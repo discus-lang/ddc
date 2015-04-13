@@ -3,7 +3,7 @@ module DDC.Core.Tetra.Transform.Curry.CallSuper
         ( makeCallSuper
         , makeCallSuperSaturated
         , makeCallSuperUnder
-        , splitStdCall)
+        , splitStdCallElim)
 where
 import DDC.Core.Tetra.Transform.Curry.Interface
 import DDC.Core.Annot.AnTEC
@@ -34,12 +34,18 @@ makeCallSuper aF _nF xF tsParamLam tResultSuper esArgValue bRun
 
  -- Fully saturated call to a super of foreign function. 
  -- We have arguments for each parameter, so can call it directly.
+ -- 
+ -- TODO: dump this code in favour of makeCallSuperSaturated
+ --
  | length esArgValue == length tsParamLam
  , xsArgValue   <- [x | Call.ElimValue _ x <- esArgValue]
  = makeRun aF bRun $ xApps aF xF xsArgValue
 
  -- Partially application of a super or foreign function.
  -- We need to build a closure, then attach any arguments we have.
+ --
+ -- TODO: dump this code in favour of makeCallSuperUnder
+ --
  | length esArgValue <  length tsParamLam
  , xsArgValue   <- [x | Call.ElimValue _ x <- esArgValue]
  = let 
@@ -121,51 +127,54 @@ makeCallSuperUnder
         -> [Call.Elim a Name]   -- ^ Eliminators at call site.
         -> Maybe (Exp a Name)
 
-makeCallSuperUnder aF nF tF cs esArgs
-        -- We don't have enough eliminators for all the constructors.
-        | length esArgs         <  length cs
-        , iArity                <- length cs
+makeCallSuperUnder aF nF tF cs es
+          -- We don't have enough eliminators for all the constructors.
+        | length es     <  length cs
 
-        -- The call must be in standard form.
-        , Just (esArgsType, esArgsValue, bRun) <- splitStdCall esArgs
-        , xsArgType             <- [XType at t  | Call.ElimType  _ at t  <- esArgsType]
-        , xsArgValue            <- [x           | Call.ElimValue _ x     <- esArgsValue]
+          -- The super and call  must be in standard form.
+        , Just (esType, esValue,  eRun)  <- splitStdCallElim es
+        , Just (csType, _csValue, _cBox) <- splitStdCallCons cs
 
-        -- Split the quantifiers, parameter type, and body type
-        -- from the type of the super.
-        , (bsForall, tBody)     <- fromMaybe ([], tF) $ takeTForalls tF
-        , (tsParam,  tResult)   <- takeTFunArgResult tBody
+          -- There must be types to satisfy all of the type paramters of the super.
+        , length esType == length csType
+
+        = let
+                -- Split the quantifiers, parameter type, and body type
+                -- from the type of the super.
+                (_bsForall, tBody)      = fromMaybe ([], tF) $ takeTForalls tF
+                (tsParam,  tResult)     = takeTFunArgResult tBody
+                iArity                  = length cs
+
+                xsArgType       = [XType at t  | Call.ElimType  _ at t  <- esType]
+                xsArgValue      = [x           | Call.ElimValue _ x     <- esValue]
+
+                -- Split the value parameters into ones accepted by the super,
+                -- and ones that are accepted by the returned closures.
+                (tsParamLam, tsParamClo) = splitAt iArity tsParam
         
-        -- There must be types to satisfy all of the type paramters of the super.
-        , length bsForall == length esArgsType
-
-        -- Split the value parameters into ones accepted by the super,
-        -- and ones that are accepted by the returned closures.
-        , (tsParamLam, tsParamClo) <- splitAt iArity tsParam
+                -- Build the type of the returned value.
+                Just tResult'   = tFunOfList (tsParamClo ++ [tResult])
         
-        -- Build the type of the returned value.
-        , Just tResult'         <- tFunOfList (tsParamClo ++ [tResult])
-        
-        -- Instantiate all the type parameters.
-        , xFunAPP               <- (xApps aF (XVar aF (UName nF)) xsArgType)
+                -- Instantiate all the type parameters.
+                xFunAPP         = (xApps aF (XVar aF (UName nF)) xsArgType)
 
-        -- Split types of the super parameters into the ones that can be
-        -- satisfied by this application, and the remaining parameters that
-        -- are still waiting for arguments.
-        , (tsParamSat, tsParamRemain)     
-                                <- splitAt (length xsArgValue) tsParamLam
+                -- Split types of the super parameters into the ones that can be
+                -- satisfied by this application, and the remaining parameters that
+                -- are still waiting for arguments.
+                (tsParamSat, tsParamRemain)     
+                                = splitAt (length xsArgValue) tsParamLam
 
-        -- The type of the result after performing this application.
-        -- If there are remaining, un-saturated parameters the result
-        -- type will still be a function.
-        , Just tResultClo       <- tFunOfList (tsParamRemain ++ [tResult'])
+                -- The type of the result after performing this application.
+                -- If there are remaining, un-saturated parameters the result
+                -- type will still be a function.
+                Just tResultClo = tFunOfList (tsParamRemain ++ [tResult'])
 
-        , tParamFirst : tsParamRest <- tsParamLam
-        , Just tSuperResult     <- tFunOfList (tsParamRest ++   [tResult'])
+                tParamFirst : tsParamRest = tsParamLam
+                Just tSuperResult = tFunOfList (tsParamRest ++   [tResult'])
 
-        =  Just 
-        $  makeRun aF bRun 
-        $  xApps aF (xFunCurry aF tsParamSat tResultClo 
+          in Just 
+                $  makeRun aF eRun 
+                $  xApps aF (xFunCurry aF tsParamSat tResultClo 
                            (xFunCReify aF tParamFirst tSuperResult xFunAPP))
                        xsArgValue
 
@@ -186,11 +195,11 @@ makeCallSuperUnder aF nF tF cs esArgs
 --
 --   @f = (/\t1. /\t2. \v1. \v2. box. body)@
 --
-splitStdCall
+splitStdCallElim
         :: [Call.Elim a Name] 
         -> Maybe ([Call.Elim a Name], [Call.Elim a Name], Bool)
 
-splitStdCall es
+splitStdCallElim es
         | (esT, esMore)   <- span Call.isElimType   es
         , (esX, esMore2)  <- span Call.isElimValue  esMore
         , (esR, [])       <- span Call.isElimRun    esMore2
@@ -199,3 +208,20 @@ splitStdCall es
 
         | otherwise
         = Nothing   
+
+
+-- | Like `splitStdCallElim`, but for the constructor side.
+splitStdCallCons
+        :: [Call.Cons Name]
+        -> Maybe ([Call.Cons Name], [Call.Cons Name], Bool)
+
+splitStdCallCons cs
+        | (csT, esMore)   <- span Call.isConsType   cs
+        , (csX, esMore2)  <- span Call.isConsValue  esMore
+        , (csR, [])       <- span Call.isConsBox    esMore2
+        ,  length csR <= 1
+        = Just (csT, csX, length csR > 0)
+
+        | otherwise
+        = Nothing   
+

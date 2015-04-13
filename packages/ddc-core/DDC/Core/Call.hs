@@ -16,23 +16,29 @@
 --    C     (algebraic data)       \case (case match)
 
 module DDC.Core.Call 
-        ( Cons (..)
+        ( -- * Call constructors
+          Cons (..)
+        , isConsType
+        , isConsValue
+        , isConsBox
+        , takeCallElim
 
+          -- * Call eliminators
         , Elim (..)
         , isElimType
         , isElimValue
         , isElimRun
-
         , takeCallCons
-        , takeCallElim
+        , applyElim
 
-        , elimForCons
-        , applyElim)
+          -- * Matching
+        , elimForCons)
 where
 import DDC.Core.Exp
 import DDC.Core.Compounds
 
 
+-----------------------------------------------------------------------------
 -- | One component of the call pattern of a super.
 --   This is the "outer wrapper" of the computation,
 -- 
@@ -52,6 +58,41 @@ data Cons n
         deriving (Show)
 
 
+-- | Get the call pattern of an object.
+takeCallCons :: Exp a n -> [Cons n]
+takeCallCons xx
+ = case xx of
+        XLAM _ b x         -> ConsType  (typeOfBind b) : takeCallCons x
+        XLam _ b x         -> ConsValue (typeOfBind b) : takeCallCons x
+        XCast _ CastBox x  -> ConsBox                  : takeCallCons x
+        _                  -> []
+
+
+-- | Check if this is an `ConsType`.
+isConsType :: Cons n -> Bool
+isConsType cc
+ = case cc of
+        ConsType{}      -> True
+        _               -> False
+
+
+-- | Check if this is an `ElimType`.
+isConsValue :: Cons n -> Bool
+isConsValue cc
+ = case cc of
+        ConsValue{}     -> True
+        _               -> False
+
+
+-- | Check if this is an `ElimType`.
+isConsBox :: Cons n -> Bool
+isConsBox cc
+ = case cc of
+        ConsBox{}       -> True
+        _               -> False
+
+
+-------------------------------------------------------------------------------
 -- | One component of a super call.
 data Elim a n
         = -- | Give a type to a type lambda.
@@ -63,7 +104,6 @@ data Elim a n
           -- | Run a suspended computation.
         | ElimRun     a
         deriving (Show)
-
 
 
 -- | Check if this is an `ElimType`.
@@ -90,16 +130,7 @@ isElimRun ee
         _               -> False
 
 
--- | Get the call pattern of an object.
-takeCallCons :: Exp a n -> [Cons n]
-takeCallCons xx
- = case xx of
-        XLAM _ b x         -> ConsType  (typeOfBind b) : takeCallCons x
-        XLam _ b x         -> ConsValue (typeOfBind b) : takeCallCons x
-        XCast _ CastBox x  -> ConsBox                  : takeCallCons x
-        _                  -> []
-
-
+-------------------------------------------------------------------------------
 -- | Split the application of some object into the object being
 --   applied and the values passed to its eliminators.
 takeCallElim :: Exp a n -> (Exp a n, [Elim a n])
@@ -120,6 +151,16 @@ takeCallElim xx
         _ -> (xx, [])
 
 
+-- | Apply an eliminator to an expression.
+applyElim :: Exp a n -> Elim a n -> Exp a n
+applyElim xx e
+ = case e of
+        ElimType  a at t -> XApp a xx (XType at t)
+        ElimValue a x    -> XApp a xx x
+        ElimRun   a      -> XCast a CastRun xx
+
+
+-------------------------------------------------------------------------------
 -- | Check if this an eliminator for the given constructor.
 --   This only checks the general form of the eliminator 
 --   and constructor, not the exact types or kinds.
@@ -130,13 +171,4 @@ elimForCons e c
         (ElimValue{}, ConsValue{})      -> True
         (ElimRun{},   ConsBox{})        -> True
         _                               -> False
-
-
-applyElim :: Exp a n -> Elim a n -> Exp a n
-applyElim xx e
- = case e of
-        ElimType  a at t -> XApp a xx (XType at t)
-        ElimValue a x    -> XApp a xx x
-        ElimRun   a      -> XCast a CastRun xx
-
 

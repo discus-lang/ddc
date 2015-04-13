@@ -73,7 +73,7 @@ makeCall xx _xF aF funMap nF esArgs
         
         -- split the arguments into the type arguments that satisfy the quantifiers,  
         -- then the value arguments.
-        , Just (esTypes, esValues, bRun) <- splitStdCall esArgs
+        , Just (esTypes, esValues, bRun) <- splitStdCallElim esArgs
         , xsArgTypes    <- [XType a t   | Call.ElimType  a _ t <- esTypes]
         , esArgValues   <- filter Call.isElimValue esValues
 
@@ -91,7 +91,7 @@ makeCall xx _xF aF funMap nF esArgs
         -- | Apply a thunk to its arguments.
         --   The functional part is a variable bound to a thunk object.
         | length esArgs > 0
-        , Just (esTypes, esValues, bRun) <- splitStdCall esArgs
+        , Just (esTypes, esValues, bRun) <- splitStdCallElim esArgs
         , xsArgTypes    <- [XType a  t  | Call.ElimType  a _ t <- esTypes]
         , xsArgValues   <- [x           | Call.ElimValue _ x <- esValues]
         = makeCallThunk aF nF (xsArgTypes ++ xsArgValues) bRun
