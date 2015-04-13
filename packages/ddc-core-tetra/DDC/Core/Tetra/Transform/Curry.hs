@@ -16,6 +16,7 @@ import qualified DDC.Type.Env                   as Env
 import qualified Data.Map                       as Map
 
 
+---------------------------------------------------------------------------------------------------
 -- TODO: handle supers names being shadowed by local bindings.
 -- TODO: ensure type lambdas are out the front of supers, supers in prenex form.
 -- TODO: build thunks for partially applied foreign functions.
