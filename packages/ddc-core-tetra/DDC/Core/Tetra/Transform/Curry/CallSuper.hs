@@ -8,9 +8,9 @@ where
 import DDC.Core.Tetra.Transform.Curry.Interface
 import DDC.Core.Annot.AnTEC
 import DDC.Core.Tetra
-import DDC.Core.Tetra.Compounds
 import DDC.Core.Exp
 import Data.Maybe
+import qualified DDC.Core.Tetra.Compounds       as C
 import qualified DDC.Core.Call                  as Call
 
 
@@ -39,7 +39,7 @@ makeCallSuper aF _nF xF tsParamLam tResultSuper esArgValue bRun
  --
  | length esArgValue == length tsParamLam
  , xsArgValue   <- [x | Call.ElimValue _ x <- esArgValue]
- = makeRun aF bRun $ xApps aF xF xsArgValue
+ = makeRun aF bRun $ C.xApps aF xF xsArgValue
 
  -- Partially application of a super or foreign function.
  -- We need to build a closure, then attach any arguments we have.
@@ -58,14 +58,14 @@ makeCallSuper aF _nF xF tsParamLam tResultSuper esArgValue bRun
         -- The type of the result after performing this application.
         -- If there are remaining, un-saturated parameters the result
         -- type will still be a function.
-        Just tResultClo           = tFunOfList (tsParamRemain ++ [tResultSuper])
+        Just tResultClo           = C.tFunOfList (tsParamRemain ++ [tResultSuper])
 
         tParamFirst : tsParamRest = tsParamLam
-        Just tSuperResult         = tFunOfList (tsParamRest ++   [tResultSuper])
+        Just tSuperResult         = C.tFunOfList (tsParamRest ++   [tResultSuper])
 
    in   makeRun aF bRun 
-         $ xApps aF (xFunCurry aF tsParamSat tResultClo 
-                           (xFunCReify aF tParamFirst tSuperResult xF))
+         $ C.xApps aF (C.xFunCurry aF tsParamSat tResultClo 
+                           (C.xFunCReify aF tParamFirst tSuperResult xF))
                        xsArgValue
 
  -- TODO: handle over-applied super.
@@ -73,7 +73,7 @@ makeCallSuper aF _nF xF tsParamLam tResultSuper esArgValue bRun
  --       the super must produce a closure, otherwise it won't be well typed.
  | otherwise
  , xsArgValue   <- [x | Call.ElimValue _ x <- esArgValue]
- = makeRun aF bRun $ xApps aF xF xsArgValue
+ = makeRun aF bRun $ C.xApps aF xF xsArgValue
 
 
 ---------------------------------------------------------------------------------------------------
@@ -141,8 +141,8 @@ makeCallSuperUnder aF nF tF cs es
         = let
                 -- Split the quantifiers, parameter type, and body type
                 -- from the type of the super.
-                (_bsForall, tBody)      = fromMaybe ([], tF) $ takeTForalls tF
-                (tsParam,  tResult)     = takeTFunArgResult tBody
+                (_bsForall, tBody)      = fromMaybe ([], tF) $ C.takeTForalls tF
+                (tsParam,  tResult)     = C.takeTFunArgResult tBody
                 iArity                  = length cs
 
                 xsArgType       = [XType at t  | Call.ElimType  _ at t  <- esType]
@@ -153,10 +153,10 @@ makeCallSuperUnder aF nF tF cs es
                 (tsParamLam, tsParamClo) = splitAt iArity tsParam
         
                 -- Build the type of the returned value.
-                Just tResult'   = tFunOfList (tsParamClo ++ [tResult])
+                Just tResult'   = C.tFunOfList (tsParamClo ++ [tResult])
         
                 -- Instantiate all the type parameters.
-                xFunAPP         = (xApps aF (XVar aF (UName nF)) xsArgType)
+                xFunAPP         = (C.xApps aF (XVar aF (UName nF)) xsArgType)
 
                 -- Split types of the super parameters into the ones that can be
                 -- satisfied by this application, and the remaining parameters that
@@ -167,19 +167,20 @@ makeCallSuperUnder aF nF tF cs es
                 -- The type of the result after performing this application.
                 -- If there are remaining, un-saturated parameters the result
                 -- type will still be a function.
-                Just tResultClo = tFunOfList (tsParamRemain ++ [tResult'])
+                Just tResultClo = C.tFunOfList (tsParamRemain ++ [tResult'])
 
                 tParamFirst : tsParamRest = tsParamLam
-                Just tSuperResult = tFunOfList (tsParamRest ++   [tResult'])
+                Just tSuperResult = C.tFunOfList (tsParamRest ++   [tResult'])
 
-          in Just 
-                $  makeRun aF eRun 
-                $  xApps aF (xFunCurry aF tsParamSat tResultClo 
-                           (xFunCReify aF tParamFirst tSuperResult xFunAPP))
-                       xsArgValue
+          in Just
+                $ makeRun aF eRun 
+                $ C.xApps aF (C.xFunCurry aF tsParamSat tResultClo 
+                               (C.xFunCReify aF tParamFirst tSuperResult xFunAPP))
+                      xsArgValue
 
         | otherwise
         = Nothing
+
 
 
 ---------------------------------------------------------------------------------------------------

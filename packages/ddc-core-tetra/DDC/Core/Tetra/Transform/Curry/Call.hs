@@ -94,10 +94,12 @@ makeCall xx _xF aF funMap nF esArgs
         , Just (esTypes, esValues, bRun) <- splitStdCallElim esArgs
         , xsArgTypes    <- [XType a  t  | Call.ElimType  a _ t <- esTypes]
         , xsArgValues   <- [x           | Call.ElimValue _ x <- esValues]
-        = makeCallThunk aF nF (xsArgTypes ++ xsArgValues) bRun
+        = let Just xResult = makeCallThunk aF nF (xsArgTypes ++ xsArgValues) bRun
+          in  xResult
 
         ---------------------------------------------------
         -- | This was an existing thunk applied to no arguments,
         --   so we can just return it without doing anything.
         | otherwise
         = xx
+
