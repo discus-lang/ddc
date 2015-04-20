@@ -21,10 +21,10 @@ module DDC.Core.Salt.Runtime
         , xPayloadOfRawSmall
 
         , xAllocThunk
-        , xAvailOfThunk
+        , xArgsOfThunk
         , xSetFieldOfThunk
         , xExtendThunk
-        , xCopyAvailOfThunk
+        , xCopyArgsOfThunk
         , xApplyThunk
 
           -- * Calls to primops.
@@ -76,10 +76,10 @@ runtimeImportTypes
    , rn utAllocRawSmall
    , rn utPayloadOfRawSmall 
    , rn utAllocThunk 
-   , rn utAvailOfThunk
+   , rn utArgsOfThunk
    , rn utSetFieldOfThunk
    , rn utExtendThunk
-   , rn utCopyAvailOfThunk 
+   , rn utCopyArgsOfThunk 
    , rn (utApplyThunk 0)
    , rn (utApplyThunk 1)
    , rn (utApplyThunk 2)
@@ -195,32 +195,42 @@ utPayloadOfRawSmall
 -- Thunk ----------------------------------------------------------------------
 -- | Allocate a Thunk object.
 xAllocThunk  
-        :: a -> Type Name 
-        -> Exp a Name -> Exp a Name -> Exp a Name -> Exp a Name
+        :: a 
+        -> Type Name 
+        -> Exp a Name   -- ^ Function
+        -> Exp a Name   -- ^ Value paramters.
+        -> Exp a Name   -- ^ Times boxed.
+        -> Exp a Name   -- ^ Value args.
+        -> Exp a Name   -- ^ Times run.
+        -> Exp a Name
 
-xAllocThunk a tR xFun xArity xAvail
+xAllocThunk a tR xFun xParam xBoxes xArgs xRun
  = xApps a (XVar a $ fst utAllocThunk)
-        [ XType a tR, xFun, xArity, xAvail]
+        [ XType a tR, xFun, xParam, xBoxes, xArgs, xRun]
 
 utAllocThunk :: (Bound Name, Type Name)
 utAllocThunk
  =      ( UName (NameVar "allocThunk")
         , tForall kRegion 
-           $ \tR -> (tAddr `tFunPE` tNat `tFunPE` tNat `tFunPE` tPtr tR tObj))
+           $ \tR -> (tAddr `tFunPE` tNat 
+                           `tFunPE` tNat 
+                           `tFunPE` tNat 
+                           `tFunPE` tNat 
+                           `tFunPE` tPtr tR tObj))
 
 
 -- | Get the available arguments in a thunk.
-xAvailOfThunk
+xArgsOfThunk
         :: a -> Type Name
         -> Exp a Name -> Exp a Name
 
-xAvailOfThunk a tR xThunk
- = xApps a (XVar a $ fst utAvailOfThunk)
+xArgsOfThunk a tR xThunk
+ = xApps a (XVar a $ fst utArgsOfThunk)
         [ XType a tR, xThunk ]
 
-utAvailOfThunk :: (Bound Name, Type Name)
-utAvailOfThunk
- =      ( UName (NameVar "availOfThunk")
+utArgsOfThunk :: (Bound Name, Type Name)
+utArgsOfThunk
+ =      ( UName (NameVar "argsOfThunk")
         , tForall kRegion
            $ \tR -> (tPtr tR tObj `tFunPE` tNat))
 
@@ -261,18 +271,18 @@ utExtendThunk
 
 
 -- | Copy the available arguments from one thunk to another.
-xCopyAvailOfThunk
+xCopyArgsOfThunk
         :: a -> Type Name -> Type Name
         -> Exp a Name -> Exp a Name -> Exp a Name -> Exp a Name -> Exp a Name
 
-xCopyAvailOfThunk a tRSrc tRDst xSrc xDst xIndex xLen
- = xApps a (XVar a $ fst utCopyAvailOfThunk)
+xCopyArgsOfThunk a tRSrc tRDst xSrc xDst xIndex xLen
+ = xApps a (XVar a $ fst utCopyArgsOfThunk)
         [ XType a tRSrc, XType a tRDst, xSrc, xDst, xIndex, xLen ]
 
 
-utCopyAvailOfThunk :: (Bound Name, Type Name)
-utCopyAvailOfThunk
- =      ( UName (NameVar "copyAvailOfThunk")
+utCopyArgsOfThunk :: (Bound Name, Type Name)
+utCopyArgsOfThunk
+ =      ( UName (NameVar "copyArgsOfThunk")
         , tForalls [kRegion, kRegion]
            $ \[tR1, tR2] -> (tPtr tR1 tObj 
                                 `tFunPE` tPtr tR2 tObj

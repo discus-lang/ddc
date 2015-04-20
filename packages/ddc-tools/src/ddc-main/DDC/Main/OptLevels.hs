@@ -99,7 +99,7 @@ opt1_salt config dconfig builder runtimeConfig filePath
                      $ Set.fromList 
                      $ map Salt.NameVar
                         [ "apply0", "apply1", "apply2", "apply4", "apply4", "applyZ"
-                        , "copyAvailOfThunk"])]
+                        , "copyArgsOfThunk"])]
 
         -- Optionally load the rewrite rules for each 'with' module
         rules <- mapM (\(m,file) -> cmdTryReadRules Salt.fragment (file ++ ".rules") m)

@@ -69,13 +69,15 @@ module  Object
 export value
   getTag            : [r : Region]. Ptr# r Obj -> Tag#
 
-  allocThunk        : [r : Region]. Addr# -> Nat# -> Nat# -> Ptr# r Obj
+  allocThunk        : [r : Region]. Addr# -> Nat# -> Nat# -> Nat# -> Nat# -> Ptr# r Obj
   setFieldOfThunk   : [r : Region]. Ptr# r Obj  -> Nat# -> Nat# -> Addr# -> Void#
-  arityOfThunk      : [r : Region]. Ptr# r Obj  -> Nat#
-  availOfThunk      : [r : Region]. Ptr# r Obj  -> Nat#
+  paramsOfThunk     : [r : Region]. Ptr# r Obj  -> Nat#
+  boxesOfThunk      : [r : Region]. Ptr# r Obj  -> Nat#
+  argsOfThunk       : [r : Region]. Ptr# r Obj  -> Nat#
+  runsOfThunk       : [r : Region]. Ptr# r Obj  -> Nat#
   fieldOfThunk      : [r : Region]. Ptr# r Obj  -> Nat# -> Addr#
   extendThunk       : [r1 r2 : Region]. Ptr# r1 Obj -> Nat# -> Ptr# r2 Obj
-  copyAvailOfThunk  : [r1 r2 : Region]. Ptr# r1 Obj -> Ptr# r2 Obj 
+  copyArgsOfThunk   : [r1 r2 : Region]. Ptr# r1 Obj -> Ptr# r2 Obj 
                                                     -> Nat# -> Nat# -> Ptr# r2 Obj
 
   allocBoxed        : [r : Region]. Tag# -> Nat# -> Ptr# r Obj
@@ -136,35 +138,60 @@ getTag [r : Region] (obj : Ptr# r Obj) : Tag#
 --   To perform a partial application we just create a new Thunk, copy the old
 --   arguments into it, and write the extra partially applied arguments into the
 --   new thunk. This is done to keep the implementation complexity down, and we
---   performed any concrete performance comparisons between the two approaches.
+--   haven't performed any concrete performance comparisons between the two
+--   approaches.
 --   
 --   For the GHC approach see: 
 --    How to make a fast curry, push/enter vs eval apply.
 --    Simon Marlow and Simon Peyton Jones.
 --    Journal of Functional Programming, 2006.
 --
+--   A thunk wraps a top-level super of the following form:
+--    f = /\a1 .. /\an. \x1 .. \xn. box .. box. body
+--
+--   The type   parameters a1 .. an are not represented at runtime.
+--
+--   The value  parameters x1 .. xn are counted in the boxes field.
+--    We need to collect this many applied arguments in the thunk before
+--    we can call the super.
+--
+--   The boxes  box .. box are counted in the boxes field of the thunk.
+--    We need to run the thunk this many times before calling the super.
+--    the expression 'box body' is equivalent to (\(_ : Void#). body), 
+--    and running it eliminates the outer lambda.
+--
 --   typedef struct
 --   {   uint32_t  tagFormat;     // Constructor tag and format field.
---       uint16_t  arity;         // Arity of the supecombinator.
---       uint16_t  avail;         // Available arguments.
+--       uint8_t   params;        // Value parameters of super.
+--       uint8_t   boxes;         // Number of runs required.
+--       uint8_t   args;          // Available arguments.
+--       uint8_t   runs;          // Number of times we've been run so far.
 --       Fun*      fun;           // Function pointer.
 --       Obj*      payload[];     // Pointers to available arguments.
 --   } Thunk;
 --
-allocThunk
-        [r : Region] (fun : Addr#) (arity : Nat#) (avail : Nat#) : Ptr# r Obj
+allocThunk [r : Region] (fun : Addr#) 
+        (params : Nat#) (boxes : Nat#) 
+        (args   : Nat#) (runs  : Nat#)
+        : Ptr# r Obj
  = do
-        -- Multiply arity by 8 bytes-per-pointer to get size of payload.
-        bytesPayload    = shl# arity (size2# [Addr#])
-        bytesObj        = add# (size# [Word32#])
-                         (add# (size# [Word32#]) bytesPayload)
+        -- The payload needs to be big enough to store pointers to the 
+        -- current available args.
+        bytesPayload    = shl# args (size2# [Addr#])
+
+        bytesObj        = add# (size# [Word32#])        -- tagFormat word.
+                         (add# (size# [Word32#])        -- params/boxes/args/runs.
+                         (add# (size# [Word64#])        -- function pointer.
+                                bytesPayload))          -- function args.
+
         case check# bytesObj of
-         True#  -> allocThunk_ok fun arity avail bytesObj
+         True#  -> allocThunk_ok fun params boxes args runs bytesObj
          False# -> fail#
 
-allocThunk_ok
-        [r : Region] (fun : Addr#) (arity : Nat#) (avail : Nat#)
-                     (bytesObj : Nat#)
+allocThunk_ok [r  : Region] (fun : Addr#) 
+        (params   : Nat#) (boxes : Nat#)
+        (args     : Nat#) (runs  : Nat#)
+        (bytesObj : Nat#)
         : Ptr# r Obj
  = do   
         addr            = alloc# bytesObj
@@ -175,13 +202,21 @@ allocThunk_ok
         header          = bor# tag32 format
         write# addr 0# header
 
-        -- Truncate arity to 16-bits and write to object.
-        arity16         = truncate# [Word16#] [Nat#] arity
-        write# addr 4# arity16
+        -- Truncate params to 8-bits and write to object.
+        params8         = truncate# [Word8#] [Nat#] params
+        write# addr 4# params8
 
-        -- Truncate avail count to 16-bits and write to object.
-        avail16         = truncate# [Word16#] [Nat#] avail
-        write# addr 6# avail16
+        -- Truncate boxes  to 8-bits and write to object.
+        boxes8          = truncate# [Word8#] [Nat#] boxes
+        write# addr 5# boxes8
+
+        -- Truncate args count to 8-bits and write to object.
+        args8           = truncate# [Word8#] [Nat#] args
+        write# addr 6# args8
+
+        -- Truncate runs count to 8-bits and write to object.
+        runs8           = truncate# [Word8#] [Nat#] runs
+        write# addr 7# runs8
 
         -- Write the function pointer.
         write# addr 8# fun
@@ -216,18 +251,28 @@ funOfThunkA      [r : Region] (obj : Addr#) : Addr#
 
 
 -- | Get the arity of the function in a thunk.
-arityOfThunk     [r : Region] (obj : Ptr# r Obj) : Nat#
- =      promote# (read# [Word16#] (takePtr# obj) 4#)
+paramsOfThunk     [r : Region] (obj : Ptr# r Obj) : Nat#
+ =      promote# (read# [Word8#] (takePtr# obj) 4#)
 
 
 -- | Get the arity of the function in a thunk.
-arityOfThunkA    [r : Region] (obj : Addr#) : Nat#
- =      promote# (read# [Word16#] obj 4#)
+paramsOfThunkA    [r : Region] (obj : Addr#) : Nat#
+ =      promote# (read# [Word8#] obj 4#)
 
 
 -- | Get the count of available arguments in a thunk.
-availOfThunk    [r : Region] (obj : Ptr# r Obj) : Nat#
- =      promote# (read# [Word16#] (takePtr# obj) 6#)
+boxesOfThunk    [r : Region] (obj : Ptr# r Obj) : Nat#
+ =      promote# (read# [Word8#] (takePtr# obj) 5#)
+
+
+-- | Get the count of available arguments in a thunk.
+argsOfThunk    [r : Region] (obj : Ptr# r Obj) : Nat#
+ =      promote# (read# [Word8#] (takePtr# obj) 6#)
+
+
+-- | Get the count of available arguments in a thunk.
+runsOfThunk    [r : Region] (obj : Ptr# r Obj) : Nat#
+ =      promote# (read# [Word8#] (takePtr# obj) 7#)
 
 
 -- | Get one of the arguments from a thunk.
@@ -250,21 +295,25 @@ extendThunk
  = do
         -- Function pointer and arity of that function.
         fun     = funOfThunk src
-        arity   = arityOfThunk src
+        params  = paramsOfThunk src
+        boxes   = boxesOfThunk src
 
         -- Available arguments in source and destination.
-        avail   = availOfThunk src
-        avail'  = add# avail more
+        args    = argsOfThunk src
+        args'   = add# args more
+
+        -- Number of times the thunk has been run
+        runs    = runsOfThunk src
 
         -- Allocate a new thunk with the orignal function and arity.
-        dst     = allocThunk [rDst] (funOfThunk src) arity avail'
+        dst     = allocThunk [rDst] (funOfThunk src) params boxes args' runs
 
         -- Copy argument pointers from the source into the new thunk.
-        copyAvailOfThunk src dst 0# avail
+        copyArgsOfThunk src dst 0# args
 
 
 -- | Copy the available arguments from one thunk to another.
-copyAvailOfThunk
+copyArgsOfThunk
         [rSrc rDst : Region]
         (src   : Ptr# rSrc Obj) (dst : Ptr# rDst Obj) 
         (index : Nat#)          (len : Nat#)
@@ -273,8 +322,8 @@ copyAvailOfThunk
         True#   -> dst
         False# 
          -> do  ptr     = fieldOfThunk src index
-                setFieldOfThunk  dst 0#  index ptr
-                copyAvailOfThunk src dst (add# index 1#) len
+                setFieldOfThunk dst 0#  index ptr
+                copyArgsOfThunk src dst (add# index 1#) len
 
 
 -- Boxed ----------------------------------------------------------------------
@@ -494,6 +543,12 @@ payloadOfRawSmall [r : Region] (obj : Ptr# r Obj) : Ptr# r Word8#
 -- The apply family of functions work out how call the function in a thunk.
 -- Some arguments come from in the thunk itself, while some can be provided
 -- directly to the evaluators.
+--
+-- TODO: 
+--  Use of these functions assumes the thunks themselves are saturated,
+--  so that they contain as many args as mentioned in the params field, 
+--  and args == params. We still need to check for under-application and
+--  build a new thunk if we still don't have enough args to call the super.
 -- 
 -- The hard limits are:
 --   - The maximum arity for the function in a thunk is 12. 
@@ -509,7 +564,7 @@ payloadOfRawSmall [r : Region] (obj : Ptr# r Obj) : Ptr# r Word8#
 apply0   (t : Addr#) : Addr#
  = do   
         f       = funOfThunkA   t
-        a       = arityOfThunkA t
+        a       = paramsOfThunkA t
         case a of
          0#     -> call0# f
 
@@ -533,7 +588,7 @@ apply0   (t : Addr#) : Addr#
 apply1   (t : Addr#) (arg0 : Addr#) : Addr#
  = do   
         f       = funOfThunkA   t
-        a       = arityOfThunkA t
+        a       = paramsOfThunkA t
         case a of
          0#     -> apply1 (call0# f) arg0
 
@@ -558,7 +613,7 @@ apply1   (t : Addr#) (arg0 : Addr#) : Addr#
 apply2  (t : Addr#) (arg0 arg1 : Addr#) : Addr#
  = do   
         f       = funOfThunkA   t
-        a       = arityOfThunkA t
+        a       = paramsOfThunkA t
         case a of
          0#     -> apply2 (call0# f) arg0  arg1
 
@@ -581,7 +636,7 @@ apply2  (t : Addr#) (arg0 arg1 : Addr#) : Addr#
 apply3   (t : Addr#) (arg0 arg1 arg2 : Addr#) : Addr#
  = do   
         f       = funOfThunkA   t
-        a       = arityOfThunkA t
+        a       = paramsOfThunkA t
         case a of
          0#     -> apply3 (call0# f) arg0  arg1  arg2
 
@@ -602,7 +657,7 @@ apply3   (t : Addr#) (arg0 arg1 arg2 : Addr#) : Addr#
 apply4   (t : Addr#) (arg0 arg1 arg2 arg3 : Addr#) : Addr#
  = do   
         f       = funOfThunkA   t
-        a       = arityOfThunkA t
+        a       = paramsOfThunkA t
         case a of
          0#     -> apply4 (call0# f) arg0  arg1  arg2  arg3
 

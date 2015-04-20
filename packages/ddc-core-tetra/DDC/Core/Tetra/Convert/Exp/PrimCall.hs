@@ -44,7 +44,7 @@ convertPrimCall _ectx ctx xx
 
            -- Given the expression defining the super, retrieve its
            -- value arity and any extra type arguments we need to apply.
-         , Just (aF, xF_super, arity, atsArg)
+         , Just (aF, xF_super, params, boxes, atsArg)
             <- case xF of
                 XVar aF uF@(UName nF)
                  -- This variable was let-bound to the application of a super
@@ -61,11 +61,14 @@ convertPrimCall _ectx ctx xx
                         -- If this fails then the super name is in-scope, but
                         -- we can't see its definition in this module, or
                         -- salt-level import to get the arity.
-                        arity   = fromMaybe (panicNoArity (UName nSuper) xx)
+                        params  = fromMaybe (panicNoArity (UName nSuper) xx)
                                 $ superDataArity ctx (UName nSuper)
 
+                        -- TODO: get actual number of inner boxes.
+                        boxes   = 0 :: Int
+
                         xF'     = XVar aF (UName nSuper)
-                    in  Just (aF, xF', arity, atsArgs)
+                    in  Just (aF, xF', params, boxes, atsArgs)
 
                  -- The name is that of an existing top-level super, either
                  -- defined in this module or imported from somewhere else.
@@ -74,10 +77,13 @@ convertPrimCall _ectx ctx xx
                         -- If this fails then the super name is in-scope, but
                         -- we can't see its definition in this module, or
                         -- salt-level import to get the arity.
-                        arity   = fromMaybe (panicNoArity uF xx) 
+                        params  = fromMaybe (panicNoArity uF xx) 
                                 $ superDataArity ctx uF
 
-                    in  Just (aF, xF, arity, [])
+                        -- TODO: get actual number of inner boxes.
+                        boxes   = 0 :: Int
+
+                    in  Just (aF, xF, params, boxes, [])
 
                 _ -> Nothing
 
@@ -92,8 +98,10 @@ convertPrimCall _ectx ctx xx
                 tF'     <- convertSuperT (typeContext ctx) (annotType aF)
                 return  $ A.xAllocThunk a A.rTop 
                                 (xConvert a A.tAddr tF' xF')
-                                (A.xNat a $ fromIntegral arity)
-                                (A.xNat a 0)
+                                (A.xNat a $ fromIntegral params)        -- value params
+                                (A.xNat a $ fromIntegral boxes)         -- boxes
+                                (A.xNat a 0)                            -- args
+                                (A.xNat a 0)                            -- runs
 
 
         ---------------------------------------------------
@@ -119,14 +127,14 @@ convertPrimCall _ectx ctx xx
                 xsArg'          <- mapM downArgX xsArg
                 tsArg'          <- mapM (convertValueT (typeContext ctx)) tsArg
                 let bObject     = BAnon (A.tPtr A.rTop A.tObj)
-                let bAvail      = BAnon A.tNat
+                let bArgs       = BAnon A.tNat
 
                 return 
                  $ XLet  a (LLet bObject 
                                  (A.xExtendThunk     a A.rTop A.rTop xThunk' 
                                         (A.xNat a $ fromIntegral nArgs)))
-                 $ XLet  a (LLet bAvail
-                                 (A.xAvailOfThunk    a A.rTop xThunk'))
+                 $ XLet  a (LLet bArgs
+                                 (A.xArgsOfThunk    a A.rTop xThunk'))
 
                  $ xLets a [LLet (BNone A.tVoid)
                                  (A.xSetFieldOfThunk a A.rTop 
