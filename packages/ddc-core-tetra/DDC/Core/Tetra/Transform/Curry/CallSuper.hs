@@ -182,7 +182,6 @@ makeCallSuperUnder aF nF tF cs es
         = Nothing
 
 
-
 ---------------------------------------------------------------------------------------------------
 -- | Check if these eliminators follow the standard super-call pattern.
 --

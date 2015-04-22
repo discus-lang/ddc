@@ -294,13 +294,13 @@ extendThunk
         (src : Ptr# rSrc Obj) (more : Nat#) : Ptr# rDst Obj
  = do
         -- Function pointer and arity of that function.
-        fun     = funOfThunk src
+        fun     = funOfThunk    src
         params  = paramsOfThunk src
-        boxes   = boxesOfThunk src
+        boxes   = boxesOfThunk  src
 
         -- Available arguments in source and destination.
-        args    = argsOfThunk src
-        args'   = add# args more
+        args    = argsOfThunk   src
+        args'   = add# args     more
 
         -- Number of times the thunk has been run
         runs    = runsOfThunk src
@@ -544,12 +544,6 @@ payloadOfRawSmall [r : Region] (obj : Ptr# r Obj) : Ptr# r Word8#
 -- Some arguments come from in the thunk itself, while some can be provided
 -- directly to the evaluators.
 --
--- TODO: 
---  Use of these functions assumes the thunks themselves are saturated,
---  so that they contain as many args as mentioned in the params field, 
---  and args == params. We still need to check for under-application and
---  build a new thunk if we still don't have enough args to call the super.
--- 
 -- The hard limits are:
 --   - The maximum arity for the function in a thunk is 12. 
 --     See the comment on applyZ.
@@ -559,13 +553,26 @@ payloadOfRawSmall [r : Region] (obj : Ptr# r Obj) : Ptr# r Word8#
 -- The choice of where to set the limit is a balance between being able to 
 -- enumerate all possible calling conventions, and polluting the instruction
 -- cache with code for too many evaluators.
+--
 
+----------------------------------------------------------- 0
 -- | Apply (evaluate) a thunk, given no more arguments.
 apply0   (t : Addr#) : Addr#
+ = do
+        p       = paramsOfThunkA t
+        a       = argsOfThunk    (makePtr# t)
+        case ge# a p of
+         True#  -> eval0 t
+         False# -> t
+
+
+-- | Evaluate a saturate thunk, give no more arguments.
+eval0    (t : Addr#) : Addr#
  = do   
-        f       = funOfThunkA   t
-        a       = paramsOfThunkA t
-        case a of
+        f       = funOfThunkA    t
+        p       = paramsOfThunkA t
+        a       = argsOfThunk    (makePtr# t)
+        case p of
          0#     -> call0# f
 
          1#     -> call1# f        (fieldOfThunkA t 0#)
@@ -578,43 +585,80 @@ apply0   (t : Addr#) : Addr#
          4#     -> call4# f        (fieldOfThunkA t 0#) (fieldOfThunkA t 1#) 
                                    (fieldOfThunkA t 2#) (fieldOfThunkA t 3#)
 
-         _      -> applyZ  t f a   (fieldOfThunkA t (sub# a 4#))
+         _      -> evalZ  t f p    (fieldOfThunkA t (sub# a 4#))
                                    (fieldOfThunkA t (sub# a 3#))
                                    (fieldOfThunkA t (sub# a 2#))
                                    (fieldOfThunkA t (sub# a 1#))
 
 
+----------------------------------------------------------- 1
 -- | Apply a thunk to one more argument.
 apply1   (t : Addr#) (arg0 : Addr#) : Addr#
+ = do
+        p       = paramsOfThunkA t
+        a       = argsOfThunk    (makePtr# t)
+        case ge# (add# a 1#) p of { True# ->
+                eval1 t arg0;
+
+        False#  ->
+        do      t' = extendThunk (makePtr# t) 1#
+                setFieldOfThunk t' a 0# arg0
+                takePtr# t'
+        }
+
+-- | Evaluate a saturated thunk, given one more argument.
+eval1    (t : Addr#) (arg0 : Addr#) : Addr#
  = do   
-        f       = funOfThunkA   t
-        a       = paramsOfThunkA t
-        case a of
+        f       = funOfThunkA    t
+        p       = paramsOfThunkA t
+        a       = argsOfThunk    (makePtr# t)
+        case p of
          0#     -> apply1 (call0# f) arg0
 
-         1#     -> call1# f         arg0
+         1#     -> call1# f          arg0
 
-         2#     -> call2# f        (fieldOfThunkA t 0#)    
-                                    arg0
+         2#     -> call2# f         (fieldOfThunkA t 0#)
+                                     arg0
 
-         3#     -> call3# f        (fieldOfThunkA t 0#) (fieldOfThunkA t 1#) 
-                                    arg0
+         3#     -> call3# f         (fieldOfThunkA t 0#) (fieldOfThunkA t 1#) 
+                                     arg0
 
-         4#     -> call4# f        (fieldOfThunkA t 0#) (fieldOfThunkA t 1#)
-                                   (fieldOfThunkA t 2#)  arg0
+         4#     -> call4# f         (fieldOfThunkA t 0#) (fieldOfThunkA t 1#)
+                                    (fieldOfThunkA t 2#)  arg0
 
-         _      -> applyZ  t f a   (fieldOfThunkA t (sub# a 3#))
-                                   (fieldOfThunkA t (sub# a 2#))
-                                   (fieldOfThunkA t (sub# a 1#))
-                                    arg0
+         _      -> evalZ  t f p     (fieldOfThunkA t (sub# a 3#))
+                                    (fieldOfThunkA t (sub# a 2#))
+                                    (fieldOfThunkA t (sub# a 1#))
+                                     arg0
 
 
--- | Apply a thunk to two more arguments.
-apply2  (t : Addr#) (arg0 arg1 : Addr#) : Addr#
+----------------------------------------------------------- 2
+apply2 (t : Addr#) (arg0 arg1 : Addr#) : Addr#
+ = do   
+        p       = paramsOfThunkA t
+        a       = argsOfThunk    (makePtr# t)
+        case ge# (add# a 2#) p of { True# ->
+                eval2 t arg0 arg1;  
+
+        False# -> 
+        case ge# (add# a 1#) p of { True# ->
+                apply1 (eval1 t arg0) arg1;
+
+        False# ->
+        do      t' = extendThunk (makePtr# t) 2#
+                setFieldOfThunk t' a 0# arg0
+                setFieldOfThunk t' a 1# arg1
+                takePtr# t'
+        }}
+
+
+-- | Evaluate a saturated thunk, given two more arguments.
+eval2  (t : Addr#) (arg0 arg1 : Addr#) : Addr#
  = do   
         f       = funOfThunkA   t
-        a       = paramsOfThunkA t
-        case a of
+        p       = paramsOfThunkA t
+        a       = argsOfThunk    (makePtr# t)
+        case p of
          0#     -> apply2 (call0# f) arg0  arg1
 
          1#     -> apply1 (call1# f  arg0) arg1
@@ -627,38 +671,96 @@ apply2  (t : Addr#) (arg0 arg1 : Addr#) : Addr#
          4#     -> call4# f        (fieldOfThunkA t 0#) (fieldOfThunkA t 1#)
                                     arg0  arg1
 
-         _      -> applyZ  t f a   (fieldOfThunkA t (sub# a 2#))
+         _      -> evalZ  t f p    (fieldOfThunkA t (sub# a 2#))
                                    (fieldOfThunkA t (sub# a 1#))
                                     arg0  arg1
 
 
+----------------------------------------------------------- 3
 -- | Apply a thunk to three more arguments.
 apply3   (t : Addr#) (arg0 arg1 arg2 : Addr#) : Addr#
+ = do
+        p       = paramsOfThunkA t
+        a       = argsOfThunk (makePtr# t)
+        case ge# (add# a 3#) p of { True# ->
+                eval3 t arg0 arg1 arg2;
+
+        False# ->
+        case ge# (add# a 2#) p of { True# ->
+                apply1 (eval2 t arg0  arg1) arg2;
+
+        False# ->
+        case ge# (add# a 1#) p of { True# ->
+                apply2 (eval1 t arg0) arg1  arg2;
+
+        False# ->
+        do      t' = extendThunk (makePtr# t) 3#
+                setFieldOfThunk t' a 0# arg0
+                setFieldOfThunk t' a 1# arg1
+                setFieldOfThunk t' a 2# arg2
+                takePtr# t'
+        }}}
+
+
+-- | Evaluate a saturated thunk, given three more arguments.
+eval3    (t : Addr#) (arg0 arg1 arg2 : Addr#) : Addr#
  = do   
-        f       = funOfThunkA   t
-        a       = paramsOfThunkA t
-        case a of
+        f       = funOfThunkA    t
+        p       = paramsOfThunkA t
+        a       = argsOfThunk   (makePtr# t)
+        case p of
          0#     -> apply3 (call0# f) arg0  arg1  arg2
 
          1#     -> apply2 (call1# f  arg0) arg1  arg2
 
          2#     -> apply1 (call2# f  arg0  arg1) arg2
 
-         3#     -> call3# f         arg0  arg1  arg2
+         3#     -> call3# f          arg0  arg1  arg2
 
-         4#     -> call4# f        (fieldOfThunkA t 0#)
-                                    arg0  arg1  arg2
+         4#     -> call4# f         (fieldOfThunkA t 0#)
+                                     arg0  arg1  arg2
 
-         _      -> applyZ  t f a   (fieldOfThunkA t (sub# a 1#))
-                                    arg0  arg1  arg2
+         _      -> evalZ  t f p     (fieldOfThunkA t (sub# a 1#))
+                                     arg0  arg1  arg2
 
 
+----------------------------------------------------------- 4
 -- | Apply a thunk to four more arguments.
 apply4   (t : Addr#) (arg0 arg1 arg2 arg3 : Addr#) : Addr#
+ = do
+        p       = paramsOfThunkA t
+        a       = argsOfThunk (makePtr# t)
+        case ge# (add# a 4#) p of { True# ->
+                eval4 t arg0 arg1 arg2 arg3;
+
+        False# ->
+        case ge# (add# a 3#) p of { True# ->
+                apply1 (eval3 t arg0  arg1  arg2) arg3;
+
+        False# ->
+        case ge# (add# a 2#) p of { True# ->
+                apply2 (eval2 t arg0  arg1) arg2  arg3;
+
+        False# ->
+        case ge# (add# a 1#) p of { True# ->
+                apply3 (eval1 t arg0) arg1  arg2  arg3;
+
+        False# ->
+        do      t' = extendThunk (makePtr# t) 4#
+                setFieldOfThunk t' a 0# arg0
+                setFieldOfThunk t' a 1# arg1
+                setFieldOfThunk t' a 2# arg2
+                setFieldOfThunk t' a 3# arg3
+                takePtr# t'
+        }}}}
+
+
+-- | Evaluate a saturated thunk, given four more arguments.
+eval4   (t : Addr#) (arg0 arg1 arg2 arg3 : Addr#) : Addr#
  = do   
         f       = funOfThunkA   t
-        a       = paramsOfThunkA t
-        case a of
+        p       = paramsOfThunkA t
+        case p of
          0#     -> apply4 (call0# f) arg0  arg1  arg2  arg3
 
          1#     -> apply3 (call1# f  arg0) arg1  arg2  arg3
@@ -669,10 +771,11 @@ apply4   (t : Addr#) (arg0 arg1 arg2 arg3 : Addr#) : Addr#
 
          4#     -> call4# f          arg0  arg1  arg2  arg3
 
-         _      -> applyZ  t f a     arg0  arg1  arg2  arg3
+         _      -> evalZ  t f p      arg0  arg1  arg2  arg3
 
 
--- Apply a thunk to its last four arguments. 
+----------------------------------------------------------- Z
+-- Evaluate a saturated thunk, given its last 4 arguments.
 -- We read the first (n-4) arguments directly from the thunk.
 --
 -- In the object code, this function serves to enumerate the function calling
@@ -691,7 +794,7 @@ apply4   (t : Addr#) (arg0 arg1 arg2 arg3 : Addr#) : Addr#
 -- If the machine has 16 general purpose registers, then setting the maximum
 -- arity here to 12 is probably enough.
 --
-applyZ  [r : Region]
+evalZ  [r : Region]
         (t : Addr#) (fun : Addr#) (arity : Nat#)
         (argL3 argL2 argL1 argL0 : Addr#) 
         : Addr#
