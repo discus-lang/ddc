@@ -66,10 +66,10 @@ convPrimArith ctx mdst p _tPrim xs
                      = return $ IOp dst op' x1' x2'
 
                      | Just icond'  <- convPrimICond op t
-                     = return $ IICmp dst icond' x1' x2'
+                     = return $ ICmp dst (ICond icond') x1' x2'
 
                      | Just fcond'  <- convPrimFCond op t
-                     = return $ IFCmp dst fcond' x1' x2'
+                     = return $ ICmp dst (FCond fcond') x1' x2'
 
                      -- Cannot use primop at this type.
                      | otherwise

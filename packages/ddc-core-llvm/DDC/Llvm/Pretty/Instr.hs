@@ -1,9 +1,10 @@
 
 module DDC.Llvm.Pretty.Instr where
-import DDC.Llvm.Syntax.Instr
-import DDC.Llvm.Syntax.Exp
-import DDC.Llvm.Syntax.Metadata
 import DDC.Llvm.Syntax.Attr
+import DDC.Llvm.Syntax.Exp
+import DDC.Llvm.Syntax.Instr
+import DDC.Llvm.Syntax.Metadata
+import DDC.Llvm.Syntax.Prim
 import DDC.Llvm.Pretty.Exp
 import DDC.Llvm.Pretty.Prim     ()
 import DDC.Llvm.Pretty.Metadata ()
@@ -132,14 +133,14 @@ instance Pretty Instr where
 
 
         -- Other operations -------------------------------
-        IICmp vDst icond x1 x2
+        ICmp vDst (ICond icond) x1 x2
          -> padVar vDst
                 <+> equals
                 <+> text "icmp"  <+> ppr icond  <+> ppr (typeOfExp x1)
                 <+> pprPlainX x1 <> comma
                 <+> pprPlainX x2
 
-        IFCmp vDst fcond x1 x2
+        ICmp vDst (FCond fcond) x1 x2
          -> padVar vDst
                 <+> equals
                 <+> text "fcmp"  <+> ppr fcond  <+> ppr (typeOfExp x1)

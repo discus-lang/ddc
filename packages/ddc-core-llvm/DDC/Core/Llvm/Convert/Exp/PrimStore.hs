@@ -122,7 +122,7 @@ convPrimStore ctx mdst p _tPrim xs
                         [ ILoad vTop (XVar vTopPtr)
                         , IOp   vMin OpAdd (XVar vTop) xBytes'
                         , ILoad vMax (XVar vMaxPtr)
-                        , IICmp vDst ICondUlt (XVar vMin) (XVar vMax) ]
+                        , ICmp  vDst (ICond ICondUlt) (XVar vMin) (XVar vMax) ]
 
 
         -- Allocate a new heap object with the given number of bytes in length.

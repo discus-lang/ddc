@@ -119,15 +119,10 @@ flattenInstrs acc (AnnotInstr i annots : is)
                 next $ (acc >< is1 >< is2) |> (reannot $ IStore x1' x2')
 
          -- Comparisons
-         IICmp v c x1 x2
+         ICmp v c x1 x2
           -> do (is1, x1')      <- flattenX x1
                 (is2, x2')      <- flattenX x2
-                next $ (acc >< is1 >< is2) |> (reannot $ IICmp v c x1' x2')
-
-         IFCmp v c x1 x2
-          -> do (is1, x1')      <- flattenX x1
-                (is2, x2')      <- flattenX x2
-                next $ (acc >< is1 >< is2) |> (reannot $ IFCmp v c x1' x2')
+                next $ (acc >< is1 >< is2) |> (reannot $ ICmp v c x1' x2')
 
          -- Function calls
          ICall mv ct mcc t n xs ats        

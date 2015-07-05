@@ -122,11 +122,8 @@ data Instr
         | IStore        Exp     Exp
 
         -- Other Operations -------------------------------
-        -- | Integer comparison.
-        | IICmp         Var     ICond   Exp     Exp
-
-        -- | Floating-point comparison.
-        | IFCmp         Var     FCond   Exp     Exp
+        -- | Comparisons
+        | ICmp          Var     Cond    Exp     Exp
 
         -- | Call a function. 
         --   Only NoReturn, NoUnwind and ReadNone attributes are valid.
@@ -170,8 +167,7 @@ defVarOfInstr instr
         IGet  var _ _   -> Just var
         ILoad var _     -> Just var
         IStore{}        -> Nothing
-        IICmp var _ _ _ -> Just var
-        IFCmp var _ _ _ -> Just var
+        ICmp var _ _ _  -> Just var
         ICall mvar _ _ _ _ _ _ -> mvar
 
 

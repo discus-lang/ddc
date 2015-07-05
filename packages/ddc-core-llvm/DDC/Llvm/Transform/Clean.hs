@@ -173,15 +173,10 @@ cleanInstrs mm label binds defs acc (ins@(AnnotInstr i annots) : instrs)
          -> do  next binds defs
                  $ acc  |> (reAnnot $ IStore    (sub x1) (sub x2))
 
-        IICmp  v c x1 x2
+        ICmp  v c x1 x2
          -> do  let defs'   = Map.insert v label defs
                 next binds defs'
-                 $ acc  |> (reAnnot $ IICmp v c (sub x1) (sub x2))
-
-        IFCmp  v c x1 x2
-         -> do  let defs'   = Map.insert v label defs
-                next binds defs'
-                 $ acc  |> (reAnnot $ IFCmp v c (sub x1) (sub x2))
+                 $ acc  |> (reAnnot $ ICmp v c  (sub x1) (sub x2))
 
         ICall  (Just v) ct mcc t n xs ats
          -> do  let defs'    =  Map.insert v label defs

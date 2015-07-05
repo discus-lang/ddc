@@ -75,6 +75,7 @@ module DDC.Llvm.Syntax
 
           -- * Primitive operators
         , Op            (..)
+        , Cond          (..)
         , ICond         (..)
         , FCond         (..)
         , Conv          (..)

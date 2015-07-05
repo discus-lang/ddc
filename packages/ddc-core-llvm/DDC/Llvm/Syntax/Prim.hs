@@ -1,8 +1,7 @@
 
 module DDC.Llvm.Syntax.Prim
         ( Op    (..)
-        , ICond (..)
-        , FCond (..)
+        , Cond  (..),   ICond (..),     FCond (..)
         , Conv  (..))
 where
 
@@ -35,7 +34,14 @@ data Op
         deriving (Eq, Show)
 
 
--- | Integer comparison.
+-- | Conditions.
+data Cond
+        = ICond ICond
+        | FCond FCond
+        deriving (Eq, Show)
+
+
+-- | Integer conditions.
 data ICond
         = ICondEq       -- ^ Equal (Signed and Unsigned)
         | ICondNe       -- ^ Not equal (Signed and Unsigned)
@@ -50,7 +56,7 @@ data ICond
         deriving (Eq, Show)
 
 
--- | Floating point comparison.
+-- | Floating point conditions.
 data FCond
         = FCondFalse    -- ^ Always yields false, regardless of operands.
         | FCondOeq      -- ^ Both operands are not a QNAN and op1 is equal to op2.

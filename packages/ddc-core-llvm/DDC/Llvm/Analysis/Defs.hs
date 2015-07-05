@@ -76,8 +76,7 @@ takeDefOfInstr instr
         IStore{}                -> Nothing
 
         -- Comparisons
-        IICmp v _ _ _           -> Just (v, DefVar)
-        IFCmp v _ _ _           -> Just (v, DefVar)
+        ICmp v _ _ _            -> Just (v, DefVar)
 
         -- Function calls
         ICall mv _ _ _ _ _ _
