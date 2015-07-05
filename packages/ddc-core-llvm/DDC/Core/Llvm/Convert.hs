@@ -74,28 +74,11 @@ convertModule platform mm@(C.ModuleCore{})
                  mmFlat   = Flatten.flatten mmConst
 
                  -- Short out simple v1 = v2 aliases.
-                 --   We need to do this *before* the linkPhi transform below.
-                 --   LLVM phi nodes need to be annotated with the block where each 
-                 --   incoming value was defined. If we need to know where some variable
-                 --   'v1' was defined, then using the block label of a 'v1 = v2' alias
-                 --   won't work as aliases aren't part of the real LLVM language and
-                 --   we need to elimiate those later anyway. 
-                 mmShort  = Simpl.simpl Simpl.configZero 
-                                { Simpl.configDropNops   = True 
-                                , Simpl.configSimplAlias = True }
+                 mmSimpl  = Simpl.simpl Simpl.configZero
+                                { Simpl.configDropNops   = True
+                                , Simpl.configSimplAlias = True
+                                , Simpl.configSimplConst = True }
                                 mmFlat
-
-                 -- Fixup the source labels in IPhi instructions.
-                 --   The code generator converter itself sets these to 'undef',
-                 --   so we need to find the defining block of each incoming value.
-                 mmPhi    = LinkPhi.linkPhi mmShort
-
-                 -- Short out v1 = constant aliases
-                 --   We need to do thie *after* linkPhi, otherwise we lose information
-                 --   about which constant to use for each incoming edge in a phi node.
-                 mmSimpl  = Simpl.simpl Simpl.configZero 
-                                { Simpl.configSimplConst = True }
-                                mmPhi
 
                  -- Attach calling conventions to call instructions
                  -- TODO: split this into separate transform.

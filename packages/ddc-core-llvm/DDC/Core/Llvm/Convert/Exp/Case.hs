@@ -95,19 +95,15 @@ convertAlts ctx (ExpNest ectx vDst lCont) alts
                 $  mapM (\alt -> do
                         vDst'   <- newUniqueNamedVar "alt" tDst'
                         alt'    <- convertAlt ctx (ExpNest ectx vDst' lJoin) alt
-                        return (vDst', alt'))
+                        lAlt    <- return (altResultLabel alt')
+                        return ((XVar vDst', lAlt), alt'))
                 $  alts
 
         -- A block to join the result from each alternative.
-        --  Trying to keep track of which block a variable is defined in is 
-        --  too hard when we have nested join points. 
-        --  Instead, we set the label here to 'unknown' and fix this up in the
-        --  Clean transform.
         let blockJoin   
                 = Block lJoin
                 $ Seq.fromList $ map annotNil
-                [ IPhi vDst  [ (XVar vDstAlt, Label "unknown")
-                             | vDstAlt   <- vDstAlts ]
+                [ IPhi vDst vDstAlts
                 , IBranch lCont ]
 
         return (alts', Seq.singleton blockJoin)
@@ -177,6 +173,14 @@ convPatName pp name
         _                       -> Nothing
 
 
+-- | Take the label from an `AltResult`.
+altResultLabel :: AltResult -> Label
+altResultLabel aa
+ = case aa of
+        AltDefault label _      -> label
+        AltCase  _ label _      -> label
+
+
 -- | Take the blocks from an `AltResult`.
 altResultBlocks :: AltResult -> Seq Block
 altResultBlocks aa
@@ -189,4 +193,3 @@ altResultBlocks aa
 takeAltCase :: AltResult -> Maybe (Lit, Label)
 takeAltCase (AltCase lit label _)       = Just (lit, label)
 takeAltCase _                           = Nothing
-
