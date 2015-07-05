@@ -3,6 +3,7 @@ module DDC.Llvm.Syntax.Exp
         ( -- * Expressions
           Exp   (..)
         , typeOfExp
+        , isXVar, isXLit, isXUndef
         , isClosedConstantExp
 
           -- * Variables
@@ -65,6 +66,30 @@ typeOfExp xx
 
         XConv  t _ _    -> t
         XGet   t _ _    -> t
+
+
+-- | Check if this expression is an `XVar`.
+isXVar :: Exp -> Bool
+isXVar xx
+ = case xx of
+        XVar{}  -> True
+        _       -> False
+
+
+-- | Check if this expression is an `XLit`.
+isXLit :: Exp -> Bool
+isXLit xx
+ = case xx of
+        XLit{}  -> True
+        _       -> False
+
+
+-- | Check if this expression is an `XUndef`.
+isXUndef :: Exp -> Bool
+isXUndef xx
+ = case xx of
+        XUndef{} -> True
+        _        -> False
 
 
 -- | Check whether this expression is closed,

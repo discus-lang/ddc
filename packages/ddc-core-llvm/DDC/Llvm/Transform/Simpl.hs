@@ -36,7 +36,13 @@ data Config
           --   NOTE: Inlining constants into phi nodes before the 'from' labels for
           --         each in-edge are filled will lose information and render the
           --         program uncompilable.
-        , configSimplConst      :: Bool }
+        , configSimplConst      :: Bool 
+
+          -- Squash out joins of 'undef' values in phi nodes.
+          --   The code generator uses 'undef' as the result of an expression
+          --   that calls 'abort', but we don't want that propagated into 
+          --   phi nodes.
+        , configSquashUndef     :: Bool }
 
 
 -- | Config with all transforms disabled.
@@ -45,7 +51,8 @@ configZero
         = Config
         { configDropNops        = False
         , configSimplAlias      = False
-        , configSimplConst      = False }
+        , configSimplConst      = False 
+        , configSquashUndef     = False }
 
 
 ---------------------------------------------------------------------------------------------------
@@ -165,9 +172,24 @@ simplInstrs config defs acc (AnnotInstr i annots : is)
 
         -- Phi nodes.
         IPhi v xls
-         -> do  xs'     <- mapM subst $ map fst xls
-                let ls' =  map snd xls
-                next $ acc |> reannot (IPhi v $ zip xs' ls')
+         -> do  
+                -- Substitute into expressions.
+                xs_subst       <- mapM subst $ map fst xls
+                let ls_subst   =  map snd xls
+
+                -- Squash out joins of 'undef' values in phi nodes.
+                --   The code generator uses 'undef' as the result of an expression
+                --   that calls 'abort', but we don't want that propagated into 
+                --   phi nodes.
+                let xls_squash 
+                        | configSquashUndef config
+                        = [ (x, l) | (x, l) <- zip xs_subst ls_subst
+                                    , not $ isXUndef x]    
+
+                        | otherwise
+                        = zip xs_subst ls_subst
+
+                next $ acc |> reannot (IPhi v xls_squash)
 
         -- Terminator instructions
         IReturn mx
