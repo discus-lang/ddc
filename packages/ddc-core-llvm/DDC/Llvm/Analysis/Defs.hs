@@ -15,6 +15,9 @@ data Def
         -- | Variable is given a non-constant value.
         = DefVar
 
+        -- | Variable is an alias of another variable.
+        | DefAlias              Var
+
         -- | Variable binds some closed, constant expression.
         | DefClosedConstant     Exp
         deriving Show
@@ -40,49 +43,55 @@ takeDefOfInstr instr
          -> Nothing
 
         -- Set meta instruction.
-        ISet v x1
-         | isClosedConstantExp x1 -> Just (v, DefClosedConstant x1)
-         | otherwise            -> Just (v, DefVar)
+        ISet v1 x2
+         | XVar v2      <- x2
+         -> Just (v1, DefAlias v2)
+
+         | isClosedConstantExp x2
+         -> Just (v1, DefClosedConstant x2)
+
+         | otherwise            
+         -> Just (v1, DefVar)
 
         -- No operation.
-        INop                    -> Nothing
+        INop            -> Nothing
 
         -- Phi nodes
         -- Even if both branches are constant, 
         -- we can't form an expression to represent this,
         -- so the result gets marked as non-constant.
-        IPhi v _                -> Just (v, DefVar)
+        IPhi v _        -> Just (v, DefVar)
 
         -- Terminator Instructions
-        IReturn{}               -> Nothing
-        IBranch{}               -> Nothing
-        IBranchIf{}             -> Nothing
-        ISwitch{}               -> Nothing
-        IUnreachable{}          -> Nothing
+        IReturn{}       -> Nothing
+        IBranch{}       -> Nothing
+        IBranchIf{}     -> Nothing
+        ISwitch{}       -> Nothing
+        IUnreachable{}  -> Nothing
 
         -- Binary Operators
-        IOp v _ _ _             -> Just (v, DefVar)
+        IOp v _ _ _     -> Just (v, DefVar)
 
         -- Conversion Operators
-        IConv v _ _             -> Just (v, DefVar)
+        IConv v _ _     -> Just (v, DefVar)
 
         -- Get element pointer
-        IGet  v _ _             -> Just (v, DefVar)
+        IGet  v _ _     -> Just (v, DefVar)
 
         -- Load a value from memory.
-        ILoad v _               -> Just (v, DefVar)
+        ILoad v _       -> Just (v, DefVar)
 
         -- Store a value to memory.
-        IStore{}                -> Nothing
+        IStore{}        -> Nothing
 
         -- Comparisons
-        ICmp v _ _ _            -> Just (v, DefVar)
+        ICmp v _ _ _    -> Just (v, DefVar)
 
         -- Function calls
         ICall mv _ _ _ _ _ _
          -> case mv of
-                Just v          -> Just (v, DefVar)
-                _               -> Nothing
+                Just v  -> Just (v, DefVar)
+                _       -> Nothing
 
 
 

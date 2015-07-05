@@ -6,6 +6,9 @@
 --   we use a fatter language, but now need to flatten out the extra operators
 --   into plain LLVM instructions.
 --
+--   This transform is kept separate from the 'Simpl' as it the input and
+--   output programs are in different (sub) languages.
+--
 module DDC.Llvm.Transform.Flatten
         (flatten)
 where
@@ -20,7 +23,9 @@ import qualified Data.Foldable  as Seq
 -- | Flatten expressions in a module.
 flatten :: Module -> Module
 flatten mm
- = let  Right funcs'    = evalCheck 0 (mapM flattenFunction $ modFuncs mm)
+ = let  Right funcs'    
+                = evalCheck 0 
+                $ mapM flattenFunction $ modFuncs mm
    in   mm { modFuncs = funcs' }
 
 
@@ -34,13 +39,14 @@ flattenFunction fun
 -- | Flatten expressions in a single block.
 flattenBlock    :: Block   -> FlattenM Block
 flattenBlock block
- = do   instrs' <- flattenInstrs Seq.empty (Seq.toList $ blockInstrs block)
+ = do   instrs' <- flattenInstrs Seq.empty 
+                $  Seq.toList $ blockInstrs block
         return  $ block { blockInstrs = Seq.fromList instrs' }
 
 
 -- | Flatten a list of instructions.
 flattenInstrs   
-        :: Seq AnnotInstr       -- ^ Accumulated instructions.
+        :: Seq AnnotInstr       -- ^ Accumulated instructions of result.
         -> [AnnotInstr]         -- ^ Instructions still to flatten.
         -> FlattenM [AnnotInstr]
 
@@ -55,7 +61,7 @@ flattenInstrs acc (AnnotInstr i annots : is)
         reannot i'
          = annotWith i' annots
 
-   in   case i of
+   in case i of
 
          -- Comments
          IComment{}
@@ -66,9 +72,10 @@ flattenInstrs acc (AnnotInstr i annots : is)
           -> do (is1, x1')     <- flattenX x1
                 next $ (acc >< is1) |> (reannot $ ISet v x1')
 
-         -- No operation, might as well ditch these now.
+         -- Preserve nops, for the sake of just doing one thing at a time.
+         -- These can be eliminated with the LLVM simplifier.
          INop 
-          ->    next acc
+          ->    next $ acc |> reannot i
 
          -- Phi nodes
          IPhi{}
@@ -170,5 +177,4 @@ newUniqueVar :: Type -> FlattenM Var
 newUniqueVar t
  = do   u <- newUnique
         return $ Var (NameLocal ("_c" ++ show u)) t
-
 

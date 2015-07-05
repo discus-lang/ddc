@@ -18,9 +18,12 @@ import DDC.Control.Monad.Check
 import qualified Control.Monad.State.Strict     as State
 import Control.Monad
 import Data.Map                                 (Map)
-import qualified DDC.Llvm.Transform.Clean       as Llvm
-import qualified DDC.Llvm.Transform.LinkPhi     as Llvm
-import qualified DDC.Llvm.Transform.Flatten     as Llvm
+
+import qualified DDC.Llvm.Transform.Clean       as Clean
+import qualified DDC.Llvm.Transform.LinkPhi     as LinkPhi
+import qualified DDC.Llvm.Transform.Flatten     as Flatten
+import qualified DDC.Llvm.Transform.Simpl       as Simpl
+
 import qualified DDC.Core.Salt                  as A
 import qualified DDC.Core.Module                as C
 import qualified DDC.Core.Exp                   as C
@@ -66,17 +69,24 @@ convertModule platform mm@(C.ModuleCore{})
                  mmConst  = mmRaw
                           { modGlobals = modGlobals mmRaw ++ gsLit }
 
-                 -- Flatten out our extended expression language into raw LLVM.
-                 mmFlat   = Llvm.flatten mmConst
+                 -- Flatten out our extended expression language into raw LLVM instructions.
+                 mmFlat   = Flatten.flatten mmConst
+
+                 -- Short out simple v1 = v2 aliases.
+                 mmShort  = Simpl.simpl Simpl.configZero 
+                                { Simpl.configDropNops   = True 
+                                , Simpl.configSimplAlias = True }
+                                mmFlat
+
 
                  -- Inline the ISet meta instructions and drop INops.
                  --  This gives us code that the LLVM compiler will accept directly.
-                 mmClean  = Llvm.clean   mmFlat
+                 mmClean  = Clean.clean     mmShort
 
                  -- Fixup the source labels in IPhi instructions.
                  --  The converter itself sets these to 'undef', so we need to find the 
                  --  real block label of each merged variable.
-                 mmPhi    = Llvm.linkPhi mmClean
+                 mmPhi    = LinkPhi.linkPhi mmClean
 
              in  Right mmPhi
 
