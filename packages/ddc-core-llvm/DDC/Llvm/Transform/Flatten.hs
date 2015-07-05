@@ -12,6 +12,7 @@ where
 import DDC.Llvm.Syntax
 import DDC.Control.Monad.Check
 import Data.Sequence            (Seq, (|>), (><))
+import Control.Monad
 import qualified Data.Sequence  as Seq
 import qualified Data.Foldable  as Seq
 
@@ -55,6 +56,7 @@ flattenInstrs acc (AnnotInstr i annots : is)
          = annotWith i' annots
 
    in   case i of
+
          -- Comments
          IComment{}
           ->    next $ acc |> reannot i
@@ -128,8 +130,11 @@ flattenInstrs acc (AnnotInstr i annots : is)
                 next $ (acc >< is1 >< is2) |> (reannot $ IFCmp v c x1' x2')
 
          -- Function calls
-         ICall{}        
-          ->    next $ acc |> reannot i
+         ICall mv ct mcc t n xs ats        
+          -> do (iss, xs')      <- fmap unzip $ mapM flattenX xs
+                let is'         =  join $ Seq.fromList iss
+                next $  (acc >< is') 
+                     |> (reannot $ ICall mv ct mcc t n xs' ats)
 
 
 ---------------------------------------------------------------------------------------------------
