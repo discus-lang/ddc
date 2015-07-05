@@ -63,6 +63,7 @@ convertModule platform mm@(C.ModuleCore{})
 
          (state', Right mmRaw)
           -> let 
+                 -- Attach any top-level constants the code generator might have made.
                  gsLit    = [ GlobalStatic var (StaticLit lit) 
                             | (var, lit) <- Map.toList $ llvmConstants state' ]
 
@@ -73,22 +74,34 @@ convertModule platform mm@(C.ModuleCore{})
                  mmFlat   = Flatten.flatten mmConst
 
                  -- Short out simple v1 = v2 aliases.
+                 --   We need to do this *before* the linkPhi transform below.
+                 --   LLVM phi nodes need to be annotated with the block where each 
+                 --   incoming value was defined. If we need to know where some variable
+                 --   'v1' was defined, then using the block label of a 'v1 = v2' alias
+                 --   won't work as aliases aren't part of the real LLVM language and
+                 --   we need to elimiate those later anyway. 
                  mmShort  = Simpl.simpl Simpl.configZero 
                                 { Simpl.configDropNops   = True 
                                 , Simpl.configSimplAlias = True }
                                 mmFlat
 
+                 -- Fixup the source labels in IPhi instructions.
+                 --   The code generator converter itself sets these to 'undef',
+                 --   so we need to find the defining block of each incoming value.
+                 mmPhi    = LinkPhi.linkPhi mmShort
+
+                 -- Short out v1 = constant aliases
+                 --   We need to do thie *after* linkPhi, otherwise we lose information
+                 --   about which constant to use for each incoming edge in a phi node.
+                 mmSimpl  = Simpl.simpl Simpl.configZero 
+                                { Simpl.configSimplConst = True }
+                                mmPhi
 
                  -- Inline the ISet meta instructions and drop INops.
                  --  This gives us code that the LLVM compiler will accept directly.
-                 mmClean  = Clean.clean     mmShort
+                 mmClean  = Clean.clean mmSimpl
 
-                 -- Fixup the source labels in IPhi instructions.
-                 --  The converter itself sets these to 'undef', so we need to find the 
-                 --  real block label of each merged variable.
-                 mmPhi    = LinkPhi.linkPhi mmClean
-
-             in  Right mmPhi
+             in  Right mmClean
 
 
 -- | Convert a Salt module to sugared LLVM.
