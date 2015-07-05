@@ -3,6 +3,7 @@ module DDC.Llvm.Syntax.Exp
         ( -- * Expressions
           Exp   (..)
         , typeOfExp
+        , isClosedConstantExp
 
           -- * Variables
         , Var   (..)
@@ -64,6 +65,18 @@ typeOfExp xx
 
         XConv  t _ _    -> t
         XGet   t _ _    -> t
+
+
+-- | Check whether this expression is closed,
+--   meaning it doesn't contain any variables that refer to the context.
+isClosedConstantExp :: Exp -> Bool
+isClosedConstantExp xx
+ = case xx of
+        XVar{}          -> False
+        XLit{}          -> True
+        XUndef{}        -> True
+        XConv _ _ x     -> isClosedConstantExp x
+        XGet  _ x1 xs   -> isClosedConstantExp x1 && all isClosedConstantExp xs
 
 
 -- Var ------------------------------------------------------------------------

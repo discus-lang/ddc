@@ -66,6 +66,7 @@ cleanBlocks mm binds defs acc (Block label instrs : bs)
         cleanBlocks mm binds' defs' (block' : acc) bs
 
 
+---------------------------------------------------------------------------------------------------
 -- | Clean set instructions in some instructions.
 cleanInstrs 
         :: Module               -- ^ Module being cleaned.

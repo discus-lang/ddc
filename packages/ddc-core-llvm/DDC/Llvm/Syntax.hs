@@ -58,6 +58,7 @@ module DDC.Llvm.Syntax
           -- * Expressions
         , Exp           (..)
         , typeOfExp
+        , isClosedConstantExp
 
           -- * Variables
         , Var           (..)
