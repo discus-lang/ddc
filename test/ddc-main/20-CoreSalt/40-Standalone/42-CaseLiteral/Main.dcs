@@ -1,0 +1,17 @@
+
+module Main
+export main : [r : Region]. Nat# -> Ptr# r Word8# -> Int#
+
+with letrec
+
+main [r : Region] (argc : Nat#) (argv : Ptr# r Word8#) : Int#
+ = do
+        i0 = 0i#
+        i1 = 1i#
+
+        i = case argc of
+          0# -> i0
+          1# -> i0
+          _  -> i1
+
+        return# i
