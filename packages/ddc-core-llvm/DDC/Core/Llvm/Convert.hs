@@ -19,8 +19,8 @@ import qualified Control.Monad.State.Strict     as State
 import Control.Monad
 import Data.Map                                 (Map)
 
+import qualified DDC.Llvm.Transform.Calls       as Calls
 import qualified DDC.Llvm.Transform.Clean       as Clean
-import qualified DDC.Llvm.Transform.LinkPhi     as LinkPhi
 import qualified DDC.Llvm.Transform.Flatten     as Flatten
 import qualified DDC.Llvm.Transform.Simpl       as Simpl
 
@@ -73,16 +73,19 @@ convertModule platform mm@(C.ModuleCore{})
                  -- Flatten out our extended expression language into raw LLVM instructions.
                  mmFlat   = Flatten.flatten mmConst
 
-                 -- Short out simple v1 = v2 aliases.
+                 -- Clean out nops, v1 = v2 aliases and constant bindings.
                  mmSimpl  = Simpl.simpl Simpl.configZero
                                 { Simpl.configDropNops   = True
                                 , Simpl.configSimplAlias = True
                                 , Simpl.configSimplConst = True }
                                 mmFlat
 
+                 -- Attach calling conventions to call sites.
+                 mmCalls  = Calls.attachCallConvs mmSimpl
+
                  -- Attach calling conventions to call instructions
                  -- TODO: split this into separate transform.
-                 mmClean  = Clean.clean mmSimpl
+                 mmClean  = Clean.clean mmCalls
 
              in  Right mmClean
 
