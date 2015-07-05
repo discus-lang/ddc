@@ -63,31 +63,31 @@ convertModule platform mm@(C.ModuleCore{})
 
          (state', Right mmRaw)
           -> let 
-                 -- Attach any top-level constants the code generator might have made.
-                 gsLit    = [ GlobalStatic var (StaticLit lit) 
-                            | (var, lit) <- Map.toList $ llvmConstants state' ]
+                -- Attach any top-level constants the code generator might have made.
+                gsLit    = [ GlobalStatic var (StaticLit lit) 
+                           | (var, lit) <- Map.toList $ llvmConstants state' ]
 
-                 mmConst  = mmRaw
-                          { modGlobals = modGlobals mmRaw ++ gsLit }
+                mmConst  = mmRaw
+                         { modGlobals = modGlobals mmRaw ++ gsLit }
 
-                 -- Flatten out our extended expression language into raw LLVM instructions.
-                 mmFlat   = Flatten.flatten mmConst
+                -- Flatten out our extended expression language into raw LLVM instructions.
+                mmFlat   = Flatten.flatten mmConst
 
-                 -- Clean out nops, v1 = v2 aliases and constant bindings.
-                 mmSimpl  = Simpl.simpl Simpl.configZero
+                -- Clean out nops, v1 = v2 aliases and constant bindings.
+                mmSimpl  = Simpl.simpl Simpl.configZero
                                 { Simpl.configDropNops   = True
                                 , Simpl.configSimplAlias = True
                                 , Simpl.configSimplConst = True }
                                 mmFlat
 
-                 -- Attach calling conventions to call sites.
-                 mmCalls  = Calls.attachCallConvs mmSimpl
+                -- Attach calling conventions to call sites.
+                mmCalls  = Calls.attachCallConvs mmSimpl
 
-                 -- Attach calling conventions to call instructions
-                 -- TODO: split this into separate transform.
-                 mmClean  = Clean.clean mmCalls
+                -- Attach calling conventions to call instructions
+                -- TODO: split this into separate transform.
+                mmClean  = Clean.clean mmCalls
 
-             in  Right mmClean
+             in Right mmClean
 
 
 -- | Convert a Salt module to sugared LLVM.
