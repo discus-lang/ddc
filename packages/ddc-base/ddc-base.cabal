@@ -21,7 +21,7 @@ Library
         deepseq         >= 1.4   && < 1.5,
         transformers    >= 0.4   && < 0.5,
         containers      >= 0.5.6 && < 0.6,
-        wl-pprint       >= 1.1   && < 1.2,
+        wl-pprint       >= 1.1   && < 1.3,
         parsec          >= 3.1   && < 3.2
         
   Exposed-modules:

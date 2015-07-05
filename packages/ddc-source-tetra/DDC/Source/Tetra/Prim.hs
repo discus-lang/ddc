@@ -25,7 +25,6 @@ import DDC.Source.Tetra.Prim.TyConPrim
 import DDC.Source.Tetra.Prim.TyConTetra
 import DDC.Source.Tetra.Prim.OpArith
 import DDC.Core.Lexer.Names             (isVarStart)
-import DDC.Core.Salt.Name.Lit
 import DDC.Base.Pretty
 import Control.DeepSeq
 import Data.Char
@@ -36,6 +35,13 @@ import DDC.Core.Tetra
         , readPrimTyConStem
         , readPrimArith
         , readOpFun)
+
+import DDC.Core.Salt.Name
+        ( readLitNat
+        , readLitInt
+        , readLitSize
+        , readLitWordOfBits
+        , readLitFloatOfBits)
 
 
 instance NFData Name where

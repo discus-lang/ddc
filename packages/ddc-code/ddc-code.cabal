@@ -15,12 +15,6 @@ Description:    Disciplined Disciple Compiler base libraries.
 data-files:
         LICENSE
 
-        lite/base/Data/Numeric/Bool.dcl
-        lite/base/Data/Numeric/Int.dcl
-        lite/base/Data/Numeric/Nat.dcl
-        lite/base/Math/Integer.dcl
-        lite/base/Data/Container/List.dcl
-
         salt/primitive/Vector.dcs
         salt/primitive32/Int.dcs
         salt/primitive64/Int.dcs
@@ -29,12 +23,12 @@ data-files:
 
         sea/primitive/Primitive.c
         sea/primitive/Primitive.h
-        sea/runtime/Runtime.h        
+        sea/runtime/Runtime.h
 
 Library
   build-depends:
-        base            >= 4.6  &&  < 4.8,
-        filepath        == 1.3.*
+        base            >= 4.6  &&  < 4.9,
+        filepath        >= 1.3  &&  < 1.5
 
   exposed-modules:
         DDC.Code.Config

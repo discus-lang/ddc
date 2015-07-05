@@ -17,14 +17,15 @@ Description:
 
 Library
   Build-depends:
-        base             >= 4.6 && < 4.8,
+        base             >= 4.6 && < 4.9,
         process          >= 1.1 && < 1.3,
-        deepseq          == 1.3.*,
+        deepseq          >= 1.3 && < 1.5,
         containers       == 0.5.*,
-        filepath         == 1.3.*,
+        filepath         >= 1.3 && < 1.5,
         mtl              == 2.2.1.*,
         directory        == 1.2.*,
         transformers     == 0.4.*,
+        time             >= 1.4 && < 1.6,
         ddc-base         == 0.4.2.*,
         ddc-core         == 0.4.2.*,
         ddc-core-eval    == 0.4.2.*,
@@ -48,8 +49,10 @@ Library
         DDC.Driver.Command.Flow.Rate
         DDC.Driver.Command.Flow.Thread
         DDC.Driver.Command.Flow.Wind
+        DDC.Driver.Command.Flow.ToTetra
         DDC.Driver.Command.Tetra.Boxing
         DDC.Driver.Command.Tetra.Curry
+        DDC.Driver.Command.Tetra.Suspend
         DDC.Driver.Command.BaseBuild
         DDC.Driver.Command.Build
         DDC.Driver.Command.Check
@@ -60,6 +63,7 @@ Library
         DDC.Driver.Command.RewriteRules
         DDC.Driver.Command.ToC
         DDC.Driver.Command.ToLlvm
+        DDC.Driver.Command.ToPHP
         DDC.Driver.Command.ToSalt
         DDC.Driver.Command.Trans
 

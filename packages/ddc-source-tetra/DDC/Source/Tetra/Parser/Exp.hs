@@ -17,6 +17,7 @@ import DDC.Source.Tetra.Prim
 import DDC.Source.Tetra.Exp
 import DDC.Core.Parser
         ( Parser
+        , Context (..)
         , pBinder
         , pWitness
         , pWitnessAtom
@@ -32,7 +33,6 @@ import DDC.Core.Parser
         , pTok
         , pTokSP)
 
-import DDC.Core.Parser.Context
 import DDC.Core.Lexer.Tokens
 import DDC.Base.Parser                  ((<?>), SourcePos)
 import qualified DDC.Base.Parser        as P

@@ -15,13 +15,13 @@ Description:    Disciplined Disciple Compiler test driver and buildbot.
 
 Executable ddc-war
   Build-depends:
-        base            >= 4.6 && < 4.8,
+        base            >= 4.6 && < 4.9,
         containers      == 0.5.*,
         directory       == 1.2.*,
         random          == 1.0.*,
         buildbox        == 2.1.*,
         process         == 1.2.*,
-        filepath        == 1.3.*,
+        filepath        >= 1.3 && < 1.5,
         stm             == 2.4.*
         
   Main-is:

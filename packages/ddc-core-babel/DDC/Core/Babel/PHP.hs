@@ -4,7 +4,7 @@ import DDC.Core.Compounds
 import DDC.Core.Collect
 import DDC.Core.Module
 import DDC.Core.Exp
-import DDC.Type.Pretty
+import DDC.Base.Pretty
 import DDC.Type.DataDef                 
 import qualified DDC.Core.Tetra.Prim as T
 import qualified DDC.Type.Env as Env

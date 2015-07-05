@@ -49,6 +49,7 @@ module DDC.Core.Salt.Name
         , readLitInteger
         , readLitNat
         , readLitInt
+        , readLitSize
         , readLitWordOfBits
         , readLitFloatOfBits
 
