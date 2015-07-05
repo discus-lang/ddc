@@ -20,6 +20,7 @@ import Control.Monad
 import Data.Map                                 (Map)
 import qualified DDC.Llvm.Transform.Clean       as Llvm
 import qualified DDC.Llvm.Transform.LinkPhi     as Llvm
+import qualified DDC.Llvm.Transform.Flatten     as Llvm
 import qualified DDC.Core.Salt                  as A
 import qualified DDC.Core.Module                as C
 import qualified DDC.Core.Exp                   as C
@@ -65,9 +66,12 @@ convertModule platform mm@(C.ModuleCore{})
                  mmConst  = mmRaw
                           { modGlobals = modGlobals mmRaw ++ gsLit }
 
+                 -- Flatten out our extended expression language into raw LLVM.
+                 mmFlat   = Llvm.flatten mmConst
+
                  -- Inline the ISet meta instructions and drop INops.
                  --  This gives us code that the LLVM compiler will accept directly.
-                 mmClean  = Llvm.clean   mmConst
+                 mmClean  = Llvm.clean   mmFlat
 
                  -- Fixup the source labels in IPhi instructions.
                  --  The converter itself sets these to 'undef', so we need to find the 
