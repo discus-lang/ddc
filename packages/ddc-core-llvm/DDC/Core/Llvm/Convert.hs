@@ -97,8 +97,8 @@ convertModule platform mm@(C.ModuleCore{})
                                 { Simpl.configSimplConst = True }
                                 mmPhi
 
-                 -- Inline the ISet meta instructions and drop INops.
-                 --  This gives us code that the LLVM compiler will accept directly.
+                 -- Attach calling conventions to call instructions
+                 -- TODO: split this into separate transform.
                  mmClean  = Clean.clean mmSimpl
 
              in  Right mmClean
