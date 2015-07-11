@@ -185,7 +185,7 @@ primDeclsMap pp
 primDecls :: Platform -> [FunctionDecl]
 primDecls pp 
  = [    FunctionDecl
-        { declName              = "malloc"
+        { declName              = textOfName nameGlobalMalloc
         , declLinkage           = External
         , declCallConv          = CC_Ccc
         , declReturnType        = tAddr pp

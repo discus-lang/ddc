@@ -13,6 +13,7 @@ module DDC.Llvm.Syntax.Exp
 
           -- * Names
         , Name  (..)
+        , textOfName
 
           -- * Literals
         , Lit   (..)
@@ -132,6 +133,12 @@ data Name
         = NameGlobal String
         | NameLocal  String
         deriving (Show, Eq, Ord)
+
+
+-- | Yield a name as a string.
+textOfName :: Name -> String
+textOfName (NameGlobal str) = str
+textOfName (NameLocal  str) = str
 
 
 -- Lit ------------------------------------------------------------------------
