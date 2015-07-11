@@ -69,6 +69,7 @@ convPrimStore pp
         PrimStoreAlloc          -> text "_ALLOC"
         PrimStoreRead           -> text "_READ"
         PrimStoreWrite          -> text "_WRITE"
+        PrimStoreCopy           -> text "_COPY"
         PrimStorePlusAddr       -> text "_PLUSADDR"
         PrimStoreMinusAddr      -> text "_MINUSADDr"
         PrimStorePeek           -> text "_PEEK"

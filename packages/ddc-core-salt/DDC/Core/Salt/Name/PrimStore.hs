@@ -40,6 +40,9 @@ data PrimStore
         -- | Write a value to the store at the given address and offset.
         | PrimStoreWrite
 
+        -- | Copy a block of memory from the source address to the destination address.
+        | PrimStoreCopy
+
         -- | Add an offset in bytes to an address.
         | PrimStorePlusAddr
 
@@ -92,6 +95,7 @@ instance Pretty PrimStore where
 
         PrimStoreRead           -> text "read#"
         PrimStoreWrite          -> text "write#"
+        PrimStoreCopy           -> text "copy#"
         PrimStorePlusAddr       -> text "plusAddr#"
         PrimStoreMinusAddr      -> text "minusAddr#"
 
@@ -119,6 +123,7 @@ readPrimStore str
 
         "read#"                 -> Just PrimStoreRead
         "write#"                -> Just PrimStoreWrite
+        "copy#"                 -> Just PrimStoreCopy
         "plusAddr#"             -> Just PrimStorePlusAddr
         "minusAddr#"            -> Just PrimStoreMinusAddr
 
