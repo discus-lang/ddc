@@ -218,13 +218,19 @@ instance Pretty Instr where
                         Nothing      -> empty
                         Just dst     -> fill 12 (ppr $ nameOfVar dst) <+> equals <> space
 
-            in dst' 
-                <> hsep  [ call'
-                         , case callConv of
-                                Nothing -> empty
-                                Just cc -> ppr cc
-                         , ppr tResult
-                         , ppr name
-                         , encloseSep lparen rparen (comma <> space) (map ppr xsArgs)
-                         , hsep $ map ppr attrs ]
+                convSuffix' 0 = empty
+                convSuffix' _ = space
+
+                conv'
+                 = case callConv of
+                        Nothing -> empty
+                        Just cc -> ppr cc
+
+                convSpace'
+                 = width conv' convSuffix'
+
+
+            in dst' <> call' <+> convSpace' <> ppr tResult <+> ppr name
+                   <+> encloseSep lparen rparen (comma <> space) (map ppr xsArgs)
+                   <+> hsep (map ppr attrs)
 

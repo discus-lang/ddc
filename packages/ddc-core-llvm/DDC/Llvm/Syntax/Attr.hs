@@ -166,6 +166,10 @@ data CallConv
         -- | X86 Specific 'StdCall' convention. LLVM includes a specific alias for it
         --   rather than just using CC_Ncc.
         | CC_X86_Stdcc
+
+        -- | Not really a calling convention. Denotes that a function is a built-in
+        -- LLVM intrinsic function and LLVM can optimise its use however it wants.
+        | CC_Intrinsic
         deriving (Eq, Show)
 
 

@@ -44,6 +44,7 @@ instance Pretty CallConv where
         CC_Coldcc       -> text "coldcc"
         CC_Ncc i        -> text "cc "  <> int i
         CC_X86_Stdcc    -> text "x86_stdcallcc"
+        CC_Intrinsic    -> empty
 
 
 instance Pretty Linkage where

@@ -62,9 +62,15 @@ pprFunctionHeader
               -> [ ppr ty <+> hsep (map ppr attrs)
                         | Param ty attrs <- params ]
 
+        convSuffix' 0 = empty
+        convSuffix' _ = space
+
+        convSpace'
+         = width (ppr callConv) convSuffix'
+
     in ppr linkage
-        <+> ppr callConv
-        <+> ppr tReturn
+        <+> convSpace'
+        <>  ppr tReturn
         <+> text "@" <> text name
         <>  lparen 
         <>  (hcat $ punctuate (comma <> space) args') <> varg' 

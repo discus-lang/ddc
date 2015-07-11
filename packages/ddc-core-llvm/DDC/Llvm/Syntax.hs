@@ -67,7 +67,8 @@ module DDC.Llvm.Syntax
         , typeOfVar
 
           -- * Names
-        , Name          (..)    
+        , Name          (..)
+        , textOfName
 
           -- * Literals
         , Lit           (..)
