@@ -21,6 +21,8 @@ clean  : cleanWar cleanRuntime
 		| grep -v "\.cabal-sandbox" \
 		| xargs -n 1 rm -f
 
+	@rm -rf packages/*/dist
+
 	@rm -f  doc/haddock/*
 	@rm -f  doc/haddock-core/*
 	@rm -f 	bin/* \
