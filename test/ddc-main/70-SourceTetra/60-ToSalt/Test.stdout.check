@@ -256,7 +256,7 @@ module Test with
 letrec {
   flipit: Ptr# rT Obj -> Ptr# rT Obj
     = λ(x: Ptr# rT Obj).
-      case getTag [rT] x of {
+      case tagOfObject [rT] x of {
         TAG0#  
          -> let ^      
                   = allocBoxed [rT] TAG1# 0# in
@@ -276,7 +276,7 @@ module Test with
 letrec {
   head: Ptr# rT Obj -> Ptr# rT Obj
     = λ(xx: Ptr# rT Obj).
-      case getTag [rT] xx of {
+      case tagOfObject [rT] xx of {
         TAG0#  
          -> let x      
                   = getBoxed [rT] [rT] xx 0# in
@@ -301,7 +301,7 @@ letrec {
   head: [a$r: Region].Ptr# rT Obj -> Ptr# rT Obj -> Ptr# rT Obj
     = Λ(a$r: Region).
       λ(def xx: Ptr# rT Obj).
-      case getTag [rT] xx of {
+      case tagOfObject [rT] xx of {
         TAG0#  
          -> let x      
                   = getBoxed [rT] [rT] xx 0# in
@@ -357,7 +357,7 @@ letrec {
   head: [a$r: Region].Ptr# rT Obj -> Ptr# rT Obj -> Ptr# rT Obj
     = Λ(a$r: Region).
       λ(def xx: Ptr# rT Obj).
-      case getTag [rT] xx of {
+      case tagOfObject [rT] xx of {
         TAG0#  
          -> let x      
                   = getBoxed [rT] [rT] xx 0# in
@@ -410,7 +410,7 @@ letrec {
   head: [a$r: Region].Ptr# rT Obj -> Ptr# rT Obj -> Ptr# rT Obj
     = Λ(a$r: Region).
       λ(def xx: Ptr# rT Obj).
-      case getTag [rT] xx of {
+      case tagOfObject [rT] xx of {
         TAG0#  
          -> let x      
                   = getBoxed [rT] [rT] xx 0# in

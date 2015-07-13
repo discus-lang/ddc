@@ -11,7 +11,7 @@ module DDC.Core.Salt.Runtime
 
           -- * Runtime Functions
           -- ** Generic
-        , xGetTag
+        , xTagOfObject
 
           -- ** Boxed Objects
         , xAllocBoxed
@@ -69,7 +69,7 @@ runtimeImportKinds
 runtimeImportTypes :: Map Name (ImportValue Name (Type Name))
 runtimeImportTypes
  = Map.fromList 
-   [ rn utGetTag
+   [ rn utTagOfObject
    , rn utAllocBoxed
    , rn utGetFieldOfBoxed
    , rn utSetFieldOfBoxed
@@ -114,14 +114,14 @@ ukTop
 
 -- Tags -------------------------------------------------------------------------------------------
 -- | Get the constructor tag of an object.
-xGetTag :: a -> Type Name -> Exp a Name -> Exp a Name
-xGetTag a tR x2 
- = xApps a (XVar a $ fst utGetTag)
+xTagOfObject :: a -> Type Name -> Exp a Name -> Exp a Name
+xTagOfObject a tR x2
+ = xApps a (XVar a $ fst utTagOfObject)
         [ XType a tR, x2 ]
 
-utGetTag :: (Bound Name, Type Name)
-utGetTag 
- =      ( UName (NameVar "getTag")
+utTagOfObject :: (Bound Name, Type Name)
+utTagOfObject
+ =      ( UName (NameVar "tagOfObject")
         ,       tForall kRegion $ \r -> tPtr r tObj `tFun` tTag)
 
 

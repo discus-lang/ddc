@@ -210,7 +210,7 @@ module Test with
 letrec {
   headUnit: Ptr# rT Obj -> Ptr# rT Obj
     = λ(xx: Ptr# rT Obj).
-      case getTag [rT] xx of {
+      case tagOfObject [rT] xx of {
         TAG1#  
          -> let x: Ptr# rT Obj
                   = getBoxed [rT] [rT] xx 0# in

@@ -68,7 +68,7 @@
 module Runtime.Object 
 export value
  -- Get the tag of an object.
- getTag         : [r:     Region]. Ptr# r Obj -> Tag#
+ tagOfObject    : [r:     Region]. Ptr# r Obj -> Tag#
 
  -- Thunk initialization.
  allocThunk     : [r1:    Region]. Addr# -> Nat# -> Nat# -> Nat# -> Nat# -> Ptr# r1 Obj
@@ -107,7 +107,7 @@ export value
 with letrec
 
 -- | Get the constructor tag of an object.
-getTag [r: Region] (obj: Ptr# r Obj): Tag#
+tagOfObject [r: Region] (obj: Ptr# r Obj): Tag#
  = do   
         ptr             = castPtr# obj
         header          = peek# ptr 0#

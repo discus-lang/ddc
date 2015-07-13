@@ -239,7 +239,7 @@ convertExp ectx ctx xx
                         | hasDefaultAlt = []
                         | otherwise     = [AAlt PDefault (A.xFail a' tX')]
 
-                return  $ XCase a' (A.xGetTag a' tPrime x') 
+                return  $ XCase a' (A.xTagOfObject a' tPrime x')
                         $ alts' ++ newDefaultAlt
 
 
