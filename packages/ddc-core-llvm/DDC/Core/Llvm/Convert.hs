@@ -200,5 +200,20 @@ primDecls pp
         , declReturnType        = TVoid
         , declParamListType     = FixedArgs
         , declParams            = []
-        , declAlign             = AlignBytes (platformAlignBytes pp) } ]
+        , declAlign             = AlignBytes (platformAlignBytes pp) }
+
+   ,    FunctionDecl
+        { declName              = textOfName (nameGlobalMemcpy pp)
+        , declLinkage           = External
+        , declCallConv          = CC_Intrinsic
+        , declReturnType        = TVoid
+        , declParamListType     = FixedArgs
+        , declParams            = [ Param (TPointer (TInt 8)) []
+                                  , Param (TPointer (TInt 8)) []
+                                  , Param (tNat pp)  []
+                                  , Param (TInt 32)  []
+                                  , Param (TInt 1)   [] ]
+        , declAlign             = AlignNone }
+
+   ]
 

@@ -2,7 +2,11 @@
 module DDC.Core.Llvm.Runtime
         ( nameGlobalHeapTop,    varGlobalHeapTop
         , nameGlobalHeapMax,    varGlobalHeapMax
-        , nameGlobalMalloc)
+        , nameGlobalSlotBase,   varGlobalSlotBase
+        , nameGlobalSlotTop,    varGlobalSlotTop
+        , nameGlobalSlotMax,    varGlobalSlotMax
+        , nameGlobalMalloc
+        , nameGlobalMemcpy)
 where
 import DDC.Llvm.Syntax
 import DDC.Core.Llvm.Convert.Type
@@ -32,3 +36,8 @@ varGlobalHeapMax pp = Var nameGlobalHeapMax (TPointer (tAddr pp))
 -- | Name of the malloc function that is used to allocate the heap.
 nameGlobalMalloc  :: Name
 nameGlobalMalloc  = NameGlobal "malloc"
+
+
+-- | Get the name of the memcpy instrinsic for a given platform.
+nameGlobalMemcpy :: Platform -> Name
+nameGlobalMemcpy pp = NameGlobal ("llvm.memcpy.p0i8.p0i8.i" ++ show (8 * platformNatBytes pp))

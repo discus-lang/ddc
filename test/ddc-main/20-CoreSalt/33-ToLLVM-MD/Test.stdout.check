@@ -14,6 +14,7 @@ ok
 @_DDC__heapMax = external global  i64
 declare external ccc i64 @malloc(i64 ) align 8
 declare external ccc void @abort() align 8
+declare external void @llvm.memcpy.p0i8.p0i8.i64(i8* , i8* , i64 , i32 , i1 )
 
 define internal fastcc i64 @x_plus_y_square(i64*  %_v1.x, i64*  %_v2.y, i64*  %_v3.z) align 8  
 {
@@ -59,6 +60,7 @@ ok
 @_DDC__heapMax = external global  i64
 declare external ccc i64 @malloc(i64 ) align 8
 declare external ccc void @abort() align 8
+declare external void @llvm.memcpy.p0i8.p0i8.i64(i8* , i8* , i64 , i32 , i1 )
 
 define internal fastcc i64 @nothing(i64*  %_v1.x) align 8  
 {
@@ -99,6 +101,7 @@ ok
 @_DDC__heapMax = external global  i64
 declare external ccc i64 @malloc(i64 ) align 8
 declare external ccc void @abort() align 8
+declare external void @llvm.memcpy.p0i8.p0i8.i64(i8* , i8* , i64 , i32 , i1 )
 
 define internal fastcc i64 @go(i64*  %_v1.a, i64*  %_v2.x, i64*  %_v3.y, i64  %_v4.i) align 8  
 {
