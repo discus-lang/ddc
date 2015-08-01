@@ -6,7 +6,8 @@ module DDC.Core.Llvm.Runtime
         , nameGlobalSlotTop,    varGlobalSlotTop
         , nameGlobalSlotMax,    varGlobalSlotMax
         , nameGlobalMalloc
-        , nameGlobalMemcpy)
+        , nameGlobalMemcpy
+        , nameGlobalGcroot)
 where
 import DDC.Llvm.Syntax
 import DDC.Core.Llvm.Convert.Type
@@ -41,3 +42,8 @@ nameGlobalMalloc  = NameGlobal "malloc"
 -- | Get the name of the memcpy instrinsic for a given platform.
 nameGlobalMemcpy :: Platform -> Name
 nameGlobalMemcpy pp = NameGlobal ("llvm.memcpy.p0i8.p0i8.i" ++ show (8 * platformNatBytes pp))
+
+
+-- | Get the name of the gcroot instrinsic.
+nameGlobalGcroot :: Name
+nameGlobalGcroot = NameGlobal "llvm.gcroot"

@@ -203,6 +203,16 @@ primDecls pp
         , declAlign             = AlignBytes (platformAlignBytes pp) }
 
    ,    FunctionDecl
+        { declName              = textOfName nameGlobalGcroot
+        , declLinkage           = External
+        , declCallConv          = CC_Intrinsic
+        , declReturnType        = TVoid
+        , declParamListType     = FixedArgs
+        , declParams            = [ Param (TPointer (TPointer (TInt 8))) []
+                                  , Param (TPointer (TInt 8)) [] ]
+        , declAlign             = AlignNone }
+
+   ,    FunctionDecl
         { declName              = textOfName (nameGlobalMemcpy pp)
         , declLinkage           = External
         , declCallConv          = CC_Intrinsic
