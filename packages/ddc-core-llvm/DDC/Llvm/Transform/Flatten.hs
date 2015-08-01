@@ -116,6 +116,9 @@ flattenInstrs acc (AnnotInstr i annots : is)
                 next $ (acc >< is1)  |> (reannot $ IGet  v x1' os)
 
          -- Memory access
+         IAlloca{}
+          ->    next $ acc |> reannot i
+
          ILoad  v x1
           -> do (is1, x1')      <- flattenX x1
                 next $ (acc >< is1)  |> (reannot $ ILoad  v x1')

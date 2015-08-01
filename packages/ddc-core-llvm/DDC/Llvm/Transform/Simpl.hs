@@ -230,6 +230,9 @@ simplInstrs config defs acc (AnnotInstr i annots : is)
                 next $ acc |> reannot (IGet  v x1' os)
 
         -- Memory instructions
+        IAlloca{}
+         ->     next $ acc |> reannot i
+
         ILoad v x1
          -> do  x1'     <- subst x1
                 next $ acc |> reannot (ILoad v x1')

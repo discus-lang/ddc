@@ -78,6 +78,9 @@ takeDefOfInstr instr
         -- Get element pointer
         IGet  v _ _     -> Just (v, DefVar)
 
+        -- Allocate a value on the stack.
+        IAlloca v _     -> Just (v, DefVar)
+
         -- Load a value from memory.
         ILoad v _       -> Just (v, DefVar)
 

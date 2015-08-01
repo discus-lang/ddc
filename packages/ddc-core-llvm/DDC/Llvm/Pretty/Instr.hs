@@ -137,6 +137,12 @@ instance Pretty Instr where
          -> text "unreachable"
 
         -- Memory Operations ------------------------------
+        IAlloca vDst tVal
+         -> padVar vDst
+                <+> equals
+                <+> text "alloca"
+                <+> ppr tVal
+
         ILoad vDst x1
          -- From LLVM 3.7 we need to give the type of the source pointer
          -- as well as the type of the result of the load.

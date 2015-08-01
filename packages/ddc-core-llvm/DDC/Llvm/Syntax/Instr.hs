@@ -114,6 +114,9 @@ data Instr
         | IGet          Var     Exp     [Exp]
 
         -- Memory Access and Addressing -------------------
+        -- | Allocate space for a value of the given type on the stack.
+        | IAlloca       Var     Type
+
         -- | Load a value from memory.
         | ILoad         Var     Exp
 
@@ -165,6 +168,7 @@ defVarOfInstr instr
         IOp var _ _ _   -> Just var
         IConv var _ _   -> Just var
         IGet  var _ _   -> Just var
+        IAlloca var _   -> Just var
         ILoad var _     -> Just var
         IStore{}        -> Nothing
         ICmp var _ _ _  -> Just var
