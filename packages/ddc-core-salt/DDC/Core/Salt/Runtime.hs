@@ -36,7 +36,18 @@ module DDC.Core.Salt.Runtime
         , xRunThunk
 
           -- ** Error handling
-        , xErrorDefault)
+        , xErrorDefault
+
+          -- * Calls to primops.
+        , xCreate
+        , xRead
+        , xWrite
+        , xPeek
+        , xPeekBuffer
+        , xPoke
+        , xPokeBuffer
+        , xFail
+        , xReturn)
 where
 import DDC.Core.Salt.Compounds
 import DDC.Core.Salt.Name
@@ -337,6 +348,7 @@ utSetFieldOfBoxed
         , tForalls [kRegion, kRegion]
             $ \[r1, t2] -> tPtr r1 tObj `tFun` tNat `tFun` tPtr t2 tObj `tFun` tVoid)
 
+
 -- Raw --------------------------------------------------------------------------------------------
 -- | Allocate a Raw object.
 xAllocRaw :: a -> Type Name -> Integer -> Exp a Name -> Exp a Name
@@ -398,4 +410,33 @@ utErrorDefault :: (Bound Name, Type Name)
 utErrorDefault
  =      ( UName (NameVar "primErrorDefault")
         , tTextLit `tFun` tNat `tFun` tPtr rTop tObj)
+
+
+-- Primops ----------------------------------------------------------------------------------------
+-- | Peek a value from a buffer pointer plus offset
+xPeekBuffer :: a -> Type Name -> Type Name -> Exp a Name -> Integer -> Exp a Name
+xPeekBuffer a r t xPtr offset
+ = let castedPtr = xCast a r t (tWord 8) xPtr
+   in  xPeek a r t castedPtr (xNat a offset)
+
+
+-- | Poke a value from a buffer pointer plus offset
+xPokeBuffer :: a -> Type Name -> Type Name -> Exp a Name -> Integer -> Exp a Name -> Exp a Name
+xPokeBuffer a r t xPtr offset xVal
+ = let castedPtr = xCast a r t (tWord 8) xPtr
+   in  xPoke a r t castedPtr (xNat a offset) xVal
+
+
+-- | Cast a pointer
+xCast :: a -> Type Name -> Type Name -> Type Name -> Exp a Name -> Exp a Name
+xCast a r toType fromType xPtr
+ =     XApp a (XApp a (XApp a (XApp a (XVar a uCast)
+                                      (XType a r)) 
+                              (XType a toType))
+                      (XType a fromType))
+              xPtr           
+                      
+uCast :: Bound Name
+uCast = UPrim (NamePrimOp $ PrimStore $ PrimStoreCastPtr)
+              (typeOfPrimStore PrimStoreCastPtr)
 

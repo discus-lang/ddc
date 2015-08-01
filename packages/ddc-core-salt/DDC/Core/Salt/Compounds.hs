@@ -30,6 +30,7 @@ module DDC.Core.Salt.Compounds
         , xReturn
 
           -- ** Primitive store operators.
+        , typeOfPrimStore
         , xStoreSize, xStoreSize2
         , xCreate
         , xRead, xWrite
