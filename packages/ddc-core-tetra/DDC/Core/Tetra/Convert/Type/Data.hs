@@ -14,7 +14,6 @@ import DDC.Type.DataDef
 import DDC.Control.Check                        (throw)
 import qualified DDC.Core.Tetra.Prim            as E
 import qualified DDC.Core.Salt.Compounds        as A
-import qualified DDC.Core.Salt.Runtime          as A
 import qualified DDC.Core.Salt.Name             as A
 import qualified DDC.Core.Salt.Env              as A
 import qualified DDC.Type.Env                   as Env

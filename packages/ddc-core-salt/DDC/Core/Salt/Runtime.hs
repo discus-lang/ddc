@@ -40,6 +40,7 @@ module DDC.Core.Salt.Runtime
 
           -- * Calls to primops.
         , xCreate
+        , xAllocSlot
         , xRead
         , xWrite
         , xPeek
@@ -108,19 +109,6 @@ runtimeImportTypes
 
  where   rn (UName n, t)  = (n, ImportValueSea (renderPlain $ ppr n) t)
          rn _   = error "ddc-core-salt: all runtime bindings must be named."
-
-
--- Regions --------------------------------------------------------------------
--- | The top-level region.
---   This region lives for the whole program, and is used to store objects whose 
---   types don't have region annotations (like function closures and Unit values).
-rTop    :: Type Name
-rTop   = TVar (fst ukTop)
-
-ukTop :: (Bound Name, Kind Name)
-ukTop
- =      ( UName (NameVar "rT")
-        , kRegion)
 
 
 -- Tags -------------------------------------------------------------------------------------------
@@ -373,6 +361,28 @@ utPayloadOfRaw
  =      ( UName (NameVar "payloadRaw")
         , tForall kRegion $ \r -> (tFun (tPtr r tObj) (tPtr r (tWord 8))))
 
+
+-- Slots ------------------------------------------------------------------------------------------
+-- | Allocate a pointer on the stack for a GC root.
+xAllocSlot :: a -> Region Name -> Exp a Name
+xAllocSlot a tR
+ = XApp a (XVar a uAllocSlot) (XType a tR)
+
+uAllocSlot :: Bound Name
+uAllocSlot
+ = UPrim (NamePrimOp $ PrimStore $ PrimStoreAllocSlot)
+         (typeOfPrimStore PrimStoreAllocSlot)
+
+
+{-
+-- | Read a value from an address plus offset.
+xRead   :: a -> Type Name -> Exp a Name -> Integer -> Exp a Name
+xRead a tField xAddr offset
+        = XApp a (XApp a (XApp a (XVar a uRead) 
+                               (XType a tField))
+                          xAddr)
+                 (xNat a offset)
+-}
 
 -- Small ------------------------------------------------------------------------------------------
 -- | Allocate a Small object.

@@ -137,6 +137,22 @@ convPrimStore ctx mdst p as
                         , IStore (XVar vTopPtr) (XVar vBump)]
 
 
+        -- Allocate a new gcroot
+        A.PrimStore A.PrimStoreAllocSlot
+         | Just vDst@(Var nDst _)       <- mdst
+         , [A.RType _]                  <- as
+         -> Just $ do
+                let vRoot       = Var (bumpName nDst "i8") (tPtr (tPtr (TInt 8)))
+                return  $ Seq.fromList $ map annotNil
+                        [ IAlloca vDst (tPtr (tObj pp))
+                        , IConv   vRoot ConvBitcast (XVar vDst)
+                        , ICall Nothing CallTypeStd Nothing
+                                TVoid nameGlobalGcroot
+                                [ XVar vRoot
+                                , XLit (LitNull (tPtr (TInt 8)))
+                                ] [] ]
+
+
         -- Read a value via a pointer.
         A.PrimStore A.PrimStoreRead
          | A.RType{} : args             <- as

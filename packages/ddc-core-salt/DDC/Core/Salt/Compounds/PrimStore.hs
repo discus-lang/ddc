@@ -1,7 +1,10 @@
 
 -- | Construct applications of primitive store operators.
 module DDC.Core.Salt.Compounds.PrimStore
-        ( xStoreSize, xStoreSize2
+        ( rTop
+        , ukTop
+        
+        , xStoreSize, xStoreSize2
         , xCreate
         , xRead, xWrite
         , xPeek, xPeekBounded, xPoke, xPokeBounded
@@ -12,6 +15,19 @@ where
 import DDC.Core.Salt.Compounds.PrimTyCon
 import DDC.Core.Salt.Name
 import DDC.Core.Exp.Annot
+
+
+-- Regions --------------------------------------------------------------------
+-- | The top-level region.
+--   This region lives for the whole program, and is used to store objects whose 
+--   types don't have region annotations (like function closures and Unit values).
+rTop    :: Type Name
+rTop   = TVar (fst ukTop)
+
+ukTop :: (Bound Name, Kind Name)
+ukTop
+ =      ( UName (NameVar "rT")
+        , kRegion)
 
 
 -- | All the Prim Store vars have this form.
@@ -114,6 +130,10 @@ typeOfPrimStore jj
 
         PrimStoreAlloc
          -> tNat `tFun` tAddr
+
+        PrimStoreAllocSlot
+         -> tForall kRegion 
+         $  \r -> tPtr rTop (tPtr r tObj)
 
         PrimStoreRead           
          -> tForall kData 
