@@ -19,6 +19,7 @@ import Data.Maybe
 import qualified DDC.Build.Language.Salt        as Salt
 import qualified DDC.Core.Salt.Name             as Salt
 import qualified DDC.Core.Salt.Convert          as Salt
+import qualified DDC.Core.Salt.Profile          as Salt
 import qualified DDC.Core.Check                 as C
 import qualified DDC.Core.Simplifier.Recipe     as S
 

@@ -59,6 +59,10 @@ module DDC.Core.Salt
         , seaOfSaltModule
         , Error(..)
 
+          -- * Name generation
+        , freshT
+        , freshX
+
           -- * Salt expressions
         , module DDC.Core.Salt.Exp)
 where
