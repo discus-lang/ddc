@@ -40,7 +40,7 @@ instance Pretty Function where
 -- | Print out a function defenition header.
 pprFunctionHeader :: FunctionDecl -> Maybe [String] -> Doc
 pprFunctionHeader 
-        (FunctionDecl name linkage callConv tReturn varg params alignment)
+        (FunctionDecl name linkage callConv tReturn varg params alignment strategy)
         mnsParams
   = let varg'  = case varg of
                       VarArgs | null params -> text "..."
@@ -50,6 +50,10 @@ pprFunctionHeader
         align' = case alignment of
                         AlignNone       -> empty
                         AlignBytes b    -> text " align" <+> ppr b
+
+        gc'    = case strategy of
+                        Nothing         -> empty
+                        Just strategy'  -> text " gc" <+> dquotes (text strategy')
 
         args'  
          = case mnsParams of
@@ -76,3 +80,4 @@ pprFunctionHeader
         <>  (hcat $ punctuate (comma <> space) args') <> varg' 
         <>  rparen 
         <>  align'
+        <>  gc'

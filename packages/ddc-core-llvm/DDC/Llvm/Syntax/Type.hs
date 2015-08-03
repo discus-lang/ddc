@@ -41,7 +41,10 @@ data FunctionDecl
         , declParams            :: [Param]
 
         -- | Function align value, must be power of 2
-        , declAlign             :: Align }
+        , declAlign             :: Align
+
+        -- | The garbage collector strategy used by the function
+        , declGarbageCollector  :: Maybe String }
         deriving (Eq, Show)
 
 

@@ -12,23 +12,28 @@ instance Pretty Param where
 
 
 instance Pretty FunctionDecl where
- ppr (FunctionDecl n l c r varg params a)
-  = let varg' = case varg of
-                 VarArgs | null params  -> text "..."
-                         | otherwise    -> text ", ..."
-                 _otherwise             -> empty
+ ppr (FunctionDecl n l c r varg params a strategy)
+  = let varg'   = case varg of
+                   VarArgs | null params        -> text "..."
+                           | otherwise          -> text ", ..."
+                   _otherwise                   -> empty
 
-        align' = case a of
-                  AlignNone         -> empty
-                  AlignBytes a'     -> text " align " <+> ppr a'
+        align'  = case a of
+                   AlignNone            -> empty
+                   AlignBytes a'        -> text " align" <+> ppr a'
 
-        args' = hcat $ punctuate comma $ map ppr params
+        gc'     = case strategy of
+                   Nothing              -> empty
+                   Just strategy'       -> text " gc" <+> dquotes (text strategy')
+
+        args'   = hcat $ punctuate comma $ map ppr params
 
     in  ppr l   <+> ppr c 
                 <+> ppr r 
                 <+> text " @" 
                 <>  ppr n <> brackets (args' <> varg') 
                 <>  align'
+                <>  gc'
 
 
 instance Pretty TypeAlias where
@@ -57,7 +62,7 @@ instance Pretty Type where
         TAlias (TypeAlias s _)  
          -> text "%"  <> text s
 
-        TFunction (FunctionDecl _ _ _ r varg params _)
+        TFunction (FunctionDecl _ _ _ r varg params _ _)
          -> let varg' = case varg of
                         VarArgs | null params -> text "..."
                                 | otherwise   -> text ", ..."
