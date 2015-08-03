@@ -374,22 +374,13 @@ uAllocSlot
          (typeOfPrimStore PrimStoreAllocSlot)
 
 
-{-
--- | Read a value from an address plus offset.
-xRead   :: a -> Type Name -> Exp a Name -> Integer -> Exp a Name
-xRead a tField xAddr offset
-        = XApp a (XApp a (XApp a (XVar a uRead) 
-                               (XType a tField))
-                          xAddr)
-                 (xNat a offset)
--}
-
 -- Small ------------------------------------------------------------------------------------------
 -- | Allocate a Small object.
 xAllocSmall :: a -> Type Name -> Integer -> Exp a Name -> Exp a Name
 xAllocSmall a tR tag x2
  = xApps a (XVar a $ fst utAllocSmall)
         [ XType a tR, xTag a tag, x2]
+
 
 utAllocSmall :: (Bound Name, Type Name)
 utAllocSmall
