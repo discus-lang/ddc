@@ -52,5 +52,6 @@ tFunction tsArgs tResult
         , declReturnType        = tResult
         , declParamListType     = FixedArgs
         , declParams            = [ Param t [] | t <- tsArgs ]
-        , declAlign             = AlignNone }
+        , declAlign             = AlignNone
+        , declGarbageCollector  = Just "shadow-stack" }
 
