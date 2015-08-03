@@ -14,6 +14,7 @@ import qualified DDC.Core.Transform.Reannotate  as C
 import qualified DDC.Core.Module                as C
 import qualified DDC.Core.Llvm.Convert          as Llvm
 import qualified DDC.Core.Salt.Transfer         as Salt
+import qualified DDC.Core.Salt.Slotify          as Salt
 import qualified DDC.Core.Salt.Platform         as Salt
 import qualified DDC.Core.Salt                  as Salt
 import Control.Monad
@@ -32,6 +33,12 @@ data PipeSalt a where
         PipeSaltOutput 
                 :: !Sink
                 -> PipeSalt a
+
+        -- Insert slot stack allocations.
+        --      This needs to be done before inserting control-transfer primops.
+        PipeSaltSlotify
+                :: ![PipeSalt (AnTEC () Salt.Name)]
+                -> PipeSalt (AnTEC () Salt.Name)
 
         -- Insert control-transfer primops.
         --      This needs to be done before we convert the module to C or LLVM.
@@ -82,6 +89,12 @@ pipeSalt !mm !pp
         PipeSaltOutput !sink
          -> {-# SCC "PipeSaltOutput" #-}
             pipeSink (renderIndent $ ppr mm) sink
+
+        PipeSaltSlotify !pipes
+         -> {-# SCC "PipeSaltTransfer" #-}
+            case Salt.slotifyModule () mm of
+                Left err        -> return [ErrorSaltConvert err]
+                Right mm'       -> liftM concat $ mapM (pipeSalt mm') pipes
 
         PipeSaltTransfer !pipes
          -> {-# SCC "PipeSaltTransfer" #-}
