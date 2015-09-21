@@ -18,6 +18,9 @@ module DDC.Core.Compounds.Annot
         , takeCallPattern
         , takePrenexCallPattern
 
+        , Param(..)
+        , takeXLamParam
+
           -- * Applications
         , xApps
         , makeXAppsWithAnnots
@@ -62,6 +65,7 @@ where
 import DDC.Type.Compounds
 import DDC.Core.Exp
 import DDC.Core.Exp.DaCon
+import Data.Maybe
 
 
 -- Annotations ----------------------------------------------------------------
@@ -140,6 +144,26 @@ takeXLamFlags xx
          (bs, body)     -> Just (bs, body)
 
 
+-- | Parameters of a function.
+data Param n
+        = ParamType  (Bind n)
+        | ParamValue (Bind n)
+        | ParamBox
+        deriving Show
+
+
+-- | Take the parameters of a function.
+takeXLamParam :: Exp a n -> Maybe ([Param n], Exp a n)
+takeXLamParam xx
+ = let  go bs (XLAM  _ b x)       = go (ParamType  b : bs) x
+        go bs (XLam  _ b x)       = go (ParamValue b : bs) x
+        go bs (XCast _ CastBox x) = go (ParamBox     : bs) x
+        go bs x                   = (reverse bs, x)
+   in   case go [] xx of
+         ([], _)        -> Nothing
+         (bs, body)     -> Just (bs, body)
+
+
 -- | Take the call pattern from this expression.
 --
 --   In the result list we get a value for each type or value lambda,
@@ -154,22 +178,32 @@ takeCallPattern xx
 -- | Take a prenex call pattern from this expression, 
 --   meaning     the kinds of the type parameters, 
 --   followed by the types of the value parameters, 
+--   followed by the number of inner box casts.
 --   or `Nothing` if this expression is not in prenex form.
-takePrenexCallPattern :: Exp a n -> Maybe ([Kind n], [Type n])
+takePrenexCallPattern :: Exp a n -> Maybe ([Kind n], [Type n], Int)
 takePrenexCallPattern xx
- = goType [] (takeCallPattern xx)
+ = goType    [] 
+ $ fromMaybe [] $ fmap fst (takeXLamParam xx)
  where
         goType ks pats
          = case pats of
-                []              -> Just (reverse ks, [])
-                (True,  k) : ps -> goType  (k : ks) ps
-                (False, _) : _  -> goValue ks []    pats
+                []                -> Just  (reverse ks, [],         0)
+                ParamType b  : ps -> goType  (typeOfBind b : ks) ps
+                _            : _  -> goValue ks                  []  pats
 
         goValue ks ts pats
          = case pats of
-                []              -> Just (reverse ks, reverse ts)
-                (True,  _) : _  -> Nothing
-                (False, t) : ps -> goValue ks (t : ts) ps
+                []                -> Just  (reverse ks, reverse ts, 0)
+                ParamType  _ : _  -> Nothing
+                ParamValue b : ps -> goValue ks (typeOfBind b : ts) ps
+                _            : _  -> goBox   ks ts                  0  pats
+
+        goBox   ks ts !nb pats
+         = case pats of
+                []                -> Just  (reverse ks, reverse ts, nb)
+                ParamType  _ : _  -> Nothing
+                ParamValue _ : _  -> Nothing
+                ParamBox     : ps -> goBox  ks ts (nb + 1) ps
 
 
 -- Applications ---------------------------------------------------------------

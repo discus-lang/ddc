@@ -61,13 +61,12 @@ convertPrimCall _ectx ctx xx
                         -- If this fails then the super name is in-scope, but
                         -- we can't see its definition in this module, or
                         -- salt-level import to get the arity.
-                        params  = fromMaybe (panicNoArity (UName nSuper) xx)
-                                $ superDataArity ctx (UName nSuper)
+                        uSuper  = UName nSuper
+                        ppanic  = panicNoArity uSuper xx
+                        params  = fromMaybe ppanic $ superDataArity ctx uSuper
+                        boxes   = fromMaybe ppanic $ superBoxings   ctx uSuper
 
-                        -- TODO: get actual number of inner boxes.
-                        boxes   = 0 :: Int
-
-                        xF'     = XVar aF (UName nSuper)
+                        xF'     = XVar aF uSuper
                     in  Just (aF, xF', params, boxes, atsArgs)
 
                  -- The name is that of an existing top-level super, either
@@ -77,11 +76,9 @@ convertPrimCall _ectx ctx xx
                         -- If this fails then the super name is in-scope, but
                         -- we can't see its definition in this module, or
                         -- salt-level import to get the arity.
-                        params  = fromMaybe (panicNoArity uF xx) 
-                                $ superDataArity ctx uF
-
-                        -- TODO: get actual number of inner boxes.
-                        boxes   = 0 :: Int
+                        ppanic  = panicNoArity uF xx
+                        params  = fromMaybe ppanic $ superDataArity ctx uF
+                        boxes   = fromMaybe ppanic $ superBoxings   ctx uF
 
                     in  Just (aF, xF, params, boxes, [])
 

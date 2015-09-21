@@ -1,0 +1,94 @@
+
+module Main
+export main
+
+-- | We assign the Console effect to computations that affect stdin or stdout.
+import foreign abstract type
+ Console  : Effect
+
+-- | Import basic functions from C land.
+import foreign c value
+ putStr_v : String -> S Console Void
+ showNat  : Nat    -> String
+
+where
+
+-- Define configurable syntax.
+add x y = add# [Nat] x y       -- used for (+)
+sub x y = sub# [Nat] x y       -- used for (-)
+eq  x y = eq#  [Nat] x y       -- used for (==)
+ge  x y = ge#  [Nat] x y       -- used for (>=)
+
+
+-------------------------------------------------------------------------------
+-- | Cons lists.
+data List (a : Data) where
+        Nil     : List a
+        Cons    : a -> List a -> List a
+
+
+-- | Construct a list containing a single element.
+singleton (x : a) : List a
+ = Cons x Nil
+
+
+-- | Construct a range of values.
+enumFromTo (start : Nat) (end : Nat)
+ | start >= end = singleton start
+ | otherwise    = Cons start (enumFromTo (start + 1) end)
+
+
+-- | Apply a worker function to all elements of a list,
+--   yielding a new list.
+mapS (f : a -> S e b) (xx : List a) : S e (List b)
+ = box case xx of
+        Nil             -> Nil
+        Cons x xs       -> Cons (run f x) (run mapS f xs)
+
+
+-- | Apply a function to all elements of a list,
+--   yielding nothing.
+forS (xx : List a) (f : a -> S e Unit) : S e Unit
+ = box case xx of
+        Nil     -> ()
+
+        Cons x xs
+         -> do  run f x
+                run forS xs f
+
+
+-- | Reduce a list to a single value.
+foldS (f : a -> b -> S e b) (z : b) (xx : List a) : S e b
+ = box case xx of
+        Nil             -> z
+        Cons x xs       -> run f x (run foldS f z xs)
+
+
+-- | Keep elements of a list that match the given predicate.
+filterS (f : a -> S e Bool) (xx : List a) : S e (List a)
+ = box case xx of
+        Nil             -> Nil
+        Cons x xs
+         | run f x, run f x      -> Cons x (run filterS f xs)
+         | otherwise    -> run filterS f xs
+
+
+length (xx : List a) : Nat
+ = case xx of
+        Nil             -> 0
+        Cons x xs       -> 1 + length xs
+
+
+main (_ : Unit) : S Console Unit
+ = box private r with { Alloc r; Read r; Write r } in
+   do
+        -- Create a demo list.
+        xx      = enumFromTo 1 100
+
+        -- Select only the even elements
+        xx'     = run filterS (\(x : Nat). box rem# x 2 == 0) xx
+
+        -- Print out the final list length.
+        run putStr_v (showNat (length xx'))
+        run putStr_v ("\n")
+        ()

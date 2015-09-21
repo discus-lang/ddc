@@ -8,6 +8,7 @@ module DDC.Core.Tetra.Convert.Exp.Base
 
         , ExpContext    (..)
         , superDataArity
+        , superBoxings
 
         -- * Constructors
         , xConvert
@@ -53,9 +54,9 @@ data Context a
         , contextForeignBoxedTypeCtors 
                                 :: Set      E.Name
 
-          -- | Map of names of imported supers, to the number of type and value
-          --   parameters. These supers are all directly callable in the object
-          --   code.
+          -- | Map of names of imported supers,
+          --   to the number of type parameters, value parameters, and boxes.
+          --   These supers are all directly callable in the object code.
           --
           --   We check the supers are all in prenex form during conversion,
           --   so they take all their type arguments before their value
@@ -65,17 +66,17 @@ data Context a
           --
           --   Foreign functions can't be partially applied yet, so they
           --   dont have any associated arity information.
-        , contextImports        :: Map      E.Name (Maybe (Int, Int))
+        , contextImports        :: Map      E.Name (Maybe (Int, Int, Int))
 
-          -- | Map of names of supers defined in the current module, to the 
-          --   number of type and value parameters. The supers are all directly
-          --   callable in the object code.
+          -- | Map of names of supers defined in the current module,
+          --   to the number of type parameters, value parameters, and boxes.
+          --   These supers are all directly callable in the object code.
           --
           --   We check the supers are all in prenex form during conversion,
           --   so they take all their type arguments before their value
           --   arguments. We get the arities by looking at the super definition
           --   in the current module being converted.
-        , contextSupers         :: Map      E.Name (Int, Int)
+        , contextSupers         :: Map      E.Name (Int, Int, Int)
 
           -- | Current kind environment.
           --   This is updated as we decend into the AST during conversion.
@@ -169,14 +170,34 @@ data ExpContext
 superDataArity :: Context a -> Bound E.Name -> Maybe Int
 superDataArity ctx u
         -- Get the arity of a locally defined super.
-        | UName n  <- u
-        , Just (_aType, aValue)         <- Map.lookup n (contextSupers ctx)
+        | UName n   <- u
+        , Just (_aType, aValue, _boxes) 
+                    <- Map.lookup n (contextSupers ctx)
         = Just aValue
 
         -- Get the arity of an imported super.
         | UName n  <- u
-        , Just (Just (_aType, aValue))  <- Map.lookup n (contextImports ctx)
+        , Just (Just (_aType, aValue, _boxes))
+                   <- Map.lookup n (contextImports ctx)
         = Just aValue
+
+        | otherwise     = Nothing
+
+
+-- | Get the number of times the inner expression of a super was boxed.
+superBoxings  :: Context a -> Bound E.Name -> Maybe Int
+superBoxings ctx u
+        -- Get the arity of a locally defined super.
+        | UName n  <- u
+        , Just (_aType, _aValue, boxes)
+                   <- Map.lookup n (contextSupers ctx)
+        = Just boxes
+
+        -- Get the arity of an imported super.
+        | UName n  <- u
+        , Just (Just (_aType, _aValue, boxes)) 
+                   <- Map.lookup n (contextImports ctx)
+        = Just boxes
 
         | otherwise     = Nothing
 

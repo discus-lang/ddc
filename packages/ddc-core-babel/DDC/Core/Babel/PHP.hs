@@ -31,7 +31,7 @@ phpOfModule mm
   arityOfImport (n,i)
    = case i of
      ImportValueModule{}
-      | Just (_,a) <- importValueModuleArity i
+      | Just (_,a, _) <- importValueModuleArity i
       -> (n, a)
       | otherwise
       -> (n, arityOfType' (importValueModuleType i))

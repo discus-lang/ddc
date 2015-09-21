@@ -154,9 +154,12 @@ pprImportValue (n, isrc)
         ImportValueModule _mn _nSrc t Nothing
          ->        text "import value" <+> padL 10 (ppr n) <+> text ":" <+> ppr t <> semi
 
-        ImportValueModule _mn _nSrc t (Just (arityType, arityValue))
+        ImportValueModule _mn _nSrc t (Just (arityType, arityValue, arityBoxes))
          -> vcat [ text "import value" <+> padL 10 (ppr n) <+> text ":" <+> ppr t <> semi
-                 , text "{-# ARITY   " <+> padL 10 (ppr n) <+> ppr arityType <+> ppr arityValue 
+                 , text "{-# ARITY   " <+> padL 10 (ppr n) 
+                                       <+> ppr arityType 
+                                       <+> ppr arityValue 
+                                       <+> ppr arityBoxes
                                        <+> text "#-}"
                  , empty ]
         ImportValueSea _var t

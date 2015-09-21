@@ -69,8 +69,8 @@ data HeadDecl n
         | HeadExportSpecs  [ExportSpec  n]
         | HeadDataDef      (DataDef     n)
 
-        -- | Number of type and value parameters for some super.
-        | HeadPragmaArity  n Int Int
+        -- | Number of type parameters, value parameters, and boxes for some super.
+        | HeadPragmaArity  n Int Int Int
 
 
 -- | Parse one of the declarations that can appear in a module header.
@@ -97,13 +97,14 @@ pHeadPragma ctx
         case words $ T.unpack txt of
 
          -- The type and value arity of a super.
-         ["ARITY", name, strTypes, strValues]
+         ["ARITY", name, strTypes, strValues, strBoxes]
           |  all isDigit strTypes
           ,  all isDigit strValues
+          ,  all isDigit strBoxes
           , Just makeStringName <- contextMakeStringName ctx
           -> return $ HeadPragmaArity
                 (makeStringName sp (T.pack name))
-                (read strTypes) (read strValues)
+                (read strTypes) (read strValues) (read strBoxes)
 
          _ -> P.unexpected $ "pragma " ++ "{-# " ++ T.unpack txt ++ "#-}"
 

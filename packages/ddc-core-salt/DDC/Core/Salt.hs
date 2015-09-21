@@ -16,10 +16,6 @@ module DDC.Core.Salt
         ( -- * Language profile
           profile
 
-          -- * Conversion
-        , seaOfSaltModule
-        , Error(..)
-
           -- * Names
         , Name          (..)
         , PrimTyCon     (..)
@@ -43,8 +39,11 @@ module DDC.Core.Salt
 
           -- * Program lexing
         , lexModuleString
-        , lexExpString)
+        , lexExpString
 
+          -- * Conversion
+        , seaOfSaltModule
+        , Error(..))
 where
 import DDC.Core.Salt.Name
 import DDC.Core.Salt.Profile

@@ -358,9 +358,9 @@ data ImportValue n
         , importValueModuleVar         :: !n 
         , importValueModuleType        :: !(Type n)
 
-          -- | Number of type and value arguments for a top-level super.
-        , importValueModuleArity       :: !(Maybe (Int, Int)) }
-
+          -- | Number of type parameters, value parameters,
+          --   and boxings for top-level super.
+        , importValueModuleArity       :: !(Maybe (Int, Int, Int)) }
 
         -- | Something imported via the C calling convention.
         | ImportValueSea

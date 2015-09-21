@@ -255,12 +255,13 @@ convertImportValueM tctx isrc
 --   the `ConvertM` monad.
 --
 takePrenexAritiesOfTopBinds 
-        :: Module a E.Name -> ConvertM b (Map E.Name (Int, Int))
+        :: Module a E.Name 
+        -> ConvertM b (Map E.Name (Int, Int, Int))
 
 takePrenexAritiesOfTopBinds mm
  = do   
-        let check (BName n _) (Just (ks, ts)) 
-                = return (n, (length ks, length ts))
+        let check (BName n _) (Just (ks, ts, nBoxes)) 
+                = return (n, (length ks, length ts, nBoxes))
 
             check b Nothing     = throw $ ErrorSuperNotPrenex b
             check b  _          = throw $ ErrorSuperUnnamed   b
@@ -274,13 +275,15 @@ takePrenexAritiesOfTopBinds mm
 -- | Check that all the imported supers in the module have real names,
 --   and are in prenex form.
 --
+--  TODO: get boxes
 takePrenexAritiesOfImports
-        :: Module a E.Name -> ConvertM b (Map E.Name (Maybe (Int, Int)))
+        :: Module a E.Name 
+        -> ConvertM b (Map E.Name (Maybe (Int, Int, Int)))
 
 takePrenexAritiesOfImports mm
  = do   
-        let check n (ImportValueModule _ _ _ (Just (aType, aValue)))
-                = return $ Just (n, Just (aType, aValue))
+        let check n (ImportValueModule _ _ _ (Just (aType, aValue, nBoxes)))
+                = return $ Just (n, Just (aType, aValue, nBoxes))
 
             check n (ImportValueSea _ _)
                 = return $ Just (n, Nothing)

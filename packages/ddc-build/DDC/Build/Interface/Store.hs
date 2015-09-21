@@ -207,12 +207,12 @@ supersOfInterface int
         --  for the super. We assume all supers are in prenex form, so they take
         --  all their type arguments before their value arguments.
         makeLocalArity b mtks
-         | BName n _            <- b
-         , Just (ks, ts)        <- mtks
-         = (n, (length ks, length ts))
+         | BName n _               <- b
+         , Just (ks, ts, nBoxes)   <- mtks
+         = (n, (length ks, length ts, nBoxes))
          | otherwise            = error "supersOfInterface: not prenex"
 
-        nsLocalArities :: Map E.Name (Int, Int)
+        nsLocalArities :: Map E.Name (Int, Int, Int)
                 =  Map.fromList
                 $  map (uncurry makeLocalArity)
                 $  mapTopBinds (\b x -> (b, takePrenexCallPattern x))
@@ -223,9 +223,9 @@ supersOfInterface int
         makeImportValue n
 
          -- Super was defined as a top-level binding in the current module.
-         | Just (aType, aValue) <- Map.lookup n nsLocalArities
-         , Just tTetra          <- Map.lookup n ntsTetra
-         = ImportValueModule modName n tTetra (Just (aType, aValue))
+         | Just (aType, aValue, nBoxes) <- Map.lookup n nsLocalArities
+         , Just tTetra                  <- Map.lookup n ntsTetra
+         = ImportValueModule modName n tTetra (Just (aType, aValue, nBoxes))
 
          -- Super was imported into the current module from somewhere else.
          -- Pass along the same import declaration to the client.
