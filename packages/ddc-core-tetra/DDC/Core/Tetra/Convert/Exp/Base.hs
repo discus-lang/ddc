@@ -15,6 +15,7 @@ module DDC.Core.Tetra.Convert.Exp.Base
         , xTakePtr
         , xMakePtr)
 where
+import DDC.Core.Tetra.Convert.Callable
 import DDC.Core.Tetra.Convert.Error
 import DDC.Core.Salt.Platform
 import DDC.Core.Compounds
@@ -54,29 +55,9 @@ data Context a
         , contextForeignBoxedTypeCtors 
                                 :: Set      E.Name
 
-          -- | Map of names of imported supers,
-          --   to the number of type parameters, value parameters, and boxes.
-          --   These supers are all directly callable in the object code.
-          --
-          --   We check the supers are all in prenex form during conversion,
-          --   so they take all their type arguments before their value
-          --   arguments. We get the arities by looking at the associated Salt
-          --   type signature in the interface files for the modules that define
-          --   each import.
-          --
-          --   Foreign functions can't be partially applied yet, so they
-          --   dont have any associated arity information.
-        , contextImports        :: Map      E.Name (Maybe (Int, Int, Int))
-
-          -- | Map of names of supers defined in the current module,
-          --   to the number of type parameters, value parameters, and boxes.
-          --   These supers are all directly callable in the object code.
-          --
-          --   We check the supers are all in prenex form during conversion,
-          --   so they take all their type arguments before their value
-          --   arguments. We get the arities by looking at the super definition
-          --   in the current module being converted.
-        , contextSupers         :: Map      E.Name (Int, Int, Int)
+          -- | Call patterns of things that we can call directly, in the generated code.
+          --   This is locally defined supers, as well as imported supers and sea functions.
+        , contextCallable       :: Map E.Name Callable
 
           -- | Current kind environment.
           --   This is updated as we decend into the AST during conversion.
@@ -168,38 +149,28 @@ data ExpContext
 -- | Get the value arity of a supercombinator. 
 --   This is how many data arguments it needs when we call it.
 superDataArity :: Context a -> Bound E.Name -> Maybe Int
-superDataArity ctx u
-        -- Get the arity of a locally defined super.
-        | UName n   <- u
-        , Just (_aType, aValue, _boxes) 
-                    <- Map.lookup n (contextSupers ctx)
-        = Just aValue
+superDataArity ctx (UName n)
+ = case Map.lookup n (contextCallable ctx) of
+        Just (CallableSuperLocal _ a _) -> Just a
+        Just (CallableSuperOther _ a _) -> Just a
+        Just (CallableImportSea  _ a _) -> Just a
+        _                               -> Nothing
 
-        -- Get the arity of an imported super.
-        | UName n  <- u
-        , Just (Just (_aType, aValue, _boxes))
-                   <- Map.lookup n (contextImports ctx)
-        = Just aValue
-
-        | otherwise     = Nothing
+superDataArity _ _
+ = Nothing
 
 
 -- | Get the number of times the inner expression of a super was boxed.
 superBoxings  :: Context a -> Bound E.Name -> Maybe Int
-superBoxings ctx u
-        -- Get the arity of a locally defined super.
-        | UName n  <- u
-        , Just (_aType, _aValue, boxes)
-                   <- Map.lookup n (contextSupers ctx)
-        = Just boxes
+superBoxings ctx (UName n)
+ = case Map.lookup n (contextCallable ctx) of
+        Just (CallableSuperLocal _ _ b) -> Just b
+        Just (CallableSuperOther _ _ b) -> Just b
+        Just (CallableImportSea  _ _ _) -> Just 0               -- TODO: WRONG
+        _                               -> Nothing
 
-        -- Get the arity of an imported super.
-        | UName n  <- u
-        , Just (Just (_aType, _aValue, boxes)) 
-                   <- Map.lookup n (contextImports ctx)
-        = Just boxes
-
-        | otherwise     = Nothing
+superBoxings _ _
+ = Nothing
 
 
 ---------------------------------------------------------------------------------------------------

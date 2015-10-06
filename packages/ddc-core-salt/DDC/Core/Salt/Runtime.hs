@@ -26,6 +26,7 @@ module DDC.Core.Salt.Runtime
         , xExtendThunk
         , xCopyArgsOfThunk
         , xApplyThunk
+        , xRunThunk
 
           -- * Calls to primops.
         , xCreate
@@ -80,6 +81,7 @@ runtimeImportTypes
    , rn utSetFieldOfThunk
    , rn utExtendThunk
    , rn utCopyArgsOfThunk 
+   , rn utRunThunk
    , rn (utApplyThunk 0)
    , rn (utApplyThunk 1)
    , rn (utApplyThunk 2)
@@ -304,6 +306,17 @@ utApplyThunk arity
  = let  Just t = tFunOfListPE ([tAddr] ++ replicate arity tAddr ++ [tAddr])
    in   ( UName (NameVar $ "apply" ++ show arity)
         , t )
+
+
+-- | Run a thunk.
+xRunThunk :: a -> Exp a Name -> Exp a Name
+xRunThunk a xArg
+ = xApps a (XVar a $ fst utRunThunk) [xArg]
+
+utRunThunk :: (Bound Name, Type Name)
+utRunThunk 
+ =      ( UName (NameVar $ "runThunk")
+        , tPtr rTop tObj `tFunPE` tPtr rTop tObj)
 
 
 -- Primops --------------------------------------------------------------------

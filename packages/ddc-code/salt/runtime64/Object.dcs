@@ -67,54 +67,75 @@
 --
 module  Object 
 export value
-  getTag            : [r : Region]. Ptr# r Obj -> Tag#
+ -- Get the tag of an object.
+ getTag         : [r     : Region]. Ptr# r Obj -> Tag#
 
-  allocThunk        : [r : Region]. Addr# -> Nat# -> Nat# -> Nat# -> Nat# -> Ptr# r Obj
-  setFieldOfThunk   : [r : Region]. Ptr# r Obj  -> Nat# -> Nat# -> Addr# -> Void#
-  paramsOfThunk     : [r : Region]. Ptr# r Obj  -> Nat#
-  boxesOfThunk      : [r : Region]. Ptr# r Obj  -> Nat#
-  argsOfThunk       : [r : Region]. Ptr# r Obj  -> Nat#
-  runsOfThunk       : [r : Region]. Ptr# r Obj  -> Nat#
-  fieldOfThunk      : [r : Region]. Ptr# r Obj  -> Nat# -> Addr#
-  extendThunk       : [r1 r2 : Region]. Ptr# r1 Obj -> Nat# -> Ptr# r2 Obj
-  copyArgsOfThunk   : [r1 r2 : Region]. Ptr# r1 Obj -> Ptr# r2 Obj 
-                                                    -> Nat# -> Nat# -> Ptr# r2 Obj
+ -- Thunk initialization.
+ allocThunk     : [r1    : Region]. Addr# -> Nat# -> Nat# -> Nat# -> Nat# -> Ptr# r1 Obj
+ copyThunk      : [r1 r2 : Region]. Ptr# r1 Obj -> Ptr# r2 Obj -> Nat# -> Nat# -> Ptr# r2 Obj
+ extendThunk    : [r1 r2 : Region]. Ptr# r1 Obj -> Nat# -> Ptr# r2 Obj
 
-  allocBoxed        : [r : Region]. Tag# -> Nat# -> Ptr# r Obj
-  getFieldOfBoxed   : [r : Region]. [a : Data]. Ptr# r Obj -> Nat# -> a
-  setFieldOfBoxed   : [r : Region]. [a : Data]. Ptr# r Obj -> Nat# -> a -> Void#
+ funThunk       : [r1    : Region]. Ptr# r1 Obj -> Addr#
+ paramsThunk    : [r1    : Region]. Ptr# r1 Obj -> Nat#
+ boxesThunk     : [r1    : Region]. Ptr# r1 Obj -> Nat#
+ argsThunk      : [r1    : Region]. Ptr# r1 Obj -> Nat#
+ runsThunk      : [r1    : Region]. Ptr# r1 Obj -> Nat#
 
-  allocMixed        : [r : Region]. Tag# -> Nat# -> Nat# -> Ptr# r Obj
-  fieldOfMixed      : [r : Region]. Ptr# r Obj -> Nat# -> Ptr# r Obj
-  payloadOfMixed    : [r : Region]. Ptr# r Obj -> Ptr# r Word8#
+ setThunk       : [r1 r2 : Region]. Ptr# r1 Obj -> Nat# -> Nat# -> Ptr# r2 Obj -> Void#
+ getThunk       : [r1 r2 : Region]. Ptr# r1 Obj -> Nat# -> Ptr# r2 Obj
 
-  allocRaw          : [r : Region]. Tag# -> Nat# -> Ptr# r Obj
-  payloadOfRaw      : [r : Region]. Ptr# r Obj -> Ptr# r Word8#
+ runThunk       : [r1 r2 : Region]. Ptr# r1 Obj -> Ptr# r2 Obj
 
-  allocRawSmall     : [r : Region]. Tag# -> Nat# -> Ptr# r Obj
-  payloadOfRawSmall : [r : Region]. Ptr# r Obj -> Ptr# r Word8#
+ -- Objects with just pointers to boxed things.
+ allocBoxed     : [r1    : Region]. Tag# -> Nat# -> Ptr# r1 Obj
+ getBoxed       : [r1 r2 : Region]. Ptr# r1 Obj  -> Nat# -> Ptr# r2 Obj
+ setBoxed       : [r1 r2 : Region]. Ptr# r1 Obj  -> Nat# -> Ptr# r2 Obj -> Void#
 
-  apply0            : Addr# -> Addr#
-  apply1            : Addr# -> Addr# -> Addr#
-  apply2            : Addr# -> Addr# -> Addr# -> Addr#
-  apply3            : Addr# -> Addr# -> Addr# -> Addr# -> Addr#
-  apply4            : Addr# -> Addr# -> Addr# -> Addr# -> Addr# -> Addr#
+ -- Object with mixed pointers and raw, non-pointer data.
+ allocMixed     : [r1    : Region]. Tag# -> Nat# -> Nat# -> Ptr# r1 Obj
+ getMixed       : [r1 r2 : Region]. Ptr# r1 Obj  -> Nat# -> Ptr# r2 Obj
+ payloadMixed   : [r1    : Region]. Ptr# r1 Obj  -> Ptr# r1 Word8# 
 
-  -- Mutable references.
-  allocRef          : [r1 r2 : Region]. Ptr# r2 Obj -> Ptr# r1 Obj
-  writeRef          : [r1 r2 : Region]. Ptr# r1 Obj -> Ptr# r2 Obj -> Void#
-  readRef           : [r1 r2 : Region]. Ptr# r1 Obj -> Ptr# r2 Obj
+ -- Objects with raw, non-pointer data.
+ allocRaw       : [r1    : Region]. Tag# -> Nat# -> Ptr# r1 Obj
+ payloadRaw     : [r1    : Region]. Ptr# r1 Obj  -> Ptr# r1 Word8#
+
+ -- Objects with small, non-pointer data.
+ allocSmall     : [r1    : Region]. Tag# -> Nat# -> Ptr# r1 Obj
+ payloadSmall   : [r1    : Region]. Ptr# r1 Obj  -> Ptr# r1 Word8#
+
+ -- Blocks of memory with a header word but uninterpreted payload.
+ allocBlock     : [r : Region]. Nat# -> Ptr# r Obj
+ payloadBlock   : [r : Region]. Ptr# r Obj -> Ptr# r Word8#
+
+ -- Mutable references.
+ allocRef       : [r1 r2 : Region]. Ptr# r1 Obj -> Ptr# r2 Obj
+ writeRef       : [r1 r2 : Region]. Ptr# r1 Obj -> Ptr# r2 Obj -> Void#
+ readRef        : [r1 r2 : Region]. Ptr# r1 Obj -> Ptr# r2 Obj
 
   -- Arrays of pointers to boxed values.
-  allocArray        : [r1 r2 : Region]. [a : Data]. Nat# -> Ptr# r1 Obj -> Ptr# r2 Obj
-  writeArray        : [r1 r2 : Region]. Ptr# r1 Obj -> Nat# -> Ptr# r2 Obj -> Void#
-  readArray         : [r1 r2 : Region]. Ptr# r1 Obj -> Nat# -> Ptr# r2 Obj
-  fillArray         : [r1 r2 : Region]. [a : Data]
-                    . Ptr# r1 Obj -> Nat# -> Nat# -> Ptr# r2 Obj -> Ptr# r1 Obj
+ allocArray     : [r1 r2 : Region]. Nat# -> Ptr# r1 Obj -> Ptr# r2 Obj
+ writeArray     : [r1 r2 : Region]. Ptr# r1 Obj -> Nat# -> Ptr# r2 Obj -> Void#
+ readArray      : [r1 r2 : Region]. Ptr# r1 Obj -> Nat# -> Ptr# r2 Obj
+ fillArray      : [r1 r2 : Region]. Ptr# r1 Obj -> Nat# -> Nat# -> Ptr# r2 Obj -> Ptr# r1 Obj
 
-  -- Blocks of memory with a header word but uninterpreted payload.
-  allocBlock        : [r : Region]. [a : Data]. Nat# -> Ptr# r Obj
-  payloadOfBlock    : [r : Region]. Ptr# r Obj -> Ptr# r Word8#
+ -- Thunk application.
+ apply0         :  [r0 r1 : Region]
+                .  Ptr# r0 Obj -> Ptr# r1 Obj
+
+ apply1         :  [r0 r1 r2 : Region]
+                .  Ptr# r0 Obj -> Ptr# r1 Obj -> Ptr# r2 Obj
+
+ apply2         :  [r0 r1 r2 r3 : Region]
+                .  Ptr# r0 Obj -> Ptr# r1 Obj -> Ptr# r2 Obj -> Ptr# r3 Obj
+
+ apply3         :  [r0 r1 r2 r3 r4 : Region]
+                .  Ptr# r0 Obj -> Ptr# r1 Obj -> Ptr# r2 Obj -> Ptr# r3 Obj 
+                -> Ptr# r4 Obj
+
+ apply4         :  [r0 r1 r2 r3 r4 r5 : Region]
+                .  Ptr# r0 Obj -> Ptr# r1 Obj -> Ptr# r2 Obj -> Ptr# r3 Obj 
+                -> Ptr# r4 Obj -> Ptr# r5 Obj
 
 with letrec
 
@@ -170,7 +191,7 @@ getTag [r : Region] (obj : Ptr# r Obj) : Tag#
 --       Obj*      payload[];     // Pointers to available arguments.
 --   } Thunk;
 --
-allocThunk [r : Region] (fun : Addr#) 
+allocThunk [r : Region] (fun   : Addr#) 
         (params : Nat#) (boxes : Nat#) 
         (args   : Nat#) (runs  : Nat#)
         : Ptr# r Obj
@@ -224,96 +245,8 @@ allocThunk_ok [r  : Region] (fun : Addr#)
         makePtr# addr
 
 
--- | Set one of the pointers in a thunk.
---   The value is just a plain Addr# because we don't know what region the
---   original pointer in the Thunk was pointing to. Also, when setting these
---   pointers for the first time the pointer values in the thunk are undefined.
---   This takes a 'base' and 'offset' parameter separately to allow for easier
---   code generation.
-setFieldOfThunk
-        [r : Region] 
-        (obj : Ptr# r Obj) (base : Nat#) (offset : Nat#) (val : Addr#) : Void#
- =      write# (takePtr# obj)
-               (add# 16# (shl# (add# base offset) (size2# [Addr#])))
-               val
-
-
--- | Get the function pointer from a thunk.
-funOfThunk       [r : Region] (obj : Ptr# r Obj) : Addr#
- =      read#    [Addr#] (takePtr# obj) 8#
-
-
--- | Get the function pointer from a thunk.
---   We really want an Any region here, instead of having to cast this to 
---   and Addr# when we don't know what region the thunk is in.
-funOfThunkA      [r : Region] (obj : Addr#) : Addr#
- =      read#   [Addr#] obj 8#
-
-
--- | Get the arity of the function in a thunk.
-paramsOfThunk     [r : Region] (obj : Ptr# r Obj) : Nat#
- =      promote# (read# [Word8#] (takePtr# obj) 4#)
-
-
--- | Get the arity of the function in a thunk.
-paramsOfThunkA    [r : Region] (obj : Addr#) : Nat#
- =      promote# (read# [Word8#] obj 4#)
-
-
--- | Get the count of available arguments in a thunk.
-boxesOfThunk    [r : Region] (obj : Ptr# r Obj) : Nat#
- =      promote# (read# [Word8#] (takePtr# obj) 5#)
-
-
--- | Get the count of available arguments in a thunk.
-argsOfThunk    [r : Region] (obj : Ptr# r Obj) : Nat#
- =      promote# (read# [Word8#] (takePtr# obj) 6#)
-
-
--- | Get the count of available arguments in a thunk.
-runsOfThunk    [r : Region] (obj : Ptr# r Obj) : Nat#
- =      promote# (read# [Word8#] (takePtr# obj) 7#)
-
-
--- | Get one of the arguments from a thunk.
-fieldOfThunk    [r1 : Region] (obj : Ptr# r1 Obj) (index : Nat#) : Addr#
- =      read#  (takePtr# obj)
-               (add# 16# (shl# index (size2# [Addr#])))
-
-
--- | Get one of the arguments from a thunk.
-fieldOfThunkA   [r1 : Region] (obj : Addr#) (index : Nat#) : Addr#
- =      read#   obj
-               (add# 16# (shl# index (size2# [Addr#])))
-
-
--- | Copy a thunk while extending the number of available argument slots.
---   This is used when implementing both the curryN# and applyN# core primops.
-extendThunk 
-        [rSrc rDst : Region] 
-        (src : Ptr# rSrc Obj) (more : Nat#) : Ptr# rDst Obj
- = do
-        -- Function pointer and arity of that function.
-        fun     = funOfThunk    src
-        params  = paramsOfThunk src
-        boxes   = boxesOfThunk  src
-
-        -- Available arguments in source and destination.
-        args    = argsOfThunk   src
-        args'   = add# args     more
-
-        -- Number of times the thunk has been run
-        runs    = runsOfThunk src
-
-        -- Allocate a new thunk with the orignal function and arity.
-        dst     = allocThunk [rDst] (funOfThunk src) params boxes args' runs
-
-        -- Copy argument pointers from the source into the new thunk.
-        copyArgsOfThunk src dst 0# args
-
-
 -- | Copy the available arguments from one thunk to another.
-copyArgsOfThunk
+copyThunk
         [rSrc rDst : Region]
         (src   : Ptr# rSrc Obj) (dst : Ptr# rDst Obj) 
         (index : Nat#)          (len : Nat#)
@@ -321,9 +254,122 @@ copyArgsOfThunk
  = case ge# index len of
         True#   -> dst
         False# 
-         -> do  ptr     = fieldOfThunk src index
-                setFieldOfThunk dst 0#  index ptr
-                copyArgsOfThunk src dst (add# index 1#) len
+         -> do  ptr     = getThunk src index
+                setThunk dst 0#  index ptr
+                copyThunk src dst (add# index 1#) len
+
+
+-- | Copy a thunk while extending the number of available argument slots.
+--   This is used when implementing both the curryN# and applyN# core primops.
+extendThunk 
+        [rSrc rDst : Region] 
+        (src : Ptr# rSrc Obj) (more : Nat#) 
+        : Ptr# rDst Obj
+ = do
+        -- Function pointer and arity of that function.
+        fun     = funThunk    src
+        params  = paramsThunk src
+        boxes   = boxesThunk  src
+
+        -- Available arguments in source and destination.
+        args    = argsThunk   src
+        args'   = add# args     more
+
+        -- Number of times the thunk has been run
+        runs    = runsThunk src
+
+        -- Allocate a new thunk with the orignal function and arity.
+        dst     = allocThunk [rDst] (funThunk src) params boxes args' runs
+
+        -- Copy argument pointers from the source into the new thunk.
+        copyThunk src dst 0# args
+
+
+-- | Get the function pointer from a thunk.
+funThunk        [r : Region] (obj : Ptr# r Obj) : Addr#
+ =      read#    [Addr#] (takePtr# obj) 8#
+
+
+-- | Get the arity of the function in a thunk.
+paramsThunk     [r : Region] (obj : Ptr# r Obj) : Nat#
+ =      promote# (read# [Word8#] (takePtr# obj) 4#)
+
+
+-- | Get the count of available arguments in a thunk.
+boxesThunk      [r : Region] (obj : Ptr# r Obj) : Nat#
+ =      promote# (read# [Word8#] (takePtr# obj) 5#)
+
+
+-- | Get the count of available arguments in a thunk.
+argsThunk       [r : Region] (obj : Ptr# r Obj) : Nat#
+ =      promote# (read# [Word8#] (takePtr# obj) 6#)
+
+
+-- | Get the count of available arguments in a thunk.
+runsThunk       [r : Region] (obj : Ptr# r Obj) : Nat#
+ =      promote# (read# [Word8#] (takePtr# obj) 7#)
+
+
+-- | Set one of the pointers in a thunk.
+--   The value is just a plain Addr# because we don't know what region the
+--   original pointer in the Thunk was pointing to. Also, when setting these
+--   pointers for the first time the pointer values in the thunk are undefined.
+--   This takes a 'base' and 'offset' parameter separately to allow for easier
+--   code generation.
+setThunk
+        [r1 r2 : Region] 
+        (obj   : Ptr# r1 Obj) (base : Nat#) (offset : Nat#) (val : Ptr# r2 Obj) : Void#
+ =      write# (takePtr# obj)
+               (add# 16# (shl# (add# base offset) (size2# [Addr#])))
+               (takePtr# val)
+
+
+-- | Get one of the arguments from a thunk.
+getThunk
+        [r1 r2 : Region]
+        (obj   : Ptr# r1 Obj) (index : Nat#) : Ptr# r2 Obj
+ =      read#  (takePtr# obj)
+               (add# 16# (shl# index (size2# [Addr#])))
+
+
+-- | Like `getThunk`, but convert the result to a raw address.
+getThunkA
+        [r1 : Region]
+        (obj   : Ptr# r1 Obj) (index : Nat#) : Addr#
+ =      read#  (takePtr# obj)
+               (add# 16# (shl# index (size2# [Addr#])))
+
+
+-- | Run a thunk.
+--   If this is the last run the evaluate it, 
+--   otherwise increment the run count.
+--
+--   TODO: finish me. This never actually applies the function.
+--         Also increment box count and check.
+--
+runThunk 
+        [r1 r2 : Region]
+        (src   : Ptr# r1 Obj) : Ptr# r2 Obj
+ = do   
+        boxes   = boxesThunk src
+        case boxes of
+
+         -- The thunk is not boxed,
+         -- so running it would be a type error.
+         0# ->  fail#
+
+         -- We don't know what region the result is going to be allocated
+         -- into, so need to assign it to rT.
+         1# ->  apply0 src
+
+         _ -> do
+                fun     = funThunk    src
+                params  = paramsThunk src
+                args    = argsThunk   src
+                runs'   = add# (runsThunk src) 1#
+
+                dst     = allocThunk [r2] fun params boxes args runs'
+                copyThunk src dst 0# args
 
 
 -- Boxed ----------------------------------------------------------------------
@@ -373,18 +419,18 @@ allocBoxed_ok
 
 
 ---- | Get one of the pointers from a boxed data object.
-getFieldOfBoxed 
-        [r1 : Region] [a : Data]
+getBoxed 
+        [r1 r2 : Region]
         (obj : Ptr# r1 Obj) (index : Nat#) 
-        : a
+        : Ptr# r2 Obj
  =      read#  (takePtr# obj)
                (add# 8# (shl# index (size2# [Addr#])))
 
 
 -- | Set one of the pointers from a boxed data object.
-setFieldOfBoxed 
-        [r1 : Region] [a : Data] 
-        (obj : Ptr# r1 Obj) (index : Nat#) (val : a) : Void#
+setBoxed 
+        [r1 r2 : Region]
+        (obj : Ptr# r1 Obj) (index : Nat#) (val : Ptr# r2 Obj) : Void#
  =      write# (takePtr# obj)
                (add# 8# (shl# index (size2# [Addr#])))
                val
@@ -406,7 +452,8 @@ setFieldOfBoxed
 --
 allocMixed 
         [r : Region]
-        (tag : Tag#) (arity : Nat#) (bytesRaw : Nat#) : Ptr# r Obj
+        (tag : Tag#) (arity : Nat#) (bytesRaw : Nat#) 
+        : Ptr# r Obj
  = do   
         bytesPtrs       = shl# arity 3#
         bytesObj        = add# (size# [Word32#])
@@ -420,7 +467,8 @@ allocMixed
 
 allocMixed_ok
         [r : Region]
-        (tag : Tag#) (arity : Nat#) (bytesObj : Nat#) : Ptr# r Obj
+        (tag : Tag#) (arity : Nat#) (bytesObj : Nat#) 
+        : Ptr# r Obj
  = do
         addr            = alloc# bytesObj
 
@@ -439,16 +487,13 @@ allocMixed_ok
 
 
 -- | Get one of the pointers from a mixed data object.
-fieldOfMixed [r : Region] (obj : Ptr# r Obj) (index : Nat#) : Ptr# r Obj
- = do   
-        offset          = add# 16# 
-                         (shl# index (size2# [Addr#]))
+getMixed [r1 r2 : Region] (obj : Ptr# r1 Obj) (index : Nat#) : Ptr# r2 Obj
+ =      read#   (takePtr# obj)
+                (add# 16# (shl# index (size2# [Addr#])))
 
-        plusPtr# obj offset
-      
 
 -- | Get the address of the raw data payload from a mixed object.
-payloadOfMixed [r : Region] (obj : Ptr# r Obj) : Ptr# r Word8#
+payloadMixed [r : Region] (obj : Ptr# r Obj) : Ptr# r Word8#
  =      plusPtr# (castPtr# obj) 16#
 
 
@@ -492,7 +537,7 @@ allocRaw_ok
 
 
 -- | Get the payload data from a raw object.
-payloadOfRaw [r : Region] (obj : Ptr# r Obj) : Ptr# r Word8#
+payloadRaw [r : Region] (obj : Ptr# r Obj) : Ptr# r Word8#
  =      plusPtr# (castPtr# obj) 8#
 
 
@@ -508,16 +553,16 @@ payloadOfRaw [r : Region] (obj : Ptr# r Obj) : Ptr# r Word8#
 --     uint8_t   payload[];  // Raw data that does not contain heap pointers.
 --   } DataRawSmall;
 --
-allocRawSmall
+allocSmall
         [r : Region] 
         (tag : Tag#) (bytesPayload : Nat#) : Ptr# r Obj
  = do   
         bytesObj        = add# 4# bytesPayload
         case check# bytesObj of
-         True#   -> allocRawSmall_ok tag bytesPayload bytesObj
+         True#   -> allocSmall_ok tag bytesPayload bytesObj
          False#  -> fail#
 
-allocRawSmall_ok
+allocSmall_ok
         [r : Region] 
         (tag : Tag#) (bytesPayload : Nat#) (bytesObj : Nat#) : Ptr# r Obj
  = do   
@@ -535,8 +580,77 @@ allocRawSmall_ok
 
 
 -- | Get the payload data from a raw small object.
-payloadOfRawSmall [r : Region] (obj : Ptr# r Obj) : Ptr# r Word8#
+payloadSmall [r : Region] (obj : Ptr# r Obj) : Ptr# r Word8#
  =      plusPtr# (castPtr# obj) 4#
+
+
+-- Block ----------------------------------------------------------------------
+-- | Allocate a block of memory on the heap.
+--   The object has a header word, but the payload is uninitialized.
+allocBlock
+        [r : Region]
+        (len : Nat#) : Ptr# r Obj
+ =      allocRaw [r] (truncate# 0#) len
+
+
+payloadBlock
+        [r : Region]
+        (chunk : Ptr# r Obj) : Ptr# r Word8#
+ =      payloadRaw chunk
+
+
+-- Ref ------------------------------------------------------------------------
+-- | Allocate a new reference to some boxed value.
+allocRef [r1 r2 : Region] (val : Ptr# r1 Obj) : Ptr# r2 Obj
+ = do   ref     = allocBoxed [r2] (truncate# 0#) 1#
+        setBoxed ref 0# val
+        ref
+
+-- | Write a value into reference.
+writeRef [r1 r2 : Region] (ref : Ptr# r1 Obj) (val : Ptr# r2 Obj) : Void#
+ =      setBoxed ref 0# val
+
+
+-- | Read the value from a reference.
+readRef  [r1 r2 : Region] (ref : Ptr# r1 Obj) : Ptr# r2 Obj
+ =      getBoxed ref 0#
+
+
+-- Array ----------------------------------------------------------------------
+-- | Allocate an array of boxed values, consisting of the same element
+--   for all positions.
+allocArray 
+        [r1 r2 : Region]
+        (len : Nat#) (val : Ptr# r1 Obj) : Ptr# r2 Obj
+ = do   arr     = allocBoxed [r2] (truncate# 0#) len
+        fillArray arr 0# len val
+        arr
+
+
+-- | Write an element into an array.
+writeArray 
+        [r1 r2 : Region] 
+        (arr : Ptr# r1 Obj) (ix : Nat#) (val : Ptr# r2 Obj) : Void#
+ =      setBoxed arr ix val
+
+
+-- | Read an element from an array.
+readArray 
+        [r1 r2 : Region]
+        (arr : Ptr# r1 Obj) (ix : Nat#) : Ptr# r2 Obj
+ =      getBoxed arr ix
+
+
+-- | Fill all elements of an array with the same value.
+fillArray
+        [r1 r2 : Region]
+        (arr : Ptr# r1 Obj) (start end : Nat#) (val : Ptr# r2 Obj) : Ptr# r1 Obj
+
+ = case ge# start end of
+        True#   -> arr
+        False#  -> do
+                setBoxed arr start val
+                fillArray arr (add# start 1#) end val
 
 
 -- Apply -----------------------------------------------------------------------
@@ -557,221 +671,248 @@ payloadOfRawSmall [r : Region] (obj : Ptr# r Obj) : Ptr# r Word8#
 
 ----------------------------------------------------------- 0
 -- | Apply (evaluate) a thunk, given no more arguments.
-apply0   (t : Addr#) : Addr#
+apply0  [r0 r1 : Region]
+        (t : Ptr# r0 Obj) : Ptr# r1 Obj
  = do
-        p       = paramsOfThunkA t
-        a       = argsOfThunk    (makePtr# t)
+        p       = paramsThunk t
+        a       = argsThunk   t
         case ge# a p of
          True#  -> eval0 t
-         False# -> t
+         False# -> makePtr# (takePtr# t)
 
 
 -- | Evaluate a saturate thunk, give no more arguments.
-eval0    (t : Addr#) : Addr#
+eval0   [r0 r1 : Region]
+        (t     : Ptr# r0 Obj) : Ptr# r1 Obj
  = do   
-        f       = funOfThunkA    t
-        p       = paramsOfThunkA t
-        a       = argsOfThunk    (makePtr# t)
+        f       = funThunk    t 
+        p       = paramsThunk t
+        a       = argsThunk   t
         case p of
-         0#     -> call0# f
+         0# -> callP0 f
 
-         1#     -> call1# f        (fieldOfThunkA t 0#)
+         1# -> callP1 f         (getThunk t 0#)
 
-         2#     -> call2# f        (fieldOfThunkA t 0#) (fieldOfThunkA t 1#)
+         2# -> callP2 f         (getThunk t 0#) (getThunk t 1#)
 
-         3#     -> call3# f        (fieldOfThunkA t 0#) (fieldOfThunkA t 1#) 
-                                   (fieldOfThunkA t 2#) 
+         3# -> callP3 f         (getThunk t 0#) (getThunk t 1#) 
+                                (getThunk t 2#) 
 
-         4#     -> call4# f        (fieldOfThunkA t 0#) (fieldOfThunkA t 1#) 
-                                   (fieldOfThunkA t 2#) (fieldOfThunkA t 3#)
+         4# -> callP4 f         (getThunk t 0#) (getThunk t 1#) 
+                                (getThunk t 2#) (getThunk t 3#)
 
-         _      -> evalZ  t f p    (fieldOfThunkA t (sub# a 4#))
-                                   (fieldOfThunkA t (sub# a 3#))
-                                   (fieldOfThunkA t (sub# a 2#))
-                                   (fieldOfThunkA t (sub# a 1#))
+         _  -> evalZ t f p      (getThunk t (sub# a 4#))
+                                (getThunk t (sub# a 3#))
+                                (getThunk t (sub# a 2#))
+                                (getThunk t (sub# a 1#))
 
 
 ----------------------------------------------------------- 1
 -- | Apply a thunk to one more argument.
-apply1   (t : Addr#) (arg0 : Addr#) : Addr#
+apply1  [r0 r1 r2 : Region] 
+        (t : Ptr# r0 Obj) (arg1 : Ptr# r1 Obj)
+        : Ptr# r2 Obj
  = do
-        p       = paramsOfThunkA t
-        a       = argsOfThunk    (makePtr# t)
+        p       = paramsThunk t
+        a       = argsThunk   t
         case ge# (add# a 1#) p of { True# ->
-                eval1 t arg0;
+                eval1 t arg1;
 
         False#  ->
-        do      t' = extendThunk (makePtr# t) 1#
-                setFieldOfThunk t' a 0# arg0
-                takePtr# t'
+        do      t' = extendThunk t 1#
+                setThunk t' a 0# arg1
+                t'
         }
 
 -- | Evaluate a saturated thunk, given one more argument.
-eval1    (t : Addr#) (arg0 : Addr#) : Addr#
+eval1   [r0 r1 r2 : Region] 
+        (t : Ptr# r0 Obj) (arg1 : Ptr# r1 Obj) 
+        : Ptr# r2 Obj
  = do   
-        f       = funOfThunkA    t
-        p       = paramsOfThunkA t
-        a       = argsOfThunk    (makePtr# t)
+        f       = funThunk    t
+        p       = paramsThunk t
+        a       = argsThunk   t
         case p of
-         0#     -> apply1 (call0# f) arg0
+         0# -> apply1 (callP0 f)  arg1
 
-         1#     -> call1# f          arg0
+         1# -> callP1 f           arg1
 
-         2#     -> call2# f         (fieldOfThunkA t 0#)
-                                     arg0
+         2# -> callP2 f          (getThunk t 0#)  arg1
 
-         3#     -> call3# f         (fieldOfThunkA t 0#) (fieldOfThunkA t 1#) 
-                                     arg0
+         3# -> callP3 f          (getThunk t 0#) (getThunk t 1#) 
+                                  arg1
 
-         4#     -> call4# f         (fieldOfThunkA t 0#) (fieldOfThunkA t 1#)
-                                    (fieldOfThunkA t 2#)  arg0
+         4# -> callP4 f          (getThunk t 0#) (getThunk t 1#)
+                                 (getThunk t 2#)  arg1
 
-         _      -> evalZ  t f p     (fieldOfThunkA t (sub# a 3#))
-                                    (fieldOfThunkA t (sub# a 2#))
-                                    (fieldOfThunkA t (sub# a 1#))
-                                     arg0
+         _  -> evalZ t f p       (getThunk t (sub# a 3#))
+                                 (getThunk t (sub# a 2#))
+                                 (getThunk t (sub# a 1#))
+                                  arg1
 
 
 ----------------------------------------------------------- 2
-apply2 (t : Addr#) (arg0 arg1 : Addr#) : Addr#
+apply2  [r0 r1 r2 r3 : Region]
+        (t    : Ptr# r0 Obj) 
+        (arg1 : Ptr# r1 Obj) (arg2 : Ptr# r2 Obj)
+        : Ptr# r3 Obj
  = do   
-        p       = paramsOfThunkA t
-        a       = argsOfThunk    (makePtr# t)
+        p       = paramsThunk t
+        a       = argsThunk   t
         case ge# (add# a 2#) p of { True# ->
-                eval2 t arg0 arg1;  
+                eval2 t arg1 arg2;  
 
         False# -> 
         case ge# (add# a 1#) p of { True# ->
-                apply1 (eval1 t arg0) arg1;
+                apply1 (eval1 t arg1) arg2;
 
         False# ->
-        do      t' = extendThunk (makePtr# t) 2#
-                setFieldOfThunk t' a 0# arg0
-                setFieldOfThunk t' a 1# arg1
-                takePtr# t'
+        do      t' = extendThunk t 2#
+                setThunk t' a 0# arg1
+                setThunk t' a 1# arg2
+                t'
         }}
 
 
 -- | Evaluate a saturated thunk, given two more arguments.
-eval2  (t : Addr#) (arg0 arg1 : Addr#) : Addr#
+eval2   [r0 r1 r2 r3 : Region]
+        (t    : Ptr# r0 Obj)
+        (arg1 : Ptr# r1 Obj) (arg2 : Ptr# r2 Obj)
+        : Ptr# r3 Obj
  = do   
-        f       = funOfThunkA   t
-        p       = paramsOfThunkA t
-        a       = argsOfThunk    (makePtr# t)
+        f       = funThunk      t
+        p       = paramsThunk   t
+        a       = argsThunk     t
         case p of
-         0#     -> apply2 (call0# f) arg0  arg1
+         0# -> apply2 (callP0 f)  arg1  arg2
 
-         1#     -> apply1 (call1# f  arg0) arg1
+         1# -> apply1 (callP1 f   arg1) arg2
 
-         2#     -> call2# f         arg0  arg1
+         2# -> callP2 f           arg1  arg2
 
-         3#     -> call3# f        (fieldOfThunkA t 0#)
-                                    arg0  arg1
+         3# -> callP3 f          (getThunk t 0#)  
+                                  arg1  arg2
 
-         4#     -> call4# f        (fieldOfThunkA t 0#) (fieldOfThunkA t 1#)
-                                    arg0  arg1
+         4# -> callP4 f          (getThunk t 0#) (getThunk t 1#)
+                                  arg1  arg2
 
-         _      -> evalZ  t f p    (fieldOfThunkA t (sub# a 2#))
-                                   (fieldOfThunkA t (sub# a 1#))
-                                    arg0  arg1
+         _  -> evalZ  t f p      (getThunk t (sub# a 2#))
+                                 (getThunk t (sub# a 1#))
+                                  arg1  arg2
 
 
 ----------------------------------------------------------- 3
 -- | Apply a thunk to three more arguments.
-apply3   (t : Addr#) (arg0 arg1 arg2 : Addr#) : Addr#
+apply3  [r0 r1 r2 r3 r4 : Region] 
+        (t    : Ptr# r0 Obj)
+        (arg1 : Ptr# r1 Obj) (arg2 : Ptr# r2 Obj)
+        (arg3 : Ptr# r3 Obj)
+        : Ptr# r4 Obj
  = do
-        p       = paramsOfThunkA t
-        a       = argsOfThunk (makePtr# t)
+        p       = paramsThunk t
+        a       = argsThunk   t
         case ge# (add# a 3#) p of { True# ->
-                eval3 t arg0 arg1 arg2;
+                eval3 t arg1 arg2 arg3;
 
         False# ->
         case ge# (add# a 2#) p of { True# ->
-                apply1 (eval2 t arg0  arg1) arg2;
+                apply1 (eval2 t arg1  arg2) arg3;
 
         False# ->
         case ge# (add# a 1#) p of { True# ->
-                apply2 (eval1 t arg0) arg1  arg2;
+                apply2 (eval1 t arg1) arg2  arg3;
 
         False# ->
-        do      t' = extendThunk (makePtr# t) 3#
-                setFieldOfThunk t' a 0# arg0
-                setFieldOfThunk t' a 1# arg1
-                setFieldOfThunk t' a 2# arg2
-                takePtr# t'
+        do      t' = extendThunk t 3#
+                setThunk t' a 0# arg1
+                setThunk t' a 1# arg2
+                setThunk t' a 2# arg3
+                t'
         }}}
 
 
 -- | Evaluate a saturated thunk, given three more arguments.
-eval3    (t : Addr#) (arg0 arg1 arg2 : Addr#) : Addr#
+eval3   [r0 r1 r2 r3 r4 : Region]
+        (t    : Ptr# r0 Obj)
+        (arg1 : Ptr# r1 Obj) (arg2 : Ptr# r2 Obj)
+        (arg3 : Ptr# r3 Obj)
+        : Ptr# r4 Obj
  = do   
-        f       = funOfThunkA    t
-        p       = paramsOfThunkA t
-        a       = argsOfThunk   (makePtr# t)
+        f       = funThunk    t
+        p       = paramsThunk t
+        a       = argsThunk   t
         case p of
-         0#     -> apply3 (call0# f) arg0  arg1  arg2
+         0# -> apply3 (callP0 f) arg1  arg2  arg3
 
-         1#     -> apply2 (call1# f  arg0) arg1  arg2
+         1# -> apply2 (callP1 f  arg1) arg2  arg3
 
-         2#     -> apply1 (call2# f  arg0  arg1) arg2
+         2# -> apply1 (callP2 f  arg1  arg2) arg3
 
-         3#     -> call3# f          arg0  arg1  arg2
+         3# -> callP3 f          arg1  arg2  arg3
 
-         4#     -> call4# f         (fieldOfThunkA t 0#)
-                                     arg0  arg1  arg2
+         4# -> callP4 f          (getThunk t 0#) 
+                                 arg1  arg2  arg3
 
-         _      -> evalZ  t f p     (fieldOfThunkA t (sub# a 1#))
-                                     arg0  arg1  arg2
+         _  -> evalZ  t f p      (getThunk t (sub# a 1#))
+                                 arg1  arg2  arg3
 
 
 ----------------------------------------------------------- 4
 -- | Apply a thunk to four more arguments.
-apply4   (t : Addr#) (arg0 arg1 arg2 arg3 : Addr#) : Addr#
+apply4  [r0 r1 r2 r3 r4 r5 : Region]
+        (t    : Ptr# r0 Obj)
+        (arg1 : Ptr# r1 Obj) (arg2 : Ptr# r2 Obj)
+        (arg3 : Ptr# r3 Obj) (arg4 : Ptr# r4 Obj) 
+        : Ptr# r5 Obj
  = do
-        p       = paramsOfThunkA t
-        a       = argsOfThunk (makePtr# t)
+        p       = paramsThunk t
+        a       = argsThunk   t
         case ge# (add# a 4#) p of { True# ->
-                eval4 t arg0 arg1 arg2 arg3;
+                eval4 t arg1 arg2 arg3 arg4;
 
         False# ->
         case ge# (add# a 3#) p of { True# ->
-                apply1 (eval3 t arg0  arg1  arg2) arg3;
+                apply1 (eval3 t arg1  arg2  arg3) arg4;
 
         False# ->
         case ge# (add# a 2#) p of { True# ->
-                apply2 (eval2 t arg0  arg1) arg2  arg3;
+                apply2 (eval2 t arg1  arg2) arg3  arg4;
 
         False# ->
         case ge# (add# a 1#) p of { True# ->
-                apply3 (eval1 t arg0) arg1  arg2  arg3;
+                apply3 (eval1 t arg1) arg2  arg3  arg4;
 
         False# ->
-        do      t' = extendThunk (makePtr# t) 4#
-                setFieldOfThunk t' a 0# arg0
-                setFieldOfThunk t' a 1# arg1
-                setFieldOfThunk t' a 2# arg2
-                setFieldOfThunk t' a 3# arg3
-                takePtr# t'
+        do      t' = extendThunk t 4#
+                setThunk t' a 0# arg1
+                setThunk t' a 1# arg2
+                setThunk t' a 2# arg3
+                setThunk t' a 3# arg4
+                t'
         }}}}
 
 
 -- | Evaluate a saturated thunk, given four more arguments.
-eval4   (t : Addr#) (arg0 arg1 arg2 arg3 : Addr#) : Addr#
+eval4   [r0 r1 r2 r3 r4 r5 : Region]
+        (t    : Ptr# r0 Obj)
+        (arg1 : Ptr# r1 Obj) (arg2 : Ptr# r2 Obj)
+        (arg3 : Ptr# r3 Obj) (arg4 : Ptr# r4 Obj)
+        : Ptr# r5 Obj
  = do   
-        f       = funOfThunkA   t
-        p       = paramsOfThunkA t
+        f       = funThunk    t
+        p       = paramsThunk t
         case p of
-         0#     -> apply4 (call0# f) arg0  arg1  arg2  arg3
+         0# -> apply4 (callP0 f) arg1  arg2  arg3  arg4
 
-         1#     -> apply3 (call1# f  arg0) arg1  arg2  arg3
+         1# -> apply3 (callP1 f  arg1) arg2  arg3  arg4
 
-         2#     -> apply2 (call2# f  arg0  arg1) arg2  arg3
+         2# -> apply2 (callP2 f  arg1  arg2) arg3  arg4
 
-         3#     -> apply1 (call3# f  arg0  arg1  arg2) arg3
+         3# -> apply1 (callP3 f  arg1  arg2  arg3) arg4
 
-         4#     -> call4# f          arg0  arg1  arg2  arg3
+         4# -> callP4 f          arg1  arg2  arg3  arg4
 
-         _      -> evalZ  t f p      arg0  arg1  arg2  arg3
+         _  -> evalZ  t f p      arg1  arg2  arg3  arg4
 
 
 ----------------------------------------------------------- Z
@@ -794,118 +935,94 @@ eval4   (t : Addr#) (arg0 arg1 arg2 arg3 : Addr#) : Addr#
 -- If the machine has 16 general purpose registers, then setting the maximum
 -- arity here to 12 is probably enough.
 --
-evalZ  [r : Region]
-        (t : Addr#) (fun : Addr#) (arity : Nat#)
-        (argL3 argL2 argL1 argL0 : Addr#) 
-        : Addr#
+evalZ   [r0 r1 r2 r3 r4 r5 : Region]
+        (t : Ptr# r0 Obj) (fun : Addr#) (arity : Nat#)
+        (argL3 : Ptr# r1 Obj) (argL2 : Ptr# r2 Obj)
+        (argL1 : Ptr# r3 Obj) (argL0 : Ptr# r4 Obj)
+        : Ptr# r5 Obj
 
- = case arity of
-         4#     -> call4# fun   argL3 argL2 argL1 argL0
+ = do   argA3   = takePtr# argL3
+        argA2   = takePtr# argL2
+        argA1   = takePtr# argL1
+        argA0   = takePtr# argL0
 
-         5#     -> call5# fun   (fieldOfThunkA t 0#) 
-                                argL3 argL2 argL1 argL0
+        case arity of
+         4#  -> makePtr# (call4#  fun
+                                argA3 argA2 argA1 argA0)
 
-         6#     -> call6# fun   (fieldOfThunkA t 0#) (fieldOfThunkA t 1#)
-                                argL3 argL2 argL1 argL0
+         5#  -> makePtr# (call5#  fun
+                                (getThunkA t 0#) 
+                                argA3 argA2 argA1 argA0)
 
-         7#     -> call7# fun   (fieldOfThunkA t 0#) (fieldOfThunkA t 1#)
-                                (fieldOfThunkA t 2#)
-                                argL3 argL2 argL1 argL0
+         6#  -> makePtr# (call6#  fun
+                                (getThunkA t 0#) (getThunkA t 1#)
+                                argA3 argA2 argA1 argA0)
 
-         8#     -> call8# fun   (fieldOfThunkA t 0#) (fieldOfThunkA t 1#)
-                                (fieldOfThunkA t 2#) (fieldOfThunkA t 3#)
-                                argL3 argL2 argL1 argL0
+         7#  -> makePtr# (call7#  fun
+                                (getThunkA t 0#) (getThunkA t 1#)
+                                (getThunkA t 2#)
+                                argA3 argA2 argA1 argA0)
 
-         9#     -> call9# fun   (fieldOfThunkA t 0#) (fieldOfThunkA t 1#)
-                                (fieldOfThunkA t 2#) (fieldOfThunkA t 3#)
-                                (fieldOfThunkA t 4#)
-                                argL3 argL2 argL1 argL0
+         8#  -> makePtr# (call8#  fun
+                                (getThunkA t 0#) (getThunkA t 1#)
+                                (getThunkA t 2#) (getThunkA t 3#)
+                                argA3 argA2 argA1 argA0)
 
-         10#    -> call10# fun  (fieldOfThunkA t 0#) (fieldOfThunkA t 1#)
-                                (fieldOfThunkA t 2#) (fieldOfThunkA t 3#)
-                                (fieldOfThunkA t 4#) (fieldOfThunkA t 5#)
-                                argL3 argL2 argL1 argL0
+         9#  -> makePtr# (call9#  fun
+                                (getThunkA t 0#) (getThunkA t 1#)
+                                (getThunkA t 2#) (getThunkA t 3#)
+                                (getThunkA t 4#)
+                                argA3 argA2 argA1 argA0)
 
-         11#    -> call11# fun  (fieldOfThunkA t 0#) (fieldOfThunkA t 1#)
-                                (fieldOfThunkA t 2#) (fieldOfThunkA t 3#)
-                                (fieldOfThunkA t 4#) (fieldOfThunkA t 5#)
-                                (fieldOfThunkA t 6#)
-                                argL3 argL2 argL1 argL0
+         10# -> makePtr# (call10# fun
+                                (getThunkA t 0#) (getThunkA t 1#)
+                                (getThunkA t 2#) (getThunkA t 3#)
+                                (getThunkA t 4#) (getThunkA t 5#)
+                                argA3 argA2 argA1 argA0)
 
-         12#    -> call12# fun  (fieldOfThunkA t 0#) (fieldOfThunkA t 1#)
-                                (fieldOfThunkA t 2#) (fieldOfThunkA t 3#)
-                                (fieldOfThunkA t 4#) (fieldOfThunkA t 5#)
-                                (fieldOfThunkA t 6#) (fieldOfThunkA t 7#)
-                                argL3 argL2 argL1 argL0
+         11# -> makePtr# (call11# fun
+                                (getThunkA t 0#) (getThunkA t 1#)
+                                (getThunkA t 2#) (getThunkA t 3#)
+                                (getThunkA t 4#) (getThunkA t 5#)
+                                (getThunkA t 6#)
+                                argA3 argA2 argA1 argA0)
 
-         _      -> fail#
+         12# -> makePtr# (call12# fun    
+                                (getThunkA t 0#) (getThunkA t 1#)
+                                (getThunkA t 2#) (getThunkA t 3#)
+                                (getThunkA t 4#) (getThunkA t 5#)
+                                (getThunkA t 6#) (getThunkA t 7#)
+                                argA3 argA2 argA1 argA0)
 
-
--- Ref ------------------------------------------------------------------------
--- | Allocate a new reference to some boxed value.
-allocRef [r1 r2 : Region] (val : Ptr# r2 Obj) : Ptr# r1 Obj
- = do   ref     = allocBoxed [r1] (truncate# 0#) 1#
-        setFieldOfBoxed ref 0# val
-        ref
-
-
--- | Write a value into reference.
-writeRef [r1 r2 : Region] (ref : Ptr# r1 Obj) (val : Ptr# r2 Obj) : Void#
- =      setFieldOfBoxed ref 0# val
-
-
--- | Read the value from a reference.
-readRef  [r1 r2 : Region] (ref : Ptr# r1 Obj) : Ptr# r2 Obj
- =      getFieldOfBoxed ref 0#
+         _   -> fail#
 
 
--- Array ----------------------------------------------------------------------
--- | Allocate an array of boxed values, consisting of the same element
---   for all positions.
-allocArray 
-        [r1 r2 : Region] [a : Data]
-        (len : Nat#) (val : Ptr# r1 Obj) : Ptr# r2 Obj
- = do   arr     = allocBoxed [r2] (truncate# 0#) len
-        fillArray arr 0# len val
-        arr
+callP0  [r1 : Region]
+        (f  : Addr#) : Ptr# r1 Obj
+ = makePtr# (call0# f)
 
+callP1  [r1 r2 : Region]
+        (f  : Addr#) 
+        (a1 : Ptr# r1 Obj) 
+        : Ptr# r2 Obj 
+ = makePtr# (call1# f (takePtr# a1))
 
--- | Write an element into an array.
-writeArray 
-        [r1 r2 : Region] 
-        (arr : Ptr# r1 Obj) (ix : Nat#) (val : Ptr# r2 Obj) : Void#
- =      setFieldOfBoxed arr ix val
+callP2  [r1 r2 r3 : Region]
+        (f  : Addr#) 
+        (a1 : Ptr# r1 Obj) (a2 : Ptr# r2 Obj)
+        : Ptr# r3 Obj 
+ = makePtr# (call2# f (takePtr# a1) (takePtr# a2))
 
+callP3  [r1 r2 r3 r4 : Region]
+        (f  : Addr#) 
+        (a1 : Ptr# r1 Obj) (a2 : Ptr# r2 Obj) (a3 : Ptr# r3 Obj)
+        : Ptr# r4 Obj 
+ = makePtr# (call3# f (takePtr# a1) (takePtr# a2) (takePtr# a3))
 
--- | Read an element from an array.
-readArray 
-        [r1 r2 : Region]
-        (arr : Ptr# r1 Obj) (ix : Nat#) : Ptr# r2 Obj
- =      getFieldOfBoxed arr ix
+callP4  [r1 r2 r3 r4 r5 : Region]
+        (f  : Addr#) 
+        (a1 : Ptr# r1 Obj) (a2 : Ptr# r2 Obj) (a3 : Ptr# r3 Obj) (a4 : Ptr# r4 Obj)
+        : Ptr# r5 Obj 
+ = makePtr# (call4# f (takePtr# a1) (takePtr# a2) (takePtr# a3) (takePtr# a4))
 
-
--- | Fill all elements of an array with the same value.
-fillArray
-        [r1 r2 : Region] [a : Data]
-        (arr : Ptr# r1 Obj) (start end : Nat#) (val : Ptr# r2 Obj) : Ptr# r1 Obj
- = case ge# start end of
-        True#   -> arr
-        False#  -> do
-                setFieldOfBoxed arr start val
-                fillArray arr (add# start 1#) end val
-
-
--- Block ----------------------------------------------------------------------
--- | Allocate a block of memory on the heap.
---   The object has a header word, but the payload is uninitialized.
-allocBlock
-        [r : Region] [a : Data] 
-        (len : Nat#) : Ptr# r Obj
- =      allocRaw [r] (truncate# 0#) len
-
-
-payloadOfBlock
-        [r : Region]
-        (chunk : Ptr# r Obj) : Ptr# r Word8#
- =      payloadOfRaw chunk
 

@@ -48,8 +48,7 @@ convertLets ctx lts
          , length tsArgs > 0
          , length xsArgs == length tsArgs
          , XVar _ (UName nSuper)     <- xF
-         ,   Map.member nSuper (contextSupers  ctx)
-          || Map.member nSuper (contextImports ctx)
+         , Map.member nSuper (contextCallable ctx)
          ->     return  ( Nothing
                         , ctx { contextSuperBinds
                                  = Map.insert nBind (nSuper, atsArgs) (contextSuperBinds ctx) })

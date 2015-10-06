@@ -2,6 +2,7 @@
 module DDC.Core.Tetra.Convert.Exp
         (convertExp)
 where
+import DDC.Core.Tetra.Convert.Callable
 import DDC.Core.Tetra.Convert.Exp.Arg
 import DDC.Core.Tetra.Convert.Exp.Ctor
 import DDC.Core.Tetra.Convert.Exp.PrimCall
@@ -14,20 +15,22 @@ import DDC.Core.Tetra.Convert.Error
 import DDC.Core.Compounds
 import DDC.Core.Predicates
 import DDC.Core.Exp
-import DDC.Core.Check                    (AnTEC(..))
-import qualified DDC.Core.Tetra.Prim     as E
-import qualified DDC.Core.Salt.Runtime   as A
-import qualified DDC.Core.Salt.Name      as A
+import DDC.Core.Check                   (AnTEC(..))
+import qualified DDC.Core.Tetra.Prim    as E
+import qualified DDC.Core.Salt.Runtime  as A
+import qualified DDC.Core.Salt.Name     as A
 
 import DDC.Type.Universe
 import DDC.Type.DataDef
+import DDC.Base.Pretty
+import Text.Show.Pretty
 import Control.Monad
 import Data.Maybe
-import DDC.Base.Pretty
 import DDC.Control.Monad.Check           (throw)
 import qualified Data.Map                as Map
 
 
+---------------------------------------------------------------------------------------------------
 -- | Convert the body of a supercombinator to Salt.
 convertExp 
         :: Show a 
@@ -42,7 +45,6 @@ convertExp ectx ctx xx
        convertX     = contextConvertExp  ctx
        convertA     = contextConvertAlt  ctx
        convertLts   = contextConvertLets ctx
-       downArgX     = convertX           ExpArg ctx 
        downCtorApp  = convertCtorApp     ctx
    in case xx of
 
@@ -70,7 +72,9 @@ convertExp ectx ctx xx
         --   We keep region lambdas but ditch the others. Polymorphic values
         --   are represented in generic boxed form, so we never need to 
         --   build a type abstraction of some other kind.
-        XLAM a b x
+        XLAM _a b x
+
+         {-
          | ExpFun       <- ectx
          , isRegionKind $ typeOfBind b
          -> do  let a'    =  annotTail a
@@ -105,6 +109,11 @@ convertExp ectx ctx xx
          -- Erase higher kinded type lambdas.
          | ExpFun       <- ectx
          , Just _       <- takeKFun $ typeOfBind b
+         -> do  let ctx' = extendKindEnv b ctx
+                convertX ectx ctx' x
+-}
+
+         | ExpFun       <- ectx
          -> do  let ctx' = extendKindEnv b ctx
                 convertX ectx ctx' x
 
@@ -150,8 +159,7 @@ convertExp ectx ctx xx
          , tsArgs       <- [t | XType _ t <- xsArgs]
          , length xsArgs == length tsArgs
          , XVar _ (UName n)     <- xF
-         , not $ Map.member n (contextSupers  ctx)
-         , not $ Map.member n (contextImports ctx)      
+         , not $ Map.member n (contextCallable ctx)
                                                 -- TODO: can bind vals with arity == 0
                                                 --       but not others.
          -> convertX ExpBody ctx xF
@@ -202,29 +210,23 @@ convertExp ectx ctx xx
         -- Saturated application of a top-level supercombinator or imported function.
         --  This does not cover application of primops, those are handled by one 
         --  of the above cases.
+        --
         XApp (AnTEC _t _ _ a') xa xb
          | (x1, xsArgs) <- takeXApps1 xa xb
          
          -- The thing being applied is a named function that is defined
          -- at top-level, or imported directly.
-         , XVar _ (UName n) <- x1
-         ,   Map.member n (contextSupers  ctx)
-          || Map.member n (contextImports ctx)
+         , XVar _ (UName nF) <- x1
+         , Map.member nF (contextCallable ctx)
+         -> convertExpSuperCall xx ectx ctx False a' nF xsArgs
 
-         -- The function is saturated.
-         , length xsArgs == arityOfType (annotType $ annotOfExp x1)
+         | otherwise
+         -> throw $ ErrorUnsupported xx 
+         $  vcat [ text "Cannot convert application."
+                 , text "fun:       " <> ppr xa
+                 , text "args:      " <> ppr xb ]
 
-         -> do  -- Convert the functional part.
-                x1'     <- downArgX x1
 
-                -- Convert the arguments.
-                -- Effect type and witness arguments are discarded here.
-                xsArgs' <- liftM catMaybes 
-                        $  mapM (convertOrDiscardSuperArgX xx ctx) xsArgs
-                        
-                return  $ xApps a' x1' xsArgs'
-
-        
         ---------------------------------------------------
         -- let-expressions.
         XLet a lts x2
@@ -313,6 +315,24 @@ convertExp ectx ctx xx
         ---------------------------------------------------
         -- Type casts
         -- TODO: convert stand-alone run and box forms.
+
+        -- Run an application of a top-level super.
+        XCast _ CastRun (XApp (AnTEC _t _ _ a') xa xb)
+         | (x1, xsArgs) <- takeXApps1 xa xb
+         
+         -- The thing being applied is a named function that is defined
+         -- at top-level, or imported directly.
+         , XVar _ (UName nSuper) <- x1
+         , Map.member nSuper (contextCallable ctx)
+         -> convertExpSuperCall xx ectx ctx True a' nSuper xsArgs
+
+        -- Run a suspended computation.
+        -- This isn't a super call, so the argument itself will be represented as a thunk.
+        XCast (AnTEC _ _ _ a') CastRun xArg
+         -> do
+                xArg'   <- convertX ExpArg ctx xArg
+                return  $ A.xRunThunk a' xArg'
+
         XCast _ _ x
          -> convertX (min ectx ExpBody) ctx x
 
@@ -329,7 +349,75 @@ convertExp ectx ctx xx
           -> throw $ ErrorMalformed "Found a naked witness."
 
 
-        -- Expression can't be converted.
-        _ -> throw $ ErrorUnsupported xx 
-           $ text "Unrecognised expression form."
+---------------------------------------------------------------------------------------------------
+--
+-- TODO: if the super has a boxed body then we need to build a thunk here.
+--
+convertExpSuperCall
+        :: Show a 
+        => Exp (AnTEC a E.Name) E.Name
+        -> ExpContext                    -- ^ The surrounding expression context.
+        -> Context a                     -- ^ Types and values in the environment.
+        -> Bool                          -- ^ Whether this is call is directly inside a 'run'
+        ->  a                            -- ^ Annotation from application node.
+        ->  E.Name                       -- ^ Name of super.
+        -> [Exp (AnTEC a E.Name) E.Name] -- ^ Arguments to super.
+        -> ConvertM a (Exp a A.Name)
+
+convertExpSuperCall xx _ectx ctx isRun a nFun xsArgs
+
+ -- EITHER Saturated super call where call site is running the result, 
+ --        and the super itself directly produces a boxed computation.
+ --   OR   Saturated super call where the call site is NOT running the result,
+ --        and the super itself does NOT directly produce a boxed computation.
+ --
+ -- In both these cases we can just call the Salt-level super directly.
+ -- 
+ | Just (arityVal, boxings)
+    <- case Map.lookup nFun (contextCallable ctx) of
+        Just (CallableSuperLocal _ arityVal boxings) 
+           -> Just (arityVal, boxings)
+
+        Just (CallableSuperOther _ arityVal boxings)
+           -> Just (arityVal, boxings)
+
+        Just (CallableImportSea  _ arityVal boxed)
+           -> Just (arityVal, if boxed then 1 else 0)
+        _  -> Nothing
+
+ -- super call is saturated.
+ , xsArgsVal        <- filter (not . isXType) xsArgs
+ , length xsArgsVal == arityVal
+
+ -- no run/box to get in the way.
+ ,   ( isRun      && boxings == 1)
+  || ((not isRun) && boxings == 0)
+ = do   
+        -- Convert the functional part.
+        uF      <- convertValueU (UName nFun)
+
+        -- Convert the arguments.
+        -- Effect type and witness arguments are discarded here.
+        xsArgs' <- liftM catMaybes 
+                $  mapM (convertOrDiscardSuperArgX xx ctx) xsArgs
+                        
+        return  $ xApps a (XVar a uF) xsArgs'
+
+
+ -- We can't make the call,
+ -- so emit some debugging info.
+ | otherwise
+ = throw $ ErrorUnsupported xx
+ $ vcat [ text "Cannot convert application."
+        , text "xx:        " <> ppr xx
+        , text "fun:       " <> ppr nFun
+        , text "args:      " <> ppr xsArgs
+
+        , (text "data args: ")
+                <> text (show $ superDataArity ctx (UName nFun))
+                <> text "/"
+                <> text (show $ length xsArgs)
+
+        , text "callables: " <> text (ppShow $ contextCallable  ctx)
+        ]
 

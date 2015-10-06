@@ -123,8 +123,10 @@ convertSuperT ctx tt
  = case tt of
         -- We pass exising quantifiers of Region variables to the Salt language,
         -- and convert quantifiers of data types to the punned name of
-        -- their top-level region.s
+        -- their top-level region.
         TForall b t     
+
+{-       This doesn't work with run/box
          | isRegionKind (typeOfBind b)
          -> do  let ctx' = extendKindEnv b ctx
                 b'      <- convertTypeB  b
@@ -139,7 +141,7 @@ convertSuperT ctx tt
                 let ctx' = extendKindEnv b ctx
                 t'      <- convertSuperT ctx' t
                 return  $ TForall b' t'
-
+-}
          |  otherwise
          -> do  let ctx' = extendKindEnv b ctx
                 convertSuperT ctx' t
@@ -166,7 +168,8 @@ convertValueT :: Context -> Type E.Name -> ConvertM a (Type A.Name)
 convertValueT ctx tt
  = case tt of
         -- Convert value type variables and constructors.
-        TVar u
+        TVar _  -> return $ A.tPtr A.rTop A.tObj
+{-
          -> case Env.lookup u (contextKindEnv ctx) of
              Just k
               -- Parametric data types are represented as generic objects,   
@@ -184,7 +187,7 @@ convertValueT ctx tt
 
              Nothing 
               -> throw $ ErrorInvalidBound u
-
+-}
         -- We should not find any polymorphic values.
         TForall{} -> throw $ ErrorMalformed
                            $ "Invalid polymorphic value type."
@@ -270,7 +273,8 @@ convertValueAppT ctx tt
         =       return  $ A.tPtr A.rTop A.tObj
 
         -- Boxed strings.
-        | Just (E.NameTyConTetra E.TyConTetraString, [])  <- takePrimTyConApps tt
+        | Just (E.NameTyConTetra E.TyConTetraString, [])
+                <- takePrimTyConApps tt
         =      return   $ A.tPtr A.rTop A.tObj
 
 
@@ -495,7 +499,7 @@ convertDaConNameM dc nn
 --     Nat#       => ** NOTHING **
 --     U# Nat#    => ** NOTHING **
 --
-saltPrimeRegionOfDataType                                                       -- TODO: is this used?
+saltPrimeRegionOfDataType
         :: KindEnv E.Name 
         -> Type E.Name 
         -> ConvertM a (Type A.Name)
@@ -521,10 +525,17 @@ saltPrimeRegionOfDataType kenv tt
         | TVar u        <- tt
         , Just k        <- Env.lookup u kenv
         , isDataKind k
+        = do    return  A.rTop
+
+{-      -- TODO: Putting these in separate regions doesn't work with box/run.
+        | TVar u        <- tt
+        , Just k        <- Env.lookup u kenv
+        , isDataKind k
         , UName (E.NameVar str) <- u
         , str'          <- str ++ "$r"
         , u'            <- UName (A.NameVar str')
         = do    return  $ TVar u'
+-}
 
         | otherwise
         = throw $ ErrorMalformed       

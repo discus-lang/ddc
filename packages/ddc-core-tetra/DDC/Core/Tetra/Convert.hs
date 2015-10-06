@@ -7,6 +7,7 @@ where
 import DDC.Core.Tetra.Convert.Exp.Lets
 import DDC.Core.Tetra.Convert.Exp.Alt
 import DDC.Core.Tetra.Convert.Exp.Base
+import DDC.Core.Tetra.Convert.Callable
 import DDC.Core.Tetra.Convert.Exp
 import DDC.Core.Tetra.Convert.Type
 import DDC.Core.Tetra.Convert.Error
@@ -27,9 +28,6 @@ import DDC.Type.Env                                     (KindEnv, TypeEnv)
 import qualified DDC.Type.Env                           as Env
 
 import DDC.Control.Monad.Check                          (throw, evalCheck)
-import Data.Maybe
-import Control.Monad
-import Data.Map                                         (Map)
 import qualified Data.Map                               as Map
 import qualified Data.Set                               as Set
 
@@ -112,28 +110,27 @@ convertM pp runConfig defs kenv tenv mm
 
         let tenv'  = Env.extends ntsImports tenv
 
-        -- Check that all the supers are fully named, and are in prenex form.
-        -- Also build a map of super names to their type and value arities.
-        aritiesSuper  <- takePrenexAritiesOfTopBinds mm
-        aritiesImport <- takePrenexAritiesOfImports  mm
+        -- Get the call patterns of the callable things
+        -- defined in this module.
+        callables  <- either throw return
+                   $  takeCallablesOfModule mm
 
         -- Starting context for the conversion.
-        let ctx    = Context
-                   { contextPlatform    = pp
-                   , contextDataDefs    = defs'
-                   , contextForeignBoxedTypeCtors = Set.fromList $ nsForeignBoxedTypes
-                   , contextSupers      = aritiesSuper
-                   , contextImports     = aritiesImport
-                   , contextKindEnv     = kenv
-                   , contextTypeEnv     = tenv' 
-                   , contextSuperBinds  = Map.empty
-                   , contextConvertExp  = convertExp 
-                   , contextConvertLets = convertLets 
-                   , contextConvertAlt  = convertAlt }
+        let ctx = Context
+                { contextPlatform    = pp
+                , contextDataDefs    = defs'
+                , contextForeignBoxedTypeCtors = Set.fromList $ nsForeignBoxedTypes
+                , contextCallable    = callables
+                , contextKindEnv     = kenv
+                , contextTypeEnv     = tenv' 
+                , contextSuperBinds  = Map.empty
+                , contextConvertExp  = convertExp 
+                , contextConvertLets = convertLets 
+                , contextConvertAlt  = convertAlt }
 
         -- Convert the body of the module itself.
-        x1         <- convertExp ExpTop ctx 
-                   $  moduleBody mm
+        x1      <- convertExp ExpTop ctx 
+                $  moduleBody mm
 
         -- Running the Tetra -> Salt converted on the module body will also
         -- expand out code to construct the place holder expression '()' 
@@ -244,56 +241,4 @@ convertImportValueM tctx isrc
         ImportValueSea str t
          -> do  t'      <- convertSuperT tctx t 
                 return  $ ImportValueSea str t'
-
-
----------------------------------------------------------------------------------------------------
--- | Check that all the supers in this module have real names, 
---   and are in prenex form -- meaning that they bind all their type parameters
---   before their value parameters.
---
---   If we find any supers where this is not the case then throw an error in 
---   the `ConvertM` monad.
---
-takePrenexAritiesOfTopBinds 
-        :: Module a E.Name 
-        -> ConvertM b (Map E.Name (Int, Int, Int))
-
-takePrenexAritiesOfTopBinds mm
- = do   
-        let check (BName n _) (Just (ks, ts, nBoxes)) 
-                = return (n, (length ks, length ts, nBoxes))
-
-            check b Nothing     = throw $ ErrorSuperNotPrenex b
-            check b  _          = throw $ ErrorSuperUnnamed   b
-            
-        nsArities       <- mapM (uncurry check)
-                        $  mapTopBinds (\b x -> (b, takePrenexCallPattern x)) mm
-
-        return $ Map.fromList nsArities
-
-
--- | Check that all the imported supers in the module have real names,
---   and are in prenex form.
---
---  TODO: get boxes
-takePrenexAritiesOfImports
-        :: Module a E.Name 
-        -> ConvertM b (Map E.Name (Maybe (Int, Int, Int)))
-
-takePrenexAritiesOfImports mm
- = do   
-        let check n (ImportValueModule _ _ _ (Just (aType, aValue, nBoxes)))
-                = return $ Just (n, Just (aType, aValue, nBoxes))
-
-            check n (ImportValueSea _ _)
-                = return $ Just (n, Nothing)
-
-            check _ _
-                = return $ Nothing
-
-        nsArities       <- liftM catMaybes
-                        $  mapM (uncurry check)
-                        $  moduleImportValues mm
-
-        return $ Map.fromList nsArities
 

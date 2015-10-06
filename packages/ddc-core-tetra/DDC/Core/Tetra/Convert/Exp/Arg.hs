@@ -3,16 +3,16 @@ module DDC.Core.Tetra.Convert.Exp.Arg
         (convertOrDiscardSuperArgX)
 where
 import DDC.Core.Tetra.Convert.Exp.Base
-import DDC.Core.Tetra.Convert.Type
+-- import DDC.Core.Tetra.Convert.Type
 import DDC.Core.Tetra.Convert.Error
-import DDC.Core.Predicates
+-- import DDC.Core.Predicates
 import DDC.Core.Exp
 import DDC.Core.Check                    (AnTEC(..))
 import qualified DDC.Core.Tetra.Prim     as E
 import qualified DDC.Core.Salt.Name      as A
 
-import DDC.Base.Pretty
-import DDC.Control.Monad.Check           (throw)
+-- import DDC.Base.Pretty
+-- import DDC.Control.Monad.Check           (throw)
 
 
 ---------------------------------------------------------------------------------------------------
@@ -26,16 +26,17 @@ convertOrDiscardSuperArgX
         -> Exp (AnTEC a E.Name) E.Name  -- ^ Expression to convert.
         -> ConvertM a (Maybe (Exp a A.Name))
 
-convertOrDiscardSuperArgX xxApp ctx xx
+convertOrDiscardSuperArgX _xxApp ctx xx
 
+{-
         -- Region type arguments get passed through directly.
         | XType a t     <- xx
         , isRegionKind (annotType a)
         = do    t'       <- convertRegionT (typeContext ctx) t
                 return   $ Just (XType (annotTail a) t')
 
-        -- If we have a data type argument where the type is boxed, then we pass
-        -- the region the corresponding Salt object is in.
+        -- If we have a data type argument where the type is boxed,
+        -- then we pass the region the corresponding Salt object is in.
         | XType a t     <- xx
         , isDataKind   (annotType a)
         = do    let kenv =  contextKindEnv ctx
@@ -63,6 +64,13 @@ convertOrDiscardSuperArgX xxApp ctx xx
         -- Witness arguments are discarded.
         | XWitness{}    <- xx
         =       return  $ Nothing
+-}
+        
+        | XType{}       <- xx
+        = return Nothing
+
+        | XWitness{}    <- xx
+        = return Nothing
 
         -- Expression arguments.
         | otherwise

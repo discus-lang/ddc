@@ -32,6 +32,12 @@ flatten1
         => Exp a n
         -> Exp a n
 
+-- Run ----------------------------------------------------
+-- TODO: this breaks the closure information in the annotation.
+flatten1 (XCast a1 CastRun (XLet a2 lts x2))
+ = XLet a2 lts $ flatten1 (XCast a1 CastRun x2)
+
+
 -- Let ----------------------------------------------------
 -- Special case when nested let is (let b = x in b):
 -- @
@@ -76,7 +82,6 @@ flatten1 (XLet a1 (LLet b1
       $ flatten1
       $ XLet a1 (LLet b1 x2) 
              x1'
-
 
 -- Drag 'letregion' out of the top-level of a binding.
 -- @

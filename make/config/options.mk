@@ -85,7 +85,8 @@ DDC_PACKAGES	:= \
         -package wl-pprint \
         -package time \
         -package bytestring \
-        -package vector 
+        -package vector \
+        -package pretty-show
 
 ifeq "$(DDC_FLOW_USE_LINEAR_SOLVER)" "1"
 DDC_PACKAGES	:= $(DDC_PACKAGES) \
