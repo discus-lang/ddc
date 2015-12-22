@@ -56,7 +56,7 @@ index (_ : xs) i        = index xs (i - 1)
 
 
 
--- | Fine the duplicate values in a list.
+-- | Find the duplicate values in a list.
 findDuplicates :: Ord n => [n] -> [n]
 findDuplicates xx
  = go (Set.fromList xx) xx
