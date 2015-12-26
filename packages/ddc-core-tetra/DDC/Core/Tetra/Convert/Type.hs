@@ -68,11 +68,11 @@ convertRegionT ctx tt
         | TVar u        <- tt
         , Just k        <- Env.lookup u (contextKindEnv ctx)
         , isRegionKind k
-        = liftM TVar $ convertTypeU u
+        = return $ A.rTop
 
         | otherwise
-        = throw $ ErrorMalformed 
-                $ "Invalid region type " ++ (renderIndent $ ppr tt)
+        = throw  $ ErrorMalformed 
+                 $ "Invalid region type " ++ (renderIndent $ ppr tt)
 
 
 -- Capability Types -------------------------------------------------------------------------------
@@ -126,13 +126,13 @@ convertSuperT ctx tt
         -- their top-level region.
         TForall b t     
 
-{-       This doesn't work with run/box
          | isRegionKind (typeOfBind b)
          -> do  let ctx' = extendKindEnv b ctx
                 b'      <- convertTypeB  b
                 t'      <- convertSuperT ctx' t
                 return  $ TForall b' t'
 
+--        This doesn't work with run/box
          | isDataKind   (typeOfBind b)
          , BName (E.NameVar str) _   <- b
          , str'         <- str ++ "$r"
@@ -141,7 +141,7 @@ convertSuperT ctx tt
                 let ctx' = extendKindEnv b ctx
                 t'      <- convertSuperT ctx' t
                 return  $ TForall b' t'
--}
+
          |  otherwise
          -> do  let ctx' = extendKindEnv b ctx
                 convertSuperT ctx' t
@@ -168,18 +168,18 @@ convertValueT :: Context -> Type E.Name -> ConvertM a (Type A.Name)
 convertValueT ctx tt
  = case tt of
         -- Convert value type variables and constructors.
-        TVar _  -> return $ A.tPtr A.rTop A.tObj
-{-
+        TVar u
          -> case Env.lookup u (contextKindEnv ctx) of
              Just k
               -- Parametric data types are represented as generic objects,   
               -- where the region those objects are in is named after the
               -- original type name.                                    -- TODO: use saltPrimREgion
               | isDataKind k
-              , UName (E.NameVar str)  <- u
-              , str'    <- str ++ "$r"
-              , u'      <- UName (A.NameVar str')
-              -> return $ A.tPtr (TVar u') A.tObj
+              -- UName (E.NameVar str)  <- u
+              -- str'    <- str ++ "$r"
+              -- u'      <- UName (A.NameVar str')
+              -- return $ A.tPtr (TVar u') A.tObj
+              -> return $ A.tPtr A.rTop A.tObj
 
               | otherwise    
               -> throw $ ErrorMalformed 
@@ -187,7 +187,7 @@ convertValueT ctx tt
 
              Nothing 
               -> throw $ ErrorInvalidBound u
--}
+
         -- We should not find any polymorphic values.
         TForall{} -> throw $ ErrorMalformed
                            $ "Invalid polymorphic value type."
@@ -509,8 +509,8 @@ saltPrimeRegionOfDataType kenv tt
         | TCon _ : TVar u : _   <- takeTApps tt
         , Just k                <- Env.lookup u kenv
         , isRegionKind k
-        = do    u'      <- convertTypeU u
-                return  $ TVar u'
+        = do    -- u'      <- convertTypeU u
+                return  A.rTop
 
         -- Boxed data types without an attached primary region variable.
         -- This also covers the function case.

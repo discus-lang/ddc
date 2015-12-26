@@ -52,7 +52,7 @@ constructData pp _kenv _tenv a _dataDef ctorDef rPrime xsFields tsFields
                          rPrime trField xObject' ix (liftX 1 xField))
                   | ix          <- [0..]
                   | xField      <- xsFields
-                  | trField     <- tsFields ]
+                  | trField     <- repeat A.rTop ]
 
         return  $ XLet a (LLet bObject xAlloc)
                 $ foldr (XLet a) xObject' lsFields
@@ -63,12 +63,12 @@ constructData pp _kenv _tenv a _dataDef ctorDef rPrime xsFields tsFields
  = do   
         -- Allocate the object.
         let bObject     = BAnon (A.tPtr rPrime A.tObj)
-        let xAlloc      = A.xAllocRawSmall a rPrime (dataCtorTag ctorDef)
+        let xAlloc      = A.xAllocSmall a rPrime (dataCtorTag ctorDef)
                         $ A.xNat a size
 
         -- Take a pointer to its payload.
         let bPayload    = BAnon (A.tPtr rPrime (A.tWord 8))
-        let xPayload    = A.xPayloadOfRawSmall a rPrime
+        let xPayload    = A.xPayloadOfSmall a rPrime
                         $ XVar a (UIx 0)
 
         -- Get the offset of each field.
@@ -123,10 +123,10 @@ destructData pp a ctorDef uScrut trPrime bsFields xBody
                 $ [ if isBNone bField
                         then Nothing
                         else Just $ LLet bField 
-                                    (A.xGetFieldOfBoxed a trPrime tField
+                                    (A.xGetFieldOfBoxed a trPrime rField
                                                         (XVar a uScrut) ix)
                   | bField      <- bsFields
-                  | tField      <- map typeOfBind bsFields
+                  | rField      <- repeat A.rTop -- map typeOfBind bsFields
                   | ix          <- [0..] ]
 
         return  $ foldr (XLet a) xBody lsFields
@@ -136,7 +136,7 @@ destructData pp a ctorDef uScrut trPrime bsFields xBody
  = do   
         -- Get the address of the payload.
         let bPayload    = BAnon (A.tPtr trPrime (A.tWord 8))
-        let xPayload    = A.xPayloadOfRawSmall a trPrime (XVar a uScrut)
+        let xPayload    = A.xPayloadOfSmall a trPrime (XVar a uScrut)
 
         -- Bind pattern variables to the fields.
         let uPayload    = UIx 0

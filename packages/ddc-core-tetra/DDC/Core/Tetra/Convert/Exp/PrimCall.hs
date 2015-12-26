@@ -134,11 +134,13 @@ convertPrimCall _ectx ctx xx
                                  (A.xArgsOfThunk    a A.rTop xThunk'))
 
                  $ xLets a [LLet (BNone A.tVoid)
-                                 (A.xSetFieldOfThunk a A.rTop 
-                                        (XVar a (UIx 1))                 -- new thunk
-                                        (XVar a (UIx 0))                 -- base index
-                                        (A.xNat a ix)                    -- offset
-                                        (xTakePtr a tPrime A.tObj xArg)) -- value
+                                 (A.xSetFieldOfThunk a 
+                                        A.rTop                  -- region containing thunk.
+                                        tPrime                  -- region containing new child.
+                                        (XVar a (UIx 1))        -- new thunk.
+                                        (XVar a (UIx 0))        -- base index
+                                        (A.xNat a ix)           -- offset
+                                        (xArg))
                                  | ix   <- [0..]
                                  | xArg <- xsArg'
                                  | tArg <- tsArg'
@@ -160,7 +162,6 @@ convertPrimCall _ectx ctx xx
                 _                                 -> Nothing
 
          , tsArg                <- [tArg | XType _ tArg <- take nArgs xs]
-         , XType _ tResult : _  <- drop  nArgs xs
          , xF : xsArgs          <- drop (nArgs + 1) xs
          -> Just $ do
                 -- Functional expression.
@@ -170,20 +171,17 @@ convertPrimCall _ectx ctx xx
                 xsArg'          <- mapM downArgX xsArgs
                 tsArg'          <- mapM (convertValueT (typeContext ctx)) tsArg
 
-                -- Result and its type.
-                tResult'        <- convertValueT (typeContext ctx) tResult
-                let tPrimeResult' = fromMaybe A.rTop $ takePrimeRegion tResult'
-
                 -- Evaluate a thunk, returning the resulting Addr#, 
                 -- then cast it back to a pointer of the appropriate type
-                return  $ xMakePtr a tPrimeResult' A.tObj
-                        $ A.xApplyThunk a nArgs 
-                        $   [ xTakePtr a A.rTop A.tObj xF' ]
-                         ++ [ xTakePtr a tPrime A.tObj xArg'
-                                | xArg'         <- xsArg'
-                                | tArg'         <- tsArg'
-                                , let tPrime    = fromMaybe A.rTop
-                                                $ takePrimeRegion tArg' ]
+                return  $ A.xApplyThunk a nArgs 
+                        $   [ XType a A.rTop ]
+
+                         ++ [ XType a $ fromMaybe A.rTop $ takePrimeRegion tArg'
+                                | tArg'         <- tsArg']
+
+                         ++ [ XType a A.rTop ]
+                         ++ [ xF' ]
+                         ++ xsArg'
 
         ---------------------------------------------------
         -- This isn't a call primitive.

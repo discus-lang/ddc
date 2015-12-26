@@ -3,13 +3,14 @@ module DDC.Core.Tetra.Convert.Exp.Arg
         (convertOrDiscardSuperArgX)
 where
 import DDC.Core.Tetra.Convert.Exp.Base
--- import DDC.Core.Tetra.Convert.Type
+import DDC.Core.Tetra.Convert.Type
 import DDC.Core.Tetra.Convert.Error
--- import DDC.Core.Predicates
+import DDC.Core.Predicates
 import DDC.Core.Exp
-import DDC.Core.Check                    (AnTEC(..))
-import qualified DDC.Core.Tetra.Prim     as E
-import qualified DDC.Core.Salt.Name      as A
+import DDC.Core.Check                   (AnTEC(..))
+import qualified DDC.Core.Tetra.Prim    as E
+import qualified DDC.Core.Salt.Name     as A
+import qualified DDC.Core.Salt.Runtime  as A
 
 -- import DDC.Base.Pretty
 -- import DDC.Control.Monad.Check           (throw)
@@ -28,12 +29,12 @@ convertOrDiscardSuperArgX
 
 convertOrDiscardSuperArgX _xxApp ctx xx
 
-{-
         -- Region type arguments get passed through directly.
-        | XType a t     <- xx
+        | XType a _     <- xx
         , isRegionKind (annotType a)
-        = do    t'       <- convertRegionT (typeContext ctx) t
-                return   $ Just (XType (annotTail a) t')
+        = do    -- t'       <- convertRegionT (typeContext ctx) t
+--                return   $ Just (XType (annotTail a) t')
+                return  $ Just $ XType (annotTail a) A.rTop
 
         -- If we have a data type argument where the type is boxed,
         -- then we pass the region the corresponding Salt object is in.
@@ -48,6 +49,7 @@ convertOrDiscardSuperArgX _xxApp ctx xx
         , isEffectKind (annotType a)
         =       return Nothing
 
+{-
         -- Some type that we don't know how to convert to Salt.
         -- We don't handle type args with higher kinds.
         -- See [Note: Salt conversion for higher kinded type arguments]

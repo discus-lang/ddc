@@ -1,0 +1,47 @@
+module Main
+import Data.Numeric.Nat
+import System.IO.Console
+where
+
+
+-- Check handling of box/run in runtime system.
+main (_ : Unit) : S Console Unit
+ = box do
+
+        -- Anonymous functions with unboxed bodies.
+        --   The body of the function is not suspended, so the RTS can
+        --   call the lifted super for the anon function directly.
+        derp1   = (\(x1 : Nat). x1 + 1)
+        run putStrLn (showNat (derp1 1))
+
+        derp2   = (\(x1 x2 : Nat). x1 + x2 + 1)
+        run putStrLn (showNat (derp2 1 2))
+
+        derp3   = (\(x1 x2 x3 : Nat). x1 + x2 + x3 + 1)
+        run putStrLn (showNat (derp3 1 2 3))
+
+        derp4   = (\(x1 x2 x3 x4 : Nat). x1 + x2 + x3 + x4 + 1)
+        run putStrLn (showNat (derp4 1 2 3 4))
+
+
+        -- Anonymous functions with singly boxed bodies.
+        --   The body of the function is suspended, but we run it at
+        --   the call site. The RTS curries on the argument then calls
+        --   the run function separately.
+        derp1B  = (\(x1 : Nat). box x1 + 1)
+        run putStrLn (showNat (run derp1B 1))
+
+        derp2B  = (\(x1 x2 : Nat). box x1 + x2 + 1)
+        run putStrLn (showNat (run derp2B 1 2))
+
+        derp3B  = (\(x1 x2 x3 : Nat). box x1 + x2 + x3 + 1)
+        run putStrLn (showNat (run derp3B 1 2 3))
+
+        derp4B  = (\(x1 x2 x3 x4 : Nat). box x1 + x2 + x3 + x4 + 1)
+        run putStrLn (showNat (run derp4B 1 2 3 4))
+
+
+        -- TODO: Anonymous functions with multiply boxed bodies.
+
+
+        ()

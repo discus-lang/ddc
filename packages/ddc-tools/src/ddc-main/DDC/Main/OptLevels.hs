@@ -8,7 +8,7 @@ import DDC.Driver.Command.Read
 import DDC.Driver.Command.RewriteRules
 import DDC.Build.Builder
 import DDC.Build.Platform
-import DDC.Core.Module
+-- import DDC.Core.Module
 import DDC.Core.Transform.Inline
 import DDC.Core.Transform.Namify
 import DDC.Core.Transform.Reannotate
@@ -25,7 +25,7 @@ import qualified DDC.Core.Salt                  as Salt
 import qualified DDC.Core.Salt.Runtime          as Salt
 import qualified DDC.Build.Language.Salt        as Salt
 import qualified Data.Map                       as Map
-import qualified Data.Set                       as Set
+-- import qualified Data.Set                       as Set
 
 
 -- | Get the simplifier for Salt code from the config.
@@ -93,14 +93,16 @@ opt1_salt config dconfig builder runtimeConfig filePath
         -- Inline everything from the Object module, except the listed functions. 
         -- We don't want these because they blow out the program size too much.
         let inlineSpec
+                = Map.empty 
+{-                
                 = Map.fromList
                 [ ( ModuleName ["Object"]
                   , InlineSpecAll (ModuleName ["Object"]) 
                      $ Set.fromList 
-                     $ map Salt.NameVar
+                     $ map Salt.NameVar []
                         [ "apply0", "apply1", "apply2", "apply4", "apply4", "applyZ"
                         , "copyArgsOfThunk"])]
-
+-}
         -- Optionally load the rewrite rules for each 'with' module
         rules <- mapM (\(m,file) -> cmdTryReadRules Salt.fragment (file ++ ".rules") m)
               $  inlineModules `zip` inlineModulePaths

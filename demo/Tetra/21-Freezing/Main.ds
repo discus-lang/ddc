@@ -21,7 +21,7 @@ rlength [a : Data] [r1 : Region]
         ref       = run allocRef [r2] 0
 
         -- Destructively initialize the reference.
-        forS xx (\(_ : a). box
+        run forS xx (\(_ : a). box
          do     x       = run readRef ref
                 run writeRef ref (x + 1)
                 ())

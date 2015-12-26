@@ -37,5 +37,5 @@ intToNat (x : Nat) : Natural
         False   -> Succ (intToNat (x - 1))
         
 main (_ : Unit) : S Console Unit
- = putStrLn (showNat (natToInt (cExp (intToNat 3) (intToNat 6))))
+ = box run putStrLn (showNat (natToInt (cExp (intToNat 3) (intToNat 6))))
 

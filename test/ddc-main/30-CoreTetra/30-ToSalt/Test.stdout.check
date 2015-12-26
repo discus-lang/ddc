@@ -13,26 +13,26 @@ letrec {
     = \(x : Ptr# rT Obj).
       let x0 : Word16#
             = let ^ : Ptr# rT Obj = x in
-              let ^ : Ptr# rT Word8# = payloadOfRawSmall [rT] ^0 in
+              let ^ : Ptr# rT Word8# = payloadSmall [rT] ^0 in
               let ^ : Word16#
                     = peek# [rT] [Word16#] (castPtr# [rT] [Word16#] [Word8#] ^0) 0# in
               ^0 in
       case x0 of {
         5w16#  
-         -> let ^ : Ptr# rT Obj = allocRawSmall [rT] TAG0# 8# in
-            let ^ : Ptr# rT Word8# = payloadOfRawSmall [rT] ^0 in
+         -> let ^ : Ptr# rT Obj = allocSmall [rT] TAG0# 8# in
+            let ^ : Ptr# rT Word8# = payloadSmall [rT] ^0 in
             let _ : Void#
                   = poke# [rT] [Word16#] (castPtr# [rT] [Word16#] [Word8#] ^0) 0# 6w16# in
             ^1;
         7w16#  
-         -> let ^ : Ptr# rT Obj = allocRawSmall [rT] TAG0# 8# in
-            let ^ : Ptr# rT Word8# = payloadOfRawSmall [rT] ^0 in
+         -> let ^ : Ptr# rT Obj = allocSmall [rT] TAG0# 8# in
+            let ^ : Ptr# rT Word8# = payloadSmall [rT] ^0 in
             let _ : Void#
                   = poke# [rT] [Word16#] (castPtr# [rT] [Word16#] [Word8#] ^0) 0# 8w16# in
             ^1;
         _ 
-         -> let ^ : Ptr# rT Obj = allocRawSmall [rT] TAG0# 8# in
-            let ^ : Ptr# rT Word8# = payloadOfRawSmall [rT] ^0 in
+         -> let ^ : Ptr# rT Obj = allocSmall [rT] TAG0# 8# in
+            let ^ : Ptr# rT Word8# = payloadSmall [rT] ^0 in
             let _ : Void#
                   = poke# [rT] [Word16#] (castPtr# [rT] [Word16#] [Word8#] ^0) 0# 0w16# in
             ^1
@@ -46,26 +46,26 @@ letrec {
     = \(x : Ptr# rT Obj).
       let x0 : Word32#
             = let ^ : Ptr# rT Obj = x in
-              let ^ : Ptr# rT Word8# = payloadOfRawSmall [rT] ^0 in
+              let ^ : Ptr# rT Word8# = payloadSmall [rT] ^0 in
               let ^ : Word32#
                     = peek# [rT] [Word32#] (castPtr# [rT] [Word32#] [Word8#] ^0) 0# in
               ^0 in
       case x0 of {
         5w32#  
-         -> let ^ : Ptr# rT Obj = allocRawSmall [rT] TAG0# 8# in
-            let ^ : Ptr# rT Word8# = payloadOfRawSmall [rT] ^0 in
+         -> let ^ : Ptr# rT Obj = allocSmall [rT] TAG0# 8# in
+            let ^ : Ptr# rT Word8# = payloadSmall [rT] ^0 in
             let _ : Void#
                   = poke# [rT] [Word32#] (castPtr# [rT] [Word32#] [Word8#] ^0) 0# 6w32# in
             ^1;
         7w32#  
-         -> let ^ : Ptr# rT Obj = allocRawSmall [rT] TAG0# 8# in
-            let ^ : Ptr# rT Word8# = payloadOfRawSmall [rT] ^0 in
+         -> let ^ : Ptr# rT Obj = allocSmall [rT] TAG0# 8# in
+            let ^ : Ptr# rT Word8# = payloadSmall [rT] ^0 in
             let _ : Void#
                   = poke# [rT] [Word32#] (castPtr# [rT] [Word32#] [Word8#] ^0) 0# 8w32# in
             ^1;
         _ 
-         -> let ^ : Ptr# rT Obj = allocRawSmall [rT] TAG0# 8# in
-            let ^ : Ptr# rT Word8# = payloadOfRawSmall [rT] ^0 in
+         -> let ^ : Ptr# rT Obj = allocSmall [rT] TAG0# 8# in
+            let ^ : Ptr# rT Word8# = payloadSmall [rT] ^0 in
             let _ : Void#
                   = poke# [rT] [Word32#] (castPtr# [rT] [Word32#] [Word8#] ^0) 0# 0w32# in
             ^1
@@ -79,26 +79,26 @@ letrec {
     = \(x : Ptr# rT Obj).
       let x0 : Word64#
             = let ^ : Ptr# rT Obj = x in
-              let ^ : Ptr# rT Word8# = payloadOfRawSmall [rT] ^0 in
+              let ^ : Ptr# rT Word8# = payloadSmall [rT] ^0 in
               let ^ : Word64#
                     = peek# [rT] [Word64#] (castPtr# [rT] [Word64#] [Word8#] ^0) 0# in
               ^0 in
       case x0 of {
         5w64#  
-         -> let ^ : Ptr# rT Obj = allocRawSmall [rT] TAG0# 8# in
-            let ^ : Ptr# rT Word8# = payloadOfRawSmall [rT] ^0 in
+         -> let ^ : Ptr# rT Obj = allocSmall [rT] TAG0# 8# in
+            let ^ : Ptr# rT Word8# = payloadSmall [rT] ^0 in
             let _ : Void#
                   = poke# [rT] [Word64#] (castPtr# [rT] [Word64#] [Word8#] ^0) 0# 6w64# in
             ^1;
         7w64#  
-         -> let ^ : Ptr# rT Obj = allocRawSmall [rT] TAG0# 8# in
-            let ^ : Ptr# rT Word8# = payloadOfRawSmall [rT] ^0 in
+         -> let ^ : Ptr# rT Obj = allocSmall [rT] TAG0# 8# in
+            let ^ : Ptr# rT Word8# = payloadSmall [rT] ^0 in
             let _ : Void#
                   = poke# [rT] [Word64#] (castPtr# [rT] [Word64#] [Word8#] ^0) 0# 8w64# in
             ^1;
         _ 
-         -> let ^ : Ptr# rT Obj = allocRawSmall [rT] TAG0# 8# in
-            let ^ : Ptr# rT Word8# = payloadOfRawSmall [rT] ^0 in
+         -> let ^ : Ptr# rT Obj = allocSmall [rT] TAG0# 8# in
+            let ^ : Ptr# rT Word8# = payloadSmall [rT] ^0 in
             let _ : Void#
                   = poke# [rT] [Word64#] (castPtr# [rT] [Word64#] [Word8#] ^0) 0# 0w64# in
             ^1
@@ -113,20 +113,20 @@ letrec {
     = \(x : Ptr# rT Obj).
       let x0 : Bool#
             = let ^ : Ptr# rT Obj = x in
-              let ^ : Ptr# rT Word8# = payloadOfRawSmall [rT] ^0 in
+              let ^ : Ptr# rT Word8# = payloadSmall [rT] ^0 in
               let ^ : Bool#
                     = peek# [rT] [Bool#] (castPtr# [rT] [Bool#] [Word8#] ^0) 0# in
               ^0 in
       case x0 of {
         True#  
-         -> let ^ : Ptr# rT Obj = allocRawSmall [rT] TAG0# 8# in
-            let ^ : Ptr# rT Word8# = payloadOfRawSmall [rT] ^0 in
+         -> let ^ : Ptr# rT Obj = allocSmall [rT] TAG0# 8# in
+            let ^ : Ptr# rT Word8# = payloadSmall [rT] ^0 in
             let _ : Void#
                   = poke# [rT] [Bool#] (castPtr# [rT] [Bool#] [Word8#] ^0) 0# False# in
             ^1;
         _ 
-         -> let ^ : Ptr# rT Obj = allocRawSmall [rT] TAG0# 8# in
-            let ^ : Ptr# rT Word8# = payloadOfRawSmall [rT] ^0 in
+         -> let ^ : Ptr# rT Obj = allocSmall [rT] TAG0# 8# in
+            let ^ : Ptr# rT Word8# = payloadSmall [rT] ^0 in
             let _ : Void#
                   = poke# [rT] [Bool#] (castPtr# [rT] [Bool#] [Word8#] ^0) 0# True# in
             ^1
@@ -148,11 +148,9 @@ Error loading module
 -- Compile application of anonymous function.
 module Test with
 letrec {
-  app : [a$r b$r : Region].Ptr# rT Obj -> Ptr# a$r Obj -> Ptr# b$r Obj
+  app : [a$r b$r : Region].Ptr# rT Obj -> Ptr# rT Obj -> Ptr# rT Obj
     = /\(a$r b$r : Region).
-       \(f : Ptr# rT Obj).\(x : Ptr# a$r Obj).
-      makePtr# [b$r] [Obj]
-          (apply1 (takePtr# [rT] [Obj] f) (takePtr# [a$r] [Obj] x))
+       \(f x : Ptr# rT Obj). apply1 [rT] [rT] [rT] f x
 }
 
 
@@ -166,10 +164,8 @@ letrec {
             = let ^ : Ptr# rT Obj = allocBoxed [rT] TAG0# 0# in
               ^0 in
       let ^ : Ptr# rT Obj = allocBoxed [rT] TAG1# 2# in
-      let _ : Void#
-            = setFieldOfBoxed [rT] [Ptr# rT Obj] ^0 0# x in
-      let _ : Void#
-            = setFieldOfBoxed [rT] [Ptr# rT Obj] ^0 1# x0 in
+      let _ : Void# = setBoxed [rT] [rT] ^0 0# x in
+      let _ : Void# = setBoxed [rT] [rT] ^0 1# x0 in
       ^0
 }
 
@@ -182,8 +178,7 @@ letrec {
     = \(xx : Ptr# rT Obj).
       case getTag [rT] xx of {
         TAG1#  
-         -> let x : Ptr# rT Obj
-                  = getFieldOfBoxed [rT] [Ptr# rT Obj] xx 0# in
+         -> let x : Ptr# rT Obj = getBoxed [rT] [rT] xx 0# in
             x;
         TAG0#  
          -> allocBoxed [rT] TAG0# 0#;
@@ -239,15 +234,15 @@ Fragment violation when converting Tetra module to Salt module.
 -- the conversion.
 module Test with
 letrec {
-  id : [a$r : Region].Ptr# a$r Obj -> Ptr# a$r Obj
+  id : [a$r : Region].Ptr# rT Obj -> Ptr# rT Obj
     = /\(a$r : Region).
-       \(x : Ptr# a$r Obj). x;
+       \(x : Ptr# rT Obj). x;
   
   foo : Ptr# rT Obj -> Ptr# rT Obj
     = \(_ : Ptr# rT Obj).
       let x0 : Ptr# rT Obj
-            = let ^ : Ptr# rT Obj = allocRawSmall [rT] TAG0# 8# in
-              let ^ : Ptr# rT Word8# = payloadOfRawSmall [rT] ^0 in
+            = let ^ : Ptr# rT Obj = allocSmall [rT] TAG0# 8# in
+              let ^ : Ptr# rT Word8# = payloadSmall [rT] ^0 in
               let _ : Void#
                     = poke# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# 5# in
               ^1 in
@@ -256,17 +251,22 @@ letrec {
 
 
 -- Error: higher kinded type arguments are not yet supported.
-Fragment violation when converting Tetra module to Salt module.
-  Cannot convert expression.
-    Unsupported type argument to function or constructor.
-    In particular, we don't yet handle higher kinded type arguments.
-    
-    See [Note: Salt conversion for higher kinded type arguments] in
-    the implementation of the Tetra to Salt conversion.
-    
-    with application:  nothin [List] [Nat#] x0
+module Test with
+letrec {
+  nothin : [b$r : Region].Ptr# rT Obj -> Ptr# rT Obj
+    = /\(b$r : Region).
+       \(x : Ptr# rT Obj). x;
   
-    with: [List]
+  foo : Ptr# rT Obj -> Ptr# rT Obj
+    = \(_ : Ptr# rT Obj).
+      let x0 : Ptr# rT Obj
+            = let ^ : Ptr# rT Obj = allocSmall [rT] TAG0# 8# in
+              let ^ : Ptr# rT Word8# = payloadSmall [rT] ^0 in
+              let _ : Void#
+                    = poke# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# 5# in
+              ^1 in
+      nothin [rT] x0
+}
 
 
 -------------------------------------------------------------------------------
@@ -276,9 +276,8 @@ module Test with
 letrec {
   blerk : Ptr# rT Obj -> Ptr# rT Obj
     = \(_ : Ptr# rT Obj).
-      private r with {Alloc r; Read r; Write r} in
-      let ^ : Ptr# rT Obj = allocRawSmall [rT] TAG0# 8# in
-      let ^ : Ptr# rT Word8# = payloadOfRawSmall [rT] ^0 in
+      let ^ : Ptr# rT Obj = allocSmall [rT] TAG0# 8# in
+      let ^ : Ptr# rT Word8# = payloadSmall [rT] ^0 in
       let _ : Void#
             = poke# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# 5# in
       ^1

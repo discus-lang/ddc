@@ -72,9 +72,8 @@ convertExp ectx ctx xx
         --   We keep region lambdas but ditch the others. Polymorphic values
         --   are represented in generic boxed form, so we never need to 
         --   build a type abstraction of some other kind.
-        XLAM _a b x
+        XLAM a b x
 
-         {-
          | ExpFun       <- ectx
          , isRegionKind $ typeOfBind b
          -> do  let a'    =  annotTail a
@@ -84,6 +83,7 @@ convertExp ectx ctx xx
                 x'        <- convertExp  ectx ctx' x
 
                 return $ XLAM a' b' x'
+
 
          -- When a function is fully polymorphic in some boxed data type,
          -- then the type lambda in Tetra is converted to a region lambda in
@@ -111,7 +111,6 @@ convertExp ectx ctx xx
          , Just _       <- takeKFun $ typeOfBind b
          -> do  let ctx' = extendKindEnv b ctx
                 convertX ectx ctx' x
--}
 
          | ExpFun       <- ectx
          -> do  let ctx' = extendKindEnv b ctx
@@ -331,7 +330,7 @@ convertExp ectx ctx xx
         XCast (AnTEC _ _ _ a') CastRun xArg
          -> do
                 xArg'   <- convertX ExpArg ctx xArg
-                return  $ A.xRunThunk a' xArg'
+                return  $ A.xRunThunk a' A.rTop A.rTop xArg'
 
         XCast _ _ x
          -> convertX (min ectx ExpBody) ctx x

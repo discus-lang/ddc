@@ -344,9 +344,6 @@ getThunkA
 --   If this is the last run the evaluate it, 
 --   otherwise increment the run count.
 --
---   TODO: finish me. This never actually applies the function.
---         Also increment box count and check.
---
 runThunk 
         [r1 r2 : Region]
         (src   : Ptr# r1 Obj) : Ptr# r2 Obj
@@ -360,7 +357,7 @@ runThunk
 
          -- We don't know what region the result is going to be allocated
          -- into, so need to assign it to rT.
-         1# ->  apply0 src
+         1# ->  eval0 src
 
          _ -> do
                 fun     = funThunk    src
@@ -676,7 +673,9 @@ apply0  [r0 r1 : Region]
  = do
         p       = paramsThunk t
         a       = argsThunk   t
-        case ge# a p of
+        b       = boxesThunk  t
+        r       = runsThunk   t
+        case mul# (ge# a p) (eq# b r) of
          True#  -> eval0 t
          False# -> makePtr# (takePtr# t)
 
@@ -715,10 +714,13 @@ apply1  [r0 r1 r2 : Region]
  = do
         p       = paramsThunk t
         a       = argsThunk   t
-        case ge# (add# a 1#) p of { True# ->
+        b       = boxesThunk  t
+        r       = runsThunk   t
+        case mul# (ge# (add# a 1#) p) (eq# b r) of { 
+        True# ->
                 eval1 t arg1;
 
-        False#  ->
+        False# ->
         do      t' = extendThunk t 1#
                 setThunk t' a 0# arg1
                 t'
@@ -759,7 +761,9 @@ apply2  [r0 r1 r2 r3 : Region]
  = do   
         p       = paramsThunk t
         a       = argsThunk   t
-        case ge# (add# a 2#) p of { True# ->
+        b       = boxesThunk  t
+        r       = runsThunk   t
+        case mul# (ge# (add# a 2#) p) (eq# b r) of { True# ->
                 eval2 t arg1 arg2;  
 
         False# -> 
@@ -811,7 +815,9 @@ apply3  [r0 r1 r2 r3 r4 : Region]
  = do
         p       = paramsThunk t
         a       = argsThunk   t
-        case ge# (add# a 3#) p of { True# ->
+        b       = boxesThunk  t
+        r       = runsThunk   t
+        case mul# (ge# (add# a 3#) p) (eq# b r) of { True# ->
                 eval3 t arg1 arg2 arg3;
 
         False# ->
@@ -867,7 +873,9 @@ apply4  [r0 r1 r2 r3 r4 r5 : Region]
  = do
         p       = paramsThunk t
         a       = argsThunk   t
-        case ge# (add# a 4#) p of { True# ->
+        b       = boxesThunk  t
+        r       = runsThunk   t
+        case mul# (ge# (add# a 4#) p) (eq# b r) of { True# ->
                 eval4 t arg1 arg2 arg3 arg4;
 
         False# ->

@@ -12,7 +12,6 @@ import DDC.Control.Monad.Check          (throw)
 import qualified DDC.Core.Tetra.Prim    as E
 import qualified DDC.Core.Salt.Name     as A
 import qualified Data.Map               as Map
-import Control.Monad
 
 
 -- | Convert some let-bindings to Salt.
@@ -61,6 +60,7 @@ convertLets ctx lts
                         , extendTypeEnv b ctx)
 
         -- Introduce a private region.
+{-
         LPrivate b mt bs
          -> do  
                 b'  <- mapM convertTypeB b
@@ -73,7 +73,11 @@ convertLets ctx lts
 
                 return  ( Just $ LPrivate b' mt' bs'
                         , extendsTypeEnv bs $ extendsKindEnv b ctx)
-  
+  -}
+        LPrivate bs _ _
+         ->     return  (Nothing
+                        , extendsTypeEnv bs ctx)
+
         LWithRegion{}
          ->     throw $ ErrorMalformed "Cannot convert LWithRegion construct."
 
