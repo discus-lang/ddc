@@ -17,8 +17,7 @@ module DDC.Core.Check.Judge.Type.Base
         , module DDC.Type.Transform.SubstituteT
         , module DDC.Type.Transform.Instantiate
         , module DDC.Type.Transform.Crush
-        , module DDC.Type.Transform.BoundT
-        , module DDC.Type.Transform.Trim)
+        , module DDC.Type.Transform.BoundT)
 where
 import DDC.Core.Check.Base
 import DDC.Core.Check.Judge.Inst
@@ -34,7 +33,6 @@ import DDC.Type.Transform.SubstituteT
 import DDC.Type.Transform.Instantiate
 import DDC.Type.Transform.Crush
 import DDC.Type.Transform.BoundT
-import DDC.Type.Transform.Trim
 
 
 -- | Type of the function that checks some node of the core AST.

@@ -11,7 +11,7 @@ import {
         two : Unit -> Nat#;
 }
 with
-private rt with { w1 : Const rt ; w2 : Lazy rt} in
+private rt with { w1 : Const rt } in
 let     one = 1 in
 letrec { 
         main (_ : Unit) : S Pure Unit
@@ -33,7 +33,7 @@ export  main    : Unit -> S Pure Unit
         double  : Nat# -> Nat#
 import  two : Unit -> Nat#
 with
-private rt with { w1 : Const rt ; w2 : Lazy rt} in
+private rt with { w1 : Const rt } in
 let     one = 1 in
 letrec 
         main (_ : Unit) : S Pure Unit

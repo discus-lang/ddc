@@ -169,17 +169,11 @@ instance Pretty TwCon where
   = case tw of
         TwConImpl       -> text "(=>)"
         TwConPure       -> text "Purify"
-        TwConEmpty      -> text "Emptify"
-        TwConGlobal     -> text "Global"
-        TwConDeepGlobal -> text "DeepGlobal"
         TwConConst      -> text "Const"
         TwConDeepConst  -> text "DeepConst"
         TwConMutable    -> text "Mutable"
         TwConDeepMutable-> text "DeepMutable"
         TwConDistinct n -> text "Distinct" <> ppr n
-        TwConLazy       -> text "Lazy"
-        TwConHeadLazy   -> text "HeadLazy"
-        TwConManifest   -> text "Manifest"
         TwConDisjoint   -> text "Disjoint"
         
 
@@ -197,7 +191,5 @@ instance Pretty TcCon where
         TcConDeepWrite  -> text "DeepWrite"
         TcConAlloc      -> text "Alloc"
         TcConDeepAlloc  -> text "DeepAlloc"
-        TcConUse        -> text "Use"
-        TcConDeepUse    -> text "DeepUse"
 
 

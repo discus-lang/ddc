@@ -217,8 +217,6 @@ hashTcCon tc
         TcConWrite      -> Just $ TyConHash 2
         TcConDeepWrite  -> Just $ TyConHash 3
         TcConAlloc      -> Just $ TyConHash 4
-        TcConUse        -> Just $ TyConHash 5
-        TcConDeepUse    -> Just $ TyConHash 6
         _               -> Nothing
 
 
@@ -239,8 +237,6 @@ unhashTyCon (TyConHash i)
         2               -> TcConWrite
         3               -> TcConDeepWrite
         4               -> TcConAlloc
-        5               -> TcConUse
-        6               -> TcConDeepUse
 
         -- This should never happen, because we only produce hashes
         -- with the above 'hashTyCon' function.

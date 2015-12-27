@@ -4,10 +4,8 @@ module DDC.Type.Transform.Crush
 where
 import DDC.Type.Predicates
 import DDC.Type.Compounds
-import DDC.Type.Transform.Trim
 import DDC.Type.Exp
 import qualified DDC.Type.Sum   as Sum
-import Data.Maybe
 
 
 -- | Crush compound effects and closure terms.
@@ -25,12 +23,6 @@ crushSomeT tt
                 TyConSpec    TcConDeepRead   -> crushEffect tt
                 TyConSpec    TcConDeepWrite  -> crushEffect tt
                 TyConSpec    TcConDeepAlloc  -> crushEffect tt
-
-                -- If a closure is miskinded then 'trimClosure' 
-                -- can return Nothing, so we just leave the term untrimmed.
-                TyConSpec    TcConDeepUse    -> fromMaybe tt (trimClosure tt)
-
-                TyConWitness TwConDeepGlobal -> crushEffect tt
                 _                            -> tt
 
         _ -> tt
@@ -111,21 +103,6 @@ crushEffect tt
 
              _ -> tt
 
-         -- Deep Global
-         -- See Note: Crushing with higher kinded type vars.
-         --
-         -- NOTE: We're hijacking crushEffect to work on witnesses as well.
-         --       It would be better to split this into another function.
-         --
-         | Just (TyConWitness TwConDeepGlobal, [t]) <- takeTyConApps tt
-         -> case takeTyConApps t of
-             Just (TyConBound _ k, ts)
-              | (ks, _)  <- takeKFuns k
-              , length ks == length ts
-              , Just props       <- sequence $ zipWith makeDeepGlobal ks ts
-              -> crushEffect $ TSum $ Sum.fromList kWitness props
-
-             _ -> tt 
 
          | otherwise
          -> TApp (crushEffect t1) (crushEffect t2)
@@ -163,16 +140,6 @@ makeDeepAlloc k t
         | isEffectKind  k       = Just $ tBot kEffect
         | otherwise             = Nothing
 
-
--- | If this type has first order kind then wrap with the 
---   appropriate read effect.
-makeDeepGlobal :: Kind n -> Type n -> Maybe (Type n)
-makeDeepGlobal k t
-        | isRegionKind  k       = Just $ tGlobal t
-        | isDataKind    k       = Just $ tDeepGlobal t
-        | isClosureKind k       = Nothing
-        | isEffectKind  k       = Just $ tBot kEffect
-        | otherwise             = Nothing
 
 
 {- [Note: Crushing with higher kinded type vars]

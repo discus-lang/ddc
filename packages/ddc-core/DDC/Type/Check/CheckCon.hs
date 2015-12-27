@@ -44,16 +44,10 @@ kindOfTwCon tc
  = case tc of
         TwConImpl       -> kWitness  `kFun`  kWitness `kFun` kWitness
         TwConPure       -> kEffect   `kFun`  kWitness
-        TwConEmpty      -> kClosure  `kFun`  kWitness
-        TwConGlobal     -> kRegion   `kFun`  kWitness
-        TwConDeepGlobal -> kData     `kFun`  kWitness
         TwConConst      -> kRegion   `kFun`  kWitness
         TwConDeepConst  -> kData     `kFun`  kWitness
         TwConMutable    -> kRegion   `kFun`  kWitness
         TwConDeepMutable-> kData     `kFun`  kWitness
-        TwConLazy       -> kRegion   `kFun`  kWitness
-        TwConHeadLazy   -> kData     `kFun`  kWitness
-        TwConManifest   -> kRegion   `kFun`  kWitness
         TwConDisjoint   -> kEffect   `kFun`  kEffect  `kFun`  kWitness
         TwConDistinct n -> (replicate n kRegion)      `kFuns` kWitness        
 
@@ -73,7 +67,4 @@ kindOfTcCon tc
         TcConDeepWrite  -> kData    `kFun` kEffect
         TcConAlloc      -> kRegion  `kFun` kEffect
         TcConDeepAlloc  -> kData    `kFun` kEffect
-        TcConUse        -> kRegion  `kFun` kClosure
-        TcConDeepUse    -> kData    `kFun` kClosure
-
 

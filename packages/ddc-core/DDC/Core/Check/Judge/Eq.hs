@@ -4,7 +4,7 @@ module DDC.Core.Check.Judge.Eq
 where
 import DDC.Core.Check.Base
 import DDC.Type.Transform.Crush
-import DDC.Type.Transform.Trim
+
 
 -- | Make two types equivalent to each other,
 --   or throw the provided error if this is not possible.
@@ -121,15 +121,12 @@ makeEq config a ctx0 tL tR err
 
 
  -- EqFun
- | Just (tL1, tEffL, tCloL, tL2) <- takeTFunEC tL
- , Just (tR1, tEffR, tCloR, tR2) <- takeTFunEC tR
+ | Just (tL1, tEffL, _tCloL, tL2) <- takeTFunEC tL
+ , Just (tR1, tEffR, _tCloR, tR2) <- takeTFunEC tR
  = do   
         ctx1    <- makeEq config a ctx0 tL1 tR1 err
         ctx2    <- makeEq config a ctx1 (crushEffect tEffL) (crushEffect tEffR) err
-        
-        let Just tCloL' = trimClosure tCloL
-        let Just tCloR' = trimClosure tCloR
-        ctx3    <- makeEq config a ctx2 tCloL' tCloR' err
+        ctx3    <- makeEq config a ctx2 (tBot kClosure) (tBot kClosure) err
 
         ctx4    <- makeEq config a ctx3 tL2 tR2 err
         return ctx4

@@ -15,7 +15,6 @@ import DDC.Type.Collect
 import DDC.Type.Compounds
 import DDC.Type.Transform.BoundT
 import DDC.Type.Transform.Crush
-import DDC.Type.Transform.Trim
 import DDC.Type.Transform.Rename
 import DDC.Type.Exp
 import Data.Maybe
@@ -97,11 +96,6 @@ instance SubstituteT Type where
 
                 TCon (TyConSpec TcConDeepAlloc) 
                   -> crushEffect      (TApp t1 (down t2))
-
-                -- If the closure is miskinded then trimClosure can 
-                -- return Nothing, so we leave it untrimmed.
-                TCon (TyConSpec TcConDeepUse)
-                  -> fromMaybe tt (trimClosure (TApp t1 (down t2)))
 
                 _ -> TApp (down t1) (down t2)
 

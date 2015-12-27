@@ -210,15 +210,6 @@ data TwCon
         -- | Purity of some effect.
         | TwConPure             -- :: Effect  ~> Witness
 
-        -- | Emptiness of some closure.
-        | TwConEmpty            -- :: Closure ~> Witness
-
-        -- | Globalness of some region.
-        | TwConGlobal           -- :: Region  ~> Witness
-
-        -- | Globalness of material regions in some type.
-        | TwConDeepGlobal       -- :: Data    ~> Witness
-        
         -- | Constancy of some region.
         | TwConConst            -- :: Region  ~> Witness
 
@@ -234,15 +225,6 @@ data TwCon
         -- | Distinctness of some n regions
         | TwConDistinct Int     -- :: Data    ~> [Region] ~> Witness
         
-        -- | Laziness of some region.
-        | TwConLazy             -- :: Region  ~> Witness
-
-        -- | Laziness of the primary region in some type.
-        | TwConHeadLazy         -- :: Data    ~> Witness
-
-        -- | Manifestness of some region (not lazy).
-        | TwConManifest         -- :: Region  ~> Witness
-
         -- | Non-interfering effects are disjoint. Used for rewrite rules.
         | TwConDisjoint         -- :: Effect ~> Effect ~> Witness
         deriving (Eq, Show)
@@ -284,11 +266,5 @@ data TcCon
 
         -- | Allocation into all material regions in some data type.
         | TcConDeepAlloc        -- :: 'Data   ~> Effect'
-        
-        -- Closure type constructors ------------
-        -- | Region is captured in a closure.
-        | TcConUse              -- :: 'Region ~> Closure'
-        
-        -- | All material regions in a data type are captured in a closure.
-        | TcConDeepUse          -- :: 'Data   ~> Closure'
         deriving (Eq, Show)
+

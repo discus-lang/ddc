@@ -4,9 +4,7 @@ where
 import DDC.Type.Exp
 import DDC.Type.Predicates
 import DDC.Type.Transform.Crush
-import DDC.Type.Transform.Trim
 import qualified DDC.Type.Sum   as Sum
-import Control.Monad
 
 
 -- | Check whether the first type subsumes the second.
@@ -21,11 +19,6 @@ subsumesT k t1 t2
         | isEffectKind k
         , ts1       <- Sum.singleton k $ crushEffect t1
         , ts2       <- Sum.singleton k $ crushEffect t2
-        = and $ [ Sum.elem t ts1 | t <- Sum.toList ts2 ]
-
-        | isClosureKind k
-        , Just ts1  <- liftM (Sum.singleton k) $ trimClosure t1
-        , Just ts2  <- liftM (Sum.singleton k) $ trimClosure t2
         = and $ [ Sum.elem t ts1 | t <- Sum.toList ts2 ]
 
         | otherwise

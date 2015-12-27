@@ -97,17 +97,11 @@ readKiConBuiltin ss
 readTwConBuiltin :: String -> Maybe TwCon
 readTwConBuiltin ss
  = case ss of
-        "Global"        -> Just TwConGlobal
-        "DeepGlobal"    -> Just TwConDeepGlobal
         "Const"         -> Just TwConConst
         "DeepConst"     -> Just TwConDeepConst
         "Mutable"       -> Just TwConMutable
         "DeepMutable"   -> Just TwConDeepMutable
-        "Lazy"          -> Just TwConLazy
-        "HeadLazy"      -> Just TwConHeadLazy
-        "Manifest"      -> Just TwConManifest
         "Purify"        -> Just TwConPure
-        "Emptify"       -> Just TwConEmpty
         "Disjoint"      -> Just TwConDisjoint
         "Distinct"      -> Just (TwConDistinct 2)
         _               -> readTwConWithArity ss
@@ -136,8 +130,6 @@ readTcConBuiltin ss
         "DeepWrite"     -> Just TcConDeepWrite
         "Alloc"         -> Just TcConAlloc
         "DeepAlloc"     -> Just TcConDeepAlloc
-        "Use"           -> Just TcConUse
-        "DeepUse"       -> Just TcConDeepUse
         _               -> Nothing
 
 

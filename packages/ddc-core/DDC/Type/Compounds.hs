@@ -79,18 +79,11 @@ module DDC.Type.Compounds
         , tWrite,       tDeepWrite
         , tAlloc,       tDeepAlloc
 
-          -- * Closure type constructors
-        , tUse,         tDeepUse
-
           -- * Witness type constructors
         , tPure
-        , tEmpty
-        , tGlobal,      tDeepGlobal
         , tConst,       tDeepConst
         , tMutable,     tDeepMutable
         , tDistinct
-        , tLazy,        tHeadLazy
-        , tManifest
         , tConData0,    tConData1)
 where
 import DDC.Type.Exp
@@ -637,23 +630,13 @@ tDeepWrite      = tcCon1 TcConDeepWrite
 tAlloc          = tcCon1 TcConAlloc
 tDeepAlloc      = tcCon1 TcConDeepAlloc
 
--- Closure type constructors.
-tUse            = tcCon1 TcConUse
-tDeepUse        = tcCon1 TcConDeepUse
-
 -- Witness type constructors.
 tPure           = twCon1 TwConPure
-tEmpty          = twCon1 TwConEmpty
-tGlobal         = twCon1 TwConGlobal
-tDeepGlobal     = twCon1 TwConDeepGlobal
 tConst          = twCon1 TwConConst
 tDeepConst      = twCon1 TwConDeepConst
 tMutable        = twCon1 TwConMutable
 tDeepMutable    = twCon1 TwConDeepMutable
 tDistinct n     = twCon2 (TwConDistinct n)
-tLazy           = twCon1 TwConLazy
-tHeadLazy       = twCon1 TwConHeadLazy
-tManifest       = twCon1 TwConManifest
 
 tcCon1 tc t     = (TCon $ TyConSpec    tc) `tApp` t
 twCon1 tc t     = (TCon $ TyConWitness tc) `tApp` t

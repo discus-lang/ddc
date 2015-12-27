@@ -182,8 +182,6 @@ checkWitnessBindsM !config !a !kenv !ctx !xx !uRegions !bsWit
         -- Check a single witness binder for conflicts with other witnesses.
         checkWitnessBindM bWit
          = case typeOfBind bWit of
-            TApp (TCon (TyConWitness TwConGlobal))   t2
-             -> checkWitnessArg bWit t2
 
             TApp (TCon (TyConWitness TwConConst))    t2
              | Just bConflict <- L.lookup (tMutable t2) btsWit
@@ -192,16 +190,6 @@ checkWitnessBindsM !config !a !kenv !ctx !xx !uRegions !bsWit
 
             TApp (TCon (TyConWitness TwConMutable))  t2
              | Just bConflict <- L.lookup (tConst t2)    btsWit
-             -> throw $ ErrorLetRegionWitnessConflict a xx bWit bConflict
-             | otherwise    -> checkWitnessArg bWit t2
-
-            TApp (TCon (TyConWitness TwConLazy))     t2
-             | Just bConflict <- L.lookup (tManifest t2) btsWit
-             -> throw $ ErrorLetRegionWitnessConflict a xx bWit bConflict
-             | otherwise    -> checkWitnessArg bWit t2
-
-            TApp (TCon (TyConWitness TwConManifest)) t2
-             | Just bConflict <- L.lookup (tLazy t2)     btsWit
              -> throw $ ErrorLetRegionWitnessConflict a xx bWit bConflict
              | otherwise    -> checkWitnessArg bWit t2
          
