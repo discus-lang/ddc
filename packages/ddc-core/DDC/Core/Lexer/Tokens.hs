@@ -259,9 +259,6 @@ data TokAtom
         --   witness type constructors.
         | KTwConBuiltin TwCon
 
-        --   witness constructors.
-        | KWbConBuiltin WbCon
-
         --   other builtin spec constructors.
         | KTcConBuiltin TcCon
 
@@ -364,7 +361,6 @@ describeTokAtom' ta
         KSoConBuiltin so        -> (Constructor, renderPlain $ ppr so)
         KKiConBuiltin ki        -> (Constructor, renderPlain $ ppr ki)
         KTwConBuiltin tw        -> (Constructor, renderPlain $ ppr tw)
-        KWbConBuiltin wi        -> (Constructor, renderPlain $ ppr wi)
         KTcConBuiltin tc        -> (Constructor, renderPlain $ ppr tc)
         KDaConUnit              -> (Constructor, "()")
         

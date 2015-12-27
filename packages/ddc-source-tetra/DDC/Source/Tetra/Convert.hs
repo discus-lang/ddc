@@ -285,7 +285,6 @@ toCoreW ww
 toCoreWC :: WiCon S.Name -> WiCon C.Name
 toCoreWC wc
  = case wc of
-        WiConBuiltin wb -> WiConBuiltin wb
         WiConBound u t  -> WiConBound (toCoreU u) (toCoreT t)
 
 

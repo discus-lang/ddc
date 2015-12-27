@@ -20,8 +20,7 @@ module DDC.Source.Tetra.Exp.Base
         , DaCon         (..)
 
         -- * Witness Constructors
-        , WiCon         (..)
-        , WbCon         (..))
+        , WiCon         (..))
 where
 import DDC.Type.Exp
 import DDC.Type.Sum     ()
@@ -29,7 +28,6 @@ import Control.DeepSeq
 import DDC.Core.Exp     
         ( Witness       (..)
         , WiCon         (..)
-        , WbCon         (..)
         , Pat           (..)
         , DaCon         (..))
 

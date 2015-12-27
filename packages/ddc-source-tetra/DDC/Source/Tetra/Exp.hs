@@ -20,8 +20,7 @@ module DDC.Source.Tetra.Exp
         , DaCon         (..)
 
         -- * Witness Constructors
-        , WiCon         (..)
-        , WbCon         (..))
+        , WiCon         (..))
 where
 import DDC.Type.Exp
 import DDC.Source.Tetra.Exp.Base

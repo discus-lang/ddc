@@ -460,18 +460,7 @@ instance (Pretty n, Eq n) => Pretty (Witness a n) where
 instance (Pretty n, Eq n) => Pretty (WiCon n) where
  ppr wc
   = case wc of
-        WiConBuiltin wb   -> ppr wb
         WiConBound   u  _ -> ppr u
-
-
-instance Pretty WbCon where
- ppr wb
-  = case wb of
-        WbConPure       -> text "pure"
-        WbConEmpty      -> text "empty"
-        WbConUse        -> text "use"
-        WbConRead       -> text "read"
-        WbConAlloc      -> text "alloc"
 
 
 -- Binder -----------------------------------------------------------------------------------------

@@ -290,9 +290,6 @@ lexText sourceName lineStart xx
 
                  | Just t       <- lookup s keywords
                  = tok t                   : lexMore (length s) rest'
-
-                 | Just wc      <- readWbConBuiltin s
-                 = tokA (KWbConBuiltin wc) : lexMore (length s) rest'
          
                  | Just v       <- readVar s
                  = tokN (KVar v)           : lexMore (length s) rest'

@@ -3,8 +3,7 @@ module DDC.Core.Check.Witness
         ( checkWitness
         , checkWitnessM
         , typeOfWitness
-        , typeOfWiCon
-        , typeOfWbCon)
+        , typeOfWiCon)
 where
 import DDC.Core.Annot.AnT
 import DDC.Core.Check.Error
@@ -130,17 +129,5 @@ checkWitnessM !config !kenv !_tenv !ctx (WType a t)
 typeOfWiCon :: WiCon n -> Type n
 typeOfWiCon wc
  = case wc of
-    WiConBuiltin wb -> typeOfWbCon wb
     WiConBound _ t  -> t
-
-
--- | Take the type of a builtin witness constructor.
-typeOfWbCon :: WbCon -> Type n
-typeOfWbCon wb
- = case wb of
-    WbConPure    -> tPure  (tBot kEffect)
-    WbConEmpty   -> tEmpty (tBot kClosure)
-    WbConUse     -> tForall kRegion $ \r -> tGlobal r `tImpl` (tEmpty $ tUse r)
-    WbConRead    -> tForall kRegion $ \r -> tConst  r `tImpl` (tPure  $ tRead r)
-    WbConAlloc   -> tForall kRegion $ \r -> tConst  r `tImpl` (tPure  $ tAlloc r)
 

@@ -92,11 +92,6 @@ pWitnessAtomSP c
    -- Named constructors
  , do   (con, sp) <- pConSP
         return  (WCon sp (WiConBound (UName con) (T.tBot T.kWitness)), sp)
-
-   -- Baked-in witness constructors.
- , do   (wb, sp) <- pWbConSP
-        return  (WCon sp (WiConBuiltin wb), sp)
-
                 
    -- Debruijn indices
  , do   (i, sp) <- pIndexSP

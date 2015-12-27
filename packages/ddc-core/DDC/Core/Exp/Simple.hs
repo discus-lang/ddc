@@ -22,8 +22,7 @@ module DDC.Core.Exp.Simple
         , DaCon         (..)
 
           -- * Witness Constructors
-        , WiCon         (..)
-        , WbCon         (..))
+        , WiCon         (..))
 where
 import DDC.Core.Exp.WiCon
 import DDC.Core.Exp.DaCon

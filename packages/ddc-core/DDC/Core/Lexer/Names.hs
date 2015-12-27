@@ -8,7 +8,6 @@ module DDC.Core.Lexer.Names
         , readKiConBuiltin
         , readTwConBuiltin
         , readTcConBuiltin
-        , readWbConBuiltin
 
           -- * Variable names
         , isVarName
@@ -60,11 +59,9 @@ keywords
         , ("let",        KA KLet)
         , ("case",       KA KCase)
         , ("purify",     KA KPurify)
-        , ("forget",     KA KForget)
         , ("box",        KA KBox)
         , ("run",        KA KRun)
         , ("weakeff",    KA KWeakEff)
-        , ("weakclo",    KA KWeakClo)
         , ("with",       KA KWith)
         , ("where",      KA KWhere) 
         , ("do",         KA KDo)
@@ -143,17 +140,6 @@ readTcConBuiltin ss
         "DeepUse"       -> Just TcConDeepUse
         _               -> Nothing
 
-
--- | Read a witness constructor.
-readWbConBuiltin :: String -> Maybe WbCon
-readWbConBuiltin ss
- = case ss of
-        "pure"          -> Just WbConPure
-        "empty"         -> Just WbConEmpty
-        "use"           -> Just WbConUse
-        "read"          -> Just WbConRead
-        "alloc"         -> Just WbConAlloc
-        _               -> Nothing
 
 
 -- Variable names -------------------------------------------------------------

@@ -4,7 +4,6 @@ module DDC.Core.Parser.Base
         , pModuleName
         , pQualName
         , pName
-        , pWbCon,       pWbConSP
         , pCon,         pConSP
         , pLit,         pLitSP
         , pString,      pStringSP
@@ -18,7 +17,6 @@ module DDC.Core.Parser.Base
 where
 import DDC.Base.Pretty
 import DDC.Core.Module
-import DDC.Core.Exp
 import DDC.Core.Lexer.Tokens
 import DDC.Base.Parser                  ((<?>), SourcePos)
 import Data.Text                        (Text)
@@ -48,7 +46,6 @@ pModuleName1 = P.pTokMaybe f
         f (KA (KSoConBuiltin c))  = Just $ ModuleName [ renderPlain $ ppr c ]
         f (KA (KKiConBuiltin c))  = Just $ ModuleName [ renderPlain $ ppr c ]
         f (KA (KTwConBuiltin c))  = Just $ ModuleName [ renderPlain $ ppr c ]
-        f (KA (KWbConBuiltin c))  = Just $ ModuleName [ renderPlain $ ppr c ]
         f (KA (KTcConBuiltin c))  = Just $ ModuleName [ renderPlain $ ppr c ]
         f _                       = Nothing
 
@@ -65,20 +62,6 @@ pQualName
 -- | Parse a constructor or variable name.
 pName :: Parser n n
 pName   = P.choice [pCon, pVar]
-
-
--- | Parse a builtin named `WbCon`
-pWbCon :: Parser n WbCon
-pWbCon  = P.pTokMaybe f
- where  f (KA (KWbConBuiltin wb)) = Just wb
-        f _                       = Nothing
-
-
--- | Parse a builtin named `WbCon`
-pWbConSP :: Parser n (WbCon, SourcePos)
-pWbConSP = P.pTokMaybeSP f
- where  f (KA (KWbConBuiltin wb)) = Just wb
-        f _                       = Nothing
 
 
 -- | Parse a constructor name.
