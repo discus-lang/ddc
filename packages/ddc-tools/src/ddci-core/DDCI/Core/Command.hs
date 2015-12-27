@@ -7,7 +7,6 @@ module DDCI.Core.Command
 where
 import DDCI.Core.Command.Help
 import DDCI.Core.Command.Set
-import DDCI.Core.Command.Eval
 import DDCI.Core.Command.TransInteract
 import DDCI.Core.Command.With
 import DDCI.Core.State
@@ -58,11 +57,9 @@ data Command
         | CommandExpEffect      -- ^ Check an expression, showing its effect.
         | CommandExpClosure     -- ^ Check an expression, showing its closure.
         | CommandExpRecon       -- ^ Reconstruct type annotations on binders.
-        | CommandEval           -- ^ Evaluate an expression.
 
         -- Generic transformations
         | CommandTrans          -- ^ Transform an expression.
-        | CommandTransEval      -- ^ Transform then evaluate an expression.
         | CommandTransInteract  -- ^ Interactively transform an expression.
 
         -- Make and compile
@@ -127,10 +124,7 @@ commands
         , (":effect",           CommandExpEffect)
         , (":closure",          CommandExpClosure)
 
-        , (":eval",             CommandEval)
-
         -- Generic transformations
-        , (":trun",             CommandTransEval)
         , (":tinteract",        CommandTransInteract)
         , (":trans",            CommandTrans)
 
@@ -262,10 +256,6 @@ handleCmd1 state cmd source line
          -> do  cmdExpRecon  lang source line
                 return state
 
-        CommandEval       
-         -> do  cmdEval state source line
-                return state
-
         -- Generic transformations --------------
         CommandTrans
          -> do  configDriver    <- getDriverConfigOfState state
@@ -275,10 +265,6 @@ handleCmd1 state cmd source line
                         (stateLanguage state)
                         (Set.member Mode.TraceTrans $ stateModes state)
                         source line
-                return state
-        
-        CommandTransEval
-         -> do  cmdTransEval state source line
                 return state
         
         CommandTransInteract

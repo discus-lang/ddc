@@ -31,9 +31,8 @@ eatLine state inputState chunk
          Nothing        
           ->    return  (state, inputState')
 
-         Just (source, Nothing,  line)
-          -> do state'  <- handleCmd state CommandEval source line
-                return  (state', inputState')
+         Just (_source, Nothing,  _line)
+          -> do return  (state,  inputState')
 
          Just (source, Just cmd, line)
           -> do state'  <- handleCmd state cmd source line

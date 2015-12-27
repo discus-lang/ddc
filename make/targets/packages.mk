@@ -4,7 +4,6 @@ PACKAGES = \
 	ddc-base \
 	ddc-core \
 	ddc-core-simpl \
-	ddc-core-eval \
 	ddc-core-salt \
 	ddc-core-llvm \
 	ddc-core-flow \

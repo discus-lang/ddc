@@ -14,7 +14,6 @@ docs-core :
 			--optghc=-ipackages/ddc-base \
 			--optghc=-ipackages/ddc-build \
 			--optghc=-ipackages/ddc-core \
-			--optghc=-ipackages/ddc-core-eval \
 			--optghc=-ipackages/ddc-core-llvm \
 			--optghc=-ipackages/ddc-core-salt \
 			--optghc=-ipackages/ddc-core-simpl \
@@ -38,7 +37,6 @@ docs-hoogle-core :
 			--optghc=-ipackages/ddc-base \
 			--optghc=-ipackages/ddc-build \
 			--optghc=-ipackages/ddc-core \
-			--optghc=-ipackages/ddc-core-eval \
 			--optghc=-ipackages/ddc-core-llvm \
 			--optghc=-ipackages/ddc-core-salt \
 			--optghc=-ipackages/ddc-core-simpl \

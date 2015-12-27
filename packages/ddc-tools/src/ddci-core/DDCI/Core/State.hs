@@ -24,6 +24,7 @@ import DDC.Interface.Input
 import DDC.Interface.Source
 import DDC.Build.Builder
 import DDC.Build.Language
+
 import DDC.Core.Exp
 import DDC.Core.Module
 import DDC.Core.Simplifier
@@ -34,7 +35,7 @@ import System.FilePath
 import Data.Map                                 (Map)
 import Data.Set                                 (Set)
 import DDC.Core.Check                           (AnTEC(..))
-import qualified DDC.Build.Language.Eval        as Eval
+import qualified DDC.Build.Language.Tetra       as Tetra
 import qualified DDC.Core.Salt                  as Salt
 import qualified DDC.Core.Simplifier            as S
 import qualified DDC.Core.Salt.Runtime          as Runtime
@@ -112,7 +113,7 @@ initState interface
         = State
         { stateInterface        = interface
         , stateModes            = Set.empty 
-        , stateLanguage         = Eval.language
+        , stateLanguage         = Tetra.language
         , stateWithSalt         = Map.empty
         , stateSimplSalt        = S.Trans S.Id
         , stateBuilder          = Nothing  
