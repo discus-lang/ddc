@@ -230,9 +230,6 @@ usageLets lts
         LPrivate b mt bs 
          -> (empty, LPrivate b mt bs)
 
-        LWithRegion b
-         -> (empty, LWithRegion b)
-
 
 -- | Annotate binding occurrences of named value variables with 
 --  usage information.

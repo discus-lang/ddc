@@ -65,7 +65,6 @@ instance Inline Lets where
         LLet b x        -> LLet b (enter b x)
         LRec bxs        -> LRec [(b, enter b x) | (b, x) <- bxs]
         LPrivate{}      -> lts
-        LWithRegion{}   -> lts
 
 
 instance Inline Alt where

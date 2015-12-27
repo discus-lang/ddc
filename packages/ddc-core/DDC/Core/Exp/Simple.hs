@@ -82,9 +82,6 @@ data Lets a n
         -- | Bind a local region variable,
         --   and witnesses to its properties.
         | LPrivate ![Bind n] !(Maybe (Type n)) ![Bind n]
-        
-        -- | Holds a region handle during evaluation.
-        | LWithRegion !(Bound n)
         deriving (Show, Eq)
 
 
@@ -180,7 +177,6 @@ instance (NFData a, NFData n) => NFData (Lets a n) where
         LLet b x                -> rnf b `seq` rnf x
         LRec bxs                -> rnf bxs
         LPrivate bs1 t2 bs3     -> rnf bs1  `seq` rnf t2 `seq` rnf bs3
-        LWithRegion u           -> rnf u
 
 
 instance (NFData a, NFData n) => NFData (Alt a n) where

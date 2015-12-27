@@ -142,8 +142,8 @@ instance Bubble Lets where
 
             in  ([], LRec bxs')
 
-        LPrivate{}              -> ([], lts)
-        LWithRegion{}           -> ([], lts)
+        LPrivate{}
+         -> ([], lts)
 
 
 instance Bubble Alt where

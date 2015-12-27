@@ -48,7 +48,6 @@ instance Reannotate Lets where
         LLet b x                -> LLet b (down x)
         LRec bxs                -> LRec [(b, down x) | (b, x) <- bxs]
         LPrivate b t bs         -> LPrivate b t bs
-        LWithRegion b           -> LWithRegion b
 
 
 instance Reannotate Alt where

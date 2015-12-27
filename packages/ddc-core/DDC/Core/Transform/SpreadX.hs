@@ -179,9 +179,6 @@ instance SpreadX (Lets a) where
                 bs'      = map (spreadX kenv' tenv) bs
             in  LPrivate b' mT' bs'
 
-        LWithRegion b
-         -> LWithRegion (spreadX kenv tenv b)
-
 
 ---------------------------------------------------------------------------------------------------
 instance SpreadX (Witness a) where

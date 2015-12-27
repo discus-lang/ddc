@@ -162,8 +162,8 @@ mapBoundAtDepthXLets f d lts
                 bs' = map (\(b,e) -> (b, mapBoundAtDepthX f (d+inc) e)) bs
             in  (LRec bs', inc)
 
-        LPrivate _b _ bs -> (lts, countBAnons bs)
-        LWithRegion _    -> (lts, 0)
+        LPrivate _b _ bs 
+         -> (lts, countBAnons bs)
 
 
 countBAnons = length . filter isAnon

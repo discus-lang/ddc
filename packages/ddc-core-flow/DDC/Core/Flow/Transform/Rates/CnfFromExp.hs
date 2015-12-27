@@ -202,5 +202,4 @@ takeLets lets
   get (LLet (BAnon _)   _) = Left   FailNoDeBruijnAllowed
   get (LRec        _     ) = Left   FailRecursiveBindings
   get (LPrivate _ _ _)     = Left   FailLetRegionNotHandled
-  get (LWithRegion _     ) = Left   FailLetRegionNotHandled
 

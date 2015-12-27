@@ -144,7 +144,6 @@ transL tails lts
         LLet b x        -> LLet b (transX tails x)
         LRec bxs        -> LRec [(b, transX tails x) | (b, x) <- bxs]
         LPrivate{}      -> lts
-        LWithRegion{}   -> lts
 
 
 -- Alt ------------------------------------------------------------------------

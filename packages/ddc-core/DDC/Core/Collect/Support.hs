@@ -223,10 +223,6 @@ instance SupportX (Lets a) where
          <> (let kenv' = Env.extends bs kenv
              in  mconcat $ map (support kenv' tenv) ws)
 
-        LWithRegion u
-         | Env.member u kenv    -> mempty
-         | otherwise            -> mempty { supportSpVar = Set.singleton u }
-
 
 instance SupportX Bind where
  support kenv tenv b

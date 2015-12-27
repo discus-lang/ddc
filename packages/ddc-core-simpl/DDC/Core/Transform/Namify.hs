@@ -149,11 +149,6 @@ instance Namify (Exp a) where
                 x2'             <- namify tnam' xnam' x2
                 return $ XLet a (LPrivate b' mt bs') x2'
 
-        XLet a (LWithRegion u) x2
-         -> do  u'              <- rewriteX tnam xnam u
-                x2'             <- down x2
-                return  $ XLet a (LWithRegion u') x2'
-
         XCase a x1 alts -> liftM2 (XCase    a) (down x1)  (mapM down alts)
         XCast a c  x    -> liftM2 (XCast    a) (down c)   (down x)
         XType a t       -> liftM  (XType    a) (down t)

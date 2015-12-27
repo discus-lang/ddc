@@ -109,9 +109,6 @@ instance SubstituteWX Exp where
                 mT'             = liftM (into sub) mT
             in  XLet a (LPrivate b' mT' bs') x2'
 
-        XLet a (LWithRegion uR) x2
-         -> XLet a (LWithRegion uR) (down sub x2)
-
         XCase    a x1 alts      -> XCase    a (down sub x1) (map (down sub) alts)
         XCast    a cc x1        -> XCast    a (down sub cc) (down sub x1)
         XType    a t            -> XType    a (into sub t)

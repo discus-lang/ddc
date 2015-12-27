@@ -134,11 +134,6 @@ enterX config arities xx
                 x2'     = snipLetBody config a $ down ars x2
             in  XLet a (LPrivate b mt bs) x2'
 
-        -- withregion
-        XLet a (LWithRegion b) x2
-         -> let x2'     = snipLetBody config a $ down [] x2
-            in  XLet a (LWithRegion b) x2'
-
         -- case
         -- Split out non-atomic discriminants into their own bindings.
         XCase a e alts

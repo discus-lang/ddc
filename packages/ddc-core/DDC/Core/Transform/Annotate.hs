@@ -62,7 +62,6 @@ instance Annotate S.Lets A.Lets where
         S.LLet b x                      -> A.LLet b (down x)
         S.LRec bxs                      -> A.LRec [(b, down x) | (b, x) <- bxs]
         S.LPrivate bks mT bts           -> A.LPrivate bks mT bts
-        S.LWithRegion u                 -> A.LWithRegion u
 
 
 instance Annotate S.Alt A.Alt where

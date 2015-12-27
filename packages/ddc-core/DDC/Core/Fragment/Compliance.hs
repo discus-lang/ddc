@@ -217,11 +217,6 @@ instance Complies Exp where
                                         (reset context) x2
                 return (tUsed2, vUsed2)
 
-        XLet _ (LWithRegion _) x2
-         -> do  (tUsed2, vUsed2) <- compliesX profile kenv tenv 
-                                        (reset context) x2
-                return (tUsed2, vUsed2)
-
         -- case ---------------------------------
         XCase _ x1 alts
          -> do  (tUsed1,  vUsed1)  

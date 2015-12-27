@@ -219,8 +219,8 @@ lambdasLets p c a xBody lts
          -> let (bxs', r) = lambdasLetRec p c a [] bxs xBody
             in  ([LRec bxs'], r)
                 
-        LPrivate{}      -> ([lts], mempty)
-        LWithRegion{}   -> ([lts], mempty)
+        LPrivate{}
+         -> ([lts], mempty)
 
 
 -- LetRec -----------------------------------------------------------------------------------------

@@ -48,7 +48,6 @@ instance MapT (Lets a) where
         LLet b x          -> LLet (down b) (down x)
         LRec bxs          -> LRec [ (down b, down x) | (b, x) <- bxs]
         LPrivate bs mT ws -> LPrivate (map down bs) (liftM f mT) (map down ws)
-        LWithRegion u     -> LWithRegion u
 
 
 instance MapT (Alt a) where

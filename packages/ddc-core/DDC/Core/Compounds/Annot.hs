@@ -325,7 +325,6 @@ bindsOfLets ll
         LLet b _          -> ([],  [b])
         LRec bxs          -> ([],  map fst bxs)
         LPrivate bs _ bbs -> (bs, bbs)
-        LWithRegion{}     -> ([],  [])
 
 
 -- | Like `bindsOfLets` but only take the spec (level-1) binders.
@@ -335,7 +334,6 @@ specBindsOfLets ll
         LLet _ _        -> []
         LRec _          -> []
         LPrivate bs _ _ -> bs
-        LWithRegion{}   -> []
 
 
 -- | Like `bindsOfLets` but only take the value and witness (level-0) binders.
@@ -345,7 +343,6 @@ valwitBindsOfLets ll
         LLet b _        -> [b]
         LRec bxs        -> map fst bxs
         LPrivate _ _ bs -> bs
-        LWithRegion{}   -> []
 
 
 -- Alternatives ---------------------------------------------------------------

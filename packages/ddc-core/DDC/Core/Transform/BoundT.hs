@@ -86,9 +86,6 @@ mapBoundAtDepthTLets f d lts
             in  ( LPrivate bsT mT bsX'
                 , inc)
 
-        LWithRegion _
-         -> (lts, 0)
-
 
 countBAnons = length . filter isAnon
  where  isAnon (BAnon _) = True

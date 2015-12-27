@@ -8,7 +8,6 @@ import DDC.Core.Tetra.Convert.Error
 import DDC.Core.Compounds
 import DDC.Core.Exp
 import DDC.Core.Check                   (AnTEC(..))
-import DDC.Control.Monad.Check          (throw)
 import qualified DDC.Core.Tetra.Prim    as E
 import qualified DDC.Core.Salt.Name     as A
 import qualified Data.Map               as Map
@@ -77,9 +76,6 @@ convertLets ctx lts
         LPrivate bs _ _
          ->     return  (Nothing
                         , extendsTypeEnv bs ctx)
-
-        LWithRegion{}
-         ->     throw $ ErrorMalformed "Cannot convert LWithRegion construct."
 
 
 -- Note: Binding top-level supers.

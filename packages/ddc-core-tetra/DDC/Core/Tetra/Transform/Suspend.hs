@@ -71,7 +71,6 @@ instance Suspend Lets where
         LLet b x        -> LLet b $ suspend env x
         LRec bxs        -> LRec [(b, suspend env x) | (b, x) <- bxs]
         LPrivate{}      -> lts
-        LWithRegion{}   -> lts
 
 
 instance Suspend Alt where

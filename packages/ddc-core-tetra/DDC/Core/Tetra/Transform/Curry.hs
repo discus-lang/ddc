@@ -148,7 +148,6 @@ curryLts ctx lts
         LLet b x        -> LLet b (curryX ctx x)
         LRec bxs        -> LRec [(b, curryX ctx x) | (b, x) <- bxs]
         LPrivate{}      -> lts
-        LWithRegion{}   -> lts
 
 
 -- | Manage function application in a case alternative.

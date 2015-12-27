@@ -445,10 +445,6 @@ instance (Pretty n, Eq n) => Pretty (Lets a n) where
                 <+> text "with"
                 <+> braces (cat $ punctuate (text "; ") $ map pprWitBind bws)
         
-        LWithRegion b
-         -> text "withregion"
-                <+> ppr b
-
 
 -- | When we pretty print witness binders, 
 --   suppress the underscore when there is no name.

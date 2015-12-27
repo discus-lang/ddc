@@ -165,7 +165,6 @@ boxingLts config lts
         LLet b x        -> LLet b (boxingX config x)
         LRec bxs        -> LRec [(b, boxingX config x) | (b, x) <- bxs]
         LPrivate{}      -> lts
-        LWithRegion{}   -> lts
 
 boxingAlt config alt
  = case alt of

@@ -58,18 +58,6 @@ pExp c
         pTok    KBraceKet
         return  $ xx
 
-        -- withregion CON in EXP
- , do   sp      <- pTokSP KWithRegion
-        u       <- P.choice 
-                [  do   n    <- pVar
-                        return $ UName n
-
-                ,  do   n    <- pCon
-                        return $ UPrim n kRegion]
-        pTok KIn
-        x       <- pExp c
-        return  $ XLet sp (LWithRegion u) x
-
         -- case EXP of { ALTS }
  , do   sp      <- pTokSP KCase
         x       <- pExp c

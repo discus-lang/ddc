@@ -122,8 +122,8 @@ instance Monad m => TransformDownMX m Lets where
                 xs'          <- mapM (transformDownMX f kenv tenv') xs
                 return       $ LRec $ zip bs xs'
 
-        LPrivate{}      -> return xx
-        LWithRegion{}   -> return xx
+        LPrivate{}
+         -> return xx
 
 
 instance Monad m => TransformDownMX m Alt where

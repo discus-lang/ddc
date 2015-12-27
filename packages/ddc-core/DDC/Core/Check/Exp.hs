@@ -151,7 +151,6 @@ checkExpM !table !ctx !xx !mode
     XLAM{}                 -> tableCheckLamT       table table ctx xx mode
     XLam{}                 -> tableCheckLamX       table table ctx xx mode
     XLet _ LPrivate{} _    -> tableCheckLetPrivate table table ctx xx mode
-    XLet _ LWithRegion{} _ -> tableCheckLetPrivate table table ctx xx mode
     XLet{}                 -> tableCheckLet        table table ctx xx mode
     XCase{}                -> tableCheckCase       table table ctx xx mode
     XCast{}                -> tableCheckCast       table table ctx xx mode

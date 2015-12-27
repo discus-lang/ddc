@@ -202,6 +202,3 @@ pushAnonymizeLets keep kstack tstack lts
                 (tstack', bs')  = pushAnonymizeBindXs keep kstack' tstack bs
             in  (kstack', tstack', LPrivate b' mt bs')
 
-        LWithRegion{}
-         -> (kstack, tstack, lts)
-

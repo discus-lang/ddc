@@ -130,65 +130,6 @@ checkLetPrivate !table !ctx
                 ctx_cut
 
 
--- withregion -----------------------------------
-checkLetPrivate !table !ctx0
-        xx@(XLet a (LWithRegion u) x) mode
- = do   let config      = tableConfig table
-        let kenv        = tableKindEnv table
-
-        -- The handle must have region kind.
-        -- We need to look in the KindEnv as well as the Context here, 
-        --  because the KindEnv knows the types of primitive variables.
-        (case listToMaybe  
-                $ catMaybes [ Env.lookup u kenv
-                            , liftM fst $ lookupKind u ctx0] of
-          Nothing -> throw $ ErrorUndefinedVar a u UniverseSpec
-
-          Just k  |  not $ isRegionKind k
-                  -> throw $ ErrorWithRegionNotRegion a xx u k
-
-          _       -> return ())
-        
-        -- Check the body expression.
-        (xBody0, tBody0, effs0, clo, ctx1) 
-         <- tableCheckExp table table ctx0 x mode
-
-        -- The body type must have data kind.
-        (tBody1, kBody1, ctx2) 
-         <- checkTypeM config kenv ctx1 UniverseSpec tBody0
-         $  case mode of
-                Recon   -> Recon
-                _       -> Check kData
-
-        let tBody2      = applyContext ctx2 tBody1
-        let kBody2      = applyContext ctx2 kBody1
-        let TSum effs2  = applyContext ctx2 (TSum effs0)
-        
-        when (not $ isDataKind kBody2)
-         $ throw $ ErrorLetBodyNotData a xx tBody2 kBody2
-        
-        -- The bound region variable cannot be free in the body type.
-        let tcs         = supportTyCon
-                        $ support Env.empty Env.empty tBody2
-        
-        when (Set.member u tcs)
-         $ throw $ ErrorWithRegionFree a xx u tBody2
-
-        -- Delete effects on the bound region from the result.
-        let tu          = TVar u
-        let effs_cut    = Sum.delete (tRead  tu)
-                        $ Sum.delete (tWrite tu)
-                        $ Sum.delete (tAlloc tu)
-                        $ effs2
-        
-        -- Delete the bound region handle from the closure.
-        let clos_cut    = Set.delete (GBoundRgnCon u) clo
-
-        returnX a
-                (\z -> XLet z (LWithRegion u) xBody0)
-                tBody2 effs_cut clos_cut
-                ctx2
-
 checkLetPrivate _ _ _ _
         = error "ddc-core.checkLetPrivate: no match"        
 

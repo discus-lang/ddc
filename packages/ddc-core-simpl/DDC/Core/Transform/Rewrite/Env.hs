@@ -104,8 +104,6 @@ extendLets (LRec bs) env
  where  lift' e b = insertDef b Nothing (liftValue b e)
 
 
-extendLets _ env  = env
-
 
 -- Witnesses ------------------------------------------------------------------
 -- | Check if the witness map in the given environment.

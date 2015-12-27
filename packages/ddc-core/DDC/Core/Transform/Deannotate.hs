@@ -41,7 +41,6 @@ instance Deannotate A.Lets S.Lets where
         A.LLet b x              -> S.LLet b (down x)
         A.LRec bxs              -> S.LRec [(b, down x) | (b, x) <- bxs]
         A.LPrivate bks mt bts   -> S.LPrivate bks mt bts
-        A.LWithRegion u         -> S.LWithRegion u
 
 
 instance Deannotate A.Alt S.Alt where

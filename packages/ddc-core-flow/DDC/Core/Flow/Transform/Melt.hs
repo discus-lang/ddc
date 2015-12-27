@@ -153,14 +153,16 @@ instance Melt (Exp () Name) where
 instance Melt (Lets () Name) where
  melt lts
   = case lts of
-        LLet b x        -> liftM (LLet b) (melt x)
+        LLet b x
+         -> liftM (LLet b) (melt x)
+
         LRec bxs        
          -> do  let (bs, xs) = unzip bxs
                 xs'      <- mapM melt xs
                 return   $  LRec $ zip bs xs'
 
-        LPrivate{}      -> return lts
-        LWithRegion{}   -> return lts
+        LPrivate{}
+         -> return lts
 
 
 -- Alt ------------------------------------------------------------------------

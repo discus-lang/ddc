@@ -41,9 +41,6 @@ instance BindStruct (Exp a) where
          ++ [ BindDef  BindLetRegions bsR
              [bindDefX BindLetRegionWith bs [x2]] ]
 
-        XLet (LWithRegion u) x2
-         -> BindUse BoundExp u : slurpBindTree x2
-
         XCase x alts    -> slurpBindTree x ++ concatMap slurpBindTree alts
         XCast c x       -> slurpBindTree c ++ slurpBindTree x
         XType t         -> slurpBindTree t

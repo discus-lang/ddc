@@ -285,17 +285,17 @@ convertDaCon dd
 convertLets :: Lets a F.Name -> ConvertM (Lets a T.Name)
 convertLets ll
  = case ll of
+
    LLet b x
     -> LLet <$> convertBind b <*> convertX x
+
    LRec bxs
     -> LRec <$> mapM (both convertBind convertX) bxs
+
    LPrivate rs t ws
     -> LPrivate <$> mapM convertBind rs
                 <*> liftMaybe convertType t -- ??
                 <*> mapM convertBind ws
-   -- This won't show up in source programs, but doesn't hurt to deal with it
-   LWithRegion b
-    -> LWithRegion <$> convertBound b
 
  where
   liftMaybe f m

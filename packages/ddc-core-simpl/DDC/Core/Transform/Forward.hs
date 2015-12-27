@@ -291,8 +291,8 @@ instance Forward Lets where
                           return (b, x')) 
             bxs
 
-        LPrivate b mt bs -> return $ LPrivate b mt bs
-        LWithRegion b    -> return $ LWithRegion b
+        LPrivate b mt bs
+         -> return $ LPrivate b mt bs
 
 
 instance Forward Alt where

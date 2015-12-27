@@ -220,8 +220,8 @@ instance Eta Lets where
                           $  map snd bxs
                 return    $ LRec (zip bs xs')
 
-        LPrivate{}      -> return lts
-        LWithRegion{}   -> return lts
+        LPrivate{}
+         -> return lts
 
 
 instance Eta Alt where

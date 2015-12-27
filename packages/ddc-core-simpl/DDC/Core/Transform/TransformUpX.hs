@@ -129,7 +129,6 @@ instance Monad m => TransformUpMX m Lets where
                 return       $ LRec $ zip bs xs'
 
         LPrivate{}      -> return xx
-        LWithRegion{}   -> return xx
 
 
 instance Monad m => TransformUpMX m Alt where
