@@ -102,7 +102,7 @@ xGetTag a tR x2
 utGetTag :: (Bound Name, Type Name)
 utGetTag 
  =      ( UName (NameVar "getTag")
-        ,       tForall kRegion $ \r -> tPtr r tObj `tFunPE` tTag)
+        ,       tForall kRegion $ \r -> tPtr r tObj `tFun` tTag)
 
 
 -- Thunk ----------------------------------------------------------------------
@@ -125,11 +125,8 @@ utAllocThunk :: (Bound Name, Type Name)
 utAllocThunk
  =      ( UName (NameVar "allocThunk")
         , tForall kRegion 
-           $ \tR -> (tAddr `tFunPE` tNat 
-                           `tFunPE` tNat 
-                           `tFunPE` tNat 
-                           `tFunPE` tNat 
-                           `tFunPE` tPtr tR tObj))
+           $ \tR -> (tAddr `tFun` tNat `tFun` tNat `tFun` tNat 
+                           `tFun` tNat `tFun` tPtr tR tObj))
 
 
 -- | Copy the available arguments from one thunk to another.
@@ -147,9 +144,9 @@ utCopyArgsOfThunk
  =      ( UName (NameVar "copyThunk")
         , tForalls [kRegion, kRegion]
            $ \[tR1, tR2] -> (tPtr tR1 tObj 
-                                `tFunPE` tPtr tR2 tObj
-                                `tFunPE` tNat `tFunPE` tNat 
-                                `tFunPE` tPtr tR2 tObj))
+                                `tFun` tPtr tR2 tObj
+                                `tFun` tNat `tFun` tNat 
+                                `tFun` tPtr tR2 tObj))
 
 
 -- | Copy a thunk while extending the number of available argument slots.
@@ -165,7 +162,7 @@ utExtendThunk :: (Bound Name, Type Name)
 utExtendThunk
  =      ( UName (NameVar "extendThunk")
         , tForalls [kRegion, kRegion]
-           $ \[tR1, tR2] -> (tPtr tR1 tObj `tFunPE` tNat `tFunPE` tPtr tR2 tObj))
+           $ \[tR1, tR2] -> (tPtr tR1 tObj `tFun` tNat `tFun` tPtr tR2 tObj))
 
 
 -- | Get the available arguments in a thunk.
@@ -181,7 +178,7 @@ utArgsOfThunk :: (Bound Name, Type Name)
 utArgsOfThunk
  =      ( UName (NameVar "argsThunk")
         , tForall kRegion
-           $ \tR -> (tPtr tR tObj `tFunPE` tNat))
+           $ \tR -> (tPtr tR tObj `tFun` tNat))
 
 
 -- | Set one of the argument pointers in a thunk.
@@ -205,8 +202,8 @@ utSetFieldOfThunk
         , tForalls [kRegion, kRegion]
            $ \[tR1, tR2] 
            -> (tPtr tR1 tObj 
-                        `tFunPE` tNat          `tFunPE` tNat 
-                        `tFunPE` tPtr tR2 tObj `tFunPE` tVoid))
+                        `tFun` tNat          `tFun` tNat 
+                        `tFun` tPtr tR2 tObj `tFun` tVoid))
 
 
 -- | Apply a thunk to some more arguments.
@@ -228,7 +225,7 @@ utApplyThunk arity
                 -> let  (rThunk : rsMore) = rs
                         rsArg             = take arity rsMore
                         [rResult]         = drop arity rsMore
-                        Just t' = tFunOfListPE 
+                        Just t' = tFunOfList 
                                 $  [tPtr rThunk  tObj]
                                 ++ [tPtr r       tObj | r <- rsArg]
                                 ++ [tPtr rResult tObj]
@@ -254,7 +251,7 @@ utRunThunk :: (Bound Name, Type Name)
 utRunThunk 
  =      ( UName (NameVar $ "runThunk")
         , tForalls [kRegion, kRegion] 
-                $ \[tR1, tR2] -> tPtr tR1 tObj `tFunPE` tPtr tR2 tObj)
+                $ \[tR1, tR2] -> tPtr tR1 tObj `tFun` tPtr tR2 tObj)
 
 
 -- Boxed ----------------------------------------------------------------------
@@ -269,7 +266,7 @@ xAllocBoxed a tR tag x2
 utAllocBoxed :: (Bound Name, Type Name)
 utAllocBoxed
  =      ( UName (NameVar "allocBoxed")
-        , tForall kRegion $ \r -> (tTag `tFunPE` tNat `tFunPE` tPtr r tObj))
+        , tForall kRegion $ \r -> (tTag `tFun` tNat `tFun` tPtr r tObj))
 
 
 -- | Get a field of a Boxed object.
@@ -293,8 +290,8 @@ utGetFieldOfBoxed
         , tForalls [kRegion, kRegion]
                 $ \[r1, r2] 
                 -> tPtr r1 tObj
-                        `tFunPE` tNat 
-                        `tFunPE` tPtr r2 tObj)
+                        `tFun` tNat 
+                        `tFun` tPtr r2 tObj)
 
 
 -- | Set a field in a Boxed Object.
@@ -318,7 +315,7 @@ utSetFieldOfBoxed :: (Bound Name, Type Name)
 utSetFieldOfBoxed 
  =      ( UName (NameVar "setBoxed")
         , tForalls [kRegion, kRegion]
-            $ \[r1, t2] -> tPtr r1 tObj `tFunPE` tNat `tFunPE` tPtr t2 tObj `tFunPE` tVoid)
+            $ \[r1, t2] -> tPtr r1 tObj `tFun` tNat `tFun` tPtr t2 tObj `tFun` tVoid)
 
 
 -- Small -------------------------------------------------------------------
@@ -331,7 +328,7 @@ xAllocSmall a tR tag x2
 utAllocSmall :: (Bound Name, Type Name)
 utAllocSmall
  =      ( UName (NameVar "allocSmall")
-        , tForall kRegion $ \r -> (tTag `tFunPE` tNat `tFunPE` tPtr r tObj))
+        , tForall kRegion $ \r -> (tTag `tFun` tNat `tFun` tPtr r tObj))
 
 
 -- | Get the payload of a Small object.
@@ -343,7 +340,7 @@ xPayloadOfSmall a tR x2
 utPayloadOfSmall :: (Bound Name, Type Name)
 utPayloadOfSmall
  =      ( UName (NameVar "payloadSmall")
-        , tForall kRegion $ \r -> (tFunPE (tPtr r tObj) (tPtr r (tWord 8))))
+        , tForall kRegion $ \r -> (tFun (tPtr r tObj) (tPtr r (tWord 8))))
 
 
 -- Primops --------------------------------------------------------------------
@@ -355,7 +352,7 @@ xCreate a bytes
 
 uCreate :: Bound Name
 uCreate = UPrim (NamePrimOp $ PrimStore $ PrimStoreCreate)
-                (tNat `tFunPE` tVoid)
+                (tNat `tFun` tVoid)
 
 
 -- | Read a value from an address plus offset.
@@ -368,7 +365,7 @@ xRead a tField xAddr offset
 
 uRead   :: Bound Name
 uRead   = UPrim (NamePrimOp $ PrimStore $ PrimStoreRead)
-                (tForall kData $ \t -> tAddr `tFunPE` tNat `tFunPE` t)
+                (tForall kData $ \t -> tAddr `tFun` tNat `tFun` t)
 
 
 -- | Write a value to an address plus offset.
@@ -382,7 +379,7 @@ xWrite a tField xAddr offset xVal
 
 uWrite   :: Bound Name
 uWrite   = UPrim (NamePrimOp $ PrimStore $ PrimStoreWrite)
-                 (tForall kData $ \t -> tAddr `tFunPE` tNat `tFunPE` t `tFunPE` tVoid)
+                 (tForall kData $ \t -> tAddr `tFun` tNat `tFun` t `tFun` tVoid)
 
 
 -- | Peek a value from a buffer pointer plus offset
@@ -443,7 +440,7 @@ xFail a t
 xReturn :: a -> Type Name -> Exp a Name -> Exp a Name
 xReturn a t x
  = XApp a (XApp a (XVar a (UPrim (NamePrimOp (PrimControl PrimControlReturn))
-                          (tForall kData $ \t1 -> t1 `tFunPE` t1)))
+                          (tForall kData $ \t1 -> t1 `tFun` t1)))
                 (XType a t))
            x
 

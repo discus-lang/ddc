@@ -132,7 +132,6 @@ convertSuperT ctx tt
                 t'      <- convertSuperT ctx' t
                 return  $ TForall b' t'
 
---        This doesn't work with run/box
          | isDataKind   (typeOfBind b)
          , BName (E.NameVar str) _   <- b
          , str'         <- str ++ "$r"
@@ -151,7 +150,7 @@ convertSuperT ctx tt
          | Just (t1, t2)  <- takeTFun tt
          -> do  t1'       <- convertValueT ctx t1
                 t2'       <- convertSuperT ctx t2
-                return    $ tFunPE t1' t2'
+                return    $ tFun t1' t2'
 
         -- Other types are just the values.
         _ -> convertValueT ctx tt

@@ -66,13 +66,7 @@ funTypeOfParams c (p:ps) tBody
          -> T.tImpl (T.typeOfBind b)
                 $ funTypeOfParams c ps tBody
 
-        ParamValue b eff clo
-         | contextFunctionalEffects c
-         , contextFunctionalClosures c
-         -> T.tFunEC (T.typeOfBind b) eff clo 
-                $ funTypeOfParams c ps tBody
-         
-         | otherwise
+        ParamValue b _eff _clo
          -> T.tFun (T.typeOfBind b)
                 $ funTypeOfParams c ps tBody
 

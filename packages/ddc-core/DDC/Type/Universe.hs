@@ -104,7 +104,6 @@ universeFromType1 kenv tt
         
         TCon (TyConSpec TcConUnit) -> Just UniverseData
         TCon (TyConSpec TcConFun)  -> Just UniverseData
-        TCon (TyConSpec TcConFunEC)-> Just UniverseData
         TCon (TyConSpec TcConSusp) -> Just UniverseData
         TCon (TyConSpec _)         -> Nothing
         

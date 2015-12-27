@@ -120,18 +120,6 @@ makeEq config a ctx0 tL tR err
         return ctx0
 
 
- -- EqFun
- | Just (tL1, tEffL, _tCloL, tL2) <- takeTFunEC tL
- , Just (tR1, tEffR, _tCloR, tR2) <- takeTFunEC tR
- = do   
-        ctx1    <- makeEq config a ctx0 tL1 tR1 err
-        ctx2    <- makeEq config a ctx1 (crushEffect tEffL) (crushEffect tEffR) err
-        ctx3    <- makeEq config a ctx2 (tBot kClosure) (tBot kClosure) err
-
-        ctx4    <- makeEq config a ctx3 tL2 tR2 err
-        return ctx4
-
-
  -- EqApp
  | TApp tL1 tL2 <- tL
  , TApp tR1 tR2 <- tR
@@ -151,9 +139,11 @@ makeEq config a ctx0 tL tR err
 
         return ctx2
 
+
  -- EqEquiv
  | equivT tL tR
  =      return ctx0
+
 
  -- Error
  | otherwise

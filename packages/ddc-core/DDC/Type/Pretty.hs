@@ -70,18 +70,6 @@ instance (Pretty n, Eq n) => Pretty (Type n) where
         TApp (TApp (TCon (TyConSpec TcConFun)) t1) t2
          -> pprParen (d > 5)
          $  pprPrec 6 t1 <+> text "->" </> pprPrec 5 t2
-
-        -- Function with a latent effect and closure.
-        TApp (TApp (TApp (TApp (TCon (TyConSpec TcConFunEC)) t1) eff) clo) t2
-         | isBot eff, isBot clo
-         -> pprParen (d > 5)
-         $  pprPrec 6 t1 <+> text "->"  </> pprPrec 5 t2
-
-         | otherwise
-         -> pprParen (d > 5)
-         $  pprPrec 6 t1
-                <+> text "-(" <> ppr eff <> text " | " <> ppr clo <> text ")>" 
-                </> pprPrec 5 t2
                    
         -- Standard types.
         TCon tc    -> ppr tc
@@ -182,7 +170,6 @@ instance Pretty TcCon where
   = case tc of
         TcConUnit       -> text "Unit"
         TcConFun        -> text "(->)"
-        TcConFunEC      -> text "(->)"
         TcConSusp       -> text "S"
         TcConRead       -> text "Read"
         TcConHeadRead   -> text "HeadRead"

@@ -239,9 +239,6 @@ data TcCon
         -- | Pure function.
         | TcConFun              -- '(->)' :: Data ~> Data ~> Data
 
-        -- | Function with a latent effect and closure.
-        | TcConFunEC            -- '(->)  :: Data ~> Data ~> Effect ~> Closure ~> Data'
-
         -- | A suspended computation.
         | TcConSusp             -- 'S     :: Effect ~> Data ~> Data'
 

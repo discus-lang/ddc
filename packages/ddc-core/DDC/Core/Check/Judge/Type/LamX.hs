@@ -275,15 +275,9 @@ makeFunctionType config a xx t1 k1 t2 e2
                 | not  $ configTrackedEffects config    = tBot kEffect
                 | otherwise                             = TSum e2
 
-        -- Data abstraction where the function type for the language fragment
-        -- supports latent effects and closures.
-        if      (  k1 == kData
-                && configFunctionalEffects  config)
-         then   return  (tFunEC t1 e2_captured (tBot kClosure) t2)
-
         -- Data abstraction where the function constructor for the language
         -- fragment does not suport latent effects or closures.
-        else if (  k1 == kData
+        if (    k1 == kData
                 && e2_captured == tBot kEffect)
          then   return  (tFun t1 t2)
 

@@ -35,19 +35,21 @@ convertM mm
         tsImportV' <- mapM convertImportNameValueM $ moduleImportValues mm
 
         let tsImportV'rest =
-              [ (T.NameVar       "getFieldOfBoxed"
-                ,ImportValueSea  "getFieldOfBoxed" 
-                 $ tForalls [kRegion, kData] $ \[r,d] -> T.tPtr r T.tObj `tFunPE` T.tNat `tFunPE` d)
-              , (T.NameVar       "setFieldOfBoxed"
-                ,ImportValueSea  "setFieldOfBoxed" 
-                 $ tForalls [kRegion, kData] $ \[r,d] -> T.tPtr r T.tObj `tFunPE` T.tNat `tFunPE` d `tFunPE` T.tVoid)
-              , (T.NameVar       "allocBoxed"
-                ,ImportValueSea  "allocBoxed"     
-                 $ tForalls [kRegion       ] $ \[r  ] -> T.tTag          `tFunPE` T.tNat `tFunPE` T.tPtr r T.tObj)
+              [ ( T.NameVar       "getFieldOfBoxed"
+                , ImportValueSea  "getFieldOfBoxed" 
+                   $ tForalls [kRegion, kData] 
+                   $ \[r,d] -> T.tPtr r T.tObj `tFun` T.tNat `tFun` d)
+
+              , ( T.NameVar       "setFieldOfBoxed"
+                , ImportValueSea  "setFieldOfBoxed" 
+                   $ tForalls [kRegion, kData] 
+                   $ \[r,d] -> T.tPtr r T.tObj `tFun` T.tNat `tFun` d `tFun` T.tVoid)
+
+              , ( T.NameVar       "allocBoxed"
+                , ImportValueSea  "allocBoxed"     
+                   $ tForalls [kRegion       ] 
+                   $ \[r  ] -> T.tTag          `tFun` T.tNat `tFun` T.tPtr r T.tObj)
               ]
-        -- getFieldOfBoxed : [^ : Region].[^ : Data].Ptr# ^1 Obj -> Nat# -> ^0;
-        -- setFieldOfBoxed : [^ : Region].[^ : Data].Ptr# ^1 Obj -> Nat# -> ^0 -> Void#;
-        -- allocBoxed : [^ : Region].Tag# -> Nat# -> Ptr# ^0 Obj;
 
         -- Convert signatures of exported functions.
         tsExportT' <- mapM convertExportM

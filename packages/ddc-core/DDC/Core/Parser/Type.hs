@@ -109,22 +109,7 @@ pTypeFun c
            -- T1 -> T2
          , do   pTok KArrowDash
                 t2      <- pTypeForall c
-                if (  contextFunctionalEffects c
-                   && contextFunctionalClosures c)
-                   then return $ t1 `tFunPE` t2
-                   else return $ t1 `tFun`   t2
-
-           -- T1 -(TSUM | TSUM)> t2
-         , do   pTok (KOp "-")
-                pTok KRoundBra
-                eff     <- pTypeSum c
-                pTok KBar
-                clo     <- pTypeSum c
-                pTok KRoundKet
-                pTok (KOp ">")
-                t2      <- pTypeForall c
-                return  $ tFunEC t1 eff clo t2
-
+                return $ t1 `tFun`   t2
 
            -- Body type
          , do   return t1 ]
@@ -158,14 +143,7 @@ pTypeAtom c
 
           -- (->)
         , do    pTok (KOpVar "->")
-
-                -- Decide what type constructor to use for the (->) token.
-                -- Only use the function constructor with latent effects
-                -- and closures if the language fragment supports both.
-                if (  contextFunctionalEffects  c 
-                   && contextFunctionalClosures c)
-                   then return (TCon $ TyConSpec TcConFunEC)
-                   else return (TCon $ TyConSpec TcConFun)
+                return (TCon $ TyConSpec TcConFun)
 
         -- (TYPE2)
         , do    pTok KRoundBra

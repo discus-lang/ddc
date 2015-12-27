@@ -149,32 +149,32 @@ typeOfPrimArith :: PrimArith -> Type Name
 typeOfPrimArith op
  = case op of
         -- Numeric
-        PrimArithNeg    -> tForall kData $ \t -> t `tFunPE` t
-        PrimArithAdd    -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
-        PrimArithSub    -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
-        PrimArithMul    -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
-        PrimArithDiv    -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
-        PrimArithMod    -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
-        PrimArithRem    -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
+        PrimArithNeg    -> tForall kData $ \t -> t `tFun` t
+        PrimArithAdd    -> tForall kData $ \t -> t `tFun` t `tFun` t
+        PrimArithSub    -> tForall kData $ \t -> t `tFun` t `tFun` t
+        PrimArithMul    -> tForall kData $ \t -> t `tFun` t `tFun` t
+        PrimArithDiv    -> tForall kData $ \t -> t `tFun` t `tFun` t
+        PrimArithMod    -> tForall kData $ \t -> t `tFun` t `tFun` t
+        PrimArithRem    -> tForall kData $ \t -> t `tFun` t `tFun` t
 
         -- Comparison
-        PrimArithEq     -> tForall kData $ \t -> t `tFunPE` t `tFunPE` tBool
-        PrimArithNeq    -> tForall kData $ \t -> t `tFunPE` t `tFunPE` tBool
-        PrimArithGt     -> tForall kData $ \t -> t `tFunPE` t `tFunPE` tBool
-        PrimArithLt     -> tForall kData $ \t -> t `tFunPE` t `tFunPE` tBool
-        PrimArithLe     -> tForall kData $ \t -> t `tFunPE` t `tFunPE` tBool
-        PrimArithGe     -> tForall kData $ \t -> t `tFunPE` t `tFunPE` tBool
+        PrimArithEq     -> tForall kData $ \t -> t `tFun` t `tFun` tBool
+        PrimArithNeq    -> tForall kData $ \t -> t `tFun` t `tFun` tBool
+        PrimArithGt     -> tForall kData $ \t -> t `tFun` t `tFun` tBool
+        PrimArithLt     -> tForall kData $ \t -> t `tFun` t `tFun` tBool
+        PrimArithLe     -> tForall kData $ \t -> t `tFun` t `tFun` tBool
+        PrimArithGe     -> tForall kData $ \t -> t `tFun` t `tFun` tBool
 
         -- Boolean
-        PrimArithAnd    -> tBool `tFunPE` tBool `tFunPE` tBool
-        PrimArithOr     -> tBool `tFunPE` tBool `tFunPE` tBool
+        PrimArithAnd    -> tBool `tFun` tBool `tFun` tBool
+        PrimArithOr     -> tBool `tFun` tBool `tFun` tBool
 
         -- Bitwise
-        PrimArithShl    -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
-        PrimArithShr    -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
-        PrimArithBAnd   -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
-        PrimArithBOr    -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
-        PrimArithBXOr   -> tForall kData $ \t -> t `tFunPE` t `tFunPE` t
+        PrimArithShl    -> tForall kData $ \t -> t `tFun` t `tFun` t
+        PrimArithShr    -> tForall kData $ \t -> t `tFun` t `tFun` t
+        PrimArithBAnd   -> tForall kData $ \t -> t `tFun` t `tFun` t
+        PrimArithBOr    -> tForall kData $ \t -> t `tFun` t `tFun` t
+        PrimArithBXOr   -> tForall kData $ \t -> t `tFun` t `tFun` t
 
 
 -- PrimCast -------------------------------------------------------------------
@@ -183,13 +183,13 @@ typeOfPrimCast :: PrimCast -> Type Name
 typeOfPrimCast cc
  = case cc of
         PrimCastConvert
-         -> tForalls [kData, kData] $ \[t1, t2] -> t2 `tFunPE` t1
+         -> tForalls [kData, kData] $ \[t1, t2] -> t2 `tFun` t1
 
         PrimCastPromote
-         -> tForalls [kData, kData] $ \[t1, t2] -> t2 `tFunPE` t1
+         -> tForalls [kData, kData] $ \[t1, t2] -> t2 `tFun` t1
 
         PrimCastTruncate
-         -> tForalls [kData, kData] $ \[t1, t2] -> t2 `tFunPE` t1
+         -> tForalls [kData, kData] $ \[t1, t2] -> t2 `tFun` t1
 
 
 -- PrimCall -------------------------------------------------------------------
@@ -207,18 +207,18 @@ typeOfPrimCall cc
 -- | Make the type of the @callN#@ and @tailcallN@ primitives.
 makePrimCallStdType :: Int -> Type Name
 makePrimCallStdType arity
- = let Just t   = tFunOfListPE ([tAddr] ++ replicate arity tAddr ++ [tAddr])
+ = let Just t   = tFunOfList ([tAddr] ++ replicate arity tAddr ++ [tAddr])
    in  t
         
 
 -- | Make the type of the @callN#@ and @tailcallN@ primitives.
 makePrimCallTailType :: Int -> Type Name
 makePrimCallTailType arity
- = let  tSuper   = foldr tFunPE 
+ = let  tSuper   = foldr tFun 
                          (TVar (UIx 0))
                          (reverse [TVar (UIx i) | i <- [1..arity]])
 
-        tCall    = foldr TForall (tSuper `tFunPE` tSuper) 
+        tCall    = foldr TForall (tSuper `tFun` tSuper) 
                          [BAnon k | k <- replicate (arity + 1) kData]
 
    in   tCall
@@ -229,7 +229,7 @@ typeOfPrimControl :: PrimControl -> Type Name
 typeOfPrimControl pc
  = case pc of
         PrimControlFail         -> tForall kData $ \t -> t
-        PrimControlReturn       -> tForall kData $ \t -> t `tFunPE` t
+        PrimControlReturn       -> tForall kData $ \t -> t `tFun` t
 
 
 -- PrimStore ------------------------------------------------------------------
@@ -244,49 +244,49 @@ typeOfPrimStore jj
          -> tForall kData $ \_ -> tNat
 
         PrimStoreCreate
-         -> tNat `tFunPE` tVoid
+         -> tNat `tFun` tVoid
 
         PrimStoreCheck
-         -> tNat `tFunPE` tBool
+         -> tNat `tFun` tBool
 
         PrimStoreRecover
-         -> tNat `tFunPE` tVoid
+         -> tNat `tFun` tVoid
 
         PrimStoreAlloc
-         -> tNat `tFunPE` tAddr
+         -> tNat `tFun` tAddr
 
         PrimStoreRead           
-         -> tForall kData $ \t -> tAddr  `tFunPE` tNat `tFunPE` t
+         -> tForall kData $ \t -> tAddr `tFun` tNat `tFun` t
 
         PrimStoreWrite
-         -> tForall kData $ \t -> tAddr  `tFunPE` tNat `tFunPE` t `tFunPE` tVoid
+         -> tForall kData $ \t -> tAddr `tFun` tNat `tFun` t `tFun` tVoid
 
         PrimStorePlusAddr
-         -> tAddr  `tFunPE` tNat `tFunPE` tAddr
+         -> tAddr  `tFun` tNat `tFun` tAddr
 
         PrimStoreMinusAddr
-         -> tAddr  `tFunPE` tNat `tFunPE` tAddr
+         -> tAddr  `tFun` tNat `tFun` tAddr
 
         PrimStorePeek
-         -> tForalls [kRegion, kData] $ \[r,t] -> tPtr r t `tFunPE` tNat `tFunPE` t
+         -> tForalls [kRegion, kData] $ \[r,t] -> tPtr r t `tFun` tNat `tFun` t
 
         PrimStorePoke
-         -> tForalls [kRegion, kData] $ \[r,t] -> tPtr r t `tFunPE` tNat `tFunPE` t `tFunPE` tVoid
+         -> tForalls [kRegion, kData] $ \[r,t] -> tPtr r t `tFun` tNat `tFun` t `tFun` tVoid
 
         PrimStorePlusPtr
-         -> tForalls [kRegion, kData] $ \[r,t] -> tPtr r t `tFunPE` tNat `tFunPE` tPtr r t
+         -> tForalls [kRegion, kData] $ \[r,t] -> tPtr r t `tFun` tNat `tFun` tPtr r t
 
         PrimStoreMinusPtr
-         -> tForalls [kRegion, kData] $ \[r,t] -> tPtr r t `tFunPE` tNat `tFunPE` tPtr r t
+         -> tForalls [kRegion, kData] $ \[r,t] -> tPtr r t `tFun` tNat `tFun` tPtr r t
 
         PrimStoreMakePtr
-         -> tForalls [kRegion, kData] $ \[r,t] -> tAddr `tFunPE` tPtr r t
+         -> tForalls [kRegion, kData] $ \[r,t] -> tAddr `tFun` tPtr r t
 
         PrimStoreTakePtr
-         -> tForalls [kRegion, kData] $ \[r,t] -> tPtr r t `tFunPE` tAddr
+         -> tForalls [kRegion, kData] $ \[r,t] -> tPtr r t `tFun` tAddr
 
         PrimStoreCastPtr
-         -> tForalls [kRegion, kData, kData] $ \[r,t1,t2] -> tPtr r t2 `tFunPE` tPtr r t1
+         -> tForalls [kRegion, kData, kData] $ \[r,t1,t2] -> tPtr r t2 `tFun` tPtr r t1
 
 
 -------------------------------------------------------------------------------

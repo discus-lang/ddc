@@ -37,7 +37,7 @@ initRuntime config mm@ModuleCore{}
 -- | Type of the POSIX main function.
 posixMainType :: Type Name
 posixMainType
-        = tFunPE tInt (tFunPE (tPtr rTop (tWord 8)) tInt)
+        = tFun tInt (tFun (tPtr rTop (tWord 8)) tInt)
 
 
 -- | Patch the list of export definitions to export our wrapper instead

@@ -238,8 +238,5 @@ splitFunType tt
         TApp (TApp (TCon (TyConSpec TcConFun)) t11) t12
           -> Just (t11, tBot kEffect, tBot kClosure, t12)
 
-        TApp (TApp (TApp (TApp (TCon (TyConSpec TcConFunEC)) t11) eff) clo) t12
-          -> Just (t11, eff, clo, t12)
-
         _ -> Nothing
          

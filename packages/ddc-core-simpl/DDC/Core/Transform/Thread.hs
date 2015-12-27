@@ -406,7 +406,7 @@ injectStateType config tt
          | (tsArg@(_ : _), tResult)     <- takeTFunArgResult tt
          -> let  tsArg'   = tsArg ++ [configTokenType config]
                  tResult' = injectStateType config tResult
-            in   foldr tFunPE tResult' tsArg'
+            in   foldr tFun tResult' tsArg'
 
         _ | tt == configTokenType config -> tt
           | tt == configVoidType  config -> configTokenType config

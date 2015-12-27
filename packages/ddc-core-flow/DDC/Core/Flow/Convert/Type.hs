@@ -86,7 +86,7 @@ convertType tt
  = do   args'   <- mapM convertType args
         res'    <-      convertType res
 
-        return   $ foldr tFunPE res' args'
+        return   $ foldr tFun res' args'
         
 
  -- For other primitives, convertName will handle convert them
