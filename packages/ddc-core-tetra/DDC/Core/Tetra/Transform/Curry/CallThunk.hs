@@ -20,10 +20,10 @@ makeCallThunk
         => AnTEC a Name                 -- ^ Annotation from functional part of application.
         -> Name                         -- ^ Name of thunk.
         -> [Exp (AnTEC a Name) Name]    -- ^ Arguments to thunk.
-        -> Bool                         -- ^ Whether the result was run
+        -> Int                          -- ^ How many times to run the result.
         -> Maybe (Exp (AnTEC a Name) Name)
 
-makeCallThunk aF nF xsArgs bRun
+makeCallThunk aF nF xsArgs nRuns
 
  -- This only works for value arguments.
  | all (\x -> (not . C.isXType)    x 
@@ -39,7 +39,7 @@ makeCallThunk aF nF xsArgs bRun
         Just tResultClo          = C.tFunOfList (tsParamClo ++ [tResult])
 
    in   Just 
-         $ makeRun aF bRun
+         $ makeRuns aF nRuns
          $ C.xFunApply aF tsParamArg tResultClo (XVar aF (UName nF)) xsArgs
 
  | otherwise

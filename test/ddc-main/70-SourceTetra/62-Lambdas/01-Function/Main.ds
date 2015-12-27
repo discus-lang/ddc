@@ -1,10 +1,11 @@
 module Main
 import Data.Numeric.Nat
+import Data.Maybe
 import System.IO.Console
 where
 
 
--- Check handling of box/run in runtime system.
+-- Basic use of box and run at a variety of arities.
 main (_ : Unit) : S Console Unit
  = box do
 
@@ -41,7 +42,21 @@ main (_ : Unit) : S Console Unit
         run putStrLn (showNat (run derp4B 1 2 3 4))
 
 
-        -- TODO: Anonymous functions with multiply boxed bodies.
+        -- Anonymous functions with multiply boxed bodies.
+        --   We run the computation the matching number of times at the call site.
+        derp1BB  = (\(x1 : Nat). box box x1 + 1)
+        run putStrLn (showNat (run run derp1BB 1))
 
+        derp1BBBB = (\(x1 : Nat). box box box box x1 + 1)
+        run putStrLn (showNat (run run run run derp1BBBB 1))
+
+        derp2BB  = (\(x1 x2 : Nat). box box x1 + x2 + 1)
+        run putStrLn (showNat (run run derp2BB 1 2))
+
+        derp3BB  = (\(x1 x2 x3 : Nat). box box x1 + x2 + x3 + 1)
+        run putStrLn (showNat (run run derp3BB 1 2 3))
+
+        derp4BB  = (\(x1 x2 x3 x4 : Nat). box box x1 + x2 + x3 + x4 + 1)
+        run putStrLn (showNat (run run derp4BB 1 2 3 4))
 
         ()

@@ -27,10 +27,10 @@ makeCallSuper
         -> Type Name                            -- ^ Return type of super.
 
         -> [Call.Elim (AnTEC a Name) Name]      -- ^ Value arguments for super.
-        -> Bool                                 -- ^ Whether the result was run.
+        -> Int                                  -- ^ How many times to run the result.
         -> Exp  (AnTEC a Name) Name
 
-makeCallSuper aF _nF xF tsParamLam tResultSuper esArgValue bRun
+makeCallSuper aF _nF xF tsParamLam tResultSuper esArgValue nRuns
 
  -- Fully saturated call to a super of foreign function. 
  -- We have arguments for each parameter, so can call it directly.
@@ -39,7 +39,7 @@ makeCallSuper aF _nF xF tsParamLam tResultSuper esArgValue bRun
  --
  | length esArgValue == length tsParamLam
  , xsArgValue   <- [x | Call.ElimValue _ x <- esArgValue]
- = makeRun aF bRun $ C.xApps aF xF xsArgValue
+ = makeRuns aF nRuns $ C.xApps aF xF xsArgValue
 
  -- Partially application of a super or foreign function.
  -- We need to build a closure, then attach any arguments we have.
@@ -63,7 +63,7 @@ makeCallSuper aF _nF xF tsParamLam tResultSuper esArgValue bRun
         tParamFirst : tsParamRest = tsParamLam
         Just tSuperResult         = C.tFunOfList (tsParamRest ++   [tResultSuper])
 
-   in   makeRun aF bRun 
+   in   makeRuns aF nRuns 
          $ C.xApps aF (C.xFunCurry aF tsParamSat tResultClo 
                            (C.xFunCReify aF tParamFirst tSuperResult xF))
                        xsArgValue
@@ -73,7 +73,7 @@ makeCallSuper aF _nF xF tsParamLam tResultSuper esArgValue bRun
  --       the super must produce a closure, otherwise it won't be well typed.
  | otherwise
  , xsArgValue   <- [x | Call.ElimValue _ x <- esArgValue]
- = makeRun aF bRun $ C.xApps aF xF xsArgValue
+ = makeRuns aF nRuns $ C.xApps aF xF xsArgValue
 
 
 ---------------------------------------------------------------------------------------------------
@@ -132,7 +132,7 @@ makeCallSuperUnder aF nF tF cs es
         | length es     <  length cs
 
           -- The super and call  must be in standard form.
-        , Just (esType, esValue,  eRun)  <- splitStdCallElim es
+        , Just (esType, esValue,  nRuns) <- splitStdCallElim es
         , Just (csType, _csValue, _cBox) <- splitStdCallCons cs
 
           -- There must be types to satisfy all of the type paramters of the super.
@@ -173,7 +173,7 @@ makeCallSuperUnder aF nF tF cs es
                 Just tSuperResult = C.tFunOfList (tsParamRest ++   [tResult'])
 
           in Just
-                $ makeRun aF eRun 
+                $ makeRuns aF nRuns
                 $ C.xApps aF (C.xFunCurry aF tsParamSat tResultClo 
                                (C.xFunCReify aF tParamFirst tSuperResult xFunAPP))
                       xsArgValue
@@ -186,7 +186,7 @@ makeCallSuperUnder aF nF tF cs es
 -- | Check if these eliminators follow the standard super-call pattern.
 --
 --   The standard pattern is a list of type arguments, followed by some
---   value arguments, and optionally running the result suspension. 
+--   value arguments, and optionally running the result suspension.
 --
 --   @run f [T1] [T2] x1 x2@
 --
@@ -197,14 +197,13 @@ makeCallSuperUnder aF nF tF cs es
 --
 splitStdCallElim
         :: [Call.Elim a Name] 
-        -> Maybe ([Call.Elim a Name], [Call.Elim a Name], Bool)
+        -> Maybe ([Call.Elim a Name], [Call.Elim a Name], Int)
 
 splitStdCallElim es
         | (esT, esMore)   <- span Call.isElimType   es
         , (esX, esMore2)  <- span Call.isElimValue  esMore
         , (esR, [])       <- span Call.isElimRun    esMore2
-        ,  length esR <= 1
-        = Just (esT, esX, length esR > 0)
+        = Just (esT, esX, length esR)
 
         | otherwise
         = Nothing   

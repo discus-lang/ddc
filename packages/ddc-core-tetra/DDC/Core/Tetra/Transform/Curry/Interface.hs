@@ -6,7 +6,7 @@ module DDC.Core.Tetra.Transform.Curry.Interface
         , funMapAddForeign
 
         -- * Utils
-        , makeRun)
+        , makeRuns)
 where
 import DDC.Core.Tetra
 import DDC.Core.Tetra.Compounds
@@ -105,13 +105,14 @@ funMapAddForeign funs (n, is)
 
 
 ---------------------------------------------------------------------------------------------------
-makeRun :: a
-        -> Bool 
+-- | Wrap an expression in the given number of 'run' casts.
+makeRuns :: a
+        -> Int 
         -> Exp a Name 
         -> Exp a Name
 
-makeRun a b x
- = if b then XCast a CastRun x
-        else x
+makeRuns _a 0 x = x
+makeRuns a n x  = XCast a CastRun (makeRuns a (n - 1) x)
+
 
 

@@ -101,7 +101,7 @@ curryX ctx@(funs, _kenv, _tenv) xx
         XCast a CastRun x1
          -> case curryX_call xx of
                 Just xx' -> xx'
-                Nothing  -> XCast a CastRun x1
+                Nothing  -> XCast a CastRun (down x1)
 
         -- Boilerplate.
         XCon{}          -> xx
@@ -116,9 +116,8 @@ curryX ctx@(funs, _kenv, _tenv) xx
  where          
 
         curryX_call x
-         -- If this is a call of a named function then split it 
-         -- into the functional part and arguments, then work out
-         -- how to call it
+         -- If this is a call of a named function then split it into the
+         --  functional part and arguments, then work out how to call it.
          | (xF, esArgs)         <- Call.takeCallElim x
          , XVar aF (UName nF)   <- xF
          , length esArgs  > 0
