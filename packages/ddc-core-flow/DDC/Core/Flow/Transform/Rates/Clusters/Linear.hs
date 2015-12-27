@@ -114,8 +114,8 @@ getConstraints bigN g arcs ws trans
    -- The edge must be fusible, the two nodes must have a similar size,
    -- and there can be no other paths between u and v that aren't fusible.
    | fusible && typeComparable g trans u v && noFusionPreventingPath arcs u v
-   -- We may want to remove the 'typeComparable' restriction later, and just check that they have
-   -- *some* iteration size, but not necessarily similar.
+   -- We may want to remove the 'typeComparable' restriction later, and just check
+   -- that they have some iteration size, but not necessarily similar.
    -- This would allow fusing @a@ into @c@ in @a = map...; c = cross a b@.
    = let x = sc u v
      in  Between x (piDiff u v) (Z bigN *. x)

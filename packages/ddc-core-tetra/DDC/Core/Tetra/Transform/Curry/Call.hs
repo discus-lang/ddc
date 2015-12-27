@@ -88,8 +88,8 @@ makeCall xx _xF aF funMap nF esArgs
                 bRun
 
         ---------------------------------------------------
-        -- | Apply a thunk to its arguments.
-        --   The functional part is a variable bound to a thunk object.
+        -- Apply a thunk to its arguments.
+        -- The functional part is a variable bound to a thunk object.
         | length esArgs > 0
         , Just (esTypes, esValues, bRun) <- splitStdCallElim esArgs
         , xsArgTypes    <- [XType a  t  | Call.ElimType  a _ t <- esTypes]
@@ -98,8 +98,8 @@ makeCall xx _xF aF funMap nF esArgs
           in  xResult
 
         ---------------------------------------------------
-        -- | This was an existing thunk applied to no arguments,
-        --   so we can just return it without doing anything.
+        -- This was an existing thunk applied to no arguments,
+        -- so we can just return it without doing anything.
         | otherwise
         = xx
 
