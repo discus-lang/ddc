@@ -24,7 +24,6 @@ import Data.Typeable
 import Control.Monad.Writer                     (Writer, runWriter, tell)
 import qualified Data.Map                               as Map
 import qualified DDC.Core.Transform.SubstituteXX        as S
-import qualified DDC.Core.Transform.Trim                as Trim
 import qualified DDC.Type.Compounds                     as T
 import qualified DDC.Type.Sum                           as TS
 import qualified DDC.Type.Transform.Crush               as T
@@ -145,7 +144,7 @@ pruneTrans _ _ xx
          , isContainedEffect $ annotEffect antec
          -> do      
                 -- We still need to substitute value into casts
-                let x2' = transformUpX' Trim.trimX $ S.substituteXX b x1 x2
+                let x2' = S.substituteXX b x1 x2
 
                 -- Record that we've erased a binding.
                 tell mempty {infoBindingsErased = 1}
