@@ -72,7 +72,6 @@ instance MapT (Witness a) where
         WVar a u        -> WVar  a (down u)
         WCon{}          -> ww
         WApp  a w1 w2   -> WApp  a (down w1) (down w2)
-        WJoin a w1 w2   -> WJoin a (down w1) (down w2)
         WType a t       -> WType a (f t)
 
 

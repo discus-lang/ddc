@@ -12,7 +12,6 @@ import DDC.Core.Check.ErrorMessage              ()
 import DDC.Core.Check.Base
 import DDC.Type.Transform.SubstituteT
 import qualified DDC.Type.Env                   as Env
-import qualified DDC.Type.Sum                   as Sum
 
 
 -- Wrappers --------------------------------------------------------------------
@@ -119,27 +118,6 @@ checkWitnessM !config !kenv !tenv !ctx ww@(WApp a w1 w2)
           
           | otherwise   -> throw $ ErrorWAppMismatch a ww t11 t2
          _              -> throw $ ErrorWAppNotCtor  a ww t1 t2
-
--- witness joining
-checkWitnessM !config !kenv !tenv !ctx ww@(WJoin a w1 w2)
- = do   (w1', t1) <- checkWitnessM config kenv tenv ctx w1
-        (w2', t2) <- checkWitnessM config kenv tenv ctx w2
-        case (t1, t2) of
-         (  TApp (TCon (TyConWitness TwConPure)) eff1
-          , TApp (TCon (TyConWitness TwConPure)) eff2)
-          -> let t'     = TApp (TCon (TyConWitness TwConPure))
-                               (TSum $ Sum.fromList kEffect  [eff1, eff2])
-             in  return ( WJoin (AnT t' a) w1' w2'
-                        , t')
-
-         (  TApp (TCon (TyConWitness TwConEmpty)) clo1
-          , TApp (TCon (TyConWitness TwConEmpty)) clo2)
-          -> let t'     = TApp (TCon (TyConWitness TwConEmpty))
-                               (TSum $ Sum.fromList kClosure [clo1, clo2])
-             in  return ( WJoin (AnT t' a) w1' w2'
-                        , t')
-
-         _ -> throw $ ErrorCannotJoin a ww w1 t1 w2 t2
 
 -- embedded types
 checkWitnessM !config !kenv !_tenv !ctx (WType a t)

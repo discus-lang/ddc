@@ -73,6 +73,5 @@ instance Reannotate Witness where
         WVar  a u               -> WVar  (f a) u
         WCon  a c               -> WCon  (f a) c
         WApp  a w1 w2           -> WApp  (f a) (down w1) (down w2)
-        WJoin a w1 w2           -> WJoin (f a) (down w1) (down w2)
         WType a t               -> WType (f a) t
 

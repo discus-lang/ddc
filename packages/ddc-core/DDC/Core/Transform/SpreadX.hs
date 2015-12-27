@@ -186,7 +186,6 @@ instance SpreadX (Witness a) where
         WCon  a wc       -> WCon  a (down wc)
         WVar  a u        -> WVar  a (down u)
         WApp  a w1 w2    -> WApp  a (down w1) (down w2)
-        WJoin a w1 w2    -> WJoin a (down w1) (down w2)
         WType a t1       -> WType a (spreadT kenv t1)
 
 

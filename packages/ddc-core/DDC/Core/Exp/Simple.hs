@@ -105,9 +105,6 @@ data Witness a n
         -- | Witness application.
         | WApp  !(Witness a n) !(Witness a n)
 
-        -- | Joining of witnesses.
-        | WJoin !(Witness a n) !(Witness a n)
-
         -- | Type can appear as the argument of an application.
         | WType !(Type n)
         deriving (Show, Eq)
@@ -182,6 +179,5 @@ instance (NFData a, NFData n) => NFData (Witness a n) where
         WVar   u                -> rnf u
         WCon   c                -> rnf c
         WApp   w1 w2            -> rnf w1 `seq` rnf w2
-        WJoin  w1 w2            -> rnf w1 `seq` rnf w2
         WType  t                -> rnf t
 

@@ -175,10 +175,6 @@ instance SupportX (Witness a) where
          -> support kenv tenv w1
          <> support kenv tenv w2
 
-        WJoin _ w1 w2
-         -> support kenv tenv w1
-         <> support kenv tenv w2
-
         WType _ t
          -> support kenv tenv t
 

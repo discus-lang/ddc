@@ -451,16 +451,10 @@ pprWitBind b
 instance (Pretty n, Eq n) => Pretty (Witness a n) where
  pprPrec d ww
   = case ww of
-        WVar _ n         -> ppr n
-        WCon _ wc        -> ppr wc
-
-        WApp _ w1 w2
-         -> pprParen (d > 10) (ppr w1 <+> pprPrec 11 w2)
-         
-        WJoin _ w1 w2
-         -> pprParen (d > 9)  (ppr w1 <+> text "&" <+> ppr w2)
-
-        WType _ t        -> text "[" <> ppr t <> text "]"
+        WVar _ n        -> ppr n
+        WCon _ wc       -> ppr wc
+        WApp _ w1 w2    -> pprParen (d > 10) (ppr w1 <+> pprPrec 11 w2)
+        WType _ t       -> text "[" <> ppr t <> text "]"
 
 
 instance (Pretty n, Eq n) => Pretty (WiCon n) where

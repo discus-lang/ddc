@@ -30,11 +30,7 @@ pWitnessJoin c
    -- WITNESS  or  WITNESS & WITNESS
  = do   w1      <- pWitnessApp c
         P.choice 
-         [ do   sp      <- pTokSP (KOp "&")
-                w2      <- pWitnessJoin c
-                return  (WJoin sp w1 w2)
-
-         , do   return w1 ]
+         [ do   return w1 ]
 
 
 -- | Parse a witness application.

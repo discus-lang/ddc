@@ -151,7 +151,6 @@ instance SubstituteWX Witness where
 
         WCon{}                  -> ww
         WApp  a w1 w2           -> WApp  a (down sub w1) (down sub w2)
-        WJoin a w1 w2           -> WJoin a (down sub w1) (down sub w2)
         WType a t               -> WType a (into sub t)
 
 

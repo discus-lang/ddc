@@ -386,7 +386,6 @@ annotOfWitness ww
         WVar  a _       -> a
         WCon  a _       -> a
         WApp  a _ _     -> a
-        WJoin a _ _     -> a
         WType a _       -> a
 
 

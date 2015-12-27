@@ -76,7 +76,8 @@ instance Namify Type where
  namify tnam xnam tt
   = let down = namify tnam xnam
     in case tt of
-        TVar u          -> liftM TVar (rewriteT tnam u)     
+        TVar u 
+         -> liftM TVar (rewriteT tnam u)     
 
         TCon{}          
          ->     return tt
@@ -86,7 +87,9 @@ instance Namify Type where
                 t'              <- namify tnam' xnam t
                 return  $ TForall b' t'
 
-        TApp t1 t2      -> liftM2 TApp (down t1) (down t2)
+        TApp t1 t2
+         -> liftM2 TApp (down t1) (down t2)
+
         TSum ts         
          -> do  ts'     <- mapM down $ Sum.toList ts
                 return  $ TSum $ Sum.fromList (Sum.kindOfSum ts) ts'
@@ -105,7 +108,6 @@ instance Namify (Witness a) where
         WVar  a u       -> liftM  (WVar  a) (rewriteX tnam xnam u)
         WCon{}          -> return ww
         WApp  a w1 w2   -> liftM2 (WApp  a) (down w1) (down w2)
-        WJoin a w1 w2   -> liftM2 (WJoin a) (down w1) (down w2)
         WType a t       -> liftM  (WType a) (down t)
 
 

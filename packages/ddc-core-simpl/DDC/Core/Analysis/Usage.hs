@@ -283,11 +283,5 @@ usageWitness ww
          , used'        <- plusUsedMap used1 used2
          -> (empty, WApp (used', a) w1' w2')
 
-        WJoin a w1 w2
-         | (used1, w1') <- usageWitness w1
-         , (used2, w2') <- usageWitness w2
-         , used'        <- plusUsedMap used1 used2
-         -> (empty, WJoin (used', a) w1' w2')
-
         WType a t
          -> (empty, WType (empty, a) t)

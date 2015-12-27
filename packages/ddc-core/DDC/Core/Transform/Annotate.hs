@@ -77,13 +77,11 @@ instance Annotate S.Witness A.Witness where
         S.WAnnot a (S.WVar  u)          -> A.WVar  a u
         S.WAnnot a (S.WCon  wc)         -> A.WCon  a wc
         S.WAnnot a (S.WApp  w1 w2)      -> A.WApp  a (down w1) (down w2)
-        S.WAnnot a (S.WJoin w1 w2)      -> A.WJoin a (down w1) (down w2)
         S.WAnnot a (S.WType t)          -> A.WType a t
 
         S.WVar  u                       -> A.WVar  def u
         S.WCon  dc                      -> A.WCon  def dc        
         S.WApp  x1 x2                   -> A.WApp  def (down x1) (down x2)
-        S.WJoin x1 x2                   -> A.WJoin def (down x1) (down x2)
         S.WType t                       -> A.WType def t
 
 

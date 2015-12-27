@@ -59,7 +59,6 @@ instance Deannotate A.Witness S.Witness where
         A.WVar  a u             -> wrap a (S.WVar u)
         A.WCon  a wc            -> wrap a (S.WCon wc)
         A.WApp  a w1 w2         -> wrap a (S.WApp  (down w1) (down w2))
-        A.WJoin a w1 w2         -> wrap a (S.WJoin (down w1) (down w2))
         A.WType a t             -> wrap a (S.WType t)
 
 

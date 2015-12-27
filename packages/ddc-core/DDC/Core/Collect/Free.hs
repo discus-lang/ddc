@@ -107,7 +107,6 @@ instance BindStruct (Witness a) where
         WVar _ u        -> [BindUse BoundWit u]
         WCon{}          -> []
         WApp  _ w1 w2   -> slurpBindTree w1 ++ slurpBindTree w2
-        WJoin _ w1 w2   -> slurpBindTree w1 ++ slurpBindTree w2
         WType _ t       -> slurpBindTree t
 
 

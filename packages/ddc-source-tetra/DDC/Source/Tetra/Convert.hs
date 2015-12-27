@@ -278,7 +278,6 @@ toCoreW ww
         S.WVar  a u     -> C.WVar  a (toCoreU  u)
         S.WCon  a wc    -> C.WCon  a (toCoreWC wc)
         S.WApp  a w1 w2 -> C.WApp  a (toCoreW  w1) (toCoreW w2)
-        S.WJoin a w1 w2 -> C.WJoin a (toCoreW  w1) (toCoreW w2)
         S.WType a t     -> C.WType a (toCoreT  t)
 
 
