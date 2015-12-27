@@ -73,8 +73,7 @@ checkExp
         -> ( Either (Error a n)         --   Type error message. 
                     ( Exp (AnTEC a n) n --   Expression with type annots
                     , Type n            --   Type of expression.
-                    , Effect n          --   Effect of expression.
-                    , Closure n)        --   Closure of expression.
+                    , Effect n)         --   Effect of expression.
            , CheckTrace)                --   Type checker debug trace.
 
 checkExp !config !kenv !tenv !xx !mode
@@ -84,7 +83,7 @@ checkExp !config !kenv !tenv !xx !mode
    = runCheck (mempty, 0, 0) 
    $ do
         -- Check the expression, using the monadic checking function.
-        (xx', t, effs, clos, ctx) 
+        (xx', t, effs, ctx) 
          <- checkExpM 
                 (makeTable config
                         (Env.union kenv (configPrimKinds config))
@@ -93,10 +92,10 @@ checkExp !config !kenv !tenv !xx !mode
                 
         -- Apply the final context to the annotations in expressions.
         -- This ensures that existentials are expanded to solved types.
-        let applyToAnnot (AnTEC t0 e0 c0 x0)
+        let applyToAnnot (AnTEC t0 e0 _ x0)
                 = AnTEC (applySolved ctx t0)
                         (applySolved ctx e0)
-                        (applySolved ctx c0)
+                        (tBot kClosure)
                         x0
 
         let xx'' = reannotate applyToAnnot 
@@ -106,9 +105,8 @@ checkExp !config !kenv !tenv !xx !mode
         -- effect and closure of the expression.
         let t'   = applySolved ctx t
         let e'   = applySolved ctx $ TSum effs
-        let c'   = applySolved ctx $ closureOfTaggedSet clos
 
-        return  (xx'', t', e', c')
+        return  (xx'', t', e')
 
 
 -- | Like `checkExp`, but only return the value type of an expression.
@@ -122,8 +120,8 @@ typeOfExp
 
 typeOfExp !config !kenv !tenv !xx
  = case fst $ checkExp config kenv tenv xx Recon of
-        Left err           -> Left err
-        Right (_, t, _, _) -> Right t
+        Left err        -> Left err
+        Right (_, t, _) -> Right t
 
 
 -- Monadic Checking -----------------------------------------------------------
@@ -138,7 +136,6 @@ checkExpM
                 ( Exp (AnTEC a n) n     -- Annotated expression.
                 , Type n                -- Output type.
                 , TypeSum n             -- Output effect
-                , Set (TaggedClosure n) -- Output closure
                 , Context n)            -- Output context.
 
 -- Dispatch to the checker table based on what sort of AST node we're at.

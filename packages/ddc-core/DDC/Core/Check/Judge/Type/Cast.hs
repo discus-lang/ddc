@@ -5,7 +5,6 @@ where
 import DDC.Core.Check.Judge.Type.Sub
 import DDC.Core.Check.Judge.Type.Base
 import qualified DDC.Type.Sum   as Sum
-import qualified Data.Set       as Set
 
 
 checkCast :: Checker a n
@@ -25,7 +24,7 @@ checkCast !table !ctx0 xx@(XCast a (CastWeakenEffect eff) x1) mode
                 Check _ -> Check kEffect
 
         -- Check the body.
-        (x1', t1, effs, clo, ctx2)
+        (x1', t1, effs, ctx2)
          <- tableCheckExp table table ctx1 x1 mode
 
         -- The effect term must have Effect kind.
@@ -36,35 +35,8 @@ checkCast !table !ctx0 xx@(XCast a (CastWeakenEffect eff) x1) mode
         let effs'  = Sum.insert eff' effs
 
         returnX a (\z -> XCast z c' x1')
-                t1 effs' clo ctx2
+                t1 effs' ctx2
                 
-
--- WeakenClosure --------------------------------------------------------------
--- Weaken the closure of an expression.
---
--- DEPRECATED: Closures are being removed in the next version,
---             so we don't bother doing proper type inference for closure
---             weakenings.
---
-checkCast !table !ctx (XCast a (CastWeakenClosure xs) x1) mode
- = do   
-        -- Check the contained expressions.
-        --  Just ditch the resulting contexts because they shouldn't
-        --  contain expression that need types infered.
-        (xs', closs, _ctx)
-                <- liftM unzip3
-                $   mapM (\x -> checkArgM table ctx x Recon) xs
-
-        -- Check the body.
-        (x1', t1, effs, clos, ctx1)
-                <- tableCheckExp table table ctx x1 mode
-        
-        let c'     = CastWeakenClosure xs'
-        let closs' = Set.unions (clos : closs)
-
-        returnX a (\z -> XCast z c' x1')
-                t1 effs closs' ctx1
-
 
 -- Purify ---------------------------------------------------------------------
 -- Purify the effect of an expression.
@@ -82,7 +54,7 @@ checkCast !table !ctx xx@(XCast a (CastPurify w) x1) mode
         let wTEC  = reannotate fromAnT w'
 
         -- Check the body.
-        (x1', t1, effs, clo, ctx1)
+        (x1', t1, effs, ctx1)
          <- tableCheckExp table table ctx x1 mode
 
         -- The witness must have type (Pure e), for some effect e.
@@ -93,7 +65,7 @@ checkCast !table !ctx xx@(XCast a (CastPurify w) x1) mode
 
         let c'  = CastPurify wTEC
         returnX a (\z -> XCast z c' x1')
-                t1 effs' clo ctx1
+                t1 effs' ctx1
 
 
 -- Forget ---------------------------------------------------------------------
@@ -102,31 +74,22 @@ checkCast !table !ctx xx@(XCast a (CastPurify w) x1) mode
 -- DEPRECATED: Closures are being removed in the next version,
 --             so we don't bother doing proper type inference for forget casts.
 -- 
-checkCast !table !ctx xx@(XCast a (CastForget w) x1) mode
+checkCast !table !ctx (XCast a (CastForget w) x1) mode
  = do   let config      = tableConfig table
         let kenv        = tableKindEnv table
         let tenv        = tableTypeEnv table
 
         -- Check the witness.
-        (w', tW)  <- checkWitnessM config kenv tenv ctx w
+        (w', _)   <- checkWitnessM config kenv tenv ctx w
         let wTEC  = reannotate fromAnT w'
 
         -- Check the body.
-        (x1', t1, effs, clos, ctx1)  
+        (x1', t1, effs, ctx1)  
          <- tableCheckExp table table ctx x1 mode
-
-        -- The witness must have type (Empty c), for some closure c.
-        clos' <- case tW of
-                  TApp (TCon (TyConWitness TwConEmpty)) cloMask
-                    -> return $ maskFromTaggedSet 
-                                        (Sum.singleton kClosure cloMask)
-                                        clos
-
-                  _ -> throw $ ErrorWitnessNotEmpty a xx w tW
 
         let c'  = CastForget wTEC
         returnX a (\z -> XCast z c' x1')
-                t1 effs clos' ctx1
+                t1 effs ctx1
 
 
 -- Box ------------------------------------------------------------------------
@@ -139,7 +102,7 @@ checkCast !table ctx0 xx@(XCast a CastBox x1) mode
         let config      = tableConfig table
 
         -- Check the body.
-        (x1', tBody, effs, clos, ctx1)     
+        (x1', tBody, effs, ctx1)     
          <- tableCheckExp table table ctx0 x1 Synth
 
         -- The actual type is (S eff tBody).
@@ -154,13 +117,13 @@ checkCast !table ctx0 xx@(XCast a CastBox x1) mode
                 $  ErrorMismatch a      tActual tExpected' xx
 
         returnX a (\z -> XCast z CastBox x1')
-                tExpected (Sum.empty kEffect) clos ctx2
+                tExpected (Sum.empty kEffect) ctx2
 
     -- Recon and Synth mode.
     _
      -> do
         -- Check the body.
-        (x1', t1, effs, clos, ctx1) 
+        (x1', t1, effs,  ctx1) 
          <- tableCheckExp table table ctx0 x1 mode
 
         -- The result type is (S effs a).
@@ -168,7 +131,7 @@ checkCast !table ctx0 xx@(XCast a CastBox x1) mode
                         [TSum effs, t1]
 
         returnX a (\z -> XCast z CastBox x1')
-                tS (Sum.empty kEffect) clos ctx1
+                tS (Sum.empty kEffect) ctx1
 
 
 -- Run ------------------------------------------------------------------------
@@ -179,7 +142,7 @@ checkCast !table !ctx0 xx@(XCast a CastRun xBody) mode
     Recon
      -> do
         -- Check the body.
-        (xBody', tBody, effs, clos, ctx1)
+        (xBody', tBody, effs, ctx1)
          <- tableCheckExp table table ctx0 xBody Recon
 
         -- The body must have type (S eff a),
@@ -196,14 +159,14 @@ checkCast !table !ctx0 xx@(XCast a CastRun xBody) mode
                         (\z -> XCast z CastRun xBody')
                         tResult 
                         (Sum.union effs (Sum.singleton kEffect eff2))
-                        clos ctx1
+                        ctx1
 
          _ -> throw $ ErrorRunNotSuspension a xx tBody
 
     Synth
      -> do
         -- Synthesize a type for the body.
-        (xBody', tBody, effs, clos, ctx1)
+        (xBody', tBody, effs, ctx1)
          <- tableCheckExp table table ctx0 xBody Synth
 
         -- Run the body,
@@ -216,7 +179,7 @@ checkCast !table !ctx0 xx@(XCast a CastRun xBody) mode
                 (\z -> XCast z CastRun xBody')
                 tResult
                 (Sum.union effs (Sum.singleton kEffect effsSusp))
-                clos ctx2
+                ctx2
 
     Check tExpected
      -> checkSub table a ctx0 xx tExpected
@@ -262,46 +225,7 @@ synthRunSusp table a xx ctx0 tt
  =      throw $ ErrorRunNotSuspension a xx tt
  
 
--- Arg ------------------------------------------------------------------------
--- | Like `checkExp` but we allow naked types and witnesses.
-checkArgM 
-        :: (Show n, Pretty n, Ord n)
-        => Table a n            -- ^ Static config.
-        -> Context n            -- ^ Input context.
-        -> Exp a n              -- ^ Expression to check.
-        -> Mode n               -- ^ Checking mode.
-        -> CheckM a n 
-                ( Exp (AnTEC a n) n
-                , Set (TaggedClosure n)
-                , Context n)
-
-checkArgM !table !ctx0 !xx !mode
- = let  config  = tableConfig  table
-        tenv    = tableTypeEnv table
-        kenv    = tableKindEnv table
-   in case xx of
-        XType a t
-         -> do  (t', k, ctx1) <- checkTypeM config kenv ctx0 UniverseSpec t Recon
-                let Just clo = taggedClosureOfTyArg kenv ctx1 t
-                let a'   = AnTEC k (tBot kEffect) (tBot kClosure) a
-                return  ( XType a' t'
-                        , clo
-                        , ctx1)
-
-        XWitness a w
-         -> do  (w', t) <- checkWitnessM config kenv tenv ctx0 w
-                let a'   = AnTEC t (tBot kEffect) (tBot kClosure) a
-                return  ( XWitness a' (reannotate fromAnT w')
-                        , Set.empty
-                        , ctx0)
-
-        _ -> do
-                (xx', _, _, clos, ctx1) 
-                        <- tableCheckExp table table ctx0 xx mode
-                return  (xx', clos, ctx1)
-                        
-
--- Support --------------------------------------------------------------------
+ -- Support --------------------------------------------------------------------
 -- | Check if the provided effect is supported by the context, 
 --   if not then throw an error.
 checkEffectSupported 

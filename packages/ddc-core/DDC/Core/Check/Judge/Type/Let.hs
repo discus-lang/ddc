@@ -4,7 +4,6 @@ module DDC.Core.Check.Judge.Type.Let
 where
 import DDC.Core.Check.Judge.Type.Base
 import qualified DDC.Type.Sum   as Sum
-import qualified Data.Set       as Set
 import Data.List                as L
 
 
@@ -29,14 +28,14 @@ checkLet !table !ctx0 xx@(XLet a lts xBody) mode
                         Check{} -> True
                         Synth   -> True
         
-        (lts', bs', effsBinds, closBinds, pos1, ctx1)
+        (lts', _bs', effsBinds, pos1, ctx1)
          <- checkLetsM useBidirChecking xx table ctx0 lts 
 
         
         -- Check the body -----------------------
         -- -- Check the body expression in a context
         -- -- extended with the types of the bindings.
-        (xBody', tBody, effsBody, closBody, ctx2)
+        (xBody', tBody, effsBody, ctx2)
          <- tableCheckExp table table ctx1 xBody mode
 
         -- The body must have data kind.
@@ -52,15 +51,9 @@ checkLet !table !ctx0 xx@(XLet a lts xBody) mode
 
 
         -- Build the result ---------------------
-        -- Mask closure terms due to locally bound value vars.
-        let clos_cut    = Set.fromList
-                        $ mapMaybe (cutTaggedClosureXs bs')
-                        $ Set.toList closBody
-
         -- The new effect and closure.
         let tResult     = applyContext ctx3 tBody'
         let effs'       = effsBinds `Sum.union` effsBody
-        let clos'       = closBinds `Set.union` clos_cut
 
         -- Pop the elements due to the let-bindings from the context.
         let ctx_cut     = popToPos pos1 ctx3
@@ -73,7 +66,7 @@ checkLet !table !ctx0 xx@(XLet a lts xBody) mode
                 , indent 2 $ ppr ctx_cut ]
 
         returnX a (\z -> XLet z lts' xBody')
-                tResult effs' clos' ctx_cut
+                tResult effs' ctx_cut
 
 
 -- others ---------------------------------------
@@ -96,7 +89,6 @@ checkLetsM
                 ( Lets (AnTEC a n) n    --   Let-bindings annotated with types.
                 , [Bind n]              --   Binding occs of vars, with types.
                 , TypeSum n             --   Effect of evaluating all the bindings.
-                , Set (TaggedClosure n) --   Closure of all the bindings.
                 , Pos                   --   Context position with bindings pushed.
                 , Context n)            --   Output context.
 
@@ -110,7 +102,7 @@ checkLetsM !bidir xx !table !ctx0 (LLet b xBind)
         let a           = annotOfExp xx
 
         -- Reconstruct the type of the binding.
-        (xBind', tBind, effsBind, closBind, ctx1) 
+        (xBind', tBind, effsBind, ctx1) 
          <- tableCheckExp table table ctx0 xBind Recon
         
         -- The kind of the binding must be Data.
@@ -137,7 +129,7 @@ checkLetsM !bidir xx !table !ctx0 (LLet b xBind)
 
         return  ( LLet b' xBind'
                 , [b']
-                , effsBind, closBind
+                , effsBind
                 , pos1, ctx3)
 
  -- Synthesise the type of a non-recursive let-binding,
@@ -164,7 +156,7 @@ checkLetsM !bidir xx !table !ctx0 (LLet b xBind)
                 return (Check tAnnot', ctx1)
 
         -- Check the expression in the right of the binding.
-        (xBind', tBind1, effsBind, closBind, ctx2)
+        (xBind', tBind1, effsBind, ctx2)
          <- tableCheckExp table table ctx1 xBind modeCheck
 
         -- Update the annotation on the binder with the actual type of
@@ -178,7 +170,7 @@ checkLetsM !bidir xx !table !ctx0 (LLet b xBind)
 
         return  ( LLet b' xBind'
                 , [b']
-                , effsBind, closBind
+                , effsBind
                 , pos1, ctx4)
 
 
@@ -203,18 +195,12 @@ checkLetsM !bidir !xx !table !ctx0 (LRec bxs)
         -- Check the right hand sides.
         (results, ctx4)  <- checkRecBindExps table bidir a ctx3 (zip bs' xs)
 
-        let (bs'', xsRight', clossBinds)
-                = unzip3 results
-
-        -- Cut closure terms due to locally bound value vars.
-        let clos_cut 
-                 = Set.fromList
-                 $ mapMaybe (cutTaggedClosureXs bs)
-                 $ Set.toList $ Set.unions clossBinds
+        let (bs'', xsRight')
+                = unzip results
 
         return  ( LRec (zip bs'' xsRight')
                 , bs''
-                , Sum.empty kEffect, clos_cut
+                , Sum.empty kEffect
                 , pos1, ctx4)
 
 
@@ -309,8 +295,7 @@ checkRecBindExps
         -> [(Bind n, Exp a n)]          -- ^ Bindings and exps for rec bindings.
         -> CheckM a n 
                 ( [ ( Bind n                   -- Result bindiner.
-                    , Exp (AnTEC a n) n        -- Result expression.
-                    , Set (TaggedClosure n))]  -- Result closure.
+                    , Exp (AnTEC a n) n)]      -- Result expression.
                 , Context n)
 
 checkRecBindExps table bidir a ctx0 bxs0
@@ -331,7 +316,7 @@ checkRecBindExps table bidir a ctx0 bxs0
                 -- Check the right of the binding.
                 --  We checked that the expression is a syntactic lambda
                 --  abstraction in checkLetsM, so we know the effect is pure.
-                (x', t, _effs, clos, ctx')
+                (x', t, _effs, ctx')
                  <- tableCheckExp table table ctx x Recon
 
                 -- Check the annotation on the binder matches the reconstructed
@@ -343,21 +328,21 @@ checkRecBindExps table bidir a ctx0 bxs0
                 -- constructors etc, so update the binders with this new info.
                 let b'  = replaceTypeOfBind t b
 
-                return ( (b', x', clos), ctx')
+                return ( (b', x'), ctx')
 
             True
              -> do
                 -- Check the right of the binding.
                 --  We checked that the expression is a syntactic lambda
                 --  abstraction in checkLetsM, so we know the effect is pure.
-                (x', t, _effs, clos, ctx')
+                (x', t, _effs, ctx')
                  <- tableCheckExp table table ctx x (Check (typeOfBind b))
 
                 -- Reconstructing the types of binders adds missing kind info to
                 -- constructors etc, so update the binders with this new info.
                 let b'  = replaceTypeOfBind t b
 
-                return ((b', x', clos), ctx')
+                return ((b', x'), ctx')
 
 
 -------------------------------------------------------------------------------

@@ -237,7 +237,7 @@ loadExpFromTokens fragment modules sourceName mode toks'
         goCheckType x
          = case C.checkExp config kenv tenv x mode of
             (Left err, ct)            -> (Left  (ErrorCheckExp err),  Just ct)
-            (Right (x', _, _, _), ct) -> goCheckCompliance ct x'
+            (Right (x', _, _), ct)    -> goCheckCompliance ct x'
 
         -- Check that the module compiles with the language fragment.
         goCheckCompliance ct x 

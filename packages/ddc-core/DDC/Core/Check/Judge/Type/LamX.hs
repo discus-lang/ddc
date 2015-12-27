@@ -5,7 +5,6 @@ where
 import DDC.Core.Check.Judge.Type.Sub
 import DDC.Core.Check.Judge.Type.Base
 import qualified DDC.Type.Sum   as Sum
-import qualified Data.Set       as Set
 
 
 -- | Check a lambda abstraction.
@@ -38,19 +37,13 @@ checkLam !table !a !ctx !b1 !x2 !Recon
         let (ctx', pos1) = markContext ctx
         let ctx1         = pushType b1 ctx'
 
-        (x2', t2, e2, c2, ctx2)
+        (x2', t2, e2, ctx2)
          <- tableCheckExp table table ctx1 x2 Recon
 
         -- The body of the function must produce data.
         (_, k2, _)      <- checkTypeM config kenv ctx2 UniverseSpec t2 Recon
         when (not $ isDataKind k2)
          $ throw $ ErrorLamBodyNotData a xx b1 t2 k2 
-
-        -- Cut closure terms due to locally bound value vars.
-        -- This also lowers deBruijn indices in un-cut closure terms.
-        let c2_cut      = Set.fromList
-                        $ mapMaybe (cutTaggedClosureX b1)
-                        $ Set.toList c2
 
         -- Cut the bound type and elems under it from the context.
         let ctx_cut     = popToPos pos1 ctx2
@@ -59,13 +52,11 @@ checkLam !table !a !ctx !b1 !x2 !Recon
         -- Build the resulting function type.
         --   The way the effect and closure term is captured depends on
         --   the configuration flags.
-        (tResult, cResult)
-         <- makeFunctionType config a xx t1 k1 t2 e2 c2_cut
+        tResult <- makeFunctionType config a xx t1 k1 t2 e2
         
         returnX a
                 (\z -> XLam z b1' x2')
-                tResult (Sum.empty kEffect) cResult
-                ctx_cut
+                tResult (Sum.empty kEffect) ctx_cut
 
 
 -- When synthesizing the type of a lambda abstraction
@@ -113,7 +104,7 @@ checkLam !table !a !ctx !b1 !x2 !Synth
         let ctx3         = pushType   b1' ctx2
 
         -- Check the body against the existential for it.
-        (x2', t2', e2, c2, ctx4)
+        (x2', t2', e2, ctx4)
          <- tableCheckExp table table ctx3 x2 (Check t2)
 
         -- Force the kind of the body to be Data.
@@ -137,12 +128,6 @@ checkLam !table !a !ctx !b1 !x2 !Synth
 
              else do
                 return (k1', ctx5)
-
-        -- Cut closure terms due to locally bound value vars.
-        -- This also lowers deBruijn indices in un-cut closure terms.
-        let c2_cut      = Set.fromList
-                        $ mapMaybe (cutTaggedClosureX b1')
-                        $ Set.toList c2
  
         -- Cut the bound type and elems under it from the context.
         let ctx_cut     = popToPos pos1 ctx6
@@ -150,10 +135,10 @@ checkLam !table !a !ctx !b1 !x2 !Synth
         -- Build the resulting function type.
         --  This switches on the kind of the argument, so we need to apply
         --  the context to 'k1' to ensure it has all available information.
-        (tResult, cResult)
+        tResult
          <- makeFunctionType config a (XLam a b1' x2) 
                 t1' k1''
-                t2' e2 c2_cut
+                t2' e2
 
         ctrace  $ vcat
                 [ text "* Lam Synth"
@@ -165,8 +150,7 @@ checkLam !table !a !ctx !b1 !x2 !Synth
 
         returnX a
                 (\z -> XLam z b1' x2')
-                tResult (Sum.empty kEffect) cResult
-                ctx_cut
+                tResult (Sum.empty kEffect) ctx_cut
 
 
 -- When checking type type of a lambda abstraction against an existing
@@ -199,7 +183,7 @@ checkLam !table !a !ctx !b1 !x2 !(Check tExpected)
         let (ctx', pos1) = markContext ctx0
         let ctx1         = pushType b1' ctx'
 
-        (x2', t2, e2, c2, ctx2)
+        (x2', t2, e2, ctx2)
          <- tableCheckExp table table ctx1 x2 (Check tX2)
 
         -- Force the kind of the body to be Data.
@@ -224,12 +208,6 @@ checkLam !table !a !ctx !b1 !x2 !(Check tExpected)
 
              else do
                 return (k1', ctx3)
-
-        -- Cut closure terms due to locally bound value vars.
-        -- This also lowers deBruijn indices in un-cut closure terms.
-        let c2_cut      = Set.fromList
-                        $ mapMaybe (cutTaggedClosureX b1)
-                        $ Set.toList c2
         
         -- Cut the bound type and elems under it from the context.
         let ctx_cut     = popToPos pos1 ctx4
@@ -237,10 +215,9 @@ checkLam !table !a !ctx !b1 !x2 !(Check tExpected)
         -- Build the resulting function type.
         --  This switches on the kind of the argument, so we need to apply
         --  the context to 'k1' to ensure it has all available information.
-        (tResult, cResult)
+        tResult
          <- makeFunctionType config a (XLam a b1' x2) 
-                t1' k1''
-                t2 e2 c2_cut
+                t1' k1'' t2 e2
 
         ctrace  $ vcat 
                 [ text "* Lam Check"
@@ -253,8 +230,7 @@ checkLam !table !a !ctx !b1 !x2 !(Check tExpected)
 
         returnX a
                 (\z -> XLam z b1' x2')
-                tResult (Sum.empty kEffect) cResult
-                ctx_cut
+                tResult (Sum.empty kEffect) ctx_cut
 
 checkLam !table !a !ctx !b1 !x2 !(Check tExpected)
  = checkSub table a ctx (XLam a b1 x2) tExpected
@@ -279,10 +255,9 @@ makeFunctionType
         -> Kind n                -- ^ Kind of the parameter.
         -> Type n                -- ^ Result type of the function.
         -> TypeSum n             -- ^ Effect sum.
-        -> Set (TaggedClosure n) -- ^ Closure terms.
-        -> CheckM a n (Type n, Set (TaggedClosure n))
+        -> CheckM a n (Type n)
 
-makeFunctionType config a xx t1 k1 t2 e2 c2
+makeFunctionType config a xx t1 k1 t2 e2
  | isTExists k1
  = throw $ ErrorLamBindBadKind a xx t1 k1
 
@@ -294,54 +269,33 @@ makeFunctionType config a xx t1 k1 t2 e2 c2
         -- Get the universe the parameter value belongs to.
         let Just uniParam    = universeFromType2 k1
 
-        -- Trim the closure before we annotate the returned function
-        -- type with it. This should always succeed because trimClosure
-        -- only returns Nothing if the closure is miskinded, and we've
-        -- already already checked that.
-        let c2_captured
-                -- If we're not tracking closure information then just drop it 
-                -- on the floor.
-                | not  $ configTrackedClosures config   = tBot kClosure
-                | otherwise
-                = let Just c = trimClosure $ closureOfTaggedSet c2 in c
-
         let e2_captured
                 -- If we're not tracking effect information then just drop it 
                 -- on the floor.
                 | not  $ configTrackedEffects config    = tBot kEffect
                 | otherwise                             = TSum e2
 
-
         -- Data abstraction where the function type for the language fragment
         -- supports latent effects and closures.
         if      (  k1 == kData
-                && configFunctionalEffects  config
-                && configFunctionalClosures config)
-         then   return  ( tFunEC t1 e2_captured c2_captured t2
-                        , c2)
+                && configFunctionalEffects  config)
+         then   return  (tFunEC t1 e2_captured (tBot kClosure) t2)
 
         -- Data abstraction where the function constructor for the language
         -- fragment does not suport latent effects or closures.
         else if (  k1 == kData
-                && e2_captured == tBot kEffect
-                && c2_captured == tBot kClosure)
-         then   return  ( tFun t1 t2
-                        , Set.empty)
+                && e2_captured == tBot kEffect)
+         then   return  (tFun t1 t2)
 
         -- Witness abstractions must always be pure,
         --  but closures are passed through.
         else if (  k1 == kWitness
                 && e2_captured == tBot kEffect)
-         then   return  ( tImpl t1 t2
-                        , c2 )
+         then   return  (tImpl t1 t2)
 
         -- We don't have a way of forming a function with an impure effect.
         else if (e2_captured /= tBot kEffect)
          then   throw $ ErrorLamNotPure  a xx uniParam e2_captured
-
-        -- We don't have a way of forming a function with an non-empty closure.
-        else if (c2_captured /= tBot kClosure)
-         then   throw $ ErrorLamNotEmpty a xx uniParam c2_captured
 
         -- One of the above error reporting cases should have fired already.
         else    error $ "ddc-core.makeFunctionType: is broken."

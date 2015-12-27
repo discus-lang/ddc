@@ -120,15 +120,15 @@ checkModuleM !config !kenv !tenv mm@ModuleCore{} !mode
                                       
         
         -- Check the body of the module -------------------
-        (x', _, _effs, _, ctx) 
+        (x', _, _effs, ctx) 
          <- checkExpM   (makeTable config_top kenv_top tenv_top)
                         emptyContext (moduleBody mm) mode
 
         -- Apply the final context to the annotations in expressions.
-        let applyToAnnot (AnTEC t0 e0 c0 x0)
+        let applyToAnnot (AnTEC t0 e0 _ x0)
                 = AnTEC (applySolved ctx t0)
                         (applySolved ctx e0)
-                        (applySolved ctx c0)
+                        (tBot kClosure)
                         x0
 
         let x'' = reannotate applyToAnnot 

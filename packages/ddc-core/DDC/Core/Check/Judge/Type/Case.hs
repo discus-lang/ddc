@@ -4,7 +4,6 @@ module DDC.Core.Check.Judge.Type.Case
 where
 import DDC.Core.Check.Judge.Type.Base
 import qualified DDC.Type.Sum   as Sum
-import qualified Data.Set       as Set
 import qualified Data.Map       as Map
 import Data.List                as L
 
@@ -24,7 +23,7 @@ checkCase !table !ctx0 xx@(XCase a xDiscrim alts) mode
          <- takeDiscrimCheckModeFromAlts table a ctx0 mode alts
 
         -- Check the discriminant.
-        (xDiscrim', tDiscrim, effsDiscrim, closDiscrim, ctx2) 
+        (xDiscrim', tDiscrim, effsDiscrim, ctx2) 
          <- tableCheckExp table table ctx1 xDiscrim modeDiscrim
 
         -- Split the type into the type constructor names and type parameters.
@@ -75,7 +74,7 @@ checkCase !table !ctx0 xx@(XCase a xDiscrim alts) mode
                         return (Check tA, ctx3)
 
         -- Check the alternatives.
-        (alts', tsAlts, effss, closs, ctx4)
+        (alts', tsAlts, effss, ctx4)
          <- checkAltsM table a xx tDiscrim tsArgs modeAlts alts ctx3
 
         -- Check that all the alternatives have the same type.
@@ -112,7 +111,6 @@ checkCase !table !ctx0 xx@(XCase a xDiscrim alts) mode
                 (\z -> XCase z xDiscrim' alts')
                 tAlt
                 (Sum.unions kEffect (effsDiscrim : effsMatch : effss))
-                (Set.unions         (closDiscrim : closs))
                 ctx4
 
 checkCase _ _ _ _
@@ -191,7 +189,6 @@ checkAltsM
                 ( [Alt (AnTEC a n) n]      -- Checked alternatives.
                 , [Type n]                 -- Type of alternative results.
                 , [TypeSum n]              -- Alternative effects.
-                , [Set (TaggedClosure n)]  -- Alternative closures
                 , Context n)
 
 checkAltsM !table !a !xx !tDiscrim !tsArgs !mode !alts0 !ctx
@@ -206,32 +203,30 @@ checkAltsM !table !a !xx !tDiscrim !tsArgs !mode !alts0 !ctx
 
   -- Check all the alternatives monadically.
   checkAltsM1 [] ctx0
-   =    return ([], [], [], [], ctx0)
+   =    return ([], [], [], ctx0)
 
   checkAltsM1 (alt : alts) ctx0
-   = do (alt',  tAlt,  eAlt, cAlt, ctx1)
+   = do (alt',  tAlt,  eAlt, ctx1)
          <- checkAltM   alt ctx0
 
-        (alts', tsAlts, esAlts, csAlts, ctx2)
+        (alts', tsAlts, esAlts, ctx2)
          <- checkAltsM1 alts ctx1
 
         return  ( alt'  : alts'
                 , tAlt  : tsAlts
                 , eAlt  : esAlts
-                , cAlt  : csAlts
                 , ctx2)
 
   -- Check a single alternative.
   checkAltM   (AAlt PDefault xBody) !ctx0
    = do   
         -- Check the right of the alternative.
-        (xBody', tBody, effBody, cloBody, ctx1)
+        (xBody', tBody, effBody, ctx1)
                 <- tableCheckExp table table ctx0 xBody mode
 
         return  ( AAlt PDefault xBody'
                 , tBody
                 , effBody
-                , cloBody
                 , ctx1)
 
   checkAltM alt@(AAlt (PData dc bsArg) xBody) !ctx0
@@ -281,15 +276,8 @@ checkAltsM !table !a !xx !tDiscrim !tsArgs !mode !alts0 !ctx
         let ctxArg         = pushTypes bsArg' ctx2
         
         -- Check the body in this new environment.
-        (xBody', tBody, effsBody, closBody, ctxBody)
+        (xBody', tBody, effsBody, ctxBody)
                  <- tableCheckExp table table ctxArg xBody mode
-
-        -- Cut closure terms due to locally bound value vars.
-        -- This also lowers deBruijn indices in un-cut closure terms.
-        let closBody_cut 
-                = Set.fromList
-                $ mapMaybe (cutTaggedClosureXs bsArg')
-                $ Set.toList closBody
 
         let tBody'      = applyContext ctxBody tBody
 
@@ -312,7 +300,6 @@ checkAltsM !table !a !xx !tDiscrim !tsArgs !mode !alts0 !ctx
         return  ( AAlt (PData dc bsArg') xBody'
                 , tBody'
                 , effsBody
-                , closBody_cut
                 , ctx_cut)
 
 

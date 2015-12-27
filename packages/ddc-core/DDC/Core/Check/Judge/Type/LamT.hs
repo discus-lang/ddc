@@ -5,7 +5,6 @@ where
 import DDC.Core.Check.Judge.Type.Sub
 import DDC.Core.Check.Judge.Type.Base
 import qualified DDC.Type.Sum   as Sum
-import qualified Data.Set       as Set
 
 
 -- Check a spec abstraction.
@@ -49,7 +48,7 @@ checkLAM !table !ctx0 a b1 x2 Recon
         let ctx3         = pushKind b1' RoleAbstract ctx2
         let ctx4         = liftTypes 1  ctx3
 
-        (x2', t2, e2, c2, ctx5)
+        (x2', t2, e2, ctx5)
          <- tableCheckExp table table ctx4 x2 Recon
         
         -- Reconstruct the kind of the body.
@@ -63,11 +62,6 @@ checkLAM !table !ctx0 a b1 x2 Recon
         -- The body of a spec abstraction must be pure.
         when (e2 /= Sum.empty kEffect)
          $ throw $ ErrorLamNotPure a xx UniverseSpec (TSum e2)
-
-        -- Mask closure terms due to locally bound region vars.
-        let c2_cut      = Set.fromList
-                        $ mapMaybe (cutTaggedClosureT b1)
-                        $ Set.toList c2
 
         -- Cut the bound kind and elems under it from the context.
         let ctx_cut     = lowerTypes 1
@@ -86,8 +80,7 @@ checkLAM !table !ctx0 a b1 x2 Recon
 
         returnX a
                 (\z -> XLAM z b1' x2')
-                tResult (Sum.empty kEffect) c2_cut
-                ctx_cut
+                tResult (Sum.empty kEffect) ctx_cut
 
 
 checkLAM !table !ctx0 a b1 x2 Synth
@@ -125,7 +118,7 @@ checkLAM !table !ctx0 a b1 x2 Synth
         let ctx3         = pushKind b1' RoleAbstract ctx2
         let ctx4         = liftTypes 1  ctx3
 
-        (x2', t2, e2, c2, ctx5)
+        (x2', t2, e2,ctx5)
          <- tableCheckExp table table ctx4 x2 Synth
         
         -- Force the kind of the body to be data.
@@ -138,11 +131,6 @@ checkLAM !table !ctx0 a b1 x2 Synth
         -- The body of a spec abstraction must be pure.
         when (e2 /= Sum.empty kEffect)
          $ throw $ ErrorLamNotPure a xx UniverseSpec (TSum e2)
-
-        -- Mask closure terms due to locally bound region vars.
-        let c2_cut      = Set.fromList
-                        $ mapMaybe (cutTaggedClosureT b1)
-                        $ Set.toList c2
 
         -- Cut the bound kind and elems under it from the context.
         let ctx_cut     = lowerTypes 1
@@ -161,8 +149,7 @@ checkLAM !table !ctx0 a b1 x2 Synth
 
         returnX a
                 (\z -> XLAM z b1' x2')
-                tResult (Sum.empty kEffect) c2_cut
-                ctx_cut
+                tResult (Sum.empty kEffect) ctx_cut
 
 
 checkLAM !table !ctx0 a b1 x2 (Check (TForall b tBody))
@@ -218,7 +205,7 @@ checkLAM !table !ctx0 a b1 x2 (Check (TForall b tBody))
                 Nothing -> return tBody
                 Just u1 -> return $ substituteT b (TVar u1) tBody
 
-        (x2', t2, e2, c2, ctx5)
+        (x2', t2, e2, ctx5)
          <- tableCheckExp table table ctx4 x2 (Check tBody_skol)
         
         -- Force the body of the spec abstraction must have data kind.
@@ -230,11 +217,6 @@ checkLAM !table !ctx0 a b1 x2 (Check (TForall b tBody))
         -- The body of a spec abstraction must be pure.
         when (e2 /= Sum.empty kEffect)
          $ throw $ ErrorLamNotPure a xx UniverseSpec (TSum e2)
-
-        -- Mask closure terms due to locally bound region vars.
-        let c2_cut      = Set.fromList
-                        $ mapMaybe (cutTaggedClosureT b1)
-                        $ Set.toList c2
 
         -- Apply context to synthesised type.
         -- We're about to pop the context back to how it was before the 
@@ -259,8 +241,7 @@ checkLAM !table !ctx0 a b1 x2 (Check (TForall b tBody))
 
         returnX a
                 (\z -> XLAM z b1' x2')
-                tResult (Sum.empty kEffect) c2_cut
-                ctx_cut
+                tResult (Sum.empty kEffect) ctx_cut
 
 checkLAM table ctx0 a b1 x2 (Check tExpected)
  = checkSub table a ctx0 (XLAM a b1 x2) tExpected

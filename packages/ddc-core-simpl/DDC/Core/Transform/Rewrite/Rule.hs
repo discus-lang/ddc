@@ -183,13 +183,13 @@ checkRewriteRule config kenv tenv
         mapM_ (checkConstraint config kenv') csSpread
 
         -- Typecheck, spread and annotate with type information
-        (lhs', _, _, _)
+        (lhs', _, _)
                 <- checkExp config kenv' tenv' Lhs lhs 
 
         -- If the extra left part is there, typecheck and annotate it.
         hole' <- case hole of
                   Just h  
-                   -> do  (h',_,_,_)  <- checkExp config kenv' tenv' Lhs h 
+                   -> do  (h',_,_)  <- checkExp config kenv' tenv' Lhs h 
                           return $ Just h'
 
                   Nothing -> return Nothing
@@ -200,17 +200,17 @@ checkRewriteRule config kenv tenv
         let lhs_full    = maybe lhs (XApp a lhs) hole
 
         -- Check the full left hand side.
-        (lhs_full', tLeft, effLeft, cloLeft)
+        (lhs_full', tLeft, effLeft)
                 <- checkExp config kenv' tenv' Lhs lhs_full
 
         -- Check the full right hand side.
-        (rhs', tRight, effRight, cloRight)
+        (rhs', tRight, effRight)
                 <- checkExp config kenv' tenv' Rhs rhs 
 
         -- Check that types of both sides are equivalent.
         let err = ErrorTypeConflict 
-                        (tLeft,  effLeft,  cloLeft) 
-                        (tRight, effRight, cloRight)
+                        (tLeft,  effLeft,  tBot kClosure) 
+                        (tRight, effRight, tBot kClosure)
 
         checkEquiv tLeft tRight err
 
@@ -287,7 +287,7 @@ checkExp
         -> Side         -- ^ Side that the expression appears on for errors.
         -> Exp a n      -- ^ Expression to check.
         -> Either (Error a n) 
-                  (Exp (C.AnTEC a n) n, Type n, Effect n, Closure n)
+                  (Exp (C.AnTEC a n) n, Type n, Effect n)
 
 checkExp defs kenv tenv side xx
  = let xx' = S.spreadX kenv tenv xx 

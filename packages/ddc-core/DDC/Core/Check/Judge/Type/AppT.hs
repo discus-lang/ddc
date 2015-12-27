@@ -4,7 +4,6 @@ module DDC.Core.Check.Judge.Type.AppT
 where
 import DDC.Core.Check.Judge.Type.Sub
 import DDC.Core.Check.Judge.Type.Base
-import qualified Data.Set       as Set
 
 
 -- | Check a spec application.
@@ -15,17 +14,13 @@ checkAppT !table !ctx0 xx@(XApp aApp xFn (XType aArg tArg)) Recon
         let kenv        = tableKindEnv table
 
         -- Check the functional expression.
-        (xFn', tFn, effsFn, closFn, ctx1) 
+        (xFn', tFn, effsFn, ctx1) 
          <- tableCheckExp table table ctx0 xFn Recon
 
         -- Check the argument.
         (tArg', kArg, ctx2)
          <- checkTypeM config kenv ctx1 UniverseSpec tArg Recon
                         
-        -- Take any Use annots from a region arg.
-        --  This always matches because we just checked tArg.
-        let Just t2_clo = taggedClosureOfTyArg kenv ctx2 tArg'
-
         -- Determine the type of the result.
         --  The function must have a quantified type, which we then instantiate
         --  with the type argument.
@@ -48,7 +43,7 @@ checkAppT !table !ctx0 xx@(XApp aApp xFn (XType aArg tArg)) Recon
         -- thus we can't be sharing objects that have it in its type.
 
         -- Build an annotated version of the type application.
-        let aApp' = AnTEC tResult (TSum effsFn)  (closureOfTaggedSet closFn) aApp  
+        let aApp' = AnTEC tResult (TSum effsFn)  (tBot kClosure) aApp  
         let aArg' = AnTEC kArg    (tBot kEffect) (tBot kClosure) aArg
         let xx'   = XApp aApp' xFn' (XType aArg' tArg')
 
@@ -64,14 +59,12 @@ checkAppT !table !ctx0 xx@(XApp aApp xFn (XType aArg tArg)) Recon
 
         returnX aApp
                 (\z -> XApp z xFn' (XType aArg' tArg'))
-                tResult effsFn (closFn `Set.union` t2_clo)
-                ctx2
+                tResult effsFn ctx2
 
 checkAppT !table !ctx0 xx@(XApp aApp xFn (XType aArg tArg)) Synth
- = do   let kenv        = tableKindEnv table
-
+ = do   
         -- Check the functional expression.
-        (xFn', tFn, effsFn, closFn, ctx1) 
+        (xFn', tFn, effsFn, ctx1) 
          <- tableCheckExp table table ctx0 xFn Synth
 
         -- Apply the type argument to the type of the function.
@@ -79,12 +72,8 @@ checkAppT !table !ctx0 xx@(XApp aApp xFn (XType aArg tArg)) Synth
          <- synthAppArgT table aApp xx ctx1 
                 (applyContext ctx1 tFn) tArg
         
-        -- Take any Use annots from a region arg.
-        --  This always matches because we just checked tArg.
-        let Just t2_clo = taggedClosureOfTyArg kenv ctx2 tArg'
-
         -- Build an annotated version of the type application.
-        let aApp' = AnTEC tResult (TSum effsFn)  (closureOfTaggedSet closFn) aApp  
+        let aApp' = AnTEC tResult (TSum effsFn)  (tBot kClosure) aApp  
         let aArg' = AnTEC kArg    (tBot kEffect) (tBot kClosure) aArg
         let xx'   = XApp aApp' xFn' (XType aArg' tArg')
 
@@ -100,8 +89,7 @@ checkAppT !table !ctx0 xx@(XApp aApp xFn (XType aArg tArg)) Synth
 
         returnX aApp
                 (\z -> XApp z xFn' (XType aArg' tArg'))
-                tResult effsFn (closFn `Set.union` t2_clo)
-                ctx2
+                tResult effsFn ctx2
 
 
 checkAppT !table !ctx0 xx@(XApp aApp _ (XType _ _)) (Check tExpected)

@@ -5,7 +5,6 @@ where
 import DDC.Core.Check.Witness
 import DDC.Core.Check.Judge.Type.Base
 import qualified DDC.Type.Sum           as Sum
-import qualified Data.Set               as Set
 
 
 checkWit :: Checker a n
@@ -22,7 +21,6 @@ checkWit !table !ctx (XWitness a w1) _
                 (\z -> XWitness z w1TEC)
                 t1
                 (Sum.empty kEffect)
-                Set.empty
                 ctx
 
 checkWit _ _ _ _

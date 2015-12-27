@@ -5,7 +5,6 @@ where
 import DDC.Core.Check.Judge.Type.Sub
 import DDC.Core.Check.Judge.Type.Base
 import qualified DDC.Type.Sum   as Sum
-import qualified Data.Set       as Set
 
 
 -------------------------------------------------------------------------------
@@ -15,11 +14,11 @@ checkAppX :: Checker a n
 checkAppX !table !ctx xx@(XApp a xFn xArg) Recon
  = do   
         -- Check the functional expression.
-        (xFn',  tFn,  effsFn,  closFn,  ctx1) 
+        (xFn',  tFn,  effsFn, ctx1) 
          <- tableCheckExp table table ctx  xFn Recon
 
         -- Check the argument.
-        (xArg', tArg, effsArg, closArg, ctx2) 
+        (xArg', tArg, effsArg, ctx2) 
          <- tableCheckExp table table ctx1 xArg Recon
 
         -- The type of the parameter must match that of the argument.
@@ -39,28 +38,25 @@ checkAppX !table !ctx xx@(XApp a xFn xArg) Recon
         let effsResult  = Sum.unions kEffect
                         $ [effsFn, effsArg, Sum.singleton kEffect effsLatent]
 
-        -- Closure of the overall application.
-        let closResult  = Set.union  closFn closArg
-
         returnX a 
                 (\z -> XApp z xFn' xArg')
-                tResult effsResult closResult 
+                tResult effsResult 
                 ctx2
 
 
 checkAppX !table !ctx0 xx@(XApp a xFn xArg) Synth
  = do   
         -- Synth a type for the functional expression.
-        (xFn', tFn, effsFn, closFn, ctx1) 
+        (xFn', tFn, effsFn, ctx1) 
          <- tableCheckExp table table ctx0 xFn Synth
 
         -- Substitute context into synthesised type.
         let tFn' = applyContext ctx1 tFn
 
         -- Synth a type for the function applied to its argument.
-        (xFn'', xArg', tResult, effsResult, closResult, ctx2)
+        (xFn'', xArg', tResult, effsResult, ctx2)
          <- synthAppArg table a xx ctx1
-                xFn' tFn' effsFn closFn 
+                xFn' tFn' effsFn 
                 xArg
 
         ctrace  $ vcat
@@ -75,7 +71,7 @@ checkAppX !table !ctx0 xx@(XApp a xFn xArg) Synth
 
         returnX a 
                 (\z -> XApp z xFn'' xArg')
-                tResult effsResult closResult 
+                tResult effsResult 
                 ctx2
 
 
@@ -98,17 +94,15 @@ synthAppArg
         -> Exp (AnTEC a n) n             -- Checked functional expression.
                 -> Type n                -- Type of functional expression.
                 -> TypeSum n             -- Effect of functional expression.
-                -> Set (TaggedClosure n) -- Closure of functional expression.
         -> Exp a n                       -- Function argument.
         -> CheckM a n
                 ( Exp (AnTEC a n) n      -- Checked functional expression.
                 , Exp (AnTEC a n) n      -- Checked argument   expression.
                 , Type n                 -- Type of result.
                 , TypeSum n              -- Effect of result.
-                , Set (TaggedClosure n)  -- Closure of result.
                 , Context n)             -- Result context.
 
-synthAppArg table a xx ctx0 xFn tFn effsFn closFn xArg
+synthAppArg table a xx ctx0 xFn tFn effsFn xArg
 
  -- Rule (App Synth exists)
  --  Functional type is an existential.
@@ -126,12 +120,11 @@ synthAppArg table a xx ctx0 xFn tFn effsFn closFn xArg
         let Just ctx1 = updateExists [iA2, iA1] iFn (tFun tA1 tA2) ctx0
 
         -- Check the argument under the new context.
-        (xArg', _, effsArg, closArg, ctx2)
+        (xArg', _, effsArg, ctx2)
          <- tableCheckExp table table ctx1 xArg (Check tA1)
 
         -- Effect and closure of the overall function application.
         let effsResult = effsFn `Sum.union` effsArg
-        let closResult = closFn `Set.union` closArg
 
         ctrace  $ vcat
                 [ text "* App Synth exists"
@@ -140,7 +133,7 @@ synthAppArg table a xx ctx0 xFn tFn effsFn closFn xArg
                 , empty ]
 
         return  ( xFn, xArg'
-                , tA2, effsResult, closResult, ctx2)
+                , tA2, effsResult, ctx2)
 
 
  -- Rule (App Synth Forall)
@@ -161,15 +154,15 @@ synthAppArg table a xx ctx0 xFn tFn effsFn closFn xArg
         --  Because we were applying a function to an expression argument, 
         --  and the type of the function was quantified, we know there should
         --  be a type application here.
-        let aFn    = AnTEC tFn (TSum effsFn) (closureOfTaggedSet closFn) a
+        let aFn    = AnTEC tFn (TSum effsFn) (tBot kClosure) a
         let aArg   = AnTEC (typeOfBind b) (tBot kEffect) (tBot kClosure) a
         let xFnTy  = XApp aFn xFn (XType aArg tA)
 
         -- Synthesise the result type of a function being applied to its 
         -- argument. We know the type of the function up-front, but we pass
         -- in the whole argument expression.
-        (xFnTy', xArg', tResult, effsResult, closResult, ctx2)
-         <- synthAppArg table a xx ctx1 xFnTy tBody' effsFn closFn xArg
+        (xFnTy', xArg', tResult, effsResult, ctx2)
+         <- synthAppArg table a xx ctx1 xFnTy tBody' effsFn xArg
 
         ctrace  $ vcat
                 [ text "* App Synth Forall"
@@ -182,7 +175,7 @@ synthAppArg table a xx ctx0 xFn tFn effsFn closFn xArg
 
         return  ( xFnTy'
                 , xArg'
-                , tResult, effsResult, closResult, ctx2)
+                , tResult, effsResult, ctx2)
 
 
  -- Rule (App Synth Fun)
@@ -190,7 +183,7 @@ synthAppArg table a xx ctx0 xFn tFn effsFn closFn xArg
  | Just (tParam, tResult)   <- takeTFun tFn
  = do   
         -- Check the argument.
-        (xArg', tArg, effsArg, closArg, ctx1) 
+        (xArg', tArg, effsArg, ctx1) 
          <- tableCheckExp table table ctx0 xArg (Check tParam)
 
         let tFn1     = applyContext ctx1 tFn
@@ -214,9 +207,6 @@ synthAppArg table a xx ctx0 xFn tFn effsFn closFn xArg
         let effsResult  = Sum.unions kEffect
                         $ [ effsFn, effsArg, Sum.singleton kEffect effsLatent]
         
-        -- Closure of the overall application.
-        let closResult  = Set.union closFn closArg
-
         ctrace  $ vcat
                 [ text "* App Synth Fun"
                 , indent 2 $ ppr xx
@@ -227,7 +217,7 @@ synthAppArg table a xx ctx0 xFn tFn effsFn closFn xArg
                 , empty ]
 
         return  ( xFn, xArg'
-                , tResult, effsResult, closResult, ctx1)
+                , tResult, effsResult, ctx1)
 
  
  -- Applied expression is not a function.

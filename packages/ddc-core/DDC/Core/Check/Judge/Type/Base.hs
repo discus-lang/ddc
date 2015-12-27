@@ -50,7 +50,6 @@ type Checker a n
                 ( Exp (AnTEC a n) n     -- Annotated, checked expression.
                 , Type n                -- Type of the expression.
                 , TypeSum n             -- Effect sum of expression.
-                , Set (TaggedClosure n) -- Closure of expression.
                 , Context n)            -- Output context.
 
 
@@ -94,19 +93,16 @@ returnX :: Ord n
                 -> Exp (AnTEC a n) n)   -- ^ Fn to build the returned expression.
         -> Type n                       -- ^ Type of expression.
         -> TypeSum n                    -- ^ Effect sum of expression.
-        -> Set (TaggedClosure n)        -- ^ Closure of expression.
         -> Context n                    -- ^ Input context.
         -> CheckM a n 
                 ( Exp (AnTEC a n) n     -- Annotated, checked expression.
                 , Type n                -- Type of expression.       (id to above)
                 , TypeSum n             -- Effect sum of expression. (id to above)
-                , Set (TaggedClosure n) -- Closure of expression.    (id to above)
                 , Context n)            -- Output context.
 
-returnX !a !f !t !es !cs !ctx
+returnX !a !f !t !es !ctx
  = let  e       = TSum es
-        c       = closureOfTaggedSet cs
-   in   return  (f (AnTEC t e c a)
-                , t, es, cs, ctx)
+   in   return  (f (AnTEC t e (tBot kClosure) a)
+                , t, es, ctx)
 {-# INLINE returnX #-}
 

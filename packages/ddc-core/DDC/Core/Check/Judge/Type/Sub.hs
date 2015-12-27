@@ -9,7 +9,7 @@ import DDC.Core.Check.Judge.Type.Base
 checkSub table !a ctx0 xx0 tExpect
  = do   let config      = tableConfig table
  
-        (xx1, tSynth, eff, clo, ctx1)
+        (xx1, tSynth, eff, ctx1)
          <- tableCheckExp table table ctx0 xx0 Synth
 
         -- Substitute context into synthesised and expected types.
@@ -35,4 +35,4 @@ checkSub table !a ctx0 xx0 tExpect
         returnX a
                 (\_ -> xx2)
                 tExpect
-                eff clo ctx2
+                eff ctx2

@@ -174,13 +174,12 @@ transExp traceTrans profile kenv tenv zero simpl xx
         let annot  = annotOfExp xx
         let t1     = annotType    annot
         let eff1   = annotEffect  annot
-        let clo1   = annotClosure annot
 
          -- Apply the simplifier.
-        let tx          = flip S.evalState zero
-                        $ applySimplifierX profile kenv tenv simpl xx
+        let tx  = flip S.evalState zero
+                $ applySimplifierX profile kenv tenv simpl xx
         
-        let x'          = reannotate (const ()) $ result tx
+        let x'  = reannotate (const ()) $ result tx
 
         when (traceTrans)
          $ case (resultInfo tx) of
@@ -190,10 +189,9 @@ transExp traceTrans profile kenv tenv zero simpl xx
 
         -- Check that the simplifier perserved the type of the expression.
         case fst $ C.checkExp (C.configOfProfile profile) kenv tenv x' Recon of
-          Right (x2, t2, eff2, clo2)
+          Right (x2, t2, eff2)
            |  equivT t1 t2
            ,  subsumesT kEffect  eff1 eff2
-           ,  subsumesT kClosure clo1 clo2
            -> do return (Just x2)
 
            | otherwise
@@ -203,9 +201,7 @@ transExp traceTrans profile kenv tenv zero simpl xx
                     , text ":: 1 " <+> ppr t1
                     , text ":: 2 " <+> ppr t2
                     , text ":!:1 " <+> ppr eff1
-                    , text ":!:2 " <+> ppr eff2
-                    , text ":$:1 " <+> ppr clo1
-                    , text ":$:2 " <+> ppr clo2 ]
+                    , text ":!:2 " <+> ppr eff2 ]
                  return Nothing
 
           Left err

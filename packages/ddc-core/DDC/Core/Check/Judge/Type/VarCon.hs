@@ -8,7 +8,6 @@ import DDC.Core.Check.Judge.Type.Base
 import qualified DDC.Type.Env   as Env
 import qualified DDC.Type.Sum   as Sum
 import qualified Data.Map       as Map
-import qualified Data.Set       as Set
 
 
 checkVarCon :: Checker a n
@@ -35,7 +34,6 @@ checkVarCon !table !ctx xx@(XVar a u) mode
                         (\z -> XVar z u)
                         t
                         (Sum.empty kEffect)
-                        (Set.singleton $ taggedClosureOfValBound t u)
                         ctx
 
  -- Look in the global environment.
@@ -57,7 +55,6 @@ checkVarCon !table !ctx xx@(XVar a u) mode
                         (\z -> XVar z u)
                         t
                         (Sum.empty kEffect)
-                        (Set.singleton $ taggedClosureOfValBound t u)
                         ctx
  
  -- Can't find this variable name in the environment.
@@ -103,7 +100,6 @@ checkVarCon !table !ctx xx@(XCon a dc) mode
                 (\z -> XCon z dc)
                 tCtor
                 (Sum.empty kEffect)
-                Set.empty
                 ctx
 
  -- Check subsumption against an existing type.

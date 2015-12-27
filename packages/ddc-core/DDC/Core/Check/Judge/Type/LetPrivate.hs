@@ -56,7 +56,7 @@ checkLetPrivate !table !ctx
 
         -- Check the body expression.
         let ctx3        = pushTypes bsWit' ctx2
-        (xBody3, tBody3, effs3, clo, ctx4)  
+        (xBody3, tBody3, effs3, ctx4)  
           <- tableCheckExp table table ctx3 x mode
 
         -- The body type must have data kind.
@@ -113,12 +113,6 @@ checkLetPrivate !table !ctx
                 _ -> return $ lowerT depth 
                             $ foldl delEff effs5 us 
 
-        -- Delete the bound region variable from the closure.
-        -- Mask closure terms due to locally bound region vars.
-        let cutClo c r  = mapMaybe (cutTaggedClosureT r) c
-        let clos_cut    = Set.fromList 
-                        $ foldl cutClo (Set.toList clo) bsRgn
-
         -- Cut stack back to the length we started with,
         --  remembering to lower to undo the lift we applied previously.
         let ctx_cut     = lowerTypes depth
@@ -126,8 +120,7 @@ checkLetPrivate !table !ctx
 
         returnX a
                 (\z -> XLet z (LPrivate bsRgn mtParent bsWit) xBody3)
-                tBody_final effs_cut clos_cut
-                ctx_cut
+                tBody_final effs_cut ctx_cut
 
 
 checkLetPrivate _ _ _ _

@@ -115,7 +115,7 @@ pruneX profile kenv tenv xx
 --
 transformTypeUsage profile kenv tenv trans xx
  = case fst $ checkExp (configOfProfile profile) kenv tenv xx Recon of
-        Right (xx1, _, _,_) 
+        Right (xx1, _, _) 
          -> let xx2        = usageX xx1
                 (x', info) = runWriter (trans xx2)
                 x''        = reannotate (\(_, AnTEC { annotTail = a }) -> a) x'
