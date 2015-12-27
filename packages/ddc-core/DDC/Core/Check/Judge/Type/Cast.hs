@@ -68,30 +68,6 @@ checkCast !table !ctx xx@(XCast a (CastPurify w) x1) mode
                 t1 effs' ctx1
 
 
--- Forget ---------------------------------------------------------------------
--- Forget the closure of an expression.
---
--- DEPRECATED: Closures are being removed in the next version,
---             so we don't bother doing proper type inference for forget casts.
--- 
-checkCast !table !ctx (XCast a (CastForget w) x1) mode
- = do   let config      = tableConfig table
-        let kenv        = tableKindEnv table
-        let tenv        = tableTypeEnv table
-
-        -- Check the witness.
-        (w', _)   <- checkWitnessM config kenv tenv ctx w
-        let wTEC  = reannotate fromAnT w'
-
-        -- Check the body.
-        (x1', t1, effs, ctx1)  
-         <- tableCheckExp table table ctx x1 mode
-
-        let c'  = CastForget wTEC
-        returnX a (\z -> XCast z c' x1')
-                t1 effs ctx1
-
-
 -- Box ------------------------------------------------------------------------
 -- Box a computation,
 -- capturing its effects in a computation type.

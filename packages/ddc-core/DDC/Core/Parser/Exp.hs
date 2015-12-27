@@ -86,29 +86,12 @@ pExp c
         x       <- pExp c
         return  $ XCast sp (CastWeakenEffect t) x
 
-        -- weakclo {EXP;+} in EXP
- , do   sp      <- pTokSP KWeakClo
-        pTok KBraceBra
-        xs      <- liftM (map fst . concat) 
-                $  P.sepEndBy1 (pArgSPs c) (pTok KSemiColon)
-        pTok KBraceKet
-        pTok KIn
-        x       <- pExp c
-        return  $ XCast sp (CastWeakenClosure xs) x
-
         -- purify WITNESS in EXP
  , do   sp      <- pTokSP KPurify
         w       <- pWitness c
         pTok KIn
         x       <- pExp c
         return  $ XCast sp (CastPurify w) x
-
-        -- forget WITNESS in EXP
- , do   sp      <- pTokSP KForget
-        w       <- pWitness c
-        pTok KIn
-        x       <- pExp c
-        return  $ XCast sp (CastForget w) x
 
         -- box EXP
  , do   sp      <- pTokSP KBox

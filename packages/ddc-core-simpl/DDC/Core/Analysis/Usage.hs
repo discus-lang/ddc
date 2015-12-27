@@ -242,19 +242,9 @@ usageCast cc
         CastWeakenEffect eff    
          -> (empty, CastWeakenEffect eff)
 
-        CastWeakenClosure xs
-         | (useds, xs')         <- unzip $ map usageX' xs
-         , UsedMap used'        <- sumUsedMap useds
-         , usedCasts            <- Map.map (map $ const UsedInCast) used'
-         -> (UsedMap usedCasts, CastWeakenClosure xs')
-
         CastPurify w
          | (used, w')   <- usageWitness w
          -> (used, CastPurify w')
-
-        CastForget w
-         | (used, w')   <- usageWitness w
-         -> (used, CastForget w')
 
         CastBox         -> (empty, CastBox)
         CastRun         -> (empty, CastRun)

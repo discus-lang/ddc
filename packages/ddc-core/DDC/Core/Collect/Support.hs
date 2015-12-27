@@ -189,13 +189,7 @@ instance SupportX (Cast a) where
         CastWeakenEffect eff
          -> support kenv tenv eff
 
-        CastWeakenClosure xs
-         -> mconcat $ map (support kenv tenv) xs
-
         CastPurify w
-         -> support kenv tenv w
-
-        CastForget w
          -> support kenv tenv w
 
         CastBox

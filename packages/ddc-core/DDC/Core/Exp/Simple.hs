@@ -120,16 +120,8 @@ data Cast a n
         --   of the body.
         = CastWeakenEffect  !(Effect n)
         
-        -- | Weaken the closure of an expression.
-        --   The closures of these expressions are added to the closure
-        --   of the body.
-        | CastWeakenClosure ![Exp a n]
-
         -- | Purify the effect (action) of an expression.
         | CastPurify        !(Witness a n)
-
-        -- | Forget about the closure (sharing) of an expression.
-        | CastForget        !(Witness a n)
 
         -- | Box up a computation, 
         --   capturing its effects in the S computation type.
@@ -164,9 +156,7 @@ instance (NFData a, NFData n) => NFData (Cast a n) where
  rnf cc
   = case cc of
         CastWeakenEffect e      -> rnf e
-        CastWeakenClosure xs    -> rnf xs
         CastPurify w            -> rnf w
-        CastForget w            -> rnf w
         CastBox                 -> ()
         CastRun                 -> ()
 

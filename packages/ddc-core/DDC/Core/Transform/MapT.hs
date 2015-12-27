@@ -81,8 +81,6 @@ instance MapT (Cast a) where
   = let down    = mapT f
     in case cc of
         CastWeakenEffect t      -> CastWeakenEffect  t
-        CastWeakenClosure xs    -> CastWeakenClosure (map down xs)
         CastPurify w            -> CastPurify  (down w)
-        CastForget w            -> CastForget  (down w)
         CastBox                 -> CastBox
         CastRun                 -> CastRun

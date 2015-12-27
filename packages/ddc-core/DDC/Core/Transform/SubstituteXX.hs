@@ -163,14 +163,11 @@ instance SubstituteXX Alt where
 
 
 instance SubstituteXX Cast where
- substituteWithXX xArg sub cc
-  = let down s x = substituteWithXX xArg s x
-        into s x = renameWith s x
+ substituteWithXX _xArg sub cc
+  = let into s x = renameWith s x
     in case cc of
         CastWeakenEffect eff    -> CastWeakenEffect  (into sub eff)
-        CastWeakenClosure xs    -> CastWeakenClosure (map (down sub) xs)
         CastPurify w            -> CastPurify (into sub w)
-        CastForget w            -> CastForget (into sub w)
         CastBox                 -> CastBox
         CastRun                 -> CastRun
 

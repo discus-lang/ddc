@@ -47,9 +47,7 @@ instance Ord n => MapBoundT (Cast a) n where
   = let down = mapBoundAtDepthT f d
     in case cc of
         CastWeakenEffect t      -> CastWeakenEffect  (down t)
-        CastWeakenClosure xs    -> CastWeakenClosure (map down xs)
         CastPurify w            -> CastPurify (down w)
-        CastForget w            -> CastForget (down w)
         CastBox                 -> CastBox
         CastRun                 -> CastRun
 

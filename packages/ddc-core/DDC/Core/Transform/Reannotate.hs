@@ -61,9 +61,7 @@ instance Reannotate Cast where
   = let down x  = reannotate f x
     in case cc of
         CastWeakenEffect  eff   -> CastWeakenEffect eff
-        CastWeakenClosure xs    -> CastWeakenClosure (map down xs)
         CastPurify w            -> CastPurify (down w)
-        CastForget w            -> CastForget (down w)
         CastBox                 -> CastBox
         CastRun                 -> CastRun
 

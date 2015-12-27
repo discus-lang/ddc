@@ -48,9 +48,7 @@ instance Annotate S.Cast A.Cast where
   = let down    = annotate def
     in case cc of
         S.CastWeakenEffect eff          -> A.CastWeakenEffect  eff
-        S.CastWeakenClosure clo         -> A.CastWeakenClosure (map down clo)
         S.CastPurify w                  -> A.CastPurify        (down w)
-        S.CastForget w                  -> A.CastForget        (down w)
         S.CastBox                       -> A.CastBox
         S.CastRun                       -> A.CastRun
 

@@ -266,13 +266,10 @@ filterUsedInCasts = filter notCast
 
 
 instance Forward Cast where
- forwardWith profile config bindings xx
-  = let down    = forwardWith profile config bindings
-    in case xx of
+ forwardWith _profile _config _bindings xx
+  = case xx of
         CastWeakenEffect eff    -> return $ CastWeakenEffect eff
-        CastWeakenClosure xs    -> liftM    CastWeakenClosure (mapM down xs)
         CastPurify w            -> return $ CastPurify (reannotate snd w)
-        CastForget w            -> return $ CastForget (reannotate snd w)
         CastBox                 -> return $ CastBox
         CastRun                 -> return $ CastRun
 

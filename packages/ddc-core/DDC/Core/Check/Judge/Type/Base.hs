@@ -8,7 +8,6 @@ module DDC.Core.Check.Judge.Type.Base
         , module DDC.Core.Check.Judge.Inst
         , module DDC.Core.Check.Judge.Sub
         , module DDC.Core.Check.Judge.Eq
-        , module DDC.Core.Check.TaggedClosure
         , module DDC.Core.Check.Witness
         , module DDC.Core.Check.Error
         , module DDC.Core.Transform.Reannotate
@@ -25,7 +24,6 @@ import DDC.Core.Check.Base
 import DDC.Core.Check.Judge.Inst
 import DDC.Core.Check.Judge.Sub
 import DDC.Core.Check.Judge.Eq
-import DDC.Core.Check.TaggedClosure
 import DDC.Core.Check.Witness
 import DDC.Core.Check.Error
 import DDC.Core.Transform.Reannotate

@@ -170,13 +170,7 @@ instance Namify (Cast a) where
   = let down = namify tnam xnam
     in case cc of
         CastWeakenEffect  eff   -> liftM CastWeakenEffect  (down eff)
-
-        CastWeakenClosure xs    
-         -> do  xs' <- mapM down xs
-                return $ CastWeakenClosure xs'
-
         CastPurify w            -> liftM CastPurify (down w)
-        CastForget w            -> liftM CastForget (down w)
         CastBox                 -> return CastBox
         CastRun                 -> return CastRun
 

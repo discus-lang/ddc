@@ -134,9 +134,7 @@ instance SubstituteWX Cast where
         into s x = renameWith s x
     in case cc of
         CastWeakenEffect eff    -> CastWeakenEffect  (into sub eff)
-        CastWeakenClosure xs    -> CastWeakenClosure (map (down sub) xs)
         CastPurify w            -> CastPurify        (down sub w)
-        CastForget w            -> CastForget        (down sub w)
         CastBox                 -> CastBox
         CastRun                 -> CastRun
 

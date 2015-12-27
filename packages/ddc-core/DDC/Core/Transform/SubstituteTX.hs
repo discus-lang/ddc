@@ -127,9 +127,7 @@ instance SubstituteTX (Cast a) where
   = let down x   = substituteWithTX tArg x
     in case cc of
         CastWeakenEffect eff    -> CastWeakenEffect  (down sub eff)
-        CastWeakenClosure clo   -> CastWeakenClosure (map (down sub) clo)
         CastPurify w            -> CastPurify        (down sub w)
-        CastForget w            -> CastForget        (down sub w)
         CastBox                 -> CastBox
         CastRun                 -> CastRun
 

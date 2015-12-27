@@ -325,14 +325,13 @@ convertCast cc
  = case cc of
    CastWeakenEffect et
     -> CastWeakenEffect  <$> convertType et
-   CastWeakenClosure cs
-    -> CastWeakenClosure <$> mapM convertX cs
+
    CastPurify w
     -> CastPurify        <$> convertWit w
-   CastForget w
-    -> CastForget        <$> convertWit w
+
    CastBox
     -> return $ CastBox
+
    CastRun
     -> return $ CastRun
 

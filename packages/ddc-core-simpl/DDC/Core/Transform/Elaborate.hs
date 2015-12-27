@@ -54,12 +54,8 @@ instance Elaborate (Exp a) where
 
 
 instance Elaborate (Cast a) where
- elaborate us cst 
-  = case cst of
-        CastWeakenClosure es
-          -> CastWeakenClosure $ map (elaborate us) es 
-        _ -> cst
-
+ elaborate _us cst = cst
+ 
 
 instance Elaborate (Alt a) where
   elaborate us (AAlt p x) = AAlt p (elaborate us x) 

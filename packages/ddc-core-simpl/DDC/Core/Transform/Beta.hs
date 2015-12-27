@@ -8,7 +8,6 @@ module DDC.Core.Transform.Beta
         , betaReduce)
 where
 import DDC.Base.Pretty
-import DDC.Core.Collect
 import DDC.Core.Exp
 import DDC.Core.Fragment
 import DDC.Core.Predicates
@@ -22,7 +21,6 @@ import Data.Typeable                    (Typeable)
 import DDC.Type.Env                     (KindEnv, TypeEnv)
 import DDC.Type.Compounds
 import qualified DDC.Type.Env           as Env
-import qualified Data.Set               as Set
 import Prelude                          hiding ((<$>))
 
 
@@ -133,19 +131,8 @@ betaReduce1
         -> Exp a n      -- ^ Expression to transform.
         -> Writer Info (Exp a n)
 
-betaReduce1 profile config _kenv tenv xx
+betaReduce1 _profile config _kenv _tenv xx
  = let  ret info x = tell info >> return x
-
-        -- If we're using closure types then when we perform a beta-reduction:
-        --  (\v. X1) X2 => X1[X2/v] then we need to weaken the closure if the 
-        -- body expression X1 does not reference 'v'.
-        weakenClosure a usesBind fvs2 xWeak x
-         | featuresTrackedClosures $ profileFeatures profile 
-         , not (usesBind || Set.null fvs2)
-         = XCast a (CastWeakenClosure [xWeak]) x
-
-         | otherwise
-         = x
 
    in case xx of
 
@@ -153,47 +140,27 @@ betaReduce1 profile config _kenv tenv xx
         --  If the type argument of the redex does not appear as an 
         --  argument of the result then we need to add a closure weakening
         --  for the case where t2 was a region variable or handle.
-        XApp a (XLAM _ b11 x12) (XType a2 t2)
+        XApp _a (XLAM _ b11 x12) (XType _a2 t2)
          | isRegionKind $ typeOfBind b11
-         -> let sup             = support Env.empty Env.empty x12
-
-                usUsed          = Set.unions
-                                        [ supportTyConXArg sup
-                                        , supportSpVarXArg sup ]
-
-                usesBind        = any (flip boundMatchesBind b11)
-                                $ Set.toList usUsed
-
-                fvs2            = freeT Env.empty t2
-
-            in  ret mempty { infoTypes = 1}
-                 $ weakenClosure a usesBind fvs2 (XType a2 t2)
-                 $ substituteTX b11 t2 x12
+         -> ret mempty { infoTypes = 1}
+              $ substituteTX b11 t2 x12
 
         -- Substitute type arguments into type abstractions,
         --  Where the argument is not a region type.
-        XApp _ (XLAM _ b11 x12) (XType _ t2)
+        XApp _a (XLAM _ b11 x12) (XType _ t2)
          -> ret mempty { infoTypes = 1 }
-                 $ substituteTX b11 t2 x12
+              $ substituteTX b11 t2 x12
 
         -- Substitute witness arguments into witness abstractions.
-        XApp a (XLam _ b11 x12) (XWitness a2 w2)
-         -> let usesBind        = any (flip boundMatchesBind b11)
-                                $ Set.toList $ freeX tenv x12
-                fvs2            = freeX Env.empty w2
-            in  ret mempty { infoWits = 1 }
-                 $ weakenClosure a usesBind fvs2 (XWitness a2 w2)
-                 $ substituteWX b11 w2 x12
+        XApp _a (XLam _ b11 x12) (XWitness _a2 w2)
+         -> ret mempty { infoWits = 1 }
+              $ substituteWX b11 w2 x12
 
         -- Substitute value arguments into value abstractions.
         XApp a (XLam _ b11 x12) x2
          |  canBetaSubstX x2
-         -> let usesBind        = any (flip boundMatchesBind b11) 
-                                $ Set.toList $ freeX tenv x12
-                fvs2            = freeX Env.empty x2
-            in  ret mempty { infoValues = 1 }
-                 $ weakenClosure a usesBind fvs2 x2
-                 $ substituteXX b11 x2 x12
+         -> ret mempty { infoValues = 1 }
+              $ substituteXX b11 x2 x12
 
          | configBindRedexes config
          -> ret mempty { infoValuesLetted  = 1 }

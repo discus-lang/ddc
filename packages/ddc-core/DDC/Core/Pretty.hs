@@ -363,16 +363,8 @@ instance (Pretty n, Eq n) => Pretty (Cast a n) where
         CastWeakenEffect  eff   
          -> text "weakeff" <+> brackets (ppr eff)
 
-        CastWeakenClosure xs
-         -> text "weakclo" 
-         <+> braces (hcat $ punctuate (semi <> space) 
-                          $ map ppr xs)
-
         CastPurify w
          -> text "purify"  <+> angles   (ppr w)
-
-        CastForget w
-         -> text "forget"  <+> angles   (ppr w)
 
         CastBox
          -> text "box"

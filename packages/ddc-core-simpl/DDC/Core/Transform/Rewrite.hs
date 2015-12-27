@@ -18,7 +18,6 @@ import qualified DDC.Core.Transform.Rewrite.Match       as RM
 import           DDC.Core.Transform.Rewrite.Rule
 import qualified DDC.Core.Transform.SubstituteXX        as S
 import qualified DDC.Type.Transform.SubstituteT         as S
-import qualified DDC.Core.Transform.Trim                as Trim
 import qualified DDC.Core.Transform.BoundX              as L
 import qualified DDC.Type.Compounds                     as T
 import qualified Data.Map                               as Map
@@ -317,7 +316,7 @@ rewriteWithX rule env f args
              , ruleConstraints   = constrs
              , ruleRight         = rhs
              , ruleWeakEff       = eff
-             , ruleWeakClo       = clo } 
+             , ruleWeakClo       = _clo } 
              = rule
    
         -- Try to find a substitution for the left of the rule.
@@ -334,10 +333,6 @@ rewriteWithX rule env f args
         -- Substitute bindings into the effect of the right of the rule.
         let eff'        = liftM (substT bas3) eff
 
-        -- Substitute bindings into the closure of the right of the rule.
-        let clo'        = Trim.trimClosures a
-                        $ map (S.substituteXArgs bas3) clo
-
         -- Substitute bindings into rule constraints and
         -- check that they are all satisfied by the environment.
         let constrs'    = map (substT bas3) constrs
@@ -347,7 +342,6 @@ rewriteWithX rule env f args
         -- Build the rewritten expression.
         let x'  =  X.xLets a lets
                 $  weakeff a eff'
-                $  weakclo a clo'
                 $  S.substituteXArgs bas3 rhs3
 
         -- Add the remaining arguments from the original expression
@@ -371,17 +365,6 @@ weakeff :: Ord n
 
 weakeff a meff x
  = maybe x (\e -> XCast a (CastWeakenEffect e) x) meff
-
-
--- | Wrap an expression in a closure weakening.
-weakclo :: Ord n 
-        => a -> [Exp a n] 
-        -> Exp a n -> Exp a n
-
-weakclo a clos x
- = case clos of
-        []      -> x
-        _       -> XCast a (CastWeakenClosure clos) x
 
 
 wrapLets

@@ -10,7 +10,6 @@ module DDC.Core.Transform.Bubble
 where
 import DDC.Core.Collect
 import DDC.Core.Transform.BoundX
-import DDC.Core.Predicates
 import DDC.Core.Compounds
 import DDC.Core.Module
 import DDC.Core.Exp
@@ -197,7 +196,7 @@ packFvsCasts kenv tenv a fvsCasts
 --   code is easier to read.
 packCasts :: Ord n
           => KindEnv n -> TypeEnv n -> a -> [Cast a n] -> [Cast a n]
-packCasts kenv tenv a vs
+packCasts _kenv _tenv _a vs
  = let  
         -- Sort casts into weakeff, weakclo and any others.
         -- We'll collect the weakeff and weakclo casts together.
@@ -209,76 +208,17 @@ packCasts kenv tenv a vs
             CastWeakenEffect eff : cs 
              -> collect (eff : weakEffs) weakClos others cs
 
-            CastWeakenClosure xs : cs 
-             -> collect weakEffs        (xs ++ weakClos) others cs
-
             c : cs
              -> collect weakEffs        weakClos (c : others) cs
 
 
-        (effs, xsClos, csOthers) 
+        (effs, csOthers, _) 
                 = collect [] [] [] vs
-
-        xsClos_packed
-                = packWeakenClosureXs kenv tenv a xsClos
 
    in   (if null effs 
                 then []
                 else [CastWeakenEffect  (TSum $ Sum.fromList kEffect effs)])
-     ++ (if null xsClos_packed
-                then []
-                else [CastWeakenClosure xsClos_packed])
      ++ csOthers
-
-
--- | Pack the expressions given to a `WeakenClosure` to just the ones that we
---   care about. We only need region variables, and value variables with 
---   open types.
-packWeakenClosureXs 
-        :: Ord n
-        => KindEnv n -> TypeEnv n 
-        -> a -> [Exp a n] -> [Exp a n]
-
-packWeakenClosureXs kenv tenv a xx
- = let  
-        eat fvsSp fvsDa []
-         = (fvsSp, fvsDa)
-
-        eat fvsSp fvsDa (x : xs)
-         = let  sup      = support Env.empty Env.empty x
-                fvsSp'   = supportSpVar sup
-                fvsDa'   = supportDaVar sup
-           in   eat (Set.union fvsSp fvsSp') (Set.union fvsDa fvsDa') xs
-
-        (vsSp, vsDa)      = eat Set.empty Set.empty xx
-
-   in   [XType a (TVar u) | u <- Set.toList vsSp]
-     ++ [XVar a u         | u <- Set.toList vsDa, keepBound kenv tenv u]
-
-
--- | When packing vars given to a closure weakening, we only need to keep
---   vars that have open types or contain region handles.
-keepBound :: Ord n => KindEnv n -> TypeEnv n -> Bound n -> Bool
-keepBound _kenv tenv u
-        | Just t        <- Env.lookup u tenv
-        , sup           <- support Env.empty Env.empty t
-        , Set.null (supportSpVar sup)
-        , all (not . isRegionHandle) $ Set.toList $ supportTyCon sup
-        = False
-
-        | otherwise
-        = True 
-
-
--- | Treat primitive constructors with region kind as region handles.
---   Region handles are only really a part of the 'Disciple Core Eval' 
---   language, but they're easy to check for even if the name type 'n'
---   hasn't been revealed.
-isRegionHandle :: Bound n -> Bool
-isRegionHandle u
- = case u of
-        UPrim _ k       -> isRegionKind k
-        _               -> False
 
 
 -- Dropping -------------------------------------------------------------------

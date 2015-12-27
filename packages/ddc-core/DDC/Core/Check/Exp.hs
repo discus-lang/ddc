@@ -31,10 +31,7 @@ module DDC.Core.Check.Exp
         , makeTable
         , CheckM
         , checkExpM
-        , CheckTrace    (..)
-
-          -- * Tagged closures.
-        , TaggedClosure(..))
+        , CheckTrace    (..))
 where
 import DDC.Core.Check.Judge.Type.VarCon
 import DDC.Core.Check.Judge.Type.LamT

@@ -23,9 +23,6 @@ import DDC.Base.Pretty
 import Data.Typeable
 import Control.Monad.Writer                     (Writer, runWriter, tell)
 import qualified Data.Map                               as Map
-import qualified Data.Set                               as Set
-import qualified DDC.Type.Env                           as Env
-import qualified DDC.Core.Collect                       as C
 import qualified DDC.Core.Transform.SubstituteXX        as S
 import qualified DDC.Core.Transform.Trim                as Trim
 import qualified DDC.Type.Compounds                     as T
@@ -155,7 +152,6 @@ pruneTrans _ _ xx
 
                 -- 
                 return $ XCast a (weakEff antec)
-                       $ XCast a (weakClo a x1)
                        $ x2'
 
         _ -> return xx
@@ -165,16 +161,6 @@ pruneTrans _ _ xx
          = CastWeakenEffect
          $ T.crushEffect
          $ annotEffect antec
-
-        weakClo a x1 
-         = CastWeakenClosure
-         $ Trim.trimClosures a
-                (  (map ((XType a) . TVar)
-                        $ Set.toList
-                        $ C.freeT Env.empty x1)
-                ++ (map (XVar a)
-                        $ Set.toList
-                          $ C.freeX Env.empty x1))
 
 
 -- | Check whether this binder has no uses, 

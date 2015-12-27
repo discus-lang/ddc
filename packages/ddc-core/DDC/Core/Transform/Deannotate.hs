@@ -68,9 +68,7 @@ instance Deannotate A.Cast S.Cast where
   = let down    = deannotate f
     in case cc of
         A.CastWeakenEffect e    -> S.CastWeakenEffect e
-        A.CastWeakenClosure xs  -> S.CastWeakenClosure (map down xs)
         A.CastPurify w          -> S.CastPurify (down w)
-        A.CastForget w          -> S.CastForget (down w)
         A.CastBox               -> S.CastBox
         A.CastRun               -> S.CastRun
 

@@ -89,9 +89,7 @@ instance AnonymizeX (Cast a) where
   = let down = anonymizeWithX keep kstack tstack
     in case cc of
         CastWeakenEffect eff    -> CastWeakenEffect  (anonymizeWithT kstack eff)
-        CastWeakenClosure xs    -> CastWeakenClosure (map down xs)
         CastPurify w            -> CastPurify        (down w)
-        CastForget w            -> CastForget        (down w)
         CastBox                 -> CastBox
         CastRun                 -> CastRun
 

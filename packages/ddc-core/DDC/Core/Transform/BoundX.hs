@@ -116,18 +116,12 @@ instance MapBoundX (Witness a) n where
 
 
 instance MapBoundX (Cast a) n where
- mapBoundAtDepthX f d cc
+ mapBoundAtDepthX _f _d cc
   = case cc of
-        CastWeakenEffect{}      
-         -> cc
-
-        CastWeakenClosure xs    
-         -> CastWeakenClosure (map (mapBoundAtDepthX f d) xs)
-
-        CastPurify w    -> CastPurify w
-        CastForget w    -> CastForget w
-        CastBox         -> CastBox
-        CastRun         -> CastRun
+        CastWeakenEffect{} -> cc
+        CastPurify w       -> CastPurify w
+        CastBox            -> CastBox
+        CastRun            -> CastRun
 
 
 instance MapBoundX (Alt a) n where

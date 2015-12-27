@@ -39,8 +39,6 @@ trimClosures a xs
 trimX   :: (Ord n)
         => Exp a n
         -> Exp a n
-trimX (XCast a (CastWeakenClosure ws) in_)
- = XCast a (CastWeakenClosure $ trimClosures a ws) in_
 
 trimX x
  = x

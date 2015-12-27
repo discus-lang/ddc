@@ -86,9 +86,7 @@ instance BindStruct (Cast a) where
  slurpBindTree cc
   = case cc of
         CastWeakenEffect  eff   -> slurpBindTree eff
-        CastWeakenClosure xs    -> concatMap slurpBindTree xs
         CastPurify w            -> slurpBindTree w
-        CastForget w            -> slurpBindTree w
         CastBox                 -> []
         CastRun                 -> []
 
