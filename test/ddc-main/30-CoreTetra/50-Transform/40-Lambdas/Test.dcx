@@ -50,6 +50,7 @@ test (_ : Unit) : Nat#
         f2 a2
 ;;
 
+
 -- Single letrec
 :load..
 module Test with letrec
@@ -62,6 +63,7 @@ test (_ : Unit) : Nat#
    in
    loop 10
 ;;
+
 
 -- Multiple letrecs, union of free vars required
 :load..
@@ -79,6 +81,7 @@ test (_ : Unit) : Nat#
    in
    loop1 10
 ;;
+
 
 -- Single letrec, multiple arguments
 :load..

@@ -60,6 +60,7 @@ letrec {
       f2 a2
 }
 
+
 -- Single letrec
 module Test with
 letrec {
@@ -79,6 +80,7 @@ letrec {
       let loop : Nat# -> Nat# = test$L0 x in
       loop 10
 }
+
 
 -- Multiple letrecs, union of free vars required
 module Test with
@@ -111,6 +113,7 @@ letrec {
       let loop2 : Nat# -> Nat# = test$L1 x y in
       loop1 10
 }
+
 
 -- Single letrec, multiple arguments
 module Test with

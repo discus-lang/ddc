@@ -1,0 +1,84 @@
+:set lang Tetra
+
+
+-- Parse private with no witnesses
+:check private r1 in ()
+
+
+-- Parse private with one witness.
+:check private r1 with { w1 : Const r1 } in ()
+
+
+-- Parse private with multiple witnesses.
+:check private r1 with { w1 : Const r1; w2 : Read r1 } in ()
+
+
+-- Use the bound region in the body of the expression.
+:load..
+module Test
+import data Ref (r : Region) (a : Data) where {
+        MkRef : a -> Ref r a
+}
+with letrec
+test : Nat#
+ = private r1 in
+   do   x = MkRef [r1] [Nat#] 5#
+        case x of
+         MkRef y -> y
+;;
+
+
+-- Error: private cannot shadow region variables that are already in the
+-- environment because the new witnesses may conflict with the old ones.
+:load..
+module Test
+import data Ref (r : Region) (a : Data) where {
+        MkRef : a -> Ref r a
+}
+import value writeRef : [r : Region]. [a : Data]. Ref r a -> a -> S (Write r) Unit
+with letrec
+test : Nat#
+ = private r1 with { w1 : Const r1 } in
+   let x = MkRef [r1] [Nat#] 5# in
+   private r1 with { w1 : Write r1 } in
+   writeRef [r1] [Nat#] x 6#
+;;
+
+
+-- Error: private region variable cannot shadow variable that is already 
+-- in the environment.
+:load..
+module Test
+import data Ref (r : Region) (a : Data) where {
+        MkRef : a -> Ref r a
+}
+import value writeRef : [r : Region]. [a : Data]. Ref r a -> a -> S (Write r) Unit
+with letrec
+test [r : Region] (x : Ref r Nat#) : S (Write r) Unit
+ = private r with { w1 : Mutable r } in
+   writeRef [r] [Nat#] x 6#
+;;
+
+
+
+-- Error: private region variable is free in the type of the returned value.
+:load..
+module Test
+import data Ref (r : Region) (a : Data) where {
+        MkRef : a -> Ref r a
+}
+import value writeRef : [r : Region]. [a : Data]. Ref r a -> a -> S (Write r) Unit
+with letrec
+test : Unit
+ = do   private r in MkRef [r] [Nat#] 5#
+        () 
+;;
+
+
+-- Error: witness types with a private must use explicit type constructors.
+:check..
+/\(c : Region ~> Witness).
+private r1 with { w : c r1 } in
+();;
+
+

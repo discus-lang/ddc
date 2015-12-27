@@ -1,0 +1,45 @@
+:set lang Tetra
+
+-- Ok: let expression with explicit type annotation.
+:check let x : Int#  = 5# in  x
+
+
+-- Ok: let expression with no type annotation.
+:check let x = 5# in x
+
+
+-- Error: let binder has incorrect type annotation.
+:check let x : Int# = () in x
+
+
+-- Error: binding must have data kind.
+:check..
+\(e1 : Effect).
+let e2 : Effect  = e1
+in ()
+;;
+
+
+-- Error: binding must have data kind.
+:check..
+\(e1 : Effect).
+letrec { e2 : Effect  = e1 }
+in ()
+;;
+
+
+-- Error: body must have data kind.
+:check..
+\(e1:Effect).
+let x : Unit  = ()
+in e1
+;;
+
+
+-- Error: body must have data kind.
+:check..
+\(e1 : Effect).
+letrec { foo (x : Unit) : Unit = () }
+in e1
+;;
+

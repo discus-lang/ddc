@@ -51,3 +51,22 @@ thing1 (blerk : ([a : Data]. a -> a) -> Nat#) : Nat#
 thing2 (u : Unit)
  = thing1 (\(f : [a : Data]. a -> a). f 5#)
 ;;
+
+
+-- Error: missing type annotation for parameter of lambda.
+:check \x. x
+
+
+-- Error: cannot shadow spec binders.
+:load..
+module Test 
+data Ref (r : Region) (a : Data)
+with letrec
+test [r : Region] (x : Ref r Int#) 
+ = /\(r : Region). \(r : Ref r Int#)
+ . case x of {
+        0#      -> x;
+        _       -> y;
+   }
+;;
+

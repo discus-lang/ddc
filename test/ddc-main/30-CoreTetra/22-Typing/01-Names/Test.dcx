@@ -1,0 +1,24 @@
+:set lang Tetra
+
+-- Error: Type varaible not in environment.
+:kind a
+
+
+-- Error: Type constructor not in environment.
+:kind Whatever
+
+
+-- Error: Data constructor not in environment.
+:type Whatever
+
+
+-- Error: Type constructor used as a data constructor.
+:type Unit
+
+
+-- Error: Data constructor used as a type constructor.
+:kind ()
+
+
+-- Error: Type variable used as a value variable.
+:check (/\(a : Data). \(x : a). a)

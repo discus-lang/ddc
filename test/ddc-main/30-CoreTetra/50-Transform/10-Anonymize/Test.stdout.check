@@ -1,0 +1,43 @@
+ok
+ok
+
+
+-- Anonymize lambdas and applications.
+\(^ : [^ : Region].Nat# -> Unit).
+/\(^ : Region).
+ \(^ : Nat#). ^1 [^0] ^0
+
+
+-- Anonymize lambdas and applications
+-- Spec and value binders have the same name.
+/\(^ : Region ~> Data).
+ \(^ : [^ : Region].^1 ^0 -> Unit).
+/\(^ : Region).
+ \(^ : ^1 ^0). ^1 [^0] ^0
+
+
+-- Anonymize single let binding.
+let ^ : Unit = () in
+^0
+
+
+-- Anonymize multiple let bindings.
+let ^ : Unit = () in
+let ^ : Unit = () in
+^1
+
+
+-- Anonymize private region binder.
+/\(^ : Region ~> Data).
+ \(^ : [^ : Region].^1 ^0).\(^ : [^ : Region].^1 ^0 -> Nat#).
+private ^ with {^ : Const ^0} in
+^1 [^0] (^2 [^0])
+
+
+-- Anonymize multiple let bindings that mention private region.
+/\(^ : Region ~> Data).
+ \(^ : [^ : Region].^1 ^0).\(^ : [^ : Region].^1 ^0 -> Nat#).
+private ^ with {^ : Const ^0} in
+let ^ : ^1 ^0 = ^2 [^0] in
+let ^ : ^1 ^0 = ^3 [^0] in
+add# [Nat#] (^3 [^0] ^1) (^3 [^0] ^0)

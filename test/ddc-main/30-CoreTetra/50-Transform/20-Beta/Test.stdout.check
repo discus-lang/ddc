@@ -1,0 +1,45 @@
+ok
+ok
+
+
+-- Beta reduce identity function.
+()
+
+
+-- Beta reduce identify function using debruijn indices.
+()
+
+
+-- Beta reduce while avoiding name capture by anonymising conflicting binder.
+let x : Unit = () in
+\(^ : Unit). x
+
+
+-- Beta reduce while not substituting into an abstraction that shadows an outer variable name.
+let u : Unit = () in
+\(x : Unit). x
+
+
+-- Beta reduce while avoiding capture of let-bound value variable.
+/\(thing : Region ~> Data).
+ \(make : [r : Region].Nat# -> thing r).\(take : [r : Region].thing r -> Nat#).
+let x : Nat# = 5 in
+/\(r0 : Region).
+let ^ : thing r0 = make [r0] x in
+add# [Nat#] (take [r0] ^0) x
+
+
+-- Rewrite outer type binder to avoid shadow conflict on type lambda.
+/\(^ : Data).
+(/\(a : Data).
+  \(_ : Unit). ()) [^0] ()
+
+
+-- Rewrite quantifier to avoid capture.
+/\(a : Data).
+ \(x : [^ : Data].^0 -> a). ()
+
+
+-- Rewrite variables on types of value binders.
+/\(thing : Region ~> Data)./\(^ : Region).
+ \(y : thing ^0). y

@@ -1,0 +1,55 @@
+:set lang Tetra
+:set trans Beta
+
+
+-- Beta reduce identity function.
+:trans (\(x : Unit). x) ()
+
+
+-- Beta reduce identify function using debruijn indices.
+:trans (\(^ : Unit). ^0) ()
+
+
+-- Beta reduce while avoiding name capture by anonymising conflicting binder.
+:trans..
+let x = () in 
+(\(y : Unit). \(x : Unit). y) x;;
+
+
+-- Beta reduce while not substituting into an abstraction that shadows an outer variable name.
+:trans..
+let u = () in
+(\(x : Unit). \(x : Unit). x) u;;
+
+
+-- Beta reduce while avoiding capture of let-bound value variable.
+:trans..
+/\(thing : Region ~> Data).
+ \(make  : [r : Region]. Nat#  -> thing r).
+ \(take  : [r : Region]. thing r -> Nat#).
+let x = 5 in 
+/\(r0 : Region).
+  (/\(r : Region). \(y : Nat#). 
+   let x = make [r] x
+   in add# [Nat#] (take [r] x) y) 
+        [r0] x;;
+
+
+-- Rewrite outer type binder to avoid shadow conflict on type lambda.
+:trans..
+(\(f : [a : Data]. Unit -> Unit). /\(a : Data). f [a] ())
+        (/\(a : Data). \(_ : Unit). ());;
+
+
+-- Rewrite quantifier to avoid capture.
+:trans..
+(/\(a : Data). 
+    (/\(b : Data). \(x : [a : Data]. a -> b). ())
+    [a]);;
+
+
+-- Rewrite variables on types of value binders.
+:trans..
+/\(thing : Region ~> Data). 
+  (\(x : Unit -> Unit). /\(r : Region). \(y : thing r). y)
+        (\(_ : Unit). private r in ());;

@@ -63,3 +63,30 @@ letrec {
       thing1
           (\(f : [a : Data].a -> a). f [Nat#] 5)
 }
+
+
+-- Error: missing type annotation for parameter of lambda.
+When checking expression.
+  <batch>:57:2
+  Missing type annotation on function parameter.
+               With paramter: x : Bot
+  
+  with: \(x : Bot). x
+
+
+-- Error: cannot shadow spec binders.
+Error loading module
+  When checking expression.
+    <batch>:66:4
+    Cannot shadow named spec variable.
+      binder: r : Region
+      is already in the environment.
+    with: /\(r : Region).
+           \(r : Ref r Int#).
+          case x of {
+            0  
+             -> x;
+            _ 
+             -> y
+          }
+
