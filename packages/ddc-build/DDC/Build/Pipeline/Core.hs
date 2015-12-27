@@ -30,7 +30,6 @@ import qualified DDC.Core.Flow.Convert                  as Flow
 
 import qualified DDC.Core.Tetra.Transform.Curry         as Tetra
 import qualified DDC.Core.Tetra.Transform.Boxing        as Tetra
-import qualified DDC.Core.Tetra.Transform.Suspend       as Tetra
 import qualified DDC.Core.Tetra                         as Tetra
 
 import qualified DDC.Core.Babel.PHP                     as PHP
@@ -253,12 +252,6 @@ data PipeTetra a where
          :: !Sink
          -> PipeTetra a
 
-        -- Suspend computations.
-        PipeTetraSuspend
-         :: (NFData a, Show a)
-         => ![PipeCore (C.AnTEC a Tetra.Name) Tetra.Name]
-         -> PipeTetra  (C.AnTEC a Tetra.Name)
-
         -- Manage currying of functions.
         PipeTetraCurry
          :: (NFData a, Show a)
@@ -298,10 +291,6 @@ pipeTetra !mm !pp
         PipeTetraOutput !sink
          -> {-# SCC "PipeTetraOutput" #-}
             pipeSink (renderIndent $ ppr mm)  sink
-
-        PipeTetraSuspend !pipes
-         -> {-# SCC "PipeTetraSuspend" #-}
-            pipeCores (Tetra.suspendModule mm) pipes
 
         PipeTetraCurry  !pipes
          -> {-# SCC "PipeTetraCurry"  #-}

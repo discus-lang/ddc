@@ -60,9 +60,6 @@ data Mode
 
 
         -- Disciple Core Tetra specific ---------
-        -- | Eta-expand suspended expressions.
-        | ModeTetraSuspend      FilePath        
-
         -- | Manage higher order functions.
         | ModeTetraCurry        FilePath
 

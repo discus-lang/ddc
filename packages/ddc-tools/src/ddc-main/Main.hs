@@ -15,7 +15,6 @@ import DDC.Driver.Command.Compile
 import DDC.Driver.Command.Build
 import DDC.Driver.Command.BaseBuild
 
-import DDC.Driver.Command.Tetra.Suspend
 import DDC.Driver.Command.Tetra.Curry
 import DDC.Driver.Command.Tetra.Boxing
 
@@ -150,11 +149,6 @@ run config
 
 
         -- Tetra specific -----------------------------------------------------
-        ModeTetraSuspend filePath
-         -> do  dconfig <- getDriverConfig config (Just filePath)
-                str     <- readFile filePath
-                runError $ cmdTetraSuspend dconfig (SourceFile filePath) str
-
         ModeTetraCurry filePath
          -> do  dconfig <- getDriverConfig config (Just filePath)
                 str     <- readFile filePath

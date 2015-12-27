@@ -138,10 +138,6 @@ parseArgs args config
         $ config { configWith  = configWith config ++ [file] }
 
         -- Tetra --------------------------------
-        | "-tetra-suspend" : file : rest <- args
-        = parseArgs rest
-        $ setMode config $ ModeTetraSuspend file
-
         | "-tetra-boxing"  : file : rest <- args
         = parseArgs rest
         $ setMode config $ ModeTetraBoxing file
@@ -275,7 +271,6 @@ flagOfMode mode
         ModeToC{}                       -> Just "-to-c"
         ModeToLLVM{}                    -> Just "-to-llvm"
         ModeToPHP{}                     -> Just "-to-php"
-        ModeTetraSuspend{}              -> Just "-tetra-suspend"
         ModeTetraCurry{}                -> Just "-tetra-curry"
         ModeTetraBoxing{}               -> Just "-tetra-boxing"
         ModeFlowPrep{}                  -> Just "-flow-prep"
