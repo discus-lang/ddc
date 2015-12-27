@@ -12,8 +12,8 @@ module DDC.Core.Context
         , enterCaseAlt
         , enterCastBody)
 where
-import DDC.Core.Exp.Annot
-import DDC.Core.Exp.AnnotCtx
+import DDC.Core.Annot.Exp
+import DDC.Core.Annot.Context
 import DDC.Core.Compounds
 import DDC.Type.Env             (KindEnv, TypeEnv)
 import qualified DDC.Type.Env   as Env

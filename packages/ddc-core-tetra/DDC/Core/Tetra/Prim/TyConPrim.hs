@@ -9,8 +9,8 @@ module DDC.Core.Tetra.Prim.TyConPrim
         , tPtr)
 where
 import DDC.Core.Tetra.Prim.Base
-import DDC.Core.Compounds.Annot
-import DDC.Core.Exp.Simple
+import DDC.Core.Compounds
+import DDC.Core.Simple.Exp
 import DDC.Core.Salt.Name
         ( pprPrimTyConStem
         , readPrimTyCon, readPrimTyConStem)

@@ -2,7 +2,7 @@
 -- | Utilities for constructing and destructing compound expressions.
 --
 --   For the annotated version of the AST.
-module DDC.Core.Compounds.Annot
+module DDC.Core.Annot.Compounds
         ( module DDC.Type.Compounds
 
           -- * Annotations

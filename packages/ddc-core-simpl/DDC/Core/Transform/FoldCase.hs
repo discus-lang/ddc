@@ -7,7 +7,7 @@ module DDC.Core.Transform.FoldCase
 where
 import DDC.Core.Exp
 import DDC.Core.Predicates
-import DDC.Core.Compounds.Annot
+import DDC.Core.Compounds
 import DDC.Core.Transform.TransformDownX
 import Control.Monad.State.Strict
 import qualified Data.Map.Strict as M

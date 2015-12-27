@@ -1,5 +1,5 @@
 
-module DDC.Core.Exp.AnnotCtx   
+module DDC.Core.Annot.Context
         ( Ctx (..)
         , isTopLetCtx
         , topOfCtx
@@ -9,7 +9,7 @@ module DDC.Core.Exp.AnnotCtx
         , encodeCtx)
 where
 import DDC.Type.DataDef
-import DDC.Core.Exp.Annot
+import DDC.Core.Annot.Exp
 import DDC.Type.Env             (KindEnv, TypeEnv)
 import Data.Set                 (Set)
 import qualified DDC.Type.Env   as Env

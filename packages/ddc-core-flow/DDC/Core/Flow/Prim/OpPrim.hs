@@ -14,8 +14,8 @@ import DDC.Core.Flow.Prim.TyConPrim
 import DDC.Core.Flow.Prim.TyConFlow
 import DDC.Core.Flow.Prim.KiConFlow
 import DDC.Core.Flow.Prim.Base
-import DDC.Core.Compounds.Simple
-import DDC.Core.Exp.Simple
+import DDC.Core.Simple.Compounds
+import DDC.Core.Simple.Exp
 
 
 -- | Take the type of a primitive cast.

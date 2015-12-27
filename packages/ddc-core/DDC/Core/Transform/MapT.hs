@@ -5,12 +5,13 @@ where
 import DDC.Core.Exp
 import Control.Monad
 
+type  MAPT c n = (Type n -> Type n) -> c n -> c n
 
 class MapT (c :: * -> *) where
  -- | Apply a function to all possibly open types in a thing.
  --   Not the types of primitives because they're guaranteed to
  --   be closed.
- mapT :: (Type n -> Type n) -> c n -> c n
+ mapT :: forall n. MAPT c n
 
 
 instance MapT Bind  where
@@ -26,8 +27,10 @@ instance MapT Bound where
   
 
 instance MapT (Exp a) where
+ mapT :: forall n. MAPT (Exp a) n
  mapT f xx
-  = let down    = mapT f
+  = let down :: forall (c :: * -> *). MapT c => c n -> c n
+        down    = mapT f
     in case xx of  
         XVar  a u       -> XVar  a u
         XCon  a c       -> XCon  a c
@@ -42,8 +45,10 @@ instance MapT (Exp a) where
 
 
 instance MapT (Lets a) where
+ mapT :: forall n. MAPT (Lets a) n
  mapT f lts
-  = let down    = mapT f
+  = let down :: forall (c :: * -> *). MapT c => c n -> c n
+        down    = mapT f
     in case lts of
         LLet b x          -> LLet (down b) (down x)
         LRec bxs          -> LRec [ (down b, down x) | (b, x) <- bxs]
@@ -51,23 +56,29 @@ instance MapT (Lets a) where
 
 
 instance MapT (Alt a) where
+ mapT :: forall n. MAPT (Alt a) n
  mapT f alt
-  = let down    = mapT f
+  = let down :: forall (c :: * -> *). MapT c => c n -> c n
+        down    = mapT f
     in case alt of
         AAlt u x        -> AAlt (down u) (down x)
 
 
 instance MapT Pat where
+ mapT :: forall n. MAPT Pat n
  mapT f pat
-  = let down    = mapT f
+  = let down :: forall (c :: * -> *). MapT c => c n -> c n
+        down    = mapT f
     in case pat of
         PDefault        -> PDefault
         PData dc bs     -> PData dc (map down bs)
 
 
 instance MapT (Witness a) where
+ mapT :: forall n. MAPT (Witness a) n
  mapT f ww
-  = let down    = mapT f
+  = let down :: forall (c :: * -> *). MapT c => c n -> c n
+        down    = mapT f
     in case ww of
         WVar a u        -> WVar  a (down u)
         WCon{}          -> ww
@@ -76,10 +87,13 @@ instance MapT (Witness a) where
 
 
 instance MapT (Cast a) where
+ mapT :: forall n. MAPT (Cast a) n
  mapT f cc
-  = let down    = mapT f
+  = let down :: forall (c :: * -> *). MapT c => c n -> c n
+        down x  = mapT f x
     in case cc of
         CastWeakenEffect t      -> CastWeakenEffect  t
         CastPurify w            -> CastPurify  (down w)
         CastBox                 -> CastBox
         CastRun                 -> CastRun
+

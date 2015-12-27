@@ -1,6 +1,6 @@
 
 module DDC.Core.Flow.Exp
-        ( module DDC.Core.Exp.Simple 
+        ( module DDC.Core.Simple.Exp
         , KindEnvF, TypeEnvF
         , TypeF
         , ModuleF
@@ -15,7 +15,7 @@ module DDC.Core.Flow.Exp
 where
 import DDC.Core.Module
 import DDC.Core.Flow.Prim
-import DDC.Core.Exp.Simple
+import DDC.Core.Simple.Exp
 import DDC.Type.Env             (Env)
 
 type KindEnvF   = Env Name

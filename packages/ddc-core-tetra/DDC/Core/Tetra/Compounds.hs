@@ -1,6 +1,6 @@
 
 module DDC.Core.Tetra.Compounds
-        ( module DDC.Core.Compounds.Annot
+        ( module DDC.Core.Compounds
 
           -- * Primitive
         , tBool, tNat, tInt, tSize, tWord, tFloat
@@ -19,7 +19,7 @@ where
 import DDC.Core.Tetra.Prim.TyConTetra
 import DDC.Core.Tetra.Prim.TyConPrim
 import DDC.Core.Tetra.Prim
-import DDC.Core.Compounds.Annot
+import DDC.Core.Compounds
 import DDC.Core.Exp
 
 

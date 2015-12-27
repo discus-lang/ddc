@@ -88,12 +88,11 @@ instance MapBoundT Bound n where
 
 instance Ord n => MapBoundT Type n where
  mapBoundAtDepthT f d tt
-  = let down = mapBoundAtDepthT f d
-    in case tt of
+  = case tt of
         TVar u          -> TVar    (f d u)
         TCon{}          -> tt
-        TApp t1 t2      -> TApp    (down t1) (down t2)
-        TSum ss         -> TSum    (down ss)
+        TApp t1 t2      -> TApp    (mapBoundAtDepthT f d t1) (mapBoundAtDepthT f d t2)
+        TSum ss         -> TSum    (mapBoundAtDepthT f d ss)
         TForall b t     
          -> TForall b (mapBoundAtDepthT f (d + countBAnons [b]) t)
 

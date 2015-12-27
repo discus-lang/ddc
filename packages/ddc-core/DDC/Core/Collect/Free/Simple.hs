@@ -4,7 +4,7 @@ module DDC.Core.Collect.Free.Simple
 where
 import DDC.Type.Collect
 import DDC.Core.Collect.Free
-import DDC.Core.Exp.Simple
+import DDC.Core.Simple.Exp
 
 
 -- Exp ------------------------------------------------------------------------

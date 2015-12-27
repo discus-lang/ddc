@@ -36,8 +36,8 @@ module DDC.Core.Flow.Prim.TyConFlow
 where
 import DDC.Core.Flow.Prim.KiConFlow
 import DDC.Core.Flow.Prim.Base
-import DDC.Core.Compounds.Simple
-import DDC.Core.Exp.Simple
+import DDC.Core.Simple.Compounds
+import DDC.Core.Simple.Exp
 import DDC.Base.Pretty
 import Control.DeepSeq
 import Data.Char
