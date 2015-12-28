@@ -55,12 +55,18 @@ convertSuper ctx (C.BName nSuper tSuper) x
         mdsup     <- Tbaa.deriveMD (renderPlain nSuper') x
         let ctx'  = ctx
                   { contextKindEnv = Env.extends bsParamType  $ contextKindEnv ctx
-                  , contextTypeEnv = Env.extends bsParamValue $ contextTypeEnv ctx 
                   , contextMDSuper = mdsup }
+
+        -- TODO: The orginal parameters did not nessesarally have all the types
+        --       occurring first, but this assumes they do. If they're out of
+        --       order then we'll convert some types of binders in the wrong
+        --       kind environments.
+        (ctx'', vsParamValue')
+                  <- bindLocalBs ctx' bsParamValue 
 
         -- Convert function body to basic blocks.
         label     <- newUniqueLabel "entry"
-        blocks    <- convertBody ctx' ExpTop Seq.empty label Seq.empty xBody
+        blocks    <- convertBody ctx'' ExpTop Seq.empty label Seq.empty xBody
 
         -- Split off the argument and result types of the super.
         (tsParam, tResult)   
@@ -97,16 +103,18 @@ convertSuper ctx (C.BName nSuper tSuper) x
                 , declParams            = [Param t [] | t <- tsParam]
                 , declAlign             = align }
 
+        let Just ssParamValues
+                = sequence
+                $ map (\v -> case v of 
+                                (Var (NameLocal s) _) -> Just s
+                                _                     -> Nothing)
+                $ vsParamValue'
+
 
         -- Build the function.
-        nsParams <- sequence   
-                        [ nameOfParam i b 
-                                | i <- [0..]
-                                | b <- bsParamValue]
-
         return  ( Function
                   { funDecl     = decl
-                  , funParams   = nsParams
+                  , funParams   = ssParamValues
                   , funAttrs    = [] 
                   , funSection  = SectionAuto
                   , funBlocks   = Seq.toList blocks }
@@ -114,18 +122,4 @@ convertSuper ctx (C.BName nSuper tSuper) x
 
 convertSuper _ b x
         = throw $ ErrorInvalidSuper b x
-
--- | Take the string name to use for a function parameter.
-nameOfParam :: Int -> C.Bind A.Name -> ConvertM String
-nameOfParam i bb
- = case bb of
-        C.BName nm _ 
-           | Just n <- A.takeNameVar nm
-           -> return $ A.sanitizeName n
-
-        C.BNone _
-           -> return $ "_arg" ++ show i
-
-        _  -> throw $ ErrorInvalidBind bb
-                    $ Just "Cannot use this as a super parameter."
 

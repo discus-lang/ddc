@@ -2,7 +2,9 @@
 module DDC.Core.Llvm.Convert.Exp
         ( Context (..)
         , convertBody
-        , convertExp)
+        , convertExp
+
+        , bindLocalB, bindLocalBs)
 where
 import DDC.Core.Llvm.Convert.Exp.PrimCall
 import DDC.Core.Llvm.Convert.Exp.PrimArith
@@ -18,7 +20,6 @@ import DDC.Core.Compounds
 import Control.Applicative
 import Data.Sequence                            (Seq, (|>), (><))
 import qualified DDC.Core.Salt                  as A
-import qualified DDC.Core.Salt.Convert          as A
 import qualified DDC.Core.Exp                   as C
 import qualified DDC.Type.Env                   as Env
 import qualified Data.Sequence                  as Seq
@@ -165,28 +166,29 @@ convertBody ctx ectx blocks label instrs xx
 
 
          -- Variable assigment from a case-expression.
-         C.XLet _ (C.LLet b@(C.BName nm t) 
-                            (C.XCase _ xScrut alts)) 
+         C.XLet _ (C.LLet (C.BName nm t) 
+                          (C.XCase _ xScrut alts)) 
                   x2
-          | Just n <- A.takeNameVar nm
           -> do 
-                t'          <- convertType pp kenv t
-
-                -- Assign result of case to this variable.
-                let n'      = A.sanitizeName n
-                let vCont   = Var (NameLocal n') t'
+                -- Bind the Salt name, allocating a new LLVM variable for it.
+                --   The alternatives assign their final result to this variable.
+                (ctx', vCont) <- bindLocalV ctx nm t 
 
                 -- Label to jump to continue evaluating 'x1'
                 lCont       <- newUniqueLabel "cont"
+
+                -- Convert the alternatives.
+                --   As the let-binding is non-recursive, the alternatives are
+                --   converted in the original context, without the let-bound
+                --   variable (ctx).
                 let ectx'   =  ExpNest ectx vCont lCont
                 blocksCase  <- convertCase ctx ectx' label instrs xScrut alts
 
-                let ctx'    = extendTypeEnv b ctx
+                -- Convert the body of the let-expression.
+                --   This is done in the new context, with the let-bound variable.
                 convertBody ctx' ectx
                         (blocks >< blocksCase) 
-                        lCont
-                        Seq.empty
-                        x2
+                        lCont Seq.empty x2
 
 
          -- Variable assignment from an instantiated super name.
@@ -209,14 +211,19 @@ convertBody ctx ectx blocks label instrs xx
 
 
          -- Variable assignment from some other expression.
-         C.XLet _ (C.LLet b@(C.BName nm t) x1) x2
-          | Just n       <- A.takeNameVar nm
-          -> do let n'   = A.sanitizeName n
-                t'       <- convertType pp kenv t
-                let dst  = Var (NameLocal n') t'
-                instrs'  <- convertExp ctx (ExpAssign ectx dst) x1
+         C.XLet _ (C.LLet (C.BName nm t) x1) x2
+          -> do 
+                -- Bind the Salt name, allocating a new LLVM variable name for it.
+                (ctx', vDst) <- bindLocalV ctx nm t
+
+                -- Convert the bound expression.
+                --   As the let-binding is non-recursive, the bound expression
+                --   is converted in the original context, without the let-bound
+                --   variable (ctx).
+                instrs'  <- convertExp ctx (ExpAssign ectx vDst) x1
                 
-                let ctx' = extendTypeEnv b ctx
+                -- Convert the body of the let-expression.
+                --   This is done in the new context, with the let-bound variable.
                 convertBody ctx' ectx blocks label (instrs >< instrs') x2
 
 
@@ -306,5 +313,4 @@ convertExp ctx ectx xx
 
          _ -> throw $ ErrorInvalidExp xx
                     $ Just "Was expecting a variable, primitive, or super application."
-
 

@@ -146,6 +146,7 @@ convertModuleM pp mm@(C.ModuleCore{})
                 , contextImports        = Set.fromList $ map fst $ C.moduleImportValues mm
                 , contextKindEnv        = kenv
                 , contextTypeEnv        = tenv
+                , contextNames          = Map.empty
                 , contextMDSuper        = MDSuper Map.empty [] 
                 , contextSuperBinds     = Map.empty
                 , contextPrimDecls      = primDeclsMap pp

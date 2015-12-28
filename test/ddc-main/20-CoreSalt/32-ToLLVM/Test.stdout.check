@@ -15,27 +15,27 @@ size2# :: [^ : Data].Nat#
 declare external ccc i64 @malloc(i64 ) align 8
 declare external ccc void @abort() align 8
 
-define internal fastcc i64 @nat(%s.Obj*  %_arg0) align 8  
+define internal fastcc i64 @nat(%s.Obj*  %_v1._arg) align 8  
 {
-l1.entry:
+l2.entry:
         ret i64 8
 }
 
-define internal fastcc i64 @int(%s.Obj*  %_arg0) align 8  
-{
-l3.entry:
-        ret i64 8
-}
-
-define internal fastcc i64 @word16(%s.Obj*  %_arg0) align 8  
+define internal fastcc i64 @int(%s.Obj*  %_v4._arg) align 8  
 {
 l5.entry:
+        ret i64 8
+}
+
+define internal fastcc i64 @word16(%s.Obj*  %_v7._arg) align 8  
+{
+l8.entry:
         ret i64 2
 }
 
-define internal fastcc i64 @tag(%s.Obj*  %_arg0) align 8  
+define internal fastcc i64 @tag(%s.Obj*  %_v10._arg) align 8  
 {
-l7.entry:
+l11.entry:
         ret i64 4
 }
 
@@ -52,46 +52,46 @@ l7.entry:
 declare external ccc i64 @malloc(i64 ) align 8
 declare external ccc void @abort() align 8
 
-define internal fastcc i64 @nat(%s.Obj*  %_arg0) align 8  
+define internal fastcc i64 @nat(%s.Obj*  %_v1._arg) align 8  
 {
-l1.entry:
+l2.entry:
         ret i64 3
 }
 
-define internal fastcc i64 @int(%s.Obj*  %_arg0) align 8  
-{
-l3.entry:
-        ret i64 3
-}
-
-define internal fastcc i64 @word8(%s.Obj*  %_arg0) align 8  
+define internal fastcc i64 @int(%s.Obj*  %_v4._arg) align 8  
 {
 l5.entry:
+        ret i64 3
+}
+
+define internal fastcc i64 @word8(%s.Obj*  %_v7._arg) align 8  
+{
+l8.entry:
         ret i64 0
 }
 
-define internal fastcc i64 @word16(%s.Obj*  %_arg0) align 8  
+define internal fastcc i64 @word16(%s.Obj*  %_v10._arg) align 8  
 {
-l7.entry:
+l11.entry:
         ret i64 1
 }
 
-define internal fastcc i64 @ptr(%s.Obj*  %_arg0) align 8  
+define internal fastcc i64 @ptr(%s.Obj*  %_v16._arg) align 8  
 {
-l12.entry:
+l17.entry:
         ret i64 3
 }
 
-define internal fastcc i64 @tag(%s.Obj*  %_arg0) align 8  
+define internal fastcc i64 @tag(%s.Obj*  %_v19._arg) align 8  
 {
-l14.entry:
+l20.entry:
         ret i64 2
 }
 
 
 
-!11 = metadata !{metadata !"ptr_r", metadata !10, i32 0}
-!10 = metadata !{metadata !"ptr_ROOT_9", null, i32 1}
+!15 = metadata !{metadata !"ptr_r", metadata !14, i32 0}
+!14 = metadata !{metadata !"ptr_ROOT_13", null, i32 1}
 
 
 
@@ -102,9 +102,9 @@ l14.entry:
 declare external ccc i64 @malloc(i64 ) align 8
 declare external ccc void @abort() align 8
 
-define internal fastcc i64 @blerk(%s.Obj*  %_arg0) align 8  
+define internal fastcc i64 @blerk(%s.Obj*  %_v1._arg) align 8  
 {
-l1.entry:
+l2.entry:
         ret i64 3
 }
 

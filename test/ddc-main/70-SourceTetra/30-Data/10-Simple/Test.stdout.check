@@ -1,5 +1,4 @@
 
-
 -- With explicit kind for parameters.
 module Test where
 data List (a : Data) where {
@@ -33,25 +32,25 @@ data Void where {
 -- Error: duplicate data type definition.
 Error in transformed module.
   Duplicate data type definition.
-     A constructor with name: Blerk
-     is already defined.
+    A constructor with name: Blerk
+    is already defined.
 
 
 -- Error: data constructor name reused in the same type.
 [Error in transformed module.
   Duplicate data constructor definition.
-     A constructor with name: Foo
-     is already defined.]
+    A constructor with name: Foo
+    is already defined.]
 
 -- Error: data constructor redefined in a different type.
 [Error in transformed module.
   Duplicate data constructor definition.
-     A constructor with name: Bar
-     is already defined.]
+    A constructor with name: Bar
+    is already defined.]
 
 
 -- Error: primitive data constructor redefined in a different type.
 Error in transformed module.
   Duplicate data constructor definition.
-     A constructor with name: False#
-     is already defined.
+    A constructor with name: False#
+    is already defined.

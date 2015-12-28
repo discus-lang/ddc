@@ -72,7 +72,7 @@ convBlockM config context kenv tenv xx
 
         XApp{}
          -- At the top-level of a function body then the last statement
-         -- expliticlty passes control.
+         -- explicitly passes control.
          | ContextTop      <- context
          -> case takeXPrimApps xx of
                 Just (NamePrimOp p, xs)

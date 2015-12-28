@@ -36,13 +36,12 @@ streamOfList (xx : List a) : Stream (List a) a
 
 
 -- | Convert a stream to a list.
---   BROKEN: name clash in llvm code generator, renaming s2 below to s1
 listOfStream  (ss : Stream s a) : List a
  = case ss of
         MkStream f s0
          -> case f s0 of
                 Yield x s1      -> Cons x (listOfStream (MkStream f s1))
-                Skip  s2        -> listOfStream (MkStream f s2)
+                Skip  s1        -> listOfStream (MkStream f s1)
                 Done            -> Nil
 
 

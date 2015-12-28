@@ -54,6 +54,9 @@ data Context
           -- | Current type environment.
         , contextTypeEnv        :: TypeEnv  A.Name 
 
+          -- | Map between core level variable names and LLVM names.
+        , contextNames          :: Map A.Name Var
+
           -- | Super meta data
         , contextMDSuper        :: MDSuper 
 

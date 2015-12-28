@@ -12,10 +12,7 @@ module DDC.Core.Llvm.Convert.Base
         , newUnique
         , newUniqueVar
         , newUniqueNamedVar
-        , newUniqueLabel
-
-          -- * Constants
-        , addConstant)
+        , newUniqueLabel)
 where
 import DDC.Core.Llvm.Convert.Error
 import DDC.Llvm.Syntax
@@ -79,25 +76,4 @@ newUniqueLabel name
  = do   u <- newUnique
         return $ Label ("l" ++ show u ++ "." ++ name)
 
-
----------------------------------------------------------------------------------------------------
--- | Add a static constant to the map, 
---   assigning a new variable to refer to it.
-addConstant :: Lit -> ConvertM Var
-addConstant lit
- = do   
-        -- Make a new variable to name the literal constant.
-        (Var (NameLocal sLit) tLit) <- newUniqueVar (typeOfLit lit)
-
-        let nLit =  NameGlobal sLit
-        let vLit =  Var nLit tLit
-
-        s        <- get
-        put     $ s { llvmConstants = Map.insert vLit lit (llvmConstants s)}
-
-        -- Although the constant itself has type tLit, when we refer
-        -- to a global name in the body of the code the reference is 
-        -- has pointer type.
-        let vRef = Var nLit (TPointer tLit)
-        return vRef
 

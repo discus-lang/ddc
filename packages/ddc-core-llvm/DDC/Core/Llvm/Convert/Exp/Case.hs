@@ -28,10 +28,7 @@ convertCase
         -> ConvertM (Seq Block)
 
 convertCase ctx ectx label instrs xScrut alts 
- | pp           <- contextPlatform ctx
- , kenv         <- contextKindEnv  ctx
- , tenv         <- contextTypeEnv  ctx
- , Just mVar    <- takeLocalV pp kenv tenv xScrut
+ | Just mVar    <- takeLocalV ctx xScrut
  = do
         vScrut' <- mVar
 
@@ -118,7 +115,7 @@ convertAlts _ ExpAssign{} alts
 -- | Convert a case alternative to LLVM.
 --
 --   This only works for zero-arity constructors.
---   The client should extrac the fields of algebraic data objects manually.
+--   The client should extract the fields of algebraic data objects manually.
 convertAlt
         :: Context -> ExpContext
         -> C.Alt () A.Name

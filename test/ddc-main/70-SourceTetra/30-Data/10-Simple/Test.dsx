@@ -1,5 +1,4 @@
 
-
 -- With explicit kind for parameters.
 :parse..
 module Test where

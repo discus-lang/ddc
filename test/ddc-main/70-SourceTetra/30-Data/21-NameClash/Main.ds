@@ -1,0 +1,22 @@
+
+-- Test using a pattern where the same named is used in multiple left-hand
+-- sides. This used to fail due to a bug in the LLVM code generator.
+module Main
+import Data.Numeric.Nat
+import System.IO.Console
+where
+
+data Thing where
+        One : Nat  -> Thing
+        Two : Bool -> Thing
+
+thing (x : Thing) : Nat
+ = case x of
+        One n   -> n
+        Two n   -> if n then 0 else 1
+
+main (_ : Unit) : S Console Unit
+ = box do   
+        run putStrLn (showNat (thing (One 5)))
+        run putStrLn (showNat (thing (Two False)))
+        run putStrLn (showNat (thing (Two True)))
