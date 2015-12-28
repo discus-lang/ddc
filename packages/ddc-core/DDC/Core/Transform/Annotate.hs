@@ -66,7 +66,8 @@ instance Annotate S.Alt A.Alt where
  annotate def alt
   = let down    = annotate def
     in case alt of
-        S.AAlt w x                      -> A.AAlt w (down x)
+        S.AAlt S.PDefault x             -> A.AAlt  A.PDefault (down x)
+        S.AAlt (S.PData dc bs) x        -> A.AAlt (A.PData dc bs) (down x)
 
 
 instance Annotate S.Witness A.Witness where

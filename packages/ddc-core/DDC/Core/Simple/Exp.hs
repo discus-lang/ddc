@@ -26,7 +26,6 @@ module DDC.Core.Simple.Exp
 where
 import DDC.Core.Exp.WiCon
 import DDC.Core.Exp.DaCon
-import DDC.Core.Exp.Pat
 import DDC.Type.Exp
 import DDC.Type.Sum             ()
 import Control.DeepSeq
@@ -90,6 +89,16 @@ data Alt a n
         deriving (Show, Eq)
 
 
+-- | Pattern matching.
+data Pat n
+        -- | The default pattern always succeeds.
+        = PDefault
+        
+        -- | Match a data constructor and bind its arguments.
+        | PData !(DaCon n) ![Bind n]
+        deriving (Show, Eq)
+
+
 -- | When a witness exists in the program it guarantees that a
 --   certain property of the program is true.
 data Witness a n
@@ -127,8 +136,6 @@ data Cast a n
         --   releasing its effects into the environment.
         | CastRun
         deriving (Show, Eq)
-
-
 
 
 -- NFData ---------------------------------------------------------------------
@@ -169,6 +176,13 @@ instance (NFData a, NFData n) => NFData (Alt a n) where
  rnf aa
   = case aa of
         AAlt w x                -> rnf w `seq` rnf x
+
+
+instance NFData n => NFData (Pat n) where
+ rnf pp
+  = case pp of
+        PDefault                -> ()
+        PData dc bs             -> rnf dc `seq` rnf bs
 
 
 instance (NFData a, NFData n) => NFData (Witness a n) where

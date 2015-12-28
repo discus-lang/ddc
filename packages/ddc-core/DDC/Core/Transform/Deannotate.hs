@@ -46,7 +46,8 @@ instance Deannotate A.Lets S.Lets where
 instance Deannotate A.Alt S.Alt where
  deannotate f aa
   = case aa of
-        A.AAlt w x              -> S.AAlt w (deannotate f x)
+        A.AAlt A.PDefault x      -> S.AAlt  S.PDefault (deannotate f x)
+        A.AAlt (A.PData dc bs) x -> S.AAlt (S.PData dc bs) (deannotate f x)
 
 
 instance Deannotate A.Witness S.Witness where
