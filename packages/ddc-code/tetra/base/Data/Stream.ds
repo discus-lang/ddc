@@ -6,6 +6,7 @@ import Data.Maybe
 import Data.List
 where
 
+
 -- | Unbounded streams, 
 --   wraps a function that produces elements on demand.
 data Stream (s a : Data) where
@@ -19,20 +20,19 @@ data Step (s a : Data) where
 data Tup2 (a b : Data) where
         T2      : a -> b -> Tup2 a b
 
+
 -- | Create a stream that returns copies of the same value.
 srepeat (x : a) : Stream a a
  = MkStream (\(s : a). Yield s s) x
 
 
 -- | Convert a list to a stream.
---   BROKEN: shifting stepper into let binding doesn't work.
 streamOfList (xx : List a) : Stream (List a) a
- = MkStream 
-        (\(s1 : List a).
-         case s1 of
+ = let  step (s1 : List a)
+         = case s1 of
                 Nil     -> Done
-                Cons x xs -> Yield x xs)
-        xx
+                Cons x xs -> Yield x xs
+   in   MkStream step xx
 
 
 -- | Convert a stream to a list.

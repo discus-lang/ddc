@@ -5,15 +5,27 @@ import Data.List
 where
 
 
+-- | Unbounded streams, 
+--   wraps a function that produces elements on demand.
+data Stream (s a : Data) where
+        MkStream : (s -> Step s a) -> s -> Stream s a
+
+data Step (s a : Data) where
+        Yield   : a -> s -> Step s a
+        Skip    : s -> Step s a 
+        Done    : Step s a
+
+data Tup2 (a b : Data) where
+        T2      : a -> b -> Tup2 a b
+
+
 -- | Convert a list to a stream.
---   BROKEN: shifting stepper into let binding doesn't work.
 streamOfList (xx : List a) : Stream (List a) a
- = MkStream 
-        (\(s1 : List a).
-         case s1 of
+ = let  step (s1 : List a)
+         = case s1 of
                 Nil     -> Done
-                Cons x xs -> Yield x xs)
-        xx
+                Cons x xs -> Yield x xs
+   in   MkStream step xx
 
 
 -- | Convert a stream to a list.
@@ -52,20 +64,6 @@ stake (n : Nat) (ss : Stream s a) : Stream (Tup2 s Nat) a
                                 Skip sA3    -> Skip  (T2 sA3 ix)
                                 Done        -> Done
             in   MkStream stepB (T2 sA0 0)
-
-
--- | Unbounded streams, 
---   wraps a function that produces elements on demand.
-data Stream (s a : Data) where
-        MkStream : (s -> Step s a) -> s -> Stream s a
-
-data Step (s a : Data) where
-        Yield   : a -> s -> Step s a
-        Skip    : s -> Step s a 
-        Done    : Step s a
-
-data Tup2 (a b : Data) where
-        T2      : a -> b -> Tup2 a b
 
 
 main (_ : Unit) : S Console Unit
