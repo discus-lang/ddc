@@ -1,95 +1,82 @@
-{-# LANGUAGE TypeFamilies, UndecidableInstances #-}
 
 module DDC.Core.Generic.Exp where
-
-
----------------------------------------------------------------------------------------------------
--- | Language tag.
-class Language l where
- type Bind    l
- type Bound   l
- type Prim    l
- type Type    l
- type DaCon   l
- type Exp     l
- type Lets    l
- type Alt     l
- type Pat     l
- type Cast    l
- type Witness l
- type WiCon   l
-
+import DDC.Core.Exp.DaCon
+import DDC.Type.Exp
 
 ---------------------------------------------------------------------------------------------------
 -- | Expression representation.
-data RExp l
+data Exp b u c p
         -- | Value variable or primitive operator.
-        = XVar     !(Bound l)
+        = XVar     !u
 
         -- | Data constructor.
-        | XCon     !(DaCon l)
+        | XCon     !(DaCon c)
 
         -- | Primitive operator or literal.
-        | XPrim    !(Prim  l)
+        | XPrim    !p
 
         -- | Type abstraction (level-1 abstration).
-        | XLAM     !(Bind  l)  !(Exp l)
+        | XLAM     !b               !(Exp b u c p)
 
         -- | Value and witness abstraction (level-0 abstraction).
-        | XLam     !(Bind  l)  !(Exp l)
+        | XLam     !b               !(Exp b u c p)
 
         -- | Application.
-        | XApp     !(Exp   l)  !(Exp l)
+        | XApp     !(Exp  b u c p)  !(Exp b u c p)
 
         -- | Possibly recursive bindings.
-        | XLet     !(Lets  l)  !(Exp l)
+        | XLet     !(Lets b u c p)  !(Exp b u c p)
 
         -- | Case branching.
-        | XCase    !(Exp   l)  ![Alt l]
+        | XCase    !(Exp  b u c p)  ![Alt b u c p]
 
         -- | Type casting.
-        | XCast    !(Cast  l)  !(Exp l)
+        | XCast    !(Cast b u c p)  !(Exp b u c p)
 
         -- | Type can appear as the argument of an application.
-        | XType    !(Type  l)
+        | XType    !(Type c)
 
         -- | Witness can appear as the argument of an application.
-        | XWitness !(Witness l)
+        | XWitness !(Witness b u c p)
+        deriving Show
 
 
 -- | Possibly recursive bindings.
-data RLets l
+data Lets b u c p
         -- | Non-recursive binding.
-        = LLet     !(Bind l)    !(Exp l)
+        = LLet     !b           !(Exp b u c p)
 
         -- | Recursive binding.
-        | LRec     ![(Bind l, Exp l)]
+        | LRec     ![(b, Exp b u c p)]
 
         -- | Introduce a private region variable and witnesses to its properties.
-        | LPrivate ![Bind l] !(Maybe (Type l)) ![Bind l]
+        | LPrivate ![b] !(Maybe (Type c)) ![b]
+        deriving Show
 
 
 -- | Case alternatives.
-data RAlt l
-        = AAlt !(Pat l) !(Exp l)
+data Alt b u c p
+        = AAlt !(Pat b u c p) !(Exp b u c p)
+        deriving Show
 
 
 -- | Patterns.
-data RPat l
+data Pat b u c p
         -- | The default pattern always succeeds.
         = PDefault
 
         -- | Match a data constructor and bind its arguments.
-        | PData !(DaCon l) ![Bind l]
+        | PData !(DaCon c) ![b]
+        deriving Show
 
 
 -- | Type casts.
-data RCast l
+data Cast b u c p
         -- | Weaken the effect of an expression.
-        = CastWeakenEffect   !(Type l)
+        = CastWeakenEffect   !(Type c)
 
         -- | Purify the effect of an expression.
-        | CastPurify         !(Witness l)
+        | CastPurify         !(Witness b u c p)
 
         -- | Box up a computation, suspending its evaluation and capturing 
         --   its effects in the S computaiton type.
@@ -97,60 +84,30 @@ data RCast l
 
         -- | Run a computation, releasing its effects into the context.
         | CastRun
+        deriving Show
 
 
 -- | Witnesses.
-data RWitness l
+data Witness b u c p
         -- | Witness variable.
-        = WVar  !(Bound l)
+        = WVar  !u
 
         -- | Witness constructor.
-        | WCon  !(WiCon l)
+        | WCon  !(WiCon b u c p)
 
         -- | Witness application.
-        | WApp  !(Witness l) !(Witness l)
+        | WApp  !(Witness b u c p) !(Witness b u c p)
 
         -- | Type can appear as an argument of a witness application.
-        | WType !(Type l)
+        | WType !(Type c)
+        deriving Show
 
 
 -- | Witness constructors.
-data RWiCon l
+data WiCon b u c p
         -- | Witness constructors defined in the environment.
         --   In the interpreter we use this to hold runtime capabilities.
         --   The attached type must be closed.
-        = WiConBound   !(Bound l) !(Type l)
-
-
----------------------------------------------------------------------------------------------------
--- Show instances.
-deriving instance
-  ( Show (Bind l),  Show (Bound l), Show (Prim  l), Show (DaCon l)
-  , Show (Exp l),   Show (Alt l),   Show (Lets l)
-  , Show (Cast  l), Show (Type  l), Show (Witness l))
- => Show (RExp l)
-
-deriving instance 
-   (Show (Bind l),  Show (Type l), Show (Exp l))
- => Show (RLets l)
-
-deriving instance 
-   (Show (Pat l),   Show (Exp l))
- => Show (RAlt l)
-
-deriving instance 
-   (Show (DaCon l), Show (Bind l))
- => Show (RPat l)
-
-deriving instance
-   (Show (Type l),  Show (Witness l))
- => Show (RCast l)
-
-deriving instance 
-   (Show (Bound l), Show (Type l)) 
- => Show (RWiCon l)
-
-deriving instance
-   (Show (Bound l), Show (Type l), Show (Witness l), Show (WiCon l))
- => Show (RWitness l)
+        = WiConBound   !u !(Type c)
+        deriving Show
 

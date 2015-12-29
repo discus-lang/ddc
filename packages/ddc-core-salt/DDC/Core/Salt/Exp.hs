@@ -1,39 +1,30 @@
-{-# LANGUAGE TypeFamilies #-}
 
 module DDC.Core.Salt.Exp where
 
 import qualified DDC.Core.Salt.Name     as A
 import qualified DDC.Core.Generic.Exp   as G
 import qualified DDC.Core.Annot.Exp     as N
-import qualified DDC.Core.Exp.DaCon     as C
 import qualified DDC.Type.Exp           as C
 
 
----------------------------------------------------------------------------------------------------
-instance G.Language A.Name where
- type Bind    A.Name    = C.Bind     A.Name
- type Bound   A.Name    = C.Bound    A.Name
- type Prim    A.Name    = C.Bound    A.Name
- type Type    A.Name    = C.Type     A.Name
- type DaCon   A.Name    = C.DaCon    A.Name
- type Exp     A.Name    = G.RExp     A.Name
- type Lets    A.Name    = G.RLets    A.Name
- type Alt     A.Name    = G.RAlt     A.Name
- type Pat     A.Name    = G.RPat     A.Name
- type Cast    A.Name    = G.RCast    A.Name
- type Witness A.Name    = G.RWitness A.Name
- type WiCon   A.Name    = G.RWiCon   A.Name
+type Exp        = G.Exp         (C.Bind A.Name) (C.Bound A.Name) A.Name A.Name
+type Lets       = G.Lets        (C.Bind A.Name) (C.Bound A.Name) A.Name A.Name
+type Alt        = G.Alt         (C.Bind A.Name) (C.Bound A.Name) A.Name A.Name
+type Pat        = G.Pat         (C.Bind A.Name) (C.Bound A.Name) A.Name A.Name
+type Cast       = G.Cast        (C.Bind A.Name) (C.Bound A.Name) A.Name A.Name
+type Witness    = G.Witness     (C.Bind A.Name) (C.Bound A.Name) A.Name A.Name
+type WiCon      = G.WiCon       (C.Bind A.Name) (C.Bound A.Name) A.Name A.Name
 
 
 ---------------------------------------------------------------------------------------------------
 class FromAnnot c1 c2 | c1 -> c2 where
- fromAnnot :: c1 A.Name -> Either Error (c2 A.Name)
+ fromAnnot :: c1 -> Either Error c2
 
 data Error
  = Error
 
 
-instance FromAnnot  (N.Exp ())  G.RExp where
+instance FromAnnot (N.Exp () A.Name) Exp where
  fromAnnot xx
   = case xx of
         N.XVar  _ u             -> G.XVar     <$> fromAnnot u
@@ -48,7 +39,7 @@ instance FromAnnot  (N.Exp ())  G.RExp where
         N.XWitness _ w          -> G.XWitness <$> fromAnnot w
 
 
-instance FromAnnot  (N.Lets ()) G.RLets where
+instance FromAnnot (N.Lets () A.Name) Lets where
  fromAnnot lts
   = case lts of
         N.LLet u x              -> G.LLet     <$> fromAnnot u <*> fromAnnot x
@@ -56,20 +47,20 @@ instance FromAnnot  (N.Lets ()) G.RLets where
         N.LPrivate rs mt wt     -> G.LPrivate <$> fromAnnots rs <*> fromAnnotM mt <*> fromAnnots wt
 
 
-instance FromAnnot  (N.Alt ()) G.RAlt where
+instance FromAnnot (N.Alt () A.Name) Alt where
  fromAnnot aa
   = case aa of
         N.AAlt w x              -> G.AAlt <$> fromAnnot w <*> fromAnnot x
 
 
-instance FromAnnot  N.Pat G.RPat where
+instance FromAnnot (N.Pat A.Name) Pat where
  fromAnnot pp
   = case pp of
         N.PDefault              -> pure G.PDefault
         N.PData dc bs           -> G.PData <$> pure dc <*> fromAnnots bs
 
 
-instance FromAnnot (N.Cast ()) G.RCast where
+instance FromAnnot (N.Cast () A.Name) Cast where
  fromAnnot cc
   = case cc of
         N.CastWeakenEffect t    -> G.CastWeakenEffect <$> pure t
@@ -78,7 +69,7 @@ instance FromAnnot (N.Cast ()) G.RCast where
         N.CastRun               -> pure G.CastRun
 
 
-instance FromAnnot (N.Witness ()) G.RWitness where
+instance FromAnnot (N.Witness () A.Name) Witness where
  fromAnnot ww
   = case ww of
         N.WVar  _ u             -> G.WVar  <$> pure u
@@ -87,25 +78,25 @@ instance FromAnnot (N.Witness ()) G.RWitness where
         N.WType _ t             -> G.WType <$> pure t
 
 
-instance FromAnnot N.DaCon N.DaCon  where
+instance FromAnnot (N.DaCon A.Name) (N.DaCon A.Name)  where
  fromAnnot dc   = pure dc
 
 
-instance FromAnnot N.WiCon G.RWiCon where
+instance FromAnnot (N.WiCon A.Name) WiCon where
  fromAnnot ww
   = case ww of
         N.WiConBound u t        -> G.WiConBound <$> pure u <*> pure t
 
 
-instance FromAnnot C.Type C.Type where
+instance FromAnnot (C.Type A.Name) (C.Type A.Name) where
  fromAnnot tt   = pure tt
 
 
-instance FromAnnot N.Bind C.Bind where
+instance FromAnnot (N.Bind A.Name) (C.Bind A.Name) where
  fromAnnot bb   = pure bb
 
 
-instance FromAnnot N.Bound C.Bound where
+instance FromAnnot (N.Bound A.Name) (C.Bound A.Name) where
  fromAnnot uu   = pure uu
 
 
