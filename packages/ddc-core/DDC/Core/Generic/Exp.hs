@@ -8,6 +8,7 @@ module DDC.Core.Generic.Exp where
 class Language l where
  type Bind    l
  type Bound   l
+ type Prim    l
  type Type    l
  type DaCon   l
  type Exp     l
@@ -19,52 +20,17 @@ class Language l where
  type WiCon   l
 
 
--- | Language AST using direct recursion to the nodes.
--- ** todo, split into direct module, name existing one Base.hs
-data Direct b u 
-
-instance Language (Direct b u) where
- type Bind    (Direct b u)      = b
- type Bound   (Direct b u)      = u
- type Type    (Direct b u)      = String
- type DaCon   (Direct b u)      = String
- type Exp     (Direct b u)      = RExp     (Direct b u)
- type Lets    (Direct b u)      = RLets    (Direct b u)
- type Alt     (Direct b u)      = RAlt     (Direct b u)
- type Pat     (Direct b u)      = RPat     (Direct b u)
- type Cast    (Direct b u)      = RCast    (Direct b u)
- type Witness (Direct b u)      = RWitness (Direct b u)
- type WiCon   (Direct b u)      = RWiCon   (Direct b u)
-
-
--- | Language AST using annotated expression nodes.
--- ** todo, split into direct module.
-data Annot a b u
-
-data RAnnot a x = XAnnot a x
-
-instance Language (Annot a b u) where
- type Bind    (Annot a b u)     = b
- type Bound   (Annot a b u)     = u
- type Type    (Annot a b u)     = String
- type DaCon   (Annot a b u)     = String
- type Exp     (Annot a b u)     = RAnnot a (RExp (Annot a b u))
- type Lets    (Annot a b u)     = RLets    (Annot a b u)
- type Alt     (Annot a b u)     = RAlt     (Annot a b u)
- type Pat     (Annot a b u)     = RPat     (Annot a b u)
- type Cast    (Annot a b u)     = RCast    (Annot a b u)
- type Witness (Annot a b u)     = RWitness (Annot a b u)
- type WiCon   (Annot a b u)     = RWiCon   (Annot a b u)
-
-
 ---------------------------------------------------------------------------------------------------
 -- | Expression representation.
 data RExp l
         -- | Value variable or primitive operator.
         = XVar     !(Bound l)
 
-        -- | Data constructor or literal.
+        -- | Data constructor.
         | XCon     !(DaCon l)
+
+        -- | Primitive operator or literal.
+        | XPrim    !(Prim  l)
 
         -- | Type abstraction (level-1 abstration).
         | XLAM     !(Bind  l)
@@ -117,7 +83,6 @@ data RPat l
         | PData !(DaCon l) ![Bind l]
 
 
-
 -- | Type casts.
 data RCast l
         -- | Weaken the effect of an expression.
@@ -160,8 +125,9 @@ data RWiCon l
 ---------------------------------------------------------------------------------------------------
 -- Show instances.
 deriving instance
-  ( Show (Bind l),  Show (Bound l), Show (DaCon l), Show (Exp l), Show (Alt l)
-  , Show (Lets l),  Show (Cast  l), Show (Type  l), Show (Witness l))
+  ( Show (Bind l),  Show (Bound l), Show (Prim  l), Show (DaCon l)
+  , Show (Exp l),   Show (Alt l),   Show (Lets l)
+  , Show (Cast  l), Show (Type  l), Show (Witness l))
  => Show (RExp l)
 
 deriving instance 
