@@ -13,9 +13,9 @@ import Control.Monad
 import Data.Maybe
 import Data.Sequence                    (Seq, (<|), (|>), (><))
 import qualified DDC.Core.Salt          as A
+import qualified DDC.Core.Salt.Exp      as A
 import qualified DDC.Core.Exp           as C
 import qualified Data.Sequence          as Seq
-
 
 -- Case -------------------------------------------------------------------------------------------
 convertCase
@@ -27,8 +27,9 @@ convertCase
         -> [C.Alt () A.Name]    -- ^ Alternatives of case expression.
         -> ConvertM (Seq Block)
 
-convertCase ctx ectx label instrs xScrut alts 
- | Just mVar    <- takeLocalV ctx xScrut
+convertCase ctx ectx label instrs xScrut0 alts 
+ | Right xScrut <- A.fromAnnot xScrut0
+ , Just mVar    <- takeLocalV ctx xScrut
  = do
         vScrut' <- mVar
 
@@ -60,7 +61,7 @@ convertCase ctx ectx label instrs xScrut alts
                 <| (blocksTable >< blocksDefault >< blocksJoin)
 
  | otherwise 
- = throw $ ErrorInvalidExp (C.XCase () xScrut alts) Nothing
+ = throw $ ErrorInvalidExp (C.XCase () xScrut0 alts) Nothing
 
 
 -- Alts -------------------------------------------------------------------------------------------

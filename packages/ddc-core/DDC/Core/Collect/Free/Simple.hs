@@ -8,7 +8,7 @@ import DDC.Core.Simple.Exp
 
 
 -- Exp ------------------------------------------------------------------------
-instance BindStruct (Exp a) where
+instance BindStruct (Exp a n) n where
  slurpBindTree xx
   = case xx of
         XAnnot _ x
@@ -47,7 +47,7 @@ instance BindStruct (Exp a) where
         XWitness w      -> slurpBindTree w
 
 
-instance BindStruct (Cast a) where
+instance BindStruct (Cast a n) n where
  slurpBindTree cc
   = case cc of
         CastWeakenEffect  eff   -> slurpBindTree eff
@@ -56,7 +56,7 @@ instance BindStruct (Cast a) where
         CastRun                 -> []
 
 
-instance BindStruct (Alt a) where
+instance BindStruct (Alt a n) n where
  slurpBindTree alt
   = case alt of
         AAlt PDefault x
@@ -66,7 +66,7 @@ instance BindStruct (Alt a) where
          -> [bindDefX BindCasePat bs [x]]
 
 
-instance BindStruct (Witness a) where
+instance BindStruct (Witness a n) n where
  slurpBindTree ww
   = case ww of
         WVar u          -> [BindUse BoundWit u]

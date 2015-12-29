@@ -146,6 +146,7 @@ convertExp ectx ctx xx
           $ vcat [ text "Cannot convert function abstraction in this context."
                  , text "The program must be lambda-lifted before conversion." ]
 
+
         ---------------------------------------------------
         -- Polymorphic instantiation.
         --  A polymorphic function is being applied without any associated type
@@ -162,6 +163,7 @@ convertExp ectx ctx xx
                                                 -- TODO: can bind vals with arity == 0
                                                 --       but not others.
          -> convertX ExpBody ctx xF
+
 
         ---------------------------------------------------
         -- Fully applied primitive data constructor.

@@ -17,6 +17,7 @@ import Control.Monad
 import qualified DDC.Type.Env                   as Env
 import qualified DDC.Core.Salt                  as A
 import qualified DDC.Core.Salt.Convert          as A
+import qualified DDC.Core.Salt.Exp              as A
 import qualified DDC.Core.Module                as C
 import qualified DDC.Core.Exp                   as C
 import qualified Data.Map                       as Map
@@ -33,32 +34,32 @@ import qualified Data.List                      as List
 --
 --   Converted atoms can be used directly as arguments to LLVM instructions.
 --
-mconvAtom :: Context -> C.Exp a A.Name -> Maybe (ConvertM Exp)
+mconvAtom :: Context -> A.Exp -> Maybe (ConvertM Exp)
 mconvAtom ctx xx
  = let  pp      = contextPlatform ctx
         kenv    = contextKindEnv  ctx
    in case xx of
 
         -- Global names
-        C.XVar _ (C.UName _)
+        A.XVar (C.UName _)
          |  Just mv     <- takeGlobalV ctx xx
          -> Just $ do  
                 var     <- mv
                 return  $ XVar var
 
         -- Local names
-        C.XVar _ (C.UName _)
+        A.XVar (C.UName _)
          |  Just mv     <- takeLocalV ctx xx
          -> Just $ do
                 var     <- mv
                 return  $ XVar var
 
         -- Literal unit values are represented as a null pointer.
-        C.XCon _ C.DaConUnit
+        A.XCon C.DaConUnit
          -> Just $ return $ XLit (LitNull (TPointer (tObj pp)))
 
         -- Primitive unboxed literals.
-        C.XCon _ dc
+        A.XCon dc
          | C.DaConPrim n t <- dc
          -> do case n of
                 A.NameLitBool b
@@ -171,13 +172,12 @@ bindLocalBs ctx (b : bs)
 
 -- | Take a variable from an expression as a local var, if any.
 takeLocalV  
-        :: Context
-        -> C.Exp a A.Name  
+        :: Context -> A.Exp
         -> Maybe (ConvertM Var)
 
 takeLocalV ctx xx
  = case xx of
-        C.XVar _ (C.UName nm)
+        A.XVar (C.UName nm)
          |     Just v     <- Map.lookup nm (contextNames ctx)
          ->    Just (return v)
         _ ->   Nothing
@@ -189,8 +189,7 @@ takeLocalV ctx xx
 --   TODO: Make sure these get sanitized.
 --
 takeGlobalV  
-        :: Context
-        -> C.Exp a A.Name  
+        :: Context -> A.Exp
         -> Maybe (ConvertM Var)
 
 takeGlobalV ctx xx
@@ -200,7 +199,7 @@ takeGlobalV ctx xx
         tenv    = contextTypeEnvTop  ctx
 
    in case xx of
-        C.XVar _ u@(C.UName nSuper)
+        A.XVar u@(C.UName nSuper)
          | Just t   <- Env.lookup u tenv
          -> Just $ do
                 let mImport  = lookup nSuper (C.moduleImportValues mm)

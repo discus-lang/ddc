@@ -12,6 +12,7 @@ import DDC.Core.Compounds
 import Data.Sequence                    (Seq)
 import qualified DDC.Core.Exp           as C
 import qualified DDC.Core.Salt          as A
+import qualified DDC.Core.Salt.Exp      as A
 import qualified Data.Sequence          as Seq
 import qualified Data.Map               as Map
 
@@ -28,17 +29,18 @@ convPrimCast
         -> [C.Exp a A.Name]     -- ^ Arguments to primitive.
         -> Maybe (ConvertM (Seq AnnotInstr))
 
-convPrimCast ctx mdst p _tPrim xs
- = case p of
+convPrimCast ctx mdst p _tPrim xs0
+ = let  Right xs        = sequence $ fmap A.fromAnnot xs0
+   in case p of
         A.PrimCast A.PrimCastConvert
-         | [C.XType _ tDst, C.XType _ tSrc, xSrc] <- xs
+         | [A.XType tDst, A.XType tSrc, xSrc] <- xs
          , Just vDst            <- mdst
          -> Just $ do
                 instr   <- convPrimConvert ctx tDst vDst tSrc xSrc
                 return  $  Seq.singleton (annotNil instr)
 
         A.PrimCast A.PrimCastPromote
-         | [C.XType _ tDst, C.XType _ tSrc, xSrc] <- xs
+         | [A.XType tDst, A.XType tSrc, xSrc] <- xs
          , Just vDst            <- mdst
          , Just mSrc            <- mconvAtom ctx xSrc
          -> Just $ do
@@ -47,7 +49,7 @@ convPrimCast ctx mdst p _tPrim xs
                 return  $  Seq.singleton (annotNil instr) 
 
         A.PrimCast A.PrimCastTruncate
-         | [C.XType _ tDst, C.XType _ tSrc, xSrc] <- xs
+         | [A.XType tDst, A.XType tSrc, xSrc] <- xs
          , Just vDst            <- mdst
          , Just mSrc            <- mconvAtom ctx xSrc
          -> Just $ do
@@ -64,7 +66,7 @@ convPrimCast ctx mdst p _tPrim xs
 convPrimConvert
         :: Context
         -> C.Type A.Name -> Var
-        -> C.Type A.Name -> C.Exp a A.Name
+        -> C.Type A.Name -> A.Exp
         -> ConvertM Instr
 
 convPrimConvert ctx tDst vDst tSrc xSrc
@@ -88,9 +90,9 @@ convPrimConvert ctx tDst vDst tSrc xSrc
           -- Argument is a variable that has been bound to an application of
           -- a super variable to some type arguments.
           | tDst'      == TInt (8 * platformAddrBytes pp)
-          , C.XVar a (C.UName nVar) <- xSrc
+          , A.XVar (C.UName nVar)   <- xSrc
           , Just (nSuper, _tsArgs)  <- Map.lookup nVar (contextSuperBinds ctx)
-          , Just mSrc               <- mconvAtom ctx (C.XVar a (C.UName nSuper))
+          , Just mSrc               <- mconvAtom ctx (A.XVar (C.UName nSuper))
           -> do xSrc' <- mSrc
                 return $ IConv vDst ConvPtrtoint xSrc'
 

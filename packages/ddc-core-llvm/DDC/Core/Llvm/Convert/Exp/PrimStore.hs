@@ -10,10 +10,12 @@ import DDC.Core.Llvm.Convert.Base
 import DDC.Core.Llvm.Metadata.Tbaa
 import DDC.Core.Llvm.Runtime
 import DDC.Core.Salt.Platform
-import Data.Sequence            (Seq)
-import qualified DDC.Core.Exp   as C
-import qualified DDC.Core.Salt  as A
-import qualified Data.Sequence  as Seq
+import DDC.Core.Generic.BindStruct      ()
+import Data.Sequence                    (Seq)
+import qualified DDC.Core.Exp           as C
+import qualified DDC.Core.Salt          as A
+import qualified DDC.Core.Salt.Exp      as A
+import qualified Data.Sequence          as Seq
 
 
 -- | Convert a primitive store operation to LLVM, 
@@ -27,19 +29,21 @@ convPrimStore
         -> [C.Exp a A.Name]     -- ^ Arguments to prim.
         -> Maybe (ConvertM (Seq AnnotInstr))
 
-convPrimStore ctx mdst p _tPrim xs
+convPrimStore ctx mdst p _tPrim xs0
  = let  pp      = contextPlatform ctx
         mdsup   = contextMDSuper  ctx
         kenv    = contextKindEnv  ctx
         atom    = mconvAtom       ctx
         atoms a = sequence $ map (mconvAtom ctx) a
 
+        Right xs = sequence $ fmap A.fromAnnot xs0
+
    in case p of
 
         -- Get the size in bytes of some primitive type.
         A.PrimStore A.PrimStoreSize
-         | [C.XType _ t]        <- xs
-         , Just vDst            <- mdst
+         | [A.XType t]  <- xs
+         , Just vDst    <- mdst
          -> Just $ do
                 t'      <- convertType pp kenv t
 
@@ -59,8 +63,8 @@ convPrimStore ctx mdst p _tPrim xs
 
         -- Get the log2 size in bytes of some primtive type.
         A.PrimStore A.PrimStoreSize2
-         | [C.XType _ t]        <- xs
-         , Just vDst            <- mdst
+         | [A.XType t]  <- xs
+         , Just vDst    <- mdst
          -> Just $ do
                 t'      <- convertType pp kenv t
 
@@ -141,7 +145,7 @@ convPrimStore ctx mdst p _tPrim xs
 
         -- Read a value via a pointer.
         A.PrimStore A.PrimStoreRead
-         | C.XType{} : args             <- xs
+         | A.XType{} : args             <- xs
          , Just vDst@(Var nDst tDst)    <- mdst
          , Just [mAddr, mOffset]        <- atoms args
          -> Just $ do
@@ -157,7 +161,7 @@ convPrimStore ctx mdst p _tPrim xs
 
         -- Write a value via a pointer.
         A.PrimStore A.PrimStoreWrite
-         | C.XType{} : args             <- xs
+         | A.XType{} : args             <- xs
          , Just [mAddr, mOffset, mVal]  <- atoms args
          -> Just $ do
                 xAddr'   <- mAddr
@@ -195,7 +199,7 @@ convPrimStore ctx mdst p _tPrim xs
 
         -- Read from a raw address.
         A.PrimStore A.PrimStorePeek
-         | C.XType{} : C.XType _ tDst : args     <- xs
+         | A.XType{} : A.XType tDst : args     <- xs
          , Just vDst@(Var nDst _)       <- mdst
          , Just [mPtr, mOffset]         <- atoms args
          -> Just $ do
@@ -216,7 +220,7 @@ convPrimStore ctx mdst p _tPrim xs
 
         -- Write to a raw address.
         A.PrimStore A.PrimStorePoke
-         | C.XType{} : C.XType _ tDst : args    <- xs
+         | A.XType{} : A.XType tDst : args    <- xs
          , Just [mPtr, mOffset, mVal]           <- atoms args
          -> Just $ do
                 tDst'    <- convertType pp kenv tDst
@@ -269,7 +273,7 @@ convPrimStore ctx mdst p _tPrim xs
 
         -- Construct a pointer from an address.
         A.PrimStore A.PrimStoreMakePtr
-         | [C.XType{}, C.XType{}, xAddr] <- xs
+         | [A.XType{}, A.XType{}, xAddr] <- xs
          , Just vDst    <- mdst
          , Just mAddr   <- atom xAddr
          -> Just $ do
@@ -280,7 +284,7 @@ convPrimStore ctx mdst p _tPrim xs
 
         -- Take an address from a pointer.
         A.PrimStore A.PrimStoreTakePtr
-         | [C.XType{}, C.XType{}, xPtr] <- xs
+         | [A.XType{}, A.XType{}, xPtr] <- xs
          , Just vDst    <- mdst
          , Just mPtr    <- atom xPtr
          -> Just $ do
@@ -291,7 +295,7 @@ convPrimStore ctx mdst p _tPrim xs
 
         -- Case a pointer from one type to another.
         A.PrimStore A.PrimStoreCastPtr
-         | [C.XType{}, C.XType{}, C.XType{}, xPtr] <- xs
+         | [A.XType{}, A.XType{}, A.XType{}, xPtr] <- xs
          , Just vDst    <- mdst
          , Just mPtr    <- atom xPtr
          -> Just $ do  

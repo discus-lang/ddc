@@ -8,9 +8,10 @@ import DDC.Core.Llvm.Convert.Type
 import DDC.Core.Llvm.Convert.Context
 import DDC.Core.Llvm.Convert.Base
 import Data.Sequence            (Seq)
-import qualified DDC.Core.Exp   as C
-import qualified DDC.Core.Salt  as A
-import qualified Data.Sequence  as Seq
+import qualified DDC.Core.Exp           as C
+import qualified DDC.Core.Salt          as A
+import qualified DDC.Core.Salt.Exp      as A
+import qualified Data.Sequence          as Seq
 
 
 -- | Convert a primitive store operation to LLVM.
@@ -23,8 +24,9 @@ convPrimCall
         -> [C.Exp a A.Name]     -- ^ Arguments to prim.
         -> Maybe (ConvertM (Seq AnnotInstr))
 
-convPrimCall ctx mDst p _tPrim xs
- = let  pp      = contextPlatform ctx
+convPrimCall ctx mDst p _tPrim xs0
+ = let  pp              = contextPlatform ctx
+        Right xs        = sequence $ fmap A.fromAnnot xs0
    in case p of
         A.PrimCall (A.PrimCallStd arity)
          | Just (mFun : msArgs) <- sequence $ map (mconvAtom ctx) xs

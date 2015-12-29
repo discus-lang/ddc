@@ -1,11 +1,21 @@
 
+-- | Generic expression representation.
+--
+--   Each of these types is polymorphic in the names used for
+--   (b)inding occurrences, bo(u)nd occurrences, (c)onstructors and (p)rimitives.
+--
+--   Clients of this module are expected to defined their own type synonyms
+--   for 'Exp', 'Lets' and so on that instantiate each of these data types to
+--   use more specific types for names.
+--
 module DDC.Core.Generic.Exp where
 import DDC.Core.Exp.DaCon
 import DDC.Type.Exp
 
+
 ---------------------------------------------------------------------------------------------------
--- | Expression representation.
-data Exp b u c p
+-- | Generic expression representation.
+data GExp b u c p
         -- | Value variable or primitive operator.
         = XVar     !u
 
@@ -16,38 +26,38 @@ data Exp b u c p
         | XPrim    !p
 
         -- | Type abstraction (level-1 abstration).
-        | XLAM     !b               !(Exp b u c p)
+        | XLAM     !b               !(GExp b u c p)
 
         -- | Value and witness abstraction (level-0 abstraction).
-        | XLam     !b               !(Exp b u c p)
+        | XLam     !b               !(GExp b u c p)
 
         -- | Application.
-        | XApp     !(Exp  b u c p)  !(Exp b u c p)
+        | XApp     !(GExp  b u c p) !(GExp b u c p)
 
         -- | Possibly recursive bindings.
-        | XLet     !(Lets b u c p)  !(Exp b u c p)
+        | XLet     !(GLets b u c p) !(GExp b u c p)
 
         -- | Case branching.
-        | XCase    !(Exp  b u c p)  ![Alt b u c p]
+        | XCase    !(GExp  b u c p) ![GAlt b u c p]
 
         -- | Type casting.
-        | XCast    !(Cast b u c p)  !(Exp b u c p)
+        | XCast    !(GCast b u c p) !(GExp b u c p)
 
         -- | Type can appear as the argument of an application.
         | XType    !(Type c)
 
         -- | Witness can appear as the argument of an application.
-        | XWitness !(Witness b u c p)
+        | XWitness !(GWitness b u c p)
         deriving Show
 
 
 -- | Possibly recursive bindings.
-data Lets b u c p
+data GLets b u c p
         -- | Non-recursive binding.
-        = LLet     !b           !(Exp b u c p)
+        = LLet     !b           !(GExp b u c p)
 
         -- | Recursive binding.
-        | LRec     ![(b, Exp b u c p)]
+        | LRec     ![(b, GExp b u c p)]
 
         -- | Introduce a private region variable and witnesses to its properties.
         | LPrivate ![b] !(Maybe (Type c)) ![b]
@@ -55,13 +65,13 @@ data Lets b u c p
 
 
 -- | Case alternatives.
-data Alt b u c p
-        = AAlt !(Pat b u c p) !(Exp b u c p)
+data GAlt b u c p
+        = AAlt !(GPat b u c p) !(GExp b u c p)
         deriving Show
 
 
 -- | Patterns.
-data Pat b u c p
+data GPat b u c p
         -- | The default pattern always succeeds.
         = PDefault
 
@@ -71,12 +81,12 @@ data Pat b u c p
 
 
 -- | Type casts.
-data Cast b u c p
+data GCast b u c p
         -- | Weaken the effect of an expression.
         = CastWeakenEffect   !(Type c)
 
         -- | Purify the effect of an expression.
-        | CastPurify         !(Witness b u c p)
+        | CastPurify         !(GWitness b u c p)
 
         -- | Box up a computation, suspending its evaluation and capturing 
         --   its effects in the S computaiton type.
@@ -88,15 +98,15 @@ data Cast b u c p
 
 
 -- | Witnesses.
-data Witness b u c p
+data GWitness b u c p
         -- | Witness variable.
         = WVar  !u
 
         -- | Witness constructor.
-        | WCon  !(WiCon b u c p)
+        | WCon  !(GWiCon b u c p)
 
         -- | Witness application.
-        | WApp  !(Witness b u c p) !(Witness b u c p)
+        | WApp  !(GWitness b u c p) !(GWitness b u c p)
 
         -- | Type can appear as an argument of a witness application.
         | WType !(Type c)
@@ -104,7 +114,7 @@ data Witness b u c p
 
 
 -- | Witness constructors.
-data WiCon b u c p
+data GWiCon b u c p
         -- | Witness constructors defined in the environment.
         --   In the interpreter we use this to hold runtime capabilities.
         --   The attached type must be closed.

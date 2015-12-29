@@ -49,7 +49,7 @@ makeNamifier new env
 -- | Namify a thing, 
 --   not reusing names already in the program.
 namifyUnique
-        :: (Ord n, Namify c, BindStruct c)
+        :: (Ord n, Namify c, BindStruct (c n) n)
         => (KindEnv n -> Namifier s n)  -- ^ Make a namifier for level-1 names.
         -> (TypeEnv n -> Namifier s n)  -- ^ Make a namifier for level-0 names.
         -> c n

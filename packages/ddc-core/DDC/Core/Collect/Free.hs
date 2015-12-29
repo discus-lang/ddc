@@ -17,8 +17,8 @@ import Control.Monad
 
 -- freeX ----------------------------------------------------------------------
 -- | Collect the free Data and Witness variables in a thing (level-0).
-freeX   :: (BindStruct c, Ord n) 
-        => Env n -> c n -> Set (Bound n)
+freeX   :: (BindStruct c n, Ord n) 
+        => Env n -> c -> Set (Bound n)
 freeX tenv xx = Set.unions $ map (freeOfTreeX tenv) $ slurpBindTree xx
 
 freeOfTreeX :: Ord n => Env n -> BindTree n -> Set (Bound n)
@@ -41,13 +41,13 @@ freeOfTreeX tenv tt
 
 
 -- Module ---------------------------------------------------------------------
-instance BindStruct (Module a) where
+instance BindStruct (Module a n) n where
  slurpBindTree mm
         = slurpBindTree $ moduleBody mm
 
 
 -- Exp ------------------------------------------------------------------------
-instance BindStruct (Exp a) where
+instance BindStruct (Exp a n) n where
  slurpBindTree xx
   = case xx of
         XVar _ u
@@ -82,7 +82,7 @@ instance BindStruct (Exp a) where
         XWitness _ w    -> slurpBindTree w
 
 
-instance BindStruct (Cast a) where
+instance BindStruct (Cast a n) n where
  slurpBindTree cc
   = case cc of
         CastWeakenEffect  eff   -> slurpBindTree eff
@@ -91,7 +91,7 @@ instance BindStruct (Cast a) where
         CastRun                 -> []
 
 
-instance BindStruct (Alt a) where
+instance BindStruct (Alt a n) n where
  slurpBindTree alt
   = case alt of
         AAlt PDefault x
@@ -101,7 +101,7 @@ instance BindStruct (Alt a) where
          -> [bindDefX BindCasePat bs [x]]
 
 
-instance BindStruct (Witness a) where
+instance BindStruct (Witness a n) n where
  slurpBindTree ww
   = case ww of
         WVar _ u        -> [BindUse BoundWit u]
@@ -111,8 +111,8 @@ instance BindStruct (Witness a) where
 
 
 -- | Helper for constructing the `BindTree` for an expression or witness binder.
-bindDefX :: BindStruct c 
-         => BindWay -> [Bind n] -> [c n] -> BindTree n
+bindDefX :: BindStruct c n
+         => BindWay -> [Bind n] -> [c] -> BindTree n
 bindDefX way bs xs
         = BindDef way bs
         $   concatMap (slurpBindTree . typeOfBind) bs

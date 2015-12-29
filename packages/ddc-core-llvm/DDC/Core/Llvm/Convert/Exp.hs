@@ -20,6 +20,7 @@ import DDC.Core.Compounds
 import Control.Applicative
 import Data.Sequence                            (Seq, (|>), (><))
 import qualified DDC.Core.Salt                  as A
+import qualified DDC.Core.Salt.Exp              as A
 import qualified DDC.Core.Exp                   as C
 import qualified DDC.Type.Env                   as Env
 import qualified Data.Sequence                  as Seq
@@ -118,8 +119,12 @@ convertBody ctx ectx blocks label instrs xx
           ,  _tsArgs                              <- take arity args
           ,  C.XType _ tResult : xFunTys : xsArgs <- drop arity args
           ,  Just (xFun, _xsTys)                  <- takeXApps xFunTys
-          ,  Just mFun                            <- takeGlobalV ctx xFun
-          ,  Just msArgs                          <- sequence $ map (mconvAtom ctx) xsArgs
+
+          ,  Right xFun'                          <- A.fromAnnot xFun
+          ,  Just mFun                            <- takeGlobalV ctx xFun'
+
+          ,  Right xsArgs''                       <- sequence $ map A.fromAnnot xsArgs
+          ,  Just  msArgs                         <- sequence $ map (mconvAtom ctx) xsArgs''
           -> do 
                 Var nFun _      <- mFun
                 xsArgs'         <- sequence msArgs
@@ -275,7 +280,8 @@ convertExp ctx ectx xx
         case xx of
          -- Atoms
          _ | ExpAssign _ vDst   <- ectx
-           , Just mx            <- mconvAtom ctx xx
+           , Right xx'          <- A.fromAnnot xx
+           , Just mx            <- mconvAtom ctx xx'
            -> do x' <- mx
                  return $ Seq.singleton $ annotNil 
                         $ ISet vDst x'
@@ -294,8 +300,10 @@ convertExp ctx ectx xx
           -- Call to top-level super.
           | Just (xFun@(C.XVar _ u), xsArgs) <- takeXApps xx
           , Just tSuper         <- Env.lookup u tenv
-          , Just msArgs_value   <- sequence $ map (mconvAtom ctx) $ eraseTypeWitArgs xsArgs
-          , Just mFun           <- takeGlobalV ctx xFun
+          , Right xsArgs'       <- sequence $ fmap A.fromAnnot $ eraseTypeWitArgs xsArgs
+          , Just msArgs_value   <- sequence $ map (mconvAtom ctx) xsArgs'
+          , Right xFun'         <- A.fromAnnot xFun
+          , Just mFun           <- takeGlobalV ctx xFun'
           -> do 
                 Var nFun _      <- mFun
                 xsArgs_value'   <- sequence $ msArgs_value

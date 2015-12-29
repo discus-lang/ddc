@@ -1,22 +1,31 @@
 
-module DDC.Core.Salt.Exp where
+module DDC.Core.Salt.Exp 
+        ( module DDC.Core.Generic.Exp
+        , FromAnnot (..)
+        , Error (..)
 
-import qualified DDC.Core.Salt.Name     as A
+        , Exp, Lets, Alt, Pat, Cast, Witness, WiCon)
+where
+import DDC.Core.Generic.Exp
 import qualified DDC.Core.Generic.Exp   as G
+import qualified DDC.Core.Salt.Name     as A
 import qualified DDC.Core.Annot.Exp     as N
 import qualified DDC.Type.Exp           as C
 
 
-type Exp        = G.Exp         (C.Bind A.Name) (C.Bound A.Name) A.Name A.Name
-type Lets       = G.Lets        (C.Bind A.Name) (C.Bound A.Name) A.Name A.Name
-type Alt        = G.Alt         (C.Bind A.Name) (C.Bound A.Name) A.Name A.Name
-type Pat        = G.Pat         (C.Bind A.Name) (C.Bound A.Name) A.Name A.Name
-type Cast       = G.Cast        (C.Bind A.Name) (C.Bound A.Name) A.Name A.Name
-type Witness    = G.Witness     (C.Bind A.Name) (C.Bound A.Name) A.Name A.Name
-type WiCon      = G.WiCon       (C.Bind A.Name) (C.Bound A.Name) A.Name A.Name
+---------------------------------------------------------------------------------------------------
+-- Type synonyms for the Salt fragment.
+type Exp        = GExp          (C.Bind A.Name) (C.Bound A.Name) A.Name A.Name
+type Lets       = GLets         (C.Bind A.Name) (C.Bound A.Name) A.Name A.Name
+type Alt        = GAlt          (C.Bind A.Name) (C.Bound A.Name) A.Name A.Name
+type Pat        = GPat          (C.Bind A.Name) (C.Bound A.Name) A.Name A.Name
+type Cast       = GCast         (C.Bind A.Name) (C.Bound A.Name) A.Name A.Name
+type Witness    = GWitness      (C.Bind A.Name) (C.Bound A.Name) A.Name A.Name
+type WiCon      = GWiCon        (C.Bind A.Name) (C.Bound A.Name) A.Name A.Name
 
 
 ---------------------------------------------------------------------------------------------------
+-- | Convert annotated version of the Core language to the Salt fragment.
 class FromAnnot c1 c2 | c1 -> c2 where
  fromAnnot :: c1 -> Either Error c2
 
@@ -24,7 +33,7 @@ data Error
  = Error
 
 
-instance FromAnnot (N.Exp () A.Name) Exp where
+instance FromAnnot (N.Exp a A.Name) Exp where
  fromAnnot xx
   = case xx of
         N.XVar  _ u             -> G.XVar     <$> fromAnnot u
@@ -39,7 +48,7 @@ instance FromAnnot (N.Exp () A.Name) Exp where
         N.XWitness _ w          -> G.XWitness <$> fromAnnot w
 
 
-instance FromAnnot (N.Lets () A.Name) Lets where
+instance FromAnnot (N.Lets a A.Name) Lets where
  fromAnnot lts
   = case lts of
         N.LLet u x              -> G.LLet     <$> fromAnnot u <*> fromAnnot x
@@ -47,7 +56,7 @@ instance FromAnnot (N.Lets () A.Name) Lets where
         N.LPrivate rs mt wt     -> G.LPrivate <$> fromAnnots rs <*> fromAnnotM mt <*> fromAnnots wt
 
 
-instance FromAnnot (N.Alt () A.Name) Alt where
+instance FromAnnot (N.Alt a A.Name) Alt where
  fromAnnot aa
   = case aa of
         N.AAlt w x              -> G.AAlt <$> fromAnnot w <*> fromAnnot x
@@ -60,7 +69,7 @@ instance FromAnnot (N.Pat A.Name) Pat where
         N.PData dc bs           -> G.PData <$> pure dc <*> fromAnnots bs
 
 
-instance FromAnnot (N.Cast () A.Name) Cast where
+instance FromAnnot (N.Cast a A.Name) Cast where
  fromAnnot cc
   = case cc of
         N.CastWeakenEffect t    -> G.CastWeakenEffect <$> pure t
@@ -69,7 +78,7 @@ instance FromAnnot (N.Cast () A.Name) Cast where
         N.CastRun               -> pure G.CastRun
 
 
-instance FromAnnot (N.Witness () A.Name) Witness where
+instance FromAnnot (N.Witness a A.Name) Witness where
  fromAnnot ww
   = case ww of
         N.WVar  _ u             -> G.WVar  <$> pure u

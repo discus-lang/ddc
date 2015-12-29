@@ -72,7 +72,7 @@ lookups us mdsup = map (flip lookup mdsup) us
 
 -- | Generate tbaa metadata for a top-level Salt supercombinator.
 deriveMD
-      :: (BindStruct (Exp ()))
+      :: (BindStruct (Exp () A.Name) A.Name)
       => String                 -- ^ Sanitized name of super
       -> Exp () A.Name          -- ^ Super to derive from
       -> ConvertM MDSuper       -- ^ Metadata encoding witness information            
@@ -126,7 +126,7 @@ freshRootName qualify = liftA (\i -> qualify ++ "_ROOT_" ++ (show i)) newUnique
 
 
 -- | Attach relevant metadata to instructions
-annot :: (BindStruct c, Show (c A.Name))
+annot :: (BindStruct (c A.Name) A.Name, Show (c A.Name))
       => KindEnv A.Name 
       -> MDSuper        -- ^ Metadata      
       -> [c A.Name]     -- ^ Things to lookup for Meta data.
@@ -212,7 +212,7 @@ partitionWits ws
 
 
 -- | Collect region bounds
-collectRegsU :: (BindStruct c) => KindEnv A.Name -> c A.Name -> [RegBound]
+collectRegsU :: (BindStruct (c A.Name) A.Name) => KindEnv A.Name -> c A.Name -> [RegBound]
 collectRegsU kenv cc
  = let isReg u = case Env.lookup u kenv of
                       Just t | isRegionKind t -> True
@@ -221,7 +221,7 @@ collectRegsU kenv cc
 
 
 -- | Collect region bindings
-collectRegsB :: (BindStruct c) => c A.Name -> [RegBound]
+collectRegsB :: (BindStruct (c A.Name) A.Name) => c A.Name -> [RegBound]
 collectRegsB cc
  = let isBindReg b 
          = case b of
@@ -232,7 +232,7 @@ collectRegsB cc
 
    
 -- | Collect witness bindings together with their types (for convinience)
-collectWitsB :: (BindStruct c) => c A.Name -> [WitType]
+collectWitsB :: (BindStruct (c A.Name) A.Name) => c A.Name -> [WitType]
 collectWitsB cc
  = let isBindWit b
         = let t = typeOfBind b
