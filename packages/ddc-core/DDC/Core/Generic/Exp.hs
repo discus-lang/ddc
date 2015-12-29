@@ -33,7 +33,7 @@ data RExp l
         | XPrim    !(Prim  l)
 
         -- | Type abstraction (level-1 abstration).
-        | XLAM     !(Bind  l)
+        | XLAM     !(Bind  l)  !(Exp l)
 
         -- | Value and witness abstraction (level-0 abstraction).
         | XLam     !(Bind  l)  !(Exp l)
@@ -89,7 +89,7 @@ data RCast l
         = CastWeakenEffect   !(Type l)
 
         -- | Purify the effect of an expression.
-        | CastPurify
+        | CastPurify         !(Witness l)
 
         -- | Box up a computation, suspending its evaluation and capturing 
         --   its effects in the S computaiton type.
@@ -143,7 +143,7 @@ deriving instance
  => Show (RPat l)
 
 deriving instance
-   (Show (Type l))
+   (Show (Type l),  Show (Witness l))
  => Show (RCast l)
 
 deriving instance 
