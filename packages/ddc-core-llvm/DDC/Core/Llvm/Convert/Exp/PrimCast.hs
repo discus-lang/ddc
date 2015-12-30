@@ -141,7 +141,7 @@ convPrimPromote ctx tDst vDst tSrc xSrc
          -- This was supposed to be a valid promotion.
          --  If this happens then the above cases do not cover all the
          --  cases that A.primCasePromoteIsValid accepts.
-         _ -> error "ddc-core-llvm.convertPrimPromote: cannot convert"
+         _ -> error "ddc-core-llvm.convertPrimPromote: cannot convert"  -- TODO: convert to error
 
  -- Promotion is not valid on this platform.
  | otherwise = throw $ ErrorInvalidPromotion tSrc tDst
@@ -185,7 +185,7 @@ convPrimTruncate ctx tDst vDst tSrc xSrc
          -- This was supposed to be a valid truncation.
          --  If this happens then the above cases do not cover all the
          --  cases that A.primCaseTruncateIsValid accepts.
-         _ -> error "ddc-core-llvm.convPrimTruncate: cannot convert"
+         _ -> error "ddc-core-llvm.convPrimTruncate: cannot convert"    -- TODO: convert to error.
 
  -- Truncation is not valid on this platform.
  | otherwise = throw $ ErrorInvalidTruncation tSrc tDst

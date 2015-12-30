@@ -25,7 +25,8 @@ import qualified Data.List                      as List
 
 
 -- Arguments ------------------------------------------------------------------
--- | Convert a function argument.
+-- | Convert a function argument expression
+--   yielding Nothing if this is a `Witness` or `Type`.
 mconvArg :: Context -> A.Arg -> Maybe (ConvertM Exp)
 mconvArg ctx aa
  = case aa of
@@ -35,12 +36,11 @@ mconvArg ctx aa
 
 
 -- Atoms ----------------------------------------------------------------------
--- | If this looks like an atomic expression, 
---    then if it is one then produce an computation to convert it to LLVM, 
---    otherwise Nothing.
+-- | Convert an atomic expression to LLVM, 
+--   or `Nothing` if this is not one of those.
 --
---   If the atom is mistyped or malformed then running the compution will
---   throw an exception in the ConvertM monad.
+--   If the expression is an atom but is mistyped or malformed then running
+--   the returned computation will throw an exception in the ConvertM monad.
 --
 --   Converted atoms can be used directly as arguments to LLVM instructions.
 --
@@ -72,6 +72,7 @@ mconvAtom ctx xx
         A.XCon dc
          | C.DaConPrim n t <- dc
          -> do case n of
+                -- Literal booleans.
                 A.NameLitBool b
                  -> let i | b           = 1
                           | otherwise   = 0
@@ -79,36 +80,43 @@ mconvAtom ctx xx
                         t' <- convertType pp kenv t
                         return $ XLit (LitInt t' i)
 
+                -- Literal natural numbers of some width.
                 A.NameLitNat nat   
                  -> Just $ do
                         t' <- convertType pp kenv t
                         return $ XLit (LitInt t' nat)
 
+                -- Literal integers of some width.
                 A.NameLitInt  val
                  -> Just $ do
                         t' <- convertType pp kenv t
                         return $ XLit (LitInt t' val)
 
+                -- Literal size value.
                 A.NameLitSize val
                  -> Just $ do
                         t' <- convertType pp kenv t
                         return $ XLit (LitInt t' val)
 
+                -- Literal binary word of some width.
                 A.NameLitWord val _
                  -> Just $ do
                         t' <- convertType pp kenv t
                         return $ XLit (LitInt t' val)
 
+                -- Literal floating point value of some width.
                 A.NameLitFloat val _
                  -> Just $ do
                         t' <- convertType pp kenv t
                         return $ XLit (LitFloat t' val)
 
+                -- Literal string.
                 A.NameLitString tx
                  -> Just $ do
-                        -- Add string constant to the constants map.
-                        -- These will be allocated in static memory, and given
-                        -- the returned name.
+                        -- Add string constant to the constants map for the
+                        -- current module. These constants will be allocated 
+                        -- into static memory, and reachable by the returned
+                        -- name.
                         var     <- addConstant ctx $ makeLitString tx
                         let w   = 8 * platformAddrBytes pp
                         
@@ -117,6 +125,7 @@ mconvAtom ctx xx
                                        [ XLit (LitInt (TInt w) 0)
                                        , XLit (LitInt (TInt w) 0) ]
 
+                -- Literal constructor tag.
                 A.NameLitTag  tag   
                  -> Just $ do
                         t' <- convertType pp kenv t

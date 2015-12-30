@@ -47,14 +47,20 @@ type Type       = C.Type    A.Name
 class FromAnnot c1 c2 | c1 -> c2 where
  fromAnnot :: c1 -> Either ErrorFromAnnot c2
 
+
+-- | Things that can go wrong when converting Salt code.
 data ErrorFromAnnot
- = ErrorFromAnnot
+        -- | Found a type that isn't part of a function application.
+        = ErrorFromAnnotFoundNakedType
+
+        -- | Found a witness that isn't part of a function application.
+        | ErrorFromAnnotFoundNakedWitness
 
 
 instance FromAnnot (N.Exp a A.Name) Exp where
  fromAnnot xx
   = case xx of
-        N.XVar  _ (C.UPrim p _) 
+        N.XVar  _ (C.UPrim p _)         -- TODO: unwrap prims.
          -> G.XPrim <$> pure p
 
         N.XVar  _ u
@@ -87,8 +93,11 @@ instance FromAnnot (N.Exp a A.Name) Exp where
         N.XCast _ c x
          -> G.XCast <$> fromAnnot c   <*> fromAnnot x
 
-        N.XType{}       -> error "fark"         -- TODO: real error 
-        N.XWitness{}    -> error "fark"         -- TODO: Real error
+        N.XType{}
+         -> Left $ ErrorFromAnnotFoundNakedType
+
+        N.XWitness{}
+         -> Left $ ErrorFromAnnotFoundNakedWitness
 
 
 instance FromAnnot (N.Lets a A.Name) Lets where
