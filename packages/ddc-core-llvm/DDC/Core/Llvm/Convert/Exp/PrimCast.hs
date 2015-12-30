@@ -12,7 +12,6 @@ import DDC.Core.Compounds
 import Data.Sequence                    (Seq)
 import qualified DDC.Core.Exp           as C
 import qualified DDC.Core.Salt          as A
-import qualified DDC.Core.Salt.Exp      as A
 import qualified Data.Sequence          as Seq
 import qualified Data.Map               as Map
 

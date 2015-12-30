@@ -3,9 +3,11 @@
 module DDC.Core.Salt.Exp 
         ( module DDC.Core.Generic.Exp
         , FromAnnot (..)
-        , Error (..)
+        , ErrorFromAnnot (..)
 
-        , Exp, Abs, Arg, Lets, Alt, Pat, Cast, Witness, WiCon)
+        , Annot, Bind, Bound, Prim
+        , Exp, Abs, Arg, Lets, Alt, Pat, Cast, Witness, WiCon
+        , Type)
 where
 import DDC.Core.Generic.Exp
 import qualified DDC.Core.Generic.Exp   as G
@@ -16,24 +18,26 @@ import qualified DDC.Type.Exp           as C
 
 ---------------------------------------------------------------------------------------------------
 -- Type synonyms for the Salt fragment.
+type instance GAnnot A.Name  = ()
+type instance GBind  A.Name  = C.Bind  A.Name
+type instance GBound A.Name  = C.Bound A.Name
+type instance GPrim  A.Name  = A.Name
 
--- TODO: Rename Annot Bind etc below to GAnnot GBind etc.
+type Annot      = GAnnot    A.Name
+type Bind       = GBind     A.Name
+type Bound      = GBound    A.Name
+type Prim       = GPrim     A.Name
+type Exp        = GExp      A.Name
+type Abs        = GAbs      A.Name
+type Arg        = GArg      A.Name
+type Lets       = GLets     A.Name
+type Alt        = GAlt      A.Name
+type Pat        = GPat      A.Name
+type Cast       = GCast     A.Name
+type Witness    = GWitness  A.Name
+type WiCon      = GWiCon    A.Name
 
-instance Language A.Name where
- type Annot A.Name      = ()
- type Bind  A.Name      = C.Bind  A.Name
- type Bound A.Name      = C.Bound A.Name
- type Prim  A.Name      = A.Name
-
-type Exp                = GExp      A.Name
-type Abs                = GAbs      A.Name
-type Arg                = GArg      A.Name
-type Lets               = GLets     A.Name
-type Alt                = GAlt      A.Name
-type Pat                = GPat      A.Name
-type Cast               = GCast     A.Name
-type Witness            = GWitness  A.Name
-type WiCon              = GWiCon    A.Name
+type Type       = C.Type    A.Name
 
 
 ---------------------------------------------------------------------------------------------------
@@ -41,10 +45,10 @@ type WiCon              = GWiCon    A.Name
 --   TODO: Once we're happy the generic representation works, 
 --         make the Tetra -> Salt transform produce this form directly.
 class FromAnnot c1 c2 | c1 -> c2 where
- fromAnnot :: c1 -> Either Error c2
+ fromAnnot :: c1 -> Either ErrorFromAnnot c2
 
-data Error
- = Error
+data ErrorFromAnnot
+ = ErrorFromAnnot
 
 
 instance FromAnnot (N.Exp a A.Name) Exp where

@@ -19,7 +19,6 @@ import DDC.Core.Generic.Compounds
 import Control.Applicative
 import Data.Sequence                            (Seq, (|>), (><))
 import qualified DDC.Core.Salt                  as A
-import qualified DDC.Core.Salt.Exp              as A
 import qualified DDC.Core.Salt.Env              as A
 import qualified DDC.Core.Exp                   as C
 import qualified DDC.Core.Exp.DaCon             as C

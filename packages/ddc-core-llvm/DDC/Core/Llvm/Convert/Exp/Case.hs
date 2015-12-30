@@ -13,7 +13,6 @@ import Control.Monad
 import Data.Maybe
 import Data.Sequence                    (Seq, (<|), (|>), (><))
 import qualified DDC.Core.Salt          as A
-import qualified DDC.Core.Salt.Exp      as A
 import qualified DDC.Core.Exp           as C
 import qualified Data.Sequence          as Seq
 

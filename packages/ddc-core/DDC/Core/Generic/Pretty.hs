@@ -12,8 +12,8 @@ import Prelude                  hiding ((<$>))
 type PrettyLanguage l
         = ( Eq l
           , Pretty l
-          , Pretty (Annot l)
-          , Pretty (Bind l), Pretty (Bound l), Pretty (Prim l))
+          , Pretty (GAnnot l)
+          , Pretty (GBind l), Pretty (GBound l), Pretty (GPrim l))
 
 
 -- Exp --------------------------------------------------------------------------------------------

@@ -18,7 +18,6 @@ import Control.Monad
 import qualified DDC.Type.Env                   as Env
 import qualified DDC.Core.Salt                  as A
 import qualified DDC.Core.Salt.Convert          as A
-import qualified DDC.Core.Salt.Exp              as A
 import qualified DDC.Core.Module                as C
 import qualified DDC.Core.Exp                   as C
 import qualified Data.Map                       as Map
@@ -137,7 +136,7 @@ mconvAtom ctx xx
 --   to avoid name clashes as the the variables in a single LLVM function
 --   are all bound at the same level.
 --
-bindLocalS :: Context -> String -> C.Type A.Name -> ConvertM (Context, Var)
+bindLocalS :: Context -> String -> A.Type -> ConvertM (Context, Var)
 bindLocalS ctx str t
  = do   t'       <- convertType (contextPlatform ctx) (contextKindEnv ctx) t
         let str'  = A.sanitizeName str
@@ -164,7 +163,7 @@ bindLocalV _ _ _
 
 
 -- | Like `bindLocalV`, but take the binder directly.
-bindLocalB  :: Context -> C.Bind A.Name -> ConvertM (Context, Var)
+bindLocalB  :: Context -> A.Bind -> ConvertM (Context, Var)
 bindLocalB ctx b 
  = case b of
         C.BName nm t    -> bindLocalV ctx nm t
@@ -173,7 +172,7 @@ bindLocalB ctx b
 
 
 -- | Like `bindLocalV`, but take some binders directly.
-bindLocalBs :: Context -> [C.Bind A.Name] -> ConvertM (Context, [Var])
+bindLocalBs :: Context -> [A.Bind] -> ConvertM (Context, [Var])
 bindLocalBs ctx []      = return (ctx, [])
 bindLocalBs ctx (b : bs)
  = do   (ctx', v)       <- bindLocalB ctx b

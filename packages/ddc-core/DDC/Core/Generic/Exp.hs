@@ -12,27 +12,26 @@ import qualified DDC.Type.Exp   as T
 --   These produce the types used for annotations, bindings, bound occurrences
 --   and primitives for that language.
 --
-class Language l where
- type Annot l
- type Bind  l    
- type Bound l
- type Prim  l
+type family GAnnot l
+type family GBind  l    
+type family GBound l
+type family GPrim  l
 
 
 ---------------------------------------------------------------------------------------------------
 -- | Generic expression representation.
 data GExp l
         -- | An annotated expression.
-        = XAnnot   !(Annot l)  !(GExp l)
+        = XAnnot   !(GAnnot l)  !(GExp l)
 
         -- | Primitive operator or literal.
-        | XPrim    !(Prim  l)
+        | XPrim    !(GPrim  l)
 
         -- | Data constructor.
         | XCon     !(DaCon l)
 
         -- | Value or Witness variable (level-0).
-        | XVar     !(Bound l)
+        | XVar     !(GBound l)
 
         -- | Function abstraction.
         | XAbs     !(GAbs  l)  !(GExp l)
@@ -56,10 +55,10 @@ data GExp l
 --
 data GAbs l
         -- | Level-1 abstraction (spec)
-        = ALAM     !(Bind l)
+        = ALAM     !(GBind l)
 
         -- | Level-0 abstraction (value and witness)
-        | ALam     !(Bind l)
+        | ALam     !(GBind l)
 
 pattern XLAM b x = XAbs (ALAM b) x
 pattern XLam b x = XAbs (ALam b) x
@@ -84,13 +83,13 @@ data GArg l
 -- | Possibly recursive bindings.
 data GLets l
         -- | Non-recursive binding.
-        = LLet     !(Bind l)  !(GExp l)
+        = LLet     !(GBind l)  !(GExp l)
 
         -- | Recursive binding.
-        | LRec     ![(Bind l, GExp l)]
+        | LRec     ![(GBind l, GExp l)]
 
         -- | Introduce a private region variable and witnesses to its properties.
-        | LPrivate ![Bind l] !(Maybe (T.Type l)) ![Bind l]
+        | LPrivate ![GBind l] !(Maybe (T.Type l)) ![GBind l]
 
 
 -- | Case alternatives.
@@ -104,7 +103,7 @@ data GPat l
         = PDefault
 
         -- | Match a data constructor and bind its arguments.
-        | PData !(DaCon l) ![Bind l]
+        | PData !(DaCon l) ![GBind l]
 
 
 -- | Type casts.
@@ -126,7 +125,7 @@ data GCast l
 -- | Witnesses.
 data GWitness l
         -- | Witness variable.
-        = WVar  !(Bound l)
+        = WVar  !(GBound l)
 
         -- | Witness constructor.
         | WCon  !(GWiCon l)
@@ -143,13 +142,13 @@ data GWiCon l
         -- | Witness constructors defined in the environment.
         --   In the interpreter we use this to hold runtime capabilities.
         --   The attached type must be closed.
-        = WiConBound   !(Bound l) !(T.Type l)
+        = WiConBound   !(GBound l) !(T.Type l)
 
 
 ---------------------------------------------------------------------------------------------------
 -- | Synonym for Show constraints of all language types.
 type ShowLanguage l
-        = (Show l, Show (Annot l), Show (Bind l), Show (Bound l), Show (Prim l))
+        = (Show l, Show (GAnnot l), Show (GBind l), Show (GBound l), Show (GPrim l))
 
 deriving instance ShowLanguage l => Show (GExp     l)
 deriving instance ShowLanguage l => Show (GAbs     l)

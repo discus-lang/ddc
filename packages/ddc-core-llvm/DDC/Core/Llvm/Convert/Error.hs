@@ -8,7 +8,6 @@ import DDC.Base.Pretty
 import DDC.Core.Generic.Pretty          ()
 import Data.Maybe
 import qualified DDC.Core.Salt          as A
-import qualified DDC.Core.Salt.Exp      as A
 
 
 -- | Things that can go wrong when converting Salt to Llvm code.

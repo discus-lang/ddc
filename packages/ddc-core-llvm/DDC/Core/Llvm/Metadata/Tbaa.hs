@@ -16,7 +16,6 @@ import DDC.Core.Llvm.Convert.Base
 import DDC.Base.Pretty                  hiding (empty)
 import qualified DDC.Type.Env           as Env
 import qualified DDC.Core.Salt          as A
-import qualified DDC.Core.Salt.Exp      as A
 import qualified DDC.Llvm.Syntax        as V
 
 import Prelude                          hiding (lookup)

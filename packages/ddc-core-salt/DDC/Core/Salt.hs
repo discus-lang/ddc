@@ -43,8 +43,12 @@ module DDC.Core.Salt
 
           -- * Conversion
         , seaOfSaltModule
-        , Error(..))
+        , Error(..)
+
+          -- * Salt expressions
+        , module DDC.Core.Salt.Exp)
 where
 import DDC.Core.Salt.Name
 import DDC.Core.Salt.Profile
 import DDC.Core.Salt.Convert
+import DDC.Core.Salt.Exp

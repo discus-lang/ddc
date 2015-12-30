@@ -42,14 +42,14 @@ takeXAbs xx
 
 
 -- | Make some nested type lambdas.
-makeXLAMs :: [Bind l] -> GExp l -> GExp l
+makeXLAMs :: [GBind l] -> GExp l -> GExp l
 makeXLAMs bs x
         = foldr XLAM x bs
 
 
 -- | Split type lambdas from the front of an expression,
 --   or `Nothing` if there aren't any.
-takeXLAMs :: GExp l -> Maybe ([Bind l], GExp l)
+takeXLAMs :: GExp l -> Maybe ([GBind l], GExp l)
 takeXLAMs xx
  = let  go bs (XLAM b x)   = go (b : bs) x
         go bs x            = (reverse bs, x)
@@ -59,14 +59,14 @@ takeXLAMs xx
 
 
 -- | Make some nested value or witness lambdas.
-makeXLams :: [Bind l] -> GExp l -> GExp l
+makeXLams :: [GBind l] -> GExp l -> GExp l
 makeXLams bs x
         = foldr XLam x bs
 
 
 -- | Split nested value or witness lambdas from the front of an expression,
 --   or `Nothing` if there aren't any.
-takeXLams :: GExp l -> Maybe ([Bind l], GExp l)
+takeXLams :: GExp l -> Maybe ([GBind l], GExp l)
 takeXLams xx
  = let  go bs (XLam b x)   = go (b : bs) x
         go bs x            = (reverse bs, x)
@@ -109,7 +109,7 @@ splitXApps xx
 -- | Flatten an application of a primitive operators into the operator itself
 --   and its arguments, or `Nothing` if this is not an application of a
 --   primitive.
-takeXPrimApps :: GExp l -> Maybe (Prim l, [GArg l])
+takeXPrimApps :: GExp l -> Maybe (GPrim l, [GArg l])
 takeXPrimApps xx
  = case xx of
         XApp (XPrim p) a2

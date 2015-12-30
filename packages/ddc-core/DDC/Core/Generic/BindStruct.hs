@@ -9,7 +9,7 @@ import qualified DDC.Type.Exp           as T
 import Data.Maybe
 
 
-instance (Bind l ~ T.Bind l, Bound l ~ T.Bound l)
+instance (GBind l ~ T.Bind l, GBound l ~ T.Bound l)
       => BindStruct (GExp l) l where
  slurpBindTree xx
   = case xx of
@@ -48,7 +48,7 @@ instance (Bind l ~ T.Bind l, Bound l ~ T.Bound l)
         XCast c x               -> slurpBindTree c ++ slurpBindTree x
 
 
-instance (Bind l ~ T.Bind l, Bound l ~ T.Bound l)
+instance (GBind l ~ T.Bind l, GBound l ~ T.Bound l)
       => BindStruct (GArg l) l where
  slurpBindTree arg
   = case arg of
@@ -57,7 +57,7 @@ instance (Bind l ~ T.Bind l, Bound l ~ T.Bound l)
         RWitness w              -> slurpBindTree w
 
 
-instance (Bind l ~ T.Bind l, Bound l ~ T.Bound l)
+instance (GBind l ~ T.Bind l, GBound l ~ T.Bound l)
       => BindStruct (GAlt l) l where
  slurpBindTree alt
   = case alt of
@@ -65,7 +65,7 @@ instance (Bind l ~ T.Bind l, Bound l ~ T.Bound l)
         AAlt (PData _ bs) x     -> [bindDefX BindCasePat bs [x]]
 
 
-instance (Bind l ~ T.Bind l, Bound l ~ T.Bound l)
+instance (GBind l ~ T.Bind l, GBound l ~ T.Bound l)
       => BindStruct (GCast l) l where
  slurpBindTree cc
   = case cc of
@@ -75,7 +75,7 @@ instance (Bind l ~ T.Bind l, Bound l ~ T.Bound l)
         CastRun                 -> []
 
 
-instance (Bind l ~ T.Bind l, Bound l ~ T.Bound l)
+instance (GBind l ~ T.Bind l, GBound l ~ T.Bound l)
       => BindStruct (GWitness l) l where
  slurpBindTree ww
   = case ww of

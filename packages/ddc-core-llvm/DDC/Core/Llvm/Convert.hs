@@ -24,7 +24,6 @@ import qualified DDC.Llvm.Transform.Flatten     as Flatten
 import qualified DDC.Llvm.Transform.Simpl       as Simpl
 
 import qualified DDC.Core.Salt                  as A
-import qualified DDC.Core.Salt.Exp              as A
 import qualified DDC.Core.Module                as C
 import qualified DDC.Core.Exp                   as C
 import qualified DDC.Type.Env                   as Env

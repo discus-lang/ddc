@@ -19,10 +19,10 @@ import Data.Sequence                    (Seq)
 import Data.Set                         (Set)
 import Data.Map                         (Map)
 import qualified DDC.Core.Salt          as A
-import qualified DDC.Core.Salt.Exp      as A
 import qualified DDC.Core.Module        as C
 import qualified DDC.Core.Exp           as C
 import qualified DDC.Type.Env           as Env
+
 
 ---------------------------------------------------------------------------------------------------
 -- | Context of an Salt to LLVM conversion.

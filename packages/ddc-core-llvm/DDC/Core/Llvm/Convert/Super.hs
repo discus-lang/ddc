@@ -14,7 +14,6 @@ import DDC.Base.Pretty                          hiding (align)
 import qualified DDC.Type.Env                   as Env
 import qualified DDC.Core.Llvm.Metadata.Tbaa    as Tbaa
 import qualified DDC.Core.Salt                  as A
-import qualified DDC.Core.Salt.Exp              as A
 import qualified DDC.Core.Salt.Convert          as A
 import qualified DDC.Core.Generic.Compounds     as A
 import qualified DDC.Core.Module                as C
@@ -28,8 +27,8 @@ import qualified Data.Foldable                  as Seq
 --   Region variables are completely stripped out.
 convertSuper
         :: Context
-        -> C.Bind   A.Name      -- ^ Bind of the top-level super.
-        -> A.Exp                -- ^ Super body.
+        -> A.Bind       -- ^ Bind of the top-level super.
+        -> A.Exp        -- ^ Super body.
         -> ConvertM (Function, [MDecl])
 
 convertSuper ctx (C.BName nSuper tSuper) x
