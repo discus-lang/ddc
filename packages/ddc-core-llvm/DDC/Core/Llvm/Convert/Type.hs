@@ -20,7 +20,6 @@ module DDC.Core.Llvm.Convert.Type
         , isIntegralT
         , isFloatingT)
 where
-import DDC.Core.Llvm.Convert.Erase
 import DDC.Core.Llvm.Convert.Base
 import DDC.Llvm.Syntax.Type
 import DDC.Llvm.Syntax.Attr
@@ -106,7 +105,7 @@ convertSuperType
 
 convertSuperType pp kenv tt
  = let tt' = eraseWitTApps tt
-   in  case tt' of
+   in case tt' of
         C.TApp{}
          |  (tsArgs, tResult)    <- takeTFunArgResult tt'
          ,  not $ null tsArgs
@@ -118,8 +117,17 @@ convertSuperType pp kenv tt
          -> let kenv' = Env.extend b kenv
             in  convertSuperType pp kenv' t
 
-        _ -> throw $ ErrorInvalidType tt'
+        _ -> throw $ ErrorInvalidType tt
                    $ Just "Cannot use this as the type of a super."
+
+
+-- | Erase witnesses from a type.
+--   TODO: This is a bit sketchy, only erase arguments to functional types.
+eraseWitTApps :: A.Type -> A.Type
+eraseWitTApps tt
+ = case tt of
+       C.TApp (C.TApp (C.TCon (C.TyConWitness _)) _) t -> eraseWitTApps t
+       _                                       -> tt
 
 
 -- Imports --------------------------------------------------------------------

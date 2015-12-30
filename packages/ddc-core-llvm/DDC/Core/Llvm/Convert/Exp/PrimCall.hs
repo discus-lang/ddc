@@ -41,6 +41,7 @@ convPrimCall ctx mDst p xs
         _ -> Nothing
 
 
+-- Build the type of a function with the given arguments and result type.
 tFunction :: [Type] -> Type -> Type
 tFunction tsArgs tResult
         = TFunction
