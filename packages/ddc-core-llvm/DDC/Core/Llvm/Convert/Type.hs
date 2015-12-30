@@ -104,13 +104,12 @@ convertSuperType
         -> ConvertM ([Type], Type)
 
 convertSuperType pp kenv tt
- = let tt' = eraseWitTApps tt
-   in case tt' of
+ = case tt of
         C.TApp{}
-         |  (tsArgs, tResult)    <- takeTFunArgResult tt'
+         |  (_, tsArgs, tResult) <- takeTFunWitArgResult tt
          ,  not $ null tsArgs
-         -> do  tsArgs'  <- mapM (convertType pp kenv) tsArgs
-                tResult' <- convertType pp kenv tResult
+         -> do  tsArgs'   <- mapM (convertType pp kenv) tsArgs
+                tResult'  <- convertType pp kenv tResult
                 return (tsArgs', tResult')
 
         C.TForall b t
@@ -118,16 +117,8 @@ convertSuperType pp kenv tt
             in  convertSuperType pp kenv' t
 
         _ -> throw $ ErrorInvalidType tt
-                   $ Just "Cannot use this as the type of a super."
-
-
--- | Erase witnesses from a type.
---   TODO: This is a bit sketchy, only erase arguments to functional types.
-eraseWitTApps :: A.Type -> A.Type
-eraseWitTApps tt
- = case tt of
-       C.TApp (C.TApp (C.TCon (C.TyConWitness _)) _) t -> eraseWitTApps t
-       _                                       -> tt
+                   $ Just $ "Cannot use this as the type of a super."
+                          ++ show (takeTFunArgResult tt)
 
 
 -- Imports --------------------------------------------------------------------

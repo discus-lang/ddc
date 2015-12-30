@@ -443,8 +443,6 @@ tFunOfList ts
 
 
 -- | Yield the argument and result type of a function type.
---   
---   Works for both `TcConFun` and `TcConFunEC`.
 takeTFun :: Type n -> Maybe (Type n, Type n)
 takeTFun tt
  = case tt of
@@ -455,8 +453,6 @@ takeTFun tt
 
 
 -- | Destruct the type of a function, returning just the argument and result types.
---
---   Works for both `TcConFun` and `TcConFunEC`.
 takeTFunArgResult :: Type n -> ([Type n], Type n)
 takeTFunArgResult tt
  = case tt of
@@ -471,9 +467,6 @@ takeTFunArgResult tt
 --   returning the witness argument, value argument and result types.
 --   The function type must have the witness implications before 
 --   the value arguments, eg  @T1 => T2 -> T3 -> T4 -> T5@.
---
---   Works for both `TcConFun` and `TcConFunEC`.
---
 takeTFunWitArgResult :: Type n -> ([Type n], [Type n], Type n)
 takeTFunWitArgResult tt
  = case tt of
