@@ -21,7 +21,7 @@ import qualified DDC.Type.Exp           as C
 type instance GAnnot A.Name  = ()
 type instance GBind  A.Name  = C.Bind  A.Name
 type instance GBound A.Name  = C.Bound A.Name
-type instance GPrim  A.Name  = A.Name
+type instance GPrim  A.Name  = A.PrimOp
 
 type Annot      = GAnnot    A.Name
 type Bind       = GBind     A.Name
@@ -60,8 +60,8 @@ data ErrorFromAnnot
 instance FromAnnot (N.Exp a A.Name) Exp where
  fromAnnot xx
   = case xx of
-        N.XVar  _ (C.UPrim p _)         -- TODO: unwrap prims.
-         -> G.XPrim <$> pure p
+        N.XVar  _ (C.UPrim (A.NamePrimVal (A.PrimValOp op)) _)
+         -> G.XPrim <$> pure op
 
         N.XVar  _ u
          -> G.XVar  <$> fromAnnot u

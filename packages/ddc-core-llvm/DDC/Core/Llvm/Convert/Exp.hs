@@ -51,7 +51,7 @@ convertBody ctx ectx blocks label instrs xx
          --   We must be at the top-level of the function.
          A.XApp{}
           |  ExpTop{}                           <- ectx
-          ,  Just (A.NamePrimOp p, as)          <- takeXPrimApps xx
+          ,  Just (p, as)                       <- takeXPrimApps xx
           ,  A.PrimControl A.PrimControlReturn  <- p
           ,  [A.RType{}, A.RExp (A.XCon dc)]    <- as
           ,  Just (A.NamePrimLit A.PrimLitVoid) <- C.takeNameOfDaCon dc
@@ -64,7 +64,7 @@ convertBody ctx ectx blocks label instrs xx
          --   We must be at the top-level of the function.
          A.XApp{}
           |  ExpTop{}                           <- ectx
-          ,  Just (A.NamePrimOp p, as)          <- takeXPrimApps xx
+          ,  Just (p, as)                       <- takeXPrimApps xx
           ,  A.PrimControl A.PrimControlReturn  <- p
           ,  [A.RType t, A.RExp x2]             <- as
           ,  isVoidT t
@@ -77,7 +77,7 @@ convertBody ctx ectx blocks label instrs xx
          --   We must be at the top-level of the function.
          A.XApp{}
           |  ExpTop{}                           <- ectx
-          ,  Just (A.NamePrimOp p, as)          <- takeXPrimApps xx
+          ,  Just (p, as)                       <- takeXPrimApps xx
           ,  A.PrimControl A.PrimControlReturn  <- p
           ,  [A.RType t, A.RExp x]              <- as
           -> do t'      <- convertType pp kenv t
@@ -90,7 +90,7 @@ convertBody ctx ectx blocks label instrs xx
          -- Fail and abort the program.
          --   Allow this inside an expression as well as from the top level.
          A.XApp{}
-          |  Just (A.NamePrimOp p, as)          <- takeXPrimApps xx
+          |  Just (p, as)                       <- takeXPrimApps xx
           ,  A.PrimControl A.PrimControlFail    <- p
           ,  [A.RType _tResult]                 <- as
           -> let 
@@ -115,7 +115,7 @@ convertBody ctx ectx blocks label instrs xx
          -- Tailcall a function.
          --   We must be at the top-level of the function.
          A.XApp{}
-          |  Just (A.NamePrimOp p, args)        <- takeXPrimApps xx
+          |  Just (p, args)                     <- takeXPrimApps xx
           ,  A.PrimCall (A.PrimCallTail arity)  <- p
           ,  _tsArgs                            <- take arity args
           ,  A.RType tResult : A.RExp xFunTys : xsArgs 
@@ -284,7 +284,7 @@ convertSimple ctx ectx xx
 
          -- Primitive operators.
          A.XApp{}
-          | Just (A.NamePrimOp p, args) <- takeXPrimApps xx
+          | Just (p, args) <- takeXPrimApps xx
           , tPrim       <- A.typeOfPrimOp p
           , mDst        <- takeNonVoidVarOfContext ectx
           , Just go     <- foldl (<|>) empty

@@ -275,7 +275,7 @@ convAltM config context kenv tenv aa
 --   cases on float literals into a sequence of boolean checks.
 convDaConName :: Name -> Maybe Doc
 convDaConName nn
- | NamePrimLit lit      <- nn
+ | NamePrimVal (PrimValLit lit) <- nn
  = case lit of
         PrimLitBool True   -> Just $ int 1
         PrimLitBool False  -> Just $ int 0
