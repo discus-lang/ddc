@@ -76,7 +76,7 @@ l11.entry:
         ret i64 1
 }
 
-define internal fastcc i64 @ptr(%s.Obj*  %_v16._arg) align 8  
+define internal fastcc i64 @ptr(%s.Obj*  %_v13._arg) align 8  
 {
 l17.entry:
         ret i64 3
@@ -90,8 +90,8 @@ l20.entry:
 
 
 
-!15 = metadata !{metadata !"ptr_r", metadata !14, i32 0}
-!14 = metadata !{metadata !"ptr_ROOT_13", null, i32 1}
+!16 = metadata !{metadata !"ptr_r", metadata !15, i32 0}
+!15 = metadata !{metadata !"ptr_ROOT_14", null, i32 1}
 
 
 

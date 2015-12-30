@@ -11,7 +11,6 @@ import DDC.Llvm.Syntax
 import DDC.Core.Salt.Platform
 import DDC.Type.Predicates
 import DDC.Base.Pretty                          hiding (align)
-import qualified DDC.Type.Env                   as Env
 import qualified DDC.Core.Llvm.Metadata.Tbaa    as Tbaa
 import qualified DDC.Core.Salt                  as A
 import qualified DDC.Core.Salt.Convert          as A
@@ -38,7 +37,7 @@ convertSuper ctx (C.BName nSuper tSuper) x
         let mm          = contextModule   ctx
         let kenv        = contextKindEnv  ctx
 
-        -- Names of exported values.
+        -- Collect names of exported values.
         let nsExports   = Set.fromList $ map fst $ C.moduleExportValues mm
 
         -- Sanitise the super name so we can use it as a symbol
@@ -48,22 +47,13 @@ convertSuper ctx (C.BName nSuper tSuper) x
                                 (lookup nSuper (C.moduleExportValues mm))
                                 nSuper
 
-        -- Add parameters to environments.
-        let asParam'     = eraseWitBinds asParam
-        let bsParamType  = [b | A.ALAM b <- asParam']
-        let bsParamValue = [b | A.ALam b <- asParam']
+        -- Add super parameters to the context.
+        (ctx', vsParamValue')
+                  <- bindLocalAs ctx $ eraseWitBinds $ asParam
 
+        -- Add super meta-data to the context.
         mdsup     <- Tbaa.deriveMD (renderPlain nSuper') x
-        let ctx'  = ctx
-                  { contextKindEnv = Env.extends bsParamType  $ contextKindEnv ctx
-                  , contextMDSuper = mdsup }
-
-        -- TODO: The orginal parameters did not nessesarally have all the types
-        --       occurring first, but this assumes they do. If they're out of
-        --       order then we'll convert some types of binders in the wrong
-        --       kind environments.
-        (ctx'', vsParamValue')
-                  <- bindLocalBs ctx' bsParamValue 
+        let ctx'' = ctx' { contextMDSuper = mdsup }
 
         -- Convert function body to basic blocks.
         label     <- newUniqueLabel "entry"

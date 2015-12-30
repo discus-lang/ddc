@@ -3,7 +3,8 @@ module DDC.Core.Llvm.Convert.Exp.Atom
         ( mconvArg
         , mconvAtom
 
-        , bindLocalV,   bindLocalB,     bindLocalBs
+        , bindLocalV
+        , bindLocalA,   bindLocalAs
         , takeLocalV
         , takeGlobalV)
 where
@@ -15,6 +16,7 @@ import DDC.Core.Salt.Platform
 import DDC.Control.Monad.Check
 import DDC.Base.Pretty
 import Control.Monad
+import Data.Maybe
 import qualified DDC.Type.Env                   as Env
 import qualified DDC.Core.Salt                  as A
 import qualified DDC.Core.Salt.Convert          as A
@@ -182,13 +184,26 @@ bindLocalB ctx b
          -> error "ddc-core-llvm.bindLocalB: can't convert anonymous binders."
 
 
--- | Like `bindLocalV`, but take some binders directly.
-bindLocalBs :: Context -> [A.Bind] -> ConvertM (Context, [Var])
-bindLocalBs ctx []      = return (ctx, [])
-bindLocalBs ctx (b : bs)
- = do   (ctx', v)       <- bindLocalB ctx b
-        (ctx'', vs)     <- bindLocalBs ctx' bs
-        return  (ctx'', v : vs)
+-- | Add the binder for a thing to the context.
+bindLocalA  :: Context -> A.Abs -> ConvertM (Context, Maybe Var)
+bindLocalA ctx aa
+ = case aa of
+        A.ALAM b
+         -> return ( ctx { contextKindEnv = Env.extend b $ contextKindEnv ctx }
+                   , Nothing)
+
+        A.ALam b
+         -> do  (ctx', v')      <- bindLocalB ctx b
+                return (ctx', Just v')
+
+
+-- | Add the binders for some things to the context.
+bindLocalAs :: Context -> [A.Abs] -> ConvertM (Context, [Var])
+bindLocalAs ctx []      = return (ctx, [])
+bindLocalAs ctx (a : as)
+ = do   (ctx',  mv)     <- bindLocalA  ctx a
+        (ctx'', vs)     <- bindLocalAs ctx' as
+        return (ctx'', maybeToList mv ++ vs)
 
 
 -- | Take a variable from an expression as a local var, if any.

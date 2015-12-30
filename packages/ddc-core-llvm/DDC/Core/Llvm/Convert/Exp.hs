@@ -3,8 +3,7 @@ module DDC.Core.Llvm.Convert.Exp
         ( Context (..)
         , convertBody
         , convertSimple
-
-        , bindLocalB, bindLocalBs)
+        , bindLocalA, bindLocalAs)
 where
 import DDC.Core.Llvm.Convert.Exp.PrimCall
 import DDC.Core.Llvm.Convert.Exp.PrimArith
