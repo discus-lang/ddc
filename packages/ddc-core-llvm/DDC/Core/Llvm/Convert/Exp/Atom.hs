@@ -167,8 +167,9 @@ bindLocalS ctx str t
 bindLocalV :: Context -> A.Name -> C.Type A.Name -> ConvertM (Context, Var)
 bindLocalV ctx (A.NameVar str) t
  = do   bindLocalS ctx str t
+
 bindLocalV _ _ _
- = error "bindLocalV: no name"
+ = error "ddc-core-llvm.bindLocalV: not a regular name."
 
 
 -- | Like `bindLocalV`, but take the binder directly.
@@ -177,7 +178,8 @@ bindLocalB ctx b
  = case b of
         C.BName nm t    -> bindLocalV ctx nm t
         C.BNone t       -> bindLocalV ctx (A.NameVar "_arg") t
-        C.BAnon _       -> error "bindLocalB: can't convert anon binders"
+        C.BAnon _       
+         -> error "ddc-core-llvm.bindLocalB: can't convert anonymous binders."
 
 
 -- | Like `bindLocalV`, but take some binders directly.

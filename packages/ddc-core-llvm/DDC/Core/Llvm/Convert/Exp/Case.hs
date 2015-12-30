@@ -28,7 +28,6 @@ convertCase
         -> ConvertM (Seq Block)
 
 convertCase ctx ectx label instrs xScrut alts 
- -- TODO: Just convert the scrutinee so this always succeeds.
  | Just mVar    <- takeLocalV ctx xScrut
  = do
         vScrut' <- mVar
@@ -45,9 +44,12 @@ convertCase ctx ectx label instrs xScrut alts
                 AltDefault l bs -> return (l, bs)
                 AltCase _  l bs -> return (l, bs)
 
-        -- Alts that aren't the default.
-        -- TODO: fix pattern to exception.
-        let Just altsTable = takeInit alts'
+        -- Get the alternatives before the default one.
+        -- This will fail if there are no alternatives at all.
+        altsTable       
+         <- case takeInit alts' of
+                Nothing -> throw $ ErrorInvalidExp (A.XCase xScrut alts) Nothing
+                Just as -> return as
 
         -- Build the jump table of non-default alts.
         let table       = mapMaybe takeAltCase altsTable
