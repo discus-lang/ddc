@@ -19,6 +19,7 @@ import Data.Sequence                    (Seq)
 import Data.Set                         (Set)
 import Data.Map                         (Map)
 import qualified DDC.Core.Salt          as A
+import qualified DDC.Core.Salt.Exp      as A
 import qualified DDC.Core.Module        as C
 import qualified DDC.Core.Exp           as C
 import qualified DDC.Type.Env           as Env
@@ -79,20 +80,20 @@ data Context
                 :: Context   -> ExpContext
                 -> Seq Block -> Label
                 -> Seq AnnotInstr
-                -> C.Exp () A.Name
+                -> A.Exp 
                 -> ConvertM (Seq Block)
 
         , contextConvertExp      
                 :: Context  -> ExpContext
-                -> C.Exp () A.Name
+                -> A.Exp
                 -> ConvertM (Seq AnnotInstr)
 
         , contextConvertCase
                 :: Context  -> ExpContext
                 -> Label
                 -> Seq AnnotInstr
-                -> C.Exp () A.Name
-                -> [C.Alt () A.Name]
+                -> A.Exp
+                -> [A.Alt]
                 -> ConvertM (Seq Block)
         }
 

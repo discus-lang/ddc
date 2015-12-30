@@ -1,20 +1,22 @@
+{-# LANGUAGE TypeFamilies #-}
 
 module DDC.Core.Llvm.Convert.Super
         (convertSuper)
 where
 import DDC.Core.Llvm.Convert.Exp
 import DDC.Core.Llvm.Convert.Type
-import DDC.Core.Llvm.Convert.Erase
 import DDC.Core.Llvm.Convert.Context
 import DDC.Core.Llvm.Convert.Base
 import DDC.Llvm.Syntax
 import DDC.Core.Salt.Platform
-import DDC.Core.Compounds
+import DDC.Type.Predicates
 import DDC.Base.Pretty                          hiding (align)
 import qualified DDC.Type.Env                   as Env
 import qualified DDC.Core.Llvm.Metadata.Tbaa    as Tbaa
 import qualified DDC.Core.Salt                  as A
+import qualified DDC.Core.Salt.Exp              as A
 import qualified DDC.Core.Salt.Convert          as A
+import qualified DDC.Core.Generic.Compounds     as A
 import qualified DDC.Core.Module                as C
 import qualified DDC.Core.Exp                   as C
 import qualified Data.Set                       as Set
@@ -27,11 +29,11 @@ import qualified Data.Foldable                  as Seq
 convertSuper
         :: Context
         -> C.Bind   A.Name      -- ^ Bind of the top-level super.
-        -> C.Exp () A.Name      -- ^ Super body.
+        -> A.Exp                -- ^ Super body.
         -> ConvertM (Function, [MDecl])
 
 convertSuper ctx (C.BName nSuper tSuper) x
- | Just (bfsParam, xBody)  <- takeXLamFlags x
+ | Just (asParam, xBody)  <- A.takeXAbs x
  = do   
         let pp          = contextPlatform ctx
         let mm          = contextModule   ctx
@@ -48,9 +50,9 @@ convertSuper ctx (C.BName nSuper tSuper) x
                                 nSuper
 
         -- Add parameters to environments.
-        let bfsParam'    = eraseWitBinds bfsParam
-        let bsParamType  = [b | (True,  b) <- bfsParam']
-        let bsParamValue = [b | (False, b) <- bfsParam']
+        let asParam'     = eraseWitBinds asParam
+        let bsParamType  = [b | A.GAbsLAM b <- asParam']
+        let bsParamValue = [b | A.GAbsLam b <- asParam']
 
         mdsup     <- Tbaa.deriveMD (renderPlain nSuper') x
         let ctx'  = ctx
@@ -122,4 +124,22 @@ convertSuper ctx (C.BName nSuper tSuper) x
 
 convertSuper _ b x
         = throw $ ErrorInvalidSuper b x
+
+
+---------------------------------------------------------------------------------------------------
+-- | Erase witness bindings
+eraseWitBinds :: [A.GAbs A.Name] -> [A.GAbs A.Name]
+eraseWitBinds
+ = let 
+        isBindWit (A.GAbsLAM b) 
+          = case b of
+                 C.BName _ t | isWitnessType t -> True
+                 _                           -> False
+
+        isBindWit (A.GAbsLam b) 
+          = case b of
+                 C.BName _ t | isWitnessType t -> True
+                 _                           -> False
+
+   in  filter (not . isBindWit)
 

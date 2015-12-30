@@ -16,6 +16,9 @@ import qualified DDC.Type.Exp           as C
 
 ---------------------------------------------------------------------------------------------------
 -- Type synonyms for the Salt fragment.
+
+-- TODO: Rename Annot Bind etc below to GAnnot GBind etc.
+
 instance Language A.Name where
  type Annot A.Name      = ()
  type Bind  A.Name      = C.Bind  A.Name
@@ -45,6 +48,7 @@ data Error
 instance FromAnnot (N.Exp a A.Name) Exp where
  fromAnnot xx
   = case xx of
+        N.XVar  _ (C.UPrim p _) -> G.XPrim    <$> pure p
         N.XVar  _ u             -> G.XVar     <$> fromAnnot u
         N.XCon  _ c             -> G.XCon     <$> fromAnnot c
         N.XLAM  _ b x           -> G.XLAM     <$> fromAnnot b   <*> fromAnnot x

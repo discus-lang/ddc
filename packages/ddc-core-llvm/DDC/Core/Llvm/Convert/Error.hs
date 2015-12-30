@@ -5,8 +5,10 @@ where
 import DDC.Core.Module
 import DDC.Core.Exp
 import DDC.Base.Pretty
+import DDC.Core.Generic.Pretty          ()
 import Data.Maybe
 import qualified DDC.Core.Salt          as A
+import qualified DDC.Core.Salt.Exp      as A
 
 
 -- | Things that can go wrong when converting Salt to Llvm code.
@@ -51,18 +53,18 @@ data Error
 
         -- | Invalid Salt expression.
         | ErrorInvalidExp
-        { errorExp      :: Exp () A.Name 
+        { errorExp      :: A.Exp
         , errorDetails  :: Maybe String }
 
         -- | Invalid Salt alternative.
         | ErrorInvalidAlt
-        { errorAlt      :: [Alt () A.Name]
+        { errorAlt      :: [A.Alt]
         , errorDetails  :: Maybe String }
 
         -- | Invalid Super
         | ErrorInvalidSuper
         { errorBind     :: Bind A.Name
-        , errorExp      :: Exp () A.Name }
+        , errorExp      :: A.Exp }
 
         -- | Invalid Module
         | ErrorInvalidModule

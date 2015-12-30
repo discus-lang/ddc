@@ -17,19 +17,16 @@ import qualified Data.Sequence          as Seq
 -- | Convert a primitive call to LLVM,
 --   or Nothing if this doesn't look like such an operation.
 convPrimArith
-        :: Show a
-        => Context              -- ^ Context of the conversion.
+        :: Context              -- ^ Context of the conversion.
         -> Maybe Var            -- ^ Assign result to this var.
         -> A.PrimOp             -- ^ Primitive to call.
         -> C.Type A.Name        -- ^ Type of the primitive.
-        -> [C.Exp a A.Name]     -- ^ Arguments to primitive.
+        -> [A.Exp]              -- ^ Arguments to primitive.
         -> Maybe (ConvertM (Seq AnnotInstr))
 
-convPrimArith ctx mdst p _tPrim xs0
+convPrimArith ctx mdst p _tPrim xs
  = let  pp              = contextPlatform ctx
         kenv            = contextKindEnv  ctx
-        Right xs        = sequence $ fmap A.fromAnnot xs0
-
    in case p of
         -- Unary operators ------------
         A.PrimArith op

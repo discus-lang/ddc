@@ -17,28 +17,29 @@ import qualified DDC.Core.Salt.Exp      as A
 import qualified DDC.Core.Exp           as C
 import qualified Data.Sequence          as Seq
 
+
 -- Case -------------------------------------------------------------------------------------------
 convertCase
         :: Context              -- ^ Context of the conversion.
         -> ExpContext           -- ^ Expression context.
         -> Label                -- ^ Label of current block
         -> Seq AnnotInstr       -- ^ Instructions to prepend to initial block.
-        -> C.Exp () A.Name      -- ^ Scrutinee of case expression.
-        -> [C.Alt () A.Name]    -- ^ Alternatives of case expression.
+        -> A.Exp                -- ^ Scrutinee of case expression.
+        -> [A.Alt]              -- ^ Alternatives of case expression.
         -> ConvertM (Seq Block)
 
-convertCase ctx ectx label instrs xScrut0 alts 
- | Right xScrut <- A.fromAnnot xScrut0
- , Just mVar    <- takeLocalV ctx xScrut
+convertCase ctx ectx label instrs xScrut alts 
+ -- TODO: Just convert the scrutinee so this always succeeds.
+ | Just mVar    <- takeLocalV ctx xScrut
  = do
         vScrut' <- mVar
 
         -- Convert all the alternatives.
         -- If we're in a nested context we'll also get a block to join the 
         -- results of each alternative.
-        (alts', blocksJoin) <- convertAlts ctx ectx alts
+        (alts', blocksJoin) 
+         <- convertAlts ctx ectx alts
 
-        -- Build the switch ---------------
         -- Determine what default alternative to use for the instruction. 
         (lDefault, blocksDefault)
          <- case last alts' of
@@ -46,6 +47,7 @@ convertCase ctx ectx label instrs xScrut0 alts
                 AltCase _  l bs -> return (l, bs)
 
         -- Alts that aren't the default.
+        -- TODO: fix pattern to exception.
         let Just altsTable = takeInit alts'
 
         -- Build the jump table of non-default alts.
@@ -61,13 +63,14 @@ convertCase ctx ectx label instrs xScrut0 alts
                 <| (blocksTable >< blocksDefault >< blocksJoin)
 
  | otherwise 
- = throw $ ErrorInvalidExp (C.XCase () xScrut0 alts) Nothing
+ = throw $ ErrorInvalidExp (A.XCase xScrut alts) Nothing
 
 
 -- Alts -------------------------------------------------------------------------------------------
+-- | Convert some case alternatives to LLVM.
 convertAlts
         :: Context -> ExpContext
-        -> [C.Alt () A.Name]
+        -> [A.Alt]
         -> ConvertM ([AltResult], Seq Block)
 
 -- Alternatives are at top level.
@@ -81,17 +84,15 @@ convertAlts ctx ectx@ExpTop{} alts
 -- on to evaluate the rest.
 convertAlts ctx (ExpNest ectx vDst lCont) alts
  = do
-        let tDst'       = typeOfVar vDst
-
         -- Label of the block that does the join.
-        lJoin           <- newUniqueLabel "join"
+        lJoin     <- newUniqueLabel "join"
 
         -- Convert all the alternatives,
         -- assiging their results into separate vars.
         (vDstAlts, alts'@(_:_))
                 <- liftM unzip 
                 $  mapM (\alt -> do
-                        vDst'   <- newUniqueNamedVar "alt" tDst'
+                        vDst'   <- newUniqueNamedVar "alt" (typeOfVar vDst)
                         alt'    <- convertAlt ctx (ExpNest ectx vDst' lJoin) alt
                         lAlt    <- return (altResultLabel alt')
                         return ((XVar vDst', lAlt), alt'))
@@ -106,7 +107,7 @@ convertAlts ctx (ExpNest ectx vDst lCont) alts
 
         return (alts', Seq.singleton blockJoin)
 
--- cannot convert alternative in this context.
+-- Cannot convert alternative in this context.
 convertAlts _ ExpAssign{} alts
  = throw $ ErrorInvalidAlt alts
          $ Just "Cannot convert alternative in this context."
@@ -119,25 +120,24 @@ convertAlts _ ExpAssign{} alts
 --   The client should extract the fields of algebraic data objects manually.
 convertAlt
         :: Context -> ExpContext
-        -> C.Alt () A.Name
+        -> A.Alt
         -> ConvertM AltResult
 
 convertAlt ctx ectx aa
  = let  pp              = contextPlatform ctx
         convBodyM       = contextConvertBody ctx
-
    in case aa of
-        C.AAlt C.PDefault x
+        A.AAlt A.PDefault x
          -> do  label   <- newUniqueLabel "default"
                 blocks  <- convBodyM ctx ectx Seq.empty label Seq.empty x
                 return  $  AltDefault label blocks
 
-        C.AAlt (C.PData C.DaConUnit []) x
+        A.AAlt (A.PData C.DaConUnit []) x
          -> do  label   <- newUniqueLabel "alt"
                 blocks  <- convBodyM ctx ectx Seq.empty label Seq.empty x
                 return  $  AltDefault label blocks
 
-        C.AAlt (C.PData dc []) x
+        A.AAlt (A.PData dc []) x
          | Just n       <- takeNameOfDaCon dc
          , Just lit     <- convPatName pp n
          -> do  label   <- newUniqueLabel "alt"
@@ -155,20 +155,26 @@ convertAlt ctx ectx aa
 convPatName :: Platform -> A.Name -> Maybe Lit
 convPatName pp name
  = case name of
-        A.NameLitBool True      -> Just $ LitInt (TInt 1) 1
-        A.NameLitBool False     -> Just $ LitInt (TInt 1) 0
+        A.NameLitBool True
+         -> Just $ LitInt (TInt 1) 1
 
-        A.NameLitNat  i         -> Just $ LitInt (TInt (8 * platformAddrBytes pp)) i
+        A.NameLitBool False
+         -> Just $ LitInt (TInt 1) 0
 
-        A.NameLitInt  i         -> Just $ LitInt (TInt (8 * platformAddrBytes pp)) i
+        A.NameLitNat  i
+         -> Just $ LitInt (TInt (8 * platformAddrBytes pp)) i
+
+        A.NameLitInt  i
+         -> Just $ LitInt (TInt (8 * platformAddrBytes pp)) i
 
         A.NameLitWord i bits 
          | elem bits [8, 16, 32, 64]
          -> Just $ LitInt (TInt $ fromIntegral bits) i
 
-        A.NameLitTag  i         -> Just $ LitInt (TInt (8 * platformTagBytes pp))  i
+        A.NameLitTag  i
+         -> Just $ LitInt (TInt (8 * platformTagBytes pp))  i
 
-        _                       -> Nothing
+        _ -> Nothing
 
 
 -- | Take the label from an `AltResult`.
@@ -189,5 +195,8 @@ altResultBlocks aa
 
 -- | Take the `Lit` and `Label` from an `AltResult`
 takeAltCase :: AltResult -> Maybe (Lit, Label)
-takeAltCase (AltCase lit label _)       = Just (lit, label)
-takeAltCase _                           = Nothing
+takeAltCase ac
+ = case ac of
+        AltCase lit label _     -> Just (lit, label)
+        _                       -> Nothing
+

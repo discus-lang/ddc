@@ -2,7 +2,7 @@
 module DDC.Core.Llvm.Convert.Exp
         ( Context (..)
         , convertBody
-        , convertExp
+        , convertSimple
 
         , bindLocalB, bindLocalBs)
 where
@@ -13,19 +13,21 @@ import DDC.Core.Llvm.Convert.Exp.PrimStore
 import DDC.Core.Llvm.Convert.Exp.Atom
 import DDC.Core.Llvm.Convert.Context
 import DDC.Core.Llvm.Convert.Type
-import DDC.Core.Llvm.Convert.Erase
 import DDC.Core.Llvm.Convert.Base
 import DDC.Llvm.Syntax
-import DDC.Core.Compounds
+import DDC.Core.Generic.Compounds
 import Control.Applicative
 import Data.Sequence                            (Seq, (|>), (><))
 import qualified DDC.Core.Salt                  as A
 import qualified DDC.Core.Salt.Exp              as A
+import qualified DDC.Core.Salt.Env              as A
 import qualified DDC.Core.Exp                   as C
+import qualified DDC.Core.Exp.DaCon             as C
 import qualified DDC.Type.Env                   as Env
 import qualified Data.Sequence                  as Seq
 import qualified Data.Set                       as Set
 import qualified Data.Map                       as Map
+
 
 ---------------------------------------------------------------------------------------------------
 -- | Convert a function body to LLVM blocks.
@@ -35,8 +37,8 @@ convertBody
         -> Seq Block            -- ^ Previous blocks.
         -> Label                -- ^ Id of current block.
         -> Seq AnnotInstr       -- ^ Instrs in current block.
-        -> C.Exp () A.Name      -- ^ Expression being converted.
-        -> ConvertM (Seq Block)    -- ^ Final blocks of function body.
+        -> A.Exp                -- ^ Expression being converted.
+        -> ConvertM (Seq Block)  -- ^ Final blocks of function body.
 
 convertBody ctx ectx blocks label instrs xx
  = let  pp           = contextPlatform    ctx 
@@ -48,12 +50,12 @@ convertBody ctx ectx blocks label instrs xx
          -- Control transfer instructions -----------------
          -- Void return applied to a literal void constructor.
          --   We must be at the top-level of the function.
-         C.XApp{}
+         A.XApp{}
           |  ExpTop{}                           <- ectx
           ,  Just (A.NamePrimOp p, xs)          <- takeXPrimApps xx
           ,  A.PrimControl A.PrimControlReturn  <- p
-          ,  [C.XType{}, C.XCon _ dc]           <- xs
-          ,  Just A.NameLitVoid                 <- takeNameOfDaCon dc
+          ,  [A.XType{}, A.XCon dc]             <- xs
+          ,  Just A.NameLitVoid                 <- C.takeNameOfDaCon dc
           -> return  $   blocks 
                      |>  Block label 
                                (instrs |> (annotNil $ IReturn Nothing))
@@ -61,37 +63,37 @@ convertBody ctx ectx blocks label instrs xx
          -- Void return applied to some other expression.
          --   We still have to eval the expression, but it returns no value.
          --   We must be at the top-level of the function.
-         C.XApp{}
+         A.XApp{}
           |  ExpTop{}                           <- ectx
           ,  Just (A.NamePrimOp p, xs)          <- takeXPrimApps xx
           ,  A.PrimControl A.PrimControlReturn  <- p
-          ,  [C.XType _ t, x2]                  <- xs
+          ,  [A.XType t, x2]                    <- xs
           ,  isVoidT t
-          -> do instrs2 <- convertExp ctx ectx x2
+          -> do instrs2 <- convertSimple ctx ectx x2
                 return  $  blocks
                         |> Block label 
                                  (instrs >< (instrs2 |> (annotNil $ IReturn Nothing)))
 
          -- Return a value.
          --   We must be at the top-level of the function.
-         C.XApp{}
+         A.XApp{}
           |  ExpTop{}                           <- ectx
           ,  Just (A.NamePrimOp p, xs)          <- takeXPrimApps xx
           ,  A.PrimControl A.PrimControlReturn  <- p
-          ,  [C.XType _ t, x]                   <- xs
+          ,  [A.XType t, x]                     <- xs
           -> do t'      <- convertType pp kenv t
                 vDst    <- newUniqueVar t'
-                is      <- convertExp ctx (ExpAssign ectx vDst) x
+                is      <- convertSimple ctx (ExpAssign ectx vDst) x
                 return  $   blocks 
                         |>  Block label 
                                   (instrs >< (is |> (annotNil $ IReturn (Just (XVar vDst)))))
 
          -- Fail and abort the program.
          --   Allow this inside an expression as well as from the top level.
-         C.XApp{}
+         A.XApp{}
           |  Just (A.NamePrimOp p, xs)          <- takeXPrimApps xx
           ,  A.PrimControl A.PrimControlFail    <- p
-          ,  [C.XType _ _tResult]               <- xs
+          ,  [A.XType _tResult]                 <- xs
           -> let 
                  iSet   = case ectx of
                            ExpTop{}           -> INop
@@ -113,18 +115,14 @@ convertBody ctx ectx blocks label instrs xx
          -- Calls -----------------------------------------
          -- Tailcall a function.
          --   We must be at the top-level of the function.
-         C.XApp{}
-          |  Just (A.NamePrimOp p, args)          <- takeXPrimApps xx
-          ,  A.PrimCall (A.PrimCallTail arity)    <- p
-          ,  _tsArgs                              <- take arity args
-          ,  C.XType _ tResult : xFunTys : xsArgs <- drop arity args
-          ,  Just (xFun, _xsTys)                  <- takeXApps xFunTys
-
-          ,  Right xFun'                          <- A.fromAnnot xFun
-          ,  Just mFun                            <- takeGlobalV ctx xFun'
-
-          ,  Right xsArgs''                       <- sequence $ map A.fromAnnot xsArgs
-          ,  Just  msArgs                         <- sequence $ map (mconvAtom ctx) xsArgs''
+         A.XApp{}
+          |  Just (A.NamePrimOp p, args)        <- takeXPrimApps xx
+          ,  A.PrimCall (A.PrimCallTail arity)  <- p
+          ,  _tsArgs                            <- take arity args
+          ,  A.XType tResult : xFunTys : xsArgs <- drop arity args
+          ,  Just (xFun, _xsTys)                <- takeXApps xFunTys
+          ,  Just mFun                          <- takeGlobalV ctx xFun
+          ,  Just msArgs                        <- sequence $ map (mconvAtom ctx) xsArgs
           -> do 
                 Var nFun _      <- mFun
                 xsArgs'         <- sequence msArgs
@@ -150,9 +148,9 @@ convertBody ctx ectx blocks label instrs xx
 
          -- Assignment ------------------------------------
          -- A let-bound expression without a name, of the void type.
-         C.XLet _ (C.LLet (C.BNone t) x1) x2
+         A.XLet (A.LLet (C.BNone t) x1) x2
           | isVoidT t
-          -> do instrs' <- convertExp ctx ectx x1
+          -> do instrs' <- convertSimple ctx ectx x1
                 convertBody ctx ectx blocks label
                         (instrs >< instrs') x2
 
@@ -161,18 +159,18 @@ convertBody ctx ectx blocks label instrs xx
          --   In C we can just drop a computed value on the floor, 
          --   but the LLVM compiler needs an explicit name for it.
          --   Add the required name then call ourselves again.
-         C.XLet a (C.LLet (C.BNone t) x1) x2
+         A.XLet (A.LLet (C.BNone t) x1) x2
           | not $ isVoidT t
           -> do n       <- newUnique
                 let b   = C.BName (A.NameVar ("_d" ++ show n)) t
 
                 convertBody ctx ectx blocks label instrs 
-                        (C.XLet a (C.LLet b x1) x2)
+                        (A.XLet (A.LLet b x1) x2)
 
 
          -- Variable assigment from a case-expression.
-         C.XLet _ (C.LLet (C.BName nm t) 
-                          (C.XCase _ xScrut alts)) 
+         A.XLet (A.LLet (C.BName nm t) 
+                        (A.XCase xScrut alts)) 
                   x2
           -> do 
                 -- Bind the Salt name, allocating a new LLVM variable for it.
@@ -180,7 +178,7 @@ convertBody ctx ectx blocks label instrs xx
                 (ctx', vCont) <- bindLocalV ctx nm t 
 
                 -- Label to jump to continue evaluating 'x1'
-                lCont       <- newUniqueLabel "cont"
+                lCont         <- newUniqueLabel "cont"
 
                 -- Convert the alternatives.
                 --   As the let-binding is non-recursive, the alternatives are
@@ -200,11 +198,10 @@ convertBody ctx ectx blocks label instrs xx
          -- We can't generate LLVM code for these bindings directly, so they are
          -- stashed in the context until we find a conversion that needs them.
          -- See [Note: Binding top-level supers]
-         C.XLet _ (C.LLet (C.BName nBind _) x1) x2
-          | Just (xF, xsArgs)         <- takeXApps x1
-          , C.XVar _ (C.UName nSuper) <- xF
-          , atsArgs     <- [(a, t) | C.XType a t <- xsArgs]
-          , tsArgs      <- map snd atsArgs
+         A.XLet (A.LLet (C.BName nBind _) x1) x2
+          | Just (xF, xsArgs)       <- takeXApps x1
+          , A.XVar (C.UName nSuper) <- xF
+          , tsArgs  <- [t | A.XType t <- xsArgs]
           , length tsArgs > 0
           , length xsArgs == length tsArgs
           ,   Set.member nSuper (contextSupers  ctx)
@@ -216,7 +213,7 @@ convertBody ctx ectx blocks label instrs xx
 
 
          -- Variable assignment from some other expression.
-         C.XLet _ (C.LLet (C.BName nm t) x1) x2
+         A.XLet (A.LLet (C.BName nm t) x1) x2
           -> do 
                 -- Bind the Salt name, allocating a new LLVM variable name for it.
                 (ctx', vDst) <- bindLocalV ctx nm t
@@ -225,7 +222,7 @@ convertBody ctx ectx blocks label instrs xx
                 --   As the let-binding is non-recursive, the bound expression
                 --   is converted in the original context, without the let-bound
                 --   variable (ctx).
-                instrs'  <- convertExp ctx (ExpAssign ectx vDst) x1
+                instrs'  <- convertSimple ctx (ExpAssign ectx vDst) x1
                 
                 -- Convert the body of the let-expression.
                 --   This is done in the new context, with the let-bound variable.
@@ -233,24 +230,24 @@ convertBody ctx ectx blocks label instrs xx
 
 
          -- Letregions ------------------------------------
-         C.XLet _ (C.LPrivate bsType _mt _) x2
+         A.XLet (A.LPrivate bsType _mt _) x2
           -> do let ctx'  = extendsKindEnv bsType ctx
                 convertBody ctx' ectx blocks label instrs x2
 
 
          -- Case ------------------------------------------
-         C.XCase _ xScrut alts
+         A.XCase xScrut alts
           -> do blocks' <- convertCase ctx ectx label instrs xScrut alts
                 return  $ blocks >< blocks'
 
 
          -- Cast -------------------------------------------
-         C.XCast _ _ x
+         A.XCast _ x
           -> convertBody ctx ectx blocks label instrs x
 
          _ 
           | ExpNest _ vDst label' <- ectx
-          -> do instrs'  <- convertExp ctx (ExpAssign ectx vDst) xx
+          -> do instrs'  <- convertSimple ctx (ExpAssign ectx vDst) xx
                 return  $ blocks >< Seq.singleton (Block label 
                                 (instrs >< (instrs' |> (annotNil $ IBranch label'))))
 
@@ -267,12 +264,12 @@ convertBody ctx ectx blocks label instrs xx
 --   before converting it. The result is just a sequence of instructions,
 --   so there are no new labels to jump to.
 --
-convertExp
+convertSimple
         :: Context -> ExpContext
-        -> C.Exp () A.Name
+        -> A.Exp
         -> ConvertM (Seq AnnotInstr)
 
-convertExp ctx ectx xx
+convertSimple ctx ectx xx
  = let  pp      = contextPlatform ctx
         tenv    = contextTypeEnv  ctx
         kenv    = contextKindEnv  ctx
@@ -280,15 +277,15 @@ convertExp ctx ectx xx
         case xx of
          -- Atoms
          _ | ExpAssign _ vDst   <- ectx
-           , Right xx'          <- A.fromAnnot xx
-           , Just mx            <- mconvAtom ctx xx'
+           , Just mx            <- mconvAtom ctx xx
            -> do x' <- mx
                  return $ Seq.singleton $ annotNil 
                         $ ISet vDst x'
 
          -- Primitive operators.
-         C.XApp{}
-          | Just (C.XVar _ (C.UPrim (A.NamePrimOp p) tPrim), args) <- takeXApps xx
+         A.XApp{}
+          | Just (A.NamePrimOp p, args) <- takeXPrimApps xx
+          , tPrim       <- A.typeOfPrim p
           , mDst        <- takeNonVoidVarOfContext ectx
           , Just go     <- foldl (<|>) empty
                                 [ convPrimCall  ctx mDst p tPrim args
@@ -298,12 +295,10 @@ convertExp ctx ectx xx
           -> go
 
           -- Call to top-level super.
-          | Just (xFun@(C.XVar _ u), xsArgs) <- takeXApps xx
+          | Just (xFun@(A.XVar u), xsArgs) <- takeXApps xx
           , Just tSuper         <- Env.lookup u tenv
-          , Right xsArgs'       <- sequence $ fmap A.fromAnnot $ eraseTypeWitArgs xsArgs
-          , Just msArgs_value   <- sequence $ map (mconvAtom ctx) xsArgs'
-          , Right xFun'         <- A.fromAnnot xFun
-          , Just mFun           <- takeGlobalV ctx xFun'
+          , Just msArgs_value   <- sequence $ map (mconvAtom ctx) $ eraseTypeWitArgs xsArgs
+          , Just mFun           <- takeGlobalV ctx xFun
           -> do 
                 Var nFun _      <- mFun
                 xsArgs_value'   <- sequence $ msArgs_value
@@ -316,9 +311,21 @@ convertExp ctx ectx xx
                         $ ICall  mv CallTypeStd Nothing
                                  tResult nFun xsArgs_value' []
          -- Casts
-         C.XCast _ _ x
-           -> convertExp ctx ectx x
+         A.XCast _ x
+           -> convertSimple ctx ectx x
 
          _ -> throw $ ErrorInvalidExp xx
                     $ Just "Was expecting a variable, primitive, or super application."
+
+
+---------------------------------------------------------------------------------------------------
+-- | Erase type and witness arge Slurp out only the values from a list of
+--   function arguments.
+eraseTypeWitArgs :: [A.Exp] -> [A.Exp]
+eraseTypeWitArgs []       = []
+eraseTypeWitArgs (x:xs)
+ = case x of
+        A.XType{}       -> eraseTypeWitArgs xs
+        A.XWitness{}    -> eraseTypeWitArgs xs
+        _               -> x : eraseTypeWitArgs xs
 

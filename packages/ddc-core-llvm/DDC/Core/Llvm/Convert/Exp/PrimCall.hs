@@ -16,17 +16,15 @@ import qualified Data.Sequence          as Seq
 
 -- | Convert a primitive store operation to LLVM.
 convPrimCall
-        :: Show a
-        => Context              -- ^ Context of the conversion.
+        :: Context              -- ^ Context of the conversion.
         -> Maybe Var            -- ^ Assign result to this var.
         -> A.PrimOp             -- ^ Prim to call.
         -> C.Type A.Name        -- ^ Type of prim.
-        -> [C.Exp a A.Name]     -- ^ Arguments to prim.
+        -> [A.Exp]              -- ^ Arguments to prim.
         -> Maybe (ConvertM (Seq AnnotInstr))
 
-convPrimCall ctx mDst p _tPrim xs0
+convPrimCall ctx mDst p _tPrim xs
  = let  pp              = contextPlatform ctx
-        Right xs        = sequence $ fmap A.fromAnnot xs0
    in case p of
         A.PrimCall (A.PrimCallStd arity)
          | Just (mFun : msArgs) <- sequence $ map (mconvAtom ctx) xs

@@ -24,6 +24,7 @@ import qualified DDC.Llvm.Transform.Flatten     as Flatten
 import qualified DDC.Llvm.Transform.Simpl       as Simpl
 
 import qualified DDC.Core.Salt                  as A
+import qualified DDC.Core.Salt.Exp              as A
 import qualified DDC.Core.Module                as C
 import qualified DDC.Core.Exp                   as C
 import qualified DDC.Type.Env                   as Env
@@ -151,12 +152,16 @@ convertModuleM pp mm@(C.ModuleCore{})
                 , contextSuperBinds     = Map.empty
                 , contextPrimDecls      = primDeclsMap pp
                 , contextConvertBody    = convertBody
-                , contextConvertExp     = convertExp
+                , contextConvertExp     = convertSimple
                 , contextConvertCase    = convertCase }
+
+        let convertSuper' ctx' b x
+                = let Right x'  = A.fromAnnot x
+                  in  convertSuper ctx' b x'
 
         (functions, mdecls)
                 <- liftM unzip 
-                $  mapM (uncurry (convertSuper ctx)) bxs
+                $  mapM (uncurry (convertSuper' ctx)) bxs
 
         -- Stitch everything together -----------
         return  $ Module 

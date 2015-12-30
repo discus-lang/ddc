@@ -11,12 +11,12 @@ import DDC.Type.Compounds
 import DDC.Type.Predicates
 import DDC.Type.Collect
 import DDC.Type.Env                     (KindEnv)
-import DDC.Core.Exp
 import DDC.Core.Llvm.Metadata.Graph
 import DDC.Core.Llvm.Convert.Base
 import DDC.Base.Pretty                  hiding (empty)
 import qualified DDC.Type.Env           as Env
 import qualified DDC.Core.Salt          as A
+import qualified DDC.Core.Salt.Exp      as A
 import qualified DDC.Llvm.Syntax        as V
 
 import Prelude                          hiding (lookup)
@@ -72,9 +72,9 @@ lookups us mdsup = map (flip lookup mdsup) us
 
 -- | Generate tbaa metadata for a top-level Salt supercombinator.
 deriveMD
-      :: (BindStruct (Exp () A.Name) A.Name)
+      :: (BindStruct A.Exp A.Name)
       => String                 -- ^ Sanitized name of super
-      -> Exp () A.Name          -- ^ Super to derive from
+      -> A.Exp                  -- ^ Super to derive from
       -> ConvertM MDSuper       -- ^ Metadata encoding witness information            
 
 deriveMD nTop xx

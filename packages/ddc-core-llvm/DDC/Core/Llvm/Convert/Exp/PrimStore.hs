@@ -21,23 +21,19 @@ import qualified Data.Sequence          as Seq
 -- | Convert a primitive store operation to LLVM, 
 --   or Nothing if this does not look like such an operation.
 convPrimStore
-        :: Show a
-        => Context              -- ^ Context of the conversion.
+        :: Context              -- ^ Context of the conversion.
         -> Maybe Var            -- ^ Assign result to this var.
         -> A.PrimOp             -- ^ Prim to call.
         -> C.Type A.Name        -- ^ Type of prim.
-        -> [C.Exp a A.Name]     -- ^ Arguments to prim.
+        -> [A.Exp]              -- ^ Arguments to prim.
         -> Maybe (ConvertM (Seq AnnotInstr))
 
-convPrimStore ctx mdst p _tPrim xs0
+convPrimStore ctx mdst p _tPrim xs
  = let  pp      = contextPlatform ctx
         mdsup   = contextMDSuper  ctx
         kenv    = contextKindEnv  ctx
         atom    = mconvAtom       ctx
         atoms a = sequence $ map (mconvAtom ctx) a
-
-        Right xs = sequence $ fmap A.fromAnnot xs0
-
    in case p of
 
         -- Get the size in bytes of some primitive type.

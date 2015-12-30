@@ -1,4 +1,4 @@
-{-# LANGUAGE TypeFamilies, UndecidableInstances #-}
+{-# LANGUAGE TypeFamilies, ConstraintKinds, UndecidableInstances #-}
 
 -- | Generic expression representation.
 --
@@ -58,6 +58,10 @@ data GExp l
 
         -- | Witness can appear as the argument of an application.
         | XWitness !(GWitness l)
+
+
+-- TODO: split XType and XWitness into GArg type.
+-- TODO: split XLAM and XLam into GAbs type.
 
 
 -- | Possibly recursive bindings.
@@ -126,33 +130,15 @@ data GWiCon l
 
 
 ---------------------------------------------------------------------------------------------------
--- Show instances.
+-- | Synonym for Show constraints of all language types.
+type ShowLanguage l
+        = (Show l, Show (Annot l), Show (Bind l), Show (Bound l), Show (Prim l))
 
-deriving instance 
-        (Show l, Show (Annot l), Show (Bind l), Show (Bound l), Show (Prim l)) 
-        => Show (GExp l)
-
-deriving instance 
-        (Show l, Show (Annot l), Show (Bind l), Show (Bound l), Show (Prim l)) 
-        => Show (GLets l)
-
-deriving instance 
-        (Show l, Show (Annot l), Show (Bind l), Show (Bound l), Show (Prim l)) 
-        => Show (GAlt l)
-
-deriving instance 
-        (Show l, Show (Annot l), Show (Bind l), Show (Bound l), Show (Prim l)) 
-        => Show (GPat l)
-
-deriving instance 
-        (Show l, Show (Annot l), Show (Bind l), Show (Bound l), Show (Prim l)) 
-        => Show (GCast l)
-
-deriving instance 
-        (Show l, Show (Annot l), Show (Bind l), Show (Bound l), Show (Prim l)) 
-        => Show (GWitness l)
-
-deriving instance 
-        (Show l, Show (Annot l), Show (Bind l), Show (Bound l), Show (Prim l)) 
-        => Show (GWiCon l)
+deriving instance ShowLanguage l => Show (GExp     l)
+deriving instance ShowLanguage l => Show (GLets    l)
+deriving instance ShowLanguage l => Show (GAlt     l)
+deriving instance ShowLanguage l => Show (GPat     l)
+deriving instance ShowLanguage l => Show (GCast    l)
+deriving instance ShowLanguage l => Show (GWitness l)
+deriving instance ShowLanguage l => Show (GWiCon   l)
 
