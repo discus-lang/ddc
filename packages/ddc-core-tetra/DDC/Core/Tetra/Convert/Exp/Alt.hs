@@ -41,7 +41,7 @@ convertAlt a uScrut tScrut ectx ctx alt
         AAlt (PData dc []) x
          | DaConUnit    <- dc
          -> do  xBody           <- convertX ectx ctx x
-                let dcTag       = DaConPrim (A.NameLitTag 0) A.tTag
+                let dcTag       = DaConPrim (A.NamePrimLit $ A.PrimLitTag 0) A.tTag
                 return  $ AAlt (PData dcTag []) xBody
 
         -- Match against literal unboxed values.
@@ -62,7 +62,7 @@ convertAlt a uScrut tScrut ectx ctx alt
 
                 -- Get the tag of this alternative.
                 let iTag        = fromIntegral $ dataCtorTag ctorDef
-                let dcTag       = DaConPrim (A.NameLitTag iTag) A.tTag
+                let dcTag       = DaConPrim (A.NamePrimLit $ A.PrimLitTag iTag) A.tTag
                 
                 -- Get the address of the payload.
                 bsFields'       <- mapM (convertValueB tctx) bsFields       

@@ -179,8 +179,8 @@ convBlockM config context kenv tenv xx
         --   Prettier printing for if-then-else.
         XCase _ x [ AAlt (PData dc1 []) x1
                   , AAlt (PData dc2 []) x2 ]
-         | Just (NameLitBool True)  <- takeNameOfDaCon dc1
-         , Just (NameLitBool False) <- takeNameOfDaCon dc2
+         | Just (NamePrimLit (PrimLitBool True))  <- takeNameOfDaCon dc1
+         , Just (NamePrimLit (PrimLitBool False)) <- takeNameOfDaCon dc2
          -> do  x'      <- convRValueM config kenv tenv x
                 x1'     <- convBlockM  config context kenv tenv x1
                 x2'     <- convBlockM  config context kenv tenv x2
@@ -275,21 +275,25 @@ convAltM config context kenv tenv aa
 --   cases on float literals into a sequence of boolean checks.
 convDaConName :: Name -> Maybe Doc
 convDaConName nn
- = case nn of
-        NameLitBool True   -> Just $ int 1
-        NameLitBool False  -> Just $ int 0
+ | NamePrimLit lit      <- nn
+ = case lit of
+        PrimLitBool True   -> Just $ int 1
+        PrimLitBool False  -> Just $ int 0
 
-        NameLitNat  i      -> Just $ integer i
+        PrimLitNat  i      -> Just $ integer i
 
-        NameLitInt  i      -> Just $ integer i
+        PrimLitInt  i      -> Just $ integer i
 
-        NameLitWord i bits
+        PrimLitWord i bits
          |  elem bits [8, 16, 32, 64]
          -> Just $ integer i
 
-        NameLitTag i       -> Just $ integer i
+        PrimLitTag i       -> Just $ integer i
 
         _                  -> Nothing
+
+ | otherwise 
+ = Nothing
 
 
 -- RValue -----------------------------------------------------------------------------------------
@@ -314,17 +318,17 @@ convRValueM config kenv tenv xx
          -> return $ integer 0
 
         XCon _ dc
-         | DaConPrim n _        <- dc
-         -> case n of
-                NameLitBool b   
+         | DaConPrim (NamePrimLit p) _        <- dc
+         -> case p of
+                PrimLitBool b   
                  | b            -> return $ integer 1
                  | otherwise    -> return $ integer 0
 
-                NameLitNat  i   -> return $ integer i
-                NameLitInt  i   -> return $ integer i
-                NameLitWord i _ -> return $ integer i
-                NameLitTag  i   -> return $ integer i
-                NameLitVoid     -> return $ text "void"
+                PrimLitNat  i   -> return $ integer i
+                PrimLitInt  i   -> return $ integer i
+                PrimLitWord i _ -> return $ integer i
+                PrimLitTag  i   -> return $ integer i
+                PrimLitVoid     -> return $ text "void"
                 _               -> throw $ ErrorRValueInvalid xx
 
         -- Primop application.

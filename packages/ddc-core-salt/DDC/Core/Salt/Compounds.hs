@@ -71,7 +71,7 @@ takeTPtr tt
 
 -- Expressions ----------------------------------------------------------------
 xBool :: a -> Bool   -> Exp a Name
-xBool a b       = XCon a (DaConPrim (NameLitBool b) tBool)
+xBool a b       = XCon a (DaConPrim (NamePrimLit (PrimLitBool b)) tBool)
 
 
 xNat  :: a -> Integer -> Exp a Name
@@ -79,32 +79,32 @@ xNat a i        = XCon a (dcNat i)
 
 
 xInt  :: a -> Integer -> Exp a Name
-xInt a i        = XCon a (DaConPrim (NameLitInt i)  tInt)
+xInt a i        = XCon a (DaConPrim (NamePrimLit (PrimLitInt i))  tInt)
 
 
 xSize :: a -> Integer -> Exp a Name
-xSize a i       = XCon a (DaConPrim (NameLitSize i)  tSize)
+xSize a i       = XCon a (DaConPrim (NamePrimLit (PrimLitSize i)) tSize)
 
 
 xWord :: a -> Integer -> Int -> Exp a Name
-xWord a i bits  = XCon a (DaConPrim (NameLitWord i bits) (tWord bits))
+xWord a i bits  = XCon a (DaConPrim (NamePrimLit (PrimLitWord i bits)) (tWord bits))
 
 
 xFloat :: a -> Double -> Int -> Exp a Name
-xFloat a i bits = XCon a (DaConPrim (NameLitFloat i bits) (tFloat bits))
+xFloat a i bits = XCon a (DaConPrim (NamePrimLit (PrimLitFloat i bits)) (tFloat bits))
 
 
 xTag  :: a -> Integer -> Exp a Name
-xTag a i        = XCon a (DaConPrim (NameLitTag i)  tTag)
+xTag a i        = XCon a (DaConPrim (NamePrimLit (PrimLitTag  i))  tTag)
 
 
 -- | A Literal @Nat#@ data constructor.
 dcNat   :: Integer -> DaCon Name
-dcNat i   = DaConPrim (NameLitNat i) tNat
+dcNat i         = DaConPrim (NamePrimLit (PrimLitNat i)) tNat
 
 
 -- | String literal.
 xString :: a -> Text -> Exp a Name
-xString a tx    = XCon a (DaConPrim (NameLitString tx) (tPtr rTop (tWord 8)))
+xString a tx    = XCon a (DaConPrim (NamePrimLit (PrimLitString tx)) (tPtr rTop (tWord 8)))
 
 

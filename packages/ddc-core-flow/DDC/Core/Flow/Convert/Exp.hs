@@ -240,10 +240,8 @@ convertX xx
 
   mk = prim anno
 
-  -- true = T.xBool anno True -- T.xNat anno 1
-
 prim anno n args
- = let t = T.typeOfPrim n
+ = let t = T.typeOfPrimOp n
    in      xApps anno (XVar anno (UPrim (T.NamePrimOp n) t)) args
 
 

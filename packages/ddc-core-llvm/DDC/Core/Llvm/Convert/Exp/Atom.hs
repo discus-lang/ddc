@@ -70,10 +70,10 @@ mconvAtom ctx xx
 
         -- Primitive unboxed literals.
         A.XCon dc
-         | C.DaConPrim n t <- dc
-         -> do case n of
+         | C.DaConPrim (A.NamePrimLit lit) t <- dc
+         -> do case lit of
                 -- Literal booleans.
-                A.NameLitBool b
+                A.PrimLitBool b
                  -> let i | b           = 1
                           | otherwise   = 0
                     in Just $ do
@@ -81,37 +81,37 @@ mconvAtom ctx xx
                         return $ XLit (LitInt t' i)
 
                 -- Literal natural numbers of some width.
-                A.NameLitNat nat   
+                A.PrimLitNat nat   
                  -> Just $ do
                         t' <- convertType pp kenv t
                         return $ XLit (LitInt t' nat)
 
                 -- Literal integers of some width.
-                A.NameLitInt  val
+                A.PrimLitInt  val
                  -> Just $ do
                         t' <- convertType pp kenv t
                         return $ XLit (LitInt t' val)
 
                 -- Literal size value.
-                A.NameLitSize val
+                A.PrimLitSize val
                  -> Just $ do
                         t' <- convertType pp kenv t
                         return $ XLit (LitInt t' val)
 
                 -- Literal binary word of some width.
-                A.NameLitWord val _
+                A.PrimLitWord val _
                  -> Just $ do
                         t' <- convertType pp kenv t
                         return $ XLit (LitInt t' val)
 
                 -- Literal floating point value of some width.
-                A.NameLitFloat val _
+                A.PrimLitFloat val _
                  -> Just $ do
                         t' <- convertType pp kenv t
                         return $ XLit (LitFloat t' val)
 
                 -- Literal string.
-                A.NameLitString tx
+                A.PrimLitString tx
                  -> Just $ do
                         -- Add string constant to the constants map for the
                         -- current module. These constants will be allocated 
@@ -126,7 +126,7 @@ mconvAtom ctx xx
                                        , XLit (LitInt (TInt w) 0) ]
 
                 -- Literal constructor tag.
-                A.NameLitTag  tag   
+                A.PrimLitTag  tag   
                  -> Just $ do
                         t' <- convertType pp kenv t
                         return $ XLit (LitInt t' tag)

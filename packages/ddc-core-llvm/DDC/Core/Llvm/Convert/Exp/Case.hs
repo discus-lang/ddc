@@ -152,28 +152,31 @@ convertAlt ctx ectx aa
 --   such as Floats we rely on the Lite transform to have expanded
 --   cases on float literals into a sequence of boolean checks.
 convPatName :: Platform -> A.Name -> Maybe Lit
-convPatName pp name
- = case name of
-        A.NameLitBool True
+convPatName pp (A.NamePrimLit lit)
+ = case lit of
+        A.PrimLitBool True
          -> Just $ LitInt (TInt 1) 1
 
-        A.NameLitBool False
+        A.PrimLitBool False
          -> Just $ LitInt (TInt 1) 0
 
-        A.NameLitNat  i
+        A.PrimLitNat  i
          -> Just $ LitInt (TInt (8 * platformAddrBytes pp)) i
 
-        A.NameLitInt  i
+        A.PrimLitInt  i
          -> Just $ LitInt (TInt (8 * platformAddrBytes pp)) i
 
-        A.NameLitWord i bits 
+        A.PrimLitWord i bits 
          | elem bits [8, 16, 32, 64]
          -> Just $ LitInt (TInt $ fromIntegral bits) i
 
-        A.NameLitTag  i
+        A.PrimLitTag  i
          -> Just $ LitInt (TInt (8 * platformTagBytes pp))  i
 
         _ -> Nothing
+
+convPatName _ _ 
+ = Nothing
 
 
 -- | Take the label from an `AltResult`.

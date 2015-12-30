@@ -54,7 +54,7 @@ convertBody ctx ectx blocks label instrs xx
           ,  Just (A.NamePrimOp p, as)          <- takeXPrimApps xx
           ,  A.PrimControl A.PrimControlReturn  <- p
           ,  [A.RType{}, A.RExp (A.XCon dc)]    <- as
-          ,  Just A.NameLitVoid                 <- C.takeNameOfDaCon dc
+          ,  Just (A.NamePrimLit A.PrimLitVoid) <- C.takeNameOfDaCon dc
           -> return  $   blocks 
                      |>  Block label 
                                (instrs |> (annotNil $ IReturn Nothing))
@@ -285,7 +285,7 @@ convertSimple ctx ectx xx
          -- Primitive operators.
          A.XApp{}
           | Just (A.NamePrimOp p, args) <- takeXPrimApps xx
-          , tPrim       <- A.typeOfPrim p
+          , tPrim       <- A.typeOfPrimOp p
           , mDst        <- takeNonVoidVarOfContext ectx
           , Just go     <- foldl (<|>) empty
                                 [ convPrimCall  ctx mDst p tPrim args

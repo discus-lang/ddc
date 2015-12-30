@@ -165,13 +165,16 @@ convertName nn
 
    -- Literals -----------------------------
    F.NameLitBool b
-    -> return $ T.NameLitBool b -- T.NameLitNat (if b then 1 else 0)
+    -> return $ T.NamePrimLit (T.PrimLitBool b)
+
    F.NameLitNat l
-    -> return $ T.NameLitNat  l
+    -> return $ T.NamePrimLit (T.PrimLitNat  l)
+
    F.NameLitInt l
-    -> return $ T.NameLitInt l
+    -> return $ T.NamePrimLit (T.PrimLitInt l)
+
    F.NameLitWord l k
-    -> return $ T.NameLitWord l k
+    -> return $ T.NamePrimLit (T.PrimLitWord l k)
 
    _
     -> return $ T.NameExt (T.NameVar $ show $ ppr $ nn) "UNHANDLED"

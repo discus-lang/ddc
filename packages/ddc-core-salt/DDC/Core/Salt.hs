@@ -20,6 +20,7 @@ module DDC.Core.Salt
         , Name          (..)
         , PrimTyCon     (..)
         , PrimOp        (..)
+        , PrimLit       (..)
 
         , PrimCast      (..)
         , primCastPromoteIsValid

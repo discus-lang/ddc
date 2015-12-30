@@ -450,16 +450,16 @@ convertDaConNameM :: DaCon E.Name -> E.Name -> ConvertM a A.Name
 convertDaConNameM dc nn
  = case nn of
         E.NameLitUnboxed (E.NameLitBool val)       
-          -> return $ A.NameLitBool val
+          -> return $ A.NamePrimLit $ A.PrimLitBool val
 
         E.NameLitUnboxed (E.NameLitNat  val)
-          -> return $ A.NameLitNat  val
+          -> return $ A.NamePrimLit $ A.PrimLitNat  val
 
         E.NameLitUnboxed (E.NameLitInt  val)
-          -> return $ A.NameLitInt  val
+          -> return $ A.NamePrimLit $ A.PrimLitInt  val
 
         E.NameLitUnboxed (E.NameLitWord val bits)
-          -> return $ A.NameLitWord val bits
+          -> return $ A.NamePrimLit $ A.PrimLitWord val bits
 
         _ -> throw $ ErrorInvalidDaCon dc
 

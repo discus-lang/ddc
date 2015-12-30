@@ -13,8 +13,13 @@ module DDC.Core.Salt.Name
         , primTyConIsSigned
         , primTyConWidth
 
+          -- * Primitive Literals
+        , PrimLit       (..)
+        , readPrimLit
+        
           -- * Primitive Operators
         , PrimOp        (..)
+        , readPrimOp
 
           -- * Primitive Arithmetic
         , PrimArith     (..)
@@ -98,32 +103,8 @@ data Name
         -- | A primitive operator.
         | NamePrimOp    PrimOp
 
-        -- | The void literal.
-        | NameLitVoid
-
-        -- | A boolean literal.
-        | NameLitBool   Bool
-
-        -- | A natural number literal.
-        | NameLitNat    Integer
-
-        -- | An integer number literal.
-        | NameLitInt    Integer
-
-        -- | A size literal.
-        | NameLitSize   Integer
-
-        -- | A word literal, of the given width.
-        | NameLitWord   Integer Int
-
-        -- | A floating point literal, of the given width.
-        | NameLitFloat  Double  Int
-
-        -- | A string literal.
-        | NameLitString Text
-
-        -- | A constructor tag literal.
-        | NameLitTag    Integer
+        -- | A primitive literal.
+        | NamePrimLit   PrimLit
         deriving (Eq, Ord, Show, Typeable)
 
 
@@ -136,15 +117,7 @@ instance NFData Name where
         NameObjTyCon            -> ()
         NamePrimTyCon con       -> rnf con
         NamePrimOp    op        -> rnf op
-        NameLitVoid             -> ()
-        NameLitBool   b         -> rnf b
-        NameLitNat    i         -> rnf i
-        NameLitInt    i         -> rnf i
-        NameLitSize   i         -> rnf i
-        NameLitWord   i bits    -> rnf i `seq` rnf bits
-        NameLitFloat  f bits    -> rnf f `seq` rnf bits
-        NameLitString bs        -> rnf bs
-        NameLitTag    i         -> rnf i
+        NamePrimLit   lit       -> rnf lit
 
 
 instance Pretty Name where
@@ -156,16 +129,7 @@ instance Pretty Name where
         NameObjTyCon            -> text "Obj"
         NamePrimTyCon tc        -> ppr tc
         NamePrimOp p            -> ppr p
-        NameLitVoid             -> text "V#"
-        NameLitBool True        -> text "True#"
-        NameLitBool False       -> text "False#"
-        NameLitNat   i          -> integer i <> text "#"
-        NameLitInt   i          -> integer i <> text "i#"
-        NameLitSize  i          -> integer i <> text "s#"
-        NameLitWord  i bits     -> integer i <> text "w" <> int bits <> text "#"
-        NameLitFloat f bits     -> double  f <> text "f" <> int bits <> text "#"
-        NameLitString tx        -> (text $ show $ T.unpack tx) <> text "#"
-        NameLitTag   i          -> text "TAG" <> integer i <> text "#"
+        NamePrimLit lit         -> ppr lit
 
 
 instance CompoundName Name where
@@ -189,65 +153,13 @@ readName str
         | Just p        <- readPrimTyCon str
         = Just $ NamePrimTyCon p
 
-        -- PrimArith
-        | Just p        <- readPrimArith str
-        = Just $ NamePrimOp $ PrimArith p
+        -- PrimOp
+        | Just p        <- readPrimOp str
+        = Just $ NamePrimOp p
 
-        -- PrimCast
-        | Just p        <- readPrimCast str
-        = Just $ NamePrimOp $ PrimCast p
-
-        -- PrimCall
-        | Just p        <- readPrimCall str
-        = Just $ NamePrimOp $ PrimCall p
-
-        -- PrimControl
-        | Just p        <- readPrimControl str
-        = Just $ NamePrimOp $ PrimControl p
-
-        -- PrimStore
-        | Just p        <- readPrimStore str
-        = Just $ NamePrimOp $ PrimStore p
-
-        -- Literal void
-        | str == "V#" 
-        = Just $ NameLitVoid
-
-        -- Literal Bools
-        | str == "True#"  = Just $ NameLitBool True
-        | str == "False#" = Just $ NameLitBool False
-
-        -- Literal Nats
-        | Just str'     <- stripSuffix "#" str
-        , Just val      <- readLitNat str'
-        = Just $ NameLitNat  val
-
-        -- Literal Ints
-        | Just str'     <- stripSuffix "#" str
-        , Just val      <- readLitInt str'
-        = Just $ NameLitInt  val
-
-        -- Literal Sizes
-        | Just str'     <- stripSuffix "s#" str
-        , Just val      <- readLitSize str'
-        = Just $ NameLitSize val
-
-        -- Literal Words
-        | Just str'        <- stripSuffix "#" str
-        , Just (val, bits) <- readLitWordOfBits str'
-        , elem bits [8, 16, 32, 64]
-        = Just $ NameLitWord val bits
-
-        -- Literal Floats
-        | Just str'        <- stripSuffix "#" str
-        , Just (val, bits) <- readLitFloatOfBits str'
-        , elem bits [32, 64]
-        = Just $ NameLitFloat val bits
-
-        -- Literal Tags
-        | Just rest     <- stripPrefix "TAG" str
-        , (ds, "#")     <- span isDigit rest
-        = Just $ NameLitTag (read ds)
+        -- PrimLit
+        | Just p        <- readPrimLit str
+        = Just $ NamePrimLit p
 
         -- Constructors.
         | c : _         <- str
@@ -279,7 +191,7 @@ takeNameVar _
 
 -- PrimOp ---------------------------------------------------------------------
 -- | Primitive operators implemented directly by the machine or runtime system.
-data    PrimOp
+data PrimOp
         -- | Arithmetic, logic, comparison and bit-wise operators.
         = PrimArith     PrimArith
 
@@ -315,4 +227,139 @@ instance Pretty PrimOp where
         PrimStore    p  -> ppr p
         PrimCall     c  -> ppr c
         PrimControl  c  -> ppr c
+
+
+-- | Read a primitive operator.
+readPrimOp :: String -> Maybe PrimOp
+readPrimOp str
+        -- PrimArith
+        | Just p        <- readPrimArith str
+        = Just $ PrimArith p
+
+        -- PrimCast
+        | Just p        <- readPrimCast str
+        = Just $ PrimCast p
+
+        -- PrimCall
+        | Just p        <- readPrimCall str
+        = Just $ PrimCall p
+
+        -- PrimControl
+        | Just p        <- readPrimControl str
+        = Just $ PrimControl p
+
+        -- PrimStore
+        | Just p        <- readPrimStore str
+        = Just $ PrimStore p
+
+        | otherwise
+        = Nothing
+
+
+-- PrimLit --------------------------------------------------------------------
+-- | Primitive literals.
+data PrimLit 
+        -- | The void literal.
+        = PrimLitVoid
+
+        -- | A boolean literal.
+        | PrimLitBool   Bool
+
+        -- | A natural number literal.
+        | PrimLitNat    Integer
+
+        -- | An integer number literal.
+        | PrimLitInt    Integer
+
+        -- | A size literal.
+        | PrimLitSize   Integer
+
+        -- | A word literal, of the given width.
+        | PrimLitWord   Integer Int
+
+        -- | A floating point literal, of the given width.
+        | PrimLitFloat  Double  Int
+
+        -- | A string literal.
+        | PrimLitString Text
+
+        -- | A constructor tag literal.
+        | PrimLitTag    Integer
+        deriving (Eq, Ord, Show)
+
+
+instance NFData PrimLit where
+ rnf p
+  = case p of
+        PrimLitVoid             -> ()
+        PrimLitBool   b         -> rnf b
+        PrimLitNat    i         -> rnf i
+        PrimLitInt    i         -> rnf i
+        PrimLitSize   i         -> rnf i
+        PrimLitWord   i bits    -> rnf i `seq` rnf bits
+        PrimLitFloat  f bits    -> rnf f `seq` rnf bits
+        PrimLitString bs        -> rnf bs
+        PrimLitTag    i         -> rnf i
+
+
+instance Pretty PrimLit where
+ ppr p 
+  = case p of
+        PrimLitVoid             -> text "V#"
+        PrimLitBool True        -> text "True#"
+        PrimLitBool False       -> text "False#"
+        PrimLitNat   i          -> integer i <> text "#"
+        PrimLitInt   i          -> integer i <> text "i#"
+        PrimLitSize  i          -> integer i <> text "s#"
+        PrimLitWord  i bits     -> integer i <> text "w" <> int bits <> text "#"
+        PrimLitFloat f bits     -> double  f <> text "f" <> int bits <> text "#"
+        PrimLitString tx        -> (text $ show $ T.unpack tx) <> text "#"
+        PrimLitTag   i          -> text "TAG" <> integer i <> text "#"
+
+
+-- | Read a primitive literal.
+readPrimLit :: String -> Maybe PrimLit
+readPrimLit str
+        -- Literal void
+        | str == "V#" 
+        = Just $ PrimLitVoid
+
+        -- Literal Bools
+        | str == "True#"  = Just $ PrimLitBool True
+        | str == "False#" = Just $ PrimLitBool False
+
+        -- Literal Nats
+        | Just str'     <- stripSuffix "#" str
+        , Just val      <- readLitNat str'
+        = Just $ PrimLitNat  val
+
+        -- Literal Ints
+        | Just str'     <- stripSuffix "#" str
+        , Just val      <- readLitInt str'
+        = Just $ PrimLitInt  val
+
+        -- Literal Sizes
+        | Just str'     <- stripSuffix "s#" str
+        , Just val      <- readLitSize str'
+        = Just $ PrimLitSize val
+
+        -- Literal Words
+        | Just str'        <- stripSuffix "#" str
+        , Just (val, bits) <- readLitWordOfBits str'
+        , elem bits [8, 16, 32, 64]
+        = Just $ PrimLitWord val bits
+
+        -- Literal Floats
+        | Just str'        <- stripSuffix "#" str
+        , Just (val, bits) <- readLitFloatOfBits str'
+        , elem bits [32, 64]
+        = Just $ PrimLitFloat val bits
+
+        -- Literal Tags
+        | Just rest     <- stripPrefix "TAG" str
+        , (ds, "#")     <- span isDigit rest
+        = Just $ PrimLitTag (read ds)
+
+        | otherwise
+        = Nothing
 

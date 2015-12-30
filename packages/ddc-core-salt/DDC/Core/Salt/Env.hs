@@ -4,12 +4,13 @@ module DDC.Core.Salt.Env
         ( primDataDefs
         , primKindEnv
         , primTypeEnv
-        , typeOfPrim
+        , typeOfPrimOp
         , typeOfPrimArith
         , typeOfPrimCast
         , typeOfPrimCall
         , typeOfPrimControl
         , typeOfPrimStore 
+        , typeOfPrimLit
         , typeIsUnboxed)
 where
 import DDC.Core.Salt.Compounds
@@ -42,8 +43,8 @@ primDataDefs
         [ makeDataDefAlg
                 (NamePrimTyCon PrimTyConBool)
                 []
-                (Just   [ (NameLitBool True,  [])
-                        , (NameLitBool False, []) ])
+                (Just   [ (NamePrimLit (PrimLitBool True),  [])
+                        , (NamePrimLit (PrimLitBool False), []) ])
         -- Nat
         , makeDataDefAlg (NamePrimTyCon PrimTyConNat)        [] Nothing
 
@@ -119,28 +120,36 @@ primTypeEnv = Env.setPrimFun typeOfName Env.empty
 typeOfName :: Name -> Maybe (Type Name)
 typeOfName nn
  = case nn of
-        NamePrimOp p        -> Just $ typeOfPrim p
-        NameLitVoid         -> Just $ tVoid
-        NameLitBool  _      -> Just $ tBool
-        NameLitNat   _      -> Just $ tNat
-        NameLitInt   _      -> Just $ tInt
-        NameLitSize  _      -> Just $ tSize
-        NameLitWord  _ bits -> Just $ tWord  bits
-        NameLitFloat _ bits -> Just $ tFloat bits
-        NameLitString _     -> Just $ tPtr rTop (tWord 8)
-        NameLitTag   _      -> Just $ tTag
+        NamePrimOp p        -> Just $ typeOfPrimOp p
+        NamePrimLit lit     -> Just $ typeOfPrimLit lit
         _                   -> Nothing
 
 
--- | Take the type of a primitive.
-typeOfPrim :: PrimOp -> Type Name
-typeOfPrim pp
+-- | Take the type of a primitive operator.
+typeOfPrimOp :: PrimOp -> Type Name
+typeOfPrimOp pp
  = case pp of
         PrimArith    op -> typeOfPrimArith    op
         PrimCast     cc -> typeOfPrimCast     cc
         PrimCall     pc -> typeOfPrimCall     pc
         PrimControl  pc -> typeOfPrimControl  pc
         PrimStore    ps -> typeOfPrimStore    ps
+
+
+-- | Take the type of a primitive literal.
+typeOfPrimLit :: PrimLit -> Type Name
+typeOfPrimLit lit
+ = case lit of
+        PrimLitVoid         -> tVoid
+        PrimLitBool  _      -> tBool
+        PrimLitNat   _      -> tNat
+        PrimLitInt   _      -> tInt
+        PrimLitSize  _      -> tSize
+        PrimLitWord  _ bits -> tWord  bits
+        PrimLitFloat _ bits -> tFloat bits
+        PrimLitString _     -> tPtr rTop (tWord 8)
+        PrimLitTag   _      -> tTag
+
 
 
 -- PrimOps --------------------------------------------------------------------
