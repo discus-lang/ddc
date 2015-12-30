@@ -1,21 +1,25 @@
+{-# LANGUAGE TypeFamilies #-}
 
 module DDC.Core.Generic.BindStruct where
 import DDC.Core.Generic.Exp
 import DDC.Core.Collect.Free
 import DDC.Core.Exp.DaCon
 import DDC.Type.Collect
-import DDC.Type.Exp
+import qualified DDC.Type.Exp           as T
 import Data.Maybe
 
 
-instance BindStruct (GExp (Bind n) (Bound n) n n) n where
+instance (Bind l ~ T.Bind l, Bound l ~ T.Bound l)
+      => BindStruct (GExp l) l where
  slurpBindTree xx
   = case xx of
+        XAnnot _ x              -> slurpBindTree x
+
         XVar u                  -> [BindUse BoundExp u]
 
         XCon dc
          -> case dc of
-                DaConBound n    -> [BindCon BoundExp (UName n) Nothing]
+                DaConBound n    -> [BindCon BoundExp (T.UName n) Nothing]
                 _               -> []
 
         XPrim{}                 -> []
@@ -44,14 +48,16 @@ instance BindStruct (GExp (Bind n) (Bound n) n n) n where
         XWitness w              -> slurpBindTree w
 
 
-instance BindStruct (GAlt (Bind n)  (Bound n) n n) n where
+instance (Bind l ~ T.Bind l, Bound l ~ T.Bound l)
+      => BindStruct (GAlt l) l where
  slurpBindTree alt
   = case alt of
         AAlt PDefault x         -> slurpBindTree x
         AAlt (PData _ bs) x     -> [bindDefX BindCasePat bs [x]]
 
 
-instance BindStruct (GCast (Bind n) (Bound n) n n) n where
+instance (Bind l ~ T.Bind l, Bound l ~ T.Bound l)
+      => BindStruct (GCast l) l where
  slurpBindTree cc
   = case cc of
         CastWeakenEffect  eff   -> slurpBindTree eff
@@ -60,7 +66,8 @@ instance BindStruct (GCast (Bind n) (Bound n) n n) n where
         CastRun                 -> []
 
 
-instance BindStruct (GWitness (Bind n) (Bound n) n n) n where
+instance (Bind l ~ T.Bind l, Bound l ~ T.Bound l)
+      => BindStruct (GWitness l) l where
  slurpBindTree ww
   = case ww of
         WVar  u                 -> [BindUse BoundWit u]

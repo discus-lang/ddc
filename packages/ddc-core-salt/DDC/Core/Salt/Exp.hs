@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies #-}
 
 module DDC.Core.Salt.Exp 
         ( module DDC.Core.Generic.Exp
@@ -15,17 +16,25 @@ import qualified DDC.Type.Exp           as C
 
 ---------------------------------------------------------------------------------------------------
 -- Type synonyms for the Salt fragment.
-type Exp        = GExp          (C.Bind A.Name) (C.Bound A.Name) A.Name A.Name
-type Lets       = GLets         (C.Bind A.Name) (C.Bound A.Name) A.Name A.Name
-type Alt        = GAlt          (C.Bind A.Name) (C.Bound A.Name) A.Name A.Name
-type Pat        = GPat          (C.Bind A.Name) (C.Bound A.Name) A.Name A.Name
-type Cast       = GCast         (C.Bind A.Name) (C.Bound A.Name) A.Name A.Name
-type Witness    = GWitness      (C.Bind A.Name) (C.Bound A.Name) A.Name A.Name
-type WiCon      = GWiCon        (C.Bind A.Name) (C.Bound A.Name) A.Name A.Name
+instance Language A.Name where
+ type Annot A.Name      = ()
+ type Bind  A.Name      = C.Bind  A.Name
+ type Bound A.Name      = C.Bound A.Name
+ type Prim  A.Name      = A.Name
+
+type Exp                = GExp      A.Name
+type Lets               = GLets     A.Name
+type Alt                = GAlt      A.Name
+type Pat                = GPat      A.Name
+type Cast               = GCast     A.Name
+type Witness            = GWitness  A.Name
+type WiCon              = GWiCon    A.Name
 
 
 ---------------------------------------------------------------------------------------------------
 -- | Convert annotated version of the Core language to the Salt fragment.
+--   TODO: Once we're happy the generic representation works, 
+--         make the Tetra -> Salt transform produce this form directly.
 class FromAnnot c1 c2 | c1 -> c2 where
  fromAnnot :: c1 -> Either Error c2
 

@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies, UndecidableInstances #-}
 
 -- | Generic expression representation.
 --
@@ -10,83 +11,88 @@
 --
 module DDC.Core.Generic.Exp where
 import DDC.Core.Exp.DaCon
-import DDC.Type.Exp
+import qualified DDC.Type.Exp   as T
+
+---------------------------------------------------------------------------------------------------
+class Language l where
+ type Annot l
+ type Bind  l    
+ type Bound l
+ type Prim  l
 
 
 ---------------------------------------------------------------------------------------------------
 -- | Generic expression representation.
-data GExp b u c p
+data GExp l
+        = XAnnot   !(Annot l)  !(GExp l)
+
         -- | Value variable or primitive operator.
-        = XVar     !u
+        | XVar     !(Bound l)
 
         -- | Data constructor.
-        | XCon     !(DaCon c)
+        | XCon     !(DaCon l)
 
         -- | Primitive operator or literal.
-        | XPrim    !p
+        | XPrim    !(Prim  l)
 
         -- | Type abstraction (level-1 abstration).
-        | XLAM     !b               !(GExp b u c p)
+        | XLAM     !(Bind  l)  !(GExp l)
 
         -- | Value and witness abstraction (level-0 abstraction).
-        | XLam     !b               !(GExp b u c p)
+        | XLam     !(Bind  l)  !(GExp l)
 
         -- | Application.
-        | XApp     !(GExp  b u c p) !(GExp b u c p)
+        | XApp     !(GExp  l)  !(GExp l)
 
         -- | Possibly recursive bindings.
-        | XLet     !(GLets b u c p) !(GExp b u c p)
+        | XLet     !(GLets l)  !(GExp l)
 
         -- | Case branching.
-        | XCase    !(GExp  b u c p) ![GAlt b u c p]
+        | XCase    !(GExp  l)  ![GAlt l]
 
         -- | Type casting.
-        | XCast    !(GCast b u c p) !(GExp b u c p)
+        | XCast    !(GCast l)  !(GExp l)
 
         -- | Type can appear as the argument of an application.
-        | XType    !(Type c)
+        | XType    !(T.Type  l)
 
         -- | Witness can appear as the argument of an application.
-        | XWitness !(GWitness b u c p)
-        deriving Show
+        | XWitness !(GWitness l)
 
 
 -- | Possibly recursive bindings.
-data GLets b u c p
+data GLets l
         -- | Non-recursive binding.
-        = LLet     !b           !(GExp b u c p)
+        = LLet     !(Bind l)  !(GExp l)
 
         -- | Recursive binding.
-        | LRec     ![(b, GExp b u c p)]
+        | LRec     ![(Bind l, GExp l)]
 
         -- | Introduce a private region variable and witnesses to its properties.
-        | LPrivate ![b] !(Maybe (Type c)) ![b]
-        deriving Show
+        | LPrivate ![Bind l] !(Maybe (T.Type l)) ![Bind l]
 
 
 -- | Case alternatives.
-data GAlt b u c p
-        = AAlt !(GPat b u c p) !(GExp b u c p)
-        deriving Show
+data GAlt l
+        = AAlt !(GPat l) !(GExp l)
 
 
 -- | Patterns.
-data GPat b u c p
+data GPat l
         -- | The default pattern always succeeds.
         = PDefault
 
         -- | Match a data constructor and bind its arguments.
-        | PData !(DaCon c) ![b]
-        deriving Show
+        | PData !(DaCon l) ![Bind l]
 
 
 -- | Type casts.
-data GCast b u c p
+data GCast l
         -- | Weaken the effect of an expression.
-        = CastWeakenEffect   !(Type c)
+        = CastWeakenEffect   !(T.Type l)
 
         -- | Purify the effect of an expression.
-        | CastPurify         !(GWitness b u c p)
+        | CastPurify         !(GWitness l)
 
         -- | Box up a computation, suspending its evaluation and capturing 
         --   its effects in the S computaiton type.
@@ -94,30 +100,59 @@ data GCast b u c p
 
         -- | Run a computation, releasing its effects into the context.
         | CastRun
-        deriving Show
 
 
 -- | Witnesses.
-data GWitness b u c p
+data GWitness l
         -- | Witness variable.
-        = WVar  !u
+        = WVar  !(Bound l)
 
         -- | Witness constructor.
-        | WCon  !(GWiCon b u c p)
+        | WCon  !(GWiCon l)
 
         -- | Witness application.
-        | WApp  !(GWitness b u c p) !(GWitness b u c p)
+        | WApp  !(GWitness l) !(GWitness l)
 
         -- | Type can appear as an argument of a witness application.
-        | WType !(Type c)
-        deriving Show
+        | WType !(T.Type l)
 
 
 -- | Witness constructors.
-data GWiCon b u c p
+data GWiCon l
         -- | Witness constructors defined in the environment.
         --   In the interpreter we use this to hold runtime capabilities.
         --   The attached type must be closed.
-        = WiConBound   !u !(Type c)
-        deriving Show
+        = WiConBound   !(Bound l) !(T.Type l)
+
+
+---------------------------------------------------------------------------------------------------
+-- Show instances.
+
+deriving instance 
+        (Show l, Show (Annot l), Show (Bind l), Show (Bound l), Show (Prim l)) 
+        => Show (GExp l)
+
+deriving instance 
+        (Show l, Show (Annot l), Show (Bind l), Show (Bound l), Show (Prim l)) 
+        => Show (GLets l)
+
+deriving instance 
+        (Show l, Show (Annot l), Show (Bind l), Show (Bound l), Show (Prim l)) 
+        => Show (GAlt l)
+
+deriving instance 
+        (Show l, Show (Annot l), Show (Bind l), Show (Bound l), Show (Prim l)) 
+        => Show (GPat l)
+
+deriving instance 
+        (Show l, Show (Annot l), Show (Bind l), Show (Bound l), Show (Prim l)) 
+        => Show (GCast l)
+
+deriving instance 
+        (Show l, Show (Annot l), Show (Bind l), Show (Bound l), Show (Prim l)) 
+        => Show (GWitness l)
+
+deriving instance 
+        (Show l, Show (Annot l), Show (Bind l), Show (Bound l), Show (Prim l)) 
+        => Show (GWiCon l)
 
