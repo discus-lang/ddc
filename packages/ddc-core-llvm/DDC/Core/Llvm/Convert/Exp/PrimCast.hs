@@ -8,7 +8,6 @@ import DDC.Core.Llvm.Convert.Type
 import DDC.Core.Llvm.Convert.Context
 import DDC.Core.Llvm.Convert.Base
 import DDC.Core.Salt.Platform
-import DDC.Core.Compounds
 import Data.Sequence                    (Seq)
 import qualified DDC.Core.Exp           as C
 import qualified DDC.Core.Salt          as A
@@ -106,14 +105,12 @@ convPrimPromote
         -> ConvertM Instr
 
 convPrimPromote ctx tDst vDst tSrc xSrc
- | pp    <- contextPlatform ctx
- , kenv  <- contextKindEnv  ctx
- , Just (A.NamePrimTyCon tcSrc, _) <- takePrimTyConApps tSrc
- , Just (A.NamePrimTyCon tcDst, _) <- takePrimTyConApps tDst
- , A.primCastPromoteIsValid pp tcSrc tcDst
  = do
-        tSrc' <- convertType pp kenv tSrc
-        tDst' <- convertType pp kenv tDst
+        let pp   =  contextPlatform ctx
+        let kenv =  contextKindEnv  ctx
+
+        tSrc'    <- convertType pp kenv tSrc
+        tDst'    <- convertType pp kenv tDst
 
         case (tDst', tSrc') of
          (TInt bitsDst, TInt bitsSrc)
@@ -137,13 +134,8 @@ convPrimPromote ctx tDst vDst tSrc xSrc
           , bitsDst > bitsSrc
           -> return $ IConv vDst ConvZext xSrc
 
-         -- This was supposed to be a valid promotion.
-         --  If this happens then the above cases do not cover all the
-         --  cases that A.primCasePromoteIsValid accepts.
-         _ -> error "ddc-core-llvm.convertPrimPromote: cannot convert"  -- TODO: convert to error
-
- -- Promotion is not valid on this platform.
- | otherwise = throw $ ErrorInvalidPromotion tSrc tDst
+         -- Promotion is not valid on this platform.
+         _ -> throw $ ErrorInvalidPromotion tSrc tDst
 
 
 -------------------------------------------------------------------------------
@@ -156,12 +148,10 @@ convPrimTruncate
         -> ConvertM Instr
 
 convPrimTruncate ctx tDst vDst tSrc xSrc
- | pp    <- contextPlatform ctx
- , kenv  <- contextKindEnv  ctx
- , Just (A.NamePrimTyCon tcSrc, _) <- takePrimTyConApps tSrc
- , Just (A.NamePrimTyCon tcDst, _) <- takePrimTyConApps tDst
- , A.primCastTruncateIsValid pp tcSrc tcDst
  = do
+        let pp   = contextPlatform ctx
+        let kenv = contextKindEnv  ctx
+
         tSrc' <- convertType pp kenv tSrc
         tDst' <- convertType pp kenv tDst
 
@@ -181,11 +171,6 @@ convPrimTruncate ctx tDst vDst tSrc xSrc
           , isUnsignedT tSrc,   isSignedT tDst
           -> return $ IConv vDst ConvZext xSrc
 
-         -- This was supposed to be a valid truncation.
-         --  If this happens then the above cases do not cover all the
-         --  cases that A.primCaseTruncateIsValid accepts.
-         _ -> error "ddc-core-llvm.convPrimTruncate: cannot convert"    -- TODO: convert to error.
-
- -- Truncation is not valid on this platform.
- | otherwise = throw $ ErrorInvalidTruncation tSrc tDst
+         -- Truncation is not valid on this platform.
+         _ -> throw $ ErrorInvalidTruncation tSrc tDst
 
