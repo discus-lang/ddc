@@ -207,7 +207,8 @@ takeLocalV ctx xx
 -- Global Variables / Names ---------------------------------------------------
 -- | Take a variable from an expression as a global var, if any.
 ---
---   TODO: Make sure these get sanitized.
+--   The seaNameOfSuper function sanitizes these, so we can use
+--   them as valid LLVM names.
 --
 takeGlobalV  
         :: Context -> A.Exp
@@ -225,6 +226,8 @@ takeGlobalV ctx xx
          -> Just $ do
                 let mImport  = lookup nSuper (C.moduleImportValues mm)
                 let mExport  = lookup nSuper (C.moduleExportValues mm)
+
+                -- Convert local name to sanitized LLVM name.
                 let Just str = liftM renderPlain 
                              $ A.seaNameOfSuper mImport mExport nSuper
 
@@ -234,16 +237,16 @@ takeGlobalV ctx xx
         _ ->    Nothing
 
 
----------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 -- | Add a static constant to the map, 
 --   assigning a new variable to refer to it.
 addConstant :: Context -> Lit -> ConvertM Var
 addConstant ctx lit
  = do   
-        -- TODO: This global name should be set as having module-local
-        --       scope, but we're cruftily uniquifying it with the
-        --       module name instead.
-        let C.ModuleName parts = C.moduleName $ contextModule ctx
+        -- This name is going into the global scope,
+        -- so prepend the module name to uniquify it.
+        let C.ModuleName parts 
+                        = C.moduleName $ contextModule ctx
         let mname       = List.intercalate "." parts
 
         -- Make a new variable to name the literal constant.
