@@ -25,8 +25,8 @@ instance (Bind l ~ T.Bind l, Bound l ~ T.Bound l)
         XPrim{}                 -> []
 
         XApp x1 x2              -> slurpBindTree x1 ++ slurpBindTree x2
-        XLAM b x                -> [bindDefT BindLAM [b] [x]]
-        XLam b x                -> [bindDefX BindLam [b] [x]]      
+        XAbs (ALAM b) x         -> [bindDefT BindLAM [b] [x]]
+        XAbs (ALam b) x         -> [bindDefX BindLam [b] [x]]      
 
         XLet (LLet b x1) x2
          -> slurpBindTree x1

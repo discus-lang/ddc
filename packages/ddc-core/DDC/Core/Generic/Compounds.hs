@@ -8,7 +8,6 @@ module DDC.Core.Generic.Compounds
         ( module DDC.Type.Compounds
 
         -- * Abstractions
-        , GAbs (..)
         , makeXAbs,     takeXAbs
         , makeXLAMs,    takeXLAMs
         , makeXLams,    takeXLams
@@ -25,28 +24,21 @@ import DDC.Type.Compounds
 
 
 -- Abstractions ---------------------------------------------------------------
-data GAbs l
-        = GAbsLAM (Bind l)
-        | GAbsLam (Bind l)
-
 -- | Make some nested abstractions.
 makeXAbs  :: [GAbs l] -> GExp l -> GExp l
 makeXAbs as xx
- = foldr mkAbs xx as
- where  mkAbs (GAbsLAM b) x = XLAM b x
-        mkAbs (GAbsLam b) x = XLam b x
+ = foldr XAbs xx as
 
 
 -- | Split type and value/witness abstractions from the front of an expression,
 --   or `Nothing` if there aren't any.
 takeXAbs  :: GExp l -> Maybe ([GAbs l], GExp l)
 takeXAbs xx
- = let  go bs (XLAM b x)   = go (GAbsLAM b : bs) x
-        go bs (XLam b x)   = go (GAbsLam b : bs) x
-        go bs x            = (reverse bs, x)
+ = let  go as (XAbs a x)   = go (a : as) x
+        go as x            = (reverse as, x)
    in   case go [] xx of
          ([], _)        -> Nothing
-         (bs, body)     -> Just (bs, body)
+         (as, body)     -> Just (as, body)
 
 
 -- | Make some nested type lambdas.

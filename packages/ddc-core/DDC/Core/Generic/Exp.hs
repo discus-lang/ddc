@@ -1,4 +1,4 @@
-{-# LANGUAGE TypeFamilies, ConstraintKinds, UndecidableInstances #-}
+{-# LANGUAGE TypeFamilies, ConstraintKinds, UndecidableInstances, PatternSynonyms #-}
 
 -- | Generic expression representation.
 --
@@ -23,10 +23,11 @@ class Language l where
 
 ---------------------------------------------------------------------------------------------------
 -- | Generic expression representation.
+-- TODO: split XType and XWitness into GArg type.
 data GExp l
         = XAnnot   !(Annot l)  !(GExp l)
 
-        -- | Value variable or primitive operator.
+        -- | Value or Witness variable (level-0).
         | XVar     !(Bound l)
 
         -- | Data constructor.
@@ -35,13 +36,10 @@ data GExp l
         -- | Primitive operator or literal.
         | XPrim    !(Prim  l)
 
-        -- | Type abstraction (level-1 abstration).
-        | XLAM     !(Bind  l)  !(GExp l)
+        -- | Function abstraction.
+        | XAbs     !(GAbs  l)  !(GExp l)
 
-        -- | Value and witness abstraction (level-0 abstraction).
-        | XLam     !(Bind  l)  !(GExp l)
-
-        -- | Application.
+        -- | Function application.
         | XApp     !(GExp  l)  !(GExp l)
 
         -- | Possibly recursive bindings.
@@ -60,8 +58,19 @@ data GExp l
         | XWitness !(GWitness l)
 
 
--- TODO: split XType and XWitness into GArg type.
--- TODO: split XLAM and XLam into GAbs type.
+-- | Abstractions.
+--
+--   This indicates what sort of object is being abstracted over in an XAbs.
+--
+data GAbs l
+        -- | Level-1 abstraction (spec)
+        = ALAM     !(Bind l)
+
+        -- | Level-0 abstraction (value and witness)
+        | ALam     !(Bind l)
+
+pattern XLAM b x = XAbs (ALAM b) x
+pattern XLam b x = XAbs (ALam b) x
 
 
 -- | Possibly recursive bindings.
@@ -135,6 +144,7 @@ type ShowLanguage l
         = (Show l, Show (Annot l), Show (Bind l), Show (Bound l), Show (Prim l))
 
 deriving instance ShowLanguage l => Show (GExp     l)
+deriving instance ShowLanguage l => Show (GAbs     l)
 deriving instance ShowLanguage l => Show (GLets    l)
 deriving instance ShowLanguage l => Show (GAlt     l)
 deriving instance ShowLanguage l => Show (GPat     l)

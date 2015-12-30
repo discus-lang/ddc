@@ -51,8 +51,8 @@ convertSuper ctx (C.BName nSuper tSuper) x
 
         -- Add parameters to environments.
         let asParam'     = eraseWitBinds asParam
-        let bsParamType  = [b | A.GAbsLAM b <- asParam']
-        let bsParamValue = [b | A.GAbsLam b <- asParam']
+        let bsParamType  = [b | A.ALAM b <- asParam']
+        let bsParamValue = [b | A.ALam b <- asParam']
 
         mdsup     <- Tbaa.deriveMD (renderPlain nSuper') x
         let ctx'  = ctx
@@ -131,15 +131,11 @@ convertSuper _ b x
 eraseWitBinds :: [A.GAbs A.Name] -> [A.GAbs A.Name]
 eraseWitBinds
  = let 
-        isBindWit (A.GAbsLAM b) 
+        isBindWit (A.ALAM _) = False
+        isBindWit (A.ALam b) 
           = case b of
                  C.BName _ t | isWitnessType t -> True
-                 _                           -> False
-
-        isBindWit (A.GAbsLam b) 
-          = case b of
-                 C.BName _ t | isWitnessType t -> True
-                 _                           -> False
+                 _                             -> False
 
    in  filter (not . isBindWit)
 

@@ -42,14 +42,14 @@ instance PrettyLanguage l => Pretty (GExp l) where
   = let pprX    = pprModePrec mode 0
         pprLts  = pprModePrec (modeExpLets mode) 0
         pprAlt  = pprModePrec (modeExpAlt  mode) 0
-    in case xx of
 
+    in case xx of
         XAnnot _ x      -> ppr x
         XVar   u        -> ppr u
         XCon   dc       -> ppr dc
         XPrim  p        -> ppr p
         
-        XLAM b xBody
+        XAbs (ALAM b) xBody
          -> pprParen' (d > 1)
                 $  text "/\\" 
                 <> ppr b
@@ -59,7 +59,7 @@ instance PrettyLanguage l => Pretty (GExp l) where
                      else    line)
                 <> pprX xBody
 
-        XLam b xBody
+        XAbs (ALam b) xBody
          -> pprParen' (d > 1)
                 $  text "\\"
                 <> ppr b
