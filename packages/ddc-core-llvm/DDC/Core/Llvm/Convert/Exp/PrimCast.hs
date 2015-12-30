@@ -23,11 +23,10 @@ convPrimCast
         :: Context              -- ^ Context of the conversion.
         -> Maybe Var            -- ^ Assign result to this var.
         -> A.PrimOp             -- ^ Primitive to call.
-        -> C.Type A.Name        -- ^ Type of the primitive.     -- TODO: look this up here
         -> [A.Arg]              -- ^ Arguments to primitive.
         -> Maybe (ConvertM (Seq AnnotInstr))
 
-convPrimCast ctx mdst p _tPrim as
+convPrimCast ctx mdst p as
  = case p of
         A.PrimCast A.PrimCastConvert
          | [A.RType tDst, A.RType tSrc, xSrc] <- as

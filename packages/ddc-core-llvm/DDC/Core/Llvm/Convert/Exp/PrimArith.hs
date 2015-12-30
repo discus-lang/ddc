@@ -19,11 +19,10 @@ convPrimArith
         :: Context              -- ^ Context of the conversion.
         -> Maybe Var            -- ^ Assign result to this var.
         -> A.PrimOp             -- ^ Primitive to call.
-        -> C.Type A.Name        -- ^ Type of the primitive.
         -> [A.Arg]              -- ^ Arguments to primitive.
         -> Maybe (ConvertM (Seq AnnotInstr))
 
-convPrimArith ctx mdst p _tPrim xs
+convPrimArith ctx mdst p xs
  = let  pp              = contextPlatform ctx
         kenv            = contextKindEnv  ctx
    in case p of

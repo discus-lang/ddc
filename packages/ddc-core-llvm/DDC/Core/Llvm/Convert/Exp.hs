@@ -19,7 +19,6 @@ import DDC.Core.Generic.Compounds
 import Control.Applicative
 import Data.Sequence                            (Seq, (|>), (><))
 import qualified DDC.Core.Salt                  as A
-import qualified DDC.Core.Salt.Env              as A
 import qualified DDC.Core.Exp                   as C
 import qualified DDC.Core.Exp.DaCon             as C
 import qualified DDC.Type.Env                   as Env
@@ -285,13 +284,12 @@ convertSimple ctx ectx xx
          -- Primitive operators.
          A.XApp{}
           | Just (p, args) <- takeXPrimApps xx
-          , tPrim       <- A.typeOfPrimOp p
           , mDst        <- takeNonVoidVarOfContext ectx
           , Just go     <- foldl (<|>) empty
-                                [ convPrimCall  ctx mDst p tPrim args
-                                , convPrimArith ctx mDst p tPrim args
-                                , convPrimCast  ctx mDst p tPrim args
-                                , convPrimStore ctx mDst p tPrim args ]
+                                [ convPrimCall  ctx mDst p args
+                                , convPrimArith ctx mDst p args
+                                , convPrimCast  ctx mDst p args
+                                , convPrimStore ctx mDst p args ]
           -> go
 
           -- Call to top-level super.

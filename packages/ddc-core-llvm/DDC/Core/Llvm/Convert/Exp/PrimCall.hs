@@ -8,7 +8,6 @@ import DDC.Core.Llvm.Convert.Type
 import DDC.Core.Llvm.Convert.Context
 import DDC.Core.Llvm.Convert.Base
 import Data.Sequence            (Seq)
-import qualified DDC.Core.Exp           as C
 import qualified DDC.Core.Salt          as A
 import qualified Data.Sequence          as Seq
 
@@ -18,11 +17,10 @@ convPrimCall
         :: Context              -- ^ Context of the conversion.
         -> Maybe Var            -- ^ Assign result to this var.
         -> A.PrimOp             -- ^ Prim to call.
-        -> C.Type A.Name        -- ^ Type of prim.
         -> [A.Arg]              -- ^ Arguments to prim.
         -> Maybe (ConvertM (Seq AnnotInstr))
 
-convPrimCall ctx mDst p _tPrim xs
+convPrimCall ctx mDst p xs
  = let  pp              = contextPlatform ctx
    in case p of
         A.PrimCall (A.PrimCallStd arity)

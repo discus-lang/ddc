@@ -12,7 +12,6 @@ import DDC.Core.Llvm.Runtime
 import DDC.Core.Salt.Platform
 import DDC.Core.Generic.BindStruct      ()
 import Data.Sequence                    (Seq)
-import qualified DDC.Core.Exp           as C
 import qualified DDC.Core.Salt          as A
 import qualified Data.Sequence          as Seq
 
@@ -23,11 +22,10 @@ convPrimStore
         :: Context              -- ^ Context of the conversion.
         -> Maybe Var            -- ^ Assign result to this var.
         -> A.PrimOp             -- ^ Prim to call.
-        -> C.Type A.Name        -- ^ Type of prim.      -- TODO: look this up here.
         -> [A.Arg]              -- ^ Arguments to prim.
         -> Maybe (ConvertM (Seq AnnotInstr))
 
-convPrimStore ctx mdst p _tPrim as
+convPrimStore ctx mdst p as
  = let  pp         = contextPlatform ctx
         mdsup      = contextMDSuper  ctx
         kenv       = contextKindEnv  ctx
