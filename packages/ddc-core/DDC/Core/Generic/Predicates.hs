@@ -5,21 +5,16 @@ module DDC.Core.Generic.Predicates
 
           -- * Atoms
         , isXVar,  isXCon
-        , isAtomX, isAtomW
+        , isAtomX, isAtomR, isAtomW
 
-          -- * Lambdas
-        , isXLAM, isXLam
-        , isLambdaX
+          -- * Abstractions
+        , isXAbs, isXLAM, isXLam
 
           -- * Applications
         , isXApp
 
           -- * Let bindings
         , isXLet
-
-          -- * Types and Witnesses
-        , isXType
-        , isXWitness
 
           -- * Patterns
         , isPDefault)
@@ -45,16 +40,24 @@ isXCon xx
         _       -> False
 
 
--- | Check whether an expression is a `XVar` or an `XCon`, 
---   or some type or witness atom.
+-- | Check whether an expression is an atomic value,
+--   eg an `XVar`, `XCon`, or `XPrim`.
 isAtomX :: GExp l -> Bool
 isAtomX xx
  = case xx of
         XVar{}          -> True
         XCon{}          -> True
-        XType    t      -> isAtomT t
-        XWitness w      -> isAtomW w
+        XPrim{}         -> True
         _               -> False
+
+
+-- | Check whether an argument is an atomic value,
+isAtomR :: GArg l -> Bool
+isAtomR aa
+ = case aa of
+        RWitness w      -> isAtomW w
+        RExp x          -> isAtomX x
+        RType t         -> isAtomT t
 
 
 -- | Check whether a witness is a `WVar` or `WCon`.
@@ -66,7 +69,15 @@ isAtomW ww
         _               -> False
 
 
--- Lambdas --------------------------------------------------------------------
+-- Abstractions ---------------------------------------------------------------
+-- | Check whether an expression is an abstraction.
+isXAbs :: GExp l -> Bool
+isXAbs xx
+ = case xx of
+        XAbs{}  -> True
+        _       -> False
+
+
 -- | Check whether an expression is a spec abstraction (level-1).
 isXLAM :: GExp l -> Bool
 isXLAM xx
@@ -81,12 +92,6 @@ isXLam xx
  = case xx of
         XLam{}  -> True
         _       -> False
-
-
--- | Check whether an expression is a spec, value, or witness abstraction.
-isLambdaX :: GExp l -> Bool
-isLambdaX xx
-        = isXLAM xx || isXLam xx
 
 
 -- Applications ---------------------------------------------------------------
@@ -106,23 +111,6 @@ isXLet xx
         XLet{}  -> True
         _       -> False
         
-
--- Type and Witness -----------------------------------------------------------
--- | Check whether an expression is an `XType`.
-isXType :: GExp l -> Bool
-isXType xx
- = case xx of
-        XType{} -> True
-        _       -> False
-
-
--- | Check whether an expression is an `XWitness`.
-isXWitness :: GExp l -> Bool
-isXWitness xx
- = case xx of
-        XWitness{}      -> True
-        _               -> False
-
 
 -- Patterns -------------------------------------------------------------------
 -- | Check whether an alternative is a `PDefault`.

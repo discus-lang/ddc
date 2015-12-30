@@ -24,32 +24,32 @@ convPrimCast
         :: Context              -- ^ Context of the conversion.
         -> Maybe Var            -- ^ Assign result to this var.
         -> A.PrimOp             -- ^ Primitive to call.
-        -> C.Type A.Name        -- ^ Type of the primitive.
-        -> [A.Exp]              -- ^ Arguments to primitive.
+        -> C.Type A.Name        -- ^ Type of the primitive.     -- TODO: look this up here
+        -> [A.Arg]              -- ^ Arguments to primitive.
         -> Maybe (ConvertM (Seq AnnotInstr))
 
-convPrimCast ctx mdst p _tPrim xs
+convPrimCast ctx mdst p _tPrim as
  = case p of
         A.PrimCast A.PrimCastConvert
-         | [A.XType tDst, A.XType tSrc, xSrc] <- xs
+         | [A.RType tDst, A.RType tSrc, xSrc] <- as
          , Just vDst            <- mdst
          -> Just $ do
                 instr   <- convPrimConvert ctx tDst vDst tSrc xSrc
                 return  $  Seq.singleton (annotNil instr)
 
         A.PrimCast A.PrimCastPromote
-         | [A.XType tDst, A.XType tSrc, xSrc] <- xs
+         | [A.RType tDst, A.RType tSrc, xSrc] <- as
          , Just vDst            <- mdst
-         , Just mSrc            <- mconvAtom ctx xSrc
+         , Just mSrc            <- mconvArg ctx xSrc
          -> Just $ do
                 xSrc'   <- mSrc
                 instr   <- convPrimPromote ctx tDst vDst tSrc xSrc'
                 return  $  Seq.singleton (annotNil instr) 
 
         A.PrimCast A.PrimCastTruncate
-         | [A.XType tDst, A.XType tSrc, xSrc] <- xs
+         | [A.RType tDst, A.RType tSrc, xSrc] <- as
          , Just vDst            <- mdst
-         , Just mSrc            <- mconvAtom ctx xSrc
+         , Just mSrc            <- mconvArg ctx xSrc
          -> Just $ do
                 xSrc'   <- mSrc
                 instr   <- convPrimTruncate ctx tDst vDst tSrc xSrc'
@@ -64,10 +64,10 @@ convPrimCast ctx mdst p _tPrim xs
 convPrimConvert
         :: Context
         -> C.Type A.Name -> Var
-        -> C.Type A.Name -> A.Exp
+        -> C.Type A.Name -> A.Arg
         -> ConvertM Instr
 
-convPrimConvert ctx tDst vDst tSrc xSrc
+convPrimConvert ctx tDst vDst tSrc aSrc
  | pp     <- contextPlatform ctx
  , kenv   <- contextKindEnv  ctx
  = do
@@ -81,16 +81,16 @@ convPrimConvert ctx tDst vDst tSrc xSrc
 
           -- Argument is the name of the super itself.
           | tDst'      == TInt (8 * platformAddrBytes pp)
-          , Just mSrc               <- mconvAtom ctx xSrc
+          , Just mSrc               <- mconvArg ctx aSrc
           -> do xSrc' <- mSrc
                 return $ IConv vDst ConvPtrtoint xSrc'
 
           -- Argument is a variable that has been bound to an application of
           -- a super variable to some type arguments.
           | tDst'      == TInt (8 * platformAddrBytes pp)
-          , A.XVar (C.UName nVar)   <- xSrc
+          , A.RExp (A.XVar (C.UName nVar))   <- aSrc
           , Just (nSuper, _tsArgs)  <- Map.lookup nVar (contextSuperBinds ctx)
-          , Just mSrc               <- mconvAtom ctx (A.XVar (C.UName nSuper))
+          , Just mSrc               <- mconvArg ctx (A.RExp (A.XVar (C.UName nSuper)))
           -> do xSrc' <- mSrc
                 return $ IConv vDst ConvPtrtoint xSrc'
 

@@ -1,19 +1,17 @@
 {-# LANGUAGE TypeFamilies, ConstraintKinds, UndecidableInstances, PatternSynonyms #-}
 
 -- | Generic expression representation.
---
---   Each of these types is polymorphic in the names used for
---   (b)inding occurrences, bo(u)nd occurrences, (c)onstructors and (p)rimitives.
---
---   Clients of this module are expected to defined their own type synonyms
---   for 'Exp', 'Lets' and so on that instantiate each of these data types to
---   use more specific types for names.
---
 module DDC.Core.Generic.Exp where
 import DDC.Core.Exp.DaCon
 import qualified DDC.Type.Exp   as T
 
+
 ---------------------------------------------------------------------------------------------------
+-- | Type functions associated with a language definition.
+--
+--   These produce the types used for annotations, bindings, bound occurrences
+--   and primitives for that language.
+--
 class Language l where
  type Annot l
  type Bind  l    
@@ -23,24 +21,24 @@ class Language l where
 
 ---------------------------------------------------------------------------------------------------
 -- | Generic expression representation.
--- TODO: split XType and XWitness into GArg type.
 data GExp l
+        -- | An annotated expression.
         = XAnnot   !(Annot l)  !(GExp l)
 
-        -- | Value or Witness variable (level-0).
-        | XVar     !(Bound l)
+        -- | Primitive operator or literal.
+        | XPrim    !(Prim  l)
 
         -- | Data constructor.
         | XCon     !(DaCon l)
 
-        -- | Primitive operator or literal.
-        | XPrim    !(Prim  l)
+        -- | Value or Witness variable (level-0).
+        | XVar     !(Bound l)
 
         -- | Function abstraction.
         | XAbs     !(GAbs  l)  !(GExp l)
 
         -- | Function application.
-        | XApp     !(GExp  l)  !(GExp l)
+        | XApp     !(GExp  l)  !(GArg l)
 
         -- | Possibly recursive bindings.
         | XLet     !(GLets l)  !(GExp l)
@@ -50,12 +48,6 @@ data GExp l
 
         -- | Type casting.
         | XCast    !(GCast l)  !(GExp l)
-
-        -- | Type can appear as the argument of an application.
-        | XType    !(T.Type  l)
-
-        -- | Witness can appear as the argument of an application.
-        | XWitness !(GWitness l)
 
 
 -- | Abstractions.
@@ -71,6 +63,22 @@ data GAbs l
 
 pattern XLAM b x = XAbs (ALAM b) x
 pattern XLam b x = XAbs (ALam b) x
+
+
+-- | Arguments.
+--
+--   Carries an argument that can be supplied to a function.
+--
+data GArg l
+        -- | Type argument.
+        = RType    !(T.Type l)
+
+        -- | Value argument.
+        | RExp     !(GExp l)
+
+        -- | Witness argument.
+        | RWitness !(GWitness l)
+
 
 
 -- | Possibly recursive bindings.
@@ -145,6 +153,7 @@ type ShowLanguage l
 
 deriving instance ShowLanguage l => Show (GExp     l)
 deriving instance ShowLanguage l => Show (GAbs     l)
+deriving instance ShowLanguage l => Show (GArg     l)
 deriving instance ShowLanguage l => Show (GLets    l)
 deriving instance ShowLanguage l => Show (GAlt     l)
 deriving instance ShowLanguage l => Show (GPat     l)

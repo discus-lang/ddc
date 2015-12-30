@@ -38,7 +38,7 @@ convertBody
         -> Label                -- ^ Id of current block.
         -> Seq AnnotInstr       -- ^ Instrs in current block.
         -> A.Exp                -- ^ Expression being converted.
-        -> ConvertM (Seq Block)  -- ^ Final blocks of function body.
+        -> ConvertM (Seq Block) -- ^ Final blocks of function body.
 
 convertBody ctx ectx blocks label instrs xx
  = let  pp           = contextPlatform    ctx 
@@ -52,9 +52,9 @@ convertBody ctx ectx blocks label instrs xx
          --   We must be at the top-level of the function.
          A.XApp{}
           |  ExpTop{}                           <- ectx
-          ,  Just (A.NamePrimOp p, xs)          <- takeXPrimApps xx
+          ,  Just (A.NamePrimOp p, as)          <- takeXPrimApps xx
           ,  A.PrimControl A.PrimControlReturn  <- p
-          ,  [A.XType{}, A.XCon dc]             <- xs
+          ,  [A.RType{}, A.RExp (A.XCon dc)]    <- as
           ,  Just A.NameLitVoid                 <- C.takeNameOfDaCon dc
           -> return  $   blocks 
                      |>  Block label 
@@ -65,9 +65,9 @@ convertBody ctx ectx blocks label instrs xx
          --   We must be at the top-level of the function.
          A.XApp{}
           |  ExpTop{}                           <- ectx
-          ,  Just (A.NamePrimOp p, xs)          <- takeXPrimApps xx
+          ,  Just (A.NamePrimOp p, as)          <- takeXPrimApps xx
           ,  A.PrimControl A.PrimControlReturn  <- p
-          ,  [A.XType t, x2]                    <- xs
+          ,  [A.RType t, A.RExp x2]             <- as
           ,  isVoidT t
           -> do instrs2 <- convertSimple ctx ectx x2
                 return  $  blocks
@@ -78,9 +78,9 @@ convertBody ctx ectx blocks label instrs xx
          --   We must be at the top-level of the function.
          A.XApp{}
           |  ExpTop{}                           <- ectx
-          ,  Just (A.NamePrimOp p, xs)          <- takeXPrimApps xx
+          ,  Just (A.NamePrimOp p, as)          <- takeXPrimApps xx
           ,  A.PrimControl A.PrimControlReturn  <- p
-          ,  [A.XType t, x]                     <- xs
+          ,  [A.RType t, A.RExp x]              <- as
           -> do t'      <- convertType pp kenv t
                 vDst    <- newUniqueVar t'
                 is      <- convertSimple ctx (ExpAssign ectx vDst) x
@@ -91,9 +91,9 @@ convertBody ctx ectx blocks label instrs xx
          -- Fail and abort the program.
          --   Allow this inside an expression as well as from the top level.
          A.XApp{}
-          |  Just (A.NamePrimOp p, xs)          <- takeXPrimApps xx
+          |  Just (A.NamePrimOp p, as)          <- takeXPrimApps xx
           ,  A.PrimControl A.PrimControlFail    <- p
-          ,  [A.XType _tResult]                 <- xs
+          ,  [A.RType _tResult]                 <- as
           -> let 
                  iSet   = case ectx of
                            ExpTop{}           -> INop
@@ -119,10 +119,11 @@ convertBody ctx ectx blocks label instrs xx
           |  Just (A.NamePrimOp p, args)        <- takeXPrimApps xx
           ,  A.PrimCall (A.PrimCallTail arity)  <- p
           ,  _tsArgs                            <- take arity args
-          ,  A.XType tResult : xFunTys : xsArgs <- drop arity args
-          ,  Just (xFun, _xsTys)                <- takeXApps xFunTys
+          ,  A.RType tResult : A.RExp xFunTys : xsArgs 
+                                                <- drop arity args
+          ,  (xFun, _xsTys)                     <- splitXApps xFunTys
           ,  Just mFun                          <- takeGlobalV ctx xFun
-          ,  Just msArgs                        <- sequence $ map (mconvAtom ctx) xsArgs
+          ,  Just msArgs                        <- sequence $ map (mconvArg ctx) xsArgs
           -> do 
                 Var nFun _      <- mFun
                 xsArgs'         <- sequence msArgs
@@ -199,11 +200,11 @@ convertBody ctx ectx blocks label instrs xx
          -- stashed in the context until we find a conversion that needs them.
          -- See [Note: Binding top-level supers]
          A.XLet (A.LLet (C.BName nBind _) x1) x2
-          | Just (xF, xsArgs)       <- takeXApps x1
-          , A.XVar (C.UName nSuper) <- xF
-          , tsArgs  <- [t | A.XType t <- xsArgs]
+          | (xF, asArgs)                <- splitXApps x1
+          , A.XVar (C.UName nSuper)     <- xF
+          , tsArgs  <- [t | A.RType t   <- asArgs]
           , length tsArgs > 0
-          , length xsArgs == length tsArgs
+          , length asArgs == length tsArgs
           ,   Set.member nSuper (contextSupers  ctx)
            || Set.member nSuper (contextImports ctx)
           -> do let ctx'   = ctx { contextSuperBinds 
@@ -295,9 +296,9 @@ convertSimple ctx ectx xx
           -> go
 
           -- Call to top-level super.
-          | Just (xFun@(A.XVar u), xsArgs) <- takeXApps xx
+          | (xFun@(A.XVar u), xsArgs) <- splitXApps xx
           , Just tSuper         <- Env.lookup u tenv
-          , Just msArgs_value   <- sequence $ map (mconvAtom ctx) $ eraseTypeWitArgs xsArgs
+          , Just msArgs_value   <- sequence $ map (mconvArg ctx) $ eraseTypeWitArgs xsArgs
           , Just mFun           <- takeGlobalV ctx xFun
           -> do 
                 Var nFun _      <- mFun
@@ -321,11 +322,11 @@ convertSimple ctx ectx xx
 ---------------------------------------------------------------------------------------------------
 -- | Erase type and witness arge Slurp out only the values from a list of
 --   function arguments.
-eraseTypeWitArgs :: [A.Exp] -> [A.Exp]
+eraseTypeWitArgs :: [A.Arg] -> [A.Arg]
 eraseTypeWitArgs []       = []
 eraseTypeWitArgs (x:xs)
  = case x of
-        A.XType{}       -> eraseTypeWitArgs xs
-        A.XWitness{}    -> eraseTypeWitArgs xs
+        A.RType{}       -> eraseTypeWitArgs xs
+        A.RWitness{}    -> eraseTypeWitArgs xs
         _               -> x : eraseTypeWitArgs xs
 

@@ -21,8 +21,11 @@ instance PrettyLanguage l => Pretty (GExp l) where
 
  data PrettyMode (GExp l)
         = PrettyModeExp
-        { -- | Mode to use when pretty printing let expressions.
-          modeExpLets           :: PrettyMode (GLets l)
+        { -- | Mode to use when pretty printing arguments.
+          modeExpArg            :: PrettyMode (GArg l)
+
+          -- | Mode to use when pretty printing let expressions.
+        , modeExpLets           :: PrettyMode (GLets l)
 
           -- | Mode to use when pretty printing alternatives.
         , modeExpAlt            :: PrettyMode (GAlt  l)
@@ -33,7 +36,8 @@ instance PrettyLanguage l => Pretty (GExp l) where
 
  pprDefaultMode
         = PrettyModeExp
-        { modeExpLets           = pprDefaultMode
+        { modeExpArg            = pprDefaultMode
+        , modeExpLets           = pprDefaultMode
         , modeExpAlt            = pprDefaultMode
         , modeExpUseLetCase     = False }
 
@@ -66,11 +70,11 @@ instance PrettyLanguage l => Pretty (GExp l) where
                 <> breakWhen (not $ isSimpleX xBody)
                 <> pprX xBody
 
-        XApp x1 x2
+        XApp x1 a2
          -> pprParen' (d > 10)
          $  pprModePrec mode 10 x1 
-                <> nest 4 (breakWhen (not $ isSimpleX x2) 
-                          <> pprModePrec mode 11 x2)
+                <> nest 4 (breakWhen (not $ isSimpleR a2) 
+                          <> pprModePrec (modeExpArg mode) 11 a2)
 
         XLet lts x
          ->  pprParen' (d > 2)
@@ -109,8 +113,19 @@ instance PrettyLanguage l => Pretty (GExp l) where
          $   ppr cc <+> text "in"
          <$> pprX x
 
-        XType    t      -> text "[" <> ppr t <> text "]"
-        XWitness w      -> text "<" <> ppr w <> text ">"
+
+-- Arg --------------------------------------------------------------------------------------------
+instance PrettyLanguage l => Pretty (GArg l) where
+
+ data PrettyMode (GArg l)
+        = PrettyModeArg
+        { modeArgExp            :: PrettyMode (GExp l) }
+
+ pprModePrec mode n aa 
+  = case aa of
+        RType    t      -> text "[" <> ppr t <> text "]"
+        RExp     x      -> pprModePrec (modeArgExp mode) n  x
+        RWitness w      -> text "<" <> ppr w <> text ">"
 
 
 -- Pat --------------------------------------------------------------------------------------------
@@ -261,9 +276,18 @@ isSimpleX :: GExp l -> Bool
 isSimpleX xx
  = case xx of
         XVar{}          -> True
+        XPrim{}         -> True
         XCon{}          -> True
-        XType{}         -> True
-        XWitness{}      -> True
-        XApp x1 x2      -> isSimpleX x1 && isAtomX x2
+        XApp x1 a2      -> isSimpleX x1 && isAtomR a2
         _               -> False
+
+-- | Check if this is a simple argument that does not need extra spacing when
+--   being pretty printed.
+isSimpleR :: GArg l -> Bool
+isSimpleR aa
+ = case aa of
+        RType{}         -> True
+        RExp x          -> isSimpleX x
+        RWitness{}      -> True
+
 

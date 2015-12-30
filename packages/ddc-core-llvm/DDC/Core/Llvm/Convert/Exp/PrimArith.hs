@@ -21,7 +21,7 @@ convPrimArith
         -> Maybe Var            -- ^ Assign result to this var.
         -> A.PrimOp             -- ^ Primitive to call.
         -> C.Type A.Name        -- ^ Type of the primitive.
-        -> [A.Exp]              -- ^ Arguments to primitive.
+        -> [A.Arg]              -- ^ Arguments to primitive.
         -> Maybe (ConvertM (Seq AnnotInstr))
 
 convPrimArith ctx mdst p _tPrim xs
@@ -30,9 +30,9 @@ convPrimArith ctx mdst p _tPrim xs
    in case p of
         -- Unary operators ------------
         A.PrimArith op
-         | A.XType t : args     <- xs
+         | A.RType t : args     <- xs
          , Just dst             <- mdst
-         , Just [mx1]           <- sequence $ map (mconvAtom ctx) args
+         , Just [mx1]           <- sequence $ map (mconvArg ctx) args
          -> Just $ do
                 x1'     <- mx1
                 t'      <- convertType pp kenv t
@@ -54,9 +54,9 @@ convPrimArith ctx mdst p _tPrim xs
 
         -- Binary operators -----------
         A.PrimArith op
-         | A.XType t : args   <- xs
+         | A.RType t : args   <- xs
          , Just dst             <- mdst
-         , Just [mx1, mx2]      <- sequence $ map (mconvAtom ctx) args
+         , Just [mx1, mx2]      <- sequence $ map (mconvArg ctx) args
          -> Just $ do
                 x1'     <- mx1
                 x2'     <- mx2

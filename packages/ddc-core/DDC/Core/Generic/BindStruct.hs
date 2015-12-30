@@ -24,8 +24,10 @@ instance (Bind l ~ T.Bind l, Bound l ~ T.Bound l)
 
         XPrim{}                 -> []
 
-        XApp x1 x2              -> slurpBindTree x1 ++ slurpBindTree x2
+        XApp x1 a2              -> slurpBindTree x1 ++ slurpBindTree a2
+
         XAbs (ALAM b) x         -> [bindDefT BindLAM [b] [x]]
+
         XAbs (ALam b) x         -> [bindDefX BindLam [b] [x]]      
 
         XLet (LLet b x1) x2
@@ -44,8 +46,15 @@ instance (Bind l ~ T.Bind l, Bound l ~ T.Bound l)
 
         XCase x alts            -> slurpBindTree x ++ concatMap slurpBindTree alts
         XCast c x               -> slurpBindTree c ++ slurpBindTree x
-        XType t                 -> slurpBindTree t
-        XWitness w              -> slurpBindTree w
+
+
+instance (Bind l ~ T.Bind l, Bound l ~ T.Bound l)
+      => BindStruct (GArg l) l where
+ slurpBindTree arg
+  = case arg of
+        RType t                 -> slurpBindTree t
+        RExp x                  -> slurpBindTree x
+        RWitness w              -> slurpBindTree w
 
 
 instance (Bind l ~ T.Bind l, Bound l ~ T.Bound l)

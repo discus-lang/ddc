@@ -24,21 +24,22 @@ convPrimStore
         :: Context              -- ^ Context of the conversion.
         -> Maybe Var            -- ^ Assign result to this var.
         -> A.PrimOp             -- ^ Prim to call.
-        -> C.Type A.Name        -- ^ Type of prim.
-        -> [A.Exp]              -- ^ Arguments to prim.
+        -> C.Type A.Name        -- ^ Type of prim.      -- TODO: look this up here.
+        -> [A.Arg]              -- ^ Arguments to prim.
         -> Maybe (ConvertM (Seq AnnotInstr))
 
-convPrimStore ctx mdst p _tPrim xs
- = let  pp      = contextPlatform ctx
-        mdsup   = contextMDSuper  ctx
-        kenv    = contextKindEnv  ctx
-        atom    = mconvAtom       ctx
-        atoms a = sequence $ map (mconvAtom ctx) a
+convPrimStore ctx mdst p _tPrim as
+ = let  pp         = contextPlatform ctx
+        mdsup      = contextMDSuper  ctx
+        kenv       = contextKindEnv  ctx
+        atom       = mconvAtom       ctx
+        atomsR as' = sequence $ map (mconvArg ctx) as'
+
    in case p of
 
         -- Get the size in bytes of some primitive type.
         A.PrimStore A.PrimStoreSize
-         | [A.XType t]  <- xs
+         | [A.RType t]  <- as
          , Just vDst    <- mdst
          -> Just $ do
                 t'      <- convertType pp kenv t
@@ -59,7 +60,7 @@ convPrimStore ctx mdst p _tPrim xs
 
         -- Get the log2 size in bytes of some primtive type.
         A.PrimStore A.PrimStoreSize2
-         | [A.XType t]  <- xs
+         | [A.RType t]  <- as
          , Just vDst    <- mdst
          -> Just $ do
                 t'      <- convertType pp kenv t
@@ -85,7 +86,7 @@ convPrimStore ctx mdst p _tPrim xs
         -- Create the initial heap.
         -- This is called once when the program starts.
         A.PrimStore A.PrimStoreCreate
-         | Just [mBytes]                <- atoms xs
+         | Just [mBytes]    <- atomsR as
          -> Just $ do
                 xBytes'     <- mBytes
                 vAddr       <- newUniqueNamedVar "addr" (tAddr pp)
@@ -110,7 +111,7 @@ convPrimStore ctx mdst p _tPrim xs
         -- of the given number of bytes in length.
         A.PrimStore A.PrimStoreCheck
          | Just vDst@(Var nDst _)       <- mdst
-         , Just [mBytes]                <- atoms xs
+         , Just [mBytes]                <- atomsR as
          -> Just $ do
                 xBytes'     <- mBytes
                 let vTop    = Var (bumpName nDst "top") (tAddr pp)
@@ -128,7 +129,7 @@ convPrimStore ctx mdst p _tPrim xs
         -- Allocate a new heap object with the given number of bytes in length.
         A.PrimStore A.PrimStoreAlloc
          | Just vDst@(Var nDst _)       <- mdst
-         , Just [mBytes]                <- atoms xs
+         , Just [mBytes]                <- atomsR as
          -> Just $ do
                 xBytes'     <- mBytes
                 let vBump   = Var (bumpName nDst "bump") (tAddr pp)
@@ -141,9 +142,9 @@ convPrimStore ctx mdst p _tPrim xs
 
         -- Read a value via a pointer.
         A.PrimStore A.PrimStoreRead
-         | A.XType{} : args             <- xs
+         | A.RType{} : args             <- as
          , Just vDst@(Var nDst tDst)    <- mdst
-         , Just [mAddr, mOffset]        <- atoms args
+         , Just [mAddr, mOffset]        <- atomsR args
          -> Just $ do
                 xAddr'      <- mAddr
                 xOffset'    <- mOffset
@@ -157,8 +158,8 @@ convPrimStore ctx mdst p _tPrim xs
 
         -- Write a value via a pointer.
         A.PrimStore A.PrimStoreWrite
-         | A.XType{} : args             <- xs
-         , Just [mAddr, mOffset, mVal]  <- atoms args
+         | A.RType{} : args             <- as
+         , Just [mAddr, mOffset, mVal]  <- atomsR args
          -> Just $ do
                 xAddr'   <- mAddr
                 xOffset' <- mOffset
@@ -174,7 +175,7 @@ convPrimStore ctx mdst p _tPrim xs
         -- Add an offset in bytes to a pointer.
         A.PrimStore A.PrimStorePlusAddr
          | Just vDst                    <- mdst
-         , Just [mAddr, mOffset]        <- atoms xs
+         , Just [mAddr, mOffset]        <- atomsR as
          -> Just $ do
                 xAddr'   <- mAddr
                 xOffset' <- mOffset
@@ -185,7 +186,7 @@ convPrimStore ctx mdst p _tPrim xs
         -- Subtract an offset in bytes from a pointer.
         A.PrimStore A.PrimStoreMinusAddr
          | Just vDst                    <- mdst
-         , Just [mAddr, mOffset]        <- atoms xs
+         , Just [mAddr, mOffset]        <- atomsR as
          -> Just $ do
                 xAddr'       <- mAddr
                 xOffset'     <- mOffset
@@ -195,9 +196,9 @@ convPrimStore ctx mdst p _tPrim xs
 
         -- Read from a raw address.
         A.PrimStore A.PrimStorePeek
-         | A.XType{} : A.XType tDst : args     <- xs
-         , Just vDst@(Var nDst _)       <- mdst
-         , Just [mPtr, mOffset]         <- atoms args
+         | A.RType{} : A.RType tDst : args      <- as
+         , Just vDst@(Var nDst _)               <- mdst
+         , Just [mPtr, mOffset]                 <- atomsR args
          -> Just $ do
                 tDst'        <- convertType   pp kenv tDst
                 xPtr'        <- mPtr
@@ -210,14 +211,14 @@ convPrimStore ctx mdst p _tPrim xs
                         [ IConv vAddr1 ConvPtrtoint xPtr'
                         , IOp   vAddr2 OpAdd (XVar vAddr1) xOffset'
                         , IConv vPtr   ConvInttoptr (XVar vAddr2) ])
-                        ++ [(annot kenv mdsup xs
+                        ++ [(annot kenv mdsup as
                         ( ILoad vDst  (XVar vPtr)))]
 
 
         -- Write to a raw address.
         A.PrimStore A.PrimStorePoke
-         | A.XType{} : A.XType tDst : args    <- xs
-         , Just [mPtr, mOffset, mVal]           <- atoms args
+         | A.RType{} : A.RType tDst : args      <- as
+         , Just [mPtr, mOffset, mVal]           <- atomsR args
          -> Just $ do
                 tDst'    <- convertType pp kenv tDst
                 xPtr'    <- mPtr
@@ -231,15 +232,15 @@ convPrimStore ctx mdst p _tPrim xs
                         [ IConv vAddr1 ConvPtrtoint xPtr'
                         , IOp   vAddr2 OpAdd (XVar vAddr1) xOffset'
                         , IConv vPtr   ConvInttoptr (XVar vAddr2) ])
-                        ++ [(annot kenv mdsup xs
+                        ++ [(annot kenv mdsup as
                         ( IStore (XVar vPtr) xVal' ))]
 
 
         -- Add an offset to a raw address.
         A.PrimStore A.PrimStorePlusPtr
-         | _xRgn : _xType : args        <- xs
+         | _xRgn : _xType : args        <- as
          , Just vDst                    <- mdst
-         , Just [mPtr, mOffset]         <- atoms args
+         , Just [mPtr, mOffset]         <- atomsR args
          -> Just $ do
                 xPtr'    <- mPtr
                 xOffset' <- mOffset
@@ -253,9 +254,9 @@ convPrimStore ctx mdst p _tPrim xs
 
         -- Subtrace an offset from a raw address.
         A.PrimStore A.PrimStoreMinusPtr
-         | _xRgn : _xType : args        <- xs
+         | _xRgn : _xType : args        <- as
          , Just vDst                    <- mdst
-         , Just [mPtr, mOffset]         <- atoms args
+         , Just [mPtr, mOffset]         <- atomsR args
          -> Just $ do
                 xPtr'    <- mPtr
                 xOffset' <- mOffset
@@ -269,7 +270,7 @@ convPrimStore ctx mdst p _tPrim xs
 
         -- Construct a pointer from an address.
         A.PrimStore A.PrimStoreMakePtr
-         | [A.XType{}, A.XType{}, xAddr] <- xs
+         | [A.RType{}, A.RType{}, A.RExp xAddr] <- as
          , Just vDst    <- mdst
          , Just mAddr   <- atom xAddr
          -> Just $ do
@@ -280,7 +281,7 @@ convPrimStore ctx mdst p _tPrim xs
 
         -- Take an address from a pointer.
         A.PrimStore A.PrimStoreTakePtr
-         | [A.XType{}, A.XType{}, xPtr] <- xs
+         | [A.RType{}, A.RType{}, A.RExp xPtr] <- as
          , Just vDst    <- mdst
          , Just mPtr    <- atom xPtr
          -> Just $ do
@@ -291,7 +292,7 @@ convPrimStore ctx mdst p _tPrim xs
 
         -- Case a pointer from one type to another.
         A.PrimStore A.PrimStoreCastPtr
-         | [A.XType{}, A.XType{}, A.XType{}, xPtr] <- xs
+         | [A.RType{}, A.RType{}, A.RType{}, A.RExp xPtr] <- as
          , Just vDst    <- mdst
          , Just mPtr    <- atom xPtr
          -> Just $ do  

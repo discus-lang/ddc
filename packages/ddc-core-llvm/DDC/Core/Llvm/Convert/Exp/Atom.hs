@@ -1,6 +1,7 @@
 
 module DDC.Core.Llvm.Convert.Exp.Atom
-        ( mconvAtom
+        ( mconvArg
+        , mconvAtom
 
         , bindLocalV,   bindLocalB,     bindLocalBs
         , takeLocalV
@@ -22,6 +23,16 @@ import qualified DDC.Core.Module                as C
 import qualified DDC.Core.Exp                   as C
 import qualified Data.Map                       as Map
 import qualified Data.List                      as List
+
+
+-- Arguments ------------------------------------------------------------------
+-- | Convert a function argument.
+mconvArg :: Context -> A.Arg -> Maybe (ConvertM Exp)
+mconvArg ctx aa
+ = case aa of
+        A.RWitness _    -> Nothing
+        A.RExp x        -> mconvAtom ctx x
+        A.RType _       -> Nothing
 
 
 -- Atoms ----------------------------------------------------------------------

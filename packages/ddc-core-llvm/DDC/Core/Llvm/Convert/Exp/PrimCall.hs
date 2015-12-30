@@ -20,14 +20,14 @@ convPrimCall
         -> Maybe Var            -- ^ Assign result to this var.
         -> A.PrimOp             -- ^ Prim to call.
         -> C.Type A.Name        -- ^ Type of prim.
-        -> [A.Exp]              -- ^ Arguments to prim.
+        -> [A.Arg]              -- ^ Arguments to prim.
         -> Maybe (ConvertM (Seq AnnotInstr))
 
 convPrimCall ctx mDst p _tPrim xs
  = let  pp              = contextPlatform ctx
    in case p of
         A.PrimCall (A.PrimCallStd arity)
-         | Just (mFun : msArgs) <- sequence $ map (mconvAtom ctx) xs
+         | Just (mFun : msArgs) <- sequence $ map (mconvArg ctx) xs
          -> Just $ do
                 xFun'   <- mFun
                 xsArgs' <- sequence msArgs

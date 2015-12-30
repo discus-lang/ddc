@@ -5,7 +5,7 @@ module DDC.Core.Salt.Exp
         , FromAnnot (..)
         , Error (..)
 
-        , Exp, Lets, Alt, Pat, Cast, Witness, WiCon)
+        , Exp, Abs, Arg, Lets, Alt, Pat, Cast, Witness, WiCon)
 where
 import DDC.Core.Generic.Exp
 import qualified DDC.Core.Generic.Exp   as G
@@ -26,6 +26,8 @@ instance Language A.Name where
  type Prim  A.Name      = A.Name
 
 type Exp                = GExp      A.Name
+type Abs                = GAbs      A.Name
+type Arg                = GArg      A.Name
 type Lets               = GLets     A.Name
 type Alt                = GAlt      A.Name
 type Pat                = GPat      A.Name
@@ -48,17 +50,41 @@ data Error
 instance FromAnnot (N.Exp a A.Name) Exp where
  fromAnnot xx
   = case xx of
-        N.XVar  _ (C.UPrim p _) -> G.XPrim    <$> pure p
-        N.XVar  _ u             -> G.XVar     <$> fromAnnot u
-        N.XCon  _ c             -> G.XCon     <$> fromAnnot c
-        N.XLAM  _ b x           -> G.XLAM     <$> fromAnnot b   <*> fromAnnot x
-        N.XLam  _ b x           -> G.XLam     <$> fromAnnot b   <*> fromAnnot x
-        N.XApp  _ x1 x2         -> G.XApp     <$> fromAnnot x1  <*> fromAnnot x2
-        N.XLet  _ lts x         -> G.XLet     <$> fromAnnot lts <*> fromAnnot x
-        N.XCase _ x alts        -> G.XCase    <$> fromAnnot x   <*> fromAnnots alts
-        N.XCast _ c x           -> G.XCast    <$> fromAnnot c   <*> fromAnnot x
-        N.XType _ t             -> G.XType    <$> fromAnnot t
-        N.XWitness _ w          -> G.XWitness <$> fromAnnot w
+        N.XVar  _ (C.UPrim p _) 
+         -> G.XPrim <$> pure p
+
+        N.XVar  _ u
+         -> G.XVar  <$> fromAnnot u
+
+        N.XCon  _ c
+         -> G.XCon  <$> fromAnnot c
+
+        N.XLAM  _ b x
+         -> G.XAbs  <$> (G.ALAM <$> fromAnnot b) <*> fromAnnot x
+
+        N.XLam  _ b x
+         -> G.XAbs  <$> (G.ALam <$> fromAnnot b) <*> fromAnnot x
+
+        N.XApp  _ x1 (N.XType _ t) 
+         -> G.XApp  <$> fromAnnot x1 <*> (G.RType    <$> fromAnnot t)
+
+        N.XApp  _ x1 (N.XWitness _ w)
+         -> G.XApp  <$> fromAnnot x1 <*> (G.RWitness <$> fromAnnot w)    
+
+        N.XApp  _ x1 x2         
+         -> G.XApp  <$> fromAnnot x1 <*> (G.RExp     <$> fromAnnot x2)
+
+        N.XLet  _ lts x
+         -> G.XLet  <$> fromAnnot lts <*> fromAnnot x
+
+        N.XCase _ x alts
+         -> G.XCase <$> fromAnnot x   <*> fromAnnots alts
+
+        N.XCast _ c x
+         -> G.XCast <$> fromAnnot c   <*> fromAnnot x
+
+        N.XType{}       -> error "fark"         -- TODO: real error 
+        N.XWitness{}    -> error "fark"         -- TODO: Real error
 
 
 instance FromAnnot (N.Lets a A.Name) Lets where

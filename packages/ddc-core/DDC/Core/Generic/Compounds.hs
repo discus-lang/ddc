@@ -13,14 +13,14 @@ module DDC.Core.Generic.Compounds
         , makeXLams,    takeXLams
 
         -- * Applications
-        , makeXApps,    takeXApps
-        , takeXAppsAsList
+        , makeXApps,    takeXApps,      splitXApps
         , takeXConApps
         , takeXPrimApps)
 where
 import DDC.Core.Generic.Exp
 import DDC.Core.Exp.DaCon
 import DDC.Type.Compounds
+import Data.Maybe
 
 
 -- Abstractions ---------------------------------------------------------------
@@ -77,46 +77,65 @@ takeXLams xx
 
 -- Applications ---------------------------------------------------------------
 -- | Build sequence of applications.
-makeXApps  :: GExp l -> [GExp l] -> GExp l
+makeXApps  :: GExp l -> [GArg l] -> GExp l
 makeXApps t1 ts
         = foldl XApp t1 ts
 
 
 -- | Flatten an application into the functional expression and its arguments,
 --   or `Nothing if this is not an application.
-takeXApps :: GExp l -> Maybe (GExp l, [GExp l])
+takeXApps :: GExp l -> Maybe (GExp l, [GArg l])
 takeXApps xx
- = case takeXAppsAsList xx of
-        (x1 : xsArgs)   -> Just (x1, xsArgs)
-        _               -> Nothing
-
-
--- | Flatten an application into the functional expression and its arguments,
---   or just return the overall expression if this is not an application.
-takeXAppsAsList :: GExp l -> [GExp l]
-takeXAppsAsList xx
  = case xx of
-        XApp x1 x2      -> takeXAppsAsList x1 ++ [x2]
-        _               -> [xx]
+        XApp x1@XApp{} a2
+         -> case takeXApps x1 of
+                Just (f1, as1)  -> Just (f1, as1 ++ [a2])
+                Nothing         -> Nothing
+
+        XApp x1 a2
+         -> Just (x1, [a2])
+
+        _                       -> Nothing
+
+
+-- | Flatten an application into a functional expression and its arguments,
+--   or just return the expression with no arguments if this is not
+--   an application.
+splitXApps :: GExp l -> (GExp l, [GArg l])
+splitXApps xx
+ = fromMaybe (xx, []) $ takeXApps xx
 
 
 -- | Flatten an application of a primitive operators into the operator itself
 --   and its arguments, or `Nothing` if this is not an application of a
 --   primitive.
-takeXPrimApps :: GExp l -> Maybe (Prim l, [GExp l])
+takeXPrimApps :: GExp l -> Maybe (Prim l, [GArg l])
 takeXPrimApps xx
- = case takeXAppsAsList xx of
-        XPrim p : xs    -> Just (p, xs)
-        _               -> Nothing
+ = case xx of
+        XApp (XPrim p) a2
+         -> Just (p, [a2])
+
+        XApp x1@XApp{} a2
+         -> case takeXPrimApps x1 of
+                Just (p, as1)   -> Just (p, as1 ++ [a2])
+                _               -> Nothing
+
+        _                       -> Nothing
 
 
 -- | Flatten an application of a data constructor into the constructor itself
 --   and its arguments, or `Nothing` if this is not an application of a 
 --   data constructor.
-takeXConApps :: GExp l -> Maybe (DaCon l, [GExp l])
+takeXConApps :: GExp l -> Maybe (DaCon l, [GArg l])
 takeXConApps xx
- = case takeXAppsAsList xx of
-        XCon dc : xs    -> Just (dc, xs)
-        _               -> Nothing
+ = case xx of
+        XApp (XCon c) a2
+         -> Just (c, [a2])
 
+        XApp x1@XApp{} a2
+         -> case takeXConApps x1 of
+                Just (c, as1)   -> Just (c, as1 ++ [a2])
+                _               -> Nothing
+
+        _                       -> Nothing
 
