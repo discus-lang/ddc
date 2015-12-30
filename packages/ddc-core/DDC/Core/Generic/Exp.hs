@@ -1,4 +1,4 @@
-{-# LANGUAGE TypeFamilies, ConstraintKinds, UndecidableInstances, PatternSynonyms #-}
+{-# LANGUAGE TypeFamilies, UndecidableInstances #-}
 
 -- | Generic expression representation.
 module DDC.Core.Generic.Exp where

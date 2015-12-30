@@ -1,4 +1,4 @@
-{-# LANGUAGE TypeFamilies, UndecidableInstances, ConstraintKinds #-}
+{-# LANGUAGE TypeFamilies, UndecidableInstances #-}
 
 module DDC.Core.Generic.Pretty where
 import DDC.Core.Generic.Predicates

@@ -22,7 +22,8 @@ GHC_LANGUAGE	:= \
         -XViewPatterns \
         -XTupleSections \
         -XInstanceSigs \
-        -XPatternSynonyms
+        -XPatternSynonyms \
+        -XConstraintKinds
 
 
 # -- Warnings -----------------------------------------------------------------
