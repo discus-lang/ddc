@@ -1,3 +1,4 @@
+{-# LANGUAGE PatternSynonyms #-}
 
 -- | Names used in the Disciple Core Salt language profile.
 module DDC.Core.Salt.Name
@@ -13,10 +14,13 @@ module DDC.Core.Salt.Name
         , primTyConIsSigned
         , primTyConWidth
 
-          -- * Primitive Literals
-        , PrimLit       (..)
-        , readPrimLit
+          -- * Primitive Values
+        , PrimVal       (..)
+        , readPrimVal
         
+        , pattern NamePrimOp
+        , pattern NamePrimLit
+
           -- * Primitive Operators
         , PrimOp        (..)
         , readPrimOp
@@ -49,14 +53,26 @@ module DDC.Core.Salt.Name
         , multiOfPrimVec
         , liftPrimArithToVec
         , lowerPrimVecToArith
-    
+
           -- * Primitive Literals
+        , PrimLit       (..)
+        , readPrimLit
         , readLitInteger
         , readLitNat
         , readLitInt
         , readLitSize
         , readLitWordOfBits
         , readLitFloatOfBits
+
+        , pattern NameLitVoid
+        , pattern NameLitBool
+        , pattern NameLitNat
+        , pattern NameLitInt
+        , pattern NameLitSize
+        , pattern NameLitWord
+        , pattern NameLitFloat
+        , pattern NameLitString
+        , pattern NameLitTag
 
           -- * Name Parsing
         , readName
@@ -86,27 +102,23 @@ import qualified Data.Text              as T
 -- | Names of things used in Disciple Core Salt.
 data Name
         -- | A type or value variable.
-        = NameVar       String
+        = NameVar       !String
 
         -- | Constructor names.
-        | NameCon       String
+        | NameCon       !String
 
         -- | An extended name.
-        | NameExt       Name String
+        | NameExt       !Name !String
 
         -- | The abstract heap object type constructor.
         | NameObjTyCon
 
         -- | A primitive type constructor.
-        | NamePrimTyCon PrimTyCon
+        | NamePrimTyCon !PrimTyCon
 
-        -- | A primitive operator.
-        | NamePrimOp    PrimOp
-
-        -- | A primitive literal.
-        | NamePrimLit   PrimLit
+        -- | A primitive value.
+        | NamePrimVal   !PrimVal
         deriving (Eq, Ord, Show, Typeable)
-
 
 instance NFData Name where
  rnf name
@@ -116,8 +128,7 @@ instance NFData Name where
         NameCon s               -> rnf s
         NameObjTyCon            -> ()
         NamePrimTyCon con       -> rnf con
-        NamePrimOp    op        -> rnf op
-        NamePrimLit   lit       -> rnf lit
+        NamePrimVal   val       -> rnf val
 
 
 instance Pretty Name where
@@ -128,8 +139,7 @@ instance Pretty Name where
         NameExt  n ext          -> ppr n <> text "$" <> text ext
         NameObjTyCon            -> text "Obj"
         NamePrimTyCon tc        -> ppr tc
-        NamePrimOp p            -> ppr p
-        NamePrimLit lit         -> ppr lit
+        NamePrimVal   val       -> ppr val
 
 
 instance CompoundName Name where
@@ -153,13 +163,9 @@ readName str
         | Just p        <- readPrimTyCon str
         = Just $ NamePrimTyCon p
 
-        -- PrimOp
-        | Just p        <- readPrimOp str
-        = Just $ NamePrimOp p
-
-        -- PrimLit
-        | Just p        <- readPrimLit str
-        = Just $ NamePrimLit p
+        -- PrimVal
+        | Just p        <- readPrimVal str
+        = Just $ NamePrimVal p
 
         -- Constructors.
         | c : _         <- str
@@ -189,23 +195,61 @@ takeNameVar _
     = Nothing
 
 
+-- PrimVal --------------------------------------------------------------------
+-- | Primitive values, meaning both operators and literals.
+data PrimVal
+        = PrimValOp     !PrimOp
+        | PrimValLit    !PrimLit
+        deriving (Eq, Ord, Show)
+
+pattern NamePrimOp op   = NamePrimVal (PrimValOp op)
+pattern NamePrimLit lit = NamePrimVal (PrimValLit lit)
+
+
+instance NFData PrimVal where
+ rnf p
+  = case p of
+        PrimValOp op    -> rnf op
+        PrimValLit lit  -> rnf lit
+
+
+instance Pretty PrimVal where
+ ppr p
+  = case p of
+        PrimValOp op    -> ppr op
+        PrimValLit lit  -> ppr lit
+
+
+-- | Read a primitive value.
+readPrimVal :: String -> Maybe PrimVal
+readPrimVal str
+        | Just op       <- readPrimOp str
+        = Just $ PrimValOp op
+
+        | Just lit      <- readPrimLit str
+        = Just $ PrimValLit lit
+
+        | otherwise
+        = Nothing
+
+
 -- PrimOp ---------------------------------------------------------------------
 -- | Primitive operators implemented directly by the machine or runtime system.
 data PrimOp
         -- | Arithmetic, logic, comparison and bit-wise operators.
-        = PrimArith     PrimArith
+        = PrimArith     !PrimArith
 
         -- | Casting between numeric types.
-        | PrimCast      PrimCast
+        | PrimCast      !PrimCast
 
         -- | Raw store access.
-        | PrimStore     PrimStore
+        | PrimStore     !PrimStore
 
         -- | Special function calling conventions.
-        | PrimCall      PrimCall
+        | PrimCall      !PrimCall
 
         -- | Non-functional control flow.
-        | PrimControl   PrimControl
+        | PrimControl   !PrimControl
         deriving (Eq, Ord, Show)
 
 
@@ -263,29 +307,41 @@ data PrimLit
         = PrimLitVoid
 
         -- | A boolean literal.
-        | PrimLitBool   Bool
+        | PrimLitBool   !Bool
 
         -- | A natural number literal.
-        | PrimLitNat    Integer
+        | PrimLitNat    !Integer
 
         -- | An integer number literal.
-        | PrimLitInt    Integer
+        | PrimLitInt    !Integer
 
         -- | A size literal.
-        | PrimLitSize   Integer
+        | PrimLitSize   !Integer
 
         -- | A word literal, of the given width.
-        | PrimLitWord   Integer Int
+        | PrimLitWord   !Integer !Int
 
         -- | A floating point literal, of the given width.
-        | PrimLitFloat  Double  Int
+        | PrimLitFloat  !Double  !Int
 
         -- | A string literal.
-        | PrimLitString Text
+        | PrimLitString !Text
 
         -- | A constructor tag literal.
-        | PrimLitTag    Integer
+        | PrimLitTag    !Integer
         deriving (Eq, Ord, Show)
+
+
+pattern NameLitVoid       = NamePrimVal (PrimValLit PrimLitVoid)
+pattern NameLitBool   x   = NamePrimVal (PrimValLit (PrimLitBool   x))
+pattern NameLitNat    x   = NamePrimVal (PrimValLit (PrimLitNat    x))
+pattern NameLitInt    x   = NamePrimVal (PrimValLit (PrimLitInt    x))
+pattern NameLitSize   x   = NamePrimVal (PrimValLit (PrimLitSize   x))
+pattern NameLitWord   x s = NamePrimVal (PrimValLit (PrimLitWord   x s))
+pattern NameLitFloat  x s = NamePrimVal (PrimValLit (PrimLitFloat  x s))
+pattern NameLitString x   = NamePrimVal (PrimValLit (PrimLitString x))
+pattern NameLitTag    x   = NamePrimVal (PrimValLit (PrimLitTag    x))
+
 
 
 instance NFData PrimLit where

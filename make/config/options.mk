@@ -21,7 +21,8 @@ GHC_LANGUAGE	:= \
         -XDeriveDataTypeable \
         -XViewPatterns \
         -XTupleSections \
-        -XInstanceSigs
+        -XInstanceSigs \
+        -XPatternSynonyms
 
 
 # -- Warnings -----------------------------------------------------------------

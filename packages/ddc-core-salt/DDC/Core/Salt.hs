@@ -1,4 +1,3 @@
-
 -- | Disciple Core Salt.
 --
 --   This is what happens to 'C' when you leave it out in the sun for too long.
@@ -19,20 +18,34 @@ module DDC.Core.Salt
           -- * Names
         , Name          (..)
         , PrimTyCon     (..)
-        , PrimOp        (..)
-        , PrimLit       (..)
 
+          -- ** Primitive Values
+        , PrimVal       (..)
+        , pattern NamePrimOp
+        , pattern NamePrimLit
+
+          -- ** Primitive Operators
+        , PrimOp        (..)
+        , PrimArith     (..)
+        , PrimCall      (..)
         , PrimCast      (..)
+        , PrimControl   (..)
+        , PrimStore     (..)
+
         , primCastPromoteIsValid
         , primCastTruncateIsValid
 
-        , PrimCall      (..)
-
-        , PrimControl   (..)
-
-        , PrimStore     (..)
-
-        , PrimArith     (..)
+          -- ** Primitive Literals
+        , PrimLit       (..)
+        , pattern NameLitVoid
+        , pattern NameLitBool
+        , pattern NameLitNat
+        , pattern NameLitInt
+        , pattern NameLitSize
+        , pattern NameLitWord
+        , pattern NameLitFloat
+        , pattern NameLitString
+        , pattern NameLitTag
 
           -- * Name parsing
         , readName
