@@ -12,6 +12,7 @@ module DDC.Core.Salt.Compounds
         , tObj
         , tAddr
         , tPtr,   takeTPtr
+        , tTextLit
         , xTextLit)
 where
 import DDC.Core.Salt.Name
@@ -33,14 +34,15 @@ ukTop
 
 
 -- Types ----------------------------------------------------------------------
-tVoid, tBool, tNat, tInt, tSize, tTag, tAddr :: Type Name
-tVoid     = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConVoid)   kData) kData)
-tBool     = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConBool)   kData) kData)
-tNat      = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConNat)    kData) kData)
-tInt      = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConInt)    kData) kData)
-tSize     = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConSize)   kData) kData)
-tAddr     = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConAddr)   kData) kData)
-tTag      = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConTag)    kData) kData)
+tVoid, tBool, tNat, tInt, tSize, tTag, tAddr, tTextLit :: Type Name
+tVoid     = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConVoid)    kData) kData)
+tBool     = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConBool)    kData) kData)
+tNat      = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConNat)     kData) kData)
+tInt      = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConInt)     kData) kData)
+tSize     = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConSize)    kData) kData)
+tAddr     = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConAddr)    kData) kData)
+tTag      = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConTag)     kData) kData)
+tTextLit  = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConTextLit) kData) kData)
 
 
 tWord :: Int -> Type Name

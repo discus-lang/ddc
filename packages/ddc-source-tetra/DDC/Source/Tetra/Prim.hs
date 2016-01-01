@@ -10,6 +10,7 @@ module DDC.Source.Tetra.Prim
         , tNat
         , tInt
         , tWord
+        , tTextLit
 
         -- * Primitive values
         , PrimVal (..)
@@ -45,8 +46,7 @@ import Data.Char
 import qualified Data.Text              as T
 
 import DDC.Core.Tetra   
-        ( pprPrimTyConStem
-        , readPrimTyConStem
+        ( readPrimTyCon
         , readPrimArith
         , readOpFun)
 
@@ -82,7 +82,7 @@ instance Pretty Name where
 
         NameTyConTetra p        -> ppr p
         NameOpFun      p        -> ppr p
-        NamePrimTyCon  p        -> pprPrimTyConStem p
+        NamePrimTyCon  p        -> ppr p
         NamePrimArith  p        -> ppr p
 
         NamePrimVal    v        -> ppr v
@@ -94,14 +94,14 @@ instance Pretty Name where
 readName :: String -> Maybe Name
 readName str
         -- Baked-in names
-        | Just p <- readTyConTetra   str  
+        | Just p <- readTyConTetra str  
         = Just $ NameTyConTetra p
 
-        | Just p <- readOpFun     str
+        | Just p <- readOpFun str
         = Just $ NameOpFun     p
 
         -- Primitive names.
-        | Just p <- readPrimTyConStem   str  
+        | Just p <- readPrimTyCon str  
         = Just $ NamePrimTyCon p
 
         | Just p <- readPrimArith str  

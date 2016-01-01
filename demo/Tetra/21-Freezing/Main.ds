@@ -14,7 +14,7 @@ where
 -- visible to the caller.
 rlength [a : Data] [r1 : Region] 
         (xx : List a) 
-        : S (Alloc r1) (Ref r1 Nat)
+        : S (Alloc r1) (Ref r1 Nat#)
  = box extend r1 using r2 with {Read r2; Write r2; Alloc r2} in     
    do   
         -- Allocate the reference into the extension region.
@@ -39,7 +39,7 @@ main (_ : Unit) : S Console Unit
         -- Count the length of the list.
         -- From this calling context, the fact that the ref is destructively
         -- initialized is not visible. 
-        ref     = run rlength [Nat] [r] xx
+        ref     = run rlength [Nat#] [r] xx
 
         -- Print out the final list length.
         run putStrLn (showNat (run readRef ref))

@@ -46,6 +46,7 @@ typeOfPrimName dc
         NameLitNat      _       -> Just $ tNat
         NameLitInt      _       -> Just $ tInt
         NameLitWord     _ bits  -> Just $ tWord bits
+        NameLitTextLit  _       -> Just $ tTextLit
 
         _                       -> Nothing
 

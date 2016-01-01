@@ -17,7 +17,7 @@ singleton (x : a) : List a
 
 
 -- | Construct a range of values.
-enumFromTo (start : Nat) (end : Nat)
+enumFromTo (start : Nat#) (end : Nat#)
  = case start >= end of
         True            -> singleton start
         False           -> Cons start (enumFromTo (start + 1) end)
@@ -50,7 +50,7 @@ foldS (f : a -> b -> S e b) (z : b) (xx : List a) : S e b
 
 
 -- | Keep elements of a list that match the given predicate.
-filterS (f : a -> S e Bool) (xx : List a) : S e (List a)
+filterS (f : a -> S e Bool#) (xx : List a) : S e (List a)
  = box case xx of
         Nil             -> Nil
         Cons x xs       
@@ -58,7 +58,7 @@ filterS (f : a -> S e Bool) (xx : List a) : S e (List a)
                 True   -> Cons x (run filterS f xs)
                 False  -> run filterS f xs
 
-length (xx : List a) : Nat
+length (xx : List a) : Nat#
  = case xx of
         Nil             -> 0
         Cons x xs       -> 1 + length xs
@@ -71,7 +71,7 @@ main (_ : Unit) : S Console Unit
         xx      = enumFromTo 0 100
 
         -- Select only the even elements
-        xx'     = run filterS (\(x : Nat). box rem# x 2 == 0) xx
+        xx'     = run filterS (\(x : Nat#). box rem# x 2 == 0) xx
 
         -- Print out the final list length.
         run putStrLn (showNat (length xx'))

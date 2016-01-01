@@ -13,7 +13,7 @@ reverseAcc2 (acc xx : List a) : List a
         Cons x xs       -> reverseAcc2 (Cons x acc) xs
 
 
-dumpListNat (xx : List Nat) : S Console Unit
+dumpListNat (xx : List Nat#) : S Console Unit
  = box case xx of
         Nil             -> ()
         Cons x xs       

@@ -9,7 +9,7 @@ data List (a : Data) where
 add (x y : a) : a 
         = add# x y
 
-length (xx : List a) : Nat
+length (xx : List a) : Nat#
  = case xx of
         Nil       -> 0
         Cons x xs -> 1 + length xs

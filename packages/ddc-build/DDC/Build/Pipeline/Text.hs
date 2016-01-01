@@ -16,6 +16,7 @@ import qualified DDC.Build.Transform.Resolve       as B
 import qualified DDC.Source.Tetra.Convert          as SE
 import qualified DDC.Source.Tetra.Transform.Defix  as SE
 import qualified DDC.Source.Tetra.Transform.Expand as SE
+import qualified DDC.Source.Tetra.Pretty           ()
 import qualified DDC.Source.Tetra.Parser           as SE
 import qualified DDC.Source.Tetra.Lexer            as SE
 import qualified DDC.Source.Tetra.Env              as SE
@@ -50,7 +51,9 @@ data PipeText n (err :: * -> *) where
 
   PipeTextLoadSourceTetra
         :: !Sink        -- Sink for source tokens.
-        -> !Sink        -- Sink for core code before final type checking.
+        -> !Sink        -- Sink for desugared source code.
+        -> !Sink        -- Sink for core tetra code after conversoin.
+        -> !Sink        -- Sink for core tetra code before type checking.
         -> !Sink        -- Sink for type checker trace.
         -> !Store       -- Interface store.
         -> ![PipeCore (C.AnTEC BP.SourcePos CE.Name) CE.Name]
@@ -87,7 +90,8 @@ pipeText !srcName !srcLine !str !pp
                         pipeCores mm pipes
 
         PipeTextLoadSourceTetra 
-                sinkTokens sinkPreCheck sinkCheckerTrace 
+                sinkTokens
+                sinkDesugared sinkCore sinkPreCheck sinkCheckerTrace 
                 store pipes
          -> {-# SCC "PipeTextLoadSourceTetra" #-}
             let 
@@ -116,6 +120,9 @@ pipeText !srcName !srcLine !str !pp
                         let mm_expand = SE.expand SE.configDefault 
                                             SE.primKindEnv SE.primTypeEnv mm
 
+                        -- Dump desguared source code.
+                        pipeSink (renderIndent $ ppr mm_expand) sinkDesugared
+
                         -- Convert Source Tetra to Core Tetra.
                         -- This source position is used to annotate the 
                         -- let-expression that holds all the top-level bindings.
@@ -123,6 +130,9 @@ pipeText !srcName !srcLine !str !pp
 
                         -- TODO: handle error
                         let Right mm_core = SE.coreOfSourceModule sp mm_expand
+
+                        -- Dump Core Tetra.
+                        pipeSink (renderIndent $ ppr mm_core) sinkCore
 
                         -- Discover which module imported names are from, and
                         -- attach the meta-data which will be needed by follow-on
@@ -155,8 +165,5 @@ pipeText !srcName !srcLine !str !pp
          = case mct of
                 Nothing                 -> return []
                 Just (C.CheckTrace doc) -> pipeSink (renderIndent doc) sink
-
-
-
 
 

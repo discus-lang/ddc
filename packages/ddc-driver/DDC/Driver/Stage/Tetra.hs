@@ -31,7 +31,9 @@ stageSourceTetraLoad
 stageSourceTetraLoad config source store pipesTetra
  = PipeTextLoadSourceTetra
                     (dump config source "dump.tetra-load-tokens.txt")
-                    (dump config source "dump.tetra-load-raw.dct")
+                    (dump config source "dump.tetra-load-desugared.dct")
+                    (dump config source "dump.tetra-load-core.dct")
+                    (dump config source "dump.tetra-load-precheck.dct")
                     (dump config source "dump.tetra-load-trace.txt")
                     store
    ( PipeCoreOutput pprDefaultMode

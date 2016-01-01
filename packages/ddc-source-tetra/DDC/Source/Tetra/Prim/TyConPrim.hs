@@ -2,7 +2,8 @@
 -- | Definitions of primitive types for Source Tetra language.
 module DDC.Source.Tetra.Prim.TyConPrim
         ( kindPrimTyCon
-        , tBool, tNat, tInt, tWord)
+        , tBool, tNat, tInt, tWord
+        , tTextLit)
 where
 import DDC.Source.Tetra.Prim.Base
 import DDC.Type.Compounds
@@ -47,4 +48,11 @@ tInt    = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConInt) kData) kData)
 tWord   :: Int -> Type Name
 tWord bits 
         = TCon (TyConBound (UPrim (NamePrimTyCon (PrimTyConWord bits)) kData) kData)
+
+
+-- | Primitive `TextLit` type.
+tTextLit  :: Type Name
+tTextLit
+        = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConTextLit) kData) kData)
+
 

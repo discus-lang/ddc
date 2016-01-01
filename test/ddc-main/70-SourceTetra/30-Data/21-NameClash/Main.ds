@@ -7,10 +7,10 @@ import System.IO.Console
 where
 
 data Thing where
-        One : Nat  -> Thing
-        Two : Bool -> Thing
+        One : Nat# -> Thing
+        Two : Bool# -> Thing
 
-thing (x : Thing) : Nat
+thing (x : Thing) : Nat#
  = case x of
         One n   -> n
         Two n   -> if n then 0 else 1
