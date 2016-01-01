@@ -1,12 +1,18 @@
 
 module Data.Text 
-export { textLit }
+export { textLit; paste; pastes }
 where
 
 -------------------------------------------------------------------------------
 -- Names used by the Source Tetra desugarer to implement string literals.
 textLit (x : TextLit#) : Text
  = TextLit x
+
+paste  (x y : Text) : Text
+ = TextApp x y
+
+pastes (x y : Text) : Text
+ = x % " " % y
 -------------------------------------------------------------------------------
 
 

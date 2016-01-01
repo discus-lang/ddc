@@ -2,37 +2,37 @@
 
 -- Application of a symbolic operator.
 module Test where
-x = add a b
+x  = add a b
 
 
 -- Symbolic operator passed to some other function.
 module Test where
-x
+x 
   = f add
-        (app (mul 3) 5)
+        (apply (mul 3) 5)
 
 
 -- Plus is left associative.
 module Test where
-x
+x 
   = add (add a b) c
 
 
 -- Multiplication has higher precedence than addition.
 module Test where
-x
+x 
   = add a (mul b c)
 
 
 -- Multiplication has higher precedence than addition.
 module Test where
-x
+x 
   = add (mul a b) c
 
 
 -- Arithmetic.
 module Test where
-x
+x 
   = add
         (add
              (add a (mul b c))
@@ -41,33 +41,33 @@ x
 
 -- Defix dollar token.
 module Test where
-x
-  = app f (app g h)
+x 
+  = apply f (apply g h)
 
 
 -- Equality.
 module Test where
-x
+x 
   = eq (add 1 2) (add 2 3)
 
 
 -- Check operators and applications
 module Test where
-x
+x 
   = add
         (add (f a) (g b)) (h c)
 
 
 -- Check operators and applications
 module Test where
-x
+x 
   = add (f a1 a2)
         (mul (g b1 b2) (h c1 c2 c3))
 
 
 -- Check operators and applications
 module Test where
-x
+x 
   = eq
         (add (f a1 a2)
              (mul (g b1 b2)
@@ -76,19 +76,19 @@ x
 
 -- Prefix negation.
 module Test where
-x = neg a
+x  = neg a
 
 
 -- Prefix negation in an argument.
 module Test where
-x
+x 
   = f (neg x) y
         (g (neg a) b)
 
 
 -- Regular infix subtraction (not prefix negation).
 module Test where
-x = sub a b
+x  = sub a b
 
 
 -- Error: prefix infix operator is malformed.

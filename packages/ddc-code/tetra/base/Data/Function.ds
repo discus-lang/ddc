@@ -1,0 +1,8 @@
+
+module Data.Function
+export { apply }
+where
+
+apply [a b : Data] (f : a -> b) (x : a) : b
+ = f x
+

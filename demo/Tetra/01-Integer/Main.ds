@@ -9,9 +9,9 @@ where
 
 main (_ : Unit) : S Console Unit
  = box do
-        run writel (showNat (fac 10))
-        run writel (showNat (ack 3   2))
-        run writel (showNat (gcd 100 28))
+        run writel ("fac 10     = " % showNat (fac 10))
+        run writel ("ack 3 2    = " % showNat (ack 3   2))
+        run writel ("gcd 100 28 = " % showNat (gcd 100 28))
 
 
 -- Factorial.

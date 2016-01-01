@@ -106,15 +106,27 @@ getInfixDefOfSymbol a table str
 defaultFixTable :: FixTable BP.SourcePos Name
 defaultFixTable
  = FixTable 
+        -- Numeric operators.
         [ FixDefPrefix "-"  (\sp -> XVar sp (UName (NameVar "neg")))
-        , FixDefInfix  "*"  (\sp -> XVar sp (UName (NameVar "mul"))) InfixLeft  7
-        , FixDefInfix  "+"  (\sp -> XVar sp (UName (NameVar "add"))) InfixLeft  6
-        , FixDefInfix  "-"  (\sp -> XVar sp (UName (NameVar "sub"))) InfixLeft  6 
-        , FixDefInfix  "==" (\sp -> XVar sp (UName (NameVar "eq" ))) InfixNone  5
-        , FixDefInfix  "/=" (\sp -> XVar sp (UName (NameVar "neq"))) InfixNone  5
-        , FixDefInfix  "<"  (\sp -> XVar sp (UName (NameVar "lt" ))) InfixNone  5
-        , FixDefInfix  "<=" (\sp -> XVar sp (UName (NameVar "le" ))) InfixNone  5
-        , FixDefInfix  ">"  (\sp -> XVar sp (UName (NameVar "gt" ))) InfixNone  5
-        , FixDefInfix  ">=" (\sp -> XVar sp (UName (NameVar "ge" ))) InfixNone  5
-        , FixDefInfix  "$"  (\sp -> XVar sp (UName (NameVar "app"))) InfixRight 1 ]
+        , FixDefInfix  "*"  (\sp -> XVar sp (UName (NameVar "mul")))    InfixLeft  7
+        , FixDefInfix  "+"  (\sp -> XVar sp (UName (NameVar "add")))    InfixLeft  6
+        , FixDefInfix  "-"  (\sp -> XVar sp (UName (NameVar "sub")))    InfixLeft  6
+
+        -- String pasting.
+        --   These associate to the right so that when text objects are formed by
+        --   pasting several together, then spine of the data structure leans to 
+        --   the right, as do cons lists.
+        , FixDefInfix  "%"  (\sp -> XVar sp (UName (NameVar "paste")))  InfixRight 6
+        , FixDefInfix  "%%" (\sp -> XVar sp (UName (NameVar "pastes"))) InfixRight 6
+
+        -- Equality and inequalities.
+        , FixDefInfix  "==" (\sp -> XVar sp (UName (NameVar "eq" )))    InfixNone  5
+        , FixDefInfix  "/=" (\sp -> XVar sp (UName (NameVar "neq")))    InfixNone  5
+        , FixDefInfix  "<"  (\sp -> XVar sp (UName (NameVar "lt" )))    InfixNone  5
+        , FixDefInfix  "<=" (\sp -> XVar sp (UName (NameVar "le" )))    InfixNone  5
+        , FixDefInfix  ">"  (\sp -> XVar sp (UName (NameVar "gt" )))    InfixNone  5
+        , FixDefInfix  ">=" (\sp -> XVar sp (UName (NameVar "ge" )))    InfixNone  5
+
+        -- Function application.
+        , FixDefInfix  "$"  (\sp -> XVar sp (UName (NameVar "apply")))  InfixRight 1 ]
 

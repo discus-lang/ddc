@@ -37,5 +37,6 @@ intToNat (x : Nat#) : Natural
         False   -> Succ (intToNat (x - 1))
         
 main (_ : Unit) : S Console Unit
- = box run writel (showNat (natToInt (cExp (intToNat 3) (intToNat 6))))
+ = box 
+        run writel ("exp 3 6 = " % showNat (natToInt (cExp (intToNat 3) (intToNat 6))))
 

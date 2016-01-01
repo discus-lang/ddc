@@ -1,6 +1,7 @@
 
 module Main 
 import System.IO.Console
+import Data.Function
 where
 
 main (_ : Unit) : S Console Unit
