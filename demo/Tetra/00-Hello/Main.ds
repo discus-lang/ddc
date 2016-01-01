@@ -5,7 +5,7 @@ where
 
 main (_ : Unit) : S Console Unit
  = box do
-        run putStrLn "hello world"
-        run putStrLn "Καλημέρα κόσμε"
-        run putStrLn "こんにちは 世界"
-        run putStrLn "হ্যালো বিশ্ব"
+        run writel (TextLit "hello world")
+        run writel (TextLit "Καλημέρα κόσμε")
+        run writel (TextLit "こんにちは 世界")
+        run writel (TextLit "হ্যালো বিশ্ব")

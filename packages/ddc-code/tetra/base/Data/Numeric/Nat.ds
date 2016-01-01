@@ -10,6 +10,15 @@ import foreign c value
 
 where
 
+
+-- | Absolute value.
+abs (x : Nat#) : Nat#
+ | x < 0        = neg x
+ | otherwise    = x
+
+
+-------------------------------------------------------------------------------
+-- Names used by the Source Tetra desugarer to implement infix operators.
 neg x   = neg# [Nat#] x
 add x y = add# [Nat#] x y
 sub x y = sub# [Nat#] x y
@@ -23,10 +32,4 @@ lt  x y = lt#  [Nat#] [Bool#] x y
 le  x y = le#  [Nat#] [Bool#] x y
 gt  x y = gt#  [Nat#] [Bool#] x y
 ge  x y = ge#  [Nat#] [Bool#] x y
-
-
--- | Absolute value.
-abs (x : Nat#) : Nat#
- | x < 0        = neg x
- | otherwise    = x
-
+-------------------------------------------------------------------------------

@@ -135,7 +135,7 @@ etaX profile config kenv tenv xx
 
 -------------------------------------------------------------------------------
 class Eta (c :: * -> * -> *) where
- etaM   :: (Ord n, Pretty n, Show n)
+ etaM   :: (Show a, Ord n, Pretty n, Show n)
         => Config               -- ^ Eta-transform config.
         -> Check.Config n       -- ^ Type checker config.
         -> KindEnv n            -- ^ Kind environment.

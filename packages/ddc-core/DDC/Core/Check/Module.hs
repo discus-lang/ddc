@@ -33,7 +33,7 @@ import qualified DDC.Type.Env   as Env
 --
 --   If it's bad, you get a description of the error.
 checkModule
-        :: (Ord n, Show n, Pretty n)
+        :: (Show a, Ord n, Show n, Pretty n)
         => Config n             -- ^ Static configuration.
         -> Module a n           -- ^ Module to check.
         -> Mode n               -- ^ Type checker mode.
@@ -53,7 +53,7 @@ checkModule !config !xx !mode
 -- checkModule ------------------------------------------------------------------------------------
 -- | Like `checkModule` but using the `CheckM` monad to handle errors.
 checkModuleM 
-        :: (Ord n, Show n, Pretty n)
+        :: (Show a, Ord n, Show n, Pretty n)
         => Config n             -- ^ Static configuration.
         -> KindEnv n            -- ^ Starting kind environment.
         -> TypeEnv n            -- ^ Starting type environment.

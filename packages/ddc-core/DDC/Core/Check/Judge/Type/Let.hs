@@ -79,7 +79,7 @@ checkLet _ _ _ _
 -- | Check some let bindings,
 --   and push their binders onto the context.
 checkLetsM 
-        :: (Show n, Pretty n, Ord n)
+        :: (Show a, Show n, Pretty n, Ord n)
         => Bool                         -- ^ Use bidirectional inference.
         -> Exp a n                      -- ^ Expression for error messages.
         -> Table a n                    -- ^ Static configuration.
@@ -287,7 +287,7 @@ checkRecBinds table bidir a xx ctx0 bs0
 --   Doing this won't push any more bindings onto the context,
 --   though it may solve some existentials in it.
 checkRecBindExps
-        :: (Pretty n, Show n, Ord n)
+        :: (Show a, Show n, Ord n, Pretty n)
         => Table a n
         -> Bool                         -- ^ Use bidirectional checking.
         -> a                            -- ^ Annotation for error messages.

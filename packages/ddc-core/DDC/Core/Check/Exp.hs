@@ -61,7 +61,7 @@ import qualified DDC.Type.Env           as Env
 --   kind and type environment.
 --
 checkExp 
-        :: (Ord n, Show n, Pretty n)
+        :: (Show a, Ord n, Show n, Pretty n)
         => Config n                     -- ^ Static configuration.
         -> KindEnv n                    -- ^ Starting kind environment.
         -> TypeEnv n                    -- ^ Starting type environment.
@@ -108,7 +108,7 @@ checkExp !config !kenv !tenv !xx !mode
 
 -- | Like `checkExp`, but only return the value type of an expression.
 typeOfExp 
-        :: (Ord n, Pretty n, Show n)
+        :: (Show a, Ord n, Pretty n, Show n)
         => Config n                     -- ^ Static configuration.
         -> KindEnv n                    -- ^ Starting Kind environment
         -> TypeEnv n                    -- ^ Starting Type environment.
@@ -124,7 +124,7 @@ typeOfExp !config !kenv !tenv !xx
 -- Monadic Checking -----------------------------------------------------------
 -- | Like `checkExp` but using the `CheckM` monad to handle errors.
 checkExpM 
-        :: (Show n, Pretty n, Ord n)
+        :: (Show a, Show n, Pretty n, Ord n)
         => Table a n                    -- ^ Static config.
         -> Context n                    -- ^ Input context.
         -> Exp a n                      -- ^ Expression to check.

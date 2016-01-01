@@ -176,7 +176,7 @@ takeDiscrimCheckModeFromAlts table a ctx mode alts
 ---------------------------------------------------------------------------------------------------
 -- | Check some case alternatives.
 checkAltsM
-        :: (Show n, Pretty n, Ord n)
+        :: (Show a, Show n, Pretty n, Ord n)
         => Table a n            -- ^ Checker table.
         -> a                    -- ^ Annotation for error messages.
         -> Exp a n              -- ^ Whole case expression, for error messages.
@@ -306,7 +306,7 @@ checkAltsM !table !a !xx !tDiscrim !tsArgs !mode !alts0 !ctx
 -- Fields -----------------------------------------------------------------------------------------
 -- | Check the inferred type for a field against any annotation for it.
 checkFieldAnnots 
-        :: (Ord n, Pretty n)
+        :: (Show a, Show n, Ord n, Pretty n)
         => Table a n            -- ^ Checker table.
         -> Bool                 -- ^ Use bi directional type inference.
         -> a                    -- ^ Annotation for error messages.

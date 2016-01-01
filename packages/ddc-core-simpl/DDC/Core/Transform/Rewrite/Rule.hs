@@ -164,7 +164,7 @@ mkRewriteRule  bs cs lhs hole rhs
 --   We don't handle anonymous binders on either the left or right.
 --
 checkRewriteRule
-    :: (Ord n, Show n, Pretty n)        
+    :: (Show a, Ord n, Show n, Pretty n)        
     => C.Config n               -- ^ Type checker config.
     -> T.Env n                  -- ^ Kind environment.
     -> T.Env n                  -- ^ Type environment.
@@ -280,7 +280,7 @@ extendBinds binds kenv tenv
 
 -- | Type check the expression on one side of the rule.
 checkExp 
-        :: (Ord n, Show n, Pretty n)
+        :: (Show a, Ord n, Show n, Pretty n)
         => C.Config n 
         -> KindEnv n    -- ^ Kind environment of expression.
         -> TypeEnv n    -- ^ Type environment of expression.

@@ -86,7 +86,7 @@ checkAppX _ _ _ _
 -------------------------------------------------------------------------------
 -- | Synthesize the type of a function applied to its argument.
 synthAppArg 
-        :: (Show n, Ord n, Pretty n)
+        :: (Show a, Show n, Ord n, Pretty n)
         => Table a n
         -> a                             -- Annot for error messages.
         -> Exp a n                       -- Expression for error messages.

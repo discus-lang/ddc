@@ -1,6 +1,7 @@
 
 module System.IO.Console 
-export putStrLn
+export { putStrLn; write; writel }
+import Data.Text
 
 import foreign abstract type
  Console  : Effect
@@ -24,3 +25,20 @@ putStrLn (s : TextLit#) : S Console Unit
         run putStr_v "\n"
         ()
 
+
+-- | Write text to the console.
+write (tt : Text) : S Console Unit
+ = box case tt of
+        TextLit lit
+         -> do  run putStr lit
+
+        TextApp t1 t2 
+         -> do  run write t1
+                run write t2
+
+
+-- | Write text to the console with a trailing newline.
+writel (tt : Text) : S Console Unit
+ = box do
+        run write tt
+        run write (TextLit "\n")

@@ -380,7 +380,7 @@ isLiftyContext ctx
 -- | Construct the call site, and new lifted binding for a lambda lifted
 --   abstraction.
 liftLambda 
-        :: (Show n, Pretty n, Ord n, CompoundName n, Pretty a)
+        :: (Show a, Show n, Pretty n, Ord n, CompoundName n, Pretty a)
         => Profile n            -- ^ Language profile.
         -> Context a n          -- ^ Context of the original abstraction.
         -> Set (Bool, Bound n)  -- ^ Free variables in the body of the abstraction.

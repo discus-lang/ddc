@@ -25,16 +25,20 @@ class SpreadX (c :: * -> *) where
 ---------------------------------------------------------------------------------------------------
 instance SpreadX (Module a) where
  spreadX kenv tenv mm@ModuleCore{}
-        = mm
-        { moduleExportTypes   = map (liftSnd $ spreadT kenv)      (moduleExportTypes   mm)
-        , moduleExportValues  = map (liftSnd $ spreadT kenv)      (moduleExportValues  mm)
+        = ModuleCore
+        { moduleName            = moduleName mm
+        , moduleIsHeader        = moduleIsHeader mm
+
+        , moduleExportTypes     = map (liftSnd $ spreadT kenv)      (moduleExportTypes    mm)
+        , moduleExportValues    = map (liftSnd $ spreadT kenv)      (moduleExportValues   mm)
           
-        , moduleImportTypes   = map (liftSnd $ spreadX kenv tenv) (moduleImportTypes   mm)
-        , moduleImportValues  = map (liftSnd $ spreadX kenv tenv) (moduleImportValues  mm)
+        , moduleImportTypes     = map (liftSnd $ spreadX kenv tenv) (moduleImportTypes    mm)
+        , moduleImportValues    = map (liftSnd $ spreadX kenv tenv) (moduleImportValues   mm)
+        , moduleImportDataDefs  = map (spreadT kenv )               (moduleImportDataDefs mm)
+
+        , moduleDataDefsLocal   = map (spreadT kenv)                (moduleDataDefsLocal  mm)
   
-        , moduleDataDefsLocal = map    (spreadT kenv)             (moduleDataDefsLocal mm)
-  
-        , moduleBody          = spreadX kenv tenv (moduleBody mm) }
+        , moduleBody            = spreadX kenv tenv (moduleBody mm) }
         where liftSnd f (x, y) = (x, f y)
 
 

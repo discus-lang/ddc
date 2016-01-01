@@ -37,7 +37,7 @@ import DDC.Type.Transform.BoundT
 
 -- | Type of the function that checks some node of the core AST.
 type Checker a n
-        =  (Show n, Ord n, Pretty n)
+        =  (Show a, Show n, Ord n, Pretty n)
         => Table a n                    -- ^ Static configuration.
         -> Context n                    -- ^ Input context.
         -> Exp a n                      -- ^ Expression to check.
