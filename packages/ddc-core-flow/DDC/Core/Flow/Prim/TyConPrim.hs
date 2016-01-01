@@ -28,6 +28,7 @@ kindPrimTyCon tc
         PrimTyConWord  _ -> kData
         PrimTyConFloat _ -> kData
         PrimTyConTag     -> kData
+        PrimTyConTextLit -> kData
         PrimTyConVec   _ -> kData `kFun` kData
 
 

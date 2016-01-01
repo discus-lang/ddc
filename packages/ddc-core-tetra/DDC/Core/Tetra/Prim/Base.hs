@@ -135,9 +135,6 @@ data TyConTetra
 
         -- | @C#@       Reified function closure.
         | TyConTetraC
-
-        -- | @TextLit#@ Text literal (UTF-8 encoded).
-        | TyConTetraTextLit
         deriving (Eq, Ord, Show)
 
 

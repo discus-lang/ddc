@@ -48,7 +48,7 @@ primDataDefs
         , makeDataDefAlg (NamePrimTyCon (PrimTyConWord 32)) [] Nothing
 
         -- TextLit#
-        , makeDataDefAlg (NameTyConTetra TyConTetraTextLit) [] Nothing
+        , makeDataDefAlg (NamePrimTyCon PrimTyConTextLit)   [] Nothing
 
         -- U#
         -- We need this data def when matching against literals with case expressions.

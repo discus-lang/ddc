@@ -53,6 +53,7 @@ repOfType tt
                 PrimTyConVec{}          -> Just RepBoxed
                 PrimTyConAddr{}         -> Just RepBoxed
                 PrimTyConPtr{}          -> Just RepBoxed
+                PrimTyConTextLit{}      -> Just RepBoxed
                 PrimTyConTag{}          -> Just RepBoxed
 
         -- Explicitly unboxed things.
@@ -69,7 +70,6 @@ repOfType tt
                 TyConTetraF{}           -> Just RepNone
                 TyConTetraC{}           -> Just RepNone
 
-                TyConTetraTextLit{}     -> Just RepBoxed
 
         | otherwise
         = Nothing
@@ -92,11 +92,11 @@ convertRepType RepUnboxed tt
                 PrimTyConSize           -> Just $ tUnboxed tSize
                 PrimTyConWord  bits     -> Just $ tUnboxed (tWord  bits)
                 PrimTyConFloat bits     -> Just $ tUnboxed (tFloat bits) 
+                PrimTyConTextLit        -> Just $ tUnboxed tTextLit
                 _                       -> Nothing
 
         | Just (NameTyConTetra tc, [])   <- takePrimTyConApps tt
         = case tc of
-                TyConTetraTextLit       -> Just $ tUnboxed tTextLit
                 _                       -> Nothing
 
 convertRepType _ _

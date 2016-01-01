@@ -106,6 +106,7 @@ kindOfPrimTyCon tc
         PrimTyConAddr    -> kData
         PrimTyConPtr     -> kRegion `kFun` kData `kFun` kData
         PrimTyConTag     -> kData
+        PrimTyConTextLit -> kData
         PrimTyConVec   _ -> kData `kFun` kData
 
 

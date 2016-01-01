@@ -72,9 +72,6 @@ data TyConTetra
 
         -- | @U#@.       Explicitly unboxed values.
         | TyConTetraU
-
-        -- | @TextLit#@. Text literals (UTF-8 encoded).
-        | TyConTetraTextLit
         deriving (Eq, Ord, Show)
 
 

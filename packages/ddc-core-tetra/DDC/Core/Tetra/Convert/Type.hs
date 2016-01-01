@@ -273,7 +273,7 @@ convertValueAppT ctx tt
 
         -- Boxed text literals.
         -- The box holds a pointer to the string data.
-        | Just (E.NameTyConTetra E.TyConTetraTextLit, [])
+        | Just (E.NamePrimTyCon E.PrimTyConTextLit, [])
                 <- takePrimTyConApps tt
         =      return   $ A.tPtr A.rTop A.tObj
 

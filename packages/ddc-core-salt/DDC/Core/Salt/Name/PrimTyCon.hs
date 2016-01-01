@@ -65,6 +65,10 @@ data PrimTyCon
         --   4-byte aligned and point to memory owned by the current process.
         | PrimTyConPtr
 
+        -- | @TextLit#@ type of a text literal, which is represented as a pointer
+        --   to the literal data in static memory.
+        | PrimTyConTextLit
+
         -- | @Tag#@ data constructor tags.
         --   Enough precision to count every possible alternative of an 
         --   enumerated type.
@@ -99,6 +103,7 @@ pprPrimTyConStem tc
         PrimTyConVec    arity   -> text "Vec"   <> int arity
         PrimTyConTag            -> text "Tag"
         PrimTyConAddr           -> text "Addr"
+        PrimTyConTextLit        -> text "TextLit"
         PrimTyConPtr            -> text "Ptr"
 
 
@@ -119,14 +124,15 @@ readPrimTyCon str
 -- | Read a primitive type constructor, without the '#' suffix.
 readPrimTyConStem :: String -> Maybe PrimTyCon
 readPrimTyConStem str
-        | str == "Void" = Just $ PrimTyConVoid
-        | str == "Bool" = Just $ PrimTyConBool
-        | str == "Nat"  = Just $ PrimTyConNat
-        | str == "Int"  = Just $ PrimTyConInt
-        | str == "Size" = Just $ PrimTyConSize
-        | str == "Tag"  = Just $ PrimTyConTag
-        | str == "Addr" = Just $ PrimTyConAddr
-        | str == "Ptr"  = Just $ PrimTyConPtr
+        | str == "Void"         = Just $ PrimTyConVoid
+        | str == "Bool"         = Just $ PrimTyConBool
+        | str == "Nat"          = Just $ PrimTyConNat
+        | str == "Int"          = Just $ PrimTyConInt
+        | str == "Size"         = Just $ PrimTyConSize
+        | str == "Tag"          = Just $ PrimTyConTag
+        | str == "Addr"         = Just $ PrimTyConAddr
+        | str == "Ptr"          = Just $ PrimTyConPtr
+        | str == "TextLit"      = Just $ PrimTyConTextLit
 
         -- WordN#
         | Just rest     <- stripPrefix "Word" str
@@ -228,5 +234,6 @@ primTyConWidth pp tc
         PrimTyConTag            -> Just $ 8 * platformTagBytes  pp
         PrimTyConAddr           -> Just $ 8 * platformAddrBytes pp
         PrimTyConPtr            -> Just $ 8 * platformAddrBytes pp
+        PrimTyConTextLit        -> Just $ 8 * platformAddrBytes pp
         PrimTyConVec   _        -> Nothing
 

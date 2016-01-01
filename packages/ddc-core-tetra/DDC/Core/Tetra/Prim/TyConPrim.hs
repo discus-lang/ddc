@@ -6,7 +6,8 @@ module DDC.Core.Tetra.Prim.TyConPrim
         , kindPrimTyCon
         , tBool
         , tNat, tInt, tSize, tWord, tFloat
-        , tPtr)
+        , tPtr
+        , tTextLit)
 where
 import DDC.Core.Tetra.Prim.Base
 import DDC.Core.Compounds
@@ -20,17 +21,18 @@ import DDC.Core.Salt.Name
 kindPrimTyCon :: PrimTyCon -> Kind Name
 kindPrimTyCon tc
  = case tc of
-        PrimTyConVoid     -> kData
-        PrimTyConBool     -> kData
-        PrimTyConNat      -> kData
-        PrimTyConInt      -> kData
-        PrimTyConSize     -> kData
-        PrimTyConWord{}   -> kData
-        PrimTyConFloat{}  -> kData
-        PrimTyConVec{}    -> kData   `kFun` kData
-        PrimTyConAddr{}   -> kData
-        PrimTyConPtr{}    -> kRegion `kFun` kData `kFun` kData
-        PrimTyConTag{}    -> kData
+        PrimTyConVoid      -> kData
+        PrimTyConBool      -> kData
+        PrimTyConNat       -> kData
+        PrimTyConInt       -> kData
+        PrimTyConSize      -> kData
+        PrimTyConWord{}    -> kData
+        PrimTyConFloat{}   -> kData
+        PrimTyConVec{}     -> kData   `kFun` kData
+        PrimTyConAddr{}    -> kData
+        PrimTyConPtr{}     -> kRegion `kFun` kData `kFun` kData
+        PrimTyConTextLit{} -> kData
+        PrimTyConTag{}     -> kData
 
 
 -- Compounds ------------------------------------------------------------------
@@ -67,11 +69,18 @@ tFloat bits = tConPrim (PrimTyConFloat bits)
 -- | Primitive `Ptr` type with given region and data type
 tPtr   :: Type Name -> Type Name -> Type Name
 tPtr r a
-        = tConPrim PrimTyConPtr `TApp` r `TApp` a
+         = tConPrim PrimTyConPtr `TApp` r `TApp` a
 
 
+-- | The text literal type.
+tTextLit :: Type Name
+tTextLit = tConPrim PrimTyConTextLit
+
+
+-- | Yield the type for a primtiive type constructor.
 tConPrim :: PrimTyCon -> Type Name
 tConPrim tc
  = let k = kindPrimTyCon tc
    in      TCon (TyConBound (UPrim (NamePrimTyCon tc) k) k)
+
 

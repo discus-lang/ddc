@@ -116,9 +116,9 @@ isNumericType tt
 -- | Check if this is the string type.
 isTextLitType :: Type Name -> Bool
 isTextLitType tt
-        | Just (NameTyConTetra n, [])   <- takePrimTyConApps tt
+        | Just (NamePrimTyCon n, [])    <- takePrimTyConApps tt
         = case n of
-                TyConTetraTextLit       -> True
+                PrimTyConTextLit        -> True
                 _                       -> False
 
         | otherwise                     = False
@@ -159,7 +159,7 @@ makeBoxedPrimDataCtor tt
 makeBoxedTextLitDataType :: DataType Name
 makeBoxedTextLitDataType 
         = DataType 
-        { dataTypeName          = NameTyConTetra TyConTetraTextLit
+        { dataTypeName          = NamePrimTyCon PrimTyConTextLit
         , dataTypeParams        = []
         , dataTypeMode          = DataModeLarge
         , dataTypeIsAlgebraic   = False }
@@ -169,10 +169,10 @@ makeBoxedTextLitDataType
 makeBoxedTextLitDataCtor :: DataCtor Name
 makeBoxedTextLitDataCtor 
         = DataCtor
-        { dataCtorName          = NameTyConTetra TyConTetraTextLit
+        { dataCtorName          = NamePrimTyCon PrimTyConTextLit
         , dataCtorTag           = 0
         , dataCtorFieldTypes    = [tUnboxed tTextLit]
         , dataCtorResultType    = tTextLit
-        , dataCtorTypeName      = NameTyConTetra TyConTetraTextLit
+        , dataCtorTypeName      = NamePrimTyCon PrimTyConTextLit
         , dataCtorTypeParams    = [] }
 

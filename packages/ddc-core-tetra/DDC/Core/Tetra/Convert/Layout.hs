@@ -56,7 +56,7 @@ heapObjectOfDataCtor pp ctor
         -- The pointer will fit in a RawSmall object.
         | [t1]                                        <- dataCtorFieldTypes ctor
         , Just (NameTyConTetra TyConTetraU, [tp])     <- takePrimTyConApps t1
-        , Just (NameTyConTetra TyConTetraTextLit, []) <- takePrimTyConApps tp
+        , Just (NamePrimTyCon  PrimTyConTextLit, [])  <- takePrimTyConApps tp
         = Just HeapObjectRawSmall
 
         | otherwise
@@ -152,7 +152,9 @@ fieldSizeOfPrimTyCon platform tc
 
         -- Pointer tycon shouldn't appear by itself.
         PrimTyConPtr            -> Nothing
+
         PrimTyConAddr           -> Just $ platformAddrBytes platform
+        PrimTyConTextLit        -> Just $ platformAddrBytes platform
 
         PrimTyConTag            -> Just $ platformTagBytes  platform
 
