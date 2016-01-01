@@ -119,8 +119,10 @@ pipeText !srcName !srcLine !str !pp
                         -- Convert Source Tetra to Core Tetra.
                         -- This source position is used to annotate the 
                         -- let-expression that holds all the top-level bindings.
-                        let sp          = SP.SourcePos "<top level>" 1 1
-                        let mm_core     = SE.coreOfSourceModule sp mm_expand
+                        let sp            = SP.SourcePos "<top level>" 1 1
+
+                        -- TODO: handle error
+                        let Right mm_core = SE.coreOfSourceModule sp mm_expand
 
                         -- Discover which module imported names are from, and
                         -- attach the meta-data which will be needed by follow-on
