@@ -5,10 +5,16 @@ export  { showNat
         ; eq;  neq; lt;  le;  gt;  ge
         ; abs }
 
+import Data.Text
 import foreign c value
- showNat   : Nat# -> TextLit#
+ primShowNat : Nat# -> TextLit#
 
 where
+
+
+-- | Show a natural number.
+showNat (x : Nat#) : Text
+ = TextLit (primShowNat x)
 
 
 -- | Absolute value.

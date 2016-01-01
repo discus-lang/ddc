@@ -2,15 +2,16 @@
 module Main 
 import Data.Numeric.Nat
 import Data.Numeric.Bool
+import Data.Text
 import System.IO.Console
 where
 
 
 main (_ : Unit) : S Console Unit
  = box do
-        run putStrLn (showNat (fac 10))
-        run putStrLn (showNat (ack 3   2))
-        run putStrLn (showNat (gcd 100 28))
+        run writel (showNat (fac 10))
+        run writel (showNat (ack 3   2))
+        run writel (showNat (gcd 100 28))
 
 
 -- Factorial.

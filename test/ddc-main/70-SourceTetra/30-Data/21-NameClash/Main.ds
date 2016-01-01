@@ -17,6 +17,6 @@ thing (x : Thing) : Nat#
 
 main (_ : Unit) : S Console Unit
  = box do   
-        run putStrLn (showNat (thing (One 5)))
-        run putStrLn (showNat (thing (Two False)))
-        run putStrLn (showNat (thing (Two True)))
+        run writel (showNat (thing (One 5)))
+        run writel (showNat (thing (Two False)))
+        run writel (showNat (thing (Two True)))

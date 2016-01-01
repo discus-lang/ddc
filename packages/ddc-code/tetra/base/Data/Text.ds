@@ -1,0 +1,18 @@
+
+module Data.Text 
+export { textLit }
+where
+
+-------------------------------------------------------------------------------
+-- Names used by the Source Tetra desugarer to implement string literals.
+textLit (x : TextLit#) : Text
+ = TextLit x
+-------------------------------------------------------------------------------
+
+
+data Text where
+        TextLit : TextLit# -> Text
+        TextApp : Text -> Text -> Text
+
+
+

@@ -8,7 +8,7 @@ where
 main (_ : Unit) : S Console Unit
  = box private r with { Alloc r; Read r } in
    do
-        run putStrLn (showNat 5)
+        run writel (showNat 5)
         ()
 
 

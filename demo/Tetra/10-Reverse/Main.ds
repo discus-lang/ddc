@@ -17,7 +17,7 @@ dumpListNat (xx : List Nat#) : S Console Unit
  = box case xx of
         Nil             -> ()
         Cons x xs       
-         -> do  run putStrLn (showNat x)
+         -> do  run writel (showNat x)
                 run dumpListNat xs
 
 

@@ -258,6 +258,11 @@ toCoreX xx
         S.XVar a u      
          -> C.XVar  <$> pure a <*> toCoreU  u
 
+        S.XCon a dc@(C.DaConPrim (S.NameLitTextLit{}) _)
+         -> C.XApp  <$> pure a 
+                    <*> (C.XVar <$> pure a <*> (pure $ C.UName (C.NameVar "textLit")))
+                    <*> (C.XCon <$> pure a <*> (toCoreDC dc))
+
         S.XCon a dc
          -> C.XCon  <$> pure a <*> toCoreDC dc
 

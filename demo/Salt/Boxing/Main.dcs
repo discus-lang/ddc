@@ -7,8 +7,8 @@ module Main
 export main       : [r1 r2 : Region]. Nat# -> Ptr# r1 Word8# -> Int#
 
 import foreign c value 
-        showInt   : [r : Region]. Int# -> Ptr# r Word8#
-        putStr_v  : [r : Region]. Ptr# r Word8# -> Void#
+        primShowInt   : [r : Region]. Int# -> Ptr# r Word8#
+        primPutString : [r : Region]. Ptr# r Word8# -> Void#
 
 with letrec 
 
@@ -103,8 +103,8 @@ main [r1 r2 : Region] (argc : Nat#) (argv : Ptr# r1 Word8#) : Int#
         
         -- Print out the result.
         x2u     = unboxWord32 x2
-        str     = showInt (truncate# [Int#] [Word32#] x2u)
-        putStr_v str
+        str     = primShowInt (truncate# [Int#] [Word32#] x2u)
+        primPutString str
 
         return# 0i#
       

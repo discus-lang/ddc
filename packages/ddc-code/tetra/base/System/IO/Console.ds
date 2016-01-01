@@ -1,36 +1,23 @@
 
 module System.IO.Console 
-export { putStrLn; write; writel }
+export { write; writel }
 import Data.Text
 
 import foreign abstract type
  Console  : Effect
 
 import foreign c value
- putStr_v  : TextLit# -> S Console Void#
+ primPutString  : TextLit# -> S Console Void#
 
 where
-
--- | Print a string to stdout.
-putStr (s : TextLit#) : S Console Unit
- = box do
-        run putStr_v s
-        ()
-
-
--- | Print a string with a trailing newline to stdout.
-putStrLn (s : TextLit#) : S Console Unit
- = box do
-        run putStr_v s
-        run putStr_v "\n"
-        ()
 
 
 -- | Write text to the console.
 write (tt : Text) : S Console Unit
  = box case tt of
         TextLit lit
-         -> do  run putStr lit
+         -> do  run primPutString lit
+                ()
 
         TextApp t1 t2 
          -> do  run write t1
@@ -41,4 +28,4 @@ write (tt : Text) : S Console Unit
 writel (tt : Text) : S Console Unit
  = box do
         run write tt
-        run write (TextLit "\n")
+        run write "\n"

@@ -7,7 +7,7 @@
 
 // Show an integer.
 // This leaks the space for the string, but nevermind until we get a GC.
-string_t* showInt (int i)
+string_t* primShowInt (int i)
 {       string_t* str = malloc(32);
         snprintf(str, 32, "%d", i);
         return str;
@@ -16,7 +16,7 @@ string_t* showInt (int i)
 
 // Show a natural number.
 // This leaks the space for the string, but nevermind until we get a GC.
-string_t* showNat (nat_t i)
+string_t* primShowNat (nat_t i)
 {       string_t* str = malloc(32);
         snprintf(str, 32, "%u", (unsigned int)i);
         return str;
@@ -24,7 +24,7 @@ string_t* showNat (nat_t i)
 
 
 // Print a string to stdout.
-void putStr_v (string_t* str)
+void primPutString (string_t* str)
 {       fputs(str, stdout);
 }
 
