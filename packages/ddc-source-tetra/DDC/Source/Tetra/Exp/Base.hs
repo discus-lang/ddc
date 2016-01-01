@@ -106,8 +106,9 @@ data Lets a n
 
         ---------------------------------------------------
         -- Sugar Constructs
-        -- | A possibly recursive group of binding clauses. Multiple clauses
-        --   bindings may define the same function via pattern matching.
+        -- | A possibly recursive group of binding clauses.
+        -- 
+        --   Multiple clauses in the group may be part of the same function.
         | LGroup   ![Clause a n]
         deriving (Show, Eq)
 

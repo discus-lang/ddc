@@ -40,19 +40,19 @@ import DDC.Core.Module
 
 
 ---------------------------------------------------------------------------------------------------
-type ConvertM a 
-        = Either ErrorConvert a
+type ConvertM a x
+        = Either (ErrorConvert a) x
 
 
 -- | Run a conversion computation.
-runConvertM :: ConvertM a -> Either ErrorConvert a
+runConvertM :: ConvertM a x -> Either (ErrorConvert a) x
 runConvertM cc = cc
 
 -- | Convert a Source Tetra module to Core Tetra.
 coreOfSourceModule 
         :: a 
         -> S.Module a S.Name
-        -> Either ErrorConvert (C.Module a C.Name)
+        -> Either (ErrorConvert a) (C.Module a C.Name)
 
 coreOfSourceModule a mm
         = runConvertM 
@@ -71,7 +71,7 @@ coreOfSourceModule a mm
 coreOfSourceModuleM
         :: a 
         -> S.Module a S.Name 
-        -> ConvertM (C.Module a C.Name)
+        -> ConvertM a (C.Module a C.Name)
 
 coreOfSourceModuleM a mm
  = do   
@@ -125,7 +125,7 @@ coreOfSourceModuleM a mm
 
 
 -- | Extract the top-level bindings from some source definitions.
-letsOfTops :: [S.Top a S.Name] -> ConvertM (C.Lets a C.Name)
+letsOfTops :: [S.Top a S.Name] -> ConvertM a (C.Lets a C.Name)
 letsOfTops tops
  = C.LRec <$> (sequence $ mapMaybe bindOfTop tops)
 
@@ -134,7 +134,7 @@ letsOfTops tops
 --   or `Nothing` if it isn't one.
 bindOfTop  
         :: S.Top a S.Name 
-        -> Maybe (ConvertM (Bind C.Name, C.Exp a C.Name))
+        -> Maybe (ConvertM a (Bind C.Name, C.Exp a C.Name))
 
 bindOfTop (S.TopClause _ (S.SLet _ b [] [S.GExp x]))
  = Just ((,) <$> toCoreB b <*> toCoreX x)
@@ -144,7 +144,7 @@ bindOfTop _
 
 
 -- ImportType -------------------------------------------------------------------------------------
-toCoreImportType :: ImportType S.Name -> ConvertM (ImportType C.Name)
+toCoreImportType :: ImportType S.Name -> ConvertM a (ImportType C.Name)
 toCoreImportType src
  = case src of
         ImportTypeAbstract t    -> ImportTypeAbstract <$> toCoreT t
@@ -152,7 +152,7 @@ toCoreImportType src
 
 
 -- ImportValue ------------------------------------------------------------------------------------
-toCoreImportValue :: ImportValue S.Name -> ConvertM (ImportValue C.Name)
+toCoreImportValue :: ImportValue S.Name -> ConvertM a (ImportValue C.Name)
 toCoreImportValue src
  = case src of
         ImportValueModule mn n t mA
@@ -165,7 +165,7 @@ toCoreImportValue src
 
 
 -- Type -------------------------------------------------------------------------------------------
-toCoreT :: Type S.Name -> ConvertM (Type C.Name)
+toCoreT :: Type S.Name -> ConvertM a (Type C.Name)
 toCoreT tt
  = case tt of
         TVar u
@@ -190,7 +190,7 @@ toCoreT tt
 
 
 -- TyCon ------------------------------------------------------------------------------------------
-toCoreTC :: TyCon S.Name -> ConvertM (TyCon C.Name)
+toCoreTC :: TyCon S.Name -> ConvertM a (TyCon C.Name)
 toCoreTC tc
  = case tc of
         TyConSort sc    
@@ -213,7 +213,7 @@ toCoreTC tc
 
 
 -- DataDef ----------------------------------------------------------------------------------------
-toCoreDataDef :: S.DataDef S.Name -> ConvertM (C.DataDef C.Name)
+toCoreDataDef :: S.DataDef S.Name -> ConvertM a (C.DataDef C.Name)
 toCoreDataDef def
  = do
         defParams       <- sequence $ fmap toCoreB $ S.dataDefParams def
@@ -235,7 +235,7 @@ toCoreDataCtor
         :: S.DataDef S.Name 
         -> Integer
         -> S.DataCtor S.Name 
-        -> ConvertM (C.DataCtor C.Name)
+        -> ConvertM a (C.DataCtor C.Name)
 
 toCoreDataCtor dataDef tag ctor
  = do   typeParams      <- sequence $ fmap toCoreB $ S.dataDefParams dataDef
@@ -252,7 +252,7 @@ toCoreDataCtor dataDef tag ctor
 
 
 -- Exp --------------------------------------------------------------------------------------------
-toCoreX :: S.Exp a S.Name -> ConvertM (C.Exp a C.Name)
+toCoreX :: S.Exp a S.Name -> ConvertM a (C.Exp a C.Name)
 toCoreX xx
  = case xx of
         S.XVar a u      
@@ -286,14 +286,13 @@ toCoreX xx
          -> C.XWitness <$> pure a <*> toCoreW w
 
         -- These shouldn't exist in the desugared source tetra code.
-        -- TODO: move to Error
-        S.XDefix{}      -> error "source-tetra.toCoreX: found XDefix node"
-        S.XInfixOp{}    -> error "source-tetra.toCoreX: found XInfixOp node"
-        S.XInfixVar{}   -> error "source-tetra.toCoreX: found XInfixVar node"
+        S.XDefix{}      -> Left $ ErrorConvertCannotConvertSugarExp xx
+        S.XInfixOp{}    -> Left $ ErrorConvertCannotConvertSugarExp xx
+        S.XInfixVar{}   -> Left $ ErrorConvertCannotConvertSugarExp xx
 
 
 -- Lets -------------------------------------------------------------------------------------------
-toCoreLts :: S.Lets a S.Name -> ConvertM (C.Lets a C.Name)
+toCoreLts :: S.Lets a S.Name -> ConvertM a (C.Lets a C.Name)
 toCoreLts lts
  = case lts of
         S.LLet b x
@@ -312,13 +311,12 @@ toCoreLts lts
                        <*> (fmap Just $ toCoreT tParent)
                        <*> (sequence $ fmap toCoreB bts)
 
-        -- TODO: move to error.
         S.LGroup{}
-         -> error "source-tetra.toCoreLts: found LGroup"
+         -> Left $ ErrorConvertCannotConvertSugarLets lts
 
 
 -- Cast -------------------------------------------------------------------------------------------
-toCoreC :: S.Cast a S.Name -> ConvertM (C.Cast a C.Name)
+toCoreC :: S.Cast a S.Name -> ConvertM a (C.Cast a C.Name)
 toCoreC cc
  = case cc of
         S.CastWeakenEffect eff
@@ -335,7 +333,7 @@ toCoreC cc
 
 
 -- Alt --------------------------------------------------------------------------------------------
-toCoreA  :: a -> S.Alt a S.Name -> ConvertM (C.Alt a C.Name)
+toCoreA  :: a -> S.Alt a S.Name -> ConvertM a (C.Alt a C.Name)
 toCoreA a (S.AAlt w gxs)
  = C.AAlt <$> toCoreP w
           <*> (toCoreX (S.desugarGuards a gxs (error "toCoreA alt fail")))
@@ -343,7 +341,7 @@ toCoreA a (S.AAlt w gxs)
 
 
 -- Pat --------------------------------------------------------------------------------------------
-toCoreP  :: Pat S.Name -> ConvertM (Pat C.Name)
+toCoreP  :: Pat S.Name -> ConvertM a (Pat C.Name)
 toCoreP pp
  = case pp of
         PDefault        
@@ -354,7 +352,7 @@ toCoreP pp
 
 
 -- DaCon ------------------------------------------------------------------------------------------
-toCoreDC :: DaCon S.Name -> ConvertM (DaCon C.Name)
+toCoreDC :: DaCon S.Name -> ConvertM a (DaCon C.Name)
 toCoreDC dc
  = case dc of
         DaConUnit
@@ -368,7 +366,7 @@ toCoreDC dc
 
 
 -- Witness ----------------------------------------------------------------------------------------
-toCoreW :: Witness a S.Name -> ConvertM (Witness a C.Name)
+toCoreW :: Witness a S.Name -> ConvertM a (Witness a C.Name)
 toCoreW ww
  = case ww of
         S.WVar a u
@@ -385,7 +383,7 @@ toCoreW ww
 
 
 -- WiCon ------------------------------------------------------------------------------------------
-toCoreWC :: WiCon S.Name -> ConvertM (WiCon C.Name)
+toCoreWC :: WiCon S.Name -> ConvertM a (WiCon C.Name)
 toCoreWC wc
  = case wc of
         WiConBound u t
@@ -393,7 +391,7 @@ toCoreWC wc
 
 
 -- Bind -------------------------------------------------------------------------------------------
-toCoreB :: Bind S.Name -> ConvertM (Bind C.Name)
+toCoreB :: Bind S.Name -> ConvertM a (Bind C.Name)
 toCoreB bb
  = case bb of
         BName n t
@@ -407,7 +405,7 @@ toCoreB bb
 
 
 -- Bound ------------------------------------------------------------------------------------------
-toCoreU :: Bound S.Name -> ConvertM (Bound C.Name)
+toCoreU :: Bound S.Name -> ConvertM a (Bound C.Name)
 toCoreU uu
  = case uu of
         UName n
@@ -451,7 +449,10 @@ toCoreTyConTetra tc
 
 
 -- Error ------------------------------------------------------------------------------------------
-data ErrorConvert
-        = ErrorConvert
+data ErrorConvert a
+        -- | Cannot convert sugar expression to core.
+        = ErrorConvertCannotConvertSugarExp  (S.Exp a S.Name)
 
-        
+        -- | Cannot convert sugar let bindings to core.
+        | ErrorConvertCannotConvertSugarLets (S.Lets a S.Name)
+
