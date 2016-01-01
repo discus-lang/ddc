@@ -3,13 +3,27 @@
 module DDC.Source.Tetra.Prim
         ( Name          (..)
 
-        -- * Primitive names.
+        -- * Primite type constructors.
         , PrimTyCon     (..)
         , kindPrimTyCon
         , tBool
         , tNat
         , tInt
         , tWord
+
+        -- * Primitive values
+        , PrimVal (..)
+        , pattern NamePrimLit
+
+        -- * Primitive literals
+        , PrimLit (..)
+        , pattern NameLitBool
+        , pattern NameLitNat
+        , pattern NameLitInt
+        , pattern NameLitSize
+        , pattern NameLitWord
+        , pattern NameLitFloat
+        , pattern NameLitString
 
         -- * Arithmetic operators.
         , PrimArith     (..)
@@ -55,13 +69,7 @@ instance NFData Name where
         NamePrimTyCon  p        -> rnf p
         NamePrimArith  p        -> rnf p
 
-        NameLitBool    b        -> rnf b
-        NameLitNat     n        -> rnf n
-        NameLitInt     i        -> rnf i
-        NameLitSize    s        -> rnf s
-        NameLitWord    i bits   -> rnf i `seq` rnf bits
-        NameLitFloat   d bits   -> rnf d `seq` rnf bits
-        NameLitString  bs       -> rnf bs       
+        NamePrimVal    v        -> rnf v
 
         NameHole                -> ()
 
@@ -77,14 +85,7 @@ instance Pretty Name where
         NamePrimTyCon  p        -> pprPrimTyConStem p
         NamePrimArith  p        -> ppr p
 
-        NameLitBool    True     -> text "True"
-        NameLitBool    False    -> text "False"
-        NameLitNat     i        -> integer i
-        NameLitInt     i        -> integer i <> text "i"
-        NameLitSize    s        -> integer s <> text "s"
-        NameLitWord    i bits   -> integer i <> text "w" <> int bits
-        NameLitFloat   f bits   -> double  f <> text "f" <> int bits
-        NameLitString  tx       -> text (show $ T.unpack tx)
+        NamePrimVal    v        -> ppr v
 
         NameHole                -> text "?"
 
@@ -106,31 +107,8 @@ readName str
         | Just p <- readPrimArith str  
         = Just $ NamePrimArith p
 
-        -- Literal Bools
-        | str == "True"        = Just $ NameLitBool True
-        | str == "False"       = Just $ NameLitBool False
-
-        -- Literal Nat
-        | Just val <- readLitNat str
-        = Just $ NameLitNat  val
-
-        -- Literal Ints
-        | Just val <- readLitInt str
-        = Just $ NameLitInt  val
-
-        -- Literal Sizes
-        | Just val <- readLitSize str
-        = Just $ NameLitSize val
-
-        -- Literal Words
-        | Just (val, bits) <- readLitWordOfBits str
-        , elem bits [8, 16, 32, 64]
-        = Just $ NameLitWord val bits
-
-        -- Literal Floats
-        | Just (val, bits) <- readLitFloatOfBits str
-        , elem bits [32, 64]
-        = Just $ NameLitFloat val bits
+        | Just v <- readPrimVal str
+        = Just $ NamePrimVal   v
 
         -- Constructors.
         | c : _         <- str
@@ -141,6 +119,88 @@ readName str
         | c : _         <- str
         , isVarStart c      
         = Just $ NameVar str
+
+        | otherwise
+        = Nothing
+
+
+---------------------------------------------------------------------------------------------------
+instance Pretty PrimVal where
+ ppr val
+  = case val of
+        PrimValLit lit          -> ppr lit
+
+
+instance NFData PrimVal where
+ rnf val
+  = case val of
+        PrimValLit lit          -> rnf lit
+
+
+-- | Read the name of a primtive value.
+readPrimVal :: String -> Maybe PrimVal
+readPrimVal str
+        | Just lit      <- readPrimLit str
+        = Just $ PrimValLit lit
+
+        | otherwise
+        = Nothing
+
+
+---------------------------------------------------------------------------------------------------
+instance Pretty PrimLit where
+ ppr lit
+  = case lit of
+        PrimLitBool    True     -> text "True"
+        PrimLitBool    False    -> text "False"
+        PrimLitNat     i        -> integer i
+        PrimLitInt     i        -> integer i <> text "i"
+        PrimLitSize    s        -> integer s <> text "s"
+        PrimLitWord    i bits   -> integer i <> text "w" <> int bits
+        PrimLitFloat   f bits   -> double  f <> text "f" <> int bits
+        PrimLitString  tx       -> text (show $ T.unpack tx)
+
+
+instance NFData PrimLit where
+ rnf lit 
+  = case lit of
+        PrimLitBool    b        -> rnf b
+        PrimLitNat     n        -> rnf n
+        PrimLitInt     i        -> rnf i
+        PrimLitSize    s        -> rnf s
+        PrimLitWord    i bits   -> rnf i `seq` rnf bits
+        PrimLitFloat   d bits   -> rnf d `seq` rnf bits
+        PrimLitString  bs       -> rnf bs       
+
+
+-- | Read the name of a primitive literal.
+readPrimLit :: String -> Maybe PrimLit
+readPrimLit str
+        -- Literal Bools
+        | str == "True"        = Just $ PrimLitBool True
+        | str == "False"       = Just $ PrimLitBool False
+
+        -- Literal Nat
+        | Just val <- readLitNat str
+        = Just $ PrimLitNat  val
+
+        -- Literal Ints
+        | Just val <- readLitInt str
+        = Just $ PrimLitInt  val
+
+        -- Literal Sizes
+        | Just val <- readLitSize str
+        = Just $ PrimLitSize val
+
+        -- Literal Words
+        | Just (val, bits) <- readLitWordOfBits str
+        , elem bits [8, 16, 32, 64]
+        = Just $ PrimLitWord val bits
+
+        -- Literal Floats
+        | Just (val, bits) <- readLitFloatOfBits str
+        , elem bits [32, 64]
+        = Just $ PrimLitFloat val bits
 
         | otherwise
         = Nothing

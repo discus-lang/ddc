@@ -5,7 +5,19 @@ module DDC.Source.Tetra.Prim.Base
         , TyConTetra    (..)
         , OpFun         (..)
         , PrimTyCon     (..)
-        , PrimArith     (..))
+        , PrimArith     (..)
+
+        , PrimVal       (..)
+        , pattern NamePrimLit
+
+        , PrimLit       (..)
+        , pattern NameLitBool
+        , pattern NameLitNat
+        , pattern NameLitInt
+        , pattern NameLitSize
+        , pattern NameLitWord
+        , pattern NameLitFloat
+        , pattern NameLitString)
 where
 import DDC.Core.Tetra    
         ( OpFun         (..)
@@ -37,35 +49,8 @@ data Name
         -- | Primitive arithmetic, logic and comparison.
         | NamePrimArith         PrimArith
 
-        -- Literals -----------------------------
-        -- | A boolean literal.
-        | NameLitBool           Bool
-
-        -- | A natural literal,
-        --   with enough precision to count every heap object.
-        | NameLitNat            Integer
-
-        -- | An integer literal,
-        --   with enough precision to count every heap object.
-        | NameLitInt            Integer
-
-        -- | An unsigned size literal,
-        --   with enough precision to count every addressable byte of memory.
-        | NameLitSize           Integer
-
-        -- | A word literal,
-        --   with the given number of bits precison.
-        | NameLitWord           Integer Int
-
-        -- | A floating point literal,
-        --   with the given number of bits precision.
-        | NameLitFloat          Double Int
-
-        -- | A UTF-8 string literal.
-        --   Although these are represented as array literals at runtime,
-        --   they have a special syntax which we want to preserve during
-        --   program transformation.
-        | NameLitString         Text
+        -- | Primitive Values
+        | NamePrimVal           PrimVal
 
         -- Inference ----------------------------
         -- | A hole used during type inference.
@@ -92,4 +77,55 @@ data TyConTetra
         | TyConTetraString   
         deriving (Eq, Ord, Show)
 
+
+-- PrimVal --------------------------------------------------------------------
+-- | Primitive values.
+data PrimVal
+        = PrimValLit    !PrimLit
+        deriving (Eq, Ord, Show)
+
+
+pattern NamePrimLit lit = NamePrimVal (PrimValLit lit)
+
+
+-- PrimLit --------------------------------------------------------------------
+data PrimLit
+        -- | A boolean literal.
+        = PrimLitBool           Bool
+
+        -- | A natural literal,
+        --   with enough precision to count every heap object.
+        | PrimLitNat            Integer
+
+        -- | An integer literal,
+        --   with enough precision to count every heap object.
+        | PrimLitInt            Integer
+
+        -- | An unsigned size literal,
+        --   with enough precision to count every addressable byte of memory.
+        | PrimLitSize           Integer
+
+        -- | A word literal,
+        --   with the given number of bits precison.
+        | PrimLitWord           Integer Int
+
+        -- | A floating point literal,
+        --   with the given number of bits precision.
+        | PrimLitFloat          Double Int
+
+        -- | A UTF-8 string literal.
+        --   Although these are represented as array literals at runtime,
+        --   they have a special syntax which we want to preserve during
+        --   program transformation.
+        | PrimLitString         Text
+        deriving (Eq, Ord, Show)
+
+
+pattern NameLitBool   x   = NamePrimVal (PrimValLit (PrimLitBool   x))
+pattern NameLitNat    x   = NamePrimVal (PrimValLit (PrimLitNat    x))
+pattern NameLitInt    x   = NamePrimVal (PrimValLit (PrimLitInt    x))
+pattern NameLitSize   x   = NamePrimVal (PrimValLit (PrimLitSize   x))
+pattern NameLitWord   x s = NamePrimVal (PrimValLit (PrimLitWord   x s))
+pattern NameLitFloat  x s = NamePrimVal (PrimValLit (PrimLitFloat  x s))
+pattern NameLitString x   = NamePrimVal (PrimValLit (PrimLitString x))
 

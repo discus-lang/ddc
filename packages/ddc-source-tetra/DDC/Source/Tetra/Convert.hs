@@ -428,16 +428,18 @@ toCoreN nn
         S.NameOpFun      tc  -> C.NameOpFun      tc
         S.NamePrimTyCon  p   -> C.NamePrimTyCon  p
         S.NamePrimArith  p   -> C.NamePrimArith  p
-        S.NameLitBool    b   -> C.NameLitBool    b
-        S.NameLitNat     n   -> C.NameLitNat     n
-        S.NameLitInt     i   -> C.NameLitInt     i 
-        S.NameLitSize    s   -> C.NameLitSize    s
-        S.NameLitWord    w b -> C.NameLitWord    w b
-        S.NameLitFloat   d b -> C.NameLitFloat   d b
-        S.NameLitString  bs  -> C.NameLitString  bs
         S.NameHole           -> C.NameHole
 
+        S.NamePrimVal (S.PrimValLit (S.PrimLitBool   x))   -> C.NameLitBool   x
+        S.NamePrimVal (S.PrimValLit (S.PrimLitNat    x))   -> C.NameLitNat    x
+        S.NamePrimVal (S.PrimValLit (S.PrimLitInt    x))   -> C.NameLitInt    x
+        S.NamePrimVal (S.PrimValLit (S.PrimLitSize   x))   -> C.NameLitSize   x
+        S.NamePrimVal (S.PrimValLit (S.PrimLitWord   x s)) -> C.NameLitWord   x s
+        S.NamePrimVal (S.PrimValLit (S.PrimLitFloat  x s)) -> C.NameLitFloat  x s
+        S.NamePrimVal (S.PrimValLit (S.PrimLitString x))   -> C.NameLitString x
 
+
+-- | Convert a Tetra specific type constructor to core.
 toCoreTyConTetra :: S.TyConTetra -> C.TyConTetra
 toCoreTyConTetra tc
  = case tc of
