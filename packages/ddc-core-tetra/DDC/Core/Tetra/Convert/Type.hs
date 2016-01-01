@@ -97,6 +97,7 @@ convertCapabilityT ctx tt
 -- Numeric Types ----------------------------------------------------------------------------------
 -- | Convert a numeric type directly to its Salt form.
 --   Works for Bool#, Nat#, Int#, WordN# and Float#
+--   TODO: we're also converting TextLit#, which is not numeric.
 convertNumericT :: Type E.Name -> ConvertM a (Type A.Name)
 convertNumericT tt
         | Just (E.NamePrimTyCon n, [])  <- takePrimTyConApps tt
@@ -107,8 +108,12 @@ convertNumericT tt
                 E.PrimTyConSize         -> return $ A.tSize
                 E.PrimTyConWord  bits   -> return $ A.tWord bits
                 E.PrimTyConFloat bits   -> return $ A.tFloat bits
+
+                E.PrimTyConTextLit      -> return $ A.tTextLit
+
                 _ -> throw $ ErrorMalformed 
                            $ "Invalid machine type " ++ (renderIndent $ ppr tt)
+
 
         | otherwise
         = throw $ ErrorMalformed 

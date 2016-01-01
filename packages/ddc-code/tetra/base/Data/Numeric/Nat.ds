@@ -6,27 +6,27 @@ export  { showNat
         ; abs }
 
 import foreign c value
- showNat   : Nat -> TextLit#
+ showNat   : Nat# -> TextLit#
 
 where
 
-neg x   = neg# [Nat] x
-add x y = add# [Nat] x y
-sub x y = sub# [Nat] x y
-mul x y = mul# [Nat] x y
-div x y = div# [Nat] x y
-rem x y = rem# [Nat] x y
+neg x   = neg# [Nat#] x
+add x y = add# [Nat#] x y
+sub x y = sub# [Nat#] x y
+mul x y = mul# [Nat#] x y
+div x y = div# [Nat#] x y
+rem x y = rem# [Nat#] x y
 
-eq  x y = eq#  [Nat] [Bool] x y
-neq x y = neq# [Nat] [Bool] x y
-lt  x y = lt#  [Nat] [Bool] x y
-le  x y = le#  [Nat] [Bool] x y
-gt  x y = gt#  [Nat] [Bool] x y
-ge  x y = ge#  [Nat] [Bool] x y
+eq  x y = eq#  [Nat#] [Bool#] x y
+neq x y = neq# [Nat#] [Bool#] x y
+lt  x y = lt#  [Nat#] [Bool#] x y
+le  x y = le#  [Nat#] [Bool#] x y
+gt  x y = gt#  [Nat#] [Bool#] x y
+ge  x y = ge#  [Nat#] [Bool#] x y
 
 
 -- | Absolute value.
-abs (x : Nat) : Nat
+abs (x : Nat#) : Nat#
  | x < 0        = neg x
  | otherwise    = x
 

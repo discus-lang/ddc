@@ -52,7 +52,7 @@ heapObjectOfDataCtor pp ctor
         , isJust $ A.primTyConWidth pp ptc
         = Just HeapObjectRawSmall
 
-        -- Unboxed strings are represented as pointers to immutable, foreign anchored memory.
+        -- Unboxed strings are represented as pointers to static memory.
         -- The pointer will fit in a RawSmall object.
         | [t1]                                        <- dataCtorFieldTypes ctor
         , Just (NameTyConTetra TyConTetraU, [tp])     <- takePrimTyConApps t1
@@ -153,7 +153,10 @@ fieldSizeOfPrimTyCon platform tc
         -- Pointer tycon shouldn't appear by itself.
         PrimTyConPtr            -> Nothing
 
+        -- Address value.
         PrimTyConAddr           -> Just $ platformAddrBytes platform
+
+        -- Address of static memory where the string data is stored.
         PrimTyConTextLit        -> Just $ platformAddrBytes platform
 
         PrimTyConTag            -> Just $ platformTagBytes  platform

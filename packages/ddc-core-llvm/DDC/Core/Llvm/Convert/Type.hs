@@ -191,13 +191,16 @@ convTyCon platform tycon
 
              A.PrimTyConFloat bits
               -> case bits of
-                        32      -> return TFloat
-                        64      -> return TDouble
-                        80      -> return TFloat80
-                        128     -> return TFloat128
+                        32        -> return TFloat
+                        64        -> return TDouble
+                        80        -> return TFloat80
+                        128       -> return TFloat128
 
                         _ -> throw $ ErrorInvalidTyCon tycon
                                    $ Just "Float has a non-standard width."
+
+             -- Text literals are represented as pointers to the static text data.
+             A.PrimTyConTextLit   -> return $ tPtr (TInt 8)
 
              _            -> throw $ ErrorInvalidTyCon tycon
                                    $ Just "Not a primitive type constructor."

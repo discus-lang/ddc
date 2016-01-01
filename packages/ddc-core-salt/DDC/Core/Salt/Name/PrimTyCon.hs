@@ -234,6 +234,13 @@ primTyConWidth pp tc
         PrimTyConTag            -> Just $ 8 * platformTagBytes  pp
         PrimTyConAddr           -> Just $ 8 * platformAddrBytes pp
         PrimTyConPtr            -> Just $ 8 * platformAddrBytes pp
-        PrimTyConTextLit        -> Just $ 8 * platformAddrBytes pp
+
+        -- The string literal itself does not have a width associated with it.
+        --  In the object code string literals are represented by pointers to
+        --  static data. The static data is an array of Word8s, but the pointer
+        --  itself is the width of an address on our machine.
+        PrimTyConTextLit        -> Nothing
+
+
         PrimTyConVec   _        -> Nothing
 

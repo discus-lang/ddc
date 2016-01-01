@@ -6,24 +6,24 @@ export  { showBool
 where
 
 -- | Convert a Bool to a String.
-showBool (x : Bool) : TextLit#
+showBool (x : Bool#) : TextLit#
  = if x then "True" 
         else "False"
 
 
 -- | Boolean NOT.
-not (x : Bool)   : Bool
+not (x : Bool#)   : Bool#
  = if x then False  
         else True
 
 
 -- | Boolean AND.
-and (x y : Bool) : Bool
+and (x y : Bool#) : Bool#
  = if x then y 
         else False
 
 
 -- | Boolean OR.
-or (x y : Bool) : Bool
+or (x y : Bool#) : Bool#
  = if x then True 
         else y

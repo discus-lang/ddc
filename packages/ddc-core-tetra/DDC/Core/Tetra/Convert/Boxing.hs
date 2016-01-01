@@ -20,9 +20,7 @@ module DDC.Core.Tetra.Convert.Boxing
         , isNumericType
         , isTextLitType
         , makeBoxedPrimDataType
-        , makeBoxedPrimDataCtor
-        , makeBoxedTextLitDataType
-        , makeBoxedTextLitDataCtor)
+        , makeBoxedPrimDataCtor)
 where
 import DDC.Core.Tetra.Prim
 import DDC.Core.Tetra.Compounds
@@ -97,7 +95,8 @@ isUnboxedRepType tt
 
 -- | Check if some type is a numeric type.
 --   These are:
---      Nat#, Int#, WordN# and so on.
+--      Nat#, Int#, WordN# and so on
+--     TODO: also now TextLit#
 --
 isNumericType :: Type Name -> Bool
 isNumericType tt
@@ -108,12 +107,14 @@ isNumericType tt
                 PrimTyConInt            -> True
                 PrimTyConWord  _        -> True
                 PrimTyConFloat _        -> True
+                PrimTyConTextLit        -> True
                 _                       -> False
 
         | otherwise                     = False
 
 
 -- | Check if this is the string type.
+--   TODO: ditch this.
 isTextLitType :: Type Name -> Bool
 isTextLitType tt
         | Just (NamePrimTyCon n, [])    <- takePrimTyConApps tt
@@ -153,26 +154,4 @@ makeBoxedPrimDataCtor tt
 
         | otherwise
         = Nothing
-
-
--- | Make the data type for a boxed text literal.
-makeBoxedTextLitDataType :: DataType Name
-makeBoxedTextLitDataType 
-        = DataType 
-        { dataTypeName          = NamePrimTyCon PrimTyConTextLit
-        , dataTypeParams        = []
-        , dataTypeMode          = DataModeLarge
-        , dataTypeIsAlgebraic   = False }
-
-
--- | Make the data constructor for a boxed text literal.
-makeBoxedTextLitDataCtor :: DataCtor Name
-makeBoxedTextLitDataCtor 
-        = DataCtor
-        { dataCtorName          = NamePrimTyCon PrimTyConTextLit
-        , dataCtorTag           = 0
-        , dataCtorFieldTypes    = [tUnboxed tTextLit]
-        , dataCtorResultType    = tTextLit
-        , dataCtorTypeName      = NamePrimTyCon PrimTyConTextLit
-        , dataCtorTypeParams    = [] }
 

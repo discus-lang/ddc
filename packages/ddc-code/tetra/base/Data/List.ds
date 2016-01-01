@@ -30,13 +30,13 @@ singleton (x : a) : List a
 
 -- | Construct a list of the given length where all elements are'
 --   the same value.
-replicate (n : Nat) (x : a) : List a
+replicate (n : Nat#) (x : a) : List a
  | n == 0       = Nil
  | otherwise    = Cons x (replicate (n - 1) x)
 
 
 -- | Construct a range of values.
-enumFromTo (start : Nat) (end : Nat) : List Nat
+enumFromTo (start : Nat#) (end : Nat#) : List Nat#
  | start >= end = singleton start
  | otherwise    = Cons start (enumFromTo (start + 1) end)
 
@@ -50,7 +50,7 @@ append (xx yy : List a) : List a
 
 -- Projections ----------------------------------------------------------------
 -- | Take the length of a list.
-length (xx : List a) : Nat
+length (xx : List a) : Nat#
  = case xx of
         Nil             -> 0
         Cons x xs       -> 1 + length xs
@@ -141,7 +141,7 @@ foldrS (f : a -> b -> S e b) (z : b) (xx : List a) : S e b
 
 
 -- | Keep only those elements that match the given predicate.
-filter (p : a -> Bool) (xx : List a) : List a
+filter (p : a -> Bool#) (xx : List a) : List a
  = case xx of
         Nil             -> Nil
         Cons x xs  
@@ -152,7 +152,7 @@ filter (p : a -> Bool) (xx : List a) : List a
 
 -- | Keep only those elements that match the given stateful predicate.
 --   The predicate is applied to the list elements from left to right.
-filterS (p : a -> S e Bool) (xx : List a) : S e (List a)
+filterS (p : a -> S e Bool#) (xx : List a) : S e (List a)
  = box case xx of
         Nil             -> Nil
         Cons x xs  

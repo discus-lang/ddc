@@ -39,33 +39,36 @@ import qualified DDC.Type.Env                   as Env
 primDataDefs :: DataDefs Name
 primDataDefs
  = fromListDataDefs
-        -- Bool
+        -- Bool#
         [ makeDataDefAlg
                 (NamePrimTyCon PrimTyConBool)
                 []
                 (Just   [ (NamePrimLit (PrimLitBool True),  [])
                         , (NamePrimLit (PrimLitBool False), []) ])
-        -- Nat
+        -- Nat#
         , makeDataDefAlg (NamePrimTyCon PrimTyConNat)        [] Nothing
 
-        -- Int
+        -- Int#
         , makeDataDefAlg (NamePrimTyCon PrimTyConInt)        [] Nothing
 
-        -- Size
+        -- Size#
         , makeDataDefAlg (NamePrimTyCon PrimTyConSize)       [] Nothing
 
-        -- Word 8, 16, 32, 64
+        -- Word# 8, 16, 32, 64
         , makeDataDefAlg (NamePrimTyCon (PrimTyConWord 8))   [] Nothing
         , makeDataDefAlg (NamePrimTyCon (PrimTyConWord 16))  [] Nothing
         , makeDataDefAlg (NamePrimTyCon (PrimTyConWord 32))  [] Nothing
         , makeDataDefAlg (NamePrimTyCon (PrimTyConWord 64))  [] Nothing
 
-        -- Float 32, 64
+        -- Float# 32, 64
         , makeDataDefAlg (NamePrimTyCon (PrimTyConFloat 32)) [] Nothing
         , makeDataDefAlg (NamePrimTyCon (PrimTyConFloat 64)) [] Nothing
 
-        -- Tag
+        -- Tag#
         , makeDataDefAlg (NamePrimTyCon PrimTyConTag)        [] Nothing
+
+        -- TextLit#
+        , makeDataDefAlg (NamePrimTyCon PrimTyConTextLit)    [] Nothing
 
         -- Ptr#
         , makeDataDefAlg (NamePrimTyCon PrimTyConPtr)        [] Nothing
@@ -148,7 +151,7 @@ typeOfPrimLit lit
         PrimLitSize    _      -> tSize
         PrimLitWord    _ bits -> tWord  bits
         PrimLitFloat   _ bits -> tFloat bits
-        PrimLitTextLit _      -> tPtr rTop (tWord 8)
+        PrimLitTextLit _      -> tTextLit
         PrimLitTag     _      -> tTag
 
 

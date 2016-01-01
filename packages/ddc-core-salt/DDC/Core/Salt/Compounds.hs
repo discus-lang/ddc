@@ -107,6 +107,6 @@ dcNat i         = DaConPrim (NameLitNat i) tNat
 
 -- | A Text literal.
 xTextLit :: a -> Text -> Exp a Name
-xTextLit a tx    = XCon a (DaConPrim (NameLitTextLit tx) (tPtr rTop (tWord 8)))
+xTextLit a tx    = XCon a (DaConPrim (NameLitTextLit tx) tTextLit)
 
 
