@@ -44,7 +44,7 @@ module DDC.Core.Salt
         , pattern NameLitSize
         , pattern NameLitWord
         , pattern NameLitFloat
-        , pattern NameLitString
+        , pattern NameLitTextLit
         , pattern NameLitTag
 
           -- * Name parsing

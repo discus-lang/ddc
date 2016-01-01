@@ -17,7 +17,7 @@ module DDC.Source.Tetra.Prim.Base
         , pattern NameLitSize
         , pattern NameLitWord
         , pattern NameLitFloat
-        , pattern NameLitString)
+        , pattern NameLitTextLit)
 where
 import DDC.Core.Tetra    
         ( OpFun         (..)
@@ -64,17 +64,17 @@ data TyConTetra
         -- | @TupleN#@. Tuples.
         = TyConTetraTuple Int
         
-        -- | @F#@.      Reified function values.
+        -- | @F#@.       Reified function values.
         | TyConTetraF
 
-        -- | @C#@.      Reified function closures.
+        -- | @C#@.       Reified function closures.
         | TyConTetraC
 
-        -- | @U#@.      Explicitly unboxed values.
+        -- | @U#@.       Explicitly unboxed values.
         | TyConTetraU
 
-        -- | @String#@. Strings
-        | TyConTetraString   
+        -- | @TextLit#@. Text literals (UTF-8 encoded).
+        | TyConTetraTextLit
         deriving (Eq, Ord, Show)
 
 
@@ -113,19 +113,16 @@ data PrimLit
         --   with the given number of bits precision.
         | PrimLitFloat          Double Int
 
-        -- | A UTF-8 string literal.
-        --   Although these are represented as array literals at runtime,
-        --   they have a special syntax which we want to preserve during
-        --   program transformation.
-        | PrimLitString         Text
+        -- | Text literals (UTF-8 encoded)
+        | PrimLitTextLit        Text
         deriving (Eq, Ord, Show)
 
 
-pattern NameLitBool   x   = NamePrimVal (PrimValLit (PrimLitBool   x))
-pattern NameLitNat    x   = NamePrimVal (PrimValLit (PrimLitNat    x))
-pattern NameLitInt    x   = NamePrimVal (PrimValLit (PrimLitInt    x))
-pattern NameLitSize   x   = NamePrimVal (PrimValLit (PrimLitSize   x))
-pattern NameLitWord   x s = NamePrimVal (PrimValLit (PrimLitWord   x s))
-pattern NameLitFloat  x s = NamePrimVal (PrimValLit (PrimLitFloat  x s))
-pattern NameLitString x   = NamePrimVal (PrimValLit (PrimLitString x))
+pattern NameLitBool   x   = NamePrimVal (PrimValLit (PrimLitBool    x))
+pattern NameLitNat    x   = NamePrimVal (PrimValLit (PrimLitNat     x))
+pattern NameLitInt    x   = NamePrimVal (PrimValLit (PrimLitInt     x))
+pattern NameLitSize   x   = NamePrimVal (PrimValLit (PrimLitSize    x))
+pattern NameLitWord   x s = NamePrimVal (PrimValLit (PrimLitWord    x s))
+pattern NameLitFloat  x s = NamePrimVal (PrimValLit (PrimLitFloat   x s))
+pattern NameLitTextLit x  = NamePrimVal (PrimValLit (PrimLitTextLit x))
 

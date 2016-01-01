@@ -6,7 +6,7 @@ export  { showBool
 where
 
 -- | Convert a Bool to a String.
-showBool (x : Bool) : String
+showBool (x : Bool) : TextLit#
  = if x then "True" 
         else "False"
 

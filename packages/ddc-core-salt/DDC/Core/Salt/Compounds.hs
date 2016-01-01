@@ -12,7 +12,7 @@ module DDC.Core.Salt.Compounds
         , tObj
         , tAddr
         , tPtr,   takeTPtr
-        , xString)
+        , xTextLit)
 where
 import DDC.Core.Salt.Name
 import DDC.Core.Exp
@@ -103,8 +103,8 @@ dcNat   :: Integer -> DaCon Name
 dcNat i         = DaConPrim (NameLitNat i) tNat
 
 
--- | String literal.
-xString :: a -> Text -> Exp a Name
-xString a tx    = XCon a (DaConPrim (NameLitString tx) (tPtr rTop (tWord 8)))
+-- | A Text literal.
+xTextLit :: a -> Text -> Exp a Name
+xTextLit a tx    = XCon a (DaConPrim (NameLitTextLit tx) (tPtr rTop (tWord 8)))
 
 

@@ -6,7 +6,7 @@ export  { showNat
         ; abs }
 
 import foreign c value
- showNat   : Nat -> String
+ showNat   : Nat -> TextLit#
 
 where
 

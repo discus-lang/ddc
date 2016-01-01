@@ -54,9 +54,9 @@ heapObjectOfDataCtor pp ctor
 
         -- Unboxed strings are represented as pointers to immutable, foreign anchored memory.
         -- The pointer will fit in a RawSmall object.
-        | [t1]                                       <- dataCtorFieldTypes ctor
-        , Just (NameTyConTetra TyConTetraU, [tp])    <- takePrimTyConApps t1
-        , Just (NameTyConTetra TyConTetraString, []) <- takePrimTyConApps tp
+        | [t1]                                        <- dataCtorFieldTypes ctor
+        , Just (NameTyConTetra TyConTetraU, [tp])     <- takePrimTyConApps t1
+        , Just (NameTyConTetra TyConTetraTextLit, []) <- takePrimTyConApps tp
         = Just HeapObjectRawSmall
 
         | otherwise

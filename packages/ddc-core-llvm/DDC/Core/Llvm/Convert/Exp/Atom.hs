@@ -112,13 +112,13 @@ mconvAtom ctx xx
                         t' <- convertType pp kenv t
                         return $ XLit (LitFloat t' val)
 
-                -- Literal string.
-                A.PrimLitString tx
+                -- A text literal.
+                A.PrimLitTextLit tx
                  -> Just $ do
-                        -- Add string constant to the constants map for the
-                        -- current module. These constants will be allocated 
-                        -- into static memory, and reachable by the returned
-                        -- name.
+                        -- Add literal text constant to the constants map for
+                        -- the current module. These constants will be
+                        -- allocated into static memory, and reachable by the
+                        -- returned name.
                         var     <- addConstant ctx $ makeLitString tx
                         let w   = 8 * platformAddrBytes pp
                         

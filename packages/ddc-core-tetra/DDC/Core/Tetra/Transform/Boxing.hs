@@ -69,7 +69,7 @@ repOfType tt
                 TyConTetraF{}           -> Just RepNone
                 TyConTetraC{}           -> Just RepNone
 
-                TyConTetraString{}      -> Just RepBoxed
+                TyConTetraTextLit{}     -> Just RepBoxed
 
         | otherwise
         = Nothing
@@ -96,7 +96,7 @@ convertRepType RepUnboxed tt
 
         | Just (NameTyConTetra tc, [])   <- takePrimTyConApps tt
         = case tc of
-                TyConTetraString        -> Just $ tUnboxed tString
+                TyConTetraTextLit       -> Just $ tUnboxed tTextLit
                 _                       -> Nothing
 
 convertRepType _ _

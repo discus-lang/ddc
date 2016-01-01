@@ -6,19 +6,19 @@ import foreign abstract type
  Console  : Effect
 
 import foreign c value
- putStr_v  : String -> S Console Void
+ putStr_v  : TextLit# -> S Console Void
 
 where
 
 -- | Print a string to stdout.
-putStr (s : String) : S Console Unit
+putStr (s : TextLit#) : S Console Unit
  = box do
         run putStr_v s
         ()
 
 
 -- | Print a string with a trailing newline to stdout.
-putStrLn (s : String) : S Console Unit
+putStrLn (s : TextLit#) : S Console Unit
  = box do
         run putStr_v s
         run putStr_v "\n"

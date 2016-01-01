@@ -430,13 +430,13 @@ toCoreN nn
         S.NamePrimArith  p   -> C.NamePrimArith  p
         S.NameHole           -> C.NameHole
 
-        S.NamePrimVal (S.PrimValLit (S.PrimLitBool   x))   -> C.NameLitBool   x
-        S.NamePrimVal (S.PrimValLit (S.PrimLitNat    x))   -> C.NameLitNat    x
-        S.NamePrimVal (S.PrimValLit (S.PrimLitInt    x))   -> C.NameLitInt    x
-        S.NamePrimVal (S.PrimValLit (S.PrimLitSize   x))   -> C.NameLitSize   x
-        S.NamePrimVal (S.PrimValLit (S.PrimLitWord   x s)) -> C.NameLitWord   x s
-        S.NamePrimVal (S.PrimValLit (S.PrimLitFloat  x s)) -> C.NameLitFloat  x s
-        S.NamePrimVal (S.PrimValLit (S.PrimLitString x))   -> C.NameLitString x
+        S.NamePrimVal (S.PrimValLit (S.PrimLitBool    x))   -> C.NameLitBool    x
+        S.NamePrimVal (S.PrimValLit (S.PrimLitNat     x))   -> C.NameLitNat     x
+        S.NamePrimVal (S.PrimValLit (S.PrimLitInt     x))   -> C.NameLitInt     x
+        S.NamePrimVal (S.PrimValLit (S.PrimLitSize    x))   -> C.NameLitSize    x
+        S.NamePrimVal (S.PrimValLit (S.PrimLitWord    x s)) -> C.NameLitWord    x s
+        S.NamePrimVal (S.PrimValLit (S.PrimLitFloat   x s)) -> C.NameLitFloat   x s
+        S.NamePrimVal (S.PrimValLit (S.PrimLitTextLit x))   -> C.NameLitTextLit x
 
 
 -- | Convert a Tetra specific type constructor to core.
@@ -447,7 +447,7 @@ toCoreTyConTetra tc
         S.TyConTetraF        -> C.TyConTetraF
         S.TyConTetraC        -> C.TyConTetraC
         S.TyConTetraU        -> C.TyConTetraU
-        S.TyConTetraString   -> C.TyConTetraString
+        S.TyConTetraTextLit  -> C.TyConTetraTextLit
 
 
 -- Error ------------------------------------------------------------------------------------------

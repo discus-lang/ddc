@@ -6,7 +6,7 @@ module DDC.Core.Tetra.Prim.TyConTetra
         , tUnboxed
         , tFunValue
         , tCloValue
-        , tString)
+        , tTextLit)
 where
 import DDC.Core.Tetra.Prim.Base
 import DDC.Core.Compounds
@@ -28,7 +28,7 @@ instance Pretty TyConTetra where
         TyConTetraU             -> text "U#"
         TyConTetraF             -> text "F#"
         TyConTetraC             -> text "C#"
-        TyConTetraString        -> text "String#"
+        TyConTetraTextLit       -> text "TextLit#"
 
 
 -- | Read the name of a baked-in type constructor.
@@ -45,7 +45,7 @@ readTyConTetra str
                 "U#"            -> Just TyConTetraU
                 "F#"            -> Just TyConTetraF
                 "C#"            -> Just TyConTetraC
-                "String#"       -> Just TyConTetraString
+                "TextLit#"      -> Just TyConTetraTextLit
                 _               -> Nothing
 
 
@@ -57,7 +57,7 @@ kindTyConTetra tc
         TyConTetraU       -> kData   `kFun` kData
         TyConTetraF       -> kData   `kFun` kData
         TyConTetraC       -> kData   `kFun` kData
-        TyConTetraString  -> kData
+        TyConTetraTextLit -> kData
 
 
 -- Compounds ------------------------------------------------------------------
@@ -80,9 +80,10 @@ tFunValue t     = tApp (tConTyConTetra TyConTetraF) t
 tCloValue :: Type Name -> Type Name
 tCloValue t     = tApp (tConTyConTetra TyConTetraC) t
 
--- | The string type.
-tString :: Type Name
-tString = tConTyConTetra TyConTetraString
+
+-- | The text literal type.
+tTextLit :: Type Name
+tTextLit = tConTyConTetra TyConTetraTextLit
 
 
 -- Utils ----------------------------------------------------------------------

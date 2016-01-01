@@ -74,11 +74,10 @@ data Name
         --   with the given number of bits precision.
         | NameLitFloat          Double  Int
 
-        -- | A UTF-8 string literal.
-        --   Although these are represented as arrays of bytes at runtime, 
-        --   they are baked into the language because we want to use a special 
-        --   syntax when pretty printing the literals.
-        | NameLitString         Text
+        -- | A text literal (UTF-8 encoded)
+        --   Note that 'Text' and 'TextLit#' are different types. 
+        --   The later is the primitive literal.
+        | NameLitTextLit        Text
 
         -- Wrappers -----------------------------
         -- | Wrapper to indicate an explicitly unboxed literal.
@@ -108,7 +107,7 @@ isNameLit nn
         NameLitSize{}    -> True
         NameLitWord{}    -> True
         NameLitFloat{}   -> True
-        NameLitString{}  -> True
+        NameLitTextLit{} -> True
         NameLitUnboxed n -> isNameLit n
         _                -> False
 
@@ -127,19 +126,18 @@ data TyConTetra
         -- | @TupleN#@. Tuples.
         = TyConTetraTuple Int
 
-        -- | @U#@.      Unboxed type constructor.
+        -- | @U#@       Unboxed type constructor.
         --   Used to represent unboxed numeric values.
         | TyConTetraU
 
-        -- | @F#@.      Reified function value.
+        -- | @F#@       Reified function value.
         | TyConTetraF
 
-        -- | @C#@.      Reified function closure.
+        -- | @C#@       Reified function closure.
         | TyConTetraC
 
-        -- | @String#@  String type.
-        --   In Tetra, strings are represented abstractly.
-        | TyConTetraString
+        -- | @TextLit#@ Text literal (UTF-8 encoded).
+        | TyConTetraTextLit
         deriving (Eq, Ord, Show)
 
 

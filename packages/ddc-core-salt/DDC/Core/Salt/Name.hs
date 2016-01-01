@@ -71,7 +71,7 @@ module DDC.Core.Salt.Name
         , pattern NameLitSize
         , pattern NameLitWord
         , pattern NameLitFloat
-        , pattern NameLitString
+        , pattern NameLitTextLit
         , pattern NameLitTag
 
           -- * Name Parsing
@@ -324,23 +324,23 @@ data PrimLit
         -- | A floating point literal, of the given width.
         | PrimLitFloat  !Double  !Int
 
-        -- | A string literal.
-        | PrimLitString !Text
+        -- | A text literal.
+        | PrimLitTextLit !Text
 
         -- | A constructor tag literal.
-        | PrimLitTag    !Integer
+        | PrimLitTag     !Integer
         deriving (Eq, Ord, Show)
 
 
-pattern NameLitVoid       = NamePrimVal (PrimValLit PrimLitVoid)
-pattern NameLitBool   x   = NamePrimVal (PrimValLit (PrimLitBool   x))
-pattern NameLitNat    x   = NamePrimVal (PrimValLit (PrimLitNat    x))
-pattern NameLitInt    x   = NamePrimVal (PrimValLit (PrimLitInt    x))
-pattern NameLitSize   x   = NamePrimVal (PrimValLit (PrimLitSize   x))
-pattern NameLitWord   x s = NamePrimVal (PrimValLit (PrimLitWord   x s))
-pattern NameLitFloat  x s = NamePrimVal (PrimValLit (PrimLitFloat  x s))
-pattern NameLitString x   = NamePrimVal (PrimValLit (PrimLitString x))
-pattern NameLitTag    x   = NamePrimVal (PrimValLit (PrimLitTag    x))
+pattern NameLitVoid        = NamePrimVal (PrimValLit PrimLitVoid)
+pattern NameLitBool    x   = NamePrimVal (PrimValLit (PrimLitBool    x))
+pattern NameLitNat     x   = NamePrimVal (PrimValLit (PrimLitNat     x))
+pattern NameLitInt     x   = NamePrimVal (PrimValLit (PrimLitInt     x))
+pattern NameLitSize    x   = NamePrimVal (PrimValLit (PrimLitSize    x))
+pattern NameLitWord    x s = NamePrimVal (PrimValLit (PrimLitWord    x s))
+pattern NameLitFloat   x s = NamePrimVal (PrimValLit (PrimLitFloat   x s))
+pattern NameLitTextLit x   = NamePrimVal (PrimValLit (PrimLitTextLit x))
+pattern NameLitTag     x   = NamePrimVal (PrimValLit (PrimLitTag     x))
 
 
 
@@ -348,14 +348,14 @@ instance NFData PrimLit where
  rnf p
   = case p of
         PrimLitVoid             -> ()
-        PrimLitBool   b         -> rnf b
-        PrimLitNat    i         -> rnf i
-        PrimLitInt    i         -> rnf i
-        PrimLitSize   i         -> rnf i
-        PrimLitWord   i bits    -> rnf i `seq` rnf bits
-        PrimLitFloat  f bits    -> rnf f `seq` rnf bits
-        PrimLitString bs        -> rnf bs
-        PrimLitTag    i         -> rnf i
+        PrimLitBool    b        -> rnf b
+        PrimLitNat     i        -> rnf i
+        PrimLitInt     i        -> rnf i
+        PrimLitSize    i        -> rnf i
+        PrimLitWord    i bits   -> rnf i `seq` rnf bits
+        PrimLitFloat   f bits   -> rnf f `seq` rnf bits
+        PrimLitTextLit bs       -> rnf bs
+        PrimLitTag     i        -> rnf i
 
 
 instance Pretty PrimLit where
@@ -364,13 +364,13 @@ instance Pretty PrimLit where
         PrimLitVoid             -> text "V#"
         PrimLitBool True        -> text "True#"
         PrimLitBool False       -> text "False#"
-        PrimLitNat   i          -> integer i <> text "#"
-        PrimLitInt   i          -> integer i <> text "i#"
-        PrimLitSize  i          -> integer i <> text "s#"
-        PrimLitWord  i bits     -> integer i <> text "w" <> int bits <> text "#"
-        PrimLitFloat f bits     -> double  f <> text "f" <> int bits <> text "#"
-        PrimLitString tx        -> (text $ show $ T.unpack tx) <> text "#"
-        PrimLitTag   i          -> text "TAG" <> integer i <> text "#"
+        PrimLitNat     i        -> integer i <> text "#"
+        PrimLitInt     i        -> integer i <> text "i#"
+        PrimLitSize    i        -> integer i <> text "s#"
+        PrimLitWord    i bits   -> integer i <> text "w" <> int bits <> text "#"
+        PrimLitFloat   f bits   -> double  f <> text "f" <> int bits <> text "#"
+        PrimLitTextLit tx       -> (text $ show $ T.unpack tx) <> text "#"
+        PrimLitTag     i        -> text "TAG" <> integer i <> text "#"
 
 
 -- | Read a primitive literal.

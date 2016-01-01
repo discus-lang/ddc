@@ -84,13 +84,13 @@ convertPrimBoxing _ectx ctx xx
         XApp a _ _
          | Just ( E.NamePrimCast E.PrimCastConvert
                 , [XType _ tUx, XType _ tBx, xArg])  <- takeXPrimApps xx
-         , tUx == E.tUnboxed E.tString
-         , tBx == E.tString
+         , tUx == E.tUnboxed E.tTextLit
+         , tBx == E.tTextLit
          -> Just $ do  
                 let a'   = annotTail a
                 xArg'    <- downArgX xArg
-                let dt   = makeBoxedStringDataType
-                let dc   = makeBoxedStringDataCtor
+                let dt   = makeBoxedTextLitDataType
+                let dc   = makeBoxedTextLitDataCtor
                 let tUx' = A.tPtr A.rTop (A.tWord 8)
 
                 constructData pp kenv tenv a'
@@ -100,12 +100,12 @@ convertPrimBoxing _ectx ctx xx
         XApp a _ _
          | Just ( E.NamePrimCast E.PrimCastConvert
                 , [XType _ tBx, XType _ tUx, xArg])     <- takeXPrimApps xx
-         , tBx == E.tString
-         , tUx == E.tUnboxed E.tString
+         , tBx == E.tTextLit
+         , tUx == E.tUnboxed E.tTextLit
          -> Just $ do
                 let a'   = annotTail a
                 xArg'    <- downArgX xArg
-                let dc   = makeBoxedStringDataCtor
+                let dc   = makeBoxedTextLitDataCtor
                 let tUx' = A.tPtr A.rTop (A.tWord 8)
                 let tBx' = A.tPtr A.rTop (A.tObj)
 

@@ -23,7 +23,7 @@ module DDC.Source.Tetra.Prim
         , pattern NameLitSize
         , pattern NameLitWord
         , pattern NameLitFloat
-        , pattern NameLitString
+        , pattern NameLitTextLit
 
         -- * Arithmetic operators.
         , PrimArith     (..)
@@ -158,7 +158,7 @@ instance Pretty PrimLit where
         PrimLitSize    s        -> integer s <> text "s"
         PrimLitWord    i bits   -> integer i <> text "w" <> int bits
         PrimLitFloat   f bits   -> double  f <> text "f" <> int bits
-        PrimLitString  tx       -> text (show $ T.unpack tx)
+        PrimLitTextLit tx       -> text (show $ T.unpack tx)
 
 
 instance NFData PrimLit where
@@ -170,7 +170,7 @@ instance NFData PrimLit where
         PrimLitSize    s        -> rnf s
         PrimLitWord    i bits   -> rnf i `seq` rnf bits
         PrimLitFloat   d bits   -> rnf d `seq` rnf bits
-        PrimLitString  bs       -> rnf bs       
+        PrimLitTextLit bs       -> rnf bs       
 
 
 -- | Read the name of a primitive literal.

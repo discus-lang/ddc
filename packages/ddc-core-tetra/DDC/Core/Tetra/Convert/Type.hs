@@ -254,11 +254,11 @@ convertValueAppT ctx tt
         = do   tNum'   <- convertNumericT tNum
                return tNum'
 
-        -- Explicitly unboxed strings.
-        -- These are represented as pointers to immutable, anchored memory.
+        -- Explicitly unboxed text literals.
+        -- These are represented as pointers to static memory.
         | Just  ( E.NameTyConTetra E.TyConTetraU
                 , [tStr])       <- takePrimTyConApps tt
-        , isStringType tStr
+        , isTextLitType tStr
         = do    return $ A.tPtr A.rTop (A.tWord 8)
 
         -- The F# type (reified function)
@@ -271,8 +271,9 @@ convertValueAppT ctx tt
                 , [_])          <- takePrimTyConApps tt
         =       return  $ A.tPtr A.rTop A.tObj
 
-        -- Boxed strings.
-        | Just (E.NameTyConTetra E.TyConTetraString, [])
+        -- Boxed text literals.
+        -- The box holds a pointer to the string data.
+        | Just (E.NameTyConTetra E.TyConTetraTextLit, [])
                 <- takePrimTyConApps tt
         =      return   $ A.tPtr A.rTop A.tObj
 

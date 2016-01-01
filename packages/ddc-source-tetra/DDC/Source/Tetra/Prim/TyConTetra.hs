@@ -26,7 +26,7 @@ instance Pretty TyConTetra where
         TyConTetraF             -> text "F#"
         TyConTetraC             -> text "C#"
         TyConTetraU             -> text "U#"
-        TyConTetraString        -> text "String"
+        TyConTetraTextLit       -> text "TextLit#"
 
 
 -- | Read the name of a baked-in type constructor.
@@ -43,7 +43,7 @@ readTyConTetra str
                 "F#"            -> Just TyConTetraF
                 "C#"            -> Just TyConTetraC
                 "U#"            -> Just TyConTetraU
-                "String"        -> Just TyConTetraString
+                "TextLit#"      -> Just TyConTetraTextLit
                 _               -> Nothing
 
 
@@ -55,7 +55,7 @@ kindTyConTetra tc
         TyConTetraF       -> kData `kFun` kData
         TyConTetraC       -> kData `kFun` kData
         TyConTetraU       -> kData `kFun` kData
-        TyConTetraString  -> kData
+        TyConTetraTextLit -> kData
 
 
 -- Compounds ------------------------------------------------------------------

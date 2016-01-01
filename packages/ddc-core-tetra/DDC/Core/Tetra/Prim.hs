@@ -13,7 +13,7 @@ module DDC.Core.Tetra.Prim
         , TyConTetra     (..)
         , readTyConTetra
         , kindTyConTetra
-        , tTupleN, tUnboxed, tFunValue, tCloValue, tString
+        , tTupleN, tUnboxed, tFunValue, tCloValue, tTextLit
 
           -- * Baked-in data constructors.
         , DaConTetra     (..)
@@ -81,13 +81,13 @@ instance NFData Name where
         NamePrimArith  op       -> rnf op
         NamePrimCast   op       -> rnf op
 
-        NameLitBool b           -> rnf b
-        NameLitNat  n           -> rnf n
-        NameLitInt  i           -> rnf i
+        NameLitBool    b        -> rnf b
+        NameLitNat     n        -> rnf n
+        NameLitInt     i        -> rnf i
         NameLitSize    s        -> rnf s
-        NameLitWord i bits      -> rnf i `seq` rnf bits
+        NameLitWord    i bits   -> rnf i `seq` rnf bits
         NameLitFloat   d bits   -> rnf d `seq` rnf bits
-        NameLitString  bs       -> rnf bs       
+        NameLitTextLit bs       -> rnf bs       
 
         NameLitUnboxed n        -> rnf n
 
@@ -115,9 +115,9 @@ instance Pretty Name where
         NameLitNat  i           -> integer i
         NameLitInt  i           -> integer i <> text "i"
         NameLitSize    s        -> integer s <> text "s"
-        NameLitWord i bits      -> integer i <> text "w" <> int bits
+        NameLitWord    i bits   -> integer i <> text "w" <> int bits
         NameLitFloat   f bits   -> double  f <> text "f" <> int bits
-        NameLitString  tx       -> text (show $ T.unpack tx)
+        NameLitTextLit tx       -> text (show $ T.unpack tx)
 
         NameLitUnboxed n        -> ppr n <> text "#"
 
@@ -211,7 +211,7 @@ takeTypeOfLitName nn
         NameLitInt{}            -> Just tInt
         NameLitWord _ bits      -> Just (tWord  bits)
         NameLitFloat _ bits     -> Just (tFloat bits)
-        NameLitString _         -> Just tString
+        NameLitTextLit _        -> Just tTextLit
         _                       -> Nothing
 
 

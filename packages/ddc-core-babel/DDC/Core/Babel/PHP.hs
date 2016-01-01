@@ -310,7 +310,7 @@ sanitise_prim n
  = text (show i)
  | T.NameLitFloat i _ <- n
  = text (show i)
- | T.NameLitString t <- n
+ | T.NameLitTextLit t <- n
  = text (show t)
 
  | T.NamePrimArith p <- n

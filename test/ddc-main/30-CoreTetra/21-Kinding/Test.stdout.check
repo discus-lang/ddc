@@ -36,9 +36,9 @@ When checking type.
   Invalid args for witness implication.
               left type: r
                has kind: Region
-             right type: String#
+             right type: TextLit#
                has kind: Data
-          when checking: r => String#
+          when checking: r => TextLit#
 
 
 -- Error: witness implication is invalid.

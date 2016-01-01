@@ -140,16 +140,15 @@ typeOfPrimOp pp
 typeOfPrimLit :: PrimLit -> Type Name
 typeOfPrimLit lit
  = case lit of
-        PrimLitVoid         -> tVoid
-        PrimLitBool  _      -> tBool
-        PrimLitNat   _      -> tNat
-        PrimLitInt   _      -> tInt
-        PrimLitSize  _      -> tSize
-        PrimLitWord  _ bits -> tWord  bits
-        PrimLitFloat _ bits -> tFloat bits
-        PrimLitString _     -> tPtr rTop (tWord 8)
-        PrimLitTag   _      -> tTag
-
+        PrimLitVoid           -> tVoid
+        PrimLitBool    _      -> tBool
+        PrimLitNat     _      -> tNat
+        PrimLitInt     _      -> tInt
+        PrimLitSize    _      -> tSize
+        PrimLitWord    _ bits -> tWord  bits
+        PrimLitFloat   _ bits -> tFloat bits
+        PrimLitTextLit _      -> tPtr rTop (tWord 8)
+        PrimLitTag     _      -> tTag
 
 
 -- PrimOps --------------------------------------------------------------------

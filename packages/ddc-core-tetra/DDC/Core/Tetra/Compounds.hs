@@ -10,7 +10,7 @@ module DDC.Core.Tetra.Compounds
         , tTupleN
         , tUnboxed
         , tFunValue,    tCloValue
-        , tString
+        , tTextLit
 
           -- * Expressions
         , xFunCReify,   xFunCCurry,    xFunApply, xFunCurry

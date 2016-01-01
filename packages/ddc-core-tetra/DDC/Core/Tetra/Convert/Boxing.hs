@@ -18,11 +18,11 @@ module DDC.Core.Tetra.Convert.Boxing
         , isBoxedRepType
         , isUnboxedRepType
         , isNumericType
-        , isStringType
+        , isTextLitType
         , makeBoxedPrimDataType
         , makeBoxedPrimDataCtor
-        , makeBoxedStringDataType
-        , makeBoxedStringDataCtor)
+        , makeBoxedTextLitDataType
+        , makeBoxedTextLitDataCtor)
 where
 import DDC.Core.Tetra.Prim
 import DDC.Core.Tetra.Compounds
@@ -88,7 +88,7 @@ isUnboxedRepType :: Type Name -> Bool
 isUnboxedRepType tt
         | Just ( NameTyConTetra TyConTetraU
                , [ti])                  <- takePrimTyConApps tt
-        , isNumericType ti || isStringType ti
+        , isNumericType ti || isTextLitType ti
         = True
 
         | otherwise
@@ -114,11 +114,11 @@ isNumericType tt
 
 
 -- | Check if this is the string type.
-isStringType :: Type Name -> Bool
-isStringType tt
+isTextLitType :: Type Name -> Bool
+isTextLitType tt
         | Just (NameTyConTetra n, [])   <- takePrimTyConApps tt
         = case n of
-                TyConTetraString        -> True
+                TyConTetraTextLit       -> True
                 _                       -> False
 
         | otherwise                     = False
@@ -155,22 +155,24 @@ makeBoxedPrimDataCtor tt
         = Nothing
 
 
-makeBoxedStringDataType :: DataType Name
-makeBoxedStringDataType 
+-- | Make the data type for a boxed text literal.
+makeBoxedTextLitDataType :: DataType Name
+makeBoxedTextLitDataType 
         = DataType 
-        { dataTypeName          = NameTyConTetra TyConTetraString
+        { dataTypeName          = NameTyConTetra TyConTetraTextLit
         , dataTypeParams        = []
         , dataTypeMode          = DataModeLarge
         , dataTypeIsAlgebraic   = False }
 
 
-makeBoxedStringDataCtor :: DataCtor Name
-makeBoxedStringDataCtor 
+-- | Make the data constructor for a boxed text literal.
+makeBoxedTextLitDataCtor :: DataCtor Name
+makeBoxedTextLitDataCtor 
         = DataCtor
-        { dataCtorName          = NameTyConTetra TyConTetraString
+        { dataCtorName          = NameTyConTetra TyConTetraTextLit
         , dataCtorTag           = 0
-        , dataCtorFieldTypes    = [tUnboxed tString]
-        , dataCtorResultType    = tString
-        , dataCtorTypeName      = NameTyConTetra TyConTetraString
+        , dataCtorFieldTypes    = [tUnboxed tTextLit]
+        , dataCtorResultType    = tTextLit
+        , dataCtorTypeName      = NameTyConTetra TyConTetraTextLit
         , dataCtorTypeParams    = [] }
 

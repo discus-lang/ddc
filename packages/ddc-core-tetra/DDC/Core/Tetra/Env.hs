@@ -47,8 +47,8 @@ primDataDefs
         , makeDataDefAlg (NamePrimTyCon (PrimTyConWord 64)) [] Nothing
         , makeDataDefAlg (NamePrimTyCon (PrimTyConWord 32)) [] Nothing
 
-        -- String#
-        , makeDataDefAlg (NameTyConTetra TyConTetraString)  [] Nothing
+        -- TextLit#
+        , makeDataDefAlg (NameTyConTetra TyConTetraTextLit) [] Nothing
 
         -- U#
         -- We need this data def when matching against literals with case expressions.
@@ -132,7 +132,7 @@ typeOfPrimName dc
         NameLitInt  _           -> Just $ tInt
         NameLitWord _ bits      -> Just $ tWord bits
         NameLitFloat _ bits     -> Just $ tFloat bits
-        NameLitString _         -> Just $ tString
+        NameLitTextLit _        -> Just $ tTextLit
 
         NameLitUnboxed NameLitBool{}         -> Just $ tUnboxed tBool
         NameLitUnboxed NameLitNat{}          -> Just $ tUnboxed tNat

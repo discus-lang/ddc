@@ -49,7 +49,7 @@ context = Context
         , contextTrackedClosures        = True
         , contextFunctionalEffects      = False
         , contextFunctionalClosures     = False 
-        , contextMakeStringName         = Just (\_ tx -> NameLitString tx) }
+        , contextMakeStringName         = Just (\_ tx -> NameLitTextLit tx) }
 
 
 -- Exp --------------------------------------------------------------------------------------------
