@@ -6,7 +6,7 @@ module DDC.Source.Tetra.Parser.Param
         , pBindParamSpec
         , expOfParams)
 where
-import DDC.Source.Tetra.Exp
+import DDC.Source.Tetra.Exp.Annot
 import DDC.Core.Parser
         ( ParamSpec(..)
         , funTypeOfParams
@@ -17,9 +17,9 @@ import DDC.Core.Parser
 --   and the expression for the body.
 expOfParams 
         :: a
-        -> [ParamSpec n]        -- ^ Spec of parameters.
-        -> Exp a n              -- ^ Body of function.
-        -> Exp a n              -- ^ Expression of whole function.
+        -> [ParamSpec Name]     -- ^ Spec of parameters.
+        -> Exp a                -- ^ Body of function.
+        -> Exp a                -- ^ Expression of whole function.
 
 expOfParams _ [] xBody            = xBody
 expOfParams a (p:ps) xBody

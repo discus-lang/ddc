@@ -9,14 +9,15 @@ data List (a : Data) where {
         Nil : List a;
         Cons : a -> List a -> List a;
 }
-map : [a b : Data].(a -> b) -> List a -> List b
-  = /\(a b : Data).
-     \(f : a -> b).\(xx : List a).
+map : [a b : Data].(a -> b) -> List a -> List b 
+  = /\a : Data./\b : Data.
+     \f : a -> b.
+    \xx : List a.
     case xs of {
-      Nil  
-       -> Nil [?];
-      Cons x xs 
-       -> Cons [?] (f x) (map [?] [?] f xs)
+      Nil 
+        -> Nil [?];
+      Cons x xs
+        -> Cons [?] (f x) (map [?] [?] f xs)
     }
 
 
@@ -26,14 +27,15 @@ data List (a : Data) where {
         Nil : List a;
         Cons : a -> List a -> List a;
 }
-map : [a b : Data].(a -> b) -> List a -> List b
-  = /\(a b : Data).
-     \(f : a -> b).\(xx : List a).
+map : [a b : Data].(a -> b) -> List a -> List b 
+  = /\a : Data./\b : Data.
+     \f : a -> b.
+    \xx : List a.
     case xs of {
-      Nil  
-       -> Nil [?];
-      Cons x xs 
-       -> Cons [a] (f x) (map [a] [?] f xs)
+      Nil 
+        -> Nil [?];
+      Cons x xs
+        -> Cons [a] (f x) (map [a] [?] f xs)
     }
 
 
@@ -44,14 +46,15 @@ data List (a : Data) where {
         Nil : List a;
         Cons : a -> List a -> List a;
 }
-map : [a b : ?].(a -> b) -> List a -> List b
-  = /\(a b : ?).
-     \(f : a -> b).\(xx : List a).
+map : [a b : ?].(a -> b) -> List a -> List b 
+  = /\a : ?./\b : ?.
+     \f : a -> b.
+    \xx : List a.
     case xs of {
-      Nil  
-       -> Nil [?];
-      Cons x xs 
-       -> Cons [?] (f x) (map [?] [?] f xs)
+      Nil 
+        -> Nil [?];
+      Cons x xs
+        -> Cons [?] (f x) (map [?] [?] f xs)
     }
 
 
@@ -62,17 +65,18 @@ data List (a : Data) where {
         Nil : List a;
         Cons : a -> List a -> List a;
 }
-add : [a : ?].a -> a -> a
-  = /\(a : ?).
-     \(x y : a). add# [a] x y
-length : [a : ?].List a -> Nat
-  = /\(a : ?).
-     \(xx : List a).
+add : [a : ?].a -> a -> a 
+  = /\a : ?.
+     \x : a.
+    \y : a. add# [a] x y
+length : [a : ?].List a -> Nat 
+  = /\a : ?.
+     \xx : List a.
     case xx of {
-      Nil  
-       -> 0;
-      Cons x xs 
-       -> add [?] 1 (length [?] xs)
+      Nil 
+        -> 0;
+      Cons x xs
+        -> add [?] 1 (length [?] xs)
     }
 
 
@@ -83,13 +87,13 @@ data Blerk (r : Region) where {
         Hot : Blerk r;
         Cold : Blerk r;
 }
-flipit : [r : ?].Blerk r -> Blerk r
-  = /\(r : ?).
-     \(x : Blerk r).
+flipit : [r : ?].Blerk r -> Blerk r 
+  = /\r : ?.
+     \x : Blerk r.
     case x of {
-      Hot  
-       -> Cold [?];
-      Cold  
-       -> Hot [?]
+      Hot 
+        -> Cold [?];
+      Cold 
+        -> Hot [?]
     }
 

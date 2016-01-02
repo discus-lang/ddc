@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies #-}
 
 -- | Desugaring Source Tetra guards to simple case-expressions.
 module DDC.Source.Tetra.Transform.Guards
@@ -5,17 +6,18 @@ module DDC.Source.Tetra.Transform.Guards
 where
 import DDC.Source.Tetra.Transform.BoundX
 import DDC.Source.Tetra.Compounds
-import DDC.Source.Tetra.Prim
-import DDC.Source.Tetra.Exp
+import DDC.Source.Tetra.Exp.Annot
+import DDC.Type.Exp
 
 
 -- | Desugar some guards to a case-expression.
 --   At runtime, if none of the guards match then run the provided fail action.
 desugarGuards
-        :: a                    -- ^ Annotation.
-        -> [GuardedExp a Name]  -- ^ Guarded expressions to desugar.
-        -> Exp a Name           -- ^ Failure action.
-        -> Exp a Name
+        :: forall a
+        .  GAnnot (Annot a)         -- ^ Annotation.
+        -> [GGuardedExp (Annot a)]  -- ^ Guarded expressions to desugar.
+        -> GExp (Annot a)           -- ^ Failure action.
+        -> GExp (Annot a)
 
 desugarGuards a gs0 fail0
  = go gs0 fail0
@@ -52,7 +54,7 @@ desugarGuards a gs0 fail0
         -- We need this when desugaring general pattern alternatives,
         -- as each group of guards can be reached from multiple places.
         go1 (GGuard (GPred x1) gs) cont
-         = XLet a (LLet (BAnon (tBot kData)) (xBox a cont))
+         = XLet  a (LLet (BAnon (tBot kData)) (xBox a cont))
          $ XCase a (liftX 1 x1)
                 [ AAlt pTrue     [GExp (go1 (liftX 1 gs) (xRun a (XVar a (UIx 0))))]
                 , AAlt PDefault  [GExp                   (xRun a (XVar a (UIx 0))) ]]
@@ -63,3 +65,4 @@ desugarGuards a gs0 fail0
                 [ AAlt p1        [GExp (go1 (liftX 1 gs) (xRun a (XVar a (UIx 0))))]
                 , AAlt PDefault  [GExp                   (xRun a (XVar a (UIx 0))) ]]
         
+

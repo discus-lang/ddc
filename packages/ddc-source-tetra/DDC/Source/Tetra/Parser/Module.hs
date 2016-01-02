@@ -13,10 +13,11 @@ import DDC.Source.Tetra.Compounds
 import DDC.Source.Tetra.DataDef
 import DDC.Source.Tetra.Module
 import DDC.Source.Tetra.Prim
-import DDC.Source.Tetra.Exp
+import DDC.Source.Tetra.Exp.Annot
 import DDC.Core.Lexer.Tokens
 import DDC.Base.Pretty
 import Control.Monad
+import qualified DDC.Type.Exp           as T
 import qualified DDC.Base.Parser        as P
 import DDC.Base.Parser                  ((<?>))
 
@@ -28,10 +29,12 @@ import DDC.Core.Parser
         , pVar
         , pTok,         pTokSP)
 
+type SP = P.SourcePos
+
 
 -- Module -----------------------------------------------------------------------------------------
 -- | Parse a source tetra module.
-pModule :: Context Name -> Parser Name (Module P.SourcePos Name)
+pModule :: Context Name -> Parser Name (Module (Annot SP))
 pModule c
  = do   
         _sp     <- pTokSP KModule
@@ -81,10 +84,7 @@ pModule c
 
 
 -- | Parse a type signature.
-pTypeSig 
-        :: Ord n 
-        => Context n -> Parser n (n, Type n)        
-
+pTypeSig :: Context Name -> Parser Name (Name, T.Type Name)
 pTypeSig c
  = do   var     <- pVar
         pTokSP (KOp ":")
@@ -101,10 +101,7 @@ data ImportSpec n
         
 
 -- | Parse some import specs.
-pImportSpecs
-        :: (Ord n, Pretty n)
-        => Context n -> Parser n [ImportSpec n]
-
+pImportSpecs :: Context Name -> Parser Name [ImportSpec Name]
 pImportSpecs c
  = do   pTok KImport
 
@@ -140,9 +137,7 @@ pImportSpecs c
 
 
 -- | Parse a type import spec.
-pImportType
-        :: (Ord n, Pretty n)
-        => Context n -> String -> Parser n (ImportSpec n)
+pImportType :: Context Name -> String -> Parser Name (ImportSpec Name)
 pImportType c src
         | "abstract"    <- src
         = do    n       <- pName
@@ -161,9 +156,7 @@ pImportType c src
 
 
 -- | Parse a value import spec.
-pImportValue 
-        :: (Ord n, Pretty n)
-        => Context n -> String -> Parser n (ImportSpec n)
+pImportValue :: Context Name -> String -> Parser Name (ImportSpec Name)
 pImportValue c src
         | "c"           <- src
         = do    n       <- pName
@@ -181,7 +174,7 @@ pImportValue c src
 
 
 -- Top Level --------------------------------------------------------------------------------------
-pTop    :: Context Name -> Parser Name (Top P.SourcePos Name)
+pTop    :: Context Name -> Parser Name (Top (Annot SP))
 pTop c
  = P.choice
  [ do   -- A top-level, possibly recursive binding.
@@ -195,8 +188,7 @@ pTop c
 
 -- Data -------------------------------------------------------------------------------------------
 -- | Parse a data type declaration.
-pData   :: Ord n
-        => Context n -> Parser n (Top P.SourcePos n)
+pData   :: Context Name -> Parser Name (Top (Annot SP))
 pData c
  = do   sp      <- pTokSP KData
         n       <- pName
@@ -216,18 +208,18 @@ pData c
 
 
 -- | Parse a type parameter to a data type.
-pDataParam :: Ord n => Context n -> Parser n [Bind n]
+pDataParam :: Context Name -> Parser Name [Bind]
 pDataParam c 
  = do   pTok KRoundBra
         ns      <- P.many1 pName
         pTokSP (KOp ":")
         k       <- pType c
         pTok KRoundKet
-        return  [BName n k | n <- ns]
+        return  [T.BName n k | n <- ns]
 
 
 -- | Parse a data constructor declaration.
-pDataCtor :: Ord n => Context n -> Parser n (DataCtor n)
+pDataCtor :: Context Name -> Parser Name (DataCtor Name)
 pDataCtor c
  = do   n       <- pName
         pTokSP (KOp ":")

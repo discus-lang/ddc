@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies #-}
 
 -- | Utilities for constructing and destructing Source Tetra expressions.
 module DDC.Source.Tetra.Compounds
@@ -59,13 +60,15 @@ import DDC.Core.Compounds
         , takeWAppsAsList
         , takePrimWiConApps)
         
+
 -- Annotations ----------------------------------------------------------------
 -- | Take the outermost annotation from an expression,
 --   or Nothing if this is an `XType` or `XWitness` without an annotation.
-takeAnnotOfExp :: Exp a n -> Maybe a
+takeAnnotOfExp :: GExp l -> Maybe (GAnnot l)
 takeAnnotOfExp xx
  = case xx of
         XVar  a _       -> Just a
+        XPrim a _       -> Just a
         XCon  a _       -> Just a
         XLAM  a _ _     -> Just a
         XLam  a _ _     -> Just a
@@ -82,20 +85,20 @@ takeAnnotOfExp xx
 
 -- Lambdas ---------------------------------------------------------------------
 -- | Make some nested type lambdas.
-xLAMs :: a -> [Bind n] -> Exp a n -> Exp a n
+xLAMs :: GAnnot l -> [GBind l] -> GExp l -> GExp l
 xLAMs a bs x
         = foldr (XLAM a) x bs
 
 
 -- | Make some nested value or witness lambdas.
-xLams :: a -> [Bind n] -> Exp a n -> Exp a n
+xLams :: GAnnot l -> [GBind l] -> GExp l -> GExp l
 xLams a bs x
         = foldr (XLam a) x bs
 
 
 -- | Split type lambdas from the front of an expression,
 --   or `Nothing` if there aren't any.
-takeXLAMs :: Exp a n -> Maybe ([Bind n], Exp a n)
+takeXLAMs :: GExp l -> Maybe ([GBind l], GExp l)
 takeXLAMs xx
  = let  go bs (XLAM _ b x) = go (b:bs) x
         go bs x            = (reverse bs, x)
@@ -106,7 +109,7 @@ takeXLAMs xx
 
 -- | Split nested value or witness lambdas from the front of an expression,
 --   or `Nothing` if there aren't any.
-takeXLams :: Exp a n -> Maybe ([Bind n], Exp a n)
+takeXLams :: GExp l -> Maybe ([GBind l], GExp l)
 takeXLams xx
  = let  go bs (XLam _ b x) = go (b:bs) x
         go bs x            = (reverse bs, x)
@@ -118,7 +121,7 @@ takeXLams xx
 -- | Make some nested lambda abstractions,
 --   using a flag to indicate whether the lambda is a
 --   level-1 (True), or level-0 (False) binder.
-makeXLamFlags :: a -> [(Bool, Bind n)] -> Exp a n -> Exp a n
+makeXLamFlags :: GAnnot l -> [(Bool, GBind l)] -> GExp l -> GExp l
 makeXLamFlags a fbs x
  = foldr (\(f, b) x'
            -> if f then XLAM a b x'
@@ -129,7 +132,7 @@ makeXLamFlags a fbs x
 -- | Split nested lambdas from the front of an expression, 
 --   with a flag indicating whether the lambda was a level-1 (True), 
 --   or level-0 (False) binder.
-takeXLamFlags :: Exp a n -> Maybe ([(Bool, Bind n)], Exp a n)
+takeXLamFlags :: GExp l -> Maybe ([(Bool, GBind l)], GExp l)
 takeXLamFlags xx
  = let  go bs (XLAM _ b x) = go ((True,  b):bs) x
         go bs (XLam _ b x) = go ((False, b):bs) x
@@ -141,14 +144,14 @@ takeXLamFlags xx
 
 -- Applications ---------------------------------------------------------------
 -- | Build sequence of value applications.
-xApps   :: a -> Exp a n -> [Exp a n] -> Exp a n
+xApps   :: GAnnot l -> GExp l -> [GExp l] -> GExp l
 xApps a t1 ts     = foldl (XApp a) t1 ts
 
 
 -- | Build sequence of applications.
 --   Similar to `xApps` but also takes list of annotations for 
 --   the `XApp` constructors.
-makeXAppsWithAnnots :: Exp a n -> [(Exp a n, a)] -> Exp a n
+makeXAppsWithAnnots :: GExp l -> [(GExp l, GAnnot l)] -> GExp l
 makeXAppsWithAnnots f xas
  = case xas of
         []              -> f
@@ -158,7 +161,7 @@ makeXAppsWithAnnots f xas
 -- | Flatten an application into the function part and its arguments.
 --
 --   Returns `Nothing` if there is no outer application.
-takeXApps :: Exp a n -> Maybe (Exp a n, [Exp a n])
+takeXApps :: GExp l -> Maybe (GExp l, [GExp l])
 takeXApps xx
  = case takeXAppsAsList xx of
         (x1 : xsArgs)   -> Just (x1, xsArgs)
@@ -168,7 +171,7 @@ takeXApps xx
 -- | Flatten an application into the function part and its arguments.
 --
 --   This is like `takeXApps` above, except we know there is at least one argument.
-takeXApps1 :: Exp a n -> Exp a n -> (Exp a n, [Exp a n])
+takeXApps1 :: GExp l -> GExp l -> (GExp l, [GExp l])
 takeXApps1 x1 x2
  = case takeXApps x1 of
         Nothing          -> (x1,  [x2])
@@ -176,7 +179,7 @@ takeXApps1 x1 x2
 
 
 -- | Flatten an application into the function parts and arguments, if any.
-takeXAppsAsList  :: Exp a n -> [Exp a n]
+takeXAppsAsList  :: GExp l -> [GExp l]
 takeXAppsAsList xx
  = case xx of
         XApp _ x1 x2    -> takeXAppsAsList x1 ++ [x2]
@@ -185,7 +188,7 @@ takeXAppsAsList xx
 
 -- | Destruct sequence of applications.
 --   Similar to `takeXAppsAsList` but also keeps annotations for later.
-takeXAppsWithAnnots :: Exp a n -> (Exp a n, [(Exp a n, a)])
+takeXAppsWithAnnots :: GExp l -> (GExp l, [(GExp l, GAnnot l)])
 takeXAppsWithAnnots xx
  = case xx of
         XApp a f arg
@@ -199,17 +202,17 @@ takeXAppsWithAnnots xx
 --   and its arguments.
 --   
 --   Returns `Nothing` if the expression isn't a primop application.
-takeXPrimApps :: Exp a n -> Maybe (n, [Exp a n])
+takeXPrimApps :: GExp l -> Maybe (GPrim l, [GExp l])
 takeXPrimApps xx
  = case takeXAppsAsList xx of
-        XVar _ (UPrim p _) : xs -> Just (p, xs)
-        _                       -> Nothing
+        XPrim _ p : xs  -> Just (p, xs)
+        _               -> Nothing
 
 -- | Flatten an application of a data constructor into the constructor
 --   and its arguments. 
 --
 --   Returns `Nothing` if the expression isn't a constructor application.
-takeXConApps :: Exp a n -> Maybe (DaCon n, [Exp a n])
+takeXConApps :: GExp l -> Maybe (DaCon (GName l), [GExp l])
 takeXConApps xx
  = case takeXAppsAsList xx of
         XCon _ dc : xs  -> Just (dc, xs)

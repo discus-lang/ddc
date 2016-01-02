@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies, UndecidableInstances #-}
 
 -- | Look at type signatures and add quantifiers to bind any free type
 --   variables. Also add holes for missing type arguments.
@@ -36,34 +37,42 @@ import qualified DDC.Type.Env           as Env
 import qualified Data.Set               as Set
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | Expander configuration.
-data Config a n
+data Config l
         = Config
         { -- | Make a type hole of the given kind.
-          configMakeTypeHole    :: Kind n -> Type n }
+          configMakeTypeHole    :: Kind (GName l) -> Type (GName l) }
 
 
 -- | Default expander configuration.
-configDefault :: Config a Name
+configDefault :: GName l ~ Name => Config l
 configDefault 
         = Config
         { configMakeTypeHole    = \k -> TVar (UPrim NameHole k)}
 
 
--------------------------------------------------------------------------------
-class Expand (c :: * -> * -> *) where
+---------------------------------------------------------------------------------------------------
+type ExpandLanguage l
+        = ( Ord (GName l)
+          , GBind  l ~ Bind  (GName l)
+          , GBound l ~ Bound (GName l))
+
+class ExpandLanguage l => Expand (c :: * -> *) l where
  -- | Add quantifiers to the types of binders. Also add holes for missing
  --   type arguments.
  expand
-        :: Ord n 
-        => Config a n
-        -> KindEnv n -> TypeEnv n
-        -> c a n     -> c a n
+        :: Ord (GName l) 
+        => Config l
+        -> KindEnv (GName l) -> TypeEnv (GName l)
+        -> c l -> c l
 
 
-instance Expand Module where
- expand config kenv tenv mm
+---------------------------------------------------------------------------------------------------
+instance ExpandLanguage l => Expand Module l where
+ expand = expandM
+
+expandM config kenv tenv mm
   = let 
         -- Add quantifiers to the types of bindings, and also slurp
         -- out the contribution to the top-level environment from each binding.
@@ -94,8 +103,11 @@ instance Expand Module where
     in  mm { moduleTops = tops' }
 
 
-instance Expand Top where
- expand config kenv tenv top
+---------------------------------------------------------------------------------------------------
+instance ExpandLanguage l => Expand Top l where
+ expand = expandT
+
+expandT config kenv tenv top
   = case top of
         TopClause a1 (SLet a2 b [] [GExp x])
          -> let tenv'   = Env.extend b tenv
@@ -106,16 +118,21 @@ instance Expand Top where
         _         -> error "source-tetra.expand: found TopClause"
 
 
-instance Expand Exp where
- expand config kenv tenv xx
-  = let down = expand config kenv tenv
-    in case xx of
+---------------------------------------------------------------------------------------------------
+instance ExpandLanguage l => Expand GExp l where
+ expand = downX
+
+downX config kenv tenv xx
+  = case xx of
 
         -- Invoke the expander --------
         XVar{}
          ->     expandApp config kenv tenv xx []
 
         XCon{}
+         ->     expandApp config kenv tenv xx []
+
+        XPrim{}
          ->     expandApp config kenv tenv xx []
 
         XApp{}
@@ -180,17 +197,21 @@ instance Expand Exp where
                 x2'     = expand config kenv' tenv' x2
             in  XLet a (LPrivate bts mR bxs) x2'
 
-        XCase a x alts  -> XCase a   (down x)   (map down alts)
-        XCast a c x     -> XCast a c (down x)
+        XCase a x alts  -> XCase a   (downX config kenv tenv x)   
+                                     (map (downA config kenv tenv) alts)
+        XCast a c x     -> XCast a c (downX config kenv tenv x)
         XType{}         -> xx
         XWitness{}      -> xx
-        XDefix a xs     -> XDefix a  (map down xs)
+        XDefix a xs     -> XDefix a  (map (downX config kenv tenv) xs)
         XInfixOp{}      -> xx
         XInfixVar{}     -> xx
 
 
-instance Expand Alt where
- expand config kenv tenv alt
+---------------------------------------------------------------------------------------------------
+instance ExpandLanguage l => Expand GAlt l where
+ expand = downA
+
+downA config kenv tenv alt
   = case alt of
         AAlt p gsx
          -> let tenv'   = extendPat p tenv
@@ -198,19 +219,25 @@ instance Expand Alt where
             in  AAlt p gsx'
 
 
-instance Expand GuardedExp where
- expand config kenv tenv (GGuard g x)
+---------------------------------------------------------------------------------------------------
+instance ExpandLanguage l => Expand GGuardedExp l where
+ expand = downGX
+
+downGX config kenv tenv (GGuard g x)
   = let g'      = expand config kenv tenv g
         tenv'   = extendGuard g' tenv
     in  GGuard g' (expand config kenv tenv' x)
 
- expand config kenv tenv (GExp x)
+downGX config kenv tenv (GExp x)
   = let x'      = expand config kenv tenv x
     in  GExp x'
 
 
-instance Expand Guard where
- expand config kenv tenv gg
+---------------------------------------------------------------------------------------------------
+instance ExpandLanguage l => Expand GGuard l where
+ expand = downG
+
+downG config kenv tenv gg
   = case gg of
         GPat p x
          -> let tenv'   = extendPat p tenv
@@ -225,9 +252,11 @@ instance Expand Guard where
          -> GDefault 
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | Extend a type environment with the variables bound by the given pattern.
-extendPat :: Ord n => Pat n -> TypeEnv n -> TypeEnv n
+extendPat 
+        :: ExpandLanguage l
+        => GPat l -> TypeEnv (GName l) -> TypeEnv (GName l)
 extendPat ww tenv
  = case ww of
         PDefault        -> tenv
@@ -235,26 +264,28 @@ extendPat ww tenv
 
 
 -- | Extend a type environment with the variables bound by the given guard.
-extendGuard :: Ord n => Guard a n -> TypeEnv n -> TypeEnv n
+extendGuard
+        :: ExpandLanguage l
+        => GGuard l -> TypeEnv (GName l) -> TypeEnv (GName l)
 extendGuard gg tenv
  = case gg of
         GPat w _        -> extendPat w tenv
         _               -> tenv
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | Expand missing quantifiers in types of bindings.
 --  
 --   If a binding mentions type variables that are not in scope then add new
 --   quantifiers to its type, as well as matching type lambdas.
 --
 expandQuant 
-        :: Ord n
-        => a                    -- ^ Annotation to use on new type lambdas.
-        -> Config a n           -- ^ Expander configuration.
-        -> KindEnv  n           -- ^ Current kind environment.
-        -> (Bind n, Exp a n)    -- ^ Binder and expression of binding.
-        -> (Bind n, Exp a n)
+        :: ExpandLanguage l
+        => GAnnot l             -- ^ Annotation to use on new type lambdas.
+        -> Config l             -- ^ Expander configuration.
+        -> KindEnv  (GName l)   -- ^ Current kind environment.
+        -> (GBind l, GExp l)    -- ^ Binder and expression of binding.
+        -> (GBind l, GExp l)
 
 expandQuant a config kenv (b, x)
  | fvs  <- freeVarsT kenv (typeOfBind b)
@@ -285,7 +316,7 @@ expandQuant a config kenv (b, x)
  = (b, x)
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | Expand missing type arguments in applications.
 --   
 --   The thing being applied needs to be a variable or data constructor
@@ -294,13 +325,13 @@ expandQuant a config kenv (b, x)
 --   the expression is missing them.
 --
 expandApp 
-        :: Ord n
-        => Config a n           -- ^ Expander configuration.
-        -> KindEnv n            -- ^ Current kind environment.
-        -> TypeEnv n            -- ^ Current type environment.
-        -> Exp a n              -- ^ Functional expression being applied.
-        -> [(Exp a n, a)]       -- ^ Function arguments.
-        -> Exp a n
+        :: ExpandLanguage l
+        => Config l             -- ^ Expander configuration.
+        -> KindEnv (GName l)    -- ^ Current kind environment.
+        -> TypeEnv (GName l)    -- ^ Current type environment.
+        -> GExp l               -- ^ Functional expression being applied.
+        -> [(GExp l, GAnnot l)] -- ^ Function arguments.
+        -> GExp l
 
 expandApp config _kenv tenv x0 xas0
  | Just (a, u)  <- slurpVarConBound x0
@@ -331,7 +362,10 @@ expandApp config _kenv tenv x0 xas0
 
 -- | Slurp a `Bound` from and `XVar` or `XCon`. 
 --   Named data constructors are converted to `UName`s.
-slurpVarConBound :: Exp a n -> Maybe (a, Bound n)
+slurpVarConBound 
+        :: GBound l ~ Bound (GName l)
+        => GExp l 
+        -> Maybe (GAnnot l, GBound l)
 slurpVarConBound xx
  = case xx of
         XVar a u -> Just (a, u)

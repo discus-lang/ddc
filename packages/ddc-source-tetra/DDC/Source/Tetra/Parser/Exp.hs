@@ -11,16 +11,15 @@ module DDC.Source.Tetra.Parser.Exp
         , pTypeAtom)
 where
 import DDC.Source.Tetra.Transform.Guards
+import DDC.Source.Tetra.Parser.Witness
 import DDC.Source.Tetra.Parser.Param
 import DDC.Source.Tetra.Compounds
 import DDC.Source.Tetra.Prim
-import DDC.Source.Tetra.Exp
+import DDC.Source.Tetra.Exp.Annot
 import DDC.Core.Parser
         ( Parser
         , Context (..)
         , pBinder
-        , pWitness
-        , pWitnessAtom
         , pType
         , pTypeAtom
         , pTypeApp
@@ -36,6 +35,7 @@ import DDC.Core.Parser
 import DDC.Core.Lexer.Tokens
 import DDC.Base.Parser                  ((<?>), SourcePos)
 import qualified DDC.Base.Parser        as P
+import qualified DDC.Type.Exp           as T
 import qualified DDC.Type.Compounds     as T
 import Control.Monad.Except
 
@@ -54,7 +54,7 @@ context = Context
 
 -- Exp --------------------------------------------------------------------------------------------
 -- | Parse a Tetra Source language expression.
-pExp    :: Context Name -> Parser Name (Exp SP Name)
+pExp    :: Context Name -> Parser Name (Exp SP)
 pExp c
  = P.choice
         -- Level-0 lambda abstractions
@@ -168,7 +168,7 @@ pExp c
 
 
 -- Applications.
-pExpApp :: Context Name -> Parser Name (Exp SP Name)
+pExpApp :: Context Name -> Parser Name (Exp SP)
 pExpApp c
   = do  xps     <- liftM concat $ P.many1 (pArgSPs c)
         let (xs, sps)   = unzip xps
@@ -182,7 +182,7 @@ pExpApp c
 
 
 -- Comp, Witness or Spec arguments.
-pArgSPs :: Context Name -> Parser Name [(Exp SP Name, SP)]
+pArgSPs :: Context Name -> Parser Name [(Exp SP, SP)]
 pArgSPs c
  = P.choice
         -- [Type]
@@ -217,7 +217,7 @@ pArgSPs c
 
 
 -- | Parse a variable, constructor or parenthesised expression.
-pExpAtom   :: Context Name -> Parser Name (Exp SP Name)
+pExpAtom   :: Context Name -> Parser Name (Exp SP)
 pExpAtom c
  = do   (x, _) <- pExpAtomSP c
         return x
@@ -225,7 +225,7 @@ pExpAtom c
 
 -- | Parse a variable, constructor or parenthesised expression,
 --   also returning source position.
-pExpAtomSP :: Context Name -> Parser Name (Exp SP Name, SP)
+pExpAtomSP :: Context Name -> Parser Name (Exp SP, SP)
 pExpAtomSP c
  = P.choice
  [      -- ( Exp2 )
@@ -265,11 +265,11 @@ pExpAtomSP c
 
         -- Debruijn indices
  , do   (i, sp)         <- pIndexSP
-        return  (XVar sp (UIx   i), sp)
+        return  (XVar sp (T.UIx   i), sp)
 
         -- Variables
  , do   (var, sp)       <- pVarSP
-        return  (XVar sp (UName var), sp)
+        return  (XVar sp (T.UName var), sp)
  ]
 
  <?> "a variable, constructor, or parenthesised type"
@@ -277,7 +277,7 @@ pExpAtomSP c
 
 -- Alternatives -----------------------------------------------------------------------------------
 -- Case alternatives.
-pAlt    :: Context Name -> Parser Name (Alt SP Name)
+pAlt    :: Context Name -> Parser Name (Alt SP)
 pAlt c
  = do   p       <- pPat c
         P.choice
@@ -292,7 +292,7 @@ pAlt c
 
 
 -- Patterns.
-pPat    :: Context Name -> Parser Name (Pat Name)
+pPat    :: Context Name -> Parser Name (Pat SP)
 pPat c
  = P.choice
  [      -- Wildcard
@@ -315,7 +315,7 @@ pPat c
 
 -- Binds in patterns can have no type annotation,
 -- or can have an annotation if the whole thing is in parens.
-pBindPat :: Context Name -> Parser Name (Bind Name)
+pBindPat :: Context Name -> Parser Name Bind
 pBindPat c
  = P.choice
         -- Plain binder.
@@ -336,7 +336,7 @@ pBindPat c
 -- | Parse some guards and auto-desugar them to a case-expression.
 pBindGuardsAsCaseSP
         :: Context Name
-        -> Parser Name (SP, Exp SP Name)
+        -> Parser Name (SP, Exp SP)
 
 pBindGuardsAsCaseSP c
  = do   (sp, g) : spgs  
@@ -347,7 +347,7 @@ pBindGuardsAsCaseSP c
 
 pMatchGuardsAsCase
         :: SP -> Context Name
-        -> Parser Name (Exp SP Name)
+        -> Parser Name (Exp SP)
 
 pMatchGuardsAsCase sp c
  = do   gg      <- liftM (map snd)
@@ -362,7 +362,7 @@ pGuardedExpSP
         :: Context Name         -- ^ Parser context.
         -> Parser  Name SP      -- ^ Parser for char between and of guards and exp.
                                 --   usually -> or =
-        -> Parser  Name (SP, GuardedExp SP Name)
+        -> Parser  Name (SP, GuardedExp SP)
 
 pGuardedExpSP c pTermSP
  = pGuardExp (pTokSP KBar)
@@ -395,7 +395,7 @@ pGuardedExpSP c pTermSP
 
 
 -- Bindings ---------------------------------------------------------------------------------------
-pLetsSP :: Context Name -> Parser Name (Lets SP Name, SP)
+pLetsSP :: Context Name -> Parser Name (Lets SP, SP)
 pLetsSP c
  = P.choice
     [ -- non-recursive let
@@ -447,8 +447,8 @@ pLetsSP c
     
     
 pLetWits :: Context Name
-         -> [Bind Name] -> Maybe (Type Name)
-         -> Parser Name (Lets SP Name)
+         -> [Bind] -> Maybe (T.Type Name)
+         -> Parser Name (Lets SP)
 
 pLetWits c bs mParent
  = P.choice 
@@ -463,7 +463,7 @@ pLetWits c bs mParent
 
                         -- Ambient witness binding, used for capabilities.
                       , do t    <- pTypeApp c
-                           return  $ BNone t
+                           return  $ T.BNone t
                       ])
                       (pTok KSemiColon)
            pTok KBraceKet
@@ -475,7 +475,7 @@ pLetWits c bs mParent
 
 -- | A binding for let expression.
 pClauseSP :: Context Name
-        -> Parser  Name (Clause SP Name, SP)
+          -> Parser Name (Clause SP, SP)
 
 pClauseSP c
  = do   b       <- pBinder
@@ -529,9 +529,9 @@ pClauseSP c
 
 -- Statements -------------------------------------------------------------------------------------
 data Stmt n
-        = StmtBind  SourcePos (Bind n) (Exp SourcePos n)
-        | StmtMatch SourcePos (Pat n)  (Exp SourcePos n) (Exp SourcePos n)
-        | StmtNone  SourcePos (Exp SourcePos n)
+        = StmtBind  SP Bind (Exp SP)
+        | StmtMatch SP (Pat SP) (Exp SP) (Exp SP)
+        | StmtNone  SP (Exp SP)
 
 
 -- | Parse a single statement.
@@ -574,7 +574,7 @@ pStmt c
 
 
 -- | Parse some statements.
-pStmts :: Context Name -> Parser Name (Exp SourcePos Name)
+pStmts :: Context Name -> Parser Name (Exp SP)
 pStmts c
  = do   stmts   <- P.sepEndBy1 (pStmt c) (pTok KSemiColon)
         case makeStmts stmts of
@@ -583,7 +583,7 @@ pStmts c
 
 
 -- | Make an expression from some statements.
-makeStmts :: [Stmt Name] -> Maybe (Exp SourcePos Name)
+makeStmts :: [Stmt Name] -> Maybe (Exp SP)
 makeStmts ss
  = case ss of
         [StmtNone _ x]    
@@ -591,7 +591,7 @@ makeStmts ss
 
         StmtNone sp x1 : rest
          | Just x2      <- makeStmts rest
-         -> Just $ XLet sp (LLet (BNone (T.tBot T.kData)) x1) x2
+         -> Just $ XLet sp (LLet (T.BNone (T.tBot T.kData)) x1) x2
 
         StmtBind sp b x1 : rest
          | Just x2      <- makeStmts rest

@@ -24,13 +24,13 @@ module DDC.Source.Tetra.Predicates
           -- * Patterns
         , isPDefault)
 where
-import DDC.Source.Tetra.Exp
+import DDC.Source.Tetra.Exp.Generic
 import DDC.Type.Predicates
 
 
 -- Atoms ----------------------------------------------------------------------
 -- | Check whether an expression is a variable.
-isXVar :: Exp a n -> Bool
+isXVar :: GExp l -> Bool
 isXVar xx
  = case xx of
         XVar{}  -> True
@@ -38,7 +38,7 @@ isXVar xx
 
 
 -- | Check whether an expression is a constructor.
-isXCon :: Exp a n -> Bool
+isXCon :: GExp l -> Bool
 isXCon xx
  = case xx of
         XCon{}  -> True
@@ -47,7 +47,7 @@ isXCon xx
 
 -- | Check whether an expression is a `XVar` or an `XCon`, 
 --   or some type or witness atom.
-isAtomX :: Exp a n -> Bool
+isAtomX :: GExp l -> Bool
 isAtomX xx
  = case xx of
         XVar{}          -> True
@@ -58,7 +58,7 @@ isAtomX xx
 
 
 -- | Check whether a witness is a `WVar` or `WCon`.
-isAtomW :: Witness a n -> Bool
+isAtomW :: GWitness l -> Bool
 isAtomW ww
  = case ww of
         WVar{}          -> True
@@ -68,7 +68,7 @@ isAtomW ww
 
 -- Lambdas --------------------------------------------------------------------
 -- | Check whether an expression is a spec abstraction (level-1).
-isXLAM :: Exp a n -> Bool
+isXLAM :: GExp l -> Bool
 isXLAM xx
  = case xx of
         XLAM{}  -> True
@@ -76,7 +76,7 @@ isXLAM xx
 
 
 -- | Check whether an expression is a value or witness abstraction (level-0).
-isXLam :: Exp a n -> Bool
+isXLam :: GExp l -> Bool
 isXLam xx
  = case xx of
         XLam{}  -> True
@@ -84,14 +84,14 @@ isXLam xx
 
 
 -- | Check whether an expression is a spec, value, or witness abstraction.
-isLambdaX :: Exp a n -> Bool
+isLambdaX :: GExp l -> Bool
 isLambdaX xx
         = isXLAM xx || isXLam xx
 
 
 -- Applications ---------------------------------------------------------------
 -- | Check whether an expression is an `XApp`.
-isXApp :: Exp a n -> Bool
+isXApp :: GExp l -> Bool
 isXApp xx
  = case xx of
         XApp{}  -> True
@@ -100,7 +100,7 @@ isXApp xx
 
 -- Let Bindings ---------------------------------------------------------------
 -- | Check whether an expression is a `XLet`.
-isXLet :: Exp a n -> Bool
+isXLet :: GExp l -> Bool
 isXLet xx
  = case xx of
         XLet{}  -> True
@@ -109,7 +109,7 @@ isXLet xx
 
 -- Type and Witness -----------------------------------------------------------
 -- | Check whether an expression is an `XType`
-isXType :: Exp a n -> Bool
+isXType :: GExp l -> Bool
 isXType xx
  = case xx of
         XType{}         -> True
@@ -117,7 +117,7 @@ isXType xx
 
 
 -- | Check whether an expression is an `XWitness`
-isXWitness :: Exp a n -> Bool
+isXWitness :: GExp l -> Bool
 isXWitness xx
  = case xx of
         XWitness{}      -> True
@@ -126,6 +126,7 @@ isXWitness xx
 
 -- Patterns -------------------------------------------------------------------
 -- | Check whether an alternative is a `PDefault`.
-isPDefault :: Pat n -> Bool
+isPDefault :: GPat l -> Bool
 isPDefault PDefault     = True
 isPDefault _            = False
+

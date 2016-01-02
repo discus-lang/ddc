@@ -36,32 +36,33 @@ import Data.Maybe
 
 
 -- Defix ----------------------------------------------------------------------
-class Defix (c :: * -> * -> *) where
+class Defix (c :: * -> *) l where
  -- | Resolve infix expressions in a thing.
- defix  :: FixTable a n
-        -> c a n
-        -> Either (Error a n) (c a n)
+ defix  :: FixTable l
+        -> c l
+        -> Either (Error l) (c l)
 
 
-instance Defix Module where
+instance Defix Module l where
  defix table mm 
   = do  tops'   <- mapM (defix table) (moduleTops mm)
         return  $ mm { moduleTops = tops' }
 
 
-instance Defix Top where
+instance Defix Top l where
  defix table tt
   = case tt of
         TopClause a c   -> liftM (TopClause a) (defix table c)
         _               -> return tt
 
 
-instance Defix Exp where
+instance Defix GExp l where
  defix table xx
   = let down = defix table
     in case xx of
         XVar{}          -> return xx
         XCon{}          -> return xx
+        XPrim{}         -> return xx
         XLAM  a b x     -> liftM  (XLAM  a b) (down x)
         XLam  a b x     -> liftM  (XLam  a b) (down x)
         XApp  a x1 x2   -> liftM2 (XApp  a)   (down x1)  (down x2)
@@ -84,7 +85,7 @@ instance Defix Exp where
                 Nothing  -> Left $ ErrorNoInfixDef a str
 
 
-instance Defix Lets where
+instance Defix GLets l where
  defix table lts
   = let down = defix table
     in case lts of
@@ -100,7 +101,7 @@ instance Defix Lets where
         LGroup cs       -> liftM LGroup (mapM down cs)
 
 
-instance Defix Clause where
+instance Defix GClause l where
  defix table cc
   = let down = defix table
     in case cc of
@@ -108,14 +109,14 @@ instance Defix Clause where
         SLet a b ps gs  -> liftM (SLet a b ps) (mapM down gs)
 
 
-instance Defix Alt where
+instance Defix GAlt l where
  defix table aa
   = let down = defix table
     in case aa of
         AAlt p x        -> liftM (AAlt p) (mapM down x)
 
 
-instance Defix GuardedExp where
+instance Defix GGuardedExp l where
  defix table gg
   = let down = defix table
     in case gg of
@@ -123,7 +124,7 @@ instance Defix GuardedExp where
         GExp x          -> liftM  GExp (down x)
 
 
-instance Defix Guard where
+instance Defix GGuard l where
  defix table gg
   = let down = defix table
     in case gg of
@@ -139,10 +140,10 @@ instance Defix Guard where
 --   and produces (f a) + (g b) with three nodes in the XDefix list.
 --
 defixApps 
-        :: a
-        -> FixTable a n
-        -> [Exp a n]
-        -> Either (Error a n) [Exp a n]
+        :: GAnnot l
+        -> FixTable l
+        -> [GExp l]
+        -> Either (Error l) [GExp l]
 
 defixApps a table xx
  = start xx
@@ -192,10 +193,10 @@ defixApps a table xx
 --   The input needs to have already been preprocessed by defixApps above.
 --
 defixExps 
-        :: a                    -- ^ Annotation from original XDefix node.
-        -> FixTable a n         -- ^ Table of infix defs.
-        -> [Exp a n]            -- ^ Body of the XDefix node.
-        -> Either (Error a n) (Exp a n)
+        :: GAnnot l             -- ^ Annotation from original XDefix node.
+        -> FixTable l           -- ^ Table of infix defs.
+        -> [GExp l]             -- ^ Body of the XDefix node.
+        -> Either (Error l) (GExp l)
 
 defixExps a table xx
  = case xx of
@@ -222,10 +223,10 @@ defixExps a table xx
 
 -- | Try to defix a sequence of expressions and XInfixOp nodes.
 defixInfix
-        :: a                    -- ^ Annotation from original XDefix node.
-        -> FixTable a n         -- ^ Table of infix defs.
-        -> [Exp a n]            -- ^ Body of the XDefix node.
-        -> Either (Error a n) (Maybe [Exp a n])
+        :: GAnnot l             -- ^ Annotation from original XDefix node.
+        -> FixTable l           -- ^ Table of infix defs.
+        -> [GExp l]             -- ^ Body of the XDefix node.
+        -> Either (Error l) (Maybe [GExp l])
 
 defixInfix a table xs
         -- Get the list of infix ops in the expression.
@@ -279,8 +280,8 @@ defixInfix_ops sp table xs spOpStrs
 
 -- | Defix some left associative ops.
 defixInfixLeft 
-        :: a -> FixTable a n -> Int 
-        -> [Exp a n] -> Either (Error a n) [Exp a n]
+        :: GAnnot l -> FixTable l -> Int 
+        -> [GExp l] -> Either (Error l) [GExp l]
 
 defixInfixLeft sp table precHigh (x1 : XInfixOp spo op : x2 : xs)
         | Just def      <- lookupDefInfixOfSymbol table op
@@ -299,8 +300,8 @@ defixInfixLeft sp _ _ xs
 --   The input expression list is reversed, so we can eat the operators left
 --   to right. However, be careful to build the App node the right way around.
 defixInfixRight
-        :: a -> FixTable a n -> Int 
-        -> [Exp a n] -> Either (Error a n) [Exp a n]
+        :: GAnnot l  -> FixTable l -> Int 
+        -> [GExp l] -> Either (Error l) [GExp l]
 
 defixInfixRight sp table precHigh (x2 : XInfixOp spo op : x1 : xs)
         | Just def      <- lookupDefInfixOfSymbol table op
@@ -317,8 +318,8 @@ defixInfixRight sp _ _ xs
 
 -- | Defix non-associative ops.
 defixInfixNone 
-        :: a -> FixTable a n -> Int
-        -> [Exp a n] -> Either (Error a n) [Exp a n]
+        :: GAnnot l -> FixTable l -> Int
+        -> [GExp l] -> Either (Error l) [GExp l]
 
 defixInfixNone sp table precHigh xx
         -- If there are two ops in a row that are non-associative and have

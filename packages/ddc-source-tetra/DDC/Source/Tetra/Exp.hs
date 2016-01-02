@@ -4,23 +4,28 @@ module DDC.Source.Tetra.Exp
         ( module DDC.Type.Exp
 
         -- * Expressions
-        , Exp           (..)
-        , Lets          (..)
-        , Alt           (..)
-        , Pat           (..)
-        , Clause        (..)
-        , GuardedExp    (..)
-        , Guard         (..)
-        , Cast          (..)
-
-        -- * Witnesses
-        , Witness       (..)
-
-        -- * Data Constructors
+        , GName         (..)
+        , GAnnot        (..)
+        , GBind         (..)
+        , GBound        (..)
+        , GPrim         (..)
+        , GExp          (..)
+        , GLets         (..)
+        , GAlt          (..)
+        , GPat          (..)
+        , GClause       (..)
+        , GGuardedExp   (..)
+        , GGuard        (..)
+        , GCast         (..)
         , DaCon         (..)
 
-        -- * Witness Constructors
-        , WiCon         (..))
+        -- * Witnesses
+        , GWitness      (..)
+        , GWiCon        (..)
+
+        -- * Dictionaries
+        , ShowLanguage
+        , NFDataLanguage)
 where
 import DDC.Type.Exp
-import DDC.Source.Tetra.Exp.Base
+import DDC.Source.Tetra.Exp.Generic

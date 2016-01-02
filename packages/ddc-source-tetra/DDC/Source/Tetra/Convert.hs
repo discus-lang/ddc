@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies #-}
 
 -- | Source Tetra conversion to Disciple Core Tetra language.
 module DDC.Source.Tetra.Convert
@@ -10,7 +11,7 @@ where
 import qualified DDC.Source.Tetra.Transform.Guards      as S
 import qualified DDC.Source.Tetra.Module                as S
 import qualified DDC.Source.Tetra.DataDef               as S
-import qualified DDC.Source.Tetra.Exp                   as S
+import qualified DDC.Source.Tetra.Exp.Annot             as S
 import qualified DDC.Source.Tetra.Prim                  as S
 
 import qualified DDC.Core.Tetra.Prim                    as C
@@ -19,19 +20,20 @@ import qualified DDC.Core.Module                        as C
 import qualified DDC.Core.Exp                           as C
 import qualified DDC.Type.DataDef                       as C
 
+import qualified DDC.Type.Exp                           as T
 import qualified DDC.Type.Sum                           as Sum
 import Data.Maybe
 
 -- Things shared between both Source and Core languages.
+{-
 import DDC.Core.Exp
-        ( Bind          (..)
-        , Bound         (..)
-        , Type          (..)
+        ( Type          (..)
         , TyCon         (..)
         , Pat           (..)
         , DaCon         (..)
         , Witness       (..)
         , WiCon         (..))
+-}
 
 import DDC.Core.Module 
         ( ExportSource  (..)
@@ -51,7 +53,7 @@ runConvertM cc = cc
 -- | Convert a Source Tetra module to Core Tetra.
 coreOfSourceModule 
         :: a 
-        -> S.Module a S.Name
+        -> S.Module (S.Annot a)
         -> Either (ErrorConvert a) (C.Module a C.Name)
 
 coreOfSourceModule a mm
@@ -70,7 +72,7 @@ coreOfSourceModule a mm
 -- 
 coreOfSourceModuleM
         :: a 
-        -> S.Module a S.Name 
+        -> S.Module (S.Annot a)
         -> ConvertM a (C.Module a C.Name)
 
 coreOfSourceModuleM a mm
@@ -125,7 +127,7 @@ coreOfSourceModuleM a mm
 
 
 -- | Extract the top-level bindings from some source definitions.
-letsOfTops :: [S.Top a S.Name] -> ConvertM a (C.Lets a C.Name)
+letsOfTops :: [S.Top (S.Annot a)] -> ConvertM a (C.Lets a C.Name)
 letsOfTops tops
  = C.LRec <$> (sequence $ mapMaybe bindOfTop tops)
 
@@ -133,8 +135,8 @@ letsOfTops tops
 -- | Try to convert a `TopBind` to a top-level binding, 
 --   or `Nothing` if it isn't one.
 bindOfTop  
-        :: S.Top a S.Name 
-        -> Maybe (ConvertM a (Bind C.Name, C.Exp a C.Name))
+        :: S.Top (S.Annot a) 
+        -> Maybe (ConvertM a (T.Bind C.Name, C.Exp a C.Name))
 
 bindOfTop (S.TopClause _ (S.SLet _ b [] [S.GExp x]))
  = Just ((,) <$> toCoreB b <*> toCoreX x)
@@ -165,51 +167,51 @@ toCoreImportValue src
 
 
 -- Type -------------------------------------------------------------------------------------------
-toCoreT :: Type S.Name -> ConvertM a (Type C.Name)
+toCoreT :: T.Type S.Name -> ConvertM a (T.Type C.Name)
 toCoreT tt
  = case tt of
-        TVar u
-         -> TVar <$> toCoreU  u
+        T.TVar u
+         -> T.TVar <$> toCoreU  u
 
-        TCon tc
-         -> TCon <$> toCoreTC tc
+        T.TCon tc
+         -> T.TCon <$> toCoreTC tc
 
-        TForall b t
-         -> TForall <$> toCoreB b  <*> toCoreT t
+        T.TForall b t
+         -> T.TForall <$> toCoreB b  <*> toCoreT t
 
-        TApp t1 t2
-         -> TApp    <$> toCoreT t1 <*> toCoreT t2
+        T.TApp t1 t2
+         -> T.TApp    <$> toCoreT t1 <*> toCoreT t2
 
-        TSum ts
+        T.TSum ts
          -> do  k'      <- toCoreT $ Sum.kindOfSum ts
 
                 tss'    <- fmap (Sum.fromList k') 
                         $  sequence $ fmap toCoreT $ Sum.toList ts
 
-                return  $ TSum tss'
+                return  $ T.TSum tss'
 
 
 -- TyCon ------------------------------------------------------------------------------------------
-toCoreTC :: TyCon S.Name -> ConvertM a (TyCon C.Name)
+toCoreTC :: T.TyCon S.Name -> ConvertM a (T.TyCon C.Name)
 toCoreTC tc
  = case tc of
-        TyConSort sc    
-         -> pure $ TyConSort sc
+        T.TyConSort sc    
+         -> pure $ T.TyConSort sc
 
-        TyConKind kc
-         -> pure $ TyConKind kc
+        T.TyConKind kc
+         -> pure $ T.TyConKind kc
 
-        TyConWitness wc
-         -> pure $ TyConWitness wc
+        T.TyConWitness wc
+         -> pure $ T.TyConWitness wc
 
-        TyConSpec sc
-         -> pure $ TyConSpec sc
+        T.TyConSpec sc
+         -> pure $ T.TyConSpec sc
 
-        TyConBound u k
-         -> TyConBound  <$> toCoreU u <*> toCoreT k
+        T.TyConBound u k
+         -> T.TyConBound  <$> toCoreU u <*> toCoreT k
 
-        TyConExists n k
-         -> TyConExists <$> pure n    <*> toCoreT k
+        T.TyConExists n k
+         -> T.TyConExists <$> pure n    <*> toCoreT k
 
 
 -- DataDef ----------------------------------------------------------------------------------------
@@ -252,7 +254,7 @@ toCoreDataCtor dataDef tag ctor
 
 
 -- Exp --------------------------------------------------------------------------------------------
-toCoreX :: S.Exp a S.Name -> ConvertM a (C.Exp a C.Name)
+toCoreX :: S.Exp a -> ConvertM a (C.Exp a C.Name)
 toCoreX xx
  = case xx of
         S.XVar a u      
@@ -264,6 +266,9 @@ toCoreX xx
          -> C.XApp  <$> pure a 
                     <*> (C.XVar <$> pure a <*> (pure $ C.UName (C.NameVar "textLit")))
                     <*> (C.XCon <$> pure a <*> (toCoreDC dc))
+
+        S.XPrim a u
+         -> C.XVar  <$> pure a <*> toCoreU u
 
         S.XCon a dc
          -> C.XCon  <$> pure a <*> toCoreDC dc
@@ -299,7 +304,7 @@ toCoreX xx
 
 
 -- Lets -------------------------------------------------------------------------------------------
-toCoreLts :: S.Lets a S.Name -> ConvertM a (C.Lets a C.Name)
+toCoreLts :: S.Lets a -> ConvertM a (C.Lets a C.Name)
 toCoreLts lts
  = case lts of
         S.LLet b x
@@ -323,7 +328,7 @@ toCoreLts lts
 
 
 -- Cast -------------------------------------------------------------------------------------------
-toCoreC :: S.Cast a S.Name -> ConvertM a (C.Cast a C.Name)
+toCoreC :: S.Cast a -> ConvertM a (C.Cast a C.Name)
 toCoreC cc
  = case cc of
         S.CastWeakenEffect eff
@@ -340,7 +345,7 @@ toCoreC cc
 
 
 -- Alt --------------------------------------------------------------------------------------------
-toCoreA  :: a -> S.Alt a S.Name -> ConvertM a (C.Alt a C.Name)
+toCoreA  :: a -> S.Alt a -> ConvertM a (C.Alt a C.Name)
 toCoreA a (S.AAlt w gxs)
  = C.AAlt <$> toCoreP w
           <*> (toCoreX (S.desugarGuards a gxs (error "toCoreA alt fail")))
@@ -348,32 +353,32 @@ toCoreA a (S.AAlt w gxs)
 
 
 -- Pat --------------------------------------------------------------------------------------------
-toCoreP  :: Pat S.Name -> ConvertM a (Pat C.Name)
+toCoreP  :: S.Pat a -> ConvertM a (C.Pat C.Name)
 toCoreP pp
  = case pp of
-        PDefault        
-         -> pure PDefault
+        S.PDefault        
+         -> pure C.PDefault
         
-        PData dc bs
-         -> PData <$> toCoreDC dc <*> (sequence $ fmap toCoreB bs)
+        S.PData dc bs
+         -> C.PData <$> toCoreDC dc <*> (sequence $ fmap toCoreB bs)
 
 
 -- DaCon ------------------------------------------------------------------------------------------
-toCoreDC :: DaCon S.Name -> ConvertM a (DaCon C.Name)
+toCoreDC :: S.DaCon S.Name -> ConvertM a (C.DaCon C.Name)
 toCoreDC dc
  = case dc of
-        DaConUnit
-         -> pure $ DaConUnit
+        S.DaConUnit
+         -> pure $ C.DaConUnit
 
-        DaConPrim n t 
-         -> DaConPrim  <$> (pure $ toCoreN n) <*> toCoreT t
+        S.DaConPrim n t 
+         -> C.DaConPrim  <$> (pure $ toCoreN n) <*> toCoreT t
 
-        DaConBound n
-         -> DaConBound <$> (pure $ toCoreN n)
+        S.DaConBound n
+         -> C.DaConBound <$> (pure $ toCoreN n)
 
 
 -- Witness ----------------------------------------------------------------------------------------
-toCoreW :: Witness a S.Name -> ConvertM a (Witness a C.Name)
+toCoreW :: S.Witness a -> ConvertM a (C.Witness a C.Name)
 toCoreW ww
  = case ww of
         S.WVar a u
@@ -390,39 +395,39 @@ toCoreW ww
 
 
 -- WiCon ------------------------------------------------------------------------------------------
-toCoreWC :: WiCon S.Name -> ConvertM a (WiCon C.Name)
+toCoreWC :: S.WiCon a -> ConvertM a (C.WiCon C.Name)
 toCoreWC wc
  = case wc of
-        WiConBound u t
-         -> WiConBound <$> toCoreU u <*> toCoreT t
+        S.WiConBound u t
+         -> C.WiConBound <$> toCoreU u <*> toCoreT t
 
 
 -- Bind -------------------------------------------------------------------------------------------
-toCoreB :: Bind S.Name -> ConvertM a (Bind C.Name)
+toCoreB :: S.Bind -> ConvertM a (C.Bind C.Name)
 toCoreB bb
  = case bb of
-        BName n t
-         -> BName <$> (pure $ toCoreN n) <*> toCoreT t
+        T.BName n t
+         -> T.BName <$> (pure $ toCoreN n) <*> toCoreT t
 
-        BAnon t
-         -> BAnon <$> toCoreT t
+        T.BAnon t
+         -> T.BAnon <$> toCoreT t
 
-        BNone t
-         -> BNone <$> toCoreT t
+        T.BNone t
+         -> T.BNone <$> toCoreT t
 
 
 -- Bound ------------------------------------------------------------------------------------------
-toCoreU :: Bound S.Name -> ConvertM a (Bound C.Name)
+toCoreU :: S.Bound -> ConvertM a (C.Bound C.Name)
 toCoreU uu
  = case uu of
-        UName n
-         -> UName <$> (pure $ toCoreN n)
+        T.UName n
+         -> T.UName <$> (pure $ toCoreN n)
 
-        UIx   i
-         -> UIx   <$> (pure i)
+        T.UIx   i
+         -> T.UIx   <$> (pure i)
 
-        UPrim n t
-         -> UPrim <$> (pure $ toCoreN n) <*> toCoreT t
+        T.UPrim n t
+         -> T.UPrim <$> (pure $ toCoreN n) <*> toCoreT t
 
 
 -- Name -------------------------------------------------------------------------------------------
@@ -461,8 +466,8 @@ toCoreTyConTetra tc
 -- Error ------------------------------------------------------------------------------------------
 data ErrorConvert a
         -- | Cannot convert sugar expression to core.
-        = ErrorConvertCannotConvertSugarExp  (S.Exp a S.Name)
+        = ErrorConvertCannotConvertSugarExp  (S.Exp a)
 
         -- | Cannot convert sugar let bindings to core.
-        | ErrorConvertCannotConvertSugarLets (S.Lets a S.Name)
+        | ErrorConvertCannotConvertSugarLets (S.Lets a)
 

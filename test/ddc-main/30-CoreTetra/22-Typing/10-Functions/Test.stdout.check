@@ -69,7 +69,7 @@ letrec {
 When checking expression.
   <batch>:57:2
   Missing type annotation on function parameter.
-               With paramter: x : Bot
+               With paramter: x
   
   with: \(x : Bot). x
 

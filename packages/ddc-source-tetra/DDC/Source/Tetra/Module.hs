@@ -1,3 +1,4 @@
+{-# LANGUAGE UndecidableInstances #-}
 
 -- | Definition of Source Tetra modules.
 module DDC.Source.Tetra.Module
@@ -33,35 +34,36 @@ import DDC.Core.Module
         
 
 -- Module ---------------------------------------------------------------------
-data Module a n
+data Module l
         = Module
         { -- | Name of this module
           moduleName            :: !ModuleName
 
           -- Exports ----------------------------
           -- | Names of exported types  (level-1).
-        , moduleExportTypes     :: [n]
+        , moduleExportTypes     :: [GName l]
 
           -- | Names of exported values (level-0).
-        , moduleExportValues    :: [n]
+        , moduleExportValues    :: [GName l]
 
           -- Imports ----------------------------
           -- | Imported modules.
         , moduleImportModules   :: [ModuleName]
 
           -- | Kinds of imported foreign types.
-        , moduleImportTypes     :: [(n, ImportType   n)]
+        , moduleImportTypes     :: [(GName l, ImportType  (GName l))]
 
           -- | Types of imported foreign values.
-        , moduleImportValues    :: [(n, ImportValue  n)]
+        , moduleImportValues    :: [(GName l, ImportValue (GName l))]
 
           -- Local ------------------------------
           -- | Top-level things
-        , moduleTops            :: [Top a n] }
-        deriving Show
+        , moduleTops            :: [Top l] }
+
+deriving instance ShowLanguage l => Show (Module l)
 
 
-instance (NFData a, NFData n) => NFData (Module a n) where
+instance NFDataLanguage l => NFData (Module l) where
  rnf !mm
         =     rnf (moduleName mm)
         `seq` rnf (moduleExportTypes   mm)
@@ -73,26 +75,26 @@ instance (NFData a, NFData n) => NFData (Module a n) where
         
 
 -- | Check if this is the `Main` module.
-isMainModule :: Module a n -> Bool
+isMainModule :: Module l -> Bool
 isMainModule mm
         = isMainModuleName $ moduleName mm
 
 
 -- Top Level Thing ------------------------------------------------------------
-data Top a n
+data Top l
         -- | Some top-level, possibly recursive clauses.
         = TopClause  
-        { topAnnot      :: a
-        , topClause     :: Clause a n }
+        { topAnnot      :: GAnnot l
+        , topClause     :: GClause l }
 
         -- | Data type definition.
         | TopData 
-        { topAnnot      :: a
-        , topDataDef    :: DataDef n }
-        deriving Show
+        { topAnnot      :: GAnnot l
+        , topDataDef    :: DataDef (GName l) }
 
+deriving instance ShowLanguage l => Show (Top l)
 
-instance (NFData a, NFData n) => NFData (Top a n) where
+instance NFDataLanguage l => NFData (Top l) where
  rnf !top
   = case top of
         TopClause a c   -> rnf a `seq` rnf c

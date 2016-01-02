@@ -1,4 +1,4 @@
-
+{-# LANGUAGE TypeFamilies #-}
 module DDCI.Tetra.Command.Infer
         (cmdInfer)
 where

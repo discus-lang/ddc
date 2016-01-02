@@ -13,10 +13,13 @@ import qualified DDC.Type.Sum           as Sum
 instance (Pretty n, Eq n) => Pretty (Bind n) where
  ppr bb
   = case bb of
-        BName v t       -> ppr v     <+> text ":" <+> ppr t
-        BAnon   t       -> text "^"  <+> text ":" <+> ppr t
-        BNone   t       -> text "_"  <+> text ":" <+> ppr t
+        BName v t       -> ppr v     <> pprT t
+        BAnon   t       -> text "^"  <> pprT t
+        BNone   t       -> text "_"  <> pprT t
 
+  where pprT t
+         | isBot t      = empty
+         | otherwise    = text " : " <> ppr t 
 
 -- Binder ---------------------------------------------------------------------
 instance Pretty n => Pretty (Binder n) where

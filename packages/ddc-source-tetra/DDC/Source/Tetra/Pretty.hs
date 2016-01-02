@@ -1,10 +1,11 @@
+{-# LANGUAGE TypeFamilies, UndecidableInstances #-}
 
 -- | Pretty printing for Tetra modules and expressions.
 module DDC.Source.Tetra.Pretty
         ( module DDC.Core.Pretty
-        , module DDC.Base.Pretty )
+        , module DDC.Base.Pretty 
+        , PrettyLanguage        (..))
 where
-import DDC.Source.Tetra.Compounds
 import DDC.Source.Tetra.Predicates
 import DDC.Source.Tetra.DataDef
 import DDC.Source.Tetra.Module
@@ -14,8 +15,14 @@ import DDC.Base.Pretty
 import Prelude                  hiding ((<$>))
 
 
+type PrettyLanguage l 
+        = ( Eq     (GName l)
+          , Pretty (GAnnot l), Pretty (GName l)
+          , Pretty (GBound l), Pretty (GBind l), Pretty (GPrim l))
+
+
 -- Module -----------------------------------------------------------------------------------------
-instance (Pretty n, Eq n) => Pretty (Module a n) where
+instance PrettyLanguage l => Pretty (Module l) where
  ppr Module
         { moduleName            = name
         , moduleExportTypes     = _exportedTypes
@@ -48,7 +55,7 @@ instance (Pretty n, Eq n) => Pretty (Module a n) where
 
 
 -- Top --------------------------------------------------------------------------------------------
-instance (Pretty n, Eq n) => Pretty (Top a n) where
+instance PrettyLanguage l => Pretty (Top l) where
  ppr (TopClause _ c) = ppr c
 
  ppr (TopData _ (DataDef name params ctors))
@@ -70,29 +77,26 @@ instance (Pretty n, Eq n) => Pretty (Top a n) where
 
 
 -- Exp --------------------------------------------------------------------------------------------
-instance (Pretty n, Eq n) => Pretty (Exp a n) where
+instance PrettyLanguage l => Pretty (GExp l) where
  pprPrec d xx
   = {-# SCC "ppr[Exp]" #-}
     case xx of
         XVar  _ u       -> ppr u
         XCon  _ dc      -> ppr dc
+        XPrim _ u       -> ppr u
         
-        XLAM{}
-         -> let Just (bs, xBody) = takeXLAMs xx
-                groups = partitionBindsByType bs
-            in  pprParen' (d > 1)
-                 $  (cat $ map (pprBinderGroup (text "/\\")) groups)
+        XLAM _ b xBody
+         -> pprParen' (d > 1)
+                 $   text "/\\" <>  ppr b <> text "."
                  <>  (if      isXLAM    xBody then empty
                       else if isXLam    xBody then line <> space
                       else if isSimpleX xBody then space
                       else    line)
                  <>  ppr xBody
 
-        XLam{}
-         -> let Just (bs, xBody) = takeXLams xx
-                groups = partitionBindsByType bs
-            in  pprParen' (d > 1)
-                 $  (cat $ map (pprBinderGroup (text "\\")) groups) 
+        XLam _ b xBody
+         -> pprParen' (d > 1)
+                 $  text "\\" <> ppr b <> text "."
                  <> breakWhen (not $ isSimpleX xBody)
                  <> ppr xBody
 
@@ -141,22 +145,17 @@ instance (Pretty n, Eq n) => Pretty (Exp a n) where
 
 
 -- Lets -------------------------------------------------------------------------------------------
-instance (Pretty n, Eq n) => Pretty (Lets a n) where
+instance PrettyLanguage l => Pretty (GLets l) where
  ppr lts
   = case lts of
         LLet b x
-         -> let dBind = if isBot (typeOfBind b)
-                          then ppr (binderOfBind b)
-                          else ppr b
-            in  text "let"
-                 <+> align (  dBind
+         -> text "let"
+                 <+> align (  ppr b
                            <> nest 2 ( breakWhen (not $ isSimpleX x)
                                      <> text "=" <+> align (ppr x)))
         LRec bxs
          -> let pprLetRecBind (b, x)
-                 =   ppr (binderOfBind b)
-                 <+> text ":"
-                 <+> ppr (typeOfBind b)
+                 =   ppr b
                  <>  nest 2 (  breakWhen (not $ isSimpleX x)
                             <> text "=" <+> align (ppr x))
         
@@ -169,11 +168,11 @@ instance (Pretty n, Eq n) => Pretty (Lets a n) where
 
         LPrivate bs Nothing []
          -> text "private"
-                <+> (hcat $ punctuate space (map (ppr . binderOfBind) bs))
+                <+> (hcat $ punctuate space (map ppr bs))
         
         LPrivate bs Nothing bsWit
          -> text "private"
-                <+> (hcat $ punctuate space (map (ppr . binderOfBind) bs))
+                <+> (hcat $ punctuate space (map ppr bs))
                 <+> text "with"
                 <+> braces (cat $ punctuate (text "; ") $ map ppr bsWit)
 
@@ -181,13 +180,13 @@ instance (Pretty n, Eq n) => Pretty (Lets a n) where
          -> text "extend"
                 <+> ppr parent
                 <+> text "using"
-                <+> (hcat $ punctuate space (map (ppr . binderOfBind) bs))
+                <+> (hcat $ punctuate space (map ppr bs))
 
         LPrivate bs (Just parent) bsWit
          -> text "extend"
                 <+> ppr parent
                 <+> text "using"
-                <+> (hcat $ punctuate space (map (ppr . binderOfBind) bs))
+                <+> (hcat $ punctuate space (map ppr bs))
                 <+> text "with"
                 <+> braces (cat $ punctuate (text "; ") $ map ppr bsWit)
 
@@ -196,36 +195,36 @@ instance (Pretty n, Eq n) => Pretty (Lets a n) where
 
 
 -- Clause -----------------------------------------------------------------------------------------
-instance (Pretty n, Eq n) => Pretty (Clause a n) where
+instance PrettyLanguage l => Pretty (GClause l) where
  ppr (SSig _ b t)
   = ppr b <+> text ":" <+> ppr t
 
  ppr (SLet _ b ps [GExp x])
-  = let dBind   = if isBot (typeOfBind b)
-                        then ppr (binderOfBind b)
-                        else ppr b
-
-    in  dBind   <+> hsep (map ppr ps) 
+  = ppr b       <+> hsep (map ppr ps) 
                 <>  nest 2 ( breakWhen (not $ isSimpleX x)
                            <> text "=" <+> align (ppr x))
 
  ppr (SLet _ b ps gxs)
-  = let dBind   = if isBot (typeOfBind b)
-                        then ppr (binderOfBind b)
-                        else ppr b
-
-    in  dBind   <+> hsep (map ppr ps) 
+  = ppr b       <+> hsep (map ppr ps) 
                 <>  nest 2 (line <> vcat (map (pprGuardedExp "=") gxs))
 
 
 -- Alt --------------------------------------------------------------------------------------------
-instance (Pretty n, Eq n) => Pretty (Alt a n) where
+instance PrettyLanguage l => Pretty (GAlt l) where
  ppr (AAlt p gxs)
   =  ppr p <> nest 2 (line <> vcat (map (pprGuardedExp "->") gxs))
 
 
+-- Pat --------------------------------------------------------------------------------------------
+instance PrettyLanguage l => Pretty (GPat l) where
+ ppr pp
+  = case pp of
+        PDefault        -> text "_"
+        PData u bs      -> ppr u <+> sep (map ppr bs)
+
+
 -- GuardedExp -------------------------------------------------------------------------------------
-pprGuardedExp :: (Pretty n, Eq n) => String -> GuardedExp a n -> Doc
+pprGuardedExp :: PrettyLanguage l => String -> GGuardedExp l -> Doc
 pprGuardedExp sTerm gx
   = pprGs "|" gx
   where
@@ -246,11 +245,11 @@ pprGuardedExp sTerm gx
         
 
 -- Guard ------------------------------------------------------------------------------------------
-instance (Pretty n, Eq n) => Pretty (Guard a n) where
+instance PrettyLanguage l => Pretty (GGuard l) where
 
 
 -- Cast -------------------------------------------------------------------------------------------
-instance (Pretty n, Eq n) => Pretty (Cast a n) where
+instance PrettyLanguage l => Pretty (GCast l) where
  ppr cc
   = case cc of
         CastWeakenEffect  eff -> text "weakeff" <+> brackets (ppr eff)
@@ -259,22 +258,20 @@ instance (Pretty n, Eq n) => Pretty (Cast a n) where
         CastRun         -> text "run"
 
 
--- Binder -----------------------------------------------------------------------------------------
-pprBinder   :: Pretty n => Binder n -> Doc
-pprBinder bb
- = case bb of
-        RName v         -> ppr v
-        RAnon           -> text "^"
-        RNone           -> text "_"
+-- Witness ----------------------------------------------------------------------------------------
+instance PrettyLanguage l => Pretty (GWitness l) where
+ pprPrec d ww
+  = case ww of
+        WVar _ n        -> ppr n
+        WCon _ wc       -> ppr wc
+        WApp _ w1 w2    -> pprParen (d > 10) (ppr w1 <+> pprPrec 11 w2)
+        WType _ t       -> text "[" <> ppr t <> text "]"
 
 
--- | Print a group of binders with the same type.
-pprBinderGroup 
-        :: (Pretty n, Eq n) 
-        => Doc -> ([Binder n], Type n) -> Doc
-
-pprBinderGroup lam (rs, t)
-        = lam <> parens ((hsep $ map pprBinder rs) <+> text ":" <+> ppr t) <> dot
+instance PrettyLanguage l => Pretty (GWiCon l) where
+ ppr wc
+  = case wc of
+        WiConBound   u  _ -> ppr u
 
 
 -- Utils ------------------------------------------------------------------------------------------
@@ -283,7 +280,7 @@ breakWhen True   = line
 breakWhen False  = space
 
 
-isSimpleX :: Exp a n -> Bool
+isSimpleX :: GExp l -> Bool
 isSimpleX xx
  = case xx of
         XVar{}          -> True
