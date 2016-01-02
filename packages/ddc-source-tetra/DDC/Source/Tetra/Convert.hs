@@ -437,7 +437,8 @@ toCoreN nn
         S.NameVar        str -> C.NameVar        str
         S.NameCon        str -> C.NameCon        str
 
-        S.NameTyConTetra tc  -> C.NameTyConTetra (toCoreTyConTetra tc)
+        S.NamePrimTyConTetra tc  
+         -> C.NameTyConTetra (toCoreTyConTetra tc)
 
         S.NameOpFun      tc  -> C.NameOpFun      tc
         S.NamePrimTyCon  p   -> C.NamePrimTyCon  p
@@ -454,13 +455,13 @@ toCoreN nn
 
 
 -- | Convert a Tetra specific type constructor to core.
-toCoreTyConTetra :: S.TyConTetra -> C.TyConTetra
+toCoreTyConTetra :: S.PrimTyConTetra -> C.TyConTetra
 toCoreTyConTetra tc
  = case tc of
-        S.TyConTetraTuple n  -> C.TyConTetraTuple n
-        S.TyConTetraF        -> C.TyConTetraF
-        S.TyConTetraC        -> C.TyConTetraC
-        S.TyConTetraU        -> C.TyConTetraU
+        S.PrimTyConTetraTuple n  -> C.TyConTetraTuple n
+        S.PrimTyConTetraF        -> C.TyConTetraF
+        S.PrimTyConTetraC        -> C.TyConTetraC
+        S.PrimTyConTetraU        -> C.TyConTetraU
 
 
 -- Error ------------------------------------------------------------------------------------------

@@ -32,8 +32,8 @@ module DDC.Source.Tetra.Prim
         , readName
 
         -- * Tetra names.
-        , TyConTetra    (..)
-        , kindTyConTetra)
+        , PrimTyConTetra(..)
+        , kindPrimTyConTetra)
 where
 import DDC.Source.Tetra.Prim.Base
 import DDC.Source.Tetra.Prim.TyConPrim
@@ -64,7 +64,7 @@ instance NFData Name where
         NameVar s               -> rnf s
         NameCon s               -> rnf s
 
-        NameTyConTetra p        -> rnf p
+        NamePrimTyConTetra p    -> rnf p
         NameOpFun      p        -> rnf p
         NamePrimTyCon  p        -> rnf p
         NamePrimArith  p        -> rnf p
@@ -80,7 +80,7 @@ instance Pretty Name where
         NameVar  v              -> text v
         NameCon  c              -> text c
 
-        NameTyConTetra p        -> ppr p
+        NamePrimTyConTetra p    -> ppr p
         NameOpFun      p        -> ppr p
         NamePrimTyCon  p        -> ppr p
         NamePrimArith  p        -> ppr p
@@ -94,8 +94,8 @@ instance Pretty Name where
 readName :: String -> Maybe Name
 readName str
         -- Baked-in names
-        | Just p <- readTyConTetra str  
-        = Just $ NameTyConTetra p
+        | Just p <- readPrimTyConTetra str  
+        = Just $ NamePrimTyConTetra p
 
         | Just p <- readOpFun str
         = Just $ NameOpFun     p

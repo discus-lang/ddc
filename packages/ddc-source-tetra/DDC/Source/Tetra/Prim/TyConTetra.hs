@@ -1,8 +1,8 @@
 
 -- | Definitions of primitive type constructors for Source Tetra language.
 module DDC.Source.Tetra.Prim.TyConTetra
-        ( kindTyConTetra
-        , readTyConTetra
+        ( kindPrimTyConTetra
+        , readPrimTyConTetra
         , tFunValue
         , tCloValue)
 where
@@ -15,54 +15,54 @@ import Data.List
 import Control.DeepSeq
 
 
-instance NFData TyConTetra where
+instance NFData PrimTyConTetra where
  rnf !_ = ()
 
 
-instance Pretty TyConTetra where
+instance Pretty PrimTyConTetra where
  ppr tc
   = case tc of
-        TyConTetraTuple n       -> text "Tuple" <> int n
-        TyConTetraF             -> text "F#"
-        TyConTetraC             -> text "C#"
-        TyConTetraU             -> text "U#"
+        PrimTyConTetraTuple n   -> text "Tuple" <> int n
+        PrimTyConTetraF         -> text "F#"
+        PrimTyConTetraC         -> text "C#"
+        PrimTyConTetraU         -> text "U#"
 
 
 -- | Read the name of a baked-in type constructor.
-readTyConTetra :: String -> Maybe TyConTetra
-readTyConTetra str
+readPrimTyConTetra :: String -> Maybe PrimTyConTetra
+readPrimTyConTetra str
         | Just rest     <- stripPrefix "Tuple" str
         , (ds, "")      <- span isDigit rest
         , not $ null ds
         , arity         <- read ds
-        = Just $ TyConTetraTuple arity
+        = Just $ PrimTyConTetraTuple arity
 
         | otherwise
         = case str of
-                "F#"            -> Just TyConTetraF
-                "C#"            -> Just TyConTetraC
-                "U#"            -> Just TyConTetraU
+                "F#"            -> Just PrimTyConTetraF
+                "C#"            -> Just PrimTyConTetraC
+                "U#"            -> Just PrimTyConTetraU
                 _               -> Nothing
 
 
 -- | Take the kind of a baked-in data constructor.
-kindTyConTetra :: TyConTetra -> Type Name
-kindTyConTetra tc
+kindPrimTyConTetra :: PrimTyConTetra -> Type Name
+kindPrimTyConTetra tc
  = case tc of
-        TyConTetraTuple n -> foldr kFun kData (replicate n kData)
-        TyConTetraF       -> kData `kFun` kData
-        TyConTetraC       -> kData `kFun` kData
-        TyConTetraU       -> kData `kFun` kData
+        PrimTyConTetraTuple n   -> foldr kFun kData (replicate n kData)
+        PrimTyConTetraF         -> kData `kFun` kData
+        PrimTyConTetraC         -> kData `kFun` kData
+        PrimTyConTetraU         -> kData `kFun` kData
 
 
 -- Compounds ------------------------------------------------------------------
 tFunValue :: Type Name -> Type Name
 tFunValue tA
- = tApps (TCon (TyConBound (UPrim (NameTyConTetra TyConTetraF) k) k)) [tA]
+ = tApps (TCon (TyConBound (UPrim (NamePrimTyConTetra PrimTyConTetraF) k) k)) [tA]
  where k = kData `kFun` kData
 
 
 tCloValue :: Type Name -> Type Name
 tCloValue tA
- = tApps (TCon (TyConBound (UPrim (NameTyConTetra TyConTetraC) k) k)) [tA]
+ = tApps (TCon (TyConBound (UPrim (NamePrimTyConTetra PrimTyConTetraC) k) k)) [tA]
  where k = kData `kFun` kData

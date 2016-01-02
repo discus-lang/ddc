@@ -2,7 +2,7 @@
 -- | Definition of names used in Source Tetra language.
 module DDC.Source.Tetra.Prim.Base
         ( Name          (..)
-        , TyConTetra    (..)
+        , PrimTyConTetra(..)
         , OpFun         (..)
         , PrimTyCon     (..)
         , PrimArith     (..)
@@ -27,6 +27,7 @@ import DDC.Core.Tetra
 import Data.Text        (Text)
 
 
+---------------------------------------------------------------------------------------------------
 -- | Names of things used in Disciple Source Tetra.
 data Name
         -- | A user defined variable.
@@ -37,7 +38,7 @@ data Name
 
         -- Baked in things ----------------------
         -- | Baked in data type constructors.
-        | NameTyConTetra        TyConTetra
+        | NamePrimTyConTetra    PrimTyConTetra
 
         -- | Baked in functional operators.
         | NameOpFun             OpFun
@@ -58,24 +59,24 @@ data Name
         deriving (Eq, Ord, Show)
 
 
--- TyConTetra ----------------------------------------------------------------
--- | Baked-in type constructors.
-data TyConTetra
+---------------------------------------------------------------------------------------------------
+-- | Primitive type constructors specific to the Tetra language fragment.
+data PrimTyConTetra
         -- | @TupleN#@. Tuples.
-        = TyConTetraTuple Int
+        = PrimTyConTetraTuple Int
         
         -- | @F#@.       Reified function values.
-        | TyConTetraF
+        | PrimTyConTetraF
 
         -- | @C#@.       Reified function closures.
-        | TyConTetraC
+        | PrimTyConTetraC
 
         -- | @U#@.       Explicitly unboxed values.
-        | TyConTetraU
+        | PrimTyConTetraU
         deriving (Eq, Ord, Show)
 
 
--- PrimVal --------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | Primitive values.
 data PrimVal
         = PrimValLit    !PrimLit
@@ -85,7 +86,7 @@ data PrimVal
 pattern NamePrimLit lit = NamePrimVal (PrimValLit lit)
 
 
--- PrimLit --------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 data PrimLit
         -- | A boolean literal.
         = PrimLitBool           Bool
