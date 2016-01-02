@@ -58,11 +58,11 @@ kindPrimTyConTetra tc
 -- Compounds ------------------------------------------------------------------
 tFunValue :: Type Name -> Type Name
 tFunValue tA
- = tApps (TCon (TyConBound (UPrim (NamePrimTyConTetra PrimTyConTetraF) k) k)) [tA]
+ = tApps (TCon (TyConBound (UPrim (NameTyConTetra PrimTyConTetraF) k) k)) [tA]
  where k = kData `kFun` kData
 
 
 tCloValue :: Type Name -> Type Name
 tCloValue tA
- = tApps (TCon (TyConBound (UPrim (NamePrimTyConTetra PrimTyConTetraC) k) k)) [tA]
+ = tApps (TCon (TyConBound (UPrim (NameTyConTetra PrimTyConTetraC) k) k)) [tA]
  where k = kData `kFun` kData

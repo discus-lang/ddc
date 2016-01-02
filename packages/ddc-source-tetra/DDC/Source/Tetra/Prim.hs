@@ -1,9 +1,20 @@
 
 -- | Definitions of Source Tetra primitive names and operators.
 module DDC.Source.Tetra.Prim
-        ( Name          (..)
+        ( -- * Names
+          Name          (..)
 
-        -- * Primite type constructors.
+          -- * Primitive Names
+        , PrimName      (..)
+        , pattern NameType
+        , pattern NameVal
+
+          -- * Primitive Types
+        , PrimType      (..)
+        , pattern NameTyCon
+        , pattern NameTyConTetra
+
+          -- ** Primitive machine type constructors.
         , PrimTyCon     (..)
         , kindPrimTyCon
         , tBool
@@ -12,11 +23,29 @@ module DDC.Source.Tetra.Prim
         , tWord
         , tTextLit
 
-        -- * Primitive values
-        , PrimVal (..)
-        , pattern NamePrimLit
+          -- ** Primitive tetra type constructors.
+        , PrimTyConTetra(..)
+        , pattern NameTyConTetraTuple
+        , pattern NameTyConTetraF
+        , pattern NameTyConTetraC
+        , pattern NameTyConTetraU
+        , kindPrimTyConTetra
 
-        -- * Primitive literals
+          -- * Primitive values
+        , PrimVal (..)
+        , pattern NameLit
+        , pattern NameArith
+        , pattern NameFun
+
+          -- ** Primitive arithmetic operators.
+        , PrimArith     (..)
+        , typePrimArith
+        , readName
+
+          -- ** Primitive function operators.
+        , OpFun         (..)
+
+          -- ** Primitive literals
         , PrimLit (..)
         , pattern NameLitBool
         , pattern NameLitNat
@@ -24,16 +53,7 @@ module DDC.Source.Tetra.Prim
         , pattern NameLitSize
         , pattern NameLitWord
         , pattern NameLitFloat
-        , pattern NameLitTextLit
-
-        -- * Arithmetic operators.
-        , PrimArith     (..)
-        , typePrimArith
-        , readName
-
-        -- * Tetra names.
-        , PrimTyConTetra(..)
-        , kindPrimTyConTetra)
+        , pattern NameLitTextLit)
 where
 import DDC.Source.Tetra.Prim.Base
 import DDC.Source.Tetra.Prim.TyConPrim
@@ -58,57 +78,31 @@ import DDC.Core.Salt.Name
         , readLitFloatOfBits)
 
 
-instance NFData Name where
- rnf nn
-  = case nn of
-        NameVar s               -> rnf s
-        NameCon s               -> rnf s
-
-        NamePrimTyConTetra p    -> rnf p
-        NameOpFun      p        -> rnf p
-        NamePrimTyCon  p        -> rnf p
-        NamePrimArith  p        -> rnf p
-
-        NamePrimVal    v        -> rnf v
-
-        NameHole                -> ()
-
-
+---------------------------------------------------------------------------------------------------
 instance Pretty Name where
  ppr nn
   = case nn of
         NameVar  v              -> text v
         NameCon  c              -> text c
-
-        NamePrimTyConTetra p    -> ppr p
-        NameOpFun      p        -> ppr p
-        NamePrimTyCon  p        -> ppr p
-        NamePrimArith  p        -> ppr p
-
-        NamePrimVal    v        -> ppr v
-
+        NamePrim p              -> ppr p
         NameHole                -> text "?"
+
+
+instance NFData Name where
+ rnf nn
+  = case nn of
+        NameVar s               -> rnf s
+        NameCon s               -> rnf s
+        NamePrim p              -> rnf p
+        NameHole                -> ()
 
 
 -- | Read the name of a variable, constructor or literal.
 readName :: String -> Maybe Name
 readName str
-        -- Baked-in names
-        | Just p <- readPrimTyConTetra str  
-        = Just $ NamePrimTyConTetra p
-
-        | Just p <- readOpFun str
-        = Just $ NameOpFun     p
-
         -- Primitive names.
-        | Just p <- readPrimTyCon str  
-        = Just $ NamePrimTyCon p
-
-        | Just p <- readPrimArith str  
-        = Just $ NamePrimArith p
-
-        | Just v <- readPrimVal str
-        = Just $ NamePrimVal   v
+        | Just n        <- readPrimName str
+        = Just $ NamePrim n
 
         -- Constructors.
         | c : _         <- str
@@ -125,16 +119,75 @@ readName str
 
 
 ---------------------------------------------------------------------------------------------------
+instance Pretty PrimName where
+ ppr nn
+  = case nn of
+        PrimNameType p          -> ppr p
+        PrimNameVal p           -> ppr p
+
+
+instance NFData PrimName where
+ rnf nn
+  = case nn of
+        PrimNameType p          -> rnf p
+        PrimNameVal p           -> rnf p
+
+
+readPrimName :: String -> Maybe PrimName
+readPrimName str
+        | Just t <- readPrimType str
+        = Just $ PrimNameType t
+
+        | Just v <- readPrimVal str
+        = Just $ PrimNameVal  v
+
+        | otherwise
+        = Nothing
+
+
+---------------------------------------------------------------------------------------------------
+instance Pretty PrimType where
+ ppr t
+  = case t of
+        PrimTypeTyConTetra p    -> ppr p
+        PrimTypeTyCon  p        -> ppr p
+
+
+instance NFData PrimType where
+ rnf t
+  = case t of
+        PrimTypeTyConTetra p    -> rnf p
+        PrimTypeTyCon p         -> rnf p
+
+
+-- | Read the name of a primitive type.
+readPrimType :: String -> Maybe PrimType
+readPrimType str
+        | Just p <- readPrimTyConTetra str  
+        = Just $ PrimTypeTyConTetra p
+
+        | Just p <- readPrimTyCon str  
+        = Just $ PrimTypeTyCon p
+
+        | otherwise
+        = Nothing
+
+
+---------------------------------------------------------------------------------------------------
 instance Pretty PrimVal where
  ppr val
   = case val of
         PrimValLit lit          -> ppr lit
+        PrimValArith p          -> ppr p
+        PrimValFun p            -> ppr p
 
 
 instance NFData PrimVal where
  rnf val
   = case val of
         PrimValLit lit          -> rnf lit
+        PrimValArith p          -> rnf p
+        PrimValFun   p          -> rnf p
 
 
 -- | Read the name of a primtive value.
@@ -142,6 +195,12 @@ readPrimVal :: String -> Maybe PrimVal
 readPrimVal str
         | Just lit      <- readPrimLit str
         = Just $ PrimValLit lit
+
+        | Just p        <- readPrimArith str  
+        = Just $ PrimValArith p
+
+        | Just p        <- readOpFun str
+        = Just $ PrimValFun   p
 
         | otherwise
         = Nothing

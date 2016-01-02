@@ -24,17 +24,6 @@ import qualified DDC.Type.Exp                           as T
 import qualified DDC.Type.Sum                           as Sum
 import Data.Maybe
 
--- Things shared between both Source and Core languages.
-{-
-import DDC.Core.Exp
-        ( Type          (..)
-        , TyCon         (..)
-        , Pat           (..)
-        , DaCon         (..)
-        , Witness       (..)
-        , WiCon         (..))
--}
-
 import DDC.Core.Module 
         ( ExportSource  (..)
         , ImportType    (..)
@@ -434,24 +423,47 @@ toCoreU uu
 toCoreN :: S.Name -> C.Name
 toCoreN nn
  = case nn of
-        S.NameVar        str -> C.NameVar        str
-        S.NameCon        str -> C.NameCon        str
+        S.NameVar str
+         -> C.NameVar str
 
-        S.NamePrimTyConTetra tc  
+        S.NameCon str
+         -> C.NameCon str
+
+        S.NamePrim (S.PrimNameType (S.PrimTypeTyConTetra tc))
          -> C.NameTyConTetra (toCoreTyConTetra tc)
 
-        S.NameOpFun      tc  -> C.NameOpFun      tc
-        S.NamePrimTyCon  p   -> C.NamePrimTyCon  p
-        S.NamePrimArith  p   -> C.NamePrimArith  p
-        S.NameHole           -> C.NameHole
+        S.NamePrim (S.PrimNameType (S.PrimTypeTyCon p))
+         -> C.NamePrimTyCon  p
 
-        S.NamePrimVal (S.PrimValLit (S.PrimLitBool    x))   -> C.NameLitBool    x
-        S.NamePrimVal (S.PrimValLit (S.PrimLitNat     x))   -> C.NameLitNat     x
-        S.NamePrimVal (S.PrimValLit (S.PrimLitInt     x))   -> C.NameLitInt     x
-        S.NamePrimVal (S.PrimValLit (S.PrimLitSize    x))   -> C.NameLitSize    x
-        S.NamePrimVal (S.PrimValLit (S.PrimLitWord    x s)) -> C.NameLitWord    x s
-        S.NamePrimVal (S.PrimValLit (S.PrimLitFloat   x s)) -> C.NameLitFloat   x s
-        S.NamePrimVal (S.PrimValLit (S.PrimLitTextLit x))   -> C.NameLitTextLit x
+        S.NamePrim (S.PrimNameVal (S.PrimValLit (S.PrimLitBool    x)))
+         -> C.NameLitBool    x
+
+        S.NamePrim (S.PrimNameVal (S.PrimValLit (S.PrimLitNat     x)))
+         -> C.NameLitNat     x
+
+        S.NamePrim (S.PrimNameVal (S.PrimValLit (S.PrimLitInt     x)))
+         -> C.NameLitInt     x
+
+        S.NamePrim (S.PrimNameVal (S.PrimValLit (S.PrimLitSize    x)))
+         -> C.NameLitSize    x
+
+        S.NamePrim (S.PrimNameVal (S.PrimValLit (S.PrimLitWord    x s)))
+         -> C.NameLitWord    x s
+
+        S.NamePrim (S.PrimNameVal (S.PrimValLit (S.PrimLitFloat   x s)))
+         -> C.NameLitFloat   x s
+
+        S.NamePrim (S.PrimNameVal (S.PrimValLit (S.PrimLitTextLit x)))
+         -> C.NameLitTextLit x
+
+        S.NamePrim (S.PrimNameVal (S.PrimValArith p))
+         -> C.NamePrimArith p
+
+        S.NamePrim (S.PrimNameVal (S.PrimValFun   p))
+         -> C.NameOpFun     p
+
+        S.NameHole
+         -> C.NameHole
 
 
 -- | Convert a Tetra specific type constructor to core.

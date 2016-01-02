@@ -25,7 +25,7 @@ primKindEnv = Env.setPrimFun kindOfPrimName Env.empty
 kindOfPrimName :: Name -> Maybe (Kind Name)
 kindOfPrimName nn
  = case nn of
-        NamePrimTyCon tc        -> Just $ kindPrimTyCon tc
+        NameTyCon tc            -> Just $ kindPrimTyCon tc
         _                       -> Nothing
 
 
@@ -40,7 +40,8 @@ primTypeEnv = Env.setPrimFun typeOfPrimName Env.empty
 typeOfPrimName :: Name -> Maybe (Type Name)
 typeOfPrimName dc
  = case dc of
-        NamePrimArith   p       -> Just $ typePrimArith p
+        NameArith p
+         -> Just $ typePrimArith p
 
         NameLitBool     _       -> Just $ tBool
         NameLitNat      _       -> Just $ tNat
@@ -54,7 +55,7 @@ typeOfPrimName dc
 -- | Data type definition for `Bool`.
 dataDefBool :: DataDef Name
 dataDefBool
- = makeDataDefAlg (NamePrimTyCon PrimTyConBool) 
+ = makeDataDefAlg (NameTyCon PrimTyConBool) 
         [] 
         (Just   [ (NameLitBool True,  []) 
                 , (NameLitBool False, []) ])

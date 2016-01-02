@@ -1,15 +1,42 @@
 
 -- | Definition of names used in Source Tetra language.
 module DDC.Source.Tetra.Prim.Base
-        ( Name          (..)
-        , PrimTyConTetra(..)
-        , OpFun         (..)
+        ( -- * Names
+          Name          (..)
+
+          -- * Primitive Names
+        , PrimName      (..)
+        , pattern NameType
+        , pattern NameVal
+
+          -- * Primitive Types
+        , PrimType      (..)
+        , pattern NameTyCon
+        , pattern NameTyConTetra
+
+          -- ** Primitive machine type constructors.
         , PrimTyCon     (..)
+
+          -- ** Primitive Tetra specific type constructors.
+        , PrimTyConTetra(..)
+        , pattern NameTyConTetraTuple
+        , pattern NameTyConTetraF
+        , pattern NameTyConTetraC
+        , pattern NameTyConTetraU
+
+          -- * Primitive Values
+        , PrimVal       (..)
+        , pattern NameLit
+        , pattern NameArith
+        , pattern NameFun
+
+          -- ** Primitive arithmetic operators.
         , PrimArith     (..)
 
-        , PrimVal       (..)
-        , pattern NamePrimLit
+          -- ** Primitive function operators.
+        , OpFun         (..)
 
+          -- ** Primitive literals.
         , PrimLit       (..)
         , pattern NameLitBool
         , pattern NameLitNat
@@ -31,27 +58,13 @@ import Data.Text        (Text)
 -- | Names of things used in Disciple Source Tetra.
 data Name
         -- | A user defined variable.
-        = NameVar               String
+        = NameVar               !String
 
         -- | A user defined constructor.
-        | NameCon               String
+        | NameCon               !String
 
-        -- Baked in things ----------------------
-        -- | Baked in data type constructors.
-        | NamePrimTyConTetra    PrimTyConTetra
-
-        -- | Baked in functional operators.
-        | NameOpFun             OpFun
-
-        -- Machine primitives -------------------
-        -- | Primitive type cosntructors.
-        | NamePrimTyCon         PrimTyCon
-
-        -- | Primitive arithmetic, logic and comparison.
-        | NamePrimArith         PrimArith
-
-        -- | Primitive Values
-        | NamePrimVal           PrimVal
+        -- | Primitive names.
+        | NamePrim              !PrimName
 
         -- Inference ----------------------------
         -- | A hole used during type inference.
@@ -60,10 +73,35 @@ data Name
 
 
 ---------------------------------------------------------------------------------------------------
+-- | Primitive names.
+data PrimName
+        = PrimNameType          !PrimType
+        | PrimNameVal           !PrimVal
+        deriving (Eq, Ord, Show)
+
+pattern NameType p              = NamePrim (PrimNameType p)
+pattern NameVal  p              = NamePrim (PrimNameVal  p)
+
+
+---------------------------------------------------------------------------------------------------
+-- | Primitive types.
+data PrimType
+        -- | Primitive machine type constructors.
+        = PrimTypeTyCon         !PrimTyCon
+
+        -- | Primtiive type constructors specific to the Tetra fragment.
+        | PrimTypeTyConTetra    !PrimTyConTetra
+        deriving (Eq, Ord, Show)
+
+pattern NameTyCon tc            = NamePrim (PrimNameType (PrimTypeTyCon tc))
+pattern NameTyConTetra tc       = NamePrim (PrimNameType (PrimTypeTyConTetra tc))
+
+
+---------------------------------------------------------------------------------------------------
 -- | Primitive type constructors specific to the Tetra language fragment.
 data PrimTyConTetra
         -- | @TupleN#@. Tuples.
-        = PrimTyConTetraTuple Int
+        = PrimTyConTetraTuple   !Int
         
         -- | @F#@.       Reified function values.
         | PrimTyConTetraF
@@ -75,52 +113,64 @@ data PrimTyConTetra
         | PrimTyConTetraU
         deriving (Eq, Ord, Show)
 
+pattern NameTyConTetraTuple i   = NameTyConTetra (PrimTyConTetraTuple i)
+pattern NameTyConTetraF         = NameTyConTetra PrimTyConTetraF
+pattern NameTyConTetraC         = NameTyConTetra PrimTyConTetraC
+pattern NameTyConTetraU         = NameTyConTetra PrimTyConTetraU
+
 
 ---------------------------------------------------------------------------------------------------
 -- | Primitive values.
 data PrimVal
-        = PrimValLit    !PrimLit
+        -- | Primitive literals.
+        = PrimValLit            !PrimLit
+
+        -- | Primitive arithmetic operators.
+        | PrimValArith          !PrimArith
+
+        -- | Primitive function operators.
+        | PrimValFun            !OpFun
         deriving (Eq, Ord, Show)
 
-
-pattern NamePrimLit lit = NamePrimVal (PrimValLit lit)
+pattern NameLit p               = NamePrim (PrimNameVal  (PrimValLit p))
+pattern NameArith p             = NamePrim (PrimNameVal  (PrimValArith p))
+pattern NameFun p               = NamePrim (PrimNameVal  (PrimValFun   p))
 
 
 ---------------------------------------------------------------------------------------------------
 data PrimLit
         -- | A boolean literal.
-        = PrimLitBool           Bool
+        = PrimLitBool           !Bool
 
         -- | A natural literal,
         --   with enough precision to count every heap object.
-        | PrimLitNat            Integer
+        | PrimLitNat            !Integer
 
         -- | An integer literal,
         --   with enough precision to count every heap object.
-        | PrimLitInt            Integer
+        | PrimLitInt            !Integer
 
         -- | An unsigned size literal,
         --   with enough precision to count every addressable byte of memory.
-        | PrimLitSize           Integer
+        | PrimLitSize           !Integer
 
         -- | A word literal,
         --   with the given number of bits precison.
-        | PrimLitWord           Integer Int
+        | PrimLitWord           !Integer !Int
 
         -- | A floating point literal,
         --   with the given number of bits precision.
-        | PrimLitFloat          Double Int
+        | PrimLitFloat          !Double !Int
 
         -- | Text literals (UTF-8 encoded)
-        | PrimLitTextLit        Text
+        | PrimLitTextLit        !Text
         deriving (Eq, Ord, Show)
 
-
-pattern NameLitBool   x   = NamePrimVal (PrimValLit (PrimLitBool    x))
-pattern NameLitNat    x   = NamePrimVal (PrimValLit (PrimLitNat     x))
-pattern NameLitInt    x   = NamePrimVal (PrimValLit (PrimLitInt     x))
-pattern NameLitSize   x   = NamePrimVal (PrimValLit (PrimLitSize    x))
-pattern NameLitWord   x s = NamePrimVal (PrimValLit (PrimLitWord    x s))
-pattern NameLitFloat  x s = NamePrimVal (PrimValLit (PrimLitFloat   x s))
-pattern NameLitTextLit x  = NamePrimVal (PrimValLit (PrimLitTextLit x))
+pattern NameLitBool   x   = NameLit (PrimLitBool    x)
+pattern NameLitNat    x   = NameLit (PrimLitNat     x)
+pattern NameLitInt    x   = NameLit (PrimLitInt     x)
+pattern NameLitSize   x   = NameLit (PrimLitSize    x)
+pattern NameLitWord   x s = NameLit (PrimLitWord    x s)
+pattern NameLitFloat  x s = NameLit (PrimLitFloat   x s)
+pattern NameLitTextLit x  = NameLit (PrimLitTextLit x)
 
