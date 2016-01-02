@@ -1,12 +1,16 @@
 
 -- | Source Tetra primitive type and kind environments.
 module DDC.Source.Tetra.Env
-        ( primKindEnv
+        ( -- * Primitive kind environment.
+          primKindEnv
         , kindOfPrimName
 
+          -- * Primitive type environment.
         , primTypeEnv 
         , typeOfPrimName
-        
+        , typeOfPrimVal
+        , typeOfPrimLit
+
         , dataDefBool)
 where
 import DDC.Source.Tetra.Prim
@@ -42,18 +46,32 @@ primTypeEnv = Env.setPrimFun typeOfPrimName Env.empty
 -- | Take the type of a name,
 --   or `Nothing` if this is not a value name.
 typeOfPrimName :: Name -> Maybe (Type Name)
-typeOfPrimName dc
+typeOfPrimName nn
+ = case nn of
+        NameVal n       -> Just $ typeOfPrimVal n
+        _               -> Nothing
+
+
+-- | Take the type of a primitive name.
+typeOfPrimVal  :: PrimVal -> Type Name
+typeOfPrimVal dc
  = case dc of
-        NameArith p
-         -> Just $ typePrimArith p
+        PrimValLit l            -> typeOfPrimLit l
+        PrimValArith p          -> typePrimArith p
+        PrimValFun _p           -> error "typeOfPrimLit: finish me"
 
-        NameLitBool     _       -> Just $ tBool
-        NameLitNat      _       -> Just $ tNat
-        NameLitInt      _       -> Just $ tInt
-        NameLitWord     _ bits  -> Just $ tWord bits
-        NameLitTextLit  _       -> Just $ tTextLit
 
-        _                       -> Nothing
+-- | Take the type of a primitive literal.
+typeOfPrimLit  :: PrimLit -> Type Name
+typeOfPrimLit pl
+ = case pl of
+        PrimLitBool     _       -> tBool
+        PrimLitNat      _       -> tNat
+        PrimLitInt      _       -> tInt
+        PrimLitSize     _       -> error "typeOfPrimLit: finish me"
+        PrimLitFloat    _ _bits -> error "typeOfPrimLit: finish me"
+        PrimLitWord     _ bits  -> tWord bits
+        PrimLitTextLit  _       -> tTextLit
 
 
 -- | Data type definition for `Bool`.

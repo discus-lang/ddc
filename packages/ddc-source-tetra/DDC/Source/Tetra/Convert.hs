@@ -259,8 +259,7 @@ toCoreX xx
 
         -- TODO: make total.
         S.XPrim a p
-         -> let Just t  = S.typeOfPrimName (S.NamePrim p)
-            in  C.XVar  <$> pure a <*> toCoreU (C.UPrim (S.NamePrim p) t)
+         -> C.XVar  <$> pure a <*> toCoreU (C.UPrim (S.NameVal p) (S.typeOfPrimVal p))
 
         S.XCon a dc
          -> C.XCon  <$> pure a <*> toCoreDC dc

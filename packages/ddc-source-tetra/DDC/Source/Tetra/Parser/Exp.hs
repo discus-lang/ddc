@@ -264,7 +264,7 @@ pExpAtomSP c
         return  (XCon sp (DaConPrim lit (T.tBot T.kData)), sp)
 
         -- Primitive names.
- , do   (nPrim, sp)     <- pPrimNameSP
+ , do   (nPrim, sp)     <- pPrimValSP
         return  (XPrim sp nPrim, sp)
 
         -- Named variables.

@@ -1,6 +1,6 @@
 
 module DDC.Source.Tetra.Parser.Atom
-        ( pPrimNameSP
+        ( pPrimValSP
         , pVarStringSP)
 where
 import DDC.Source.Tetra.Prim
@@ -11,12 +11,13 @@ import qualified DDC.Base.Parser        as P
 import DDC.Core.Parser
         (Parser)
 
+
 -- | Parse a variable, with source position.
-pPrimNameSP :: Parser Name (PrimName, SourcePos)
-pPrimNameSP =  P.pTokMaybeSP f
+pPrimValSP :: Parser Name (PrimVal, SourcePos)
+pPrimValSP =  P.pTokMaybeSP f
         <?> "a variable"
- where  f (KN (KVar (NamePrim p)))      = Just p
-        f _                             = Nothing
+ where  f (KN (KVar (NameVal p)))      = Just p
+        f _                            = Nothing
 
 
 -- | Parse a variable, with source position.
