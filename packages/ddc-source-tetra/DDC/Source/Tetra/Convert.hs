@@ -11,6 +11,7 @@ where
 import qualified DDC.Source.Tetra.Transform.Guards      as S
 import qualified DDC.Source.Tetra.Module                as S
 import qualified DDC.Source.Tetra.DataDef               as S
+import qualified DDC.Source.Tetra.Env                   as S
 import qualified DDC.Source.Tetra.Exp.Annot             as S
 import qualified DDC.Source.Tetra.Prim                  as S
 
@@ -256,8 +257,10 @@ toCoreX xx
                     <*> (C.XVar <$> pure a <*> (pure $ C.UName (C.NameVar "textLit")))
                     <*> (C.XCon <$> pure a <*> (toCoreDC dc))
 
-        S.XPrim a u
-         -> C.XVar  <$> pure a <*> toCoreU u
+        -- TODO: make total.
+        S.XPrim a p
+         -> let Just t  = S.typeOfPrimName (S.NamePrim p)
+            in  C.XVar  <$> pure a <*> toCoreU (C.UPrim (S.NamePrim p) t)
 
         S.XCon a dc
          -> C.XCon  <$> pure a <*> toCoreDC dc

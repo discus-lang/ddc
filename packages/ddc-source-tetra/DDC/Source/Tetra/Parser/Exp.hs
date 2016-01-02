@@ -13,6 +13,7 @@ where
 import DDC.Source.Tetra.Transform.Guards
 import DDC.Source.Tetra.Parser.Witness
 import DDC.Source.Tetra.Parser.Param
+import DDC.Source.Tetra.Parser.Atom
 import DDC.Source.Tetra.Compounds
 import DDC.Source.Tetra.Prim
 import DDC.Source.Tetra.Exp.Annot
@@ -28,7 +29,6 @@ import DDC.Core.Parser
         ,               pStringSP
         , pIndexSP
         , pOpSP,        pOpVarSP
-        , pVarSP
         , pTok
         , pTokSP)
 
@@ -263,13 +263,18 @@ pExpAtomSP c
         let lit           = mkString sp tx
         return  (XCon sp (DaConPrim lit (T.tBot T.kData)), sp)
 
+        -- Primitive names.
+ , do   (nPrim, sp)     <- pPrimNameSP
+        return  (XPrim sp nPrim, sp)
+
+        -- Named variables.
+ , do   (sVar,  sp)     <- pVarStringSP
+        return  (XVar  sp (T.UName (NameVar sVar)), sp)
+
         -- Debruijn indices
  , do   (i, sp)         <- pIndexSP
-        return  (XVar sp (T.UIx   i), sp)
+        return  (XVar  sp (T.UIx   i), sp)
 
-        -- Variables
- , do   (var, sp)       <- pVarSP
-        return  (XVar sp (T.UName var), sp)
  ]
 
  <?> "a variable, constructor, or parenthesised type"

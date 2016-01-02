@@ -39,7 +39,7 @@ type instance GName  (Annot a) = Name
 type instance GAnnot (Annot a) = a
 type instance GBind  (Annot a) = T.Bind  Name
 type instance GBound (Annot a) = T.Bound Name
-type instance GPrim  (Annot a) = T.Bound Name
+type instance GPrim  (Annot a) = PrimName
 
 type Bound              = T.Bound Name
 type Bind               = T.Bind  Name

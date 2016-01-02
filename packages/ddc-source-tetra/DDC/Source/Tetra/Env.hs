@@ -2,7 +2,11 @@
 -- | Source Tetra primitive type and kind environments.
 module DDC.Source.Tetra.Env
         ( primKindEnv
+        , kindOfPrimName
+
         , primTypeEnv 
+        , typeOfPrimName
+        
         , dataDefBool)
 where
 import DDC.Source.Tetra.Prim

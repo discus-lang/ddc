@@ -68,7 +68,8 @@ data List (a : Data) where {
 add : [a : ?].a -> a -> a 
   = /\a : ?.
      \x : a.
-    \y : a. add# [a] x y
+    \y : a.
+    add# [a] x y
 length : [a : ?].List a -> Nat 
   = /\a : ?.
      \xx : List a.
