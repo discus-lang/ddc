@@ -10,7 +10,7 @@ data Hotness where {
 with
 letrec {
   flip : Hotness -> Hotness
-    = \(x : Hotness).
+    = λ(x : Hotness).
       case x of {
         Hot  
          -> Cold;
@@ -29,12 +29,12 @@ data List (a : Data) where {
 with
 letrec {
   add : [a : Data].a -> a -> a
-    = /\(a : Data).
-       \(x y : a). add# [a] x y;
+    = Λ(a : Data).
+      λ(x y : a). add# [a] x y;
   
   length : [a : Data].List a -> Nat#
-    = /\(a : Data).
-       \(xx : List a).
+    = Λ(a : Data).
+      λ(xx : List a).
       case xx of {
         Nil  
          -> 0;
@@ -54,7 +54,7 @@ data Box where {
 with
 letrec {
   thing : Box -> Nat#
-    = \(b : Box).
+    = λ(b : Box).
       case b of {
         Box (f : [a : Data].a -> a) 
          -> f [Nat#] 5
@@ -77,7 +77,7 @@ data Nest (a : Data) where {
 with
 letrec {
   thing : Unit -> Nest Nat#
-    = \(_ : Unit).
+    = λ(_ : Unit).
       ConsN [Nat#] 7
           (ConsN [Tuple2 Nat# Nat#] (T2 [Nat#] [Nat#] 1 2)
                (ConsN [Tuple2 (Tuple2 Nat# Nat#) (Tuple2 Nat# Nat#)]
@@ -101,7 +101,7 @@ data Bush (a : Data) where {
 with
 letrec {
   thing : Unit -> Bush Nat#
-    = \(_ : Unit).
+    = λ(_ : Unit).
       ConsB [Nat#] 4
           (ConsB [Bush Nat#]
                (ConsB [Nat#] 8

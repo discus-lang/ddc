@@ -3,17 +3,17 @@ ok
 
 
 -- Anonymize lambdas and applications.
-\(^ : [^ : Region].Nat# -> Unit).
-/\(^ : Region).
- \(^ : Nat#). ^1 [^0] ^0
+λ(^ : [^ : Region].Nat# -> Unit).
+Λ(^ : Region).
+λ(^ : Nat#). ^1 [^0] ^0
 
 
 -- Anonymize lambdas and applications
 -- Spec and value binders have the same name.
-/\(^ : Region ~> Data).
- \(^ : [^ : Region].^1 ^0 -> Unit).
-/\(^ : Region).
- \(^ : ^1 ^0). ^1 [^0] ^0
+Λ(^ : Region ~> Data).
+λ(^ : [^ : Region].^1 ^0 -> Unit).
+Λ(^ : Region).
+λ(^ : ^1 ^0). ^1 [^0] ^0
 
 
 -- Anonymize single let binding.
@@ -28,15 +28,15 @@ let ^ : Unit = () in
 
 
 -- Anonymize private region binder.
-/\(^ : Region ~> Data).
- \(^ : [^ : Region].^1 ^0).\(^ : [^ : Region].^1 ^0 -> Nat#).
+Λ(^ : Region ~> Data).
+λ(^ : [^ : Region].^1 ^0).λ(^ : [^ : Region].^1 ^0 -> Nat#).
 private ^ with {^ : Const ^0} in
 ^1 [^0] (^2 [^0])
 
 
 -- Anonymize multiple let bindings that mention private region.
-/\(^ : Region ~> Data).
- \(^ : [^ : Region].^1 ^0).\(^ : [^ : Region].^1 ^0 -> Nat#).
+Λ(^ : Region ~> Data).
+λ(^ : [^ : Region].^1 ^0).λ(^ : [^ : Region].^1 ^0 -> Nat#).
 private ^ with {^ : Const ^0} in
 let ^ : ^1 ^0 = ^2 [^0] in
 let ^ : ^1 ^0 = ^3 [^0] in

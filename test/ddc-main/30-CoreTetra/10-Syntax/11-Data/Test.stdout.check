@@ -10,7 +10,7 @@ data Foo where {
 with
 letrec {
   foo : Foo -> Foo
-    = \(x : Foo).
+    = λ(x : Foo).
       case x of {
         Foo  
          -> Bar;

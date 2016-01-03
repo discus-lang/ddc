@@ -6,13 +6,13 @@ ok
 module Test with
 letrec {
   map : [p : Proc].[k : Rate].Vector# Int# -> RateVec# k Int# -> Unit
-    = /\(p : Proc)./\(k : Rate).
-       \(v : Vector# Int#).\(ins : RateVec# k Int#).
+    = Λ(p : Proc).Λ(k : Rate).
+      λ(v : Vector# Int#).λ(ins : RateVec# k Int#).
       let v$buf = vbuf# [Int#] v in
       let x3 = series# [p] [k] [Int#] ins in
       let _
             = loop# [k]
-                  (\(x0 : Nat#).
+                  (λ(x0 : Nat#).
                    let x3$elem = next# [Int#] [p] [k] x3 x0 in
                    let x1 = mul# [Int#] x3$elem 2i# in
                    let x4$elem = add# [Int#] x1 1i# in
@@ -26,14 +26,14 @@ letrec {
 module Test with
 letrec {
   foldMap : [p : Proc].[k : Rate].Ref# Int# -> RateVec# k Int# -> Unit
-    = /\(p : Proc)./\(k : Rate).
-       \(x : Ref# Int#).\(ins : RateVec# k Int#).
+    = Λ(p : Proc).Λ(k : Rate).
+      λ(x : Ref# Int#).λ(ins : RateVec# k Int#).
       let x4 = series# [p] [k] [Int#] ins in
       let x$init = read# [Int#] x in
       let x$acc = new# [Int#] x$init in
       let _
             = loop# [k]
-                  (\(x2 : Nat#).
+                  (λ(x2 : Nat#).
                    let x4$elem = next# [Int#] [p] [k] x4 x2 in
                    let x5$elem = mul# [Int#] x4$elem 2i# in
                    let x$val = read# [Int#] x$acc in
@@ -50,13 +50,13 @@ letrec {
 module Test with
 letrec {
   map : [p : Proc].[k : Rate].Vector# Int# -> RateVec# k Int# -> Unit
-    = /\(p : Proc)./\(k : Rate).
-       \(v : Vector# Int#).\(ins : RateVec# k Int#).
+    = Λ(p : Proc).Λ(k : Rate).
+      λ(v : Vector# Int#).λ(ins : RateVec# k Int#).
       let v$buf = vbuf# [Int#] v in
       let x4 = series# [p] [k] [Int#] ins in
       let _
             = loop# [k]
-                  (\(x1 : Nat#).
+                  (λ(x1 : Nat#).
                    let x4$elem = next# [Int#] [p] [k] x4 x1 in
                    let x5$elem = add# [Int#] 1i# x4$elem in
                    let x6$elem = mul# [Int#] 2i# x5$elem in
@@ -70,15 +70,15 @@ letrec {
 module Test with
 letrec {
   foldMap : [p : Proc].[k : Rate].Vector# Int# -> Ref# Int# -> RateVec# k Int# -> Unit
-    = /\(p : Proc)./\(k : Rate).
-       \(v : Vector# Int#).\(x : Ref# Int#).\(ins : RateVec# k Int#).
+    = Λ(p : Proc).Λ(k : Rate).
+      λ(v : Vector# Int#).λ(x : Ref# Int#).λ(ins : RateVec# k Int#).
       let v$buf = vbuf# [Int#] v in
       let s = series# [p] [k] [Int#] ins in
       let x$init = read# [Int#] x in
       let x$acc = new# [Int#] x$init in
       let _
             = loop# [k]
-                  (\(x1 : Nat#).
+                  (λ(x1 : Nat#).
                    let s$elem = next# [Int#] [p] [k] s x1 in
                    let x$val = read# [Int#] x$acc in
                    let x2 = add# [Int#] x$val s$elem in

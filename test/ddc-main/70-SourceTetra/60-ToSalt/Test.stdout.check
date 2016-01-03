@@ -6,7 +6,7 @@ ok
 module Test with
 letrec {
   foo : Ptr# rT Obj -> Ptr# rT Obj
-    = \(x : Ptr# rT Obj).
+    = λ(x : Ptr# rT Obj).
       let x1
             = let ^ = allocSmall [rT] TAG0# 8# in
               let ^ = payloadSmall [rT] ^0 in
@@ -63,7 +63,7 @@ letrec {
 module Test with
 letrec {
   neg : Ptr# rT Obj -> Ptr# rT Obj
-    = \(x : Ptr# rT Obj).
+    = λ(x : Ptr# rT Obj).
       let x0
             = let ^ = x in
               let ^ = payloadSmall [rT] ^0 in
@@ -91,7 +91,7 @@ letrec {
 module Test with
 letrec {
   foo : Ptr# rT Obj -> Ptr# rT Obj
-    = \(x : Ptr# rT Obj).
+    = λ(x : Ptr# rT Obj).
       let x0
             = let ^ = x in
               let ^ = payloadSmall [rT] ^0 in
@@ -125,7 +125,7 @@ letrec {
 module Test with
 letrec {
   foo : Ptr# rT Obj -> Ptr# rT Obj -> Ptr# rT Obj
-    = \(x y : Ptr# rT Obj).
+    = λ(x y : Ptr# rT Obj).
       let x0
             = let ^ = x in
               let ^ = payloadSmall [rT] ^0 in
@@ -168,7 +168,7 @@ letrec {
 module Test with
 letrec {
   add : Ptr# rT Obj -> Ptr# rT Obj -> Ptr# rT Obj
-    = \(x y : Ptr# rT Obj).
+    = λ(x y : Ptr# rT Obj).
       let x0
             = let ^ = x in
               let ^ = payloadSmall [rT] ^0 in
@@ -189,7 +189,7 @@ letrec {
       ^1;
   
   foo : Ptr# rT Obj -> Ptr# rT Obj
-    = \(x : Ptr# rT Obj).
+    = λ(x : Ptr# rT Obj).
       let x3
             = let ^ = allocSmall [rT] TAG0# 8# in
               let ^ = payloadSmall [rT] ^0 in
@@ -204,7 +204,7 @@ letrec {
 module Test with
 letrec {
   flipit : Ptr# rT Obj -> Ptr# rT Obj
-    = \(x : Ptr# rT Obj).
+    = λ(x : Ptr# rT Obj).
       case getTag [rT] x of {
         TAG0#  
          -> let ^ = allocBoxed [rT] TAG1# 0# in
@@ -222,7 +222,7 @@ letrec {
 module Test with
 letrec {
   head : Ptr# rT Obj -> Ptr# rT Obj
-    = \(xx : Ptr# rT Obj).
+    = λ(xx : Ptr# rT Obj).
       case getTag [rT] xx of {
         TAG0#  
          -> let x = getBoxed [rT] [rT] xx 0# in
@@ -241,8 +241,8 @@ letrec {
 module Test with
 letrec {
   head : [a$r : Region].Ptr# rT Obj -> Ptr# rT Obj -> Ptr# rT Obj
-    = /\(a$r : Region).
-       \(def xx : Ptr# rT Obj).
+    = Λ(a$r : Region).
+      λ(def xx : Ptr# rT Obj).
       case getTag [rT] xx of {
         TAG0#  
          -> let x = getBoxed [rT] [rT] xx 0# in
@@ -258,7 +258,7 @@ letrec {
 module Test with
 letrec {
   swap : Ptr# rT Obj -> Ptr# rT Obj
-    = \(x : Ptr# rT Obj).
+    = λ(x : Ptr# rT Obj).
       let x0
             = let ^ = x in
               let ^ = payloadSmall [rT] ^0 in
@@ -288,8 +288,8 @@ letrec {
 module Test with
 letrec {
   head : [a$r : Region].Ptr# rT Obj -> Ptr# rT Obj -> Ptr# rT Obj
-    = /\(a$r : Region).
-       \(def xx : Ptr# rT Obj).
+    = Λ(a$r : Region).
+      λ(def xx : Ptr# rT Obj).
       case getTag [rT] xx of {
         TAG0#  
          -> let x = getBoxed [rT] [rT] xx 0# in
@@ -299,7 +299,7 @@ letrec {
       };
   
   foo : Ptr# rT Obj -> Ptr# rT Obj
-    = \(_ : Ptr# rT Obj).
+    = λ(_ : Ptr# rT Obj).
       let x0
             = let ^ = allocBoxed [rT] TAG1# 0# in
               ^0 in
@@ -330,8 +330,8 @@ letrec {
 module Test with
 letrec {
   head : [a$r : Region].Ptr# rT Obj -> Ptr# rT Obj -> Ptr# rT Obj
-    = /\(a$r : Region).
-       \(def xx : Ptr# rT Obj).
+    = Λ(a$r : Region).
+      λ(def xx : Ptr# rT Obj).
       case getTag [rT] xx of {
         TAG0#  
          -> let x = getBoxed [rT] [rT] xx 0# in
@@ -341,8 +341,8 @@ letrec {
       };
   
   foo : [r : Region].Ptr# rT Obj -> Ptr# rT Obj
-    = /\(r : Region).
-       \(_ : Ptr# rT Obj).
+    = Λ(r : Region).
+      λ(_ : Ptr# rT Obj).
       let x0
             = let ^ = allocBoxed [rT] TAG0# 0# in
               ^0 in

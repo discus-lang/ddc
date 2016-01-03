@@ -6,26 +6,26 @@ ok
 module Test with
 letrec {
   filter : [p : Proc].[k0 : Rate].[a : Data].(a -> Bool#) -> (a -> Bool#) -> Series# p k0 a -> World# -> Tuple2# World# (Vector# a)
-    = /\(p : Proc)./\(k0 : Rate)./\(a : Data).
-       \(f g : a -> Bool#).\(s0 : Series# p k0 a).\(^ : World#).
+    = Λ(p : Proc).Λ(k0 : Rate).Λ(a : Data).
+      λ(f g : a -> Bool#).λ(s0 : Series# p k0 a).λ(^ : World#).
       letcase T2# (^ : World#) (k2__count : Ref# Nat#)  = new# [Nat#] 0# ^0 in
       letcase T2# (^ : World#) (x4 : Vector# a) 
         = vnewN# [a] [k0] (rateOfSeries# [p] [k0] [a] s0) ^0 in
       let x4$buf : Buffer# a = vbuf# [a] x4 in
       letcase T1# (^ : World#) 
         = loopn# [k0] (rateOfSeries# [p] [k0] [a] s0)
-              (\(x0 : Nat#).\(^ : World#).
+              (λ(x0 : Nat#).λ(^ : World#).
                letcase T2# (^ : World#) (s0__elem : a)  = next# [a] [p] [k0] s0 x0 ^0 in
                let x1__elem : Bool#
-                     = (\(x : a). f x) s0__elem in
+                     = (λ(x : a). f x) s0__elem in
                letcase T1# (^ : World#) 
                  = guard# x1__elem
-                       (\(_ : Unit).\(^ : World#).
+                       (λ(_ : Unit).λ(^ : World#).
                         let x3__elem : Bool#
-                              = (\(x : a). g x) s0__elem in
+                              = (λ(x : a). g x) s0__elem in
                         letcase T1# (^ : World#) 
                           = guard# x3__elem
-                                (\(_ : Unit).\(^ : World#).
+                                (λ(_ : Unit).λ(^ : World#).
                                  letcase T2# (^ : World#) (x2 : Nat#)  = read# [Nat#] k2__count ^0 in
                                  letcase T1# (^ : World#)  = vwrite# [a] x4$buf x2 s0__elem ^0 in
                                  letcase T1# (^ : World#) 
@@ -42,14 +42,14 @@ letrec {
 module Test with
 letrec {
   map_map : [p : Proc].[k : Rate].Series# p k Int# -> World# -> Tuple2# World# (Vector# Int#)
-    = /\(p : Proc)./\(k : Rate).
-       \(s_aub : Series# p k Int#).\(^ : World#).
+    = Λ(p : Proc).Λ(k : Rate).
+      λ(s_aub : Series# p k Int#).λ(^ : World#).
       letcase T2# (^ : World#) (x6 : Vector# Int#) 
         = vnewN# [Int#] [k] (rateOfSeries# [p] [k] [Int#] s_aub) ^0 in
       let x6$buf : Buffer# Int# = vbuf# [Int#] x6 in
       letrec {
         loop_k : Nat# -> World# -> World#
-          = \(x0 : Nat#).\(^ : World#).
+          = λ(x0 : Nat#).λ(^ : World#).
             case x0 of {
               0#  
                -> ^0;
@@ -72,15 +72,15 @@ letrec {
 module Test with
 letrec {
   lower_ffold_rqB : [p : Proc].[k_c : Rate].Series# p k_c Int# -> World# -> Tuple2# World# Int#
-    = /\(p : Proc)./\(k_c : Rate).
-       \(s_au5 : Series# p k_c Int#).\(^ : World#).
+    = Λ(p : Proc).Λ(k_c : Rate).
+      λ(s_au5 : Series# p k_c Int#).λ(^ : World#).
       let x3__acc_0 : Int# = 0i# in
       let x8__acc_0 : Int# = 1i# in
       let k_c_length : Nat#
             = natOfRateNat# [k_c] (rateOfSeries# [p] [k_c] [Int#] s_au5) in
       letrec {
         loop_k_c : Nat# -> Int# -> Int# -> World# -> Tuple3# World# Int# Int#
-          = \(x1 : Nat#).\(x3__acc_1 x8__acc_1 : Int#).\(^ : World#).
+          = λ(x1 : Nat#).λ(x3__acc_1 x8__acc_1 : Int#).λ(^ : World#).
             case sub# [Nat#] k_c_length x1 of {
               0#  
                -> T3# [World#] [Int#] [Int#] ^0 x3__acc_1 x8__acc_1;

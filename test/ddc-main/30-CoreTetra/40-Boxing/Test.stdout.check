@@ -5,7 +5,7 @@ ok
 module Test with
 letrec {
   f : Nat# -> Nat#
-    = \(x : Nat#).
+    = λ(x : Nat#).
       convert# [U# Nat#] [Nat#]
           (add# [U# Nat#]
                (convert# [Nat#] [U# Nat#] x)
@@ -18,7 +18,7 @@ letrec {
 module Test with
 letrec {
   neg : Bool# -> Bool#
-    = \(x : Bool#).
+    = λ(x : Bool#).
       case convert# [Bool#] [U# Bool#] x of {
         True##  
          -> convert# [U# Bool#] [Bool#] False##;
@@ -32,7 +32,7 @@ letrec {
 module Test with
 letrec {
   foo : Word32# -> Word32#
-    = \(x : Word32#).
+    = λ(x : Word32#).
       case convert# [Word32#] [U# Word32#] x of {
         5w32#  
          -> convert# [U# Word32#] [Word32#] 6w32#;
@@ -48,7 +48,7 @@ letrec {
 module Test with
 letrec {
   f : Nat# -> Nat# -> Nat#
-    = \(x y : Nat#).
+    = λ(x y : Nat#).
       case convert# [Nat#] [U# Nat#] x of {
         0#  
          -> case convert# [Nat#] [U# Nat#] y of {

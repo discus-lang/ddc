@@ -6,11 +6,11 @@ ok
 module Test with
 letrec {
   test : [p : Proc].[k : Rate].RateNat# k -> Ref# Float32# -> Series# p k Float32# -> Series# p k Float32# -> Unit
-    = /\(p : Proc)./\(k : Rate).
-       \(n : RateNat# k).\(x1 : Ref# Float32#).\(s1 s2 : Series# p k Float32#).
+    = Λ(p : Proc).Λ(k : Rate).
+      λ(n : RateNat# k).λ(x1 : Ref# Float32#).λ(s1 s2 : Series# p k Float32#).
       let _
             = split$8# [k] n
-                  (\(x3 : RateNat# (Down8# k)).
+                  (λ(x3 : RateNat# (Down8# k)).
                    let s1$down = down$8# [p] [k] [Float32#] x3 s1 in
                    let s2$down = down$8# [p] [k] [Float32#] x3 s2 in
                    let x10 = vrep$8# [Float32#] 0.0f32# in
@@ -18,7 +18,7 @@ letrec {
                          = new# [Vec8# Float32#] x10 in
                    let _
                          = loop# [Down8# k]
-                               (\(x6 : Nat#).
+                               (λ(x6 : Nat#).
                                 let s1$elem = next$8# [Float32#] [p] [k] s1$down x6 in
                                 let s2$elem = next$8# [Float32#] [p] [k] s2$down x6 in
                                 let s3$elem = vmul$8# [Float32#] s1$elem s2$elem in
@@ -49,14 +49,14 @@ letrec {
                    let x1$res$7 = add# [Float32#] x1$res$6 x27 in
                    let _ = write# [Float32#] x1 x1$res$7 in
                    ())
-                  (\(x8 : RateNat# (Tail8# k)).
+                  (λ(x8 : RateNat# (Tail8# k)).
                    let s1$tail = tail$8# [p] [k] [Float32#] x8 s1 in
                    let s2$tail = tail$8# [p] [k] [Float32#] x8 s2 in
                    let x1$init = read# [Float32#] x1 in
                    let x1$acc = new# [Float32#] x1$init in
                    let _
                          = loop# [Tail8# k]
-                               (\(x9 : Nat#).
+                               (λ(x9 : Nat#).
                                 let s1$elem
                                       = next# [Float32#] [p] [Tail8# k] s1$tail x9 in
                                 let s2$elem
@@ -76,11 +76,11 @@ letrec {
 module Flow with
 letrec {
   eatPoints : [p : Proc].[k : Rate].Float32# -> Float32# -> Vector# Float32# -> Ref# Float32# -> RateNat# k -> Series# p k Float32# -> Series# p k Float32# -> Unit
-    = /\(p : Proc)./\(k : Rate).
-       \(ox oy : Float32#).\(v0 : Vector# Float32#).\(r0 : Ref# Float32#).\(dsr : RateNat# k).\(s1 s2 : Series# p k Float32#).
+    = Λ(p : Proc).Λ(k : Rate).
+      λ(ox oy : Float32#).λ(v0 : Vector# Float32#).λ(r0 : Ref# Float32#).λ(dsr : RateNat# k).λ(s1 s2 : Series# p k Float32#).
       let _
             = split$8# [k] dsr
-                  (\(x0 : RateNat# (Down8# k)).
+                  (λ(x0 : RateNat# (Down8# k)).
                    let s1$down = down$8# [p] [k] [Float32#] x0 s1 in
                    let s2$down = down$8# [p] [k] [Float32#] x0 s2 in
                    let v0$buf = vbuf# [Float32#] v0 in
@@ -89,7 +89,7 @@ letrec {
                          = new# [Vec8# Float32#] x4 in
                    let _
                          = loop# [Down8# k]
-                               (\(x1 : Nat#).
+                               (λ(x1 : Nat#).
                                 let s1$elem = next$8# [Float32#] [p] [k] s1$down x1 in
                                 let s2$elem = next$8# [Float32#] [p] [k] s2$down x1 in
                                 let x5 = vrep$8# [Float32#] ox in
@@ -131,7 +131,7 @@ letrec {
                    let r0$res$7 = add# [Float32#] r0$res$6 x32 in
                    let _ = write# [Float32#] r0 r0$res$7 in
                    ())
-                  (\(x2 : RateNat# (Tail8# k)).
+                  (λ(x2 : RateNat# (Tail8# k)).
                    let s1$tail = tail$8# [p] [k] [Float32#] x2 s1 in
                    let s2$tail = tail$8# [p] [k] [Float32#] x2 s2 in
                    let v0$tail = vtail8# [k] [Float32#] x2 v0 in
@@ -140,7 +140,7 @@ letrec {
                    let r0$acc = new# [Float32#] r0$init in
                    let _
                          = loop# [Tail8# k]
-                               (\(x3 : Nat#).
+                               (λ(x3 : Nat#).
                                 let s1$elem
                                       = next# [Float32#] [p] [Tail8# k] s1$tail x3 in
                                 let s2$elem

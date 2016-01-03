@@ -10,7 +10,7 @@ ok
 module Test with
 letrec {
   foo : Ptr# rT Obj -> Ptr# rT Obj
-    = \(x : Ptr# rT Obj).
+    = λ(x : Ptr# rT Obj).
       let x0 : Word16#
             = let ^ : Ptr# rT Obj = x in
               let ^ : Ptr# rT Word8# = payloadSmall [rT] ^0 in
@@ -43,7 +43,7 @@ letrec {
 module Test with
 letrec {
   foo : Ptr# rT Obj -> Ptr# rT Obj
-    = \(x : Ptr# rT Obj).
+    = λ(x : Ptr# rT Obj).
       let x0 : Word32#
             = let ^ : Ptr# rT Obj = x in
               let ^ : Ptr# rT Word8# = payloadSmall [rT] ^0 in
@@ -76,7 +76,7 @@ letrec {
 module Test with
 letrec {
   foo : Ptr# rT Obj -> Ptr# rT Obj
-    = \(x : Ptr# rT Obj).
+    = λ(x : Ptr# rT Obj).
       let x0 : Word64#
             = let ^ : Ptr# rT Obj = x in
               let ^ : Ptr# rT Word8# = payloadSmall [rT] ^0 in
@@ -110,7 +110,7 @@ letrec {
 module Test with
 letrec {
   foo : Ptr# rT Obj -> Ptr# rT Obj
-    = \(x : Ptr# rT Obj).
+    = λ(x : Ptr# rT Obj).
       let x0 : Bool#
             = let ^ : Ptr# rT Obj = x in
               let ^ : Ptr# rT Word8# = payloadSmall [rT] ^0 in
@@ -142,15 +142,15 @@ Error loading module
                   of type: [a : Data].a -> a
     
     with: id
-              (\(x : Nat#). x)
+              (λ(x : Nat#). x)
 
 
 -- Compile application of anonymous function.
 module Test with
 letrec {
   app : [a$r b$r : Region].Ptr# rT Obj -> Ptr# rT Obj -> Ptr# rT Obj
-    = /\(a$r b$r : Region).
-       \(f x : Ptr# rT Obj). apply1 [rT] [rT] [rT] f x
+    = Λ(a$r b$r : Region).
+      λ(f x : Ptr# rT Obj). apply1 [rT] [rT] [rT] f x
 }
 
 
@@ -159,7 +159,7 @@ letrec {
 module Test with
 letrec {
   singleton : Ptr# rT Obj -> Ptr# rT Obj
-    = \(x : Ptr# rT Obj).
+    = λ(x : Ptr# rT Obj).
       let x0 : Ptr# rT Obj
             = let ^ : Ptr# rT Obj = allocBoxed [rT] TAG0# 0# in
               ^0 in
@@ -175,7 +175,7 @@ letrec {
 module Test with
 letrec {
   headUnit : Ptr# rT Obj -> Ptr# rT Obj
-    = \(xx : Ptr# rT Obj).
+    = λ(xx : Ptr# rT Obj).
       case getTag [rT] xx of {
         TAG1#  
          -> let x : Ptr# rT Obj = getBoxed [rT] [rT] xx 0# in
@@ -202,7 +202,7 @@ ok
 module Test with
 letrec {
   id : Ptr# rT Obj -> Ptr# rT Obj
-    = \(x0 : Ptr# rT Obj). x0
+    = λ(x0 : Ptr# rT Obj). x0
 }
 
 
@@ -235,11 +235,11 @@ Fragment violation when converting Tetra module to Salt module.
 module Test with
 letrec {
   id : [a$r : Region].Ptr# rT Obj -> Ptr# rT Obj
-    = /\(a$r : Region).
-       \(x : Ptr# rT Obj). x;
+    = Λ(a$r : Region).
+      λ(x : Ptr# rT Obj). x;
   
   foo : Ptr# rT Obj -> Ptr# rT Obj
-    = \(_ : Ptr# rT Obj).
+    = λ(_ : Ptr# rT Obj).
       let x0 : Ptr# rT Obj
             = let ^ : Ptr# rT Obj = allocSmall [rT] TAG0# 8# in
               let ^ : Ptr# rT Word8# = payloadSmall [rT] ^0 in
@@ -254,11 +254,11 @@ letrec {
 module Test with
 letrec {
   nothin : [b$r : Region].Ptr# rT Obj -> Ptr# rT Obj
-    = /\(b$r : Region).
-       \(x : Ptr# rT Obj). x;
+    = Λ(b$r : Region).
+      λ(x : Ptr# rT Obj). x;
   
   foo : Ptr# rT Obj -> Ptr# rT Obj
-    = \(_ : Ptr# rT Obj).
+    = λ(_ : Ptr# rT Obj).
       let x0 : Ptr# rT Obj
             = let ^ : Ptr# rT Obj = allocSmall [rT] TAG0# 8# in
               let ^ : Ptr# rT Word8# = payloadSmall [rT] ^0 in
@@ -275,7 +275,7 @@ letrec {
 module Test with
 letrec {
   blerk : Ptr# rT Obj -> Ptr# rT Obj
-    = \(_ : Ptr# rT Obj).
+    = λ(_ : Ptr# rT Obj).
       let ^ : Ptr# rT Obj = allocSmall [rT] TAG0# 8# in
       let ^ : Ptr# rT Word8# = payloadSmall [rT] ^0 in
       let _ : Void#

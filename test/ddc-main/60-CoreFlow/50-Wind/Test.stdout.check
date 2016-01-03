@@ -6,8 +6,8 @@ ok
 module Main with
 letrec {
   lower_map_map_rq2 : [p : Proc].[k_d : Rate].Series# p k_d Int# -> Vector# Int#
-    = /\(p : Proc)./\(k_d : Rate).
-       \(s_aub : Series# p k_d Int#).
+    = Λ(p : Proc).Λ(k_d : Rate).
+      λ(s_aub : Series# p k_d Int#).
       let x6 : Vector# Int#
             = vnewN# [Int#] [k_d] (rateOfSeries# [p] [k_d] [Int#] s_aub) in
       let x6$buf : Buffer# Int# = vbuf# [Int#] x6 in
@@ -15,7 +15,7 @@ letrec {
             = natOfRateNat# [k_d] (rateOfSeries# [p] [k_d] [Int#] s_aub) in
       letrec {
         loop : Nat# -> Unit
-          = \(x0 : Nat#).
+          = λ(x0 : Nat#).
             case sub# [Nat#] loop$length x0 of {
               0#  
                -> ();
@@ -34,12 +34,12 @@ letrec {
 
 -- Loop with a guard and a scalar result.
 module Main 
-import value maxx : Int# -> Int# -> Int#;
+import value maxx       : Int# -> Int# -> Int#;
 with
 letrec {
   filterMax : [p : Proc].[k : Rate].Series# p k Int# -> Tuple2# (Vector# Int#) Int#
-    = /\(p : Proc)./\(k : Rate).
-       \(s1 : Series# p k Int#).
+    = Λ(p : Proc).Λ(k : Rate).
+      λ(s1 : Series# p k Int#).
       let k2__count$0 : Nat# = 0# in
       let x5 : Vector# Int#
             = vnewN# [Int#] [k] (rateOfSeries# [p] [k] [Int#] s1) in
@@ -49,7 +49,7 @@ letrec {
             = natOfRateNat# [k] (rateOfSeries# [p] [k] [Int#] s1) in
       letrec {
         loop : Nat# -> Nat# -> Int# -> Tuple2# Nat# Int#
-          = \(x2 k2__count$1 : Nat#).\(x9__acc$1 : Int#).
+          = λ(x2 k2__count$1 : Nat#).λ(x9__acc$1 : Int#).
             case sub# [Nat#] loop$length x2 of {
               0#  
                -> T2# [Nat#] [Int#] k2__count$1 x9__acc$1;
@@ -82,10 +82,10 @@ letrec {
 module Test with
 letrec {
   test : [p : Proc].[k : Rate].RateNat# k -> Ref# Float32# -> Ref# Float32# -> Series# p k Float32# -> Series# p k Float32# -> Unit
-    = /\(p : Proc)./\(k : Rate).
-       \(n : RateNat# k).\(x1 x2 : Ref# Float32#).\(s1 s2 : Series# p k Float32#).
+    = Λ(p : Proc).Λ(k : Rate).
+      λ(n : RateNat# k).λ(x1 x2 : Ref# Float32#).λ(s1 s2 : Series# p k Float32#).
       split$4# [k] n
-          (\(x4 : RateNat# (Down4# k)).
+          (λ(x4 : RateNat# (Down4# k)).
            let s1$down : Series# p (Down4# k) Float32# = down$4# [p] [k] [Float32#] x4 s1 in
            let s2$down : Series# p (Down4# k) Float32# = down$4# [p] [k] [Float32#] x4 s2 in
            let x13 : Vec4# Float32# = vrep$4# [Float32#] 0.0f32# in
@@ -96,7 +96,7 @@ letrec {
                  = natOfRateNat# [Down4# k] x4 in
            letrec {
              loop : Nat# -> Vec4# Float32# -> Vec4# Float32# -> Tuple2# (Vec4# Float32#) (Vec4# Float32#)
-               = \(x5 : Nat#).\(x1$vec$1 x2$vec$1 : Vec4# Float32#).
+               = λ(x5 : Nat#).λ(x1$vec$1 x2$vec$1 : Vec4# Float32#).
                  case sub# [Nat#] loop$length x5 of {
                    0#  
                     -> T2# [Vec4# Float32#] [Vec4# Float32#] x1$vec$1 x2$vec$1;
@@ -137,7 +137,7 @@ letrec {
            let x2$res$3 : Float32# = mul# [Float32#] x2$res$2 x32 in
            let _ : Unit = write# [Float32#] x2 x2$res$3 in
            ())
-          (\(x8 : RateNat# (Tail4# k)).
+          (λ(x8 : RateNat# (Tail4# k)).
            let s1$tail : Series# p (Tail4# k) Float32# = tail$4# [p] [k] [Float32#] x8 s1 in
            let s2$tail : Series# p (Tail4# k) Float32# = tail$4# [p] [k] [Float32#] x8 s2 in
            let x1$init : Float32# = read# [Float32#] x1 in
@@ -148,7 +148,7 @@ letrec {
                  = natOfRateNat# [Tail4# k] x8 in
            letrec {
              loop : Nat# -> Float32# -> Float32# -> Tuple2# Float32# Float32#
-               = \(x12 : Nat#).\(x1$acc$1 x2$acc$1 : Float32#).
+               = λ(x12 : Nat#).λ(x1$acc$1 x2$acc$1 : Float32#).
                  case sub# [Nat#] loop$length x12 of {
                    0#  
                     -> T2# [Float32#] [Float32#] x1$acc$1 x2$acc$1;

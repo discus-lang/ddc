@@ -59,8 +59,7 @@ pExp c
  = P.choice
         -- Level-0 lambda abstractions
         -- \(x1 x2 ... : Type) (y1 y2 ... : Type) ... . Exp
- [ do   sp      <- pTokSP KBackSlash
-
+ [ do   sp      <- P.choice [ pTokSP KLambda, pTokSP KBackSlash ]
         bs      <- liftM concat
                 $  P.many1 
                 $  do   pTok KRoundBra
@@ -76,8 +75,7 @@ pExp c
 
         -- Level-1 lambda abstractions.
         -- /\(x1 x2 ... : Type) (y1 y2 ... : Type) ... . Exp
- , do   sp      <- pTokSP KBigLambda
-
+ , do   sp      <- P.choice [ pTokSP KBigLambda, pTokSP KBigLambdaSlash ]
         bs      <- liftM concat
                 $  P.many1 
                 $  do   pTok KRoundBra

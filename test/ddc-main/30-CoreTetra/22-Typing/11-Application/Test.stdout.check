@@ -5,27 +5,27 @@ ok
 module Test with
 letrec {
   f : [a : Data].a -> a
-    = /\(a : Data).
-       \(v : a). v;
+    = Λ(a : Data).
+      λ(v : a). v;
   
   com : ([^ : Data].^0 -> ^0) -> Int#
-    = \(g : [^ : Data].^0 -> ^0). g [Int#] 0i;
+    = λ(g : [^ : Data].^0 -> ^0). g [Int#] 0i;
   
   uuse : ?6 -> Int#
-    = \(_ : ?6). com f
+    = λ(_ : ?6). com f
 }
 
 
 module Test with
 letrec {
   f : [a : Data].a -> a
-    = /\(a : Data).
-       \(v : a). v;
+    = Λ(a : Data).
+      λ(v : a). v;
   
   com : ([b : Data].b -> b) -> Int#
-    = \(g : [b : Data].b -> b). g [Int#] 0i;
+    = λ(g : [b : Data].b -> b). g [Int#] 0i;
   
   uuse : ?6 -> Int#
-    = \(_ : ?6). com f
+    = λ(_ : ?6). com f
 }
 

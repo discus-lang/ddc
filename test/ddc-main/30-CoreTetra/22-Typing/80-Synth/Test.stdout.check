@@ -1,73 +1,73 @@
 ok
 
 -- Check we can produce existential vars.
-\(x : ?0). x
+λ(x : ?0). x
 :*: ?0 -> ?0
 :!: Pure
 
 
 -- Check existing type annots are not trashed during synth.
-\(x : Unit). x
+λ(x : Unit). x
 :*: Unit -> Unit
 :!: Pure
 
 
 -- Check order of existential vars.
-\(x : ?0).\(y : ?2).\(z : ?4). y
+λ(x : ?0).λ(y : ?2).λ(z : ?4). y
 :*: ?0 -> ?2 -> ?4 -> ?2
 :!: Pure
 
 
 -- Function application.
-\(f : ?4 -> ?5).\(x : ?4). f x
+λ(f : ?4 -> ?5).λ(x : ?4). f x
 :*: (?4 -> ?5) -> ?4 -> ?5
 :!: Pure
 
 
 -- Multiple use of argument.
-\(f : ?4 -> ?4 -> ?7).\(x : ?4). f x x
+λ(f : ?4 -> ?4 -> ?7).λ(x : ?4). f x x
 :*: (?4 -> ?4 -> ?7) -> ?4 -> ?7
 :!: Pure
 
 
 -- Second order.
-\(f : ?6 -> ?7).\(g : ?8 -> ?6).\(x : ?8).
+λ(f : ?6 -> ?7).λ(g : ?8 -> ?6).λ(x : ?8).
 f (g x)
 :*: (?6 -> ?7) -> (?8 -> ?6) -> ?8 -> ?7
 :!: Pure
 
 
 -- Third order.
-\(f : (?10 -> ?11) -> ?11 -> ?9).\(g : ?10 -> ?11).\(x : ?10).
+λ(f : (?10 -> ?11) -> ?11 -> ?9).λ(g : ?10 -> ?11).λ(x : ?10).
 f g (g x)
 :*: ((?10 -> ?11) -> ?11 -> ?9) -> (?10 -> ?11) -> ?10 -> ?9
 :!: Pure
 
 
 -- Application.
-(\(f : (?10 -> ?10) -> ?10 -> ?10).\(g : ?10 -> ?10).\(x : ?10).
+(λ(f : (?10 -> ?10) -> ?10 -> ?10).λ(g : ?10 -> ?10).λ(x : ?10).
  f g (g x))
-    (\(x : ?10 -> ?10). x)
+    (λ(x : ?10 -> ?10). x)
 :*: (?10 -> ?10) -> ?10 -> ?10
 :!: Pure
 
 
 -- Type abstraction.
-/\(a : Data).
- \(x : ?0). x
+Λ(a : Data).
+λ(x : ?0). x
 :*: [a : Data].?0 -> ?0
 :!: Pure
 
 
 -- Abstract type being used as annotation.
-/\(a : Data).
- \(x : a).\(y : ?1). x
+Λ(a : Data).
+λ(x : a).λ(y : ?1). x
 :*: [a : Data].a -> ?1 -> a
 :!: Pure
 
 
 -- Check existentials can be solved against a constructor type,
-(\(x y : Nat#). add# [Nat#] x y) 5
+(λ(x y : Nat#). add# [Nat#] x y) 5
 :*: Nat# -> Nat#
 :!: Pure
 
@@ -87,7 +87,7 @@ add# [Nat#] x
 
 -- Functional let binding.
 let f : Nat# -> Nat#
-      = \(x : Nat#). add# [Nat#] x 2 in
+      = λ(x : Nat#). add# [Nat#] x 2 in
 f 3
 :*: Nat#
 :!: Pure
@@ -95,11 +95,11 @@ f 3
 
 -- Multiple let bindings.
 let f : Nat# -> Nat#
-      = \(x : Nat#). x in
+      = λ(x : Nat#). x in
 let g : (Nat# -> Nat#) -> Nat# -> Nat#
-      = \(f : Nat# -> Nat#).\(z : Nat#). f z in
+      = λ(f : Nat# -> Nat#).λ(z : Nat#). f z in
 let h : Nat# -> Nat#
-      = \(x : Nat#). add# [Nat#] x 2 in
+      = λ(x : Nat#). add# [Nat#] x 2 in
 h (g f 5)
 :*: Nat#
 :!: Pure
@@ -107,11 +107,11 @@ h (g f 5)
 
 -- As above, but use function binding syntax.
 let f : Nat# -> Nat#
-      = \(x : Nat#). x in
+      = λ(x : Nat#). x in
 let g : (Nat# -> Nat#) -> Nat# -> Nat#
-      = \(f : Nat# -> Nat#).\(z : Nat#). f z in
+      = λ(f : Nat# -> Nat#).λ(z : Nat#). f z in
 let h : Nat# -> Nat#
-      = \(x : Nat#). add# [Nat#] x 2 in
+      = λ(x : Nat#). add# [Nat#] x 2 in
 h (g f 5)
 :*: Nat#
 :!: Pure
@@ -120,8 +120,8 @@ h (g f 5)
 -- Synthesis still runs in the right of a binding with a 
 -- full type annotation.
 let f : Nat# -> Nat#
-      = \(x : Nat#).
-        (\(z : Nat#). z) x in
+      = λ(x : Nat#).
+        (λ(z : Nat#). z) x in
 f 5
 :*: Nat#
 :!: Pure
@@ -130,8 +130,8 @@ f 5
 -- Synthesis in the right of a letrec with a full annotation.
 letrec {
   f : Nat# -> Nat#
-    = \(x : Nat#).
-      (\(z : Nat#). z) x
+    = λ(x : Nat#).
+      (λ(z : Nat#). z) x
 } in
 f 5
 :*: Nat#
@@ -148,7 +148,7 @@ case () of {
 
 
 -- Match against a single constructor.
-\(x : Tuple2# ?2 ?3).
+λ(x : Tuple2# ?2 ?3).
 case x of {
   T2# (a : ?2) (b : ?3) 
    -> ()
@@ -181,17 +181,17 @@ case T2# [Nat#] [Nat#] 2 3 of {
 
 -- Kind of 'a' variable is constrained by its use as the type
 -- of the body of a data abstraction.
-/\(a : Data).
- \(x : a). x
+Λ(a : Data).
+λ(x : a). x
 :*: [a : Data].a -> a
 :!: Pure
 
 
 -- Kind of 'a' variable is constrained by its use as the type
 -- of the body of a type abstraction.
-/\(a : Data).
- \(x : a).
-/\(b : Data). x
+Λ(a : Data).
+λ(x : a).
+Λ(b : Data). x
 :*: [a : Data].a -> [b : Data].a
 :!: Pure
 
@@ -209,72 +209,72 @@ When checking expression.
 
 
 -- As above, but we've given a type for functional parameter.
-\(f : [a : Data].a). f [Unit]
+λ(f : [a : Data].a). f [Unit]
 :*: ([a : Data].a) -> Unit
 :!: Pure
 
 
 -- Kind of 'a' is defaulted to Data because its used in the type of
 -- a function parameter.
-/\(a : Data).
- \(x : [b : Data].a). ()
+Λ(a : Data).
+λ(x : [b : Data].a). ()
 :*: [a : Data].([b : Data].a) -> Unit
 :!: Pure
 
 
 -- As above but synthesise the kind parameter.
-/\(a : Data).
- \(x : [b : ?1].a). ()
+Λ(a : Data).
+λ(x : [b : ?1].a). ()
 :*: [a : Data].([b : ?1].a) -> Unit
 :!: Pure
 
 
 -- As above but also return the function parameter.
-/\(a : Data).
- \(x : [b : Data].a). x
+Λ(a : Data).
+λ(x : [b : Data].a). x
 :*: [a : Data].([b : Data].a) -> [b : Data].a
 :!: Pure
 
 
 -- Result kind of 'f' is defaulted to Data because the result is used
 -- as the type of a function parameter.
-/\(f : Data ~> Data).
- \(a : f Int#). ()
+Λ(f : Data ~> Data).
+λ(a : f Int#). ()
 :*: [f : Data ~> Data].f Int# -> Unit
 :!: Pure
 
 
 -- As above, but with an explicit hole.
-/\(f : Data ~> Data).
- \(a : f Int#). ()
+Λ(f : Data ~> Data).
+λ(a : f Int#). ()
 :*: [f : Data ~> Data].f Int# -> Unit
 :!: Pure
 
 
 -- As above, but with a more specific kind.
-/\(f : Data ~> Data).
- \(a : f Int#). ()
+Λ(f : Data ~> Data).
+λ(a : f Int#). ()
 :*: [f : Data ~> Data].f Int# -> Unit
 :!: Pure
 
 
 -- Kind of 'r' is constrained within a witness abstraction.
-/\(r : Region).
- \(w : Const r). ()
+Λ(r : Region).
+λ(w : Const r). ()
 :*: [r : Region].Const r => Unit
 :!: Pure
 
 
 -- Kind of 'a' is unconstrained, but kind of 'x' is defaulted to Data.
-/\(f : ?2 ~> Data)./\(a : ?2).
- \(x : f a). ()
+Λ(f : ?2 ~> Data).Λ(a : ?2).
+λ(x : f a). ()
 :*: [f : ?2 ~> Data].[a : ?2].f a -> Unit
 :!: Pure
 
 
 -- Kinds of 'e' and 'r' are constrained via the type sum. 
-/\(e : Effect)./\(r : Region).
- \(x : S (Write r + e) Nat#). x
+Λ(e : Effect).Λ(r : Region).
+λ(x : S (Write r + e) Nat#). x
 :*: [e : Effect].[r : Region].S (Write r + e) Nat# -> S (Write r + e) Nat#
 :!: Pure
 
@@ -289,7 +289,7 @@ When checking expression.
 
 
 -- Synthesis works through box casts.
-\(f : ?4 -> ?5).\(x : ?4).
+λ(f : ?4 -> ?5).λ(x : ?4).
 box
 f x
 :*: (?4 -> ?5) -> ?4 -> S Pure ?5
@@ -297,8 +297,8 @@ f x
 
 
 -- Synthesis works through effect weakenings.
-/\(r : Region).
- \(f : ?5 -> ?6).\(x : ?5).
+Λ(r : Region).
+λ(f : ?5 -> ?6).λ(x : ?5).
 box
 weakeff [Read r] in
 f x
@@ -306,7 +306,7 @@ f x
 :!: Pure
 
 -- Synthesis works through boxings.
-\(f : ?4 -> ?5).\(c : S Pure ?4).
+λ(f : ?4 -> ?5).λ(c : S Pure ?4).
 box
 f
     (run c)
@@ -315,8 +315,8 @@ f
 
 
 -- Kind of 'a' is constrained by its use as the type of a let-binding.
-/\(a : Data).
- \(x : a).
+Λ(a : Data).
+λ(x : a).
 let y : a = x in
 ()
 :*: [a : Data].a -> Unit
@@ -324,8 +324,8 @@ let y : a = x in
 
 
 -- As above, but with transitive let-bindings.
-/\(a : Data).
- \(x : a).
+Λ(a : Data).
+λ(x : a).
 let y : a = x in
 let z : a = y in
 z
@@ -335,8 +335,8 @@ z
 
 -- Kind of 'a' is constrained by its use as the type of the body
 -- of a let-binding. 
-/\(a : Data).
- \(x : a).
+Λ(a : Data).
+λ(x : a).
 let y : Unit = () in
 x
 :*: [a : Data].a -> a
@@ -344,11 +344,11 @@ x
 
 
 -- Synthesis works through recursive let-bindings.
-/\(a : Data).
- \(x : a).
+Λ(a : Data).
+λ(x : a).
 letrec {
   f : Unit -> Unit
-    = \(y : Unit). y
+    = λ(y : Unit). y
 } in
 x
 :*: [a : Data].a -> a
@@ -356,14 +356,14 @@ x
 
 
 -- Mutually recursive bindings with no type annotations.
-/\(a : Data).
- \(x : a).
+Λ(a : Data).
+λ(x : a).
 letrec {
   f : a -> ?1
-    = \(y : a). g y;
+    = λ(y : a). g y;
   
   g : a -> ?1
-    = \(z : a). f z
+    = λ(z : a). f z
 } in
 f x
 :*: [a : Data].a -> ?1
@@ -371,8 +371,8 @@ f x
 
 
 -- Synthesis works through private region introduction.
-/\(a : Data).
- \(x : a).
+Λ(a : Data).
+λ(x : a).
 private r in
 x
 :*: [a : Data].a -> a
@@ -380,8 +380,8 @@ x
 
 
 -- Combo 1.
-/\(r : Region)./\(e : Effect)./\(g : Region ~> Effect).
- \(f : ?9 -> ?10).\(x : ?9).
+Λ(r : Region).Λ(e : Effect).Λ(g : Region ~> Effect).
+λ(f : ?9 -> ?10).λ(x : ?9).
 box
 weakeff [Read r + e + g r] in
 f x
@@ -390,8 +390,8 @@ f x
 
 
 -- Combo 2.
-/\(f : ?3 ~> Data)./\(a : ?3).
- \(x : [w : Data].f a).\(g : f a -> Nat# -> ?11).
+Λ(f : ?3 ~> Data).Λ(a : ?3).
+λ(x : [w : Data].f a).λ(g : f a -> Nat# -> ?11).
 let y : Nat# -> ?11
       = g (x [Nat#]) in
 y 5
@@ -400,8 +400,8 @@ y 5
 
 
 -- Combo 3.
-/\(f : Data ~> Region)./\(a : Data).
- \(x : [w : Region].a).\(g : a -> Nat# -> ?10).
+Λ(f : Data ~> Region).Λ(a : Data).
+λ(x : [w : Region].a).λ(g : a -> Nat# -> ?10).
 let y : Nat# -> ?10
       = g
             (x [f a]) in

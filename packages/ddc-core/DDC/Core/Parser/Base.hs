@@ -8,7 +8,7 @@ module DDC.Core.Parser.Base
         , pLit,         pLitSP
         , pString,      pStringSP
         , pIndex,       pIndexSP
-        , pVar,         pVarSP
+        , pVar,         pVarSP,         pVarNamedSP
         , pTok,         pTokSP
         , pTokAs,       pTokAsSP
         , pOpSP
@@ -120,6 +120,14 @@ pVarSP  =   P.pTokMaybeSP f
         <?> "a variable"
  where  f (KN (KVar n))         = Just n
         f _                     = Nothing
+
+
+-- | Parse a variable of a specific name, with its source position.
+pVarNamedSP :: String -> Parser String SourcePos
+pVarNamedSP str 
+        = fmap snd (P.pTokMaybeSP f <?> "a variable")
+ where  f (KN (KVar n)) | n == str = Just n
+        f _                        = Nothing
 
 
 -- | Parse a deBruijn index.

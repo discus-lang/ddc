@@ -5,23 +5,23 @@ ok
 module Test with
 letrec {
   x3$runproc$process : [u1$k : Rate].RateVec# u1$k Int# -> Ref# Int# -> [x3$PROC : Proc].Unit -> Process# x3$PROC u1$k
-    = /\(u1$k : Rate).
-       \(u1$rv : RateVec# u1$k Int#).\(x3$ref : Ref# Int#).
-      /\(x3$PROC : Proc).
-       \(_ : Unit).
+    = Λ(u1$k : Rate).
+      λ(u1$rv : RateVec# u1$k Int#).λ(x3$ref : Ref# Int#).
+      Λ(x3$PROC : Proc).
+      λ(_ : Unit).
       let u1$s : Series# x3$PROC u1$k Int# = series# [x3$PROC] [u1$k] [Int#] u1$rv in
       let x3$proc : Process# x3$PROC u1$k
             = sreduce# [x3$PROC] [u1$k] [Int#] x3$ref
-                  (\(x0 x1 : Int#). add# [Int#] x0 x1) 0i# u1$s in
+                  (λ(x0 x1 : Int#). add# [Int#] x0 x1) 0i# u1$s in
       x3$proc;
   
   test : Vector# Int# -> Int#
-    = \(u1 : Vector# Int#).
+    = λ(u1 : Vector# Int#).
       let x3$ref : Ref# Int# = new# [Int#] 0i# in
       let x3$runproc : Unit
             = ratify1# [Int#] [Unit] u1
-                  (/\(u1$k : Rate).
-                    \(u1$rv : RateVec# u1$k Int#).
+                  (Λ(u1$k : Rate).
+                   λ(u1$rv : RateVec# u1$k Int#).
                    runProcess# [u1$k] (x3$runproc$process [u1$k] u1$rv x3$ref)) in
       let x3 : Int# = read# [Int#] x3$ref in
       x3
@@ -32,27 +32,27 @@ letrec {
 module Test with
 letrec {
   x3$runproc$process : [u1$k : Rate].RateVec# u1$k Int# -> Ref# Int# -> Ref# Int# -> [x3$PROC : Proc].Unit -> Process# x3$PROC u1$k
-    = /\(u1$k : Rate).
-       \(u1$rv : RateVec# u1$k Int#).\(x7$ref x3$ref : Ref# Int#).
-      /\(x3$PROC : Proc).
-       \(_ : Unit).
+    = Λ(u1$k : Rate).
+      λ(u1$rv : RateVec# u1$k Int#).λ(x7$ref x3$ref : Ref# Int#).
+      Λ(x3$PROC : Proc).
+      λ(_ : Unit).
       let u1$s : Series# x3$PROC u1$k Int# = series# [x3$PROC] [u1$k] [Int#] u1$rv in
       let x3$proc : Process# x3$PROC u1$k
             = sreduce# [x3$PROC] [u1$k] [Int#] x3$ref
-                  (\(x0 x1 : Int#). add# [Int#] x0 x1) 0i# u1$s in
+                  (λ(x0 x1 : Int#). add# [Int#] x0 x1) 0i# u1$s in
       let x7$proc : Process# x3$PROC u1$k
             = sreduce# [x3$PROC] [u1$k] [Int#] x7$ref
-                  (\(x4 x5 : Int#). mul# [Int#] x4 x5) 1i# u1$s in
+                  (λ(x4 x5 : Int#). mul# [Int#] x4 x5) 1i# u1$s in
       pjoin# [x3$PROC] [u1$k] x3$proc x7$proc;
   
   test : Vector# Int# -> Int#
-    = \(u1 : Vector# Int#).
+    = λ(u1 : Vector# Int#).
       let x3$ref : Ref# Int# = new# [Int#] 0i# in
       let x7$ref : Ref# Int# = new# [Int#] 1i# in
       let x3$runproc : Unit
             = ratify1# [Int#] [Unit] u1
-                  (/\(u1$k : Rate).
-                    \(u1$rv : RateVec# u1$k Int#).
+                  (Λ(u1$k : Rate).
+                   λ(u1$rv : RateVec# u1$k Int#).
                    runProcess# [u1$k] (x3$runproc$process [u1$k] u1$rv x7$ref x3$ref)) in
       let x3 : Int# = read# [Int#] x3$ref in
       let x7 : Int# = read# [Int#] x7$ref in

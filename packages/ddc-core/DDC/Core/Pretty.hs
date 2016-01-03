@@ -240,7 +240,6 @@ instance (Pretty n, Eq n) => Pretty (Exp a n) where
          | otherwise
          -> ppr u
 
-
         XCon  _ dc
          | modeExpConTypes mode
          , Just t       <- takeTypeOfDaCon dc
@@ -249,14 +248,13 @@ instance (Pretty n, Eq n) => Pretty (Exp a n) where
          | otherwise
          -> ppr dc
         
-        
         XLAM{}
          -> let Just (bs, xBody) = takeXLAMs xx
                 groups = partitionBindsByType bs
             in  pprParen' (d > 1)
-                 $  (cat $ map (pprBinderGroup (text "/\\")) groups)
+                 $  (cat $ map (pprBinderGroup (text "Λ")) groups)
                  <>  (if      isXLAM    xBody then empty
-                      else if isXLam    xBody then line <> space
+                      else if isXLam    xBody then line
                       else if isSimpleX xBody then space
                       else    line)
                  <>  pprX xBody
@@ -265,7 +263,7 @@ instance (Pretty n, Eq n) => Pretty (Exp a n) where
          -> let Just (bs, xBody) = takeXLams xx
                 groups = partitionBindsByType bs
             in  pprParen' (d > 1)
-                 $  (cat $ map (pprBinderGroup (text "\\")) groups) 
+                 $  (cat $ map (pprBinderGroup (text "\955")) groups) 
                  <> breakWhen (not $ isSimpleX xBody)
                  <> pprX xBody
 

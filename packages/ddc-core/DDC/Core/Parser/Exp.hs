@@ -29,16 +29,16 @@ pExp    :: Ord n => Context n -> Parser n (Exp SourcePos n)
 pExp c
  = P.choice
         -- Level-0 lambda abstractions
-        -- \BIND.. . EXP
- [ do   sp      <- pTokSP KBackSlash
+        -- (λBIND.. . EXP) or (\BIND.. . EXP)
+ [ do   sp      <- P.choice [ pTokSP KLambda,    pTokSP KBackSlash]
         bs      <- liftM concat $ P.many1 (pBinds c)
         pTok KDot
         xBody   <- pExp c
         return  $ foldr (XLam sp) xBody bs
 
         -- Level-1 lambda abstractions.
-        -- /\BINDS.. . EXP
- , do   sp      <- pTokSP KBigLambda
+        -- (ΛBINDS.. . EXP) or (/\BIND.. . EXP)
+ , do   sp      <- P.choice [ pTokSP KBigLambda, pTokSP KBigLambdaSlash] 
         bs      <- liftM concat $ P.many1 (pBinds c)
         pTok KDot
         xBody   <- pExp c

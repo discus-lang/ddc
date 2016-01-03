@@ -13,7 +13,7 @@ ok
 module Test with
 letrec {
   max : Float64# -> Float64# -> Float64#
-    = \(n1 n2 : Float64#).
+    = λ(n1 n2 : Float64#).
       case gt# [Float64#] n1 n2 of {
         True#  
          -> n1;
@@ -22,7 +22,7 @@ letrec {
       };
   
   det : Tuple2# Float64# Float64# -> Tuple2# Float64# Float64# -> Tuple2# Float64# Float64# -> Float64#
-    = \(l1 l2 p0 : Tuple2# Float64# Float64#).
+    = λ(l1 l2 p0 : Tuple2# Float64# Float64#).
       letcase T2# (x0 : Float64#) (y0 : Float64#)  = p0 in
       letcase T2# (x1 : Float64#) (y1 : Float64#)  = l1 in
       letcase T2# (x2 : Float64#) (y2 : Float64#)  = l2 in
@@ -31,8 +31,8 @@ letrec {
           (mul# [Float64#] (sub# [Float64#] y1 y0) (sub# [Float64#] x2 x0));
   
   split : [p : Proc].[k1 : Rate].Tuple2# Float64# Float64# -> Tuple2# Float64# Float64# -> Series# p k1 (Tuple2# Float64# Float64#) -> Vector# (Tuple2# Float64# Float64#) -> Ref# Float64# -> Process# p k1
-    = /\(p : Proc)./\(k1 : Rate).
-       \(l1 l2 : Tuple2# Float64# Float64#).\(points : Series# p k1 (Tuple2# Float64# Float64#)).\(vec : Vector# (Tuple2# Float64# Float64#)).\(mx : Ref# Float64#).
+    = Λ(p : Proc).Λ(k1 : Rate).
+      λ(l1 l2 : Tuple2# Float64# Float64#).λ(points : Series# p k1 (Tuple2# Float64# Float64#)).λ(vec : Vector# (Tuple2# Float64# Float64#)).λ(mx : Ref# Float64#).
       let dets : Series# p k1 Float64#
             = smap# [p] [k1] [Tuple2# Float64# Float64#] [Float64#] (det l1 l2) points in
       let flags : Series# p k1 Bool#
@@ -40,8 +40,8 @@ letrec {
                   (gt# [Float64#] (promote# [Float64#] [Nat#] 0#)) dets in
       pjoin# [p] [k1]
           (smkSel# [p] [k1] [k1] flags
-               (/\(k2 : Rate).
-                 \(sel : Sel1# p k1 k2).
+               (Λ(k2 : Rate).
+                λ(sel : Sel1# p k1 k2).
                 let above : Series# p k2 (Tuple2# Float64# Float64#)
                       = spack# [p] [k1] [k2] [Tuple2# Float64# Float64#] sel points in
                 presize# [p] [k2] [k1]

@@ -5,7 +5,7 @@ ok
 module Test with
 letrec {
   addInt : Int# -> Int# -> Int#
-    = \(x : Int#). add# [Int#] x
+    = λ(x : Int#). add# [Int#] x
 }
 
 
@@ -20,9 +20,9 @@ data Tuple2 (a : Data) (b : Data) where {
 with
 letrec {
   t1 : [a : Data].a -> [b : Data].b -> Tuple2 a b
-    = /\(a : Data).
-       \(x : a).
-      /\(b : Data). T2 [a] [b] x
+    = Λ(a : Data).
+      λ(x : a).
+      Λ(b : Data). T2 [a] [b] x
 }
 
 
@@ -31,16 +31,16 @@ ok
 module Test with
 letrec {
   thing : ([a : Data].a -> a) -> Unit
-    = \(id : [a : Data].a -> a).
+    = λ(id : [a : Data].a -> a).
       let _ : Nat# = id [Nat#] 5 in
       let _ : Unit = id [Unit] () in
       ();
   
   foo : Unit -> Unit
-    = \(x : Unit).
+    = λ(x : Unit).
       thing
-          (/\(a : Data).
-            \(x : a). x)
+          (Λ(a : Data).
+           λ(x : a). x)
 }
 
 
@@ -49,19 +49,19 @@ ok
 module Test with
 letrec {
   id : [a : Data].a -> a
-    = /\(a : Data).
-       \(x : a). x;
+    = Λ(a : Data).
+      λ(x : a). x;
   
   thing1 : (([a : Data].a -> a) -> Nat#) -> Nat#
-    = \(blerk : ([a : Data].a -> a) -> Nat#).
+    = λ(blerk : ([a : Data].a -> a) -> Nat#).
       blerk
-          (/\(a : Data).
-            \(x : a). x);
+          (Λ(a : Data).
+           λ(x : a). x);
   
   thing2 : Unit -> Nat#
-    = \(u : Unit).
+    = λ(u : Unit).
       thing1
-          (\(f : [a : Data].a -> a). f [Nat#] 5)
+          (λ(f : [a : Data].a -> a). f [Nat#] 5)
 }
 
 
@@ -71,7 +71,7 @@ When checking expression.
   Missing type annotation on function parameter.
                With paramter: x
   
-  with: \(x : Bot). x
+  with: λ(x : Bot). x
 
 
 -- Error: cannot shadow spec binders.
@@ -81,8 +81,8 @@ Error loading module
     Cannot shadow named spec variable.
       binder: r : Region
       is already in the environment.
-    with: /\(r : Region).
-           \(r : Ref r Int#).
+    with: Λ(r : Region).
+          λ(r : Ref r Int#).
           case x of {
             0  
              -> x;

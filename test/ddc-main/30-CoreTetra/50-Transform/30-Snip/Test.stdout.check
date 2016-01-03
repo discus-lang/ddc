@@ -6,13 +6,13 @@ ok
 
 -- Snip identity function.
 let ^ : Unit -> Unit
-      = \(x : Unit). x in
+      = λ(x : Unit). x in
 ^0 ()
 
 
 -- Snip identify function with indices.
 let ^ : Unit -> Unit
-      = \(^ : Unit). ^0 in
+      = λ(^ : Unit). ^0 in
 ^0 ()
 
 
@@ -28,7 +28,7 @@ add# [Nat#] ^1 ^0
 
 -- Snip scrutinee of case expression.
 let ^ : Unit -> Nat#
-      = \(u : Unit).
+      = λ(u : Unit).
         let ^ : Nat# = add# [Nat#] 1 2 in
         case ^0 of {
           0  

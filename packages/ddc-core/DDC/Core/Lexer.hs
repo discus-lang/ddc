@@ -146,7 +146,7 @@ lexText sourceName lineStart xx
                 "->"            -> Just KArrowDash
                 "<-"            -> Just KArrowDashLeft
                 "=>"            -> Just KArrowEquals
-                "/\\"           -> Just KBigLambda
+                "/\\"           -> Just KBigLambdaSlash
                 "()"            -> Just KDaConUnit
                 _               -> Nothing
          = tokA t : lexMore 2 rest
@@ -240,6 +240,14 @@ lexText sourceName lineStart xx
          -- Operator body symbols.
          | Just ('^', rest)     <- T.uncons cs
          = tokA KHat                            : lexMore 1 rest
+
+         -- Lambdas
+         | Just ('λ', rest)     <- T.uncons cs
+         = tokA KLambda                         : lexMore 1 rest
+
+         | Just ('Λ', rest)     <- T.uncons cs
+         = tokA KBigLambda                      : lexMore 1 rest
+
 
          -- Bottoms
          | Just rest            <- prefix "Pure" cs

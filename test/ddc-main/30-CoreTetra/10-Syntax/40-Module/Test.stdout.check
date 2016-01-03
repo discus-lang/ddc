@@ -10,18 +10,18 @@ private rt with {w1 : Const rt}
 let one : Nat# = 1
 letrec {
   main : Unit -> S Pure Unit
-    = \(_ : Unit).
+    = λ(_ : Unit).
       box
       private r0 in
       ();
   
   double : Nat# -> Nat#
-    = \(x : Nat#).
+    = λ(x : Nat#).
       mul# [Nat#] x (two ());
   
   thing : [r : Region].Nat# -> Nat#
-    = /\(r : Region).
-       \(x : Nat#). add# [Nat#] x one
+    = Λ(r : Region).
+      λ(x : Nat#). add# [Nat#] x one
 }
 
 
@@ -35,16 +35,16 @@ private rt with {w1 : Const rt}
 let one : Nat# = 1
 letrec {
   main : Unit -> S Pure Unit
-    = \(_ : Unit).
+    = λ(_ : Unit).
       box
       private r0 in
       ();
   
   double : Nat# -> Nat#
-    = \(x : Nat#).
+    = λ(x : Nat#).
       mul# [Nat#] x (two ());
   
   thing : [r : Region].Nat# -> Nat#
-    = /\(r : Region).
-       \(x : Nat#). add# [Nat#] x one
+    = Λ(r : Region).
+      λ(x : Nat#). add# [Nat#] x one
 }

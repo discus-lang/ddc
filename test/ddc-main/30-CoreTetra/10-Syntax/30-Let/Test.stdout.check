@@ -16,7 +16,7 @@ x
 
 -- Let-bound function with full signature.
 let f : Unit -> Unit
-      = \(x : Unit). x in
+      = λ(x : Unit). x in
 ()
 :*: Unit
 :!: Pure
@@ -24,7 +24,7 @@ let f : Unit -> Unit
 
 -- Let using function syntax with a return type.
 let f : Unit -> Unit
-      = \(x : Unit). x in
+      = λ(x : Unit). x in
 f ()
 :*: Unit
 :!: Pure
@@ -32,7 +32,7 @@ f ()
 
 -- Let using function syntax without a return type.
 let f : Unit -> Unit
-      = \(x : Unit). x in
+      = λ(x : Unit). x in
 f ()
 :*: Unit
 :!: Pure
@@ -40,7 +40,7 @@ f ()
 
 -- Lazy using function syntax without a return type.
 let f : Unit -> Unit
-      = \(x : Unit). x in
+      = λ(x : Unit). x in
 f ()
 :*: Unit
 :!: Pure
@@ -73,7 +73,7 @@ private r in
 private r in
 letrec {
   f : Unit -> Nat#
-    = \(x : Unit). 5
+    = λ(x : Unit). 5
 } in
 f ()
 :*: Nat#
@@ -84,7 +84,7 @@ f ()
 private r in
 letrec {
   f : Unit -> Nat#
-    = \(u : Unit). 5
+    = λ(u : Unit). 5
 } in
 add# [Nat#] (f ()) (f ())
 :*: Nat#
@@ -95,7 +95,7 @@ add# [Nat#] (f ()) (f ())
 private r in
 letrec {
   f : Unit -> Nat#
-    = \(u : Unit). 5
+    = λ(u : Unit). 5
 } in
 add# [Nat#] (f ()) (f ())
 :*: Nat#

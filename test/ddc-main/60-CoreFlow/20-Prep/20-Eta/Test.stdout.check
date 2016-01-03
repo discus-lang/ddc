@@ -3,13 +3,13 @@
 ok
 ok
 module Test 
-import value f : Int# -> Int# -> Int#;
+import value f          : Int# -> Int# -> Int#;
 with
 letrec {
   ffold : [p : Proc].[k : Rate].Ref# Int# -> Series# p k Int# -> Process# p k
-    = /\(p : Proc)./\(k : Rate).
-       \(o : Ref# Int#).\(s : Series# p k Int#).
+    = Λ(p : Proc).Λ(k : Rate).
+      λ(o : Ref# Int#).λ(s : Series# p k Int#).
       sreduce# [p] [k] [Int#] o
-          (\(^ ^ : Int#). f ^1 ^0) 0i# s
+          (λ(^ ^ : Int#). f ^1 ^0) 0i# s
 }
 

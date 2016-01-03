@@ -7,17 +7,17 @@ ok
 module Test with
 letrec {
   test : [p : Proc].[k1 : Rate].Series# p k1 Nat# -> Vector# Nat# -> Unit
-    = /\(p : Proc)./\(k1 : Rate).
-       \(lens : Series# p k1 Nat#).\(v : Vector# Nat#).
+    = Λ(p : Proc).Λ(k1 : Rate).
+      λ(lens : Series# p k1 Nat#).λ(v : Vector# Nat#).
       let v$buf = vbuf# [Nat#] v in
       let v$count = new# [Nat#] 0# in
       let _
             = loop# [k1]
-                  (\(x0 : Nat#).
+                  (λ(x0 : Nat#).
                    let lens$elem = next# [Nat#] [p] [k1] lens x0 in
                    let _
                          = segment# lens$elem
-                               (\(x1 : Nat#).
+                               (λ(x1 : Nat#).
                                 let ^ = read# [Nat#] v$count in
                                 let _ = vwrite# [Nat#] v$buf ^0 x1 in
                                 let ^ = read# [Nat#] v$count in
@@ -35,18 +35,18 @@ letrec {
 module Test with
 letrec {
   test : [p : Proc].[k1 : Rate].Series# p k1 Nat# -> Series# p k1 Nat# -> Vector# Nat# -> Unit
-    = /\(p : Proc)./\(k1 : Rate).
-       \(lens things : Series# p k1 Nat#).\(v : Vector# Nat#).
+    = Λ(p : Proc).Λ(k1 : Rate).
+      λ(lens things : Series# p k1 Nat#).λ(v : Vector# Nat#).
       let v$buf = vbuf# [Nat#] v in
       let v$count = new# [Nat#] 0# in
       let _
             = loop# [k1]
-                  (\(x2 : Nat#).
+                  (λ(x2 : Nat#).
                    let lens$elem = next# [Nat#] [p] [k1] lens x2 in
                    let things$elem = next# [Nat#] [p] [k1] things x2 in
                    let _
                          = segment# lens$elem
-                               (\(x3 : Nat#).
+                               (λ(x3 : Nat#).
                                 let s4$elem = add# [Nat#] x3 things$elem in
                                 let x5 = read# [Nat#] v$count in
                                 let _ = vwrite# [Nat#] v$buf x5 s4$elem in
@@ -69,8 +69,8 @@ letrec {
 module Test with
 letrec {
   test : [p : Proc].[k1 kThings : Rate].RateVec# k1 Nat# -> RateVec# k1 Nat# -> RateVec# kThings Float32# -> Vector# Float32# -> Vector# Float32# -> Unit
-    = /\(p : Proc)./\(k1 kThings : Rate).
-       \(lens base : RateVec# k1 Nat#).\(things : RateVec# kThings Float32#).\(out1 out2 : Vector# Float32#).
+    = Λ(p : Proc).Λ(k1 kThings : Rate).
+      λ(lens base : RateVec# k1 Nat#).λ(things : RateVec# kThings Float32#).λ(out1 out2 : Vector# Float32#).
       let out1$buf = vbuf# [Float32#] out1 in
       let out2$buf = vbuf# [Float32#] out2 in
       let out1$count = new# [Nat#] 0# in
@@ -78,14 +78,14 @@ letrec {
       let base' = series# [p] [k1] [Nat#] base in
       let _
             = loop# [k1]
-                  (\(x2 : Nat#).
+                  (λ(x2 : Nat#).
                    let lens'$elem = next# [Nat#] [p] [k1] lens' x2 in
                    let base'$elem = next# [Nat#] [p] [k1] base' x2 in
                    let x6 = vbufofratevec# [kThings] [Float32#] things in
                    let firsts$elem = vread# [Float32#] x6 base'$elem in
                    let _
                          = segment# lens'$elem
-                               (\(x3 : Nat#).
+                               (λ(x3 : Nat#).
                                 let x7 = read# [Nat#] out1$count in
                                 let _ = vwrite# [Float32#] out2$buf x7 firsts$elem in
                                 let ixs$elem = add# [Nat#] base'$elem x3 in
