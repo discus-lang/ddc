@@ -33,11 +33,14 @@ module DDC.Core.Lexer.Names
 where
 import DDC.Core.Exp
 import DDC.Core.Lexer.Tokens
+import DDC.Core.Lexer.Unicode
 import DDC.Data.ListUtils
 import Data.Char
 import Data.List
+import qualified Data.Set               as Set
 
 
+---------------------------------------------------------------------------------------------------
 -- | Textual keywords in the core language.
 keywords :: [(String, Tok n)]
 keywords
@@ -134,7 +137,7 @@ readTcConBuiltin ss
 
 
 
--- Variable names -------------------------------------------------------------
+-- Variable names ---------------------------------------------------------------------------------
 -- | String is a variable name
 isVarName :: String -> Bool
 isVarName str
@@ -182,7 +185,7 @@ readVar ss
         | otherwise     = Nothing
 
 
--- Constructor names ----------------------------------------------------------
+-- Constructor names ------------------------------------------------------------------------------
 -- | String is a constructor name.
 isConName :: String -> Bool
 isConName str
@@ -224,7 +227,7 @@ readCon ss
         | otherwise     = Nothing
 
 
--- Operator names -------------------------------------------------------------
+-- Operator names ---------------------------------------------------------------------------------
 -- | String is the name of some operator.
 isOpName :: String -> Bool
 isOpName str
@@ -247,6 +250,7 @@ isOpStart c
         || c == '*'     || c == '-'     || c == '+'     || c == '='
         || c == ':'                     || c == '/'     || c == '|'
         || c == '<'     || c == '>'
+        || Set.member c unicodeOperatorsInfix
 
 
 -- | Character can be part of an operator body.
@@ -257,9 +261,10 @@ isOpBody c
         || c == '*'     || c == '-'     || c == '+'     || c == '='
         || c == ':'     || c == '?'     || c == '/'     || c == '|'
         || c == '<'     || c == '>'
+        || Set.member c unicodeOperatorsInfix
 
 
--- Literal names --------------------------------------------------------------
+-- Literal names ----------------------------------------------------------------------------------
 -- | String is the name of a literal.
 isLitName :: String -> Bool
 isLitName str

@@ -27,3 +27,5 @@ and (x y : Bool#) : Bool#
 or (x y : Bool#) : Bool#
  = if x then True 
         else y
+
+

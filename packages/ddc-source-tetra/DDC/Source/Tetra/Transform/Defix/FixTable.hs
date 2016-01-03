@@ -51,7 +51,6 @@ data FixDef l
         , fixDefPrec    :: Int }
 
 
-
 -- | Infix associativity.
 data InfixAssoc
         -- | Left associative.
@@ -106,27 +105,43 @@ getInfixDefOfSymbol a table str
 defaultFixTable :: GBound l ~ T.Bound Name => FixTable l
 defaultFixTable
  = FixTable 
-        -- Numeric operators.
-        [ FixDefPrefix "-"  (\sp -> XVar sp (T.UName (NameVar "neg")))
-        , FixDefInfix  "*"  (\sp -> XVar sp (T.UName (NameVar "mul")))    InfixLeft  7
-        , FixDefInfix  "+"  (\sp -> XVar sp (T.UName (NameVar "add")))    InfixLeft  6
-        , FixDefInfix  "-"  (\sp -> XVar sp (T.UName (NameVar "sub")))    InfixLeft  6
+        [ FixDefPrefix  "-"     (xvar "neg")
+        , FixDefPrefix  "¬"     (xvar "not")
+
+        -- Operators defined in the Haskell Prelude.
+        , FixDefInfix   "∘"     (xvar "compose")        InfixRight 9
+
+        , FixDefInfix   "*"     (xvar "mul")            InfixLeft  7
+
+        , FixDefInfix   "+"     (xvar "add")            InfixLeft  6
+        , FixDefInfix   "-"     (xvar "sub")            InfixLeft  6
+
+        , FixDefInfix   "∪"     (xvar "intersect")      InfixLeft  6
+        , FixDefInfix   "∩"     (xvar "union")          InfixLeft  6
+
+        , FixDefInfix   "=="    (xvar "eq")             InfixNone  4
+        , FixDefInfix   "/="    (xvar "neq")            InfixNone  4
+        , FixDefInfix   "<"     (xvar "lt")             InfixNone  4
+        , FixDefInfix   "<="    (xvar "le")             InfixNone  4
+        , FixDefInfix   ">"     (xvar "gt")             InfixNone  4
+        , FixDefInfix   ">="    (xvar "ge")             InfixNone  4
+
+        , FixDefInfix   "/\\"   (xvar "and")            InfixRight 3
+        , FixDefInfix   "∧"     (xvar "and")            InfixRight 3
+
+        , FixDefInfix   "\\/"   (xvar "or")             InfixRight 3
+        , FixDefInfix   "∨"     (xvar "or")             InfixRight 3
+
+        , FixDefInfix   "$"     (xvar "apply")          InfixRight 1 
 
         -- String pasting.
         --   These associate to the right so that when text objects are formed by
         --   pasting several together, then spine of the data structure leans to 
         --   the right, as do cons lists.
-        , FixDefInfix  "%"  (\sp -> XVar sp (T.UName (NameVar "paste")))  InfixRight 6
-        , FixDefInfix  "%%" (\sp -> XVar sp (T.UName (NameVar "pastes"))) InfixRight 6
+        , FixDefInfix   "%"  (xvar "paste")             InfixRight 6
+        , FixDefInfix   "%%" (xvar "pastes")            InfixRight 6
+        ]
 
-        -- Equality and inequalities.
-        , FixDefInfix  "==" (\sp -> XVar sp (T.UName (NameVar "eq" )))    InfixNone  5
-        , FixDefInfix  "/=" (\sp -> XVar sp (T.UName (NameVar "neq")))    InfixNone  5
-        , FixDefInfix  "<"  (\sp -> XVar sp (T.UName (NameVar "lt" )))    InfixNone  5
-        , FixDefInfix  "<=" (\sp -> XVar sp (T.UName (NameVar "le" )))    InfixNone  5
-        , FixDefInfix  ">"  (\sp -> XVar sp (T.UName (NameVar "gt" )))    InfixNone  5
-        , FixDefInfix  ">=" (\sp -> XVar sp (T.UName (NameVar "ge" )))    InfixNone  5
-
-        -- Function application.
-        , FixDefInfix  "$"  (\sp -> XVar sp (T.UName (NameVar "apply")))  InfixRight 1 ]
+ where  xvar str sp 
+         = XVar sp (T.UName (NameVar str))
 

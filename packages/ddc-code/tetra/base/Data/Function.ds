@@ -3,6 +3,9 @@ module Data.Function
 export { apply }
 where
 
-apply [a b : Data] (f : a -> b) (x : a) : b
+apply   [a b : Data] (f : a -> b) (x : a) : b
  = f x
+
+compose [a b c : Data] (f : b -> c) (g : a -> b) : a -> c
+ = λ x : a. f (g x)
 
