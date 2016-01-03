@@ -57,17 +57,26 @@ context = Context
 pExp    :: Context Name -> Parser Name (Exp SP)
 pExp c
  = P.choice
+
         -- Level-0 lambda abstractions
-        -- \(x1 x2 ... : Type) (y1 y2 ... : Type) ... . Exp
+        --  \(x1 x2 ... : Type) (y1 y2 ... : Type) ... . Exp
+        --  \x1 x2 : Type. Exp
  [ do   sp      <- P.choice [ pTokSP KLambda, pTokSP KBackSlash ]
-        bs      <- liftM concat
-                $  P.many1 
-                $  do   pTok KRoundBra
+
+        bs      <- P.choice
+                [ fmap concat $ P.many1 
+                   $ do pTok KRoundBra
                         bs'     <- P.many1 pBinder
                         pTok (KOp ":")
                         t       <- pType c
                         pTok KRoundKet
                         return (map (\b -> T.makeBindFromBinder b t) bs')
+
+                , do    bs'     <- P.many1 pBinder
+                        pTok (KOp ":")
+                        t       <- pType c
+                        return (map (\b -> T.makeBindFromBinder b t) bs') 
+                ]
 
         pTok KDot
         xBody   <- pExp c
@@ -76,14 +85,21 @@ pExp c
         -- Level-1 lambda abstractions.
         -- /\(x1 x2 ... : Type) (y1 y2 ... : Type) ... . Exp
  , do   sp      <- P.choice [ pTokSP KBigLambda, pTokSP KBigLambdaSlash ]
-        bs      <- liftM concat
-                $  P.many1 
-                $  do   pTok KRoundBra
+
+        bs      <- P.choice
+                [ fmap concat $ P.many1
+                   $ do pTok KRoundBra
                         bs'     <- P.many1 pBinder
                         pTok (KOp ":")
                         t       <- pType c
                         pTok KRoundKet
                         return (map (\b -> T.makeBindFromBinder b t) bs')
+
+                , do    bs'     <- P.many1 pBinder
+                        pTok (KOp ":")
+                        t       <- pType c
+                        return (map (\b -> T.makeBindFromBinder b t) bs')
+                ]
 
         pTok KDot
         xBody   <- pExp c
