@@ -45,6 +45,22 @@ listOfStream  (ss : Stream s a) : List a
                 Done            -> Nil
 
 
+-- | Cons an element to the front of a stream.
+scons (x : a) (ss : Stream s a) : Stream (Tup2 s Bool#) a
+ = case ss of
+        MkStream stepA sA0
+         -> let stepA2 q
+                 = case q of
+                        T2 sA1 b
+                         -> case b of
+                                True    -> Yield x (T2 sA1 False)
+                                False   -> case stepA sA1 of
+                                                Yield y sA2 -> Yield y (T2 sA2 False)
+                                                Skip  sA2   -> Skip    (T2 sA2 False)
+                                                Done        -> Done
+            in  MkStream stepA2 (T2 sA0 True)
+
+
 -- | Apply a function to every element of a stream.
 smap (f : a -> b) (ss : Stream s a) : Stream s b
  = case ss of  
@@ -58,7 +74,7 @@ smap (f : a -> b) (ss : Stream s a) : Stream s b
 
 
 -- | Take the given number of elements from a stream.
-stake (n : Nat) (ss : Stream s a) : Stream (Tup2 s Nat) a
+stake (n : Nat#) (ss : Stream s a) : Stream (Tup2 s Nat#) a
  = case ss of
         MkStream fA sA0
          -> let stepB q
@@ -71,4 +87,22 @@ stake (n : Nat) (ss : Stream s a) : Stream (Tup2 s Nat) a
                                 Skip sA3    -> Skip  (T2 sA3 ix)
                                 Done        -> Done
             in   MkStream stepB (T2 sA0 0)
+
+
+smapacc (f : a -> b -> Tup2 a c) (z : a) 
+        (ss : Stream s b) : Stream (Tup2 s a) c
+ = case ss of
+        MkStream fB sB0
+         -> let stepC q
+                 = case q of
+                        T2 sB1 xA1
+                         -> case fB sB1 of
+                                Yield xB1 sB2 
+                                 -> case f xA1 xB1 of
+                                        T2 xA2 xC2
+                                         -> Yield xC2 (T2 sB2 xA2)
+                                Skip sB2 -> Skip      (T2 sB2 xA1)
+                                Done     -> Done
+            in  MkStream stepC (T2 sB0 z)
+
 

@@ -4,17 +4,19 @@ export  { singleton;    replicate
         ; enumFromTo
         ; append
         ; length
-        ; head;         tail;           last
+        ; head
+        ; tail; tail1
+        ; last; index
         ; reverse 
         ; map;    mapS
-        ; zipWith; zipWithS
         ; forS
+        ; zipWith; zipWithS
         ; foldl;  foldlS
         ; foldr;  foldrS
+        ; scanl
         ; filter; filterS }
 
 import  Data.Numeric.Nat
-import  Data.Maybe
 where
 
 -- | Standard Cons-lists.
@@ -58,27 +60,46 @@ length (xx : List a) : Nat#
 
 
 -- | Take the head of a list, if there is one.
-head (xx : List a) : Maybe a
+head (def : a) (xx : List a) : a
  = case xx of
-        Nil             -> Nothing
-        Cons x xs       -> Just x
+        Nil             -> def
+        Cons x xs       -> x
 
 
 -- | Take the tail of a list, if there is one.
-tail (xx : List a) : Maybe (List a)
+tail (def : List a) (xx : List a) : List a
  = case xx of
-        Nil             -> Nothing
-        Cons x xs       -> Just xs
+        Nil             -> def
+        Cons x xs       -> xs
+
+
+-- | Like `tail`, but if there is only one element then keep it.
+tail1   (def : a) (xx : List a) : List a
+ = case xx of
+        Nil                -> singleton def
+        Cons x xs        
+         -> case xs of
+                Nil        -> singleton x
+                _          -> xs
 
 
 -- | Take the last element of a list, if there is one.
-last (xx : List a) : Maybe a
+last (def : a) (xx : List a) : a
  = case xx of
-        Nil                     -> Nothing
+        Nil                     -> def
         Cons x xs
          -> case xs of
-                Nil             -> Just x
-                Cons y ys       -> last xs
+                Nil             -> x
+                Cons y ys       -> last def xs
+
+
+index (def : a) (n : Nat#) (xx : List a) : a
+ = case xx of   
+        Nil     -> def
+        Cons x xs 
+         -> case n of
+                0       -> x
+                _       -> index def (n - 1) xs
 
 
 -- Transforms -----------------------------------------------------------------
@@ -90,7 +111,7 @@ reverse (xx : List a) : List a
         Cons x xs       -> append (reverse xs) (singleton x)
 
 
--- Combinators ----------------------------------------------------------------
+-- Maps -----------------------------------------------------------------------
 -- | Apply a worker function to every element of a list, yielding a new list.
 map     (f : a -> b) (xx : List a) : List b
  = case xx of
@@ -107,6 +128,16 @@ mapS    (f : a -> S e b) (xx : List a) : S e (List b)
         Cons x xs       -> Cons (run f x) (run mapS f xs)
 
 
+-- | Apply a function to all elements of a list, yielding nothing.
+forS (xx : List a) (f : a -> S e Unit) : S e Unit
+ = box case xx of
+        Nil     -> ()
+        Cons x xs       
+         -> do  run f x
+                run forS xs f
+
+
+-- Zips -----------------------------------------------------------------------
 zipWith (f : a -> b -> c) 
         (xx : List a) (yy : List b) : List c
  = case xx of
@@ -131,15 +162,7 @@ zipWithS (f : a -> b -> S e c)
                 Nil -> Nil
 
 
--- | Apply a function to all elements of a list, yielding nothing.
-forS (xx : List a) (f : a -> S e Unit) : S e Unit
- = box case xx of
-        Nil     -> ()
-        Cons x xs       
-         -> do  run f x
-                run forS xs f
-
-
+-- Folds ----------------------------------------------------------------------
 -- | Reduce a list with a binary function and zero value, 
 --   from left to right.
 foldl (f : b -> a -> b) (z : b) (xx : List a) : b
@@ -172,6 +195,19 @@ foldrS (f : a -> b -> S e b) (z : b) (xx : List a) : S e b
         Cons x xs       -> run f x (run foldrS f z xs)
 
 
+
+-- Scans ----------------------------------------------------------------------
+scanl (f : b -> a -> b) (acc : b) (xx : List a) : List b
+ = case xx of
+        Nil     
+         -> Cons acc Nil
+
+        Cons x xs
+         -> let acc' = f acc x
+            in  Cons acc (scanl f acc' xs)
+
+
+-- Filters --------------------------------------------------------------------
 -- | Keep only those elements that match the given predicate.
 filter (p : a -> Bool#) (xx : List a) : List a
  = case xx of
