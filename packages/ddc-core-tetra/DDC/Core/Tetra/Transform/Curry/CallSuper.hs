@@ -30,7 +30,7 @@ makeCallSuper
         -> Int                                  -- ^ How many times to run the result.
         -> Exp  (AnTEC a Name) Name
 
-makeCallSuper aF _nF xF tsParamLam tResultSuper esArgValue nRuns
+makeCallSuper aF _nF xF tsParamLam _tResultSuper esArgValue nRuns
 
  -- Fully saturated call to a super of foreign function. 
  -- We have arguments for each parameter, so can call it directly.
@@ -40,33 +40,6 @@ makeCallSuper aF _nF xF tsParamLam tResultSuper esArgValue nRuns
  | length esArgValue == length tsParamLam
  , xsArgValue   <- [x | Call.ElimValue _ x <- esArgValue]
  = makeRuns aF nRuns $ C.xApps aF xF xsArgValue
-
- -- Partially application of a super or foreign function.
- -- We need to build a closure, then attach any arguments we have.
- --
- -- TODO: dump this code in favour of makeCallSuperUnder
- --
- | length esArgValue <  length tsParamLam
- , xsArgValue   <- [x | Call.ElimValue _ x <- esArgValue]
- = let 
-        -- Split types of the super parameters into the ones that can be
-        -- satisfied by this application, and the remaining parameters that
-        -- are still waiting for arguments.
-        (tsParamSat, tsParamRemain)     
-                = splitAt (length esArgValue) tsParamLam
-
-        -- The type of the result after performing this application.
-        -- If there are remaining, un-saturated parameters the result
-        -- type will still be a function.
-        Just tResultClo           = C.tFunOfList (tsParamRemain ++ [tResultSuper])
-
-        tParamFirst : tsParamRest = tsParamLam
-        Just tSuperResult         = C.tFunOfList (tsParamRest ++   [tResultSuper])
-
-   in   makeRuns aF nRuns 
-         $ C.xApps aF (C.xFunCurry aF tsParamSat tResultClo 
-                           (C.xFunCReify aF tParamFirst tSuperResult xF))
-                       xsArgValue
 
  -- TODO: handle over-applied super.
  --       do direct call, then do an application.

@@ -33,16 +33,22 @@ makeCall
 
 makeCall xx _xF aF funMap nF esArgs
 
-
         ---------------------------------------------------
         -- Direct call of top-level super in the current module
         | Just (FunLocalSuper _ _ _ csSuper) <- Map.lookup nF funMap
         , Just xResult  <- makeCallSuperSaturated aF nF csSuper esArgs
         = xResult
 
-        -- Under-application of a top-level super in the curent module
-        | Just (FunLocalSuper _ tF _ csSuper) <- Map.lookup nF funMap
+        -- Under-application of a top-level super in the current module
+        | Just (FunLocalSuper  _ tF _ csSuper) <- Map.lookup nF funMap
+        , length esArgs < length csSuper
         , Just xResult  <- makeCallSuperUnder aF  nF tF csSuper esArgs
+        = xResult
+
+        -- Under-application of a top-level super in an external module.
+        | Just (FunExternSuper _ tF _ (Just csSuper)) <- Map.lookup nF funMap
+        , length esArgs < length csSuper
+        , Just xResult  <- makeCallSuperUnder aF nF tF csSuper esArgs
         = xResult
 
         ---------------------------------------------------

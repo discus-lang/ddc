@@ -7,7 +7,7 @@ export  { singleton;    replicate
         ; head;         tail;           last
         ; reverse 
         ; map;    mapS
-        ; zipWith
+        ; zipWith; zipWithS
         ; forS
         ; foldl;  foldlS
         ; foldr;  foldrS
@@ -92,7 +92,7 @@ reverse (xx : List a) : List a
 
 -- Combinators ----------------------------------------------------------------
 -- | Apply a worker function to every element of a list, yielding a new list.
-map (f : a -> b) (xx : List a) : List b
+map     (f : a -> b) (xx : List a) : List b
  = case xx of
         Nil             -> Nil
         Cons x xs       -> Cons (f x) (map f xs)
@@ -101,13 +101,14 @@ map (f : a -> b) (xx : List a) : List b
 -- | Apply a stateful worker function to every element of a list,
 --   yielding a new list. 
 --   The worker is applied to the source elements left-to-right.
-mapS (f : a -> S e b) (xx : List a) : S e (List b)
+mapS    (f : a -> S e b) (xx : List a) : S e (List b)
  = box case xx of
         Nil             -> Nil
         Cons x xs       -> Cons (run f x) (run mapS f xs)
 
 
-zipWith (f : a -> b -> c) (xx : List a) (yy : List b) : List c
+zipWith (f : a -> b -> c) 
+        (xx : List a) (yy : List b) : List c
  = case xx of
         Nil     -> Nil
         Cons x xs
@@ -118,11 +119,22 @@ zipWith (f : a -> b -> c) (xx : List a) (yy : List b) : List c
                 Nil -> Nil
 
 
+zipWithS (f : a -> b -> S e c) 
+         (xx : List a) (yy : List b) : S e (List c)
+ = box case xx of
+        Nil     -> Nil
+        Cons x xs
+         -> case yy of
+                Cons y ys
+                 -> Cons (run f x y) (run zipWithS f xs ys)
+
+                Nil -> Nil
+
+
 -- | Apply a function to all elements of a list, yielding nothing.
 forS (xx : List a) (f : a -> S e Unit) : S e Unit
  = box case xx of
         Nil     -> ()
-
         Cons x xs       
          -> do  run f x
                 run forS xs f
