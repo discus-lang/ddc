@@ -23,7 +23,7 @@ checkDaConM config xx a dc
      -> return tUnit
 
     -- Primitive data constructors need to have a corresponding data type,
-    -- but there may be too many constructors to list, like with Int literals. 
+    -- but there may be too many constructors to list, like with Int literals.
     --
     -- The mode field in the data type declaration says what to expect.
     --    If the mode is 'Small' the data constructor needs to be listed,

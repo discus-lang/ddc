@@ -13,7 +13,7 @@ import qualified DDC.Core.Annot.AnT as AnT
 
 
 -- Annot ----------------------------------------------------------------------
--- | The type checker adds this annotation to every node in the AST, 
+-- | The type checker adds this annotation to every node in the AST,
 --   giving its type, effect and closure.
 ---
 --   NOTE: We want to leave the components lazy so that the checker
@@ -44,7 +44,7 @@ instance (NFData a, NFData n) => NFData (AnTEC a n) where
 
 
 instance Pretty (AnTEC a n) where
- ppr _ = text "AnTEC"        
+ ppr _ = text "AnTEC"
 
 
 

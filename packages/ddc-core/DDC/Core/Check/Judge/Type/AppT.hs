@@ -14,13 +14,13 @@ checkAppT !table !ctx0 xx@(XApp aApp xFn (XType aArg tArg)) Recon
         let kenv        = tableKindEnv table
 
         -- Check the functional expression.
-        (xFn', tFn, effsFn, ctx1) 
+        (xFn', tFn, effsFn, ctx1)
          <- tableCheckExp table table ctx0 xFn Recon
 
         -- Check the argument.
         (tArg', kArg, ctx2)
          <- checkTypeM config kenv ctx1 UniverseSpec tArg Recon
-                        
+
         -- Determine the type of the result.
         --  The function must have a quantified type, which we then instantiate
         --  with the type argument.
@@ -43,7 +43,7 @@ checkAppT !table !ctx0 xx@(XApp aApp xFn (XType aArg tArg)) Recon
         -- thus we can't be sharing objects that have it in its type.
 
         -- Build an annotated version of the type application.
-        let aApp' = AnTEC tResult (TSum effsFn)  (tBot kClosure) aApp  
+        let aApp' = AnTEC tResult (TSum effsFn)  (tBot kClosure) aApp
         let aArg' = AnTEC kArg    (tBot kEffect) (tBot kClosure) aArg
         let xx'   = XApp aApp' xFn' (XType aArg' tArg')
 
@@ -62,18 +62,18 @@ checkAppT !table !ctx0 xx@(XApp aApp xFn (XType aArg tArg)) Recon
                 tResult effsFn ctx2
 
 checkAppT !table !ctx0 xx@(XApp aApp xFn (XType aArg tArg)) Synth
- = do   
+ = do
         -- Check the functional expression.
-        (xFn', tFn, effsFn, ctx1) 
+        (xFn', tFn, effsFn, ctx1)
          <- tableCheckExp table table ctx0 xFn Synth
 
         -- Apply the type argument to the type of the function.
         (tResult, tArg', kArg, ctx2)
-         <- synthAppArgT table aApp xx ctx1 
+         <- synthAppArgT table aApp xx ctx1
                 (applyContext ctx1 tFn) tArg
-        
+
         -- Build an annotated version of the type application.
-        let aApp' = AnTEC tResult (TSum effsFn)  (tBot kClosure) aApp  
+        let aApp' = AnTEC tResult (TSum effsFn)  (tBot kClosure) aApp
         let aArg' = AnTEC kArg    (tBot kEffect) (tBot kClosure) aArg
         let xx'   = XApp aApp' xFn' (XType aArg' tArg')
 
@@ -120,7 +120,7 @@ synthAppArgT table a xx ctx0 tFn tArg
  -- Rule (AppT Synth exists)
  --  Functional type is an existential.
  --
- --  Although we know the functional part should have a quantified type, 
+ --  Although we know the functional part should have a quantified type,
  --  we can't infer a type for the result because we would need to represent
  --  a delayed substitution of a type into an existential. The rule would be
  --  as follows:
@@ -129,7 +129,7 @@ synthAppArgT table a xx ctx0 tFn tArg
  --   -----------------------------------------------------
  --      Env0[?0] |- ?0 * t2 => ?2 [t2/a] -| Env1
  --
- --  .. but we can't represent the (?2 [t2/a]) part. This is an inherent 
+ --  .. but we can't represent the (?2 [t2/a]) part. This is an inherent
  --  limitation of our type inference algorithm.
  --
  | Just _               <- takeExists tFn
@@ -137,7 +137,7 @@ synthAppArgT table a xx ctx0 tFn tArg
 
 
  -- Rule (AppT Synth Forall)
- --  The function already has a quantified type, so we can instantiate it 
+ --  The function already has a quantified type, so we can instantiate it
  --  with the supplied type argument.
  | TForall b11 t12      <- tFn
  = do   let config      = tableConfig table
@@ -145,7 +145,7 @@ synthAppArgT table a xx ctx0 tFn tArg
 
         -- The kind of the argument must match the annotation on the quantifier.
         (tArg', kArg, ctx1)
-         <- checkTypeM config kenv ctx0 UniverseSpec tArg 
+         <- checkTypeM config kenv ctx0 UniverseSpec tArg
                 (Check (typeOfBind b11))
 
         -- Instantiate the type of the function with the type argument.

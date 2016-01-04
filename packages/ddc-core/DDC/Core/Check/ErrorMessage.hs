@@ -8,16 +8,16 @@ import DDC.Type.Compounds
 import DDC.Type.Universe
 
 
-instance (Pretty a, Show n, Eq n, Pretty n) 
+instance (Pretty a, Show n, Eq n, Pretty n)
        => Pretty (Error a n) where
  ppr err
   = case err of
-        ErrorType err'  
+        ErrorType err'
          -> ppr err'
 
         ErrorData err'
          -> ppr err'
-        
+
         -- Modules ---------------------------------------
         ErrorExportUndefined n
          -> vcat [ text "Exported name '" <> ppr n <> text "' is undefined." ]
@@ -25,7 +25,7 @@ instance (Pretty a, Show n, Eq n, Pretty n)
         ErrorExportDuplicate n
          -> vcat [ text "Duplicate exported name '" <> ppr n <> text "'."]
 
-        ErrorExportMismatch n tExport tDef 
+        ErrorExportMismatch n tExport tDef
          -> vcat [ text "Type of exported name does not match type of definition."
                  , text "             with binding: "   <> ppr n
                  , text "           type of export: "   <> ppr tExport
@@ -78,12 +78,12 @@ instance (Pretty a, Show n, Eq n, Pretty n)
         -- Application ------------------------------------
         ErrorAppMismatch a xx t1 t2
          -> vcat [ ppr a
-                 , text "Type mismatch in application." 
+                 , text "Type mismatch in application."
                  , text "     Function expects: "       <> ppr t1
                  , text "      but argument is: "       <> ppr t2
                  , empty
                  , text "with: "                        <> align (ppr xx) ]
-         
+
         ErrorAppNotFun a xx t1
          -> vcat [ ppr a
                  , text "Cannot apply non-function"
@@ -108,7 +108,7 @@ instance (Pretty a, Show n, Eq n, Pretty n)
                  , text "with: "                        <> align (ppr xx) ]
 
         ErrorLamNotPure a xx universe eff
-         -> vcat 
+         -> vcat
                 [ ppr a
                 , text "Impure" <+> ppr universe <+> text "abstraction"
                 , text "           has effect: "       <> ppr eff
@@ -116,13 +116,13 @@ instance (Pretty a, Show n, Eq n, Pretty n)
                 , text "with: "                        <> align (ppr xx) ]
 
         ErrorLamNotEmpty a xx universe eff
-         -> vcat 
+         -> vcat
                 [ ppr a
                 , text "Non-empty" <+> ppr universe <+> text "abstraction"
                 , text "           has closure: "       <> ppr eff
                 , empty
                 , text "with: "                        <> align (ppr xx) ]
-                 
+
         ErrorLamBindBadKind a xx t1 k1
          -> vcat [ ppr a
                  , text "Function parameter has invalid kind."
@@ -145,7 +145,7 @@ instance (Pretty a, Show n, Eq n, Pretty n)
         ErrorLamParamUnannotated a xx b1
          -> vcat [ ppr a
                  , text "Missing type annotation on function parameter."
-                 , text "             With paramter: " <> ppr b1 
+                 , text "             With paramter: " <> ppr b1
                  , empty
                  , text "with: "                        <> align (ppr xx) ]
 
@@ -203,7 +203,7 @@ instance (Pretty a, Show n, Eq n, Pretty n)
 
         ErrorLetrecMissingAnnot a b xx
          -> vcat [ ppr a
-                 , text "Missing or incomplete type annotation on recursive let-binding '" 
+                 , text "Missing or incomplete type annotation on recursive let-binding '"
                         <> ppr (binderOfBind b) <> text "'."
                  , text "Recursive functions must have full type annotations."
                  , empty
@@ -223,7 +223,7 @@ instance (Pretty a, Show n, Eq n, Pretty n)
                  , text "Letregion binders do not have region kind."
                  , text "        Region binders: "       <> (hcat $ map ppr bs)
                  , text "             has kinds: "       <> (hcat $ map ppr ks)
-                 , text "       but they must all be: Region" 
+                 , text "       but they must all be: Region"
                  , empty
                  , text "with: "                         <> align (ppr xx) ]
 
@@ -242,7 +242,7 @@ instance (Pretty a, Show n, Eq n, Pretty n)
                  , text "   is free in the body type: "   <> ppr t
                  , empty
                  , text "with: "                         <> align (ppr xx) ]
-        
+
         ErrorLetRegionWitnessInvalid a xx b
          -> vcat [ ppr a
                  , text "Invalid witness type with private."
@@ -255,7 +255,7 @@ instance (Pretty a, Show n, Eq n, Pretty n)
          -> vcat [ ppr a
                  , text "Conflicting witness types with private."
                  , text "      Witness binding: "       <> ppr b1
-                 , text "       conflicts with: "       <> ppr b2 
+                 , text "       conflicts with: "       <> ppr b2
                  , empty
                  , text "with: "                        <> align (ppr xx) ]
 
@@ -266,7 +266,7 @@ instance (Pretty a, Show n, Eq n, Pretty n)
                  , text "  but witness type is: "       <> ppr b2
                  , empty
                  , text "with: "                        <> align (ppr xx) ]
-                 
+
 
         -- Withregion -------------------------------------
         ErrorWithRegionFree a xx u t
@@ -338,7 +338,7 @@ instance (Pretty a, Show n, Eq n, Pretty n)
                  , text "     Scrutinee type: "         <> ppr tScrutinee
                  , empty
                  , text "with: "                        <> align (ppr xx) ]
-        
+
         ErrorCaseScrutineeTypeUndeclared a xx tScrutinee
          -> vcat [ ppr a
                  , text "Type of scrutinee does not have a data declaration."
@@ -355,7 +355,7 @@ instance (Pretty a, Show n, Eq n, Pretty n)
         ErrorCaseNonExhaustive a xx ns
          -> vcat [ ppr a
                  , text "Case alternatives are non-exhaustive."
-                 , text " Constructors not matched: "   
+                 , text " Constructors not matched: "
                         <> (sep $ punctuate comma $ map ppr ns)
                  , empty
                  , text "with: "                        <> align (ppr xx) ]
@@ -376,10 +376,10 @@ instance (Pretty a, Show n, Eq n, Pretty n)
          -> vcat [ ppr a
                  , text "Pattern has more binders than there are fields in the constructor."
                  , text "     Contructor: " <> ppr uCtor
-                 , text "            has: " <> ppr iCtorFields      
+                 , text "            has: " <> ppr iCtorFields
                                             <+> text "fields"
-                 , text "  but there are: " <> ppr iPatternFields   
-                                           <+> text "binders in the pattern" 
+                 , text "  but there are: " <> ppr iPatternFields
+                                           <+> text "binders in the pattern"
                  , empty
                  , text "with: "                        <> align (ppr xx) ]
 
@@ -426,7 +426,7 @@ instance (Pretty a, Show n, Eq n, Pretty n)
                  , text "       has kind: "             <> ppr k
                  , empty
                  , text "with: "                        <> align (ppr xx) ]
-       
+
         ErrorRunNotSuspension a xx t
          -> vcat [ ppr a
                  , text "Expression to run is not a suspension."

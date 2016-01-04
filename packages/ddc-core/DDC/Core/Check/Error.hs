@@ -58,7 +58,7 @@ data Error a n
         -- | An undefined type variable.
         | ErrorUndefinedVar
         { errorAnnot            :: a
-        , errorBound            :: Bound n 
+        , errorBound            :: Bound n
         , errorUniverse         :: Universe }
 
 
@@ -81,7 +81,7 @@ data Error a n
         | ErrorAppNotFun
         { errorAnnot            :: a
         , errorChecking         :: Exp a n
-        , errorNotFunType       :: Type n } 
+        , errorNotFunType       :: Type n }
 
         -- | Cannot infer type of polymorphic expression.
         | ErrorAppCannotInferPolymorphic
@@ -93,10 +93,10 @@ data Error a n
         --   already in the environment.
         | ErrorLamShadow
         { errorAnnot            :: a
-        , errorChecking         :: Exp a n 
+        , errorChecking         :: Exp a n
         , errorBind             :: Bind n }
 
-        -- | An abstraction where the body has a visible side effect that 
+        -- | An abstraction where the body has a visible side effect that
         --   is not supported by the current language fragment.
         | ErrorLamNotPure
         { errorAnnot            :: a
@@ -104,7 +104,7 @@ data Error a n
         , errorUniverse         :: Universe
         , errorEffect           :: Effect n }
 
-        -- | An abstraction where the body has a visible closure that 
+        -- | An abstraction where the body has a visible closure that
         --   is not supported by the current language fragment.
         | ErrorLamNotEmpty
         { errorAnnot            :: a
@@ -116,7 +116,7 @@ data Error a n
         --   or witness kind.
         | ErrorLamBindBadKind
         { errorAnnot            :: a
-        , errorChecking         :: Exp a n 
+        , errorChecking         :: Exp a n
         , errorType             :: Type n
         , errorKind             :: Kind n }
 
@@ -133,7 +133,7 @@ data Error a n
         { errorAnnot            :: a
         , errorChecking         :: Exp a n
         , errorBind             :: Bind n }
-        
+
         -- | A type abstraction without a kind annotation on the parameter.
         | ErrorLAMParamUnannotated
         { errorAnnot            :: a
@@ -176,7 +176,7 @@ data Error a n
         --   a lambda abstraction.
         | ErrorLetrecBindingNotLambda
         { errorAnnot            :: a
-        , errorChecking         :: Exp a n 
+        , errorChecking         :: Exp a n
         , errorExp              :: Exp a n }
 
         -- | A recursive let-binding with a missing type annotation.
@@ -217,7 +217,7 @@ data Error a n
         , errorBinds            :: [Bind n]
         , errorType             :: Type n }
 
-        -- | A letregion-expression that tried to create a witness with an 
+        -- | A letregion-expression that tried to create a witness with an
         --   invalid type.
         | ErrorLetRegionWitnessInvalid
         { errorAnnot            :: a
@@ -308,7 +308,7 @@ data Error a n
         --   of data type declarations.
         | ErrorCaseScrutineeTypeUndeclared
         { errorAnnot            :: a
-        , errorChecking         :: Exp a n 
+        , errorChecking         :: Exp a n
         , errorTypeScrutinee    :: Type n }
 
         -- | A case-expression with no alternatives.
@@ -348,7 +348,7 @@ data Error a n
         | ErrorCaseCannotInstantiate
         { errorAnnot            :: a
         , errorChecking         :: Exp a n
-        , errorTypeScrutinee    :: Type n 
+        , errorTypeScrutinee    :: Type n
         , errorTypeCtor         :: Type n }
 
         -- | A case-expression where the type of the scrutinee does not match

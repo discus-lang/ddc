@@ -1,9 +1,9 @@
 
--- | Core language AST that includes an annotation on every node of 
+-- | Core language AST that includes an annotation on every node of
 --   an expression.
 --
 --   This is the default representation for Disciple Core, and should be preferred
---   over the 'Simple' version of the AST in most cases. 
+--   over the 'Simple' version of the AST in most cases.
 --
 --   * Local transformations on this AST should propagate the annotations in a way that
 --   would make sense if they were source position identifiers that tracked the provenance
@@ -100,7 +100,7 @@ data Alt a n
 data Pat n
         -- | The default pattern always succeeds.
         = PDefault
-        
+
         -- | Match a data constructor and bind its arguments.
         | PData !(DaCon n) ![Bind n]
         deriving (Show, Eq)
@@ -112,13 +112,13 @@ data Cast a n
         --   The given effect is added to the effect
         --   of the body.
         = CastWeakenEffect  !(Effect n)
-        
+
         -- | Purify the effect (action) of an expression.
         | CastPurify !(Witness a n)
 
-        -- | Box up a computation, 
+        -- | Box up a computation,
         --   capturing its effects in the S computation type.
-        | CastBox 
+        | CastBox
 
         -- | Run a computation,
         --   releasing its effects into the environment.
@@ -131,10 +131,10 @@ data Cast a n
 data Witness a n
         -- | Witness variable.
         = WVar  a !(Bound n)
-        
+
         -- | Witness constructor.
         | WCon  a !(WiCon n)
-        
+
         -- | Witness application.
         | WApp  a !(Witness a n) !(Witness a n)
 

@@ -63,9 +63,9 @@ import qualified DDC.Control.Monad.Check        as G
 import Prelude                                  hiding ((<$>))
 
 
--- | Type checker monad. 
+-- | Type checker monad.
 --   Used to manage type errors.
-type CheckM a n   
+type CheckM a n
         = G.CheckM (CheckTrace, Int, Int) (Error a n)
 
 -- | Allocate a new existential.
@@ -86,7 +86,7 @@ newPos
 
 -- CheckTrace -----------------------------------------------------------------
 -- | Human readable trace of the type checker.
-data CheckTrace 
+data CheckTrace
         = CheckTrace
         { checkTraceDoc :: Doc }
 
@@ -95,9 +95,9 @@ instance Pretty CheckTrace where
 
 instance Monoid CheckTrace where
  mempty = CheckTrace empty
- 
+
  mappend ct1 ct2
-        = CheckTrace 
+        = CheckTrace
         { checkTraceDoc = checkTraceDoc ct1 <> checkTraceDoc ct2 }
 
 
@@ -123,15 +123,15 @@ checkBindM
         -> CheckM a n (Bind n, Type n, Context n)
 
 checkBindM config kenv ctx uni bb mode
- = do   (t', k, ctx')   <- checkTypeM config kenv ctx uni 
+ = do   (t', k, ctx')   <- checkTypeM config kenv ctx uni
                                 (typeOfBind bb) mode
         return (replaceTypeOfBind t' bb, k, ctx')
 
 
 -- Type -----------------------------------------------------------------------
 -- | Check a type in the exp checking monad, returning its kind.
-checkTypeM 
-        :: (Ord n, Show n, Pretty n) 
+checkTypeM
+        :: (Ord n, Show n, Pretty n)
         => Config n             -- ^ Checker configuration.
         -> KindEnv n            -- ^ Global kind environment.
         -> Context n            -- ^ Local context.
@@ -141,24 +141,24 @@ checkTypeM
         -> CheckM a n (Type n, Kind n, Context n)
 
 checkTypeM config kenv ctx uni tt mode
- = do   
-        -- Run the inner type/kind checker computation, 
-        -- giving it our current values for the existential and position 
+ = do
+        -- Run the inner type/kind checker computation,
+        -- giving it our current values for the existential and position
         -- generators.
         (tr, ix, pos)   <- G.get
-        
+
         let ((ix', pos'), result)
                 = G.runCheck (ix, pos)
                 $ T.checkTypeM config kenv ctx uni tt mode
-        
+
         G.put (tr, ix', pos')
-        
-        -- If the type/kind checker returns an error then wrap it 
+
+        -- If the type/kind checker returns an error then wrap it
         -- so we can throw it from our exp/type checker.
         case result of
-         Left err               
+         Left err
           -> throw $ ErrorType err
 
-         Right (t, k, ctx')     
+         Right (t, k, ctx')
           -> return (t, k, ctx')
 

@@ -42,7 +42,7 @@ checkModule
 
 checkModule !config !xx !mode
  = let  (s, result)     = runCheck (mempty, 0, 0)
-                        $ checkModuleM config 
+                        $ checkModuleM config
                                 (configPrimKinds config)
                                 (configPrimTypes config)
                                 xx mode
@@ -52,7 +52,7 @@ checkModule !config !xx !mode
 
 -- checkModule ------------------------------------------------------------------------------------
 -- | Like `checkModule` but using the `CheckM` monad to handle errors.
-checkModuleM 
+checkModuleM
         :: (Show a, Ord n, Show n, Pretty n)
         => Config n             -- ^ Static configuration.
         -> KindEnv n            -- ^ Starting kind environment.
@@ -62,9 +62,9 @@ checkModuleM
         -> CheckM a n (Module (AnTEC a n) n)
 
 checkModuleM !config !kenv !tenv mm@ModuleCore{} !mode
- = do   
+ = do
         -- Check kinds of imported types ------------------
-        nksImported'    <- checkImportTypes config mode   
+        nksImported'    <- checkImportTypes config mode
                         $  moduleImportTypes mm
 
         -- Check imported data type defs ------------------
@@ -76,7 +76,7 @@ checkModuleM !config !kenv !tenv mm@ModuleCore{} !mode
 
         -- Build the imported defs and kind environment.
         --  This contains kinds of type visible in the imported values.
-        let config_import = config 
+        let config_import = config
                         { configDataDefs = unionDataDefs (configDataDefs config)
                                                          (fromListDataDefs defsImported') }
         let kenv_import = Env.union kenv
@@ -85,12 +85,12 @@ checkModuleM !config !kenv !tenv mm@ModuleCore{} !mode
 
 
         -- Check types of imported values -----------------
-        ntsImported'    <- checkImportValues config_import kenv_import mode 
+        ntsImported'    <- checkImportValues config_import kenv_import mode
                         $  moduleImportValues mm
 
 
         -- Check the local data type defs -----------------
-        let defsLocal   =  moduleDataDefsLocal mm 
+        let defsLocal   =  moduleDataDefsLocal mm
         defsLocal'      <- case checkDataDefs config defsLocal of
                                 (err : _, _)     -> throw $ ErrorData err
                                 ([], defsLocal') -> return defsLocal'
@@ -98,14 +98,14 @@ checkModuleM !config !kenv !tenv mm@ModuleCore{} !mode
 
         -- Build the top-level config, defs and environments.
         --  These contain names that are visible to bindings in the module.
-        let defs_top    = unionDataDefs (configDataDefs config) 
+        let defs_top    = unionDataDefs (configDataDefs config)
                         $ unionDataDefs (fromListDataDefs defsImported')
                                         (fromListDataDefs defsLocal')
 
         let config_top  = config { configDataDefs = defs_top }
         let kenv_top    = kenv_import
 
-        let tenv_top    = Env.union tenv 
+        let tenv_top    = Env.union tenv
                         $ Env.fromList  [ BName n (typeOfImportValue isrc)
                                         | (n, isrc) <- ntsImported' ]
 
@@ -117,10 +117,10 @@ checkModuleM !config !kenv !tenv mm@ModuleCore{} !mode
         -- Check the sigs of exported values --------------
         esrcsValue'     <- checkExportValues config_top kenv_top
                         $  moduleExportValues mm
-                                      
-        
+
+
         -- Check the body of the module -------------------
-        (x', _, _effs, ctx) 
+        (x', _, _effs, ctx)
          <- checkExpM   (makeTable config_top kenv_top tenv_top)
                         emptyContext (moduleBody mm) mode
 
@@ -131,12 +131,12 @@ checkModuleM !config !kenv !tenv mm@ModuleCore{} !mode
                         (tBot kClosure)
                         x0
 
-        let x'' = reannotate applyToAnnot 
+        let x'' = reannotate applyToAnnot
                 $ mapT (applySolved ctx) x'
 
         -- Build new module with infered annotations ------
         let mm_inferred
-                = mm    
+                = mm
                 { moduleExportTypes     = esrcsType'
                 , moduleImportTypes     = nksImported'
                 , moduleImportValues    = ntsImported'
@@ -146,8 +146,8 @@ checkModuleM !config !kenv !tenv mm@ModuleCore{} !mode
         -- Check that each exported signature matches the type of its binding.
         -- This returns an environment containing all the bindings defined
         -- in the module.
-        tenv_binds      <- checkModuleBinds 
-                                (moduleExportTypes  mm_inferred) 
+        tenv_binds      <- checkModuleBinds
+                                (moduleExportTypes  mm_inferred)
                                 (moduleExportValues mm_inferred) x''
 
         -- Build the environment containing all names that can be exported.
@@ -158,7 +158,7 @@ checkModuleM !config !kenv !tenv mm@ModuleCore{} !mode
         --   Header modules don't need to contain the complete set of bindings,
         --   but all other modules do.
         when (not $ moduleIsHeader mm_inferred)
-                $ mapM_ (checkBindDefined tenv_exportable) 
+                $ mapM_ (checkBindDefined tenv_exportable)
                 $ map fst $ moduleExportValues mm_inferred
 
         -- If exported names are missing types then fill them in.
@@ -166,7 +166,7 @@ checkModuleM !config !kenv !tenv mm@ModuleCore{} !mode
                 | ExportSourceLocalNoType n <- e
                 , Just t  <- Env.lookup (UName n) tenv_exportable
                 = ExportSourceLocal n t
-                
+
                 | otherwise = e
 
         let esrcsValue_updated
@@ -202,11 +202,11 @@ checkExportTypes config nesrcs
         (case takeHead dups of
           Just n -> throw $ ErrorExportDuplicate n
           _      -> return ())
-        
+
 
         -- Check the kinds of the export specs.
         mapM check nesrcs
- 
+
 
 ---------------------------------------------------------------------------------------------------
 -- | Check exported types.
@@ -245,7 +245,7 @@ checkImportTypes
         -> CheckM a n [(n, ImportType n)]
 
 checkImportTypes config mode nisrcs
- = let  
+ = let
         -- Checker mode to use.
         modeCheckImportTypes
          = case mode of
@@ -302,12 +302,12 @@ checkImportValues config kenv mode nisrcs
           Just n -> throw $ ErrorImportDuplicate n
           _      -> return ())
 
-        mapM check nisrcs        
+        mapM check nisrcs
 
 
 ---------------------------------------------------------------------------------------------------
 -- | Check that the exported signatures match the types of their bindings.
-checkModuleBinds 
+checkModuleBinds
         :: Ord n
         => [(n, ExportSource n)]        -- ^ Exported types.
         -> [(n, ExportSource n)]        -- ^ Exported values
@@ -317,7 +317,7 @@ checkModuleBinds
 
 checkModuleBinds !ksExports !tsExports !xx
  = case xx of
-        XLet _ (LLet b _) x2     
+        XLet _ (LLet b _) x2
          -> do  checkModuleBind  ksExports tsExports b
                 env     <- checkModuleBinds ksExports tsExports x2
                 return  $ Env.extend b env
@@ -334,7 +334,7 @@ checkModuleBinds !ksExports !tsExports !xx
 
 
 -- | If some bind is exported, then check that it matches the exported version.
-checkModuleBind 
+checkModuleBind
         :: Ord n
         => [(n, ExportSource n)]        -- ^ Exported types.
         -> [(n, ExportSource n)]        -- ^ Exported values.
@@ -345,11 +345,11 @@ checkModuleBind !_ksExports !tsExports !b
  | BName n tDef <- b
  = case join $ liftM takeTypeOfExportSource $ lookup n tsExports of
         Nothing                 -> return ()
-        Just tExport 
+        Just tExport
          | equivT tDef tExport  -> return ()
          | otherwise            -> throw $ ErrorExportMismatch n tExport tDef
 
- -- Only named bindings can be exported, 
+ -- Only named bindings can be exported,
  --  so we don't need to worry about non-named ones.
  | otherwise
  = return ()
@@ -357,7 +357,7 @@ checkModuleBind !_ksExports !tsExports !b
 
 ---------------------------------------------------------------------------------------------------
 -- | Check that a top-level binding is actually defined by the module.
-checkBindDefined 
+checkBindDefined
         :: Ord n
         => TypeEnv n                    -- ^ Types defined by the module.
         -> n                            -- ^ Name of an exported binding.

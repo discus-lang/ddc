@@ -22,16 +22,16 @@ checkLet !table !ctx0 xx@(XLet a lts xBody) mode
         -- Check the bindings -------------------
         -- Decide whether to use bidirectional type inference when checking
         -- the types of the bindings.
-        let useBidirChecking   
+        let useBidirChecking
                 = case mode of
                         Recon   -> False
                         Check{} -> True
                         Synth   -> True
-        
-        (lts', _bs', effsBinds, pos1, ctx1)
-         <- checkLetsM useBidirChecking xx table ctx0 lts 
 
-        
+        (lts', _bs', effsBinds, pos1, ctx1)
+         <- checkLetsM useBidirChecking xx table ctx0 lts
+
+
         -- Check the body -----------------------
         -- -- Check the body expression in a context
         -- -- extended with the types of the bindings.
@@ -39,12 +39,12 @@ checkLet !table !ctx0 xx@(XLet a lts xBody) mode
          <- tableCheckExp table table ctx1 xBody mode
 
         -- The body must have data kind.
-        (tBody', kBody, ctx3)      
+        (tBody', kBody, ctx3)
          <- checkTypeM config kenv ctx2 UniverseSpec tBody
          $  case mode of
                 Recon   -> Recon
                 _       -> Check kData
-        
+
         let kBody' = applyContext ctx3 kBody
         when (not $ isDataKind kBody')
          $ throw $ ErrorLetBodyNotData a xx tBody kBody'
@@ -72,13 +72,13 @@ checkLet !table !ctx0 xx@(XLet a lts xBody) mode
 -- others ---------------------------------------
 -- The dispatcher should only call checkLet with a XLet AST node.
 checkLet _ _ _ _
-        = error "ddc-core.checkLet: no match"        
+        = error "ddc-core.checkLet: no match"
 
 
 -------------------------------------------------------------------------------
 -- | Check some let bindings,
 --   and push their binders onto the context.
-checkLetsM 
+checkLetsM
         :: (Show a, Show n, Pretty n, Ord n)
         => Bool                         -- ^ Use bidirectional inference.
         -> Exp a n                      -- ^ Expression for error messages.
@@ -93,32 +93,32 @@ checkLetsM
                 , Context n)            --   Output context.
 
 checkLetsM !bidir xx !table !ctx0 (LLet b xBind)
- 
+
  -- Reconstruct the type of a non-recursive let-binding.
  | False  <- bidir
- = do   
+ = do
         let config      = tableConfig table
         let kenv        = tableKindEnv table
         let a           = annotOfExp xx
 
         -- Reconstruct the type of the binding.
-        (xBind', tBind, effsBind, ctx1) 
+        (xBind', tBind, effsBind, ctx1)
          <- tableCheckExp table table ctx0 xBind Recon
-        
+
         -- The kind of the binding must be Data.
-        (_, kBind', _) 
+        (_, kBind', _)
          <- checkTypeM config kenv ctx1 UniverseSpec tBind Recon
 
         when (not $ isDataKind kBind')
          $ throw $ ErrorLetBindingNotData a xx b kBind'
-        
+
         -- If there is a type annotation on the binding then this
         -- must match the reconstructed type.
         when (not $ isBot (typeOfBind b))
          $ if equivT (typeOfBind b) tBind
                 then return ()
-                else (throw $ ErrorLetMismatch a xx b tBind)          
-        
+                else (throw $ ErrorLetMismatch a xx b tBind)
+
         -- Update the annotation on the binder with the actual type of
         -- the binding.
         let b'  = replaceTypeOfBind tBind b
@@ -135,10 +135,10 @@ checkLetsM !bidir xx !table !ctx0 (LLet b xBind)
  -- Synthesise the type of a non-recursive let-binding,
  -- using any annotation on the binder as the expected type.
  | True   <- bidir
- = do   
+ = do
         let config      = tableConfig table
         let kenv        = tableKindEnv table
-        
+
         -- If the binder has a type annotation then we use that as the expected
         -- type when checking the binding. Any annotation must also have kind
         -- Data, which we verify here.
@@ -147,7 +147,7 @@ checkLetsM !bidir xx !table !ctx0 (LLet b xBind)
          <- if isBot tAnnot
              -- There is no annotation on the binder.
              then return (Synth, ctx0)
-             
+
              -- Check the type annotation on the binder,
              -- expecting the kind to be Data.
              else do
@@ -185,7 +185,7 @@ checkLetsM !bidir !xx !table !ctx0 (LRec bxs)
         -- All right hand sides must be syntactic abstractions.
         checkSyntacticLambdas table a xx xs
 
-        -- Check the type annotations on all the binders.       
+        -- Check the type annotations on all the binders.
         (bs', ctx1)      <- checkRecBinds table bidir a xx ctx0 bs
 
         -- All variables are in scope in all right hand sides.
@@ -205,7 +205,7 @@ checkLetsM !bidir !xx !table !ctx0 (LRec bxs)
 
 
 -- others ---------------------------------------
--- The dispatcher should only call checkLet with LLet and LRec AST nodes, 
+-- The dispatcher should only call checkLet with LLet and LRec AST nodes,
 -- so we should not see the others here.
 checkLetsM _ _ _ _ _
         = error "ddc-core.checkLetsM: no match"
@@ -219,9 +219,9 @@ checkRecBinds
         -> Bool                         -- ^ Use bidirectional checking.
         -> a                            -- ^ Annotation for error messages.
         -> Exp a n                      -- ^ Expression for error messages.
-        -> Context n                    -- ^ Original context.                     
+        -> Context n                    -- ^ Original context.
         -> [Bind n]                     -- ^ Input binding group.
-        -> CheckM a n 
+        -> CheckM a n
                 ( [Bind n]              --   Result binding group.
                 ,  Context n)           --   Output context.
 
@@ -242,14 +242,14 @@ checkRecBinds table bidir a xx ctx0 bs0
         checkRecBind b ctx
          = case bidir of
             False
-             -> do      
+             -> do
                 -- In Recon mode, all recursive let-bindings must have full
                 -- type annotations.
                 when (isBot $ typeOfBind b)
                  $ throw $ ErrorLetrecMissingAnnot a b xx
 
                 -- Check the type on the binder.
-                (b', k, ctx') 
+                (b', k, ctx')
                  <- checkBindM config kenv ctx UniverseSpec b Recon
 
                 -- The type on the binder must have kind Data.
@@ -268,11 +268,11 @@ checkRecBinds table bidir a xx ctx0 bs0
                    let b'   = replaceTypeOfBind t b
                    return (b', ctx')
 
-             -- Recursive let-binding has a type annotation, 
+             -- Recursive let-binding has a type annotation,
              -- so check it, expecting it to have kind Data.
              | otherwise
              -> do
-                (b0, _k, ctx1) 
+                (b0, _k, ctx1)
                  <- checkBindM config kenv ctx UniverseSpec b (Check kData)
 
                 let t0  = typeOfBind b0
@@ -293,17 +293,17 @@ checkRecBindExps
         -> a                            -- ^ Annotation for error messages.
         -> Context n                    -- ^ Original context.
         -> [(Bind n, Exp a n)]          -- ^ Bindings and exps for rec bindings.
-        -> CheckM a n 
+        -> CheckM a n
                 ( [ ( Bind n                   -- Result bindiner.
                     , Exp (AnTEC a n) n)]      -- Result expression.
                 , Context n)
 
 checkRecBindExps table bidir a ctx0 bxs0
  = go bxs0 ctx0
- where  
-        go [] ctx       
+ where
+        go [] ctx
          = return ([], ctx)
-        
+
         go ((b, x) : bxs) ctx
          = do   (result, ctx')  <- checkRecBindExp b x ctx
                 (moar,   ctx'') <- go bxs ctx'
@@ -311,7 +311,7 @@ checkRecBindExps table bidir a ctx0 bxs0
 
         checkRecBindExp b x ctx
          = case bidir of
-            False 
+            False
              -> do
                 -- Check the right of the binding.
                 --  We checked that the expression is a syntactic lambda
@@ -368,7 +368,7 @@ duplicates []           = []
 duplicates (x : xs)
         | L.elem x xs   = x : duplicates (filter (/= x) xs)
         | otherwise     = duplicates xs
-        
+
 
 -------------------------------------------------------------------------------
 -- | Check that all the bindings in a recursive let are syntactic lambdas.
@@ -386,7 +386,7 @@ checkSyntacticLambdas table a xx xs
  = return ()
 
  | otherwise
- = forM_ xs $ \x 
+ = forM_ xs $ \x
         -> when (not $ (isXLam x || isXLAM x))
         $  throw $ ErrorLetrecBindingNotLambda a xx x
 

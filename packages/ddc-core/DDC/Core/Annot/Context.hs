@@ -27,7 +27,7 @@ data Ctx a n
         -- | Body of a type abstraction.
         | CtxLAM        !(Ctx a n) !a
                         !(Bind n)
-        
+
         -- | Body of a value or witness abstraction.
         | CtxLam        !(Ctx a n) !a
                         !(Bind n)
@@ -77,9 +77,9 @@ isTopLetCtx ctx
         CtxLetLLet CtxTop{} _ _ _        -> True
         CtxLetLRec CtxTop{} _ _ _ _ _    -> True
 
-        CtxLetLLet (CtxLetBody ctx' _ _) _ _ _ 
+        CtxLetLLet (CtxLetBody ctx' _ _) _ _ _
            -> isTopLetCtx ctx'
-        
+
         CtxLetLRec (CtxLetBody ctx' _ _) _ _ _ _ _
            -> isTopLetCtx ctx'
 
@@ -87,7 +87,7 @@ isTopLetCtx ctx
 
 
 -- | Get the top level of a context.
-topOfCtx :: Ctx a n 
+topOfCtx :: Ctx a n
          -> (DataDefs n, KindEnv n, TypeEnv n)
 
 topOfCtx ctx
@@ -132,7 +132,7 @@ takeTopNameOfCtx ctx0
          = case ctx of
                 CtxTop{}
                  -> Nothing
-                
+
                 CtxLetLLet CtxTop{} _ (BName n _) _
                  -> Just n
 
@@ -144,7 +144,7 @@ takeTopNameOfCtx ctx0
                         Just ctx' -> eat ctx'
 
 
--- | Get the set of value names defined at top-level, including top-level 
+-- | Get the set of value names defined at top-level, including top-level
 --   let-bindings and the top level type environment.
 takeTopLetEnvNamesOfCtx :: Ord n => Ctx a n -> Set n
 takeTopLetEnvNamesOfCtx ctx0
@@ -193,30 +193,30 @@ takeTopLetEnvNamesOfCtx ctx0
 
 -- | Encode a context into a unique string.
 --   This is a name for a particlar program context, which is guaranteed
---   to be from names of other contexts. This encoding can be used as 
+--   to be from names of other contexts. This encoding can be used as
 --   a fresh name generator if you can base the names on the context they
 --   are created in.
 encodeCtx :: Ctx a n -> String
 encodeCtx ctx0
  = go 1 ctx0
  where
-  
+
   -- We indicate simulilar encosing contexts with by using an integer prefix
   -- for each component. We encode the position of particular alternatives
   -- and let-bindings with an integer suffix.
   go (n :: Int) ctx
    = let sn     = if n == 1
-                        then "x" 
+                        then "x"
                         else "x" ++ show n
      in case ctx of
         CtxTop{}                        -> "Tt"
-        
+
         CtxLAM       c@CtxLAM{} _ _     -> go (n + 1) c
         CtxLAM       c _ _              -> go 1 c ++ sn ++ "Lt"
-        
+
         CtxLam       c@CtxLam{} _ _     -> go (n + 1) c
         CtxLam       c _ _              -> go 1 c ++ sn ++ "Lv"
-        
+
         CtxAppLeft   c _ _              -> go 1 c ++ sn ++ "Al"
         CtxAppRight  c _ _              -> go 1 c ++ sn ++ "Ar"
 
@@ -227,8 +227,8 @@ encodeCtx ctx0
         CtxLetLRec   c _ bxs  _ _ _     -> go 1 c ++ sn ++ "Er" ++ show (length bxs + 1)
 
         CtxCaseScrut c _ _              -> go 1 c ++ sn ++ "Cs"
-        
+
         CtxCaseAlt   c _ _ alts _ _     -> go 1 c ++ sn ++ "Ca" ++ show (length alts + 1)
-        
+
         CtxCastBody  c _ _              -> go 1 c ++ sn ++ "Sb"
 

@@ -19,7 +19,7 @@ makeSub :: (Eq n, Ord n, Show n, Pretty n)
         -> Type n
         -> Type n
         -> Error a n
-        -> CheckM a n 
+        -> CheckM a n
                 ( Exp (AnTEC a n) n
                 , Context n)
 
@@ -33,7 +33,7 @@ makeSub config a ctx0 xL tL tR err
  | TCon tc1     <- tL
  , TCon tc2     <- tR
  , equivTyCon tc1 tc2
- = do   
+ = do
         ctrace  $ vcat
                 [ text "* SubCon"
                 , text "  LEFT:  " <> ppr tL
@@ -49,7 +49,7 @@ makeSub config a ctx0 xL tL tR err
  | TVar u1      <- tL
  , TVar u2      <- tR
  , u1 == u2
- = do   
+ = do
         ctrace  $ vcat
                 [ text "* SubVar"
                 , text "  LEFT:  " <> ppr tL
@@ -65,12 +65,12 @@ makeSub config a ctx0 xL tL tR err
  | Just iL <- takeExists tL
  , Just iR <- takeExists tR
  , iL == iR
- = do   
+ = do
         ctrace  $ vcat
                 [ text "* SubExVar"
                 , text "  LEFT:  " <> ppr tL
                 , text "  RIGHT: " <> ppr tR
-                , indent 2 $ ppr ctx0 
+                , indent 2 $ ppr ctx0
                 , empty ]
 
         return (xL, ctx0)
@@ -79,12 +79,12 @@ makeSub config a ctx0 xL tL tR err
  -- SubEquiv
  --  Both sides are equivalent
  | equivT tL tR
- = do   
+ = do
         ctrace  $ vcat
                 [ text "* SubEquiv"
                 , text "  LEFT:  " <> ppr tL
                 , text "  RIGHT: " <> ppr tR
-                , indent 2 $ ppr ctx0 
+                , indent 2 $ ppr ctx0
                 , empty ]
 
         return (xL, ctx0)
@@ -124,7 +124,7 @@ makeSub config a ctx0 xL tL tR err
                 , text "  LEFT:  " <> ppr tL
                 , text "  RIGHT: " <> ppr tR
                 , indent 2 $ ppr ctx0
-                , indent 2 $ ppr ctx1 
+                , indent 2 $ ppr ctx1
                 , empty ]
 
         return (xL, ctx1)
@@ -134,7 +134,7 @@ makeSub config a ctx0 xL tL tR err
  --  Both sides are arrow types.
  | Just (tL1, tL2)  <- takeTFun tL
  , Just (tR1, tR2)  <- takeTFun tR
- = do   
+ = do
         (_, ctx1)   <- makeSub config a ctx0 xL tR1 tL1 err
         let tL2'    =  applyContext  ctx1    tL2
         let tR2'    =  applyContext  ctx1    tR2
@@ -146,18 +146,18 @@ makeSub config a ctx0 xL tL tR err
                 , text "  RIGHT: " <> ppr tR
                 , indent 2 $ ppr ctx0
                 , indent 2 $ ppr ctx1
-                , indent 2 $ ppr ctx2 
+                , indent 2 $ ppr ctx2
                 , empty ]
 
         return (xL, ctx2)
 
 
- -- SubApp 
+ -- SubApp
  --   Both sides are type applications.
  --   Assumes non-function type constructors are invariant.
  | TApp tL1 tL2 <- tL
  , TApp tR1 tR2 <- tR
- = do   
+ = do
         ctx1     <- makeEq config a ctx0 tL1 tR1 err
         let tL2' =  applyContext ctx1 tL2
         let tR2' =  applyContext ctx1 tR2
@@ -169,7 +169,7 @@ makeSub config a ctx0 xL tL tR err
                 , text "  RIGHT: " <> ppr tR
                 , indent 2 $ ppr ctx0
                 , indent 2 $ ppr ctx1
-                , indent 2 $ ppr ctx2 
+                , indent 2 $ ppr ctx2
                 , empty ]
 
         return (xL, ctx2)
@@ -178,14 +178,14 @@ makeSub config a ctx0 xL tL tR err
  -- SubForall
  --   Left side is a forall type.
  | TForall b t1 <- tL
- = do   
+ = do
         -- Make a new existential to instantiate the quantified
-        -- variable and substitute it into the body. 
+        -- variable and substitute it into the body.
         iA        <- newExists (typeOfBind b)
         let tA    = typeOfExists iA
         let t1'   = substituteT b tA t1
 
-        -- Check the new body against the right type, 
+        -- Check the new body against the right type,
         -- so that the existential we just made is instantiated
         -- to match the right.
         let (ctx1, pos1) =  markContext ctx0
@@ -201,16 +201,16 @@ makeSub config a ctx0 xL tL tR err
                 , text "  LEFT:  " <> ppr tL
                 , text "  RIGHT: " <> ppr tR
                 , indent 2 $ ppr ctx0
-                , indent 2 $ ppr ctx4 
+                , indent 2 $ ppr ctx4
                 , empty ]
 
         -- Wrap the expression with a type application to cause
         -- the instantiation.
-        let AnTEC _ e0 c0 _    
+        let AnTEC _ e0 c0 _
                  = annotOfExp xL
         let aFn  = AnTEC t1' (substituteT b tA e0) (substituteT b tA c0) a
         let aArg = AnTEC (typeOfBind b) (tBot kEffect) (tBot kClosure) a
-        let xL2  = XApp aFn xL1 (XType aArg tA) 
+        let xL2  = XApp aFn xL1 (XType aArg tA)
 
         return (xL2, ctx4)
 
@@ -218,7 +218,7 @@ makeSub config a ctx0 xL tL tR err
  -- Error
  | otherwise
  = do   ctrace  $ vcat
-                [ text "DDC.Core.Check.Exp.Inst.makeSub: no match" 
+                [ text "DDC.Core.Check.Exp.Inst.makeSub: no match"
                 , text "  LEFT:   " <> text (show tL)
                 , text "  RIGHT:  " <> text (show tR) ]
 

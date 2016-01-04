@@ -15,17 +15,17 @@ import qualified DDC.Type.Env                   as Env
 
 -- Wrappers --------------------------------------------------------------------
 -- | Check a witness.
---   
+--
 --   If it's good, you get a new version with types attached to all the bound
 --   variables, as well as the type of the overall witness.
 --
 --   If it's bad, you get a description of the error.
 --
---   The returned expression has types attached to all variable occurrences, 
+--   The returned expression has types attached to all variable occurrences,
 --   so you can call `typeOfWitness` on any open subterm.
 --
---   The kinds and types of primitives are added to the environments 
---   automatically, you don't need to supply these as part of the 
+--   The kinds and types of primitives are added to the environments
+--   automatically, you don't need to supply these as part of the
 --   starting environments.
 --
 checkWitness
@@ -34,7 +34,7 @@ checkWitness
         -> KindEnv n            -- ^ Starting Kind Environment.
         -> TypeEnv n            -- ^ Strating Type Environment.
         -> Witness a n          -- ^ Witness to check.
-        -> Either (Error a n) 
+        -> Either (Error a n)
                   ( Witness (AnT a n) n
                   , Type n)
 
@@ -49,13 +49,13 @@ checkWitness config kenv tenv xx
 --   must be attached directly to the bound occurrences.
 --   This attachment is performed by `checkWitness` above.
 --
-typeOfWitness 
-        :: (Ord n, Show n, Pretty n) 
+typeOfWitness
+        :: (Ord n, Show n, Pretty n)
         => Config n
-        -> Witness a n 
+        -> Witness a n
         -> Either (Error a n) (Type n)
 
-typeOfWitness config ww 
+typeOfWitness config ww
  = case checkWitness config Env.empty Env.empty ww of
         Left  err       -> Left err
         Right (_, t)    -> Right t
@@ -63,14 +63,14 @@ typeOfWitness config ww
 
 ------------------------------------------------------------------------------
 -- | Like `checkWitness` but using the `CheckM` monad to manage errors.
-checkWitnessM 
+checkWitnessM
         :: (Ord n, Show n, Pretty n)
         => Config n             -- ^ Data type definitions.
         -> KindEnv n            -- ^ Kind environment.
         -> TypeEnv n            -- ^ Type environment.
         -> Context n            -- ^ Input context
         -> Witness a n          -- ^ Witness to check.
-        -> CheckM a n 
+        -> CheckM a n
                 ( Witness (AnT a n) n
                 , Type n)
 
@@ -80,17 +80,17 @@ checkWitnessM !_config !_kenv !tenv !ctx (WVar a u)
  = return ( WVar (AnT t a) u, t)
 
  -- Witness is defined globally.
- | Just t       <- Env.lookup u tenv 
+ | Just t       <- Env.lookup u tenv
  = return ( WVar (AnT t a) u, t)
-           
+
  | otherwise
  = throw $ ErrorUndefinedVar a u UniverseWitness
- 
+
 checkWitnessM !_config !_kenv !_tenv !_ctx (WCon a wc)
  = let  t'       = typeOfWiCon wc
    in   return  ( WCon (AnT t' a) wc
                 , t')
-  
+
 -- witness-type application
 checkWitnessM !config !kenv !tenv !ctx ww@(WApp a1 w1 (WType a2 t2))
  = do   (w1', t1)       <- checkWitnessM  config kenv tenv ctx w1
@@ -111,10 +111,10 @@ checkWitnessM !config !kenv !tenv !ctx ww@(WApp a w1 w2)
         (w2', t2)       <- checkWitnessM config kenv tenv ctx w2
         case t1 of
          TApp (TApp (TCon (TyConWitness TwConImpl)) t11) t12
-          |  t11 == t2   
+          |  t11 == t2
           -> return ( WApp (AnT t12 a) w1' w2'
                     , t12)
-          
+
           | otherwise   -> throw $ ErrorWAppMismatch a ww t11 t2
          _              -> throw $ ErrorWAppNotCtor  a ww t1 t2
 
@@ -123,7 +123,7 @@ checkWitnessM !config !kenv !_tenv !ctx (WType a t)
  = do   (t', k, _)  <- checkTypeM config kenv ctx UniverseSpec t Recon
         return  ( WType (AnT k a) t'
                 , k)
-        
+
 
 -- | Take the type of a witness constructor.
 typeOfWiCon :: WiCon n -> Type n

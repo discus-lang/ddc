@@ -20,7 +20,7 @@ import DDC.Data.Token
 lexModuleString :: String -> Int -> String -> [Token (Tok Name)]
 lexModuleString sourceName lineStart str
  = map rn $ lexModuleWithOffside sourceName lineStart str
- where rn (Token strTok sp) 
+ where rn (Token strTok sp)
         = case renameTok readName strTok of
                 Just t' -> Token t' sp
                 Nothing -> Token (KErrorJunk "lexical error") sp

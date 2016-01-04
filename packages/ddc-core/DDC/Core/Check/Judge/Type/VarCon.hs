@@ -14,7 +14,7 @@ checkVarCon :: Checker a n
 
 -- variables ------------------------------------
 checkVarCon !table !ctx xx@(XVar a u) mode
- 
+
  -- Look in the local context.
  | Just t       <- lookupType u ctx
  = case mode of
@@ -27,7 +27,7 @@ checkVarCon !table !ctx xx@(XVar a u) mode
                         [ text "* Var Local"
                         , indent 2 $ ppr xx
                         , text "  TYPE:  " <> ppr t
-                        , indent 2 $ ppr ctx 
+                        , indent 2 $ ppr ctx
                         , empty ]
 
                 returnX a
@@ -51,30 +51,30 @@ checkVarCon !table !ctx xx@(XVar a u) mode
                         , indent 2 $ ppr ctx
                         , empty ]
 
-                returnX a 
+                returnX a
                         (\z -> XVar z u)
                         t
                         (Sum.empty kEffect)
                         ctx
- 
+
  -- Can't find this variable name in the environment.
  | otherwise
  = throw $ ErrorUndefinedVar a u UniverseData
-         
+
 
 -- constructors ---------------------------------
 checkVarCon !table !ctx xx@(XCon a dc) mode
  -- For recon and synthesis we already know what type the constructor
  -- should have, so we can use that.
- | mode == Recon || mode == Synth 
+ | mode == Recon || mode == Synth
  = do   let config      = tableConfig table
         let defs        = configDataDefs config
 
         -- All data constructors need to have valid type annotations.
-        tCtor 
+        tCtor
          <- case dc of
              DaConUnit   -> return tUnit
-             
+
              DaConPrim{} -> return $ daConType dc
 
              DaConBound n

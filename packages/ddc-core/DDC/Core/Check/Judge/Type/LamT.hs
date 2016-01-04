@@ -42,7 +42,7 @@ checkLAM !table !ctx0 a b1 x2 Recon
         when (not (sA == sComp) && not (sA == sProp))
          $ throw $ ErrorLAMParamBadSort a xx b1 sA
 
-        
+
         -- Check the body -----------------------
         let (ctx2, pos1) = markContext ctxA
         let ctx3         = pushKind b1' RoleAbstract ctx2
@@ -50,11 +50,11 @@ checkLAM !table !ctx0 a b1 x2 Recon
 
         (x2', t2, e2, ctx5)
          <- tableCheckExp table table ctx4 x2 Recon
-        
+
         -- Reconstruct the kind of the body.
-        (t2', k2, ctx6) 
+        (t2', k2, ctx6)
          <- checkTypeM config kenv ctx5 UniverseSpec t2 Recon
-        
+
         -- The type of the body must have data kind.
         when (not $ isDataKind k2)
          $ throw $ ErrorLamBodyNotData a xx b1 t2' k2
@@ -66,7 +66,7 @@ checkLAM !table !ctx0 a b1 x2 Recon
         -- Cut the bound kind and elems under it from the context.
         let ctx_cut     = lowerTypes 1
                         $ popToPos pos1 ctx6
-                                   
+
         -- Build the result type.
         let tResult     = TForall b1' t2'
 
@@ -75,7 +75,7 @@ checkLAM !table !ctx0 a b1 x2 Recon
                 , indent 2 $ ppr (XLAM a b1' x2)
                 , text "  OUT: " <> ppr tResult
                 , indent 2 $ ppr ctx0
-                , indent 2 $ ppr ctx_cut 
+                , indent 2 $ ppr ctx_cut
                 , empty ]
 
         returnX a
@@ -97,8 +97,8 @@ checkLAM !table !ctx0 a b1 x2 Synth
         -- If the annotation is missing then make a new existential for it.
         let kA  = typeOfBind b1
         (kA', sA, ctxA)
-         <- if isBot kA 
-             then do   
+         <- if isBot kA
+             then do
                 iA       <- newExists sComp
                 let kA'  = typeOfExists iA
                 let ctxA = pushExists   iA ctx0
@@ -120,14 +120,14 @@ checkLAM !table !ctx0 a b1 x2 Synth
 
         (x2', t2, e2,ctx5)
          <- tableCheckExp table table ctx4 x2 Synth
-        
+
         -- Force the kind of the body to be data.
         --  This is needed when the type of the body is an existential
         --  which doesn't yet have a resolved kind.
-        (_, _, ctx6) 
-         <- checkTypeM config kenv ctx5 UniverseSpec 
+        (_, _, ctx6)
+         <- checkTypeM config kenv ctx5 UniverseSpec
                 (applyContext ctx5 t2) (Check kData)
-        
+
         -- The body of a spec abstraction must be pure.
         when (e2 /= Sum.empty kEffect)
          $ throw $ ErrorLamNotPure a xx UniverseSpec (TSum e2)
@@ -135,7 +135,7 @@ checkLAM !table !ctx0 a b1 x2 Synth
         -- Cut the bound kind and elems under it from the context.
         let ctx_cut     = lowerTypes 1
                         $ popToPos pos1 ctx6
-        
+
         -- Build the result type.
         let tResult     = TForall b1' t2
 
@@ -144,7 +144,7 @@ checkLAM !table !ctx0 a b1 x2 Synth
                 , indent 2 $ ppr (XLAM a b1' x2)
                 , text "  OUT: " <> ppr tResult
                 , indent 2 $ ppr ctx0
-                , indent 2 $ ppr ctx_cut 
+                , indent 2 $ ppr ctx_cut
                 , empty ]
 
         returnX a
@@ -171,14 +171,14 @@ checkLAM !table !ctx0 a b1 x2 (Check (TForall b tBody))
         -- If both the kind annotation is missing and there is no
         -- expected kind then we need to make an existential for it.
         (kA', sA, ctxA)
-         <- if (isBot kParam && isBot kExpected) 
+         <- if (isBot kParam && isBot kExpected)
              then do
                 iA       <- newExists sComp
                 let kA'  = typeOfExists iA
                 let ctxA = pushExists   iA ctx0
                 return (kA', sComp, ctxA)
 
-             else if isBot kExpected 
+             else if isBot kExpected
               then do
                 checkTypeM config kenv ctx0 UniverseKind kParam Synth
 
@@ -207,7 +207,7 @@ checkLAM !table !ctx0 a b1 x2 (Check (TForall b tBody))
 
         (x2', t2, e2, ctx5)
          <- tableCheckExp table table ctx4 x2 (Check tBody_skol)
-        
+
         -- Force the body of the spec abstraction must have data kind.
         --  This is needed when the type of the body is an existential
         --  which doesn't yet have a resolved kind.
@@ -219,7 +219,7 @@ checkLAM !table !ctx0 a b1 x2 (Check (TForall b tBody))
          $ throw $ ErrorLamNotPure a xx UniverseSpec (TSum e2)
 
         -- Apply context to synthesised type.
-        -- We're about to pop the context back to how it was before the 
+        -- We're about to pop the context back to how it was before the
         -- type lambda, and want to keep information gained from synthing
         -- the body.
         let t2_sub      = applyContext ctx6 t2'
@@ -227,7 +227,7 @@ checkLAM !table !ctx0 a b1 x2 (Check (TForall b tBody))
         -- Cut the bound kind and elems under it from the context.
         let ctx_cut     = lowerTypes 1
                         $ popToPos pos1 ctx6
-        
+
         -- Build the result type.
         let tResult     = TForall b1' t2_sub
 
@@ -236,7 +236,7 @@ checkLAM !table !ctx0 a b1 x2 (Check (TForall b tBody))
                 , indent 2 $ ppr (XLAM a b1' x2)
                 , text "  OUT: " <> ppr tResult
                 , indent 2 $ ppr ctx0
-                , indent 2 $ ppr ctx_cut 
+                , indent 2 $ ppr ctx_cut
                 , empty ]
 
         returnX a

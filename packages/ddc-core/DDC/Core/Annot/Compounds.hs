@@ -132,8 +132,8 @@ makeXLamFlags a fbs x
                 x fbs
 
 
--- | Split nested lambdas from the front of an expression, 
---   with a flag indicating whether the lambda was a level-1 (True), 
+-- | Split nested lambdas from the front of an expression,
+--   with a flag indicating whether the lambda was a level-1 (True),
 --   or level-0 (False) binder.
 takeXLamFlags :: Exp a n -> Maybe ([(Bool, Bind n)], Exp a n)
 takeXLamFlags xx
@@ -176,14 +176,14 @@ takeCallPattern xx
         Just (fbs, _)   -> [ (f, typeOfBind b) | (f, b) <- fbs ]
 
 
--- | Take a prenex call pattern from this expression, 
---   meaning     the kinds of the type parameters, 
---   followed by the types of the value parameters, 
+-- | Take a prenex call pattern from this expression,
+--   meaning     the kinds of the type parameters,
+--   followed by the types of the value parameters,
 --   followed by the number of inner box casts.
 --   or `Nothing` if this expression is not in prenex form.
 takePrenexCallPattern :: Exp a n -> Maybe ([Kind n], [Type n], Int)
 takePrenexCallPattern xx
- = goType    [] 
+ = goType    []
  $ fromMaybe [] $ fmap fst (takeXLamParam xx)
  where
         goType ks pats
@@ -214,7 +214,7 @@ xApps a t1 ts     = foldl (XApp a) t1 ts
 
 
 -- | Build sequence of applications.
---   Similar to `xApps` but also takes list of annotations for 
+--   Similar to `xApps` but also takes list of annotations for
 --   the `XApp` constructors.
 makeXAppsWithAnnots :: Exp a n -> [(Exp a n, a)] -> Exp a n
 makeXAppsWithAnnots f xas
@@ -265,7 +265,7 @@ takeXAppsWithAnnots xx
 
 -- | Flatten an application of a primop into the variable
 --   and its arguments.
---   
+--
 --   Returns `Nothing` if the expression isn't a primop application.
 takeXPrimApps :: Exp a n -> Maybe (n, [Exp a n])
 takeXPrimApps xx
@@ -274,7 +274,7 @@ takeXPrimApps xx
         _                       -> Nothing
 
 -- | Flatten an application of a data constructor into the constructor
---   and its arguments. 
+--   and its arguments.
 --
 --   Returns `Nothing` if the expression isn't a constructor application.
 takeXConApps :: Exp a n -> Maybe (DaCon n, [Exp a n])
@@ -301,7 +301,7 @@ xLetsAnnot lts x
 splitXLets :: Exp a n -> ([Lets a n], Exp a n)
 splitXLets xx
  = case xx of
-        XLet _ lts x 
+        XLet _ lts x
          -> let (lts', x')      = splitXLets x
             in  (lts : lts', x')
 
@@ -311,7 +311,7 @@ splitXLets xx
 splitXLetsAnnot :: Exp a n -> ([(Lets a n, a)], Exp a n)
 splitXLetsAnnot xx
  = case xx of
-        XLet a lts x 
+        XLet a lts x
          -> let (lts', x')              = splitXLetsAnnot x
             in  ((lts, a) : lts', x')
 

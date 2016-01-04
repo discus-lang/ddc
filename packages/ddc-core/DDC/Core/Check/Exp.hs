@@ -3,17 +3,17 @@
 --   The algorithm is based on:
 --    Complete and Easy Bidirectional Typechecking for Higher-Rank Polymorphism.
 --    Joshua Dunfield, Neelakantan R. Krishnaswami, ICFP 2013.
---  
+--
 --   Extensions include:
 --    * Check let-bindings and case-expressions.
 --    * Allow type annotations on function parameters.
 --    * Allow explicit type abstraction and application.
 --    * Infer the kinds of type parameters.
---    * Insert type applications in the checked expression, so that the 
+--    * Insert type applications in the checked expression, so that the
 --      resulting program can be checked by the standard bottom-up algorithm.
---    * Allow explicit hole '?' annotations to indicate a type or kind 
+--    * Allow explicit hole '?' annotations to indicate a type or kind
 --      that should be inferred.
--- 
+--
 module DDC.Core.Check.Exp
         ( -- * Checker configuation.
           Config (..)
@@ -49,25 +49,25 @@ import qualified DDC.Type.Env           as Env
 
 
 -- Wrappers -------------------------------------------------------------------
--- | Type check an expression. 
+-- | Type check an expression.
 --
---   If it's good, you get a new version with types attached every AST node, 
+--   If it's good, you get a new version with types attached every AST node,
 --   as well as every binding occurrence of a variable.
 --
 --   If it's bad, you get a description of the error.
 --
---   The kinds and types of primitives are added to the environments 
---   automatically, you don't need to supply these as part of the starting 
+--   The kinds and types of primitives are added to the environments
+--   automatically, you don't need to supply these as part of the starting
 --   kind and type environment.
 --
-checkExp 
+checkExp
         :: (Show a, Ord n, Show n, Pretty n)
         => Config n                     -- ^ Static configuration.
         -> KindEnv n                    -- ^ Starting kind environment.
         -> TypeEnv n                    -- ^ Starting type environment.
         -> Exp a n                      -- ^ Expression to check.
         -> Mode  n                      -- ^ Check mode.
-        -> ( Either (Error a n)         --   Type error message. 
+        -> ( Either (Error a n)         --   Type error message.
                     ( Exp (AnTEC a n) n --   Expression with type annots
                     , Type n            --   Type of expression.
                     , Effect n)         --   Effect of expression.
@@ -75,18 +75,18 @@ checkExp
 
 checkExp !config !kenv !tenv !xx !mode
  = (result, ct)
- where  
+ where
   ((ct, _, _), result)
-   = runCheck (mempty, 0, 0) 
+   = runCheck (mempty, 0, 0)
    $ do
         -- Check the expression, using the monadic checking function.
-        (xx', t, effs, ctx) 
-         <- checkExpM 
+        (xx', t, effs, ctx)
+         <- checkExpM
                 (makeTable config
                         (Env.union kenv (configPrimKinds config))
                         (Env.union tenv (configPrimTypes config)))
                 emptyContext xx mode
-                
+
         -- Apply the final context to the annotations in expressions.
         -- This ensures that existentials are expanded to solved types.
         let applyToAnnot (AnTEC t0 e0 _ x0)
@@ -95,10 +95,10 @@ checkExp !config !kenv !tenv !xx !mode
                         (tBot kClosure)
                         x0
 
-        let xx'' = reannotate applyToAnnot 
+        let xx'' = reannotate applyToAnnot
                  $ mapT (applySolved ctx) xx'
 
-        -- Also apply the final context to the overall type, 
+        -- Also apply the final context to the overall type,
         -- effect and closure of the expression.
         let t'   = applySolved ctx t
         let e'   = applySolved ctx $ TSum effs
@@ -107,7 +107,7 @@ checkExp !config !kenv !tenv !xx !mode
 
 
 -- | Like `checkExp`, but only return the value type of an expression.
-typeOfExp 
+typeOfExp
         :: (Show a, Ord n, Pretty n, Show n)
         => Config n                     -- ^ Static configuration.
         -> KindEnv n                    -- ^ Starting Kind environment
@@ -123,13 +123,13 @@ typeOfExp !config !kenv !tenv !xx
 
 -- Monadic Checking -----------------------------------------------------------
 -- | Like `checkExp` but using the `CheckM` monad to handle errors.
-checkExpM 
+checkExpM
         :: (Show a, Show n, Pretty n, Ord n)
         => Table a n                    -- ^ Static config.
         -> Context n                    -- ^ Input context.
         -> Exp a n                      -- ^ Expression to check.
         -> Mode n                       -- ^ Check mode.
-        -> CheckM a n 
+        -> CheckM a n
                 ( Exp (AnTEC a n) n     -- Annotated expression.
                 , Type n                -- Output type.
                 , TypeSum n             -- Output effect
@@ -149,7 +149,7 @@ checkExpM !table !ctx !xx !mode
     XCase{}                -> tableCheckCase       table table ctx xx mode
     XCast{}                -> tableCheckCast       table table ctx xx mode
     XWitness{}             -> tableCheckWitness    table table ctx xx mode
-    XType    a _           -> throw $ ErrorNakedType    a xx 
+    XType    a _           -> throw $ ErrorNakedType    a xx
 
 
 -- Table ----------------------------------------------------------------------
@@ -168,6 +168,6 @@ makeTable config kenv tenv
         , tableCheckLet         = checkLet
         , tableCheckLetPrivate  = checkLetPrivate
         , tableCheckCase        = checkCase
-        , tableCheckCast        = checkCast 
+        , tableCheckCast        = checkCast
         , tableCheckWitness     = checkWit }
 

@@ -59,8 +59,8 @@ makeEq config a ctx0 tL tR err
  , Just iR <- takeExists tR,    Just lR <- locationOfExists iR ctx0
  , lL > lR
  = do   let Just ctx1   = updateExists [] iR tL ctx0
-        
-        ctrace  $ vcat 
+
+        ctrace  $ vcat
                 [ text "* EqLReach"
                 , text "  LEFT:  " <> ppr tL
                 , text "  RIGHT: " <> ppr tR
@@ -79,7 +79,7 @@ makeEq config a ctx0 tL tR err
  , lR > lL
  = do   let Just ctx1   = updateExists [] iL tR ctx0
 
-        ctrace  $ vcat 
+        ctrace  $ vcat
                 [ text "* EqRReach"
                 , text "  LEFT:  " <> ppr tL
                 , text "  RIGHT: " <> ppr tR
@@ -94,7 +94,7 @@ makeEq config a ctx0 tL tR err
  | TVar u1      <- tL
  , TVar u2      <- tR
  , u1 == u2
- = do   
+ = do
         ctrace  $ vcat
                 [ text "* EqVar"
                 , text "  LEFT:  " <> ppr tL
@@ -109,7 +109,7 @@ makeEq config a ctx0 tL tR err
  | TCon tc1     <- tL
  , TCon tc2     <- tR
  , equivTyCon tc1 tc2
- = do   
+ = do
         ctrace  $ vcat
                 [ text "* EqCon"
                 , text "  LEFT:  " <> ppr tL
@@ -148,9 +148,9 @@ makeEq config a ctx0 tL tR err
  -- Error
  | otherwise
  = do   ctrace  $ vcat
-                [ text "DDC.Core.Check.Exp.Inst.makeEq: no match" 
+                [ text "DDC.Core.Check.Exp.Inst.makeEq: no match"
                 , text "  LEFT:   " <> ppr tL
-                , text "  RIGHT:  " <> ppr tR 
+                , text "  RIGHT:  " <> ppr tR
                 , text "  LEFTC:  " <> (ppr $ crushSomeT tL)
                 , text "  RIGHTC: " <> (ppr $ crushSomeT tR)
                 , indent 2 $ ppr ctx0 ]

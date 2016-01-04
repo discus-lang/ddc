@@ -23,7 +23,7 @@ checkLam !table !a !ctx !b1 !x2 !Recon
 
         -- Check the parameter ------------------
         let t1          = typeOfBind b1
-        
+
         -- The formal parameter must have a type annotation.
         when (isBot t1)
          $ throw $ ErrorLamParamUnannotated a xx b1
@@ -43,17 +43,17 @@ checkLam !table !a !ctx !b1 !x2 !Recon
         -- The body of the function must produce data.
         (_, k2, _)      <- checkTypeM config kenv ctx2 UniverseSpec t2 Recon
         when (not $ isDataKind k2)
-         $ throw $ ErrorLamBodyNotData a xx b1 t2 k2 
+         $ throw $ ErrorLamBodyNotData a xx b1 t2 k2
 
         -- Cut the bound type and elems under it from the context.
         let ctx_cut     = popToPos pos1 ctx2
-        
+
         -- Build result type --------------------
         -- Build the resulting function type.
         --   The way the effect and closure term is captured depends on
         --   the configuration flags.
         tResult <- makeFunctionType config a xx t1 k1 t2 e2
-        
+
         returnX a
                 (\z -> XLam z b1' x2')
                 tResult (Sum.empty kEffect) ctx_cut
@@ -62,7 +62,7 @@ checkLam !table !a !ctx !b1 !x2 !Recon
 -- When synthesizing the type of a lambda abstraction
 --   we produce a type (?1 -> ?2) with new unification variables.
 checkLam !table !a !ctx !b1 !x2 !Synth
- = do   let config      = tableConfig table     
+ = do   let config      = tableConfig table
         let kenv        = tableKindEnv table
         let xx          = XLam a b1 x2
 
@@ -72,7 +72,7 @@ checkLam !table !a !ctx !b1 !x2 !Synth
         -- If there isn't an existing annotation then make an existential.
         (b1', t1', k1, ctx1)
          <- if isBot t1
-             then do 
+             then do
                 -- There is no annotation at all, so make an existential.
                 -- Missing anotations are assumed to have kind Data.
                 i1      <- newExists kData
@@ -80,7 +80,7 @@ checkLam !table !a !ctx !b1 !x2 !Synth
                 let b1'  = replaceTypeOfBind t1' b1
                 let ctx1 = pushExists i1 ctx
                 return (b1', t1', kData, ctx1)
-                     
+
              else do
                 -- Check the existing annotation.
                 --   This also turns explit holes ? into existentials.
@@ -91,15 +91,15 @@ checkLam !table !a !ctx !b1 !x2 !Synth
                 let b1' = replaceTypeOfBind t1' b1
                 return (b1', t1', k1, ctx1)
 
-        -- Check the body -----------------------        
+        -- Check the body -----------------------
         -- Make an existential for the result type.
         -- The type of a function abstraction has kind Data.
         i2              <- newExists kData
         let t2          = typeOfExists i2
-        
-        -- Push the existential for the result, 
+
+        -- Push the existential for the result,
         -- and parameter type onto the context.
-        let (ctx2, pos1) = markContext 
+        let (ctx2, pos1) = markContext
                          $ pushExists i2 ctx1
         let ctx3         = pushType   b1' ctx2
 
@@ -109,9 +109,9 @@ checkLam !table !a !ctx !b1 !x2 !Synth
 
         -- Force the kind of the body to be Data.
         --   This constrains the kind of polymorpic variables that are used
-        --   as the result of a function, like with (\x. x). 
+        --   as the result of a function, like with (\x. x).
         --   We know \x. can't bind a witness here.
-        (_, _, ctx5)    <- checkTypeM config kenv ctx4 UniverseSpec 
+        (_, _, ctx5)    <- checkTypeM config kenv ctx4 UniverseSpec
                                 (applyContext ctx4 t2')
                                 (Check kData)
 
@@ -128,7 +128,7 @@ checkLam !table !a !ctx !b1 !x2 !Synth
 
              else do
                 return (k1', ctx5)
- 
+
         -- Cut the bound type and elems under it from the context.
         let ctx_cut     = popToPos pos1 ctx6
 
@@ -136,7 +136,7 @@ checkLam !table !a !ctx !b1 !x2 !Synth
         --  This switches on the kind of the argument, so we need to apply
         --  the context to 'k1' to ensure it has all available information.
         tResult
-         <- makeFunctionType config a (XLam a b1' x2) 
+         <- makeFunctionType config a (XLam a b1' x2)
                 t1' k1''
                 t2' e2
 
@@ -145,7 +145,7 @@ checkLam !table !a !ctx !b1 !x2 !Synth
                 , indent 2 $ ppr (XLam a b1' x2)
                 , text "  OUT: " <> ppr tResult
                 , indent 2 $ ppr ctx
-                , indent 2 $ ppr ctx_cut 
+                , indent 2 $ ppr ctx_cut
                 , empty ]
 
         returnX a
@@ -169,15 +169,15 @@ checkLam !table !a !ctx !b1 !x2 !(Check tExpected)
         --   expected type we were passed down from above.
         -- If it does have an annotation, then it needs to match the
         --   expected type.
-        (b1', t1', ctx0) 
-         <- if isBot t1             
-             then 
+        (b1', t1', ctx0)
+         <- if isBot t1
+             then
                 return  (replaceTypeOfBind tX1 b1, tX1, ctx)
              else do
-                ctx0    <- makeEq config a ctx t1 tX1 
+                ctx0    <- makeEq config a ctx t1 tX1
                         $  ErrorMismatch a t1 tExpected (XLam a b1 x2)
                 return  (b1, t1, ctx0)
-                        
+
         -- Check the body ----------------------
         -- Check the body of the abstraction under the extended environment.
         let (ctx', pos1) = markContext ctx0
@@ -188,10 +188,10 @@ checkLam !table !a !ctx !b1 !x2 !(Check tExpected)
 
         -- Force the kind of the body to be Data.
         --   This constrains the kind of polymorpic variables that are used
-        --   as the result of a function, like with (\x. x). 
+        --   as the result of a function, like with (\x. x).
         --   We know \x. can't bind a witness here.
-        (_, _, ctx3)    <- checkTypeM config kenv ctx2 UniverseSpec 
-                                (applyContext ctx2 t2) 
+        (_, _, ctx3)    <- checkTypeM config kenv ctx2 UniverseSpec
+                                (applyContext ctx2 t2)
                                 (Check kData)
 
         -- Make the result type -----------------
@@ -208,7 +208,7 @@ checkLam !table !a !ctx !b1 !x2 !(Check tExpected)
 
              else do
                 return (k1', ctx3)
-        
+
         -- Cut the bound type and elems under it from the context.
         let ctx_cut     = popToPos pos1 ctx4
 
@@ -216,10 +216,10 @@ checkLam !table !a !ctx !b1 !x2 !(Check tExpected)
         --  This switches on the kind of the argument, so we need to apply
         --  the context to 'k1' to ensure it has all available information.
         tResult
-         <- makeFunctionType config a (XLam a b1' x2) 
+         <- makeFunctionType config a (XLam a b1' x2)
                 t1' k1'' t2 e2
 
-        ctrace  $ vcat 
+        ctrace  $ vcat
                 [ text "* Lam Check"
                 , indent 2 $ ppr (XLam a b1' x2)
                 , text "  IN:  " <> ppr tExpected
@@ -246,7 +246,7 @@ checkLam !table !a !ctx !b1 !x2 !(Check tExpected)
 --   is set by the Config, which depends on the specific language fragment
 --   that we're checking.
 --
-makeFunctionType 
+makeFunctionType
         :: (Show n, Ord n)
         => Config n              -- ^ Type checker config.
         -> a                     -- ^ Annotation for error messages.
@@ -265,12 +265,12 @@ makeFunctionType config a xx t1 k1 t2 e2
  = throw $ ErrorLamBindBadKind a xx t1 k1
 
  | otherwise
- = do   
+ = do
         -- Get the universe the parameter value belongs to.
         let Just uniParam    = universeFromType2 k1
 
         let e2_captured
-                -- If we're not tracking effect information then just drop it 
+                -- If we're not tracking effect information then just drop it
                 -- on the floor.
                 | not  $ configTrackedEffects config    = tBot kEffect
                 | otherwise                             = TSum e2

@@ -12,7 +12,7 @@ import Data.List                as L
 checkLetPrivate :: Checker a n
 
 -- private --------------------------------------
-checkLetPrivate !table !ctx 
+checkLetPrivate !table !ctx
         xx@(XLet a (LPrivate bsRgn mtParent bsWit) x) mode
  = case takeSubstBoundsOfBinds bsRgn of
     []   -> tableCheckExp table table ctx x Recon
@@ -23,14 +23,14 @@ checkLetPrivate !table !ctx
 
         -- Check the kinds of the region binders.
         -- These must already set to kind Region.
-        (bsRgn', _, _)  
+        (bsRgn', _, _)
          <- liftM unzip3
          $  mapM (\b -> checkBindM config kenv ctx UniverseKind b Recon)
                  bsRgn
         let ksRgn       = map typeOfBind bsRgn'
-        
+
         -- The binders must have region kind.
-        when (any (not . isRegionKind) ksRgn) 
+        when (any (not . isRegionKind) ksRgn)
          $ throw $ ErrorLetRegionsNotRegion a xx bsRgn ksRgn
 
         -- We can't shadow region binders because we might have witnesses
@@ -38,29 +38,29 @@ checkLetPrivate !table !ctx
         let rebounds    = filter (flip memberKindBind ctx) bsRgn'
         when (not $ null rebounds)
          $ throw $ ErrorLetRegionsRebound a xx rebounds
-        
+
         -- Check the witness binders.
         -- These must have full type annotations, as we don't infer
         -- the types of introduced witnesses.
         let (ctx', pos1) = markContext ctx
         let ctx1         = pushKinds [(b, RoleConcrete) | b <- bsRgn] ctx'
         let ctx2         = liftTypes depth ctx1
-        (bsWit', _, _)   
+        (bsWit', _, _)
          <- liftM unzip3
-         $  mapM (\b -> checkBindM config kenv ctx2 UniverseSpec b Recon) 
+         $  mapM (\b -> checkBindM config kenv ctx2 UniverseSpec b Recon)
                  bsWit
-        
+
         -- Check that the witnesses bound here are for the region,
         -- and they don't conflict with each other.
         checkWitnessBindsM config a kenv ctx xx us bsWit'
 
         -- Check the body expression.
         let ctx3        = pushTypes bsWit' ctx2
-        (xBody3, tBody3, effs3, ctx4)  
+        (xBody3, tBody3, effs3, ctx4)
           <- tableCheckExp table table ctx3 x mode
 
         -- The body type must have data kind.
-        (tBody4, kBody4, ctx5)   
+        (tBody4, kBody4, ctx5)
          <- checkTypeM config kenv ctx4 UniverseSpec tBody3
          $  case mode of
                 Recon   -> Recon
@@ -76,13 +76,13 @@ checkLetPrivate !table !ctx
         tBody_final
          <- case mtParent of
                 -- If the bound region variables are children of some parent
-                -- region then they are merged into the parent when the 
+                -- region then they are merged into the parent when the
                 -- private/extend construct ends.
                 Just tParent
-                 -> do  return $ foldl  (\t b -> substituteTX b tParent t) 
+                 -> do  return $ foldl  (\t b -> substituteTX b tParent t)
                                         tBody5 bsRgn
 
-                -- If the bound region variables have no parent then they are 
+                -- If the bound region variables have no parent then they are
                 -- deallocated when the private construct ends.
                 -- The bound region variables cannot be free in the body type.
                 _
@@ -96,12 +96,12 @@ checkLetPrivate !table !ctx
                         $ Sum.delete (tWrite (TVar u))
                         $ Sum.delete (tAlloc (TVar u))
                         $ es
-        
+
         -- The final effect type.
         effs_cut
          <- case mtParent of
                 -- If the bound region variables are children of some parent
-                -- region then the overall effect is to allocate into 
+                -- region then the overall effect is to allocate into
                 -- the parent.
                 Just tParent
                   -> return $ (lowerT depth $ foldl delEff effs5 us)
@@ -110,8 +110,8 @@ checkLetPrivate !table !ctx
                 -- If the bound region variables have no parent then they
                 -- are deallocated when the private construct ends and no
                 -- effect on these regions is visible.
-                _ -> return $ lowerT depth 
-                            $ foldl delEff effs5 us 
+                _ -> return $ lowerT depth
+                            $ foldl delEff effs5 us
 
         -- Cut stack back to the length we started with,
         --  remembering to lower to undo the lift we applied previously.
@@ -124,13 +124,13 @@ checkLetPrivate !table !ctx
 
 
 checkLetPrivate _ _ _ _
-        = error "ddc-core.checkLetPrivate: no match"        
+        = error "ddc-core.checkLetPrivate: no match"
 
 
 -------------------------------------------------------------------------------
 -- | Check the set of witness bindings bound in a letregion for conflicts.
-checkWitnessBindsM 
-        :: (Show n, Ord n) 
+checkWitnessBindsM
+        :: (Show n, Ord n)
         => Config n             -- ^ Type checker config.
         -> a                    -- ^ Annotation for error messages.
         -> KindEnv n            -- ^ Kind Environment.
@@ -148,14 +148,14 @@ checkWitnessBindsM !config !a !kenv !ctx !xx !uRegions !bsWit
         -- when using the Eval fragment.
         inEnv tt
          = case tt of
-             TVar u'                
+             TVar u'
                 | Env.member u' kenv    -> True
                 | memberKind u' ctx     -> True
-             
-             TCon (TyConBound u' _) 
+
+             TCon (TyConBound u' _)
                 | Env.member u' kenv    -> True
                 | memberKind u' ctx     -> True
-             _                          -> False 
+             _                          -> False
 
 
         -- Check the argument of a witness type is for the region we're
@@ -163,22 +163,22 @@ checkWitnessBindsM !config !a !kenv !ctx !xx !uRegions !bsWit
         checkWitnessArg bWit t2
          = case t2 of
             TVar u'
-             |  all (/= u') uRegions 
+             |  all (/= u') uRegions
              -> throw $ ErrorLetRegionsWitnessOther a xx uRegions bWit
              | otherwise -> return ()
 
             TCon (TyConBound u' _)
-             | all (/= u') uRegions 
+             | all (/= u') uRegions
              -> throw $ ErrorLetRegionsWitnessOther a xx uRegions bWit
              | otherwise -> return ()
-            
-            -- The parser should ensure the right of a witness is a 
+
+            -- The parser should ensure the right of a witness is a
             -- constructor or variable.
             _            -> throw $ ErrorLetRegionWitnessInvalid a xx bWit
-    
+
         -- Associate each witness binder with its type.
         btsWit  = [(typeOfBind b, b) | b <- bsWit]
-  
+
         -- Check a single witness binder for conflicts with other witnesses.
         checkWitnessBindM bWit
          = case typeOfBind bWit of
@@ -192,7 +192,7 @@ checkWitnessBindsM !config !a !kenv !ctx !xx !uRegions !bsWit
              | Just bConflict <- L.lookup (tConst t2)    btsWit
              -> throw $ ErrorLetRegionWitnessConflict a xx bWit bConflict
              | otherwise    -> checkWitnessArg bWit t2
-         
+
             (takeTyConApps -> Just (TyConWitness (TwConDistinct 2), [t1, t2]))
              | inEnv t1  -> checkWitnessArg bWit t2
              | inEnv t2  -> checkWitnessArg bWit t1

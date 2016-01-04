@@ -12,23 +12,23 @@ import qualified DDC.Type.Sum   as Sum
 checkAppX :: Checker a n
 
 checkAppX !table !ctx xx@(XApp a xFn xArg) Recon
- = do   
+ = do
         -- Check the functional expression.
-        (xFn',  tFn,  effsFn, ctx1) 
+        (xFn',  tFn,  effsFn, ctx1)
          <- tableCheckExp table table ctx  xFn Recon
 
         -- Check the argument.
-        (xArg', tArg, effsArg, ctx2) 
+        (xArg', tArg, effsArg, ctx2)
          <- tableCheckExp table table ctx1 xArg Recon
 
         -- The type of the parameter must match that of the argument.
         (tResult, effsLatent)
          <- case splitFunType tFn of
              Just (tParam, effs, _, tResult)
-              | tParam `equivT` tArg 
+              | tParam `equivT` tArg
               -> return (tResult, effs)
 
-              | otherwise           
+              | otherwise
               -> throw  $ ErrorAppMismatch a xx tParam tArg
 
              Nothing
@@ -38,16 +38,16 @@ checkAppX !table !ctx xx@(XApp a xFn xArg) Recon
         let effsResult  = Sum.unions kEffect
                         $ [effsFn, effsArg, Sum.singleton kEffect effsLatent]
 
-        returnX a 
+        returnX a
                 (\z -> XApp z xFn' xArg')
-                tResult effsResult 
+                tResult effsResult
                 ctx2
 
 
 checkAppX !table !ctx0 xx@(XApp a xFn xArg) Synth
- = do   
+ = do
         -- Synth a type for the functional expression.
-        (xFn', tFn, effsFn, ctx1) 
+        (xFn', tFn, effsFn, ctx1)
          <- tableCheckExp table table ctx0 xFn Synth
 
         -- Substitute context into synthesised type.
@@ -56,7 +56,7 @@ checkAppX !table !ctx0 xx@(XApp a xFn xArg) Synth
         -- Synth a type for the function applied to its argument.
         (xFn'', xArg', tResult, effsResult, ctx2)
          <- synthAppArg table a xx ctx1
-                xFn' tFn' effsFn 
+                xFn' tFn' effsFn
                 xArg
 
         ctrace  $ vcat
@@ -69,9 +69,9 @@ checkAppX !table !ctx0 xx@(XApp a xFn xArg) Synth
                 , ppr ctx2
                 , empty ]
 
-        returnX a 
+        returnX a
                 (\z -> XApp z xFn'' xArg')
-                tResult effsResult 
+                tResult effsResult
                 ctx2
 
 
@@ -85,7 +85,7 @@ checkAppX _ _ _ _
 
 -------------------------------------------------------------------------------
 -- | Synthesize the type of a function applied to its argument.
-synthAppArg 
+synthAppArg
         :: (Show a, Show n, Ord n, Pretty n)
         => Table a n
         -> a                             -- Annot for error messages.
@@ -107,7 +107,7 @@ synthAppArg table a xx ctx0 xFn tFn effsFn xArg
  -- Rule (App Synth exists)
  --  Functional type is an existential.
  | Just iFn      <- takeExists tFn
- = do   
+ = do
         -- New existential for the type of the function parameter.
         iA1      <- newExists kData
         let tA1  = typeOfExists iA1
@@ -129,7 +129,7 @@ synthAppArg table a xx ctx0 xFn tFn effsFn xArg
         ctrace  $ vcat
                 [ text "* App Synth exists"
                 , indent 2 $ ppr xx
-                , indent 2 $ ppr ctx2 
+                , indent 2 $ ppr ctx2
                 , empty ]
 
         return  ( xFn, xArg'
@@ -140,7 +140,7 @@ synthAppArg table a xx ctx0 xFn tFn effsFn xArg
  --  Function has a quantified type, but we're applying an expression to it.
  --  We need to inject a new type argument.
  | TForall b tBody      <- tFn
- = do   
+ = do
         -- Make a new existential for the type of the argument,
         -- and push it onto the context.
         iA         <- newExists (typeOfBind b)
@@ -151,14 +151,14 @@ synthAppArg table a xx ctx0 xFn tFn effsFn xArg
         let tBody' = substituteT b tA tBody
 
         -- Add the missing type application.
-        --  Because we were applying a function to an expression argument, 
+        --  Because we were applying a function to an expression argument,
         --  and the type of the function was quantified, we know there should
         --  be a type application here.
         let aFn    = AnTEC tFn (TSum effsFn) (tBot kClosure) a
         let aArg   = AnTEC (typeOfBind b) (tBot kEffect) (tBot kClosure) a
         let xFnTy  = XApp aFn xFn (XType aArg tA)
 
-        -- Synthesise the result type of a function being applied to its 
+        -- Synthesise the result type of a function being applied to its
         -- argument. We know the type of the function up-front, but we pass
         -- in the whole argument expression.
         (xFnTy', xArg', tResult, effsResult, ctx2)
@@ -181,9 +181,9 @@ synthAppArg table a xx ctx0 xFn tFn effsFn xArg
  -- Rule (App Synth Fun)
  --  Function already has a concrete function type.
  | Just (tParam, tResult)   <- takeTFun tFn
- = do   
+ = do
         -- Check the argument.
-        (xArg', tArg, effsArg, ctx1) 
+        (xArg', tArg, effsArg, ctx1)
          <- tableCheckExp table table ctx0 xArg (Check tParam)
 
         let tFn1     = applyContext ctx1 tFn
@@ -198,7 +198,7 @@ synthAppArg table a xx ctx0 xFn tFn effsFn xArg
               -> return effsLatent
 
              -- This shouldn't happen because this rule (App Synth Fun) only
-             -- applies when 'tFn' is has a functional type, and applying 
+             -- applies when 'tFn' is has a functional type, and applying
              -- the current context to it as above should not change this.
              Nothing
               -> error "ddc-core.synthAppArg: unexpected type of function."
@@ -206,7 +206,7 @@ synthAppArg table a xx ctx0 xFn tFn effsFn xArg
         -- Effect of the overall application.
         let effsResult  = Sum.unions kEffect
                         $ [ effsFn, effsArg, Sum.singleton kEffect effsLatent]
-        
+
         ctrace  $ vcat
                 [ text "* App Synth Fun"
                 , indent 2 $ ppr xx
@@ -219,7 +219,7 @@ synthAppArg table a xx ctx0 xFn tFn effsFn xArg
         return  ( xFn, xArg'
                 , tResult, effsResult, ctx1)
 
- 
+
  -- Applied expression is not a function.
  | otherwise
  =      throw $ ErrorAppNotFun a xx tFn
@@ -239,4 +239,4 @@ splitFunType tt
           -> Just (t11, tBot kEffect, tBot kClosure, t12)
 
         _ -> Nothing
-         
+

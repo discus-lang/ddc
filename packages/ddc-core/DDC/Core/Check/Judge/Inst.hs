@@ -42,8 +42,8 @@ makeInst !config !a !ctx0 !tL !tR !err
  , Just iR <- takeExists tR,    Just lR <- locationOfExists iR ctx0
  , lL > lR
  = do   let Just ctx1   = updateExists [] iR tL ctx0
-        
-        ctrace  $ vcat 
+
+        ctrace  $ vcat
                 [ text "* InstLReach"
                 , text "  LEFT:  " <> ppr tL
                 , text "  RIGHT: " <> ppr tR
@@ -62,7 +62,7 @@ makeInst !config !a !ctx0 !tL !tR !err
  , lR > lL
  = do   let Just ctx1   = updateExists [] iL tR ctx0
 
-        ctrace  $ vcat 
+        ctrace  $ vcat
                 [ text "* InstRReach"
                 , text "  LEFT:  " <> ppr tL
                 , text "  RIGHT: " <> ppr tR
@@ -80,7 +80,7 @@ makeInst !config !a !ctx0 !tL !tR !err
  = do
         -- Make new existentials to match the function type and parameter.
         iL1             <- newExists kData
-        let tL1         =  typeOfExists iL1 
+        let tL1         =  typeOfExists iL1
 
         iL2             <- newExists kData
         let tL2         =  typeOfExists iL2
@@ -102,7 +102,7 @@ makeInst !config !a !ctx0 !tL !tR !err
                 , text "  LEFT:  " <> ppr tL
                 , text "  RIGHT: " <> ppr tR
                 , indent 2 $ ppr ctx0
-                , indent 2 $ ppr ctx3 
+                , indent 2 $ ppr ctx3
                 , empty ]
 
         return ctx3
@@ -128,10 +128,10 @@ makeInst !config !a !ctx0 !tL !tR !err
  --  Left is an function arrow, and right is an existential.
  | Just (tL1, tL2)      <- takeTFun tL
  , Just iR              <- takeExists tR
- = do   
+ = do
         -- Make new existentials to match the function type and parameter.
         iR1             <- newExists kData
-        let tR1         =  typeOfExists iR1 
+        let tR1         =  typeOfExists iR1
 
         iR2             <- newExists kData
         let tR2         =  typeOfExists iR2
@@ -153,7 +153,7 @@ makeInst !config !a !ctx0 !tL !tR !err
                 , text "  LEFT:  " <> ppr tL
                 , text "  RIGHT: " <> ppr tR
                 , indent 2 $ ppr ctx0
-                , indent 2 $ ppr ctx3 
+                , indent 2 $ ppr ctx3
                 , empty ]
 
         return ctx3
@@ -162,7 +162,7 @@ makeInst !config !a !ctx0 !tL !tR !err
  | otherwise
  = do
         ctrace  $ vcat
-                [ text "DDC.Core.Check.Exp.Inst.inst: no match" 
+                [ text "DDC.Core.Check.Exp.Inst.inst: no match"
                 , text "  LEFT:  " <> ppr tL
                 , text "  RIGHT: " <> ppr tR
                 , indent 2 $ ppr ctx0

@@ -1,5 +1,5 @@
 
-module DDC.Core.Check.Judge.Type.Base 
+module DDC.Core.Check.Judge.Type.Base
         ( Checker
         , Table (..)
         , returnX
@@ -51,7 +51,7 @@ type Checker a n
 
 -- | Table of environment things that do not change during type checking
 --
---   We've got the static config, 
+--   We've got the static config,
 --    global kind and type environments,
 --    and a type checking function for each node of the AST.
 --
@@ -75,22 +75,22 @@ data Table a n
         , tableCheckLet         :: Checker a n
         , tableCheckLetPrivate  :: Checker a n
         , tableCheckCase        :: Checker a n
-        , tableCheckCast        :: Checker a n 
+        , tableCheckCast        :: Checker a n
         , tableCheckWitness     :: Checker a n }
 
 
 -- | Helper function for building the return value of checkExpM'
 --   It builts the AnTEC annotation and attaches it to the new AST node,
 --   as well as returning the current effect and closure in the appropriate
---   form as part of the tuple. 
-returnX :: Ord n 
+--   form as part of the tuple.
+returnX :: Ord n
         => a                            -- ^ Annotation for the returned expression.
-        -> (AnTEC a n 
+        -> (AnTEC a n
                 -> Exp (AnTEC a n) n)   -- ^ Fn to build the returned expression.
         -> Type n                       -- ^ Type of expression.
         -> TypeSum n                    -- ^ Effect sum of expression.
         -> Context n                    -- ^ Input context.
-        -> CheckM a n 
+        -> CheckM a n
                 ( Exp (AnTEC a n) n     -- Annotated, checked expression.
                 , Type n                -- Type of expression.       (id to above)
                 , TypeSum n             -- Effect sum of expression. (id to above)

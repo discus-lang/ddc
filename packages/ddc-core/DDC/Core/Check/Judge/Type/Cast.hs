@@ -16,8 +16,8 @@ checkCast !table !ctx0 xx@(XCast a (CastWeakenEffect eff) x1) mode
         let kenv        = tableKindEnv table
 
         -- Check the effect term.
-        (eff', kEff, ctx1) 
-         <- checkTypeM config kenv ctx0 UniverseSpec eff 
+        (eff', kEff, ctx1)
+         <- checkTypeM config kenv ctx0 UniverseSpec eff
           $ case mode of
                 Recon   -> Recon
                 Synth   -> Check kEffect
@@ -36,14 +36,14 @@ checkCast !table !ctx0 xx@(XCast a (CastWeakenEffect eff) x1) mode
 
         returnX a (\z -> XCast z c' x1')
                 t1 effs' ctx2
-                
+
 
 -- Purify ---------------------------------------------------------------------
 -- Purify the effect of an expression.
--- 
+--
 -- EXPERIMENTAL: The Tetra language doesn't have purification casts yet,
 --               so proper type inference isn't implemented.
--- 
+--
 checkCast !table !ctx xx@(XCast a (CastPurify w) x1) mode
  = do   let config      = tableConfig table
         let kenv        = tableKindEnv table
@@ -74,11 +74,11 @@ checkCast !table !ctx xx@(XCast a (CastPurify w) x1) mode
 checkCast !table ctx0 xx@(XCast a CastBox x1) mode
  = case mode of
     Check tExpected
-     -> do      
+     -> do
         let config      = tableConfig table
 
         -- Check the body.
-        (x1', tBody, effs, ctx1)     
+        (x1', tBody, effs, ctx1)
          <- tableCheckExp table table ctx0 x1 Synth
 
         -- The actual type is (S eff tBody).
@@ -99,7 +99,7 @@ checkCast !table ctx0 xx@(XCast a CastBox x1) mode
     _
      -> do
         -- Check the body.
-        (x1', t1, effs,  ctx1) 
+        (x1', t1, effs,  ctx1)
          <- tableCheckExp table table ctx0 x1 mode
 
         -- The result type is (S effs a).
@@ -126,14 +126,14 @@ checkCast !table !ctx0 xx@(XCast a CastRun xBody) mode
         case tBody of
          TApp (TApp (TCon (TyConSpec TcConSusp)) eff2) tResult
           -> do
-                -- Check that the context has the capability to support 
+                -- Check that the context has the capability to support
                 -- this effect.
                 let config      = tableConfig table
                 checkEffectSupported config a xx ctx0 eff2
 
                 returnX a
                         (\z -> XCast z CastRun xBody')
-                        tResult 
+                        tResult
                         (Sum.union effs (Sum.singleton kEffect eff2))
                         ctx1
 
@@ -151,7 +151,7 @@ checkCast !table !ctx0 xx@(XCast a CastRun xBody) mode
         (tResult, effsSusp, ctx2)
          <- synthRunSusp table a xx ctx1 tBody'
 
-        returnX a 
+        returnX a
                 (\z -> XCast z CastRun xBody')
                 tResult
                 (Sum.union effs (Sum.singleton kEffect effsSusp))
@@ -178,8 +178,8 @@ synthRunSusp
                 , Effect n      -- Effects unleashed by running the computation.
                 , Context n)    -- Result context.
 
-synthRunSusp table a xx ctx0 tt 
- 
+synthRunSusp table a xx ctx0 tt
+
  -- Rule (Run Synth exists)
  -- If the type of the suspension has not been resolved then we don't know
  -- what effects it has, and thus cannot check if running them is supported
@@ -199,13 +199,13 @@ synthRunSusp table a xx ctx0 tt
  -- Run expression is not a suspension.
  | otherwise
  =      throw $ ErrorRunNotSuspension a xx tt
- 
+
 
  -- Support --------------------------------------------------------------------
--- | Check if the provided effect is supported by the context, 
+-- | Check if the provided effect is supported by the context,
 --   if not then throw an error.
-checkEffectSupported 
-        :: Ord n 
+checkEffectSupported
+        :: Ord n
         => Config n             -- ^ Static config.
         -> a                    -- ^ Annotation for error messages.
         -> Exp a n              -- ^ Expression for error messages.
@@ -217,4 +217,4 @@ checkEffectSupported _config a xx ctx eff
  = case effectSupported eff ctx of
         Nothing         -> return ()
         Just effBad     -> throw $ ErrorRunNotSupported a xx effBad
- 
+
