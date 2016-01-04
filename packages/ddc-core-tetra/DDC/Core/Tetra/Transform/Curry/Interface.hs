@@ -34,7 +34,10 @@ data Fun
         = FunLocalSuper
         { _funName      :: Name
         , _funType      :: Type Name 
+
+        -- TODO: ditch the separate arity field.
         , _funArity     :: Int 
+
         , _funCons      :: [Call.Cons Name] }
 
         -- | An externally defined super.
@@ -43,7 +46,11 @@ data Fun
         | FunExternSuper
         { _funName      :: Name
         , _funType      :: Type Name
-        , _funArity     :: Int }
+
+        -- TODO: ditch the separate arity field.
+        , _funArity     :: Int
+
+        , _funConsMaybe :: Maybe [Call.Cons Name] }
 
         -- | A foreign imported function.
         --   We can do a saturated call for these directly.
@@ -78,15 +85,32 @@ funMapAddLocalSuper funs (b, x)
 funMapAddForeign :: FunMap -> (Name, ImportValue Name) -> FunMap
 funMapAddForeign funs (n, is)
 
-        -- Import from a different DDC compiled module.
-        | ImportValueModule _m _n t _ <- is
-        = let   (tsArgs, _tResult)                      -- TODO: get real call pattern.
-                        = takeTFunArgResult
-                        $ eraseTForalls t
+        -- Imported value where we don't have any arity information.
+        --   We allow the function type to be imported, but we won't be able
+        --   to call it in the current module without the arity information.
+        | ImportValueModule _mn n' tVal Nothing  <- is
+        = Map.insert n (FunExternSuper n' tVal 0 Nothing) funs
 
-                arity   = length tsArgs
+        -- Imported value which we have arity information for.
+        | ImportValueModule _mn n' tVal (Just (iTypes, iValues, iBoxes)) <- is
+        = let
+                (bsParam, tBody)        = fromMaybe ([], tVal) $ takeTForalls tVal
+                ksParam                 = map typeOfBind bsParam
+                ([], tsParam, _tResult) = takeTFunWitArgResult tBody
 
-          in    Map.insert n (FunExternSuper n t arity) funs
+                csType  = map Call.ConsType  ksParam
+                csValue = map Call.ConsValue tsParam
+                csBox   = replicate iBoxes Call.ConsBox
+                cons    = csType ++ csValue ++ csBox
+
+                -- Check that the the arity information matches the imported
+                -- type of the value.
+          in    if  (iTypes  == length ksParam)
+                 && (iValues <= length tsParam)
+                 then Map.insert n (FunExternSuper n' tVal (length csValue) (Just cons)) funs
+
+                 -- TODO: better error, lift into exception.
+                 else error "funMapAddForeign: arity type mismatch"
 
 
         -- Import from a Sea land.

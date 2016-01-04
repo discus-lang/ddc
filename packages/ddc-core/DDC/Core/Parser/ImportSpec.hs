@@ -93,6 +93,12 @@ pImportForeignType c src
 
 ---------------------------------------------------------------------------------------------------
 -- | Parse a value import spec.
+---
+-- When we parse this initially the arity information is set to Nothing.
+-- The arity information itself comes in with the associated ARITY pragma
+-- which is parsed separately. The information from the ARITY pragma
+-- is attached to the `InputValueModule` constructor by the Module parser.
+--
 pImportValue
         :: (Ord n, Pretty n)
         => Context n -> Parser n (ImportSpec n)
@@ -100,6 +106,7 @@ pImportValue c
  = do   n       <- pName
         pTokSP (KOp ":")
         t       <- pType c
+
         return  (ImportValue n (ImportValueModule (ModuleName []) n t Nothing))
 
 

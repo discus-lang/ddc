@@ -14,6 +14,7 @@ import DDC.Core.Lexer.Tokens
 import DDC.Core.Compounds
 import DDC.Base.Pretty
 import Data.Char
+import qualified Data.Map               as Map
 import qualified DDC.Base.Parser        as P
 import qualified Data.Text              as T
 
@@ -26,15 +27,30 @@ pModule c
  = do   sp      <- pTokSP KModule
         name    <- pModuleName
 
-        -- Header declarations
-        heads           <- P.many (pHeadDecl c)
-        let importSpecs = concat $ [specs | HeadImportSpecs specs <- heads ]
-        let exportSpecs = concat $ [specs | HeadExportSpecs specs <- heads ]
-        let defsLocal   =          [def   | HeadDataDef     def   <- heads ]
 
-        -- TODO: attach arities to import specs.
+        -- Parse header declarations
+        heads                   <- P.many (pHeadDecl c)
+        let importSpecs_noArity = concat $ [specs | HeadImportSpecs specs <- heads ]
+        let exportSpecs         = concat $ [specs | HeadExportSpecs specs <- heads ]
+        let defsLocal           =          [def   | HeadDataDef     def   <- heads ]
 
-        -- Function definitions.
+        -- Attach arity information to import specs.
+        --   The aritity information itself comes in the ARITY pragmas,
+        --   which are parsed as separate top level things.
+        let importArities
+                = Map.fromList  [ (n, (iTypes, iValues, iBoxes ))
+                                | HeadPragmaArity n iTypes iValues iBoxes <- heads ]
+
+        let attachAritySpec (ImportValue n (ImportValueModule mn v t _))
+                = ImportValue n (ImportValueModule mn v t (Map.lookup n importArities))
+
+            attachAritySpec spec = spec
+
+        let importSpecs
+                = map attachAritySpec importSpecs_noArity
+
+
+        -- Parse function definitions.
         --  If there is a 'with' keyword then this is a standard module with bindings.
         --  If not, then it is a module header, which doesn't need bindings.
         (lts, isHeader) 

@@ -54,7 +54,7 @@ makeCall xx _xF aF funMap nF esArgs
         | Just (tF, iArity) 
             <- case Map.lookup nF funMap of
                 Just (FunLocalSuper  _ tF iArity _)     -> Just (tF, iArity)
-                Just (FunExternSuper _ tF iArity)       -> Just (tF, iArity)
+                Just (FunExternSuper _ tF iArity _)     -> Just (tF, iArity)
                 Just (FunForeignSea  _ tF iArity)       -> Just (tF, iArity)
                 _                                       -> Nothing
         
