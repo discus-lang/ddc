@@ -9,7 +9,7 @@ import DDC.Core.Tetra.Transform.Curry.Interface
 import DDC.Core.Annot.AnTEC
 import DDC.Core.Tetra
 import DDC.Core.Exp
-import Data.Maybe
+import qualified DDC.Type.Transform.Instantiate as T
 import qualified DDC.Core.Tetra.Compounds       as C
 import qualified DDC.Core.Call                  as Call
 
@@ -135,15 +135,15 @@ makeCallSuperUnder aF nF tF cs es
         , Just (esType, esValue,  nRuns) <- splitStdCallElim es
         , Just (csType, _csValue, _cBox) <- splitStdCallCons cs
 
-          -- There must be types to satisfy all of the type paramters of the super.
+          -- There must be types to satisfy all of the type parameters of the super.
         , length esType == length csType
 
         = let
                 -- Split the quantifiers, parameter type, and body type
                 -- from the type of the super.
-                (_bsForall, tBody)      = fromMaybe ([], tF) $ C.takeTForalls tF
-                (tsParam,  tResult)     = C.takeTFunArgResult tBody
-                iArity                  = length cs
+                Just tF_inst        = T.instantiateTs tF [t | Call.ElimType _ _ t <- esType]
+                (tsParam,  tResult) = C.takeTFunArgResult tF_inst
+                iArity              = length cs
 
                 xsArgType       = [XType at t  | Call.ElimType  _ at t  <- esType]
                 xsArgValue      = [x           | Call.ElimValue _ x     <- esValue]
