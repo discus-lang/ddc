@@ -13,8 +13,8 @@ module DDC.Core.Tetra.Convert.Type
         , convertTypeB
         , convertTypeU
 
-        , convertSuperT
-        , convertSuperB
+        , convertCtorT
+        , convertSuperConsT
 
         , convertValueT
         , convertValueB
@@ -32,7 +32,8 @@ where
 import DDC.Core.Tetra.Convert.Type.Base
 import DDC.Core.Tetra.Convert.Boxing
 import DDC.Core.Tetra.Convert.Error
-import DDC.Core.Exp
+import DDC.Core.Call
+import DDC.Core.Annot.Exp
 import DDC.Type.Env
 import DDC.Type.DataDef
 import DDC.Type.Compounds
@@ -121,10 +122,9 @@ convertNumericT tt
 
 
 -- Super Types ------------------------------------------------------------------------------------
--- | Types of supercombinators and constructors.
---      
-convertSuperT :: Context -> Type E.Name -> ConvertM a (Type A.Name)
-convertSuperT ctx tt
+-- | Types of constructors.
+convertCtorT :: Context -> Type E.Name -> ConvertM a (Type A.Name)
+convertCtorT ctx tt
  = case tt of
         -- We pass exising quantifiers of Region variables to the Salt language,
         -- and convert quantifiers of data types to the punned name of
@@ -134,7 +134,7 @@ convertSuperT ctx tt
          | isRegionKind (typeOfBind b)
          -> do  let ctx' = extendKindEnv b ctx
                 b'      <- convertTypeB  b
-                t'      <- convertSuperT ctx' t
+                t'      <- convertCtorT ctx' t
                 return  $ TForall b' t'
 
          | isDataKind   (typeOfBind b)
@@ -143,18 +143,18 @@ convertSuperT ctx tt
          , b'           <- BName (A.NameVar str') kRegion
          -> do
                 let ctx' = extendKindEnv b ctx
-                t'      <- convertSuperT ctx' t
+                t'      <- convertCtorT ctx' t
                 return  $ TForall b' t'
 
          |  otherwise
          -> do  let ctx' = extendKindEnv b ctx
-                convertSuperT ctx' t
+                convertCtorT ctx' t
 
         TApp{}
          -- Convert Tetra function types to Salt function types.
          | Just (t1, t2)  <- takeTFun tt
          -> do  t1'       <- convertValueT ctx t1
-                t2'       <- convertSuperT ctx t2
+                t2'       <- convertCtorT ctx t2
                 return    $ tFun t1' t2'
 
         -- Other types are just the values.
@@ -347,15 +347,6 @@ convertCapabilityB ctx bb
         BName n t       -> liftM2 BName (convertBindNameM n) (convertCapabilityT ctx t)
 
 
--- | Convert a super binder to Salt
-convertSuperB :: Context -> Bind E.Name -> ConvertM a (Bind A.Name)
-convertSuperB ctx bb
-  = case bb of
-        BNone t         -> liftM  BNone (convertSuperT ctx t)        
-        BAnon t         -> liftM  BAnon (convertSuperT ctx t)
-        BName n t       -> liftM2 BName (convertBindNameM n) (convertSuperT ctx t)
-
-
 -- | Convert a value binder with a representable type.
 --   This is used for the binders of function arguments, which must have
 --   representatable types to adhere to some calling convention. 
@@ -440,7 +431,7 @@ convertDaCon ctx dc
 
         DaConPrim n t
          -> do  n'      <- convertDaConNameM dc n
-                t'      <- convertSuperT ctx t
+                t'      <- convertCtorT ctx t
                 return  $ DaConPrim
                         { daConName             = n'
                         , daConType             = t' }
@@ -545,4 +536,83 @@ saltPrimeRegionOfDataType kenv tt
         | otherwise
         = throw $ ErrorMalformed       
                 $ "Cannot take prime region from " ++ (renderIndent $ ppr tt)
+
+
+---------------------------------------------------------------------------------------------------
+-- | Convert the Tetra type of a super with the given call pattern to Salt.
+--
+--   This type conversion mirrors the `convertSuperXT` converesion function
+--   except that we only know the call pattern of the function, rather than
+--   its defining expression.
+-- 
+convertSuperConsT
+        :: Context 
+        -> [Cons E.Name]
+        -> Type E.Name 
+        -> ConvertM a (Type A.Name)
+
+convertSuperConsT ctx0 cs0 tt0
+ = convertAbsType ctx0 cs0 tt0
+ where
+        -- Accepting type abstractions --------------------
+        convertAbsType ctx cs tt
+         = case cs of
+                -- TODO: check kinds.
+                ConsType _k : cs'
+                 | TForall bParam tBody <- tt
+                 -> convertConsType ctx bParam cs' tBody
+
+                _ -> convertAbsValue ctx cs tt
+
+        convertConsType ctx bParam cs tBody
+         -- Erase higher kinded type abstractions.
+         | Just _       <- takeKFun $ typeOfBind bParam
+         = do   let ctx' = extendKindEnv bParam ctx
+                convertAbsType ctx' cs tBody
+
+         -- Erase effect abstractions.
+         | isEffectKind $ typeOfBind bParam
+         = do   let ctx' = extendKindEnv bParam ctx
+                convertAbsType ctx' cs tBody
+
+         -- Retain region abstractions.
+         | isRegionKind $ typeOfBind bParam
+         = do   bParam'  <- convertTypeB bParam
+
+                let ctx' =  extendKindEnv bParam ctx
+                tBody'   <- convertAbsType ctx' cs tBody
+                return   $  TForall bParam' tBody'
+
+         -- When a function is polymorphic in some boxed data type,
+         -- then the type lambda then the type lambda in Tetra is converted
+         -- to a region lambda in Salt which binds the region the object is in.
+         | isDataKind $ typeOfBind bParam
+         , BName (E.NameVar str) _ <- bParam
+         , str'          <- str ++ "$r"
+         , bParam'       <- BName (A.NameVar str') kRegion
+         = do   let ctx' =  extendKindEnv bParam ctx
+                tBody'   <- convertAbsType ctx' cs tBody
+                return   $  TForall bParam' tBody'
+
+         -- Some other type abstraction we can't convert.
+         | otherwise
+         = error "convertSuperConsT: nope"
+
+
+        -- Accepting value abstractions -------------------
+        convertAbsValue ctx cs tt
+         = case cs of
+                -- TODO: check types.
+                ConsValue tParam : cs'
+                 | Just (_tArg, tBody)  <- takeTFun tt
+                 -> convertConsValue ctx tParam cs' tBody
+
+                _ -> convertValueT ctx tt
+
+
+        convertConsValue ctx tParam cs tBody
+         = do   tParam'  <- convertValueT   ctx tParam
+                tBody'   <- convertAbsValue ctx cs tBody
+                return   $  tFun tParam' tBody'
+
 

@@ -11,6 +11,7 @@ import Data.Set                                 (Set)
 import qualified DDC.Type.Env                   as Env
 import qualified DDC.Core.Tetra.Prim            as E
 
+
 -- Context  ---------------------------------------------------------------------------------------
 -- | Context of a type conversion.
 data Context

@@ -92,7 +92,10 @@ convertPrimCall _ectx ctx xx
                 let xsArgs' = catMaybes mxsArgs'
                 let xF'     = xApps a xF_super' xsArgs'
 
-                tF'     <- convertSuperT (typeContext ctx) (annotType aF)
+                -- TODO: this type is wrong.
+                tF'     <- convertCtorT (typeContext ctx) (annotType aF)
+
+
                 return  $ A.xAllocThunk a A.rTop 
                                 (xConvert a A.tAddr tF' xF')
                                 (A.xNat a $ fromIntegral params)        -- value params

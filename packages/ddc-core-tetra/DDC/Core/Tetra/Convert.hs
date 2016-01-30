@@ -195,7 +195,7 @@ convertExportSourceM tctx esrc
  = case esrc of
         ExportSourceLocal n t
          -> do  n'      <- convertBindNameM n
-                t'      <- convertSuperT  tctx t
+                t'      <- convertCtorT  tctx t                -- TODO: wrong if function return.
                 return  $ ExportSourceLocal n' t'
 
         ExportSourceLocalNoType n
@@ -235,10 +235,10 @@ convertImportValueM tctx isrc
  = case isrc of
         ImportValueModule mn n t _
          -> do  n'      <- convertBindNameM n
-                t'      <- convertSuperT tctx t
+                t'      <- convertCtorT tctx t                 -- TODO: wrong if function return.
                 return  $ ImportValueModule mn n' t' Nothing
 
         ImportValueSea str t
-         -> do  t'      <- convertSuperT tctx t 
+         -> do  t'      <- convertCtorT tctx t                 -- TODO: wrong if function return.
                 return  $ ImportValueSea str t'
 

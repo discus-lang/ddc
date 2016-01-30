@@ -190,8 +190,12 @@ letrec {
 
 -- Keep witnesses arguments
 Fragment violation when converting Tetra module to Salt module.
-  Module is malformed.
-  Invalid type constructor application Mutable r => Unit -> Word64#
+  Cannot convert expression.
+    Cannot convert function abstraction in this context.
+    The program must be lambda-lifted before conversion.
+  
+    with: λ(w : Mutable r).λ(x : Unit).
+    convert# [U# Word64#] [Word64#] 42w64#
 
 
 -------------------------------------------------------------------------------

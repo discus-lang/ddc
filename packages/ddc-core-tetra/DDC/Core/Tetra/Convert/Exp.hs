@@ -20,7 +20,6 @@ import qualified DDC.Core.Tetra.Prim    as E
 import qualified DDC.Core.Salt.Runtime  as A
 import qualified DDC.Core.Salt.Name     as A
 
-import DDC.Type.Universe
 import DDC.Type.DataDef
 import DDC.Base.Pretty
 import Text.Show.Pretty
@@ -41,7 +40,6 @@ convertExp
 
 convertExp ectx ctx xx
  = let defs         = contextDataDefs    ctx
-       kenv         = contextKindEnv     ctx
        convertX     = contextConvertExp  ctx
        convertA     = contextConvertAlt  ctx
        convertLts   = contextConvertLets ctx
@@ -68,56 +66,8 @@ convertExp ectx ctx xx
 
 
         ---------------------------------------------------
-        -- Type lambdas can only appear at the top-level of a function.
-        --   We keep region lambdas but ditch the others. Polymorphic values
-        --   are represented in generic boxed form, so we never need to 
-        --   build a type abstraction of some other kind.
-        XLAM a b x
-
-         | ExpFun       <- ectx
-         , isRegionKind $ typeOfBind b
-         -> do  let a'    =  annotTail a
-                b'        <- convertTypeB b
-
-                let ctx'  =  extendKindEnv b ctx
-                x'        <- convertExp  ectx ctx' x
-
-                return $ XLAM a' b' x'
-
-
-         -- When a function is fully polymorphic in some boxed data type,
-         -- then the type lambda in Tetra is converted to a region lambda in
-         -- Salt which binds the region the object is in.
-         | ExpFun       <- ectx
-         , BName (E.NameVar str) k <- b
-         , isDataKind k
-         , str'         <- str ++ "$r"
-         , b'           <- BName (A.NameVar str') kRegion
-         -> do  let a'   = annotTail a
-                
-                let ctx' = extendKindEnv b ctx 
-                x'      <- convertExp   ectx ctx' x
-
-                return $ XLAM a' b' x'
-
-         -- Erase effect lambdas.
-         | ExpFun       <- ectx
-         , isEffectKind $ typeOfBind b
-         -> do  let ctx' = extendKindEnv b ctx
-                convertX ectx ctx' x
-
-         -- Erase higher kinded type lambdas.
-         | ExpFun       <- ectx
-         , Just _       <- takeKFun $ typeOfBind b
-         -> do  let ctx' = extendKindEnv b ctx
-                convertX ectx ctx' x
-
-         | ExpFun       <- ectx
-         -> do  let ctx' = extendKindEnv b ctx
-                convertX ectx ctx' x
-
-         -- A type abstraction that we can't convert to Salt.
-         | otherwise
+        -- Type abstractions can only appear at the top-level of a function.
+        XLAM{}
          -> throw $ ErrorUnsupported xx
           $ vcat [ text "Cannot convert type abstraction in this context."
                  , text "The program must be lambda-lifted before conversion." ]
@@ -125,23 +75,7 @@ convertExp ectx ctx xx
 
         ---------------------------------------------------
         -- Function abstractions can only appear at the top-level of a fucntion.
-        XLam a b x
-         | ExpFun       <- ectx
-         -> let ctx'    = extendTypeEnv b ctx
-            in case universeFromType1 kenv (typeOfBind b) of
-                Just UniverseData
-                 -> liftM3 XLam (return $ annotTail a) 
-                                (convertValueB (typeContext ctx) b) 
-                                (convertX      ectx ctx' x)
-
-                Just UniverseWitness 
-                 -> liftM3 XLam (return $ annotTail a)
-                                (convertValueB (typeContext ctx) b)
-                                (convertX      ectx ctx' x)
-
-                _  -> throw $ ErrorMalformed 
-                            $ "Invalid universe for XLam binder: " ++ show b
-         | otherwise
+        XLam{}
          -> throw $ ErrorUnsupported xx
           $ vcat [ text "Cannot convert function abstraction in this context."
                  , text "The program must be lambda-lifted before conversion." ]
