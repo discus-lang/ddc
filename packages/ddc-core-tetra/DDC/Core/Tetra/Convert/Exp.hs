@@ -54,7 +54,7 @@ convertExp ectx ctx xx
 
         XVar a u
          -> do  let a'  = annotTail a
-                u'      <- convertValueU u
+                u'      <- convertDataU u
                 return  $  XVar a' u'
 
 
@@ -329,7 +329,7 @@ convertExpSuperCall xx _ectx ctx isRun a nFun xsArgs
   || ((not isRun) && boxings == 0)
  = do   
         -- Convert the functional part.
-        uF      <- convertValueU (UName nFun)
+        uF      <- convertDataU (UName nFun)
 
         -- Convert the arguments.
         -- Effect type and witness arguments are discarded here.

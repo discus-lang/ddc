@@ -58,14 +58,14 @@ convertAlt a uScrut tScrut ectx ctx alt
          , Just ctorDef <- Map.lookup nCtor $ dataDefsCtors defs
          -> do  
                 -- Convert the scrutinee.
-                uScrut'         <- convertValueU uScrut
+                uScrut'         <- convertDataU uScrut
 
                 -- Get the tag of this alternative.
                 let iTag        = fromIntegral $ dataCtorTag ctorDef
                 let dcTag       = DaConPrim (A.NamePrimLit $ A.PrimLitTag iTag) A.tTag
                 
                 -- Get the address of the payload.
-                bsFields'       <- mapM (convertValueB tctx) bsFields       
+                bsFields'       <- mapM (convertDataB tctx) bsFields       
 
                 -- Convert the right of the alternative, 
                 -- with all all the pattern variables in scope.

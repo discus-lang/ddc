@@ -48,7 +48,7 @@ convertLets ctx lts
         -- Standard non-recursive let-binding.
         -- TODO: Do via convertBinding.
         LLet b x1
-         -> do  b'      <- convertValueB (typeContext ctx) b
+         -> do  b'      <- convertDataB (typeContext ctx) b
                 x1'     <- convertX      ExpBind ctx x1
                 return  ( Just $ LLet b' x1'
                         , extendTypeEnv b ctx)
@@ -180,7 +180,7 @@ convertSuperXT    ctx0 xx0 tt0
         convertXLam ctx a bParam xBody tBody
          = do   let ctx'    = extendTypeEnv bParam ctx
                 let a'      = annotTail a
-                bParam'    <- convertValueB (typeContext ctx) bParam
+                bParam'    <- convertDataB (typeContext ctx) bParam
                 tParam'    <- convertDataT (typeContext ctx) (typeOfBind bParam)
 
                 (xBody', tBody') <- convertAbsValue ctx' xBody tBody

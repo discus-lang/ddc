@@ -1,6 +1,8 @@
 
 module DDC.Core.Tetra.Convert.Type.Data
-        ( convertDataT
+        ( convertDataB
+        , convertDataU
+        , convertDataT
         , convertDataPrimitiveT)
 where
 import DDC.Core.Tetra.Convert.Type.Region
@@ -13,15 +15,56 @@ import DDC.Type.Compounds
 import DDC.Type.Predicates
 import DDC.Control.Monad.Check                  (throw)
 import qualified DDC.Core.Tetra.Prim            as E
+import qualified DDC.Core.Salt.Env              as A
 import qualified DDC.Core.Salt.Name             as A
 import qualified DDC.Core.Salt.Compounds        as A
 import qualified DDC.Type.Env                   as Env
 import qualified Data.Map                       as Map
 import qualified Data.Set                       as Set
+import Control.Monad
 import DDC.Base.Pretty
 
 
--- Data -------------------------------------------------------------------------------------------
+-- | Convert a value binder with a representable type.
+--   This is used for the binders of function arguments, which must have
+--   representatable types to adhere to some calling convention. 
+convertDataB :: Context -> Bind E.Name -> ConvertM a (Bind A.Name)
+convertDataB ctx bb
+  = case bb of
+        BNone t         -> liftM  BNone (convertDataT ctx t)        
+        BAnon t         -> liftM  BAnon (convertDataT ctx t)
+        BName n t       -> liftM2 BName (convertBindNameM n) (convertDataT ctx t)
+
+
+-- | Convert a value bound.
+--   These refer to function arguments or let-bound values, 
+--   and hence must have representable types.
+convertDataU :: Bound E.Name -> ConvertM a (Bound A.Name)
+convertDataU uu
+  = case uu of
+        UIx i                   
+         -> return $ UIx i
+
+        UName n
+         -> do  n'      <- convertBindNameM n
+                return $ UName n'
+
+        -- When converting primops, use the type directly specified by the 
+        -- Salt language instead of converting it from Tetra. The types from
+        -- each language definition may not be inter-convertible.
+        UPrim n _
+         -> case n of
+                E.NamePrimArith op      
+                  -> return $ UPrim (A.NamePrimOp (A.PrimArith op)) 
+                                    (A.typeOfPrimArith op)
+
+                E.NamePrimCast op
+                  -> return $ UPrim (A.NamePrimOp (A.PrimCast  op)) 
+                                    (A.typeOfPrimCast  op)
+
+                _ -> throw $ ErrorInvalidBound uu
+
+
 -- | Convert a value type from Core Tetra to Core Salt.
 --
 --   Value types have kind Data and can be passed to, and returned from
@@ -186,7 +229,6 @@ convertDataAppT ctx tt
                        ++ (renderIndent $ ppr tt)
 
 
--- Numeric Types ----------------------------------------------------------------------------------
 -- | Convert a primitive type directly to its Salt form.
 --   Works for Bool#, Nat#, Int#, WordN# and Float#
 --   TODO: we're also converting TextLit#, which is not numeric.
