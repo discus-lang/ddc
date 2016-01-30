@@ -3,7 +3,10 @@ module DDC.Core.Tetra.Convert.Type.Base
         ( Context (..)
         , extendKindEnv
         , extendsKindEnv
-        , convertK)
+
+        , convertK
+        , convertTypeB
+        , convertBindNameM)
 where
 import DDC.Core.Tetra.Convert.Error
 import DDC.Type.Exp
@@ -11,6 +14,7 @@ import DDC.Type.DataDef
 import DDC.Base.Pretty
 import DDC.Control.Monad.Check                  (throw)
 import DDC.Type.Env                             (KindEnv)
+import Control.Monad
 import Data.Set                                 (Set)
 import qualified DDC.Type.Env                   as Env
 import qualified DDC.Core.Tetra.Prim            as E
@@ -59,3 +63,25 @@ convertK kk
                 $ "Invalid kind " ++ (renderIndent $ ppr kk)
 
 
+-- | Convert a type binder.
+--   These are formal type parameters.
+convertTypeB    :: Bind E.Name -> ConvertM a (Bind A.Name)
+convertTypeB bb
+ = case bb of
+        BNone k         -> liftM BNone  (convertK k)
+        BAnon k         -> liftM BAnon  (convertK k)
+        BName n k       -> liftM2 BName (convertBindNameM n) (convertK k)
+
+
+-- | Convert the name of a Bind.
+convertBindNameM :: E.Name -> ConvertM a A.Name
+convertBindNameM nn
+ = case nn of
+        E.NameVar str 
+          -> return $ A.NameVar str
+
+        E.NameExt n str      
+          -> do  n'      <- convertBindNameM n
+                 return  $ A.NameExt n' str
+
+        _ -> throw $ ErrorInvalidBinder nn
