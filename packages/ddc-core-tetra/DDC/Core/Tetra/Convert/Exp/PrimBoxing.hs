@@ -49,7 +49,7 @@ convertPrimBoxing _ectx ctx xx
          -> Just $ do  
                 let a'  = annotTail a
                 xArg'   <- downArgX xArg
-                tUx'    <- convertNumericT tBx
+                tUx'    <- convertDataPrimitiveT tBx
 
                 constructData pp kenv tenv a'
                         dt dc A.rTop [xArg'] [tUx']
@@ -68,8 +68,8 @@ convertPrimBoxing _ectx ctx xx
          -> Just $ do
                 let a'  = annotTail a
                 xArg'   <- downArgX xArg
-                tBx'    <- convertValueT (typeContext ctx) tBx
-                tUx'    <- convertNumericT tBx
+                tBx'    <- convertDataT (typeContext ctx) tBx
+                tUx'    <- convertDataPrimitiveT tBx
 
                 x'      <- destructData pp a' dc
                                 (UIx 0) A.rTop 

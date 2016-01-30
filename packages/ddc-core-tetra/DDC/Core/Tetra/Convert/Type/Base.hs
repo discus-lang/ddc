@@ -2,14 +2,19 @@
 module DDC.Core.Tetra.Convert.Type.Base
         ( Context (..)
         , extendKindEnv
-        , extendsKindEnv)
+        , extendsKindEnv
+        , convertK)
 where
+import DDC.Core.Tetra.Convert.Error
 import DDC.Type.Exp
 import DDC.Type.DataDef
+import DDC.Base.Pretty
+import DDC.Control.Monad.Check                  (throw)
 import DDC.Type.Env                             (KindEnv)
 import Data.Set                                 (Set)
 import qualified DDC.Type.Env                   as Env
 import qualified DDC.Core.Tetra.Prim            as E
+import qualified DDC.Core.Salt.Name             as A
 
 
 -- Context  ---------------------------------------------------------------------------------------
@@ -40,5 +45,17 @@ extendKindEnv b ctx
 extendsKindEnv :: [Bind E.Name] -> Context -> Context
 extendsKindEnv bs ctx
         = ctx { contextKindEnv = Env.extends bs (contextKindEnv ctx) }
+
+
+---------------------------------------------------------------------------------------------------
+-- | Convert a kind from Core Tetra to Core Salt.
+convertK :: Kind E.Name -> ConvertM a (Kind A.Name)
+convertK kk
+        | TCon (TyConKind kc) <- kk
+        = return $ TCon (TyConKind kc)
+
+        | otherwise
+        = throw $ ErrorMalformed 
+                $ "Invalid kind " ++ (renderIndent $ ppr kk)
 
 

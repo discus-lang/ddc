@@ -125,7 +125,7 @@ convertPrimCall _ectx ctx xx
          -> Just $ do  
                 xThunk'         <- downArgX xThunk
                 xsArg'          <- mapM downArgX xsArg
-                tsArg'          <- mapM (convertValueT (typeContext ctx)) tsArg
+                tsArg'          <- mapM (convertDataT (typeContext ctx)) tsArg
                 let bObject     = BAnon (A.tPtr A.rTop A.tObj)
                 let bArgs       = BAnon A.tNat
 
@@ -172,7 +172,7 @@ convertPrimCall _ectx ctx xx
 
                 -- Arguments and their ypes.
                 xsArg'          <- mapM downArgX xsArgs
-                tsArg'          <- mapM (convertValueT (typeContext ctx)) tsArg
+                tsArg'          <- mapM (convertDataT (typeContext ctx)) tsArg
 
                 -- Evaluate a thunk, returning the resulting Addr#, 
                 -- then cast it back to a pointer of the appropriate type

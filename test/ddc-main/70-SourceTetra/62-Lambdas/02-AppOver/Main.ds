@@ -1,0 +1,28 @@
+
+-- Test over-application.
+-- Calling supers with more args than their arity.
+module Main
+import Data.Numeric.Nat
+import System.IO.Console
+where
+
+
+-- Super that returns a functional value.
+test  (n : Nat#) : Nat# -> Nat#
+ = λx : Nat#. x + n
+
+-- Over-applied super from the same module.
+test2 (x : Nat#) : Nat# -> Nat#
+ = λy : Nat#. test x y
+
+-- Over-applied super from an imported module.
+test3 (n : Nat#) : Nat# -> Nat#
+ = add n
+
+
+main (_ : Unit) : S Console Unit
+ = box do
+        run writel (showNat (test  2 3))
+        run writel (showNat (test2 2 3))
+--        run writel (showNat (test3 2 3))
+

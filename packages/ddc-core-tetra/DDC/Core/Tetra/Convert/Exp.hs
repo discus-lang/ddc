@@ -208,9 +208,9 @@ convertExp ectx ctx xx
          -> do  
                 -- Convert scrutinee, and determine its prime region.
                 x'      <- convertX      ExpArg ctx xScrut
-                tX'     <- convertValueT (typeContext ctx) tX
+                tX'     <- convertDataT (typeContext ctx) tX
 
-                tScrut' <- convertValueT (typeContext ctx) tScrut
+                tScrut' <- convertDataT (typeContext ctx) tScrut
                 let tPrime = fromMaybe A.rTop
                            $ takePrimeRegion tScrut'
 

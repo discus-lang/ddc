@@ -85,7 +85,7 @@ convertPrimArgX ctx ectx xx
  = let  convertX = contextConvertExp ctx
    in case xx of
         XType a t
-         -> do  t'      <- convertValueT (typeContext ctx) t
+         -> do  t'      <- convertDataT (typeContext ctx) t
                 return  $ XType (annotTail a) t'
 
         XWitness{}

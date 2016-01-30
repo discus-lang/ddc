@@ -181,7 +181,7 @@ convertSuperXT    ctx0 xx0 tt0
          = do   let ctx'    = extendTypeEnv bParam ctx
                 let a'      = annotTail a
                 bParam'    <- convertValueB (typeContext ctx) bParam
-                tParam'    <- convertValueT (typeContext ctx) (typeOfBind bParam)
+                tParam'    <- convertDataT (typeContext ctx) (typeOfBind bParam)
 
                 (xBody', tBody') <- convertAbsValue ctx' xBody tBody
 
@@ -192,7 +192,7 @@ convertSuperXT    ctx0 xx0 tt0
         -- Converting body expressions---------------------
         convertBody ctx xx tt
          = do   xBody'  <- contextConvertExp ctx ExpBody ctx xx
-                tBody'  <- convertValueT (typeContext ctx) tt
+                tBody'  <- convertDataT (typeContext ctx) tt
                 return  ( xBody', tBody' )
 
 
