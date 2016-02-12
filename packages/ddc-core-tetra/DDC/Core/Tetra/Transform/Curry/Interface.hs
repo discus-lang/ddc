@@ -34,10 +34,6 @@ data Fun
         = FunLocalSuper
         { _funName      :: Name
         , _funType      :: Type Name 
-
-        -- TODO: ditch the separate arity field.
-        , _funArity     :: Int 
-
         , _funCons      :: [Call.Cons Name] }
 
         -- | An externally defined super.
@@ -46,10 +42,6 @@ data Fun
         | FunExternSuper
         { _funName      :: Name
         , _funType      :: Type Name
-
-        -- TODO: ditch the separate arity field.
-        , _funArity     :: Int
-
         , _funConsMaybe :: Maybe [Call.Cons Name] }
 
         -- | A foreign imported function.
@@ -59,10 +51,6 @@ data Fun
         | FunForeignSea
         { _funName      :: Name
         , _funType      :: Type Name
-
-        -- TODO: ditch separate arity field.
-        , _funArity     :: Int
-
         , _funCons      :: [Call.Cons Name] }
         deriving Show
 
@@ -71,15 +59,10 @@ data Fun
 funMapAddLocalSuper :: FunMap -> (Bind Name, Exp a Name) -> FunMap
 funMapAddLocalSuper funs (b, x)
         | BName n t             <- b
-        = let   -- Get the value arity of the super, that is, how many
-                -- values we need to saturate all the value lambdas.
-                (flags, _) = fromMaybe ([], x) (takeXLamFlags x)
-                arity      = length $ filter (== False) $ map fst flags
-
-                -- How the super is constructed.
+        = let   -- How the super is constructed.
                 cons       = Call.takeCallCons x
 
-          in    Map.insert n (FunLocalSuper n t arity cons) funs
+          in    Map.insert n (FunLocalSuper n t cons) funs
 
         | otherwise
         = funs
@@ -93,7 +76,7 @@ funMapAddForeign funs (n, is)
         --   We allow the function type to be imported, but we won't be able
         --   to call it in the current module without the arity information.
         | ImportValueModule _mn n' tVal Nothing  <- is
-        = Map.insert n (FunExternSuper n' tVal 0 Nothing) funs
+        = Map.insert n (FunExternSuper n' tVal Nothing) funs
 
         -- Imported value which we have arity information for.
         | ImportValueModule _mn n' tVal (Just (iTypes, iValues, iBoxes)) <- is
@@ -111,7 +94,7 @@ funMapAddForeign funs (n, is)
                 -- type of the value.
           in    if  (iTypes  == length ksParam)
                  && (iValues <= length tsParam)
-                 then Map.insert n (FunExternSuper n' tVal (length csValue) (Just cons)) funs
+                 then Map.insert n (FunExternSuper n' tVal (Just cons)) funs
 
                  -- TODO: better error, lift into exception.
                  else error "funMapAddForeign: arity type mismatch"
@@ -130,9 +113,7 @@ funMapAddForeign funs (n, is)
                 csBox   = replicate (length esEffs) Call.ConsBox
                 cons    = csType ++ csValue ++ csBox
 
-                arity   = length csValue
-
-          in    Map.insert n (FunForeignSea n tVal arity cons) funs
+          in    Map.insert n (FunForeignSea n tVal cons) funs
 
 
         | otherwise
@@ -141,6 +122,9 @@ funMapAddForeign funs (n, is)
 
 ---------------------------------------------------------------------------------------------------
 -- | Wrap an expression in the given number of 'run' casts.
+-- 
+--   TODO: shift into core compounds
+--
 makeRuns :: a
         -> Int 
         -> Exp a Name 

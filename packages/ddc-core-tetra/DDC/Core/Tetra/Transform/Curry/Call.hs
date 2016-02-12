@@ -33,10 +33,10 @@ makeCall funMap xx nF aF esArgs
         -- Call of a local or imported super.
         | Just (tF, csF)
             <- case Map.lookup nF funMap of
-                Just (FunLocalSuper  _ tF _ csFun)        -> Just (tF, csFun)
-                Just (FunExternSuper _ tF _ (Just csFun)) -> Just (tF, csFun)
-                Just (FunForeignSea  _ tF _ csFun)        -> Just (tF, csFun)
-                _                                         -> Nothing
+                Just (FunLocalSuper  _ tF csFun)        -> Just (tF, csFun)
+                Just (FunExternSuper _ tF (Just csFun)) -> Just (tF, csFun)
+                Just (FunForeignSea  _ tF csFun)        -> Just (tF, csFun)
+                _                                       -> Nothing
 
         = case Call.dischargeConsWithElims csF esArgs of
                 -- Saturating call.
