@@ -30,10 +30,12 @@ module DDC.Core.Call
         , isElimRun
         , takeCallCons
         , applyElim
+        , splitStdCallElims
 
           -- * Matching
         , elimForCons
-        , dischargeElimsWithConss)
+        , dischargeConsWithElims
+        , dischargeTypeWithElims)
 where
 import DDC.Core.Exp
 import DDC.Core.Compounds
@@ -132,6 +134,34 @@ isElimRun ee
 
 
 -------------------------------------------------------------------------------
+-- | Group eliminators into sets for a standard call,
+--   all the types first, then values, then runs.
+splitStdCallElims :: [Elim a n] -> Maybe ([Elim a n], [Elim a n], [Elim a n])
+splitStdCallElims ee
+ = eatTypes [] ee
+ where
+        eatTypes  accTs (e@ElimType{} : es)
+         = eatTypes (e : accTs) es
+
+        eatTypes  accTs es
+         = eatValues (reverse accTs) [] es
+
+        eatValues accTs accVs (e@ElimValue{} : es)
+         = eatValues accTs (e : accVs) es
+
+        eatValues accTs accVs es
+         = eatRuns   accTs (reverse accVs) [] es
+
+        eatRuns  accTs accVs accRs (e@ElimRun{} : es)
+         = eatRuns   accTs accVs (e : accRs) es
+
+        eatRuns  accTs accVs accRs []
+         = Just (accTs, accVs, reverse accRs)
+
+        eatRuns  _accTs _accVs _accRs _
+         = Nothing
+
+
 -- | Split the application of some object into the object being
 --   applied and the values passed to its eliminators.
 takeCallElim :: Exp a n -> (Exp a n, [Elim a n])
@@ -178,25 +208,60 @@ elimForCons e c
 --   eliminators satisfy the constructors, and return any remaining
 --   unmatching constructors and eliminators.
 ---
---   TODO: handle type applications, and check types.
+--   TODO: subst type args during type application.
+--   TODO: and check types and kinds as we do the application.
 --
-dischargeElimsWithConss
+dischargeConsWithElims
         :: [Cons n] 
         -> [Elim a n] 
         -> ([Cons n], [Elim a n])
 
-dischargeElimsWithConss (c : cs) (e : es)
+dischargeConsWithElims (c : cs) (e : es)
  = case (c, e) of
         (ConsType  _k1, ElimType  _ _ _t2)
-          -> dischargeElimsWithConss cs es
+          -> dischargeConsWithElims cs es
 
         (ConsValue _t1, ElimValue _ _x2)
-          -> dischargeElimsWithConss cs es
+          -> dischargeConsWithElims cs es
 
         (ConsBox,       ElimRun _)
-          -> dischargeElimsWithConss cs es
+          -> dischargeConsWithElims cs es
 
         _ -> (c : cs, e : es)
 
-dischargeElimsWithConss cs es
+dischargeConsWithElims cs es
  = (cs, es)
+
+
+-- | Given a type of a function and eliminators, discharge
+--   foralls, abstractions and boxes to get the result type
+--   of performing the application.
+--
+---  
+--   TODO: subst type args during type application.
+--   TODO: check types and kinds as we do the application.
+--
+dischargeTypeWithElims
+        :: Type n
+        -> [Elim a n]
+        -> Maybe (Type n)
+
+dischargeTypeWithElims tt (ElimType  _ _ _tArg : es)
+        | TForall b tBody         <- tt
+        , _kParam                 <- typeOfBind b
+        = dischargeTypeWithElims tBody es
+
+dischargeTypeWithElims tt (ElimValue _ _xArg  : es)
+        | Just (_tParam, tResult) <- takeTFun tt
+        = dischargeTypeWithElims tResult es
+
+dischargeTypeWithElims tt (ElimRun _ : es)
+        | Just (_, tBody)         <- takeTSusp tt
+        = dischargeTypeWithElims tBody es
+ 
+dischargeTypeWithElims tt []
+        = Just tt
+
+dischargeTypeWithElims _tt _es
+        = Nothing
+

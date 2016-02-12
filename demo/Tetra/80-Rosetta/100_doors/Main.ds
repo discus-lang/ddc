@@ -60,7 +60,6 @@ toggleEvery (n : Nat#) (k : Nat#) (ds : List Door) : List Door
 
    in   zipWith toggleIx (enumFromTo 1 n) ds
 
-
 runToggle (n : Nat#) : List Door
  = foldr (toggleEvery n) (replicate n Closed) (enumFromTo 1 n)
 

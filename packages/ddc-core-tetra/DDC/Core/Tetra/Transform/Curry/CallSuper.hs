@@ -64,8 +64,8 @@ makeCallSuperUnder
         -> Maybe (Exp a Name)
 
 makeCallSuperUnder aF nF tF cs es
-        -- We don't have enough eliminators for all the constructors.
-        | length es     <  length cs
+        -- We have more constructors than eliminators.
+        | length es <  length cs
 
           -- The super and call  must be in standard form.
         , Just (esType, esValue,  nRuns) <- splitStdCallElim es
@@ -131,6 +131,8 @@ makeCallSuperUnder aF nF tF cs es
 --
 --   @f = (/\t1. /\t2. \v1. \v2. box. body)@
 --
+--  TODO: this is duplicated by splitStdCallElims
+--
 splitStdCallElim
         :: [Call.Elim a Name] 
         -> Maybe ([Call.Elim a Name], [Call.Elim a Name], Int)
@@ -146,6 +148,9 @@ splitStdCallElim es
 
 
 -- | Like `splitStdCallElim`, but for the constructor side.
+--
+--   TODO: return the ElimBoxes rather than Bool.
+--
 splitStdCallCons
         :: [Call.Cons Name]
         -> Maybe ([Call.Cons Name], [Call.Cons Name], Bool)

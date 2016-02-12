@@ -11,7 +11,6 @@ import DDC.Core.Tetra
 import DDC.Core.Exp
 import qualified DDC.Core.Call                  as Call
 import qualified Data.Map                       as Map
-import qualified Text.Show.Pretty               as Text
 
 ---------------------------------------------------------------------------------------------------
 -- | Call a thing, depending on what it is.
@@ -39,7 +38,7 @@ makeCall funMap xx nF aF esArgs
                 Just (FunForeignSea  _ tF _ csFun)        -> Just (tF, csFun)
                 _                                         -> Nothing
 
-        = case Call.dischargeElimsWithConss csF esArgs of
+        = case Call.dischargeConsWithElims csF esArgs of
                 -- Saturating call.
                 --  We have matching eliminators for all the constructors.
                 ([], []) 
@@ -56,9 +55,21 @@ makeCall funMap xx nF aF esArgs
                 -- Over application.
                 --   The constructors have all been used up, 
                 --   but we still have eliminators at the call site.
-                ([], _esRemain)
-                 -> error $  "makeCall: over application"
-                          ++ Text.ppShow (nF, esArgs, csF)
+                ([], esOver)
+                 -> let -- Eliminators that saturate the super.
+                        nSat        = length csF
+                        esSat       = take nSat esArgs
+
+                        -- Saturate the super that we have.
+                        Just xApp   = makeCallSuperSaturated aF nF csF esSat
+
+                        -- Apply the thunk to the other arguments.
+                        Just tF'    = Call.dischargeTypeWithElims (annotType aF) esSat
+
+                        Just xFinal = makeCallThunk aF xApp tF' esOver
+
+                    in  xFinal
+
 
                 -- Bad application.
                 -- The eliminators we have do not match the constructors of the thing
@@ -71,10 +82,8 @@ makeCall funMap xx nF aF esArgs
         -- Apply a thunk to some arguments.
         -- The functional part is a variable bound to a thunk object.
         | length esArgs > 0
-        , Just (esTypes, esValues, bRun) <- splitStdCallElim esArgs
-        , xsArgTypes    <- [XType a  t  | Call.ElimType  a _ t <- esTypes]
-        , xsArgValues   <- [x           | Call.ElimValue _ x <- esValues]
-        , Just xResult  <- makeCallThunk aF nF (xsArgTypes ++ xsArgValues) bRun
+        , tF            <- annotType aF
+        , Just xResult  <- makeCallThunk aF (XVar aF (UName nF)) tF esArgs
         = xResult
 
 

@@ -5,7 +5,7 @@ where
 import DDC.Core.Tetra.Transform.Curry.Interface
 import DDC.Core.Annot.AnTEC
 import DDC.Core.Tetra
-import qualified DDC.Core.Predicates                    as C
+import qualified DDC.Core.Call                          as Call
 import qualified DDC.Core.Tetra.Compounds               as C
 import DDC.Core.Exp
 
@@ -17,30 +17,30 @@ import DDC.Core.Exp
 --
 makeCallThunk
         :: Show a
-        => AnTEC a Name                 -- ^ Annotation from functional part of application.
-        -> Name                         -- ^ Name of thunk.
-        -> [Exp (AnTEC a Name) Name]    -- ^ Arguments to thunk.
-        -> Int                          -- ^ How many times to run the result.
+        => AnTEC a Name                         -- ^ Annotation for result expression.
+        -> Exp (AnTEC a Name) Name              -- ^ Functional expression to apply.
+        -> Type Name                            -- ^ Type of functional expression.
+        -> [Call.Elim (AnTEC a Name) Name]      -- ^ Eliminators for applicatoin.
         -> Maybe (Exp (AnTEC a Name) Name)
 
-makeCallThunk aF nF xsArgs nRuns
+makeCallThunk aF xF tF esArgs
 
- -- This only works for value arguments.
- | all (\x -> (not . C.isXType)    x 
-           && (not . C.isXWitness) x) xsArgs
- = let  
-        (tsParam, tResult)       = C.takeTFunArgResult $ annotType aF
+ = let  Just ([], esValues, esRuns)
+                = Call.splitStdCallElims esArgs
 
-        -- Split the value paramters into ones applied to the thunk,
+        (tsParam, tResult)       = C.takeTFunArgResult tF
+
+        -- Split the value parameters into ones applied to the thunk,
         -- and the ones that form part of its resulting type. 
-        (tsParamArg, tsParamClo) = splitAt (length xsArgs) tsParam
+        (tsParamArg, tsParamClo) = splitAt (length esValues) tsParam
 
         -- Build the type of the returned closure.
+        -- TODO: use dischargs fns instead, this won't work for polytypes.
         Just tResultClo          = C.tFunOfList (tsParamClo ++ [tResult])
 
-   in   Just 
-         $ makeRuns aF nRuns
-         $ C.xFunApply aF tsParamArg tResultClo (XVar aF (UName nF)) xsArgs
+        xsArgs  = [ x | Call.ElimValue _ x <- esValues] 
 
- | otherwise
- = Nothing
+   in   Just 
+         $ makeRuns    aF (length esRuns)
+         $ C.xFunApply aF tsParamArg tResultClo xF xsArgs
+
