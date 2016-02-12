@@ -32,7 +32,8 @@ module DDC.Core.Call
         , applyElim
 
           -- * Matching
-        , elimForCons)
+        , elimForCons
+        , dischargeElimsWithConss)
 where
 import DDC.Core.Exp
 import DDC.Core.Compounds
@@ -172,3 +173,30 @@ elimForCons e c
         (ElimRun{},   ConsBox{})        -> True
         _                               -> False
 
+
+-- | Given lists of constructors and eliminators, check if the
+--   eliminators satisfy the constructors, and return any remaining
+--   unmatching constructors and eliminators.
+---
+--   TODO: handle type applications, and check types.
+--
+dischargeElimsWithConss
+        :: [Cons n] 
+        -> [Elim a n] 
+        -> ([Cons n], [Elim a n])
+
+dischargeElimsWithConss (c : cs) (e : es)
+ = case (c, e) of
+        (ConsType  _k1, ElimType  _ _ _t2)
+          -> dischargeElimsWithConss cs es
+
+        (ConsValue _t1, ElimValue _ _x2)
+          -> dischargeElimsWithConss cs es
+
+        (ConsBox,       ElimRun _)
+          -> dischargeElimsWithConss cs es
+
+        _ -> (c : cs, e : es)
+
+dischargeElimsWithConss cs es
+ = (cs, es)

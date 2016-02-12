@@ -55,6 +55,8 @@ module DDC.Type.Compounds
 
           -- * Suspensions
         , tSusp
+        , takeTSusp
+        , takeTSusps
 
           -- * Implications
         , tImpl
@@ -543,9 +545,30 @@ infixr `tImpl`
 
 
 -- Suspensions ----------------------------------------------------------------
+-- | Construct a suspension type.
 tSusp  :: Effect n -> Type n -> Type n
 tSusp tE tA
         = (TCon $ TyConSpec TcConSusp) `tApp` tE `tApp` tA
+
+
+-- | Take the effect and result type of a suspension type.
+takeTSusp :: Type n -> Maybe (Effect n, Type n)
+takeTSusp tt
+ = case tt of
+        TApp (TApp (TCon (TyConSpec TcConSusp)) tE) tA
+          -> Just (tE, tA)
+        _ -> Nothing
+
+
+-- | Split off enclosing suspension types.
+takeTSusps :: Type n -> ([Effect n], Type n)
+takeTSusps tt
+ = case tt of
+        TApp (TApp (TCon (TyConSpec TcConSusp)) tE) tRest
+          -> let (tEs, tA) = takeTSusps tRest
+             in  (tE : tEs, tA)
+
+        _ -> ([], tt)
 
 
 -- Level 3 constructors (sorts) -----------------------------------------------

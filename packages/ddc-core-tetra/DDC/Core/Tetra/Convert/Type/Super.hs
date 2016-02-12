@@ -16,7 +16,7 @@ import qualified DDC.Core.Salt.Name             as A
 
 -- | Convert the Tetra type of a super with the given call pattern to Salt.
 --
---   This type conversion mirrors the `convertSuperXT` converesion function
+--   This type conversion mirrors the `convertSuperXT` conversion function
 --   except that we only know the call pattern of the function, rather than
 --   its defining expression.
 -- 

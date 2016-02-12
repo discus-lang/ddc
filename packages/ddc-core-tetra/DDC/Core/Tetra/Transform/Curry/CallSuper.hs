@@ -1,52 +1,15 @@
 
 module DDC.Core.Tetra.Transform.Curry.CallSuper
-        ( makeCallSuper
-        , makeCallSuperSaturated
+        ( makeCallSuperSaturated
         , makeCallSuperUnder
         , splitStdCallElim)
 where
 import DDC.Core.Tetra.Transform.Curry.Interface
-import DDC.Core.Annot.AnTEC
 import DDC.Core.Tetra
 import DDC.Core.Exp
 import qualified DDC.Type.Transform.Instantiate as T
 import qualified DDC.Core.Tetra.Compounds       as C
 import qualified DDC.Core.Call                  as Call
-
-
----------------------------------------------------------------------------------------------------
--- | Call a top-level supercombinator,
---   or foriegn function imported from Sea land.
-makeCallSuper 
-        :: Show a 
-        => AnTEC a Name                         -- ^ Annotation to use.
-        -> Name                                 -- ^ Name of super to call.
-        -> Exp  (AnTEC a Name) Name             -- ^ Expression of super to call.
-
-        -> [Type Name]                          -- ^ Parameter types of super
-        -> Type Name                            -- ^ Return type of super.
-
-        -> [Call.Elim (AnTEC a Name) Name]      -- ^ Value arguments for super.
-        -> Int                                  -- ^ How many times to run the result.
-        -> Exp  (AnTEC a Name) Name
-
-makeCallSuper aF _nF xF tsParamLam _tResultSuper esArgValue nRuns
-
- -- Fully saturated call to a super of foreign function. 
- -- We have arguments for each parameter, so can call it directly.
- -- 
- -- TODO: dump this code in favour of makeCallSuperSaturated
- --
- | length esArgValue == length tsParamLam
- , xsArgValue   <- [x | Call.ElimValue _ x <- esArgValue]
- = makeRuns aF nRuns $ C.xApps aF xF xsArgValue
-
- -- TODO: handle over-applied super.
- --       do direct call, then do an application.
- --       the super must produce a closure, otherwise it won't be well typed.
- | otherwise
- , xsArgValue   <- [x | Call.ElimValue _ x <- esArgValue]
- = makeRuns aF nRuns $ C.xApps aF xF xsArgValue
 
 
 ---------------------------------------------------------------------------------------------------
@@ -101,7 +64,7 @@ makeCallSuperUnder
         -> Maybe (Exp a Name)
 
 makeCallSuperUnder aF nF tF cs es
-          -- We don't have enough eliminators for all the constructors.
+        -- We don't have enough eliminators for all the constructors.
         | length es     <  length cs
 
           -- The super and call  must be in standard form.

@@ -59,7 +59,11 @@ data Fun
         | FunForeignSea
         { _funName      :: Name
         , _funType      :: Type Name
-        , _funArity     :: Int }
+
+        -- TODO: ditch separate arity field.
+        , _funArity     :: Int
+
+        , _funCons      :: [Call.Cons Name] }
         deriving Show
 
 
@@ -113,15 +117,22 @@ funMapAddForeign funs (n, is)
                  else error "funMapAddForeign: arity type mismatch"
 
 
-        -- Import from a Sea land.
-        | ImportValueSea _ t  <- is
-        = let   (tsArgs, _tResult)
-                        = takeTFunArgResult
-                        $ eraseTForalls t
+        -- Imported foreign function from Sea land.
+        | ImportValueSea _ tVal  <- is
+        = let   
+                (bsParam, tBody1)       = fromMaybe ([], tVal) $ takeTForalls tVal
+                ksParam                 = map typeOfBind bsParam
+                ([], tsParam, tBody2)   = takeTFunWitArgResult tBody1
+                (esEffs, _tResult)      = takeTSusps tBody2
 
-                arity   = length tsArgs
+                csType  = map Call.ConsType  ksParam
+                csValue = map Call.ConsValue tsParam
+                csBox   = replicate (length esEffs) Call.ConsBox
+                cons    = csType ++ csValue ++ csBox
 
-          in    Map.insert n (FunForeignSea n t arity) funs
+                arity   = length csValue
+
+          in    Map.insert n (FunForeignSea n tVal arity cons) funs
 
 
         | otherwise

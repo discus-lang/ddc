@@ -8,12 +8,10 @@ import DDC.Core.Tetra.Transform.Curry.Interface
 
 import DDC.Core.Annot.AnTEC
 import DDC.Core.Tetra
-import DDC.Core.Tetra.Compounds
 import DDC.Core.Exp
-import Data.Maybe
 import qualified DDC.Core.Call                  as Call
 import qualified Data.Map                       as Map
-
+import qualified Text.Show.Pretty               as Text
 
 ---------------------------------------------------------------------------------------------------
 -- | Call a thing, depending on what it is.
@@ -21,87 +19,64 @@ import qualified Data.Map                       as Map
 --   whether its a super, foreign imports, or thunk.
 makeCall
         :: Show a
-        => Exp (AnTEC a Name) Name
-        -> Exp (AnTEC a Name) Name      -- ^ Functional expression being called.
-        -> AnTEC a Name         -- ^ Annotation that contains the type of the function
-                                --   that we're applying.
-        -> FunMap               -- ^ Types and arities of functions in the environment.
-        -> Name                 -- ^ Name of function to call.
+        => FunMap                       -- ^ Types and arities of functions in the environment.
+        -> Exp (AnTEC a Name) Name      -- ^ Overall application expression, for error reporting.
+        -> Name                         -- ^ Name of function to call.
+        -> AnTEC a Name                 -- ^ Annotation that contains the type of the function
+                                        --   that we're applying.
         -> [Call.Elim (AnTEC a Name) Name]    
-                                -- ^ Arguments to eliminators.
+                                        -- ^ Arguments to eliminators.
         ->  Exp (AnTEC a Name) Name
 
-makeCall xx _xF aF funMap nF esArgs
+makeCall funMap xx nF aF esArgs
 
         ---------------------------------------------------
-        -- Direct call of top-level super in the current module
-        | Just (FunLocalSuper _ _ _ csSuper) <- Map.lookup nF funMap
-        , Just xResult  <- makeCallSuperSaturated aF nF csSuper esArgs
-        = xResult
-
-        -- Under-application of a top-level super in the current module
-        | Just (FunLocalSuper  _ tF _ csSuper) <- Map.lookup nF funMap
-        , length esArgs < length csSuper
-        , Just xResult  <- makeCallSuperUnder aF  nF tF csSuper esArgs
-        = xResult
-
-        -- Under-application of a top-level super in an external module.
-        | Just (FunExternSuper _ tF _ (Just csSuper)) <- Map.lookup nF funMap
-        , length esArgs < length csSuper
-        , Just xResult  <- makeCallSuperUnder aF nF tF csSuper esArgs
-        = xResult
-
-        ---------------------------------------------------
-        -- Direct call of a top-level super, 
-        --  either defined in the local module, 
-        --  an external module,
-        --  or impoted via the foreign function interface.
-        --
-        | Just (tF, iArity) 
+        -- Call of a local or imported super.
+        | Just (tF, csF)
             <- case Map.lookup nF funMap of
-                Just (FunLocalSuper  _ tF iArity _)     -> Just (tF, iArity)
-                Just (FunExternSuper _ tF iArity _)     -> Just (tF, iArity)
-                Just (FunForeignSea  _ tF iArity)       -> Just (tF, iArity)
-                _                                       -> Nothing
-        
-        -- split the quantifiers from the type of the super.
-        , (bsForall, tBody)             <- fromMaybe ([], tF) $ takeTForalls tF
-        
-        -- split the body type into value parameters and result.
-        , (tsParam, tResult)            <- takeTFunArgResult tBody
-        
-        -- split the value parameters into ones accepted by lambdas and ones that 
-        -- are accepted by the returned closure.
-        , (tsParamLam, tsParamClo)      <- splitAt iArity tsParam
-        
-        -- build the type of the returned value.
-        , Just tResult'                 <- tFunOfList (tsParamClo ++ [tResult])
-        
-        -- split the arguments into the type arguments that satisfy the quantifiers,  
-        -- then the value arguments.
-        , Just (esTypes, esValues, bRun) <- splitStdCallElim esArgs
-        , xsArgTypes    <- [XType a t   | Call.ElimType  a _ t <- esTypes]
-        , esArgValues   <- filter Call.isElimValue esValues
+                Just (FunLocalSuper  _ tF _ csFun)        -> Just (tF, csFun)
+                Just (FunExternSuper _ tF _ (Just csFun)) -> Just (tF, csFun)
+                Just (FunForeignSea  _ tF _ csFun)        -> Just (tF, csFun)
+                _                                         -> Nothing
 
-        -- there must be types to satisfy all of the quantifiers
-        , length bsForall == length xsArgTypes
- 
-        = makeCallSuper aF nF
-                (xApps aF (XVar aF (UName nF)) xsArgTypes)
-                tsParamLam 
-                tResult' 
-                esArgValues
-                bRun
+        = case Call.dischargeElimsWithConss csF esArgs of
+                -- Saturating call.
+                --  We have matching eliminators for all the constructors.
+                ([], []) 
+                 |  Just xResult <- makeCallSuperSaturated aF nF csF esArgs
+                 -> xResult
+
+                -- Under application.
+                --  The eliminators have all been used up,
+                --  but the super that we're applying still has outer constructors.
+                (_csRemain, [])
+                 |  Just xResult <- makeCallSuperUnder     aF nF tF csF esArgs
+                 -> xResult
+
+                -- Over application.
+                --   The constructors have all been used up, 
+                --   but we still have eliminators at the call site.
+                ([], _esRemain)
+                 -> error $  "makeCall: over application"
+                          ++ Text.ppShow (nF, esArgs, csF)
+
+                -- Bad application.
+                -- The eliminators we have do not match the constructors of the thing
+                -- that we're applying. The program is mis-typed.
+                (_, _)
+                 -> error "makeCall: bad application"
+
 
         ---------------------------------------------------
-        -- Apply a thunk to its arguments.
+        -- Apply a thunk to some arguments.
         -- The functional part is a variable bound to a thunk object.
         | length esArgs > 0
         , Just (esTypes, esValues, bRun) <- splitStdCallElim esArgs
         , xsArgTypes    <- [XType a  t  | Call.ElimType  a _ t <- esTypes]
         , xsArgValues   <- [x           | Call.ElimValue _ x <- esValues]
-        = let Just xResult = makeCallThunk aF nF (xsArgTypes ++ xsArgValues) bRun
-          in  xResult
+        , Just xResult  <- makeCallThunk aF nF (xsArgTypes ++ xsArgValues) bRun
+        = xResult
+
 
         ---------------------------------------------------
         -- This was an existing thunk applied to no arguments,
