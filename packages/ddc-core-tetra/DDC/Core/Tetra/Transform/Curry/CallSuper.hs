@@ -71,25 +71,27 @@ makeCallSuperUnder nF tF cs es
  -- There must be types to satisfy all of the type parameters of the super.
  , length esType == length csType
 
+ -- Instantiate the type of the function.
+ , Just tF_inst  <- T.instantiateTs tF [t | Call.ElimType _ _ t <- esType]
  = let
         -- Split the quantifiers, parameter type, and body type
         -- from the type of the super.
-        Just tF_inst        = T.instantiateTs tF [t | Call.ElimType _ _ t <- esType]
         (tsParam,  tResult) = C.takeTFunArgResult tF_inst
-        iArity              = length cs
 
+        iArity          = length cs
         xsArgType       = [XType at t  | Call.ElimType  _ at t  <- esType]
         xsArgValue      = [x           | Call.ElimValue _ x     <- esValue]
 
         -- Split the value parameters into ones accepted by the super,
         -- and ones that are accepted by the returned closures.
-        (tsParamLam, tsParamClo) = splitAt iArity tsParam
+        (tsParamLam, tsParamClo) 
+                        = splitAt iArity tsParam
         
         -- Build the type of the returned value.
-        Just tResult'   = C.tFunOfList (tsParamClo ++ [tResult])
+        tResult'        = C.tFunOfParamResult tsParamClo tResult
         
         -- Instantiate all the type parameters.
-        xFunAPP         = (C.xApps () (XVar () (UName nF)) xsArgType)
+        xFunAPP         = C.xApps () (XVar () (UName nF)) xsArgType
 
         -- Split types of the super parameters into the ones that can be
         -- satisfied by this application, and the remaining parameters that
@@ -100,16 +102,16 @@ makeCallSuperUnder nF tF cs es
         -- The type of the result after performing this application.
         -- If there are remaining, un-saturated parameters the result
         -- type will still be a function.
-        Just tResultClo = C.tFunOfList (tsParamRemain ++ [tResult'])
+        tResultClo      = C.tFunOfParamResult tsParamRemain tResult'
 
         tParamFirst : tsParamRest = tsParamLam
-        Just tSuperResult = C.tFunOfList (tsParamRest ++   [tResult'])
+        tSuperResult    = C.tFunOfParamResult tsParamRest   tResult'
 
    in Just
         $ makeRuns () (length esRuns)
         $ C.xApps  () (C.xFunCurry () tsParamSat tResultClo 
                        (C.xFunCReify () tParamFirst tSuperResult xFunAPP))
-              xsArgValue
+                      xsArgValue
 
  | otherwise
  = Nothing

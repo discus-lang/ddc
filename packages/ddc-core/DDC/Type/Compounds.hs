@@ -45,7 +45,9 @@ module DDC.Type.Compounds
         , takePrimeRegion
 
           -- * Functions
-        , tFun,         tFunOfList
+        , tFun
+        , tFunOfList
+        , tFunOfParamResult
         , takeTFun
         , takeTFunArgResult
         , takeTFunWitArgResult
@@ -431,9 +433,17 @@ tFun t1 t2
 infixr `tFun`
 
 
+-- | Construct a function type from a list of parameter types and the
+--   return type.
+tFunOfParamResult :: [Type n] -> Type n -> Type n
+tFunOfParamResult tsArg tResult
+ = let  tFuns' []        = tResult
+        tFuns' (t': ts') = t' `tFun` tFuns' ts'
+   in   tFuns' tsArg
 
--- | Construct a pure and empty function from a list containing the 
---   parameter and return type. Yields `Nothing` if the list is empty.
+
+-- | Construct a function type from a list containing the parameter
+--   and return types. Yields `Nothing` if the list is empty.
 tFunOfList :: [Type n] -> Maybe (Type n)
 tFunOfList ts
   = case reverse ts of

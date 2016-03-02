@@ -22,8 +22,9 @@ makeCallThunk
 
 makeCallThunk xF tF esArgs
 
- = let  Just ([], esValues, esRuns)
-                = Call.splitStdCallElims esArgs
+ -- Split the eliminators according to the standard call pattern.
+ | Just ([], esValues, esRuns)  <- Call.splitStdCallElims esArgs
+ = let  
 
         (tsParam, tResult)       = C.takeTFunArgResult tF
 
@@ -33,11 +34,13 @@ makeCallThunk xF tF esArgs
 
         -- Build the type of the returned closure.
         -- TODO: use dischargs fns instead, this won't work for polytypes.
-        Just tResultClo          = C.tFunOfList (tsParamClo ++ [tResult])
+        tResultClo               = C.tFunOfParamResult tsParamClo tResult
 
         xsArgs  = [ x | Call.ElimValue _ x <- esValues] 
 
-   in   Just 
+   in  Just 
          $ makeRuns    () (length esRuns)
          $ C.xFunApply () tsParamArg tResultClo xF xsArgs
 
+ | otherwise
+ = Nothing
