@@ -20,18 +20,18 @@ import qualified DDC.Core.Call                  as Call
 --   object code we do a standard function call.
 --
 makeCallSuperSaturated
-        :: a                    -- ^ Annotation from var node that mentioned super.
-        -> n                    -- ^ Name of super to call.
+        :: n                    -- ^ Name of super to call.
         -> [Call.Cons n]        -- ^ How the super is constructed.
-        -> [Call.Elim a n]      -- ^ Eliminators at call site.
-        -> Maybe (Exp a n)
+        -> [Call.Elim () n]     -- ^ Eliminators at call site.
+        -> Maybe (Exp () n)
 
-makeCallSuperSaturated aF nF cs es
+makeCallSuperSaturated nF cs es
         | length es == length cs
         , and  $ zipWith Call.elimForCons es cs
-        = Just $ foldl Call.applyElim (XVar aF (UName nF)) es
+        = Just $ foldl Call.applyElim (XVar () (UName nF)) es
 
-        | otherwise     = Nothing
+        | otherwise     
+        = Nothing
 
 
 ---------------------------------------------------------------------------------------------------
@@ -56,14 +56,13 @@ makeCallSuperSaturated aF nF cs es
 --   standard calls before undergoing the curry transform.
 --
 makeCallSuperUnder
-        :: a                    -- ^ Annotation from var node that mentioned super.
-        -> Name                 -- ^ Name of super to call.
+        :: Name                 -- ^ Name of super to call.
         -> Type Name            -- ^ Type of super.
         -> [Call.Cons Name]     -- ^ How the super is constructed.
-        -> [Call.Elim a Name]   -- ^ Eliminators at call site.
-        -> Maybe (Exp a Name)
+        -> [Call.Elim () Name]  -- ^ Eliminators at call site.
+        -> Maybe (Exp () Name)
 
-makeCallSuperUnder aF nF tF cs es
+makeCallSuperUnder nF tF cs es
         -- We have more constructors than eliminators.
         | length es <  length cs
 
@@ -92,7 +91,7 @@ makeCallSuperUnder aF nF tF cs es
                 Just tResult'   = C.tFunOfList (tsParamClo ++ [tResult])
         
                 -- Instantiate all the type parameters.
-                xFunAPP         = (C.xApps aF (XVar aF (UName nF)) xsArgType)
+                xFunAPP         = (C.xApps () (XVar () (UName nF)) xsArgType)
 
                 -- Split types of the super parameters into the ones that can be
                 -- satisfied by this application, and the remaining parameters that
@@ -109,9 +108,9 @@ makeCallSuperUnder aF nF tF cs es
                 Just tSuperResult = C.tFunOfList (tsParamRest ++   [tResult'])
 
           in Just
-                $ makeRuns aF nRuns
-                $ C.xApps aF (C.xFunCurry aF tsParamSat tResultClo 
-                               (C.xFunCReify aF tParamFirst tSuperResult xFunAPP))
+                $ makeRuns () nRuns
+                $ C.xApps  () (C.xFunCurry () tsParamSat tResultClo 
+                               (C.xFunCReify () tParamFirst tSuperResult xFunAPP))
                       xsArgValue
 
         | otherwise

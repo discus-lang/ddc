@@ -4,6 +4,7 @@ module DDC.Core.Tetra.Transform.Curry
 where
 import DDC.Core.Tetra.Transform.Curry.Call
 import DDC.Core.Tetra.Transform.Curry.Interface
+import DDC.Core.Transform.Reannotate
 
 import DDC.Type.Env                             (KindEnv, TypeEnv)
 import DDC.Core.Annot.AnTEC
@@ -16,21 +17,21 @@ import qualified DDC.Type.Env                   as Env
 import qualified Data.Map                       as Map
 
 
----------------------------------------------------------------------------------------------------
 -- TODO: handle supers names being shadowed by local bindings.
+--
 -- TODO: ensure type lambdas are out the front of supers, supers in prenex form.
--- TODO: build thunks for partially applied foreign functions.
+--
 -- TODO: handle monomorphic functions being passed to contructors, etc.
 --       not an app but we need to build a closure.
--- TOOD: also handle under/over applied data constructors, do a transform
+--
+-- TODO: also handle under/over applied data constructors, do a transform
 --       beforehand to saturate them.
 
-
+---------------------------------------------------------------------------------------------------
 -- | Insert primitives to manage higher order functions in a module.
 curryModule 
-        :: Show a
-        => Module (AnTEC a Name) Name -> Module (AnTEC a Name) Name
-
+        :: Module (AnTEC a Name) Name 
+        -> Module () Name
 curryModule mm
  = let  
         -- Add all the foreign functions to the function map.
@@ -52,15 +53,14 @@ type Context
 
 
 -- | Manage higher-order functions in a module body.
-curryBody
-        :: Show a
-        => Context
-        -> Exp (AnTEC a Name) Name
-        -> Exp (AnTEC a Name) Name
+curryBody 
+        :: Context 
+        -> Exp (AnTEC a Name) Name 
+        -> Exp () Name
 
 curryBody (funs, kenv, tenv) xx
  = case xx of
-        XLet a (LRec bxs) x2
+        XLet _ (LRec bxs) x2
          -> let (bs, xs) = unzip bxs
 
                 -- Add types of supers to the function map.
@@ -74,47 +74,49 @@ curryBody (funs, kenv, tenv) xx
                 xs'     = map (curryX ctx') xs
                 bxs'    = zip bs xs'
 
-            in  XLet a (LRec bxs') 
+            in  XLet () (LRec bxs') 
                  $ curryBody ctx' x2
 
-        _ -> xx
+        _ -> reannotate (const ()) xx
 
 
 ---------------------------------------------------------------------------------------------------
-curryX  :: Show a
-        => Context
-        -> Exp (AnTEC a Name) Name 
-        -> Exp (AnTEC a Name) Name
-
+-- | Manage function application in an expression.
+curryX  :: forall a
+        .  Context -> Exp (AnTEC a Name) Name -> Exp () Name
 curryX ctx@(funs, _kenv, _tenv) xx
  = case xx of
-        XVar a u
-         -> case u of 
-                UName nF -> makeCall funs xx nF a []
-                _        -> xx
+        XVar  a (UName nF)
+         -> case makeCall funs nF (annotType a) [] of
+                Just xx' -> xx'
+                Nothing  -> XVar () (UName nF)
 
-        XApp  a x1 x2
+        XVar  _ u
+         -> XVar () u
+
+        XApp  _ x1 x2
          -> case curryX_call xx of
                 Just xx' -> xx'
-                Nothing  -> XApp a (down x1) (down x2)
+                Nothing  -> XApp () (down x1) (down x2)
 
-        XCast a CastRun x1
+        XCast _ CastRun x1
          -> case curryX_call xx of
                 Just xx' -> xx'
-                Nothing  -> XCast a CastRun (down x1)
+                Nothing  -> XCast () CastRun (down x1)
 
         -- Boilerplate.
-        XCon{}          -> xx
-        XLam  a b x     -> XLam  a b (down x)
-        XLAM  a b x     -> XLAM  a b (down x)
-        XLet  a lts x   -> XLet  a   (curryLts ctx lts) (down x)
-        XCase a x alts  -> XCase a   (down x) (map (curryAlt ctx) alts)
-        XCast a c x     -> XCast a c (down x)
-        XType{}         -> xx
-        XWitness{}      -> xx
+        XCon     _ c     -> XCon     () c
+        XLam     _ b x   -> XLam     () b (down x)
+        XLAM     _ b x   -> XLAM     () b (down x)
+        XLet     _ lts x -> XLet     () (curryLts ctx lts) (down x)
+        XCase    _ x as  -> XCase    () (down x) (map (curryAlt ctx) as)
+        XCast    _ c x   -> XCast    () (reannotate (const ()) c) (down x)
+        XType    _ t     -> XType    () t
+        XWitness _ w     -> XWitness () (reannotate (const ()) w)
 
  where          
 
+        curryX_call :: Exp (AnTEC a Name) Name -> Maybe (Exp () Name)
         curryX_call x
          -- If this is a call of a named function then split it into the
          --  functional part and arguments, then work out how to call it.
@@ -122,7 +124,7 @@ curryX ctx@(funs, _kenv, _tenv) xx
          , XVar aF (UName nF)   <- xF
          , length esArgs  > 0
          = let esArgs' = map downElim esArgs
-           in  Just $ makeCall funs x nF aF esArgs'
+           in  makeCall funs nF (annotType aF) esArgs'
 
          | otherwise
          = Nothing
@@ -132,28 +134,22 @@ curryX ctx@(funs, _kenv, _tenv) xx
 
         downElim ee
          = case ee of
-                Call.ElimType{}         -> ee
-                Call.ElimValue a x      -> Call.ElimValue a (down x)
-                Call.ElimRun{}          -> ee
+                Call.ElimType  _ _ t -> Call.ElimType  () () t
+                Call.ElimValue _ x   -> Call.ElimValue () (down x)
+                Call.ElimRun   _     -> Call.ElimRun   ()
 
 
 -- | Manage function application in a let binding.
-curryLts :: Show a
-        => Context
-        -> Lets (AnTEC a Name) Name -> Lets (AnTEC a Name) Name
-
+curryLts :: Context -> Lets (AnTEC a Name) Name -> Lets () Name
 curryLts ctx lts
  = case lts of
-        LLet b x        -> LLet b (curryX ctx x)
-        LRec bxs        -> LRec [(b, curryX ctx x) | (b, x) <- bxs]
-        LPrivate{}      -> lts
+        LLet b x          -> LLet b (curryX ctx x)
+        LRec bxs          -> LRec [(b, curryX ctx x) | (b, x) <- bxs]
+        LPrivate bs mt ws -> LPrivate bs mt ws
 
 
 -- | Manage function application in a case alternative.
-curryAlt :: Show a
-        => Context
-        -> Alt (AnTEC a Name) Name  -> Alt (AnTEC a Name) Name
-
+curryAlt :: Context -> Alt (AnTEC a Name) Name -> Alt () Name
 curryAlt ctx alt
  = case alt of
         AAlt w x        -> AAlt w (curryX ctx x)
