@@ -39,8 +39,6 @@ toggleDoor (d : Door) : Door
         Closed  -> Open
 
 
--- BROKEN: Tetra -> Salt transform doesn't like functional return value.
-{-
 toggleEvery (n : Nat#) (k : Nat#) : List Door -> List Door
  = let
         toggleIx (i : Nat#) (d : Door) : Door
@@ -49,23 +47,34 @@ toggleEvery (n : Nat#) (k : Nat#) : List Door -> List Door
                 else d
 
    in   zipWith toggleIx (enumFromTo 1 n)
--}
-
-toggleEvery (n : Nat#) (k : Nat#) (ds : List Door) : List Door
- = let
-        toggleIx (i : Nat#) (d : Door) : Door
-         = if rem i k == 0 
-                then toggleDoor d
-                else d
-
-   in   zipWith toggleIx (enumFromTo 1 n) ds
 
 runToggle (n : Nat#) : List Door
- = foldr (toggleEvery n) (replicate n Closed) (enumFromTo 1 n)
+ = foldr (λk : Nat#. λd : List Door. toggleEvery n k d) 
+         (replicate n Closed) 
+         (enumFromTo 1 n)
 
+-- BROKEN: partially applying the thunk does not work.
+--
+-- runToggle (n : Nat#) : List Door
+-- = foldr (toggleEvery n) (replicate n Closed) (enumFromTo 1 n)
 
 main (_ : Unit) : S Console Unit
  = box do
+
+{-
+        derp = toggleEvery 100
+
+        run zipWithS
+                (λn : Nat#. λd : Door. box 
+                        case d of
+                         Open   -> run writel (showNat n %% showDoor d)
+                         _      -> ())
+                (enumFromTo  1 100)
+                ((derp 2) (replicate 100 Closed))
+
+        ()
+-}
+  
         run zipWithS 
                 (λn : Nat#. λd : Door. box 
                         case d of

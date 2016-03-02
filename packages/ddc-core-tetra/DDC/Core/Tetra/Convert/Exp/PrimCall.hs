@@ -4,14 +4,15 @@ module DDC.Core.Tetra.Convert.Exp.PrimCall
 where
 import DDC.Core.Tetra.Convert.Exp.Arg
 import DDC.Core.Tetra.Convert.Exp.Base
+import DDC.Core.Tetra.Convert.Callable
 import DDC.Core.Tetra.Convert.Type
 import DDC.Core.Tetra.Convert.Error
+import DDC.Type.Transform.Instantiate
 import DDC.Core.Compounds
 import DDC.Core.Exp
-import DDC.Base.Pretty
-import DDC.Base.Panic
 import DDC.Core.Check                    (AnTEC(..))
 import qualified Data.Map                as Map
+import qualified DDC.Core.Call           as Call
 import qualified DDC.Core.Tetra.Prim     as E
 import qualified DDC.Core.Salt.Runtime   as A
 import qualified DDC.Core.Salt.Name      as A
@@ -44,64 +45,86 @@ convertPrimCall _ectx ctx xx
 
            -- Given the expression defining the super, retrieve its
            -- value arity and any extra type arguments we need to apply.
-         , Just (aF, xF_super, params, boxes, atsArg)
+         , Just (xF_super, tSuper, csCall, atsArg)
             <- case xF of
-                XVar aF uF@(UName nF)
+                XVar aF (UName nF)
                  -- This variable was let-bound to the application of a super
                  -- name to some type arguments, like f = g [t1] [t2]. 
-                 -- The value arity and extra type arguments are stashed in the
-                 -- ConvertM state monad. See [Note: Binding top-level supers]
+                 -- The value arity and extra type arguments we need to add are
+                 -- are stashed in the ConvertM state monad.
+                 -- See [Note: Binding top-level supers]
                  --
                  -- TODO: check this works with repeated bindings,
                  --       like f  = g1 [t1] [t2]
                  --            g1 = g2 [t3] [t4] [t5]
+                 --
                  |  Just (nSuper, atsArgs) 
                         <- Map.lookup nF (contextSuperBinds ctx) 
                  -> let 
-                        -- If this fails then the super name is in-scope, but
-                        -- we can't see its definition in this module, or
-                        -- salt-level import to get the arity.
-                        uSuper  = UName nSuper
-                        ppanic  = panicNoArity uSuper xx
-                        params  = fromMaybe ppanic $ superDataArity ctx uSuper
-                        boxes   = fromMaybe ppanic $ superBoxings   ctx uSuper
+                        uSuper          = UName nSuper
+                        xF'             = XVar aF uSuper
 
-                        xF'     = XVar aF uSuper
-                    in  Just (aF, xF', params, boxes, atsArgs)
+                        -- Lookup the call pattern of the super.
+                        --  If this fails then the super name is in-scope, but
+                        --  we can't see its definition in this module, or
+                        --  salt-level import to get the arity.
+                        Just callable   = Map.lookup nSuper (contextCallable ctx)
+                        tSuper          = typeOfCallable callable
+                        csSuper         = consOfCallable callable
+
+                    in  Just (xF', tSuper, csSuper, atsArgs)
 
                  -- The name is that of an existing top-level super, either
                  -- defined in this module or imported from somewhere else.
                  | otherwise
                  -> let 
-                        -- If this fails then the super name is in-scope, but
-                        -- we can't see its definition in this module, or
-                        -- salt-level import to get the arity.
-                        ppanic  = panicNoArity uF xx
-                        params  = fromMaybe ppanic $ superDataArity ctx uF
-                        boxes   = fromMaybe ppanic $ superBoxings   ctx uF
+                        -- Lookup the call pattern of the super.
+                        --   If this fails then the super name is in-scope, but
+                        --   we can't see its definition in this module, or
+                        --   salt-level import to get the arity.
+                        Just callable   = Map.lookup nF    (contextCallable ctx)
+                        tSuper          = typeOfCallable callable
+                        csSuper         = consOfCallable callable
 
-                    in  Just (aF, xF, params, boxes, [])
+                    in  Just (xF, tSuper, csSuper, [])
 
                 _ -> Nothing
 
          -> Just $ do
-                xF_super' <- downArgX xF_super
-                mxsArgs'  <- mapM (convertOrDiscardSuperArgX xx ctx) 
-                          $  [XType aArg tArg | (aArg, tArg) <- atsArg]
 
-                let xsArgs' = catMaybes mxsArgs'
+                -- Apply any outer type arguments to the functional expression.
+                xF_super'   <- downArgX xF_super
+
+                xsArgs'     <- fmap catMaybes
+                            $  mapM (convertOrDiscardSuperArgX xx ctx) 
+                            $  [XType aArg tArg | (aArg, tArg) <- atsArg]
+
                 let xF'     = xApps a xF_super' xsArgs'
 
-                -- TODO: this type is wrong.
-                tF'     <- convertCtorT (typeContext ctx) (annotType aF)
+                -- Type of the super with its type args applied.
+                let Just tSuper' = instantiateTs tSuper $ map snd atsArg
 
+                -- Discharge type abstractions with type args that are applied
+                -- directly to the super.
+                let (csCall', []) 
+                        = Call.dischargeConsWithElims csCall 
+                        $ [Call.ElimType a a t | t <- map snd atsArg]
+
+                let Just (_csType, csValue, csBoxes)
+                        = Call.splitStdCallCons csCall
+
+                -- Get the Sea-level type of the super.
+                --   We need to use the call pattern here to detect the case
+                --   where the super returns a functional value. We can't do
+                --   this directly from the Tetra-level type.
+                tF'       <- convertSuperConsT (typeContext ctx) csCall' tSuper'
 
                 return  $ A.xAllocThunk a A.rTop 
                                 (xConvert a A.tAddr tF' xF')
-                                (A.xNat a $ fromIntegral params)        -- value params
-                                (A.xNat a $ fromIntegral boxes)         -- boxes
-                                (A.xNat a 0)                            -- args
-                                (A.xNat a 0)                            -- runs
+                                (A.xNat a $ fromIntegral $ length csValue)
+                                (A.xNat a $ fromIntegral $ length csBoxes)
+                                (A.xNat a 0)                                -- args
+                                (A.xNat a 0)                                -- runs
 
 
         ---------------------------------------------------
@@ -186,19 +209,8 @@ convertPrimCall _ectx ctx xx
                          ++ [ xF' ]
                          ++ xsArg'
 
+
         ---------------------------------------------------
         -- This isn't a call primitive.
         _ -> Nothing
-
-
--- | Couldn't find the arity of an in-scope super.
-panicNoArity :: Show a => Bound E.Name -> Exp (AnTEC a E.Name) E.Name -> b
-panicNoArity uF xx
-        = panic "ddc-core-tetra" "convertPrimCall" $ vcat
-        [ text "Cannot find arity for application of super " <> (squotes $ ppr uF)
-        , text " in expression: " <> ppr xx 
-        , empty
-        , text "The super is allegedly in-scope, but we can't see its definition"
-        , text "in this module, nor can we get the arity from an import." ]
-
 

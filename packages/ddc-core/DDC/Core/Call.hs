@@ -21,6 +21,7 @@ module DDC.Core.Call
         , isConsBox
         , takeCallElim
         , splitStdCallCons
+        , takeStdCallConsFromTypeArity
 
           -- * Call eliminators
         , Elim (..)
@@ -38,6 +39,7 @@ module DDC.Core.Call
 where
 import DDC.Core.Exp
 import DDC.Core.Compounds
+import DDC.Type.Transform.SubstituteT
 
 
 -----------------------------------------------------------------------------
@@ -50,7 +52,7 @@ import DDC.Core.Compounds
 --
 data Cons n
         = -- | A type  lambda that needs a type of this kind.
-          ConsType    (Kind n)
+          ConsType    (Bind n)
 
           -- | A value lambda that needs a value of this type.
         | ConsValue   (Type n)
@@ -64,7 +66,7 @@ data Cons n
 takeCallCons :: Exp a n -> [Cons n]
 takeCallCons xx
  = case xx of
-        XLAM _ b x         -> ConsType  (typeOfBind b) : takeCallCons x
+        XLAM _ b x         -> ConsType  b              : takeCallCons x
         XLam _ b x         -> ConsValue (typeOfBind b) : takeCallCons x
         XCast _ CastBox x  -> ConsBox                  : takeCallCons x
         _                  -> []
@@ -123,6 +125,86 @@ splitStdCallCons cs
 
         eatRuns  _accTs _accVs _accRs _
          = Nothing
+
+
+-- | Given the type of a super, and the number of type parameters,
+--   value parameters and boxings, produce the corresponding list
+--   of call constructors.
+--
+--   Example:
+--    takeStdCallConsFromType 
+--       [| forall (a : k1) (b : k2). a -> b -> S e b |] 
+--       2 2 1
+--
+--    => [ ConsType  [|k1|], ConsType  [|k2|]
+--       , ConsValue [|a\],  ConsValue [|b|]
+--       , ConsBox ]
+--
+--   When we're considering the parts of the type, if the given arity
+--   does not match what is in the type then `Nothing`.
+--
+takeStdCallConsFromTypeArity
+        :: Type n       -- ^ Type of super
+        -> Int          -- ^ Number of type parameters.
+        -> Int          -- ^ Number of value parameters.
+        -> Int          -- ^ Number of boxings.
+        -> Maybe [Cons n]
+
+takeStdCallConsFromTypeArity tt0 nTypes0 nValues0 nBoxes0
+ = eatTypes [] tt0 nTypes0
+ where
+        -- Consider type parameters.
+        eatTypes !accTs !tt !nTypes
+
+         -- The arity information tells us to expect a type parameter.
+         | nTypes  > 0
+         = case tt of
+            -- The super type matches.
+            TForall b tBody
+             -> eatTypes (ConsType b : accTs) tBody (nTypes - 1)
+
+            -- The super type does not match the arity information.
+            _ -> Nothing
+
+         -- No more type parameters expected, so consider the value parameters.
+         | otherwise
+         = eatValues (reverse accTs) [] tt nValues0
+
+
+        -- Consider value parameters.
+        eatValues !accTs !accVs !tt !nValues
+
+         -- The arity information tells us to expect a value parameter.
+         | nValues > 0
+         = case takeTFun tt of
+            -- The super type matches.
+            Just (t1, t2) 
+              -> eatValues accTs (ConsValue t1 : accVs) t2 (nValues - 1)
+
+            -- The super type does not match the arity information.
+            _ -> Nothing
+
+         -- No more value parameters expect, so consider the boxes.
+         | otherwise
+         = eatBoxes accTs (reverse accVs) [] tt nBoxes0
+
+
+        -- Consider boxes.
+        eatBoxes !accTs !accVs !accBs tt nBoxes
+
+         -- The arity information tells us to expect a boxing.
+         | nBoxes > 0
+         = case takeTSusp tt of
+            -- The super type matches.
+            Just (_eff, tBody)
+              -> eatBoxes accTs accVs (ConsBox : accBs) tBody (nBoxes - 1)
+
+            -- The super type does not match the arity information.
+            _ -> Nothing
+
+         -- No more boxings to expect, so we're done.
+         | otherwise
+         = return (accTs ++ accVs ++ reverse accBs)
 
 
 -------------------------------------------------------------------------------
@@ -252,18 +334,23 @@ elimForCons e c
 --   eliminators satisfy the constructors, and return any remaining
 --   unmatching constructors and eliminators.
 ---
---   TODO: subst type args during type application.
---   TODO: and check types and kinds as we do the application.
+--   TODO: check types and kinds as we do the application.
+--
+--   TODO: this doesn't avoid variable capture due to conflicting
+--         ConsTypes earlier in the ilst.
 --
 dischargeConsWithElims
-        :: [Cons n] 
+        :: Ord n
+        => [Cons n] 
         -> [Elim a n] 
         -> ([Cons n], [Elim a n])
 
 dischargeConsWithElims (c : cs) (e : es)
  = case (c, e) of
-        (ConsType  _k1, ElimType  _ _ _t2)
-          -> dischargeConsWithElims cs es
+        (ConsType  b1, ElimType  _ _ t2)
+          -> dischargeConsWithElims 
+                (map (instantiateConsT b1 t2) cs) 
+                es
 
         (ConsValue _t1, ElimValue _ _x2)
           -> dischargeConsWithElims cs es
@@ -277,23 +364,36 @@ dischargeConsWithElims cs es
  = (cs, es)
 
 
+instantiateConsT 
+        :: Ord n 
+        => Bind n -> Type n -> Cons n -> Cons n
+
+instantiateConsT b t cc
+ = case cc of
+        ConsType{}      -> cc
+        ConsValue t'    -> ConsValue (substituteT b t t')
+        ConsBox{}       -> cc
+
+
 -- | Given a type of a function and eliminators, discharge
 --   foralls, abstractions and boxes to get the result type
 --   of performing the application.
 --
 ---  
---   TODO: subst type args during type application.
 --   TODO: check types and kinds as we do the application.
 --
 dischargeTypeWithElims
-        :: Type n
+        :: Ord n
+        => Type n
         -> [Elim a n]
         -> Maybe (Type n)
 
-dischargeTypeWithElims tt (ElimType  _ _ _tArg : es)
+dischargeTypeWithElims tt (ElimType  _ _ tArg : es)
         | TForall b tBody         <- tt
         , _kParam                 <- typeOfBind b
-        = dischargeTypeWithElims tBody es
+        = dischargeTypeWithElims 
+                (substituteT b tArg tBody) 
+                es
 
 dischargeTypeWithElims tt (ElimValue _ _xArg  : es)
         | Just (_tParam, tResult) <- takeTFun tt

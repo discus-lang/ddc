@@ -171,6 +171,9 @@ takeXLamParam xx
 --
 --   In the result list we get a value for each type or value lambda,
 --   with types indicated by `True`, and values indicated by `False`.
+--
+--   TODO: ditch this in favour of Call.Cons.
+--
 takeCallPattern :: Exp a n -> [(Bool, Type n)]
 takeCallPattern xx
  = case takeXLamFlags xx of
@@ -183,6 +186,9 @@ takeCallPattern xx
 --   followed by the types of the value parameters,
 --   followed by the number of inner box casts.
 --   or `Nothing` if this expression is not in prenex form.
+--
+--   TODO: ditch this in favour of Call.Cons.
+--
 takePrenexCallPattern :: Exp a n -> Maybe ([Kind n], [Type n], Int)
 takePrenexCallPattern xx
  = goType    []

@@ -90,7 +90,7 @@ convertDataT ctx tt
                        $ "Invalid value type " ++ (renderIndent $ ppr tt)
 
              Nothing 
-              -> throw $ ErrorInvalidBound u
+              -> throw $ ErrorUnbound u
 
         -- We should not find any polymorphic values.
         TForall{} -> throw $ ErrorMalformed

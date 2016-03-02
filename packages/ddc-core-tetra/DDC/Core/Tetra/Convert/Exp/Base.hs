@@ -7,8 +7,6 @@ module DDC.Core.Tetra.Convert.Exp.Base
         , extendTypeEnv, extendsTypeEnv
 
         , ExpContext    (..)
-        , superDataArity
-        , superBoxings
 
         -- * Constructors
         , xConvert
@@ -30,7 +28,6 @@ import qualified DDC.Core.Tetra.Prim                    as E
 import qualified DDC.Type.Env                           as Env
 import qualified DDC.Core.Salt.Name                     as A
 import qualified DDC.Core.Salt.Env                      as A
-import qualified Data.Map                               as Map
 
 
 ---------------------------------------------------------------------------------------------------
@@ -144,33 +141,6 @@ data ExpContext
         | ExpBind       -- ^ In the right of a let-binding.
         | ExpArg        -- ^ In a function argument.
         deriving (Show, Eq, Ord)
-
-
--- | Get the value arity of a supercombinator. 
---   This is how many data arguments it needs when we call it.
-superDataArity :: Context a -> Bound E.Name -> Maybe Int
-superDataArity ctx (UName n)
- = case Map.lookup n (contextCallable ctx) of
-        Just (CallableSuperLocal _ a _) -> Just a
-        Just (CallableSuperOther _ a _) -> Just a
-        Just (CallableImportSea  _ a _) -> Just a
-        _                               -> Nothing
-
-superDataArity _ _
- = Nothing
-
-
--- | Get the number of times the inner expression of a super was boxed.
-superBoxings  :: Context a -> Bound E.Name -> Maybe Int
-superBoxings ctx (UName n)
- = case Map.lookup n (contextCallable ctx) of
-        Just (CallableSuperLocal _ _ b) -> Just b
-        Just (CallableSuperOther _ _ b) -> Just b
-        Just (CallableImportSea  _ _ _) -> Just 0               -- TODO: WRONG
-        _                               -> Nothing
-
-superBoxings _ _
- = Nothing
 
 
 ---------------------------------------------------------------------------------------------------

@@ -34,6 +34,9 @@ data Error a
         -- | Found an unexpected type sum.
         | ErrorUnexpectedSum
 
+        -- | Found an unbound variable.
+        | ErrorUnbound      (Bound E.Name)
+
         -- | An invalid name used in a binding position
         | ErrorInvalidBinder E.Name
 
@@ -75,6 +78,9 @@ instance Show a => Pretty (Error a) where
 
         ErrorUnexpectedSum
          -> vcat [ text "Unexpected type sum."]
+
+        ErrorUnbound u
+         -> vcat [ text "Unbound name " <> ppr u <> text "."]
 
         ErrorInvalidBinder n
          -> vcat [ text "Invalid name used in binder '" <> ppr n <> text "'."]

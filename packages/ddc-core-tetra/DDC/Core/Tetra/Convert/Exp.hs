@@ -310,14 +310,14 @@ convertExpSuperCall xx _ectx ctx isRun a nFun xsArgs
  -- 
  | Just (arityVal, boxings)
     <- case Map.lookup nFun (contextCallable ctx) of
-        Just (CallableSuperLocal _ arityVal boxings) 
+        Just (CallableSuperLocal _ _ _ arityVal boxings) 
            -> Just (arityVal, boxings)
 
-        Just (CallableSuperOther _ arityVal boxings)
+        Just (CallableSuperOther _ _ _ arityVal boxings)
            -> Just (arityVal, boxings)
 
-        Just (CallableImportSea  _ arityVal boxed)
-           -> Just (arityVal, if boxed then 1 else 0)
+        Just (CallableImportSea  _ _ _ arityVal boxings)
+           -> Just (arityVal, boxings)
         _  -> Nothing
 
  -- super call is saturated.
@@ -347,12 +347,6 @@ convertExpSuperCall xx _ectx ctx isRun a nFun xsArgs
         , text "xx:        " <> ppr xx
         , text "fun:       " <> ppr nFun
         , text "args:      " <> ppr xsArgs
-
-        , (text "data args: ")
-                <> text (show $ superDataArity ctx (UName nFun))
-                <> text "/"
-                <> text (show $ length xsArgs)
-
         , text "callables: " <> text (ppShow $ contextCallable  ctx)
         ]
 
