@@ -1,20 +1,18 @@
 
 -- | Call patterns.
 --
---   Abstractly, a call pattern describes the sequence of objects that is
---   eliminated by some procedure when we call it, and before it starts
---   constructing new values. This definition includes any use of 'box',
---   as the 'box' construct acts like a lambda expression that suspends
---   computation but does not bind a value. 
+--   A call pattern describes the sequence of objects that are eliminated
+--   by some object when we apply it, and before it starts constructing
+--   new values. 
 --
---   Constructor (+ve)            Eliminator (-ve)
---    /\x.  (type  lambda)         @'    (type  lambda)
---     \x.  (value lambda)         @     (value application)
---    box   (suspend evaluation)   run   (commence evaluation)
+--   Constructor (+ve)             Eliminator (-ve)
+--    /\x.  (type   abstraction)    @'    (type   application)
+--     \x.  (object abstraction)    @     (object application) 
+--    box   (suspend evaluation)    run   (commence evaluation)
 --    
 --   TODO: if we changed case to \case we could also have.
---    C     (algebraic data)       \case (case match)
-
+--    C     (algebraic data)        \case (case match)
+--
 module DDC.Core.Call 
         ( -- * Call constructors
           Cons (..)
@@ -22,6 +20,7 @@ module DDC.Core.Call
         , isConsValue
         , isConsBox
         , takeCallElim
+        , splitStdCallCons
 
           -- * Call eliminators
         , Elim (..)
@@ -95,6 +94,37 @@ isConsBox cc
         _               -> False
 
 
+-- | Like `splitStdCallElim`, but for the constructor side.
+--
+splitStdCallCons
+        :: [Cons n]
+        -> Maybe ([Cons n], [Cons n], [Cons n])
+
+splitStdCallCons cs
+ = eatTypes [] cs
+ where
+        eatTypes  accTs (e@ConsType{} : es)
+         = eatTypes (e : accTs) es
+
+        eatTypes  accTs es
+         = eatValues (reverse accTs) [] es
+
+        eatValues accTs accVs (e@ConsValue{} : es)
+         = eatValues accTs (e : accVs) es
+
+        eatValues accTs accVs es
+         = eatRuns   accTs (reverse accVs) [] es
+
+        eatRuns  accTs accVs accRs (e@ConsBox{} : es)
+         = eatRuns   accTs accVs (e : accRs) es
+
+        eatRuns  accTs accVs accRs []
+         = Just (accTs, accVs, reverse accRs)
+
+        eatRuns  _accTs _accVs _accRs _
+         = Nothing
+
+
 -------------------------------------------------------------------------------
 -- | One component of a super call.
 data Elim a n
@@ -133,10 +163,53 @@ isElimRun ee
         _               -> False
 
 
--------------------------------------------------------------------------------
--- | Group eliminators into sets for a standard call,
---   all the types first, then values, then runs.
-splitStdCallElims :: [Elim a n] -> Maybe ([Elim a n], [Elim a n], [Elim a n])
+-- | Apply an eliminator to an expression.
+applyElim :: Exp a n -> Elim a n -> Exp a n
+applyElim xx e
+ = case e of
+        ElimType  a at t -> XApp a xx (XType at t)
+        ElimValue a x    -> XApp a xx x
+        ElimRun   a      -> XCast a CastRun xx
+
+
+-- | Split the application of some object into the object being
+--   applied and its eliminators.
+takeCallElim :: Exp a n -> (Exp a n, [Elim a n])
+takeCallElim xx
+ = case xx of
+        XApp a x1 (XType at t2)
+         -> let (xF, xArgs)     = takeCallElim x1
+            in  (xF, xArgs ++ [ElimType a at t2])
+
+        XApp a x1 x2            
+         -> let (xF, xArgs)     = takeCallElim x1
+            in  (xF, xArgs ++ [ElimValue a x2])
+
+        XCast a CastRun x1
+         -> let (xF, xArgs)     = takeCallElim x1
+            in  (xF, xArgs ++ [ElimRun a])
+
+        _ -> (xx, [])
+
+
+-- | Group eliminators into sets for a standard call.
+--
+--   The standard call sequence is a list of type arguments, followed
+--   by some objects, and optionally running the result suspension.
+--
+--   @run f [T1] [T2] x1 x2@
+--
+--   If 'f' is a super, and this is a saturating call then the super header
+--   will look like the following:
+--
+--   @f = (/\t1. /\t2. \v1. \v2. box. body)@
+
+--   If the eliminators are not in the standard call sequence then `Nothing`.
+--
+splitStdCallElims 
+        :: [Elim a n] 
+        -> Maybe ([Elim a n], [Elim a n], [Elim a n])
+
 splitStdCallElims ee
  = eatTypes [] ee
  where
@@ -160,35 +233,6 @@ splitStdCallElims ee
 
         eatRuns  _accTs _accVs _accRs _
          = Nothing
-
-
--- | Split the application of some object into the object being
---   applied and the values passed to its eliminators.
-takeCallElim :: Exp a n -> (Exp a n, [Elim a n])
-takeCallElim xx
- = case xx of
-        XApp a x1 (XType at t2)
-         -> let (xF, xArgs)     = takeCallElim x1
-            in  (xF, xArgs ++ [ElimType a at t2])
-
-        XApp a x1 x2            
-         -> let (xF, xArgs)     = takeCallElim x1
-            in  (xF, xArgs ++ [ElimValue a x2])
-
-        XCast a CastRun x1
-         -> let (xF, xArgs)     = takeCallElim x1
-            in  (xF, xArgs ++ [ElimRun a])
-
-        _ -> (xx, [])
-
-
--- | Apply an eliminator to an expression.
-applyElim :: Exp a n -> Elim a n -> Exp a n
-applyElim xx e
- = case e of
-        ElimType  a at t -> XApp a xx (XType at t)
-        ElimValue a x    -> XApp a xx x
-        ElimRun   a      -> XCast a CastRun xx
 
 
 -------------------------------------------------------------------------------

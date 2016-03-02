@@ -1,8 +1,7 @@
 
 module DDC.Core.Tetra.Transform.Curry.CallSuper
         ( makeCallSuperSaturated
-        , makeCallSuperUnder
-        , splitStdCallElim)
+        , makeCallSuperUnder)
 where
 import DDC.Core.Tetra.Transform.Curry.Interface
 import DDC.Core.Tetra
@@ -66,8 +65,8 @@ makeCallSuperUnder nF tF cs es
  | length es <  length cs
 
  -- The super and call  must be in standard form.
- , Just (esType, esValue,  nRuns) <- splitStdCallElim es
- , Just (csType, _csValue, _cBox) <- splitStdCallCons cs
+ , Just (esType, esValue,  esRuns) <- Call.splitStdCallElims es
+ , Just (csType, _csValue, _cBox)  <- Call.splitStdCallCons  cs
 
  -- There must be types to satisfy all of the type parameters of the super.
  , length esType == length csType
@@ -107,59 +106,11 @@ makeCallSuperUnder nF tF cs es
         Just tSuperResult = C.tFunOfList (tsParamRest ++   [tResult'])
 
    in Just
-        $ makeRuns () nRuns
+        $ makeRuns () (length esRuns)
         $ C.xApps  () (C.xFunCurry () tsParamSat tResultClo 
                        (C.xFunCReify () tParamFirst tSuperResult xFunAPP))
               xsArgValue
 
  | otherwise
  = Nothing
-
-
----------------------------------------------------------------------------------------------------
--- | Check if these eliminators follow the standard super-call pattern.
---
---   The standard pattern is a list of type arguments, followed by some
---   value arguments, and optionally running the result suspension.
---
---   @run f [T1] [T2] x1 x2@
---
---   If 'f' is a super, and this is a saturating call then the super header
---   will look like the following:
---
---   @f = (/\t1. /\t2. \v1. \v2. box. body)@
---
---  TODO: this is duplicated by splitStdCallElims
---
-splitStdCallElim
-        :: [Call.Elim a Name] 
-        -> Maybe ([Call.Elim a Name], [Call.Elim a Name], Int)
-
-splitStdCallElim es
-        | (esT, esMore)   <- span Call.isElimType   es
-        , (esX, esMore2)  <- span Call.isElimValue  esMore
-        , (esR, [])       <- span Call.isElimRun    esMore2
-        = Just (esT, esX, length esR)
-
-        | otherwise
-        = Nothing   
-
-
--- | Like `splitStdCallElim`, but for the constructor side.
---
---   TODO: return the ElimBoxes rather than Bool.
---
-splitStdCallCons
-        :: [Call.Cons Name]
-        -> Maybe ([Call.Cons Name], [Call.Cons Name], Bool)
-
-splitStdCallCons cs
-        | (csT, esMore)   <- span Call.isConsType   cs
-        , (csX, esMore2)  <- span Call.isConsValue  esMore
-        , (csR, [])       <- span Call.isConsBox    esMore2
-        ,  length csR <= 1
-        = Just (csT, csX, length csR > 0)
-
-        | otherwise
-        = Nothing   
 
