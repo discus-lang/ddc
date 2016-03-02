@@ -39,13 +39,15 @@ module DDC.Core.Annot.Compounds
         , specBindsOfLets
         , valwitBindsOfLets
 
-          -- * Patterns
-        , bindsOfPat
-
-
           -- * Alternatives
         , patOfAlt
         , takeCtorNameOfAlt
+
+          -- * Patterns
+        , bindsOfPat
+
+          -- * Casts
+        , makeRuns
 
           -- * Witnesses
         , wApp
@@ -367,6 +369,13 @@ bindsOfPat pp
  = case pp of
         PDefault          -> []
         PData _ bs        -> bs
+
+
+-- Casts ----------------------------------------------------------------------
+-- | Wrap an expression in the given number of 'run' casts.
+makeRuns :: a -> Int -> Exp a n -> Exp a n
+makeRuns _a 0 x = x
+makeRuns a n x  = XCast a CastRun (makeRuns a (n - 1) x)
 
 
 -- Witnesses ------------------------------------------------------------------

@@ -58,80 +58,63 @@ data Fun
 -- | Add the type of this binding to the function map.
 funMapAddLocalSuper :: FunMap -> (Bind Name, Exp a Name) -> FunMap
 funMapAddLocalSuper funs (b, x)
-        | BName n t             <- b
-        = let   -- How the super is constructed.
-                cons       = Call.takeCallCons x
+ | BName n t             <- b
+ = let   -- How the super is constructed.
+         cons       = Call.takeCallCons x
 
-          in    Map.insert n (FunLocalSuper n t cons) funs
+   in    Map.insert n (FunLocalSuper n t cons) funs
 
-        | otherwise
-        = funs
+ | otherwise
+ = funs
 
 
 -- | Add the type of a foreign import to the function map.
 funMapAddForeign :: FunMap -> (Name, ImportValue Name) -> FunMap
 funMapAddForeign funs (n, is)
 
-        -- Imported value where we don't have any arity information.
-        --   We allow the function type to be imported, but we won't be able
-        --   to call it in the current module without the arity information.
-        | ImportValueModule _mn n' tVal Nothing  <- is
-        = Map.insert n (FunExternSuper n' tVal Nothing) funs
+ -- Imported value where we don't have any arity information.
+ --   We allow the function type to be imported, but we won't be able
+ --   to call it in the current module without the arity information.
+ | ImportValueModule _mn n' tVal Nothing  <- is
+ = Map.insert n (FunExternSuper n' tVal Nothing) funs
 
-        -- Imported value which we have arity information for.
-        | ImportValueModule _mn n' tVal (Just (iTypes, iValues, iBoxes)) <- is
-        = let
-                (bsParam, tBody)        = fromMaybe ([], tVal) $ takeTForalls tVal
-                ksParam                 = map typeOfBind bsParam
-                ([], tsParam, _tResult) = takeTFunWitArgResult tBody
+ -- Imported value which we have arity information for.
+ | ImportValueModule _mn n' tVal (Just (iTypes, iValues, iBoxes)) <- is
+ = let
+        (bsParam, tBody)        = fromMaybe ([], tVal) $ takeTForalls tVal
+        ksParam                 = map typeOfBind bsParam
+        ([], tsParam, _tResult) = takeTFunWitArgResult tBody
 
-                csType  = map Call.ConsType  ksParam
-                csValue = map Call.ConsValue tsParam
-                csBox   = replicate iBoxes Call.ConsBox
-                cons    = csType ++ csValue ++ csBox
+        csType  = map Call.ConsType  ksParam
+        csValue = map Call.ConsValue tsParam
+        csBox   = replicate iBoxes Call.ConsBox
+        cons    = csType ++ csValue ++ csBox
 
-                -- Check that the the arity information matches the imported
-                -- type of the value.
-          in    if  (iTypes  == length ksParam)
-                 && (iValues <= length tsParam)
-                 then Map.insert n (FunExternSuper n' tVal (Just cons)) funs
+  -- Check that the the arity information matches the imported
+  -- type of the value.
+   in    if  (iTypes  == length ksParam)
+          && (iValues <= length tsParam)
+          then Map.insert n (FunExternSuper n' tVal (Just cons)) funs
 
-                 -- TODO: better error, lift into exception.
-                 else error "funMapAddForeign: arity type mismatch"
-
-
-        -- Imported foreign function from Sea land.
-        | ImportValueSea _ tVal  <- is
-        = let   
-                (bsParam, tBody1)       = fromMaybe ([], tVal) $ takeTForalls tVal
-                ksParam                 = map typeOfBind bsParam
-                ([], tsParam, tBody2)   = takeTFunWitArgResult tBody1
-                (esEffs, _tResult)      = takeTSusps tBody2
-
-                csType  = map Call.ConsType  ksParam
-                csValue = map Call.ConsValue tsParam
-                csBox   = replicate (length esEffs) Call.ConsBox
-                cons    = csType ++ csValue ++ csBox
-
-          in    Map.insert n (FunForeignSea n tVal cons) funs
+          -- TODO: better error, lift into exception.
+          else error "funMapAddForeign: arity type mismatch"
 
 
-        | otherwise
-        = funs
+ -- Imported foreign function from Sea land.
+ | ImportValueSea _ tVal  <- is
+ = let   
+        (bsParam, tBody1)       = fromMaybe ([], tVal) $ takeTForalls tVal
+        ksParam                 = map typeOfBind bsParam
+        ([], tsParam, tBody2)   = takeTFunWitArgResult tBody1
+        (esEffs, _tResult)      = takeTSusps tBody2
 
+        csType  = map Call.ConsType  ksParam
+        csValue = map Call.ConsValue tsParam
+        csBox   = replicate (length esEffs) Call.ConsBox
+        cons    = csType ++ csValue ++ csBox
 
----------------------------------------------------------------------------------------------------
--- | Wrap an expression in the given number of 'run' casts.
--- 
---   TODO: shift into core compounds
---
-makeRuns :: a
-        -> Int 
-        -> Exp a Name 
-        -> Exp a Name
+   in   Map.insert n (FunForeignSea n tVal cons) funs
 
-makeRuns _a 0 x = x
-makeRuns a n x  = XCast a CastRun (makeRuns a (n - 1) x)
-
-
+ | otherwise
+ = funs
 
