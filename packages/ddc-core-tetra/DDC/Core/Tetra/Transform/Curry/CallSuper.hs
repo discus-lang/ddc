@@ -26,19 +26,19 @@ makeCallSuperSaturated
         -> Maybe (Exp () n)
 
 makeCallSuperSaturated nF cs es
-        | length es == length cs
-        , and  $ zipWith Call.elimForCons es cs
-        = Just $ foldl Call.applyElim (XVar () (UName nF)) es
+ | length es == length cs
+ , and  $ zipWith Call.elimForCons es cs
+ = Just $ foldl Call.applyElim (XVar () (UName nF)) es
 
-        | otherwise     
-        = Nothing
+ | otherwise     
+ = Nothing
 
 
 ---------------------------------------------------------------------------------------------------
 -- | Under saturated application.
 --
---   When we don't have enough eliminators to match all the constructors in
---   the function header then the application is under-saturated.
+--   When we don't have enough eliminators to match all the constructors
+--   in the function header then the application is under-saturated.
 --
 --   We build a PAP object to store the arguments we have at the moment,
 --   and the runtime will wait until we have the full set until calling
@@ -51,9 +51,8 @@ makeCallSuperSaturated nF cs es
 --   all the type parameters, but don't need to supply all the value
 --   arguments, or to run the box. We restrict the call pattern this
 --   way to make the runtime easier to write, and so that we can implement
---   perform PAP construction and elimination using primitives with
---   straightforward types. The code program needs to be normalised to use
---   standard calls before undergoing the curry transform.
+--   PAP construction and elimination using primitives with straightforward
+--   types. 
 --
 makeCallSuperUnder
         :: Name                 -- ^ Name of super to call.
@@ -63,58 +62,58 @@ makeCallSuperUnder
         -> Maybe (Exp () Name)
 
 makeCallSuperUnder nF tF cs es
-        -- We have more constructors than eliminators.
-        | length es <  length cs
+ -- We have more constructors than eliminators.
+ | length es <  length cs
 
-          -- The super and call  must be in standard form.
-        , Just (esType, esValue,  nRuns) <- splitStdCallElim es
-        , Just (csType, _csValue, _cBox) <- splitStdCallCons cs
+ -- The super and call  must be in standard form.
+ , Just (esType, esValue,  nRuns) <- splitStdCallElim es
+ , Just (csType, _csValue, _cBox) <- splitStdCallCons cs
 
-          -- There must be types to satisfy all of the type parameters of the super.
-        , length esType == length csType
+ -- There must be types to satisfy all of the type parameters of the super.
+ , length esType == length csType
 
-        = let
-                -- Split the quantifiers, parameter type, and body type
-                -- from the type of the super.
-                Just tF_inst        = T.instantiateTs tF [t | Call.ElimType _ _ t <- esType]
-                (tsParam,  tResult) = C.takeTFunArgResult tF_inst
-                iArity              = length cs
+ = let
+        -- Split the quantifiers, parameter type, and body type
+        -- from the type of the super.
+        Just tF_inst        = T.instantiateTs tF [t | Call.ElimType _ _ t <- esType]
+        (tsParam,  tResult) = C.takeTFunArgResult tF_inst
+        iArity              = length cs
 
-                xsArgType       = [XType at t  | Call.ElimType  _ at t  <- esType]
-                xsArgValue      = [x           | Call.ElimValue _ x     <- esValue]
+        xsArgType       = [XType at t  | Call.ElimType  _ at t  <- esType]
+        xsArgValue      = [x           | Call.ElimValue _ x     <- esValue]
 
-                -- Split the value parameters into ones accepted by the super,
-                -- and ones that are accepted by the returned closures.
-                (tsParamLam, tsParamClo) = splitAt iArity tsParam
+        -- Split the value parameters into ones accepted by the super,
+        -- and ones that are accepted by the returned closures.
+        (tsParamLam, tsParamClo) = splitAt iArity tsParam
         
-                -- Build the type of the returned value.
-                Just tResult'   = C.tFunOfList (tsParamClo ++ [tResult])
+        -- Build the type of the returned value.
+        Just tResult'   = C.tFunOfList (tsParamClo ++ [tResult])
         
-                -- Instantiate all the type parameters.
-                xFunAPP         = (C.xApps () (XVar () (UName nF)) xsArgType)
+        -- Instantiate all the type parameters.
+        xFunAPP         = (C.xApps () (XVar () (UName nF)) xsArgType)
 
-                -- Split types of the super parameters into the ones that can be
-                -- satisfied by this application, and the remaining parameters that
-                -- are still waiting for arguments.
-                (tsParamSat, tsParamRemain)     
-                                = splitAt (length xsArgValue) tsParamLam
+        -- Split types of the super parameters into the ones that can be
+        -- satisfied by this application, and the remaining parameters that
+        -- are still waiting for arguments.
+        (tsParamSat, tsParamRemain)     
+                        = splitAt (length xsArgValue) tsParamLam
 
-                -- The type of the result after performing this application.
-                -- If there are remaining, un-saturated parameters the result
-                -- type will still be a function.
-                Just tResultClo = C.tFunOfList (tsParamRemain ++ [tResult'])
+        -- The type of the result after performing this application.
+        -- If there are remaining, un-saturated parameters the result
+        -- type will still be a function.
+        Just tResultClo = C.tFunOfList (tsParamRemain ++ [tResult'])
 
-                tParamFirst : tsParamRest = tsParamLam
-                Just tSuperResult = C.tFunOfList (tsParamRest ++   [tResult'])
+        tParamFirst : tsParamRest = tsParamLam
+        Just tSuperResult = C.tFunOfList (tsParamRest ++   [tResult'])
 
-          in Just
-                $ makeRuns () nRuns
-                $ C.xApps  () (C.xFunCurry () tsParamSat tResultClo 
-                               (C.xFunCReify () tParamFirst tSuperResult xFunAPP))
-                      xsArgValue
+   in Just
+        $ makeRuns () nRuns
+        $ C.xApps  () (C.xFunCurry () tsParamSat tResultClo 
+                       (C.xFunCReify () tParamFirst tSuperResult xFunAPP))
+              xsArgValue
 
-        | otherwise
-        = Nothing
+ | otherwise
+ = Nothing
 
 
 ---------------------------------------------------------------------------------------------------
