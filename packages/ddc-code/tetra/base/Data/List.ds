@@ -11,11 +11,11 @@ export  { singleton;    replicate
         ; map;    mapS
         ; forS
         ; zipWith; zipWithS
-        ; foldl;  foldlS
+        ; foldl;  foldlS;       sum;    prod
         ; foldr;  foldrS
         ; scanl
-        ; filter; filterS }
-
+        ; filter; filterS
+        ; any }
 import  Data.Numeric.Nat
 where
 
@@ -195,6 +195,15 @@ foldrS (f : a -> b -> S e b) (z : b) (xx : List a) : S e b
         Cons x xs       -> run f x (run foldrS f z xs)
 
 
+-- | Take the sum of a list of Nats.
+sum (xs: List Nat#): Nat#
+ = foldl (+) 0 xs
+
+
+-- | Take the product of a list of Nats.
+prod (xs: List Nat#): Nat#
+ = foldl (*) 1 xs
+
 
 -- Scans ----------------------------------------------------------------------
 scanl (f : b -> a -> b) (acc : b) (xx : List a) : List b
@@ -227,4 +236,17 @@ filterS (p : a -> S e Bool#) (xx : List a) : S e (List a)
          -> if run p x 
                 then Cons x (run filterS p xs)
                 else run filterS p xs
+
+
+-- | Check if any of the members of the list match the given predicate.
+any (p: a -> Bool#) (xx: List a): Bool#
+ = case xx of
+        Nil
+         -> False
+
+        Cons x xs 
+         | p x          -> True
+         | otherwise    -> any p xs
+
+
 

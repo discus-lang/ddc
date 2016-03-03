@@ -1,6 +1,7 @@
 
 module Data.Stream
-export { srepeat; streamOfList; listOfStream; smap; stake }
+export  { srepeat; sgenerate; senumFrom
+        ; streamOfList; listOfStream; smap; stake }
 import Data.Numeric.Nat
 import Data.Maybe
 import Data.List
@@ -22,9 +23,20 @@ data Tup2 (a b : Data) where
 
 
 -- | Create a stream that returns copies of the same value.
-srepeat (x : a) : Stream a a
- = MkStream (\(s : a). Yield s s) x
+srepeat (x: a): Stream a a
+ = MkStream (\(s: a). Yield s s) x
 
+
+-- | Generate a stream, given a starting value and a stepper function.
+--   BROKEN: type vars not inserted? why does it need them explicitly?
+sgenerate [s a: Data] (x: s) (step: s -> Tup2 s a)
+ = let  step' sA
+         = case step sA of
+                T2 s' x -> Yield x s'
+   in   MkStream step' x
+
+senumFrom (x: Nat#): Stream Nat# Nat#
+ = sgenerate x (λs: Nat#. T2 (s + 1) s)
 
 -- | Convert a list to a stream.
 streamOfList (xx : List a) : Stream (List a) a
@@ -80,7 +92,7 @@ stake (n : Nat#) (ss : Stream s a) : Stream (Tup2 s Nat#) a
          -> let stepB q
                  = case q of
                         T2 sA ix 
-                         | ix > n   -> Done
+                         | ix >= n   -> Done
                          | otherwise 
                          -> case fA sA of
                                 Yield x sA2 -> Yield x (T2 sA2 (ix + 1))
@@ -104,5 +116,6 @@ smapacc (f : a -> b -> Tup2 a c) (z : a)
                                 Skip sB2 -> Skip      (T2 sB2 xA1)
                                 Done     -> Done
             in  MkStream stepC (T2 sB0 z)
+
 
 

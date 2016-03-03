@@ -1,0 +1,46 @@
+-- Gray Code
+-- https://rosettacode.org/wiki/Gray_code
+--
+-- Gray code is a form of binary encoding where transitions between
+-- consecutive numbers differ by only one bit. This is a useful encoding
+-- for reducing hardware data hazards with values that change rapidly
+-- and/or connect to slower hardware as inputs. It is also useful for
+-- generating inputs for Karnaugh maps in order from left to right or
+-- top to bottom.
+--
+-- Create functions to encode a number to and decode a number
+-- from Gray code.
+--
+module Main
+import Data.List
+import Data.Text
+import Data.Function
+import System.IO.Console
+where
+
+
+-- | Convert a source number to its grey-code.
+grayToBin (g: Nat#): Nat#
+ | g == 0       = 0
+ | otherwise    = bxor g (grayToBin (shr g 1))
+
+
+-- | Convert a gray-code back to the source number.
+binToGray (b: Nat#): Nat#
+ = bxor b (shr b 1)
+
+
+main (_: Unit): S Console Unit
+ = box do   
+        showBinary = showBaseNat 2 digitBinary 5 "0"
+
+        run writel      $  "   x "
+                        %% " grey"
+                        %% "   x'"
+
+        run forS (enumFromTo 0 31)
+                 (λx: Nat#. writel 
+                        $  showBinary x
+                        %% showBinary (binToGray x)
+                        %% showBinary (grayToBin (binToGray x)))
+        ()
