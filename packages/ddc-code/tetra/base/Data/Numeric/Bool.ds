@@ -1,14 +1,7 @@
 
 module Data.Numeric.Bool
-export  { showBool
-        ; not; and; or }
-import Data.Text
+export  { not; and; or }
 where
-
--- | Convert a Bool to a String.
-showBool (x : Bool#) : Text
- = if x then "True" 
-        else "False"
 
 
 -- | Boolean NOT.
