@@ -1,7 +1,10 @@
 
 module Data.Text 
-export { textLit; paste; pastes }
+export  { textLit; paste; pastes
+        ; showNat; showBinaryNat; showDecimalNat; showHexNat }
+import Data.Numeric.Nat
 where
+
 
 -------------------------------------------------------------------------------
 -- Names used by the Source Tetra desugarer to implement string literals.
@@ -13,12 +16,91 @@ paste  (x y : Text) : Text
 
 pastes (x y : Text) : Text
  = x % " " % y
+
+
 -------------------------------------------------------------------------------
-
-
 data Text where
         TextLit : TextLit# -> Text
         TextApp : Text -> Text -> Text
 
 
+-- | Show a natural number.
+showNat (x: Nat#): Text
+ = showBaseNat 10 digitDecimal x
+
+
+-------------------------------------------------------------------------------
+-- | Show a natural number, in binary.
+showBinaryNat (x: Nat#): Text
+ = showBaseNat 2 digitBinary x
+
+digitBinary (n: Nat#): Text
+ = case n of
+        0       -> "0"
+        1       -> "1"
+        _       -> "X"
+
+
+-- | Show a natural number in decimal.
+showDecimalNat (x: Nat#): Text
+ = showBaseNat 10 digitDecimal x
+
+digitDecimal (n: Nat#): Text
+ = case n of
+        0       -> "0"
+        1       -> "1"
+        2       -> "2"
+        3       -> "3"
+        4       -> "4"
+        5       -> "5"
+        6       -> "6"
+        7       -> "7"
+        8       -> "8"
+        9       -> "9"
+        _       -> "X"
+
+
+-- | Show a natural number in hex.
+showHexNat (x: Nat#): Text
+ = showBaseNat    16 digitHex x
+
+digitHex (n: Nat#): Text
+ = case n of
+        0       -> "0"
+        1       -> "1"
+        2       -> "2"
+        3       -> "3"
+        4       -> "4"
+        5       -> "5"
+        6       -> "6"
+        7       -> "7"
+        8       -> "8"
+        9       -> "9"
+        10      -> "a"
+        11      -> "b"
+        12      -> "c"
+        13      -> "d"
+        14      -> "e"
+        15      -> "f"
+        _       -> "X"
+
+
+-------------------------------------------------------------------------------
+-- | Show a natural number using an arbitrary base encoding.
+showBaseNat 
+        (base:  Nat#)           -- ^ Base of encoding.
+        (digit: Nat# -> Text)   -- ^ Show a digit in this base.
+        (x:     Nat#)           -- ^ Number to print.
+        : Text
+ = do   s       = showBaseNat' base digit True x
+        if x < 0 
+         then "-" % s 
+         else s
+
+showBaseNat' base digit first x
+ | x == 0
+ = if first then "0" else ""
+
+ | otherwise
+ = showBaseNat' base digit False (div x base) % digit (rem x base) 
 

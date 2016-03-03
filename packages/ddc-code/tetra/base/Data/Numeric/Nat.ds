@@ -1,27 +1,10 @@
 
 module Data.Numeric.Nat
-export  { showNat
-        ; neg; add; sub; mul; div; rem
+export  { neg; add; sub; mul; div; rem
         ; eq;  neq; lt;  le;  gt;  ge
         ; abs }
 
-import Data.Text
-import foreign c value
- primShowNat : Nat# -> TextLit#
-
 where
-
-
--- | Show a natural number.
-showNat (x : Nat#) : Text
- = TextLit (primShowNat x)
-
-
--- | Absolute value.
-abs (x : Nat#) : Nat#
- | x < 0        = neg x
- | otherwise    = x
-
 
 -------------------------------------------------------------------------------
 -- Names used by the Source Tetra desugarer to implement infix operators.
@@ -39,3 +22,10 @@ le  x y = le#  [Nat#] [Bool#] x y
 gt  x y = gt#  [Nat#] [Bool#] x y
 ge  x y = ge#  [Nat#] [Bool#] x y
 -------------------------------------------------------------------------------
+
+
+-- | Absolute value.
+abs (x: Nat#): Nat#
+ | x < 0        = neg x
+ | otherwise    = x
+
