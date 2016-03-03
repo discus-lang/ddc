@@ -1,0 +1,211 @@
+
+-- | Dumping of the runtime object graph.
+module Dump
+
+export value 
+ traceObj       : [r : Region]. Bool# -> Ptr# r Obj -> Nat#
+
+import value 
+ -- Primitives imported from C-land.
+ primPutString  : TextLit# -> Void#
+ primShowAddr   : Addr#    -> TextLit#
+ primShowNat    : Nat#     -> TextLit#
+ primShowWord32 : Word32#  -> TextLit#
+
+ -- Generic objects.
+ getTag : [r : Region]. Ptr# r Obj -> Tag#
+
+ -- Thunk objects.
+ paramsThunk    : [r: Region]. Ptr# r Obj -> Nat#
+ boxesThunk     : [r: Region]. Ptr# r Obj -> Nat#
+ argsThunk      : [r: Region]. Ptr# r Obj -> Nat#
+ runsThunk      : [r: Region]. Ptr# r Obj -> Nat#
+ funThunk       : [r: Region]. Ptr# r Obj -> Addr#
+ getThunk       : [r1 r2 : Region]. Ptr# r1 Obj -> Nat# -> Ptr# r2 Obj
+
+ -- Boxed objects.
+ allocBoxed     : [r1    : Region]. Tag# -> Nat# -> Ptr# r1 Obj
+ getBoxed       : [r1 r2 : Region]. Ptr# r1 Obj  -> Nat# -> Ptr# r2 Obj
+ setBoxed       : [r1 r2 : Region]. Ptr# r1 Obj  -> Nat# -> Ptr# r2 Obj -> Void#
+
+with letrec
+
+
+-------------------------------------------------------------------------------
+-- | Dump an object to stdout.
+traceObj [r: Region] (trace: Bool#) (obj: Ptr# r Obj): Nat#
+ = do   
+        ptr      = castPtr# obj
+        header   = peek# ptr 0#
+
+        -- Get the object format, masking out the anchor flag.
+        wFormat  = band# header 0b11110111w32#
+        nFormat  = promote# wFormat
+
+        case nFormat of
+         -- Thunk format.
+         0b00010001w32# -> traceThunk trace obj
+
+         -- Boxed object format.
+         0b00100001w32# -> traceBoxed trace obj
+
+         -- RawSmall format, with the size in the top nibble.
+         _ -> do
+                wFormatLow      =              band# wFormat 0b00001111w32#
+                wFormatHigh     = shr#  4w32# (band# wFormat 0b11110000w32#)
+
+                case wFormatLow of
+                 0b0011w32# 
+                        -> traceRawSmall obj
+
+                 -- Some format that we don't handle yet, 
+                 -- or the header is trashed.
+                 _      -> do   primPutString "Unknown\n"
+                                0#
+
+
+-------------------------------------------------------------------------------
+-- | Print a thunk object to stdout.
+traceThunk [r: Region] (trace: Bool#) (obj: Ptr# r Obj): Nat#
+ = do   
+        ptr     = castPtr# obj
+        header  = peek# ptr 0#
+        format  = band# header 0x0fw32#
+        tag     = shr#  header 8w32#
+
+        primPutString   "Thunk\n"
+        fieldAddr       "{   ptr     = " (takePtr# obj)
+        fieldWord32     "    format  = " format
+        fieldWord32     "    tag     = " tag
+        fieldNat        "    params  = " (paramsThunk obj)
+        fieldNat        "    boxes   = " (boxesThunk  obj)
+        fieldNat        "    args    = " (argsThunk   obj)
+        fieldNat        "    runs    = " (runsThunk   obj)
+        fieldAddr       "    fun     = " (funThunk    obj)
+        traceThunkPtrs obj 0#
+        primPutString   "}\n"
+
+        case trace of
+         True#  -> traceThunkPtrss obj 0#
+         False# -> 0#
+
+
+-- | Print pointers in a thunk object, which point to more objects.
+traceThunkPtrs [r: Region] (obj: Ptr# r Obj) (i: Nat#) : Nat#
+ = do   args    = argsThunk obj
+        case eq# args i of
+         True#  
+          ->    0#
+
+         False# 
+          -> do addr    = takePtr# (getThunk obj i)
+                primPutString "    arg "
+                primPutString (primShowNat i)
+                primPutString "   = "
+                primPutString (primShowAddr addr)
+                primPutString ";\n"
+                traceThunkPtrs obj (add# i 1#)
+
+
+-- | Trace out the objects that this one refers to.
+traceThunkPtrss [r: Region] (obj: Ptr# r Obj) (i: Nat#) : Nat#
+ = do   args    = argsThunk obj
+        case eq# args i of
+         True#  
+          ->    0#
+
+         False# 
+          -> do traceObj True# (getThunk obj i)
+                traceThunkPtrss obj (add# i 1#)
+
+
+-------------------------------------------------------------------------------
+-- | Print a Boxed object to stdout.
+traceBoxed [r: Region] (trace: Bool#) (obj: Ptr# r Obj): Nat#
+ = do
+        ptr     = castPtr# obj
+        header  = peek# ptr 0#
+        format  = band# header 0x0fw32#
+        tag     = shr#  header 8w32#
+        arity   = peek# ptr 4#
+
+        primPutString   "Boxed\n"
+        fieldAddr       "{   ptr     = " (takePtr# obj)
+        fieldWord32     "    format  = " format
+        fieldWord32     "    tag     = " tag
+        fieldNat        "    arity   = " (promote# arity)
+        traceBoxedPtrs obj (promote# arity) 0#
+        primPutString   "}\n"
+
+        case trace of
+         True#  -> traceBoxedPtrss obj (promote# arity) 0#
+         False# -> 0#
+
+
+-- | Print pointers in a boxed object, which point to more objects.
+traceBoxedPtrs [r: Region] (obj: Ptr# r Obj) (n: Nat#) (i: Nat#) : Nat#
+ = case eq# n i of
+         True#  
+          ->    0#
+
+         False# 
+          -> do addr     = takePtr# (getBoxed obj i)
+
+                primPutString "    arg "
+                primPutString (primShowNat i)
+                primPutString "   = "
+                primPutString (primShowAddr addr)
+                primPutString ";\n"
+                traceBoxedPtrs obj n (add# i 1#)
+
+
+-- | Trace out the objects that this one refers to.
+traceBoxedPtrss [r: Region] (obj: Ptr# r Obj) (n: Nat#) (i: Nat#) : Nat#
+ = case eq# n i of
+         True#  
+          ->    0#
+
+         False# 
+          -> do traceObj True# (getBoxed obj i)
+                traceBoxedPtrss obj n (add# i 1#)
+
+
+-------------------------------------------------------------------------------
+-- | Print a RawSmall object to stdout.
+traceRawSmall [r: Region] (obj: Ptr# r Obj): Nat#
+ = do
+        ptr     = castPtr# obj
+        header  = peek# ptr 0#
+        format  =             band# header 0x0fw32#
+        size    = shr# 4w32# (band# header 0xf0w32#)
+
+        primPutString   "RawSmall\n"
+        fieldAddr       "{   ptr     = " (takePtr# obj)
+        fieldWord32     "    format  = " format
+        fieldWord32     "    size    = " size
+        primPutString   "}\n"
+        0#
+
+
+-------------------------------------------------------------------------------
+-- | Print an Addr# field to stdout.
+fieldAddr (name: TextLit#) (val: Addr#): Void#
+ = do   primPutString name
+        primPutString (primShowAddr val)
+        primPutString ";\n"
+
+
+-- | Print a Nat# field to stdout.
+fieldNat (name: TextLit#) (val: Nat#): Void#
+ = do   primPutString name
+        primPutString (primShowNat val)
+        primPutString ";\n"
+
+
+-- | Print a Word32# field to stdout.
+fieldWord32 (name: TextLit#) (val: Word32#): Void#
+ = do   primPutString name
+        primPutString (primShowWord32 val)
+        primPutString ";\n"
+
+

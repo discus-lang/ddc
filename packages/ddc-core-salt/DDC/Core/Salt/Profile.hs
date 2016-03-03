@@ -23,7 +23,7 @@ profile
         , profilePrimTypes              = primTypeEnv 
         , profileTypeIsUnboxed          = typeIsUnboxed 
         , profileNameIsHole             = Nothing 
-        , profileMakeStringName         = Nothing }
+        , profileMakeStringName         = Just (\_sp t -> NameLitTextLit t) }
 
 
 -- | The Salt fragment doesn't support many features.

@@ -540,10 +540,10 @@ payloadRaw [r : Region] (obj : Ptr# r Obj) : Ptr# r Word8#
 
 -- RawSmall -------------------------------------------------------------------
 -- | A Small Raw object.
---   The object size is encoded as part of format field.
+--   The object size is encoded as part of format field
 --   This saves us from needing to include a separate arity field.
 --
---   The payload size must be no greater than 16, else undefined. 
+--   The payload size must be no greater than 16 words, else undefined. 
 --
 --   typedef struct 
 --   { uint32_t  tagFormat;  // Constructor tag and format field.
@@ -675,12 +675,12 @@ apply0  [r0 r1 : Region]
         a       = argsThunk   t
         b       = boxesThunk  t
         r       = runsThunk   t
-        case mul# (ge# a p) (eq# b r) of
+        case mul# (eq# a p) (eq# b r) of
          True#  -> eval0 t
          False# -> makePtr# (takePtr# t)
 
 
--- | Evaluate a saturate thunk, give no more arguments.
+-- | Evaluate a saturated thunk, give no more arguments.
 eval0   [r0 r1 : Region]
         (t     : Ptr# r0 Obj) : Ptr# r1 Obj
  = do   
@@ -716,7 +716,8 @@ apply1  [r0 r1 r2 : Region]
         a       = argsThunk   t
         b       = boxesThunk  t
         r       = runsThunk   t
-        case mul# (ge# (add# a 1#) p) (eq# b r) of { 
+
+        case mul# (eq# (add# a 1#) p) (eq# b r) of { 
         True# ->
                 eval1 t arg1;
 
@@ -763,12 +764,13 @@ apply2  [r0 r1 r2 r3 : Region]
         a       = argsThunk   t
         b       = boxesThunk  t
         r       = runsThunk   t
-        case mul# (ge# (add# a 2#) p) (eq# b r) of { True# ->
-                eval2 t arg1 arg2;  
 
-        False# -> 
-        case ge# (add# a 1#) p of { True# ->
+        case eq#  (add# a 1#) p of { True# ->
                 apply1 (eval1 t arg1) arg2;
+
+        False# ->
+        case mul# (eq# (add# a 2#) p) (eq# b r) of { True# ->
+                eval2 t arg1 arg2;  
 
         False# ->
         do      t' = extendThunk t 2#
@@ -817,16 +819,17 @@ apply3  [r0 r1 r2 r3 r4 : Region]
         a       = argsThunk   t
         b       = boxesThunk  t
         r       = runsThunk   t
-        case mul# (ge# (add# a 3#) p) (eq# b r) of { True# ->
-                eval3 t arg1 arg2 arg3;
 
-        False# ->
-        case ge# (add# a 2#) p of { True# ->
+        case eq#  (add# a 2#) p of { True# ->
                 apply1 (eval2 t arg1  arg2) arg3;
 
         False# ->
-        case ge# (add# a 1#) p of { True# ->
+        case eq#  (add# a 1#) p of { True# ->
                 apply2 (eval1 t arg1) arg2  arg3;
+
+        False# ->
+        case mul# (eq# (add# a 3#) p) (eq# b r) of { True# ->
+                eval3 t arg1 arg2 arg3;
 
         False# ->
         do      t' = extendThunk t 3#
@@ -875,20 +878,21 @@ apply4  [r0 r1 r2 r3 r4 r5 : Region]
         a       = argsThunk   t
         b       = boxesThunk  t
         r       = runsThunk   t
-        case mul# (ge# (add# a 4#) p) (eq# b r) of { True# ->
-                eval4 t arg1 arg2 arg3 arg4;
 
-        False# ->
-        case ge# (add# a 3#) p of { True# ->
+        case eq# (add# a 3#) p of { True# ->
                 apply1 (eval3 t arg1  arg2  arg3) arg4;
 
         False# ->
-        case ge# (add# a 2#) p of { True# ->
+        case eq# (add# a 2#) p of { True# ->
                 apply2 (eval2 t arg1  arg2) arg3  arg4;
 
         False# ->
-        case ge# (add# a 1#) p of { True# ->
+        case eq# (add# a 1#) p of { True# ->
                 apply3 (eval1 t arg1) arg2  arg3  arg4;
+
+        False# ->
+        case mul# (eq# (add# a 4#) p) (eq# b r) of { True# ->
+                eval4 t arg1 arg2 arg3 arg4;
 
         False# ->
         do      t' = extendThunk t 4#

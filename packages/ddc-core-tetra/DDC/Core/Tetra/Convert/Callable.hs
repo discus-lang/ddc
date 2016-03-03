@@ -134,7 +134,7 @@ takeCallableFromImport n im
                 Just (TyConSpec TcConSusp, _) -> True
                 _                             -> False
 
-        csType  = map Call.ConsType  $ map typeOfBind bsTy
+        csType  = map Call.ConsType  bsTy
         csValue = map Call.ConsValue tsArg
         csBoxes = if isSuspReturn then [Call.ConsBox] else []
         cs      = csType ++ csValue ++ csBoxes

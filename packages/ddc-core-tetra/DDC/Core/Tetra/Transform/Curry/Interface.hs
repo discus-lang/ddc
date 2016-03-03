@@ -82,17 +82,16 @@ funMapAddForeign funs (n, is)
  | ImportValueModule _mn n' tVal (Just (iTypes, iValues, iBoxes)) <- is
  = let
         (bsParam, tBody)        = fromMaybe ([], tVal) $ takeTForalls tVal
-        ksParam                 = map typeOfBind bsParam
         ([], tsParam, _tResult) = takeTFunWitArgResult tBody
 
-        csType  = map Call.ConsType  ksParam
+        csType  = map Call.ConsType  bsParam
         csValue = map Call.ConsValue tsParam
         csBox   = replicate iBoxes Call.ConsBox
         cons    = csType ++ csValue ++ csBox
 
   -- Check that the the arity information matches the imported
   -- type of the value.
-   in    if  (iTypes  == length ksParam)
+   in    if  (iTypes  == length bsParam)
           && (iValues <= length tsParam)
           then Map.insert n (FunExternSuper n' tVal (Just cons)) funs
 
@@ -104,11 +103,10 @@ funMapAddForeign funs (n, is)
  | ImportValueSea _ tVal  <- is
  = let   
         (bsParam, tBody1)       = fromMaybe ([], tVal) $ takeTForalls tVal
-        ksParam                 = map typeOfBind bsParam
         ([], tsParam, tBody2)   = takeTFunWitArgResult tBody1
         (esEffs, _tResult)      = takeTSusps tBody2
 
-        csType  = map Call.ConsType  ksParam
+        csType  = map Call.ConsType  bsParam
         csValue = map Call.ConsValue tsParam
         csBox   = replicate (length esEffs) Call.ConsBox
         cons    = csType ++ csValue ++ csBox
