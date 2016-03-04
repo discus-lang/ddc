@@ -59,10 +59,8 @@ data Fun
 funMapAddLocalSuper :: FunMap -> (Bind Name, Exp a Name) -> FunMap
 funMapAddLocalSuper funs (b, x)
  | BName n t             <- b
- = let   -- How the super is constructed.
-         cons       = Call.takeCallCons x
-
-   in    Map.insert n (FunLocalSuper n t cons) funs
+ = let   cs     = Call.takeCallConsFromExp x
+   in    Map.insert n (FunLocalSuper n t cs) funs
 
  | otherwise
  = funs

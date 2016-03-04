@@ -112,21 +112,9 @@ takeCallableFromImport n im
  --       We can only exchange primitives and abstract data values,
  --       not algebraic data that we contruct on the Tetra side.
  | ImportValueSea _ ty  <- im
- = let
-        -- TODO: shift the call pattern split into DDC.Core.Call.
-        (bsTy,  ty')     = fromMaybe ([], ty) $ takeTForalls ty
-        (tsArg, tResult) = takeTFunArgResult ty'
+ = let  cs      = Call.takeCallConsFromType ty
 
-        isSuspReturn
-         = case takeTyConApps tResult of
-                Just (TyConSpec TcConSusp, _) -> True
-                _                             -> False
-
-        csType  = map Call.ConsType  bsTy
-        csValue = map Call.ConsValue tsArg
-        csBoxes = if isSuspReturn then [Call.ConsBox] else []
-        cs      = csType ++ csValue ++ csBoxes
-
+        -- TODO: Check that call is in standard form.
    in   return $ Just (n, Callable CallableImportSea ty cs)
 
  | otherwise
@@ -136,6 +124,6 @@ takeCallableFromImport n im
 -- | Take the standard call pattern from the body of a super combinator.
 takeCallableFromSuper :: Bind E.Name -> Exp a E.Name -> Maybe Callable
 takeCallableFromSuper b xx
- = do   let cs     =  Call.takeCallCons xx
+ = do   let cs     =  Call.takeCallConsFromExp xx
         return $ Callable CallableSuperLocal (typeOfBind b) cs
 

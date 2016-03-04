@@ -19,7 +19,8 @@ module DDC.Core.Call
         , isConsType
         , isConsValue
         , isConsBox
-        , takeCallElim
+        , takeCallConsFromExp
+        , takeCallConsFromType
         , splitStdCallCons
         , takeStdCallConsFromTypeArity
 
@@ -28,7 +29,7 @@ module DDC.Core.Call
         , isElimType
         , isElimValue
         , isElimRun
-        , takeCallCons
+        , takeCallElim
         , applyElim
         , splitStdCallElims
 
@@ -62,16 +63,6 @@ data Cons n
         deriving (Show)
 
 
--- | Get the call pattern of an object.
-takeCallCons :: Exp a n -> [Cons n]
-takeCallCons xx
- = case xx of
-        XLAM _ b x         -> ConsType  b              : takeCallCons x
-        XLam _ b x         -> ConsValue (typeOfBind b) : takeCallCons x
-        XCast _ CastBox x  -> ConsBox                  : takeCallCons x
-        _                  -> []
-
-
 -- | Check if this is an `ConsType`.
 isConsType :: Cons n -> Bool
 isConsType cc
@@ -94,6 +85,41 @@ isConsBox cc
  = case cc of
         ConsBox{}       -> True
         _               -> False
+
+
+-- | Get the call pattern of an expression.
+takeCallConsFromExp :: Exp a n -> [Cons n]
+takeCallConsFromExp xx
+ = case xx of
+        XLAM _ b x         
+         ->     ConsType  b : takeCallConsFromExp x
+
+        XLam _ b x         
+         -> let t       = typeOfBind b
+            in  ConsValue t : takeCallConsFromExp x
+
+        XCast _ CastBox x
+         ->     ConsBox     : takeCallConsFromExp x
+
+        _ -> []
+
+
+-- | Infer the call pattern of an expression from its type.
+--   If the type has a function constructor then we assume there
+--   is a corresponding lambda abstraction in the expression, and so on.
+takeCallConsFromType :: Type n -> [Cons n]
+takeCallConsFromType tt
+        | TForall bParam tBody   <- tt
+        = ConsType  bParam : takeCallConsFromType tBody
+
+        | Just (tParam, tResult) <- takeTFun tt
+        = ConsValue tParam : takeCallConsFromType tResult
+
+        | Just (_, tResult)      <- takeTSusp tt
+        = ConsBox          : takeCallConsFromType tResult
+
+        | otherwise
+        = []
 
 
 -- | Like `splitStdCallElim`, but for the constructor side.
@@ -364,10 +390,7 @@ dischargeConsWithElims cs es
  = (cs, es)
 
 
-instantiateConsT 
-        :: Ord n 
-        => Bind n -> Type n -> Cons n -> Cons n
-
+instantiateConsT :: Ord n => Bind n -> Type n -> Cons n -> Cons n
 instantiateConsT b t cc
  = case cc of
         ConsType{}      -> cc

@@ -126,7 +126,7 @@ destructData pp a ctorDef uScrut trPrime bsFields xBody
                                     (A.xGetFieldOfBoxed a trPrime rField
                                                         (XVar a uScrut) ix)
                   | bField      <- bsFields
-                  | rField      <- repeat A.rTop -- map typeOfBind bsFields
+                  | rField      <- repeat A.rTop
                   | ix          <- [0..] ]
 
         return  $ foldr (XLet a) xBody lsFields
