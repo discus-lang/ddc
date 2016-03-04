@@ -16,6 +16,7 @@ import DDC.Core.Compounds
 import DDC.Core.Predicates
 import DDC.Core.Exp
 import DDC.Core.Check                   (AnTEC(..))
+import qualified DDC.Core.Call          as Call
 import qualified DDC.Core.Tetra.Prim    as E
 import qualified DDC.Core.Salt.Runtime  as A
 import qualified DDC.Core.Salt.Name     as A
@@ -310,14 +311,10 @@ convertExpSuperCall xx _ectx ctx isRun a nFun xsArgs
  -- 
  | Just (arityVal, boxings)
     <- case Map.lookup nFun (contextCallable ctx) of
-        Just (CallableSuperLocal _ _ _ arityVal boxings) 
-           -> Just (arityVal, boxings)
+        Just (Callable _src _ty cs)
+           |  Just (_, csVal, csBox)      <- Call.splitStdCallCons cs
+           -> Just (length csVal, length csBox)
 
-        Just (CallableSuperOther _ _ _ arityVal boxings)
-           -> Just (arityVal, boxings)
-
-        Just (CallableImportSea  _ _ _ arityVal boxings)
-           -> Just (arityVal, boxings)
         _  -> Nothing
 
  -- super call is saturated.

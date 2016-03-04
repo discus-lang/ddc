@@ -1,6 +1,7 @@
 
 module DDC.Core.Tetra.Convert.Callable
-        ( Callable (..)
+        ( Callable       (..)
+        , CallableSource (..)
         , typeOfCallable
         , consOfCallable
         , takeCallablesOfModule)
@@ -19,55 +20,41 @@ import qualified DDC.Core.Tetra.Prim            as E
 import qualified Data.Map                       as Map
 
 
--- | Enough information to call a top-level super or imported thing.
+-- | Enough information to call a super.
 --
---   Directly callable things are required to be in a normalised format
+--   Callable supers are must use the standard call convention, 
 --   with their type parameters, value parameters and boxings in that order.
 --
 data Callable
         -- | A directly callable super in the current module.
-        = CallableSuperLocal
-        { callableType          :: Type E.Name
-        , callableCons          :: [Call.Cons E.Name]
-        , callableTypeArgs      :: Int          -- TODO: ditch arity numbers in favour of cons.
-        , callableValueArgs     :: Int
-        , callableBoxes         :: Int  }
-
-
-        -- | A directly callable super in a different module.
-        | CallableSuperOther
-        { callableType          :: Type E.Name
-        , callableCons          :: [Call.Cons E.Name] 
-        , callableTypeArgs      :: Int          -- TODO: ditch arity numbers in favour of cons.
-        , callableValueArgs     :: Int
-        , callableBoxes         :: Int  }
-
-        -- | A function imported from Sea land.
-        | CallableImportSea
-        { callableType          :: Type E.Name
-        , callableCons          :: [Call.Cons E.Name]
-        , callableTypeArgs      :: Int          -- TODO: ditch arity numbers in favour of cons.
-        , callableValueArgs     :: Int 
-        , callableBoxedReturn   :: Int }
+        = Callable
+        { callableSource        :: CallableSource
+        , callableType          :: Type E.Name
+        , callableCons          :: [Call.Cons E.Name] }
         deriving (Show)
+
+
+-- | The source of a callable super.
+data CallableSource
+        -- | Callable super is defined in the current module.
+        = CallableSuperLocal
+
+        -- | Callable thing is a super 
+        | CallableSuperOther
+
+        -- | Callable super is imported from sea land.
+        | CallableImportSea
+        deriving Show
 
 
 -- | Take the Tetra type of a callable thing.
 typeOfCallable :: Callable -> Type E.Name
-typeOfCallable cc
- = case cc of
-        CallableSuperLocal t _ _ _ _    -> t
-        CallableSuperOther t _ _ _ _    -> t
-        CallableImportSea  t _ _ _ _    -> t
+typeOfCallable (Callable _ t _)  = t
 
 
 -- | Take the call constructors from a `Callable`.
 consOfCallable :: Callable -> [Call.Cons E.Name]
-consOfCallable cc
- = case cc of
-        CallableSuperLocal _ cs _ _ _     -> cs
-        CallableSuperOther _ cs _ _ _     -> cs
-        CallableImportSea  _ cs _ _ _     -> cs
+consOfCallable (Callable _ _ cs) = cs
 
 
 -- Get callable things from the current module.
@@ -113,7 +100,7 @@ takeCallableFromImport n im
  = let rCons = Call.takeStdCallConsFromTypeArity tThing nTypes nValues nBoxes
    in  case rCons of
         Nothing -> error "type/arity mismatch"  -- TODO: lift to either
-        Just cs -> return $ Just (n, CallableSuperOther tThing cs nTypes nValues nBoxes)
+        Just cs -> return $ Just (n, Callable CallableSuperOther tThing cs)
 
  -- A thing imported from sea land.
  --  We determine the call pattern directly from the type.
@@ -139,11 +126,7 @@ takeCallableFromImport n im
         csBoxes = if isSuspReturn then [Call.ConsBox] else []
         cs      = csType ++ csValue ++ csBoxes
 
-        nType   = length csType
-        nValue  = length csValue
-        nBoxes  = length csBoxes
-
-   in   return $ Just (n, CallableImportSea ty cs nType nValue nBoxes)
+   in   return $ Just (n, Callable CallableImportSea ty cs)
 
  | otherwise
  = return Nothing
@@ -152,19 +135,6 @@ takeCallableFromImport n im
 -- | Take the standard call pattern from the body of a super combinator.
 takeCallableFromSuper :: Bind E.Name -> Exp a E.Name -> Maybe Callable
 takeCallableFromSuper b xx
- = do   
-        -- Take the complete call pattern of the super.
-        let cs     =  Call.takeCallCons xx
-
-        -- Split the pattern into the components for a standard call.
-        -- If this is not a standard call then this returns Nothing.
-        (csType, csValue, csBoxes)
-                   <- Call.splitStdCallCons cs
-
-        -- Build numeric arity information.
-        let nType  = length csType
-        let nValue = length csValue
-        let nBoxes = length csBoxes
-
-        return $ CallableSuperLocal (typeOfBind b) cs nType nValue nBoxes
+ = do   let cs     =  Call.takeCallCons xx
+        return $ Callable CallableSuperLocal (typeOfBind b) cs
 
