@@ -17,14 +17,14 @@ import qualified DDC.Core.Salt.Compounds as A
 import qualified Data.Map                as Map
 
 
--- | Convert a Lite alternative to Salt.
+-- | Convert a Tetra alternative to Salt.
 convertAlt 
         :: Show a
         => a                            -- ^ Annotation from case expression.
         -> Bound E.Name                 -- ^ Bound of scrutinee.
         -> Type  E.Name                 -- ^ Type  of scrutinee
         -> ExpContext                   -- ^ Context of enclosing case-expression.
-        -> Context a
+        -> Context a                    -- ^ Type context of the conversion.
         -> Alt (AnTEC a E.Name) E.Name  -- ^ Alternative to convert.
         -> ConvertM a (Alt a A.Name)
 
@@ -54,8 +54,8 @@ convertAlt a uScrut tScrut ectx ctx alt
 
         -- Match against user-defined algebraic data.
         AAlt (PData dc bsFields) x
-         | Just nCtor   <- takeNameOfDaCon dc
-         , Just ctorDef <- Map.lookup nCtor $ dataDefsCtors defs
+         | Just nCtor           <- takeNameOfDaCon dc
+         , Just ctorDef         <- Map.lookup nCtor $ dataDefsCtors defs
          -> do  
                 -- Convert the scrutinee.
                 uScrut'         <- convertDataU uScrut
@@ -88,5 +88,8 @@ convertAlt a uScrut tScrut ectx ctx alt
          -> do  x'      <- convertX ectx ctx x 
                 return  $ AAlt PDefault x'
 
+        -- Invalid alternative. 
+        -- Maybe we don't have the definition for the data constructor
+        -- being matched against.
         AAlt{}          
          -> throw ErrorInvalidAlt

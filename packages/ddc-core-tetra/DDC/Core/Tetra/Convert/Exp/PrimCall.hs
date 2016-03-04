@@ -23,8 +23,8 @@ import Data.Maybe
 -- | Convert a Tetra function call primitive to Salt.
 convertPrimCall
         :: Show a 
-        => ExpContext           -- ^ The surrounding expression context.
-        -> Context a            -- ^ Types and values in the environment.
+        => ExpContext                   -- ^ The surrounding expression context.
+        -> Context a                    -- ^ Types and values in the environment.
         -> Exp (AnTEC a E.Name) E.Name  -- ^ Expression to convert.
         -> Maybe (ConvertM a (Exp a A.Name))
 
@@ -96,7 +96,7 @@ convertPrimCall _ectx ctx xx
                 xF_super'   <- downArgX xF_super
 
                 xsArgs'     <- fmap catMaybes
-                            $  mapM (convertOrDiscardSuperArgX xx ctx) 
+                            $  mapM (convertOrDiscardSuperArgX ctx) 
                             $  [XType aArg tArg | (aArg, tArg) <- atsArg]
 
                 let xF'     = xApps a xF_super' xsArgs'

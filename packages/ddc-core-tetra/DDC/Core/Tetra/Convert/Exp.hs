@@ -331,7 +331,7 @@ convertExpSuperCall xx _ectx ctx isRun a nFun xsArgs
         -- Convert the arguments.
         -- Effect type and witness arguments are discarded here.
         xsArgs' <- liftM catMaybes 
-                $  mapM (convertOrDiscardSuperArgX xx ctx) xsArgs
+                $  mapM (convertOrDiscardSuperArgX ctx) xsArgs
                         
         return  $ xApps a (XVar a uF) xsArgs'
 

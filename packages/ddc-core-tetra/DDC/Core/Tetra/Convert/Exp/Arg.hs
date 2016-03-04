@@ -12,9 +12,6 @@ import qualified DDC.Core.Tetra.Prim    as E
 import qualified DDC.Core.Salt.Name     as A
 import qualified DDC.Core.Salt.Runtime  as A
 
--- import DDC.Base.Pretty
--- import DDC.Control.Monad.Check           (throw)
-
 
 ---------------------------------------------------------------------------------------------------
 -- | Given an argument to a function or data constructor, either convert
@@ -22,19 +19,16 @@ import qualified DDC.Core.Salt.Runtime  as A
 --   return Nothing which indicates it should be discarded.
 convertOrDiscardSuperArgX
         :: Show a                       
-        => Exp (AnTEC a E.Name) E.Name  -- ^ Overall application expression, for debugging.
-        -> Context a
+        => Context a                    -- ^ Type context of the conversion.
         -> Exp (AnTEC a E.Name) E.Name  -- ^ Expression to convert.
         -> ConvertM a (Maybe (Exp a A.Name))
 
-convertOrDiscardSuperArgX _xxApp ctx xx
+convertOrDiscardSuperArgX ctx xx
 
-        -- Region type arguments get passed through directly.
+        -- In the salt code everything currently goes into the top-level region.
         | XType a _     <- xx
         , isRegionKind (annotType a)
-        = do    -- t'       <- convertRegionT (typeContext ctx) t
---                return   $ Just (XType (annotTail a) t')
-                return  $ Just $ XType (annotTail a) A.rTop
+        = do    return  $ Just $ XType (annotTail a) A.rTop
 
         -- If we have a data type argument where the type is boxed,
         -- then we pass the region the corresponding Salt object is in.
@@ -44,33 +38,11 @@ convertOrDiscardSuperArgX _xxApp ctx xx
                 t'       <- saltPrimeRegionOfDataType kenv t
                 return   $ Just (XType (annotTail a) t')
 
-        -- Drop effect arguments.
-        | XType a _     <- xx
-        , isEffectKind (annotType a)
-        =       return Nothing
-
-{-
-        -- Some type that we don't know how to convert to Salt.
-        -- We don't handle type args with higher kinds.
-        -- See [Note: Salt conversion for higher kinded type arguments]
-        | XType{}       <- xx
-        = throw $ ErrorUnsupported xx
-        $ vcat [ text "Unsupported type argument to function or constructor."
-               , text "In particular, we don't yet handle higher kinded type arguments."
-               , empty
-               , text "See [Note: Salt conversion for higher kinded type arguments] in"
-               , text "the implementation of the Tetra to Salt conversion." 
-               , empty
-               , text "with application: " <+> ppr xxApp ]
-
-        -- Witness arguments are discarded.
-        | XWitness{}    <- xx
-        =       return  $ Nothing
--}
-        
+        -- Drop other type arguments.
         | XType{}       <- xx
         = return Nothing
-
+        
+        -- Drop witneses.
         | XWitness{}    <- xx
         = return Nothing
 
