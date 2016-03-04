@@ -55,6 +55,15 @@ data Error a
         -- | Super is not in prenex form.
         | ErrorSuperNotPrenex (Bind Name)
 
+        -- | The arity information that we have for a super does not match 
+        --   its type. For example, the arity information may say that it
+        --   is a function with two parameters, but the type only has a
+        --   single one.
+        | ErrorSuperArityMismatch
+        { errorName     :: Name
+        , errorType     :: Type Name
+        , errorArity    :: (Int, Int, Int) }
+
 
 instance Show a => Pretty (Error a) where
  ppr err
@@ -105,3 +114,10 @@ instance Show a => Pretty (Error a) where
         ErrorSuperNotPrenex b
          -> vcat [ text "Super " 
                         <> (squotes $ ppr b) <> text " is not in prenex form." ]
+
+        ErrorSuperArityMismatch n t arity
+         -> vcat [ text "Arity information for " 
+                        <> ppr n   <> text " does not match its type."
+                 , text " type:  " <> ppr t
+                 , text " arity: " <> text (show arity) ]
+

@@ -97,10 +97,12 @@ takeCallableFromImport n im
  --  direct from its logical type alone.
  | ImportValueModule _ _ tThing (Just arity) <- im
  , (nTypes, nValues, nBoxes)                 <- arity
- = let rCons = Call.takeStdCallConsFromTypeArity tThing nTypes nValues nBoxes
-   in  case rCons of
-        Nothing -> error "type/arity mismatch"  -- TODO: lift to either
-        Just cs -> return $ Just (n, Callable CallableSuperOther tThing cs)
+ = case Call.takeStdCallConsFromTypeArity tThing nTypes nValues nBoxes of
+        Nothing 
+         -> Left   $ ErrorSuperArityMismatch n tThing (nTypes, nValues, nBoxes)
+
+        Just cs 
+         -> return $ Just (n, Callable CallableSuperOther tThing cs)
 
  -- A thing imported from sea land.
  --  We determine the call pattern directly from the type.
