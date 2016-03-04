@@ -1,11 +1,22 @@
 
-module Data.Function
-export { apply; compose }
+module  Data.Function
+export  { id; apply; compose }
 where
 
-apply   [a b : Data] (f : a -> b) (x : a) : b
+
+-- | Identity function.
+id (x: a): a
+ = x
+
+
+-- | Apply a function to its argument.
+--   The operator '$' is desugared to applications of this function.
+apply   [a b : Data]   (f : a -> b) (x : a) : b
  = f x
 
+
+-- | Compose two functions.
+--   The operator '∘' is desugared to applications of this function.
 compose [a b c : Data] (f : b -> c) (g : a -> b) : a -> c
  = λx : a. f (g x)
 

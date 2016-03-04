@@ -1,9 +1,13 @@
+-- Almost Prime
+-- https://rosettacode.org/wiki/Almost_prime
+--
 -- A k-Almost-prime is a natural number 'n' that is the product of 'k'
 -- (possibly identical) primes. So, for example, 1-almost-primes, where
 -- k=1, are the prime numbers themselves; 2-almost-primes are the semiprimes.
 -- The task is to write a function/method/subroutine/... that generates
 -- k-almost primes and use it to create a table here of the first ten
 -- members of k-Almost primes for 1<=K<=5.
+--
 module Main
 import Data.List
 import Data.Text
@@ -13,82 +17,6 @@ import System.IO.Console
 where
 
 
---------------------------------------------
--- Tuple stuff, move to tuple lib.
-fst (t: Tup2 a b): a
- = case t of
-        T2 x y  -> x
-
-snd (t: Tup2 a b): b
- = case t of
-        T2 x y  -> y
-
-divMod (n m: Nat#): Tup2 Nat# Nat#
- = T2 (div n m) (rem n m)
-
-
--------------------------------------------
--- Stream stuff, move to stream lib.
-stakeWhile (p: a -> Bool#) (ss: Stream s a): Stream s a
- = case ss of
-        MkStream stepA sA0
-         -> let stepB q
-                 = case stepA q of
-                        Yield x sA1     
-                         | p x          -> Yield x sA1
-                         | otherwise    -> Done [s] [a]
-
-                        Skip sA1        -> Skip    sA1
-
-                        -- BROKEN: if the type args are left out here
-                        -- it inserts them in the wrong order??
-                        Done            -> Done [s] [a]
-
-            in  MkStream stepB sA0
-
-
-sfilter (p: a -> Bool#) (ss: Stream s a): Stream s a
- = case ss of
-        MkStream stepA sA0
-         -> let stepB q
-                 = case stepA q of
-                        Yield x sA1     
-                         | p x          -> Yield x sA1
-                         | otherwise    -> Skip    sA1
-
-                        Skip sA1        -> Skip    sA1
-
-                        -- BROKEN: if the type args are left out here
-                        -- it inserts them in the wrong order??
-                        Done            -> Done [s] [a]
-
-            in  MkStream stepB sA0
-
-
-sfold    (f: a -> b -> a) (acc: a) (ss: Stream s b): a
- = case ss of
-        MkStream step s0 
-         -> sconsume f acc step s0
-
-
-sconsume (f: a -> b -> a) (acc: a) (step: s -> Step s b) (state: s) : a
- = case step state of
-        Yield x s'      -> sconsume f (f acc x) step s'
-        Skip    s'      -> sconsume f acc       step s'
-        Done            -> acc
-
-
--- | Check if any of the elements of this stream are true,
---   demanding only the prefix of non-true elements from the stream.
-sany [s: Data] (ss: Stream s Bool#): Bool#
- = sfold or False $ stakeWhile id ss
-
-
-id (x: a): a
- = x
-
-
--------------------------------------------
 -- | A stream of prime numbers.
 primes (c0: Nat#): Stream Nat# Nat#
  = sfilter isPrime $ senumFrom 2

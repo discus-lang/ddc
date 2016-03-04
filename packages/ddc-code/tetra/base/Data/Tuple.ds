@@ -1,0 +1,17 @@
+
+module  Data.Tuple
+export  {fst; snd}
+where
+
+
+data Tup2 (a b : Data) where
+ T2     : a -> b -> Tup2 a b
+
+
+fst (t: Tup2 a b): a
+ = case t of
+        T2 x y  -> x
+
+snd (t: Tup2 a b): b
+ = case t of
+        T2 x y  -> y

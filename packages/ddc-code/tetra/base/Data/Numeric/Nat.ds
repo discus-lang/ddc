@@ -2,7 +2,9 @@
 module Data.Numeric.Nat
 export  { add; sub;  mul; div; rem
         ; eq;  neq; lt;   le;  gt;  ge
-        ; shl; shr; band; bor; bxor }
+        ; shl; shr; band; bor; bxor
+        ; divMod }
+import Data.Tuple
 where
 
 -------------------------------------------------------------------------------
@@ -33,4 +35,9 @@ shr  x y        = shr#  [Nat#] x y
 band x y        = band# [Nat#] x y
 bor  x y        = bor#  [Nat#] x y
 bxor x y        = bxor# [Nat#] x y 
+
+
+divMod (n m: Nat#): Tup2 Nat# Nat#
+ = T2 (div n m) (rem n m)
+
 
