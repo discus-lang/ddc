@@ -10,14 +10,13 @@ import DDC.Core.Tetra.Convert.Error
 import DDC.Core.Module
 import DDC.Core.Compounds
 import DDC.Core.Exp
-import qualified DDC.Core.Call                  as Call
-
 import DDC.Core.Annot.AnTEC
 import Control.Monad
 import Data.Maybe
-import Data.Map                                 (Map)
-import qualified DDC.Core.Tetra.Prim            as E
-import qualified Data.Map                       as Map
+import Data.Map                         (Map)
+import qualified DDC.Core.Call          as Call
+import qualified DDC.Core.Tetra.Prim    as E
+import qualified Data.Map               as Map
 
 
 -- | Enough information to call a super.
@@ -82,7 +81,7 @@ takeCallablesOfModule mm
         return  $ Map.fromList $ nsCallableSuperLocal ++ nsCallableImport
 
 
--- | Take a callable from an `ImportValue`, or Nothing if there isn't one.
+-- | Take a `Callable` from an `ImportValue`, or Nothing if there isn't one.
 takeCallableFromImport
         :: E.Name               -- ^ Name of the imported thing.
         -> ImportValue E.Name   -- ^ Import definition.

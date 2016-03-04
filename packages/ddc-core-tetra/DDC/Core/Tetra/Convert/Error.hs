@@ -9,7 +9,6 @@ import DDC.Core.Check                           (AnTEC(..))
 import DDC.Core.Tetra.Prim                      as E
 import qualified DDC.Control.Monad.Check        as G
 
-
 -- | Conversion Monad
 type ConvertM a x = G.CheckM () (Error a) x
 
@@ -20,13 +19,17 @@ data Error a
         = ErrorMainHasNoMain
 
         -- | Found unexpected AST node, like `LWithRegion`.
-        | ErrorMalformed String
+        | ErrorMalformed 
+        { errorMessage  :: String }
 
         -- | The program is definately not well typed.
-        | ErrorMistyped  (Exp (AnTEC a E.Name) E.Name)
+        | ErrorMistyped 
+        { errorExp      :: Exp (AnTEC a E.Name) E.Name }
 
         -- | The program wasn't normalised, or we don't support the feature.
-        | ErrorUnsupported (Exp (AnTEC a E.Name) E.Name) Doc
+        | ErrorUnsupported
+        { errorExp      :: Exp (AnTEC a E.Name) E.Name
+        , errorDor      :: Doc }
 
         -- | The program has bottom (missing) type annotations.
         | ErrorBotAnnot
@@ -35,25 +38,31 @@ data Error a
         | ErrorUnexpectedSum
 
         -- | Found an unbound variable.
-        | ErrorUnbound      (Bound E.Name)
+        | ErrorUnbound
+        { errorBound    :: Bound E.Name }
 
         -- | An invalid name used in a binding position
-        | ErrorInvalidBinder E.Name
+        | ErrorInvalidBinder
+        { errorName     :: E.Name }
 
         -- | An invalid name used in a bound position
-        | ErrorInvalidBound (Bound E.Name)
+        | ErrorInvalidBound 
+        { errorBound    :: Bound E.Name }
 
         -- | An invalid data constructor name.
-        | ErrorInvalidDaCon (DaCon E.Name)
+        | ErrorInvalidDaCon
+        { errorDaCon    :: DaCon E.Name }
 
         -- | An invalid name used for the constructor of an alternative.
         | ErrorInvalidAlt
 
         -- | Super is not fully named.
-        | ErrorSuperUnnamed   (Bind Name)
+        | ErrorSuperUnnamed
+        { errorBind     :: Bind Name }
 
         -- | Super is not in prenex form.
-        | ErrorSuperNotPrenex (Bind Name)
+        | ErrorSuperNotPrenex
+        { errorBind     :: Bind Name }
 
         -- | The arity information that we have for a super does not match 
         --   its type. For example, the arity information may say that it
@@ -73,7 +82,7 @@ instance Show a => Pretty (Error a) where
                  , text str ]
 
         ErrorMistyped xx
-         -> vcat [ text "Module is mistyped."           <> (text $ show xx) ]
+         -> vcat [ text "Module is mistyped." <> (text $ show xx) ]
 
         ErrorUnsupported xx doc
          -> vcat [ text "Cannot convert expression."
@@ -105,7 +114,6 @@ instance Show a => Pretty (Error a) where
 
         ErrorMainHasNoMain
          -> vcat [ text "Main module has no 'main' function." ]
-
 
         ErrorSuperUnnamed b
          -> vcat [ text "Super with binder " 
