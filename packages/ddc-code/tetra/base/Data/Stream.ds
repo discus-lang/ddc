@@ -42,10 +42,10 @@ listOfStream  (ss : Stream s a) : List a
                 Skip  s1        -> listOfStream (MkStream f s1)
                 Done            -> Nil
 
+
 -- Constructors -----------------------------------------------------------------------------------
 -- | Generate a stream, given a starting value and a stepper function.
---   BROKEN: type vars not inserted? why does it need them explicitly?
-sgenerate [s a: Data] (x: s) (step: s -> Tup2 s a)
+sgenerate (x: s) (step: s -> Tup2 s a): Stream s a
  = let  step' sA
          = case step sA of
                 T2 s' x -> Yield x s'
