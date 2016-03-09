@@ -1,0 +1,22 @@
+
+-- Test under-application.
+-- Calling supers with less args than their arity.
+module Main
+import Data.Numeric.Nat
+import System.IO.Console
+where
+
+
+add3   (x1 x2 x3: Nat#): Nat#
+ = x1 + x2 + x3
+
+derp1  (x1: Nat#) : Nat# -> Nat#
+ = add3 x1 x1
+
+derp2  (x1 x2:  Nat#) : Nat#
+ = derp1 x1 x2
+
+main (_ : Unit) : S Console Unit
+ = box do
+        run writel (showNat (derp2 1 2))
+
