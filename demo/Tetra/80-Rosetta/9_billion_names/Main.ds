@@ -46,23 +46,19 @@ make    (n : Nat#) (acc  : List (List Nat#)) (prev : List Nat#)
 
 
 -- | Make some rows.
-rows (n : Nat#) : List (List Nat#) 
- = Cons (singleton 1) (make n Nil (singleton 1))
+rows n  = Cons (singleton 1) (make n Nil (singleton 1))
 
 -- | Make cumulative sums.
-cumu (n : Nat#) : List (List Nat#)
- = map (scanl add 0) (rows n)
+cumu n  = map (scanl add 0) (rows n)
 
 -- | Get sum of the nth row.
-sums (n : Nat#) : Nat#
- = foldl add 0 (last (Nil [Nat#]) (rows n))
+sums n  = foldl add 0 (last (Nil [Nat#]) (rows n))
 
 -- | Write a list to the console.
-writeListl (xs : List Nat#) : S Console Unit
+writeListl xs
  = box do
         run forS xs (λn : Nat#. write ((showNat n) % " "))
         run write "\n"
-
 
 main (_ : Unit) : S Console Unit
  = box do
