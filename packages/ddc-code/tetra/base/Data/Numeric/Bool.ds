@@ -5,19 +5,19 @@ where
 
 
 -- | Boolean NOT.
-not (x : Bool#)   : Bool#
+not (x: Bool#): Bool#
  = if x then False  
         else True
 
 
 -- | Boolean AND.
-and (x y : Bool#) : Bool#
+and (x y: Bool#): Bool#
  = if x then y 
         else False
 
 
 -- | Boolean OR.
-or (x y : Bool#) : Bool#
+or (x y: Bool#): Bool#
  = if x then True 
         else y
 

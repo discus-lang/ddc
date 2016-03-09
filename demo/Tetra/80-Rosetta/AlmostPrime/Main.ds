@@ -25,7 +25,7 @@ primes (c0: Nat#): Stream Nat# Nat#
 --   Use Wilson's theorem to check for primality, being sure to take
 --   the mod of the running sum to avoid integer overflow.
 isPrime (n: Nat#): Bool#
- =  foldl (\acc x : Nat#. rem (x * acc) n) 1 (enumFromTo 1 (n - 1))
+ =  foldl (λacc x : Nat#. rem (x * acc) n) 1 (enumFromTo 1 (n - 1))
  == (n - 1)
 
 
@@ -43,20 +43,18 @@ isKPrime (k n: Nat#): Bool#
         $ smap       fst
         $ sfilter    ((eq 0) ∘ snd)
         $ smap       (divMod n)
-        $ stakeWhile (\x: Nat#. x < n)
+        $ stakeWhile (λx: Nat#. x < n)
         $ primes 2
 
 
 main (_: Unit): S Console Unit
  = box do   
-        -- Trying to show more k-primes than (5,6) runs out of space.
         run forS (enumFromTo 1 5)
-             (\k: Nat#. box do
+             (λk: Nat#. box do
                 run write $ "k = " % showNat k % ": "
                 run forS (listOfStream $ stake 10 $ kPrimes k)
-                         (\x: Nat#. write $ showNat x % " ")
+                         (λx: Nat#. write $ showNat x % " ")
                 run write "\n")
 
         ()
-
 

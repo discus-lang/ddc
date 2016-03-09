@@ -4,7 +4,7 @@ export  {fst; snd}
 where
 
 
-data Tup2 (a b : Data) where
+data Tup2 (a b: Data) where
  T2     : a -> b -> Tup2 a b
 
 
