@@ -8,6 +8,8 @@ import DDC.Core.Tetra.Transform.Curry.Callable
 import DDC.Core.Tetra.Transform.Curry.Error
 import DDC.Core.Tetra.Prim
 import DDC.Core.Exp
+import DDC.Type.Equiv
+import Control.Monad
 import Data.Map                                 (Map)
 import qualified DDC.Core.Call                  as Call
 import qualified Data.Map                       as Map
@@ -16,7 +18,7 @@ import qualified Data.Map                       as Map
 -- | Call a thing, depending on what it is.
 --   Decide how to call the functional thing, depending on 
 --   whether its a super, foreign imports, or thunk.
-makeCall
+makeCall 
         :: Map Name Callable    -- ^ Types and arities of functions in the environment.
         -> Name                 -- ^ Name of function to call. 
         -> Type Name            -- ^ Type of function to call.
@@ -26,48 +28,60 @@ makeCall
 makeCall callables nFun tFun esArgs
 
  -- Call of a local or imported super.
- -- TODO: Check that the type in the table matches the one we were 
- --       given for the function.
- | Just (tF, csF)
+ | Just (tFunTable, csF)
     <- case Map.lookup nFun callables of
-        Just (Callable _ tF csFun) -> Just (tF, csFun)
-        _                          -> Nothing
+        Just (Callable _ tFunTable csFun) -> Just (tFunTable, csFun)
+        _                                 -> Nothing
+ = do
+        -- Internal sanity check: the type annotation on the function
+        -- to call should match the type we have for it in the callables
+        -- table. If not then we're bugged.
+        when (not $ equivT tFun tFunTable)
+         $ Left $ ErrorSuperTypeMismatch nFun tFun tFunTable
 
- = case Call.dischargeConsWithElims csF esArgs of
-        -- Saturating call.
-        --  We have matching eliminators for all the constructors.
-        ([], []) 
-         -> makeCallSuperSaturated nFun csF esArgs
+        case Call.dischargeConsWithElims csF esArgs of
+         -- Saturating call.
+         --  We have matching eliminators for all the constructors.
+         ([], []) 
+          -> fmap Just $ makeCallSuperSaturated nFun csF esArgs
 
-        -- Under application.
-        --  The eliminators have all been used up,
-        --  but the super that we're applying still has outer constructors.
-        (_csRemain, [])
-         -> makeCallSuperUnder     nFun tF csF esArgs
+         -- Under application.
+         --  The eliminators have all been used up,
+         --  but the super that we're applying still has outer constructors.
+         --  We need to build a PAP object to store the eliminators we have,
+         --  rather than calling the super right now.
+         (_csRemain, [])
+          -> makeCallSuperUnder nFun tFun csF esArgs
 
-        -- Over application.
-        --   The constructors have all been used up, 
-        --   but we still have eliminators at the call site.
-        ([], esOver)
-         -> do  -- Split off enough eliminators to saturate the super.
-                let nSat        = length csF
-                let esSat       = take nSat esArgs
+         -- Over application.
+         --   The constructors have all been used up, 
+         --   but we still have eliminators at the call site.
+         ([], esOver)
+          -> do -- Split off enough eliminators to saturate the super.
+                let nSat  = length csF
+                let esSat = take nSat esArgs
 
                 -- Apply the super to all its arguments,
                 -- which yields a thunk that wants more arguments.
-                -- TODO: handle errors
-                Just xApp       <- makeCallSuperSaturated nFun csF esSat
+                xApp     <- makeCallSuperSaturated nFun csF esSat
+
+                -- Work out the type of the returned thunk.
+                --  If this fails then the expression was mis-typed,
+                --  or the arity information we had was wrong.
+                tFun'    <- case Call.dischargeTypeWithElims tFun esSat of
+                                Just tFun' -> return tFun'
+                                Nothing    -> Left $ ErrorSuperCallPatternMismatch
+                                                      nFun (Just tFun) Nothing esSat
 
                 -- Apply the resulting thunk to the remaining arguments.
-                let Just tF'    = Call.dischargeTypeWithElims tF esSat
+                makeCallThunk xApp tFun' esOver
 
-                makeCallThunk xApp tF' esOver
-
-        -- Bad application.
-        -- The eliminators we have do not match the constructors of the
-        -- thing that we're applying. The program is mis-typed.
-        (_, _)
-         -> return $ Nothing    -- TODO: throw error
+         -- Bad application.
+         -- The eliminators we have do not match the constructors of the
+         -- thing that we're applying. The program is mis-typed.
+         (_, _)
+          -> Left $ ErrorSuperCallPatternMismatch
+                        nFun (Just tFun) Nothing esArgs
 
  -- Apply a thunk to some arguments.
  -- The functional part is a variable bound to a thunk object.

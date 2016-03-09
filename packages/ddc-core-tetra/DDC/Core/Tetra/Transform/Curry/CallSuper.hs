@@ -20,18 +20,18 @@ import qualified DDC.Core.Call                  as Call
 --   object code we do a standard function call.
 --
 makeCallSuperSaturated
-        :: n                    -- ^ Name of super to call.
-        -> [Call.Cons n]        -- ^ How the super is constructed.
-        -> [Call.Elim () n]     -- ^ Eliminators at call site.
-        -> Either Error (Maybe (Exp () n))
+        :: Name                 -- ^ Name of super to call.
+        -> [Call.Cons Name]     -- ^ How the super is constructed.
+        -> [Call.Elim () Name]  -- ^ Eliminators at call site.
+        -> Either Error (Exp () Name)
 
 makeCallSuperSaturated nF cs es
  | length es == length cs
  , and  $ zipWith Call.elimForCons es cs
- = return $ Just $ foldl Call.applyElim (XVar () (UName nF)) es
+ = return $ foldl Call.applyElim (XVar () (UName nF)) es
 
  | otherwise     
- = return $ Nothing
+ = Left   $ ErrorSuperCallPatternMismatch nF Nothing (Just cs) es
 
 
 ---------------------------------------------------------------------------------------------------
