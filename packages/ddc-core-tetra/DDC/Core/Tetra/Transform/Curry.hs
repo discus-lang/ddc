@@ -18,9 +18,6 @@ import qualified Data.Map.Strict                as Map
 
 -- TODO: handle supers names being shadowed by local bindings.
 --
--- TODO: handle monomorphic functions being passed to contructors, etc.
---       not an app but we need to build a closure.
---
 -- TODO: also handle under/over applied data constructors, do a transform
 --       beforehand to saturate them.
 

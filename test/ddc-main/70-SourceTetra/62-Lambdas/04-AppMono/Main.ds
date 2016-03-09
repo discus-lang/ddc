@@ -1,0 +1,22 @@
+
+-- Test under-application.
+-- Calling supers with less args than their arity.
+module Main
+import Data.Numeric.Nat
+import System.IO.Console
+where
+
+data Thing where
+        MkThing : (Nat# -> Nat#) -> Thing
+
+runThing (t: Thing) (x: Nat#): Nat#
+ = case t of
+        MkThing f -> f x
+
+add1 (x: Nat#): Nat#
+ = x + 1
+
+main (_ : Unit): S Console Unit
+ = box do
+        run writel (showNat (runThing (MkThing add1) 2))
+
