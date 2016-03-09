@@ -2,7 +2,7 @@
 module DDC.Core.Tetra.Convert.Exp
         (convertExp)
 where
-import DDC.Core.Tetra.Convert.Callable
+import DDC.Core.Tetra.Transform.Curry.Callable
 import DDC.Core.Tetra.Convert.Exp.Arg
 import DDC.Core.Tetra.Convert.Exp.Ctor
 import DDC.Core.Tetra.Convert.Exp.PrimCall

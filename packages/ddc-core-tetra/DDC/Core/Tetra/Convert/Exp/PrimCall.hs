@@ -2,9 +2,9 @@
 module DDC.Core.Tetra.Convert.Exp.PrimCall
         (convertPrimCall)
 where
+import DDC.Core.Tetra.Transform.Curry.Callable
 import DDC.Core.Tetra.Convert.Exp.Arg
 import DDC.Core.Tetra.Convert.Exp.Base
-import DDC.Core.Tetra.Convert.Callable
 import DDC.Core.Tetra.Convert.Type
 import DDC.Core.Tetra.Convert.Error
 import DDC.Type.Transform.Instantiate

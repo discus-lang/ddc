@@ -294,7 +294,9 @@ pipeTetra !mm !pp
 
         PipeTetraCurry  !pipes
          -> {-# SCC "PipeTetraCurry"  #-}
-            pipeCores (Tetra.curryModule mm)  pipes
+            case Tetra.curryModule mm of
+             Left err  -> return [ErrorTetraConvert err]
+             Right mm' -> pipeCores mm' pipes
 
         PipeTetraBoxing !pipes
          -> {-# SCC "PipeTetraBoxing" #-}

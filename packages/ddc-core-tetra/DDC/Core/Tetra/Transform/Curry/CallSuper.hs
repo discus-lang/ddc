@@ -3,8 +3,9 @@ module DDC.Core.Tetra.Transform.Curry.CallSuper
         ( makeCallSuperSaturated
         , makeCallSuperUnder)
 where
-import DDC.Core.Tetra.Transform.Curry.Interface
-import DDC.Core.Tetra
+import DDC.Core.Tetra.Transform.Curry.Error
+import DDC.Core.Tetra.Prim
+import DDC.Core.Compounds
 import DDC.Core.Exp
 import qualified DDC.Type.Transform.Instantiate as T
 import qualified DDC.Core.Tetra.Compounds       as C
@@ -22,15 +23,15 @@ makeCallSuperSaturated
         :: n                    -- ^ Name of super to call.
         -> [Call.Cons n]        -- ^ How the super is constructed.
         -> [Call.Elim () n]     -- ^ Eliminators at call site.
-        -> Maybe (Exp () n)
+        -> Either Error (Maybe (Exp () n))
 
 makeCallSuperSaturated nF cs es
  | length es == length cs
  , and  $ zipWith Call.elimForCons es cs
- = Just $ foldl Call.applyElim (XVar () (UName nF)) es
+ = return $ Just $ foldl Call.applyElim (XVar () (UName nF)) es
 
  | otherwise     
- = Nothing
+ = return $ Nothing
 
 
 ---------------------------------------------------------------------------------------------------
@@ -58,7 +59,7 @@ makeCallSuperUnder
         -> Type Name            -- ^ Type of super.
         -> [Call.Cons Name]     -- ^ How the super is constructed.
         -> [Call.Elim () Name]  -- ^ Eliminators at call site.
-        -> Maybe (Exp () Name)
+        -> Either Error (Maybe (Exp () Name))
 
 makeCallSuperUnder nF tF cs es
  -- We have more constructors than eliminators.
@@ -107,12 +108,13 @@ makeCallSuperUnder nF tF cs es
         tParamFirst : tsParamRest = tsParamLam
         tSuperResult    = C.tFunOfParamResult tsParamRest   tResult'
 
-   in Just
+   in return
+        $ Just
         $ makeRuns () (length esRuns)
         $ C.xApps  () (C.xFunCurry () tsParamSat tResultClo 
                        (C.xFunCReify () tParamFirst tSuperResult xFunAPP))
                       xsArgValue
 
  | otherwise
- = Nothing
+ = return $ Nothing
 

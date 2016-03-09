@@ -4,10 +4,10 @@ module DDC.Core.Tetra.Convert
         ( saltOfTetraModule
         , Error(..))
 where
+import DDC.Core.Tetra.Transform.Curry.Callable
 import DDC.Core.Tetra.Convert.Exp.Lets
 import DDC.Core.Tetra.Convert.Exp.Alt
 import DDC.Core.Tetra.Convert.Exp.Base
-import DDC.Core.Tetra.Convert.Callable
 import DDC.Core.Tetra.Convert.Exp
 import DDC.Core.Tetra.Convert.Type
 import DDC.Core.Tetra.Convert.Error
@@ -112,7 +112,7 @@ convertM pp runConfig defs kenv tenv mm
 
         -- Get the call patterns of the callable things
         -- defined in this module.
-        callables  <- either throw return
+        callables  <- either (throw . ErrorCurry) return
                    $  takeCallablesOfModule mm
 
         -- Starting context for the conversion.

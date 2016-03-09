@@ -1,14 +1,15 @@
 
-module DDC.Core.Tetra.Convert.Callable
+module DDC.Core.Tetra.Transform.Curry.Callable
         ( Callable       (..)
         , CallableSource (..)
         , typeOfCallable
         , consOfCallable
-        , takeCallablesOfModule)
+        , takeCallablesOfModule
+        , takeCallableFromImport
+        , takeCallableFromSuper)
 where
-import DDC.Core.Tetra.Convert.Error
+import DDC.Core.Tetra.Transform.Curry.Error
 import DDC.Core.Module
-import DDC.Core.Compounds
 import DDC.Core.Exp
 import DDC.Core.Annot.AnTEC
 import Control.Monad
@@ -59,24 +60,20 @@ consOfCallable (Callable _ _ cs) = cs
 -- Get callable things from the current module.
 takeCallablesOfModule
         :: Module (AnTEC a E.Name) E.Name
-        -> Either (Error a) (Map E.Name Callable)
+        -> Either Error (Map E.Name Callable)
 
 takeCallablesOfModule mm
  = do
-        -- Get callable local supers.
-        let checkCallable (BName n _) (Just callable)
-                = return (n, callable)
-            checkCallable b Nothing = Left $ ErrorSuperNotPrenex b
-            checkCallable b _       = Left $ ErrorSuperUnnamed   b
-
-        nsCallableSuperLocal
-                <- mapM (uncurry checkCallable)
-                $  mapTopBinds (\b x -> (b, takeCallableFromSuper b x)) mm
-
+        -- Get callables from imported things.
         nsCallableImport
                 <- liftM catMaybes
                 $  mapM (uncurry takeCallableFromImport)
                 $  moduleImportValues mm
+
+        -- Get callable top-level supers.
+        nsCallableSuperLocal
+                <- mapM (uncurry takeCallableFromSuper)
+                $  mapTopBinds (\b x -> (b, x)) mm
 
         return  $ Map.fromList $ nsCallableSuperLocal ++ nsCallableImport
 
@@ -85,7 +82,7 @@ takeCallablesOfModule mm
 takeCallableFromImport
         :: E.Name               -- ^ Name of the imported thing.
         -> ImportValue E.Name   -- ^ Import definition.
-        -> Either (Error a) (Maybe (E.Name, Callable))
+        -> Either Error (Maybe (E.Name, Callable))
 
 takeCallableFromImport n im
 
@@ -122,8 +119,18 @@ takeCallableFromImport n im
 
 
 -- | Take the standard call pattern from the body of a super combinator.
-takeCallableFromSuper :: Bind E.Name -> Exp a E.Name -> Maybe Callable
-takeCallableFromSuper b xx
- = do   let cs     =  Call.takeCallConsFromExp xx
-        return $ Callable CallableSuperLocal (typeOfBind b) cs
+takeCallableFromSuper 
+        :: Bind E.Name 
+        -> Exp a E.Name 
+        -> Either Error (E.Name, Callable)
 
+takeCallableFromSuper (BName n t) xx
+ = do   let cs     =  Call.takeCallConsFromExp xx
+        return $ (n, Callable CallableSuperLocal t cs)
+
+takeCallableFromSuper _ _
+ = error "TODO: proper error"
+
+-- TODO: check callable errors
+-- checkCallable b Nothing = Left $ ErrorSuperNotPrenex b
+-- checkCallable b _       = Left $ ErrorSuperUnnamed   b

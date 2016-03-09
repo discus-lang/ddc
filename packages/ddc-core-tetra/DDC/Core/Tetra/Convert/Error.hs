@@ -5,9 +5,10 @@ module DDC.Core.Tetra.Convert.Error
 where
 import DDC.Core.Exp
 import DDC.Base.Pretty
-import DDC.Core.Check                           (AnTEC(..))
-import DDC.Core.Tetra.Prim                      as E
-import qualified DDC.Control.Monad.Check        as G
+import DDC.Core.Check                                   (AnTEC(..))
+import DDC.Core.Tetra.Prim                              as E
+import qualified DDC.Core.Tetra.Transform.Curry.Error   as Curry
+import qualified DDC.Control.Monad.Check                as G
 
 -- | Conversion Monad
 type ConvertM a x = G.CheckM () (Error a) x
@@ -15,8 +16,10 @@ type ConvertM a x = G.CheckM () (Error a) x
 
 -- | Things that can go wrong during the conversion.
 data Error a
+        = ErrorCurry    Curry.Error
+
         -- | The 'Main' module has no 'main' function.
-        = ErrorMainHasNoMain
+        | ErrorMainHasNoMain
 
         -- | Found unexpected AST node, like `LWithRegion`.
         | ErrorMalformed 
@@ -56,27 +59,13 @@ data Error a
         -- | An invalid name used for the constructor of an alternative.
         | ErrorInvalidAlt
 
-        -- | Super is not fully named.
-        | ErrorSuperUnnamed
-        { errorBind     :: Bind Name }
-
-        -- | Super is not in prenex form.
-        | ErrorSuperNotPrenex
-        { errorBind     :: Bind Name }
-
-        -- | The arity information that we have for a super does not match 
-        --   its type. For example, the arity information may say that it
-        --   is a function with two parameters, but the type only has a
-        --   single one.
-        | ErrorSuperArityMismatch
-        { errorName     :: Name
-        , errorType     :: Type Name
-        , errorArity    :: (Int, Int, Int) }
-
 
 instance Show a => Pretty (Error a) where
  ppr err
   = case err of
+        ErrorCurry err'
+         -> ppr err'
+
         ErrorMalformed str
          -> vcat [ text "Module is malformed."
                  , text str ]
@@ -114,18 +103,4 @@ instance Show a => Pretty (Error a) where
 
         ErrorMainHasNoMain
          -> vcat [ text "Main module has no 'main' function." ]
-
-        ErrorSuperUnnamed b
-         -> vcat [ text "Super with binder " 
-                        <> (squotes $ ppr b) <> text " lacks a name." ]
-
-        ErrorSuperNotPrenex b
-         -> vcat [ text "Super " 
-                        <> (squotes $ ppr b) <> text " is not in prenex form." ]
-
-        ErrorSuperArityMismatch n t arity
-         -> vcat [ text "Arity information for " 
-                        <> ppr n   <> text " does not match its type."
-                 , text " type:  " <> ppr t
-                 , text " arity: " <> text (show arity) ]
 

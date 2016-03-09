@@ -4,9 +4,11 @@ module DDC.Core.Tetra.Transform.Curry.Call
 where
 import DDC.Core.Tetra.Transform.Curry.CallSuper
 import DDC.Core.Tetra.Transform.Curry.CallThunk
-import DDC.Core.Tetra.Transform.Curry.Interface
-import DDC.Core.Tetra
+import DDC.Core.Tetra.Transform.Curry.Callable
+import DDC.Core.Tetra.Transform.Curry.Error
+import DDC.Core.Tetra.Prim
 import DDC.Core.Exp
+import Data.Map                                 (Map)
 import qualified DDC.Core.Call                  as Call
 import qualified Data.Map                       as Map
 
@@ -15,23 +17,21 @@ import qualified Data.Map                       as Map
 --   Decide how to call the functional thing, depending on 
 --   whether its a super, foreign imports, or thunk.
 makeCall
-        :: FunMap               -- ^ Types and arities of functions in the environment.
+        :: Map Name Callable    -- ^ Types and arities of functions in the environment.
         -> Name                 -- ^ Name of function to call. 
         -> Type Name            -- ^ Type of function to call.
         -> [Call.Elim () Name]  -- ^ Eliminators for function call.
-        -> Maybe (Exp () Name)
+        -> Either Error (Maybe (Exp () Name))
 
-makeCall funMap nFun tFun esArgs
+makeCall callables nFun tFun esArgs
 
  -- Call of a local or imported super.
  -- TODO: Check that the type in the table matches the one we were 
  --       given for the function.
  | Just (tF, csF)
-    <- case Map.lookup nFun funMap of
-        Just (FunLocalSuper  _ tF csFun)        -> Just (tF, csFun)
-        Just (FunExternSuper _ tF (Just csFun)) -> Just (tF, csFun)
-        Just (FunForeignSea  _ tF csFun)        -> Just (tF, csFun)
-        _                                       -> Nothing
+    <- case Map.lookup nFun callables of
+        Just (Callable _ tF csFun) -> Just (tF, csFun)
+        _                          -> Nothing
 
  = case Call.dischargeConsWithElims csF esArgs of
         -- Saturating call.
@@ -49,23 +49,25 @@ makeCall funMap nFun tFun esArgs
         --   The constructors have all been used up, 
         --   but we still have eliminators at the call site.
         ([], esOver)
-         -> let -- Split off enough eliminators to saturate the super.
-                nSat        = length csF
-                esSat       = take nSat esArgs
+         -> do  -- Split off enough eliminators to saturate the super.
+                let nSat        = length csF
+                let esSat       = take nSat esArgs
 
                 -- Apply the super to all its arguments,
                 -- which yields a thunk that wants more arguments.
-                Just xApp   = makeCallSuperSaturated nFun csF esSat
+                -- TODO: handle errors
+                Just xApp       <- makeCallSuperSaturated nFun csF esSat
 
                 -- Apply the resulting thunk to the remaining arguments.
-                Just tF'    = Call.dischargeTypeWithElims tF esSat
-            in  makeCallThunk xApp tF' esOver
+                let Just tF'    = Call.dischargeTypeWithElims tF esSat
+
+                makeCallThunk xApp tF' esOver
 
         -- Bad application.
         -- The eliminators we have do not match the constructors of the
         -- thing that we're applying. The program is mis-typed.
         (_, _)
-         -> Nothing
+         -> return $ Nothing    -- TODO: throw error
 
  -- Apply a thunk to some arguments.
  -- The functional part is a variable bound to a thunk object.
@@ -75,5 +77,5 @@ makeCall funMap nFun tFun esArgs
  -- This was an existing thunk applied to no arguments,
  -- so we can just return it without doing anything.
  | otherwise
- = Nothing
+ = return $ Nothing
 
