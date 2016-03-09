@@ -49,18 +49,11 @@ isKPrime (k n: Nat#): Bool#
 
 main (_: Unit): S Console Unit
  = box do   
-
-        -- BROKEN: using '$' here causes tyvars to be inserted in the wrong order.
-        -- Replacing '$' by parens makes it work.
-        --      run forS
-        --              (listOfStream $ stake 10 $ sprimes 2)
-        --              (\x: Nat#. writel (showNat x))
-
         -- Trying to show more k-primes than (5,6) runs out of space.
         run forS (enumFromTo 1 5)
              (\k: Nat#. box do
                 run write $ "k = " % showNat k % ": "
-                run forS (listOfStream (stake 10 (kPrimes k)))
+                run forS (listOfStream $ stake 10 $ kPrimes k)
                          (\x: Nat#. write $ showNat x % " ")
                 run write "\n")
 

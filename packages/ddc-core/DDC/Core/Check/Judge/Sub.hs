@@ -36,8 +36,9 @@ makeSub config a ctx0 xL tL tR err
  = do
         ctrace  $ vcat
                 [ text "* SubCon"
-                , text "  LEFT:  " <> ppr tL
-                , text "  RIGHT: " <> ppr tR
+                , text "    xL: " <> ppr xL
+                , text "    tL: " <> ppr tL
+                , text "    tR: " <> ppr tR
                 , indent 2 $ ppr ctx0
                 , empty ]
 
@@ -52,8 +53,9 @@ makeSub config a ctx0 xL tL tR err
  = do
         ctrace  $ vcat
                 [ text "* SubVar"
-                , text "  LEFT:  " <> ppr tL
-                , text "  RIGHT: " <> ppr tR
+                , text "    xL: " <> ppr xL
+                , text "    tL: " <> ppr tL
+                , text "    tR: " <> ppr tR
                 , indent 2 $ ppr ctx0
                 , empty ]
 
@@ -68,8 +70,9 @@ makeSub config a ctx0 xL tL tR err
  = do
         ctrace  $ vcat
                 [ text "* SubExVar"
-                , text "  LEFT:  " <> ppr tL
-                , text "  RIGHT: " <> ppr tR
+                , text "    xL: " <> ppr xL
+                , text "    tL: " <> ppr tL
+                , text "    tR: " <> ppr tR
                 , indent 2 $ ppr ctx0
                 , empty ]
 
@@ -82,8 +85,9 @@ makeSub config a ctx0 xL tL tR err
  = do
         ctrace  $ vcat
                 [ text "* SubEquiv"
-                , text "  LEFT:  " <> ppr tL
-                , text "  RIGHT: " <> ppr tR
+                , text "    xL: " <> ppr xL
+                , text "    tL: " <> ppr tL
+                , text "    tR: " <> ppr tR
                 , indent 2 $ ppr ctx0
                 , empty ]
 
@@ -101,8 +105,9 @@ makeSub config a ctx0 xL tL tR err
 
         ctrace  $ vcat
                 [ text "* SubInstL"
-                , text "  LEFT:   " <> ppr tL
-                , text "  RIGHT:  " <> ppr tR
+                , text "    xL: " <> ppr xL
+                , text "    tL: " <> ppr tL
+                , text "    tR: " <> ppr tR
                 , indent 2 $ ppr ctx0
                 , indent 2 $ ppr ctx1
                 , empty ]
@@ -121,8 +126,9 @@ makeSub config a ctx0 xL tL tR err
 
         ctrace  $ vcat
                 [ text "* SubInstR"
-                , text "  LEFT:  " <> ppr tL
-                , text "  RIGHT: " <> ppr tR
+                , text "    xL: " <> ppr xL
+                , text "    tL: " <> ppr tL
+                , text "    tR: " <> ppr tR
                 , indent 2 $ ppr ctx0
                 , indent 2 $ ppr ctx1
                 , empty ]
@@ -142,8 +148,9 @@ makeSub config a ctx0 xL tL tR err
 
         ctrace  $ vcat
                 [ text "* SubArr"
-                , text "  LEFT:  " <> ppr tL
-                , text "  RIGHT: " <> ppr tR
+                , text "    xL: " <> ppr xL
+                , text "    tL: " <> ppr tL
+                , text "    tR: " <> ppr tR
                 , indent 2 $ ppr ctx0
                 , indent 2 $ ppr ctx1
                 , indent 2 $ ppr ctx2
@@ -165,8 +172,9 @@ makeSub config a ctx0 xL tL tR err
 
         ctrace  $ vcat
                 [ text "* SubApp"
-                , text "  LEFT:  " <> ppr tL
-                , text "  RIGHT: " <> ppr tR
+                , text "    xL: " <> ppr xL
+                , text "    tL: " <> ppr tL
+                , text "    tR: " <> ppr tR
                 , indent 2 $ ppr ctx0
                 , indent 2 $ ppr ctx1
                 , indent 2 $ ppr ctx2
@@ -190,19 +198,6 @@ makeSub config a ctx0 xL tL tR err
         -- to match the right.
         let (ctx1, pos1) =  markContext ctx0
         let ctx2         =  pushExists  iA ctx1
-        (xL1, ctx3)      <- makeSub config a ctx2 xL t1' tR err
-
-        -- Pop the existential and constraints above it back off
-        -- the stack.
-        let ctx4  = popToPos pos1 ctx3
-
-        ctrace  $ vcat
-                [ text "* SubForall"
-                , text "  LEFT:  " <> ppr tL
-                , text "  RIGHT: " <> ppr tR
-                , indent 2 $ ppr ctx0
-                , indent 2 $ ppr ctx4
-                , empty ]
 
         -- Wrap the expression with a type application to cause
         -- the instantiation.
@@ -210,7 +205,23 @@ makeSub config a ctx0 xL tL tR err
                  = annotOfExp xL
         let aFn  = AnTEC t1' (substituteT b tA e0) (substituteT b tA c0) a
         let aArg = AnTEC (typeOfBind b) (tBot kEffect) (tBot kClosure) a
-        let xL2  = XApp aFn xL1 (XType aArg tA)
+        let xL1  = XApp aFn xL (XType aArg tA)
+
+        (xL2, ctx3) <- makeSub config a ctx2 xL1 t1' tR err
+
+        -- Pop the existential and constraints above it back off
+        -- the stack.
+        let ctx4  = popToPos pos1 ctx3
+
+        ctrace  $ vcat
+                [ text "* SubForall"
+                , text "  xL:    " <> ppr xL
+                , text "  LEFT:  " <> ppr tL
+                , text "  RIGHT: " <> ppr tR
+                , text "  xL2:   " <> ppr xL2
+                , indent 2 $ ppr ctx0
+                , indent 2 $ ppr ctx4
+                , empty ]
 
         return (xL2, ctx4)
 

@@ -158,10 +158,7 @@ stakeWhile (p: a -> Bool#) (ss: Stream s a): Stream s a
                          | otherwise    -> Done [s] [a]
 
                         Skip sA1        -> Skip    sA1
-
-                        -- BROKEN: if the type args are left out here
-                        -- it inserts them in the wrong order??
-                        Done            -> Done [s] [a]
+                        Done            -> Done
 
             in  MkStream stepB sA0
 
@@ -177,10 +174,7 @@ sfilter (p: a -> Bool#) (ss: Stream s a): Stream s a
                          | otherwise    -> Skip    sA1
 
                         Skip sA1        -> Skip    sA1
-
-                        -- BROKEN: if the type args are left out here
-                        -- it inserts them in the wrong order??
-                        Done            -> Done [s] [a]
+                        Done            -> Done
 
             in  MkStream stepB sA0
 

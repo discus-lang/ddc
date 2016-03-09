@@ -127,7 +127,11 @@ synthAppArg table a xx ctx0 xFn tFn effsFn xArg
         let effsResult = effsFn `Sum.union` effsArg
 
         ctrace  $ vcat
-                [ text "* App Synth exists"
+                [ text "* App Synth Exists"
+                , text "  xFn  :"  <> ppr xFn
+                , text "  tFn  :"  <> ppr tFn
+                , text "  xArg :"  <> ppr xArg
+                , text "  xArg':"  <> ppr xArg'
                 , indent 2 $ ppr xx
                 , indent 2 $ ppr ctx2
                 , empty ]
@@ -166,9 +170,11 @@ synthAppArg table a xx ctx0 xFn tFn effsFn xArg
 
         ctrace  $ vcat
                 [ text "* App Synth Forall"
-                , text "      xFn:  " <> ppr xFnTy'
-                , text "     tArg:  " <> ppr xArg'
-                , text "      tFn:  " <> ppr tFn
+                , text "     xFn :  " <> ppr xFn
+                , text "     tFn :  " <> ppr tFn
+                , text "    xArg :  " <> ppr xArg
+                , text "  xFunTy':  " <> ppr xFnTy'
+                , text "    xArg':  " <> ppr xArg'
                 , text "  tResult:  " <> ppr tResult
                 , indent 2 $ ppr ctx2
                 , empty ]
@@ -210,8 +216,10 @@ synthAppArg table a xx ctx0 xFn tFn effsFn xArg
         ctrace  $ vcat
                 [ text "* App Synth Fun"
                 , indent 2 $ ppr xx
+                , text "     xArg: " <> ppr xArg
                 , text "      tFn: " <> ppr tFn1
                 , text "     tArg: " <> ppr tArg1
+                , text "    xArg': " <> ppr xArg'
                 , text "  tResult: " <> ppr tResult1
                 , indent 2 $ ppr ctx1
                 , empty ]
