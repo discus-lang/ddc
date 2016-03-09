@@ -18,8 +18,6 @@ import qualified Data.Map.Strict                as Map
 
 -- TODO: handle supers names being shadowed by local bindings.
 --
--- TODO: ensure type lambdas are out the front of supers, supers in prenex form.
---
 -- TODO: handle monomorphic functions being passed to contructors, etc.
 --       not an app but we need to build a closure.
 --
