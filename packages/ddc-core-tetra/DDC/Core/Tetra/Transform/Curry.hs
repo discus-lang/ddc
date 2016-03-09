@@ -8,17 +8,16 @@ import DDC.Core.Tetra.Transform.Curry.Error
 import DDC.Core.Tetra.Prim
 import DDC.Core.Transform.Reannotate
 import DDC.Core.Annot.AnTEC
+import DDC.Core.Compounds
 import DDC.Core.Module
 import DDC.Core.Exp
 import Data.Maybe
 import Data.Map                                 (Map)
 import qualified DDC.Core.Call                  as Call
 import qualified Data.Map.Strict                as Map
+import qualified Data.List                      as List
 
 
--- TODO: handle supers names being shadowed by local bindings.
-
----------------------------------------------------------------------------------------------------
 -- | Insert primitives to manage higher order functions in a module.
 curryModule 
         :: Module (AnTEC a Name) Name 
@@ -96,16 +95,57 @@ curryX callables xx
                  Nothing  -> XCast () CastRun    <$> down x1
 
         -- Boilerplate.
-        XCon     _ c     -> return $ XCon     () c
-        XLam     _ b x   -> XLam     () b <$> down x
-        XLAM     _ b x   -> XLAM     () b <$> down x
-        XLet     _ lts x -> XLet     ()   <$> curryLts callables lts <*> down x
-        XCase    _ x as  -> XCase    ()   <$> down x <*> mapM (curryAlt callables) as
-        XCast    _ c x   -> XCast    ()   <$> return (reannotate (const ()) c) <*> down x
-        XType    _ t     -> return $ XType    () t
-        XWitness _ w     -> return $ XWitness () (reannotate (const ()) w)
+        XCon     _ c     
+         -> return $ XCon     () c
+
+        XLam     _ b xBody   
+         -> let callables' = shadowCallables [b] callables
+            in  XLam () b <$> curryX   callables' xBody
+
+        XLAM     _ b xBody
+         ->     XLAM () b <$> curryX   callables  xBody
+
+        XLet     _ lts@(LLet b _) xBody
+         -> let callables' = shadowCallables [b] callables
+            in  XLet  ()  <$> curryLts callables' lts 
+                          <*> curryX   callables' xBody
+
+        XLet     _ lts@(LRec bxs) xBody
+         -> let bs         = map fst bxs
+                callables' = shadowCallables bs callables
+            in  XLet  ()  <$> curryLts callables' lts
+                          <*> curryX   callables' xBody
+
+        XLet     _ lts@(LPrivate{}) xBody
+         ->     XLet  ()  <$> curryLts callables  lts
+                          <*> curryX   callables  xBody
+
+        XCase    _ x as
+         ->     XCase ()  <$> down x
+                          <*> mapM (curryAlt callables) as
+
+        XCast    _ c xBody
+         ->     XCast ()  <$> return (reannotate (const ()) c)
+                          <*> curryX callables xBody
+
+        XType    _ t
+         -> return $ XType    () t
+
+        XWitness _ w
+         -> return $ XWitness () (reannotate (const ()) w)
 
 
+-- If we introduce a locally bound name with the same name as one of
+-- the top-level callable things then we need to remove it from the map
+-- of callables. References in the new context refer to the local thing
+-- instead.
+shadowCallables :: [Bind Name] -> Map Name Callable -> Map Name Callable
+shadowCallables bs callables
+        = List.foldl' (flip Map.delete) callables
+        $ mapMaybe takeNameOfBind bs
+
+
+-- | Build a function call for the given application expression.
 curryX_call 
         :: Map Name Callable
         -> Exp (AnTEC a Name) Name 

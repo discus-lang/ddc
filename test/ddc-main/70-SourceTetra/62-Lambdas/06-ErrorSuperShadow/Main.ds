@@ -1,0 +1,34 @@
+
+-- We have a top-level super named 'add2', but also a locally bound variable
+-- with the same name. During Tetra -> Salt conversion the curry transform
+-- needs to call the right one.
+module Main
+import Data.Numeric.Nat
+import System.IO.Console
+where
+
+
+add2 (x y: Nat#): Nat#
+ = x + y + 100
+
+
+add3 (x y z: Nat#): Nat#
+ = x + y + z
+
+
+thing1 (add2: Nat# -> Nat# -> Nat#): S Console Unit
+ = box do
+        run writel (showNat (add2 1 2))
+
+
+thing2 (_: Unit): S Console Unit
+ = box do
+        add2 = add3 5
+        run writel (showNat (add2 1 2)) 
+
+main (_: Unit): S Console Unit
+ = box do
+        run thing1 (add3 2)
+        run thing2 ()
+        ()
+
