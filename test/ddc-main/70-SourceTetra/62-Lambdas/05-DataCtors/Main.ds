@@ -1,0 +1,20 @@
+
+module Main
+import Data.Numeric.Nat
+import System.IO.Console
+where
+
+
+data Derp where
+        Derp : Nat# -> Nat# -> Derp
+
+
+underp (d: Derp): Nat#
+ = case d of
+        Derp x y        -> x + y
+
+
+main (_: Unit): S Console Unit
+ = box do
+        x   = Derp 5
+        run writel (showNat (underp (x 6)))

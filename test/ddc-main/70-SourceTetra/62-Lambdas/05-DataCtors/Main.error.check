@@ -1,0 +1,5 @@
+Fragment violation when converting Tetra module to Salt module.
+  Cannot convert expression.
+    Cannot convert partially applied data constructor.
+  
+    with: Derp x3

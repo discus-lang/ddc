@@ -17,9 +17,6 @@ import qualified Data.Map.Strict                as Map
 
 
 -- TODO: handle supers names being shadowed by local bindings.
---
--- TODO: also handle under/over applied data constructors, do a transform
---       beforehand to saturate them.
 
 ---------------------------------------------------------------------------------------------------
 -- | Insert primitives to manage higher order functions in a module.
