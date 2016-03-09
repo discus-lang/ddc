@@ -7,6 +7,8 @@ import Data.Numeric.Nat
 import System.IO.Console
 where
 
+data Foo where
+        MkFoo : (Nat# -> Nat# -> Nat#) -> Foo
 
 add2 (x y: Nat#): Nat#
  = x + y + 100
@@ -25,6 +27,12 @@ thing2 (_: Unit): S Console Unit
  = box do
         add2 = add3 5
         run writel (showNat (add2 1 2)) 
+
+
+thing3 (f: Foo): S Console Unit
+ = box case f of
+        MkFoo add2 -> run writel (showNat (add2 1 2))
+
 
 main (_: Unit): S Console Unit
  = box do

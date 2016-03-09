@@ -19,6 +19,10 @@ import qualified Data.List                      as List
 
 
 -- | Insert primitives to manage higher order functions in a module.
+--
+--   We work out which supers are being fully applied, under applied or
+--   over applied, and build and evaluate closures as necessary.
+--
 curryModule 
         :: Module (AnTEC a Name) Name 
         -> Either Error (Module () Name)
@@ -27,14 +31,13 @@ curryModule mm
  = do
         -- Add all the foreign functions to the function map.
         -- We can do a saturated call for these directly.
-        callables 
-                <- fmap (Map.fromList . catMaybes)
-                $  mapM (uncurry takeCallableFromImport)
-                $  moduleImportValues mm
+        callables <- fmap (Map.fromList . catMaybes)
+                  $  mapM (uncurry takeCallableFromImport)
+                  $  moduleImportValues mm
 
         -- Apply curry transform in the body of the module.
-        xBody'  <- curryBody callables
-                $  moduleBody mm
+        xBody'    <- curryBody callables
+                  $  moduleBody mm
 
         return  $ mm { moduleBody = xBody' }
 
@@ -50,19 +53,20 @@ curryBody callables xx
         XLet _ (LRec bxs) xBody
          -> do  let (bs, xs) = unzip bxs
 
-                -- Add types of supers to the function map.
+                -- Add types of supers to the map of callable things.
                 csSuper <- fmap (Map.fromList)
                         $  mapM (uncurry takeCallableFromSuper) bxs
 
-                let callables'  = Map.union csSuper callables
+                let callables'  
+                        = Map.union csSuper callables
 
                 -- Rewrite bindings in the body of the let-expression.
                 xs'      <- mapM (curryX callables') xs
                 let bxs' =  zip bs xs'
                 xBody'   <- curryBody callables' xBody
-                return  $ XLet () (LRec bxs') xBody'
+                return   $  XLet () (LRec bxs') xBody'
 
-        _ ->    return  $ reannotate (const ()) xx
+        _ ->    return   $ reannotate (const ()) xx
 
 
 -- | Manage function application in an expression.
@@ -164,16 +168,14 @@ curryX_call callables xx
  | otherwise
  = return $ Nothing
 
- where  down x  
-         = curryX callables x
-
-        downElim ee
+ where  downElim ee
          = case ee of
                 Call.ElimType  _ _ t 
                  -> return $ Call.ElimType  () () t
 
                 Call.ElimValue _ x   
-                 -> Call.ElimValue () <$> down x
+                 ->  Call.ElimValue () 
+                 <$> curryX callables x
 
                 Call.ElimRun   _
                  -> return $ Call.ElimRun   ()
@@ -190,8 +192,8 @@ curryLts callables lts
          -> LLet b <$> curryX callables x
 
         LRec bxs          
-         -> do  let (bs, xs)    = unzip bxs
-                xs'             <- mapM (curryX callables) xs
+         -> do  let (bs, xs) =  unzip bxs
+                xs'          <- mapM (curryX callables) xs
                 return  $ LRec  $ zip bs xs'
 
         LPrivate bs mt ws 
@@ -205,6 +207,8 @@ curryAlt :: Map Name Callable
 
 curryAlt callables alt
  = case alt of
-        AAlt w x
-         -> AAlt w  <$> curryX callables x
+        AAlt w xBody
+         -> let bs         = bindsOfPat w
+                callables' = shadowCallables bs callables
+            in  AAlt w  <$> curryX callables' xBody
 
