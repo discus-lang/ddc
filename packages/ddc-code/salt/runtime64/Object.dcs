@@ -629,15 +629,13 @@ writeArray
         [r1 r2 : Region] 
         (obj : Ptr# r1 Obj) (ix : Nat#) (val : Ptr# r2 Obj) : Ptr# r1 Obj
  = do   
-        addr    = takePtr# obj
-
         -- Get address of the first byte after the end of the array.
-        len     = promote# [Nat#] [Word32#] (read# [Word32#] addr 4#)
-        top     = add# 8# (shl# len (size2# [Addr#]))
+        len     = promote# (peek# [r1] [Word32#] (castPtr# obj) 4#)
+        top     = add# 8#  (shl# len (size2# [Addr#]))
 
         -- Bounded poke.
         -- If the requested address is past the end of the array then abort.
-        off     = add# 8# (shl# ix  (size2# [Addr#]))
+        off     = add# 8#  (shl# ix  (size2# [Addr#]))
         _       = pokeBounded# (castPtr# obj) off top val
         obj
 
@@ -647,15 +645,13 @@ readArray
         [r1 r2 : Region]
         (obj : Ptr# r1 Obj) (ix : Nat#) : Ptr# r2 Obj
  = do   
-        addr    = takePtr# obj
-
         -- Get address of the first byte after the end of the array.
-        len     = promote# [Nat#] [Word32#] (read# [Word32#] addr 4#)
-        top     = add# 8# (shl#  len  (size2# [Addr#]))
+        len     = promote# (peek# [r1] [Word32#] (castPtr# obj) 4#) 
+        top     = add# 8#  (shl#  len  (size2# [Addr#]))
 
         -- Bounded peek.
         -- If the requested address is past the end of the array then abort.
-        off     = add# 8# (shl#  ix   (size2# [Addr#]))
+        off     = add# 8#  (shl#  ix   (size2# [Addr#]))
         result  = peekBounded# (castPtr# obj) off top
         result
 
