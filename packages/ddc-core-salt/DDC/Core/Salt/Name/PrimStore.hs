@@ -47,11 +47,17 @@ data PrimStore
         | PrimStoreMinusAddr
 
         -- Ptr operations -------------
-        -- | Read a value from a pointer plus the given offset.
+        -- | Read a value from a pointer plus offset.
         | PrimStorePeek
 
-        -- | Write a value to a pointer plus the given offset.
+        -- | Read a value from a pointer plus offset, with an integrated bounds check.
+        | PrimStorePeekBounded
+
+        -- | Write a value to a pointer plus given offset.
         | PrimStorePoke
+
+        -- | Write a value to ap ointer plus offset, with an integrated bounds check.
+        | PrimStorePokeBounded
 
         -- | Add an offset in bytes to a pointer.
         | PrimStorePlusPtr
@@ -91,6 +97,8 @@ instance Pretty PrimStore where
 
         PrimStorePeek           -> text "peek#"
         PrimStorePoke           -> text "poke#"
+        PrimStorePeekBounded    -> text "peekBounded#"
+        PrimStorePokeBounded    -> text "pokeBounded#"
         PrimStorePlusPtr        -> text "plusPtr#"
         PrimStoreMinusPtr       -> text "minusPtr#"
         PrimStoreMakePtr        -> text "makePtr#"
@@ -116,6 +124,8 @@ readPrimStore str
 
         "peek#"                 -> Just PrimStorePeek
         "poke#"                 -> Just PrimStorePoke
+        "peekBounded#"          -> Just PrimStorePeekBounded
+        "pokeBounded#"          -> Just PrimStorePokeBounded
         "plusPtr#"              -> Just PrimStorePlusPtr
         "minusPtr#"             -> Just PrimStoreMinusPtr
         "makePtr#"              -> Just PrimStoreMakePtr

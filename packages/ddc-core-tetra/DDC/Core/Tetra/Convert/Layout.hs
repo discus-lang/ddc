@@ -150,11 +150,14 @@ fieldSizeOfPrimTyCon platform tc
         -- Vectors don't appear as raw fields.
         PrimTyConVec{}          -> Nothing
 
+        -- Address value.
+        PrimTyConAddr           -> Just $ platformAddrBytes platform
+
         -- Pointer tycon shouldn't appear by itself.
         PrimTyConPtr            -> Nothing
 
-        -- Address value.
-        PrimTyConAddr           -> Just $ platformAddrBytes platform
+        -- Array tycon shouldn't appear by itself.
+        PrimTyConArray          -> Nothing
 
         -- Address of static memory where the string data is stored.
         PrimTyConTextLit        -> Just $ platformAddrBytes platform

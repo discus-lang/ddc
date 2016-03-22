@@ -41,6 +41,7 @@ convertBody ctx ectx blocks label instrs xx
  = let  pp           = contextPlatform    ctx 
         kenv         = contextKindEnv     ctx
         convertCase  = contextConvertCase ctx
+        atomsR as' = sequence $ map (mconvArg ctx) as'
    in do   
         case xx of
 
@@ -210,6 +211,58 @@ convertBody ctx ectx blocks label instrs xx
                 convertBody ctx' ectx blocks label instrs x2 
 
 
+         -- Read from a raw address, with integrated bounds check.
+         A.XLet (A.LLet (C.BName nDst _) x1) x2
+          | Just (p, as)                         <- takeXPrimApps x1
+          , A.PrimStore A.PrimStorePeekBounded   <- p
+          , A.RType{} : A.RType tDst : args      <- as
+          , Just [mPtr, mOffset, mLength]        <- atomsR args
+          -> do
+                (ctx', vDst@(Var nDst' _))    
+                                <- bindLocalV ctx nDst tDst
+
+                xPtr'           <- mPtr
+                xOffset'        <- mOffset
+                xLength'        <- mLength
+                let vTest       =  Var (bumpName nDst' "test")  (tInt  pp)
+                let vAddr1      =  Var (bumpName nDst' "addr1") (tAddr pp)
+                let vAddr2      =  Var (bumpName nDst' "addr2") (tAddr pp)
+
+                tDst'           <- convertType pp kenv tDst
+                let vPtr        =  Var (bumpName nDst' "ptr")   (tPtr tDst')
+
+                labelFail       <- newUniqueLabel "fail"
+                labelOk         <- newUniqueLabel "ok"
+
+                let block       =  Block label
+                                $  instrs 
+                                |> (annotNil $ ICmp      vTest (ICond ICondUge) xOffset' xLength')
+                                |> (annotNil $ IBranchIf (XVar vTest) labelOk labelFail)
+
+                let iSet        = case ectx of
+                                        ExpTop{}           -> INop
+                                        ExpNest _   vDst' _ -> ISet vDst' (XUndef (typeOfVar vDst'))
+                                        ExpAssign _ vDst'   -> ISet vDst' (XUndef (typeOfVar vDst'))
+
+                let iFail       = ICall Nothing CallTypeStd Nothing 
+                                        TVoid (NameGlobal "abort") [] []
+
+                let blockFail   =  Block labelFail
+                                $  Seq.fromList
+                                $  map annotNil [iSet, iFail, IUnreachable]
+
+                let instrs'     = Seq.fromList
+                                $ (map annotNil
+                                [ IConv     vAddr1 ConvPtrtoint xPtr'
+                                , IOp       vAddr2 OpAdd (XVar vAddr1) xOffset'
+                                , IConv     vPtr   ConvInttoptr (XVar vAddr2)
+                                , ILoad     vDst (XVar vPtr)])
+
+                convertBody ctx' ectx 
+                        (blocks |> block |> blockFail) 
+                        labelOk instrs' x2
+
+
          -- Variable assignment from some other expression.
          A.XLet (A.LLet (C.BName nm t) x1) x2
           -> do 
@@ -326,3 +379,10 @@ eraseTypeWitArgs (x:xs)
         A.RWitness{}    -> eraseTypeWitArgs xs
         _               -> x : eraseTypeWitArgs xs
 
+
+-- | Append the given string to a name.
+bumpName :: Name -> String -> Name
+bumpName nn s
+ = case nn of
+        NameLocal str   -> NameLocal  (str ++ "." ++ s)
+        NameGlobal str  -> NameGlobal (str ++ "." ++ s)

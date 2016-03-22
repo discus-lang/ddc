@@ -73,10 +73,11 @@ convPrimStore pp
         PrimStoreMinusAddr      -> text "_MINUSADDr"
         PrimStorePeek           -> text "_PEEK"
         PrimStorePoke           -> text "_POKE"
+        PrimStorePeekBounded    -> text "_PEEKBOUNDED"
+        PrimStorePokeBounded    -> text "_POKEBOUNDED"
         PrimStorePlusPtr        -> text "_PLUSPTR"
         PrimStoreMinusPtr       -> text "_MINUSPTR"
         PrimStoreMakePtr        -> text "_MAKEPTR"
         PrimStoreTakePtr        -> text "_TAKEPTR"
         PrimStoreCastPtr        -> text "_CASTPTR"
-
 

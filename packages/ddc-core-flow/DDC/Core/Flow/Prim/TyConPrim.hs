@@ -19,7 +19,8 @@ kindPrimTyCon :: PrimTyCon -> Kind Name
 kindPrimTyCon tc
  = case tc of
         PrimTyConVoid    -> kData
-        PrimTyConPtr     -> (kRegion `kFun` kData `kFun` kData)
+        PrimTyConPtr     -> kRegion `kFun` kData `kFun` kData
+        PrimTyConArray   -> kRegion `kFun` kData `kFun` kData
         PrimTyConAddr    -> kData
         PrimTyConBool    -> kData
         PrimTyConNat     -> kData

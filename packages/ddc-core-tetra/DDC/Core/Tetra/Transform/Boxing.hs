@@ -53,6 +53,7 @@ repOfType tt
                 PrimTyConVec{}          -> Just RepBoxed
                 PrimTyConAddr{}         -> Just RepBoxed
                 PrimTyConPtr{}          -> Just RepBoxed
+                PrimTyConArray{}        -> Just RepBoxed
                 PrimTyConTextLit{}      -> Just RepBoxed
                 PrimTyConTag{}          -> Just RepBoxed
 

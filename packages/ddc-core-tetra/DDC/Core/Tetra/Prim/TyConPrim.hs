@@ -31,6 +31,7 @@ kindPrimTyCon tc
         PrimTyConVec{}     -> kData   `kFun` kData
         PrimTyConAddr{}    -> kData
         PrimTyConPtr{}     -> kRegion `kFun` kData `kFun` kData
+        PrimTyConArray{}   -> kRegion `kFun` kData `kFun` kData
         PrimTyConTextLit{} -> kData
         PrimTyConTag{}     -> kData
 

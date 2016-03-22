@@ -12,6 +12,7 @@ module DDC.Core.Salt.Compounds
         , tObj
         , tAddr
         , tPtr,   takeTPtr
+        , tArray, takeTArray
         , tTextLit
         , xTextLit)
 where
@@ -57,6 +58,7 @@ tObj :: Type Name
 tObj      = TCon (TyConBound (UPrim  NameObjTyCon kData) kData)
 
 
+-- Pointer
 tPtr :: Region Name -> Type Name -> Type Name
 tPtr r t = TApp (TApp (TCon tcPtr) r) t
  where  tcPtr   = TyConBound (UPrim (NamePrimTyCon PrimTyConPtr) kPtr) kPtr
@@ -70,6 +72,24 @@ takeTPtr tt
          -> Just (r, t)
 
         _ -> Nothing
+
+
+-- Array
+tArray :: Region Name -> Type Name -> Type Name
+tArray r t = TApp (TApp (TCon tcArray) r) t
+ where  tcArray = TyConBound (UPrim (NamePrimTyCon PrimTyConArray) kArray) kArray
+        kArray  = kRegion `kFun` kData `kFun` kData
+
+
+takeTArray :: Type Name -> Maybe (Region Name, Type Name)
+takeTArray tt
+ = case tt of
+        TApp (TApp (TCon tc) r) t
+         | TyConBound (UPrim (NamePrimTyCon PrimTyConArray) _) _  <- tc
+         -> Just (r, t)
+
+        _ -> Nothing
+
 
 -- Expressions ----------------------------------------------------------------
 xBool :: a -> Bool   -> Exp a Name

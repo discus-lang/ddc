@@ -1,5 +1,5 @@
 # The DDC build system.
- 
+
 # -----------------------------------------------------------------------------
 # (Build targets)
 #   all                 -- build the compiler and libs (default)

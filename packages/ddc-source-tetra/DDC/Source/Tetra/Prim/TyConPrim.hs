@@ -15,15 +15,16 @@ kindPrimTyCon :: PrimTyCon -> Kind Name
 kindPrimTyCon tc
  = case tc of
         PrimTyConVoid    -> kData
-        PrimTyConPtr     -> (kRegion `kFun` kData `kFun` kData)
-        PrimTyConAddr    -> kData
         PrimTyConBool    -> kData
         PrimTyConNat     -> kData
         PrimTyConInt     -> kData
         PrimTyConSize    -> kData
         PrimTyConWord  _ -> kData
         PrimTyConFloat _ -> kData
-        PrimTyConVec   _ -> kData `kFun` kData
+        PrimTyConVec   _ -> kData   `kFun` kData
+        PrimTyConAddr    -> kData
+        PrimTyConPtr     -> kRegion `kFun` kData `kFun` kData
+        PrimTyConArray   -> kRegion `kFun` kData `kFun` kData
         PrimTyConTextLit -> kData
         PrimTyConTag     -> kData
 

@@ -65,6 +65,9 @@ data PrimTyCon
         --   4-byte aligned and point to memory owned by the current process.
         | PrimTyConPtr
 
+        -- | @Array#@ like @Ptr#@, but indexing does an integrated bounds check.
+        | PrimTyConArray 
+
         -- | @TextLit#@ type of a text literal, which is represented as a pointer
         --   to the literal data in static memory.
         | PrimTyConTextLit
@@ -103,8 +106,9 @@ pprPrimTyConStem tc
         PrimTyConVec    arity   -> text "Vec"   <> int arity
         PrimTyConTag            -> text "Tag"
         PrimTyConAddr           -> text "Addr"
-        PrimTyConTextLit        -> text "TextLit"
         PrimTyConPtr            -> text "Ptr"
+        PrimTyConArray          -> text "Array"
+        PrimTyConTextLit        -> text "TextLit"
 
 
 -- | Read a primitive type constructor.
@@ -132,6 +136,7 @@ readPrimTyConStem str
         | str == "Tag"          = Just $ PrimTyConTag
         | str == "Addr"         = Just $ PrimTyConAddr
         | str == "Ptr"          = Just $ PrimTyConPtr
+        | str == "Array"        = Just $ PrimTyConArray
         | str == "TextLit"      = Just $ PrimTyConTextLit
 
         -- WordN#
@@ -234,13 +239,13 @@ primTyConWidth pp tc
         PrimTyConTag            -> Just $ 8 * platformTagBytes  pp
         PrimTyConAddr           -> Just $ 8 * platformAddrBytes pp
         PrimTyConPtr            -> Just $ 8 * platformAddrBytes pp
+        PrimTyConArray          -> Just $ 8 * platformAddrBytes pp
 
         -- The string literal itself does not have a width associated with it.
         --  In the object code string literals are represented by pointers to
         --  static data. The static data is an array of Word8s, but the pointer
         --  itself is the width of an address on our machine.
         PrimTyConTextLit        -> Nothing
-
 
         PrimTyConVec   _        -> Nothing
 
