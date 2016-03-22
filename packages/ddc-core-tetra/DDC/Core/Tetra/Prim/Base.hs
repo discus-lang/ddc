@@ -40,8 +40,6 @@ data Name
         -- | Baked-in function operators.
         | NameOpFun             OpFun
 
-        
-
         -- Machine primitives ------------------
         -- | A primitive type constructor.
         | NamePrimTyCon         PrimTyCon

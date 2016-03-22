@@ -122,24 +122,24 @@ primTypeEnv = Env.setPrimFun typeOfPrimName Env.empty
 typeOfPrimName :: Name -> Maybe (Type Name)
 typeOfPrimName dc
  = case dc of
-        NameDaConTetra p        -> Just $ typeDaConTetra p
-        NameOpFun      p        -> Just $ typeOpFun      p
-        NamePrimArith  p        -> Just $ typePrimArith  p
-        NamePrimCast   p        -> Just $ typePrimCast   p
+        NameDaConTetra p                        -> Just $ typeDaConTetra p
+        NameOpFun      p                        -> Just $ typeOpFun      p
+        NamePrimArith  p                        -> Just $ typePrimArith  p
+        NamePrimCast   p                        -> Just $ typePrimCast   p
 
-        NameLitBool _           -> Just $ tBool
-        NameLitNat  _           -> Just $ tNat
-        NameLitInt  _           -> Just $ tInt
-        NameLitWord _ bits      -> Just $ tWord bits
-        NameLitFloat _ bits     -> Just $ tFloat bits
-        NameLitTextLit _        -> Just $ tTextLit
+        NameLitBool _                           -> Just $ tBool
+        NameLitNat  _                           -> Just $ tNat
+        NameLitInt  _                           -> Just $ tInt
+        NameLitWord _ bits                      -> Just $ tWord bits
+        NameLitFloat _ bits                     -> Just $ tFloat bits
+        NameLitTextLit _                        -> Just $ tTextLit
 
-        NameLitUnboxed NameLitBool{}         -> Just $ tUnboxed tBool
-        NameLitUnboxed NameLitNat{}          -> Just $ tUnboxed tNat
-        NameLitUnboxed NameLitInt{}          -> Just $ tUnboxed tInt
-        NameLitUnboxed (NameLitWord  _ bits) -> Just $ tUnboxed (tWord bits)
-        NameLitUnboxed (NameLitFloat _ bits) -> Just $ tUnboxed (tFloat bits)
-        NameLitUnboxed NameLitTextLit{}      -> Just $ tUnboxed tTextLit
+        NameLitUnboxed NameLitBool{}            -> Just $ tUnboxed tBool
+        NameLitUnboxed NameLitNat{}             -> Just $ tUnboxed tNat
+        NameLitUnboxed NameLitInt{}             -> Just $ tUnboxed tInt
+        NameLitUnboxed (NameLitWord  _ bits)    -> Just $ tUnboxed (tWord bits)
+        NameLitUnboxed (NameLitFloat _ bits)    -> Just $ tUnboxed (tFloat bits)
+        NameLitUnboxed NameLitTextLit{}         -> Just $ tUnboxed tTextLit
 
-        _                       -> Nothing
+        _                                       -> Nothing
 

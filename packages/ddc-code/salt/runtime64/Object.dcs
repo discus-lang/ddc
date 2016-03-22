@@ -115,7 +115,7 @@ export value
 
   -- Arrays of pointers to boxed values.
  allocArray     : [r1 r2 : Region]. Nat# -> Ptr# r1 Obj -> Ptr# r2 Obj
- writeArray     : [r1 r2 : Region]. Ptr# r1 Obj -> Nat# -> Ptr# r2 Obj -> Void#
+ writeArray     : [r1 r2 : Region]. Ptr# r1 Obj -> Nat# -> Ptr# r2 Obj -> Ptr# r1 Obj
  readArray      : [r1 r2 : Region]. Ptr# r1 Obj -> Nat# -> Ptr# r2 Obj
  fillArray      : [r1 r2 : Region]. Ptr# r1 Obj -> Nat# -> Nat# -> Ptr# r2 Obj -> Ptr# r1 Obj
 
@@ -627,8 +627,19 @@ allocArray
 -- | Write an element into an array.
 writeArray 
         [r1 r2 : Region] 
-        (arr : Ptr# r1 Obj) (ix : Nat#) (val : Ptr# r2 Obj) : Void#
- =      setBoxed arr ix val
+        (obj : Ptr# r1 Obj) (ix : Nat#) (val : Ptr# r2 Obj) : Ptr# r1 Obj
+ = do   
+        addr    = takePtr# obj
+
+        -- Get address of the first byte after the end of the array.
+        len     = promote# [Nat#] [Word32#] (read# [Word32#] addr 4#)
+        top     = add# 8# (shl# len (size2# [Addr#]))
+
+        -- Bounded poke.
+        -- If the requested address is past the end of the array then abort.
+        off     = add# 8# (shl# ix  (size2# [Addr#]))
+        _       = pokeBounded# (castPtr# obj) off top val
+        obj
 
 
 -- | Read an element from an array.
@@ -638,13 +649,13 @@ readArray
  = do   
         addr    = takePtr# obj
 
-        -- Get address of the first byte after the end length of the array.
-        len     = read# addr 4#
-        top     = shl#  len  (size2# [Addr#])
+        -- Get address of the first byte after the end of the array.
+        len     = promote# [Nat#] [Word32#] (read# [Word32#] addr 4#)
+        top     = add# 8# (shl#  len  (size2# [Addr#]))
 
         -- Bounded peek.
-        -- If the requested address is off the end of the array then abort.
-        off     = shl#  ix   (size2# [Addr#])
+        -- If the requested address is past the end of the array then abort.
+        off     = add# 8# (shl#  ix   (size2# [Addr#]))
         result  = peekBounded# (castPtr# obj) off top
         result
 

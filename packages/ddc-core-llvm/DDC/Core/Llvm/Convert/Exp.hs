@@ -146,6 +146,107 @@ convertBody ctx ectx blocks label instrs xx
 
 
          -- Assignment ------------------------------------
+         -- Read from a pointer, with integrated bounds check.
+         A.XLet (A.LLet (C.BName nDst _) x1) x2
+          | Just (p, as)                         <- takeXPrimApps x1
+          , A.PrimStore A.PrimStorePeekBounded   <- p
+          , A.RType{} : A.RType tDst : args      <- as
+          , Just [mPtr, mOffset, mLength]        <- atomsR args
+          -> do
+                tDst'           <- convertType pp kenv tDst
+                (ctx', vDst@(Var nDst' _))    
+                                <- bindLocalV ctx nDst tDst
+
+                xPtr'           <- mPtr
+                xOffset'        <- mOffset
+                xLength'        <- mLength
+                let vTest       =  Var (bumpName nDst' "test")  (TInt  1)
+                let vAddr1      =  Var (bumpName nDst' "addr1") (tAddr pp)
+                let vAddr2      =  Var (bumpName nDst' "addr2") (tAddr pp)
+                let vPtr        =  Var (bumpName nDst' "ptr")   (tPtr tDst')
+
+                labelFail       <- newUniqueLabel "peek-bounds"
+                labelOk         <- newUniqueLabel "peek-ok"
+
+                let blockEntry  = Block label
+                                $ instrs 
+                                >< (Seq.fromList $ map annotNil
+                                [ ICmp      vTest (ICond ICondUlt) xOffset' xLength'
+                                , IBranchIf (XVar vTest) labelOk labelFail ])
+
+                let blockFail   = Block labelFail
+                                $ Seq.fromList $ map annotNil
+                                [ case ectx of
+                                   ExpTop{}            -> INop
+                                   ExpNest _   vDst' _ -> ISet vDst' (XUndef (typeOfVar vDst'))
+                                   ExpAssign _ vDst'   -> ISet vDst' (XUndef (typeOfVar vDst'))
+
+                                , ICall Nothing CallTypeStd Nothing 
+                                        TVoid (NameGlobal "abort") [] []
+
+                                , IUnreachable]
+
+                let instrsCont  = Seq.fromList $ map annotNil
+                                [ IConv     vAddr1 ConvPtrtoint xPtr'
+                                , IOp       vAddr2 OpAdd (XVar vAddr1) xOffset'
+                                , IConv     vPtr   ConvInttoptr (XVar vAddr2)
+                                , ILoad     vDst   (XVar vPtr)]
+
+                convertBody ctx' ectx 
+                        (blocks |> blockEntry |> blockFail) 
+                        labelOk instrsCont x2
+
+
+         -- Write to a pointer, with integrated bounds check.
+         A.XLet (A.LLet _ x1) x2
+          | Just (p, as)                         <- takeXPrimApps x1
+          , A.PrimStore A.PrimStorePokeBounded   <- p
+          , A.RType{} : A.RType tVal : args      <- as
+          , Just [mPtr, mOffset, mLength, mVal]  <- atomsR args
+          -> do
+                tVal'           <- convertType pp kenv tVal
+                xPtr'           <- mPtr
+                xOffset'        <- mOffset
+                xLength'        <- mLength
+                xVal'           <- mVal
+
+                vTest           <- newUniqueNamedVar "test"  (TInt  1)
+                vAddr1          <- newUniqueNamedVar "addr1" (tAddr pp)
+                vAddr2          <- newUniqueNamedVar "addr2" (tAddr pp)
+                vPtr            <- newUniqueNamedVar "ptr"   (tPtr  tVal')
+
+                labelFail       <- newUniqueLabel "poke-bounds"
+                labelOk         <- newUniqueLabel "poke-ok"
+
+                let blockEntry  = Block label
+                                $ instrs 
+                                >< (Seq.fromList $ map annotNil
+                                [ ICmp      vTest (ICond ICondUlt) xOffset' xLength'
+                                , IBranchIf (XVar vTest) labelOk labelFail ])
+
+                let blockFail   = Block labelFail
+                                $ Seq.fromList $ map annotNil
+                                [ case ectx of
+                                   ExpTop{}            -> INop
+                                   ExpNest _   vDst' _ -> ISet vDst' (XUndef (typeOfVar vDst'))
+                                   ExpAssign _ vDst'   -> ISet vDst' (XUndef (typeOfVar vDst'))
+
+                                , ICall Nothing CallTypeStd Nothing 
+                                        TVoid (NameGlobal "abort") [] []
+
+                                , IUnreachable]
+
+                let instrsCont  = Seq.fromList $ map annotNil
+                                [ IConv     vAddr1 ConvPtrtoint xPtr'
+                                , IOp       vAddr2 OpAdd (XVar vAddr1) xOffset'
+                                , IConv     vPtr   ConvInttoptr (XVar vAddr2)
+                                , IStore    (XVar vPtr)  xVal' ]
+
+                convertBody ctx ectx
+                        (blocks |> blockEntry |> blockFail) 
+                        labelOk instrsCont x2
+
+
          -- A let-bound expression without a name, of the void type.
          A.XLet (A.LLet (C.BNone t) x1) x2
           | isVoidT t
@@ -209,58 +310,6 @@ convertBody ctx ectx blocks label instrs xx
                                     = Map.insert nBind (nSuper, tsArgs)
                                         (contextSuperBinds ctx) }
                 convertBody ctx' ectx blocks label instrs x2 
-
-
-         -- Read from a raw address, with integrated bounds check.
-         A.XLet (A.LLet (C.BName nDst _) x1) x2
-          | Just (p, as)                         <- takeXPrimApps x1
-          , A.PrimStore A.PrimStorePeekBounded   <- p
-          , A.RType{} : A.RType tDst : args      <- as
-          , Just [mPtr, mOffset, mLength]        <- atomsR args
-          -> do
-                (ctx', vDst@(Var nDst' _))    
-                                <- bindLocalV ctx nDst tDst
-
-                xPtr'           <- mPtr
-                xOffset'        <- mOffset
-                xLength'        <- mLength
-                let vTest       =  Var (bumpName nDst' "test")  (TInt  1)
-                let vAddr1      =  Var (bumpName nDst' "addr1") (tAddr pp)
-                let vAddr2      =  Var (bumpName nDst' "addr2") (tAddr pp)
-
-                tDst'           <- convertType pp kenv tDst
-                let vPtr        =  Var (bumpName nDst' "ptr")   (tPtr tDst')
-
-                labelFail       <- newUniqueLabel "fail"
-                labelOk         <- newUniqueLabel "ok"
-
-                let block       =  Block label
-                                $  instrs 
-                                |> (annotNil $ ICmp      vTest (ICond ICondUge) xOffset' xLength')
-                                |> (annotNil $ IBranchIf (XVar vTest) labelOk labelFail)
-
-                let iSet        = case ectx of
-                                        ExpTop{}           -> INop
-                                        ExpNest _   vDst' _ -> ISet vDst' (XUndef (typeOfVar vDst'))
-                                        ExpAssign _ vDst'   -> ISet vDst' (XUndef (typeOfVar vDst'))
-
-                let iFail       = ICall Nothing CallTypeStd Nothing 
-                                        TVoid (NameGlobal "abort") [] []
-
-                let blockFail   =  Block labelFail
-                                $  Seq.fromList
-                                $  map annotNil [iSet, iFail, IUnreachable]
-
-                let instrs'     = Seq.fromList
-                                $ (map annotNil
-                                [ IConv     vAddr1 ConvPtrtoint xPtr'
-                                , IOp       vAddr2 OpAdd (XVar vAddr1) xOffset'
-                                , IConv     vPtr   ConvInttoptr (XVar vAddr2)
-                                , ILoad     vDst (XVar vPtr)])
-
-                convertBody ctx' ectx 
-                        (blocks |> block |> blockFail) 
-                        labelOk instrs' x2
 
 
          -- Variable assignment from some other expression.

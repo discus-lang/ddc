@@ -1,0 +1,12 @@
+
+module Data.Array
+export { allocArray; readArray; writeArray }
+
+import foreign boxed type
+ Array : Region ~> Data ~> Data
+
+import foreign c value
+ allocArray : [r: Region]. [a: Data]. Nat# -> a -> S (Alloc r) (Array r a)
+ readArray  : [r: Region]. [a: Data]. Array r a -> Nat# -> S (Read r) a
+ writeArray : [r: Region]. [a: Data]. Array r a -> Nat# -> a -> S (Write r) Void#
+

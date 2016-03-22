@@ -15,8 +15,8 @@ import Data.List
 
 
 instance NFData OpFun where
- rnf prim
-  = case prim of
+ rnf op
+  = case op of
         OpFunCurry   n  -> rnf n
         OpFunApply   n  -> rnf n
         OpFunCReify     -> ()
