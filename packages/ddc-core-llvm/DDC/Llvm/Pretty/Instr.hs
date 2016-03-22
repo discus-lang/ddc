@@ -78,9 +78,9 @@ instance Pretty Instr where
 
         IBranchIf cond labelTrue labelFalse
          -> hsep [ text "br"
-                 , ppr cond,      comma
-                 , ppr labelTrue, comma
-                 , ppr labelFalse ]
+                 , ppr cond,                         comma
+                 , text "label %" <> ppr labelTrue,  comma
+                 , text "label %" <> ppr labelFalse ]
 
         ISwitch x1 lDefault alts
          -> text "switch"

@@ -224,7 +224,7 @@ convertBody ctx ectx blocks label instrs xx
                 xPtr'           <- mPtr
                 xOffset'        <- mOffset
                 xLength'        <- mLength
-                let vTest       =  Var (bumpName nDst' "test")  (tInt  pp)
+                let vTest       =  Var (bumpName nDst' "test")  (TInt  1)
                 let vAddr1      =  Var (bumpName nDst' "addr1") (tAddr pp)
                 let vAddr2      =  Var (bumpName nDst' "addr2") (tAddr pp)
 

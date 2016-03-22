@@ -634,8 +634,19 @@ writeArray
 -- | Read an element from an array.
 readArray 
         [r1 r2 : Region]
-        (arr : Ptr# r1 Obj) (ix : Nat#) : Ptr# r2 Obj
- =      getBoxed arr ix
+        (obj : Ptr# r1 Obj) (ix : Nat#) : Ptr# r2 Obj
+ = do   
+        addr    = takePtr# obj
+
+        -- Get address of the first byte after the end length of the array.
+        len     = read# addr 4#
+        top     = shl#  len  (size2# [Addr#])
+
+        -- Bounded peek.
+        -- If the requested address is off the end of the array then abort.
+        off     = shl#  ix   (size2# [Addr#])
+        result  = peekBounded# (castPtr# obj) off top
+        result
 
 
 -- | Fill all elements of an array with the same value.
