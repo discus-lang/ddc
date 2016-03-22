@@ -113,12 +113,6 @@ export value
  writeRef       : [r1 r2 : Region]. Ptr# r1 Obj -> Ptr# r2 Obj -> Void#
  readRef        : [r1 r2 : Region]. Ptr# r1 Obj -> Ptr# r2 Obj
 
-  -- Arrays of pointers to boxed values.
- allocArray     : [r1 r2 : Region]. Nat# -> Ptr# r1 Obj -> Ptr# r2 Obj
- writeArray     : [r1 r2 : Region]. Ptr# r1 Obj -> Nat# -> Ptr# r2 Obj -> Ptr# r1 Obj
- readArray      : [r1 r2 : Region]. Ptr# r1 Obj -> Nat# -> Ptr# r2 Obj
- fillArray      : [r1 r2 : Region]. Ptr# r1 Obj -> Nat# -> Nat# -> Ptr# r2 Obj -> Ptr# r1 Obj
-
  -- Thunk application.
  apply0         :  [r0 r1 : Region]
                 .  Ptr# r0 Obj -> Ptr# r1 Obj
@@ -611,61 +605,6 @@ writeRef [r1 r2 : Region] (ref : Ptr# r1 Obj) (val : Ptr# r2 Obj) : Void#
 -- | Read the value from a reference.
 readRef  [r1 r2 : Region] (ref : Ptr# r1 Obj) : Ptr# r2 Obj
  =      getBoxed ref 0#
-
-
--- Array ----------------------------------------------------------------------
--- | Allocate an array of boxed values, consisting of the same element
---   for all positions.
-allocArray 
-        [r1 r2 : Region]
-        (len : Nat#) (val : Ptr# r1 Obj) : Ptr# r2 Obj
- = do   arr     = allocBoxed [r2] (truncate# 0#) len
-        fillArray arr 0# len val
-        arr
-
-
--- | Write an element into an array.
-writeArray 
-        [r1 r2 : Region] 
-        (obj : Ptr# r1 Obj) (ix : Nat#) (val : Ptr# r2 Obj) : Ptr# r1 Obj
- = do   
-        -- Get address of the first byte after the end of the array.
-        len     = promote# (peek# [r1] [Word32#] (castPtr# obj) 4#)
-        top     = add# 8#  (shl# len (size2# [Addr#]))
-
-        -- Bounded poke.
-        -- If the requested address is past the end of the array then abort.
-        off     = add# 8#  (shl# ix  (size2# [Addr#]))
-        _       = pokeBounded# (castPtr# obj) off top val
-        obj
-
-
--- | Read an element from an array.
-readArray 
-        [r1 r2 : Region]
-        (obj : Ptr# r1 Obj) (ix : Nat#) : Ptr# r2 Obj
- = do   
-        -- Get address of the first byte after the end of the array.
-        len     = promote# (peek# [r1] [Word32#] (castPtr# obj) 4#) 
-        top     = add# 8#  (shl#  len  (size2# [Addr#]))
-
-        -- Bounded peek.
-        -- If the requested address is past the end of the array then abort.
-        off     = add# 8#  (shl#  ix   (size2# [Addr#]))
-        result  = peekBounded# (castPtr# obj) off top
-        result
-
-
--- | Fill all elements of an array with the same value.
-fillArray
-        [r1 r2 : Region]
-        (arr : Ptr# r1 Obj) (start end : Nat#) (val : Ptr# r2 Obj) : Ptr# r1 Obj
-
- = case ge# start end of
-        True#   -> arr
-        False#  -> do
-                setBoxed arr start val
-                fillArray arr (add# start 1#) end val
 
 
 -- Apply -----------------------------------------------------------------------
