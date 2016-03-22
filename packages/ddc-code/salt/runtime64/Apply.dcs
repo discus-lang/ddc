@@ -1,0 +1,467 @@
+
+ -- Thunk application.
+module Runtime.Apply
+
+export value
+ runThunk       : [r1 r2 : Region]. Ptr# r1 Obj -> Ptr# r2 Obj
+
+ apply0         :  [r0 r1 : Region]
+                .  Ptr# r0 Obj -> Ptr# r1 Obj
+
+ apply1         :  [r0 r1 r2 : Region]
+                .  Ptr# r0 Obj -> Ptr# r1 Obj -> Ptr# r2 Obj
+
+ apply2         :  [r0 r1 r2 r3 : Region]
+                .  Ptr# r0 Obj -> Ptr# r1 Obj -> Ptr# r2 Obj -> Ptr# r3 Obj
+
+ apply3         :  [r0 r1 r2 r3 r4 : Region]
+                .  Ptr# r0 Obj -> Ptr# r1 Obj -> Ptr# r2 Obj -> Ptr# r3 Obj 
+                -> Ptr# r4 Obj
+
+ apply4         :  [r0 r1 r2 r3 r4 r5 : Region]
+                .  Ptr# r0 Obj -> Ptr# r1 Obj -> Ptr# r2 Obj -> Ptr# r3 Obj 
+                -> Ptr# r4 Obj -> Ptr# r5 Obj
+
+import value
+ allocThunk     : [r1    : Region]. Addr# -> Nat# -> Nat# -> Nat# -> Nat# -> Ptr# r1 Obj
+ copyThunk      : [r1 r2 : Region]. Ptr# r1 Obj -> Ptr# r2 Obj -> Nat# -> Nat# -> Ptr# r2 Obj
+ extendThunk    : [r1 r2 : Region]. Ptr# r1 Obj -> Nat# -> Ptr# r2 Obj
+
+ funThunk       : [r1    : Region]. Ptr# r1 Obj -> Addr#
+ paramsThunk    : [r1    : Region]. Ptr# r1 Obj -> Nat#
+ boxesThunk     : [r1    : Region]. Ptr# r1 Obj -> Nat#
+ argsThunk      : [r1    : Region]. Ptr# r1 Obj -> Nat#
+ runsThunk      : [r1    : Region]. Ptr# r1 Obj -> Nat#
+
+ setThunk       : [r1 r2 : Region]. Ptr# r1 Obj -> Nat# -> Nat# -> Ptr# r2 Obj -> Void#
+ getThunk       : [r1 r2 : Region]. Ptr# r1 Obj -> Nat# -> Ptr# r2 Obj
+
+with letrec
+
+
+-------------------------------------------------------------------------------
+-- | Run a thunk.
+--   If this is the last run the evaluate it, 
+--   otherwise increment the run count.
+--
+runThunk 
+        [r1 r2 : Region]
+        (src   : Ptr# r1 Obj) : Ptr# r2 Obj
+ = do   
+        boxes   = boxesThunk src
+        case boxes of
+
+         -- The thunk is not boxed,
+         -- so running it would be a type error.
+         0# ->  fail#
+
+         -- We don't know what region the result is going to be allocated
+         -- into, so need to assign it to rT.
+         1# ->  eval0 src
+
+         _ -> do
+                fun     = funThunk    src
+                params  = paramsThunk src
+                args    = argsThunk   src
+                runs'   = add# (runsThunk src) 1#
+
+                dst     = allocThunk [r2] fun params boxes args runs'
+                copyThunk src dst 0# args
+
+
+
+-------------------------------------------------------------------------------
+-- The apply family of functions work out how call the function in a thunk.
+-- Some arguments come from in the thunk itself, while some can be provided
+-- directly to the evaluators.
+--
+-- The hard limits are:
+--   - The maximum arity for the function in a thunk is 12. 
+--     See the comment on applyZ.
+--   - The maximum number of directly applied arguments is 4, 
+--     because we only have apply0 - apply4.
+--
+-- The choice of where to set the limit is a balance between being able to 
+-- enumerate all possible calling conventions, and polluting the instruction
+-- cache with code for too many evaluators.
+--
+
+----------------------------------------------------------- 0
+-- | Apply (evaluate) a thunk, given no more arguments.
+apply0  [r0 r1 : Region]
+        (t : Ptr# r0 Obj) : Ptr# r1 Obj
+ = do
+        p       = paramsThunk t
+        a       = argsThunk   t
+        b       = boxesThunk  t
+        r       = runsThunk   t
+        case mul# (eq# a p) (eq# b r) of
+         True#  -> eval0 t
+         False# -> makePtr# (takePtr# t)
+
+
+-- | Evaluate a saturated thunk, give no more arguments.
+eval0   [r0 r1 : Region]
+        (t     : Ptr# r0 Obj) : Ptr# r1 Obj
+ = do   
+        f       = funThunk    t 
+        p       = paramsThunk t
+        a       = argsThunk   t
+        case p of
+         0# -> callP0 f
+
+         1# -> callP1 f         (getThunk t 0#)
+
+         2# -> callP2 f         (getThunk t 0#) (getThunk t 1#)
+
+         3# -> callP3 f         (getThunk t 0#) (getThunk t 1#) 
+                                (getThunk t 2#) 
+
+         4# -> callP4 f         (getThunk t 0#) (getThunk t 1#) 
+                                (getThunk t 2#) (getThunk t 3#)
+
+         _  -> evalZ t f p      (getThunk t (sub# a 4#))
+                                (getThunk t (sub# a 3#))
+                                (getThunk t (sub# a 2#))
+                                (getThunk t (sub# a 1#))
+
+
+----------------------------------------------------------- 1
+-- | Apply a thunk to one more argument.
+apply1  [r0 r1 r2 : Region] 
+        (t : Ptr# r0 Obj) (arg1 : Ptr# r1 Obj)
+        : Ptr# r2 Obj
+ = do
+        p       = paramsThunk t
+        a       = argsThunk   t
+        b       = boxesThunk  t
+        r       = runsThunk   t
+
+        case mul# (eq# (add# a 1#) p) (eq# b r) of { 
+        True# ->
+                eval1 t arg1;
+
+        False# ->
+        do      t' = extendThunk t 1#
+                setThunk t' a 0# arg1
+                t'
+        }
+
+-- | Evaluate a saturated thunk, given one more argument.
+eval1   [r0 r1 r2 : Region] 
+        (t : Ptr# r0 Obj) (arg1 : Ptr# r1 Obj) 
+        : Ptr# r2 Obj
+ = do   
+        f       = funThunk    t
+        p       = paramsThunk t
+        a       = argsThunk   t
+        case p of
+         0# -> apply1 (callP0 f)  arg1
+
+         1# -> callP1 f           arg1
+
+         2# -> callP2 f          (getThunk t 0#)  arg1
+
+         3# -> callP3 f          (getThunk t 0#) (getThunk t 1#) 
+                                  arg1
+
+         4# -> callP4 f          (getThunk t 0#) (getThunk t 1#)
+                                 (getThunk t 2#)  arg1
+
+         _  -> evalZ t f p       (getThunk t (sub# a 3#))
+                                 (getThunk t (sub# a 2#))
+                                 (getThunk t (sub# a 1#))
+                                  arg1
+
+
+----------------------------------------------------------- 2
+apply2  [r0 r1 r2 r3 : Region]
+        (t    : Ptr# r0 Obj) 
+        (arg1 : Ptr# r1 Obj) (arg2 : Ptr# r2 Obj)
+        : Ptr# r3 Obj
+ = do   
+        p       = paramsThunk t
+        a       = argsThunk   t
+        b       = boxesThunk  t
+        r       = runsThunk   t
+
+        case eq#  (add# a 1#) p of { True# ->
+                apply1 (eval1 t arg1) arg2;
+
+        False# ->
+        case mul# (eq# (add# a 2#) p) (eq# b r) of { True# ->
+                eval2 t arg1 arg2;  
+
+        False# ->
+        do      t' = extendThunk t 2#
+                setThunk t' a 0# arg1
+                setThunk t' a 1# arg2
+                t'
+        }}
+
+
+-- | Evaluate a saturated thunk, given two more arguments.
+eval2   [r0 r1 r2 r3 : Region]
+        (t    : Ptr# r0 Obj)
+        (arg1 : Ptr# r1 Obj) (arg2 : Ptr# r2 Obj)
+        : Ptr# r3 Obj
+ = do   
+        f       = funThunk      t
+        p       = paramsThunk   t
+        a       = argsThunk     t
+        case p of
+         0# -> apply2 (callP0 f)  arg1  arg2
+
+         1# -> apply1 (callP1 f   arg1) arg2
+
+         2# -> callP2 f           arg1  arg2
+
+         3# -> callP3 f          (getThunk t 0#)  
+                                  arg1  arg2
+
+         4# -> callP4 f          (getThunk t 0#) (getThunk t 1#)
+                                  arg1  arg2
+
+         _  -> evalZ  t f p      (getThunk t (sub# a 2#))
+                                 (getThunk t (sub# a 1#))
+                                  arg1  arg2
+
+
+----------------------------------------------------------- 3
+-- | Apply a thunk to three more arguments.
+apply3  [r0 r1 r2 r3 r4 : Region] 
+        (t    : Ptr# r0 Obj)
+        (arg1 : Ptr# r1 Obj) (arg2 : Ptr# r2 Obj)
+        (arg3 : Ptr# r3 Obj)
+        : Ptr# r4 Obj
+ = do
+        p       = paramsThunk t
+        a       = argsThunk   t
+        b       = boxesThunk  t
+        r       = runsThunk   t
+
+        case eq#  (add# a 2#) p of { True# ->
+                apply1 (eval2 t arg1  arg2) arg3;
+
+        False# ->
+        case eq#  (add# a 1#) p of { True# ->
+                apply2 (eval1 t arg1) arg2  arg3;
+
+        False# ->
+        case mul# (eq# (add# a 3#) p) (eq# b r) of { True# ->
+                eval3 t arg1 arg2 arg3;
+
+        False# ->
+        do      t' = extendThunk t 3#
+                setThunk t' a 0# arg1
+                setThunk t' a 1# arg2
+                setThunk t' a 2# arg3
+                t'
+        }}}
+
+
+-- | Evaluate a saturated thunk, given three more arguments.
+eval3   [r0 r1 r2 r3 r4 : Region]
+        (t    : Ptr# r0 Obj)
+        (arg1 : Ptr# r1 Obj) (arg2 : Ptr# r2 Obj)
+        (arg3 : Ptr# r3 Obj)
+        : Ptr# r4 Obj
+ = do   
+        f       = funThunk    t
+        p       = paramsThunk t
+        a       = argsThunk   t
+        case p of
+         0# -> apply3 (callP0 f) arg1  arg2  arg3
+
+         1# -> apply2 (callP1 f  arg1) arg2  arg3
+
+         2# -> apply1 (callP2 f  arg1  arg2) arg3
+
+         3# -> callP3 f          arg1  arg2  arg3
+
+         4# -> callP4 f          (getThunk t 0#) 
+                                 arg1  arg2  arg3
+
+         _  -> evalZ  t f p      (getThunk t (sub# a 1#))
+                                 arg1  arg2  arg3
+
+
+----------------------------------------------------------- 4
+-- | Apply a thunk to four more arguments.
+apply4  [r0 r1 r2 r3 r4 r5 : Region]
+        (t    : Ptr# r0 Obj)
+        (arg1 : Ptr# r1 Obj) (arg2 : Ptr# r2 Obj)
+        (arg3 : Ptr# r3 Obj) (arg4 : Ptr# r4 Obj) 
+        : Ptr# r5 Obj
+ = do
+        p       = paramsThunk t
+        a       = argsThunk   t
+        b       = boxesThunk  t
+        r       = runsThunk   t
+
+        case eq# (add# a 3#) p of { True# ->
+                apply1 (eval3 t arg1  arg2  arg3) arg4;
+
+        False# ->
+        case eq# (add# a 2#) p of { True# ->
+                apply2 (eval2 t arg1  arg2) arg3  arg4;
+
+        False# ->
+        case eq# (add# a 1#) p of { True# ->
+                apply3 (eval1 t arg1) arg2  arg3  arg4;
+
+        False# ->
+        case mul# (eq# (add# a 4#) p) (eq# b r) of { True# ->
+                eval4 t arg1 arg2 arg3 arg4;
+
+        False# ->
+        do      t' = extendThunk t 4#
+                setThunk t' a 0# arg1
+                setThunk t' a 1# arg2
+                setThunk t' a 2# arg3
+                setThunk t' a 3# arg4
+                t'
+        }}}}
+
+
+-- | Evaluate a saturated thunk, given four more arguments.
+eval4   [r0 r1 r2 r3 r4 r5 : Region]
+        (t    : Ptr# r0 Obj)
+        (arg1 : Ptr# r1 Obj) (arg2 : Ptr# r2 Obj)
+        (arg3 : Ptr# r3 Obj) (arg4 : Ptr# r4 Obj)
+        : Ptr# r5 Obj
+ = do   
+        f       = funThunk    t
+        p       = paramsThunk t
+        case p of
+         0# -> apply4 (callP0 f) arg1  arg2  arg3  arg4
+
+         1# -> apply3 (callP1 f  arg1) arg2  arg3  arg4
+
+         2# -> apply2 (callP2 f  arg1  arg2) arg3  arg4
+
+         3# -> apply1 (callP3 f  arg1  arg2  arg3) arg4
+
+         4# -> callP4 f          arg1  arg2  arg3  arg4
+
+         _  -> evalZ  t f p      arg1  arg2  arg3  arg4
+
+
+----------------------------------------------------------- Z
+-- Evaluate a saturated thunk, given its last 4 arguments.
+-- We read the first (n-4) arguments directly from the thunk.
+--
+-- In the object code, this function serves to enumerate the function calling
+-- conventions for functions of 4-12 parameters. The fact that it stops at 12
+-- places a hard limit on the arity of the core programs that we're prepared
+-- to compile. Supers higher than this arity need to be transformed to take
+-- some of their arguments from a tuple instead of as direct parameters.
+--
+-- In terms of the generated object program, we don't want to add more
+-- alternatives here anyway because the underlying machine is unlikely to have
+-- good calling convention when the object function has > 12 arguments. It
+-- isn't useful for the 'arity' here to be more than the number of general
+-- purpose registers we're likely to have in the machine. 
+-- 
+-- Note that some registers will also be needed for the stack pointer etc.
+-- If the machine has 16 general purpose registers, then setting the maximum
+-- arity here to 12 is probably enough.
+--
+evalZ   [r0 r1 r2 r3 r4 r5 : Region]
+        (t : Ptr# r0 Obj) (fun : Addr#) (arity : Nat#)
+        (argL3 : Ptr# r1 Obj) (argL2 : Ptr# r2 Obj)
+        (argL1 : Ptr# r3 Obj) (argL0 : Ptr# r4 Obj)
+        : Ptr# r5 Obj
+
+ = do   argA3   = takePtr# argL3
+        argA2   = takePtr# argL2
+        argA1   = takePtr# argL1
+        argA0   = takePtr# argL0
+
+        case arity of
+         4#  -> makePtr# (call4#  fun
+                                argA3 argA2 argA1 argA0)
+
+         5#  -> makePtr# (call5#  fun
+                                (getThunkA t 0#) 
+                                argA3 argA2 argA1 argA0)
+
+         6#  -> makePtr# (call6#  fun
+                                (getThunkA t 0#) (getThunkA t 1#)
+                                argA3 argA2 argA1 argA0)
+
+         7#  -> makePtr# (call7#  fun
+                                (getThunkA t 0#) (getThunkA t 1#)
+                                (getThunkA t 2#)
+                                argA3 argA2 argA1 argA0)
+
+         8#  -> makePtr# (call8#  fun
+                                (getThunkA t 0#) (getThunkA t 1#)
+                                (getThunkA t 2#) (getThunkA t 3#)
+                                argA3 argA2 argA1 argA0)
+
+         9#  -> makePtr# (call9#  fun
+                                (getThunkA t 0#) (getThunkA t 1#)
+                                (getThunkA t 2#) (getThunkA t 3#)
+                                (getThunkA t 4#)
+                                argA3 argA2 argA1 argA0)
+
+         10# -> makePtr# (call10# fun
+                                (getThunkA t 0#) (getThunkA t 1#)
+                                (getThunkA t 2#) (getThunkA t 3#)
+                                (getThunkA t 4#) (getThunkA t 5#)
+                                argA3 argA2 argA1 argA0)
+
+         11# -> makePtr# (call11# fun
+                                (getThunkA t 0#) (getThunkA t 1#)
+                                (getThunkA t 2#) (getThunkA t 3#)
+                                (getThunkA t 4#) (getThunkA t 5#)
+                                (getThunkA t 6#)
+                                argA3 argA2 argA1 argA0)
+
+         12# -> makePtr# (call12# fun    
+                                (getThunkA t 0#) (getThunkA t 1#)
+                                (getThunkA t 2#) (getThunkA t 3#)
+                                (getThunkA t 4#) (getThunkA t 5#)
+                                (getThunkA t 6#) (getThunkA t 7#)
+                                argA3 argA2 argA1 argA0)
+
+         _   -> fail#
+
+
+callP0  [r1 : Region]
+        (f  : Addr#) : Ptr# r1 Obj
+ = makePtr# (call0# f)
+
+callP1  [r1 r2 : Region]
+        (f  : Addr#) 
+        (a1 : Ptr# r1 Obj) 
+        : Ptr# r2 Obj 
+ = makePtr# (call1# f (takePtr# a1))
+
+callP2  [r1 r2 r3 : Region]
+        (f  : Addr#) 
+        (a1 : Ptr# r1 Obj) (a2 : Ptr# r2 Obj)
+        : Ptr# r3 Obj 
+ = makePtr# (call2# f (takePtr# a1) (takePtr# a2))
+
+callP3  [r1 r2 r3 r4 : Region]
+        (f  : Addr#) 
+        (a1 : Ptr# r1 Obj) (a2 : Ptr# r2 Obj) (a3 : Ptr# r3 Obj)
+        : Ptr# r4 Obj 
+ = makePtr# (call3# f (takePtr# a1) (takePtr# a2) (takePtr# a3))
+
+callP4  [r1 r2 r3 r4 r5 : Region]
+        (f  : Addr#) 
+        (a1 : Ptr# r1 Obj) (a2 : Ptr# r2 Obj) (a3 : Ptr# r3 Obj) (a4 : Ptr# r4 Obj)
+        : Ptr# r5 Obj 
+ = makePtr# (call4# f (takePtr# a1) (takePtr# a2) (takePtr# a3) (takePtr# a4))
+
+
+-- | Like `getThunk`, but convert the result to a raw address.
+getThunkA
+        [r1 : Region]
+        (obj   : Ptr# r1 Obj) (index : Nat#) : Addr#
+ =      read#  (takePtr# obj)
+               (add# 16# (shl# index (size2# [Addr#])))
+
