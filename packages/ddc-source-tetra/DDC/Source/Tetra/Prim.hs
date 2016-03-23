@@ -76,7 +76,8 @@ import qualified Data.Text              as T
 import DDC.Core.Tetra   
         ( readPrimTyCon
         , readPrimArith
-        , readOpFun)
+        , readOpFun
+        , readOpVectorFlag)
 
 import DDC.Core.Salt.Name
         ( readLitNat
@@ -203,16 +204,16 @@ instance NFData PrimVal where
 -- | Read the name of a primtive value.
 readPrimVal :: String -> Maybe PrimVal
 readPrimVal str
-        | Just lit      <- readPrimLit str
+        | Just lit        <- readPrimLit str
         = Just $ PrimValLit lit
 
-        | Just p        <- readPrimArith str  
+        | Just p          <- readPrimArith str  
         = Just $ PrimValArith  p
 
-        | Just p        <- readOpVector str  
+        | Just (p, False) <- readOpVectorFlag str
         = Just $ PrimValVector p
 
-        | Just p        <- readOpFun str
+        | Just p          <- readOpFun str
         = Just $ PrimValFun    p
 
         | otherwise

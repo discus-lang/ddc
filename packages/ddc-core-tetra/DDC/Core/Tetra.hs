@@ -27,7 +27,7 @@ module DDC.Core.Tetra
         , readTyConTetra
         , readDaConTetra
         , readOpFun
-        , readOpVector
+        , readOpVectorFlag
         , readPrimTyCon,        readPrimTyConStem
         , readPrimArith
 

@@ -53,6 +53,7 @@ module DDC.Source.Tetra.Prim.Base
 where
 import DDC.Core.Tetra    
         ( OpFun         (..)
+        , OpVector      (..)
         , PrimTyCon     (..)
         , PrimArith     (..))
 
@@ -186,18 +187,3 @@ pattern NameLitSize   x   = NameLit (PrimLitSize    x)
 pattern NameLitWord   x s = NameLit (PrimLitWord    x s)
 pattern NameLitFloat  x s = NameLit (PrimLitFloat   x s)
 pattern NameLitTextLit x  = NameLit (PrimLitTextLit x)
-
-
----------------------------------------------------------------------------------------------------
--- | Vector operations.
-data OpVector
-        -- | Allocate a new vector of the given size.
-        = OpVectorAlloc
-
-        -- | Read a value from a vector.
-        | OpVectorRead
-
-        -- | Write a value to a vector.
-        | OpVectorWrite
-        deriving (Eq, Ord, Show)
-

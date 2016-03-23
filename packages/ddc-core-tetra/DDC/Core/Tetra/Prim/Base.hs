@@ -42,7 +42,8 @@ data Name
         | NameOpFun             OpFun
 
         -- | Baked-in vector operators.
-        | NameOpVector          OpVector
+        --   The flag indicates whether this is the boxed (False) or unboxed (True) version.
+        | NameOpVector          OpVector        Bool
 
         -- Machine primitives ------------------
         -- | A primitive type constructor.
@@ -184,18 +185,14 @@ data OpFun
 
 -- OpVector -------------------------------------------------------------------
 -- | Vector operators.
---
---   Each operator has a flag saying whether it is the version working
---   on boxed or unboxed values.
---
 data OpVector
         -- | Allocate a new vector of a given size.
-        = OpVectorAlloc Bool
+        = OpVectorAlloc
 
         -- | Read a value from a vector.
-        | OpVectorRead  Bool
+        | OpVectorRead
 
         -- | Write a value to a vector.
-        | OpVectorWrite Bool
+        | OpVectorWrite
         deriving (Eq, Ord, Show)
 

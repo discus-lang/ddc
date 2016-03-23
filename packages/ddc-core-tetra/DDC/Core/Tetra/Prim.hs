@@ -30,8 +30,8 @@ module DDC.Core.Tetra.Prim
 
           -- * Baked-in vector operators.
         , OpVector      (..)
-        , readOpVector
-        , typeOpVector
+        , readOpVectorFlag
+        , typeOpVectorFlag
 
           -- * Primitive type constructors.
         , PrimTyCon     (..)
@@ -82,7 +82,7 @@ instance NFData Name where
         NameDaConTetra con      -> rnf con
 
         NameOpFun      op       -> rnf op
-        NameOpVector   op       -> rnf op
+        NameOpVector   op _     -> rnf op
 
         NamePrimTyCon  op       -> rnf op
         NamePrimArith  op       -> rnf op
@@ -112,7 +112,9 @@ instance Pretty Name where
         NameDaConTetra dc       -> ppr dc
         
         NameOpFun      op       -> ppr op
-        NameOpVector   op       -> ppr op
+
+        NameOpVector   op False -> ppr op
+        NameOpVector   op True  -> ppr op <> text "#"
 
         NamePrimTyCon  op       -> ppr op
         NamePrimArith  op       -> ppr op
@@ -155,8 +157,8 @@ readName str
         | Just p <- readOpFun     str
         = Just $ NameOpFun p
 
-        | Just p <- readOpVector  str
-        = Just $ NameOpVector p
+        | Just (p, f) <- readOpVectorFlag  str
+        = Just $ NameOpVector p f
 
         -- Primitive names.
         | Just p <- readPrimTyCon str  
@@ -230,9 +232,9 @@ takeTypeOfLitName nn
 takeTypeOfPrimOpName :: Name -> Maybe (Type Name)
 takeTypeOfPrimOpName nn
  = case nn of
-        NameOpFun       op -> Just (typeOpFun     op)
-        NameOpVector    op -> Just (typeOpVector  op)
-        NamePrimArith   op -> Just (typePrimArith op)
-        NamePrimCast    op -> Just (typePrimCast  op)
-        _                  -> Nothing
+        NameOpFun       op      -> Just (typeOpFun        op)
+        NameOpVector    op f    -> Just (typeOpVectorFlag op f)
+        NamePrimArith   op      -> Just (typePrimArith    op)
+        NamePrimCast    op      -> Just (typePrimCast     op)
+        _                       -> Nothing
 
