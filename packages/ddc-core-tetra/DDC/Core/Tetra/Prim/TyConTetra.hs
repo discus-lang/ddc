@@ -3,6 +3,7 @@ module DDC.Core.Tetra.Prim.TyConTetra
         ( kindTyConTetra
         , readTyConTetra
         , tTupleN
+        , tVector
         , tUnboxed
         , tFunValue
         , tCloValue)
@@ -24,6 +25,7 @@ instance Pretty TyConTetra where
  ppr tc
   = case tc of
         TyConTetraTuple n       -> text "Tuple" <> int n <> text "#"
+        TyConTetraVector        -> text "Vector#"
         TyConTetraU             -> text "U#"
         TyConTetraF             -> text "F#"
         TyConTetraC             -> text "C#"
@@ -51,6 +53,7 @@ kindTyConTetra :: TyConTetra -> Type Name
 kindTyConTetra tc
  = case tc of
         TyConTetraTuple n -> foldr kFun kData (replicate n kData)
+        TyConTetraVector  -> kRegion `kFun` kData `kFun` kData
         TyConTetraU       -> kData   `kFun` kData
         TyConTetraF       -> kData   `kFun` kData
         TyConTetraC       -> kData   `kFun` kData
@@ -60,6 +63,11 @@ kindTyConTetra tc
 -- | Construct a tuple type.
 tTupleN :: [Type Name] -> Type Name
 tTupleN tys     = tApps (tConTyConTetra (TyConTetraTuple (length tys))) tys
+
+
+-- | Construct a vector type.
+tVector ::  Region Name -> Type Name -> Type Name
+tVector tR tA   = tApps (tConTyConTetra TyConTetraVector) [tR, tA]
 
 
 -- | Construct an unboxed representation type.

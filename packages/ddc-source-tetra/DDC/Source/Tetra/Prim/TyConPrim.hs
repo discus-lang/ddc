@@ -2,7 +2,7 @@
 -- | Definitions of primitive types for Source Tetra language.
 module DDC.Source.Tetra.Prim.TyConPrim
         ( kindPrimTyCon
-        , tBool, tNat, tInt, tWord
+        , tVoid, tBool, tNat, tInt, tWord
         , tTextLit)
 where
 import DDC.Source.Tetra.Prim.Base
@@ -24,12 +24,16 @@ kindPrimTyCon tc
         PrimTyConVec   _ -> kData   `kFun` kData
         PrimTyConAddr    -> kData
         PrimTyConPtr     -> kRegion `kFun` kData `kFun` kData
-        PrimTyConArray   -> kRegion `kFun` kData `kFun` kData
         PrimTyConTextLit -> kData
         PrimTyConTag     -> kData
 
 
 -- Compounds ------------------------------------------------------------------
+-- | Primitive `Void` type.
+tVoid   :: Type Name
+tVoid   = TCon (TyConBound (UPrim (NameTyCon PrimTyConVoid) kData) kData)
+
+
 -- | Primitive `Bool` type.
 tBool   :: Type Name
 tBool   = TCon (TyConBound (UPrim (NameTyCon PrimTyConBool) kData) kData)
@@ -55,5 +59,3 @@ tWord bits
 tTextLit  :: Type Name
 tTextLit
         = TCon (TyConBound (UPrim (NameTyCon PrimTyConTextLit) kData) kData)
-
-

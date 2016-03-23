@@ -20,6 +20,7 @@ module DDC.Source.Tetra.Prim.Base
           -- ** Primitive Tetra specific type constructors.
         , PrimTyConTetra(..)
         , pattern NameTyConTetraTuple
+        , pattern NameTyConTetraVector
         , pattern NameTyConTetraF
         , pattern NameTyConTetraC
         , pattern NameTyConTetraU
@@ -28,10 +29,14 @@ module DDC.Source.Tetra.Prim.Base
         , PrimVal       (..)
         , pattern NameLit
         , pattern NameArith
+        , pattern NameVector
         , pattern NameFun
 
           -- ** Primitive arithmetic operators.
         , PrimArith     (..)
+
+          -- ** Primitive vector operators.
+        , OpVector      (..)
 
           -- ** Primitive function operators.
         , OpFun         (..)
@@ -101,8 +106,11 @@ pattern NameTyConTetra tc       = NamePrim (PrimNameType (PrimTypeTyConTetra tc)
 -- | Primitive type constructors specific to the Tetra language fragment.
 data PrimTyConTetra
         -- | @TupleN#@. Tuples.
-        = PrimTyConTetraTuple   !Int
+        = PrimTyConTetraTuple !Int
         
+        -- | @Vector#@. Vectors.
+        | PrimTyConTetraVector
+
         -- | @F#@.       Reified function values.
         | PrimTyConTetraF
 
@@ -114,6 +122,7 @@ data PrimTyConTetra
         deriving (Eq, Ord, Show)
 
 pattern NameTyConTetraTuple i   = NameTyConTetra (PrimTyConTetraTuple i)
+pattern NameTyConTetraVector    = NameTyConTetra PrimTyConTetraVector
 pattern NameTyConTetraF         = NameTyConTetra PrimTyConTetraF
 pattern NameTyConTetraC         = NameTyConTetra PrimTyConTetraC
 pattern NameTyConTetraU         = NameTyConTetra PrimTyConTetraU
@@ -128,13 +137,17 @@ data PrimVal
         -- | Primitive arithmetic operators.
         | PrimValArith          !PrimArith
 
+        -- | Primitive vector operators.
+        | PrimValVector         !OpVector
+
         -- | Primitive function operators.
         | PrimValFun            !OpFun
         deriving (Eq, Ord, Show)
 
-pattern NameLit p               = NamePrim (PrimNameVal  (PrimValLit p))
-pattern NameArith p             = NamePrim (PrimNameVal  (PrimValArith p))
-pattern NameFun p               = NamePrim (PrimNameVal  (PrimValFun   p))
+pattern NameLit    p            = NamePrim (PrimNameVal  (PrimValLit    p))
+pattern NameArith  p            = NamePrim (PrimNameVal  (PrimValArith  p))
+pattern NameVector p            = NamePrim (PrimNameVal  (PrimValVector p))
+pattern NameFun    p            = NamePrim (PrimNameVal  (PrimValFun    p))
 
 
 ---------------------------------------------------------------------------------------------------
@@ -173,4 +186,18 @@ pattern NameLitSize   x   = NameLit (PrimLitSize    x)
 pattern NameLitWord   x s = NameLit (PrimLitWord    x s)
 pattern NameLitFloat  x s = NameLit (PrimLitFloat   x s)
 pattern NameLitTextLit x  = NameLit (PrimLitTextLit x)
+
+
+---------------------------------------------------------------------------------------------------
+-- | Vector operations.
+data OpVector
+        -- | Allocate a new vector of the given size.
+        = OpVectorAlloc
+
+        -- | Read a value from a vector.
+        | OpVectorRead
+
+        -- | Write a value to a vector.
+        | OpVectorWrite
+        deriving (Eq, Ord, Show)
 

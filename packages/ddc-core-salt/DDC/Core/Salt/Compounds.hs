@@ -12,7 +12,6 @@ module DDC.Core.Salt.Compounds
         , tObj
         , tAddr
         , tPtr,   takeTPtr
-        , tArray, takeTArray
         , tTextLit
         , xTextLit)
 where
@@ -69,23 +68,6 @@ takeTPtr tt
  = case tt of
         TApp (TApp (TCon tc) r) t
          | TyConBound (UPrim (NamePrimTyCon PrimTyConPtr) _) _  <- tc
-         -> Just (r, t)
-
-        _ -> Nothing
-
-
--- Array
-tArray :: Region Name -> Type Name -> Type Name
-tArray r t = TApp (TApp (TCon tcArray) r) t
- where  tcArray = TyConBound (UPrim (NamePrimTyCon PrimTyConArray) kArray) kArray
-        kArray  = kRegion `kFun` kData `kFun` kData
-
-
-takeTArray :: Type Name -> Maybe (Region Name, Type Name)
-takeTArray tt
- = case tt of
-        TApp (TApp (TCon tc) r) t
-         | TyConBound (UPrim (NamePrimTyCon PrimTyConArray) _) _  <- tc
          -> Just (r, t)
 
         _ -> Nothing

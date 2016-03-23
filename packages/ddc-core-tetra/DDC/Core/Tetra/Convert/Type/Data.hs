@@ -190,6 +190,12 @@ convertDataAppT ctx tt
         =       return $ A.tPtr A.rTop A.tObj
 
 
+        -- Boxed vectors of unboxed values-----------------
+        | Just  ( E.NameTyConTetra E.TyConTetraVector
+                , [_, _])      <- takePrimTyConApps tt
+        =       return $ A.tPtr A.rTop A.tObj
+
+
         -- Foreign boxed data types -----------------------
         --   If these have a primary region then we use that, 
         --   otherwise they are represnted in generic boxed form.

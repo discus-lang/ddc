@@ -8,6 +8,7 @@ module DDC.Core.Tetra.Prim.Base
         , TyConTetra    (..)
         , DaConTetra    (..)
         , OpFun         (..)
+        , OpVector      (..)
         , PrimTyCon     (..)
         , PrimArith     (..)
         , PrimCast      (..))
@@ -39,6 +40,9 @@ data Name
 
         -- | Baked-in function operators.
         | NameOpFun             OpFun
+
+        -- | Baked-in vector operators.
+        | NameOpVector          OpVector
 
         -- Machine primitives ------------------
         -- | A primitive type constructor.
@@ -126,6 +130,9 @@ data TyConTetra
         -- | @TupleN#@. Tuples.
         = TyConTetraTuple Int
 
+        -- | @Vector#@. Vectors of unboxed values.
+        | TyConTetraVector
+
         -- | @U#@       Unboxed type constructor.
         --   Used to represent unboxed numeric values.
         | TyConTetraU
@@ -172,5 +179,23 @@ data OpFun
         -- | Apply an explicitly typed closure to some arguments,
         --   possibly evaluating the contained function.
         | OpFunCApply   Int
+        deriving (Eq, Ord, Show)
+
+
+-- OpVector -------------------------------------------------------------------
+-- | Vector operators.
+--
+--   Each operator has a flag saying whether it is the version working
+--   on boxed or unboxed values.
+--
+data OpVector
+        -- | Allocate a new vector of a given size.
+        = OpVectorAlloc Bool
+
+        -- | Read a value from a vector.
+        | OpVectorRead  Bool
+
+        -- | Write a value to a vector.
+        | OpVectorWrite Bool
         deriving (Eq, Ord, Show)
 

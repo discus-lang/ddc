@@ -459,10 +459,13 @@ toCoreN nn
          -> C.NameLitTextLit x
 
         S.NamePrim (S.PrimNameVal (S.PrimValArith p))
-         -> C.NamePrimArith p
+         -> C.NamePrimArith  p
+
+        S.NamePrim (S.PrimNameVal (S.PrimValVector p))
+         -> C.NameOpVector   (toCoreOpVector p)
 
         S.NamePrim (S.PrimNameVal (S.PrimValFun   p))
-         -> C.NameOpFun     p
+         -> C.NameOpFun      p
 
         S.NameHole
          -> C.NameHole
@@ -472,10 +475,25 @@ toCoreN nn
 toCoreTyConTetra :: S.PrimTyConTetra -> C.TyConTetra
 toCoreTyConTetra tc
  = case tc of
-        S.PrimTyConTetraTuple n  -> C.TyConTetraTuple n
-        S.PrimTyConTetraF        -> C.TyConTetraF
-        S.PrimTyConTetraC        -> C.TyConTetraC
-        S.PrimTyConTetraU        -> C.TyConTetraU
+        S.PrimTyConTetraTuple n -> C.TyConTetraTuple n
+        S.PrimTyConTetraVector  -> C.TyConTetraVector
+        S.PrimTyConTetraF       -> C.TyConTetraF
+        S.PrimTyConTetraC       -> C.TyConTetraC
+        S.PrimTyConTetraU       -> C.TyConTetraU
+
+
+-- | Convert a Source Tetra vector operator to the Core Tetra version.
+--
+--   We use the primitives expressed in terms of value types.
+--   They will get rewritten to use the explicitly unboxed versions
+--   by the unboxing transformation on the Core code.
+--
+toCoreOpVector :: S.OpVector -> C.OpVector
+toCoreOpVector op
+ = case op of
+        S.OpVectorAlloc         -> C.OpVectorAlloc False
+        S.OpVectorRead          -> C.OpVectorRead  False
+        S.OpVectorWrite         -> C.OpVectorWrite False
 
 
 -- Error ------------------------------------------------------------------------------------------

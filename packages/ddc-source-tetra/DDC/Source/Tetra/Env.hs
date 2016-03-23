@@ -56,9 +56,10 @@ typeOfPrimName nn
 typeOfPrimVal  :: PrimVal -> Type Name
 typeOfPrimVal dc
  = case dc of
-        PrimValLit l            -> typeOfPrimLit l
-        PrimValArith p          -> typePrimArith p
-        PrimValFun _p           -> error "typeOfPrimLit: finish me"
+        PrimValLit    l         -> typeOfPrimLit  l
+        PrimValArith  p         -> typePrimArith  p
+        PrimValVector p         -> typeOpVector   p
+        PrimValFun    p         -> typeOpFun      p
 
 
 -- | Take the type of a primitive literal.
@@ -68,8 +69,8 @@ typeOfPrimLit pl
         PrimLitBool     _       -> tBool
         PrimLitNat      _       -> tNat
         PrimLitInt      _       -> tInt
-        PrimLitSize     _       -> error "typeOfPrimLit: finish me"
-        PrimLitFloat    _ _bits -> error "typeOfPrimLit: finish me"
+        PrimLitSize     _       -> error "typeOfPrimLit: TODO: finish me"
+        PrimLitFloat    _ _bits -> error "typeOfPrimLit: TODO: finish me"
         PrimLitWord     _ bits  -> tWord bits
         PrimLitTextLit  _       -> tTextLit
 

@@ -7,6 +7,7 @@ import DDC.Core.Tetra.Convert.Exp.Arg
 import DDC.Core.Tetra.Convert.Exp.Ctor
 import DDC.Core.Tetra.Convert.Exp.PrimCall
 import DDC.Core.Tetra.Convert.Exp.PrimArith
+import DDC.Core.Tetra.Convert.Exp.PrimVector
 import DDC.Core.Tetra.Convert.Exp.PrimBoxing
 import DDC.Core.Tetra.Convert.Exp.Base
 import DDC.Core.Tetra.Convert.Boxing
@@ -140,6 +141,7 @@ convertExp ectx ctx xx
          | Just makeX   <- convertPrimBoxing ectx ctx xx -> makeX
          | Just makeX   <- convertPrimCall   ectx ctx xx -> makeX
          | Just makeX   <- convertPrimArith  ectx ctx xx -> makeX
+         | Just makeX   <- convertPrimVector ectx ctx xx -> makeX
 
 
         ---------------------------------------------------

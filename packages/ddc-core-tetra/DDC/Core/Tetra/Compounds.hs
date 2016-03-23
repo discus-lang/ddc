@@ -18,7 +18,9 @@ module DDC.Core.Tetra.Compounds
 where
 import DDC.Core.Tetra.Prim.TyConTetra
 import DDC.Core.Tetra.Prim.TyConPrim
-import DDC.Core.Tetra.Prim
+import DDC.Core.Tetra.Prim.OpCast
+import DDC.Core.Tetra.Prim.OpFun
+import DDC.Core.Tetra.Prim.Base
 import DDC.Core.Compounds
 import DDC.Core.Exp
 

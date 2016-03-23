@@ -156,9 +156,6 @@ fieldSizeOfPrimTyCon platform tc
         -- Pointer tycon shouldn't appear by itself.
         PrimTyConPtr            -> Nothing
 
-        -- Array tycon shouldn't appear by itself.
-        PrimTyConArray          -> Nothing
-
         -- Address of static memory where the string data is stored.
         PrimTyConTextLit        -> Just $ platformAddrBytes platform
 

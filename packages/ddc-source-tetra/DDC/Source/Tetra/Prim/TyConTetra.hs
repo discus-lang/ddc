@@ -3,6 +3,7 @@
 module DDC.Source.Tetra.Prim.TyConTetra
         ( kindPrimTyConTetra
         , readPrimTyConTetra
+        , tVector
         , tFunValue
         , tCloValue)
 where
@@ -23,6 +24,7 @@ instance Pretty PrimTyConTetra where
  ppr tc
   = case tc of
         PrimTyConTetraTuple n   -> text "Tuple" <> int n
+        PrimTyConTetraVector    -> text "Vector"
         PrimTyConTetraF         -> text "F#"
         PrimTyConTetraC         -> text "C#"
         PrimTyConTetraU         -> text "U#"
@@ -39,6 +41,7 @@ readPrimTyConTetra str
 
         | otherwise
         = case str of
+                "Vector#"       -> Just PrimTyConTetraVector
                 "F#"            -> Just PrimTyConTetraF
                 "C#"            -> Just PrimTyConTetraC
                 "U#"            -> Just PrimTyConTetraU
@@ -50,12 +53,21 @@ kindPrimTyConTetra :: PrimTyConTetra -> Type Name
 kindPrimTyConTetra tc
  = case tc of
         PrimTyConTetraTuple n   -> foldr kFun kData (replicate n kData)
-        PrimTyConTetraF         -> kData `kFun` kData
-        PrimTyConTetraC         -> kData `kFun` kData
-        PrimTyConTetraU         -> kData `kFun` kData
+        PrimTyConTetraVector    -> kRegion `kFun` kData `kFun` kData
+        PrimTyConTetraF         -> kData   `kFun` kData
+        PrimTyConTetraC         -> kData   `kFun` kData
+        PrimTyConTetraU         -> kData   `kFun` kData
 
 
 -- Compounds ------------------------------------------------------------------
+-- | Primitive `Vector` type.
+tVector ::  Region Name -> Type Name -> Type Name
+tVector tR tA   
+ = tApps (TCon (TyConBound (UPrim (NameTyConTetra PrimTyConTetraVector) k) k)) 
+         [tR, tA]
+ where k = kRegion `kFun` kData `kFun` kData
+
+
 tFunValue :: Type Name -> Type Name
 tFunValue tA
  = tApps (TCon (TyConBound (UPrim (NameTyConTetra PrimTyConTetraF) k) k)) [tA]

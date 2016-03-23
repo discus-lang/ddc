@@ -124,6 +124,7 @@ typeOfPrimName dc
  = case dc of
         NameDaConTetra p                        -> Just $ typeDaConTetra p
         NameOpFun      p                        -> Just $ typeOpFun      p
+        NameOpVector   p                        -> Just $ typeOpVector   p
         NamePrimArith  p                        -> Just $ typePrimArith  p
         NamePrimCast   p                        -> Just $ typePrimCast   p
 

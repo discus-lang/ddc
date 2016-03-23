@@ -27,10 +27,10 @@ config ntsForeignSea
         { configRepOfType               = repOfType
         , configConvertRepType          = convertRepType
         , configConvertRepExp           = convertRepExp
-        , configNameIsUnboxedOp         = isNameOfUnboxedOp 
         , configValueTypeOfLitName      = takeTypeOfLitName
         , configValueTypeOfPrimOpName   = takeTypeOfPrimOpName
         , configValueTypeOfForeignName  = \n -> lookup n ntsForeignSea
+        , configUnboxPrimOpName         = unboxPrimOpName
         , configUnboxLitName            = unboxLitName }
 
 
@@ -53,7 +53,6 @@ repOfType tt
                 PrimTyConVec{}          -> Just RepBoxed
                 PrimTyConAddr{}         -> Just RepBoxed
                 PrimTyConPtr{}          -> Just RepBoxed
-                PrimTyConArray{}        -> Just RepBoxed
                 PrimTyConTextLit{}      -> Just RepBoxed
                 PrimTyConTag{}          -> Just RepBoxed
 
@@ -67,6 +66,7 @@ repOfType tt
                 -- These are all higher-kinded type constructors,
                 -- which don't have any associated values.
                 TyConTetraTuple{}       -> Just RepNone
+                TyConTetraVector{}      -> Just RepNone
                 TyConTetraU{}           -> Just RepNone
                 TyConTetraF{}           -> Just RepNone
                 TyConTetraC{}           -> Just RepNone
@@ -114,6 +114,7 @@ convertRepExp rep a tSource xx
         = Nothing
 
 
+{-
 -- | Check if the primitive operator with this name takes unboxed values
 --   directly.
 isNameOfUnboxedOp :: Name -> Bool
@@ -121,7 +122,24 @@ isNameOfUnboxedOp nn
  = case nn of
         NamePrimArith{} -> True
         NamePrimCast{}  -> True
+        NameOpVector{}  -> True
         _               -> False
+-}
+
+-- | Convert a primitive operator name to the unboxed version.
+unboxPrimOpName :: Name -> Maybe Name
+unboxPrimOpName n
+ = case n of
+        -- The types of arithmetic operators are already polytypic,
+        -- and can be instantiated at either value types or unboxed types.
+        NamePrimArith   op                      -> Just $ NamePrimArith  op
+
+        -- The types of vector operators have different value type and unboxed versions.
+        NameOpVector (OpVectorAlloc False)      -> Just $ NameOpVector (OpVectorAlloc True)
+        NameOpVector (OpVectorRead  False)      -> Just $ NameOpVector (OpVectorRead  True)
+        NameOpVector (OpVectorWrite False)      -> Just $ NameOpVector (OpVectorWrite True)
+
+        _                                       -> Nothing
 
 
 -- | If this is the name of an literal, then produce the unboxed version.

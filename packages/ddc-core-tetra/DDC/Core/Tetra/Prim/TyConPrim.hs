@@ -4,6 +4,7 @@ module DDC.Core.Tetra.Prim.TyConPrim
         , pprPrimTyConStem
         , readPrimTyCon,        readPrimTyConStem
         , kindPrimTyCon
+        , tVoid
         , tBool
         , tNat, tInt, tSize, tWord, tFloat
         , tPtr
@@ -31,12 +32,16 @@ kindPrimTyCon tc
         PrimTyConVec{}     -> kData   `kFun` kData
         PrimTyConAddr{}    -> kData
         PrimTyConPtr{}     -> kRegion `kFun` kData `kFun` kData
-        PrimTyConArray{}   -> kRegion `kFun` kData `kFun` kData
         PrimTyConTextLit{} -> kData
         PrimTyConTag{}     -> kData
 
 
 -- Compounds ------------------------------------------------------------------
+-- | Primitive `Void` type.
+tVoid   :: Type Name
+tVoid   = tConPrim PrimTyConVoid
+
+
 -- | Primitive `Bool` type.
 tBool   :: Type Name
 tBool   = tConPrim PrimTyConBool

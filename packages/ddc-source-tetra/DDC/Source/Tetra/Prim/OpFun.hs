@@ -1,6 +1,5 @@
 
--- | Definitions of primitive operators for working with higher order
---   functions in the Source Tetra language.
+-- | Types of primitive Source Tetra function operators.
 module DDC.Source.Tetra.Prim.OpFun
         (typeOpFun)
 where

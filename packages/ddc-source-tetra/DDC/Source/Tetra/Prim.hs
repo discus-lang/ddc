@@ -8,6 +8,7 @@ module DDC.Source.Tetra.Prim
         , PrimName      (..)
         , pattern NameType
         , pattern NameVal
+        , readName
 
           -- * Primitive Types
         , PrimType      (..)
@@ -35,15 +36,20 @@ module DDC.Source.Tetra.Prim
         , PrimVal (..)
         , pattern NameLit
         , pattern NameArith
+        , pattern NameVector
         , pattern NameFun
 
           -- ** Primitive arithmetic operators.
         , PrimArith     (..)
         , typePrimArith
-        , readName
+
+          -- ** Primitive vector operators.
+        , OpVector      (..)
+        , typeOpVector
 
           -- ** Primitive function operators.
         , OpFun         (..)
+        , typeOpFun
 
           -- ** Primitive literals
         , PrimLit (..)
@@ -59,6 +65,8 @@ import DDC.Source.Tetra.Prim.Base
 import DDC.Source.Tetra.Prim.TyConPrim
 import DDC.Source.Tetra.Prim.TyConTetra
 import DDC.Source.Tetra.Prim.OpArith
+import DDC.Source.Tetra.Prim.OpFun
+import DDC.Source.Tetra.Prim.OpVector
 import DDC.Core.Lexer.Names             (isVarStart)
 import DDC.Base.Pretty
 import Control.DeepSeq
@@ -177,17 +185,19 @@ readPrimType str
 instance Pretty PrimVal where
  ppr val
   = case val of
-        PrimValLit lit          -> ppr lit
-        PrimValArith p          -> ppr p
-        PrimValFun p            -> ppr p
+        PrimValLit    lit       -> ppr lit
+        PrimValArith  p         -> ppr p
+        PrimValVector p         -> ppr p
+        PrimValFun    p         -> ppr p
 
 
 instance NFData PrimVal where
  rnf val
   = case val of
-        PrimValLit lit          -> rnf lit
-        PrimValArith p          -> rnf p
-        PrimValFun   p          -> rnf p
+        PrimValLit    lit       -> rnf lit
+        PrimValArith  p         -> rnf p
+        PrimValVector p         -> rnf p
+        PrimValFun    p         -> rnf p
 
 
 -- | Read the name of a primtive value.
@@ -197,10 +207,13 @@ readPrimVal str
         = Just $ PrimValLit lit
 
         | Just p        <- readPrimArith str  
-        = Just $ PrimValArith p
+        = Just $ PrimValArith  p
+
+        | Just p        <- readOpVector str  
+        = Just $ PrimValVector p
 
         | Just p        <- readOpFun str
-        = Just $ PrimValFun   p
+        = Just $ PrimValFun    p
 
         | otherwise
         = Nothing

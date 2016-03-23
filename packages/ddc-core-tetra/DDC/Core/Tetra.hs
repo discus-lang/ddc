@@ -18,6 +18,7 @@ module DDC.Core.Tetra
         , TyConTetra    (..)
         , DaConTetra    (..)
         , OpFun         (..)
+        , OpVector      (..)
         , PrimTyCon     (..),   pprPrimTyConStem
         , PrimArith     (..)
 
@@ -26,6 +27,7 @@ module DDC.Core.Tetra
         , readTyConTetra
         , readDaConTetra
         , readOpFun
+        , readOpVector
         , readPrimTyCon,        readPrimTyConStem
         , readPrimArith
 

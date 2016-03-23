@@ -1,5 +1,5 @@
 
--- | Definitions of primitive operators in Source Tetra language.
+-- | Types of primitive Source Tetra arithmetic operators.
 module DDC.Source.Tetra.Prim.OpArith
         (typePrimArith)
 where

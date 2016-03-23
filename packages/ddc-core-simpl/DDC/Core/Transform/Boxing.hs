@@ -63,13 +63,11 @@ data Config a n
           --   The function can be polymorphic, but must have a prenex rank-1 type.
         , configValueTypeOfForeignName  :: n -> Maybe (Type n)
 
-          -- | Check if the primop with this name works on unboxed values
-          --   directly. Operators where this function returns False are assumed
-          --   to take boxed values for every argument.
-        , configNameIsUnboxedOp         :: n -> Bool 
-
           -- | Convert a literal name to its unboxed version.
         , configUnboxLitName            :: n -> Maybe n
+
+          -- | Covnert a primop name to its unboxed version.
+        , configUnboxPrimOpName         :: n -> Maybe n
         }
 
 
@@ -124,13 +122,25 @@ boxingX config xx
 
         -- Use unboxed versions of primops by unboxing their arguments then 
         -- reboxing their results.
+        XCast _ CastRun xx'@(XApp a _ _)
+         |  Just (n, xsArgsAll) <- takeXPrimApps xx'
+         ,  Just n'             <- configUnboxPrimOpName config n
+         -> let Just tPrimBoxed    = configValueTypeOfPrimOpName config n
+                Just tPrimUnboxed  = configValueTypeOfPrimOpName config n'
+                xsArgsAll'         = map (boxingX config) xsArgsAll
+            in  boxingPrimitive config a True xx' (XVar a (UName n')) 
+                        tPrimBoxed tPrimUnboxed
+                        xsArgsAll'
+
         XApp a _ _
-         |  Just (n, xsArgsAll)  <- takeXPrimApps xx
-         ,  configNameIsUnboxedOp config n
-         -> let Just tPrim      = configValueTypeOfPrimOpName config n
-                Just (xFn, _)   = takeXApps     xx
-                xsArgsAll'      = map (boxingX config) xsArgsAll
-            in  boxingPrimitive config a xx xFn tPrim xsArgsAll'
+         |  Just (n, xsArgsAll) <- takeXPrimApps xx
+         ,  Just n'             <- configUnboxPrimOpName config n
+         -> let Just tPrimBoxed    = configValueTypeOfPrimOpName config n
+                Just tPrimUnboxed  = configValueTypeOfPrimOpName config n'
+                xsArgsAll'         = map (boxingX config) xsArgsAll
+            in  boxingPrimitive config a False xx (XVar a (UName n')) 
+                        tPrimBoxed tPrimUnboxed
+                        xsArgsAll'
 
         -- Foreign calls
         XApp a _ _
@@ -151,12 +161,12 @@ boxingX config xx
         -- Boilerplate.
         XVar{}          -> xx
         XCon{}          -> xx
-        XLAM a b x      -> XLAM a b (boxingX   config x)
-        XLam a b x      -> XLam a b (boxingX   config x)
-        XApp a x1 x2    -> XApp a   (boxingX   config x1)  (boxingX config x2)
-        XLet a lts x    -> XLet a   (boxingLts config lts) (boxingX config x)
-        XCase a x alts  -> XCase a  (boxingX   config x)   (map (boxingAlt config) alts)
-        XCast a c x     -> XCast a  c (boxingX config x)
+        XLAM a b x      -> XLAM a b  (boxingX   config x)
+        XLam a b x      -> XLam a b  (boxingX   config x)
+        XApp a x1 x2    -> XApp a    (boxingX   config x1)  (boxingX config x2)
+        XLet a lts x    -> XLet a    (boxingLts config lts) (boxingX config x)
+        XCase a x alts  -> XCase a   (boxingX   config x)   (map (boxingAlt config) alts)
+        XCast a c x     -> XCast a c (boxingX   config x)
         XType{}         -> xx
         XWitness{}      -> xx
 
@@ -180,52 +190,69 @@ boxingAlt config alt
 --   TODO: Assumes that the type of the primitive is prenex.
 
 boxingPrimitive
-        :: (Ord n, Pretty n)
+        :: (Ord n, Pretty n, Show a, Show n)
         => Config a n -> a
+        -> Bool         -- ^ Primitive is being run at the call site.
         -> Exp a n      -- ^ Whole primitive application, for debugging.
         -> Exp a n      -- ^ Functional expression.
-        -> Type n       -- ^ Type of the primitive.
+        -> Type n       -- ^ Type of the boxed version of the primitive.
+        -> Type n       -- ^ Type of the unboxed version of the primitive.
         -> [Exp a n]    -- ^ Arguments to the primitive.
         -> Exp a n
 
-boxingPrimitive config a xx xFn tPrim xsArgsAll
- = fromMaybe xx go
+boxingPrimitive config a bRun xx xFn tPrimBoxed tPrimUnboxed xsArgsAll
+ = fromMaybe (error $ "fails " ++ show xx) go
  where
   go = do  
         -- Split off the type args.
         let (asArgs, tsArgs) = unzip [(a', t) | XType a' t <- xsArgsAll]
         let xsArgs      = drop (length tsArgs) xsArgsAll
 
-        -- Get the original types of the args and return value.
-        tPrimInst       <- instantiateTs tPrim tsArgs
-        let (tsArgsInst, _tResultInst) = takeTFunArgResult tPrimInst
+        -- Get the boxed version of the types of parameters and return value.
+        tPrimBoxedInst   <- instantiateTs tPrimBoxed tsArgs
+        let (tsParamBoxed, _tResultBoxed) 
+                        = takeTFunArgResult tPrimBoxedInst
 
-        -- Get the unboxed version of the args and return value
-        tsArgsU         <- sequence 
-                        $  map (configConvertRepType config RepUnboxed) tsArgs
+        -- Get the unboxed version of the types of parameters and return value.
+        tPrimUnboxedInst <- instantiateTs tPrimUnboxed tsArgs
+        let (tsParamUnboxed, tResultUnboxed)
+                        = takeTFunArgResult tPrimUnboxedInst
 
-        tPrimInstU      <- instantiateTs tPrim tsArgsU
-        let (_tsArgsInstU, tResultInstU) = takeTFunArgResult tPrimInstU
+        -- If the primitive is being run at the call site then we need to 
+        -- re-box the result AFTER it has been run, not before.
+        let tResultUnboxed'
+                | not bRun      = tResultUnboxed
+                | otherwise     = case takeTSusp tResultUnboxed of
+                                        Just (_, t)     -> t
+                                        Nothing         -> tResultUnboxed
 
         -- We must end up with a type of each argument.
         -- If not then the primop is partially applied or something else is wrong.
         -- The Tetra to Salt conversion will give a proper error message
         -- if the primop is indeed partially applied.
-        (if not (length xsArgs == length tsArgsInst)
+        (if not (  length xsArgs == length tsParamBoxed
+                && length xsArgs == length tsParamUnboxed)
            then Nothing
            else Just ())
 
         -- We got a type for each argument, so the primop is fully applied
         -- and we can do the boxing/unboxing transform.
-        let xsArgs' = [ (let Just t = configConvertRepExp config RepUnboxed
-                                                 a tArgInst xArg 
+        let xsArgs' = [ (let t = fromMaybe xArg
+                               $ configConvertRepExp config RepUnboxed a tArgInst xArg 
                                  in t)
                       | xArg      <- xsArgs
-                      | tArgInst  <- tsArgsInst ]
+                      | tArgInst  <- tsParamBoxed ]
 
-        let xtsArgsU = [ XType a' t | t <- tsArgsU | a' <- asArgs ]
-        let xResultU = xApps a xFn (xtsArgsU ++ xsArgs')
-        xResultV     <- configConvertRepExp config RepBoxed a tResultInstU xResultU
+        -- Construct the result expression, running it if necessary.
+        let xtsArgsU            = [ XType a' t | t <- tsArgs | a' <- asArgs ]
+        let xResultU            = xApps a xFn (xtsArgsU ++ xsArgs')
+        let xResultRunU
+                | not bRun      = xResultU
+                | otherwise     = XCast a CastRun xResultU
+
+        let xResultV =  fromMaybe xResultRunU
+                     $  configConvertRepExp config RepBoxed a tResultUnboxed' xResultRunU
+
         return xResultV
 
 

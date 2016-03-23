@@ -108,7 +108,6 @@ kindOfPrimTyCon tc
         PrimTyConFloat _ -> kData
         PrimTyConAddr    -> kData
         PrimTyConPtr     -> kRegion `kFun` kData `kFun` kData
-        PrimTyConArray   -> kRegion `kFun` kData `kFun` kData
         PrimTyConTag     -> kData
         PrimTyConVec   _ -> kData `kFun` kData
         PrimTyConTextLit -> kData
