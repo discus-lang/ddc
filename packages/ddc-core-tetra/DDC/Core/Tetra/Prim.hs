@@ -41,8 +41,8 @@ module DDC.Core.Tetra.Prim
 
           -- * Primitive arithmetic operators.
         , PrimArith     (..)
-        , readPrimArith
-        , typePrimArith
+        , readPrimArithFlag
+        , typePrimArithFlag
 
           -- * Primitive numeric casts.
         , PrimCast      (..)
@@ -82,10 +82,10 @@ instance NFData Name where
         NameDaConTetra con      -> rnf con
 
         NameOpFun      op       -> rnf op
-        NameOpVector   op _     -> rnf op
+        NameOpVector   op !_    -> rnf op
 
         NamePrimTyCon  op       -> rnf op
-        NamePrimArith  op       -> rnf op
+        NamePrimArith  op !_    -> rnf op
         NamePrimCast   op       -> rnf op
 
         NameLitBool    b        -> rnf b
@@ -117,7 +117,10 @@ instance Pretty Name where
         NameOpVector   op True  -> ppr op <> text "#"
 
         NamePrimTyCon  op       -> ppr op
-        NamePrimArith  op       -> ppr op
+
+        NamePrimArith  op False -> ppr op
+        NamePrimArith  op True  -> ppr op <> text "#"
+
         NamePrimCast   op       -> ppr op
 
         NameLitBool True        -> text "True#"
@@ -164,8 +167,8 @@ readName str
         | Just p <- readPrimTyCon str  
         = Just $ NamePrimTyCon p
 
-        | Just p <- readPrimArith str  
-        = Just $ NamePrimArith p
+        | Just (p, f) <- readPrimArithFlag str  
+        = Just $ NamePrimArith p f
 
         | Just p <- readPrimCast  str
         = Just $ NamePrimCast  p
@@ -232,9 +235,9 @@ takeTypeOfLitName nn
 takeTypeOfPrimOpName :: Name -> Maybe (Type Name)
 takeTypeOfPrimOpName nn
  = case nn of
-        NameOpFun       op      -> Just (typeOpFun        op)
-        NameOpVector    op f    -> Just (typeOpVectorFlag op f)
-        NamePrimArith   op      -> Just (typePrimArith    op)
-        NamePrimCast    op      -> Just (typePrimCast     op)
+        NameOpFun       op      -> Just (typeOpFun         op)
+        NameOpVector    op f    -> Just (typeOpVectorFlag  op f)
+        NamePrimArith   op f    -> Just (typePrimArithFlag op f)
+        NamePrimCast    op      -> Just (typePrimCast      op)
         _                       -> Nothing
 

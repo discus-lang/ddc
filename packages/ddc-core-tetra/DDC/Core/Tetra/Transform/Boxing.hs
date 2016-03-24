@@ -132,10 +132,10 @@ unboxPrimOpName n
  = case n of
         -- The types of arithmetic operators are already polytypic,
         -- and can be instantiated at either value types or unboxed types.
-        NamePrimArith op        -> Just $ NamePrimArith  op
+        NamePrimArith op False  -> Just $ NamePrimArith op True
 
         -- The types of vector operators have different value type and unboxed versions.
-        NameOpVector  op False  -> Just $ NameOpVector op True
+        NameOpVector  op False  -> Just $ NameOpVector  op True
 
         _                       -> Nothing
 

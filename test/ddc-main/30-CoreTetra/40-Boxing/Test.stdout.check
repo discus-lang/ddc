@@ -7,7 +7,7 @@ letrec {
   f : Nat# -> Nat#
     = λ(x : Nat#).
       convert# [U# Nat#] [Nat#]
-          (add# [U# Nat#]
+          (add## [Nat#]
                (convert# [Nat#] [U# Nat#] x)
                (convert# [Nat#] [U# Nat#]
                     (convert# [U# Nat#] [Nat#] 1#)))

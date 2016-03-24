@@ -162,7 +162,8 @@ convertExp ectx ctx xx
          -> throw $ ErrorUnsupported xx 
          $  vcat [ text "Cannot convert application."
                  , text "fun:       " <> ppr xa
-                 , text "args:      " <> ppr xb ]
+                 , text "args:      " <> ppr xb 
+                 , text (ppShow xx)]
 
 
         ---------------------------------------------------

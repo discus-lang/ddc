@@ -313,7 +313,7 @@ sanitise_prim n
  | T.NameLitTextLit t <- n
  = text (show t)
 
- | T.NamePrimArith p <- n
+ | T.NamePrimArith p _ <- n
  = text ("DDC::" ++ show p)
  -- = text ("DDC::curry(DDC::" ++ show p ++ ", DDC::" ++ show p ++ "_arity)")
 
@@ -366,7 +366,7 @@ data OpType
  | Suffix
 operators :: [(T.Name,OpType,String)]
 operators
- = lmap T.NamePrimArith ariths
+ = lmap (flip T.NamePrimArith False) ariths
  where
   lmap f = map (\(n,o,s) -> (f n, o, s))
   ariths

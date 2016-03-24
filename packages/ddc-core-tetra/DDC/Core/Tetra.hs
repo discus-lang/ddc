@@ -29,7 +29,7 @@ module DDC.Core.Tetra
         , readOpFun
         , readOpVectorFlag
         , readPrimTyCon,        readPrimTyConStem
-        , readPrimArith
+        , readPrimArithFlag
 
         -- * Name Generation
         , freshT

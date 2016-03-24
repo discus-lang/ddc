@@ -50,7 +50,8 @@ data Name
         | NamePrimTyCon         PrimTyCon
 
         -- | Primitive arithmetic, logic, comparison and bit-wise operators.
-        | NamePrimArith         PrimArith
+        --   The flag indicates whether this is the boxed (Falst) or unboxed (True) version.
+        | NamePrimArith         PrimArith       Bool
 
         -- | Primitive numeric casting operators.
         | NamePrimCast          PrimCast

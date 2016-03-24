@@ -459,7 +459,7 @@ toCoreN nn
          -> C.NameLitTextLit x
 
         S.NamePrim (S.PrimNameVal (S.PrimValArith p))
-         -> C.NamePrimArith  p
+         -> C.NamePrimArith  p False
 
         S.NamePrim (S.PrimNameVal (S.PrimValVector p))
          -> C.NameOpVector   p False

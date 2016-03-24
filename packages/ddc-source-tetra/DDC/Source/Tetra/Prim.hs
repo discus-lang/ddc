@@ -75,7 +75,7 @@ import qualified Data.Text              as T
 
 import DDC.Core.Tetra   
         ( readPrimTyCon
-        , readPrimArith
+        , readPrimArithFlag
         , readOpFun
         , readOpVectorFlag)
 
@@ -207,7 +207,7 @@ readPrimVal str
         | Just lit        <- readPrimLit str
         = Just $ PrimValLit lit
 
-        | Just p          <- readPrimArith str  
+        | Just (p, False) <- readPrimArithFlag str  
         = Just $ PrimValArith  p
 
         | Just (p, False) <- readOpVectorFlag str

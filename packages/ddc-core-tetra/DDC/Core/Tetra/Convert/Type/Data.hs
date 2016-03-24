@@ -54,7 +54,7 @@ convertDataU uu
         -- each language definition may not be inter-convertible.
         UPrim n _
          -> case n of
-                E.NamePrimArith op      
+                E.NamePrimArith op True
                   -> return $ UPrim (A.NamePrimOp (A.PrimArith op)) 
                                     (A.typeOfPrimArith op)
 

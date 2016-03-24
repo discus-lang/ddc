@@ -16,16 +16,16 @@ sub x y
         then 0
         else sub# [Nat#] x y
 
-mul x y         = mul# [Nat#] x y
-div x y         = div# [Nat#] x y
-rem x y         = rem# [Nat#] x y
+mul x y         = mul#  [Nat#] x y
+div x y         = div#  [Nat#] x y
+rem x y         = rem#  [Nat#] x y
 
-eq  x y         = eq#  [Nat#] [Bool#] x y
-neq x y         = neq# [Nat#] [Bool#] x y
-lt  x y         = lt#  [Nat#] [Bool#] x y
-le  x y         = le#  [Nat#] [Bool#] x y
-gt  x y         = gt#  [Nat#] [Bool#] x y
-ge  x y         = ge#  [Nat#] [Bool#] x y
+eq  x y         = eq#   [Nat#] x y
+neq x y         = neq#  [Nat#] x y
+lt  x y         = lt#   [Nat#] x y
+le  x y         = le#   [Nat#] x y
+gt  x y         = gt#   [Nat#] x y
+ge  x y         = ge#   [Nat#] x y
 
 
 -------------------------------------------------------------------------------

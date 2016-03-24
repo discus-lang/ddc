@@ -128,7 +128,7 @@ boxingX config xx
          -> let Just tPrimBoxed    = configValueTypeOfPrimOpName config n
                 Just tPrimUnboxed  = configValueTypeOfPrimOpName config n'
                 xsArgsAll'         = map (boxingX config) xsArgsAll
-            in  boxingPrimitive config a True xx' (XVar a (UName n')) 
+            in  boxingPrimitive config a True xx' (XVar a (UPrim n' tPrimUnboxed)) 
                         tPrimBoxed tPrimUnboxed
                         xsArgsAll'
 
@@ -138,7 +138,7 @@ boxingX config xx
          -> let Just tPrimBoxed    = configValueTypeOfPrimOpName config n
                 Just tPrimUnboxed  = configValueTypeOfPrimOpName config n'
                 xsArgsAll'         = map (boxingX config) xsArgsAll
-            in  boxingPrimitive config a False xx (XVar a (UName n')) 
+            in  boxingPrimitive config a False xx (XVar a (UPrim n' tPrimUnboxed))
                         tPrimBoxed tPrimUnboxed
                         xsArgsAll'
 
@@ -201,7 +201,7 @@ boxingPrimitive
         -> Exp a n
 
 boxingPrimitive config a bRun xx xFn tPrimBoxed tPrimUnboxed xsArgsAll
- = fromMaybe (error $ "fails " ++ show xx) go
+ = fromMaybe xx go
  where
   go = do  
         -- Split off the type args.

@@ -51,14 +51,11 @@ convertPrimArith _ectx ctx xx
                 xsArgs' <- mapM downPrimArgX xsArgs
                 
                 case nPrim of
-                 -- The Tetra type of these is also parameterised by the type of the
-                 -- boolean result, so that we can choose between value type and unboxed
-                 -- versions. In the Salt version we only need the first type parameter.
-                 E.NamePrimArith o
+                 E.NamePrimArith o False
                   |  elem o [ E.PrimArithEq, E.PrimArithNeq
                             , E.PrimArithGt, E.PrimArithLt
                             , E.PrimArithLe, E.PrimArithGe ]
-                  ,  [t1, _t2, z1, z2] <- xsArgs'
+                  ,  [t1, z1, z2] <- xsArgs'
                   ->  return $ xApps (annotTail a) x1' [t1, z1, z2]
 
                  _ -> return $ xApps (annotTail a) x1' xsArgs'
@@ -85,7 +82,7 @@ convertPrimArgX ctx ectx xx
  = let  convertX = contextConvertExp ctx
    in case xx of
         XType a t
-         -> do  t'      <- convertDataT (typeContext ctx) t
+         -> do  t'      <- convertDataPrimitiveT t
                 return  $ XType (annotTail a) t'
 
         XWitness{}
