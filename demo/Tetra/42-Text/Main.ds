@@ -1,0 +1,18 @@
+
+module Main
+import Data.Numeric.Nat
+import System.IO.Console
+where
+
+
+main (_: Unit): S Console Unit
+ = box private r with { Alloc r; Read r } in
+   do   
+        tx      = "I walked through the forests"
+                %% "with ugly spirits\n"
+                %  ("kissed" %% "their feet and found them") % "\n"
+                %  "calm, calm, calm."
+
+        vec     = vectorOfText tx
+
+        run writel tx
