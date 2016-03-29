@@ -1,0 +1,18 @@
+
+module Main
+import Data.Numeric.Nat
+import System.IO.Console
+where
+
+
+main (_: Unit): S Console Unit
+ = box private r with { Alloc r; Read r; Write r } in
+   do   
+        vec     = run vectorAlloc# [r] 100
+
+        run writel ("length = " % showNat (vectorLength# vec))
+
+        run vectorWrite# vec 99 27
+
+        run writel ("value  = "  % showNat (run vectorRead# vec 99))
+
