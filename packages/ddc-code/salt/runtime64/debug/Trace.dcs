@@ -49,14 +49,19 @@ traceObj [r: Region] (trace: Bool#) (obj: Ptr# r Obj): Nat#
          -- Boxed object format.
          0b00100001w32# -> traceBoxed trace obj
 
-         -- RawSmall format, with the size in the top nibble.
+         -- Raw format.
+         -- Payload contains raw unboxed data.
+         0b00110001w32# -> traceRaw   obj
+
+         -- Small format, with the size in the top nibble.
+         -- Payload contains raw unboxed data.
          _ -> do
                 wFormatLow      =              band# wFormat 0b00001111w32#
                 wFormatHigh     = shr#  4w32# (band# wFormat 0b11110000w32#)
 
                 case wFormatLow of
                  0b0011w32# 
-                        -> traceRawSmall obj
+                        -> traceSmall obj
 
                  -- Some format that we don't handle yet, 
                  -- or the header is trashed.
@@ -171,15 +176,34 @@ traceBoxedPtrss [r: Region] (obj: Ptr# r Obj) (n: Nat#) (i: Nat#) : Nat#
 
 
 -------------------------------------------------------------------------------
--- | Print a RawSmall object to stdout.
-traceRawSmall [r: Region] (obj: Ptr# r Obj): Nat#
+-- | Print a Raw object to stdout.
+traceRaw [r: Region] (obj: Ptr# r Obj): Nat#
+ = do
+        ptr     = castPtr# obj
+        header  = peek# ptr 0#
+        format  = band# header 0x0fw32#
+        tag     = shr#  header 8w32#
+        size    = peek# ptr 4#
+
+        primPutString   "Raw\n"
+        fieldAddr       "{   ptr     = " (takePtr# obj)
+        fieldWord32     "    format  = " format
+        fieldWord32     "    tag     = " tag
+        fieldWord32     "    size    = " size
+        primPutString   "}\n"
+        0#
+
+
+-------------------------------------------------------------------------------
+-- | Print a Small object to stdout.
+traceSmall [r: Region] (obj: Ptr# r Obj): Nat#
  = do
         ptr     = castPtr# obj
         header  = peek# ptr 0#
         format  =             band# header 0x0fw32#
         size    = shr# 4w32# (band# header 0xf0w32#)
 
-        primPutString   "RawSmall\n"
+        primPutString   "Small\n"
         fieldAddr       "{   ptr     = " (takePtr# obj)
         fieldWord32     "    format  = " format
         fieldWord32     "    size    = " size

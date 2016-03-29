@@ -56,7 +56,7 @@ data PrimStore
         -- | Write a value to a pointer plus given offset.
         | PrimStorePoke
 
-        -- | Write a value to ap ointer plus offset, with an integrated bounds check.
+        -- | Write a value to a pointer plus offset, with an integrated bounds check.
         | PrimStorePokeBounded
 
         -- | Add an offset in bytes to a pointer.
