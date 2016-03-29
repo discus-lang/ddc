@@ -42,6 +42,7 @@ readTyConTetra str
 
         | otherwise
         = case str of
+                "Vector#"       -> Just TyConTetraVector
                 "U#"            -> Just TyConTetraU
                 "F#"            -> Just TyConTetraF
                 "C#"            -> Just TyConTetraC

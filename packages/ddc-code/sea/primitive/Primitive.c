@@ -58,7 +58,7 @@ string_t* primShowWord8 (uint8_t w)
 
 
 // Print a C string to stdout.
-void primPutSeaString (string_t* str)
+void primPutString (string_t* str)
 {       fputs(str, stdout);
 }
 

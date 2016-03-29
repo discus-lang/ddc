@@ -3,6 +3,7 @@ module Data.Text
 export  { textLit; paste; pastes
         ; showBool
         ; showNat; showBinaryNat; showDecimalNat; showHexNat; showBaseNat
+        ; sizeOfText; vectorOfText
         ; digitBinary; digitDecimal; digitHex }
 import Data.Numeric.Nat
 import Data.Numeric.Bool
@@ -10,11 +11,18 @@ import Data.Numeric.Bool
 import foreign boxed type
  TextLit : Data
 
+-- import foreign abstract type
+--  Top    : Region
+
+-- import foreign c value
+--  derp   : Read Top
+
 import foreign c value
- makeTextLit : TextLit# -> TextLit
+ makeTextLit    : TextLit# -> TextLit
+ sizeOfTextLit  : TextLit  -> Nat#
+ indexTextLit   : TextLit  -> Nat# -> Word8#
 
 where
-
 
 -------------------------------------------------------------------------------
 -- Names used by the Source Tetra desugarer to implement string literals.
@@ -29,9 +37,11 @@ pastes (x y : Text) : Text
 
 
 -------------------------------------------------------------------------------
+-- TODO: put the vector in the Top region.
 data Text where
-        TextLit : TextLit -> Text
-        TextApp : Text -> Text -> Text
+        TextLit : TextLit               -> Text
+--      TextVec : Vector# Top Word8#   -> Text
+        TextApp : Text -> Text          -> Text
 
 
 -- | Convert a Bool to a String.
@@ -43,6 +53,67 @@ showBool (x : Bool#) : Text
 -- | Show a natural number.
 showNat (x: Nat#): Text
  = showBaseNat 10 digitDecimal 0 "X" x
+
+
+-- | Get the size of the utf8 data in a Text object, in bytes.
+sizeOfText (tt: Text):  Nat#
+ = case tt of
+        TextLit lit     -> sizeOfTextLit lit
+--      TextVec vec     -> vectorLength# vec
+        TextApp t1 t2   -> sizeOfText t1 + sizeOfText t2
+
+
+-- | Copy a Text object into a flat vector of utf-8 bytes.
+vectorOfText [r1: Region] (tt: Text): S (Alloc r1) (Vector# r1 Word8#)
+ = box extend r1 using r2 with { Alloc r2; Write r2 } in
+   do   
+        vec     = run vectorAlloc# [r2] [Word8#] (sizeOfText tt)
+        copyTextToVector tt vec
+        vec
+
+
+-- | Copy a text literal to a mutable vector of utf-8 bytes.
+--   TODO: need (Read Top) capability.
+copyTextToVector [r: Region] 
+        (tt: Text) (vec: Vector# r Word8#) (i0: Nat#)
+        : S (Write r) Nat#
+ = box case tt of
+        TextLit lit
+         -> run copyTextLitToVector lit  vec i0 0 (sizeOfTextLit lit)
+
+--      TextVec vec2
+--       -> run copyTextVecToVector vec2 vec i0 0 (vectorLength# vec2)
+
+        TextApp t1 t2
+         -> do  i1      = run copyTextToVector t1 vec i0
+                i2      = run copyTextToVector t2 vec i1
+                i2
+
+
+-- | Copy a text literal to a mutable vector of utf-8 bytes.
+copyTextLitToVector [r: Region]
+        (tt: TextLit) (vec: Vector# r Word8#) 
+        (iDst: Nat#)  (iSrc: Nat#) (nSrc: Nat#)
+        : S (Write r) Nat#
+ = box case iSrc == nSrc of
+        True  -> iDst
+        False -> run do
+                x       = indexTextLit tt iSrc
+                run vectorWrite# vec iDst x
+                copyTextLitToVector tt vec (iDst + 1) (iSrc + 1) nSrc
+
+
+-- | Copy a text source vector to a mutable destination of utf-8 bytes.
+copyTextVecToVector [r1 r2: Region]
+        (vecSrc: Vector# r1 Word8#) (vecDst: Vector# r2 Word8#)
+        (iDst:   Nat#) (iSrc: Nat#) (nSrc: Nat#)
+        : S (Read r1 + Write r2) Nat#
+ = box case iSrc == nSrc of
+        True    -> iDst
+        False   -> run do
+                x       = run vectorRead# vecSrc iSrc
+                run vectorWrite# vecDst iDst x
+                copyTextVecToVector vecSrc vecDst (iDst + 1) (iSrc + 1) nSrc
 
 
 -------------------------------------------------------------------------------
