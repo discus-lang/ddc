@@ -139,11 +139,12 @@ convertExp ectx ctx xx
         ---------------------------------------------------
         -- Conversions for primitive operators are defined separately.
         XApp{}
-         | Just makeX   <- convertPrimBoxing ectx ctx xx -> makeX
-         | Just makeX   <- convertPrimCall   ectx ctx xx -> makeX
-         | Just makeX   <- convertPrimArith  ectx ctx xx -> makeX
-         | Just makeX   <- convertPrimVector ectx ctx xx -> makeX
+         | Just makeX   <- convertPrimBoxing ectx ctx xx  -> makeX
+         | Just makeX   <- convertPrimCall   ectx ctx xx  -> makeX
+         | Just makeX   <- convertPrimArith  ectx ctx xx  -> makeX
 
+        XCast _ CastRun XApp{}
+         | Just makeX   <- convertPrimVector ectx ctx xx  -> makeX
 
         ---------------------------------------------------
         -- Saturated application of a top-level supercombinator or imported function.

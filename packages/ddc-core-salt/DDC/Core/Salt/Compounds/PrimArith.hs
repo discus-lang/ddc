@@ -39,18 +39,18 @@ xBOr    = xOp2 PrimArithBOr
 xBXOr   = xOp2 PrimArithBXOr
 
 
-xOp1 :: PrimArith -> a -> Exp a Name -> Exp a Name
-xOp1 p a x1
+xOp1 :: PrimArith -> a -> Type Name -> Exp a Name -> Exp a Name
+xOp1 p a tElem x1
  = let  u       = UPrim (NamePrimOp $ PrimArith $ p)
                         (typeOfPrimArith p)
-   in   xApps a (XVar a u) [x1]
+   in   xApps a (XVar a u) [XType a tElem, x1]
 
 
-xOp2 :: PrimArith -> a -> Exp a Name -> Exp a Name -> Exp a Name
-xOp2 p a x1 x2
+xOp2 :: PrimArith -> a -> Type Name -> Exp a Name -> Exp a Name -> Exp a Name
+xOp2 p a tElem  x1 x2
  = let  u       = UPrim (NamePrimOp $ PrimArith $ p)
                         (typeOfPrimArith p)
-   in   xApps a (XVar a u) [x1, x2]
+   in   xApps a (XVar a u) [XType a tElem, x1, x2]
 
 
 -- | Take the type of a primitive operator.

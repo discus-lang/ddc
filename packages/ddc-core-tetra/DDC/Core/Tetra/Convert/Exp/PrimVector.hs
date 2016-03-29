@@ -22,40 +22,49 @@ convertPrimVector
         -> Exp (AnTEC a E.Name) E.Name  -- ^ Expression to convert.
         -> Maybe (ConvertM a (Exp a A.Name))
 
-convertPrimVector _ectx ctx xx
+convertPrimVector _ectx ctx xxRun
  = let  convertX        = contextConvertExp ctx
-   in case xx of
+   in case xxRun of
 
         -- Vector allocate.
         -- TODO: memset payload.
-        XApp a _ _
+        XCast _ CastRun xxApp@(XApp a _ _)
          |  Just ( E.NameOpVector E.OpVectorAlloc True
                  , [XType _ _rPrime, XType _ tA, xLength])    
-                         <- takeXPrimApps xx
+                         <- takeXPrimApps xxApp
          ,  isNumericType tA
          -> Just $ do
                 let a'   =  annotTail a
-                xLength' <- convertX ExpArg ctx xLength -- TODO: need length in bytes.
+                xLength' <- convertX ExpArg ctx xLength         -- TODO: need length in bytes.
                 return  $ XLet a' (LLet  (BAnon (A.tPtr  A.rTop A.tObj))
                                          (A.xAllocRaw a' A.rTop 0 xLength'))
                         $ XVar a' (UIx 0)
 
         -- Vector read.
-        XApp a _ _
-         | Just ( E.NameOpVector E.OpVectorAlloc True
+        XCast _ CastRun xxApp@(XApp a _ _)
+         | Just ( E.NameOpVector E.OpVectorRead True
                 , [XType _ _rPrime, XType _ tElem, xVec, xIndex])
-                        <- takeXPrimApps xx
+                        <- takeXPrimApps xxApp
          , isNumericType tElem
          -> Just $ do
                 let a'  =  annotTail a
                 tElem'  <- convertDataPrimitiveT tElem
                 xVec'   <- convertX ExpArg ctx xVec
                 xIndex' <- convertX ExpArg ctx xIndex
-                return  $ A.xPeekBounded a' 
-                              A.rTop tElem'
-                              (A.xPayloadOfRaw a' A.rTop xVec')         -- TODO: need cast here.
-                              (A.xShl a' xIndex'                         (A.xStoreSize2 a' tElem'))
-                              (A.xShl a' (xVectorLength a' A.rTop xVec') (A.xStoreSize2 a' tElem'))
+
+                return  
+                 $ A.xPeekBounded a' 
+                        A.rTop tElem'
+                        (A.xCastPtr a' A.rTop tElem' (A.tWord 8)
+                                (A.xPayloadOfRaw a' A.rTop xVec'))
+
+                        (A.xShl a' A.tNat 
+                                xIndex' 
+                                (A.xStoreSize2 a' tElem'))
+
+                        (A.xShl a' A.tNat 
+                                (xVectorLength a' A.rTop xVec') 
+                                (A.xStoreSize2 a' tElem'))
         _ -> Nothing
 
 

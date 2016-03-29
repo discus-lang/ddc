@@ -72,14 +72,20 @@ runtimeImportTypes
    , rn utAllocBoxed
    , rn utGetFieldOfBoxed
    , rn utSetFieldOfBoxed
+
    , rn utAllocSmall
    , rn utPayloadOfSmall 
+
+   , rn utAllocRaw
+   , rn utPayloadOfRaw
+
    , rn utAllocThunk 
    , rn utArgsOfThunk
    , rn utSetFieldOfThunk
    , rn utExtendThunk
    , rn utCopyArgsOfThunk 
    , rn utRunThunk
+
    , rn (utApplyThunk 0)
    , rn (utApplyThunk 1)
    , rn (utApplyThunk 2)

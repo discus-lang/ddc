@@ -26,7 +26,7 @@ xConvert a t1 t2 x
 -- | Promote a value to a wider type.
 xPromote :: a -> Type Name -> Type Name -> Exp a Name -> Exp a Name
 xPromote a t1 t2 x
- = xApps a      (xPrimCast a PrimCastConvert)
+ = xApps a      (xPrimCast a PrimCastPromote)
                 [XType a t1, XType a t2, x]
 
 
