@@ -187,8 +187,11 @@ data OpFun
 -- OpVector -------------------------------------------------------------------
 -- | Vector operators.
 data OpVector
-        -- | Allocate a new vector of a given size.
+        -- | Allocate a new vector of a given length number of elements.
         = OpVectorAlloc
+
+        -- | Get the length of a vector, in elements.
+        | OpVectorLength
 
         -- | Read a value from a vector.
         | OpVectorRead

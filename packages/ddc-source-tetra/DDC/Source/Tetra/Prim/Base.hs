@@ -187,3 +187,4 @@ pattern NameLitSize   x   = NameLit (PrimLitSize    x)
 pattern NameLitWord   x s = NameLit (PrimLitWord    x s)
 pattern NameLitFloat  x s = NameLit (PrimLitFloat   x s)
 pattern NameLitTextLit x  = NameLit (PrimLitTextLit x)
+

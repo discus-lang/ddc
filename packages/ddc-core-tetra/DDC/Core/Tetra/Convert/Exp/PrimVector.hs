@@ -22,9 +22,9 @@ convertPrimVector
         -> Exp (AnTEC a E.Name) E.Name  -- ^ Expression to convert.
         -> Maybe (ConvertM a (Exp a A.Name))
 
-convertPrimVector _ectx ctx xxRun
+convertPrimVector _ectx ctx xxExp
  = let  convertX        = contextConvertExp ctx
-   in case xxRun of
+   in case xxExp of
 
         -- Vector allocate.
         -- TODO: memset payload.
@@ -49,6 +49,30 @@ convertPrimVector _ectx ctx xxRun
                 return  $ XLet a' (LLet  (BAnon (A.tPtr  A.rTop A.tObj))
                                          (A.xAllocRaw a' A.rTop 0 xLengthBytes'))
                         $ XVar a' (UIx 0)
+
+
+        -- Vector length.
+        XApp a _ _
+         | Just ( E.NameOpVector E.OpVectorLength True
+                , [XType _ _tPrime, XType _ tElem, xVec])
+                        <- takeXPrimApps xxExp
+         , isNumericType tElem
+         -> Just $ do
+                let a'  =  annotTail a
+
+                -- The element type of the vector.
+                tElem'  <- convertDataPrimitiveT tElem
+
+                -- Pointer to the vector object.
+                xVec'   <- convertX ExpArg ctx xVec
+
+                -- Size of the vector payload, in bytes.
+                let xLengthBytes = xVectorLength a' A.rTop xVec'
+
+                -- Shift down the length-in-bytes so we get length-in-elements.
+                return  $ A.xShr a' A.tNat xLengthBytes 
+                                (A.xStoreSize2 a' tElem')
+
 
         -- Vector read.
         XCast _ CastRun xxApp@(XApp a _ _)
@@ -130,18 +154,26 @@ convertPrimVector _ectx ctx xxRun
         _ -> Nothing
 
 
--- Get the size of the vector payload, in byes.
+-- Get the size of the vector payload, in bytes.
+-- 
+-- * This contains the hard-coded length of the raw object payload in bytes,
+--   as well as a hard-coded offset to the size field of the header.
+--
 xVectorLength   
         :: a -> Type A.Name
         -> Exp a A.Name -> Exp a A.Name
 
 xVectorLength a rVec xVec
-        = A.xSub a
-                A.tNat 
-                (A.xPromote a A.tNat (A.tWord 32)
-                        $ A.xPeek a rVec (A.tWord 32) 
-                                (A.xCastPtr a rVec (A.tWord 32) A.tObj xVec) 
-                                (A.xNat a 4))
-                (A.xNat a 8)
+ = let
+        -- Read the size field of the object, 
+        -- to get the total object length in bytes.
+        xLengthObject  
+                = A.xPromote a A.tNat (A.tWord 32)
+                $ A.xPeek a rVec (A.tWord 32) 
+                        (A.xCastPtr a rVec (A.tWord 32) A.tObj xVec)
+                        (A.xNat a 4)
 
+        -- Subtract the size of the object header,
+        -- so we get payload length in bytes.
+   in   A.xSub a A.tNat xLengthObject (A.xNat a 8)
 

@@ -20,6 +20,7 @@ instance Pretty OpVector where
  ppr pv
   = case pv of
         OpVectorAlloc   -> text "vectorAlloc#"
+        OpVectorLength  -> text "vectorLength#"
         OpVectorRead    -> text "vectorRead#"
         OpVectorWrite   -> text "vectorWrite#"
 
@@ -30,16 +31,19 @@ instance Pretty OpVector where
 readOpVectorFlag :: String -> Maybe (OpVector, Bool)
 readOpVectorFlag str
  = case str of
-        "vectorAlloc#"  -> Just (OpVectorAlloc, False)
-        "vectorAlloc##" -> Just (OpVectorAlloc, True)
+        "vectorAlloc#"   -> Just (OpVectorAlloc,  False)
+        "vectorAlloc##"  -> Just (OpVectorAlloc,  True)
 
-        "vectorRead#"   -> Just (OpVectorRead,  False)
-        "vectorRead##"  -> Just (OpVectorRead,  True)
+        "vectorLength#"  -> Just (OpVectorLength, False)
+        "vectorLength##" -> Just (OpVectorLength, True)
 
-        "vectorWrite#"  -> Just (OpVectorWrite, False)
-        "vectorWrite##" -> Just (OpVectorWrite, True)
+        "vectorRead#"    -> Just (OpVectorRead,   False)
+        "vectorRead##"   -> Just (OpVectorRead,   True)
 
-        _               -> Nothing
+        "vectorWrite#"   -> Just (OpVectorWrite,  False)
+        "vectorWrite##"  -> Just (OpVectorWrite,  True)
+
+        _                -> Nothing
 
 
 -- | Take the type of a primitive vector operator.
@@ -51,6 +55,11 @@ typeOpVectorFlag op False
          -> tForalls [kRegion, kData]
          $  \[tR, tA] -> tNat 
                         `tFun` tSusp (tAlloc tR) (tVector tR tA)
+
+        OpVectorLength
+         -> tForalls [kRegion, kData]
+         $  \[tR, tA] -> tVector tR tA
+                        `tFun` tNat
 
         OpVectorRead
          -> tForalls [kRegion, kData]
@@ -69,6 +78,11 @@ typeOpVectorFlag op True
          $  \[tR, tA] -> tUnboxed tNat 
                         `tFun` tSusp (tAlloc tR) (tVector tR tA)
 
+        OpVectorLength
+         -> tForalls [kRegion, kData]
+         $  \[tR, tA] -> tVector tR tA
+                        `tFun` tUnboxed tNat
+
         OpVectorRead
          -> tForalls [kRegion, kData]
          $  \[tR, tA] -> tVector tR tA `tFun` tUnboxed tNat 
@@ -78,3 +92,5 @@ typeOpVectorFlag op True
          -> tForalls [kRegion, kData]
          $  \[tR, tA] -> tVector tR tA `tFun` tUnboxed tNat `tFun` tUnboxed tA 
                         `tFun` tSusp (tWrite tR) tVoid
+
+

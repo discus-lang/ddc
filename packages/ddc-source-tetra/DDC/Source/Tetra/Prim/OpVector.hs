@@ -18,6 +18,10 @@ typeOpVector op
          -> tForalls [kRegion, kData]
          $  \[tR, tA] -> tNat `tFun` tSusp (tAlloc tR) (tVector tR tA)
 
+        OpVectorLength
+         -> tForalls [kRegion, kData]
+         $  \[tR, tA] -> tVector tR tA `tFun` tNat
+
         OpVectorRead
          -> tForalls [kRegion, kData]
          $  \[tR, tA] -> tVector tR tA `tFun` tNat `tFun` tSusp (tRead tR) tA

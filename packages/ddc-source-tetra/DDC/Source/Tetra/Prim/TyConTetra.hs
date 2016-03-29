@@ -78,3 +78,4 @@ tCloValue :: Type Name -> Type Name
 tCloValue tA
  = tApps (TCon (TyConBound (UPrim (NameTyConTetra PrimTyConTetraC) k) k)) [tA]
  where k = kData `kFun` kData
+
