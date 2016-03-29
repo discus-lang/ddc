@@ -13,6 +13,10 @@ module DDC.Core.Salt.Env
         , typeOfPrimLit
         , typeIsUnboxed)
 where
+import DDC.Core.Salt.Compounds.PrimArith
+import DDC.Core.Salt.Compounds.PrimCast
+import DDC.Core.Salt.Compounds.PrimControl
+import DDC.Core.Salt.Compounds.PrimStore
 import DDC.Core.Salt.Compounds
 import DDC.Core.Salt.Name
 import DDC.Type.DataDef
@@ -155,55 +159,6 @@ typeOfPrimLit lit
         PrimLitTag     _      -> tTag
 
 
--- PrimOps --------------------------------------------------------------------
--- | Take the type of a primitive operator.
-typeOfPrimArith :: PrimArith -> Type Name
-typeOfPrimArith op
- = case op of
-        -- Numeric
-        PrimArithNeg    -> tForall kData $ \t -> t `tFun` t
-        PrimArithAdd    -> tForall kData $ \t -> t `tFun` t `tFun` t
-        PrimArithSub    -> tForall kData $ \t -> t `tFun` t `tFun` t
-        PrimArithMul    -> tForall kData $ \t -> t `tFun` t `tFun` t
-        PrimArithDiv    -> tForall kData $ \t -> t `tFun` t `tFun` t
-        PrimArithMod    -> tForall kData $ \t -> t `tFun` t `tFun` t
-        PrimArithRem    -> tForall kData $ \t -> t `tFun` t `tFun` t
-
-        -- Comparison
-        PrimArithEq     -> tForall kData $ \t -> t `tFun` t `tFun` tBool
-        PrimArithNeq    -> tForall kData $ \t -> t `tFun` t `tFun` tBool
-        PrimArithGt     -> tForall kData $ \t -> t `tFun` t `tFun` tBool
-        PrimArithLt     -> tForall kData $ \t -> t `tFun` t `tFun` tBool
-        PrimArithLe     -> tForall kData $ \t -> t `tFun` t `tFun` tBool
-        PrimArithGe     -> tForall kData $ \t -> t `tFun` t `tFun` tBool
-
-        -- Boolean
-        PrimArithAnd    -> tBool `tFun` tBool `tFun` tBool
-        PrimArithOr     -> tBool `tFun` tBool `tFun` tBool
-
-        -- Bitwise
-        PrimArithShl    -> tForall kData $ \t -> t `tFun` t `tFun` t
-        PrimArithShr    -> tForall kData $ \t -> t `tFun` t `tFun` t
-        PrimArithBAnd   -> tForall kData $ \t -> t `tFun` t `tFun` t
-        PrimArithBOr    -> tForall kData $ \t -> t `tFun` t `tFun` t
-        PrimArithBXOr   -> tForall kData $ \t -> t `tFun` t `tFun` t
-
-
--- PrimCast -------------------------------------------------------------------
--- | Take the type of a primitive cast.
-typeOfPrimCast :: PrimCast -> Type Name
-typeOfPrimCast cc
- = case cc of
-        PrimCastConvert
-         -> tForalls [kData, kData] $ \[t1, t2] -> t2 `tFun` t1
-
-        PrimCastPromote
-         -> tForalls [kData, kData] $ \[t1, t2] -> t2 `tFun` t1
-
-        PrimCastTruncate
-         -> tForalls [kData, kData] $ \[t1, t2] -> t2 `tFun` t1
-
-
 -- PrimCall -------------------------------------------------------------------
 -- | Take the type of a primitive call operator.
 typeOfPrimCall :: PrimCall -> Type Name
@@ -234,88 +189,6 @@ makePrimCallTailType arity
                          [BAnon k | k <- replicate (arity + 1) kData]
 
    in   tCall
-
-
--- PrimControl ----------------------------------------------------------------
-typeOfPrimControl :: PrimControl -> Type Name
-typeOfPrimControl pc
- = case pc of
-        PrimControlFail         -> tForall kData $ \t -> t
-        PrimControlReturn       -> tForall kData $ \t -> t `tFun` t
-
-
--- PrimStore ------------------------------------------------------------------
--- | Take the type of a primitive projection.
-typeOfPrimStore :: PrimStore -> Type Name
-typeOfPrimStore jj
- = case jj of
-        PrimStoreSize 
-         -> tForall kData $ \_ -> tNat
-
-        PrimStoreSize2
-         -> tForall kData $ \_ -> tNat
-
-        PrimStoreCreate
-         -> tNat `tFun` tVoid
-
-        PrimStoreCheck
-         -> tNat `tFun` tBool
-
-        PrimStoreRecover
-         -> tNat `tFun` tVoid
-
-        PrimStoreAlloc
-         -> tNat `tFun` tAddr
-
-        PrimStoreRead           
-         -> tForall kData 
-         $ \t -> tAddr `tFun` tNat `tFun` t
-
-        PrimStoreWrite
-         -> tForall kData 
-         $ \t -> tAddr `tFun` tNat `tFun` t `tFun` tVoid
-
-        PrimStorePlusAddr
-         -> tAddr  `tFun` tNat `tFun` tAddr
-
-        PrimStoreMinusAddr
-         -> tAddr  `tFun` tNat `tFun` tAddr
-
-        PrimStorePeek
-         -> tForalls [kRegion, kData]
-         $ \[r,t] -> tPtr r t `tFun` tNat `tFun` t
-
-        PrimStorePoke
-         -> tForalls [kRegion, kData] 
-         $ \[r,t] -> tPtr r t `tFun` tNat `tFun` t `tFun` tVoid
-
-        PrimStorePeekBounded
-         -> tForalls [kRegion, kData]
-         $ \[r,t] -> tPtr r t `tFun` tNat `tFun` tNat `tFun` t
-
-        PrimStorePokeBounded
-         -> tForalls [kRegion, kData] 
-         $ \[r,t] -> tPtr r t `tFun` tNat `tFun` tNat `tFun` t `tFun` tVoid
-
-        PrimStorePlusPtr
-         -> tForalls [kRegion, kData] 
-         $ \[r,t] -> tPtr r t `tFun` tNat `tFun` tPtr r t
-
-        PrimStoreMinusPtr
-         -> tForalls [kRegion, kData] 
-         $ \[r,t] -> tPtr r t `tFun` tNat `tFun` tPtr r t
-
-        PrimStoreMakePtr
-         -> tForalls [kRegion, kData] 
-         $ \[r,t] -> tAddr `tFun` tPtr r t
-
-        PrimStoreTakePtr
-         -> tForalls [kRegion, kData] 
-         $ \[r,t] -> tPtr r t `tFun` tAddr
-
-        PrimStoreCastPtr
-         -> tForalls [kRegion, kData, kData] 
-         $ \[r,t1,t2] -> tPtr r t2 `tFun` tPtr r t1
 
 
 -------------------------------------------------------------------------------

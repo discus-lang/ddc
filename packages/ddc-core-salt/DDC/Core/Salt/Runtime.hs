@@ -1,4 +1,3 @@
-
 -- | Bindings to functions exported by the runtime system,
 --   and wrappers for related primops.
 module DDC.Core.Salt.Runtime
@@ -7,39 +6,38 @@ module DDC.Core.Salt.Runtime
         , runtimeImportKinds
         , runtimeImportTypes
 
-          -- * Types defined in the runtime system.
+          -- * Runtime Types.
         , rTop
 
-          -- * Functions defined in the runtime system.
+          -- * Runtime Functions
+
+          -- ** Generic
         , xGetTag
 
+          -- ** Boxed Objects
         , xAllocBoxed
         , xGetFieldOfBoxed
         , xSetFieldOfBoxed
 
+          -- ** Raw Objects
+        , xAllocRaw
+        , xPayloadOfRaw
+
+          -- ** Raw Small Objects
         , xAllocSmall
         , xPayloadOfSmall
 
+          -- ** Thunk Objects
         , xAllocThunk
         , xArgsOfThunk
         , xSetFieldOfThunk
         , xExtendThunk
         , xCopyArgsOfThunk
         , xApplyThunk
-        , xRunThunk
-
-          -- * Calls to primops.
-        , xCreate
-        , xRead
-        , xWrite
-        , xPeekBuffer
-        , xPokeBuffer
-        , xFail
-        , xReturn)
+        , xRunThunk)
 where
 import DDC.Core.Salt.Compounds
 import DDC.Core.Salt.Name
-import DDC.Core.Salt.Env
 import DDC.Core.Compounds
 import DDC.Core.Module
 import DDC.Core.Exp
@@ -48,7 +46,7 @@ import qualified Data.Map       as Map
 import Data.Map                 (Map)
 
 
--- Runtime --------------------------------------------------------------------
+-- Runtime -----------------------------------------------------------------------------------------
 -- | Runtime system configuration
 data Config
         = Config
@@ -92,7 +90,7 @@ runtimeImportTypes
          rn _   = error "ddc-core-salt: all runtime bindings must be named."
 
 
--- Tags -----------------------------------------------------------------------
+-- Tags -------------------------------------------------------------------------------------------
 -- | Get the constructor tag of an object.
 xGetTag :: a -> Type Name -> Exp a Name -> Exp a Name
 xGetTag a tR x2 
@@ -105,7 +103,7 @@ utGetTag
         ,       tForall kRegion $ \r -> tPtr r tObj `tFun` tTag)
 
 
--- Thunk ----------------------------------------------------------------------
+-- Thunk ------------------------------------------------------------------------------------------
 -- | Allocate a Thunk object.
 xAllocThunk  
         :: a 
@@ -254,7 +252,7 @@ utRunThunk
                 $ \[tR1, tR2] -> tPtr tR1 tObj `tFun` tPtr tR2 tObj)
 
 
--- Boxed ----------------------------------------------------------------------
+-- Boxed ------------------------------------------------------------------------------------------
 -- | Allocate a Boxed object.
 xAllocBoxed :: a -> Type Name -> Integer -> Exp a Name -> Exp a Name
 xAllocBoxed a tR tag x2
@@ -317,8 +315,32 @@ utSetFieldOfBoxed
         , tForalls [kRegion, kRegion]
             $ \[r1, t2] -> tPtr r1 tObj `tFun` tNat `tFun` tPtr t2 tObj `tFun` tVoid)
 
+-- Raw --------------------------------------------------------------------------------------------
+-- | Allocate a Raw object.
+xAllocRaw :: a -> Type Name -> Integer -> Exp a Name -> Exp a Name
+xAllocRaw a tR tag x2
+ = xApps a (XVar a $ fst utAllocRaw)
+        [ XType a tR, xTag a tag, x2]
 
--- Small -------------------------------------------------------------------
+utAllocRaw :: (Bound Name, Type Name)
+utAllocRaw
+ =      ( UName (NameVar "allocRaw")
+        , tForall kRegion $ \r -> (tTag `tFun` tNat `tFun` tPtr r tObj))
+
+
+-- | Get the payload of a Raw object.
+xPayloadOfRaw :: a -> Type Name -> Exp a Name -> Exp a Name
+xPayloadOfRaw a tR x2 
+ = xApps a (XVar a $ fst utPayloadOfRaw) 
+        [XType a tR, x2]
+ 
+utPayloadOfRaw :: (Bound Name, Type Name)
+utPayloadOfRaw
+ =      ( UName (NameVar "payloadRaw")
+        , tForall kRegion $ \r -> (tFun (tPtr r tObj) (tPtr r (tWord 8))))
+
+
+-- Small ------------------------------------------------------------------------------------------
 -- | Allocate a Small object.
 xAllocSmall :: a -> Type Name -> Integer -> Exp a Name -> Exp a Name
 xAllocSmall a tR tag x2
@@ -341,106 +363,4 @@ utPayloadOfSmall :: (Bound Name, Type Name)
 utPayloadOfSmall
  =      ( UName (NameVar "payloadSmall")
         , tForall kRegion $ \r -> (tFun (tPtr r tObj) (tPtr r (tWord 8))))
-
-
--- Primops --------------------------------------------------------------------
--- | Create the heap.
-xCreate :: a -> Integer -> Exp a Name
-xCreate a bytes
-        = XApp a (XVar a uCreate) 
-                 (xNat  a bytes) 
-
-uCreate :: Bound Name
-uCreate = UPrim (NamePrimOp $ PrimStore $ PrimStoreCreate)
-                (tNat `tFun` tVoid)
-
-
--- | Read a value from an address plus offset.
-xRead   :: a -> Type Name -> Exp a Name -> Integer -> Exp a Name
-xRead a tField xAddr offset
-        = XApp a (XApp a (XApp a (XVar a uRead) 
-                               (XType a tField))
-                          xAddr)
-                 (xNat a offset)
-
-uRead   :: Bound Name
-uRead   = UPrim (NamePrimOp $ PrimStore $ PrimStoreRead)
-                (tForall kData $ \t -> tAddr `tFun` tNat `tFun` t)
-
-
--- | Write a value to an address plus offset.
-xWrite   :: a -> Type Name -> Exp a Name -> Integer -> Exp a Name -> Exp a Name
-xWrite a tField xAddr offset xVal
-        = XApp a (XApp a (XApp a (XApp a (XVar a uWrite) 
-                                         (XType a tField))
-                                  xAddr)
-                          (xNat a offset))
-                  xVal
-
-uWrite   :: Bound Name
-uWrite   = UPrim (NamePrimOp $ PrimStore $ PrimStoreWrite)
-                 (tForall kData $ \t -> tAddr `tFun` tNat `tFun` t `tFun` tVoid)
-
-
--- | Peek a value from a buffer pointer plus offset
-xPeekBuffer :: a -> Type Name -> Type Name -> Exp a Name -> Integer -> Exp a Name
-xPeekBuffer a r t xPtr offset
- = let castedPtr = xCast a r t (tWord 8) xPtr
-   in  XApp a (XApp a (XApp a (XApp a (XVar a uPeek) 
-                                      (XType a r)) 
-                              (XType a t)) 
-                       castedPtr) 
-              (xNat a offset)
-
-uPeek :: Bound Name
-uPeek = UPrim (NamePrimOp $ PrimStore $ PrimStorePeek)
-              (typeOfPrimStore PrimStorePeek)
-              
-
--- | Poke a value from a buffer pointer plus offset
-xPokeBuffer :: a -> Type Name -> Type Name -> Exp a Name -> Integer -> Exp a Name -> Exp a Name
-xPokeBuffer a r t xPtr offset xVal
- = let castedPtr = xCast a r t (tWord 8) xPtr
-   in  XApp a (XApp a (XApp a (XApp a (XApp a (XVar a uPoke) 
-                                              (XType a r)) 
-                                      (XType a t)) 
-                               castedPtr) 
-                      (xNat a offset))
-              xVal
-
-uPoke :: Bound Name
-uPoke = UPrim (NamePrimOp $ PrimStore $ PrimStorePoke)
-              (typeOfPrimStore PrimStorePoke)
-
-
--- | Cast a pointer
-xCast :: a -> Type Name -> Type Name -> Type Name -> Exp a Name -> Exp a Name
-xCast a r toType fromType xPtr
- =     XApp a (XApp a (XApp a (XApp a (XVar a uCast)
-                                      (XType a r)) 
-                              (XType a toType))
-                      (XType a fromType))
-              xPtr           
-                      
-uCast :: Bound Name
-uCast = UPrim (NamePrimOp $ PrimStore $ PrimStoreCastPtr)
-              (typeOfPrimStore PrimStoreCastPtr)
-              
-                             
--- | Fail with an internal error.
-xFail   :: a -> Type Name -> Exp a Name
-xFail a t       
- = XApp a (XVar a uFail) (XType a t)
- where  uFail   = UPrim (NamePrimOp (PrimControl PrimControlFail)) tFail
-        tFail   = TForall (BAnon kData) (TVar $ UIx 0)
-
-
--- | Return a value.
---   like  (return# [Int32#] x)
-xReturn :: a -> Type Name -> Exp a Name -> Exp a Name
-xReturn a t x
- = XApp a (XApp a (XVar a (UPrim (NamePrimOp (PrimControl PrimControlReturn))
-                          (tForall kData $ \t1 -> t1 `tFun` t1)))
-                (XType a t))
-           x
 

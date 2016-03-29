@@ -78,8 +78,10 @@ constructData pp _kenv _tenv a _dataDef ctorDef rPrime xsFields tsFields
         let xObject'    = XVar a $ UIx 1
         let xPayload'   = XVar a $ UIx 0
         let lsFields    = [ LLet (BNone A.tVoid)
-                                 (A.xPokeBuffer a rPrime tField xPayload'
-                                                offset (liftX 2 xField))
+                                 (A.xPoke a rPrime tField 
+                                        (A.xCastPtr a A.rTop tField (A.tWord 8) xPayload')
+                                        (A.xNat a offset) 
+                                        (liftX 2 xField))
                                 | tField        <- tsFields
                                 | offset        <- offsets
                                 | xField        <- xsFields]
@@ -145,8 +147,10 @@ destructData pp a ctorDef uScrut trPrime bsFields xBody
                 $ [ if isBNone bField
                      then Nothing 
                      else Just $ LLet bField 
-                                     (A.xPeekBuffer a trPrime tField 
-                                              (XVar a uPayload) offset)
+                                     (A.xPeek a trPrime tField 
+                                        (A.xCastPtr a A.rTop tField (A.tWord 8) 
+                                                (XVar a uPayload))
+                                        (A.xNat a offset))
                   | bField      <- bsFields
                   | tField      <- map typeOfBind bsFields
                   | offset      <- offsets ]

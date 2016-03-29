@@ -3,7 +3,7 @@ module DDC.Core.Salt.Transfer
         (transferModule)
 where
 import DDC.Core.Salt.Convert.Base
-import DDC.Core.Salt.Runtime
+import DDC.Core.Salt.Compounds
 import DDC.Core.Salt.Name
 import DDC.Core.Salt.Env
 import DDC.Core.Predicates
