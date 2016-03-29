@@ -1,0 +1,53 @@
+
+module Runtime.Prim.Text
+export value
+ makeTextLit    : [r1: Region]. Addr# -> Ptr# r1 Obj
+ takeTextLit    : [r1: Region]. Ptr# r1 Obj -> Addr#
+
+import value 
+ -- Objects with raw, non-pointer data.
+ allocRaw       : [r1: Region]. Tag# -> Nat# -> Ptr# r1 Obj
+ payloadRaw     : [r1: Region]. Ptr# r1 Obj  -> Ptr# r1 Word8#
+ payloadSizeRaw : [r1: Region]. Ptr# r1 Obj  -> Nat#
+
+with letrec
+
+
+-- | Make a boxed text literal from a pointer to a null terminated
+--   sequence of bytes.
+--
+--   We first take the length of the string for bounds checks during
+--   indexing and store the pointer and length together in the object.
+--
+--   typedef struct
+--   {   uint32_t  tagFormat;   // Constructor tag and format field.
+--       uint32_t  size         // Size of this boxed object in bytes.
+--       uint32_t  length;      // Length of the string literal in bytes.
+--       uint8_t*  ptr;         // Pointer to null terminated string data.
+--   } TextLit;
+--
+makeTextLit [r1: Region] (addrString: Addr#): Ptr# r1 Obj
+ = do
+        len     = lengthOfString 0# addrString
+        obj     = allocRaw (truncate# 0#) (add# 4# (size# [Addr#]))
+        payload = takePtr# (payloadRaw obj)
+        write# [Word32#] payload 0# (truncate# len)
+        write# [Addr#]   payload 4# addrString
+        obj
+
+
+-- | Take the pointer from a text literal.
+takeTextLit [r1: Region] (obj: Ptr# r1 Obj): Addr#
+ = do   
+        payload = takePtr# (payloadRaw obj)
+        read# [Addr#]    payload 4#
+
+
+-- | Size of 
+lengthOfString (i: Nat#) (str: Addr#): Nat#
+ = do
+        x       = promote# (read# [Word8#] str i)
+        case x of
+         0#     -> i
+         _      -> lengthOfString (add# i 1#) str
+

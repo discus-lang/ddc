@@ -6,13 +6,20 @@ export  { textLit; paste; pastes
         ; digitBinary; digitDecimal; digitHex }
 import Data.Numeric.Nat
 import Data.Numeric.Bool
+
+import foreign boxed type
+ TextLit : Data
+
+import foreign c value
+ makeTextLit : TextLit# -> TextLit
+
 where
 
 
 -------------------------------------------------------------------------------
 -- Names used by the Source Tetra desugarer to implement string literals.
 textLit (x : TextLit#) : Text
- = TextLit x
+ = TextLit (makeTextLit x)
 
 paste  (x y : Text) : Text
  = TextApp x y
@@ -23,7 +30,7 @@ pastes (x y : Text) : Text
 
 -------------------------------------------------------------------------------
 data Text where
-        TextLit : TextLit# -> Text
+        TextLit : TextLit -> Text
         TextApp : Text -> Text -> Text
 
 

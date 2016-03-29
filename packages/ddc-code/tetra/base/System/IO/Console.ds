@@ -7,7 +7,10 @@ import foreign abstract type
  Console  : Effect
 
 import foreign c value
- primPutString  : TextLit# -> S Console Void#
+ primPutSeaString  : TextLit# -> S Console Void#
+
+import foreign c value
+ takeTextLit       : TextLit -> TextLit#
 
 where
 
@@ -16,7 +19,7 @@ where
 write (tt : Text) : S Console Unit
  = box case tt of
         TextLit lit
-         -> do  run primPutString lit
+         -> do  run primPutSeaString (takeTextLit lit)
                 ()
 
         TextApp t1 t2 
