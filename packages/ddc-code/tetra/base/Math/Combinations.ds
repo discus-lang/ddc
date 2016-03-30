@@ -1,0 +1,42 @@
+
+module Math.Combinations
+export  { factorial
+        ; choose; chooseMany }
+import Data.Numeric.Nat
+import Data.List
+where
+
+-- | Compute the factorial of a number.
+--
+--   factorial n is the number of possible permutations
+--   of a sequence of n things.
+--
+factorial (n: Nat#): Nat#
+ = if n == 0
+        then 1
+        else n * factorial (n - 1)
+
+
+-- | Compute the number of was of choosing r things from n things.
+---
+--   Note that the textbook definition of this is,
+--     div (factorial n) ( factorial (n - 1) * factorial r )
+--   but we factor out the (factorial (n - 1)) term beforehand to 
+--   make it easier to compute.
+--
+choose (n r: Nat#): Nat#
+ = if r > n 
+        then 0
+        else div (prodRange n (n - (r - 1))) (factorial r)
+
+-- | Compute the product of the range [n, n-1 .. m] inclusive.
+prodRange (n m: Nat#): Nat#
+ = if n == m
+        then n
+        else n * prodRange (n - 1) m
+
+
+-- | Compute the number of ways of choosing collections of things
+--   of sizes rs from n things.
+chooseMany (n: Nat#) (rs: List Nat#): Nat#
+ = div (factorial n) (prod (map factorial rs))
