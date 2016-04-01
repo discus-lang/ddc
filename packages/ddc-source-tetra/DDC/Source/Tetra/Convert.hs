@@ -110,6 +110,7 @@ coreOfSourceModuleM a mm
                         else [])
 
                 , C.moduleImportTypes    = importTypes'
+                , C.moduleImportCaps     = []
                 , C.moduleImportValues   = importValues'
                 , C.moduleImportDataDefs = []
                 , C.moduleDataDefsLocal  = dataDefsLocal

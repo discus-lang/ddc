@@ -15,12 +15,12 @@ instance Reannotate Module where
  reannotate f
      (ModuleCore name isHeader
                  exportKinds  exportTypes 
-                 importKinds  importTypes  importDataDefs
+                 importKinds  importCaps   importTypes  importDataDefs
                  dataDefsLocal
                  body)
   =   ModuleCore name isHeader
                  exportKinds  exportTypes
-                 importKinds  importTypes  importDataDefs
+                 importKinds  importCaps   importTypes  importDataDefs
                  dataDefsLocal
                  (reannotate f body)
 

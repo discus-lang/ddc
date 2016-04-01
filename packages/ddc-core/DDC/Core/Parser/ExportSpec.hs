@@ -13,11 +13,12 @@ import Control.Monad
 import qualified DDC.Base.Parser        as P
 
 
+-- An exported thing.
 data ExportSpec n
         = ExportValue   n (ExportSource n)
 
 
--- | Parse some export specs.
+-- | Parse some export specifications.
 pExportSpecs
         :: (Ord n, Pretty n)
         => Context n -> Parser n [ExportSpec n]
@@ -44,10 +45,11 @@ pExportSpecs c
          ]
 
 
--- | Parse an export spec.
+-- | Parse an export specification.
 pExportValue
         :: (Ord n, Pretty n)
         => Context n -> Parser n (ExportSpec n)
+
 pExportValue c 
  = do   
         n       <- pName
@@ -60,6 +62,7 @@ pExportValue c
 pExportForeignValue    
         :: (Ord n, Pretty n)
         => Context n -> String -> Parser n (ExportSpec n)
+
 pExportForeignValue c dst
         | "c"           <- dst
         = do    n       <- pName
@@ -72,5 +75,4 @@ pExportForeignValue c dst
 
         | otherwise
         = P.unexpected "export mode for foreign value."
-
 

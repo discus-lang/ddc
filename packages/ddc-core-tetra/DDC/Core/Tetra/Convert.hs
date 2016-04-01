@@ -143,24 +143,25 @@ convertM pp runConfig defs kenv tenv mm
         -- Build the output module.
         let mm_salt 
                 = ModuleCore
-                { moduleName           = moduleName mm
-                , moduleIsHeader       = moduleIsHeader mm
+                { moduleName            = moduleName mm
+                , moduleIsHeader        = moduleIsHeader mm
 
                   -- None of the types imported by Tetra modules are relevant
                   -- to the Salt language.
-                , moduleExportTypes    = []
-                , moduleExportValues   = tsExports'
+                , moduleExportTypes     = []
+                , moduleExportValues    = tsExports'
 
-                , moduleImportTypes    = Map.toList $ A.runtimeImportKinds
-                , moduleImportValues   = (Map.toList A.runtimeImportTypes) ++ tsImports'
-                , moduleImportDataDefs = []
+                , moduleImportTypes     = Map.toList $ A.runtimeImportKinds
+                , moduleImportCaps      = []
+                , moduleImportValues    = (Map.toList A.runtimeImportTypes) ++ tsImports'
+                , moduleImportDataDefs  = []
 
                   -- Data constructors and pattern matches should have been
                   -- flattened into primops, so we don't need the data type
                   -- definitions.
-                , moduleDataDefsLocal  = []
+                , moduleDataDefsLocal   = []
 
-                , moduleBody           = x2 }
+                , moduleBody            = x2 }
 
         -- If this is the 'Main' module then add code to initialise the 
         -- runtime system. This will fail if given a Main module with no

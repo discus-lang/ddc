@@ -1,4 +1,5 @@
 
+-- | Construct applications of primitive arithmetic operators.
 module DDC.Core.Salt.Compounds.PrimArith
         ( xNeg
         , xAdd, xSub, xMul, xDiv, xMod, xRem

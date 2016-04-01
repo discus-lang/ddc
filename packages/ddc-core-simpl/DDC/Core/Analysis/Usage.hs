@@ -95,6 +95,7 @@ usageModule
                 , moduleExportTypes     = exportTypes
                 , moduleExportValues    = exportValues
                 , moduleImportTypes     = importTypes
+                , moduleImportCaps      = importCaps
                 , moduleImportValues    = importValues
                 , moduleImportDataDefs  = importDataDefs
                 , moduleDataDefsLocal   = dataDefsLocal
@@ -106,6 +107,7 @@ usageModule
                 , moduleExportTypes     = exportTypes
                 , moduleExportValues    = exportValues
                 , moduleImportTypes     = importTypes
+                , moduleImportCaps      = importCaps
                 , moduleImportValues    = importValues
                 , moduleImportDataDefs  = importDataDefs
                 , moduleDataDefsLocal   = dataDefsLocal
@@ -232,7 +234,7 @@ usageLets lts
 
 
 -- | Annotate binding occurrences of named value variables with 
---  usage information.
+--   usage information.
 usageCast  
         :: Ord n
         => Cast a n

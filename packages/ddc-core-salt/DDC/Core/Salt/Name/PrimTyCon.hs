@@ -18,7 +18,6 @@ import Data.Char
 import Data.List
 
 
--- PrimTyCon -----------------------------------------------------------------
 -- | Primitive type constructors.
 data PrimTyCon
         -- | @Void#@ the Void type has no values.

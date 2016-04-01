@@ -73,6 +73,7 @@ pModule c
                 , moduleExportTypes     = []
                 , moduleExportValues    = [(n, s) | ExportValue n s <- exportSpecs]
                 , moduleImportTypes     = [(n, s) | ImportType  n s <- importSpecs]
+                , moduleImportCaps      = [(n, s) | ImportCap   n s <- importSpecs]
                 , moduleImportValues    = [(n, s) | ImportValue n s <- importSpecs]
                 , moduleImportDataDefs  = [def    | ImportData  def <- importSpecs]
                 , moduleDataDefsLocal   = defsLocal
@@ -92,6 +93,7 @@ data HeadDecl n
 -- | Parse one of the declarations that can appear in a module header.
 pHeadDecl :: (Ord n, Pretty n)
           => Context n -> Parser n (HeadDecl n)
+
 pHeadDecl ctx
  = P.choice 
         [ do    def     <- pDataDef ctx

@@ -1,4 +1,5 @@
 
+-- | Construct applications of primitive store operators.
 module DDC.Core.Salt.Compounds.PrimStore
         ( xStoreSize, xStoreSize2
         , xCreate

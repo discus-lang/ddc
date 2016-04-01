@@ -14,18 +14,29 @@ import Control.Monad
 import qualified DDC.Base.Parser        as P
 
 
--- | An imported foreign type or foreign value.
+---------------------------------------------------------------------------------------------------
+-- | An imported thing.
+--
+--   During parsing the specifications of all imported things are bundled
+--   into this common type. The caller can split them out into separate 
+--   buckets if it wants to.
+--
 data ImportSpec n
-        = ImportType    n (ImportType  n)
-        | ImportValue   n (ImportValue n)
+        = ImportType    n (ImportType   n)
+        | ImportCap     n (ImportCap    n)
+        | ImportValue   n (ImportValue  n)
         | ImportData    (DataDef n)
+        deriving Show
         
 
--- | Parse some import specs.
-pImportSpecs    :: (Ord n, Pretty n)
-                => Context n -> Parser n [ImportSpec n]
+-- | Parse some import specifications.
+pImportSpecs
+        :: (Ord n, Pretty n)
+        => Context n -> Parser n [ImportSpec n]
+
 pImportSpecs c
  = do   
+        -- import ...
         pTok KImport
 
         P.choice
@@ -40,18 +51,26 @@ pImportSpecs c
                 pTok KBraceKet
                 return specs
 
+                -- foreign ...
          , do   pTok KForeign
                 src     <- liftM (renderIndent . ppr) pName
 
                 P.choice
-                 [      -- import foreign X type { (NAME :: TYPE)+ }
+                 [      -- import foreign MODE type { (NAME : TYPE)+ }
                   do    pTok KType
                         pTok KBraceBra
                         sigs <- P.sepEndBy1 (pImportForeignType c src) (pTok KSemiColon)
                         pTok KBraceKet
                         return sigs
         
-                        -- imports foreign X value { (NAME :: TYPE)+ }
+                        -- import foreign MODE capability { (NAME : TYPE)+ }
+                 , do   pTok KCapability
+                        pTok KBraceBra
+                        sigs <- P.sepEndBy1 (pImportForeignCap c src) (pTok KSemiColon)
+                        pTok KBraceKet
+                        return sigs
+
+                        -- import foreign MODE value { (NAME : TYPE)+ }
                  , do   pTok KValue
                         pTok KBraceBra
                         sigs <- P.sepEndBy1 (pImportForeignValue c src) (pTok KSemiColon)
@@ -63,7 +82,7 @@ pImportSpecs c
 
 
 ---------------------------------------------------------------------------------------------------
--- | Parse a foreign type import spec.
+-- | Parse a foreign type import specification.
 pImportForeignType
         :: (Ord n, Pretty n) 
         => Context n -> String -> Parser n (ImportSpec n)
@@ -77,7 +96,7 @@ pImportForeignType c src
         = do    n       <- pName
                 pTokSP (KOp ":")
                 k       <- pType c
-                return  (ImportType n (ImportTypeAbstract k))
+                return  $ ImportType n (ImportTypeAbstract k)
 
         -- Boxed types are associate with values that follow the standard
         -- heap object layout. They can be passed and return from functions.
@@ -85,14 +104,33 @@ pImportForeignType c src
         = do    n       <- pName
                 pTokSP (KOp ":")
                 k       <- pType c
-                return  (ImportType n (ImportTypeBoxed k))
+                return  $ ImportType n (ImportTypeBoxed k)
 
         | otherwise
         = P.unexpected "import mode for foreign type."
 
 
 ---------------------------------------------------------------------------------------------------
--- | Parse a value import spec.
+-- | Parse a foreign capability import specification.
+pImportForeignCap
+        :: (Ord n, Pretty n)
+        => Context n -> String -> Parser n (ImportSpec n)
+
+pImportForeignCap c src
+
+        -- Abstract capability.
+        | "abstract"    <- src
+        = do    n       <- pName
+                pTokSP  (KOp ":")
+                t       <- pType c
+                return  $  ImportCap n (ImportCapAbstract t)
+
+        | otherwise
+        = P.unexpected "import mode for foreign capability."
+
+
+---------------------------------------------------------------------------------------------------
+-- | Parse a value import specification.
 ---
 -- When we parse this initially the arity information is set to Nothing.
 -- The arity information itself comes in with the associated ARITY pragma
@@ -102,11 +140,11 @@ pImportForeignType c src
 pImportValue
         :: (Ord n, Pretty n)
         => Context n -> Parser n (ImportSpec n)
+
 pImportValue c
  = do   n       <- pName
         pTokSP (KOp ":")
         t       <- pType c
-
         return  (ImportValue n (ImportValueModule (ModuleName []) n t Nothing))
 
 
@@ -114,6 +152,7 @@ pImportValue c
 pImportForeignValue    
         :: (Ord n, Pretty n)
         => Context n -> String -> Parser n (ImportSpec n)
+
 pImportForeignValue c src
         | "c"           <- src
         = do    n       <- pName
@@ -124,7 +163,7 @@ pImportForeignValue c src
                 --             with foreign C imports and exports.
                 let symbol = renderIndent (ppr n)
 
-                return  (ImportValue n (ImportValueSea symbol k))
+                return  $ ImportValue n (ImportValueSea symbol k)
 
         | otherwise
         = P.unexpected "import mode for foreign value."

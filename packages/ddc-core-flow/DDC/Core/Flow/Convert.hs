@@ -64,22 +64,24 @@ convertM mm
         -- Build the output module.
         let mm_tetra 
                 = ModuleCore
-                { moduleName           = moduleName mm
-                , moduleIsHeader       = moduleIsHeader mm
+                { moduleName            = moduleName mm
+                , moduleIsHeader        = moduleIsHeader mm
 
-                , moduleExportTypes    = tsExportT'
-                , moduleExportValues   = tsExportV'
+                , moduleExportTypes     = tsExportT'
+                , moduleExportValues    = tsExportV'
 
-                , moduleImportTypes    = tsImportT'
-                , moduleImportValues   = tsImportV' ++ tsImportV'rest
+                , moduleImportTypes     = tsImportT'
+                , moduleImportCaps      = []
+                , moduleImportValues    = tsImportV' ++ tsImportV'rest
 
                 -- TODO
-                , moduleImportDataDefs = []
-                , moduleDataDefsLocal  = []
+                , moduleImportDataDefs  = []
+                , moduleDataDefsLocal   = []
 
                 , moduleBody           = body' }
 
-        -- Initialise the salt heap. Hardcode this for now, because eventually this will target tetra.
+        -- Initialise the salt heap.
+        -- Hardcode this for now, because eventually this will target tetra.
         mm_init <- case initRuntime (Config 10000)  mm_tetra of
                         Nothing   -> return mm_tetra
                         Just mm'  -> return mm'

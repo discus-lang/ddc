@@ -13,7 +13,7 @@ import Data.List
 import Data.Char
 
 
--- | Primitive vector operators.
+-- | Primitive fixed-length SIMD vector operators.
 data PrimVec
         -- Arithmetic ---------------------------
         -- | Negate elements of a vector.
@@ -159,5 +159,4 @@ lowerPrimVecToArith pp
         PrimVecMul{}            -> Just PrimArithMul
         PrimVecDiv{}            -> Just PrimArithDiv
         _                       -> Nothing
-
 

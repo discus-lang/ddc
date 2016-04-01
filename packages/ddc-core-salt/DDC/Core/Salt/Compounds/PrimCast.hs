@@ -1,4 +1,5 @@
 
+-- | Construct applications of primitive cast operators.
 module DDC.Core.Salt.Compounds.PrimCast
         ( xConvert
         , xPromote

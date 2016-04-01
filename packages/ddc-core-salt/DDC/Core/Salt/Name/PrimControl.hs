@@ -38,4 +38,3 @@ readPrimControl str
         "return#"       -> Just $ PrimControlReturn
         _               -> Nothing
 
-

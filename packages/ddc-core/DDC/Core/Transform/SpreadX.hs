@@ -25,21 +25,46 @@ class SpreadX (c :: * -> *) where
 ---------------------------------------------------------------------------------------------------
 instance SpreadX (Module a) where
  spreadX kenv tenv mm@ModuleCore{}
-        = ModuleCore
-        { moduleName            = moduleName mm
-        , moduleIsHeader        = moduleIsHeader mm
+  = let liftSnd f (x, y) = (x, f y)
+    in  ModuleCore
+        { moduleName            
+                = moduleName mm
 
-        , moduleExportTypes     = map (liftSnd $ spreadT kenv)      (moduleExportTypes    mm)
-        , moduleExportValues    = map (liftSnd $ spreadT kenv)      (moduleExportValues   mm)
+        , moduleIsHeader        
+                = moduleIsHeader mm
+
+        , moduleExportTypes     
+                = map (liftSnd $ spreadT kenv)
+                $ moduleExportTypes mm
+
+        , moduleExportValues    
+                = map (liftSnd $ spreadT kenv)
+                $ moduleExportValues mm
           
-        , moduleImportTypes     = map (liftSnd $ spreadX kenv tenv) (moduleImportTypes    mm)
-        , moduleImportValues    = map (liftSnd $ spreadX kenv tenv) (moduleImportValues   mm)
-        , moduleImportDataDefs  = map (spreadT kenv )               (moduleImportDataDefs mm)
+        , moduleImportTypes     
+                = map (liftSnd $ spreadX kenv tenv) 
+                $ moduleImportTypes mm
 
-        , moduleDataDefsLocal   = map (spreadT kenv)                (moduleDataDefsLocal  mm)
+        , moduleImportCaps
+                = map (liftSnd $ spreadX kenv tenv)
+                $ moduleImportCaps mm
+
+        , moduleImportValues    
+                = map (liftSnd $ spreadX kenv tenv) 
+                $ moduleImportValues mm
+
+        , moduleImportDataDefs  
+                = map (spreadT kenv)
+                $ moduleImportDataDefs mm
+
+        , moduleDataDefsLocal   
+                = map (spreadT kenv)
+                $ moduleDataDefsLocal mm
   
-        , moduleBody            = spreadX kenv tenv (moduleBody mm) }
-        where liftSnd f (x, y) = (x, f y)
+        , moduleBody           
+                 = spreadX kenv tenv
+                 $ moduleBody mm 
+        }
 
 
 ---------------------------------------------------------------------------------------------------
@@ -62,6 +87,14 @@ instance SpreadX ImportType where
 
         ImportTypeBoxed t
          -> ImportTypeBoxed    (spreadT kenv t)
+
+
+---------------------------------------------------------------------------------------------------
+instance SpreadX ImportCap where
+ spreadX kenv _tenv isrc
+  = case isrc of
+        ImportCapAbstract t
+         -> ImportCapAbstract   (spreadT kenv t)
 
 
 ---------------------------------------------------------------------------------------------------

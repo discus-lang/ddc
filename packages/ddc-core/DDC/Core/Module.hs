@@ -23,18 +23,24 @@ module DDC.Core.Module
          -- * Qualified names.
         , QualName      (..)
 
-         -- * Export Sources
+         -- * Export Definitions
         , ExportSource  (..)
         , takeTypeOfExportSource
         , mapTypeOfExportSource
 
-         -- * Import Types
+         -- * Import Definitions
+         -- ** Import Types
         , ImportType    (..)
         , kindOfImportType
         , mapKindOfImportType
 
-         -- * Import Types
-        , ImportValue  (..)
+         -- ** Import Capabilities
+        , ImportCap     (..)
+        , typeOfImportCap
+        , mapTypeOfImportCap
+
+         -- ** Import Types
+        , ImportValue   (..)
         , typeOfImportValue
         , mapTypeOfImportValue)
 where
@@ -59,38 +65,41 @@ import Data.Maybe
 data Module a n
         = ModuleCore
         { -- | Name of this module.
-          moduleName                    :: !ModuleName
+          moduleName            :: !ModuleName
 
           -- | Whether this is a module header only.
           --   Module headers contain type definitions, as well as imports and exports, 
           --   but no function definitions. Module headers are used in interface files.
-        , moduleIsHeader                :: !Bool
+        , moduleIsHeader        :: !Bool
 
           -- Exports ------------------
           -- | Kinds of exported types.
-        , moduleExportTypes             :: ![(n, ExportSource n)]
+        , moduleExportTypes     :: ![(n, ExportSource n)]
 
           -- | Types of exported values.
-        , moduleExportValues            :: ![(n, ExportSource n)]
+        , moduleExportValues    :: ![(n, ExportSource n)]
 
           -- Imports ------------------
-          -- | Information about types  imported from somewhere else.
-        , moduleImportTypes             :: ![(n, ImportType  n)]
+          -- | Define imported types.
+        , moduleImportTypes     :: ![(n, ImportType  n)]
 
-          -- | Information about values imported from somewhere else.
-        , moduleImportValues            :: ![(n, ImportValue n)]
+          -- | Define imported capabilities.
+        , moduleImportCaps      :: ![(n, ImportCap n)]
+
+          -- | Define imported values.
+        , moduleImportValues    :: ![(n, ImportValue n)]
 
           -- | Data defs imported from other modules.
-        , moduleImportDataDefs          :: ![DataDef n]
+        , moduleImportDataDefs  :: ![DataDef n]
 
           -- Local defs ---------------
           -- | Data types defined in this module.
-        , moduleDataDefsLocal           :: ![DataDef n]
+        , moduleDataDefsLocal   :: ![DataDef n]
 
           -- | The module body consists of some let-bindings wrapping a unit
           --   data constructor. We're only interested in the bindings, with
           --   the unit being just a place-holder.
-        , moduleBody                    :: !(Exp a n)
+        , moduleBody            :: !(Exp a n)
         }
         deriving (Show, Typeable)
 
@@ -102,6 +111,7 @@ instance (NFData a, NFData n) => NFData (Module a n) where
         `seq` rnf (moduleExportTypes    mm)
         `seq` rnf (moduleExportValues   mm)
         `seq` rnf (moduleImportTypes    mm)
+        `seq` rnf (moduleImportCaps     mm)
         `seq` rnf (moduleImportValues   mm)
         `seq` rnf (moduleImportDataDefs mm)
         `seq` rnf (moduleDataDefsLocal  mm)
@@ -224,6 +234,4 @@ modulesExportValues mods base
         liftSnd f (x, y) = (x, f y)
 
    in   Env.unions $ base : (map envOfModule $ Map.elems mods)
-
-
 

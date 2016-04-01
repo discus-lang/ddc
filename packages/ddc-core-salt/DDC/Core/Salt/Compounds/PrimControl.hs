@@ -1,4 +1,5 @@
 
+-- | Construct applications of primitive control operators.
 module DDC.Core.Salt.Compounds.PrimControl
         ( xFail
         , xReturn

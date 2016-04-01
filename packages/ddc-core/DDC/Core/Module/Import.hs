@@ -1,9 +1,16 @@
 
 module DDC.Core.Module.Import
-        ( ImportType    (..)
+        ( -- * Imported types
+          ImportType    (..)
         , kindOfImportType
         , mapKindOfImportType
 
+          -- * Imported capabilities
+        , ImportCap (..)
+        , typeOfImportCap
+        , mapTypeOfImportCap
+
+          -- * Imported values
         , ImportValue   (..)
         , typeOfImportValue
         , mapTypeOfImportValue)
@@ -14,19 +21,27 @@ import Control.DeepSeq
 
 
 -- ImportType -------------------------------------------------------------------------------------
--- | Source of some imported type.
+-- | Define a foreign type being imported into a module.
 data ImportType n
-        -- | A type imported abstractly.
-        --   Used for phantom types of kind Data, 
-        --   as well as any type that does not have kind Data.
+        -- | Type imported abstractly.
+        --
+        --   Used for phantom types of kind Data, as well as regions, effects,
+        --   and any other type that does not have kind Data. When a type is
+        --   imported abstractly it has no associated values, so we can just
+        --   say that we have the type without worrying about how to represent
+        --   its associated values.
+        --
         = ImportTypeAbstract
         { importTypeAbstractType      :: !(Kind n) }
 
-        -- | The type of some boxed data which is defined somewhere else.
+        -- | Type of some boxed data.
+        --
         --   The objects follow the standard heap object layout, but the code
         --   that constructs and destructs them may have been written in a 
         --   different language.
-        --   Used when importing data types defined in Salt modules.
+        --
+        --   This is used when importing data types defined in Salt modules.
+        --
         | ImportTypeBoxed
         { importTypeBoxed             :: !(Kind n) }
         deriving Show
@@ -39,7 +54,7 @@ instance NFData n => NFData (ImportType n) where
         ImportTypeBoxed    k            -> rnf k
 
 
--- | Take the type of an imported thing.
+-- | Take the kind of an `ImportType`.
 kindOfImportType :: ImportType n -> Kind n
 kindOfImportType src
  = case src of
@@ -47,7 +62,7 @@ kindOfImportType src
         ImportTypeBoxed    k            -> k
 
 
--- | Apply a function to the kind in an ImportType.
+-- | Apply a function to the kind of an `ImportType`
 mapKindOfImportType :: (Kind n -> Kind n) -> ImportType n -> ImportType n
 mapKindOfImportType f isrc
  = case isrc of
@@ -55,22 +70,62 @@ mapKindOfImportType f isrc
         ImportTypeBoxed    k            -> ImportTypeBoxed    (f k)
 
 
+-- ImportCapability -------------------------------------------------------------------------------
+-- | Define a foreign capability being imported into a module.
+data ImportCap n
+        -- | Capability imported abstractly.
+        --   For capabilities like (Read r) for some top-level region r
+        --   we can just say that we have the capability.
+        = ImportCapAbstract
+        { importCapAbstractType  :: !(Type n) }
+        deriving Show
+
+
+instance NFData n => NFData (ImportCap n) where
+ rnf ii
+  = case ii of
+        ImportCapAbstract t     -> rnf t
+
+
+-- | Take the type of an `ImportCap`.
+typeOfImportCap :: ImportCap n -> Type n
+typeOfImportCap ii
+ = case ii of
+        ImportCapAbstract t     -> t
+
+
+-- | Apply a function to the type in an `ImportCapability`.
+mapTypeOfImportCap :: (Type n -> Type n) -> ImportCap n -> ImportCap n
+mapTypeOfImportCap f ii
+ = case ii of
+        ImportCapAbstract t     -> ImportCapAbstract (f t)
+
+
 -- ImportValue ------------------------------------------------------------------------------------
--- | Source of some imported value.
+-- | Define a foreign value being imported into a module.
 data ImportValue n
-        -- | Value imported from a Disciple module that we compiled ourself.
+        -- | Value imported from a module that we compiled ourselves.
         = ImportValueModule
-        { importValueModuleName        :: !ModuleName 
+        { -- | Name of the module that we're importing from.
+          importValueModuleName        :: !ModuleName 
+
+          -- | Name of the the value that we're importing.
         , importValueModuleVar         :: !n 
+
+          -- | Type of the value that we're importing.
         , importValueModuleType        :: !(Type n)
 
-          -- | Number of type parameters, value parameters,
-          --   and boxings for top-level super.
+          -- | Calling convention for this value,
+          --   including the number of type parameters, value parameters, and boxings.
         , importValueModuleArity       :: !(Maybe (Int, Int, Int)) }
 
-        -- | Something imported via the C calling convention.
+        -- | Value imported via the C calling convention.
         | ImportValueSea
-        { importValueSeaVar            :: !String 
+        { -- | Name of the symbol being imported. 
+          --   This can be different from the name that we give it in the core language.
+          importValueSeaVar            :: !String 
+
+          -- | Type of the value that we're importing.
         , importValueSeaType           :: !(Type n) }
         deriving Show
 
