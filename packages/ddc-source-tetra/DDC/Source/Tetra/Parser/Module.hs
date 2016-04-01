@@ -119,6 +119,14 @@ pImportSpecs c
                         pTok KBraceKet
                         return sigs
 
+                        -- import foreign X capability (NAME :: TYPE)+
+                 , do   pTok KCapability
+                        pTok KBraceBra
+
+                        sigs <- P.sepEndBy1 (pImportCapability c src) (pTok KSemiColon)
+                        pTok KBraceKet
+                        return sigs
+
                         -- import foreign X value (NAME :: TYPE)+
                  , do   pTok KValue
                         pTok KBraceBra
@@ -153,6 +161,19 @@ pImportType c src
 
         | otherwise
         = P.unexpected "import mode for foreign type"
+
+
+-- | Parse a capability import.
+pImportCapability :: Context Name -> String -> Parser Name (ImportSpec Name)
+pImportCapability c src
+        | "abstract"    <- src
+        = do    n       <- pName
+                pTokSP (KOp ":")
+                k       <- pType c
+                return  (ImportValue n (ImportValueSea "derp" k))
+
+        | otherwise
+        = P.unexpected "import mode for foreign capability"
 
 
 -- | Parse a value import spec.

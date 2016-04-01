@@ -210,6 +210,7 @@ data TokAtom
         | KExport
         | KForeign
         | KType
+        | KCapability
         | KValue
         | KData
         | KWith
@@ -330,6 +331,7 @@ describeTokAtom' ta
         KExport                 -> (Keyword, "export")
         KForeign                -> (Keyword, "foreign")
         KType                   -> (Keyword, "type")
+        KCapability             -> (Keyword, "capability")
         KValue                  -> (Keyword, "value")
         KData                   -> (Keyword, "data")
         KWith                   -> (Keyword, "with")

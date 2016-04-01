@@ -50,6 +50,7 @@ keywords
         , ("foreign",    KA KForeign)
         , ("type",       KA KType)
         , ("value",      KA KValue)
+        , ("capability", KA KCapability)
         , ("data",       KA KData)
         , ("in",         KA KIn)
         , ("of",         KA KOf) 

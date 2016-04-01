@@ -11,11 +11,14 @@ import Data.Numeric.Bool
 import foreign boxed type
  TextLit : Data
 
+-- | Top level region containing text vectors.
 -- import foreign abstract type
---  Top    : Region
+--  TopText      : Region
 
--- import foreign c value
---  derp   : Read Top
+-- | Capabilities to allocate and read top-level text vectors.
+-- import foreign abstract capability
+--  topTextAlloc : 
+--  topTextRead  : Read To
 
 import foreign c value
  makeTextLit    : TextLit# -> TextLit
