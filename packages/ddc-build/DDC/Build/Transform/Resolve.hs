@@ -52,18 +52,24 @@ resolveNamesInModule kenv tenv store mm
                                 $  text  "Cannot resolve anonymous binder."
 
         eimportsDaVar   <- mapM getDaVarImport $ Set.toList $ supportDaVar sp
+
         case sequence eimportsDaVar of
          Left err       -> return $ Left [err]
+
          Right importsDaVar
           -> return $ Right $ mm 
            { moduleImportTypes   
                 =  moduleImportTypes  mm 
-                ++ importsForTyCons deps (Set.toList $ supportTyCon sp)
+                ++ importsForTyCons   deps (Set.toList $ supportTyCon sp)
 
            , moduleImportDataDefs
                 =  nubBy ((==) `on` dataDefTypeName)          
                 $  moduleImportDataDefs mm 
                 ++ importsForDaTyCons deps (Set.toList $ supportTyCon sp)
+
+           , moduleImportCaps
+                = moduleImportCaps mm
+                ++ importsCap deps
 
            , moduleImportValues  
                 =  moduleImportValues mm 
@@ -91,6 +97,17 @@ importsForTyCons deps _tyCons
         , [(n, ImportTypeBoxed k) 
                 | (n, k)        <- Map.toList $ Map.unions 
                                 $  map importedTyConsBoxed $ Map.elems deps] ]
+
+
+---------------------------------------------------------------------------------------------------
+-- | Import caps defined in other modules.
+importsCap
+        :: Ord n
+        => Map ModuleName (Module b n)
+        -> [(n, ImportCap n)]
+
+importsCap deps
+ = concatMap moduleImportCaps $ Map.elems deps
 
 
 ---------------------------------------------------------------------------------------------------

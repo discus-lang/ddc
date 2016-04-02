@@ -89,6 +89,8 @@ checkModuleM !config !kenv !tenv mm@ModuleCore{} !mode
         ntsImportCap'   <- checkImportCaps config_import kenv_import mode
                         $  moduleImportCaps mm
 
+        let bsImportCap = [ BName n (typeOfImportCap   isrc)
+                          | (n, isrc) <- ntsImportCap' ]
 
         -- Check types of imported values -----------------
         ntsImportValue' <- checkImportValues config_import kenv_import mode
@@ -100,6 +102,7 @@ checkModuleM !config !kenv !tenv mm@ModuleCore{} !mode
         defsLocal'      <- case checkDataDefs config defsLocal of
                                 (err : _, _)     -> throw $ ErrorData err
                                 ([], defsLocal') -> return defsLocal'
+
 
 
         -- Build the top-level config, defs and environments.
@@ -115,10 +118,10 @@ checkModuleM !config !kenv !tenv mm@ModuleCore{} !mode
                         [ tenv
                         , Env.fromList  [ BName n (typeOfImportValue isrc)
                                         | (n, isrc) <- ntsImportValue' ]
-                        ]
 
-        let bsImportCap = [ BName n (typeOfImportCap   isrc)
-                          | (n, isrc) <- ntsImportCap' ]
+                        , Env.fromList  [ BName n (typeOfImportCap   isrc)
+                                        | (n, isrc) <- ntsImportCap'   ]
+                        ]
 
         let ctx_top     = pushTypes bsImportCap emptyContext
 
@@ -274,10 +277,15 @@ checkImportTypes config mode nisrcs
                 return  (n, mapKindOfImportType (const k') isrc)
    in do
         -- Check for duplicate imports.
-        let dups = findDuplicates $ map fst nisrcs
-        (case takeHead dups of
-          Just n -> throw $ ErrorImportDuplicate n
-          _      -> return ())
+        -- TODO: fix duplicate import check.
+        --       this doesn't work for diamond imports.
+        --       We should be able to import a single thing that has been 
+        --       exported-to and re-imported from multiple library modules.
+
+--         let dups = findDuplicates $ map fst nisrcs
+--         (case takeHead dups of
+--           Just n -> throw $ ErrorImportDuplicate n
+--           _      -> return ())
 
         mapM check nisrcs
 
@@ -316,10 +324,10 @@ checkImportCaps config kenv mode nisrcs
 
     in do
         -- Check for duplicate imports.
-        let dups = findDuplicates $ map fst nisrcs
-        (case takeHead dups of
-          Just n -> throw $ ErrorImportDuplicate n
-          _      -> return ())
+--         let dups = findDuplicates $ map fst nisrcs
+--         (case takeHead dups of
+--           Just n -> throw $ ErrorImportDuplicate n
+--           _      -> return ())
 
         mapM check nisrcs
 
@@ -357,10 +365,10 @@ checkImportValues config kenv mode nisrcs
                 return  (n, mapTypeOfImportValue (const t') isrc)
    in do
         -- Check for duplicate imports.
-        let dups = findDuplicates $ map fst nisrcs
-        (case takeHead dups of
-          Just n -> throw $ ErrorImportDuplicate n
-          _      -> return ())
+--         let dups = findDuplicates $ map fst nisrcs
+--         (case takeHead dups of
+--           Just n -> throw $ ErrorImportDuplicate n
+--           _      -> return ())
 
         mapM check nisrcs
 

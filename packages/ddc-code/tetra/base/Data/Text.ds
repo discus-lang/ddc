@@ -17,8 +17,8 @@ import foreign abstract type
 
 -- | Capabilities to allocate and read top-level text vectors.
 import foreign abstract capability
- topTextAlloc   : Alloc TopText
- topTextRead    : Read  TopText
+ capTopTextAlloc : Alloc TopText
+ capTopTextRead  : Read  TopText
 
 import foreign c value
  makeTextLit    : TextLit# -> TextLit

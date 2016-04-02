@@ -1,14 +1,9 @@
 
 module Main
-import Data.Numeric.Nat
 import Data.Function
 import System.IO.Console
-
-import foreign abstract capability
- topTextAlloc : Alloc TopText
- topTextRead  : Read  TopText
-
 where
+
 
 main (_: Unit): S (Alloc TopText + Read TopText + Console) Unit
  = box private r with { Alloc r; Read r } in
