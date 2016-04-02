@@ -7,6 +7,7 @@ module DDC.Source.Tetra.Module
         , isMainModule
         , ExportSource  (..)
         , ImportType    (..)
+        , ImportCap     (..)
         , ImportValue   (..)
 
           -- * Module Names
@@ -30,6 +31,7 @@ import DDC.Core.Module
         , isMainModuleName
         , ExportSource  (..)
         , ImportType    (..)
+        , ImportCap     (..)
         , ImportValue   (..))
         
 
@@ -53,6 +55,9 @@ data Module l
           -- | Kinds of imported foreign types.
         , moduleImportTypes     :: [(GName l, ImportType  (GName l))]
 
+          -- | Types of imported capabilities.
+        , moduleImportCaps      :: [(GName l, ImportCap   (GName l))]
+
           -- | Types of imported foreign values.
         , moduleImportValues    :: [(GName l, ImportValue (GName l))]
 
@@ -65,13 +70,14 @@ deriving instance ShowLanguage l => Show (Module l)
 
 instance NFDataLanguage l => NFData (Module l) where
  rnf !mm
-        =     rnf (moduleName mm)
-        `seq` rnf (moduleExportTypes   mm)
-        `seq` rnf (moduleExportValues  mm)
-        `seq` rnf (moduleImportModules mm)
-        `seq` rnf (moduleImportTypes   mm)
-        `seq` rnf (moduleImportValues  mm)
-        `seq` rnf (moduleTops          mm)
+        =     rnf (moduleName           mm)
+        `seq` rnf (moduleExportTypes    mm)
+        `seq` rnf (moduleExportValues   mm)
+        `seq` rnf (moduleImportModules  mm)
+        `seq` rnf (moduleImportTypes    mm)
+        `seq` rnf (moduleImportCaps     mm)
+        `seq` rnf (moduleImportValues   mm)
+        `seq` rnf (moduleTops           mm)
         
 
 -- | Check if this is the `Main` module.

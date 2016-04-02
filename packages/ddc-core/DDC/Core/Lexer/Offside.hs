@@ -58,8 +58,9 @@ applyOffside ps [] (LexemeToken t : ts)
 -- offside rule within it.
 -- The blocks are introduced by:
 --      'exports' 'imports' 'letrec' 'where'
---      'import foreign X type'
---      'import foreign X value'
+--      'import foreign MODE type'
+--      'import foreign MODE capability'
+--      'import foreign MODE value'
 applyOffside ps [] ls
         | LexemeToken t1 
                 : (LexemeStartBlock n) : ls' <- ls
@@ -78,12 +79,12 @@ applyOffside ps [] ls
         = t1 : t2 : newCBra ls'
                 : applyOffside (ParenBrace : ps) [n] ls'
 
-        -- (import | export) foreign X (type | value) { ... }
+        -- (import | export) foreign X (type | capability | value) { ... }
         | LexemeToken t1 : LexemeToken t2 : LexemeToken t3 : LexemeToken t4
                 : LexemeStartBlock n : ls' <- ls
         , isToken t1 (KA KImport)  || isToken t1 (KA KExport)
         , isToken t2 (KA KForeign)
-        , isToken t4 (KA KType)    || isToken t4 (KA KValue)
+        , isToken t4 (KA KType)    || isToken t4 (KA KCapability) || isToken t4 (KA KValue)
         = t1 : t2 : t3 : t4 : newCBra ls' 
                 : applyOffside (ParenBrace : ps) [n] ls'
 
@@ -142,7 +143,7 @@ applyOffside ps mm@(m : ms) (LexemeStartBlock n : ts)
         --  This should never happen,
         --   as there is no lexeme to start a new context at the end of the file.
         | []            <- dropNewLinesLexeme ts
-        = error "ddc-core: tried to start new context at end of file."
+        = error $ "ddc-core: tried to start new context at end of file."
 
         -- an empty block
         | otherwise
@@ -267,6 +268,7 @@ addStarts' ts
         | otherwise
         = []
 
+
 -- | Drop newline tokens at the front of this stream.
 dropNewLines :: Eq n => [Token (Tok n)] -> [Token (Tok n)]
 dropNewLines []              = []
@@ -326,6 +328,11 @@ splitBlockStart toks
  -- import foreign X type
  |  t1@Token { tokenTok = KA KImport }  : t2@Token { tokenTok = KA KForeign }
   : t3                                  : t4@Token { tokenTok = KA KType }    : ts
+ <- toks = Just ([t1, t2, t3, t4], ts)
+
+ -- import foreign X capability
+ |  t1@Token { tokenTok = KA KImport }  : t2@Token { tokenTok = KA KForeign }
+  : t3                                  : t4@Token { tokenTok = KA KCapability } : ts
  <- toks = Just ([t1, t2, t3, t4], ts)
 
  -- import foreign X value
@@ -393,3 +400,4 @@ takeTok (l : ls)
         LexemeToken t           -> t
         LexemeStartLine  _      -> takeTok ls
         LexemeStartBlock _      -> takeTok ls
+

@@ -79,6 +79,7 @@ pModule c
                 , moduleExportValues    = tExports
                 , moduleImportModules   = [mn     | ImportModule mn  <- tImports]
                 , moduleImportTypes     = [(n, s) | ImportType  n s  <- tImports]
+                , moduleImportCaps      = [(n, s) | ImportCap   n s  <- tImports]
                 , moduleImportValues    = [(n, s) | ImportValue n s  <- tImports]
                 , moduleTops            = tops }
 
@@ -97,7 +98,9 @@ pTypeSig c
 data ImportSpec n
         = ImportModule  ModuleName
         | ImportType    n (ImportType  n)
+        | ImportCap     n (ImportCap   n)
         | ImportValue   n (ImportValue n)
+        deriving Show
         
 
 -- | Parse some import specs.
@@ -169,8 +172,8 @@ pImportCapability c src
         | "abstract"    <- src
         = do    n       <- pName
                 pTokSP (KOp ":")
-                k       <- pType c
-                return  (ImportValue n (ImportValueSea "derp" k))
+                t       <- pType c
+                return  (ImportCap n (ImportCapAbstract t))
 
         | otherwise
         = P.unexpected "import mode for foreign capability"

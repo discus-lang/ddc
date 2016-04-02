@@ -12,13 +12,13 @@ import foreign boxed type
  TextLit : Data
 
 -- | Top level region containing text vectors.
--- import foreign abstract type
---  TopText      : Region
+import foreign abstract type
+ TopText        : Region
 
 -- | Capabilities to allocate and read top-level text vectors.
--- import foreign abstract capability
---  topTextAlloc : 
---  topTextRead  : Read To
+import foreign abstract capability
+ topTextAlloc   : Alloc TopText
+ topTextRead    : Read  TopText
 
 import foreign c value
  makeTextLit    : TextLit# -> TextLit
