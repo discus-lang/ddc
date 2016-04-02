@@ -1,29 +1,48 @@
 
 module Data.Text 
-export  { textLit; paste; pastes
-        ; showBool
-        ; showNat; showBinaryNat; showDecimalNat; showHexNat; showBaseNat
-        ; sizeOfText;  textOfVector; vectorOfText
-        ; digitBinary; digitDecimal; digitHex }
+export  
+{       -- * Construction
+        textLit; textOfVector; vectorOfText;
+        paste; pastes;
+
+        -- * Projections
+        sizeOfText;
+
+        -- * Conversions
+        copyTextToVector;
+        copyTextLitToVector;
+        copyTextVecToVector;
+
+        -- * Operators
+        textOfWord8;
+
+        -- * Showing
+        showBool;
+        showNat; showBinaryNat; showDecimalNat; showHexNat; showBaseNat;
+        digitBinary; digitDecimal; digitHex;
+}
 import Data.Numeric.Nat
 import Data.Numeric.Bool
+import Data.List
 
+-- | The TextLit type is define in the runtime system and contains
+--   a pointer to the literal utf-8 text data in static memory.
 import foreign boxed type
- TextLit : Data
+        TextLit         : Data
 
 -- | Top level region containing text vectors.
 import foreign abstract type
- TopText        : Region
+        RegionText      : Region
 
 -- | Capabilities to allocate and read top-level text vectors.
 import foreign abstract capability
- capTopTextAlloc : Alloc TopText
- capTopTextRead  : Read  TopText
+        capTopTextAlloc : Alloc RegionText
+        capTopTextRead  : Read  RegionText
 
 import foreign c value
- makeTextLit    : TextLit# -> TextLit
- sizeOfTextLit  : TextLit  -> Nat#
- indexTextLit   : TextLit  -> Nat# -> Word8#
+        makeTextLit     : TextLit# -> TextLit
+        sizeOfTextLit   : TextLit  -> Nat#
+        indexTextLit    : TextLit  -> Nat# -> Word8#
 
 where
 
@@ -41,44 +60,20 @@ pastes (x y : Text) : Text
 
 -------------------------------------------------------------------------------
 data Text where
-        TextLit : TextLit                -> Text
-        TextVec : Vector# TopText Word8# -> Text
-        TextApp : Text -> Text           -> Text
+        TextLit : TextLit                   -> Text
+        TextVec : Vector# RegionText Word8# -> Text
+        TextApp : Text -> Text              -> Text
 
 
--- | Convert a Bool to a String.
-showBool (x : Bool#) : Text
- = if x then "True" 
-        else "False"
-
-
--- | Show a natural number.
-showNat (x: Nat#): Text
- = showBaseNat 10 digitDecimal 0 "X" x
-
-
--- | Get the size of the utf8 data in a Text object, in bytes.
-sizeOfText (tt: Text):  Nat#
- = case tt of
-        TextLit lit
-         -> sizeOfTextLit lit
-
-        -- The size of a text vector is the vector size minus
-        -- the null terminator byte.
-        TextVec vec     
-         -> vectorLength# vec - 1
-
-        TextApp t1 t2
-         -> sizeOfText t1 + sizeOfText t2
-
-
+-- Construction ---------------------------------------------------------------
 -- | O(1). Wrap a vector of utf8 data into a text object.
-textOfVector [r1: Region] (vec: Vector# TopText Word8#): Text
+textOfVector (vec: Vector# RegionText Word8#): Text
  = TextVec vec
 
 
 -- | Copy a Text object into a flat vector of utf-8 bytes.
-vectorOfText [r1: Region] (tt: Text): S (Read TopText + Alloc r1) (Vector# r1 Word8#)
+vectorOfText [r1: Region] (tt: Text)
+        : S (Read RegionText + Alloc r1) (Vector# r1 Word8#)
  = box extend r1 using r2 with { Alloc r2; Write r2 } in
    do   
         -- Allocate a vector to hold all the data, 
@@ -94,10 +89,56 @@ vectorOfText [r1: Region] (tt: Text): S (Read TopText + Alloc r1) (Vector# r1 Wo
         vec
 
 
+-- | Wrap a single 8-bit character into a text object.
+--
+--   TODO: We should be able to purify the Alloc RegionText effect as we have
+--         a global capability for it.
+--
+textOfWord8 (w8: Word8#): S (Alloc RegionText) Text
+ = box do
+
+        -- TODO: omitting the inner box/run here breaks it.
+        --       Maybe the Forward transform is messing up the extend.. structure.
+        vec'    = box extend RegionText using r1 with { Alloc r1; Write r1 } in
+                  do    -- Allocate the vector to hold the data,
+                        -- including an extra null terminator byte.
+                        vec     = run vectorAlloc# [r1] [Word8#] 2
+
+                        -- Write the character.
+                        run vectorWrite# vec 0 w8
+
+                        -- Write the null terminator.
+                        run vectorWrite# vec 1 0w8
+
+                        vec
+        TextVec (run vec')
+
+
+-- Projections ----------------------------------------------------------------
+-- | Get the size of the utf8 data in a Text object, in bytes.
+--
+--   * This is NOT the same as the length of the text string in characters,
+--     as single characters can be encoded using multiple bytes.
+--
+sizeOfText (tt: Text): Nat#
+ = case tt of
+        TextLit lit
+         -> sizeOfTextLit lit
+
+        -- The size of a text vector is the vector size minus
+        -- the null terminator byte.
+        TextVec vec     
+         -> vectorLength# vec - 1
+
+        TextApp t1 t2
+         -> sizeOfText t1 + sizeOfText t2
+
+
+-- Conversions ----------------------------------------------------------------
 -- | Copy a text literal to a mutable vector of utf-8 bytes.
 copyTextToVector [r: Region] 
         (tt: Text) (vec: Vector# r Word8#) (i0: Nat#)
-        : S (Read TopText + Write r) Nat#
+        : S (Read RegionText + Write r) Nat#
 
  = box case tt of
         TextLit lit
@@ -115,27 +156,65 @@ copyTextToVector [r: Region]
 -- | Copy a text literal to a mutable vector of utf-8 bytes.
 copyTextLitToVector [r: Region]
         (tt: TextLit) (vec: Vector# r Word8#) 
-        (iDst: Nat#)  (iSrc: Nat#) (nSrc: Nat#)
+        (iDst iSrc nSrc: Nat#)
         : S (Write r) Nat#
  = box case iSrc >= nSrc of
         True  -> iDst
         False -> run do
-                x       = indexTextLit tt iSrc
-                run vectorWrite# vec iDst x
-                copyTextLitToVector tt vec (iDst + 1) (iSrc + 1) nSrc
+                run vectorWrite# vec iDst 
+                        (indexTextLit tt iSrc)
+
+                copyTextLitToVector 
+                        tt vec (iDst + 1) (iSrc + 1) nSrc
 
 
 -- | Copy a text source vector to a mutable destination of utf-8 bytes.
 copyTextVecToVector [r1 r2: Region]
         (vecSrc: Vector# r1 Word8#) (vecDst: Vector# r2 Word8#)
-        (iDst:   Nat#) (iSrc: Nat#) (nSrc: Nat#)
+        (iDst iSrc nSrc: Nat#)
         : S (Read r1 + Write r2) Nat#
  = box case iSrc >= nSrc of
         True    -> iDst
+
         False   -> run do
-                x       = run vectorRead# vecSrc iSrc
-                run vectorWrite# vecDst iDst x
-                copyTextVecToVector vecSrc vecDst (iDst + 1) (iSrc + 1) nSrc
+                run vectorWrite# vecDst iDst 
+                        (run vectorRead# vecSrc iSrc)
+
+                copyTextVecToVector 
+                        vecSrc vecDst (iDst + 1) (iSrc + 1) nSrc
+
+
+-- Operators ------------------------------------------------------------------
+-- | If this text is not already in flat form then flatten it.
+--
+--   This allocates a new contiguous vector for the text object and
+--   allows the program to release space for intermediate append nodes.
+--
+--   TODO: purify read and alloc effects.
+--
+flattenText (tt: Text): S (Read RegionText + Alloc RegionText) Text
+ = box case tt of
+        -- Single text literals are already flat.
+        TextLit lit     -> tt
+
+        -- Single text vectors are already flat.
+        TextVec vec     -> tt
+
+        -- Text has an outer append-node, 
+        -- so flatten the whole thing.
+        TextApp _ _     -> textOfVector (run vectorOfText [RegionText] tt)
+
+
+-- Showing --------------------------------------------------------------------
+-- | Convert a Bool to a String.
+showBool (x : Bool#) : Text
+ = if x then "True" 
+        else "False"
+
+
+-- | Show a natural number.
+showNat (x: Nat#): Text
+ = showBaseNat 10 digitDecimal 0 "X" x
 
 
 -------------------------------------------------------------------------------
