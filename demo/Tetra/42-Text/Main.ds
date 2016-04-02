@@ -1,18 +1,33 @@
 
 module Main
 import Data.Numeric.Nat
+import Data.Function
 import System.IO.Console
+
+import foreign abstract capability
+ topTextAlloc : Alloc TopText
+ topTextRead  : Read  TopText
+
 where
 
-
-main (_: Unit): S Console Unit
+main (_: Unit): S (Alloc TopText + Read TopText + Console) Unit
  = box private r with { Alloc r; Read r } in
    do   
+        -- Write a text tree to console.
         tx      = "I walked through the forests"
                 %% "with ugly spirits\n"
                 %  ("kissed" %% "their feet and found them") % "\n"
                 %  "calm, calm, calm."
 
-        vec     = vectorOfText tx
+        run writel  $ "length text = " % showNat (sizeOfText tx)
+        run writell $ tx
 
-        run writel tx
+
+        -- Flatten text tree into a single vector and write the
+        -- flat version to console. 
+        vec     = run vectorOfText [TopText] tx
+        tx'     = textOfVector vec
+
+        run writel  $ "length vec  = " % showNat (sizeOfText tx')
+        run writell $ tx'
+

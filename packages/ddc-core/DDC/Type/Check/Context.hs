@@ -41,6 +41,7 @@ where
 import DDC.Type.Exp
 import DDC.Type.Pretty
 import DDC.Type.Transform.BoundT
+import DDC.Type.Equiv
 import DDC.Type.Compounds
 import DDC.Base.Pretty                  ()
 import Data.Maybe
@@ -543,7 +544,7 @@ applySolved ctx tt
 --    or `Just e`, where `e` is some unsuported atomic effect.
 --
 effectSupported 
-        :: Ord n 
+        :: (Ord n, Show n)
         => Effect n 
         -> Context n 
         -> Maybe (Effect n)
@@ -568,7 +569,8 @@ effectSupported eff ctx
         -- the capability is supported if it's in the lexical environment.
         | TApp (TCon (TyConSpec tc)) _t2       <- eff
         , elem tc [TcConRead, TcConWrite, TcConAlloc]
-        , elem (ElemType (BNone eff)) (contextElems ctx)
+        , any   (\b -> equivT (typeOfBind b) eff) 
+                [ b | ElemType b <- contextElems ctx ] 
         = Nothing
 
         -- For an effect on an abstract region, we allow any capability.

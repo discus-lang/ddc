@@ -34,8 +34,15 @@ instance (Pretty a, Show n, Eq n, Pretty n)
         ErrorImportDuplicate n
          -> vcat [ text "Duplicate imported name '" <> ppr n <> text "'."]
 
+        ErrorImportCapNotEffect n
+         -> vcat [ text "Imported capability '"
+                        <> ppr n 
+                        <> text "' does not have kind Effect." ]
+
         ErrorImportValueNotData n
-         -> vcat [ text "Imported value '" <> ppr n <> text "' does not have kind Data." ]
+         -> vcat [ text "Imported value '"
+                        <> ppr n 
+                        <> text "' does not have kind Data." ]
 
 
         -- Exp --------------------------------------------

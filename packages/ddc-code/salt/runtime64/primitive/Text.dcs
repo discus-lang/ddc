@@ -55,10 +55,10 @@ sizeOfTextLit [r1: Region] (obj: Ptr# r1 Obj): Nat#
 -- | Get a single byte of a text literal.
 indexTextLit [r1: Region] (obj: Ptr# r1 Obj) (ix: Nat#): Word8#
  = do   
-        charPtr = plusPtr# (payloadRaw obj) 4#
+        charPtr = takeTextLit obj
         size    = sizeOfTextLit obj
 
-        char    = peekBounded# charPtr ix size
+        char    = peekBounded# (makePtr# charPtr) ix size
         char
 
 

@@ -39,8 +39,8 @@ convertTypeU uu
          -> do  k'      <- convertK k
                 return $ UPrim (A.NameVar str) k'
 
-        _ -> throw $ ErrorInvalidBound uu
-
+        _ -> throw $ ErrorMalformed
+                   $ "Invalid type bound " ++ (renderIndent $ ppr uu)
 
 -- | Convert a kind from Core Tetra to Core Salt.
 convertK :: Kind E.Name -> ConvertM a (Kind A.Name)

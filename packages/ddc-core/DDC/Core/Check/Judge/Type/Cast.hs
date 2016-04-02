@@ -205,7 +205,7 @@ synthRunSusp table a xx ctx0 tt
 -- | Check if the provided effect is supported by the context,
 --   if not then throw an error.
 checkEffectSupported
-        :: Ord n
+        :: (Show n, Ord n)
         => Config n             -- ^ Static config.
         -> a                    -- ^ Annotation for error messages.
         -> Exp a n              -- ^ Expression for error messages.

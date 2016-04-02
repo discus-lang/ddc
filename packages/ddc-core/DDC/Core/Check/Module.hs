@@ -67,6 +67,7 @@ checkModuleM !config !kenv !tenv mm@ModuleCore{} !mode
         nksImported'    <- checkImportTypes config mode
                         $  moduleImportTypes mm
 
+
         -- Check imported data type defs ------------------
         let defsImported = moduleImportDataDefs mm
         defsImported'   <- case checkDataDefs config defsImported of
@@ -84,8 +85,13 @@ checkModuleM !config !kenv !tenv mm@ModuleCore{} !mode
                                         | (n, isrc) <- nksImported' ]
 
 
+        -- Check types of imported capabilities -----------
+        ntsImportCap'   <- checkImportCaps config_import kenv_import mode
+                        $  moduleImportCaps mm
+
+
         -- Check types of imported values -----------------
-        ntsImported'    <- checkImportValues config_import kenv_import mode
+        ntsImportValue' <- checkImportValues config_import kenv_import mode
                         $  moduleImportValues mm
 
 
@@ -105,14 +111,21 @@ checkModuleM !config !kenv !tenv mm@ModuleCore{} !mode
         let config_top  = config { configDataDefs = defs_top }
         let kenv_top    = kenv_import
 
-        let tenv_top    = Env.union tenv
-                        $ Env.fromList  [ BName n (typeOfImportValue isrc)
-                                        | (n, isrc) <- ntsImported' ]
+        let tenv_top    = Env.unions 
+                        [ tenv
+                        , Env.fromList  [ BName n (typeOfImportValue isrc)
+                                        | (n, isrc) <- ntsImportValue' ]
+                        ]
 
+        let bsImportCap = [ BName n (typeOfImportCap   isrc)
+                          | (n, isrc) <- ntsImportCap' ]
+
+        let ctx_top     = pushTypes bsImportCap emptyContext
 
         -- Check the sigs of exported types ---------------
         esrcsType'      <- checkExportTypes  config_top
                         $  moduleExportTypes mm
+
 
         -- Check the sigs of exported values --------------
         esrcsValue'     <- checkExportValues config_top kenv_top
@@ -122,7 +135,7 @@ checkModuleM !config !kenv !tenv mm@ModuleCore{} !mode
         -- Check the body of the module -------------------
         (x', _, _effs, ctx)
          <- checkExpM   (makeTable config_top kenv_top tenv_top)
-                        emptyContext (moduleBody mm) mode
+                        ctx_top (moduleBody mm) mode
 
         -- Apply the final context to the annotations in expressions.
         let applyToAnnot (AnTEC t0 e0 _ x0)
@@ -134,12 +147,14 @@ checkModuleM !config !kenv !tenv mm@ModuleCore{} !mode
         let x'' = reannotate applyToAnnot
                 $ mapT (applySolved ctx) x'
 
+
         -- Build new module with infered annotations ------
         let mm_inferred
                 = mm
                 { moduleExportTypes     = esrcsType'
                 , moduleImportTypes     = nksImported'
-                , moduleImportValues    = ntsImported'
+                , moduleImportCaps      = ntsImportCap'
+                , moduleImportValues    = ntsImportValue'
                 , moduleBody            = x'' }
 
 
@@ -268,6 +283,48 @@ checkImportTypes config mode nisrcs
 
 
 ---------------------------------------------------------------------------------------------------
+-- | Check types of imported capabilities.
+checkImportCaps
+        :: (Ord n, Show n, Pretty n)
+        => Config n -> KindEnv n -> Mode n
+        -> [(n, ImportCap n)]
+        -> CheckM a n [(n, ImportCap n)]
+
+checkImportCaps config kenv mode nisrcs
+ = let
+        -- Checker mode to use.
+        modeCheckImportCaps
+         = case mode of
+                Recon   -> Recon
+                _       -> Check kEffect
+
+        check (n, isrc)
+         = do   let t      =  typeOfImportCap isrc
+                (t', k, _) <- checkTypeM config kenv emptyContext UniverseSpec
+                                         t modeCheckImportCaps
+
+                -- In Recon mode we need to post-check that the imported
+                -- capability really has kind Effect.
+                --
+                -- In Check mode we pass down the expected kind,
+                -- so this is checked locally.
+                -- 
+                when (not $ isEffectKind k)
+                 $ throw $ ErrorImportCapNotEffect n
+
+                return (n, mapTypeOfImportCap (const t') isrc)
+
+    in do
+        -- Check for duplicate imports.
+        let dups = findDuplicates $ map fst nisrcs
+        (case takeHead dups of
+          Just n -> throw $ ErrorImportDuplicate n
+          _      -> return ())
+
+        mapM check nisrcs
+
+
+---------------------------------------------------------------------------------------------------
 -- | Check types of imported values.
 checkImportValues
         :: (Ord n, Show n, Pretty n)
@@ -284,13 +341,16 @@ checkImportValues config kenv mode nisrcs
                 _       -> Check kData
 
         check (n, isrc)
-         = do   let t      = typeOfImportValue isrc
+         = do   let t      =  typeOfImportValue isrc
                 (t', k, _) <- checkTypeM config kenv emptyContext UniverseSpec
                                          t modeCheckImportTypes
 
                 -- In Recon mode we need to post-check that the imported
-                -- value really has kind data. In inference mode the expected
-                -- kind we pass down will handle this.
+                -- value really has kind Data.
+                --
+                -- In Check mode we pass down the expected kind,
+                -- so this is checked locally.
+                --
                 when (not $ isDataKind k)
                  $ throw $ ErrorImportValueNotData n
 

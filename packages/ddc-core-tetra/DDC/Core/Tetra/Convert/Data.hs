@@ -12,7 +12,6 @@ import DDC.Type.Env
 import DDC.Type.Compounds
 import DDC.Type.Predicates
 import DDC.Type.DataDef
-import DDC.Control.Monad.Check                  (throw)
 import qualified DDC.Core.Tetra.Prim            as E
 import qualified DDC.Core.Salt.Runtime          as A
 import qualified DDC.Core.Salt.Name             as A
@@ -159,4 +158,9 @@ destructData pp a ctorDef uScrut trPrime bsFields xBody
                 $ LLet bPayload xPayload : lsFields
 
  | otherwise
- = throw ErrorInvalidAlt
+ = error $ unlines
+        [ "destructData: don't know how to destruct a " 
+                ++ (show $ dataCtorName ctorDef)
+        , "  heapObject = " ++ (show $ heapObjectOfDataCtor  pp ctorDef) 
+        , "  fields     = " ++ (show $ dataCtorFieldTypes ctorDef)
+        , "  size       = " ++ (show $ payloadSizeOfDataCtor pp ctorDef) ]

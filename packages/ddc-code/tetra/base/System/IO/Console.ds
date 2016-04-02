@@ -1,6 +1,6 @@
 
 module System.IO.Console 
-export { write; writel }
+export { write; writel; writell }
 import Data.Text
 
 import foreign abstract type
@@ -8,8 +8,11 @@ import foreign abstract type
 
 import foreign c value
  primPutString : TextLit# -> S Console Void#
+ primPutVector : [r : Region]. Vector# r Word8# -> S Console Void#
 
 import foreign c value
+ -- Get the unboxed text literal from a boxed text literal.
+ -- The unboxed version is a pointer to the text data in static memory.
  takeTextLit   : TextLit -> TextLit#
 
 where
@@ -22,6 +25,10 @@ write (tt : Text) : S Console Unit
          -> do  run primPutString (takeTextLit lit)
                 ()
 
+        TextVec vec
+         -> do  run primPutVector vec
+                ()
+
         TextApp t1 t2 
          -> do  run write t1
                 run write t2
@@ -32,3 +39,10 @@ writel (tt : Text) : S Console Unit
  = box do
         run write tt
         run write "\n"
+
+
+-- | Write text to the console with two trailing newlines.
+writell (tt : Text) : S Console Unit
+ = box do
+        run write tt
+        run write "\n\n"

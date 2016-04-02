@@ -40,6 +40,10 @@ data Error a n
         | ErrorImportDuplicate
         { errorName             :: n }
 
+        -- | An imported capability that does not have kind Effect.
+        | ErrorImportCapNotEffect
+        { errorName             :: n }
+
         -- | An imported value that doesn't have kind Data.
         | ErrorImportValueNotData
         { errorName             :: n }

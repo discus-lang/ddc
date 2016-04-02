@@ -60,7 +60,11 @@ heapObjectOfDataCtor pp ctor
         = Just HeapObjectRawSmall
 
         | otherwise
-        = Nothing
+        = error $ unlines [ show "no object"
+                          , show $ dataCtorFieldTypes ctor
+                          , show $ map isBoxedRepType $ dataCtorFieldTypes ctor]
+
+--        Nothing
 
 
 -- Field Layout ---------------------------------------------------------------

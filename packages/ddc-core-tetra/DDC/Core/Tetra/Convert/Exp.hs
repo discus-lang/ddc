@@ -57,7 +57,10 @@ convertExp ectx ctx xx
 
         XVar a u
          -> do  let a'  = annotTail a
-                u'      <- convertDataU u
+
+                -- TODO: convert to exception
+                Just u' <- convertDataU u
+
                 return  $  XVar a' u'
 
 
@@ -82,6 +85,25 @@ convertExp ectx ctx xx
          -> throw $ ErrorUnsupported xx
           $ vcat [ text "Cannot convert function abstraction in this context."
                  , text "The program must be lambda-lifted before conversion." ]
+
+
+        ---------------------------------------------------
+        -- Conversions for primitive operators are defined separately.
+        XApp{}
+         | Just result          -- TODO: dodgyness. Changing the order of these
+                                -- tests makes it not work.
+                <- let result
+                         | Just makeX   <- convertPrimVector ectx ctx xx  = Just makeX
+                         | Just makeX   <- convertPrimBoxing ectx ctx xx  = Just makeX
+                         | Just makeX   <- convertPrimCall   ectx ctx xx  = Just makeX
+                         | Just makeX   <- convertPrimArith  ectx ctx xx  = Just makeX
+                         | otherwise    = Nothing
+                   in  result
+         -> -- trace ("match ~ " ++ (renderIndent $ ppr xx)) 
+            result
+
+        XCast _ CastRun XApp{}
+         | Just makeX   <- convertPrimVector ectx ctx xx  -> makeX
 
 
         ---------------------------------------------------
@@ -135,17 +157,6 @@ convertExp ectx ctx xx
                else throw $ ErrorUnsupported xx
                      $ text "Cannot convert partially applied data constructor."
 
-
-        ---------------------------------------------------
-        -- Conversions for primitive operators are defined separately.
-        XApp{}
-         | Just makeX   <- convertPrimBoxing ectx ctx xx  -> makeX
-         | Just makeX   <- convertPrimCall   ectx ctx xx  -> makeX
-         | Just makeX   <- convertPrimArith  ectx ctx xx  -> makeX
-         | Just makeX   <- convertPrimVector ectx ctx xx  -> makeX
-
-        XCast _ CastRun XApp{}
-         | Just makeX   <- convertPrimVector ectx ctx xx  -> makeX
 
         ---------------------------------------------------
         -- Saturated application of a top-level supercombinator or imported function.
@@ -331,7 +342,8 @@ convertExpSuperCall xx _ectx ctx isRun a nFun xsArgs
   || ((not isRun) && boxings == 0)
  = do   
         -- Convert the functional part.
-        uF      <- convertDataU (UName nFun)
+        -- TODO: convert to exception
+        Just uF  <- convertDataU (UName nFun)
 
         -- Convert the arguments.
         -- Effect type and witness arguments are discarded here.

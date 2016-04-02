@@ -62,3 +62,9 @@ void primPutString (string_t* str)
 {       fputs(str, stdout);
 }
 
+
+// Print a text vector to stdout.
+void primPutVector (Obj* obj)
+{       string_t* str = (string_t*) _payloadRaw(obj);
+        fputs(str, stdout);
+}

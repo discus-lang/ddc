@@ -40,15 +40,15 @@ convertDataB ctx bb
 -- | Convert a value bound.
 --   These refer to function arguments or let-bound values, 
 --   and hence must have representable types.
-convertDataU :: Bound E.Name -> ConvertM a (Bound A.Name)
+convertDataU :: Bound E.Name -> ConvertM a (Maybe (Bound A.Name))
 convertDataU uu
   = case uu of
         UIx i                   
-         -> return $ UIx i
+         -> return $ Just $ UIx i
 
         UName n
          -> do  n'      <- convertBindNameM n
-                return $ UName n'
+                return $ Just $ UName n'
 
         -- When converting primops, use the type directly specified by the 
         -- Salt language instead of converting it from Tetra. The types from
@@ -56,14 +56,16 @@ convertDataU uu
         UPrim n _
          -> case n of
                 E.NamePrimArith op True
-                  -> return $ UPrim (A.NamePrimOp (A.PrimArith op)) 
-                                    (A.typeOfPrimArith op)
+                  -> return 
+                  $  Just $ UPrim (A.NamePrimOp (A.PrimArith op)) 
+                                  (A.typeOfPrimArith op)
 
                 E.NamePrimCast op
-                  -> return $ UPrim (A.NamePrimOp (A.PrimCast  op)) 
-                                    (A.typeOfPrimCast  op)
+                  -> return 
+                  $  Just $ UPrim (A.NamePrimOp (A.PrimCast  op)) 
+                                  (A.typeOfPrimCast  op)
 
-                _ -> throw $ ErrorInvalidBound uu
+                _ -> return Nothing
 
 
 -- | Convert a value type from Core Tetra to Core Salt.

@@ -50,6 +50,9 @@ primDataDefs
         -- TextLit#
         , makeDataDefAlg (NamePrimTyCon PrimTyConTextLit)   [] Nothing
 
+        -- Vector#
+        , makeDataDefAlg (NameTyConTetra TyConTetraVector)  [] Nothing
+
         -- U#
         -- We need this data def when matching against literals with case expressions.
         , makeDataDefAlg (NameTyConTetra TyConTetraU)       [] Nothing

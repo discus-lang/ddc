@@ -18,6 +18,7 @@ module DDC.Core.Tetra.Convert.Boxing
         , isBoxedRepType
         , isUnboxedRepType
         , isNumericType
+        , isVectorType
         , isTextLitType
         , makeBoxedPrimDataType
         , makeBoxedPrimDataCtor)
@@ -69,6 +70,10 @@ isBoxedRepType tt
         | isNumericType tt
         = True
 
+        -- The primitive vector type.
+        | isVectorType tt
+        = True
+
         | otherwise
         = False
 
@@ -108,6 +113,17 @@ isNumericType tt
                 PrimTyConWord  _        -> True
                 PrimTyConFloat _        -> True
                 PrimTyConTextLit        -> True
+                _                       -> False
+
+        | otherwise                     = False
+
+
+-- | Check if some type is the boxed vector type.
+isVectorType :: Type Name -> Bool
+isVectorType tt
+        | Just (NameTyConTetra n, _)   <- takePrimTyConApps tt
+        = case n of
+                TyConTetraVector        -> True
                 _                       -> False
 
         | otherwise                     = False

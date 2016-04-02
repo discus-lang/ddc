@@ -177,6 +177,7 @@ typedef struct
 } DataMixed;
 
 
+// ----------------------------------------------------------------------------
 // A Raw Data Object.
 //   A raw data object does not contain heap pointers that need to be traced
 //   by the garbage collector.
@@ -185,6 +186,11 @@ typedef struct
         uint32_t  size;         // Size of the whole object, in bytes.
         uint8_t   payload[];    // Raw data that does not contain heap pointers.
 } DataRaw;
+
+static inline uint8_t* _payloadRaw(Obj* obj)
+{
+        return ((uint8_t*)obj) + 8;
+}
 
 
 // A Small Raw object.

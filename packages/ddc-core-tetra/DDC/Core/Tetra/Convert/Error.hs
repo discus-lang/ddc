@@ -58,7 +58,11 @@ data Error a
 
         -- | An invalid name used for the constructor of an alternative.
         | ErrorInvalidAlt
+        { errorAlt      :: Alt (AnTEC a E.Name) E.Name }
 
+        -- | Something that we can't destruct in a case expression.
+        | ErrorInvalidScrut
+        { errorScrut    :: Exp (AnTEC a E.Name) E.Name }
 
 instance Show a => Pretty (Error a) where
  ppr err
@@ -98,8 +102,13 @@ instance Show a => Pretty (Error a) where
         ErrorInvalidDaCon n
          -> vcat [ text "Invalid data constructor name " <> ppr n <> text "." ]
 
-        ErrorInvalidAlt
-         -> vcat [ text "Invalid alternative." ]
+        ErrorInvalidAlt alt
+         -> vcat [ text "Invalid alternative."
+                 , indent 2 $ text "with:" <+> ppr alt ]
+
+        ErrorInvalidScrut xx
+         -> vcat [ text "Invalid scrutinee."
+                 , indent 2 $ text "with:" <+> ppr xx ]
 
         ErrorMainHasNoMain
          -> vcat [ text "Main module has no 'main' function." ]

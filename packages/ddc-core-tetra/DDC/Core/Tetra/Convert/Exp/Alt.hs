@@ -58,7 +58,8 @@ convertAlt a uScrut tScrut ectx ctx alt
          , Just ctorDef         <- Map.lookup nCtor $ dataDefsCtors defs
          -> do  
                 -- Convert the scrutinee.
-                uScrut'         <- convertDataU uScrut
+                -- TODO: convert to exception
+                Just uScrut'    <- convertDataU uScrut
 
                 -- Get the tag of this alternative.
                 let iTag        = fromIntegral $ dataCtorTag ctorDef
@@ -92,4 +93,4 @@ convertAlt a uScrut tScrut ectx ctx alt
         -- Maybe we don't have the definition for the data constructor
         -- being matched against.
         AAlt{}          
-         -> throw ErrorInvalidAlt
+         -> throw $ ErrorInvalidAlt alt
