@@ -5,8 +5,7 @@ module DDC.Source.Tetra.Convert
         ( ConvertM
         , ErrorConvert (..)
         , coreOfSourceModule
-        , runConvertM
-        )
+        , runConvertM)
 where
 import qualified DDC.Source.Tetra.Transform.Guards      as S
 import qualified DDC.Source.Tetra.Module                as S
@@ -28,6 +27,7 @@ import Data.Maybe
 import DDC.Core.Module 
         ( ExportSource  (..)
         , ImportType    (..)
+        , ImportCap     (..)
         , ImportValue   (..))
 
 
@@ -69,22 +69,31 @@ coreOfSourceModuleM a mm
  = do   
         -- Exported types and values.
         exportTypes'    <- sequence
-                        $  fmap (\n -> (,) <$> (pure $ toCoreN n) 
-                                           <*> (pure $ ExportSourceLocalNoType (toCoreN n)))
+                        $  fmap (\n 
+                                -> (,)  <$> (pure $ toCoreN n) 
+                                        <*> (pure $ ExportSourceLocalNoType (toCoreN n)))
                         $  S.moduleExportTypes mm
 
         exportValues'   <- sequence
-                        $  fmap (\n -> (,) <$> (pure $ toCoreN n)
-                                           <*> (pure $ ExportSourceLocalNoType (toCoreN n)))
+                        $  fmap (\n
+                                -> (,)  <$> (pure $ toCoreN n)
+                                        <*> (pure $ ExportSourceLocalNoType (toCoreN n)))
                         $  S.moduleExportValues mm
 
         -- Imported types and values.
         importTypes'    <- sequence
-                        $  fmap (\(n, it) -> (,) <$> (pure $ toCoreN n) <*> (toCoreImportType it))
-                        $  S.moduleImportTypes mm
+                        $  fmap (\(n, it) 
+                                -> (,)  <$> (pure $ toCoreN n) <*> (toCoreImportType it))
+                        $  S.moduleImportTypes  mm
+
+        importCaps'     <- sequence 
+                        $  fmap (\(n, iv) 
+                                -> (,)  <$> (pure $ toCoreN n) <*> (toCoreImportCap iv))
+                        $  S.moduleImportCaps   mm
 
         importValues'   <- sequence 
-                        $  fmap (\(n, iv) -> (,) <$> (pure $ toCoreN n) <*> (toCoreImportValue iv))
+                        $  fmap (\(n, iv) 
+                                -> (,)  <$> (pure $ toCoreN n) <*> (toCoreImportValue iv))
                         $  S.moduleImportValues mm
 
         -- Data type definitions.
@@ -110,7 +119,7 @@ coreOfSourceModuleM a mm
                         else [])
 
                 , C.moduleImportTypes    = importTypes'
-                , C.moduleImportCaps     = []
+                , C.moduleImportCaps     = importCaps'
                 , C.moduleImportValues   = importValues'
                 , C.moduleImportDataDefs = []
                 , C.moduleDataDefsLocal  = dataDefsLocal
@@ -140,8 +149,19 @@ bindOfTop _
 toCoreImportType :: ImportType S.Name -> ConvertM a (ImportType C.Name)
 toCoreImportType src
  = case src of
-        ImportTypeAbstract t    -> ImportTypeAbstract <$> toCoreT t
-        ImportTypeBoxed t       -> ImportTypeBoxed    <$> toCoreT t
+        ImportTypeAbstract t    
+         -> ImportTypeAbstract <$> toCoreT t
+
+        ImportTypeBoxed t
+         -> ImportTypeBoxed    <$> toCoreT t
+
+
+-- ImportCap --------------------------------------------------------------------------------------
+toCoreImportCap :: ImportCap S.Name -> ConvertM a (ImportCap C.Name)
+toCoreImportCap src
+ = case src of
+        ImportCapAbstract t
+         -> ImportCapAbstract   <$> toCoreT t
 
 
 -- ImportValue ------------------------------------------------------------------------------------
@@ -219,8 +239,7 @@ toCoreDataDef def
          { C.dataDefTypeName    = toCoreN     $ S.dataDefTypeName def
          , C.dataDefParams      = defParams
          , C.dataDefCtors       = Just $ defCtors
-         , C.dataDefIsAlgebraic = True
-         }
+         , C.dataDefIsAlgebraic = True }
 
 
 -- DataCtor ---------------------------------------------------------------------------------------
@@ -258,7 +277,6 @@ toCoreX xx
                     <*> (C.XVar <$> pure a <*> (pure $ C.UName (C.NameVar "textLit")))
                     <*> (C.XCon <$> pure a <*> (toCoreDC dc))
 
-        -- TODO: make total.
         S.XPrim a p
          -> C.XVar  <$> pure a <*> toCoreU (C.UPrim (S.NameVal p) (S.typeOfPrimVal p))
 
@@ -340,7 +358,7 @@ toCoreC cc
 toCoreA  :: a -> S.Alt a -> ConvertM a (C.Alt a C.Name)
 toCoreA a (S.AAlt w gxs)
  = C.AAlt <$> toCoreP w
-          <*> (toCoreX (S.desugarGuards a gxs (error "toCoreA alt fail")))
+          <*> (toCoreX (S.desugarGuards a gxs (error "ddc-source-tetra.toCoreA alt fail")))
                 -- TODO: need pattern inexhaustiveness message.
 
 
@@ -490,4 +508,5 @@ data ErrorConvert a
 
         -- | Cannot convert sugar let bindings to core.
         | ErrorConvertCannotConvertSugarLets (S.Lets a)
+
 

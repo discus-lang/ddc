@@ -47,6 +47,7 @@ instance (Pretty n, Eq n) => Pretty (Module a n) where
         , moduleExportTypes     = exportTypes
         , moduleExportValues    = exportValues
         , moduleImportTypes     = importTypes
+        , moduleImportCaps      = importCaps
         , moduleImportValues    = importValues
         , moduleImportDataDefs  = importData
         , moduleDataDefsLocal   = localData
@@ -58,7 +59,7 @@ instance (Pretty n, Eq n) => Pretty (Module a n) where
         -- Exports --------------------
         dExportTypes
          | null $ exportTypes   = empty
-         | otherwise            = (vcat $ map pprExportType  exportTypes)   <> line
+         | otherwise            = (vcat $ map pprExportType  exportTypes)  <> line
 
         dExportValues
          | null $ exportValues  = empty
@@ -67,7 +68,11 @@ instance (Pretty n, Eq n) => Pretty (Module a n) where
         -- Imports --------------------
         dImportTypes
          | null $ importTypes   = empty
-         | otherwise            = (vcat $ map pprImportType importTypes)   <> line
+         | otherwise            = (vcat $ map pprImportType  importTypes)  <> line
+
+        dImportCaps
+         | null $ importCaps    = empty
+         | otherwise            = (vcat $ map pprImportCap   importCaps)   <> line
 
         dImportValues
          | null $ importValues  = empty
@@ -79,11 +84,13 @@ instance (Pretty n, Eq n) => Pretty (Module a n) where
          = empty
          
          -- If there are no imports or exports then suppress printint.
-         | null exportTypes, null exportValues, null importTypes, null importValues
+         | null exportTypes, null exportValues
+         , null importTypes, null importCaps, null importValues
          = empty
 
          | otherwise            
-         = line <> dExportTypes <> dExportValues <> dImportTypes <> dImportValues
+         = line <> dExportTypes <> dExportValues 
+                <> dImportTypes <> dImportCaps <> dImportValues
                 
         -- Data Definitions -----
         docsDataImport
@@ -132,7 +139,7 @@ pprExportValue (n, esrc)
 
 
 -- Imports ----------------------------------------------------------------------------------------
--- | Pretty print an imported type definition.                
+-- | Pretty print a type import.
 pprImportType :: (Pretty n, Eq n) => (n, ImportType n) -> Doc
 pprImportType (n, isrc)
  = case isrc of
@@ -147,7 +154,17 @@ pprImportType (n, isrc)
          <> line
 
 
--- | Pretty print an imported value definition.
+-- | Pretty print a capability import.
+pprImportCap :: (Pretty n, Eq n) => (n, ImportCap n) -> Doc
+pprImportCap (n, isrc)
+ = case isrc of
+        ImportCapAbstract t
+         -> text "import foreign abstract capability" <> line
+         <> indent 8 (padL 15 (ppr n) <+> text ":" <+> ppr t <> semi)
+         <> line
+
+
+-- | Pretty print a value import.
 pprImportValue :: (Pretty n, Eq n) => (n, ImportValue n) -> Doc
 pprImportValue (n, isrc)
  = case isrc of
@@ -162,6 +179,7 @@ pprImportValue (n, isrc)
                                        <+> ppr arityBoxes
                                        <+> text "#-}"
                  , empty ]
+
         ImportValueSea _var t
          -> text "import foreign c value" <> line
          <> indent 8 (padL 15 (ppr n) <+> text ":" <+> ppr t <> semi)
