@@ -25,24 +25,35 @@ import Data.Numeric.Nat
 import Data.Numeric.Bool
 import Data.List
 
+
 -- | The TextLit type is define in the runtime system and contains
 --   a pointer to the literal utf-8 text data in static memory.
 import foreign boxed type
         TextLit         : Data
 
+
+-- | Runtime functions for dealing with unboxed text literals.
+import foreign c value
+
+        -- | Box a text literal.
+        makeTextLit     : TextLit# -> TextLit
+
+        -- | Get the size of a boxed text literal.
+        sizeOfTextLit   : TextLit  -> Nat#
+
+        -- | Get a single byte from a boxed text literal.
+        indexTextLit    : TextLit  -> Nat# -> Word8#
+
+
 -- | Top level region containing text vectors.
 import foreign abstract type
         RegionText      : Region
+
 
 -- | Capabilities to allocate and read top-level text vectors.
 import foreign abstract capability
         capTopTextAlloc : Alloc RegionText
         capTopTextRead  : Read  RegionText
-
-import foreign c value
-        makeTextLit     : TextLit# -> TextLit
-        sizeOfTextLit   : TextLit  -> Nat#
-        indexTextLit    : TextLit  -> Nat# -> Word8#
 
 where
 

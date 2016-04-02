@@ -24,9 +24,7 @@ main (_: Unit): S (Alloc RegionText + Read RegionText + Console) Unit
         -- flat version to console. 
         run writel  $ "-- Flat Text ---------------------------------"
 
-        vec     = run vectorOfText [RegionText] tx
-        tx'     = textOfVector vec
-
+        tx'     = textOfVector (run vectorOfText [RegionText] tx)
         run writel  $ "length vec  = " % showNat (sizeOfText tx')
         run writell $ tx'
 
