@@ -9,10 +9,12 @@ import qualified DDC.Type.Sum   as Sum
 
 -- Check a spec abstraction.
 checkLamT :: Checker a n
-checkLamT !table !ctx xx mode
+checkLamT !table !ctx mode _demand xx 
  = case xx of
-        XLAM a b1 x2    -> checkLAM table ctx a b1 x2 mode
-        _               -> error "ddc-core.checkLamT: no match."
+        XLAM a b1 x2
+           -> checkLAM table ctx a b1 x2 mode
+        _  -> error "ddc-core.checkLamT: no match."
+
 
 -- When reconstructing the type of a type abstraction,
 --  the formal parameter must have a kind annotation: eg (/\v : K. x2)
@@ -48,8 +50,11 @@ checkLAM !table !ctx0 a b1 x2 Recon
         let ctx3         = pushKind b1' RoleAbstract ctx2
         let ctx4         = liftTypes 1  ctx3
 
+        -- Set the demand to 'None' because we don't want to force out
+        -- suspensions. If the body of a type abstraction has any effects
+        -- then this is a type error.
         (x2', t2, e2, ctx5)
-         <- tableCheckExp table table ctx4 x2 Recon
+         <- tableCheckExp table table ctx4 Recon DemandNone x2 
 
         -- Reconstruct the kind of the body.
         (t2', k2, ctx6)
@@ -118,8 +123,11 @@ checkLAM !table !ctx0 a b1 x2 Synth
         let ctx3         = pushKind b1' RoleAbstract ctx2
         let ctx4         = liftTypes 1  ctx3
 
+        -- Set the demand to 'None' because we don't want to force out
+        -- suspensions. If the body of a type abstraction has any effects
+        -- then this is a type error.
         (x2', t2, e2,ctx5)
-         <- tableCheckExp table table ctx4 x2 Synth
+         <- tableCheckExp table table ctx4 Synth DemandNone x2 
 
         -- Force the kind of the body to be data.
         --  This is needed when the type of the body is an existential
@@ -205,8 +213,11 @@ checkLAM !table !ctx0 a b1 x2 (Check (TForall b tBody))
                 Nothing -> return tBody
                 Just u1 -> return $ substituteT b (TVar u1) tBody
 
+        -- Set the demand to 'None' because we don't want to force out
+        -- suspensions. If the body of a type abstraction has any effects
+        -- then this is a type error.
         (x2', t2, e2, ctx5)
-         <- tableCheckExp table table ctx4 x2 (Check tBody_skol)
+         <- tableCheckExp table table ctx4 (Check tBody_skol) DemandNone x2 
 
         -- Force the body of the spec abstraction must have data kind.
         --  This is needed when the type of the body is an existential
@@ -244,5 +255,5 @@ checkLAM !table !ctx0 a b1 x2 (Check (TForall b tBody))
                 tResult (Sum.empty kEffect) ctx_cut
 
 checkLAM table ctx0 a b1 x2 (Check tExpected)
- = checkSub table a ctx0 (XLAM a b1 x2) tExpected
+ = checkSub table a ctx0 DemandNone (XLAM a b1 x2) tExpected
 

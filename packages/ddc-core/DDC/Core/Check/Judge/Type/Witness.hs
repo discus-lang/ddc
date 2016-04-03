@@ -8,7 +8,8 @@ import qualified DDC.Type.Sum           as Sum
 
 
 checkWit :: Checker a n
-checkWit !table !ctx (XWitness a w1) _
+checkWit !table !ctx _mode _demand 
+        (XWitness a w1)
  = do   let config      = tableConfig table
         let kenv        = tableKindEnv table
         let tenv        = tableTypeEnv table
@@ -23,5 +24,5 @@ checkWit !table !ctx (XWitness a w1) _
                 (Sum.empty kEffect)
                 ctx
 
-checkWit _ _ _ _
+checkWit _ _ _ _ _
  = error "ddc-core.checkWit: no match"

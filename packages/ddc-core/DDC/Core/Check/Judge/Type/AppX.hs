@@ -11,15 +11,16 @@ import qualified DDC.Type.Sum   as Sum
 -- | Check a value expression application.
 checkAppX :: Checker a n
 
-checkAppX !table !ctx xx@(XApp a xFn xArg) Recon
+checkAppX !table !ctx Recon demand
+        xx@(XApp a xFn xArg)
  = do
         -- Check the functional expression.
         (xFn',  tFn,  effsFn, ctx1)
-         <- tableCheckExp table table ctx  xFn Recon
+         <- tableCheckExp table table ctx  Recon demand xFn
 
         -- Check the argument.
         (xArg', tArg, effsArg, ctx2)
-         <- tableCheckExp table table ctx1 xArg Recon
+         <- tableCheckExp table table ctx1 Recon DemandNone xArg
 
         -- The type of the parameter must match that of the argument.
         (tResult, effsLatent)
@@ -35,8 +36,9 @@ checkAppX !table !ctx xx@(XApp a xFn xArg) Recon
               -> throw  $ ErrorAppNotFun a xx tFn
 
         -- Effect of the overall application.
-        let effsResult  = Sum.unions kEffect
-                        $ [effsFn, effsArg, Sum.singleton kEffect effsLatent]
+        let effsResult  
+                = Sum.unions kEffect
+                $ [effsFn, effsArg, Sum.singleton kEffect effsLatent]
 
         returnX a
                 (\z -> XApp z xFn' xArg')
@@ -44,11 +46,12 @@ checkAppX !table !ctx xx@(XApp a xFn xArg) Recon
                 ctx2
 
 
-checkAppX !table !ctx0 xx@(XApp a xFn xArg) Synth
+checkAppX !table !ctx0 Synth demand 
+        xx@(XApp a xFn xArg)
  = do
         -- Synth a type for the functional expression.
         (xFn', tFn, effsFn, ctx1)
-         <- tableCheckExp table table ctx0 xFn Synth
+         <- tableCheckExp table table ctx0 Synth demand xFn
 
         -- Substitute context into synthesised type.
         let tFn' = applyContext ctx1 tFn
@@ -75,11 +78,12 @@ checkAppX !table !ctx0 xx@(XApp a xFn xArg) Synth
                 ctx2
 
 
-checkAppX !table !ctx xx@(XApp a _ _) (Check tEx)
- =      checkSub table a ctx xx tEx
+checkAppX !table !ctx (Check tEx) demand 
+        xx@(XApp a _ _) 
+ =      checkSub table a ctx demand xx tEx
 
 
-checkAppX _ _ _ _
+checkAppX _ _ _ _ _
  = error "ddc-core.checkApp: no match"
 
 
@@ -121,7 +125,7 @@ synthAppArg table a xx ctx0 xFn tFn effsFn xArg
 
         -- Check the argument under the new context.
         (xArg', _, effsArg, ctx2)
-         <- tableCheckExp table table ctx1 xArg (Check tA1)
+         <- tableCheckExp table table ctx1 (Check tA1) DemandNone xArg
 
         -- Effect and closure of the overall function application.
         let effsResult = effsFn `Sum.union` effsArg
@@ -190,7 +194,7 @@ synthAppArg table a xx ctx0 xFn tFn effsFn xArg
  = do
         -- Check the argument.
         (xArg', tArg, effsArg, ctx1)
-         <- tableCheckExp table table ctx0 xArg (Check tParam)
+         <- tableCheckExp table table ctx0 (Check tParam) DemandNone xArg
 
         let tFn1     = applyContext ctx1 tFn
         let tArg1    = applyContext ctx1 tArg

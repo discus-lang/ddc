@@ -9,16 +9,19 @@ import qualified DDC.Type.Sum   as Sum
 
 -- | Check a lambda abstraction.
 checkLamX :: Checker a n
-checkLamX !table !ctx xx mode
+
+checkLamX !table !ctx mode _demand xx
  = case xx of
-        XLam a b1 x2    -> checkLam table a ctx b1 x2 mode
-        _               -> error "ddc-core.checkLamX: no match."
+        XLam a b1 x2
+          -> checkLam table a ctx b1 x2 mode
+        _ -> error "ddc-core.checkLamX: no match."
 
 
 -- When reconstructing the type of a lambda abstraction,
 --  the formal parameter must have a type annotation: eg (\v : T. x2)
 checkLam !table !a !ctx !b1 !x2 !Recon
- = do   let config      = tableConfig table
+ = do
+        let config      = tableConfig table
         let kenv        = tableKindEnv table
         let xx          = XLam a b1 x2
 
@@ -38,8 +41,11 @@ checkLam !table !a !ctx !b1 !x2 !Recon
         let (ctx', pos1) = markContext ctx
         let ctx1         = pushType b1 ctx'
 
+        -- It doesn't matter what we set the demand to at this point
+        -- because the 'Recon' mode doesn't use it. We'll just set it 
+        -- like the other modes to avoid confusion.
         (x2', t2, e2, ctx2)
-         <- tableCheckExp table table ctx1 x2 Recon
+         <- tableCheckExp table table ctx1 Recon DemandRun x2 
 
         -- The body of the function must produce data.
         (_, k2, _)      <- checkTypeM config kenv ctx2 UniverseSpec t2 Recon
@@ -54,7 +60,7 @@ checkLam !table !a !ctx !b1 !x2 !Recon
         --   The way the effect and closure term is captured depends on
         --   the configuration flags.
         (xAbs', tAbs) 
-                <- makeFunction config a xx b1' t1 k1 x2' t2 e2
+         <- makeFunction config a xx b1' t1 k1 x2' t2 e2
 
         return  ( xAbs'
                 , tAbs
@@ -65,7 +71,8 @@ checkLam !table !a !ctx !b1 !x2 !Recon
 -- When synthesizing the type of a lambda abstraction
 --   we produce a type (?1 -> ?2) with new unification variables.
 checkLam !table !a !ctx !b1 !x2 !Synth
- = do   let config      = tableConfig table
+ = do
+        let config      = tableConfig table
         let kenv        = tableKindEnv table
         let xx          = XLam a b1 x2
 
@@ -102,21 +109,25 @@ checkLam !table !a !ctx !b1 !x2 !Synth
 
         -- Push the existential for the result,
         -- and parameter type onto the context.
-        let (ctx2, pos1) = markContext
+        let (ctx2, pos1) = markContext 
                          $ pushExists i2 ctx1
         let ctx3         = pushType   b1' ctx2
 
         -- Check the body against the existential for it.
+        --   Set the demand to 'Run' to force out any suspensions.
+        --   We'll box them up again just underneath the lambda
+        --   so that the effects from multiple computations get combined.
         (x2', t2', e2, ctx4)
-         <- tableCheckExp table table ctx3 x2 (Check t2)
+         <- tableCheckExp table table ctx3 (Check t2) DemandRun x2 
 
         -- Force the kind of the body to be Data.
         --   This constrains the kind of polymorpic variables that are used
         --   as the result of a function, like with (\x. x).
         --   We know \x. can't bind a witness here.
-        (_, _, ctx5)    <- checkTypeM config kenv ctx4 UniverseSpec
-                                (applyContext ctx4 t2')
-                                (Check kData)
+        (_, _, ctx5)
+         <- checkTypeM config kenv ctx4 UniverseSpec
+                (applyContext ctx4 t2')
+                (Check kData)
 
         -- Build the result type -------------
         -- If the kind of the parameter is unconstrained then default it
@@ -188,16 +199,22 @@ checkLam !table !a !ctx !b1 !x2 !(Check tExpected)
         let (ctx', pos1) = markContext ctx0
         let ctx1         = pushType b1' ctx'
 
+        -- Check the body against the type we have for it.
+        --  It doesn't matter what we set the demand to here because
+        --  the insertion of box/run casts is controlled by the body 
+        --  type when we have it. Just set it to 'Run' like the others
+        --  to avoid confusion.
         (x2', t2, e2, ctx2)
-         <- tableCheckExp table table ctx1 x2 (Check tX2)
+         <- tableCheckExp table table ctx1 (Check tX2) DemandRun x2 
 
         -- Force the kind of the body to be Data.
         --   This constrains the kind of polymorpic variables that are used
         --   as the result of a function, like with (\x. x).
         --   We know \x. can't bind a witness here.
-        (_, _, ctx3)    <- checkTypeM config kenv ctx2 UniverseSpec
-                                (applyContext ctx2 t2)
-                                (Check kData)
+        (_, _, ctx3)
+         <- checkTypeM config kenv ctx2 UniverseSpec
+                (applyContext ctx2 t2)
+                (Check kData)
 
         -- Make the result type -----------------
         -- If the kind of the parameter is unconstrained then default it
@@ -242,7 +259,7 @@ checkLam !table !a !ctx !b1 !x2 !(Check tExpected)
 
 
 checkLam !table !a !ctx !b1 !x2 !(Check tExpected)
- = checkSub table a ctx (XLam a b1 x2) tExpected
+ = checkSub table a ctx DemandNone (XLam a b1 x2) tExpected
 
 
 -------------------------------------------------------------------------------

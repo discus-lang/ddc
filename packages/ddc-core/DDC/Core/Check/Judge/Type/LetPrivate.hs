@@ -12,10 +12,12 @@ import Data.List                as L
 checkLetPrivate :: Checker a n
 
 -- private --------------------------------------
-checkLetPrivate !table !ctx
-        xx@(XLet a (LPrivate bsRgn mtParent bsWit) x) mode
+checkLetPrivate !table !ctx mode demand
+        xx@(XLet a (LPrivate bsRgn mtParent bsWit) x)
+
  = case takeSubstBoundsOfBinds bsRgn of
-    []   -> tableCheckExp table table ctx x Recon
+    []   -> tableCheckExp table table ctx Recon demand x
+
     us   -> do
         let config      = tableConfig table
         let kenv        = tableKindEnv table
@@ -57,12 +59,12 @@ checkLetPrivate !table !ctx
         -- Check the body expression.
         let ctx3        = pushTypes bsWit' ctx2
         (xBody3, tBody3, effs3, ctx4)
-          <- tableCheckExp table table ctx3 x mode
+          <- tableCheckExp table table ctx3 mode demand x
 
         -- The body type must have data kind.
         (tBody4, kBody4, ctx5)
-         <- checkTypeM config kenv ctx4 UniverseSpec tBody3
-         $  case mode of
+          <- checkTypeM config kenv ctx4 UniverseSpec tBody3
+          $  case mode of
                 Recon   -> Recon
                 _       -> Check kData
 
@@ -123,7 +125,7 @@ checkLetPrivate !table !ctx
                 tBody_final effs_cut ctx_cut
 
 
-checkLetPrivate _ _ _ _
+checkLetPrivate _ _ _ _ _
         = error "ddc-core.checkLetPrivate: no match"
 
 

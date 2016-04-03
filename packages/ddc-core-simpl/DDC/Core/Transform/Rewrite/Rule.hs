@@ -291,7 +291,7 @@ checkExp
 
 checkExp defs kenv tenv side xx
  = let xx' = S.spreadX kenv tenv xx 
-   in  case fst $ C.checkExp defs kenv tenv xx' C.Recon of
+   in  case fst $ C.checkExp defs kenv tenv C.Recon C.DemandNone xx'  of
         Left err  -> Left $ ErrorTypeCheck side xx' err
         Right rhs -> return rhs
 

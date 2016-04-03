@@ -7,7 +7,7 @@ import System.IO.Console
 where
 
 main (_ : Unit) : S Console Unit
- = box private r with { Alloc r; Read r; Write r } in 
+ = private r with { Alloc r; Read r; Write r } in 
    do
         -- Create a demo list.
         xx      = enumFromTo 0 100
@@ -27,5 +27,4 @@ main (_ : Unit) : S Console Unit
         
         -- Print out the final list length.
         writel (showNat (run readRef ref))
-        ()
 

@@ -10,7 +10,7 @@ import Data.List                as L
 checkLet :: Checker a n
 
 -- let --------------------------------------------
-checkLet !table !ctx0 xx@(XLet a lts xBody) mode
+checkLet !table !ctx0 mode demand xx@(XLet a lts xBody)
  | case lts of
         LLet{}  -> True
         LRec{}  -> True
@@ -29,14 +29,14 @@ checkLet !table !ctx0 xx@(XLet a lts xBody) mode
                         Synth   -> True
 
         (lts', _bs', effsBinds, pos1, ctx1)
-         <- checkLetsM useBidirChecking xx table ctx0 lts
+         <- checkLetsM useBidirChecking xx table ctx0 demand lts
 
 
         -- Check the body -----------------------
         -- -- Check the body expression in a context
         -- -- extended with the types of the bindings.
         (xBody', tBody, effsBody, ctx2)
-         <- tableCheckExp table table ctx1 xBody mode
+         <- tableCheckExp table table ctx1 mode demand xBody
 
         -- The body must have data kind.
         (tBody', kBody, ctx3)
@@ -71,7 +71,7 @@ checkLet !table !ctx0 xx@(XLet a lts xBody) mode
 
 -- others ---------------------------------------
 -- The dispatcher should only call checkLet with a XLet AST node.
-checkLet _ _ _ _
+checkLet _ _ _ _ _
         = error "ddc-core.checkLet: no match"
 
 
@@ -84,6 +84,7 @@ checkLetsM
         -> Exp a n                      -- ^ Expression for error messages.
         -> Table a n                    -- ^ Static configuration.
         -> Context n                    -- ^ Input context.
+        -> Demand                       -- ^ Demand placed on the bindings.
         -> Lets a n                     -- ^ Let-bindings to check.
         -> CheckM a n
                 ( Lets (AnTEC a n) n    --   Let-bindings annotated with types.
@@ -92,7 +93,7 @@ checkLetsM
                 , Pos                   --   Context position with bindings pushed.
                 , Context n)            --   Output context.
 
-checkLetsM !bidir xx !table !ctx0 (LLet b xBind)
+checkLetsM !bidir xx !table !ctx0 !demand (LLet b xBind)
 
  -- Reconstruct the type of a non-recursive let-binding.
  | False  <- bidir
@@ -103,7 +104,7 @@ checkLetsM !bidir xx !table !ctx0 (LLet b xBind)
 
         -- Reconstruct the type of the binding.
         (xBind', tBind, effsBind, ctx1)
-         <- tableCheckExp table table ctx0 xBind Recon
+         <- tableCheckExp table table ctx0 Recon demand xBind
 
         -- The kind of the binding must be Data.
         (_, kBind', _)
@@ -158,7 +159,7 @@ checkLetsM !bidir xx !table !ctx0 (LLet b xBind)
 
         -- Check the expression in the right of the binding.
         (xBind_raw, tBind_raw, effs_raw, ctx2)
-         <- tableCheckExp table table ctx1 xBind modeCheck
+         <- tableCheckExp table table ctx1 modeCheck demand xBind
 
         let tBind_ctx   = applyContext ctx2 tBind_raw
 
@@ -204,7 +205,7 @@ checkLetsM !bidir xx !table !ctx0 (LLet b xBind)
 
 
 -- letrec ---------------------------------------
-checkLetsM !bidir !xx !table !ctx0 (LRec bxs)
+checkLetsM !bidir !xx !table !ctx0 !demand (LRec bxs)
  = do   let (bs, xs)    = unzip bxs
         let a           = annotOfExp xx
 
@@ -215,14 +216,16 @@ checkLetsM !bidir !xx !table !ctx0 (LRec bxs)
         checkSyntacticLambdas table a xx xs
 
         -- Check the type annotations on all the binders.
-        (bs', ctx1)      <- checkRecBinds table bidir a xx ctx0 bs
+        (bs', ctx1)
+         <- checkRecBinds table bidir a xx ctx0 bs
 
         -- All variables are in scope in all right hand sides.
         let (ctx2, pos1) =  markContext ctx1
         let ctx3         =  pushTypes bs' ctx2
 
         -- Check the right hand sides.
-        (results, ctx4)  <- checkRecBindExps table bidir a ctx3 (zip bs' xs)
+        (results, ctx4)  
+         <- checkRecBindExps table bidir a ctx3 demand (zip bs' xs)
 
         let (bs'', xsRight')
                 = unzip results
@@ -236,7 +239,7 @@ checkLetsM !bidir !xx !table !ctx0 (LRec bxs)
 -- others ---------------------------------------
 -- The dispatcher should only call checkLet with LLet and LRec AST nodes,
 -- so we should not see the others here.
-checkLetsM _ _ _ _ _
+checkLetsM _ _ _ _ _ _
         = error "ddc-core.checkLetsM: no match"
 
 
@@ -321,13 +324,14 @@ checkRecBindExps
         -> Bool                         -- ^ Use bidirectional checking.
         -> a                            -- ^ Annotation for error messages.
         -> Context n                    -- ^ Original context.
+        -> Demand                       -- ^ Demand placed on bindings.
         -> [(Bind n, Exp a n)]          -- ^ Bindings and exps for rec bindings.
         -> CheckM a n
                 ( [ ( Bind n                   -- Result bindiner.
                     , Exp (AnTEC a n) n)]      -- Result expression.
                 , Context n)
 
-checkRecBindExps table bidir a ctx0 bxs0
+checkRecBindExps table bidir a ctx0 demand bxs0
  = go bxs0 ctx0
  where
         go [] ctx
@@ -338,40 +342,41 @@ checkRecBindExps table bidir a ctx0 bxs0
                 (moar,   ctx'') <- go bxs ctx'
                 return (result : moar, ctx'')
 
-        checkRecBindExp b x ctx
+        checkRecBindExp b xBind ctx
          = case bidir of
             False
              -> do
                 -- Check the right of the binding.
                 --  We checked that the expression is a syntactic lambda
                 --  abstraction in checkLetsM, so we know the effect is pure.
-                (x', t, _effs, ctx')
-                 <- tableCheckExp table table ctx x Recon
+                (xBind', t, _effs, ctx')
+                 <- tableCheckExp table table ctx Recon demand xBind
 
                 -- Check the annotation on the binder matches the reconstructed
                 -- type of the binding.
                 when (not $ equivT (typeOfBind b) t)
-                 $ throw $ ErrorLetMismatch a x b t
+                 $ throw $ ErrorLetMismatch a xBind b t
 
                 -- Reconstructing the types of binders adds missing kind info to
                 -- constructors etc, so update the binders with this new info.
                 let b'  = replaceTypeOfBind t b
 
-                return ( (b', x'), ctx')
+                return ( (b', xBind'), ctx')
 
             True
              -> do
                 -- Check the right of the binding.
                 --  We checked that the expression is a syntactic lambda
                 --  abstraction in checkLetsM, so we know the effect is pure.
-                (x', t, _effs, ctx')
-                 <- tableCheckExp table table ctx x (Check (typeOfBind b))
+                (xBind', t, _effs, ctx')
+                 <- tableCheckExp table table
+                        ctx (Check (typeOfBind b)) demand xBind
 
                 -- Reconstructing the types of binders adds missing kind info to
                 -- constructors etc, so update the binders with this new info.
                 let b'  = replaceTypeOfBind t b
 
-                return ((b', x'), ctx')
+                return ((b', xBind'), ctx')
 
 
 -------------------------------------------------------------------------------

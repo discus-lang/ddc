@@ -13,7 +13,7 @@ import qualified Data.Map       as Map
 checkVarCon :: Checker a n
 
 -- variables ------------------------------------
-checkVarCon !table !ctx xx@(XVar a u) mode
+checkVarCon !table !ctx mode demand xx@(XVar a u)
 
  -- Look in the local context.
  | Just t       <- lookupType u ctx
@@ -21,7 +21,7 @@ checkVarCon !table !ctx xx@(XVar a u) mode
         -- Check subsumption against an existing type.
         -- This may instantiate existentials in the exising type.
         Check tExpect
-         ->     checkSub table a ctx xx tExpect
+         ->     checkSub table a ctx demand xx tExpect
 
         _ -> do ctrace  $ vcat
                         [ text "* Var Local"
@@ -42,7 +42,7 @@ checkVarCon !table !ctx xx@(XVar a u) mode
         -- Check subsumption against an existing type.
         -- This may instantiate existentials in the exising type.
         Check tExpect
-         ->     checkSub table a ctx xx tExpect
+         ->     checkSub table a ctx demand xx tExpect
 
         _ -> do ctrace  $ vcat
                         [ text "* Var Global"
@@ -63,11 +63,12 @@ checkVarCon !table !ctx xx@(XVar a u) mode
 
 
 -- constructors ---------------------------------
-checkVarCon !table !ctx xx@(XCon a dc) mode
+checkVarCon !table !ctx mode demand xx@(XCon a dc) 
  -- For recon and synthesis we already know what type the constructor
  -- should have, so we can use that.
  | mode == Recon || mode == Synth
- = do   let config      = tableConfig table
+ = do
+        let config      = tableConfig table
         let defs        = configDataDefs config
 
         -- All data constructors need to have valid type annotations.
@@ -106,10 +107,10 @@ checkVarCon !table !ctx xx@(XCon a dc) mode
  -- This may instantiate existentials in the exising type.
  | otherwise
  , Check tExpect    <- mode
- = checkSub table a ctx xx tExpect
+ = checkSub table a ctx demand xx tExpect
 
 
 -- others ---------------------------------------
-checkVarCon _ _ _ _
+checkVarCon _ _ _ _ _
  = error "ddc-core.checkVarCon: no match"
 

@@ -4,16 +4,16 @@ import System.IO.Console
 where
 
 -- Reverse the elements of a list, using an accumulator.
-reverseAcc (xx : List a) : List a
+reverseAcc (xx: List a): List a
  = reverseAcc2 Nil xx
 
-reverseAcc2 (acc xx : List a) : List a
+reverseAcc2 (acc xx: List a): List a
  = case xx of
         Nil             -> acc
         Cons x xs       -> reverseAcc2 (Cons x acc) xs
 
 
-dumpListNat (xx : List Nat#) : S Console Unit
+dumpListNat (xx: List Nat#): S Console Unit
  = box case xx of
         Nil             -> ()
         Cons x xs       
@@ -21,7 +21,7 @@ dumpListNat (xx : List Nat#) : S Console Unit
                 run dumpListNat xs
 
 
-main (_ : Unit) : S Console Unit
+main (_: Unit): S Console Unit
  = box do
         xs1     = replicate  5 100
         xs2     = enumFromTo 10 20

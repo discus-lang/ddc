@@ -5,9 +5,7 @@ import Data.Function
 where
 
 main (_ : Unit) : S Console Unit
- = box do
-        writel "hello world"
+ = do   writel "hello world"
         writel "Καλημέρα κόσμε"
         writel "こんにちは 世界"
         writel "হ্যালো বিশ্ব"
-        ()

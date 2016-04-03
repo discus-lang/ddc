@@ -6,11 +6,11 @@ import DDC.Core.Check.Judge.Type.Base
 
 
 -- This is the subtyping rule for the type checking judgment.
-checkSub table !a ctx0 xx0 tExpect
+checkSub table !a ctx0 demand xx0 tExpect
  = do   let config      = tableConfig table
 
         (xx1, tSynth, eff, ctx1)
-         <- tableCheckExp table table ctx0 xx0 Synth
+         <- tableCheckExp table table ctx0 Synth demand xx0 
 
         -- Substitute context into synthesised and expected types.
         let tSynth'     = applyContext ctx1 tSynth

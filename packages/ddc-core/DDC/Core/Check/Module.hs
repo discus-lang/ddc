@@ -138,7 +138,7 @@ checkModuleM !config !kenv !tenv mm@ModuleCore{} !mode
         -- Check the body of the module -------------------
         (x', _, _effs, ctx)
          <- checkExpM   (makeTable config_top kenv_top tenv_top)
-                        ctx_top (moduleBody mm) mode
+                        ctx_top mode DemandNone (moduleBody mm) 
 
         -- Apply the final context to the annotations in expressions.
         let applyToAnnot (AnTEC t0 e0 _ x0)

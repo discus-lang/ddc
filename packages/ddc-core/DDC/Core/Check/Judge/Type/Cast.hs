@@ -11,7 +11,8 @@ checkCast :: Checker a n
 
 -- WeakenEffect ---------------------------------------------------------------
 -- Weaken the effect of an expression.
-checkCast !table !ctx0 xx@(XCast a (CastWeakenEffect eff) x1) mode
+checkCast !table !ctx0 mode _demand
+        xx@(XCast a (CastWeakenEffect eff) x1)
  = do   let config      = tableConfig  table
         let kenv        = tableKindEnv table
 
@@ -25,7 +26,7 @@ checkCast !table !ctx0 xx@(XCast a (CastWeakenEffect eff) x1) mode
 
         -- Check the body.
         (x1', t1, effs, ctx2)
-         <- tableCheckExp table table ctx1 x1 mode
+         <- tableCheckExp table table ctx1 mode DemandNone x1
 
         -- The effect term must have Effect kind.
         when (not $ isEffectKind kEff)
@@ -44,7 +45,8 @@ checkCast !table !ctx0 xx@(XCast a (CastWeakenEffect eff) x1) mode
 -- EXPERIMENTAL: The Tetra language doesn't have purification casts yet,
 --               so proper type inference isn't implemented.
 --
-checkCast !table !ctx xx@(XCast a (CastPurify w) x1) mode
+checkCast !table !ctx mode _demand 
+        xx@(XCast a (CastPurify w) x1)
  = do   let config      = tableConfig table
         let kenv        = tableKindEnv table
         let tenv        = tableTypeEnv table
@@ -55,7 +57,7 @@ checkCast !table !ctx xx@(XCast a (CastPurify w) x1) mode
 
         -- Check the body.
         (x1', t1, effs, ctx1)
-         <- tableCheckExp table table ctx x1 mode
+         <- tableCheckExp table table ctx mode DemandNone x1
 
         -- The witness must have type (Pure e), for some effect e.
         effs' <- case tW of
@@ -71,7 +73,8 @@ checkCast !table !ctx xx@(XCast a (CastPurify w) x1) mode
 -- Box ------------------------------------------------------------------------
 -- Box a computation,
 -- capturing its effects in a computation type.
-checkCast !table ctx0 xx@(XCast a CastBox x1) mode
+checkCast !table ctx0 mode _demand 
+        xx@(XCast a CastBox x1)
  = case mode of
     Check tExpected
      -> do
@@ -79,7 +82,7 @@ checkCast !table ctx0 xx@(XCast a CastBox x1) mode
 
         -- Check the body.
         (x1', tBody, effs, ctx1)
-         <- tableCheckExp table table ctx0 x1 Synth
+         <- tableCheckExp table table ctx0 Synth DemandNone x1
 
         -- The actual type is (S eff tBody).
         let tBody'      = applyContext ctx1 tBody
@@ -100,7 +103,7 @@ checkCast !table ctx0 xx@(XCast a CastBox x1) mode
      -> do
         -- Check the body.
         (x1', t1, effs,  ctx1)
-         <- tableCheckExp table table ctx0 x1 mode
+         <- tableCheckExp table table ctx0 mode DemandNone x1
 
         -- The result type is (S effs a).
         let tS  = tApps (TCon (TyConSpec TcConSusp))
@@ -113,13 +116,14 @@ checkCast !table ctx0 xx@(XCast a CastBox x1) mode
 -- Run ------------------------------------------------------------------------
 -- Run a suspended computation,
 -- releasing its effects into the environment.
-checkCast !table !ctx0 xx@(XCast a CastRun xBody) mode
+checkCast !table !ctx0 mode demand
+        xx@(XCast a CastRun xBody)
  = case mode of
     Recon
      -> do
         -- Check the body.
         (xBody', tBody, effs, ctx1)
-         <- tableCheckExp table table ctx0 xBody Recon
+         <- tableCheckExp table table ctx0 Recon DemandNone xBody
 
         -- The body must have type (S eff a),
         --  and the result has type 'a' while unleashing effect 'eff'.
@@ -143,7 +147,7 @@ checkCast !table !ctx0 xx@(XCast a CastRun xBody) mode
      -> do
         -- Synthesize a type for the body.
         (xBody', tBody, effs, ctx1)
-         <- tableCheckExp table table ctx0 xBody Synth
+         <- tableCheckExp table table ctx0 Synth DemandNone xBody
 
         -- Run the body,
         -- which needs to have been resolved to a computation type.
@@ -158,9 +162,9 @@ checkCast !table !ctx0 xx@(XCast a CastRun xBody) mode
                 ctx2
 
     Check tExpected
-     -> checkSub table a ctx0 xx tExpected
+     -> checkSub table a ctx0 demand xx tExpected
 
-checkCast _ _ _ _
+checkCast _ _ _ _ _
         = error "ddc-core.checkCast: no match"
 
 

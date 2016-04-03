@@ -187,8 +187,11 @@ transExp traceTrans profile kenv tenv zero simpl xx
             -> outDocLn  
             $  text "* TRANSFORM INFORMATION: " <$> indent 4 (ppr inf) <$> text ""
 
+        let config = C.configOfProfile profile
+        let rr     = C.checkExp config kenv tenv Recon C.DemandNone x' 
+
         -- Check that the simplifier perserved the type of the expression.
-        case fst $ C.checkExp (C.configOfProfile profile) kenv tenv x' Recon of
+        case fst rr of
           Right (x2, t2, eff2)
            |  equivT t1 t2
            ,  subsumesT kEffect  eff1 eff2

@@ -235,7 +235,7 @@ loadExpFromTokens fragment modules sourceName mode toks'
 
         -- Check the kind of the type.
         goCheckType x
-         = case C.checkExp config kenv tenv x mode of
+         = case C.checkExp config kenv tenv mode C.DemandNone x  of
             (Left err, ct)            -> (Left  (ErrorCheckExp err),  Just ct)
             (Right (x', _, _), ct)    -> goCheckCompliance ct x'
 

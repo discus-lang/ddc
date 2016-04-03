@@ -16,7 +16,8 @@ module DDC.Core.Check
         , checkModule
         
           -- * Checking Expressions
-        , Mode       (..)
+        , Mode   (..)
+        , Demand (..)
         , checkExp,     typeOfExp
 
           -- * Checking Witnesses

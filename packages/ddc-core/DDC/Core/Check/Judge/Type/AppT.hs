@@ -9,17 +9,19 @@ import DDC.Core.Check.Judge.Type.Base
 -- | Check a spec application.
 checkAppT :: Checker a n
 
-checkAppT !table !ctx0 xx@(XApp aApp xFn (XType aArg tArg)) Recon
- = do   let config      = tableConfig table
+checkAppT !table !ctx0 Recon demand
+        xx@(XApp aApp xFn (XType aArg tArg))
+ = do   
+        let config      = tableConfig table
         let kenv        = tableKindEnv table
 
         -- Check the functional expression.
         (xFn', tFn, effsFn, ctx1)
-         <- tableCheckExp table table ctx0 xFn Recon
+         <- tableCheckExp table table ctx0 Recon demand xFn
 
         -- Check the argument.
         (tArg', kArg, ctx2)
-         <- checkTypeM config kenv ctx1 UniverseSpec tArg Recon
+         <- checkTypeM    config kenv ctx1 UniverseSpec tArg Recon
 
         -- Determine the type of the result.
         --  The function must have a quantified type, which we then instantiate
@@ -61,11 +63,12 @@ checkAppT !table !ctx0 xx@(XApp aApp xFn (XType aArg tArg)) Recon
                 (\z -> XApp z xFn' (XType aArg' tArg'))
                 tResult effsFn ctx2
 
-checkAppT !table !ctx0 xx@(XApp aApp xFn (XType aArg tArg)) Synth
+checkAppT !table !ctx0 Synth demand 
+        xx@(XApp aApp xFn (XType aArg tArg))
  = do
         -- Check the functional expression.
         (xFn', tFn, effsFn, ctx1)
-         <- tableCheckExp table table ctx0 xFn Synth
+         <- tableCheckExp table table ctx0 Synth demand xFn
 
         -- Apply the type argument to the type of the function.
         (tResult, tArg', kArg, ctx2)
@@ -92,10 +95,11 @@ checkAppT !table !ctx0 xx@(XApp aApp xFn (XType aArg tArg)) Synth
                 tResult effsFn ctx2
 
 
-checkAppT !table !ctx0 xx@(XApp aApp _ (XType _ _)) (Check tExpected)
- =      checkSub table aApp ctx0 xx tExpected
+checkAppT !table !ctx0 (Check tExpected) demand 
+        xx@(XApp aApp _ (XType _ _)) 
+ =      checkSub table aApp ctx0 demand xx tExpected
 
-checkAppT _ _ _ _
+checkAppT _ _ _ _ _
  = error "ddc-core.checkAppT: no match"
 
 

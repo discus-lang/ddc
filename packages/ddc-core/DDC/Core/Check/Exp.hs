@@ -21,6 +21,7 @@ module DDC.Core.Check.Exp
           -- * Pure checking.
         , AnTEC         (..)
         , Mode          (..)
+        , Demand        (..)
         , Context
         , emptyContext
         , checkExp
@@ -65,15 +66,16 @@ checkExp
         => Config n                     -- ^ Static configuration.
         -> KindEnv n                    -- ^ Starting kind environment.
         -> TypeEnv n                    -- ^ Starting type environment.
-        -> Exp a n                      -- ^ Expression to check.
         -> Mode  n                      -- ^ Check mode.
+        -> Demand                       -- ^ Demand placed on the expression.
+        -> Exp a n                      -- ^ Expression to check.
         -> ( Either (Error a n)         --   Type error message.
                     ( Exp (AnTEC a n) n --   Expression with type annots
                     , Type n            --   Type of expression.
                     , Effect n)         --   Effect of expression.
            , CheckTrace)                --   Type checker debug trace.
 
-checkExp !config !kenv !tenv !xx !mode
+checkExp !config !kenv !tenv !mode !demand !xx
  = (result, ct)
  where
   ((ct, _, _), result)
@@ -85,7 +87,7 @@ checkExp !config !kenv !tenv !xx !mode
                 (makeTable config
                         (Env.union kenv (configPrimKinds config))
                         (Env.union tenv (configPrimTypes config)))
-                emptyContext xx mode
+                emptyContext mode demand xx 
 
         -- Apply the final context to the annotations in expressions.
         -- This ensures that existentials are expanded to solved types.
@@ -116,7 +118,7 @@ typeOfExp
         -> Either (Error a n) (Type n)
 
 typeOfExp !config !kenv !tenv !xx
- = case fst $ checkExp config kenv tenv xx Recon of
+ = case fst $ checkExp config kenv tenv Recon DemandNone xx of
         Left err        -> Left err
         Right (_, t, _) -> Right t
 
@@ -127,8 +129,9 @@ checkExpM
         :: (Show a, Show n, Pretty n, Ord n)
         => Table a n                    -- ^ Static config.
         -> Context n                    -- ^ Input context.
-        -> Exp a n                      -- ^ Expression to check.
         -> Mode n                       -- ^ Check mode.
+        -> Demand                       -- ^ Demand placed on the expression.
+        -> Exp a n                      -- ^ Expression to check.
         -> CheckM a n
                 ( Exp (AnTEC a n) n     -- Annotated expression.
                 , Type n                -- Output type.
@@ -136,20 +139,20 @@ checkExpM
                 , Context n)            -- Output context.
 
 -- Dispatch to the checker table based on what sort of AST node we're at.
-checkExpM !table !ctx !xx !mode
+checkExpM !table !ctx !mode !demand !xx 
  = case xx of
-    XVar{}                 -> tableCheckVarCon     table table ctx xx mode
-    XCon{}                 -> tableCheckVarCon     table table ctx xx mode
-    XApp _ _ XType{}       -> tableCheckAppT       table table ctx xx mode
-    XApp{}                 -> tableCheckAppX       table table ctx xx mode
-    XLAM{}                 -> tableCheckLamT       table table ctx xx mode
-    XLam{}                 -> tableCheckLamX       table table ctx xx mode
-    XLet _ LPrivate{} _    -> tableCheckLetPrivate table table ctx xx mode
-    XLet{}                 -> tableCheckLet        table table ctx xx mode
-    XCase{}                -> tableCheckCase       table table ctx xx mode
-    XCast{}                -> tableCheckCast       table table ctx xx mode
-    XWitness{}             -> tableCheckWitness    table table ctx xx mode
-    XType    a _           -> throw $ ErrorNakedType    a xx
+    XVar{}              -> tableCheckVarCon     table table ctx mode demand xx
+    XCon{}              -> tableCheckVarCon     table table ctx mode demand xx
+    XApp _ _ XType{}    -> tableCheckAppT       table table ctx mode demand xx
+    XApp{}              -> tableCheckAppX       table table ctx mode demand xx
+    XLAM{}              -> tableCheckLamT       table table ctx mode demand xx
+    XLam{}              -> tableCheckLamX       table table ctx mode demand xx
+    XLet _ LPrivate{} _ -> tableCheckLetPrivate table table ctx mode demand xx
+    XLet{}              -> tableCheckLet        table table ctx mode demand xx
+    XCase{}             -> tableCheckCase       table table ctx mode demand xx
+    XCast{}             -> tableCheckCast       table table ctx mode demand xx
+    XWitness{}          -> tableCheckWitness    table table ctx mode demand xx
+    XType    a _        -> throw $ ErrorNakedType    a xx
 
 
 -- Table ----------------------------------------------------------------------

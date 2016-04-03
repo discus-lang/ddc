@@ -1,7 +1,8 @@
 
 module DDC.Core.Check.Judge.Type.Base
         ( Checker
-        , Table (..)
+        , Demand (..)
+        , Table  (..)
         , returnX
 
         , module DDC.Core.Check.Base
@@ -35,13 +36,24 @@ import DDC.Type.Transform.Crush
 import DDC.Type.Transform.BoundT
 
 
+-- | Demand placed on suspensions by the surrounding context.
+data Demand
+        -- | Run suspensions as we encounter them.
+        = DemandRun
+
+        -- | Ignore suspensions, don't run them.
+        | DemandNone
+        deriving Show
+
+
 -- | Type of the function that checks some node of the core AST.
 type Checker a n
         =  (Show a, Show n, Ord n, Pretty n)
         => Table a n                    -- ^ Static configuration.
         -> Context n                    -- ^ Input context.
-        -> Exp a n                      -- ^ Expression to check.
         -> Mode n                       -- ^ Type checker mode.
+        -> Demand                       -- ^ Demand on the expression.
+        -> Exp a n                      -- ^ Expression to check.
         -> CheckM a n
                 ( Exp (AnTEC a n) n     -- Annotated, checked expression.
                 , Type n                -- Type of the expression.

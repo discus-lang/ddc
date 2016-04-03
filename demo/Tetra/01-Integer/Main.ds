@@ -8,11 +8,9 @@ where
 
 
 main (_ : Unit) : S Console Unit
- = box do
-        writel ("fac 10     = " % showNat (fac 10))
+ = do   writel ("fac 10     = " % showNat (fac 10))
         writel ("ack 3 2    = " % showNat (ack 3   2))
         writel ("gcd 100 28 = " % showNat (gcd 100 28))
-        ()
 
 
 -- Factorial.
@@ -38,4 +36,5 @@ gcd (x y : Nat#) : Nat#
  | y == 0       = x
  | x > y        = gcd y (rem x y)
  | otherwise    = gcd x (rem y x) 
+
 

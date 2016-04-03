@@ -9,8 +9,10 @@ import Data.List                as L
 
 ---------------------------------------------------------------------------------------------------
 checkCase :: Checker a n
-checkCase !table !ctx0 xx@(XCase a xDiscrim alts) mode
- = do   let config      = tableConfig table
+checkCase !table !ctx0 mode demand 
+        xx@(XCase a xDiscrim alts)
+ = do   
+        let config      = tableConfig table
 
         -- There must be at least one alternative, even if there are no data
         -- constructors. The rest of the checking code assumes this, and will
@@ -23,8 +25,11 @@ checkCase !table !ctx0 xx@(XCase a xDiscrim alts) mode
          <- takeDiscrimCheckModeFromAlts table a ctx0 mode alts
 
         -- Check the discriminant.
+        --   We set the demand to 'Run' because if the scrutinee is a
+        --   suspension then we won't be able to destruct it, so we
+        --   might as well run it to get the result.
         (xDiscrim', tDiscrim, effsDiscrim, ctx2)
-         <- tableCheckExp table table ctx1 xDiscrim modeDiscrim
+         <- tableCheckExp table table ctx1 modeDiscrim DemandRun xDiscrim 
 
         -- Split the type into the type constructor names and type parameters.
         -- Also check that it's algebraic data, and not a function or effect
@@ -75,7 +80,7 @@ checkCase !table !ctx0 xx@(XCase a xDiscrim alts) mode
 
         -- Check the alternatives.
         (alts', tsAlts, effss, ctx4)
-         <- checkAltsM table a xx tDiscrim tsArgs modeAlts alts ctx3
+         <- checkAltsM table a xx tDiscrim tsArgs modeAlts demand alts ctx3
 
         -- Check that all the alternatives have the same type.
         --   In Synth mode this is enforced by passing down an existential to
@@ -113,7 +118,7 @@ checkCase !table !ctx0 xx@(XCase a xDiscrim alts) mode
                 (Sum.unions kEffect (effsDiscrim : effsMatch : effss))
                 ctx4
 
-checkCase _ _ _ _
+checkCase _ _ _ _ _
         = error "ddc-core.checkCase: no match"
 
 
@@ -183,6 +188,7 @@ checkAltsM
         -> Type n               -- ^ Type of discriminant.
         -> [Type n]             -- ^ Args to type constructor of discriminant.
         -> Mode n               -- ^ Check mode for the alternatives.
+        -> Demand               -- ^ Demand on the result of the alternatives.
         -> [Alt a n]            -- ^ Alternatives to check.
         -> Context n            -- ^ Context to check the alternatives in.
         -> CheckM a n
@@ -191,7 +197,7 @@ checkAltsM
                 , [TypeSum n]              -- Alternative effects.
                 , Context n)
 
-checkAltsM !table !a !xx !tDiscrim !tsArgs !mode !alts0 !ctx
+checkAltsM !table !a !xx !tDiscrim !tsArgs !mode !demand !alts0 !ctx
  = checkAltsM1 alts0 ctx
 
  where
@@ -222,7 +228,7 @@ checkAltsM !table !a !xx !tDiscrim !tsArgs !mode !alts0 !ctx
    = do
         -- Check the right of the alternative.
         (xBody', tBody, effBody, ctx1)
-                <- tableCheckExp table table ctx0 xBody mode
+                <- tableCheckExp table table ctx0 mode demand xBody
 
         return  ( AAlt PDefault xBody'
                 , tBody
@@ -277,7 +283,7 @@ checkAltsM !table !a !xx !tDiscrim !tsArgs !mode !alts0 !ctx
 
         -- Check the body in this new environment.
         (xBody', tBody, effsBody, ctxBody)
-                 <- tableCheckExp table table ctxArg xBody mode
+                 <- tableCheckExp table table ctxArg mode demand xBody
 
         let tBody'      = applyContext ctxBody tBody
 

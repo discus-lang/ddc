@@ -110,7 +110,9 @@ pruneX profile kenv tenv xx
 -- deadCodeTrans to actually erase dead bindings.
 --
 transformTypeUsage profile kenv tenv trans xx
- = case fst $ checkExp (configOfProfile profile) kenv tenv xx Recon of
+ = let  config  = configOfProfile profile
+        rr      = checkExp config kenv tenv Recon DemandNone xx
+   in case fst rr of
         Right (xx1, _, _) 
          -> let xx2        = usageX xx1
                 (x', info) = runWriter (trans xx2)
@@ -119,7 +121,7 @@ transformTypeUsage profile kenv tenv trans xx
 
         Left _
          -> error $  renderIndent
-         $  vcat [ text "ddc-coe-simpl.Prune: core type error" ]
+         $  vcat [ text "ddc-core-simpl.Prune: core type error" ]
 
 
 -------------------------------------------------------------------------------
