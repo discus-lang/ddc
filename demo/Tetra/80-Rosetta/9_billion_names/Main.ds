@@ -57,15 +57,17 @@ sums n  = foldl add 0 (last (Nil [Nat#]) (rows n))
 -- | Write a list to the console.
 writeListl xs
  = box do
-        run forS xs (λn : Nat#. write ((showNat n) % " "))
-        run write "\n"
+        forS xs (λn : Nat#. write ((showNat n) % " "))
+        write "\n"
+        ()
 
 main (_ : Unit) : S Console Unit
  = box do
-        run forS (rows 20) writeListl
-        run writel (showNat (sums 23))
-        run writel (showNat (sums 123))
+        forS (rows 20) writeListl
+        writel (showNat (sums 23))
+        writel (showNat (sums 123))
+        ()
 
-        -- run writel (showNat (sums 1234))     -- runs out of space.
-        -- run writel (showNat (sums 12345))    -- runs out of space.
+        -- writel (showNat (sums 1234))     -- runs out of space.
+        -- writel (showNat (sums 12345))    -- runs out of space.
 

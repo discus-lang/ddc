@@ -23,8 +23,12 @@ data Config n
           -- | Types of primitive operators.
         , configPrimTypes               :: TypeEnv n
 
-        -- | Data type definitions.
+          -- | Data type definitions.
         , configDataDefs                :: DataDefs n  
+
+          -- | This name represents some hole in the expression that needs
+          --   to be filled in by the type checker.
+        , configNameIsHole              :: Maybe (n -> Bool) 
 
           -- | Track effect type information.
         , configTrackedEffects          :: Bool
@@ -44,39 +48,32 @@ data Config n
           -- | Allow general let-rec
         , configGeneralLetRec           :: Bool
 
-          -- | This name represents some hole in the expression that needs
-          --   to be filled in by the type checker.
-        , configNameIsHole              :: Maybe (n -> Bool) }
+          -- | Automatically run effectful let-bindings where the left
+          --   is the 'none' / 'wildcard' binder.
+        , configImplicitRunBindings     :: Bool
+
+        }
 
 
 
 -- | Convert a language profile to a type checker configuration.
 configOfProfile :: F.Profile n -> Config n
 configOfProfile profile
-        = Config
-        { configPrimKinds          = F.profilePrimKinds  profile
-        , configPrimTypes          = F.profilePrimTypes  profile
-
-        , configDataDefs           = F.profilePrimDataDefs profile
+ = let  features        = F.profileFeatures profile
+   in   Config
+        { configPrimKinds               = F.profilePrimKinds  profile
+        , configPrimTypes               = F.profilePrimTypes  profile
+        , configDataDefs                = F.profilePrimDataDefs profile
+        , configNameIsHole              = F.profileNameIsHole profile 
         
-        , configTrackedEffects     = F.featuresTrackedEffects
-                                   $ F.profileFeatures profile
+        , configTrackedEffects          = F.featuresTrackedEffects      features
+        , configTrackedClosures         = F.featuresTrackedClosures     features
+        , configFunctionalEffects       = F.featuresFunctionalEffects   features
+        , configFunctionalClosures      = F.featuresFunctionalClosures  features
+        , configEffectCapabilities      = F.featuresEffectCapabilities  features
+        , configGeneralLetRec           = F.featuresGeneralLetRec       features
+        , configImplicitRunBindings     = F.featuresImplicitRunBindings features
 
-        , configTrackedClosures    = F.featuresTrackedClosures
-                                   $ F.profileFeatures profile
-
-        , configFunctionalEffects  = F.featuresFunctionalEffects
-                                   $ F.profileFeatures profile
-
-        , configFunctionalClosures = F.featuresFunctionalClosures
-                                   $ F.profileFeatures profile 
-
-        , configEffectCapabilities = F.featuresEffectCapabilities
-                                   $ F.profileFeatures profile
-
-        , configGeneralLetRec      = F.featuresGeneralLetRec
-                                   $ F.profileFeatures profile
-
-        , configNameIsHole         = F.profileNameIsHole profile }
+        }
         
 

@@ -9,8 +9,9 @@ where
 main (_: Unit): S Console Unit
  = box private r with { Alloc r; Read r; Write r } in
    do   
-        arr     = run allocArray [r] 10 0
+        arr     = allocArray [r] 10 0
 
-        run writeArray arr 5 100
+        writeArray arr 5 100
 
-        run writel (showNat (run readArray arr 5))
+        writel (showNat (run readArray arr 5))
+        ()

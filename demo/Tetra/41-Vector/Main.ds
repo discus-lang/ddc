@@ -8,11 +8,10 @@ where
 main (_: Unit): S Console Unit
  = box private r with { Alloc r; Read r; Write r } in
    do   
-        vec     = run vectorAlloc# [r] 100
+        vec     = vectorAlloc# [r] 100
+        writel ("length = " % showNat (vectorLength# vec))
 
-        run writel ("length = " % showNat (vectorLength# vec))
-
-        run vectorWrite# vec 99 27
-
-        run writel ("value  = "  % showNat (run vectorRead# vec 99))
+        vectorWrite# vec 99 27
+        writel ("value  = "  % showNat (run vectorRead# vec 99))
+        ()
 

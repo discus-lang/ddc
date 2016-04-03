@@ -39,6 +39,12 @@ features
         , featuresFunctionalEffects     = False
         , featuresFunctionalClosures    = False
         , featuresEffectCapabilities    = True
+
+        -- We don't want to insert implicit casts when type checking 
+        -- the core code during transformation, but we do insert them
+        -- the first time the source 
+        , featuresImplicitRunBindings   = False
+
         , featuresPartialPrims          = True
         , featuresPartialApplication    = True
         , featuresGeneralApplication    = True

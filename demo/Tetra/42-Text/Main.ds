@@ -9,29 +9,31 @@ main (_: Unit): S (Alloc RegionText + Read RegionText + Console) Unit
  = box private r with { Alloc r; Read r } in
    do   
         -- Write a text tree to console.
-        run writel  $ "-- Text Tree ---------------------------------"
+        writel  $ "-- Text Tree ---------------------------------"
 
         tx      = "I walked through the forests"
                 %% "with ugly spirits\n"
                 %  ("kissed" %% "their feet and found them") % "\n"
                 %  "calm, calm, calm."
 
-        run writel  $ "length text = " % showNat (sizeOfText tx)
-        run writell $ tx
+        writel  $ "length text = " % showNat (sizeOfText tx)
+        writell $ tx
 
 
         -- Flatten text tree into a single vector and write the
         -- flat version to console. 
-        run writel  $ "-- Flat Text ---------------------------------"
+        writel  $ "-- Flat Text ---------------------------------"
 
         tx'     = textOfVector (run vectorOfText [RegionText] tx)
-        run writel  $ "length vec  = " % showNat (sizeOfText tx')
-        run writell $ tx'
+        writel  $ "length vec  = " % showNat (sizeOfText tx')
+        writell $ tx'
 
 
         -- Print single characters.
-        run writel  $ "-- Characters --------------------------------"
-        run writel  $ (run textOfWord8 0x30w8)
-        run writel  $ (run textOfWord8 0x31w8)
-        run writel  $ (run textOfWord8 0x32w8)
-        run writel  $ (run textOfWord8 0x33w8)
+        writel  $ "-- Characters --------------------------------"
+        writel  $ (run textOfWord8 0x30w8)
+        writel  $ (run textOfWord8 0x31w8)
+        writel  $ (run textOfWord8 0x32w8)
+        writel  $ (run textOfWord8 0x33w8)
+
+        ()

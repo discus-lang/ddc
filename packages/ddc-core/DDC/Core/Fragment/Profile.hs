@@ -2,6 +2,7 @@
 -- | A fragment profile determines what features a program can use.
 module DDC.Core.Fragment.Profile
         ( Profile (..)
+        , mapFeaturesOfProfile
         , zeroProfile
 
         , Features(..)
@@ -48,6 +49,13 @@ data Profile n
         , profileMakeStringName         :: Maybe (SourcePos -> Text -> n) }
 
 
+-- | Apply a function to the `Features` of a `Profile`.
+mapFeaturesOfProfile :: (Features -> Features) -> Profile n -> Profile n
+mapFeaturesOfProfile f profile
+        = profile
+        { profileFeatures       = f (profileFeatures profile) }
+
+
 -- | A language profile with no features or primitive operators.
 --
 --   This provides a simple first-order language.
@@ -72,6 +80,7 @@ data Features
         , featuresFunctionalEffects     :: Bool
         , featuresFunctionalClosures    :: Bool
         , featuresEffectCapabilities    :: Bool
+        , featuresImplicitRunBindings   :: Bool
         , featuresPartialPrims          :: Bool
         , featuresPartialApplication    :: Bool
         , featuresGeneralApplication    :: Bool
@@ -95,6 +104,7 @@ zeroFeatures
         , featuresFunctionalEffects     = False
         , featuresFunctionalClosures    = False
         , featuresEffectCapabilities    = False
+        , featuresImplicitRunBindings   = False
         , featuresPartialPrims          = False
         , featuresPartialApplication    = False
         , featuresGeneralApplication    = False
@@ -117,6 +127,7 @@ setFeature feature val features
         FunctionalEffects       -> features { featuresFunctionalEffects    = val }
         FunctionalClosures      -> features { featuresFunctionalClosures   = val }
         EffectCapabilities      -> features { featuresEffectCapabilities   = val }
+        ImplicitRunBindings     -> features { featuresImplicitRunBindings  = val }
         PartialPrims            -> features { featuresPartialPrims         = val }
         PartialApplication      -> features { featuresPartialApplication   = val }
         GeneralApplication      -> features { featuresGeneralApplication   = val }

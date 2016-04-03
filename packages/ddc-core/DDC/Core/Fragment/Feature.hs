@@ -22,6 +22,10 @@ data Feature
         -- | Treat effects as capabilities.
         | EffectCapabilities
 
+        -- | Insert implicit run casts for effectful bindings where the left
+        --   is the 'none' / 'anonymous' binding.
+        | ImplicitRunBindings
+
         -- General features -------------------------------
         -- | Partially applied primitive operators.
         | PartialPrims

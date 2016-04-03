@@ -41,7 +41,7 @@ isKPrime (k n: Nat#): Bool#
  | otherwise    
  = sany $ smap       (isKPrime (k - 1))
         $ smap       fst
-        $ sfilter    ((eq 0) ∘ snd)
+        $ sfilter    (eq 0 ∘ snd)
         $ smap       (divMod n)
         $ stakeWhile (λx: Nat#. x < n)
         $ primes 2
@@ -49,12 +49,13 @@ isKPrime (k n: Nat#): Bool#
 
 main (_: Unit): S Console Unit
  = box do   
-        run forS (enumFromTo 1 5)
-             (λk: Nat#. box do
-                run write $ "k = " % showNat k % ": "
-                run forS (listOfStream $ stake 10 $ kPrimes k)
+        forS (enumFromTo 1 5)
+         (λk: Nat#. box do
+                write $ "k = " % showNat k % ": "
+                forS (listOfStream $ stake 10 $ kPrimes k)
                          (λx: Nat#. write $ showNat x % " ")
-                run write "\n")
+                write "\n"
+                ())
 
         ()
 

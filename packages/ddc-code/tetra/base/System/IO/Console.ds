@@ -22,27 +22,30 @@ where
 write (tt : Text) : S Console Unit
  = box case tt of
         TextLit lit
-         -> do  run primPutString (takeTextLit lit)
+         -> do  primPutString (takeTextLit lit)
                 ()
 
         TextVec vec
-         -> do  run primPutVector vec
+         -> do  primPutVector vec
                 ()
 
         TextApp t1 t2 
-         -> do  run write t1
-                run write t2
+         -> do  write t1
+                write t2
+                ()
 
 
 -- | Write text to the console with a trailing newline.
 writel (tt : Text) : S Console Unit
  = box do
-        run write tt
-        run write "\n"
+        write tt
+        write "\n"
+        ()
 
 
 -- | Write text to the console with two trailing newlines.
 writell (tt : Text) : S Console Unit
  = box do
-        run write tt
-        run write "\n\n"
+        write tt
+        write "\n\n"
+        ()

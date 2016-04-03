@@ -89,13 +89,13 @@ vectorOfText [r1: Region] (tt: Text)
    do   
         -- Allocate a vector to hold all the data, 
         -- including an extra null terminator byte.
-        vec     = run vectorAlloc# [r2] [Word8#] (add (sizeOfText tt) 1)
+        vec     = vectorAlloc# [r2] [Word8#] (add (sizeOfText tt) 1)
 
         -- Copy the text data into the vector.
-        iEnd    = run copyTextToVector tt vec 0
+        iEnd    = copyTextToVector tt vec 0
 
         -- Write the null terminator.
-        run vectorWrite# vec iEnd 0w8
+        vectorWrite# vec iEnd 0w8
 
         vec
 
@@ -113,15 +113,16 @@ textOfWord8 (w8: Word8#): S (Alloc RegionText) Text
         vec'    = box extend RegionText using r1 with { Alloc r1; Write r1 } in
                   do    -- Allocate the vector to hold the data,
                         -- including an extra null terminator byte.
-                        vec     = run vectorAlloc# [r1] [Word8#] 2
+                        vec     = vectorAlloc# [r1] [Word8#] 2
 
                         -- Write the character.
-                        run vectorWrite# vec 0 w8
+                        vectorWrite# vec 0 w8
 
                         -- Write the null terminator.
-                        run vectorWrite# vec 1 0w8
+                        vectorWrite# vec 1 0w8
 
                         vec
+
         TextVec (run vec')
 
 
@@ -171,11 +172,11 @@ copyTextLitToVector [r: Region]
         : S (Write r) Nat#
  = box case iSrc >= nSrc of
         True  -> iDst
-        False -> run do
-                run vectorWrite# vec iDst 
+        False -> do
+                vectorWrite# vec iDst 
                         (indexTextLit tt iSrc)
 
-                copyTextLitToVector 
+                run copyTextLitToVector 
                         tt vec (iDst + 1) (iSrc + 1) nSrc
 
 
@@ -187,11 +188,11 @@ copyTextVecToVector [r1 r2: Region]
  = box case iSrc >= nSrc of
         True    -> iDst
 
-        False   -> run do
-                run vectorWrite# vecDst iDst 
+        False   -> do
+                vectorWrite# vecDst iDst 
                         (run vectorRead# vecSrc iSrc)
 
-                copyTextVecToVector 
+                run copyTextVecToVector 
                         vecSrc vecDst (iDst + 1) (iSrc + 1) nSrc
 
 

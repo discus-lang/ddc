@@ -6,13 +6,17 @@
 module DDC.Core.Fragment
         ( -- * Langauge fragments
           Fragment      (..)
+        , mapProfileOfFragment
+
         , Profile       (..)
+        , mapFeaturesOfProfile
         , zeroProfile
 
           -- * Fragment features
         , Feature       (..)
         , Features      (..)
         , zeroFeatures
+        , setFeature
 
         -- * Compliance
         , complies
@@ -62,3 +66,12 @@ instance Show (Fragment n err) where
  show frag
   = profileName $ fragmentProfile frag
 
+
+-- | Apply a function to the profile in a fragment.
+mapProfileOfFragment 
+        :: (Profile n -> Profile n) 
+        -> Fragment n err -> Fragment n err
+
+mapProfileOfFragment f fragment
+        = fragment
+        { fragmentProfile       = f (fragmentProfile fragment) }

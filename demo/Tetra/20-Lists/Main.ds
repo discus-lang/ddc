@@ -13,19 +13,19 @@ main (_ : Unit) : S Console Unit
         xx      = enumFromTo 0 100
 
         -- Select only the even elements
-        xx'     = run filterS (λx : Nat#. box rem# x 2 == 0) xx
+        xx'     = filterS (λx : Nat#. box rem# x 2 == 0) xx
 
         -- Mutable reference to hold list length.
-        ref     = run allocRef [r] [Nat#] 0
+        ref     = allocRef [r] [Nat#] 0
 
         -- Eat the list, updating the mutable counter while printing
         -- the elements to the console.
         run forS xx' (λx : Nat#.
-         box do run writeRef ref ((run readRef ref) + 1)
-                run writel (showNat x)
+         box do writeRef ref ((run readRef ref) + 1)
+                writel (showNat x)
                 ())
         
         -- Print out the final list length.
-        run writel (showNat (run readRef ref))
+        writel (showNat (run readRef ref))
         ()
 

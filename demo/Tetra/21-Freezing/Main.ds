@@ -18,12 +18,12 @@ rlength [a : Data] [r1 : Region]
  = box extend r1 using r2 with {Read r2; Write r2; Alloc r2} in     
    do   
         -- Allocate the reference into the extension region.
-        ref       = run allocRef [r2] 0
+        ref       = allocRef [r2] 0
 
         -- Destructively initialize the reference.
-        run forS xx (λ(_ : a). box
-         do     x       = run readRef ref
-                run writeRef ref (x + 1)
+        forS xx (λ(_ : a). box
+         do     x       = readRef ref
+                writeRef ref (x + 1)
                 ())
 
         -- Return the reference.
@@ -39,8 +39,8 @@ main (_ : Unit) : S Console Unit
         -- Count the length of the list.
         -- From this calling context, the fact that the ref is destructively
         -- initialized is not visible. 
-        ref     = run rlength [Nat#] [r] xx
+        ref     = rlength [Nat#] [r] xx
 
         -- Print out the final list length.
-        run writel (showNat (run readRef ref))
+        writel (showNat (run readRef ref))
         ()

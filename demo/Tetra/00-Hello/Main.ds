@@ -6,7 +6,8 @@ where
 
 main (_ : Unit) : S Console Unit
  = box do
-        run writel "hello world"
-        run writel "Καλημέρα κόσμε"
-        run writel "こんにちは 世界"
-        run writel "হ্যালো বিশ্ব"
+        writel "hello world"
+        writel "Καλημέρα κόσμε"
+        writel "こんにちは 世界"
+        writel "হ্যালো বিশ্ব"
+        ()

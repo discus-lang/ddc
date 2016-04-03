@@ -25,6 +25,7 @@ import qualified DDC.Build.Language.Tetra          as CE
 import qualified DDC.Core.Tetra                    as CE
 import qualified DDC.Core.Tetra.Env                as CE
 
+import qualified DDC.Core.Fragment                 as C
 import qualified DDC.Core.Transform.SpreadX        as C
 import qualified DDC.Core.Check                    as C
 import qualified DDC.Core.Load                     as C
@@ -154,10 +155,15 @@ pipeText !srcName !srcLine !str !pp
                         -- Dump loaded code before type checking.
                         pipeSink (renderIndent $ ppr mm_spread) sinkPreCheck
 
-                        -- Use the existing checker pipeline to Synthesize
-                        -- missing type annotations.
+                        -- Type check the code, synthesising missing type annotations.
+                        --  Insert casts to implicitly run suspended bindings along the way.
+                        let fragment_implicit
+                                = flip C.mapProfileOfFragment CE.fragment
+                                $ C.mapFeaturesOfProfile 
+                                $ C.setFeature C.ImplicitRunBindings True
+
                         pipeCore mm_spread
-                          $ PipeCoreCheck CE.fragment C.Synth sinkCheckerTrace pipes
+                          $ PipeCoreCheck fragment_implicit C.Synth sinkCheckerTrace pipes
 
             in goParse
 

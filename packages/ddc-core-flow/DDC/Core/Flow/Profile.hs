@@ -40,6 +40,7 @@ features
         , featuresFunctionalEffects     = False
         , featuresFunctionalClosures    = False
         , featuresEffectCapabilities    = False
+        , featuresImplicitRunBindings   = False
         , featuresPartialPrims          = True
         , featuresPartialApplication    = True
         , featuresGeneralApplication    = True

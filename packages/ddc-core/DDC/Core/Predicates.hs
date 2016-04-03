@@ -14,6 +14,11 @@ module DDC.Core.Predicates
           -- * Applications
         , isXApp
 
+          -- * Cast
+        , isXCast
+        , isXCastBox
+        , isXCastRun
+
           -- * Let bindings
         , isXLet
 
@@ -98,6 +103,31 @@ isXApp xx
         _       -> False
 
 
+-- Casts ----------------------------------------------------------------------
+-- | Check whether this is a cast expression.
+isXCast :: Exp a n -> Bool
+isXCast xx
+ = case xx of
+        XCast{} -> True
+        _       -> False
+
+
+-- | Check whether this is a box cast.
+isXCastBox :: Exp a n -> Bool
+isXCastBox xx
+ = case xx of
+        XCast _ CastBox _ -> True
+        _                 -> False
+
+
+-- | Check whether this is a run cast.
+isXCastRun :: Exp a n -> Bool
+isXCastRun xx
+ = case xx of
+        XCast _ CastRun _ -> True
+        _                 -> False
+
+
 -- Let Bindings ---------------------------------------------------------------
 -- | Check whether an expression is a `XLet`.
 isXLet :: Exp a n -> Bool
@@ -105,7 +135,7 @@ isXLet xx
  = case xx of
         XLet{}  -> True
         _       -> False
-        
+
 
 -- Type and Witness -----------------------------------------------------------
 -- | Check whether an expression is an `XType`.

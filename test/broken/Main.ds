@@ -28,8 +28,8 @@ main (_ : Unit) : S Console Unit
 
         -- Check that we can build suspended computations, 
         -- and running comes out in the right order.
-        pWorld     = writel "world"
-        pHello     = writel "hello"
+        pWorld     = box run writel "world"
+        pHello     = box run writel "hello"
         run pHello
         run pWorld
 
@@ -39,8 +39,8 @@ main (_ : Unit) : S Console Unit
 
 
         -- Check that we can call a super without running the wrapped action.
-        mo      = morning ()
-        ev      = evening ()
+        mo         = box run morning ()
+        ev         = box run evening ()
         run ev
         run mo
 

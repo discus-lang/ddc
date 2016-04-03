@@ -34,13 +34,13 @@ main (_: Unit): S Console Unit
  = box do   
         showBinary = showBaseNat 2 digitBinary 5 "0"
 
-        run writel      $  "   x "
-                        %% " grey"
-                        %% "   x'"
+        writel $ "   x "
+               %% " grey"
+               %% "   x'"
 
-        run forS (enumFromTo 0 31)
-                 (λx: Nat#. writel 
-                        $  showBinary x
+        forS (enumFromTo 0 31)
+         (λx: Nat#. 
+                writel  $  showBinary x
                         %% showBinary (binToGray x)
                         %% showBinary (grayToBin (binToGray x)))
         ()

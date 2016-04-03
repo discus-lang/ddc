@@ -138,6 +138,7 @@ checkLetsM !bidir xx !table !ctx0 (LLet b xBind)
  = do
         let config      = tableConfig table
         let kenv        = tableKindEnv table
+        let a           = annotOfExp xx
 
         -- If the binder has a type annotation then we use that as the expected
         -- type when checking the binding. Any annotation must also have kind
@@ -156,21 +157,49 @@ checkLetsM !bidir xx !table !ctx0 (LLet b xBind)
                 return (Check tAnnot', ctx1)
 
         -- Check the expression in the right of the binding.
-        (xBind', tBind1, effsBind, ctx2)
+        (xBind_raw, tBind_raw, effs_raw, ctx2)
          <- tableCheckExp table table ctx1 xBind modeCheck
+
+        let tBind_ctx   = applyContext ctx2 tBind_raw
+
+        -- Handle ImplictRunBindings
+        -- If the right of the binding is a suspended expression, but there is
+        -- no binder then the expression is probably being evaluated for its
+        -- effect only. If ImplicitRunBindings is enabled then we automatically
+        -- run the suspension to release its effect.
+        let (xBind_run, tBind_run, effs_run)
+                | configImplicitRunBindings $ tableConfig table 
+                , not $ isXCastBox xBind_raw
+                , not $ isXCastRun xBind_raw
+                , Just  (effs_susp, tBind_susp) <- takeTSusp tBind_ctx
+                = let   
+                        -- Effect of overall expression is effect of computing
+                        -- the suspension plus the effect we get by running
+                        -- that suspension.
+                        effs_result = Sum.insert effs_susp effs_raw
+
+                        -- Annotation for the resulting cast expression.
+                        a'          = AnTEC tBind_susp (TSum $ effs_result)
+                                            (tBot kClosure) a
+                  in    ( XCast a' CastRun xBind_raw
+                        , tBind_susp
+                        , effs_result)
+
+                | otherwise
+                = (xBind_raw, tBind_raw, effs_raw)
+
 
         -- Update the annotation on the binder with the actual type of
         -- the binding.
-        let tBind2      = applyContext ctx2 tBind1
-        let b'          = replaceTypeOfBind tBind2 b
+        let b'           = replaceTypeOfBind tBind_run b
 
         -- Push the binder on the context.
         let (ctx3, pos1) =  markContext ctx2
         let ctx4         =  pushType b' ctx3
 
-        return  ( LLet b' xBind'
+        return  ( LLet b' xBind_run
                 , [b']
-                , effsBind
+                , effs_run
                 , pos1, ctx4)
 
 
