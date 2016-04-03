@@ -35,11 +35,11 @@ makeSub config a ctx0 xL tL tR err
  , equivTyCon tc1 tc2
  = do
         ctrace  $ vcat
-                [ text "* SubCon"
+                [ text "**  SubCon"
                 , text "    xL: " <> ppr xL
                 , text "    tL: " <> ppr tL
                 , text "    tR: " <> ppr tR
-                , indent 2 $ ppr ctx0
+                , indent 4 $ ppr ctx0
                 , empty ]
 
         return (xL, ctx0)
@@ -52,11 +52,11 @@ makeSub config a ctx0 xL tL tR err
  , u1 == u2
  = do
         ctrace  $ vcat
-                [ text "* SubVar"
+                [ text "**  SubVar"
                 , text "    xL: " <> ppr xL
                 , text "    tL: " <> ppr tL
                 , text "    tR: " <> ppr tR
-                , indent 2 $ ppr ctx0
+                , indent 4 $ ppr ctx0
                 , empty ]
 
         return (xL, ctx0)
@@ -69,11 +69,11 @@ makeSub config a ctx0 xL tL tR err
  , iL == iR
  = do
         ctrace  $ vcat
-                [ text "* SubExVar"
+                [ text "**  SubExVar"
                 , text "    xL: " <> ppr xL
                 , text "    tL: " <> ppr tL
                 , text "    tR: " <> ppr tR
-                , indent 2 $ ppr ctx0
+                , indent 4 $ ppr ctx0
                 , empty ]
 
         return (xL, ctx0)
@@ -84,11 +84,11 @@ makeSub config a ctx0 xL tL tR err
  | equivT tL tR
  = do
         ctrace  $ vcat
-                [ text "* SubEquiv"
+                [ text "**  SubEquiv"
                 , text "    xL: " <> ppr xL
                 , text "    tL: " <> ppr tL
                 , text "    tR: " <> ppr tR
-                , indent 2 $ ppr ctx0
+                , indent 4 $ ppr ctx0
                 , empty ]
 
         return (xL, ctx0)
@@ -104,12 +104,12 @@ makeSub config a ctx0 xL tL tR err
  = do   ctx1    <- makeInst config a ctx0 tR tL err
 
         ctrace  $ vcat
-                [ text "* SubInstL"
+                [ text "**  SubInstL"
                 , text "    xL: " <> ppr xL
                 , text "    tL: " <> ppr tL
                 , text "    tR: " <> ppr tR
-                , indent 2 $ ppr ctx0
-                , indent 2 $ ppr ctx1
+                , indent 4 $ ppr ctx0
+                , indent 4 $ ppr ctx1
                 , empty ]
 
         return (xL, ctx1)
@@ -125,12 +125,12 @@ makeSub config a ctx0 xL tL tR err
  = do   ctx1    <- makeInst config a ctx0 tL tR err
 
         ctrace  $ vcat
-                [ text "* SubInstR"
+                [ text "**  SubInstR"
                 , text "    xL: " <> ppr xL
                 , text "    tL: " <> ppr tL
                 , text "    tR: " <> ppr tR
-                , indent 2 $ ppr ctx0
-                , indent 2 $ ppr ctx1
+                , indent 4 $ ppr ctx0
+                , indent 4 $ ppr ctx1
                 , empty ]
 
         return (xL, ctx1)
@@ -141,19 +141,23 @@ makeSub config a ctx0 xL tL tR err
  | Just (tL1, tL2)  <- takeTFun tL
  , Just (tR1, tR2)  <- takeTFun tR
  = do
+        ctrace  $ vcat
+                [ text "*>  SubArr"
+                , empty ]
+
         (_, ctx1)   <- makeSub config a ctx0 xL tR1 tL1 err
         let tL2'    =  applyContext  ctx1    tL2
         let tR2'    =  applyContext  ctx1    tR2
         (_, ctx2)   <- makeSub config a ctx1 xL tL2' tR2' err
 
         ctrace  $ vcat
-                [ text "* SubArr"
+                [ text "*<  SubArr"
                 , text "    xL: " <> ppr xL
                 , text "    tL: " <> ppr tL
                 , text "    tR: " <> ppr tR
-                , indent 2 $ ppr ctx0
-                , indent 2 $ ppr ctx1
-                , indent 2 $ ppr ctx2
+                , indent 4 $ ppr ctx0
+                , indent 4 $ ppr ctx1
+                , indent 4 $ ppr ctx2
                 , empty ]
 
         return (xL, ctx2)
@@ -165,19 +169,23 @@ makeSub config a ctx0 xL tL tR err
  | TApp tL1 tL2 <- tL
  , TApp tR1 tR2 <- tR
  = do
+        ctrace  $ vcat
+                [ text "*>  SubApp"
+                , empty ]
+
         ctx1     <- makeEq config a ctx0 tL1 tR1 err
         let tL2' =  applyContext ctx1 tL2
         let tR2' =  applyContext ctx1 tR2
         ctx2     <- makeEq config a ctx1 tL2' tR2' err
 
         ctrace  $ vcat
-                [ text "* SubApp"
+                [ text "*<  SubApp"
                 , text "    xL: " <> ppr xL
                 , text "    tL: " <> ppr tL
                 , text "    tR: " <> ppr tR
-                , indent 2 $ ppr ctx0
-                , indent 2 $ ppr ctx1
-                , indent 2 $ ppr ctx2
+                , indent 4 $ ppr ctx0
+                , indent 4 $ ppr ctx1
+                , indent 4 $ ppr ctx2
                 , empty ]
 
         return (xL, ctx2)
@@ -187,6 +195,10 @@ makeSub config a ctx0 xL tL tR err
  --   Left side is a forall type.
  | TForall b t1 <- tL
  = do
+        ctrace  $ vcat
+                [ text "*>  SubForall"
+                , empty ]
+
         -- Make a new existential to instantiate the quantified
         -- variable and substitute it into the body.
         iA        <- newExists (typeOfBind b)
@@ -214,13 +226,13 @@ makeSub config a ctx0 xL tL tR err
         let ctx4  = popToPos pos1 ctx3
 
         ctrace  $ vcat
-                [ text "* SubForall"
-                , text "  xL:    " <> ppr xL
-                , text "  LEFT:  " <> ppr tL
-                , text "  RIGHT: " <> ppr tR
-                , text "  xL2:   " <> ppr xL2
-                , indent 2 $ ppr ctx0
-                , indent 2 $ ppr ctx4
+                [ text "*<  SubForall"
+                , text "    xL:    " <> ppr xL
+                , text "    LEFT:  " <> ppr tL
+                , text "    RIGHT: " <> ppr tR
+                , text "    xL2:   " <> ppr xL2
+                , indent 4 $ ppr ctx0
+                , indent 4 $ ppr ctx4
                 , empty ]
 
         return (xL2, ctx4)
@@ -230,8 +242,8 @@ makeSub config a ctx0 xL tL tR err
  | otherwise
  = do   ctrace  $ vcat
                 [ text "DDC.Core.Check.Exp.Inst.makeSub: no match"
-                , text "  LEFT:   " <> text (show tL)
-                , text "  RIGHT:  " <> text (show tR) ]
+                , text "  LEFT:   " <> ppr tL
+                , text "  RIGHT:  " <> ppr tR ]
 
         throw err
 

@@ -25,11 +25,11 @@ makeEq config a ctx0 tL tR err
  = do   let Just ctx1   = updateExists [] iL tR ctx0
 
         ctrace  $ vcat
-                [ text "* EqLSolve"
-                , text "  LEFT:  " <> ppr tL
-                , text "  RIGHT: " <> ppr tR
-                , indent 2 $ ppr ctx0
-                , indent 2 $ ppr ctx1
+                [ text "**  EqLSolve"
+                , text "    LEFT:  " <> ppr tL
+                , text "    RIGHT: " <> ppr tR
+                , indent 4 $ ppr ctx0
+                , indent 4 $ ppr ctx1
                 , empty ]
 
         return ctx1
@@ -41,11 +41,11 @@ makeEq config a ctx0 tL tR err
  = do   let Just ctx1   = updateExists [] iR tL ctx0
 
         ctrace  $ vcat
-                [ text "* EqRSolve"
-                , text "  LEFT:  " <> ppr tL
-                , text "  RIGHT: " <> ppr tR
-                , indent 2 $ ppr ctx0
-                , indent 2 $ ppr ctx1
+                [ text "**  EqRSolve"
+                , text "    LEFT:  " <> ppr tL
+                , text "    RIGHT: " <> ppr tR
+                , indent 4 $ ppr ctx0
+                , indent 4 $ ppr ctx1
                 , empty ]
 
         return ctx1
@@ -61,11 +61,11 @@ makeEq config a ctx0 tL tR err
  = do   let Just ctx1   = updateExists [] iR tL ctx0
 
         ctrace  $ vcat
-                [ text "* EqLReach"
-                , text "  LEFT:  " <> ppr tL
-                , text "  RIGHT: " <> ppr tR
-                , indent 2 $ ppr ctx0
-                , indent 2 $ ppr ctx1
+                [ text "**  EqLReach"
+                , text "    LEFT:  " <> ppr tL
+                , text "    RIGHT: " <> ppr tR
+                , indent 4 $ ppr ctx0
+                , indent 4 $ ppr ctx1
                 , empty ]
 
         return ctx1
@@ -80,11 +80,11 @@ makeEq config a ctx0 tL tR err
  = do   let Just ctx1   = updateExists [] iL tR ctx0
 
         ctrace  $ vcat
-                [ text "* EqRReach"
-                , text "  LEFT:  " <> ppr tL
-                , text "  RIGHT: " <> ppr tR
-                , indent 2 $ ppr ctx0
-                , indent 2 $ ppr ctx1
+                [ text "**  EqRReach"
+                , text "    LEFT:  " <> ppr tL
+                , text "    RIGHT: " <> ppr tR
+                , indent 4 $ ppr ctx0
+                , indent 4 $ ppr ctx1
                 , empty ]
 
         return ctx1
@@ -96,10 +96,10 @@ makeEq config a ctx0 tL tR err
  , u1 == u2
  = do
         ctrace  $ vcat
-                [ text "* EqVar"
-                , text "  LEFT:  " <> ppr tL
-                , text "  RIGHT: " <> ppr tR
-                , indent 2 $ ppr ctx0
+                [ text "**  EqVar"
+                , text "    LEFT:  " <> ppr tL
+                , text "    RIGHT: " <> ppr tR
+                , indent 4 $ ppr ctx0
                 , empty ]
 
         return ctx0
@@ -111,10 +111,10 @@ makeEq config a ctx0 tL tR err
  , equivTyCon tc1 tc2
  = do
         ctrace  $ vcat
-                [ text "* EqCon"
-                , text "  LEFT:  " <> ppr tL
-                , text "  RIGHT: " <> ppr tR
-                , indent 2 $ ppr ctx0
+                [ text "**  EqCon"
+                , text "    LEFT:  " <> ppr tL
+                , text "    RIGHT: " <> ppr tR
+                , indent 4 $ ppr ctx0
                 , empty ]
 
         return ctx0
@@ -124,17 +124,21 @@ makeEq config a ctx0 tL tR err
  | TApp tL1 tL2 <- tL
  , TApp tR1 tR2 <- tR
  = do
+        ctrace  $ vcat
+                [ text "*>  EqApp" 
+                , empty ]
+
         ctx1     <- makeEq config a ctx0 tL1 tR1 err
         let tL2' = applyContext ctx1 tL2
         let tR2' = applyContext ctx1 tR2
         ctx2     <- makeEq config a ctx1 tL2' tR2' err
 
         ctrace  $ vcat
-                [ text "* EqApp"
-                , text "  LEFT:   " <> ppr tL
-                , text "  RIGHT:  " <> ppr tR
-                , indent 2 $ ppr ctx0
-                , indent 2 $ ppr ctx2
+                [ text "*<  EqApp"
+                , text "    LEFT:   " <> ppr tL
+                , text "    RIGHT:  " <> ppr tR
+                , indent 4 $ ppr ctx0
+                , indent 4 $ ppr ctx2
                 , empty ]
 
         return ctx2
@@ -142,7 +146,10 @@ makeEq config a ctx0 tL tR err
 
  -- EqEquiv
  | equivT tL tR
- =      return ctx0
+ = do   ctrace  $ vcat
+                [ text "**  EqEquiv" ]
+
+        return ctx0
 
 
  -- Error

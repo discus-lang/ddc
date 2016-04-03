@@ -49,6 +49,10 @@ checkAppX !table !ctx Recon demand
 checkAppX !table !ctx0 Synth demand 
         xx@(XApp a xFn xArg)
  = do
+        ctrace  $ vcat
+                [ text "*>  App Synth"
+                , empty ]
+
         -- Synth a type for the functional expression.
         (xFn', tFn, effsFn, ctx1)
          <- tableCheckExp table table ctx0 Synth demand xFn
@@ -63,13 +67,14 @@ checkAppX !table !ctx0 Synth demand
                 xArg
 
         ctrace  $ vcat
-                [ text "* App Synth"
-                , indent 2 $ ppr xx
-                , text "      tFn:  " <> ppr tFn'
-                , text "     xArg:  " <> ppr xArg
-                , text "  tResult:  " <> ppr tResult
-                , ppr ctx0
-                , ppr ctx2
+                [ text "*<  App Synth"
+                , text "    demand  : " <> (text $ show demand)
+                , indent 4 $ ppr xx
+                , text "    tFn     : " <> ppr tFn'
+                , text "    tArg    : " <> ppr xArg
+                , text "    tResult : " <> ppr tResult
+                , indent 4 $ ppr ctx0
+                , indent 4 $ ppr ctx2
                 , empty ]
 
         returnX a
@@ -78,9 +83,22 @@ checkAppX !table !ctx0 Synth demand
                 ctx2
 
 
-checkAppX !table !ctx (Check tEx) demand 
+checkAppX !table !ctx (Check tExpected) demand 
         xx@(XApp a _ _) 
- =      checkSub table a ctx demand xx tEx
+ = do   
+        ctrace  $ vcat
+                [ text "*>  App Check"
+                , text "    tExpected: " <> ppr tExpected
+                , empty ]
+
+        result  <- checkSub table a ctx demand xx tExpected
+
+        ctrace  $ vcat
+                [ text "*<  App Check"
+                , empty ]
+
+        return  result   
+
 
 
 checkAppX _ _ _ _ _
@@ -112,6 +130,10 @@ synthAppArg table a xx ctx0 xFn tFn effsFn xArg
  --  Functional type is an existential.
  | Just iFn      <- takeExists tFn
  = do
+        ctrace  $ vcat
+                [ text "*>  App Synth Exists"
+                , empty ]
+
         -- New existential for the type of the function parameter.
         iA1      <- newExists kData
         let tA1  = typeOfExists iA1
@@ -131,13 +153,13 @@ synthAppArg table a xx ctx0 xFn tFn effsFn xArg
         let effsResult = effsFn `Sum.union` effsArg
 
         ctrace  $ vcat
-                [ text "* App Synth Exists"
-                , text "  xFn  :"  <> ppr xFn
-                , text "  tFn  :"  <> ppr tFn
-                , text "  xArg :"  <> ppr xArg
-                , text "  xArg':"  <> ppr xArg'
-                , indent 2 $ ppr xx
-                , indent 2 $ ppr ctx2
+                [ text "*<  App Synth Exists"
+                , text "    xFn  :"  <> ppr xFn
+                , text "    tFn  :"  <> ppr tFn
+                , text "    xArg :"  <> ppr xArg
+                , text "    xArg':"  <> ppr xArg'
+                , indent 4 $ ppr xx
+                , indent 4 $ ppr ctx2
                 , empty ]
 
         return  ( xFn, xArg'
@@ -149,6 +171,10 @@ synthAppArg table a xx ctx0 xFn tFn effsFn xArg
  --  We need to inject a new type argument.
  | TForall b tBody      <- tFn
  = do
+        ctrace  $ vcat
+                [ text "*>  App Synth Forall"
+                , empty ]
+
         -- Make a new existential for the type of the argument,
         -- and push it onto the context.
         iA         <- newExists (typeOfBind b)
@@ -173,14 +199,14 @@ synthAppArg table a xx ctx0 xFn tFn effsFn xArg
          <- synthAppArg table a xx ctx1 xFnTy tBody' effsFn xArg
 
         ctrace  $ vcat
-                [ text "* App Synth Forall"
-                , text "     xFn :  " <> ppr xFn
-                , text "     tFn :  " <> ppr tFn
-                , text "    xArg :  " <> ppr xArg
-                , text "  xFunTy':  " <> ppr xFnTy'
-                , text "    xArg':  " <> ppr xArg'
-                , text "  tResult:  " <> ppr tResult
-                , indent 2 $ ppr ctx2
+                [ text "*<  App Synth Forall"
+                , text "    xFn     : " <> ppr xFn
+                , text "    tFn     : " <> ppr tFn
+                , text "    xArg    : " <> ppr xArg
+                , text "    xFunTy' : " <> ppr xFnTy'
+                , text "    xArg'   : " <> ppr xArg'
+                , text "    tResult : " <> ppr tResult
+                , indent 4 $ ppr ctx2
                 , empty ]
 
         return  ( xFnTy'
@@ -192,6 +218,10 @@ synthAppArg table a xx ctx0 xFn tFn effsFn xArg
  --  Function already has a concrete function type.
  | Just (tParam, tResult)   <- takeTFun tFn
  = do
+        ctrace  $ vcat
+                [ text "*>  App Synth Fun"
+                , empty ]
+
         -- Check the argument.
         (xArg', tArg, effsArg, ctx1)
          <- tableCheckExp table table ctx0 (Check tParam) DemandNone xArg
@@ -218,14 +248,14 @@ synthAppArg table a xx ctx0 xFn tFn effsFn xArg
                         $ [ effsFn, effsArg, Sum.singleton kEffect effsLatent]
 
         ctrace  $ vcat
-                [ text "* App Synth Fun"
-                , indent 2 $ ppr xx
-                , text "     xArg: " <> ppr xArg
-                , text "      tFn: " <> ppr tFn1
-                , text "     tArg: " <> ppr tArg1
-                , text "    xArg': " <> ppr xArg'
-                , text "  tResult: " <> ppr tResult1
-                , indent 2 $ ppr ctx1
+                [ text "*<  App Synth Fun"
+                , indent 4 $ ppr xx
+                , text "    xArg    : " <> ppr xArg
+                , text "    tFn     : " <> ppr tFn1
+                , text "    tArg    : " <> ppr tArg1
+                , text "    xArg'   : " <> ppr xArg'
+                , text "    tResult : " <> ppr tResult1
+                , indent 4 $ ppr ctx1
                 , empty ]
 
         return  ( xFn, xArg'

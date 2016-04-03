@@ -72,6 +72,9 @@ checkLam !table !a !ctx !b1 !x2 !Recon
 --   we produce a type (?1 -> ?2) with new unification variables.
 checkLam !table !a !ctx !b1 !x2 !Synth
  = do
+        ctrace  $ vcat
+                [ text "*> Lam Synth"]
+
         let config      = tableConfig table
         let kenv        = tableKindEnv table
         let xx          = XLam a b1 x2
@@ -156,11 +159,11 @@ checkLam !table !a !ctx !b1 !x2 !Synth
                 x2' t2' e2
 
         ctrace  $ vcat
-                [ text "* Lam Synth"
-                , indent 2 $ ppr (XLam a b1' x2)
+                [ text "*<  Lam Synth"
+                , indent 4 $ ppr (XLam a b1' x2)
                 , text "  OUT: " <> ppr tAbs
-                , indent 2 $ ppr ctx
-                , indent 2 $ ppr ctx_cut
+                , indent 4 $ ppr ctx
+                , indent 4 $ ppr ctx_cut
                 , empty ]
 
         return  ( xAbs'
@@ -174,7 +177,12 @@ checkLam !table !a !ctx !b1 !x2 !Synth
 --   type annotation, and in this case we replace it with the expected type.
 checkLam !table !a !ctx !b1 !x2 !(Check tExpected)
  | Just (tX1, tX2)      <- takeTFun tExpected
- = do   let config      = tableConfig table
+ = do   
+        ctrace  $ vcat
+                [ text "*>  Lam Check"
+                , empty ]
+
+        let config      = tableConfig table
         let kenv        = tableKindEnv table
         let xx          = XLam a b1 x2
 
@@ -205,7 +213,14 @@ checkLam !table !a !ctx !b1 !x2 !(Check tExpected)
         --  type when we have it. Just set it to 'Run' like the others
         --  to avoid confusion.
         (x2', t2, e2, ctx2)
-         <- tableCheckExp table table ctx1 (Check tX2) DemandRun x2 
+         <- 
+{-            -- TODO: suppress this hackery if the flag is not enabled.
+            case takeTSusp tX2 of
+             Just (_e, tResult)
+              -> tableCheckExp table table ctx1 (Check tResult) DemandRun  x2 
+
+             Nothing 
+              -> -} tableCheckExp table table ctx1 (Check tX2)     DemandNone x2
 
         -- Force the kind of the body to be Data.
         --   This constrains the kind of polymorpic variables that are used
@@ -244,12 +259,12 @@ checkLam !table !a !ctx !b1 !x2 !(Check tExpected)
                 x2' t2 e2
 
         ctrace  $ vcat
-                [ text "* Lam Check"
-                , indent 2 $ ppr (XLam a b1' x2)
-                , text "  IN:  " <> ppr tExpected
-                , text "  OUT: " <> ppr tAbs
-                , indent 2 $ ppr ctx
-                , indent 2 $ ppr ctx_cut
+                [ text "*<  Lam Check"
+                , indent 4 $ ppr (XLam a b1' x2)
+                , text "    IN:  " <> ppr tExpected
+                , text "    OUT: " <> ppr tAbs
+                , indent 4 $ ppr ctx
+                , indent 4 $ ppr ctx_cut
                 , empty ]
 
         return  ( xAbs'
@@ -258,8 +273,14 @@ checkLam !table !a !ctx !b1 !x2 !(Check tExpected)
                 , ctx_cut)
 
 
+-- The expected type is not a functional type, yet we have a lambda
+-- abstraction. Fall through to the subsumtion checker which will
+-- throw the error message.
 checkLam !table !a !ctx !b1 !x2 !(Check tExpected)
- = checkSub table a ctx DemandNone (XLam a b1 x2) tExpected
+ = do   ctrace  $ vcat
+                [ text "*>  Lam Check (not function)" ]
+
+        checkSub table a ctx DemandNone (XLam a b1 x2) tExpected
 
 
 -------------------------------------------------------------------------------

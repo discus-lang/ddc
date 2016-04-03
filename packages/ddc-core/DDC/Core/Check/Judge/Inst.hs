@@ -24,11 +24,11 @@ makeInst !config !a !ctx0 !tL !tR !err
  = do   let Just ctx1   = updateExists [] iL tR ctx0
 
         ctrace  $ vcat
-                [ text "* InstLSolve"
-                , text "  LEFT:  " <> ppr tL
-                , text "  RIGHT: " <> ppr tR
-                , indent 2 $ ppr ctx0
-                , indent 2 $ ppr ctx1
+                [ text "**  InstLSolve"
+                , text "    LEFT:  " <> ppr tL
+                , text "    RIGHT: " <> ppr tR
+                , indent 4 $ ppr ctx0
+                , indent 4 $ ppr ctx1
                 , empty ]
 
         return ctx1
@@ -44,11 +44,11 @@ makeInst !config !a !ctx0 !tL !tR !err
  = do   let Just ctx1   = updateExists [] iR tL ctx0
 
         ctrace  $ vcat
-                [ text "* InstLReach"
-                , text "  LEFT:  " <> ppr tL
-                , text "  RIGHT: " <> ppr tR
-                , indent 2 $ ppr ctx0
-                , indent 2 $ ppr ctx1
+                [ text "**  InstLReach"
+                , text "    LEFT:  " <> ppr tL
+                , text "    RIGHT: " <> ppr tR
+                , indent 4 $ ppr ctx0
+                , indent 4 $ ppr ctx1
                 , empty ]
 
         return ctx1
@@ -63,11 +63,11 @@ makeInst !config !a !ctx0 !tL !tR !err
  = do   let Just ctx1   = updateExists [] iL tR ctx0
 
         ctrace  $ vcat
-                [ text "* InstRReach"
-                , text "  LEFT:  " <> ppr tL
-                , text "  RIGHT: " <> ppr tR
-                , indent 2 $ ppr ctx0
-                , indent 2 $ ppr ctx1
+                [ text "**  InstRReach"
+                , text "    LEFT:  " <> ppr tL
+                , text "    RIGHT: " <> ppr tR
+                , indent 4 $ ppr ctx0
+                , indent 4 $ ppr ctx1
                 , empty ]
 
         return ctx1
@@ -98,11 +98,11 @@ makeInst !config !a !ctx0 !tL !tR !err
         ctx3            <- makeInst config a ctx2 tL2 tR2' err
 
         ctrace  $ vcat
-                [ text "* InstLArr"
-                , text "  LEFT:  " <> ppr tL
-                , text "  RIGHT: " <> ppr tR
-                , indent 2 $ ppr ctx0
-                , indent 2 $ ppr ctx3
+                [ text "**  InstLArr"
+                , text "    LEFT:  " <> ppr tL
+                , text "    RIGHT: " <> ppr tR
+                , indent 4 $ ppr ctx0
+                , indent 4 $ ppr ctx3
                 , empty ]
 
         return ctx3
@@ -114,11 +114,11 @@ makeInst !config !a !ctx0 !tL !tR !err
  = do   let Just ctx1   = updateExists [] iR tL ctx0
 
         ctrace  $ vcat
-                [ text "* InstRSolve"
-                , text "  LEFT:  " <> ppr tL
-                , text "  RIGHT: " <> ppr tR
-                , indent 2 $ ppr ctx0
-                , indent 2 $ ppr ctx1
+                [ text "**  InstRSolve"
+                , text "    LEFT:  " <> ppr tL
+                , text "    RIGHT: " <> ppr tR
+                , indent 4 $ ppr ctx0
+                , indent 4 $ ppr ctx1
                 , empty ]
 
         return ctx1
@@ -149,11 +149,11 @@ makeInst !config !a !ctx0 !tL !tR !err
         ctx3            <- makeInst config a ctx2 tL2' tR2 err
 
         ctrace  $ vcat
-                [ text "* InstRArr"
-                , text "  LEFT:  " <> ppr tL
-                , text "  RIGHT: " <> ppr tR
-                , indent 2 $ ppr ctx0
-                , indent 2 $ ppr ctx3
+                [ text "**  InstRArr"
+                , text "    LEFT:  " <> ppr tL
+                , text "    RIGHT: " <> ppr tR
+                , indent 4 $ ppr ctx0
+                , indent 4 $ ppr ctx3
                 , empty ]
 
         return ctx3

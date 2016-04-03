@@ -24,10 +24,10 @@ checkVarCon !table !ctx mode demand xx@(XVar a u)
          ->     checkSub table a ctx demand xx tExpect
 
         _ -> do ctrace  $ vcat
-                        [ text "* Var Local"
-                        , indent 2 $ ppr xx
-                        , text "  TYPE:  " <> ppr t
-                        , indent 2 $ ppr ctx
+                        [ text "**  Var Local"
+                        , indent 4 $ ppr xx
+                        , text "    tVar: " <> ppr t
+                        , indent 4 $ ppr ctx
                         , empty ]
 
                 returnX a
@@ -45,10 +45,10 @@ checkVarCon !table !ctx mode demand xx@(XVar a u)
          ->     checkSub table a ctx demand xx tExpect
 
         _ -> do ctrace  $ vcat
-                        [ text "* Var Global"
-                        , indent 2 $ ppr xx
-                        , text "  TYPE:  " <> ppr t
-                        , indent 2 $ ppr ctx
+                        [ text "**  Var Global"
+                        , indent 4 $ ppr xx
+                        , text "    tVar: " <> ppr t
+                        , indent 4 $ ppr ctx
                         , empty ]
 
                 returnX a
@@ -90,10 +90,10 @@ checkVarCon !table !ctx mode demand xx@(XCon a dc)
         checkDaConM config xx a dc
 
         ctrace  $ vcat
-                [ text "* Con"
-                , indent 2 $ ppr xx
-                , text "  TYPE:  " <> ppr tCtor
-                , indent 2 $ ppr ctx
+                [ text "**  Con"
+                , indent 4 $ ppr xx
+                , text "    tCon: " <> ppr tCtor
+                , indent 4 $ ppr ctx
                 , empty ]
 
         -- Type of the data constructor.

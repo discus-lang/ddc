@@ -1,6 +1,6 @@
 
 module DDC.Core.Check.Judge.Type.Cast
-        (checkCast)
+        ( checkCast)
 where
 import DDC.Core.Check.Judge.Type.Sub
 import DDC.Core.Check.Judge.Type.Base
@@ -205,7 +205,7 @@ synthRunSusp table a xx ctx0 tt
  =      throw $ ErrorRunNotSuspension a xx tt
 
 
- -- Support --------------------------------------------------------------------
+-- Support --------------------------------------------------------------------
 -- | Check if the provided effect is supported by the context,
 --   if not then throw an error.
 checkEffectSupported
@@ -221,4 +221,5 @@ checkEffectSupported _config a xx ctx eff
  = case effectSupported eff ctx of
         Nothing         -> return ()
         Just effBad     -> throw $ ErrorRunNotSupported a xx effBad
+
 

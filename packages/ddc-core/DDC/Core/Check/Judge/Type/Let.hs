@@ -16,7 +16,12 @@ checkLet !table !ctx0 mode demand xx@(XLet a lts xBody)
         LRec{}  -> True
         _       -> False
 
- = do   let config  = tableConfig table
+ = do   ctrace  $ vcat
+                [ text "*>  Let " <> ppr mode 
+                , text "    demand = " <> (text $ show demand)
+                , empty]
+
+        let config  = tableConfig table
         let kenv    = tableKindEnv table
 
         -- Check the bindings -------------------
@@ -35,11 +40,16 @@ checkLet !table !ctx0 mode demand xx@(XLet a lts xBody)
         -- Check the body -----------------------
         -- -- Check the body expression in a context
         -- -- extended with the types of the bindings.
+        ctrace  $ vcat
+                [ text "*.  Let Body " <> ppr mode
+                , text "    demand = " <> (text $ show demand)
+                , empty]
+
         (xBody', tBody, effsBody, ctx2)
          <- tableCheckExp table table ctx1 mode demand xBody
 
         -- The body must have data kind.
-        (tBody', kBody, ctx3)
+        (tBodyChecked, kBody, ctx3)
          <- checkTypeM config kenv ctx2 UniverseSpec tBody
          $  case mode of
                 Recon   -> Recon
@@ -49,24 +59,42 @@ checkLet !table !ctx0 mode demand xx@(XLet a lts xBody)
         when (not $ isDataKind kBody')
          $ throw $ ErrorLetBodyNotData a xx tBody kBody'
 
+        let tBody'      = applyContext ctx3 tBodyChecked
+
+        -- Run the body if needed ---------------
+        (xBodyRun, tBodyRun, eBodyRun)
+         <- case mode of
+                Synth   -> runForDemand (tableConfig table) a demand
+                                xBody' tBody' (TSum effsBody)
+                _       -> return (xBody', tBody', TSum effsBody)
+
 
         -- Build the result ---------------------
         -- The new effect and closure.
-        let tResult     = applyContext ctx3 tBody'
-        let effs'       = effsBinds `Sum.union` effsBody
+        let eResult     = tSum kEffect [TSum effsBinds, eBodyRun]
 
         -- Pop the elements due to the let-bindings from the context.
         let ctx_cut     = popToPos pos1 ctx3
 
         ctrace  $ vcat
-                [ text "* Let"
-                , indent 2 $ ppr xx
-                , text "  tResult:  " <> ppr tResult
-                , indent 2 $ ppr ctx3
-                , indent 2 $ ppr ctx_cut ]
+                [ text "*< Let " <> ppr mode
+                , text "   demand = " <> (text $ show demand)
+                , text "   -- EXP IN  ----"
+                , indent 4 $ ppr xx
+                , text "   -- EXP OUT ----"
+                , indent 4 $ ppr (XLet (AnTEC tBodyRun (tBot kEffect) (tBot kClosure) a) 
+                                        lts' xBodyRun)
+                , text "  --"
+                , text "  tBodyRun:  " <> ppr tBodyRun
+                , indent 4 $ ppr ctx3
+                , indent 4 $ ppr ctx_cut 
+                , empty ]
 
-        returnX a (\z -> XLet z lts' xBody')
-                tResult effs' ctx_cut
+        returnX a 
+                (\z -> XLet z lts' xBodyRun)
+                tBodyRun 
+                (Sum.fromList kEffect [eResult])
+                ctx_cut
 
 
 -- others ---------------------------------------
@@ -137,6 +165,11 @@ checkLetsM !bidir xx !table !ctx0 !demand (LLet b xBind)
  -- using any annotation on the binder as the expected type.
  | True   <- bidir
  = do
+        ctrace  $ vcat
+                [ text "*>  Let Bind Synth"
+                , text "    demand = " <> (text $ show demand)
+                , empty ]
+
         let config      = tableConfig table
         let kenv        = tableKindEnv table
         let a           = annotOfExp xx

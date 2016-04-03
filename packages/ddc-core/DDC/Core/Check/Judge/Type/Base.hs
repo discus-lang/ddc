@@ -4,6 +4,7 @@ module DDC.Core.Check.Judge.Type.Base
         , Demand (..)
         , Table  (..)
         , returnX
+        , runForDemand
 
         , module DDC.Core.Check.Base
         , module DDC.Core.Check.Judge.Inst
@@ -113,4 +114,52 @@ returnX !a !f !t !es !ctx
    in   return  (f (AnTEC t e (tBot kClosure) a)
                 , t, es, ctx)
 {-# INLINE returnX #-}
+
+
+-- Run ------------------------------------------------------------------------
+-- | If an expression has suspension type then run it.
+runForDemand 
+        :: Ord n
+        => Config n                     -- ^ Type checker config.
+        -> a                            -- ^ Annotation for new
+        -> Demand                       -- ^ Demand placed on expression.
+        -> Exp    (AnTEC a n) n         -- ^ Expression to inspect.
+        -> Type   n                     -- ^ Type of the expression.
+        -> Effect n                     -- ^ Effect of the expression.
+        -> CheckM a n
+                ( Exp (AnTEC a n) n     -- New expression, possibly with run cast.
+                , Type   n              -- New type of expression.
+                , Effect n)             -- New effect of expression.
+
+runForDemand _config _a DemandNone xExp tExp eExp 
+ = return (xExp, tExp, eExp)
+
+runForDemand _config a  DemandRun  xExp tExp eExp
+
+ -- TODO: check config flag.
+
+ -- If the expression is wrapped in an explicit box or run then
+ -- don't run it again. Doing this will just confuse the client
+ -- programmer.
+ | isXCastBox xExp || isXCastRun xExp
+ = return (xExp, tExp, eExp)
+
+ | Just (eResult, tResult)  <- takeTSusp tExp
+ = let
+        -- Effect of overall expression is effect of computing
+        -- the suspension plus the effect we get by running 
+        -- that suspension.
+        eTotal  = tSum kEffect [eExp, eResult]
+
+        -- Annotation for the cast expression.
+        aCast   = AnTEC tResult eTotal (tBot kClosure) a
+
+   in   return  ( XCast aCast CastRun xExp
+                , tResult
+                , eTotal)
+
+ | otherwise
+ = return (xExp, tExp, eExp)
+
+
 
