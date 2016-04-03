@@ -40,8 +40,8 @@ features
         , featuresFunctionalEffects     = False
         , featuresFunctionalClosures    = False
         , featuresEffectCapabilities    = False
-        , featuresImplicitRunBindings   = False
-        , featuresImplicitBoxBodies     = False
+        , featuresImplicitRun           = False
+        , featuresImplicitBox           = False
         , featuresPartialPrims          = True
         , featuresPartialApplication    = True
         , featuresGeneralApplication    = True

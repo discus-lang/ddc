@@ -350,7 +350,7 @@ makeFunction config a xx bParam tParam kParam xBody tBody eBody
         --   a suspension that we can abstract over. We justify the fact that
         --   inserting this cast is valid because if we didn't the program
         --   would be ill-typed, as the next case it to throw an error.
-        else if (   configImplicitBoxBodies config
+        else if (   configImplicitBox config
                 && (eCaptured /= tBot kEffect))
          then case takeTSusp tBody of
 

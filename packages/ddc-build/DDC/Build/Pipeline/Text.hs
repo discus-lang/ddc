@@ -160,8 +160,8 @@ pipeText !srcName !srcLine !str !pp
                         let fragment_implicit
                                 = flip C.mapProfileOfFragment CE.fragment
                                 $ C.mapFeaturesOfProfile 
-                                $ ( C.setFeature C.ImplicitRunBindings True
-                                  . C.setFeature C.ImplicitBoxBodies   True)
+                                $ ( C.setFeature C.ImplicitRun True
+                                  . C.setFeature C.ImplicitBox True)
 
                         pipeCore mm_spread
                           $ PipeCoreCheck fragment_implicit C.Synth sinkCheckerTrace pipes

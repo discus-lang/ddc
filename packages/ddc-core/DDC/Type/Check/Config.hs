@@ -48,12 +48,11 @@ data Config n
           -- | Allow general let-rec
         , configGeneralLetRec           :: Bool
 
-          -- | Automatically run effectful let-bindings.
-        , configImplicitRunBindings     :: Bool
+          -- | Automatically run effectful applications.
+        , configImplicitRun             :: Bool
 
-          -- | Automatically box bodies of abstractions where the program
-          --   would not be well typed without doing so.
-        , configImplicitBoxBodies       :: Bool
+          -- | Automatically box bodies of abstractions.
+        , configImplicitBox             :: Bool
         }
 
 
@@ -74,8 +73,8 @@ configOfProfile profile
         , configFunctionalClosures      = F.featuresFunctionalClosures  features
         , configEffectCapabilities      = F.featuresEffectCapabilities  features
         , configGeneralLetRec           = F.featuresGeneralLetRec       features
-        , configImplicitRunBindings     = F.featuresImplicitRunBindings features
-        , configImplicitBoxBodies       = F.featuresImplicitBoxBodies   features
+        , configImplicitRun             = F.featuresImplicitRun         features
+        , configImplicitBox             = F.featuresImplicitBox         features
 
         }
         

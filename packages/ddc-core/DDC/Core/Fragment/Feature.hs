@@ -22,13 +22,11 @@ data Feature
         -- | Treat effects as capabilities.
         | EffectCapabilities
 
-        -- | Insert implicit run casts for effectful bindings where the left
-        --   is the 'none' / 'anonymous' binding.
-        | ImplicitRunBindings
+        -- | Insert implicit run casts for effectful applications.
+        | ImplicitRun
 
-        -- | Insert implicit box casts for bodies of abstractions in cases
-        --   where it would be a type error not to.
-        | ImplicitBoxBodies
+        -- | Insert implicit box casts for bodies of abstractions.
+        | ImplicitBox
 
         -- General features -------------------------------
         -- | Partially applied primitive operators.

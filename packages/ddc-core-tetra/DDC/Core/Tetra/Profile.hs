@@ -43,8 +43,8 @@ features
         -- We don't want to insert implicit casts when type checking 
         -- the core code during transformation, but we do insert them
         -- the first time the source 
-        , featuresImplicitRunBindings   = False
-        , featuresImplicitBoxBodies     = False
+        , featuresImplicitRun           = False
+        , featuresImplicitBox           = False
 
         , featuresPartialPrims          = True
         , featuresPartialApplication    = True

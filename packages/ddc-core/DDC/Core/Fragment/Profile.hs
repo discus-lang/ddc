@@ -80,8 +80,8 @@ data Features
         , featuresFunctionalEffects     :: Bool
         , featuresFunctionalClosures    :: Bool
         , featuresEffectCapabilities    :: Bool
-        , featuresImplicitRunBindings   :: Bool
-        , featuresImplicitBoxBodies     :: Bool
+        , featuresImplicitRun           :: Bool
+        , featuresImplicitBox           :: Bool
         , featuresPartialPrims          :: Bool
         , featuresPartialApplication    :: Bool
         , featuresGeneralApplication    :: Bool
@@ -105,8 +105,8 @@ zeroFeatures
         , featuresFunctionalEffects     = False
         , featuresFunctionalClosures    = False
         , featuresEffectCapabilities    = False
-        , featuresImplicitRunBindings   = False
-        , featuresImplicitBoxBodies     = False
+        , featuresImplicitRun           = False
+        , featuresImplicitBox           = False
         , featuresPartialPrims          = False
         , featuresPartialApplication    = False
         , featuresGeneralApplication    = False
@@ -129,8 +129,8 @@ setFeature feature val features
         FunctionalEffects       -> features { featuresFunctionalEffects    = val }
         FunctionalClosures      -> features { featuresFunctionalClosures   = val }
         EffectCapabilities      -> features { featuresEffectCapabilities   = val }
-        ImplicitRunBindings     -> features { featuresImplicitRunBindings  = val }
-        ImplicitBoxBodies       -> features { featuresImplicitBoxBodies    = val }
+        ImplicitRun             -> features { featuresImplicitRun          = val }
+        ImplicitBox             -> features { featuresImplicitBox          = val }
         PartialPrims            -> features { featuresPartialPrims         = val }
         PartialApplication      -> features { featuresPartialApplication   = val }
         GeneralApplication      -> features { featuresGeneralApplication   = val }

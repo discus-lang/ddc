@@ -202,7 +202,7 @@ checkLetsM !bidir xx !table !ctx0 !demand (LLet b xBind)
         --   effect only. If ImplicitRunBindings is enabled then we automatically
         --   run the suspension to release its effect.
         let (xBind_run, tBind_run, effs_run)
-                | configImplicitRunBindings $ tableConfig table 
+                | configImplicitRun $ tableConfig table 
                 , not $ isXCastBox xBind_raw
                 , not $ isXCastRun xBind_raw
                 , Just  (effs_susp, tBind_susp) <- takeTSusp tBind_ctx
