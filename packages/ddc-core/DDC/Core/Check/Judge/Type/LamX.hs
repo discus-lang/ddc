@@ -14,6 +14,7 @@ checkLamX !table !ctx xx mode
         XLam a b1 x2    -> checkLam table a ctx b1 x2 mode
         _               -> error "ddc-core.checkLamX: no match."
 
+
 -- When reconstructing the type of a lambda abstraction,
 --  the formal parameter must have a type annotation: eg (\v : T. x2)
 checkLam !table !a !ctx !b1 !x2 !Recon
@@ -52,11 +53,13 @@ checkLam !table !a !ctx !b1 !x2 !Recon
         -- Build the resulting function type.
         --   The way the effect and closure term is captured depends on
         --   the configuration flags.
-        tResult <- makeFunctionType config a xx t1 k1 t2 e2
+        (xAbs', tAbs) 
+                <- makeFunction config a xx b1' t1 k1 x2' t2 e2
 
-        returnX a
-                (\z -> XLam z b1' x2')
-                tResult (Sum.empty kEffect) ctx_cut
+        return  ( xAbs'
+                , tAbs
+                , Sum.empty kEffect
+                , ctx_cut)
 
 
 -- When synthesizing the type of a lambda abstraction
@@ -135,22 +138,24 @@ checkLam !table !a !ctx !b1 !x2 !Synth
         -- Build the resulting function type.
         --  This switches on the kind of the argument, so we need to apply
         --  the context to 'k1' to ensure it has all available information.
-        tResult
-         <- makeFunctionType config a (XLam a b1' x2)
-                t1' k1''
-                t2' e2
+        (xAbs', tAbs)
+         <- makeFunction 
+                config a (XLam a b1' x2)
+                b1' t1' k1''
+                x2' t2' e2
 
         ctrace  $ vcat
                 [ text "* Lam Synth"
                 , indent 2 $ ppr (XLam a b1' x2)
-                , text "  OUT: " <> ppr tResult
+                , text "  OUT: " <> ppr tAbs
                 , indent 2 $ ppr ctx
                 , indent 2 $ ppr ctx_cut
                 , empty ]
 
-        returnX a
-                (\z -> XLam z b1' x2')
-                tResult (Sum.empty kEffect) ctx_cut
+        return  ( xAbs'
+                , tAbs
+                , Sum.empty kEffect
+                , ctx_cut)
 
 
 -- When checking type type of a lambda abstraction against an existing
@@ -215,29 +220,33 @@ checkLam !table !a !ctx !b1 !x2 !(Check tExpected)
         -- Build the resulting function type.
         --  This switches on the kind of the argument, so we need to apply
         --  the context to 'k1' to ensure it has all available information.
-        tResult
-         <- makeFunctionType config a (XLam a b1' x2)
-                t1' k1'' t2 e2
+        (xAbs', tAbs)
+         <- makeFunction
+                config a (XLam a b1' x2)
+                b1' t1' k1'' 
+                x2' t2 e2
 
         ctrace  $ vcat
                 [ text "* Lam Check"
                 , indent 2 $ ppr (XLam a b1' x2)
                 , text "  IN:  " <> ppr tExpected
-                , text "  OUT: " <> ppr tResult
+                , text "  OUT: " <> ppr tAbs
                 , indent 2 $ ppr ctx
                 , indent 2 $ ppr ctx_cut
                 , empty ]
 
-        returnX a
-                (\z -> XLam z b1' x2')
-                tResult (Sum.empty kEffect) ctx_cut
+        return  ( xAbs'
+                , tAbs
+                , Sum.empty kEffect
+                , ctx_cut)
+
 
 checkLam !table !a !ctx !b1 !x2 !(Check tExpected)
  = checkSub table a ctx (XLam a b1 x2) tExpected
 
 
 -------------------------------------------------------------------------------
--- | Construct a function-like type with the given effect and closure.
+-- | Construct a function type with the given effect and closure.
 --
 --   Whether this is a witness or data abstraction depends on the kind
 --   of the parameter type.
@@ -246,50 +255,106 @@ checkLam !table !a !ctx !b1 !x2 !(Check tExpected)
 --   is set by the Config, which depends on the specific language fragment
 --   that we're checking.
 --
-makeFunctionType
+makeFunction
         :: (Show n, Ord n)
-        => Config n              -- ^ Type checker config.
-        -> a                     -- ^ Annotation for error messages.
-        -> Exp a n               -- ^ Expression for error messages.
-        -> Type n                -- ^ Parameter type of the function.
-        -> Kind n                -- ^ Kind of the parameter.
-        -> Type n                -- ^ Result type of the function.
-        -> TypeSum n             -- ^ Effect sum.
-        -> CheckM a n (Type n)
+        => Config n             -- ^ Type checker config.
+        -> a                    -- ^ Annotation for error messages.
+        -> Exp  a n             -- ^ Expression for error messages.
+        -> Bind n               -- ^ Binder of the function parameter.
+        -> Type n               -- ^ Parameter type of the function.
+        -> Kind n               -- ^ Kind of the parameter.
+        -> Exp  (AnTEC a n) n   -- ^ Body of the function.
+        -> Type n               -- ^ Result type of the function.
+        -> TypeSum n            -- ^ Effect sum.
+        -> CheckM a n (Exp (AnTEC a n) n, Type n)
 
-makeFunctionType config a xx t1 k1 t2 e2
- | isTExists k1
- = throw $ ErrorLamBindBadKind a xx t1 k1
+makeFunction config a xx bParam tParam kParam xBody tBody eBody
+ | isTExists kParam
+ = throw $ ErrorLamBindBadKind a xx tParam kParam
 
- | not (k1 == kData) && not (k1 == kWitness)
- = throw $ ErrorLamBindBadKind a xx t1 k1
+ | not (kParam == kData) && not (kParam == kWitness)
+ = throw $ ErrorLamBindBadKind a xx tParam kParam
 
  | otherwise
  = do
         -- Get the universe the parameter value belongs to.
-        let Just uniParam    = universeFromType2 k1
+        let Just uniParam    = universeFromType2 kParam
 
-        let e2_captured
+        -- The effects due to evaluating the body that are 
+        -- captured by this abstraction.
+        let eCaptured
                 -- If we're not tracking effect information then just drop it
                 -- on the floor.
                 | not  $ configTrackedEffects config    = tBot kEffect
-                | otherwise                             = TSum e2
+                | otherwise                             = TSum eBody
 
         -- Data abstraction where the function constructor for the language
         -- fragment does not suport latent effects or closures.
-        if (    k1 == kData
-                && e2_captured == tBot kEffect)
-         then   return  (tFun t1 t2)
+        if (    kParam == kData
+                && eCaptured == tBot kEffect)
+         then let tAbs  = tFun tParam tBody
+                  aAbs  = AnTEC tAbs (tBot kEffect) (tBot kClosure) a
+              in  return ( XLam aAbs bParam xBody
+                         , tAbs)
 
         -- Witness abstractions must always be pure,
         --  but closures are passed through.
-        else if (  k1 == kWitness
-                && e2_captured == tBot kEffect)
-         then   return  (tImpl t1 t2)
+        else if (  kParam == kWitness
+                && eCaptured == tBot kEffect)
+         then let tAbs  = tImpl tParam tBody
+                  aAbs  = AnTEC tAbs (tBot kEffect) (tBot kClosure) a
+              in  return ( XLam aAbs bParam xBody
+                         , tAbs)
+
+        -- Handle ImplicitBoxBodies
+        --   Evaluating the given body causes an effect, but the body of an
+        --   abstraction must be pure. Automatically box up the body to build
+        --   a suspension that we can abstract over. We justify the fact that
+        --   inserting this cast is valid because if we didn't the program
+        --   would be ill-typed, as the next case it to throw an error.
+        else if (   configImplicitBoxBodies config
+                && (eCaptured /= tBot kEffect))
+         then case takeTSusp tBody of
+
+                -- The body itself does not produce another suspension, 
+                -- so we can just box it up.
+                Nothing 
+                 -> let tBodySusp = tSusp eCaptured tBody
+                        aBox      = AnTEC tBodySusp (tBot kEffect) (tBot kClosure) a
+
+                        tAbs      = tFun tParam tBodySusp
+                        aAbs      = AnTEC tAbs      (tBot kEffect) (tBot kClosure) a
+
+                    in  return  ( XLam aAbs bParam (XCast aBox CastBox xBody)
+                                , tAbs)
+
+                -- The body itself produces another suspension.
+                -- Instead boxing this to form a result of type:
+                --    S eCaptured (S eResult tResult)
+                --
+                -- we instead run the inner suspension and re-box it,
+                -- so that we have a single suspension that includes both effects:
+                --    S (eCaptured + eResult) tResult
+                -- 
+                Just (eSusp, tResult)
+                 -> let aRun      = AnTEC tResult eSusp (tBot kClosure) a
+
+                        eTotal    = tSum kEffect [eSusp, eCaptured]
+                        tBodySusp = tSusp eTotal tResult
+                        aBox      = AnTEC tBodySusp (tBot kEffect) (tBot kClosure) a
+
+                        tAbs      = tFun tParam tBodySusp
+                        aAbs      = AnTEC tAbs      (tBot kEffect) (tBot kClosure) a
+
+                    in  return  ( XLam aAbs bParam 
+                                        $ XCast aBox CastBox 
+                                        $ XCast aRun CastRun 
+                                        $ xBody
+                                , tAbs)
 
         -- We don't have a way of forming a function with an impure effect.
-        else if (e2_captured /= tBot kEffect)
-         then   throw $ ErrorLamNotPure  a xx uniParam e2_captured
+        else if (eCaptured /= tBot kEffect)
+         then   throw $ ErrorLamNotPure  a xx uniParam eCaptured
 
         -- One of the above error reporting cases should have fired already.
         else    error $ "ddc-core.makeFunctionType: is broken."

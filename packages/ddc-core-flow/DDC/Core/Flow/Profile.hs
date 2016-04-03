@@ -41,6 +41,7 @@ features
         , featuresFunctionalClosures    = False
         , featuresEffectCapabilities    = False
         , featuresImplicitRunBindings   = False
+        , featuresImplicitBoxBodies     = False
         , featuresPartialPrims          = True
         , featuresPartialApplication    = True
         , featuresGeneralApplication    = True

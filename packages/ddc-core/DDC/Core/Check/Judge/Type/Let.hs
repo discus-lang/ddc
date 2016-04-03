@@ -163,10 +163,10 @@ checkLetsM !bidir xx !table !ctx0 (LLet b xBind)
         let tBind_ctx   = applyContext ctx2 tBind_raw
 
         -- Handle ImplictRunBindings
-        -- If the right of the binding is a suspended expression, but there is
-        -- no binder then the expression is probably being evaluated for its
-        -- effect only. If ImplicitRunBindings is enabled then we automatically
-        -- run the suspension to release its effect.
+        --   If the right of the binding is a suspended expression, but there is
+        --   no binder then the expression is probably being evaluated for its
+        --   effect only. If ImplicitRunBindings is enabled then we automatically
+        --   run the suspension to release its effect.
         let (xBind_run, tBind_run, effs_run)
                 | configImplicitRunBindings $ tableConfig table 
                 , not $ isXCastBox xBind_raw

@@ -48,10 +48,12 @@ data Config n
           -- | Allow general let-rec
         , configGeneralLetRec           :: Bool
 
-          -- | Automatically run effectful let-bindings where the left
-          --   is the 'none' / 'wildcard' binder.
+          -- | Automatically run effectful let-bindings.
         , configImplicitRunBindings     :: Bool
 
+          -- | Automatically box bodies of abstractions where the program
+          --   would not be well typed without doing so.
+        , configImplicitBoxBodies       :: Bool
         }
 
 
@@ -73,6 +75,7 @@ configOfProfile profile
         , configEffectCapabilities      = F.featuresEffectCapabilities  features
         , configGeneralLetRec           = F.featuresGeneralLetRec       features
         , configImplicitRunBindings     = F.featuresImplicitRunBindings features
+        , configImplicitBoxBodies       = F.featuresImplicitBoxBodies   features
 
         }
         

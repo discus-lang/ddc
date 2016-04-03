@@ -26,6 +26,10 @@ data Feature
         --   is the 'none' / 'anonymous' binding.
         | ImplicitRunBindings
 
+        -- | Insert implicit box casts for bodies of abstractions in cases
+        --   where it would be a type error not to.
+        | ImplicitBoxBodies
+
         -- General features -------------------------------
         -- | Partially applied primitive operators.
         | PartialPrims
@@ -71,3 +75,4 @@ data Feature
         -- | Allow unused named matches.
         | UnusedMatches
         deriving (Eq, Ord, Show)
+

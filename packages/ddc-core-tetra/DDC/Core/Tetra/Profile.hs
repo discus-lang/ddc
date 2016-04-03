@@ -44,6 +44,7 @@ features
         -- the core code during transformation, but we do insert them
         -- the first time the source 
         , featuresImplicitRunBindings   = False
+        , featuresImplicitBoxBodies     = False
 
         , featuresPartialPrims          = True
         , featuresPartialApplication    = True

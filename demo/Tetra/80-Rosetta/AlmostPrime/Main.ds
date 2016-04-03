@@ -21,17 +21,19 @@ where
 primes (c0: Nat#): Stream Nat# Nat#
  = sfilter isPrime $ senumFrom 2
 
+
 -- | Check if a number is prime.
 --   Use Wilson's theorem to check for primality, being sure to take
 --   the mod of the running sum to avoid integer overflow.
 isPrime (n: Nat#): Bool#
- =  foldl (λacc x : Nat#. rem (x * acc) n) 1 (enumFromTo 1 (n - 1))
+ =  foldl (λacc x: Nat#. rem (x * acc) n) 1 (enumFromTo 1 (n - 1))
  == (n - 1)
 
 
 -- | A stream of k-almost-prime numbers.
 kPrimes (k: Nat#): Stream Nat# Nat#
  = sfilter (isKPrime k) (senumFrom 2) 
+
 
 -- | Check if some number is k-almost-prime.
 isKPrime (k n: Nat#): Bool#
@@ -48,14 +50,12 @@ isKPrime (k n: Nat#): Bool#
 
 
 main (_: Unit): S Console Unit
- = box do   
+ = box run do   
         forS (enumFromTo 1 5)
-         (λk: Nat#. box do
-                write $ "k = " % showNat k % ": "
+         (λk: Nat#.
+          do    write $ "k = " % showNat k % ": "
                 forS (listOfStream $ stake 10 $ kPrimes k)
                          (λx: Nat#. write $ showNat x % " ")
-                write "\n"
-                ())
+                write "\n")
 
-        ()
 

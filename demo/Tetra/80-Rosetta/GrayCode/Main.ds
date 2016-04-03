@@ -31,7 +31,7 @@ binToGray (b: Nat#): Nat#
 
 
 main (_: Unit): S Console Unit
- = box do   
+ = do   
         showBinary = showBaseNat 2 digitBinary 5 "0"
 
         writel $ "   x "
@@ -43,4 +43,3 @@ main (_: Unit): S Console Unit
                 writel  $  showBinary x
                         %% showBinary (binToGray x)
                         %% showBinary (grayToBin (binToGray x)))
-        ()
