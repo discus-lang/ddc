@@ -69,33 +69,6 @@ letrec {
 
 
 -- Effectful List map with explicit effect management.
---  The result computation is boxed in both alternatives,
---  which means we must weaken the effect of the first alternative.
-module Test 
-data List (a : Data) where {
-        Nil : List a;
-        Cons : a -> List a -> List a;
-}
-with
-letrec {
-  mapS : [a b : Data].[e : Effect].(a -> S e b) -> List a -> S e (List b)
-    = Λ(a b : Data).Λ(e : Effect).
-      λ(f : a -> S e b).λ(xx : List a).
-      case xx of {
-        Nil  
-         -> box
-            weakeff [e] in
-            Nil [b];
-        Cons (x : a) (xs : List a) 
-         -> box
-            Cons [b]
-                (run f x)
-                (run mapS [a] [b] [e] f xs)
-      }
-}
-
-
--- Effectful List map with explicit effect management.
 --  The result computation is boxed just inside the outer lambda.
 module Test 
 data List (a : Data) where {

@@ -67,7 +67,7 @@ stake (n : Nat#) (ss : Stream s a) : Stream (Tup2 s Nat#) a
 
 
 main (_ : Unit) : S Console Unit
- = box do   
+ = do   
         xx1     = enumFromTo 0 100
         ss1     = streamOfList xx1
         ss2     = stake 10 (smap (add 1) ss1)

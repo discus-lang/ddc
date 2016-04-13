@@ -208,15 +208,15 @@ checkLam !table !a !ctx !b1 !x2 !(Check tExpected)
         let ctx1         = pushType b1' ctx'
 
         -- Check the body against the type we have for it.
-        --  It doesn't matter what we set the demand to here because
-        --  the insertion of box/run casts is controlled by the body 
-        --  type when we have it. Just set it to 'Run' like the others
-        --  to avoid confusion.
         (x2', t2, e2, ctx2)
-         <- 
-            case takeTSusp tX2 of
+         <- case takeTSusp tX2 of
+
+             -- If we're implicitly boxing bodies and we're expecting a
+             -- suspension, then check the body against the type of the
+             -- result of the suspension.
              Just (_e, tResult)
-              |  not $ isXCastBox x2
+              |  configImplicitBox config
+              ,  not $ isXCastBox x2
               -> tableCheckExp table table ctx1 (Check tResult) DemandRun  x2 
 
              _
@@ -345,7 +345,6 @@ makeFunction config a xx bParam tParam kParam xBody tBody eBody
               in  return ( XLam aAbs bParam xBody
                          , tAbs)
 
-{-
         -- Handle ImplicitBoxBodies
         --   Evaluating the given body causes an effect, but the body of an
         --   abstraction must be pure. Automatically box up the body to build
@@ -354,7 +353,8 @@ makeFunction config a xx bParam tParam kParam xBody tBody eBody
         --   would be ill-typed, as the next case it to throw an error.
         else if (   configImplicitBox config
                 && (eCaptured /= tBot kEffect))
-         then case takeTSusp tBody of
+         then 
+              case takeTSusp tBody of
 
                 -- The body itself does not produce another suspension, 
                 -- so we can just box it up.
@@ -391,7 +391,7 @@ makeFunction config a xx bParam tParam kParam xBody tBody eBody
                                         $ XCast aRun CastRun 
                                         $ xBody
                                 , tAbs)
--}
+
         -- We don't have a way of forming a function with an impure effect.
         else if (eCaptured /= tBot kEffect)
          then   throw $ ErrorLamNotPure  a xx uniParam eCaptured

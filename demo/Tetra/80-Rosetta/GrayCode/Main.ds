@@ -39,7 +39,7 @@ main (_: Unit): S Console Unit
                %% "   x'"
 
         forS (enumFromTo 0 31)
-         (λx: Nat#. 
+         (λx: Nat#. box
                 writel  $  showBinary x
                         %% showBinary (binToGray x)
                         %% showBinary (grayToBin (binToGray x)))

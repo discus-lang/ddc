@@ -61,10 +61,9 @@ checkAppX !table !ctx0 Synth demand
         let tFn' = applyContext ctx1 tFn
 
         -- Synth a type for the function applied to its argument.
-        (xFn'', xArg', tResult, effsResult, ctx2)
-         <- synthAppArg table a xx ctx1
-                xFn' tFn' effsFn
-                xArg
+        (xResult, tResult, esResult, ctx2)
+         <- synthAppArg table a xx ctx1 demand
+                xFn' tFn' effsFn xArg
 
         ctrace  $ vcat
                 [ text "*<  App Synth"
@@ -72,15 +71,13 @@ checkAppX !table !ctx0 Synth demand
                 , indent 4 $ ppr xx
                 , text "    tFn     : " <> ppr tFn'
                 , text "    tArg    : " <> ppr xArg
+                , text "    xResult : " <> ppr xResult
                 , text "    tResult : " <> ppr tResult
                 , indent 4 $ ppr ctx0
                 , indent 4 $ ppr ctx2
                 , empty ]
 
-        returnX a
-                (\z -> XApp z xFn'' xArg')
-                tResult effsResult
-                ctx2
+        return  (xResult, tResult, esResult, ctx2)
 
 
 checkAppX !table !ctx (Check tExpected) demand 
@@ -99,8 +96,6 @@ checkAppX !table !ctx (Check tExpected) demand
 
         return  result   
 
-
-
 checkAppX _ _ _ _ _
  = error "ddc-core.checkApp: no match"
 
@@ -110,21 +105,21 @@ checkAppX _ _ _ _ _
 synthAppArg
         :: (Show a, Show n, Ord n, Pretty n)
         => Table a n
-        -> a                             -- Annot for error messages.
-        -> Exp a n                       -- Expression for error messages.
-        -> Context n                     -- Current context.
-        -> Exp (AnTEC a n) n             -- Checked functional expression.
-                -> Type n                -- Type of functional expression.
-                -> TypeSum n             -- Effect of functional expression.
-        -> Exp a n                       -- Function argument.
+        -> a                         -- Annot for error messages.
+        -> Exp a n                   -- Expression for error messages.
+        -> Context n                 -- Current context.
+        -> Demand                    -- Demand placed on result of application.
+        -> Exp (AnTEC a n) n         -- Checked functional expression.
+                -> Type n            -- Type of functional expression.
+                -> TypeSum n         -- Effect of functional expression.
+        -> Exp a n                   -- Function argument.
         -> CheckM a n
-                ( Exp (AnTEC a n) n      -- Checked functional expression.
-                , Exp (AnTEC a n) n      -- Checked argument   expression.
-                , Type n                 -- Type of result.
-                , TypeSum n              -- Effect of result.
-                , Context n)             -- Result context.
+                ( Exp (AnTEC a n) n  -- Checked application.
+                , Type n             -- Type of result.
+                , TypeSum n          -- Effect of result.
+                , Context n)         -- Result context.
 
-synthAppArg table a xx ctx0 xFn tFn effsFn xArg
+synthAppArg table a xx ctx0 demand xFn tFn effsFn xArg
 
  -- Rule (App Synth exists)
  --  Functional type is an existential.
@@ -147,23 +142,27 @@ synthAppArg table a xx ctx0 xFn tFn effsFn xArg
 
         -- Check the argument under the new context.
         (xArg', _, effsArg, ctx2)
-         <- tableCheckExp table table ctx1 (Check tA1) DemandNone xArg
+         <- tableCheckExp table table ctx1 (Check tA1) DemandRun xArg
 
         -- Effect and closure of the overall function application.
-        let effsResult = effsFn `Sum.union` effsArg
+        let esResult    = effsFn `Sum.union` effsArg
+
+        -- Result expression.
+        let xResult    = XApp  (AnTEC tA2 (TSum esResult) (tBot kClosure) a)
+                                xFn xArg'
 
         ctrace  $ vcat
                 [ text "*<  App Synth Exists"
-                , text "    xFn  :"  <> ppr xFn
-                , text "    tFn  :"  <> ppr tFn
-                , text "    xArg :"  <> ppr xArg
-                , text "    xArg':"  <> ppr xArg'
+                , text "    xFn    :"  <> ppr xFn
+                , text "    tFn    :"  <> ppr tFn
+                , text "    xArg   :"  <> ppr xArg
+                , text "    xArg'  :"  <> ppr xArg'
+                , text "    xResult:"  <> ppr xResult
                 , indent 4 $ ppr xx
                 , indent 4 $ ppr ctx2
                 , empty ]
 
-        return  ( xFn, xArg'
-                , tA2, effsResult, ctx2)
+        return  (xResult, tA2, esResult, ctx2)
 
 
  -- Rule (App Synth Forall)
@@ -195,23 +194,22 @@ synthAppArg table a xx ctx0 xFn tFn effsFn xArg
         -- Synthesise the result type of a function being applied to its
         -- argument. We know the type of the function up-front, but we pass
         -- in the whole argument expression.
-        (xFnTy', xArg', tResult, effsResult, ctx2)
-         <- synthAppArg table a xx ctx1 xFnTy tBody' effsFn xArg
+        (xResult, tResult, esResult, ctx2)
+         <- synthAppArg table a xx ctx1 demand xFnTy tBody' effsFn xArg
+
+        -- Result expression.
 
         ctrace  $ vcat
                 [ text "*<  App Synth Forall"
                 , text "    xFn     : " <> ppr xFn
                 , text "    tFn     : " <> ppr tFn
                 , text "    xArg    : " <> ppr xArg
-                , text "    xFunTy' : " <> ppr xFnTy'
-                , text "    xArg'   : " <> ppr xArg'
+                , text "    xResult : " <> ppr xResult
                 , text "    tResult : " <> ppr tResult
                 , indent 4 $ ppr ctx2
                 , empty ]
 
-        return  ( xFnTy'
-                , xArg'
-                , tResult, effsResult, ctx2)
+        return  (xResult, tResult, esResult, ctx2)
 
 
  -- Rule (App Synth Fun)
@@ -223,17 +221,17 @@ synthAppArg table a xx ctx0 xFn tFn effsFn xArg
                 , empty ]
 
         -- Check the argument.
-        (xArg', tArg, effsArg, ctx1)
-         <- tableCheckExp table table ctx0 (Check tParam) DemandNone xArg
+        (xArg', tArg, esArg, ctx1)
+         <- tableCheckExp table table ctx0 (Check tParam) DemandRun xArg
 
-        let tFn1     = applyContext ctx1 tFn
-        let tArg1    = applyContext ctx1 tArg
-        let tResult1 = applyContext ctx1 tResult
+        let tFn'     = applyContext ctx1 tFn
+        let tArg'    = applyContext ctx1 tArg
+        let tResult' = applyContext ctx1 tResult
 
         -- Get the type, effect and closure resulting from the application
         -- of a function of this type to its argument.
-        effsLatent
-         <- case splitFunType tFn1 of
+        esLatent
+         <- case splitFunType tFn' of
              Just (_tParam, effsLatent, _closLatent, _tResult)
               -> return effsLatent
 
@@ -243,23 +241,47 @@ synthAppArg table a xx ctx0 xFn tFn effsFn xArg
              Nothing
               -> error "ddc-core.synthAppArg: unexpected type of function."
 
-        -- Effect of the overall application.
-        let effsResult  = Sum.unions kEffect
-                        $ [ effsFn, effsArg, Sum.singleton kEffect effsLatent]
+
+        -- Result of evaluating the functional expression applied
+        -- to its argument.
+        let esExp       = Sum.unions kEffect
+                        $ [ effsFn, esArg, Sum.singleton kEffect esLatent]
+
+        -- The checked application.
+        let xExp'       = XApp  (AnTEC tResult' (TSum esExp) (tBot kClosure) a)
+                                xFn xArg'
+
+        -- If the function returns a suspension then automatically run it.
+        let (xExpRun, tExpRun, esExpRun)
+                | configImplicitRun (tableConfig table)
+                , DemandRun     <- demand
+                , Just (eExpRun', tExpRun') <- takeTSusp tResult'
+                = let   
+                        eTotal  = tSum kEffect [TSum esExp, eExpRun']
+
+                  in    ( XCast (AnTEC tResult' eTotal (tBot kClosure) a)
+                                CastRun xExp'
+                        , tExpRun'
+                        , Sum.fromList kEffect [eTotal])
+
+                | otherwise
+                =       ( xExp'
+                        , tResult'
+                        , esExp)
 
         ctrace  $ vcat
                 [ text "*<  App Synth Fun"
                 , indent 4 $ ppr xx
                 , text "    xArg    : " <> ppr xArg
-                , text "    tFn     : " <> ppr tFn1
-                , text "    tArg    : " <> ppr tArg1
+                , text "    tFn'    : " <> ppr tFn'
+                , text "    tArg'   : " <> ppr tArg'
                 , text "    xArg'   : " <> ppr xArg'
-                , text "    tResult : " <> ppr tResult1
+                , text "    xExpRun : " <> ppr xExpRun
+                , text "    tExpRun : " <> ppr tExpRun
                 , indent 4 $ ppr ctx1
                 , empty ]
 
-        return  ( xFn, xArg'
-                , tResult, effsResult, ctx1)
+        return  (xExpRun, tExpRun, esExpRun, ctx1)
 
 
  -- Applied expression is not a function.

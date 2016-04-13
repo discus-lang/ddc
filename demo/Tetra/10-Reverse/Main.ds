@@ -14,18 +14,18 @@ reverseAcc2 (acc xx: List a): List a
 
 
 dumpListNat (xx: List Nat#): S Console Unit
- = box case xx of
+ = case xx of
         Nil             -> ()
         Cons x xs       
          -> do  writel (showNat x)
-                run dumpListNat xs
+                dumpListNat xs
 
 
 main (_: Unit): S Console Unit
- = box do
+ = do
         xs1     = replicate  5 100
         xs2     = enumFromTo 10 20
         zs      = append xs1 xs2
         
-        run dumpListNat (reverseAcc zs)
+        dumpListNat (reverseAcc zs)
         

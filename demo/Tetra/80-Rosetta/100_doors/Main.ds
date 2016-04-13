@@ -54,7 +54,7 @@ runToggle (n: Nat#): List Door
 
 
 main (_: Unit): S Console Unit
- = box do
+ = do
         zipWithS 
                 (λn: Nat#. λd: Door. box 
                         case d of

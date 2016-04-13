@@ -20,20 +20,20 @@ import  Data.Numeric.Nat
 where
 
 -- | Standard Cons-lists.
-data List (a : Data) where
+data List (a: Data) where
         Nil     : List a
         Cons    : a -> List a -> List a
 
 
 -- Constructors ---------------------------------------------------------------
 -- | Construct a list containing a single element.
-singleton (x : a) : List a
+singleton (x: a): List a
  = Cons x Nil
 
 
 -- | Construct a list of the given length where all elements are'
 --   the same value.
-replicate (n : Nat#) (x : a) : List a
+replicate (n: Nat#) (x: a): List a
  | n == 0       = Nil
  | otherwise    = Cons x (replicate (n - 1) x)
 
@@ -76,11 +76,11 @@ tail (def : List a) (xx : List a) : List a
 -- | Like `tail`, but if there is only one element then keep it.
 tail1   (def : a) (xx : List a) : List a
  = case xx of
-        Nil                -> singleton def
+        Nil             -> singleton def
         Cons x xs        
          -> case xs of
-                Nil        -> singleton x
-                _          -> xs
+                Nil     -> singleton x
+                _       -> xs
 
 
 -- | Take the last element of a list, if there is one.
@@ -125,16 +125,16 @@ map     (f : a -> b) (xx : List a) : List b
 mapS    (f : a -> S e b) (xx : List a) : S e (List b)
  = box case xx of
         Nil             -> Nil
-        Cons x xs       -> Cons (run f x) (run mapS f xs)
+        Cons x xs       -> Cons (f x) (mapS f xs)
 
 
 -- | Apply a function to all elements of a list, yielding nothing.
-forS (xx : List a) (f : a -> S e Unit) : S e Unit
+forS (xx: List a) (f: a -> S e Unit) : S e Unit
  = box case xx of
         Nil     -> ()
         Cons x xs       
-         -> do  run f x
-                run forS xs f
+         -> do  f x
+                forS xs f
 
 
 -- Zips -----------------------------------------------------------------------
@@ -157,7 +157,7 @@ zipWithS (f : a -> b -> S e c)
         Cons x xs
          -> case yy of
                 Cons y ys
-                 -> Cons (run f x y) (run zipWithS f xs ys)
+                 -> Cons (f x y) (zipWithS f xs ys)
 
                 Nil -> Nil
 
@@ -176,7 +176,7 @@ foldl (f : b -> a -> b) (z : b) (xx : List a) : b
 foldlS (f : b -> a -> S e b) (z : b) (xx : List a) : S e b
  = box case xx of
         Nil             -> z
-        Cons x xs       -> run foldlS f (run f z x) xs
+        Cons x xs       -> foldlS f (f z x) xs
 
 
 -- | Reduce a list with a binary function and zero value,
@@ -192,7 +192,7 @@ foldr (f : a -> b -> b) (z : b) (xx : List a) : b
 foldrS (f : a -> b -> S e b) (z : b) (xx : List a) : S e b
  = box case xx of
         Nil             -> z
-        Cons x xs       -> run f x (run foldrS f z xs)
+        Cons x xs       -> f x (foldrS f z xs)
 
 
 -- | Take the sum of a list of Nats.
@@ -233,9 +233,9 @@ filterS (p : a -> S e Bool#) (xx : List a) : S e (List a)
  = box case xx of
         Nil             -> Nil
         Cons x xs  
-         -> if run p x 
-                then Cons x (run filterS p xs)
-                else run filterS p xs
+         -> if p x 
+                then Cons x (filterS p xs)
+                else filterS p xs
 
 
 -- | Check if any of the members of the list match the given predicate.

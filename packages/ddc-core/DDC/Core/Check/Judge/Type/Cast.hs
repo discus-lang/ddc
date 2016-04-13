@@ -82,7 +82,7 @@ checkCast !table ctx0 mode _demand
 
         -- Check the body.
         (x1', tBody, effs, ctx1)
-         <- tableCheckExp table table ctx0 Synth DemandNone x1
+         <- tableCheckExp table table ctx0 Synth DemandRun x1
 
         -- The actual type is (S eff tBody).
         let tBody'      = applyContext ctx1 tBody
@@ -103,7 +103,7 @@ checkCast !table ctx0 mode _demand
      -> do
         -- Check the body.
         (x1', t1, effs,  ctx1)
-         <- tableCheckExp table table ctx0 mode DemandNone x1
+         <- tableCheckExp table table ctx0 mode DemandRun x1
 
         -- The result type is (S effs a).
         let tS  = tApps (TCon (TyConSpec TcConSusp))
@@ -116,7 +116,7 @@ checkCast !table ctx0 mode _demand
 -- Run ------------------------------------------------------------------------
 -- Run a suspended computation,
 -- releasing its effects into the environment.
-checkCast !table !ctx0 mode demand
+checkCast !table !ctx0 mode _demand
         xx@(XCast a CastRun xBody)
  = case mode of
     Recon
@@ -162,7 +162,7 @@ checkCast !table !ctx0 mode demand
                 ctx2
 
     Check tExpected
-     -> checkSub table a ctx0 demand xx tExpected
+     -> checkSub table a ctx0 DemandNone xx tExpected
 
 checkCast _ _ _ _ _
         = error "ddc-core.checkCast: no match"

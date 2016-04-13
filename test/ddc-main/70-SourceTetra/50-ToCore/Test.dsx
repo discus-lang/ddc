@@ -44,23 +44,6 @@ map     (f : a -> b) (xx : List a) : List b
 
 
 -- Effectful List map with explicit effect management.
---  The result computation is boxed in both alternatives,
---  which means we must weaken the effect of the first alternative.
-:to-core..
-module Test where
-data List (a : Data) where
-        Nil     : List a
-        Cons    : a -> List a -> List a
-
-mapS    [a b : Data] [e : Effect]
-        (f : a -> S e b) (xx : List a) : S e (List b)
- = case xx of
-        Nil       -> box (weakeff [e] in Nil)
-        Cons x xs -> box (Cons (run f x) (run mapS f xs))
-;;
-
-
--- Effectful List map with explicit effect management.
 --  The result computation is boxed just inside the outer lambda.
 :to-core..
 module Test where

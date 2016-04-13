@@ -106,8 +106,7 @@ vectorOfText [r1: Region] (tt: Text)
 --         a global capability for it.
 --
 textOfWord8 (w8: Word8#): S (Alloc RegionText) Text
- = box do
-
+ = do
         -- TODO: omitting the inner box/run here breaks it.
         --       Maybe the Forward transform is messing up the extend.. structure.
         vec'    = box extend RegionText using r1 with { Alloc r1; Write r1 } in
@@ -152,16 +151,16 @@ copyTextToVector [r: Region]
         (tt: Text) (vec: Vector# r Word8#) (i0: Nat#)
         : S (Read RegionText + Write r) Nat#
 
- = box case tt of
+ = case tt of
         TextLit lit
-         -> run copyTextLitToVector lit  vec i0 0 (sizeOfTextLit lit)
+         -> copyTextLitToVector lit  vec i0 0 (sizeOfTextLit lit)
 
         TextVec vec2
-         -> run copyTextVecToVector vec2 vec i0 0 (vectorLength# vec2)
+         -> copyTextVecToVector vec2 vec i0 0 (vectorLength# vec2)
 
         TextApp t1 t2
-         -> do  i1      = run copyTextToVector t1 vec i0
-                i2      = run copyTextToVector t2 vec i1
+         -> do  i1 = copyTextToVector t1 vec i0
+                i2 = copyTextToVector t2 vec i1
                 i2
 
 
@@ -170,13 +169,13 @@ copyTextLitToVector [r: Region]
         (tt: TextLit) (vec: Vector# r Word8#) 
         (iDst iSrc nSrc: Nat#)
         : S (Write r) Nat#
- = box case iSrc >= nSrc of
+ = case iSrc >= nSrc of
         True  -> iDst
         False -> do
                 vectorWrite# vec iDst 
                         (indexTextLit tt iSrc)
 
-                run copyTextLitToVector 
+                copyTextLitToVector 
                         tt vec (iDst + 1) (iSrc + 1) nSrc
 
 
@@ -185,14 +184,14 @@ copyTextVecToVector [r1 r2: Region]
         (vecSrc: Vector# r1 Word8#) (vecDst: Vector# r2 Word8#)
         (iDst iSrc nSrc: Nat#)
         : S (Read r1 + Write r2) Nat#
- = box case iSrc >= nSrc of
+ = case iSrc >= nSrc of
         True    -> iDst
 
         False   -> do
                 vectorWrite# vecDst iDst 
-                        (run vectorRead# vecSrc iSrc)
+                        (vectorRead# vecSrc iSrc)
 
-                run copyTextVecToVector 
+                copyTextVecToVector 
                         vecSrc vecDst (iDst + 1) (iSrc + 1) nSrc
 
 
@@ -205,7 +204,7 @@ copyTextVecToVector [r1 r2: Region]
 --   TODO: purify read and alloc effects.
 --
 flattenText (tt: Text): S (Read RegionText + Alloc RegionText) Text
- = box case tt of
+ = case tt of
         -- Single text literals are already flat.
         TextLit lit     -> tt
 

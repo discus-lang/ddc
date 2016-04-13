@@ -31,7 +31,7 @@ rlength [a : Data] [r1 : Region]
 
 
 main (_ : Unit) : S Console Unit
- = box private r with { Alloc r; Read r } in 
+ = private r with { Alloc r; Read r } in 
    do
         -- Create a demo list.
         xx      = enumFromTo 0 100
@@ -42,5 +42,5 @@ main (_ : Unit) : S Console Unit
         ref     = rlength [Nat#] [r] xx
 
         -- Print out the final list length.
-        writel (showNat (run readRef ref))
+        writel (showNat (readRef ref))
         ()
