@@ -44,7 +44,6 @@ Executable ddc
         transformers    == 0.4.*,
         ddc-base        == 0.4.2.*,
         ddc-core        == 0.4.2.*,
-        ddc-core-eval   == 0.4.2.*,
         ddc-core-simpl  == 0.4.2.*,
         ddc-core-salt   == 0.4.2.*,
         ddc-core-llvm   == 0.4.2.*,
@@ -80,7 +79,6 @@ Executable ddci-core
         mtl             == 2.2.1.*,
         ddc-base        == 0.4.2.*,
         ddc-core        == 0.4.2.*,
-        ddc-core-eval   == 0.4.2.*,
         ddc-core-simpl  == 0.4.2.*,
         ddc-core-salt   == 0.4.2.*,
         ddc-core-llvm   == 0.4.2.*,
@@ -95,7 +93,6 @@ Executable ddci-core
         Main.hs
   
     Other-modules:
-        DDCI.Core.Command.Eval
         DDCI.Core.Command.Help
         DDCI.Core.Command.Set
         DDCI.Core.Command.TransInteract
@@ -105,8 +102,6 @@ Executable ddci-core
         DDCI.Core.Interface.Batch
         DDCI.Core.Interface.Interactive
 
-        DDCI.Core.Stats.Trace
-
         DDCI.Core.Command
         DDCI.Core.Input
         DDCI.Core.Mode
@@ -115,19 +110,19 @@ Executable ddci-core
         DDCI.Core.State
 
     Extensions:
-        DoAndIfThenElse
-        PatternGuards
+        ExistentialQuantification
+        FunctionalDependencies
+        MultiParamTypeClasses
+        TypeSynonymInstances
+        ScopedTypeVariables
+        StandaloneDeriving
+        FlexibleInstances
         ParallelListComp
         FlexibleContexts
-        ExistentialQuantification
-        MultiParamTypeClasses
-        FunctionalDependencies
-        TypeSynonymInstances
-        FlexibleInstances
-        StandaloneDeriving
         KindSignatures
+        DoAndIfThenElse
+        PatternGuards
         RankNTypes
-        ScopedTypeVariables
 
     ghc-options:
         -Wall
@@ -150,7 +145,6 @@ Executable ddci-tetra
         mtl              == 2.2.1.*,
         ddc-base         == 0.4.2.*,
         ddc-core         == 0.4.2.*,
-        ddc-core-eval    == 0.4.2.*,
         ddc-core-simpl   == 0.4.2.*,
         ddc-core-salt    == 0.4.2.*,
         ddc-core-llvm    == 0.4.2.*,
@@ -184,19 +178,19 @@ Executable ddci-tetra
         DDCI.Tetra.State
 
     Extensions:
-        DoAndIfThenElse
-        PatternGuards
-        ParallelListComp
-        FlexibleContexts
         ExistentialQuantification
-        MultiParamTypeClasses
         FunctionalDependencies
+        MultiParamTypeClasses
         TypeSynonymInstances
-        FlexibleInstances
-        StandaloneDeriving
-        KindSignatures
-        RankNTypes
         ScopedTypeVariables
+        StandaloneDeriving
+        FlexibleInstances
+        FlexibleContexts
+        ParallelListComp
+        DoAndIfThenElse
+        KindSignatures
+        PatternGuards
+        RankNTypes
 
     ghc-options:
         -Wall

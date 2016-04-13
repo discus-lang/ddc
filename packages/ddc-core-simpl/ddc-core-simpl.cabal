@@ -27,8 +27,8 @@ Library
         DDC.Core.Analysis.Arity
         DDC.Core.Analysis.Usage
 
-        DDC.Core.Simplifier.Recipe
         DDC.Core.Simplifier.Parser
+        DDC.Core.Simplifier.Recipe
         DDC.Core.Simplifier.Result
 
         DDC.Core.Transform.Rewrite.Disjoint
@@ -36,11 +36,11 @@ Library
         DDC.Core.Transform.Rewrite.Match
         DDC.Core.Transform.Rewrite.Parser
         DDC.Core.Transform.Rewrite.Rule
+
         DDC.Core.Transform.AnonymizeX
         DDC.Core.Transform.Beta
         DDC.Core.Transform.Boxing
         DDC.Core.Transform.Bubble
-        DDC.Core.Transform.Prune
         DDC.Core.Transform.Elaborate
         DDC.Core.Transform.Eta
         DDC.Core.Transform.Flatten
@@ -49,13 +49,13 @@ Library
         DDC.Core.Transform.Inline
         DDC.Core.Transform.Lambdas
         DDC.Core.Transform.Namify
+        DDC.Core.Transform.Prune
         DDC.Core.Transform.Rewrite
         DDC.Core.Transform.Snip
         DDC.Core.Transform.Thread
-        DDC.Core.Transform.TransformUpX
         DDC.Core.Transform.TransformDownX
         DDC.Core.Transform.TransformModX
-
+        DDC.Core.Transform.TransformUpX
         DDC.Core.Simplifier
 
         DDC.Type.Transform.Alpha
@@ -63,12 +63,11 @@ Library
 
   Other-modules:
         DDC.Core.Simplifier.Apply
-        DDC.Core.Simplifier.Lexer
         DDC.Core.Simplifier.Base
+        DDC.Core.Simplifier.Lexer
 
         DDC.Core.Transform.Inline.Templates
         DDC.Core.Transform.Rewrite.Error
-
 
   GHC-options:
         -Wall
@@ -78,18 +77,16 @@ Library
         -fno-warn-unused-do-bind
 
   Extensions:
-        BangPatterns
         NoMonomorphismRestriction
+        ExistentialQuantification
+        MultiParamTypeClasses
+        ScopedTypeVariables
+        DeriveDataTypeable
+        FlexibleInstances
+        FlexibleContexts
         ParallelListComp
         ExplicitForAll
         KindSignatures
         PatternGuards
-        MultiParamTypeClasses
-        FlexibleContexts
-        FlexibleInstances
+        BangPatterns
         RankNTypes
-        ExistentialQuantification
-        DeriveDataTypeable
-        ScopedTypeVariables
-
-        

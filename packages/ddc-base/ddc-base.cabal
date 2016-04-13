@@ -25,18 +25,18 @@ Library
         parsec          >= 3.1   && < 3.2
         
   Exposed-modules:
+        DDC.Base.Env
+        DDC.Base.Name
         DDC.Base.Panic
         DDC.Base.Parser
         DDC.Base.Pretty
-        DDC.Base.Name
-        DDC.Base.Env
 
         DDC.Control.Monad.Check
 
         DDC.Data.Canned
+        DDC.Data.ListUtils
         DDC.Data.SourcePos
         DDC.Data.Token
-        DDC.Data.ListUtils
 
         DDC.Version
         

@@ -19,7 +19,6 @@ import Control.Applicative
 import Data.Sequence                            (Seq, (|>), (><))
 import qualified DDC.Core.Salt                  as A
 import qualified DDC.Core.Exp                   as C
-import qualified DDC.Core.Exp.DaCon             as C
 import qualified DDC.Type.Env                   as Env
 import qualified Data.Sequence                  as Seq
 import qualified Data.Set                       as Set
@@ -53,7 +52,7 @@ convertBody ctx ectx blocks label instrs xx
           ,  Just (p, as)                       <- takeXPrimApps xx
           ,  A.PrimControl A.PrimControlReturn  <- p
           ,  [A.RType{}, A.RExp (A.XCon dc)]    <- as
-          ,  Just (A.NamePrimLit A.PrimLitVoid) <- C.takeNameOfDaCon dc
+          ,  Just (A.NamePrimLit A.PrimLitVoid) <- takeNameOfDaCon dc
           -> return  $   blocks 
                      |>  Block label 
                                (instrs |> (annotNil $ IReturn Nothing))

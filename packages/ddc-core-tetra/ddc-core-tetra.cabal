@@ -15,11 +15,12 @@ Description:    Disciplined Disciple Compiler intermediate language
 
 Library
   Build-Depends: 
-        base            >= 4.6 && < 4.9,
-        array           >= 0.4 && < 0.6,
-        deepseq         >= 1.3 && < 1.5,
+        base            >= 4.6    && < 4.9,
+        array           >= 0.4    && < 0.6,
+        deepseq         >= 1.3    && < 1.5,
         containers      == 0.5.*,
-        text            >= 1.0 && < 1.3,
+        text            >= 1.0    && < 1.3,
+        pretty-show     >= 1.6.8  && < 1.7,
         transformers    == 0.4.*,
         mtl             == 2.2.1.*,
         ddc-base        == 0.4.2.*,
@@ -30,7 +31,7 @@ Library
   Exposed-modules:
         DDC.Core.Tetra.Transform.Boxing
         DDC.Core.Tetra.Transform.Curry
-        DDC.Core.Tetra.Transform.Suspend
+        DDC.Core.Tetra.Check
         DDC.Core.Tetra.Compounds
         DDC.Core.Tetra.Convert
         DDC.Core.Tetra.Env
@@ -38,10 +39,6 @@ Library
         DDC.Core.Tetra
 
   Other-modules:
-        DDC.Core.Tetra.Check
-        DDC.Core.Tetra.Error
-        DDC.Core.Tetra.Profile
-
         DDC.Core.Tetra.Convert.Exp.Alt
         DDC.Core.Tetra.Convert.Exp.Arg
         DDC.Core.Tetra.Convert.Exp.Base
@@ -51,8 +48,15 @@ Library
         DDC.Core.Tetra.Convert.Exp.PrimArith
         DDC.Core.Tetra.Convert.Exp.PrimBoxing
         DDC.Core.Tetra.Convert.Exp.PrimCall
+        DDC.Core.Tetra.Convert.Exp.PrimVector
 
         DDC.Core.Tetra.Convert.Type.Base
+        DDC.Core.Tetra.Convert.Type.DaCon
+        DDC.Core.Tetra.Convert.Type.Data
+        DDC.Core.Tetra.Convert.Type.Kind
+        DDC.Core.Tetra.Convert.Type.Region
+        DDC.Core.Tetra.Convert.Type.Super
+        DDC.Core.Tetra.Convert.Type.Witness
 
         DDC.Core.Tetra.Convert.Boxing
         DDC.Core.Tetra.Convert.Data
@@ -66,14 +70,18 @@ Library
         DDC.Core.Tetra.Prim.OpArith
         DDC.Core.Tetra.Prim.OpCast
         DDC.Core.Tetra.Prim.OpFun
+        DDC.Core.Tetra.Prim.OpVector
         DDC.Core.Tetra.Prim.TyConPrim
         DDC.Core.Tetra.Prim.TyConTetra
 
         DDC.Core.Tetra.Transform.Curry.Call
+        DDC.Core.Tetra.Transform.Curry.Callable
         DDC.Core.Tetra.Transform.Curry.CallSuper
         DDC.Core.Tetra.Transform.Curry.CallThunk
-        DDC.Core.Tetra.Transform.Curry.Interface
+        DDC.Core.Tetra.Transform.Curry.Error
 
+        DDC.Core.Tetra.Profile
+        DDC.Core.Tetra.Error
 
   GHC-options:
         -Wall

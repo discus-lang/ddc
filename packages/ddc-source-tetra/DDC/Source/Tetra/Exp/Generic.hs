@@ -6,11 +6,11 @@ module DDC.Source.Tetra.Exp.Generic
           HasAnonBind   (..)
 
           -- * Expressions
-        , GName         (..)
-        , GAnnot        (..)
-        , GBind         (..)
-        , GBound        (..)
-        , GPrim         (..)
+        , GName
+        , GAnnot
+        , GBind
+        , GBound
+        , GPrim
         , GExp          (..)
         , GLets         (..)
         , GAlt          (..)
@@ -33,7 +33,7 @@ import DDC.Type.Exp
 import qualified DDC.Type.Exp           as T
 import DDC.Type.Sum                     ()
 import Control.DeepSeq
-import DDC.Core.Exp.DaCon
+import DDC.Core.Exp
         ( DaCon         (..))
 
 

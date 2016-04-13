@@ -17,11 +17,11 @@ Description:    Disciplined Disciple Compiler Tetra source language.
                 
 Library
   Build-Depends: 
-        base             >= 4.6 && < 4.9,
-        array            >= 0.4 && < 0.6,
-        deepseq          >= 1.3 && < 1.5,
+        base             >= 4.6   && < 4.9,
+        array            >= 0.4   && < 0.6,
+        deepseq          >= 1.3   && < 1.5,
         containers       == 0.5.*,
-        text             >= 1.0  && < 1.3,
+        text             >= 1.0   && < 1.3,
         transformers     == 0.4.*,
         mtl              == 2.2.1.*,
         ddc-base         == 0.4.2.*,
@@ -30,6 +30,9 @@ Library
         ddc-core-tetra   == 0.4.2.*
 
   Exposed-modules:
+        DDC.Source.Tetra.Exp.Annot
+        DDC.Source.Tetra.Exp.Generic
+
         DDC.Source.Tetra.Transform.BoundX
         DDC.Source.Tetra.Transform.Defix
         DDC.Source.Tetra.Transform.Expand
@@ -48,18 +51,21 @@ Library
         DDC.Source.Tetra.Prim
 
   Other-modules:
-        DDC.Source.Tetra.Exp.Base
+        DDC.Source.Tetra.Parser.Atom
         DDC.Source.Tetra.Parser.Exp
         DDC.Source.Tetra.Parser.Module
         DDC.Source.Tetra.Parser.Param
+        DDC.Source.Tetra.Parser.Witness
+
         DDC.Source.Tetra.Prim.Base
         DDC.Source.Tetra.Prim.OpArith
         DDC.Source.Tetra.Prim.OpFun
+        DDC.Source.Tetra.Prim.OpVector
         DDC.Source.Tetra.Prim.TyConPrim
         DDC.Source.Tetra.Prim.TyConTetra
+
         DDC.Source.Tetra.Transform.Defix.Error
         DDC.Source.Tetra.Transform.Defix.FixTable
-        
 
   GHC-options:
         -Wall
@@ -69,13 +75,18 @@ Library
         -fno-warn-unused-do-bind
 
   Extensions:
-        KindSignatures
         NoMonomorphismRestriction
-        ScopedTypeVariables
-        PatternGuards
-        FlexibleContexts
-        FlexibleInstances
-        RankNTypes
-        BangPatterns
-        ParallelListComp
         MultiParamTypeClasses
+        ScopedTypeVariables
+        StandaloneDeriving
+        FlexibleInstances
+        FlexibleContexts
+        ParallelListComp
+        ConstraintKinds
+        PatternSynonyms
+        EmptyDataDecls
+        KindSignatures
+        PatternGuards
+        BangPatterns
+        RankNTypes
+

@@ -4,7 +4,7 @@
 module DDC.Source.Tetra.Pretty
         ( module DDC.Core.Pretty
         , module DDC.Base.Pretty 
-        , PrettyLanguage        (..))
+        , PrettyLanguage)
 where
 import DDC.Source.Tetra.Predicates
 import DDC.Source.Tetra.DataDef

@@ -28,6 +28,7 @@ Library
         DDC.Core.Salt.Compounds
         DDC.Core.Salt.Convert
         DDC.Core.Salt.Env
+        DDC.Core.Salt.Exp
         DDC.Core.Salt.Name
         DDC.Core.Salt.Platform
         DDC.Core.Salt.Profile
@@ -36,6 +37,14 @@ Library
         DDC.Core.Salt
 
   Other-modules:
+        DDC.Core.Salt.Compounds.Lit
+        DDC.Core.Salt.Compounds.PrimArith
+        DDC.Core.Salt.Compounds.PrimCast
+        DDC.Core.Salt.Compounds.PrimControl
+        DDC.Core.Salt.Compounds.PrimStore
+        DDC.Core.Salt.Compounds.PrimTyCon
+
+        DDC.Core.Salt.Convert.Base
         DDC.Core.Salt.Convert.Exp
         DDC.Core.Salt.Convert.Init
         DDC.Core.Salt.Convert.Name
@@ -45,8 +54,8 @@ Library
         
         DDC.Core.Salt.Name.Lit
         DDC.Core.Salt.Name.PrimArith
-        DDC.Core.Salt.Name.PrimCast
         DDC.Core.Salt.Name.PrimCall
+        DDC.Core.Salt.Name.PrimCast
         DDC.Core.Salt.Name.PrimControl
         DDC.Core.Salt.Name.PrimStore
         DDC.Core.Salt.Name.PrimTyCon
@@ -54,7 +63,6 @@ Library
         
         DDC.Core.Salt.Convert.Base
         
-
                   
   GHC-options:
         -Wall
@@ -64,11 +72,15 @@ Library
         -fno-warn-unused-do-bind
 
   Extensions:
-        KindSignatures
         NoMonomorphismRestriction
+        FunctionalDependencies
+        MultiParamTypeClasses
         ScopedTypeVariables
         StandaloneDeriving
-        PatternGuards
-        DeriveDataTypeable
+        FlexibleInstances
+        FlexibleContexts
         ParallelListComp
+        PatternSynonyms
+        KindSignatures
+        PatternGuards
         BangPatterns

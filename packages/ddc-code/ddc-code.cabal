@@ -15,15 +15,34 @@ Description:    Disciplined Disciple Compiler base libraries.
 data-files:
         LICENSE
 
-        salt/primitive/Vector.dcs
-        salt/primitive32/Int.dcs
-        salt/primitive64/Int.dcs
         salt/runtime32/Object.dcs
+
+        salt/runtime64/debug/Trace.dcs
+        salt/runtime64/primitive/Array.dcs
+        salt/runtime64/primitive/Ref.dcs
+        salt/runtime64/primitive/Text.dcs
+        salt/runtime64/Apply.dcs
         salt/runtime64/Object.dcs
 
         sea/primitive/Primitive.c
         sea/primitive/Primitive.h
         sea/runtime/Runtime.h
+
+        tetra/base/Data/Numeric/Bool.ds
+        tetra/base/Data/Numeric/Nat.ds
+        tetra/base/Data/Array.ds
+        tetra/base/Data/Function.ds
+        tetra/base/Data/List.ds
+        tetra/base/Data/Maybe.ds
+        tetra/base/Data/Ref.ds
+        tetra/base/Data/Stream.ds
+        tetra/base/Data/Text.ds
+        tetra/base/Data/Tuple.ds
+
+        tetra/base/Math/Combinations.ds
+
+        tetra/base/System/IO/Console.ds
+
 
 Library
   build-depends:

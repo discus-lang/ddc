@@ -36,13 +36,13 @@ Library
         DDC.Llvm.Analysis.Defs
         DDC.Llvm.Analysis.Parents
 
-        DDC.Llvm.Transform.Flatten
         DDC.Llvm.Transform.Calls
+        DDC.Llvm.Transform.Flatten
         DDC.Llvm.Transform.Simpl
 
+        DDC.Llvm.Graph
         DDC.Llvm.Pretty
         DDC.Llvm.Syntax
-        DDC.Llvm.Graph
 
   Other-modules:
         DDC.Core.Llvm.Convert.Exp.Atom
@@ -54,7 +54,6 @@ Library
 
         DDC.Core.Llvm.Convert.Base
         DDC.Core.Llvm.Convert.Context
-        DDC.Core.Llvm.Convert.Erase
         DDC.Core.Llvm.Convert.Error
         DDC.Core.Llvm.Convert.Exp
         DDC.Core.Llvm.Convert.Super

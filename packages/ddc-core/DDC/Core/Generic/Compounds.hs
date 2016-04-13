@@ -15,7 +15,12 @@ module DDC.Core.Generic.Compounds
         -- * Applications
         , makeXApps,    takeXApps,      splitXApps
         , takeXConApps
-        , takeXPrimApps)
+        , takeXPrimApps
+
+        -- * Data Constructors
+        , dcUnit
+        , takeNameOfDaCon
+        , takeTypeOfDaCon)
 where
 import DDC.Core.Generic.Exp
 import DDC.Core.Exp.DaCon

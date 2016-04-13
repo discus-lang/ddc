@@ -1,7 +1,7 @@
 {-# LANGUAGE TypeFamilies #-}
 module DDC.Source.Tetra.Exp.Annot
         ( module DDC.Source.Tetra.Exp.Generic
-        , Annot         (..)
+        , Annot
         , HasAnonBind   (..)
 
         -- * Expressions
@@ -16,7 +16,7 @@ module DDC.Source.Tetra.Exp.Annot
         , GuardedExp 
         , Guard      
         , Cast
-        , C.DaCon       (..)       
+        , DaCon         (..)
 
         -- * Witnesses
         , Witness
@@ -24,7 +24,6 @@ module DDC.Source.Tetra.Exp.Annot
 where
 import DDC.Source.Tetra.Exp.Generic
 import DDC.Source.Tetra.Prim
-import qualified DDC.Core.Exp.DaCon     as C
 import qualified DDC.Type.Exp           as T
 
 

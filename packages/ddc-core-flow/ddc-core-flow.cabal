@@ -46,17 +46,21 @@ Library
 
   Exposed-modules:
 
+        DDC.Core.Flow.Convert.Base
+        DDC.Core.Flow.Convert.Exp
+        DDC.Core.Flow.Convert.Type
+
         DDC.Core.Flow.Process.Operator
         DDC.Core.Flow.Process.Process
 
+        DDC.Core.Flow.Transform.Rates.Clusters.Base
+        DDC.Core.Flow.Transform.Rates.Clusters.Greedy
+        DDC.Core.Flow.Transform.Rates.Clusters.Linear
+        DDC.Core.Flow.Transform.Rates.Clusters
         DDC.Core.Flow.Transform.Rates.CnfFromExp
         DDC.Core.Flow.Transform.Rates.Combinators
         DDC.Core.Flow.Transform.Rates.Fail
         DDC.Core.Flow.Transform.Rates.Graph
-        DDC.Core.Flow.Transform.Rates.Clusters
-        DDC.Core.Flow.Transform.Rates.Clusters.Base
-        DDC.Core.Flow.Transform.Rates.Clusters.Greedy
-        DDC.Core.Flow.Transform.Rates.Clusters.Linear
         DDC.Core.Flow.Transform.Rates.SeriesOfVector
         DDC.Core.Flow.Transform.Rates.SizeInference
 
@@ -69,13 +73,9 @@ Library
         DDC.Core.Flow.Transform.Thread
         DDC.Core.Flow.Transform.Wind
 
-        DDC.Core.Flow.Convert
-        DDC.Core.Flow.Convert.Base
-        DDC.Core.Flow.Convert.Type
-        DDC.Core.Flow.Convert.Exp
-
         DDC.Core.Flow.Compounds
         DDC.Core.Flow.Context
+        DDC.Core.Flow.Convert
         DDC.Core.Flow.Env
         DDC.Core.Flow.Exp
         DDC.Core.Flow.Lower

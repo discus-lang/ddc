@@ -28,7 +28,6 @@ Library
         time             >= 1.4 && < 1.6,
         ddc-base         == 0.4.2.*,
         ddc-core         == 0.4.2.*,
-        ddc-core-eval    == 0.4.2.*,
         ddc-core-simpl   == 0.4.2.*,
         ddc-core-salt    == 0.4.2.*,
         ddc-core-llvm    == 0.4.2.*,
@@ -48,11 +47,12 @@ Library
         DDC.Driver.Command.Flow.Prep
         DDC.Driver.Command.Flow.Rate
         DDC.Driver.Command.Flow.Thread
-        DDC.Driver.Command.Flow.Wind
         DDC.Driver.Command.Flow.ToTetra
+        DDC.Driver.Command.Flow.Wind
+
         DDC.Driver.Command.Tetra.Boxing
         DDC.Driver.Command.Tetra.Curry
-        DDC.Driver.Command.Tetra.Suspend
+
         DDC.Driver.Command.BaseBuild
         DDC.Driver.Command.Build
         DDC.Driver.Command.Check

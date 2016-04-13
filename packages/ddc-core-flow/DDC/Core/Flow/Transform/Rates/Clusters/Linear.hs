@@ -59,7 +59,7 @@ mkSameCluster m n
 
 -- | Minimise objective:
 -- \Sigma_i,j Weight(i,j) * SameCluster(i,j)
-gobjective :: Ord n => [n] -> [(Int,n,n)] -> Linear (ZVar n) (RVar n) IntDouble KZ
+gobjective :: Ord n => [n] -> [(Int,n,n)] -> Linear (ZVar n) (RVar n) IntDouble 'KZ
 gobjective ns ws
  =  foldl (.+.) c0
  (  map (\(w,i,j) -> z (mkSameCluster i j) (Z w)) ws

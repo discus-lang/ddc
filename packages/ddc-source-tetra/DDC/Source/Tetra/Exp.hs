@@ -4,11 +4,11 @@ module DDC.Source.Tetra.Exp
         ( module DDC.Type.Exp
 
         -- * Expressions
-        , GName         (..)
-        , GAnnot        (..)
-        , GBind         (..)
-        , GBound        (..)
-        , GPrim         (..)
+        , GName
+        , GAnnot
+        , GBind
+        , GBound
+        , GPrim
         , GExp          (..)
         , GLets         (..)
         , GAlt          (..)

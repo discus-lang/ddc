@@ -6,8 +6,9 @@ PACKAGES = \
 	ddc-core-simpl \
 	ddc-core-salt \
 	ddc-core-llvm \
-	ddc-core-flow \
 	ddc-core-tetra \
+	ddc-core-flow \
+	ddc-core-babel \
         ddc-source-tetra \
 	ddc-build \
         ddc-interface \

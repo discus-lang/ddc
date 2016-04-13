@@ -1,6 +1,6 @@
 module DDC.Core.Flow.Transform.Rates.Graph
         ( Graph(..)
-        , Edge(..)
+        , Edge
         , graphOfBinds
         , graphTopoOrder 
         , mergeWeights
