@@ -214,13 +214,14 @@ checkLam !table !a !ctx !b1 !x2 !(Check tExpected)
         --  to avoid confusion.
         (x2', t2, e2, ctx2)
          <- 
-{-            -- TODO: suppress this hackery if the flag is not enabled.
             case takeTSusp tX2 of
              Just (_e, tResult)
+              |  not $ isXCastBox x2
               -> tableCheckExp table table ctx1 (Check tResult) DemandRun  x2 
 
-             Nothing 
-              -> -} tableCheckExp table table ctx1 (Check tX2)     DemandNone x2
+             _
+              -> tableCheckExp table table ctx1 (Check tX2)     DemandNone x2
+
 
         -- Force the kind of the body to be Data.
         --   This constrains the kind of polymorpic variables that are used
@@ -344,6 +345,7 @@ makeFunction config a xx bParam tParam kParam xBody tBody eBody
               in  return ( XLam aAbs bParam xBody
                          , tAbs)
 
+{-
         -- Handle ImplicitBoxBodies
         --   Evaluating the given body causes an effect, but the body of an
         --   abstraction must be pure. Automatically box up the body to build
@@ -389,7 +391,7 @@ makeFunction config a xx bParam tParam kParam xBody tBody eBody
                                         $ XCast aRun CastRun 
                                         $ xBody
                                 , tAbs)
-
+-}
         -- We don't have a way of forming a function with an impure effect.
         else if (eCaptured /= tBot kEffect)
          then   throw $ ErrorLamNotPure  a xx uniParam eCaptured

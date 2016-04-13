@@ -67,13 +67,6 @@ total	:
 	@$(MAKE) batchwar
 
 
-# -- Same as 'total', but do a full clean first
-.PHONY  : cleantotal
-cleantotal :
-	@$(MAKE) clean
-	@$(MAKE) total
-
-
 # -- Build all dependencies
 .PHONY	: deps
 deps	: make/deps/Makefile-ddc-check.deps \

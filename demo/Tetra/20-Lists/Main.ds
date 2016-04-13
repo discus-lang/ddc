@@ -20,10 +20,12 @@ main (_ : Unit) : S Console Unit
 
         -- Eat the list, updating the mutable counter while printing
         -- the elements to the console.
-        run forS xx' (λx : Nat#. box
-          do    run writeRef ref ((run readRef ref) + 1)
-                run writel (showNat x))
+        run forS xx' (λx : Nat#. 
+          do    writeRef ref ((run readRef ref) + 1)
+                writel (showNat x))
         
         -- Print out the final list length.
         writel (showNat (run readRef ref))
+
+
 

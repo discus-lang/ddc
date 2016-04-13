@@ -9,7 +9,6 @@ import BuildBox.Build.BuildState
 import BuildBox.Control.Gang
 import BuildBox
 import Control.Concurrent.STM.TChan
-import System.Random
 
 
 -- | Run some job chains.
@@ -41,18 +40,9 @@ runChainIO
         -> IO ()
 
 runChainIO tmpDir mChanResult ixChain chain
- = do   uid             <- getUniqueId
-        let state       = buildStateDefault uid tmpDir
+ = do   let state       = buildStateDefault tmpDir
 
         runBuildWithState state
          $ runChainWithTChan mChanResult ixChain chain
 
         return ()
-
-
--- | Get a unique(ish) id for this process.
---   The random seeds the global generator with the cpu time in psecs,
---   which should be good enough.
-getUniqueId :: IO Integer
-getUniqueId
-        = randomRIO (0, 1000000000)     
