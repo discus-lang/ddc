@@ -21,10 +21,9 @@ rlength [a : Data] [r1 : Region]
         ref       = allocRef [r2] 0
 
         -- Destructively initialize the reference.
-        forS xx (λ(_ : a). box
+        forS xx (λ(_ : a).
          do     x       = readRef ref
-                writeRef ref (x + 1)
-                ())
+                writeRef ref (x + 1))
 
         -- Return the reference.
         ref
@@ -37,10 +36,9 @@ main (_ : Unit) : S Console Unit
         xx      = enumFromTo 0 100
 
         -- Count the length of the list.
-        -- From this calling context, the fact that the ref is destructively
-        -- initialized is not visible. 
+        -- From this calling context, the fact that the ref is
+        -- destructively initialized is not visible. 
         ref     = rlength [Nat#] [r] xx
 
         -- Print out the final list length.
         writel (showNat (readRef ref))
-        ()

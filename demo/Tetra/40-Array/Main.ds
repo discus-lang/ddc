@@ -1,8 +1,9 @@
 
 module Main
-import Data.Numeric.Nat
-import Data.Array
 import System.IO.Console
+import Data.Numeric.Nat
+import Data.Function
+import Data.Array
 where
 
 
@@ -13,5 +14,4 @@ main (_: Unit): S Console Unit
 
         writeArray arr 5 100
 
-        writel (showNat (readArray arr 5))
-        ()
+        writel $ showNat (readArray arr 5)

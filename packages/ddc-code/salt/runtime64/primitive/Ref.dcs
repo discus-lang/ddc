@@ -3,8 +3,8 @@
 module Runtime.Prim.Ref
 export value
  allocRef       : [r1 r2 : Region]. Ptr# r1 Obj -> Ptr# r2 Obj
- writeRef       : [r1 r2 : Region]. Ptr# r1 Obj -> Ptr# r2 Obj -> Void#
  readRef        : [r1 r2 : Region]. Ptr# r1 Obj -> Ptr# r2 Obj
+ writeRef_      : [r1 r2 : Region]. Ptr# r1 Obj -> Ptr# r2 Obj -> Void#
 
 import value
  allocBoxed     : [r1    : Region]. Tag# -> Nat# -> Ptr# r1 Obj
@@ -20,13 +20,15 @@ allocRef [r1 r2: Region] (val: Ptr# r1 Obj): Ptr# r2 Obj
         setBoxed ref 0# val
         ref
 
--- | Write a value into reference.
-writeRef [r1 r2: Region] (ref: Ptr# r1 Obj) (val: Ptr# r2 Obj): Void#
- =      setBoxed ref 0# val
-
-
 -- | Read the value from a reference.
 readRef  [r1 r2: Region] (ref: Ptr# r1 Obj): Ptr# r2 Obj
  =      getBoxed ref 0#
+
+
+-- | Write a value into reference.
+writeRef_ [r1 r2: Region] (ref: Ptr# r1 Obj) (val: Ptr# r2 Obj): Void#
+ =      setBoxed ref 0# val
+
+
 
 

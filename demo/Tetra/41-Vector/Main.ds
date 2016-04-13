@@ -1,7 +1,8 @@
 
 module Main
-import Data.Numeric.Nat
 import System.IO.Console
+import Data.Numeric.Nat
+import Data.Function
 where
 
 
@@ -9,9 +10,8 @@ main (_: Unit): S Console Unit
  = private r with { Alloc r; Read r; Write r } in
    do   
         vec     = vectorAlloc# [r] 100
-        writel ("length = " % showNat (vectorLength# vec))
+        writel $ "length = " % showNat (vectorLength# vec)
 
         vectorWrite# vec 99 27
-        writel ("value  = "  % showNat (vectorRead# vec 99))
-        ()
+        writel $ "value  = "  % showNat (vectorRead# vec 99)
 

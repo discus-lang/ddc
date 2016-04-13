@@ -7,26 +7,26 @@ import Data.Ref
 import System.IO.Console
 where
 
-main (_ : Unit) : S Console Unit
+main (_: Unit): S Console Unit
  = private r with { Alloc r; Read r; Write r } in 
    do
         -- Create a demo list.
         xx      = enumFromTo 0 100
 
         -- Select only the even elements
-        xx'     = filterS (λx : Nat#. box rem# x 2 == 0) xx
+        xx'     = filter (λx: Nat#. rem# x 2 == 0) xx
 
         -- Mutable reference to hold list length.
         ref     = allocRef [r] [Nat#] 0
 
         -- Eat the list, updating the mutable counter while printing
         -- the elements to the console.
-        forS xx' (λx: Nat#. box
+        forS xx' (λx: Nat#.
           do    writeRef ref ((readRef ref) + 1)
                 writel (showNat x))
         
         -- Print out the final list length.
-        writel (showNat (readRef ref))
+        writel $ showNat (readRef ref)
 
 
 

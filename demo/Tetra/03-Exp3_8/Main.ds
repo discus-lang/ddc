@@ -1,7 +1,8 @@
 
 module Main 
-import Data.Numeric.Nat
 import System.IO.Console
+import Data.Numeric.Nat
+import Data.Function
 where
 
 -- Evaluate 3^6 using church encoding of natural numbers.
@@ -37,5 +38,5 @@ intToNat (x : Nat#) : Natural
         False   -> Succ (intToNat (x - 1))
         
 main (_ : Unit) : S Console Unit
- = writel ("exp 3 6 = " % showNat (natToInt (cExp (intToNat 3) (intToNat 6))))
+ = writel $ "exp 3 6 = " % showNat (natToInt (cExp (intToNat 3) (intToNat 6)))
 

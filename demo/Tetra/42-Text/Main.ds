@@ -35,5 +35,3 @@ main (_: Unit): S (Alloc RegionText + Read RegionText + Console) Unit
         writel  $ textOfWord8 0x31w8
         writel  $ textOfWord8 0x32w8
         writel  $ textOfWord8 0x33w8
-
-        ()

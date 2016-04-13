@@ -214,13 +214,26 @@ checkLam !table !a !ctx !b1 !x2 !(Check tExpected)
              -- If we're implicitly boxing bodies and we're expecting a
              -- suspension, then check the body against the type of the
              -- result of the suspension.
-             Just (_e, tResult)
+             Just (e2Expected, t2Expected)
               |  configImplicitBox config
               ,  not $ isXCastBox x2
-              -> tableCheckExp table table ctx1 (Check tResult) DemandRun  x2 
+              -> do 
+                    -- Check the body against the expected result type of the
+                    -- suspension.
+                    (x2', t2', es2Actual, ctx2)
+                      <- tableCheckExp table table ctx1 (Check t2Expected) DemandRun x2 
+
+                    -- The expected effect in the suspension could have been an
+                    -- existential, so we need to unify it against the reconstructed
+                    -- effect to instantiate it.
+                    let e2Actual = TSum es2Actual
+                    ctx2' <- makeEq config a ctx2 e2Expected e2Actual
+                          $  ErrorMismatch a e2Actual e2Expected x2
+
+                    return (x2', t2', es2Actual, ctx2')
 
              _
-              -> tableCheckExp table table ctx1 (Check tX2)     DemandNone x2
+              -> tableCheckExp table table ctx1 (Check tX2) DemandNone x2
 
 
         -- Force the kind of the body to be Data.
