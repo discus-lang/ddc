@@ -2,7 +2,8 @@
 -- Demonstration of list combinators and combining commutable effects.
 module Main 
 import Data.Numeric.Nat
-import Data.Ref; Data.List; Data.Maybe
+import Data.Function; Data.Maybe; Data.List
+import Data.Ref
 import System.IO.Console
 where
 

@@ -39,13 +39,13 @@ replicate (n: Nat#) (x: a): List a
 
 
 -- | Construct a range of values.
-enumFromTo (start : Nat#) (end : Nat#) : List Nat#
+enumFromTo (start: Nat#) (end: Nat#): List Nat#
  | start >= end = singleton start
  | otherwise    = Cons start (enumFromTo (start + 1) end)
 
 
 -- | Append two lists.
-append (xx yy : List a) : List a
+append (xx yy: List a): List a
  = case xx of
         Nil             -> yy
         Cons x xs       -> Cons x (append xs yy)
@@ -53,28 +53,28 @@ append (xx yy : List a) : List a
 
 -- Projections ----------------------------------------------------------------
 -- | Take the length of a list.
-length (xx : List a) : Nat#
+length (xx: List a): Nat#
  = case xx of
         Nil             -> 0
         Cons x xs       -> 1 + length xs
 
 
 -- | Take the head of a list, if there is one.
-head (def : a) (xx : List a) : a
+head (def: a) (xx: List a): a
  = case xx of
         Nil             -> def
         Cons x xs       -> x
 
 
 -- | Take the tail of a list, if there is one.
-tail (def : List a) (xx : List a) : List a
+tail (def: List a) (xx: List a): List a
  = case xx of
         Nil             -> def
         Cons x xs       -> xs
 
 
 -- | Like `tail`, but if there is only one element then keep it.
-tail1   (def : a) (xx : List a) : List a
+tail1   (def: a) (xx: List a): List a
  = case xx of
         Nil             -> singleton def
         Cons x xs        
@@ -84,7 +84,7 @@ tail1   (def : a) (xx : List a) : List a
 
 
 -- | Take the last element of a list, if there is one.
-last (def : a) (xx : List a) : a
+last (def: a) (xx: List a): a
  = case xx of
         Nil                     -> def
         Cons x xs
@@ -93,7 +93,7 @@ last (def : a) (xx : List a) : a
                 Cons y ys       -> last def xs
 
 
-index (def : a) (n : Nat#) (xx : List a) : a
+index (def: a) (n: Nat#) (xx: List a): a
  = case xx of   
         Nil     -> def
         Cons x xs 
@@ -105,7 +105,7 @@ index (def : a) (n : Nat#) (xx : List a) : a
 -- Transforms -----------------------------------------------------------------
 -- | Reverse the elements of a list.
 --   This is a naive O(n^2) version for testing purposes.
-reverse (xx : List a) : List a
+reverse (xx: List a): List a
  = case xx of
         Nil             -> Nil
         Cons x xs       -> append (reverse xs) (singleton x)
@@ -113,7 +113,7 @@ reverse (xx : List a) : List a
 
 -- Maps -----------------------------------------------------------------------
 -- | Apply a worker function to every element of a list, yielding a new list.
-map     (f : a -> b) (xx : List a) : List b
+map     (f: a -> b) (xx: List a): List b
  = case xx of
         Nil             -> Nil
         Cons x xs       -> Cons (f x) (map f xs)
@@ -122,15 +122,15 @@ map     (f : a -> b) (xx : List a) : List b
 -- | Apply a stateful worker function to every element of a list,
 --   yielding a new list. 
 --   The worker is applied to the source elements left-to-right.
-mapS    (f : a -> S e b) (xx : List a) : S e (List b)
- = box case xx of
+mapS    (f: a -> S e b) (xx: List a): S e (List b)
+ = case xx of
         Nil             -> Nil
         Cons x xs       -> Cons (f x) (mapS f xs)
 
 
 -- | Apply a function to all elements of a list, yielding nothing.
-forS (xx: List a) (f: a -> S e Unit) : S e Unit
- = box case xx of
+forS (xx: List a) (f: a -> S e Unit): S e Unit
+ = case xx of
         Nil     -> ()
         Cons x xs       
          -> do  f x
@@ -138,8 +138,8 @@ forS (xx: List a) (f: a -> S e Unit) : S e Unit
 
 
 -- Zips -----------------------------------------------------------------------
-zipWith (f : a -> b -> c) 
-        (xx : List a) (yy : List b) : List c
+zipWith (f: a -> b -> c) 
+        (xx: List a) (yy: List b): List c
  = case xx of
         Nil     -> Nil
         Cons x xs
@@ -150,9 +150,9 @@ zipWith (f : a -> b -> c)
                 Nil -> Nil
 
 
-zipWithS (f : a -> b -> S e c) 
-         (xx : List a) (yy : List b) : S e (List c)
- = box case xx of
+zipWithS (f: a -> b -> S e c) 
+         (xx: List a) (yy: List b): S e (List c)
+ = case xx of
         Nil     -> Nil
         Cons x xs
          -> case yy of
@@ -165,7 +165,7 @@ zipWithS (f : a -> b -> S e c)
 -- Folds ----------------------------------------------------------------------
 -- | Reduce a list with a binary function and zero value, 
 --   from left to right.
-foldl (f : b -> a -> b) (z : b) (xx : List a) : b
+foldl (f: b -> a -> b) (z: b) (xx: List a): b
  = case xx of
         Nil             -> z
         Cons x xs       -> foldl f (f z x) xs
@@ -173,15 +173,15 @@ foldl (f : b -> a -> b) (z : b) (xx : List a) : b
 
 -- | Reduce a list with a stateful binary function and zero value, 
 --   from left to right.
-foldlS (f : b -> a -> S e b) (z : b) (xx : List a) : S e b
- = box case xx of
+foldlS (f: b -> a -> S e b) (z: b) (xx: List a): S e b
+ = case xx of
         Nil             -> z
         Cons x xs       -> foldlS f (f z x) xs
 
 
 -- | Reduce a list with a binary function and zero value,
 --   from right to left.
-foldr (f : a -> b -> b) (z : b) (xx : List a) : b
+foldr (f: a -> b -> b) (z: b) (xx: List a): b
  = case xx of
         Nil             -> z
         Cons x xs       -> f x (foldr f z xs)
@@ -189,8 +189,8 @@ foldr (f : a -> b -> b) (z : b) (xx : List a) : b
 
 -- | Reduce a list with a stateful binary function and zero value, 
 --   from right to left.
-foldrS (f : a -> b -> S e b) (z : b) (xx : List a) : S e b
- = box case xx of
+foldrS (f: a -> b -> S e b) (z: b) (xx: List a): S e b
+ = case xx of
         Nil             -> z
         Cons x xs       -> f x (foldrS f z xs)
 
@@ -206,7 +206,7 @@ prod (xs: List Nat#): Nat#
 
 
 -- Scans ----------------------------------------------------------------------
-scanl (f : b -> a -> b) (acc : b) (xx : List a) : List b
+scanl (f: b -> a -> b) (acc: b) (xx: List a): List b
  = case xx of
         Nil     
          -> Cons acc Nil
@@ -218,7 +218,7 @@ scanl (f : b -> a -> b) (acc : b) (xx : List a) : List b
 
 -- Filters --------------------------------------------------------------------
 -- | Keep only those elements that match the given predicate.
-filter (p : a -> Bool#) (xx : List a) : List a
+filter (p: a -> Bool#) (xx: List a): List a
  = case xx of
         Nil             -> Nil
         Cons x xs  
@@ -229,8 +229,8 @@ filter (p : a -> Bool#) (xx : List a) : List a
 
 -- | Keep only those elements that match the given stateful predicate.
 --   The predicate is applied to the list elements from left to right.
-filterS (p : a -> S e Bool#) (xx : List a) : S e (List a)
- = box case xx of
+filterS (p: a -> S e Bool#) (xx: List a): S e (List a)
+ = case xx of
         Nil             -> Nil
         Cons x xs  
          -> if p x 
@@ -247,6 +247,4 @@ any (p: a -> Bool#) (xx: List a): Bool#
         Cons x xs 
          | p x          -> True
          | otherwise    -> any p xs
-
-
 

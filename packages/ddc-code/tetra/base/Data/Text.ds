@@ -171,9 +171,8 @@ copyTextLitToVector [r: Region]
         : S (Write r) Nat#
  = case iSrc >= nSrc of
         True  -> iDst
-        False -> do
-                vectorWrite# vec iDst 
-                        (indexTextLit tt iSrc)
+        False 
+         -> do  vectorWrite# vec iDst (indexTextLit tt iSrc)
 
                 copyTextLitToVector 
                         tt vec (iDst + 1) (iSrc + 1) nSrc
@@ -188,8 +187,7 @@ copyTextVecToVector [r1 r2: Region]
         True    -> iDst
 
         False   -> do
-                vectorWrite# vecDst iDst 
-                        (vectorRead# vecSrc iSrc)
+                vectorWrite# vecDst iDst (vectorRead# vecSrc iSrc)
 
                 copyTextVecToVector 
                         vecSrc vecDst (iDst + 1) (iSrc + 1) nSrc
