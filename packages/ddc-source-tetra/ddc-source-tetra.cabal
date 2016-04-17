@@ -51,6 +51,8 @@ Library
         DDC.Source.Tetra.Prim
 
   Other-modules:
+        DDC.Source.Tetra.Convert.Error
+
         DDC.Source.Tetra.Parser.Atom
         DDC.Source.Tetra.Parser.Exp
         DDC.Source.Tetra.Parser.Module

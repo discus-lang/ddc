@@ -128,29 +128,29 @@ pipeText !srcName !srcLine !str !pp
                         -- This source position is used to annotate the 
                         -- let-expression that holds all the top-level bindings.
                         let sp            = SP.SourcePos "<top level>" 1 1
+                        case SE.coreOfSourceModule sp mm_expand of
+                         Left err
+                          -> return [ErrorLoad err]
 
-                        -- TODO: handle error
-                        let Right mm_core = SE.coreOfSourceModule sp mm_expand
+                         Right mm_core
+                          -> do -- Dump Core Tetra.
+                                pipeSink (renderIndent $ ppr mm_core) sinkCore
 
-                        -- Dump Core Tetra.
-                        pipeSink (renderIndent $ ppr mm_core) sinkCore
+                                -- Discover which module imported names are from, and
+                                -- attach the meta-data which will be needed by follow-on
+                                -- compilation, such as the arity of each super.
+                                result <- B.resolveNamesInModule 
+                                                CE.primKindEnv CE.primTypeEnv
+                                                store mm_core
 
-                        -- Discover which module imported names are from, and
-                        -- attach the meta-data which will be needed by follow-on
-                        -- compilation, such as the arity of each super.
-                        result          <- B.resolveNamesInModule 
-                                                    CE.primKindEnv CE.primTypeEnv
-                                                    store mm_core
-
-                        case result of 
-                         Left err          -> return [ErrorLoad err]
-                         Right mm_resolved -> goSpread mm_resolved
+                                case result of 
+                                 Left err          -> return [ErrorLoad err]
+                                 Right mm_resolved -> goSpread mm_resolved
 
                 goSpread mm
                  = do
                         -- Spread types of data constructors into uses.
-                        let mm_spread   = C.spreadX CE.primKindEnv CE.primTypeEnv
-                                                    mm
+                        let mm_spread   = C.spreadX CE.primKindEnv CE.primTypeEnv mm
 
                         -- Dump loaded code before type checking.
                         pipeSink (renderIndent $ ppr mm_spread) sinkPreCheck

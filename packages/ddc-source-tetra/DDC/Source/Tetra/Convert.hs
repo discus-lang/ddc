@@ -7,6 +7,8 @@ module DDC.Source.Tetra.Convert
         , coreOfSourceModule
         , runConvertM)
 where
+import DDC.Source.Tetra.Convert.Error
+
 import qualified DDC.Source.Tetra.Transform.Guards      as S
 import qualified DDC.Source.Tetra.Module                as S
 import qualified DDC.Source.Tetra.DataDef               as S
@@ -499,14 +501,4 @@ toCoreTyConTetra tc
         S.PrimTyConTetraF       -> C.TyConTetraF
         S.PrimTyConTetraC       -> C.TyConTetraC
         S.PrimTyConTetraU       -> C.TyConTetraU
-
-
--- Error ------------------------------------------------------------------------------------------
-data ErrorConvert a
-        -- | Cannot convert sugar expression to core.
-        = ErrorConvertCannotConvertSugarExp  (S.Exp a)
-
-        -- | Cannot convert sugar let bindings to core.
-        | ErrorConvertCannotConvertSugarLets (S.Lets a)
-
 
