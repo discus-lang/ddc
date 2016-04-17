@@ -60,12 +60,18 @@ phpOfDataDefs ds
       [ text "class" <+> bare_name name <+> text "{"
       , indent 4 $ vcat $
         [ text "function __construct" <> parenss (map var_name_t args) <+> text "{"
-        , indent 4 $ vcat $ map (\i -> obj_field_tt "this" i <> text " = " <> var_name_t i <> text ";") args
+        , indent 4 $ vcat 
+                  $ map (\i -> obj_field_tt "this" i 
+                            <> text " = " <> var_name_t i <> text ";") args
         , indent 4 $ obj_field_tt "this" "tag" <+> text " = " <+> string_of name <> text ";"
         , text "}"
         ]
       , text "}"
-      -- , text "$" <> bare_name name <> text "_new" <+> text " = DDC::curry(function" <> parenss (map var_name_t args) <+> text "{ return new " <+> bare_name name <> parenss (map var_name_t args) <> text "; }, " <> text (show (length args)) <> text ");"
+      -- , text "$" <> bare_name name <> text "_new" <+> text " 
+      --         = DDC::curry(function" <> parenss (map var_name_t args) 
+      --                <+> text "{ return new " <+> bare_name name 
+      --                <> parenss (map var_name_t args) <> text "; }, "
+      --                <> text (show (length args)) <> text ");"
       ]
 
 data Context
@@ -85,7 +91,8 @@ phpOfExp xx ctx m
     XVar _ v
      | UName n <- v
      , Just  arity <- Map.lookup n m
-     -> wrap $ text "DDC::curry(" <> bare_name n <> text ", " <> text (show arity) <> text ")"
+     -> wrap $ text "DDC::curry(" <> bare_name n <> text ", " 
+                                  <> text (show arity) <> text ")"
      | UPrim p _ <- v
      -> wrap $ phpOfPrimOp p []
      | otherwise
@@ -104,9 +111,12 @@ phpOfExp xx ctx m
     XLam a _ _
      | Just (bs, f) <- takeXLamFlags xx
      , bs' <- filter (not.fst) bs
-     -> wrap $ text "DDC::curry(/* Lam " <+> text (show a) <+> text "*/" <+> makeFunction Nothing bs f m <> text ", " <> text (show (length bs')) <> text ")"
+     -> wrap $ text "DDC::curry(/* Lam " <+> text (show a) 
+                <+> text "*/" <+> makeFunction Nothing bs f m <> text ", " 
+                <> text (show (length bs')) <> text ")"
      
-     -- (" <> var_name_b b <> text ")/* Lam " <+> text (show a) <+> text "*/ {" <+> phpOfExp x CRet <+> text " }, 1)"
+     -- (" <> var_name_b b <> text ")/* Lam " <+> text (show a) 
+     --   <+> text "*/ {" <+> phpOfExp x CRet <+> text " }, 1)"
 
     XApp _ f x
      | (f',xs) <- takeXApps1 f x
@@ -117,7 +127,9 @@ phpOfExp xx ctx m
      -> if arity == length xs'
         then wrap $ bare_name n <> parenss (map (\arg -> phpOfExp arg CExp m) xs')
         -- todo also curry in phpOfLet (xvar)
-        else wrap $ text "DDC::apply" <> parenss ((text "DDC::curry(" <> bare_name n <> text ", " <> text (show arity) <> text ")") : map (\arg -> phpOfExp arg CExp m) xs')
+        else wrap $ text "DDC::apply" 
+                <> parenss ((text "DDC::curry(" <> bare_name n <> text ", " <> text (show arity) 
+                <> text ")") : map (\arg -> phpOfExp arg CExp m) xs')
 
      | (f',xs) <- takeXApps1 f x
      , xs'     <- noTypes xs
@@ -139,7 +151,7 @@ phpOfExp xx ctx m
 
     XCase a x alts
      -> vcat
-         -- TODO
+         -- Case expressions aren't finished.
          [ text "/* Case " <> text (show a) <> text " */"
          , text "$SCRUT = " <> phpOfExp x CExp m <> text ";"
          , phpOfAlts "SCRUT" alts ctx m
@@ -170,7 +182,8 @@ phpOfLets lets ctx m
      | Just (bs, f) <- takeXLamFlags x
      , CTop <- ctx
      -> (makeFunction (Just b) bs f m, insertArity (b,x) m)
-         -- , var_name_b b <> text " = DDC::curry(" <> bare_name_b b <> text ", " <> text (show (length bs')) <> text ");" ]
+         -- , var_name_b b <> text " = DDC::curry(" <> bare_name_b b 
+         --  <> text ", " <> text (show (length bs')) <> text ");" ]
      | otherwise
      -> (phpOfExp x (CLet b) m <> line, m)
 
@@ -323,8 +336,8 @@ sanitise_prim n
  | otherwise
  = ppr n
 
+-- String conversion isn't finished.
 string_of :: T.Name -> Doc
--- TODO
 string_of n = text $ show $ show $ ppr n
 
 parenss :: [Doc] -> Doc
@@ -348,8 +361,8 @@ phpOfPrimOp op args
  where
   fallback
    = text "DDC::apply"
-       <> parenss ((text "DDC::curry(" <> sanitise_prim op <> text ", " <> sanitise_prim op <> text "_arity)")
-                  : args)
+       <> parenss ((text "DDC::curry(" <> sanitise_prim op <> text ", " 
+                        <> sanitise_prim op <> text "_arity)") : args)
   getOp
    = go operators
   go []

@@ -102,13 +102,12 @@ vectorOfText [r1: Region] (tt: Text)
 
 -- | Wrap a single 8-bit character into a text object.
 --
---   TODO: We should be able to purify the Alloc RegionText effect as we have
---         a global capability for it.
+--   ISSUE #353: Purify effects on top-level regions where there
+--   is a global capability for it.
 --
 textOfWord8 (w8: Word8#): S (Alloc RegionText) Text
  = do
-        -- TODO: omitting the inner box/run here breaks it.
-        --       Maybe the Forward transform is messing up the extend.. structure.
+        -- ISSUE #354: Local extend forms don't work without an enclosing box cast.
         vec'    = box extend RegionText using r1 with { Alloc r1; Write r1 } in
                   do    -- Allocate the vector to hold the data,
                         -- including an extra null terminator byte.
@@ -199,7 +198,8 @@ copyTextVecToVector [r1 r2: Region]
 --   This allocates a new contiguous vector for the text object and
 --   allows the program to release space for intermediate append nodes.
 --
---   TODO: purify read and alloc effects.
+--   ISSUE #353: Purify effects on top-level regions where there
+--   is a global capability for it.
 --
 flattenText (tt: Text): S (Read RegionText + Alloc RegionText) Text
  = case tt of

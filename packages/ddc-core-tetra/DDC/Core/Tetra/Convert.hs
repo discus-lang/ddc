@@ -196,7 +196,9 @@ convertExportSourceM tctx esrc
  = case esrc of
         ExportSourceLocal n t
          -> do  n'      <- convertBindNameM n
-                t'      <- convertCtorT  tctx t                -- TODO: wrong if function return.
+                t'      <- convertCtorT  tctx t     
+                                -- -- TODO: wrong if function return.
+                                -- use convertSuperConsT
                 return  $ ExportSourceLocal n' t'
 
         ExportSourceLocalNoType n
@@ -236,10 +238,15 @@ convertImportValueM tctx isrc
  = case isrc of
         ImportValueModule mn n t _
          -> do  n'      <- convertBindNameM n
-                t'      <- convertCtorT tctx t                 -- TODO: wrong if function return.
+                t'      <- convertCtorT tctx t
+                                -- TODO: wrong if function return.
+                                -- need arity and use convertSuperConsT
                 return  $ ImportValueModule mn n' t' Nothing
 
         ImportValueSea str t
-         -> do  t'      <- convertCtorT tctx t                 -- TODO: wrong if function return.
+         -> do  t'      <- convertCtorT tctx t
+                                -- TODO: wrong if function return.
+                                -- infer call pattern from type and use convertSuperConsT
+                                -- for consistency.
                 return  $ ImportValueSea str t'
 

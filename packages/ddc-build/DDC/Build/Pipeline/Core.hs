@@ -314,12 +314,9 @@ pipeTetra !mm !pp
 
         PipeTetraToPHP !sink
          -> {-# SCC "PipeTetraToPHP" #-}
-            let -- TODO: eta just the top-level definitions
-                -- Snip program to expose intermediate bindings.
+            let -- Snip program to expose intermediate bindings.
                 mm_snip         = Flatten.flatten 
-                                $ Snip.snip 
-                                        (Snip.configZero)
-                                        mm
+                                $ Snip.snip (Snip.configZero) mm
 
                 -- The floater needs bindings to be fully named.
                 namifierT       = C.makeNamifier Tetra.freshT Env.empty
