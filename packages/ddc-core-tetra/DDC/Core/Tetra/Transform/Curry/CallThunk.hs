@@ -33,8 +33,11 @@ makeCallThunk xF tF esArgs
         (tsParamArg, tsParamClo) = splitAt (length esValues) tsParam
 
         -- Build the type of the returned closure.
-        -- TODO: use dischargs fns instead, this won't work for polytypes.
-        tResultClo               = C.tFunOfParamResult tsParamClo tResult
+        --   Splitting the type like this assumes that the thunk 
+        --   we're applying has a monomorphic type, which is true
+        --   for thunked supers with standard calling convention as
+        -- t  he types of these are all prenex.
+        tResultClo      = C.tFunOfParamResult tsParamClo tResult
 
         xsArgs  = [ x | Call.ElimValue _ x <- esValues] 
 

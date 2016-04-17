@@ -105,13 +105,13 @@ takeCallableFromImport n im
  --  Things imported from Sea land do not return functional values, 
  --  so every parameter in the type is a real parameter in the call pattern.
  --
- -- TODO: Lock down the type of things that can be imported.
- --       We can only exchange primitives and abstract data values,
- --       not algebraic data that we contruct on the Tetra side.
+ -- ISSUE #348: Restrict types of things that can be foreign imported.
+ --    The parameter and result type of imported functions should have
+ --    primitive type only, but we don't check this fact. We should also 
+ --    check that each imported function has the standard call pattern.
+ --
  | ImportValueSea _ ty  <- im
  = let  cs      = Call.takeCallConsFromType ty
-
-        -- TODO: Check that call is in standard form.
    in   return $ Just (n, Callable CallableImportSea ty cs)
 
  | otherwise
@@ -128,9 +128,6 @@ takeCallableFromSuper (BName n t) xx
  = do   let cs     =  Call.takeCallConsFromExp xx
         return $ (n, Callable CallableSuperLocal t cs)
 
-takeCallableFromSuper _ _
- = error "TODO: proper error"
+takeCallableFromSuper b _
+ =      Left $ ErrorSuperUnnamed b
 
--- TODO: check callable errors
--- checkCallable b Nothing = Left $ ErrorSuperNotPrenex b
--- checkCallable b _       = Left $ ErrorSuperUnnamed   b

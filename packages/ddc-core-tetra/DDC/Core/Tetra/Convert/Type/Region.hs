@@ -93,16 +93,6 @@ saltPrimeRegionOfDataType kenv tt
         , isDataKind k
         = do    return  A.rTop
 
-{-      -- TODO: Putting these in separate regions doesn't work with box/run.
-        | TVar u        <- tt
-        , Just k        <- Env.lookup u kenv
-        , isDataKind k
-        , UName (E.NameVar str) <- u
-        , str'          <- str ++ "$r"
-        , u'            <- UName (A.NameVar str')
-        = do    return  $ TVar u'
--}
-
         | otherwise
         = throw $ ErrorMalformed       
                 $ "Cannot take prime region from " ++ (renderIndent $ ppr tt)

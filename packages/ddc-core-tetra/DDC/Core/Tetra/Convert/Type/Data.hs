@@ -84,7 +84,6 @@ convertDataT ctx tt
               -- Parametric data types are represented as generic objects,   
               -- where the region those objects are in is named after the
               -- original type name.
-              -- TODO: use saltPrimREgion
               |  isDataKind k
               -> return $ A.tPtr A.rTop A.tObj
 
@@ -133,12 +132,8 @@ convertDataAppT ctx tt
 
         -- The Ptr# type.
         | Just  ( E.NamePrimTyCon E.PrimTyConPtr
-                , [tR, tA])       <- takePrimTyConApps tt
-        = do    tR'     <- convertRegionT ctx tR       
-                tA'     <- convertDataT  ctx tA
-
-                -- TODO: wrong, need boxed version.
-                return  $ A.tPtr tR' tA'                
+                , [_tR, _tA])       <- takePrimTyConApps tt
+        = do    return $ A.tPtr A.rTop A.tObj
 
 
         -- Numeric TyCons ---------------------------------
@@ -239,9 +234,6 @@ convertDataAppT ctx tt
 
 
 -- | Convert a primitive type directly to its Salt form.
---   Works for Bool#, Nat#, Int#, WordN# and Float#
---   TODO: we're also converting TextLit#, which is not numeric.
---
 convertDataPrimitiveT :: Type E.Name -> ConvertM a (Type A.Name)
 convertDataPrimitiveT tt
         | Just (E.NamePrimTyCon n, [])  <- takePrimTyConApps tt
@@ -257,7 +249,6 @@ convertDataPrimitiveT tt
 
                 _ -> throw $ ErrorMalformed 
                            $ "Invalid primitive type " ++ (renderIndent $ ppr tt)
-
 
         | otherwise
         = throw $ ErrorMalformed 

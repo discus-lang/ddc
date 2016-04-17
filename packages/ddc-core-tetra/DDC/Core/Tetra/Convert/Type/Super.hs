@@ -32,7 +32,6 @@ convertSuperConsT ctx0 cs0 tt0
         -- Accepting type abstractions --------------------
         convertAbsType ctx cs tt
          = case cs of
-                -- TODO: check kinds.
                 ConsType _k : cs'
                   | TForall bParam tBody <- tt
                   -> convertConsType ctx bParam cs' tBody
@@ -67,13 +66,12 @@ convertSuperConsT ctx0 cs0 tt0
 
          -- Some other type abstraction we can't convert.
          | otherwise
-         = error "convertSuperConsT: nope"
+         = error "convertSuperConsT: cannot convert type abstraction."
 
 
         -- Accepting value abstractions -------------------
         convertAbsValue ctx cs tt
          = case cs of
-                -- TODO: check types.
                 ConsValue tParam : cs'
                   | Just (_tArg, tBody)  <- takeTFun tt
                   -> convertConsValue ctx tParam cs' tBody
