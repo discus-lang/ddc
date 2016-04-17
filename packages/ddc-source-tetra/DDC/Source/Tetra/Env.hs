@@ -69,9 +69,9 @@ typeOfPrimLit pl
         PrimLitBool     _       -> tBool
         PrimLitNat      _       -> tNat
         PrimLitInt      _       -> tInt
-        PrimLitSize     _       -> error "typeOfPrimLit: TODO: finish me"
-        PrimLitFloat    _ _bits -> error "typeOfPrimLit: TODO: finish me"
-        PrimLitWord     _ bits  -> tWord bits
+        PrimLitSize     _       -> tSize
+        PrimLitFloat    _ bits  -> tFloat bits
+        PrimLitWord     _ bits  -> tWord  bits
         PrimLitTextLit  _       -> tTextLit
 
 

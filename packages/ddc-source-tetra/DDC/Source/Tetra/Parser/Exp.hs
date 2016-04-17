@@ -300,7 +300,7 @@ pAlt    :: Context Name -> Parser Name (Alt SP)
 pAlt c
  = do   p       <- pPat c
         P.choice
-         [ do   -- TODO: desugar guards in toCore transform instead.
+         [ do   -- Desugar case guards while we're here.
                 spgxs     <- P.many1 (pGuardedExpSP c (pTokSP KArrowDash))
                 let gxs  = map snd spgxs
                 return  $ AAlt p gxs 

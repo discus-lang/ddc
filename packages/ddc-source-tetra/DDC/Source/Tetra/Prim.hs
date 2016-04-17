@@ -21,7 +21,9 @@ module DDC.Source.Tetra.Prim
         , tBool
         , tNat
         , tInt
+        , tSize
         , tWord
+        , tFloat
         , tTextLit
 
           -- ** Primitive tetra type constructors.
