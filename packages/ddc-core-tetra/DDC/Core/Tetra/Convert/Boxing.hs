@@ -59,11 +59,11 @@ isBoxedRepType tt
         | TForall{}     <- tt   = True
 
         -- Unit data type.
-        | Just (TyConSpec TcConUnit, _)         <- takeTyConApps tt
+        | Just (TyConSpec TcConUnit, _)    <- takeTyConApps tt
         = True
 
         -- User defined data types.
-        | Just (TyConBound (UName _) _, _)      <- takeTyConApps tt
+        | Just (TyConBound (UName _) _, _) <- takeTyConApps tt
         = True
 
         -- Boxed numeric types
@@ -98,11 +98,7 @@ isUnboxedRepType tt
         = False
 
 
--- | Check if some type is a numeric type.
---   These are:
---      Nat#, Int#, WordN# and so on
---     TODO: also now TextLit#
---
+-- | Check if some type is a numeric or other primtitype.
 isNumericType :: Type Name -> Bool
 isNumericType tt
         | Just (NamePrimTyCon n, [])   <- takePrimTyConApps tt
@@ -110,6 +106,7 @@ isNumericType tt
                 PrimTyConBool           -> True
                 PrimTyConNat            -> True
                 PrimTyConInt            -> True
+                PrimTyConSize           -> True
                 PrimTyConWord  _        -> True
                 PrimTyConFloat _        -> True
                 PrimTyConTextLit        -> True
@@ -130,7 +127,6 @@ isVectorType tt
 
 
 -- | Check if this is the string type.
---   TODO: ditch this.
 isTextLitType :: Type Name -> Bool
 isTextLitType tt
         | Just (NamePrimTyCon n, [])    <- takePrimTyConApps tt

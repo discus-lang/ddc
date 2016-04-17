@@ -74,7 +74,6 @@ data Config a n
 -- Module -----------------------------------------------------------------------------------------
 -- TODO: throw real errors instead of just returning original, 
 --       want this when handling foreign functions anyway.
--- TODO: only do boxing for foreign functions, not foreign values.
 boxingModule 
         :: (Show a, Show n, Pretty n, Ord n) 
         => Config a n -> Module a n -> Module a n
@@ -187,8 +186,8 @@ boxingAlt config alt
 --   follow on transforms to report the error. The code generator won't be able to
 --   convert the original expression.
 --
---   TODO: Assumes that the type of the primitive is prenex.
-
+--   * Assumes that the type of the primitive is in prenex form.
+--
 boxingPrimitive
         :: (Ord n, Pretty n, Show a, Show n)
         => Config a n -> a
@@ -259,7 +258,7 @@ boxingPrimitive config a bRun xx xFn tPrimBoxed tPrimUnboxed xsArgsAll
 ---------------------------------------------------------------------------------------------------
 -- Marshall arguments and return values of foreign imported functions.
 -- 
---  TODO: assumes that the type of the import is prenex.
+-- * Assumes that the type of the imported thing is in prenex form.
 --
 boxingForeignSea
         :: (Ord n, Pretty n)

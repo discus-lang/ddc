@@ -58,8 +58,9 @@ convertAlt a uScrut tScrut ectx ctx alt
          , Just ctorDef         <- Map.lookup nCtor $ dataDefsCtors defs
          -> do  
                 -- Convert the scrutinee.
-                -- TODO: convert to exception
-                Just uScrut'    <- convertDataU uScrut
+                uScrut'         <-  convertDataU uScrut
+                                >>= maybe (throw $ ErrorInvalidBound uScrut) return
+
 
                 -- Get the tag of this alternative.
                 let iTag        = fromIntegral $ dataCtorTag ctorDef

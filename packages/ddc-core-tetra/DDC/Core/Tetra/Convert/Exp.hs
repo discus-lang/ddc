@@ -58,8 +58,8 @@ convertExp ectx ctx xx
         XVar a u
          -> do  let a'  = annotTail a
 
-                -- TODO: convert to exception
-                Just u' <- convertDataU u
+                u'      <-  convertDataU u
+                        >>= maybe (throw $ ErrorInvalidBound u) return
 
                 return  $  XVar a' u'
 
@@ -119,8 +119,6 @@ convertExp ectx ctx xx
          , length xsArgs == length tsArgs
          , XVar _ (UName n)     <- xF
          , not $ Map.member n (contextCallable ctx)
-                                                -- TODO: can bind vals with arity == 0
-                                                --       but not others.
          -> convertX ExpBody ctx xF
 
 
@@ -266,7 +264,8 @@ convertExp ectx ctx xx
 
         ---------------------------------------------------
         -- Type casts
-        -- TODO: convert stand-alone run and box forms.
+
+        -- ISSUE #352: Tetra to Salt conversion for stand-along run and box.
 
         -- Run an application of a top-level super.
         XCast _ CastRun (XApp (AnTEC _t _ _ a') xa xb)
@@ -302,9 +301,6 @@ convertExp ectx ctx xx
 
 
 ---------------------------------------------------------------------------------------------------
---
--- TODO: if the super has a boxed body then we need to build a thunk here.
---
 convertExpSuperCall
         :: Show a 
         => Exp (AnTEC a E.Name) E.Name
@@ -342,8 +338,8 @@ convertExpSuperCall xx _ectx ctx isRun a nFun xsArgs
   || ((not isRun) && boxings == 0)
  = do   
         -- Convert the functional part.
-        -- TODO: convert to exception
-        Just uF  <- convertDataU (UName nFun)
+        uF      <-  convertDataU (UName nFun)
+                >>= maybe (throw $ ErrorInvalidBound (UName nFun)) return
 
         -- Convert the arguments.
         -- Effect type and witness arguments are discarded here.

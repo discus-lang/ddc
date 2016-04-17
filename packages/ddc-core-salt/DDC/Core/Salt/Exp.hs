@@ -42,8 +42,6 @@ type Type       = C.Type    A.Name
 
 ---------------------------------------------------------------------------------------------------
 -- | Convert annotated version of the Core language to the Salt fragment.
---   TODO: Once we're happy the generic representation works, 
---         make the Tetra -> Salt transform produce this form directly.
 class FromAnnot c1 c2 | c1 -> c2 where
  fromAnnot :: c1 -> Either ErrorFromAnnot c2
 
@@ -76,13 +74,13 @@ instance FromAnnot (N.Exp a A.Name) Exp where
          -> G.XAbs  <$> (G.ALam <$> fromAnnot b) <*> fromAnnot x
 
         N.XApp  _ x1 (N.XType _ t) 
-         -> G.XApp  <$> fromAnnot x1 <*> (G.RType    <$> fromAnnot t)
+         -> G.XApp  <$> fromAnnot x1  <*> (G.RType    <$> fromAnnot t)
 
         N.XApp  _ x1 (N.XWitness _ w)
-         -> G.XApp  <$> fromAnnot x1 <*> (G.RWitness <$> fromAnnot w)    
+         -> G.XApp  <$> fromAnnot x1  <*> (G.RWitness <$> fromAnnot w)    
 
         N.XApp  _ x1 x2         
-         -> G.XApp  <$> fromAnnot x1 <*> (G.RExp     <$> fromAnnot x2)
+         -> G.XApp  <$> fromAnnot x1  <*> (G.RExp     <$> fromAnnot x2)
 
         N.XLet  _ lts x
          -> G.XLet  <$> fromAnnot lts <*> fromAnnot x
@@ -103,9 +101,14 @@ instance FromAnnot (N.Exp a A.Name) Exp where
 instance FromAnnot (N.Lets a A.Name) Lets where
  fromAnnot lts
   = case lts of
-        N.LLet u x              -> G.LLet     <$> fromAnnot u <*> fromAnnot x
-        N.LRec bxs              -> G.LRec     <$> (sequence $ fmap fromAnnot2 bxs)
-        N.LPrivate rs mt wt     -> G.LPrivate <$> fromAnnots rs <*> fromAnnotM mt <*> fromAnnots wt
+        N.LLet u x
+         -> G.LLet     <$> fromAnnot u <*> fromAnnot x
+
+        N.LRec bxs
+         -> G.LRec     <$> (sequence $ fmap fromAnnot2 bxs)
+
+        N.LPrivate rs mt wt     
+         -> G.LPrivate <$> fromAnnots rs <*> fromAnnotM mt <*> fromAnnots wt
 
 
 instance FromAnnot (N.Alt a A.Name) Alt where

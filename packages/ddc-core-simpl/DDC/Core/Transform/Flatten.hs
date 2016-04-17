@@ -33,7 +33,6 @@ flatten1
         -> Exp a n
 
 -- Run ----------------------------------------------------
--- TODO: this breaks the closure information in the annotation.
 flatten1 (XCast a1 CastRun (XLet a2 lts x2))
  = XLet a2 lts $ flatten1 (XCast a1 CastRun x2)
 
