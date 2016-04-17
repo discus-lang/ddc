@@ -276,16 +276,17 @@ checkImportTypes config mode nisrcs
                                         k modeCheckImportTypes
                 return  (n, mapKindOfImportType (const k') isrc)
    in do
-        -- Check for duplicate imports.
-        -- TODO: fix duplicate import check.
-        --       this doesn't work for diamond imports.
-        --       We should be able to import a single thing that has been 
-        --       exported-to and re-imported from multiple library modules.
 
---         let dups = findDuplicates $ map fst nisrcs
---         (case takeHead dups of
---           Just n -> throw $ ErrorImportDuplicate n
---           _      -> return ())
+        -- ISSUE #346: Fix duplicate import check for diamond imports.
+        --  This doesn't work for diamond imports.
+        --  We should be able to import a single thing that has been 
+        --  exported-to and re-imported from multiple library modules.
+
+        -- Check for duplicate imports.
+--      let dups = findDuplicates $ map fst nisrcs
+--      (case takeHead dups of
+--        Just n -> throw $ ErrorImportDuplicate n
+--        _      -> return ())
 
         mapM check nisrcs
 
@@ -323,6 +324,11 @@ checkImportCaps config kenv mode nisrcs
                 return (n, mapTypeOfImportCap (const t') isrc)
 
     in do
+        -- ISSUE #346: Fix duplicate import check for diamond imports.
+        --  This doesn't work for diamond imports.
+        --  We should be able to import a single thing that has been 
+        --  exported-to and re-imported from multiple library modules.
+
         -- Check for duplicate imports.
 --         let dups = findDuplicates $ map fst nisrcs
 --         (case takeHead dups of
@@ -364,6 +370,11 @@ checkImportValues config kenv mode nisrcs
 
                 return  (n, mapTypeOfImportValue (const t') isrc)
    in do
+        -- ISSUE #346: Fix duplicate import check for diamond imports.
+        --  This doesn't work for diamond imports.
+        --  We should be able to import a single thing that has been 
+        --  exported-to and re-imported from multiple library modules.
+
         -- Check for duplicate imports.
 --         let dups = findDuplicates $ map fst nisrcs
 --         (case takeHead dups of

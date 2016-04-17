@@ -10,9 +10,6 @@
 --     \x.  (object abstraction)    @     (object application) 
 --    box   (suspend evaluation)    run   (commence evaluation)
 --    
---   TODO: if we changed case to \case we could also have.
---    C     (algebraic data)        \case (case match)
---
 module DDC.Core.Call 
         ( -- * Call constructors
           Cons (..)

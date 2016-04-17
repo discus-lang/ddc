@@ -134,9 +134,7 @@ runForDemand
 runForDemand _config _a DemandNone xExp tExp eExp 
  = return (xExp, tExp, eExp)
 
-runForDemand _config a  DemandRun  xExp tExp eExp
-
- -- TODO: check config flag.
+runForDemand config a  DemandRun  xExp tExp eExp
 
  -- If the expression is wrapped in an explicit box or run then
  -- don't run it again. Doing this will just confuse the client
@@ -144,7 +142,9 @@ runForDemand _config a  DemandRun  xExp tExp eExp
  | isXCastBox xExp || isXCastRun xExp
  = return (xExp, tExp, eExp)
 
- | Just (eResult, tResult)  <- takeTSusp tExp
+ -- Insert an implicit run cast for this suspension.
+ | configImplicitRun config
+ , Just (eResult, tResult)  <- takeTSusp tExp
  = let
         -- Effect of overall expression is effect of computing
         -- the suspension plus the effect we get by running 

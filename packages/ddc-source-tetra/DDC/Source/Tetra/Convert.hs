@@ -359,7 +359,7 @@ toCoreA  :: a -> S.Alt a -> ConvertM a (C.Alt a C.Name)
 toCoreA a (S.AAlt w gxs)
  = C.AAlt <$> toCoreP w
           <*> (toCoreX (S.desugarGuards a gxs (error "ddc-source-tetra.toCoreA alt fail")))
-                -- TODO: need pattern inexhaustiveness message.
+        -- ISSUE #345: Give pattern inexhaustiveness message.
 
 
 -- Pat --------------------------------------------------------------------------------------------
