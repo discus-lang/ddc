@@ -36,8 +36,6 @@ convertPrimCall _ectx ctx xx
 
         ---------------------------------------------------
         -- Reify a top-level super.
-        --  TODO: Check that we're only reifying functions that will have
-        --        the standard calling convention.
         XApp (AnTEC _t _ _ a)  xa xb
          | (xR,   [XType _ _, XType _ _, xF])   <- takeXApps1 xa xb
          , XVar _ (UPrim nR _tPrim)     <- xR
@@ -54,9 +52,15 @@ convertPrimCall _ectx ctx xx
                  -- are stashed in the ConvertM state monad.
                  -- See [Note: Binding top-level supers]
                  --
-                 -- TODO: check this works with repeated bindings,
+                 -- ISSUE #350: Tetra to Salt conversion of let-bound type 
+                 --    applications is incomplete.
+                 --
+                 --    The following process won't work with code like:
                  --       like f  = g1 [t1] [t2]
                  --            g1 = g2 [t3] [t4] [t5]
+                 --    as we don't look through the intermediate g1 binding
+                 --    to see the other type args. These should really be 
+                 --    inlined in a pre-process.
                  --
                  |  Just (nSuper, atsArgs) 
                         <- Map.lookup nF (contextSuperBinds ctx) 
@@ -161,11 +165,11 @@ convertPrimCall _ectx ctx xx
 
                  $ xLets a [LLet (BNone A.tVoid)
                                  (A.xSetFieldOfThunk a 
-                                        A.rTop                  -- region containing thunk.
-                                        tPrime                  -- region containing new child.
-                                        (XVar a (UIx 1))        -- new thunk.
-                                        (XVar a (UIx 0))        -- base index
-                                        (A.xNat a ix)           -- offset
+                                        A.rTop           -- region containing thunk.
+                                        tPrime           -- region containing new child.
+                                        (XVar a (UIx 1)) -- new thunk.
+                                        (XVar a (UIx 0)) -- base index
+                                        (A.xNat a ix)    -- offset
                                         (xArg))
                                  | ix   <- [0..]
                                  | xArg <- xsArg'

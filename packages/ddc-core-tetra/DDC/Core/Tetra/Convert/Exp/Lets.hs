@@ -43,39 +43,22 @@ convertLets ctx lts
          , Map.member nSuper (contextCallable ctx)
          ->     return  ( Nothing
                         , ctx { contextSuperBinds
-                                 = Map.insert nBind (nSuper, atsArgs) (contextSuperBinds ctx) })
+                                 = Map.insert nBind (nSuper, atsArgs) 
+                                                    (contextSuperBinds ctx) })
 
         -- Standard non-recursive let-binding.
-        -- TODO: Do via convertBinding.
         LLet b x1
          -> do  b'      <- convertDataB (typeContext ctx) b
                 x1'     <- convertX      ExpBind ctx x1
                 return  ( Just $ LLet b' x1'
                         , extendTypeEnv b ctx)
 
-        -- Introduce a private region.
-{-      -- TODO: we need these for Disctinct witnesses.
-        LPrivate b mt bs
-         -> do  
-                b'  <- mapM convertTypeB b
-                let ctx' = extendsKindEnv b ctx
-                
-                bs' <- mapM (convertCapabilityB (typeContext ctx')) bs
-                mt' <- case mt of
-                        Nothing -> return Nothing
-                        Just t  -> liftM Just $ convertRegionT (typeContext ctx) t
-
-                return  ( Just $ LPrivate b' mt' bs'
-                        , extendsTypeEnv bs $ extendsKindEnv b ctx)
-  -}
         LPrivate bs _ _
          ->     return  ( Nothing
                         , extendsTypeEnv bs ctx)
 
 
 -- | Convert a possibly recursive let binding.
----
---   TODO: Don't assume all letrecs bind lambda abstractions.
 convertBinding
         :: Show a
         => Context a
@@ -112,7 +95,6 @@ convertSuperXT    ctx0 xx0 tt0
         -- Accepting type abstractions --------------------
         convertAbsType ctx xx tt
          = case xx of
-                -- TODO: check kinds.
                 XLAM a bParam xBody
                   |  TForall _bParam' tBody    <- tt
                   -> convertXLAM ctx a bParam xBody tBody 
@@ -140,9 +122,12 @@ convertSuperXT    ctx0 xx0 tt0
                 (xBody', tBody')    
                           <- convertAbsType ctx' xBody tBody
 
-                -- TODO: bParam / bParam' mismatch.
+                -- ISSUE #351: Handle case where the name of type a type param
+                -- in super type and binder are different.
+                --
                 -- We're converting the type in parallel with the expression,
                 -- and the binders may have different names.
+                --
                 return  ( XLAM a' bParam' xBody'                
                         , TForall bParam' tBody')
 
@@ -163,13 +148,12 @@ convertSuperXT    ctx0 xx0 tt0
 
          -- Convert the body of the function.
          | otherwise
-         = error "convertSuperXLAM: nope"
+         = error "convertSuperXLAM: Cannot convert type abstraction."
 
 
         -- Accepting value abstractions -------------------
         convertAbsValue ctx xx tt
          = case xx of
-                -- TODO: check types.
                 XLam a bParam xBody
                   |  Just (_tArg, tBody)  <- takeTFun tt
                   -> convertXLam ctx a bParam xBody tBody

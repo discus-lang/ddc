@@ -27,7 +27,7 @@ convertPrimVector _ectx ctx xxExp
    in case xxExp of
 
         -- Vector allocate.
-        -- TODO: memset payload.
+        -- ISSUE #349: Zero the payload of unboxed vectors when we allocate them.
         XCast _ CastRun xxApp@(XApp a _ _)
          |  Just ( E.NameOpVector E.OpVectorAlloc True
                  , [XType _ _rPrime, XType _ tElem, xLength])    
