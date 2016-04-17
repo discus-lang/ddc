@@ -356,11 +356,12 @@ elimForCons e c
 -- | Given lists of constructors and eliminators, check if the
 --   eliminators satisfy the constructors, and return any remaining
 --   unmatching constructors and eliminators.
----
---   TODO: check types and kinds as we do the application.
 --
---   TODO: this doesn't avoid variable capture due to conflicting
---         ConsTypes earlier in the ilst.
+--   We assume that the application is well typed.
+---
+--   ISSUE #347: Avoid name capture in dischargeConsWithElims
+--   This process doesn't avoid name capture by ConsTypes earlier
+--   in the list.
 --
 dischargeConsWithElims
         :: Ord n
@@ -398,9 +399,8 @@ instantiateConsT b t cc
 -- | Given a type of a function and eliminators, discharge
 --   foralls, abstractions and boxes to get the result type
 --   of performing the application.
---
----  
---   TODO: check types and kinds as we do the application.
+-- 
+--   We assume that the application is well typed.
 --
 dischargeTypeWithElims
         :: Ord n
@@ -410,7 +410,6 @@ dischargeTypeWithElims
 
 dischargeTypeWithElims tt (ElimType  _ _ tArg : es)
         | TForall b tBody         <- tt
-        , _kParam                 <- typeOfBind b
         = dischargeTypeWithElims 
                 (substituteT b tArg tBody) 
                 es

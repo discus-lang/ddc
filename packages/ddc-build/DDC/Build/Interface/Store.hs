@@ -13,7 +13,7 @@ module DDC.Build.Interface.Store
 where
 import DDC.Build.Interface.Base         
 import DDC.Build.Interface.Load
-import DDC.Core.Compounds
+import DDC.Core.Call
 import DDC.Core.Module
 import DDC.Type.Exp
 import System.Directory
@@ -206,16 +206,17 @@ supersOfInterface int
         --  The call pattern is the number of type parameters then value parameters
         --  for the super. We assume all supers are in prenex form, so they take
         --  all their type arguments before their value arguments.
-        makeLocalArity b mtks
-         | BName n _               <- b
-         , Just (ks, ts, nBoxes)   <- mtks
-         = (n, (length ks, length ts, nBoxes))
+        makeLocalArity b x
+         | BName nSuper _       <- b
+         , cs                   <- takeCallConsFromExp x
+         , Just (csType, csValue, csBox) <- splitStdCallCons cs
+         = (nSuper, (length csType, length csValue, length csBox))
+
          | otherwise            = error "supersOfInterface: not prenex"
 
         nsLocalArities :: Map E.Name (Int, Int, Int)
                 =  Map.fromList
-                $  map (uncurry makeLocalArity)
-                $  mapTopBinds (\b x -> (b, takePrenexCallPattern x))
+                $  mapTopBinds makeLocalArity
                 $  mmTetra
 
         -- Build an ImportSource for the given super name. A client module
