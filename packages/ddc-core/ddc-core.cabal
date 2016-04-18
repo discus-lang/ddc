@@ -42,6 +42,9 @@ Library
         DDC.Core.Exp.Annot.Context
         DDC.Core.Exp.Annot.Exp
 
+        DDC.Core.Exp.Simple.Compounds
+        DDC.Core.Exp.Simple.Exp
+
         DDC.Core.Generic.BindStruct
         DDC.Core.Generic.Compounds
         DDC.Core.Generic.Exp
@@ -52,8 +55,6 @@ Library
         DDC.Core.Lexer.Tokens
         DDC.Core.Lexer.Unicode
 
-        DDC.Core.Simple.Compounds
-        DDC.Core.Simple.Exp
         
         DDC.Core.Transform.Annotate
         DDC.Core.Transform.BoundT

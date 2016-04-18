@@ -10,8 +10,8 @@ module DDC.Core.Flow.Prim.TyConPrim
         , tVec)
 where
 import DDC.Core.Flow.Prim.Base
-import DDC.Core.Simple.Compounds
-import DDC.Core.Simple.Exp
+import DDC.Core.Exp.Simple.Compounds
+import DDC.Core.Exp.Simple.Exp
 
 
 -- | Yield the kind of a type constructor.

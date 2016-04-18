@@ -8,8 +8,8 @@ module DDC.Core.Tetra.Prim.DaConTetra
 where
 import DDC.Core.Tetra.Prim.Base
 import DDC.Core.Tetra.Prim.TyConTetra
-import DDC.Core.Simple.Compounds
-import DDC.Core.Simple.Exp
+import DDC.Core.Exp.Simple.Compounds
+import DDC.Core.Exp.Simple.Exp
 import DDC.Base.Pretty
 import Control.DeepSeq
 import Data.Char

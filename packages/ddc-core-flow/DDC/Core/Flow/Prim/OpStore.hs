@@ -15,8 +15,8 @@ import DDC.Core.Flow.Prim.KiConFlow
 import DDC.Core.Flow.Prim.TyConFlow
 import DDC.Core.Flow.Prim.TyConPrim
 import DDC.Core.Flow.Prim.Base
-import DDC.Core.Simple.Compounds
-import DDC.Core.Simple.Exp
+import DDC.Core.Exp.Simple.Compounds
+import DDC.Core.Exp.Simple.Exp
 import DDC.Base.Pretty
 import Control.DeepSeq
 import Data.List

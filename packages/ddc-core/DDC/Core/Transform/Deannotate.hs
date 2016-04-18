@@ -2,8 +2,8 @@
 module DDC.Core.Transform.Deannotate
         (Deannotate(..))
 where
-import qualified DDC.Core.Exp.Annot.Exp as A
-import qualified DDC.Core.Simple.Exp    as S
+import qualified DDC.Core.Exp.Annot.Exp    as A
+import qualified DDC.Core.Exp.Simple.Exp   as S
 
 
 -- | Convert the `Annot` version of the AST to the `Simple` version,

@@ -18,8 +18,8 @@ import DDC.Core.Transform.Deannotate
 import DDC.Type.Env             (KindEnv, TypeEnv)
 import Data.Functor.Identity
 import Control.Monad
-import qualified DDC.Type.Env           as Env
-import qualified DDC.Core.Simple.Exp    as S
+import qualified DDC.Type.Env                   as Env
+import qualified DDC.Core.Exp.Simple.Exp        as S
 
 
 -- | Bottom up rewrite of all core expressions in a thing.
