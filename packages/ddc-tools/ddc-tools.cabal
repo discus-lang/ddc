@@ -12,6 +12,7 @@ Homepage:       http://disciple.ouroborus.net
 Synopsis:       Disciplined Disciple Compiler command line tools.
 Description:    Disciplined Disciple Compiler command line tools.
 
+
 Executable ddc-check
     hs-source-dirs:
         src/ddc-check

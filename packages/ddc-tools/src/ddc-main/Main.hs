@@ -37,7 +37,10 @@ import DDC.Base.Pretty
 import System.Environment
 import System.IO
 import System.Exit
+import Control.Monad
 import Control.Monad.Trans.Except
+import qualified System.FilePath                as System
+import qualified System.Directory               as System
 import qualified DDC.Driver.Stage               as Driver
 import qualified DDC.Driver.Config              as Driver
 import qualified DDC.Core.Salt.Runtime          as Runtime
@@ -58,6 +61,7 @@ main
         -- Update the static config with dynamic config read from
         --   the command-line arguments.
         config  <- parseArgs args config0
+
 
         -- Run the main compiler.
         run config
@@ -107,19 +111,22 @@ run config
 
         -- Compile a module to object code.
         ModeCompile filePath
-         -> do  dconfig <- getDriverConfig config (Just filePath)
+         -> do  forceBaseBuild config
+                dconfig <- getDriverConfig config (Just filePath)
                 store   <- Store.new
                 runError $ cmdCompileRecursive dconfig False store filePath []
 
         -- Compile a module into an executable.
         ModeMake filePath
-         -> do  dconfig <- getDriverConfig config (Just filePath)
+         -> do  forceBaseBuild config
+                dconfig <- getDriverConfig config (Just filePath)
                 store   <- Store.new
                 runError $ cmdCompileRecursive dconfig True store filePath []
 
         -- Build libraries or executables following a .spec file.
         ModeBuild filePath
-         -> do  dconfig <- getDriverConfig config (Just filePath)
+         -> do  forceBaseBuild config
+                dconfig <- getDriverConfig config (Just filePath)
                 store   <- Store.new
                 runError $ cmdBuild dconfig store filePath
 
@@ -281,4 +288,28 @@ runError m
 
          Right _
           -> return ()
+
+
+-- | Force build of base library if it doesn't already exist.
+-- 
+--   Due to bugs in cabal-install 1.22 it can't be trusted to run the
+--   post-install hook that builds our base library. To work around this
+--   we check that it is built before running any command that might
+--   need it.
+--
+forceBaseBuild :: Config -> IO ()
+forceBaseBuild config
+ = do   
+        -- Check if the runtime library has already been built.
+        -- If it hasn't then force a basebuild.
+        exist   <- System.doesFileExist 
+                $  configBaseDir config 
+                        System.</> "build" 
+                        System.</> "libddc-runtime.a"
+
+        when (not exist)
+         $ do   putStrLn "* Building base library..."
+                dconfig <- getDriverConfig config Nothing
+                store   <- Store.new
+                runError $ cmdBaseBuild dconfig store
 

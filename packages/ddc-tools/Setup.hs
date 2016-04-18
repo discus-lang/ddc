@@ -6,7 +6,8 @@ import System.FilePath
 import System.Process
 import System.Exit
 
-main    = defaultMainWithHooks hooks
+main    
+ =      defaultMainWithHooks hooks
 
 hooks   = simpleUserHooks
         { postInst      = hookPostInstall }
