@@ -72,8 +72,7 @@ data Config a n
 
 
 -- Module -----------------------------------------------------------------------------------------
--- TODO: throw real errors instead of just returning original, 
---       want this when handling foreign functions anyway.
+-- | Manage boxing in a module.
 boxingModule 
         :: (Show a, Show n, Pretty n, Ord n) 
         => Config a n -> Module a n -> Module a n
@@ -284,9 +283,6 @@ boxingForeignSea config a xx xFn tF xsArg
                         $ eraseTForalls tF
 
         -- We must end up with a type for each argument.
-        -- TODO: throw an error if this doesn't happen, foreign function is
-        --       either under or over applied. This should have been fixed by
-        --       eta-expansion, in the curry transform.
         (if not (length xsArgVal == length tsArgVal)
            then Nothing
            else Just ())
@@ -308,7 +304,7 @@ boxingForeignSea config a xx xFn tF xsArg
         return $ boxResult tResult xExpU
 
 
--- | 
+-- | Marshall arguments and return values for function imported from Sea land.
 boxingForeignSeaType
         :: Config a n -> Type n -> Type n
 
@@ -392,3 +388,4 @@ ensureDefault alts
 
         | otherwise
         = alts
+

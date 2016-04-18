@@ -301,13 +301,8 @@ applyTransformX !profile !kenv !tenv !spec !xx
             in  return $ forwardX profile config xx
 
         Inline  getDef    -> res    $ inline getDef Set.empty xx
-
         FoldCase config   -> res    $ foldCase config xx
-
-        -- TODO: Make this work for single expressions.
-        -- Attach the lifted bindings to an outer letrec.
         Lambdas           -> res    $ xx
-
         Namify  namK namT -> namifyUnique namK namT xx >>= res
         Prune             -> return $ pruneX     profile kenv tenv xx
         Rewrite rules     -> return $ rewriteX rules xx

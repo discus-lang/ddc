@@ -89,22 +89,15 @@ convertExp ectx ctx xx
 
         ---------------------------------------------------
         -- Conversions for primitive operators are defined separately.
-        XApp{}
-         | Just result          -- TODO: dodgyness. Changing the order of these
-                                -- tests makes it not work.
-                <- let result
-                         | Just makeX   <- convertPrimVector ectx ctx xx  = Just makeX
-                         | Just makeX   <- convertPrimBoxing ectx ctx xx  = Just makeX
-                         | Just makeX   <- convertPrimCall   ectx ctx xx  = Just makeX
-                         | Just makeX   <- convertPrimArith  ectx ctx xx  = Just makeX
-                         | otherwise    = Nothing
-                   in  result
-         -> -- trace ("match ~ " ++ (renderIndent $ ppr xx)) 
-            result
-
-        XCast _ CastRun XApp{}
-         | Just makeX   <- convertPrimVector ectx ctx xx  -> makeX
-
+        _ 
+         |  Just n <- takeNamePrimX xx
+         ,  Just r <- case n of
+                         E.NamePrimArith{} -> convertPrimArith  ectx ctx xx
+                         E.NamePrimCast{}  -> convertPrimBoxing ectx ctx xx
+                         E.NameOpVector{}  -> convertPrimVector ectx ctx xx 
+                         E.NameOpFun{}     -> convertPrimCall   ectx ctx xx
+                         _                 -> Nothing
+         -> r
 
         ---------------------------------------------------
         -- Polymorphic instantiation.
@@ -359,4 +352,24 @@ convertExpSuperCall xx _ectx ctx isRun a nFun xsArgs
         , text "args:      " <> ppr xsArgs
         , text "callables: " <> text (ppShow $ contextCallable  ctx)
         ]
+
+
+---------------------------------------------------------------------------------------------------
+-- | If this is an application of a primitive or 
+--   the result of running one then take its name.
+takeNamePrimX :: Exp a E.Name -> Maybe E.Name
+takeNamePrimX xx
+ = case xx of
+        XApp{}
+          -> case takeXPrimApps xx of
+                Just (n, _)     -> Just n
+                Nothing         -> Nothing
+
+        XCast _ CastRun xx'@XApp{}
+          -> takeNamePrimX xx'
+
+        _ -> Nothing
+
+
+
 
