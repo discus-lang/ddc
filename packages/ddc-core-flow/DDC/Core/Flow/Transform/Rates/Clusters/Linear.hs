@@ -224,11 +224,13 @@ clusterings arcs ns bigN g trans
     -- An edge between them
     | (_:_) <- filter (\((i,j),_) -> (u,v) == (i,j) || (v,u) == (i,j)) arcs
     = bigN * bigN
+
     -- Share a parent
     | ius <- map (fst.fst) $ filter (\((_,j),_) -> j == u) arcs
     , ivs <- map (fst.fst) $ filter (\((_,j),_) -> j == v) arcs
     , _:_ <- filter (flip elem ius) ivs
-    -- TODO check that is array
+
+    -- Assume that this is for an array.
     = bigN * bigN
     | otherwise
     = 1

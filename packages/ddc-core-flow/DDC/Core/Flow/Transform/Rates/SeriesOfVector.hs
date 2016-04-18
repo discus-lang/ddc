@@ -419,7 +419,6 @@ process types env arrIns bs
        -> goResize ain v rest
 
       Right (Cross a _b)
-       -- TODO: resize cross
        -> goResize a v rest
 
    | otherwise

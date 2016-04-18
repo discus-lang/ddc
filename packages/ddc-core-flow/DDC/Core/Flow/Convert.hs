@@ -74,7 +74,8 @@ convertM mm
                 , moduleImportCaps      = []
                 , moduleImportValues    = tsImportV' ++ tsImportV'rest
 
-                -- TODO
+                -- We're only using whole module compilation for
+                -- flow programs, so there aren't any imports.
                 , moduleImportDataDefs  = []
                 , moduleDataDefsLocal   = []
 

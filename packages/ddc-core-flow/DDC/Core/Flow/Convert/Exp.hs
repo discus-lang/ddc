@@ -335,21 +335,8 @@ convertCast cc
 
 
 convertWit :: Witness a F.Name -> ConvertM (Witness a T.Name)
-convertWit _ww
- = error "fix me"
- {-
- = case ww of
-   WVar a b
-    -> WVar a <$> convertBound b
-   WCon a wc
-    -> convertWitCon
-   WApp a wp wq
-    -> WApp  a <$> convertWit wp <*> convertWit wq
-   WJoin a wp wq
-    -> WJoin a <$> convertWit wp <*> convertWit wq
-   WType a t
-    -> WType a <$> convertType t
--}
+convertWit = error "ddc-core-flow.convertWit: cannot convert witness from core flow program"
+
 
 -- | When replacing @/\(b : Rate). x@ with @x@, if @b@ is a de bruijn index then any type vars in @x@ must be lowered.
 -- @b@ must not be mentioned in @x@.
@@ -362,7 +349,7 @@ removeXLAM b t
     ->          t
 
 
--- TODO these are temporary
+-- | Type of the top-level region.
 xRTop :: a -> Exp a T.Name
 xRTop a = XType a rTop
 

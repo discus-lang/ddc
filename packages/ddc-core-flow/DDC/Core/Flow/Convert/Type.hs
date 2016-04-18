@@ -10,9 +10,6 @@ module DDC.Core.Flow.Convert.Type
         , tVec
         , tRef )
 where
-
-import DDC.Base.Pretty (ppr)
-
 import DDC.Core.Flow.Convert.Base
 import DDC.Core.Compounds
 import DDC.Core.Exp
@@ -147,9 +144,6 @@ convertName nn
         _
          -> throw $ ErrorPartialPrimitive nn
 
-   -- F.NameDaConFlow (F.DaConFlowTuple n)
-   --  -> return $ T.NameDaConTetra $ T.DaConTetraTuple n
-
    -- Machine primitives ------------------
    -- F.NamePrimTyCon T.PrimTyConBool
    --  -> return $ T.NamePrimTyCon T.PrimTyConNat
@@ -176,11 +170,7 @@ convertName nn
    F.NameLitWord l k
     -> return $ T.NamePrimLit (T.PrimLitWord l k)
 
-   _
-    -> return $ T.NameExt (T.NameVar $ show $ ppr $ nn) "UNHANDLED"
-    -- This should be a throw:
-    -- > throw  $ ErrorInvalidBinder nn
-    -- but for debugging, just splatting it out is easier
+   _ -> throw  $ ErrorInvalidBinder nn
 
 
 convertTyCon :: TyCon F.Name -> ConvertM (TyCon T.Name)
@@ -200,8 +190,8 @@ convertTyCon tc
     -> TyConExists    i              <$> convertType k
 
 
--- | When replacing @Forall b t@ with @t@, if @b@ is a de bruijn index then @t@ must be lowered.
--- @b@ must not be mentioned in @t@.
+-- | When replacing @Forall b t@ with @t@, if @b@ is a de bruijn
+--   index then @t@ must be lowered. @b@ must not be mentioned in @t@.
 removeForall :: Bind F.Name -> Type T.Name -> Type T.Name
 removeForall b t
  = case b of
@@ -212,7 +202,6 @@ removeForall b t
 
 
 -- | Top region
--- TODO: this needs to be fixed. See DDC.Core.Salt.Runtime
 rTop :: Type T.Name
 rTop = TVar $ UName $ T.NameVar "rT"
 

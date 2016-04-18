@@ -212,6 +212,7 @@ resizeContext resize ctx
          , contextRate2  = b
          , contextInner2 = emptyCtx a
          }
+
     AppR a b
      -> return
          ContextAppend
@@ -220,6 +221,7 @@ resizeContext resize ctx
          , contextRate2  = b
          , contextInner2 = wrapCtx b ctx
          }
+
     App _ k' _ l' ls rs
      | ContextAppend{} <- ctx
      -> do  in1 <- resizeContext ls (contextInner1 ctx)
@@ -232,15 +234,15 @@ resizeContext resize ctx
              , contextInner2 = in2 }
      | otherwise
      -> Left (ErrorCannotResizeContext ctx)
+
     Sel1 _ _k _ r
      -> do  ctx' <- resizeContext r ctx
             return $ ctx'
-            -- return $ wrapCtx k ctx'
+
     Segd _ _k _ r
      -> do  ctx' <- resizeContext r ctx
             return $ ctx'
-            -- return $ wrapCtx k ctx'
-    -- TODO doublecheck this after implementing slurp for OpSeriesCross
+
     Cross _ k _ r
      -> do  ctx' <- resizeContext r ctx
             return $ wrapCtx k ctx'

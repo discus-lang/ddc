@@ -24,11 +24,9 @@ data Error
         | ErrorNotInContext Name
 
         -- | Cannot merge contexts
-        -- TODO more info
         | ErrorCannotMergeContext Context Context
 
         -- | Cannot split contexts
-        -- TODO more info
         | ErrorCannotSplitContext Context
 
         -- | Cannot resize a non-append

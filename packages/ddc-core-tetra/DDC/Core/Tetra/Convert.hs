@@ -15,8 +15,9 @@ import qualified DDC.Core.Tetra.Convert.Type.Base       as T
 
 import DDC.Core.Salt.Convert                            (initRuntime)
 import DDC.Core.Salt.Platform
-import DDC.Core.Module
 import DDC.Core.Compounds
+import DDC.Core.Module
+import DDC.Core.Call
 import DDC.Core.Exp
 import DDC.Core.Check                                   (AnTEC(..))
 import qualified DDC.Core.Tetra.Prim                    as E
@@ -196,9 +197,11 @@ convertExportSourceM tctx esrc
  = case esrc of
         ExportSourceLocal n t
          -> do  n'      <- convertBindNameM n
+
+                -- ISSUE #355: Conversion of Tetra types to Salt does not use
+                -- arity information.
                 t'      <- convertCtorT  tctx t     
-                                -- -- TODO: wrong if function return.
-                                -- use convertSuperConsT
+
                 return  $ ExportSourceLocal n' t'
 
         ExportSourceLocalNoType n
@@ -229,7 +232,7 @@ convertImportNameM n
         _               -> throw  $ ErrorInvalidBinder n
 
 
--- | Convert an import source.
+-- | Convert an import source to Salt.
 convertImportValueM 
         :: T.Context -> ImportValue E.Name
         -> ConvertM a (ImportValue A.Name)
@@ -238,15 +241,18 @@ convertImportValueM tctx isrc
  = case isrc of
         ImportValueModule mn n t _
          -> do  n'      <- convertBindNameM n
-                t'      <- convertCtorT tctx t
-                                -- TODO: wrong if function return.
-                                -- need arity and use convertSuperConsT
+
+                -- ISSUE #355: Conversion of Tetra types to Salt does not use
+                -- arity information.
+                let cs  =  takeCallConsFromType t
+                t'      <- convertSuperConsT tctx cs t
+
                 return  $ ImportValueModule mn n' t' Nothing
 
         ImportValueSea str t
-         -> do  t'      <- convertCtorT tctx t
-                                -- TODO: wrong if function return.
-                                -- infer call pattern from type and use convertSuperConsT
-                                -- for consistency.
+         -> do  
+                -- ISSUE #355: Conversion of Tetra types to Salt does not use
+                -- arity information.
+                t'      <- convertCtorT tctx t
                 return  $ ImportValueSea str t'
 

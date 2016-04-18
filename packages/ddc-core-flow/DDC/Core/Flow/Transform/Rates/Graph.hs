@@ -197,7 +197,6 @@ nodeType (Graph gmap) k
  | otherwise
  = Nothing
 
--- TODO nodeOutputs, nodeOutEdges
 
 -- | Convert @Graph@ to a lists of nodes and a list of edges
 listOfGraph :: Ord n => Graph n t -> ([(n,Maybe t)], [((n,n),Bool)])
