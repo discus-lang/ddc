@@ -1,6 +1,6 @@
 
 -- | Simple predicates on core expressions.
-module DDC.Core.Predicates
+module DDC.Core.Exp.Annot.Predicates
         ( module DDC.Type.Predicates
 
           -- * Atoms
@@ -22,14 +22,14 @@ module DDC.Core.Predicates
           -- * Let bindings
         , isXLet
 
+          -- * Patterns
+        , isPDefault
+
           -- * Types and Witnesses
         , isXType
-        , isXWitness
-
-          -- * Patterns
-        , isPDefault)
+        , isXWitness)
 where
-import DDC.Core.Exp
+import DDC.Core.Exp.Annot.Exp
 import DDC.Type.Predicates
 
 

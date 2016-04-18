@@ -6,10 +6,8 @@ import DDC.Core.Salt.Convert.Base
 import DDC.Core.Salt.Compounds
 import DDC.Core.Salt.Name
 import DDC.Core.Salt.Env
-import DDC.Core.Predicates
-import DDC.Core.Compounds
 import DDC.Core.Module
-import DDC.Core.Exp
+import DDC.Core.Exp.Annot
 import DDC.Core.Check           (AnTEC(..))
 import Data.Map                 (Map)
 import qualified Data.Map       as Map

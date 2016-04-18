@@ -5,8 +5,7 @@ where
 import DDC.Core.Tetra.Convert.Exp.Base
 import DDC.Core.Tetra.Convert.Type
 import DDC.Core.Tetra.Convert.Error
-import DDC.Core.Predicates
-import DDC.Core.Exp
+import DDC.Core.Exp.Annot
 import DDC.Core.Check                   (AnTEC(..))
 import qualified DDC.Core.Tetra.Prim    as E
 import qualified DDC.Core.Salt.Name     as A

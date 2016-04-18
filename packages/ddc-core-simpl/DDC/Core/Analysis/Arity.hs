@@ -22,10 +22,8 @@ module DDC.Core.Analysis.Arity
         , arityFromType
         , arityOfExp)
 where
-import DDC.Core.Predicates
-import DDC.Core.Compounds
 import DDC.Core.Module
-import DDC.Core.Exp
+import DDC.Core.Exp.Annot
 import DDC.Data.ListUtils
 import Control.Monad
 import Data.Maybe

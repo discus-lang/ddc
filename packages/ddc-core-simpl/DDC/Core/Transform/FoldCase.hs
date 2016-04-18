@@ -5,9 +5,7 @@ module DDC.Core.Transform.FoldCase
         , foldCase
         , foldCaseX )
 where
-import DDC.Core.Exp
-import DDC.Core.Predicates
-import DDC.Core.Compounds
+import DDC.Core.Exp.Annot
 import DDC.Core.Transform.TransformDownX
 import Control.Monad.State.Strict
 import qualified Data.Map.Strict as M

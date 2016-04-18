@@ -20,10 +20,8 @@ module DDC.Core.Check.Base
         , Set
         , module DDC.Core.Check.Error
         , module DDC.Core.Collect
-        , module DDC.Core.Predicates
-        , module DDC.Core.Compounds
         , module DDC.Core.Pretty
-        , module DDC.Core.Exp
+        , module DDC.Core.Exp.Annot
         , module DDC.Type.Check.Context
         , module DDC.Type.DataDef
         , module DDC.Type.Equiv
@@ -38,10 +36,8 @@ module DDC.Core.Check.Base
 where
 import DDC.Core.Check.Error
 import DDC.Core.Collect
-import DDC.Core.Predicates
-import DDC.Core.Compounds
 import DDC.Core.Pretty
-import DDC.Core.Exp
+import DDC.Core.Exp.Annot
 import DDC.Type.Check.Context
 import DDC.Type.Check                           (Config (..), configOfProfile)
 import DDC.Type.Env                             (KindEnv, TypeEnv)

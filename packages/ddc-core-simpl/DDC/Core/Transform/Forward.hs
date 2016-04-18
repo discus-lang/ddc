@@ -9,13 +9,11 @@ module DDC.Core.Transform.Forward
 where
 import DDC.Base.Pretty
 import DDC.Core.Analysis.Usage
-import DDC.Core.Exp
+import DDC.Core.Exp.Annot
 import DDC.Core.Module
 import DDC.Core.Simplifier.Base
 import DDC.Core.Transform.Reannotate
 import DDC.Core.Fragment
-import DDC.Core.Predicates
-import DDC.Core.Compounds
 import Data.Map                 (Map)
 import Control.Monad
 import Control.Monad.Writer     (Writer, runWriter, tell)

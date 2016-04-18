@@ -6,10 +6,8 @@ import DDC.Core.Tetra.Convert.Exp.Base
 import DDC.Core.Tetra.Convert.Type
 import DDC.Core.Tetra.Convert.Boxing
 import DDC.Core.Tetra.Convert.Error
-import DDC.Core.Compounds
-import DDC.Core.Predicates
 import DDC.Core.Pretty
-import DDC.Core.Exp
+import DDC.Core.Exp.Annot
 import DDC.Core.Check                    (AnTEC(..))
 import DDC.Control.Monad.Check           (throw)
 import qualified DDC.Core.Tetra.Prim     as E

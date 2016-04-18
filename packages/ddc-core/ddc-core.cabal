@@ -41,6 +41,7 @@ Library
         DDC.Core.Exp.Annot.Compounds
         DDC.Core.Exp.Annot.Context
         DDC.Core.Exp.Annot.Exp
+        DDC.Core.Exp.Annot.Predicates
 
         DDC.Core.Exp.Generic.BindStruct
         DDC.Core.Exp.Generic.Compounds
@@ -50,6 +51,8 @@ Library
 
         DDC.Core.Exp.Simple.Compounds
         DDC.Core.Exp.Simple.Exp
+        DDC.Core.Exp.Annot
+        DDC.Core.Exp
 
         DDC.Core.Lexer.Names
         DDC.Core.Lexer.Tokens
@@ -72,13 +75,13 @@ Library
         DDC.Core.Collect
         DDC.Core.Compounds
         DDC.Core.Context
-        DDC.Core.Exp
+
+
         DDC.Core.Fragment
         DDC.Core.Lexer
         DDC.Core.Load
         DDC.Core.Module
         DDC.Core.Parser
-        DDC.Core.Predicates
         DDC.Core.Pretty
 
         DDC.Type.Transform.BoundT

@@ -8,9 +8,8 @@ module DDC.Core.Transform.Beta
         , betaReduce)
 where
 import DDC.Base.Pretty
-import DDC.Core.Exp
+import DDC.Core.Exp.Annot
 import DDC.Core.Fragment
-import DDC.Core.Predicates
 import DDC.Core.Transform.TransformUpX
 import DDC.Core.Transform.SubstituteTX
 import DDC.Core.Transform.SubstituteWX
@@ -19,7 +18,6 @@ import DDC.Core.Simplifier.Result
 import Control.Monad.Writer             (Writer, runWriter, tell)
 import Data.Typeable                    (Typeable)
 import DDC.Type.Env                     (KindEnv, TypeEnv)
-import DDC.Type.Compounds
 import qualified DDC.Type.Env           as Env
 import Prelude                          hiding ((<$>))
 

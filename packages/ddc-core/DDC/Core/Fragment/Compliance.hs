@@ -7,10 +7,8 @@ where
 import DDC.Core.Fragment.Feature
 import DDC.Core.Fragment.Profile
 import DDC.Core.Fragment.Error
-import DDC.Core.Compounds
-import DDC.Core.Predicates
 import DDC.Core.Module
-import DDC.Core.Exp
+import DDC.Core.Exp.Annot
 import Control.Monad
 import Data.Maybe
 import DDC.Type.Env                     (Env)

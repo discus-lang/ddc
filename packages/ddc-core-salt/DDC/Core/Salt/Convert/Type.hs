@@ -7,10 +7,8 @@ import DDC.Core.Salt.Convert.Prim
 import DDC.Core.Salt.Convert.Base
 import DDC.Core.Salt.Convert.Name
 import DDC.Core.Salt.Name
-import DDC.Core.Predicates
-import DDC.Core.Compounds
 import DDC.Core.Module                          as C
-import DDC.Core.Exp
+import DDC.Core.Exp.Annot
 import DDC.Type.Env                             (KindEnv)
 import DDC.Base.Pretty
 import DDC.Control.Monad.Check                  (throw)

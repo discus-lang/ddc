@@ -10,10 +10,8 @@ module DDC.Core.Pretty
         , pprImportType
         , pprImportValue)
 where
-import DDC.Core.Compounds
-import DDC.Core.Predicates
 import DDC.Core.Module
-import DDC.Core.Exp
+import DDC.Core.Exp.Annot
 import DDC.Type.DataDef
 import DDC.Type.Pretty
 import DDC.Base.Pretty
