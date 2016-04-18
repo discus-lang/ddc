@@ -69,7 +69,6 @@ runThunk
                 copyThunk src dst 0# args
 
 
-
 -------------------------------------------------------------------------------
 -- The apply family of functions work out how call the function in a thunk.
 -- Some arguments come from in the thunk itself, while some can be provided
