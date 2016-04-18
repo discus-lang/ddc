@@ -1,6 +1,6 @@
 
 -- | Abstract syntax for the Disciple core language.
 module DDC.Core.Exp 
-        ( module DDC.Core.Annot.Exp )
+        ( module DDC.Core.Exp.Annot.Exp )
 where
-import DDC.Core.Annot.Exp
+import DDC.Core.Exp.Annot.Exp

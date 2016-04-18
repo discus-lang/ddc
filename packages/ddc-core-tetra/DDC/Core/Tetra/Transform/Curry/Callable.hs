@@ -11,7 +11,7 @@ where
 import DDC.Core.Tetra.Transform.Curry.Error
 import DDC.Core.Module
 import DDC.Core.Exp
-import DDC.Core.Annot.AnTEC
+import DDC.Core.Exp.Annot.AnTEC
 import Control.Monad
 import Data.Maybe
 import Data.Map                         (Map)

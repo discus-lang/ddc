@@ -34,13 +34,13 @@ Library
         ddc-base        == 0.4.2.*
 
   Exposed-modules:
-        DDC.Core.Annot.AnT
-        DDC.Core.Annot.AnTEC
-        DDC.Core.Annot.Compounds
-        DDC.Core.Annot.Context
-        DDC.Core.Annot.Exp
-
         DDC.Core.Collect.Support
+
+        DDC.Core.Exp.Annot.AnT
+        DDC.Core.Exp.Annot.AnTEC
+        DDC.Core.Exp.Annot.Compounds
+        DDC.Core.Exp.Annot.Context
+        DDC.Core.Exp.Annot.Exp
 
         DDC.Core.Generic.BindStruct
         DDC.Core.Generic.Compounds

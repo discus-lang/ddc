@@ -5,7 +5,7 @@ module DDC.Core.Check.Witness
         , typeOfWitness
         , typeOfWiCon)
 where
-import DDC.Core.Annot.AnT
+import DDC.Core.Exp.Annot.AnT
 import DDC.Core.Check.Error
 import DDC.Core.Check.ErrorMessage              ()
 import DDC.Core.Check.Base

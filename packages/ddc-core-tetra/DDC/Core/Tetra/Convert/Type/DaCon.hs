@@ -7,7 +7,7 @@ import DDC.Core.Tetra.Convert.Type.Kind
 import DDC.Core.Tetra.Convert.Type.Data
 import DDC.Core.Tetra.Convert.Type.Base
 import DDC.Core.Tetra.Convert.Error
-import DDC.Core.Annot.Exp
+import DDC.Core.Exp.Annot.Exp
 import DDC.Type.Compounds
 import DDC.Type.Predicates
 import DDC.Control.Monad.Check                  (throw)

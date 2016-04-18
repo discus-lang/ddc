@@ -18,7 +18,7 @@ import Control.Monad.Trans.Except
 import Control.Monad.IO.Class
 import Control.Monad
 import DDC.Build.Interface.Store        (Store)
-import DDC.Core.Annot.AnTEC
+import DDC.Core.Exp.Annot.AnTEC
 
 
 -------------------------------------------------------------------------------

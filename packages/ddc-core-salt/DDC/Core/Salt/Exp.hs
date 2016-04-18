@@ -12,7 +12,7 @@ where
 import DDC.Core.Generic.Exp
 import qualified DDC.Core.Generic.Exp   as G
 import qualified DDC.Core.Salt.Name     as A
-import qualified DDC.Core.Annot.Exp     as N
+import qualified DDC.Core.Exp.Annot.Exp as N
 import qualified DDC.Type.Exp           as C
 
 

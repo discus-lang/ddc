@@ -3,7 +3,7 @@ module DDC.Core.Check.Judge.Sub
         ( makeSub)
 where
 import DDC.Type.Transform.SubstituteT
-import DDC.Core.Annot.AnTEC
+import DDC.Core.Exp.Annot.AnTEC
 import DDC.Core.Check.Judge.Eq
 import DDC.Core.Check.Judge.Inst
 import DDC.Core.Check.Base

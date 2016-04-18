@@ -1,5 +1,5 @@
 
-module DDC.Core.Annot.AnT
+module DDC.Core.Exp.Annot.AnT
         (AnT (..))
 where
 import DDC.Type.Exp

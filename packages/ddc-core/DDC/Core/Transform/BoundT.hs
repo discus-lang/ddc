@@ -7,7 +7,7 @@ module DDC.Core.Transform.BoundT
         ( liftT,         liftAtDepthT
         , MapBoundT(..))
 where
-import DDC.Core.Exp
+import DDC.Core.Exp.Annot.Exp
 import DDC.Type.Transform.BoundT
 
 

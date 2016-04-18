@@ -3,7 +3,7 @@ module DDC.Core.Transform.SpreadX
         (SpreadX(..))
 where
 import DDC.Core.Module
-import DDC.Core.Exp
+import DDC.Core.Exp.Annot.Exp
 import DDC.Core.Compounds
 import DDC.Type.Transform.SpreadT
 import Control.Monad

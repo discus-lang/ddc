@@ -31,7 +31,7 @@ import DDC.Core.Fragment.Profile
 import DDC.Core.Lexer.Tokens
 import DDC.Core.Check                           (Mode(..), CheckTrace)
 import DDC.Core.Exp
-import DDC.Core.Annot.AnT                       (AnT)
+import DDC.Core.Exp.Annot.AnT                   (AnT)
 import DDC.Type.Transform.SpreadT
 import DDC.Type.Universe
 import DDC.Core.Module

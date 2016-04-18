@@ -2,7 +2,7 @@
 module DDC.Core.Transform.MapT
         (mapT)
 where
-import DDC.Core.Exp
+import DDC.Core.Exp.Annot.Exp
 import Control.Monad
 
 type  MAPT c n = (Type n -> Type n) -> c n -> c n

@@ -11,7 +11,7 @@ module DDC.Core.Transform.SubstituteXX
         , substituteXArg
         , substituteXArgs)
 where
-import DDC.Core.Exp
+import DDC.Core.Exp.Annot.Exp
 import DDC.Core.Collect
 import DDC.Core.Transform.BoundX
 import DDC.Type.Compounds

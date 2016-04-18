@@ -11,7 +11,7 @@ module DDC.Core.Transform.SubstituteTX
         , substituteBoundTX)
 where
 import DDC.Core.Collect
-import DDC.Core.Exp
+import DDC.Core.Exp.Annot.Exp
 import DDC.Type.Compounds
 import DDC.Type.Transform.SubstituteT
 import DDC.Type.Transform.Rename

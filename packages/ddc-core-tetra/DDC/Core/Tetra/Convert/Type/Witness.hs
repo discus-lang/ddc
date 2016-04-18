@@ -6,7 +6,7 @@ where
 import DDC.Core.Tetra.Convert.Type.Region
 import DDC.Core.Tetra.Convert.Type.Base
 import DDC.Core.Tetra.Convert.Error
-import DDC.Core.Annot.Exp
+import DDC.Core.Exp.Annot.Exp
 import DDC.Type.Compounds
 import DDC.Control.Monad.Check                  (throw)
 import qualified DDC.Core.Tetra.Prim            as E

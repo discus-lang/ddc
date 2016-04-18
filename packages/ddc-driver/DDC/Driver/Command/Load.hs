@@ -16,7 +16,7 @@ import DDC.Core.Transform.Reannotate
 import DDC.Driver.Command.Read
 import DDC.Driver.Stage
 import DDC.Driver.Config
-import DDC.Core.Annot.AnTEC
+import DDC.Core.Exp.Annot.AnTEC
 import DDC.Core.Pretty
 import DDC.Data.SourcePos
 import Control.Monad

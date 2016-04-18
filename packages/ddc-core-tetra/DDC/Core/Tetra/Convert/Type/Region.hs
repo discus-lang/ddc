@@ -5,7 +5,7 @@ module DDC.Core.Tetra.Convert.Type.Region
 where
 import DDC.Core.Tetra.Convert.Type.Base
 import DDC.Core.Tetra.Convert.Error
-import DDC.Core.Annot.Exp
+import DDC.Core.Exp.Annot.Exp
 import DDC.Type.Env
 import DDC.Type.Compounds
 import DDC.Type.Predicates

@@ -2,7 +2,7 @@
 module DDC.Core.Transform.Annotate
         (Annotate (..))
 where
-import qualified DDC.Core.Annot.Exp     as A
+import qualified DDC.Core.Exp.Annot.Exp as A
 import qualified DDC.Core.Simple.Exp    as S
 
 

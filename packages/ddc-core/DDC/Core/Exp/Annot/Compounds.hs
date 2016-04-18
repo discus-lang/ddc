@@ -3,7 +3,7 @@
 --
 --   For the annotated version of the AST.
 --
-module DDC.Core.Annot.Compounds
+module DDC.Core.Exp.Annot.Compounds
         ( module DDC.Type.Compounds
 
           -- * Annotations
@@ -63,9 +63,9 @@ module DDC.Core.Annot.Compounds
         , takeNameOfDaCon
         , takeTypeOfDaCon)
 where
-import DDC.Type.Compounds
-import DDC.Core.Exp
+import DDC.Core.Exp.Annot.Exp
 import DDC.Core.Exp.DaCon
+import DDC.Type.Compounds
 
 
 -- Annotations ----------------------------------------------------------------

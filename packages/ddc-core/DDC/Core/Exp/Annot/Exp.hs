@@ -15,7 +15,7 @@
 --     accept an AST with an arbitrary annotation type, but produce one with the annotations
 --     set to @()@.
 --
-module DDC.Core.Annot.Exp
+module DDC.Core.Exp.Annot.Exp
         ( module DDC.Type.Exp
 
          -- * Expressions

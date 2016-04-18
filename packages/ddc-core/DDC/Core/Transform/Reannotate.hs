@@ -3,7 +3,7 @@ module DDC.Core.Transform.Reannotate
         (Reannotate (..))
 where
 import DDC.Core.Module
-import DDC.Core.Exp
+import DDC.Core.Exp.Annot.Exp
 
 
 -- | Apply the given function to every annotation in a core thing.

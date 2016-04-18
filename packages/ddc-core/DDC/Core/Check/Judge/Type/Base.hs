@@ -14,7 +14,7 @@ module DDC.Core.Check.Judge.Type.Base
         , module DDC.Core.Check.Error
         , module DDC.Core.Transform.Reannotate
         , module DDC.Core.Transform.SubstituteTX
-        , module DDC.Core.Annot.AnTEC
+        , module DDC.Core.Exp.Annot.AnTEC
 
         , module DDC.Type.Transform.SubstituteT
         , module DDC.Type.Transform.Instantiate
@@ -29,7 +29,7 @@ import DDC.Core.Check.Witness
 import DDC.Core.Check.Error
 import DDC.Core.Transform.Reannotate
 import DDC.Core.Transform.SubstituteTX
-import DDC.Core.Annot.AnTEC
+import DDC.Core.Exp.Annot.AnTEC
 
 import DDC.Type.Transform.SubstituteT
 import DDC.Type.Transform.Instantiate

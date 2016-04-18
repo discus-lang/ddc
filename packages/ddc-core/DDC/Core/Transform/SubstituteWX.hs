@@ -9,7 +9,7 @@ module DDC.Core.Transform.SubstituteWX
         , substituteWX
         , substituteWXs)
 where
-import DDC.Core.Exp
+import DDC.Core.Exp.Annot.Exp
 import DDC.Core.Collect
 import DDC.Core.Transform.Rename
 import DDC.Core.Transform.BoundX

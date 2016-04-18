@@ -17,7 +17,7 @@ module DDC.Core.Transform.Rename
         -- * Rewriting bound occurences
         , use1,  use0)
 where
-import DDC.Core.Exp
+import DDC.Core.Exp.Annot.Exp
 import DDC.Type.Transform.Rename
 
 

@@ -7,7 +7,7 @@ import DDC.Core.Tetra.Transform.Curry.Callable
 import DDC.Core.Tetra.Transform.Curry.Error
 import DDC.Core.Tetra.Prim
 import DDC.Core.Transform.Reannotate
-import DDC.Core.Annot.AnTEC
+import DDC.Core.Exp.Annot.AnTEC
 import DDC.Core.Compounds
 import DDC.Core.Module
 import DDC.Core.Exp

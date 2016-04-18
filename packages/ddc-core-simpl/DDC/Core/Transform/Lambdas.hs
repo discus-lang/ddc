@@ -6,7 +6,7 @@ import DDC.Core.Fragment
 import DDC.Core.Collect.Support
 import DDC.Core.Transform.SubstituteXX
 import DDC.Type.Collect
-import DDC.Core.Annot.Context
+import DDC.Core.Exp.Annot.Context
 import DDC.Core.Context
 import DDC.Core.Module
 import DDC.Core.Compounds
