@@ -57,7 +57,7 @@ sums n  = foldl add 0 (last (Nil [Nat#]) (rows n))
 
 -- | Write a list to the console.
 writeListl xs
- = do   forS xs (λn : Nat#. box write ((showNat n) % " "))
+ = do   forS xs (λn : Nat#. write ((showNat n) % " "))
         write "\n"
 
 main (_ : Unit): S Console Unit

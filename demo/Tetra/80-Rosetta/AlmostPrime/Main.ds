@@ -51,10 +51,10 @@ isKPrime (k n: Nat#): Bool#
 
 main (_: Unit): S Console Unit
  = do   forS (enumFromTo 1 5)
-         (λk: Nat#. box
+         (λk: Nat#. 
           do    write $ "k = " % showNat k % ": "
                 forS (listOfStream $ stake 10 $ kPrimes k)
-                         (λx: Nat#. box write $ showNat x % " ")
+                         (λx: Nat#.  write $ showNat x % " ")
                 write "\n")
 
 
