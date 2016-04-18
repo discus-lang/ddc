@@ -11,6 +11,7 @@ module DDC.Build.Interface.Store
         , Super (..)
         , findSuper)
 where
+import DDC.Base.Pretty
 import DDC.Build.Interface.Base         
 import DDC.Build.Interface.Load
 import DDC.Core.Call
@@ -35,15 +36,15 @@ import qualified Data.Map               as Map
 data Store
         = Store
         { -- | Metadata for interface files currently in the store.
-          storeMeta     :: IORef [Meta]
+          storeMeta       :: IORef [Meta]
 
           -- | Lookup the definition of the given top-level super, 
           --   from one or more of the provided modules.
-        , storeSupers   :: IORef (Map ModuleName (Map E.Name Super)) 
+        , storeSupers     :: IORef (Map ModuleName (Map E.Name Super)) 
 
           -- | Fully loaded interface files.
           --   In future we want to load parts of interface files on demand, 
-          --   and not the whole lot.q
+          --   and not the whole lot.
         , storeInterfaces :: IORef [InterfaceAA] }
 
 
@@ -54,6 +55,13 @@ data Meta
         { metaFilePath     :: FilePath
         , metaTimeStamp    :: UTCTime
         , metaModuleName   :: ModuleName }
+        deriving Show
+
+instance Pretty Meta where
+        ppr (Meta path stamp name)
+         = hsep [ padL 60 $ text (show path)
+                , padL 30 $ text (show stamp)
+                , text (show name)]
 
 
 -- | Interface for some top-level super.
@@ -96,17 +104,17 @@ new
 
 -- | Add a pre-loaded interface file to the store.
 wrap    :: Store -> InterfaceAA -> IO ()
-wrap store int
+wrap store ii
  = do   modifyIORef (storeMeta store)
-         $ \meta   -> meta ++ [metaOfInterface int] 
+         $ \meta   -> meta ++ [metaOfInterface ii] 
 
         modifyIORef (storeSupers store)
-         $ \supers -> Map.insert (interfaceModuleName int)
-                                 (supersOfInterface   int)
+         $ \supers -> Map.insert (interfaceModuleName ii)
+                                 (supersOfInterface   ii)
                                  supers
 
         modifyIORef (storeInterfaces store)
-         $ \ints   -> ints ++ [int]
+         $ \iis    -> iis ++ [ii]
 
 
 -- | Load a new interface into the store.
@@ -119,8 +127,8 @@ load store filePath
          Left err  
           ->    return $ Just err
 
-         Right int 
-          -> do wrap store int
+         Right iis
+          -> do wrap store iis
                 return Nothing
 
 
@@ -170,11 +178,11 @@ findSuper store n modNames
 ---------------------------------------------------------------------------------------------------
 -- | Extract metadata from an interface.
 metaOfInterface   :: InterfaceAA -> Meta
-metaOfInterface int
+metaOfInterface ii
         = Meta
-        { metaFilePath   = interfaceFilePath   int
-        , metaTimeStamp  = interfaceTimeStamp  int
-        , metaModuleName = interfaceModuleName int }
+        { metaFilePath   = interfaceFilePath   ii
+        , metaTimeStamp  = interfaceTimeStamp  ii
+        , metaModuleName = interfaceModuleName ii }
 
 
 -- | Extract a map of super interfaces from the given module interface.
@@ -183,12 +191,12 @@ metaOfInterface int
 --   a client module.
 --
 supersOfInterface :: InterfaceAA -> Map E.Name Super
-supersOfInterface int
- | Just mmTetra <- interfaceTetraModule int
- , Just mmSalt  <- interfaceSaltModule  int
+supersOfInterface ii
+ | Just mmTetra <- interfaceTetraModule ii
+ , Just mmSalt  <- interfaceSaltModule  ii
  = let  
         -- The current module name.
-        modName = interfaceModuleName int
+        modName = interfaceModuleName ii
 
         -- Collect Tetra types for all supers exported by the module.
         ntsTetra    

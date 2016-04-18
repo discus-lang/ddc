@@ -86,6 +86,7 @@ cmdCompileRecursiveDS config buildExe store filePath modsEntered
         -- it imports.
         modNamesNeeded  <- tasteNeeded filePath src
 
+
         -- Recursively compile modules until we have all the interfaces required
         -- for the current one.
         let loop = do
@@ -153,8 +154,9 @@ cmdCompileRecursiveDS config buildExe store filePath modsEntered
                 | Just timeO    <- mTimeO,      timeDS < timeO
                 , Just timeDI   <- mTimeDI,     timeDS < timeDI
 
-                  -- interface is fresher than all dependencies.
-                , and   [ Store.metaTimeStamp m < timeDI 
+                  -- Interface at least as fresh than all dependencies.
+                  -- See Note: Timestamp accuracy during rebuild.
+                , and   [ Store.metaTimeStamp m <= timeDI 
                                 | m <- meta'
                                 , elem (Store.metaModuleName m) modNamesNeeded ]
 
@@ -184,6 +186,26 @@ getModificationTimeIfExists path
 
          else   return Nothing
 
+
+-- [Note: Timestamp acccuracy during rebuild]
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+--
+-- There's an ugly system where if the underlying file system does not
+-- support file time stamps with sub-second accuracy, then the timestamps
+-- of the interface files we compile in this run will have more accuracy
+-- than the ones we load from the file system.
+-- 
+-- The problem with inaccurate timestamps is that if we compiled two 
+-- dependent modules within the same second, then both will have the
+-- same time-stamp and none is fresher than the other.
+--
+-- Due to this we allow the time stamp of dependent interface files to
+-- be equal so that they will not be rebuilt in this situation.
+--
+-- We assume that if any process legitimately changes a dependent
+-- object file then this will be done at least a second after we first
+-- created it.
+--
 
 ---------------------------------------------------------------------------------------------------
 -- | Compile a source module into a @.o@ file.

@@ -10,8 +10,15 @@ library
  synopsis:      Disciple Tetra base library
  
  tetra-modules:
+        Data.Tuple
+        Data.Numeric.Bool
         Data.Numeric.Nat
+        Data.Array
+        Data.Function
         Data.Ref
         Data.Maybe
+        Data.Text
         Data.List
+        Data.Stream
+        Math.Combinations
         System.IO.Console

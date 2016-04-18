@@ -111,6 +111,7 @@ include make/targets/ddc-check.mk
 include make/targets/ddc-main.mk
 include make/targets/ddci-core.mk
 include make/targets/ddci-tetra.mk
+include make/targets/libs.mk
 include make/targets/helper.mk
 include make/targets/packages.mk
 
