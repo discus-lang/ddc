@@ -7,8 +7,7 @@ import DDC.Core.Salt.Compounds
 import DDC.Core.Salt.Runtime
 import DDC.Core.Salt.Name
 import DDC.Core.Module
-import DDC.Core.Exp
-import DDC.Core.Compounds
+import DDC.Core.Exp.Annot
 import Data.List
 
 

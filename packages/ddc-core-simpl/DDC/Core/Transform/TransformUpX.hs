@@ -11,8 +11,7 @@ module DDC.Core.Transform.TransformUpX
         , transformSimpleUpX')
 where
 import DDC.Core.Module
-import DDC.Core.Exp
-import DDC.Core.Compounds
+import DDC.Core.Exp.Annot
 import DDC.Core.Transform.Annotate
 import DDC.Core.Transform.Deannotate
 import DDC.Type.Env             (KindEnv, TypeEnv)

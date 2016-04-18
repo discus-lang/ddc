@@ -11,7 +11,7 @@ import DDC.Core.Parser.ImportSpec
 import DDC.Core.Parser.DataDef
 import DDC.Core.Module
 import DDC.Core.Lexer.Tokens
-import DDC.Core.Compounds
+import DDC.Core.Exp.Annot
 import DDC.Base.Pretty
 import Data.Char
 import qualified Data.Map               as Map

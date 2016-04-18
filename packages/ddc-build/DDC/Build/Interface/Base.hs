@@ -7,7 +7,7 @@ module DDC.Build.Interface.Base
 where
 import DDC.Core.Module
 import DDC.Core.Pretty
-import DDC.Core.Compounds
+import DDC.Core.Exp.Annot
 import Data.Maybe
 import Data.Time.Clock
 import qualified Data.Char              as Char

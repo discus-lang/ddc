@@ -7,7 +7,7 @@ import DDC.Core.Llvm.Convert.Context
 import DDC.Core.Llvm.Convert.Base
 import DDC.Llvm.Syntax
 import DDC.Core.Salt.Platform
-import DDC.Core.Compounds
+import DDC.Core.Exp.Annot.Compounds
 import DDC.Data.ListUtils
 import Control.Monad
 import Data.Maybe

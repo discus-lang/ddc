@@ -16,8 +16,7 @@ where
 import DDC.Core.Tetra.Transform.Curry.Callable
 import DDC.Core.Tetra.Convert.Error
 import DDC.Core.Salt.Platform
-import DDC.Core.Compounds
-import DDC.Core.Exp
+import DDC.Core.Exp.Annot
 import DDC.Core.Check                                   (AnTEC(..))
 import DDC.Type.DataDef
 import DDC.Type.Env                                     (KindEnv, TypeEnv)

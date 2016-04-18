@@ -10,9 +10,8 @@ module DDC.Core.Transform.Bubble
 where
 import DDC.Core.Collect
 import DDC.Core.Transform.BoundX
-import DDC.Core.Compounds
 import DDC.Core.Module
-import DDC.Core.Exp
+import DDC.Core.Exp.Annot
 import DDC.Type.Env                             (KindEnv, TypeEnv)
 import qualified DDC.Type.Env                   as Env
 import qualified DDC.Type.Sum                   as Sum

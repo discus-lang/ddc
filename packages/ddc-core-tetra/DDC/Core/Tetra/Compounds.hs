@@ -1,6 +1,6 @@
 
 module DDC.Core.Tetra.Compounds
-        ( module DDC.Core.Compounds
+        ( module DDC.Core.Exp.Annot.Compounds
 
           -- * Primitive
         , tBool, tNat, tInt, tSize, tWord, tFloat
@@ -21,8 +21,8 @@ import DDC.Core.Tetra.Prim.TyConPrim
 import DDC.Core.Tetra.Prim.OpCast
 import DDC.Core.Tetra.Prim.OpFun
 import DDC.Core.Tetra.Prim.Base
-import DDC.Core.Compounds
-import DDC.Core.Exp
+import DDC.Core.Exp.Annot.Compounds
+import DDC.Core.Exp.Annot.Exp
 
 
 -- | Reify a super or foreign function into a closure.

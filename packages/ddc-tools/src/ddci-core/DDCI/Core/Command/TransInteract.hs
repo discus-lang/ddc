@@ -10,7 +10,7 @@ import DDC.Build.Language
 import DDC.Core.Fragment
 import DDC.Core.Simplifier.Parser
 import DDC.Core.Transform.Reannotate
-import DDC.Core.Compounds
+import DDC.Core.Exp.Annot
 import DDC.Core.Check
 import DDC.Core.Module
 import DDC.Base.Pretty

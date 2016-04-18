@@ -10,8 +10,7 @@ module DDC.Core.Salt.Compounds.PrimTyCon
         , tObj)
 where
 import DDC.Core.Salt.Name
-import DDC.Core.Exp
-import DDC.Core.Compounds
+import DDC.Core.Exp.Annot
 
 
 tVoid, tBool, tNat, tInt, tSize, tTag, tAddr, tTextLit :: Type Name

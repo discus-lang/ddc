@@ -37,9 +37,8 @@ module DDC.Core.Salt.Runtime
 where
 import DDC.Core.Salt.Compounds
 import DDC.Core.Salt.Name
-import DDC.Core.Compounds
+import DDC.Core.Exp.Annot
 import DDC.Core.Module
-import DDC.Core.Exp
 import DDC.Base.Pretty
 import qualified Data.Map       as Map
 import Data.Map                 (Map)

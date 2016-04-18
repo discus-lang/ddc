@@ -7,8 +7,7 @@ where
 
 import DDC.Core.Flow.Convert.Base
 import DDC.Core.Flow.Convert.Type
-import DDC.Core.Compounds
-import DDC.Core.Exp
+import DDC.Core.Exp.Annot
 import DDC.Type.Transform.BoundT
 
 import qualified DDC.Core.Flow.Prim             as F

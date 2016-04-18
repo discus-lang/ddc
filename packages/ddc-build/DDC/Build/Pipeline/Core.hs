@@ -53,8 +53,7 @@ import qualified DDC.Core.Check                         as C
 import qualified DDC.Core.Pretty                        as C
 import qualified DDC.Core.Module                        as C
 
-import qualified DDC.Core.Exp                           as C
-import qualified DDC.Core.Compounds                     as C
+import qualified DDC.Core.Exp.Annot                     as C
 
 import qualified DDC.Type.Env                           as Env
 

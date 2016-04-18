@@ -28,10 +28,9 @@ module DDC.Core.Flow.Transform.Wind
         , windModule)
 where
 import DDC.Core.Module
-import DDC.Core.Exp
 import DDC.Core.Flow
 import DDC.Core.Flow.Prim
-import DDC.Core.Compounds
+import DDC.Core.Exp.Annot
 import DDC.Core.Transform.TransformModX
 import DDC.Core.Flow.Compounds  
         (tNat, dcNat, dcTupleN, dcBool, tTupleN, kRate)

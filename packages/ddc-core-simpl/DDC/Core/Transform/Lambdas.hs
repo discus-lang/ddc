@@ -5,12 +5,11 @@ where
 import DDC.Core.Fragment
 import DDC.Core.Collect.Support
 import DDC.Core.Transform.SubstituteXX
-import DDC.Type.Collect
-import DDC.Core.Exp.Annot.Context
-import DDC.Core.Context
 import DDC.Core.Module
-import DDC.Core.Compounds
-import DDC.Core.Exp
+import DDC.Core.Exp.Annot.Context
+import DDC.Core.Exp.Annot.Ctx
+import DDC.Core.Exp.Annot
+import DDC.Type.Collect
 import DDC.Base.Pretty
 import DDC.Base.Name
 import Data.Function

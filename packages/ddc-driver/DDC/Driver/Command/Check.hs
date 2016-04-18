@@ -32,9 +32,8 @@ import DDC.Core.Load
 import DDC.Core.Parser
 import DDC.Core.Lexer
 import DDC.Core.Module
-import DDC.Core.Exp
+import DDC.Core.Exp.Annot
 import DDC.Core.Pretty
-import DDC.Core.Compounds
 import DDC.Type.Transform.SpreadT
 import DDC.Type.Universe
 import DDC.Type.Equiv

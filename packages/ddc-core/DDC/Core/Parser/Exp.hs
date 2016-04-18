@@ -9,14 +9,13 @@ module DDC.Core.Parser.Exp
         , pTypeApp
         , pTypeAtom)
 where
-import DDC.Core.Exp
+import DDC.Core.Exp.Annot
 import DDC.Core.Parser.Witness
 import DDC.Core.Parser.Param
 import DDC.Core.Parser.Type
 import DDC.Core.Parser.Context
 import DDC.Core.Parser.Base
 import DDC.Core.Lexer.Tokens
-import DDC.Core.Compounds
 import DDC.Base.Parser                  ((<?>), SourcePos)
 import qualified DDC.Base.Parser        as P
 import qualified DDC.Type.Compounds     as T

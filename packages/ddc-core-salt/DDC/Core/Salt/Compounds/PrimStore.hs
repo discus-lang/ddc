@@ -11,8 +11,7 @@ module DDC.Core.Salt.Compounds.PrimStore
 where
 import DDC.Core.Salt.Compounds.PrimTyCon
 import DDC.Core.Salt.Name
-import DDC.Core.Compounds
-import DDC.Core.Exp
+import DDC.Core.Exp.Annot
 
 
 -- | All the Prim Store vars have this form.

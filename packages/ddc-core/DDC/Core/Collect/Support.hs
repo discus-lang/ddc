@@ -4,9 +4,8 @@ module DDC.Core.Collect.Support
         , SupportX      (..)
         , supportEnvFlags)
 where
-import DDC.Core.Compounds
 import DDC.Core.Module
-import DDC.Core.Exp
+import DDC.Core.Exp.Annot
 import DDC.Type.Collect.FreeT
 import Data.Set                 (Set)
 import DDC.Type.Env             (KindEnv, TypeEnv)

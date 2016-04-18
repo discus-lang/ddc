@@ -17,10 +17,9 @@ where
 import DDC.Core.Transform.Rewrite.Error
 import DDC.Core.Transform.Reannotate
 import DDC.Core.Transform.TransformUpX
-import DDC.Core.Exp
+import DDC.Core.Exp.Annot
 import DDC.Core.Pretty                          ()
 import DDC.Core.Collect
-import DDC.Core.Compounds
 import DDC.Core.Pretty                          ()
 import DDC.Type.Env                             (KindEnv, TypeEnv)
 import DDC.Base.Pretty

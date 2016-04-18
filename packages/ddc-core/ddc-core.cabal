@@ -40,6 +40,7 @@ Library
         DDC.Core.Exp.Annot.AnTEC
         DDC.Core.Exp.Annot.Compounds
         DDC.Core.Exp.Annot.Context
+        DDC.Core.Exp.Annot.Ctx
         DDC.Core.Exp.Annot.Exp
         DDC.Core.Exp.Annot.Predicates
 
@@ -73,9 +74,6 @@ Library
         DDC.Core.Call
         DDC.Core.Check
         DDC.Core.Collect
-        DDC.Core.Compounds
-        DDC.Core.Context
-
 
         DDC.Core.Fragment
         DDC.Core.Lexer

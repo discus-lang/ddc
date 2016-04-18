@@ -14,12 +14,11 @@ module DDC.Core.Transform.Eta
 where
 import qualified DDC.Core.Check as Check
 import DDC.Core.Module
-import DDC.Core.Exp
+import DDC.Core.Exp.Annot
 import DDC.Core.Fragment
 import DDC.Core.Transform.BoundX
 import DDC.Core.Transform.BoundT
 import DDC.Core.Simplifier.Result
-import DDC.Core.Compounds
 import DDC.Core.Pretty
 import DDC.Type.Env             (TypeEnv, KindEnv)
 import DDC.Type.Transform.AnonymizeT

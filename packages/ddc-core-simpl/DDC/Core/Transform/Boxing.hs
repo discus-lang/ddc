@@ -18,9 +18,8 @@ module DDC.Core.Transform.Boxing
         , Config        (..)
         , boxingModule)
 where
-import DDC.Core.Compounds
 import DDC.Core.Module
-import DDC.Core.Exp
+import DDC.Core.Exp.Annot
 import DDC.Core.Pretty
 import DDC.Type.Transform.Instantiate
 import Data.Maybe

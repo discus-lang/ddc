@@ -6,11 +6,10 @@ module DDC.Core.Transform.Rewrite
         , rewriteX)
 where
 import DDC.Base.Pretty
-import DDC.Core.Exp
+import DDC.Core.Exp.Annot                               as X
 import DDC.Core.Module
 import Data.Map                                         (Map)
 import DDC.Core.Simplifier.Base (TransformResult(..), TransformInfo(..))
-import qualified DDC.Core.Compounds                     as X
 import qualified DDC.Core.Transform.AnonymizeX          as A
 import qualified DDC.Core.Transform.Rewrite.Disjoint    as RD
 import qualified DDC.Core.Transform.Rewrite.Env         as RE

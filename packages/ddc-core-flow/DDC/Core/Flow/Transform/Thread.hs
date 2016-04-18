@@ -10,11 +10,10 @@ where
 import DDC.Core.Flow.Compounds
 import DDC.Core.Flow.Profile
 import DDC.Core.Flow.Prim
-import DDC.Core.Compounds       as C
-import DDC.Core.Exp
+import DDC.Core.Exp.Annot               as C
 import DDC.Core.Transform.Thread
 import DDC.Core.Transform.Reannotate
-import DDC.Core.Check           (AnTEC (..))
+import DDC.Core.Check                   (AnTEC (..))
 import qualified DDC.Core.Check         as Check
 
 

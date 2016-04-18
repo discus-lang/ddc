@@ -15,10 +15,9 @@ import qualified DDC.Core.Tetra.Convert.Type.Base       as T
 
 import DDC.Core.Salt.Convert                            (initRuntime)
 import DDC.Core.Salt.Platform
-import DDC.Core.Compounds
+import DDC.Core.Exp.Annot
 import DDC.Core.Module
 import DDC.Core.Call
-import DDC.Core.Exp
 import DDC.Core.Check                                   (AnTEC(..))
 import qualified DDC.Core.Tetra.Prim                    as E
 import qualified DDC.Core.Salt.Runtime                  as A

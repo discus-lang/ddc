@@ -6,8 +6,7 @@ module DDC.Core.Transform.TransformModX
         )
 where
 import DDC.Core.Module
-import DDC.Core.Exp
-import DDC.Core.Compounds
+import DDC.Core.Exp.Annot
 
 import Control.Arrow
 

@@ -6,8 +6,7 @@ module DDC.Core.Transform.TransformDownX
         , transformDownX')
 where
 import DDC.Core.Module
-import DDC.Core.Exp
-import DDC.Core.Compounds
+import DDC.Core.Exp.Annot
 import DDC.Type.Env             (KindEnv, TypeEnv)
 import Data.Functor.Identity
 import Control.Monad

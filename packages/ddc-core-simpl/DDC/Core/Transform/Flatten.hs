@@ -7,9 +7,7 @@ import DDC.Core.Transform.TransformUpX
 import DDC.Core.Transform.AnonymizeX
 import DDC.Core.Transform.BoundX
 import DDC.Core.Transform.BoundT
-import DDC.Core.Exp
-import DDC.Core.Compounds
-import DDC.Type.Predicates
+import DDC.Core.Exp.Annot
 import Data.Functor.Identity
 
 

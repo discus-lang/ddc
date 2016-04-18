@@ -8,7 +8,7 @@ where
 import DDC.Core.Flow.Convert.Base
 import DDC.Core.Flow.Convert.Type
 import DDC.Core.Flow.Convert.Exp
-import DDC.Core.Compounds
+import DDC.Core.Exp.Annot
 import DDC.Core.Module
 import DDC.Control.Monad.Check
 

@@ -4,10 +4,9 @@ module DDC.Core.Tetra.Transform.Curry.CallThunk
 where
 import DDC.Core.Tetra.Transform.Curry.Error
 import DDC.Core.Tetra.Prim
-import DDC.Core.Compounds
+import DDC.Core.Exp.Annot
 import qualified DDC.Core.Call                          as Call
 import qualified DDC.Core.Tetra.Compounds               as C
-import DDC.Core.Exp
 
 
 -- | Apply a thunk to some more arguments.

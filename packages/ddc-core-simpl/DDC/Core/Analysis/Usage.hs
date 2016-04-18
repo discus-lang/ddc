@@ -10,8 +10,7 @@ module DDC.Core.Analysis.Usage
         , usageX)
 where
 import DDC.Core.Module
-import DDC.Core.Exp
-import DDC.Core.Compounds
+import DDC.Core.Exp.Annot
 import Data.List
 import Data.Map                 (Map)
 import qualified Data.Map       as Map

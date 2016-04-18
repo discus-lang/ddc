@@ -3,12 +3,11 @@ module DDC.Core.Parser.DataDef
         ( DataDef    (..)
         , pDataDef)
 where
-import DDC.Core.Exp
+import DDC.Core.Exp.Annot
 import DDC.Core.Parser.Type
 import DDC.Core.Parser.Context
 import DDC.Core.Parser.Base
 import DDC.Core.Lexer.Tokens
-import DDC.Core.Compounds
 import DDC.Type.DataDef
 import Control.Monad
 import qualified DDC.Base.Parser        as P

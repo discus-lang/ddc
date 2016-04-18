@@ -17,8 +17,7 @@ import DDC.Core.Transform.Reannotate
 import DDC.Core.Load
 import DDC.Core.Fragment
 import DDC.Core.Simplifier
-import DDC.Core.Exp
-import DDC.Core.Compounds
+import DDC.Core.Exp.Annot
 import DDC.Type.Equiv
 import DDC.Type.Subsumes
 import DDC.Base.Pretty

@@ -10,8 +10,7 @@ module DDC.Core.Salt.Compounds.PrimArith
 where
 import DDC.Core.Salt.Compounds.PrimTyCon
 import DDC.Core.Salt.Name
-import DDC.Core.Compounds
-import DDC.Core.Exp
+import DDC.Core.Exp.Annot
 
 
 xNeg    = xOp1 PrimArithNeg

@@ -1,9 +1,8 @@
 -- | Convert Disciple Core to PHP code
 module DDC.Core.Babel.PHP where
-import DDC.Core.Compounds
 import DDC.Core.Collect
 import DDC.Core.Module
-import DDC.Core.Exp
+import DDC.Core.Exp.Annot
 import DDC.Base.Pretty
 import DDC.Type.DataDef                 
 import qualified DDC.Core.Tetra.Prim as T

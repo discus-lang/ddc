@@ -47,8 +47,7 @@ where
 import DDC.Core.Module.Export
 import DDC.Core.Module.Import
 import DDC.Core.Module.Name
-import DDC.Core.Compounds
-import DDC.Core.Exp
+import DDC.Core.Exp.Annot
 import DDC.Type.DataDef                 
 import Data.Typeable
 import Data.Map.Strict                  (Map)

@@ -9,9 +9,8 @@ module DDC.Core.Transform.Thread
         , Config (..)
         , injectStateType)
 where
-import DDC.Core.Compounds
 import DDC.Core.Module
-import DDC.Core.Exp
+import DDC.Core.Exp.Annot
 import DDC.Base.Pretty
 import DDC.Core.Transform.Reannotate
 import DDC.Core.Check           (AnTEC (..))

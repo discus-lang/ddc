@@ -6,7 +6,7 @@ module DDC.Core.Flow.Convert.Base
         ,  withSuspFns,   isSuspFn)
 where
 import DDC.Base.Pretty
-import DDC.Core.Compounds
+import DDC.Core.Exp.Annot.Compounds
 import DDC.Type.Exp
 import DDC.Core.Flow.Prim                       as F
 import qualified DDC.Control.Monad.Check        as G

@@ -17,9 +17,8 @@ import qualified DDC.Source.Tetra.Exp.Annot             as S
 import qualified DDC.Source.Tetra.Prim                  as S
 
 import qualified DDC.Core.Tetra.Prim                    as C
-import qualified DDC.Core.Compounds                     as C
 import qualified DDC.Core.Module                        as C
-import qualified DDC.Core.Exp                           as C
+import qualified DDC.Core.Exp.Annot                     as C
 import qualified DDC.Type.DataDef                       as C
 
 import qualified DDC.Type.Exp                           as T

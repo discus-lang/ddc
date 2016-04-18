@@ -6,8 +6,7 @@ module DDC.Core.Salt.Compounds.PrimControl
         , typeOfPrimControl)
 where
 import DDC.Core.Salt.Name
-import DDC.Core.Compounds
-import DDC.Core.Exp
+import DDC.Core.Exp.Annot
 
 
 -- | All the Prim Control vars have this form.

@@ -3,8 +3,7 @@ module DDC.Core.Tetra.Convert.Exp.Lit
         (convertLitCtor)
 where
 import DDC.Core.Tetra.Convert.Error
-import DDC.Core.Compounds
-import DDC.Core.Exp
+import DDC.Core.Exp.Annot
 import qualified DDC.Core.Tetra.Prim     as E
 import qualified DDC.Core.Salt.Name      as A
 import qualified DDC.Core.Salt.Compounds as A

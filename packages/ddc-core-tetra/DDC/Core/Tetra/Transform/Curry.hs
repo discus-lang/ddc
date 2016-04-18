@@ -8,9 +8,8 @@ import DDC.Core.Tetra.Transform.Curry.Error
 import DDC.Core.Tetra.Prim
 import DDC.Core.Transform.Reannotate
 import DDC.Core.Exp.Annot.AnTEC
-import DDC.Core.Compounds
 import DDC.Core.Module
-import DDC.Core.Exp
+import DDC.Core.Exp.Annot
 import Data.Maybe
 import Data.Map                                 (Map)
 import qualified DDC.Core.Call                  as Call

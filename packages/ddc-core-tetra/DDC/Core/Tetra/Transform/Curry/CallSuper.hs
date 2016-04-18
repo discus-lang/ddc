@@ -5,8 +5,7 @@ module DDC.Core.Tetra.Transform.Curry.CallSuper
 where
 import DDC.Core.Tetra.Transform.Curry.Error
 import DDC.Core.Tetra.Prim
-import DDC.Core.Compounds
-import DDC.Core.Exp
+import DDC.Core.Exp.Annot
 import qualified DDC.Type.Transform.Instantiate as T
 import qualified DDC.Core.Tetra.Compounds       as C
 import qualified DDC.Core.Call                  as Call

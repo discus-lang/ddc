@@ -8,8 +8,7 @@ module DDC.Core.Salt.Compounds.PrimCast
         , typeOfPrimCast )
 where
 import DDC.Core.Salt.Name
-import DDC.Core.Compounds
-import DDC.Core.Exp
+import DDC.Core.Exp.Annot
 
 
 -- | All the Prim Cast vars have this form.

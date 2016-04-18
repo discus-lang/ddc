@@ -7,9 +7,8 @@ import DDC.Core.Tetra.Convert.Type
 import DDC.Core.Tetra.Convert.Error
 import DDC.Core.Tetra.Convert.Exp.Base
 import DDC.Core.Tetra.Convert.Exp.Lit
-import DDC.Core.Compounds
 import DDC.Core.Pretty
-import DDC.Core.Exp
+import DDC.Core.Exp.Annot
 import DDC.Core.Check                    (AnTEC(..))
 import qualified DDC.Core.Tetra.Prim     as E
 import qualified DDC.Core.Salt.Runtime   as A

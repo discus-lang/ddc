@@ -8,8 +8,7 @@ import DDC.Core.Tetra.Convert.Exp.Base
 import DDC.Core.Tetra.Convert.Type
 import DDC.Core.Tetra.Convert.Error
 import DDC.Type.Transform.Instantiate
-import DDC.Core.Compounds
-import DDC.Core.Exp
+import DDC.Core.Exp.Annot
 import DDC.Core.Check                    (AnTEC(..))
 import qualified Data.Map                as Map
 import qualified DDC.Core.Call           as Call

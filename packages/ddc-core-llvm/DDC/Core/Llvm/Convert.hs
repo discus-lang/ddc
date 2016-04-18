@@ -12,7 +12,7 @@ import DDC.Core.Llvm.Convert.Type
 import DDC.Core.Llvm.Convert.Base
 import DDC.Core.Llvm.Runtime
 import DDC.Core.Salt.Platform
-import DDC.Core.Compounds
+import DDC.Core.Exp.Annot.Compounds
 import DDC.Llvm.Syntax
 import DDC.Control.Monad.Check
 import qualified Control.Monad.State.Strict     as State

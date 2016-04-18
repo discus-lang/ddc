@@ -11,8 +11,7 @@ module DDC.Core.Flow.Convert.Type
         , tRef )
 where
 import DDC.Core.Flow.Convert.Base
-import DDC.Core.Compounds
-import DDC.Core.Exp
+import DDC.Core.Exp.Annot
 import DDC.Control.Monad.Check                  (throw)
 import DDC.Type.Transform.BoundT
 
