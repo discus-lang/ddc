@@ -5,7 +5,7 @@ where
 import DDC.Core.Module
 import DDC.Core.Exp
 import DDC.Base.Pretty
-import DDC.Core.Generic.Pretty          ()
+import DDC.Core.Exp.Generic.Pretty      ()
 import Data.Maybe
 import qualified DDC.Core.Salt          as A
 

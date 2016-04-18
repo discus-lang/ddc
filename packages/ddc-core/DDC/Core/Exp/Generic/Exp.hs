@@ -1,7 +1,7 @@
 {-# LANGUAGE TypeFamilies, UndecidableInstances #-}
 
 -- | Generic expression representation.
-module DDC.Core.Generic.Exp where
+module DDC.Core.Exp.Generic.Exp where
 import DDC.Core.Exp.DaCon
 import qualified DDC.Type.Exp   as T
 

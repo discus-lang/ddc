@@ -4,7 +4,7 @@
 --
 --   For the generic version of the AST.
 --
-module DDC.Core.Generic.Compounds
+module DDC.Core.Exp.Generic.Compounds
         ( module DDC.Type.Compounds
 
         -- * Abstractions
@@ -22,7 +22,7 @@ module DDC.Core.Generic.Compounds
         , takeNameOfDaCon
         , takeTypeOfDaCon)
 where
-import DDC.Core.Generic.Exp
+import DDC.Core.Exp.Generic.Exp
 import DDC.Core.Exp.DaCon
 import DDC.Type.Compounds
 import Data.Maybe

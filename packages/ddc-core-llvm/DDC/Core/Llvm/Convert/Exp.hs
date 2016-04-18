@@ -14,7 +14,7 @@ import DDC.Core.Llvm.Convert.Context
 import DDC.Core.Llvm.Convert.Type
 import DDC.Core.Llvm.Convert.Base
 import DDC.Llvm.Syntax
-import DDC.Core.Generic.Compounds
+import DDC.Core.Exp.Generic.Compounds
 import Control.Applicative
 import Data.Sequence                            (Seq, (|>), (><))
 import qualified DDC.Core.Salt                  as A

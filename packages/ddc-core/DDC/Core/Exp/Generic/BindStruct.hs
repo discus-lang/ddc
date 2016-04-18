@@ -1,9 +1,9 @@
 {-# LANGUAGE TypeFamilies #-}
 
-module DDC.Core.Generic.BindStruct where
-import DDC.Core.Generic.Exp
-import DDC.Core.Collect.Free
+module DDC.Core.Exp.Generic.BindStruct where
+import DDC.Core.Exp.Generic.Exp
 import DDC.Core.Exp.DaCon
+import DDC.Core.Collect.Free
 import DDC.Type.Collect
 import qualified DDC.Type.Exp           as T
 import Data.Maybe

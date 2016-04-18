@@ -1,6 +1,6 @@
 
 -- | Simple predicates on core expressions.
-module DDC.Core.Generic.Predicates
+module DDC.Core.Exp.Generic.Predicates
         ( module DDC.Type.Predicates
 
           -- * Atoms
@@ -19,7 +19,7 @@ module DDC.Core.Generic.Predicates
           -- * Patterns
         , isPDefault)
 where
-import DDC.Core.Generic.Exp
+import DDC.Core.Exp.Generic.Exp
 import DDC.Type.Predicates
 
 

@@ -1,7 +1,7 @@
 {-# LANGUAGE TypeFamilies #-}
 
 module DDC.Core.Salt.Exp 
-        ( module DDC.Core.Generic.Exp
+        ( module DDC.Core.Exp.Generic.Exp
         , FromAnnot (..)
         , ErrorFromAnnot (..)
 
@@ -9,11 +9,11 @@ module DDC.Core.Salt.Exp
         , Exp, Abs, Arg, Lets, Alt, Pat, Cast, Witness, WiCon
         , Type)
 where
-import DDC.Core.Generic.Exp
-import qualified DDC.Core.Generic.Exp   as G
-import qualified DDC.Core.Salt.Name     as A
-import qualified DDC.Core.Exp.Annot.Exp as N
-import qualified DDC.Type.Exp           as C
+import DDC.Core.Exp.Generic.Exp
+import qualified DDC.Core.Exp.Generic.Exp       as G
+import qualified DDC.Core.Salt.Name             as A
+import qualified DDC.Core.Exp.Annot.Exp         as N
+import qualified DDC.Type.Exp                   as C
 
 
 ---------------------------------------------------------------------------------------------------

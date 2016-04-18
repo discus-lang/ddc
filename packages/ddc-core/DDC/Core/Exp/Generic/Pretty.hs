@@ -1,8 +1,8 @@
 {-# LANGUAGE TypeFamilies, UndecidableInstances #-}
 
-module DDC.Core.Generic.Pretty where
-import DDC.Core.Generic.Predicates
-import DDC.Core.Generic.Exp
+module DDC.Core.Exp.Generic.Pretty where
+import DDC.Core.Exp.Generic.Predicates
+import DDC.Core.Exp.Generic.Exp
 import DDC.Core.Exp.DaCon
 import DDC.Type.Pretty
 import Prelude                  hiding ((<$>))

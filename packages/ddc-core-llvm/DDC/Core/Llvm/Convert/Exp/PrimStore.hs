@@ -10,7 +10,7 @@ import DDC.Core.Llvm.Convert.Base
 import DDC.Core.Llvm.Metadata.Tbaa
 import DDC.Core.Llvm.Runtime
 import DDC.Core.Salt.Platform
-import DDC.Core.Generic.BindStruct      ()
+import DDC.Core.Exp.Generic.BindStruct  ()
 import Data.Sequence                    (Seq)
 import qualified DDC.Core.Salt          as A
 import qualified Data.Sequence          as Seq

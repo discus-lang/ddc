@@ -14,7 +14,7 @@ import DDC.Base.Pretty                          hiding (align)
 import qualified DDC.Core.Llvm.Metadata.Tbaa    as Tbaa
 import qualified DDC.Core.Salt                  as A
 import qualified DDC.Core.Salt.Convert          as A
-import qualified DDC.Core.Generic.Compounds     as A
+import qualified DDC.Core.Exp.Generic.Compounds as A
 import qualified DDC.Core.Module                as C
 import qualified DDC.Core.Exp                   as C
 import qualified Data.Set                       as Set
