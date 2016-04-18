@@ -11,7 +11,7 @@ module DDC.Core.Tetra.Prim.TyConPrim
         , tTextLit)
 where
 import DDC.Core.Tetra.Prim.Base
-import DDC.Core.Compounds
+import DDC.Core.Exp.Annot.Compounds
 import DDC.Core.Exp.Simple.Exp
 import DDC.Core.Salt.Name
         ( pprPrimTyConStem

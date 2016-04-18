@@ -9,8 +9,8 @@ module DDC.Core.Tetra.Prim.TyConTetra
         , tCloValue)
 where
 import DDC.Core.Tetra.Prim.Base
-import DDC.Core.Compounds
 import DDC.Core.Exp.Simple.Exp
+import DDC.Type.Compounds
 import DDC.Base.Pretty
 import Control.DeepSeq
 import Data.List

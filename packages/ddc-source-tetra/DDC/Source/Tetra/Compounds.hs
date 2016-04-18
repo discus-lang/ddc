@@ -47,7 +47,7 @@ where
 import DDC.Source.Tetra.Exp
 import DDC.Source.Tetra.Prim
 import DDC.Type.Compounds
-import DDC.Core.Compounds
+import DDC.Core.Exp.Annot.Compounds
         ( dcUnit
         , takeNameOfDaCon
         , takeTypeOfDaCon
