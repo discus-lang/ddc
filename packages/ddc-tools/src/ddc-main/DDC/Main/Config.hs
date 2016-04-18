@@ -223,5 +223,9 @@ defaultBuilderConfig config
         { builderConfigBaseSrcDir = configBaseDir config 
         , builderConfigBaseLibDir = configBaseDir config </> "build"
         , builderConfigLibFile    
-           = \static dynamic -> if configRuntimeLinkStrategy config == D.LinkStatic 
-                                  then static else dynamic }
+           =  \static dynamic 
+           -> if configRuntimeLinkStrategy config == D.LinkStatic 
+                        then static 
+                        else dynamic }
+
+
