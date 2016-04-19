@@ -48,6 +48,8 @@ import Data.Maybe
 import qualified DDC.Type.Sum           as Sum
 import qualified Data.IntMap.Strict     as IntMap
 import Data.IntMap.Strict               (IntMap)
+import qualified Data.Set               as Set
+import Data.Set                         (Set)
 import Prelude                          hiding ((<$>))
 
 
@@ -471,32 +473,55 @@ lowerTypes n ctx
 --   This function is used during the algorithm proper, whereas we use
 --   `applySolved` below to update annotations in the larger program after
 --   type inference has completed.
+--
 applyContext :: Ord n => Context n -> Type n -> Type n
-applyContext ctx tt
+applyContext  ctx tt
+ = case applyContext' ctx Set.empty tt of
+        Left  _err -> error "applyContext: loop"
+        Right t    -> t
+
+
+-- | Like `applyContext'`, but we keep track of which existentials we have
+--   entered. If we find a loop through the existential equations then 
+--   return `Left` the existential and what is was locally bound to.
+applyContext' 
+        :: Ord n 
+        => Context n    -- ^ Type checker context.
+        -> Set Int      -- ^ Indexes of existentials we've already entered.
+        -> Type n       -- ^ Type to apply context to.
+        -> Either (Type n, Type n) (Type n)
+
+applyContext' ctx is tt
  = case tt of
-        TVar{}          -> tt
+        TVar{}          
+         ->     return tt
 
         TCon (TyConExists i k)  
          |  Just t      <- lookupExistsEq (Exists i k) ctx
-         -> applyContext ctx t
+         -> if Set.member i is 
+                then Left (tt, t)
+                else applyContext' ctx (Set.insert i is) t
 
-        TCon{}          -> tt
+        TCon{}
+         ->     return tt
 
         TForall b t     
-         -> let tb'     = applySolved ctx (typeOfBind b)
-                b'      = replaceTypeOfBind tb' b
-                t'      = applySolved ctx t
-            in  TForall b' t'
+         -> do  tb'     <- applySolved' ctx is (typeOfBind b)
+                let b'  =  replaceTypeOfBind tb' b
+                t'      <- applySolved' ctx is t
+                return $ TForall b' t'
 
         TApp t1 t2
-         -> let t1'     = applySolved ctx t1
-                t2'     = applySolved ctx t2
-            in  TApp t1' t2'
+         -> do  t1'     <- applySolved' ctx is t1
+                t2'     <- applySolved' ctx is t2
+                return  $ TApp t1' t2'
 
         TSum ts         
-         -> TSum $ Sum.fromList (Sum.kindOfSum ts) 
-                 $ map (applyContext ctx)
-                 $ Sum.toList ts
+         -> do  tss'    <- mapM (applyContext' ctx is) 
+                        $  Sum.toList ts
+
+                return  $ TSum
+                        $ Sum.fromList (Sum.kindOfSum ts) tss'
 
 
 -- | Apply the solved constraints in a context to a type, updating any
@@ -507,32 +532,57 @@ applyContext ctx tt
 --   in annotations in the larger program.
 applySolved :: Ord n => Context n -> Type n -> Type n
 applySolved ctx tt
+ = case applySolved' ctx Set.empty tt of
+        Left  _err -> error "applySolved: loop"
+        Right t    -> t
+
+
+-- | Like `applySolved`, but we keep track of which existentials we have
+--   entered. If we find a loop through the existential equations then
+--   return `Left`
+applySolved' 
+        :: Ord n 
+        => Context n 
+        -> Set Int 
+        -> Type n 
+        -> Either (Type n, Type n) (Type n)
+
+applySolved' ctx is tt
  = case tt of
-        TVar{}          -> tt
+        TVar{}          
+         ->     return tt
 
         TCon (TyConExists i k)
-         | Just t       <- IntMap.lookup i (contextSolved ctx)
-         -> applySolved ctx t
+         |  Just t       <- IntMap.lookup i (contextSolved ctx)
+         -> if Set.member i is 
+                then Left (tt, t)
+                else applySolved' ctx (Set.insert i is) t
 
-         | Just t       <- lookupExistsEq (Exists i k) ctx
-         -> applySolved ctx t
+         |  Just t       <- lookupExistsEq (Exists i k) ctx
+         -> if Set.member i is
+                then Left (tt, t)
+                else applySolved' ctx (Set.insert i is) t
 
-        TCon {}         -> tt
+        TCon {}
+         ->     return tt
+
         TForall b t
-         -> let tb'     = applySolved ctx (typeOfBind b)     
-                b'      = replaceTypeOfBind tb' b
-                t'      = applySolved ctx t
-             in TForall b' t'
+         -> do  tb'     <- applySolved' ctx is (typeOfBind b)     
+                let b'  =  replaceTypeOfBind tb' b
+                t'      <- applySolved' ctx is t
+                return  $ TForall b' t'
 
         TApp t1 t2      
-         -> let t1'     = applySolved ctx t1
-                t2'     = applySolved ctx t2
-            in  TApp t1' t2'
+         -> do  t1'     <- applySolved' ctx is t1
+                t2'     <- applySolved' ctx is t2
+                return  $ TApp t1' t2'
 
         TSum ts
-         -> TSum $ Sum.fromList (Sum.kindOfSum ts)
-                 $ map (applySolved ctx)
-                 $ Sum.toList ts
+         -> do  tss'    <- mapM (applySolved' ctx is)
+                        $  Sum.toList ts
+
+                return  $  TSum
+                        $  Sum.fromList (Sum.kindOfSum ts) tss'
 
 
 -- Support --------------------------------------------------------------------

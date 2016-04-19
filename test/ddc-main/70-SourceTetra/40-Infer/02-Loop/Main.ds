@@ -1,0 +1,7 @@
+
+module Test where
+
+data Moar (a : Data) where
+        Moar    : a -> Moar a
+
+x = Moar x 
