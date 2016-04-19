@@ -19,7 +19,6 @@ data Error a n
         | ErrorData
         { errorData             :: T.ErrorData n }
 
-
         -- Module -----------------------------------------
         -- | Exported value is undefined.
         | ErrorExportUndefined
@@ -107,14 +106,6 @@ data Error a n
         , errorChecking         :: Exp a n
         , errorUniverse         :: Universe
         , errorEffect           :: Effect n }
-
-        -- | An abstraction where the body has a visible closure that
-        --   is not supported by the current language fragment.
-        | ErrorLamNotEmpty
-        { errorAnnot            :: a
-        , errorChecking         :: Exp a n
-        , errorUniverse         :: Universe
-        , errorClosure          :: Closure n }
 
         -- | A value function where the parameter does not have data
         --   or witness kind.
@@ -244,23 +235,6 @@ data Error a n
         , errorBindWitness      :: Bind  n }
 
 
-        -- Withregion -------------------------------------
-        -- | A withregion-expression where the handle does not have region kind.
-        | ErrorWithRegionNotRegion
-        { errorAnnot            :: a
-        , errorChecking         :: Exp a n
-        , errorBound            :: Bound n
-        , errorKind             :: Kind n }
-
-        -- | A letregion-expression where some of the the bound region variables
-        --   are free in the type of the body.
-        | ErrorWithRegionFree
-        { errorAnnot            :: a
-        , errorChecking         :: Exp a n
-        , errorBound            :: Bound n
-        , errorType             :: Type n }
-
-
         -- Witnesses --------------------------------------
         -- | A witness application where the argument type does not match
         --   the parameter type.
@@ -277,24 +251,8 @@ data Error a n
         , errorNotFunType       :: Type n
         , errorArgType          :: Type n }
 
-        -- | An invalid witness join.
-        | ErrorCannotJoin
-        { errorAnnot            :: a
-        , errorWitness          :: Witness a n
-        , errorWitnessLeft      :: Witness a n
-        , errorTypeLeft         :: Type n
-        , errorWitnessRight     :: Witness a n
-        , errorTypeRight        :: Type n }
-
         -- | A witness provided for a purify cast that does not witness purity.
         | ErrorWitnessNotPurity
-        { errorAnnot            :: a
-        , errorChecking         :: Exp a n
-        , errorWitness          :: Witness a n
-        , errorType             :: Type n }
-
-        -- | A witness provided for a forget cast that does not witness emptiness.
-        | ErrorWitnessNotEmpty
         { errorAnnot            :: a
         , errorChecking         :: Exp a n
         , errorWitness          :: Witness a n

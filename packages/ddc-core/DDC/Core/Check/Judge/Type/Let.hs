@@ -66,6 +66,7 @@ checkLet !table !ctx0 mode demand xx@(XLet a lts xBody)
          <- case mode of
                 Synth   -> runForDemand (tableConfig table) a demand
                                 xBody' tBody' (TSum effsBody)
+
                 _       -> return (xBody', tBody', TSum effsBody)
 
 

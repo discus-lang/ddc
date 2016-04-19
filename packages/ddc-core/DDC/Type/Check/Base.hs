@@ -55,13 +55,21 @@ newPos
 applyContext :: Ord n => Context n -> Type n -> CheckM n (Type n)
 applyContext ctx tt
  = case applyContextEither ctx Set.empty tt of
-        Left _err       -> error "applyContext: nope"
-        Right t         -> return t
+
+        -- We found an infinite path when trying to complete this
+        -- substitution. We get back the existential and the type for it.
+        Left  (tExt, tBind) 
+                -> throw $ ErrorInfinite tExt tBind
+        Right t -> return t
 
 
 -- | Substitute solved constraints into a type.
 applySolved :: Ord n => Context n -> Type n -> CheckM n (Type n)
 applySolved ctx tt
  = case applySolvedEither ctx Set.empty tt of
-        Left _err       -> error "applySolved: nope"
-        Right t         -> return t
+
+        -- We found an infinite path when trying to complete this
+        -- substitution. We get back the existential and the type for it.
+        Left  (tExt, tBind)
+                -> throw $ ErrorInfinite tExt tBind
+        Right t -> return t

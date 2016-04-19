@@ -122,14 +122,6 @@ instance (Pretty a, Show n, Eq n, Pretty n)
                 , empty
                 , text "with: "                        <> align (ppr xx) ]
 
-        ErrorLamNotEmpty a xx universe eff
-         -> vcat
-                [ ppr a
-                , text "Non-empty" <+> ppr universe <+> text "abstraction"
-                , text "           has closure: "       <> ppr eff
-                , empty
-                , text "with: "                        <> align (ppr xx) ]
-
         ErrorLamBindBadKind a xx t1 k1
          -> vcat [ ppr a
                  , text "Function parameter has invalid kind."
@@ -275,25 +267,6 @@ instance (Pretty a, Show n, Eq n, Pretty n)
                  , text "with: "                        <> align (ppr xx) ]
 
 
-        -- Withregion -------------------------------------
-        ErrorWithRegionFree a xx u t
-         -> vcat [ ppr a
-                 , text "Region handle escapes scope of withregion."
-                 , text "         The region handle: "   <> ppr u
-                 , text "  is used in the body type: "   <> ppr t
-                 , empty
-                 , text "with: "                         <> align (ppr xx) ]
-
-        ErrorWithRegionNotRegion a xx u k
-         -> vcat [ ppr a
-                 , text "Withregion handle does not have region kind."
-                 , text "   Region var or ctor: "       <> ppr u
-                 , text "             has kind: "       <> ppr k
-                 , text "       but it must be: Region"
-                 , empty
-                 , text "with: "                        <> align (ppr xx) ]
-
-
         -- Witnesses --------------------------------------
         ErrorWAppMismatch a ww t1 t2
          -> vcat [ ppr a
@@ -311,27 +284,9 @@ instance (Pretty a, Show n, Eq n, Pretty n)
                  , empty
                  , text "with: "                        <> align (ppr ww) ]
 
-        ErrorCannotJoin a ww w1 t1 w2 t2
-         -> vcat [ ppr a
-                 , text "Cannot join witnesses."
-                 , text "          Cannot join: "       <> ppr w1
-                 , text "              of type: "       <> ppr t1
-                 , text "         with witness: "       <> ppr w2
-                 , text "              of type: "       <> ppr t2
-                 , empty
-                 , text "with: "                        <> align (ppr ww) ]
-
         ErrorWitnessNotPurity a xx w t
          -> vcat [ ppr a
                  , text "Witness for a purify does not witness purity."
-                 , text "        Witness: "             <> ppr w
-                 , text "       has type: "             <> ppr t
-                 , empty
-                 , text "with: "                        <> align (ppr xx) ]
-
-        ErrorWitnessNotEmpty a xx w t
-         -> vcat [ ppr a
-                 , text "Witness for a forget does not witness emptiness."
                  , text "        Witness: "             <> ppr w
                  , text "       has type: "             <> ppr t
                  , empty

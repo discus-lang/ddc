@@ -31,6 +31,9 @@ instance (Eq n, Show n, Pretty n) => Pretty (Error n) where
                 , empty
                 , text "with: "                         <> align (ppr tt) ]
 
+        ErrorInfinite tExt tBind
+         -> vcat [ text "Cannot construct infinite type."
+                 , text "  " <> ppr tExt <+> text "=" <+> ppr tBind ]
 
         -- Variables ----------------------------
         ErrorUndefined u

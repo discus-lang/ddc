@@ -1,0 +1,3 @@
+Error in transformed module.
+  Cannot construct infinite type.
+    ?0 = Moar ?0

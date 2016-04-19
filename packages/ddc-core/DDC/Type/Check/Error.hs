@@ -24,6 +24,10 @@ data Error n
         , errorExpected         :: Type n
         , errorChecking         :: Type n }
 
+        -- | Cannot construct infinite type.
+        | ErrorInfinite
+        { errorTypeVar          :: Type n
+        , errorTypeBind         :: Type n }
 
         -- Variables ----------------------------
         -- | An undefined type variable.

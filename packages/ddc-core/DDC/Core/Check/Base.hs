@@ -87,16 +87,18 @@ newPos
 applyContext :: Ord n => Context n -> Type n -> CheckM a n (Type n)
 applyContext ctx tt
  = case applyContextEither ctx Set.empty tt of
-        Left _err       -> error "applyContext: nope"
-        Right t         -> return t
+        Left  (tExt, tBind)       
+                -> throw $ ErrorType $ T.ErrorInfinite tExt tBind
+        Right t -> return t
 
 
 -- | Substitute solved constraints into a type.
 applySolved :: Ord n => Context n -> Type n -> CheckM a n (Type n)
 applySolved ctx tt
  = case applySolvedEither ctx Set.empty tt of
-        Left _err       -> error "applySolved: nope"
-        Right t         -> return t
+        Left  (tExt, tBind)
+                -> throw $ ErrorType $ T.ErrorInfinite tExt tBind
+        Right t -> return t
 
 
 
