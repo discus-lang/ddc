@@ -7,6 +7,7 @@ module DDC.Core.Check.Base
         , CheckM
         , newExists
         , newPos
+        , applyContext
 
         , CheckTrace (..)
         , ctrace
@@ -54,6 +55,7 @@ import Control.Monad
 import Data.Monoid                              hiding ((<>))
 import Data.Maybe
 import Data.Set                                 (Set)
+import qualified Data.Set                       as Set
 import qualified DDC.Type.Check                 as T
 import qualified DDC.Control.Monad.Check        as G
 import Prelude                                  hiding ((<$>))
@@ -78,6 +80,15 @@ newPos
  = do   (tr, ix, pos)       <- G.get
         G.put (tr, ix, pos + 1)
         return  (Pos pos)
+
+
+-- | Apply the checker context to a type.
+applyContext :: Ord n => Context n -> Type n -> CheckM a n (Type n)
+applyContext ctx tt
+ = case applyContextEither ctx Set.empty tt of
+        Left _err       -> error "applyContext: nope"
+        Right t         -> return t
+
 
 
 -- CheckTrace -----------------------------------------------------------------

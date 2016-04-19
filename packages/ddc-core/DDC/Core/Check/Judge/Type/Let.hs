@@ -55,11 +55,11 @@ checkLet !table !ctx0 mode demand xx@(XLet a lts xBody)
                 Recon   -> Recon
                 _       -> Check kData
 
-        let kBody' = applyContext ctx3 kBody
+        kBody' <- applyContext ctx3 kBody
         when (not $ isDataKind kBody')
          $ throw $ ErrorLetBodyNotData a xx tBody kBody'
 
-        let tBody'      = applyContext ctx3 tBodyChecked
+        tBody' <- applyContext ctx3 tBodyChecked
 
         -- Run the body if needed ---------------
         (xBodyRun, tBodyRun, eBodyRun)
@@ -194,7 +194,7 @@ checkLetsM !bidir xx !table !ctx0 !demand (LLet b xBind)
         (xBind_raw, tBind_raw, effs_raw, ctx2)
          <- tableCheckExp table table ctx1 modeCheck demand xBind
 
-        let tBind_ctx   = applyContext ctx2 tBind_raw
+        tBind_ctx <- applyContext ctx2 tBind_raw
 
         -- Handle ImplictRunBindings
         --   If the right of the binding is a suspended expression, but there is
@@ -340,9 +340,9 @@ checkRecBinds table bidir a xx ctx0 bs0
                 (b0, _k, ctx1)
                  <- checkBindM config kenv ctx UniverseSpec b (Check kData)
 
-                let t0  = typeOfBind b0
-                let t1  = applyContext ctx1 t0
-                let b1  = replaceTypeOfBind t1 b0
+                let t0  =  typeOfBind b0
+                t1      <- applyContext ctx1 t0
+                let b1  =  replaceTypeOfBind t1 b0
 
                 return (b1, ctx1)
 

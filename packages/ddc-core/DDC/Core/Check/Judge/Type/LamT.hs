@@ -132,9 +132,9 @@ checkLAM !table !ctx0 a b1 x2 Synth
         -- Force the kind of the body to be data.
         --  This is needed when the type of the body is an existential
         --  which doesn't yet have a resolved kind.
+        t2'     <- applyContext ctx5 t2
         (_, _, ctx6)
-         <- checkTypeM config kenv ctx5 UniverseSpec
-                (applyContext ctx5 t2) (Check kData)
+         <- checkTypeM config kenv ctx5 UniverseSpec t2' (Check kData)
 
         -- The body of a spec abstraction must be pure.
         when (e2 /= Sum.empty kEffect)
@@ -233,7 +233,7 @@ checkLAM !table !ctx0 a b1 x2 (Check (TForall b tBody))
         -- We're about to pop the context back to how it was before the
         -- type lambda, and want to keep information gained from synthing
         -- the body.
-        let t2_sub      = applyContext ctx6 t2'
+        t2_sub  <- applyContext ctx6 t2'
 
         -- Cut the bound kind and elems under it from the context.
         let ctx_cut     = lowerTypes 1

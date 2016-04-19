@@ -142,17 +142,17 @@ checkTypeM config env ctx0 uni tt@(TVar u) mode
          = throw $ ErrorUndefined u
 
    in do
-        kActual <- getActual
-        let kActual'    = applyContext ctx0 kActual
+        kActual  <- getActual
+        kActual' <- applyContext ctx0 kActual
 
         -- In Check mode we check the expected kind against the actual
         -- kind from the environment.
         case mode of
          Check kExpected
           -> do 
-                let kExpected'  = applyContext ctx0 kExpected
-                ctx1    <- makeEq config ctx0 kActual' kExpected'
-                        $  ErrorMismatch uni  kActual' kExpected' tt
+                kExpected' <- applyContext ctx0 kExpected
+                ctx1       <- makeEq config ctx0 kActual' kExpected'
+                           $  ErrorMismatch uni  kActual' kExpected' tt
 
                 return (tt, kActual', ctx1)
  
@@ -236,13 +236,13 @@ checkTypeM config env ctx0 uni tt@(TCon tc) mode
         -- Get the actual kind/sort of the constructor according to the 
         -- constructor definition.
         (tt', kActual)  <- getActual
-        let kActual'    =  applyContext ctx0 kActual
+        kActual'        <- applyContext ctx0 kActual
 
         case mode of
          -- If we have an expected kind then make the actual kind the same.
          Check kExpected
            -> do 
-                 let kExpected' = applyContext ctx0 kExpected
+                 kExpected' <- applyContext ctx0 kExpected
                  ctx1   <- makeEq config ctx0 kActual' kExpected'
                         $  ErrorMismatch uni  kActual' kExpected' tt
                  return (tt', kActual', ctx1)
@@ -267,7 +267,7 @@ checkTypeM config kenv ctx0 uni@UniverseSpec
         (t2', k2, ctx3) <- checkTypeM config kenv ctx2 UniverseSpec t2 Recon
 
         -- The body must have kind Data or Witness.
-        let k2'         = applyContext ctx3 k2
+        k2'             <- applyContext ctx3 k2
         when ( not (isDataKind k2')
             && not (isWitnessKind k2'))
          $ throw $ ErrorForallKindInvalid tt t2 k2'
@@ -292,13 +292,15 @@ checkTypeM config kenv ctx0 uni@UniverseSpec
 
         -- If the kind of the body is unconstrained then default it to Data.
         -- See [Note: Defaulting the kind of quantified types]
-        let k2' = applyContext ctx4 k2
+        k2' <- applyContext ctx4 k2
         (k2'', ctx5)
          <- if isTExists k2'
              then do
                 ctx5    <- makeEq config ctx4 k2' kData
                         $  ErrorMismatch uni  k2' kData tt
-                return (applyContext ctx5 k2', ctx5)
+
+                k2''    <- applyContext ctx5 k2'
+                return (k2'', ctx5)
 
              else do
                 return (k2', ctx4)
@@ -330,7 +332,7 @@ checkTypeM config kenv ctx0 uni@UniverseSpec
         -- kind are existentials then force them both to be data. Otherwise make
         -- the kind of the body the same as the expected kind.
         -- See [Note: Defaulting the kind of quantified types]
-        let k2' = applyContext ctx4 k2
+        k2' <- applyContext ctx4 k2
         (k2'', ctx5)
          <- if isTExists k2' && isTExists kExpected
              then do
@@ -339,12 +341,16 @@ checkTypeM config kenv ctx0 uni@UniverseSpec
 
                 ctx5    <- makeEq config ctx' k2' kData 
                         $  ErrorMismatch uni  k2' kData  tt
-                return (applyContext ctx5 k2', ctx5)
+
+                k2''    <- applyContext ctx5 k2'
+                return (k2'', ctx5)
 
              else do
                 ctx5    <- makeEq config ctx4 k2' kExpected
                         $  ErrorMismatch uni  k2' kExpected tt
-                return (applyContext ctx5 k2', ctx4)
+
+                k2''    <- applyContext ctx5 k2'
+                return (k2'', ctx4)
 
         -- The above horror show needs to have worked.
         when ( not (isDataKind k2'')
@@ -450,10 +456,9 @@ checkTypeM config kenv ctx0 UniverseSpec
          <- checkTypeM config kenv ctx0 UniverseSpec tFn Synth
 
         -- Apply the argument to the function.
+        kFn'    <- applyContext ctx1 kFn
         (kResult, tArg', ctx2)
-         <- synthTAppArg config kenv ctx1
-                tFn' (applyContext ctx1 kFn )
-                tArg
+         <- synthTAppArg config kenv ctx1 tFn' kFn' tArg
 
         return (TApp tFn' tArg', kResult, ctx2)
 
@@ -464,10 +469,10 @@ checkTypeM config kenv ctx0 UniverseSpec
          <- checkTypeM config kenv ctx0 UniverseSpec tt Synth
 
         -- Force the synthesised kind to be the same as the expected one.
-        let k1'         = applyContext ctx1 k1
-        let kExpected'  = applyContext ctx1 kExpected
-        ctx2    <- makeEq config ctx1         k1' kExpected'
-                $  ErrorMismatch UniverseSpec k1' kExpected' tt
+        k1'         <- applyContext ctx1 k1
+        kExpected'  <- applyContext ctx1 kExpected
+        ctx2        <- makeEq config ctx1         k1' kExpected'
+                    $  ErrorMismatch UniverseSpec k1' kExpected' tt
 
         return (t1', k1', ctx2)
 
@@ -511,9 +516,8 @@ checkTypeM config kenv ctx0 UniverseSpec tt@(TSum ss) mode
          k : _ksMore
           -> do 
                 (ts'', _, ctx2)
-                 <- checkTypesM config kenv ctx1 UniverseSpec (Check k) ts
-
-                let k'  = applyContext ctx2 k
+                    <- checkTypesM config kenv ctx1 UniverseSpec (Check k) ts
+                k'  <- applyContext ctx2 k
                 return  (TSum (TS.fromList k' ts''), k', ctx2)
 
          -- If the sum does not contain an attached kind, and there are no elements
@@ -533,8 +537,8 @@ checkTypeM config kenv ctx0 UniverseSpec tt@(TSum ss) mode
                 <- checkTypeM config kenv ctx0 UniverseSpec tt Synth
 
         -- Force the synthesised kind to match the expected one.
-        let k1'         = applyContext ctx1 k1
-        let kExpected'  = applyContext ctx1 kExpected
+        k1'         <- applyContext ctx1 k1
+        kExpected'  <- applyContext ctx1 kExpected
         ctx2    <- makeEq config ctx1         k1' kExpected'
                 $  ErrorMismatch UniverseSpec k1' kExpected' tt
 

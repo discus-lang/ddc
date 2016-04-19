@@ -20,8 +20,8 @@ checkSub table !a ctx0 demand xx0 tExpect
          <- tableCheckExp table table ctx0 Synth demand xx0 
 
         -- Substitute context into synthesised and expected types.
-        let tSynth'     = applyContext ctx1 tSynth
-        let tExpect'    = applyContext ctx1 tExpect
+        tSynth'  <- applyContext ctx1 tSynth
+        tExpect' <- applyContext ctx1 tExpect
 
         ctrace  $ vcat
                 [ text "*.  Sub Check"

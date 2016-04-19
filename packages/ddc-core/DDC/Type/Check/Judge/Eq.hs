@@ -66,10 +66,10 @@ makeEq config ctx0 tL tR err
  | TApp tL1 tL2 <- tL
  , TApp tR1 tR2 <- tR
  = do
-        ctx1     <- makeEq config ctx0 tL1  tR1  err
-        let tL2' = applyContext ctx1 tL2
-        let tR2' = applyContext ctx1 tR2
-        ctx2     <- makeEq config ctx0 tL2' tR2' err
+        ctx1    <- makeEq config ctx0 tL1  tR1  err
+        tL2'    <- applyContext ctx1 tL2
+        tR2'    <- applyContext ctx1 tR2
+        ctx2    <- makeEq config ctx0 tL2' tR2' err
 
         return ctx2
 

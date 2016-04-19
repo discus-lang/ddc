@@ -85,15 +85,15 @@ checkCast !table ctx0 mode _demand
          <- tableCheckExp table table ctx0 Synth DemandRun x1
 
         -- The actual type is (S eff tBody).
-        let tBody'      = applyContext ctx1 tBody
-        let tActual     = tApps (TCon (TyConSpec TcConSusp)) [TSum effs, tBody']
+        tBody'      <- applyContext ctx1 tBody
+        let tActual =  tApps (TCon (TyConSpec TcConSusp)) [TSum effs, tBody']
 
         -- The actual type needs to match the expected type.
         -- We're treating the S constructor as invariant in both positions,
         --  so we use 'makeEq' here instead of 'makeSub'
-        let tExpected'  = applyContext ctx1 tExpected
-        ctx2    <- makeEq config a ctx1 tActual tExpected'
-                $  ErrorMismatch a      tActual tExpected' xx
+        tExpected'  <- applyContext ctx1 tExpected
+        ctx2        <- makeEq config a ctx1 tActual tExpected'
+                    $  ErrorMismatch a      tActual tExpected' xx
 
         returnX a (\z -> XCast z CastBox x1')
                 tExpected (Sum.empty kEffect) ctx2
@@ -151,7 +151,7 @@ checkCast !table !ctx0 mode _demand
 
         -- Run the body,
         -- which needs to have been resolved to a computation type.
-        let tBody'      = applyContext ctx1 tBody
+        tBody'  <- applyContext ctx1 tBody
         (tResult, effsSusp, ctx2)
          <- synthRunSusp table a xx ctx1 tBody'
 

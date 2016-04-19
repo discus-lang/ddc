@@ -79,23 +79,23 @@ makeInst !config !a !ctx0 !tL !tR !err
  , Just (tR1, tR2)      <- takeTFun tR
  = do
         -- Make new existentials to match the function type and parameter.
-        iL1             <- newExists kData
-        let tL1         =  typeOfExists iL1
+        iL1     <- newExists kData
+        let tL1 =  typeOfExists iL1
 
-        iL2             <- newExists kData
-        let tL2         =  typeOfExists iL2
+        iL2     <- newExists kData
+        let tL2 =  typeOfExists iL2
 
         -- Update the context with the new constraint.
         let Just ctx1   =  updateExists [iL2, iL1] iL (tFun tL1 tL2) ctx0
 
         -- Instantiate the parameter type.
-        ctx2            <- makeInst config a ctx1 tR1 tL1 err
+        ctx2    <- makeInst config a ctx1 tR1 tL1 err
 
         -- Substitute into tR2
-        let tR2'        =  applyContext ctx2 tR2
+        tR2'    <- applyContext ctx2 tR2
 
         -- Instantiate the return type.
-        ctx3            <- makeInst config a ctx2 tL2 tR2' err
+        ctx3    <- makeInst config a ctx2 tL2 tR2' err
 
         ctrace  $ vcat
                 [ text "**  InstLArr"
@@ -130,23 +130,23 @@ makeInst !config !a !ctx0 !tL !tR !err
  , Just iR              <- takeExists tR
  = do
         -- Make new existentials to match the function type and parameter.
-        iR1             <- newExists kData
-        let tR1         =  typeOfExists iR1
+        iR1     <- newExists kData
+        let tR1 =  typeOfExists iR1
 
-        iR2             <- newExists kData
-        let tR2         =  typeOfExists iR2
+        iR2     <- newExists kData
+        let tR2 =  typeOfExists iR2
 
         -- Update the context with the new constraint.
         let Just ctx1   =  updateExists [iR2, iR1] iR (tFun tR1 tR2) ctx0
 
         -- Instantiate the parameter type.
-        ctx2            <- makeInst config a ctx1 tR1 tL1 err
+        ctx2    <- makeInst config a ctx1 tR1 tL1 err
 
         -- Substitute into tL2
-        let tL2'        = applyContext ctx2 tL2
+        tL2'    <- applyContext ctx2 tL2
 
         -- Instantiate the return type.
-        ctx3            <- makeInst config a ctx2 tL2' tR2 err
+        ctx3    <- makeInst config a ctx2 tL2' tR2 err
 
         ctrace  $ vcat
                 [ text "**  InstRArr"

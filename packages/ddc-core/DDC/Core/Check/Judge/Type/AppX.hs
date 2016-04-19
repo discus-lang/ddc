@@ -58,7 +58,7 @@ checkAppX !table !ctx0 Synth demand
          <- tableCheckExp table table ctx0 Synth demand xFn
 
         -- Substitute context into synthesised type.
-        let tFn' = applyContext ctx1 tFn
+        tFn' <- applyContext ctx1 tFn
 
         -- Synth a type for the function applied to its argument.
         (xResult, tResult, esResult, ctx2)
@@ -224,9 +224,9 @@ synthAppArg table a xx ctx0 demand xFn tFn effsFn xArg
         (xArg', tArg, esArg, ctx1)
          <- tableCheckExp table table ctx0 (Check tParam) DemandRun xArg
 
-        let tFn'     = applyContext ctx1 tFn
-        let tArg'    = applyContext ctx1 tArg
-        let tResult' = applyContext ctx1 tResult
+        tFn'     <- applyContext ctx1 tFn
+        tArg'    <- applyContext ctx1 tArg
+        tResult' <- applyContext ctx1 tResult
 
         -- Get the type, effect and closure resulting from the application
         -- of a function of this type to its argument.

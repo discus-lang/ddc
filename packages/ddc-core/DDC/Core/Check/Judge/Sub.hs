@@ -145,10 +145,10 @@ makeSub config a ctx0 xL tL tR err
                 [ text "*>  SubArr"
                 , empty ]
 
-        (_, ctx1)   <- makeSub config a ctx0 xL tR1 tL1 err
-        let tL2'    =  applyContext  ctx1    tL2
-        let tR2'    =  applyContext  ctx1    tR2
-        (_, ctx2)   <- makeSub config a ctx1 xL tL2' tR2' err
+        (_, ctx1) <- makeSub config a ctx0 xL tR1 tL1 err
+        tL2'      <- applyContext     ctx1 tL2
+        tR2'      <- applyContext     ctx1 tR2
+        (_, ctx2) <- makeSub config a ctx1 xL tL2' tR2' err
 
         ctrace  $ vcat
                 [ text "*<  SubArr"
@@ -173,10 +173,10 @@ makeSub config a ctx0 xL tL tR err
                 [ text "*>  SubApp"
                 , empty ]
 
-        ctx1     <- makeEq config a ctx0 tL1 tR1 err
-        let tL2' =  applyContext ctx1 tL2
-        let tR2' =  applyContext ctx1 tR2
-        ctx2     <- makeEq config a ctx1 tL2' tR2' err
+        ctx1    <- makeEq config a ctx0 tL1 tR1 err
+        tL2'    <- applyContext ctx1 tL2
+        tR2'    <- applyContext ctx1 tR2
+        ctx2    <- makeEq config a ctx1 tL2' tR2' err
 
         ctrace  $ vcat
                 [ text "*<  SubApp"

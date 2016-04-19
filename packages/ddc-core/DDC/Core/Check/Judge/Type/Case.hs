@@ -86,8 +86,8 @@ checkCase !table !ctx0 mode demand
         --   In Synth mode this is enforced by passing down an existential to
         --   unifify against, but with Recon and Check modes we might get
         --   a different type for each alternative.
-        let tsAlts'     = map (applyContext ctx4) tsAlts
-        let tAlt : _    = tsAlts'
+        tsAlts'         <- mapM (applyContext ctx4) tsAlts
+        let tAlt : _    =  tsAlts'
         forM_ tsAlts' $ \tAlt'
          -> when (not $ equivT tAlt tAlt')
           $ throw $ ErrorCaseAltResultMismatch a xx tAlt tAlt'
@@ -283,9 +283,9 @@ checkAltsM !table !a !xx !tDiscrim !tsArgs !mode !demand !alts0 !ctx
 
         -- Check the body in this new environment.
         (xBody', tBody, effsBody, ctxBody)
-                 <- tableCheckExp table table ctxArg mode demand xBody
+                <- tableCheckExp table table ctxArg mode demand xBody
 
-        let tBody'      = applyContext ctxBody tBody
+        tBody'  <- applyContext ctxBody tBody
 
         -- Pop the argument types from the context.
         let ctx_cut     = popToPos posArg ctxBody
@@ -342,7 +342,7 @@ checkFieldAnnots table bidir a xx tts ctx0
         = do    ctx'    <- makeEq (tableConfig table) a ctx tAnnot tActual
                         $  ErrorCaseFieldTypeMismatch a xx tAnnot tActual
 
-                let tField = applyContext ctx' tActual
+                tField  <- applyContext ctx' tActual
                 return  (tField, ctx')
 
         -- In Recon mode, if there is an annotation on the field then it needs

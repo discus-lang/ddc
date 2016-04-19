@@ -127,21 +127,23 @@ checkLam !table !a !ctx !b1 !x2 !Synth
         --   This constrains the kind of polymorpic variables that are used
         --   as the result of a function, like with (\x. x).
         --   We know \x. can't bind a witness here.
+        t2''     <- applyContext ctx4 t2'
         (_, _, ctx5)
-         <- checkTypeM config kenv ctx4 UniverseSpec
-                (applyContext ctx4 t2')
-                (Check kData)
+         <- checkTypeM config kenv ctx4 UniverseSpec t2'' (Check kData)
 
         -- Build the result type -------------
         -- If the kind of the parameter is unconstrained then default it
         -- to Data. This handles  "/\f. \(a : f Int#). ()"
-        let k1'        = applyContext ctx5 k1
+        k1'     <- applyContext ctx5 k1
         (k1'', ctx6)
          <- if isTExists k1'
              then do
                 ctx6    <- makeEq config a ctx5 k1' kData
                         $  ErrorMismatch a k1' kData xx
-                return (applyContext ctx6 k1', ctx6)
+
+                k1''    <- applyContext ctx6 k1'
+
+                return (k1'', ctx6)
 
              else do
                 return (k1', ctx5)
@@ -240,22 +242,24 @@ checkLam !table !a !ctx !b1 !x2 !(Check tExpected)
         --   This constrains the kind of polymorpic variables that are used
         --   as the result of a function, like with (\x. x).
         --   We know \x. can't bind a witness here.
+        t2' <- applyContext ctx2 t2
         (_, _, ctx3)
-         <- checkTypeM config kenv ctx2 UniverseSpec
-                (applyContext ctx2 t2)
-                (Check kData)
+            <- checkTypeM config kenv ctx2 UniverseSpec t2' (Check kData)
 
         -- Make the result type -----------------
         -- If the kind of the parameter is unconstrained then default it
         -- to Data. This handles  "/\f. \(a : f Int#). ()"
         (_, k1, _)      <- checkTypeM config kenv ctx3 UniverseSpec t1' Synth
-        let k1'         = applyContext ctx3 k1
+        k1'             <- applyContext ctx3 k1
         (k1'', ctx4)
          <- if isTExists k1'
              then do
                 ctx4    <- makeEq config a ctx3 k1' kData
                         $  ErrorMismatch a k1' kData xx
-                return (applyContext ctx4 k1', ctx4)
+
+                k1''    <- applyContext ctx4 k1'
+
+                return (k1'', ctx4)
 
              else do
                 return (k1', ctx3)

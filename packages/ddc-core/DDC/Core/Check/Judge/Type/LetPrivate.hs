@@ -68,9 +68,9 @@ checkLetPrivate !table !ctx mode demand
                 Recon   -> Recon
                 _       -> Check kData
 
-        let tBody5      = applyContext ctx5 tBody4
-        let kBody5      = applyContext ctx5 kBody4
-        let TSum effs5  = applyContext ctx5 (TSum effs3)
+        tBody5      <- applyContext ctx5 tBody4
+        kBody5      <- applyContext ctx5 kBody4
+        TSum effs5  <- applyContext ctx5 (TSum effs3)
         when (not $ isDataKind kBody5)
          $ throw $ ErrorLetBodyNotData a xx tBody5 kBody5
 

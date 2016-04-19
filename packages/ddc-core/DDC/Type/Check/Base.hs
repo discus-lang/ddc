@@ -3,6 +3,7 @@ module DDC.Type.Check.Base
         ( CheckM
         , newExists
         , newPos
+        , applyContext
 
         , throw
 
@@ -21,8 +22,9 @@ import DDC.Type.Compounds
 import DDC.Type.Equiv
 import DDC.Type.Exp
 import DDC.Base.Pretty
-import qualified DDC.Control.Monad.Check as G
 import DDC.Control.Monad.Check           (throw)
+import qualified Data.Set               as Set
+import qualified DDC.Control.Monad.Check as G
 
 
 -- | The type checker monad.
@@ -47,4 +49,11 @@ newPos
         G.put (ix, pos + 1)
         return  (Pos pos)
 
+
+-- | Apply the checker context to a type.
+applyContext :: Ord n => Context n -> Type n -> CheckM n (Type n)
+applyContext ctx tt
+ = case applyContextEither ctx Set.empty tt of
+        Left _err       -> error "applyContext: nope"
+        Right t         -> return t
 

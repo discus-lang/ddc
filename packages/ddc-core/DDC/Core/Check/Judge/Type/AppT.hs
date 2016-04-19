@@ -71,9 +71,9 @@ checkAppT !table !ctx0 Synth demand
          <- tableCheckExp table table ctx0 Synth demand xFn
 
         -- Apply the type argument to the type of the function.
+        tFn' <- applyContext ctx1 tFn
         (tResult, tArg', kArg, ctx2)
-         <- synthAppArgT table aApp xx ctx1
-                (applyContext ctx1 tFn) tArg
+             <- synthAppArgT table aApp xx ctx1 tFn' tArg
 
         -- Build an annotated version of the type application.
         let aApp' = AnTEC tResult (TSum effsFn)  (tBot kClosure) aApp
