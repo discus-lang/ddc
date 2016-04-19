@@ -8,7 +8,7 @@ import foreign abstract type
 
 import foreign c value
  primPutString : TextLit# -> S Console Void#
- primPutVector : [r : Region]. Vector# r Word8# -> S Console Void#
+ primPutVector : [r: Region]. Vector# r Word8# -> S Console Void#
 
 import foreign c value
  -- Get the unboxed text literal from a boxed text literal.
@@ -19,7 +19,7 @@ where
 
 
 -- | Write text to the console.
-write (tt : Text) : S Console Unit
+write (tt: Text): S Console Unit
  = box case tt of
         TextLit lit
          -> do  primPutString (takeTextLit lit)
@@ -32,20 +32,15 @@ write (tt : Text) : S Console Unit
         TextApp t1 t2 
          -> do  write t1
                 write t2
-                ()
 
 
 -- | Write text to the console with a trailing newline.
-writel (tt : Text) : S Console Unit
- = box do
-        write tt
+writel  (tt: Text): S Console Unit
+ = do   write tt
         write "\n"
-        ()
 
 
 -- | Write text to the console with two trailing newlines.
-writell (tt : Text) : S Console Unit
- = box do
-        write tt
+writell (tt: Text): S Console Unit
+ = do   write tt
         write "\n\n"
-        ()
