@@ -4,6 +4,7 @@ module DDC.Type.Check.Base
         , newExists
         , newPos
         , applyContext
+        , applySolved
 
         , throw
 
@@ -57,3 +58,10 @@ applyContext ctx tt
         Left _err       -> error "applyContext: nope"
         Right t         -> return t
 
+
+-- | Substitute solved constraints into a type.
+applySolved :: Ord n => Context n -> Type n -> CheckM n (Type n)
+applySolved ctx tt
+ = case applySolvedEither ctx Set.empty tt of
+        Left _err       -> error "applySolved: nope"
+        Right t         -> return t

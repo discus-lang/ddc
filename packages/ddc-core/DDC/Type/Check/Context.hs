@@ -32,7 +32,7 @@ module DDC.Type.Check.Context
         , updateExists
 
         , applyContextEither
-        , applySolved
+        , applySolvedEither
         , effectSupported
 
         , liftTypes
@@ -524,7 +524,7 @@ applyContextEither ctx is tt
                 return  $ TSum
                         $ Sum.fromList (Sum.kindOfSum ts) tss'
 
-
+{-
 -- | Apply the solved constraints in a context to a type, updating any
 --   existentials in the type. This uses constraints on the stack as well
 --   as in the solved constraints set.
@@ -536,7 +536,7 @@ applySolved ctx tt
  = case applySolvedEither ctx Set.empty tt of
         Left  _err -> error "applySolved: loop"
         Right t    -> t
-
+-}
 
 -- | Like `applySolved`, but we keep track of which existentials we have
 --   entered. If we find a loop through the existential equations then

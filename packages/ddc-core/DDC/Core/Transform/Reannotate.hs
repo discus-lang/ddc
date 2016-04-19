@@ -4,74 +4,89 @@ module DDC.Core.Transform.Reannotate
 where
 import DDC.Core.Module
 import DDC.Core.Exp.Annot.Exp
+import Control.Monad.Identity
 
 
 -- | Apply the given function to every annotation in a core thing.
 class Reannotate c where
- reannotate :: (a -> b) -> c a n -> c b n
+ reannotate  :: (a -> b) -> c a n -> c b n
+ reannotate f xx
+  = runIdentity (reannotateM (\x -> return $ f x) xx)
+
+ reannotateM :: forall m a b n. Monad m 
+             => (a -> m b) -> c a n -> m (c b n)
 
 
 instance Reannotate Module where
- reannotate f
+ reannotateM f
      (ModuleCore name isHeader
                  exportKinds  exportTypes 
                  importKinds  importCaps   importTypes  importDataDefs
                  dataDefsLocal
                  body)
-  =   ModuleCore name isHeader
-                 exportKinds  exportTypes
-                 importKinds  importCaps   importTypes  importDataDefs
-                 dataDefsLocal
-                 (reannotate f body)
+
+  = do  body'   <- reannotateM f body
+        return  $  ModuleCore name isHeader
+                        exportKinds  exportTypes
+                        importKinds  importCaps   importTypes  importDataDefs
+                        dataDefsLocal
+                        body'
 
 
 instance Reannotate Exp where
- reannotate f xx
-  = let down x   = reannotate f x
+ reannotateM f xx
+  = let down x   = reannotateM f x
     in case xx of
-        XVar     a u            -> XVar     (f a) u
-        XCon     a u            -> XCon     (f a) u
-        XLAM     a b x          -> XLAM     (f a) b (down x)
-        XLam     a b x          -> XLam     (f a) b (down x)
-        XApp     a x1 x2        -> XApp     (f a)   (down x1)  (down x2)
-        XLet     a lts x        -> XLet     (f a)   (down lts) (down x)
-        XCase    a x alts       -> XCase    (f a)   (down x)   (map down alts)
-        XCast    a c x          -> XCast    (f a)   (down c)   (down x)
-        XType    a t            -> XType    (f a) t
-        XWitness a w            -> XWitness (f a)   (down w)
+        XVar     a u            -> XVar     <$> f a <*> pure u
+        XCon     a u            -> XCon     <$> f a <*> pure u
+        XLAM     a b x          -> XLAM     <$> f a <*> pure b <*> down x
+        XLam     a b x          -> XLam     <$> f a <*> pure b <*> down x
+        XApp     a x1 x2        -> XApp     <$> f a            <*> down x1  <*> down x2
+        XLet     a lts x        -> XLet     <$> f a            <*> down lts <*> down x
+        XCase    a x alts       -> XCase    <$> f a            <*> down x   <*> mapM down alts
+        XCast    a c x          -> XCast    <$> f a            <*> down c   <*> down x
+        XType    a t            -> XType    <$> f a <*> pure t
+        XWitness a w            -> XWitness <$> f a <*> down w
 
 
 instance Reannotate Lets where
- reannotate f xx
-  = let down x  = reannotate f x
+ reannotateM f xx
+  = let down x  = reannotateM f x
     in case xx of
-        LLet b x                -> LLet b (down x)
-        LRec bxs                -> LRec [(b, down x) | (b, x) <- bxs]
-        LPrivate b t bs         -> LPrivate b t bs
+        LLet b x
+         -> LLet <$> pure b <*> down x
+
+        LRec bxs 
+         -> do  let (bs, xs) = unzip bxs
+                xs'     <- mapM down xs
+                return  $ LRec $ zip bs xs'
+
+        LPrivate b t bs
+         -> return $ LPrivate b t bs
 
 
 instance Reannotate Alt where
- reannotate f aa
+ reannotateM f aa
   = case aa of
-        AAlt w x                -> AAlt w (reannotate f x)
+        AAlt w x                -> AAlt w <$> reannotateM f x
 
 
 instance Reannotate Cast where
- reannotate f cc
-  = let down x  = reannotate f x
+ reannotateM f cc
+  = let down x  = reannotateM f x
     in case cc of
-        CastWeakenEffect  eff   -> CastWeakenEffect eff
-        CastPurify w            -> CastPurify (down w)
-        CastBox                 -> CastBox
-        CastRun                 -> CastRun
+        CastWeakenEffect eff    -> pure $ CastWeakenEffect eff
+        CastPurify w            -> CastPurify <$> down w
+        CastBox                 -> pure CastBox
+        CastRun                 -> pure CastRun
 
 
 instance Reannotate Witness where
- reannotate f ww
-  = let down x = reannotate f x
+ reannotateM f ww
+  = let down x = reannotateM f x
     in case ww of
-        WVar  a u               -> WVar  (f a) u
-        WCon  a c               -> WCon  (f a) c
-        WApp  a w1 w2           -> WApp  (f a) (down w1) (down w2)
-        WType a t               -> WType (f a) t
+        WVar  a u               -> WVar  <$> f a <*> pure u
+        WCon  a c               -> WCon  <$> f a <*> pure c
+        WApp  a w1 w2           -> WApp  <$> f a <*> down w1 <*> down w2
+        WType a t               -> WType <$> f a <*> pure t
 

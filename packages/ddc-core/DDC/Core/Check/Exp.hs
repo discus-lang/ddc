@@ -92,20 +92,19 @@ checkExp !config !kenv !tenv !mode !demand !xx
         -- Apply the final context to the annotations in expressions.
         -- This ensures that existentials are expanded to solved types.
         let applyToAnnot (AnTEC t0 e0 _ x0)
-                = AnTEC (applySolved ctx t0)
-                        (applySolved ctx e0)
-                        (tBot kClosure)
-                        x0
+             = do t0' <- applySolved ctx t0
+                  e0' <- applySolved ctx e0
+                  return $ AnTEC t0' e0' (tBot kClosure) x0
 
-        let xx'' = reannotate applyToAnnot
-                 $ mapT (applySolved ctx) xx'
+        xx_solved <- mapT (applySolved ctx) xx'
+        xx_annot  <- reannotateM applyToAnnot xx_solved
 
         -- Also apply the final context to the overall type,
         -- effect and closure of the expression.
-        let t'   = applySolved ctx t
-        let e'   = applySolved ctx $ TSum effs
+        t'      <- applySolved ctx t
+        e'      <- applySolved ctx $ TSum effs
 
-        return  (xx'', t', e')
+        return  (xx_annot, t', e')
 
 
 -- | Like `checkExp`, but only return the value type of an expression.

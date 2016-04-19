@@ -3,7 +3,7 @@ module DDC.Core.Check.Module
         ( checkModule
         , checkModuleM)
 where
-import DDC.Core.Check.Base      (checkTypeM)
+import DDC.Core.Check.Base      (checkTypeM, applySolved)
 import DDC.Core.Check.Exp
 import DDC.Core.Check.Error
 import DDC.Core.Transform.Reannotate
@@ -142,14 +142,12 @@ checkModuleM !config !kenv !tenv mm@ModuleCore{} !mode
 
         -- Apply the final context to the annotations in expressions.
         let applyToAnnot (AnTEC t0 e0 _ x0)
-                = AnTEC (applySolved ctx t0)
-                        (applySolved ctx e0)
-                        (tBot kClosure)
-                        x0
+             = do t0' <- applySolved ctx t0
+                  e0' <- applySolved ctx e0
+                  return $ AnTEC t0' e0' (tBot kClosure) x0
 
-        let x'' = reannotate applyToAnnot
-                $ mapT (applySolved ctx) x'
-
+        xx_solved <- mapT (applySolved ctx) x'
+        xx_annot  <- reannotateM applyToAnnot xx_solved
 
         -- Build new module with infered annotations ------
         let mm_inferred
@@ -158,7 +156,7 @@ checkModuleM !config !kenv !tenv mm@ModuleCore{} !mode
                 , moduleImportTypes     = nksImported'
                 , moduleImportCaps      = ntsImportCap'
                 , moduleImportValues    = ntsImportValue'
-                , moduleBody            = x'' }
+                , moduleBody            = xx_annot }
 
 
         -- Check that each exported signature matches the type of its binding.
@@ -166,7 +164,8 @@ checkModuleM !config !kenv !tenv mm@ModuleCore{} !mode
         -- in the module.
         tenv_binds      <- checkModuleBinds
                                 (moduleExportTypes  mm_inferred)
-                                (moduleExportValues mm_inferred) x''
+                                (moduleExportValues mm_inferred) 
+                                xx_annot
 
         -- Build the environment containing all names that can be exported.
         let tenv_exportable = Env.union tenv_top tenv_binds
