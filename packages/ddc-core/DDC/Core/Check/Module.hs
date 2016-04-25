@@ -22,7 +22,8 @@ import DDC.Type.Env             (KindEnv, TypeEnv)
 import DDC.Control.Monad.Check  (runCheck, throw)
 import DDC.Data.ListUtils
 import Control.Monad
-import qualified DDC.Type.Env   as Env
+import qualified DDC.Type.Env           as Env
+import qualified Data.Map.Strict        as Map
 
 
 -- Wrappers ---------------------------------------------------------------------------------------
@@ -269,25 +270,41 @@ checkImportTypes config mode nisrcs
                 Recon   -> Recon
                 _       -> Synth
 
+        -- Check an import definition.
         check (n, isrc)
-         = do   let k           =  kindOfImportType isrc
-                (k', _, _)      <- checkTypeM config Env.empty emptyContext UniverseKind
+         = do   let k      =  kindOfImportType isrc
+                (k', _, _) <- checkTypeM config Env.empty emptyContext UniverseKind
                                         k modeCheckImportTypes
                 return  (n, mapKindOfImportType (const k') isrc)
+
+        -- Pack down duplicate import definitions.
+        --   We can import the same value via multiple modules,
+        --   which is ok provided all instances have the same kind.
+        pack !mm []
+         = return $ Map.toList mm
+
+        pack !mm ((n, isrc) : nis)
+         = case Map.lookup n mm of
+                Just isrc'
+                 | compat isrc isrc' -> pack mm nis
+                 | otherwise         -> throw $ ErrorImportDuplicate n
+
+                Nothing              -> pack (Map.insert n isrc mm) nis
+
+        -- Check if two import definitions with the same name are compatible.
+        -- The same import definition can appear multiple times provided
+        -- each instance has the same name and kind.
+        compat (ImportTypeAbstract k1) (ImportTypeAbstract k2) = equivT k1 k2
+        compat (ImportTypeBoxed    k1) (ImportTypeBoxed    k2) = equivT k1 k2
+        compat _ _ = False
+
    in do
+        -- Check all the imports individually.
+        nisrcs' <- mapM check nisrcs
 
-        -- ISSUE #346: Fix duplicate import check for diamond imports.
-        --  This doesn't work for diamond imports.
-        --  We should be able to import a single thing that has been 
-        --  exported-to and re-imported from multiple library modules.
-
-        -- Check for duplicate imports.
---      let dups = findDuplicates $ map fst nisrcs
---      (case takeHead dups of
---        Just n -> throw $ ErrorImportDuplicate n
---        _      -> return ())
-
-        mapM check nisrcs
+        -- Check that exports with the same name are compatable,
+        -- and pack down duplicates.
+        pack Map.empty nisrcs'
 
 
 ---------------------------------------------------------------------------------------------------
@@ -306,6 +323,7 @@ checkImportCaps config kenv mode nisrcs
                 Recon   -> Recon
                 _       -> Check kEffect
 
+        -- Check an import definition.
         check (n, isrc)
          = do   let t      =  typeOfImportCap isrc
                 (t', k, _) <- checkTypeM config kenv emptyContext UniverseSpec
@@ -322,19 +340,32 @@ checkImportCaps config kenv mode nisrcs
 
                 return (n, mapTypeOfImportCap (const t') isrc)
 
+        -- Pack down duplicate import definitions.
+        --   We can import the same capability via multiple modules,
+        --   which is ok provided all instances have the same type.
+        pack !mm []
+         = return $ Map.toList mm
+
+        pack !mm ((n, isrc) : nis)
+         = case Map.lookup n mm of
+                Just isrc'
+                 | compat isrc isrc'    -> pack mm nis
+                 | otherwise            -> throw $ ErrorImportDuplicate n
+
+                Nothing                 -> pack (Map.insert n isrc mm) nis
+
+        -- Check if two imported capabilities of the same name are compatiable.
+        -- The same import definition can appear multiple times provided each 
+        -- instance has the same name and type.
+        compat (ImportCapAbstract t1) (ImportCapAbstract t2) = equivT t1 t2
+
     in do
-        -- ISSUE #346: Fix duplicate import check for diamond imports.
-        --  This doesn't work for diamond imports.
-        --  We should be able to import a single thing that has been 
-        --  exported-to and re-imported from multiple library modules.
+        -- Check all the imports individually.
+        nisrcs' <- mapM check nisrcs
 
-        -- Check for duplicate imports.
---         let dups = findDuplicates $ map fst nisrcs
---         (case takeHead dups of
---           Just n -> throw $ ErrorImportDuplicate n
---           _      -> return ())
-
-        mapM check nisrcs
+        -- Check that imports with the same name are compatable,
+        -- and pack down duplicates.
+        pack Map.empty nisrcs'
 
 
 ---------------------------------------------------------------------------------------------------
@@ -353,6 +384,7 @@ checkImportValues config kenv mode nisrcs
                 Recon   -> Recon
                 _       -> Check kData
 
+        -- Check an import definition.
         check (n, isrc)
          = do   let t      =  typeOfImportValue isrc
                 (t', k, _) <- checkTypeM config kenv emptyContext UniverseSpec
@@ -368,19 +400,39 @@ checkImportValues config kenv mode nisrcs
                  $ throw $ ErrorImportValueNotData n
 
                 return  (n, mapTypeOfImportValue (const t') isrc)
+
+        -- Pack down duplicate import definitions.
+        --   We can import the same value via multiple modules,
+        --   which is ok provided all instances have the same type.
+        pack !mm []
+         = return $ Map.toList mm
+
+        pack !mm ((n, isrc) : nis)
+         = case Map.lookup n mm of
+                Just isrc'
+                  | compat isrc isrc'   -> pack mm nis
+                  | otherwise           -> throw $ ErrorImportDuplicate n
+
+                Nothing                 -> pack (Map.insert n isrc mm) nis
+
+        -- Check if two imported values of the same name are compatable.
+        compat (ImportValueModule _ _ t1 a1) 
+               (ImportValueModule _ _ t2 a2)
+         = equivT t1 t2 && a1 == a2
+
+        compat (ImportValueSea _ t1)
+               (ImportValueSea _ t2)
+         = equivT t1 t2 
+
+        compat _ _ = False
+
    in do
-        -- ISSUE #346: Fix duplicate import check for diamond imports.
-        --  This doesn't work for diamond imports.
-        --  We should be able to import a single thing that has been 
-        --  exported-to and re-imported from multiple library modules.
+        -- Check all the imports individually.
+        nisrcs' <- mapM check nisrcs
 
-        -- Check for duplicate imports.
---         let dups = findDuplicates $ map fst nisrcs
---         (case takeHead dups of
---           Just n -> throw $ ErrorImportDuplicate n
---           _      -> return ())
-
-        mapM check nisrcs
+        -- Check that imports with the same name are compatable,
+        -- and pack down duplicates.
+        pack Map.empty nisrcs'
 
 
 ---------------------------------------------------------------------------------------------------
@@ -434,11 +486,11 @@ checkModuleBind !_ksExports !tsExports !b
 
 
 ---------------------------------------------------------------------------------------------------
--- | Check that a top-level binding is actually defined by the module.
+-- | Check that an exported top-level value is actually defined by the module.
 checkBindDefined
         :: Ord n
-        => TypeEnv n                    -- ^ Types defined by the module.
-        -> n                            -- ^ Name of an exported binding.
+        => TypeEnv n            -- ^ Types defined by the module.
+        -> n                    -- ^ Name of an exported binding.
         -> CheckM a n ()
 
 checkBindDefined env n
