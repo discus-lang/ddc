@@ -5,10 +5,12 @@ export  { streamOfList; listOfStream
         ; smap; smapacc
         ; sfold; sany
         ; stake; stakeWhile; sfilter }
+
 import Data.Numeric.Nat
 import Data.List
 import Data.Maybe
 import Data.Tuple
+import Data.Array
 where
 
 
@@ -41,6 +43,45 @@ listOfStream  (ss: Stream s a): List a
                 Yield x s1      -> Cons x (listOfStream (MkStream f s1))
                 Skip  s1        -> listOfStream (MkStream f s1)
                 Done            -> Nil
+
+
+-- | Load the given number of elements from a stream and write them
+--   into a freshly allocated array.
+arrayOfStream 
+        [r1: Region] 
+        (n: Nat#)        -- ^ Length of result array.
+        (d: a)           -- ^ Default element value.
+        (ss: Stream s a) -- ^ Stream to evaluate.
+        : S (Alloc r1) (Array r1 a)
+ = box extend r1 using r2 with { Write r2; Alloc r2 } in
+   do
+        -- Allocate an array of the given maximum size.
+        arr     = allocArray [r2] n d
+
+        -- Unstream elements into the array.
+        unstreamToArray ss arr 0
+
+        -- Return the completed array.
+        arr
+
+
+-- | Unstream all available elements into the given array.
+unstreamToArray
+        [r: Region] 
+        (ss: Stream s a) (arr: Array r a) (ix: Nat#)
+        : S (Write r) Unit
+ = case ss of
+        MkStream f s0
+         -> case f s0 of
+                Yield x s1
+                 -> do  writeArray arr ix x
+                        unstreamToArray (MkStream f s1) arr (ix + 1)
+
+                Skip s1
+                 ->     unstreamToArray (MkStream f s1)  arr ix
+
+                Done
+                 ->     ()
 
 
 -- Constructors -----------------------------------------------------------------------------------
