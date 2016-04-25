@@ -69,6 +69,7 @@ Library
         DDC.Core.Tetra.Prim.DaConTetra
         DDC.Core.Tetra.Prim.OpArith
         DDC.Core.Tetra.Prim.OpCast
+        DDC.Core.Tetra.Prim.OpError
         DDC.Core.Tetra.Prim.OpFun
         DDC.Core.Tetra.Prim.OpVector
         DDC.Core.Tetra.Prim.TyConPrim

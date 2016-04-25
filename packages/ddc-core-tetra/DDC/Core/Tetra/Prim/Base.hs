@@ -7,6 +7,7 @@ module DDC.Core.Tetra.Prim.Base
         
         , TyConTetra    (..)
         , DaConTetra    (..)
+        , OpError       (..)
         , OpFun         (..)
         , OpVector      (..)
         , PrimTyCon     (..)
@@ -38,19 +39,25 @@ data Name
         -- | Baked-in data constructors.
         | NameDaConTetra        DaConTetra
 
+        -- | Baked-in runtime error reporting.
+        | NameOpError           OpError
+
         -- | Baked-in function operators.
         | NameOpFun             OpFun
 
         -- | Baked-in vector operators.
-        --   The flag indicates whether this is the boxed (False) or unboxed (True) version.
+        --   The flag indicates whether this is the
+        --   boxed (False) or unboxed (True) version.
         | NameOpVector          OpVector        Bool
 
         -- Machine primitives ------------------
         -- | A primitive type constructor.
         | NamePrimTyCon         PrimTyCon
 
-        -- | Primitive arithmetic, logic, comparison and bit-wise operators.
-        --   The flag indicates whether this is the boxed (Falst) or unboxed (True) version.
+        -- | Primitive arithmetic, logic, comparison and
+        --   bit-wise operators.
+        --   The flag indicates whether this is the boxed
+        --   (False) or unboxed (True) version.
         | NamePrimArith         PrimArith       Bool
 
         -- | Primitive numeric casting operators.
@@ -155,6 +162,14 @@ data DaConTetra
         deriving (Eq, Ord, Show)
 
 
+-- OpError --------------------------------------------------------------------
+-- | Operators for runtime error reporting.
+data OpError
+        -- | Raise an error due to inexhaustive case expressions.
+        = OpErrorDefault
+        deriving (Eq, Ord, Show)
+
+
 -- OpFun ----------------------------------------------------------------------
 -- | Operators for building function values and closures.
 --   The implicit versions work on functions of type (a -> b), 
@@ -180,7 +195,7 @@ data OpFun
 
         -- | Apply an explicitly typed closure to some arguments,
         --   possibly evaluating the contained function.
-        | OpFunCApply   Int
+        | OpFunCApply  Int
         deriving (Eq, Ord, Show)
 
 

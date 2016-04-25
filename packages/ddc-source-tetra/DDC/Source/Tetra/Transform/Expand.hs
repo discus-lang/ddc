@@ -177,7 +177,7 @@ downX config kenv tenv xx
          -> expand config kenv tenv (XLet a (LLet b x1) x2)
 
         XLet _ (LGroup{}) _
-         -> error $ "ddc-source-tetra.expand: can't expand LGroup."
+         -> error $ "ddc-source-tetra.expand: can't expand sugared LGroup."
 
 
         -- Boilerplate ----------------

@@ -13,6 +13,7 @@ import qualified DDC.Source.Tetra.Transform.Guards      as S
 import qualified DDC.Source.Tetra.Module                as S
 import qualified DDC.Source.Tetra.DataDef               as S
 import qualified DDC.Source.Tetra.Env                   as S
+import qualified DDC.Source.Tetra.Compounds             as S
 import qualified DDC.Source.Tetra.Exp.Annot             as S
 import qualified DDC.Source.Tetra.Prim                  as S
 
@@ -285,10 +286,21 @@ toCoreX xx
          -> C.XCon  <$> pure a <*> toCoreDC dc
 
         S.XLAM a b x
-         -> C.XLAM  <$> pure a <*> toCoreB b <*> toCoreX x
+         -> C.XLAM  <$> pure a <*> toCoreB b  <*> toCoreX x
 
         S.XLam a b x
-         -> C.XLam  <$> pure a <*> toCoreB b <*> toCoreX x
+         -> C.XLam  <$> pure a <*> toCoreB b  <*> toCoreX x
+
+        -- We don't want to wrap the source file path passed to the default# prim
+        -- in a Text constructor, so detect this case separately.
+        S.XApp a0 _ _
+         |  Just ( p@(S.PrimValError S.OpErrorDefault)
+                 , [S.XCon a1 dc1, S.XCon a2 dc2])
+                 <- S.takeXPrimApps xx
+         -> do  xPrim'  <- toCoreX (S.XPrim a0 p)
+                dc1'    <- toCoreDC dc1
+                dc2'    <- toCoreDC dc2
+                return  $  C.xApps a0 xPrim' [C.XCon a1 dc1', C.XCon a2 dc2']
 
         S.XApp a x1 x2
          -> C.XApp  <$> pure a <*> toCoreX x1 <*> toCoreX x2
@@ -457,35 +469,27 @@ toCoreN nn
         S.NamePrim (S.PrimNameType (S.PrimTypeTyCon p))
          -> C.NamePrimTyCon  p
 
-        S.NamePrim (S.PrimNameVal (S.PrimValLit (S.PrimLitBool    x)))
-         -> C.NameLitBool    x
-
-        S.NamePrim (S.PrimNameVal (S.PrimValLit (S.PrimLitNat     x)))
-         -> C.NameLitNat     x
-
-        S.NamePrim (S.PrimNameVal (S.PrimValLit (S.PrimLitInt     x)))
-         -> C.NameLitInt     x
-
-        S.NamePrim (S.PrimNameVal (S.PrimValLit (S.PrimLitSize    x)))
-         -> C.NameLitSize    x
-
-        S.NamePrim (S.PrimNameVal (S.PrimValLit (S.PrimLitWord    x s)))
-         -> C.NameLitWord    x s
-
-        S.NamePrim (S.PrimNameVal (S.PrimValLit (S.PrimLitFloat   x s)))
-         -> C.NameLitFloat   x s
-
-        S.NamePrim (S.PrimNameVal (S.PrimValLit (S.PrimLitTextLit x)))
-         -> C.NameLitTextLit x
+        S.NamePrim (S.PrimNameVal (S.PrimValLit lit))
+         -> case lit of
+                S.PrimLitBool    x   -> C.NameLitBool    x
+                S.PrimLitNat     x   -> C.NameLitNat     x
+                S.PrimLitInt     x   -> C.NameLitInt     x
+                S.PrimLitSize    x   -> C.NameLitSize    x
+                S.PrimLitWord    x s -> C.NameLitWord    x s
+                S.PrimLitFloat   x s -> C.NameLitFloat   x s
+                S.PrimLitTextLit x   -> C.NameLitTextLit x
 
         S.NamePrim (S.PrimNameVal (S.PrimValArith p))
-         -> C.NamePrimArith  p False
+         -> C.NamePrimArith p False
 
         S.NamePrim (S.PrimNameVal (S.PrimValVector p))
-         -> C.NameOpVector   p False
+         -> C.NameOpVector  p False
 
         S.NamePrim (S.PrimNameVal (S.PrimValFun   p))
-         -> C.NameOpFun      p
+         -> C.NameOpFun     p
+
+        S.NamePrim (S.PrimNameVal (S.PrimValError p))
+         -> C.NameOpError   p
 
         S.NameHole
          -> C.NameHole

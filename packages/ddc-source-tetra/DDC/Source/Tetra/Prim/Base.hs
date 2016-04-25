@@ -31,6 +31,7 @@ module DDC.Source.Tetra.Prim.Base
         , pattern NameArith
         , pattern NameVector
         , pattern NameFun
+        , pattern NameError
 
           -- ** Primitive arithmetic operators.
         , PrimArith     (..)
@@ -40,6 +41,9 @@ module DDC.Source.Tetra.Prim.Base
 
           -- ** Primitive function operators.
         , OpFun         (..)
+
+          -- ** Primitive error handling.
+        , OpError       (..)
 
           -- ** Primitive literals.
         , PrimLit       (..)
@@ -54,6 +58,7 @@ where
 import DDC.Core.Tetra    
         ( OpFun         (..)
         , OpVector      (..)
+        , OpError       (..)
         , PrimTyCon     (..)
         , PrimArith     (..))
 
@@ -138,6 +143,9 @@ data PrimVal
         -- | Primitive arithmetic operators.
         | PrimValArith          !PrimArith
 
+        -- | Primitive error handling.
+        | PrimValError          !OpError
+        
         -- | Primitive vector operators.
         | PrimValVector         !OpVector
 
@@ -147,6 +155,7 @@ data PrimVal
 
 pattern NameLit    p            = NamePrim (PrimNameVal  (PrimValLit    p))
 pattern NameArith  p            = NamePrim (PrimNameVal  (PrimValArith  p))
+pattern NameError  p            = NamePrim (PrimNameVal  (PrimValError  p))
 pattern NameVector p            = NamePrim (PrimNameVal  (PrimValVector p))
 pattern NameFun    p            = NamePrim (PrimNameVal  (PrimValFun    p))
 

@@ -17,6 +17,14 @@ import DDC.Source.Tetra.Parser.Atom
 import DDC.Source.Tetra.Compounds
 import DDC.Source.Tetra.Prim
 import DDC.Source.Tetra.Exp.Annot
+import DDC.Core.Lexer.Tokens
+import Control.Monad.Except
+import DDC.Base.Parser                  ((<?>), SourcePos(..))
+import qualified DDC.Base.Parser        as P
+import qualified DDC.Type.Exp           as T
+import qualified DDC.Type.Compounds     as T
+import qualified Data.Text              as Text
+
 import DDC.Core.Parser
         ( Parser
         , Context (..)
@@ -32,12 +40,6 @@ import DDC.Core.Parser
         , pTok
         , pTokSP)
 
-import DDC.Core.Lexer.Tokens
-import DDC.Base.Parser                  ((<?>), SourcePos)
-import qualified DDC.Base.Parser        as P
-import qualified DDC.Type.Exp           as T
-import qualified DDC.Type.Compounds     as T
-import Control.Monad.Except
 
 type SP = SourcePos
 
@@ -358,10 +360,18 @@ pBindGuardsAsCaseSP
         -> Parser Name (SP, Exp SP)
 
 pBindGuardsAsCaseSP c
- = do   (sp, g) : spgs  
+ = do   
+        (sp, g) : spgs  
                 <- P.many1 (pGuardedExpSP c (pTokSP KEquals))
-        return  (sp, desugarGuards sp (g : map snd spgs) 
-                        (error "pBindGuardsAsCaseSP fail"))
+
+        -- Desugar guards.
+        -- If none match then raise a runtime error.
+        let xx' = desugarGuards sp (g : map snd spgs)  
+                $ xErrorDefault sp 
+                        (Text.pack    $ sourcePosSource sp) 
+                        (fromIntegral $ sourcePosLine   sp)
+
+        return  (sp, xx')
 
 
 pMatchGuardsAsCase
@@ -372,7 +382,15 @@ pMatchGuardsAsCase sp c
  = do   gg      <- liftM (map snd)
                 $  P.sepEndBy1  (pGuardedExpSP c (pTokSP KEquals)) 
                                 (pTok KSemiColon)
-        return  (desugarGuards sp gg (error "pMatchGuardsAsCase fail"))
+
+        -- Desugar guards.
+        -- If none match then raise a runtime error.
+        let xx' = desugarGuards sp gg
+                $ xErrorDefault sp 
+                        (Text.pack    $ sourcePosSource sp) 
+                        (fromIntegral $ sourcePosLine   sp)
+
+        return  xx'
 
 
 -- | An guarded expression,

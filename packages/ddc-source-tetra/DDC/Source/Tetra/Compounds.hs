@@ -42,11 +42,15 @@ module DDC.Source.Tetra.Compounds
         , wApps
         , takeXWitness
         , takeWAppsAsList
-        , takePrimWiConApps)
+        , takePrimWiConApps
+
+          -- * Primitives
+        , xErrorDefault)
 where
 import DDC.Source.Tetra.Exp
 import DDC.Source.Tetra.Prim
 import DDC.Type.Compounds
+import Data.Text                        (Text)
 import DDC.Core.Exp.Annot.Compounds
         ( dcUnit
         , takeNameOfDaCon
@@ -223,6 +227,15 @@ takeXConApps xx
 xBox a x = XCast a CastBox x
 xRun a x = XCast a CastRun x
 
+
+-- Primitives -----------------------------------------------------------------
+xErrorDefault :: (GPrim l ~ PrimVal, GName l ~ Name)
+              => GAnnot l -> Text -> Integer -> GExp l
+xErrorDefault a name n
+ = xApps a
+        (XPrim a  (PrimValError OpErrorDefault))
+        [ XCon a (DaConPrim (NameLitTextLit name) (tBot kData))
+        , XCon a (DaConPrim (NameLitNat     n)    (tBot kData))]
 
 -- Patterns -------------------------------------------------------------------
 pTrue    = PData (DaConPrim (NameLitBool True)  tBool) []

@@ -56,14 +56,15 @@ typeOfPrimName nn
 typeOfPrimVal  :: PrimVal -> Type Name
 typeOfPrimVal dc
  = case dc of
-        PrimValLit    l         -> typeOfPrimLit  l
-        PrimValArith  p         -> typePrimArith  p
-        PrimValVector p         -> typeOpVector   p
-        PrimValFun    p         -> typeOpFun      p
+        PrimValLit    l         -> typeOfPrimLit l
+        PrimValArith  p         -> typePrimArith p
+        PrimValError  p         -> typeOpError   p
+        PrimValVector p         -> typeOpVector  p
+        PrimValFun    p         -> typeOpFun     p
 
 
 -- | Take the type of a primitive literal.
-typeOfPrimLit  :: PrimLit -> Type Name
+typeOfPrimLit   :: PrimLit -> Type Name
 typeOfPrimLit pl
  = case pl of
         PrimLitBool     _       -> tBool
@@ -82,3 +83,4 @@ dataDefBool
         [] 
         (Just   [ (NameLitBool True,  []) 
                 , (NameLitBool False, []) ])
+

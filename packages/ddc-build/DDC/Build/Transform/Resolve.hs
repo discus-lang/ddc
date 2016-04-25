@@ -35,7 +35,7 @@ resolveNamesInModule
 
 resolveNamesInModule kenv tenv store mm
  = do
-        let sp  = support kenv tenv mm
+        let sp      = support kenv tenv mm
         ints    <- Store.getInterfaces store
         let deps    = Map.fromList 
                         [ ( interfaceModuleName i
@@ -48,8 +48,10 @@ resolveNamesInModule kenv tenv store mm
                 case eImport of
                  Left err       -> return $ Left err
                  Right isrc     -> return $ Right (n, isrc)
-            getDaVarImport _    =  panic "ddc-build" "resolveNamesInModule"
-                                $  text  "Cannot resolve anonymous binder."
+
+            getDaVarImport u    =   panic "ddc-build" "resolveNamesInModule"
+                                $   text  "Cannot resolve anonymous binder:"
+                                <+> ppr u
 
         eimportsDaVar   <- mapM getDaVarImport $ Set.toList $ supportDaVar sp
 

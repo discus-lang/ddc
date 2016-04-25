@@ -54,7 +54,7 @@ main (_: Unit): S Console Unit
          (λk: Nat#. 
           do    write $ "k = " % showNat k % ": "
                 forS (listOfStream $ stake 10 $ kPrimes k)
-                         (λx: Nat#.  write $ showNat x % " ")
+                        (λx: Nat#. write $ showNat x % " ")
                 write "\n")
 
 

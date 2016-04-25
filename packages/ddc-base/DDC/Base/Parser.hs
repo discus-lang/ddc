@@ -5,7 +5,7 @@ module DDC.Base.Parser
         ( module Text.Parsec
         , Parser
         , ParserState   (..)
-        , D.SourcePos
+        , D.SourcePos   (..)
         , runTokenParser
         , pTokMaybe,    pTokMaybeSP
         , pTokAs,       pTokAsSP
@@ -52,7 +52,8 @@ runTokenParser tokenShow fileName parser
  where
   eofParser
    = do r <- parser
-        -- We can't use primitive Text.Parsec.eof because it requires @Show (Token k)@
+        -- We can't use primitive Text.Parsec.eof because it requires
+        -- @Show (Token k)@
         (do
                 c <- pTokMaybe Just
                 unexpected (tokenShow c)) <|> return r

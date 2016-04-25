@@ -40,6 +40,7 @@ module DDC.Source.Tetra.Prim
         , pattern NameArith
         , pattern NameVector
         , pattern NameFun
+        , pattern NameError
 
           -- ** Primitive arithmetic operators.
         , PrimArith     (..)
@@ -52,6 +53,10 @@ module DDC.Source.Tetra.Prim
           -- ** Primitive function operators.
         , OpFun         (..)
         , typeOpFun
+
+          -- ** Primitive error handling
+        , OpError (..)
+        , typeOpError
 
           -- ** Primitive literals
         , PrimLit (..)
@@ -69,6 +74,7 @@ import DDC.Source.Tetra.Prim.TyConTetra
 import DDC.Source.Tetra.Prim.OpArith
 import DDC.Source.Tetra.Prim.OpFun
 import DDC.Source.Tetra.Prim.OpVector
+import DDC.Source.Tetra.Prim.OpError
 import DDC.Core.Lexer.Names             (isVarStart)
 import DDC.Base.Pretty
 import Control.DeepSeq
@@ -79,6 +85,7 @@ import DDC.Core.Tetra
         ( readPrimTyCon
         , readPrimArithFlag
         , readOpFun
+        , readOpError
         , readOpVectorFlag)
 
 import DDC.Core.Salt.Name
@@ -188,6 +195,7 @@ readPrimType str
 instance Pretty PrimVal where
  ppr val
   = case val of
+        PrimValError  p         -> ppr p
         PrimValLit    lit       -> ppr lit
         PrimValArith  p         -> ppr p
         PrimValVector p         -> ppr p
@@ -197,6 +205,7 @@ instance Pretty PrimVal where
 instance NFData PrimVal where
  rnf val
   = case val of
+        PrimValError  p         -> rnf p
         PrimValLit    lit       -> rnf lit
         PrimValArith  p         -> rnf p
         PrimValVector p         -> rnf p
@@ -206,8 +215,11 @@ instance NFData PrimVal where
 -- | Read the name of a primtive value.
 readPrimVal :: String -> Maybe PrimVal
 readPrimVal str
+        | Just p          <- readOpError str
+        = Just $ PrimValError  p
+
         | Just lit        <- readPrimLit str
-        = Just $ PrimValLit lit
+        = Just $ PrimValLit    lit
 
         | Just (p, False) <- readPrimArithFlag str  
         = Just $ PrimValArith  p

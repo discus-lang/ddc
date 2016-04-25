@@ -33,6 +33,11 @@ module DDC.Core.Tetra.Prim
         , readOpVectorFlag
         , typeOpVectorFlag
 
+          --- * Baked-in error handling.
+        , OpError       (..)
+        , readOpError
+        , typeOpError
+
           -- * Primitive type constructors.
         , PrimTyCon     (..)
         , pprPrimTyConStem
@@ -53,6 +58,7 @@ import DDC.Core.Tetra.Prim.Base
 import DDC.Core.Tetra.Prim.TyConTetra
 import DDC.Core.Tetra.Prim.TyConPrim
 import DDC.Core.Tetra.Prim.DaConTetra
+import DDC.Core.Tetra.Prim.OpError
 import DDC.Core.Tetra.Prim.OpArith
 import DDC.Core.Tetra.Prim.OpCast
 import DDC.Core.Tetra.Prim.OpFun
@@ -81,6 +87,7 @@ instance NFData Name where
         NameTyConTetra con      -> rnf con
         NameDaConTetra con      -> rnf con
 
+        NameOpError    op       -> rnf op
         NameOpFun      op       -> rnf op
         NameOpVector   op !_    -> rnf op
 
@@ -111,6 +118,7 @@ instance Pretty Name where
         NameTyConTetra tc       -> ppr tc
         NameDaConTetra dc       -> ppr dc
         
+        NameOpError    op       -> ppr op
         NameOpFun      op       -> ppr op
 
         NameOpVector   op False -> ppr op
@@ -156,6 +164,9 @@ readName str
 
         | Just p <- readDaConTetra str
         = Just $ NameDaConTetra p
+
+        | Just p <- readOpError   str
+        = Just $ NameOpError p
 
         | Just p <- readOpFun     str
         = Just $ NameOpFun p
@@ -235,6 +246,7 @@ takeTypeOfLitName nn
 takeTypeOfPrimOpName :: Name -> Maybe (Type Name)
 takeTypeOfPrimOpName nn
  = case nn of
+        NameOpError     op      -> Just (typeOpError       op)
         NameOpFun       op      -> Just (typeOpFun         op)
         NameOpVector    op f    -> Just (typeOpVectorFlag  op f)
         NamePrimArith   op f    -> Just (typePrimArithFlag op f)
