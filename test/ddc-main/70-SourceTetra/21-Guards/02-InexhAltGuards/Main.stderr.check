@@ -1,0 +1,3 @@
+
+DDC runtime error: inexhaustive case match.
+ at: test/ddc-main/70-SourceTetra/21-Guards/02-InexhAltGuards/Main.ds:12

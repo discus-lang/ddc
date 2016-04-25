@@ -25,76 +25,78 @@ import DDC.Core.Salt.Name
 -- | Names of things used in Disciple Core Tetra.
 data Name
         -- | User defined variables.
-        = NameVar               String
+        = NameVar               !String
 
         -- | A user defined constructor.
-        | NameCon               String
+        | NameCon               !String
 
         -- | An extended name.
-        | NameExt               Name String
+        | NameExt               !Name !String
 
         -- | Baked-in type constructors.
-        | NameTyConTetra        TyConTetra
+        | NameTyConTetra        !TyConTetra
 
         -- | Baked-in data constructors.
-        | NameDaConTetra        DaConTetra
+        | NameDaConTetra        !DaConTetra
 
         -- | Baked-in runtime error reporting.
-        | NameOpError           OpError
+        --   The flag indicates whether this is the
+        --   boxed (False) or unboxed (True) version.
+        | NameOpError           !OpError        !Bool
 
         -- | Baked-in function operators.
-        | NameOpFun             OpFun
+        | NameOpFun             !OpFun
 
         -- | Baked-in vector operators.
         --   The flag indicates whether this is the
         --   boxed (False) or unboxed (True) version.
-        | NameOpVector          OpVector        Bool
+        | NameOpVector          !OpVector       !Bool
 
         -- Machine primitives ------------------
         -- | A primitive type constructor.
-        | NamePrimTyCon         PrimTyCon
+        | NamePrimTyCon         !PrimTyCon
 
         -- | Primitive arithmetic, logic, comparison and
         --   bit-wise operators.
         --   The flag indicates whether this is the boxed
         --   (False) or unboxed (True) version.
-        | NamePrimArith         PrimArith       Bool
+        | NamePrimArith         !PrimArith      !Bool
 
         -- | Primitive numeric casting operators.
-        | NamePrimCast          PrimCast
+        | NamePrimCast          !PrimCast
 
         -- Literals -----------------------------
         -- | A boolean literal.
-        | NameLitBool           Bool
+        | NameLitBool           !Bool
 
         -- | A natural literal,
         --   with enough precision to count every heap object.
-        | NameLitNat            Integer
+        | NameLitNat            !Integer
 
         -- | An integer literal,
         --   with enough precision to count every heap object.
-        | NameLitInt            Integer
+        | NameLitInt            !Integer
 
         -- | An unsigned size literal,
         --   with enough precision to count every addressable byte of memory.
-        | NameLitSize           Integer
+        | NameLitSize           !Integer
 
         -- | A word literal,
         --   with the given number of bits precision.
-        | NameLitWord           Integer Int
+        | NameLitWord           !Integer !Int
 
         -- | A floating point literal,
         --   with the given number of bits precision.
-        | NameLitFloat          Double  Int
+        | NameLitFloat          !Double  !Int
 
         -- | A text literal (UTF-8 encoded)
         --   Note that 'Text' and 'TextLit#' are different types. 
         --   The later is the primitive literal.
-        | NameLitTextLit        Text
+        | NameLitTextLit        !Text
 
         -- Wrappers -----------------------------
         -- | Wrapper to indicate an explicitly unboxed literal.
-        | NameLitUnboxed        Name
+        | NameLitUnboxed        !Name
 
         -- Inference ----------------------------
         -- | Hole used during type inference.

@@ -33,7 +33,10 @@ module DDC.Core.Salt.Runtime
         , xExtendThunk
         , xCopyArgsOfThunk
         , xApplyThunk
-        , xRunThunk)
+        , xRunThunk
+
+          -- ** Error handling
+        , xErrorDefault)
 where
 import DDC.Core.Salt.Compounds
 import DDC.Core.Salt.Name
@@ -88,7 +91,9 @@ runtimeImportTypes
    , rn (utApplyThunk 1)
    , rn (utApplyThunk 2)
    , rn (utApplyThunk 3)
-   , rn (utApplyThunk 4) ]
+   , rn (utApplyThunk 4) 
+
+   , rn utErrorDefault]
 
  where   rn (UName n, t)  = (n, ImportValueSea (renderPlain $ ppr n) t)
          rn _   = error "ddc-core-salt: all runtime bindings must be named."
@@ -380,4 +385,17 @@ utPayloadOfSmall :: (Bound Name, Type Name)
 utPayloadOfSmall
  =      ( UName (NameVar "payloadSmall")
         , tForall kRegion $ \r -> (tFun (tPtr r tObj) (tPtr r (tWord 8))))
+
+
+-- Error ------------------------------------------------------------------------------------------
+-- | Get the payload of a Small object.
+xErrorDefault :: a -> Exp a Name -> Exp a Name -> Exp a Name
+xErrorDefault a xStr xLine
+ = xApps a (XVar a $ fst utErrorDefault) 
+           [xStr, xLine]
+ 
+utErrorDefault :: (Bound Name, Type Name)
+utErrorDefault
+ =      ( UName (NameVar "primErrorDefault")
+        , tTextLit `tFun` tNat `tFun` tPtr rTop tObj)
 

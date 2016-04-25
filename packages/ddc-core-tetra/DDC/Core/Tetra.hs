@@ -29,7 +29,7 @@ module DDC.Core.Tetra
         , readDaConTetra
         , readOpFun
         , readOpVectorFlag
-        , readOpError
+        , readOpErrorFlag
         , readPrimTyCon,        readPrimTyConStem
         , readPrimArithFlag
 

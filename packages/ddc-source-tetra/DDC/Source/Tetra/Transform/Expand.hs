@@ -88,7 +88,8 @@ expandM config kenv tenv mm
                 TopData _ def
                  -> (p, typeEnvOfDataDef def)
 
-                _ -> error "source-tetra.expand: found TopClause"
+                -- Clauses should have already desugared.
+                _ -> error "source-tetra.expand: can't expand sugared TopClause."
 
         (tops_quant, tenvs)
                 = unzip $ map preTop $ moduleTops mm
@@ -115,7 +116,9 @@ expandT config kenv tenv top
             in  TopClause a1 (SLet a2 b [] [GExp x'])
 
         TopData{} -> top
-        _         -> error "source-tetra.expand: found TopClause"
+
+        -- Clauses should have already been desugared.
+        _   -> error "source-tetra.expand: can't expand sugared TopClause."
 
 
 ---------------------------------------------------------------------------------------------------
@@ -176,6 +179,7 @@ downX config kenv tenv xx
         XLet a (LGroup [SLet _ b [] [GExp x1]]) x2
          -> expand config kenv tenv (XLet a (LLet b x1) x2)
 
+        -- This should have already been desugared.
         XLet _ (LGroup{}) _
          -> error $ "ddc-source-tetra.expand: can't expand sugared LGroup."
 

@@ -9,6 +9,7 @@ import DDC.Core.Tetra.Convert.Exp.PrimCall
 import DDC.Core.Tetra.Convert.Exp.PrimArith
 import DDC.Core.Tetra.Convert.Exp.PrimVector
 import DDC.Core.Tetra.Convert.Exp.PrimBoxing
+import DDC.Core.Tetra.Convert.Exp.PrimError
 import DDC.Core.Tetra.Convert.Exp.Base
 import DDC.Core.Tetra.Convert.Boxing
 import DDC.Core.Tetra.Convert.Type
@@ -92,6 +93,7 @@ convertExp ectx ctx xx
          ,  Just r <- case n of
                          E.NamePrimArith{} -> convertPrimArith  ectx ctx xx
                          E.NamePrimCast{}  -> convertPrimBoxing ectx ctx xx
+                         E.NameOpError{}   -> convertPrimError  ectx ctx xx
                          E.NameOpVector{}  -> convertPrimVector ectx ctx xx 
                          E.NameOpFun{}     -> convertPrimCall   ectx ctx xx
                          _                 -> Nothing

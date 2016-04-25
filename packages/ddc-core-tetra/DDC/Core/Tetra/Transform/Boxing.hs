@@ -114,30 +114,23 @@ convertRepExp rep a tSource xx
         = Nothing
 
 
-{-
--- | Check if the primitive operator with this name takes unboxed values
---   directly.
-isNameOfUnboxedOp :: Name -> Bool
-isNameOfUnboxedOp nn
- = case nn of
-        NamePrimArith{} -> True
-        NamePrimCast{}  -> True
-        NameOpVector{}  -> True
-        _               -> False
--}
-
 -- | Convert a primitive operator name to the unboxed version.
 unboxPrimOpName :: Name -> Maybe Name
 unboxPrimOpName n
  = case n of
         -- The types of arithmetic operators are already polytypic,
         -- and can be instantiated at either value types or unboxed types.
-        NamePrimArith op False  -> Just $ NamePrimArith op True
+        NamePrimArith op False 
+          -> Just $ NamePrimArith op True
 
         -- The types of vector operators have different value type and unboxed versions.
-        NameOpVector  op False  -> Just $ NameOpVector  op True
+        NameOpVector  op False
+          -> Just $ NameOpVector  op True
 
-        _                       -> Nothing
+        NameOpError   op False
+          -> Just $ NameOpError   op True
+
+        _ -> Nothing
 
 
 -- | If this is the name of an literal, then produce the unboxed version.

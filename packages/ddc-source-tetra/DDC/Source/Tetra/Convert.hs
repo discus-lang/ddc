@@ -8,6 +8,7 @@ module DDC.Source.Tetra.Convert
         , runConvertM)
 where
 import DDC.Source.Tetra.Convert.Error
+import DDC.Data.SourcePos
 
 import qualified DDC.Source.Tetra.Transform.Guards      as S
 import qualified DDC.Source.Tetra.Module                as S
@@ -24,7 +25,9 @@ import qualified DDC.Type.DataDef                       as C
 
 import qualified DDC.Type.Exp                           as T
 import qualified DDC.Type.Sum                           as Sum
+import qualified Data.Text                              as Text
 import Data.Maybe
+
 
 import DDC.Core.Module 
         ( ExportSource  (..)
@@ -37,6 +40,8 @@ import DDC.Core.Module
 type ConvertM a x
         = Either (ErrorConvert a) x
 
+type SP = SourcePos
+
 
 -- | Run a conversion computation.
 runConvertM :: ConvertM a x -> Either (ErrorConvert a) x
@@ -44,9 +49,9 @@ runConvertM cc = cc
 
 -- | Convert a Source Tetra module to Core Tetra.
 coreOfSourceModule 
-        :: a 
-        -> S.Module (S.Annot a)
-        -> Either (ErrorConvert a) (C.Module a C.Name)
+        :: SP
+        -> S.Module (S.Annot SP)
+        -> Either (ErrorConvert SP) (C.Module SP C.Name)
 
 coreOfSourceModule a mm
         = runConvertM 
@@ -63,9 +68,9 @@ coreOfSourceModule a mm
 --   module uses from its environment.
 -- 
 coreOfSourceModuleM
-        :: a 
-        -> S.Module (S.Annot a)
-        -> ConvertM a (C.Module a C.Name)
+        :: SP
+        -> S.Module (S.Annot SP)
+        -> ConvertM SP (C.Module SP C.Name)
 
 coreOfSourceModuleM a mm
  = do   
@@ -129,7 +134,8 @@ coreOfSourceModuleM a mm
 
 
 -- | Extract the top-level bindings from some source definitions.
-letsOfTops :: [S.Top (S.Annot a)] -> ConvertM a (C.Lets a C.Name)
+letsOfTops :: [S.Top (S.Annot SP)] 
+           -> ConvertM SP (C.Lets SP C.Name)
 letsOfTops tops
  = C.LRec <$> (sequence $ mapMaybe bindOfTop tops)
 
@@ -137,8 +143,8 @@ letsOfTops tops
 -- | Try to convert a `TopBind` to a top-level binding, 
 --   or `Nothing` if it isn't one.
 bindOfTop  
-        :: S.Top (S.Annot a) 
-        -> Maybe (ConvertM a (T.Bind C.Name, C.Exp a C.Name))
+        :: S.Top (S.Annot SP) 
+        -> Maybe (ConvertM SP (T.Bind C.Name, C.Exp SP C.Name))
 
 bindOfTop (S.TopClause _ (S.SLet _ b [] [S.GExp x]))
  = Just ((,) <$> toCoreB b <*> toCoreX x)
@@ -266,7 +272,7 @@ toCoreDataCtor dataDef tag ctor
 
 
 -- Exp --------------------------------------------------------------------------------------------
-toCoreX :: S.Exp a -> ConvertM a (C.Exp a C.Name)
+toCoreX :: S.Exp SP -> ConvertM SP (C.Exp SP C.Name)
 toCoreX xx
  = case xx of
         S.XVar a u      
@@ -327,7 +333,7 @@ toCoreX xx
 
 
 -- Lets -------------------------------------------------------------------------------------------
-toCoreLts :: S.Lets a -> ConvertM a (C.Lets a C.Name)
+toCoreLts :: S.Lets SP -> ConvertM SP (C.Lets SP C.Name)
 toCoreLts lts
  = case lts of
         S.LLet b x
@@ -368,11 +374,13 @@ toCoreC cc
 
 
 -- Alt --------------------------------------------------------------------------------------------
-toCoreA  :: a -> S.Alt a -> ConvertM a (C.Alt a C.Name)
-toCoreA a (S.AAlt w gxs)
+toCoreA  :: SP -> S.Alt SP -> ConvertM SP (C.Alt SP C.Name)
+toCoreA sp (S.AAlt w gxs)
  = C.AAlt <$> toCoreP w
-          <*> (toCoreX (S.desugarGuards a gxs (error "ddc-source-tetra.toCoreA alt fail")))
-        -- ISSUE #345: Give pattern inexhaustiveness message.
+          <*> (toCoreX  $ S.desugarGuards sp gxs 
+                        $ S.xErrorDefault sp
+                                (Text.pack    $ sourcePosSource sp)
+                                (fromIntegral $ sourcePosLine   sp))
 
 
 -- Pat --------------------------------------------------------------------------------------------
@@ -489,7 +497,7 @@ toCoreN nn
          -> C.NameOpFun     p
 
         S.NamePrim (S.PrimNameVal (S.PrimValError p))
-         -> C.NameOpError   p
+         -> C.NameOpError   p False
 
         S.NameHole
          -> C.NameHole

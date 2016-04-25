@@ -85,7 +85,7 @@ import DDC.Core.Tetra
         ( readPrimTyCon
         , readPrimArithFlag
         , readOpFun
-        , readOpError
+        , readOpErrorFlag
         , readOpVectorFlag)
 
 import DDC.Core.Salt.Name
@@ -215,7 +215,7 @@ instance NFData PrimVal where
 -- | Read the name of a primtive value.
 readPrimVal :: String -> Maybe PrimVal
 readPrimVal str
-        | Just p          <- readOpError str
+        | Just (p, False) <- readOpErrorFlag str
         = Just $ PrimValError  p
 
         | Just lit        <- readPrimLit str

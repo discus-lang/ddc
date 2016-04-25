@@ -128,7 +128,7 @@ typeOfPrimName dc
         NameDaConTetra p                        -> Just $ typeDaConTetra    p
         NameOpFun      p                        -> Just $ typeOpFun         p
         NameOpVector   p f                      -> Just $ typeOpVectorFlag  p f
-        NameOpError    p                        -> Just $ typeOpError       p
+        NameOpError    p f                      -> Just $ typeOpErrorFlag   p f
         NamePrimArith  p f                      -> Just $ typePrimArithFlag p f
         NamePrimCast   p                        -> Just $ typePrimCast      p
 

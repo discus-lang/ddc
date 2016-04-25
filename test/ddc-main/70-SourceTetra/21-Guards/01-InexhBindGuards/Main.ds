@@ -6,25 +6,13 @@ import System.IO.Console
 where
 
 
+-- | The first guard is inexhaustive, and will cause a runtime
+--   error if x /= 0.
 derp (x: Nat#): Nat#
  | x == 0               = 10
-
-{-
- = case x of
-        Just x'         
-         | x' == 0      -> 10
-
-        Nothing         -> 20
--}
 
 main (_: Unit): S Console Unit
  = do
         writel $ showNat (derp 0)
         writel $ showNat (derp 1)
-
-
---        writel $ showNat (derp (Just 0))
---        writel $ showNat (derp Nothing)
---        writel $ showNat (derp (Just 1))
-
 
