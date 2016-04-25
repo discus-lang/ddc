@@ -5,6 +5,7 @@ where
 import DDC.Type.Predicates
 import DDC.Type.Compounds
 import DDC.Type.Exp
+import DDC.Type.Env             (TypeEnv)
 import qualified DDC.Type.Sum   as Sum
 
 
@@ -14,15 +15,15 @@ import qualified DDC.Type.Sum   as Sum
 --   As equivT is already recursive, we don't want a doubly-recursive function
 --   that tries to re-crush the same non-crushable type over and over.
 --
-crushSomeT :: Ord n => Type n -> Type n
-crushSomeT tt
+crushSomeT :: Ord n => TypeEnv n -> Type n -> Type n
+crushSomeT caps tt
  = {-# SCC crushSomeT #-}
    case tt of
-        (TApp (TCon tc) _)
+        TApp (TCon tc) _
          -> case tc of
-                TyConSpec    TcConDeepRead   -> crushEffect tt
-                TyConSpec    TcConDeepWrite  -> crushEffect tt
-                TyConSpec    TcConDeepAlloc  -> crushEffect tt
+                TyConSpec    TcConDeepRead   -> crushEffect caps tt
+                TyConSpec    TcConDeepWrite  -> crushEffect caps tt
+                TyConSpec    TcConDeepAlloc  -> crushEffect caps tt
                 _                            -> tt
 
         _ -> tt
@@ -30,23 +31,27 @@ crushSomeT tt
 
 -- | Crush compound effect terms into their components.
 --
---   This is like `trimClosure` but for effects instead of closures.
--- 
 --   For example, crushing @DeepRead (List r1 (Int r2))@ yields @(Read r1 + Read r2)@.
 --
-crushEffect :: Ord n => Effect n -> Effect n
-crushEffect tt
+crushEffect 
+        :: Ord n 
+        => TypeEnv n            -- ^ Globally available capabilities.
+        -> Effect n             -- ^ Type to crush. 
+        -> Effect n
+
+crushEffect caps tt
  = {-# SCC crushEffect #-}
    case tt of
         TVar{}          -> tt
         TCon{}          -> tt
+
         TForall b t
-         -> TForall b (crushEffect t)
+         -> TForall b $ crushEffect caps t
 
         TSum ts         
          -> TSum
           $ Sum.fromList (Sum.kindOfSum ts)   
-          $ map crushEffect
+          $ map (crushEffect caps)
           $ Sum.toList ts
 
         TApp t1 t2
@@ -62,8 +67,11 @@ crushEffect tt
 
              -- Type has no head region.
              -- This happens with  case () of { ... }
-             Just (TyConSpec  TcConUnit, [])    -> tBot kEffect
-             Just (TyConBound _ _,       _)     -> tBot kEffect
+             Just (TyConSpec  TcConUnit, [])
+              -> tBot kEffect
+
+             Just (TyConBound _ _,       _)     
+              -> tBot kEffect
 
              _ -> tt
 
@@ -75,7 +83,7 @@ crushEffect tt
               | (ks, _)  <- takeKFuns k
               , length ks == length ts
               , Just effs       <- sequence $ zipWith makeDeepRead ks ts
-              -> crushEffect $ TSum $ Sum.fromList kEffect effs
+              -> crushEffect caps $ TSum $ Sum.fromList kEffect effs
 
              _ -> tt
 
@@ -87,7 +95,7 @@ crushEffect tt
               | (ks, _)  <- takeKFuns k
               , length ks == length ts
               , Just effs       <- sequence $ zipWith makeDeepWrite ks ts
-              -> crushEffect $ TSum $ Sum.fromList kEffect effs
+              -> crushEffect caps $ TSum $ Sum.fromList kEffect effs
 
              _ -> tt 
 
@@ -99,13 +107,13 @@ crushEffect tt
               | (ks, _)  <- takeKFuns k
               , length ks == length ts
               , Just effs       <- sequence $ zipWith makeDeepAlloc ks ts
-              -> crushEffect $ TSum $ Sum.fromList kEffect effs
+              -> crushEffect caps $ TSum $ Sum.fromList kEffect effs
 
              _ -> tt
 
 
          | otherwise
-         -> TApp (crushEffect t1) (crushEffect t2)
+         -> TApp (crushEffect caps t1) (crushEffect caps t2)
 
 
 -- | If this type has first order kind then wrap with the 

@@ -112,7 +112,13 @@ checkModuleM !config !kenv !tenv mm@ModuleCore{} !mode
                         $ unionDataDefs (fromListDataDefs defsImported')
                                         (fromListDataDefs defsLocal')
 
-        let config_top  = config { configDataDefs = defs_top }
+        let caps_top    = Env.fromList
+                        $ [BName n t    | (n, ImportCapAbstract t) <- ntsImportCap' ]
+
+        let config_top  = config 
+                        { configDataDefs        = defs_top 
+                        , configGlobalCaps      = caps_top }
+
         let kenv_top    = kenv_import
 
         let tenv_top    = Env.unions 

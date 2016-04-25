@@ -4,6 +4,7 @@ module DDC.Core.Check.Judge.Eq
 where
 import DDC.Core.Check.Base
 import DDC.Type.Transform.Crush
+import qualified DDC.Type.Env   as Env
 
 
 -- | Make two types equivalent to each other,
@@ -158,8 +159,8 @@ makeEq config a ctx0 tL tR err
                 [ text "DDC.Core.Check.Exp.Inst.makeEq: no match"
                 , text "  LEFT:   " <> ppr tL
                 , text "  RIGHT:  " <> ppr tR
-                , text "  LEFTC:  " <> (ppr $ crushSomeT tL)
-                , text "  RIGHTC: " <> (ppr $ crushSomeT tR)
+                , text "  LEFTC:  " <> (ppr $ crushSomeT Env.empty tL)
+                , text "  RIGHTC: " <> (ppr $ crushSomeT Env.empty tR)
                 , indent 2 $ ppr ctx0 ]
 
         throw err

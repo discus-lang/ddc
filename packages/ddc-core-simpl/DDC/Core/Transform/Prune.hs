@@ -26,6 +26,7 @@ import qualified Data.Map                               as Map
 import qualified DDC.Core.Transform.SubstituteXX        as S
 import qualified DDC.Type.Compounds                     as T
 import qualified DDC.Type.Sum                           as TS
+import qualified DDC.Type.Env                           as Env
 import qualified DDC.Type.Transform.Crush               as T
 import Prelude                                          hiding ((<$>))
 
@@ -160,7 +161,7 @@ pruneTrans _ _ xx
  where
         weakEff antec
          = CastWeakenEffect
-         $ T.crushEffect
+         $ T.crushEffect Env.empty
          $ annotEffect antec
 
 
@@ -193,7 +194,7 @@ isContainedEffect eff
  = all contained
         $ map T.takeTApps 
         $ sumList 
-        $ T.crushEffect eff
+        $ T.crushEffect Env.empty eff
  where
         contained (c : _args)
          = case c of

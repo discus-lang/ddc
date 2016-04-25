@@ -8,6 +8,7 @@ import DDC.Type.Transform.Crush
 import DDC.Type.Compounds
 import DDC.Type.Bind
 import DDC.Type.Exp
+import qualified DDC.Type.Env   as Env
 import qualified DDC.Type.Sum   as Sum
 
 
@@ -36,8 +37,8 @@ equivWithBindsT
         -> Bool
 
 equivWithBindsT stack1 stack2 t1 t2
- = let  t1'     = unpackSumT $ crushSomeT t1
-        t2'     = unpackSumT $ crushSomeT t2
+ = let  t1'     = unpackSumT $ crushSomeT Env.empty t1
+        t2'     = unpackSumT $ crushSomeT Env.empty t2
    in case (t1', t2') of
         (TVar u1,         TVar u2)
          -- Free variables are name-equivalent, bound variables aren't:

@@ -5,7 +5,7 @@ import DDC.Type.Exp
 import DDC.Type.Predicates
 import DDC.Type.Transform.Crush
 import qualified DDC.Type.Sum   as Sum
-
+import qualified DDC.Type.Env   as Env
 
 -- | Check whether the first type subsumes the second.
 --
@@ -17,8 +17,8 @@ import qualified DDC.Type.Sum   as Sum
 subsumesT :: Ord n => Kind n -> Type n -> Type n -> Bool
 subsumesT k t1 t2
         | isEffectKind k
-        , ts1       <- Sum.singleton k $ crushEffect t1
-        , ts2       <- Sum.singleton k $ crushEffect t2
+        , ts1       <- Sum.singleton k $ crushEffect Env.empty t1
+        , ts2       <- Sum.singleton k $ crushEffect Env.empty t2
         = and $ [ Sum.elem t ts1 | t <- Sum.toList ts2 ]
 
         | otherwise

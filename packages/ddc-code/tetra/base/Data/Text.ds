@@ -201,7 +201,7 @@ copyTextVecToVector [r1 r2: Region]
 --   ISSUE #353: Purify effects on top-level regions where there
 --   is a global capability for it.
 --
-flattenText (tt: Text): S Pure Text
+flattenText (tt: Text): S (Read RegionText + Alloc RegionText) Text
  = case tt of
         -- Single text literals are already flat.
         TextLit lit     -> tt

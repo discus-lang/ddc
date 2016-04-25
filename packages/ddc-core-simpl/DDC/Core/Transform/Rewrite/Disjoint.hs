@@ -7,6 +7,7 @@ import DDC.Core.Exp
 import DDC.Type.Predicates
 import DDC.Type.Compounds
 import qualified DDC.Core.Transform.Rewrite.Env as RE
+import qualified DDC.Type.Env                   as Env
 import qualified DDC.Type.Sum                   as Sum
 import qualified DDC.Type.Transform.Crush       as TC
 
@@ -68,8 +69,8 @@ checkDisjoint c env
         -- The type must have the form "Disjoint e1 e2"
         | [TCon (TyConWitness TwConDisjoint), fs, gs] <- takeTApps c
         = and [ areDisjoint env g f 
-                | f <- sumList $ TC.crushEffect fs
-                , g <- sumList $ TC.crushEffect gs ]
+                | f <- sumList $ TC.crushEffect Env.empty fs
+                , g <- sumList $ TC.crushEffect Env.empty gs ]
 
         | otherwise
         = False

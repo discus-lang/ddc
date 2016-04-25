@@ -5,6 +5,7 @@ module DDC.Type.Check.Config
 where
 import DDC.Type.DataDef
 import DDC.Type.Env                     (KindEnv, TypeEnv)
+import qualified DDC.Type.Env           as Env
 import qualified DDC.Core.Fragment      as F
 
 
@@ -25,6 +26,13 @@ data Config n
 
           -- | Data type definitions.
         , configDataDefs                :: DataDefs n  
+
+          -- | Types of globally available capabilities.
+          --
+          --   The inferred types of computations do not contain these
+          --   capabilities as they are always available and thus do not
+          --   need to be tracked in types.
+        , configGlobalCaps              :: TypeEnv n
 
           -- | This name represents some hole in the expression that needs
           --   to be filled in by the type checker.
@@ -56,16 +64,16 @@ data Config n
         }
 
 
-
 -- | Convert a language profile to a type checker configuration.
 configOfProfile :: F.Profile n -> Config n
 configOfProfile profile
  = let  features        = F.profileFeatures profile
    in   Config
-        { configPrimKinds               = F.profilePrimKinds  profile
-        , configPrimTypes               = F.profilePrimTypes  profile
-        , configDataDefs                = F.profilePrimDataDefs profile
-        , configNameIsHole              = F.profileNameIsHole profile 
+        { configPrimKinds               = F.profilePrimKinds            profile
+        , configPrimTypes               = F.profilePrimTypes            profile
+        , configDataDefs                = F.profilePrimDataDefs         profile
+        , configGlobalCaps              = Env.empty
+        , configNameIsHole              = F.profileNameIsHole           profile 
         
         , configTrackedEffects          = F.featuresTrackedEffects      features
         , configTrackedClosures         = F.featuresTrackedClosures     features

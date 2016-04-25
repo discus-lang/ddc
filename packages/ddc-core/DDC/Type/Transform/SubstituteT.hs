@@ -14,7 +14,6 @@ where
 import DDC.Type.Collect
 import DDC.Type.Compounds
 import DDC.Type.Transform.BoundT
-import DDC.Type.Transform.Crush
 import DDC.Type.Transform.Rename
 import DDC.Type.Exp
 import Data.Maybe
@@ -80,27 +79,9 @@ instance SubstituteT Type where
  substituteWithT u t fns stack tt
   = let down    = substituteWithT u t fns stack
     in  case tt of
-         TCon{}          -> tt
-
-         -- Crush out compound effects and closures as we substitute them.
-         TApp t1 t2
-          -> case t1 of
-                TCon (TyConSpec TcConHeadRead)  
-                  -> crushEffect      (TApp t1 (down t2))
-
-                TCon (TyConSpec TcConDeepRead)  
-                  -> crushEffect      (TApp t1 (down t2))
-
-                TCon (TyConSpec TcConDeepWrite) 
-                  -> crushEffect      (TApp t1 (down t2))
-
-                TCon (TyConSpec TcConDeepAlloc) 
-                  -> crushEffect      (TApp t1 (down t2))
-
-                _ -> TApp (down t1) (down t2)
-
-         TSum ss        
-          -> TSum (down ss)
+         TCon{}         -> tt
+         TApp t1 t2     -> TApp (down t1) (down t2)
+         TSum ss        -> TSum (down ss)
 
          TForall b tBody
           | namedBoundMatchesBind u b -> tt
