@@ -470,20 +470,7 @@ lowerTypes n ctx
 -- | Apply a context to a type, updating any existentials in the type. This
 --   uses just the solved constraints on the stack, but not in the solved set.
 --
---   This function is used during the algorithm proper, whereas we use
---   `applySolved` below to update annotations in the larger program after
---   type inference has completed.
---
-{-
-applyContext :: Ord n => Context n -> Type n -> Type n
-applyContext  ctx tt
- = case applyContextEither ctx Set.empty tt of
-        Left  _err -> error "applyContext: loop"
-        Right t    -> t
--}
-
--- | Like `applyContext'`, but we keep track of which existentials we have
---   entered. If we find a loop through the existential equations then 
+--   If we find a loop through the existential equations then 
 --   return `Left` the existential and what is was locally bound to.
 applyContextEither
         :: Ord n 
@@ -524,23 +511,8 @@ applyContextEither ctx is tt
                 return  $ TSum
                         $ Sum.fromList (Sum.kindOfSum ts) tss'
 
-{-
--- | Apply the solved constraints in a context to a type, updating any
---   existentials in the type. This uses constraints on the stack as well
---   as in the solved constraints set.
---   
---   This function is used after the algorithm proper, to update existentials
---   in annotations in the larger program.
-applySolved :: Ord n => Context n -> Type n -> Type n
-applySolved ctx tt
- = case applySolvedEither ctx Set.empty tt of
-        Left  _err -> error "applySolved: loop"
-        Right t    -> t
--}
 
--- | Like `applySolved`, but we keep track of which existentials we have
---   entered. If we find a loop through the existential equations then
---   return `Left`
+-- | Like `applyContextEither`, but for the solved types.
 applySolvedEither
         :: Ord n 
         => Context n    -- ^ Type checker context.
