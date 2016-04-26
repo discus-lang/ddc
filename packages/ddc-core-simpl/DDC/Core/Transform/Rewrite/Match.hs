@@ -8,7 +8,6 @@ module DDC.Core.Transform.Rewrite.Match
         , match)
 where
 import DDC.Core.Exp
-import DDC.Type.Transform.Crush
 import Data.Set                                 (Set)
 import Data.Map                                 (Map)
 import qualified DDC.Type.Env                   as Env
@@ -133,8 +132,8 @@ matchT  :: Ord n
         -> Maybe (Subst n)
 
 matchT t1 t2 vs subst
- = let  t1'     = unpackSumT $ crushSomeT Env.empty t1
-        t2'     = unpackSumT $ crushSomeT Env.empty t2
+ = let  t1'     = unpackSumT $ TE.crushSomeT Env.empty t1
+        t2'     = unpackSumT $ TE.crushSomeT Env.empty t2
    in case (t1', t2') of
         -- Constructor names must be equal.
         --

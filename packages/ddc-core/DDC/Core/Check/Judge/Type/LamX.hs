@@ -73,7 +73,8 @@ checkLam !table !a !ctx !b1 !x2 !Recon
 checkLam !table !a !ctx !b1 !x2 !Synth
  = do
         ctrace  $ vcat
-                [ text "*> Lam Synth"]
+                [ text "*>  Lam SYNTH"
+                , text "    in  bind = " <+> ppr b1 ]
 
         let config      = tableConfig table
         let kenv        = tableKindEnv table
@@ -161,9 +162,9 @@ checkLam !table !a !ctx !b1 !x2 !Synth
                 x2' t2' e2
 
         ctrace  $ vcat
-                [ text "*<  Lam Synth"
-                , indent 4 $ ppr (XLam a b1' x2)
-                , text "  OUT: " <> ppr tAbs
+                [ text "*<  Lam SYNTH"
+                , text "    in  bind = " <+> ppr b1
+                , text "    out type = " <+> ppr tAbs
                 , indent 4 $ ppr ctx
                 , indent 4 $ ppr ctx_cut
                 , empty ]
@@ -181,7 +182,9 @@ checkLam !table !a !ctx !b1 !x2 !(Check tExpected)
  | Just (tX1, tX2)      <- takeTFun tExpected
  = do   
         ctrace  $ vcat
-                [ text "*>  Lam Check"
+                [ text "*>  Lam CHECK"
+                , text "    in bind =" <+> ppr b1
+                , text "    in type =" <+> ppr tExpected 
                 , empty ]
 
         let config      = tableConfig table
@@ -191,10 +194,10 @@ checkLam !table !a !ctx !b1 !x2 !(Check tExpected)
         -- Check the parameter ------------------
         let t1          = typeOfBind b1
 
-        -- If the parameter has no type annotation at all then we can use the
-        --   expected type we were passed down from above.
-        -- If it does have an annotation, then it needs to match the
-        --   expected type.
+        -- If the parameter has no type annotation at all then we can
+        --   use the expected type we were passed down from above.
+        -- If it does have an annotation, then the annotation also needs
+        --   to match the expected type.
         (b1', t1', ctx0)
          <- if isBot t1
              then
@@ -264,8 +267,6 @@ checkLam !table !a !ctx !b1 !x2 !(Check tExpected)
              else do
                 return (k1', ctx3)
 
-        -- Cut the bound type and elems under it from the context.
-        let ctx_cut     = popToPos pos1 ctx4
 
         -- Build the resulting function type.
         --  This switches on the kind of the argument, so we need to apply
@@ -274,19 +275,35 @@ checkLam !table !a !ctx !b1 !x2 !(Check tExpected)
          <- makeFunction
                 config a (XLam a b1' x2)
                 b1' t1' k1'' 
-                x2' t2 e2
+                x2' t2  e2
+
+
+        -- Ensure that the final type matches the one we expected.
+        --   The expected type may have had an existential for the parameter,
+        --   which we want to unify with any type annotation that was on 
+        --   the abstraction.
+        --   
+        --   The `makeFunction` can also insert implicit box casts, so we 
+        --   need to check that the result of doing this is as expected.
+        -- 
+        ctx5    <- makeEq config a ctx4 tAbs tExpected
+                $  ErrorMismatch a tAbs tExpected xx
+
+        tAbs'   <- applyContext ctx4 tAbs
+
+        -- Cut the bound type and elems under it from the context.
+        let ctx_cut     = popToPos pos1 ctx5
 
         ctrace  $ vcat
-                [ text "*<  Lam Check"
-                , indent 4 $ ppr (XLam a b1' x2)
-                , text "    IN:  " <> ppr tExpected
-                , text "    OUT: " <> ppr tAbs
+                [ text "*<  Lam CHECK"
+                , text "    in  type: " <> ppr tExpected
+                , text "    out type: " <> ppr tAbs'
                 , indent 4 $ ppr ctx
                 , indent 4 $ ppr ctx_cut
                 , empty ]
 
         return  ( xAbs'
-                , tAbs
+                , tAbs'
                 , Sum.empty kEffect
                 , ctx_cut)
 

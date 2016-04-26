@@ -3,13 +3,12 @@ module DDC.Core.Check.Judge.Eq
         (makeEq)
 where
 import DDC.Core.Check.Base
-import DDC.Type.Transform.Crush
-import qualified DDC.Type.Env   as Env
+import qualified DDC.Type.Sum   as Sum
 
 
 -- | Make two types equivalent to each other,
 --   or throw the provided error if this is not possible.
-makeEq  :: (Eq n, Ord n, Pretty n)
+makeEq  :: (Eq n, Ord n, Pretty n, Show n)
         => Config n
         -> a
         -> Context n
@@ -146,7 +145,7 @@ makeEq config a ctx0 tL tR err
 
 
  -- EqEquiv
- | equivT tL tR
+ | equivT tL tR 
  = do   ctrace  $ vcat
                 [ text "**  EqEquiv" ]
 
@@ -155,13 +154,24 @@ makeEq config a ctx0 tL tR err
 
  -- Error
  | otherwise
- = do   ctrace  $ vcat
+ = do   let caps = configGlobalCaps config
+        let tL'  = crushEffect caps $ unpackSumT tL
+        let tR'  = crushEffect caps $ unpackSumT tR
+
+        ctrace  $ vcat
                 [ text "DDC.Core.Check.Exp.Inst.makeEq: no match"
-                , text "  LEFT:   " <> ppr tL
-                , text "  RIGHT:  " <> ppr tR
-                , text "  LEFTC:  " <> (ppr $ crushSomeT Env.empty tL)
-                , text "  RIGHTC: " <> (ppr $ crushSomeT Env.empty tR)
+                , text "  LEFT:   " <> (text $ show tL)
+                , text "  RIGHT:  " <> (text $ show tR)
+                , text "  LEFTC:  " <> (text $ show tL')
+                , text "  RIGHTC: " <> (text $ show tR')
                 , indent 2 $ ppr ctx0 ]
 
         throw err
+
+
+-- | Unpack single element sums into plain types.
+unpackSumT :: Type n -> Type n
+unpackSumT (TSum ts)
+        | [t]   <- Sum.toList ts = t
+unpackSumT tt                    = tt
 

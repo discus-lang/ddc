@@ -57,6 +57,7 @@ import foreign abstract capability
 
 where
 
+
 -------------------------------------------------------------------------------
 -- Names used by the Source Tetra desugarer to implement string literals.
 textLit (x : TextLit#) : Text
@@ -84,7 +85,7 @@ textOfVector (vec: Vector# RegionText Word8#): Text
 
 -- | Copy a Text object into a flat vector of utf-8 bytes.
 vectorOfText [r1: Region] (tt: Text)
-        : S (Read RegionText + Alloc r1) (Vector# r1 Word8#)
+        : S (Alloc r1) (Vector# r1 Word8#)
  = box extend r1 using r2 with { Alloc r2; Write r2 } in
    do   
         -- Allocate a vector to hold all the data, 
@@ -146,10 +147,9 @@ sizeOfText (tt: Text): Nat#
 
 -- Conversions ----------------------------------------------------------------
 -- | Copy a text literal to a mutable vector of utf-8 bytes.
-copyTextToVector [r: Region] 
-        (tt: Text) (vec: Vector# r Word8#) (i0: Nat#)
-        : S (Read RegionText + Write r) Nat#
-
+copyTextToVector 
+        [r: Region] (tt: Text) (vec: Vector# r Word8#) (i0: Nat#)
+        : S (Write r) Nat#
  = case tt of
         TextLit lit
          -> copyTextLitToVector lit  vec i0 0 (sizeOfTextLit lit)
@@ -164,8 +164,8 @@ copyTextToVector [r: Region]
 
 
 -- | Copy a text literal to a mutable vector of utf-8 bytes.
-copyTextLitToVector [r: Region]
-        (tt: TextLit) (vec: Vector# r Word8#) 
+copyTextLitToVector 
+        [r: Region] (tt: TextLit) (vec: Vector# r Word8#) 
         (iDst iSrc nSrc: Nat#)
         : S (Write r) Nat#
  = case iSrc >= nSrc of
@@ -178,7 +178,8 @@ copyTextLitToVector [r: Region]
 
 
 -- | Copy a text source vector to a mutable destination of utf-8 bytes.
-copyTextVecToVector [r1 r2: Region]
+copyTextVecToVector 
+        [r1 r2: Region] 
         (vecSrc: Vector# r1 Word8#) (vecDst: Vector# r2 Word8#)
         (iDst iSrc nSrc: Nat#)
         : S (Read r1 + Write r2) Nat#
@@ -201,7 +202,7 @@ copyTextVecToVector [r1 r2: Region]
 --   ISSUE #353: Purify effects on top-level regions where there
 --   is a global capability for it.
 --
-flattenText (tt: Text): S (Read RegionText + Alloc RegionText) Text
+flattenText (tt: Text): Text
  = case tt of
         -- Single text literals are already flat.
         TextLit lit     -> tt

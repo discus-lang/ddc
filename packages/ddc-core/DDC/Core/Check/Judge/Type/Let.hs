@@ -7,6 +7,7 @@ import qualified DDC.Type.Sum   as Sum
 import Data.List                as L
 
 
+---------------------------------------------------------------------------------------------------
 checkLet :: Checker a n
 
 -- let --------------------------------------------
@@ -78,15 +79,15 @@ checkLet !table !ctx0 mode demand xx@(XLet a lts xBody)
         let ctx_cut     = popToPos pos1 ctx3
 
         ctrace  $ vcat
-                [ text "*< Let " <> ppr mode
-                , text "   demand = " <> (text $ show demand)
-                , text "   -- EXP IN  ----"
+                [ text "*<  Let " <> ppr mode
+                , text "    demand = " <> (text $ show demand)
+                , text "    -- EXP IN  ----"
                 , indent 4 $ ppr xx
-                , text "   -- EXP OUT ----"
+                , text "    -- EXP OUT ----"
                 , indent 4 $ ppr (XLet (AnTEC tBodyRun (tBot kEffect) (tBot kClosure) a) 
                                         lts' xBodyRun)
-                , text "  --"
-                , text "  tBodyRun:  " <> ppr tBodyRun
+                , text "    --"
+                , text "    tBodyRun:  " <> ppr tBodyRun
                 , indent 4 $ ppr ctx3
                 , indent 4 $ ppr ctx_cut 
                 , empty ]
@@ -104,7 +105,7 @@ checkLet _ _ _ _ _
         = error "ddc-core.checkLet: no match"
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | Check some let bindings,
 --   and push their binders onto the context.
 checkLetsM
@@ -166,11 +167,6 @@ checkLetsM !bidir xx !table !ctx0 !demand (LLet b xBind)
  -- using any annotation on the binder as the expected type.
  | True   <- bidir
  = do
-        ctrace  $ vcat
-                [ text "*>  Let Bind Synth"
-                , text "    demand = " <> (text $ show demand)
-                , empty ]
-
         let config      = tableConfig table
         let kenv        = tableKindEnv table
         let a           = annotOfExp xx
@@ -179,7 +175,7 @@ checkLetsM !bidir xx !table !ctx0 !demand (LLet b xBind)
         -- type when checking the binding. Any annotation must also have kind
         -- Data, which we verify here.
         let tAnnot      = typeOfBind b
-        (modeCheck, ctx1)
+        (mode, ctx1)
          <- if isBot tAnnot
              -- There is no annotation on the binder.
              then return (Synth, ctx0)
@@ -191,9 +187,15 @@ checkLetsM !bidir xx !table !ctx0 !demand (LLet b xBind)
                  <- checkTypeM config kenv ctx0 UniverseSpec tAnnot (Check kData)
                 return (Check tAnnot', ctx1)
 
+        ctrace  $ vcat
+                [ text "*>  Let Bind"  <+> ppr mode
+                , text "    demand = " <> (text $ show demand)
+                , text "    bind   = " <> (ppr b)
+                , empty ]
+
         -- Check the expression in the right of the binding.
         (xBind_raw, tBind_raw, effs_raw, ctx2)
-         <- tableCheckExp table table ctx1 modeCheck demand xBind
+         <- tableCheckExp table table ctx1 mode demand xBind
 
         tBind_ctx <- applyContext ctx2 tBind_raw
 
@@ -243,6 +245,12 @@ checkLetsM !bidir !xx !table !ctx0 !demand (LRec bxs)
  = do   let (bs, xs)    = unzip bxs
         let a           = annotOfExp xx
 
+        ctrace  $ vcat
+                [ text "*>  Let Rec"
+                , text "    demand = " <> (text $ show demand)
+                , text "    binds  = " <> (ppr  $ map fst bxs)
+                , empty ]
+
         -- Named binders cannot be multiply defined.
         checkNoDuplicateBindings a xx bs
 
@@ -277,7 +285,7 @@ checkLetsM _ _ _ _ _ _
         = error "ddc-core.checkLetsM: no match"
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | Check the annotations on a group of recursive binders.
 checkRecBinds
         :: (Pretty n, Show n, Ord n)
@@ -348,7 +356,7 @@ checkRecBinds table bidir a xx ctx0 bs0
                 return (b1, ctx1)
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | Check some recursive bindings.
 --   Doing this won't push any more bindings onto the context,
 --   though it may solve some existentials in it.
@@ -365,21 +373,21 @@ checkRecBindExps
                     , Exp (AnTEC a n) n)]      -- Result expression.
                 , Context n)
 
-checkRecBindExps table bidir a ctx0 demand bxs0
+checkRecBindExps table False a ctx0 demand bxs0
  = go bxs0 ctx0
  where
         go [] ctx
          = return ([], ctx)
 
-        go ((b, x) : bxs) ctx
-         = do   (result, ctx')  <- checkRecBindExp b x ctx
-                (moar,   ctx'') <- go bxs ctx'
-                return (result : moar, ctx'')
+        go ((b, xBind) : bxs) ctx
+         = do   
+                ctrace  $ vcat
+                        [ text "*>  Let Rec Bind RECON"
+                        , text "    demand     = " <> (text $ show demand)
+                        , text "    in binder  = " <> ppr (binderOfBind b)
+                        , text "    in type    = " <> ppr (typeOfBind   b)
+                        , empty ]
 
-        checkRecBindExp b xBind ctx
-         = case bidir of
-            False
-             -> do
                 -- Check the right of the binding.
                 --  We checked that the expression is a syntactic lambda
                 --  abstraction in checkLetsM, so we know the effect is pure.
@@ -395,25 +403,60 @@ checkRecBindExps table bidir a ctx0 demand bxs0
                 -- constructors etc, so update the binders with this new info.
                 let b'  = replaceTypeOfBind t b
 
-                return ( (b', xBind'), ctx')
+                ctrace  $ vcat
+                        [ text "*<  Let Rec Bind RECON"
+                        , text "    demand     =" <+> (text $ show demand)
+                        , text "    in  binder =" <+> ppr (binderOfBind b)
+                        , text "    in  type   =" <+> ppr (typeOfBind   b)
+                        , text "    out type   =" <+> ppr t 
+                        , empty ]
 
-            True
-             -> do
+                -- Check the rest of the bindings.
+                (moar,   ctx'') <- go bxs ctx'
+
+                return ((b', xBind') : moar, ctx'')
+
+checkRecBindExps table True _a ctx0 demand bxs0
+ = go bxs0 ctx0
+ where
+        go [] ctx
+         = return ([], ctx)
+
+        go ((b, xBind) : bxs) ctx
+         = do
+                ctrace  $ vcat
+                        [ text "*>  Let Rec Bind BIDIR"
+                        , text "    demand    =" <+> (text $ show demand)
+                        , text "    in binder =" <+> ppr (binderOfBind b)
+                        , text "    in type   =" <+> ppr (typeOfBind   b)
+                        , empty ]
+
                 -- Check the right of the binding.
                 --  We checked that the expression is a syntactic lambda
                 --  abstraction in checkLetsM, so we know the effect is pure.
                 (xBind', t, _effs, ctx')
-                 <- tableCheckExp table table
-                        ctx (Check (typeOfBind b)) demand xBind
+                 <- tableCheckExp table table ctx 
+                        (Check (typeOfBind b)) demand xBind
 
                 -- Reconstructing the types of binders adds missing kind info to
                 -- constructors etc, so update the binders with this new info.
                 let b'  = replaceTypeOfBind t b
 
-                return ((b', xBind'), ctx')
+                ctrace  $ vcat
+                        [ text "*<  Let Rec Bind BIDIR"
+                        , text "    demand     =" <+> (text $ show demand)
+                        , text "    in  binder =" <+> ppr (binderOfBind b)
+                        , text "    in  type   =" <+> ppr (typeOfBind   b)
+                        , text "    out type   =" <+> ppr t 
+                        , empty ]
+
+                -- Check the rest of the bindings.
+                (moar, ctx'') <- go bxs ctx'
+
+                return ((b', xBind') : moar, ctx'')
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | Check that the given list of binds does not contain duplicates
 --   that would conflict if we added them to the environment
 --   at the same level. If so, then throw and error.
@@ -438,7 +481,7 @@ duplicates (x : xs)
         | otherwise     = duplicates xs
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | Check that all the bindings in a recursive let are syntactic lambdas.
 --   We don't support value recursion, so can only define recursive functions.
 --   If one of the expression is not a lambda then throw an error.
@@ -450,13 +493,11 @@ checkSyntacticLambdas
         -> CheckM a n ()
 
 checkSyntacticLambdas table a xx xs
- | configGeneralLetRec $ tableConfig table
- = return ()
+        | configGeneralLetRec $ tableConfig table
+        = return ()
 
- | otherwise
- = forM_ xs $ \x
-        -> when (not $ (isXLam x || isXLAM x))
-        $  throw $ ErrorLetrecBindingNotLambda a xx x
-
-
+        | otherwise
+        = forM_ xs $ \x
+                -> when (not $ (isXLam x || isXLAM x))
+                $  throw $ ErrorLetrecBindingNotLambda a xx x
 

@@ -9,7 +9,7 @@ import DDC.Type.Compounds
 import qualified DDC.Core.Transform.Rewrite.Env as RE
 import qualified DDC.Type.Env                   as Env
 import qualified DDC.Type.Sum                   as Sum
-import qualified DDC.Type.Transform.Crush       as TC
+import qualified DDC.Type.Equiv                 as TC
 
 
 -- | Check whether a disjointness property is true in the given

@@ -5,7 +5,7 @@ import System.IO.Console
 where
 
 
-main (_: Unit): S (Alloc RegionText + Read RegionText + Console) Unit
+main (_: Unit): S (Alloc RegionText + Console) Unit
  = private r with { Alloc r; Read r } in
    do   
         -- Write a text tree to console.

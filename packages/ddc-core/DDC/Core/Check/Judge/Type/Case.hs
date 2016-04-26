@@ -4,7 +4,7 @@ module DDC.Core.Check.Judge.Type.Case
 where
 import DDC.Core.Check.Judge.Type.Base
 import qualified DDC.Type.Sum   as Sum
-import qualified DDC.Type.Env   as Env
+-- import qualified DDC.Type.Env   as Env
 import qualified Data.Map       as Map
 import Data.List                as L
 
@@ -99,10 +99,16 @@ checkCase !table !ctx0 mode demand
         -- Check that alternatives are exhaustive.
         checkAltsExhaustive a xx dataMode alts
 
+        -- Effect due to inspecting the scrutinee.
         let effsMatch
                 = Sum.singleton kEffect
-                $ crushEffect Env.empty 
                 $ tHeadRead tDiscrim
+
+        -- Effect of overall expression.
+        let effTotal
+                = crushEffect (configGlobalCaps config)
+                $ TSum $ Sum.unions kEffect
+                $ effsDiscrim : effsMatch : effss
 
         ctrace  $ vcat
                 [ text "* Case"
@@ -117,7 +123,7 @@ checkCase !table !ctx0 mode demand
         returnX a
                 (\z -> XCase z xDiscrim' alts')
                 tAlt
-                (Sum.unions kEffect (effsDiscrim : effsMatch : effss))
+                (Sum.fromList kEffect [effTotal])
                 ctx4
 
 checkCase _ _ _ _ _
@@ -274,9 +280,9 @@ checkAltsM !table !a !xx !tDiscrim !tsArgs !mode !demand !alts0 !ctx
         -- type with possible annotations from the source program.
         -- If the annotations don't match, then we throw an error.
         (tsFields, ctx1)
-                <- checkFieldAnnots table bidir a xx
-                        (zip tsFields_ctor (map typeOfBind bsArg))
-                        ctx0
+         <- checkFieldAnnots table bidir a xx
+                (zip tsFields_ctor (map typeOfBind bsArg))
+                ctx0
 
         -- Extend the environment with the field types.
         let bsArg'         = zipWith replaceTypeOfBind tsFields bsArg
@@ -342,7 +348,7 @@ checkFieldAnnots table bidir a xx tts ctx0
         -- inferred type for the overal expression.
         | bidir
         = do    ctx'    <- makeEq (tableConfig table) a ctx tAnnot tActual
-                        $  ErrorCaseFieldTypeMismatch a xx tAnnot tActual
+                        $  ErrorCaseFieldTypeMismatch a xx  tAnnot tActual
 
                 tField  <- applyContext ctx' tActual
                 return  (tField, ctx')

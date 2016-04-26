@@ -83,7 +83,6 @@ Library
         DDC.Core.Pretty
 
         DDC.Type.Transform.BoundT
-        DDC.Type.Transform.Crush
         DDC.Type.Transform.Instantiate
         DDC.Type.Transform.Rename
         DDC.Type.Transform.SpreadT

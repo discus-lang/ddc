@@ -3,7 +3,7 @@ module DDC.Type.Subsumes
 where
 import DDC.Type.Exp
 import DDC.Type.Predicates
-import DDC.Type.Transform.Crush
+import DDC.Type.Equiv
 import qualified DDC.Type.Sum   as Sum
 import qualified DDC.Type.Env   as Env
 
