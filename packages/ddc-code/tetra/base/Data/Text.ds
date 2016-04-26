@@ -86,7 +86,7 @@ textOfVector (vec: Vector# RegionText Word8#): Text
 -- | Copy a Text object into a flat vector of utf-8 bytes.
 vectorOfText [r1: Region] (tt: Text)
         : S (Alloc r1) (Vector# r1 Word8#)
- = box extend r1 using r2 with { Alloc r2; Write r2 } in
+ = extend r1 using r2 with { Alloc r2; Write r2 } in
    do   
         -- Allocate a vector to hold all the data, 
         -- including an extra null terminator byte.

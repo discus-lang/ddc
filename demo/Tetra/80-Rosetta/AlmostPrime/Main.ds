@@ -57,4 +57,3 @@ main (_: Unit): S Console Unit
                         (λx: Nat#. write $ showNat x % " ")
                 write "\n")
 
-

@@ -5,7 +5,6 @@ export  { streamOfList; listOfStream
         ; smap; smapacc
         ; sfold; sany
         ; stake; stakeWhile; sfilter }
-
 import Data.Numeric.Nat
 import Data.List
 import Data.Maybe
@@ -53,7 +52,7 @@ arrayOfStream
         (d: a)           -- ^ Default element value.
         (ss: Stream s a) -- ^ Stream to evaluate.
         : S (Alloc r1) (Array r1 a)
- = box extend r1 using r2 with { Write r2; Alloc r2 } in
+ = extend r1 using r2 with { Write r2; Alloc r2 } in
    do
         -- Allocate an array of the given maximum size.
         arr     = allocArray [r2] n d
@@ -218,4 +217,3 @@ sfilter (p: a -> Bool#) (ss: Stream s a): Stream s a
                         Done            -> Done
 
             in  MkStream stepB sA0
-

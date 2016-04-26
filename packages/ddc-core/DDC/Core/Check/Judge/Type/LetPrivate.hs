@@ -66,9 +66,13 @@ checkLetPrivate !table !ctx mode demand
         checkWitnessBindsM config a kenv ctx xx us bsWit'
 
         -- Check the body expression.
+        --   We always want to do this in 'Synth' mode as the expected
+        --   type uses the region names visible from outside, and will
+        --   not mention local regions are introduced by the 'private'
+        --   construct.
         let ctx3        = pushTypes bsWit' ctx2
         (xBody3, tBody3, effs3, ctx4)
-          <- tableCheckExp table table ctx3 mode demand x
+          <- tableCheckExp table table ctx3 Synth demand x
 
         -- The body type must have data kind.
         (tBody4, kBody4, ctx5)
@@ -102,6 +106,16 @@ checkLetPrivate !table !ctx mode demand
                          $ throw $ ErrorLetRegionFree a xx bsRgn tBody5
                         return $ lowerT depth tBody5
 
+        -- Check that the result matches any expected type.
+        ctx6    <- case mode of
+                    Check tExpected
+                     -> do  makeEq config a ctx5 tExpected tBody_final
+                             $  ErrorMismatch a tExpected tBody_final xx
+
+                    _ -> return ctx5
+
+        tBody_final' <- applyContext ctx6 tBody_final
+
         -- Delete effects on the bound region from the result.
         let delEff es u = Sum.delete (tRead  (TVar u))
                         $ Sum.delete (tWrite (TVar u))
@@ -127,11 +141,11 @@ checkLetPrivate !table !ctx mode demand
         -- Cut stack back to the length we started with,
         --  remembering to lower to undo the lift we applied previously.
         let ctx_cut     = lowerTypes depth
-                        $ popToPos pos1 ctx5
+                        $ popToPos pos1 ctx6
 
         returnX a
                 (\z -> XLet z (LPrivate bsRgn mtParent bsWit) xBody3)
-                tBody_final effs_cut ctx_cut
+                tBody_final' effs_cut ctx_cut
 
 
 checkLetPrivate _ _ _ _ _
