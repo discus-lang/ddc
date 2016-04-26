@@ -356,11 +356,13 @@ elimForCons e c
 --   eliminators satisfy the constructors, and return any remaining
 --   unmatching constructors and eliminators.
 --
---   We assume that the application is well typed.
+--   We assume that the application is well typed and that applying
+--   the given eliminators will not cause variable capture.
 ---
 --   ISSUE #347: Avoid name capture in dischargeConsWithElims
 --   This process doesn't avoid name capture by ConsTypes earlier
---   in the list.
+--   in the list, but it's only called from the Curry transform
+--   where there shouldn't be any shadowed type binders.
 --
 dischargeConsWithElims
         :: Ord n
