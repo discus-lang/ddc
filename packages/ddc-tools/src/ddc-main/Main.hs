@@ -37,6 +37,7 @@ import DDC.Base.Pretty
 import System.Environment
 import System.IO
 import System.Exit
+import Data.Maybe
 import Control.Monad
 import Control.Monad.Trans.Except
 import qualified System.FilePath                as System
@@ -241,12 +242,25 @@ run config
 
 -- | Get the compile driver from the config.
 getDriverConfig :: Config -> Maybe FilePath -> IO Driver.Config
-getDriverConfig config filePath
- = do   Just builder    <- determineDefaultBuilder (defaultBuilderConfig config)
+getDriverConfig config mFilePath
+ = do   
+        -- Determine the default builder config.
+        Just builder    
+                <- determineDefaultBuilder 
+                $  defaultBuilderConfig config
+
+        -- Treat the directory holding a module to compile as a base
+        -- directory where we look for other modules.
+        let moduleBaseDirs
+                = maybeToList
+                $ fmap System.takeDirectory mFilePath
+
+        -- The default runtime system config.
         let runtimeConfig
              = Runtime.Config
              { Runtime.configHeapSize             = configRuntimeHeapSize config }
 
+        -- Build driver config.
         let dconfig
              = Driver.Config
              { Driver.configLogBuild              = True
@@ -258,7 +272,7 @@ getDriverConfig config filePath
              , Driver.configBuilder               = builder
              , Driver.configPretty                = Driver.defaultConfigPretty
              , Driver.configSuppressHashImports   = False
-             , Driver.configModuleBaseDirectories = []
+             , Driver.configModuleBaseDirectories = moduleBaseDirs
              , Driver.configOutputFile            = configOutputFile config
              , Driver.configOutputDir             = configOutputDir  config 
              , Driver.configKeepLlvmFiles         = configKeepLlvmFiles config
@@ -271,7 +285,7 @@ getDriverConfig config filePath
         -- have full type annotations.
         simplSalt <- getSimplSaltOfConfig config 
                         dconfig { Driver.configInferTypes = True }
-                        builder runtimeConfig filePath
+                        builder runtimeConfig mFilePath
 
         return  $ dconfig        
                 { Driver.configSimplSalt        = simplSalt }
