@@ -260,20 +260,29 @@ convertImportValueM
 
 convertImportValueM tctx isrc
  = case isrc of
-        ImportValueModule mn n t _
-         -> do  n'      <- convertBindNameM n
-
-                -- ISSUE #355: Conversion of Tetra types to Salt does not use
-                -- arity information.
-                let cs  =  takeCallConsFromType t
+        -- We have no arity information for some reason.
+        --   Just convert the type assuming it's a standard call.
+        --   If this is wrong then the Salt type checker will
+        --   catch the problem.
+        ImportValueModule mn n t Nothing
+         -> do  let cs  =  takeCallConsFromType t
+                n'      <- convertBindNameM n
                 t'      <- convertSuperConsT tctx cs t
+                return  $  ImportValueModule mn n' t' Nothing
 
-                return  $ ImportValueModule mn n' t' Nothing
+        -- We have arity information for this thing from
+        -- from the imported interface file.
+        ImportValueModule mn n t (Just (nType, nValue, nBox))
+         -> do  let Just cs = takeStdCallConsFromTypeArity t nType nValue nBox
+                n'      <- convertBindNameM n
+                t'      <- convertSuperConsT tctx cs t
+                return  $  ImportValueModule mn n' t' Nothing
 
+        -- We convert the types of Sea things directly.
+        --   We assume that they don't return thunks,
+        --   so we don't need any extra arity information to produce
+        --   the Salt level type.
         ImportValueSea str t
-         -> do  
-                -- ISSUE #355: Conversion of Tetra types to Salt does not use
-                -- arity information.
-                t'      <- convertCtorT tctx t
-                return  $ ImportValueSea str t'
+         -> do  t'      <- convertCtorT tctx t
+                return  $  ImportValueSea str t'
 

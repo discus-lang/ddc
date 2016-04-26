@@ -1,0 +1,11 @@
+-- Check that we can import a higher order function from another module.
+-- The code generator needs to use the arity information in the interface file.
+module Main
+import Module
+import System.IO.Console
+where
+
+
+main (_: Unit): S Console Unit
+ = do   writel (showNat (addThing1 2 3))
+        writel (showNat (addThing2 2 3))
