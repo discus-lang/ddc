@@ -7,6 +7,7 @@ import DDC.Core.Tetra.Convert.Type
 import DDC.Core.Tetra.Convert.Error
 import DDC.Core.Exp.Annot
 import DDC.Core.Check                                   (AnTEC(..))
+import qualified DDC.Core.Tetra.Convert.Type.Base       as T
 import qualified DDC.Core.Tetra.Prim                    as E
 import qualified DDC.Core.Salt.Name                     as A
 import qualified Data.Map                               as Map
@@ -75,7 +76,7 @@ convertBinding ctx b xx
         return  (b', x')
 
 
--- | Convert a supercombinator expression and type.
+-- | Convert a supercombinator expression in parallel with its type.
 --
 --   This also checks that it is in the standard form,
 --   meaning that type abstractions must be out the front,
@@ -88,95 +89,112 @@ convertSuperXT
         -> ConvertM a (Exp a A.Name, Type A.Name)
 
 convertSuperXT    ctx0 xx0 tt0
- = convertAbsType ctx0 xx0 tt0
+ = convertAbsType ctx0 xx0 (typeContext ctx0) tt0
  where
         -- Accepting type abstractions --------------------
-        convertAbsType ctx xx tt
+        convertAbsType ctxX xx ctxT tt
          = case xx of
-                XLAM a bParam xBody
-                  |  TForall _bParam' tBody    <- tt
-                  -> convertXLAM ctx a bParam xBody tBody 
+                XLAM a bParamX xBody
+                  |  TForall bParamT tBody    <- tt
+                  -> convertXLAM a   ctxX bParamX xBody 
+                                     ctxT bParamT tBody 
 
-                _ -> convertAbsValue ctx xx tt
+                _ -> convertAbsValue ctxX xx 
+                                     ctxT tt
 
+        convertXLAM a ctxX bParamX xBody 
+                      ctxT bParamT tBody 
 
-        convertXLAM ctx a bParam xBody tBody 
          -- Erase higher kinded type abstractions.
-         | Just _       <- takeKFun $ typeOfBind bParam
-         = do   let ctx' = extendKindEnv bParam ctx
-                convertAbsType ctx' xBody tBody
+         | Just _       <- takeKFun $ typeOfBind bParamX
+         = do   let ctxX' =   extendKindEnv bParamX ctxX
+                let ctxT' = T.extendKindEnv bParamT ctxT
+                convertAbsType ctxX' xBody ctxT' tBody
 
          -- Erase effect abstractions.
-         | isEffectKind $ typeOfBind bParam
-         = do   let ctx' = extendKindEnv bParam ctx
-                convertAbsType ctx' xBody tBody
+         | isEffectKind $ typeOfBind bParamX
+         = do   let ctxX' =   extendKindEnv bParamX ctxX
+                let ctxT' = T.extendKindEnv bParamT ctxT
+                convertAbsType ctxX' xBody ctxT' tBody
 
          -- Retain region abstractions.
-         | isRegionKind $ typeOfBind bParam
+         | isRegionKind $ typeOfBind bParamX
          = do   let a'    =  annotTail    a
-                bParam'   <- convertTypeB bParam
 
-                let ctx'  =  extendKindEnv bParam ctx
-                (xBody', tBody')    
-                          <- convertAbsType ctx' xBody tBody
+                bParamX'  <- convertTypeB bParamX
+                bParamT'  <- convertTypeB bParamT
 
-                -- ISSUE #351: Handle case where the name of type a type param
-                -- in super type and binder are different.
-                --
-                -- We're converting the type in parallel with the expression,
-                -- and the binders may have different names.
-                --
-                return  ( XLAM a' bParam' xBody'                
-                        , TForall bParam' tBody')
+                let ctxX' =   extendKindEnv bParamX ctxX
+                let ctxT' = T.extendKindEnv bParamT ctxT
+
+                (xBody', tBody') 
+                          <- convertAbsType ctxX' xBody ctxT' tBody
+
+                return  ( XLAM a' bParamX' xBody'
+                        , TForall bParamT' tBody')
 
          -- When a function is polymorphic in some boxed data type,
-         -- then the type lambda in Tetra is converted to a region lambda in
-         -- Salt which binds the region the object is in.
-         | isDataKind $ typeOfBind bParam
-         , BName (E.NameVar str) _ <- bParam
-         , str'         <-  str ++ "$r"
-         , bParam'      <-  BName (A.NameVar str') kRegion
-         = do   let a'   =  annotTail a
-                let ctx' =  extendKindEnv bParam ctx 
-                (xBody', tBody')   
-                         <- convertAbsType ctx' xBody tBody
+         -- then the type lambda in Tetra is converted to a region
+         -- lambda in Salt which binds the region the object is in.
+         | isDataKind $ typeOfBind bParamX
 
-                return  ( XLAM a' bParam' xBody'
-                        , TForall bParam' tBody')
+         , BName (E.NameVar strX) _ <- bParamX
+         , strX'        <-  strX ++ "$r"
+         , bParamX'     <-  BName (A.NameVar strX') kRegion
 
-         -- Convert the body of the function.
+         , BName (E.NameVar strT) _ <- bParamT
+         , strT'        <-  strT ++ "$r"
+         , bParamT'     <-  BName (A.NameVar strT') kRegion
+
+         = do   let a'    =  annotTail a
+
+                let ctxX' =   extendKindEnv bParamX ctxX
+                let ctxT' = T.extendKindEnv bParamT ctxT
+
+                (xBody', tBody')
+                         <- convertAbsType ctxX' xBody ctxT' tBody
+
+                return  ( XLAM a' bParamX' xBody'
+                        , TForall bParamT' tBody')
+
+         -- Cannot convert this type abstraction.
+         -- Maybe the binder is anonymous.
          | otherwise
-         = error "convertSuperXLAM: Cannot convert type abstraction."
+         = error "ddc-core-tetra.convertSuperXLAM: Cannot convert type abstraction."
 
 
         -- Accepting value abstractions -------------------
-        convertAbsValue ctx xx tt
+        convertAbsValue ctxX xx ctxT tt
          = case xx of
-                XLam a bParam xBody
-                  |  Just (_tArg, tBody)  <- takeTFun tt
-                  -> convertXLam ctx a bParam xBody tBody
+                XLam a bParamX xBody
+                  |  Just (tParamT, tBody)  <- takeTFun tt
+                  -> convertXLam a ctxX bParamX xBody 
+                                   ctxT tParamT tBody
 
-                _ -> convertBody ctx xx tt
+                _ -> convertBody ctxX xx ctxT tt
 
 
-        convertXLam ctx a bParam xBody tBody
-         = do   let ctx'    = extendTypeEnv bParam ctx
+        convertXLam a ctxX bParamX xBody 
+                      ctxT tParamT tBody
+         = do   
                 let a'      = annotTail a
-                bParam'    <- convertDataB (typeContext ctx) bParam
-                tParam'    <- convertDataT (typeContext ctx) (typeOfBind bParam)
 
-                (xBody', tBody') <- convertAbsValue ctx' xBody tBody
+                let ctxX'   = extendTypeEnv bParamX ctxX
 
-                return  ( XLam a' bParam' xBody'
-                        , tFun tParam' tBody')
+                bParamX'   <- convertDataB (typeContext ctxX) bParamX
+                tParamT'   <- convertDataT ctxT tParamT
+
+                (xBody', tBody') <- convertAbsValue ctxX' xBody ctxT tBody
+
+                return  ( XLam a' bParamX' xBody'
+                        , tFun tParamT' tBody')
 
 
         -- Converting body expressions---------------------
-        convertBody ctx xx tt
-         = do   xBody'  <- contextConvertExp ctx ExpBody ctx xx
-                tBody'  <- convertDataT (typeContext ctx) tt
+        convertBody ctxX xx ctxT tt
+         = do   xBody'  <- contextConvertExp ctxX ExpBody ctxX xx
+                tBody'  <- convertDataT ctxT tt
                 return  ( xBody', tBody' )
-
 
 
 -- Note: Binding top-level supers.
