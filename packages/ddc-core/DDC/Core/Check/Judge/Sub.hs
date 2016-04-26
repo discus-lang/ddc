@@ -96,10 +96,6 @@ makeSub config a ctx0 xL tL tR err
 
  -- SubInstL
  --  Left is an existential.
- --
- --  ISSUE #326: Do free variables check in new inferencer.
- --    check  tL /= FV(tR)
- --
  | isTExists tL
  = do   ctx1    <- makeInst config a ctx0 tR tL err
 
@@ -117,10 +113,6 @@ makeSub config a ctx0 xL tL tR err
 
  -- SubInstR
  --  Right is an existential.
- --
- --  ISSUE #326: Do free variables check in new inferencer.
- --     check  tR /= FV(tL)
- --
  | isTExists tR
  = do   ctx1    <- makeInst config a ctx0 tL tR err
 
