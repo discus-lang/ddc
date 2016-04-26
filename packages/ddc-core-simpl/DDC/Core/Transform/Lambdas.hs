@@ -37,7 +37,11 @@ lambdasModule profile mm
         defs    = moduleDataDefs mm
         kenv    = moduleKindEnv  mm
         tenv    = moduleTypeEnv  mm
-        c       = Context kenv tenv (CtxTop defs kenv tenv)
+        c       = Context 
+                        kenv tenv 
+                        (Env.fromList 
+                                [BName n t | (n, ImportCapAbstract t) <- moduleImportCaps mm])
+                        (CtxTop defs kenv tenv)
 
         x'      = lambdasLoopX profile c $ moduleBody mm
 
@@ -411,8 +415,13 @@ liftLambda p c fusFree a lams xBody
         -- Build the type checker configuration for this context.
         (defs, _, _)    = topOfCtx (contextCtx c)        
         config          = Check.configOfProfile p
-        config'         = config { Check.configDataDefs
-                                        = mappend defs (Check.configDataDefs config) }
+
+        config'         = config 
+                        { Check.configDataDefs
+                                = mappend defs (Check.configDataDefs config) 
+
+                        , Check.configGlobalCaps
+                                = contextGlobalCaps c }
 
         -- Function to get the type of an expression in this context.
         -- If there are type errors in the input program then some 

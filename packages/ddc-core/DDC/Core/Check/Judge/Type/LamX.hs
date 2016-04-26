@@ -47,6 +47,10 @@ checkLam !table !a !ctx !b1 !x2 !Recon
         (x2', t2, e2, ctx2)
          <- tableCheckExp table table ctx1 Recon DemandRun x2 
 
+        let e2_crush 
+                = Sum.fromList kEffect
+                [ crushEffect (configGlobalCaps config) (TSum e2)]
+
         -- The body of the function must produce data.
         (_, k2, _)      <- checkTypeM config kenv ctx2 UniverseSpec t2 Recon
         when (not $ isDataKind k2)
@@ -60,7 +64,7 @@ checkLam !table !a !ctx !b1 !x2 !Recon
         --   The way the effect and closure term is captured depends on
         --   the configuration flags.
         (xAbs', tAbs) 
-         <- makeFunction config a xx b1' t1 k1 x2' t2 e2
+         <- makeFunction config a xx b1' t1 k1 x2' t2 e2_crush
 
         return  ( xAbs'
                 , tAbs
@@ -124,6 +128,10 @@ checkLam !table !a !ctx !b1 !x2 !Synth
         (x2', t2', e2, ctx4)
          <- tableCheckExp table table ctx3 (Check t2) DemandRun x2 
 
+        let e2_crush 
+                = Sum.fromList kEffect
+                [ crushEffect (configGlobalCaps config) (TSum e2)]
+
         -- Force the kind of the body to be Data.
         --   This constrains the kind of polymorpic variables that are used
         --   as the result of a function, like with (\x. x).
@@ -159,7 +167,7 @@ checkLam !table !a !ctx !b1 !x2 !Synth
          <- makeFunction 
                 config a (XLam a b1' x2)
                 b1' t1' k1''
-                x2' t2' e2
+                x2' t2' e2_crush
 
         ctrace  $ vcat
                 [ text "*<  Lam SYNTH"
@@ -228,18 +236,29 @@ checkLam !table !a !ctx !b1 !x2 !(Check tExpected)
                     (x2', t2', es2Actual, ctx2)
                       <- tableCheckExp table table ctx1 (Check t2Expected) DemandRun x2 
 
+                    let es2Actual_crushed
+                          = Sum.fromList kEffect
+                          [ crushEffect (configGlobalCaps config) (TSum es2Actual)]
+
                     -- The expected effect in the suspension could have been an
                     -- existential, so we need to unify it against the reconstructed
                     -- effect to instantiate it.
-                    let e2Actual = TSum es2Actual
-                    ctx2' <- makeEq config a ctx2 e2Expected e2Actual
-                          $  ErrorMismatch a e2Actual e2Expected x2
+                    let e2Actual_crushed = TSum es2Actual_crushed
+                    ctx2' <- makeEq config a ctx2 e2Expected e2Actual_crushed
+                          $  ErrorMismatch a e2Actual_crushed e2Expected x2
 
-                    return (x2', t2', es2Actual, ctx2')
+                    return (x2', t2', es2Actual_crushed, ctx2')
 
              _
-              -> tableCheckExp table table ctx1 (Check tX2) DemandNone x2
+              -> do
+                    (x2', t2', es2Actual, ctx2)
+                      <- tableCheckExp table table ctx1 (Check tX2) DemandNone x2
 
+                    let es2Actual_crushed
+                          = Sum.fromList kEffect
+                          [ crushEffect (configGlobalCaps config) (TSum es2Actual)]
+
+                    return (x2', t2', es2Actual_crushed, ctx2)
 
         -- Force the kind of the body to be Data.
         --   This constrains the kind of polymorpic variables that are used

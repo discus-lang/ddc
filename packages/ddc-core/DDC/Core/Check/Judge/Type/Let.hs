@@ -18,8 +18,9 @@ checkLet !table !ctx0 mode demand xx@(XLet a lts xBody)
         _       -> False
 
  = do   ctrace  $ vcat
-                [ text "*>  Let " <> ppr mode 
-                , text "    demand = " <> (text $ show demand)
+                [ text "*>  Let" 
+                , text "    mode   =" <+> ppr mode 
+                , text "    demand =" <+> (text $ show demand)
                 , empty]
 
         let config  = tableConfig table

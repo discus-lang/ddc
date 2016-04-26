@@ -4,7 +4,6 @@ module DDC.Core.Check.Judge.Type.Case
 where
 import DDC.Core.Check.Judge.Type.Base
 import qualified DDC.Type.Sum   as Sum
--- import qualified DDC.Type.Env   as Env
 import qualified Data.Map       as Map
 import Data.List                as L
 

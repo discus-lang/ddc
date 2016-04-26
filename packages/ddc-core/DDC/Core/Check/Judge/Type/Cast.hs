@@ -84,9 +84,14 @@ checkCast !table ctx0 mode _demand
         (x1', tBody, effs, ctx1)
          <- tableCheckExp table table ctx0 Synth DemandRun x1
 
+        let effs_crush 
+                = Sum.fromList kEffect
+                [ crushEffect (configGlobalCaps config) (TSum effs)]
+
         -- The actual type is (S eff tBody).
         tBody'      <- applyContext ctx1 tBody
-        let tActual =  tApps (TCon (TyConSpec TcConSusp)) [TSum effs, tBody']
+        let tActual =  tApps (TCon (TyConSpec TcConSusp)) 
+                             [TSum effs_crush, tBody']
 
         -- The actual type needs to match the expected type.
         -- We're treating the S constructor as invariant in both positions,
@@ -101,13 +106,19 @@ checkCast !table ctx0 mode _demand
     -- Recon and Synth mode.
     _
      -> do
+        let config      = tableConfig table
+
         -- Check the body.
         (x1', t1, effs,  ctx1)
          <- tableCheckExp table table ctx0 mode DemandRun x1
 
+        let effs_crush 
+                = Sum.fromList kEffect
+                [ crushEffect (configGlobalCaps config) (TSum effs)]
+
         -- The result type is (S effs a).
         let tS  = tApps (TCon (TyConSpec TcConSusp))
-                        [TSum effs, t1]
+                        [TSum effs_crush, t1]
 
         returnX a (\z -> XCast z CastBox x1')
                 tS (Sum.empty kEffect) ctx1

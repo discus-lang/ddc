@@ -23,6 +23,15 @@ checkLetPrivate !table !ctx mode demand
         let kenv        = tableKindEnv table
         let depth       = length $ map isBAnon bsRgn
 
+        ctrace  $ vcat
+                [ text "*>  Let Private"
+                , text "    mode             =" <+> ppr mode
+                , text "    demand           =" <+> text (show demand)
+                , text "    in region binds  =" <+> ppr bsRgn
+                , text "    in parent bind   =" <+> text (show mtParent)
+                , text "    in witness binds =" <+> ppr bsWit
+                , empty ]
+
         -- Check the kinds of the region binders.
         -- These must already set to kind Region.
         (bsRgn', _, _)

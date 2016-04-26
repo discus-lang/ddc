@@ -20,9 +20,10 @@ import qualified Data.Map       as Map
 -- | A one-hole context for `Exp`.
 data Ctx a n
         -- | The top-level context.
-        = CtxTop        !(DataDefs n)
-                        !(KindEnv n)
-                        !(TypeEnv n)
+        = CtxTop        
+        { ctxDataDefs   :: !(DataDefs n)
+        , ctxKindEnv    :: !(KindEnv n)
+        , ctxTypeEnv    :: !(TypeEnv n) }
 
         -- | Body of a type abstraction.
         | CtxLAM        !(Ctx a n) !a

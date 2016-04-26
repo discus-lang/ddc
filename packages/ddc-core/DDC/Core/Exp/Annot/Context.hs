@@ -22,7 +22,8 @@ import qualified DDC.Type.Env   as Env
 data Context a n
         = Context
         { contextKindEnv        :: KindEnv n
-        , contextTypeEnv        :: TypeEnv n 
+        , contextTypeEnv        :: TypeEnv n
+        , contextGlobalCaps     :: TypeEnv n
         , contextCtx            :: Ctx a n }
 
 
