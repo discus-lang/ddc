@@ -28,6 +28,7 @@ import DDC.Type.Env                                     (KindEnv, TypeEnv)
 import qualified DDC.Type.Env                           as Env
 
 import DDC.Control.Monad.Check                          (throw, evalCheck)
+import Data.Map                                         (Map)
 import qualified Data.Map                               as Map
 import qualified Data.Set                               as Set
 
@@ -94,15 +95,6 @@ convertM pp runConfig defs kenv tenv mm
                         = Set.fromList nsForeignBoxedTypes
                    , T.contextKindEnv   = Env.empty }
 
-        -- Imports and Exports ----------------------------
-        -- Convert signatures of imported functions.
-        tsImports' <- mapM (convertNameImportValueM tctx') 
-                   $ moduleImportValues mm
-
-        -- Convert signatures of exported functions.
-        tsExports' <- mapM (convertExportM tctx') 
-                   $ moduleExportValues mm
-
         -- Module body ------------------------------------
         let ntsImports  
                    = [BName n (typeOfImportValue src) 
@@ -140,6 +132,23 @@ convertM pp runConfig defs kenv tenv mm
         let (lts', _)   = splitXLets x1
         let x2          = xLets a lts' (xUnit a)
 
+
+        -- Imports and Exports ----------------------------
+        -- Convert signatures of imported functions.
+        ntsImports'     <- mapM (convertNameImportValueM tctx') 
+                        $  moduleImportValues mm
+
+        -- Convert signatures of exported functions.
+        --  Locally defined values can be exported,
+        --  and imported values can be re-exported.
+        let ntsImport'  =  [(n, typeOfImportValue iv) | (n, iv) <- ntsImports']
+        let ntsSuper'   =  [(n, t) | BName n t <- concat $ map snd $ map bindsOfLets lts']
+        let ntsAvail    =  Map.fromList $ ntsSuper' ++ ntsImport'
+
+        ntsExports'     <- mapM (convertExportM tctx' ntsAvail) 
+                        $  moduleExportValues mm
+
+
         -- Build the output module.
         let mm_salt 
                 = ModuleCore
@@ -149,11 +158,11 @@ convertM pp runConfig defs kenv tenv mm
                   -- None of the types imported by Tetra modules are relevant
                   -- to the Salt language.
                 , moduleExportTypes     = []
-                , moduleExportValues    = tsExports'
+                , moduleExportValues    = ntsExports'
 
                 , moduleImportTypes     = Map.toList $ A.runtimeImportKinds
                 , moduleImportCaps      = []
-                , moduleImportValues    = (Map.toList A.runtimeImportTypes) ++ tsImports'
+                , moduleImportValues    = (Map.toList A.runtimeImportTypes) ++ ntsImports'
                 , moduleImportDataDefs  = []
 
                   -- Data constructors and pattern matches should have been
@@ -176,32 +185,45 @@ convertM pp runConfig defs kenv tenv mm
 ---------------------------------------------------------------------------------------------------
 -- | Convert an export spec.
 convertExportM
-        :: T.Context
-        -> (E.Name, ExportSource E.Name)                
+        :: T.Context                     -- ^ Context of the conversion.
+        -> Map A.Name (Type A.Name)      -- ^ Salt types of top-level values.
+        -> (E.Name, ExportSource E.Name) -- ^ Name and export def to convert.
         -> ConvertM a (A.Name, ExportSource A.Name)
 
-convertExportM tctx (n, esrc)
+convertExportM tctx tsSalt (n, esrc)
  = do   n'      <- convertBindNameM n
-        esrc'   <- convertExportSourceM tctx esrc
+        esrc'   <- convertExportSourceM tctx tsSalt esrc
         return  (n', esrc')
 
 
 -- Convert an export source.
+--
+--  We can't just convert the Tetra type of an exported thing to the
+--  corresponding Salt type as the form of the Salt type depends on 
+--  the arity of the underlying value. Instead, we lookup the Salt type
+--  of each export from the list of previously known Salt types.
+--
 convertExportSourceM 
-        :: T.Context
-        -> ExportSource E.Name
+        :: T.Context                    -- ^ Context of the conversion.
+        -> Map A.Name (Type A.Name)     -- ^ Salt types of top-level values.
+        -> ExportSource E.Name          -- ^ Export source to convert.
         -> ConvertM a (ExportSource A.Name)
 
-convertExportSourceM tctx esrc
+convertExportSourceM tctx tsSalt esrc
  = case esrc of
         ExportSourceLocal n t
          -> do  n'      <- convertBindNameM n
 
-                -- ISSUE #355: Conversion of Tetra types to Salt does not use
-                -- arity information.
-                t'      <- convertCtorT  tctx t     
+                case Map.lookup n' tsSalt of
+                 -- We have a Salt type for this exported value.
+                 Just t' -> return $ ExportSourceLocal n' t'
 
-                return  $ ExportSourceLocal n' t'
+                 -- If a type has been foreign imported from Salt land
+                 -- then it won't be in the map, and we can just convert
+                 -- its Tetra type to get the Salt version.
+                 Nothing 
+                  -> do t'      <- convertCtorT tctx t
+                        return  $ ExportSourceLocal n' t'
 
         ExportSourceLocalNoType n
          -> do  n'      <- convertBindNameM n
