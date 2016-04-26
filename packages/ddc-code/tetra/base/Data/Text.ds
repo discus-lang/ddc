@@ -105,8 +105,7 @@ vectorOfText [r1: Region] (tt: Text)
 --
 textOfWord8 (w8: Word8#): Text
  = do
-        -- ISSUE #354: Local extend forms don't work without an enclosing box cast.
-        vec'    = box extend RegionText using r1 with { Alloc r1; Write r1 } in
+        vec'    = extend RegionText using r1 with { Alloc r1; Write r1 } in
                   do    -- Allocate the vector to hold the data,
                         -- including an extra null terminator byte.
                         vec     = vectorAlloc# [r1] [Word8#] 2
@@ -119,7 +118,7 @@ textOfWord8 (w8: Word8#): Text
 
                         vec
 
-        TextVec (run vec')
+        TextVec vec'
 
 
 -- Projections ----------------------------------------------------------------

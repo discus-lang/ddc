@@ -6,7 +6,6 @@ where
 import DDC.Core.Transform.TransformUpX
 import DDC.Core.Transform.AnonymizeX
 import DDC.Core.Transform.BoundX
-import DDC.Core.Transform.BoundT
 import DDC.Core.Exp.Annot
 import Data.Functor.Identity
 
@@ -80,36 +79,6 @@ flatten1 (XLet a1 (LLet b1
       $ XLet a1 (LLet b1 x2) 
              x1'
 
--- Drag 'letregion' out of the top-level of a binding.
--- @
---    let b1 = letregion b2 in x2 in
---    x1
---
--- => letregion b2 in 
---    let b1 = x2 in
---    x1
--- @
---
--- NOTE: For region allocation this increases the lifetime of the region.
---       Maybe use a follow on transform to reduce the lifetime again.
---
-flatten1 (XLet a1 (LLet b1
-            inner@(XLet a2 (LPrivate b2 mt bs2) x2))
-               x1)
- | all isBName b2
- = flatten1
-        $ XLet a1 (LLet b1
-                  (anonymizeX inner))
-               x1
-
- | otherwise
- = let  x1'     = liftAcrossT []   b2
-                $ liftAcrossX [b1] bs2 x1
-   in   XLet a2 (LPrivate b2 mt bs2) 
-      $ flatten1
-      $ XLet a1 (LLet (zapX b1) x2) 
-             x1'
-
 
 -- Flatten single-alt case expressions.
 -- @
@@ -162,15 +131,4 @@ liftAcrossX bsDepth bsLevels x
         levels  = length [b | b@(BAnon _) <- bsLevels]
    in   liftAtDepthX levels depth x
 
-
-liftAcrossT :: Ord n => [Bind n] -> [Bind n] -> Exp a n -> Exp a n
-liftAcrossT bsDepth bsLevels x
- = let  depth   = length [b | b@(BAnon _) <- bsDepth]
-        levels  = length [b | b@(BAnon _) <- bsLevels]
-   in   liftAtDepthT levels depth x
-
-
--- | Erase the type of a data binder.
-zapX :: Bind n -> Bind n
-zapX b = replaceTypeOfBind (tBot kData) b
 

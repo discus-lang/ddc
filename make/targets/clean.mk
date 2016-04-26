@@ -1,7 +1,7 @@
 
 # -- clean up everything
 .PHONY : clean
-clean  : cleanWar cleanRuntime
+clean  : clean-war clean-runtime
 	@echo "* Cleaning leftovers"
 	@find . \
 			-name "*.o" \

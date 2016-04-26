@@ -39,7 +39,7 @@ runtime : $(runtime_dep) \
 
 
 # Clean objects in the runtime system
-.PHONY : cleanRuntime
+.PHONY : clean-runtime
 clean-runtime :
 	@echo "* Cleaning runtime"
 	@rm packages/ddc-code/build/*

@@ -86,8 +86,8 @@ batchwar : allWithConfig
 
 
 # -- Clean junk dropped while testing -------------------------------------------------------------
-.PHONY  : cleanWar
-cleanWar :
+.PHONY  : clean-war
+clean-war :
 	@echo "* Cleaning war"
 	@find test \
 			-name "*.dump-*" \

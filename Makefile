@@ -31,8 +31,9 @@
 #
 # (Cleaning up)
 #   clean               -- clean everything.
-#   cleanWar            -- clean libraries and tests.
-#   cleanRuntime        -- clean the runtime system.
+#   clean-war           -- clean libraries and tests.
+#   clean-runtime       -- clean the runtime system.
+#   clean-libs		-- clean the libraries
 #
 
 # -- Meta Targets -------------------------------------------------------------
