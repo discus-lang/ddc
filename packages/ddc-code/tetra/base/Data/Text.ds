@@ -23,6 +23,7 @@ export
 }
 import Data.Numeric.Nat
 import Data.Numeric.Bool
+import Data.Function
 import Data.List
 
 
@@ -104,21 +105,19 @@ vectorOfText [r1: Region] (tt: Text)
 -- | Wrap a single 8-bit character into a text object.
 --
 textOfWord8 (w8: Word8#): Text
- = do
-        vec'    = extend RegionText using r1 with { Alloc r1; Write r1 } in
-                  do    -- Allocate the vector to hold the data,
-                        -- including an extra null terminator byte.
-                        vec     = vectorAlloc# [r1] [Word8#] 2
+ = TextVec
+  (extend RegionText using r1 with { Alloc r1; Write r1 } in
+   do   -- Allocate the vector to hold the data,
+        -- including an extra null terminator byte.
+        vec     = vectorAlloc# [r1] [Word8#] 2
 
-                        -- Write the character.
-                        vectorWrite# vec 0 w8
+        -- Write the character.
+        vectorWrite# vec 0 w8
 
-                        -- Write the null terminator.
-                        vectorWrite# vec 1 0w8
+        -- Write the null terminator.
+        vectorWrite# vec 1 0w8
 
-                        vec
-
-        TextVec vec'
+        vec)
 
 
 -- Projections ----------------------------------------------------------------
