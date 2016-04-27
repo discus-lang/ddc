@@ -186,8 +186,8 @@ convertExp ectx ctx xx
 
         XLet{}
          -> throw $ ErrorUnsupported xx 
-         $ vcat [ text "Cannot convert a let-expression in this context."
-                , text "The program must be a-normalized before conversion." ]
+         $  vcat [ text "Cannot convert a let-expression in this context."
+                 , text "The program must be a-normalized before conversion." ]
 
 
         ---------------------------------------------------
@@ -252,14 +252,11 @@ convertExp ectx ctx xx
         -- expressions need to be eliminated before conversion.
         XCase{} 
          -> throw $ ErrorUnsupported xx  
-         $ text "Unsupported case expression form." 
+         $  text "Unsupported case expression form." 
 
 
         ---------------------------------------------------
         -- Type casts
-
-        -- ISSUE #352: Tetra to Salt conversion for stand-along run and box.
-
         -- Run an application of a top-level super.
         XCast _ CastRun (XApp (AnTEC _t _ _ a') xa xb)
          | (x1, xsArgs) <- takeXApps1 xa xb
@@ -271,12 +268,15 @@ convertExp ectx ctx xx
          -> convertExpSuperCall xx ectx ctx True a' nSuper xsArgs
 
         -- Run a suspended computation.
-        -- This isn't a super call, so the argument itself will be represented as a thunk.
+        --   This isn't a super call, so the argument itself will be
+        --   represented as a thunk.
         XCast (AnTEC _ _ _ a') CastRun xArg
          -> do
                 xArg'   <- convertX ExpArg ctx xArg
                 return  $ A.xRunThunk a' A.rTop A.rTop xArg'
 
+
+        -- Some cast that has no operational behaviour.
         XCast _ _ x
          -> convertX (min ectx ExpBody) ctx x
 
@@ -369,7 +369,4 @@ takeNamePrimX xx
           -> takeNamePrimX xx'
 
         _ -> Nothing
-
-
-
 
