@@ -61,6 +61,13 @@ makeCallSuperUnder
         -> Either Error (Maybe (Exp () Name))
 
 makeCallSuperUnder nF tF cs es
+ -- We have no eliminators at all, 
+ -- so this is just a reference to a top-level super that is not 
+ -- being applied.
+ | []   <- es
+ = return $ Just $ XVar () (UName nF)
+
+
  -- We have more constructors than eliminators.
  | length es <  length cs
 
@@ -104,15 +111,20 @@ makeCallSuperUnder nF tF cs es
         -- type will still be a function.
         tResultClo      = C.tFunOfParamResult tsParamRemain tResult'
 
-        tParamFirst : tsParamRest = tsParamLam
-        tSuperResult    = C.tFunOfParamResult tsParamRest   tResult'
+   in   case tsParamLam of
+         -- We should have at least one argument to apply. 
+         -- If not then the arity information is wrong or the super we were
+         -- told to call doesn't have any parameters. Either case is a bug.
+         [] -> error $ "ddc-core-tetra.makeCallSuperUnder: no arguments to apply."
 
-   in return
-        $ Just
-        $ makeRuns () (length esRuns)
-        $ C.xApps  () (C.xFunCurry () tsParamSat tResultClo 
-                       (C.xFunCReify () tParamFirst tSuperResult xFunAPP))
-                      xsArgValue
+         tParamFirst : tsParamRest
+          -> let tSuperResult    = C.tFunOfParamResult tsParamRest tResult'
+             in return
+                 $ Just
+                 $ makeRuns () (length esRuns)
+                 $ C.xApps  () (C.xFunCurry () tsParamSat tResultClo 
+                               (C.xFunCReify () tParamFirst tSuperResult xFunAPP))
+                               xsArgValue
 
  | otherwise
  = return $ Nothing
