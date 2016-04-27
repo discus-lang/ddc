@@ -22,6 +22,9 @@ fnord [a: Data]: Fnord a
 --  to make it a function.
 derp  = 93
 
+-- A suspended computation as a CAF.
+beep  = writel "beep"
+
 -- Evaluate a suspended computation twice.
 doTwice (s: S e a): S e a
  = do   run s
@@ -30,6 +33,8 @@ doTwice (s: S e a): S e a
 -- Verify that we can pass a suspended computation,
 -- as well as invoking the transformed CAFs.
 main (_: Unit): S Console Unit
- = doTwice (box writel 
-                $ "derp = " 
-                % showNat (derp + defnord (fnord [Nat#])))
+ = doTwice (box do writel 
+                    $ "derp = " 
+                    % showNat (derp + defnord (fnord [Nat#]))
+                   run beep)
+
