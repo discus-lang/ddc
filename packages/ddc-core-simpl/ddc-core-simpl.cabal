@@ -56,6 +56,7 @@ Library
         DDC.Core.Transform.TransformDownX
         DDC.Core.Transform.TransformModX
         DDC.Core.Transform.TransformUpX
+        DDC.Core.Transform.Unshare
         DDC.Core.Simplifier
 
         DDC.Type.Transform.Alpha

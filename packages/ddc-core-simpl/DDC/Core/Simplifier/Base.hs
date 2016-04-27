@@ -122,6 +122,7 @@ data Transform s a n
         | Snip  Snip.Config
 
 
+
 -- | Function to get the inliner template (unfolding) for the given name.
 type InlinerTemplates a n 
         = (n -> Maybe (Exp a n))
@@ -149,4 +150,5 @@ instance Pretty (Transform s a n) where
         Prune           -> text "Prune"
         Rewrite{}       -> text "Rewrite"
         Snip{}          -> text "Snip"
+        
 

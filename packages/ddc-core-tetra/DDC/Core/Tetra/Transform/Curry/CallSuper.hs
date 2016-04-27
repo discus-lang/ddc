@@ -64,8 +64,8 @@ makeCallSuperUnder nF tF cs es
  -- We have no eliminators at all, 
  -- so this is just a reference to a top-level super that is not 
  -- being applied.
- | []   <- es
- = return $ Just $ XVar () (UName nF)
+ --  | []   <- es
+ -- = return $ Just $ XVar () (UName nF)
 
 
  -- We have more constructors than eliminators.

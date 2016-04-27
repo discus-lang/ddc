@@ -8,6 +8,7 @@ module DDC.Core.Exp.Annot.Compounds
 
           -- * Annotations
         , annotOfExp
+        , mapAnnotOfExp
 
           -- * Lambdas
         , xLAMs
@@ -83,6 +84,22 @@ annotOfExp xx
         XCast    a _ _    -> a
         XType    a _      -> a
         XWitness a _      -> a
+
+
+-- | Apply a function to the annotation of an expression.
+mapAnnotOfExp :: (a -> a) -> Exp a n -> Exp a n
+mapAnnotOfExp f xx
+ = case xx of
+        XVar     a u      -> XVar     (f a) u
+        XCon     a c      -> XCon     (f a) c
+        XLAM     a b  x   -> XLAM     (f a) b  x
+        XLam     a b  x   -> XLam     (f a) b  x
+        XApp     a x1 x2  -> XApp     (f a) x1 x2
+        XLet     a lt x   -> XLet     (f a) lt x
+        XCase    a x  as  -> XCase    (f a) x  as
+        XCast    a c  x   -> XCast    (f a) c  x
+        XType    a t      -> XType    (f a) t
+        XWitness a w      -> XWitness (f a) w
 
 
 -- Lambdas ---------------------------------------------------------------------

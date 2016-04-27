@@ -1,0 +1,35 @@
+
+module Main 
+import System.IO.Console
+where
+
+-- A polymorphic value type.
+data Fnord (a: Data) where
+        Fnord : Fnord a
+
+-- Consume a fnord.
+defnord (x: Fnord a): Nat#
+ = 42
+
+-- Some polymorphic CAF.
+--  During code generation we insert a value abstraction under
+--  the existing type abstraction to make it a function.
+fnord [a: Data]: Fnord a
+ = Fnord
+
+-- Some monomorphic CAF.
+--  During code generation we wrap it in a value abstraction
+--  to make it a function.
+derp  = 93
+
+-- Evaluate a suspended computation twice.
+doTwice (s: S e a): S e a
+ = do   run s
+        run s
+
+-- Verify that we can pass a suspended computation,
+-- as well as invoking the transformed CAFs.
+main (_: Unit): S Console Unit
+ = doTwice (box writel 
+                $ "derp = " 
+                % showNat (derp + defnord (fnord [Nat#])))

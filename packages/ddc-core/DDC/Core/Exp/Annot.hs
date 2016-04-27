@@ -57,6 +57,7 @@ module DDC.Core.Exp.Annot
 
           -- ** Annotations
         , annotOfExp
+        , mapAnnotOfExp
 
           -- ** Lambdas
         , xLAMs

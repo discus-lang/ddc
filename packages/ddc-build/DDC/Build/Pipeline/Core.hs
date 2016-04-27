@@ -38,6 +38,7 @@ import qualified DDC.Core.Salt.Platform                 as Salt
 import qualified DDC.Core.Salt.Runtime                  as Salt
 import qualified DDC.Core.Salt                          as Salt
 
+import qualified DDC.Core.Transform.Unshare             as C
 import qualified DDC.Core.Transform.Reannotate          as C
 import qualified DDC.Core.Transform.Namify              as C
 import qualified DDC.Core.Transform.Snip                as Snip
@@ -293,7 +294,7 @@ pipeTetra !mm !pp
 
         PipeTetraCurry  !pipes
          -> {-# SCC "PipeTetraCurry"  #-}
-            case Tetra.curryModule mm of
+            case Tetra.curryModule (C.unshareModule mm) of
              Left err  -> return [ErrorTetraConvert err]
              Right mm' -> pipeCores mm' pipes
 
