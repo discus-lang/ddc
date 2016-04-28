@@ -117,19 +117,12 @@ wrap store ii
          $ \iis    -> iis ++ [ii]
 
 
--- | Load a new interface into the store.
-load    :: Store -> FilePath -> IO (Maybe Error)
-load store filePath
+-- | Load a new interface from a file.
+load    :: FilePath -> IO (Either Error InterfaceAA)
+load filePath
  = do   timeStamp  <- getModificationTime filePath
         str        <- readFile filePath
-
-        case loadInterface filePath timeStamp str of
-         Left err  
-          ->    return $ Just err
-
-         Right iis
-          -> do wrap store iis
-                return Nothing
+        return $ loadInterface filePath timeStamp str
 
 
 -- | Get metadata of interfaces currently in the store.

@@ -38,7 +38,7 @@ main
           -> do let state       = initState (InputInterfaceBatch filePath)
                 dconfig         <- getDriverConfigOfState state
                 store           <- Store.new
-                runError $ cmdCompileRecursive dconfig True store filePath []
+                runError $ cmdCompileRecursive dconfig True store filePath
 
          -- Run a Disciple-Core-Exchange file.
          [filePath]

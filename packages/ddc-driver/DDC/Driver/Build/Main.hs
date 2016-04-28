@@ -90,9 +90,10 @@ buildExecutable config store mMain msOther0
  = go msOther0
  where  
         go [] 
-         = do   let dirs        = configModuleBaseDirectories config
-                path            <- locateModuleFromPaths dirs mMain "ds"
-                cmdCompile config True store path
+         = do   let dirs = configModuleBaseDirectories config
+                path     <- locateModuleFromPaths dirs mMain "ds"
+                _        <- cmdCompile config True store path
+                return ()
 
         go (m : more)
          = do   buildModule config store m
@@ -109,7 +110,8 @@ buildModule
 
 buildModule config store name
  = do   let dirs = configModuleBaseDirectories config
-        path     <- locateModuleFromPaths dirs name "ds"
-        cmdCompile config False store path
+        path    <- locateModuleFromPaths dirs name "ds"
+        _       <- cmdCompile config False store path
+        return ()
 
 

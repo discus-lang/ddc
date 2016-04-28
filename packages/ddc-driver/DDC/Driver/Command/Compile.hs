@@ -1,14 +1,17 @@
 
 module DDC.Driver.Command.Compile
-        ( cmdCompile
-        , cmdCompileRecursive )
+        ( cmdCompileRecursive
+        , cmdCompileRecursiveDS
+        , cmdLoadOrCompile
+        , cmdCompile
+        , getModificationTimeIfExists)
 where
 import DDC.Driver.Stage
 import DDC.Driver.Config
 import DDC.Interface.Source
-import DDC.Data.Canned
 import DDC.Build.Pipeline
 import DDC.Build.Interface.Base
+import DDC.Data.Canned
 import DDC.Data.Token
 import System.FilePath
 import System.Directory
@@ -28,6 +31,7 @@ import qualified DDC.Core.Parser                as C
 import qualified DDC.Core.Lexer                 as C
 import qualified DDC.Base.Parser                as BP
 import qualified DDC.Version                    as Version
+import qualified Data.List                      as List
 
 import DDC.Driver.Command.Flow.ToTetra
 import qualified DDC.Core.Flow                  as Flow
@@ -37,42 +41,114 @@ import qualified DDC.Build.Interface.Store      as Store
 
 
 ---------------------------------------------------------------------------------------------------
--- | Recursively compile source modules into @.o@ files.
+-- | Recursively compile source modules into @.o@ files,
+--   or load existing interfaces if we have them and the @.o@ file is
+--   still fresh.
 --
---   Like `cmdCompile`, but if the interface for a needed module is not already 
---   loaded then use the provided command to load or compile it. A recursive
---   make process can be constructed by looking up the file the corresponds
---   to the module, and calling cmdCompileRecursive again -- tying the knot.
+--   * Interface files that are loaded or generated during compilation
+--     are added to the interface store.
 --
 cmdCompileRecursive
         :: Config               -- ^ Build driver config.
         -> Bool                 -- ^ Build an exectable.
         -> Store                -- ^ Interface store.
         -> FilePath             -- ^ Path to file to compile
-        -> [C.ModuleName]       -- ^ Names of modules currently being build on this
-                                --   branch in the dependency tree.
         -> ExceptT String IO ()
 
-cmdCompileRecursive config buildExe store filePath modsEntered
+cmdCompileRecursive config bBuildExe store filePath
  | takeExtension filePath == ".ds"
- = cmdCompileRecursiveDS config buildExe store filePath modsEntered
+ = do   cmdCompileRecursiveDS config bBuildExe store [filePath] []
 
  | otherwise
- = cmdCompile            config buildExe store filePath
+ = do   cmdCompile            config bBuildExe store filePath
 
 
--- | Recursively build the given Source Tetra file.
-cmdCompileRecursiveDS 
+---------------------------------------------------------------------------------------------------
+-- | Recursively compile @.ds@ source modules into @.o@ files,
+--   or load existing interfaces if we have them and the @.o@ file is
+--   still fresh.
+--
+--   * Interface files that are loaded or generated during compilation
+--     are added to the interface store.
+--
+cmdCompileRecursiveDS
         :: Config               -- ^ Build driver config.
         -> Bool                 -- ^ Build an executable.
-        -> Store                -- ^ Interface store.
-        -> FilePath             -- ^ Path to file to compile
-        -> [C.ModuleName]       -- ^ Names of modules currently being built on this
-                                --   branch in the dependency tree. 
+        -> Store                -- ^ Inferface store.
+        -> [FilePath]           -- ^ Names of source files still to load.
+        -> [FilePath]           -- ^ Names of source files currently blocked.
         -> ExceptT String IO ()
 
-cmdCompileRecursiveDS config buildExe store filePath modsEntered
+cmdCompileRecursiveDS _config _bBuildExe _store []           _fsBlocked
+ = return ()
+
+cmdCompileRecursiveDS  config  bBuildExe  store (filePath:fs) fsBlocked
  = do   
+        -- Check if the requested file exists.
+        exists  <- liftIO $ doesFileExist filePath
+        when (not exists)
+         $ throwE $ "No such file " ++ show filePath
+
+        -- Read in the source file.
+        src             <- liftIO $ readFile filePath
+
+        -- Parse just the header of the module to determine what
+        -- other modules it imports.
+        modNamesNeeded  <- tasteNeeded filePath src
+
+        -- Names of all the modules that we have interfaces for.
+        modsNamesHave   <- liftIO $ Store.getModuleNames store
+
+        -- Names of modules that we are missing interfaces for.
+        let missing     = filter (\m -> not $ elem m modsNamesHave) 
+                        $ modNamesNeeded
+
+        case missing of
+         -- We've already got all the interfaces needed by the
+         -- current module.
+         [] -> do
+                -- Compile the current module.
+                cmdLoadOrCompile config bBuildExe store filePath
+
+                -- Build other modules that are still queued.
+                cmdCompileRecursiveDS config bBuildExe store fs []
+
+         -- We still need to load or comile dependent modules.
+         ms -> do
+                -- Determine filepaths for all dependent modules.
+                fsMore  <- mapM (locateModuleFromConfig config) ms
+
+                -- Check that we're not a a recursive loop, 
+                -- trying to compile a module that's importing itself.
+                let fsRec = List.intersect fsMore fsBlocked
+                when (not $ null fsRec)
+                 $ throwE $ unlines
+                 $  [ "Cannot build recursive module" ]
+                 ++ [ "    " ++ show fsRec ]
+
+                -- Shift the current module to the end of the queue, 
+                -- compiling the dependent modules first.
+                cmdCompileRecursiveDS config bBuildExe store 
+                        (List.nub $ fsMore ++ fs ++ [filePath]) 
+                        (filePath : fsBlocked)
+
+
+---------------------------------------------------------------------------------------------------
+-- | Load the interface correponding to a source file,
+--   or re-compile the source if it's fresher than the interface.
+--
+--   * Interfaces for dependent modules must already be in the
+--     interface store.
+--
+cmdLoadOrCompile
+        :: Config               -- ^ Build driver config.
+        -> Bool                 -- ^ Build an exeecutable.
+        -> Store                -- ^ Interface store.
+        -> FilePath             -- ^ Path to source file.
+        -> ExceptT String IO ()
+
+cmdLoadOrCompile config buildExe store filePath
+ = do
         -- Check that the source file exists.
         exists  <- liftIO $ doesFileExist filePath
         when (not exists)
@@ -85,49 +161,6 @@ cmdCompileRecursiveDS config buildExe store filePath modsEntered
         -- Parse just the header of the module to determine what other modules
         -- it imports.
         modNamesNeeded  <- tasteNeeded filePath src
-
-
-        -- Recursively compile modules until we have all the interfaces required
-        -- for the current one.
-        let loop = do
-
-                -- Names of all the modules that we have interfaces for.
-                modsNamesHave    <- liftIO $ Store.getModuleNames store
-
-                -- Names of modules that we are missing interfaces for.
-                let missing       = filter (\m -> not $ elem m modsNamesHave) 
-                                  $ modNamesNeeded
-
-                case missing of
-                 -- If there are no missing interfaces then we're good to go.
-                 []     -> return ()
-
-                 -- Otherwise compile the first of the missing modules and try again.
-                 m : _  -> do
-
-                        -- Automatically look for modules in the base library.
-                        let baseDirs 
-                                =  configModuleBaseDirectories config
-                                ++ [Builder.buildBaseSrcDir (configBuilder config)
-                                        </> "tetra" </> "base"]
-
-                        mfilePath   <- Locate.locateModuleFromPaths baseDirs m ".ds"
-
-                        -- Check that we haven't tried to compile this module before
-                        -- on a recursive path. This detects module import loops.
-                        when (elem m modsEntered)
-                         $ throwE $ unlines
-                         $  [ "! Cannot build recursive modules:" ]
-                         ++ [ "    " ++ (P.renderIndent $ P.ppr mm) | mm <- modsEntered ]
-
-                        -- Compile the first of the dependencies,
-                        --   adding the new interface files to the store.
-                        cmdCompileRecursiveDS config False store 
-                                mfilePath (modsEntered ++ [m])
-
-                        -- See if we've got them all.
-                        loop
-        loop 
 
         -- At this point we should have all the interfaces needed for the current module,
         -- and need to decide whether we can reload an existing interface file for the
@@ -161,67 +194,45 @@ cmdCompileRecursiveDS config buildExe store filePath modsEntered
                                 , elem (Store.metaModuleName m) modNamesNeeded ]
 
                   -- this is not the top-level module.
-                , not $ null modsEntered       
+                , not $ takeFileName filePath == "Main.ds"
                 = do
-                        result  <- liftIO $ Store.load store filePathDI
+                        result  <- liftIO $ Store.load filePathDI
                         case result of
-                         Just  err -> throwE $ P.renderIndent $ P.ppr err
-                         Nothing   -> return ()
+                         Left  err -> throwE $ P.renderIndent $ P.ppr err
+                         Right int -> liftIO $ Store.wrap store int
 
                 | otherwise
-                = cmdCompile config buildExe store filePath
+                = do    cmdCompile config buildExe store filePath
 
         loadOrCompile
 
 
--- | If the given file exists then get its modification time,
---   otherwise Nothing.
-getModificationTimeIfExists :: FilePath -> IO (Maybe UTCTime)
-getModificationTimeIfExists path
- = do   exists  <- doesFileExist path
-        if exists 
-         then do
-                timeStamp <- getModificationTime path
-                return $ Just timeStamp
-
-         else   return Nothing
-
-
--- [Note: Timestamp acccuracy during rebuild]
--- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
---
--- There's an ugly system where if the underlying file system does not
--- support file time stamps with sub-second accuracy, then the timestamps
--- of the interface files we compile in this run will have more accuracy
--- than the ones we load from the file system.
--- 
--- The problem with inaccurate timestamps is that if we compiled two 
--- dependent modules within the same second, then both will have the
--- same time-stamp and none is fresher than the other.
---
--- Due to this we allow the time stamp of dependent interface files to
--- be equal so that they will not be rebuilt in this situation.
---
--- We assume that if any process legitimately changes a dependent
--- object file then this will be done at least a second after we first
--- created it.
---
-
 ---------------------------------------------------------------------------------------------------
 -- | Compile a source module into a @.o@ file.
 --
---   This produces an @.o@ file next to the source file, and may also produce
---   a @.di@ interface, depending on what sort of source file we're compiling.
+--   * Interfaces for dependent modules must already be in the interface
+--     store.
+--
+--   * This produces an @.o@ file next to the source file, and may also
+--     produce a @.di@ interface, depending on what sort of source file
+--     we're compiling.
 -- 
+--   * If compilation produces an interface then it is added to the
+--     existing store.
+--
 cmdCompile
         :: Config               -- ^ Build driver config.
         -> Bool                 -- ^ Build an executable.
         -> Store                -- ^ Interface store.
-        -> FilePath             -- ^ Path to file to compile
+        -> FilePath             -- ^ Path to source file.
         -> ExceptT String IO ()
 
-cmdCompile config buildExe store filePath
+cmdCompile config bBuildExe' store filePath
  = do   
+        let buildExe
+                =  takeBaseName filePath == "Main"
+                && bBuildExe'
+
         if buildExe 
          then liftIO $ putStrLn $ "* Compiling " ++ filePath ++ " as executable"
          else liftIO $ putStrLn $ "* Compiling " ++ filePath
@@ -234,11 +245,11 @@ cmdCompile config buildExe store filePath
         when (not exists)
          $ throwE $ "No such file " ++ show filePath
 
-        src             <- liftIO $ readFile filePath
+        src     <- liftIO $ readFile filePath
 
         -- If we're building an executable, then get paths to the other object
         -- files that we need to link with.
-        metas           <- liftIO $ Store.getMeta store
+        metas   <- liftIO $ Store.getMeta store
         let pathsDI     = map Store.metaFilePath metas
         let otherObjs
                 | buildExe  = Just $ map (\path -> replaceExtension path "o") pathsDI
@@ -247,8 +258,8 @@ cmdCompile config buildExe store filePath
         -- During complation of this module the intermediate code will be
         -- stashed in these refs. We will use the intermediate code to build
         -- the interface for this module.
-        refTetra        <- liftIO $ newIORef Nothing
-        refSalt         <- liftIO $ newIORef Nothing
+        refTetra <- liftIO $ newIORef Nothing
+        refSalt  <- liftIO $ newIORef Nothing
 
         -- Use the file extension to decide what compilation pipeline to use.
         let make
@@ -307,7 +318,6 @@ cmdCompile config buildExe store filePath
         modTetra  <- liftIO $ readIORef refTetra
         modSalt   <- liftIO $ readIORef refSalt
 
-
         -- Handle errors ------------------------
         case errs of
          -- There was some error during compilation.
@@ -342,6 +352,8 @@ cmdCompile config buildExe store filePath
                 -- Add the new interface to the store.
                 liftIO $ Store.wrap store int
 
+                return ()
+
           -- Compilation was successful,
           --  but we didn't get enough build products to produce an interface file.
           | otherwise
@@ -359,29 +371,59 @@ tasteNeeded
         -> ExceptT String IO [C.ModuleName]
 
 tasteNeeded filePath src 
-        | takeExtension filePath == ".ds"
-        = do    
-                -- Lex the module, dropping all tokens after and including
-                -- the first 'where', because we only need the module header.
-                let tokens 
-                        = dropBody
-                        $ SE.lexModuleString filePath 1 src
+ | takeExtension filePath == ".ds"
+ = do    
+        -- Lex the module, dropping all tokens after and including
+        -- the first 'where', because we only need the module header.
+        let tokens 
+                = dropBody
+                $ SE.lexModuleString filePath 1 src
 
-                let context 
-                        = C.Context
-                        { C.contextTrackedEffects         = True
-                        , C.contextTrackedClosures        = True
-                        , C.contextFunctionalEffects      = False
-                        , C.contextFunctionalClosures     = False 
-                        , C.contextMakeStringName         = Nothing }
+        let context 
+                = C.Context
+                { C.contextTrackedEffects         = True
+                , C.contextTrackedClosures        = True
+                , C.contextFunctionalEffects      = False
+                , C.contextFunctionalClosures     = False 
+                , C.contextMakeStringName         = Nothing }
 
-                case BP.runTokenParser C.describeTok filePath
-                        (SE.pModule context) tokens of
-                 Left  err  -> throwE $ P.renderIndent $ P.ppr err
-                 Right mm   -> return $ SE.moduleImportModules mm
+        case BP.runTokenParser C.describeTok filePath
+                (SE.pModule context) tokens of
+         Left  err  -> throwE $ P.renderIndent $ P.ppr err
+         Right mm   -> return $ SE.moduleImportModules mm
 
-        | otherwise
-        = return []
+ | otherwise
+ = return []
+
+
+---------------------------------------------------------------------------------------------------
+-- | Given a driver config, locate the module with the given name.
+locateModuleFromConfig 
+        :: Config 
+        -> C.ModuleName 
+        -> ExceptT String IO FilePath
+
+locateModuleFromConfig config mname
+ = do   -- Automatically look for modules in the base library.
+        let baseDirs 
+                =  configModuleBaseDirectories config
+                ++ [Builder.buildBaseSrcDir (configBuilder config)
+                        </> "tetra" </> "base"]
+
+        Locate.locateModuleFromPaths baseDirs mname ".ds"
+
+
+-- | If the given file exists then get its modification time,
+--   otherwise Nothing.
+getModificationTimeIfExists :: FilePath -> IO (Maybe UTCTime)
+getModificationTimeIfExists path
+ = do   exists  <- doesFileExist path
+        if exists 
+         then do
+                timeStamp <- getModificationTime path
+                return $ Just timeStamp
+
+         else   return Nothing
 
 
 -- | Drop tokens after and including the first 'where' keyword.
@@ -389,7 +431,27 @@ tasteNeeded filePath src
 --   because they only represent the body of the module.
 dropBody :: [Token (C.Tok n)] -> [Token (C.Tok n)]
 dropBody toks = go toks
- where  go []                                           = []
-        go (Token { tokenTok = C.KA C.KWhere} : _)      = []
-        go (t : moar)                                   = t : go moar
+ where  go []                                      = []
+        go (Token { tokenTok = C.KA C.KWhere} : _) = []
+        go (t : moar)                              = t : go moar
 
+
+-- [Note: Timestamp acccuracy during rebuild]
+-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+--
+-- There's an ugly system where if the underlying file system does not
+-- support file time stamps with sub-second accuracy, then the timestamps
+-- of the interface files we compile in this run will have more accuracy
+-- than the ones we load from the file system.
+-- 
+-- The problem with inaccurate timestamps is that if we compiled two 
+-- dependent modules within the same second, then both will have the
+-- same time-stamp and none is fresher than the other.
+--
+-- Due to this we allow the time stamp of dependent interface files to
+-- be equal so that they will not be rebuilt in this situation.
+--
+-- We assume that if any process legitimately changes a dependent
+-- object file then this will be done at least a second after we first
+-- created it.
+--
