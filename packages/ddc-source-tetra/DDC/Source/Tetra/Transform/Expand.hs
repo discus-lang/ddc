@@ -4,22 +4,23 @@
 --   variables. Also add holes for missing type arguments.
 --   
 --   Given
+--
 -- @
 --    mapS (f : a -> S e b) (xx : List a) : S e (List b)
 --     = box case xx of
---        Nil             -> Nil
---        Cons x xs       -> Cons (run f x) (run mapS f xs)
+--        Nil        -> Nil
+--        Cons x xs  -> Cons (run f x) (run mapS f xs)
 -- @
 --
 --  We get:
+--
 -- @
 --    mapS [a e b : ?] (f : a -> S e b) (xx : List a) : S e (List b)
 --     = /\(a e b : ?). box case xx of
---        Nil             -> Nil
---        Cons x xs       -> Cons (run f x) (run mapS [?] [?] [?] f xs)
+--        Nil        -> Nil
+--        Cons x xs  -> Cons (run f x) (run mapS [?] [?] [?] f xs)
 -- @
-
-
+--
 module DDC.Source.Tetra.Transform.Expand
         ( Config        (..)
         , configDefault

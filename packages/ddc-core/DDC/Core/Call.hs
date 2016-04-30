@@ -5,11 +5,13 @@
 --   by some object when we apply it, and before it starts constructing
 --   new values. 
 --
---   Constructor (+ve)             Eliminator (-ve)
---    /\x.  (type   abstraction)    @'    (type   application)
---     \x.  (object abstraction)    @     (object application) 
---    box   (suspend evaluation)    run   (commence evaluation)
---    
+-- @
+-- Constructor (+ve)             Eliminator (-ve)
+--  /\x.  (type   abstraction)    \@'    (type   application)
+--   \x.  (object abstraction)    \@     (object application) 
+--  box   (suspend evaluation)   run   (commence evaluation)
+-- @
+--   
 module DDC.Core.Call 
         ( -- * Call constructors
           Cons (..)
@@ -43,7 +45,7 @@ import DDC.Type.Transform.SubstituteT
 -- | One component of the call pattern of a super.
 --   This is the "outer wrapper" of the computation,
 -- 
---   Eg, with  /\(a : k). \(x : t). box (x + 1) the call pattern consists of
+--   With @/\(a : k). \(x : t). box (x + 1)@ the call pattern consists of
 --   the two lambdas and the box. These three things need to be eliminated
 --   before we can construct any new values.
 --
@@ -154,13 +156,15 @@ splitStdCallCons cs
 --   of call constructors.
 --
 --   Example:
+--
+-- @
 --    takeStdCallConsFromType 
 --       [| forall (a : k1) (b : k2). a -> b -> S e b |] 
 --       2 2 1
---
 --    => [ ConsType  [|k1|], ConsType  [|k2|]
 --       , ConsValue [|a\],  ConsValue [|b|]
 --       , ConsBox ]
+-- @
 --
 --   When we're considering the parts of the type, if the given arity
 --   does not match what is in the type then `Nothing`.
