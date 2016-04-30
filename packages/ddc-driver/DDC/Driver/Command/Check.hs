@@ -25,7 +25,7 @@ import DDC.Driver.Stage
 import DDC.Driver.Output
 import DDC.Driver.Config
 import DDC.Driver.Command.Compile
-import DDC.Interface.Source
+import DDC.Driver.Interface.Source
 import DDC.Build.Language
 import DDC.Build.Pipeline
 import DDC.Core.Fragment

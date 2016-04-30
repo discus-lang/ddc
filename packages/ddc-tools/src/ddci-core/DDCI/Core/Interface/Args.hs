@@ -5,7 +5,7 @@ where
 import DDCI.Core.Command.Help
 import DDCI.Core.Command
 import DDCI.Core.State
-import DDC.Interface.Input
+import DDC.Driver.Interface.Input
 import DDC.Data.ListUtils
 import Data.List
 

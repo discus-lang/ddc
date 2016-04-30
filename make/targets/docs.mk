@@ -21,7 +21,6 @@ docs-core :
 			--optghc=-ipackages/ddc-core-tetra \
                         --optghc=-ipackages/ddc-source-tetra \
 			--optghc=-ipackages/ddc-driver \
-                        --optghc=-ipackages/ddc-interface \
 			--optghc=-ipackages/ddci-core \
 		$(patsubst %,--optghc=%,$(GHC_LANGUAGE)) \
                 $(patsubst %,--optghc=%,$(GHC_WARNINGS)) \
@@ -44,7 +43,6 @@ docs-hoogle-core :
 			--optghc=-ipackages/ddc-core-tetra \
                         --optghc=-ipackages/ddc-source-tetra \
 			--optghc=-ipackages/ddc-driver \
-                        --optghc=-ipackages/ddc-interface \
 		$(patsubst %,--optghc=%,$(GHC_LANGUAGE)) \
                 $(patsubst %,--optghc=%,$(GHC_WARNINGS)) \
 		$(ddci-core_src_hs_all)

@@ -12,7 +12,7 @@ import DDCI.Tetra.Command.Parse
 import DDCI.Tetra.Command.Desugar
 import DDCI.Tetra.Command.Infer
 import DDCI.Tetra.Command.ToCore
-import DDC.Interface.Source
+import DDC.Driver.Interface.Source
 import DDC.Driver.Command.ToSalt       
 import Control.Monad.Trans.Except
 import Data.List

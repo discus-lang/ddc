@@ -2,8 +2,8 @@
 module DDCI.Tetra.Command.Infer
         (cmdInfer)
 where
-import DDC.Interface.Source
 import DDCI.Tetra.State
+import DDC.Driver.Interface.Source
 import DDC.Base.Pretty
 import DDC.Source.Tetra.Env
 import DDC.Source.Tetra.Lexer

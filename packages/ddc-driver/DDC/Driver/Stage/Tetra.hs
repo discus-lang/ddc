@@ -6,7 +6,7 @@ module DDC.Driver.Stage.Tetra
 where
 import DDC.Driver.Dump
 import DDC.Driver.Config
-import DDC.Interface.Source
+import DDC.Driver.Interface.Source
 import DDC.Build.Interface.Store                (Store)
 import DDC.Build.Pipeline
 import DDC.Base.Pretty

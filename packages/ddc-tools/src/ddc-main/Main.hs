@@ -31,7 +31,7 @@ import DDC.Driver.Command.ToC
 import DDC.Driver.Command.ToLlvm
 import DDC.Driver.Command.ToPHP
 
-import DDC.Interface.Source
+import DDC.Driver.Interface.Source
 import DDC.Build.Builder
 import DDC.Base.Pretty
 import System.Environment

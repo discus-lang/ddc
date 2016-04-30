@@ -4,7 +4,7 @@ module DDC.Driver.Command.Flow.Prep
 where
 import DDC.Driver.Stage
 import DDC.Driver.Config
-import DDC.Interface.Source
+import DDC.Driver.Interface.Source
 import DDC.Build.Pipeline
 import Control.Monad.Trans.Except
 import Control.Monad.IO.Class

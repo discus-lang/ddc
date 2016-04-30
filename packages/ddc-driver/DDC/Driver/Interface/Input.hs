@@ -1,12 +1,12 @@
 
-module DDC.Interface.Input
+module DDC.Driver.Interface.Input
         ( InputInterface (..)
         , InputState     (..)
         , Input          (..)
         , readInput
         , inputLine)
 where
-import DDC.Interface.Source
+import DDC.Driver.Interface.Source
 import DDC.Data.ListUtils
 import System.Directory
 import Data.List

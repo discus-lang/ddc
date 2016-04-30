@@ -5,7 +5,7 @@ where
 import DDCI.Core.Input
 import DDCI.Core.State
 import DDCI.Core.Command
-import DDC.Interface.Input
+import DDC.Driver.Interface.Input
 import Data.List
 import Data.Maybe
 import qualified System.Console.Haskeline       as HL

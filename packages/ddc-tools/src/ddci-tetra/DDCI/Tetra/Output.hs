@@ -5,7 +5,7 @@ module DDCI.Tetra.Output
         , chatStrLn)
 where
 import DDCI.Tetra.State
-import DDC.Interface.Input
+import DDC.Driver.Interface.Input
 import DDC.Base.Pretty
 
 

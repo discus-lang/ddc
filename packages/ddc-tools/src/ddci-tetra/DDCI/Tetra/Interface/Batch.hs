@@ -5,7 +5,7 @@ where
 import DDCI.Tetra.State
 import DDCI.Tetra.Input
 import DDCI.Tetra.Command
-import DDC.Interface.Input
+import DDC.Driver.Interface.Input
 import Data.List
 
 

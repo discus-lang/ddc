@@ -2,9 +2,9 @@
 module DDC.Driver.Command.Flow.Lower
         (cmdFlowLower)
 where
-import DDC.Driver.Stage                         as Driver
-import DDC.Driver.Config
-import DDC.Interface.Source
+import DDC.Driver.Stage
+import DDC.Driver.Config                        as Driver
+import DDC.Driver.Interface.Source
 import DDC.Build.Pipeline
 import Control.Monad.Trans.Except
 import Control.Monad.IO.Class

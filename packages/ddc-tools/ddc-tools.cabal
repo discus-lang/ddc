@@ -51,8 +51,7 @@ Executable ddc
         ddc-core-tetra  == 0.4.2.*,
         ddc-code        == 0.4.2.*,
         ddc-build       == 0.4.2.*,
-        ddc-driver      == 0.4.2.*,
-        ddc-interface   == 0.4.2.*
+        ddc-driver      == 0.4.2.*
 
     Main-is:
         Main.hs
@@ -87,8 +86,7 @@ Executable ddci-core
         ddc-core-tetra  == 0.4.2.*,
         ddc-code        == 0.4.2.*,
         ddc-build       == 0.4.2.*,
-        ddc-driver      == 0.4.2.*,
-        ddc-interface   == 0.4.2.*
+        ddc-driver      == 0.4.2.*
 
     Main-is:
         Main.hs
@@ -154,8 +152,7 @@ Executable ddci-tetra
         ddc-source-tetra == 0.4.2.*,
         ddc-code         == 0.4.2.*,
         ddc-build        == 0.4.2.*,
-        ddc-driver       == 0.4.2.*,
-        ddc-interface    == 0.4.2.*
+        ddc-driver       == 0.4.2.*
 
     Main-is:
         Main.hs

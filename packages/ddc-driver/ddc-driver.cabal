@@ -34,8 +34,7 @@ Library
         ddc-core-flow    == 0.4.2.*,
         ddc-core-tetra   == 0.4.2.*,
         ddc-source-tetra == 0.4.2.*,
-        ddc-build        == 0.4.2.*,
-        ddc-interface    == 0.4.2.*
+        ddc-build        == 0.4.2.*
   
   Exposed-modules:
         DDC.Driver.Build.Locate

@@ -13,8 +13,7 @@ ddc-main_packages = \
         packages/ddc-source-tetra/DDC \
 	packages/ddc-build/DDC \
 	packages/ddc-code/DDC \
-	packages/ddc-driver/DDC \
-        packages/ddc-interface/DDC
+	packages/ddc-driver/DDC
 
 ddc-main_src_hs_all = \
 	$(shell find $(ddc-main_packages)            -name "*.hs" -follow) \

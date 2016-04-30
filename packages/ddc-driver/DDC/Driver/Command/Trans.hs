@@ -10,9 +10,9 @@ where
 import DDC.Driver.Config
 import DDC.Driver.Output
 import DDC.Driver.Command.Check
+import DDC.Driver.Interface.Source
 import DDC.Build.Language
 import DDC.Build.Pipeline
-import DDC.Interface.Source
 import DDC.Core.Transform.Reannotate
 import DDC.Core.Load
 import DDC.Core.Fragment

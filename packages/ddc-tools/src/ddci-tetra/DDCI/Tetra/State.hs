@@ -10,7 +10,7 @@ module DDCI.Tetra.State
 where
 import DDCI.Tetra.Mode
 import DDC.Code.Config
-import DDC.Interface.Input
+import DDC.Driver.Interface.Input
 import DDC.Build.Builder
 import System.FilePath
 import Data.Set                         (Set)

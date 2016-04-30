@@ -11,8 +11,7 @@ ddc-check_packages = \
 	packages/ddc-core-flow/DDC \
 	packages/ddc-core-tetra/DDC \
         packages/ddc-source-tetra/DDC \
-	packages/ddc-build/DDC \
-        packages/ddc-interface/DDC
+	packages/ddc-build/DDC
 
 ddc-check_src_hs_all = \
 	$(shell find $(ddc-check_packages)            -name "*.hs" -follow) \

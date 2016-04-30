@@ -3,7 +3,7 @@ module DDC.Driver.Dump
         (dump)
 where
 import DDC.Driver.Config
-import DDC.Interface.Source
+import DDC.Driver.Interface.Source
 import DDC.Build.Pipeline
 import System.FilePath
 import Data.Maybe

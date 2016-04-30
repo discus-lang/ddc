@@ -5,7 +5,7 @@ where
 import DDCI.Tetra.Input
 import DDCI.Tetra.State
 import DDCI.Tetra.Command
-import DDC.Interface.Input
+import DDC.Driver.Interface.Input
 import Data.List
 import Data.Maybe
 import qualified System.Console.Haskeline       as HL

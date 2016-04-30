@@ -5,7 +5,7 @@ module DDCI.Core.Output
         , chatStrLn)
 where
 import DDCI.Core.State
-import DDC.Interface.Input
+import DDC.Driver.Interface.Input
 import DDC.Base.Pretty
 import qualified Data.Set       as Set
 

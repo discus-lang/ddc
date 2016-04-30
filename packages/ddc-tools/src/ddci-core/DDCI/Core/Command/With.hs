@@ -3,12 +3,12 @@ module DDCI.Core.Command.With
         (cmdWith, cmdWithSalt)
 where
 import DDCI.Core.State
-import DDC.Interface.Source
-import DDC.Core.Pretty
+import DDC.Driver.Interface.Source
 import DDC.Build.Pipeline
+import DDC.Core.Pretty
 import DDC.Core.Module
-import DDC.Data.Canned
 import DDC.Core.Check
+import DDC.Data.Canned
 import System.Directory
 import Control.Monad
 import Data.IORef

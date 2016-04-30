@@ -3,7 +3,7 @@ module DDC.Driver.Command.Read
         ( cmdReadModule
         , cmdReadModule')
 where
-import DDC.Interface.Source
+import DDC.Driver.Interface.Source
 import DDC.Driver.Config
 import DDC.Build.Pipeline
 import DDC.Build.Language

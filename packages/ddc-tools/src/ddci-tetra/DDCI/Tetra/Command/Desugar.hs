@@ -2,7 +2,7 @@
 module DDCI.Tetra.Command.Desugar
         (cmdDesugar)
 where
-import DDC.Interface.Source
+import DDC.Driver.Interface.Source
 import DDCI.Tetra.State
 import DDC.Base.Pretty
 import DDC.Source.Tetra.Lexer

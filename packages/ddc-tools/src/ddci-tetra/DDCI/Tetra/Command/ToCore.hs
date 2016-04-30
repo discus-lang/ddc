@@ -2,7 +2,7 @@ module DDCI.Tetra.Command.ToCore
         (cmdToCore)
 where
 import DDCI.Tetra.State
-import DDC.Interface.Source
+import DDC.Driver.Interface.Source
 import DDC.Driver.Stage
 import DDC.Build.Pipeline   
 import DDC.Base.Pretty

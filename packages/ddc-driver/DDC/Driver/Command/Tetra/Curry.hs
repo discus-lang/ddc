@@ -5,7 +5,7 @@ where
 import DDC.Driver.Stage
 import DDC.Driver.Config
 import DDC.Driver.Dump
-import DDC.Interface.Source
+import DDC.Driver.Interface.Source
 import DDC.Build.Pipeline
 import Control.Monad.Trans.Except
 import Control.Monad.IO.Class

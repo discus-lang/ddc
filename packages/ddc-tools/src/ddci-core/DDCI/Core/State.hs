@@ -20,8 +20,8 @@ module DDCI.Core.State
 where
 import DDCI.Core.Mode
 import DDC.Code.Config
-import DDC.Interface.Input
-import DDC.Interface.Source
+import DDC.Driver.Interface.Input
+import DDC.Driver.Interface.Source
 import DDC.Build.Builder
 import DDC.Build.Language
 

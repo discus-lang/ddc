@@ -9,7 +9,7 @@ module DDC.Driver.Stage.Salt
 where
 import DDC.Driver.Dump
 import DDC.Driver.Config
-import DDC.Interface.Source
+import DDC.Driver.Interface.Source
 import DDC.Build.Builder
 import DDC.Build.Pipeline
 import DDC.Core.Transform.Namify

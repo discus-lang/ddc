@@ -9,7 +9,7 @@ import DDCI.Core.Interface.Batch
 import DDCI.Core.Interface.Interactive
 import DDCI.Core.State
 import DDC.Driver.Command.Compile
-import DDC.Interface.Input
+import DDC.Driver.Interface.Input
 import System.Environment
 import System.IO
 import Control.Monad.Trans.Except

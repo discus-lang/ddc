@@ -12,7 +12,7 @@ import DDC.Driver.Command.Compile
 import DDC.Driver.Command.Read
 import DDC.Driver.Stage
 import DDC.Driver.Config
-import DDC.Interface.Source
+import DDC.Driver.Interface.Source
 import DDC.Build.Pipeline
 import DDC.Build.Language
 import DDC.Core.Simplifier.Parser

@@ -11,9 +11,8 @@ PACKAGES = \
 	ddc-core-babel \
         ddc-source-tetra \
 	ddc-build \
-        ddc-interface \
 	ddc-driver \
-	ddc-code \
+	ddc-code
 
 
 # Build and install all the Cabal packages.

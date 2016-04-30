@@ -4,8 +4,8 @@ module DDC.Driver.Command.Tetra.Boxing
 where
 import DDC.Driver.Stage
 import DDC.Driver.Config
+import DDC.Driver.Interface.Source
 import DDC.Build.Pipeline
-import DDC.Interface.Source
 import System.FilePath
 import Control.Monad.Trans.Except
 import Control.Monad.IO.Class

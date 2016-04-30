@@ -9,7 +9,7 @@ module DDC.Driver.Stage.Flow
 where
 import DDC.Driver.Dump
 import DDC.Driver.Config
-import DDC.Interface.Source
+import DDC.Driver.Interface.Source
 import DDC.Build.Pipeline
 import DDC.Base.Pretty
 import qualified DDC.Core.Check                 as C

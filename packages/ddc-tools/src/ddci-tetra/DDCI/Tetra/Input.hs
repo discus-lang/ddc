@@ -7,7 +7,7 @@ module DDCI.Tetra.Input
 where
 import DDCI.Tetra.State
 import DDCI.Tetra.Command
-import DDC.Interface.Input
+import DDC.Driver.Interface.Input
 
 
 -- Eating input lines.

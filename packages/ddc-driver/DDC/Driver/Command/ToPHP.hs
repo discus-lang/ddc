@@ -8,7 +8,7 @@ module DDC.Driver.Command.ToPHP
 where
 import DDC.Driver.Stage
 import DDC.Driver.Command.Compile
-import DDC.Interface.Source
+import DDC.Driver.Interface.Source
 import DDC.Build.Pipeline
 import DDC.Build.Language
 import DDC.Core.Fragment

@@ -8,7 +8,7 @@ module DDC.Driver.Command.Compile
 where
 import DDC.Driver.Stage
 import DDC.Driver.Config
-import DDC.Interface.Source
+import DDC.Driver.Interface.Source
 import DDC.Build.Pipeline
 import DDC.Build.Interface.Base
 import DDC.Data.Canned

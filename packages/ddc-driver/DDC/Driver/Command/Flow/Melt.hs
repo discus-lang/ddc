@@ -2,7 +2,7 @@
 module DDC.Driver.Command.Flow.Melt
         (cmdFlowMelt)
 where
-import DDC.Interface.Source
+import DDC.Driver.Interface.Source
 import DDC.Driver.Stage
 import DDC.Driver.Config
 import DDC.Build.Pipeline

@@ -113,7 +113,6 @@ packages/ddc-driver/%.o : packages/ddc-driver/%.hs
 		      -ipackages/ddc-core-babel \
                       -ipackages/ddc-source-tetra \
 		      -ipackages/ddc-build \
-		      -ipackages/ddc-interface \
 		      -ipackages/ddc-driver
 
 packages/ddc-code/%.o : packages/ddc-code/%.hs
@@ -121,13 +120,7 @@ packages/ddc-code/%.o : packages/ddc-code/%.hs
 	@$(GHC) $(GHC_FLAGS) $(GHC_WARNINGS2) $(DDC_PACKAGES) $(GHC_INCDIRS) \
 		-c $<
 
-packages/ddc-interface/%.o : packages/ddc-interface/%.hs
-	@echo "* Compiling $<"
-	@$(GHC) $(GHC_FLAGS) $(GHC_WARNINGS2) $(DDC_PACKAGES) $(GHC_INCDIRS) \
-		-c $< -ipackages/ddc-base \
-		      -ipackages/ddc-interface 
 
-		
 packages/ddc-tools/src/ddc-check/%.o : packages/ddc-tools/src/ddc-check/%.hs
 	@echo "* Compiling $<"
 	@$(GHC) $(GHC_FLAGS) $(GHC_WARNINGS2) $(DDC_PACKAGES) $(GHC_INCDIRS) \
@@ -159,7 +152,6 @@ packages/ddc-tools/src/ddci-core/%.o : packages/ddc-tools/src/ddci-core/%.hs
 		      -ipackages/ddc-build \
 		      -ipackages/ddc-driver \
 		      -ipackages/ddc-code \
-		      -ipackages/ddc-interface \
 		      -ipackages/ddc-tools/src/ddci-core
 
 
@@ -178,7 +170,6 @@ packages/ddc-tools/src/ddci-tetra/%.o : packages/ddc-tools/src/ddci-tetra/%.hs
 		      -ipackages/ddc-build \
 		      -ipackages/ddc-driver \
 		      -ipackages/ddc-code \
-		      -ipackages/ddc-interface \
 		      -ipackages/ddc-tools/src/ddci-tetra
 
 
@@ -197,7 +188,6 @@ packages/ddc-tools/src/ddc-main/%.o : packages/ddc-tools/src/ddc-main/%.hs
 		      -ipackages/ddc-build \
 		      -ipackages/ddc-driver \
 		      -ipackages/ddc-code \
-		      -ipackages/ddc-interface \
 		      -ipackages/ddc-tools/src/ddc-main
 
 
