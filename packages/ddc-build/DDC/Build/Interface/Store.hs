@@ -213,7 +213,7 @@ supersOfInterface ii
          , Just (csType, csValue, csBox) <- splitStdCallCons cs
          = (nSuper, (length csType, length csValue, length csBox))
 
-         | otherwise            = error "supersOfInterface: not prenex"
+         | otherwise = error "ddc-build.supersOfInterface: type is not in prenex form."
 
         nsLocalArities :: Map E.Name (Int, Int, Int)
                 =  Map.fromList
@@ -234,7 +234,7 @@ supersOfInterface ii
          | Just impt            <- lookup n (moduleImportValues mmTetra)
          = impt
 
-         | otherwise            = error $ "supersOfInterface: no source" ++ (show n)
+         | otherwise = error $ "ddc-build.supersOfInterface: no source" ++ show n
 
         makeSuper n tTetra
          | E.NameVar s  <- n

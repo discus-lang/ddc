@@ -158,7 +158,7 @@ phpOfExp xx ctx m
     XCast _ _ x
      -> phpOfExp x ctx m
     _
-     -> error ("No can do: " ++ show (ppr xx))
+     -> error ("ddc-core-babel.phpOfExp No can do: " ++ show (ppr xx))
  where
   wrap d
    = case ctx of
@@ -192,7 +192,7 @@ phpOfLets lets ctx m
         , m')
     
     _
-     -> error "phpOfLets: no private or withregion"
+     -> error "ddc-core-babel.phpOfLets: no private or withregion"
  where
   insertArity (b,x) mm
      | Just (bs, _) <- takeXLamFlags x
@@ -287,14 +287,14 @@ bare_name = ppr
 bare_name_b :: Bind T.Name -> Doc
 bare_name_b (BName n _) = bare_name n
 bare_name_b (BNone   _) = text "__NONE__"
-bare_name_b _ = error "Only named vars allowed"
+bare_name_b _ = error "ddc-core-babel.bare_name: Only named vars allowed"
 
 var_name_b :: Bind T.Name -> Doc
 var_name_b b = text "$" <> bare_name_b b
 
 var_name_u :: Bound T.Name -> Doc
 var_name_u (UName n) = text "$" <> bare_name n
-var_name_u (UIx _) = error "Only named vars allowed"
+var_name_u (UIx _) = error "ddc-core-babel.var_name: Only named vars allowed"
 var_name_u (UPrim n _) = sanitise_prim n
 
 var_name_t :: String -> Doc

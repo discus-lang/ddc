@@ -181,7 +181,7 @@ convertX xx
     _
      -> case takeXApps xx of
          Just (f,args) -> convertApp f args
-         Nothing       -> error "Impossible"
+         Nothing       -> error "ddc-core-flow.convertX: impossible!"
 
  | Just
     (DaConPrim (F.NameDaConFlow (F.DaConFlowTuple n)) _

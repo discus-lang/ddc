@@ -186,17 +186,17 @@ mkLets types env arrIns bs
     [(Ext (NameArray  b) xx _, _)] -> [LLet (BName b (types Map.! b)) xx]
     [(Ext (NameScalar b) xx _, _)] -> [LLet (BName b (types Map.! b)) xx]
 
-    _         -> error ("ddc-core-flow:DDC.Core.Flow.Transform.Rates.SeriesOfVector impossible\n" ++
-                        "an external node has been clustered with another node.\n" ++
-                        "this means there must be a bug in the clustering algorithm.\n" ++
-                        show bs)
+    _    -> error ("ddc-core-flow:DDC.Core.Flow.Transform.Rates.SeriesOfVector impossible\n" ++
+                   "an external node has been clustered with another node.\n" ++
+                   "this means there must be a bug in the clustering algorithm.\n" ++
+                   show bs)
 
  -- We *could* just return an empty list in this case, but I don't think that's a good idea.
  | [] <- bs
- =               error ("ddc-core-flow:DDC.Core.Flow.Transform.Rates.SeriesOfVector impossible\n" ++
-                        "a cluster was created with no bindings.\n" ++
-                        "this means there must be a bug in the clustering algorithm.\n" ++
-                        show bs)
+ =          error ("ddc-core-flow:DDC.Core.Flow.Transform.Rates.SeriesOfVector impossible\n" ++
+                   "a cluster was created with no bindings.\n" ++
+                   "this means there must be a bug in the clustering algorithm.\n" ++
+                   show bs)
 
  | otherwise
  = process types env arrIns
@@ -208,7 +208,7 @@ mkLets types env arrIns bs
 
   toEither (SBind s b, out) = ((s, Left  b), out)
   toEither (ABind a b, out) = ((a, Right b), out)
-  toEither (Ext{},     _)   = error "impossible"
+  toEither (Ext{},     _)   = error "ddc-core-flow.mkLets: impossible!"
 
 
 -- | Create a process for a cluster of array and scalar bindings.
@@ -292,7 +292,7 @@ process types env arrIns bs
    = [ LLet (BName s $ sctyOf s) (xRead (tyOf s) (var $ NameVarMod s "ref")) ]
 
    -- Ignore anything else
-   | _                                          <- b
+   | _   <- b
    = []
 
   runProcs body
@@ -307,10 +307,11 @@ process types env arrIns bs
    = let rest = mkProcs rs
      in  XLet (LLet   (BName (NameVarMod s "proc") $ tProcess procT $ klokT ain)
               $ xApps (xVarOpSeries OpSeriesReduce)
-                      [procX, klokX ain, xtyOf s, var (NameVarMod s "ref"), xf, xs, var (NameVarMod ain "s")])
+                      [ procX, klokX ain, xtyOf s, var (NameVarMod s "ref")
+                      , xf, xs, var (NameVarMod ain "s")])
          rest
 
-   | ((n, Right abind), out)                            <- b
+   | ((n, Right abind), out) <- b
    = let rest   = mkProcs rs
          n'proc = NameVarMod n "proc"
          n's    = NameVarMod n "s"
@@ -331,7 +332,8 @@ process types env arrIns bs
          MapN (Fun xf _) ains
           -> llet n's (tSeries procT (klokT n) $ sctyOf n)
            ( xApps (xVarOpSeries (OpSeriesMap (length ains)))
-                   ([procX, klokX n] ++ (map xsctyOf  ains) ++ [xsctyOf n, xf] ++ map (var . flip NameVarMod "s") ains) )
+                   ([procX, klokX n] ++ (map xsctyOf  ains) ++ [xsctyOf n, xf] 
+                        ++ map (var . flip NameVarMod "s") ains) )
              go
 
          Filter (Fun xf _) ain
@@ -357,14 +359,15 @@ process types env arrIns bs
          Gather v ix
           -> llet n's (tSeries procT (klokT n) $ sctyOf n)
            ( xApps (xVarOpSeries OpSeriesGather)
-                   ([ procX, klokX v, klokX ix, xsctyOf v, var $ NameVarMod v "rv", var $ NameVarMod ix "s"]) )
+                   ([ procX, klokX v, klokX ix, xsctyOf v
+                    , var $ NameVarMod v "rv", var $ NameVarMod ix "s"]) )
              go
          Cross _a _b
-          -> error "DDC.Core.Flow.Transform.Rates.SeriesOfVector: Cross combinator not implemented yet"
+          -> error "ddc-core-flow.process: Cross combinator not implemented yet"
 
    -- All cases are handled above
    | otherwise
-   = error "Impossible"
+   = error "ddc-core-flow.process: impossible!"
 
 
 
@@ -373,7 +376,7 @@ process types env arrIns bs
    = let procs = concatMap getProc bs
      in  case procs of
          (_:_)  -> foldl1 mkJoin $ concatMap getProc bs
-         []     -> error "cluster with no outputs?"
+         []     -> error "ddc-core-flow.process: cluster with no outputs?"
 
   mkJoin p q
    = xApps (xVarOpSeries OpSeriesJoin) [p, q]
@@ -398,7 +401,7 @@ process types env arrIns bs
       Right (MapN _ (i:_))
        -> goResize i   v rest
       Right (MapN _ [])
-       -> error "SeriesOfVector: Map with no inputs: impossible"
+       -> error "ddc-core-flow.process: Map with no inputs."
 
       Right (Filter _ ain)
        -> goResize ain

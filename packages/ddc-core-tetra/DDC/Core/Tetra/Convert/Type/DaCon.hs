@@ -62,7 +62,7 @@ convertCtorT ctx0 tt0
 
          -- Some other type that we can't convert.
          | otherwise
-         = error "converCtorT: nope"
+         = error "ddc-core-tetra.converCtorT: cannot convert type."
 
 
         -- Accepting value abstractions -------------------

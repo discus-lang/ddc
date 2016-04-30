@@ -66,7 +66,7 @@ convertSuperConsT ctx0 cs0 tt0
 
          -- Some other type abstraction we can't convert.
          | otherwise
-         = error "convertSuperConsT: cannot convert type abstraction."
+         = error "ddc-core-tetra.convertSuperConsT: cannot convert type abstraction."
 
 
         -- Accepting value abstractions -------------------

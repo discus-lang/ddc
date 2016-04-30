@@ -52,7 +52,7 @@ pathsOfFills ctx
   merge (PathAppend l _, t) (PathAppend _ r, _)
    = (PathAppend l r, t)
   merge _ _
-   = error "dumbpossible"
+   = error "ddc-core-flow.pathsOfFills: impossible!"
 
   path c@ContextRate{} 
    = PathRate $ contextRate c
