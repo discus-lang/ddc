@@ -1,0 +1,28 @@
+
+module Things 
+export { defnord
+       ; nat1; text1; fnord1; comp1}
+import Data.Text
+where
+
+-- A polymorphic value type.
+data Fnord (a: Data) where
+        Fnord : Fnord a
+
+-- Consume a fnord.
+defnord (x: Fnord a): Nat#
+ = 42 + nat1
+
+-- A monomorphic CAF.
+nat1 = 777
+
+-- Another monomporphic CAF.
+text1 = "marmot"
+
+-- A polymorphic CAF.
+fnord1 [a: Data]
+ = Fnord [a]
+
+-- A suspended computation as a CAF.
+comp1  = writel "beep1"
+

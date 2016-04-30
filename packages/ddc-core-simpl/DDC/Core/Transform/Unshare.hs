@@ -1,6 +1,6 @@
 
 module DDC.Core.Transform.Unshare
-        ( unshareModule)
+        (unshareModule)
 where
 import DDC.Core.Exp.Annot.AnTEC
 import DDC.Core.Exp.Annot
@@ -18,18 +18,78 @@ unshareModule
 
 unshareModule !mm
  = let
+        -- Add extra parameters to the types of imported CAFs.
+        importValuesNts 
+                = [ let (iv', m) = addParamsImportValue iv
+                    in  ((n, iv'), m)
+                  | (n, iv) <- moduleImportValues mm]
+
+        (importValues', ntssImport')
+                = unzip importValuesNts
+
         -- Add extra parameters to the CAFs,
         -- returning the names of the ones we've transformed
         -- along with the transformed module body.
-        (nts, xx)   = addParamsX $ moduleBody mm
+        (ntsBody, xx) = addParamsX $ moduleBody mm
 
         -- Add the corresponding arguments to each use.
-        xx'         = addArgsX nts xx
+        nts'    = Map.union (Map.unions ntssImport') ntsBody
+        xx'     = addArgsX nts' xx
  
-   in   mm { moduleBody = xx' }
- 
+        -- Update the types of exports with the transformed ones.
+        exportValues' 
+                = [ (n, updateExportSource nts' ex)
+                  | (n, ex) <- moduleExportValues mm ]
 
- -------------------------------------------------------------------------------
+   in   mm { moduleBody         = xx' 
+           , moduleExportValues = exportValues'  
+           , moduleImportValues = importValues' }
+
+-------------------------------------------------------------------------------
+-- | If this import def imports a CAF then then add an extra parameter to it
+--   to its type, assuming that the same transform has been applied to 
+---  the imported module.
+--
+addParamsImportValue 
+        :: ImportValue n -> (ImportValue n, Map n (Type n))
+
+addParamsImportValue iv 
+ = case iv of
+        ImportValueModule m n t (Just (nType, nValue, nBoxes))
+         -> case addParamsT t of
+                Just t' 
+                 -> ( ImportValueModule m n t' 
+                        (Just (nType, nValue + 1, nBoxes))
+                    , Map.singleton n t')
+
+                Nothing 
+                 -> ( iv, Map.empty)
+
+        ImportValueModule{} -> (iv, Map.empty)
+        ImportValueSea{}    -> (iv, Map.empty)
+
+
+-- | If this is the type of a CAF then add an extra unit parameter to it.
+addParamsT :: Type n -> Maybe (Type n)
+addParamsT tt
+ = case tt of
+        TVar{}  -> Just $ tUnit `tFun` tt
+        TCon{}  -> Just $ tUnit `tFun` tt
+
+        TForall b tBody
+         -> do  tBody'   <- addParamsT tBody
+                return   $  TForall b tBody'
+
+        TApp{}
+         -> case takeTFun tt of
+                Nothing -> Just $ tUnit `tFun` tt
+                Just _  -> Nothing
+
+        TSum{}
+         -> Nothing
+
+
+-------------------------------------------------------------------------------
 -- | Add unit parameters to the top-level CAFs in the given module body,
 --   returning a map of names of transformed CAFs to their transformed 
 --   types.
@@ -230,3 +290,19 @@ wrapAtsX !xF !tF ((aArg, tArg): ats)
 
     _ -> (xF, tF)
 
+
+-------------------------------------------------------------------------------
+-- | Update the types of exported things with the ones in 
+--   the give map.
+updateExportSource 
+        :: Ord n
+        => Map n (Type n) -> ExportSource n -> ExportSource n
+updateExportSource mm ex
+ = case ex of
+        ExportSourceLocal n _t
+         -> case Map.lookup n mm of
+                Nothing         -> ex
+                Just t'         -> ExportSourceLocal n t'
+
+        ExportSourceLocalNoType _
+         -> ex
