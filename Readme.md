@@ -24,6 +24,7 @@ DDC compiles several related languages:
      program and its 
      [output](https://github.com/DDCSF/ddc/blob/master/demo/Tetra/80-Rosetta/AlmostPrime/Main.stdout.check).
      
+     Example 
      [GrayCode](https://github.com/DDCSF/ddc/blob/master/demo/Tetra/80-Rosetta/GrayCode/Main.ds)
      program and its 
      [output](https://github.com/DDCSF/ddc/blob/master/demo/Tetra/80-Rosetta/GrayCode/Main.stdout.check).
