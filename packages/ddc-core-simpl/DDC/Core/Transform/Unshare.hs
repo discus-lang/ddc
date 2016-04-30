@@ -45,10 +45,11 @@ unshareModule !mm
            , moduleExportValues = exportValues'  
            , moduleImportValues = importValues' }
 
+
 -------------------------------------------------------------------------------
--- | If this import def imports a CAF then then add an extra parameter to it
---   to its type, assuming that the same transform has been applied to 
----  the imported module.
+-- | If this import def imports a CAF then then add an extra parameter to its
+--   type, assuming that the unsharing transform has also been applied to the
+--   imported module.
 --
 addParamsImportValue 
         :: ImportValue n -> (ImportValue n, Map n (Type n))
@@ -190,8 +191,8 @@ addArgsX nts xx
         -- Add an extra argument for a monomorphic CAF.
         XVar _a (UName n)
          -> case Map.lookup n nts of
-                Just tF -> fst $ wrapAppX xx tF
-                Nothing -> xx
+                Just tF   -> fst $ wrapAppX xx tF
+                Nothing   -> xx
 
         XVar{}            -> xx
         XCon{}            -> xx
@@ -297,6 +298,7 @@ wrapAtsX !xF !tF ((aArg, tArg): ats)
 updateExportSource 
         :: Ord n
         => Map n (Type n) -> ExportSource n -> ExportSource n
+
 updateExportSource mm ex
  = case ex of
         ExportSourceLocal n _t
@@ -306,3 +308,4 @@ updateExportSource mm ex
 
         ExportSourceLocalNoType _
          -> ex
+
