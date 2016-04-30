@@ -171,7 +171,5 @@ The following people contributed to DDC since the last major release:
 
  See the web-site:        http://disciple.ouroborus.net
  
- Getting Started Guide:   http://disciple.ouroborus.net/wiki/Tutorial/Core
- 
  Read the mailing list:   http://groups.google.com/group/disciple-cafe
 
