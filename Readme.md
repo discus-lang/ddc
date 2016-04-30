@@ -113,7 +113,7 @@ operators are included.
 ## How you can help
 
 1. Work through the tutorial on the web-site and send any comments to the
-    mailing list.] http://disciple.ouroborus.net/wiki/Tutorial
+    mailing list. http://disciple.ouroborus.net/wiki/Tutorial
 
 2. Say hello on the mailing list and we can help you get started on any of
     the main missing features. These are all interesting projects.
@@ -127,34 +127,36 @@ The following people contributed to DDC since the last major release:
 
 
 * Amos Robinson
-  . PHP code generator.
-  . Clustering and rate inference for Core Flow.
+  * PHP code generator.
+  * Clustering and rate inference for Core Flow.
 
 * Max Swadling           
-  . Added -run-static-link option for statically linked runtime.
+  * Added -run-static-link option for statically linked runtime.
 
 * Kyle Van Berendonck    
-  . Added case-of-known-constructor transform.
+  * Added case-of-known-constructor transform.
 
 * Jacob Stanley
-  . Code generation and build system fixes.
+  * Code generation and build system fixes.
 
 * Viktar Basharymau      
-  . Documentation fixes.
+  * Documentation fixes.
 
 * Erik de Castro Lopo
-  . Documentation fixes.
+  * Documentation fixes.
 
 * Ben Lippmeier          
-  . Added lambda lifter and code generation for higher order functions.
-  . Automatic insertion of run and box casts.
-  . Multi module compilation.
-  . Desugaring of guards.
+  * Added lambda lifter and code generation for higher order functions.
+  * Automatic insertion of run and box casts.
+  * Multi module compilation.
+  * Desugaring of guards.
 
 
 ## More Information:
 
  See the web-site:        http://disciple.ouroborus.net
+ 
  Getting Started Guide:   http://disciple.ouroborus.net/wiki/Tutorial/Core
+ 
  Read the mailing list:   http://groups.google.com/group/disciple-cafe
 
