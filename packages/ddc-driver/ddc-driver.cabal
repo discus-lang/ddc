@@ -40,6 +40,9 @@ Library
         DDC.Driver.Build.Locate
         DDC.Driver.Build.Main
 
+        DDC.Driver.Interface.Input
+        DDC.Driver.Interface.Source
+        
         DDC.Driver.Command.Flow.Concretize
         DDC.Driver.Command.Flow.Lower
         DDC.Driver.Command.Flow.Melt

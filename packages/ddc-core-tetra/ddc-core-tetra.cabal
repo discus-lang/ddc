@@ -49,6 +49,7 @@ Library
         DDC.Core.Tetra.Convert.Exp.PrimBoxing
         DDC.Core.Tetra.Convert.Exp.PrimCall
         DDC.Core.Tetra.Convert.Exp.PrimVector
+        DDC.Core.Tetra.Convert.Exp.PrimError
 
         DDC.Core.Tetra.Convert.Type.Base
         DDC.Core.Tetra.Convert.Type.DaCon
