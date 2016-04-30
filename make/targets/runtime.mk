@@ -42,5 +42,5 @@ runtime : $(runtime_dep) \
 .PHONY : clean-runtime
 clean-runtime :
 	@echo "* Cleaning runtime"
-	@rm packages/ddc-code/build/*
+	@rm -f packages/ddc-code/build/*
 
