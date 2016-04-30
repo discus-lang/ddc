@@ -19,10 +19,19 @@ DDC compiles several related languages:
    abstractions and applications when needed. Higher ranked types are
    supported with annotations.
 
-   Example: https://github.com/DDCSF/ddc/blob/master/demo/Tetra/80-Rosetta/AlmostPrime/Main.ds
-   
-   Example: https://github.com/DDCSF/ddc/blob/master/demo/Tetra/80-Rosetta/GrayCode/Main.ds
-   
+   Example 
+     [AlmostPrimes](https://github.com/DDCSF/ddc/blob/master/demo/Tetra/80-Rosetta/AlmostPrime/Main.ds)
+     program and its 
+     [output](https://github.com/DDCSF/ddc/blob/master/demo/Tetra/80-Rosetta/AlmostPrime/Main.stdout.check)
+     
+     [GrayCode](https://github.com/DDCSF/ddc/blob/master/demo/Tetra/80-Rosetta/GrayCode/Main.ds)
+     program and its 
+     [output](https://github.com/DDCSF/ddc/blob/master/demo/Tetra/80-Rosetta/GrayCode/Main.stdout.check)
+     
+     The [List.ds](https://github.com/DDCSF/ddc/blob/master/packages/ddc-code/tetra/base/Data/List.ds),
+      [Streams.ds](https://github.com/DDCSF/ddc/blob/master/packages/ddc-code/tetra/base/Data/Stream.ds)
+     and [Text.ds](https://github.com/DDCSF/ddc/blob/master/packages/ddc-code/tetra/base/Data/Text.ds)
+     library modules.
 
 * Disciple Core Tetra (.dct)
 
