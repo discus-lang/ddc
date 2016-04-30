@@ -10,6 +10,8 @@ import Data.List
 import Data.Maybe
 import Data.Tuple
 import Data.Array
+import Data.Numeric.Bool
+import Data.Function
 where
 
 

@@ -6,6 +6,7 @@ module DDC.Driver.Command.ToSalt
         , cmdToSaltCoreFromFile
         , cmdToSaltCoreFromString)
 where
+import DDC.Driver.Command.Compile
 import DDC.Driver.Stage
 import DDC.Driver.Config
 import DDC.Interface.Source
@@ -65,6 +66,9 @@ cmdToSaltSourceTetraFromFile config store filePath
         exists  <- liftIO $ doesFileExist filePath
         when (not exists)
          $ throwE $ "No such file " ++ show filePath
+
+        -- Call the compiler to build/load all dependent modules.
+        cmdCompileRecursive config False store filePath
 
         -- Read in the source file.
         src     <- liftIO $ readFile filePath

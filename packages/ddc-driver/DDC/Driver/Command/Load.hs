@@ -8,14 +8,15 @@ module DDC.Driver.Command.Load
         , cmdLoadSimplifier
         , cmdLoadSimplifierIntoBundle)
 where
+import DDC.Driver.Command.Compile
+import DDC.Driver.Command.Read
+import DDC.Driver.Stage
+import DDC.Driver.Config
 import DDC.Interface.Source
 import DDC.Build.Pipeline
 import DDC.Build.Language
 import DDC.Core.Simplifier.Parser
 import DDC.Core.Transform.Reannotate
-import DDC.Driver.Command.Read
-import DDC.Driver.Stage
-import DDC.Driver.Config
 import DDC.Core.Exp.Annot.AnTEC
 import DDC.Core.Pretty
 import DDC.Data.SourcePos
@@ -45,6 +46,9 @@ import qualified DDC.Core.Tetra                 as Tetra
 --   extension.
 --      
 --   We also take the specification of a simplifier to apply to the module.
+--
+--   For Source Tetra modules, dependent modules will be compiled,
+--   or their interfaces loaded as needed.
 --
 cmdLoadFromFile
         :: Config               -- ^ Driver config.
@@ -77,11 +81,14 @@ cmdLoadFromFile config store mStrSimpl fsTemplates filePath
  | ".ds"        <- takeExtension filePath
  = case mStrSimpl of
         Nothing
-         ->     cmdLoadSourceTetraFromFile config store Tetra.bundle filePath
+         -> do  cmdLoadSourceTetraFromFile config store Tetra.bundle filePath
 
         Just strSimpl
-         -> do  bundle' <- cmdLoadSimplifierIntoBundle config 
+         -> do  -- Parse the specified simplifier.
+                bundle' <- cmdLoadSimplifierIntoBundle config 
                                 Tetra.bundle strSimpl fsTemplates
+
+                -- Load a simplify the target module.
                 cmdLoadSourceTetraFromFile config store bundle' filePath
 
  -- Load a module in some fragment of Disciple Core.
@@ -118,9 +125,12 @@ cmdLoadSourceTetraFromFile config store bundle filePath
         when (not exists)
          $ throwE $ "No such file " ++ show filePath
 
+        -- Call the compiler to build/load all dependent modules.
+        cmdCompileRecursive config False store filePath
+
         -- Read in the source file.
         src     <- liftIO $ readFile filePath
-
+                
         cmdLoadSourceTetraFromString config store bundle 
                 (SourceFile filePath) src
 
@@ -261,15 +271,11 @@ cmdLoadSimplifierIntoBundle config bundle strSimpl fsTemplates
         -- Zap annotations on the loaded modules.
         -- Any type errors will already have been displayed, so we don't need 
         -- the source position info any more.
-        let zapAnnot annot
-                = annot { annotTail = () }
-
-        let modules_new 
-                = map (reannotate zapAnnot) modules_annot
+        let zapAnnot annot = annot { annotTail = () }
+        let modules_new    = map (reannotate zapAnnot) modules_annot
 
         -- Collect all definitions from modules
-        let modules_all
-                = Map.elems modules_bundle ++ modules_new
+        let modules_all    = Map.elems modules_bundle ++ modules_new
 
         -- Wrap up the inliner templates and current rules into
         -- a SimplifierDetails, which we give to the Simplifier parser.
@@ -280,9 +286,6 @@ cmdLoadSimplifierIntoBundle config bundle strSimpl fsTemplates
 
         -- Parse the simplifer string.
         case parseSimplifier readName details strSimpl of
-         Left err
-          -> throwE $ renderIndent $ ppr err
-
-         Right simpl
-          -> return $ bundle { bundleSimplifier = simpl }
+         Left err    -> throwE $ renderIndent $ ppr err
+         Right simpl -> return $ bundle { bundleSimplifier = simpl }
 
