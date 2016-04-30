@@ -113,12 +113,12 @@ cmdCompileRecursiveDS  config  bBuildExe  store (filePath:fs) fsBlocked
                 -- Build other modules that are still queued.
                 cmdCompileRecursiveDS config bBuildExe store fs []
 
-         -- We still need to load or comile dependent modules.
+         -- We still need to load or compile dependent modules.
          ms -> do
                 -- Determine filepaths for all dependent modules.
                 fsMore  <- mapM (locateModuleFromConfig config) ms
 
-                -- Check that we're not a a recursive loop, 
+                -- Check that we're not on a recursive loop, 
                 -- trying to compile a module that's importing itself.
                 let fsRec = List.intersect fsMore fsBlocked
                 when (not $ null fsRec)
@@ -162,19 +162,15 @@ cmdLoadOrCompile config buildExe store filePath
         -- it imports.
         modNamesNeeded  <- tasteNeeded filePath src
 
-        -- At this point we should have all the interfaces needed for the current module,
-        -- and need to decide whether we can reload an existing interface file for the
-        -- current module, or need to rebuild.
-        --  
-        -- It's safe to reload if:
-        --      1. There is an existing interface which is fresher than the source.
-        --      2. There is an existing object    which is fresher than the source.
-        --      3. There is an existing interface which is fresher than the 
-        --         interfaces of all dependencies.
+        -- It's safe to reload the module from an inteface file if:
+        --  1. There is an existing interface which is fresher than the source.
+        --  2. There is an existing object    which is fresher than the source.
+        --  3. There is an existing interface which is fresher than the 
+        --     interfaces of all dependencies.
         --
-        -- Additionally, we force rebuild for the top level module, because that's what
-        -- was mentioned on the command line. We're trying to follow the principle of
-        -- least surprise in this regard.
+        -- Additionally, we force rebuild for the top level module, because
+        -- that's what was mentioned on the command line. We're trying to
+        -- follow the principle of least surprise in this regard.
         --
         let filePathO   =  objectPathOfConfig config filePath
         let filePathDI  =  replaceExtension filePathO ".di"
