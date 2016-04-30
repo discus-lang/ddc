@@ -22,11 +22,11 @@ DDC compiles several related languages:
    Example 
      [AlmostPrimes](https://github.com/DDCSF/ddc/blob/master/demo/Tetra/80-Rosetta/AlmostPrime/Main.ds)
      program and its 
-     [output](https://github.com/DDCSF/ddc/blob/master/demo/Tetra/80-Rosetta/AlmostPrime/Main.stdout.check)
+     [output](https://github.com/DDCSF/ddc/blob/master/demo/Tetra/80-Rosetta/AlmostPrime/Main.stdout.check).
      
      [GrayCode](https://github.com/DDCSF/ddc/blob/master/demo/Tetra/80-Rosetta/GrayCode/Main.ds)
      program and its 
-     [output](https://github.com/DDCSF/ddc/blob/master/demo/Tetra/80-Rosetta/GrayCode/Main.stdout.check)
+     [output](https://github.com/DDCSF/ddc/blob/master/demo/Tetra/80-Rosetta/GrayCode/Main.stdout.check).
      
      The [List.ds](https://github.com/DDCSF/ddc/blob/master/packages/ddc-code/tetra/base/Data/List.ds),
       [Streams.ds](https://github.com/DDCSF/ddc/blob/master/packages/ddc-code/tetra/base/Data/Stream.ds)
