@@ -70,7 +70,7 @@ operators are included.
 * Added desugaring of guards.
 
 * Added primitives for dealing with arrays of boxed values and vectors
-   of primitive, unboxed values.
+   of primitive unboxed values.
 
 * Added first cut PHP code generator.
 
