@@ -82,6 +82,9 @@ Library
         DDC.Core.Parser
         DDC.Core.Pretty
 
+        DDC.Type.Exp.Generic.Exp
+        DDC.Type.Exp.TyCon
+
         DDC.Type.Transform.BoundT
         DDC.Type.Transform.Instantiate
         DDC.Type.Transform.Rename

@@ -1,12 +1,12 @@
 {-# LANGUAGE TypeFamilies, UndecidableInstances #-}
 
--- | Generic expression representation.
+-- | Generic term expression representation.
 module DDC.Core.Exp.Generic.Exp where
 import DDC.Core.Exp.DaCon
 import qualified DDC.Type.Exp   as T
 
 
----------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 -- | Type functions associated with a language definition.
 --
 --   These produce the types used for annotations, bindings, bound occurrences
@@ -18,8 +18,8 @@ type family GBound l
 type family GPrim  l
 
 
----------------------------------------------------------------------------------------------------
--- | Generic expression representation.
+-------------------------------------------------------------------------------
+-- | Generic term expression representation.
 data GExp l
         -- | An annotated expression.
         = XAnnot   !(GAnnot l)  !(GExp l)
@@ -88,7 +88,8 @@ data GLets l
         -- | Recursive binding.
         | LRec     ![(GBind l, GExp l)]
 
-        -- | Introduce a private region variable and witnesses to its properties.
+        -- | Introduce a private region variable and witnesses to
+        --   its properties.
         | LPrivate ![GBind l] !(Maybe (T.Type l)) ![GBind l]
 
 
@@ -145,10 +146,13 @@ data GWiCon l
         = WiConBound   !(GBound l) !(T.Type l)
 
 
----------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 -- | Synonym for Show constraints of all language types.
 type ShowLanguage l
-        = (Show l, Show (GAnnot l), Show (GBind l), Show (GBound l), Show (GPrim l))
+        = ( Show l
+          , Show (GAnnot l)
+          , Show (GBind l), Show (GBound l)
+          , Show (GPrim l))
 
 deriving instance ShowLanguage l => Show (GExp     l)
 deriving instance ShowLanguage l => Show (GAbs     l)

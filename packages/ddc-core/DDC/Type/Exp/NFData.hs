@@ -67,27 +67,10 @@ instance NFData n => NFData (TypeSumVarCon n) where
 instance NFData n => NFData (TyCon n) where
  rnf tc
   = case tc of
-        TyConSort    con        -> rnf con
-        TyConKind    con        -> rnf con
-        TyConWitness con        -> rnf con
-        TyConSpec    con        -> rnf con
+        TyConSort    _          -> ()
+        TyConKind    _          -> ()
+        TyConWitness _          -> ()
+        TyConSpec    _          -> ()
         TyConBound   con k      -> rnf con `seq` rnf k
         TyConExists  n   k      -> rnf n   `seq` rnf k
-
-
-instance NFData SoCon where
- rnf !_ = ()
-
-
-instance NFData KiCon where
- rnf !_ = ()
-
-
-instance NFData TwCon where
- rnf !_ = ()
-
-
-instance NFData TcCon where
- rnf !_ = ()
-
 
