@@ -36,14 +36,15 @@ data GType l
 -- | Wrapper for primitive constructors that adds the ones
 --   common to SystemFw based languages.
 data GCon l
-        -- | The arrow constructor at the given level.
-        = TConArr    !Int
+        -- | The arrow constructor.
+        = TConArr
 
         -- | Primitive constructors.
         | TConPrim   !(GPrim l)
 
-        -- | Take the least upper bound at the given kind.
-        | TConSum    !(GPrim l)
+        -- | Take the least upper bound at the given kind,
+        --   of the given number of elements.
+        | TConSum    !(GPrim l) Int
 
         -- | The least element of the given kind.
         | TConZero   !(GPrim l)
