@@ -60,6 +60,7 @@ Library
         DDC.Core.Llvm.Convert.Type
 
         DDC.Llvm.Pretty.Attr
+        DDC.Llvm.Pretty.Base
         DDC.Llvm.Pretty.Exp
         DDC.Llvm.Pretty.Function
         DDC.Llvm.Pretty.Instr

@@ -27,8 +27,8 @@ instance Pretty FunctionDecl where
     in  ppr l   <+> ppr c 
                 <+> ppr r 
                 <+> text " @" 
-                <> ppr n <> brackets (args' <> varg') 
-                <> align'
+                <>  ppr n <> brackets (args' <> varg') 
+                <>  align'
 
 
 instance Pretty TypeAlias where
@@ -52,10 +52,10 @@ instance Pretty Type where
          -> text "<{" <> (hcat $ punctuate comma (map ppr tys)) <> text "}>"
 
         TArray nr tp
-         -> brackets (integer nr <> text " x " <> ppr tp)
+         -> brackets  $ integer nr <> text " x " <> ppr tp
 
         TAlias (TypeAlias s _)  
-         -> text "%" <> text s
+         -> text "%"  <> text s
 
         TFunction (FunctionDecl _ _ _ r varg params _)
          -> let varg' = case varg of
@@ -67,7 +67,4 @@ instance Pretty Type where
                 args    = hcat $ punctuate comma $ map ppr params
 
             in ppr r <> parens (args <> varg')
-
-
-
 

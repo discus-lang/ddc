@@ -131,7 +131,6 @@ instance Pretty Instr where
                 <+> text "getelementptr"
                 <+> (hcat $ punctuate (text ", ") $ (ppr xSrc : map ppr os))
 
-
         -- Other operations -------------------------------
         ICmp vDst (ICond icond) x1 x2
          -> padVar vDst

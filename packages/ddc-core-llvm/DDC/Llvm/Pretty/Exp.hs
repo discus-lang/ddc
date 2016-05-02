@@ -73,10 +73,8 @@ pprPlainL ll
          -> text "c" <> pprString txEnc
 
 
+-- | Pretty print an LLVM string.
 pprString :: Text -> Doc
 pprString tx
  = text "\"" <> text (T.unpack tx) <> text "\""
-
-
-
 

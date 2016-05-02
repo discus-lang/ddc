@@ -3,6 +3,7 @@ module DDC.Llvm.Pretty.Prim where
 import DDC.Llvm.Syntax.Prim
 import DDC.Base.Pretty
 
+
 instance Pretty Op where
  ppr op
   = case op of
