@@ -90,8 +90,8 @@ l20.entry:
 
 
 
-!16 = metadata !{metadata !"ptr_r", metadata !15, i32 0}
-!15 = metadata !{metadata !"ptr_ROOT_14", null, i32 1}
+!16 = !{!"ptr_r",  !15, i32 0}
+!15 = !{!"ptr_ROOT_14", null, i32 1}
 
 
 
