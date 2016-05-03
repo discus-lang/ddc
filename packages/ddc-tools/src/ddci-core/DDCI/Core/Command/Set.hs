@@ -7,8 +7,6 @@ where
 import DDCI.Core.State
 import DDCI.Core.Mode
 import DDCI.Core.Output
-import DDC.Build.Builder
-import DDC.Build.Language
 import DDC.Core.Fragment
 import DDC.Core.Simplifier.Parser
 import DDC.Core.Transform.Reannotate
@@ -16,6 +14,7 @@ import DDC.Base.Pretty
 import Control.Monad
 import Data.Char
 import Data.List
+import qualified DDC.Build.Builder              as Build
 import qualified DDC.Core.Check                 as Check
 import qualified DDCI.Core.Rewrite              as R
 import qualified Data.Map                       as Map
@@ -38,7 +37,8 @@ cmdSet state []
          $ vcat  [ text "Modes:      " <> text (show $ Set.toList $ stateModes state)
                  , text "Language:   " <> text langName
                  , text "Simplifier: " <> ppr  simpl
-                 , text "Builder:    " <> text (show $ liftM builderName $ stateBuilder state) ]
+                 , text "Builder:    " 
+                       <> text (show $ liftM Build.builderName $ stateBuilder state) ]
          <$> vcat (text "With:       " : map ppr (Map.keys modules))
          <$> vcat (text "With Salt:  " : map ppr (Map.keys (stateWithSalt state)))
 
@@ -111,14 +111,25 @@ cmdSet state cmd
 
  | "builder" : name : []     <- words cmd
  = do   config  <- getDefaultBuilderConfig
-        case find (\b -> builderName b == name) (builders config) of
+        mHost   <- Build.determineDefaultBuilderHost
+
+        case mHost of
          Nothing
-          -> do  putStrLn "unknown builder"
+          -> do  putStrLn "cannot determine build environment"
                  return state
 
-         Just builder
-          -> do  chatStrLn state "ok"
-                 return state { stateBuilder = Just builder }
+         Just host
+          -> case find (\b -> Build.builderName b == name) 
+                       (Build.builders config host) of
+
+                 Nothing
+                  -> do  putStrLn "unknown builder"
+                         return state
+
+                 Just builder
+                  -> do  chatStrLn state "ok"
+                         return state { stateBuilder = Just builder }
+
 
  | "outputdir" : dir : []    <- words cmd
  = return $ state { stateOutputDir  = Just dir }

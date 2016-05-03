@@ -12,12 +12,15 @@ module DDC.Build.Platform
         -- * Host platform
         , determineHostPlatform
         , determineHostArch
-        , determineHostOs)
+        , determineHostOs
+        , determineHostLlvmVersion)
 where
 import DDC.Base.Pretty
-import System.Process
-import System.Exit
-import Data.List
+import Data.List                as List
+import Data.Maybe               as Maybe
+import Data.Char                as Char
+import qualified System.Process as System
+import qualified System.Exit    as System
 
 
 -------------------------------------------------------------------------------
@@ -126,10 +129,12 @@ determineHostPlatform
 determineHostArch :: IO (Maybe Arch)
 determineHostArch
  = do   (exitCode, strArch, _) 
-         <- readProcessWithExitCode "uname" ["-m"] ""
+         <- System.readProcessWithExitCode "uname" ["-m"] ""
 
         let result
-                | ExitFailure{} <- exitCode     = Nothing
+                | System.ExitFailure{} <- exitCode     
+                = Nothing
+
                 | isPrefixOf "i386"   strArch   = Just ArchX86_32
                 | isPrefixOf "i486"   strArch   = Just ArchX86_32
                 | isPrefixOf "i586"   strArch   = Just ArchX86_32
@@ -147,10 +152,12 @@ determineHostArch
 determineHostOs :: IO (Maybe Os)
 determineHostOs 
  = do   (exitCode, strOs, _)
-         <- readProcessWithExitCode "uname" [] ""
+         <- System.readProcessWithExitCode "uname" [] ""
         
         let result
-                | ExitFailure{} <- exitCode     = Nothing
+                | System.ExitFailure{} <- exitCode     
+                = Nothing
+
                 | isPrefixOf "Darwin" strOs     = Just OsDarwin
                 | isPrefixOf "Linux"  strOs     = Just OsLinux
                 | isPrefixOf "CYGWIN" strOs     = Just OsCygwin
@@ -158,4 +165,32 @@ determineHostOs
                 | otherwise                     = Nothing
 
         return result
+
+
+-- | Determine the host LLVM version string, eg "3.5.2"
+--   Takes the path to the LLVM compiler to use, 
+--   or `Nothing` to use whatever is in the current path.
+determineHostLlvmVersion :: Maybe FilePath -> IO (Maybe String)
+determineHostLlvmVersion mpath
+ = do
+        let path    = fromMaybe "llc" mpath
+        (exitCode, strAll, _)
+         <- System.readProcessWithExitCode path ["-version"] ""
+
+        case exitCode of 
+         System.ExitFailure{}
+          -> return Nothing
+
+         System.ExitSuccess
+          -> do -- Supplying -version gives us the LLVM title as well as
+                -- a list of all registered targets.
+                let ls      = map      (takeWhile $ not . Char.isSpace)
+                            $ map      (dropWhile Char.isSpace)
+                            $ mapMaybe (stripPrefix "LLVM version")
+                            $ map      (dropWhile Char.isSpace)
+                            $ lines strAll
+
+                case ls of
+                 [str]  -> return $ Just str
+                 _      -> return Nothing
 

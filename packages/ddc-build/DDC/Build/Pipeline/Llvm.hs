@@ -5,10 +5,10 @@ module DDC.Build.Pipeline.Llvm
 where
 import DDC.Build.Pipeline.Error
 import DDC.Build.Pipeline.Sink
-import DDC.Build.Builder
-import DDC.Llvm.Pretty                          ()
 import DDC.Base.Pretty
 import Control.Monad
+import qualified DDC.Build.Builder              as Build
+import qualified DDC.Llvm.Pretty                as Llvm
 import qualified DDC.Llvm.Syntax                as Llvm
 import System.Directory
 
@@ -18,7 +18,7 @@ data PipeLlvm
         = PipeLlvmPrint     Sink
 
         | PipeLlvmCompile   
-        { pipeBuilder           :: Builder
+        { pipeBuilder           :: Build.Builder
         , pipeFileLlvm          :: FilePath
         , pipeFileAsm           :: FilePath
         , pipeFileObject        :: FilePath
@@ -47,15 +47,25 @@ pipeLlvm !mm !pp
                 !builder !llPath !sPath !oPath !mExePath !osLinkOther
                 !keepLlvmFiles !keepAsmFiles
          -> {-# SCC "PipeLlvmCompile" #-}
-            do  -- Write out the LLVM source file.
-                let llSrc       = renderIndent $ ppr mm
+            do  
+                -- LLVM config.
+                let llConfig    = Llvm.Config
+                                { Llvm.configLlvmVersion = Build.buildLlvmVersion builder }
+
+                -- Pretty printer mode to use for the current LLVM version.
+                let llMode      = Llvm.prettyModeModuleOfConfig llConfig
+
+                putStrLn $ Build.buildLlvmVersion builder
+
+                -- Write out the LLVM source file.
+                let llSrc       = renderIndent $ pprModePrec llMode (0 :: Int) mm
                 writeFile llPath llSrc
 
                 -- Compile LLVM source file into .s file.
-                buildLlc builder llPath sPath
+                Build.buildLlc builder llPath sPath
 
                 -- Assemble .s file into .o file
-                buildAs builder  sPath  oPath
+                Build.buildAs builder  sPath  oPath
 
                 -- Link .o file into an executable if we were asked for one.      
                 (case mExePath of
@@ -63,7 +73,7 @@ pipeLlvm !mm !pp
                    -> return ()
 
                   Just exePath
-                   -> do buildLdExe builder (oPath : osLinkOther) exePath
+                   -> do Build.buildLdExe builder (oPath : osLinkOther) exePath
                          return ())
 
                 -- Remove LLVM IR files if we weren't asked for them.

@@ -1,11 +1,13 @@
 
 module DDC.Build.Builder
         ( BuilderConfig (..)
+        , BuilderHost   (..)
         , Builder       (..)
         , BuilderResult (..)
         , builders
 
-        , determineDefaultBuilder)
+        , determineDefaultBuilder
+        , determineDefaultBuilderHost)
 where
 import DDC.Build.Platform
 import DDC.Base.Pretty                          hiding ((</>))
@@ -27,8 +29,16 @@ data BuilderConfig
           --   system and base library.
         , builderConfigBaseLibDir       :: FilePath
 
-          -- | Runtime library link with.
+          -- | Runtime library to link with.
         , builderConfigLibFile          :: FilePath -> FilePath -> FilePath }
+
+
+-- | Builder information that we determine by interrogating the host platform.
+--   This tells us what we need to know about the environment that we're 
+--   building in, versions of software tools etc. This is separate 
+data BuilderHost
+        = BuilderHost
+        { builderHostLlvmVersion        :: String }
 
 
 -- | Actions to use to invoke external compilation tools.
@@ -62,6 +72,9 @@ data Builder
           -- | Invoke the LLVM compiler
           --   to compile a .ll file into a .s file.
         , buildLlc              :: FilePath -> FilePath -> IO ()
+
+          -- | Version string of the LLVM compiler suite we are using.
+        , buildLlvmVersion      :: String 
 
           -- | Invoke the system assembler
           --   to assemble a .s file into a .o file.
@@ -126,13 +139,13 @@ instance Pretty Builder where
 --      @x86_32-cygwin@,
 --      @ppc32-linux@
 --
-builders :: BuilderConfig -> [Builder]
-builders config
- =      [ builder_X8632_Darwin config
-        , builder_X8664_Darwin config
-        , builder_X8632_Linux  config 
-        , builder_X8664_Linux  config
-        , builder_PPC32_Linux  config ]
+builders :: BuilderConfig -> BuilderHost -> [Builder]
+builders config host
+ =      [ builder_X8632_Darwin config host
+        , builder_X8664_Darwin config host
+        , builder_X8632_Linux  config host
+        , builder_X8664_Linux  config host
+        , builder_PPC32_Linux  config host ]
 
 
 -- defaultBuilder -------------------------------------------------------------
@@ -144,34 +157,51 @@ builders config
 determineDefaultBuilder :: BuilderConfig -> IO (Maybe Builder)
 determineDefaultBuilder config
  = do   mPlatform       <- determineHostPlatform
+        mHost           <- determineDefaultBuilderHost
 
-        case mPlatform of
-         Just (Platform ArchX86_32 OsDarwin)    
-                -> return $ Just (builder_X8632_Darwin config)
+        case (mPlatform, mHost) of
+         (Just (Platform ArchX86_32 OsDarwin), Just host)
+                -> return $ Just (builder_X8632_Darwin config host)
 
-         Just (Platform ArchX86_64 OsDarwin)    
-                -> return $ Just (builder_X8664_Darwin config)
+         (Just (Platform ArchX86_64 OsDarwin), Just host)
+                -> return $ Just (builder_X8664_Darwin config host)
 
-         Just (Platform ArchX86_32 OsLinux)
-                -> return $ Just (builder_X8632_Linux  config)
+         (Just (Platform ArchX86_32 OsLinux),  Just host)
+                -> return $ Just (builder_X8632_Linux  config host)
 
-         Just (Platform ArchX86_64 OsLinux)
-                -> return $ Just (builder_X8664_Linux  config)
+         (Just (Platform ArchX86_64 OsLinux),  Just host)
+                -> return $ Just (builder_X8664_Linux  config host)
 
-         Just (Platform ArchPPC_32 OsLinux)
-                -> return $ Just (builder_PPC32_Linux  config)
+         (Just (Platform ArchPPC_32 OsLinux),  Just host)
+                -> return $ Just (builder_PPC32_Linux  config host)
 
-         Just (Platform ArchX86_32 OsCygwin)
-                -> return $ Just (builder_X8632_Cygwin config)
+         (Just (Platform ArchX86_32 OsCygwin), Just host)
+                -> return $ Just (builder_X8632_Cygwin config host)
 
-         Just (Platform ArchX86_32 OsMingw)
-                -> return $ Just (builder_X8632_Mingw config)
+         (Just (Platform ArchX86_32 OsMingw),  Just host)
+                -> return $ Just (builder_X8632_Mingw  config host)
 
          _      -> return Nothing
 
 
+-- | Determine the default builder host configuration, 
+--   this the default set of build tools that we can see in the current path.
+determineDefaultBuilderHost :: IO (Maybe BuilderHost)
+determineDefaultBuilderHost
+ = do   
+        -- Get the version of the LLVM suite in the current path.
+        mStrLlvmVersion  <- determineHostLlvmVersion Nothing
+        case mStrLlvmVersion of
+         Nothing 
+          -> return Nothing
+
+         Just strLlvmVersion
+          -> return  $ Just $ BuilderHost
+                     { builderHostLlvmVersion = strLlvmVersion }
+
+
 -- x86_32-darwin ----------------------------------------------------------------
-builder_X8632_Darwin config
+builder_X8632_Darwin config host
  =      Builder 
         { builderName           = "x86_32-darwin" 
         , buildHost             = Platform ArchX86_32 OsDarwin
@@ -180,6 +210,7 @@ builder_X8632_Darwin config
         , buildBaseSrcDir       = builderConfigBaseSrcDir config
         , buildBaseLibDir       = builderConfigBaseLibDir config
 
+        , buildLlvmVersion      = builderHostLlvmVersion  host
         , buildLlc    
                 = \llFile sFile
                 -> doCmd "LLVM compiler"        [(2, BuilderCanceled)]
@@ -228,7 +259,7 @@ builder_X8632_Darwin config
         }
 
 -- x86_64-darwin --------------------------------------------------------------
-builder_X8664_Darwin config
+builder_X8664_Darwin config host
  =      Builder
         { builderName           = "x86_64-darwin"
         , buildHost             = Platform ArchX86_64 OsDarwin
@@ -237,6 +268,7 @@ builder_X8664_Darwin config
         , buildBaseSrcDir       = builderConfigBaseSrcDir config
         , buildBaseLibDir       = builderConfigBaseLibDir config
 
+        , buildLlvmVersion      = builderHostLlvmVersion  host
         , buildLlc    
                 = \llFile sFile
                 -> doCmd "LLVM compiler"        [(2, BuilderCanceled)]
@@ -286,7 +318,7 @@ builder_X8664_Darwin config
 
 
 -- x86_32-linux ---------------------------------------------------------------
-builder_X8632_Linux config
+builder_X8632_Linux config host
  =      Builder
         { builderName           = "x86_32-linux"
         , buildHost             = Platform ArchX86_32 OsLinux
@@ -295,6 +327,7 @@ builder_X8632_Linux config
         , buildBaseSrcDir       = builderConfigBaseSrcDir config
         , buildBaseLibDir       = builderConfigBaseLibDir config
 
+        , buildLlvmVersion      = builderHostLlvmVersion  host
         , buildLlc    
                 = \llFile sFile
                 -> doCmd "LLVM compiler"        [(2, BuilderCanceled)]
@@ -343,7 +376,7 @@ builder_X8632_Linux config
 
 
 -- x86_64-linux ---------------------------------------------------------------
-builder_X8664_Linux config
+builder_X8664_Linux config host
  =      Builder
         { builderName           = "x86_64-linux"
         , buildHost             = Platform ArchX86_64 OsLinux
@@ -352,6 +385,7 @@ builder_X8664_Linux config
         , buildBaseSrcDir       = builderConfigBaseSrcDir config
         , buildBaseLibDir       = builderConfigBaseLibDir config
 
+        , buildLlvmVersion      = builderHostLlvmVersion  host
         , buildLlc    
                 = \llFile sFile
                 -> doCmd "LLVM compiler"        [(2, BuilderCanceled)]
@@ -400,7 +434,7 @@ builder_X8664_Linux config
 
 
 -- ppc32-linux ---------------------------------------------------------------
-builder_PPC32_Linux config
+builder_PPC32_Linux config host
  =      Builder
         { builderName           = "ppc32-linux"
         , buildHost             = Platform ArchPPC_32 OsLinux
@@ -409,6 +443,7 @@ builder_PPC32_Linux config
         , buildBaseSrcDir       = builderConfigBaseSrcDir config
         , buildBaseLibDir       = builderConfigBaseLibDir config
 
+        , buildLlvmVersion      = builderHostLlvmVersion  host
         , buildLlc    
                 = \llFile sFile
                 -> doCmd "LLVM compiler"        [(2, BuilderCanceled)]
@@ -456,7 +491,7 @@ builder_PPC32_Linux config
 
 
 -- x86_32-cygwin ---------------------------------------------------------------
-builder_X8632_Cygwin config
+builder_X8632_Cygwin config host
  =      Builder
         { builderName           = "x86_32-cygwin"
         , buildHost             = Platform ArchX86_32 OsCygwin
@@ -465,6 +500,7 @@ builder_X8632_Cygwin config
         , buildBaseSrcDir       = builderConfigBaseSrcDir config
         , buildBaseLibDir       = builderConfigBaseLibDir config
 
+        , buildLlvmVersion      = builderHostLlvmVersion  host
         , buildLlc    
                 = \llFile sFile
                 -> doCmd "LLVM compiler"        [(2, BuilderCanceled)]
@@ -513,7 +549,7 @@ builder_X8632_Cygwin config
 
 
 -- x86_32-mingw ----------------------------------------------------------------
-builder_X8632_Mingw config
+builder_X8632_Mingw config host
  =      Builder
         { builderName           = "x86_32-mingw"
         , buildHost             = Platform ArchX86_32 OsMingw
@@ -522,6 +558,7 @@ builder_X8632_Mingw config
         , buildBaseSrcDir       = builderConfigBaseSrcDir config
         , buildBaseLibDir       = builderConfigBaseLibDir config
 
+        , buildLlvmVersion      = builderHostLlvmVersion  host
         , buildLlc    
                 = \llFile sFile
                 -> doCmd "LLVM compiler"        [(2, BuilderCanceled)]

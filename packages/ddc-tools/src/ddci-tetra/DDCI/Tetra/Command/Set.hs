@@ -4,10 +4,10 @@ module DDCI.Tetra.Command.Set
 where
 import DDCI.Tetra.State
 import DDCI.Tetra.Mode
-import DDC.Build.Builder
 import DDC.Base.Pretty
 import Data.Char
 import Data.List
+import qualified DDC.Build.Builder      as Build
 import qualified Data.Set               as Set
 
 
@@ -22,15 +22,26 @@ cmdSet state []
 
 cmdSet state cmd
  | "builder" : name : []        <- words cmd
- = do   config <- getDefaultBuilderConfig
-        case find (\b -> builderName b == name) (builders config) of
-         Nothing
-          -> do putStrLn "unknown builder"
+ = do   config  <- getDefaultBuilderConfig
+        mHost   <- Build.determineDefaultBuilderHost 
+
+        case mHost of
+         Nothing        
+          -> do putStrLn "cannot determine build environment"
                 return state
 
-         Just builder
-          -> do putStrLn "ok"
-                return state { stateBuilder = Just builder }
+         Just host
+          -> case find (\b -> Build.builderName b == name) 
+                       (Build.builders config host) of
+
+              Nothing
+               -> do putStrLn "unknown builder"
+                     return state
+
+              Just builder
+               -> do putStrLn "ok"
+                     return state { stateBuilder = Just builder }
+
 
  | otherwise
  = case parseModeChanges cmd of
