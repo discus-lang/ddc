@@ -2,7 +2,7 @@
 -- | Pretty printer instances for the Llvm syntax.
 module DDC.Llvm.Pretty 
         ( Config(..)
-        , configDefault
+        , configOfVersion
         , prettyModeModuleOfConfig)
 where
 import DDC.Llvm.Pretty.Base

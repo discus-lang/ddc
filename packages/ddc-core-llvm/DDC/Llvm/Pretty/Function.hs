@@ -1,27 +1,39 @@
-
-module DDC.Llvm.Pretty.Function
-        ( pprFunctionHeader)
-where
+{-# LANGUAGE TypeFamilies #-}
+module DDC.Llvm.Pretty.Function where
 import DDC.Llvm.Syntax.Function
 import DDC.Llvm.Syntax.Type
 import DDC.Llvm.Pretty.Attr             ()
-import DDC.Llvm.Pretty.Instr            ()
+import DDC.Llvm.Pretty.Instr
+import DDC.Llvm.Pretty.Base
 import DDC.Base.Pretty
 import Prelude                          hiding ((<$>))
 
 
 instance Pretty Function where
- ppr (Function decl paramNames attrs sec body) 
-  = let attrDoc = hsep $ map ppr attrs
-        secDoc  = case sec of
+ data PrettyMode Function
+        = PrettyModeFunction
+        { modeFunctionConfig :: Config }
+
+ pprDefaultMode
+        = PrettyModeFunction
+        { modeFunctionConfig = defaultConfig }
+
+ pprModePrec (PrettyModeFunction config) prec
+        (Function decl paramNames attrs sec body) 
+  = let 
+        attrDoc  = hsep $ map ppr attrs
+
+        secDoc   = case sec of
                         SectionAuto       -> empty
                         SectionSpecific s -> text "section" <+> (dquotes $ text s)
+
+        pprBlock = pprModePrec (PrettyModeBlock config) prec
 
     in text "define" 
         <+> pprFunctionHeader decl (Just paramNames)
                 <+> attrDoc <+> secDoc
         <$> lbrace
-        <$> vcat (map ppr body)
+        <$> vcat (map pprBlock body)
         <$> rbrace
 
 

@@ -49,13 +49,11 @@ pipeLlvm !mm !pp
          -> {-# SCC "PipeLlvmCompile" #-}
             do  
                 -- LLVM config.
-                let llConfig    = Llvm.Config
-                                { Llvm.configLlvmVersion = Build.buildLlvmVersion builder }
+                let llConfig    = Llvm.configOfVersion
+                                $ Just $ Build.buildLlvmVersion builder
 
                 -- Pretty printer mode to use for the current LLVM version.
                 let llMode      = Llvm.prettyModeModuleOfConfig llConfig
-
-                putStrLn $ Build.buildLlvmVersion builder
 
                 -- Write out the LLVM source file.
                 let llSrc       = renderIndent $ pprModePrec llMode (0 :: Int) mm

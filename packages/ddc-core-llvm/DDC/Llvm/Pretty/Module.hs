@@ -8,7 +8,6 @@ import DDC.Llvm.Pretty.Exp      ()
 import DDC.Llvm.Pretty.Metadata
 import DDC.Llvm.Pretty.Base
 import DDC.Base.Pretty
-import Data.Maybe
 
 
 -------------------------------------------------------------------------------
@@ -16,42 +15,38 @@ import Data.Maybe
 prettyModeModuleOfConfig :: Config -> PrettyMode Module
 prettyModeModuleOfConfig config
         = PrettyModeModule
-        { -- | In LLVM 3.6 the syntax of meta-data was changed from being
-          --   similar to that for values to its own untyped syntax. 
-          --   If we don't know for sure what the current LLVM version wants
-          --   then assume that it wants the new syntax
-          modeModuleMetadataAsValue     
-                = fromMaybe False 
-                $ versionWantsMetadataAsValue 
-                $ configLlvmVersion config }
+        { modeModuleConfig      = config }
 
 
 -------------------------------------------------------------------------------
 -- | Print out a whole LLVM module.
 instance Pretty Module where
- data PrettyMode Module 
+ data PrettyMode Module
         = PrettyModeModule
-        { modeModuleMetadataAsValue     :: Bool }
+        { modeModuleConfig      :: Config }
 
  pprDefaultMode 
         = PrettyModeModule
-        { modeModuleMetadataAsValue     = True }   
-                -- TODO: Set to False once we test llc version
+        { modeModuleConfig      = defaultConfig }   
 
  pprModePrec 
-        (PrettyModeModule asValue) _ 
+        (PrettyModeModule config) prec
         (Module _comments aliases globals decls funcs mdecls)
-  =     (vcat $ map ppr aliases)
-  <$$>  (vcat $ map ppr globals)
-  <$$>  (vcat $ map (\decl -> text "declare" 
+  = let 
+        pprFunction' = pprModePrec (PrettyModeFunction config) prec
+        pprMDecl'    = pprModePrec (PrettyModeMDecl    config) prec
+
+    in   (vcat $ map ppr aliases)
+    <$$> (vcat $ map ppr globals)
+    <$$> (vcat $ map (\decl -> text "declare" 
                           <+> pprFunctionHeader decl Nothing) decls)
-  <$$>  empty
-  <$$>  (vcat $ punctuate line 
-             $ map ppr funcs)
-  <$$>  line
-  <$$>  empty
-  <$$>  (vcat $ map (pprModePrec (PrettyModeMDecl asValue) (0 :: Int)) mdecls)
-  <$$>  empty
+    <$$>  empty
+    <$$>  (vcat $ punctuate line 
+                $ map pprFunction' funcs)
+    <$$>  line
+    <$$>  empty
+    <$$>  (vcat $ map pprMDecl' mdecls)
+    <$$>  empty
 
 
 -------------------------------------------------------------------------------

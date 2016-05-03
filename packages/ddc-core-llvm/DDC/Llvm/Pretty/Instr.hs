@@ -1,41 +1,81 @@
-
+{-# LANGUAGE TypeFamilies #-}
 module DDC.Llvm.Pretty.Instr where
 import DDC.Llvm.Syntax.Attr
 import DDC.Llvm.Syntax.Exp
 import DDC.Llvm.Syntax.Instr
 import DDC.Llvm.Syntax.Metadata
 import DDC.Llvm.Syntax.Prim
+import DDC.Llvm.Syntax.Type
 import DDC.Llvm.Pretty.Exp
 import DDC.Llvm.Pretty.Prim     ()
 import DDC.Llvm.Pretty.Metadata ()
+import DDC.Llvm.Pretty.Base
 import Data.List
 import qualified Data.Foldable  as Seq
 import DDC.Base.Pretty
 
 
+-------------------------------------------------------------------------------
 instance Pretty Label where
  ppr (Label str)        = text str
 
 
+-------------------------------------------------------------------------------
 instance  Pretty Block where
- ppr (Block label instrs)
-        =    ppr label <> colon
-        <$$> indent 8 (vcat $ map ppr $ Seq.toList instrs)
+ data PrettyMode Block
+        = PrettyModeBlock
+        { modeBlockConfig :: Config }
+
+ pprDefaultMode
+        = PrettyModeBlock
+        { modeBlockConfig = defaultConfig }
+
+ pprModePrec 
+        (PrettyModeBlock config) prec 
+        (Block label instrs)
+  = let downAnnotInstr
+         = pprModePrec (PrettyModeAnnotInstr config) prec
+
+    in    ppr label <>  colon 
+     <$$> indent 8 (vcat $ map downAnnotInstr $ Seq.toList instrs)
 
 
+-------------------------------------------------------------------------------
 instance Pretty AnnotInstr where
- ppr (AnnotInstr instr []) = ppr instr
- ppr (AnnotInstr instr mds)
-  = let pprWithTag (MDecl ref Tbaa{}) = text "!tbaa"  <> space <> ppr ref
-        pprWithTag (MDecl ref Debug)  = text "!debug" <> space <> ppr ref
-    in  ppr  instr
-        <>   comma <> (hcat $ replicate 4 space)
-        <>   (hcat $ punctuate (comma <> space) (map pprWithTag mds))
+ data PrettyMode AnnotInstr
+        = PrettyModeAnnotInstr
+        { modeAnnotInstrConfig :: Config }
+
+ pprDefaultMode
+        = PrettyModeAnnotInstr
+        { modeAnnotInstrConfig = defaultConfig }
+
+ pprModePrec (PrettyModeAnnotInstr config) prec ainstr
+  = case ainstr of
+        AnnotInstr instr []
+         -> pprModePrec (PrettyModeInstr config) prec instr
+
+        AnnotInstr instr mds
+         -> let pprWithTag (MDecl ref Tbaa{}) = text "!tbaa"  <> space <> ppr ref
+                pprWithTag (MDecl ref Debug)  = text "!debug" <> space <> ppr ref
+            in  pprModePrec (PrettyModeInstr config) prec instr
+                 <> comma <> (hcat $ replicate 4 space)
+                 <> (hcat $ punctuate (comma <> space) (map pprWithTag mds))
 
 
+-------------------------------------------------------------------------------
 instance Pretty Instr where
- ppr ii
-  = let -- Pad binding occurrence of variable.
+ data PrettyMode Instr
+        = PrettyModeInstr
+        { modeInstrConfig :: Config }
+
+ pprDefaultMode 
+        = PrettyModeInstr
+        { modeInstrConfig = defaultConfig }
+
+ pprModePrec (PrettyModeInstr config) _prec ii
+  = let 
+        -- Pad binding occurrence of variable.
         padVar  var
          = fill 12 (ppr $ nameOfVar var)
 
@@ -98,10 +138,20 @@ instance Pretty Instr where
 
         -- Memory Operations ------------------------------
         ILoad vDst x1
+         -- From LLVM 3.7 we need to give the type of the source pointer
+         -- as well as the type of the result of the load.
+         |  configWantsLoadReturnTypes config
          -> padVar vDst
-                <+> equals
-                <+> text "load"
-                <+> ppr x1
+                <+> equals 
+                <+> text "load" 
+                <+> ppr (typeOfVar vDst) <> comma       -- Type of result.
+                <+> ppr x1                              -- Pointer type of source.
+
+         -- Before LLVM 3.7 we only needed to give the type of the source pointer.
+         |  otherwise
+         -> padVar vDst 
+                <+> equals 
+                <+> text "load" <+> ppr x1
 
         IStore xDst xSrc
          -> text "store"
@@ -126,6 +176,18 @@ instance Pretty Instr where
                 <+> ppr (typeOfVar vDst)
 
         IGet vDst xSrc os
+         -- From LLVM 3.7 we need to give the type of the source pointer
+         -- as well as the type of the result of the load.      
+         |  configWantsLoadReturnTypes config
+         ,  XVar (Var _ (TPointer t)) <- xSrc
+         -> padVar vDst
+                <+> equals
+                <+> text "getelementptr"
+                <+> ppr t <> comma              -- Type of result
+                <+> (hcat $ punctuate (text ", ") $ (ppr xSrc : map ppr os))
+
+         -- Before LLVM 3.7 we only needed to give the type of the source pointer.
+         |  otherwise
          -> padVar vDst
                 <+> equals
                 <+> text "getelementptr"
@@ -149,12 +211,12 @@ instance Pretty Instr where
         ICall mdst callType callConv tResult name xsArgs attrs
          -> let call'
                  = case callType of
-                        CallTypeTail    -> text "tail call"
-                        _               -> text "call"
+                        CallTypeTail -> text "tail call"
+                        _            -> text "call"
                 dst'
                  = case mdst of
-                        Nothing         -> empty
-                        Just dst        -> fill 12 (ppr $ nameOfVar dst) <+> equals <> space
+                        Nothing      -> empty
+                        Just dst     -> fill 12 (ppr $ nameOfVar dst) <+> equals <> space
 
             in dst' 
                 <> hsep  [ call'

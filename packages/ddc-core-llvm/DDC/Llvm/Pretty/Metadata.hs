@@ -2,6 +2,7 @@
 module DDC.Llvm.Pretty.Metadata where
 import DDC.Llvm.Syntax.Metadata
 import DDC.Llvm.Pretty.Type             ()
+import DDC.Llvm.Pretty.Base
 import DDC.Base.Pretty
 
 
@@ -9,18 +10,18 @@ import DDC.Base.Pretty
 instance Pretty Metadata where
  data PrettyMode Metadata
         = PrettyModeMetadata
-        { modeMetadataMetadataAsValue   :: Bool }
+        { modeMetadataConfig    :: Config }
 
  pprDefaultMode
         = PrettyModeMetadata
-        { modeMetadataMetadataAsValue   = False  }
+        { modeMetadataConfig    = defaultConfig  }
 
  pprModePrec    mode prec md
   = pprMetaData mode prec md
 
-pprMetaData (PrettyModeMetadata asValue) _ mt
+pprMetaData (PrettyModeMetadata config) _ mt
   = let downMDNodeOp = pprMDNodeOp 
-                        (PrettyModeMDNodeOp asValue) 
+                        (PrettyModeMDNodeOp config) 
                         (0 :: Int)
     in case mt of
          Tbaa (MDNode ops) 
@@ -35,24 +36,24 @@ pprMetaData (PrettyModeMetadata asValue) _ mt
 instance Pretty MDecl where
  data PrettyMode MDecl
         = PrettyModeMDecl
-        { modeMDeclMetadataAsValue      :: Bool }
+        { modeMDeclConfig       :: Config }
 
  pprDefaultMode
         = PrettyModeMDecl
-        { modeMDeclMetadataAsValue      = False }
+        { modeMDeclConfig       = defaultConfig }
 
  pprModePrec mode prec md
   = pprMDecl mode prec md
 
-pprMDecl (PrettyModeMDecl asValue) _ (MDecl ref m) 
- | asValue
+pprMDecl (PrettyModeMDecl config) _ (MDecl ref m) 
+ | configWantsMetadataAsValue config
  = ppr ref <> space <> equals <> space 
            <> text "metadata" <> space
-           <> pprMetaData (PrettyModeMetadata asValue) (0 :: Int) m
+           <> pprMetaData (PrettyModeMetadata config) (0 :: Int) m
 
  | otherwise
  = ppr ref <> space <> equals <> space 
-           <> pprMetaData (PrettyModeMetadata asValue) (0 :: Int) m
+           <> pprMetaData (PrettyModeMetadata config) (0 :: Int) m
 
 
 -------------------------------------------------------------------------------
@@ -77,17 +78,17 @@ instance Pretty MDNode where
 instance Pretty MDNodeOp where
  data PrettyMode MDNodeOp
         = PrettyModeMDNodeOp
-        { modeMDNodeOpMetadataAsValue   :: Bool }
+        { modeMDNodeOpConfig   :: Config }
 
  pprDefaultMode
         = PrettyModeMDNodeOp
-        { modeMDNodeOpMetadataAsValue   = False }
+        { modeMDNodeOpConfig   = defaultConfig }
 
  pprModePrec    mode prec elt
   = pprMDNodeOp mode prec elt
 
-pprMDNodeOp mode _prec elt
- | modeMDNodeOpMetadataAsValue mode
+pprMDNodeOp (PrettyModeMDNodeOp config) _prec elt
+ | configWantsMetadataAsValue config
  = case elt of
         OpNull        -> text "null"
         OpMDString ms -> text "metadata" <> space <> ppr ms
