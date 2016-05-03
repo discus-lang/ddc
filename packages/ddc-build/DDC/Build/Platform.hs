@@ -42,7 +42,7 @@ instance Pretty Platform where
 staticFileExtensionOfPlatform :: Platform -> String
 staticFileExtensionOfPlatform pp
  = case platformOs pp of
-        OsDarwin        -> "a"
+        OsDarwin{}      -> "a"
         OsLinux         -> "a"
         OsCygwin        -> "a"
         OsMingw         -> "a"
@@ -52,7 +52,7 @@ staticFileExtensionOfPlatform pp
 sharedFileExtensionOfPlatform :: Platform -> String
 sharedFileExtensionOfPlatform pp
  = case platformOs pp of
-        OsDarwin        -> "dylib"
+        OsDarwin{}      -> "dylib"
         OsLinux         -> "so"
         OsCygwin        -> "so"
         OsMingw         -> "dll"
@@ -89,16 +89,24 @@ archPointerWidth arch
 -------------------------------------------------------------------------------
 -- | Operating System.
 data Os
-        = OsDarwin
+        -- | Darwin, including the major, minor and patch numbers, 
+        --   if specified.
+        = OsDarwin (Maybe (Int, Int, Int))
+
+        -- | Generic Linux.
         | OsLinux
+
+        -- | Cygwin on Windows.
         | OsCygwin
+
+        -- | MinGW  on Windows.
         | OsMingw
         deriving (Eq, Show)
 
 instance Pretty Os where
  ppr os
   = case os of
-        OsDarwin        -> text "Darwin"
+        OsDarwin{}      -> text "Darwin"
         OsLinux         -> text "Linux"
         OsCygwin        -> text "Cygwin"
         OsMingw         -> text "Mingw"
@@ -154,17 +162,39 @@ determineHostOs
  = do   (exitCode, strOs, _)
          <- System.readProcessWithExitCode "uname" [] ""
         
-        let result
-                | System.ExitFailure{} <- exitCode     
-                = Nothing
+        case exitCode of
+         System.ExitFailure{}
+          -> return Nothing
 
-                | isPrefixOf "Darwin" strOs     = Just OsDarwin
-                | isPrefixOf "Linux"  strOs     = Just OsLinux
-                | isPrefixOf "CYGWIN" strOs     = Just OsCygwin
-                | isPrefixOf "MINGW"  strOs     = Just OsMingw
-                | otherwise                     = Nothing
+         System.ExitSuccess
+          |  isPrefixOf "Darwin" strOs  -> determineHostOsDarwin
+          |  isPrefixOf "Linux"  strOs  -> return $ Just OsLinux
+          |  isPrefixOf "CYGWIN" strOs  -> return $ Just OsCygwin
+          |  isPrefixOf "MINGW"  strOs  -> return $ Just OsMingw
+          |  otherwise                  -> return Nothing
 
-        return result
+
+-- | Given that we're running on Darwin, determine the version numbers.
+determineHostOsDarwin :: IO (Maybe Os)
+determineHostOsDarwin 
+ = do   (exitCode, strVersion, _)
+         <- System.readProcessWithExitCode "uname" ["-r"] ""
+
+        case exitCode of
+         System.ExitFailure{}
+          -> return Nothing
+
+         System.ExitSuccess
+          | (dsMajor, '.' : rest1) <- List.span isDigit strVersion
+          , nMajor                 <- read dsMajor
+          , (dsMinor, '.' : rest2) <- List.span isDigit rest1
+          , nMinor                 <- read dsMinor
+          , (dsPatch, _)           <- List.span isDigit rest2
+          , nPatch                 <- read dsPatch
+          -> return $ Just $ OsDarwin (Just (nMajor, nMinor, nPatch))
+
+          | otherwise
+          -> return $ Nothing
 
 
 -- | Determine the host LLVM version string, eg "3.5.2"

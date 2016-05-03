@@ -141,8 +141,8 @@ instance Pretty Builder where
 --
 builders :: BuilderConfig -> BuilderHost -> [Builder]
 builders config host
- =      [ builder_X8632_Darwin config host
-        , builder_X8664_Darwin config host
+ =      [ builder_X8632_Darwin config host Nothing
+        , builder_X8664_Darwin config host Nothing
         , builder_X8632_Linux  config host
         , builder_X8664_Linux  config host
         , builder_PPC32_Linux  config host ]
@@ -160,11 +160,11 @@ determineDefaultBuilder config
         mHost           <- determineDefaultBuilderHost
 
         case (mPlatform, mHost) of
-         (Just (Platform ArchX86_32 OsDarwin), Just host)
-                -> return $ Just (builder_X8632_Darwin config host)
+         (Just (Platform ArchX86_32 (OsDarwin mVersion)), Just host)
+                -> return $ Just (builder_X8632_Darwin config host mVersion)
 
-         (Just (Platform ArchX86_64 OsDarwin), Just host)
-                -> return $ Just (builder_X8664_Darwin config host)
+         (Just (Platform ArchX86_64 (OsDarwin mVersion)), Just host)
+                -> return $ Just (builder_X8664_Darwin config host mVersion)
 
          (Just (Platform ArchX86_32 OsLinux),  Just host)
                 -> return $ Just (builder_X8632_Linux  config host)
@@ -201,11 +201,11 @@ determineDefaultBuilderHost
 
 
 -- x86_32-darwin ----------------------------------------------------------------
-builder_X8632_Darwin config host
+builder_X8632_Darwin config host mVersion
  =      Builder 
         { builderName           = "x86_32-darwin" 
-        , buildHost             = Platform ArchX86_32 OsDarwin
-        , buildTarget           = Platform ArchX86_32 OsDarwin
+        , buildHost             = Platform ArchX86_32 (OsDarwin mVersion)
+        , buildTarget           = Platform ArchX86_32 (OsDarwin mVersion)
         , buildSpec             = Llvm.platform32
         , buildBaseSrcDir       = builderConfigBaseSrcDir config
         , buildBaseLibDir       = builderConfigBaseLibDir config
@@ -231,7 +231,18 @@ builder_X8632_Darwin config host
         , buildAs
                 = \sFile oFile
                 -> doCmd "assembler"            [(2, BuilderCanceled)]
-                [ "llvm-mc -arch x86 -filetype=obj"  
+                [ "llvm-mc -arch x86 -filetype=obj"
+
+                  -- From LLVM 3.8 we need to set the -triple explicitly which includes
+                  -- the macosx OS specifier. llc inserts a pragma into the output
+                  -- .s files saying they're for a specific version of macosx. If we
+                  -- don't set the same version in the triple passed to llvm-mc then
+                  -- it throws a warning. Note that Darwin v14.5 is OSX v10.10.5 etc.
+                , case mVersion of
+                        Nothing -> ""
+                        Just (major, _minor, _patch)
+                         -> "-triple=x86-apple-macosx10." ++ show (major - 4)
+
                 , "-o", oFile
                 ,       sFile ]
 
@@ -259,11 +270,11 @@ builder_X8632_Darwin config host
         }
 
 -- x86_64-darwin --------------------------------------------------------------
-builder_X8664_Darwin config host
+builder_X8664_Darwin config host mVersion
  =      Builder
         { builderName           = "x86_64-darwin"
-        , buildHost             = Platform ArchX86_64 OsDarwin
-        , buildTarget           = Platform ArchX86_64 OsDarwin
+        , buildHost             = Platform ArchX86_64 (OsDarwin mVersion)
+        , buildTarget           = Platform ArchX86_64 (OsDarwin mVersion)
         , buildSpec             = Llvm.platform64
         , buildBaseSrcDir       = builderConfigBaseSrcDir config
         , buildBaseLibDir       = builderConfigBaseLibDir config
@@ -289,7 +300,18 @@ builder_X8664_Darwin config host
         , buildAs
                 = \sFile oFile
                 -> doCmd "assembler"            [(2, BuilderCanceled)]
-                [ "llvm-mc -arch x86-64 -filetype=obj"  
+                [ "llvm-mc -filetype=obj"
+
+                  -- From LLVM 3.8 we need to set the -triple explicitly which includes
+                  -- the macosx OS specifier. llc inserts a pragma into the output
+                  -- .s files saying they're for a specific version of macosx. If we
+                  -- don't set the same version in the triple passed to llvm-mc then
+                  -- it throws a warning. Note that Darwin v14.5 is OSX v10.10.5 etc.
+                , case mVersion of
+                        Nothing -> ""
+                        Just (major, _minor, _patch)
+                         -> "-triple=x86_64-apple-macosx10." ++ show (major - 4)
+
                 , "-o", oFile
                 ,       sFile ]
 
