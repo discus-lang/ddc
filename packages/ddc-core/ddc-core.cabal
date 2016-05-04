@@ -43,6 +43,7 @@ Library
         DDC.Core.Exp.Annot.Ctx
         DDC.Core.Exp.Annot.Exp
         DDC.Core.Exp.Annot.Predicates
+        DDC.Core.Exp.Annot.Pretty
 
         DDC.Core.Exp.Generic.BindStruct
         DDC.Core.Exp.Generic.Compounds
