@@ -1,6 +1,6 @@
+# Make rules for ddc-check.
 
-# -- Find Source Files --------------------------------------------------------
-# -- all .hs files in the src dir, including ones we need to preprocess.
+# Find source files for ddc-check.
 ddc-check_packages = \
 	packages/ddc-base/DDC \
 	packages/ddc-core/DDC \
@@ -18,7 +18,7 @@ ddc-check_src_hs_all = \
 	$(shell find packages/ddc-tools/src/ddc-check -name "*.hs" -follow)
 
 
-# -- Dependencies -------------------------------------------------------------
+# Make dependencies.
 make/deps/Makefile-ddc-check.deps : $(ddc-check_src_hs_all)
 	@echo "* Building dependencies (ddc-check)"
 	@$(GHC) $(GHC_LANGUAGE) \
@@ -29,7 +29,24 @@ make/deps/Makefile-ddc-check.deps : $(ddc-check_src_hs_all)
 	@cp make/deps/Makefile-ddc-check.deps make/deps/Makefile-ddc-check.deps.inc
 
 
-# -- Link ddci-core -----------------------------------------------------------
+# Build object files.
+packages/ddc-tools/src/ddc-check/%.o : packages/ddc-tools/src/ddc-check/%.hs
+	@echo "* Compiling $<"
+	@$(GHC) $(GHC_FLAGS) $(GHC_WARNINGS2) $(DDC_PACKAGES) $(GHC_INCDIRS) \
+		-c $< -ipackages/ddc-base \
+		      -ipackages/ddc-core \
+		      -ipackages/ddc-core-simpl \
+		      -ipackages/ddc-core-salt \
+		      -ipackages/ddc-core-llvm \
+		      -ipackages/ddc-core-flow \
+		      -ipackages/ddc-core-tetra \
+		      -ipackages/ddc-core-babel \
+                      -ipackages/ddc-source-tetra \
+		      -ipackages/ddc-build \
+		      -ipackages/ddc-tools/src/ddc-check
+
+
+# Link ddc-check executable.
 ddc-check_obj = $(patsubst %.hs,%.o,$(ddc-check_src_hs_all))
 
 bin/ddc-check : $(ddc-check_obj)

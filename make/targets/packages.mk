@@ -1,4 +1,5 @@
 
+# -----------------------------------------------------------------------------
 # All the Cabal packages in dependency order.
 PACKAGES = \
 	ddc-base \
@@ -53,3 +54,121 @@ packages-sdist :
 		 cabal sdist; \
 		cd ../..; \
 	done;
+
+# -----------------------------------------------------------------------------
+# Some of the module names are reused between ddc-main and ddc-core, 
+#   so we need to write these rules specific to the package.
+#   Writing specific rules for each package also means that we can control
+#   inter-package dependencies.
+packages/ddc-base/%.o : packages/ddc-base/%.hs
+	@echo "* Compiling $<"
+	@$(GHC) $(GHC_FLAGS) $(GHC_WARNINGS2) $(DDC_PACKAGES) $(GHC_INCDIRS) \
+		-c $< -ipackages/ddc-base
+
+packages/ddc-core/%.o : packages/ddc-core/%.hs
+	@echo "* Compiling $<"
+	@$(GHC) $(GHC_FLAGS) $(GHC_WARNINGS2) $(DDC_PACKAGES) $(GHC_INCDIRS) \
+		-c $< -ipackages/ddc-base -ipackages/ddc-core
+
+packages/ddc-core-simpl/%.o : packages/ddc-core-simpl/%.hs
+	@echo "* Compiling $<"
+	@$(GHC) $(GHC_FLAGS) $(GHC_WARNINGS2) $(DDC_PACKAGES) $(GHC_INCDIRS) \
+		-c $< -ipackages/ddc-base \
+		      -ipackages/ddc-core \
+		      -ipackages/ddc-core-simpl
+
+packages/ddc-core-salt/%.o : packages/ddc-core-salt/%.hs
+	@echo "* Compiling $<"
+	@$(GHC) $(GHC_FLAGS) $(GHC_WARNINGS2) $(DDC_PACKAGES) $(GHC_INCDIRS) \
+		-c $< -ipackages/ddc-base \
+		      -ipackages/ddc-core \
+		      -ipackages/ddc-core-simpl \
+		      -ipackages/ddc-core-salt
+
+packages/ddc-core-llvm/%.o : packages/ddc-core-llvm/%.hs
+	@echo "* Compiling $<"
+	@$(GHC) $(GHC_FLAGS) $(GHC_WARNINGS2) $(DDC_PACKAGES) $(GHC_INCDIRS) \
+		-c $< -ipackages/ddc-base \
+		      -ipackages/ddc-core \
+		      -ipackages/ddc-core-simpl \
+		      -ipackages/ddc-core-salt \
+		      -ipackages/ddc-core-llvm
+
+packages/ddc-core-flow/%.o : packages/ddc-core-flow/%.hs
+	@echo "* Compiling $<"
+	@$(GHC) $(GHC_FLAGS) $(GHC_WARNINGS2) $(DDC_PACKAGES) $(GHC_INCDIRS) \
+		-c $< -ipackages/ddc-base \
+		      -ipackages/ddc-core \
+		      -ipackages/ddc-core-simpl \
+		      -ipackages/ddc-core-salt \
+		      -ipackages/ddc-core-flow \
+		      -ipackages/ddc-core-tetra
+
+packages/ddc-core-babel/%.o : packages/ddc-core-babel/%.hs
+	@echo "* Compiling $<"
+	@$(GHC) $(GHC_FLAGS) $(GHC_WARNINGS2) $(DDC_PACKAGES) $(GHC_INCDIRS) \
+		-c $< -ipackages/ddc-base \
+		      -ipackages/ddc-core \
+		      -ipackages/ddc-core-simpl \
+		      -ipackages/ddc-core-salt  \
+		      -ipackages/ddc-core-tetra
+
+packages/ddc-core-tetra/%.o : packages/ddc-core-tetra/%.hs
+	@echo "* Compiling $<"
+	@$(GHC) $(GHC_FLAGS) $(GHC_WARNINGS2) $(DDC_PACKAGES) $(GHC_INCDIRS) \
+		-c $< -ipackages/ddc-base \
+		      -ipackages/ddc-core \
+		      -ipackages/ddc-core-simpl \
+		      -ipackages/ddc-core-salt \
+		      -ipackages/ddc-core-tetra
+
+packages/ddc-source-tetra/%.o : packages/ddc-source-tetra/%.hs
+	@echo "* Compiling $<"
+	@$(GHC) $(GHC_FLAGS) $(GHC_WARNINGS2) $(DDC_PACKAGES) $(GHC_INCDIRS) \
+		-c $< -ipackages/ddc-base \
+		      -ipackages/ddc-core \
+                      -ipackages/ddc-core-salt \
+		      -ipackages/ddc-core-tetra \
+		      -ipackages/ddc-source-tetra
+		       
+packages/ddc-build/%.o : packages/ddc-build/%.hs
+	@echo "* Compiling $<"
+	@$(GHC) $(GHC_FLAGS) $(GHC_WARNINGS2) $(DDC_PACKAGES) $(GHC_INCDIRS) \
+		-c $< -ipackages/ddc-base \
+		      -ipackages/ddc-core \
+		      -ipackages/ddc-core-babel \
+		      -ipackages/ddc-core-simpl \
+		      -ipackages/ddc-core-salt \
+		      -ipackages/ddc-core-llvm \
+		      -ipackages/ddc-core-flow \
+		      -ipackages/ddc-core-tetra \
+		      -ipackages/ddc-core-babel \
+                      -ipackages/ddc-source-tetra \
+		      -ipackages/ddc-build
+
+packages/ddc-driver/%.o : packages/ddc-driver/%.hs
+	@echo "* Compiling $<"
+	@$(GHC) $(GHC_FLAGS) $(GHC_WARNINGS2) $(DDC_PACKAGES) $(GHC_INCDIRS) \
+		-c $< -ipackages/ddc-base \
+		      -ipackages/ddc-core \
+		      -ipackages/ddc-core-simpl \
+		      -ipackages/ddc-core-salt \
+		      -ipackages/ddc-core-llvm \
+		      -ipackages/ddc-core-flow \
+		      -ipackages/ddc-core-tetra \
+		      -ipackages/ddc-core-babel \
+                      -ipackages/ddc-source-tetra \
+		      -ipackages/ddc-build \
+		      -ipackages/ddc-driver
+
+packages/ddc-code/%.o : packages/ddc-code/%.hs
+	@echo "* Compiling $<"
+	@$(GHC) $(GHC_FLAGS) $(GHC_WARNINGS2) $(DDC_PACKAGES) $(GHC_INCDIRS) \
+		-c $<
+
+
+packages/ddc-war/%.o : packages/ddc-war/%.hs
+	@echo "* Compiling $<"
+	@$(GHC) $(GHC_FLAGS) -O2 -threaded $(GHC_WARNINGS2) $(DDC_PACKAGES) $(GHC_INCDIRS) \
+		-c $< -ipackages/ddc-war
+

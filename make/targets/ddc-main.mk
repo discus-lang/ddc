@@ -1,6 +1,6 @@
+# Make rules for ddc main executable.
 
-# -- Find Source Files --------------------------------------------------------
-# -- all .hs files in the src dir, including ones we need to preprocess.
+# Find source files for ddc-main.
 ddc-main_packages = \
 	packages/ddc-base/DDC \
         packages/ddc-core/DDC \
@@ -19,7 +19,8 @@ ddc-main_src_hs_all = \
 	$(shell find $(ddc-main_packages)            -name "*.hs" -follow) \
 	$(shell find packages/ddc-tools/src/ddc-main -name "*.hs" -follow)
 
-# -- Dependencies -------------------------------------------------------------
+
+# Make dependencies.
 make/deps/Makefile-ddc-main.deps : $(ddc-main_src_hs_all)
 	@echo "* Building dependencies (ddc-main)"
 	@$(GHC) $(GHC_LANGUAGE) \
@@ -30,7 +31,25 @@ make/deps/Makefile-ddc-main.deps : $(ddc-main_src_hs_all)
 	@cp make/deps/Makefile-ddc-main.deps make/deps/Makefile-ddc-main.deps.inc
 
 
-# -- Link ddc -----------------------------------------------------------------
+# Build object files.
+packages/ddc-tools/src/ddc-main/%.o : packages/ddc-tools/src/ddc-main/%.hs
+	@echo "* Compiling $<"
+	@$(GHC) $(GHC_FLAGS) $(GHC_WARNINGS2) $(DDC_PACKAGES) $(GHC_INCDIRS) \
+		-c $< -ipackages/ddc-base \
+		      -ipackages/ddc-core \
+		      -ipackages/ddc-core-simpl \
+		      -ipackages/ddc-core-salt \
+		      -ipackages/ddc-core-llvm \
+		      -ipackages/ddc-core-flow \
+		      -ipackages/ddc-core-tetra \
+		      -ipackages/ddc-core-babel \
+                      -ipackages/ddc-source-tetra \
+		      -ipackages/ddc-build \
+		      -ipackages/ddc-driver \
+		      -ipackages/ddc-code \
+		      -ipackages/ddc-tools/src/ddc-main
+
+# Link ddc execurable.
 ddc-main_obj = $(patsubst %.hs,%.o,$(ddc-main_src_hs_all))
 
 bin/ddc : $(ddc-main_obj)
