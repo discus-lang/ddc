@@ -61,8 +61,6 @@ totalwar : allWithConfig
                 -j $(THREADS) \
                 -results        war.results  \
                 -results-failed war.failed   \
-		+compway viac  -fvia-c       \
-                +compway viaco -fvia-c    -O \
 		+compway llvm  -fvia-llvm    \
 		+compway llvmo -fvia-llvm -O
 	@echo
@@ -78,8 +76,6 @@ batchwar : allWithConfig
                 -j $(THREADS) \
                 -results        war.results  \
                 -results-failed war.failed   \
-		+compway viac  -fvia-c       \
-                +compway viaco -fvia-c    -O \
 		+compway llvm  -fvia-llvm    \
 		+compway llvmo -fvia-llvm -O
 	@echo

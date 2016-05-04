@@ -17,16 +17,24 @@ salt-runtime_o   = \
         $(patsubst %.c,%.o,$(salt-runtime_c))
 
 
-# Link the static runtime.
-packages/ddc-code/build/libddc-runtime.a : $(salt-runtime_o)
-	@echo "* Linking $@"
-	@ar r $@ $^
+# Call ddc to build its own runtime.
+#  The ddc executable itself knows what source files it needs to build
+#  to create the runtime, as it uses this during the cabal-install process.
+#  We place a dependency on all the source files so it gets rebuilt
+#  if we touch any of them. The list of source files needs to match the
+#  ones backed into ddc.
+packages/ddc-code/build/libddc-runtime.a : \
+ bin/ddc ${salt-runtime_c} ${salt-runtime_dcs}
+	@echo "* Building $@"
+	@bin/ddc -basebuild
 
 
-# Link the dynamic runtime.
-packages/ddc-code/build/libddc-runtime.$(SHARED_SUFFIX) : $(salt-runtime_o)
-	@echo "* Linking $@"
-	@$(GCC_LINK_SHARED) -o $@ $^
+# Dummy rule for the shared runtime.
+#  The ddc -basebuild command also creates this when generating the static
+#  runtime above, but we print the file path to console anyway.
+packages/ddc-code/build/libddc-runtime.$(SHARED_SUFFIX) : \
+ packages/ddc-code/build/libddc-runtime.a
+	@echo "* Building $@"
 
 
 # -----------------------------------------------------------------------------

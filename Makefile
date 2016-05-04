@@ -57,7 +57,8 @@ include make/build.mk
 allWithConfig :
 	@$(MAKE) deps
 	@$(MAKE) bin/ddc bin/ddc-check bin/ddci-core bin/ddci-tetra \
-		 runtime bin/war -j $(THREADS)
+		 bin/war -j $(THREADS)
+	@$(MAKE) packages/ddc-code/build/libddc-runtime.a
 
 
 # -- Build the compiler, libs, docs, and run all the tests in all ways (slow)
@@ -134,3 +135,4 @@ include make/rules.mk
 -include make/deps/Makefile-ddci-core.deps.inc
 -include make/deps/Makefile-ddci-tetra.deps.inc
 -include make/deps/Makefile-war.deps.inc
+
