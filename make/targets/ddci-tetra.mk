@@ -27,7 +27,7 @@ ddci-tetra_src_hs_all = \
 # Make dependencies.
 make/deps/Makefile-ddci-tetra.deps : $(ddci-tetra_src_hs_all)
 	@echo "* Building dependencies (ddci-tetra)"
-	@$(GHC) $(GHC_LANGUAGE) \
+	@$(GHC) $(GHC_LANGUAGE) $(GHC_FLAGS) \
                 $(patsubst %,-i%,$(ddci-tetra_packages)) \
 		-M $^ -dep-makefile make/deps/Makefile-ddci-tetra.deps \
                 -dep-suffix "" $(GHC_INCDIRS)

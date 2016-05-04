@@ -28,7 +28,7 @@ ddci-core_packages_root = \
 # Make dependencies.
 make/deps/Makefile-ddci-core.deps : $(ddci-core_src_hs_all)
 	@echo "* Building dependencies (ddci-core)"
-	@$(GHC) $(GHC_LANGUAGE) \
+	@$(GHC) $(GHC_LANGUAGE) $(GHC_FLAGS) \
                 $(patsubst %,-i%,$(ddci-core_packages)) \
 		-M $^ -dep-makefile make/deps/Makefile-ddci-core.deps \
                 -dep-suffix "" $(GHC_INCDIRS)

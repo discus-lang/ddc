@@ -23,7 +23,7 @@ ddc-main_src_hs_all = \
 # Make dependencies.
 make/deps/Makefile-ddc-main.deps : $(ddc-main_src_hs_all)
 	@echo "* Building dependencies (ddc-main)"
-	@$(GHC) $(GHC_LANGUAGE) \
+	@$(GHC) $(GHC_LANGUAGE) $(GHC_FLAGS) \
                 $(patsubst %,-i%,$(ddc-main_packages)) \
 		-M $^ -dep-makefile make/deps/Makefile-ddc-main.deps \
                 -dep-suffix "" $(GHC_INCDIRS)
