@@ -58,6 +58,16 @@ and are amenable to many of the same program transformations. They differ only
 in the set of allowable language features, and which primitive types and
 operators are included.
 
+## Installation
+
+You need a recent version of GHC, and an LLVM suite 3.5 - 3.8 in your path. Easiest way to build is from Hackage.
+
+```
+ cabal update
+ cabal install ddc-tools
+```
+
+If you want to build from the git repo then see [the wiki](http://disciple.ouroborus.net/wiki/Tutorial/Installation).
 
 ## Main changes since 0.4.1
 
