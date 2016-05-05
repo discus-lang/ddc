@@ -67,7 +67,7 @@ You need a recent version of GHC, and an LLVM suite 3.5 - 3.8 in your path. Easi
  cabal install ddc-tools
 ```
 
-If you want to build from the git repo then see [the wiki](http://disciple.ouroborus.net/wiki/Tutorial/Installation).
+If you want to build from the git repo then see [the wiki](http://disciple.ouroborus.net).
 
 ## Main changes since 0.4.1
 
