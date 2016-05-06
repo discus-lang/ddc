@@ -89,10 +89,19 @@ data Type n
         deriving Show
 
 
+-- | Sorts are types at level 3.
 type Sort    n = Type n
+
+-- | Kinds are types at level 2
 type Kind    n = Type n
+
+-- | Alias for region types.
 type Region  n = Type n
+
+-- | Alias for effect types.
 type Effect  n = Type n
+
+-- | Alias for closure types.
 type Closure n = Type n
 
 

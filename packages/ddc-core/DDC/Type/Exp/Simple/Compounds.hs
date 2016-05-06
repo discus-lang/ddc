@@ -20,17 +20,15 @@ module DDC.Type.Exp.Simple.Compounds
         , replaceTypeOfBound
 
           -- * Kinds
-        , kFun
-        , kFuns
+        , kFun,         kFuns
         , takeKFun
-        , takeKFuns
-        , takeKFuns'
+        , takeKFuns,    takeKFuns'
         , takeResultKind
 
          -- * Quantifiers
-        , tForall,  tForall'
-        , tForalls, tForalls'
-        , takeTForalls,  eraseTForalls
+        , tForall,      tForall'
+        , tForalls,     tForalls'
+        , takeTForalls, eraseTForalls
 
           -- * Sums
         , tBot
@@ -86,6 +84,8 @@ module DDC.Type.Exp.Simple.Compounds
         , tConst,       tDeepConst
         , tMutable,     tDeepMutable
         , tDistinct
+
+          -- * Type constructor wrappers.
         , tConData0,    tConData1)
 where
 import DDC.Type.Exp
@@ -243,13 +243,14 @@ takeTExists tt
 -- Applications ---------------------------------------------------------------
 -- | Construct an empty type sum.
 tBot :: Kind n -> Type n
-tBot k          = TSum $ Sum.empty k
+tBot k = TSum $ Sum.empty k
 
 
 -- | Construct a type application.
 tApp, ($:) :: Type n -> Type n -> Type n
-tApp            = TApp
-($:)            = TApp
+tApp   = TApp
+($:)   = TApp
+
 
 -- | Construct a sequence of type applications.
 tApps   :: Type n -> [Type n] -> Type n
@@ -280,9 +281,8 @@ takePrimTyConApps :: Type n -> Maybe (n, [Type n])
 takePrimTyConApps tt
  = case takeTApps tt of
         TCon tc : args  
-         | TyConBound (UPrim n _) _     <- tc
-         -> Just (n, args)
-
+         | TyConBound (UPrim n _) _ <- tc 
+          -> Just (n, args)
         _ -> Nothing
 
 
@@ -294,8 +294,7 @@ takeDataTyConApps tt
         TCon tc : args  
          | TyConBound (UName{}) k       <- tc
          , TCon (TyConKind KiConData)   <- takeResultKind k
-         -> Just (tc, args)
-
+          -> Just (tc, args)
         _ -> Nothing
 
 
@@ -306,7 +305,6 @@ takePrimeRegion tt
  = case takeTApps tt of
         TCon _ : tR@(TVar _) : _
           -> Just tR
-
         _ -> Nothing
 
 
@@ -366,13 +364,13 @@ eraseTForalls tt
 
 -- Sums -----------------------------------------------------------------------
 tSum :: Ord n => Kind n -> [Type n] -> Type n
-tSum k ts
-        = TSum (Sum.fromList k ts)
+tSum k ts = TSum (Sum.fromList k ts)
 
 
 -- Unit -----------------------------------------------------------------------
+-- | The unit type.
 tUnit :: Type n
-tUnit           = TCon (TyConSpec TcConUnit)
+tUnit = TCon (TyConSpec TcConUnit)
 
 
 -- Function Constructors ------------------------------------------------------
@@ -459,8 +457,7 @@ takeTFun :: Type n -> Maybe (Type n, Type n)
 takeTFun tt
  = case tt of
         TApp (TApp (TCon (TyConSpec TcConFun)) t1) t2
-         ->  Just (t1, t2)
-
+          -> Just (t1, t2)
         _ -> Nothing
 
 
@@ -469,9 +466,8 @@ takeTFunArgResult :: Type n -> ([Type n], Type n)
 takeTFunArgResult tt
  = case tt of
         TApp (TApp (TCon (TyConSpec TcConFun)) t1) t2
-         -> let (tsMore, tResult) = takeTFunArgResult t2
-            in  (t1 : tsMore, tResult)
-
+          -> let (tsMore, tResult) = takeTFunArgResult t2
+             in  (t1 : tsMore, tResult)
         _ -> ([], tt)
 
 
@@ -577,52 +573,88 @@ takeTSusps tt
         TApp (TApp (TCon (TyConSpec TcConSusp)) tE) tRest
           -> let (tEs, tA) = takeTSusps tRest
              in  (tE : tEs, tA)
-
         _ -> ([], tt)
 
 
 -- Level 3 constructors (sorts) -----------------------------------------------
+-- | Sort of kinds of computational types.
 sComp           = TCon $ TyConSort SoConComp
+
+-- | Sort of kinds of propositional types.
 sProp           = TCon $ TyConSort SoConProp
 
 
 -- Level 2 constructors (kinds) -----------------------------------------------
+-- | Kind of data types.
 kData           = TCon $ TyConKind KiConData
+
+-- | Kind of region types.
 kRegion         = TCon $ TyConKind KiConRegion
+
+-- | Kind of effect types.
 kEffect         = TCon $ TyConKind KiConEffect
+
+-- | Kind of closure types.
 kClosure        = TCon $ TyConKind KiConClosure
+
+-- | Kind of witness types.
 kWitness        = TCon $ TyConKind KiConWitness
 
 
 -- Level 1 constructors (witness and computation types) -----------------------
-
 -- Effect type constructors
+-- | Read effect type constructor.
 tRead           = tcCon1 TcConRead
+
+-- | Head Read effect type constructor.
 tHeadRead       = tcCon1 TcConHeadRead
+
+-- | Deep Read effect type constructor.
 tDeepRead       = tcCon1 TcConDeepRead
+
+-- | Write effect type  constructor.
 tWrite          = tcCon1 TcConWrite
+
+-- | Deep Write effect type constructor.
 tDeepWrite      = tcCon1 TcConDeepWrite
+
+-- | Alloc effect type constructor. 
 tAlloc          = tcCon1 TcConAlloc
+
+-- | Deep Alloc effect type constructor.
 tDeepAlloc      = tcCon1 TcConDeepAlloc
 
 -- Witness type constructors.
+-- | Pure witness type constructor.
 tPure           = twCon1 TwConPure
+
+-- | Const witness type constructor.
 tConst          = twCon1 TwConConst
+
+-- | Deep Const witness type constructor.
 tDeepConst      = twCon1 TwConDeepConst
+
+-- | Mutable witness type constructor.
 tMutable        = twCon1 TwConMutable
+
+-- | Deep Mutable witness type constructor.
 tDeepMutable    = twCon1 TwConDeepMutable
+
+-- | Distinct witness type constructor.
 tDistinct n     = twCon2 (TwConDistinct n)
 
+-- | Wrap a computation type constructor applied to a single argument.
 tcCon1 tc t     = (TCon $ TyConSpec    tc) `tApp` t
+
+-- | Wrap a witness type constructor applied to a single argument.
 twCon1 tc t     = (TCon $ TyConWitness tc) `tApp` t
 
+-- | Wrap a witness type constructor applied to two arguments.
 twCon2 tc ts    = tApps (TCon $ TyConWitness tc) ts
-
 
 -- | Build a nullary type constructor of the given kind.
 tConData0 :: n -> Kind n -> Type n
 tConData0 n k   = TCon (TyConBound (UName n) k)
-
 
 -- | Build a type constructor application of one argumnet.
 tConData1 :: n -> Kind n -> Type n -> Type n

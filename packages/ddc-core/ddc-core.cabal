@@ -89,7 +89,6 @@ Library
         DDC.Type.Exp.Generic
 
         DDC.Type.Exp.Simple.Exp
-        DDC.Type.Exp.Simple.Pretty
         DDC.Type.Exp.Simple.Compounds
         DDC.Type.Exp.Simple.Predicates
 
@@ -178,8 +177,7 @@ Library
         DDC.Type.Collect.FreeT
 
         DDC.Type.Exp.Simple.NFData
-
-        DDC.Type.Pretty
+        DDC.Type.Exp.Simple.Pretty
 
                   
   GHC-options:

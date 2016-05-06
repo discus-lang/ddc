@@ -1,7 +1,7 @@
 
 module DDC.Type.Exp.Generic
-        ( GAnnot (..), GBind (..), GBound (..), GPrim (..)
-        , GType  (..), GCon  (..)
+        ( GAnnot, GBind, GBound, GPrim
+        , GType (..), GCon (..)
         , ShowLanguage
         , PrettyLanguage)
 where

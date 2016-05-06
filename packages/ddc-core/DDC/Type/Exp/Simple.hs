@@ -2,13 +2,16 @@
 module DDC.Type.Exp.Simple
         ( -------------------------------------------------
           -- * Abstract Syntax
-          Binder        (..)
-        , Bind          (..)
-        , Bound         (..)
-        , Type          (..)
+          -- ** Types
+          Type          (..)
         , TypeSum       (..)
         , TyConHash     (..)
         , TypeSumVarCon (..)
+
+          -- ** Binding
+        , Binder        (..)
+        , Bind          (..)
+        , Bound         (..)
 
           -- ** Constructors
         , TyCon         (..)
@@ -79,7 +82,11 @@ module DDC.Type.Exp.Simple
         , takeSubstBoundsOfBinds
         , replaceTypeOfBound
 
+          -- ** Sorts
+        , sComp, sProp
+
           -- ** Kinds
+        , kData, kRegion, kEffect, kClosure, kWitness
         , kFun
         , kFuns
         , takeKFun
@@ -123,25 +130,19 @@ module DDC.Type.Exp.Simple
           -- ** Implications
         , tImpl
 
-          -- * Units
+          -- ** Units
         , tUnit
 
           -- ** Variables
         , tIx
         , takeTExists
 
-          -- ** Sort construction
-        , sComp, sProp
-
-          -- ** Kind construction
-        , kData, kRegion, kEffect, kClosure, kWitness
-
-          -- ** Effect type constructors
+          -- ** Effect types
         , tRead,        tDeepRead,      tHeadRead
         , tWrite,       tDeepWrite
         , tAlloc,       tDeepAlloc
 
-          -- ** Witness type constructors
+          -- ** Witness types
         , tPure
         , tConst,       tDeepConst
         , tMutable,     tDeepMutable
