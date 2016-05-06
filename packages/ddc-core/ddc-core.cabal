@@ -84,6 +84,8 @@ Library
         DDC.Core.Pretty
 
         DDC.Type.Exp.Generic.Exp
+        DDC.Type.Exp.Generic.Pretty
+        DDC.Type.Exp.Pretty
         DDC.Type.Exp.TyCon
 
         DDC.Type.Transform.BoundT

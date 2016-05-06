@@ -3,6 +3,7 @@ module DDC.Type.Pretty
         (module DDC.Base.Pretty)
 where
 import DDC.Type.Exp
+import DDC.Type.Exp.Pretty              ()
 import DDC.Type.Predicates
 import DDC.Type.Compounds
 import DDC.Base.Pretty
@@ -125,7 +126,6 @@ instance (Pretty n, Eq n) => Pretty (TypeSum n) where
       ts  -> sep $ punctuate (text " +") (map ppr ts)
 
 
--- TyCon ----------------------------------------------------------------------
 instance (Eq n, Pretty n) => Pretty (TyCon n) where
  ppr tt
   = case tt of
@@ -135,51 +135,4 @@ instance (Eq n, Pretty n) => Pretty (TyCon n) where
         TyConSpec tc    -> ppr tc
         TyConBound u _  -> ppr u
         TyConExists n _ -> text "?" <> int n
-
-
-instance Pretty SoCon where
- ppr sc 
-  = case sc of
-        SoConComp       -> text "Comp"
-        SoConProp       -> text "Prop"
-
-
-instance Pretty KiCon where
- ppr kc
-  = case kc of
-        KiConFun        -> text "(~>)"
-        KiConData       -> text "Data"
-        KiConRegion     -> text "Region"
-        KiConEffect     -> text "Effect"
-        KiConClosure    -> text "Closure"
-        KiConWitness    -> text "Witness"
-
-
-instance Pretty TwCon where
- ppr tw
-  = case tw of
-        TwConImpl       -> text "(=>)"
-        TwConPure       -> text "Purify"
-        TwConConst      -> text "Const"
-        TwConDeepConst  -> text "DeepConst"
-        TwConMutable    -> text "Mutable"
-        TwConDeepMutable-> text "DeepMutable"
-        TwConDistinct n -> text "Distinct" <> ppr n
-        TwConDisjoint   -> text "Disjoint"
-        
-
-instance Pretty TcCon where
- ppr tc 
-  = case tc of
-        TcConUnit       -> text "Unit"
-        TcConFun        -> text "(->)"
-        TcConSusp       -> text "S"
-        TcConRead       -> text "Read"
-        TcConHeadRead   -> text "HeadRead"
-        TcConDeepRead   -> text "DeepRead"
-        TcConWrite      -> text "Write"
-        TcConDeepWrite  -> text "DeepWrite"
-        TcConAlloc      -> text "Alloc"
-        TcConDeepAlloc  -> text "DeepAlloc"
-
 
