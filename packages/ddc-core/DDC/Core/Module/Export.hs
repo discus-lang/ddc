@@ -4,16 +4,15 @@ module DDC.Core.Module.Export
         , takeTypeOfExportSource
         , mapTypeOfExportSource)
 where
-import DDC.Type.Exp
 import Control.DeepSeq
 
 
 -- | Define thing exported from a module.
-data ExportSource n
+data ExportSource n t
         -- | A name defined in this module, with an explicit type.
         = ExportSourceLocal   
         { exportSourceLocalName         :: n 
-        , exportSourceLocalType         :: Type n }
+        , exportSourceLocalType         :: t }
 
         -- | A named defined in this module, without a type attached.
         --   We use this version for source language where we infer the type of
@@ -23,7 +22,7 @@ data ExportSource n
         deriving Show
 
 
-instance NFData n => NFData (ExportSource n) where
+instance (NFData n, NFData t) => NFData (ExportSource n t) where
  rnf es
   = case es of
         ExportSourceLocal n t           -> rnf n `seq` rnf t
@@ -31,7 +30,7 @@ instance NFData n => NFData (ExportSource n) where
 
 
 -- | Take the type of an imported thing, if there is one.
-takeTypeOfExportSource :: ExportSource n -> Maybe (Type n)
+takeTypeOfExportSource :: ExportSource n t -> Maybe t
 takeTypeOfExportSource es
  = case es of
         ExportSourceLocal _ t           -> Just t
@@ -39,7 +38,7 @@ takeTypeOfExportSource es
 
 
 -- | Apply a function to any type in an ExportSource.
-mapTypeOfExportSource :: (Type n -> Type n) -> ExportSource n -> ExportSource n
+mapTypeOfExportSource :: (t -> t) -> ExportSource n t -> ExportSource n t
 mapTypeOfExportSource f esrc
  = case esrc of
         ExportSourceLocal n t           -> ExportSourceLocal n (f t)

@@ -207,8 +207,8 @@ checkModuleM !config !kenv !tenv mm@ModuleCore{} !mode
 checkExportTypes
         :: (Show n, Pretty n, Ord n)
         => Config n
-        -> [(n, ExportSource n)]
-        -> CheckM a n [(n, ExportSource n)]
+        -> [(n, ExportSource n (Type n))]
+        -> CheckM a n [(n, ExportSource n (Type n))]
 
 checkExportTypes config nesrcs
  = let  check (n, esrc)
@@ -235,8 +235,8 @@ checkExportTypes config nesrcs
 checkExportValues
         :: (Show n, Pretty n, Ord n)
         => Config n -> KindEnv n
-        -> [(n, ExportSource n)]
-        -> CheckM a n [(n, ExportSource n)]
+        -> [(n, ExportSource n (Type n))]
+        -> CheckM a n [(n, ExportSource n (Type n))]
 
 checkExportValues config kenv nesrcs
  = let  check (n, esrc)
@@ -263,8 +263,8 @@ checkExportValues config kenv nesrcs
 checkImportTypes
         :: (Ord n, Show n, Pretty n)
         => Config n -> Mode n
-        -> [(n, ImportType n)]
-        -> CheckM a n [(n, ImportType n)]
+        -> [(n, ImportType n (Type n))]
+        -> CheckM a n [(n, ImportType n (Type n))]
 
 checkImportTypes config mode nisrcs
  = let
@@ -316,8 +316,8 @@ checkImportTypes config mode nisrcs
 checkImportCaps
         :: (Ord n, Show n, Pretty n)
         => Config n -> KindEnv n -> Mode n
-        -> [(n, ImportCap n)]
-        -> CheckM a n [(n, ImportCap n)]
+        -> [(n, ImportCap n (Type n))]
+        -> CheckM a n [(n, ImportCap n (Type n))]
 
 checkImportCaps config kenv mode nisrcs
  = let
@@ -377,8 +377,8 @@ checkImportCaps config kenv mode nisrcs
 checkImportValues
         :: (Ord n, Show n, Pretty n)
         => Config n -> KindEnv n -> Mode n
-        -> [(n, ImportValue n)]
-        -> CheckM a n [(n, ImportValue n)]
+        -> [(n, ImportValue n (Type n))]
+        -> CheckM a n [(n, ImportValue n (Type n))]
 
 checkImportValues config kenv mode nisrcs
  = let
@@ -443,11 +443,11 @@ checkImportValues config kenv mode nisrcs
 -- | Check that the exported signatures match the types of their bindings.
 checkModuleBinds
         :: Ord n
-        => [(n, ExportSource n)]        -- ^ Exported types.
-        -> [(n, ExportSource n)]        -- ^ Exported values
+        => [(n, ExportSource n (Type n))]       -- ^ Exported types.
+        -> [(n, ExportSource n (Type n))]       -- ^ Exported values
         -> Exp (AnTEC a n) n
-        -> CheckM a n (TypeEnv n)       -- ^ Environment of top-level bindings
-                                        --   defined by the module
+        -> CheckM a n (TypeEnv n)               -- ^ Environment of top-level bindings
+                                                --   defined by the module
 
 checkModuleBinds !ksExports !tsExports !xx
  = case xx of
@@ -470,8 +470,8 @@ checkModuleBinds !ksExports !tsExports !xx
 -- | If some bind is exported, then check that it matches the exported version.
 checkModuleBind
         :: Ord n
-        => [(n, ExportSource n)]        -- ^ Exported types.
-        -> [(n, ExportSource n)]        -- ^ Exported values.
+        => [(n, ExportSource n (Type n))]       -- ^ Exported types.
+        -> [(n, ExportSource n (Type n))]       -- ^ Exported values.
         -> Bind n
         -> CheckM a n ()
 

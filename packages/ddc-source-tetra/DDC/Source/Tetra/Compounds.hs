@@ -237,6 +237,7 @@ xErrorDefault a name n
         [ XCon a (DaConPrim (NameLitTextLit name) (tBot kData))
         , XCon a (DaConPrim (NameLitNat     n)    (tBot kData))]
 
+
 -- Patterns -------------------------------------------------------------------
 pTrue    = PData (DaConPrim (NameLitBool True)  tBool) []
 pFalse   = PData (DaConPrim (NameLitBool False) tBool) []

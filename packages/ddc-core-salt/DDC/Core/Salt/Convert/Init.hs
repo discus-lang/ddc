@@ -42,8 +42,8 @@ posixMainType
 -- | Patch the list of export definitions to export our wrapper instead
 --   of the original main function.
 patchMainExports 
-        ::  [(Name, ExportSource Name)] 
-        ->  [(Name, ExportSource Name)]
+        ::  [(Name, ExportSource Name (Type Name))] 
+        ->  [(Name, ExportSource Name (Type Name))]
 
 patchMainExports xx
  = case xx of

@@ -7,6 +7,7 @@ module DDC.Core.Salt.Convert.Name
 where
 import DDC.Core.Salt.Name
 import DDC.Core.Module
+import DDC.Type.Exp.Simple.Exp
 import DDC.Base.Pretty
 import Data.Maybe
 
@@ -21,9 +22,9 @@ sanitizeGlobal = sanitizeName
 -- | Convert the Salt name of a supercombinator to a name we can use when
 --   defining the C function.
 seaNameOfSuper 
-        :: Maybe (ImportValue Name)     -- ^ How the super is imported
-        -> Maybe (ExportSource Name)    -- ^ How the super is exported
-        -> Name                         -- ^ Name of the super.
+        :: Maybe (ImportValue  Name (Type Name)) -- ^ How the super is imported
+        -> Maybe (ExportSource Name (Type Name)) -- ^ How the super is exported
+        -> Name                                  -- ^ Name of the super.
         -> Maybe Doc
 
 seaNameOfSuper mImport mExport nm

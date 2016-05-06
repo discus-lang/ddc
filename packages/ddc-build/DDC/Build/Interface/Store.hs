@@ -86,7 +86,7 @@ data Super
           -- | Import source for the super.
           --
           --   This can be used to refer to the super from a client module.
-        , superImportValue      :: ImportValue E.Name }
+        , superImportValue      :: ImportValue E.Name (Type E.Name) }
 
 
 ---------------------------------------------------------------------------------------------------

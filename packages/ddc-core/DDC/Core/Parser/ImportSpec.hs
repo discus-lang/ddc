@@ -9,6 +9,7 @@ import DDC.Core.Parser.Context
 import DDC.Core.Parser.Base
 import DDC.Core.Parser.DataDef
 import DDC.Core.Lexer.Tokens
+import DDC.Type.Exp.Simple
 import DDC.Base.Pretty
 import Control.Monad
 import qualified DDC.Base.Parser        as P
@@ -22,9 +23,9 @@ import qualified DDC.Base.Parser        as P
 --   buckets if it wants to.
 --
 data ImportSpec n
-        = ImportType    n (ImportType   n)
-        | ImportCap     n (ImportCap    n)
-        | ImportValue   n (ImportValue  n)
+        = ImportType    n (ImportType   n (Type n))
+        | ImportCap     n (ImportCap    n (Type n))
+        | ImportValue   n (ImportValue  n (Type n))
         | ImportData    (DataDef n)
         deriving Show
         

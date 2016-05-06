@@ -187,8 +187,9 @@ convertM pp runConfig defs kenv tenv mm
 convertExportM
         :: T.Context                     -- ^ Context of the conversion.
         -> Map A.Name (Type A.Name)      -- ^ Salt types of top-level values.
-        -> (E.Name, ExportSource E.Name) -- ^ Name and export def to convert.
-        -> ConvertM a (A.Name, ExportSource A.Name)
+        -> (E.Name, ExportSource E.Name (Type E.Name)) 
+                                        -- ^ Name and export def to convert.
+        -> ConvertM a (A.Name, ExportSource A.Name (Type A.Name))
 
 convertExportM tctx tsSalt (n, esrc)
  = do   n'      <- convertBindNameM n
@@ -204,10 +205,10 @@ convertExportM tctx tsSalt (n, esrc)
 --  of each export from the list of previously known Salt types.
 --
 convertExportSourceM 
-        :: T.Context                    -- ^ Context of the conversion.
-        -> Map A.Name (Type A.Name)     -- ^ Salt types of top-level values.
-        -> ExportSource E.Name          -- ^ Export source to convert.
-        -> ConvertM a (ExportSource A.Name)
+        :: T.Context                            -- ^ Context of the conversion.
+        -> Map A.Name (Type A.Name)             -- ^ Salt types of top-level values.
+        -> ExportSource E.Name (Type E.Name)    -- ^ Export source to convert.
+        -> ConvertM a (ExportSource A.Name (Type A.Name))
 
 convertExportSourceM tctx tsSalt esrc
  = case esrc of
@@ -233,8 +234,8 @@ convertExportSourceM tctx tsSalt esrc
 ---------------------------------------------------------------------------------------------------
 -- | Convert an import spec.
 convertNameImportValueM
-        :: T.Context -> (E.Name, ImportValue E.Name)
-        -> ConvertM a (A.Name, ImportValue A.Name)
+        :: T.Context -> (E.Name, ImportValue E.Name (Type E.Name))
+        -> ConvertM a (A.Name, ImportValue A.Name (Type A.Name))
 
 convertNameImportValueM tctx (n, isrc)
  = do   n'      <- convertImportNameM n
@@ -255,8 +256,8 @@ convertImportNameM n
 
 -- | Convert an import source to Salt.
 convertImportValueM 
-        :: T.Context -> ImportValue E.Name
-        -> ConvertM a (ImportValue A.Name)
+        :: T.Context -> ImportValue E.Name (Type E.Name)
+        -> ConvertM a (ImportValue A.Name (Type A.Name))
 
 convertImportValueM tctx isrc
  = case isrc of

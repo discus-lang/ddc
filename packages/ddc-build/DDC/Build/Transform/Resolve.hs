@@ -84,7 +84,7 @@ importsForTyCons
         :: Ord n
         => Map ModuleName (Module b n)  -- ^ Modules which this one depends on.
         -> [Bound n]                    -- ^ Unbound type constructors to find imports for.
-        -> [(n, ImportType n)]
+        -> [(n, ImportType n (Type n))]
 
 importsForTyCons deps _tyCons
  = concat
@@ -106,7 +106,7 @@ importsForTyCons deps _tyCons
 importsCap
         :: Ord n
         => Map ModuleName (Module b n)
-        -> [(n, ImportCap n)]
+        -> [(n, ImportCap n (Type n))]
 
 importsCap deps
  = concatMap moduleImportCaps $ Map.elems deps
@@ -136,7 +136,7 @@ findImportSourceForDaVar
         :: Store                -- ^ Interface store.
         -> [ModuleName]         -- ^ Modules to search for matching exports.
         -> E.Name               -- ^ Name of value.
-        -> IO (Either Error (ImportValue E.Name))
+        -> IO (Either Error (ImportValue E.Name (Type E.Name)))
 
 findImportSourceForDaVar store modNames nSuper
  = do   result  <- Store.findSuper store nSuper modNames

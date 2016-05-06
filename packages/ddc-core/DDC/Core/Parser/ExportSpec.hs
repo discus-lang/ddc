@@ -8,6 +8,7 @@ import DDC.Core.Parser.Type
 import DDC.Core.Parser.Context
 import DDC.Core.Parser.Base
 import DDC.Core.Lexer.Tokens
+import DDC.Type.Exp.Simple
 import DDC.Base.Pretty
 import Control.Monad
 import qualified DDC.Base.Parser        as P
@@ -15,7 +16,7 @@ import qualified DDC.Base.Parser        as P
 
 -- An exported thing.
 data ExportSpec n
-        = ExportValue   n (ExportSource n)
+        = ExportValue   n (ExportSource n (Type n))
 
 
 -- | Parse some export specifications.

@@ -60,8 +60,8 @@ convTypeM kenv tt
 -- | Convert a Salt function type to a C source prototype.
 convSuperTypeM
         :: KindEnv      Name
-        -> Maybe (ImportValue Name)
-        -> Maybe (ExportSource Name)
+        -> Maybe (ImportValue  Name (Type Name))
+        -> Maybe (ExportSource Name (Type Name))
         -> Name                 -- ^ Local name of super.
         -> Type         Name    -- ^ Function type.
         -> ConvertM a Doc

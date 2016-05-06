@@ -97,9 +97,9 @@ pTypeSig c
 -- | An imported foreign type or foreign value.
 data ImportSpec n
         = ImportModule  ModuleName
-        | ImportType    n (ImportType  n)
-        | ImportCap     n (ImportCap   n)
-        | ImportValue   n (ImportValue n)
+        | ImportType    n (ImportType  n (T.Type n))
+        | ImportCap     n (ImportCap   n (T.Type n))
+        | ImportValue   n (ImportValue n (T.Type n))
         deriving Show
         
 

@@ -52,7 +52,8 @@ unshareModule !mm
 --   imported module.
 --
 addParamsImportValue 
-        :: ImportValue n -> (ImportValue n, Map n (Type n))
+        ::  ImportValue n (Type n)
+        -> (ImportValue n (Type n), Map n (Type n))
 
 addParamsImportValue iv 
  = case iv of
@@ -297,7 +298,8 @@ wrapAtsX !xF !tF ((aArg, tArg): ats)
 --   the give map.
 updateExportSource 
         :: Ord n
-        => Map n (Type n) -> ExportSource n -> ExportSource n
+        => Map n (Type n) 
+        -> ExportSource n (Type n) -> ExportSource n (Type n)
 
 updateExportSource mm ex
  = case ex of

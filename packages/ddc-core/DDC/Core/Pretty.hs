@@ -117,7 +117,7 @@ instance (Pretty n, Eq n) => Pretty (Module a n) where
 
 -- Exports ----------------------------------------------------------------------------------------
 -- | Pretty print an exported type definition.
-pprExportType :: (Pretty n, Eq n) => (n, ExportSource n) -> Doc
+pprExportType :: (Pretty n, Pretty t) => (n, ExportSource n t) -> Doc
 pprExportType (n, esrc)
  = case esrc of
         ExportSourceLocal _n k
@@ -128,7 +128,7 @@ pprExportType (n, esrc)
 
 
 -- | Pretty print an exported value definition.
-pprExportValue :: (Pretty n, Eq n) => (n, ExportSource n) -> Doc
+pprExportValue :: (Pretty n, Pretty t) => (n, ExportSource n t) -> Doc
 pprExportValue (n, esrc)
  = case esrc of
         ExportSourceLocal _n t
@@ -140,7 +140,7 @@ pprExportValue (n, esrc)
 
 -- Imports ----------------------------------------------------------------------------------------
 -- | Pretty print a type import.
-pprImportType :: (Pretty n, Eq n) => (n, ImportType n) -> Doc
+pprImportType :: (Pretty n, Pretty t) => (n, ImportType n t) -> Doc
 pprImportType (n, isrc)
  = case isrc of
         ImportTypeAbstract k
@@ -155,7 +155,7 @@ pprImportType (n, isrc)
 
 
 -- | Pretty print a capability import.
-pprImportCap :: (Pretty n, Eq n) => (n, ImportCap n) -> Doc
+pprImportCap :: (Pretty n, Pretty t) => (n, ImportCap n t) -> Doc
 pprImportCap (n, isrc)
  = case isrc of
         ImportCapAbstract t
@@ -165,7 +165,7 @@ pprImportCap (n, isrc)
 
 
 -- | Pretty print a value import.
-pprImportValue :: (Pretty n, Eq n) => (n, ImportValue n) -> Doc
+pprImportValue :: (Pretty n, Pretty t) => (n, ImportValue n t) -> Doc
 pprImportValue (n, isrc)
  = case isrc of
         ImportValueModule _mn _nSrc t Nothing

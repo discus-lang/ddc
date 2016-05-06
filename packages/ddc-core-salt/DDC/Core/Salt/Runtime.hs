@@ -57,7 +57,7 @@ data Config
 
 
 -- | Kind signatures for runtime types that we use when converting to Salt.
-runtimeImportKinds :: Map Name (ImportType Name)
+runtimeImportKinds :: Map Name (ImportType Name (Type Name))
 runtimeImportKinds
  = Map.fromList
    [ rn ukTop ]
@@ -66,7 +66,7 @@ runtimeImportKinds
 
 
 -- | Type signatures for runtime funtions that we use when converting to Salt.
-runtimeImportTypes :: Map Name (ImportValue Name)
+runtimeImportTypes :: Map Name (ImportValue Name (Type Name))
 runtimeImportTypes
  = Map.fromList 
    [ rn utGetTag

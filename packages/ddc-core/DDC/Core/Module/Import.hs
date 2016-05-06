@@ -16,13 +16,12 @@ module DDC.Core.Module.Import
         , mapTypeOfImportValue)
 where
 import DDC.Core.Module.Name
-import DDC.Type.Exp
 import Control.DeepSeq
 
 
 -- ImportType -------------------------------------------------------------------------------------
 -- | Define a foreign type being imported into a module.
-data ImportType n
+data ImportType n t
         -- | Type imported abstractly.
         --
         --   Used for phantom types of kind Data, as well as regions, effects,
@@ -32,7 +31,7 @@ data ImportType n
         --   its associated values.
         --
         = ImportTypeAbstract
-        { importTypeAbstractType      :: !(Kind n) }
+        { importTypeAbstractType :: !t }
 
         -- | Type of some boxed data.
         --
@@ -43,11 +42,11 @@ data ImportType n
         --   This is used when importing data types defined in Salt modules.
         --
         | ImportTypeBoxed
-        { importTypeBoxed             :: !(Kind n) }
+        { importTypeBoxed        :: !t }
         deriving Show
 
 
-instance NFData n => NFData (ImportType n) where
+instance (NFData n, NFData t) => NFData (ImportType n t) where
  rnf is
   = case is of
         ImportTypeAbstract k            -> rnf k
@@ -55,7 +54,7 @@ instance NFData n => NFData (ImportType n) where
 
 
 -- | Take the kind of an `ImportType`.
-kindOfImportType :: ImportType n -> Kind n
+kindOfImportType :: ImportType n t -> t
 kindOfImportType src
  = case src of
         ImportTypeAbstract k            -> k
@@ -63,7 +62,7 @@ kindOfImportType src
 
 
 -- | Apply a function to the kind of an `ImportType`
-mapKindOfImportType :: (Kind n -> Kind n) -> ImportType n -> ImportType n
+mapKindOfImportType :: (t -> t) -> ImportType n t -> ImportType n t
 mapKindOfImportType f isrc
  = case isrc of
         ImportTypeAbstract k            -> ImportTypeAbstract (f k)
@@ -72,30 +71,30 @@ mapKindOfImportType f isrc
 
 -- ImportCapability -------------------------------------------------------------------------------
 -- | Define a foreign capability being imported into a module.
-data ImportCap n
+data ImportCap n t
         -- | Capability imported abstractly.
         --   For capabilities like (Read r) for some top-level region r
         --   we can just say that we have the capability.
         = ImportCapAbstract
-        { importCapAbstractType  :: !(Type n) }
+        { importCapAbstractType  :: !t }
         deriving Show
 
 
-instance NFData n => NFData (ImportCap n) where
+instance (NFData n, NFData t) => NFData (ImportCap n t) where
  rnf ii
   = case ii of
         ImportCapAbstract t     -> rnf t
 
 
 -- | Take the type of an `ImportCap`.
-typeOfImportCap :: ImportCap n -> Type n
+typeOfImportCap :: ImportCap n t -> t
 typeOfImportCap ii
  = case ii of
         ImportCapAbstract t     -> t
 
 
 -- | Apply a function to the type in an `ImportCapability`.
-mapTypeOfImportCap :: (Type n -> Type n) -> ImportCap n -> ImportCap n
+mapTypeOfImportCap :: (t -> t) -> ImportCap n t -> ImportCap n t
 mapTypeOfImportCap f ii
  = case ii of
         ImportCapAbstract t     -> ImportCapAbstract (f t)
@@ -103,7 +102,7 @@ mapTypeOfImportCap f ii
 
 -- ImportValue ------------------------------------------------------------------------------------
 -- | Define a foreign value being imported into a module.
-data ImportValue n
+data ImportValue n t
         -- | Value imported from a module that we compiled ourselves.
         = ImportValueModule
         { -- | Name of the module that we're importing from.
@@ -113,7 +112,7 @@ data ImportValue n
         , importValueModuleVar         :: !n 
 
           -- | Type of the value that we're importing.
-        , importValueModuleType        :: !(Type n)
+        , importValueModuleType        :: !t
 
           -- | Calling convention for this value,
           --   including the number of type parameters, value parameters, and boxings.
@@ -126,11 +125,11 @@ data ImportValue n
           importValueSeaVar            :: !String 
 
           -- | Type of the value that we're importing.
-        , importValueSeaType           :: !(Type n) }
+        , importValueSeaType           :: !t }
         deriving Show
 
 
-instance NFData n => NFData (ImportValue n) where
+instance (NFData n, NFData t) => NFData (ImportValue n t) where
  rnf is
   = case is of
         ImportValueModule mn n t mAV 
@@ -141,7 +140,7 @@ instance NFData n => NFData (ImportValue n) where
 
 
 -- | Take the type of an imported thing.
-typeOfImportValue :: ImportValue n -> Type n
+typeOfImportValue :: ImportValue n t -> t
 typeOfImportValue src
  = case src of
         ImportValueModule _ _ t _       -> t
@@ -149,7 +148,7 @@ typeOfImportValue src
 
 
 -- | Apply a function to the type in an ImportValue.
-mapTypeOfImportValue :: (Type n -> Type n) -> ImportValue n -> ImportValue n
+mapTypeOfImportValue :: (t -> t) -> ImportValue n t -> ImportValue n t
 mapTypeOfImportValue f isrc
  = case isrc of
         ImportValueModule mn n t a      -> ImportValueModule mn n (f t) a

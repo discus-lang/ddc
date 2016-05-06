@@ -33,23 +33,23 @@ instance SpreadX (Module a) where
                 = moduleIsHeader mm
 
         , moduleExportTypes     
-                = map (liftSnd $ spreadT kenv)
+                = map (liftSnd $ spreadExportSourceT kenv)
                 $ moduleExportTypes mm
 
         , moduleExportValues    
-                = map (liftSnd $ spreadT kenv)
+                = map (liftSnd $ spreadExportSourceT kenv)
                 $ moduleExportValues mm
           
         , moduleImportTypes     
-                = map (liftSnd $ spreadX kenv tenv) 
+                = map (liftSnd $ spreadImportTypeT kenv tenv) 
                 $ moduleImportTypes mm
 
         , moduleImportCaps
-                = map (liftSnd $ spreadX kenv tenv)
+                = map (liftSnd $ spreadImportCapX kenv tenv)
                 $ moduleImportCaps mm
 
         , moduleImportValues    
-                = map (liftSnd $ spreadX kenv tenv) 
+                = map (liftSnd $ spreadImportValueX kenv tenv) 
                 $ moduleImportValues mm
 
         , moduleImportDataDefs  
@@ -67,8 +67,7 @@ instance SpreadX (Module a) where
 
 
 ---------------------------------------------------------------------------------------------------
-instance SpreadT ExportSource where
- spreadT kenv esrc
+spreadExportSourceT kenv esrc
   = case esrc of
         ExportSourceLocal n t   
          -> ExportSourceLocal n (spreadT kenv t)
@@ -78,8 +77,7 @@ instance SpreadT ExportSource where
 
 
 ---------------------------------------------------------------------------------------------------
-instance SpreadX ImportType where
- spreadX kenv _tenv isrc
+spreadImportTypeT kenv _tenv isrc
   = case isrc of
         ImportTypeAbstract t
          -> ImportTypeAbstract (spreadT kenv t)
@@ -89,16 +87,14 @@ instance SpreadX ImportType where
 
 
 ---------------------------------------------------------------------------------------------------
-instance SpreadX ImportCap where
- spreadX kenv _tenv isrc
+spreadImportCapX kenv _tenv isrc
   = case isrc of
         ImportCapAbstract t
          -> ImportCapAbstract   (spreadT kenv t)
 
 
 ---------------------------------------------------------------------------------------------------
-instance SpreadX ImportValue where
- spreadX kenv _tenv isrc
+spreadImportValueX kenv _tenv isrc
   = case isrc of
         ImportValueModule mn n t mArity
          -> ImportValueModule   mn n (spreadT kenv t) mArity

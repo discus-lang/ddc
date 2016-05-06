@@ -93,8 +93,8 @@ convertM mm
 ---------------------------------------------------------------------------------------------------
 -- | Convert an export spec.
 convertExportM
-        :: (F.Name, ExportSource F.Name)                
-        -> ConvertM (T.Name, ExportSource T.Name)
+        :: (F.Name, ExportSource F.Name (Type F.Name))
+        -> ConvertM (T.Name, ExportSource T.Name (Type T.Name))
 
 convertExportM (n, esrc)
  = do   n'      <- convertName n
@@ -104,8 +104,8 @@ convertExportM (n, esrc)
 
 -- Convert an export source.
 convertExportSourceM 
-        :: ExportSource F.Name
-        -> ConvertM (ExportSource T.Name)
+        :: ExportSource F.Name (Type F.Name)
+        -> ConvertM (ExportSource T.Name (Type T.Name))
 
 convertExportSourceM esrc
  = case esrc of
@@ -122,8 +122,8 @@ convertExportSourceM esrc
 ---------------------------------------------------------------------------------------------------
 -- | Convert an import spec.
 convertImportNameTypeM
-        :: (F.Name, ImportType F.Name)
-        -> ConvertM (T.Name, ImportType T.Name)
+        :: (F.Name, ImportType F.Name (Type F.Name))
+        -> ConvertM (T.Name, ImportType T.Name (Type T.Name))
 
 convertImportNameTypeM (n, isrc)
  = do   n'      <- convertImportNameM n
@@ -133,8 +133,8 @@ convertImportNameTypeM (n, isrc)
 
 -- | Convert an import spec.
 convertImportNameValueM
-        :: (F.Name, ImportValue F.Name)
-        -> ConvertM (T.Name, ImportValue T.Name)
+        :: (F.Name, ImportValue F.Name (Type F.Name))
+        -> ConvertM (T.Name, ImportValue T.Name (Type T.Name))
 
 convertImportNameValueM (n, isrc)
  = do   n'      <- convertImportNameM n
@@ -155,8 +155,8 @@ convertImportNameM n
 
 -- | Convert an import source.
 convertImportTypeM 
-        :: ImportType F.Name
-        -> ConvertM (ImportType T.Name)
+        :: ImportType F.Name (Type F.Name)
+        -> ConvertM (ImportType T.Name (Type T.Name))
 
 convertImportTypeM isrc
  = case isrc of
@@ -171,8 +171,8 @@ convertImportTypeM isrc
 
 -- | Convert an import value spec.
 convertImportValueM 
-        :: ImportValue F.Name
-        -> ConvertM (ImportValue T.Name)
+        :: ImportValue F.Name (Type F.Name)
+        -> ConvertM (ImportValue T.Name (Type T.Name))
 
 convertImportValueM isrc
  = case isrc of

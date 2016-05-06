@@ -73,20 +73,20 @@ data Module a n
 
           -- Exports ------------------
           -- | Kinds of exported types.
-        , moduleExportTypes     :: ![(n, ExportSource n)]
+        , moduleExportTypes     :: ![(n, ExportSource n (Type n))]
 
           -- | Types of exported values.
-        , moduleExportValues    :: ![(n, ExportSource n)]
+        , moduleExportValues    :: ![(n, ExportSource n (Type n))]
 
           -- Imports ------------------
           -- | Define imported types.
-        , moduleImportTypes     :: ![(n, ImportType  n)]
+        , moduleImportTypes     :: ![(n, ImportType   n (Type n))]
 
           -- | Define imported capabilities.
-        , moduleImportCaps      :: ![(n, ImportCap n)]
+        , moduleImportCaps      :: ![(n, ImportCap    n (Type n))]
 
           -- | Define imported values.
-        , moduleImportValues    :: ![(n, ImportValue n)]
+        , moduleImportValues    :: ![(n, ImportValue  n (Type n))]
 
           -- | Data defs imported from other modules.
         , moduleImportDataDefs  :: ![DataDef n]

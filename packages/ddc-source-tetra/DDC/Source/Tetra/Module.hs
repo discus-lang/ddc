@@ -53,13 +53,16 @@ data Module l
         , moduleImportModules   :: [ModuleName]
 
           -- | Kinds of imported foreign types.
-        , moduleImportTypes     :: [(GName l, ImportType  (GName l))]
+        , moduleImportTypes     
+                :: [(GName l, ImportType  (GName l) (Type (GName l)))]
 
           -- | Types of imported capabilities.
-        , moduleImportCaps      :: [(GName l, ImportCap   (GName l))]
+        , moduleImportCaps      
+                :: [(GName l, ImportCap   (GName l) (Type (GName l)))]
 
           -- | Types of imported foreign values.
-        , moduleImportValues    :: [(GName l, ImportValue (GName l))]
+        , moduleImportValues    
+                :: [(GName l, ImportValue (GName l) (Type (GName l)))]
 
           -- Local ------------------------------
           -- | Top-level things

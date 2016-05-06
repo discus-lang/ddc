@@ -80,8 +80,8 @@ takeCallablesOfModule mm
 
 -- | Take a `Callable` from an `ImportValue`, or Nothing if there isn't one.
 takeCallableFromImport
-        :: E.Name               -- ^ Name of the imported thing.
-        -> ImportValue E.Name   -- ^ Import definition.
+        :: E.Name                               -- ^ Name of the imported thing.
+        -> ImportValue E.Name (Type E.Name)     -- ^ Import definition.
         -> Either Error (Maybe (E.Name, Callable))
 
 takeCallableFromImport n im

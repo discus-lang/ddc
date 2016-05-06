@@ -154,7 +154,10 @@ bindOfTop _
 
 
 -- ImportType -------------------------------------------------------------------------------------
-toCoreImportType :: ImportType S.Name -> ConvertM a (ImportType C.Name)
+toCoreImportType 
+        :: ImportType S.Name (T.Type S.Name)
+        -> ConvertM a (ImportType C.Name (T.Type C.Name))
+
 toCoreImportType src
  = case src of
         ImportTypeAbstract t    
@@ -165,7 +168,10 @@ toCoreImportType src
 
 
 -- ImportCap --------------------------------------------------------------------------------------
-toCoreImportCap :: ImportCap S.Name -> ConvertM a (ImportCap C.Name)
+toCoreImportCap 
+        :: ImportCap S.Name (T.Type S.Name)
+        -> ConvertM a (ImportCap C.Name (T.Type C.Name))
+
 toCoreImportCap src
  = case src of
         ImportCapAbstract t
@@ -173,7 +179,10 @@ toCoreImportCap src
 
 
 -- ImportValue ------------------------------------------------------------------------------------
-toCoreImportValue :: ImportValue S.Name -> ConvertM a (ImportValue C.Name)
+toCoreImportValue 
+        :: ImportValue S.Name (T.Type S.Name)
+        -> ConvertM a (ImportValue C.Name (T.Type C.Name))
+
 toCoreImportValue src
  = case src of
         ImportValueModule mn n t mA
