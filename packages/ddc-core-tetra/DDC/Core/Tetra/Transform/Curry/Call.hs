@@ -8,7 +8,7 @@ import DDC.Core.Tetra.Transform.Curry.Callable
 import DDC.Core.Tetra.Transform.Curry.Error
 import DDC.Core.Tetra.Prim
 import DDC.Core.Exp
-import DDC.Type.Equiv
+import DDC.Type.Exp.Simple.Equiv
 import Control.Monad
 import Data.Map                                 (Map)
 import qualified DDC.Core.Call                  as Call

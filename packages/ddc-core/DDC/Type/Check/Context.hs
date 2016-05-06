@@ -38,9 +38,8 @@ module DDC.Type.Check.Context
         , liftTypes
         , lowerTypes)
 where
-import DDC.Type.Exp.Simple
 import DDC.Type.Transform.BoundT
-import DDC.Type.Equiv
+import DDC.Type.Exp.Simple
 import DDC.Base.Pretty
 import Data.Maybe
 import qualified DDC.Type.Sum           as Sum

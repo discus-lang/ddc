@@ -14,7 +14,6 @@ import DDC.Type.Check.Context
 import DDC.Type.Check.Data
 import DDC.Type.Exp.Simple
 import DDC.Type.DataDef
-import DDC.Type.Equiv
 import DDC.Type.Universe
 import DDC.Base.Pretty
 import DDC.Type.Env             (KindEnv, TypeEnv)

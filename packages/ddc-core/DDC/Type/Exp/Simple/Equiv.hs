@@ -1,5 +1,5 @@
 
-module DDC.Type.Equiv
+module DDC.Type.Exp.Simple.Equiv
         ( equivT
         , equivWithBindsT
         , equivTyCon
@@ -9,8 +9,8 @@ module DDC.Type.Equiv
 where
 import DDC.Type.Exp.Simple.Predicates
 import DDC.Type.Exp.Simple.Compounds
+import DDC.Type.Exp.Simple.Exp
 import DDC.Type.Bind
-import DDC.Type.Exp
 import DDC.Type.Env             (TypeEnv)
 import qualified DDC.Type.Env   as Env
 import qualified DDC.Type.Sum   as Sum

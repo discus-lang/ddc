@@ -91,6 +91,8 @@ Library
         DDC.Type.Exp.Simple.Exp
         DDC.Type.Exp.Simple.Compounds
         DDC.Type.Exp.Simple.Predicates
+        DDC.Type.Exp.Simple.Equiv
+        DDC.Type.Exp.Simple.Subsumes
 
         DDC.Type.Exp.TyCon
 
@@ -105,9 +107,7 @@ Library
         DDC.Type.Collect
         DDC.Type.DataDef
         DDC.Type.Env
-        DDC.Type.Equiv
         DDC.Type.Exp
-        DDC.Type.Subsumes
         DDC.Type.Sum
         DDC.Type.Universe
 
@@ -175,6 +175,8 @@ Library
         DDC.Type.Check.ErrorMessage
         
         DDC.Type.Collect.FreeT
+
+        DDC.Type.Exp.Pretty
 
         DDC.Type.Exp.Simple.NFData
         DDC.Type.Exp.Simple.Pretty

@@ -60,6 +60,21 @@ module DDC.Type.Exp.Simple
         , isSomeWriteEffect
         , isSomeAllocEffect
 
+        ---------------------------------------------------
+          -- * Relations
+          -- ** Equivalence
+        , equivT
+        , equivWithBindsT
+        , equivTyCon
+
+          -- ** Subsumption
+        , subsumesT
+
+        ---------------------------------------------------
+          -- * Transforms
+          -- ** Crushing
+        , crushSomeT
+        , crushEffect
 
         ---------------------------------------------------
           -- * Compounds
@@ -154,6 +169,8 @@ import DDC.Type.Exp.Simple.NFData       ()
 import DDC.Type.Exp.Simple.Pretty       ()
 import DDC.Type.Exp.Simple.Predicates
 import DDC.Type.Exp.Simple.Compounds
+import DDC.Type.Exp.Simple.Equiv
+import DDC.Type.Exp.Simple.Subsumes
 
 
 

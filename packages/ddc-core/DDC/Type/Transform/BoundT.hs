@@ -5,7 +5,8 @@ module DDC.Type.Transform.BoundT
         , lowerT,       lowerAtDepthT
         , MapBoundT(..))
 where
-import DDC.Type.Exp.Simple
+import DDC.Type.Exp.Simple.Exp
+import DDC.Type.Exp.Simple.Compounds
 import qualified DDC.Type.Sum   as Sum
 
 

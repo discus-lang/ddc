@@ -4,11 +4,10 @@ module DDC.Core.Transform.Rewrite.Disjoint
         , checkDistinct )
 where
 import DDC.Core.Exp
-import DDC.Type.Exp.Simple
+import DDC.Type.Exp.Simple                      as T
 import qualified DDC.Core.Transform.Rewrite.Env as RE
 import qualified DDC.Type.Env                   as Env
 import qualified DDC.Type.Sum                   as Sum
-import qualified DDC.Type.Equiv                 as TC
 
 
 -- | Check whether a disjointness property is true in the given
@@ -68,8 +67,8 @@ checkDisjoint c env
         -- The type must have the form "Disjoint e1 e2"
         | [TCon (TyConWitness TwConDisjoint), fs, gs] <- takeTApps c
         = and [ areDisjoint env g f 
-                | f <- sumList $ TC.crushEffect Env.empty fs
-                , g <- sumList $ TC.crushEffect Env.empty gs ]
+                | f <- sumList $ T.crushEffect Env.empty fs
+                , g <- sumList $ T.crushEffect Env.empty gs ]
 
         | otherwise
         = False

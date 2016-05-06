@@ -24,7 +24,6 @@ import Data.Typeable
 import Control.Monad.Writer                     (Writer, runWriter, tell)
 import qualified Data.Map                               as Map
 import qualified DDC.Core.Transform.SubstituteXX        as S
-import qualified DDC.Type.Equiv                         as T
 import qualified DDC.Type.Exp.Simple                    as T
 import qualified DDC.Type.Sum                           as TS
 import qualified DDC.Type.Env                           as Env

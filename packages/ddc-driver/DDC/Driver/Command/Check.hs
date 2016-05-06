@@ -37,7 +37,7 @@ import DDC.Core.Exp.Annot
 import DDC.Core.Pretty
 import DDC.Type.Transform.SpreadT
 import DDC.Type.Universe
-import DDC.Type.Equiv
+import DDC.Type.Exp.Simple
 import Control.Monad.Trans.Except
 import Control.Monad.IO.Class
 import Control.Monad

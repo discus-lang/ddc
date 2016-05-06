@@ -4,7 +4,7 @@ module DDC.Type.Check.Data
 where
 import DDC.Type.Check.Error
 import DDC.Type.Check.Config
-import DDC.Type.Equiv
+import DDC.Type.Exp.Simple
 import DDC.Type.DataDef
 import DDC.Base.Pretty
 import Data.Maybe

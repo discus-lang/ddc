@@ -1,10 +1,12 @@
-module DDC.Type.Subsumes
+module DDC.Type.Exp.Simple.Subsumes
         (subsumesT)
 where
-import DDC.Type.Equiv
-import DDC.Type.Exp.Simple
+import DDC.Type.Exp.Simple.Equiv
+import DDC.Type.Exp.Simple.Predicates
+import DDC.Type.Exp.Simple.Exp
 import qualified DDC.Type.Sum   as Sum
 import qualified DDC.Type.Env   as Env
+
 
 -- | Check whether the first type subsumes the second.
 --

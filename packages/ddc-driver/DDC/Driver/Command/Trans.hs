@@ -18,8 +18,7 @@ import DDC.Core.Load
 import DDC.Core.Fragment
 import DDC.Core.Simplifier
 import DDC.Core.Exp.Annot
-import DDC.Type.Equiv
-import DDC.Type.Subsumes
+import DDC.Type.Exp.Simple
 import DDC.Base.Pretty
 import DDC.Base.Name
 import DDC.Core.Module

@@ -26,10 +26,8 @@ module DDC.Core.Check.Base
         , module DDC.Core.Exp.Annot
         , module DDC.Type.Check.Context
         , module DDC.Type.DataDef
-        , module DDC.Type.Equiv
         , module DDC.Type.Universe
         , module DDC.Type.Exp.Simple
-        , module DDC.Type.Exp
         , module DDC.Base.Pretty
         , module DDC.Data.ListUtils
         , module Control.Monad
@@ -43,10 +41,8 @@ import DDC.Type.Check.Context
 import DDC.Type.Check                           (Config (..), configOfProfile)
 import DDC.Type.Env                             (KindEnv, TypeEnv)
 import DDC.Type.DataDef
-import DDC.Type.Equiv
 import DDC.Type.Universe
 import DDC.Type.Exp.Simple
-import DDC.Type.Exp
 import DDC.Base.Pretty
 import DDC.Control.Monad.Check                  (throw, runCheck, evalCheck)
 import DDC.Data.ListUtils

@@ -15,7 +15,7 @@ import qualified DDC.Type.Sum                   as Sum
 import qualified DDC.Type.Transform.AnonymizeT  as T
 import qualified DDC.Core.Transform.AnonymizeX  as T
 import qualified DDC.Core.Transform.Reannotate  as T
-import qualified DDC.Type.Equiv                 as TE
+import qualified DDC.Type.Exp.Simple            as T
 import qualified Data.Map                       as Map
 import qualified Data.Set                       as Set
 
@@ -132,8 +132,8 @@ matchT  :: Ord n
         -> Maybe (Subst n)
 
 matchT t1 t2 vs subst
- = let  t1'     = unpackSumT $ TE.crushSomeT Env.empty t1
-        t2'     = unpackSumT $ TE.crushSomeT Env.empty t2
+ = let  t1'     = unpackSumT $ T.crushSomeT Env.empty t1
+        t2'     = unpackSumT $ T.crushSomeT Env.empty t2
    in case (t1', t2') of
         -- Constructor names must be equal.
         --
@@ -183,7 +183,7 @@ matchT t1 t2 vs subst
 
          | Set.member n vs
          , Just t1'' <- Map.lookup n subst
-         , TE.equivT t1'' t2'
+         , T.equivT t1'' t2'
          -> Just subst
 
         -- Both are variables but it's not a template variable,

@@ -11,15 +11,11 @@ module DDC.Type.Check.Base
         , module DDC.Type.Check.Context
         , module DDC.Type.Check.Error
         , module DDC.Type.Exp.Simple
-        , module DDC.Type.Equiv
-        , module DDC.Type.Exp
         , module DDC.Base.Pretty)
 where
 import DDC.Type.Check.Context
 import DDC.Type.Check.Error
 import DDC.Type.Exp.Simple
-import DDC.Type.Equiv
-import DDC.Type.Exp
 import DDC.Base.Pretty
 import DDC.Control.Monad.Check           (throw)
 import qualified Data.Set               as Set
