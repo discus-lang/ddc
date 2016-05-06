@@ -27,7 +27,7 @@ data GType l
         = TAnnot     !(GAnnot l) (GType l)
 
         -- | Type constructor or literal.
-        | TCon       !(GCon   l)
+        | TCon       !(GTyCon l)
 
         -- | Type variable.
         | TVar       !(GBound l)
@@ -42,51 +42,51 @@ data GType l
 -------------------------------------------------------------------------------
 -- | Wrapper for primitive constructors that adds the ones
 --   common to SystemFω based languages.
-data GCon l
+data GTyCon l
         -- | The function constructor.
-        = TConFun
+        = TyConFun
 
         -- | The unit constructor.
-        | TConUnit
+        | TyConUnit
 
         -- | The void constructor.
-        | TConVoid
+        | TyConVoid
 
         -- | Take the least upper bound at the given kind,
         --   of the given number of elements.
-        | TConSum    !(GType l) Int
+        | TyConSum    !(GType l) Int
 
         -- | The least element of the given kind.
-        | TConBot    !(GType l)
+        | TyConBot    !(GType l)
 
         -- | The universal quantifier with a parameter of the given kind.
-        | TConForall !(GType l)
+        | TyConForall !(GType l)
 
         -- | The existential quantifier with a parameter of the given kind.
-        | TConExists !(GType l)
+        | TyConExists !(GType l)
 
         -- | Primitive constructors.
-        | TConPrim   !(GPrim l)
+        | TyConPrim   !(GPrim l)
 
 
 -------------------------------------------------------------------------------
 -- | Representation of the function type.
-pattern TFun            = TCon TConFun
+pattern TFun            = TCon TyConFun
 
 -- | Representation of the unit type.
-pattern TUnit           = TCon TConUnit
+pattern TUnit           = TCon TyConUnit
 
 -- | Representation of the void type.
-pattern TVoid           = TCon TConVoid
+pattern TVoid           = TCon TyConVoid
 
 -- | Representation of forall quantified types.
-pattern TForall k b t   = TApp (TCon (TConForall k)) (TAbs b t)
+pattern TForall k b t   = TApp (TCon (TyConForall k)) (TAbs b t)
 
 -- | Representation of exists quantified types.
-pattern TExists k b t   = TApp (TCon (TConExists k)) (TAbs b t)
+pattern TExists k b t   = TApp (TCon (TyConExists k)) (TAbs b t)
 
 -- | Representation of primitive type constructors.
-pattern TPrim   p       = TCon (TConPrim p)
+pattern TPrim   p       = TCon (TyConPrim p)
 
 
 -------------------------------------------------------------------------------
@@ -97,5 +97,6 @@ type ShowLanguage l
           , Show (GBind  l), Show (GBound l)
           , Show (GPrim  l))
 
-deriving instance ShowLanguage l => Show (GType l)
-deriving instance ShowLanguage l => Show (GCon  l)
+deriving instance ShowLanguage l => Show (GType  l)
+deriving instance ShowLanguage l => Show (GTyCon l)
+

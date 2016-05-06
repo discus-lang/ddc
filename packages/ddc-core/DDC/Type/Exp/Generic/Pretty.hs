@@ -1,46 +1,58 @@
 {-# LANGUAGE TypeFamilies, UndecidableInstances #-}
 
-module DDC.Type.Exp.Generic.Pretty where
+module DDC.Type.Exp.Generic.Pretty
+        ( PrettyConfig
+        , pprRawT
+        , pprRawPrecT
+        , pprRawC)
+where
 import DDC.Type.Exp.Generic.Exp
 import DDC.Base.Pretty
 
 
--- | Synonym for pretty constraints on all language types.
-type PrettyLanguage l
-      = ( Eq l
-        , Pretty (GAnnot l)
-        , Pretty (GBind  l), Pretty (GBound l)
-        , Pretty (GCon   l), Pretty (GPrim  l))
+-- | Synonym for pretty constraints on the configurable types.
+type PrettyConfig l
+      = ( Pretty (GAnnot l)
+        , Pretty (GBind  l)
+        , Pretty (GBound l)
+        , Pretty (GPrim  l))
 
 
-instance PrettyLanguage l => Pretty (GType l) where
- pprPrec d tt
-  = case tt of
-        TAnnot a x
+-- | Pretty print a type using the generic, raw syntax.
+pprRawT     :: PrettyConfig l => GType l -> Doc
+pprRawT tt = pprRawPrecT 0 tt
+
+
+-- | Like `pprRawT`, but take the initial precedence.
+pprRawPrecT :: PrettyConfig l => Int -> GType l -> Doc
+pprRawPrecT d tt
+ = case tt of
+        TAnnot a t
          ->  braces (ppr a) 
-         <+> ppr x
+         <+> pprRawT t
 
-        TCon c   -> ppr c
+        TCon c   -> pprRawC c
         TVar u   -> ppr u
 
         TAbs b t 
          -> pprParen (d > 1) 
-         $  text "λ" <> ppr b <> text "." <+> ppr t
+         $  text "λ" <> ppr b <> text "." <+> pprRawT t
 
         TApp t1 t2
          -> pprParen (d > 10)
-         $  ppr t1 <+> pprPrec 11 t2
+         $  pprRawT t1 <+> pprRawPrecT 11 t2
 
 
-instance PrettyLanguage l => Pretty (GCon l) where
- ppr cc
+-- | Pretty print a type constructor using the generic, raw syntax.
+pprRawC :: PrettyConfig l => GTyCon l -> Doc
+pprRawC cc
   = case cc of
-        TConFun         -> text "(→)"
-        TConUnit        -> text "1"
-        TConVoid        -> text "0"
-        TConSum    k n  -> text "Σ" <> braces (ppr k <> comma <+> ppr n)
-        TConBot    k    -> text "⊥" <> braces (ppr k)
-        TConForall k    -> text "∀" <> braces (ppr k)
-        TConExists k    -> text "∃" <> braces (ppr k)
-        TConPrim   p    -> ppr p
+        TyConFun        -> text "(→)"
+        TyConUnit       -> text "1"
+        TyConVoid       -> text "0"
+        TyConSum    k n -> text "Σ" <> braces (pprRawT k <> comma <+> ppr n)
+        TyConBot    k   -> text "⊥" <> braces (pprRawT k)
+        TyConForall k   -> text "∀" <> braces (pprRawT k)
+        TyConExists k   -> text "∃" <> braces (pprRawT k)
+        TyConPrim   p   -> ppr p
 

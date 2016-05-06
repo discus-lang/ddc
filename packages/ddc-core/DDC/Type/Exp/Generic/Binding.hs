@@ -24,3 +24,4 @@ class Anon l where
  -- | Evaluate a function given a new anonymous binding and matching
  --   bound occurrence.
  withBinding :: l -> (GBind l -> GBound l -> a) -> a
+

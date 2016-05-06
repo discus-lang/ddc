@@ -50,7 +50,7 @@ makeTFuns (t:ts) t1      = t `makeTFun` makeTFuns ts t1
 takeTFun :: GType l -> Maybe (GType l, GType l)
 takeTFun tt
  = case tt of
-        TApp (TApp (TCon TConFun) t1) t2 
+        TApp (TApp (TCon TyConFun) t1) t2 
                 -> Just (t1, t2)
         _       -> Nothing
 
@@ -60,7 +60,7 @@ takeTFun tt
 takeTFuns :: GType l -> ([GType l], GType l)
 takeTFuns tt
  = case tt of
-        TApp (TApp (TCon TConFun) t1) t2
+        TApp (TApp (TCon TyConFun) t1) t2
           |  (ts, t2') <- takeTFuns t2
           -> (t1 : ts, t2')
 

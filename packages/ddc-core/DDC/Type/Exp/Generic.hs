@@ -5,7 +5,7 @@ module DDC.Type.Exp.Generic
           GAnnot, GBind, GBound, GPrim
 
           -- ** Core Syntax
-        , GType (..), GCon (..)
+        , GType (..), GTyCon (..)
 
           -- ** Syntactic Sugar
         , pattern TFun

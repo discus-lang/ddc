@@ -84,6 +84,9 @@ Library
         DDC.Core.Parser
         DDC.Core.Pretty
 
+        DDC.Type.Exp.Flat.Exp
+        DDC.Type.Exp.Flat.Pretty
+
         DDC.Type.Exp.Generic.Binding
         DDC.Type.Exp.Generic.Compounds
         DDC.Type.Exp.Generic.Exp
