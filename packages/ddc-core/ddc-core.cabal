@@ -86,6 +86,7 @@ Library
 
         DDC.Type.Exp.Flat.Exp
         DDC.Type.Exp.Flat.Pretty
+        DDC.Type.Exp.Flat
 
         DDC.Type.Exp.Generic.Binding
         DDC.Type.Exp.Generic.Compounds
