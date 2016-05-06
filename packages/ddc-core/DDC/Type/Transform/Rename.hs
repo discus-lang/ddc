@@ -18,8 +18,7 @@ module DDC.Type.Transform.Rename
         -- * Rewriting bound occurences
         , use1,  use0)
 where
-import DDC.Type.Compounds
-import DDC.Type.Exp
+import DDC.Type.Exp.Simple
 import Data.List
 import Data.Set                         (Set)
 import qualified DDC.Type.Sum           as Sum

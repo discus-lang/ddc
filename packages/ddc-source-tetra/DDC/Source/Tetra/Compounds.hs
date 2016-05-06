@@ -2,7 +2,7 @@
 
 -- | Utilities for constructing and destructing Source Tetra expressions.
 module DDC.Source.Tetra.Compounds
-        ( module DDC.Type.Compounds
+        ( module DDC.Type.Exp.Simple.Compounds
         , takeAnnotOfExp
 
           -- * Lambdas
@@ -49,7 +49,7 @@ module DDC.Source.Tetra.Compounds
 where
 import DDC.Source.Tetra.Exp
 import DDC.Source.Tetra.Prim
-import DDC.Type.Compounds
+import DDC.Type.Exp.Simple.Compounds
 import Data.Text                        (Text)
 import DDC.Core.Exp.Annot.Compounds
         ( dcUnit

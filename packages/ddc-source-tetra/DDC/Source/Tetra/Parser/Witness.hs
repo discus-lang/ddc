@@ -19,8 +19,7 @@ import DDC.Core.Parser
 import DDC.Core.Lexer.Tokens
 import DDC.Base.Parser                  ((<?>), SourcePos)
 import qualified DDC.Base.Parser        as P
-import qualified DDC.Type.Exp           as T
-import qualified DDC.Type.Compounds     as T
+import qualified DDC.Type.Exp.Simple    as T
 import Control.Monad.Except
 
 type SP = SourcePos

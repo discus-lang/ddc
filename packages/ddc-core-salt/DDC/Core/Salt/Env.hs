@@ -20,9 +20,7 @@ import DDC.Core.Salt.Compounds.PrimStore
 import DDC.Core.Salt.Compounds
 import DDC.Core.Salt.Name
 import DDC.Type.DataDef
-import DDC.Type.Compounds
-import DDC.Type.Predicates
-import DDC.Type.Exp
+import DDC.Type.Exp.Simple
 import DDC.Type.Env                             (Env)
 import qualified DDC.Type.Env                   as Env
 

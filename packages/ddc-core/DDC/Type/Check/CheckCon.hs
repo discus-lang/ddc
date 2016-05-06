@@ -5,8 +5,7 @@ module DDC.Type.Check.CheckCon
         , kindOfTwCon
         , kindOfTcCon)
 where
-import DDC.Type.Exp
-import DDC.Type.Compounds
+import DDC.Type.Exp.Simple
 
 
 -- | Take the kind of a `TyCon`, if there is one.

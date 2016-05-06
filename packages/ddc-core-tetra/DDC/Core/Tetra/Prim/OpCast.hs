@@ -4,8 +4,7 @@ module DDC.Core.Tetra.Prim.OpCast
         , typePrimCast)
 where
 import DDC.Core.Tetra.Prim.Base
-import DDC.Type.Compounds
-import DDC.Type.Exp
+import DDC.Type.Exp.Simple
 import DDC.Core.Salt.Name       (readPrimCast)
 
 

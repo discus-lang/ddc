@@ -53,6 +53,7 @@ Library
 
         DDC.Core.Exp.Simple.Compounds
         DDC.Core.Exp.Simple.Exp
+
         DDC.Core.Exp.Annot
         DDC.Core.Exp
 
@@ -85,7 +86,13 @@ Library
 
         DDC.Type.Exp.Generic.Exp
         DDC.Type.Exp.Generic.Pretty
-        DDC.Type.Exp.Pretty
+        DDC.Type.Exp.Generic
+
+        DDC.Type.Exp.Simple.Exp
+        DDC.Type.Exp.Simple.Pretty
+        DDC.Type.Exp.Simple.Compounds
+        DDC.Type.Exp.Simple.Predicates
+
         DDC.Type.Exp.TyCon
 
         DDC.Type.Transform.BoundT
@@ -97,12 +104,10 @@ Library
         DDC.Type.Bind
         DDC.Type.Check
         DDC.Type.Collect
-        DDC.Type.Compounds
         DDC.Type.DataDef
         DDC.Type.Env
         DDC.Type.Equiv
         DDC.Type.Exp
-        DDC.Type.Predicates
         DDC.Type.Subsumes
         DDC.Type.Sum
         DDC.Type.Universe
@@ -172,8 +177,7 @@ Library
         
         DDC.Type.Collect.FreeT
 
-        DDC.Type.Exp.Base
-        DDC.Type.Exp.NFData
+        DDC.Type.Exp.Simple.NFData
 
         DDC.Type.Pretty
 

@@ -14,11 +14,11 @@ where
 import DDC.Core.Exp.Annot.Exp
 import DDC.Core.Collect
 import DDC.Core.Transform.BoundX
-import DDC.Type.Compounds
 import DDC.Core.Transform.SubstituteWX
 import DDC.Core.Transform.SubstituteTX
 import DDC.Type.Transform.SubstituteT
 import DDC.Type.Transform.Rename
+import DDC.Type.Exp.Simple
 import Data.Maybe
 import qualified DDC.Type.Env   as Env
 import qualified Data.Set       as Set

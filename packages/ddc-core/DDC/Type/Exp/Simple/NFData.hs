@@ -1,6 +1,6 @@
 
-module DDC.Type.Exp.NFData where
-import DDC.Type.Exp.Base
+module DDC.Type.Exp.Simple.NFData where
+import DDC.Type.Exp.Simple.Exp
 import Control.DeepSeq
 
 

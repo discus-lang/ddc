@@ -5,11 +5,18 @@ module DDC.Type.Exp.Generic.Exp where
 
 
 -------------------------------------------------------------------------------
--- | Type functions associated with the language definition.
---
+-- Type functions associated with the language definition.
+
+-- | Yield the type of annotations for language @l@.
 type family GAnnot l
+
+-- | Yield the type of binding occurrences of variables for language @l@.
 type family GBind  l
+
+-- | Yield the type of bound occurrences of variables for language @l@.
 type family GBound l
+
+-- | Yield the type of primitive names for language @l@.
 type family GPrim  l
 
 
@@ -34,7 +41,7 @@ data GType l
 
 -------------------------------------------------------------------------------
 -- | Wrapper for primitive constructors that adds the ones
---   common to SystemFw based languages.
+--   common to SystemFω based languages.
 data GCon l
         -- | The arrow constructor.
         = TConArr

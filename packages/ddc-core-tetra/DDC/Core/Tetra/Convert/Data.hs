@@ -9,8 +9,7 @@ import DDC.Core.Salt.Platform
 import DDC.Core.Transform.BoundX
 import DDC.Core.Exp
 import DDC.Type.Env
-import DDC.Type.Compounds
-import DDC.Type.Predicates
+import DDC.Type.Exp.Simple
 import DDC.Type.DataDef
 import qualified DDC.Core.Tetra.Prim            as E
 import qualified DDC.Core.Salt.Runtime          as A

@@ -4,7 +4,7 @@ module DDC.Core.Collect.Free
         , bindDefX)
 where
 import DDC.Type.Collect
-import DDC.Type.Compounds
+import DDC.Type.Exp.Simple
 import DDC.Core.Module
 import DDC.Core.Exp
 import DDC.Type.Env                     (Env)

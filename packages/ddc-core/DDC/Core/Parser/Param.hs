@@ -12,7 +12,7 @@ import DDC.Core.Parser.Context
 import DDC.Core.Parser.Base             (Parser)
 import DDC.Core.Lexer.Tokens
 import qualified DDC.Base.Parser        as P
-import qualified DDC.Type.Compounds     as T
+import qualified DDC.Type.Exp.Simple    as T
 
 
 -- | Specification of a function parameter.

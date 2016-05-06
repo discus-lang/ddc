@@ -12,7 +12,6 @@ import DDC.Type.Check.Judge.Eq
 import DDC.Type.Universe
 import Data.List
 import Control.Monad
-import DDC.Type.Pretty                   ()
 import DDC.Type.Env                      (KindEnv)
 import qualified DDC.Type.Sum            as TS
 import qualified DDC.Type.Env            as Env

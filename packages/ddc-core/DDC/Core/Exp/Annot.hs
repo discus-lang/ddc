@@ -23,7 +23,7 @@ module DDC.Core.Exp.Annot
 
           ---------------------------------------
           -- * Predicates
-        , module DDC.Type.Predicates
+        , module DDC.Type.Exp.Simple.Predicates
 
           -- ** Atoms
         , isXVar,  isXCon
@@ -53,7 +53,7 @@ module DDC.Core.Exp.Annot
 
           ---------------------------------------
           -- * Compounds
-        , module DDC.Type.Compounds
+        , module DDC.Type.Exp.Simple.Compounds
 
           -- ** Annotations
         , annotOfExp
@@ -118,6 +118,6 @@ where
 import DDC.Core.Exp.Annot.Exp
 import DDC.Core.Exp.Annot.Compounds
 import DDC.Core.Exp.Annot.Predicates
-import DDC.Type.Compounds
-import DDC.Type.Predicates
+import DDC.Type.Exp.Simple.Compounds
+import DDC.Type.Exp.Simple.Predicates
 import DDC.Type.Exp

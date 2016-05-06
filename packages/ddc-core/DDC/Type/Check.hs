@@ -27,10 +27,9 @@ import DDC.Type.Check.Error
 import DDC.Type.Check.ErrorMessage      ()
 import DDC.Type.Check.CheckCon
 import DDC.Type.Check.Config
+import DDC.Type.Exp.Simple
 import DDC.Type.Universe
-import DDC.Type.Exp
 import DDC.Base.Pretty
-import DDC.Type.Pretty                   ()
 import DDC.Type.Env                      (KindEnv)
 import DDC.Control.Monad.Check           (evalCheck)
 import qualified DDC.Type.Env            as Env

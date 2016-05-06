@@ -8,7 +8,7 @@ where
 import DDC.Core.Module
 import DDC.Core.Exp
 import DDC.Type.Transform.AnonymizeT
-import DDC.Type.Compounds
+import DDC.Type.Exp.Simple
 import Data.List
 import Data.Set                         (Set)
 import qualified Data.Set               as Set

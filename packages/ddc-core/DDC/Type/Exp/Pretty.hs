@@ -3,6 +3,7 @@ module DDC.Type.Exp.Pretty where
 import DDC.Type.Exp.TyCon
 import DDC.Base.Pretty
 
+
 instance Pretty SoCon where
  ppr sc 
   = case sc of
@@ -47,5 +48,4 @@ instance Pretty TcCon where
         TcConDeepWrite  -> text "DeepWrite"
         TcConAlloc      -> text "Alloc"
         TcConDeepAlloc  -> text "DeepAlloc"
-
 

@@ -9,7 +9,7 @@ module DDC.Source.Tetra.DataDef
         , DataCtor (..)
         , typeOfDataCtor)
 where
-import DDC.Type.Compounds
+import DDC.Type.Exp.Simple.Compounds
 import DDC.Type.Exp
 import DDC.Type.Env             (TypeEnv)
 import qualified DDC.Type.Env   as Env

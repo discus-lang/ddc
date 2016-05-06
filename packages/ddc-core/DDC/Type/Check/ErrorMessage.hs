@@ -2,10 +2,9 @@
 -- | Errors produced when checking types.
 module DDC.Type.Check.ErrorMessage where
 import DDC.Type.Check.Error
+import DDC.Type.Exp.Simple
 import DDC.Type.Universe
-import DDC.Type.Compounds
-import DDC.Type.Pretty
-
+import DDC.Base.Pretty
 
 instance (Eq n, Show n, Pretty n) => Pretty (Error n) where
  ppr err

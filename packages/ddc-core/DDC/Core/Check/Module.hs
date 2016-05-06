@@ -12,8 +12,7 @@ import DDC.Core.Module
 import DDC.Core.Exp
 import DDC.Type.Check.Context
 import DDC.Type.Check.Data
-import DDC.Type.Compounds
-import DDC.Type.Predicates
+import DDC.Type.Exp.Simple
 import DDC.Type.DataDef
 import DDC.Type.Equiv
 import DDC.Type.Universe

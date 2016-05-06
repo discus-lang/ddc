@@ -9,7 +9,7 @@ import DDC.Core.Analysis.Arity
 import DDC.Core.Module
 import DDC.Core.Exp.Annot
 import qualified DDC.Core.Transform.BoundX      as L
-import qualified DDC.Type.Compounds             as T
+import qualified DDC.Type.Exp.Simple            as T
 
 
 -------------------------------------------------------------------------------

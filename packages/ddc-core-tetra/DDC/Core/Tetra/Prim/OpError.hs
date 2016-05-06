@@ -7,8 +7,7 @@ where
 import DDC.Core.Tetra.Prim.TyConTetra
 import DDC.Core.Tetra.Prim.TyConPrim
 import DDC.Core.Tetra.Prim.Base
-import DDC.Type.Compounds
-import DDC.Type.Exp
+import DDC.Type.Exp.Simple
 import DDC.Base.Pretty
 import Control.DeepSeq
 

@@ -1,5 +1,5 @@
 
-module DDC.Type.Exp.Base 
+module DDC.Type.Exp.Simple.Exp
         ( Binder        (..)
         , Bind          (..)
         , Bound         (..)
@@ -167,5 +167,4 @@ data TyCon n
         --   Used during type checking, but not accepted in source programs.
         | TyConExists   !Int       !(Kind n)
         deriving Show
-
 

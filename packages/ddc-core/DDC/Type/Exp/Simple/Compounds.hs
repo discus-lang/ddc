@@ -1,5 +1,5 @@
 {-# OPTIONS -fno-warn-missing-signatures #-}
-module DDC.Type.Compounds
+module DDC.Type.Exp.Simple.Compounds
         (  -- * Binds
           takeNameOfBind
         , typeOfBind

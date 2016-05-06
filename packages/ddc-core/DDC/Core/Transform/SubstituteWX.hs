@@ -13,7 +13,7 @@ import DDC.Core.Exp.Annot.Exp
 import DDC.Core.Collect
 import DDC.Core.Transform.Rename
 import DDC.Core.Transform.BoundX
-import DDC.Type.Compounds
+import DDC.Type.Exp.Simple
 import Data.Maybe
 import qualified DDC.Type.Env   as Env
 import qualified Data.Set       as Set

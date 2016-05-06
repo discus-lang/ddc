@@ -28,10 +28,9 @@ import qualified DDC.Core.Check                 as C
 import qualified DDC.Core.Collect               as C
 import qualified DDC.Core.Transform.SpreadX     as S
 import qualified DDC.Type.Check                 as T
-import qualified DDC.Type.Compounds             as T
 import qualified DDC.Type.Env                   as T
 import qualified DDC.Type.Equiv                 as T
-import qualified DDC.Type.Predicates            as T
+import qualified DDC.Type.Exp.Simple            as T
 import qualified DDC.Type.Subsumes              as T
 import qualified DDC.Type.Transform.SpreadT     as S
 import qualified Data.Map                       as Map

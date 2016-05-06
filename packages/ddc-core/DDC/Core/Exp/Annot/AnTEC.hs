@@ -3,8 +3,7 @@ module DDC.Core.Exp.Annot.AnTEC
         ( AnTEC (..)
         , fromAnT)
 where
-import DDC.Type.Compounds
-import DDC.Type.Exp
+import DDC.Type.Exp.Simple
 import DDC.Base.Pretty
 import Control.DeepSeq
 import Data.Typeable

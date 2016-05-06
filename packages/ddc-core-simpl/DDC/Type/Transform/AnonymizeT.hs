@@ -4,8 +4,7 @@ module DDC.Type.Transform.AnonymizeT
         , AnonymizeT(..)
         , pushAnonymizeBindT)
 where
-import DDC.Type.Exp
-import DDC.Type.Compounds
+import DDC.Type.Exp.Simple
 import Data.List
 import qualified DDC.Type.Sum           as T
 

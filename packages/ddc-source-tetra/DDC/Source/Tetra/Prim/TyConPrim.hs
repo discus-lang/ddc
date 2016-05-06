@@ -6,8 +6,7 @@ module DDC.Source.Tetra.Prim.TyConPrim
         , tTextLit)
 where
 import DDC.Source.Tetra.Prim.Base
-import DDC.Type.Compounds
-import DDC.Type.Exp
+import DDC.Type.Exp.Simple
 
 
 -- | Yield the kind of a type constructor.

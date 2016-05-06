@@ -7,7 +7,7 @@ module DDC.Core.Transform.Elaborate
 where
 import DDC.Core.Exp
 import DDC.Core.Module
-import DDC.Type.Compounds
+import DDC.Type.Exp.Simple
 import DDC.Data.ListUtils
 import Control.Monad
 import Control.Arrow

@@ -12,7 +12,7 @@ module DDC.Core.Transform.SubstituteTX
 where
 import DDC.Core.Collect
 import DDC.Core.Exp.Annot.Exp
-import DDC.Type.Compounds
+import DDC.Type.Exp.Simple
 import DDC.Type.Transform.SubstituteT
 import DDC.Type.Transform.Rename
 import Data.Maybe

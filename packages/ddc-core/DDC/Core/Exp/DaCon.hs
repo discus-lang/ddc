@@ -7,8 +7,7 @@ module DDC.Core.Exp.DaCon
         , takeNameOfDaCon
         , takeTypeOfDaCon)
 where
-import DDC.Type.Compounds
-import DDC.Type.Exp
+import DDC.Type.Exp.Simple
 import Control.DeepSeq
 
 

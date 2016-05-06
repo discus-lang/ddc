@@ -7,8 +7,8 @@ module DDC.Type.Equiv
         , crushSomeT
         , crushEffect)
 where
-import DDC.Type.Predicates
-import DDC.Type.Compounds
+import DDC.Type.Exp.Simple.Predicates
+import DDC.Type.Exp.Simple.Compounds
 import DDC.Type.Bind
 import DDC.Type.Exp
 import DDC.Type.Env             (TypeEnv)

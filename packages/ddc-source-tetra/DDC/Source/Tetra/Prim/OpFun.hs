@@ -5,8 +5,7 @@ module DDC.Source.Tetra.Prim.OpFun
 where
 import DDC.Source.Tetra.Prim.TyConTetra
 import DDC.Source.Tetra.Prim.Base
-import DDC.Type.Compounds
-import DDC.Type.Exp
+import DDC.Type.Exp.Simple
 
 
 -- | Take the type of a primitive function operator.

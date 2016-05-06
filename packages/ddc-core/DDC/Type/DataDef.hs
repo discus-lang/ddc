@@ -26,7 +26,7 @@ module DDC.Type.DataDef
         , typeOfDataCtor)
 where
 import DDC.Type.Exp
-import DDC.Type.Compounds
+import DDC.Type.Exp.Simple.Compounds
 import Data.Map                         (Map)
 import qualified Data.Map.Strict        as Map
 import Data.Maybe

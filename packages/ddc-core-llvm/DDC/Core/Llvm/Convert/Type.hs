@@ -25,8 +25,8 @@ import DDC.Llvm.Syntax.Type
 import DDC.Llvm.Syntax.Attr
 import DDC.Core.Salt.Platform
 import DDC.Type.Env
-import DDC.Type.Compounds
-import DDC.Type.Predicates
+import DDC.Type.Exp.Simple.Compounds
+import DDC.Type.Exp.Simple.Predicates
 import DDC.Base.Pretty
 import qualified DDC.Core.Salt          as A
 import qualified DDC.Core.Salt.Name     as A

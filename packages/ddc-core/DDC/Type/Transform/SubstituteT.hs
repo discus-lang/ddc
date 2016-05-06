@@ -12,10 +12,9 @@ module DDC.Type.Transform.SubstituteT
         , substBound)
 where
 import DDC.Type.Collect
-import DDC.Type.Compounds
 import DDC.Type.Transform.BoundT
 import DDC.Type.Transform.Rename
-import DDC.Type.Exp
+import DDC.Type.Exp.Simple
 import Data.Maybe
 import qualified DDC.Type.Sum   as Sum
 import qualified DDC.Type.Env   as Env

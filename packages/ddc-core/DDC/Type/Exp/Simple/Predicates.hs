@@ -1,6 +1,6 @@
 
 -- | Predicates on type expressions.
-module DDC.Type.Predicates
+module DDC.Type.Exp.Simple.Predicates
         ( -- * Binders
           isBNone
         , isBAnon
@@ -35,7 +35,7 @@ module DDC.Type.Predicates
         , isSomeAllocEffect)
 where
 import DDC.Type.Exp
-import DDC.Type.Compounds
+import DDC.Type.Exp.Simple.Compounds
 import Data.Maybe
 import qualified DDC.Type.Sum   as T
 

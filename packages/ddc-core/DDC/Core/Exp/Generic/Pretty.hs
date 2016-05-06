@@ -4,7 +4,8 @@ module DDC.Core.Exp.Generic.Pretty where
 import DDC.Core.Exp.Generic.Predicates
 import DDC.Core.Exp.Generic.Exp
 import DDC.Core.Exp.DaCon
-import DDC.Type.Pretty
+import DDC.Type.Exp.Simple      ()
+import DDC.Base.Pretty
 import Prelude                  hiding ((<$>))
 
 

@@ -1,9 +1,8 @@
 module DDC.Type.Subsumes
         (subsumesT)
 where
-import DDC.Type.Exp
-import DDC.Type.Predicates
 import DDC.Type.Equiv
+import DDC.Type.Exp.Simple
 import qualified DDC.Type.Sum   as Sum
 import qualified DDC.Type.Env   as Env
 

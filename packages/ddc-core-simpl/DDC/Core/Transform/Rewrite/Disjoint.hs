@@ -4,8 +4,7 @@ module DDC.Core.Transform.Rewrite.Disjoint
         , checkDistinct )
 where
 import DDC.Core.Exp
-import DDC.Type.Predicates
-import DDC.Type.Compounds
+import DDC.Type.Exp.Simple
 import qualified DDC.Core.Transform.Rewrite.Env as RE
 import qualified DDC.Type.Env                   as Env
 import qualified DDC.Type.Sum                   as Sum

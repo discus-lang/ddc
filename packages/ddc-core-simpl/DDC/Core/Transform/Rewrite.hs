@@ -18,7 +18,7 @@ import           DDC.Core.Transform.Rewrite.Rule
 import qualified DDC.Core.Transform.SubstituteXX        as S
 import qualified DDC.Type.Transform.SubstituteT         as S
 import qualified DDC.Core.Transform.BoundX              as L
-import qualified DDC.Type.Compounds                     as T
+import qualified DDC.Type.Exp.Simple                    as T
 import qualified Data.Map                               as Map
 import qualified Data.Set                               as Set
 import Data.Maybe

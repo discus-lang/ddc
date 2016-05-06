@@ -14,6 +14,6 @@ module DDC.Type.Exp
         , Bind     (..)
         , Bound    (..))
 where
-import DDC.Type.Exp.Base
-import DDC.Type.Exp.NFData      ()
+import DDC.Type.Exp.Simple.Exp
+import DDC.Type.Exp.Simple.NFData       ()
 

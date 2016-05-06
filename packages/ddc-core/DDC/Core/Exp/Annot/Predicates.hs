@@ -1,7 +1,7 @@
 
 -- | Simple predicates on core expressions.
 module DDC.Core.Exp.Annot.Predicates
-        ( module DDC.Type.Predicates
+        ( module DDC.Type.Exp.Simple.Predicates
 
           -- * Atoms
         , isXVar,  isXCon
@@ -30,7 +30,7 @@ module DDC.Core.Exp.Annot.Predicates
         , isXWitness)
 where
 import DDC.Core.Exp.Annot.Exp
-import DDC.Type.Predicates
+import DDC.Type.Exp.Simple.Predicates
 
 
 -- Atoms ----------------------------------------------------------------------

@@ -3,7 +3,7 @@
 --
 --   For the Simple version of the AST.
 module DDC.Core.Exp.Simple.Compounds
-        ( module DDC.Type.Compounds
+        ( module DDC.Type.Exp.Simple.Compounds
 
           -- * Lambdas
         , xLAMs
@@ -52,7 +52,7 @@ where
 import DDC.Type.Exp
 import DDC.Core.Exp.Simple.Exp
 import DDC.Core.Exp.DaCon
-import DDC.Type.Compounds
+import DDC.Type.Exp.Simple.Compounds
 
 
 -- Lambdas ---------------------------------------------------------------------

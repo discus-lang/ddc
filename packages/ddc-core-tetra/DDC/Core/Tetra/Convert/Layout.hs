@@ -12,9 +12,8 @@ where
 import DDC.Core.Tetra.Convert.Boxing
 import DDC.Core.Tetra.Prim
 import DDC.Core.Salt.Platform
-import DDC.Type.Compounds
+import DDC.Type.Exp.Simple
 import DDC.Type.DataDef
-import DDC.Type.Exp
 import Control.Monad
 import Data.Maybe
 import qualified DDC.Core.Salt.Name     as A
