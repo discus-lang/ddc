@@ -158,7 +158,7 @@ instance (Pretty n, Eq n) => Pretty (Alt a n) where
 
 
 -- DaCon ------------------------------------------------------------------------------------------
-instance (Pretty n, Eq n) => Pretty (DaCon n) where
+instance (Pretty n, Eq n) => Pretty (DaCon n (Type n)) where
  ppr dc
   = case dc of
         DaConUnit       -> text "()"

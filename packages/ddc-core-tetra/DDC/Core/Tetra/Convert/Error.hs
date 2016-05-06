@@ -54,7 +54,7 @@ data Error a
 
         -- | An invalid data constructor name.
         | ErrorInvalidDaCon
-        { errorDaCon    :: DaCon E.Name }
+        { errorDaCon    :: DaCon E.Name (Type E.Name)}
 
         -- | An invalid name used for the constructor of an alternative.
         | ErrorInvalidAlt

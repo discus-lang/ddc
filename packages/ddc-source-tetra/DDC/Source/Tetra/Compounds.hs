@@ -216,7 +216,7 @@ takeXPrimApps xx
 --   and its arguments. 
 --
 --   Returns `Nothing` if the expression isn't a constructor application.
-takeXConApps :: GExp l -> Maybe (DaCon (GName l), [GExp l])
+takeXConApps :: GExp l -> Maybe (DaCon (GName l) (Type (GName l)), [GExp l])
 takeXConApps xx
  = case takeXAppsAsList xx of
         XCon _ dc : xs  -> Just (dc, xs)

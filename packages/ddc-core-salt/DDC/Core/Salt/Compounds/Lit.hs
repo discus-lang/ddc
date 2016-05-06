@@ -40,7 +40,7 @@ xTag a i        = XCon a (DaConPrim (NameLitTag i)  tTag)
 
 
 -- | A Literal @Nat#@ data constructor.
-dcNat   :: Integer -> DaCon Name
+dcNat   :: Integer -> DaCon Name (Type Name)
 dcNat i         = DaConPrim (NameLitNat i) tNat
 
 

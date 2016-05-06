@@ -301,7 +301,7 @@ data Error a n
         | ErrorCaseTooManyBinders
         { errorAnnot            :: a
         , errorChecking         :: Exp a n
-        , errorCtorDaCon        :: DaCon n
+        , errorCtorDaCon        :: DaCon n (Type n)
         , errorCtorFields       :: Int
         , errorPatternFields    :: Int }
 

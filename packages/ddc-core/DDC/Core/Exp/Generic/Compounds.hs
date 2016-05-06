@@ -25,6 +25,7 @@ where
 import DDC.Core.Exp.Generic.Exp
 import DDC.Core.Exp.DaCon
 import DDC.Type.Exp.Simple.Compounds
+import DDC.Type.Exp.Simple.Exp
 import Data.Maybe
 
 
@@ -131,7 +132,7 @@ takeXPrimApps xx
 -- | Flatten an application of a data constructor into the constructor itself
 --   and its arguments, or `Nothing` if this is not an application of a 
 --   data constructor.
-takeXConApps :: GExp l -> Maybe (DaCon l, [GArg l])
+takeXConApps :: GExp l -> Maybe (DaCon l (Type l), [GArg l])
 takeXConApps xx
  = case xx of
         XApp (XCon c) a2

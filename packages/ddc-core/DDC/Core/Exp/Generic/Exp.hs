@@ -28,7 +28,7 @@ data GExp l
         | XPrim    !(GPrim  l)
 
         -- | Data constructor.
-        | XCon     !(DaCon l)
+        | XCon     !(DaCon  l (T.Type l))
 
         -- | Value or Witness variable (level-0).
         | XVar     !(GBound l)
@@ -104,7 +104,7 @@ data GPat l
         = PDefault
 
         -- | Match a data constructor and bind its arguments.
-        | PData !(DaCon l) ![GBind l]
+        | PData !(DaCon l (T.Type l)) ![GBind l]
 
 
 -- | Type casts.

@@ -26,7 +26,7 @@ convertCtorApp
         :: Show a
         => Context a
         -> AnTEC a  E.Name                -- ^ Annot from deconstructed app node.
-        -> DaCon    E.Name                -- ^ Data constructor being applied.
+        -> DaCon    E.Name (Type E.Name)  -- ^ Data constructor being applied.
         -> [Exp (AnTEC a E.Name) E.Name]  -- ^ Data constructor arguments.
         -> ConvertM a (Exp a A.Name)
 

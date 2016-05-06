@@ -162,7 +162,7 @@ takeXPrimApps xx
 --   and its arguments. 
 --
 --   Returns `Nothing` if the expression isn't a constructor application.
-takeXConApps :: Exp a n -> Maybe (DaCon n, [Exp a n])
+takeXConApps :: Exp a n -> Maybe (DaCon n (Type n), [Exp a n])
 takeXConApps xx
  = case takeXAppsAsList xx of
         XCon dc : xs  -> Just (dc, xs)

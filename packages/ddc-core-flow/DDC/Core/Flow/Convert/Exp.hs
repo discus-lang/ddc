@@ -269,7 +269,9 @@ convertApp f args
  where
   anno = annotOfExp f
 
-convertDaCon :: DaCon F.Name -> ConvertM (DaCon T.Name)
+convertDaCon 
+        :: DaCon F.Name (Type F.Name)
+        -> ConvertM (DaCon T.Name (Type T.Name))
 convertDaCon dd
  = case dd of
    DaConUnit

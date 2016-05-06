@@ -57,13 +57,13 @@ xTuple2 t1 t2 x1 x2
 
 
 -- | Data constructor for @Tuple2#@
-dcTuple2 :: DaCon Name
+dcTuple2 :: DaCon Name (Type Name)
 dcTuple2  = DaConPrim   (NameDaConTetra (DaConTetraTuple 2))
                         (typeDaConTetra (DaConTetraTuple 2))
 
 
 -- | Data constructor for n-tuples
-dcTupleN :: Int -> DaCon Name
+dcTupleN :: Int -> DaCon Name (Type Name)
 dcTupleN n
           = DaConPrim   (NameDaConTetra (DaConTetraTuple n))
                         (typeDaConTetra (DaConTetraTuple n))

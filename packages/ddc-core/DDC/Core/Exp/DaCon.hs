@@ -12,7 +12,7 @@ import Control.DeepSeq
 
 
 -- | Data constructors.
-data DaCon n
+data DaCon n t
         -- | Baked in unit data constructor.
         = DaConUnit
 
@@ -29,7 +29,7 @@ data DaCon n
           daConName     :: !n 
 
           -- | Type of the data constructor.
-        , daConType     :: !(Type n)
+        , daConType     :: !t
         }
 
         -- | Data constructor that has a data type declaration.
@@ -40,7 +40,7 @@ data DaCon n
         deriving (Show, Eq)
 
 
-instance NFData n => NFData (DaCon n) where
+instance (NFData n, NFData t) => NFData (DaCon n t) where
  rnf !dc
   = case dc of
         DaConUnit       -> ()
@@ -50,7 +50,7 @@ instance NFData n => NFData (DaCon n) where
 
 -- | Take the name of data constructor,
 --   if there is one.
-takeNameOfDaCon :: DaCon n -> Maybe n
+takeNameOfDaCon :: DaCon n t -> Maybe n
 takeNameOfDaCon dc
  = case dc of
         DaConUnit       -> Nothing
@@ -60,7 +60,7 @@ takeNameOfDaCon dc
 
 -- | Take the type annotation of a data constructor,
 --   if we know it locally.
-takeTypeOfDaCon :: DaCon n -> Maybe (Type n)
+takeTypeOfDaCon :: DaCon n (Type n) -> Maybe (Type n)
 takeTypeOfDaCon dc  
  = case dc of
         DaConUnit       -> Just $ tUnit
@@ -69,6 +69,6 @@ takeTypeOfDaCon dc
 
 
 -- | The unit data constructor.
-dcUnit  :: DaCon n
+dcUnit  :: DaCon n t
 dcUnit  = DaConUnit
 

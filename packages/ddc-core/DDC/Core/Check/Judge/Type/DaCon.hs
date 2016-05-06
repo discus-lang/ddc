@@ -13,7 +13,7 @@ checkDaConM
         => Config n
         -> Exp a n              -- ^ The full expression for error messages.
         -> a                    -- ^ Annotation for error messages.
-        -> DaCon n              -- ^ Data constructor to check.
+        -> DaCon n (Type n)     -- ^ Data constructor to check.
         -> CheckM a n (Type n)
 
 checkDaConM config xx a dc

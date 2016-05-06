@@ -64,7 +64,7 @@ data GExp l
         | XPrim     !(GAnnot l) !(GPrim  l)
 
         -- | Data constructor or literal.
-        | XCon      !(GAnnot l) !(DaCon (GName l))
+        | XCon      !(GAnnot l) !(DaCon (GName l) (Type (GName l)))
 
         -- | Type abstraction (level-1).
         | XLAM      !(GAnnot l) !(GBind l) !(GExp l)
@@ -152,7 +152,7 @@ data GPat l
         = PDefault
 
         -- | Match a data constructor and bind its arguments.
-        | PData !(DaCon (GName l)) ![GBind l]
+        | PData !(DaCon (GName l) (Type (GName l))) ![GBind l]
 
 
 -- | An expression with some guards.

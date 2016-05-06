@@ -28,7 +28,7 @@ configZero
 
 
 ---------------------------------------------------------------------------------------------------
-type FoldCase a n = State (M.Map n (DaCon n, [Exp a n]))
+type FoldCase a n = State (M.Map n (DaCon n (Type n), [Exp a n]))
 
 foldCase :: (Ord n, TransformDownMX (FoldCase a n) c)
         => Config
@@ -43,6 +43,7 @@ foldCaseX :: Ord n
         => Config
         -> Exp a n
         -> FoldCase a n (Exp a n)
+
 
 -- Collect ----------------------------------------------------------------------------------------
 foldCaseX _

@@ -19,7 +19,7 @@ xBool b  = XCon (dcBool b)
 
 
 -- | A literal @Bool#@ data constructor.
-dcBool  :: Bool -> DaCon Name
+dcBool  :: Bool -> DaCon Name (Type Name)
 dcBool b = DaConPrim (NameLitBool b) tBool
 
 
@@ -29,12 +29,12 @@ xNat i  = XCon (dcNat i)
 
 
 -- | A Literal @Nat#@ data constructor.
-dcNat   :: Integer -> DaCon Name
+dcNat   :: Integer -> DaCon Name (Type Name)
 dcNat i   = DaConPrim (NameLitNat i) tNat
 
 
 -- | Data constructor for @Tuple1#@
-dcTuple1 :: DaCon Name
+dcTuple1 :: DaCon Name (Type Name)
 dcTuple1  = DaConPrim (NameDaConFlow (DaConFlowTuple 1))
                       (typeDaConFlow (DaConFlowTuple 1))
 
@@ -50,13 +50,13 @@ xTuple2 t1 t2 x1 x2
 
 
 -- | Data constructor for @Tuple2#@
-dcTuple2 :: DaCon Name
+dcTuple2 :: DaCon Name (Type Name)
 dcTuple2  = DaConPrim   (NameDaConFlow (DaConFlowTuple 2))
                         (typeDaConFlow (DaConFlowTuple 2))
 
 
 -- | Data constructor for n-tuples
-dcTupleN :: Int -> DaCon Name
+dcTupleN :: Int -> DaCon Name (Type Name)
 dcTupleN n
           = DaConPrim   (NameDaConFlow (DaConFlowTuple n))
                         (typeDaConFlow (DaConFlowTuple n))

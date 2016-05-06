@@ -114,7 +114,7 @@ instance SpreadX (Exp a) where
     let down x = spreadX kenv tenv x
     in case xx of
         XVar a u        -> XVar a (down u)
-        XCon a u        -> XCon a (down u)
+        XCon a d        -> XCon a (spreadDaCon kenv tenv d)
         XApp a x1 x2    -> XApp a (down x1) (down x2)
 
         XLAM a b x
@@ -138,8 +138,7 @@ instance SpreadX (Exp a) where
 
 
 ---------------------------------------------------------------------------------------------------
-instance SpreadX DaCon where
- spreadX _kenv tenv dc
+spreadDaCon _kenv tenv dc
   = case dc of
         DaConUnit       
          -> dc
@@ -178,7 +177,7 @@ instance SpreadX Pat where
   = let down x   = spreadX kenv tenv x
     in case pat of
         PDefault        -> PDefault
-        PData u bs      -> PData (down u) (map down bs)
+        PData u bs      -> PData (spreadDaCon kenv tenv u) (map down bs)
 
 
 ---------------------------------------------------------------------------------------------------

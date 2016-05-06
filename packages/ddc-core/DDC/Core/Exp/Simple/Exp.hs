@@ -41,7 +41,7 @@ data Exp a n
         | XVar  !(Bound n)
 
         -- | Data constructor or literal.
-        | XCon  !(DaCon n)
+        | XCon  !(DaCon n (Type n))
 
         -- | Type abstraction (level-1).
         | XLAM  !(Bind n)   !(Exp a n)
@@ -95,7 +95,7 @@ data Pat n
         = PDefault
         
         -- | Match a data constructor and bind its arguments.
-        | PData !(DaCon n) ![Bind n]
+        | PData !(DaCon n (Type n)) ![Bind n]
         deriving (Show, Eq)
 
 

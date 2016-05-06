@@ -395,7 +395,9 @@ toCoreP pp
 
 
 -- DaCon ------------------------------------------------------------------------------------------
-toCoreDC :: S.DaCon S.Name -> ConvertM a (C.DaCon C.Name)
+toCoreDC :: S.DaCon S.Name (T.Type S.Name)
+         -> ConvertM a (C.DaCon C.Name (T.Type (C.Name)))
+
 toCoreDC dc
  = case dc of
         S.DaConUnit

@@ -5,6 +5,7 @@ import DDC.Core.Exp.Generic.Predicates
 import DDC.Core.Exp.Generic.Exp
 import DDC.Core.Exp.DaCon
 import DDC.Type.Exp.Simple      ()
+import DDC.Type.Exp.Simple.Exp
 import DDC.Base.Pretty
 import Prelude                  hiding ((<$>))
 
@@ -244,7 +245,7 @@ instance PrettyLanguage l => Pretty (GWiCon l) where
 
 
 -- DaCon ------------------------------------------------------------------------------------------
-instance PrettyLanguage l => Pretty (DaCon l) where
+instance PrettyLanguage l => Pretty (DaCon l (Type l)) where
  ppr dc
   = case dc of
         DaConUnit       -> text "()"

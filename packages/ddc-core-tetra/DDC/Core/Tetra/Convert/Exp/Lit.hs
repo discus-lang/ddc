@@ -14,7 +14,7 @@ import DDC.Control.Monad.Check           (throw)
 --   These are values that have boxable index types like Bool# and Nat#.
 convertLitCtor
         :: a                            -- ^ Annot from deconstructed XCon node.
-        -> DaCon E.Name                 -- ^ Data constructor of literal.
+        -> DaCon E.Name (Type E.Name)   -- ^ Data constructor of literal.
         -> ConvertM a (Exp a A.Name)
 
 convertLitCtor a dc

@@ -142,7 +142,7 @@ instance FromAnnot (N.Witness a A.Name) Witness where
         N.WType _ t             -> G.WType <$> pure t
 
 
-instance FromAnnot (N.DaCon A.Name) (N.DaCon A.Name)  where
+instance FromAnnot (N.DaCon A.Name (C.Type A.Name)) (N.DaCon A.Name (C.Type A.Name))  where
  fromAnnot dc   = pure dc
 
 
