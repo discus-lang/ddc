@@ -35,10 +35,12 @@ instance PrettyLanguage l => Pretty (GType l) where
 instance PrettyLanguage l => Pretty (GCon l) where
  ppr cc
   = case cc of
-        TConArr         -> text "(->)"
-        TConPrim   p    -> ppr p
+        TConFun         -> text "(→)"
+        TConUnit        -> text "1"
+        TConVoid        -> text "0"
         TConSum    k n  -> text "Σ" <> braces (ppr k <> comma <+> ppr n)
-        TConZero   k    -> text "0" <> braces (ppr k)
-        TConAll    k    -> text "∀" <> braces (ppr k)
+        TConBot    k    -> text "⊥" <> braces (ppr k)
+        TConForall k    -> text "∀" <> braces (ppr k)
         TConExists k    -> text "∃" <> braces (ppr k)
+        TConPrim   p    -> ppr p
 

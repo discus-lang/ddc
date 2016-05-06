@@ -23,10 +23,10 @@ type family GPrim  l
 -------------------------------------------------------------------------------
 -- | Generic type expression representation.
 data GType l
-        -- | An annotated expression.
+        -- | An annotated type.
         = TAnnot     !(GAnnot l) (GType l)
 
-        -- | Constructor or literal.
+        -- | Type constructor or literal.
         | TCon       !(GCon   l)
 
         -- | Type variable.
@@ -43,24 +43,50 @@ data GType l
 -- | Wrapper for primitive constructors that adds the ones
 --   common to SystemFω based languages.
 data GCon l
-        -- | The arrow constructor.
-        = TConArr
+        -- | The function constructor.
+        = TConFun
+
+        -- | The unit constructor.
+        | TConUnit
+
+        -- | The void constructor.
+        | TConVoid
+
+        -- | Take the least upper bound at the given kind,
+        --   of the given number of elements.
+        | TConSum    !(GType l) Int
+
+        -- | The least element of the given kind.
+        | TConBot    !(GType l)
+
+        -- | The universal quantifier with a parameter of the given kind.
+        | TConForall !(GType l)
+
+        -- | The existential quantifier with a parameter of the given kind.
+        | TConExists !(GType l)
 
         -- | Primitive constructors.
         | TConPrim   !(GPrim l)
 
-        -- | Take the least upper bound at the given kind,
-        --   of the given number of elements.
-        | TConSum    !(GPrim l) Int
 
-        -- | The least element of the given kind.
-        | TConZero   !(GPrim l)
+-------------------------------------------------------------------------------
+-- | Representation of the function type.
+pattern TFun            = TCon TConFun
 
-        -- | The universal quantifier with a parameter of the given kind.
-        | TConAll    !(GPrim l)
+-- | Representation of the unit type.
+pattern TUnit           = TCon TConUnit
 
-        -- | The existential quantifier with a parameter of the given kind.
-        | TConExists !(GPrim l)
+-- | Representation of the void type.
+pattern TVoid           = TCon TConVoid
+
+-- | Representation of forall quantified types.
+pattern TForall k b t   = TApp (TCon (TConForall k)) (TAbs b t)
+
+-- | Representation of exists quantified types.
+pattern TExists k b t   = TApp (TCon (TConExists k)) (TAbs b t)
+
+-- | Representation of primitive type constructors.
+pattern TPrim   p       = TCon (TConPrim p)
 
 
 -------------------------------------------------------------------------------
