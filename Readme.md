@@ -183,3 +183,6 @@ The following people contributed to DDC since the last major release:
  
  Read the mailing list:   http://groups.google.com/group/disciple-cafe
 
+ Check the blog:          http://disciple-devel.blogspot.com.au/
+ 
+ 
