@@ -99,6 +99,7 @@ Library
         DDC.Type.Exp.Simple.Predicates
         DDC.Type.Exp.Simple.Equiv
         DDC.Type.Exp.Simple.Subsumes
+        DDC.Type.Exp.Simple
 
         DDC.Type.Exp.TyCon
 

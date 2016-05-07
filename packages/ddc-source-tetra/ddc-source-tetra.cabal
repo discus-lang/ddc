@@ -32,6 +32,7 @@ Library
   Exposed-modules:
         DDC.Source.Tetra.Exp.Annot
         DDC.Source.Tetra.Exp.Generic
+        DDC.Source.Tetra.Exp.Source
 
         DDC.Source.Tetra.Transform.BoundX
         DDC.Source.Tetra.Transform.Defix
