@@ -58,7 +58,7 @@ Under kind environment Δ type τ has kind κ.
  (→)    :: Data → Data → Data
  Unit   :: Data
  Void   :: Data
- Σ κ n  :: κ0 → κ1 ... → κn
+ Σ κ n  :: κ1 → κ2 ... → κn → κ
  ⊥ κ    :: κ
  ∀ κ    :: (κ → Data) → κ → Data
  ∃ κ    :: (κ → Data) → κ → Data
