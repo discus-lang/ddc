@@ -10,32 +10,32 @@ Specific language fragments provide their own set of primitives, and may place f
 VAR (n)  ⟶ (named variables)
 CON (c)  ⟶ (named constructors)
 
-Type (τ,κ,σ) 
-        ::= TyCon                               -- Type Constructors
+TYPE (τ,κ,σ) 
+        ::= TYCON                               -- Type Constructors
          |  VAR                                 -- Type Variables
-         |  λ n : Type. Exp                     -- Type Abstraction
-         |  Type Type                           -- Type Application
+         |  λ n : TYPE. EXP                     -- Type Abstraction
+         |  TYPE TYPE                           -- Type Application
 
-TyCon   ::= CON                                 -- Primitive type constructor.
+TYCON   ::= CON                                 -- Primitive type constructor.
          |  Data                                -- Data kind
          |  Effect                              -- Effect kind
          |  Region                              -- Region kind
          |  (→)                                 -- Function type constructor
          |  Unit                                -- Unit type
          |  Void                                -- Void type
-         |  Σ Type NAT                          -- Least-upper-bound of types
-         |  ⊥ Type                              -- Least type
-         |  ∀ Type                              -- Forall quantification
-         |  ∃ Type                              -- Exists quantification
+         |  Σ TYPE NAT                          -- Least-upper-bound of types
+         |  ⊥ TYPE                              -- Least type
+         |  ∀ TYPE                              -- Forall quantification
+         |  ∃ TYPE                              -- Exists quantification
 
-Exp (x) ::= CON                                 -- Data Constructors
+EXP (x) ::= CON                                 -- Data Constructors
          |  VAR                                 -- Term Variables
-         |  λ n : Type. Exp                     -- Type  Abstraction
-         |  Exp Exp                             -- Term-Term Application
-         |  Λ n : Type. Exp                     -- Value Abstraction
-         |  Exp Type                            -- Term-Type Application 
-         |  let  Bind  in  Exp                  -- Let binding
-         |  letrec  BindTyped+  in  Exp         -- Recursive let-binding
+         |  λ n : TYPE. EXP                     -- Type  Abstraction
+         |  EXP EXP                             -- Term-Term Application
+         |  Λ n : TYPE. EXP                     -- Value Abstraction
+         |  EXP TYPE                            -- Term-Type Application 
+         |  let  BIND  in  EXP                  -- Let binding
+         |  letrec  BINDT+  in  EXP             -- Recursive let-binding
 ```
 
 ## Kinding
