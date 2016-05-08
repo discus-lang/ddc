@@ -7,17 +7,23 @@ module DDC.Type.Exp.Generic.Exp where
 -------------------------------------------------------------------------------
 -- Type functions associated with the language definition.
 
--- | Yield the type of annotations for language @l@.
-type family GAnnot l
+-- | Yield the type of annotations.
+type family GAnnot    l
 
--- | Yield the type of binding occurrences of variables for language @l@.
-type family GBind  l
+-- | Yield the type of binding occurrences of variables.
+type family GBindVar  l
 
--- | Yield the type of bound occurrences of variables for language @l@.
-type family GBound l
+-- | Yield the type of bound occurrences of variables.
+type family GBoundVar l
+
+-- | Yield the type of binding occurrences of constructors.
+type family GBindCon  l
+
+-- | Yield the type of bound occurrences of constructors.
+type family GBoundCon l
 
 -- | Yield the type of primitive names for language @l@.
-type family GPrim  l
+type family GPrim     l
 
 
 -------------------------------------------------------------------------------
@@ -30,13 +36,13 @@ data GType l
         | TCon       !(GTyCon l)
 
         -- | Type variable.
-        | TVar       !(GBound l)
+        | TVar       !(GBoundVar l)
 
         -- | Type abstracton.
-        | TAbs       !(GBind  l) (GType l)
+        | TAbs       !(GBindVar  l) (GType l)
 
         -- | Type application.
-        | TApp       !(GType  l) (GType l)
+        | TApp       !(GType     l) (GType l)
 
 
 -------------------------------------------------------------------------------
@@ -65,8 +71,11 @@ data GTyCon l
         -- | The existential quantifier with a parameter of the given kind.
         | TyConExists !(GType l)
 
-        -- | Primitive constructors.
+        -- | Primitive constructor.
         | TyConPrim   !(GPrim l)
+
+        -- | Bound constructor.
+        | TyConBound  !(GBoundCon l)
 
 
 -------------------------------------------------------------------------------
@@ -93,9 +102,10 @@ pattern TPrim   p       = TCon (TyConPrim p)
 -- | Synonym for show constraints of all language types.
 type ShowLanguage l
         = ( Show l
-          , Show (GAnnot l)
-          , Show (GBind  l), Show (GBound l)
-          , Show (GPrim  l))
+          , Show (GAnnot   l)
+          , Show (GBindVar l), Show (GBoundVar l)
+          , Show (GBindCon l), Show (GBoundCon l)
+          , Show (GPrim    l))
 
 deriving instance ShowLanguage l => Show (GType  l)
 deriving instance ShowLanguage l => Show (GTyCon l)

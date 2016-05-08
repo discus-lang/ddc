@@ -2,7 +2,10 @@
 module DDC.Type.Exp.Generic
         ( -- * Abstract Syntax
           -- ** Type Families
-          GAnnot, GBind, GBound, GPrim
+          GAnnot
+        , GBindVar, GBoundVar
+        , GBindCon, GBoundCon
+        , GPrim
 
           -- ** Core Syntax
         , GType (..), GTyCon (..)

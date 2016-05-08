@@ -15,8 +15,10 @@ data Flat
 type Type       = GType  Flat
 type TyCon      = GTyCon Flat
 
-type instance GAnnot Flat       = ()
-type instance GBind  Flat       = Text
-type instance GBound Flat       = Text
-type instance GPrim  Flat       = Text
+type instance GAnnot    Flat       = ()
+type instance GBindVar  Flat       = Text
+type instance GBoundVar Flat       = Text
+type instance GBindCon  Flat       = Text
+type instance GBoundCon Flat       = Text
+type instance GPrim     Flat       = Text
 

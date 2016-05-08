@@ -11,10 +11,10 @@ import DDC.Type.Exp.Generic.Exp
 class Binding l where
 
  -- | Get the bound occurrence that matches the given binding occurrence.
- boundOfBind      :: GBind l -> GBound l
+ boundOfBind      :: GBindVar l -> GBoundVar l
 
  -- | Check if the given bound occurence matches a binding occurrence.
- boundMatchesBind :: GBind l -> GBound l -> Bool
+ boundMatchesBind :: GBindVar l -> GBoundVar l -> Bool
 
 
 -- Anon -----------------------------------------------------------------------
@@ -23,5 +23,5 @@ class Anon l where
  
  -- | Evaluate a function given a new anonymous binding and matching
  --   bound occurrence.
- withBinding :: l -> (GBind l -> GBound l -> a) -> a
+ withBinding :: l -> (GBindVar l -> GBoundVar l -> a) -> a
 

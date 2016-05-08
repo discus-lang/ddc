@@ -12,10 +12,10 @@ import DDC.Base.Pretty
 
 -- | Synonym for pretty constraints on the configurable types.
 type PrettyConfig l
-      = ( Pretty (GAnnot l)
-        , Pretty (GBind  l)
-        , Pretty (GBound l)
-        , Pretty (GPrim  l))
+      = ( Pretty (GAnnot   l)
+        , Pretty (GBindVar l), Pretty (GBoundVar l)
+        , Pretty (GBindCon l), Pretty (GBoundCon l)
+        , Pretty (GPrim    l))
 
 
 -- | Pretty print a type using the generic, raw syntax.
@@ -47,7 +47,7 @@ pprRawPrecT d tt
 pprRawC :: PrettyConfig l => GTyCon l -> Doc
 pprRawC cc
   = case cc of
-        TyConFun        -> text "(→)"
+        TyConFun        -> text "→"
         TyConUnit       -> text "1"
         TyConVoid       -> text "0"
         TyConSum    k n -> text "Σ" <> braces (pprRawT k <> comma <+> ppr n)
@@ -55,4 +55,5 @@ pprRawC cc
         TyConForall k   -> text "∀" <> braces (pprRawT k)
         TyConExists k   -> text "∃" <> braces (pprRawT k)
         TyConPrim   p   -> ppr p
+        TyConBound  u   -> ppr u
 

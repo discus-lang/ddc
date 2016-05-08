@@ -82,7 +82,7 @@ makeTForall l k makeBody
 
 
 -- | Destruct a forall quantified type, if this is one.
-takeTForall :: GType l -> Maybe (GType l, GBind l, GType l)
+takeTForall :: GType l -> Maybe (GType l, GBindVar l, GType l)
 takeTForall (TForall k b t)     = Just (k, b, t)
 takeTForall _                   = Nothing
 
@@ -95,7 +95,7 @@ makeTExists l k makeBody
 
 
 -- | Destruct an exists quantified type, if this is one.
-takeTExists :: GType l -> Maybe (GType l, GBind l, GType l)
+takeTExists :: GType l -> Maybe (GType l, GBindVar l, GType l)
 takeTExists (TExists k b t)     = Just (k, b, t)
 takeTExists _                   = Nothing
 
