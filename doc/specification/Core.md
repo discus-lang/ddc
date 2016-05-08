@@ -35,7 +35,7 @@ In the grammar for types, the only binding form is that for type abstractions `�
 
 The basic kind constructors are `Data`, `Effect` and `Region` for the kind of data, effect and region type respectively. The function constructor `(→)` is usally written infix as per the section on syntactic sure. The `Unit` type classifies a set of values with the single element `()`. The `Void` type classifies the empty set.
 
-The `Σ` type constructor is used to express type sums, where `\bot` expresses an empty sum. Both are annotated with the kind of their result types.
+The `Σ` type constructor is used to express type sums, where `⊥` expresses an empty sum. Both are annotated with the kind of their result types.
 
 The quantifier constructors `∀` and `∃` are annotated with the kind of their parameters.
 
@@ -87,8 +87,8 @@ EXP (x)
          |  EXP TYPE
 
         (let binding)
-         |  let    BIND  in EXP
-         |  letrec BIND+ in EXP
+         |  let    BIND   in EXP
+         |  letrec BINDT+ in EXP
 
         (case matching)
          |  case   EXP   of ALT+
@@ -104,7 +104,8 @@ EXP (x)
 
 DACON   ::= CON | ()
 
-BIND    ::= VAR : TYPE = EXP
+BIND    ::= VAR = EXP
+BINDT   ::= VAR : TYPE = EXP
 SIG     ::= VAR : TYPE
 
 ALT     ::= PAT → EXP
@@ -159,7 +160,7 @@ The kinds of named type variables are taken from the kind environment.
 ### KiAbs
 
 ```
-     Δ, n : κ1 ⊢ τ :: κ2
+     Δ, n:κ1 ⊢ τ :: κ2
   ---------------------------
   Δ ⊢ λ n : κ1. τ :: κ1 → κ2
 ```
@@ -188,7 +189,7 @@ Under kind environment Δ and type environment Γ expression x has type τ and e
 ### TyVar
 
 ```
-      n : τ ∈ Γ
+       n:τ ∈ Γ
   ------------------
   Δ | Γ ⊢ n :: τ ! ⊥
 ```
@@ -199,7 +200,7 @@ The types of named variables are taken from the type environment. Referencing a 
 ### TyAbsX
   
 ```
-   Δ ⊢ τ1 :: Data      Δ | Γ, n : τ1 ⊢ x :: τ2 ! ⊥ 
+   Δ ⊢ τ1 :: Data      Δ | Γ, n:τ1 ⊢ x :: τ2 ! ⊥ 
   --------------------------------------------------
      Δ | Γ ⊢ (λ n : τ1. x) :: (τ1 → τ2) ! ⊥
 ```
@@ -221,8 +222,9 @@ For a term-term application, the type of the function parameter τ1 must match t
 ### TyAbsT
 
 ```
-    Δ ⊢ κ1    n : κ1 ⊢ x :: τ2 ! ⊥    Δ ⊢ τ2 :: Data
-  -----------------------------------------------------
+       n ∉ Δ     Δ ⊢ κ1    
+       Δ, n:κ1 | Γ ⊢ x :: τ2 ! ⊥    Δ ⊢ τ2 :: Data
+    ------------------------------------------------ 
        Δ | Γ ⊢ (Λ n : κ1. x) :: (∀ n : τ1. τ2)  !  ⊥
 ```
 
@@ -238,6 +240,62 @@ For a type abstraction, the parameter kind must be well formed. The kind of the 
 ```
 
 For term-type application, the kind of the type parameter (κ1) must match that of the type argument. The type argument is substituted for the formal parameter n in the body type (τ1). The effect of the overall application is the effect of evaluating the functional expression (σ1).
+
+
+### TyLet
+
+```
+  Δ | Γ ⊢ x1 :: τ1 ! σ1    Δ | Γ, n1: τ1 ⊢ x2 :: τ2 ! σ2
+ ---------------------------------------------------------
+      Δ | Γ ⊢ (let n1 = x1 in x2) :: τ2 ! σ1 + σ2
+
+```
+
+The bound variable is in scope in the body of the let-binding. The effect of the overall expression is the effect of evaluating the bound expression and the body.
+
+
+### TyLetRec
+
+```
+   { Δ | Γ, { n_i : τ_i }^i ⊢ x_i :: τ_i ! ⊥ }^i
+     Δ | Γ, { n_i : τ_i }^i ⊢ x'  :: τ'  ! σ'
+ --------------------------------------------------------------
+    Δ | Γ ⊢ (letrec { n_i : τ_i = x_i }^i in x') :: τ' ! σ'
+```
+
+In a letrec every bound variable must be annotated with its type. All the bound variables are in scope in all the bound expressions. All bound expressions must have the types indivated by their corresponding type annotations. All bound expressions in a letrec must be pure. All bound variables are also in scope in the body, and the effect of the overall expression is the effect of evaluating its body.
+
+
+### TyWeakEff
+
+```
+ Δ | Γ ⊢ x1 :: τ1 ! σ1
+ --------------------------------------
+ Δ | Γ ⊢ weakeff σ2 x1 :: τ1 ! σ1 + σ2
+```
+
+To weaken the effect of some term `x1` we supply a new effect `σ2` which is added to the effect of of the original term `σ1`.
+
+### TyBox
+
+```
+  Δ | Γ ⊢ x :: τ ! σ 
+ ----------------------------
+  Δ | Γ ⊢ box x :: S σ τ ! ⊥
+```
+
+A boxed term has the type of a suspension, where the effect `σ` and return type `τ` of the suspension are the corresponding effect and types of the term being boxed. A boxed term is pure.
+
+
+### TyRun
+
+```
+  Δ | Γ ⊢ x1 :: S σ1 τ1 ! σ2    Γ supports σ1
+ ----------------------------------------------
+  Δ | Γ ⊢ run x1 :: τ1  ! σ1 + σ2
+```
+
+The term to run must have type matching `S σ1 τ1`. The type of the result of running it is `τ1`. The overall effect of the expression is the effect of computing the suspension `σ2` and the effect of running it `σ1`. The type environment `Γ` must contain capabilities that support the effects σ1.
 
 
 
