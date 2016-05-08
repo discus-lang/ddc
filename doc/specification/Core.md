@@ -5,40 +5,118 @@ This is the specification for the desugared, explicitly typed, generic core lang
 
 Specific language fragments provide their own set of primitives, and may place further restrictions on how types and term exressions may be formed.
 
-## Grammar
-```
-VAR (n)  ⟶ (named variables)
-CON (c)  ⟶ (named constructors)
+## Abstract Syntax
 
+### Names
+```
+CON   (c)   ⟶ (named constructors)
+VAR   (n)   ⟶ (named variables)
+```
+
+
+### Types
+```
 TYPE (τ,κ,σ) 
-        ::= TYCON                               -- Type Constructors
-         |  VAR                                 -- Type Variables
-         |  λ n : TYPE. EXP                     -- Type Abstraction
-         |  TYPE TYPE                           -- Type Application
+        ::= TYCON                     (type constructors)
+         |  VAR                       (type variables)
+         |  λ n : TYPE. TYPE          (type abstraction)
+         |  TYPE TYPE                 (type application)
 
-TYCON   ::= CON                                 -- Primitive type constructor.
-         |  Data                                -- Data kind
-         |  Effect                              -- Effect kind
-         |  Region                              -- Region kind
-         |  (→)                                 -- Function type constructor
-         |  Unit                                -- Unit type
-         |  Void                                -- Void type
-         |  Σ TYPE NAT                          -- Least-upper-bound of types
-         |  ⊥ TYPE                              -- Least type
-         |  ∀ TYPE                              -- Forall quantification
-         |  ∃ TYPE                              -- Exists quantification
-
-EXP (x) ::= CON                                 -- Data Constructors
-         |  VAR                                 -- Term Variables
-         |  λ n : TYPE. EXP                     -- Type  Abstraction
-         |  EXP EXP                             -- Term-Term Application
-         |  Λ n : TYPE. EXP                     -- Value Abstraction
-         |  EXP TYPE                            -- Term-Type Application 
-         |  let  BIND  in  EXP                  -- Let binding
-         |  letrec  BINDT+  in  EXP             -- Recursive let-binding
+TYCON   ::= CON                       (primitive type constructors)
+         |  Data | Effect |  Region   (basic kind constructors)
+         |  (→)  | Unit   |  Void     (basic type constructors)
+         |  Σ TYPE NAT                (least upper bound of types)
+         |  ⊥ TYPE                    (least element of a type)
+         |  ∀ TYPE                    (universal   quantification constructor)
+         |  ∃ TYPE                    (existential quantification constructor)
 ```
 
-## Kinding
+In the grammar for types, the only binding form is that for type abstractions `λn : TYPE.TYPE`. All quantifiers are expressed in terms of generic type abstraction.
+
+The basic kind constructors are `Data`, `Effect` and `Region` for the kind of data, effect and region type respectively. The function constructor `(→)` is usally written infix as per the section on syntactic sure. The `Unit` type classifies a set of values with the single element `()`. The `Void` type classifies the empty set.
+
+The `Σ` type constructor is used to express type sums, where `\bot` expresses an empty sum. Both are annotated with the kind of their result types.
+
+The quantifier constructors `∀` and `∃` are annotated with the kind of their parameters.
+
+#### Syntactic Sugar for Types
+
+
+```
+τ1 → τ2       = (→) τ1 τ2
+```
+The function type constructor `(→)` is usually written infix.
+
+
+
+```
+τ1 + τ2       = Σ κ 2 τ1 τ2
+τ1 + τ2 + τ3  = Σ κ 3 τ1 τ2 τ3
+```
+
+When the kind is clear from context we use the infix `(+)` operator to express type sums.
+
+```
+⊥             = ⊥ κ
+```
+
+When the kind is clear from context, the kind argument on `(⊥)` is elided.
+
+
+```
+∀ n : κ. τ    = (∀ κ) (λ n : κ. τ)
+∃ n : κ. τ    = (∃ κ) (λ n : κ. τ)
+```
+
+Quantifiers that bind names are desugared to an application of the associated type constructor and a type abstraction. Representing the different quantifiers as constructors allows us to retain a single binding form for types.
+
+
+
+### Terms
+```
+EXP (x) 
+        (data constructors and variables)
+        ::= DACON | VAR
+
+        (term abstraction and application)
+         |  λ n : TYPE. EXP
+         |  EXP EXP
+
+        (type abstraction and application)
+         |  Λ n : TYPE. EXP
+         |  EXP TYPE
+
+        (let binding)
+         |  let    BIND  in EXP
+         |  letrec BIND+ in EXP
+
+        (case matching)
+         |  case   EXP   of ALT+
+
+        (private region introduction and region extension)
+         |  private  VAR  with  SIG+ in   EXP
+         |  extend   VAR  using VAR  with SIG+ in EXP
+
+        (type casts)
+         |  weakeff TYPE in EXP
+         |  run EXP
+         |  box EXP
+
+DACON   ::= CON | ()
+
+BIND    ::= VAR : TYPE = EXP
+SIG     ::= VAR : TYPE
+
+ALT     ::= PAT → EXP
+PAT     ::= _ | DACON SIG+ 
+```
+
+The syntax of constructors and variables, term abstraction and application, type abstraction and application, case-matching and let-binding is standard.
+
+The `private` construct introduces a new region variable along with capabilities of the given signatures. Both the region variable and names of the capabilities are in scope in the body expression.
+
+
+## Kinds of Types
 
 ```
 [ Δ ⊢ τ :: κ ]
@@ -99,7 +177,7 @@ For a type abstraction, the kind of the parameter is added to the kind environme
 For a type-type application, the kind of the parameter of the type function (κ1) must match the kind of the argument.
 
 
-## Typing
+## Types of Terms
 
 ```
 [ Δ | Γ ⊢ x :: τ : σ ]
