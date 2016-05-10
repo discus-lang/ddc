@@ -14,6 +14,7 @@ module DDC.Type.Exp.Generic
         , pattern TFun
         , pattern TUnit
         , pattern TVoid
+        , pattern TBot
         , pattern TForall
         , pattern TExists
         , pattern TPrim

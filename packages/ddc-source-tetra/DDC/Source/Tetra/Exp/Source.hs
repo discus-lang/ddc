@@ -26,19 +26,12 @@ module DDC.Source.Tetra.Exp.Source
         , pattern TForall
         , pattern TExists
         , pattern TPrim
-
-        -- ** Annotated types
-        , pattern ATCon
-        , pattern ATVar
-        , pattern ATAbs
-        , pattern ATApp
-        , pattern ATBot
-        , pattern ATKiFun
-        , pattern ATDaImpl
-        , pattern ATDaFun
-        , pattern ATData
-        , pattern ATRegion
-        , pattern ATEffect
+        , pattern TData
+        , pattern TRegion
+        , pattern TEffect
+        , pattern TKiFun
+        , pattern TDaImpl
+        , pattern TDaFun
 
         -- ** Type Constructors
         , TyConPrim      (..)
@@ -110,37 +103,22 @@ data TyConPrim
 
 
 -------------------------------------------------------------------------------
--- | Annotated type constructor.
-pattern ATCon   a tc    = TAnnot a (TCon tc)
-
--- | Annotated type variable.
-pattern ATVar   a u     = TAnnot a (TVar u)
-
--- | Annotated type abstraction.
-pattern ATAbs   a b t   = TAnnot a (TAbs b t)
-
--- | Annotated type application.
-pattern ATApp   a t1 t2 = TAnnot a (TApp t1 t2)
-
--- | Annotated bottom type.
-pattern ATBot   a k     = TAnnot a (TBot k)
-
 -- | Annotated kind function constructor.
-pattern ATKiFun  a      = TAnnot a (TCon (TyConPrim (TyConPrimKiCon KiConFun)))
+pattern TKiFun  = TCon (TyConPrim (TyConPrimKiCon KiConFun))
 
 -- | Annotated implication constructor.
-pattern ATDaImpl a      = TAnnot a (TCon (TyConPrim (TyConPrimTwCon TwConImpl)))
+pattern TDaImpl = TCon (TyConPrim (TyConPrimTwCon TwConImpl))
 
 -- | Annotated function constructor.
-pattern ATDaFun  a      = TAnnot a (TCon (TyConPrim (TyConPrimTcCon TcConFun)))
+pattern TDaFun  = TCon (TyConPrim (TyConPrimTcCon TcConFun))
 
 -- | Annotated effect type constructor.
-pattern ATData   a      = TAnnot a (TCon (TyConPrim (TyConPrimKiCon KiConData)))
+pattern TData   = TCon (TyConPrim (TyConPrimKiCon KiConData))
 
 -- | Annotated effect type constructor.
-pattern ATRegion a      = TAnnot a (TCon (TyConPrim (TyConPrimKiCon KiConRegion)))
+pattern TRegion = TCon (TyConPrim (TyConPrimKiCon KiConRegion))
 
 -- | Annotated effect type constructor.
-pattern ATEffect a      = TAnnot a (TCon (TyConPrim (TyConPrimKiCon KiConEffect)))
+pattern TEffect = TCon (TyConPrim (TyConPrimKiCon KiConEffect))
 
 

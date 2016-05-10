@@ -1,7 +1,30 @@
 {-# LANGUAGE TypeFamilies, UndecidableInstances #-}
 
 -- Generic type expression representation.
-module DDC.Type.Exp.Generic.Exp where
+module DDC.Type.Exp.Generic.Exp 
+        ( -- * Type Families
+          GAnnot
+        , GBindVar, GBoundVar
+        , GBindCon, GBoundCon
+        , GPrim
+
+          -- * Abstract Syntax
+        , GType         (..)
+        , GTyCon        (..)
+
+          -- * Syntactic Sugar
+        , pattern TFun
+        , pattern TUnit
+        , pattern TVoid
+        , pattern TBot
+        , pattern TSum
+        , pattern TForall
+        , pattern TExists
+        , pattern TPrim
+
+          -- * Classes
+        , ShowLanguage (..))
+where
 
 
 -------------------------------------------------------------------------------
@@ -87,8 +110,11 @@ pattern TUnit           = TCon TyConUnit
 -- | Representation of the void type.
 pattern TVoid           = TCon TyConVoid
 
--- | Representatino of the bottom type at a given kind.
+-- | Representation of the bottom type at a given kind.
 pattern TBot k          = TCon (TyConBot k)
+
+-- | Representatino of a sum of two types.
+pattern TSum k t1 t2    = TApp (TApp (TCon (TyConSum k)) t1) t2
 
 -- | Representation of forall quantified types.
 pattern TForall k b t   = TApp (TCon (TyConForall k)) (TAbs b t)

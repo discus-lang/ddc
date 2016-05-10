@@ -8,6 +8,7 @@ module DDC.Source.Tetra.Parser.Type
 where
 import DDC.Source.Tetra.Exp.Source      as S
 import DDC.Source.Tetra.Prim.TyConTetra as S
+import DDC.Type.Exp.Generic.Exp         as T
 import DDC.Core.Tetra                   as C
 import DDC.Core.Lexer.Tokens            as C
 import DDC.Core.Parser                  (Parser)
@@ -27,15 +28,10 @@ pTypeSum
            -- T2 + T3
            do   sp      <- pTokSP (KOp "+")
                 t2      <- pTypeSum
-                return  $  makeATSum sp (ATEffect sp) t1 t2
+                return  $  TAnnot sp $ TSum TEffect t1 t2
 
          , do   return t1 ]
  <?> "a type"
-
-
--- | Annotated sum type.
-makeATSum a k t1 t2
-        = ATApp a (ATApp a (ATCon a (TyConSum k)) t1) t2
 
 
 -- | Parse a binder.
@@ -70,17 +66,12 @@ pTypeForall
                 pTok KDot
 
                 tBody   <- pTypeForall
-                return  $ foldr (\b t -> makeATForall sp kBind b t) tBody bs
+                return  $ foldr (\b t -> TAnnot sp $ TForall kBind b t) tBody bs
 
            -- Body type
          , do   pTypeFun
          ]
  <?> "a type"
-
-
--- | Annotated forall type.
-makeATForall a k b t
-        = ATApp a (ATCon a (TyConForall k)) (ATAbs a b t)
 
 
 -- | Parse a function type.
@@ -91,17 +82,17 @@ pTypeFun
          [ -- T1 ~> T2
            do   sp      <- pTokSP KArrowTilde
                 t2      <- pTypeForall
-                return  $  ATApp sp (ATApp sp (ATKiFun  sp) t1) t2
+                return  $  TAnnot sp $ TApp (TApp TKiFun  t1) t2
 
            -- T1 => T2
          , do   sp      <- pTokSP KArrowEquals
                 t2      <- pTypeForall
-                return  $  ATApp sp (ATApp sp (ATDaImpl sp) t1) t2
+                return  $  TAnnot sp $ TApp (TApp TDaImpl t1) t2
 
            -- T1 -> T2
          , do   sp      <- pTokSP KArrowDash
                 t2      <- pTypeForall
-                return  $  ATApp sp (ATApp sp (ATDaFun  sp) t1) t2
+                return  $  TAnnot sp $ TApp (TApp TDaFun  t1) t2
 
            -- Body type
          , do   return t1 
@@ -124,15 +115,15 @@ pTypeAtomSP
         -- (~>) and (=>) and (->) and (TYPE2)
         [ -- (~>)
           do    sp      <- pTokSP $ KOpVar "~>"
-                return  (ATKiFun  sp, sp)
+                return  (TAnnot sp $ TKiFun,  sp)
 
           -- (=>)
         , do    sp      <- pTokSP $ KOpVar "=>"
-                return  (ATDaImpl sp, sp)
+                return  (TAnnot sp $ TDaImpl, sp)
 
           -- (->)
         , do    sp      <- pTokSP $ KOpVar "->"
-                return  (ATDaFun  sp, sp)
+                return  (TAnnot sp $ TDaFun,  sp)
 
           -- (TYPE2)
         , do    sp      <- pTokSP KRoundBra
@@ -142,21 +133,21 @@ pTypeAtomSP
 
         -- Named type constructors
         , do    (tc, sp) <- pTyConSP 
-                return  (TCon tc, sp)
+                return  (TAnnot sp $ TCon tc, sp)
             
         -- Bottoms.
         , do    sp       <- pTokSP KBotEffect  
-                return  (ATBot sp (ATEffect sp), sp)
+                return  (TAnnot sp $ TBot TEffect, sp)
 
         -- Bound occurrence of a variable.
         --  We don't know the kind of this variable yet, so fill in the
         --  field with the bottom element of computation kinds. This isn't
         --  really part of the language, but makes sense implentation-wise.
         , do    (v, sp) <- pVarSP
-                return  (ATVar sp (UName v), sp)
+                return  (TAnnot sp $ TVar (UName v), sp)
 
         , do    (i, sp) <- pIndexSP
-                return  (ATVar sp (UIx i), sp)
+                return  (TAnnot sp $ TVar (UIx i), sp)
         ]
  <?> "an atomic type"
 
@@ -170,16 +161,16 @@ pTyConSP  =   P.pTokMaybeSP f
         = case kk of
                 -- Primitive Ambient TyCons.
                 KA (KSoConBuiltin c)    
-                 -> Just (TyConPrim $ TyConPrimSoCon c)
+                 -> Just $ TyConPrim $ TyConPrimSoCon c
 
                 KA (KKiConBuiltin c)    
-                 -> Just (TyConPrim $ TyConPrimKiCon c)
+                 -> Just $ TyConPrim $ TyConPrimKiCon c
 
                 KA (KTwConBuiltin c)
-                 -> Just (TyConPrim $ TyConPrimTwCon c)
+                 -> Just $ TyConPrim $ TyConPrimTwCon c
 
                 KA (KTcConBuiltin c)
-                 -> Just (TyConPrim $ TyConPrimTcCon c)
+                 -> Just $ TyConPrim $ TyConPrimTcCon c
 
                 -- Primitive Machine TyCons.
                 KN (KCon tx)
