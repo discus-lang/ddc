@@ -29,3 +29,5 @@ module DDC.Source.Tetra.Exp
 where
 import DDC.Type.Exp
 import DDC.Source.Tetra.Exp.Generic
+import DDC.Source.Tetra.Exp.NFData
+
