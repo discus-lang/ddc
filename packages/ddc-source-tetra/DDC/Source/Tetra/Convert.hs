@@ -327,13 +327,13 @@ toCoreX xx
          -> C.XCase <$> pure a <*> toCoreX x <*> (sequence $ map (toCoreA a) alts)
 
         S.XCast a c x
-         -> C.XCast <$> pure a <*> toCoreC c <*> toCoreX x
+         -> C.XCast <$> pure a <*> toCoreC a c <*> toCoreX x
 
         S.XType a t
          -> C.XType    <$> pure a <*> toCoreT t
 
         S.XWitness a w
-         -> C.XWitness <$> pure a <*> toCoreW w
+         -> C.XWitness <$> pure a <*> toCoreW a w
 
         -- These shouldn't exist in the desugared source tetra code.
         S.XDefix{}      -> Left $ ErrorConvertCannotConvertSugarExp xx
@@ -366,14 +366,14 @@ toCoreLts lts
 
 
 -- Cast -------------------------------------------------------------------------------------------
-toCoreC :: S.Cast a -> ConvertM a (C.Cast a C.Name)
-toCoreC cc
+toCoreC :: a -> S.Cast a -> ConvertM a (C.Cast a C.Name)
+toCoreC a cc
  = case cc of
         S.CastWeakenEffect eff
          -> C.CastWeakenEffect <$> toCoreT eff
 
         S.CastPurify w
-         -> C.CastPurify       <$> toCoreW w
+         -> C.CastPurify       <$> toCoreW a w
 
         S.CastBox
          -> pure C.CastBox
@@ -420,19 +420,22 @@ toCoreDC dc
 
 
 -- Witness ----------------------------------------------------------------------------------------
-toCoreW :: S.Witness a -> ConvertM a (C.Witness a C.Name)
-toCoreW ww
+toCoreW :: a -> S.Witness a -> ConvertM a (C.Witness a C.Name)
+toCoreW a ww
  = case ww of
-        S.WVar a u
+        S.WAnnot a' w   
+         -> toCoreW a' w
+
+        S.WVar  u
          -> C.WVar  <$> pure a <*> toCoreU  u
 
-        S.WCon a wc
+        S.WCon  wc
          -> C.WCon  <$> pure a <*> toCoreWC wc
 
-        S.WApp a w1 w2
-         -> C.WApp  <$> pure a <*> toCoreW  w1 <*> toCoreW w2
+        S.WApp  w1 w2
+         -> C.WApp  <$> pure a <*> toCoreW a w1 <*> toCoreW a w2
 
-        S.WType a t
+        S.WType t
          -> C.WType <$> pure a <*> toCoreT  t
 
 

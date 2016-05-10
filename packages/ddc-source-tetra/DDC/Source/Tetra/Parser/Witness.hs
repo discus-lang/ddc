@@ -46,7 +46,7 @@ pWitnessApp c
         let x'  = fst x
         let sp  = snd x
         let xs' = map fst xs
-        return  $ foldl (WApp sp) x' xs'
+        return  $ foldl (\w1 w2 -> WAnnot sp $ WApp w1 w2) x' xs'
 
  <?> "a witness expression or application"
 
@@ -59,7 +59,7 @@ pWitnessArgSP c
    do   sp      <- pTokSP KSquareBra
         t       <- pType c
         pTok KSquareKet
-        return  (WType sp t, sp)
+        return  ( WAnnot sp $ WType t, sp)
 
    -- WITNESS
  , do   pWitnessAtomSP c ]
@@ -85,15 +85,19 @@ pWitnessAtomSP c
 
    -- Named constructors
  , do   (con, sp) <- pConSP
-        return  (WCon sp (WiConBound (T.UName con) (T.tBot T.kWitness)), sp)
+        return  ( WAnnot sp $ WCon (WiConBound (T.UName con) (T.tBot T.kWitness))
+                , sp)
                 
    -- Debruijn indices
  , do   (i, sp) <- pIndexSP
-        return  (WVar sp (T.UIx   i), sp)
+        return  ( WAnnot sp $ WVar (T.UIx   i)
+                , sp)
 
    -- Variables
  , do   (var, sp) <- pVarSP
-        return  (WVar sp (T.UName var), sp) ]
+        return  ( WAnnot sp $ WVar (T.UName var)
+                , sp) 
+ ]
 
  <?> "a witness"
 

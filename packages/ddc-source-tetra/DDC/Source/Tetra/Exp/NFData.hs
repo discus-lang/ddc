@@ -84,10 +84,11 @@ instance NFDataLanguage l => NFData (GCast l) where
 instance NFDataLanguage l => NFData (GWitness l) where
  rnf ww
   = case ww of
-        WVar  a u               -> rnf a `seq` rnf u
-        WCon  a c               -> rnf a `seq` rnf c
-        WApp  a w1 w2           -> rnf a `seq` rnf w1 `seq` rnf w2
-        WType a t               -> rnf a `seq` rnf t
+        WAnnot a w              -> rnf a `seq` rnf w
+        WVar   u                -> rnf u
+        WCon   c                -> rnf c
+        WApp   w1 w2            -> rnf w1 `seq` rnf w2
+        WType  t                -> rnf t
 
 
 instance NFDataLanguage l => NFData (GWiCon l) where

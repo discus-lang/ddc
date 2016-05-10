@@ -262,10 +262,11 @@ instance PrettyLanguage l => Pretty (GCast l) where
 instance PrettyLanguage l => Pretty (GWitness l) where
  pprPrec d ww
   = case ww of
-        WVar _ n        -> ppr n
-        WCon _ wc       -> ppr wc
-        WApp _ w1 w2    -> pprParen (d > 10) (ppr w1 <+> pprPrec 11 w2)
-        WType _ t       -> text "[" <> ppr t <> text "]"
+        WAnnot _ w      -> ppr w
+        WVar   n        -> ppr n
+        WCon   wc       -> ppr wc
+        WApp   w1 w2    -> pprParen (d > 10) (ppr w1 <+> pprPrec 11 w2)
+        WType  t        -> text "[" <> ppr t <> text "]"
 
 
 instance PrettyLanguage l => Pretty (GWiCon l) where

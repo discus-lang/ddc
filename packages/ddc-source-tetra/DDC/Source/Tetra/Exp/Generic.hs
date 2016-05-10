@@ -151,7 +151,7 @@ data GPat l
         = PDefault
 
         -- | Match a data constructor and bind its arguments.
-        | PData !(DaCon (GName l) (Type (GName l))) ![GBind l]
+        | PData  !(DaCon (GName l) (Type (GName l))) ![GBind l]
 
 
 -- | An expression with some guards.
@@ -162,8 +162,8 @@ data GGuardedExp l
 
 -- | Expression guards.
 data GGuard l
-        = GPat  !(GPat l) !(GExp l)
-        | GPred !(GExp l)
+        = GPat   !(GPat l) !(GExp l)
+        | GPred  !(GExp l)
         | GDefault
 
 
@@ -188,17 +188,20 @@ data GCast l
 
 -- | Witnesses.
 data GWitness l
+        -- | Witness annotation
+        = WAnnot !(GAnnot l)  !(GWitness l)
+
         -- | Witness variable.
-        = WVar  !(GAnnot l) !(GBound l)
+        | WVar   !(GBound l)
 
         -- | Witness constructor.
-        | WCon  !(GAnnot l) !(GWiCon l)
+        | WCon   !(GWiCon l)
 
         -- | Witness application.
-        | WApp  !(GAnnot l) !(GWitness l) !(GWitness l)
+        | WApp   !(GWitness l) !(GWitness l)
 
         -- | Type can appear as an argument of a witness application.
-        | WType !(GAnnot l) !(T.Type (GName l))
+        | WType  !(T.Type (GName l))
 
 
 -- | Witness constructors.

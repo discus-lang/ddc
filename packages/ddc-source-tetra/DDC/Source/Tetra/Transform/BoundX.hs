@@ -150,10 +150,11 @@ instance HasAnonBind l => MapBoundX GWitness l where
 
 downW l f d ww
  = case ww of
-        WVar a u        -> WVar a (f d u)
-        WCon{}          -> ww
-        WApp a w1 w2    -> WApp a (downW l f d w1) (downW l f d w2)
-        WType{}         -> ww
+        WAnnot a w      -> WAnnot a (downW l f d w)
+        WVar   u        -> WVar   (f d u)
+        WCon   c        -> WCon   c
+        WApp   w1 w2    -> WApp   (downW l f d w1) (downW l f d w2)
+        WType  t        -> WType  t
 
 
 ---------------------------------------------------------------------------------------------------
