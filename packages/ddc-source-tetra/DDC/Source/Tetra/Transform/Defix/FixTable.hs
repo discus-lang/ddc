@@ -143,5 +143,5 @@ defaultFixTable
         ]
 
  where  xvar str sp 
-         = XVar sp (T.UName (NameVar str))
+         = XAnnot sp $ XVar (T.UName (NameVar str))
 

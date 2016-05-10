@@ -14,12 +14,11 @@ import DDC.Type.Exp
 --   At runtime, if none of the guards match then run the provided fail action.
 desugarGuards
         :: forall a
-        .  GAnnot (Annot a)         -- ^ Annotation.
-        -> [GGuardedExp (Annot a)]  -- ^ Guarded expressions to desugar.
+        .  [GGuardedExp (Annot a)]  -- ^ Guarded expressions to desugar.
         -> GExp (Annot a)           -- ^ Failure action.
         -> GExp (Annot a)
 
-desugarGuards a gs0 fail0
+desugarGuards gs0 fail0
  = go gs0 fail0
  where
         -- Desugar list of guarded expressions.
@@ -41,12 +40,12 @@ desugarGuards a gs0 fail0
 
         -- Simple cases where we can avoid introducing the continuation.
         go1 (GGuard (GPred g1)   (GExp x1)) cont
-         = XCase a g1
-                [ AAlt pTrue     [GExp x1]
+         = XCase g1
+                [ AAlt makePTrue [GExp x1]
                 , AAlt PDefault  [GExp cont] ]
 
         go1 (GGuard (GPat p1 g1) (GExp x1)) cont
-         = XCase a g1
+         = XCase g1
                 [ AAlt p1        [GExp x1]
                 , AAlt PDefault  [GExp cont]]
 
@@ -54,15 +53,15 @@ desugarGuards a gs0 fail0
         -- We need this when desugaring general pattern alternatives,
         -- as each group of guards can be reached from multiple places.
         go1 (GGuard (GPred x1) gs) cont
-         = XLet  a (LLet (BAnon (tBot kData)) (xBox a cont))
-         $ XCase a (liftX 1 x1)
-                [ AAlt pTrue     [GExp (go1 (liftX 1 gs) (xRun a (XVar a (UIx 0))))]
-                , AAlt PDefault  [GExp                   (xRun a (XVar a (UIx 0))) ]]
+         = XLet  (LLet (BAnon (tBot kData)) (makeXBox cont))
+         $ XCase (liftX 1 x1)
+                [ AAlt makePTrue [GExp (go1 (liftX 1 gs) (makeXRun (XVar (UIx 0))))]
+                , AAlt PDefault  [GExp                   (makeXRun (XVar (UIx 0))) ]]
 
         go1 (GGuard (GPat p1 x1) gs) cont
-         = XLet a (LLet (BAnon (tBot kData)) (xBox a cont))
-         $ XCase a (liftX 1 x1)
-                [ AAlt p1        [GExp (go1 (liftX 1 gs) (xRun a (XVar a (UIx 0))))]
-                , AAlt PDefault  [GExp                   (xRun a (XVar a (UIx 0))) ]]
+         = XLet  (LLet (BAnon (tBot kData)) (makeXBox cont))
+         $ XCase (liftX 1 x1)
+                [ AAlt p1        [GExp (go1 (liftX 1 gs) (makeXRun (XVar (UIx 0))))]
+                , AAlt PDefault  [GExp                   (makeXRun (XVar (UIx 0))) ]]
         
 

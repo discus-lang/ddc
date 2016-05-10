@@ -12,20 +12,21 @@ type NFDataLanguage l
 instance NFDataLanguage l => NFData (GExp l) where
  rnf xx
   = case xx of
-        XVar      a u           -> rnf a `seq` rnf u
-        XPrim     a p           -> rnf a `seq` rnf p
-        XCon      a dc          -> rnf a `seq` rnf dc
-        XLAM      a b x         -> rnf a `seq` rnf b   `seq` rnf x
-        XLam      a b x         -> rnf a `seq` rnf b   `seq` rnf x
-        XApp      a x1 x2       -> rnf a `seq` rnf x1  `seq` rnf x2
-        XLet      a lts x       -> rnf a `seq` rnf lts `seq` rnf x
-        XCase     a x alts      -> rnf a `seq` rnf x   `seq` rnf alts
-        XCast     a c x         -> rnf a `seq` rnf c   `seq` rnf x
-        XType     a t           -> rnf a `seq` rnf t
-        XWitness  a w           -> rnf a `seq` rnf w
-        XDefix    a xs          -> rnf a `seq` rnf xs
-        XInfixOp  a s           -> rnf a `seq` rnf s
-        XInfixVar a s           -> rnf a `seq` rnf s
+        XAnnot    a x           -> rnf a `seq` rnf x
+        XVar      u             -> rnf u
+        XPrim     p             -> rnf p
+        XCon      dc            -> rnf dc
+        XLAM      b x           -> rnf b   `seq` rnf x
+        XLam      b x           -> rnf b   `seq` rnf x
+        XApp      x1 x2         -> rnf x1  `seq` rnf x2
+        XLet      lts x         -> rnf lts `seq` rnf x
+        XCase     x alts        -> rnf x   `seq` rnf alts
+        XCast     c x           -> rnf c   `seq` rnf x
+        XType     t             -> rnf t
+        XWitness  w             -> rnf w
+        XDefix    a xs          -> rnf a   `seq` rnf xs
+        XInfixOp  a s           -> rnf a   `seq` rnf s
+        XInfixVar a s           -> rnf a   `seq` rnf s
 
 
 instance NFDataLanguage l => NFData (GClause l) where

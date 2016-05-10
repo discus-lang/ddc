@@ -60,28 +60,29 @@ instance HasAnonBind l => MapBoundX GExp l where
 
 downX l f d xx
   = case xx of
-        XVar  a u       -> XVar a (f d u)
-        XCon{}          -> xx
-        XPrim{}         -> xx
-        XApp  a x1 x2   -> XApp a   (downX l f d x1) (downX l f d x2)
-        XLAM  a b x     -> XLAM a b (downX l f d x)
+        XAnnot a x      -> XAnnot a (downX l f d x)
+        XVar   u        -> XVar (f d u)
+        XCon   c        -> XCon c
+        XPrim  p        -> XPrim p
+        XApp   x1 x2    -> XApp   (downX l f d x1) (downX l f d x2)
+        XLAM   b  x     -> XLAM b (downX l f d x)
 
-        XLam  a b x     
+        XLam   b x     
          -> let d'      = d + countBAnons l [b]
-            in  XLam a b (mapBoundAtDepthX l f d' x)
+            in  XLam b (mapBoundAtDepthX l f d' x)
 
-        XLet  a lets x   
+        XLet   lets x   
          -> let (lets', levels) = mapBoundAtDepthXLets l f d lets 
-            in  XLet a lets' (mapBoundAtDepthX l f (d + levels) x)
+            in  XLet lets' (mapBoundAtDepthX l f (d + levels) x)
 
-        XCase a x alts  -> XCase a  (downX l f d x)  (map (downA l f d) alts)
-        XCast a cc x    -> XCast a  (downC l f d cc) (downX l f d x)
-        XType{}         -> xx
-        XWitness a w    -> XWitness a (downW l f d w)
+        XCase x alts    -> XCase (downX l f d x)  (map (downA l f d) alts)
+        XCast cc x      -> XCast (downC l f d cc) (downX l f d x)
+        XType t         -> XType t
+        XWitness w      -> XWitness (downW l f d w)
 
-        XDefix   a xs   -> XDefix a (map (downX l f d) xs)
-        XInfixOp{}      -> xx
-        XInfixVar{}     -> xx
+        XDefix    a xs  -> XDefix    a (map (downX l f d) xs)
+        XInfixOp  a x   -> XInfixOp  a x
+        XInfixVar a x   -> XInfixVar a x
 
 
 ---------------------------------------------------------------------------------------------------

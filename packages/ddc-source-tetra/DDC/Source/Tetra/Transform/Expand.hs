@@ -33,6 +33,7 @@ import DDC.Source.Tetra.Module
 import DDC.Source.Tetra.Prim
 import DDC.Source.Tetra.Exp
 import DDC.Type.Collect
+import Data.Maybe
 import DDC.Type.Env                     (KindEnv, TypeEnv)
 import qualified DDC.Type.Env           as Env
 import qualified Data.Set               as Set
@@ -65,6 +66,7 @@ class ExpandLanguage l => Expand (c :: * -> *) l where
  expand
         :: Ord (GName l) 
         => Config l
+        -> GAnnot l
         -> KindEnv (GName l) -> TypeEnv (GName l)
         -> c l -> c l
 
@@ -73,7 +75,7 @@ class ExpandLanguage l => Expand (c :: * -> *) l where
 instance ExpandLanguage l => Expand Module l where
  expand = expandM
 
-expandM config kenv tenv mm
+expandM config a kenv tenv mm
   = let 
         -- Add quantifiers to the types of bindings, and also slurp
         -- out the contribution to the top-level environment from each binding.
@@ -81,9 +83,9 @@ expandM config kenv tenv mm
         --   thing is in-scope of all the others.
         preTop p
          = case p of
-                TopClause a (SLet _ b [] [GExp x])
-                 -> let (b', x') = expandQuant a config kenv (b, x)
-                    in  ( TopClause a (SLet a b' [] [GExp x'])
+                TopClause a' (SLet _ b [] [GExp x])
+                 -> let (b', x') = expandQuant a' config kenv (b, x)
+                    in  ( TopClause a' (SLet a' b' [] [GExp x'])
                         , Env.singleton b')
 
                 TopData _ def
@@ -99,7 +101,7 @@ expandM config kenv tenv mm
         tenv'           = Env.unions $ tenv : tenvs
 
         -- Expand all the top-level definitions.
-        tops'           = map (expand config kenv tenv')
+        tops'           = map (expand config a kenv tenv')
                         $ tops_quant
 
     in  mm { moduleTops = tops' }
@@ -109,11 +111,11 @@ expandM config kenv tenv mm
 instance ExpandLanguage l => Expand Top l where
  expand = expandT
 
-expandT config kenv tenv top
+expandT config _a kenv tenv top
   = case top of
         TopClause a1 (SLet a2 b [] [GExp x])
          -> let tenv'   = Env.extend b tenv
-                x'      = expand config kenv tenv' x
+                x'      = expand config a2 kenv tenv' x
             in  TopClause a1 (SLet a2 b [] [GExp x'])
 
         TopData{} -> top
@@ -126,88 +128,93 @@ expandT config kenv tenv top
 instance ExpandLanguage l => Expand GExp l where
  expand = downX
 
-downX config kenv tenv xx
-  = case xx of
+downX config a kenv tenv xx
+  = let fm = fromMaybe
+    in case xx of
+        XAnnot a' x
+         -> downX config a' kenv tenv x
 
         -- Invoke the expander --------
         XVar{}
-         ->     expandApp config kenv tenv xx []
+         ->     expandApp config a kenv tenv xx []
 
         XCon{}
-         ->     expandApp config kenv tenv xx []
+         ->     expandApp config a kenv tenv xx []
 
         XPrim{}
-         ->     expandApp config kenv tenv xx []
+         ->     expandApp config a kenv tenv xx []
 
         XApp{}
          | (x1, xas)     <- takeXAppsWithAnnots xx
          -> if isXVar x1 || isXCon x1
              -- If the function is a variable or constructor then try to expand
              -- extra arguments in the application.
-             then let   xas'    = [ (expand config kenv tenv x, a) | (x, a) <- xas ]
-                  in    expandApp config kenv tenv x1 xas'
+             then let   xas'     = [ (expand config (fm a a') kenv tenv x, a') 
+                                   | (x, a') <- xas ]
+                  in    expandApp config a kenv tenv x1 xas'
 
              -- Otherwise just apply the original arguments.
-             else let   x1'     = expand config kenv tenv x1
-                        xas'    = [ (expand config kenv tenv x, a) | (x, a) <- xas ]
+             else let   x1'      = expand config a kenv tenv x1
+                        xas'     = [ (expand config (fm a a') kenv tenv x, a') 
+                                   | (x, a') <- xas ]
                   in    makeXAppsWithAnnots x1' xas'
 
-        XLet a (LLet b x1) x2
+        XLet (LLet b x1) x2
          -> let 
                 -- Add missing quantifiers to the types of let-bindings.
                 (b_quant, x1_quant)
                         = expandQuant a config kenv (b, x1)
 
                 tenv'   = Env.extend b_quant tenv
-                x1'     = expand config kenv tenv' x1_quant
-                x2'     = expand config kenv tenv' x2
-            in  XLet a (LLet b x1') x2'
+                x1'     = expand config a kenv tenv' x1_quant
+                x2'     = expand config a kenv tenv' x2
+            in  XLet (LLet b x1') x2'
 
-        XLet a (LRec bxs) x2
+        XLet (LRec bxs) x2
          -> let 
                 (bs_quant, xs_quant)
                         = unzip
                         $ [expandQuant a config kenv (b, x) | (b, x) <- bxs]
 
                 tenv'   = Env.extends bs_quant tenv
-                xs'     = map (expand config kenv tenv') xs_quant
-                x2'     = expand config kenv tenv' x2
-            in  XLet a (LRec (zip bs_quant xs')) x2'
+                xs'     = map (expand config a kenv tenv') xs_quant
+                x2'     = expand config a kenv tenv' x2
+            in  XLet (LRec (zip bs_quant xs')) x2'
 
         -- LGroups need to be desugared first because any quantifiers
         -- we add to the front of a function binding need to scope over
         -- all the clauses related to that binding.
-        XLet a (LGroup [SLet _ b [] [GExp x1]]) x2
-         -> expand config kenv tenv (XLet a (LLet b x1) x2)
+        XLet (LGroup [SLet _ b [] [GExp x1]]) x2
+         -> expand config a kenv tenv (XLet (LLet b x1) x2)
 
         -- This should have already been desugared.
-        XLet _ (LGroup{}) _
+        XLet (LGroup{}) _
          -> error $ "ddc-source-tetra.expand: can't expand sugared LGroup."
 
 
         -- Boilerplate ----------------
-        XLAM a b x
+        XLAM b x
          -> let kenv'   = Env.extend b kenv
-                x'      = expand config kenv' tenv x
-            in  XLAM a b x'
+                x'      = expand config a kenv' tenv x
+            in  XLAM b x'
 
-        XLam a b x
+        XLam b x
          -> let tenv'   = Env.extend b tenv
-                x'      = expand config kenv tenv' x
-            in  XLam a b x'
+                x'      = expand config a kenv tenv' x
+            in  XLam b x'
 
-        XLet a (LPrivate bts mR bxs) x2
+        XLet (LPrivate bts mR bxs) x2
          -> let tenv'   = Env.extends bts kenv
                 kenv'   = Env.extends bxs tenv
-                x2'     = expand config kenv' tenv' x2
-            in  XLet a (LPrivate bts mR bxs) x2'
+                x2'     = expand config a kenv' tenv' x2
+            in  XLet (LPrivate bts mR bxs) x2'
 
-        XCase a x alts  -> XCase a   (downX config kenv tenv x)   
-                                     (map (downA config kenv tenv) alts)
-        XCast a c x     -> XCast a c (downX config kenv tenv x)
+        XCase  x alts   -> XCase  (downX config a kenv tenv x)   
+                                  (map (downA config a kenv tenv) alts)
+        XCast  c x      -> XCast  c (downX config a kenv tenv x)
         XType{}         -> xx
         XWitness{}      -> xx
-        XDefix a xs     -> XDefix a  (map (downX config kenv tenv) xs)
+        XDefix a' xs    -> XDefix a' (map (downX config a' kenv tenv) xs)
         XInfixOp{}      -> xx
         XInfixVar{}     -> xx
 
@@ -216,11 +223,11 @@ downX config kenv tenv xx
 instance ExpandLanguage l => Expand GAlt l where
  expand = downA
 
-downA config kenv tenv alt
+downA config a kenv tenv alt
   = case alt of
         AAlt p gsx
          -> let tenv'   = extendPat p tenv
-                gsx'    = map (expand config kenv tenv') gsx
+                gsx'    = map (expand config a kenv tenv') gsx
             in  AAlt p gsx'
 
 
@@ -228,13 +235,13 @@ downA config kenv tenv alt
 instance ExpandLanguage l => Expand GGuardedExp l where
  expand = downGX
 
-downGX config kenv tenv (GGuard g x)
-  = let g'      = expand config kenv tenv g
+downGX config a kenv tenv (GGuard g x)
+  = let g'      = expand  config a kenv tenv g
         tenv'   = extendGuard g' tenv
-    in  GGuard g' (expand config kenv tenv' x)
+    in  GGuard g' (expand config a kenv tenv' x)
 
-downGX config kenv tenv (GExp x)
-  = let x'      = expand config kenv tenv x
+downGX config a kenv tenv (GExp x)
+  = let x'      = expand config a kenv tenv x
     in  GExp x'
 
 
@@ -242,15 +249,15 @@ downGX config kenv tenv (GExp x)
 instance ExpandLanguage l => Expand GGuard l where
  expand = downG
 
-downG config kenv tenv gg
+downG config a kenv tenv gg
   = case gg of
         GPat p x
          -> let tenv'   = extendPat p tenv
-                x'      = expand config kenv tenv' x
+                x'      = expand config a kenv tenv' x
             in  GPat  p x'
 
         GPred x
-         -> let x'      = expand config kenv tenv x
+         -> let x'      = expand config a kenv tenv x
             in  GPred x'
 
         GDefault
@@ -292,7 +299,7 @@ expandQuant
         -> (GBind l, GExp l)    -- ^ Binder and expression of binding.
         -> (GBind l, GExp l)
 
-expandQuant a config kenv (b, x)
+expandQuant _a config kenv (b, x)
  | fvs  <- freeVarsT kenv (typeOfBind b)
  , not $ Set.null fvs
  = let  
@@ -313,7 +320,7 @@ expandQuant a config kenv (b, x)
         b'      = replaceTypeOfBind t' b
 
         -- Attach type lambdas to the front of the expression.
-        x'      = foldr (XLAM a) x bsNew
+        x'      = foldr XLAM x bsNew
 
    in   (b', x')
 
@@ -331,28 +338,28 @@ expandQuant a config kenv (b, x)
 --
 expandApp 
         :: ExpandLanguage l
-        => Config l             -- ^ Expander configuration.
-        -> KindEnv (GName l)    -- ^ Current kind environment.
-        -> TypeEnv (GName l)    -- ^ Current type environment.
-        -> GExp l               -- ^ Functional expression being applied.
-        -> [(GExp l, GAnnot l)] -- ^ Function arguments.
+        => Config l                     -- ^ Expander configuration.
+        -> GAnnot l                     -- ^ Default annotation
+        -> KindEnv (GName l)            -- ^ Current kind environment.
+        -> TypeEnv (GName l)            -- ^ Current type environment.
+        -> GExp l                       -- ^ Functional expression being applied.
+        -> [(GExp l, Maybe (GAnnot l))] -- ^ Function arguments.
         -> GExp l
 
-expandApp config _kenv tenv x0 xas0
- | Just (a, u)  <- slurpVarConBound x0
+expandApp config a0 _kenv tenv x0 xas0
+ | Just (ma, u) <- slurpVarConBound a0 x0
  , Just tt      <- Env.lookup u tenv 
  , not $ isBot tt
  = let
         go t xas
          = case (t, xas) of
-                (TForall _b t2, (x1@(XType _ _t1'), a1) : xas')
+                (TForall _b t2, (x1@(XType _t1'), a1) : xas')
                  ->     (x1, a1) : go t2 xas'
 
                 (TForall b t2, xas')
                  -> let k       = typeOfBind b
-                        Just a0 = takeAnnotOfExp x0
-                        xh      = XType a0 (configMakeTypeHole config k)
-                    in  (xh, a) : go t2 xas'
+                        xh      = XType (configMakeTypeHole config k)
+                    in  (xh, ma) : go t2 xas'
 
                 _ -> xas
 
@@ -369,13 +376,21 @@ expandApp config _kenv tenv x0 xas0
 --   Named data constructors are converted to `UName`s.
 slurpVarConBound 
         :: GBound l ~ Bound (GName l)
-        => GExp l 
-        -> Maybe (GAnnot l, GBound l)
-slurpVarConBound xx
+        => GAnnot l
+        -> GExp   l 
+        -> Maybe (Maybe (GAnnot l), GBound l)
+
+slurpVarConBound a xx
  = case xx of
-        XVar a u -> Just (a, u)
-        XCon a dc 
-         | DaConBound n   <- dc -> Just (a, UName n)
-         | DaConPrim  n t <- dc -> Just (a, UPrim n t)
+        XAnnot a' x
+         -> slurpVarConBound a' x
+
+        XVar u 
+         -> Just (Just a, u)
+
+        XCon dc 
+         | DaConBound n   <- dc -> Just (Just a, UName n)
+         | DaConPrim  n t <- dc -> Just (Just a, UPrim n t)
+
         _       -> Nothing
 

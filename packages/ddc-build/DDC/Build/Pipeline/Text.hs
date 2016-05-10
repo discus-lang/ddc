@@ -117,8 +117,10 @@ pipeText !srcName !srcLine !str !pp
                         Right mm' -> goToCore mm'
 
                 goToCore mm
-                 = do   -- Expand missing quantifiers in signatures.
-                        let mm_expand = SE.expand SE.configDefault 
+                 = do   let sp            = SP.SourcePos "<top level>" 1 1
+
+                        -- Expand missing quantifiers in signatures.
+                        let mm_expand = SE.expand SE.configDefault sp
                                             SE.primKindEnv SE.primTypeEnv mm
 
                         -- Dump desguared source code.
@@ -127,7 +129,6 @@ pipeText !srcName !srcLine !str !pp
                         -- Convert Source Tetra to Core Tetra.
                         -- This source position is used to annotate the 
                         -- let-expression that holds all the top-level bindings.
-                        let sp            = SP.SourcePos "<top level>" 1 1
                         case SE.coreOfSourceModule sp mm_expand of
                          Left err
                           -> return [ErrorLoad err]

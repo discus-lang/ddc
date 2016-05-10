@@ -52,8 +52,8 @@ isAtomX xx
  = case xx of
         XVar{}          -> True
         XCon{}          -> True
-        XType    _ t    -> isAtomT t
-        XWitness _ w    -> isAtomW w
+        XType    t      -> isAtomT t
+        XWitness w      -> isAtomW w
         _               -> False
 
 

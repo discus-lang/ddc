@@ -81,11 +81,13 @@ instance PrettyLanguage l => Pretty (GExp l) where
  pprPrec d xx
   = {-# SCC "ppr[Exp]" #-}
     case xx of
-        XVar  _ u       -> ppr u
-        XCon  _ dc      -> ppr dc
-        XPrim _ u       -> ppr u
+        XAnnot _ x      -> ppr x
+
+        XVar  u         -> ppr u
+        XCon  dc        -> ppr dc
+        XPrim u         -> ppr u
         
-        XLAM _ b xBody
+        XLAM  b xBody
          -> pprParen' (d > 1)
                  $   text "/\\" <>  ppr b <> text "."
                  <>  (if      isXLAM    xBody then empty
@@ -94,50 +96,50 @@ instance PrettyLanguage l => Pretty (GExp l) where
                       else    line)
                  <>  ppr xBody
 
-        XLam _ b xBody
+        XLam b xBody
          -> pprParen' (d > 1)
                  $  text "\\" <> ppr b <> text "."
                  <> breakWhen (not $ isSimpleX xBody)
                  <> ppr xBody
 
-        XApp _ x1 x2
+        XApp x1 x2
          -> pprParen' (d > 10)
          $  pprPrec 10 x1 
                 <> nest 4 (breakWhen (not $ isSimpleX x2) 
                            <> pprPrec 11 x2)
 
-        XLet _ lts x
+        XLet lts x
          ->  pprParen' (d > 2)
          $   ppr lts <+> text "in"
          <$> ppr x
 
-        XCase _ x alts
+        XCase x alts
          -> pprParen' (d > 2) 
          $  (nest 2 $ text "case" <+> ppr x <+> text "of" <+> lbrace <> line
                 <> (vcat $ punctuate semi $ map ppr alts))
          <> line 
          <> rbrace
 
-        XCast _ CastBox x
+        XCast CastBox x
          -> pprParen' (d > 2)
          $  text "box"  <$> ppr x
 
-        XCast _ CastRun x
+        XCast CastRun x
          -> pprParen' (d > 2)
          $  text "run"  <+> ppr x
 
-        XCast _ cc x
+        XCast cc x
          ->  pprParen' (d > 2)
          $   ppr cc <+> text "in"
          <$> ppr x
 
-        XType    _ t    -> text "[" <> ppr t <> text "]"
-        XWitness _ w    -> text "<" <> ppr w <> text ">"
+        XType    t    -> text "[" <> ppr t <> text "]"
+        XWitness w    -> text "<" <> ppr w <> text ">"
 
-        XDefix _ xs
+        XDefix    _ xs
          -> text "[" <> text "DEFIX|" <+> hsep (map (pprPrec 11) xs) <+> text "]"
 
-        XInfixOp _ str
+        XInfixOp  _ str
          -> parens $ text "INFIXOP"  <+> text "\"" <> text str <> text "\""
 
         XInfixVar _ str
@@ -284,11 +286,12 @@ breakWhen False  = space
 isSimpleX :: GExp l -> Bool
 isSimpleX xx
  = case xx of
+        XAnnot _ x      -> isSimpleX x
         XVar{}          -> True
         XCon{}          -> True
         XType{}         -> True
         XWitness{}      -> True
-        XApp _ x1 x2    -> isSimpleX x1 && isAtomX x2
+        XApp x1 x2      -> isSimpleX x1 && isAtomX x2
         _               -> False
 
 
@@ -301,3 +304,4 @@ pprParen' :: Bool -> Doc -> Doc
 pprParen' b c
  = if b then parens' c
         else c
+

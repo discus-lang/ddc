@@ -60,15 +60,16 @@ instance Defix GExp l where
  defix table xx
   = let down = defix table
     in case xx of
+        XAnnot a x      -> liftM  (XAnnot a) (defix table x)
         XVar{}          -> return xx
         XCon{}          -> return xx
         XPrim{}         -> return xx
-        XLAM  a b x     -> liftM  (XLAM  a b) (down x)
-        XLam  a b x     -> liftM  (XLam  a b) (down x)
-        XApp  a x1 x2   -> liftM2 (XApp  a)   (down x1)  (down x2)
-        XLet  a lts x   -> liftM2 (XLet  a)   (down lts) (down x)
-        XCase a x alts  -> liftM2 (XCase a)   (down x)   (mapM down alts)
-        XCast a c x     -> liftM  (XCast a c) (down x)
+        XLAM  b x       -> liftM  (XLAM  b) (down x)
+        XLam  b x       -> liftM  (XLam  b) (down x)
+        XApp  x1 x2     -> liftM2  XApp     (down x1)  (down x2)
+        XLet  lts x     -> liftM2  XLet     (down lts) (down x)
+        XCase x alts    -> liftM2  XCase    (down x)   (mapM down alts)
+        XCast c x       -> liftM  (XCast c) (down x)
         XType{}         -> return xx
         XWitness{}      -> return xx
 
@@ -184,7 +185,7 @@ defixApps a table xx
 
         -- Add another argument to the application.
         munch acc (x1 : xs)
-         = munch (XApp a acc x1) xs
+         = munch (XApp acc x1) xs
 
 
 -------------------------------------------------------------------------------
@@ -215,7 +216,7 @@ defixExps a table xx
                 
                 -- Defixer didn't find any infix ops, so whatever is leftover
                 -- is a standard prefix application.
-                Right Nothing   -> Right $ xApps a x xs
+                Right Nothing   -> Right $ XAnnot a $ makeXApps x xs
 
                 -- Defixer made progress, so keep calling it.
                 Right (Just xs') -> defixExps a table xs'
@@ -286,7 +287,7 @@ defixInfixLeft
 defixInfixLeft sp table precHigh (x1 : XInfixOp spo op : x2 : xs)
         | Just def      <- lookupDefInfixOfSymbol table op
         , fixDefPrec def == precHigh
-        =       Right (XApp sp (XApp sp (fixDefExp def spo) x1) x2 : xs)
+        =       Right (XApp (XApp (fixDefExp def spo) x1) x2 : xs)
 
         | otherwise
         = do    xs'     <- defixInfixLeft sp table precHigh (x2 : xs)
@@ -306,7 +307,7 @@ defixInfixRight
 defixInfixRight sp table precHigh (x2 : XInfixOp spo op : x1 : xs)
         | Just def      <- lookupDefInfixOfSymbol table op
         , fixDefPrec def == precHigh
-        =       Right (XApp sp (XApp sp (fixDefExp def spo) x1) x2 : xs)
+        =       Right (XApp (XApp (fixDefExp def spo) x1) x2 : xs)
 
         | otherwise
         = do    xs'     <- defixInfixRight sp table precHigh (x1 : xs)
@@ -334,7 +335,7 @@ defixInfixNone sp table precHigh xx
         | x1 : XInfixOp sp2 op2 : x3 : xs       <- xx
         , Just def2     <- lookupDefInfixOfSymbol table op2
         , fixDefPrec def2 == precHigh
-        = Right $ (XApp sp (XApp sp (fixDefExp def2 sp2) x1) x3) : xs
+        = Right $ (XApp (XApp (fixDefExp def2 sp2) x1) x3) : xs
 
         -- Some other operator.
         | x1 : x2@(XInfixOp{}) : x3 : xs       <- xx

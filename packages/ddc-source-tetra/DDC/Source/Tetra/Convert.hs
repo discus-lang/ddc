@@ -146,8 +146,8 @@ bindOfTop
         :: S.Top (S.Annot SP) 
         -> Maybe (ConvertM SP (T.Bind C.Name, C.Exp SP C.Name))
 
-bindOfTop (S.TopClause _ (S.SLet _ b [] [S.GExp x]))
- = Just ((,) <$> toCoreB b <*> toCoreX x)
+bindOfTop (S.TopClause _ (S.SLet a b [] [S.GExp x]))
+ = Just ((,) <$> toCoreB b <*> toCoreX a x)
 
 bindOfTop _     
  = Nothing
@@ -281,59 +281,63 @@ toCoreDataCtor dataDef tag ctor
 
 
 -- Exp --------------------------------------------------------------------------------------------
-toCoreX :: S.Exp SP -> ConvertM SP (C.Exp SP C.Name)
-toCoreX xx
+toCoreX :: SP -> S.Exp SP -> ConvertM SP (C.Exp SP C.Name)
+toCoreX a xx
  = case xx of
-        S.XVar a u      
-         -> C.XVar  <$> pure a <*> toCoreU  u
+        S.XAnnot a' x
+         -> toCoreX a' x
+
+        S.XVar u      
+         -> C.XVar  <$> pure a <*> toCoreU u
 
         -- Wrap text literals into Text during conversion to Core.
         -- The 'textLit' variable refers to whatever is in scope.
-        S.XCon a dc@(C.DaConPrim (S.NameLitTextLit{}) _)
+        S.XCon dc@(C.DaConPrim (S.NameLitTextLit{}) _)
          -> C.XApp  <$> pure a 
                     <*> (C.XVar <$> pure a <*> (pure $ C.UName (C.NameVar "textLit")))
                     <*> (C.XCon <$> pure a <*> (toCoreDC dc))
 
-        S.XPrim a p
+        S.XPrim p
          -> C.XVar  <$> pure a <*> toCoreU (C.UPrim (S.NameVal p) (S.typeOfPrimVal p))
 
-        S.XCon a dc
+        S.XCon  dc
          -> C.XCon  <$> pure a <*> toCoreDC dc
 
-        S.XLAM a b x
-         -> C.XLAM  <$> pure a <*> toCoreB b  <*> toCoreX x
+        S.XLAM  b x
+         -> C.XLAM  <$> pure a <*> toCoreB b  <*> toCoreX a x
 
-        S.XLam a b x
-         -> C.XLam  <$> pure a <*> toCoreB b  <*> toCoreX x
+        S.XLam  b x
+         -> C.XLam  <$> pure a <*> toCoreB b  <*> toCoreX a x
 
         -- We don't want to wrap the source file path passed to the default# prim
         -- in a Text constructor, so detect this case separately.
-        S.XApp a0 _ _
+        S.XApp  _ _
          |  Just ( p@(S.PrimValError S.OpErrorDefault)
-                 , [S.XCon a1 dc1, S.XCon a2 dc2])
+                 , [S.XCon dc1, S.XCon dc2])
                  <- S.takeXPrimApps xx
-         -> do  xPrim'  <- toCoreX (S.XPrim a0 p)
+         -> do  xPrim'  <- toCoreX  a (S.XPrim p)
                 dc1'    <- toCoreDC dc1
                 dc2'    <- toCoreDC dc2
-                return  $  C.xApps a0 xPrim' [C.XCon a1 dc1', C.XCon a2 dc2']
+                return  $  C.xApps a xPrim' [C.XCon a dc1', C.XCon a dc2']
 
-        S.XApp a x1 x2
-         -> C.XApp  <$> pure a <*> toCoreX x1 <*> toCoreX x2
+        S.XApp x1 x2
+         -> C.XApp      <$> pure a  <*> toCoreX a x1 <*> toCoreX a x2
 
-        S.XLet a lts x
-         -> C.XLet  <$> pure a <*> toCoreLts lts <*> toCoreX x
+        S.XLet lts x
+         -> C.XLet      <$> pure a  <*> toCoreLts a lts <*> toCoreX a x
 
-        S.XCase a x alts
-         -> C.XCase <$> pure a <*> toCoreX x <*> (sequence $ map (toCoreA a) alts)
+        S.XCase x alts
+         -> C.XCase     <$> pure a  <*> toCoreX a x 
+                                    <*> (sequence $ map (toCoreA a) alts)
 
-        S.XCast a c x
-         -> C.XCast <$> pure a <*> toCoreC a c <*> toCoreX x
+        S.XCast c x
+         -> C.XCast     <$> pure a  <*> toCoreC a c <*> toCoreX a x
 
-        S.XType a t
-         -> C.XType    <$> pure a <*> toCoreT t
+        S.XType t
+         -> C.XType     <$> pure a  <*> toCoreT t
 
-        S.XWitness a w
-         -> C.XWitness <$> pure a <*> toCoreW a w
+        S.XWitness w
+         -> C.XWitness  <$> pure a  <*> toCoreW a w
 
         -- These shouldn't exist in the desugared source tetra code.
         S.XDefix{}      -> Left $ ErrorConvertCannotConvertSugarExp xx
@@ -342,14 +346,14 @@ toCoreX xx
 
 
 -- Lets -------------------------------------------------------------------------------------------
-toCoreLts :: S.Lets SP -> ConvertM SP (C.Lets SP C.Name)
-toCoreLts lts
+toCoreLts :: SP -> S.Lets SP -> ConvertM SP (C.Lets SP C.Name)
+toCoreLts a lts
  = case lts of
         S.LLet b x
-         -> C.LLet <$> toCoreB b <*> toCoreX x
+         -> C.LLet <$> toCoreB b <*> toCoreX a x
         
         S.LRec bxs
-         -> C.LRec <$> (sequence $ map (\(b, x) -> (,) <$> toCoreB b <*> toCoreX x) bxs)
+         -> C.LRec <$> (sequence $ map (\(b, x) -> (,) <$> toCoreB b <*> toCoreX a x) bxs)
 
         S.LPrivate bks Nothing bts
          -> C.LPrivate <$> (sequence $ fmap toCoreB bks) 
@@ -386,8 +390,8 @@ toCoreC a cc
 toCoreA  :: SP -> S.Alt SP -> ConvertM SP (C.Alt SP C.Name)
 toCoreA sp (S.AAlt w gxs)
  = C.AAlt <$> toCoreP w
-          <*> (toCoreX  $ S.desugarGuards sp gxs 
-                        $ S.xErrorDefault sp
+          <*> (toCoreX sp $ S.desugarGuards gxs 
+                          $ S.makeXErrorDefault
                                 (Text.pack    $ sourcePosSource sp)
                                 (fromIntegral $ sourcePosLine   sp))
 

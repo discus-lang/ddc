@@ -6,15 +6,15 @@ module DDC.Source.Tetra.Compounds
         , takeAnnotOfExp
 
           -- * Lambdas
-        , xLAMs
-        , xLams
+        , makeXLAMs
+        , makeXLams
         , makeXLamFlags
         , takeXLAMs
         , takeXLams
         , takeXLamFlags
 
           -- * Applications
-        , xApps
+        , makeXApps
         , makeXAppsWithAnnots
         , takeXApps
         , takeXApps1
@@ -24,8 +24,8 @@ module DDC.Source.Tetra.Compounds
         , takeXPrimApps
 
           -- * Casts
-        , xBox
-        , xRun
+        , makeXBox
+        , makeXRun
 
           -- * Data Constructors
         , dcUnit
@@ -34,8 +34,8 @@ module DDC.Source.Tetra.Compounds
 
           -- * Patterns
         , bindsOfPat
-        , pTrue
-        , pFalse
+        , makePTrue
+        , makePFalse
 
           -- * Witnesses
         , wApp
@@ -45,11 +45,12 @@ module DDC.Source.Tetra.Compounds
         , takePrimWiConApps
 
           -- * Primitives
-        , xErrorDefault)
+        , makeXErrorDefault)
 where
 import DDC.Source.Tetra.Exp
 import DDC.Source.Tetra.Prim
 import DDC.Type.Exp.Simple.Compounds
+import Data.Maybe
 import Data.Text                        (Text)
 import DDC.Core.Exp.Annot.Compounds
         ( dcUnit
@@ -71,41 +72,43 @@ import DDC.Core.Exp.Annot.Compounds
 takeAnnotOfExp :: GExp l -> Maybe (GAnnot l)
 takeAnnotOfExp xx
  = case xx of
-        XVar  a _       -> Just a
-        XPrim a _       -> Just a
-        XCon  a _       -> Just a
-        XLAM  a _ _     -> Just a
-        XLam  a _ _     -> Just a
-        XApp  a _ _     -> Just a
-        XLet  a _ _     -> Just a
-        XCase a _ _     -> Just a
-        XCast a _ _     -> Just a
+        XAnnot a _      -> Just a
+        XVar{}          -> Nothing
+        XPrim{}         -> Nothing
+        XCon{}          -> Nothing
+        XLAM    _  x    -> takeAnnotOfExp x
+        XLam    _  x    -> takeAnnotOfExp x
+        XApp    x1 x2   -> firstJust $ map takeAnnotOfExp [x1, x2]
+        XLet    _  x    -> takeAnnotOfExp x
+        XCase   x  _    -> takeAnnotOfExp x
+        XCast   _  x    -> takeAnnotOfExp x
         XType{}         -> Nothing
         XWitness{}      -> Nothing
-        XDefix a _      -> Just a
+        XDefix    a _   -> Just a
         XInfixOp  a _   -> Just a
         XInfixVar a _   -> Just a
 
+firstJust = listToMaybe . catMaybes
 
 -- Lambdas ---------------------------------------------------------------------
 -- | Make some nested type lambdas.
-xLAMs :: GAnnot l -> [GBind l] -> GExp l -> GExp l
-xLAMs a bs x
-        = foldr (XLAM a) x bs
+makeXLAMs :: [GBind l] -> GExp l -> GExp l
+makeXLAMs bs x = foldr XLAM x bs
 
 
 -- | Make some nested value or witness lambdas.
-xLams :: GAnnot l -> [GBind l] -> GExp l -> GExp l
-xLams a bs x
-        = foldr (XLam a) x bs
+makeXLams :: [GBind l] -> GExp l -> GExp l
+makeXLams bs x = foldr XLam x bs
 
 
 -- | Split type lambdas from the front of an expression,
 --   or `Nothing` if there aren't any.
 takeXLAMs :: GExp l -> Maybe ([GBind l], GExp l)
 takeXLAMs xx
- = let  go bs (XLAM _ b x) = go (b:bs) x
+ = let  go bs (XAnnot _ x) = go bs x
+        go bs (XLAM b x)   = go (b:bs) x
         go bs x            = (reverse bs, x)
+
    in   case go [] xx of
          ([], _)        -> Nothing
          (bs, body)     -> Just (bs, body)
@@ -115,7 +118,8 @@ takeXLAMs xx
 --   or `Nothing` if there aren't any.
 takeXLams :: GExp l -> Maybe ([GBind l], GExp l)
 takeXLams xx
- = let  go bs (XLam _ b x) = go (b:bs) x
+ = let  go bs (XAnnot _ x) = go bs x
+        go bs (XLam b x)   = go (b:bs) x
         go bs x            = (reverse bs, x)
    in   case go [] xx of
          ([], _)        -> Nothing
@@ -125,11 +129,11 @@ takeXLams xx
 -- | Make some nested lambda abstractions,
 --   using a flag to indicate whether the lambda is a
 --   level-1 (True), or level-0 (False) binder.
-makeXLamFlags :: GAnnot l -> [(Bool, GBind l)] -> GExp l -> GExp l
-makeXLamFlags a fbs x
+makeXLamFlags :: [(Bool, GBind l)] -> GExp l -> GExp l
+makeXLamFlags fbs x
  = foldr (\(f, b) x'
-           -> if f then XLAM a b x'
-                   else XLam a b x')
+           -> if f then XLAM b x'
+                   else XLam b x')
                 x fbs
 
 
@@ -138,8 +142,9 @@ makeXLamFlags a fbs x
 --   or level-0 (False) binder.
 takeXLamFlags :: GExp l -> Maybe ([(Bool, GBind l)], GExp l)
 takeXLamFlags xx
- = let  go bs (XLAM _ b x) = go ((True,  b):bs) x
-        go bs (XLam _ b x) = go ((False, b):bs) x
+ = let  go bs (XAnnot _ x) = go bs x
+        go bs (XLAM b x)   = go ((True,  b):bs) x
+        go bs (XLam b x)   = go ((False, b):bs) x
         go bs x            = (reverse bs, x)
    in   case go [] xx of
          ([], _)        -> Nothing
@@ -148,18 +153,19 @@ takeXLamFlags xx
 
 -- Applications ---------------------------------------------------------------
 -- | Build sequence of value applications.
-xApps   :: GAnnot l -> GExp l -> [GExp l] -> GExp l
-xApps a t1 ts     = foldl (XApp a) t1 ts
+makeXApps   :: GExp l -> [GExp l] -> GExp l
+makeXApps t1 ts     = foldl XApp t1 ts
 
 
 -- | Build sequence of applications.
 --   Similar to `xApps` but also takes list of annotations for 
 --   the `XApp` constructors.
-makeXAppsWithAnnots :: GExp l -> [(GExp l, GAnnot l)] -> GExp l
+makeXAppsWithAnnots :: GExp l -> [(GExp l, Maybe (GAnnot l))] -> GExp l
 makeXAppsWithAnnots f xas
  = case xas of
-        []              -> f
-        (arg,a ) : as   -> makeXAppsWithAnnots (XApp a f arg) as
+        []                  -> f
+        (arg, Nothing) : as -> makeXAppsWithAnnots (XApp f arg) as
+        (arg, Just a)  : as -> makeXAppsWithAnnots (XAnnot a $ XApp f arg) as
 
 
 -- | Flatten an application into the function part and its arguments.
@@ -186,18 +192,23 @@ takeXApps1 x1 x2
 takeXAppsAsList  :: GExp l -> [GExp l]
 takeXAppsAsList xx
  = case xx of
-        XApp _ x1 x2    -> takeXAppsAsList x1 ++ [x2]
+        XAnnot _ x      -> takeXAppsAsList x
+        XApp x1 x2      -> takeXAppsAsList x1 ++ [x2]
         _               -> [xx]
 
 
 -- | Destruct sequence of applications.
 --   Similar to `takeXAppsAsList` but also keeps annotations for later.
-takeXAppsWithAnnots :: GExp l -> (GExp l, [(GExp l, GAnnot l)])
+takeXAppsWithAnnots :: GExp l -> (GExp l, [(GExp l, Maybe (GAnnot l))])
 takeXAppsWithAnnots xx
  = case xx of
-        XApp a f arg
+        XAnnot a (XApp f arg)
          -> let (f', args') = takeXAppsWithAnnots f
-            in  (f', args' ++ [(arg,a)])
+            in  (f', args' ++ [(arg, Just a)])
+
+        XApp f arg
+         -> let (f', args') = takeXAppsWithAnnots f
+            in  (f', args' ++ [(arg, Nothing)])
 
         _ -> (xx, [])
 
@@ -209,7 +220,7 @@ takeXAppsWithAnnots xx
 takeXPrimApps :: GExp l -> Maybe (GPrim l, [GExp l])
 takeXPrimApps xx
  = case takeXAppsAsList xx of
-        XPrim _ p : xs  -> Just (p, xs)
+        XPrim p : xs    -> Just (p, xs)
         _               -> Nothing
 
 -- | Flatten an application of a data constructor into the constructor
@@ -219,27 +230,27 @@ takeXPrimApps xx
 takeXConApps :: GExp l -> Maybe (DaCon (GName l) (Type (GName l)), [GExp l])
 takeXConApps xx
  = case takeXAppsAsList xx of
-        XCon _ dc : xs  -> Just (dc, xs)
+        XCon dc : xs    -> Just (dc, xs)
         _               -> Nothing
 
 
 -- Casts ----------------------------------------------------------------------
-xBox a x = XCast a CastBox x
-xRun a x = XCast a CastRun x
+makeXBox x = XCast CastBox x
+makeXRun x = XCast CastRun x
 
 
 -- Primitives -----------------------------------------------------------------
-xErrorDefault :: (GPrim l ~ PrimVal, GName l ~ Name)
-              => GAnnot l -> Text -> Integer -> GExp l
-xErrorDefault a name n
- = xApps a
-        (XPrim a  (PrimValError OpErrorDefault))
-        [ XCon a (DaConPrim (NameLitTextLit name) (tBot kData))
-        , XCon a (DaConPrim (NameLitNat     n)    (tBot kData))]
+makeXErrorDefault :: (GPrim l ~ PrimVal, GName l ~ Name)
+              => Text -> Integer -> GExp l
+makeXErrorDefault name n
+ = makeXApps
+        (XPrim (PrimValError OpErrorDefault))
+        [ XCon (DaConPrim (NameLitTextLit name) (tBot kData))
+        , XCon (DaConPrim (NameLitNat     n)    (tBot kData))]
 
 
 -- Patterns -------------------------------------------------------------------
-pTrue    = PData (DaConPrim (NameLitBool True)  tBool) []
-pFalse   = PData (DaConPrim (NameLitBool False) tBool) []
+makePTrue    = PData (DaConPrim (NameLitBool True)  tBool) []
+makePFalse   = PData (DaConPrim (NameLitBool False) tBool) []
 
 

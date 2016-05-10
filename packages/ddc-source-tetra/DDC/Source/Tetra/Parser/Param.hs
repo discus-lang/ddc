@@ -16,19 +16,18 @@ import DDC.Core.Parser
 -- | Build the expression of a function from specifications of its parameters,
 --   and the expression for the body.
 expOfParams 
-        :: a
-        -> [ParamSpec Name]     -- ^ Spec of parameters.
+        :: [ParamSpec Name]     -- ^ Spec of parameters.
         -> Exp a                -- ^ Body of function.
         -> Exp a                -- ^ Expression of whole function.
 
-expOfParams _ [] xBody            = xBody
-expOfParams a (p:ps) xBody
+expOfParams [] xBody            = xBody
+expOfParams (p:ps) xBody
  = case p of
         ParamType b     
-         -> XLAM a b $ expOfParams a ps xBody
+         -> XLAM b $ expOfParams ps xBody
         
         ParamWitness b
-         -> XLam a b $ expOfParams a ps xBody
+         -> XLam b $ expOfParams ps xBody
 
         ParamValue b _ _
-         -> XLam a b $ expOfParams a ps xBody
+         -> XLam b $ expOfParams ps xBody

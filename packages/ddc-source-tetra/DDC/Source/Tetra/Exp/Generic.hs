@@ -56,38 +56,40 @@ data GExp l
         --   These are also in the core language, and after desugaring only
         --   these constructs are used.
         --
+        = XAnnot    !(GAnnot l) !(GExp   l)
+
         -- | Value variable   or primitive operation.
-        = XVar      !(GAnnot l) !(GBound l)
+        | XVar      !(GBound l)
 
         -- | Primitive values.
-        | XPrim     !(GAnnot l) !(GPrim  l)
+        | XPrim     !(GPrim  l)
 
         -- | Data constructor or literal.
-        | XCon      !(GAnnot l) !(DaCon (GName l) (Type (GName l)))
+        | XCon      !(DaCon (GName l) (Type (GName l)))
 
         -- | Type abstraction (level-1).
-        | XLAM      !(GAnnot l) !(GBind l) !(GExp l)
+        | XLAM      !(GBind l) !(GExp l)
 
         -- | Value and Witness abstraction (level-0).
-        | XLam      !(GAnnot l) !(GBind l) !(GExp l)
+        | XLam      !(GBind l) !(GExp l)
 
         -- | Application.
-        | XApp      !(GAnnot l) !(GExp  l) !(GExp l)
+        | XApp      !(GExp  l) !(GExp l)
 
         -- | A non-recursive let-binding.
-        | XLet      !(GAnnot l) !(GLets l) !(GExp l)
+        | XLet      !(GLets l) !(GExp l)
 
         -- | Case branching.
-        | XCase     !(GAnnot l) !(GExp  l) ![GAlt l]
+        | XCase     !(GExp  l) ![GAlt l]
 
         -- | Type cast.
-        | XCast     !(GAnnot l) !(GCast l) !(GExp l)
+        | XCast     !(GCast l) !(GExp l)
 
         -- | Type can appear as the argument of an application.
-        | XType     !(GAnnot l) !(Type  (GName l))
+        | XType     !(Type  (GName l))
 
         -- | Witness can appear as the argument of an application.
-        | XWitness  !(GAnnot l) !(GWitness l)
+        | XWitness  !(GWitness l)
 
 
         ---------------------------------------------------

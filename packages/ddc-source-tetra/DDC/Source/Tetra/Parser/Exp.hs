@@ -81,7 +81,7 @@ pExp c
 
         pTok KDot
         xBody   <- pExp c
-        return  $ foldr (XLam sp) xBody bs
+        return  $ XAnnot sp $ foldr XLam xBody bs
 
         -- Level-1 lambda abstractions.
         -- /\(x1 x2 ... : Type) (y1 y2 ... : Type) ... . Exp
@@ -104,13 +104,13 @@ pExp c
 
         pTok KDot
         xBody   <- pExp c
-        return  $ foldr (XLAM sp) xBody bs
+        return  $ XAnnot sp $ foldr XLAM xBody bs
 
         -- let expression
  , do   (lts, sp) <- pLetsSP c
         pTok    KIn
         x2      <- pExp c
-        return  $ XLet sp lts x2
+        return  $ XAnnot sp $ XLet lts x2
 
         -- Sugar for a let-expression.
         --  do { Stmt;+ }
@@ -127,7 +127,7 @@ pExp c
         pTok KBraceBra
         alts    <- P.sepEndBy1 (pAlt c) (pTok KSemiColon)
         pTok KBraceKet
-        return  $ XCase sp x alts
+        return  $ XAnnot sp $ XCase x alts
 
         -- match { | EXP = EXP | EXP = EXP ... }
         --  Sugar for cascaded case expressions case-expression.
@@ -135,7 +135,7 @@ pExp c
         pTok KBraceBra
         x       <- pMatchGuardsAsCase sp c
         pTok KBraceKet
-        return x
+        return  $ XAnnot sp x
 
  , do   -- if-then-else
         --  Sugar for a case-expression.
@@ -145,9 +145,9 @@ pExp c
         x2      <- pExp c
         pTok KElse
         x3      <- pExp c
-        return  $ XCase sp x1 
-                        [ AAlt pTrue    [GExp x2]
-                        , AAlt PDefault [GExp x3]]
+        return  $ XAnnot sp $ XCase x1 
+                        [ AAlt makePTrue [GExp x2]
+                        , AAlt PDefault  [GExp x3]]
 
         -- weakeff [Type] in Exp
  , do   sp      <- pTokSP KWeakEff
@@ -156,24 +156,24 @@ pExp c
         pTok KSquareKet
         pTok KIn
         x       <- pExp c
-        return  $ XCast sp (CastWeakenEffect t) x
+        return  $ XAnnot sp $ XCast (CastWeakenEffect t) x
 
         -- purify Witness in Exp
  , do   sp      <- pTokSP KPurify
         w       <- pWitness c
         pTok KIn
         x       <- pExp c
-        return  $ XCast sp (CastPurify w) x
+        return  $ XAnnot sp $ XCast (CastPurify w) x
 
         -- box Exp
  , do   sp      <- pTokSP KBox
         x       <- pExp c
-        return  $ XCast sp CastBox x
+        return  $ XAnnot sp $ XCast CastBox x
 
         -- run Exp
  , do   sp      <- pTokSP KRun
         x       <- pExp c
-        return  $ XCast sp CastRun x
+        return  $ XAnnot sp $ XCast CastRun x
 
         -- APP
  , do   pExpApp c
@@ -186,8 +186,8 @@ pExp c
 pExpApp :: Context Name -> Parser Name (Exp SP)
 pExpApp c
   = do  xps     <- liftM concat $ P.many1 (pArgSPs c)
-        let (xs, sps)   = unzip xps
-        let sp1 : _     = sps
+        let (xs, sps) = unzip xps
+        let (sp1 : _) = sps
                 
         case xs of
          [x]    -> return x
@@ -204,25 +204,25 @@ pArgSPs c
  [ do   sp      <- pTokSP KSquareBra
         t       <- pType c
         pTok KSquareKet
-        return  [(XType sp t, sp)]
+        return  [(XType t, sp)]
 
         -- [: Type0 Type0 ... :]
  , do   sp      <- pTokSP KSquareColonBra
         ts      <- P.many1 (pTypeAtom c)
         pTok KSquareColonKet
-        return  [(XType sp t, sp) | t <- ts]
+        return  [(XType t, sp) | t <- ts]
         
         -- { Witness }
  , do   sp      <- pTokSP KBraceBra
         w       <- pWitness c
         pTok KBraceKet
-        return  [(XWitness sp w, sp)]
+        return  [(XWitness w, sp)]
                 
         -- {: Witness0 Witness0 ... :}
  , do   sp      <- pTokSP KBraceColonBra
         ws      <- P.many1 (pWitnessAtom c)
         pTok KBraceColonKet
-        return  [(XWitness sp w, sp) | w <- ws]
+        return  [(XWitness w, sp) | w <- ws]
                
         -- Exp0
  , do   (x, sp)  <- pExpAtomSP c
@@ -255,15 +255,15 @@ pExpAtomSP c
 
         -- Infix operator used nekkid.
  , do   (str, sp) <- pOpSP
-        return  (XInfixOp sp str, sp)
+        return  (XInfixOp  sp str, sp)
   
         -- The unit data constructor.       
  , do   sp              <- pTokSP KDaConUnit
-        return  (XCon sp dcUnit, sp)
+        return  (XCon  dcUnit, sp)
 
         -- Named algebraic constructors.
  , do   (con, sp)       <- pConSP
-        return  (XCon sp (DaConBound con), sp)
+        return  (XCon  (DaConBound con), sp)
 
         -- Literals.
         --  We just fill-in the type with tBot for now, and leave it to
@@ -271,24 +271,24 @@ pExpAtomSP c
         --  We also set the literal as being algebraic, which may not be
         --  true (as for Floats). The spreader also needs to fix this.
  , do   (lit, sp)       <- pLitSP
-        return  (XCon sp (DaConPrim lit (T.tBot T.kData)), sp)
+        return  (XCon  (DaConPrim lit (T.tBot T.kData)), sp)
 
  , do   (tx, sp)        <- pStringSP
         let Just mkString = contextMakeStringName c 
         let lit           = mkString sp tx
-        return  (XCon sp (DaConPrim lit (T.tBot T.kData)), sp)
+        return  (XCon  (DaConPrim lit (T.tBot T.kData)), sp)
 
         -- Primitive names.
  , do   (nPrim, sp)     <- pPrimValSP
-        return  (XPrim sp nPrim, sp)
+        return  (XPrim nPrim, sp)
 
         -- Named variables.
  , do   (sVar,  sp)     <- pVarStringSP
-        return  (XVar  sp (T.UName (NameVar sVar)), sp)
+        return  (XVar  (T.UName (NameVar sVar)), sp)
 
         -- Debruijn indices
  , do   (i, sp)         <- pIndexSP
-        return  (XVar  sp (T.UIx   i), sp)
+        return  (XVar  (T.UIx   i), sp)
 
  ]
 
@@ -365,8 +365,8 @@ pBindGuardsAsCaseSP c
 
         -- Desugar guards.
         -- If none match then raise a runtime error.
-        let xx' = desugarGuards sp (g : map snd spgs)  
-                $ xErrorDefault sp 
+        let xx' = desugarGuards (g : map snd spgs)  
+                $ makeXErrorDefault 
                         (Text.pack    $ sourcePosSource sp) 
                         (fromIntegral $ sourcePosLine   sp)
 
@@ -384,8 +384,8 @@ pMatchGuardsAsCase sp c
 
         -- Desugar guards.
         -- If none match then raise a runtime error.
-        let xx' = desugarGuards sp gg
-                $ xErrorDefault sp 
+        let xx' = desugarGuards gg
+                $ makeXErrorDefault
                         (Text.pack    $ sourcePosSource sp) 
                         (fromIntegral $ sourcePosLine   sp)
 
@@ -543,7 +543,7 @@ pClauseSP c
                         tBody       <- pType c
                         (sp, xBody) <- pBindGuardsAsCaseSP c
 
-                        let x   = expOfParams sp ps xBody
+                        let x   = expOfParams ps xBody
                         let t   = funTypeOfParams c ps tBody
                         return  ( SLet sp (T.makeBindFromBinder b t) [] [GExp x]
                                 , sp)
@@ -555,7 +555,7 @@ pClauseSP c
                         --   Binder Param1 Param2 .. ParamN = Exp
                  , do   (sp, xBody) <- pBindGuardsAsCaseSP c
 
-                        let x   = expOfParams sp ps xBody
+                        let x   = expOfParams ps xBody
                         let t   = T.tBot T.kData
                         return  ( SLet sp (T.makeBindFromBinder b t) [] [GExp x]
                                 , sp)
@@ -627,15 +627,15 @@ makeStmts ss
 
         StmtNone sp x1 : rest
          | Just x2      <- makeStmts rest
-         -> Just $ XLet sp (LLet (T.BNone (T.tBot T.kData)) x1) x2
+         -> Just $ XAnnot sp $ XLet (LLet (T.BNone (T.tBot T.kData)) x1) x2
 
         StmtBind sp b x1 : rest
          | Just x2      <- makeStmts rest
-         -> Just $ XLet sp (LLet b x1) x2
+         -> Just $ XAnnot sp $ XLet (LLet b x1) x2
 
         StmtMatch sp p x1 x2 : rest
          | Just x3      <- makeStmts rest
-         -> Just $ XCase sp x1 
+         -> Just $ XAnnot sp $ XCase x1 
                  [ AAlt p        [GExp x3]
                  , AAlt PDefault [GExp x2] ]
 

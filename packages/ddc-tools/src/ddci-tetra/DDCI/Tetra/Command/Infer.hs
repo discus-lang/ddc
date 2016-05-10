@@ -13,6 +13,7 @@ import DDC.Source.Tetra.Transform.Defix
 import DDC.Source.Tetra.Transform.Expand        as Expand
 import qualified DDC.Core.Lexer                 as C
 import qualified DDC.Base.Parser                as BP
+import qualified DDC.Data.SourcePos             as SP
 
 
 cmdInfer :: State -> Source -> String -> IO ()
@@ -34,7 +35,8 @@ cmdInfer _state source str
             Right mm'   -> goExpand mm'
 
         goExpand mm
-         = do   let mm' = Expand.expand Expand.configDefault 
+         = do   let sp            = SP.SourcePos "<top level>" 1 1
+                let mm' = Expand.expand Expand.configDefault sp
                                 primKindEnv primTypeEnv mm
                 putStrLn (renderIndent $ ppr mm')
 
