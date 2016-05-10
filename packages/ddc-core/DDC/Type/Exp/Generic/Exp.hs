@@ -58,9 +58,8 @@ data GTyCon l
         -- | The void constructor.
         | TyConVoid
 
-        -- | Take the least upper bound at the given kind,
-        --   of the given number of elements.
-        | TyConSum    !(GType l) Int
+        -- | Take the least upper bound at the given kind.
+        | TyConSum    !(GType l)
 
         -- | The least element of the given kind.
         | TyConBot    !(GType l)
@@ -87,6 +86,9 @@ pattern TUnit           = TCon TyConUnit
 
 -- | Representation of the void type.
 pattern TVoid           = TCon TyConVoid
+
+-- | Representatino of the bottom type at a given kind.
+pattern TBot k          = TCon (TyConBot k)
 
 -- | Representation of forall quantified types.
 pattern TForall k b t   = TApp (TCon (TyConForall k)) (TAbs b t)
