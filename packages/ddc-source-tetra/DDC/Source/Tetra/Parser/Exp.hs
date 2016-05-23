@@ -71,12 +71,14 @@ pExp c
                         pTok (KOp ":")
                         t       <- pType c
                         pTok KRoundKet
-                        return (map (\b -> T.makeBindFromBinder b t) bs')
+                        return  [ BindMT (T.makeBindFromBinder b t) (Just t)
+                                | b <- bs']
 
                 , do    bs'     <- P.many1 pBinder
                         pTok (KOp ":")
                         t       <- pType c
-                        return (map (\b -> T.makeBindFromBinder b t) bs') 
+                        return  [ BindMT (T.makeBindFromBinder b t) (Just t)
+                                | b <- bs']
                 ]
 
         pTok KDot
@@ -94,12 +96,12 @@ pExp c
                         pTok (KOp ":")
                         t       <- pType c
                         pTok KRoundKet
-                        return (map (\b -> T.makeBindFromBinder b t) bs')
+                        return  $ map (\b -> BindMT (T.makeBindFromBinder b t) (Just t)) bs'
 
                 , do    bs'     <- P.many1 pBinder
                         pTok (KOp ":")
                         t       <- pType c
-                        return (map (\b -> T.makeBindFromBinder b t) bs')
+                        return  $ map (\b -> BindMT (T.makeBindFromBinder b t) (Just t)) bs'
                 ]
 
         pTok KDot

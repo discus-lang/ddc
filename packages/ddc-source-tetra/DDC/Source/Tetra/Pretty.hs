@@ -21,6 +21,14 @@ type PrettyLanguage l
           , Pretty (GBound l), Pretty (GBind l), Pretty (GPrim l))
 
 
+-- Bind -------------------------------------------------------------------------------------------
+instance PrettyLanguage l => Pretty (GBindMT l) where
+ ppr (BindMT b mt)
+  = case mt of
+        Nothing -> ppr b
+        Just _t -> ppr b
+
+
 -- Module -----------------------------------------------------------------------------------------
 instance PrettyLanguage l => Pretty (Module l) where
  ppr Module

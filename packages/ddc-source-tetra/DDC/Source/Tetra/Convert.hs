@@ -303,10 +303,10 @@ toCoreX a xx
         S.XCon  dc
          -> C.XCon  <$> pure a <*> toCoreDC dc
 
-        S.XLAM  b x
+        S.XLAM  (S.BindMT b _mt) x
          -> C.XLAM  <$> pure a <*> toCoreB b  <*> toCoreX a x
 
-        S.XLam  b x
+        S.XLam  (S.BindMT b _mt) x
          -> C.XLam  <$> pure a <*> toCoreB b  <*> toCoreX a x
 
         -- We don't want to wrap the source file path passed to the default# prim

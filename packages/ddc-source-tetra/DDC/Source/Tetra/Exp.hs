@@ -9,6 +9,7 @@ module DDC.Source.Tetra.Exp
         , GBind
         , GBound
         , GPrim
+        , GBindMT       (..)
         , GExp          (..)
         , GLets         (..)
         , GAlt          (..)

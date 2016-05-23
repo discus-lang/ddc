@@ -5,6 +5,10 @@ module DDC.Source.Tetra.Compounds
         ( module DDC.Type.Exp.Simple.Compounds
         , takeAnnotOfExp
 
+          -- * Binds
+        , bindOfBindMT
+        , takeTypeOfBindMT
+
           -- * Lambdas
         , makeXLAMs
         , makeXLams
@@ -52,6 +56,9 @@ import DDC.Source.Tetra.Prim
 import DDC.Type.Exp.Simple.Compounds
 import Data.Maybe
 import Data.Text                        (Text)
+
+import qualified DDC.Type.Exp           as T
+
 import DDC.Core.Exp.Annot.Compounds
         ( dcUnit
         , takeNameOfDaCon
@@ -65,6 +72,17 @@ import DDC.Core.Exp.Annot.Compounds
         , takeWAppsAsList
         , takePrimWiConApps)
         
+
+-- Binds ----------------------------------------------------------------------
+-- | Take the `GBind` of a `GBindMT`
+bindOfBindMT :: GBindMT l -> GBind l
+bindOfBindMT (BindMT g _mt) = g
+
+
+-- | Take the type of a `GBindMT`.
+takeTypeOfBindMT :: GBindMT l -> Maybe (T.Type (GName l))
+takeTypeOfBindMT (BindMT _g mt) = mt
+
 
 -- Annotations ----------------------------------------------------------------
 -- | Take the outermost annotation from an expression,
@@ -92,18 +110,18 @@ firstJust = listToMaybe . catMaybes
 
 -- Lambdas ---------------------------------------------------------------------
 -- | Make some nested type lambdas.
-makeXLAMs :: [GBind l] -> GExp l -> GExp l
+makeXLAMs :: [GBindMT l] -> GExp l -> GExp l
 makeXLAMs bs x = foldr XLAM x bs
 
 
 -- | Make some nested value or witness lambdas.
-makeXLams :: [GBind l] -> GExp l -> GExp l
+makeXLams :: [GBindMT l] -> GExp l -> GExp l
 makeXLams bs x = foldr XLam x bs
 
 
 -- | Split type lambdas from the front of an expression,
 --   or `Nothing` if there aren't any.
-takeXLAMs :: GExp l -> Maybe ([GBind l], GExp l)
+takeXLAMs :: GExp l -> Maybe ([GBindMT l], GExp l)
 takeXLAMs xx
  = let  go bs (XAnnot _ x) = go bs x
         go bs (XLAM b x)   = go (b:bs) x
@@ -116,7 +134,7 @@ takeXLAMs xx
 
 -- | Split nested value or witness lambdas from the front of an expression,
 --   or `Nothing` if there aren't any.
-takeXLams :: GExp l -> Maybe ([GBind l], GExp l)
+takeXLams :: GExp l -> Maybe ([GBindMT l], GExp l)
 takeXLams xx
  = let  go bs (XAnnot _ x) = go bs x
         go bs (XLam b x)   = go (b:bs) x
@@ -129,7 +147,7 @@ takeXLams xx
 -- | Make some nested lambda abstractions,
 --   using a flag to indicate whether the lambda is a
 --   level-1 (True), or level-0 (False) binder.
-makeXLamFlags :: [(Bool, GBind l)] -> GExp l -> GExp l
+makeXLamFlags :: [(Bool, GBindMT l)] -> GExp l -> GExp l
 makeXLamFlags fbs x
  = foldr (\(f, b) x'
            -> if f then XLAM b x'
@@ -140,12 +158,16 @@ makeXLamFlags fbs x
 -- | Split nested lambdas from the front of an expression, 
 --   with a flag indicating whether the lambda was a level-1 (True), 
 --   or level-0 (False) binder.
-takeXLamFlags :: GExp l -> Maybe ([(Bool, GBind l)], GExp l)
+takeXLamFlags 
+        :: GExp l 
+        -> Maybe ([(Bool, GBindMT l)], GExp l)
+
 takeXLamFlags xx
- = let  go bs (XAnnot _ x) = go bs x
-        go bs (XLAM b x)   = go ((True,  b):bs) x
-        go bs (XLam b x)   = go ((False, b):bs) x
-        go bs x            = (reverse bs, x)
+ = let  go bs (XAnnot _ x)  = go bs x
+        go bs (XLAM b x)    = go ((True,  b):bs) x
+        go bs (XLam b x)    = go ((False, b):bs) x
+        go bs x             = (reverse bs, x)
+
    in   case go [] xx of
          ([], _)        -> Nothing
          (bs, body)     -> Just (bs, body)

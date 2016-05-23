@@ -1,6 +1,7 @@
 {-# LANGUAGE TypeFamilies #-}
 module DDC.Source.Tetra.Parser.Type
-        ( pTypeSum
+        ( pBind
+        , pTypeSum
         , pTypeApp
         , pTypeAtomSP
         , pTyConSP
@@ -19,21 +20,6 @@ import qualified DDC.Base.Parser        as P
 import qualified Data.Text              as T
 
 
---  | Parse a type sum.
-pTypeSum :: Parser Text Type
-pTypeSum
- = do   t1      <- pTypeForall
-        P.choice 
-         [ -- Type sums.
-           -- T2 + T3
-           do   sp      <- pTokSP (KOp "+")
-                t2      <- pTypeSum
-                return  $  TAnnot sp $ TSum TEffect t1 t2
-
-         , do   return t1 ]
- <?> "a type"
-
-
 -- | Parse a binder.
 pBind :: Parser Text Bind
 pBind
@@ -50,6 +36,21 @@ pBind
         , do    pTok KUnderscore
                 return  $  BNone ]
  <?> "a binder"
+
+
+--  | Parse a type sum.
+pTypeSum :: Parser Text Type
+pTypeSum
+ = do   t1      <- pTypeForall
+        P.choice 
+         [ -- Type sums.
+           -- T2 + T3
+           do   sp      <- pTokSP (KOp "+")
+                t2      <- pTypeSum
+                return  $  TAnnot sp $ TSum TEffect t1 t2
+
+         , do   return t1 ]
+ <?> "a type"
 
 
 -- | Parse a quantified type.

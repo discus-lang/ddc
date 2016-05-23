@@ -68,7 +68,7 @@ downX l f d xx
         XLAM   b  x     -> XLAM b (downX l f d x)
 
         XLam   b x     
-         -> let d'      = d + countBAnons l [b]
+         -> let d'      = d + countBAnonsBM l [b]
             in  XLam b (mapBoundAtDepthX l f d' x)
 
         XLet   lets x   
@@ -105,7 +105,7 @@ downA l f d (AAlt p gxs)
          -> AAlt PDefault (map (downGX l f d)  gxs)
 
         PData _ bs 
-         -> let d' = d + countBAnons l bs
+         -> let d' = d + countBAnonsB l bs
             in  AAlt p    (map (downGX l f d') gxs)
 
 
@@ -172,17 +172,17 @@ mapBoundAtDepthXLets
 mapBoundAtDepthXLets l f d lts
  = case lts of
         LLet b x
-         -> let inc = countBAnons l [b]
+         -> let inc = countBAnonsB l [b]
                 x'  = mapBoundAtDepthX l f d x
             in  (LLet b x', inc)
 
         LRec bs
-         -> let inc = countBAnons l (map fst bs)
+         -> let inc = countBAnonsB l (map fst bs)
                 bs' = map (\(b,e) -> (b, mapBoundAtDepthX l f (d + inc) e)) bs
             in  (LRec bs', inc)
 
         LPrivate _b _ bs 
-         -> (lts, countBAnons l bs)
+         -> (lts, countBAnonsB l bs)
 
         LGroup cs
          -> let inc = sum (map (countBAnonsC l) cs)
@@ -191,15 +191,21 @@ mapBoundAtDepthXLets l f d lts
 
 
 ---------------------------------------------------------------------------------------------------
-countBAnons  :: HasAnonBind l => l -> [GBind l] -> Int
-countBAnons l = length . filter (isAnon l)
+countBAnonsB  :: HasAnonBind l => l -> [GBind l] -> Int
+countBAnonsB l = length . filter (isAnon l)
+
+countBAnonsBM  :: HasAnonBind l => l -> [GBindMT l] -> Int
+countBAnonsBM l bmts
+        = length 
+        $ filter (isAnon l)
+        $ [b | BindMT b _ <- bmts]
 
 
 countBAnonsC :: HasAnonBind l => l -> GClause l -> Int
 countBAnonsC l c
  = case c of
-        SSig _ b _   -> countBAnons l [b]
-        SLet _ b _ _ -> countBAnons l [b]
+        SSig _ b _   -> countBAnonsB l [b]
+        SLet _ b _ _ -> countBAnonsB l [b]
 
 
 countBAnonsG :: HasAnonBind l => l -> GGuard l -> Int
@@ -212,6 +218,6 @@ countBAnonsG l g
 countBAnonsP :: HasAnonBind l => l -> GPat l -> Int
 countBAnonsP l p
  = case p of
-        PData _  bs -> countBAnons l bs
+        PData _  bs -> countBAnonsB l bs
         PDefault    -> 0
 

@@ -193,15 +193,15 @@ downX config a kenv tenv xx
 
 
         -- Boilerplate ----------------
-        XLAM b x
+        XLAM bm@(BindMT b _) x
          -> let kenv'   = Env.extend b kenv
                 x'      = expand config a kenv' tenv x
-            in  XLAM b x'
+            in  XLAM bm x'
 
-        XLam b x
+        XLam bm@(BindMT b _) x
          -> let tenv'   = Env.extend b tenv
                 x'      = expand config a kenv tenv' x
-            in  XLam b x'
+            in  XLam bm x'
 
         XLet (LPrivate bts mR bxs) x2
          -> let tenv'   = Env.extends bts kenv
@@ -310,17 +310,18 @@ expandQuant _a config kenv (b, x)
         makeBind u
          = case u of 
                 UName n         -> Just $ BName n kHole
-                UIx{}           -> Just $ BAnon kHole
+                UIx{}           -> Just $ BAnon   kHole
                 _               -> Nothing
 
         Just bsNew = sequence $ map makeBind $ Set.toList fvs
 
         -- Attach quantifiers to the front of the old type.
-        t'      = foldr TForall  (typeOfBind b) bsNew
+        t'      = foldr TForall (typeOfBind b) bsNew
         b'      = replaceTypeOfBind t' b
 
         -- Attach type lambdas to the front of the expression.
-        x'      = foldr XLAM x bsNew
+        x'      = foldr (\b1 x1 -> XLAM (BindMT b1 (Just (typeOfBind b1))) x1) 
+                        x bsNew
 
    in   (b', x')
 

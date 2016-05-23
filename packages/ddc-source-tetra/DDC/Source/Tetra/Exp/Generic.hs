@@ -11,6 +11,7 @@ module DDC.Source.Tetra.Exp.Generic
         , GBind
         , GBound
         , GPrim
+        , GBindMT       (..)
         , GExp          (..)
         , GLets         (..)
         , GAlt          (..)
@@ -48,6 +49,11 @@ class HasAnonBind l where
  isAnon :: l -> GBind l -> Bool
 
 
+-- | A possibly typed binding.
+data GBindMT l 
+        = BindMT (GBind l) (Maybe (Type (GName l)))
+
+
 -------------------------------------------------------------------------------
 -- | Well-typed expressions have types of kind `Data`.
 data GExp l
@@ -68,25 +74,25 @@ data GExp l
         | XCon      !(DaCon (GName l) (Type (GName l)))
 
         -- | Type abstraction (level-1).
-        | XLAM      !(GBind l) !(GExp l)
+        | XLAM      !(GBindMT l) !(GExp l)
 
         -- | Value and Witness abstraction (level-0).
-        | XLam      !(GBind l) !(GExp l)
+        | XLam      !(GBindMT l) !(GExp l)
 
         -- | Application.
-        | XApp      !(GExp  l) !(GExp l)
+        | XApp      !(GExp  l)   !(GExp l)
 
         -- | A non-recursive let-binding.
-        | XLet      !(GLets l) !(GExp l)
+        | XLet      !(GLets l)   !(GExp l)
 
         -- | Case branching.
-        | XCase     !(GExp  l) ![GAlt l]
+        | XCase     !(GExp  l)   ![GAlt l]
 
         -- | Type cast.
-        | XCast     !(GCast l) !(GExp l)
+        | XCast     !(GCast l)   !(GExp l)
 
         -- | Type can appear as the argument of an application.
-        | XType     !(Type  (GName l))
+        | XType     !(Type (GName l))
 
         -- | Witness can appear as the argument of an application.
         | XWitness  !(GWitness l)
@@ -230,4 +236,5 @@ deriving instance ShowLanguage l => Show (GPat        l)
 deriving instance ShowLanguage l => Show (GCast       l)
 deriving instance ShowLanguage l => Show (GWitness    l)
 deriving instance ShowLanguage l => Show (GWiCon      l)
+deriving instance ShowLanguage l => Show (GBindMT     l)
 
