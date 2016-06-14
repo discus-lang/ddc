@@ -60,12 +60,24 @@ import DDC.Core.Exp                     (DaCon (..))
 
 
 -------------------------------------------------------------------------------
--- | Type functions associated with the language AST.
+-- Type functions associated with the language AST.
+
+-- | Yield the type of annotations.
 type family GXAnnot    l
+
+-- | Yield the type of binding occurrences of variables.
 type family GXBindVar  l
+
+-- | Yield the type of bound occurrences of variables.
 type family GXBoundVar l
+
+-- | Yield the type of binding occurrences of constructors.
 type family GXBindCon  l
+
+-- | Yield the type of bound occurrences of constructors.
 type family GXBoundCon l
+
+-- | Yield the type of primitive operator names.
 type family GXPrim     l
 
 

@@ -33,7 +33,7 @@ where
 
 
 ---------------------------------------------------------------------------------------------------
--- Type functions associated with the language definition.
+-- Type functions associated with the language AST.
 
 -- | Yield the type of annotations.
 type family GTAnnot    l
@@ -50,7 +50,7 @@ type family GTBindCon  l
 -- | Yield the type of bound occurrences of constructors.
 type family GTBoundCon l
 
--- | Yield the type of primitive names for language @l@.
+-- | Yield the type of primitive type names.
 type family GTPrim     l
 
 
