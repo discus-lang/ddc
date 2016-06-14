@@ -55,6 +55,7 @@ module DDC.Source.Tetra.Prim.Base
         , pattern NameLitFloat
         , pattern NameLitTextLit)
 where
+import DDC.Type.Exp.TyCon
 import DDC.Core.Tetra    
         ( OpFun         (..)
         , OpVector      (..)
@@ -97,8 +98,20 @@ pattern NameVal  p              = NamePrim (PrimNameVal  p)
 ---------------------------------------------------------------------------------------------------
 -- | Primitive types.
 data PrimType
+        -- | Primitive sort constructors.
+        = PrimTypeSoCon         !SoCon
+
+        -- | Primitive kind constructors.
+        | PrimTypeKiCon         !KiCon
+
+        -- | Primitive witness type constructors.
+        | PrimTypeTwCon         !TwCon
+
+        -- | Other type constructors at the spec level.
+        | PrimTypeTcCon         !TcCon
+
         -- | Primitive machine type constructors.
-        = PrimTypeTyCon         !PrimTyCon
+        | PrimTypeTyCon         !PrimTyCon
 
         -- | Primtiive type constructors specific to the Tetra fragment.
         | PrimTypeTyConTetra    !PrimTyConTetra

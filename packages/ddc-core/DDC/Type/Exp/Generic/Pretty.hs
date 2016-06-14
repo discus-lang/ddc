@@ -12,10 +12,10 @@ import DDC.Base.Pretty
 
 -- | Synonym for pretty constraints on the configurable types.
 type PrettyConfig l
-      = ( Pretty (GAnnot   l)
-        , Pretty (GBindVar l), Pretty (GBoundVar l)
-        , Pretty (GBindCon l), Pretty (GBoundCon l)
-        , Pretty (GPrim    l))
+      = ( Pretty (GTAnnot   l)
+        , Pretty (GTBindVar l), Pretty (GTBoundVar l)
+        , Pretty (GTBindCon l), Pretty (GTBoundCon l)
+        , Pretty (GTPrim    l))
 
 
 -- | Pretty print a type using the generic, raw syntax.

@@ -18,13 +18,24 @@ module DDC.Source.Tetra.Prim
           -- ** Primitive machine type constructors.
         , PrimTyCon     (..)
         , kindPrimTyCon
-        , tBool
-        , tNat
-        , tInt
-        , tSize
-        , tWord
-        , tFloat
-        , tTextLit
+
+        , pattern KData
+        , pattern KRegion
+        , pattern KEffect
+
+        , pattern TImpl
+        , pattern TSusp
+        , pattern TRead
+        , pattern TWrite
+        , pattern TAlloc
+
+        , pattern TBool
+        , pattern TNat
+        , pattern TInt
+        , pattern TSize
+        , pattern TWord
+        , pattern TFloat
+        , pattern TTextLit
 
           -- ** Primitive tetra type constructors.
         , PrimTyConTetra(..)
@@ -57,6 +68,7 @@ module DDC.Source.Tetra.Prim
           -- ** Primitive error handling
         , OpError (..)
         , typeOpError
+        , makeXErrorDefault
 
           -- ** Primitive literals
         , PrimLit (..)
@@ -66,9 +78,13 @@ module DDC.Source.Tetra.Prim
         , pattern NameLitSize
         , pattern NameLitWord
         , pattern NameLitFloat
-        , pattern NameLitTextLit)
+        , pattern NameLitTextLit
+
+        , pattern PTrue
+        , pattern PFalse)
 where
 import DDC.Source.Tetra.Prim.Base
+import DDC.Source.Tetra.Prim.TyCon
 import DDC.Source.Tetra.Prim.TyConPrim
 import DDC.Source.Tetra.Prim.TyConTetra
 import DDC.Source.Tetra.Prim.OpArith
@@ -167,15 +183,23 @@ readPrimName str
 instance Pretty PrimType where
  ppr t
   = case t of
-        PrimTypeTyConTetra p    -> ppr p
-        PrimTypeTyCon  p        -> ppr p
+        PrimTypeSoCon c         -> ppr c
+        PrimTypeKiCon c         -> ppr c
+        PrimTypeTwCon c         -> ppr c
+        PrimTypeTcCon c         -> ppr c
+        PrimTypeTyCon c         -> ppr c
+        PrimTypeTyConTetra c    -> ppr c
 
 
 instance NFData PrimType where
  rnf t
   = case t of
-        PrimTypeTyConTetra p    -> rnf p
-        PrimTypeTyCon p         -> rnf p
+        PrimTypeSoCon _         -> ()
+        PrimTypeKiCon _         -> ()
+        PrimTypeTwCon _         -> ()
+        PrimTypeTcCon _         -> ()
+        PrimTypeTyCon c         -> rnf c
+        PrimTypeTyConTetra c    -> rnf c
 
 
 -- | Read the name of a primitive type.
@@ -291,4 +315,5 @@ readPrimLit str
 
         | otherwise
         = Nothing
+
 

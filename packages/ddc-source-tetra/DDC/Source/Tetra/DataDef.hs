@@ -1,62 +1,67 @@
+{-# LANGUAGE UndecidableInstances #-}
 
 -- | Source Tetra data type definitions.
 module DDC.Source.Tetra.DataDef
         ( -- * Data Type Definition.
           DataDef  (..)
-        , typeEnvOfDataDef
+--        , typeEnvOfDataDef
           
           -- * Data Constructor Definition.
         , DataCtor (..)
         , typeOfDataCtor)
 where
-import DDC.Type.Exp.Simple.Compounds
-import DDC.Type.Exp
-import DDC.Type.Env             (TypeEnv)
-import qualified DDC.Type.Env   as Env
+import DDC.Source.Tetra.Exp.Generic
+-- import DDC.Type.Env             (TypeEnv)
+-- import qualified DDC.Type.Env   as Env
 import Control.DeepSeq
 
 
 -- DataDef --------------------------------------------------------------------
 -- | Data type definitions.
-data DataDef n
+data DataDef l
         = DataDef
         { -- | Data type name.
-          dataDefTypeName       :: !n
+          dataDefTypeName       :: !(GTBindCon l)
 
-          -- | Type parameters.
-        , dataDefParams         :: [Bind n]
+          -- | Type parameters and their kinds.
+        , dataDefParams         :: [(GTBindVar l, GType l)]
 
           -- | Parameters and return type of each constructor.
-        , dataDefCtors          :: [DataCtor n] }
-        deriving Show
+        , dataDefCtors          :: [DataCtor l] }
 
+deriving instance (ShowLanguage l, Show (DataCtor l))
+ => Show (DataDef l)
 
 instance NFData (DataDef n) where
  rnf !_ = ()
 
 
 -- | Take the types of data constructors from a data type definition.
+{-
 typeEnvOfDataDef :: Ord n => DataDef n -> TypeEnv n
 typeEnvOfDataDef def 
  = Env.fromList 
         [BName  (dataCtorName ctor) 
                 (typeOfDataCtor def ctor)
                 | ctor  <- dataDefCtors def ]
-                
+-}              
 
 -- DataCtor -------------------------------------------------------------------
 -- | A data type constructor definition.
-data DataCtor n
+data DataCtor l
         = DataCtor
         { -- | Name of the data constructor.
-          dataCtorName          :: !n
+          dataCtorName          :: !(GXBindCon l)
 
           -- | Types of each of the fields of the constructor.
-        , dataCtorFieldTypes    :: ![Type n]
+        , dataCtorFieldTypes    :: ![GType l]
 
           -- | Result type of the constructor.
-        , dataCtorResultType    :: !(Type n) }
-        deriving Show
+        , dataCtorResultType    :: !(GType l) }
+
+deriving instance (ShowLanguage l) 
+ => Show (DataCtor l)
+
 
 
 instance NFData (DataCtor n) where
@@ -64,9 +69,9 @@ instance NFData (DataCtor n) where
 
 
 -- | Get the type of a data constructor.
-typeOfDataCtor :: DataDef n -> DataCtor n -> Type n
+typeOfDataCtor :: DataDef l -> DataCtor l -> GType l
 typeOfDataCtor def ctor
-        = foldr TForall
-                (foldr tFun (dataCtorResultType ctor)
+        = foldr (\(b, k) -> TForall k b)
+                (foldr TFun (dataCtorResultType ctor)
                             (dataCtorFieldTypes ctor))
                 (dataDefParams def)

@@ -4,11 +4,12 @@ module DDC.Type.Exp.Generic.Compounds
           makeTApps,    takeTApps
 
           -- * Function Types
-        , makeTFun,     makeTFuns
+        , makeTFun,     makeTFuns,      makeTFuns',     (~>)
         , takeTFun,     takeTFuns,      takeTFuns'
 
           -- * Forall Types
-        , makeTForall,  takeTForall
+        , makeTForall,  makeTForalls 
+        , takeTForall
 
           -- * Exists Types
         , makeTExists,  takeTExists)
@@ -35,14 +36,25 @@ takeTApps tt
 -- Function Types -------------------------------------------------------------
 -- | Construct a function type with the given parameter and result type.
 makeTFun :: GType l -> GType l -> GType l
-makeTFun t1 t2           = (TFun `TApp` t1) `TApp` t2
+makeTFun t1 t2           = TFun t1 t2
 infixr `makeTFun`
 
+(~>) = makeTFun
+infixr ~>
 
 -- | Like `makeFun` but taking a list of parameter types.
 makeTFuns :: [GType l] -> GType l -> GType l
-makeTFuns []     t1      = t1
-makeTFuns (t:ts) t1      = t `makeTFun` makeTFuns ts t1
+makeTFuns []     t1     = t1
+makeTFuns (t:ts) t1     = t `makeTFun` makeTFuns ts t1
+
+
+-- | Like `makeTFuns` but taking the parameter and return types as a list.
+makeTFuns' :: [GType l] -> Maybe (GType l)
+makeTFuns' []           = Nothing
+makeTFuns' [_]          = Nothing
+makeTFuns' ts
+ = let (tR : tAs)       = reverse ts
+   in  Just $ makeTFuns (reverse tAs) tR
 
 
 -- | Destruct a function type into its parameter and result types,
@@ -76,13 +88,22 @@ takeTFuns' tt
 
 -- Forall types ---------------------------------------------------------------
 -- | Construct a forall quantified type using an anonymous binder.
-makeTForall :: Anon l => l -> GType l -> (GType l -> GType l) -> GType l
+makeTForall :: Anon l  => l -> GType l -> (GType l -> GType l) -> GType l
 makeTForall l k makeBody
  =  withBinding l $ \b u -> TForall k b (makeBody (TVar u))
 
 
+-- | Construct a forall quantified type using some anonymous binders.
+makeTForalls :: Anon l => l -> [GType l] -> ([GType l] -> GType l) -> GType l
+makeTForalls l ks makeBody
+ = withBindings l (length ks)
+ $ \bs us -> foldr (\(k, b) -> TForall k b) 
+                   (makeBody $ reverse $ map TVar us)
+                   (zip ks bs)
+
+
 -- | Destruct a forall quantified type, if this is one.
-takeTForall :: GType l -> Maybe (GType l, GBindVar l, GType l)
+takeTForall :: GType l -> Maybe (GType l, GTBindVar l, GType l)
 takeTForall (TForall k b t)     = Just (k, b, t)
 takeTForall _                   = Nothing
 
@@ -95,7 +116,7 @@ makeTExists l k makeBody
 
 
 -- | Destruct an exists quantified type, if this is one.
-takeTExists :: GType l -> Maybe (GType l, GBindVar l, GType l)
+takeTExists :: GType l -> Maybe (GType l, GTBindVar l, GType l)
 takeTExists (TExists k b t)     = Just (k, b, t)
 takeTExists _                   = Nothing
 

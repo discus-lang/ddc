@@ -12,26 +12,26 @@ import DDC.Source.Tetra.Pretty
 data Error l
         -- | Infix operator symbol has no infix definition.
         = ErrorNoInfixDef
-        { errorAnnot            :: GAnnot l
+        { errorAnnot            :: GXAnnot l
         , errorSymbol           :: String }
 
         -- | Two non-associative operators with the same precedence.
         | ErrorDefixNonAssoc
         { errorOp1              :: String
-        , errorAnnot1           :: GAnnot l
+        , errorAnnot1           :: GXAnnot l
         , errorOp2              :: String
-        , errorAnnot2           :: GAnnot l }
+        , errorAnnot2           :: GXAnnot l }
 
         -- | Two operators of different associativies with same precedence.
         | ErrorDefixMixedAssoc 
-        { errorAnnot            :: GAnnot l
+        { errorAnnot            :: GXAnnot l
         , errorOps              :: [String] }
 
         -- | Infix expression is malformed.
         --   Eg "+ 3" or "2 + + 2"
         | ErrorMalformed
-        { errorAnnot            :: GAnnot l
-        , errorExp              :: GExp l }
+        { errorAnnot            :: GXAnnot l
+        , errorExp              :: GXExp l }
 
 deriving instance ShowLanguage l => Show (Error l)
 

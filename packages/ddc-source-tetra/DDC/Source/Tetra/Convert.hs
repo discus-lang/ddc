@@ -13,18 +13,15 @@ import DDC.Data.SourcePos
 import qualified DDC.Source.Tetra.Transform.Guards      as S
 import qualified DDC.Source.Tetra.Module                as S
 import qualified DDC.Source.Tetra.DataDef               as S
-import qualified DDC.Source.Tetra.Env                   as S
+-- import qualified DDC.Source.Tetra.Env                   as S
 import qualified DDC.Source.Tetra.Compounds             as S
-import qualified DDC.Source.Tetra.Exp.Annot             as S
+import qualified DDC.Source.Tetra.Exp.Source            as S
 import qualified DDC.Source.Tetra.Prim                  as S
 
 import qualified DDC.Core.Tetra.Prim                    as C
 import qualified DDC.Core.Module                        as C
 import qualified DDC.Core.Exp.Annot                     as C
 import qualified DDC.Type.DataDef                       as C
-
-import qualified DDC.Type.Exp                           as T
-import qualified DDC.Type.Sum                           as Sum
 import qualified Data.Text                              as Text
 import Data.Maybe
 
@@ -50,7 +47,7 @@ runConvertM cc = cc
 -- | Convert a Source Tetra module to Core Tetra.
 coreOfSourceModule 
         :: SP
-        -> S.Module (S.Annot SP)
+        -> S.Module S.Source
         -> Either (ErrorConvert SP) (C.Module SP C.Name)
 
 coreOfSourceModule a mm
@@ -69,38 +66,33 @@ coreOfSourceModule a mm
 -- 
 coreOfSourceModuleM
         :: SP
-        -> S.Module (S.Annot SP)
+        -> S.Module S.Source
         -> ConvertM SP (C.Module SP C.Name)
 
 coreOfSourceModuleM a mm
  = do   
         -- Exported types and values.
         exportTypes'    <- sequence
-                        $  fmap (\n 
-                                -> (,)  <$> (pure $ toCoreN n) 
-                                        <*> (pure $ ExportSourceLocalNoType (toCoreN n)))
+                        $  fmap (\n -> (,) <$> toCoreTUCN n 
+                                           <*> (fmap ExportSourceLocalNoType $ toCoreTUCN n))
                         $  S.moduleExportTypes mm
 
         exportValues'   <- sequence
-                        $  fmap (\n
-                                -> (,)  <$> (pure $ toCoreN n)
-                                        <*> (pure $ ExportSourceLocalNoType (toCoreN n)))
+                        $  fmap (\n -> (,) <$> toCoreXUVN n
+                                           <*> (fmap ExportSourceLocalNoType (toCoreXUVN n)))
                         $  S.moduleExportValues mm
 
         -- Imported types and values.
         importTypes'    <- sequence
-                        $  fmap (\(n, it) 
-                                -> (,)  <$> (pure $ toCoreN n) <*> (toCoreImportType it))
+                        $  fmap (\(n, it) -> (,) <$> (pure $ toCoreN n) <*> (toCoreImportType it))
                         $  S.moduleImportTypes  mm
 
         importCaps'     <- sequence 
-                        $  fmap (\(n, iv) 
-                                -> (,)  <$> (pure $ toCoreN n) <*> (toCoreImportCap iv))
+                        $  fmap (\(n, iv) -> (,) <$> toCoreXBVN n <*> toCoreImportCap   iv)
                         $  S.moduleImportCaps   mm
 
         importValues'   <- sequence 
-                        $  fmap (\(n, iv) 
-                                -> (,)  <$> (pure $ toCoreN n) <*> (toCoreImportValue iv))
+                        $  fmap (\(n, iv) -> (,) <$> toCoreXBVN n <*> toCoreImportValue iv)
                         $  S.moduleImportValues mm
 
         -- Data type definitions.
@@ -109,6 +101,8 @@ coreOfSourceModuleM a mm
 
         -- Top level bindings.
         ltsTops         <- letsOfTops $  S.moduleTops mm
+
+
 
         return
          $ C.ModuleCore
@@ -120,9 +114,12 @@ coreOfSourceModuleM a mm
                 , C.moduleExportValues
                    =  exportValues'
                    ++ (if C.isMainModuleName (S.moduleName mm)
-                        && (not $ elem (S.NameVar "main") $ S.moduleExportValues mm)
+                        && (not $ elem (S.UName (Text.pack "main")) 
+                                $ S.moduleExportValues mm)
+
                         then [ ( C.NameVar "main"
                              , ExportSourceLocalNoType (C.NameVar "main"))]
+
                         else [])
 
                 , C.moduleImportTypes    = importTypes'
@@ -134,7 +131,7 @@ coreOfSourceModuleM a mm
 
 
 -- | Extract the top-level bindings from some source definitions.
-letsOfTops :: [S.Top (S.Annot SP)] 
+letsOfTops :: [S.Top S.Source] 
            -> ConvertM SP (C.Lets SP C.Name)
 letsOfTops tops
  = C.LRec <$> (sequence $ mapMaybe bindOfTop tops)
@@ -143,8 +140,8 @@ letsOfTops tops
 -- | Try to convert a `TopBind` to a top-level binding, 
 --   or `Nothing` if it isn't one.
 bindOfTop  
-        :: S.Top (S.Annot SP) 
-        -> Maybe (ConvertM SP (T.Bind C.Name, C.Exp SP C.Name))
+        :: S.Top S.Source
+        -> Maybe (ConvertM SP (C.Bind C.Name, C.Exp SP C.Name))
 
 bindOfTop (S.TopClause _ (S.SLet a b [] [S.GExp x]))
  = Just ((,) <$> toCoreB b <*> toCoreX a x)
@@ -155,8 +152,8 @@ bindOfTop _
 
 -- ImportType -------------------------------------------------------------------------------------
 toCoreImportType 
-        :: ImportType S.Name (T.Type S.Name)
-        -> ConvertM a (ImportType C.Name (T.Type C.Name))
+        :: ImportType S.Name S.Type
+        -> ConvertM a (ImportType C.Name (C.Type C.Name))
 
 toCoreImportType src
  = case src of
@@ -169,8 +166,8 @@ toCoreImportType src
 
 -- ImportCap --------------------------------------------------------------------------------------
 toCoreImportCap 
-        :: ImportCap S.Name (T.Type S.Name)
-        -> ConvertM a (ImportCap C.Name (T.Type C.Name))
+        :: ImportCap S.Bind S.Type
+        -> ConvertM a (ImportCap C.Name (C.Type C.Name))
 
 toCoreImportCap src
  = case src of
@@ -180,14 +177,14 @@ toCoreImportCap src
 
 -- ImportValue ------------------------------------------------------------------------------------
 toCoreImportValue 
-        :: ImportValue S.Name (T.Type S.Name)
-        -> ConvertM a (ImportValue C.Name (T.Type C.Name))
+        :: ImportValue S.Bind S.Type
+        -> ConvertM a (ImportValue C.Name (C.Type C.Name))
 
 toCoreImportValue src
  = case src of
         ImportValueModule mn n t mA
          ->  ImportValueModule 
-         <$> (pure mn) <*> (pure $ toCoreN n) <*> toCoreT t <*> pure mA
+         <$> (pure mn) <*> toCoreXBVN n <*> toCoreT t <*> pure mA
 
         ImportValueSea v t
          -> ImportValueSea 
@@ -195,65 +192,64 @@ toCoreImportValue src
 
 
 -- Type -------------------------------------------------------------------------------------------
-toCoreT :: T.Type S.Name -> ConvertM a (T.Type C.Name)
+toCoreT :: S.Type -> ConvertM a (C.Type C.Name)
 toCoreT tt
  = case tt of
-        T.TVar u
-         -> T.TVar <$> toCoreU  u
+        S.TAnnot _ t
+         -> toCoreT t
 
-        T.TCon tc
-         -> T.TCon <$> toCoreTC tc
+        S.TCon tc
+         -> C.TCon <$> toCoreTC tc
 
-        T.TForall b t
-         -> T.TForall <$> toCoreB b  <*> toCoreT t
+        S.TVar u
+         -> C.TVar <$> toCoreU  u
 
-        T.TApp t1 t2
-         -> T.TApp    <$> toCoreT t1 <*> toCoreT t2
+        S.TApp (S.TCon (S.TyConForall k)) (S.TAbs b t)
+         -> C.TForall <$> toCoreBM (S.XBindVarMT b (Just k)) <*> toCoreT t
 
-        T.TSum ts
+        S.TApp t1 t2
+         -> C.TApp    <$> toCoreT t1 <*> toCoreT t2
+
+        _ -> error "Convert.toCoreT: finish me"
+
+{-
+        S.TSum ts
          -> do  k'      <- toCoreT $ Sum.kindOfSum ts
 
                 tss'    <- fmap (Sum.fromList k') 
                         $  sequence $ fmap toCoreT $ Sum.toList ts
 
                 return  $ T.TSum tss'
-
+-}
 
 -- TyCon ------------------------------------------------------------------------------------------
-toCoreTC :: T.TyCon S.Name -> ConvertM a (T.TyCon C.Name)
+toCoreTC :: S.TyCon -> ConvertM a (C.TyCon C.Name)
 toCoreTC tc
  = case tc of
-        T.TyConSort sc    
-         -> pure $ T.TyConSort sc
+        S.TyConVoid             -> error "ddc-source-tetra.toCoreTC: finish me"
+        S.TyConUnit             -> pure $ C.TyConSpec C.TcConUnit
+        S.TyConFun              -> pure $ C.TyConSpec C.TcConFun
+        S.TyConSum _            -> error "ddc-source-tetra.toCoreTC: named sum"         
+        S.TyConBot _k           -> error "ddc-source-tetra.toCoreTC: bot"
+        S.TyConForall _k        -> error "ddc-source-tetra.toCoreTC: naked forall"
+        S.TyConExists _k        -> error "ddc-source-tetra.toCoreTC: naked exists"
 
-        T.TyConKind kc
-         -> pure $ T.TyConKind kc
-
-        T.TyConWitness wc
-         -> pure $ T.TyConWitness wc
-
-        T.TyConSpec sc
-         -> pure $ T.TyConSpec sc
-
-        T.TyConBound u k
-         -> T.TyConBound  <$> toCoreU u <*> toCoreT k
-
-        T.TyConExists n k
-         -> T.TyConExists <$> pure n    <*> toCoreT k
+        S.TyConPrim _           -> error "ddc-source-tetra.toCoreTC: finish me"
+        S.TyConBound _          -> error "ddc-source-tetra.toCoreTC: finish me"
 
 
 -- DataDef ----------------------------------------------------------------------------------------
-toCoreDataDef :: S.DataDef S.Name -> ConvertM a (C.DataDef C.Name)
+toCoreDataDef :: S.DataDef S.Source -> ConvertM a (C.DataDef C.Name)
 toCoreDataDef def
  = do
-        defParams       <- sequence $ fmap toCoreB $ S.dataDefParams def
+        defParams       <- sequence $ fmap toCoreTBK $ S.dataDefParams def
 
         defCtors        <- sequence $ fmap (\(ctor, tag) -> toCoreDataCtor def tag ctor)
                                     $ [(ctor, tag) | ctor <- S.dataDefCtors def
                                                    | tag  <- [0..]]
 
         return $ C.DataDef
-         { C.dataDefTypeName    = toCoreN     $ S.dataDefTypeName def
+         { C.dataDefTypeName    = toCoreN (S.NameCon $ Text.unpack $ S.dataDefTypeName def)
          , C.dataDefParams      = defParams
          , C.dataDefCtors       = Just $ defCtors
          , C.dataDefIsAlgebraic = True }
@@ -261,14 +257,14 @@ toCoreDataDef def
 
 -- DataCtor ---------------------------------------------------------------------------------------
 toCoreDataCtor 
-        :: S.DataDef S.Name 
+        :: S.DataDef  S.Source
         -> Integer
-        -> S.DataCtor S.Name 
+        -> S.DataCtor S.Source
         -> ConvertM a (C.DataCtor C.Name)
 
 toCoreDataCtor dataDef tag ctor
- = do   typeParams      <- sequence $ fmap toCoreB $ S.dataDefParams dataDef
-        fieldTypes      <- sequence $ fmap toCoreT $ S.dataCtorFieldTypes ctor
+ = do   typeParams      <- sequence $ fmap toCoreTBK $ S.dataDefParams dataDef
+        fieldTypes      <- sequence $ fmap toCoreT   $ S.dataCtorFieldTypes ctor
         resultType      <- toCoreT (S.dataCtorResultType ctor)
 
         return $ C.DataCtor
@@ -276,12 +272,15 @@ toCoreDataCtor dataDef tag ctor
          , C.dataCtorTag         = tag
          , C.dataCtorFieldTypes  = fieldTypes
          , C.dataCtorResultType  = resultType
-         , C.dataCtorTypeName    = toCoreN (S.dataDefTypeName dataDef) 
+
+         , C.dataCtorTypeName    
+                = toCoreN (S.NameCon (Text.unpack $ S.dataDefTypeName dataDef))
+
          , C.dataCtorTypeParams  = typeParams }
 
 
 -- Exp --------------------------------------------------------------------------------------------
-toCoreX :: SP -> S.Exp SP -> ConvertM SP (C.Exp SP C.Name)
+toCoreX :: SP -> S.Exp -> ConvertM SP (C.Exp SP C.Name)
 toCoreX a xx
  = case xx of
         S.XAnnot a' x
@@ -297,16 +296,18 @@ toCoreX a xx
                     <*> (C.XVar <$> pure a <*> (pure $ C.UName (C.NameVar "textLit")))
                     <*> (C.XCon <$> pure a <*> (toCoreDC dc))
 
-        S.XPrim p
-         -> C.XVar  <$> pure a <*> toCoreU (C.UPrim (S.NameVal p) (S.typeOfPrimVal p))
+        S.XPrim _p
+         -> error "convert: exp prim"
+
+--         -> C.XVar  <$> pure a <*> toCoreU (C.UPrim (S.NameVal p) (S.typeOfPrimVal p))
 
         S.XCon  dc
          -> C.XCon  <$> pure a <*> toCoreDC dc
 
-        S.XLAM  (S.BindMT b _mt) x
+        S.XLAM  (S.XBindVarMT b _mt) x
          -> C.XLAM  <$> pure a <*> toCoreB b  <*> toCoreX a x
 
-        S.XLam  (S.BindMT b _mt) x
+        S.XLam  (S.XBindVarMT b _mt) x
          -> C.XLam  <$> pure a <*> toCoreB b  <*> toCoreX a x
 
         -- We don't want to wrap the source file path passed to the default# prim
@@ -340,20 +341,23 @@ toCoreX a xx
          -> C.XWitness  <$> pure a  <*> toCoreW a w
 
         -- These shouldn't exist in the desugared source tetra code.
-        S.XDefix{}      -> Left $ ErrorConvertCannotConvertSugarExp xx
-        S.XInfixOp{}    -> Left $ ErrorConvertCannotConvertSugarExp xx
-        S.XInfixVar{}   -> Left $ ErrorConvertCannotConvertSugarExp xx
+        S.XDefix{}      -> error "ddc-source-tetra.convert: error" 
+                -- Left $ ErrorConvertCannotConvertSugarExp xx
+        S.XInfixOp{}    -> error "ddc-source-tetra.convert: error" 
+                -- Left $ ErrorConvertCannotConvertSugarExp xx
+        S.XInfixVar{}   -> error "ddc-source-tetra.convert: error" 
+                -- Left $ ErrorConvertCannotConvertSugarExp xx
 
 
 -- Lets -------------------------------------------------------------------------------------------
-toCoreLts :: SP -> S.Lets SP -> ConvertM SP (C.Lets SP C.Name)
+toCoreLts :: SP -> S.Lets -> ConvertM SP (C.Lets SP C.Name)
 toCoreLts a lts
  = case lts of
         S.LLet b x
-         -> C.LLet <$> toCoreB b <*> toCoreX a x
+         -> C.LLet <$> toCoreBM b <*> toCoreX a x
         
         S.LRec bxs
-         -> C.LRec <$> (sequence $ map (\(b, x) -> (,) <$> toCoreB b <*> toCoreX a x) bxs)
+         -> C.LRec <$> (sequence $ map (\(b, x) -> (,) <$> toCoreBM b <*> toCoreX a x) bxs)
 
         S.LPrivate bks Nothing bts
          -> C.LPrivate <$> (sequence $ fmap toCoreB bks) 
@@ -366,11 +370,13 @@ toCoreLts a lts
                        <*> (sequence $ fmap toCoreB bts)
 
         S.LGroup{}
-         -> Left $ ErrorConvertCannotConvertSugarLets lts
+         -> error "ddc-source-tetra.convert: cannot convert sugar lets"
+
+--         -> Left $ ErrorConvertCannotConvertSugarLets lts
 
 
 -- Cast -------------------------------------------------------------------------------------------
-toCoreC :: a -> S.Cast a -> ConvertM a (C.Cast a C.Name)
+toCoreC :: SP -> S.Cast -> ConvertM SP (C.Cast SP C.Name)
 toCoreC a cc
  = case cc of
         S.CastWeakenEffect eff
@@ -387,7 +393,7 @@ toCoreC a cc
 
 
 -- Alt --------------------------------------------------------------------------------------------
-toCoreA  :: SP -> S.Alt SP -> ConvertM SP (C.Alt SP C.Name)
+toCoreA  :: SP -> S.Alt -> ConvertM SP (C.Alt SP C.Name)
 toCoreA sp (S.AAlt w gxs)
  = C.AAlt <$> toCoreP w
           <*> (toCoreX sp $ S.desugarGuards gxs 
@@ -397,7 +403,7 @@ toCoreA sp (S.AAlt w gxs)
 
 
 -- Pat --------------------------------------------------------------------------------------------
-toCoreP  :: S.Pat a -> ConvertM a (C.Pat C.Name)
+toCoreP  :: S.Pat -> ConvertM a (C.Pat C.Name)
 toCoreP pp
  = case pp of
         S.PDefault        
@@ -408,8 +414,8 @@ toCoreP pp
 
 
 -- DaCon ------------------------------------------------------------------------------------------
-toCoreDC :: S.DaCon S.Name (T.Type S.Name)
-         -> ConvertM a (C.DaCon C.Name (T.Type (C.Name)))
+toCoreDC :: S.DaCon S.Name S.Type
+         -> ConvertM a (C.DaCon C.Name (C.Type (C.Name)))
 
 toCoreDC dc
  = case dc of
@@ -424,7 +430,7 @@ toCoreDC dc
 
 
 -- Witness ----------------------------------------------------------------------------------------
-toCoreW :: a -> S.Witness a -> ConvertM a (C.Witness a C.Name)
+toCoreW :: SP -> S.Witness -> ConvertM SP (C.Witness SP C.Name)
 toCoreW a ww
  = case ww of
         S.WAnnot a' w   
@@ -444,7 +450,7 @@ toCoreW a ww
 
 
 -- WiCon ------------------------------------------------------------------------------------------
-toCoreWC :: S.WiCon a -> ConvertM a (C.WiCon C.Name)
+toCoreWC :: S.WiCon -> ConvertM a (C.WiCon C.Name)
 toCoreWC wc
  = case wc of
         S.WiConBound u t
@@ -452,31 +458,81 @@ toCoreWC wc
 
 
 -- Bind -------------------------------------------------------------------------------------------
-toCoreB :: S.Bind -> ConvertM a (C.Bind C.Name)
+
+-- | Convert a type constructor bound occurrence to a core name.
+toCoreTUCN :: S.GTBoundCon S.Source -> ConvertM a C.Name
+toCoreTUCN n
+ = return $ C.NameCon (Text.unpack n)
+
+
+-- | Convert a term variable bound occurrence to a core name.
+toCoreXUVN :: S.Bound -> ConvertM a C.Name
+toCoreXUVN uu
+ = case uu of
+        S.UIx  _i -> error "ddc-source-tetra.toCoreXBVN: anon bound"
+        S.UName n -> return $ C.NameCon (Text.unpack n)
+
+
+toCoreXBVN  :: S.GTBindVar S.Source -> ConvertM a C.Name
+toCoreXBVN bb
+ = case bb of
+        S.BNone   -> error "ddc-source-tetra.toCoreXBVN: none bound"
+        S.BAnon   -> error "ddc-source-tetra.toCoreXBVN: anon bound"
+        S.BName n -> return $ C.NameVar (Text.unpack n)
+
+
+
+toCoreB  :: S.Bind   -> ConvertM a (C.Bind C.Name)
 toCoreB bb
  = case bb of
-        T.BName n t
-         -> T.BName <$> (pure $ toCoreN n) <*> toCoreT t
+        S.BNone   -> C.BNone <$> (return $ C.tBot C.kData)
+        S.BAnon   -> C.BAnon <$> (return $ C.tBot C.kData)
+        S.BName n -> C.BName <$> (return $ C.NameVar (Text.unpack n)) <*> (return $ C.tBot C.kData)
 
-        T.BAnon t
-         -> T.BAnon <$> toCoreT t
 
-        T.BNone t
-         -> T.BNone <$> toCoreT t
+-- | Convert a type binder and kind to core.
+toCoreTBK :: (S.GTBindVar S.Source, S.GType S.Source)
+          -> ConvertM a (C.Bind C.Name)
+
+toCoreTBK (bb, k)
+ = case bb of
+        S.BNone   -> C.BNone <$> (toCoreT k)
+        S.BAnon   -> C.BAnon <$> (toCoreT k)
+        S.BName n -> C.BName <$> (return $ C.NameVar (Text.unpack n)) <*> (toCoreT k)
+
+
+
+toCoreBM :: S.GXBindVarMT S.Source -> ConvertM a (C.Bind C.Name)
+toCoreBM bb
+ = case bb of
+        S.XBindVarMT S.BNone     (Just t)
+         -> C.BNone <$> toCoreT t
+
+        S.XBindVarMT S.BNone     Nothing
+         -> C.BNone <$> (return $ C.tBot C.kData) 
+
+        S.XBindVarMT S.BAnon     (Just t)   
+         -> C.BAnon <$> toCoreT t
+
+        S.XBindVarMT S.BAnon     Nothing    
+         -> C.BAnon <$> (return $ C.tBot C.kData)
+
+        S.XBindVarMT (S.BName n) (Just t)
+         -> C.BName <$> (return $ C.NameVar (Text.unpack n)) <*> toCoreT t
+
+        S.XBindVarMT (S.BName n) Nothing    
+         -> C.BName <$> (return $ C.NameVar (Text.unpack n)) <*> (pure $ C.tBot C.kData)
 
 
 -- Bound ------------------------------------------------------------------------------------------
 toCoreU :: S.Bound -> ConvertM a (C.Bound C.Name)
 toCoreU uu
  = case uu of
-        T.UName n
-         -> T.UName <$> (pure $ toCoreN n)
+        S.UName n
+         -> C.UName <$> pure (C.NameVar (Text.unpack n))
 
-        T.UIx   i
-         -> T.UIx   <$> (pure i)
-
-        T.UPrim n t
-         -> T.UPrim <$> (pure $ toCoreN n) <*> toCoreT t
+        S.UIx   i
+         -> C.UIx   <$> (pure i)
 
 
 -- Name -------------------------------------------------------------------------------------------
@@ -520,6 +576,7 @@ toCoreN nn
         S.NameHole
          -> C.NameHole
 
+        _ -> error "ddc-source-tetra.toCoreN: not finished"
 
 -- | Convert a Tetra specific type constructor to core.
 toCoreTyConTetra :: S.PrimTyConTetra -> C.TyConTetra

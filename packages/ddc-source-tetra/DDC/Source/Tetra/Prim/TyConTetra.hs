@@ -1,20 +1,24 @@
-
+{-# LANGUAGE TypeFamilies #-}
 -- | Definitions of primitive type constructors for Source Tetra language.
 module DDC.Source.Tetra.Prim.TyConTetra
         ( kindPrimTyConTetra
         , readPrimTyConTetra
-        , tVector
-        , tFunValue
-        , tCloValue)
+        , pattern TVector
+        , pattern TFunValue
+        , pattern TCloValue)
 where
+import DDC.Source.Tetra.Prim.TyCon
 import DDC.Source.Tetra.Prim.Base
-import DDC.Type.Exp.Simple
+import DDC.Source.Tetra.Exp.Generic
+import DDC.Source.Tetra.Compounds
+
 import DDC.Base.Pretty
 import Data.Char
 import Data.List
 import Control.DeepSeq
 
 
+---------------------------------------------------------------------------------------------------
 instance NFData PrimTyConTetra where
  rnf !_ = ()
 
@@ -29,6 +33,7 @@ instance Pretty PrimTyConTetra where
         PrimTyConTetraU         -> text "U#"
 
 
+---------------------------------------------------------------------------------------------------
 -- | Read the name of a baked-in type constructor.
 readPrimTyConTetra :: String -> Maybe PrimTyConTetra
 readPrimTyConTetra str
@@ -48,33 +53,17 @@ readPrimTyConTetra str
 
 
 -- | Take the kind of a baked-in data constructor.
-kindPrimTyConTetra :: PrimTyConTetra -> Type Name
 kindPrimTyConTetra tc
  = case tc of
-        PrimTyConTetraTuple n   -> foldr kFun kData (replicate n kData)
-        PrimTyConTetraVector    -> kRegion `kFun` kData `kFun` kData
-        PrimTyConTetraF         -> kData   `kFun` kData
-        PrimTyConTetraC         -> kData   `kFun` kData
-        PrimTyConTetraU         -> kData   `kFun` kData
+        PrimTyConTetraTuple n   -> foldr (~>) KData (replicate n KData)
+        PrimTyConTetraVector    -> KRegion ~> KData ~> KData
+        PrimTyConTetraF         -> KData   ~> KData
+        PrimTyConTetraC         -> KData   ~> KData
+        PrimTyConTetraU         -> KData   ~> KData
 
 
--- Compounds ------------------------------------------------------------------
--- | Primitive `Vector` type.
-tVector ::  Region Name -> Type Name -> Type Name
-tVector tR tA   
- = tApps (TCon (TyConBound (UPrim (NameTyConTetra PrimTyConTetraVector) k) k)) 
-         [tR, tA]
- where k = kRegion `kFun` kData `kFun` kData
-
-
-tFunValue :: Type Name -> Type Name
-tFunValue tA
- = tApps (TCon (TyConBound (UPrim (NameTyConTetra PrimTyConTetraF) k) k)) [tA]
- where k = kData `kFun` kData
-
-
-tCloValue :: Type Name -> Type Name
-tCloValue tA
- = tApps (TCon (TyConBound (UPrim (NameTyConTetra PrimTyConTetraC) k) k)) [tA]
- where k = kData `kFun` kData
+---------------------------------------------------------------------------------------------------
+pattern TVector   tR tA = TApp2 (TCon (TyConPrim (PrimTypeTyConTetra PrimTyConTetraVector))) tR tA
+pattern TFunValue tA    = TApp  (TCon (TyConPrim (PrimTypeTyConTetra PrimTyConTetraF)))      tA
+pattern TCloValue tA    = TApp  (TCon (TyConPrim (PrimTypeTyConTetra PrimTyConTetraC)))      tA
 

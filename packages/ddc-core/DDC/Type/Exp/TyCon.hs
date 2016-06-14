@@ -9,7 +9,7 @@ data SoCon
 
         -- | Sort of computation kinds.
         | SoConComp                -- 'Comp'
-        deriving (Eq, Show)
+        deriving (Eq, Ord, Show)
 
 
 -- | Kind constructor.
@@ -34,7 +34,7 @@ data KiCon
 
         -- | Kind of closures.
         | KiConClosure          -- 'Closure :: Comp'
-        deriving (Eq, Show)
+        deriving (Eq, Ord, Show)
 
 
 -- | Witness type constructors.
@@ -62,7 +62,7 @@ data TwCon
         
         -- | Non-interfering effects are disjoint. Used for rewrite rules.
         | TwConDisjoint         -- :: Effect  ~> Effect ~> Witness
-        deriving (Eq, Show)
+        deriving (Eq, Ord, Show)
 
 
 -- | Other constructors at the spec level.
@@ -98,5 +98,5 @@ data TcCon
 
         -- | Allocation into all material regions in some data type.
         | TcConDeepAlloc        -- :: 'Data   ~> Effect'
-        deriving (Eq, Show)
+        deriving (Eq, Ord, Show)
 

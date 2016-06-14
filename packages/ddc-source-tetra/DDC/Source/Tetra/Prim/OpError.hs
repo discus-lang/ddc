@@ -1,17 +1,16 @@
-
+{-# LANGUAGE TypeFamilies #-}
 module DDC.Source.Tetra.Prim.OpError
         ( typeOpError)
 where
 import DDC.Source.Tetra.Prim.TyConPrim
 import DDC.Source.Tetra.Prim.Base
-import DDC.Type.Exp.Simple
+import DDC.Source.Tetra.Prim.TyCon
+import DDC.Source.Tetra.Compounds
 
 
 -- | Take the type of a primitive error function.
-typeOpError :: OpError -> Type Name
-typeOpError err
+typeOpError l err
  = case err of
         OpErrorDefault    
-         -> tForall kData $ \t -> tTextLit `tFun` tNat `tFun` t
-
+         -> makeTForall l KData $ \t -> TTextLit ~> TNat ~> t
 

@@ -10,22 +10,22 @@ module DDC.Source.Tetra.Transform.BoundX
         , HasAnonBind   (..))
 where
 import DDC.Source.Tetra.Exp.Generic
-import DDC.Type.Exp
+import DDC.Source.Tetra.Exp.Bind
 
 ---------------------------------------------------------------------------------------------------
 class HasAnonBind l => MapBoundX (c :: * -> *) l where
  mapBoundAtDepthX
-        :: l                                    -- Proxy for language index, not inspected.
-        -> (Int -> GBound l -> GBound l)        -- Function to apply to current bound occ.
-        -> Int                                  -- Current binding depth.
-        -> c l                                  -- Map across bounds in this thing.
-        -> c l                                  -- Result thing.
+        :: l                                     -- Proxy for language index, not inspected.
+        -> (Int -> GXBoundVar l -> GXBoundVar l) -- Function to apply to current bound occ.
+        -> Int                                   -- Current binding depth.
+        -> c l                                   -- Map across bounds in this thing.
+        -> c l                                   -- Result thing.
 
 
 -- Lift -------------------------------------------------------------------------------------------
 -- | Lift debruijn indices less than or equal to the given depth.
 liftAtDepthX   
-        :: (MapBoundX c l, GBound l ~ Bound n)
+        :: (MapBoundX c l, GXBoundVar l ~ Bound)
         => l
         -> Int          -- ^ Number of levels to lift.
         -> Int          -- ^ Current binding depth.
@@ -38,14 +38,13 @@ liftAtDepthX l n d
         liftU d' u
          = case u of
                 UName{}         -> u
-                UPrim{}         -> u
                 UIx i
                  | d' <= i      -> UIx (i + n)
                  | otherwise    -> u
 
 
 -- | Wrapper for `liftAtDepthX` that starts at depth 0.       
-liftX   :: (MapBoundX c l, GBound l ~ Bound n)
+liftX   :: (MapBoundX c l, GXBoundVar l ~ Bound)
         => Int -> c l -> c l
 
 liftX n xx  
@@ -163,7 +162,7 @@ mapBoundAtDepthXLets
         :: forall l
         .  HasAnonBind l
         => l
-        -> (Int -> GBound l -> GBound l)  
+        -> (Int -> GXBoundVar l -> GXBoundVar l)  
                            -- ^ Function given number of levels to lift.
         -> Int             -- ^ Current binding depth.
         -> GLets l         -- ^ Lift exp indices in this thing.
@@ -172,12 +171,12 @@ mapBoundAtDepthXLets
 mapBoundAtDepthXLets l f d lts
  = case lts of
         LLet b x
-         -> let inc = countBAnonsB l [b]
+         -> let inc = countBAnonsBM l [b]
                 x'  = mapBoundAtDepthX l f d x
             in  (LLet b x', inc)
 
         LRec bs
-         -> let inc = countBAnonsB l (map fst bs)
+         -> let inc = countBAnonsBM l (map fst bs)
                 bs' = map (\(b,e) -> (b, mapBoundAtDepthX l f (d + inc) e)) bs
             in  (LRec bs', inc)
 
@@ -191,14 +190,14 @@ mapBoundAtDepthXLets l f d lts
 
 
 ---------------------------------------------------------------------------------------------------
-countBAnonsB  :: HasAnonBind l => l -> [GBind l] -> Int
+countBAnonsB  :: HasAnonBind l => l -> [GXBindVar l] -> Int
 countBAnonsB l = length . filter (isAnon l)
 
-countBAnonsBM  :: HasAnonBind l => l -> [GBindMT l] -> Int
+countBAnonsBM  :: HasAnonBind l => l -> [GXBindVarMT l] -> Int
 countBAnonsBM l bmts
         = length 
         $ filter (isAnon l)
-        $ [b | BindMT b _ <- bmts]
+        $ [b | XBindVarMT b _ <- bmts]
 
 
 countBAnonsC :: HasAnonBind l => l -> GClause l -> Int

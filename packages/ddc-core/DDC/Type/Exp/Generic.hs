@@ -2,10 +2,10 @@
 module DDC.Type.Exp.Generic
         ( -- * Abstract Syntax
           -- ** Type Families
-          GAnnot
-        , GBindVar, GBoundVar
-        , GBindCon, GBoundCon
-        , GPrim
+          GTAnnot
+        , GTBindVar, GTBoundVar
+        , GTBindCon, GTBoundCon
+        , GTPrim
 
           -- ** Core Syntax
         , GType (..), GTyCon (..)
@@ -36,7 +36,7 @@ module DDC.Type.Exp.Generic
           -- * Type Classes
         , Binding       (..)
         , Anon          (..)
-        , ShowLanguage)
+        , ShowGType)
 where
 import DDC.Type.Exp.Generic.Exp
 import DDC.Type.Exp.Generic.Binding

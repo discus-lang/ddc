@@ -1,20 +1,21 @@
-
+{-# LANGUAGE UndecidableInstances #-}
 module DDC.Source.Tetra.Convert.Error
         (ErrorConvert (..))
 where
 import DDC.Source.Tetra.Pretty
-import qualified DDC.Source.Tetra.Exp.Annot   as S
+import DDC.Source.Tetra.Exp.Generic
 
 
-data ErrorConvert a
+data ErrorConvert l
         -- | Cannot convert sugar expression to core.
-        = ErrorConvertCannotConvertSugarExp  (S.Exp a)
+        = ErrorConvertCannotConvertSugarExp  (GExp l)
 
         -- | Cannot convert sugar let bindings to core.
-        | ErrorConvertCannotConvertSugarLets (S.Lets a)
+        | ErrorConvertCannotConvertSugarLets (GLets l)
 
 
-instance Pretty a => Pretty (ErrorConvert a) where
+instance (PrettyLanguage l)
+      => Pretty (ErrorConvert l) where
  ppr err
   = case err of
         ErrorConvertCannotConvertSugarExp xx

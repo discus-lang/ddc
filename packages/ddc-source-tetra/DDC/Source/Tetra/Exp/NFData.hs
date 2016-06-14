@@ -1,13 +1,16 @@
 {-# LANGUAGE UndecidableInstances #-}
 module DDC.Source.Tetra.Exp.NFData where
 import DDC.Source.Tetra.Exp.Generic
+import qualified DDC.Type.Exp.Generic.NFData    as T
 import Control.DeepSeq
 
 ---------------------------------------------------------------------------------------------------
 type NFDataLanguage l
-        = ( NFData l
-          , NFData (GAnnot l), NFData (GName l)
-          , NFData (GBind l),  NFData (GBound l), NFData (GPrim l))
+        = ( NFData l, T.NFDataLanguage l
+          , NFData (GXAnnot   l)
+          , NFData (GXBindVar l),  NFData (GXBoundVar l)
+          , NFData (GXBindCon l),  NFData (GXBoundCon l)
+          , NFData (GXPrim    l))
 
 instance NFDataLanguage l => NFData (GExp l) where
  rnf xx
@@ -28,9 +31,11 @@ instance NFDataLanguage l => NFData (GExp l) where
         XInfixOp  a s           -> rnf a   `seq` rnf s
         XInfixVar a s           -> rnf a   `seq` rnf s
 
-instance NFDataLanguage l => NFData (GBindMT l) where
- rnf (BindMT b mt)
+
+instance NFDataLanguage l => NFData (GXBindVarMT l) where
+ rnf (XBindVarMT b mt)
   = rnf b `seq` rnf mt
+
 
 instance NFDataLanguage l => NFData (GClause l) where
  rnf cc

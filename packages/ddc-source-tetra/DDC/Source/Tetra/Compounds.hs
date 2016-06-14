@@ -2,14 +2,32 @@
 
 -- | Utilities for constructing and destructing Source Tetra expressions.
 module DDC.Source.Tetra.Compounds
-        ( module DDC.Type.Exp.Simple.Compounds
-        , takeAnnotOfExp
+        ( takeAnnotOfExp
 
           -- * Binds
         , bindOfBindMT
         , takeTypeOfBindMT
 
-          -- * Lambdas
+          -- * Types
+          -- ** Type Applications
+        , T.makeTApps,   T.takeTApps
+
+          -- ** Sum Types
+        , makeTBot
+
+          -- ** Function Types
+        , T.makeTFun,    T.makeTFuns,   T.makeTFuns',   (T.~>)
+        , T.takeTFun,    T.takeTFuns,   T.takeTFuns'
+
+          -- ** Forall Types
+        , T.makeTForall, T.makeTForalls
+        , T.takeTForall
+
+          -- ** Exists Types
+        , T.makeTExists, T.takeTExists
+
+          -- * Terms
+          -- ** Lambdas
         , makeXLAMs
         , makeXLams
         , makeXLamFlags
@@ -17,7 +35,7 @@ module DDC.Source.Tetra.Compounds
         , takeXLams
         , takeXLamFlags
 
-          -- * Applications
+          -- ** Applications
         , makeXApps
         , makeXAppsWithAnnots
         , takeXApps
@@ -27,37 +45,28 @@ module DDC.Source.Tetra.Compounds
         , takeXConApps
         , takeXPrimApps
 
-          -- * Casts
-        , makeXBox
-        , makeXRun
+          -- ** Casts
+        , pattern XRun
+        , pattern XBox
 
-          -- * Data Constructors
+          -- ** Data Constructors
         , dcUnit
         , takeNameOfDaCon
         , takeTypeOfDaCon
 
-          -- * Patterns
+          -- ** Patterns
         , bindsOfPat
-        , makePTrue
-        , makePFalse
 
           -- * Witnesses
         , wApp
         , wApps
         , takeXWitness
         , takeWAppsAsList
-        , takePrimWiConApps
-
-          -- * Primitives
-        , makeXErrorDefault)
+        , takePrimWiConApps)
 where
 import DDC.Source.Tetra.Exp
-import DDC.Source.Tetra.Prim
-import DDC.Type.Exp.Simple.Compounds
 import Data.Maybe
-import Data.Text                        (Text)
-
-import qualified DDC.Type.Exp           as T
+import qualified DDC.Type.Exp.Generic.Compounds as T
 
 import DDC.Core.Exp.Annot.Compounds
         ( dcUnit
@@ -75,19 +84,26 @@ import DDC.Core.Exp.Annot.Compounds
 
 -- Binds ----------------------------------------------------------------------
 -- | Take the `GBind` of a `GBindMT`
-bindOfBindMT :: GBindMT l -> GBind l
-bindOfBindMT (BindMT g _mt) = g
+bindOfBindMT :: GXBindVarMT l -> GXBindVar l
+bindOfBindMT (XBindVarMT g _mt) = g
 
 
 -- | Take the type of a `GBindMT`.
-takeTypeOfBindMT :: GBindMT l -> Maybe (T.Type (GName l))
-takeTypeOfBindMT (BindMT _g mt) = mt
+takeTypeOfBindMT :: GXBindVarMT l -> Maybe (GType l)
+takeTypeOfBindMT (XBindVarMT _g mt) = mt
+
+
+-- Types ----------------------------------------------------------------------
+-- | Make an empty sum type of the given kind.
+makeTBot  :: GType l -> GType l
+makeTBot k = TCon (TyConSum k)
+
 
 
 -- Annotations ----------------------------------------------------------------
 -- | Take the outermost annotation from an expression,
 --   or Nothing if this is an `XType` or `XWitness` without an annotation.
-takeAnnotOfExp :: GExp l -> Maybe (GAnnot l)
+takeAnnotOfExp :: GExp l -> Maybe (GXAnnot l)
 takeAnnotOfExp xx
  = case xx of
         XAnnot a _      -> Just a
@@ -110,18 +126,18 @@ firstJust = listToMaybe . catMaybes
 
 -- Lambdas ---------------------------------------------------------------------
 -- | Make some nested type lambdas.
-makeXLAMs :: [GBindMT l] -> GExp l -> GExp l
+makeXLAMs :: [GXBindVarMT l] -> GExp l -> GExp l
 makeXLAMs bs x = foldr XLAM x bs
 
 
 -- | Make some nested value or witness lambdas.
-makeXLams :: [GBindMT l] -> GExp l -> GExp l
+makeXLams :: [GXBindVarMT l] -> GExp l -> GExp l
 makeXLams bs x = foldr XLam x bs
 
 
 -- | Split type lambdas from the front of an expression,
 --   or `Nothing` if there aren't any.
-takeXLAMs :: GExp l -> Maybe ([GBindMT l], GExp l)
+takeXLAMs :: GExp l -> Maybe ([GXBindVarMT l], GExp l)
 takeXLAMs xx
  = let  go bs (XAnnot _ x) = go bs x
         go bs (XLAM b x)   = go (b:bs) x
@@ -134,7 +150,7 @@ takeXLAMs xx
 
 -- | Split nested value or witness lambdas from the front of an expression,
 --   or `Nothing` if there aren't any.
-takeXLams :: GExp l -> Maybe ([GBindMT l], GExp l)
+takeXLams :: GExp l -> Maybe ([GXBindVarMT l], GExp l)
 takeXLams xx
  = let  go bs (XAnnot _ x) = go bs x
         go bs (XLam b x)   = go (b:bs) x
@@ -147,7 +163,7 @@ takeXLams xx
 -- | Make some nested lambda abstractions,
 --   using a flag to indicate whether the lambda is a
 --   level-1 (True), or level-0 (False) binder.
-makeXLamFlags :: [(Bool, GBindMT l)] -> GExp l -> GExp l
+makeXLamFlags :: [(Bool, GXBindVarMT l)] -> GExp l -> GExp l
 makeXLamFlags fbs x
  = foldr (\(f, b) x'
            -> if f then XLAM b x'
@@ -160,7 +176,7 @@ makeXLamFlags fbs x
 --   or level-0 (False) binder.
 takeXLamFlags 
         :: GExp l 
-        -> Maybe ([(Bool, GBindMT l)], GExp l)
+        -> Maybe ([(Bool, GXBindVarMT l)], GExp l)
 
 takeXLamFlags xx
  = let  go bs (XAnnot _ x)  = go bs x
@@ -182,7 +198,7 @@ makeXApps t1 ts     = foldl XApp t1 ts
 -- | Build sequence of applications.
 --   Similar to `xApps` but also takes list of annotations for 
 --   the `XApp` constructors.
-makeXAppsWithAnnots :: GExp l -> [(GExp l, Maybe (GAnnot l))] -> GExp l
+makeXAppsWithAnnots :: GExp l -> [(GExp l, Maybe (GXAnnot l))] -> GExp l
 makeXAppsWithAnnots f xas
  = case xas of
         []                  -> f
@@ -221,7 +237,7 @@ takeXAppsAsList xx
 
 -- | Destruct sequence of applications.
 --   Similar to `takeXAppsAsList` but also keeps annotations for later.
-takeXAppsWithAnnots :: GExp l -> (GExp l, [(GExp l, Maybe (GAnnot l))])
+takeXAppsWithAnnots :: GExp l -> (GExp l, [(GExp l, Maybe (GXAnnot l))])
 takeXAppsWithAnnots xx
  = case xx of
         XAnnot a (XApp f arg)
@@ -239,7 +255,7 @@ takeXAppsWithAnnots xx
 --   and its arguments.
 --   
 --   Returns `Nothing` if the expression isn't a primop application.
-takeXPrimApps :: GExp l -> Maybe (GPrim l, [GExp l])
+takeXPrimApps :: GExp l -> Maybe (GXPrim l, [GExp l])
 takeXPrimApps xx
  = case takeXAppsAsList xx of
         XPrim p : xs    -> Just (p, xs)
@@ -249,7 +265,7 @@ takeXPrimApps xx
 --   and its arguments. 
 --
 --   Returns `Nothing` if the expression isn't a constructor application.
-takeXConApps :: GExp l -> Maybe (DaCon (GName l) (Type (GName l)), [GExp l])
+takeXConApps :: GExp l -> Maybe (DaCon (GXBoundCon l) (GType l), [GExp l])
 takeXConApps xx
  = case takeXAppsAsList xx of
         XCon dc : xs    -> Just (dc, xs)
@@ -257,22 +273,6 @@ takeXConApps xx
 
 
 -- Casts ----------------------------------------------------------------------
-makeXBox x = XCast CastBox x
-makeXRun x = XCast CastRun x
-
-
--- Primitives -----------------------------------------------------------------
-makeXErrorDefault :: (GPrim l ~ PrimVal, GName l ~ Name)
-              => Text -> Integer -> GExp l
-makeXErrorDefault name n
- = makeXApps
-        (XPrim (PrimValError OpErrorDefault))
-        [ XCon (DaConPrim (NameLitTextLit name) (tBot kData))
-        , XCon (DaConPrim (NameLitNat     n)    (tBot kData))]
-
-
--- Patterns -------------------------------------------------------------------
-makePTrue    = PData (DaConPrim (NameLitBool True)  tBool) []
-makePFalse   = PData (DaConPrim (NameLitBool False) tBool) []
-
+pattern XBox x = XCast CastBox x
+pattern XRun x = XCast CastRun x
 

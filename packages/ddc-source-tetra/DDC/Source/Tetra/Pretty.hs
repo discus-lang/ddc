@@ -12,21 +12,42 @@ import DDC.Source.Tetra.Module
 import DDC.Source.Tetra.Exp
 import DDC.Core.Pretty
 import DDC.Base.Pretty
-import Prelude                  hiding ((<$>))
+import Prelude                                  hiding ((<$>))
 
 
 type PrettyLanguage l 
-        = ( Eq     (GName l)
-          , Pretty (GAnnot l), Pretty (GName l)
-          , Pretty (GBound l), Pretty (GBind l), Pretty (GPrim l))
+ =      ( Pretty l
+        , Pretty (GTAnnot    l)
+        , Pretty (GTBindVar  l), Pretty (GTBoundVar l)
+        , Pretty (GTBindCon  l), Pretty (GTBoundCon l)
+        , Pretty (GTyCon     l)
+
+        , Pretty (GXAnnot    l)
+        , Pretty (GXBindVar  l), Pretty (GXBoundVar l)
+        , Pretty (GXBindCon  l), Pretty (GXBoundCon l)
+        , Pretty (GXPrim l)
+        , Pretty (DaCon (GXBoundCon l) (GType l)))
+
 
 
 -- Bind -------------------------------------------------------------------------------------------
-instance PrettyLanguage l => Pretty (GBindMT l) where
- ppr (BindMT b mt)
+instance PrettyLanguage l => Pretty (GXBindVarMT l) where
+ ppr (XBindVarMT b mt)
   = case mt of
-        Nothing -> ppr b
-        Just _t -> ppr b
+        Nothing         -> ppr b
+        Just _t         -> ppr b
+
+
+-- Type -------------------------------------------------------------------------------------------
+instance PrettyLanguage l => Pretty (GType l) where
+ ppr tt
+  = case tt of
+        TAnnot a t      -> braces (ppr a) <> text "@" <> ppr t
+        TCon tc         -> ppr tc
+        TVar bv         -> ppr bv
+        TAbs bv t       -> ppr bv <+> ppr t
+        TApp t1 t2      -> ppr t1 <+> ppr t2
+ 
 
 
 -- Module -----------------------------------------------------------------------------------------

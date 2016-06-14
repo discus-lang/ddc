@@ -17,7 +17,7 @@ factorial (n: Nat#): Nat#
         else n * factorial (n - 1)
 
 
--- | Compute the number of was of choosing r things from n things.
+-- | Compute the number of ways of choosing r things from n things.
 ---
 --   Note that the textbook definition of this is,
 --     div (factorial n) ( factorial (n - 1) * factorial r )

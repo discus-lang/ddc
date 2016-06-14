@@ -1,31 +1,33 @@
-
+{-# LANGUAGE TypeFamilies #-}
 -- Types of primitive Source Tetra vector operators.
 module DDC.Source.Tetra.Prim.OpVector
         (typeOpVector)
 where
+import DDC.Source.Tetra.Prim.TyCon
 import DDC.Source.Tetra.Prim.TyConPrim
 import DDC.Source.Tetra.Prim.TyConTetra
 import DDC.Source.Tetra.Prim.Base
-import DDC.Type.Exp.Simple
+import DDC.Source.Tetra.Exp.Generic
+import DDC.Source.Tetra.Compounds
 
 
 -- | Take the type of a primitive vector operator.
-typeOpVector :: OpVector -> Type Name
-typeOpVector op
+typeOpVector :: forall l. (Anon l, GTPrim l ~ PrimType) => l -> OpVector -> GType l
+typeOpVector l op
  = case op of
         OpVectorAlloc
-         -> tForalls [kRegion, kData]
-         $  \[tR, tA] -> tNat `tFun` tSusp (tAlloc tR) (tVector tR tA)
+         -> makeTForalls l [KRegion, KData] $ \[tR, tA]
+         -> TSusp (TAlloc tR) (TVector tR tA)
 
         OpVectorLength
-         -> tForalls [kRegion, kData]
-         $  \[tR, tA] -> tVector tR tA `tFun` tNat
+         -> makeTForalls l [KRegion, KData] $ \[tR, tA]
+         -> TVector tR tA ~> TNat
 
         OpVectorRead
-         -> tForalls [kRegion, kData]
-         $  \[tR, tA] -> tVector tR tA `tFun` tNat `tFun` tSusp (tRead tR) tA
+         -> makeTForalls l [KRegion, KData] $ \[tR, tA]
+         -> TVector tR tA ~> TNat ~> TSusp (TRead tR) tA
 
         OpVectorWrite
-         -> tForalls [kRegion, kData]
-         $  \[tR, tA] -> tVector tR tA `tFun` tNat `tFun` tA `tFun` tSusp (tWrite tR) tVoid
+         -> makeTForalls l [KRegion, KData] $ \[tR, tA]
+         -> TVector tR tA ~> TNat ~> tA ~> TSusp (TWrite tR) TVoid
 

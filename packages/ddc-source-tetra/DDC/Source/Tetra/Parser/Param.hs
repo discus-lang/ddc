@@ -19,6 +19,7 @@ import DDC.Core.Parser
         , pType
         , pBinder)
 
+
 -- | Specification of a function parameter.
 --   We can determine the contribution to the type of the function, 
 --   as well as its expression based on the parameter.
@@ -39,13 +40,13 @@ expOfParams [] xBody            = xBody
 expOfParams (p:ps) xBody
  = case p of
         ParamType    b mt
-         -> XLAM (BindMT b mt) $ expOfParams ps xBody
+         -> XLAM (XBindVarMT b mt) $ expOfParams ps xBody
         
         ParamWitness b mt
-         -> XLam (BindMT b mt) $ expOfParams ps xBody
+         -> XLam (XBindVarMT b mt) $ expOfParams ps xBody
 
         ParamValue   b mt
-         -> XLam (BindMT b mt) $ expOfParams ps xBody
+         -> XLam (XBindVarMT b mt) $ expOfParams ps xBody
 
 
 -- | Build the type of a function from specifications of its parameters,

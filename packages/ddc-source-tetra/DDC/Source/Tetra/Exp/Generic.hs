@@ -4,14 +4,41 @@
 module DDC.Source.Tetra.Exp.Generic
         ( -- * Classes
           HasAnonBind   (..)
+        , Anon          (..)
 
-          -- * Expressions
-        , GName
-        , GAnnot
-        , GBind
-        , GBound
-        , GPrim
-        , GBindMT       (..)
+          -- * Types
+          -- ** Type Functions
+        , GTAnnot
+        , GTBindVar,    GTBoundVar
+        , GTBindCon,    GTBoundCon
+        , GTPrim
+
+          -- ** Syntax
+        , GType         (..)
+        , GTyCon        (..)
+
+        , pattern TApp2, pattern TApp3
+        , pattern TApp4, pattern TApp5
+
+        , pattern TVoid, pattern TUnit
+        , pattern TFun
+        , pattern TBot,  pattern TSum
+        , pattern TForall
+        , pattern TExists
+        , pattern TPrim
+
+          -- ** Dictionaries
+        , ShowGType     (..)
+
+          -- * Terms
+          -- ** Type Functions
+        , GXAnnot
+        , GXBindVar, GXBoundVar
+        , GXBindCon, GXBoundCon
+        , GXPrim
+
+          -- ** Syntax
+        , GXBindVarMT   (..)
         , GExp          (..)
         , GLets         (..)
         , GAlt          (..)
@@ -20,38 +47,35 @@ module DDC.Source.Tetra.Exp.Generic
         , GGuardedExp   (..)
         , GGuard        (..)
         , GCast         (..)
-        , DaCon         (..)
-
-          -- * Witnesses
         , GWitness      (..)
         , GWiCon        (..)
+        , DaCon         (..)
 
           -- * Dictionaries
         , ShowLanguage)
 where
-import DDC.Type.Exp     
-import DDC.Type.Sum                     ()
-import qualified DDC.Type.Exp           as T
-
-import DDC.Core.Exp
-        ( DaCon         (..))
+import DDC.Type.Exp.Generic.Binding
+import DDC.Type.Exp.Generic.Exp
+import DDC.Core.Exp                     (DaCon (..))
 
 
 -------------------------------------------------------------------------------
 -- | Type functions associated with the language AST.
-type family GName  l
-type family GAnnot l
-type family GBind  l
-type family GBound l
-type family GPrim  l
+type family GXAnnot    l
+type family GXBindVar  l
+type family GXBoundVar l
+type family GXBindCon  l
+type family GXBoundCon l
+type family GXPrim     l
+
 
 class HasAnonBind l where
- isAnon :: l -> GBind l -> Bool
+ isAnon :: l -> GXBindVar l -> Bool
 
 
 -- | A possibly typed binding.
-data GBindMT l 
-        = BindMT (GBind l) (Maybe (Type (GName l)))
+data GXBindVarMT l 
+        = XBindVarMT (GXBindVar l) (Maybe (GType l))
 
 
 -------------------------------------------------------------------------------
@@ -62,22 +86,22 @@ data GExp l
         --   These are also in the core language, and after desugaring only
         --   these constructs are used.
         --
-        = XAnnot    !(GAnnot l) !(GExp   l)
+        = XAnnot    !(GXAnnot l) !(GExp   l)
 
         -- | Value variable   or primitive operation.
-        | XVar      !(GBound l)
+        | XVar      !(GXBoundVar l)
 
         -- | Primitive values.
-        | XPrim     !(GPrim  l)
+        | XPrim     !(GXPrim  l)
 
         -- | Data constructor or literal.
-        | XCon      !(DaCon (GName l) (Type (GName l)))
+        | XCon      !(DaCon (GXBoundCon l) (GType l))
 
         -- | Type abstraction (level-1).
-        | XLAM      !(GBindMT l) !(GExp l)
+        | XLAM      !(GXBindVarMT l) !(GExp l)
 
         -- | Value and Witness abstraction (level-0).
-        | XLam      !(GBindMT l) !(GExp l)
+        | XLam      !(GXBindVarMT l) !(GExp l)
 
         -- | Application.
         | XApp      !(GExp  l)   !(GExp l)
@@ -92,7 +116,7 @@ data GExp l
         | XCast     !(GCast l)   !(GExp l)
 
         -- | Type can appear as the argument of an application.
-        | XType     !(Type (GName l))
+        | XType     !(GType l)
 
         -- | Witness can appear as the argument of an application.
         | XWitness  !(GWitness l)
@@ -104,15 +128,15 @@ data GExp l
         --
         -- | Some expressions and infix operators that need to be resolved
         --   into proper function applications.
-        | XDefix    !(GAnnot l) [GExp l]
+        | XDefix    !(GXAnnot l) [GExp l]
 
         -- | Use of a naked infix operator, like in 1 + 2.
         --   INVARIANT: only appears in the list of an XDefix node.
-        | XInfixOp  !(GAnnot l) String
+        | XInfixOp  !(GXAnnot l) String
 
         -- | Use of an infix operator as a plain variable, like in (+) 1 2.
         --   INVARIANT: only appears in the list of an XDefix node.
-        | XInfixVar !(GAnnot l) String
+        | XInfixVar !(GXAnnot l) String
 
 
 -- | Possibly recursive bindings.
@@ -122,14 +146,14 @@ data GLets l
         ---------------------------------------------------
         -- Core Language Constructs
         -- | Non-recursive expression binding.
-        = LLet     !(GBind l) !(GExp l)
+        = LLet      !(GXBindVarMT l) !(GExp l)
 
         -- | Recursive binding of lambda abstractions.
-        | LRec     ![(GBind l, GExp l)]
+        | LRec     ![(GXBindVarMT l,   GExp l)]
 
         -- | Bind a local region variable,
         --   and witnesses to its properties.
-        | LPrivate ![GBind l] !(Maybe (Type (GName l))) ![GBind l]
+        | LPrivate ![GXBindVar l] !(Maybe (GType l)) ![GXBindVar l]
 
         ---------------------------------------------------
         -- Sugar Constructs
@@ -142,10 +166,10 @@ data GLets l
 -- | Binding clause
 data GClause l
         -- | A separate type signature.
-        = SSig   !(GAnnot l) !(GBind l) !(Type (GName l))
+        = SSig   !(GXAnnot l) !(GXBindVar l) !(GType l)
 
         -- | A function binding using pattern matching and guards.
-        | SLet   !(GAnnot l) !(GBind l) ![GPat l]  ![GGuardedExp l]
+        | SLet   !(GXAnnot l) !(GXBindVar l) ![GPat l]  ![GGuardedExp l]
 
 
 -- | Case alternatives.
@@ -159,7 +183,7 @@ data GPat l
         = PDefault
 
         -- | Match a data constructor and bind its arguments.
-        | PData  !(DaCon (GName l) (Type (GName l))) ![GBind l]
+        | PData  !(DaCon (GXBoundCon l) (GType l)) ![GXBindVar l]
 
 
 -- | An expression with some guards.
@@ -180,7 +204,7 @@ data GCast l
         -- | Weaken the effect of an expression.
         --   The given effect is added to the effect
         --   of the body.
-        = CastWeakenEffect  !(Effect (GName l))
+        = CastWeakenEffect  !(GType l)
         
         -- | Purify the effect (action) of an expression.
         | CastPurify !(GWitness l)
@@ -197,10 +221,10 @@ data GCast l
 -- | Witnesses.
 data GWitness l
         -- | Witness annotation
-        = WAnnot !(GAnnot l)  !(GWitness l)
+        = WAnnot !(GXAnnot l)  !(GWitness l)
 
         -- | Witness variable.
-        | WVar   !(GBound l)
+        | WVar   !(GXBoundVar l)
 
         -- | Witness constructor.
         | WCon   !(GWiCon l)
@@ -209,7 +233,7 @@ data GWitness l
         | WApp   !(GWitness l) !(GWitness l)
 
         -- | Type can appear as an argument of a witness application.
-        | WType  !(T.Type (GName l))
+        | WType  !(GType l)
 
 
 -- | Witness constructors.
@@ -217,14 +241,17 @@ data GWiCon l
         -- | Witness constructors defined in the environment.
         --   In the interpreter we use this to hold runtime capabilities.
         --   The attached type must be closed.
-        = WiConBound   !(GBound l) !(T.Type (GName l))
+        = WiConBound   !(GXBoundVar l) !(GType l)
 
 
 -------------------------------------------------------------------------------
 type ShowLanguage l
         = ( Show l
-          , Show (GName l), Show (GAnnot l)
-          , Show (GBind l), Show (GBound l), Show (GPrim l))
+          , ShowGType l
+          , Show (GXAnnot    l)
+          , Show (GXBindVar l), Show (GXBoundVar l)
+          , Show (GXBindCon l), Show (GXBoundCon l)
+          , Show (GXPrim l))
 
 deriving instance ShowLanguage l => Show (GExp        l)
 deriving instance ShowLanguage l => Show (GLets       l)
@@ -236,5 +263,5 @@ deriving instance ShowLanguage l => Show (GPat        l)
 deriving instance ShowLanguage l => Show (GCast       l)
 deriving instance ShowLanguage l => Show (GWitness    l)
 deriving instance ShowLanguage l => Show (GWiCon      l)
-deriving instance ShowLanguage l => Show (GBindMT     l)
+deriving instance ShowLanguage l => Show (GXBindVarMT  l)
 

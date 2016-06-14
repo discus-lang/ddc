@@ -1,7 +1,7 @@
 
 -- | Simple predicates on Source Tetra things.
 module DDC.Source.Tetra.Predicates
-        ( module DDC.Type.Exp.Simple.Predicates
+        ( module DDC.Type.Exp.Generic.Predicates
 
           -- * Atoms
         , isXVar,       isXCon
@@ -25,7 +25,7 @@ module DDC.Source.Tetra.Predicates
         , isPDefault)
 where
 import DDC.Source.Tetra.Exp.Generic
-import DDC.Type.Exp.Simple.Predicates
+import DDC.Type.Exp.Generic.Predicates
 
 
 -- Atoms ----------------------------------------------------------------------

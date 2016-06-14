@@ -3,19 +3,24 @@
 -- Generic type expression representation.
 module DDC.Type.Exp.Generic.Exp 
         ( -- * Type Families
-          GAnnot
-        , GBindVar, GBoundVar
-        , GBindCon, GBoundCon
-        , GPrim
+          GTAnnot
+        , GTBindVar, GTBoundVar
+        , GTBindCon, GTBoundCon
+        , GTPrim
 
           -- * Abstract Syntax
         , GType         (..)
         , GTyCon        (..)
 
           -- * Syntactic Sugar
-        , pattern TFun
-        , pattern TUnit
+        , pattern TApp2
+        , pattern TApp3
+        , pattern TApp4
+        , pattern TApp5
+
         , pattern TVoid
+        , pattern TUnit
+        , pattern TFun
         , pattern TBot
         , pattern TSum
         , pattern TForall
@@ -23,63 +28,69 @@ module DDC.Type.Exp.Generic.Exp
         , pattern TPrim
 
           -- * Classes
-        , ShowLanguage (..))
+        , ShowGType (..))
 where
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- Type functions associated with the language definition.
 
 -- | Yield the type of annotations.
-type family GAnnot    l
+type family GTAnnot    l
 
 -- | Yield the type of binding occurrences of variables.
-type family GBindVar  l
+type family GTBindVar  l
 
 -- | Yield the type of bound occurrences of variables.
-type family GBoundVar l
+type family GTBoundVar l
 
 -- | Yield the type of binding occurrences of constructors.
-type family GBindCon  l
+type family GTBindCon  l
 
 -- | Yield the type of bound occurrences of constructors.
-type family GBoundCon l
+type family GTBoundCon l
 
 -- | Yield the type of primitive names for language @l@.
-type family GPrim     l
+type family GTPrim     l
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | Generic type expression representation.
 data GType l
         -- | An annotated type.
-        = TAnnot     !(GAnnot l) (GType l)
+        = TAnnot     !(GTAnnot l) (GType l)
 
         -- | Type constructor or literal.
         | TCon       !(GTyCon l)
 
         -- | Type variable.
-        | TVar       !(GBoundVar l)
+        | TVar       !(GTBoundVar l)
 
         -- | Type abstracton.
-        | TAbs       !(GBindVar  l) (GType l)
+        | TAbs       !(GTBindVar  l) (GType l)
 
         -- | Type application.
-        | TApp       !(GType     l) (GType l)
+        | TApp       !(GType      l) (GType l)
 
 
--------------------------------------------------------------------------------
+pattern TApp2 t0 t1 t2          = TApp (TApp t0 t1) t2
+pattern TApp3 t0 t1 t2 t3       = TApp (TApp (TApp t0 t1) t2) t3
+pattern TApp4 t0 t1 t2 t3 t4    = TApp (TApp (TApp (TApp t0 t1) t2) t3) t4
+pattern TApp5 t0 t1 t2 t3 t4 t5 = TApp (TApp (TApp (TApp (TApp t0 t1) t2) t3) t4) t5
+
+
+---------------------------------------------------------------------------------------------------
 -- | Wrapper for primitive constructors that adds the ones
 --   common to SystemFω based languages.
 data GTyCon l
-        -- | The function constructor.
-        = TyConFun
+        -- | The void constructor.
+        = TyConVoid
 
         -- | The unit constructor.
         | TyConUnit
 
-        -- | The void constructor.
-        | TyConVoid
+        -- | The function constructor.
+        | TyConFun
 
         -- | Take the least upper bound at the given kind.
         | TyConSum    !(GType l)
@@ -94,26 +105,26 @@ data GTyCon l
         | TyConExists !(GType l)
 
         -- | Primitive constructor.
-        | TyConPrim   !(GPrim l)
+        | TyConPrim   !(GTPrim l)
 
         -- | Bound constructor.
-        | TyConBound  !(GBoundCon l)
+        | TyConBound  !(GTBoundCon l)
 
 
--------------------------------------------------------------------------------
--- | Representation of the function type.
-pattern TFun            = TCon TyConFun
+---------------------------------------------------------------------------------------------------
+-- | Representation of the void type.
+pattern TVoid           = TCon TyConVoid
 
 -- | Representation of the unit type.
 pattern TUnit           = TCon TyConUnit
 
--- | Representation of the void type.
-pattern TVoid           = TCon TyConVoid
+-- | Representation of the function type.
+pattern TFun t1 t2      = TApp (TApp (TCon TyConFun) t1) t2
 
 -- | Representation of the bottom type at a given kind.
 pattern TBot k          = TCon (TyConBot k)
 
--- | Representatino of a sum of two types.
+-- | Representation of a sum of two types.
 pattern TSum k t1 t2    = TApp (TApp (TCon (TyConSum k)) t1) t2
 
 -- | Representation of forall quantified types.
@@ -126,15 +137,15 @@ pattern TExists k b t   = TApp (TCon (TyConExists k)) (TAbs b t)
 pattern TPrim   p       = TCon (TyConPrim p)
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | Synonym for show constraints of all language types.
-type ShowLanguage l
+type ShowGType l
         = ( Show l
-          , Show (GAnnot   l)
-          , Show (GBindVar l), Show (GBoundVar l)
-          , Show (GBindCon l), Show (GBoundCon l)
-          , Show (GPrim    l))
+          , Show (GTAnnot   l)
+          , Show (GTBindVar l), Show (GTBoundVar l)
+          , Show (GTBindCon l), Show (GTBoundCon l)
+          , Show (GTPrim    l))
 
-deriving instance ShowLanguage l => Show (GType  l)
-deriving instance ShowLanguage l => Show (GTyCon l)
+deriving instance ShowGType l => Show (GType  l)
+deriving instance ShowGType l => Show (GTyCon l)
 

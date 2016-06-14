@@ -1,41 +1,47 @@
+{-# LANGUAGE TypeFamilies #-}
 
 -- | Types of primitive Source Tetra arithmetic operators.
 module DDC.Source.Tetra.Prim.OpArith
         (typePrimArith)
 where
+import DDC.Source.Tetra.Prim.TyCon
 import DDC.Source.Tetra.Prim.TyConPrim
 import DDC.Source.Tetra.Prim.Base
-import DDC.Type.Exp.Simple
+import DDC.Source.Tetra.Exp.Generic
+import DDC.Source.Tetra.Compounds
 
 
 -- | Take the type of a primitive arithmetic operator.
-typePrimArith :: PrimArith -> Type Name
-typePrimArith op
+typePrimArith 
+        :: (Anon l, GTPrim l ~ PrimType)
+        => l -> PrimArith -> GType l
+typePrimArith l op
  = case op of
         -- Numeric
-        PrimArithNeg  -> tForall kData $ \t -> t `tFun` t
-        PrimArithAdd  -> tForall kData $ \t -> t `tFun` t `tFun` t
-        PrimArithSub  -> tForall kData $ \t -> t `tFun` t `tFun` t
-        PrimArithMul  -> tForall kData $ \t -> t `tFun` t `tFun` t
-        PrimArithDiv  -> tForall kData $ \t -> t `tFun` t `tFun` t
-        PrimArithMod  -> tForall kData $ \t -> t `tFun` t `tFun` t
-        PrimArithRem  -> tForall kData $ \t -> t `tFun` t `tFun` t
+        PrimArithNeg  -> makeTForall l KData $ \t -> t ~> t
+        PrimArithAdd  -> makeTForall l KData $ \t -> t ~> t ~> t
+        PrimArithSub  -> makeTForall l KData $ \t -> t ~> t ~> t
+        PrimArithMul  -> makeTForall l KData $ \t -> t ~> t ~> t
+        PrimArithDiv  -> makeTForall l KData $ \t -> t ~> t ~> t
+        PrimArithMod  -> makeTForall l KData $ \t -> t ~> t ~> t
+        PrimArithRem  -> makeTForall l KData $ \t -> t ~> t ~> t
 
         -- Comparison
-        PrimArithEq   -> tForall kData $ \t -> t `tFun` t `tFun` tBool
-        PrimArithNeq  -> tForall kData $ \t -> t `tFun` t `tFun` tBool
-        PrimArithGt   -> tForall kData $ \t -> t `tFun` t `tFun` tBool
-        PrimArithLt   -> tForall kData $ \t -> t `tFun` t `tFun` tBool
-        PrimArithLe   -> tForall kData $ \t -> t `tFun` t `tFun` tBool
-        PrimArithGe   -> tForall kData $ \t -> t `tFun` t `tFun` tBool
+        PrimArithEq   -> makeTForall l KData $ \t -> t ~> t ~> TBool
+        PrimArithNeq  -> makeTForall l KData $ \t -> t ~> t ~> TBool
+        PrimArithGt   -> makeTForall l KData $ \t -> t ~> t ~> TBool
+        PrimArithLt   -> makeTForall l KData $ \t -> t ~> t ~> TBool
+        PrimArithLe   -> makeTForall l KData $ \t -> t ~> t ~> TBool
+        PrimArithGe   -> makeTForall l KData $ \t -> t ~> t ~> TBool
 
         -- Boolean
-        PrimArithAnd  -> tBool `tFun` tBool `tFun` tBool
-        PrimArithOr   -> tBool `tFun` tBool `tFun` tBool
+        PrimArithAnd  -> TBool ~> TBool ~> TBool
+        PrimArithOr   -> TBool ~> TBool ~> TBool
 
         -- Bitwise
-        PrimArithShl  -> tForall kData $ \t -> t `tFun` t `tFun` t
-        PrimArithShr  -> tForall kData $ \t -> t `tFun` t `tFun` t
-        PrimArithBAnd -> tForall kData $ \t -> t `tFun` t `tFun` t
-        PrimArithBOr  -> tForall kData $ \t -> t `tFun` t `tFun` t
-        PrimArithBXOr -> tForall kData $ \t -> t `tFun` t `tFun` t
+        PrimArithShl  -> makeTForall l KData $ \t -> t ~> t ~> t
+        PrimArithShr  -> makeTForall l KData $ \t -> t ~> t ~> t
+        PrimArithBAnd -> makeTForall l KData $ \t -> t ~> t ~> t
+        PrimArithBOr  -> makeTForall l KData $ \t -> t ~> t ~> t
+        PrimArithBXOr -> makeTForall l KData $ \t -> t ~> t ~> t
+

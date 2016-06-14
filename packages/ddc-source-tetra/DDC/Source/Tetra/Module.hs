@@ -35,7 +35,7 @@ import DDC.Core.Module
         , ImportValue   (..))
         
 
--- Module ---------------------------------------------------------------------
+-- Module -----------------------------------------------------------------------------------------
 data Module l
         = Module
         { -- | Name of this module
@@ -43,30 +43,28 @@ data Module l
 
           -- Exports ----------------------------
           -- | Names of exported types  (level-1).
-        , moduleExportTypes     :: [GName l]
+        , moduleExportTypes     :: [GTBoundCon l]
 
           -- | Names of exported values (level-0).
-        , moduleExportValues    :: [GName l]
+        , moduleExportValues    :: [GXBoundVar l]
 
           -- Imports ----------------------------
           -- | Imported modules.
         , moduleImportModules   :: [ModuleName]
 
           -- | Kinds of imported foreign types.
-        , moduleImportTypes     
-                :: [(GName l, ImportType  (GName l) (Type (GName l)))]
+        , moduleImportTypes     :: [(GXBindCon l, ImportType  (GXBindCon l) (GType l))]
 
           -- | Types of imported capabilities.
-        , moduleImportCaps      
-                :: [(GName l, ImportCap   (GName l) (Type (GName l)))]
+        , moduleImportCaps      :: [(GXBindVar l, ImportCap   (GXBindVar l) (GType l))]
 
           -- | Types of imported foreign values.
-        , moduleImportValues    
-                :: [(GName l, ImportValue (GName l) (Type (GName l)))]
+        , moduleImportValues    :: [(GXBindVar l, ImportValue (GXBindVar l) (GType l))]
 
           -- Local ------------------------------
           -- | Top-level things
         , moduleTops            :: [Top l] }
+
 
 deriving instance ShowLanguage l => Show (Module l)
 
@@ -89,17 +87,17 @@ isMainModule mm
         = isMainModuleName $ moduleName mm
 
 
--- Top Level Thing ------------------------------------------------------------
+-- Top Level Thing --------------------------------------------------------------------------------
 data Top l
         -- | Some top-level, possibly recursive clauses.
         = TopClause  
-        { topAnnot      :: GAnnot l
+        { topAnnot      :: GXAnnot l
         , topClause     :: GClause l }
 
         -- | Data type definition.
         | TopData 
-        { topAnnot      :: GAnnot l
-        , topDataDef    :: DataDef (GName l) }
+        { topAnnot      :: GXAnnot l
+        , topDataDef    :: DataDef l }
 
 deriving instance ShowLanguage l => Show (Top l)
 

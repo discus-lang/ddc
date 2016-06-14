@@ -2,11 +2,11 @@
 -- | Source Tetra primitive type and kind environments.
 module DDC.Source.Tetra.Env
         ( -- * Primitive kind environment.
-          primKindEnv
-        , kindOfPrimName
+--          primKindEnv
+          kindOfPrimName
 
           -- * Primitive type environment.
-        , primTypeEnv 
+--        , primTypeEnv 
         , typeOfPrimName
         , typeOfPrimVal
         , typeOfPrimLit
@@ -14,23 +14,21 @@ module DDC.Source.Tetra.Env
         , dataDefBool)
 where
 import DDC.Source.Tetra.Prim
-import DDC.Source.Tetra.Exp
+import DDC.Source.Tetra.Exp.Source
 import DDC.Type.DataDef
-import DDC.Type.Env             (Env)
-import qualified DDC.Type.Env   as Env
 
 
 -- Kinds ----------------------------------------------------------------------
 -- | Kind environment containing kinds of primitive data types.
-primKindEnv :: Env Name
-primKindEnv = Env.setPrimFun kindOfPrimName Env.empty
+-- primKindEnv :: Env Name
+-- primKindEnv = Env.setPrimFun kindOfPrimName Env.empty
 
 
 -- | Take the kind of a primitive name.
 --
 --   Returns `Nothing` if the name isn't primitive. 
 --
-kindOfPrimName :: Name -> Maybe (Kind Name)
+kindOfPrimName :: Name -> Maybe Type
 kindOfPrimName nn
  = case nn of
         NameTyCon tc            -> Just $ kindPrimTyCon tc
@@ -39,13 +37,13 @@ kindOfPrimName nn
 
 -- Types ----------------------------------------------------------------------
 -- | Type environment containing types of primitive operators.
-primTypeEnv :: Env Name
-primTypeEnv = Env.setPrimFun typeOfPrimName Env.empty
+-- primTypeEnv :: Env Name
+-- primTypeEnv = Env.setPrimFun typeOfPrimName Env.empty
 
 
 -- | Take the type of a name,
 --   or `Nothing` if this is not a value name.
-typeOfPrimName :: Name -> Maybe (Type Name)
+typeOfPrimName :: Name -> Maybe Type
 typeOfPrimName nn
  = case nn of
         NameVal n       -> Just $ typeOfPrimVal n
@@ -53,27 +51,27 @@ typeOfPrimName nn
 
 
 -- | Take the type of a primitive name.
-typeOfPrimVal  :: PrimVal -> Type Name
+typeOfPrimVal  :: PrimVal -> Type
 typeOfPrimVal dc
  = case dc of
         PrimValLit    l         -> typeOfPrimLit l
-        PrimValArith  p         -> typePrimArith p
-        PrimValError  p         -> typeOpError   p
-        PrimValVector p         -> typeOpVector  p
-        PrimValFun    p         -> typeOpFun     p
+        PrimValArith  p         -> typePrimArith Source p
+        PrimValError  p         -> typeOpError   Source p
+        PrimValVector p         -> typeOpVector  Source p
+        PrimValFun    p         -> typeOpFun     Source p
 
 
 -- | Take the type of a primitive literal.
-typeOfPrimLit   :: PrimLit -> Type Name
+typeOfPrimLit   :: PrimLit -> Type
 typeOfPrimLit pl
  = case pl of
-        PrimLitBool     _       -> tBool
-        PrimLitNat      _       -> tNat
-        PrimLitInt      _       -> tInt
-        PrimLitSize     _       -> tSize
-        PrimLitFloat    _ bits  -> tFloat bits
-        PrimLitWord     _ bits  -> tWord  bits
-        PrimLitTextLit  _       -> tTextLit
+        PrimLitBool     _       -> TBool
+        PrimLitNat      _       -> TNat
+        PrimLitInt      _       -> TInt
+        PrimLitSize     _       -> TSize
+        PrimLitFloat    _ bits  -> TFloat bits
+        PrimLitWord     _ bits  -> TWord  bits
+        PrimLitTextLit  _       -> TTextLit
 
 
 -- | Data type definition for `Bool`.
