@@ -31,7 +31,7 @@ data Error l
         --   Eg "+ 3" or "2 + + 2"
         | ErrorMalformed
         { errorAnnot            :: GXAnnot l
-        , errorExp              :: GXExp l }
+        , errorExp              :: GExp l }
 
 deriving instance ShowLanguage l => Show (Error l)
 

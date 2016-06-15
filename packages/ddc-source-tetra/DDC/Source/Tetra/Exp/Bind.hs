@@ -10,6 +10,7 @@ where
 import DDC.Source.Tetra.Prim.Base
 import Data.Text                (Text)
 
+
 -- | Binding occurrence of a variable.
 data Bind
         = BNone
@@ -48,3 +49,4 @@ data TyConBind
 data TyConBound
         = TyConBoundName Text
         deriving Show
+

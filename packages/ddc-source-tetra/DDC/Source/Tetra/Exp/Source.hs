@@ -90,6 +90,7 @@ import DDC.Source.Tetra.Exp.Bind
 import DDC.Source.Tetra.Prim
 import DDC.Type.Exp.TyCon               as T
 import DDC.Data.SourcePos
+import DDC.Base.Pretty
 
 
 -- Language -------------------------------------------------------------------
@@ -97,6 +98,9 @@ import DDC.Data.SourcePos
 data Source     
         = Source
         deriving Show
+
+instance Pretty Source where
+ ppr ss = text (show ss)
 
 
 instance HasAnonBind Source where

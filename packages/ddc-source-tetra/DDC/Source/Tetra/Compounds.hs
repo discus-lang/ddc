@@ -64,7 +64,7 @@ module DDC.Source.Tetra.Compounds
         , takeWAppsAsList
         , takePrimWiConApps)
 where
-import DDC.Source.Tetra.Exp
+import DDC.Source.Tetra.Exp.Generic
 import Data.Maybe
 import qualified DDC.Type.Exp.Generic.Compounds as T
 

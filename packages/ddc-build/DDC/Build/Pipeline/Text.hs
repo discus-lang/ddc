@@ -15,11 +15,11 @@ import qualified DDC.Build.Transform.Resolve       as B
 
 import qualified DDC.Source.Tetra.Convert          as SE
 import qualified DDC.Source.Tetra.Transform.Defix  as SE
-import qualified DDC.Source.Tetra.Transform.Expand as SE
+-- import qualified DDC.Source.Tetra.Transform.Expand as SE
 import qualified DDC.Source.Tetra.Pretty           ()
 import qualified DDC.Source.Tetra.Parser           as SE
 import qualified DDC.Source.Tetra.Lexer            as SE
-import qualified DDC.Source.Tetra.Env              as SE
+-- import qualified DDC.Source.Tetra.Env              as SE
 
 import qualified DDC.Build.Language.Tetra          as CE
 import qualified DDC.Core.Tetra                    as CE
@@ -30,6 +30,7 @@ import qualified DDC.Core.Transform.SpreadX        as C
 import qualified DDC.Core.Check                    as C
 import qualified DDC.Core.Load                     as C
 import qualified DDC.Core.Lexer                    as C
+-- import qualified DDC.Core.Pretty                   as C
 import qualified DDC.Base.Parser                   as BP
 import qualified DDC.Data.SourcePos                as SP
 import qualified DDC.Data.Token                    as Token
@@ -92,7 +93,7 @@ pipeText !srcName !srcLine !str !pp
 
         PipeTextLoadSourceTetra 
                 sinkTokens
-                sinkDesugared sinkCore sinkPreCheck sinkCheckerTrace 
+                _sinkDesugared sinkCore sinkPreCheck sinkCheckerTrace 
                 store pipes
          -> {-# SCC "PipeTextLoadSourceTetra" #-}
             let 
@@ -106,7 +107,7 @@ pipeText !srcName !srcLine !str !pp
 
                         -- Parse the tokens into a Source Tetra module.
                         case BP.runTokenParser C.describeTok srcName
-                                (SE.pModule SE.context) tokens of
+                                (SE.pModule) tokens of
                          Left err -> return [ErrorLoad err]
                          Right mm -> goDesugar mm
 
@@ -120,16 +121,16 @@ pipeText !srcName !srcLine !str !pp
                  = do   let sp            = SP.SourcePos "<top level>" 1 1
 
                         -- Expand missing quantifiers in signatures.
-                        let mm_expand = SE.expand SE.configDefault sp
+{-                        let mm_expand = SE.expand SE.configDefault sp
                                             SE.primKindEnv SE.primTypeEnv mm
-
+-}
                         -- Dump desguared source code.
-                        pipeSink (renderIndent $ ppr mm_expand) sinkDesugared
+--                        pipeSink (renderIndent $ ppr mm_expand) sinkDesugared
 
                         -- Convert Source Tetra to Core Tetra.
                         -- This source position is used to annotate the 
                         -- let-expression that holds all the top-level bindings.
-                        case SE.coreOfSourceModule sp mm_expand of
+                        case SE.coreOfSourceModule sp {- mm_expand -} mm of
                          Left err
                           -> return [ErrorLoad err]
 

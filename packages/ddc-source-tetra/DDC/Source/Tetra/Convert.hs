@@ -48,7 +48,7 @@ runConvertM cc = cc
 coreOfSourceModule 
         :: SP
         -> S.Module S.Source
-        -> Either (ErrorConvert SP) (C.Module SP C.Name)
+        -> Either (ErrorConvert S.Source) (C.Module SP C.Name)
 
 coreOfSourceModule a mm
         = runConvertM 
@@ -67,7 +67,7 @@ coreOfSourceModule a mm
 coreOfSourceModuleM
         :: SP
         -> S.Module S.Source
-        -> ConvertM SP (C.Module SP C.Name)
+        -> ConvertM S.Source (C.Module SP C.Name)
 
 coreOfSourceModuleM a mm
  = do   
@@ -102,8 +102,6 @@ coreOfSourceModuleM a mm
         -- Top level bindings.
         ltsTops         <- letsOfTops $  S.moduleTops mm
 
-
-
         return
          $ C.ModuleCore
                 { C.moduleName          = S.moduleName mm
@@ -132,7 +130,7 @@ coreOfSourceModuleM a mm
 
 -- | Extract the top-level bindings from some source definitions.
 letsOfTops :: [S.Top S.Source] 
-           -> ConvertM SP (C.Lets SP C.Name)
+           -> ConvertM S.Source (C.Lets SP C.Name)
 letsOfTops tops
  = C.LRec <$> (sequence $ mapMaybe bindOfTop tops)
 
@@ -141,7 +139,7 @@ letsOfTops tops
 --   or `Nothing` if it isn't one.
 bindOfTop  
         :: S.Top S.Source
-        -> Maybe (ConvertM SP (C.Bind C.Name, C.Exp SP C.Name))
+        -> Maybe (ConvertM S.Source (C.Bind C.Name, C.Exp SP C.Name))
 
 bindOfTop (S.TopClause _ (S.SLet a bm [] [S.GExp x]))
  = Just ((,) <$> toCoreBM bm <*> toCoreX a x)
@@ -280,7 +278,7 @@ toCoreDataCtor dataDef tag ctor
 
 
 -- Exp --------------------------------------------------------------------------------------------
-toCoreX :: SP -> S.Exp -> ConvertM SP (C.Exp SP C.Name)
+toCoreX :: SP -> S.Exp -> ConvertM S.Source (C.Exp SP C.Name)
 toCoreX a xx
  = case xx of
         S.XAnnot a' x
@@ -350,7 +348,7 @@ toCoreX a xx
 
 
 -- Lets -------------------------------------------------------------------------------------------
-toCoreLts :: SP -> S.Lets -> ConvertM SP (C.Lets SP C.Name)
+toCoreLts :: SP -> S.Lets -> ConvertM S.Source (C.Lets SP C.Name)
 toCoreLts a lts
  = case lts of
         S.LLet b x
@@ -376,7 +374,7 @@ toCoreLts a lts
 
 
 -- Cast -------------------------------------------------------------------------------------------
-toCoreC :: SP -> S.Cast -> ConvertM SP (C.Cast SP C.Name)
+toCoreC :: SP -> S.Cast -> ConvertM S.Source (C.Cast SP C.Name)
 toCoreC a cc
  = case cc of
         S.CastWeakenEffect eff
@@ -393,7 +391,7 @@ toCoreC a cc
 
 
 -- Alt --------------------------------------------------------------------------------------------
-toCoreA  :: SP -> S.Alt -> ConvertM SP (C.Alt SP C.Name)
+toCoreA  :: SP -> S.Alt -> ConvertM S.Source (C.Alt SP C.Name)
 toCoreA sp (S.AAlt w gxs)
  = C.AAlt <$> toCoreP w
           <*> (toCoreX sp $ S.desugarGuards gxs 
@@ -430,7 +428,7 @@ toCoreDC dc
 
 
 -- Witness ----------------------------------------------------------------------------------------
-toCoreW :: SP -> S.Witness -> ConvertM SP (C.Witness SP C.Name)
+toCoreW :: SP -> S.Witness -> ConvertM a (C.Witness SP C.Name)
 toCoreW a ww
  = case ww of
         S.WAnnot a' w   

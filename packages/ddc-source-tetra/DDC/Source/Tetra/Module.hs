@@ -21,7 +21,9 @@ module DDC.Source.Tetra.Module
           -- * Data type definitions
         , DataDef       (..))
 where
-import DDC.Source.Tetra.Exp
+import DDC.Source.Tetra.Exp.Source
+import DDC.Source.Tetra.Exp.NFData
+import DDC.Source.Tetra.Exp.Generic
 import DDC.Source.Tetra.DataDef
 import Control.DeepSeq
 

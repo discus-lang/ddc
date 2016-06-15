@@ -22,6 +22,10 @@
 -- @
 --
 module DDC.Source.Tetra.Transform.Expand
+        ()
+where
+
+{-
         ( Config        (..)
         , configDefault
         , Expand        (..))
@@ -394,4 +398,4 @@ slurpVarConBound a xx
          | DaConPrim  n t <- dc -> Just (Just a, UPrim n t)
 
         _       -> Nothing
-
+-}

@@ -27,7 +27,6 @@ import qualified DDC.Source.Tetra.Lexer         as SE
 import qualified DDC.Source.Tetra.Parser        as SE
 import qualified DDC.Core.Pretty                as P
 import qualified DDC.Core.Module                as C
-import qualified DDC.Core.Parser                as C
 import qualified DDC.Core.Lexer                 as C
 import qualified DDC.Base.Parser                as BP
 import qualified DDC.Version                    as Version
@@ -375,6 +374,7 @@ tasteNeeded filePath src
                 = dropBody
                 $ SE.lexModuleString filePath 1 src
 
+{-
         let context 
                 = C.Context
                 { C.contextTrackedEffects         = True
@@ -382,9 +382,8 @@ tasteNeeded filePath src
                 , C.contextFunctionalEffects      = False
                 , C.contextFunctionalClosures     = False 
                 , C.contextMakeStringName         = Nothing }
-
-        case BP.runTokenParser C.describeTok filePath
-                (SE.pModule context) tokens of
+-}
+        case BP.runTokenParser C.describeTok filePath SE.pModule tokens of
          Left  err  -> throwE $ P.renderIndent $ P.ppr err
          Right mm   -> return $ SE.moduleImportModules mm
 

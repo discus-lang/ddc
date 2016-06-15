@@ -13,10 +13,9 @@ module DDC.Source.Tetra.Transform.Defix.FixTable
         , defaultFixTable)
 where
 import DDC.Source.Tetra.Transform.Defix.Error
-import DDC.Source.Tetra.Exp.Generic
-import DDC.Source.Tetra.Prim
+import DDC.Source.Tetra.Exp.Source
 import Data.List
-import qualified DDC.Type.Exp           as T
+import qualified Data.Text              as Text
 
 
 -- | Table of infix operator definitions.
@@ -33,7 +32,7 @@ data FixDef l
 
           -- Expression to rewrite the operator to, 
           -- given the annotation of the original symbol.
-        , fixDefExp     :: GAnnot l -> GExp l }
+        , fixDefExp     :: GXAnnot l -> GExp l }
 
         -- An infix operator.
         | FixDefInfix
@@ -42,7 +41,7 @@ data FixDef l
         
           -- Expression to rewrite the operator to, 
           -- given the annotation of the original symbol.
-        , fixDefExp     :: GAnnot l -> GExp l
+        , fixDefExp     :: GXAnnot l -> GExp l
 
           -- Associativity of infix operator.
         , fixDefAssoc   :: InfixAssoc
@@ -90,7 +89,7 @@ lookupDefPrefixOfSymbol (FixTable defs) str
 
 -- | Get the precedence of an infix symbol, else Error.
 getInfixDefOfSymbol 
-        :: GAnnot l
+        :: GXAnnot l
         -> FixTable l
         -> String 
         -> Either (Error l) (FixDef l)
@@ -102,7 +101,7 @@ getInfixDefOfSymbol a table str
 
 
 -- | Default fixity table for infix operators.
-defaultFixTable :: GBound l ~ T.Bound Name => FixTable l
+defaultFixTable :: GXBoundVar l ~ Bound => FixTable l
 defaultFixTable
  = FixTable 
         [ FixDefPrefix  "-"     (xvar "neg")
@@ -143,5 +142,5 @@ defaultFixTable
         ]
 
  where  xvar str sp 
-         = XAnnot sp $ XVar (T.UName (NameVar str))
+         = XAnnot sp $ XVar (UName $ Text.pack str)
 

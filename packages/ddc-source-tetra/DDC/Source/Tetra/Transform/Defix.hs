@@ -141,7 +141,7 @@ instance Defix GGuard l where
 --   and produces (f a) + (g b) with three nodes in the XDefix list.
 --
 defixApps 
-        :: GAnnot l
+        :: GXAnnot  l
         -> FixTable l
         -> [GExp l]
         -> Either (Error l) [GExp l]
@@ -194,7 +194,7 @@ defixApps a table xx
 --   The input needs to have already been preprocessed by defixApps above.
 --
 defixExps 
-        :: GAnnot l             -- ^ Annotation from original XDefix node.
+        :: GXAnnot  l           -- ^ Annotation from original XDefix node.
         -> FixTable l           -- ^ Table of infix defs.
         -> [GExp l]             -- ^ Body of the XDefix node.
         -> Either (Error l) (GExp l)
@@ -224,7 +224,7 @@ defixExps a table xx
 
 -- | Try to defix a sequence of expressions and XInfixOp nodes.
 defixInfix
-        :: GAnnot l             -- ^ Annotation from original XDefix node.
+        :: GXAnnot  l           -- ^ Annotation from original XDefix node.
         -> FixTable l           -- ^ Table of infix defs.
         -> [GExp l]             -- ^ Body of the XDefix node.
         -> Either (Error l) (Maybe [GExp l])
@@ -281,7 +281,7 @@ defixInfix_ops sp table xs spOpStrs
 
 -- | Defix some left associative ops.
 defixInfixLeft 
-        :: GAnnot l -> FixTable l -> Int 
+        :: GXAnnot l -> FixTable l -> Int 
         -> [GExp l] -> Either (Error l) [GExp l]
 
 defixInfixLeft sp table precHigh (x1 : XInfixOp spo op : x2 : xs)
@@ -301,7 +301,7 @@ defixInfixLeft sp _ _ xs
 --   The input expression list is reversed, so we can eat the operators left
 --   to right. However, be careful to build the App node the right way around.
 defixInfixRight
-        :: GAnnot l  -> FixTable l -> Int 
+        :: GXAnnot l  -> FixTable l -> Int 
         -> [GExp l] -> Either (Error l) [GExp l]
 
 defixInfixRight sp table precHigh (x2 : XInfixOp spo op : x1 : xs)
@@ -319,7 +319,7 @@ defixInfixRight sp _ _ xs
 
 -- | Defix non-associative ops.
 defixInfixNone 
-        :: GAnnot l -> FixTable l -> Int
+        :: GXAnnot l -> FixTable l -> Int
         -> [GExp l] -> Either (Error l) [GExp l]
 
 defixInfixNone sp table precHigh xx

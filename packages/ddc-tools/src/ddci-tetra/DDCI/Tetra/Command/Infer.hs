@@ -5,15 +5,15 @@ where
 import DDCI.Tetra.State
 import DDC.Driver.Interface.Source
 import DDC.Base.Pretty
-import DDC.Source.Tetra.Env
+-- import DDC.Source.Tetra.Env
 import DDC.Source.Tetra.Lexer
 import DDC.Source.Tetra.Parser
 import DDC.Source.Tetra.Pretty                  ()
 import DDC.Source.Tetra.Transform.Defix
-import DDC.Source.Tetra.Transform.Expand        as Expand
+-- import DDC.Source.Tetra.Transform.Expand        as Expand
 import qualified DDC.Core.Lexer                 as C
 import qualified DDC.Base.Parser                as BP
-import qualified DDC.Data.SourcePos             as SP
+-- import qualified DDC.Data.SourcePos             as SP
 
 
 cmdInfer :: State -> Source -> String -> IO ()
@@ -24,8 +24,7 @@ cmdInfer _state source str
            in   goParse tokens
 
         goParse tokens
-         = case BP.runTokenParser C.describeTok (nameOfSource source)
-                        (pModule context) tokens of
+         = case BP.runTokenParser C.describeTok (nameOfSource source) pModule tokens of
                  Left err        -> error $ show err
                  Right mm        -> goDesugar mm
 
@@ -35,8 +34,10 @@ cmdInfer _state source str
             Right mm'   -> goExpand mm'
 
         goExpand mm
-         = do   let sp            = SP.SourcePos "<top level>" 1 1
-                let mm' = Expand.expand Expand.configDefault sp
+         = do   -- let sp            = SP.SourcePos "<top level>" 1 1
+
+{-                let mm' = Expand.expand Expand.configDefault sp
                                 primKindEnv primTypeEnv mm
-                putStrLn (renderIndent $ ppr mm')
+-}
+                putStrLn (renderIndent $ ppr mm)
 

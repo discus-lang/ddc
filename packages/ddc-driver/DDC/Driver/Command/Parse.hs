@@ -81,9 +81,7 @@ cmdParseSourceTetraFromFile config filePath
          $ liftIO $ writeFile "dump.tetra-parse.tokens" 
                   $ unlines $ map show $ map Token.tokenTok toks
                     
-        case BP.runTokenParser
-                C.describeTok filePath 
-                (ST.pModule context) toks of
+        case BP.runTokenParser C.describeTok filePath ST.pModule toks of
          Left err 
           ->    throwE (renderIndent $ ppr err)
          

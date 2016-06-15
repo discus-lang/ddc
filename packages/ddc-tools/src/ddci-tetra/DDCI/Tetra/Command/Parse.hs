@@ -21,10 +21,8 @@ cmdParse _state source str
 
         goParse tokens
          = case BP.runTokenParser 
-                        C.describeTok 
-                        (nameOfSource source)
-                        (pModule context)
-                        tokens of
+                        C.describeTok (nameOfSource source)
+                        pModule tokens of
                  Left err        -> error $ show err
                  Right mm        
                   -> do putStrLn (renderIndent $ ppr mm)

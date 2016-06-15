@@ -9,10 +9,12 @@ where
 import DDC.Source.Tetra.Predicates
 import DDC.Source.Tetra.DataDef
 import DDC.Source.Tetra.Module
-import DDC.Source.Tetra.Exp
+import DDC.Source.Tetra.Exp.Source
+import DDC.Type.Exp.Generic.Pretty
 import DDC.Core.Pretty
 import DDC.Base.Pretty
 import Prelude                                  hiding ((<$>))
+import qualified Data.Text                      as Text
 
 
 type PrettyLanguage l 
@@ -20,7 +22,7 @@ type PrettyLanguage l
         , Pretty (GTAnnot    l)
         , Pretty (GTBindVar  l), Pretty (GTBoundVar l)
         , Pretty (GTBindCon  l), Pretty (GTBoundCon l)
-        , Pretty (GTyCon     l)
+        , Pretty (GTPrim     l)
 
         , Pretty (GXAnnot    l)
         , Pretty (GXBindVar  l), Pretty (GXBoundVar l)
@@ -28,6 +30,39 @@ type PrettyLanguage l
         , Pretty (GXPrim l)
         , Pretty (DaCon (GXBoundCon l) (GType l)))
 
+
+instance Pretty Bind where
+ ppr bb
+  = case bb of 
+        BNone   -> text "_"
+        BAnon   -> text "^"
+        BName t -> text (Text.unpack t)
+
+
+instance Pretty Bound where
+ ppr uu
+  = case uu of
+        UIx i   -> int i
+        UName t -> text (Text.unpack t)
+
+
+instance Pretty DaConBind where
+ ppr (DaConBindName tt)         = text (Text.unpack tt)
+
+
+instance Pretty DaConBound where
+ ppr uu
+  = case uu of
+        DaConBoundName tt       -> text (Text.unpack tt)
+        DaConBoundLit  pl       -> ppr  pl
+
+
+instance Pretty TyConBind where
+ ppr (TyConBindName tx)  = text (Text.unpack tx)
+
+
+instance Pretty TyConBound where
+ ppr (TyConBoundName tx) = text (Text.unpack tx)
 
 
 -- Bind -------------------------------------------------------------------------------------------
@@ -48,6 +83,11 @@ instance PrettyLanguage l => Pretty (GType l) where
         TAbs bv t       -> ppr bv <+> ppr t
         TApp t1 t2      -> ppr t1 <+> ppr t2
  
+
+instance PrettyLanguage l => Pretty (GTyCon l) where
+ ppr tc
+  = pprRawC tc
+
 
 
 -- Module -----------------------------------------------------------------------------------------
@@ -304,6 +344,14 @@ instance PrettyLanguage l => Pretty (GWiCon l) where
  ppr wc
   = case wc of
         WiConBound   u  _ -> ppr u
+
+
+instance Pretty n => Pretty (DaCon n t) where
+ ppr dc
+  = case dc of
+        DaConUnit       -> text "()"
+        DaConPrim n _   -> ppr n
+        DaConBound n    -> ppr n
 
 
 -- Utils ------------------------------------------------------------------------------------------
