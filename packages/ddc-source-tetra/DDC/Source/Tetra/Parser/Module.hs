@@ -8,34 +8,27 @@ module DDC.Source.Tetra.Parser.Module
           -- * Top-level things
         , pTop)
 where
-import DDC.Source.Tetra.Parser.Exp
-import DDC.Source.Tetra.Compounds
-import DDC.Source.Tetra.DataDef
-import DDC.Source.Tetra.Module
-import DDC.Source.Tetra.Prim
-import DDC.Source.Tetra.Exp.Annot
-import DDC.Core.Lexer.Tokens
+import DDC.Source.Tetra.Parser.Exp      as S
+import DDC.Source.Tetra.Parser.Base     as S
+import DDC.Source.Tetra.Exp.Source      as S
+import DDC.Source.Tetra.Compounds       as S
+import DDC.Source.Tetra.DataDef         as S
+import DDC.Source.Tetra.Module          as S
+import DDC.Core.Lexer.Tokens            as K
 import DDC.Base.Pretty
 import Control.Monad
-import qualified DDC.Type.Exp           as T
 import qualified DDC.Base.Parser        as P
-import DDC.Base.Parser                  ((<?>))
+import qualified Data.Text              as Text
 
 import DDC.Core.Parser
-        ( Parser
-        , Context       (..)
-        , pModuleName
-        , pName
-        , pVar
-        , pTok,         pTokSP)
-
-type SP = P.SourcePos
+        ( pModuleName
+        , pName)
 
 
 -- Module -----------------------------------------------------------------------------------------
 -- | Parse a source tetra module.
-pModule :: Context Name -> Parser Name (Module (Annot SP))
-pModule c
+pModule :: Parser (Module Source)
+pModule 
  = do   
         _sp     <- pTokSP KModule
         name    <- pModuleName <?> "a module name"
@@ -45,7 +38,7 @@ pModule c
          <- P.choice
             [do pTok KExport
                 pTok KBraceBra
-                vars    <- P.sepEndBy1 pVar (pTok KSemiColon)
+                vars    <- P.sepEndBy1 pBoundName (pTok KSemiColon)
                 pTok KBraceKet
                 return vars
 
@@ -53,7 +46,7 @@ pModule c
 
         -- import { SIG;+ }
         tImports
-         <- liftM concat $ P.many (pImportSpecs c)
+         <- liftM concat $ P.many pImportSpecs
 
         -- top-level declarations.
         tops    
@@ -62,7 +55,7 @@ pModule c
                 pTok KBraceBra
 
                 -- TOP;+
-                tops    <- P.sepEndBy (pTop c) (pTok KSemiColon)
+                tops    <- P.sepEndBy pTop (pTok KSemiColon)
 
                 pTok KBraceKet
                 return tops
@@ -85,27 +78,27 @@ pModule c
 
 
 -- | Parse a type signature.
-pTypeSig :: Context Name -> Parser Name (Name, T.Type Name)
-pTypeSig c
- = do   var     <- pVar
+pTypeSig :: Parser (Bind, Type)
+pTypeSig 
+ = do   (b, _)  <- pBindNameSP
         pTokSP (KOp ":")
-        t       <- pType c
-        return  (var, t)
+        t       <- pType
+        return  (b, t)
 
 
 ---------------------------------------------------------------------------------------------------
 -- | An imported foreign type or foreign value.
-data ImportSpec n
+data ImportSpec 
         = ImportModule  ModuleName
-        | ImportType    n (ImportType  n (T.Type n))
-        | ImportCap     n (ImportCap   n (T.Type n))
-        | ImportValue   n (ImportValue n (T.Type n))
+        | ImportType    TyConBind (ImportType  TyConBind Type)
+        | ImportCap     Bind      (ImportCap   Bind      Type)
+        | ImportValue   Bind      (ImportValue Bind      Type)
         deriving Show
         
 
 -- | Parse some import specs.
-pImportSpecs :: Context Name -> Parser Name [ImportSpec Name]
-pImportSpecs c
+pImportSpecs :: Parser [ImportSpec]
+pImportSpecs
  = do   pTok KImport
 
         P.choice
@@ -118,7 +111,7 @@ pImportSpecs c
                   do    pTok KType
                         pTok KBraceBra
 
-                        sigs <- P.sepEndBy1 (pImportType c src) (pTok KSemiColon)
+                        sigs <- P.sepEndBy1 (pImportType src) (pTok KSemiColon)
                         pTok KBraceKet
                         return sigs
 
@@ -126,7 +119,7 @@ pImportSpecs c
                  , do   pTok KCapability
                         pTok KBraceBra
 
-                        sigs <- P.sepEndBy1 (pImportCapability c src) (pTok KSemiColon)
+                        sigs <- P.sepEndBy1 (pImportCapability src) (pTok KSemiColon)
                         pTok KBraceKet
                         return sigs
 
@@ -134,7 +127,7 @@ pImportSpecs c
                  , do   pTok KValue
                         pTok KBraceBra
 
-                        sigs <- P.sepEndBy1 (pImportValue c src) (pTok KSemiColon)
+                        sigs <- P.sepEndBy1 (pImportValue src) (pTok KSemiColon)
                         pTok KBraceKet
                         return sigs
                  ]
@@ -148,108 +141,107 @@ pImportSpecs c
 
 
 -- | Parse a type import spec.
-pImportType :: Context Name -> String -> Parser Name (ImportSpec Name)
-pImportType c src
+pImportType :: String -> Parser ImportSpec
+pImportType src
         | "abstract"    <- src
-        = do    n       <- pName
+        = do    (BName n, _)    <- pBindNameSP
                 pTokSP (KOp ":")
-                k       <- pType c
-                return  (ImportType n (ImportTypeAbstract k))
+                k       <- pType
+                return  (ImportType (TyConBindName n) (ImportTypeAbstract k))
 
-        | "boxed"        <- src
-        = do    n       <- pName
+        | "boxed"               <- src
+        = do    (BName n, _)    <- pBindNameSP
                 pTokSP (KOp ":")
-                k       <- pType c
-                return  (ImportType n (ImportTypeBoxed k))
+                k       <- pType
+                return  (ImportType (TyConBindName n) (ImportTypeBoxed k))
 
         | otherwise
         = P.unexpected "import mode for foreign type"
 
 
 -- | Parse a capability import.
-pImportCapability :: Context Name -> String -> Parser Name (ImportSpec Name)
-pImportCapability c src
+pImportCapability :: String -> Parser ImportSpec
+pImportCapability src
         | "abstract"    <- src
-        = do    n       <- pName
+        = do    (b, _)  <- pBindNameSP
                 pTokSP (KOp ":")
-                t       <- pType c
-                return  (ImportCap n (ImportCapAbstract t))
+                t       <- pType
+                return  (ImportCap b (ImportCapAbstract t))
 
         | otherwise
         = P.unexpected "import mode for foreign capability"
 
 
 -- | Parse a value import spec.
-pImportValue :: Context Name -> String -> Parser Name (ImportSpec Name)
-pImportValue c src
+pImportValue :: String -> Parser ImportSpec
+pImportValue src
         | "c"           <- src
-        = do    n       <- pName
+        = do    (b@(BName n), _)  <- pBindNameSP
                 pTokSP (KOp ":")
-                k       <- pType c
+                k       <- pType
 
                 -- ISSUE #327: Allow external symbol to be specified 
                 --             with foreign C imports and exports.
-                let symbol = renderIndent (ppr n)
+                let symbol = renderIndent (text $ Text.unpack n)
 
-                return  (ImportValue n (ImportValueSea symbol k))
+                return  (ImportValue b (ImportValueSea symbol k))
 
         | otherwise
         = P.unexpected "import mode for foreign value"
 
 
 -- Top Level --------------------------------------------------------------------------------------
-pTop    :: Context Name -> Parser Name (Top (Annot SP))
-pTop c
+pTop    :: Parser (Top Source)
+pTop
  = P.choice
  [ do   -- A top-level, possibly recursive binding.
-        (l, sp)         <- pClauseSP c
+        (l, sp)         <- pClauseSP
         return  $ TopClause sp l
  
         -- A data type declaration
- , do   pData c
+ , do   pData
  ]
 
 
 -- Data -------------------------------------------------------------------------------------------
 -- | Parse a data type declaration.
-pData   :: Context Name -> Parser Name (Top (Annot SP))
-pData c
- = do   sp      <- pTokSP KData
-        n       <- pName
-        ps      <- liftM concat $ P.many (pDataParam c)
+pData  :: Parser (Top Source)
+pData
+ = do   sp              <- pTokSP K.KData
+        (BName n, _)    <- pBindNameSP
+        ps              <- liftM concat $ P.many pDataParam
              
         P.choice
          [ -- Data declaration with constructors that have explicit types.
            do   pTok KWhere
                 pTok KBraceBra
-                ctors   <- P.sepEndBy1 (pDataCtor c) (pTok KSemiColon)
+                ctors   <- P.sepEndBy1 pDataCtor (pTok KSemiColon)
                 pTok KBraceKet
-                return  $ TopData sp (DataDef n ps ctors)
+                return  $ TopData sp (DataDef (TyConBindName n) ps ctors)
          
            -- Data declaration with no data constructors.
-         , do   return  $ TopData sp (DataDef n ps [])
+         , do   return  $ TopData sp (DataDef (TyConBindName n) ps [])
          ]
 
 
 -- | Parse a type parameter to a data type.
-pDataParam :: Context Name -> Parser Name [Bind]
-pDataParam c 
+pDataParam :: Parser [(Bind, Type)]
+pDataParam 
  = do   pTok KRoundBra
-        ns      <- P.many1 pName
+        bs      <- fmap (fst . unzip) $ P.many1 pBindNameSP
         pTokSP (KOp ":")
-        k       <- pType c
+        k       <- pType
         pTok KRoundKet
-        return  [T.BName n k | n <- ns]
+        return  [(b, k) | b <- bs]
 
 
 -- | Parse a data constructor declaration.
-pDataCtor :: Context Name -> Parser Name (DataCtor Name)
-pDataCtor c
- = do   n       <- pName
+pDataCtor :: Parser (DataCtor Source)
+pDataCtor
+ = do   n       <- pDaConBindName
         pTokSP (KOp ":")
-        t       <- pType c
-        let (tsArg, tResult)    
-                = takeTFunArgResult t
+        t       <- pType
+        let (tsArg, tResult) = takeTFuns t
 
         return  $ DataCtor
                 { dataCtorName          = n

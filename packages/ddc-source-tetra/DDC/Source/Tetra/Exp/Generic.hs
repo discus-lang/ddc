@@ -165,7 +165,7 @@ data GLets l
 
         -- | Bind a local region variable,
         --   and witnesses to its properties.
-        | LPrivate ![GXBindVar l] !(Maybe (GType l)) ![GXBindVar l]
+        | LPrivate ![GXBindVar l] !(Maybe (GType l)) ![(GXBindVar l, GType l)]
 
         ---------------------------------------------------
         -- Sugar Constructs
@@ -181,7 +181,7 @@ data GClause l
         = SSig   !(GXAnnot l) !(GXBindVar l) !(GType l)
 
         -- | A function binding using pattern matching and guards.
-        | SLet   !(GXAnnot l) !(GXBindVar l) ![GPat l]  ![GGuardedExp l]
+        | SLet   !(GXAnnot l) !(GXBindVarMT l) ![GPat l]  ![GGuardedExp l]
 
 
 -- | Case alternatives.

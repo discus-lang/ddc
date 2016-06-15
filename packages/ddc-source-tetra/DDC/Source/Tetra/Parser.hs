@@ -2,8 +2,6 @@
 -- | Parser for the Source Tetra language.
 module DDC.Source.Tetra.Parser
         ( Parser
-        , Context       (..)
-        , context
 
         -- * Modules
         , pModule
@@ -16,41 +14,31 @@ module DDC.Source.Tetra.Parser
         -- * Types
         , pType
         , pTypeApp
-        , pTypeAtom
+        , pTypeAtomSP
 
         -- * Witnesses
         , pWitness
         , pWitnessApp
         , pWitnessAtom
 
-        -- * Constructors
-        , pCon
-        , pLit
-
         -- * Variables
-        , pBinder
-        , pIndex
-        , pVar
-        , pName
+        , pBindNameSP
+        , pBoundNameSP,         pBoundName
+        , pBoundIxSP
+        , pBoundNameOpSP
+        , pBoundNameOpVarSP
+
+        -- * Constructors
+        , pDaConBindName
+        , pDaConBoundName,      pDaConBoundNameSP
+        , pDaConBoundLit,       pDaConBoundLitSP
+        , pPrimValSP
 
         -- * Raw Tokens
-        , pTok
-        , pTokAs)
+        , pTok)
 where
-import DDC.Source.Tetra.Parser.Exp
 import DDC.Source.Tetra.Parser.Module
+import DDC.Source.Tetra.Parser.Witness
+import DDC.Source.Tetra.Parser.Exp
+import DDC.Source.Tetra.Parser.Base
 
-import DDC.Core.Parser
-        ( Parser
-        , Context       (..)
-        , pWitness
-        , pWitnessApp
-        , pWitnessAtom
-        , pVar
-        , pCon
-        , pName
-        , pBinder
-        , pIndex        
-        , pLit
-        , pTok, pTokAs)
-        

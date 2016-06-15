@@ -4,45 +4,34 @@ module DDC.Source.Tetra.Parser.Witness
         , pWitnessApp
         , pWitnessAtom) 
 where
-import DDC.Source.Tetra.Prim
-import DDC.Source.Tetra.Exp.Annot
-import DDC.Core.Parser
-        ( Parser
-        , Context (..)
-        , pType
-        , pConSP
-        , pIndexSP
-        , pVarSP
-        , pTok
-        , pTokSP)
-
-import DDC.Core.Lexer.Tokens
-import DDC.Base.Parser                  ((<?>), SourcePos)
-import qualified DDC.Base.Parser        as P
-import qualified DDC.Type.Exp.Simple    as T
+import DDC.Source.Tetra.Parser.Type
+import DDC.Source.Tetra.Parser.Base
+import DDC.Source.Tetra.Exp.Source
 import Control.Monad.Except
+import qualified DDC.Core.Lexer.Tokens  as K
+import qualified DDC.Base.Parser        as P
 
 type SP = SourcePos
 
 
 -- | Parse a witness expression.
-pWitness      :: Context Name -> Parser Name (Witness SP)
-pWitness c = pWitnessJoin c
+pWitness :: Parser Witness
+pWitness = pWitnessJoin
 
 
 -- | Parse a witness join.
-pWitnessJoin  :: Context Name -> Parser Name (Witness SP)
-pWitnessJoin c
+pWitnessJoin :: Parser Witness
+pWitnessJoin 
    -- WITNESS  or  WITNESS & WITNESS
- = do   w1      <- pWitnessApp c
+ = do   w1      <- pWitnessApp
         P.choice 
          [ do   return w1 ]
 
 
 -- | Parse a witness application.
-pWitnessApp   :: Context Name -> Parser Name (Witness SP)
-pWitnessApp c
-  = do  (x:xs)  <- P.many1 (pWitnessArgSP c)
+pWitnessApp :: Parser Witness
+pWitnessApp 
+  = do  (x:xs)  <- P.many1 pWitnessArgSP
         let x'  = fst x
         let sp  = snd x
         let xs' = map fst xs
@@ -52,51 +41,48 @@ pWitnessApp c
 
 
 -- | Parse a witness argument.
-pWitnessArgSP :: Context Name -> Parser Name (Witness SP, SP)
-pWitnessArgSP c
+pWitnessArgSP :: Parser (Witness, SP)
+pWitnessArgSP 
  = P.choice
  [ -- [TYPE]
-   do   sp      <- pTokSP KSquareBra
-        t       <- pType c
-        pTok KSquareKet
-        return  ( WAnnot sp $ WType t, sp)
+   do   sp      <- pTokSP K.KSquareBra
+        t       <- pType
+        pTok K.KSquareKet
+        return  (WAnnot sp $ WType t, sp)
 
    -- WITNESS
- , do   pWitnessAtomSP c ]
+ , do   pWitnessAtomSP ]
 
 
 
 -- | Parse a variable, constructor or parenthesised witness.
-pWitnessAtom   :: Context Name -> Parser Name (Witness SP)
-pWitnessAtom c   
-        = liftM fst (pWitnessAtomSP c)
+pWitnessAtom :: Parser Witness
+pWitnessAtom =  liftM fst pWitnessAtomSP
 
 
 -- | Parse a variable, constructor or parenthesised witness,
 --   also returning source position.
-pWitnessAtomSP :: Context Name -> Parser Name (Witness SP, SP)
-pWitnessAtomSP c
+pWitnessAtomSP :: Parser (Witness, SP)
+pWitnessAtomSP 
  = P.choice
    -- (WITNESS)
- [ do   sp      <- pTokSP KRoundBra
-        w       <- pWitness c
-        pTok KRoundKet
+ [ do   sp      <- pTokSP K.KRoundBra
+        w       <- pWitness
+        pTok K.KRoundKet
         return  (w, sp)
 
    -- Named constructors
- , do   (con, sp) <- pConSP
-        return  ( WAnnot sp $ WCon (WiConBound (T.UName con) (T.tBot T.kWitness))
+ , do   (DaConBoundName n, sp) <- pDaConBoundNameSP
+        return  ( WAnnot sp $ WCon (WiConBound (UName n) (TBot KData))
                 , sp)
                 
    -- Debruijn indices
- , do   (i, sp) <- pIndexSP
-        return  ( WAnnot sp $ WVar (T.UIx   i)
-                , sp)
+ , do   (u, sp) <- pBoundIxSP
+        return  ( WAnnot sp $ WVar u, sp)
 
    -- Variables
- , do   (var, sp) <- pVarSP
-        return  ( WAnnot sp $ WVar (T.UName var)
-                , sp) 
+ , do   (u, sp) <- pBoundNameSP
+        return  ( WAnnot sp $ WVar u, sp)
  ]
 
  <?> "a witness"

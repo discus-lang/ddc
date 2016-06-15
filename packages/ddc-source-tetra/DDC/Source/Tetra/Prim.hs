@@ -1,19 +1,9 @@
 
 -- | Definitions of Source Tetra primitive names and operators.
 module DDC.Source.Tetra.Prim
-        ( -- * Names
-          Name          (..)
-
-          -- * Primitive Names
-        , PrimName      (..)
-        , pattern NameType
-        , pattern NameVal
-        , readName
-
-          -- * Primitive Types
-        , PrimType      (..)
-        , pattern NameTyCon
-        , pattern NameTyConTetra
+        ( -- * Primitive Types
+          PrimType      (..)
+        , readPrimType
 
           -- ** Primitive machine type constructors.
         , PrimTyCon     (..)
@@ -39,19 +29,11 @@ module DDC.Source.Tetra.Prim
 
           -- ** Primitive tetra type constructors.
         , PrimTyConTetra(..)
-        , pattern NameTyConTetraTuple
-        , pattern NameTyConTetraF
-        , pattern NameTyConTetraC
-        , pattern NameTyConTetraU
         , kindPrimTyConTetra
 
           -- * Primitive values
         , PrimVal (..)
-        , pattern NameLit
-        , pattern NameArith
-        , pattern NameVector
-        , pattern NameFun
-        , pattern NameError
+        , readPrimVal
 
           -- ** Primitive arithmetic operators.
         , PrimArith     (..)
@@ -72,13 +54,7 @@ module DDC.Source.Tetra.Prim
 
           -- ** Primitive literals
         , PrimLit (..)
-        , pattern NameLitBool
-        , pattern NameLitNat
-        , pattern NameLitInt
-        , pattern NameLitSize
-        , pattern NameLitWord
-        , pattern NameLitFloat
-        , pattern NameLitTextLit
+        , readPrimLit
 
         , pattern PTrue
         , pattern PFalse)
@@ -91,10 +67,8 @@ import DDC.Source.Tetra.Prim.OpArith
 import DDC.Source.Tetra.Prim.OpFun
 import DDC.Source.Tetra.Prim.OpVector
 import DDC.Source.Tetra.Prim.OpError
-import DDC.Core.Lexer.Names             (isVarStart)
 import DDC.Base.Pretty
 import Control.DeepSeq
-import Data.Char
 import qualified Data.Text              as T
 
 import DDC.Core.Tetra   
@@ -110,73 +84,6 @@ import DDC.Core.Salt.Name
         , readLitSize
         , readLitWordOfBits
         , readLitFloatOfBits)
-
-
----------------------------------------------------------------------------------------------------
-instance Pretty Name where
- ppr nn
-  = case nn of
-        NameVar  v              -> text v
-        NameCon  c              -> text c
-        NamePrim p              -> ppr p
-        NameHole                -> text "?"
-
-
-instance NFData Name where
- rnf nn
-  = case nn of
-        NameVar s               -> rnf s
-        NameCon s               -> rnf s
-        NamePrim p              -> rnf p
-        NameHole                -> ()
-
-
--- | Read the name of a variable, constructor or literal.
-readName :: String -> Maybe Name
-readName str
-        -- Primitive names.
-        | Just n        <- readPrimName str
-        = Just $ NamePrim n
-
-        -- Constructors.
-        | c : _         <- str
-        , isUpper c
-        = Just $ NameCon str
-
-        -- Variables.
-        | c : _         <- str
-        , isVarStart c      
-        = Just $ NameVar str
-
-        | otherwise
-        = Nothing
-
-
----------------------------------------------------------------------------------------------------
-instance Pretty PrimName where
- ppr nn
-  = case nn of
-        PrimNameType p          -> ppr p
-        PrimNameVal p           -> ppr p
-
-
-instance NFData PrimName where
- rnf nn
-  = case nn of
-        PrimNameType p          -> rnf p
-        PrimNameVal p           -> rnf p
-
-
-readPrimName :: String -> Maybe PrimName
-readPrimName str
-        | Just t <- readPrimType str
-        = Just $ PrimNameType t
-
-        | Just v <- readPrimVal str
-        = Just $ PrimNameVal  v
-
-        | otherwise
-        = Nothing
 
 
 ---------------------------------------------------------------------------------------------------

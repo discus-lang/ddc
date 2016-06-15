@@ -19,6 +19,7 @@ where
 import DDC.Source.Tetra.Prim.Base
 import DDC.Source.Tetra.Prim.TyCon
 import DDC.Source.Tetra.Exp.Generic
+import DDC.Source.Tetra.Exp.Bind
 import DDC.Source.Tetra.Compounds
 import Data.Text                        (Text)
 
@@ -68,19 +69,19 @@ pattern TTextLit        = TCon (TyConPrim (PrimTypeTyCon PrimTyConTextLit))
 
 
 -- Patterns ---------------------------------------------------------------------------------------
-pattern PTrue  = PData (DaConPrim (NameLitBool True)  TBool) []
-pattern PFalse = PData (DaConPrim (NameLitBool False) TBool) []
+pattern PTrue  = PData (DaConPrim (DaConBoundLit (PrimLitBool True))  TBool) []
+pattern PFalse = PData (DaConPrim (DaConBoundLit (PrimLitBool False)) TBool) []
 
 
 -- Primitives -------------------------------------------------------------------------------------
 makeXErrorDefault 
-        :: ( GXBoundCon l ~ Name
-           , GXPrim l ~ PrimVal
-           , GTPrim l ~ PrimType)
+        :: ( GXBoundCon l ~ DaConBound
+           , GXPrim l     ~ PrimVal
+           , GTPrim l     ~ PrimType)
         => Text -> Integer -> GExp l
 makeXErrorDefault name n
  = makeXApps
         (XPrim (PrimValError OpErrorDefault))
-        [ XCon (DaConPrim (NameLitTextLit name) (TBot KData))
-        , XCon (DaConPrim (NameLitNat     n)    (TBot KData))]
+        [ XCon (DaConPrim (DaConBoundLit (PrimLitTextLit name)) (TBot KData))
+        , XCon (DaConPrim (DaConBoundLit (PrimLitNat     n))    (TBot KData))]
 

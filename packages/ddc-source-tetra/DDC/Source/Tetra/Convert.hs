@@ -84,7 +84,7 @@ coreOfSourceModuleM a mm
 
         -- Imported types and values.
         importTypes'    <- sequence
-                        $  fmap (\(n, it) -> (,) <$> (pure $ toCoreN n) <*> (toCoreImportType it))
+                        $  fmap (\(n, it) -> (,) <$> toCoreTBCN n <*> (toCoreImportType it))
                         $  S.moduleImportTypes  mm
 
         importCaps'     <- sequence 
@@ -143,8 +143,8 @@ bindOfTop
         :: S.Top S.Source
         -> Maybe (ConvertM SP (C.Bind C.Name, C.Exp SP C.Name))
 
-bindOfTop (S.TopClause _ (S.SLet a b [] [S.GExp x]))
- = Just ((,) <$> toCoreB b <*> toCoreX a x)
+bindOfTop (S.TopClause _ (S.SLet a bm [] [S.GExp x]))
+ = Just ((,) <$> toCoreBM bm <*> toCoreX a x)
 
 bindOfTop _     
  = Nothing
@@ -152,7 +152,7 @@ bindOfTop _
 
 -- ImportType -------------------------------------------------------------------------------------
 toCoreImportType 
-        :: ImportType S.Name S.Type
+        :: ImportType n S.Type
         -> ConvertM a (ImportType C.Name (C.Type C.Name))
 
 toCoreImportType src
@@ -248,8 +248,10 @@ toCoreDataDef def
                                     $ [(ctor, tag) | ctor <- S.dataDefCtors def
                                                    | tag  <- [0..]]
 
+        let (S.TyConBindName txTyConName) = S.dataDefTypeName def
+
         return $ C.DataDef
-         { C.dataDefTypeName    = toCoreN (S.NameCon $ Text.unpack $ S.dataDefTypeName def)
+         { C.dataDefTypeName    = C.NameCon (Text.unpack txTyConName)
          , C.dataDefParams      = defParams
          , C.dataDefCtors       = Just $ defCtors
          , C.dataDefIsAlgebraic = True }
@@ -266,16 +268,14 @@ toCoreDataCtor dataDef tag ctor
  = do   typeParams      <- sequence $ fmap toCoreTBK $ S.dataDefParams dataDef
         fieldTypes      <- sequence $ fmap toCoreT   $ S.dataCtorFieldTypes ctor
         resultType      <- toCoreT (S.dataCtorResultType ctor)
+        let (S.TyConBindName txTyConName) = S.dataDefTypeName dataDef
 
         return $ C.DataCtor
-         { C.dataCtorName        = toCoreN (S.dataCtorName ctor)
+         { C.dataCtorName        = toCoreDaConBind (S.dataCtorName ctor)
          , C.dataCtorTag         = tag
          , C.dataCtorFieldTypes  = fieldTypes
          , C.dataCtorResultType  = resultType
-
-         , C.dataCtorTypeName    
-                = toCoreN (S.NameCon (Text.unpack $ S.dataDefTypeName dataDef))
-
+         , C.dataCtorTypeName    = C.NameCon (Text.unpack txTyConName)
          , C.dataCtorTypeParams  = typeParams }
 
 
@@ -291,7 +291,7 @@ toCoreX a xx
 
         -- Wrap text literals into Text during conversion to Core.
         -- The 'textLit' variable refers to whatever is in scope.
-        S.XCon dc@(C.DaConPrim (S.NameLitTextLit{}) _)
+        S.XCon dc@(C.DaConPrim (S.DaConBoundLit (S.PrimLitTextLit{})) _)
          -> C.XApp  <$> pure a 
                     <*> (C.XVar <$> pure a <*> (pure $ C.UName (C.NameVar "textLit")))
                     <*> (C.XCon <$> pure a <*> (toCoreDC dc))
@@ -362,12 +362,12 @@ toCoreLts a lts
         S.LPrivate bks Nothing bts
          -> C.LPrivate <$> (sequence $ fmap toCoreB bks) 
                        <*>  pure Nothing 
-                       <*> (sequence $ fmap toCoreB bts)
+                       <*> (sequence $ fmap toCoreTBK bts)
 
         S.LPrivate bks (Just tParent) bts
          -> C.LPrivate <$> (sequence $ fmap toCoreB bks) 
                        <*> (fmap Just $ toCoreT tParent)
-                       <*> (sequence $ fmap toCoreB bts)
+                       <*> (sequence $ fmap toCoreTBK bts)
 
         S.LGroup{}
          -> error "ddc-source-tetra.convert: cannot convert sugar lets"
@@ -414,7 +414,7 @@ toCoreP pp
 
 
 -- DaCon ------------------------------------------------------------------------------------------
-toCoreDC :: S.DaCon S.Name S.Type
+toCoreDC :: S.DaCon S.DaConBound S.Type
          -> ConvertM a (C.DaCon C.Name (C.Type (C.Name)))
 
 toCoreDC dc
@@ -422,11 +422,11 @@ toCoreDC dc
         S.DaConUnit
          -> pure $ C.DaConUnit
 
-        S.DaConPrim n t 
-         -> C.DaConPrim  <$> (pure $ toCoreN n) <*> toCoreT t
+        S.DaConPrim  n t 
+         -> C.DaConPrim  <$> (pure $ toCoreDaConBound n) <*> toCoreT t
 
         S.DaConBound n
-         -> C.DaConBound <$> (pure $ toCoreN n)
+         -> C.DaConBound <$> (pure $ toCoreDaConBound n)
 
 
 -- Witness ----------------------------------------------------------------------------------------
@@ -459,9 +459,15 @@ toCoreWC wc
 
 -- Bind -------------------------------------------------------------------------------------------
 
+-- | Convert a type constructor binding occurrence to a core name.
+toCoreTBCN :: S.GTBindCon S.Source  -> ConvertM a C.Name
+toCoreTBCN (S.TyConBindName n)
+ = return $ C.NameCon (Text.unpack n)
+
+
 -- | Convert a type constructor bound occurrence to a core name.
 toCoreTUCN :: S.GTBoundCon S.Source -> ConvertM a C.Name
-toCoreTUCN n
+toCoreTUCN (S.TyConBoundName n)
  = return $ C.NameCon (Text.unpack n)
 
 
@@ -479,7 +485,6 @@ toCoreXBVN bb
         S.BNone   -> error "ddc-source-tetra.toCoreXBVN: none bound"
         S.BAnon   -> error "ddc-source-tetra.toCoreXBVN: anon bound"
         S.BName n -> return $ C.NameVar (Text.unpack n)
-
 
 
 toCoreB  :: S.Bind   -> ConvertM a (C.Bind C.Name)
@@ -536,6 +541,30 @@ toCoreU uu
 
 
 -- Name -------------------------------------------------------------------------------------------
+toCoreDaConBind :: S.DaConBind -> C.Name
+toCoreDaConBind (S.DaConBindName tx)
+ = C.NameCon (Text.unpack tx)
+
+
+toCoreDaConBound :: S.DaConBound -> C.Name
+toCoreDaConBound dcb
+ = case dcb of
+        S.DaConBoundName tx
+         -> C.NameCon (Text.unpack tx)
+
+        S.DaConBoundLit lit
+         -> case lit of
+                S.PrimLitBool    x   -> C.NameLitBool    x
+                S.PrimLitNat     x   -> C.NameLitNat     x
+                S.PrimLitInt     x   -> C.NameLitInt     x
+                S.PrimLitSize    x   -> C.NameLitSize    x
+                S.PrimLitWord    x s -> C.NameLitWord    x s
+                S.PrimLitFloat   x s -> C.NameLitFloat   x s
+                S.PrimLitTextLit x   -> C.NameLitTextLit x
+
+
+
+{-
 toCoreN :: S.Name -> C.Name
 toCoreN nn
  = case nn of
@@ -573,11 +602,10 @@ toCoreN nn
         S.NamePrim (S.PrimNameVal (S.PrimValError p))
          -> C.NameOpError   p False
 
-        S.NameHole
-         -> C.NameHole
-
         _ -> error "ddc-source-tetra.toCoreN: not finished"
+-}
 
+{-
 -- | Convert a Tetra specific type constructor to core.
 toCoreTyConTetra :: S.PrimTyConTetra -> C.TyConTetra
 toCoreTyConTetra tc
@@ -587,4 +615,4 @@ toCoreTyConTetra tc
         S.PrimTyConTetraF       -> C.TyConTetraF
         S.PrimTyConTetraC       -> C.TyConTetraC
         S.PrimTyConTetraU       -> C.TyConTetraU
-
+-}

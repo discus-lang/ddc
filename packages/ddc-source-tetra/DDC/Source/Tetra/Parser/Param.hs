@@ -7,34 +7,29 @@ module DDC.Source.Tetra.Parser.Param
         , pBindParamSpec
         , pBindParamSpecAnnot)
 where
-import DDC.Source.Tetra.Exp.Annot
-import DDC.Core.Lexer.Tokens
+import DDC.Source.Tetra.Parser.Base
+import DDC.Source.Tetra.Parser.Type
+import DDC.Source.Tetra.Exp.Source
+import Data.Maybe
+import qualified DDC.Core.Lexer.Tokens  as K
 import qualified DDC.Base.Parser        as P
-import qualified DDC.Type.Exp.Simple    as T
-
-import DDC.Core.Parser
-        ( Parser
-        , Context (..)
-        , pTok
-        , pType
-        , pBinder)
 
 
 -- | Specification of a function parameter.
 --   We can determine the contribution to the type of the function, 
 --   as well as its expression based on the parameter.
 data ParamSpec
-        = ParamType    Bind (Maybe (T.Type Name))
-        | ParamWitness Bind (Maybe (T.Type Name))
-        | ParamValue   Bind (Maybe (T.Type Name))
+        = ParamType    Bind (Maybe Type)
+        | ParamWitness Bind (Maybe Type)
+        | ParamValue   Bind (Maybe Type)
 
 
 -- | Build the expression of a function from specifications of its parameters,
 --   and the expression for the body.
 expOfParams 
-        :: [ParamSpec]          -- ^ Spec of parameters.
-        -> Exp a                -- ^ Body of function.
-        -> Exp a                -- ^ Expression of whole function.
+        :: [ParamSpec]  -- ^ Spec of parameters.
+        -> Exp          -- ^ Body of function.
+        -> Exp          -- ^ Expression of whole function.
 
 expOfParams [] xBody            = xBody
 expOfParams (p:ps) xBody
@@ -52,41 +47,39 @@ expOfParams (p:ps) xBody
 -- | Build the type of a function from specifications of its parameters,
 --   and the type of the body.
 funTypeOfParams 
-        :: Context Name
-        -> [ParamSpec]          -- ^ Spec of parameters.
-        -> T.Type Name          -- ^ Type of body.
-        -> T.Type Name          -- ^ Type of whole function.
+        :: [ParamSpec]          -- ^ Spec of parameters.
+        -> Type                 -- ^ Type of body.
+        -> Type                 -- ^ Type of whole function.
 
-funTypeOfParams _ [] tBody        
+funTypeOfParams [] tBody        
  = tBody
 
-funTypeOfParams c (p:ps) tBody
+funTypeOfParams (p:ps) tBody
  = case p of
-        ParamType     b _  
-         -> T.TForall b
-          $ funTypeOfParams c ps tBody
+        ParamType     b mt
+         -> TForall (fromMaybe (TBot KData) mt) b
+          $ funTypeOfParams ps tBody
 
-        ParamWitness  b _
-         -> T.tImpl (T.typeOfBind b)
-          $ funTypeOfParams c ps tBody
+        ParamWitness  _ mt
+         -> TImpl (fromMaybe (TBot KData) mt)
+          $ funTypeOfParams ps tBody
 
-        ParamValue    b _
-         -> T.tFun (T.typeOfBind b)
-          $ funTypeOfParams c ps tBody
+        ParamValue    _ mt
+         -> TFun  (fromMaybe (TBot KData) mt)
+          $ funTypeOfParams ps tBody
+
 
 -- | Parse a function parameter specification,
 --   with an optional type (or kind) annotation.
+pBindParamSpec :: Parser [ParamSpec]
 pBindParamSpec
-        :: Context Name -> Parser Name [ParamSpec]
-
-pBindParamSpec c
  = P.choice
  [      -- Value (or type) binder with a type (or kind) annotation.
-        pBindParamSpecAnnot c
+        pBindParamSpecAnnot
 
         -- Value binder without type annotations.
-  , do  b       <- pBinder
-        return  $  [ ParamValue (T.makeBindFromBinder b (T.tBot T.kData)) Nothing ]
+  , do  b       <- pBind
+        return  $  [ ParamValue b Nothing ]
  ]
 
 
@@ -97,39 +90,37 @@ pBindParamSpec c
 --   or  (BIND : TYPE)
 --   or  (BIND : TYPE) { EFFECT | CLOSURE }
 --
+pBindParamSpecAnnot :: Parser [ParamSpec]
 pBindParamSpecAnnot 
-        :: Context Name -> Parser Name [ParamSpec]
-
-pBindParamSpecAnnot c
  = P.choice
         -- Type parameter
         -- [BIND1 BIND2 .. BINDN : TYPE]
- [ do   pTok KSquareBra
-        bs      <- P.many1 pBinder
-        pTok (KOp ":")
-        t       <- pType c
-        pTok KSquareKet
-        return  [ ParamType   (T.makeBindFromBinder b t) (Just t)
-                | b <- bs]
+ [ do   pTok K.KSquareBra
+        bs      <- P.many1 pBind
+        pTok (K.KOp ":")
+        t       <- pType
+        pTok K.KSquareKet
+        return  [ ParamType b (Just t) | b <- bs]
 
         -- Witness parameter
         -- {BIND : TYPE}
- , do   pTok KBraceBra
-        b       <- pBinder
-        pTok (KOp ":")
-        t       <- pType c
-        pTok KBraceKet
-        return  [ ParamWitness (T.makeBindFromBinder b t) (Just t)]
+ , do   pTok K.KBraceBra
+        b       <- pBind
+        pTok (K.KOp ":")
+        t       <- pType
+        pTok K.KBraceKet
+        return  [ ParamWitness b (Just t) ]
 
         -- Value parameter with type annotations.
         -- (BIND1 BIND2 .. BINDN : TYPE) 
         -- (BIND1 BIND2 .. BINDN : TYPE) { TYPE | TYPE }
- , do   pTok KRoundBra
-        bs      <- P.many1 pBinder
-        pTok (KOp ":")
-        t       <- pType c
-        pTok KRoundKet
+ , do   pTok K.KRoundBra
+        bs      <- P.many1 pBind
+        pTok (K.KOp ":")
+        t       <- pType
+        pTok K.KRoundKet
 
-        return  $  [ ParamValue (T.makeBindFromBinder b t) (Just t)
-                   | b <- bs ]
+        return  $  [ ParamValue b (Just t) | b <- bs ]
  ]
+
+

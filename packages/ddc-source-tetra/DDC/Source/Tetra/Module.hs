@@ -53,7 +53,7 @@ data Module l
         , moduleImportModules   :: [ModuleName]
 
           -- | Kinds of imported foreign types.
-        , moduleImportTypes     :: [(GXBindCon l, ImportType  (GXBindCon l) (GType l))]
+        , moduleImportTypes     :: [(GTBindCon l, ImportType  (GTBindCon l) (GType l))]
 
           -- | Types of imported capabilities.
         , moduleImportCaps      :: [(GXBindVar l, ImportCap   (GXBindVar l) (GType l))]

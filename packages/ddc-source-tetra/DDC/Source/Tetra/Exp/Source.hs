@@ -22,6 +22,9 @@ module DDC.Source.Tetra.Exp.Source
         , TwCon         (..)
         , TcCon         (..)
 
+        , TyConBind     (..)
+        , TyConBound    (..)
+
         , pattern TApp2, pattern TApp3
         , pattern TApp4, pattern TApp5
 
@@ -68,6 +71,9 @@ module DDC.Source.Tetra.Exp.Source
         , WiCon,        GWiCon      (..)
         , DaCon (..)
 
+        , DaConBind     (..)
+        , DaConBound    (..)
+
           -- ** Primitives
         , PrimVal       (..)
         , PrimArith     (..)
@@ -84,7 +90,6 @@ import DDC.Source.Tetra.Exp.Bind
 import DDC.Source.Tetra.Prim
 import DDC.Type.Exp.TyCon               as T
 import DDC.Data.SourcePos
-import Data.Text                        (Text)
 
 
 -- Language -------------------------------------------------------------------
@@ -113,8 +118,8 @@ type TyCon      = GTyCon Source
 type instance GTAnnot    Source = SourcePos
 type instance GTBindVar  Source = Bind
 type instance GTBoundVar Source = Bound
-type instance GTBindCon  Source = Text
-type instance GTBoundCon Source = Text
+type instance GTBindCon  Source = TyConBind
+type instance GTBoundCon Source = TyConBound
 type instance GTPrim     Source = PrimType
 
 
@@ -131,10 +136,11 @@ type Cast       = GCast       Source
 type Witness    = GWitness    Source
 type WiCon      = GWiCon      Source
 
-type instance GXAnnot    Source  = SourcePos
-type instance GXBindVar  Source  = Bind
-type instance GXBoundVar Source  = Bound
-type instance GXBindCon  Source  = Name
-type instance GXBoundCon Source  = Name
-type instance GXPrim     Source  = PrimVal
+type instance GXAnnot    Source = SourcePos
+type instance GXBindVar  Source = Bind
+type instance GXBoundVar Source = Bound
+type instance GXBindCon  Source = DaConBind
+type instance GXBoundCon Source = DaConBound
+type instance GXPrim     Source = PrimVal
+
 

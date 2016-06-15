@@ -180,8 +180,8 @@ mapBoundAtDepthXLets l f d lts
                 bs' = map (\(b,e) -> (b, mapBoundAtDepthX l f (d + inc) e)) bs
             in  (LRec bs', inc)
 
-        LPrivate _b _ bs 
-         -> (lts, countBAnonsB l bs)
+        LPrivate _b _ bts
+         -> (lts, countBAnonsB l $ map fst bts)
 
         LGroup cs
          -> let inc = sum (map (countBAnonsC l) cs)
@@ -203,8 +203,8 @@ countBAnonsBM l bmts
 countBAnonsC :: HasAnonBind l => l -> GClause l -> Int
 countBAnonsC l c
  = case c of
-        SSig _ b _   -> countBAnonsB l [b]
-        SLet _ b _ _ -> countBAnonsB l [b]
+        SSig _ b  _   -> countBAnonsB  l [b]
+        SLet _ bm _ _ -> countBAnonsBM l [bm]
 
 
 countBAnonsG :: HasAnonBind l => l -> GGuard l -> Int
