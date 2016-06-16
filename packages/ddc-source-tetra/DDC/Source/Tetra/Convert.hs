@@ -630,10 +630,10 @@ toCorePrimVal :: S.PrimVal -> C.Name
 toCorePrimVal pv
  = case pv of
         S.PrimValArith  p       -> C.NamePrimArith  p False
-        S.PrimValError  p       -> C.NameOpError  p False
-        S.PrimValVector p       -> C.NameOpVector p False
-        S.PrimValFun    p       -> C.NameOpFun    p
-        S.PrimValLit    p       -> toCorePrimLit p
+        S.PrimValError  p       -> C.NameOpError    p False
+        S.PrimValVector p       -> C.NameOpVector   p False
+        S.PrimValFun    p       -> C.NameOpFun      p
+        S.PrimValLit    p       -> toCorePrimLit    p
 
 
 -- | Convert a primitive literal to a core name.

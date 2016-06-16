@@ -344,13 +344,18 @@ checkFieldAnnots table bidir a xx tts ctx0
         = return (tActual, ctx)
 
         -- With bidirectional checking, annotations on fields can refine the
-        -- inferred type for the overal expression.
+        -- inferred type for the overall expression.
         | bidir
-        = do    ctx'    <- makeEq (tableConfig table) a ctx tAnnot tActual
-                        $  ErrorCaseFieldTypeMismatch a xx  tAnnot tActual
+        = do    -- Check the type of the annotation.
+                let config      = tableConfig table
+                let kenv        = tableKindEnv table
+                (tAnnot', _, ctx2) <- checkTypeM config kenv ctx UniverseSpec tAnnot Synth
 
-                tField  <- applyContext ctx' tActual
-                return  (tField, ctx')
+                ctx3    <- makeEq (tableConfig table) a ctx2 tAnnot' tActual
+                        $  ErrorCaseFieldTypeMismatch a xx   tAnnot' tActual
+
+                tField  <- applyContext ctx3 tActual
+                return  (tField, ctx3)
 
         -- In Recon mode, if there is an annotation on the field then it needs
         -- to exactly match the inferred type of the field.
