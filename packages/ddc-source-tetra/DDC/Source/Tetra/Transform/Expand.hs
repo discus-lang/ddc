@@ -22,7 +22,8 @@
 -- @
 --
 module DDC.Source.Tetra.Transform.Expand
---                , Expand        (..))
+        ( expandModule
+        , Expand        (..))
 where
 import DDC.Source.Tetra.Collect.FreeVars
 import DDC.Source.Tetra.Compounds
@@ -35,20 +36,23 @@ import Data.Function
 import qualified DDC.Source.Tetra.Env   as Env
 import DDC.Source.Tetra.Env             (Env)
 import Data.Maybe
--- import Data.Map                         (Map)
 import qualified Data.Set               as Set
+
+
+-- | Run the expander on the given module.
+expandModule :: SourcePos -> Module Source -> Module Source
+expandModule sp mm
+ = expand sp Env.empty mm
 
 
 ---------------------------------------------------------------------------------------------------
 class Expand c where
  -- | Add quantifiers to the types of binders. Also add holes for missing
  --   type arguments.
- expand
-        :: SourcePos
-        -> Env -> c  -> c 
+ expand :: SourcePos -> Env -> c -> c 
+
 
 ---------------------------------------------------------------------------------------------------
-
 instance Expand (Module Source) where
  expand = expandM
 
