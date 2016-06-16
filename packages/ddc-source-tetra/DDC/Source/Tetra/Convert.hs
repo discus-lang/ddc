@@ -9,6 +9,7 @@ module DDC.Source.Tetra.Convert
 where
 import DDC.Source.Tetra.Convert.Error
 import DDC.Data.SourcePos
+import DDC.Type.Universe                                (Universe (..), universeUp)
 
 import qualified DDC.Source.Tetra.Transform.Guards      as S
 import qualified DDC.Source.Tetra.Module                as S
@@ -144,7 +145,7 @@ bindOfTop
         -> Maybe (ConvertM S.Source (C.Bind C.Name, C.Exp SP C.Name))
 
 bindOfTop (S.TopClause _ (S.SLet a bm [] [S.GExp x]))
- = Just ((,) <$> toCoreBM bm <*> toCoreX a x)
+ = Just ((,) <$> toCoreBM UniverseSpec bm <*> toCoreX a x)
 
 bindOfTop _     
  = Nothing
@@ -158,10 +159,10 @@ toCoreImportType
 toCoreImportType src
  = case src of
         ImportTypeAbstract t    
-         -> ImportTypeAbstract <$> toCoreT t
+         -> ImportTypeAbstract <$> toCoreT UniverseKind t
 
         ImportTypeBoxed t
-         -> ImportTypeBoxed    <$> toCoreT t
+         -> ImportTypeBoxed    <$> toCoreT UniverseKind t
 
 
 -- ImportCap --------------------------------------------------------------------------------------
@@ -172,7 +173,7 @@ toCoreImportCap
 toCoreImportCap src
  = case src of
         ImportCapAbstract t
-         -> ImportCapAbstract   <$> toCoreT t
+         -> ImportCapAbstract   <$> toCoreT UniverseSpec t
 
 
 -- ImportValue ------------------------------------------------------------------------------------
@@ -184,47 +185,51 @@ toCoreImportValue src
  = case src of
         ImportValueModule mn n t mA
          ->  ImportValueModule 
-         <$> (pure mn) <*> toCoreXBVN n <*> toCoreT t <*> pure mA
+         <$> pure mn    <*> toCoreXBVN n 
+                        <*> toCoreT UniverseSpec t 
+                        <*> pure mA
 
         ImportValueSea v t
          -> ImportValueSea 
-         <$> pure v    <*> toCoreT t
+         <$> pure v     <*> toCoreT UniverseSpec t
 
 
 -- Type -------------------------------------------------------------------------------------------
-toCoreT :: S.Type -> ConvertM a (C.Type C.Name)
-toCoreT tt
+toCoreT :: Universe -> S.Type -> ConvertM a (C.Type C.Name)
+toCoreT uu tt
  = case tt of
         S.TAnnot _ t
-         -> toCoreT t
+         -> toCoreT uu t
 
         S.TCon (S.TyConBot k)     
-         -> do  k'      <- toCoreT k
+         -> do  k'      <- toCoreT uu k
                 return  $ C.tBot k'
 
         S.TCon (S.TyConVoid)
          -> do  return  $ C.tVoid
 
         S.TCon tc
-         -> do  mtc'    <- toCoreTC tc
+         -> do  mtc'    <- toCoreTC uu tc
                 case mtc' of
-                 Nothing  -> error  $ "ddc-soure-tetra.toCoreT: " ++ show tt
-                 Just tc' -> return $ C.TCon tc'
+                 Nothing        -> error  $ "ddc-soure-tetra.toCoreT: " ++ show tt
+                 Just tc'       -> return $ C.TCon tc'
 
         S.TVar u
          -> C.TVar <$> toCoreU  u
 
         S.TApp (S.TCon (S.TyConForall k)) (S.TAbs b t)
-         -> C.TForall <$> toCoreBM (S.XBindVarMT b (Just k)) <*> toCoreT t
+         -> let uu'     =  universeUp uu
+            in  C.TForall <$> toCoreBM uu' (S.XBindVarMT b (Just k)) <*> toCoreT uu t
 
         S.TApp{}
          | Just (k, ts) <- S.takeTSums tt
-         -> do  k'      <- toCoreT k
-                ts'     <- sequence $ fmap toCoreT ts
+         -> do  let uu' =  universeUp uu
+                k'      <- toCoreT uu' k
+                ts'     <- sequence $ fmap (toCoreT uu) ts
                 return  $  C.TSum (CSum.fromList k' ts')
 
         S.TApp t1 t2
-         -> C.TApp    <$> toCoreT t1 <*> toCoreT t2
+         -> C.TApp      <$> toCoreT uu t1 <*> toCoreT uu t2
 
         S.TAbs{}
          -> error $ "ddc-source-tetra: cannot convert naked type abstraction"
@@ -232,12 +237,19 @@ toCoreT tt
 
 -- TyCon ------------------------------------------------------------------------------------------
 -- | Convert a Source TyCon to Core, or Nothing if it cannot be converted in isolation.
-toCoreTC :: S.TyCon -> ConvertM a (Maybe (C.TyCon C.Name))
-toCoreTC tc
+toCoreTC :: Universe -> S.TyCon -> ConvertM a (Maybe (C.TyCon C.Name))
+toCoreTC uu tc
  = case tc of
-        S.TyConVoid      -> return Nothing
-        S.TyConUnit      -> return $ Just $ C.TyConSpec C.TcConUnit
-        S.TyConFun       -> return $ Just $ C.TyConSpec C.TcConFun
+        S.TyConVoid             -> return Nothing
+        S.TyConUnit             -> return $ Just $ C.TyConSpec C.TcConUnit
+
+        S.TyConFun       
+         -> case uu of
+                UniverseSpec    -> return $ Just $ C.TyConSpec C.TcConFun
+                UniverseKind    -> return $ Just $ C.TyConKind C.KiConFun
+                _               -> return Nothing
+
+
         S.TyConSum _     -> return Nothing
 
         S.TyConBot _k    -> return Nothing
@@ -255,13 +267,13 @@ toCoreTC tc
 
                 -- Primitive TyCons
                 S.PrimTypeTyCon tcy
-                 -> do  k       <- toCoreT $ S.kindPrimTyCon tcy
-                        return $ Just $ C.TyConBound (C.UPrim (C.NamePrimTyCon tcy) k) k
+                 -> do  k       <- toCoreT UniverseKind $ S.kindPrimTyCon tcy
+                        return  $ Just $ C.TyConBound (C.UPrim (C.NamePrimTyCon tcy) k) k
 
                 S.PrimTypeTyConTetra tct 
-                 -> do  k        <- toCoreT $ S.kindPrimTyConTetra tct
+                 -> do  k       <- toCoreT UniverseKind $ S.kindPrimTyConTetra tct
                         let tct' =  toCoreTyConTetra tct
-                        return $ Just $ C.TyConBound (C.UPrim (C.NameTyConTetra tct') k) k
+                        return  $ Just $ C.TyConBound (C.UPrim (C.NameTyConTetra tct') k) k
 
         -- Bound type constructors.
         --   The embedded kind is set to Bot. We rely on the spreader
@@ -300,8 +312,8 @@ toCoreDataCtor
 
 toCoreDataCtor dataDef tag ctor
  = do   typeParams      <- sequence $ fmap toCoreTBK $ S.dataDefParams dataDef
-        fieldTypes      <- sequence $ fmap toCoreT   $ S.dataCtorFieldTypes ctor
-        resultType      <- toCoreT (S.dataCtorResultType ctor)
+        fieldTypes      <- sequence $ fmap (toCoreT UniverseSpec)   $ S.dataCtorFieldTypes ctor
+        resultType      <- toCoreT UniverseSpec (S.dataCtorResultType ctor)
         let (S.TyConBindName txTyConName) = S.dataDefTypeName dataDef
 
         return $ C.DataCtor
@@ -321,28 +333,28 @@ toCoreX a xx
          -> toCoreX a' x
 
         S.XVar u      
-         -> C.XVar  <$> pure a <*> toCoreU u
+         -> C.XVar      <$> pure a <*> toCoreU u
 
         -- Wrap text literals into Text during conversion to Core.
         -- The 'textLit' variable refers to whatever is in scope.
         S.XCon dc@(C.DaConPrim (S.DaConBoundLit (S.PrimLitTextLit{})) _)
-         -> C.XApp  <$> pure a 
-                    <*> (C.XVar <$> pure a <*> (pure $ C.UName (C.NameVar "textLit")))
-                    <*> (C.XCon <$> pure a <*> (toCoreDC dc))
+         -> C.XApp      <$> pure a 
+                        <*> (C.XVar <$> pure a <*> (pure $ C.UName (C.NameVar "textLit")))
+                        <*> (C.XCon <$> pure a <*> (toCoreDC dc))
 
         S.XPrim p
          -> do  let p'  =  toCorePrimVal p 
-                t'      <- toCoreT $ Env.typeOfPrimVal p
+                t'      <- toCoreT UniverseSpec  $ Env.typeOfPrimVal p
                 return  $ C.XVar a (C.UPrim p' t')
 
         S.XCon  dc
-         -> C.XCon  <$> pure a <*> toCoreDC dc
+         -> C.XCon      <$> pure a <*> toCoreDC dc
 
         S.XLAM  bm x
-         -> C.XLAM  <$> pure a <*> toCoreBM bm  <*> toCoreX a x
+         -> C.XLAM      <$> pure a <*> toCoreBM UniverseKind bm  <*> toCoreX a x
 
         S.XLam  bm x
-         -> C.XLam  <$> pure a <*> toCoreBM bm  <*> toCoreX a x
+         -> C.XLam      <$> pure a <*> toCoreBM UniverseSpec bm  <*> toCoreX a x
 
         -- We don't want to wrap the source file path passed to the default# prim
         -- in a Text constructor, so detect this case separately.
@@ -369,7 +381,7 @@ toCoreX a xx
          -> C.XCast     <$> pure a  <*> toCoreC a c <*> toCoreX a x
 
         S.XType t
-         -> C.XType     <$> pure a  <*> toCoreT t
+         -> C.XType     <$> pure a  <*> toCoreT UniverseSpec t
 
         S.XWitness w
          -> C.XWitness  <$> pure a  <*> toCoreW a w
@@ -388,21 +400,24 @@ toCoreLts :: SP -> S.Lets -> ConvertM S.Source (C.Lets SP C.Name)
 toCoreLts a lts
  = case lts of
         S.LLet b x
-         -> C.LLet <$> toCoreBM b <*> toCoreX a x
+         -> C.LLet <$> toCoreBM UniverseSpec b <*> toCoreX a x
         
         S.LRec bxs
-         -> C.LRec <$> (sequence $ map (\(b, x) -> (,) <$> toCoreBM b <*> toCoreX a x) bxs)
+         -> C.LRec <$> (sequence 
+                $ map (\(b, x) -> (,) <$> toCoreBM UniverseSpec b <*> toCoreX a x) bxs)
 
         S.LPrivate bs Nothing bts
          -> C.LPrivate 
-                <$> (sequence  $ fmap toCoreBM [S.XBindVarMT b (Just S.KRegion) | b <- bs])
+                <$> (sequence  $ fmap (toCoreBM UniverseKind)
+                               $ [S.XBindVarMT b (Just S.KRegion) | b <- bs])
                 <*>  pure Nothing 
                 <*> (sequence  $ fmap toCoreTBK bts)
 
         S.LPrivate bs (Just tParent) bts
          -> C.LPrivate 
-                <$> (sequence  $ fmap toCoreBM [S.XBindVarMT b (Just S.KRegion) | b <- bs])
-                <*> (fmap Just $ toCoreT tParent)
+                <$> (sequence  $ fmap (toCoreBM UniverseKind)
+                               $ [S.XBindVarMT b (Just S.KRegion) | b <- bs])
+                <*> (fmap Just $ toCoreT UniverseKind tParent)
                 <*> (sequence  $ fmap toCoreTBK bts)
 
         S.LGroup{}
@@ -416,7 +431,7 @@ toCoreC :: SP -> S.Cast -> ConvertM S.Source (C.Cast SP C.Name)
 toCoreC a cc
  = case cc of
         S.CastWeakenEffect eff
-         -> C.CastWeakenEffect <$> toCoreT eff
+         -> C.CastWeakenEffect <$> toCoreT UniverseSpec eff
 
         S.CastPurify w
          -> C.CastPurify       <$> toCoreW a w
@@ -459,7 +474,7 @@ toCoreDC dc
          -> pure $ C.DaConUnit
 
         S.DaConPrim  n t 
-         -> C.DaConPrim  <$> (pure $ toCoreDaConBound n) <*> toCoreT t
+         -> C.DaConPrim  <$> (pure $ toCoreDaConBound n) <*> toCoreT UniverseSpec t
 
         S.DaConBound n
          -> C.DaConBound <$> (pure $ toCoreDaConBound n)
@@ -482,7 +497,7 @@ toCoreW a ww
          -> C.WApp  <$> pure a <*> toCoreW a w1 <*> toCoreW a w2
 
         S.WType t
-         -> C.WType <$> pure a <*> toCoreT  t
+         -> C.WType <$> pure a <*> toCoreT UniverseSpec t
 
 
 -- WiCon ------------------------------------------------------------------------------------------
@@ -490,7 +505,8 @@ toCoreWC :: S.WiCon -> ConvertM a (C.WiCon C.Name)
 toCoreWC wc
  = case wc of
         S.WiConBound u t
-         -> C.WiConBound <$> toCoreU u <*> toCoreT t
+         -> C.WiConBound <$> toCoreU u 
+                         <*> toCoreT UniverseSpec t
 
 
 -- Bind -------------------------------------------------------------------------------------------
@@ -528,9 +544,10 @@ toCoreTBK :: (S.GTBindVar S.Source, S.GType S.Source)
           -> ConvertM a (C.Bind C.Name)
 toCoreTBK (bb, k)
  = case bb of
-        S.BNone   -> C.BNone <$> (toCoreT k)
-        S.BAnon   -> C.BAnon <$> (toCoreT k)
-        S.BName n -> C.BName <$> (return $ C.NameVar (Text.unpack n)) <*> (toCoreT k)
+        S.BNone   -> C.BNone <$> (toCoreT UniverseKind k)
+        S.BAnon   -> C.BAnon <$> (toCoreT UniverseKind k)
+        S.BName n -> C.BName <$> (return $ C.NameVar (Text.unpack n)) 
+                             <*> (toCoreT UniverseKind k)
 
 
 -- | Convert an unannoted binder to core.
@@ -544,18 +561,18 @@ toCoreB bb
 
 
 -- | Convert a possibly annoted binding occurrence of a variable to core.
-toCoreBM :: S.GXBindVarMT S.Source -> ConvertM a (C.Bind C.Name)
-toCoreBM bb
+toCoreBM :: Universe -> S.GXBindVarMT S.Source -> ConvertM a (C.Bind C.Name)
+toCoreBM uu bb
  = case bb of
         S.XBindVarMT S.BNone     (Just t)
-         -> C.BNone <$> toCoreT t
+         -> C.BNone <$> toCoreT uu t
 
         S.XBindVarMT S.BNone     Nothing
          -> C.BNone <$> (return $ C.TVar (C.UName C.NameHole))
 
 
         S.XBindVarMT S.BAnon     (Just t)   
-         -> C.BAnon <$> toCoreT t
+         -> C.BAnon <$> toCoreT uu t
 
         S.XBindVarMT S.BAnon     Nothing    
          -> C.BAnon <$> (return $ C.TVar (C.UName C.NameHole))
@@ -563,7 +580,7 @@ toCoreBM bb
 
         S.XBindVarMT (S.BName n) (Just t)
          -> C.BName <$> (return $ C.NameVar (Text.unpack n)) 
-                    <*> toCoreT t
+                    <*> toCoreT uu t
 
         S.XBindVarMT (S.BName n) Nothing    
          -> C.BName <$> (return $ C.NameVar (Text.unpack n)) 

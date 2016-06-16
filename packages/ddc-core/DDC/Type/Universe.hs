@@ -1,6 +1,7 @@
 
 module DDC.Type.Universe
         ( Universe(..)
+        , universeUp
         , universeFromType3
         , universeFromType2
         , universeFromType1
@@ -14,9 +15,12 @@ import qualified DDC.Type.Sum   as T
 
 -- | Universes of the Disciple Core language.
 data Universe 
+        -- | A numbered universe (levels 4..)
+        = UniverseLevel Int
+
         -- | (level 3). The universe of sorts.
         --   Sorts classify kinds.
-        = UniverseSort
+        | UniverseSort
 
         -- | (level 2). The universe of kinds.
         --   Kinds classify specifications.
@@ -48,11 +52,24 @@ data Universe
 instance Pretty Universe where
  ppr u
   = case u of
+        UniverseLevel i -> text "Universe" <> int i
         UniverseSort    -> text "Sort"
         UniverseKind    -> text "Kind"
         UniverseSpec    -> text "Spec"
         UniverseWitness -> text "Witness"
         UniverseData    -> text "Data"
+
+
+-- | Take the next highest universe of the given one.
+universeUp :: Universe -> Universe
+universeUp uu
+ = case uu of
+        UniverseLevel n -> UniverseLevel (n + 1)
+        UniverseSort    -> UniverseLevel 4
+        UniverseKind    -> UniverseSort
+        UniverseSpec    -> UniverseKind
+        UniverseWitness -> UniverseSpec
+        UniverseData    -> UniverseSpec
 
 
 -- | Given the type of the type of the type of some thing (up three levels),
