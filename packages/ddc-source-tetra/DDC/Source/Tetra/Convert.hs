@@ -192,11 +192,17 @@ toCoreImportValue src
 toCoreT :: S.Type -> ConvertM a (C.Type C.Name)
 toCoreT tt
  = case tt of
-        S.TAnnot _ t
-         -> toCoreT t
+        S.TAnnot _ t                    -> toCoreT t
+
+        S.TCon (S.TyConBot k)     
+         -> do  k'      <- toCoreT k
+                return  $ C.tBot k'
 
         S.TCon tc
-         -> C.TCon <$> toCoreTC tc
+         -> do  mtc'    <- toCoreTC tc
+                case mtc' of
+                 Nothing  -> error  $ "ddc-soure-tetra.toCoreT: " ++ show tt
+                 Just tc' -> return $ C.TCon tc'
 
         S.TVar u
          -> C.TVar <$> toCoreU  u
@@ -220,41 +226,44 @@ toCoreT tt
 -}
 
 -- TyCon ------------------------------------------------------------------------------------------
-toCoreTC :: S.TyCon -> ConvertM a (C.TyCon C.Name)
+-- | Convert a Source TyCon to Core, or Nothing if it cannot be converted in isolation.
+toCoreTC :: S.TyCon -> ConvertM a (Maybe (C.TyCon C.Name))
 toCoreTC tc
  = case tc of
-        S.TyConVoid             -> error $ "ddc-source-tetra.toCoreTC: finish me" ++ show tc
-        S.TyConUnit             -> pure  $ C.TyConSpec C.TcConUnit
-        S.TyConFun              -> pure  $ C.TyConSpec C.TcConFun
-        S.TyConSum _            -> error $ "ddc-source-tetra.toCoreTC: named sum"         
-        S.TyConBot _k           -> error $ "ddc-source-tetra.toCoreTC: bot"
-        S.TyConForall _k        -> error $ "ddc-source-tetra.toCoreTC: naked forall"
-        S.TyConExists _k        -> error $ "ddc-source-tetra.toCoreTC: naked exists"
+        S.TyConVoid      -> return Nothing
+        S.TyConUnit      -> return $ Just $ C.TyConSpec C.TcConUnit
+        S.TyConFun       -> return $ Just $ C.TyConSpec C.TcConFun
+        S.TyConSum _     -> return Nothing
+
+        S.TyConBot _k    -> return Nothing
+        S.TyConForall _k -> return Nothing
+        S.TyConExists _k -> return Nothing
 
         -- Primitive type constructors.
         S.TyConPrim pt
          -> case pt of
                 -- Ambient TyCons
-                S.PrimTypeSoCon sc      -> pure $ C.TyConSort    sc
-                S.PrimTypeKiCon kc      -> pure $ C.TyConKind    kc
-                S.PrimTypeTwCon tw      -> pure $ C.TyConWitness tw
-                S.PrimTypeTcCon ts      -> pure $ C.TyConSpec    ts
+                S.PrimTypeSoCon sc -> return $ Just $ C.TyConSort    sc
+                S.PrimTypeKiCon kc -> return $ Just $ C.TyConKind    kc
+                S.PrimTypeTwCon tw -> return $ Just $ C.TyConWitness tw
+                S.PrimTypeTcCon ts -> return $ Just $ C.TyConSpec    ts
 
                 -- Primitive TyCons
                 S.PrimTypeTyCon tcy
                  -> do  k       <- toCoreT $ S.kindPrimTyCon tcy
-                        return  $ C.TyConBound (C.UPrim (C.NamePrimTyCon tcy) k) k
+                        return $ Just $ C.TyConBound (C.UPrim (C.NamePrimTyCon tcy) k) k
 
                 S.PrimTypeTyConTetra tct 
                  -> do  k        <- toCoreT $ S.kindPrimTyConTetra tct
                         let tct' =  toCoreTyConTetra tct
-                        pure $ C.TyConBound (C.UPrim (C.NameTyConTetra tct') k) k
+                        return $ Just $ C.TyConBound (C.UPrim (C.NameTyConTetra tct') k) k
 
         -- Bound type constructors.
         --   The embedded kind is set to Bot. We rely on the spreader
         --   to fill in the real kind before type checking.
         S.TyConBound (S.TyConBoundName tx)
-         -> return $ C.TyConBound (C.UName (C.NameCon (Text.unpack tx))) 
+         -> return $ Just 
+         $  C.TyConBound (C.UName (C.NameCon (Text.unpack tx))) 
                                   (C.tBot C.kData)
 
 
@@ -494,7 +503,7 @@ toCoreTUCN (S.TyConBoundName n)
 toCoreXUVN :: S.Bound -> ConvertM a C.Name
 toCoreXUVN uu
  = case uu of
-        S.UName n -> return $ C.NameCon (Text.unpack n)
+        S.UName n -> return $ C.NameVar (Text.unpack n)
         S.UIx  _i -> error "ddc-source-tetra.toCoreXBVN: anon bound"
         S.UHole   -> return $ C.NameHole        
 

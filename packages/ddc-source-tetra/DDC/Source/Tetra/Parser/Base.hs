@@ -121,18 +121,25 @@ pDaConBoundNameSP = P.pTokMaybeSP f
  where  f (KN (KCon (NameCon n)))       = Just (DaConBoundName n)
         f _                             = Nothing
 
+
 -- | Parse a literal.
+--    These are numeric literals, string literals, 
+--    and special constructors like 'True' and 'False'.
 pDaConBoundLit :: Parser DaConBound
 pDaConBoundLit = P.pTokMaybe f
  where  f (KN (KLit (NamePrimValLit n))) = Just (DaConBoundLit n)
+        f (KN (KCon (NamePrimValLit n))) = Just (DaConBoundLit n)
         f (KA (KString tx))              = Just (DaConBoundLit (PrimLitTextLit tx))
         f _                              = Nothing
 
 
 -- | Parse a literal, with source position.
+--    These are numeric literals, string literals, 
+--    and special constructors like 'True' and 'False'.
 pDaConBoundLitSP :: Parser (DaConBound, SourcePos)
 pDaConBoundLitSP = P.pTokMaybeSP f
  where  f (KN (KLit (NamePrimValLit n))) = Just (DaConBoundLit n)
+        f (KN (KCon (NamePrimValLit n))) = Just (DaConBoundLit n)
         f (KA (KString tx))              = Just (DaConBoundLit (PrimLitTextLit tx))
         f _                              = Nothing
 
