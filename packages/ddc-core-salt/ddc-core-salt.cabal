@@ -1,5 +1,5 @@
 Name:           ddc-core-salt
-Version:        0.4.2.1
+Version:        0.4.3.0
 License:        MIT
 License-file:   LICENSE
 Author:         The Disciplined Disciple Compiler Strike Force
@@ -21,8 +21,8 @@ Library
         text            >= 1.0 && < 1.3,
         transformers    == 0.4.*,
         mtl             == 2.2.1.*,
-        ddc-base        == 0.4.2.*,
-        ddc-core        == 0.4.2.*
+        ddc-base        == 0.4.3.*,
+        ddc-core        == 0.4.3.*
 
   Exposed-modules:
         DDC.Core.Salt.Compounds

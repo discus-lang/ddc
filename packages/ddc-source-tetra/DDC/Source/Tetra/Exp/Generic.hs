@@ -28,7 +28,7 @@ module DDC.Source.Tetra.Exp.Generic
         , pattern TPrim
 
           -- ** Dictionaries
-        , ShowGType     (..)
+        , ShowGType
 
           -- * Terms
           -- ** Type Functions

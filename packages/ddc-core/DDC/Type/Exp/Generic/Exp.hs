@@ -28,7 +28,7 @@ module DDC.Type.Exp.Generic.Exp
         , pattern TPrim
 
           -- * Classes
-        , ShowGType (..))
+        , ShowGType)
 where
 
 

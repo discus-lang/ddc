@@ -1,5 +1,5 @@
 Name:           ddc-source-tetra
-Version:        0.4.2.1
+Version:        0.4.3.0
 License:        MIT
 License-file:   LICENSE
 Author:         The Disciplined Disciple Compiler Strike Force
@@ -24,13 +24,15 @@ Library
         text             >= 1.0   && < 1.3,
         transformers     == 0.4.*,
         mtl              == 2.2.1.*,
-        ddc-base         == 0.4.2.*,
-        ddc-core         == 0.4.2.*,
-        ddc-core-salt    == 0.4.2.*,
-        ddc-core-tetra   == 0.4.2.*
+        ddc-base         == 0.4.3.*,
+        ddc-core         == 0.4.3.*,
+        ddc-core-salt    == 0.4.3.*,
+        ddc-core-tetra   == 0.4.3.*
 
   Exposed-modules:
+        DDC.Source.Tetra.Exp.Bind
         DDC.Source.Tetra.Exp.Generic
+        DDC.Source.Tetra.Exp.NFData
         DDC.Source.Tetra.Exp.Source
 
         DDC.Source.Tetra.Transform.BoundX
@@ -51,12 +53,15 @@ Library
         DDC.Source.Tetra.Prim
 
   Other-modules:
+        DDC.Source.Tetra.Collect.FreeVars
+
         DDC.Source.Tetra.Convert.Error
 
-        DDC.Source.Tetra.Parser.Atom
+        DDC.Source.Tetra.Parser.Base
         DDC.Source.Tetra.Parser.Exp
         DDC.Source.Tetra.Parser.Module
         DDC.Source.Tetra.Parser.Param
+        DDC.Source.Tetra.Parser.Type
         DDC.Source.Tetra.Parser.Witness
 
         DDC.Source.Tetra.Prim.Base
@@ -64,6 +69,7 @@ Library
         DDC.Source.Tetra.Prim.OpError
         DDC.Source.Tetra.Prim.OpFun
         DDC.Source.Tetra.Prim.OpVector
+        DDC.Source.Tetra.Prim.TyCon
         DDC.Source.Tetra.Prim.TyConPrim
         DDC.Source.Tetra.Prim.TyConTetra
 
