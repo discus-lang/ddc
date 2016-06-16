@@ -241,12 +241,11 @@ pExpAtomSP
         return  (XCon  (DaConBound con), sp)
 
         -- Literals.
-        --  We just fill-in the type with tBot for now, and leave it to
-        --  the spreader to attach the real type.
+        --  We just fill-in the type with a hole for now, and leave it to
         --  We also set the literal as being algebraic, which may not be
         --  true (as for Floats). The spreader also needs to fix this.
  , do   (lit, sp)       <- pDaConBoundLitSP
-        return  (XCon  (DaConPrim lit (TBot S.KData)), sp)
+        return  (XCon  (DaConPrim lit (TVar UHole)), sp)
 
         -- Primitive names.
  , do   (nPrim, sp)     <- pPrimValSP

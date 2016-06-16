@@ -269,7 +269,7 @@ toCoreTC tc
         S.TyConBound (S.TyConBoundName tx)
          -> return $ Just 
          $  C.TyConBound (C.UName (C.NameCon (Text.unpack tx))) 
-                                  (C.tBot C.kData)
+                                  (C.TVar (C.UName C.NameHole))
 
 
 -- DataDef ----------------------------------------------------------------------------------------
@@ -338,11 +338,11 @@ toCoreX a xx
         S.XCon  dc
          -> C.XCon  <$> pure a <*> toCoreDC dc
 
-        S.XLAM  (S.XBindVarMT b _mt) x
-         -> C.XLAM  <$> pure a <*> toCoreB b  <*> toCoreX a x
+        S.XLAM  bm x
+         -> C.XLAM  <$> pure a <*> toCoreBM bm  <*> toCoreX a x
 
-        S.XLam  (S.XBindVarMT b _mt) x
-         -> C.XLam  <$> pure a <*> toCoreB b  <*> toCoreX a x
+        S.XLam  bm x
+         -> C.XLam  <$> pure a <*> toCoreBM bm  <*> toCoreX a x
 
         -- We don't want to wrap the source file path passed to the default# prim
         -- in a Text constructor, so detect this case separately.
@@ -393,15 +393,17 @@ toCoreLts a lts
         S.LRec bxs
          -> C.LRec <$> (sequence $ map (\(b, x) -> (,) <$> toCoreBM b <*> toCoreX a x) bxs)
 
-        S.LPrivate bks Nothing bts
-         -> C.LPrivate <$> (sequence $ fmap toCoreB bks) 
-                       <*>  pure Nothing 
-                       <*> (sequence $ fmap toCoreTBK bts)
+        S.LPrivate bs Nothing bts
+         -> C.LPrivate 
+                <$> (sequence  $ fmap toCoreBM [S.XBindVarMT b (Just S.KRegion) | b <- bs])
+                <*>  pure Nothing 
+                <*> (sequence  $ fmap toCoreTBK bts)
 
-        S.LPrivate bks (Just tParent) bts
-         -> C.LPrivate <$> (sequence $ fmap toCoreB bks) 
-                       <*> (fmap Just $ toCoreT tParent)
-                       <*> (sequence $ fmap toCoreTBK bts)
+        S.LPrivate bs (Just tParent) bts
+         -> C.LPrivate 
+                <$> (sequence  $ fmap toCoreBM [S.XBindVarMT b (Just S.KRegion) | b <- bs])
+                <*> (fmap Just $ toCoreT tParent)
+                <*> (sequence  $ fmap toCoreTBK bts)
 
         S.LGroup{}
          -> error "ddc-source-tetra.convert: cannot convert sugar lets"
@@ -521,18 +523,9 @@ toCoreXBVN bb
         S.BName n -> return $ C.NameVar (Text.unpack n)
 
 
-toCoreB  :: S.Bind   -> ConvertM a (C.Bind C.Name)
-toCoreB bb
- = case bb of
-        S.BNone   -> C.BNone <$> (return $ C.tBot C.kData)
-        S.BAnon   -> C.BAnon <$> (return $ C.tBot C.kData)
-        S.BName n -> C.BName <$> (return $ C.NameVar (Text.unpack n)) <*> (return $ C.tBot C.kData)
-
-
 -- | Convert a type binder and kind to core.
 toCoreTBK :: (S.GTBindVar S.Source, S.GType S.Source)
           -> ConvertM a (C.Bind C.Name)
-
 toCoreTBK (bb, k)
  = case bb of
         S.BNone   -> C.BNone <$> (toCoreT k)
@@ -540,7 +533,17 @@ toCoreTBK (bb, k)
         S.BName n -> C.BName <$> (return $ C.NameVar (Text.unpack n)) <*> (toCoreT k)
 
 
+-- | Convert an unannoted binder to core.
+toCoreB  :: S.Bind -> ConvertM a (C.Bind C.Name)
+toCoreB bb
+ = let hole     = C.TVar (C.UName C.NameHole)
+   in case bb of
+        S.BNone   -> return $ C.BNone hole
+        S.BAnon   -> return $ C.BAnon hole
+        S.BName n -> return $ C.BName (C.NameVar (Text.unpack n)) hole
 
+
+-- | Convert a possibly annoted binding occurrence of a variable to core.
 toCoreBM :: S.GXBindVarMT S.Source -> ConvertM a (C.Bind C.Name)
 toCoreBM bb
  = case bb of
@@ -548,19 +551,23 @@ toCoreBM bb
          -> C.BNone <$> toCoreT t
 
         S.XBindVarMT S.BNone     Nothing
-         -> C.BNone <$> (return $ C.tBot C.kData) 
+         -> C.BNone <$> (return $ C.TVar (C.UName C.NameHole))
+
 
         S.XBindVarMT S.BAnon     (Just t)   
          -> C.BAnon <$> toCoreT t
 
         S.XBindVarMT S.BAnon     Nothing    
-         -> C.BAnon <$> (return $ C.tBot C.kData)
+         -> C.BAnon <$> (return $ C.TVar (C.UName C.NameHole))
+
 
         S.XBindVarMT (S.BName n) (Just t)
-         -> C.BName <$> (return $ C.NameVar (Text.unpack n)) <*> toCoreT t
+         -> C.BName <$> (return $ C.NameVar (Text.unpack n)) 
+                    <*> toCoreT t
 
         S.XBindVarMT (S.BName n) Nothing    
-         -> C.BName <$> (return $ C.NameVar (Text.unpack n)) <*> (pure $ C.tBot C.kData)
+         -> C.BName <$> (return $ C.NameVar (Text.unpack n)) 
+                    <*> (return $ C.TVar (C.UName C.NameHole))
 
 
 -- Bound ------------------------------------------------------------------------------------------

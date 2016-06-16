@@ -12,7 +12,7 @@ instance (Eq n, Show n, Pretty n) => Pretty (Error n) where
         -- Generic Problems ---------------------
         ErrorUniverseMalfunction t u
          -> vcat [ text "Universe malfunction."
-                 , text "               Type: " <> ppr t
+                 , text "               Type: " <> text (show t) --ppr (t
                  , text " is not in universe: " <> ppr u ]
 
         ErrorMismatch uni tInferred tExpected tt
