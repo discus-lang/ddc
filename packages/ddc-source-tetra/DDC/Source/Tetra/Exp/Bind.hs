@@ -35,24 +35,24 @@ data Bound
 -- | Binding occurrence of a data constructor.
 data DaConBind
         = DaConBindName  Text
-        deriving Show
+        deriving (Eq, Ord, Show)
 
 
 -- | Bound occurrences of a data constructor.
 data DaConBound
         = DaConBoundName Text
         | DaConBoundLit  PrimLit
-        deriving Show
+        deriving (Eq, Ord, Show)
 
 
 -- | Binding occurrence of a type constructor.
 data TyConBind
         = TyConBindName  Text
-        deriving Show
+        deriving (Eq, Ord, Show)
 
 
 -- | Bound occurrence of a type constructor.
 data TyConBound
         = TyConBoundName Text
-        deriving Show
+        deriving (Eq, Ord, Show)
 

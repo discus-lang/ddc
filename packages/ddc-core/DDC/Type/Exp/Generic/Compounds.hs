@@ -18,7 +18,12 @@ module DDC.Type.Exp.Generic.Compounds
         , takeTForall
 
           -- * Exists Types
-        , makeTExists,  takeTExists)
+        , makeTExists,  takeTExists
+
+          -- * Sum types
+        , takeTSum
+        , makeTSums,    takeTSums
+        , splitTSumsOfKind)
 where
 import DDC.Type.Exp.Generic.Exp
 import DDC.Type.Exp.Generic.Binding
@@ -171,3 +176,72 @@ takeTExists :: GType l -> Maybe (GType l, GTBindVar l, GType l)
 takeTExists (TExists k b t)     = Just (k, b, t)
 takeTExists _                   = Nothing
 
+
+-- Bot Types ------------------------------------------------------------------
+-- | Take a bottom type, looking through annotations.
+takeTBot :: GType l -> Maybe (GType l)
+takeTBot tt
+ = case tt of
+        TAnnot _ t              -> takeTBot t
+        TCon (TyConBot k)       -> Just k
+        _                       -> Nothing
+
+
+-- Sum types ------------------------------------------------------------------
+-- | Take the kind, left and right types from a sum type.
+takeTSum :: GType l -> Maybe (GType l, GType l, GType l)
+takeTSum tt
+        | Just (ts1, t2)        <- takeTApp tt
+        , Just (ts,  t1)        <- takeTApp ts1
+        , Just (TyConSum k)     <- takeTCon ts
+        = Just (k, t1, t2)
+
+        | otherwise
+        = Nothing
+
+
+-- | Make a sum type from a kind and list of component types.
+makeTSums :: GType l -> [GType l] -> GType l
+makeTSums k tss
+ = case tss of
+        []              -> TBot k
+        [t1]            -> t1
+        (t1 : ts)       -> foldr (TSum k) t1 ts
+
+
+-- | Split a sum type into its components.
+--    If this is not a sum, or is an ill kinded sum then Nothing.
+takeTSums :: Eq (GType l) => GType l -> Maybe (GType l, [GType l])
+takeTSums tt
+        | Just k                <- takeTBot tt
+        = Just (k, [])
+
+        | Just (k, t1, t2)      <- takeTSum tt
+        , Just ts1              <- splitTSumsOfKind k t1
+        , Just ts2              <- splitTSumsOfKind k t2
+        = Just (k, ts1 ++ ts2)
+
+        | otherwise
+        = Nothing
+
+
+-- | Split a sum of the given kind into its components.
+--    When we split a sum we need to check that the kind attached
+--    to the sum type constructor is the one that we were expecting,
+--    otherwise we risk splitting ill-kinded sums without noticing it.
+splitTSumsOfKind :: Eq (GType l) => GType l -> GType l -> Maybe [GType l]
+splitTSumsOfKind k t
+        | Just k'             <- takeTBot t
+        = if k == k'
+                then    return []
+                else    Nothing
+
+        | Just (k', t1, t2)   <- takeTSum t
+        = if k == k'
+                then do t1s     <- splitTSumsOfKind k t1
+                        t2s     <- splitTSumsOfKind k t2
+                        return  $  t1s ++ t2s
+                else    Nothing
+
+        | otherwise
+        = Just [t]

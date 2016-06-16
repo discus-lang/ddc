@@ -3,7 +3,7 @@ module DDC.Core.Tetra.Compounds
         ( module DDC.Core.Exp.Annot.Compounds
 
           -- * Primitive
-        , tBool, tNat, tInt, tSize, tWord, tFloat
+        , tVoid, tBool, tNat, tInt, tSize, tWord, tFloat
         , tPtr
 
           -- * Tetra types.

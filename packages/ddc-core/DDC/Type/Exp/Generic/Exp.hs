@@ -79,6 +79,12 @@ pattern TApp4 t0 t1 t2 t3 t4    = TApp (TApp (TApp (TApp t0 t1) t2) t3) t4
 pattern TApp5 t0 t1 t2 t3 t4 t5 = TApp (TApp (TApp (TApp (TApp t0 t1) t2) t3) t4) t5
 
 
+deriving instance
+        ( Eq (GTAnnot l),   Eq (GTyCon l)
+        , Eq (GTBindVar l), Eq (GTBoundVar l))
+        => Eq (GType l)
+
+
 ---------------------------------------------------------------------------------------------------
 -- | Wrapper for primitive constructors that adds the ones
 --   common to SystemFω based languages.
@@ -93,6 +99,7 @@ data GTyCon l
         | TyConFun
 
         -- | Take the least upper bound at the given kind.
+        --   TODO: Rename this to Union, as it's really a type constructor for a union.
         | TyConSum    !(GType l)
 
         -- | The least element of the given kind.
@@ -109,6 +116,11 @@ data GTyCon l
 
         -- | Bound constructor.
         | TyConBound  !(GTBoundCon l)
+
+
+deriving instance 
+        (Eq (GType l), Eq (GTPrim l), Eq (GTBoundCon l))
+        => Eq (GTyCon l)
 
 
 ---------------------------------------------------------------------------------------------------

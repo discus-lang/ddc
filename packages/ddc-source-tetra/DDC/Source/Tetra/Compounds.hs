@@ -26,6 +26,11 @@ module DDC.Source.Tetra.Compounds
           -- ** Exists Types
         , T.makeTExists, T.takeTExists
 
+          -- ** Sum types
+        , T.takeTSum
+        , T.makeTSums,    T.takeTSums
+        , T.splitTSumsOfKind
+
           -- * Terms
           -- ** Lambdas
         , makeXLAMs

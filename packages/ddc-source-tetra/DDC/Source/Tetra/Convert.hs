@@ -16,11 +16,14 @@ import qualified DDC.Source.Tetra.DataDef               as S
 import qualified DDC.Source.Tetra.Compounds             as S
 import qualified DDC.Source.Tetra.Exp.Source            as S
 import qualified DDC.Source.Tetra.Prim                  as S
+import qualified DDC.Source.Tetra.Env                   as Env
 
+import qualified DDC.Core.Tetra.Compounds               as C
 import qualified DDC.Core.Tetra.Prim                    as C
 import qualified DDC.Core.Module                        as C
 import qualified DDC.Core.Exp.Annot                     as C
 import qualified DDC.Type.DataDef                       as C
+import qualified DDC.Type.Sum                           as CSum
 import qualified Data.Text                              as Text
 import Data.Maybe
 
@@ -192,11 +195,15 @@ toCoreImportValue src
 toCoreT :: S.Type -> ConvertM a (C.Type C.Name)
 toCoreT tt
  = case tt of
-        S.TAnnot _ t                    -> toCoreT t
+        S.TAnnot _ t
+         -> toCoreT t
 
         S.TCon (S.TyConBot k)     
          -> do  k'      <- toCoreT k
                 return  $ C.tBot k'
+
+        S.TCon (S.TyConVoid)
+         -> do  return  $ C.tVoid
 
         S.TCon tc
          -> do  mtc'    <- toCoreTC tc
@@ -210,20 +217,18 @@ toCoreT tt
         S.TApp (S.TCon (S.TyConForall k)) (S.TAbs b t)
          -> C.TForall <$> toCoreBM (S.XBindVarMT b (Just k)) <*> toCoreT t
 
+        S.TApp{}
+         | Just (k, ts) <- S.takeTSums tt
+         -> do  k'      <- toCoreT k
+                ts'     <- sequence $ fmap toCoreT ts
+                return  $  C.TSum (CSum.fromList k' ts')
+
         S.TApp t1 t2
          -> C.TApp    <$> toCoreT t1 <*> toCoreT t2
 
-        _ -> error $ "Convert.toCoreT: finish me " ++ show tt
+        S.TAbs{}
+         -> error $ "ddc-source-tetra: cannot convert naked type abstraction"
 
-{-
-        S.TSum ts
-         -> do  k'      <- toCoreT $ Sum.kindOfSum ts
-
-                tss'    <- fmap (Sum.fromList k') 
-                        $  sequence $ fmap toCoreT $ Sum.toList ts
-
-                return  $ T.TSum tss'
--}
 
 -- TyCon ------------------------------------------------------------------------------------------
 -- | Convert a Source TyCon to Core, or Nothing if it cannot be converted in isolation.
@@ -325,10 +330,10 @@ toCoreX a xx
                     <*> (C.XVar <$> pure a <*> (pure $ C.UName (C.NameVar "textLit")))
                     <*> (C.XCon <$> pure a <*> (toCoreDC dc))
 
-        S.XPrim _p
-         -> error "convert: exp prim"
-
---         -> C.XVar  <$> pure a <*> toCoreU (C.UPrim (S.NameVal p) (S.typeOfPrimVal p))
+        S.XPrim p
+         -> do  let p'  =  toCorePrimVal p 
+                t'      <- toCoreT $ Env.typeOfPrimVal p
+                return  $ C.XVar a (C.UPrim p' t')
 
         S.XCon  dc
          -> C.XCon  <$> pure a <*> toCoreDC dc
@@ -568,28 +573,6 @@ toCoreU uu
 
 
 -- Name -------------------------------------------------------------------------------------------
-toCoreDaConBind :: S.DaConBind -> C.Name
-toCoreDaConBind (S.DaConBindName tx)
- = C.NameCon (Text.unpack tx)
-
-
-toCoreDaConBound :: S.DaConBound -> C.Name
-toCoreDaConBound dcb
- = case dcb of
-        S.DaConBoundName tx
-         -> C.NameCon (Text.unpack tx)
-
-        S.DaConBoundLit lit
-         -> case lit of
-                S.PrimLitBool    x   -> C.NameLitBool    x
-                S.PrimLitNat     x   -> C.NameLitNat     x
-                S.PrimLitInt     x   -> C.NameLitInt     x
-                S.PrimLitSize    x   -> C.NameLitSize    x
-                S.PrimLitWord    x s -> C.NameLitWord    x s
-                S.PrimLitFloat   x s -> C.NameLitFloat   x s
-                S.PrimLitTextLit x   -> C.NameLitTextLit x
-
-
 -- | Convert a Tetra specific type constructor to core.
 toCoreTyConTetra :: S.PrimTyConTetra -> C.TyConTetra
 toCoreTyConTetra tc
@@ -599,3 +582,45 @@ toCoreTyConTetra tc
         S.PrimTyConTetraF       -> C.TyConTetraF
         S.PrimTyConTetraC       -> C.TyConTetraC
         S.PrimTyConTetraU       -> C.TyConTetraU
+
+
+-- | Convert a binding occurrences of a data constructor to a core name.
+toCoreDaConBind :: S.DaConBind -> C.Name
+toCoreDaConBind (S.DaConBindName tx)
+ = C.NameCon (Text.unpack tx)
+
+
+-- | Convert a bound occurrence of a data constructor to a core name.
+toCoreDaConBound :: S.DaConBound -> C.Name
+toCoreDaConBound dcb
+ = case dcb of
+        S.DaConBoundName tx
+         -> C.NameCon (Text.unpack tx)
+
+        S.DaConBoundLit pl
+         -> toCorePrimLit pl
+
+
+-- | Convert a value primtivie to a core name.
+toCorePrimVal :: S.PrimVal -> C.Name
+toCorePrimVal pv
+ = case pv of
+        S.PrimValArith  p       -> C.NamePrimArith  p False
+        S.PrimValError  p       -> C.NameOpError  p False
+        S.PrimValVector p       -> C.NameOpVector p False
+        S.PrimValFun    p       -> C.NameOpFun    p
+        S.PrimValLit    p       -> toCorePrimLit p
+
+
+-- | Convert a primitive literal to a core name.
+toCorePrimLit :: S.PrimLit -> C.Name
+toCorePrimLit pl
+ = case pl of       
+        S.PrimLitBool    x      -> C.NameLitBool    x
+        S.PrimLitNat     x      -> C.NameLitNat     x
+        S.PrimLitInt     x      -> C.NameLitInt     x
+        S.PrimLitSize    x      -> C.NameLitSize    x
+        S.PrimLitWord    x s    -> C.NameLitWord    x s
+        S.PrimLitFloat   x s    -> C.NameLitFloat   x s
+        S.PrimLitTextLit x      -> C.NameLitTextLit x
+
