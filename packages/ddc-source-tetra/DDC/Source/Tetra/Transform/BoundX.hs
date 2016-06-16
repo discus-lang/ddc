@@ -1,11 +1,10 @@
 {-# LANGUAGE TypeFamilies #-}
--- | Lifting and lowering level-0 deBruijn indices in source expressions.
+-- | Lifting level-0 deBruijn indices in source expressions.
 --
 --   Level-0 indices are used for both value and witness variables.
 --
 module DDC.Source.Tetra.Transform.BoundX
         ( liftX,        liftAtDepthX
---        , lowerX,       lowerAtDepthX
         , MapBoundX     (..)
         , HasAnonBind   (..))
 where
@@ -41,6 +40,7 @@ liftAtDepthX l n d
                 UIx i
                  | d' <= i      -> UIx (i + n)
                  | otherwise    -> u
+                UHole{}         -> u
 
 
 -- | Wrapper for `liftAtDepthX` that starts at depth 0.       

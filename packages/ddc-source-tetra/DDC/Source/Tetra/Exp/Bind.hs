@@ -16,14 +16,20 @@ data Bind
         = BNone
         | BAnon
         | BName !Text
-        deriving Show
+        deriving (Eq, Ord, Show)
 
 
 -- | Bound occurrence of a variable.
 data Bound 
-        = UIx   !Int
-        | UName !Text
-        deriving (Show, Eq)
+        -- A named variable.
+        = UName !Text
+
+        -- A deBruijn idex.
+        | UIx   !Int
+
+        -- A hole that we want the type checker to fill in.
+        | UHole
+        deriving (Eq, Ord, Show)
 
 
 -- | Binding occurrence of a data constructor.

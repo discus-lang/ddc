@@ -1,18 +1,21 @@
-{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE TypeFamilies, UndecidableInstances #-}
 
 -- | Source Tetra data type definitions.
 module DDC.Source.Tetra.DataDef
         ( -- * Data Type Definition.
           DataDef  (..)
---        , typeEnvOfDataDef
+        , envOfDataDef
           
           -- * Data Constructor Definition.
         , DataCtor (..)
         , typeOfDataCtor)
 where
 import DDC.Source.Tetra.Exp.Generic
--- import DDC.Type.Env             (TypeEnv)
--- import qualified DDC.Type.Env   as Env
+import DDC.Source.Tetra.Exp.Source
+import DDC.Source.Tetra.Env             (Env)
+import qualified DDC.Source.Tetra.Env   as Env
+-- import DDC.Type.Env                  (TypeEnv)
+-- import qualified DDC.Type.Env        as Env
 import Control.DeepSeq
 
 
@@ -37,14 +40,14 @@ instance NFData (DataDef n) where
 
 
 -- | Take the types of data constructors from a data type definition.
-{-
-typeEnvOfDataDef :: Ord n => DataDef n -> TypeEnv n
-typeEnvOfDataDef def 
- = Env.fromList 
-        [BName  (dataCtorName ctor) 
-                (typeOfDataCtor def ctor)
-                | ctor  <- dataDefCtors def ]
--}              
+envOfDataDef 
+        :: DataDef Source -> Env
+
+envOfDataDef def 
+        =  Env.unions
+        $ [Env.singletonDaCon (dataCtorName ctor) (typeOfDataCtor def ctor)
+                | ctor  <- dataDefCtors def]
+              
 
 -- DataCtor -------------------------------------------------------------------
 -- | A data type constructor definition.

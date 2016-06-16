@@ -44,6 +44,7 @@ instance Pretty Bound where
   = case uu of
         UIx i   -> int i
         UName t -> text (Text.unpack t)
+        UHole   -> text "?"
 
 
 instance Pretty DaConBind where

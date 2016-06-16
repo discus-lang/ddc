@@ -13,7 +13,6 @@ import DDC.Data.SourcePos
 import qualified DDC.Source.Tetra.Transform.Guards      as S
 import qualified DDC.Source.Tetra.Module                as S
 import qualified DDC.Source.Tetra.DataDef               as S
--- import qualified DDC.Source.Tetra.Env                   as S
 import qualified DDC.Source.Tetra.Compounds             as S
 import qualified DDC.Source.Tetra.Exp.Source            as S
 import qualified DDC.Source.Tetra.Prim                  as S
@@ -495,8 +494,9 @@ toCoreTUCN (S.TyConBoundName n)
 toCoreXUVN :: S.Bound -> ConvertM a C.Name
 toCoreXUVN uu
  = case uu of
-        S.UIx  _i -> error "ddc-source-tetra.toCoreXBVN: anon bound"
         S.UName n -> return $ C.NameCon (Text.unpack n)
+        S.UIx  _i -> error "ddc-source-tetra.toCoreXBVN: anon bound"
+        S.UHole   -> return $ C.NameHole        
 
 
 toCoreXBVN  :: S.GTBindVar S.Source -> ConvertM a C.Name
@@ -553,11 +553,9 @@ toCoreBM bb
 toCoreU :: S.Bound -> ConvertM a (C.Bound C.Name)
 toCoreU uu
  = case uu of
-        S.UName n
-         -> C.UName <$> pure (C.NameVar (Text.unpack n))
-
-        S.UIx   i
-         -> C.UIx   <$> (pure i)
+        S.UName n       -> C.UName <$> pure (C.NameVar (Text.unpack n))
+        S.UIx   i       -> C.UIx   <$> (pure i)
+        S.UHole         -> C.UName <$> pure (C.NameHole)
 
 
 -- Name -------------------------------------------------------------------------------------------

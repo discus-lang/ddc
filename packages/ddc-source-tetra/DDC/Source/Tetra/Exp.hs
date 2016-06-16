@@ -1,10 +1,14 @@
 
 -- | Definition of Source Tetra Expressions.
 module DDC.Source.Tetra.Exp
-        ( -- * Types
+        ( -- * Binding
+          Bind          (..)
+        , Bound         (..)
+
+          -- * Types
 
           -- ** Syntax
-          GTAnnot
+        , GTAnnot
         , GTBindVar,    GTBoundVar
         , GTBindCon,    GTBoundCon
         , GTPrim
