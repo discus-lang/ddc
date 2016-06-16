@@ -174,15 +174,9 @@ pTyConSP  =   P.pTokMaybeSP f <?> "a type constructor"
                 KA (KTcConBuiltin c)
                  -> Just $ TyConPrim $ PrimTypeTcCon c
 
-                -- Primitive Machine TyCons.
-                KN (KCon (NameCon tx))
-                 |  Just tc  <- C.readPrimTyCon (T.unpack tx)
-                 -> Just $ TyConPrim $ PrimTypeTyCon tc
-
-                -- Primitive Tetra TyCons.
-                KN (KCon (NameCon tx))
-                 |  Just tc  <- S.readPrimTyConTetra (T.unpack tx)
-                 -> Just $ TyConPrim $ PrimTypeTyConTetra tc
+                -- Primitive TyCons.
+                KN (KCon (NamePrimType tc))
+                 -> Just $ TyConPrim tc
 
                 -- User Bound TyCons.
                 KN (KCon (NameCon tx))

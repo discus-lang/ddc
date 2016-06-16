@@ -8,15 +8,18 @@ module DDC.Source.Tetra.Parser.Base
 
           -- * Term Variables
         , pBindNameSP
-        , pBoundName,      pBoundNameSP
+        , pBoundName,           pBoundNameSP
         , pBoundIxSP
         , pBoundNameOpVarSP
         , pBoundNameOpSP
 
+          -- * TyCons
+        , pTyConBindName,       pTyConBindNameSP
+
           -- * DaCons
         , pDaConBindName
-        , pDaConBoundName, pDaConBoundNameSP
-        , pDaConBoundLit,  pDaConBoundLitSP
+        , pDaConBoundName,      pDaConBoundNameSP
+        , pDaConBoundLit,       pDaConBoundLitSP
 
           -- * Primitive Operators
         , pPrimValSP)
@@ -79,6 +82,22 @@ pBoundNameOpVarSP :: Parser (Bound, SourcePos)
 pBoundNameOpVarSP = P.pTokMaybeSP f
  where  f (KA (KOpVar s))               = Just (UName (Text.pack s))
         f _                             = Nothing
+
+
+-- TyCons ---------------------------------------------------------------------
+-- | Parse a binding occurrences of a type constructor name.
+pTyConBindName :: Parser TyConBind
+pTyConBindName = P.pTokMaybe f
+ where  f (KN (KCon (NameCon n)))       = Just (TyConBindName n)
+        f _                             = Nothing
+
+
+-- | Parse a binding occurrences of a type constructor name.
+pTyConBindNameSP :: Parser (TyConBind, SourcePos)
+pTyConBindNameSP = P.pTokMaybeSP f
+ where  f (KN (KCon (NameCon n)))       = Just (TyConBindName n)
+        f _                             = Nothing
+
 
 
 -- DaCons ---------------------------------------------------------------------

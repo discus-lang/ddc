@@ -144,16 +144,16 @@ pImportSpecs
 pImportType :: String -> Parser ImportSpec
 pImportType src
         | "abstract"    <- src
-        = do    (BName n, _)    <- pBindNameSP
+        = do    b       <- pTyConBindName
                 pTokSP (KOp ":")
                 k       <- pType
-                return  (ImportType (TyConBindName n) (ImportTypeAbstract k))
+                return  (ImportType b (ImportTypeAbstract k))
 
-        | "boxed"               <- src
-        = do    (BName n, _)    <- pBindNameSP
+        | "boxed"       <- src
+        = do    b       <- pTyConBindName
                 pTokSP (KOp ":")
                 k       <- pType
-                return  (ImportType (TyConBindName n) (ImportTypeBoxed k))
+                return  (ImportType b (ImportTypeBoxed k))
 
         | otherwise
         = P.unexpected "import mode for foreign type"
@@ -207,9 +207,9 @@ pTop
 -- | Parse a data type declaration.
 pData  :: Parser (Top Source)
 pData
- = do   sp              <- pTokSP K.KData
-        (BName n, _)    <- pBindNameSP
-        ps              <- liftM concat $ P.many pDataParam
+ = do   sp      <- pTokSP K.KData
+        b       <- pTyConBindName
+        ps      <- liftM concat $ P.many pDataParam
              
         P.choice
          [ -- Data declaration with constructors that have explicit types.
@@ -217,10 +217,10 @@ pData
                 pTok KBraceBra
                 ctors   <- P.sepEndBy1 pDataCtor (pTok KSemiColon)
                 pTok KBraceKet
-                return  $ TopData sp (DataDef (TyConBindName n) ps ctors)
+                return  $ TopData sp (DataDef b ps ctors)
          
            -- Data declaration with no data constructors.
-         , do   return  $ TopData sp (DataDef (TyConBindName n) ps [])
+         , do   return  $ TopData sp (DataDef b ps [])
          ]
 
 

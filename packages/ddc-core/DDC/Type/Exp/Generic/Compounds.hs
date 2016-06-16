@@ -1,7 +1,13 @@
 {-# OPTIONS -fno-warn-missing-signatures #-}
 module DDC.Type.Exp.Generic.Compounds
-        ( -- * Type Applications
-          makeTApps,    takeTApps
+        ( -- * Destructors
+          takeTCon
+        , takeTVar
+        , takeTAbs
+        , takeTApp
+
+          -- * Type Applications
+        , makeTApps,    takeTApps
 
           -- * Function Types
         , makeTFun,     makeTFuns,      makeTFuns',     (~>)
@@ -18,6 +24,43 @@ import DDC.Type.Exp.Generic.Exp
 import DDC.Type.Exp.Generic.Binding
 
 
+-- Destructors ----------------------------------------------------------------
+-- | Take a type constructor, looking through annotations.
+takeTCon :: GType l -> Maybe (GTyCon l)
+takeTCon tt
+ = case tt of
+        TAnnot _ t      -> takeTCon t
+        TCon   tc       -> Just tc
+        _               -> Nothing
+
+
+-- | Take a type variable, looking through annotations.
+takeTVar :: GType l -> Maybe (GTBoundVar l)
+takeTVar tt
+ = case tt of
+        TAnnot _ t      -> takeTVar t
+        TVar u          -> Just u
+        _               -> Nothing
+
+
+-- | Take a type abstraction, looking through annotations.
+takeTAbs :: GType l -> Maybe (GTBindVar l, GType l)
+takeTAbs tt
+ = case tt of
+        TAnnot _ t      -> takeTAbs t
+        TAbs b t        -> Just (b, t)
+        _               -> Nothing
+
+
+-- | Take a type application, looking through annotations.
+takeTApp :: GType l -> Maybe (GType l, GType l)
+takeTApp tt
+ = case tt of
+        TAnnot _ t      -> takeTApp t
+        TApp t1 t2      -> Just (t1, t2)
+        _               -> Nothing
+
+
 -- Type Applications ----------------------------------------------------------
 -- | Construct a sequence of type applications.
 makeTApps :: GType l -> [GType l] -> GType l
@@ -28,9 +71,9 @@ makeTApps t1 ts     = foldl TApp t1 ts
 --   arguments, if any.
 takeTApps :: GType l -> [GType l]
 takeTApps tt
- = case tt of
-        TApp t1 t2 -> takeTApps t1 ++ [t2]
-        _          -> [tt]
+ = case takeTApp tt of
+        Just (t1, t2) -> takeTApps t1 ++ [t2]
+        _             -> [tt]
 
 
 -- Function Types -------------------------------------------------------------
@@ -61,18 +104,20 @@ makeTFuns' ts
 --   returning `Nothing` if this isn't a function type.
 takeTFun :: GType l -> Maybe (GType l, GType l)
 takeTFun tt
- = case tt of
-        TApp (TApp (TCon TyConFun) t1) t2 
-                -> Just (t1, t2)
-        _       -> Nothing
+        | Just (t1f, t2)               <- takeTApp tt
+        , Just (TCon TyConFun, t1)     <- takeTApp t1f
+        = Just (t1, t2)
+
+        | otherwise
+        = Nothing
 
 
 -- | Destruct a function type into into all its parameters and result type,
 --   returning an empty parameter list if this isn't a function type.
 takeTFuns :: GType l -> ([GType l], GType l)
 takeTFuns tt
- = case tt of
-        TApp (TApp (TCon TyConFun) t1) t2
+ = case takeTFun tt of
+        Just (t1, t2)
           |  (ts, t2') <- takeTFuns t2
           -> (t1 : ts, t2')
 
@@ -104,8 +149,14 @@ makeTForalls l ks makeBody
 
 -- | Destruct a forall quantified type, if this is one.
 takeTForall :: GType l -> Maybe (GType l, GTBindVar l, GType l)
-takeTForall (TForall k b t)     = Just (k, b, t)
-takeTForall _                   = Nothing
+takeTForall tt
+        | Just (t1, t2)         <- takeTApp tt
+        , Just (TyConForall k)  <- takeTCon t1
+        , Just (b, t)           <- takeTAbs t2
+        = Just (k, b, t)
+
+        | otherwise
+        = Nothing
 
 
 -- Exists types ---------------------------------------------------------------

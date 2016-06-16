@@ -208,7 +208,7 @@ toCoreT tt
         S.TApp t1 t2
          -> C.TApp    <$> toCoreT t1 <*> toCoreT t2
 
-        _ -> error "Convert.toCoreT: finish me"
+        _ -> error $ "Convert.toCoreT: finish me " ++ show tt
 
 {-
         S.TSum ts
@@ -224,16 +224,39 @@ toCoreT tt
 toCoreTC :: S.TyCon -> ConvertM a (C.TyCon C.Name)
 toCoreTC tc
  = case tc of
-        S.TyConVoid             -> error "ddc-source-tetra.toCoreTC: finish me"
-        S.TyConUnit             -> pure $ C.TyConSpec C.TcConUnit
-        S.TyConFun              -> pure $ C.TyConSpec C.TcConFun
-        S.TyConSum _            -> error "ddc-source-tetra.toCoreTC: named sum"         
-        S.TyConBot _k           -> error "ddc-source-tetra.toCoreTC: bot"
-        S.TyConForall _k        -> error "ddc-source-tetra.toCoreTC: naked forall"
-        S.TyConExists _k        -> error "ddc-source-tetra.toCoreTC: naked exists"
+        S.TyConVoid             -> error $ "ddc-source-tetra.toCoreTC: finish me" ++ show tc
+        S.TyConUnit             -> pure  $ C.TyConSpec C.TcConUnit
+        S.TyConFun              -> pure  $ C.TyConSpec C.TcConFun
+        S.TyConSum _            -> error $ "ddc-source-tetra.toCoreTC: named sum"         
+        S.TyConBot _k           -> error $ "ddc-source-tetra.toCoreTC: bot"
+        S.TyConForall _k        -> error $ "ddc-source-tetra.toCoreTC: naked forall"
+        S.TyConExists _k        -> error $ "ddc-source-tetra.toCoreTC: naked exists"
 
-        S.TyConPrim _           -> error "ddc-source-tetra.toCoreTC: finish me"
-        S.TyConBound _          -> error "ddc-source-tetra.toCoreTC: finish me"
+        -- Primitive type constructors.
+        S.TyConPrim pt
+         -> case pt of
+                -- Ambient TyCons
+                S.PrimTypeSoCon sc      -> pure $ C.TyConSort    sc
+                S.PrimTypeKiCon kc      -> pure $ C.TyConKind    kc
+                S.PrimTypeTwCon tw      -> pure $ C.TyConWitness tw
+                S.PrimTypeTcCon ts      -> pure $ C.TyConSpec    ts
+
+                -- Primitive TyCons
+                S.PrimTypeTyCon tcy
+                 -> do  k       <- toCoreT $ S.kindPrimTyCon tcy
+                        return  $ C.TyConBound (C.UPrim (C.NamePrimTyCon tcy) k) k
+
+                S.PrimTypeTyConTetra tct 
+                 -> do  k        <- toCoreT $ S.kindPrimTyConTetra tct
+                        let tct' =  toCoreTyConTetra tct
+                        pure $ C.TyConBound (C.UPrim (C.NameTyConTetra tct') k) k
+
+        -- Bound type constructors.
+        --   The embedded kind is set to Bot. We rely on the spreader
+        --   to fill in the real kind before type checking.
+        S.TyConBound (S.TyConBoundName tx)
+         -> return $ C.TyConBound (C.UName (C.NameCon (Text.unpack tx))) 
+                                  (C.tBot C.kData)
 
 
 -- DataDef ----------------------------------------------------------------------------------------
@@ -456,7 +479,6 @@ toCoreWC wc
 
 
 -- Bind -------------------------------------------------------------------------------------------
-
 -- | Convert a type constructor binding occurrence to a core name.
 toCoreTBCN :: S.GTBindCon S.Source  -> ConvertM a C.Name
 toCoreTBCN (S.TyConBindName n)
@@ -561,49 +583,6 @@ toCoreDaConBound dcb
                 S.PrimLitTextLit x   -> C.NameLitTextLit x
 
 
-
-{-
-toCoreN :: S.Name -> C.Name
-toCoreN nn
- = case nn of
-        S.NameVar str
-         -> C.NameVar str
-
-        S.NameCon str
-         -> C.NameCon str
-
-        S.NamePrim (S.PrimNameType (S.PrimTypeTyConTetra tc))
-         -> C.NameTyConTetra (toCoreTyConTetra tc)
-
-        S.NamePrim (S.PrimNameType (S.PrimTypeTyCon p))
-         -> C.NamePrimTyCon  p
-
-        S.NamePrim (S.PrimNameVal (S.PrimValLit lit))
-         -> case lit of
-                S.PrimLitBool    x   -> C.NameLitBool    x
-                S.PrimLitNat     x   -> C.NameLitNat     x
-                S.PrimLitInt     x   -> C.NameLitInt     x
-                S.PrimLitSize    x   -> C.NameLitSize    x
-                S.PrimLitWord    x s -> C.NameLitWord    x s
-                S.PrimLitFloat   x s -> C.NameLitFloat   x s
-                S.PrimLitTextLit x   -> C.NameLitTextLit x
-
-        S.NamePrim (S.PrimNameVal (S.PrimValArith p))
-         -> C.NamePrimArith p False
-
-        S.NamePrim (S.PrimNameVal (S.PrimValVector p))
-         -> C.NameOpVector  p False
-
-        S.NamePrim (S.PrimNameVal (S.PrimValFun   p))
-         -> C.NameOpFun     p
-
-        S.NamePrim (S.PrimNameVal (S.PrimValError p))
-         -> C.NameOpError   p False
-
-        _ -> error "ddc-source-tetra.toCoreN: not finished"
--}
-
-{-
 -- | Convert a Tetra specific type constructor to core.
 toCoreTyConTetra :: S.PrimTyConTetra -> C.TyConTetra
 toCoreTyConTetra tc
@@ -613,4 +592,3 @@ toCoreTyConTetra tc
         S.PrimTyConTetraF       -> C.TyConTetraF
         S.PrimTyConTetraC       -> C.TyConTetraC
         S.PrimTyConTetraU       -> C.TyConTetraU
--}
