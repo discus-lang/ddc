@@ -8,15 +8,15 @@ module Test where
 -- Parse module with some top-level things.
 -- Top level things are signaled by 'where'.
 module Test where
-x : Nat  = 5
-y : Nat 
+x  = 5
+y 
   = [DEFIX| add# x x ]
 
 
 -- Factorial with primops.
 module Test where
-fac : Nat -> Nat 
-  = \x : Nat.
+fac 
+  = \x.
     case x of {
       0 
         -> 1;
@@ -27,8 +27,8 @@ fac : Nat -> Nat
 
 -- Factorial with infix operators.
 module Test where
-fac : Nat -> Nat 
-  = \x : Nat.
+fac 
+  = \x.
     case x of {
       0 
         -> 1;
@@ -39,8 +39,8 @@ fac : Nat -> Nat
 
 -- All the literals
 module Test where
-foo : Unit -> Unit 
-  = \_ : Unit.
+foo 
+  = \_.
     let b1 = True# in
     let b2 = False# in
     let n1 = 1 in
