@@ -25,6 +25,7 @@ module DDC.Type.Exp.Simple.Predicates
         , isConstWitType
         , isMutableWitType
         , isDistinctWitType
+        , isFunishTCon
 
           -- * Effect Types
         , isReadEffect
@@ -183,6 +184,16 @@ isDistinctWitType tt
         Just (TyConWitness (TwConDistinct _), _) -> True
         _                                        -> False
         
+
+-- | Check if this is the TyFun or KiFun constructor.
+--   TODO: We're migrating to use the same constructor for both levels.
+isFunishTCon :: Type n -> Bool
+isFunishTCon tt
+ = case tt of
+        TCon (TyConSpec TcConFun)               -> True
+        TCon (TyConKind KiConFun)               -> True
+        _                                       -> False
+
 
 -- Effects --------------------------------------------------------------------
 -- | Check whether this is an atomic read effect.

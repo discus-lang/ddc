@@ -9,6 +9,7 @@ import DDC.Type.Check.CheckCon
 import DDC.Type.Check.Config
 import DDC.Type.Check.Base
 import DDC.Type.Check.Judge.Eq
+import DDC.Type.Exp.Simple.Predicates
 import DDC.Type.Universe
 import Data.List
 import Control.Monad
@@ -367,7 +368,8 @@ checkTypeM config kenv ctx0 uni@UniverseSpec
 -- because the constructor doesn't have a sort by itself.
 -- The sort of a kind function is the sort of the result.
 checkTypeM config kenv ctx0 uni@UniverseKind 
-        tt@(TApp (TApp (TCon (TyConKind KiConFun)) k1) k2) mode
+        tt@(TApp (TApp ttFun k1) k2) mode
+ | isFunishTCon ttFun
  = case mode of
     Recon
      -> do
@@ -439,8 +441,9 @@ checkTypeM config kenv ctx0 UniverseSpec
 
         -- The kind of the parameter must match that of the argument
         case kFn of
-         TApp (TApp (TCon (TyConKind KiConFun)) kParam) kBody
-           |  equivT kParam kArg
+         TApp (TApp ttFun kParam) kBody
+           | isFunishTCon ttFun 
+           , equivT kParam kArg
            -> return (tApp tFn' tArg', kBody, ctx2)
 
            | otherwise
@@ -611,7 +614,8 @@ synthTAppArg config kenv ctx0 tFn kFn tArg
         return (kBody, tArg', ctx2)
 
 
- | TApp (TApp (TCon (TyConKind KiConFun)) kParam) kBody <- kFn
+ | TApp (TApp ttFun kParam) kBody <- kFn
+ , isFunishTCon ttFun
  = do   
         -- The kind of the argument must match the parameter kind
         (tArg', _kArg, ctx1) 
