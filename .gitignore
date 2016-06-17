@@ -13,6 +13,7 @@
 *.ddc.h
 *.dep
 *.bin
+.DS_Store
 _darcs
 war.results
 war.failed
