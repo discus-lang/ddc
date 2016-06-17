@@ -67,11 +67,13 @@ expandM a env mm
                     in  ( TopClause aT (SLet aL bm' [] [GExp x'])
                         , Env.extendDaVarMT bm' Env.empty)
 
-                TopData _ def
-                 -> (p, envOfDataDef def)
-
                 -- Clauses should have already desugared.
-                _ -> error "source-tetra.expand: can't expand sugared TopClause."
+                TopClause{}
+                 -> error $ "source-tetra.expand: can't expand sugared TopClause."
+                          ++ show p
+
+                TopData _ def   -> (p, envOfDataDef def)
+                TopType{}       -> (p, Env.empty)
 
         (tops_quant, envs)
                 = unzip $ map preTop $ moduleTops mm
@@ -97,11 +99,11 @@ expandT _a env top
                 x'      = expand a2 env' x
             in  TopClause a1 (SLet a2 bm [] [GExp x'])
 
+        TopClause{}
+         -> error "source-tetra.expand: can't expand sugared TopClause."
+
         TopData{} -> top
-
-        -- Clauses should have already been desugared.
-        _   -> error "source-tetra.expand: can't expand sugared TopClause."
-
+        TopType{} -> top
 
 ---------------------------------------------------------------------------------------------------
 instance Expand Exp where

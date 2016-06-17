@@ -100,6 +100,12 @@ data Top l
         { topAnnot      :: GXAnnot l
         , topDataDef    :: DataDef l }
 
+        -- | Type binding.
+        | TopType
+        { topAnnot      :: GXAnnot l
+        , topTypeBind   :: GTBindCon l
+        , topTypeExp    :: GType l }
+
 
 deriving instance ShowLanguage l => Show (Top l)
 
@@ -108,4 +114,5 @@ instance NFDataLanguage l => NFData (Top l) where
   = case top of
         TopClause a c   -> rnf a `seq` rnf c
         TopData   a def -> rnf a `seq` rnf def
+        TopType   a b t -> rnf a `seq` rnf b `seq` rnf t
 

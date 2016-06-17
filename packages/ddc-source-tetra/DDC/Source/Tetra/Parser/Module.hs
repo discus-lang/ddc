@@ -198,17 +198,20 @@ pTop
         return  $ TopClause sp l
  
         -- A data type declaration
- , do   pData
+ , do   pDataDef
+
+        -- A type binding
+ , do   pTypeDef
  ]
 
 
 -- Data -------------------------------------------------------------------------------------------
 -- | Parse a data type declaration.
-pData  :: Parser (Top Source)
-pData
+pDataDef :: Parser (Top Source)
+pDataDef
  = do   sp      <- pTokSP K.KData
         b       <- pTyConBindName
-        ps      <- liftM concat $ P.many pDataParam
+        ps      <- liftM concat $ P.many pTypeParam
              
         P.choice
          [ -- Data declaration with constructors that have explicit types.
@@ -222,18 +225,6 @@ pData
          , do   return  $ TopData sp (DataDef b ps [])
          ]
 
-
--- | Parse a type parameter to a data type.
-pDataParam :: Parser [(Bind, Type)]
-pDataParam 
- = do   pTok KRoundBra
-        bs      <- fmap (fst . unzip) $ P.many1 pBindNameSP
-        pTokSP (KOp ":")
-        k       <- pType
-        pTok KRoundKet
-        return  [(b, k) | b <- bs]
-
-
 -- | Parse a data constructor declaration.
 pDataCtor :: Parser (DataCtor Source)
 pDataCtor
@@ -246,4 +237,29 @@ pDataCtor
                 { dataCtorName          = n
                 , dataCtorFieldTypes    = tsArg
                 , dataCtorResultType    = tResult }
+
+
+-- Type -------------------------------------------------------------------------------------------
+pTypeDef :: Parser (Top Source)
+pTypeDef
+ = do   sp      <- pTokSP K.KType
+        bType   <- pTyConBindName
+        bsParam <- liftM concat $ P.many pTypeParam
+        _       <- pTokSP K.KEquals
+        tBody   <- pType
+
+        return  $  TopType sp bType 
+                $  foldr (\(b, k) t -> TAbs b k t) tBody bsParam
+
+
+-- | Parse a type parameter to a data type or type function.
+pTypeParam :: Parser [(Bind, Type)]
+pTypeParam 
+ = do   pTok KRoundBra
+        bs      <- fmap (fst . unzip) $ P.many1 pBindNameSP
+        pTokSP (KOp ":")
+        k       <- pType
+        pTok KRoundKet
+        return  [(b, k) | b <- bs]
+
 

@@ -78,7 +78,7 @@ instance PrettyLanguage l => Pretty (GXBindVarMT l) where
 instance PrettyLanguage l => Pretty (GType l) where
  ppr tt
   = case tt of
-        TAnnot a t      -> braces (ppr a) <> text "@" <> ppr t
+        TAnnot _ t      -> ppr t
         TCon tc         -> ppr tc
         TVar bv         -> ppr bv
         TAbs bv k t     -> text "λ" <> ppr bv <> text ":" <+> ppr k <> text "." <+> ppr t
@@ -144,6 +144,9 @@ instance PrettyLanguage l => Pretty (Top l) where
                         | ctor       <- ctors ])
   <> line
   <> rbrace
+
+ ppr (TopType _ b t)
+  = text "type" <+> ppr b <+> text "=" <+> ppr t
 
 
 -- Exp --------------------------------------------------------------------------------------------
