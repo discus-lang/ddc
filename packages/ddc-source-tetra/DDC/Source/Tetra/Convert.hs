@@ -216,7 +216,7 @@ toCoreT uu tt
         S.TVar u
          -> C.TVar <$> toCoreU  u
 
-        S.TApp (S.TCon (S.TyConForall k)) (S.TAbs b t)
+        S.TApp (S.TCon (S.TyConForall _)) (S.TAbs b k t)
          -> let uu'     =  universeUp uu
             in  C.TForall <$> toCoreBM uu' (S.XBindVarMT b (Just k)) <*> toCoreT uu t
 

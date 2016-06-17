@@ -34,9 +34,9 @@ pprRawPrecT d tt
         TCon c   -> pprRawC c
         TVar u   -> ppr u
 
-        TAbs b t 
+        TAbs b k t 
          -> pprParen (d > 1) 
-         $  text "λ" <> ppr b <> text "." <+> pprRawT t
+         $  text "λ" <> ppr b <> text ":" <+> pprRawT k <> text "." <+> pprRawT t
 
         TApp t1 t2
          -> pprParen (d > 10)

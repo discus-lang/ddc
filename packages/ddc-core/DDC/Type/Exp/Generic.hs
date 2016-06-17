@@ -15,8 +15,6 @@ module DDC.Type.Exp.Generic
         , pattern TUnit
         , pattern TVoid
         , pattern TBot
-        , pattern TForall
-        , pattern TExists
         , pattern TPrim
 
           -- * Compounds

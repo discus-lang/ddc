@@ -14,8 +14,6 @@ import DDC.Source.Tetra.Exp.Generic
 import DDC.Source.Tetra.Exp.Source
 import DDC.Source.Tetra.Env             (Env)
 import qualified DDC.Source.Tetra.Env   as Env
--- import DDC.Type.Env                  (TypeEnv)
--- import qualified DDC.Type.Env        as Env
 import Control.DeepSeq
 
 
@@ -74,7 +72,11 @@ instance NFData (DataCtor n) where
 -- | Get the type of a data constructor.
 typeOfDataCtor :: DataDef l -> DataCtor l -> GType l
 typeOfDataCtor def ctor
-        = foldr (\(b, k) -> TForall k b)
+        = foldr (\(b, k) t -> TApp (TCon (TyConForall k)) (TAbs b k t))
                 (foldr TFun (dataCtorResultType ctor)
                             (dataCtorFieldTypes ctor))
                 (dataDefParams def)
+
+
+
+

@@ -57,8 +57,8 @@ funTypeOfParams [] tBody
 funTypeOfParams (p:ps) tBody
  = case p of
         ParamType     b mt
-         -> TForall (fromMaybe (TBot KData) mt) b
-          $ funTypeOfParams ps tBody
+         -> let k       = fromMaybe (TBot KData) mt
+            in  TApp (TCon (TyConForall k)) (TAbs b k $ funTypeOfParams ps tBody)
 
         ParamWitness  _ mt
          -> TImpl (fromMaybe (TBot KData) mt)

@@ -100,6 +100,7 @@ data Top l
         { topAnnot      :: GXAnnot l
         , topDataDef    :: DataDef l }
 
+
 deriving instance ShowLanguage l => Show (Top l)
 
 instance NFDataLanguage l => NFData (Top l) where

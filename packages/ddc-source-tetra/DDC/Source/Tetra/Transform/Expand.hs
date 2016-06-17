@@ -286,7 +286,8 @@ expandQuant env bmBind xBind
         -- Attach quantifiers to the front of the old type,
         --   using a hole bound to indicate we want the type inferencer,
         --   to infer a kind or this.
-        tBind'  = foldr (TForall (TVar UHole)) tBind bsNew
+        k       = TVar UHole
+        tBind'  = foldr (\b t -> TApp (TCon (TyConForall k)) (TAbs b k t)) tBind bsNew
 
         -- Attach type lambdas to the front of the term
         --   using a matching hole bound on the type abstraction.

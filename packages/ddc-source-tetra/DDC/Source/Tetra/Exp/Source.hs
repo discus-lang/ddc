@@ -31,8 +31,6 @@ module DDC.Source.Tetra.Exp.Source
         , pattern TVoid, pattern TUnit
         , pattern TFun
         , pattern TBot,  pattern TSum
-        , pattern TForall
-        , pattern TExists
         , pattern TPrim
 
           -- ** Primitives 

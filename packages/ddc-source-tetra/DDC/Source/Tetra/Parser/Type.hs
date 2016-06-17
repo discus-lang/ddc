@@ -70,7 +70,10 @@ pTypeForall
                 pTok KDot
 
                 tBody   <- pTypeForall
-                return  $ foldr (\b t -> TAnnot sp $ TForall kBind b t) tBody bs
+                return  $ foldr (\b t   -> TAnnot sp 
+                                        $  TApp (TCon (TyConForall kBind)) 
+                                                (TAbs b kBind t)) 
+                                tBody bs
 
            -- Body type
          , do   pTypeFun

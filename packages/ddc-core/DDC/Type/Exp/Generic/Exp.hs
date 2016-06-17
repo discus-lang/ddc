@@ -23,8 +23,6 @@ module DDC.Type.Exp.Generic.Exp
         , pattern TFun
         , pattern TBot
         , pattern TSum
-        , pattern TForall
-        , pattern TExists
         , pattern TPrim
 
           -- * Classes
@@ -67,10 +65,10 @@ data GType l
         | TVar       !(GTBoundVar l)
 
         -- | Type abstracton.
-        | TAbs       !(GTBindVar  l) (GType l)
+        | TAbs       !(GTBindVar l) (GType l) (GType l)
 
         -- | Type application.
-        | TApp       !(GType      l) (GType l)
+        | TApp       !(GType l) (GType l)
 
 
 -- | Applcation of a type to two arguments.
@@ -145,12 +143,6 @@ pattern TBot k          = TCon (TyConBot k)
 
 -- | Representation of a sum of two types.
 pattern TSum k t1 t2    = TApp (TApp (TCon (TyConSum k)) t1) t2
-
--- | Representation of forall quantified types.
-pattern TForall k b t   = TApp (TCon (TyConForall k)) (TAbs b t)
-
--- | Representation of exists quantified types.
-pattern TExists k b t   = TApp (TCon (TyConExists k)) (TAbs b t)
 
 -- | Representation of primitive type constructors.
 pattern TPrim   p       = TCon (TyConPrim p)

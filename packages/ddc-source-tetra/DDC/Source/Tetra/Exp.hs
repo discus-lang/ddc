@@ -48,8 +48,6 @@ module DDC.Source.Tetra.Exp
         , pattern TVoid, pattern TUnit
         , pattern TFun
         , pattern TBot,  pattern TSum
-        , pattern TForall
-        , pattern TExists
         , pattern TPrim
 
         , pattern KData, pattern KRegion, pattern KEffect

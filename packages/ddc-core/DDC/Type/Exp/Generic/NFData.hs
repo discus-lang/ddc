@@ -19,7 +19,7 @@ instance NFDataLanguage l => NFData (GType l) where
         TAnnot a t      -> rnf a  `seq` rnf t
         TCon   tc       -> rnf tc
         TVar   bv       -> rnf bv
-        TAbs   bv t     -> rnf bv `seq` rnf t
+        TAbs   bv k t   -> rnf bv `seq` rnf k `seq` rnf t
         TApp   t1 t2    -> rnf t1 `seq` rnf t2
 
 

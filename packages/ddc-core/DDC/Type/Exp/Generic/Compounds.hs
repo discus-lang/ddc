@@ -49,11 +49,11 @@ takeTVar tt
 
 
 -- | Take a type abstraction, looking through annotations.
-takeTAbs :: GType l -> Maybe (GTBindVar l, GType l)
+takeTAbs :: GType l -> Maybe (GTBindVar l, GType l, GType l)
 takeTAbs tt
  = case tt of
         TAnnot _ t      -> takeTAbs t
-        TAbs b t        -> Just (b, t)
+        TAbs b k t      -> Just (b, k, t)
         _               -> Nothing
 
 
@@ -140,24 +140,28 @@ takeTFuns' tt
 -- | Construct a forall quantified type using an anonymous binder.
 makeTForall :: Anon l  => l -> GType l -> (GType l -> GType l) -> GType l
 makeTForall l k makeBody
- =  withBinding l $ \b u -> TForall k b (makeBody (TVar u))
+        =  withBinding l $ \b u 
+        -> TApp (TCon (TyConForall k)) (TAbs b k (makeBody (TVar u)))
 
 
 -- | Construct a forall quantified type using some anonymous binders.
 makeTForalls :: Anon l => l -> [GType l] -> ([GType l] -> GType l) -> GType l
 makeTForalls l ks makeBody
- = withBindings l (length ks)
- $ \bs us -> foldr (\(k, b) -> TForall k b) 
-                   (makeBody $ reverse $ map TVar us)
-                   (zip ks bs)
+        = withBindings l (length ks) $ \bs us 
+        -> foldr (\(k, b) t -> TApp (TCon (TyConForall k)) (TAbs b k t))
+                        (makeBody $ reverse $ map TVar us)
+                        (zip ks bs)
 
 
 -- | Destruct a forall quantified type, if this is one.
+--
+--   The kind we return comes from the abstraction rather than the
+--   Forall constructor.
 takeTForall :: GType l -> Maybe (GType l, GTBindVar l, GType l)
 takeTForall tt
         | Just (t1, t2)         <- takeTApp tt
-        , Just (TyConForall k)  <- takeTCon t1
-        , Just (b, t)           <- takeTAbs t2
+        , Just (TyConForall _)  <- takeTCon t1
+        , Just (b, k, t)        <- takeTAbs t2
         = Just (k, b, t)
 
         | otherwise
@@ -168,13 +172,23 @@ takeTForall tt
 -- | Construct an exists quantified type using an anonymous binder.
 makeTExists :: Anon l => l -> GType l -> (GType l -> GType l) -> GType l
 makeTExists l k makeBody
- =  withBinding l $ \b u -> TExists k b (makeBody (TVar u))
+        =  withBinding l $ \b u 
+        -> TApp (TCon (TyConExists k)) (TAbs b k (makeBody (TVar u)))
 
 
 -- | Destruct an exists quantified type, if this is one.
+--   
+--   The kind we return comes from the abstraction rather than the
+--   Exists constructor. 
 takeTExists :: GType l -> Maybe (GType l, GTBindVar l, GType l)
-takeTExists (TExists k b t)     = Just (k, b, t)
-takeTExists _                   = Nothing
+takeTExists tt
+        | Just (t1, t2)         <- takeTApp tt
+        , Just (TyConExists _)  <- takeTCon t1
+        , Just (b, k, t)        <- takeTAbs t2
+        = Just (k, b, t)
+
+        | otherwise     
+        = Nothing
 
 
 -- Bot Types ------------------------------------------------------------------

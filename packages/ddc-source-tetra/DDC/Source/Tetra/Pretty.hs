@@ -81,7 +81,7 @@ instance PrettyLanguage l => Pretty (GType l) where
         TAnnot a t      -> braces (ppr a) <> text "@" <> ppr t
         TCon tc         -> ppr tc
         TVar bv         -> ppr bv
-        TAbs bv t       -> ppr bv <+> ppr t
+        TAbs bv k t     -> text "λ" <> ppr bv <> text ":" <+> ppr k <> text "." <+> ppr t
         TApp t1 t2      -> ppr t1 <+> ppr t2
  
 
