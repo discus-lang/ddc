@@ -14,8 +14,7 @@ import DDC.Type.Universe                                (Universe (..), universe
 import qualified DDC.Source.Tetra.Transform.Guards      as S
 import qualified DDC.Source.Tetra.Module                as S
 import qualified DDC.Source.Tetra.DataDef               as S
-import qualified DDC.Source.Tetra.Compounds             as S
-import qualified DDC.Source.Tetra.Exp.Source            as S
+import qualified DDC.Source.Tetra.Exp                   as S
 import qualified DDC.Source.Tetra.Prim                  as S
 import qualified DDC.Source.Tetra.Env                   as Env
 

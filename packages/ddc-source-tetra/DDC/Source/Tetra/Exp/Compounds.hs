@@ -1,7 +1,7 @@
 {-# LANGUAGE TypeFamilies #-}
 
 -- | Utilities for constructing and destructing Source Tetra expressions.
-module DDC.Source.Tetra.Compounds
+module DDC.Source.Tetra.Exp.Compounds
         ( takeAnnotOfExp
 
           -- * Binds

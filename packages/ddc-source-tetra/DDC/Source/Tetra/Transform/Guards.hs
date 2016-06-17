@@ -6,7 +6,7 @@ module DDC.Source.Tetra.Transform.Guards
 where
 import DDC.Source.Tetra.Transform.BoundX
 import DDC.Source.Tetra.Exp.Source
-import DDC.Source.Tetra.Compounds
+import DDC.Source.Tetra.Exp.Compounds
 
 
 -- | Desugar some guards to a case-expression.

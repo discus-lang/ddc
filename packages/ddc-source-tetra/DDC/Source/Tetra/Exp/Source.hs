@@ -83,7 +83,10 @@ module DDC.Source.Tetra.Exp.Source
         , PrimLit       (..)
 
         , pattern PTrue
-        , pattern PFalse)
+        , pattern PFalse
+
+          -- ** Dictionaries
+        , ShowLanguage)
 where
 import DDC.Source.Tetra.Exp.Generic
 import DDC.Source.Tetra.Exp.Bind

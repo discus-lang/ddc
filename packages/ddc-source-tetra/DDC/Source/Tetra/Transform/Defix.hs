@@ -26,7 +26,6 @@ module DDC.Source.Tetra.Transform.Defix
 where
 import DDC.Source.Tetra.Transform.Defix.FixTable
 import DDC.Source.Tetra.Transform.Defix.Error
-import DDC.Source.Tetra.Compounds
 import DDC.Source.Tetra.Module
 import DDC.Source.Tetra.Exp
 import DDC.Data.ListUtils

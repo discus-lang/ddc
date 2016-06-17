@@ -10,10 +10,9 @@ module DDC.Source.Tetra.Parser.Module
 where
 import DDC.Source.Tetra.Parser.Exp      as S
 import DDC.Source.Tetra.Parser.Base     as S
-import DDC.Source.Tetra.Exp.Source      as S
-import DDC.Source.Tetra.Compounds       as S
-import DDC.Source.Tetra.DataDef         as S
 import DDC.Source.Tetra.Module          as S
+import DDC.Source.Tetra.DataDef         as S
+import DDC.Source.Tetra.Exp             as S
 import DDC.Core.Lexer.Tokens            as K
 import DDC.Base.Pretty
 import Control.Monad

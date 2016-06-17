@@ -1,29 +1,47 @@
 
--- | Definition of Source Tetra Expressions.
+-- | Definition of Source Tetra Abstract Syntax,
+--   and utilities for working with it.
 module DDC.Source.Tetra.Exp
         ( -- * Binding
           Bind          (..)
         , Bound         (..)
 
+          -------------------------------------------------
           -- * Types
 
+          -----------------------------
           -- ** Syntax
+          -- *** Expressions
+        , Type,         GType  (..)
+
+          -- *** TyCons
+        , TyCon,        GTyCon (..)
+        , TyConBind     (..)
+        , TyConBound    (..)
+
+          -----------------------------
+          -- ** Type Generics
+        , Source        (..)
         , GTAnnot
         , GTBindVar,    GTBoundVar
         , GTBindCon,    GTBoundCon
         , GTPrim
 
-        , Type,         GType  (..)
-        , TyCon,        GTyCon (..)
-
+          -----------------------------
+          -- ** Type Constructors
         , SoCon         (..)
         , KiCon         (..)
         , TwCon         (..)
         , TcCon         (..)
 
-        , TyConBind     (..)
-        , TyConBound    (..)
+          -----------------------------
+          -- ** Type Primitives 
+        , PrimType       (..)
+        , PrimTyCon      (..)
+        , PrimTyConTetra (..)
 
+          -----------------------------
+          -- ** Pattern Synonyms
         , pattern TApp2, pattern TApp3
         , pattern TApp4, pattern TApp5
 
@@ -33,11 +51,6 @@ module DDC.Source.Tetra.Exp
         , pattern TForall
         , pattern TExists
         , pattern TPrim
-
-          -- ** Primitives 
-        , PrimType       (..)
-        , PrimTyCon      (..)
-        , PrimTyConTetra (..)
 
         , pattern KData, pattern KRegion, pattern KEffect
         , pattern TImpl
@@ -50,31 +63,87 @@ module DDC.Source.Tetra.Exp
         , pattern TFloat
         , pattern TTextLit
 
+          -----------------------------
+          -- ** Predicates
+        , isAtomT
 
+          -----------------------------
+          -- ** Compounds
+        , -- *** Destructors
+          takeTCon
+        , takeTVar
+        , takeTAbs
+        , takeTApp
+
+          -- *** Type Applications
+        , makeTApps,    takeTApps
+
+          -- *** Function Types
+        , makeTFun,     makeTFuns,      makeTFuns',     (~>)
+        , takeTFun,     takeTFuns,      takeTFuns'
+
+          -- *** Forall Types
+        , makeTForall,  makeTForalls 
+        , takeTForall
+
+          -- *** Exists Types
+        , makeTExists,  takeTExists
+
+          -- *** Sum types
+        , takeTSum
+        , makeTSums,    takeTSums
+        , splitTSumsOfKind
+        , makeTBot
+
+          -------------------------------------------------
           -- * Terms
           -- ** Syntax
+        , BindVarMT,    GXBindVarMT (..)
+
+          -- *** Expressions
+        , Exp,          GExp        (..)
+
+          -- *** Let-binding
+        , Lets,         GLets       (..)
+
+          -- *** Clauses
+        , Clause,       GClause     (..)
+
+          -- *** Case Alternatives
+        , Alt,          GAlt        (..)
+
+          -- *** Patterns
+        , Pat,          GPat        (..)
+
+          -- *** Guarded Expressions
+        , GuardedExp,   GGuardedExp (..)
+
+          -- *** Guards
+        , Guard,        GGuard      (..)
+
+          -- *** Casts
+        , Cast,         GCast       (..)
+
+          -- *** Witnesses
+        , Witness,      GWitness    (..)
+
+          -- *** Witness Constructors
+        , WiCon,        GWiCon      (..)
+
+          -- *** Data Constructors
+        , DaCon (..)
+        , DaConBind     (..)
+        , DaConBound    (..)
+
+          -----------------------------
+          -- ** Term Generics
         , GXAnnot
         , GXBindVar,    GXBoundVar
         , GXBindCon,    GXBoundCon
         , GXPrim
 
-        , BindVarMT,    GXBindVarMT (..)
-        , Exp,          GExp        (..)
-        , Lets,         GLets       (..)
-        , Clause,       GClause     (..)
-        , Alt,          GAlt        (..)
-        , Pat,          GPat        (..)
-        , GuardedExp,   GGuardedExp (..)
-        , Guard,        GGuard      (..)
-        , Cast,         GCast       (..)
-        , Witness,      GWitness    (..)
-        , WiCon,        GWiCon      (..)
-        , DaCon (..)
-
-        , DaConBind     (..)
-        , DaConBound    (..)
-
-          -- ** Primitives
+          -----------------------------
+          -- ** Term Primitives
         , PrimVal       (..)
         , PrimArith     (..)
         , OpVector      (..)
@@ -82,16 +151,89 @@ module DDC.Source.Tetra.Exp
         , OpError       (..)
         , PrimLit       (..)
 
+          -----------------------------
+          -- ** Pattern Synonyms
         , pattern PTrue
         , pattern PFalse
 
+          -----------------------------
+          -- ** Predicates
+          -- *** Atoms
+        , isXVar,       isXCon
+        , isAtomX,      isAtomW
+
+          -- *** Lambdas
+        , isXLAM, isXLam
+        , isLambdaX
+
+          -- *** Applications
+        , isXApp
+
+          -- *** Let bindings
+        , isXLet
+
+          -- *** Types and Witnesses
+        , isXType
+        , isXWitness
+
+          -- *** Patterns
+        , isPDefault
+
+          -----------------------------
+          -- ** Compounds
+        , takeAnnotOfExp
+
+          -- *** Binds
+        , bindOfBindMT
+        , takeTypeOfBindMT
+
+          -- *** Lambdas
+        , makeXLAMs
+        , makeXLams
+        , makeXLamFlags
+        , takeXLAMs
+        , takeXLams
+        , takeXLamFlags
+
+          -- *** Applications
+        , makeXApps
+        , makeXAppsWithAnnots
+        , takeXApps
+        , takeXApps1
+        , takeXAppsAsList
+        , takeXAppsWithAnnots
+        , takeXConApps
+        , takeXPrimApps
+
+          -- *** Casts
+        , pattern XRun
+        , pattern XBox
+
+          -- *** Data Constructors
+        , dcUnit
+        , takeNameOfDaCon
+        , takeTypeOfDaCon
+
+          -- *** Patterns
+        , bindsOfPat
+
+          -- *** Witnesses
+        , wApp
+        , wApps
+        , takeXWitness
+        , takeWAppsAsList
+        , takePrimWiConApps
+
+        -------------------------------------------------
         -- * Dictionaries
         , ShowLanguage
         , PrettyLanguage
         , NFDataLanguage)
 where
 import DDC.Source.Tetra.Exp.Source
-import DDC.Source.Tetra.Exp.Generic
+import DDC.Source.Tetra.Exp.Predicates
+import DDC.Source.Tetra.Exp.Compounds
 import DDC.Source.Tetra.Exp.NFData
 import DDC.Source.Tetra.Pretty
+import DDC.Type.Exp.Generic.Compounds
 

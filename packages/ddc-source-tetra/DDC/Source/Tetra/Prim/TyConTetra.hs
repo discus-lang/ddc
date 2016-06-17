@@ -10,7 +10,7 @@ where
 import DDC.Source.Tetra.Prim.TyCon
 import DDC.Source.Tetra.Prim.Base
 import DDC.Source.Tetra.Exp.Generic
-import DDC.Source.Tetra.Compounds
+import DDC.Source.Tetra.Exp.Compounds
 
 import DDC.Base.Pretty
 import Data.Char

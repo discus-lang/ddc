@@ -26,11 +26,9 @@ module DDC.Source.Tetra.Transform.Expand
         , Expand        (..))
 where
 import DDC.Source.Tetra.Collect.FreeVars
-import DDC.Source.Tetra.Compounds
-import DDC.Source.Tetra.Predicates
+import DDC.Source.Tetra.Exp
 import DDC.Source.Tetra.DataDef
 import DDC.Source.Tetra.Module
-import DDC.Source.Tetra.Exp.Source
 import DDC.Data.SourcePos
 import Data.Function
 import qualified DDC.Source.Tetra.Env   as Env

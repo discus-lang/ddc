@@ -1,6 +1,6 @@
 
 -- | Simple predicates on Source Tetra things.
-module DDC.Source.Tetra.Predicates
+module DDC.Source.Tetra.Exp.Predicates
         ( module DDC.Type.Exp.Generic.Predicates
 
           -- * Atoms

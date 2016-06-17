@@ -6,7 +6,7 @@ module DDC.Source.Tetra.Pretty
         , module DDC.Base.Pretty 
         , PrettyLanguage)
 where
-import DDC.Source.Tetra.Predicates
+import DDC.Source.Tetra.Exp.Predicates
 import DDC.Source.Tetra.DataDef
 import DDC.Source.Tetra.Module
 import DDC.Source.Tetra.Exp.Source

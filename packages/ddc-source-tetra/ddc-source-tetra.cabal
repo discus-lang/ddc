@@ -34,13 +34,14 @@ Library
         DDC.Source.Tetra.Exp.Generic
         DDC.Source.Tetra.Exp.NFData
         DDC.Source.Tetra.Exp.Source
+        DDC.Source.Tetra.Exp.Compounds
+        DDC.Source.Tetra.Exp.Predicates
 
         DDC.Source.Tetra.Transform.BoundX
         DDC.Source.Tetra.Transform.Defix
         DDC.Source.Tetra.Transform.Expand
         DDC.Source.Tetra.Transform.Guards
 
-        DDC.Source.Tetra.Compounds
         DDC.Source.Tetra.Convert
         DDC.Source.Tetra.DataDef
         DDC.Source.Tetra.Env
@@ -48,7 +49,6 @@ Library
         DDC.Source.Tetra.Lexer
         DDC.Source.Tetra.Module
         DDC.Source.Tetra.Parser
-        DDC.Source.Tetra.Predicates
         DDC.Source.Tetra.Pretty
         DDC.Source.Tetra.Prim
 

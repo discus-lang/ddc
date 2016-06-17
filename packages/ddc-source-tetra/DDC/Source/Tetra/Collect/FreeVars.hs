@@ -1,7 +1,5 @@
 
-module DDC.Source.Tetra.Collect.FreeVars
-where
-import DDC.Source.Tetra.Compounds
+module DDC.Source.Tetra.Collect.FreeVars where
 import DDC.Source.Tetra.Exp
 import DDC.Source.Tetra.Env             (Env, Presence(..))
 import Data.Set                         (Set)

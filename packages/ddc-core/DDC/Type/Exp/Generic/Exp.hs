@@ -73,9 +73,16 @@ data GType l
         | TApp       !(GType      l) (GType l)
 
 
+-- | Applcation of a type to two arguments.
 pattern TApp2 t0 t1 t2          = TApp (TApp t0 t1) t2
+
+-- | Applcation of a type to three arguments.
 pattern TApp3 t0 t1 t2 t3       = TApp (TApp (TApp t0 t1) t2) t3
+
+-- | Applcation of a type to four arguments.
 pattern TApp4 t0 t1 t2 t3 t4    = TApp (TApp (TApp (TApp t0 t1) t2) t3) t4
+
+-- | Applcation of a type to five arguments.
 pattern TApp5 t0 t1 t2 t3 t4 t5 = TApp (TApp (TApp (TApp (TApp t0 t1) t2) t3) t4) t5
 
 

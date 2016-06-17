@@ -14,8 +14,7 @@ import DDC.Source.Tetra.Parser.Type
 import DDC.Source.Tetra.Parser.Witness
 import DDC.Source.Tetra.Parser.Param
 import DDC.Source.Tetra.Parser.Base
-import DDC.Source.Tetra.Exp.Source
-import DDC.Source.Tetra.Compounds
+import DDC.Source.Tetra.Exp
 import DDC.Source.Tetra.Prim            as S
 import DDC.Core.Lexer.Tokens
 import Control.Monad.Except
