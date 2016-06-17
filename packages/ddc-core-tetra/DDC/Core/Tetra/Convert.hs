@@ -164,11 +164,13 @@ convertM pp runConfig defs kenv tenv mm
                 , moduleImportCaps      = []
                 , moduleImportValues    = (Map.toList A.runtimeImportTypes) ++ ntsImports'
                 , moduleImportDataDefs  = []
+                , moduleImportTypeDefs  = []
 
                   -- Data constructors and pattern matches should have been
                   -- flattened into primops, so we don't need the data type
                   -- definitions.
                 , moduleDataDefsLocal   = []
+                , moduleTypeDefsLocal   = []
 
                 , moduleBody            = x2 }
 

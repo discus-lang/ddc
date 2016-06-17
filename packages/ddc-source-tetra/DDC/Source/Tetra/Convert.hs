@@ -126,7 +126,9 @@ coreOfSourceModuleM a mm
                 , C.moduleImportCaps     = importCaps'
                 , C.moduleImportValues   = importValues'
                 , C.moduleImportDataDefs = []
+                , C.moduleImportTypeDefs = []
                 , C.moduleDataDefsLocal  = dataDefsLocal
+                , C.moduleTypeDefsLocal  = []           -- TODO convert type defs
                 , C.moduleBody           = C.XLet  a ltsTops (C.xUnit a) }
 
 

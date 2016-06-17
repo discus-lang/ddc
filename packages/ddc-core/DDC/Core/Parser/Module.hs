@@ -76,7 +76,9 @@ pModule c
                 , moduleImportCaps      = [(n, s) | ImportCap   n s <- importSpecs]
                 , moduleImportValues    = [(n, s) | ImportValue n s <- importSpecs]
                 , moduleImportDataDefs  = [def    | ImportData  def <- importSpecs]
+                , moduleImportTypeDefs  = []            -- TODO: parse type defs.
                 , moduleDataDefsLocal   = defsLocal
+                , moduleTypeDefsLocal   = []            -- TODO: parse type defs.
                 , moduleBody            = body }
 
 

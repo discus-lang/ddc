@@ -77,9 +77,12 @@ convertM mm
                 -- We're only using whole module compilation for
                 -- flow programs, so there aren't any imports.
                 , moduleImportDataDefs  = []
-                , moduleDataDefsLocal   = []
+                , moduleImportTypeDefs  = []
 
-                , moduleBody           = body' }
+                , moduleDataDefsLocal   = []
+                , moduleTypeDefsLocal   = []
+
+                , moduleBody            = body' }
 
         -- Initialise the salt heap.
         -- Hardcode this for now, because eventually this will target tetra.

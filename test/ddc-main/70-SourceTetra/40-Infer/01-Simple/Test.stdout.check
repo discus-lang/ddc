@@ -5,9 +5,9 @@
 -- can do it without proper constraint solving.
 -- Convert source to core that includes holes, then fill holes at core level.
 module Test where
-data List ((a,{<batch>:3:16}@Data)) where {
-        Nil : {<batch>:4:24}@{<batch>:4:19}@List {<batch>:4:24}@a;
-        Cons : {<batch>:5:19}@a -> {<batch>:5:29}@{<batch>:5:24}@List {<batch>:5:29}@a -> {<batch>:5:39}@{<batch>:5:34}@List {<batch>:5:39}@a;
+data List ((a,Data)) where {
+        Nil : List a;
+        Cons : a -> List a -> List a;
 }
 map 
   = /\a./\b.
@@ -23,9 +23,9 @@ map
 
 -- Function application already has some explicit type arguments.
 module Test where
-data List ((a,{<batch>:3:16}@Data)) where {
-        Nil : {<batch>:4:24}@{<batch>:4:19}@List {<batch>:4:24}@a;
-        Cons : {<batch>:5:19}@a -> {<batch>:5:29}@{<batch>:5:24}@List {<batch>:5:29}@a -> {<batch>:5:39}@{<batch>:5:34}@List {<batch>:5:39}@a;
+data List ((a,Data)) where {
+        Nil : List a;
+        Cons : a -> List a -> List a;
 }
 map 
   = /\a./\b.
@@ -35,16 +35,16 @@ map
       Nil 
         -> Nil;
       Cons x xs
-        -> Cons [{<batch>:10:28}@a] (f x) (map [{<batch>:10:43}@a] f xs)
+        -> Cons [a] (f x) (map [a] f xs)
     }
 
 
 -- If any type variables are not in scope in a top-level signature,
 -- then insert quantifiers for these.
 module Test where
-data List ((a,{<batch>:3:16}@Data)) where {
-        Nil : {<batch>:4:24}@{<batch>:4:19}@List {<batch>:4:24}@a;
-        Cons : {<batch>:5:19}@a -> {<batch>:5:29}@{<batch>:5:24}@List {<batch>:5:29}@a -> {<batch>:5:39}@{<batch>:5:34}@List {<batch>:5:39}@a;
+data List ((a,Data)) where {
+        Nil : List a;
+        Cons : a -> List a -> List a;
 }
 map 
   = \f.
@@ -60,14 +60,14 @@ map
 -- The expanded type for 'add' should be used when expanding the body
 -- of 'length'.
 module Test where
-data List ((a,{<batch>:3:16}@Data)) where {
-        Nil : {<batch>:4:24}@{<batch>:4:19}@List {<batch>:4:24}@a;
-        Cons : {<batch>:5:19}@a -> {<batch>:5:29}@{<batch>:5:24}@List {<batch>:5:29}@a -> {<batch>:5:39}@{<batch>:5:34}@List {<batch>:5:39}@a;
+data List ((a,Data)) where {
+        Nil : List a;
+        Cons : a -> List a -> List a;
 }
 add 
   = \x.
     \y.
-    add# [{<batch>:8:17}@a] x y
+    add# [a] x y
 length 
   = \xx.
     case xx of {
@@ -81,9 +81,9 @@ length
 -- Data type used in function signature has a region variable.
 -- During elaboration we add a region parameter to the front of flipit.
 module Test where
-data Blerk ((r,{<batch>:3:17}@Region)) where {
-        Hot : {<batch>:4:25}@{<batch>:4:19}@Blerk {<batch>:4:25}@r;
-        Cold : {<batch>:5:25}@{<batch>:5:19}@Blerk {<batch>:5:25}@r;
+data Blerk ((r,Region)) where {
+        Hot : Blerk r;
+        Cold : Blerk r;
 }
 flipit 
   = \x.

@@ -20,16 +20,16 @@ class Reannotate c where
 instance Reannotate Module where
  reannotateM f
      (ModuleCore name isHeader
-                 exportKinds  exportTypes 
-                 importKinds  importCaps   importTypes  importDataDefs
-                 dataDefsLocal
+                 exportKinds   exportTypes 
+                 importKinds   importCaps   importTypes  importDataDefs importTypeDefs
+                 dataDefsLocal typeDefsLocal
                  body)
 
   = do  body'   <- reannotateM f body
         return  $  ModuleCore name isHeader
                         exportKinds  exportTypes
-                        importKinds  importCaps   importTypes  importDataDefs
-                        dataDefsLocal
+                        importKinds  importCaps   importTypes  importDataDefs importTypeDefs
+                        dataDefsLocal typeDefsLocal
                         body'
 
 

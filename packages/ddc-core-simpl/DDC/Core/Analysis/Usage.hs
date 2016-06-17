@@ -97,7 +97,9 @@ usageModule
                 , moduleImportCaps      = importCaps
                 , moduleImportValues    = importValues
                 , moduleImportDataDefs  = importDataDefs
+                , moduleImportTypeDefs  = importTypeDefs
                 , moduleDataDefsLocal   = dataDefsLocal
+                , moduleTypeDefsLocal   = typeDefsLocal
                 , moduleBody            = body })
 
  =       ModuleCore
@@ -109,7 +111,9 @@ usageModule
                 , moduleImportCaps      = importCaps
                 , moduleImportValues    = importValues
                 , moduleImportDataDefs  = importDataDefs
+                , moduleImportTypeDefs  = importTypeDefs
                 , moduleDataDefsLocal   = dataDefsLocal
+                , moduleTypeDefsLocal   = typeDefsLocal
                 , moduleBody            = usageX body }
 
 

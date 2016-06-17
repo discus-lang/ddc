@@ -4,6 +4,7 @@ module DDC.Core.Module
           Module        (..)
         , isMainModule
         , moduleDataDefs
+        , moduleTypeDefs
         , moduleKindEnv
         , moduleTypeEnv
         , moduleTopBinds
@@ -91,9 +92,15 @@ data Module a n
           -- | Data defs imported from other modules.
         , moduleImportDataDefs  :: ![DataDef n]
 
+          -- | Type defs imported from other modules.
+        , moduleImportTypeDefs  :: ![(n, Type n)]
+
           -- Local defs ---------------
           -- | Data types defined in this module.
         , moduleDataDefsLocal   :: ![DataDef n]
+
+          -- | Type definitions in this module.
+        , moduleTypeDefsLocal   :: ![(n, Type n)]
 
           -- | The module body consists of some let-bindings wrapping a unit
           --   data constructor. We're only interested in the bindings, with
@@ -113,7 +120,9 @@ instance (NFData a, NFData n) => NFData (Module a n) where
         `seq` rnf (moduleImportCaps     mm)
         `seq` rnf (moduleImportValues   mm)
         `seq` rnf (moduleImportDataDefs mm)
+        `seq` rnf (moduleImportTypeDefs mm)
         `seq` rnf (moduleDataDefsLocal  mm)
+        `seq` rnf (moduleTypeDefsLocal  mm)
         `seq` rnf (moduleBody           mm)
 
 
@@ -129,6 +138,12 @@ moduleDataDefs :: Ord n => Module a n -> DataDefs n
 moduleDataDefs mm
         = fromListDataDefs 
         $ (moduleImportDataDefs mm ++ moduleDataDefsLocal mm)
+
+
+-- | Get the data type definitions visible in a module.
+moduleTypeDefs :: Ord n => Module a n -> [(n, Type n)]
+moduleTypeDefs mm
+        = moduleImportTypeDefs mm ++ moduleTypeDefsLocal mm
 
 
 -- | Get the top-level kind environment of a module,

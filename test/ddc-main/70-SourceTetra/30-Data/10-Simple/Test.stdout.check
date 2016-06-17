@@ -1,24 +1,24 @@
 
 -- With explicit kind for parameters.
 module Test where
-data List ((a,{<batch>:3:16}@Data)) where {
-        Nil : {<batch>:4:23}@{<batch>:4:18}@List {<batch>:4:23}@a;
-        Cons : {<batch>:5:18}@a -> {<batch>:5:28}@{<batch>:5:23}@List {<batch>:5:28}@a -> {<batch>:5:38}@{<batch>:5:33}@List {<batch>:5:38}@a;
+data List ((a,Data)) where {
+        Nil : List a;
+        Cons : a -> List a -> List a;
 }
 
 
 -- Maybe type.
 module Test where
-data Maybe ((a,{<batch>:3:17}@Data)) where {
-        Nothing : {<batch>:4:25}@{<batch>:4:19}@Maybe {<batch>:4:25}@a;
-        Just : {<batch>:5:19}@a -> {<batch>:5:30}@{<batch>:5:24}@Maybe {<batch>:5:30}@a;
+data Maybe ((a,Data)) where {
+        Nothing : Maybe a;
+        Just : a -> Maybe a;
 }
 
 
 -- Closure.
 module Test where
-data Clo ((a,{<batch>:3:17}@Data)) ((b,{<batch>:3:17}@Data)) where {
-        Clo : {<batch>:4:22}@→ {<batch>:4:20}@a {<batch>:4:25}@b -> {<batch>:4:37}@{<batch>:4:35}@{<batch>:4:31}@Clo {<batch>:4:35}@a {<batch>:4:37}@b;
+data Clo ((a,Data)) ((b,Data)) where {
+        Clo : → a b -> Clo a b;
 }
 
 

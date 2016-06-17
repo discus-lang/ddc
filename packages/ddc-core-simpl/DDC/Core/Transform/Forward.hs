@@ -138,7 +138,9 @@ instance Forward Module where
                 , moduleImportCaps      = importCaps
                 , moduleImportValues    = importValues
                 , moduleImportDataDefs  = importDataDefs
+                , moduleImportTypeDefs  = importTypeDefs
                 , moduleDataDefsLocal   = dataDefsLocal
+                , moduleTypeDefsLocal   = typeDefsLocal
                 , moduleBody            = body })
 
   = do  body' <- forwardWith profile config bindings body
@@ -151,7 +153,9 @@ instance Forward Module where
                 , moduleImportCaps      = importCaps
                 , moduleImportValues    = importValues
                 , moduleImportDataDefs  = importDataDefs
+                , moduleImportTypeDefs  = importTypeDefs
                 , moduleDataDefsLocal   = dataDefsLocal
+                , moduleTypeDefsLocal   = typeDefsLocal
                 , moduleBody            = body' }
 
 
