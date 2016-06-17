@@ -7,7 +7,7 @@ export  { add; sub;  mul; div; rem
 import Data.Tuple
 where
 
-type Derp (a : Data)  = Tuple2 a a
+type Nat = Nat#
 
 -------------------------------------------------------------------------------
 -- Names used by the Source Tetra desugarer to implement infix operators.

@@ -20,7 +20,7 @@ import Control.DeepSeq
 
 
 -- ImportType -------------------------------------------------------------------------------------
--- | Define a foreign type being imported into a module.
+-- | Define a type being imported into a module.
 data ImportType n t
         -- | Type imported abstractly.
         --

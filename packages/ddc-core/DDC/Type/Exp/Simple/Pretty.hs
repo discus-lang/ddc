@@ -69,7 +69,7 @@ instance (Pretty n, Eq n) => Pretty (Type n) where
         -- Generic abstraction.
         TAbs b t       
          -> pprParen (d > 5)
-         $  text "λ" <> ppr b <> dot <> ppr t
+         $  text "λ" <> ppr b <> dot <+> ppr t
 
         -- Full application of function constructors are printed infix.
         TApp (TApp (TCon (TyConKind KiConFun)) k1) k2

@@ -69,12 +69,17 @@ resolveNamesInModule kenv tenv store mm
                 $  moduleImportDataDefs mm 
                 ++ importsForDaTyCons deps (Set.toList $ supportTyCon sp)
 
+           , moduleImportTypeDefs
+                =  nubBy ((==) `on` fst)
+                $  moduleImportTypeDefs mm
+                ++ importsTypeDef deps
+
            , moduleImportCaps
-                = moduleImportCaps mm
+                =  moduleImportCaps mm
                 ++ importsCap deps
 
            , moduleImportValues  
-                =  moduleImportValues mm 
+                =  moduleImportValues mm
                 ++ importsDaVar }
 
 
@@ -123,6 +128,19 @@ importsForDaTyCons
 importsForDaTyCons deps _tycons
         = concat
         $ [ moduleImportDataDefs m ++ moduleDataDefsLocal m
+                | m <- Map.elems deps ]
+
+
+---------------------------------------------------------------------------------------------------
+-- | Import type defs defined in other modules.
+importsTypeDef 
+        :: Ord n
+        => Map ModuleName (Module b n)
+        -> [(n, Type n)]
+
+importsTypeDef deps
+        = concat
+        $ [ moduleImportTypeDefs m ++ moduleTypeDefsLocal m
                 | m <- Map.elems deps ]
 
 

@@ -4,7 +4,7 @@
 :set trans Eta
 :load..
 module Test 
-import f : Int# -> Int# -> Int#
+import value f : Int# -> Int# -> Int#
 with letrec
 ffold [p : Proc] [k : Rate]
     (o : Ref# Int#)

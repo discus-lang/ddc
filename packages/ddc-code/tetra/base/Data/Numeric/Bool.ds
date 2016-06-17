@@ -3,6 +3,7 @@ module Data.Numeric.Bool
 export  { not; and; or }
 where
 
+type Bool = Bool#
 
 -- | Boolean NOT.
 not (x: Bool#): Bool#

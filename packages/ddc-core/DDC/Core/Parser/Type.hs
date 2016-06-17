@@ -68,9 +68,21 @@ pTypeForall
         => Context n -> Parser n (Type n)
 pTypeForall c
  = P.choice
-         [ -- Universal quantification.
+         [ -- Type abstraction.
+           do   pTok KLambda
+                bs      <- P.many1 pBinder
+                pTok (KOp ":")
+                k       <- pTypeSum c
+                pTok KDot
+
+                tBody    <- pTypeForall c
+
+                return  $ foldr TAbs tBody 
+                        $ map (\b -> makeBindFromBinder b k) bs
+
+           -- Universal quantification.
            -- [v1 v1 ... vn : T1]. T2
-           do   pTok KSquareBra
+         , do   pTok KSquareBra
                 bs      <- P.many1 pBinder
                 pTok (KOp ":")
                 k       <- pTypeSum c

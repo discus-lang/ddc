@@ -3,11 +3,11 @@
 -- Load a module definition.
 :load..
 module Main
-export {
+export value {
         main    : Unit -> S Pure Unit;
         double  : Nat# -> Nat#;
 }
-import {
+import value {
         two : Unit -> Nat#;
 }
 with
@@ -29,9 +29,11 @@ letrec {
 -- Load the same module using the offside rule.
 :load..
 module  Main
-export  main    : Unit -> S Pure Unit
+export value
+        main    : Unit -> S Pure Unit
         double  : Nat# -> Nat#
-import  two : Unit -> Nat#
+import value 
+        two : Unit -> Nat#
 with
 private rt with { w1 : Const rt } in
 let     one = 1 in

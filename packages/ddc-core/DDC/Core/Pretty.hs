@@ -5,10 +5,10 @@ module DDC.Core.Pretty
         ( module DDC.Type.Exp.Simple.Pretty
         , module DDC.Base.Pretty
         , PrettyMode (..)
-        , pprExportType
-        , pprExportValue
-        , pprImportType
-        , pprImportValue)
+        , pprExportType, pprExportValue
+        , pprImportType, pprImportValue
+        , pprDataDef,    pprDataCtor
+        , pprTypeDef)
 where
 import DDC.Core.Module
 import DDC.Core.Exp.Annot.Exp
@@ -50,7 +50,9 @@ instance (Pretty n, Eq n) => Pretty (Module a n) where
         , moduleImportCaps      = importCaps
         , moduleImportValues    = importValues
         , moduleImportDataDefs  = importData
+        , moduleImportTypeDefs  = importType
         , moduleDataDefsLocal   = localData
+        , moduleTypeDefsLocal   = localType
         , moduleBody            = body }
   = {-# SCC "ppr[Module]" #-}
     let 
@@ -83,7 +85,7 @@ instance (Pretty n, Eq n) => Pretty (Module a n) where
          | modeModuleSuppressImports mode 
          = empty
          
-         -- If there are no imports or exports then suppress printint.
+         -- If there are no imports or exports then suppress printing.
          | null exportTypes, null exportValues
          , null importTypes, null importCaps, null importValues
          = empty
@@ -96,19 +98,32 @@ instance (Pretty n, Eq n) => Pretty (Module a n) where
         docsDataImport
          | null importData = empty
          | otherwise
-         = line <> vsep  (map (\i -> text "import" <+> (ppr i)) $ importData)
+         = line <> vsep  (map (\i -> text "import" <+> ppr i) $ importData)
 
         docsDataLocal
          | null localData = empty
          | otherwise
          = line <> vsep  (map ppr localData)
-                  
+
+        -- Type Definitions -----
+        docsTypeImport
+         | null importType = empty
+         | otherwise
+         = line <> vsep  (map (\i -> text "import" <+> pprTypeDef i) $ importType)
+
+        docsTypeLocal
+         | null localType  = empty
+         | otherwise
+         = line <> vsep  (map pprTypeDef localType)
+
         pprLts = pprModePrec (modeModuleLets mode) 0
 
     in  text "module" <+> ppr name 
          <+> docsImportsExports
          <>  docsDataImport
          <>  docsDataLocal
+         <>  docsTypeImport
+         <>  docsTypeLocal
          <>  (case lts of
                 []       -> empty
                 [LRec[]] -> empty
@@ -188,9 +203,13 @@ pprImportValue (n, isrc)
 
 -- DataDef ----------------------------------------------------------------------------------------
 instance (Pretty n, Eq n) => Pretty (DataDef n) where
- pprPrec _ def
-  = {-# SCC "ppr[DataDef]" #-}
-      (text "data" 
+ pprPrec _ def = pprDataDef def
+
+
+-- | Pretty print a data type definition.
+pprDataDef :: (Pretty n, Eq n) => DataDef n -> Doc
+pprDataDef def
+  =   (text "data" 
         <+> hsep ( ppr (dataDefTypeName def)
                  : map (parens . ppr) (dataDefParams def))
         <+> text "where"
@@ -202,20 +221,29 @@ instance (Pretty n, Eq n) => Pretty (DataDef n) where
 
         Nothing
          -> text "LARGE")
-  <> line
-  <> rbrace
-  <> line
+  <> line <> rbrace <> line
 
 
 -- DataCtor ---------------------------------------------------------------------------------------
 instance (Pretty n, Eq n) => Pretty (DataCtor n) where
- pprPrec _ ctor
+ pprPrec _ def = pprDataCtor def
+
+
+-- | Pretty print a data constructor definition.
+pprDataCtor :: (Pretty n, Eq n) => DataCtor n -> Doc
+pprDataCtor ctor
         =   ppr (dataCtorName ctor)
         <+> text ":"
         <+> (hsep $ punctuate (text " ->") 
                   $ (map (pprPrec 6) 
-                        (  dataCtorFieldTypes ctor
+                        (   dataCtorFieldTypes ctor
                         ++ [dataCtorResultType ctor])))
   
 
+-- TypeDef -----------------------------------------------------------------------------------------
+-- | Pretty print a type definition.
+pprTypeDef :: (Pretty n, Eq n) => (n, Type n) -> Doc 
+pprTypeDef (n, t)
+ =  text "type" <+> ppr n <+> text "=" <+> ppr t
+ <> semi <> line
 

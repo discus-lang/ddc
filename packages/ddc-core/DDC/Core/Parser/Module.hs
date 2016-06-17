@@ -30,9 +30,11 @@ pModule c
 
         -- Parse header declarations
         heads                   <- P.many (pHeadDecl c)
-        let importSpecs_noArity = concat $ [specs | HeadImportSpecs specs <- heads ]
-        let exportSpecs         = concat $ [specs | HeadExportSpecs specs <- heads ]
-        let defsLocal           =          [def   | HeadDataDef     def   <- heads ]
+        let importSpecs_noArity = concat $ [specs  | HeadImportSpecs   specs <- heads ]
+        let exportSpecs         = concat $ [specs  | HeadExportSpecs   specs <- heads ]
+
+        let dataDefsLocal       =          [def    | HeadDataDef     def     <- heads ]
+        let typeDefsLocal       =          [(n, t) | HeadTypeDef     n t     <- heads ]
 
         -- Attach arity information to import specs.
         --   The aritity information itself comes in the ARITY pragmas,
@@ -41,8 +43,8 @@ pModule c
                 = Map.fromList  [ (n, (iTypes, iValues, iBoxes ))
                                 | HeadPragmaArity n iTypes iValues iBoxes <- heads ]
 
-        let attachAritySpec (ImportValue n (ImportValueModule mn v t _))
-                = ImportValue n (ImportValueModule mn v t (Map.lookup n importArities))
+        let attachAritySpec (ImportForeignValue n (ImportValueModule mn v t _))
+                = ImportForeignValue n (ImportValueModule mn v t (Map.lookup n importArities))
 
             attachAritySpec spec = spec
 
@@ -71,24 +73,33 @@ pModule c
                 { moduleName            = name
                 , moduleIsHeader        = isHeader
                 , moduleExportTypes     = []
-                , moduleExportValues    = [(n, s) | ExportValue n s <- exportSpecs]
-                , moduleImportTypes     = [(n, s) | ImportType  n s <- importSpecs]
-                , moduleImportCaps      = [(n, s) | ImportCap   n s <- importSpecs]
-                , moduleImportValues    = [(n, s) | ImportValue n s <- importSpecs]
-                , moduleImportDataDefs  = [def    | ImportData  def <- importSpecs]
-                , moduleImportTypeDefs  = []            -- TODO: parse type defs.
-                , moduleDataDefsLocal   = defsLocal
-                , moduleTypeDefsLocal   = []            -- TODO: parse type defs.
+                , moduleExportValues    = [(n, s) | ExportValue n s        <- exportSpecs]
+                , moduleImportTypes     = [(n, s) | ImportForeignType  n s <- importSpecs]
+                , moduleImportCaps      = [(n, s) | ImportForeignCap   n s <- importSpecs]
+                , moduleImportValues    = [(n, s) | ImportForeignValue n s <- importSpecs]
+                , moduleImportTypeDefs  = [(n, t) | ImportType  n t        <- importSpecs]
+                , moduleImportDataDefs  = [def    | ImportData  def        <- importSpecs]
+                , moduleDataDefsLocal   = dataDefsLocal
+                , moduleTypeDefsLocal   = typeDefsLocal
                 , moduleBody            = body }
 
 
 -- | Wrapper for a declaration that can appear in the module header.
 data HeadDecl n
+        -- | Import specifications.
         = HeadImportSpecs  [ImportSpec  n]
+
+        -- | Export specifications.
         | HeadExportSpecs  [ExportSpec  n]
+
+        -- | Data type definitions.
         | HeadDataDef      (DataDef     n)
 
-        -- | Number of type parameters, value parameters, and boxes for some super.
+        -- | Type equations.
+        | HeadTypeDef       n (Type n)
+
+        -- | Arity pragmas.
+        --   Number of type parameters, value parameters, and boxes for some super.
         | HeadPragmaArity  n Int Int Int
 
 
@@ -98,16 +109,31 @@ pHeadDecl :: (Ord n, Pretty n)
 
 pHeadDecl ctx
  = P.choice 
-        [ do    def     <- pDataDef ctx
-                return  $ HeadDataDef def
-
-        , do    imports <- pImportSpecs ctx
+        [ do    imports <- pImportSpecs ctx
                 return  $ HeadImportSpecs imports
 
         , do    exports <- pExportSpecs ctx
                 return  $ HeadExportSpecs exports 
 
-        , do    pHeadPragma ctx ]
+        , do    def     <- pDataDef ctx
+                return  $ HeadDataDef def
+
+        , do    (n, t)  <- pTypeDef ctx
+                return  $ HeadTypeDef n t
+
+        , do    pHeadPragma ctx 
+        ]
+
+
+-- | Parse a type definition.
+pTypeDef :: Ord n => Context n -> Parser n (n, Type n)
+pTypeDef c
+ = do   pTokSP KType
+        n       <- pName
+        pTokSP KEquals
+        t       <- pType c
+        pTokSP KSemiColon
+        return  (n, t)
 
 
 -- | Parse one of the pragmas that can appear in the module header.
@@ -127,4 +153,3 @@ pHeadPragma ctx
                 (read strTypes) (read strValues) (read strBoxes)
 
          _ -> P.unexpected $ "pragma " ++ "{-# " ++ T.unpack txt ++ "#-}"
-

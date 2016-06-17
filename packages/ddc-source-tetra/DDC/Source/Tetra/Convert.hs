@@ -74,35 +74,48 @@ coreOfSourceModuleM
 coreOfSourceModuleM a mm
  = do   
         -- Exported types and values.
-        exportTypes'    <- sequence
-                        $  fmap (\n -> (,) <$> toCoreTUCN n 
-                                           <*> (fmap ExportSourceLocalNoType $ toCoreTUCN n))
-                        $  S.moduleExportTypes mm
+        exportTypes'    
+         <- sequence
+         $  fmap (\n -> (,) <$> toCoreTUCN n 
+                            <*> (fmap ExportSourceLocalNoType $ toCoreTUCN n))
+         $  S.moduleExportTypes mm
 
-        exportValues'   <- sequence
-                        $  fmap (\n -> (,) <$> toCoreXUVN n
-                                           <*> (fmap ExportSourceLocalNoType (toCoreXUVN n)))
-                        $  S.moduleExportValues mm
+        exportValues'   
+         <- sequence
+         $  fmap (\n -> (,) <$> toCoreXUVN n
+                            <*> (fmap ExportSourceLocalNoType (toCoreXUVN n)))
+         $  S.moduleExportValues mm
 
-        -- Imported types and values.
-        importTypes'    <- sequence
-                        $  fmap (\(n, it) -> (,) <$> toCoreTBCN n <*> (toCoreImportType it))
-                        $  S.moduleImportTypes  mm
 
-        importCaps'     <- sequence 
-                        $  fmap (\(n, iv) -> (,) <$> toCoreXBVN n <*> toCoreImportCap   iv)
-                        $  S.moduleImportCaps   mm
+        -- Imported types, capabilities and values.
+        importTypes'    
+         <- sequence
+         $  fmap (\(n, it) -> (,) <$> toCoreTBCN n <*> (toCoreImportType it))
+         $  S.moduleImportTypes  mm
 
-        importValues'   <- sequence 
-                        $  fmap (\(n, iv) -> (,) <$> toCoreXBVN n <*> toCoreImportValue iv)
-                        $  S.moduleImportValues mm
+        importCaps'     
+         <- sequence 
+         $  fmap (\(n, iv) -> (,) <$> toCoreXBVN n <*> toCoreImportCap   iv)
+         $  S.moduleImportCaps   mm
+
+        importValues'
+         <- sequence 
+         $  fmap (\(n, iv) -> (,) <$> toCoreXBVN n <*> toCoreImportValue iv)
+         $  S.moduleImportValues mm
 
         -- Data type definitions.
-        dataDefsLocal   <- sequence $ fmap toCoreDataDef 
-                        $  [ def | S.TopData _ def <- S.moduleTops mm ]
+        dataDefsLocal 
+         <- sequence $ fmap toCoreDataDef 
+         $  [ def    | S.TopData _ def <- S.moduleTops mm ]
+
+        -- Type equations.
+        typeDefsLocal
+         <- sequence $ fmap toCoreTypeDef 
+         $  [ (b, t) | S.TopType _ b t <- S.moduleTops mm ]
 
         -- Top level bindings.
-        ltsTops         <- letsOfTops $  S.moduleTops mm
+        ltsTops
+         <- letsOfTops $  S.moduleTops mm
 
         return
          $ C.ModuleCore
@@ -128,7 +141,7 @@ coreOfSourceModuleM a mm
                 , C.moduleImportDataDefs = []
                 , C.moduleImportTypeDefs = []
                 , C.moduleDataDefsLocal  = dataDefsLocal
-                , C.moduleTypeDefsLocal  = []           -- TODO convert type defs
+                , C.moduleTypeDefsLocal  = typeDefsLocal
                 , C.moduleBody           = C.XLet  a ltsTops (C.xUnit a) }
 
 
@@ -195,6 +208,55 @@ toCoreImportValue src
          <$> pure v     <*> toCoreT UniverseSpec t
 
 
+-- DataDef ----------------------------------------------------------------------------------------
+toCoreDataDef :: S.DataDef S.Source -> ConvertM a (C.DataDef C.Name)
+toCoreDataDef def
+ = do
+        defParams       <- sequence $ fmap toCoreTBK $ S.dataDefParams def
+
+        defCtors        <- sequence $ fmap (\(ctor, tag) -> toCoreDataCtor def tag ctor)
+                                    $ [(ctor, tag) | ctor <- S.dataDefCtors def
+                                                   | tag  <- [0..]]
+
+        let (S.TyConBindName txTyConName) = S.dataDefTypeName def
+
+        return $ C.DataDef
+         { C.dataDefTypeName    = C.NameCon (Text.unpack txTyConName)
+         , C.dataDefParams      = defParams
+         , C.dataDefCtors       = Just $ defCtors
+         , C.dataDefIsAlgebraic = True }
+
+
+-- DataCtor ---------------------------------------------------------------------------------------
+toCoreDataCtor 
+        :: S.DataDef  S.Source
+        -> Integer
+        -> S.DataCtor S.Source
+        -> ConvertM a (C.DataCtor C.Name)
+
+toCoreDataCtor dataDef tag ctor
+ = do   typeParams      <- sequence $ fmap toCoreTBK $ S.dataDefParams dataDef
+        fieldTypes      <- sequence $ fmap (toCoreT UniverseSpec)   $ S.dataCtorFieldTypes ctor
+        resultType      <- toCoreT UniverseSpec (S.dataCtorResultType ctor)
+        let (S.TyConBindName txTyConName) = S.dataDefTypeName dataDef
+
+        return $ C.DataCtor
+         { C.dataCtorName        = toCoreDaConBind (S.dataCtorName ctor)
+         , C.dataCtorTag         = tag
+         , C.dataCtorFieldTypes  = fieldTypes
+         , C.dataCtorResultType  = resultType
+         , C.dataCtorTypeName    = C.NameCon (Text.unpack txTyConName)
+         , C.dataCtorTypeParams  = typeParams }
+
+
+-- TypeDef ----------------------------------------------------------------------------------------
+toCoreTypeDef :: (S.TyConBind, S.Type) -> ConvertM a (C.Name, C.Type C.Name)
+toCoreTypeDef (b, t)
+ = do   n       <- toCoreTBCN b
+        t'      <- toCoreT UniverseSpec t
+        return  (n, t')
+
+
 -- Type -------------------------------------------------------------------------------------------
 toCoreT :: Universe -> S.Type -> ConvertM a (C.Type C.Name)
 toCoreT uu tt
@@ -218,6 +280,11 @@ toCoreT uu tt
         S.TVar u
          -> C.TVar <$> toCoreU  u
 
+        S.TAbs b k t
+         -> do  b'      <- toCoreTBK (b, k)
+                t'      <- toCoreT uu  t
+                return  $  C.TAbs b' t'
+
         S.TApp (S.TCon (S.TyConForall _)) (S.TAbs b k t)
          -> let uu'     =  universeUp uu
             in  C.TForall <$> toCoreBM uu' (S.XBindVarMT b (Just k)) <*> toCoreT uu t
@@ -232,8 +299,6 @@ toCoreT uu tt
         S.TApp t1 t2
          -> C.TApp      <$> toCoreT uu t1 <*> toCoreT uu t2
 
-        S.TAbs{}
-         -> error $ "ddc-source-tetra: cannot convert naked type abstraction"
 
 
 -- TyCon ------------------------------------------------------------------------------------------
@@ -283,47 +348,6 @@ toCoreTC uu tc
          -> return $ Just 
          $  C.TyConBound (C.UName (C.NameCon (Text.unpack tx))) 
                                   (C.TVar (C.UName C.NameHole))
-
-
--- DataDef ----------------------------------------------------------------------------------------
-toCoreDataDef :: S.DataDef S.Source -> ConvertM a (C.DataDef C.Name)
-toCoreDataDef def
- = do
-        defParams       <- sequence $ fmap toCoreTBK $ S.dataDefParams def
-
-        defCtors        <- sequence $ fmap (\(ctor, tag) -> toCoreDataCtor def tag ctor)
-                                    $ [(ctor, tag) | ctor <- S.dataDefCtors def
-                                                   | tag  <- [0..]]
-
-        let (S.TyConBindName txTyConName) = S.dataDefTypeName def
-
-        return $ C.DataDef
-         { C.dataDefTypeName    = C.NameCon (Text.unpack txTyConName)
-         , C.dataDefParams      = defParams
-         , C.dataDefCtors       = Just $ defCtors
-         , C.dataDefIsAlgebraic = True }
-
-
--- DataCtor ---------------------------------------------------------------------------------------
-toCoreDataCtor 
-        :: S.DataDef  S.Source
-        -> Integer
-        -> S.DataCtor S.Source
-        -> ConvertM a (C.DataCtor C.Name)
-
-toCoreDataCtor dataDef tag ctor
- = do   typeParams      <- sequence $ fmap toCoreTBK $ S.dataDefParams dataDef
-        fieldTypes      <- sequence $ fmap (toCoreT UniverseSpec)   $ S.dataCtorFieldTypes ctor
-        resultType      <- toCoreT UniverseSpec (S.dataCtorResultType ctor)
-        let (S.TyConBindName txTyConName) = S.dataDefTypeName dataDef
-
-        return $ C.DataCtor
-         { C.dataCtorName        = toCoreDaConBind (S.dataCtorName ctor)
-         , C.dataCtorTag         = tag
-         , C.dataCtorFieldTypes  = fieldTypes
-         , C.dataCtorResultType  = resultType
-         , C.dataCtorTypeName    = C.NameCon (Text.unpack txTyConName)
-         , C.dataCtorTypeParams  = typeParams }
 
 
 -- Exp --------------------------------------------------------------------------------------------

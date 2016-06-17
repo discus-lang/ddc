@@ -1,7 +1,7 @@
 
 :flow-melt..
 module Test 
-import {
+import value {
         addInt : Int# -> Int# -> Int#;
         minIx  : Nat# -> Tuple2# Int# Int# -> Int# -> Tuple2# Int# Int#;
 } with

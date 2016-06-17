@@ -23,10 +23,20 @@ import qualified DDC.Base.Parser        as P
 --   buckets if it wants to.
 --
 data ImportSpec n
-        = ImportType    n (ImportType   n (Type n))
-        | ImportCap     n (ImportCap    n (Type n))
-        | ImportValue   n (ImportValue  n (Type n))
-        | ImportData    (DataDef n)
+        -- | Foreign imported types.
+        = ImportForeignType  n (ImportType   n (Type n))
+
+        -- | Foreign imported capabilities.
+        | ImportForeignCap   n (ImportCap    n (Type n))
+
+        -- | Foreign imported values.
+        | ImportForeignValue n (ImportValue  n (Type n))
+
+        -- | Imported types from other modules.
+        | ImportType         n (Type n)
+
+        -- | Imported data declarations from other modules.
+        | ImportData           (DataDef n)
         deriving Show
         
 
@@ -45,7 +55,14 @@ pImportSpecs c
            do   def     <- pDataDef c
                 return  [ ImportData def ]
 
-                -- import value { (NAME :: TYPE)+ }
+                -- type { (NAME :: KIND)+ }
+         , do   P.choice [ pTok KType, return () ]
+                pTok KBraceBra
+                specs   <- P.sepEndBy1 (pImportType c) (pTok KSemiColon)
+                pTok KBraceKet
+                return specs
+
+                -- value { (NAME :: TYPE)+ }
          , do   P.choice [ pTok KValue, return () ]
                 pTok KBraceBra
                 specs   <- P.sepEndBy1 (pImportValue c) (pTok KSemiColon)
@@ -97,7 +114,7 @@ pImportForeignType c src
         = do    n       <- pName
                 pTokSP (KOp ":")
                 k       <- pType c
-                return  $ ImportType n (ImportTypeAbstract k)
+                return  $ ImportForeignType n (ImportTypeAbstract k)
 
         -- Boxed types are associate with values that follow the standard
         -- heap object layout. They can be passed and return from functions.
@@ -105,7 +122,7 @@ pImportForeignType c src
         = do    n       <- pName
                 pTokSP (KOp ":")
                 k       <- pType c
-                return  $ ImportType n (ImportTypeBoxed k)
+                return  $ ImportForeignType n (ImportTypeBoxed k)
 
         | otherwise
         = P.unexpected "import mode for foreign type."
@@ -124,10 +141,23 @@ pImportForeignCap c src
         = do    n       <- pName
                 pTokSP  (KOp ":")
                 t       <- pType c
-                return  $  ImportCap n (ImportCapAbstract t)
+                return  $  ImportForeignCap n (ImportCapAbstract t)
 
         | otherwise
         = P.unexpected "import mode for foreign capability."
+
+
+---------------------------------------------------------------------------------------------------
+-- | Parse a type import.
+pImportType
+        :: (Ord n, Pretty n)
+        => Context n -> Parser n (ImportSpec n)
+
+pImportType c
+ = do   n       <- pName
+        pTokSP KEquals
+        t       <- pType c
+        return  $  ImportType n t
 
 
 ---------------------------------------------------------------------------------------------------
@@ -146,7 +176,7 @@ pImportValue c
  = do   n       <- pName
         pTokSP (KOp ":")
         t       <- pType c
-        return  (ImportValue n (ImportValueModule (ModuleName []) n t Nothing))
+        return  $ ImportForeignValue n (ImportValueModule (ModuleName []) n t Nothing)
 
 
 -- | Parse a foreign value import spec.
@@ -160,11 +190,12 @@ pImportForeignValue c src
                 pTokSP (KOp ":")
                 k       <- pType c
 
-                -- ISSUE #327: Allow external symbol to be specified 
-                --             with foreign C imports and exports.
+                -- ISSUE #327: Allow external symbol name to be specified 
+                -- with foreign C imports and exports, rather than forcing
+                -- the external name to be the same as the internal one.
                 let symbol = renderIndent (ppr n)
 
-                return  $ ImportValue n (ImportValueSea symbol k)
+                return  $ ImportForeignValue n (ImportValueSea symbol k)
 
         | otherwise
         = P.unexpected "import mode for foreign value."
