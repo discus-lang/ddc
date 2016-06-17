@@ -40,7 +40,7 @@ instance FreeVarConT Type where
          | TyConBound u _ <- tc -> (Set.empty, Set.singleton u)
          | otherwise            -> (Set.empty, Set.empty)
 
-        TForall b t
+        TAbs b t
          -> freeVarConT (Env.extend b kenv) t
 
         TApp t1 t2
@@ -48,6 +48,9 @@ instance FreeVarConT Type where
                 (vs2, cs2)      = freeVarConT kenv t2
             in  ( Set.union vs1 vs2
                 , Set.union cs1 cs2)
+
+        TForall b t
+         -> freeVarConT (Env.extend b kenv) t
 
         TSum ts
          -> let (vss, css)      = unzip $ map (freeVarConT kenv) 

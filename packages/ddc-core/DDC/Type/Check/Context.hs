@@ -490,16 +490,22 @@ applyContextEither ctx is tt
         TCon{}
          ->     return tt
 
-        TForall b t     
+        TAbs b t     
          -> do  tb'     <- applySolvedEither ctx is (typeOfBind b)
                 let b'  =  replaceTypeOfBind tb' b
                 t'      <- applySolvedEither ctx is t
-                return $ TForall b' t'
+                return $ TAbs b' t'
 
         TApp t1 t2
          -> do  t1'     <- applySolvedEither ctx is t1
                 t2'     <- applySolvedEither ctx is t2
                 return  $ TApp t1' t2'
+
+        TForall b t     
+         -> do  tb'     <- applySolvedEither ctx is (typeOfBind b)
+                let b'  =  replaceTypeOfBind tb' b
+                t'      <- applySolvedEither ctx is t
+                return $ TForall b' t'
 
         TSum ts         
          -> do  tss'    <- mapM (applyContextEither ctx is) 
@@ -536,16 +542,22 @@ applySolvedEither ctx is tt
         TCon {}
          ->     return tt
 
-        TForall b t
+        TAbs b t
          -> do  tb'     <- applySolvedEither ctx is (typeOfBind b)     
                 let b'  =  replaceTypeOfBind tb' b
                 t'      <- applySolvedEither ctx is t
-                return  $ TForall b' t'
+                return  $ TAbs b' t'
 
         TApp t1 t2      
          -> do  t1'     <- applySolvedEither ctx is t1
                 t2'     <- applySolvedEither ctx is t2
                 return  $ TApp t1' t2'
+
+        TForall b t
+         -> do  tb'     <- applySolvedEither ctx is (typeOfBind b)     
+                let b'  =  replaceTypeOfBind tb' b
+                t'      <- applySolvedEither ctx is t
+                return  $ TForall b' t'
 
         TSum ts
          -> do  tss'    <- mapM (applySolvedEither ctx is)

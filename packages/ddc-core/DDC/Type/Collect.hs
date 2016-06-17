@@ -42,7 +42,8 @@ data BindTree n
 
 -- | Describes how a variable was bound.
 data BindWay
-        = BindForall
+        = BindTAbs
+        | BindForall
         | BindLAM
         | BindLam
         | BindLet
@@ -72,6 +73,7 @@ isBoundExpWit _        = False
 boundLevelOfBindWay :: BindWay -> BoundLevel
 boundLevelOfBindWay way
  = case way of
+        BindTAbs                -> BoundSpec
         BindForall              -> BoundSpec
         BindLAM                 -> BoundSpec
         BindLam                 -> BoundExp
@@ -92,8 +94,9 @@ instance BindStruct (Type n) n where
   = case tt of
         TVar u          -> [BindUse BoundSpec u]
         TCon tc         -> slurpBindTree tc
-        TForall b t     -> [bindDefT BindForall [b] [t]]
+        TAbs b t        -> [bindDefT BindTAbs   [b] [t]]
         TApp t1 t2      -> slurpBindTree t1 ++ slurpBindTree t2
+        TForall b t     -> [bindDefT BindForall [b] [t]]
         TSum ts         -> concatMap slurpBindTree $ Sum.toList ts
 
 

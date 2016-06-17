@@ -181,20 +181,15 @@ crushEffect caps tt
  = {-# SCC crushEffect #-}
    case tt of
         TVar{}          -> tt
+
         TCon{}          -> tt
-
-        TForall b t
-         -> TForall b $ crushEffect caps t
-
-        TSum ts         
-         -> TSum
-          $ Sum.fromList (Sum.kindOfSum ts)   
-          $ map (crushEffect caps)
-          $ Sum.toList ts
 
         TApp{}
          |  or [equivT tt t | (_, t) <- Map.toList $ Env.envMap caps]
          -> tSum kEffect []
+
+        TAbs b t
+         -> TAbs b $ crushEffect caps t
 
         TApp t1 t2
          -- Head Read.
@@ -253,9 +248,17 @@ crushEffect caps tt
 
              _ -> tt
 
-
          | otherwise
          -> TApp (crushEffect caps t1) (crushEffect caps t2)
+
+        TForall b t
+         -> TForall b $ crushEffect caps t
+
+        TSum ts         
+         -> TSum
+          $ Sum.fromList (Sum.kindOfSum ts)   
+          $ map (crushEffect caps)
+          $ Sum.toList ts
 
 
 -- | If this type has first order kind then wrap with the 

@@ -91,10 +91,10 @@ instance Ord n => MapBoundT Type n where
   = case tt of
         TVar u          -> TVar    (f d u)
         TCon{}          -> tt
-        TApp t1 t2      -> TApp    (mapBoundAtDepthT f d t1) (mapBoundAtDepthT f d t2)
-        TSum ss         -> TSum    (mapBoundAtDepthT f d ss)
-        TForall b t     
-         -> TForall b (mapBoundAtDepthT f (d + countBAnons [b]) t)
+        TAbs    b t     -> TAbs    b (mapBoundAtDepthT f (d + countBAnons [b]) t)
+        TApp t1 t2      -> TApp      (mapBoundAtDepthT f d t1) (mapBoundAtDepthT f d t2)
+        TForall b t     -> TForall b (mapBoundAtDepthT f (d + countBAnons [b]) t)
+        TSum ss         -> TSum      (mapBoundAtDepthT f d ss)
 
 
 instance Ord n => MapBoundT TypeSum n where

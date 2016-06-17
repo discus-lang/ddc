@@ -159,12 +159,19 @@ lowerEither _config _procnames (Right (b,xx))
    = case tt of
       TVar{} -> tt
       TCon{} -> tt
-      TForall bind tt' -> TForall bind (replaceProcTy tt')
+
+      TAbs bind tt'
+       -> TAbs bind (replaceProcTy tt')
+
       TApp l r
        | Just (NameTyConFlow TyConFlowProcess, [_,_]) <- takePrimTyConApps tt
        -> tUnit
        | otherwise
        -> TApp (replaceProcTy l) (replaceProcTy r)
+
+      TForall bind tt'
+       -> TForall bind (replaceProcTy tt')
+
       TSum ts
        -> TSum ts
  

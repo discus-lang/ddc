@@ -88,6 +88,7 @@ universeFromType2 :: Type n -> Maybe Universe
 universeFromType2 tt
  = case tt of
         TVar _                  -> Nothing
+
         TCon (TyConSort _)      -> Just UniverseSpec
 
         TCon (TyConKind kc)     
@@ -100,8 +101,10 @@ universeFromType2 tt
         TCon TyConSpec{}        -> Nothing
         TCon TyConBound{}       -> Nothing
         TCon TyConExists{}      -> Nothing
-        TForall _ _             -> Nothing
+
+        TAbs{}                  -> Nothing
         TApp _ t2               -> universeFromType2 t2
+        TForall{}               -> Nothing
         TSum _                  -> Nothing
 
 
@@ -126,8 +129,10 @@ universeFromType1 kenv tt
         
         TCon (TyConBound  _ k)     -> universeFromType2 k
         TCon (TyConExists _ k)     -> universeFromType2 k
-        TForall b t2               -> universeFromType1 (Env.extend b kenv) t2
+
+        TAbs b t2                  -> universeFromType1 (Env.extend b kenv) t2
         TApp t1 _                  -> universeFromType1 kenv t1
+        TForall b t2               -> universeFromType1 (Env.extend b kenv) t2
         TSum _                     -> Nothing
 
 
@@ -151,8 +156,10 @@ universeOfType kenv tt
         TCon (TyConSpec _)      -> Just UniverseSpec
         TCon (TyConBound  _ k)  -> universeFromType1 kenv k
         TCon (TyConExists _ k)  -> universeFromType1 kenv k
-        TForall b t2            -> universeOfType (Env.extend b kenv) t2
+
+        TAbs b t2               -> universeOfType (Env.extend b kenv) t2
         TApp _ t2               -> universeOfType kenv t2
+        TForall b t2            -> universeOfType (Env.extend b kenv) t2
         TSum ss                 -> universeFromType1 kenv (T.kindOfSum ss)
 
 

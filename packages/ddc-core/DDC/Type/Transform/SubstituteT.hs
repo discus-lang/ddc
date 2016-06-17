@@ -79,8 +79,28 @@ instance SubstituteT Type where
   = let down    = substituteWithT u t fns stack
     in  case tt of
          TCon{}         -> tt
-         TApp t1 t2     -> TApp (down t1) (down t2)
-         TSum ss        -> TSum (down ss)
+
+         TVar u'
+          -> case substBound stack u u' of
+                Left  u'' -> TVar u''
+                Right n   -> liftT n t
+
+         TAbs b tBody
+          | namedBoundMatchesBind u b -> tt
+          | otherwise
+          -> let -- Substitute into the annotation on the binder.
+                 bSub            = down b
+
+                 -- Push bind onto stack, and anonymise to avoid capture.
+                 (stack', b')    = pushBind fns stack bSub
+                
+                 -- Substitute into body.
+                 tBody'          = substituteWithT u t fns stack' tBody
+
+             in  TAbs b' tBody'
+
+         TApp t1 t2
+          -> TApp (down t1) (down t2)
 
          TForall b tBody
           | namedBoundMatchesBind u b -> tt
@@ -88,8 +108,7 @@ instance SubstituteT Type where
           -> let -- Substitute into the annotation on the binder.
                  bSub            = down b
 
-                 -- Push bind onto stack, and anonymise to avoid capture
-                 -- if needed
+                 -- Push bind onto stack, and anonymise to avoid capture.
                  (stack', b')    = pushBind fns stack bSub
                 
                  -- Substitute into body.
@@ -97,10 +116,7 @@ instance SubstituteT Type where
 
              in  TForall b' tBody'
 
-         TVar u'
-          -> case substBound stack u u' of
-                Left  u'' -> TVar u''
-                Right n   -> liftT n t
+         TSum ss        -> TSum (down ss)
                 
 
 instance SubstituteT TypeSum where

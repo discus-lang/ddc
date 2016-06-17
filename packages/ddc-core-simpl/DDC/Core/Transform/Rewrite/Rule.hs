@@ -469,8 +469,9 @@ checkValidPattern expr
 
         go_t _ (TVar _)         = return ()
         go_t _ (TCon _)         = return ()
-        go_t a t@(TForall _ _)  = Left $ ErrorNotFirstOrder (XType a t)
+        go_t a t@(TAbs _ _)     = Left $ ErrorNotFirstOrder (XType a t)
         go_t a (TApp l r)       = go_t a l >> go_t a r
+        go_t a t@(TForall _ _)  = Left $ ErrorNotFirstOrder (XType a t)
         go_t _ (TSum _)         = return ()
 
 

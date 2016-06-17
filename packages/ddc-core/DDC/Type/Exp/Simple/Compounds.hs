@@ -356,8 +356,9 @@ eraseTForalls tt
  = case tt of
         TVar{}          -> tt
         TCon{}          -> tt
-        TForall _ t     -> eraseTForalls t
+        TAbs{}          -> tt
         TApp t1 t2      -> TApp (eraseTForalls t1) (eraseTForalls t2)
+        TForall _ t     -> eraseTForalls t
         TSum ts         -> TSum $ Sum.fromList (Sum.kindOfSum ts) 
                                 $ map eraseTForalls $ Sum.toList ts
 

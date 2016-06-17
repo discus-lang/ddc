@@ -78,14 +78,18 @@ addParamsT tt
         TVar{}  -> Just $ tUnit `tFun` tt
         TCon{}  -> Just $ tUnit `tFun` tt
 
-        TForall b tBody
+        TAbs b tBody
          -> do  tBody'   <- addParamsT tBody
-                return   $  TForall b tBody'
+                return   $  TAbs b tBody'
 
         TApp{}
          -> case takeTFun tt of
                 Nothing -> Just $ tUnit `tFun` tt
                 Just _  -> Nothing
+
+        TForall b tBody
+         -> do  tBody'   <- addParamsT tBody
+                return   $  TForall b tBody'
 
         TSum{}
          -> Nothing

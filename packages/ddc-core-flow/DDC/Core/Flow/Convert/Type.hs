@@ -93,11 +93,14 @@ convertType tt
     TCon c
      -> TCon    <$> convertTyCon c
 
-    TForall b t
-     -> TForall <$> convertBind  b <*> convertType t
+    TAbs b t
+     -> TAbs    <$> convertBind b <*> convertType t
 
     TApp p q
-     -> TApp    <$> convertType  p <*> convertType q
+     -> TApp    <$> convertType p <*> convertType q
+
+    TForall b t
+     -> TForall <$> convertBind b <*> convertType t
 
     TSum _t
      -> return $ TSum $ TypeSumBot $ kData -- throw    $ ErrorUnexpectedSum

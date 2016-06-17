@@ -61,6 +61,16 @@ instance (Pretty n, Eq n) => Pretty (Bound n) where
 instance (Pretty n, Eq n) => Pretty (Type n) where
  pprPrec d tt
   = case tt of
+        -- Standard types.
+        TCon tc    -> ppr tc
+
+        TVar b     -> ppr b
+
+        -- Generic abstraction.
+        TAbs b t       
+         -> pprParen (d > 5)
+         $  text "λ" <> ppr b <> dot <> ppr t
+
         -- Full application of function constructors are printed infix.
         TApp (TApp (TCon (TyConKind KiConFun)) k1) k2
          -> pprParen (d > 5)
@@ -74,11 +84,11 @@ instance (Pretty n, Eq n) => Pretty (Type n) where
         TApp (TApp (TCon (TyConSpec TcConFun)) t1) t2
          -> pprParen (d > 5)
          $  pprPrec 6 t1 <+> text "->" </> pprPrec 5 t2
-                   
-        -- Standard types.
-        TCon tc    -> ppr tc
-        TVar b     -> ppr b
-
+ 
+        TApp t1 t2
+         -> pprParen (d > 10)
+         $  ppr t1 <+> pprPrec 11 t2
+                  
         TForall b t
          | Just (bsMore, tBody) <- takeTForalls t
          -> let groups  = partitionBindsByType (b:bsMore)
@@ -87,11 +97,7 @@ instance (Pretty n, Eq n) => Pretty (Type n) where
                         
          | otherwise
          -> pprParen (d > 5)
-                $ brackets (ppr b) <> dot <> ppr t
-
-        TApp t1 t2
-         -> pprParen (d > 10)
-         $  ppr t1 <+> pprPrec 11 t2
+          $ brackets (ppr b) <> dot <> ppr t
 
         TSum ts
          | isBot tt, isEffectKind  $ Sum.kindOfSum ts

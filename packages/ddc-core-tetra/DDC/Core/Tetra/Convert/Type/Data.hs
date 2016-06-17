@@ -93,15 +93,17 @@ convertDataT ctx tt
              Nothing 
               -> throw $ ErrorUnbound u
 
-        -- We should not find any polymorphic values.
-        TForall{} -> throw $ ErrorMalformed
-                           $ "Invalid polymorphic value type."
-
         -- Convert unapplied type constructors.
         TCon{}    -> convertDataAppT ctx tt
 
+        -- We should not find any type abstractions.
+        TAbs{}    -> throw $ ErrorMalformed $ "Invalid type abstraction."
+
         -- Convert type constructor applications.
         TApp{}    -> convertDataAppT ctx tt
+
+        -- We should not find any polymorphic values.
+        TForall{} -> throw $ ErrorMalformed $ "Invalid polymorphic value type."
 
         -- Resentable types always have kind Data, but type sums cannot.
         TSum{}    -> throw $ ErrorUnexpectedSum

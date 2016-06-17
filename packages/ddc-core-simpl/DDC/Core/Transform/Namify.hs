@@ -82,13 +82,18 @@ instance Namify Type where
         TCon{}          
          ->     return tt
 
+        TAbs b t
+         -> do  (tnam', b')     <- pushT tnam b
+                t'              <- namify tnam' xnam t
+                return  $ TAbs b' t'
+
+        TApp t1 t2
+         -> liftM2 TApp (down t1) (down t2)
+
         TForall b t
          -> do  (tnam', b')     <- pushT tnam b
                 t'              <- namify tnam' xnam t
                 return  $ TForall b' t'
-
-        TApp t1 t2
-         -> liftM2 TApp (down t1) (down t2)
 
         TSum ts         
          -> do  ts'     <- mapM down $ Sum.toList ts

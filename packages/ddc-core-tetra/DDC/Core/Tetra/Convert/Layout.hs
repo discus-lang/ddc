@@ -96,20 +96,25 @@ fieldOffsetsOfDataCtor platform ctor
 fieldSizeOfType    :: Platform -> Type Name -> Maybe Integer
 fieldSizeOfType platform tt
  = case tt of
+        -- Polymorphic objects are represented boxed.
         TVar{}          -> Just $ platformAddrBytes platform
 
+        -- Type constructor might be a primitive or boxed value type.
         TCon tc
          -> case tc of
                 TyConBound (UPrim n _) _ -> fieldSizeOfPrim platform n
                 TyConBound _ _           -> Just $ platformAddrBytes platform
                 _                        -> Nothing
 
-        -- We're not supporting polymorphic fields yet.
-        TForall{}       -> Nothing
+        --- Higher kinded types are not value types.
+        TAbs{}          -> Nothing
 
         -- Assume anything that isn't a primitive constructor is
         -- represented by a pointer.
         TApp{}          -> Just $ platformAddrBytes platform
+
+        -- We're not supporting polymorphic fields yet.
+        TForall{}       -> Nothing
 
         -- We shouldn't find any TSums, because field types always have
         -- kind data.

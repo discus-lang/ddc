@@ -16,8 +16,9 @@ instance Alpha Type where
   = case tt of
         TVar    u       -> TVar    (alpha f u)
         TCon    c       -> TCon    (alpha f c)
-        TForall b t     -> TForall (alpha f b)  (alpha f t)
+        TAbs    b t     -> TAbs    (alpha f b)  (alpha f t)
         TApp    t1 t2   -> TApp    (alpha f t1) (alpha f t2)
+        TForall b t     -> TForall (alpha f b)  (alpha f t)
         TSum    ts      -> TSum    (alpha f ts)
 
 

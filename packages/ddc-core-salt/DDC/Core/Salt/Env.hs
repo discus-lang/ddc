@@ -202,7 +202,9 @@ typeIsUnboxed tt
 
         TCon _          -> False
 
-        TForall _ t     -> typeIsUnboxed t
+        -- Higher kinded types are not values types,
+        -- so we'll say they're not unboxed.
+        TAbs{}          -> False
 
         -- Pointers to objects are boxed.
         TApp{}
@@ -212,6 +214,8 @@ typeIsUnboxed tt
 
         TApp t1 t2      
          -> typeIsUnboxed t1 || typeIsUnboxed t2
+
+        TForall _ t     -> typeIsUnboxed t
 
         TSum{}          -> False
 

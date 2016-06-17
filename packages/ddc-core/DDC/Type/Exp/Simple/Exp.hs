@@ -69,7 +69,7 @@ data Bound n
 -- | A value type, kind, or sort.
 --
 --   We use the same data type to represent all three universes, as they have
---  a similar algebraic structure.
+--   a similar algebraic structure.
 --
 data Type n
         -- | Constructor.
@@ -79,10 +79,13 @@ data Type n
         | TVar    !(Bound n)
 
         -- | Abstraction.
-        | TForall !(Bind  n) !(Type  n)
+        | TAbs    !(Bind  n) !(Type  n)
         
         -- | Application.
         | TApp    !(Type  n) !(Type  n)
+
+        -- | Universal Quantification.
+        | TForall !(Bind  n) !(Type  n)
 
         -- | Least upper bound.
         | TSum    !(TypeSum n)

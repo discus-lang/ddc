@@ -33,8 +33,9 @@ instance NFData n => NFData (Type n) where
   = case tt of
         TVar u          -> rnf u
         TCon tc         -> rnf tc
-        TForall b t     -> rnf b  `seq` rnf t
+        TAbs    b t     -> rnf b  `seq` rnf t
         TApp    t1 t2   -> rnf t1 `seq` rnf t2
+        TForall b t     -> rnf b  `seq` rnf t
         TSum    ts      -> rnf ts
 
 

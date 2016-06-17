@@ -26,11 +26,16 @@ instance SpreadT Type where
         TVar u          -> TVar $ spreadT kenv u
         TCon tc         -> TCon $ spreadT kenv tc
 
+        TAbs b t
+         -> let b'      = spreadT kenv b
+            in  TAbs b' $ spreadT (Env.extend b' kenv) t
+
+        TApp t1 t2      -> TApp (spreadT kenv t1) (spreadT kenv t2)
+
         TForall b t
          -> let b'      = spreadT kenv b
             in  TForall b' $ spreadT (Env.extend b' kenv) t
 
-        TApp t1 t2      -> TApp (spreadT kenv t1) (spreadT kenv t2)
         TSum ss         -> TSum (spreadT kenv ss)
         
 

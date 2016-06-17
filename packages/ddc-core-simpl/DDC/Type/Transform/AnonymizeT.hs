@@ -35,12 +35,16 @@ instance AnonymizeT Type where
         TCon{}          
          -> tt
 
-        TForall b t     
+        TAbs b t
          -> let (kstack', b') = pushAnonymizeBindT kstack b
-            in  TForall b' (anonymizeWithT kstack' t)
+            in  TAbs b' (anonymizeWithT kstack' t)
 
         TApp t1 t2      
          -> TApp (anonymizeWithT kstack t1) (anonymizeWithT kstack t2)
+
+        TForall b t     
+         -> let (kstack', b') = pushAnonymizeBindT kstack b
+            in  TForall b' (anonymizeWithT kstack' t)
 
         TSum ss 
          -> TSum (anonymizeWithT kstack ss)

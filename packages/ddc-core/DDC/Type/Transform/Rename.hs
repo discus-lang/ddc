@@ -39,14 +39,21 @@ instance Rename Type where
     let down    = renameWith 
     in case tt of
         TVar u          -> TVar (use1 sub u)
+
         TCon{}          -> tt
+
+        TAbs b t
+         -> let (sub1, b')      = bind1 sub b
+                t'              = down  sub1 t
+            in  TAbs b' t'
+
+        TApp t1 t2      -> TApp (down sub t1) (down sub t2)
 
         TForall b t
          -> let (sub1, b')      = bind1 sub b
                 t'              = down  sub1 t
             in  TForall b' t'
 
-        TApp t1 t2      -> TApp (down sub t1) (down sub t2)
         TSum ts         -> TSum (down sub ts)
 
 
