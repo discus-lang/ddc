@@ -1,4 +1,9 @@
 
+-- In GHC 8 we need to turn of the pattern match checker because the new algorithm
+-- runs out of stack space when checking this module.
+-- https://ghc.haskell.org/trac/ghc/ticket/11822
+{-# OPTIONS_GHC -fno-warn-incomplete-patterns -fno-warn-overlapping-patterns #-}
+
 module DDC.Core.Llvm.Convert.Exp
         ( Context (..)
         , convertBody

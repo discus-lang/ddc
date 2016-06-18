@@ -164,9 +164,6 @@ importedFunctionDeclOfType pp kenv isrc mesrc nSuper tt
                 , declParams         = map mkParam tsArgs
                 , declAlign          = AlignBytes (platformAlignBytes pp) }
 
-importedFunctionDeclOfType _ _ _ _ _ _
-        = Nothing
-
 
 -- TyCon ----------------------------------------------------------------------
 -- | Convert a Sea TyCon to a LlvmType.

@@ -11,10 +11,10 @@ import DDC.Type.Exp.Generic.Exp
 class Binding l where
 
  -- | Get the bound occurrence that matches the given binding occurrence.
- boundOfBind      :: GTBindVar l -> GTBoundVar l
+ boundOfBind      :: l -> GTBindVar l -> GTBoundVar l
 
  -- | Check if the given bound occurence matches a binding occurrence.
- boundMatchesBind :: GTBindVar l -> GTBoundVar l -> Bool
+ boundMatchesBind :: l -> GTBindVar l -> GTBoundVar l -> Bool
 
 
 -- Anon -----------------------------------------------------------------------

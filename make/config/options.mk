@@ -48,7 +48,7 @@ GHC_WARNINGS	:= \
         -fwarn-wrong-do-bind \
         -fno-warn-missing-methods \
         -fno-warn-missing-signatures \
-        -fno-warn-missing-local-sigs \
+        -fno-warn-missing-local-signatures \
         -fno-warn-orphans
 
 # Warnings that enforce programming styles that we don't use.
