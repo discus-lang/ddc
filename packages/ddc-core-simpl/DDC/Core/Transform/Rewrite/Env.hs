@@ -50,7 +50,7 @@ type RewriteDef a n
 
 
 -- | An empty environment.
-empty   :: Ord n => RewriteEnv a n
+empty   :: RewriteEnv a n
 empty = RewriteEnv [] [] []
 
 

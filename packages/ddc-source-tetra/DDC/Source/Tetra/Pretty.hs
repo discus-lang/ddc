@@ -320,7 +320,7 @@ pprGuardedExp sTerm gx
         
 
 -- Guard ------------------------------------------------------------------------------------------
-instance PrettyLanguage l => Pretty (GGuard l) where
+instance Pretty (GGuard l) where
 
 
 -- Cast -------------------------------------------------------------------------------------------

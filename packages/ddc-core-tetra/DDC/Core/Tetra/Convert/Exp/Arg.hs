@@ -17,8 +17,7 @@ import qualified DDC.Core.Salt.Runtime  as A
 --   it to the corresponding argument to use in the Salt program, or 
 --   return Nothing which indicates it should be discarded.
 convertOrDiscardSuperArgX
-        :: Show a                       
-        => Context a                    -- ^ Type context of the conversion.
+        :: Context a                    -- ^ Type context of the conversion.
         -> Exp (AnTEC a E.Name) E.Name  -- ^ Expression to convert.
         -> ConvertM a (Maybe (Exp a A.Name))
 

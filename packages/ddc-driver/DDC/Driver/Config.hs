@@ -109,8 +109,7 @@ defaultConfigPretty
 --   former can be non-recursive with other types, and does not need to be
 --   parameterised by the annotation or name types.
 prettyModeOfConfig
-        :: (Eq n, Pretty n) 
-        => ConfigPretty -> PrettyMode (Module a n)
+        :: ConfigPretty -> PrettyMode (Module a n)
 
 prettyModeOfConfig config
  = modeModule

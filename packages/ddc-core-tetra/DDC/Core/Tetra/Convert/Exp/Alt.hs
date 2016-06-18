@@ -18,8 +18,7 @@ import qualified Data.Map                as Map
 
 -- | Convert a Tetra alternative to Salt.
 convertAlt 
-        :: Show a
-        => a                            -- ^ Annotation from case expression.
+        :: a                            -- ^ Annotation from case expression.
         -> Bound E.Name                 -- ^ Bound of scrutinee.
         -> Type  E.Name                 -- ^ Type  of scrutinee
         -> ExpContext                   -- ^ Context of enclosing case-expression.

@@ -15,8 +15,7 @@ import qualified DDC.Core.Salt.Compounds        as A
 
 
 convertPrimVector
-        :: Show a
-        => ExpContext                   -- ^ The surrounding expression context.
+        :: ExpContext                   -- ^ The surrounding expression context.
         -> Context a                    -- ^ Types and values in the environment.
         -> Exp (AnTEC a E.Name) E.Name  -- ^ Expression to convert.
         -> Maybe (ConvertM a (Exp a A.Name))

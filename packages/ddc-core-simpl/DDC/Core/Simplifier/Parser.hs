@@ -152,7 +152,7 @@ pTransform details
 
 -- | Parse an inlining specification.
 pInlinerSpec 
-        :: (Ord n, Show n)
+        :: Ord n
         => Parser n (ModuleName, InlineSpec n)
 
 pInlinerSpec 

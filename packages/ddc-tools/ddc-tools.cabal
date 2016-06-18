@@ -18,7 +18,7 @@ Executable ddc-check
         src/ddc-check
 
     Build-depends:
-        base            >= 4.6 && < 4.9,
+        base            >= 4.6 && < 4.10,
         ddc-core        == 0.4.3.*
 
     Main-is:
@@ -35,14 +35,14 @@ Executable ddc
         src/ddc-main
 
     Build-depends:
-        base            >= 4.6 && < 4.9,
-        process         >= 1.1 && < 1.3,
+        base            >= 4.6 && < 4.10,
+        process         >= 1.4 && < 1.5,
         containers      == 0.5.*,
         filepath        >= 1.3 && < 1.5,
         haskeline       == 0.7.*,
         directory       == 1.2.*,
         mtl             == 2.2.1.*,
-        transformers    == 0.4.*,
+        transformers    == 0.5.*,
         ddc-base        == 0.4.3.*,
         ddc-core        == 0.4.3.*,
         ddc-core-simpl  == 0.4.3.*,
@@ -70,8 +70,8 @@ Executable ddci-core
         src/ddci-core
 
     Build-depends:
-        base            >= 4.6 && < 4.9,
-        process         >= 1.1 && < 1.3,
+        base            >= 4.6 && < 4.10,
+        process         >= 1.4 && < 1.5,
         containers      == 0.5.*,
         filepath        >= 1.3 && < 1.5,
         haskeline       == 0.7.*,
@@ -135,8 +135,8 @@ Executable ddci-tetra
         src/ddci-tetra
 
     Build-depends:
-        base             >= 4.6 && < 4.9,
-        process          >= 1.1 && < 1.3,
+        base             >= 4.6 && < 4.10,
+        process          >= 1.4 && < 1.5,
         containers       == 0.5.*,
         filepath         >= 1.3 && < 1.5,
         haskeline        == 0.7.*,

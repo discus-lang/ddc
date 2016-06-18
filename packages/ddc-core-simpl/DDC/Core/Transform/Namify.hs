@@ -198,8 +198,7 @@ rewriteT tnam u
 
 
 -- | Rewrite level-0 anonymous binders.
-rewriteX :: Ord n
-         => Namifier s n
+rewriteX :: Namifier s n
          -> Namifier s n
          -> Bound n
          -> State s (Bound n)

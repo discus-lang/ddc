@@ -205,7 +205,7 @@ generateEnv (Program (_inSs,inAs) binds _outs)
 
 
 -- | Gamma |- lets ~> Gamma |- C
-generateLets :: Ord a => Env a -> [Bind s a] -> (Env a, Constraint a)
+generateLets :: Env a -> [Bind s a] -> (Env a, Constraint a)
 generateLets e bs
  = foldl go (e, CTrue) bs
  where
@@ -214,7 +214,7 @@ generateLets e bs
      in  (e'', c' `CAnd` c'')
 
 -- | Gamma | z |- bind ~> Gamma |- C
-generateBind :: Ord a => Env a -> Bind s a -> (Env a, Constraint a)
+generateBind :: Env a -> Bind s a -> (Env a, Constraint a)
 generateBind env b
  = case b of
    ABind z (MapN _ xs)

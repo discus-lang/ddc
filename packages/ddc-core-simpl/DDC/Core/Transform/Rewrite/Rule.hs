@@ -133,8 +133,7 @@ isBMValue _             = False
 --   You then need to apply 'checkRewriteRule' to check it.
 --
 mkRewriteRule
-        :: Ord n
-        => [(BindMode,Bind n)]  -- ^ Variables bound by the rule.
+        :: [(BindMode,Bind n)]  -- ^ Variables bound by the rule.
         -> [Type n]             -- ^ Extra constraints on the rule.
         -> Exp a n              -- ^ Left-hand side of the rule.
         -> Maybe (Exp a n)      -- ^ Extra part of left, can be out of context.
@@ -328,7 +327,7 @@ checkEquiv tLeft tRight err
 --   If the right has more effects than the left then return an error.
 --
 makeEffectWeakening
-        :: (Ord n, Show n)
+        :: Ord n
         => Kind n       -- ^ Should be the effect kind.
         -> Effect n     -- ^ Effect of the left of the rule.
         -> Effect n     -- ^ Effect of the right of the rule.
@@ -420,7 +419,7 @@ removeEffects config = transformUpX remove
 -- Structural Checks ----------------------------------------------------------
 -- | Check for rule variables that have no uses.
 checkUnmentionedBinders
-        :: (Ord n, Show n)
+        :: Ord n
         => [(BindMode, Bind n)]
         -> Exp (C.AnTEC a n) n
         -> Either (Error a n) ()

@@ -141,7 +141,7 @@ data PipeCore a n where
 --
 --   Returns empty list on success.
 pipeCore
-        :: (NFData a, Show a, NFData n, Eq n, Ord n, Show n, Pretty n)
+        :: (NFData a, Show a, NFData n, Ord n, Show n, Pretty n)
         => C.Module a n
         -> PipeCore a n
         -> IO [Error]
@@ -231,7 +231,7 @@ pipeCore !mm !pp
                 pipeCores mm' pipes
 
 
-pipeCores :: (NFData a, Show a, NFData n, Eq n, Ord n, Show n, Pretty n)
+pipeCores :: (NFData a, Show a, NFData n, Ord n, Show n, Pretty n)
           => C.Module a n -> [PipeCore a n] -> IO [Error]
 
 pipeCores !mm !pipes 
@@ -552,9 +552,7 @@ pipeFlow !mm !pp
 
 
 -- | Process a Flow module with several different pipes.
-pipeFlows :: (NFData a, Show a)
-          => C.Module a Flow.Name -> [PipeFlow a] -> IO [Error]
-
+pipeFlows :: C.Module a Flow.Name -> [PipeFlow a] -> IO [Error]
 pipeFlows !mm !pipes 
  = go [] pipes
  where  go !errs []   

@@ -61,12 +61,12 @@ runTokenParser tokenShow fileName parser
 
 -------------------------------------------------------------------------------
 -- | Accept the given token.
-pTok   :: Eq k => k -> Parser k ()
+pTok   :: k -> Parser k ()
 pTok k  = pTokMaybe $ \k' -> if k == k' then Just () else Nothing
 
 
 -- | Accept the given token, returning its source position.
-pTokSP :: Eq k => k -> Parser k D.SourcePos
+pTokSP :: k -> Parser k D.SourcePos
 pTokSP k  
  = do   (_, sp) <- pTokMaybeSP 
                 $ \k' -> if k == k' then Just () else Nothing
@@ -74,7 +74,7 @@ pTokSP k
 
 
 -- | Accept a token and return the given value.
-pTokAs    :: Eq k => k -> t -> Parser k t
+pTokAs :: k -> t -> Parser k t
 pTokAs k t 
  = do   pTok k
         return t
@@ -82,7 +82,7 @@ pTokAs k t
 
 -- | Accept a token and return the given value, 
 --   along with the source position of the token.
-pTokAsSP :: Eq k => k -> t -> Parser k (t, D.SourcePos)
+pTokAsSP :: k -> t -> Parser k (t, D.SourcePos)
 pTokAsSP k t 
  = do   sp      <- pTokSP k
         return  (t, sp)

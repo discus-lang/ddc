@@ -49,7 +49,7 @@ instance Pretty Side where
  ppr Rhs = text "rhs"
 
 
-instance (Pretty a, Show a, Pretty n, Show n, Eq n) 
+instance (Pretty a, Pretty n, Show n, Eq n) 
         => Pretty (Error a n) where
  ppr err
   = case err of

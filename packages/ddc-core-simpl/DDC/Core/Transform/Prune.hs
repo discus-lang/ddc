@@ -132,7 +132,7 @@ type Annot a n
 
 -- | Apply the dead-code transform to an annotated expression.
 pruneTrans
-        :: (Show a, Show n, Ord n, Pretty n)
+        :: Ord n
         => KindEnv n
         -> TypeEnv n
         -> Exp (Annot a n) n

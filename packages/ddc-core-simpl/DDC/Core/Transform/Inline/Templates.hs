@@ -39,7 +39,7 @@ data InlineSpec n
 --   about lifting indices in templates when we go under binders.
 --
 lookupTemplateFromModules 
-        :: (Eq n, Ord n, Show n)
+        :: (Ord n, Show n)
         => Map ModuleName (InlineSpec n)
                                 -- ^ Inliner specifications for the modules.
         -> [Module a n]         -- ^ Modules to use for inliner templates.
@@ -62,7 +62,7 @@ lookupTemplateFromModules specs mm n
 
 
 lookupTemplateFromModule 
-        :: (Eq n, Ord n, Show n)
+        :: Ord n
         => InlineSpec n         -- ^ Inliner specification for this module.
         -> Module a n           -- ^ Module to use for inliner templates.
         -> n    
@@ -81,7 +81,7 @@ lookupTemplateFromModule spec mm n
 -- | Decide whether we should inline the binding with this name based on the 
 --   provided inliner specification.
 shouldInline
-        :: (Ord n, Show n)
+        :: Ord n
         => InlineSpec n -> n -> Bool
 
 shouldInline spec n

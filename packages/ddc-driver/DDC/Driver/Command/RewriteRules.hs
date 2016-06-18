@@ -13,7 +13,6 @@ import DDC.Core.Exp
 import DDC.Core.Transform.Reannotate
 import DDC.Core.Transform.Rewrite.Rule  hiding (Error)
 import DDC.Core.Transform.Rewrite.Parser
-import Control.DeepSeq
 import System.Directory
 import System.IO
 import qualified DDC.Base.Parser        as BP
@@ -26,7 +25,7 @@ import qualified DDC.Type.Env           as Env
 -- | Load and typecheck a module's rewrite rules, using exported and imported
 --   definitions from module
 cmdTryReadRules 
-        :: (Ord n, Show n, Pretty n, NFData n)
+        :: (Ord n, Show n, Pretty n)
         => Fragment n err       -- ^ Language fragment.
         -> FilePath             -- ^ Path to the module.
         -> Module () n          -- ^ Module with types of imports and exports

@@ -123,7 +123,7 @@ freshRootName qualify = liftA (\i -> qualify ++ "_ROOT_" ++ (show i)) newUnique
 
 
 -- | Attach relevant metadata to instructions
-annot :: (BindStruct (c A.Name) A.Name, Show (c A.Name))
+annot :: (BindStruct (c A.Name) A.Name)
       => KindEnv A.Name 
       -> MDSuper        -- ^ Metadata      
       -> [c A.Name]     -- ^ Things to lookup for Meta data.

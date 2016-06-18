@@ -209,8 +209,7 @@ buildNormalisedApp config arities f0 args@( (_, annot) : _)
 --   Unlike the `buildNormalisedFunApp` function above, this one
 --   wants the function part to be normalised as well.
 buildNormalisedFunApp
-        :: Ord n
-        => Config         -- ^ Snipper configuration.
+        :: Config         -- ^ Snipper configuration.
         -> a              -- ^ Annotation to use.
         -> Int            -- ^ Arity of the function part.
         -> Exp a n        -- ^ Function part.
@@ -284,8 +283,7 @@ buildNormalisedFunApp config an funArity xFun xsArgs
 -- | Sort function arguments into either the atomic ones, 
 --   or compound ones.
 splitArgs 
-        :: Ord n
-        => Config               
+        :: Config               
         -> [(Exp a n, a)] 
         -> [( Exp a n            -- Expression to use as the new argument.
             , a                  -- Annoation for the argument application.

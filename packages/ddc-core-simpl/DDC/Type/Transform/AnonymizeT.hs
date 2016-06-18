@@ -71,8 +71,7 @@ instance AnonymizeT Bound where
 -- | Push a binding occurrence of a level-1 variable on the stack, 
 --   returning the anonyized binding occurrence and the new stack.
 pushAnonymizeBindT 
-        :: Ord n 
-        => [Bind n]             -- ^ Stack for Spec binders (level-1)
+        :: [Bind n]             -- ^ Stack for Spec binders (level-1)
         -> Bind n 
         -> ([Bind n], Bind n)
 

@@ -212,7 +212,7 @@ isTree dom r
 
 
 -- | Get the sources of a tree.
-sources :: Eq a => a -> Tree a -> [a]
+sources :: a -> Tree a -> [a]
 sources x (Tree (d, r)) = [y | y <- d, r y x]
 
 

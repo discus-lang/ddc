@@ -109,8 +109,7 @@ importsForTyCons deps _tyCons
 ---------------------------------------------------------------------------------------------------
 -- | Import caps defined in other modules.
 importsCap
-        :: Ord n
-        => Map ModuleName (Module b n)
+        :: Map ModuleName (Module b n)
         -> [(n, ImportCap n (Type n))]
 
 importsCap deps
@@ -120,8 +119,7 @@ importsCap deps
 ---------------------------------------------------------------------------------------------------
 -- | Import data defs defined in other modules.
 importsForDaTyCons
-        :: Ord n
-        => Map ModuleName (Module b n)
+        :: Map ModuleName (Module b n)
         -> [Bound n]
         -> [DataDef n]
 
@@ -134,8 +132,7 @@ importsForDaTyCons deps _tycons
 ---------------------------------------------------------------------------------------------------
 -- | Import type defs defined in other modules.
 importsTypeDef 
-        :: Ord n
-        => Map ModuleName (Module b n)
+        :: Map ModuleName (Module b n)
         -> [(n, Type n)]
 
 importsTypeDef deps

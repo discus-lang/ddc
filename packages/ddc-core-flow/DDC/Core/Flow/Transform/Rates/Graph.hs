@@ -147,7 +147,7 @@ mergeWeights g@(Graph graph) weights
    = Nothing
 
 
-invertMap :: (Ord k, Ord v) => Map.Map k v -> Map.Map v [k]
+invertMap :: Ord v => Map.Map k v -> Map.Map v [k]
 invertMap m
  = Map.foldWithKey go Map.empty m
  where
@@ -199,7 +199,7 @@ nodeType (Graph gmap) k
 
 
 -- | Convert @Graph@ to a lists of nodes and a list of edges
-listOfGraph :: Ord n => Graph n t -> ([(n,Maybe t)], [((n,n),Bool)])
+listOfGraph :: Graph n t -> ([(n,Maybe t)], [((n,n),Bool)])
 listOfGraph (Graph g)
  = (nodes, edges)
  where

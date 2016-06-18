@@ -56,7 +56,7 @@ data Result a n
            Bool                 -- Whether we've made progress in this pass.
            [(Bind n, Exp a n)]  -- Lifted bindings
 
-instance Ord n => Monoid (Result a n) where
+instance Monoid (Result a n) where
  mempty
   = Result False []
  
@@ -537,7 +537,7 @@ liftLambda p c fusFree a lams xBody
 --   it was lifted out of.
 --
 beautifyModule 
-        :: forall a n. (Ord n, Show n, CompoundName n)
+        :: forall a n. (Ord n, CompoundName n)
         => Module a n -> Module a n
 
 beautifyModule mm

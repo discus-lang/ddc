@@ -247,12 +247,12 @@ seriesInputsOfCluster prog cluster
 -- == Pretty printing
 -- This is just the notation I used in the prototype.
 
-instance (Pretty s, Pretty a) => Pretty (Fun s a) where
+instance Pretty s => Pretty (Fun s a) where
  ppr (Fun _ ss)
   = encloseSep lbrace rbrace space
   $ map ppr ss
 
-instance (Pretty s, Pretty a) => Pretty (Scalar s a) where
+instance Pretty s => Pretty (Scalar s a) where
  ppr (Scalar _ Nothing)
   = text "-"
  ppr (Scalar _ (Just s))

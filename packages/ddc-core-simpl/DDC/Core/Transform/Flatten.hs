@@ -125,7 +125,7 @@ flatten1 (XCase a x1 alts)
 flatten1 x = x
 
 
-liftAcrossX :: Ord n => [Bind n] -> [Bind n] -> Exp a n -> Exp a n
+liftAcrossX :: [Bind n] -> [Bind n] -> Exp a n -> Exp a n
 liftAcrossX bsDepth bsLevels x
  = let  depth   = length [b | b@(BAnon _) <- bsDepth]
         levels  = length [b | b@(BAnon _) <- bsLevels]

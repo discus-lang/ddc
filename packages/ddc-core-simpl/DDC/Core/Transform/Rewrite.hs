@@ -350,7 +350,7 @@ rewriteWithX rule env f args
 
 -- | Check whether we can satisfy this constraint using witnesses
 --   in the rewrite nevironment.
-satisfiedContraint :: (Ord n, Show n) => RE.RewriteEnv a n -> Type n -> Bool
+satisfiedContraint :: Ord n => RE.RewriteEnv a n -> Type n -> Bool
 satisfiedContraint env c
         =  RE.containsWitness c env
         || RD.checkDisjoint   c env
@@ -358,8 +358,7 @@ satisfiedContraint env c
 
 
 -- | Wrap an expression in an effect weakning.
-weakeff :: Ord n 
-        => a -> Maybe (Effect n) 
+weakeff :: a -> Maybe (Effect n) 
         -> Exp a n -> Exp a n
 
 weakeff a meff x

@@ -35,7 +35,7 @@ type Arities n = (Map.Map n Int, [Int])
 
 
 -- | Empty arities context.
-emptyArities :: Ord n => Arities n
+emptyArities :: Arities n
 emptyArities = (Map.empty, [])
 
 
@@ -101,7 +101,7 @@ aritiesOfLets ll
 
 -- | Retrieve binders from case pattern, so we can extend the arity context.
 --   We don't know anything about their values, so record as 0.
-aritiesOfPat :: Ord n => Pat n -> [(Bind n, Int)]
+aritiesOfPat :: Pat n -> [(Bind n, Int)]
 aritiesOfPat p
  = case p of
         PDefault        -> []

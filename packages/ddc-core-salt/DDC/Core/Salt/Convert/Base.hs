@@ -79,7 +79,7 @@ data Error a
         deriving Show
 
 
-instance (Show a, Pretty a) => Pretty (Error a) where
+instance Pretty (Error a) where
  ppr err
   = case err of
         ErrorUndefined var

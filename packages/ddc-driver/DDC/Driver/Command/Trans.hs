@@ -157,7 +157,7 @@ cmdTransExpCont _config traceTrans language eatExp source str
 -- Trans ------------------------------------------------------------------------------------------
 -- | Transform an expression, or display errors
 transExp
-        :: (Eq n, Ord n, Pretty n, Show n, CompoundName n)
+        :: (Ord n, Pretty n, Show n, CompoundName n)
         => Bool                         -- ^ Trace transform information.
         -> Profile n                    -- ^ Language profile.
         -> KindEnv n                    -- ^ Kind Environment.

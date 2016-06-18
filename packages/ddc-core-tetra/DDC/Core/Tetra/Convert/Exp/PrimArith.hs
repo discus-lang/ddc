@@ -16,8 +16,7 @@ import qualified DDC.Core.Salt.Name      as A
 
 -- | Convert a Tetra arithmetic or logic primop to Salt.
 convertPrimArith
-        :: Show a 
-        => ExpContext                   -- ^ The surrounding expression context.
+        :: ExpContext                   -- ^ The surrounding expression context.
         -> Context a                    -- ^ Types and values in the environment.
         -> Exp (AnTEC a E.Name) E.Name  -- ^ Expression to convert.
         -> Maybe (ConvertM a (Exp a A.Name))
@@ -70,8 +69,7 @@ convertPrimArith _ectx ctx xx
 --   we need to convert the ones applied directly to primops, 
 --   as the primops are specified polytypically.
 convertPrimArgX 
-        :: Show a 
-        => Context a
+        :: Context a
         -> ExpContext                   -- ^ What context we're converting in.
         -> Exp (AnTEC a E.Name) E.Name  -- ^ Expression to convert.
         -> ConvertM a (Exp a A.Name)

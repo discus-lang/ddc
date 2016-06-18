@@ -1,12 +1,12 @@
 module DDC.Core.Flow.Transform.Rates.Clusters.Greedy
     (cluster_greedy)
- where
-
-import DDC.Base.Pretty
+where
 import DDC.Core.Flow.Transform.Rates.Graph
 import DDC.Core.Flow.Transform.Rates.Clusters.Base
 
-cluster_greedy :: (Ord n, Eq t, Show n, Pretty n) => Graph n t -> TransducerMap n -> [[n]]
+cluster_greedy 
+        :: (Ord n, Eq t) 
+        => Graph n t -> TransducerMap n -> [[n]]
 cluster_greedy g trans
  -- First find a greedy vertical clustering, then merge any leftover horizontal opportunities
  --

@@ -20,7 +20,6 @@ module DDC.Core.Transform.Boxing
 where
 import DDC.Core.Module
 import DDC.Core.Exp.Annot
-import DDC.Core.Pretty
 import DDC.Type.Transform.Instantiate
 import Data.Maybe
 
@@ -73,7 +72,7 @@ data Config a n
 -- Module -----------------------------------------------------------------------------------------
 -- | Manage boxing in a module.
 boxingModule 
-        :: (Show a, Show n, Pretty n, Ord n) 
+        :: Ord n
         => Config a n -> Module a n -> Module a n
 
 boxingModule config mm
@@ -187,7 +186,7 @@ boxingAlt config alt
 --   * Assumes that the type of the primitive is in prenex form.
 --
 boxingPrimitive
-        :: (Ord n, Pretty n, Show a, Show n)
+        :: Ord n
         => Config a n -> a
         -> Bool         -- ^ Primitive is being run at the call site.
         -> Exp a n      -- ^ Whole primitive application, for debugging.
@@ -259,7 +258,7 @@ boxingPrimitive config a bRun xx xFn tPrimBoxed tPrimUnboxed xsArgsAll
 -- * Assumes that the type of the imported thing is in prenex form.
 --
 boxingForeignSea
-        :: (Ord n, Pretty n)
+        :: Ord n
         => Config a n -> a 
         -> Exp a n      -- ^ Whole function application, for debugging.
         -> Exp a n      -- ^ Functional expression.

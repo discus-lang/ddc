@@ -15,8 +15,7 @@ import qualified Data.Map                               as Map
 
 -- | Convert some let-bindings to Salt.
 convertLets
-        :: Show a  
-        => Context a
+        :: Context a
         -> Lets (AnTEC a E.Name) E.Name -- ^ Expression to convert.
         -> ConvertM a (Maybe (Lets a A.Name), Context a)
 
@@ -59,8 +58,7 @@ convertLets ctx lts
 
 -- | Convert a possibly recursive let binding.
 convertBinding
-        :: Show a
-        => Context a
+        :: Context a
         -> Bind  E.Name
         -> Exp (AnTEC a E.Name) E.Name 
         -> ConvertM a (Bind A.Name, Exp a A.Name)

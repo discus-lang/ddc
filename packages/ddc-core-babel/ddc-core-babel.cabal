@@ -14,7 +14,7 @@ Description:    Disciplined Disciple Compiler PHP code generator.
 
 Library
   Build-Depends:
-        base            >= 4.6 && < 4.9,
+        base            >= 4.6 && < 4.10,
         containers      == 0.5.*,
         ddc-base        == 0.4.3.*,
         ddc-core        == 0.4.3.*,

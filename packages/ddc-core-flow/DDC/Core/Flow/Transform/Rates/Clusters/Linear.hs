@@ -79,12 +79,14 @@ getBounds ns ws
 
 
 -- | Create constraints for edges and weights
-getConstraints :: (Ord n, Eq t, Show n)
-               => Int -> Graph n t
-               -> [((n,n),Bool)]
-               -> [(Int,n,n)]
-               -> TransducerMap n
-               -> Constraint (ZVar n) (RVar n) IntDouble
+getConstraints 
+        :: (Ord n, Eq t)
+        => Int -> Graph n t
+        -> [((n,n),Bool)]
+        -> [(Int,n,n)]
+        -> TransducerMap n
+        -> Constraint (ZVar n) (RVar n) IntDouble
+
 getConstraints bigN g arcs ws trans
  = mconcat $  map edgeConstraint arcs
            ++ map weightConstraint ws
@@ -237,7 +239,7 @@ clusterings arcs ns bigN g trans
 
 
 -- | Create linear program for graph, and put all the pieces together.
-lp :: (Ord n, Eq t, Show n) => Graph n t -> TransducerMap n -> Program (ZVar n) (RVar n) IntDouble
+lp :: (Ord n, Eq t) => Graph n t -> TransducerMap n -> Program (ZVar n) (RVar n) IntDouble
 lp g trans
  = minimise (gobjective names weights)
             (getConstraints nNodes g arcs weights trans)

@@ -57,7 +57,7 @@ import qualified DDC.Type.Sum                   as Sum
 -- >  = True
 --
 checkDisjoint
-        :: (Ord n, Show n)
+        :: Ord n
         => Type n               -- ^ Type of property we want
                                 --   eg @Disjoint e1 e2@
         -> RE.RewriteEnv a n    -- ^ Environment we're rewriting in.
@@ -78,7 +78,7 @@ checkDisjoint c env
 
 -- | Check whether two atomic effects are disjoint.
 areDisjoint 
-        :: (Ord n, Show n)
+        :: Ord n
         => RE.RewriteEnv a n
         -> Effect n
         -> Effect n
