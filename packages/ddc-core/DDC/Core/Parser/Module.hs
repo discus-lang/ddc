@@ -33,8 +33,8 @@ pModule c
         let importSpecs_noArity = concat $ [specs  | HeadImportSpecs   specs <- heads ]
         let exportSpecs         = concat $ [specs  | HeadExportSpecs   specs <- heads ]
 
-        let dataDefsLocal       =          [def    | HeadDataDef     def     <- heads ]
-        let typeDefsLocal       =          [(n, t) | HeadTypeDef     n t     <- heads ]
+        let dataDefsLocal       = [def         | HeadDataDef     def       <- heads ]
+        let typeDefsLocal       = [(n, (k, t)) | HeadTypeDef     n k t     <- heads ]
 
         -- Attach arity information to import specs.
         --   The aritity information itself comes in the ARITY pragmas,
@@ -73,17 +73,18 @@ pModule c
                 { moduleName            = name
                 , moduleIsHeader        = isHeader
                 , moduleExportTypes     = []
-                , moduleExportValues    = [(n, s) | ExportValue n s        <- exportSpecs]
-                , moduleImportTypes     = [(n, s) | ImportForeignType  n s <- importSpecs]
-                , moduleImportCaps      = [(n, s) | ImportForeignCap   n s <- importSpecs]
-                , moduleImportValues    = [(n, s) | ImportForeignValue n s <- importSpecs]
-                , moduleImportTypeDefs  = [(n, t) | ImportType  n t        <- importSpecs]
-                , moduleImportDataDefs  = [def    | ImportData  def        <- importSpecs]
+                , moduleExportValues    = [(n, s)      | ExportValue n s        <- exportSpecs]
+                , moduleImportTypes     = [(n, s)      | ImportForeignType  n s <- importSpecs]
+                , moduleImportCaps      = [(n, s)      | ImportForeignCap   n s <- importSpecs]
+                , moduleImportValues    = [(n, s)      | ImportForeignValue n s <- importSpecs]
+                , moduleImportTypeDefs  = [(n, (k, t)) | ImportType  n k t      <- importSpecs]
+                , moduleImportDataDefs  = [def         | ImportData  def        <- importSpecs]
                 , moduleDataDefsLocal   = dataDefsLocal
                 , moduleTypeDefsLocal   = typeDefsLocal
                 , moduleBody            = body }
 
 
+---------------------------------------------------------------------------------------------------
 -- | Wrapper for a declaration that can appear in the module header.
 data HeadDecl n
         -- | Import specifications.
@@ -96,7 +97,7 @@ data HeadDecl n
         | HeadDataDef      (DataDef     n)
 
         -- | Type equations.
-        | HeadTypeDef       n (Type n)
+        | HeadTypeDef       n (Kind n) (Type n)
 
         -- | Arity pragmas.
         --   Number of type parameters, value parameters, and boxes for some super.
@@ -118,22 +119,24 @@ pHeadDecl ctx
         , do    def     <- pDataDef ctx
                 return  $ HeadDataDef def
 
-        , do    (n, t)  <- pTypeDef ctx
-                return  $ HeadTypeDef n t
+        , do    (n, k, t) <- pTypeDef ctx
+                return  $ HeadTypeDef n k t
 
         , do    pHeadPragma ctx 
         ]
 
 
--- | Parse a type definition.
-pTypeDef :: Ord n => Context n -> Parser n (n, Type n)
+-- | Parse a type equation.
+pTypeDef :: Ord n => Context n -> Parser n (n, Kind n, Type n)
 pTypeDef c
  = do   pTokSP KType
         n       <- pName
+        pTokSP (KOp ":")
+        k       <- pType c
         pTokSP KEquals
         t       <- pType c
         pTokSP KSemiColon
-        return  (n, t)
+        return  (n, k, t)
 
 
 -- | Parse one of the pragmas that can appear in the module header.

@@ -242,8 +242,10 @@ pprDataCtor ctor
 
 -- TypeDef -----------------------------------------------------------------------------------------
 -- | Pretty print a type definition.
-pprTypeDef :: (Pretty n, Eq n) => (n, Type n) -> Doc 
-pprTypeDef (n, t)
- =  text "type" <+> ppr n <+> text "=" <+> ppr t
+pprTypeDef :: (Pretty n, Eq n) => (n, (Kind n, Type n)) -> Doc 
+pprTypeDef (n, (k, t))
+ =  text "type" <+> ppr n 
+                <+> text ":" <+> ppr k
+                <+> text "=" <+> ppr t
  <> semi <> line
 

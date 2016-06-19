@@ -133,7 +133,7 @@ importsForDaTyCons deps _tycons
 -- | Import type defs defined in other modules.
 importsTypeDef 
         :: Map ModuleName (Module b n)
-        -> [(n, Type n)]
+        -> [(n, (Kind n, Type n))]
 
 importsTypeDef deps
         = concat

@@ -250,11 +250,15 @@ toCoreDataCtor dataDef tag ctor
 
 
 -- TypeDef ----------------------------------------------------------------------------------------
-toCoreTypeDef :: (S.TyConBind, S.Type) -> ConvertM a (C.Name, C.Type C.Name)
+toCoreTypeDef
+        :: (S.TyConBind, S.Type)
+        -> ConvertM a (C.Name, (C.Kind C.Name, C.Type C.Name))
+
 toCoreTypeDef (b, t)
  = do   n       <- toCoreTBCN b
         t'      <- toCoreT UniverseSpec t
-        return  (n, t')
+        let hole = C.TVar (C.UName C.NameHole)
+        return  (n, (hole, t'))
 
 
 -- Type -------------------------------------------------------------------------------------------

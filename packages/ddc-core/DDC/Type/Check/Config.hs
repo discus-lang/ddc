@@ -3,10 +3,13 @@ module DDC.Type.Check.Config
         ( Config (..)
         , configOfProfile)
 where
+import DDC.Type.Exp
 import DDC.Type.DataDef
 import DDC.Type.Env                     (KindEnv, TypeEnv)
+import Data.Map                         (Map)
 import qualified DDC.Type.Env           as Env
 import qualified DDC.Core.Fragment      as F
+import qualified Data.Map               as Map
 
 
 -- Config ---------------------------------------------------------------------
@@ -26,6 +29,10 @@ data Config n
 
           -- | Data type definitions.
         , configDataDefs                :: DataDefs n  
+
+          -- | Type equations, mapping the constructor name to its
+          --   kind and associated type.
+        , configTypeDefs                :: Map n (Kind n, Type n)
 
           -- | Types of globally available capabilities.
           --
@@ -72,6 +79,7 @@ configOfProfile profile
         { configPrimKinds               = F.profilePrimKinds            profile
         , configPrimTypes               = F.profilePrimTypes            profile
         , configDataDefs                = F.profilePrimDataDefs         profile
+        , configTypeDefs                = Map.empty
         , configGlobalCaps              = Env.empty
         , configNameIsHole              = F.profileNameIsHole           profile 
         

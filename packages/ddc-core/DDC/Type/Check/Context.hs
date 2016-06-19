@@ -42,9 +42,9 @@ import DDC.Type.Transform.BoundT
 import DDC.Type.Exp.Simple
 import DDC.Base.Pretty
 import Data.Maybe
+import Data.IntMap.Strict               (IntMap)
 import qualified DDC.Type.Sum           as Sum
 import qualified Data.IntMap.Strict     as IntMap
-import Data.IntMap.Strict               (IntMap)
 import qualified Data.Set               as Set
 import Data.Set                         (Set)
 import Prelude                          hiding ((<$>))
@@ -233,7 +233,11 @@ instance Pretty Role where
 -- | An empty context.
 emptyContext :: Context n
 emptyContext 
-        = Context 0 0 [] IntMap.empty
+        = Context
+        { contextGenPos         = 0
+        , contextGenExists      = 0 
+        , contextElems          = []
+        , contextSolved         = IntMap.empty }
 
 
 -- Push -----------------------------------------------------------------------
@@ -421,22 +425,24 @@ updateExists isMore iEx@(Exists iEx' _) tEx ctx
         go ll
          = case ll of
                 l@ElemPos{}     : ls
-                 | Just ls'     <- go ls        -> Just (l : ls')
+                 | Just ls'     <- go ls  -> Just (l : ls')
 
                 l@ElemKind{}    : ls   
-                 | Just ls'     <- go ls        -> Just (l : ls')
+                 | Just ls'     <- go ls  -> Just (l : ls')
 
                 l@ElemType{}    : ls
-                 | Just ls'     <- go ls        -> Just (l : ls')
+                 | Just ls'     <- go ls  -> Just (l : ls')
 
                 l@(ElemExistsDecl i) : ls
                  | i == iEx             
-                 -> Just $ (ElemExistsEq i tEx : [ElemExistsDecl n' | n' <- isMore]) ++ ls
+                 -> let es  =  ElemExistsEq i tEx 
+                            : [ElemExistsDecl n' | n' <- isMore]
+                    in  Just $ es ++ ls
 
-                 | Just ls'     <- go ls        -> Just (l : ls')
+                 | Just ls'     <- go ls  -> Just (l : ls')
 
                 l@ElemExistsEq{} : ls
-                 | Just ls'     <- go ls        -> Just (l : ls')
+                 | Just ls'     <- go ls  -> Just (l : ls')
 
                 _ -> Just ll  -- Nothing
 

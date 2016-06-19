@@ -33,7 +33,7 @@ data ImportSpec n
         | ImportForeignValue n (ImportValue  n (Type n))
 
         -- | Imported types from other modules.
-        | ImportType         n (Type n)
+        | ImportType         n (Kind n) (Type n)
 
         -- | Imported data declarations from other modules.
         | ImportData           (DataDef n)
@@ -155,9 +155,11 @@ pImportType
 
 pImportType c
  = do   n       <- pName
+        pTokSP (KOp ":")
+        k       <- pType c
         pTokSP KEquals
         t       <- pType c
-        return  $  ImportType n t
+        return  $  ImportType n k t
 
 
 ---------------------------------------------------------------------------------------------------

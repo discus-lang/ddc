@@ -13,6 +13,7 @@ import qualified DDC.Type.Env   as Env
 import qualified Data.Set       as Set
 import qualified Data.Map       as Map
 
+
 -------------------------------------------------------------------------------
 -- | Check some data type definitions.
 checkDataDefs 

@@ -93,14 +93,14 @@ data Module a n
         , moduleImportDataDefs  :: ![DataDef n]
 
           -- | Type defs imported from other modules.
-        , moduleImportTypeDefs  :: ![(n, Type n)]
+        , moduleImportTypeDefs  :: ![(n, (Kind n, Type n))]
 
           -- Local defs ---------------
           -- | Data types defined in this module.
         , moduleDataDefsLocal   :: ![DataDef n]
 
           -- | Type definitions in this module.
-        , moduleTypeDefsLocal   :: ![(n, Type n)]
+        , moduleTypeDefsLocal   :: ![(n, (Kind n, Type n))]
 
           -- | The module body consists of some let-bindings wrapping a unit
           --   data constructor. We're only interested in the bindings, with
@@ -141,7 +141,7 @@ moduleDataDefs mm
 
 
 -- | Get the data type definitions visible in a module.
-moduleTypeDefs :: Ord n => Module a n -> [(n, Type n)]
+moduleTypeDefs :: Ord n => Module a n -> [(n, (Kind n, Type n))]
 moduleTypeDefs mm
         = moduleImportTypeDefs mm ++ moduleTypeDefsLocal mm
 

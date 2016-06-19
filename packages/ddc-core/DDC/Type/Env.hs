@@ -22,6 +22,7 @@ module DDC.Type.Env
 
         -- * Conversion
         , fromList
+        , fromListNT
         , fromTypeMap
 
         -- * Projections 
@@ -126,6 +127,12 @@ isPrim env n
 fromList :: Ord n => [Bind n] -> Env n
 fromList bs
         = foldr extend empty bs
+
+
+-- | Convert a list of name and types into an environment
+fromListNT :: Ord n => [(n, Type n)] -> Env n
+fromListNT nts
+ = fromList [BName n t | (n, t) <- nts]
 
 
 -- | Convert a map of names to types to a environment.
