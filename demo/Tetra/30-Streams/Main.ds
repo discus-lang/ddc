@@ -51,7 +51,7 @@ smap (f : a -> b) (ss : Stream s a) : Stream s b
 
 
 -- | Take the given number of elements from a stream.
-stake (n : Nat#) (ss : Stream s a) : Stream (Tup2 s Nat#) a
+stake (n : Nat) (ss : Stream s a) : Stream (Tup2 s Nat) a
  = case ss of
         MkStream fA sA0
          -> let stepB q

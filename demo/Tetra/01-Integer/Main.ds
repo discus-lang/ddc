@@ -14,24 +14,24 @@ main (_ : Unit) : S Console Unit
 
 
 -- Factorial.
-fac  (n : Nat#) : Nat#
+fac  (n : Nat) : Nat
  = fac' 1 n
 
-fac' (acc : Nat#) (n : Nat#) : Nat#
+fac' (acc : Nat) (n : Nat) : Nat
  | n == 0       = acc
  | n == 1       = acc
  | otherwise    = fac' (acc * n) (n - 1)
 
 
 -- Ackermann's function.
-ack (m : Nat#) (n : Nat#) : Nat#
+ack (m : Nat) (n : Nat) : Nat
  | m == 0       = n + 1
  | n == 0       = ack (m - 1) 1
  | otherwise    = ack (m - 1) (ack m (n - 1)) 
 
 
 -- Greatest Common Divisor.
-gcd (x y : Nat#) : Nat#
+gcd (x y : Nat) : Nat
  | x == 0       = y
  | y == 0       = x
  | x > y        = gcd y (rem x y)

@@ -18,25 +18,26 @@ where
 
 
 -- | A stream of prime numbers.
-primes (c0: Nat#): Stream Nat# Nat#
+primes (c0: Nat): Stream Nat Nat
  = sfilter isPrime $ senumFrom 2
 
 
 -- | Check if a number is prime.
 --   Use Wilson's theorem to check for primality, being sure to take
 --   the mod of the running sum to avoid integer overflow.
-isPrime (n: Nat#): Bool#
- =  foldl (λacc x: Nat#. rem (x * acc) n) 1 (enumFromTo 1 (n - 1))
+isPrime (n: Nat): Bool#         
+                -- TODO: Tetra -> Salt conversion fails if we set this to 'Bool'.
+ =  foldl (λacc x: Nat. rem (x * acc) n) 1 (enumFromTo 1 (n - 1))
  == (n - 1)
 
 
 -- | A stream of k-almost-prime numbers.
-kPrimes (k: Nat#): Stream Nat# Nat#
+kPrimes (k: Nat): Stream Nat Nat
  = sfilter (isKPrime k) (senumFrom 2) 
 
 
 -- | Check if some number is k-almost-prime.
-isKPrime (k n: Nat#): Bool#
+isKPrime (k n: Nat): Bool
  | k == 1       
  = isPrime n
 
@@ -45,7 +46,7 @@ isKPrime (k n: Nat#): Bool#
         $ smap       fst
         $ sfilter    (eq 0 ∘ snd)
         $ smap       (divMod n)
-        $ stakeWhile (λx: Nat#. x < n)
+        $ stakeWhile (λx: Nat. x < n)
         $ primes 2
 
 

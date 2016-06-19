@@ -20,13 +20,13 @@ where
 
 
 -- | Convert a source number to its grey-code.
-grayToBin (g: Nat#): Nat#
+grayToBin (g: Nat): Nat
  | g == 0       = 0
  | otherwise    = bxor g (grayToBin (shr g 1))
 
 
 -- | Convert a gray-code back to the source number.
-binToGray (b: Nat#): Nat#
+binToGray (b: Nat): Nat
  = bxor b (shr b 1)
 
 

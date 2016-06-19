@@ -27,12 +27,12 @@ cExp (x y : Natural) : Natural
         Zero    -> Succ Zero
         Succ y2 -> cMul x (cExp x y2)
 
-natToInt (x : Natural) : Nat#
+natToInt (x : Natural) : Nat
  = case x of
         Zero    -> 0
         Succ x2 -> 1 + natToInt x2
 
-intToNat (x : Nat#) : Natural
+intToNat (x : Nat) : Natural
  = case x < 1 of
         True    -> Zero
         False   -> Succ (intToNat (x - 1))

@@ -35,8 +35,8 @@ where
 
 
 -- | Make a triangle of the given size.
-make    (n: Nat#) (acc: List (List Nat#)) (prev: List Nat#)
-        : List (List (Nat#))
+make    (n: Nat) (acc: List (List Nat)) (prev: List Nat)
+        : List (List Nat)
  = case n of
     0 -> Nil
     _ -> do
@@ -53,11 +53,11 @@ rows n  = Cons (singleton 1) (make n Nil (singleton 1))
 cumu n  = map (scanl add 0) (rows n)
 
 -- | Get sum of the nth row.
-sums n  = foldl add 0 (last (Nil [Nat#]) (rows n))
+sums n  = foldl add 0 (last (Nil [Nat]) (rows n))
 
 -- | Write a list to the console.
 writeListl xs
- = do   forS xs (λn : Nat#. write ((showNat n) % " "))
+ = do   forS xs (λn : Nat. write ((showNat n) % " "))
         write "\n"
 
 main (_ : Unit): S Console Unit

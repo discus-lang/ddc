@@ -39,9 +39,9 @@ toggleDoor (d: Door): Door
         Closed  -> Open
 
 
-toggleEvery (n: Nat#) (k: Nat#): List Door -> List Door
+toggleEvery (n: Nat) (k: Nat): List Door -> List Door
  = let
-        toggleIx (i: Nat#) (d: Door): Door
+        toggleIx (i: Nat) (d: Door): Door
          = if rem i k == 0 
                 then toggleDoor d
                 else d
@@ -49,14 +49,14 @@ toggleEvery (n: Nat#) (k: Nat#): List Door -> List Door
    in   zipWith toggleIx (enumFromTo 1 n)
 
 
-runToggle (n: Nat#): List Door
+runToggle (n: Nat): List Door
  = foldr (toggleEvery n) (replicate n Closed) (enumFromTo 1 n)
 
 
 main (_: Unit): S Console Unit
  = do
         zipWithS 
-                (λn: Nat#. λd: Door. 
+                (λn: Nat. λd: Door. 
                         case d of
                          Open   -> writel (showNat n %% showDoor d)
                          _      -> ())

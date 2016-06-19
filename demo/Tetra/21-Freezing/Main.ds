@@ -14,7 +14,7 @@ where
 -- visible to the caller.
 rlength [a : Data] [r1 : Region] 
         (xx : List a) 
-        : S (Alloc r1) (Ref r1 Nat#)
+        : S (Alloc r1) (Ref r1 Nat)
  = extend r1 using r2 with {Read r2; Write r2; Alloc r2} in     
    do   
         -- Allocate the reference into the extension region.
