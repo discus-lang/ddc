@@ -4,6 +4,7 @@ module DDC.Type.Exp.Simple.Equiv
         , equivWithBindsT
         , equivTyCon
 
+        , crushHeadT
         , crushSomeT
         , crushEffect)
 where
@@ -11,10 +12,11 @@ import DDC.Type.Exp.Simple.Predicates
 import DDC.Type.Exp.Simple.Compounds
 import DDC.Type.Exp.Simple.Exp
 import DDC.Type.Bind
-import DDC.Type.Env             (TypeEnv)
-import qualified DDC.Type.Env   as Env
-import qualified DDC.Type.Sum   as Sum
-import qualified Data.Map       as Map
+import DDC.Type.Env                     (TypeEnv)
+import Data.Map                         (Map)
+import qualified DDC.Type.Env           as Env
+import qualified DDC.Type.Sum           as Sum
+import qualified Data.Map.Strict        as Map
 
 
 ---------------------------------------------------------------------------------------------------
@@ -29,22 +31,26 @@ import qualified Data.Map       as Map
 --     bound variables match the binders. If this is not the case then you get
 --     an indeterminate result.
 --
-equivT  :: Ord n => Type n -> Type n -> Bool
-equivT t1 t2
-        = equivWithBindsT [] [] t1 t2
+equivT  :: Ord n 
+        => Map n (Type n)
+        -> Type n -> Type n -> Bool
+
+equivT eqs t1 t2
+        = equivWithBindsT eqs [] [] t1 t2
 
 -- | Like `equivT` but take the initial stacks of type binders.
 equivWithBindsT
         :: Ord n
-        => [Bind n]
+        => Map n (Type n)
+        -> [Bind n]
         -> [Bind n]
         -> Type n
         -> Type n
         -> Bool
 
-equivWithBindsT stack1 stack2 t1 t2
- = let  t1'     = unpackSumT $ crushSomeT Env.empty t1
-        t2'     = unpackSumT $ crushSomeT Env.empty t2
+equivWithBindsT eqns stack1 stack2 t1 t2
+ = let  t1'     = unpackSumT $ crushSomeT eqns Env.empty t1
+        t2'     = unpackSumT $ crushSomeT eqns Env.empty t2
 
    in case (t1', t2') of
         (TVar u1,         TVar u2)
@@ -60,11 +66,20 @@ equivWithBindsT stack1 stack2 t1 t2
          , Just (ix2, t2a)   <- getBindType stack2 u2
          , ix1 == ix2
          -> checkBounds u1 u2 
-         $  equivWithBindsT stack1 stack2 t1a t2a
+         $  equivWithBindsT eqns stack1 stack2 t1a t2a
 
          | otherwise
          -> checkBounds u1 u2
          $  False
+
+        -- Lookup type equations.
+        (TCon (TyConBound (UName n) _), _)
+         | Just t1'' <- Map.lookup n eqns
+         -> equivWithBindsT eqns stack1 stack2 t1'' t2'
+
+        (_, TCon (TyConBound (UName n) _))
+         | Just t2'' <- Map.lookup n eqns
+         -> equivWithBindsT eqns stack1 stack2 t1' t2''
 
         -- Constructor names must be equal.
         (TCon tc1,        TCon tc2)
@@ -72,16 +87,16 @@ equivWithBindsT stack1 stack2 t1 t2
 
         -- Push binders on the stack as we enter foralls.
         (TForall b11 t12, TForall b21 t22)
-         |  equivT  (typeOfBind b11) (typeOfBind b21)
-         -> equivWithBindsT
+         |  equivT  eqns (typeOfBind b11) (typeOfBind b21)
+         -> equivWithBindsT eqns
                 (b11 : stack1)
                 (b21 : stack2)
                 t12 t22
 
         -- Decend into applications.
         (TApp t11 t12,    TApp t21 t22)
-         -> equivWithBindsT stack1 stack2 t11 t21
-         && equivWithBindsT stack1 stack2 t12 t22
+         -> equivWithBindsT eqns stack1 stack2 t11 t21
+         && equivWithBindsT eqns stack1 stack2 t12 t22
         
         -- Sums are equivalent if all of their components are.
         (TSum ts1,        TSum ts2)
@@ -91,15 +106,16 @@ equivWithBindsT stack1 stack2 t1 t2
                 -- If all the components of the sum were in the element
                 -- arrays then they come out of Sum.toList sorted
                 -- and we can compare corresponding pairs.
-                checkFast = and $ zipWith (equivWithBindsT stack1 stack2) ts1' ts2'
+                checkFast = and $ zipWith (equivWithBindsT eqns stack1 stack2) ts1' ts2'
 
                 -- If any of the components use a higher kinded type variable
                 -- like (c : % ~> !) then they won't nessesarally be sorted,
                 -- so we need to do this slower O(n^2) check.
                 -- Make sure to get the bind stacks the right way around here.
-                checkSlow = and [ or (map (equivWithBindsT stack1 stack2 t1c) ts2') 
+                checkSlow = and [ or (map (equivWithBindsT eqns stack1 stack2 t1c) ts2') 
                                 | t1c <- ts1' ]
-                         && and [ or (map (equivWithBindsT stack2 stack1 t2c) ts1') 
+
+                         && and [ or (map (equivWithBindsT eqns stack2 stack1 t2c) ts1') 
                                 | t2c <- ts2' ]
 
             in  (length ts1' == length ts2')
@@ -147,21 +163,60 @@ equivTyCon tc1 tc2
 
 
 ---------------------------------------------------------------------------------------------------
+-- | Head normal reduction of the given type,
+--    expanding out type equations,
+--    reducing applications,
+--    and normalizing effects.
+
+crushHeadT  :: Ord n
+        => Map n (Type n)
+        -> TypeEnv n
+        -> Type n -> Type n
+
+crushHeadT eqns caps tt
+ = case tt of
+        TCon (TyConBound (UName n) _)
+         -> case Map.lookup n eqns of
+                Nothing         -> tt
+                Just tt'        -> crushHeadT eqns caps tt'
+
+        TCon{}  -> tt
+
+        TVar{}  -> tt
+
+        TAbs{}  -> tt
+
+        -- TODO: apply type abstractions.
+        TApp t1 t2
+         -> let t1'     = crushHeadT eqns caps t1
+                t2'     = crushHeadT eqns caps t2
+            in  TApp t1' t2'
+
+        TForall{} -> tt
+
+        TSum{}    -> tt
+
+
 -- | Crush compound effects and closure terms.
 --   We check for a crushable term before calling crushT because that function
 --   will recursively crush the components. 
 --   As equivT is already recursive, we don't want a doubly-recursive function
 --   that tries to re-crush the same non-crushable type over and over.
 --
-crushSomeT :: Ord n => TypeEnv n -> Type n -> Type n
-crushSomeT caps tt
+crushSomeT 
+        :: Ord n 
+        => Map n (Type n)
+        -> TypeEnv n 
+        -> Type n -> Type n
+
+crushSomeT eqs caps tt
  = {-# SCC crushSomeT #-}
    case tt of
         TApp (TCon tc) _
          -> case tc of
-                TyConSpec    TcConDeepRead   -> crushEffect caps tt
-                TyConSpec    TcConDeepWrite  -> crushEffect caps tt
-                TyConSpec    TcConDeepAlloc  -> crushEffect caps tt
+                TyConSpec    TcConDeepRead   -> crushEffect eqs caps tt
+                TyConSpec    TcConDeepWrite  -> crushEffect eqs caps tt
+                TyConSpec    TcConDeepAlloc  -> crushEffect eqs caps tt
                 _                            -> tt
 
         _ -> tt
@@ -173,11 +228,12 @@ crushSomeT caps tt
 --
 crushEffect 
         :: Ord n 
-        => TypeEnv n            -- ^ Globally available capabilities.
+        => Map n (Type n)
+        -> TypeEnv n            -- ^ Globally available capabilities.
         -> Effect n             -- ^ Type to crush. 
         -> Effect n
 
-crushEffect caps tt
+crushEffect eqs caps tt
  = {-# SCC crushEffect #-}
    case tt of
         TVar{}          -> tt
@@ -185,11 +241,11 @@ crushEffect caps tt
         TCon{}          -> tt
 
         TApp{}
-         |  or [equivT tt t | (_, t) <- Map.toList $ Env.envMap caps]
+         |  or [equivT eqs tt t | (_, t) <- Map.toList $ Env.envMap caps]
          -> tSum kEffect []
 
         TAbs b t
-         -> TAbs b $ crushEffect caps t
+         -> TAbs b $ crushEffect eqs caps t
 
         TApp t1 t2
          -- Head Read.
@@ -220,7 +276,7 @@ crushEffect caps tt
               | (ks, _)  <- takeKFuns k
               , length ks == length ts
               , Just effs       <- sequence $ zipWith makeDeepRead ks ts
-              -> crushEffect caps $ TSum $ Sum.fromList kEffect effs
+              -> crushEffect eqs caps $ TSum $ Sum.fromList kEffect effs
 
              _ -> tt
 
@@ -232,7 +288,7 @@ crushEffect caps tt
               | (ks, _)  <- takeKFuns k
               , length ks == length ts
               , Just effs       <- sequence $ zipWith makeDeepWrite ks ts
-              -> crushEffect caps $ TSum $ Sum.fromList kEffect effs
+              -> crushEffect eqs caps $ TSum $ Sum.fromList kEffect effs
 
              _ -> tt 
 
@@ -244,20 +300,20 @@ crushEffect caps tt
               | (ks, _)  <- takeKFuns k
               , length ks == length ts
               , Just effs       <- sequence $ zipWith makeDeepAlloc ks ts
-              -> crushEffect caps $ TSum $ Sum.fromList kEffect effs
+              -> crushEffect eqs caps $ TSum $ Sum.fromList kEffect effs
 
              _ -> tt
 
          | otherwise
-         -> TApp (crushEffect caps t1) (crushEffect caps t2)
+         -> TApp (crushEffect eqs caps t1) (crushEffect eqs caps t2)
 
         TForall b t
-         -> TForall b $ crushEffect caps t
+         -> TForall b $ crushEffect eqs caps t
 
         TSum ts         
          -> TSum
           $ Sum.fromList (Sum.kindOfSum ts)   
-          $ map (crushEffect caps)
+          $ map (crushEffect eqs caps)
           $ Sum.toList ts
 
 

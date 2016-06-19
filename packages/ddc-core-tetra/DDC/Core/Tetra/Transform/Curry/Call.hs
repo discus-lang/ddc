@@ -36,7 +36,7 @@ makeCall callables nFun tFun esArgs
         -- Internal sanity check: the type annotation on the function
         -- to call should match the type we have for it in the callables
         -- table. If not then we're bugged.
-        when (not $ equivT tFun tFunTable)
+        when (not $ equivT Map.empty tFun tFunTable)
          $ Left $ ErrorSuperTypeMismatch nFun tFun tFunTable
 
         case Call.dischargeConsWithElims csF esArgs of

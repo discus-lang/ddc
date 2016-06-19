@@ -131,6 +131,7 @@ checkLetsM !bidir xx !table !ctx0 !demand (LLet b xBind)
  = do
         let config      = tableConfig table
         let kenv        = tableKindEnv table
+        let eqns        = configTypeEqns config
         let a           = annotOfExp xx
 
         -- Reconstruct the type of the binding.
@@ -147,7 +148,7 @@ checkLetsM !bidir xx !table !ctx0 !demand (LLet b xBind)
         -- If there is a type annotation on the binding then this
         -- must match the reconstructed type.
         when (not $ isBot (typeOfBind b))
-         $ if equivT (typeOfBind b) tBind
+         $ if equivT eqns (typeOfBind b) tBind
                 then return ()
                 else (throw $ ErrorLetMismatch a xx b tBind)
 
@@ -382,6 +383,9 @@ checkRecBindExps table False a ctx0 demand bxs0
 
         go ((b, xBind) : bxs) ctx
          = do   
+                let config      = tableConfig table
+                let eqns        = configTypeEqns config
+
                 ctrace  $ vcat
                         [ text "*>  Let Rec Bind RECON"
                         , text "    demand     = " <> (text $ show demand)
@@ -397,7 +401,7 @@ checkRecBindExps table False a ctx0 demand bxs0
 
                 -- Check the annotation on the binder matches the reconstructed
                 -- type of the binding.
-                when (not $ equivT (typeOfBind b) t)
+                when (not $ equivT eqns (typeOfBind b) t)
                  $ throw $ ErrorLetMismatch a xBind b t
 
                 -- Reconstructing the types of binders adds missing kind info to

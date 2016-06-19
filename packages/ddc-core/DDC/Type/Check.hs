@@ -1,6 +1,7 @@
 -- | Check the kind of a type.
 module DDC.Type.Check
         ( Config        (..)
+        , configTypeEqns
         , configOfProfile
 
           -- * Checking types.

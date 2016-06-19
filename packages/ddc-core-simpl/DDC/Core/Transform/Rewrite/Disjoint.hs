@@ -8,6 +8,7 @@ import DDC.Type.Exp.Simple                      as T
 import qualified DDC.Core.Transform.Rewrite.Env as RE
 import qualified DDC.Type.Env                   as Env
 import qualified DDC.Type.Sum                   as Sum
+import qualified Data.Map.Strict                as Map
 
 
 -- | Check whether a disjointness property is true in the given
@@ -67,8 +68,8 @@ checkDisjoint c env
         -- The type must have the form "Disjoint e1 e2"
         | [TCon (TyConWitness TwConDisjoint), fs, gs] <- takeTApps c
         = and [ areDisjoint env g f 
-                | f <- sumList $ T.crushEffect Env.empty fs
-                , g <- sumList $ T.crushEffect Env.empty gs ]
+                | f <- sumList $ T.crushEffect Map.empty Env.empty fs
+                , g <- sumList $ T.crushEffect Map.empty Env.empty gs ]
 
         | otherwise
         = False

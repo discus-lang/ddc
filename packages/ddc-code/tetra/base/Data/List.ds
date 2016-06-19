@@ -33,13 +33,13 @@ singleton (x: a): List a
 
 -- | Construct a list of the given length where all elements are'
 --   the same value.
-replicate (n: Nat#) (x: a): List a
+replicate (n: Nat) (x: a): List a
  | n == 0       = Nil
  | otherwise    = Cons x (replicate (n - 1) x)
 
 
 -- | Construct a range of values.
-enumFromTo (start: Nat#) (end: Nat#): List Nat#
+enumFromTo (start: Nat) (end: Nat): List Nat
  | start >= end = singleton start
  | otherwise    = Cons start (enumFromTo (start + 1) end)
 
@@ -53,7 +53,7 @@ append (xx yy: List a): List a
 
 -- Projections ----------------------------------------------------------------
 -- | Take the length of a list.
-length (xx: List a): Nat#
+length (xx: List a): Nat
  = case xx of
         Nil             -> 0
         Cons x xs       -> 1 + length xs
@@ -93,7 +93,7 @@ last (def: a) (xx: List a): a
                 Cons y ys       -> last def xs
 
 
-index (def: a) (n: Nat#) (xx: List a): a
+index (def: a) (n: Nat) (xx: List a): a
  = case xx of   
         Nil     -> def
         Cons x xs 
@@ -196,12 +196,12 @@ foldrS (f: a -> b -> S e b) (z: b) (xx: List a): S e b
 
 
 -- | Take the sum of a list of Nats.
-sum (xs: List Nat#): Nat#
+sum (xs: List Nat): Nat
  = foldl (+) 0 xs
 
 
 -- | Take the product of a list of Nats.
-prod (xs: List Nat#): Nat#
+prod (xs: List Nat): Nat
  = foldl (*) 1 xs
 
 
@@ -218,7 +218,7 @@ scanl (f: b -> a -> b) (acc: b) (xx: List a): List b
 
 -- Filters --------------------------------------------------------------------
 -- | Keep only those elements that match the given predicate.
-filter (p: a -> Bool#) (xx: List a): List a
+filter (p: a -> Bool) (xx: List a): List a
  = case xx of
         Nil             -> Nil
         Cons x xs  
@@ -229,7 +229,7 @@ filter (p: a -> Bool#) (xx: List a): List a
 
 -- | Keep only those elements that match the given stateful predicate.
 --   The predicate is applied to the list elements from left to right.
-filterS (p: a -> S e Bool#) (xx: List a): S e (List a)
+filterS (p: a -> S e Bool) (xx: List a): S e (List a)
  = case xx of
         Nil             -> Nil
         Cons x xs  
@@ -239,7 +239,7 @@ filterS (p: a -> S e Bool#) (xx: List a): S e (List a)
 
 
 -- | Check if any of the members of the list match the given predicate.
-any (p: a -> Bool#) (xx: List a): Bool#
+any (p: a -> Bool) (xx: List a): Bool
  = case xx of
         Nil
          -> False

@@ -3,23 +3,15 @@ module DDC.Core.Check.Module
         ( checkModule
         , checkModuleM)
 where
-import DDC.Core.Check.Base      (checkTypeM, applySolved)
+import DDC.Core.Check.Base
 import DDC.Core.Check.Exp
-import DDC.Core.Check.Error
 import DDC.Core.Transform.Reannotate
 import DDC.Core.Transform.MapT
 import DDC.Core.Module
-import DDC.Core.Exp
-import DDC.Type.Check.Context
 import DDC.Type.Check.Data
-import DDC.Type.Exp.Simple
-import DDC.Type.DataDef
-import DDC.Type.Universe
-import DDC.Base.Pretty
 import DDC.Type.Env             (KindEnv, TypeEnv)
 import DDC.Control.Monad.Check  (runCheck, throw)
-import DDC.Data.ListUtils
-import Control.Monad
+import Data.Map.Strict          (Map)
 import qualified DDC.Type.Env           as Env
 import qualified Data.Map.Strict        as Map
 
@@ -149,8 +141,10 @@ checkModuleM !config !kenv !tenv mm@ModuleCore{} !mode
                                         (fromListDataDefs dataDefsImported') }
 
         let kenv_import 
-                = Env.union kenv 
-                $ Env.fromListNT nksImported'
+                = Env.unions 
+                        [ kenv 
+                        , Env.fromListNT nksImported'
+                        , Env.fromList [(BName n k) | (n, (k, _)) <- nktsImportTypeDef' ]]
 
         -- Check types of imported capabilities -----------
         ntsImportCap'   <- checkImportCaps config_import kenv_import mode
@@ -175,6 +169,10 @@ checkModuleM !config !kenv !tenv mm@ModuleCore{} !mode
         let typeDefs_top
                 =  nktsLocalTypeDef'
                 ++ nktsImportTypeDef'
+
+        let eqns_top
+                = [(n, t) | (n, (_, t)) <- typeDefs_top]
+
 
         let caps_top
                 = Env.fromList
@@ -246,7 +244,7 @@ checkModuleM !config !kenv !tenv mm@ModuleCore{} !mode
         -- This returns an environment containing all the bindings defined
         -- in the module.
         tenv_binds
-         <- checkModuleBinds
+         <- checkModuleBinds (Map.fromList eqns_top)
                 (moduleExportTypes  mm_inferred)
                 (moduleExportValues mm_inferred) 
                 xx_annot
@@ -347,6 +345,8 @@ checkImportTypes
 
 checkImportTypes config mode nisrcs
  = let
+        eqns    = configTypeEqns config
+
         -- Checker mode to use.
         modeCheckImportTypes
          = case mode of
@@ -379,8 +379,8 @@ checkImportTypes config mode nisrcs
         -- Check if two import definitions with the same name are compatible.
         -- The same import definition can appear multiple times provided
         -- each instance has the same name and kind.
-        compat (ImportTypeAbstract k1) (ImportTypeAbstract k2) = equivT k1 k2
-        compat (ImportTypeBoxed    k1) (ImportTypeBoxed    k2) = equivT k1 k2
+        compat (ImportTypeAbstract k1) (ImportTypeAbstract k2) = equivT eqns k1 k2
+        compat (ImportTypeBoxed    k1) (ImportTypeBoxed    k2) = equivT eqns k1 k2
         compat _ _ = False
 
    in do
@@ -459,6 +459,8 @@ checkImportCaps
 
 checkImportCaps config kenv mode nisrcs
  = let
+        eqns    = configTypeEqns config
+
         -- Checker mode to use.
         modeCheckImportCaps
          = case mode of
@@ -499,7 +501,8 @@ checkImportCaps config kenv mode nisrcs
         -- Check if two imported capabilities of the same name are compatiable.
         -- The same import definition can appear multiple times provided each 
         -- instance has the same name and type.
-        compat (ImportCapAbstract t1) (ImportCapAbstract t2) = equivT t1 t2
+        compat (ImportCapAbstract t1) (ImportCapAbstract t2) 
+                = equivT eqns t1 t2
 
     in do
         -- Check all the imports individually.
@@ -520,6 +523,8 @@ checkImportValues
 
 checkImportValues config kenv mode nisrcs
  = let
+        eqns    = configTypeEqns config
+
         -- Checker mode to use.
         modeCheckImportTypes
          = case mode of
@@ -560,11 +565,11 @@ checkImportValues config kenv mode nisrcs
         -- Check if two imported values of the same name are compatable.
         compat (ImportValueModule _ _ t1 a1) 
                (ImportValueModule _ _ t2 a2)
-         = equivT t1 t2 && a1 == a2
+         = equivT eqns t1 t2 && a1 == a2
 
         compat (ImportValueSea _ t1)
                (ImportValueSea _ t2)
-         = equivT t1 t2 
+         = equivT eqns t1 t2 
 
         compat _ _ = False
 
@@ -581,26 +586,27 @@ checkImportValues config kenv mode nisrcs
 -- | Check that the exported signatures match the types of their bindings.
 checkModuleBinds
         :: Ord n
-        => [(n, ExportSource n (Type n))]       -- ^ Exported types.
+        => Map n (Type n)
+        -> [(n, ExportSource n (Type n))]       -- ^ Exported types.
         -> [(n, ExportSource n (Type n))]       -- ^ Exported values
         -> Exp (AnTEC a n) n
         -> CheckM a n (TypeEnv n)               -- ^ Environment of top-level bindings
                                                 --   defined by the module
 
-checkModuleBinds !ksExports !tsExports !xx
+checkModuleBinds !eqns !ksExports !tsExports !xx
  = case xx of
         XLet _ (LLet b _) x2
-         -> do  checkModuleBind  ksExports tsExports b
-                env     <- checkModuleBinds ksExports tsExports x2
+         -> do  checkModuleBind eqns ksExports tsExports b
+                env     <- checkModuleBinds eqns ksExports tsExports x2
                 return  $ Env.extend b env
 
         XLet _ (LRec bxs) x2
-         -> do  mapM_ (checkModuleBind ksExports tsExports) $ map fst bxs
-                env     <- checkModuleBinds ksExports tsExports x2
+         -> do  mapM_ (checkModuleBind eqns ksExports tsExports) $ map fst bxs
+                env     <- checkModuleBinds eqns ksExports tsExports x2
                 return  $ Env.extends (map fst bxs) env
 
         XLet _ (LPrivate _ _ _) x2
-         ->     checkModuleBinds ksExports tsExports x2
+         ->     checkModuleBinds eqns ksExports tsExports x2
 
         _ ->    return Env.empty
 
@@ -608,18 +614,19 @@ checkModuleBinds !ksExports !tsExports !xx
 -- | If some bind is exported, then check that it matches the exported version.
 checkModuleBind
         :: Ord n
-        => [(n, ExportSource n (Type n))]       -- ^ Exported types.
+        => Map n (Type n)                       -- ^ Type equations.
+        -> [(n, ExportSource n (Type n))]       -- ^ Exported types.
         -> [(n, ExportSource n (Type n))]       -- ^ Exported values.
         -> Bind n
         -> CheckM a n ()
 
-checkModuleBind !_ksExports !tsExports !b
+checkModuleBind eqns !_ksExports !tsExports !b
  | BName n tDef <- b
  = case join $ liftM takeTypeOfExportSource $ lookup n tsExports of
         Nothing                 -> return ()
         Just tExport
-         | equivT tDef tExport  -> return ()
-         | otherwise            -> throw $ ErrorExportMismatch n tExport tDef
+         | equivT eqns tDef tExport  -> return ()
+         | otherwise                 -> throw $ ErrorExportMismatch n tExport tDef
 
  -- Only named bindings can be exported,
  --  so we don't need to worry about non-named ones.

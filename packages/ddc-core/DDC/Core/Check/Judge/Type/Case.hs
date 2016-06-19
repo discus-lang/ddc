@@ -3,6 +3,7 @@ module DDC.Core.Check.Judge.Type.Case
         (checkCase)
 where
 import DDC.Core.Check.Judge.Type.Base
+import DDC.Type.Exp.Simple.Equiv
 import qualified DDC.Type.Sum   as Sum
 import qualified Data.Map       as Map
 import Data.List                as L
@@ -13,6 +14,8 @@ checkCase !table !ctx0 mode demand
         xx@(XCase a xDiscrim alts)
  = do   
         let config      = tableConfig table
+        let eqns        = configTypeEqns config
+        let caps        = configGlobalCaps config
 
         -- There must be at least one alternative, even if there are no data
         -- constructors. The rest of the checking code assumes this, and will
@@ -31,11 +34,15 @@ checkCase !table !ctx0 mode demand
         (xDiscrim', tDiscrim, effsDiscrim, ctx2)
          <- tableCheckExp table table ctx1 modeDiscrim DemandRun xDiscrim 
 
+        -- Reduce to head-normal form so we can see the outer
+        -- data type constructor (if there is one).
+        let tDiscrim' = crushHeadT eqns caps tDiscrim
+
         -- Split the type into the type constructor names and type parameters.
         -- Also check that it's algebraic data, and not a function or effect
         -- type etc.
         (mDataMode, tsArgs)
-         <- case takeTyConApps tDiscrim of
+         <- case takeTyConApps tDiscrim' of
              Just (tc, ts)
               -- The unit data type.
               | TyConSpec TcConUnit         <- tc
@@ -89,7 +96,7 @@ checkCase !table !ctx0 mode demand
         tsAlts'         <- mapM (applyContext ctx4) tsAlts
         let tAlt : _    =  tsAlts'
         forM_ tsAlts' $ \tAlt'
-         -> when (not $ equivT tAlt tAlt')
+         -> when (not $ equivT eqns tAlt tAlt')
           $ throw $ ErrorCaseAltResultMismatch a xx tAlt tAlt'
 
         -- Check for overlapping alternatives.
@@ -105,7 +112,7 @@ checkCase !table !ctx0 mode demand
 
         -- Effect of overall expression.
         let effTotal
-                = crushEffect (configGlobalCaps config)
+                = crushEffect eqns (configGlobalCaps config)
                 $ TSum $ Sum.unions kEffect
                 $ effsDiscrim : effsMatch : effss
 
@@ -244,6 +251,9 @@ checkAltsM !table !a !xx !tDiscrim !tsArgs !mode !demand !alts0 !ctx
 
   checkAltM alt@(AAlt (PData dc bsArg) xBody) !ctx0
    = do
+        let config      = tableConfig table
+        let eqns        = configTypeEqns config
+
         -- Get the constructor type associated with this pattern.
         Just tCtor <- ctorTypeOfPat table a (PData dc bsArg)
 
@@ -252,7 +262,7 @@ checkAltsM !table !a !xx !tDiscrim !tsArgs !mode !demand !alts0 !ctx
         -- doesn't instantiate then it won't have enough foralls on the front,
         -- which should have been checked by the def checker.
         tCtor_inst
-         <- if equivT tCtor tDiscrim
+         <- if equivT eqns tCtor tDiscrim
              then return tCtor
              else case instantiateTs tCtor tsArgs of
                    Nothing -> throw $ ErrorCaseCannotInstantiate a xx tDiscrim tCtor
@@ -265,7 +275,7 @@ checkAltsM !table !a !xx !tDiscrim !tsArgs !mode !demand !alts0 !ctx
         -- The result type of the constructor must match the discriminant type.
         -- If it doesn't then the constructor in the pattern probably isn't for
         -- the discriminant type.
-        when (not $ equivT tDiscrim tResult)
+        when (not $ equivT eqns tDiscrim tResult)
          $ throw $ ErrorCaseScrutineeTypeMismatch a xx
                         tDiscrim tResult
 
@@ -360,7 +370,7 @@ checkFieldAnnots table bidir a xx tts ctx0
         -- In Recon mode, if there is an annotation on the field then it needs
         -- to exactly match the inferred type of the field.
         | not bidir
-        , equivT tActual tAnnot
+        , equivT (configTypeEqns (tableConfig table)) tActual tAnnot
         = return (tAnnot, ctx)
 
         -- Annotation does not match actual type.

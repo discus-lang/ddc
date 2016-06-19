@@ -10,11 +10,12 @@ module DDC.Core.Exp.Annot.Ctx
 where
 import DDC.Type.DataDef
 import DDC.Core.Exp.Annot.Exp
-import DDC.Type.Env             (KindEnv, TypeEnv)
-import Data.Set                 (Set)
-import qualified DDC.Type.Env   as Env
-import qualified Data.Set       as Set
-import qualified Data.Map       as Map
+import DDC.Type.Env                     (KindEnv, TypeEnv)
+import Data.Set                         (Set)
+import Data.Map                         (Map)
+import qualified DDC.Type.Env           as Env
+import qualified Data.Set               as Set
+import qualified Data.Map.Strict        as Map
 
 
 -- | A one-hole context for `Exp`.
@@ -22,6 +23,7 @@ data Ctx a n
         -- | The top-level context.
         = CtxTop        
         { ctxDataDefs   :: !(DataDefs n)
+        , ctxTypeEqns   :: !(Map n (Kind n, Type n))
         , ctxKindEnv    :: !(KindEnv n)
         , ctxTypeEnv    :: !(TypeEnv n) }
 
@@ -89,11 +91,12 @@ isTopLetCtx ctx
 
 -- | Get the top level of a context.
 topOfCtx :: Ctx a n
-         -> (DataDefs n, KindEnv n, TypeEnv n)
+         -> (DataDefs n, Map n (Kind n, Type n), KindEnv n, TypeEnv n)
 
 topOfCtx ctx
  = case ctx of
-        CtxTop defs kenv tenv    -> (defs, kenv, tenv)
+        CtxTop defs eqns kenv tenv    
+                -> (defs, eqns, kenv, tenv)
         CtxLAM       c _ _       -> topOfCtx c
         CtxLam       c _ _       -> topOfCtx c
         CtxAppLeft   c _ _       -> topOfCtx c
@@ -152,17 +155,17 @@ takeTopLetEnvNamesOfCtx ctx0
  = eatCtx ctx0
  where  eatCtx ctx
          = case ctx of
-                CtxTop _ _ tenv
+                CtxTop _ _ _ tenv
                  -> Set.fromList
                  $  Map.keys $ Env.envMap tenv
 
-                CtxLetLLet (CtxTop _ _ tenv) _ b xBody
+                CtxLetLLet (CtxTop _ _ _ tenv) _ b xBody
                  -> Set.unions
                         [ Set.fromList $ Map.keys $ Env.envMap tenv
                         , eatBind b
                         , eatExp xBody]
 
-                CtxLetLRec (CtxTop _ _ tenv) _ bxsBefore b bxsAfter xBody
+                CtxLetLRec (CtxTop _ _ _ tenv) _ bxsBefore b bxsAfter xBody
                  -> Set.unions
                         [ Set.fromList  $ Map.keys $ Env.envMap tenv
                         , Set.unions    $ map (eatBind . fst) bxsBefore

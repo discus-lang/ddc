@@ -35,13 +35,18 @@ lambdasModule profile mm
  = let  
         -- Take the top-level environment of the module.
         defs    = moduleDataDefs mm
+
+        eqns    = Map.unions
+                        [ Map.fromList $ moduleTypeDefs mm
+                        , Map.fromList $ moduleImportTypeDefs mm ]
+
         kenv    = moduleKindEnv  mm
         tenv    = moduleTypeEnv  mm
         c       = Context 
                         kenv tenv 
                         (Env.fromList 
                                 [BName n t | (n, ImportCapAbstract t) <- moduleImportCaps mm])
-                        (CtxTop defs kenv tenv)
+                        (CtxTop defs eqns kenv tenv)
 
         x'      = lambdasLoopX profile c $ moduleBody mm
 
@@ -411,26 +416,32 @@ liftLambda p c fusFree a lams xBody
         nLifted         = extendName nTop ("Lift_" ++ encodeCtx ctx)
         uLifted         = UName nLifted
 
-
         -- Build the type checker configuration for this context.
-        (defs, _, _)    = topOfCtx (contextCtx c)        
-        config          = Check.configOfProfile p
+        (defs, eqns, _, _)    
+                = topOfCtx (contextCtx c)        
+        config  = Check.configOfProfile p
 
-        config'         = config 
-                        { Check.configDataDefs
-                                = mappend defs (Check.configDataDefs config) 
+        config' = config 
+                { Check.configDataDefs
+                        = mappend defs (Check.configDataDefs config) 
 
-                        , Check.configGlobalCaps
-                                = contextGlobalCaps c }
+                , Check.configTypeDefs
+                        = mappend eqns (Check.configTypeDefs config)
+
+                , Check.configGlobalCaps
+                        = contextGlobalCaps c }
+
+        kenv'   = Env.unions
+                [ kenv
+                , Env.fromList [BName n k | (n, (k, _)) 
+                                        <- Map.toList $ Check.configTypeDefs config'] ]
 
         -- Function to get the type of an expression in this context.
         -- If there are type errors in the input program then some 
         -- either the lambda lifter is broken or some other transform
         -- has messed up.
         typeOfExp x
-         = case Check.typeOfExp 
-                        config' (contextKindEnv c) (contextTypeEnv c)
-                        x
+         = case Check.typeOfExp config' kenv' tenv x
             of  Left err
                  -> error $ renderIndent $ vcat
                           [ text "ddc-core-simpl.liftLambda: type error in lifted expression"

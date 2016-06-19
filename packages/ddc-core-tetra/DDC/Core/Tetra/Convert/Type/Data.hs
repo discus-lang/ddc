@@ -224,9 +224,14 @@ convertDataAppT ctx tt
 
         -- A user-defined data type without a primary region.
         --   These are converted to generic boxed objects in the top-level region.
-        | Just (TyConBound (UName n) _, _)          <- takeTyConApps tt
+        | Just (TyConBound (UName n) _, _) <- takeTyConApps tt
         , Map.member n (dataDefsTypes $ contextDataDefs ctx)
         = do   return  $ A.tPtr A.rTop A.tObj
+
+        -- TODO: If the left is a type function we need to normalise it.
+        | Just (TyConBound (UName n) _, []) <- takeTyConApps tt
+        , Just t' <- Map.lookup n (contextTypeEqns ctx)
+        = convertDataAppT ctx t'
 
         | otherwise
         =      throw   $ ErrorMalformed 

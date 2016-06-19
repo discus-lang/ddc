@@ -49,7 +49,7 @@ listOfStream  (ss: Stream s a): List a
 -- | Load the given number of elements from a stream and write them
 --   into a freshly allocated array.
 arrayOfStream 
-        (n: Nat#)        -- ^ Length of result array.
+        (n: Nat)         -- ^ Length of result array.
         (d: a)           -- ^ Default element value.
         (ss: Stream s a) -- ^ Stream to evaluate.
         : S (Alloc r1) (Array r1 a)
@@ -67,7 +67,7 @@ arrayOfStream
 
 -- | Unstream all available elements into the given array.
 unstreamToArray
-        (ss: Stream s a) (arr: Array r a) (ix: Nat#)
+        (ss: Stream s a) (arr: Array r a) (ix: Nat)
         : S (Write r) Unit
  = case ss of
         MkStream f s0
@@ -91,8 +91,8 @@ sgenerate (x: s) (step: s -> Tup2 s a): Stream s a
                 T2 s' x -> Yield x s'
    in   MkStream step' x
 
-senumFrom (x: Nat#): Stream Nat# Nat#
- = sgenerate x (λs: Nat#. T2 (s + 1) s)
+senumFrom (x: Nat): Stream Nat Nat
+ = sgenerate x (λs: Nat. T2 (s + 1) s)
 
 
 -- | Create a stream that returns copies of the same value.
@@ -101,7 +101,7 @@ srepeat (x: a): Stream a a
 
 
 -- | Cons an element to the front of a stream.
-scons (x: a) (ss: Stream s a): Stream (Tup2 s Bool#) a
+scons (x: a) (ss: Stream s a): Stream (Tup2 s Bool) a
  = case ss of
         MkStream stepA sA0
          -> let stepA2 q
@@ -166,13 +166,13 @@ sconsume (f:    a -> b -> a)   (acc:   a)
 
 -- | Check if any of the elements of this stream are true,
 --   demanding only the prefix of non-true elements from the stream.
-sany [s: Data] (ss: Stream s Bool#): Bool#
+sany [s: Data] (ss: Stream s Bool): Bool
  = sfold or False $ stakeWhile id ss
 
 
 -- Projections ------------------------------------------------------------------------------------
 -- | Take the given number of elements from a stream.
-stake (n: Nat#) (ss: Stream s a): Stream (Tup2 s Nat#) a
+stake (n: Nat) (ss: Stream s a): Stream (Tup2 s Nat) a
  = case ss of
         MkStream fA sA0
          -> let stepB q
@@ -188,7 +188,7 @@ stake (n: Nat#) (ss: Stream s a): Stream (Tup2 s Nat#) a
 
 
 -- | Take elements from a strem while they match the given predicate.
-stakeWhile (p: a -> Bool#) (ss: Stream s a): Stream s a
+stakeWhile (p: a -> Bool) (ss: Stream s a): Stream s a
  = case ss of
         MkStream stepA sA0
          -> let stepB q
@@ -204,7 +204,7 @@ stakeWhile (p: a -> Bool#) (ss: Stream s a): Stream s a
 
 
 -- | Take elements from a stream that match the given predicate.
-sfilter (p: a -> Bool#) (ss: Stream s a): Stream s a
+sfilter (p: a -> Bool) (ss: Stream s a): Stream s a
  = case ss of
         MkStream stepA sA0
          -> let stepB q

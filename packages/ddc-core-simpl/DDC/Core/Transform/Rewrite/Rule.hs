@@ -316,8 +316,9 @@ checkEquiv
         -> Either (Error a n) ()
 
 checkEquiv tLeft tRight err
-        | T.equivT tLeft tRight  = return ()
-        | otherwise              = Left err
+        | T.equivT Map.empty tLeft tRight  
+                        = return ()
+        | otherwise     = Left err
 
 
 -- Weaken ---------------------------------------------------------------------
@@ -337,13 +338,13 @@ makeEffectWeakening
 makeEffectWeakening k effLeft effRight onError
         -- When the effect of the left matches that of the right
         -- then we don't have to do anything else.
-        | T.equivT effLeft effRight
+        | T.equivT Map.empty effLeft effRight
         = return Nothing
 
         -- When the effect of the right is smaller than that of
         -- the left then we need to wrap it in an effect weaking
         -- so the rewritten expression retains its original effect.
-        | T.subsumesT k effLeft effRight
+        | T.subsumesT Map.empty k effLeft effRight
         = return $ Just effLeft
 
         -- When the effect of the right is more than that of the left

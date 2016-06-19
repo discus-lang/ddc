@@ -29,7 +29,7 @@ import qualified DDC.Type.Env                           as Env
 
 import DDC.Control.Monad.Check                          (throw, evalCheck)
 import Data.Map                                         (Map)
-import qualified Data.Map                               as Map
+import qualified Data.Map.Strict                        as Map
 import qualified Data.Set                               as Set
 
 
@@ -86,11 +86,16 @@ convertM pp runConfig defs kenv tenv mm
                    $ fromListDataDefs 
                    $ moduleImportDataDefs mm ++ moduleDataDefsLocal mm
 
+        let eqns'  = Map.unions
+                   [ Map.fromList $ [(n, t) | (n, (_, t)) <- moduleImportTypeDefs mm]
+                   , Map.fromList $ [(n, t) | (n, (_, t)) <- moduleTypeDefsLocal  mm] ]
+
         let nsForeignBoxedTypes
                    = [n | (n, ImportTypeBoxed _) <- moduleImportTypes mm ]
 
         let tctx'  = T.Context
                    { T.contextDataDefs  = defs'
+                   , T.contextTypeEqns  = eqns'
                    , T.contextForeignBoxedTypeCtors     
                         = Set.fromList nsForeignBoxedTypes
                    , T.contextKindEnv   = Env.empty }
@@ -109,16 +114,18 @@ convertM pp runConfig defs kenv tenv mm
 
         -- Starting context for the conversion.
         let ctx = Context
-                { contextPlatform    = pp
-                , contextDataDefs    = defs'
-                , contextForeignBoxedTypeCtors = Set.fromList $ nsForeignBoxedTypes
-                , contextCallable    = callables
-                , contextKindEnv     = kenv
-                , contextTypeEnv     = tenv' 
-                , contextSuperBinds  = Map.empty
-                , contextConvertExp  = convertExp 
-                , contextConvertLets = convertLets 
-                , contextConvertAlt  = convertAlt }
+                { contextPlatform       = pp
+                , contextDataDefs       = defs'
+                , contextTypeEqns       = eqns'
+                , contextForeignBoxedTypeCtors 
+                                        = Set.fromList $ nsForeignBoxedTypes
+                , contextCallable       = callables
+                , contextKindEnv        = kenv
+                , contextTypeEnv        = tenv' 
+                , contextSuperBinds     = Map.empty
+                , contextConvertExp     = convertExp 
+                , contextConvertLets    = convertLets 
+                , contextConvertAlt     = convertAlt }
 
         -- Convert the body of the module itself.
         x1      <- convertExp ExpTop ctx 

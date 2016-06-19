@@ -43,6 +43,7 @@ import DDC.Type.Exp.Simple
 import DDC.Base.Pretty
 import Data.Maybe
 import Data.IntMap.Strict               (IntMap)
+import Data.Map                         (Map)
 import qualified DDC.Type.Sum           as Sum
 import qualified Data.IntMap.Strict     as IntMap
 import qualified Data.Set               as Set
@@ -583,14 +584,15 @@ applySolvedEither ctx is tt
 --
 effectSupported 
         :: (Ord n, Show n)
-        => Effect n 
+        => Map n (Type n)       -- Type Equations
+        -> Effect n 
         -> Context n 
         -> Maybe (Effect n)
 
-effectSupported eff ctx
+effectSupported eqs eff ctx
         -- Check that all the components of a sum are supported.
         | TSum ts       <- eff
-        = listToMaybe $ concat [ maybeToList $ effectSupported e ctx 
+        = listToMaybe $ concat [ maybeToList $ effectSupported eqs e ctx 
                                | e <- Sum.toList ts ]
 
         -- Abstract effects are fine.
@@ -607,7 +609,7 @@ effectSupported eff ctx
         -- the capability is supported if it's in the lexical environment.
         | TApp (TCon (TyConSpec tc)) _t2       <- eff
         , elem tc [TcConRead, TcConWrite, TcConAlloc]
-        , any   (\b -> equivT (typeOfBind b) eff) 
+        , any   (\b -> equivT eqs (typeOfBind b) eff) 
                 [ b | ElemType b <- contextElems ctx ] 
         = Nothing
 

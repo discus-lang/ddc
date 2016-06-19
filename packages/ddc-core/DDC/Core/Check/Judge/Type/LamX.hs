@@ -22,6 +22,8 @@ checkLamX !table !ctx mode _demand xx
 checkLam !table !a !ctx !b1 !x2 !Recon
  = do
         let config      = tableConfig table
+        let eqns        = configTypeEqns   config
+        let caps        = configGlobalCaps config
         let kenv        = tableKindEnv table
         let xx          = XLam a b1 x2
 
@@ -49,7 +51,7 @@ checkLam !table !a !ctx !b1 !x2 !Recon
 
         let e2_crush 
                 = Sum.fromList kEffect
-                [ crushEffect (configGlobalCaps config) (TSum e2)]
+                [ crushEffect eqns caps (TSum e2)]
 
         -- The body of the function must produce data.
         (_, k2, _)      <- checkTypeM config kenv ctx2 UniverseSpec t2 Recon
@@ -81,6 +83,8 @@ checkLam !table !a !ctx !b1 !x2 !Synth
                 , text "    in  bind = " <+> ppr b1 ]
 
         let config      = tableConfig table
+        let caps        = configGlobalCaps config
+        let eqns        = configTypeEqns config
         let kenv        = tableKindEnv table
         let xx          = XLam a b1 x2
 
@@ -130,7 +134,7 @@ checkLam !table !a !ctx !b1 !x2 !Synth
 
         let e2_crush 
                 = Sum.fromList kEffect
-                [ crushEffect (configGlobalCaps config) (TSum e2)]
+                [ crushEffect eqns caps (TSum e2)]
 
         -- Force the kind of the body to be Data.
         --   This constrains the kind of polymorpic variables that are used
@@ -196,6 +200,8 @@ checkLam !table !a !ctx !b1 !x2 !(Check tExpected)
                 , empty ]
 
         let config      = tableConfig table
+        let caps        = configGlobalCaps config
+        let eqns        = configTypeEqns   config
         let kenv        = tableKindEnv table
         let xx          = XLam a b1 x2
 
@@ -238,7 +244,7 @@ checkLam !table !a !ctx !b1 !x2 !(Check tExpected)
 
                     let es2Actual_crushed
                           = Sum.fromList kEffect
-                          [ crushEffect (configGlobalCaps config) (TSum es2Actual)]
+                          [ crushEffect eqns caps (TSum es2Actual)]
 
                     -- The expected effect in the suspension could have been an
                     -- existential, so we need to unify it against the reconstructed
@@ -256,7 +262,7 @@ checkLam !table !a !ctx !b1 !x2 !(Check tExpected)
 
                     let es2Actual_crushed
                           = Sum.fromList kEffect
-                          [ crushEffect (configGlobalCaps config) (TSum es2Actual)]
+                          [ crushEffect eqns caps (TSum es2Actual)]
 
                     return (x2', t2', es2Actual_crushed, ctx2)
 

@@ -7,6 +7,7 @@ import DDC.Core.Exp.Annot.AnTEC
 import DDC.Core.Check.Judge.Eq
 import DDC.Core.Check.Judge.Inst
 import DDC.Core.Check.Base
+import qualified Data.Map.Strict        as Map
 
 
 -- | Make the left type a subtype of the right type,
@@ -28,38 +29,15 @@ makeSub :: (Eq n, Ord n, Show n, Pretty n)
 --       existentials, vs the case when only one side is an existential.
 makeSub config a ctx0 xL tL tR err
 
- -- SubCon
- --  Both sides are the same type constructor.
- | TCon tc1     <- tL
- , TCon tc2     <- tR
- , equivTyCon tc1 tc2
- = do
-        ctrace  $ vcat
-                [ text "**  SubCon"
-                , text "    xL: " <> ppr xL
-                , text "    tL: " <> ppr tL
-                , text "    tR: " <> ppr tR
-                , indent 4 $ ppr ctx0
-                , empty ]
-
-        return (xL, ctx0)
+ -- Expand type equations.
+ | TCon (TyConBound (UName n) _) <- tL
+ , Just (_, tL')        <- Map.lookup n $ configTypeDefs config
+ = makeSub config a ctx0 xL tL' tR err
 
 
- -- SubVar
- --  Both sides are the same (rigid) type variable.
- | TVar u1      <- tL
- , TVar u2      <- tR
- , u1 == u2
- = do
-        ctrace  $ vcat
-                [ text "**  SubVar"
-                , text "    xL: " <> ppr xL
-                , text "    tL: " <> ppr tL
-                , text "    tR: " <> ppr tR
-                , indent 4 $ ppr ctx0
-                , empty ]
-
-        return (xL, ctx0)
+ | TCon (TyConBound (UName n) _) <- tR
+ , Just (_, tR')        <- Map.lookup n $ configTypeDefs config
+ = makeSub config a ctx0 xL tL tR' err
 
 
  -- SubExVar
@@ -70,21 +48,6 @@ makeSub config a ctx0 xL tL tR err
  = do
         ctrace  $ vcat
                 [ text "**  SubExVar"
-                , text "    xL: " <> ppr xL
-                , text "    tL: " <> ppr tL
-                , text "    tR: " <> ppr tR
-                , indent 4 $ ppr ctx0
-                , empty ]
-
-        return (xL, ctx0)
-
-
- -- SubEquiv
- --  Both sides are equivalent
- | equivT tL tR
- = do
-        ctrace  $ vcat
-                [ text "**  SubEquiv"
                 , text "    xL: " <> ppr xL
                 , text "    tL: " <> ppr tL
                 , text "    tR: " <> ppr tR
@@ -126,6 +89,57 @@ makeSub config a ctx0 xL tL tR err
                 , empty ]
 
         return (xL, ctx1)
+
+
+ -- SubCon
+ --  Both sides are the same type constructor.
+ | TCon tc1     <- tL
+ , TCon tc2     <- tR
+ , equivTyCon tc1 tc2
+ = do
+        ctrace  $ vcat
+                [ text "**  SubCon"
+                , text "    xL: " <> ppr xL
+                , text "    tL: " <> ppr tL
+                , text "    tR: " <> ppr tR
+                , indent 4 $ ppr ctx0
+                , empty ]
+
+        return (xL, ctx0)
+
+
+ -- SubVar
+ --  Both sides are the same (rigid) type variable.
+ | TVar u1      <- tL
+ , TVar u2      <- tR
+ , u1 == u2
+ = do
+        ctrace  $ vcat
+                [ text "**  SubVar"
+                , text "    xL: " <> ppr xL
+                , text "    tL: " <> ppr tL
+                , text "    tR: " <> ppr tR
+                , indent 4 $ ppr ctx0
+                , empty ]
+
+        return (xL, ctx0)
+
+
+
+ -- SubEquiv
+ --  Both sides are equivalent
+ | equivT (configTypeEqns config) tL tR
+ = do
+        ctrace  $ vcat
+                [ text "**  SubEquiv"
+                , text "    xL: " <> ppr xL
+                , text "    tL: " <> ppr tL
+                , text "    tR: " <> ppr tR
+                , indent 4 $ ppr ctx0
+                , empty ]
+
+        return (xL, ctx0)
+
 
 
  -- SubArr

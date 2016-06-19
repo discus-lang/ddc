@@ -1,6 +1,7 @@
 
 module DDC.Type.Check.Config
         ( Config (..)
+        , configTypeEqns
         , configOfProfile)
 where
 import DDC.Type.Exp
@@ -69,6 +70,10 @@ data Config n
           -- | Automatically box bodies of abstractions.
         , configImplicitBox             :: Bool
         }
+
+configTypeEqns :: Config n -> Map n (Type n)
+configTypeEqns config
+        = Map.map snd $ configTypeDefs config
 
 
 -- | Convert a language profile to a type checker configuration.

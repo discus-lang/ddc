@@ -160,7 +160,7 @@ pruneTrans _ _ xx
  where
         weakEff antec
          = CastWeakenEffect
-         $ T.crushEffect Env.empty
+         $ T.crushEffect Map.empty Env.empty
          $ annotEffect antec
 
 
@@ -193,7 +193,7 @@ isContainedEffect eff
  = all contained
         $ map T.takeTApps 
         $ sumList 
-        $ T.crushEffect Env.empty eff
+        $ T.crushEffect Map.empty Env.empty eff
  where
         contained (c : _args)
          = case c of

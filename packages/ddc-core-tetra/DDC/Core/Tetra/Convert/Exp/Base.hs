@@ -38,9 +38,12 @@ data Context a
           contextPlatform       :: Platform
 
           -- | Data type definitions.
-          --   These are all the visible data type definitions, from both
-          --   the current module and imported ones.
+          --   All the visible type equations, from the current and imported modules.
         , contextDataDefs       :: DataDefs E.Name
+
+          -- | Type equations.
+          --   All the visible type equations, from the current and imported modules.
+        , contextTypeEqns       :: Map E.Name (Type E.Name)
 
           -- | Names of foreign boxed data type contructors.
           --   These are names like 'Ref' and 'Array' that are defined in the
@@ -98,6 +101,7 @@ typeContext :: Context a -> T.Context
 typeContext ctx
         = T.Context
         { T.contextDataDefs     = contextDataDefs ctx
+        , T.contextTypeEqns     = contextTypeEqns ctx
         , T.contextForeignBoxedTypeCtors 
                                 = contextForeignBoxedTypeCtors ctx
         , T.contextKindEnv      = contextKindEnv  ctx }

@@ -79,6 +79,8 @@ checkCast !table ctx0 mode _demand
     Check tExpected
      -> do
         let config      = tableConfig table
+        let eqns        = configTypeEqns   config
+        let caps        = configGlobalCaps config
 
         -- Check the body.
         (x1', tBody, effs, ctx1)
@@ -86,7 +88,7 @@ checkCast !table ctx0 mode _demand
 
         let effs_crush 
                 = Sum.fromList kEffect
-                [ crushEffect (configGlobalCaps config) (TSum effs)]
+                [ crushEffect eqns caps (TSum effs)]
 
         -- The actual type is (S eff tBody).
         tBody'      <- applyContext ctx1 tBody
@@ -107,6 +109,8 @@ checkCast !table ctx0 mode _demand
     _
      -> do
         let config      = tableConfig table
+        let eqns        = configTypeEqns   config
+        let caps        = configGlobalCaps config
 
         -- Check the body.
         (x1', t1, effs,  ctx1)
@@ -114,7 +118,7 @@ checkCast !table ctx0 mode _demand
 
         let effs_crush 
                 = Sum.fromList kEffect
-                [ crushEffect (configGlobalCaps config) (TSum effs)]
+                [ crushEffect eqns caps (TSum effs)]
 
         -- The result type is (S effs a).
         let tS  = tApps (TCon (TyConSpec TcConSusp))
@@ -228,8 +232,8 @@ checkEffectSupported
         -> Effect n             -- ^ Effect to check
         -> CheckM a n ()
 
-checkEffectSupported _config a xx ctx eff
- = case effectSupported eff ctx of
+checkEffectSupported config a xx ctx eff
+ = case effectSupported (configTypeEqns config) eff ctx of
         Nothing         -> return ()
         Just effBad     -> throw $ ErrorRunNotSupported a xx effBad
 

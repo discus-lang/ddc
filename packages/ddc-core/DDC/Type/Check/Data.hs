@@ -9,6 +9,7 @@ import DDC.Type.DataDef
 import DDC.Base.Pretty
 import Data.Maybe
 import Data.Set                 (Set)
+import Data.Map                 (Map)
 import qualified DDC.Type.Env   as Env
 import qualified Data.Set       as Set
 import qualified Data.Map       as Map
@@ -26,6 +27,7 @@ checkDataDefs config defs
  = let
         -- Get the list of type and data constructors which the module
         -- cannot re-define locally.
+        eqns    = configTypeEqns config
 
         -- Primitive type constructors.
         primTypeCtors
@@ -42,7 +44,7 @@ checkDataDefs config defs
                 = Set.fromList 
                 $ Map.keys $ dataDefsCtors $ configDataDefs config
 
-   in   checkDataDefs' 
+   in   checkDataDefs' eqns
                 (Set.union primTypeCtors primDataTypeCtors)
                 primDataCtors
                 [] []
@@ -51,32 +53,33 @@ checkDataDefs config defs
 
 checkDataDefs'
         :: (Ord n, Show n, Pretty n)
-        => Set n                -- ^ Names of existing data types.
+        => Map n (Type n)       -- ^ Type equations.
+        -> Set n                -- ^ Names of existing data types.
         -> Set n                -- ^ Names of existing data constructor.
         -> [ErrorData n]        -- ^ Errors found so far.
         -> [DataDef n]          -- ^ Checked data defs.
         -> [DataDef n]          -- ^ Data defs still to check.
         -> ([ErrorData n], [DataDef n])
 
-checkDataDefs' nsTypes nsCtors errs dsChecked ds
+checkDataDefs' eqns nsTypes nsCtors errs dsChecked ds
  -- We've checked all the defs.
  | []   <- ds
  = (reverse errs, reverse dsChecked)
  
  -- Keep checking defs.
  | d : ds' <- ds
- = case checkDataDef nsTypes nsCtors d of
+ = case checkDataDef eqns nsTypes nsCtors d of
 
     -- There are errors in this def.
     Left errs' 
-     -> checkDataDefs'
+     -> checkDataDefs' eqns
                 (Set.insert (dataDefTypeName d) nsTypes)
                 (Set.fromList $ fromMaybe [] $ dataCtorNamesOfDataDef d)
                 (errs ++ errs') dsChecked ds'
 
     -- This def is ok.
     Right d'   
-     -> checkDataDefs'
+     -> checkDataDefs' eqns
                 (Set.insert (dataDefTypeName d') nsTypes)
                 (Set.fromList $ fromMaybe [] $ dataCtorNamesOfDataDef d)
                 errs (d' : dsChecked) ds'
@@ -89,12 +92,13 @@ checkDataDefs' nsTypes nsCtors errs dsChecked ds
 -- | Check a data type definition.
 checkDataDef 
         :: (Ord n, Show n, Pretty n)
-        => Set n                -- ^ Names of existing data types.
+        => Map n (Type n)       -- ^ Type equations.
+        -> Set n                -- ^ Names of existing data types.
         -> Set n                -- ^ Names of existing data constructors.
         -> DataDef n            -- ^ Data type definition to check.
         -> Either [ErrorData n] (DataDef n)
 
-checkDataDef nsTypes nsCtors def
+checkDataDef eqns nsTypes nsCtors def
         
  -- Check the data type name is not already defined.
  | Set.member (dataDefTypeName def) nsTypes
@@ -106,7 +110,7 @@ checkDataDef nsTypes nsCtors def
 
  -- Check the data constructors.
  | Just ctors   <- dataDefCtors def
- = case checkDataCtors nsCtors [] def [] ctors of
+ = case checkDataCtors eqns nsCtors [] def [] ctors of
         Left errs       -> Left errs
         Right ctors'    -> Right $ def { dataDefCtors = Just ctors' }
 
@@ -118,14 +122,15 @@ checkDataDef nsTypes nsCtors def
 -- | Check the data constructor definitions from a single data type.
 checkDataCtors
         :: (Ord n, Show n, Pretty n)
-        => Set n                -- ^ Names of existing data constructors.
+        => Map n (Type n)       -- ^ Type equations.
+        -> Set n                -- ^ Names of existing data constructors.
         -> [ErrorData n]        -- ^ Errors found so far.
         -> DataDef n            -- ^ The DataDef these constructors relate to.
         -> [DataCtor  n]        -- ^ Checked constructor defs.
         -> [DataCtor  n]        -- ^ Constructor defs still to check.
         -> Either [ErrorData n] [DataCtor n]
 
-checkDataCtors nsCtors errs def csChecked cs
+checkDataCtors eqns nsCtors errs def csChecked cs
  -- We've checked all the constructors and there were no errors.
  | []   <- cs, []   <- errs
  = Right (reverse csChecked)
@@ -136,12 +141,12 @@ checkDataCtors nsCtors errs def csChecked cs
 
  -- Keep checking constructors.
  | c : cs' <- cs
- = case checkDataCtor nsCtors def c of
-        Left  err -> checkDataCtors 
+ = case checkDataCtor eqns nsCtors def c of
+        Left  err -> checkDataCtors eqns
                         (Set.insert (dataCtorName c) nsCtors)
                         (err : errs) def csChecked cs'
         
-        Right c'  -> checkDataCtors 
+        Right c'  -> checkDataCtors eqns
                         (Set.insert (dataCtorName c') nsCtors)
                         errs         def (c' : csChecked) cs'
 
@@ -153,19 +158,20 @@ checkDataCtors nsCtors errs def csChecked cs
 -- | Check a single data constructor definition.
 checkDataCtor 
         :: (Ord n, Show n, Pretty n)
-        => Set n                -- ^ Names of existing data constructors.
+        => Map n (Type n)       -- ^ Type equations.
+        -> Set n                -- ^ Names of existing data constructors.
         -> DataDef  n           -- ^ Def of data type for this constructor.
         -> DataCtor n           -- ^ Data constructor to check.
         -> Either (ErrorData n) (DataCtor n)
 
-checkDataCtor nsCtors def ctor
+checkDataCtor eqns nsCtors def ctor
         
  -- Check the constructor name is not already defined.
  | Set.member (dataCtorName ctor) nsCtors 
  = Left $ ErrorDataDupCtorName (dataCtorName ctor)
 
  -- Check that the constructor produces a value of the associated data type.
- | not $ equivT (dataTypeOfDataDef def)   (dataCtorResultType ctor)
+ | not $ equivT eqns (dataTypeOfDataDef def)   (dataCtorResultType ctor)
  = Left $ ErrorDataWrongResult 
                 (dataCtorName ctor)
                 (dataCtorResultType ctor) (dataTypeOfDataDef def)

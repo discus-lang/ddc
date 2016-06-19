@@ -2,6 +2,7 @@
 module DDC.Core.Check.Base
         ( -- Things defined in this module.
           Config (..)
+        , configTypeEqns
         , configOfProfile
 
         , CheckM
@@ -38,7 +39,7 @@ import DDC.Core.Collect
 import DDC.Core.Pretty
 import DDC.Core.Exp.Annot
 import DDC.Type.Check.Context
-import DDC.Type.Check                           (Config (..), configOfProfile)
+import DDC.Type.Check                           (Config (..), configOfProfile, configTypeEqns)
 import DDC.Type.Env                             (KindEnv, TypeEnv)
 import DDC.Type.DataDef
 import DDC.Type.Universe

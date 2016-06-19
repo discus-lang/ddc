@@ -29,6 +29,7 @@ import Control.Monad.IO.Class
 import DDC.Type.Env                             as Env
 import qualified DDC.Core.Check                 as C
 import qualified Control.Monad.State.Strict     as S
+import qualified Data.Map.Strict                as Map
 import Prelude                                  hiding ((<$>))
 
 
@@ -191,8 +192,8 @@ transExp traceTrans profile kenv tenv zero simpl xx
         -- Check that the simplifier perserved the type of the expression.
         case fst rr of
           Right (x2, t2, eff2)
-           |  equivT t1 t2
-           ,  subsumesT kEffect  eff1 eff2
+           |  equivT    Map.empty t1 t2
+           ,  subsumesT Map.empty kEffect eff1 eff2
            -> do return (Just x2)
 
            | otherwise

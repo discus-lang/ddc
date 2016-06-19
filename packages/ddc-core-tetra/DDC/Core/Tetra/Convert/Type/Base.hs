@@ -11,6 +11,7 @@ import DDC.Type.DataDef
 import DDC.Control.Monad.Check                  (throw)
 import DDC.Type.Env                             (KindEnv)
 import Data.Set                                 (Set)
+import Data.Map.Strict                          (Map)
 import qualified DDC.Type.Env                   as Env
 import qualified DDC.Core.Tetra.Prim            as E
 import qualified DDC.Core.Salt.Name             as A
@@ -23,6 +24,9 @@ data Context
           --   These are all the visible data type definitions, from both
           --   the current module and imported ones.
           contextDataDefs       :: DataDefs E.Name       
+
+          -- | Type equations.
+        , contextTypeEqns       :: Map E.Name (Type E.Name)
 
           -- | Names of foreign boxed data type contructors.
           --   These are names like 'Ref' and 'Array' that are defined in the

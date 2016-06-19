@@ -39,7 +39,7 @@ bor  x y        = bor#  [Nat#] x y
 bxor x y        = bxor# [Nat#] x y 
 
 
-divMod (n m: Nat#): Tup2 Nat# Nat#
+divMod (n m: Nat): Tup2 Nat Nat
  = T2 (div n m) (rem n m)
 
 

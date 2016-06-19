@@ -442,8 +442,8 @@ checkTypeM config kenv ctx0 UniverseSpec
         -- The kind of the parameter must match that of the argument
         case kFn of
          TApp (TApp ttFun kParam) kBody
-           | isFunishTCon ttFun 
-           , equivT kParam kArg
+           |  isFunishTCon ttFun 
+           ,  equivT (configTypeEqns config) kParam kArg
            -> return (tApp tFn' tArg', kBody, ctx2)
 
            | otherwise
