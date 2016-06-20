@@ -37,9 +37,6 @@ module DDC.Type.Env
         , isPrim
 
         -- * Lifting
-        , wrapTForalls
-
-        -- * Wrapping
         , lift)
 where
 import DDC.Type.Exp
@@ -213,15 +210,4 @@ lift n env
         , envStack       = map (liftT n) (envStack env)
         , envStackLength = envStackLength env
         , envPrimFun     = envPrimFun     env }
-
-
--- | Wrap locally bound (non primitive) variables defined in an environment
---   around a type as new foralls.
-wrapTForalls :: Ord n => Env n -> Type n -> Type n
-wrapTForalls env tBody
- = let  bsNamed = [BName b t | (b, t) <- Map.toList $ envMap env ]
-        bsAnon  = [BAnon t   | t <- envStack env]
-        
-        tInner  = foldr TForall tBody (reverse bsAnon)
-   in   foldr TForall tInner bsNamed
 
