@@ -45,6 +45,8 @@ Library
         DDC.Core.Exp.Annot.Predicates
         DDC.Core.Exp.Annot.Pretty
 
+        DDC.Core.Exp.Env.EnvT
+
         DDC.Core.Exp.Generic.BindStruct
         DDC.Core.Exp.Generic.Compounds
         DDC.Core.Exp.Generic.Exp
