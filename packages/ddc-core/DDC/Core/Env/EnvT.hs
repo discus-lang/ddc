@@ -46,29 +46,33 @@ import Control.Monad
 data EnvT n
         = EnvT
         { -- | Kinds of named variables and constructors.
-          envtMap         :: !(Map n (Type n))
+          envtMap          :: !(Map n (Type n))
 
           -- | Types of anonymous deBruijn variables.
-        , envtStack       :: ![Type n] 
+        , envtStack        :: ![Type n] 
         
           -- | The length of the above stack.
-        , envtStackLength :: !Int
+        , envtStackLength  :: !Int
 
           -- | Map of constructor name to bound type for type equations.
-        , envtEqns        :: !(Map n (Type n))
+        , envtEquations    :: !(Map n (Type n))
+
+          -- | Map of globally available capabilities.
+        , envtCapabilities :: !(Map n (Type n))
 
           -- | Types of baked in, primitive names.
-        , envtPrimFun     :: !(n -> Maybe (Type n)) }
+        , envtPrimFun      :: !(n -> Maybe (Type n)) }
 
 
 -- | An empty environment.
 empty :: EnvT n
 empty   = EnvT
-        { envtMap         = Map.empty
-        , envtStack       = [] 
-        , envtStackLength = 0
-        , envtEqns        = Map.empty
-        , envtPrimFun     = \_ -> Nothing }
+        { envtMap          = Map.empty
+        , envtStack        = [] 
+        , envtStackLength  = 0
+        , envtEquations    = Map.empty
+        , envtCapabilities = Map.empty
+        , envtPrimFun      = \_ -> Nothing }
 
 
 -- | Construct a singleton type environment.
@@ -130,12 +134,13 @@ fromTypeMap m
 --   then the one in the second environment takes preference.
 union :: Ord n => EnvT n -> EnvT n -> EnvT n
 union env1 env2
-        = EnvT  
-        { envtMap         = envtMap         env1 `Map.union` envtMap  env2
-        , envtStack       = envtStack       env2  ++ envtStack        env1
-        , envtStackLength = envtStackLength env2  +  envtStackLength  env1
-        , envtEqns        = envtEqns        env1 `Map.union` envtEqns env2
-        , envtPrimFun     = \n -> envtPrimFun env2 n `mplus` envtPrimFun env1 n }
+        = EnvT       
+        { envtMap          = envtMap          env1 `Map.union` envtMap          env2
+        , envtStack        = envtStack        env2  ++ envtStack                env1
+        , envtStackLength  = envtStackLength  env2  +  envtStackLength          env1
+        , envtEquations    = envtEquations    env1 `Map.union` envtEquations    env2
+        , envtCapabilities = envtCapabilities env1 `Map.union` envtCapabilities env2
+        , envtPrimFun      = \n -> envtPrimFun env2 n `mplus` envtPrimFun env1 n }
 
 
 -- | Combine multiple environments,
@@ -194,9 +199,10 @@ depth env = envtStackLength env
 lift :: Ord n => Int -> EnvT n -> EnvT n
 lift n env
         = EnvT
-        { envtMap         = Map.map (liftT n) (envtMap env)
-        , envtStack       = map (liftT n) (envtStack env)
-        , envtStackLength = envtStackLength env
-        , envtEqns        = envtEqns        env
-        , envtPrimFun     = envtPrimFun     env }
+        { envtMap          = Map.map (liftT n) (envtMap env)
+        , envtStack        = map (liftT n) (envtStack env)
+        , envtStackLength  = envtStackLength  env
+        , envtEquations    = envtEquations    env
+        , envtCapabilities = envtCapabilities env
+        , envtPrimFun      = envtPrimFun      env }
 

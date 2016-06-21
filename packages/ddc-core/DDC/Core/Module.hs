@@ -7,6 +7,7 @@ module DDC.Core.Module
         , moduleTypeDefs
         , moduleKindEnv
         , moduleTypeEnv
+        , moduleEnvT
         , moduleTopBinds
         , moduleTopBindTypes
         , mapTopBinds
@@ -53,9 +54,11 @@ import DDC.Type.DataDef
 import Data.Typeable
 import Data.Map.Strict                  (Map)
 import Data.Set                         (Set)
+import DDC.Core.Env.EnvT                (EnvT(EnvT))
 import DDC.Type.Env                     as Env
 import qualified Data.Map.Strict        as Map
 import qualified Data.Set               as Set
+import qualified DDC.Core.Env.EnvT      as EnvT
 import Control.DeepSeq
 import Data.Maybe
 
@@ -160,6 +163,63 @@ moduleTypeEnv :: Ord n => Module a n -> TypeEnv n
 moduleTypeEnv mm
         = Env.fromList 
         $ [BName n (typeOfImportValue isrc) | (n, isrc) <- moduleImportValues mm]
+
+
+-- | Extract the top-level type environment of a module.
+--
+--   This includes kinds for abstract types, data types, and type equations, 
+--   but not primitive types which are fragment specific.
+--
+moduleEnvT :: Ord n => Module a n -> EnvT n
+moduleEnvT mm
+ = EnvT
+ { EnvT.envtMap         
+        = let -- Kinds of imported foreign types.
+              nksImportForeignType
+                = Map.fromList [(n, kindOfImportType isrc) 
+                               | (n, isrc) <- moduleImportTypes mm]
+
+              -- Kinds of imported data types.
+              nksImportDataType
+               = Map.fromList  [(dataDefTypeName def, kindOfDataDef def) 
+                               | def <- moduleImportDataDefs mm]
+
+              -- Kinds of imported type defs.
+              nksImportTypeDef
+               = Map.fromList  [(n, k) | (n, (k, _)) <- moduleImportTypeDefs mm]
+
+              -- Kinds of locally defined data types.
+              nksLocalDataType
+               = Map.fromList  [(dataDefTypeName def, kindOfDataDef def) 
+                               | def <- moduleImportDataDefs mm]
+
+              -- Kinds of imported type defs.
+              nksLocalTypeDef
+               = Map.fromList  [(n, k) | (n, (k, _)) <- moduleTypeDefsLocal mm]
+
+          in  -- Build a map of all the kinds, 
+              -- Where kinds of locally defined type shadow the imported ones.
+              Map.unions
+                [ nksImportForeignType
+                , nksImportDataType
+                , nksImportTypeDef
+                , nksLocalDataType
+                , nksLocalTypeDef ]
+
+ , EnvT.envtStack       = []
+ , EnvT.envtStackLength = 0
+
+ , EnvT.envtEquations   
+        = Map.unions
+        [ Map.fromList [(n, t)  | (n, (_, t)) <- moduleImportTypeDefs mm]
+        , Map.fromList [(n, t)  | (n, (_, t)) <- moduleTypeDefsLocal  mm]]
+
+ , EnvT.envtCapabilities
+        = Map.fromList [(n, typeOfImportCap ic) | (n, ic) <- moduleImportCaps mm]
+
+ , EnvT.envtPrimFun
+        = \_n -> Nothing
+ }
 
 
 -- | Get the set of top-level value bindings in a module.
