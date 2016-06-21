@@ -24,7 +24,6 @@ checkLet !table !ctx0 mode demand xx@(XLet a lts xBody)
                 , empty]
 
         let config  = tableConfig table
-        let kenv    = tableKindEnv table
 
         -- Check the bindings -------------------
         -- Decide whether to use bidirectional type inference when checking
@@ -52,7 +51,7 @@ checkLet !table !ctx0 mode demand xx@(XLet a lts xBody)
 
         -- The body must have data kind.
         (tBodyChecked, kBody, ctx3)
-         <- checkTypeM config kenv ctx2 UniverseSpec tBody
+         <- checkTypeM config ctx2 UniverseSpec tBody
          $  case mode of
                 Recon   -> Recon
                 _       -> Check kData
@@ -130,8 +129,6 @@ checkLetsM !bidir xx !table !ctx0 !demand (LLet b xBind)
  | False  <- bidir
  = do
         let config      = tableConfig table
-        let kenv        = tableKindEnv table
-        let eqns        = configTypeEqns config
         let a           = annotOfExp xx
 
         -- Reconstruct the type of the binding.
@@ -140,7 +137,7 @@ checkLetsM !bidir xx !table !ctx0 !demand (LLet b xBind)
 
         -- The kind of the binding must be Data.
         (_, kBind', _)
-         <- checkTypeM config kenv ctx1 UniverseSpec tBind Recon
+         <- checkTypeM config ctx1 UniverseSpec tBind Recon
 
         when (not $ isDataKind kBind')
          $ throw $ ErrorLetBindingNotData a xx b kBind'
@@ -148,7 +145,7 @@ checkLetsM !bidir xx !table !ctx0 !demand (LLet b xBind)
         -- If there is a type annotation on the binding then this
         -- must match the reconstructed type.
         when (not $ isBot (typeOfBind b))
-         $ if equivT eqns (typeOfBind b) tBind
+         $ if equivT (contextEnvT ctx0) (typeOfBind b) tBind
                 then return ()
                 else (throw $ ErrorLetMismatch a xx b tBind)
 
@@ -170,7 +167,6 @@ checkLetsM !bidir xx !table !ctx0 !demand (LLet b xBind)
  | True   <- bidir
  = do
         let config      = tableConfig table
-        let kenv        = tableKindEnv table
         let a           = annotOfExp xx
 
         -- If the binder has a type annotation then we use that as the expected
@@ -186,7 +182,7 @@ checkLetsM !bidir xx !table !ctx0 !demand (LLet b xBind)
              -- expecting the kind to be Data.
              else do
                 (tAnnot', _kAnnot, ctx1)
-                 <- checkTypeM config kenv ctx0 UniverseSpec tAnnot (Check kData)
+                 <- checkTypeM config ctx0 UniverseSpec tAnnot (Check kData)
                 return (Check tAnnot', ctx1)
 
         ctrace  $ vcat
@@ -313,7 +309,6 @@ checkRecBinds table bidir a xx ctx0 bs0
                 return (b' : moar, ctx'')
 
         config  = tableConfig  table
-        kenv    = tableKindEnv table
 
         checkRecBind b ctx
          = case bidir of
@@ -326,7 +321,7 @@ checkRecBinds table bidir a xx ctx0 bs0
 
                 -- Check the type on the binder.
                 (b', k, ctx')
-                 <- checkBindM config kenv ctx UniverseSpec b Recon
+                 <- checkBindM config ctx UniverseSpec b Recon
 
                 -- The type on the binder must have kind Data.
                 when (not $ isDataKind k)
@@ -349,7 +344,7 @@ checkRecBinds table bidir a xx ctx0 bs0
              | otherwise
              -> do
                 (b0, _k, ctx1)
-                 <- checkBindM config kenv ctx UniverseSpec b (Check kData)
+                 <- checkBindM config ctx UniverseSpec b (Check kData)
 
                 let t0  =  typeOfBind b0
                 t1      <- applyContext ctx1 t0
@@ -383,9 +378,6 @@ checkRecBindExps table False a ctx0 demand bxs0
 
         go ((b, xBind) : bxs) ctx
          = do   
-                let config      = tableConfig table
-                let eqns        = configTypeEqns config
-
                 ctrace  $ vcat
                         [ text "*>  Let Rec Bind RECON"
                         , text "    demand     = " <> (text $ show demand)
@@ -401,7 +393,7 @@ checkRecBindExps table False a ctx0 demand bxs0
 
                 -- Check the annotation on the binder matches the reconstructed
                 -- type of the binding.
-                when (not $ equivT eqns (typeOfBind b) t)
+                when (not $ equivT (contextEnvT ctx') (typeOfBind b) t)
                  $ throw $ ErrorLetMismatch a xBind b t
 
                 -- Reconstructing the types of binders adds missing kind info to

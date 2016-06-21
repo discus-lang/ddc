@@ -417,24 +417,26 @@ liftLambda p c fusFree a lams xBody
         uLifted         = UName nLifted
 
         -- Build the type checker configuration for this context.
-        (defs, eqns, _, _)    
+        (defs, _eqns, _, _)    
                 = topOfCtx (contextCtx c)        
         config  = Check.configOfProfile p
 
         config' = config 
                 { Check.configDataDefs
-                        = mappend defs (Check.configDataDefs config) 
+                        = mappend defs (Check.configDataDefs config)  }
 
-                , Check.configTypeDefs
-                        = mappend eqns (Check.configTypeDefs config)
+--                , Check.configTypeDefs
+--                        = mappend eqns (Check.configTypeDefs config)
 
-                , Check.configGlobalCaps
-                        = contextGlobalCaps c }
+--                , Check.configGlobalCaps
+--                        = contextGlobalCaps c }
 
         kenv'   = Env.unions
-                [ kenv
-                , Env.fromList [BName n k | (n, (k, _)) 
+                [ kenv ]
+
+{-                , Env.fromList [BName n k | (n, (k, _)) 
                                         <- Map.toList $ Check.configTypeDefs config'] ]
+-}
 
         -- Function to get the type of an expression in this context.
         -- If there are type errors in the input program then some 

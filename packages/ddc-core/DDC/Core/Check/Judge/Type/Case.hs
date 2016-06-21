@@ -14,8 +14,6 @@ checkCase !table !ctx0 mode demand
         xx@(XCase a xDiscrim alts)
  = do   
         let config      = tableConfig table
-        let eqns        = configTypeEqns config
-        let caps        = configGlobalCaps config
 
         -- There must be at least one alternative, even if there are no data
         -- constructors. The rest of the checking code assumes this, and will
@@ -36,7 +34,7 @@ checkCase !table !ctx0 mode demand
 
         -- Reduce to head-normal form so we can see the outer
         -- data type constructor (if there is one).
-        let tDiscrim' = crushHeadT eqns caps tDiscrim
+        let tDiscrim' = crushHeadT (contextEnvT ctx2) tDiscrim
 
         -- Split the type into the type constructor names and type parameters.
         -- Also check that it's algebraic data, and not a function or effect
@@ -96,7 +94,7 @@ checkCase !table !ctx0 mode demand
         tsAlts'         <- mapM (applyContext ctx4) tsAlts
         let tAlt : _    =  tsAlts'
         forM_ tsAlts' $ \tAlt'
-         -> when (not $ equivT eqns tAlt tAlt')
+         -> when (not $ equivT (contextEnvT ctx4) tAlt tAlt')
           $ throw $ ErrorCaseAltResultMismatch a xx tAlt tAlt'
 
         -- Check for overlapping alternatives.
@@ -112,7 +110,7 @@ checkCase !table !ctx0 mode demand
 
         -- Effect of overall expression.
         let effTotal
-                = crushEffect eqns (configGlobalCaps config)
+                = crushEffect (contextEnvT ctx4)
                 $ TSum $ Sum.unions kEffect
                 $ effsDiscrim : effsMatch : effss
 
@@ -251,9 +249,6 @@ checkAltsM !table !a !xx !tDiscrim !tsArgs !mode !demand !alts0 !ctx
 
   checkAltM alt@(AAlt (PData dc bsArg) xBody) !ctx0
    = do
-        let config      = tableConfig table
-        let eqns        = configTypeEqns config
-
         -- Get the constructor type associated with this pattern.
         Just tCtor <- ctorTypeOfPat table a (PData dc bsArg)
 
@@ -262,7 +257,7 @@ checkAltsM !table !a !xx !tDiscrim !tsArgs !mode !demand !alts0 !ctx
         -- doesn't instantiate then it won't have enough foralls on the front,
         -- which should have been checked by the def checker.
         tCtor_inst
-         <- if equivT eqns tCtor tDiscrim
+         <- if equivT (contextEnvT ctx0) tCtor tDiscrim
              then return tCtor
              else case instantiateTs tCtor tsArgs of
                    Nothing -> throw $ ErrorCaseCannotInstantiate a xx tDiscrim tCtor
@@ -275,7 +270,7 @@ checkAltsM !table !a !xx !tDiscrim !tsArgs !mode !demand !alts0 !ctx
         -- The result type of the constructor must match the discriminant type.
         -- If it doesn't then the constructor in the pattern probably isn't for
         -- the discriminant type.
-        when (not $ equivT eqns tDiscrim tResult)
+        when (not $ equivT (contextEnvT ctx0) tDiscrim tResult)
          $ throw $ ErrorCaseScrutineeTypeMismatch a xx
                         tDiscrim tResult
 
@@ -358,8 +353,7 @@ checkFieldAnnots table bidir a xx tts ctx0
         | bidir
         = do    -- Check the type of the annotation.
                 let config      = tableConfig table
-                let kenv        = tableKindEnv table
-                (tAnnot', _, ctx2) <- checkTypeM config kenv ctx UniverseSpec tAnnot Synth
+                (tAnnot', _, ctx2) <- checkTypeM config ctx UniverseSpec tAnnot Synth
 
                 ctx3    <- makeEq (tableConfig table) a ctx2 tAnnot' tActual
                         $  ErrorCaseFieldTypeMismatch a xx   tAnnot' tActual
@@ -370,7 +364,7 @@ checkFieldAnnots table bidir a xx tts ctx0
         -- In Recon mode, if there is an annotation on the field then it needs
         -- to exactly match the inferred type of the field.
         | not bidir
-        , equivT (configTypeEqns (tableConfig table)) tActual tAnnot
+        , equivT (contextEnvT ctx) tActual tAnnot
         = return (tAnnot, ctx)
 
         -- Annotation does not match actual type.

@@ -13,7 +13,6 @@ checkAppT !table !ctx0 Recon demand
         xx@(XApp aApp xFn (XType aArg tArg))
  = do   
         let config      = tableConfig table
-        let kenv        = tableKindEnv table
 
         -- Check the functional expression.
         (xFn', tFn, effsFn, ctx1)
@@ -21,7 +20,7 @@ checkAppT !table !ctx0 Recon demand
 
         -- Check the argument.
         (tArg', kArg, ctx2)
-         <- checkTypeM    config kenv ctx1 UniverseSpec tArg Recon
+         <- checkTypeM    config ctx1 UniverseSpec tArg Recon
 
         -- Determine the type of the result.
         --  The function must have a quantified type, which we then instantiate
@@ -145,11 +144,10 @@ synthAppArgT table a xx ctx0 tFn tArg
  --  with the supplied type argument.
  | TForall b11 t12      <- tFn
  = do   let config      = tableConfig table
-        let kenv        = tableKindEnv table
 
         -- The kind of the argument must match the annotation on the quantifier.
         (tArg', kArg, ctx1)
-         <- checkTypeM config kenv ctx0 UniverseSpec tArg
+         <- checkTypeM config ctx0 UniverseSpec tArg
                 (Check (typeOfBind b11))
 
         -- Instantiate the type of the function with the type argument.

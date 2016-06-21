@@ -20,7 +20,6 @@ checkLamT !table !ctx mode _demand xx
 --  the formal parameter must have a kind annotation: eg (/\v : K. x2)
 checkLAM !table !ctx0 a b1 x2 Recon
  = do   let config      = tableConfig table
-        let kenv        = tableKindEnv table
         let xx          = XLAM a b1 x2
 
         -- Check the parameter ------------------
@@ -36,7 +35,7 @@ checkLAM !table !ctx0 a b1 x2 Recon
 
         -- Check the kind annotation is well-sorted.
         (kA', sA, ctxA)
-         <- checkTypeM config kenv ctx0 UniverseKind kA Recon
+         <- checkTypeM config ctx0 UniverseKind kA Recon
 
         let b1'         = replaceTypeOfBind kA' b1
 
@@ -58,7 +57,7 @@ checkLAM !table !ctx0 a b1 x2 Recon
 
         -- Reconstruct the kind of the body.
         (t2', k2, ctx6)
-         <- checkTypeM config kenv ctx5 UniverseSpec t2 Recon
+         <- checkTypeM config ctx5 UniverseSpec t2 Recon
 
         -- The type of the body must have data kind.
         when (not $ isDataKind k2)
@@ -90,7 +89,6 @@ checkLAM !table !ctx0 a b1 x2 Recon
 
 checkLAM !table !ctx0 a b1 x2 Synth
  = do   let config      = tableConfig table
-        let kenv        = tableKindEnv table
         let xx          = XLAM a b1 x2
 
         -- Check the parameter ------------------
@@ -110,7 +108,7 @@ checkLAM !table !ctx0 a b1 x2 Synth
                 return (kA', sComp, ctxA)
 
              else
-                checkTypeM config kenv ctx0 UniverseKind kA Synth
+                checkTypeM config ctx0 UniverseKind kA Synth
 
         let b1'         = replaceTypeOfBind kA' b1
 
@@ -134,7 +132,7 @@ checkLAM !table !ctx0 a b1 x2 Synth
         --  which doesn't yet have a resolved kind.
         t2'     <- applyContext ctx5 t2
         (_, _, ctx6)
-         <- checkTypeM config kenv ctx5 UniverseSpec t2' (Check kData)
+         <- checkTypeM config ctx5 UniverseSpec t2' (Check kData)
 
         -- The body of a spec abstraction must be pure.
         when (e2 /= Sum.empty kEffect)
@@ -162,7 +160,6 @@ checkLAM !table !ctx0 a b1 x2 Synth
 
 checkLAM !table !ctx0 a b1 x2 (Check (TForall b tBody))
  = do   let config      = tableConfig table
-        let kenv        = tableKindEnv table
         let xx          = XLAM a b1 x2
 
         -- Check the parameter ------------------
@@ -188,10 +185,10 @@ checkLAM !table !ctx0 a b1 x2 (Check (TForall b tBody))
 
              else if isBot kExpected
               then do
-                checkTypeM config kenv ctx0 UniverseKind kParam Synth
+                checkTypeM config ctx0 UniverseKind kParam Synth
 
               else do
-                checkTypeM config kenv ctx0 UniverseKind kExpected Synth
+                checkTypeM config ctx0 UniverseKind kExpected Synth
 
         let b1' = replaceTypeOfBind kA' b1
 
@@ -223,7 +220,7 @@ checkLAM !table !ctx0 a b1 x2 (Check (TForall b tBody))
         --  This is needed when the type of the body is an existential
         --  which doesn't yet have a resolved kind.
         (t2', _k2, ctx6)
-         <- checkTypeM config kenv ctx5 UniverseSpec t2 (Check kData)
+         <- checkTypeM config ctx5 UniverseSpec t2 (Check kData)
 
         -- The body of a spec abstraction must be pure.
         when (e2 /= Sum.empty kEffect)

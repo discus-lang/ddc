@@ -11,6 +11,8 @@ module DDC.Type.Check.Context
         , Role    (..)
         , Context (..)
         , emptyContext
+        , contextEnvT,  contextOfEnvT
+        , contextOfPrimEnvs
 
         -- Positions
         , Pos     (..)
@@ -43,7 +45,11 @@ import DDC.Type.Exp.Simple
 import DDC.Base.Pretty
 import Data.Maybe
 import Data.IntMap.Strict               (IntMap)
-import Data.Map                         (Map)
+import qualified DDC.Type.Env           as Env
+import DDC.Core.Env.EnvX                (EnvX)
+import DDC.Core.Env.EnvX                (EnvT)
+import qualified DDC.Core.Env.EnvT      as EnvT
+import qualified DDC.Core.Env.EnvX      as EnvX
 import qualified DDC.Type.Sum           as Sum
 import qualified Data.IntMap.Strict     as IntMap
 import qualified Data.Set               as Set
@@ -122,8 +128,11 @@ takeExists tt
 --
 data Context n
         = Context 
-        { -- | Fresh name generator for context positions.
-          contextGenPos         :: !Int
+        { -- | Top level environment for terms.
+          contextEnvX           :: !(EnvX n)
+
+          -- | Fresh name generator for context positions.
+        , contextGenPos         :: !Int
 
           -- | Fresh name generator for existential variables.
         , contextGenExists      :: !Int 
@@ -137,11 +146,41 @@ data Context n
           --   annotations after type inference proper. It's not used as part
           --   of the main algorithm.
         , contextSolved         :: IntMap (Type n) }
-        deriving Show
+
+
+-- | Take the top level environment for types from the context.
+contextEnvT :: Context n -> EnvT n
+contextEnvT ctx
+ = EnvX.envxEnvT (contextEnvX ctx)
+
+
+-- | Wrap an EnvT into a Context.
+contextOfEnvT :: EnvT n -> Context n
+contextOfEnvT envt
+ = let  envx    = EnvX.empty
+                { EnvX.envxEnvT = envt }
+
+        ctx     = emptyContext
+                { contextEnvX   = envx }
+   in   ctx
+
+
+-- | Build a context from prim environments.
+contextOfPrimEnvs :: Ord n => Env.KindEnv n -> Env.TypeEnv n -> Context n
+contextOfPrimEnvs kenv tenv
+ = let  envt    = EnvT.empty 
+                { EnvT.envtPrimFun = \n -> Env.lookupName n kenv }
+
+        envx    = EnvX.empty
+                { EnvX.envxEnvT    = envt
+                , EnvX.envxPrimFun = \n -> Env.lookupName n tenv }
+
+   in   emptyContext 
+         { contextEnvX = envx }
 
 
 instance (Pretty n, Eq n) => Pretty (Context n) where
- ppr (Context genPos genExists ls _solved)
+ ppr (Context _ genPos genExists ls _solved)
   =   text "Context "
   <$> text "  genPos    = " <> int genPos
   <$> text "  genExists = " <> int genExists
@@ -235,7 +274,8 @@ instance Pretty Role where
 emptyContext :: Context n
 emptyContext 
         = Context
-        { contextGenPos         = 0
+        { contextEnvX           = EnvX.empty
+        , contextGenPos         = 0
         , contextGenExists      = 0 
         , contextElems          = []
         , contextSolved         = IntMap.empty }
@@ -584,15 +624,14 @@ applySolvedEither ctx is tt
 --
 effectSupported 
         :: (Ord n, Show n)
-        => Map n (Type n)       -- Type Equations
+        => Context n 
         -> Effect n 
-        -> Context n 
         -> Maybe (Effect n)
 
-effectSupported eqs eff ctx
+effectSupported ctx eff 
         -- Check that all the components of a sum are supported.
         | TSum ts       <- eff
-        = listToMaybe $ concat [ maybeToList $ effectSupported eqs e ctx 
+        = listToMaybe $ concat [ maybeToList $ effectSupported ctx e
                                | e <- Sum.toList ts ]
 
         -- Abstract effects are fine.
@@ -601,15 +640,15 @@ effectSupported eqs eff ctx
         = Nothing
 
         -- Abstract global effects are always supported.
-        | TCon (TyConBound _ k)                <- eff
+        | TCon (TyConBound _ k) <- eff
         , k == kEffect
         = Nothing
 
         -- For an effects on concrete region,
         -- the capability is supported if it's in the lexical environment.
-        | TApp (TCon (TyConSpec tc)) _t2       <- eff
+        | TApp (TCon (TyConSpec tc)) _t2 <- eff
         , elem tc [TcConRead, TcConWrite, TcConAlloc]
-        , any   (\b -> equivT eqs (typeOfBind b) eff) 
+        , any   (\b -> equivT (contextEnvT ctx) (typeOfBind b) eff) 
                 [ b | ElemType b <- contextElems ctx ] 
         = Nothing
 
@@ -625,3 +664,4 @@ effectSupported eqs eff ctx
 
         | otherwise
         = Just eff
+

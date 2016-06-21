@@ -1,16 +1,11 @@
 
 module DDC.Type.Check.Config
         ( Config (..)
-        , configTypeEqns
         , configOfProfile)
 where
-import DDC.Type.Exp
 import DDC.Type.DataDef
 import DDC.Type.Env                     (KindEnv, TypeEnv)
-import Data.Map                         (Map)
-import qualified DDC.Type.Env           as Env
 import qualified DDC.Core.Fragment      as F
-import qualified Data.Map               as Map
 
 
 -- Config ---------------------------------------------------------------------
@@ -30,17 +25,6 @@ data Config n
 
           -- | Data type definitions.
         , configDataDefs                :: DataDefs n  
-
-          -- | Type equations, mapping the constructor name to its
-          --   kind and associated type.
-        , configTypeDefs                :: Map n (Kind n, Type n)
-
-          -- | Types of globally available capabilities.
-          --
-          --   The inferred types of computations do not contain these
-          --   capabilities as they are always available and thus do not
-          --   need to be tracked in types.
-        , configGlobalCaps              :: TypeEnv n
 
           -- | This name represents some hole in the expression that needs
           --   to be filled in by the type checker.
@@ -71,10 +55,6 @@ data Config n
         , configImplicitBox             :: Bool
         }
 
-configTypeEqns :: Config n -> Map n (Type n)
-configTypeEqns config
-        = Map.map snd $ configTypeDefs config
-
 
 -- | Convert a language profile to a type checker configuration.
 configOfProfile :: F.Profile n -> Config n
@@ -84,8 +64,6 @@ configOfProfile profile
         { configPrimKinds               = F.profilePrimKinds            profile
         , configPrimTypes               = F.profilePrimTypes            profile
         , configDataDefs                = F.profilePrimDataDefs         profile
-        , configTypeDefs                = Map.empty
-        , configGlobalCaps              = Env.empty
         , configNameIsHole              = F.profileNameIsHole           profile 
         
         , configTrackedEffects          = F.featuresTrackedEffects      features

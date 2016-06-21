@@ -75,8 +75,6 @@ type Checker a n
 data Table a n
         = Table
         { tableConfig           :: Config n
-        , tableKindEnv          :: KindEnv n
-        , tableTypeEnv          :: TypeEnv n
         , tableCheckExp         :: Checker a n
         , tableCheckVarCon      :: Checker a n
         , tableCheckAppT        :: Checker a n

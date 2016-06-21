@@ -35,6 +35,7 @@ import qualified Data.Map                       as Map
 import qualified Data.Maybe                     as Maybe
 import qualified Data.Set                       as Set
 import qualified DDC.Type.Env                   as Env
+import qualified DDC.Core.Env.EnvT              as EnvT
 
 
 -- | A rewrite rule. For example:
@@ -299,8 +300,8 @@ checkConstraint
         -> Type n       -- ^ The constraint type to check.
         -> Either (Error a n) (Kind n)
 
-checkConstraint config kenv tt
- = case T.checkSpec config kenv tt of
+checkConstraint config _kenv tt
+ = case T.checkSpec config tt of
         Left _err               -> Left $ ErrorBadConstraint tt
         Right (_, k)
          | T.isWitnessType tt   -> return k
@@ -316,7 +317,7 @@ checkEquiv
         -> Either (Error a n) ()
 
 checkEquiv tLeft tRight err
-        | T.equivT Map.empty tLeft tRight  
+        | T.equivT EnvT.empty tLeft tRight  
                         = return ()
         | otherwise     = Left err
 
@@ -338,13 +339,13 @@ makeEffectWeakening
 makeEffectWeakening k effLeft effRight onError
         -- When the effect of the left matches that of the right
         -- then we don't have to do anything else.
-        | T.equivT Map.empty effLeft effRight
+        | T.equivT EnvT.empty effLeft effRight
         = return Nothing
 
         -- When the effect of the right is smaller than that of
         -- the left then we need to wrap it in an effect weaking
         -- so the rewritten expression retains its original effect.
-        | T.subsumesT Map.empty k effLeft effRight
+        | T.subsumesT EnvT.empty k effLeft effRight
         = return $ Just effLeft
 
         -- When the effect of the right is more than that of the left
@@ -404,12 +405,13 @@ removeEffects
         -> T.Env n      -- ^ Type environment
         -> Exp a n      -- ^ Target expression - has all effects replaced with bottom.
         -> Exp a n
-removeEffects config = transformUpX remove
+removeEffects config 
+ = transformUpX remove
  where
-  remove kenv _tenv x
+  remove _kenv _tenv x
 
-   | XType a et     <- x
-   , Right (_, k) <- T.checkSpec config kenv et
+   | XType a et    <- x
+   , Right (_, k)  <- T.checkSpec config et
    , T.isEffectKind k
    = XType a $ T.tBot T.kEffect
 

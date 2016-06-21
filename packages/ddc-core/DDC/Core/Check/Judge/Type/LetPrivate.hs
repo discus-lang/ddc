@@ -3,10 +3,11 @@ module DDC.Core.Check.Judge.Type.LetPrivate
         (checkLetPrivate)
 where
 import DDC.Core.Check.Judge.Type.Base
-import qualified DDC.Type.Sum   as Sum
-import qualified DDC.Type.Env   as Env
-import qualified Data.Set       as Set
-import Data.List                as L
+import qualified DDC.Core.Env.EnvT      as EnvT
+import qualified DDC.Type.Sum           as Sum
+import qualified DDC.Type.Env           as Env
+import qualified Data.Set               as Set
+import Data.List                        as L
 
 
 checkLetPrivate :: Checker a n
@@ -20,7 +21,6 @@ checkLetPrivate !table !ctx mode demand
 
     us   -> do
         let config      = tableConfig table
-        let kenv        = tableKindEnv table
         let depth       = length $ map isBAnon bsRgn
 
         ctrace  $ vcat
@@ -36,7 +36,7 @@ checkLetPrivate !table !ctx mode demand
         -- These must already set to kind Region.
         (bsRgn', _, _)
          <- liftM unzip3
-         $  mapM (\b -> checkBindM config kenv ctx UniverseKind b Recon)
+         $  mapM (\b -> checkBindM config ctx UniverseKind b Recon)
                  bsRgn
         let ksRgn       = map typeOfBind bsRgn'
 
@@ -58,12 +58,12 @@ checkLetPrivate !table !ctx mode demand
         let ctx2         = liftTypes depth ctx1
         (bsWit', _, _)
          <- liftM unzip3
-         $  mapM (\b -> checkBindM config kenv ctx2 UniverseSpec b Recon)
+         $  mapM (\b -> checkBindM config ctx2 UniverseSpec b Recon)
                  bsWit
 
         -- Check that the witnesses bound here are for the region,
         -- and they don't conflict with each other.
-        checkWitnessBindsM config a kenv ctx xx us bsWit'
+        checkWitnessBindsM config a ctx xx us bsWit'
 
         -- Check the body expression.
         --   We always want to do this in 'Synth' mode as the expected
@@ -76,7 +76,7 @@ checkLetPrivate !table !ctx mode demand
 
         -- The body type must have data kind.
         (tBody4, kBody4, ctx5)
-          <- checkTypeM config kenv ctx4 UniverseSpec tBody3
+          <- checkTypeM config ctx4 UniverseSpec tBody3
           $  case mode of
                 Recon   -> Recon
                 _       -> Check kData
@@ -158,14 +158,13 @@ checkWitnessBindsM
         :: (Show n, Ord n)
         => Config n             -- ^ Type checker config.
         -> a                    -- ^ Annotation for error messages.
-        -> KindEnv n            -- ^ Kind Environment.
         -> Context n            -- ^ Context
         -> Exp a n              -- ^ The whole expression, for error messages.
         -> [Bound n]            -- ^ Region variables bound in the letregion.
         -> [Bind n]             -- ^ Other witness bindings in the same set.
         -> CheckM a n ()
 
-checkWitnessBindsM !config !a !kenv !ctx !xx !uRegions !bsWit
+checkWitnessBindsM !config !a !ctx !xx !uRegions !bsWit
  = mapM_ checkWitnessBindM  bsWit
  where
         -- Check if some type variable or constructor is already in the
@@ -174,13 +173,13 @@ checkWitnessBindsM !config !a !kenv !ctx !xx !uRegions !bsWit
         inEnv tt
          = case tt of
              TVar u'
-                | Env.member u' kenv    -> True
-                | memberKind u' ctx     -> True
+                | EnvT.member u' (contextEnvT ctx) -> True
+                | memberKind u' ctx                -> True
 
              TCon (TyConBound u' _)
-                | Env.member u' kenv    -> True
-                | memberKind u' ctx     -> True
-             _                          -> False
+                | EnvT.member u' (contextEnvT ctx) -> True
+                | memberKind u' ctx                -> True
+             _                                     -> False
 
 
         -- Check the argument of a witness type is for the region we're

@@ -11,11 +11,9 @@ checkWit :: Checker a n
 checkWit !table !ctx _mode _demand 
         (XWitness a w1)
  = do   let config      = tableConfig table
-        let kenv        = tableKindEnv table
-        let tenv        = tableTypeEnv table
 
         -- Check the witness.
-        (w1', t1)       <- checkWitnessM config kenv tenv ctx w1
+        (w1', t1)       <- checkWitnessM config ctx w1
         let w1TEC = reannotate fromAnT w1'
 
         returnX a

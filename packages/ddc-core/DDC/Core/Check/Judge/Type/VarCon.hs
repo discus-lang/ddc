@@ -5,9 +5,9 @@ where
 import DDC.Core.Check.Judge.Type.DaCon
 import DDC.Core.Check.Judge.Type.Sub
 import DDC.Core.Check.Judge.Type.Base
-import qualified DDC.Type.Env   as Env
-import qualified DDC.Type.Sum   as Sum
-import qualified Data.Map       as Map
+import qualified DDC.Core.Env.EnvX      as EnvX
+import qualified DDC.Type.Sum           as Sum
+import qualified Data.Map               as Map
 
 
 checkVarCon :: Checker a n
@@ -37,7 +37,7 @@ checkVarCon !table !ctx mode demand xx@(XVar a u)
                         ctx
 
  -- Look in the global environment.
- | Just t      <- Env.lookup u (tableTypeEnv table)
+ | Just t      <- EnvX.lookup u (contextEnvX ctx)
  = case mode of
         -- Check subsumption against an existing type.
         -- This may instantiate existentials in the exising type.

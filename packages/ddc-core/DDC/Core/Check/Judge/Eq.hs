@@ -3,6 +3,7 @@ module DDC.Core.Check.Judge.Eq
         (makeEq)
 where
 import DDC.Core.Check.Base
+import qualified DDC.Core.Env.EnvT      as EnvT
 import qualified DDC.Type.Sum           as Sum
 import qualified Data.Map.Strict        as Map
 
@@ -22,12 +23,12 @@ makeEq config a ctx0 tL tR err
 
  -- Expand type equations.
  | TCon (TyConBound (UName n) _) <- tL
- , Just (_, tL')        <- Map.lookup n $ configTypeDefs config
+ , Just tL' <- Map.lookup n $ EnvT.envtEquations $ contextEnvT ctx0
  = makeEq config a ctx0 tL' tR err
 
 
  | TCon (TyConBound (UName n) _) <- tR
- , Just (_, tR')        <- Map.lookup n $ configTypeDefs config
+ , Just tR' <- Map.lookup n $ EnvT.envtEquations $ contextEnvT ctx0
  = makeEq config a ctx0 tL tR' err
 
 
@@ -157,7 +158,7 @@ makeEq config a ctx0 tL tR err
 
 
  -- EqEquiv
- | equivT (configTypeEqns config) tL tR 
+ | equivT (contextEnvT ctx0) tL tR 
  = do   ctrace  $ vcat
                 [ text "**  EqEquiv" ]
 
@@ -166,10 +167,9 @@ makeEq config a ctx0 tL tR err
 
  -- Error
  | otherwise
- = do   let eqns = configTypeEqns   config
-        let caps = configGlobalCaps config
-        let tL'  = crushEffect eqns caps $ unpackSumT tL
-        let tR'  = crushEffect eqns caps $ unpackSumT tR
+ = do   let env  = contextEnvT ctx0
+        let tL'  = crushEffect env $ unpackSumT tL
+        let tR'  = crushEffect env $ unpackSumT tR
 
         ctrace  $ vcat
                 [ text "DDC.Core.Check.Exp.Inst.makeEq: no match"

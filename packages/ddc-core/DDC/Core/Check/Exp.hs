@@ -84,10 +84,13 @@ checkExp !config !kenv !tenv !mode !demand !xx
         -- Check the expression, using the monadic checking function.
         (xx', t, effs, ctx)
          <- checkExpM
-                (makeTable config
+                (makeTable config)
+                (contextOfPrimEnvs 
                         (Env.union kenv (configPrimKinds config))
                         (Env.union tenv (configPrimTypes config)))
-                emptyContext mode demand xx 
+                mode 
+                demand 
+                xx 
 
         -- Apply the final context to the annotations in expressions.
         -- This ensures that existentials are expanded to solved types.
@@ -155,12 +158,10 @@ checkExpM !table !ctx !mode !demand !xx
 
 
 -- Table ----------------------------------------------------------------------
-makeTable :: Config n -> KindEnv n -> TypeEnv n -> Table a n
-makeTable config kenv tenv
+makeTable :: Config n -> Table a n
+makeTable config
         = Table
         { tableConfig           = config
-        , tableKindEnv          = kenv
-        , tableTypeEnv          = tenv
         , tableCheckExp         = checkExpM
         , tableCheckVarCon      = checkVarCon
         , tableCheckAppT        = checkAppT

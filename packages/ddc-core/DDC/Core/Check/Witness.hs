@@ -10,7 +10,9 @@ import DDC.Core.Check.Error
 import DDC.Core.Check.ErrorMessage              ()
 import DDC.Core.Check.Base
 import DDC.Type.Transform.SubstituteT
-import qualified DDC.Type.Env                   as Env
+import qualified DDC.Core.Env.EnvT              as EnvT
+import qualified DDC.Type.Check.Context         as Context
+import qualified Data.Map.Strict                as Map
 
 
 -- Wrappers --------------------------------------------------------------------
@@ -31,16 +33,17 @@ import qualified DDC.Type.Env                   as Env
 checkWitness
         :: (Ord n, Show n, Pretty n)
         => Config n             -- ^ Static configuration.
-        -> KindEnv n            -- ^ Starting Kind Environment.
-        -> TypeEnv n            -- ^ Strating Type Environment.
+        -> KindEnv n            -- ^ Primitive Kind Environment.
+        -> TypeEnv n            -- ^ Primitive Type Environment.
         -> Witness a n          -- ^ Witness to check.
         -> Either (Error a n)
                   ( Witness (AnT a n) n
                   , Type n)
 
 checkWitness config kenv tenv xx
-        = evalCheck (mempty, 0, 0)
-        $ checkWitnessM config kenv tenv emptyContext xx
+ = let  ctx0    = Context.contextOfPrimEnvs kenv tenv
+   in   evalCheck (mempty, 0, 0)
+         $ checkWitnessM config ctx0 xx
 
 
 -- | Like `checkWitness`, but check in an empty environment.
@@ -56,7 +59,9 @@ typeOfWitness
         -> Either (Error a n) (Type n)
 
 typeOfWitness config ww
- = case checkWitness config Env.empty Env.empty ww of
+ = case checkWitness config 
+                (configPrimKinds config)
+                (configPrimTypes config) ww of
         Left  err       -> Left err
         Right (_, t)    -> Right t
 
@@ -65,36 +70,35 @@ typeOfWitness config ww
 -- | Like `checkWitness` but using the `CheckM` monad to manage errors.
 checkWitnessM
         :: (Ord n, Show n, Pretty n)
-        => Config n             -- ^ Data type definitions.
-        -> KindEnv n            -- ^ Kind environment.
-        -> TypeEnv n            -- ^ Type environment.
+        => Config n             -- ^ Static configuration.
         -> Context n            -- ^ Input context
         -> Witness a n          -- ^ Witness to check.
         -> CheckM a n
                 ( Witness (AnT a n) n
                 , Type n)
 
-checkWitnessM !_config !_kenv !tenv !ctx (WVar a u)
+checkWitnessM !_config !ctx (WVar a u)
  -- Witness is defined locally.
  | Just t       <- lookupType u ctx
  = return ( WVar (AnT t a) u, t)
 
  -- Witness is defined globally.
- | Just t       <- Env.lookup u tenv
+ | UName n      <- u
+ , Just t       <- Map.lookup n (EnvT.envtCapabilities (Context.contextEnvT ctx))
  = return ( WVar (AnT t a) u, t)
 
  | otherwise
  = throw $ ErrorUndefinedVar a u UniverseWitness
 
-checkWitnessM !_config !_kenv !_tenv !_ctx (WCon a wc)
+checkWitnessM !_config !_ctx (WCon a wc)
  = let  t'       = typeOfWiCon wc
    in   return  ( WCon (AnT t' a) wc
                 , t')
 
 -- witness-type application
-checkWitnessM !config !kenv !tenv !ctx ww@(WApp a1 w1 (WType a2 t2))
- = do   (w1', t1)       <- checkWitnessM  config kenv tenv ctx w1
-        (t2', k2, _)    <- checkTypeM     config kenv ctx UniverseSpec t2 Recon
+checkWitnessM !config !ctx ww@(WApp a1 w1 (WType a2 t2))
+ = do   (w1', t1)       <- checkWitnessM config ctx w1
+        (t2', k2, _)    <- checkTypeM    config ctx UniverseSpec t2 Recon
         case t1 of
          TForall b11 t12
           |  typeOfBind b11 == k2
@@ -106,9 +110,9 @@ checkWitnessM !config !kenv !tenv !ctx ww@(WApp a1 w1 (WType a2 t2))
          _              -> throw $ ErrorWAppNotCtor  a1 ww t1 t2'
 
 -- witness-witness application
-checkWitnessM !config !kenv !tenv !ctx ww@(WApp a w1 w2)
- = do   (w1', t1)       <- checkWitnessM config kenv tenv ctx w1
-        (w2', t2)       <- checkWitnessM config kenv tenv ctx w2
+checkWitnessM !config !ctx ww@(WApp a w1 w2)
+ = do   (w1', t1)       <- checkWitnessM config ctx w1
+        (w2', t2)       <- checkWitnessM config ctx w2
         case t1 of
          TApp (TApp (TCon (TyConWitness TwConImpl)) t11) t12
           |  t11 == t2
@@ -119,8 +123,8 @@ checkWitnessM !config !kenv !tenv !ctx ww@(WApp a w1 w2)
          _              -> throw $ ErrorWAppNotCtor  a ww t1 t2
 
 -- embedded types
-checkWitnessM !config !kenv !_tenv !ctx (WType a t)
- = do   (t', k, _)  <- checkTypeM config kenv ctx UniverseSpec t Recon
+checkWitnessM !config !ctx (WType a t)
+ = do   (t', k, _)  <- checkTypeM config ctx UniverseSpec t Recon
         return  ( WType (AnT k a) t'
                 , k)
 

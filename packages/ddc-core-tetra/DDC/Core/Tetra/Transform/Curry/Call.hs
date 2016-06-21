@@ -13,6 +13,7 @@ import Control.Monad
 import Data.Map                                 (Map)
 import qualified DDC.Core.Call                  as Call
 import qualified Data.Map                       as Map
+import qualified DDC.Core.Env.EnvT              as EnvT
 
 
 -- | Call a thing, depending on what it is.
@@ -36,7 +37,7 @@ makeCall callables nFun tFun esArgs
         -- Internal sanity check: the type annotation on the function
         -- to call should match the type we have for it in the callables
         -- table. If not then we're bugged.
-        when (not $ equivT Map.empty tFun tFunTable)
+        when (not $ equivT EnvT.empty tFun tFunTable)
          $ Left $ ErrorSuperTypeMismatch nFun tFun tFunTable
 
         case Call.dischargeConsWithElims csF esArgs of

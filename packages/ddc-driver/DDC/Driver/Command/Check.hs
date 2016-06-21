@@ -47,7 +47,7 @@ import DDC.Build.Interface.Store        (Store)
 import qualified DDC.Base.Parser        as BP
 import qualified DDC.Type.Check         as T
 import qualified DDC.Core.Check         as C
-import qualified Data.Map.Strict        as Map
+import qualified DDC.Core.Env.EnvT      as EnvT
 
 
 -- Module -----------------------------------------------------------------------------------------
@@ -231,7 +231,7 @@ cmdTypeEquiv language source ss
          = do   b1 <- checkT t1
                 b2 <- checkT t2
                 if b1 && b2 
-                 then outStrLn $ show $ equivT Map.empty t1 t2    
+                 then outStrLn $ show $ equivT EnvT.empty t1 t2    
                  else return ()
 
 
@@ -239,7 +239,7 @@ cmdTypeEquiv language source ss
         kenv    = profilePrimKinds    profile
 
         checkT t
-         = case T.checkSpec config kenv (spreadT kenv t) of
+         = case T.checkSpec config (spreadT kenv t) of
                 Left err 
                  -> do  outDocLn $ ppr err
                         return False

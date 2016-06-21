@@ -9,12 +9,13 @@ import DDC.Core.Transform.Reannotate
 import DDC.Core.Transform.MapT
 import DDC.Core.Module
 import DDC.Type.Check.Data
-import DDC.Type.Env             (KindEnv, TypeEnv)
+import DDC.Core.Env.EnvX        (EnvX)
 import DDC.Control.Monad.Check  (runCheck, throw)
-import Data.Map.Strict          (Map)
-import qualified DDC.Type.Env           as Env
-import qualified Data.Map.Strict        as Map
 
+import qualified DDC.Type.Env           as Env
+import qualified DDC.Core.Env.EnvT      as EnvT
+import qualified DDC.Core.Env.EnvX      as EnvX
+import qualified Data.Map.Strict        as Map
 
 -- Wrappers ---------------------------------------------------------------------------------------
 -- | Type check a module.
@@ -33,10 +34,7 @@ checkModule
 
 checkModule !config !xx !mode
  = let  (s, result)     = runCheck (mempty, 0, 0)
-                        $ checkModuleM config
-                                (configPrimKinds config)
-                                (configPrimTypes config)
-                                xx mode
+                        $ checkModuleM config xx mode
         (tr, _, _)      = s
    in   (result, tr)
 
@@ -46,25 +44,28 @@ checkModule !config !xx !mode
 checkModuleM
         :: (Show a, Ord n, Show n, Pretty n)
         => Config n             -- ^ Static configuration.
-        -> KindEnv n            -- ^ Starting kind environment.
-        -> TypeEnv n            -- ^ Starting type environment.
         -> Module a n           -- ^ Module to check.
         -> Mode n               -- ^ Type checker mode.
         -> CheckM a n (Module (AnTEC a n) n)
 
-checkModuleM !config !kenv !tenv mm@ModuleCore{} !mode
+checkModuleM !config mm@ModuleCore{} !mode
  = do
+        let envT_prim
+                = EnvT.empty
+                { EnvT.envtPrimFun      
+                        = \n -> Env.lookupName n (configPrimKinds config) }
+
         -- Check sorts of imported types --------------------------------------
         --   These have explicit kind annotations on the type parameters,
         --   which we can sort check directly.
-        nitsImported'
-                <- checkImportTypes config mode
+        nitsImportType'
+                <- checkImportTypes  config envT_prim mode
                 $  moduleImportTypes mm
 
-        let nksImported' 
-                = [(n, kindOfImportType i) | (n, i) <- nitsImported']
+        let nksImportType' 
+                = [(n, kindOfImportType i) | (n, i) <- nitsImportType']
 
-        -- Check sorts of imported and local data types -----------------------
+        -- Check sorts of imported data types ---------------------------------
         --   These have explicit kind annotations on the type parameters,
         --   which we can sort check directly.
         nksImportDataDef'   
@@ -75,23 +76,28 @@ checkModuleM !config !kenv !tenv mm@ModuleCore{} !mode
                 <- checkSortsOfDataTypes config mode
                 $  moduleDataDefsLocal   mm
 
+        let envT_dataDefs
+                = EnvT.unions
+                [ envT_prim
+                , EnvT.fromListNT nksImportType'
+                , EnvT.fromListNT nksImportDataDef'
+                , EnvT.fromListNT nksLocalDataDef' ]
 
         -- Check kinds of imported type equations -----------------------------
         --   The right of each type equation can mention both imported abstract
         --   types and data type definitions, so we need to include them in
         --   the kind environment as well.
 
-        -- Kinds of type constructors in scope in the
-        -- imported type equations.
-        let kenv_importTypeDef 
-                = Env.fromList 
-                $ [BName n k | (n, k)
-                        <- nksImported'
-                        ++ nksImportDataDef']
-
         nktsImportTypeDef'
-                <- checkKindsOfTypeDefs config kenv_importTypeDef
+                <- checkKindsOfTypeDefs config envT_dataDefs
                 $  moduleImportTypeDefs mm
+
+        let envT_importedTypeDefs
+                = (EnvT.unions
+                     [ envT_dataDefs
+                     , EnvT.fromListNT [ (n, k) | (n, (k, _)) <- nktsImportTypeDef']])
+                 { EnvT.envtEquations 
+                     = Map.fromList    [ (n, t) | (n, (_, t)) <- nktsImportTypeDef'] }
 
 
         -- Check kinds of local type equations --------------------------------
@@ -100,123 +106,92 @@ checkModuleM !config !kenv !tenv mm@ModuleCore{} !mode
 
         -- Kinds of type constructors in scope in the
         -- locally defined type equations.
-        let kenv_localTypeDef
-                = Env.fromList
-                $ [BName n k | (n, k) 
-                        <- nksImported' 
-                        ++ nksImportDataDef'
-                        ++ nksLocalDataDef' 
-                        ++ [(n, k) | (n, (k, _)) <- nktsImportTypeDef' ] 
-                  ]
-
         nktsLocalTypeDef'
-                <- checkKindsOfTypeDefs config kenv_localTypeDef
+                <- checkKindsOfTypeDefs config envT_importedTypeDefs
                 $  moduleTypeDefsLocal  mm
+
+        let envT_localTypeDefs
+                = (EnvT.unions
+                     [ envT_importedTypeDefs
+                     , EnvT.fromListNT [ (n, k) | (n, (k, _)) <- nktsLocalTypeDef']])
+                 { EnvT.envtEquations
+                     = Map.fromList    [ (n, t) | (n, (_, t)) <- nktsLocalTypeDef'] }
 
 
         -- Check imported data type defs --------------------------------------
         -- TODO: The types of constructors can refer to imported abstract
         --       types as well as type equations.
+
         let dataDefsImported = moduleImportDataDefs mm
         dataDefsImported'  
-         <- case checkDataDefs config dataDefsImported of
+         <- case checkDataDefs config envT_localTypeDefs dataDefsImported of
                 (err : _, _)            -> throw $ ErrorData err
                 ([], dataDefsImported') -> return dataDefsImported'
 
 
-        -- Check the local data defs -----------------
-        let dataDefsLocal =  moduleDataDefsLocal mm
-        dataDefsLocal'  <- case checkDataDefs config dataDefsLocal of
-                                (err : _, _)     -> throw $ ErrorData err
-                                ([], dataDefsLocal') -> return dataDefsLocal'
+        -- Check the local data defs ------------------------------------------
+        let dataDefsLocal    = moduleDataDefsLocal mm
+        dataDefsLocal'  
+         <- case checkDataDefs config envT_localTypeDefs dataDefsLocal of
+                (err : _, _)            -> throw $ ErrorData err
+                ([], dataDefsLocal')    -> return dataDefsLocal'
 
-
-        -----------------------------------------------------------------------
-        -- Build the imported defs and kind environment.
-        --  This contains kinds of type visible in the imported values.
-        let config_import 
-                = config
-                { configDataDefs = unionDataDefs 
-                                        (configDataDefs config)
-                                        (fromListDataDefs dataDefsImported') }
-
-        let kenv_import 
-                = Env.unions 
-                        [ kenv 
-                        , Env.fromListNT nksImported'
-                        , Env.fromList [(BName n k) | (n, (k, _)) <- nktsImportTypeDef' ]]
-
-        -- Check types of imported capabilities -----------
-        ntsImportCap'   <- checkImportCaps config_import kenv_import mode
-                        $  moduleImportCaps mm
-
-        let bsImportCap = [ BName n (typeOfImportCap   isrc)
-                          | (n, isrc) <- ntsImportCap' ]
-
-        -- Check types of imported values -----------------
-        ntsImportValue' <- checkImportValues config_import kenv_import mode
-                        $  moduleImportValues mm
-
-
-        -----------------------------------------------------------------------
-        -- Build the top-level config, defs and environments.
-        --  These contain names that are visible to bindings in the module.
         let dataDefs_top    
                 = unionDataDefs (configDataDefs config)
                 $ unionDataDefs (fromListDataDefs dataDefsImported')
                                 (fromListDataDefs dataDefsLocal')
 
-        let typeDefs_top
-                =  nktsLocalTypeDef'
-                ++ nktsImportTypeDef'
 
-        let eqns_top
-                = [(n, t) | (n, (_, t)) <- typeDefs_top]
+        -- Check types of imported capabilities -------------------------------
+        let config_import 
+                = config
+                { configDataDefs = dataDefs_top }
+
+        ntsImportCap'   
+                <- checkImportCaps   config_import  envT_localTypeDefs mode
+                $  moduleImportCaps  mm
+
+        let envT_importCaps
+                = envT_localTypeDefs
+                { EnvT.envtCapabilities 
+                        = Map.fromList 
+                        $ [ (n, t) | (n, ImportCapAbstract t) <- ntsImportCap'] }
 
 
-        let caps_top
-                = Env.fromList
-                $ [BName n t    | (n, ImportCapAbstract t) <- ntsImportCap' ]
+        -- Check types of imported values ------------------------------------
+        ntsImportValue'
+                <- checkImportValues  config_import envT_localTypeDefs mode
+                $  moduleImportValues mm
 
-        let config_top
-                = config 
-                { configDataDefs        = dataDefs_top 
-                , configTypeDefs        = Map.fromList typeDefs_top
-                , configGlobalCaps      = caps_top }
+        let envX_importValues
+                = EnvX.empty
+                { EnvX.envxEnvT    = envT_importCaps 
+                , EnvX.envxPrimFun = \n -> Env.lookupName n (configPrimTypes config) }
 
-        let kenv_top    
-                = Env.unions
-                [ kenv_import
-                , Env.fromList  [ BName n k | (n, (k, _)) <- typeDefs_top ] ]
 
-        let tenv_top    
-                = Env.unions 
-                [ tenv
-                , Env.fromList  [ BName n (typeOfImportValue isrc)
-                                | (n, isrc) <- ntsImportValue' ]
+        -----------------------------------------------------------------------
+        -- Build the top-level config, defs and environments.
+        --  These contain names that are visible to bindings in the module.
 
-                , Env.fromList  [ BName n (typeOfImportCap   isrc)
-                                | (n, isrc) <- ntsImportCap'   ]
-                ]
+        let config_top  = config_import
+        let envT_top    = envT_importCaps
+        let envX_top    = envX_importValues
+        let ctx_top     = emptyContext { contextEnvX = envX_top }
 
-        let ctx_top
-                = pushTypes bsImportCap emptyContext
 
         -- Check the sigs of exported types ---------------
-        esrcsType'
-                <- checkExportTypes  config_top
-                $  moduleExportTypes mm
+        esrcsType'  <- checkExportTypes  config_top envT_top
+                    $  moduleExportTypes mm
 
 
         -- Check the sigs of exported values --------------
-        esrcsValue'
-                <- checkExportValues config_top kenv_top
-                $  moduleExportValues mm
+        esrcsValue' <- checkExportValues  config_top envT_top
+                    $  moduleExportValues mm
 
 
         -- Check the body of the module -------------------
         (x', _, _effs, ctx)
-         <- checkExpM   (makeTable config_top kenv_top tenv_top)
+         <- checkExpM   (makeTable config_top)
                         ctx_top mode DemandNone (moduleBody mm) 
 
         -- Apply the final context to the annotations in expressions.
@@ -232,7 +207,7 @@ checkModuleM !config !kenv !tenv mm@ModuleCore{} !mode
         let mm_inferred
                 = mm
                 { moduleExportTypes     = esrcsType'
-                , moduleImportTypes     = nitsImported'
+                , moduleImportTypes     = nitsImportType'
                 , moduleImportTypeDefs  = nktsImportTypeDef'
                 , moduleImportCaps      = ntsImportCap'
                 , moduleImportValues    = ntsImportValue'
@@ -243,27 +218,24 @@ checkModuleM !config !kenv !tenv mm@ModuleCore{} !mode
         -- Check that each exported signature matches the type of its binding.
         -- This returns an environment containing all the bindings defined
         -- in the module.
-        tenv_binds
-         <- checkModuleBinds (Map.fromList eqns_top)
+        envX_binds
+         <- checkModuleBinds envX_top
                 (moduleExportTypes  mm_inferred)
                 (moduleExportValues mm_inferred) 
                 xx_annot
-
-        -- Build the environment containing all names that can be exported.
-        let tenv_exportable = Env.union tenv_top tenv_binds
 
         -- Check that all exported bindings are defined by the module,
         --   either directly as bindings, or by importing them from somewhere else.
         --   Header modules don't need to contain the complete set of bindings,
         --   but all other modules do.
         when (not $ moduleIsHeader mm_inferred)
-                $ mapM_ (checkBindDefined tenv_exportable)
+                $ mapM_ (checkBindDefined envX_binds)
                 $ map fst $ moduleExportValues mm_inferred
 
         -- If exported names are missing types then fill them in.
         let updateExportSource e
                 | ExportSourceLocalNoType n <- e
-                , Just t  <- Env.lookup (UName n) tenv_exportable
+                , Just t  <- EnvX.lookup (UName n) envX_binds
                 = ExportSourceLocal n t
 
                 | otherwise = e
@@ -283,14 +255,18 @@ checkModuleM !config !kenv !tenv mm@ModuleCore{} !mode
 -- | Check exported types.
 checkExportTypes
         :: (Show n, Pretty n, Ord n)
-        => Config n
+        => Config  n
+        -> EnvT  n
         -> [(n, ExportSource n (Type n))]
         -> CheckM a n [(n, ExportSource n (Type n))]
 
-checkExportTypes config nesrcs
- = let  check (n, esrc)
+checkExportTypes config env nesrcs
+ = let  
+        ctx     = contextOfEnvT env
+
+        check (n, esrc)
          | Just k          <- takeTypeOfExportSource esrc
-         = do   (k', _, _) <- checkTypeM config Env.empty emptyContext UniverseKind k Recon
+         = do   (k', _, _) <- checkTypeM config ctx UniverseKind k Recon
                 return  $ (n, mapTypeOfExportSource (const k') esrc)
 
          | otherwise
@@ -311,14 +287,18 @@ checkExportTypes config nesrcs
 -- | Check exported types.
 checkExportValues
         :: (Show n, Pretty n, Ord n)
-        => Config n -> KindEnv n
+        => Config n 
+        -> EnvT   n
         -> [(n, ExportSource n (Type n))]
         -> CheckM a n [(n, ExportSource n (Type n))]
 
-checkExportValues config kenv nesrcs
- = let  check (n, esrc)
+checkExportValues config env nesrcs
+ = let  
+        ctx     = contextOfEnvT env
+
+        check (n, esrc)
          | Just t          <- takeTypeOfExportSource esrc
-         = do   (t', _, _) <- checkTypeM config kenv emptyContext UniverseSpec t Recon
+         = do   (t', _, _) <- checkTypeM config ctx UniverseSpec t Recon
                 return  $ (n, mapTypeOfExportSource (const t') esrc)
 
          | otherwise
@@ -339,13 +319,15 @@ checkExportValues config kenv nesrcs
 -- | Check kinds of imported types.
 checkImportTypes
         :: (Ord n, Show n, Pretty n)
-        => Config n -> Mode n
+        => Config n
+        -> EnvT   n 
+        -> Mode   n
         -> [(n, ImportType n (Type n))]
         -> CheckM a n [(n, ImportType n (Type n))]
 
-checkImportTypes config mode nisrcs
+checkImportTypes config env mode nisrcs
  = let
-        eqns    = configTypeEqns config
+        ctx     = contextOfEnvT env
 
         -- Checker mode to use.
         modeCheckImportTypes
@@ -356,10 +338,7 @@ checkImportTypes config mode nisrcs
         -- Check an import definition.
         check (n, isrc)
          = do   let k      =  kindOfImportType isrc
-                (k', _, _) <- checkTypeM 
-                                config Env.empty emptyContext
-                                UniverseKind k 
-                                modeCheckImportTypes
+                (k', _, _) <- checkTypeM config ctx UniverseKind k modeCheckImportTypes
                 return  (n, mapKindOfImportType (const k') isrc)
 
         -- Pack down duplicate import definitions.
@@ -379,8 +358,12 @@ checkImportTypes config mode nisrcs
         -- Check if two import definitions with the same name are compatible.
         -- The same import definition can appear multiple times provided
         -- each instance has the same name and kind.
-        compat (ImportTypeAbstract k1) (ImportTypeAbstract k2) = equivT eqns k1 k2
-        compat (ImportTypeBoxed    k1) (ImportTypeBoxed    k2) = equivT eqns k1 k2
+        compat (ImportTypeAbstract k1) (ImportTypeAbstract k2) 
+                = equivT env k1 k2
+
+        compat (ImportTypeBoxed    k1) (ImportTypeBoxed    k2)
+                = equivT env k1 k2
+
         compat _ _ = False
 
    in do
@@ -397,7 +380,8 @@ checkImportTypes config mode nisrcs
 --   returning a map of data type constructor constructor name to its kind.
 checkSortsOfDataTypes
         :: (Ord n, Show n, Pretty n)
-        => Config n -> Mode n
+        => Config n 
+        -> Mode n
         -> [DataDef n]
         -> CheckM a n [(n, Kind n)]
 
@@ -412,10 +396,7 @@ checkSortsOfDataTypes config mode defs
         -- Check kind of a data type constructor.
         check def
          = do   let k   = kindOfDataDef def
-                (k', _, _) <- checkTypeM
-                                config Env.empty emptyContext
-                                UniverseKind k
-                                modeCheckDataTypes
+                (k', _, _) <- checkTypeM config emptyContext UniverseKind k modeCheckDataTypes
                 return (dataDefTypeName def, k')
 
    in do
@@ -428,17 +409,19 @@ checkSortsOfDataTypes config mode defs
 -- | Check kinds of imported type equations.
 checkKindsOfTypeDefs
         :: (Ord n, Show n, Pretty n)
-        => Config n -> KindEnv n
+        => Config n
+        -> EnvT n
         -> [(n, (Kind n, Type n))]
         -> CheckM a n [(n, (Kind n, Type n))]
 
-checkKindsOfTypeDefs config kenv nkts
+checkKindsOfTypeDefs config env nkts
  = let
+        ctx     = contextOfEnvT env
+
         -- Check a single type equation.
         check (n, (_k, t))
          = do   (t', k', _) 
-                 <- checkTypeM config kenv emptyContext
-                        UniverseSpec t Recon
+                 <- checkTypeM config ctx UniverseSpec t Recon
 
                 -- TODO: If the kind was specified then check it against the reconstructed one.
                 return (n, (k', t'))
@@ -453,13 +436,15 @@ checkKindsOfTypeDefs config kenv nkts
 -- | Check types of imported capabilities.
 checkImportCaps
         :: (Ord n, Show n, Pretty n)
-        => Config n -> KindEnv n -> Mode n
+        => Config n 
+        -> EnvT n
+        -> Mode n
         -> [(n, ImportCap n (Type n))]
         -> CheckM a n [(n, ImportCap n (Type n))]
 
-checkImportCaps config kenv mode nisrcs
+checkImportCaps config env mode nisrcs
  = let
-        eqns    = configTypeEqns config
+        ctx     = contextOfEnvT env
 
         -- Checker mode to use.
         modeCheckImportCaps
@@ -470,8 +455,8 @@ checkImportCaps config kenv mode nisrcs
         -- Check an import definition.
         check (n, isrc)
          = do   let t      =  typeOfImportCap isrc
-                (t', k, _) <- checkTypeM config kenv emptyContext UniverseSpec
-                                         t modeCheckImportCaps
+                (t', k, _) <- checkTypeM config ctx UniverseSpec
+                                t modeCheckImportCaps
 
                 -- In Recon mode we need to post-check that the imported
                 -- capability really has kind Effect.
@@ -502,7 +487,7 @@ checkImportCaps config kenv mode nisrcs
         -- The same import definition can appear multiple times provided each 
         -- instance has the same name and type.
         compat (ImportCapAbstract t1) (ImportCapAbstract t2) 
-                = equivT eqns t1 t2
+                = equivT (contextEnvT ctx) t1 t2
 
     in do
         -- Check all the imports individually.
@@ -517,13 +502,15 @@ checkImportCaps config kenv mode nisrcs
 -- | Check types of imported values.
 checkImportValues
         :: (Ord n, Show n, Pretty n)
-        => Config n -> KindEnv n -> Mode n
+        => Config n 
+        -> EnvT n 
+        -> Mode n
         -> [(n, ImportValue n (Type n))]
         -> CheckM a n [(n, ImportValue n (Type n))]
 
-checkImportValues config kenv mode nisrcs
+checkImportValues config env mode nisrcs
  = let
-        eqns    = configTypeEqns config
+        ctx = contextOfEnvT env
 
         -- Checker mode to use.
         modeCheckImportTypes
@@ -534,7 +521,7 @@ checkImportValues config kenv mode nisrcs
         -- Check an import definition.
         check (n, isrc)
          = do   let t      =  typeOfImportValue isrc
-                (t', k, _) <- checkTypeM config kenv emptyContext UniverseSpec
+                (t', k, _) <- checkTypeM config ctx UniverseSpec
                                          t modeCheckImportTypes
 
                 -- In Recon mode we need to post-check that the imported
@@ -565,11 +552,11 @@ checkImportValues config kenv mode nisrcs
         -- Check if two imported values of the same name are compatable.
         compat (ImportValueModule _ _ t1 a1) 
                (ImportValueModule _ _ t2 a2)
-         = equivT eqns t1 t2 && a1 == a2
+         = equivT (contextEnvT ctx) t1 t2 && a1 == a2
 
         compat (ImportValueSea _ t1)
                (ImportValueSea _ t2)
-         = equivT eqns t1 t2 
+         = equivT (contextEnvT ctx) t1 t2 
 
         compat _ _ = False
 
@@ -586,46 +573,46 @@ checkImportValues config kenv mode nisrcs
 -- | Check that the exported signatures match the types of their bindings.
 checkModuleBinds
         :: Ord n
-        => Map n (Type n)
+        => EnvX n                               -- ^ Starting environment.
         -> [(n, ExportSource n (Type n))]       -- ^ Exported types.
         -> [(n, ExportSource n (Type n))]       -- ^ Exported values
         -> Exp (AnTEC a n) n
-        -> CheckM a n (TypeEnv n)               -- ^ Environment of top-level bindings
+        -> CheckM a n (EnvX n)                  -- ^ Environment of top-level bindings
                                                 --   defined by the module
 
-checkModuleBinds !eqns !ksExports !tsExports !xx
+checkModuleBinds !env !ksExports !tsExports !xx
  = case xx of
         XLet _ (LLet b _) x2
-         -> do  checkModuleBind eqns ksExports tsExports b
-                env     <- checkModuleBinds eqns ksExports tsExports x2
-                return  $ Env.extend b env
+         -> do  checkModuleBind (EnvX.envxEnvT env) ksExports tsExports b
+                env'    <- checkModuleBinds env ksExports tsExports x2
+                return  $ EnvX.extend b env'
 
         XLet _ (LRec bxs) x2
-         -> do  mapM_ (checkModuleBind eqns ksExports tsExports) $ map fst bxs
-                env     <- checkModuleBinds eqns ksExports tsExports x2
-                return  $ Env.extends (map fst bxs) env
+         -> do  mapM_ (checkModuleBind (EnvX.envxEnvT env) ksExports tsExports) $ map fst bxs
+                env'    <- checkModuleBinds env ksExports tsExports x2
+                return  $ EnvX.extends (map fst bxs) env'
 
         XLet _ (LPrivate _ _ _) x2
-         ->     checkModuleBinds eqns ksExports tsExports x2
+         ->     checkModuleBinds env ksExports tsExports x2
 
-        _ ->    return Env.empty
+        _ ->    return EnvX.empty
 
 
 -- | If some bind is exported, then check that it matches the exported version.
 checkModuleBind
         :: Ord n
-        => Map n (Type n)                       -- ^ Type equations.
+        => EnvT n                               -- ^ Environment of types.
         -> [(n, ExportSource n (Type n))]       -- ^ Exported types.
         -> [(n, ExportSource n (Type n))]       -- ^ Exported values.
         -> Bind n
         -> CheckM a n ()
 
-checkModuleBind eqns !_ksExports !tsExports !b
+checkModuleBind env !_ksExports !tsExports !b
  | BName n tDef <- b
  = case join $ liftM takeTypeOfExportSource $ lookup n tsExports of
         Nothing                 -> return ()
         Just tExport
-         | equivT eqns tDef tExport  -> return ()
+         | equivT env tDef tExport  -> return ()
          | otherwise                 -> throw $ ErrorExportMismatch n tExport tDef
 
  -- Only named bindings can be exported,
@@ -638,12 +625,12 @@ checkModuleBind eqns !_ksExports !tsExports !b
 -- | Check that an exported top-level value is actually defined by the module.
 checkBindDefined
         :: Ord n
-        => TypeEnv n            -- ^ Types defined by the module.
+        => EnvX n               -- ^ Environment containing binds defined by the module.
         -> n                    -- ^ Name of an exported binding.
         -> CheckM a n ()
 
-checkBindDefined env n
- = case Env.lookup (UName n) env of
+checkBindDefined envx n
+ = case EnvX.lookup (UName n) envx of
         Just _  -> return ()
         _       -> throw $ ErrorExportUndefined n
 

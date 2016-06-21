@@ -2,7 +2,6 @@
 module DDC.Core.Check.Base
         ( -- Things defined in this module.
           Config (..)
-        , configTypeEqns
         , configOfProfile
 
         , CheckM
@@ -19,7 +18,7 @@ module DDC.Core.Check.Base
 
           -- Things defined elsewhere.
         , throw, runCheck, evalCheck
-        , KindEnv, TypeEnv
+        , EnvT, TypeEnv, KindEnv
         , Set
         , module DDC.Core.Check.Error
         , module DDC.Core.Collect
@@ -39,8 +38,9 @@ import DDC.Core.Collect
 import DDC.Core.Pretty
 import DDC.Core.Exp.Annot
 import DDC.Type.Check.Context
-import DDC.Type.Check                           (Config (..), configOfProfile, configTypeEqns)
-import DDC.Type.Env                             (KindEnv, TypeEnv)
+import DDC.Type.Check                           (Config (..), configOfProfile)
+import DDC.Core.Env.EnvT                        (EnvT)
+import DDC.Type.Env                             (TypeEnv, KindEnv)
 import DDC.Type.DataDef
 import DDC.Type.Universe
 import DDC.Type.Exp.Simple
@@ -127,17 +127,16 @@ ctrace doc'
 -- | Check the type of a bind.
 checkBindM
         :: (Ord n, Show n, Pretty n)
-        => Config n             -- ^ Checker configuration.
-        -> KindEnv n            -- ^ Global kind environment.
-        -> Context n            -- ^ Local context.
-        -> Universe             -- ^ Universe for the type of the bind.
-        -> Bind n               -- ^ Check this bind.
-        -> Mode n               -- ^ Mode for bidirectional checking.
+        => Config n     -- ^ Checker configuration.
+        -> Context n    -- ^ Type context.
+        -> Universe     -- ^ Universe for the type of the bind.
+        -> Bind n       -- ^ Check this bind.
+        -> Mode n       -- ^ Mode for bidirectional checking.
         -> CheckM a n (Bind n, Type n, Context n)
 
-checkBindM config kenv ctx uni bb mode
- = do   (t', k, ctx')   <- checkTypeM config kenv ctx uni
-                                (typeOfBind bb) mode
+checkBindM config ctx uni bb mode
+ = do   (t', k, ctx')   
+         <- checkTypeM config ctx uni (typeOfBind bb) mode
         return (replaceTypeOfBind t' bb, k, ctx')
 
 
@@ -145,15 +144,14 @@ checkBindM config kenv ctx uni bb mode
 -- | Check a type in the exp checking monad, returning its kind.
 checkTypeM
         :: (Ord n, Show n, Pretty n)
-        => Config n             -- ^ Checker configuration.
-        -> KindEnv n            -- ^ Global kind environment.
-        -> Context n            -- ^ Local context.
-        -> Universe             -- ^ Universe the type is supposed to be in.
-        -> Type n               -- ^ Check this type.
-        -> Mode n               -- ^ Mode for bidirectional checking
+        => Config n     -- ^ Checker configuration.
+        -> Context n    -- ^ Type context.
+        -> Universe     -- ^ Universe the type is supposed to be in.
+        -> Type n       -- ^ Check this type.
+        -> Mode n       -- ^ Mode for bidirectional checking
         -> CheckM a n (Type n, Kind n, Context n)
 
-checkTypeM config kenv ctx uni tt mode
+checkTypeM config ctx uni tt mode
  = do
         -- Run the inner type/kind checker computation,
         -- giving it our current values for the existential and position
@@ -162,7 +160,7 @@ checkTypeM config kenv ctx uni tt mode
 
         let ((ix', pos'), result)
                 = G.runCheck (ix, pos)
-                $ T.checkTypeM config kenv ctx uni tt mode
+                $ T.checkTypeM config ctx uni tt mode
 
         G.put (tr, ix', pos')
 

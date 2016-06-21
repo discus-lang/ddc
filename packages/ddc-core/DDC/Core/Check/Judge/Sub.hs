@@ -8,6 +8,8 @@ import DDC.Core.Check.Judge.Eq
 import DDC.Core.Check.Judge.Inst
 import DDC.Core.Check.Base
 import qualified Data.Map.Strict        as Map
+import qualified DDC.Type.Check.Context as Context
+import qualified DDC.Core.Env.EnvT      as EnvT
 
 
 -- | Make the left type a subtype of the right type,
@@ -31,12 +33,14 @@ makeSub config a ctx0 xL tL tR err
 
  -- Expand type equations.
  | TCon (TyConBound (UName n) _) <- tL
- , Just (_, tL')        <- Map.lookup n $ configTypeDefs config
+ , Just tL'  <- Map.lookup n $ EnvT.envtEquations
+                             $ Context.contextEnvT ctx0
  = makeSub config a ctx0 xL tL' tR err
 
 
  | TCon (TyConBound (UName n) _) <- tR
- , Just (_, tR')        <- Map.lookup n $ configTypeDefs config
+ , Just tR'  <- Map.lookup n $ EnvT.envtEquations
+                             $ Context.contextEnvT ctx0
  = makeSub config a ctx0 xL tL tR' err
 
 
@@ -128,7 +132,7 @@ makeSub config a ctx0 xL tL tR err
 
  -- SubEquiv
  --  Both sides are equivalent
- | equivT (configTypeEqns config) tL tR
+ | equivT (contextEnvT ctx0) tL tR
  = do
         ctrace  $ vcat
                 [ text "**  SubEquiv"

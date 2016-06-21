@@ -14,11 +14,10 @@ checkCast :: Checker a n
 checkCast !table !ctx0 mode _demand
         xx@(XCast a (CastWeakenEffect eff) x1)
  = do   let config      = tableConfig  table
-        let kenv        = tableKindEnv table
 
         -- Check the effect term.
         (eff', kEff, ctx1)
-         <- checkTypeM config kenv ctx0 UniverseSpec eff
+         <- checkTypeM config ctx0 UniverseSpec eff
           $ case mode of
                 Recon   -> Recon
                 Synth   -> Check kEffect
@@ -48,11 +47,9 @@ checkCast !table !ctx0 mode _demand
 checkCast !table !ctx mode _demand 
         xx@(XCast a (CastPurify w) x1)
  = do   let config      = tableConfig table
-        let kenv        = tableKindEnv table
-        let tenv        = tableTypeEnv table
 
         -- Check the witness.
-        (w', tW)  <- checkWitnessM config kenv tenv ctx w
+        (w', tW)  <- checkWitnessM config ctx w
         let wTEC  = reannotate fromAnT w'
 
         -- Check the body.
@@ -79,8 +76,6 @@ checkCast !table ctx0 mode _demand
     Check tExpected
      -> do
         let config      = tableConfig table
-        let eqns        = configTypeEqns   config
-        let caps        = configGlobalCaps config
 
         -- Check the body.
         (x1', tBody, effs, ctx1)
@@ -88,7 +83,7 @@ checkCast !table ctx0 mode _demand
 
         let effs_crush 
                 = Sum.fromList kEffect
-                [ crushEffect eqns caps (TSum effs)]
+                [ crushEffect (contextEnvT ctx0) (TSum effs)]
 
         -- The actual type is (S eff tBody).
         tBody'      <- applyContext ctx1 tBody
@@ -108,17 +103,13 @@ checkCast !table ctx0 mode _demand
     -- Recon and Synth mode.
     _
      -> do
-        let config      = tableConfig table
-        let eqns        = configTypeEqns   config
-        let caps        = configGlobalCaps config
-
         -- Check the body.
         (x1', t1, effs,  ctx1)
          <- tableCheckExp table table ctx0 mode DemandRun x1
 
         let effs_crush 
                 = Sum.fromList kEffect
-                [ crushEffect eqns caps (TSum effs)]
+                [ crushEffect (contextEnvT ctx1) (TSum effs)]
 
         -- The result type is (S effs a).
         let tS  = tApps (TCon (TyConSpec TcConSusp))
@@ -232,8 +223,8 @@ checkEffectSupported
         -> Effect n             -- ^ Effect to check
         -> CheckM a n ()
 
-checkEffectSupported config a xx ctx eff
- = case effectSupported (configTypeEqns config) eff ctx of
+checkEffectSupported _config a xx ctx eff
+ = case effectSupported ctx eff of
         Nothing         -> return ()
         Just effBad     -> throw $ ErrorRunNotSupported a xx effBad
 

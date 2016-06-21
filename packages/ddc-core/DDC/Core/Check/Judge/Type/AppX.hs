@@ -26,7 +26,7 @@ checkAppX !table !ctx Recon demand
         (tResult, effsLatent)
          <- case splitFunType tFn of
              Just (tParam, effs, _, tResult)
-              |  equivT (configTypeEqns (tableConfig table)) tParam tArg
+              |  equivT (contextEnvT ctx2) tParam tArg
               -> return (tResult, effs)
 
               | otherwise

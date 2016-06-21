@@ -13,9 +13,8 @@ import DDC.Type.Exp.Simple.Predicates
 import DDC.Type.Universe
 import Data.List
 import Control.Monad
-import DDC.Type.Env                      (KindEnv)
 import qualified DDC.Type.Sum            as TS
-import qualified DDC.Type.Env            as Env
+import qualified DDC.Core.Env.EnvT       as EnvT
 import qualified Data.Map                as Map
 
 
@@ -37,19 +36,18 @@ import qualified Data.Map                as Map
 --
 checkTypeM 
         :: (Ord n, Show n, Pretty n) 
-        => Config n             -- ^ Type checker configuration.
-        -> KindEnv n            -- ^ Top-level kind environment.
-        -> Context n            -- ^ Local context.
-        -> Universe             -- ^ What universe the type to check is in.
-        -> Type n               -- ^ The type to check (can be a Spec or Kind)
-        -> Mode n               -- ^ Type checker mode.
+        => Config n     -- ^ Type checker configuration.
+        -> Context n    -- ^ Context of type to check.
+        -> Universe     -- ^ What universe the type to check is in.
+        -> Type n       -- ^ The type to check (can be a Spec or Kind)
+        -> Mode n       -- ^ Type checker mode.
         -> CheckM n 
                 ( Type n
                 , Kind n
                 , Context n)
 
 -- Variables ------------------------------------
-checkTypeM config env ctx0 uni tt@(TVar u) mode
+checkTypeM config ctx0 uni tt@(TVar u) mode
 
  -- Kind holes.
  --   This is some kind that we were explicitly told to infer,
@@ -126,7 +124,7 @@ checkTypeM config env ctx0 uni tt@(TVar u) mode
          = return k
 
          -- A variable in the global environment.
-         | Just k          <- Env.lookup u env
+         | Just k          <- EnvT.lookup u (contextEnvT ctx0)
          = return k
 
          -- A primitive type variable with its kind directly attached, but where
@@ -164,7 +162,7 @@ checkTypeM config env ctx0 uni tt@(TVar u) mode
 
 
 -- Constructors ---------------------------------
-checkTypeM config env ctx0 uni tt@(TCon tc) mode
+checkTypeM config ctx0 uni tt@(TCon tc) mode
  = let  
         -- Get the actual kind of the constructor, 
         -- according to the constructor definition.
@@ -208,7 +206,7 @@ checkTypeM config env ctx0 uni tt@(TCon tc) mode
 
              -- The kinds of abstract imported type constructors are in the
              -- global kind environment.
-             | Just k'          <- Env.lookupName n env
+             | Just k'          <- EnvT.lookupName n (contextEnvT ctx0)
              , UniverseSpec     <- uni
              -> return (TCon (TyConBound u k'), k')
 
@@ -252,19 +250,19 @@ checkTypeM config env ctx0 uni tt@(TCon tc) mode
 
 
 -- Quantifiers ----------------------------------
-checkTypeM config kenv ctx0 uni@UniverseSpec 
+checkTypeM config ctx0 uni@UniverseSpec 
         tt@(TForall b1 t2) mode
  = case mode of
     Recon
      -> do
         -- Check the binder is well sorted.
         let t1  = typeOfBind b1
-        _       <- checkTypeM config kenv ctx0 UniverseKind t1 Recon
+        _       <- checkTypeM config ctx0 UniverseKind t1 Recon
 
         -- Check the body with the binder in scope.
         let (ctx1, pos1) = markContext ctx0
         let ctx2         = pushKind b1 RoleAbstract ctx1
-        (t2', k2, ctx3) <- checkTypeM config kenv ctx2 UniverseSpec t2 Recon
+        (t2', k2, ctx3) <- checkTypeM config ctx2 UniverseSpec t2 Recon
 
         -- The body must have kind Data or Witness.
         k2'             <- applyContext ctx3 k2
@@ -281,14 +279,14 @@ checkTypeM config kenv ctx0 uni@UniverseSpec
      -> do
         -- Synthesise a sort for the binder.
         let k1  = typeOfBind b1
-        (k1', _s1, ctx1) <- checkTypeM config kenv ctx0 UniverseKind k1 Synth
+        (k1', _s1, ctx1) <- checkTypeM config ctx0 UniverseKind k1 Synth
                 
         let b1' = replaceTypeOfBind k1' b1
 
         -- Check the body with the binder in scope.
         let (ctx2, pos1) = markContext ctx1
         let ctx3         = pushKind b1' RoleAbstract ctx2
-        (t2', k2, ctx4) <- checkTypeM config kenv ctx3 UniverseSpec t2 Synth
+        (t2', k2, ctx4) <- checkTypeM config ctx3 UniverseSpec t2 Synth
 
         -- If the kind of the body is unconstrained then default it to Data.
         -- See [Note: Defaulting the kind of quantified types]
@@ -319,14 +317,14 @@ checkTypeM config kenv ctx0 uni@UniverseSpec
      -> do
         -- Synthesise a sort for the binder.
         let k1  = typeOfBind b1
-        (k1', _s1, ctx1) <- checkTypeM config kenv ctx0 UniverseKind k1 Synth
+        (k1', _s1, ctx1) <- checkTypeM config ctx0 UniverseKind k1 Synth
 
         let b1' = replaceTypeOfBind k1' b1
 
         -- Check the body with the binder in scope.
         let (ctx2, pos1) = markContext ctx1
         let ctx3         = pushKind b1' RoleAbstract ctx2
-        (t2', k2, ctx4) <- checkTypeM config kenv ctx3 UniverseSpec t2 Synth
+        (t2', k2, ctx4) <- checkTypeM config ctx3 UniverseSpec t2 Synth
 
         -- In Check mode if *both* the current kind of the body and the expected
         -- kind are existentials then force them both to be data. Otherwise make
@@ -367,26 +365,26 @@ checkTypeM config kenv ctx0 uni@UniverseSpec
 -- Applications of the kind function constructor are handled directly
 -- because the constructor doesn't have a sort by itself.
 -- The sort of a kind function is the sort of the result.
-checkTypeM config kenv ctx0 uni@UniverseKind 
+checkTypeM config ctx0 uni@UniverseKind 
         tt@(TApp (TApp ttFun k1) k2) mode
  | isFunishTCon ttFun
  = case mode of
     Recon
      -> do
-        _               <- checkTypeM config kenv ctx0 uni k1 Recon
-        (_, s2, _)      <- checkTypeM config kenv ctx0 uni k2 Recon
+        _               <- checkTypeM config ctx0 uni k1 Recon
+        (_, s2, _)      <- checkTypeM config ctx0 uni k2 Recon
         return  (tt, s2, ctx0)
 
     Synth
      -> do
-        (k1',  _, ctx1) <- checkTypeM config kenv ctx0 uni k1 Synth
-        (k2', s2, ctx2) <- checkTypeM config kenv ctx1 uni k2 Synth
+        (k1',  _, ctx1) <- checkTypeM config ctx0 uni k1 Synth
+        (k2', s2, ctx2) <- checkTypeM config ctx1 uni k2 Synth
         return  (kFun k1' k2', s2, ctx2)
 
     Check sExpected
      -> do
-        (k1',  _, ctx1) <- checkTypeM config kenv ctx0 uni k1 Synth
-        (k2', s2, ctx2) <- checkTypeM config kenv ctx1 uni k2 (Check sExpected)
+        (k1',  _, ctx1) <- checkTypeM config ctx0 uni k1 Synth
+        (k2', s2, ctx2) <- checkTypeM config ctx1 uni k2 (Check sExpected)
         return  (kFun k1' k2', s2, ctx2)
 
 
@@ -394,13 +392,13 @@ checkTypeM config kenv ctx0 uni@UniverseKind
 -- following kinds:
 --   (=>) :: @ ~> @ ~> @,  for witness constructors.
 --   (=>) :: @ ~> * ~> *,  for functions that take witnesses.
-checkTypeM config env ctx0 uni@UniverseSpec 
+checkTypeM config ctx0 uni@UniverseSpec 
         tt@(TApp (TApp tC@(TCon (TyConWitness TwConImpl)) t1) t2) mode
  = case mode of
     Recon
      -> do
-        (t1', k1, ctx1) <- checkTypeM config env ctx0 uni t1 Recon
-        (t2', k2, ctx2) <- checkTypeM config env ctx1 uni t2 Recon
+        (t1', k1, ctx1) <- checkTypeM config ctx0 uni t1 Recon
+        (t2', k2, ctx2) <- checkTypeM config ctx1 uni t2 Recon
 
         let tt' = TApp (TApp tC t1') t2'
 
@@ -412,38 +410,38 @@ checkTypeM config env ctx0 uni@UniverseSpec
 
     Synth
      -> do
-        (t1', _k1, ctx1) <- checkTypeM config env ctx0 uni t1 Synth
-        (t2', k2,  ctx2) <- checkTypeM config env ctx1 uni t2 Synth
+        (t1', _k1, ctx1) <- checkTypeM config ctx0 uni t1 Synth
+        (t2', k2,  ctx2) <- checkTypeM config ctx1 uni t2 Synth
 
         return (tImpl t1' t2', k2, ctx2)
 
     Check kExpected
      -> do
-        (t1', _k1, ctx1) <- checkTypeM config env ctx0 uni t1 Synth
-        (t2', k2,  ctx2) <- checkTypeM config env ctx1 uni t2 (Check kExpected)
+        (t1', _k1, ctx1) <- checkTypeM config ctx0 uni t1 Synth
+        (t2', k2,  ctx2) <- checkTypeM config ctx1 uni t2 (Check kExpected)
 
         return (tImpl t1' t2', k2, ctx2)
 
 
 -- General type application.
-checkTypeM config kenv ctx0 UniverseSpec 
+checkTypeM config ctx0 UniverseSpec 
         tt@(TApp tFn tArg) mode
  = case mode of
     Recon
      -> do
         -- Check the kind of the functional part.
         (tFn',  kFn,  ctx1) 
-         <- checkTypeM config kenv ctx0 UniverseSpec tFn Recon
+         <- checkTypeM config ctx0 UniverseSpec tFn Recon
         
         -- Check the kind of the argument.
         (tArg', kArg, ctx2) 
-         <- checkTypeM config kenv ctx1 UniverseSpec tArg Recon
+         <- checkTypeM config ctx1 UniverseSpec tArg Recon
 
         -- The kind of the parameter must match that of the argument
         case kFn of
          TApp (TApp ttFun kParam) kBody
            |  isFunishTCon ttFun 
-           ,  equivT (configTypeEqns config) kParam kArg
+           ,  equivT (contextEnvT ctx2) kParam kArg
            -> return (tApp tFn' tArg', kBody, ctx2)
 
            | otherwise
@@ -455,12 +453,12 @@ checkTypeM config kenv ctx0 UniverseSpec
      -> do
         -- Synthesise a kind for the functional part.
         (tFn', kFn, ctx1) 
-         <- checkTypeM config kenv ctx0 UniverseSpec tFn Synth
+         <- checkTypeM config ctx0 UniverseSpec tFn Synth
 
         -- Apply the argument to the function.
         kFn'    <- applyContext ctx1 kFn
         (kResult, tArg', ctx2)
-         <- synthTAppArg config kenv ctx1 tFn' kFn' tArg
+         <- synthTAppArg config ctx1 tFn' kFn' tArg
 
         return (TApp tFn' tArg', kResult, ctx2)
 
@@ -468,7 +466,7 @@ checkTypeM config kenv ctx0 UniverseSpec
      -> do
         -- Synthesise a kind for the overall type.
         (t1', k1, ctx1) 
-         <- checkTypeM config kenv ctx0 UniverseSpec tt Synth
+         <- checkTypeM config ctx0 UniverseSpec tt Synth
 
         -- Force the synthesised kind to be the same as the expected one.
         k1'         <- applyContext ctx1 k1
@@ -480,14 +478,14 @@ checkTypeM config kenv ctx0 UniverseSpec
 
 
 -- Sums -----------------------------------------
-checkTypeM config kenv ctx0 UniverseSpec tt@(TSum ss) mode
+checkTypeM config ctx0 UniverseSpec tt@(TSum ss) mode
  = case mode of
     Recon
      -> do   
         -- Check all the elements,
         --  threading the context from left to right.
         (ts', ks, ctx1) 
-                <- checkTypesM config kenv ctx0 UniverseSpec Recon
+                <- checkTypesM config ctx0 UniverseSpec Recon
                 $  TS.toList ss
 
         -- Check that all the types in the sum have the same kind.
@@ -508,7 +506,7 @@ checkTypeM config kenv ctx0 UniverseSpec tt@(TSum ss) mode
         -- Synthesise a kind for all the elements,
         --  threading the context from left to right.
         (ts, ks, ctx1)
-                <- checkTypesM config kenv ctx0 UniverseSpec Synth
+                <- checkTypesM config ctx0 UniverseSpec Synth
                 $  TS.toList ss
 
         case ks of
@@ -518,7 +516,7 @@ checkTypeM config kenv ctx0 UniverseSpec tt@(TSum ss) mode
          k : _ksMore
           -> do 
                 (ts'', _, ctx2)
-                    <- checkTypesM config kenv ctx1 UniverseSpec (Check k) ts
+                    <- checkTypesM  config ctx1 UniverseSpec (Check k) ts
                 k'  <- applyContext ctx2 k
                 return  (TSum (TS.fromList k' ts''), k', ctx2)
 
@@ -536,7 +534,7 @@ checkTypeM config kenv ctx0 UniverseSpec tt@(TSum ss) mode
      -> do
         -- Synthesise a kind for the overall type.
         (t1', k1, ctx1)
-                <- checkTypeM config kenv ctx0 UniverseSpec tt Synth
+                <- checkTypeM config ctx0 UniverseSpec tt Synth
 
         -- Force the synthesised kind to match the expected one.
         k1'         <- applyContext ctx1 k1
@@ -548,7 +546,7 @@ checkTypeM config kenv ctx0 UniverseSpec tt@(TSum ss) mode
 
 
 -- Whatever type we were given wasn't in the specified universe.
-checkTypeM _ _ _ uni tt _mode
+checkTypeM _ _ uni tt _mode
         = throw $ ErrorUniverseMalfunction tt uni
 
 
@@ -557,7 +555,6 @@ checkTypeM _ _ _ uni tt _mode
 checkTypesM 
         :: (Ord n, Show n, Pretty n) 
         => Config n             -- ^ Type checker configuration.
-        -> KindEnv n            -- ^ Top-level kind environment.
         -> Context n            -- ^ Local context.
         -> Universe             -- ^ What universe the types to check are in.
         -> Mode n               -- ^ Type checker mode.
@@ -567,12 +564,12 @@ checkTypesM
                 , [Kind n]
                 , Context n)
 
-checkTypesM _ _ ctx0 _ _ []
+checkTypesM _      ctx0 _   _    []
  = return ([], [], ctx0)
 
-checkTypesM config kenv ctx0 uni mode (t : ts)
- = do   (t',  k',  ctx1)  <- checkTypeM  config kenv ctx0 uni t mode
-        (ts', ks', ctx')  <- checkTypesM config kenv ctx1 uni mode ts
+checkTypesM config ctx0 uni mode (t : ts)
+ = do   (t',  k',  ctx1)  <- checkTypeM  config ctx0 uni t mode
+        (ts', ks', ctx')  <- checkTypesM config ctx1 uni mode ts
         return  (t' : ts', k' : ks', ctx')
 
 
@@ -581,7 +578,6 @@ checkTypesM config kenv ctx0 uni mode (t : ts)
 synthTAppArg
         :: (Show n, Ord n, Pretty n)
         => Config n
-        -> KindEnv n
         -> Context n
         -> Type n               -- Type function.
         -> Kind n               -- Kind of functional part.
@@ -591,7 +587,7 @@ synthTAppArg
                 , Type n        -- Checked type argument.
                 , Context n)    -- Result context. 
 
-synthTAppArg config kenv ctx0 tFn kFn tArg
+synthTAppArg config ctx0 tFn kFn tArg
 
  | Just iFn     <- takeExists kFn
  = do  
@@ -609,7 +605,7 @@ synthTAppArg config kenv ctx0 tFn kFn tArg
 
         -- Check the argument under the new context.
         (tArg', _kArg, ctx2)
-         <- checkTypeM config kenv ctx1 UniverseSpec tArg (Check kParam)
+         <- checkTypeM config ctx1 UniverseSpec tArg (Check kParam)
 
         return (kBody, tArg', ctx2)
 
@@ -619,7 +615,7 @@ synthTAppArg config kenv ctx0 tFn kFn tArg
  = do   
         -- The kind of the argument must match the parameter kind
         (tArg', _kArg, ctx1) 
-         <- checkTypeM config kenv ctx0 UniverseSpec tArg (Check kParam)
+         <- checkTypeM config ctx0 UniverseSpec tArg (Check kParam)
 
         return (kBody, tArg', ctx1)
 

@@ -22,9 +22,6 @@ checkLamX !table !ctx mode _demand xx
 checkLam !table !a !ctx !b1 !x2 !Recon
  = do
         let config      = tableConfig table
-        let eqns        = configTypeEqns   config
-        let caps        = configGlobalCaps config
-        let kenv        = tableKindEnv table
         let xx          = XLam a b1 x2
 
         -- Check the parameter ------------------
@@ -35,7 +32,7 @@ checkLam !table !a !ctx !b1 !x2 !Recon
          $ throw $ ErrorLamParamUnannotated a xx b1
 
         -- Determine the kind of the parameter.
-        (t1', k1, _)    <- checkTypeM config kenv ctx UniverseSpec t1 Recon
+        (t1', k1, _)    <- checkTypeM config ctx UniverseSpec t1 Recon
         let b1'         = replaceTypeOfBind t1' b1
 
         -- Check the body -----------------------
@@ -51,10 +48,10 @@ checkLam !table !a !ctx !b1 !x2 !Recon
 
         let e2_crush 
                 = Sum.fromList kEffect
-                [ crushEffect eqns caps (TSum e2)]
+                [ crushEffect (contextEnvT ctx2) (TSum e2)]
 
         -- The body of the function must produce data.
-        (_, k2, _)      <- checkTypeM config kenv ctx2 UniverseSpec t2 Recon
+        (_, k2, _)      <- checkTypeM config ctx2 UniverseSpec t2 Recon
         when (not $ isDataKind k2)
          $ throw $ ErrorLamBodyNotData a xx b1 t2 k2
 
@@ -83,9 +80,6 @@ checkLam !table !a !ctx !b1 !x2 !Synth
                 , text "    in  bind = " <+> ppr b1 ]
 
         let config      = tableConfig table
-        let caps        = configGlobalCaps config
-        let eqns        = configTypeEqns config
-        let kenv        = tableKindEnv table
         let xx          = XLam a b1 x2
 
         -- Check the parameter ------------------
@@ -109,7 +103,7 @@ checkLam !table !a !ctx !b1 !x2 !Synth
                 --   The parameter must have Data or Witness kind,
                 --   which is checked by 'makeFunctionType' below.
                 (t1', k1, ctx1)
-                        <- checkTypeM config kenv ctx UniverseSpec t1 Synth
+                        <- checkTypeM config ctx UniverseSpec t1 Synth
                 let b1' = replaceTypeOfBind t1' b1
                 return (b1', t1', k1, ctx1)
 
@@ -134,7 +128,7 @@ checkLam !table !a !ctx !b1 !x2 !Synth
 
         let e2_crush 
                 = Sum.fromList kEffect
-                [ crushEffect eqns caps (TSum e2)]
+                [ crushEffect (contextEnvT ctx4) (TSum e2)]
 
         -- Force the kind of the body to be Data.
         --   This constrains the kind of polymorpic variables that are used
@@ -142,7 +136,7 @@ checkLam !table !a !ctx !b1 !x2 !Synth
         --   We know \x. can't bind a witness here.
         t2''     <- applyContext ctx4 t2'
         (_, _, ctx5)
-         <- checkTypeM config kenv ctx4 UniverseSpec t2'' (Check kData)
+         <- checkTypeM config ctx4 UniverseSpec t2'' (Check kData)
 
         -- Build the result type -------------
         -- If the kind of the parameter is unconstrained then default it
@@ -200,9 +194,6 @@ checkLam !table !a !ctx !b1 !x2 !(Check tExpected)
                 , empty ]
 
         let config      = tableConfig table
-        let caps        = configGlobalCaps config
-        let eqns        = configTypeEqns   config
-        let kenv        = tableKindEnv table
         let xx          = XLam a b1 x2
 
         -- Check the parameter ------------------
@@ -244,7 +235,7 @@ checkLam !table !a !ctx !b1 !x2 !(Check tExpected)
 
                     let es2Actual_crushed
                           = Sum.fromList kEffect
-                          [ crushEffect eqns caps (TSum es2Actual)]
+                          [ crushEffect (contextEnvT ctx2) (TSum es2Actual)]
 
                     -- The expected effect in the suspension could have been an
                     -- existential, so we need to unify it against the reconstructed
@@ -262,7 +253,7 @@ checkLam !table !a !ctx !b1 !x2 !(Check tExpected)
 
                     let es2Actual_crushed
                           = Sum.fromList kEffect
-                          [ crushEffect eqns caps (TSum es2Actual)]
+                          [ crushEffect (contextEnvT ctx2) (TSum es2Actual)]
 
                     return (x2', t2', es2Actual_crushed, ctx2)
 
@@ -272,12 +263,12 @@ checkLam !table !a !ctx !b1 !x2 !(Check tExpected)
         --   We know \x. can't bind a witness here.
         t2' <- applyContext ctx2 t2
         (_, _, ctx3)
-            <- checkTypeM config kenv ctx2 UniverseSpec t2' (Check kData)
+            <- checkTypeM config ctx2 UniverseSpec t2' (Check kData)
 
         -- Make the result type -----------------
         -- If the kind of the parameter is unconstrained then default it
         -- to Data. This handles  "/\f. \(a : f Int#). ()"
-        (_, k1, _)      <- checkTypeM config kenv ctx3 UniverseSpec t1' Synth
+        (_, k1, _)      <- checkTypeM config ctx3 UniverseSpec t1' Synth
         k1'             <- applyContext ctx3 k1
         (k1'', ctx4)
          <- if isTExists k1'

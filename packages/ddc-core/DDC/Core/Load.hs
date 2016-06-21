@@ -42,7 +42,6 @@ import qualified DDC.Core.Fragment              as F
 import qualified DDC.Core.Parser                as C
 import qualified DDC.Core.Check                 as C
 import qualified DDC.Type.Check                 as T
-import qualified DDC.Type.Env                   as Env
 import qualified DDC.Base.Parser                as BP
 import Data.Map.Strict                          (Map)
 import System.Directory
@@ -293,7 +292,7 @@ loadTypeFromTokens fragment uni sourceName toks'
 
         -- Check the kind of the type.
         goCheckType t
-         = case T.checkType (T.configOfProfile profile) Env.empty uni t of
+         = case T.checkType (T.configOfProfile profile) uni t of
                 Left err      -> Left (ErrorCheckType err)
                 Right (t', k) -> Right (t', k)
         
