@@ -19,6 +19,7 @@ import qualified DDC.Base.Parser        as BP
 import qualified DDC.Core.Check         as C
 import qualified DDC.Core.Parser        as C
 import qualified DDC.Type.Env           as Env
+import qualified DDC.Core.Env.EnvX      as EnvX
 
 
 -- Read rewrite rules ---------------------------------------------------------
@@ -66,7 +67,7 @@ parse fragment modu source str
  where
     -- Typecheck, then clear annotations
     check' (n,r)
-     = do r' <- checkRewriteRule config kinds' types' r
+     = do r' <- checkRewriteRule config env' r
           return (show n, reannotate (const ()) r')
 
     config      = C.configOfProfile (fragmentProfile fragment)
@@ -89,6 +90,7 @@ parse fragment modu source str
     -- Final kind and type environments
     kinds'      = kinds `Env.union` kindsImp `Env.union` kindsExp
     types'      = types `Env.union` typesImp `Env.union` typesExp
+    env'        = EnvX.fromPrimEnvs kinds' types'
 
     source'  = nameOfSource source
 

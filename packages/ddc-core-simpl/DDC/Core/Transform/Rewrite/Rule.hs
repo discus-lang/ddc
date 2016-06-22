@@ -21,7 +21,7 @@ import DDC.Core.Exp.Annot
 import DDC.Core.Pretty                          ()
 import DDC.Core.Collect
 import DDC.Core.Pretty                          ()
-import DDC.Type.Env                             (KindEnv, TypeEnv)
+import DDC.Core.Env.EnvX                        (EnvX)
 import DDC.Base.Pretty
 import qualified DDC.Core.Analysis.Usage        as U
 import qualified DDC.Core.Check                 as C
@@ -36,7 +36,7 @@ import qualified Data.Maybe                     as Maybe
 import qualified Data.Set                       as Set
 import qualified DDC.Type.Env                   as Env
 import qualified DDC.Core.Env.EnvT              as EnvT
-
+import qualified DDC.Core.Env.EnvX              as EnvX
 
 -- | A rewrite rule. For example:
 --
@@ -162,30 +162,30 @@ mkRewriteRule  bs cs lhs hole rhs
 checkRewriteRule
     :: (Show a, Ord n, Show n, Pretty n)        
     => C.Config n               -- ^ Type checker config.
-    -> T.Env n                  -- ^ Kind environment.
-    -> T.Env n                  -- ^ Type environment.
+    -> EnvX n                   -- ^ Type checker environment.
     -> RewriteRule a n          -- ^ Rule to check
     -> Either (Error a n)
               (RewriteRule (C.AnTEC a n) n)
 
-checkRewriteRule config kenv tenv
+checkRewriteRule config env
         (RewriteRule bs cs lhs hole rhs _ _ _)
  = do   
         -- Extend the environments with variables bound by the rule.
-        let (kenv', tenv', bs')  = extendBinds bs kenv tenv
-        let csSpread             = map (S.spreadT kenv') cs
+        let (env', bs') = extendBinds bs env
+        let kenv'       = EnvX.kindEnvOfEnvX env'
+        let csSpread    = map (S.spreadT kenv') cs
 
         -- Check that all constraints are valid types.
-        mapM_ (checkConstraint config kenv') csSpread
+        mapM_ (checkConstraint config) csSpread
 
         -- Typecheck, spread and annotate with type information
         (lhs', _, _)
-                <- checkExp config kenv' tenv' Lhs lhs 
+                <- checkExp config env' Lhs lhs 
 
         -- If the extra left part is there, typecheck and annotate it.
         hole' <- case hole of
                   Just h  
-                   -> do  (h',_,_)  <- checkExp config kenv' tenv' Lhs h 
+                   -> do  (h',_,_)  <- checkExp config env' Lhs h 
                           return $ Just h'
 
                   Nothing -> return Nothing
@@ -197,11 +197,11 @@ checkRewriteRule config kenv tenv
 
         -- Check the full left hand side.
         (lhs_full', tLeft, effLeft)
-                <- checkExp config kenv' tenv' Lhs lhs_full
+                <- checkExp config env' Lhs lhs_full
 
         -- Check the full right hand side.
         (rhs', tRight, effRight)
-                <- checkExp config kenv' tenv' Rhs rhs 
+                <- checkExp config env' Rhs rhs 
 
         -- Check that types of both sides are equivalent.
         let err = ErrorTypeConflict 
@@ -216,7 +216,7 @@ checkRewriteRule config kenv tenv
 
         -- Check that the closure of the right is smaller than that
         -- of the left, and add a weakclo cast if nessesary.
-        cloWeak        <- makeClosureWeakening config kenv' tenv' lhs_full' rhs'
+        cloWeak        <- makeClosureWeakening config env' lhs_full' rhs'
 
         -- Check that all the bound variables are mentioned
         -- in the left-hand side.
@@ -256,38 +256,42 @@ checkRewriteRule config kenv tenv
 extendBinds 
         :: Ord n 
         => [(BindMode, Bind n)] 
-        -> KindEnv n -> TypeEnv n 
-        -> (T.KindEnv n, T.TypeEnv n, [(BindMode, Bind n)])
+        ->  EnvX n
+        -> (EnvX n, [(BindMode, Bind n)])
 
-extendBinds binds kenv tenv
- = go binds kenv tenv []
+extendBinds binds env0
+ = go binds env0 []
  where
-        go []          k t acc
-         = (k,t,acc)
+        go []          env acc
+         = (env, acc)
 
-        go ((bm,b):bs) k t acc
-         = let  b'      = S.spreadX k t b
-                (k',t') = case bm of
-                             BMSpec    -> (T.extend b' k, t)
-                             BMValue _ -> (k, T.extend b' t)
+        go ((bm,b):bs) env acc
+         = let  kenv    = EnvX.kindEnvOfEnvX env
+                tenv    = EnvX.typeEnvOfEnvX env
+                b'      = S.spreadX kenv tenv b
+                env'    = case bm of
+                             BMSpec    -> EnvX.extendT b' env
+                             BMValue _ -> EnvX.extendX b' env
 
-           in  go bs k' t' (acc ++ [(bm,b')])
+           in  go bs env' (acc ++ [(bm,b')])
 
 
 -- | Type check the expression on one side of the rule.
 checkExp 
         :: (Show a, Ord n, Show n, Pretty n)
-        => C.Config n 
-        -> KindEnv n    -- ^ Kind environment of expression.
-        -> TypeEnv n    -- ^ Type environment of expression.
+        => C.Config n   -- ^ Type checker config.
+        -> EnvX n       -- ^ Type checker environment.
         -> Side         -- ^ Side that the expression appears on for errors.
         -> Exp a n      -- ^ Expression to check.
         -> Either (Error a n) 
                   (Exp (C.AnTEC a n) n, Type n, Effect n)
 
-checkExp defs kenv tenv side xx
- = let xx' = S.spreadX kenv tenv xx 
-   in  case fst $ C.checkExp defs kenv tenv C.Recon C.DemandNone xx'  of
+checkExp defs env side xx
+ = let  kenv    = EnvX.kindEnvOfEnvX env
+        tenv    = EnvX.typeEnvOfEnvX env
+        xx'     = S.spreadX kenv tenv xx 
+
+   in  case fst $ C.checkExp defs env C.Recon C.DemandNone xx'  of
         Left err  -> Left $ ErrorTypeCheck side xx' err
         Right rhs -> return rhs
 
@@ -296,11 +300,10 @@ checkExp defs kenv tenv side xx
 checkConstraint
         :: (Ord n, Show n, Pretty n)
         => C.Config n
-        -> KindEnv n    -- ^ Kind environment of the constraint.
         -> Type n       -- ^ The constraint type to check.
         -> Either (Error a n) (Kind n)
 
-checkConstraint config _kenv tt
+checkConstraint config tt
  = case T.checkSpec config tt of
         Left _err               -> Left $ ErrorBadConstraint tt
         Right (_, k)
@@ -361,22 +364,21 @@ makeEffectWeakening k effLeft effRight onError
 --
 makeClosureWeakening 
         :: (Ord n, Pretty n, Show n)
-        => C.Config n               -- ^ Type-checker config
-        -> T.Env n                  -- ^ Kind environment.
-        -> T.Env n                  -- ^ Type environment.
-        -> Exp (C.AnTEC a n) n      -- ^ Expression on the left of the rule.
-        -> Exp (C.AnTEC a n) n      -- ^ Expression on the right of the rule.
+        => C.Config n           -- ^ Type-checker config
+        -> EnvX n               -- ^ Type checker environment.
+        -> Exp (C.AnTEC a n) n  -- ^ Expression on the left of the rule.
+        -> Exp (C.AnTEC a n) n  -- ^ Expression on the right of the rule.
         -> Either (Error a n) 
                   [Exp (C.AnTEC a n) n]
 
-makeClosureWeakening config kenv tenv lhs rhs
- = let  lhs'         = removeEffects config kenv tenv lhs
+makeClosureWeakening config env lhs rhs
+ = let  lhs'         = removeEffects config env lhs
         supportLeft  = support Env.empty Env.empty lhs'
         daLeft  = supportDaVar supportLeft
         wiLeft  = supportWiVar supportLeft
         spLeft  = supportSpVar supportLeft
 
-        rhs'         = removeEffects config kenv tenv rhs
+        rhs'         = removeEffects config env rhs
         supportRight = support Env.empty Env.empty rhs'
         daRight = supportDaVar supportRight
         wiRight = supportWiVar supportRight
@@ -401,14 +403,14 @@ makeClosureWeakening config kenv tenv lhs rhs
 removeEffects
         :: (Ord n, Pretty n, Show n)
         => C.Config n   -- ^ Type-checker config
-        -> T.Env n      -- ^ Kind environment
-        -> T.Env n      -- ^ Type environment
+        -> EnvX n       -- ^ Type checker environment.
         -> Exp a n      -- ^ Target expression - has all effects replaced with bottom.
         -> Exp a n
+
 removeEffects config 
  = transformUpX remove
  where
-  remove _kenv _tenv x
+  remove _env x
 
    | XType a et    <- x
    , Right (_, k)  <- T.checkSpec config et

@@ -18,10 +18,10 @@ import DDC.Core.Fragment
 import DDC.Core.Check
 import DDC.Core.Module
 import DDC.Core.Exp
-import DDC.Type.Env
 import DDC.Base.Pretty
 import Data.Typeable
-import Control.Monad.Writer                     (Writer, runWriter, tell)
+import Control.Monad.Writer                             (Writer, runWriter, tell)
+import DDC.Core.Env.EnvX                                (EnvX)
 import qualified Data.Map                               as Map
 import qualified DDC.Core.Transform.SubstituteXX        as S
 import qualified DDC.Type.Exp.Simple                    as T
@@ -70,27 +70,29 @@ pruneModule profile mm
          = mm
 
          | otherwise
-         = mm { moduleBody      
-                = result 
-                $ pruneX profile (moduleKindEnv mm) (moduleTypeEnv mm)
-                $ moduleBody mm }
+         = let  env     = moduleEnvX 
+                                (profilePrimKinds profile)
+                                (profilePrimTypes profile)
+                                mm
+           in   mm { moduleBody      
+                        = result $ pruneX profile env
+                                $ moduleBody mm }
 
 
 -- | Erase pure let-bindings in an expression that have no uses.
 pruneX
         :: (Show a, Show n, Ord n, Pretty n)
-        => Profile n           -- ^ Profile of the language we're in
-        -> KindEnv n           -- ^ Kind environment
-        -> TypeEnv n           -- ^ Type environment
+        => Profile n            -- ^ Profile of the language we're in
+        -> EnvX n               -- ^ Type checker environment.
         -> Exp a n
         -> TransformResult (Exp a n)
 
-pruneX profile kenv tenv xx
+pruneX profile env xx
  = {-# SCC pruneX #-}
    let  
         (xx', info)
-                = transformTypeUsage profile kenv tenv
-                       (transformUpMX pruneTrans kenv tenv)
+                = transformTypeUsage profile env
+                       (transformUpMX pruneTrans env)
                        xx
 
         progress (PruneInfo r) 
@@ -109,9 +111,9 @@ pruneX profile kenv tenv xx
 -- We generate these annotations here then pass the result off to
 -- deadCodeTrans to actually erase dead bindings.
 --
-transformTypeUsage profile kenv tenv trans xx
+transformTypeUsage profile env trans xx
  = let  config  = configOfProfile profile
-        rr      = checkExp config kenv tenv Recon DemandNone xx
+        rr      = checkExp config env Recon DemandNone xx
    in case fst rr of
         Right (xx1, _, _) 
          -> let xx2        = usageX xx1
@@ -133,13 +135,12 @@ type Annot a n
 -- | Apply the dead-code transform to an annotated expression.
 pruneTrans
         :: Ord n
-        => KindEnv n
-        -> TypeEnv n
-        -> Exp (Annot a n) n
+        => EnvX n               -- ^ Type checker environment.
+        -> Exp (Annot a n) n    -- ^ Expression to transform.
         -> Writer PruneInfo 
                  (Exp (Annot a n) n)
 
-pruneTrans _ _ xx
+pruneTrans _ xx
  = case xx of
         XLet a@(usedMap, antec) (LLet b x1) x2
          | isUnusedBind b usedMap

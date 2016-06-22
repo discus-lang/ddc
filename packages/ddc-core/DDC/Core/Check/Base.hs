@@ -18,7 +18,7 @@ module DDC.Core.Check.Base
 
           -- Things defined elsewhere.
         , throw, runCheck, evalCheck
-        , EnvT, TypeEnv, KindEnv
+        , EnvX,  EnvT, TypeEnv, KindEnv
         , Set
         , module DDC.Core.Check.Error
         , module DDC.Core.Collect
@@ -40,6 +40,7 @@ import DDC.Core.Exp.Annot
 import DDC.Type.Check.Context
 import DDC.Type.Check                           (Config (..), configOfProfile)
 import DDC.Core.Env.EnvT                        (EnvT)
+import DDC.Core.Env.EnvX                        (EnvX)
 import DDC.Type.Env                             (TypeEnv, KindEnv)
 import DDC.Type.DataDef
 import DDC.Type.Universe

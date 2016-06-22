@@ -30,6 +30,7 @@ import Data.Typeable                    (Typeable)
 import Control.Monad.State.Strict
 import DDC.Base.Name
 import qualified DDC.Base.Pretty        as P
+import qualified DDC.Core.Env.EnvX      as EnvX
 import qualified Data.Set               as Set
 import Prelude                          hiding ((<$>))
 
@@ -286,14 +287,17 @@ applyTransformX
         -> State s (TransformResult (Exp a n))
 
 applyTransformX !profile !kenv !tenv !spec !xx
- = let  res x = return $ resultDone (show $ ppr spec) x
+ = let  res x   = return $ resultDone (show $ ppr spec) x
+        env     = EnvX.fromPrimEnvs 
+                        (profilePrimKinds profile)
+                        (profilePrimTypes profile)
    in case spec of
         Id                -> res xx
         Anonymize         -> res    $ anonymizeX xx
         Beta config       -> return $ betaReduce profile config xx
         Bubble            -> res    $ bubbleX kenv tenv xx
         Elaborate{}       -> res    $ elaborateX xx
-        Eta  config       -> return $ Eta.etaX   profile config kenv tenv xx
+        Eta  config       -> return $ Eta.etaX   profile config env xx
         Flatten           -> res    $ flatten xx
 
         Forward          
@@ -304,7 +308,7 @@ applyTransformX !profile !kenv !tenv !spec !xx
         FoldCase config   -> res    $ foldCase config xx
         Lambdas           -> res    $ xx
         Namify  namK namT -> namifyUnique namK namT xx >>= res
-        Prune             -> return $ pruneX     profile kenv tenv xx
+        Prune             -> return $ pruneX     profile env xx
         Rewrite rules     -> return $ rewriteX rules xx
         Snip config       -> res    $ snip config xx
 

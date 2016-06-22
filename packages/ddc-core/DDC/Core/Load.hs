@@ -38,6 +38,7 @@ import DDC.Core.Module
 import DDC.Base.Pretty
 import DDC.Data.Token
 import DDC.Core.Fragment                        (Fragment)
+import qualified DDC.Core.Env.EnvX              as EnvX
 import qualified DDC.Core.Fragment              as F
 import qualified DDC.Core.Parser                as C
 import qualified DDC.Core.Check                 as C
@@ -223,6 +224,7 @@ loadExpFromTokens fragment modules sourceName mode toks'
         config  = C.configOfProfile  profile
         kenv    = modulesExportTypes  modules $ profilePrimKinds profile
         tenv    = modulesExportValues modules $ profilePrimTypes profile
+        envx    = EnvX.fromPrimEnvs kenv tenv
 
         -- Parse the tokens.
         goParse toks                
@@ -234,7 +236,7 @@ loadExpFromTokens fragment modules sourceName mode toks'
 
         -- Check the kind of the type.
         goCheckType x
-         = case C.checkExp config kenv tenv mode C.DemandNone x  of
+         = case C.checkExp config envx mode C.DemandNone x  of
             (Left err, ct)            -> (Left  (ErrorCheckExp err),  Just ct)
             (Right (x', _, _), ct)    -> goCheckCompliance ct x'
 

@@ -46,7 +46,6 @@ import DDC.Core.Check.Judge.Type.Cast
 import DDC.Core.Check.Judge.Type.Witness
 import DDC.Core.Check.Judge.Type.Base
 import DDC.Core.Transform.MapT
-import qualified DDC.Type.Env           as Env
 
 
 -- Wrappers -------------------------------------------------------------------
@@ -64,9 +63,8 @@ import qualified DDC.Type.Env           as Env
 checkExp
         :: (Show a, Ord n, Show n, Pretty n)
         => Config n                     -- ^ Static configuration.
-        -> KindEnv n                    -- ^ Starting kind environment.
-        -> TypeEnv n                    -- ^ Starting type environment.
-        -> Mode  n                      -- ^ Check mode.
+        -> EnvX n                       -- ^ Environment of expression.
+        -> Mode n                       -- ^ Check mode.
         -> Demand                       -- ^ Demand placed on the expression.
         -> Exp a n                      -- ^ Expression to check.
         -> ( Either (Error a n)         --   Type error message.
@@ -75,7 +73,7 @@ checkExp
                     , Effect n)         --   Effect of expression.
            , CheckTrace)                --   Type checker debug trace.
 
-checkExp !config !kenv !tenv !mode !demand !xx
+checkExp !config !env !mode !demand !xx
  = (result, ct)
  where
   ((ct, _, _), result)
@@ -85,9 +83,7 @@ checkExp !config !kenv !tenv !mode !demand !xx
         (xx', t, effs, ctx)
          <- checkExpM
                 (makeTable config)
-                (contextOfPrimEnvs 
-                        (Env.union kenv (configPrimKinds config))
-                        (Env.union tenv (configPrimTypes config)))
+                (emptyContext { contextEnvX = env })
                 mode 
                 demand 
                 xx 
@@ -113,14 +109,13 @@ checkExp !config !kenv !tenv !mode !demand !xx
 -- | Like `checkExp`, but only return the value type of an expression.
 typeOfExp
         :: (Show a, Ord n, Pretty n, Show n)
-        => Config n                     -- ^ Static configuration.
-        -> KindEnv n                    -- ^ Starting Kind environment
-        -> TypeEnv n                    -- ^ Starting Type environment.
-        -> Exp a n                      -- ^ Expression to check.
+        => Config n             -- ^ Static configuration.
+        -> EnvX n               -- ^ Environment of expresion.
+        -> Exp a n              -- ^ Expression to check.
         -> Either (Error a n) (Type n)
 
-typeOfExp !config !kenv !tenv !xx
- = case fst $ checkExp config kenv tenv Recon DemandNone xx of
+typeOfExp !config !env !xx
+ = case fst $ checkExp config env Recon DemandNone xx of
         Left err        -> Left err
         Right (_, t, _) -> Right t
 

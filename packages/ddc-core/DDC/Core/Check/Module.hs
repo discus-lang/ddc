@@ -17,6 +17,7 @@ import qualified DDC.Core.Env.EnvT      as EnvT
 import qualified DDC.Core.Env.EnvX      as EnvX
 import qualified Data.Map.Strict        as Map
 
+
 -- Wrappers ---------------------------------------------------------------------------------------
 -- | Type check a module.
 --
@@ -93,11 +94,12 @@ checkModuleM !config mm@ModuleCore{} !mode
                 $  moduleImportTypeDefs mm
 
         let envT_importedTypeDefs
-                = (EnvT.unions
-                     [ envT_dataDefs
-                     , EnvT.fromListNT [ (n, k) | (n, (k, _)) <- nktsImportTypeDef']])
-                 { EnvT.envtEquations 
-                     = Map.fromList    [ (n, t) | (n, (_, t)) <- nktsImportTypeDef'] }
+                = EnvT.unions
+                [ envT_dataDefs
+                , EnvT.fromListNT [ (n, k) | (n, (k, _)) <- nktsImportTypeDef']
+                , EnvT.empty 
+                        { EnvT.envtEquations 
+                        = Map.fromList    [ (n, t) | (n, (_, t)) <- nktsImportTypeDef']}]
 
 
         -- Check kinds of local type equations --------------------------------
@@ -111,11 +113,12 @@ checkModuleM !config mm@ModuleCore{} !mode
                 $  moduleTypeDefsLocal  mm
 
         let envT_localTypeDefs
-                = (EnvT.unions
-                     [ envT_importedTypeDefs
-                     , EnvT.fromListNT [ (n, k) | (n, (k, _)) <- nktsLocalTypeDef']])
-                 { EnvT.envtEquations
-                     = Map.fromList    [ (n, t) | (n, (_, t)) <- nktsLocalTypeDef'] }
+                = EnvT.unions
+                [ envT_importedTypeDefs
+                , EnvT.fromListNT [ (n, k) | (n, (k, _)) <- nktsLocalTypeDef']
+                , EnvT.empty
+                        { EnvT.envtEquations
+                        = Map.fromList    [ (n, t) | (n, (_, t)) <- nktsLocalTypeDef']}]
 
 
         -- Check imported data type defs --------------------------------------
@@ -152,21 +155,23 @@ checkModuleM !config mm@ModuleCore{} !mode
                 $  moduleImportCaps  mm
 
         let envT_importCaps
-                = envT_localTypeDefs
-                { EnvT.envtCapabilities 
-                        = Map.fromList 
-                        $ [ (n, t) | (n, ImportCapAbstract t) <- ntsImportCap'] }
+                = EnvT.unions
+                [ envT_localTypeDefs
+                , EnvT.empty
+                        { EnvT.envtCapabilities 
+                           = Map.fromList 
+                           $ [ (n, t) | (n, ImportCapAbstract t) <- ntsImportCap'] }]
 
 
         -- Check types of imported values ------------------------------------
         ntsImportValue'
-                <- checkImportValues  config_import envT_localTypeDefs mode
+                <- checkImportValues  config_import envT_importCaps mode
                 $  moduleImportValues mm
 
         let envX_importValues
-                = EnvX.empty
-                { EnvX.envxEnvT    = envT_importCaps 
-                , EnvX.envxPrimFun = \n -> Env.lookupName n (configPrimTypes config) }
+                = (EnvX.fromListNT [(n, typeOfImportValue i) | (n, i) <- ntsImportValue' ])
+                {  EnvX.envxEnvT    = envT_importCaps 
+                ,  EnvX.envxPrimFun = \n -> Env.envPrimFun (configPrimTypes config) n }
 
 
         -----------------------------------------------------------------------
@@ -595,7 +600,7 @@ checkModuleBinds !env !ksExports !tsExports !xx
         XLet _ (LPrivate _ _ _) x2
          ->     checkModuleBinds env ksExports tsExports x2
 
-        _ ->    return EnvX.empty
+        _ ->    return env
 
 
 -- | If some bind is exported, then check that it matches the exported version.

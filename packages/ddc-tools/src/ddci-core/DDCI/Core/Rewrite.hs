@@ -17,6 +17,7 @@ import Data.Char
 import qualified DDC.Core.Check         as C
 import qualified DDC.Core.Parser        as C
 import qualified DDC.Base.Parser        as BP
+import qualified Data.Map.Strict        as Map
 
 import DDC.Core.Module
 import Data.Map                         (Map)
@@ -79,16 +80,16 @@ parseAdd fragment modules str
           (fragmentLexExp fragment "interactive" 0 rest) of
                 Left err -> Left $ renderIndent $ ppr err
                 Right rule ->
-                  case checkRewriteRule config kinds' types' rule of
+                  case checkRewriteRule config env rule of
                     Left err    -> Left  $ renderIndent $ ppr err
                     Right rule' -> Right $ SetAdd name rule'
  where
         config   = C.configOfProfile (fragmentProfile fragment)
-        kinds    = profilePrimKinds  (fragmentProfile fragment)
-        types    = profilePrimTypes  (fragmentProfile fragment)
-
-        kinds'   = modulesExportTypes  modules kinds
-        types'   = modulesExportValues modules types
+        profile  = fragmentProfile fragment
+        env      = modulesEnvX 
+                        (profilePrimKinds profile)
+                        (profilePrimTypes profile)
+                        (Map.elems modules)
 
 
 -- | Display rule

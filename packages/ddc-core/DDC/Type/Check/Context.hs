@@ -53,6 +53,7 @@ import qualified DDC.Core.Env.EnvX      as EnvX
 import qualified DDC.Type.Sum           as Sum
 import qualified Data.IntMap.Strict     as IntMap
 import qualified Data.Set               as Set
+import qualified Data.Map.Strict        as Map
 import Data.Set                         (Set)
 import Prelude                          hiding ((<$>))
 
@@ -648,8 +649,14 @@ effectSupported ctx eff
         -- the capability is supported if it's in the lexical environment.
         | TApp (TCon (TyConSpec tc)) _t2 <- eff
         , elem tc [TcConRead, TcConWrite, TcConAlloc]
-        , any   (\b -> equivT (contextEnvT ctx) (typeOfBind b) eff) 
-                [ b | ElemType b <- contextElems ctx ] 
+
+        ,   -- Capability in local environment. 
+            (any  (\b -> equivT (contextEnvT ctx) (typeOfBind b) eff) 
+                  [ b | ElemType b <- contextElems ctx ] )
+   
+            -- Capability imported at top level.
+         || (any  (\t -> equivT (contextEnvT ctx) t eff)
+                  (Map.elems $ EnvT.envtCapabilities $ contextEnvT ctx))
         = Nothing
 
         -- For an effect on an abstract region, we allow any capability.

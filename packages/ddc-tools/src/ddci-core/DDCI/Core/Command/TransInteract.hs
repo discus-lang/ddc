@@ -14,8 +14,8 @@ import DDC.Core.Exp.Annot
 import DDC.Core.Check
 import DDC.Core.Module
 import DDC.Base.Pretty
-import qualified Data.Map       as Map
-import qualified Data.Set       as Set
+import qualified Data.Map.Strict        as Map
+import qualified Data.Set               as Set
 
 
 -- TransInteract --------------------------------------------------------------
@@ -97,17 +97,14 @@ cmdTransInteractLoop state str
                 return state
 
             Right tr' -> do
-                let kenv    = modulesExportTypes
-                                (bundleModules bundle) 
+                let env  = modulesEnvX 
                                 (profilePrimKinds profile)
-
-                let tenv    = modulesExportValues
-                                (bundleModules bundle) 
                                 (profilePrimTypes profile)
+                                (Map.elems $ bundleModules bundle)
 
                 x_trans  <- transExp
                                 (Set.member TraceTrans $ stateModes state)
-                                profile kenv tenv
+                                profile env
                                 (bundleStateInit bundle) tr' x'
 
                 case x_trans of

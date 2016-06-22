@@ -20,6 +20,8 @@ module DDC.Core.Env.EnvT
         , fromListNT
         , fromTypeMap
 
+        , kindEnvOfEnvT 
+
         -- * Projections 
         , depth
         , member,       memberBind
@@ -37,6 +39,7 @@ import DDC.Type.Transform.BoundT
 import Data.Maybe
 import Data.Map                         (Map)
 import Prelude                          hiding (lookup)
+import qualified DDC.Type.Env           as Env
 import qualified Data.Map.Strict        as Map
 import qualified Prelude                as P
 import Control.Monad
@@ -127,6 +130,14 @@ fromListNT nts
 fromTypeMap :: Map n (Type n) -> EnvT n
 fromTypeMap m
         = empty { envtMap = m}
+
+
+-- | Extract a `KindEnv` from an `EnvT`.
+kindEnvOfEnvT :: Ord n => EnvT n -> Env.KindEnv n
+kindEnvOfEnvT env
+        = Env.empty
+        { Env.envMap       = envtMap env
+        , Env.envPrimFun   = \n -> envtPrimFun env n }
 
 
 -- | Combine two environments.

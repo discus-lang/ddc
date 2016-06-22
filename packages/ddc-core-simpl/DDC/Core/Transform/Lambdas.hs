@@ -16,10 +16,12 @@ import Data.Function
 import Data.List
 import Data.Set                         (Set)
 import Data.Map                         (Map)
+-- import DDC.Core.Env.EnvX                (EnvX)
 import qualified DDC.Core.Check         as Check
 import qualified DDC.Type.Env           as Env
 import qualified Data.Set               as Set
 import qualified Data.Map               as Map
+import qualified DDC.Core.Env.EnvX      as EnvX
 import Data.Maybe
 
 
@@ -425,14 +427,15 @@ liftLambda p c fusFree a lams xBody
                 { Check.configDataDefs
                         = mappend defs (Check.configDataDefs config)  }
 
+
+--                        ** TODO: need the type defs to check.
 --                , Check.configTypeDefs
 --                        = mappend eqns (Check.configTypeDefs config)
 
 --                , Check.configGlobalCaps
 --                        = contextGlobalCaps c }
 
-        kenv'   = Env.unions
-                [ kenv ]
+        env'    = EnvX.empty
 
 {-                , Env.fromList [BName n k | (n, (k, _)) 
                                         <- Map.toList $ Check.configTypeDefs config'] ]
@@ -443,7 +446,7 @@ liftLambda p c fusFree a lams xBody
         -- either the lambda lifter is broken or some other transform
         -- has messed up.
         typeOfExp x
-         = case Check.typeOfExp config' kenv' tenv x
+         = case Check.typeOfExp config' env' x
             of  Left err
                  -> error $ renderIndent $ vcat
                           [ text "ddc-core-simpl.liftLambda: type error in lifted expression"

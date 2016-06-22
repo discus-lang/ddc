@@ -20,12 +20,12 @@ import DDC.Core.Transform.BoundX
 import DDC.Core.Transform.BoundT
 import DDC.Core.Simplifier.Result
 import DDC.Core.Pretty
-import DDC.Type.Env             (TypeEnv, KindEnv)
 import DDC.Type.Transform.AnonymizeT
 import Control.Monad.Writer     (Writer, tell, runWriter)
 import Data.Typeable
-import qualified DDC.Type.Env   as Env
-import Prelude                  hiding ((<$>))
+import DDC.Core.Env.EnvX                (EnvX)
+import qualified DDC.Core.Env.EnvX      as EnvX
+import Prelude                          hiding ((<$>))
 
 
 -------------------------------------------------------------------------------
@@ -78,14 +78,18 @@ etaModule
         -> TransformResult (Module a n)
 
 etaModule profile config  mm
- = let  cconfig = Check.configOfProfile profile
-        kenv'   = Env.union (profilePrimKinds profile) (moduleKindEnv mm)
-        tenv'   = Env.union (profilePrimTypes profile) (moduleTypeEnv mm)
+ = let 
+        -- Slurp type checker config.
+        cconfig = Check.configOfProfile profile
+
+        -- Slurp the top level environment.
+        env     = moduleEnvX
+                        (profilePrimKinds profile)
+                        (profilePrimTypes profile)
+                        mm
         
         -- Run the eta transform.
-        (mm', info) 
-                = runWriter 
-                $ etaM config cconfig kenv' tenv' mm
+        (mm', info) = runWriter $ etaM config cconfig env mm
                     
         -- Check if any actual work was performed
         progress
@@ -104,20 +108,17 @@ etaModule profile config  mm
 etaX    :: (Ord n, Show n, Show a, Pretty n)
         => Profile n            -- ^ Language profile.
         -> Config               -- ^ Eta-transform config.
-        -> KindEnv n            -- ^ Kind environment.
-        -> TypeEnv n            -- ^ Type environment.
+        -> EnvX    n            -- ^ Type checker environment.
         -> Exp a n              -- ^ Expression to transform.
         -> TransformResult (Exp a n)
 
-etaX profile config kenv tenv xx
+etaX profile config env xx
  = let  cconfig = Check.configOfProfile profile
-        kenv'   = Env.union (profilePrimKinds profile) kenv
-        tenv'   = Env.union (profilePrimTypes profile) tenv
 
         -- Run the eta transform.
         (xx', info)     
                 = runWriter
-                $ etaM config cconfig kenv' tenv' xx
+                $ etaM config cconfig env xx
 
         -- Check if any actual work was performed
         progress
@@ -137,33 +138,32 @@ class Eta (c :: * -> * -> *) where
  etaM   :: (Show a, Ord n, Pretty n, Show n)
         => Config               -- ^ Eta-transform config.
         -> Check.Config n       -- ^ Type checker config.
-        -> KindEnv n            -- ^ Kind environment.
-        -> TypeEnv n            -- ^ Type environment.
+        -> EnvX n               -- ^ Type checker environment.
         -> c a n                -- ^ Do eta-expansion in this thing.
         -> Writer Info (c a n)
 
 
 instance Eta Module where
- etaM config cconfig kenv tenv mm
-  = do  let kenv'       = Env.union (moduleKindEnv mm) kenv
-        let tenv'       = Env.union (moduleTypeEnv mm) tenv
-        xx'             <- etaM config cconfig kenv' tenv' (moduleBody mm)
+ etaM config cconfig envx mm
+  = do  -- TODO: add top level env of module.
+        let envx'   = envx
+        xx'             <- etaM config cconfig envx' (moduleBody mm)
         return  $ mm { moduleBody = xx' }
 
 
 instance Eta Exp where
- etaM config cconfig kenv tenv xx
-  = let down = etaM config cconfig kenv tenv
+ etaM config cconfig env xx
+  = let down = etaM config cconfig env
     in case xx of
 
         XVar a _
          | configExpand config
-         , Right tX     <- Check.typeOfExp cconfig kenv tenv xx
+         , Right tX     <- Check.typeOfExp cconfig env xx
          -> do  etaExpand a tX xx
 
         XApp a _ _
          |  configExpand config
-         ,  Right tX    <- Check.typeOfExp cconfig kenv tenv xx
+         ,  Right tX    <- Check.typeOfExp cconfig env xx
          -> do  
                 -- Decend into the arguments first.
                 --   We don't need to decend into the function part because
@@ -175,26 +175,28 @@ instance Eta Exp where
                 etaExpand a tX $ xApps a x xs_eta
 
         XLAM a b x
-         -> do  let kenv'       = Env.extend b kenv
-                x'              <- etaM config cconfig kenv' tenv x
+         -> do  let env'        = EnvX.extendT b env
+                x'              <- etaM config cconfig env' x
                 return $ XLAM a b x'
 
         XLam a b x
-         -> do  let tenv'       = Env.extend b tenv
-                x'              <- etaM config cconfig kenv tenv' x
+         -> do  let env'        = EnvX.extendX b env
+                x'              <- etaM config cconfig env' x
                 return $ XLam a b x'
 
         XLet a lts x2
          -> do  lts'            <- down lts
                 let (bs1, bs0)  = bindsOfLets lts
-                let kenv'       = Env.extends bs1 kenv
-                let tenv'       = Env.extends bs0 tenv
-                x2'             <- etaM config cconfig kenv' tenv' x2
+
+                let env'        = EnvX.extendsT bs1 
+                                $ EnvX.extendsX bs0 env
+
+                x2'             <- etaM config cconfig env' x2
                 return $ XLet a lts' x2'
 
         XCase a x alts
          -> do  x'              <- down x
-                alts'           <- mapM (etaM config cconfig kenv tenv) alts
+                alts'           <- mapM (etaM config cconfig env) alts
                 return $ XCase a x' alts'
 
         XCast a cc x
@@ -205,8 +207,8 @@ instance Eta Exp where
 
 
 instance Eta Lets where
- etaM config cconfig kenv tenv lts
-  = let down    = etaM config cconfig kenv tenv
+ etaM config cconfig env lts
+  = let down    = etaM config cconfig env
     in case lts of
         LLet b x
          -> do  x'      <- down x
@@ -214,8 +216,8 @@ instance Eta Lets where
 
         LRec bxs
          -> do  let bs    = map fst bxs
-                let tenv' = Env.extends bs tenv
-                xs'       <- mapM (etaM config cconfig kenv tenv') 
+                let env'  = EnvX.extends bs env
+                xs'       <- mapM (etaM config cconfig env') 
                           $  map snd bxs
                 return    $ LRec (zip bs xs')
 
@@ -224,12 +226,12 @@ instance Eta Lets where
 
 
 instance Eta Alt where
- etaM config cconfig kenv tenv alt
+ etaM config cconfig env alt
   = case alt of
         AAlt p x        
          -> do  let bs    = bindsOfPat p
-                let tenv' = Env.extends bs tenv
-                x'        <- etaM config cconfig kenv tenv' x
+                let env'  = EnvX.extends bs env
+                x'        <- etaM config cconfig env' x
                 return  $ AAlt p x'
 
 

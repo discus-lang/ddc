@@ -17,8 +17,8 @@ import DDC.Core.Transform.SubstituteXX
 import DDC.Core.Simplifier.Result
 import Control.Monad.Writer             (Writer, runWriter, tell)
 import Data.Typeable                    (Typeable)
-import DDC.Type.Env                     (KindEnv, TypeEnv)
-import qualified DDC.Type.Env           as Env
+import DDC.Core.Env.EnvX                (EnvX)
+import qualified DDC.Core.Env.EnvX      as EnvX
 import Prelude                          hiding ((<$>))
 
 
@@ -97,7 +97,7 @@ betaReduce
 betaReduce profile config x
  = {-# SCC betaReduce #-}
    let (x', info) = runWriter
-                  $ transformUpMX (betaReduce1 profile config) Env.empty Env.empty x
+                  $ transformUpMX (betaReduce1 profile config) EnvX.empty x
 
        -- Check if any actual work was performed
        progress 
@@ -124,12 +124,11 @@ betaReduce1
         :: Ord n
         => Profile n    -- ^ Language profile.
         -> Config       -- ^ Beta tranform config.
-        -> KindEnv n    -- ^ Current kind environment.
-        -> TypeEnv n    -- ^ Current type environment.
+        -> EnvX n       -- ^ Current environment
         -> Exp a n      -- ^ Expression to transform.
         -> Writer Info (Exp a n)
 
-betaReduce1 _profile config _kenv _tenv xx
+betaReduce1 _profile config _env xx
  = let  ret info x = tell info >> return x
 
    in case xx of

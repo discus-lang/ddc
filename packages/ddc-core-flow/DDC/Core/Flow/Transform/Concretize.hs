@@ -7,7 +7,8 @@ import DDC.Core.Flow.Compounds
 import DDC.Core.Flow.Prim
 import DDC.Core.Flow.Exp
 import DDC.Core.Transform.TransformUpX
-import qualified DDC.Type.Env           as Env
+import DDC.Core.Env.EnvX                (EnvX)
+import qualified DDC.Core.Env.EnvX      as EnvX
 import qualified Data.Map               as Map
 
 
@@ -15,21 +16,21 @@ import qualified Data.Map               as Map
 --   use value level ones.
 concretizeModule :: Module () Name -> Module () Name
 concretizeModule mm
-        = transformSimpleUpX concretizeX Env.empty Env.empty mm
+        = transformSimpleUpX concretizeX EnvX.empty mm
 
 
 -- | Rewrite an expression to use concrete operators.
 concretizeX 
-        :: KindEnvF -> TypeEnvF
+        :: EnvX Name
         -> ExpF     -> Maybe ExpF
 
-concretizeX _kenv tenv xx
+concretizeX env xx
 
         -- loop# -> loopn#
         -- using an existing RateNat in the environment.
         | Just ( NameOpControl OpControlLoop
                , [XType tK, xF]) <- takeXPrimApps xx
-        , Just nRN               <- findRateNatWithRate tenv tK
+        , Just nRN               <- findRateNatWithRate env tK
         , xRN                    <- XVar (UName nRN)
         = Just
         $ xLoopN tK xRN xF
@@ -38,7 +39,7 @@ concretizeX _kenv tenv xx
         -- using the length of a series to get the rate.
         | Just ( NameOpControl OpControlLoop
                , [XType tK, xF])   <- takeXPrimApps xx
-        , Just (nS, tP, _, tA)     <- findSeriesWithRate tenv tK
+        , Just (nS, tP, _, tA)     <- findSeriesWithRate env tK
         , xS                       <- XVar (UName nS)
         = Just 
         $ xLoopN 
@@ -49,7 +50,7 @@ concretizeX _kenv tenv xx
         -- newVectorR# -> newVector#
         | Just ( NameOpStore OpStoreNewVectorR
                , [XType tA, XType tK])  <- takeXPrimApps xx
-        , Just (nS, tP, _, tS)          <- findSeriesWithRate tenv tK
+        , Just (nS, tP, _, tS)          <- findSeriesWithRate env tK
         , xS                            <- XVar (UName nS)
         = Just
         $ xNewVector
@@ -64,12 +65,12 @@ concretizeX _kenv tenv xx
 -- | Search the given environment for the name of a RateNat with the
 --   given rate parameter. We only look at named binders.
 findRateNatWithRate 
-        :: TypeEnvF             -- ^ Type Environment.
+        :: EnvX Name            -- ^ Type Environment.
         -> Type Name            -- ^ Rate type.
         -> Maybe Name
                                 -- ^ RateNat name
-findRateNatWithRate tenv tR
- = go (Map.toList (Env.envMap tenv))
+findRateNatWithRate env tR
+ = go (Map.toList (EnvX.envxMap env))
  where  go []           = Nothing
         go ((n, tRN) : moar)
          | isRateNatTypeOfRate tR tRN = Just n
@@ -95,12 +96,12 @@ isRateNatTypeOfRate tR tRN
 -- | Search the given environment for the name of a series with the
 --   given result rate parameter. We only look at named binders.
 findSeriesWithRate 
-        :: TypeEnvF             -- ^ Type Environment.
+        :: EnvX Name             -- ^ Type Environment.
         -> Type Name            -- ^ Rate type.
         -> Maybe (Name, Type Name, Type Name, Type Name)
         -- ^ Series name, process, result rate, element type.
-findSeriesWithRate tenv tK
- = go (Map.toList (Env.envMap tenv))
+findSeriesWithRate env tK
+ = go (Map.toList (EnvX.envxMap env))
  where  go []           = Nothing
         go ((n, tS) : moar)
          = case isSeriesTypeOfRate tK tS of

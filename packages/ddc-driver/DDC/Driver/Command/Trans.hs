@@ -17,19 +17,21 @@ import DDC.Core.Transform.Reannotate
 import DDC.Core.Load
 import DDC.Core.Fragment
 import DDC.Core.Simplifier
+import DDC.Core.Module
 import DDC.Core.Exp.Annot
 import DDC.Type.Exp.Simple
 import DDC.Base.Pretty
 import DDC.Base.Name
-import DDC.Core.Module
 import Data.Typeable
 import Control.Monad
 import Control.Monad.Trans.Except
 import Control.Monad.IO.Class
-import DDC.Type.Env                             as Env
+import DDC.Core.Env.EnvX                        (EnvX)
 import qualified DDC.Core.Check                 as C
 import qualified Control.Monad.State.Strict     as S
+import qualified Data.Map.Strict                as Map
 import qualified DDC.Core.Env.EnvT              as EnvT
+import qualified DDC.Core.Env.EnvX              as EnvX
 import Prelude                                  hiding ((<$>))
 
 
@@ -138,10 +140,13 @@ cmdTransExpCont _config traceTrans language eatExp source str
  where
         -- Expression is well-typed.
         goStore profile modules zero simpl (Just x, _)
-         = do   let kenv    = modulesExportTypes  modules (profilePrimKinds profile)
-                let tenv    = modulesExportValues modules (profilePrimTypes profile)
+         = do   
+                let env = modulesEnvX 
+                                (profilePrimKinds profile)
+                                (profilePrimTypes profile)
+                                (Map.elems modules)
 
-                tr      <- transExp traceTrans profile kenv tenv zero simpl 
+                tr      <- transExp traceTrans profile env zero simpl 
                         $  reannotate (\a -> a { annotTail = ()}) x
                 
                 case tr of
@@ -161,18 +166,20 @@ transExp
         :: (Ord n, Pretty n, Show n, CompoundName n)
         => Bool                         -- ^ Trace transform information.
         -> Profile n                    -- ^ Language profile.
-        -> KindEnv n                    -- ^ Kind Environment.
-        -> TypeEnv n                    -- ^ Type Environment.
+        -> EnvX n
         -> s
         -> Simplifier s (AnTEC () n) n
         -> Exp (AnTEC () n) n
         -> IO (Maybe (Exp (AnTEC () n) n))
 
-transExp traceTrans profile kenv tenv zero simpl xx
+transExp traceTrans profile env zero simpl xx
  = do
         let annot  = annotOfExp xx
         let t1     = annotType    annot
         let eff1   = annotEffect  annot
+
+        let kenv   = EnvX.kindEnvOfEnvX env
+        let tenv   = EnvX.typeEnvOfEnvX env
 
          -- Apply the simplifier.
         let tx  = flip S.evalState zero
@@ -187,7 +194,7 @@ transExp traceTrans profile kenv tenv zero simpl xx
             $  text "* TRANSFORM INFORMATION: " <$> indent 4 (ppr inf) <$> text ""
 
         let config = C.configOfProfile profile
-        let rr     = C.checkExp config kenv tenv Recon C.DemandNone x' 
+        let rr     = C.checkExp config env Recon C.DemandNone x' 
 
         -- Check that the simplifier perserved the type of the expression.
         case fst rr of

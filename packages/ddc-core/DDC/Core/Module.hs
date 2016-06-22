@@ -5,9 +5,9 @@ module DDC.Core.Module
         , isMainModule
         , moduleDataDefs
         , moduleTypeDefs
-        , moduleKindEnv
-        , moduleTypeEnv
-        , moduleEnvT
+        , moduleKindEnv, moduleTypeEnv
+        , moduleEnvT,    moduleEnvX
+        , modulesEnvT,   modulesEnvX
         , moduleTopBinds
         , moduleTopBindTypes
         , mapTopBinds
@@ -54,11 +54,13 @@ import DDC.Type.DataDef
 import Data.Typeable
 import Data.Map.Strict                  (Map)
 import Data.Set                         (Set)
-import DDC.Core.Env.EnvT                (EnvT(EnvT))
+import DDC.Core.Env.EnvT                (EnvT (EnvT))
+import DDC.Core.Env.EnvX                (EnvX)
 import DDC.Type.Env                     as Env
 import qualified Data.Map.Strict        as Map
 import qualified Data.Set               as Set
 import qualified DDC.Core.Env.EnvT      as EnvT
+import qualified DDC.Core.Env.EnvX      as EnvX
 import Control.DeepSeq
 import Data.Maybe
 
@@ -165,13 +167,18 @@ moduleTypeEnv mm
         $ [BName n (typeOfImportValue isrc) | (n, isrc) <- moduleImportValues mm]
 
 
--- | Extract the top-level type environment of a module.
+-- | Extract the top-level `EnvT` environment from a module.
 --
 --   This includes kinds for abstract types, data types, and type equations, 
 --   but not primitive types which are fragment specific.
 --
-moduleEnvT :: Ord n => Module a n -> EnvT n
-moduleEnvT mm
+moduleEnvT 
+        :: Ord n 
+        => KindEnv n    -- ^ Primitive kind environment.
+        -> Module a n   -- ^ Module to extract environemnt from.
+        -> EnvT n
+
+moduleEnvT kenvPrim mm
  = EnvT
  { EnvT.envtMap         
         = let -- Kinds of imported foreign types.
@@ -218,8 +225,53 @@ moduleEnvT mm
         = Map.fromList [(n, typeOfImportCap ic) | (n, ic) <- moduleImportCaps mm]
 
  , EnvT.envtPrimFun
-        = \_n -> Nothing
+        = Env.envPrimFun kenvPrim
  }
+
+
+-- | Extract the top-level `EnvT` environment from several modules.
+---
+--   After unioning all the individual environments we reset the prim 
+--   function so we only have a single version of it.
+modulesEnvT 
+        :: Ord n
+        => KindEnv n    -- ^ Primitive kind environment.
+        -> [Module a n] -- ^ Modules to build environment from.
+        -> EnvT n
+
+modulesEnvT kenv ms
+        = (EnvT.unions $ map (moduleEnvT kenv) ms)
+        { EnvT.envtPrimFun = Env.envPrimFun kenv }
+
+
+-- | Extract the top-level `EnvX` environment from a module.
+moduleEnvX 
+        :: Ord n 
+        => KindEnv n    -- ^ Primitive kind environment.
+        -> TypeEnv n    -- ^ Primitive type environment.
+        -> Module a n   -- ^ Module to extract environemnt from.
+        -> EnvX n
+
+moduleEnvX kenvPrim tenvPrim mm
+ = EnvX.empty
+ { EnvX.envxEnvT        = moduleEnvT kenvPrim mm
+ , EnvX.envxPrimFun     = \n -> Env.envPrimFun tenvPrim n }
+
+
+-- | Extract the top-level `EnvT` environment from several modules.
+---
+--   After unioning all the individual environments we reset the prim 
+--   function so we only have a single version of it.
+modulesEnvX
+        :: Ord n
+        => KindEnv n    -- ^ Primitive kind environment.
+        -> TypeEnv n    -- ^ Primitive type environment.
+        -> [Module a n] -- ^ Modules to build environment from.
+        -> EnvX n
+
+modulesEnvX kenv tenv ms
+        = (EnvX.unions $ map (moduleEnvX kenv tenv) ms)
+        { EnvX.envxPrimFun = Env.envPrimFun tenv }
 
 
 -- | Get the set of top-level value bindings in a module.
