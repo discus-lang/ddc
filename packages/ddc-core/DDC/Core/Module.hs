@@ -249,13 +249,15 @@ moduleEnvX
         :: Ord n 
         => KindEnv n    -- ^ Primitive kind environment.
         -> TypeEnv n    -- ^ Primitive type environment.
+        -> DataDefs n   -- ^ Primtiive data type definitions.
         -> Module a n   -- ^ Module to extract environemnt from.
         -> EnvX n
 
-moduleEnvX kenvPrim tenvPrim mm
+moduleEnvX kenvPrim tenvPrim dataDefs mm
  = EnvX.empty
  { EnvX.envxEnvT        = moduleEnvT kenvPrim mm
- , EnvX.envxPrimFun     = \n -> Env.envPrimFun tenvPrim n }
+ , EnvX.envxPrimFun     = \n -> Env.envPrimFun tenvPrim n 
+ , EnvX.envxDataDefs    = dataDefs }
 
 
 -- | Extract the top-level `EnvT` environment from several modules.
@@ -266,11 +268,12 @@ modulesEnvX
         :: Ord n
         => KindEnv n    -- ^ Primitive kind environment.
         -> TypeEnv n    -- ^ Primitive type environment.
+        -> DataDefs n   -- ^ Primitive data type definitions.
         -> [Module a n] -- ^ Modules to build environment from.
         -> EnvX n
 
-modulesEnvX kenv tenv ms
-        = (EnvX.unions $ map (moduleEnvX kenv tenv) ms)
+modulesEnvX kenv tenv defs ms
+        = (EnvX.unions $ map (moduleEnvX kenv tenv defs) ms)
         { EnvX.envxPrimFun = Env.envPrimFun tenv }
 
 

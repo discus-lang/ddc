@@ -69,7 +69,6 @@ checkVarCon !table !ctx mode demand xx@(XCon a dc)
  | mode == Recon || mode == Synth
  = do
         let config      = tableConfig table
-        let defs        = configDataDefs config
 
         -- All data constructors need to have valid type annotations.
         tCtor
@@ -80,14 +79,14 @@ checkVarCon !table !ctx mode demand xx@(XCon a dc)
 
              DaConBound n
               -- Types of algebraic data ctors should be in the defs table.
-              |  Just ctor <- Map.lookup n (dataDefsCtors defs)
+              |  Just ctor <- Map.lookup n (dataDefsCtors $ contextDataDefs ctx)
               -> return $ typeOfDataCtor ctor
 
               | otherwise
               -> throw  $ ErrorUndefinedCtor a $ XCon a dc
 
         -- Check that the constructor is in the data type declarations.
-        checkDaConM config xx a dc
+        checkDaConM config ctx xx a dc
 
         ctrace  $ vcat
                 [ text "**  Con"

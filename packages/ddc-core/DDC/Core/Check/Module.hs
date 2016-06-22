@@ -140,18 +140,14 @@ checkModuleM !config mm@ModuleCore{} !mode
                 ([], dataDefsLocal')    -> return dataDefsLocal'
 
         let dataDefs_top    
-                = unionDataDefs (configDataDefs config)
+                = unionDataDefs (configPrimDataDefs config)
                 $ unionDataDefs (fromListDataDefs dataDefsImported')
                                 (fromListDataDefs dataDefsLocal')
 
 
         -- Check types of imported capabilities -------------------------------
-        let config_import 
-                = config
-                { configDataDefs = dataDefs_top }
-
         ntsImportCap'   
-                <- checkImportCaps   config_import  envT_localTypeDefs mode
+                <- checkImportCaps   config  envT_localTypeDefs mode
                 $  moduleImportCaps  mm
 
         let envT_importCaps
@@ -165,38 +161,37 @@ checkModuleM !config mm@ModuleCore{} !mode
 
         -- Check types of imported values ------------------------------------
         ntsImportValue'
-                <- checkImportValues  config_import envT_importCaps mode
+                <- checkImportValues  config envT_importCaps mode
                 $  moduleImportValues mm
 
         let envX_importValues
                 = (EnvX.fromListNT [(n, typeOfImportValue i) | (n, i) <- ntsImportValue' ])
-                {  EnvX.envxEnvT    = envT_importCaps 
-                ,  EnvX.envxPrimFun = \n -> Env.envPrimFun (configPrimTypes config) n }
+                {  EnvX.envxEnvT     = envT_importCaps 
+                ,  EnvX.envxDataDefs = dataDefs_top
+                ,  EnvX.envxPrimFun  = \n -> Env.envPrimFun (configPrimTypes config) n }
 
 
         -----------------------------------------------------------------------
         -- Build the top-level config, defs and environments.
         --  These contain names that are visible to bindings in the module.
-
-        let config_top  = config_import
         let envT_top    = envT_importCaps
         let envX_top    = envX_importValues
         let ctx_top     = emptyContext { contextEnvX = envX_top }
 
 
         -- Check the sigs of exported types ---------------
-        esrcsType'  <- checkExportTypes  config_top envT_top
-                    $  moduleExportTypes mm
+        esrcsType'  <- checkExportTypes   config envT_top
+                    $  moduleExportTypes  mm
 
 
         -- Check the sigs of exported values --------------
-        esrcsValue' <- checkExportValues  config_top envT_top
+        esrcsValue' <- checkExportValues  config envT_top
                     $  moduleExportValues mm
 
 
         -- Check the body of the module -------------------
         (x', _, _effs, ctx)
-         <- checkExpM   (makeTable config_top)
+         <- checkExpM   (makeTable config)
                         ctx_top mode DemandNone (moduleBody mm) 
 
         -- Apply the final context to the annotations in expressions.

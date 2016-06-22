@@ -10,8 +10,13 @@ module DDC.Type.Check.Context
         , Elem    (..)
         , Role    (..)
         , Context (..)
+        , contextEquations
+        , contextCapabilities
+        , contextDataDefs
+        , contextEnvT
+
         , emptyContext
-        , contextEnvT,  contextOfEnvT
+        , contextOfEnvT
         , contextOfPrimEnvs
 
         -- Positions
@@ -45,12 +50,14 @@ import DDC.Type.Exp.Simple
 import DDC.Base.Pretty
 import Data.Maybe
 import Data.IntMap.Strict               (IntMap)
-import qualified DDC.Type.Env           as Env
+import Data.Map                         (Map)
+import DDC.Type.DataDef
 import DDC.Core.Env.EnvX                (EnvX)
 import DDC.Core.Env.EnvX                (EnvT)
 import qualified DDC.Core.Env.EnvT      as EnvT
 import qualified DDC.Core.Env.EnvX      as EnvX
 import qualified DDC.Type.Sum           as Sum
+import qualified DDC.Type.Env           as Env
 import qualified Data.IntMap.Strict     as IntMap
 import qualified Data.Set               as Set
 import qualified Data.Map.Strict        as Map
@@ -147,6 +154,24 @@ data Context n
           --   annotations after type inference proper. It's not used as part
           --   of the main algorithm.
         , contextSolved         :: IntMap (Type n) }
+
+
+-- | Take the type equations from a context.
+contextEquations :: Context n -> Map n (Type n)
+contextEquations ctx
+ = EnvT.envtEquations   $ contextEnvT ctx
+
+
+-- | Take the capabilities from a context.
+contextCapabilities :: Context n -> Map n (Type n)
+contextCapabilities ctx
+ = EnvT.envtCapabilities $ contextEnvT ctx
+
+
+-- | Take the capabilities from a context.
+contextDataDefs :: Context n -> DataDefs n
+contextDataDefs ctx
+ = EnvX.envxDataDefs $ contextEnvX ctx
 
 
 -- | Take the top level environment for types from the context.

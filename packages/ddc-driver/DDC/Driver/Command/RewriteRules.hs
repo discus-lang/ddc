@@ -70,9 +70,11 @@ parse fragment modu source str
      = do r' <- checkRewriteRule config env' r
           return (show n, reannotate (const ()) r')
 
-    config      = C.configOfProfile (fragmentProfile fragment)
-    kinds       = profilePrimKinds  (fragmentProfile fragment)
-    types       = profilePrimTypes  (fragmentProfile fragment)
+    profile     = fragmentProfile fragment
+    config      = C.configOfProfile   profile
+    kinds       = profilePrimKinds    profile
+    types       = profilePrimTypes    profile
+    defs        = profilePrimDataDefs profile
 
     kindsImp    = moduleKindEnv modu
     typesImp    = moduleTypeEnv modu
@@ -90,7 +92,7 @@ parse fragment modu source str
     -- Final kind and type environments
     kinds'      = kinds `Env.union` kindsImp `Env.union` kindsExp
     types'      = types `Env.union` typesImp `Env.union` typesExp
-    env'        = EnvX.fromPrimEnvs kinds' types'
+    env'        = EnvX.fromPrimEnvs kinds' types' defs
 
     source'  = nameOfSource source
 

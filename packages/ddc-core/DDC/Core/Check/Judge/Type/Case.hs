@@ -4,17 +4,16 @@ module DDC.Core.Check.Judge.Type.Case
 where
 import DDC.Core.Check.Judge.Type.Base
 import DDC.Type.Exp.Simple.Equiv
-import qualified DDC.Type.Sum   as Sum
-import qualified Data.Map       as Map
-import Data.List                as L
+import qualified DDC.Type.Sum           as Sum
+import qualified DDC.Core.Env.EnvX      as EnvX
+import qualified Data.Map               as Map
+import Data.List                        as L
 
 ---------------------------------------------------------------------------------------------------
 checkCase :: Checker a n
 checkCase !table !ctx0 mode demand 
         xx@(XCase a xDiscrim alts)
  = do   
-        let config      = tableConfig table
-
         -- There must be at least one alternative, even if there are no data
         -- constructors. The rest of the checking code assumes this, and will
         -- throw an unhelpful error if there are no alternatives.
@@ -36,6 +35,8 @@ checkCase !table !ctx0 mode demand
         -- data type constructor (if there is one).
         let tDiscrim' = crushHeadT (contextEnvT ctx2) tDiscrim
 
+        let dataDefs  = EnvX.envxDataDefs $ contextEnvX ctx2
+
         -- Split the type into the type constructor names and type parameters.
         -- Also check that it's algebraic data, and not a function or effect
         -- type etc.
@@ -49,17 +50,16 @@ checkCase !table !ctx0 mode demand
 
               -- User defined or imported data types.
               | TyConBound (UName nTyCon) _ <- tc
-              , Just dataType  <- Map.lookup nTyCon
-                               $  dataDefsTypes $ configDataDefs config
+              , Just dataType  <- Map.lookup nTyCon $ dataDefsTypes dataDefs
               , k              <- kindOfDataType dataType
               , takeResultKind k == kData
-              -> return ( lookupModeOfDataType nTyCon (configDataDefs config)
+              -> return ( lookupModeOfDataType nTyCon dataDefs
                         , ts )
 
               -- Primitive data types.
               | TyConBound (UPrim nTyCon _) k <- tc
               , takeResultKind k == kData
-              -> return ( lookupModeOfDataType nTyCon (configDataDefs config)
+              -> return ( lookupModeOfDataType nTyCon dataDefs
                         , ts )
 
              _ -> throw $ ErrorCaseScrutineeNotAlgebraic a xx tDiscrim
@@ -164,7 +164,7 @@ takeDiscrimCheckModeFromAlts table a ctx mode alts
         --       This will be done by checkAltsM when we check each individual
         --       pattern type against the type of the scrutinee.
         let pats     = map patOfAlt alts
-        tsPats       <- liftM catMaybes $ mapM (dataTypeOfPat table a) pats
+        tsPats       <- liftM catMaybes $ mapM (dataTypeOfPat table ctx a) pats
 
         case tsPats of
          -- We only have a default pattern,
@@ -250,7 +250,7 @@ checkAltsM !table !a !xx !tDiscrim !tsArgs !mode !demand !alts0 !ctx
   checkAltM alt@(AAlt (PData dc bsArg) xBody) !ctx0
    = do
         -- Get the constructor type associated with this pattern.
-        Just tCtor <- ctorTypeOfPat table a (PData dc bsArg)
+        Just tCtor <- ctorTypeOfPat table ctx a (PData dc bsArg)
 
         -- Take the type of the constructor and instantiate it with the
         -- type arguments we got from the discriminant. If the ctor type
@@ -381,26 +381,25 @@ checkFieldAnnots table bidir a xx tts ctx0
 ctorTypeOfPat
         :: Ord n
         => Table a n            -- ^ Checker table.
+        -> Context n            -- ^ Type checker context
         -> a                    -- ^ Annotation for error messages.
         -> Pat n                -- ^ Pattern.
         -> CheckM a n (Maybe (Type n))
 
-ctorTypeOfPat table a (PData dc _)
+ctorTypeOfPat _table ctx a (PData dc _)
  = case dc of
         DaConUnit   -> return $ Just $ tUnit
         DaConPrim{} -> return $ Just $ daConType dc
 
         DaConBound n
          -- Types of algebraic data ctors should be in the defs table.
-         |  Just ctor <- Map.lookup n
-                                $ dataDefsCtors
-                                $ configDataDefs $ tableConfig table
+         |  Just ctor   <- Map.lookup n $ dataDefsCtors $ contextDataDefs ctx
          -> return $ Just $ typeOfDataCtor ctor
 
          | otherwise
          -> throw  $ ErrorUndefinedCtor a $ XCon a dc
 
-ctorTypeOfPat _table _a PDefault
+ctorTypeOfPat _table _ctx _a PDefault
  = return Nothing
 
 
@@ -413,12 +412,13 @@ ctorTypeOfPat _table _a PDefault
 dataTypeOfPat
         :: Ord n
         => Table a n            -- ^ Checker table.
+        -> Context n            -- ^ Type Checker context.
         -> a                    -- ^ Annotation for error messages.
         -> Pat n                -- ^ Pattern.
         -> CheckM a n (Maybe (Type n))
 
-dataTypeOfPat table a pat
- = do   mtCtor      <- ctorTypeOfPat table a pat
+dataTypeOfPat table ctx a pat
+ = do   mtCtor      <- ctorTypeOfPat table ctx a pat
 
         case mtCtor of
          Nothing    -> return Nothing

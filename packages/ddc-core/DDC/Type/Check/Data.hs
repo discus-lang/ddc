@@ -29,17 +29,17 @@ checkDataDefs config env defs
         -- Primitive type constructors.
         primTypeCtors
                 = Set.fromList
-                $ Map.keys $ Env.envMap $ configPrimKinds config
+                $ Map.keys $ Env.envMap   $ configPrimKinds config
 
         -- Primitive data type constructors
         primDataTypeCtors  
                 = Set.fromList 
-                $ Map.keys $ dataDefsTypes $ configDataDefs config
+                $ Map.keys $ dataDefsTypes $ configPrimDataDefs config
 
         -- Primitive data constructors
         primDataCtors   
                 = Set.fromList 
-                $ Map.keys $ dataDefsCtors $ configDataDefs config
+                $ Map.keys $ dataDefsCtors $ configPrimDataDefs config
 
    in   checkDataDefs' env
                 (Set.union primTypeCtors primDataTypeCtors)

@@ -36,19 +36,13 @@ lambdasModule
 lambdasModule profile mm
  = let  
         -- Take the top-level environment of the module.
-        defs    = moduleDataDefs mm
+        env     = moduleEnvX 
+                        (profilePrimKinds    profile)
+                        (profilePrimTypes    profile)
+                        (profilePrimDataDefs profile)
+                        mm
 
-        eqns    = Map.unions
-                        [ Map.fromList $ moduleTypeDefs mm
-                        , Map.fromList $ moduleImportTypeDefs mm ]
-
-        kenv    = moduleKindEnv  mm
-        tenv    = moduleTypeEnv  mm
-        c       = Context 
-                        kenv tenv 
-                        (Env.fromList 
-                                [BName n t | (n, ImportCapAbstract t) <- moduleImportCaps mm])
-                        (CtxTop defs eqns kenv tenv)
+        c       = Context env (CtxTop env)
 
         x'      = lambdasLoopX profile c $ moduleBody mm
 
@@ -401,9 +395,7 @@ liftLambda
             , Bind n, Exp a n)
 
 liftLambda p c fusFree a lams xBody
- = let  ctx     = contextCtx c
-        kenv    = contextKindEnv c
-        tenv    = contextTypeEnv c
+ = let  ctx             = contextCtx c
 
         -- The complete abstraction that we're lifting out.
         xLambda         = makeXLamFlags a lams xBody
@@ -419,34 +411,15 @@ liftLambda p c fusFree a lams xBody
         uLifted         = UName nLifted
 
         -- Build the type checker configuration for this context.
-        (defs, _eqns, _, _)    
-                = topOfCtx (contextCtx c)        
-        config  = Check.configOfProfile p
-
-        config' = config 
-                { Check.configDataDefs
-                        = mappend defs (Check.configDataDefs config)  }
-
-
---                        ** TODO: need the type defs to check.
---                , Check.configTypeDefs
---                        = mappend eqns (Check.configTypeDefs config)
-
---                , Check.configGlobalCaps
---                        = contextGlobalCaps c }
-
-        env'    = EnvX.empty
-
-{-                , Env.fromList [BName n k | (n, (k, _)) 
-                                        <- Map.toList $ Check.configTypeDefs config'] ]
--}
+        config          = Check.configOfProfile p
+        env             = contextEnv c
 
         -- Function to get the type of an expression in this context.
         -- If there are type errors in the input program then some 
         -- either the lambda lifter is broken or some other transform
         -- has messed up.
         typeOfExp x
-         = case Check.typeOfExp config' env' x
+         = case Check.typeOfExp config env x
             of  Left err
                  -> error $ renderIndent $ vcat
                           [ text "ddc-core-simpl.liftLambda: type error in lifted expression"
@@ -472,10 +445,10 @@ liftLambda p c fusFree a lams xBody
         -- Join in the types of the free variables.
         joinType (f, u)
          = case f of
-            True    | Just t <- Env.lookup u kenv
+            True    | Just t <- EnvX.lookupT u env
                     -> ((f, u), t)
 
-            False   | Just t <- Env.lookup u tenv
+            False   | Just t <- EnvX.lookupX u env
                     -> ((f, u), t)
                 
             _       -> error $ unlines
@@ -563,8 +536,9 @@ beautifyModule mm
   -- If the given binder is for an abstraction that we have lifted, 
   -- then produce a new nice name for it.
   makeRenamer 
-        :: Map n Int -> Bind n 
+        ::  Map n Int -> Bind n 
         -> (Map n Int, Maybe (n, (n, Type n)))
+
   makeRenamer acc b
         | BName n t         <- b
         , Just (nBase, str) <- splitName n

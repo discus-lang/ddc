@@ -87,8 +87,9 @@ parseAdd fragment modules str
         config   = C.configOfProfile (fragmentProfile fragment)
         profile  = fragmentProfile fragment
         env      = modulesEnvX 
-                        (profilePrimKinds profile)
-                        (profilePrimTypes profile)
+                        (profilePrimKinds    profile)
+                        (profilePrimTypes    profile)
+                        (profilePrimDataDefs profile)
                         (Map.elems modules)
 
 

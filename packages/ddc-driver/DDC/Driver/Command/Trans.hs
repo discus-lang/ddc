@@ -142,8 +142,9 @@ cmdTransExpCont _config traceTrans language eatExp source str
         goStore profile modules zero simpl (Just x, _)
          = do   
                 let env = modulesEnvX 
-                                (profilePrimKinds profile)
-                                (profilePrimTypes profile)
+                                (profilePrimKinds    profile)
+                                (profilePrimTypes    profile)
+                                (profilePrimDataDefs profile)
                                 (Map.elems modules)
 
                 tr      <- transExp traceTrans profile env zero simpl 

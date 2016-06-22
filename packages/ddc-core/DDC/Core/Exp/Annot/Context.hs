@@ -15,16 +15,13 @@ where
 import DDC.Core.Exp.Annot.Exp
 import DDC.Core.Exp.Annot.Ctx
 import DDC.Core.Exp.Annot.Compounds
-import DDC.Type.Env             (KindEnv, TypeEnv)
-import qualified DDC.Type.Env   as Env
-
+import DDC.Core.Env.EnvX                (EnvX)
+import qualified DDC.Core.Env.EnvX      as EnvX
 
 data Context a n
         = Context
-        { contextKindEnv        :: KindEnv n
-        , contextTypeEnv        :: TypeEnv n
-        , contextGlobalCaps     :: TypeEnv n
-        , contextCtx            :: Ctx a n }
+        { contextEnv    :: EnvX n
+        , contextCtx    :: Ctx a n }
 
 
 -- | Enter the body of a type lambda.
@@ -34,8 +31,8 @@ enterLAM
         -> (Context a n -> Exp a n -> b) -> b
 
 enterLAM c a b x f
- = let  c' = c  { contextKindEnv = Env.extend b (contextKindEnv c)
-                , contextCtx     = CtxLAM (contextCtx c) a b }
+ = let  c' = c  { contextEnv    = EnvX.extendT b (contextEnv c)
+                , contextCtx    = CtxLAM (contextCtx c) a b }
    in   f c' x
 
 
@@ -46,8 +43,8 @@ enterLam
         -> (Context a n -> Exp a n -> b) -> b
 
 enterLam c a b x f
- = let  c' = c  { contextTypeEnv = Env.extend b (contextTypeEnv c) 
-                , contextCtx     = CtxLam (contextCtx c) a b }
+ = let  c' = c  { contextEnv    = EnvX.extendX b (contextEnv c) 
+                , contextCtx    = CtxLam (contextCtx c) a b }
    in   f c' x
 
 
@@ -82,8 +79,9 @@ enterLetBody
 
 enterLetBody c a lts x f
  = let  (bs1, bs0) = bindsOfLets lts
-        c' = c  { contextKindEnv  = Env.extends bs1 (contextKindEnv c)
-                , contextTypeEnv  = Env.extends bs0 (contextTypeEnv c)
+        c' = c  { contextEnv    = EnvX.extendsX bs0 
+                                $ EnvX.extendsT bs1
+                                $ contextEnv c
                 , contextCtx      = CtxLetBody (contextCtx c) a lts }
    in   f c' x
 
@@ -108,9 +106,9 @@ enterLetLRec
 enterLetLRec c a bxsBefore b x bxsAfter xBody f
  = let  bsBefore = map fst bxsBefore
         bsAfter  = map fst bxsAfter
-        c' = c  { contextTypeEnv = Env.extends (bsBefore ++ [b] ++ bsAfter)
-                                        (contextTypeEnv c) 
-                , contextCtx     = CtxLetLRec (contextCtx c) a 
+        c' = c  { contextEnv    = EnvX.extendsX (bsBefore ++ [b] ++ bsAfter)
+                                        (contextEnv c) 
+                , contextCtx    = CtxLetLRec (contextCtx c) a 
                                         bxsBefore b bxsAfter xBody 
                 }
    in   f c' x
@@ -135,8 +133,8 @@ enterCaseAlt
 
 enterCaseAlt c a xScrut altsBefore w x altsAfter f
  = let  bs      = bindsOfPat w
-        c' = c  { contextTypeEnv = Env.extends bs (contextTypeEnv c)
-                , contextCtx     = CtxCaseAlt (contextCtx c) a
+        c' = c  { contextEnv    = EnvX.extendsX bs (contextEnv c)
+                , contextCtx    = CtxCaseAlt (contextCtx c) a
                                         xScrut altsBefore w altsAfter }
    in   f c' x
 

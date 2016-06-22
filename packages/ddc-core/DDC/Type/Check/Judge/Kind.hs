@@ -14,6 +14,7 @@ import DDC.Type.Universe
 import Data.List
 import Control.Monad
 import qualified DDC.Type.Sum            as TS
+import qualified DDC.Core.Env.EnvX       as EnvX
 import qualified DDC.Core.Env.EnvT       as EnvT
 import qualified Data.Map                as Map
 
@@ -198,8 +199,9 @@ checkTypeM config ctx0 uni tt@(TCon tc) mode
             UName n
              -- User defined data type constructors must be in the set of
              -- data defs. Attach the real kind why we're here.
-             | Just def         <- Map.lookup n 
-                                $  dataDefsTypes $ configDataDefs config
+             | Just def         <- Map.lookup n $ dataDefsTypes 
+                                                $ EnvX.envxDataDefs 
+                                                $ contextEnvX ctx0
              , UniverseSpec     <- uni
              -> let k'   = kindOfDataType def
                 in  return (TCon (TyConBound u k'), k')

@@ -71,12 +71,13 @@ pruneModule profile mm
 
          | otherwise
          = let  env     = moduleEnvX 
-                                (profilePrimKinds profile)
-                                (profilePrimTypes profile)
+                                (profilePrimKinds    profile)
+                                (profilePrimTypes    profile)
+                                (profilePrimDataDefs profile)
                                 mm
            in   mm { moduleBody      
                         = result $ pruneX profile env
-                                $ moduleBody mm }
+                                 $ moduleBody mm }
 
 
 -- | Erase pure let-bindings in an expression that have no uses.

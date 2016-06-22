@@ -84,8 +84,9 @@ etaModule profile config  mm
 
         -- Slurp the top level environment.
         env     = moduleEnvX
-                        (profilePrimKinds profile)
-                        (profilePrimTypes profile)
+                        (profilePrimKinds    profile)
+                        (profilePrimTypes    profile)
+                        (profilePrimDataDefs profile)
                         mm
         
         -- Run the eta transform.

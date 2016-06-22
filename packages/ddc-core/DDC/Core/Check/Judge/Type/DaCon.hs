@@ -11,12 +11,13 @@ import Prelude                  as L
 checkDaConM
         :: (Ord n, Eq n, Show n)
         => Config n
+        -> Context n            -- ^ Type checker context.
         -> Exp a n              -- ^ The full expression for error messages.
         -> a                    -- ^ Annotation for error messages.
         -> DaCon n (Type n)     -- ^ Data constructor to check.
         -> CheckM a n (Type n)
 
-checkDaConM config xx a dc
+checkDaConM _config ctx xx a dc
  = case dc of
     -- Type type of the unit data constructor is baked-in.
     DaConUnit
@@ -34,11 +35,10 @@ checkDaConM config xx a dc
     DaConPrim { daConName        = nCtor
               , daConType        = t }
      -> let  tResult = snd $ takeTFunArgResult $ eraseTForalls t
-             defs    = configDataDefs config
         in case liftM fst $ takeTyConApps tResult of
             Just (TyConBound u _)
-                | Just nType         <- takeNameOfBound u
-                , Just dataType      <- Map.lookup nType (dataDefsTypes defs)
+                | Just nType     <- takeNameOfBound u
+                , Just dataType  <- Map.lookup nType $ dataDefsTypes $ contextDataDefs ctx
                 -> case dataTypeMode dataType of
                     DataModeSmall nsCtors
                         | L.elem nCtor nsCtors -> return t
@@ -51,7 +51,7 @@ checkDaConM config xx a dc
     -- Bound data constructors are always algebraic and Small, so there needs
     --   to be a data definition that gives the type of the constructor.
     DaConBound { daConName = nCtor }
-     -> case Map.lookup nCtor (dataDefsCtors $ configDataDefs config) of
+     -> case Map.lookup nCtor (dataDefsCtors $ contextDataDefs ctx) of
          Just ctor       -> return $ typeOfDataCtor ctor
          Nothing         -> throw $ ErrorUndefinedCtor a xx
 

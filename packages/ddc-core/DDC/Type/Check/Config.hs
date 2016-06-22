@@ -24,7 +24,7 @@ data Config n
         , configPrimTypes               :: TypeEnv n
 
           -- | Data type definitions.
-        , configDataDefs                :: DataDefs n  
+        , configPrimDataDefs            :: DataDefs n  
 
           -- | This name represents some hole in the expression that needs
           --   to be filled in by the type checker.
@@ -63,7 +63,7 @@ configOfProfile profile
    in   Config
         { configPrimKinds               = F.profilePrimKinds            profile
         , configPrimTypes               = F.profilePrimTypes            profile
-        , configDataDefs                = F.profilePrimDataDefs         profile
+        , configPrimDataDefs            = F.profilePrimDataDefs         profile
         , configNameIsHole              = F.profileNameIsHole           profile 
         
         , configTrackedEffects          = F.featuresTrackedEffects      features
@@ -74,7 +74,6 @@ configOfProfile profile
         , configGeneralLetRec           = F.featuresGeneralLetRec       features
         , configImplicitRun             = F.featuresImplicitRun         features
         , configImplicitBox             = F.featuresImplicitBox         features
-
         }
         
 

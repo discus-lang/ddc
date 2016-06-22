@@ -48,14 +48,8 @@ import Control.Monad
 -- | A type environment.
 data EnvT n
         = EnvT
-        { -- | Kinds of named variables and constructors.
-          envtMap          :: !(Map n (Type n))
-
-          -- | Types of anonymous deBruijn variables.
-        , envtStack        :: ![Type n] 
-        
-          -- | The length of the above stack.
-        , envtStackLength  :: !Int
+        { -- | Types of baked in, primitive names.
+          envtPrimFun      :: !(n -> Maybe (Type n))
 
           -- | Map of constructor name to bound type for type equations.
         , envtEquations    :: !(Map n (Type n))
@@ -63,19 +57,25 @@ data EnvT n
           -- | Map of globally available capabilities.
         , envtCapabilities :: !(Map n (Type n))
 
-          -- | Types of baked in, primitive names.
-        , envtPrimFun      :: !(n -> Maybe (Type n)) }
+          -- | Kinds of named variables and constructors.
+        , envtMap          :: !(Map n (Type n))
+
+          -- | Types of anonymous deBruijn variables.
+        , envtStack        :: ![Type n] 
+        
+          -- | The length of the above stack.
+        , envtStackLength  :: !Int }
 
 
 -- | An empty environment.
 empty :: EnvT n
 empty   = EnvT
-        { envtMap          = Map.empty
-        , envtStack        = [] 
-        , envtStackLength  = 0
+        { envtPrimFun      = \_ -> Nothing 
         , envtEquations    = Map.empty
         , envtCapabilities = Map.empty
-        , envtPrimFun      = \_ -> Nothing }
+        , envtMap          = Map.empty
+        , envtStack        = [] 
+        , envtStackLength  = 0 }
 
 
 -- | Construct a singleton type environment.

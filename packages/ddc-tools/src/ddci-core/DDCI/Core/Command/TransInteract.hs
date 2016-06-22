@@ -98,8 +98,9 @@ cmdTransInteractLoop state str
 
             Right tr' -> do
                 let env  = modulesEnvX 
-                                (profilePrimKinds profile)
-                                (profilePrimTypes profile)
+                                (profilePrimKinds    profile)
+                                (profilePrimTypes    profile)
+                                (profilePrimDataDefs profile)
                                 (Map.elems $ bundleModules bundle)
 
                 x_trans  <- transExp

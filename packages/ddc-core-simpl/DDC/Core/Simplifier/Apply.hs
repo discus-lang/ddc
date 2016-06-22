@@ -289,8 +289,9 @@ applyTransformX
 applyTransformX !profile !kenv !tenv !spec !xx
  = let  res x   = return $ resultDone (show $ ppr spec) x
         env     = EnvX.fromPrimEnvs 
-                        (profilePrimKinds profile)
-                        (profilePrimTypes profile)
+                        (profilePrimKinds    profile)
+                        (profilePrimTypes    profile)
+                        (profilePrimDataDefs profile)
    in case spec of
         Id                -> res xx
         Anonymize         -> res    $ anonymizeX xx
