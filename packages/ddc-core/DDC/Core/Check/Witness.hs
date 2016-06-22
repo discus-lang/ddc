@@ -32,18 +32,17 @@ import qualified Data.Map.Strict                as Map
 --
 checkWitness
         :: (Ord n, Show n, Pretty n)
-        => Config n             -- ^ Static configuration.
-        -> KindEnv n            -- ^ Primitive Kind Environment.
-        -> TypeEnv n            -- ^ Primitive Type Environment.
+        => Config  n            -- ^ Type checker configuration.
+        -> EnvX n               -- ^ Type checker environment.
         -> Witness a n          -- ^ Witness to check.
         -> Either (Error a n)
                   ( Witness (AnT a n) n
                   , Type n)
 
-checkWitness config kenv tenv xx
- = let  ctx0    = Context.contextOfPrimEnvs kenv tenv
+checkWitness config env xx
+ = let  ctx     = contextOfEnvX env
    in   evalCheck (mempty, 0, 0)
-         $ checkWitnessM config ctx0 xx
+         $ checkWitnessM config ctx xx
 
 
 -- | Like `checkWitness`, but check in an empty environment.
@@ -54,14 +53,13 @@ checkWitness config kenv tenv xx
 --
 typeOfWitness
         :: (Ord n, Show n, Pretty n)
-        => Config n
-        -> Witness a n
+        => Config n             -- ^ Type checker configuration.
+        -> EnvX n               -- ^ Type checker environment.
+        -> Witness a n          -- ^ Witness to check.
         -> Either (Error a n) (Type n)
 
-typeOfWitness config ww
- = case checkWitness config 
-                (configPrimKinds config)
-                (configPrimTypes config) ww of
+typeOfWitness config env ww
+ = case checkWitness config env ww of
         Left  err       -> Left err
         Right (_, t)    -> Right t
 
@@ -70,8 +68,8 @@ typeOfWitness config ww
 -- | Like `checkWitness` but using the `CheckM` monad to manage errors.
 checkWitnessM
         :: (Ord n, Show n, Pretty n)
-        => Config n             -- ^ Static configuration.
-        -> Context n            -- ^ Input context
+        => Config n             -- ^ Type checker configuration.
+        -> Context n            -- ^ Type checker context.
         -> Witness a n          -- ^ Witness to check.
         -> CheckM a n
                 ( Witness (AnT a n) n

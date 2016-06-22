@@ -329,8 +329,14 @@ loadWitnessFromTokens fragment sourceName toks'
  where  -- Type checker config, kind and type environments.
         profile = F.fragmentProfile fragment
         config  = C.configOfProfile profile
-        kenv    = profilePrimKinds  profile
-        tenv    = profilePrimTypes  profile
+
+        env     = EnvX.fromPrimEnvs 
+                        (profilePrimKinds    profile)
+                        (profilePrimTypes    profile)
+                        (profilePrimDataDefs profile)
+
+        kenv    = profilePrimKinds profile
+        tenv    = profilePrimTypes profile
 
         -- Parse the tokens.
         goParse toks                
@@ -342,7 +348,7 @@ loadWitnessFromTokens fragment sourceName toks'
 
         -- Check the kind of the type.
         goCheckType w
-         = case C.checkWitness config kenv tenv w of
+         = case C.checkWitness config env w of
                 Left err      -> Left (ErrorCheckExp err)
                 Right (w', t) -> Right (w', t)
 

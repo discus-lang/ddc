@@ -17,6 +17,7 @@ module DDC.Type.Check.Context
 
         , emptyContext
         , contextOfEnvT
+        , contextOfEnvX
         , contextOfPrimEnvs
 
         -- Positions
@@ -185,24 +186,26 @@ contextOfEnvT :: EnvT n -> Context n
 contextOfEnvT envt
  = let  envx    = EnvX.empty
                 { EnvX.envxEnvT = envt }
+   in   contextOfEnvX envx
 
-        ctx     = emptyContext
-                { contextEnvX   = envx }
-   in   ctx
+
+-- | Wrap an `EnvX` into a context.
+contextOfEnvX :: EnvX n -> Context n
+contextOfEnvX envx
+        = emptyContext { contextEnvX = envx }
 
 
 -- | Build a context from prim environments.
-contextOfPrimEnvs :: Ord n => Env.KindEnv n -> Env.TypeEnv n -> Context n
-contextOfPrimEnvs kenv tenv
- = let  envt    = EnvT.empty 
-                { EnvT.envtPrimFun = \n -> Env.lookupName n kenv }
+contextOfPrimEnvs
+        :: Ord n
+        => Env.KindEnv n
+        -> Env.TypeEnv n
+        -> DataDefs n
+        -> Context n
 
-        envx    = EnvX.empty
-                { EnvX.envxEnvT    = envt
-                , EnvX.envxPrimFun = \n -> Env.lookupName n tenv }
-
-   in   emptyContext 
-         { contextEnvX = envx }
+contextOfPrimEnvs kenv tenv defs
+        = emptyContext 
+        { contextEnvX = EnvX.fromPrimEnvs kenv tenv defs }
 
 
 instance (Pretty n, Eq n) => Pretty (Context n) where
