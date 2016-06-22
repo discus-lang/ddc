@@ -453,7 +453,8 @@ liftLambda p c fusFree a lams xBody
                 
             _       -> error $ unlines
                         [ "ddc-core-simpl.joinType: cannot find type of free var."
-                        , show (f, u) ]
+                        , show (f, u)
+                        , show (Map.keys $ EnvX.envxMap env) ]
 
         futsFree_types
                 = map joinType fusFree_filtered

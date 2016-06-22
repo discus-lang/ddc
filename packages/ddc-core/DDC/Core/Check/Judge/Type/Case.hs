@@ -9,6 +9,7 @@ import qualified DDC.Core.Env.EnvX      as EnvX
 import qualified Data.Map               as Map
 import Data.List                        as L
 
+
 ---------------------------------------------------------------------------------------------------
 checkCase :: Checker a n
 checkCase !table !ctx0 mode demand 

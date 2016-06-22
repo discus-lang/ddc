@@ -1,4 +1,3 @@
-
 module DDC.Core.Module
         ( -- * Modules
           Module        (..)
@@ -57,6 +56,7 @@ import Data.Set                         (Set)
 import DDC.Core.Env.EnvT                (EnvT (EnvT))
 import DDC.Core.Env.EnvX                (EnvX)
 import DDC.Type.Env                     as Env
+import qualified DDC.Type.DataDef       as DataDef
 import qualified Data.Map.Strict        as Map
 import qualified Data.Set               as Set
 import qualified DDC.Core.Env.EnvT      as EnvT
@@ -249,15 +249,26 @@ moduleEnvX
         :: Ord n 
         => KindEnv n    -- ^ Primitive kind environment.
         -> TypeEnv n    -- ^ Primitive type environment.
-        -> DataDefs n   -- ^ Primtiive data type definitions.
+        -> DataDefs n   -- ^ Primitive data type definitions.
         -> Module a n   -- ^ Module to extract environemnt from.
         -> EnvX n
 
 moduleEnvX kenvPrim tenvPrim dataDefs mm
  = EnvX.empty
  { EnvX.envxEnvT        = moduleEnvT kenvPrim mm
- , EnvX.envxPrimFun     = \n -> Env.envPrimFun tenvPrim n 
- , EnvX.envxDataDefs    = dataDefs }
+ , EnvX.envxPrimFun     = Env.envPrimFun tenvPrim 
+
+ , EnvX.envxDataDefs    
+        = DataDef.unionDataDefs dataDefs
+        $ DataDef.unionDataDefs 
+                (DataDef.fromListDataDefs $ moduleImportDataDefs mm)
+                (DataDef.fromListDataDefs $ moduleDataDefsLocal  mm)
+
+ , EnvX.envxMap
+        = Map.fromList 
+                [ (n, typeOfImportValue isrc)
+                | (n, isrc) <- moduleImportValues mm ]
+ }
 
 
 -- | Extract the top-level `EnvT` environment from several modules.
