@@ -11,7 +11,6 @@ module DDC.Type.DataDef
         -- * Data type definition table
         , DataDefs   (..)
         
-
         , DataMode   (..)
         , emptyDataDefs
         , insertDataDef
@@ -228,7 +227,7 @@ emptyDataDefs
 -- | Union two `DataDef` tables.
 unionDataDefs :: Ord n => DataDefs n -> DataDefs n -> DataDefs n
 unionDataDefs defs1 defs2
-        = DataDefs
+ = DataDefs
         { dataDefsTypes = Map.union (dataDefsTypes defs1) (dataDefsTypes defs2)
         , dataDefsCtors = Map.union (dataDefsCtors defs1) (dataDefsCtors defs2) }
 

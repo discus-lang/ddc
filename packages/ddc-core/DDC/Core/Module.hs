@@ -180,7 +180,18 @@ moduleEnvT
 
 moduleEnvT kenvPrim mm
  = EnvT
- { EnvT.envtMap         
+ { EnvT.envtEquations   
+        = Map.unions
+        [ Map.fromList [(n, t)  | (n, (_, t)) <- moduleImportTypeDefs mm]
+        , Map.fromList [(n, t)  | (n, (_, t)) <- moduleTypeDefsLocal  mm]]
+
+ , EnvT.envtCapabilities
+        = Map.fromList [(n, typeOfImportCap ic) | (n, ic) <- moduleImportCaps mm]
+
+ , EnvT.envtPrimFun
+        = Env.envPrimFun kenvPrim
+
+ , EnvT.envtMap         
         = let -- Kinds of imported foreign types.
               nksImportForeignType
                 = Map.fromList [(n, kindOfImportType isrc) 
@@ -216,16 +227,6 @@ moduleEnvT kenvPrim mm
  , EnvT.envtStack       = []
  , EnvT.envtStackLength = 0
 
- , EnvT.envtEquations   
-        = Map.unions
-        [ Map.fromList [(n, t)  | (n, (_, t)) <- moduleImportTypeDefs mm]
-        , Map.fromList [(n, t)  | (n, (_, t)) <- moduleTypeDefsLocal  mm]]
-
- , EnvT.envtCapabilities
-        = Map.fromList [(n, typeOfImportCap ic) | (n, ic) <- moduleImportCaps mm]
-
- , EnvT.envtPrimFun
-        = Env.envPrimFun kenvPrim
  }
 
 
@@ -272,9 +273,6 @@ moduleEnvX kenvPrim tenvPrim dataDefs mm
 
 
 -- | Extract the top-level `EnvT` environment from several modules.
----
---   After unioning all the individual environments we reset the prim 
---   function so we only have a single version of it.
 modulesEnvX
         :: Ord n
         => KindEnv n    -- ^ Primitive kind environment.
@@ -284,8 +282,24 @@ modulesEnvX
         -> EnvX n
 
 modulesEnvX kenv tenv defs ms
-        = (EnvX.unions $ map (moduleEnvX kenv tenv defs) ms)
-        { EnvX.envxPrimFun = Env.envPrimFun tenv }
+ = let  -- Base environment contains all the prims.
+        --   We need to include this for the case when there are no
+        --   provided modules, so the prims are still end up in the result.
+        env0    = EnvX.fromPrimEnvs kenv tenv defs
+
+        -- Build environments for each of the modules
+        envs    = map (moduleEnvX kenv tenv defs) ms
+
+        -- Union the above into a composite environment.
+        env     = EnvX.unions (env0 : envs)
+
+        -- The EnvX.unions function combines the prim funs so that
+        -- if a lookup fails the primfun from the next module will 
+        -- be called, but as the primfuns in each module are identical
+        -- we only need a single version.
+        env'    = env
+                { EnvX.envxPrimFun  = EnvX.envxPrimFun env0 }
+   in   env'
 
 
 -- | Get the set of top-level value bindings in a module.

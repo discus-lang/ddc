@@ -30,7 +30,6 @@ import DDC.Core.Env.EnvX                        (EnvX)
 import qualified DDC.Core.Check                 as C
 import qualified Control.Monad.State.Strict     as S
 import qualified Data.Map.Strict                as Map
-import qualified DDC.Core.Env.EnvT              as EnvT
 import qualified DDC.Core.Env.EnvX              as EnvX
 import Prelude                                  hiding ((<$>))
 
@@ -181,6 +180,7 @@ transExp traceTrans profile env zero simpl xx
 
         let kenv   = EnvX.kindEnvOfEnvX env
         let tenv   = EnvX.typeEnvOfEnvX env
+        let envt   = EnvX.envxEnvT      env
 
          -- Apply the simplifier.
         let tx  = flip S.evalState zero
@@ -200,8 +200,8 @@ transExp traceTrans profile env zero simpl xx
         -- Check that the simplifier perserved the type of the expression.
         case fst rr of
           Right (x2, t2, eff2)
-           |  equivT    EnvT.empty t1 t2
-           ,  subsumesT EnvT.empty kEffect eff1 eff2
+           |  equivT    envt t1 t2
+           ,  subsumesT envt kEffect eff1 eff2
            -> do return (Just x2)
 
            | otherwise

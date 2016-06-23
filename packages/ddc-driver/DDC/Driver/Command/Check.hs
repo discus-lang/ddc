@@ -287,7 +287,7 @@ cmdParseCheckExp
         features' = features { featuresPartialPrims 
                              = featuresPartialPrims features || permitPartialPrims}
         profile'  = profile  { profileFeatures  = features' }
-        fragment' = fragment     { fragmentProfile  = profile'  }
+        fragment' = fragment { fragmentProfile  = profile'  }
 
         goLex 
          = goLoad (fragmentLexExp fragment'

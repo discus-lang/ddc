@@ -6,7 +6,6 @@ import DDC.Core.Check.Judge.Type.Base
 import qualified Data.Map       as Map
 import Prelude                  as L
 
-
 -- | Check a data constructor, returning its type.
 checkDaConM
         :: (Ord n, Eq n, Show n)

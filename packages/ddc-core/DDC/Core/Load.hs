@@ -44,6 +44,7 @@ import qualified DDC.Core.Parser                as C
 import qualified DDC.Core.Check                 as C
 import qualified DDC.Type.Check                 as T
 import qualified DDC.Base.Parser                as BP
+import qualified Data.Map.Strict                as Map
 import Data.Map.Strict                          (Map)
 import System.Directory
 
@@ -222,10 +223,15 @@ loadExpFromTokens fragment modules sourceName mode toks'
         -- Type checker profile, kind and type environments.
         profile = F.fragmentProfile fragment
         config  = C.configOfProfile  profile
-        defs    = profilePrimDataDefs profile
-        kenv    = modulesExportTypes  modules $ profilePrimKinds profile
-        tenv    = modulesExportValues modules $ profilePrimTypes profile
-        envx    = EnvX.fromPrimEnvs kenv tenv defs
+        
+        envx    = modulesEnvX 
+                        (profilePrimKinds    profile)
+                        (profilePrimTypes    profile)
+                        (profilePrimDataDefs profile)
+                        (Map.elems modules)
+
+        kenv    = EnvX.kindEnvOfEnvX envx
+        tenv    = EnvX.typeEnvOfEnvX envx
 
         -- Parse the tokens.
         goParse toks                
@@ -237,7 +243,7 @@ loadExpFromTokens fragment modules sourceName mode toks'
 
         -- Check the kind of the type.
         goCheckType x
-         = case C.checkExp config envx mode C.DemandNone x  of
+         = case C.checkExp config envx mode C.DemandNone x of
             (Left err, ct)            -> (Left  (ErrorCheckExp err),  Just ct)
             (Right (x', _, _), ct)    -> goCheckCompliance ct x'
 

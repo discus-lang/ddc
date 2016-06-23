@@ -23,7 +23,6 @@ import qualified Text.PrettyPrint.Leijen as P
 import Text.PrettyPrint.Leijen           
        hiding (Pretty(..), renderPretty, putDoc)
 
-
 -- Utils ---------------------------------------------------------------------
 -- | Wrap a `Doc` in parens if the predicate is true.
 pprParen :: Bool -> Doc -> Doc

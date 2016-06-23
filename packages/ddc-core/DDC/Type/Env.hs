@@ -187,7 +187,8 @@ lookup uu env
 -- | Lookup a bound name from an environment.
 lookupName :: Ord n => n -> Env n -> Maybe (Type n)
 lookupName n env
-        = Map.lookup n (envMap env)
+        =       Map.lookup n (envMap env)
+        `mplus` (envPrimFun env n)
 
 
 -- | Yield the total depth of the deBruijn stack.
