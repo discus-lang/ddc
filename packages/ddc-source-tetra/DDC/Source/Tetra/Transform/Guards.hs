@@ -39,13 +39,13 @@ desugarGuards gs0 fail0
         -- Simple cases where we can avoid introducing the continuation.
         go1 (GGuard (GPred g1)   (GExp x1)) cont
          = XCase g1
-                [ AAlt PTrue    [GExp x1]
-                , AAlt PDefault [GExp cont] ]
+                [ AAltCase PTrue    [GExp x1]
+                , AAltCase PDefault [GExp cont] ]
 
         go1 (GGuard (GPat p1 g1) (GExp x1)) cont
          = XCase g1
-                [ AAlt p1        [GExp x1]
-                , AAlt PDefault  [GExp cont]]
+                [ AAltCase p1        [GExp x1]
+                , AAltCase PDefault  [GExp cont]]
 
         -- Cases that use a continuation function as a join point.
         -- We need this when desugaring general pattern alternatives,
@@ -53,11 +53,11 @@ desugarGuards gs0 fail0
         go1 (GGuard (GPred x1) gs) cont
          = XLet  (LLet (XBindVarMT BAnon Nothing) (XBox cont))
          $ XCase (liftX 1 x1)
-                [ AAlt PTrue    [GExp (go1 (liftX 1 gs) (XRun (XVar (UIx 0))))]
-                , AAlt PDefault [GExp                   (XRun (XVar (UIx 0))) ]]
+                [ AAltCase PTrue    [GExp (go1 (liftX 1 gs) (XRun (XVar (UIx 0))))]
+                , AAltCase PDefault [GExp                   (XRun (XVar (UIx 0))) ]]
 
         go1 (GGuard (GPat p1 x1) gs) cont
          = XLet  (LLet (XBindVarMT BAnon Nothing) (XBox cont))
          $ XCase (liftX 1 x1)
-                [ AAlt p1       [GExp (go1 (liftX 1 gs) (XRun (XVar (UIx 0))))]
-                , AAlt PDefault [GExp                   (XRun (XVar (UIx 0))) ]]
+                [ AAltCase p1       [GExp (go1 (liftX 1 gs) (XRun (XVar (UIx 0))))]
+                , AAltCase PDefault [GExp                   (XRun (XVar (UIx 0))) ]]

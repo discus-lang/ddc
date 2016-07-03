@@ -108,7 +108,8 @@ module DDC.Source.Tetra.Exp
         , Clause,       GClause     (..)
 
           -- *** Case Alternatives
-        , Alt,          GAlt        (..)
+        , AltCase,      GAltCase    (..)
+        , AltMatch,     GAltMatch   (..)
 
           -- *** Patterns
         , Pat,          GPat        (..)

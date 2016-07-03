@@ -39,7 +39,8 @@ module DDC.Source.Tetra.Exp.Generic
         , GXBindVarMT   (..)
         , GExp          (..)
         , GLets         (..)
-        , GAlt          (..)
+        , GAltMatch     (..)
+        , GAltCase      (..)
         , GPat          (..)
         , GClause       (..)
         , GGuardedExp   (..)
@@ -120,7 +121,7 @@ data GExp l
         | XLet      !(GLets l)   !(GExp l)
 
         -- | Case branching.
-        | XCase     !(GExp  l)   ![GAlt l]
+        | XCase     !(GExp  l)   ![GAltCase l]
 
         -- | Type cast.
         | XCast     !(GCast l)   !(GExp l)
@@ -147,6 +148,13 @@ data GExp l
         -- | Use of an infix operator as a plain variable, like in (+) 1 2.
         --   INVARIANT: only appears in the list of an XDefix node.
         | XInfixVar !(GXAnnot l) String
+
+        -- | Match expression with default.
+        --   Similar to a case expression, except that if an alternative
+        --   fails then we try the next one instead of failing.
+        --   If none of the alternatives succeeds then the overall value
+        --   is the value of the default expression.
+        | XMatch    !(GXAnnot l) ![GAltMatch l] (GExp l)
 
 
 -- | Possibly recursive bindings.
@@ -182,9 +190,18 @@ data GClause l
         | SLet   !(GXAnnot l) !(GXBindVarMT l) ![GPat l]  ![GGuardedExp l]
 
 
--- | Case alternatives.
-data GAlt l
-        = AAlt   !(GPat l) ![GGuardedExp l]
+-- | Case alternative.
+--   If the pattern matches then bind the variables then enter
+--   the guarded expression.
+data GAltCase l
+        = AAltCase   !(GPat l) ![GGuardedExp l]
+
+
+-- | Match alternative.
+--   This is like a case alternative except that the match expression
+--   does not give us a head pattern.
+data GAltMatch l
+        = AAltMatch  ![GGuardedExp l]
 
 
 -- | Patterns.
@@ -266,7 +283,8 @@ type ShowLanguage l
 deriving instance ShowLanguage l => Show (GExp        l)
 deriving instance ShowLanguage l => Show (GLets       l)
 deriving instance ShowLanguage l => Show (GClause     l)
-deriving instance ShowLanguage l => Show (GAlt        l)
+deriving instance ShowLanguage l => Show (GAltCase    l)
+deriving instance ShowLanguage l => Show (GAltMatch   l)
 deriving instance ShowLanguage l => Show (GGuardedExp l)
 deriving instance ShowLanguage l => Show (GGuard      l)
 deriving instance ShowLanguage l => Show (GPat        l)

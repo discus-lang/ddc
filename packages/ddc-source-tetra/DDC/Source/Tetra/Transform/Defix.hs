@@ -84,6 +84,8 @@ instance Defix GExp l where
                 Just def -> return (fixDefExp def a)
                 Nothing  -> Left $ ErrorNoInfixDef a str
 
+        XMatch a gs x   -> liftM2 (XMatch a) (mapM down gs) (down x)
+
 
 instance Defix GLets l where
  defix table lts
@@ -109,11 +111,18 @@ instance Defix GClause l where
         SLet a b ps gs  -> liftM (SLet a b ps) (mapM down gs)
 
 
-instance Defix GAlt l where
+instance Defix GAltCase l where
  defix table aa
   = let down = defix table
     in case aa of
-        AAlt p x        -> liftM (AAlt p) (mapM down x)
+        AAltCase p x    -> liftM (AAltCase p) (mapM down x)
+
+
+instance Defix GAltMatch l where
+ defix table aa
+  = let down = defix table
+    in case aa of
+        AAltMatch gs    -> liftM AAltMatch (mapM down gs)
 
 
 instance Defix GGuardedExp l where

@@ -416,13 +416,13 @@ toCoreX a xx
          -> C.XWitness  <$> pure a  <*> toCoreW a w
 
         -- These shouldn't exist in the desugared source tetra code.
-        S.XDefix{}      -> error "ddc-source-tetra.convert: error" 
-                -- Left $ ErrorConvertCannotConvertSugarExp xx
-        S.XInfixOp{}    -> error "ddc-source-tetra.convert: error" 
-                -- Left $ ErrorConvertCannotConvertSugarExp xx
-        S.XInfixVar{}   -> error "ddc-source-tetra.convert: error" 
-                -- Left $ ErrorConvertCannotConvertSugarExp xx
+        S.XDefix{}      -> Left $ ErrorConvertCannotConvertSugarExp xx
 
+        S.XInfixOp{}    -> Left $ ErrorConvertCannotConvertSugarExp xx
+
+        S.XInfixVar{}   -> Left $ ErrorConvertCannotConvertSugarExp xx
+
+        S.XMatch{}      -> Left $ ErrorConvertCannotConvertSugarExp xx
 
 -- Lets -------------------------------------------------------------------------------------------
 toCoreLts :: SP -> S.Lets -> ConvertM S.Source (C.Lets SP C.Name)
@@ -473,8 +473,8 @@ toCoreC a cc
 
 
 -- Alt --------------------------------------------------------------------------------------------
-toCoreA  :: SP -> S.Alt -> ConvertM S.Source (C.Alt SP C.Name)
-toCoreA sp (S.AAlt w gxs)
+toCoreA  :: SP -> S.AltCase -> ConvertM S.Source (C.Alt SP C.Name)
+toCoreA sp (S.AAltCase w gxs)
  = C.AAlt <$> toCoreP w
           <*> (toCoreX sp $ S.desugarGuards gxs 
                           $ S.makeXErrorDefault

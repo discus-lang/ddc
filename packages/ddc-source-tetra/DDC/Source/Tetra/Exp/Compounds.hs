@@ -126,6 +126,8 @@ takeAnnotOfExp xx
         XDefix    a _   -> Just a
         XInfixOp  a _   -> Just a
         XInfixVar a _   -> Just a
+        XMatch    a _ _ -> Just a
+        
 
 firstJust = listToMaybe . catMaybes
 

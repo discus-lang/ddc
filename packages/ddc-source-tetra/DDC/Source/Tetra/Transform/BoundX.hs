@@ -82,6 +82,7 @@ downX l f d xx
         XDefix    a xs  -> XDefix    a (map (downX l f d) xs)
         XInfixOp  a x   -> XInfixOp  a x
         XInfixVar a x   -> XInfixVar a x
+        XMatch   a gs x -> XMatch    a (map (downMA l f d) gs) (downX l f d x)
 
 
 ---------------------------------------------------------------------------------------------------
@@ -95,17 +96,25 @@ downCL l f d cc
 
 
 ---------------------------------------------------------------------------------------------------
-instance HasAnonBind l => MapBoundX GAlt l where
+instance HasAnonBind l => MapBoundX GAltCase l where
  mapBoundAtDepthX = downA
 
-downA l f d (AAlt p gxs)
+downA l f d (AAltCase p gxs)
   = case p of
         PDefault 
-         -> AAlt PDefault (map (downGX l f d)  gxs)
+         -> AAltCase PDefault (map (downGX l f d)  gxs)
 
         PData _ bs 
          -> let d' = d + countBAnonsB l bs
-            in  AAlt p    (map (downGX l f d') gxs)
+            in  AAltCase p    (map (downGX l f d') gxs)
+
+
+---------------------------------------------------------------------------------------------------
+instance HasAnonBind l => MapBoundX GAltMatch l where
+ mapBoundAtDepthX = downMA
+
+downMA l f d (AAltMatch gxs)
+  = AAltMatch (map (downGX l f d) gxs)
 
 
 ---------------------------------------------------------------------------------------------------
@@ -120,7 +129,6 @@ downGX l f d gx
 
         GExp x  
          -> GExp   (downX l f d x)
-
 
 ---------------------------------------------------------------------------------------------------
 instance HasAnonBind l => MapBoundX GGuard l where

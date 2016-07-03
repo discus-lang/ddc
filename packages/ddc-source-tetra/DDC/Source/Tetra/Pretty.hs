@@ -218,6 +218,14 @@ instance PrettyLanguage l => Pretty (GExp l) where
         XInfixVar _ str
          -> parens $ text "INFIXVAR" <+> text "\"" <> text str <> text "\""
 
+        XMatch _ alts xDefault
+         -> pprParen' (d > 2)
+         $  (nest 2 $ text "match" <+> lbrace <> line
+                <> (vcat $ punctuate semi $ map ppr alts))
+         <> line
+         <> rbrace
+         <+> text "else" <+> pprPrec 10 xDefault
+
 
 -- Lets -------------------------------------------------------------------------------------------
 instance PrettyLanguage l => Pretty (GLets l) where
@@ -284,10 +292,16 @@ instance PrettyLanguage l => Pretty (GClause l) where
                 <>  nest 2 (line <> vcat (map (pprGuardedExp "=") gxs))
 
 
--- Alt --------------------------------------------------------------------------------------------
-instance PrettyLanguage l => Pretty (GAlt l) where
- ppr (AAlt p gxs)
+-- AltCase ----------------------------------------------------------------------------------------
+instance PrettyLanguage l => Pretty (GAltCase l) where
+ ppr (AAltCase p gxs)
   =  ppr p <> nest 2 (line <> vcat (map (pprGuardedExp "->") gxs))
+
+
+-- AltMatch ---------------------------------------------------------------------------------------
+instance PrettyLanguage l => Pretty (GAltMatch l) where
+ ppr (AAltMatch gs)
+  = vcat $ punctuate comma (map (pprGuardedExp "=") gs)
 
 
 -- Pat --------------------------------------------------------------------------------------------

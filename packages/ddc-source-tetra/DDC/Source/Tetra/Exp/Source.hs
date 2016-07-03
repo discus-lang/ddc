@@ -60,7 +60,8 @@ module DDC.Source.Tetra.Exp.Source
         , Exp,          GExp        (..)
         , Lets,         GLets       (..)
         , Clause,       GClause     (..)
-        , Alt,          GAlt        (..)
+        , AltMatch,     GAltMatch   (..)
+        , AltCase,      GAltCase    (..)
         , Pat,          GPat        (..)
         , GuardedExp,   GGuardedExp (..)
         , Guard,        GGuard      (..)
@@ -133,7 +134,8 @@ type BindVarMT  = GXBindVarMT Source
 type Exp        = GExp        Source
 type Lets       = GLets       Source
 type Clause     = GClause     Source
-type Alt        = GAlt        Source
+type AltCase    = GAltCase    Source
+type AltMatch   = GAltMatch   Source
 type Pat        = GPat        Source
 type GuardedExp = GGuardedExp Source
 type Guard      = GGuard      Source

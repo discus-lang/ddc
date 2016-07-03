@@ -99,7 +99,7 @@ pExp
         x       <- pExp
         pTok KOf 
         pTok KBraceBra
-        alts    <- P.sepEndBy1 pAlt (pTok KSemiColon)
+        alts    <- P.sepEndBy1 pAltCase (pTok KSemiColon)
         pTok KBraceKet
         return  $ XAnnot sp $ XCase x alts
 
@@ -120,8 +120,8 @@ pExp
         pTok KElse
         x3      <- pExp 
         return  $ XAnnot sp $ XCase x1 
-                        [ AAlt PTrue    [GExp x2]
-                        , AAlt PDefault [GExp x3]]
+                        [ AAltCase PTrue    [GExp x2]
+                        , AAltCase PDefault [GExp x3]]
 
         -- weakeff [Type] in Exp
  , do   sp      <- pTokSP KWeakEff
@@ -265,18 +265,18 @@ pExpAtomSP
 
 -- Alternatives -----------------------------------------------------------------------------------
 -- Case alternatives.
-pAlt :: Parser Alt
-pAlt
+pAltCase :: Parser AltCase
+pAltCase
  = do   p       <- pPat
         P.choice
          [ do   -- Desugar case guards while we're here.
                 spgxs     <- P.many1 (pGuardedExpSP (pTokSP KArrowDash))
                 let gxs  = map snd spgxs
-                return  $ AAlt p gxs 
+                return  $ AAltCase p gxs 
                 
          , do   pTok KArrowDash
                 x       <- pExp
-                return  $ AAlt p [GExp x] ]
+                return  $ AAltCase p [GExp x] ]
 
 
 -- Patterns.
@@ -574,8 +574,8 @@ makeStmts ss
         StmtMatch sp p x1 x2 : rest
          | Just x3      <- makeStmts rest
          -> Just $ XAnnot sp $ XCase x1 
-                 [ AAlt p        [GExp x3]
-                 , AAlt PDefault [GExp x2] ]
+                 [ AAltCase p        [GExp x3]
+                 , AAltCase PDefault [GExp x2] ]
 
         _ -> Nothing
 

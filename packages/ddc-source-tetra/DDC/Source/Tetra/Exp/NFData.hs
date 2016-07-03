@@ -30,6 +30,7 @@ instance NFDataLanguage l => NFData (GExp l) where
         XDefix    a xs          -> rnf a   `seq` rnf xs
         XInfixOp  a s           -> rnf a   `seq` rnf s
         XInfixVar a s           -> rnf a   `seq` rnf s
+        XMatch    a as x        -> rnf a   `seq` rnf as `seq` rnf x
 
 
 instance NFDataLanguage l => NFData (GXBindVarMT l) where
@@ -53,10 +54,16 @@ instance NFDataLanguage l => NFData (GLets l) where
         LGroup cs               -> rnf cs
 
 
-instance NFDataLanguage l => NFData (GAlt l) where
+instance NFDataLanguage l => NFData (GAltCase l) where
  rnf aa
   = case aa of
-        AAlt w gxs              -> rnf w `seq` rnf gxs
+        AAltCase w gxs          -> rnf w `seq` rnf gxs
+
+
+instance NFDataLanguage l => NFData (GAltMatch l) where
+ rnf aa
+  = case aa of
+        AAltMatch gs            -> rnf gs
 
 
 instance NFDataLanguage l => NFData (GPat l) where

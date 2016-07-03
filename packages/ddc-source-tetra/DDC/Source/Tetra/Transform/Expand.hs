@@ -190,21 +190,33 @@ downX a env xx
         XCast  c x      -> XCast  c (downX a env x)
         XType{}         -> xx
         XWitness{}      -> xx
+
         XDefix a' xs    -> XDefix a' (map (downX a' env) xs)
         XInfixOp{}      -> xx
         XInfixVar{}     -> xx
 
+        XMatch a' as x  -> XMatch a' (map (downMA a' env) as) (downX a' env x)
+
 
 ---------------------------------------------------------------------------------------------------
-instance Expand Alt where
+instance Expand AltCase where
  expand = downA
 
 downA a env alt
   = case alt of
-        AAlt p gsx
+        AAltCase p gsx
          -> let env'    = extendPat p env
                 gsx'    = map (expand a env') gsx
-            in  AAlt p gsx'
+            in  AAltCase p gsx'
+
+
+---------------------------------------------------------------------------------------------------
+instance Expand AltMatch where
+ expand = downMA
+
+downMA a env alt
+  = case alt of
+        AAltMatch gsx   -> AAltMatch (map (downGX a env) gsx)
 
 
 ---------------------------------------------------------------------------------------------------
