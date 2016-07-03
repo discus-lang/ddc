@@ -110,7 +110,7 @@ letrec {
     = Λ(a : Data).
       λ(def : a).λ(xx : List a).
       case xx of {
-        Cons (x : a) (_ : List a) 
+        Cons (x : a) (^ : List a) 
          -> x;
         _ 
          -> def

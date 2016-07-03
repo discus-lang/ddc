@@ -544,7 +544,26 @@ toCoreP pp
          -> error "ddc-source-tetra: cannot convert PVar pattern"
 
         S.PData dc bs
-         -> C.PData <$> toCoreDC dc <*> (sequence $ fmap toCoreB bs)
+         -> C.PData <$> toCoreDC dc <*> (sequence $ fmap toCorePasB bs)
+
+
+-- | Convert a pattern to a core binder.
+--   Only default and var patterns are supported,
+--   nested patterns need to have been eliminated by the desugarer.
+toCorePasB :: S.Pat -> ConvertM a (C.Bind C.Name)
+toCorePasB pp
+ = let  hole = C.TVar (C.UName C.NameHole)
+   in   case pp of
+         S.PDefault
+          -> pure $ C.BAnon hole
+
+         S.PVar b
+          -> do b'      <- toCoreB b
+                return  b'
+
+         S.PData{}
+          -> error $  "ddc-source-tetra: cannot convert nested pattern"
+                  ++ Text.ppShow pp
 
 
 -- DaCon ------------------------------------------------------------------------------------------

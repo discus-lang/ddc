@@ -17,6 +17,8 @@ export  { singleton;    replicate
         ; filter; filterS
         ; any }
 import  Data.Numeric.Nat
+import  Data.Numeric.Bool
+import  Data.Tuple
 where
 
 -- | Standard Cons-lists.
@@ -140,6 +142,14 @@ forS (xx: List a) (f: a -> S e Unit): S e Unit
 -- Zips -----------------------------------------------------------------------
 zipWith (f: a -> b -> c) 
         (xx: List a) (yy: List b): List c
+{-
+ = case T2 xx yy of
+        T2 Nil _                -> Nil
+        T2 (Cons x xs) Nil      -> Nil
+        T2 (Cons x xs) (Cons y ys)
+         -> Cons (f x y) (zipWith f xs ys)
+-}
+
  = case xx of
         Nil     -> Nil
         Cons x xs
@@ -148,7 +158,6 @@ zipWith (f: a -> b -> c)
                  -> Cons (f x y) (zipWith f xs ys)
 
                 Nil -> Nil
-
 
 zipWithS (f: a -> b -> S e c) 
          (xx: List a) (yy: List b): S e (List c)

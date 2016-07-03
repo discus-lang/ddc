@@ -266,7 +266,7 @@ extendPat ww env
  = case ww of
         PDefault        -> env
         PVar  b         -> Env.union  env (Env.singletonDaVar' b) 
-        PData _ bs      -> Env.unions (env : map Env.singletonDaVar' bs)
+        PData{}         -> env
 
 
 extendParam :: Param -> Env -> Env

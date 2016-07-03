@@ -108,8 +108,8 @@ downA l f d (AAltCase p gxs)
          -> let d' = d + countBAnonsB l [b]
             in  AAltCase p (map (downGX l f d') gxs)
 
-        PData _ bs 
-         -> let d' = d + countBAnonsB l bs
+        PData _ ps
+         -> let d' = d + (sum $ map (countBAnonsP l) ps)
             in  AAltCase p (map (downGX l f d') gxs)
 
 
@@ -229,7 +229,7 @@ countBAnonsG l g
 countBAnonsP :: HasAnonBind l => l -> GPat l -> Int
 countBAnonsP l p
  = case p of
-        PData _  bs -> countBAnonsB l bs
+        PData _  ps -> sum $ map (countBAnonsP l) ps
         PVar  b     -> countBAnonsB l [b]
         PDefault    -> 0
 

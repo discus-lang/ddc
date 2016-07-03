@@ -38,7 +38,7 @@ streamOfList (xx: List a): Stream (List a) a
 
 
 -- | Convert a stream to a list.
-listOfStream  (MkStream f s0: Stream s a): List a
+listOfStream (MkStream f s0: Stream s a): List a
  = case f s0 of
         Yield x s1      -> Cons x (listOfStream (MkStream f s1))
         Skip  s1        -> listOfStream (MkStream f s1)
@@ -102,13 +102,14 @@ scons   (x: a) (MkStream stepA sA0: Stream s a)
         : Stream (Tup2 s Bool) a
  = MkStream stepA2 (T2 sA0 True)
  where  
-        stepA2 (T2 sA1 b)
-         = case b of
-                True    -> Yield x (T2 sA1 False)
-                False   -> case stepA sA1 of
-                                   Yield y sA2 -> Yield y (T2 sA2 False)
-                                   Skip  sA2   -> Skip    (T2 sA2 False)
-                                   Done        -> Done
+        stepA2 (T2 sA1 True)
+         = Yield x (T2 sA1 False)
+
+        stepA2 (T2 sA1 False)
+         = case stepA sA1 of
+                Yield y sA2 -> Yield y (T2 sA2 False)
+                Skip  sA2   -> Skip    (T2 sA2 False)
+                Done        -> Done
 
 
 -- Maps -----------------------------------------------------------------------
@@ -194,10 +195,10 @@ stakeWhile
          = case stepA q of
                 Yield x sA1     
                  | p x          -> Yield x sA1
-                 | otherwise    -> Done
+                 | otherwise    -> Done [s] [a]
 
                 Skip sA1        -> Skip    sA1
-                Done            -> Done
+                Done            -> Done [s] [a]
 
 
 -- | Take elements from a stream that match the given predicate.
@@ -213,4 +214,4 @@ sfilter (p: a -> Bool)
                  | otherwise    -> Skip    sA1
 
                 Skip sA1        -> Skip    sA1
-                Done            -> Done
+                Done            -> Done [s] [a]

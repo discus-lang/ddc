@@ -321,11 +321,14 @@ instance PrettyLanguage l => Pretty (GParam l) where
 
 -- Pat --------------------------------------------------------------------------------------------
 instance PrettyLanguage l => Pretty (GPat l) where
- ppr pp
+ pprPrec d pp
   = case pp of
         PDefault        -> text "_"
         PVar  b         -> ppr b
-        PData u bs      -> ppr u <+> sep (map ppr bs)
+        PData u []      -> ppr u
+        PData u ps
+         -> pprParen' (d > 1) 
+         $  ppr u <+> sep (map (pprPrec 2) ps)
 
 
 -- GuardedExp -------------------------------------------------------------------------------------

@@ -40,7 +40,7 @@ pExp
                 return  $ XAnnot sp $ XLet (LGroup cls) xx
 
          , do   return  xx ]
-         
+
 
 -- | Parse a Tetra Source language expression.
 pExpFront :: Parser Exp
@@ -308,8 +308,27 @@ pAltCase
 pPat :: Parser Pat
 pPat
  = P.choice
- [      -- Wildcard
-   do   pTok KUnderscore
+ [  -- Con Bind Bind ...
+    do  nCon    <- pDaConBoundName 
+        ps      <- P.many pPatAtom
+        return  $ PData (DaConBound nCon) ps
+
+ , do   p       <- pPatAtom
+        return  p
+ ]
+
+
+pPatAtom :: Parser Pat
+pPatAtom
+ = P.choice
+ [ do   -- ( PAT )
+        pTok KRoundBra
+        p       <- pPat
+        pTok KRoundKet
+        return  $ p
+
+        -- Wildcard
+ , do   pTok KUnderscore
         return  $ PDefault
 
         -- Var
@@ -320,23 +339,13 @@ pPat
  , do   nLit    <- pDaConBoundLit
         return  $ PData (DaConPrim nLit (TBot S.KData)) []
 
+        -- Named algebraic constructors.
+ , do   nCon    <- pDaConBoundName
+        return  $ PData (DaConBound nCon) []
+
         -- 'Unit'
  , do   pTok KDaConUnit
         return  $ PData  dcUnit []
-
-        -- Con Bind Bind ...
- , do   nCon    <- pDaConBoundName 
-        bs      <- P.many pBindPat
-        return  $ PData (DaConBound nCon) bs]
-
-
--- Binds in patterns can have no type annotation.
-pBindPat :: Parser Bind
-pBindPat 
- = P.choice
-        -- Plain binder.
- [ do   b       <- pBind
-        return  b
  ]
 
 

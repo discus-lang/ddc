@@ -226,6 +226,7 @@ letrec {
       case getTag [rT] xx of {
         TAG0#  
          -> let x = getBoxed [rT] [rT] xx 0# in
+            let x0 = getBoxed [rT] [rT] xx 1# in
             x;
         _ 
          -> let ^ = allocSmall [rT] TAG0# 8# in
@@ -246,6 +247,7 @@ letrec {
       case getTag [rT] xx of {
         TAG0#  
          -> let x = getBoxed [rT] [rT] xx 0# in
+            let x0 = getBoxed [rT] [rT] xx 1# in
             x;
         _ 
          -> def
@@ -293,6 +295,7 @@ letrec {
       case getTag [rT] xx of {
         TAG0#  
          -> let x = getBoxed [rT] [rT] xx 0# in
+            let x0 = getBoxed [rT] [rT] xx 1# in
             x;
         _ 
          -> def
@@ -300,27 +303,27 @@ letrec {
   
   foo : Ptr# rT Obj -> Ptr# rT Obj
     = λ(_ : Ptr# rT Obj).
-      let x0
-            = let ^ = allocBoxed [rT] TAG1# 0# in
-              ^0 in
-      let x2
-            = let ^ = allocSmall [rT] TAG0# 8# in
-              let ^ = payloadSmall [rT] ^0 in
-              let _
-                    = poke# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# 1# in
-              ^1 in
       let x1
-            = let ^ = allocBoxed [rT] TAG0# 2# in
-              let _ = setBoxed [rT] [rT] ^0 0# x2 in
-              let _ = setBoxed [rT] [rT] ^0 1# x0 in
+            = let ^ = allocBoxed [rT] TAG1# 0# in
               ^0 in
       let x3
             = let ^ = allocSmall [rT] TAG0# 8# in
               let ^ = payloadSmall [rT] ^0 in
               let _
+                    = poke# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# 1# in
+              ^1 in
+      let x2
+            = let ^ = allocBoxed [rT] TAG0# 2# in
+              let _ = setBoxed [rT] [rT] ^0 0# x3 in
+              let _ = setBoxed [rT] [rT] ^0 1# x1 in
+              ^0 in
+      let x4
+            = let ^ = allocSmall [rT] TAG0# 8# in
+              let ^ = payloadSmall [rT] ^0 in
+              let _
                     = poke# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# 0# in
               ^1 in
-      head [rT] x3 x1
+      head [rT] x4 x2
 }
 
 
@@ -335,6 +338,7 @@ letrec {
       case getTag [rT] xx of {
         TAG0#  
          -> let x = getBoxed [rT] [rT] xx 0# in
+            let x0 = getBoxed [rT] [rT] xx 1# in
             x;
         _ 
          -> def
@@ -343,20 +347,20 @@ letrec {
   foo : [r : Region].Ptr# rT Obj -> Ptr# rT Obj
     = Λ(r : Region).
       λ(_ : Ptr# rT Obj).
-      let x0
-            = let ^ = allocBoxed [rT] TAG0# 0# in
-              ^0 in
       let x1
-            = let ^ = allocBoxed [rT] TAG1# 0# in
+            = let ^ = allocBoxed [rT] TAG0# 0# in
               ^0 in
       let x2
             = let ^ = allocBoxed [rT] TAG1# 0# in
               ^0 in
       let x3
-            = let ^ = allocBoxed [rT] TAG0# 2# in
-              let _ = setBoxed [rT] [rT] ^0 0# x1 in
-              let _ = setBoxed [rT] [rT] ^0 1# x2 in
+            = let ^ = allocBoxed [rT] TAG1# 0# in
               ^0 in
-      head [rT] x0 x3
+      let x4
+            = let ^ = allocBoxed [rT] TAG0# 2# in
+              let _ = setBoxed [rT] [rT] ^0 0# x2 in
+              let _ = setBoxed [rT] [rT] ^0 1# x3 in
+              ^0 in
+      head [rT] x1 x4
 }
 

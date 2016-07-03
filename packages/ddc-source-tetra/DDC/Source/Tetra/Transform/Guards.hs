@@ -75,7 +75,7 @@ desugarCl _sp cc
                 xBody_rec       <- desugarX sp xBody_inner
 
                 -- Strip out patterns in the parameter list and add them as new guards
-                (ps', gx')      <- stripPatterns ps xBody_rec
+                (ps', gx')      <- stripParams ps (GExp xBody_rec)
 
                 -- Desugar the new guards that we just produced.
                 let xBody_flat  =  desugarGXs [gx'] xError
@@ -83,36 +83,141 @@ desugarCl _sp cc
                 return $ SLet sp mt ps' [GExp xBody_flat]
 
 
+-- | Desugar a clause group
+desugarClGroup :: SP -> [Clause] -> S [Clause]
+desugarClGroup _sp0 cls0
+ = loop cls0 
+ where
+  loop []
+   =    return []
+
+  -- Skip over signatures.
+  loop (cl@SSig{} : cls) 
+   = do cls'    <- loop cls
+        return  $  cl : cls'
+
+  -- We have a let-clause.
+  loop ( SLet sp1 (XBindVarMT b1 mt1) ps1 gxs1 : cls)
+   = loop cls >>= \cls'
+   -> case cls' of
+
+        -- Consecutive clauses are for the same function.
+        (SLet _sp2 (XBindVarMT b2 _mt2) ps2 [GExp xNext] : clsRest)
+          | b1 == b2
+          -> do  -- Desugar the inner guarded expressions.
+                 let xBody_inner = desugarGXs gxs1 xNext
+
+                 -- Recursively decend into the inner expression.
+                 -- TODO: this will make it quadratic. do the recursion in desugarGXs
+                 xBody_rec   <- desugarX sp1 xBody_inner
+
+                 -- Strip out pattern in the parameter list and add them as new guards.
+                 (ps1', gx') <- stripParams ps1 (GExp xBody_rec)
+
+                 -- Flatten the guards that we've just introduced.
+                 let xBody_flat = desugarGXs [gx'] 
+                                $ joinClauseParams ps1' ps2 xNext
+
+                 return $ SLet sp1 (XBindVarMT b1 mt1) ps1' [GExp xBody_flat]
+                        : clsRest
+
+        -- Consecutive clauses are not for the same function.
+        _ -> do let xError  = makeXErrorDefault
+                                (Text.pack    $ SP.sourcePosSource sp1)
+                                (fromIntegral $ SP.sourcePosLine   sp1)
+
+                -- Desugar the inner guarded expressions.
+                let xBody_inner = desugarGXs gxs1 xError
+
+                -- Recursively decend into the inner expression.
+                -- TODO: this will make it quadratic. do the recursion in desugarGXs
+                xBody_rec   <- desugarX sp1 xBody_inner
+
+                -- Strip out pattern in the parameter list and add them as new guards.
+                (ps1', gx') <- stripParams ps1 (GExp xBody_rec)
+
+                -- Flatten the guards that we've just introduced.
+                let xBody_flat = desugarGXs [gx'] xError
+
+                return  $ SLet sp1 (XBindVarMT b1 mt1) ps1' [GExp xBody_flat]
+                        : cls'
+
+
+joinClauseParams :: [Param] -> [Param] -> Exp -> Exp
+joinClauseParams [] _  xx = xx
+joinClauseParams _  [] xx = xx
+joinClauseParams (p1: ps1) (p2: ps2) xx
+ = case joinClauseParam p1 p2 of
+        Nothing  -> joinClauseParams ps1 ps2 xx
+        Just lts -> XLet lts (joinClauseParams ps1 ps2 xx)
+
+
+joinClauseParam :: Param -> Param -> Maybe Lets
+joinClauseParam p1 p2
+ = case (p1, p2) of
+        (  MValue (PVar (BName n1)) _mt1
+         , MValue (PVar (BName n2)) mt2)
+         |   n1 /= n2
+         ->  Just $ LLet (XBindVarMT (BName n2) mt2) (XVar (UName n1))
+
+         |   otherwise
+         ->  Nothing
+
+        _ -> Nothing
+
+
 -- | Strip out patterns in the given parameter list, 
 --   wrapping the expression with new guards that implement the patterns.
-stripPatterns :: [Param] -> Exp -> S ([Param], GuardedExp)
+stripParams :: [Param] -> GuardedExp -> S ([Param], GuardedExp)
+stripParams [] gx
+ = return ([], gx)
 
-stripPatterns [] x
- = return ([], GExp x)
-
-stripPatterns (p:ps) xBody
+stripParams (p:ps) gxBody
  = case p of
         MType{} 
-         -> do  (ps', gx)       <- stripPatterns ps xBody
+         -> do  (ps', gx) <- stripParams ps gxBody
                 return (p : ps', gx)
 
         MWitness{} 
-         -> do  (ps', gx)       <- stripPatterns ps xBody
+         -> do  (ps', gx) <- stripParams ps gxBody
                 return (p : ps', gx)
 
-        MValue PDefault _mt
-         -> do  (ps', gx)       <- stripPatterns ps xBody
+        MValue PDefault   _mt
+         -> do  (ps', gx) <- stripParams ps gxBody
                 return (p : ps', gx)
 
         MValue (PVar _b) _mt
-         -> do  (ps', gx)       <- stripPatterns ps xBody
+         -> do  (ps', gx) <- stripParams ps gxBody
                 return (p : ps', gx)
 
-        MValue (PData dc bs) mt
-         -> do  (ps', gx)       <- stripPatterns ps xBody
-                (b, u)          <- newVar "p"
-                return  ( MValue (PVar b) mt : ps'
-                        , GGuard (GPat (PData dc bs) (XVar u)) gx)
+        MValue (PData dc psData) mt
+         -> do  (psParam', gxRest) <- stripParams   ps     gxBody
+                (psData',  gxData) <- stripPatterns psData gxRest
+                (b, u)             <- newVar "p"
+                return  ( MValue (PVar b) mt : psParam'
+                        , GGuard (GPat (PData dc psData') (XVar u)) gxData)
+
+
+stripPatterns :: [Pat] -> GuardedExp -> S ([Pat], GuardedExp)
+stripPatterns [] gx
+ = return ([], gx)
+
+stripPatterns (p:ps) gxBody
+ = case p of
+        PDefault
+         -> do  (ps', gx) <- stripPatterns ps gxBody
+                return (p : ps', gx)
+
+        PVar  _b
+         -> do  (ps', gx) <- stripPatterns ps gxBody
+                return (p : ps', gx)
+
+        PData dc psData
+         -> do  (psRest', gxRest) <- stripPatterns ps     gxBody
+                (psData', gxData) <- stripPatterns psData gxRest
+                (b, u)            <- newVar "p"
+                return  ( PVar b : psRest'
+                        , GGuard (GPat (PData dc psData') (XVar u)) gxData)
 
 
 ---------------------------------------------------------------------------------------------------
@@ -128,7 +233,6 @@ desugarX sp xx
         XLAM  b x       -> XLAM b     <$> pure x
         XApp  x1 x2     -> XApp       <$> desugarX   sp x1  <*> desugarX sp x2
         XLet  lts x     -> XLet       <$> desugarLts sp lts <*> desugarX sp x
-        XCase x as      -> XCase      <$> desugarX   sp x   <*> mapM (desugarAC sp) as
         XCast c x       -> XCast c    <$> desugarX   sp x
         XType{}         -> pure xx
         XWitness{}      -> pure xx
@@ -136,12 +240,40 @@ desugarX sp xx
         XInfixOp{}      -> pure xx
         XInfixVar{}     -> pure xx
 
+        XCase xScrut alts
+         | all isSimpleAltCase alts
+         -> do  xScrut' <- desugarX sp xScrut 
+                alts'   <- mapM (desugarAC sp) alts
+                return  $ XCase xScrut' alts'
+
+         | otherwise
+         -> do  xScrut' <- desugarX sp xScrut
+                let xError = makeXErrorDefault
+                                (Text.pack    $ SP.sourcePosSource sp)
+                                (fromIntegral $ SP.sourcePosLine   sp)
+
+                (b, u)     <- newVar "xScrut"
+                let gxsAlt = concat  [ map (GGuard (GPat p (XVar u))) gxs
+                                     | AAltCase p gxs <- alts]
+
+                xFail'     <- desugarX   sp  xError
+                let xMatch =  desugarGXs gxsAlt xFail'
+                pure    $ XLet (LLet (XBindVarMT b Nothing) xScrut')
+                        $ xMatch
+
+
         XMatch sp' as xFail
          -> do  let gxs    =  [gx | AAltMatch gx <- as]
                 xFail'     <- desugarX sp' xFail
                 let xMatch =  desugarGXs   gxs xFail'
                 pure xMatch
 
+
+isSimpleAltCase :: AltCase -> Bool
+isSimpleAltCase aa
+ = case aa of
+        AAltCase _p [GExp _] -> True
+        _                    -> False
 
 ---------------------------------------------------------------------------------------------------
 -- | Desugar some let bindings.
@@ -158,8 +290,7 @@ desugarLts sp lts
 
         LPrivate{}      -> pure lts
 
-        LGroup cs       -> LGroup <$> mapM (desugarCl sp) cs
-
+        LGroup cs       -> LGroup <$> desugarClGroup sp cs
 
 ---------------------------------------------------------------------------------------------------
 -- | Desugar a case alternative.
@@ -169,11 +300,37 @@ desugarAC sp (AAltCase p gxs)
                         (Text.pack    $ SP.sourcePosSource sp)
                         (fromIntegral $ SP.sourcePosLine   sp)
 
-        let x'  =  desugarGXs gxs xError
-        x''     <- desugarX sp x'
+        let x'        =  desugarGXs gxs xError
+        pure $ AAltCase p [GExp x']
 
-        pure $ AAltCase p [GExp x'']
+{-
+wrapGuards :: [Guard] -> GuardedExp -> GuardedExp
+wrapGuards [] gx        = gx
+wrapGuards (g : gs) gx  = GGuard g (wrapGuards gs gx)
 
+
+stripPatsToGuards :: [Pat] -> S ([Pat], [Guard])
+
+stripPatsToGuards []
+ = return ([], [])
+
+stripPatsToGuards (p:ps)
+ = case p of
+        PDefault
+         -> do  (ps', gs) <- stripPatsToGuards ps
+                return (p : ps', gs)
+
+        PVar  _b
+         -> do  (ps', gs) <- stripPatsToGuards ps
+                return (p : ps', gs)
+
+        PData dc psData
+         -> do  (psRest', gsRest) <- stripPatsToGuards ps
+                (psData', gsData) <- stripPatsToGuards psData
+                (b, u)            <- newVar "p"
+                return  (  PVar b : psRest'
+                        , [GPat (PData dc psData') (XVar u)] ++ gsData ++ gsRest )
+-}
 
 ---------------------------------------------------------------------------------------------------
 -- | Desugar some guards to a case-expression.

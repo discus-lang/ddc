@@ -213,7 +213,7 @@ data GPat l
         | PVar   !(GXBindVar l) 
 
         -- | Match a data constructor and bind its arguments.
-        | PData  !(DaCon (GXBoundCon l) (GType l)) ![GXBindVar l]
+        | PData  !(DaCon (GXBoundCon l) (GType l)) ![GPat l]
 
 
 -- | An expression with some guards.
