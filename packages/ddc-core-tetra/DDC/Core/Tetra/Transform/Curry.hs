@@ -8,10 +8,13 @@ import DDC.Core.Tetra.Transform.Curry.Error
 import DDC.Core.Tetra.Prim
 import DDC.Core.Transform.Reannotate
 import DDC.Core.Exp.Annot.AnTEC
+import DDC.Core.Tetra.Profile
 import DDC.Core.Module
 import DDC.Core.Exp.Annot
 import Data.Maybe
 import Data.Map                                 (Map)
+import DDC.Core.Env.EnvT                        (EnvT)
+import qualified DDC.Core.Fragment              as C
 import qualified DDC.Core.Call                  as Call
 import qualified Data.Map.Strict                as Map
 import qualified Data.List                      as List
@@ -28,6 +31,11 @@ curryModule
 
 curryModule mm
  = do
+        -- Extract the top-level environment for types from the module.
+
+        let kenv  = C.profilePrimKinds profile
+        let envt  = moduleEnvT kenv mm
+
         -- Add all the foreign functions to the function map.
         -- We can do a saturated call for these directly.
         callables <- fmap (Map.fromList . catMaybes)
@@ -35,7 +43,7 @@ curryModule mm
                   $  moduleImportValues mm
 
         -- Apply curry transform in the body of the module.
-        xBody'    <- curryBody callables
+        xBody'    <- curryBody envt callables
                   $  moduleBody mm
 
         return  $ mm { moduleBody = xBody' }
@@ -43,11 +51,12 @@ curryModule mm
 
 -- | Manage higher-order functions in a module body.
 curryBody 
-        :: Map Name Callable
+        :: EnvT Name
+        -> Map Name Callable
         -> Exp (AnTEC a Name) Name 
         -> Either Error (Exp () Name)
 
-curryBody callables xx
+curryBody envt callables xx
  = case xx of
         XLet _ (LRec bxs) xBody
          -> do  let (bs, xs) = unzip bxs
@@ -60,24 +69,25 @@ curryBody callables xx
                         = Map.union csSuper callables
 
                 -- Rewrite bindings in the body of the let-expression.
-                xs'      <- mapM (curryX callables') xs
+                xs'      <- mapM (curryX envt callables') xs
                 let bxs' =  zip bs xs'
-                xBody'   <- curryBody callables' xBody
+                xBody'   <- curryBody envt callables' xBody
                 return   $  XLet () (LRec bxs') xBody'
 
         _ ->    return   $ reannotate (const ()) xx
 
 
 -- | Manage function application in an expression.
-curryX  :: Map Name Callable
+curryX  :: EnvT Name
+        -> Map Name Callable
         -> Exp (AnTEC a Name) Name 
         -> Either Error (Exp () Name)
 
-curryX callables xx
- = let down x = curryX callables x
+curryX envt callables xx
+ = let down x = curryX envt callables x
    in case xx of
         XVar  a (UName nF)
-         -> do  result  <- makeCall callables nF (annotType a) []
+         -> do  result  <- makeCall envt callables nF (annotType a) []
                 case result of 
                  Just xx' -> return xx'
                  Nothing  -> return $ XVar () (UName nF)
@@ -86,13 +96,13 @@ curryX callables xx
          ->     return $ XVar () u
 
         XApp  _ x1 x2
-         -> do  result  <- curryX_call callables xx
+         -> do  result  <- curryX_call envt callables xx
                 case result of
                  Just xx' -> return xx'
                  Nothing  -> XApp () <$> down x1 <*> down x2
 
         XCast _ CastRun x1
-         -> do  result  <- curryX_call callables xx
+         -> do  result  <- curryX_call envt callables xx
                 case result of
                  Just xx' -> return xx'
                  Nothing  -> XCast () CastRun    <$> down x1
@@ -103,33 +113,33 @@ curryX callables xx
 
         XLam     _ b xBody   
          -> let callables' = shadowCallables [b] callables
-            in  XLam () b <$> curryX   callables' xBody
+            in  XLam () b <$> curryX   envt callables' xBody
 
         XLAM     _ b xBody
-         ->     XLAM () b <$> curryX   callables  xBody
+         ->     XLAM () b <$> curryX   envt callables  xBody
 
         XLet     _ lts@(LLet b _) xBody
          -> let callables' = shadowCallables [b] callables
-            in  XLet  ()  <$> curryLts callables' lts 
-                          <*> curryX   callables' xBody
+            in  XLet  ()  <$> curryLts envt callables' lts 
+                          <*> curryX   envt callables' xBody
 
         XLet     _ lts@(LRec bxs) xBody
          -> let bs         = map fst bxs
                 callables' = shadowCallables bs callables
-            in  XLet  ()  <$> curryLts callables' lts
-                          <*> curryX   callables' xBody
+            in  XLet  ()  <$> curryLts envt callables' lts
+                          <*> curryX   envt callables' xBody
 
         XLet     _ lts@(LPrivate{}) xBody
-         ->     XLet  ()  <$> curryLts callables  lts
-                          <*> curryX   callables  xBody
+         ->     XLet  ()  <$> curryLts envt callables  lts
+                          <*> curryX   envt callables  xBody
 
         XCase    _ x as
          ->     XCase ()  <$> down x
-                          <*> mapM (curryAlt callables) as
+                          <*> mapM (curryAlt envt callables) as
 
         XCast    _ c xBody
          ->     XCast ()  <$> return (reannotate (const ()) c)
-                          <*> curryX callables xBody
+                          <*> curryX envt callables xBody
 
         XType    _ t
          -> return $ XType    () t
@@ -150,11 +160,12 @@ shadowCallables bs callables
 
 -- | Build a function call for the given application expression.
 curryX_call 
-        :: Map Name Callable
+        :: EnvT Name
+        -> Map Name Callable
         -> Exp (AnTEC a Name) Name 
         -> Either Error (Maybe (Exp () Name))
 
-curryX_call callables xx
+curryX_call envt callables xx
 
  -- If this is a call of a named function then split it into the
  --  functional part and arguments, then work out how to call it.
@@ -162,7 +173,7 @@ curryX_call callables xx
  , XVar aF (UName nF)   <- xF
  , length esArgs  > 0
  = do   esArgs'   <- mapM downElim esArgs
-        makeCall callables nF (annotType aF) esArgs'
+        makeCall envt callables nF (annotType aF) esArgs'
 
  | otherwise
  = return $ Nothing
@@ -174,25 +185,26 @@ curryX_call callables xx
 
                 Call.ElimValue _ x   
                  ->  Call.ElimValue () 
-                 <$> curryX callables x
+                 <$> curryX envt callables x
 
                 Call.ElimRun   _
                  -> return $ Call.ElimRun   ()
 
 
 -- | Manage function application in a let binding.
-curryLts :: Map Name Callable 
+curryLts :: EnvT Name 
+         -> Map Name Callable 
          -> Lets (AnTEC a Name) Name 
          -> Either Error (Lets () Name)
 
-curryLts callables lts
+curryLts envt callables lts
  = case lts of
         LLet b x
-         -> LLet b <$> curryX callables x
+         -> LLet b <$> curryX envt callables x
 
         LRec bxs          
          -> do  let (bs, xs) =  unzip bxs
-                xs'          <- mapM (curryX callables) xs
+                xs'          <- mapM (curryX envt callables) xs
                 return  $ LRec  $ zip bs xs'
 
         LPrivate bs mt ws 
@@ -200,14 +212,15 @@ curryLts callables lts
 
 
 -- | Manage function application in a case alternative.
-curryAlt :: Map Name Callable 
+curryAlt :: EnvT Name
+         -> Map Name Callable 
          -> Alt (AnTEC a Name) Name 
          -> Either Error (Alt () Name)
 
-curryAlt callables alt
+curryAlt envt callables alt
  = case alt of
         AAlt w xBody
          -> let bs         = bindsOfPat w
                 callables' = shadowCallables bs callables
-            in  AAlt w  <$> curryX callables' xBody
+            in  AAlt w  <$> curryX envt callables' xBody
 

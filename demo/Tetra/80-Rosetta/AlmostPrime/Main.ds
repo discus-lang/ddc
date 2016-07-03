@@ -25,8 +25,7 @@ primes (c0: Nat): Stream Nat Nat
 -- | Check if a number is prime.
 --   Use Wilson's theorem to check for primality, being sure to take
 --   the mod of the running sum to avoid integer overflow.
-isPrime (n: Nat): Bool#         
-                -- TODO: Tetra -> Salt conversion fails if we set this to 'Bool'.
+isPrime (n: Nat): Bool
  =  foldl (λacc x: Nat. rem (x * acc) n) 1 (enumFromTo 1 (n - 1))
  == (n - 1)
 

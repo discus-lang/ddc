@@ -11,22 +11,22 @@ import DDC.Core.Exp
 import DDC.Type.Exp.Simple.Equiv
 import Control.Monad
 import Data.Map                                 (Map)
+import DDC.Core.Env.EnvT                        (EnvT)
 import qualified DDC.Core.Call                  as Call
 import qualified Data.Map                       as Map
-import qualified DDC.Core.Env.EnvT              as EnvT
 
 
 -- | Call a thing, depending on what it is.
 --   Decide how to call the functional thing, depending on 
 --   whether its a super, foreign imports, or thunk.
-makeCall 
-        :: Map Name Callable    -- ^ Types and arities of functions in the environment.
-        -> Name                 -- ^ Name of function to call. 
-        -> Type Name            -- ^ Type of function to call.
-        -> [Call.Elim () Name]  -- ^ Eliminators for function call.
-        -> Either Error (Maybe (Exp () Name))
+makeCall :: EnvT Name
+         -> Map  Name Callable   -- ^ Types and arities of functions in the environment.
+         -> Name                 -- ^ Name of function to call. 
+         -> Type Name            -- ^ Type of function to call.
+         -> [Call.Elim () Name]  -- ^ Eliminators for function call.
+         -> Either Error (Maybe (Exp () Name))
 
-makeCall callables nFun tFun esArgs
+makeCall envt callables nFun tFun esArgs
 
  -- Call of a local or imported super.
  | Just (tFunTable, csF)
@@ -37,7 +37,7 @@ makeCall callables nFun tFun esArgs
         -- Internal sanity check: the type annotation on the function
         -- to call should match the type we have for it in the callables
         -- table. If not then we're bugged.
-        when (not $ equivT EnvT.empty tFun tFunTable)
+        when (not $ equivT envt tFun tFunTable)
          $ Left $ ErrorSuperTypeMismatch nFun tFun tFunTable
 
         case Call.dischargeConsWithElims csF esArgs of
