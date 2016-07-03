@@ -71,7 +71,7 @@ instance PrettyLanguage l => Pretty (GXBindVarMT l) where
  ppr (XBindVarMT b mt)
   = case mt of
         Nothing         -> ppr b
-        Just _t         -> ppr b
+        Just  _t        -> ppr b
 
 
 -- Type -------------------------------------------------------------------------------------------
@@ -88,7 +88,6 @@ instance PrettyLanguage l => Pretty (GType l) where
 instance PrettyLanguage l => Pretty (GTyCon l) where
  ppr tc
   = pprRawC tc
-
 
 
 -- Module -----------------------------------------------------------------------------------------
@@ -126,7 +125,9 @@ instance PrettyLanguage l => Pretty (Module l) where
 
 -- Top --------------------------------------------------------------------------------------------
 instance PrettyLanguage l => Pretty (Top l) where
- ppr (TopClause _ c) = ppr c
+ ppr (TopClause _ c) 
+  =  ppr c
+  <> line
 
  ppr (TopData _ (DataDef name params ctors))
   = (text "data"
@@ -144,6 +145,7 @@ instance PrettyLanguage l => Pretty (Top l) where
                         | ctor       <- ctors ])
   <> line
   <> rbrace
+  <> line
 
  ppr (TopType _ b t)
   = text "type" <+> ppr b <+> text "=" <+> ppr t
@@ -274,7 +276,11 @@ instance PrettyLanguage l => Pretty (GLets l) where
                 <+> braces (cat $ punctuate (text "; ") $ map ppr bsWit)
 
         LGroup cs
-         -> vcat $ map ppr cs
+         ->   text "letgroup" 
+                <+> nest 2 (lbrace 
+                                <> line 
+                                <> (vcat $ map ppr cs)
+                                <> line <> rbrace)
 
 
 -- Clause -----------------------------------------------------------------------------------------
@@ -344,7 +350,17 @@ pprGuardedExp sTerm gx
         
 
 -- Guard ------------------------------------------------------------------------------------------
-instance Pretty (GGuard l) where
+instance PrettyLanguage l => Pretty (GGuard l) where
+ ppr gg
+  = case gg of
+        GPat p w
+         -> ppr p <+> text "<-" <+> ppr w
+
+        GPred p
+         -> ppr p
+
+        GDefault
+         -> text "otherwise"
 
 
 -- AltCase ----------------------------------------------------------------------------------------

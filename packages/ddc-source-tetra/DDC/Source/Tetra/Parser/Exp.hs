@@ -433,12 +433,12 @@ pClauseSP
                         gxs     <- pTermGuardedExps (pTokSP KEquals)
 
                         let t   = funTypeOfParams     ps tBody
-                        return  (sp, SLet sp (XBindVarMT b (Just t)) [] gxs)
+                        return  (sp, SLet sp (XBindVarMT b (Just t))  ps gxs)
 
                         -- Function syntax with no return type.
                         -- We can't make the type sig for the let-bound variable.
                  , do   gxs     <- pTermGuardedExps (pTokSP KEquals)
-                        return  (sp0, SLet sp0 (XBindVarMT b Nothing) [] gxs)
+                        return  (sp0, SLet sp0 (XBindVarMT b Nothing) ps gxs)
                  ]
          ]
 
