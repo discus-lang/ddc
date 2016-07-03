@@ -56,6 +56,7 @@ desugarTop tt
 
 
 ---------------------------------------------------------------------------------------------------
+-- | Desugar a clause.
 desugarCl :: SP -> Clause -> S Clause
 desugarCl _sp cc
  = case cc of
@@ -67,10 +68,51 @@ desugarCl _sp cc
                                 (Text.pack    $ SP.sourcePosSource sp)
                                 (fromIntegral $ SP.sourcePosLine   sp)
 
-                let xBody   =  desugarGXs gxs xError
-                xBody'      <- desugarX sp xBody
+                -- Desugar the inner guarded expressions.
+                let xBody_inner =  desugarGXs gxs xError
 
-                return $ SLet sp mt ps [GExp xBody']
+                -- Recursively decend into the inner expression.
+                xBody_rec       <- desugarX sp xBody_inner
+
+                -- Strip out patterns in the parameter list and add them as new guards
+                (ps', gx')      <- stripPatterns ps xBody_rec
+
+                -- Desugar the new guards that we just produced.
+                let xBody_flat  =  desugarGXs [gx'] xError
+
+                return $ SLet sp mt ps' [GExp xBody_flat]
+
+
+-- | Strip out patterns in the given parameter list, 
+--   wrapping the expression with new guards that implement the patterns.
+stripPatterns :: [Param] -> Exp -> S ([Param], GuardedExp)
+
+stripPatterns [] x
+ = return ([], GExp x)
+
+stripPatterns (p:ps) xBody
+ = case p of
+        MType{} 
+         -> do  (ps', gx)       <- stripPatterns ps xBody
+                return (p : ps', gx)
+
+        MWitness{} 
+         -> do  (ps', gx)       <- stripPatterns ps xBody
+                return (p : ps', gx)
+
+        MValue PDefault _mt
+         -> do  (ps', gx)       <- stripPatterns ps xBody
+                return (p : ps', gx)
+
+        MValue (PVar _b) _mt
+         -> do  (ps', gx)       <- stripPatterns ps xBody
+                return (p : ps', gx)
+
+        MValue (PData dc bs) mt
+         -> do  (ps', gx)       <- stripPatterns ps xBody
+                (b, u)          <- newVar "p"
+                return  ( MValue (PVar b) mt : ps'
+                        , GGuard (GPat (PData dc bs) (XVar u)) gx)
 
 
 ---------------------------------------------------------------------------------------------------
@@ -123,12 +165,14 @@ desugarLts sp lts
 -- | Desugar a case alternative.
 desugarAC :: SP -> AltCase -> S AltCase
 desugarAC sp (AAltCase p gxs)
- = let  
-        xError  = makeXErrorDefault
+ = do   let xError  = makeXErrorDefault
                         (Text.pack    $ SP.sourcePosSource sp)
                         (fromIntegral $ SP.sourcePosLine   sp)
 
-   in   pure $ AAltCase p [GExp $ desugarGXs gxs xError]
+        let x'  =  desugarGXs gxs xError
+        x''     <- desugarX sp x'
+
+        pure $ AAltCase p [GExp x'']
 
 
 ---------------------------------------------------------------------------------------------------

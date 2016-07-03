@@ -20,8 +20,8 @@ data Tup2 (a b : Data) where
 
 
 -- | Convert a list to a stream.
-streamOfList (xx : List a) : Stream (List a) a
- = let  step (s1 : List a)
+streamOfList (xx: List a): Stream (List a) a
+ = let  step (s1: List a)
          = case s1 of
                 Nil     -> Done
                 Cons x xs -> Yield x xs
@@ -29,7 +29,7 @@ streamOfList (xx : List a) : Stream (List a) a
 
 
 -- | Convert a stream to a list.
-listOfStream  (MkStream f s0: Stream s a) : List a
+listOfStream (MkStream f s0: Stream s a): List a
  = case f s0 of
         Yield x s1      -> Cons x (listOfStream (MkStream f s1))
         Skip  s1        -> listOfStream (MkStream f s1)
@@ -66,7 +66,7 @@ stake   (n: Nat)
    in   MkStream stepB (T2 sA0 0)
 
 
-main (_ : Unit) : S Console Unit
+main (() : Unit): S Console Unit
  = do   
         xx1     = enumFromTo 0 100
         ss1     = streamOfList xx1

@@ -7,12 +7,14 @@ data List ((a,Data)) where {
 }
 
 
+
 -- Maybe type.
 module Test where
 data Maybe ((a,Data)) where {
         Nothing : Maybe a;
         Just : a -> Maybe a;
 }
+
 
 
 -- Closure.
@@ -22,11 +24,13 @@ data Clo ((a,Data)) ((b,Data)) where {
 }
 
 
+
 -- Data declaration with no constructors.
 module Test where
 data Void where {
         
 }
+
 
 
 -- Error: duplicate data type definition.

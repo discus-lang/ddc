@@ -9,15 +9,16 @@ module Test where
 -- Top level things are signaled by 'where'.
 module Test where
 x  = 5
+
 y 
   = [DEFIX| add# x x ]
 
 
+
 -- Factorial with primops.
 module Test where
-fac 
-  = \x.
-    case x of {
+fac (x: Nat)
+  = case x of {
       0 
         -> 1;
       _
@@ -25,11 +26,11 @@ fac
     }
 
 
+
 -- Factorial with infix operators.
 module Test where
-fac 
-  = \x.
-    case x of {
+fac (x: Nat)
+  = case x of {
       0 
         -> 1;
       _
@@ -37,11 +38,11 @@ fac
     }
 
 
+
 -- All the literals
 module Test where
-foo 
-  = \_.
-    let b1 = True# in
+foo (_: Unit)
+  = let b1 = True# in
     let b2 = False# in
     let n1 = 1 in
     let n2 = 2 in
@@ -60,3 +61,4 @@ foo
     let w32 = 4660w32 in
     let r = "strung" in
     ()
+
