@@ -422,7 +422,10 @@ toCoreX a xx
 
         S.XInfixVar{}   -> Left $ ErrorConvertCannotConvertSugarExp xx
 
-        S.XMatch{}      -> Left $ ErrorConvertCannotConvertSugarExp xx
+        S.XMatch sp alts xDefault
+         -> let gxs     = [ gx | S.AAltMatch gx <- alts]
+            in  toCoreX sp $ S.desugarGuards gxs xDefault
+
 
 -- Lets -------------------------------------------------------------------------------------------
 toCoreLts :: SP -> S.Lets -> ConvertM S.Source (C.Lets SP C.Name)

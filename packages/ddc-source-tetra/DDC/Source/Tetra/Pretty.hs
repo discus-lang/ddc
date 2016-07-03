@@ -301,7 +301,7 @@ instance PrettyLanguage l => Pretty (GAltCase l) where
 -- AltMatch ---------------------------------------------------------------------------------------
 instance PrettyLanguage l => Pretty (GAltMatch l) where
  ppr (AAltMatch gs)
-  = vcat $ punctuate comma (map (pprGuardedExp "=") gs)
+  = pprGuardedExp "=" gs
 
 
 -- Pat --------------------------------------------------------------------------------------------

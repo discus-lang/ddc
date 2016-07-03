@@ -216,7 +216,7 @@ instance Expand AltMatch where
 
 downMA a env alt
   = case alt of
-        AAltMatch gsx   -> AAltMatch (map (downGX a env) gsx)
+        AAltMatch gx    -> AAltMatch (downGX a env gx)
 
 
 ---------------------------------------------------------------------------------------------------

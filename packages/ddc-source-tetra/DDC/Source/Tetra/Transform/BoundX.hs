@@ -113,8 +113,8 @@ downA l f d (AAltCase p gxs)
 instance HasAnonBind l => MapBoundX GAltMatch l where
  mapBoundAtDepthX = downMA
 
-downMA l f d (AAltMatch gxs)
-  = AAltMatch (map (downGX l f d) gxs)
+downMA l f d (AAltMatch gx)
+  = AAltMatch (downGX l f d gx)
 
 
 ---------------------------------------------------------------------------------------------------

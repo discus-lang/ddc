@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies #-}
 
 -- | Parser for Source Tetra expressions.
 module DDC.Source.Tetra.Parser.Exp
@@ -107,9 +108,26 @@ pExp
         --  Sugar for cascaded case expressions case-expression.
  , do   sp      <- pTokSP KMatch
         pTok KBraceBra
-        x       <- pMatchGuardsAsCase sp
+
+        gxs     <- liftM (map (AAltMatch . snd))
+                $  P.sepEndBy1  (pGuardedExpSP (pTokSP KEquals)) 
+                                (pTok KSemiColon)
+
+        let xError
+                = makeXErrorDefault 
+                        (Text.pack    $ sourcePosSource sp) 
+                        (fromIntegral $ sourcePosLine   sp)
+
+        -- Desugar guards.
+        -- If none match then raise a runtime error.
+{-
+        let xx' = desugarGuards gg
+                $ makeXErrorDefault
+                        (Text.pack    $ sourcePosSource sp) 
+                        (fromIntegral $ sourcePosLine   sp)
+-}
         pTok KBraceKet
-        return  $ XAnnot sp x
+        return  $ XAnnot sp $ XMatch sp gxs xError
 
  , do   -- if-then-else
         --  Sugar for a case-expression.
@@ -327,22 +345,6 @@ pBindGuardsAsCaseSP
                         (fromIntegral $ sourcePosLine   sp)
 
         return  (sp, xx')
-
-
-pMatchGuardsAsCase :: SP -> Parser Exp
-pMatchGuardsAsCase sp
- = do   gg      <- liftM (map snd)
-                $  P.sepEndBy1  (pGuardedExpSP (pTokSP KEquals)) 
-                                (pTok KSemiColon)
-
-        -- Desugar guards.
-        -- If none match then raise a runtime error.
-        let xx' = desugarGuards gg
-                $ makeXErrorDefault
-                        (Text.pack    $ sourcePosSource sp) 
-                        (fromIntegral $ sourcePosLine   sp)
-
-        return  xx'
 
 
 -- | An guarded expression,

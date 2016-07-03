@@ -201,7 +201,7 @@ data GAltCase l
 --   This is like a case alternative except that the match expression
 --   does not give us a head pattern.
 data GAltMatch l
-        = AAltMatch  ![GGuardedExp l]
+        = AAltMatch  !(GGuardedExp l)
 
 
 -- | Patterns.

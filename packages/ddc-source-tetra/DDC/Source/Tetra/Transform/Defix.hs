@@ -122,7 +122,7 @@ instance Defix GAltMatch l where
  defix table aa
   = let down = defix table
     in case aa of
-        AAltMatch gs    -> liftM AAltMatch (mapM down gs)
+        AAltMatch gx    -> liftM AAltMatch (down gx)
 
 
 instance Defix GGuardedExp l where
