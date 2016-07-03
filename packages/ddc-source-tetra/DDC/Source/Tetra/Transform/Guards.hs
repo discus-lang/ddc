@@ -241,11 +241,17 @@ desugarX sp xx
         XInfixVar{}     -> pure xx
 
         XCase xScrut alts
+         -- When all the alternatives are simple then we can determine
+         -- which expression to evaluate just based on the head pattern,
+         -- and thus can translate directly to the core-level case expressions.
          | all isSimpleAltCase alts
          -> do  xScrut' <- desugarX sp xScrut 
                 alts'   <- mapM (desugarAC sp) alts
                 return  $ XCase xScrut' alts'
 
+         -- Complex alternatives are ones that have include a guard
+         -- or some other pattern that may fail.
+         --
          | otherwise
          -> do  xScrut' <- desugarX sp xScrut
                 let xError = makeXErrorDefault
@@ -269,11 +275,34 @@ desugarX sp xx
                 pure xMatch
 
 
+-- | Check if this is simple Case alternative, which means if the pattern
+--   matches then we can run the expression on the right instead of needing
+--   to skip to another alternative.
 isSimpleAltCase :: AltCase -> Bool
 isSimpleAltCase aa
  = case aa of
-        AAltCase _p [GExp _] -> True
+        AAltCase p [GExp _]  -> isSimplePat p
         _                    -> False
+
+
+-- | Simple patterns can be converted directly to core.
+isSimplePat :: Pat -> Bool
+isSimplePat pp
+ = case pp of
+        PDefault        -> True
+        PVar{}          -> True
+        PData _  ps     -> all isTrivialPat ps
+
+
+-- | Trival patterns are the default one and variables,
+--   and don't require an actual pattern to be matched.
+isTrivialPat :: Pat -> Bool
+isTrivialPat pp
+ = case pp of
+        PDefault        -> True
+        PVar{}          -> True
+        _               -> False
+
 
 ---------------------------------------------------------------------------------------------------
 -- | Desugar some let bindings.
