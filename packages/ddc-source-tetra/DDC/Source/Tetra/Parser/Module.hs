@@ -194,7 +194,7 @@ pTop    :: Parser (Top Source)
 pTop
  = P.choice
  [ do   -- A top-level, possibly recursive binding.
-        (l, sp)         <- pClauseSP
+        (sp, l)         <- pClauseSP
         return  $ TopClause sp l
  
         -- A data type declaration

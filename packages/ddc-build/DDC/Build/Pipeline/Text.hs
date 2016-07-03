@@ -50,6 +50,7 @@ data PipeText n (err :: * -> *) where
 
   PipeTextLoadSourceTetra
         :: !Sink        -- Sink for source tokens.
+        -> !Sink        -- Sink for parsed source code.
         -> !Sink        -- Sink for desugared source code.
         -> !Sink        -- Sink for core tetra code after conversoin.
         -> !Sink        -- Sink for core tetra code before type checking.
@@ -89,7 +90,7 @@ pipeText !srcName !srcLine !str !pp
                         pipeCores mm pipes
 
         PipeTextLoadSourceTetra 
-                sinkTokens
+                sinkTokens    sinkParsed
                 sinkDesugared sinkCore sinkPreCheck sinkCheckerTrace 
                 store pipes
          -> {-# SCC "PipeTextLoadSourceTetra" #-}
@@ -106,7 +107,9 @@ pipeText !srcName !srcLine !str !pp
                         case BP.runTokenParser C.describeTok srcName
                                 (SE.pModule) tokens of
                          Left err -> return [ErrorLoad err]
-                         Right mm -> goDesugar mm
+                         Right mm 
+                          -> do pipeSink (renderIndent $ ppr mm) sinkParsed
+                                goDesugar mm
 
                 goDesugar mm
                  =      -- Resolve fixity of infix operators.

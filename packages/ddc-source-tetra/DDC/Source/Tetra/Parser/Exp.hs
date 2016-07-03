@@ -10,15 +10,15 @@ module DDC.Source.Tetra.Parser.Exp
         , pTypeApp
         , pTypeAtomSP)
 where
-import DDC.Source.Tetra.Transform.Guards
+-- import DDC.Source.Tetra.Transform.Guards
 import DDC.Source.Tetra.Parser.Type
 import DDC.Source.Tetra.Parser.Witness
-import DDC.Source.Tetra.Parser.Param
 import DDC.Source.Tetra.Parser.Base
 import DDC.Source.Tetra.Exp
 import DDC.Source.Tetra.Prim            as S
 import DDC.Core.Lexer.Tokens
 import Control.Monad.Except
+import Data.Maybe
 import qualified DDC.Base.Parser        as P
 import qualified Data.Text              as Text
 
@@ -305,6 +305,10 @@ pPat
    do   pTok KUnderscore
         return  $ PDefault
 
+        -- Var
+ , do   b       <- pBind
+        return  $ PVar b
+
         -- Lit
  , do   nLit    <- pDaConBoundLit
         return  $ PData (DaConPrim nLit (TBot S.KData)) []
@@ -329,73 +333,19 @@ pBindPat
  ]
 
 
--- Guards -----------------------------------------------------------------------------------------
--- | Parse some guards and auto-desugar them to a case-expression.
-pBindGuardsAsCaseSP :: Parser (SP, Exp)
-pBindGuardsAsCaseSP
- = do   
-        (sp, g) : spgs  
-                <- P.many1 (pGuardedExpSP (pTokSP KEquals))
-
-        -- Desugar guards.
-        -- If none match then raise a runtime error.
-        let xx' = desugarGuards (g : map snd spgs)  
-                $ makeXErrorDefault 
-                        (Text.pack    $ sourcePosSource sp) 
-                        (fromIntegral $ sourcePosLine   sp)
-
-        return  (sp, xx')
-
-
--- | An guarded expression,
---   like | EXP1 = EXP2.
-pGuardedExpSP 
-        :: Parser  SP   -- ^ Parser for char between and of guards and exp.
-                        --   usually -> or =
-        -> Parser  (SP, GuardedExp)
-
-pGuardedExpSP pTermSP
- = pGuardExp (pTokSP KBar)
-
- where  pGuardExp pSepSP
-         = P.choice
-         [ do   sp      <- pSepSP
-                g       <- pGuard
-                gx      <- liftM snd $ pGuardExp (pTokSP KComma)
-                return  (sp, GGuard g gx)
-
-         , do   sp      <- pTermSP
-                x       <- pExp
-                return  (sp, GExp x) ]
-
-        pGuard
-         = P.choice 
-         [ P.try $
-           do   p       <- pPat
-                pTok KArrowDashLeft
-                x       <- pExp
-                return $ GPat p x
-
-         , do   g       <- pExp
-                return $ GPred g
-
-         , do   pTok KOtherwise
-                return GDefault ]
-
-
 -- Bindings ---------------------------------------------------------------------------------------
 pLetsSP :: Parser (Lets, SP)
 pLetsSP 
  = P.choice
     [ -- non-recursive let
       do sp       <- pTokSP KLet
-         l        <- liftM fst $ pClauseSP
+         l        <- liftM snd $ pClauseSP
          return (LGroup [l], sp)
 
       -- recursive let
     , do sp       <- pTokSP KLetRec
          pTok KBraceBra
-         ls       <- liftM (map fst)
+         ls       <- liftM (map snd)
                   $  P.sepEndBy1 pClauseSP (pTok KSemiColon)
          pTok KBraceKet
          return (LGroup ls, sp)
@@ -456,53 +406,186 @@ pLetWits bs mParent
 
 
 -- | A binding for let expression.
-pClauseSP :: Parser (Clause, SP)
+pClauseSP :: Parser (SP, Clause)
 pClauseSP
- = do   b       <- pBind
+ = do   (b, sp0) <- pBindNameSP
 
         P.choice
-         [ do   -- Binding with full type signature.
-                sp         <- pTokSP (KOp ":")
-                t          <- pType
-                (_, xBody) <- pBindGuardsAsCaseSP
-                return  ( SLet sp (XBindVarMT b (Just t)) [] [GExp xBody]
-                        , sp)
+         [ do   -- Non-function binding with full type signature.
+                sp      <- pTokSP (KOp ":")
+                t       <- pType
+                gxs     <- pTermGuardedExps (pTokSP KEquals)
+                return  (sp,  SLet sp (XBindVarMT b (Just t)) [] gxs)
 
          , do   -- Non-function binding with no type signature.
-                sp      <- pTokSP KEquals
-                xBody   <- pExp
-                return  ( SLet sp (XBindVarMT b Nothing) [] [GExp xBody]
-                        , sp)
+                gxs     <- pTermGuardedExps (pTokSP KEquals)
+                return  (sp0, SLet sp0 (XBindVarMT b Nothing)  [] gxs)
 
          , do   -- Binding using function syntax.
-                ps      <- liftM concat 
-                        $  P.many pBindParamSpec
+                ps      <- fmap concat $ P.many pParamsSP
         
                 P.choice
                  [ do   -- Function syntax with a return type.
                         -- We can make the full type sig for the let-bound variable.
                         --   Binder Param1 Param2 .. ParamN : Type = Exp
-                        pTok (KOp ":")
-                        tBody       <- pType
-                        (sp, xBody) <- pBindGuardsAsCaseSP
+                        sp      <- pTokSP (KOp ":")
+                        tBody   <- pType
+                        gxs     <- pTermGuardedExps (pTokSP KEquals)
 
-                        let x   = expOfParams ps xBody
-                        let t   = funTypeOfParams ps tBody
-                        return  ( SLet sp (XBindVarMT b (Just t)) [] [GExp x]
-                                , sp)
+                        let t   = funTypeOfParams     ps tBody
+                        return  (sp, SLet sp (XBindVarMT b (Just t)) [] gxs)
 
                         -- Function syntax with no return type.
-                        -- We can't make the type sig for the let-bound variable,
-                        -- but we can create lambda abstractions with the given 
-                        -- parameter types.
-                        --   Binder Param1 Param2 .. ParamN = Exp
-                 , do   (sp, xBody) <- pBindGuardsAsCaseSP
-
-                        let x   = expOfParams ps xBody
-                        return  ( SLet sp (XBindVarMT b Nothing) [] [GExp x]
-                                , sp)
+                        -- We can't make the type sig for the let-bound variable.
+                 , do   gxs     <- pTermGuardedExps (pTokSP KEquals)
+                        return  (sp0, SLet sp0 (XBindVarMT b Nothing) [] gxs)
                  ]
          ]
+
+
+pParamsSP :: Parser [Param]
+pParamsSP
+ = P.choice
+        -- Type parameter
+        -- [BIND1 BIND2 .. BINDN : TYPE]
+ [ do   pTok KSquareBra
+        bs      <- P.many1 pBind
+        pTok (KOp ":")
+        t       <- pType
+        pTok KSquareKet
+        return  [ MType b (Just t) | b <- bs]
+
+        -- Witness parameter
+        -- {BIND : TYPE}
+ , do   pTok  KBraceBra
+        b       <- pBind
+        pTok (KOp ":")
+        t       <- pType
+        pTok  KBraceKet
+        return  [ MWitness b (Just t) ]
+
+        -- Value pattern with type annotations.
+        -- (BIND1 BIND2 .. BINDN : TYPE) 
+ , do   pTok    KRoundBra
+        ps      <- P.choice
+                [  P.try $ do
+                        ps      <- P.many1 pPat
+                        pTok (KOp ":")
+                        t       <- pType
+                        return  [ MValue p (Just t) | p <- ps ]
+
+                , do    p       <- pPat
+                        return  [ MValue p Nothing ]
+                ]
+
+        pTok  KRoundKet
+        return ps
+
+
+ , do   -- Value parameter without a type annotation.
+        p       <- pPat
+        return  [MValue p Nothing]
+ ]
+ <?> "a function parameter"
+
+
+--   and the type of the body.
+funTypeOfParams 
+        :: [Param]      -- ^ Spec of parameters.
+        -> Type         -- ^ Type of body.
+        -> Type         -- ^ Type of whole function.
+
+funTypeOfParams [] tBody        
+ = tBody
+
+funTypeOfParams (p:ps) tBody
+ = case p of
+        MType     b mt
+         -> let k       = fromMaybe (TBot S.KData) mt
+            in  TApp (TCon (TyConForall k)) (TAbs b k $ funTypeOfParams ps tBody)
+
+        MWitness  _ mt
+         -> let k       = fromMaybe (TBot S.KData) mt
+            in  TImpl k $ funTypeOfParams ps tBody
+
+        MValue    _ mt
+         -> let k       = fromMaybe (TBot S.KData) mt
+            in  TFun k  $ funTypeOfParams ps tBody
+
+
+
+-- Guards -----------------------------------------------------------------------------------------
+-- | Parse either the terminating char and a single expression, 
+--   or some guarded expressions.
+pTermGuardedExps
+        :: Parser SP    -- ^ Parser for char between guards and exp
+        -> Parser [GuardedExp]
+
+pTermGuardedExps pTerm
+ = P.choice
+ [ do   _       <- pTerm
+        xBody   <- pExp
+        return  [GExp xBody]
+
+ , do   fmap (map snd)
+         $ P.many1 $ pGuardedExpSP pTerm
+ ]
+
+
+-- | An guarded expression,
+--   like | EXP1 = EXP2.
+pGuardedExpSP 
+        :: Parser  SP   -- ^ Parser for char between and of guards and exp.
+                        --   usually -> or =
+        -> Parser  (SP, GuardedExp)
+
+pGuardedExpSP pTermSP
+ = pGuardExp (pTokSP KBar)
+
+ where  pGuardExp pSepSP
+         = P.choice
+         [ do   sp      <- pSepSP
+                g       <- pGuard
+                gx      <- liftM snd $ pGuardExp (pTokSP KComma)
+                return  (sp, GGuard g gx)
+
+         , do   sp      <- pTermSP
+                x       <- pExp
+                return  (sp, GExp x) ]
+
+        pGuard
+         = P.choice 
+         [ P.try $
+           do   p       <- pPat
+                pTok KArrowDashLeft
+                x       <- pExp
+                return $ GPat p x
+
+         , do   g       <- pExp
+                return $ GPred g
+
+         , do   pTok KOtherwise
+                return GDefault ]
+
+
+
+-- | Parse some guards and auto-desugar them to a case-expression.
+{-
+pBindGuardsAsCaseSP :: Parser (SP, Exp)
+pBindGuardsAsCaseSP
+ = do   
+        (sp, g) : spgs  
+                <- P.many1 (pGuardedExpSP (pTokSP KEquals))
+
+        -- Desugar guards.
+        -- If none match then raise a runtime error.
+        let xx' = desugarGuards (g : map snd spgs)  
+                $ makeXErrorDefault 
+                        (Text.pack    $ sourcePosSource sp) 
+                        (fromIntegral $ sourcePosLine   sp)
+
+        return  (sp, xx')
+-}
 
 
 -- Statements -------------------------------------------------------------------------------------
