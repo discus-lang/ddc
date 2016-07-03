@@ -27,9 +27,24 @@ type SP = SourcePos
 
 
 -- Exp --------------------------------------------------------------------------------------------
--- | Parse a Tetra Source language expression.
 pExp :: Parser Exp
-pExp
+pExp 
+ = do   xx      <- pExpFront 
+
+        P.choice
+         [ do   sp      <- pTokSP KWhere
+                pTok KBraceBra
+                cls     <- liftM (map snd)
+                        $  P.sepEndBy1 pClauseSP (pTok KSemiColon)
+                pTok KBraceKet
+                return  $ XAnnot sp $ XLet (LGroup cls) xx
+
+         , do   return  xx ]
+         
+
+-- | Parse a Tetra Source language expression.
+pExpFront :: Parser Exp
+pExpFront
  = P.choice
 
         -- Level-0 lambda abstractions
