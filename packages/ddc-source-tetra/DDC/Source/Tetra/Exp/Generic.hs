@@ -39,12 +39,13 @@ module DDC.Source.Tetra.Exp.Generic
         , GXBindVarMT   (..)
         , GExp          (..)
         , GLets         (..)
-        , GAltMatch     (..)
-        , GAltCase      (..)
         , GPat          (..)
         , GClause       (..)
-        , GGuardedExp   (..)
+        , GParam        (..)
         , GGuard        (..)
+        , GGuardedExp   (..)
+        , GAltMatch     (..)
+        , GAltCase      (..)
         , GCast         (..)
         , GWitness      (..)
         , GWiCon        (..)
@@ -184,30 +185,32 @@ data GLets l
 -- | Binding clause
 data GClause l
         -- | A separate type signature.
-        = SSig   !(GXAnnot l) !(GXBindVar l) !(GType l)
+        = SSig   !(GXAnnot l) !(GXBindVar l)   !(GType l)
 
         -- | A function binding using pattern matching and guards.
-        | SLet   !(GXAnnot l) !(GXBindVarMT l) ![GPat l]  ![GGuardedExp l]
+        | SLet   !(GXAnnot l) !(GXBindVarMT l) ![GParam l] ![GGuardedExp l]
 
 
--- | Case alternative.
---   If the pattern matches then bind the variables then enter
---   the guarded expression.
-data GAltCase l
-        = AAltCase   !(GPat l) ![GGuardedExp l]
+-- | Parameter for a binding.
+data GParam l
+        -- | Type parameter with optional kind.
+        = MType    !(GXBindVar l) (Maybe (GType l))
 
+        -- | Witness parameter with optional type.
+        | MWitness !(GXBindVar l) (Maybe (GType l))
 
--- | Match alternative.
---   This is like a case alternative except that the match expression
---   does not give us a head pattern.
-data GAltMatch l
-        = AAltMatch  !(GGuardedExp l)
+        -- | Value paatter with optional type.
+        | MValue   !(GPat l)      (Maybe (GType l))
 
 
 -- | Patterns.
 data GPat l
         -- | The default pattern always succeeds.
         = PDefault
+
+        -- | The variable pattern always succeeds and binds the value
+        --   to the new variable.
+        | PVar   !(GXBindVar l) 
 
         -- | Match a data constructor and bind its arguments.
         | PData  !(DaCon (GXBoundCon l) (GType l)) ![GXBindVar l]
@@ -224,6 +227,20 @@ data GGuard l
         = GPat   !(GPat l) !(GExp l)
         | GPred  !(GExp l)
         | GDefault
+
+
+-- | Case alternative.
+--   If the pattern matches then bind the variables then enter
+--   the guarded expression.
+data GAltCase l
+        = AAltCase   !(GPat l) ![GGuardedExp l]
+
+
+-- | Match alternative.
+--   This is like a case alternative except that the match expression
+--   does not give us a head pattern.
+data GAltMatch l
+        = AAltMatch  !(GGuardedExp l)
 
 
 -- | Type casts.
@@ -280,16 +297,17 @@ type ShowLanguage l
           , Show (GXBindCon l), Show (GXBoundCon l)
           , Show (GXPrim l))
 
-deriving instance ShowLanguage l => Show (GExp        l)
-deriving instance ShowLanguage l => Show (GLets       l)
-deriving instance ShowLanguage l => Show (GClause     l)
-deriving instance ShowLanguage l => Show (GAltCase    l)
-deriving instance ShowLanguage l => Show (GAltMatch   l)
-deriving instance ShowLanguage l => Show (GGuardedExp l)
-deriving instance ShowLanguage l => Show (GGuard      l)
-deriving instance ShowLanguage l => Show (GPat        l)
-deriving instance ShowLanguage l => Show (GCast       l)
-deriving instance ShowLanguage l => Show (GWitness    l)
-deriving instance ShowLanguage l => Show (GWiCon      l)
+deriving instance ShowLanguage l => Show (GExp         l)
+deriving instance ShowLanguage l => Show (GLets        l)
+deriving instance ShowLanguage l => Show (GClause      l)
+deriving instance ShowLanguage l => Show (GParam       l)
+deriving instance ShowLanguage l => Show (GAltCase     l)
+deriving instance ShowLanguage l => Show (GAltMatch    l)
+deriving instance ShowLanguage l => Show (GGuardedExp  l)
+deriving instance ShowLanguage l => Show (GGuard       l)
+deriving instance ShowLanguage l => Show (GPat         l)
+deriving instance ShowLanguage l => Show (GCast        l)
+deriving instance ShowLanguage l => Show (GWitness     l)
+deriving instance ShowLanguage l => Show (GWiCon       l)
 deriving instance ShowLanguage l => Show (GXBindVarMT  l)
 

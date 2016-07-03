@@ -60,11 +60,12 @@ module DDC.Source.Tetra.Exp.Source
         , Exp,          GExp        (..)
         , Lets,         GLets       (..)
         , Clause,       GClause     (..)
+        , Param,        GParam      (..)
+        , Pat,          GPat        (..)
+        , Guard,        GGuard      (..)
+        , GuardedExp,   GGuardedExp (..)
         , AltMatch,     GAltMatch   (..)
         , AltCase,      GAltCase    (..)
-        , Pat,          GPat        (..)
-        , GuardedExp,   GGuardedExp (..)
-        , Guard,        GGuard      (..)
         , Cast,         GCast       (..)
         , Witness,      GWitness    (..)
         , WiCon,        GWiCon      (..)
@@ -134,11 +135,12 @@ type BindVarMT  = GXBindVarMT Source
 type Exp        = GExp        Source
 type Lets       = GLets       Source
 type Clause     = GClause     Source
+type Param      = GParam      Source
+type Pat        = GPat        Source
+type Guard      = GGuard      Source
+type GuardedExp = GGuardedExp Source
 type AltCase    = GAltCase    Source
 type AltMatch   = GAltMatch   Source
-type Pat        = GPat        Source
-type GuardedExp = GGuardedExp Source
-type Guard      = GGuard      Source
 type Cast       = GCast       Source
 type Witness    = GWitness    Source
 type WiCon      = GWiCon      Source
@@ -149,5 +151,4 @@ type instance GXBoundVar Source = Bound
 type instance GXBindCon  Source = DaConBind
 type instance GXBoundCon Source = DaConBound
 type instance GXPrim     Source = PrimVal
-
 

@@ -292,16 +292,25 @@ instance PrettyLanguage l => Pretty (GClause l) where
                 <>  nest 2 (line <> vcat (map (pprGuardedExp "=") gxs))
 
 
--- AltCase ----------------------------------------------------------------------------------------
-instance PrettyLanguage l => Pretty (GAltCase l) where
- ppr (AAltCase p gxs)
-  =  ppr p <> nest 2 (line <> vcat (map (pprGuardedExp "->") gxs))
+-- Param ------------------------------------------------------------------------------------------
+instance PrettyLanguage l => Pretty (GParam l) where
+ ppr (MType    b Nothing)
+  = text "[" <> ppr b <> text "]"
 
+ ppr (MType    b (Just t))
+  = text "[" <> ppr b <> text ":" <+> ppr t <> text "]"
 
--- AltMatch ---------------------------------------------------------------------------------------
-instance PrettyLanguage l => Pretty (GAltMatch l) where
- ppr (AAltMatch gs)
-  = pprGuardedExp "=" gs
+ ppr (MWitness b Nothing)
+  = text "<" <> ppr b <> text ">"
+
+ ppr (MWitness b (Just t))
+  = text "<" <> ppr b <> text ":" <+> ppr t <> text ">"
+
+ ppr (MValue   p Nothing)
+  = parens $ ppr p
+
+ ppr (MValue   p (Just t))
+  = parens $ ppr p <> text ":" <+> ppr t
 
 
 -- Pat --------------------------------------------------------------------------------------------
@@ -309,6 +318,7 @@ instance PrettyLanguage l => Pretty (GPat l) where
  ppr pp
   = case pp of
         PDefault        -> text "_"
+        PVar  b         -> ppr b
         PData u bs      -> ppr u <+> sep (map ppr bs)
 
 
@@ -335,6 +345,18 @@ pprGuardedExp sTerm gx
 
 -- Guard ------------------------------------------------------------------------------------------
 instance Pretty (GGuard l) where
+
+
+-- AltCase ----------------------------------------------------------------------------------------
+instance PrettyLanguage l => Pretty (GAltCase l) where
+ ppr (AAltCase p gxs)
+  =  ppr p <> nest 2 (line <> vcat (map (pprGuardedExp "->") gxs))
+
+
+-- AltMatch ---------------------------------------------------------------------------------------
+instance PrettyLanguage l => Pretty (GAltMatch l) where
+ ppr (AAltMatch gs)
+  = pprGuardedExp "=" gs
 
 
 -- Cast -------------------------------------------------------------------------------------------

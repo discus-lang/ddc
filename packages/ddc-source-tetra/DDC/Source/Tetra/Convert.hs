@@ -491,7 +491,10 @@ toCoreP pp
  = case pp of
         S.PDefault        
          -> pure C.PDefault
-        
+  
+        S.PVar _b
+         -> error "ddc-source-tetra: cannot convert PVar pattern"
+
         S.PData dc bs
          -> C.PData <$> toCoreDC dc <*> (sequence $ fmap toCoreB bs)
 

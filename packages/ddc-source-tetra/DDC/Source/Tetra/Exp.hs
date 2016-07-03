@@ -107,18 +107,21 @@ module DDC.Source.Tetra.Exp
           -- *** Clauses
         , Clause,       GClause     (..)
 
-          -- *** Case Alternatives
-        , AltCase,      GAltCase    (..)
-        , AltMatch,     GAltMatch   (..)
+          -- *** Parameters
+        , Param,        GParam      (..)
 
           -- *** Patterns
         , Pat,          GPat        (..)
 
+          -- *** Guards
+        , Guard,        GGuard      (..)
+
           -- *** Guarded Expressions
         , GuardedExp,   GGuardedExp (..)
 
-          -- *** Guards
-        , Guard,        GGuard      (..)
+          -- *** Case Alternatives
+        , AltCase,      GAltCase    (..)
+        , AltMatch,     GAltMatch   (..)
 
           -- *** Casts
         , Cast,         GCast       (..)
