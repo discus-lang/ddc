@@ -26,7 +26,7 @@ data Step (s a: Data) where
         Done    : Step s a
 
 
--- Conversions ------------------------------------------------------------------------------------
+-- Conversions ----------------------------------------------------------------
 -- | Convert a list to a stream.
 streamOfList (xx: List a): Stream (List a) a
  = let  step (s1: List a)
@@ -37,13 +37,11 @@ streamOfList (xx: List a): Stream (List a) a
 
 
 -- | Convert a stream to a list.
-listOfStream  (ss: Stream s a): List a
- = case ss of
-        MkStream f s0
-         -> case f s0 of
-                Yield x s1      -> Cons x (listOfStream (MkStream f s1))
-                Skip  s1        -> listOfStream (MkStream f s1)
-                Done            -> Nil
+listOfStream  (MkStream f s0: Stream s a): List a
+ = case f s0 of
+        Yield x s1      -> Cons x (listOfStream (MkStream f s1))
+        Skip  s1        -> listOfStream (MkStream f s1)
+        Done            -> Nil
 
 
 -- | Load the given number of elements from a stream and write them
@@ -67,23 +65,21 @@ arrayOfStream
 
 -- | Unstream all available elements into the given array.
 unstreamToArray
-        (ss: Stream s a) (arr: Array r a) (ix: Nat)
+        (MkStream f s0: Stream s a) (arr: Array r a) (ix: Nat)
         : S (Write r) Unit
- = case ss of
-        MkStream f s0
-         -> case f s0 of
-                Yield x s1
-                 -> do  writeArray arr ix x
-                        unstreamToArray (MkStream f s1) arr (ix + 1)
+ = case f s0 of
+        Yield x s1
+         -> do  writeArray arr ix x
+                unstreamToArray (MkStream f s1) arr (ix + 1)
 
-                Skip s1
-                 ->     unstreamToArray (MkStream f s1)  arr ix
+        Skip s1
+         ->     unstreamToArray (MkStream f s1)  arr ix
 
-                Done
-                 ->     ()
+        Done
+         ->     ()
 
 
--- Constructors -----------------------------------------------------------------------------------
+-- Constructors ---------------------------------------------------------------
 -- | Generate a stream, given a starting value and a stepper function.
 sgenerate (x: s) (step: s -> Tup2 s a): Stream s a
  = let  step' sA
@@ -101,59 +97,56 @@ srepeat (x: a): Stream a a
 
 
 -- | Cons an element to the front of a stream.
-scons (x: a) (ss: Stream s a): Stream (Tup2 s Bool) a
- = case ss of
-        MkStream stepA sA0
-         -> let stepA2 q
-                 = case q of
-                        T2 sA1 b
-                         -> case b of
-                                True    -> Yield x (T2 sA1 False)
-                                False   -> case stepA sA1 of
-                                                Yield y sA2 -> Yield y (T2 sA2 False)
-                                                Skip  sA2   -> Skip    (T2 sA2 False)
-                                                Done        -> Done
-            in  MkStream stepA2 (T2 sA0 True)
+scons   (x: a) 
+        (MkStream stepA sA0: Stream s a)
+        : Stream (Tup2 s Bool) a
+ = let stepA2 (T2 sA1 b)
+        = case b of
+                True    -> Yield x (T2 sA1 False)
+                False   -> case stepA sA1 of
+                                   Yield y sA2 -> Yield y (T2 sA2 False)
+                                   Skip  sA2   -> Skip    (T2 sA2 False)
+                                   Done        -> Done
+   in  MkStream stepA2 (T2 sA0 True)
 
 
--- Maps -------------------------------------------------------------------------------------------
+-- Maps -----------------------------------------------------------------------
 -- | Apply a function to every element of a stream.
-smap (f: a -> b) (ss: Stream s a): Stream s b
- = case ss of  
-        MkStream stepA sA0
-         -> let stepB q 
-                 = case stepA q of
-                        Yield x sA1     -> Yield (f x) sA1
-                        Skip sA2        -> Skip sA2
-                        Done            -> Done
-            in  MkStream stepB sA0
+smap    (f: a -> b) 
+        (MkStream stepA sA0: Stream s a)
+        : Stream s b
+ = let stepB q 
+        = case stepA q of
+                Yield x sA1     -> Yield (f x) sA1
+                Skip sA2        -> Skip sA2
+                Done            -> Done
+   in  MkStream stepB sA0
 
 
--- Scans ------------------------------------------------------------------------------------------
+-- Scans ----------------------------------------------------------------------
 -- | Like `smap`, but keep a running accumulator as we walk along the stream.
-smapacc (f: a -> b -> Tup2 a c) (z: a) 
-        (ss: Stream s b): Stream (Tup2 s a) c
- = case ss of
-        MkStream fB sB0
-         -> let stepC q
-                 = case q of
-                        T2 sB1 xA1
-                         -> case fB sB1 of
-                                Yield xB1 sB2 
-                                 -> case f xA1 xB1 of
-                                        T2 xA2 xC2
-                                         -> Yield xC2 (T2 sB2 xA2)
-                                Skip sB2 -> Skip      (T2 sB2 xA1)
-                                Done     -> Done
-            in  MkStream stepC (T2 sB0 z)
+smapacc (f: a -> b -> Tup2 a c) 
+        (z: a) 
+        (MkStream fB sB0: Stream s b)
+        : Stream (Tup2 s a) c
+ = let stepC (T2 sB1 xA1)
+        = case fB sB1 of
+                Yield xB1 sB2 
+                 -> case f xA1 xB1 of
+                        T2 xA2 xC2
+                         -> Yield xC2 (T2 sB2 xA2)
+                Skip sB2 -> Skip      (T2 sB2 xA1)
+                Done     -> Done
+   in  MkStream stepC (T2 sB0 z)
 
 
--- Folds ------------------------------------------------------------------------------------------
+-- Folds ----------------------------------------------------------------------
 -- | Fold all the elements from a stream.
-sfold    (f: a -> b -> a) (acc: a) (ss: Stream s b): a
- = case ss of
-        MkStream step s0 
-         -> sconsume f acc step s0
+sfold   (f: a -> b -> a) 
+        (acc: a) 
+        (MkStream step s0: Stream s b)
+        : a
+ = sconsume f acc step s0
 
 
 sconsume (f:    a -> b -> a)   (acc:   a) 
@@ -170,51 +163,51 @@ sany [s: Data] (ss: Stream s Bool): Bool
  = sfold or False $ stakeWhile id ss
 
 
--- Projections ------------------------------------------------------------------------------------
+-- Projections ----------------------------------------------------------------
 -- | Take the given number of elements from a stream.
-stake (n: Nat) (ss: Stream s a): Stream (Tup2 s Nat) a
- = case ss of
-        MkStream fA sA0
-         -> let stepB q
-                 = case q of
-                        T2 sA ix 
-                         | ix >= n   -> Done
-                         | otherwise 
-                         -> case fA sA of
-                                Yield x sA2 -> Yield x (T2 sA2 (ix + 1))
-                                Skip sA3    -> Skip  (T2 sA3 ix)
-                                Done        -> Done
-            in   MkStream stepB (T2 sA0 0)
+stake   (n: Nat)
+        (MkStream fA sA0: Stream s a)
+        : Stream (Tup2 s Nat) a
+
+ = let stepB (T2 sA ix)
+        | ix >= n   = Done
+        | otherwise 
+        = case fA sA of
+                Yield x sA2 -> Yield x (T2 sA2 (ix + 1))
+                Skip sA3    -> Skip  (T2 sA3 ix)
+                Done        -> Done
+   in   MkStream stepB (T2 sA0 0)
 
 
 -- | Take elements from a strem while they match the given predicate.
-stakeWhile (p: a -> Bool) (ss: Stream s a): Stream s a
- = case ss of
-        MkStream stepA sA0
-         -> let stepB q
-                 = case stepA q of
-                        Yield x sA1     
-                         | p x          -> Yield x sA1
-                         | otherwise    -> Done [s] [a]
+stakeWhile 
+        (p: a -> Bool) 
+        (MkStream stepA sA0: Stream s a)
+        : Stream s a
+ = let stepB q
+        = case stepA q of
+                Yield x sA1     
+                 | p x          -> Yield x sA1
+                 | otherwise    -> Done
 
-                        Skip sA1        -> Skip    sA1
-                        Done            -> Done
+                Skip sA1        -> Skip    sA1
+                Done            -> Done
 
-            in  MkStream stepB sA0
+   in  MkStream stepB sA0
 
 
 -- | Take elements from a stream that match the given predicate.
-sfilter (p: a -> Bool) (ss: Stream s a): Stream s a
- = case ss of
-        MkStream stepA sA0
-         -> let stepB q
-                 = case stepA q of
-                        Yield x sA1     
-                         | p x          -> Yield x sA1
-                         | otherwise    -> Skip    sA1
+sfilter (p: a -> Bool)
+        (MkStream stepA sA0: Stream s a)
+        : Stream s a
+ = let stepB q
+        = case stepA q of
+                Yield x sA1     
+                 | p x          -> Yield x sA1
+                 | otherwise    -> Skip    sA1
 
-                        Skip sA1        -> Skip    sA1
-                        Done            -> Done
+                Skip sA1        -> Skip    sA1
+                Done            -> Done
 
-            in  MkStream stepB sA0
+   in  MkStream stepB sA0
 
