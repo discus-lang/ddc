@@ -118,14 +118,6 @@ pExp
                         (Text.pack    $ sourcePosSource sp) 
                         (fromIntegral $ sourcePosLine   sp)
 
-        -- Desugar guards.
-        -- If none match then raise a runtime error.
-{-
-        let xx' = desugarGuards gg
-                $ makeXErrorDefault
-                        (Text.pack    $ sourcePosSource sp) 
-                        (fromIntegral $ sourcePosLine   sp)
--}
         pTok KBraceKet
         return  $ XAnnot sp $ XMatch sp gxs xError
 
@@ -566,26 +558,6 @@ pGuardedExpSP pTermSP
 
          , do   pTok KOtherwise
                 return GDefault ]
-
-
-
--- | Parse some guards and auto-desugar them to a case-expression.
-{-
-pBindGuardsAsCaseSP :: Parser (SP, Exp)
-pBindGuardsAsCaseSP
- = do   
-        (sp, g) : spgs  
-                <- P.many1 (pGuardedExpSP (pTokSP KEquals))
-
-        -- Desugar guards.
-        -- If none match then raise a runtime error.
-        let xx' = desugarGuards (g : map snd spgs)  
-                $ makeXErrorDefault 
-                        (Text.pack    $ sourcePosSource sp) 
-                        (fromIntegral $ sourcePosLine   sp)
-
-        return  (sp, xx')
--}
 
 
 -- Statements -------------------------------------------------------------------------------------

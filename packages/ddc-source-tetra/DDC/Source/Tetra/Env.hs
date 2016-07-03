@@ -10,9 +10,9 @@ module DDC.Source.Tetra.Env
         , union, unions
 
           -- ** Type Variables
-        , singletonTyVar
+        , singletonTyVar, singletonTyVar'
         , extendTyVar
-        , extendTyVar', extendsTyVar'
+        , extendTyVar',   extendsTyVar'
         , lookupTyVar
         , tyStackDepth
 
@@ -146,10 +146,16 @@ extendsTyVar' bs env
  = List.foldl' (flip extendTyVar') env bs
 
 
--- | Yield an environment containing the type for a single term variable.
+-- | Yield an environment containing a single type variable.
+singletonTyVar' :: Bind -> Env
+singletonTyVar' b 
+ = extendTyVar' b empty
+
+-- | Yield an environment containing the kind for a single type variable.
 singletonTyVar :: Bind -> Type -> Env
 singletonTyVar b t
  = extendTyVar b t empty
+
 
 
 -- | Lookup the kind of the given type variable.

@@ -31,10 +31,11 @@ import DDC.Source.Tetra.DataDef
 import DDC.Source.Tetra.Module
 import DDC.Data.SourcePos
 import Data.Function
-import qualified DDC.Source.Tetra.Env   as Env
 import DDC.Source.Tetra.Env             (Env)
 import Data.Maybe
+import qualified DDC.Source.Tetra.Env   as Env
 import qualified Data.Set               as Set
+import qualified Data.List              as List
 
 
 -- | Run the expander on the given module.
@@ -62,18 +63,15 @@ expandM a env mm
         --   thing is in-scope of all the others.
         preTop p
          = case p of
-                TopClause aT (SLet aL  bm [] [GExp x])
-                 -> let (bm', x') = expandQuant env   bm x
-                    in  ( TopClause aT (SLet aL bm' [] [GExp x'])
+                TopClause aT (SLet aL bm ps gxs)
+                 -> let (bm', ps') = expandQuantParams env bm ps
+                    in  ( TopClause aT (SLet aL bm' ps' gxs)
                         , Env.extendDaVarMT bm' Env.empty)
 
                 -- Clauses should have already desugared.
-                TopClause{}
-                 -> error $ "source-tetra.expand: can't expand sugared TopClause."
-                          ++ show p
-
-                TopData _ def   -> (p, envOfDataDef def)
-                TopType{}       -> (p, Env.empty)
+                TopClause _ SSig{} -> (p, Env.empty)
+                TopData   _ def    -> (p, envOfDataDef def)
+                TopType{}          -> (p, Env.empty)
 
         (tops_quant, envs)
                 = unzip $ map preTop $ moduleTops mm
@@ -94,16 +92,17 @@ instance Expand (Top Source) where
 
 expandT _a env top
  = case top of
-        TopClause a1 (SLet a2 bm [] [GExp x])
+        TopClause a1 (SLet a2 bm ps gxs)
          -> let env'    = Env.extendDaVarMT bm env
-                x'      = expand a2 env' x
-            in  TopClause a1 (SLet a2 bm [] [GExp x'])
+                env''   = List.foldl' (flip extendParam) env' ps
+                gxs'    = map (expand a2 env'') gxs
+            in  TopClause a1 (SLet a2 bm ps gxs')
 
-        TopClause{}
-         -> error "source-tetra.expand: can't expand sugared TopClause."
+        TopClause _ (SSig{})    -> top
 
-        TopData{} -> top
-        TopType{} -> top
+        TopData{}               -> top
+        TopType{}               -> top
+
 
 ---------------------------------------------------------------------------------------------------
 instance Expand Exp where
@@ -135,41 +134,34 @@ downX a env xx
                   in    makeXAppsWithAnnots x1' xas'
 
         XLet (LLet b x1) x2
-         -> let 
-                -- Add missing quantifiers to the types of let-bindings.
-                (b_quant, x1_quant)
-                        = expandQuant env b x1
+         -> let x1'     = expand a env x1
 
-                env'    = Env.extendDaVarMT b_quant env
-                x1'     = expand a env' x1_quant
+                env'    = Env.extendDaVarMT b env
                 x2'     = expand a env' x2
             in  XLet (LLet b x1') x2'
 
         XLet (LRec bxs) x2
-         -> let 
-                (bs_quant, xs_quant)
-                        = unzip
-                        $ [expandQuant env b x | (b, x) <- bxs]
+         -> let (bs, xs) = unzip bxs
+                env'    = Env.extendsDaVarMT bs env
 
-                env'    = Env.extendsDaVarMT  bs_quant env
-                xs'     = map (expand a env') xs_quant
+                xs'     = map (expand a env') xs
+                bxs'    = zip bs xs'
+
                 x2'     = expand a env' x2
-            in  XLet (LRec (zip bs_quant xs')) x2'
+            in  XLet (LRec bxs') x2'
 
-        -- LGroups need to be desugared first because any quantifiers
-        -- we add to the front of a function binding need to scope over
-        -- all the clauses related to that binding.
-        XLet (LGroup [SLet _ b [] [GExp x1]]) x2
-         -> expand a env (XLet (LLet b x1) x2)
 
-        -- This should have already been desugared.
-        XLet (LGroup{}) _
-         -> error $ "ddc-source-tetra.expand: can't expand sugared LGroup."
+        XLet (LGroup cs) x2
+         -> let cs'     = map (downCX a env) cs
+                bs      = [b | SLet _ b _ _ <- cs']
+                env'    = Env.extendsDaVarMT bs env
+                x2'     = downX a env' x2
+            in  XLet (LGroup cs') x2'
 
 
         -- Boilerplate ----------------
         XLAM bm@(XBindVarMT b _) x
-         -> let env'    = env   & Env.extendDaVar' b
+         -> let env'    = env   & Env.extendTyVar' b
                 x'      = expand a env' x
             in  XLAM bm x'
 
@@ -199,24 +191,18 @@ downX a env xx
 
 
 ---------------------------------------------------------------------------------------------------
-instance Expand AltCase where
- expand = downA
+instance Expand Clause where
+ expand a env cl 
+  = downCX a env cl
 
-downA a env alt
-  = case alt of
-        AAltCase p gsx
-         -> let env'    = extendPat p env
-                gsx'    = map (expand a env') gsx
-            in  AAltCase p gsx'
+downCX _a env cl
+ = case expandQuantClause env cl of
+        (_, SSig{})     
+         -> cl
 
-
----------------------------------------------------------------------------------------------------
-instance Expand AltMatch where
- expand = downMA
-
-downMA a env alt
-  = case alt of
-        AAltMatch gx    -> AAltMatch (downGX a env gx)
+        (env', SLet a mt ps gxs)
+         -> let gxs'   = map (downGX a env') gxs
+            in  SLet a mt ps gxs'
 
 
 ---------------------------------------------------------------------------------------------------
@@ -253,6 +239,27 @@ downG a env gg
 
 
 ---------------------------------------------------------------------------------------------------
+instance Expand AltCase where
+ expand = downA
+
+downA a env alt
+  = case alt of
+        AAltCase p gsx
+         -> let env'    = extendPat p env
+                gsx'    = map (expand a env') gsx
+            in  AAltCase p gsx'
+
+
+---------------------------------------------------------------------------------------------------
+instance Expand AltMatch where
+ expand = downMA
+
+downMA a env alt
+  = case alt of
+        AAltMatch gx    -> AAltMatch (downGX a env gx)
+
+
+---------------------------------------------------------------------------------------------------
 -- | Extend a type environment with the variables bound by the given pattern.
 extendPat :: Pat -> Env -> Env
 extendPat ww env
@@ -260,6 +267,14 @@ extendPat ww env
         PDefault        -> env
         PVar  b         -> Env.union  env (Env.singletonDaVar' b) 
         PData _ bs      -> Env.unions (env : map Env.singletonDaVar' bs)
+
+
+extendParam :: Param -> Env -> Env
+extendParam pp env
+ = case pp of
+        MType    b _    -> Env.union env (Env.singletonTyVar' b)
+        MWitness b _    -> Env.union env (Env.singletonDaVar' b)
+        MValue   p _    -> extendPat p env
 
 
 -- | Extend a type environment with the variables bound by the given guard.
@@ -271,18 +286,29 @@ extendGuard gg tenv
 
 
 ---------------------------------------------------------------------------------------------------
+expandQuantClause :: Env -> Clause -> (Env, Clause)
+expandQuantClause env cc
+ = case cc of
+        SSig{}  
+         -> (env, cc)
+
+        SLet a mt ps gxs
+         -> let (mt', ps')      = expandQuantParams env mt ps
+            in  (env, SLet a mt' ps' gxs)
+
+
 -- | Expand missing quantifiers in types of bindings.
 --  
 --   If a binding mentions type variables that are not in scope then add new
 --   quantifiers to its type, as well as matching type lambdas.
 --
-expandQuant 
+expandQuantParams 
         :: Env                  -- ^ Current environment.
         -> BindVarMT            -- ^ Type of binding.
-        -> Exp                  -- ^ Body of binding.
-        -> (BindVarMT, Exp)     -- ^ Expanded type and body of binding.
+        -> [Param]              -- ^ Parameters of binding.
+        -> (BindVarMT, [Param]) -- ^ Expanded type and body of binding.
 
-expandQuant env bmBind xBind
+expandQuantParams env bmBind ps
  | XBindVarMT bBind (Just tBind) <- bmBind
  , fvs                           <- freeVarsT  env tBind
  , not $ Set.null fvs
@@ -309,13 +335,12 @@ expandQuant env bmBind xBind
         --   We could instead just not include a kind, but use
         --   a hole so the form of the term matches the form 
         --   of its type.
-        xBind'     = foldr (\b1 x1 -> XLAM (XBindVarMT b1 (Just (TVar UHole))) x1)
-                           xBind bsNew
+        ps'     = [MType b Nothing | b <- bsNew] ++ ps
 
-   in   (XBindVarMT bBind (Just tBind'), xBind')
+   in   (XBindVarMT bBind (Just tBind'), ps')
 
  | otherwise
- = (bmBind, xBind)
+ = (bmBind, ps)
 
 
 ---------------------------------------------------------------------------------------------------

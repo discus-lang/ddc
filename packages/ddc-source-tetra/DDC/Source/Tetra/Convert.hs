@@ -11,7 +11,6 @@ import DDC.Source.Tetra.Convert.Error
 import DDC.Data.SourcePos
 import DDC.Type.Universe                                (Universe (..), universeUp)
 
-import qualified DDC.Source.Tetra.Transform.Guards      as S
 import qualified DDC.Source.Tetra.Module                as S
 import qualified DDC.Source.Tetra.DataDef               as S
 import qualified DDC.Source.Tetra.Exp                   as S
@@ -26,7 +25,7 @@ import qualified DDC.Type.DataDef                       as C
 import qualified DDC.Type.Sum                           as CSum
 import qualified Data.Text                              as Text
 import Data.Maybe
-
+import qualified Text.Show.Pretty                       as Text
 
 import DDC.Core.Module 
         ( ExportSource  (..)
@@ -152,17 +151,51 @@ letsOfTops tops
  = C.LRec <$> (sequence $ mapMaybe bindOfTop tops)
 
 
+---------------------------------------------------------------------------------------------------
 -- | Try to convert a `TopBind` to a top-level binding, 
 --   or `Nothing` if it isn't one.
-bindOfTop  
-        :: S.Top S.Source
-        -> Maybe (ConvertM S.Source (C.Bind C.Name, C.Exp SP C.Name))
+bindOfTop :: S.Top S.Source
+          -> Maybe (ConvertM S.Source (C.Bind C.Name, C.Exp SP C.Name))
 
-bindOfTop (S.TopClause _ (S.SLet a bm [] [S.GExp x]))
- = Just ((,) <$> toCoreBM UniverseSpec bm <*> toCoreX a x)
+bindOfTop tt
+ = case tt of
+        S.TopClause _ (S.SLet a bm ps [S.GExp x])
+         -> Just ((,)   <$> toCoreBM UniverseSpec bm 
+                        <*> toCoreX a (wrapParams ps x))
 
-bindOfTop _     
- = Nothing
+        S.TopClause _ (S.SLet{})
+         -> error $ unlines
+                [ "bindOfTop: cannot convert top"
+                , Text.ppShow tt]
+
+        -- Sigs don't make bindings.
+        S.TopClause _ S.SSig{}
+         -> Nothing
+
+        S.TopType{}     -> Nothing
+        S.TopData{}     -> Nothing
+
+
+wrapParams :: [S.Param] -> S.Exp -> S.Exp
+wrapParams [] x = x
+wrapParams (p:ps) x
+ = case p of
+        S.MType    b mt    
+         -> S.XLAM (S.XBindVarMT b mt)       $ wrapParams ps x
+
+        S.MWitness b mt
+         -> S.XLam (S.XBindVarMT b mt)       $ wrapParams ps x
+
+        S.MValue   S.PDefault mt
+         -> S.XLam (S.XBindVarMT S.BNone mt) $ wrapParams ps x
+
+        S.MValue   (S.PVar b) mt
+         -> S.XLam (S.XBindVarMT b mt)       $ wrapParams ps x
+
+        S.MValue   _ _
+         -> error $ unlines
+                [ "wrapParams: cannot convert pat"
+                , Text.ppShow p ]
 
 
 -- ImportType -------------------------------------------------------------------------------------
@@ -417,14 +450,9 @@ toCoreX a xx
 
         -- These shouldn't exist in the desugared source tetra code.
         S.XDefix{}      -> Left $ ErrorConvertCannotConvertSugarExp xx
-
         S.XInfixOp{}    -> Left $ ErrorConvertCannotConvertSugarExp xx
-
         S.XInfixVar{}   -> Left $ ErrorConvertCannotConvertSugarExp xx
-
-        S.XMatch sp alts xDefault
-         -> let gxs     = [ gx | S.AAltMatch gx <- alts]
-            in  toCoreX sp $ S.desugarGuards gxs xDefault
+        S.XMatch{}      -> Left $ ErrorConvertCannotConvertSugarExp xx
 
 
 -- Lets -------------------------------------------------------------------------------------------
@@ -452,10 +480,28 @@ toCoreLts a lts
                 <*> (fmap Just $ toCoreT UniverseKind tParent)
                 <*> (sequence  $ fmap toCoreTBK bts)
 
-        S.LGroup{}
-         -> error "ddc-source-tetra.convert: cannot convert sugar lets"
+        S.LGroup [c]
+         |  [(b, x')] <- stripClause c
+         -> toCoreLts a (S.LLet b x')
 
---         -> Left $ ErrorConvertCannotConvertSugarLets lts
+        S.LGroup cs
+         -> do  let bxs = concatMap stripClause cs
+                toCoreLts a (S.LRec bxs)
+
+
+stripClause :: S.Clause -> [(S.BindVarMT, S.Exp)]
+stripClause cc
+ = case cc of
+        S.SLet _ bm ps [S.GExp x]
+         -> [(bm, wrapParams ps x)]
+
+        S.SLet{}       
+         -> error $ unlines
+                [ "stripClause: cannot strip"
+                , Text.ppShow cc]
+
+        S.SSig{}
+         -> []
 
 
 -- Cast -------------------------------------------------------------------------------------------
@@ -477,12 +523,14 @@ toCoreC a cc
 
 -- Alt --------------------------------------------------------------------------------------------
 toCoreA  :: SP -> S.AltCase -> ConvertM S.Source (C.Alt SP C.Name)
-toCoreA sp (S.AAltCase w gxs)
- = C.AAlt <$> toCoreP w
-          <*> (toCoreX sp $ S.desugarGuards gxs 
-                          $ S.makeXErrorDefault
-                                (Text.pack    $ sourcePosSource sp)
-                                (fromIntegral $ sourcePosLine   sp))
+toCoreA sp alt
+ = case alt of
+        S.AAltCase w [S.GExp x]
+         -> C.AAlt <$> toCoreP w <*> toCoreX sp x
+
+        _ -> error $ unlines
+                [ "ddc-source-tetra: cannot convert sugared alt"       
+                , Text.ppShow alt]
 
 
 -- Pat --------------------------------------------------------------------------------------------

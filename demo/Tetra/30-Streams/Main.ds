@@ -1,4 +1,3 @@
-
 module Main 
 import System.IO.Console
 import Data.List
@@ -29,41 +28,41 @@ streamOfList (xx : List a) : Stream (List a) a
 
 
 -- | Convert a stream to a list.
-listOfStream  (MkStream f s0: Stream s a) : List a
- = case f s0 of
-        Yield x s1      -> Cons x (listOfStream (MkStream f s1))
-        Skip  s1        -> listOfStream (MkStream f s1)
-        Done            -> Nil
-
+listOfStream  (ss : Stream s a) : List a
+ = case ss of
+        MkStream f s0
+         -> case f s0 of
+                Yield x s1      -> Cons x (listOfStream (MkStream f s1))
+                Skip  s1        -> listOfStream (MkStream f s1)
+                Done            -> Nil
 
 -- | Apply a function to every element of a stream.
-smap    (f: a -> b) 
-        (MkStream stepA sA0: Stream s a) 
-        : Stream s b
- = let stepB q 
-        = case stepA q of
-                Yield x sA1     -> Yield (f x) sA1
-                Skip sA2        -> Skip sA2
-                Done            -> Done
-   in  MkStream stepB sA0
+smap (f : a -> b) (ss : Stream s a) : Stream s b
+ = match {
+        | MkStream stepA sA0      <- ss
+        = let stepB q 
+                 = case stepA q of
+                        Yield x sA1     -> Yield (f x) sA1
+                        Skip sA2        -> Skip sA2
+                        Done            -> Done
+          in  MkStream stepB sA0
+   }
 
 
 -- | Take the given number of elements from a stream.
-stake   (n: Nat) 
-        (MkStream fA sA0: Stream s a) 
-        : Stream (Tup2 s Nat) a
-
- = let stepB (T2 sA ix)
-        | ix >= n       
-        = Done
-
-        | otherwise     
-        = case fA sA of
-                Yield x sA2 -> Yield x (T2 sA2 (ix + 1))
-                Skip sA3    -> Skip  (T2 sA3 ix)
-                Done        -> Done
-
-   in   MkStream stepB (T2 sA0 0)
+stake (n : Nat) (ss : Stream s a) : Stream (Tup2 s Nat) a
+ = case ss of
+        MkStream fA sA0
+         -> let stepB q
+                 = case q of
+                        T2 sA ix 
+                         | ix >= n   -> Done
+                         | otherwise 
+                         -> case fA sA of
+                                Yield x sA2 -> Yield x (T2 sA2 (ix + 1))
+                                Skip sA3    -> Skip  (T2 sA3 ix)
+                                Done        -> Done
+            in   MkStream stepB (T2 sA0 0)
 
 
 main (_ : Unit) : S Console Unit
@@ -73,4 +72,3 @@ main (_ : Unit) : S Console Unit
         ss2     = stake 10 (smap (add 1) ss1)
         xx2     = listOfStream ss2
         writel (showNat (foldl add 0 xx2))
-
