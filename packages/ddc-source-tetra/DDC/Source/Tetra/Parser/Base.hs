@@ -24,9 +24,9 @@ module DDC.Source.Tetra.Parser.Base
           -- * Primitive Operators
         , pPrimValSP)
 where
-import DDC.Source.Tetra.Exp.Bind
-import DDC.Source.Tetra.Lexer
+import DDC.Source.Tetra.Exp.Bind        hiding (Name)
 import DDC.Source.Tetra.Prim
+import DDC.Source.Tetra.Lexer
 import DDC.Core.Lexer.Tokens
 import DDC.Base.Parser                  ((<?>))
 import DDC.Base.Parser                  (SourcePos(..))

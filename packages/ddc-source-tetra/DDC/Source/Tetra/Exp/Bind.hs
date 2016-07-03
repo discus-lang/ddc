@@ -1,6 +1,7 @@
 
 module DDC.Source.Tetra.Exp.Bind
-        ( Bind          (..)
+        ( Name
+        , Bind          (..)
         , Bound         (..)
         , DaConBind     (..)
         , DaConBound    (..)
@@ -10,6 +11,7 @@ where
 import DDC.Source.Tetra.Prim.Base
 import Data.Text                (Text)
 
+type Name = Text
 
 -- | Binding occurrence of a variable.
 data Bind

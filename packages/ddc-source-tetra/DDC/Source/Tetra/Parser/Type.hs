@@ -8,11 +8,11 @@ module DDC.Source.Tetra.Parser.Type
         , pTyConSP
         , pTyConBound)
 where
-import DDC.Source.Tetra.Lexer           as S
 import DDC.Source.Tetra.Parser.Base     as S
 import DDC.Source.Tetra.Exp.Source      as S
 import DDC.Source.Tetra.Prim.TyConTetra as S
 import DDC.Core.Lexer.Tokens            as K
+import qualified DDC.Source.Tetra.Lexer as SL
 
 import qualified DDC.Core.Tetra         as C
 import qualified DDC.Base.Parser        as P
@@ -178,11 +178,11 @@ pTyConSP  =   P.pTokMaybeSP f <?> "a type constructor"
                  -> Just $ TyConPrim $ PrimTypeTcCon c
 
                 -- Primitive TyCons.
-                KN (KCon (NamePrimType tc))
+                KN (KCon (SL.NamePrimType tc))
                  -> Just $ TyConPrim tc
 
                 -- User Bound TyCons.
-                KN (KCon (NameCon tx))
+                KN (KCon (SL.NameCon tx))
                  -> Just (TyConBound (TyConBoundName tx))
 
                 _ -> Nothing
@@ -194,8 +194,8 @@ pTyConBound :: Parser TyCon
 pTyConBound  
         =   P.pTokMaybe f <?> "a bound type constructor"
  where  
-        f :: Tok Name -> Maybe TyCon
-        f (KN (KCon (NameCon tx)))
+        f :: Tok SL.Name -> Maybe TyCon
+        f (KN (KCon (SL.NameCon tx)))
          |  Nothing <- C.readPrimTyCon      (T.unpack tx)
          ,  Nothing <- S.readPrimTyConTetra (T.unpack tx)
          = Just (TyConBound (TyConBoundName tx))

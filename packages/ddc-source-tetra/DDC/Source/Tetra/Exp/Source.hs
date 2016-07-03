@@ -4,6 +4,7 @@ module DDC.Source.Tetra.Exp.Source
           Source        (..)
 
           -- * Binding
+        , Name
         , Bind          (..)
         , Bound         (..)
 

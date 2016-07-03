@@ -15,6 +15,7 @@ import qualified DDC.Build.Transform.Resolve       as B
 import qualified DDC.Source.Tetra.Convert          as SE
 import qualified DDC.Source.Tetra.Transform.Defix  as SE
 import qualified DDC.Source.Tetra.Transform.Expand as SE
+import qualified DDC.Source.Tetra.Transform.Guards as SE
 import qualified DDC.Source.Tetra.Pretty           ()
 import qualified DDC.Source.Tetra.Parser           as SE
 import qualified DDC.Source.Tetra.Lexer            as SE
@@ -31,6 +32,8 @@ import qualified DDC.Core.Lexer                    as C
 import qualified DDC.Base.Parser                   as BP
 import qualified DDC.Data.SourcePos                as SP
 import qualified DDC.Data.Token                    as Token
+
+import qualified Data.Text                         as Text
 import Control.DeepSeq
 
 
@@ -121,15 +124,19 @@ pipeText !srcName !srcLine !str !pp
                  = do   let sp            = SP.SourcePos "<top level>" 1 1
 
                         -- Expand missing quantifiers in signatures.
-                        let mm_expand = SE.expandModule sp mm
+                        let mm_expand   = SE.expandModule sp mm
+
+                        -- Desugar guards and patterns.
+                        let mm_guards   = SE.evalState (Text.pack "g")
+                                        $ SE.desugarModule mm_expand
 
                         -- Dump desguared source code.
-                        pipeSink (renderIndent $ ppr mm_expand) sinkDesugared
+                        pipeSink (renderIndent $ ppr mm_guards) sinkDesugared
 
                         -- Convert Source Tetra to Core Tetra.
                         -- This source position is used to annotate the 
                         -- let-expression that holds all the top-level bindings.
-                        case SE.coreOfSourceModule sp mm_expand of
+                        case SE.coreOfSourceModule sp mm_guards of
                          Left err
                           -> return [ErrorLoad err]
 

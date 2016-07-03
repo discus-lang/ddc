@@ -3,7 +3,8 @@
 --   and utilities for working with it.
 module DDC.Source.Tetra.Exp
         ( -- * Binding
-          Bind          (..)
+          Name
+        , Bind          (..)
         , Bound         (..)
 
           -------------------------------------------------
