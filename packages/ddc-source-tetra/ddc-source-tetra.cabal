@@ -41,6 +41,7 @@ Library
         DDC.Source.Tetra.Transform.Defix
         DDC.Source.Tetra.Transform.Expand
         DDC.Source.Tetra.Transform.Guards
+        DDC.Source.Tetra.Transform.Matches
 
         DDC.Source.Tetra.Convert
         DDC.Source.Tetra.DataDef

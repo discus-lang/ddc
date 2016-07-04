@@ -3,25 +3,30 @@
 -- | Desugar guards and nested patterns to match expressions.
 module DDC.Source.Tetra.Transform.Guards
         ( type S, evalState, newVar
-        , desugarGuardsOfModule)
+        , desugarModule)
 where
 import DDC.Source.Tetra.Module
 import DDC.Source.Tetra.Prim
 import DDC.Source.Tetra.Exp
-import qualified DDC.Data.SourcePos     as SP
 import Data.Monoid
 import Data.Text                        (Text)
-import qualified Data.Text              as Text
-import qualified Control.Monad.State    as S
 import Control.Monad
+import qualified DDC.Data.SourcePos     as SP
+import qualified Control.Monad.State    as S
+import qualified Data.Text              as Text
 
 
 -------------------------------------------------------------------------------
+-- | Source position.
 type SP = SP.SourcePos
+
+-- | State holding a variable name prefix and counter to 
+--   create fresh variable names.
 type S  = S.State (Text, Int)
 
 
--- | Evaluate a desguaring computation.
+-- | Evaluate a desguaring computation,
+--   using the given prefix for freshly introduced variables.
 evalState :: Text -> S a -> a
 evalState n c
  = S.evalState c (n, 0) 
@@ -37,9 +42,9 @@ newVar pre
 
 
 -------------------------------------------------------------------------------
--- | Desugar guards in a module.
-desugarGuardsOfModule :: Module Source -> S (Module Source)
-desugarGuardsOfModule mm
+-- | Desugar guards and nested patterns to match expressions.
+desugarModule :: Module Source -> S (Module Source)
+desugarModule mm
  = do   ts'     <- mapM desugarTop $ moduleTops mm
         return  $ mm { moduleTops = ts' }
 
