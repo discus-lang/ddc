@@ -20,6 +20,7 @@ import qualified Data.Text              as Text
 -- | Source position.
 type SP = SP.SourcePos
 
+
 -- | State holding a variable name prefix and counter to 
 --   create fresh variable names.
 type S  = S.State (Text, Int)
