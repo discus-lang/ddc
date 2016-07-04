@@ -79,20 +79,16 @@ tail (def: List a) (xx: List a): List a
 tail1   (def: a) (xx: List a): List a
  = case xx of
         Nil             -> singleton def
-        Cons x xs        
-         -> case xs of
-                Nil     -> singleton x
-                _       -> xs
+        Cons x Nil      -> singleton x
+        Cons _ xs       -> xs
 
 
 -- | Take the last element of a list, if there is one.
 last (def: a) (xx: List a): a
  = case xx of
         Nil                     -> def
-        Cons x xs
-         -> case xs of
-                Nil             -> x
-                Cons y ys       -> last def xs
+        Cons x Nil              -> x
+        Cons x (Cons y ys)      -> last def (Cons y ys)
 
 
 index (def: a) (n: Nat) (xx: List a): a
@@ -142,17 +138,6 @@ forS (xx: List a) (f: a -> S e Unit): S e Unit
 -- Zips -----------------------------------------------------------------------
 zipWith (f: a -> b -> c) 
         (xx: List a) (yy: List b): List c
-{-
- = case xx of
-        Nil     -> Nil
-        Cons x xs
-         -> case yy of
-                Cons y ys
-                 -> Cons (f x y) (zipWith f xs ys)
-
-              Nil -> Nil
--}
-
  = case T2 xx yy of
         T2 Nil _                -> Nil
         T2 (Cons x xs) Nil      -> Nil
@@ -163,14 +148,11 @@ zipWith (f: a -> b -> c)
 
 zipWithS (f: a -> b -> S e c) 
          (xx: List a) (yy: List b): S e (List c)
- = case xx of
-        Nil     -> Nil
-        Cons x xs
-         -> case yy of
-                Cons y ys
-                 -> Cons (f x y) (zipWithS f xs ys)
-
-                Nil -> Nil
+ = case T2 xx yy of
+        T2 Nil _                -> Nil
+        T2 (Cons x xs) Nil      -> Nil
+        T2 (Cons x xs) (Cons y ys)
+         -> Cons (f x y) (zipWithS f xs ys)
 
 
 -- Folds ----------------------------------------------------------------------
@@ -233,9 +215,8 @@ filter (p: a -> Bool) (xx: List a): List a
  = case xx of
         Nil             -> Nil
         Cons x xs  
-         -> if p x 
-                then Cons x (filter p xs)
-                else filter p xs
+         | p x          -> Cons x (filter p xs)
+         | otherwise    -> filter p xs
 
 
 -- | Keep only those elements that match the given stateful predicate.
@@ -244,16 +225,14 @@ filterS (p: a -> S e Bool) (xx: List a): S e (List a)
  = case xx of
         Nil             -> Nil
         Cons x xs  
-         -> if p x 
-                then Cons x (filterS p xs)
-                else filterS p xs
+         | p x          -> Cons x (filterS p xs)
+         | otherwise    -> filterS p xs
 
 
 -- | Check if any of the members of the list match the given predicate.
 any (p: a -> Bool) (xx: List a): Bool
  = case xx of
-        Nil
-         -> False
+        Nil             -> False
 
         Cons x xs 
          | p x          -> True

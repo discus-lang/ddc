@@ -54,8 +54,11 @@ data PipeText n (err :: * -> *) where
   PipeTextLoadSourceTetra
         :: !Sink        -- Sink for source tokens.
         -> !Sink        -- Sink for parsed source code.
-        -> !Sink        -- Sink for desugared source code.
-        -> !Sink        -- Sink for core tetra code after conversoin.
+        -> !Sink        -- Sink for defixed source code.
+        -> !Sink        -- Sink for expanded source code.
+        -> !Sink        -- Sink for guard desugared source code.
+        -> !Sink        -- Sink for match desugared source code.
+        -> !Sink        -- Sink for core tetra code after conversion.
         -> !Sink        -- Sink for core tetra code before type checking.
         -> !Sink        -- Sink for type checker trace.
         -> !Store       -- Interface store.
@@ -93,8 +96,10 @@ pipeText !srcName !srcLine !str !pp
                         pipeCores mm pipes
 
         PipeTextLoadSourceTetra 
-                sinkTokens    sinkParsed
-                sinkDesugared sinkCore sinkPreCheck sinkCheckerTrace 
+                sinkTokens sinkParsed
+                sinkDefix  sinkExpand sinkGuards _sinkMatches
+                sinkCore        
+                sinkPreCheck sinkCheckerTrace 
                 store pipes
          -> {-# SCC "PipeTextLoadSourceTetra" #-}
             let 
@@ -120,18 +125,19 @@ pipeText !srcName !srcLine !str !pp
                         Left err  -> return [ErrorLoad err]
                         Right mm' -> goToCore mm'
 
-                goToCore mm
-                 = do   let sp            = SP.SourcePos "<top level>" 1 1
+                goToCore mm_defixed
+                 = do   -- Dump defixed source code.
+                        pipeSink (renderIndent $ ppr mm_defixed) sinkDefix
 
                         -- Expand missing quantifiers in signatures.
-                        let mm_expand   = SE.expandModule sp mm
+                        let sp          = SP.SourcePos "<top level>" 1 1
+                        let mm_expand   = SE.expandModule sp mm_defixed
+                        pipeSink (renderIndent $ ppr mm_expand)  sinkExpand
 
                         -- Desugar guards and patterns.
                         let mm_guards   = SE.evalState (Text.pack "g")
-                                        $ SE.desugarModule mm_expand
-
-                        -- Dump desguared source code.
-                        pipeSink (renderIndent $ ppr mm_guards) sinkDesugared
+                                        $ SE.desugarGuardsOfModule mm_expand
+                        pipeSink (renderIndent $ ppr mm_guards) sinkGuards
 
                         -- Convert Source Tetra to Core Tetra.
                         -- This source position is used to annotate the 

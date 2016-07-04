@@ -1,9 +1,9 @@
 {-# LANGUAGE TypeFamilies, OverloadedStrings #-}
 
--- | Desugaring Source Tetra guards and nested patterns to simple match-expressions.
+-- | Desugar guards and nested patterns to match expressions.
 module DDC.Source.Tetra.Transform.Guards
         ( type S, evalState, newVar
-        , desugarModule)
+        , desugarGuardsOfModule)
 where
 import DDC.Source.Tetra.Module
 import DDC.Source.Tetra.Prim
@@ -13,6 +13,7 @@ import Data.Monoid
 import Data.Text                        (Text)
 import qualified Data.Text              as Text
 import qualified Control.Monad.State    as S
+import Control.Monad
 
 
 ---------------------------------------------------------------------------------------------------
@@ -37,8 +38,8 @@ newVar pre
 
 ---------------------------------------------------------------------------------------------------
 -- | Desugar guards in a module.
-desugarModule :: Module Source -> S (Module Source)
-desugarModule mm
+desugarGuardsOfModule :: Module Source -> S (Module Source)
+desugarGuardsOfModule mm
  = do   ts'     <- mapM desugarTop $ moduleTops mm
         return  $ mm { moduleTops = ts' }
 
@@ -63,71 +64,10 @@ desugarCl _sp cc
 
         SLet sp mt ps gxs
          -> do  (ps', gsParam) <- stripParamsToGuards ps
-                gxs'    <- mapM (desugarGX sp)
-                        $  map (wrapGuards gsParam) gxs
+                gxs'    <- mapM (desugarGX sp >=> (return . cleanGX))
+                        $  map  (wrapGuards gsParam) gxs
 
                 return $ SLet sp mt ps' gxs'
-
-
--- | Strip out patterns in the given parameter list, 
---   yielding a list of guards that implement the patterns.
-stripParamsToGuards :: [Param] -> S ([Param], [Guard])
-stripParamsToGuards []
- = return ([], [])
-
-stripParamsToGuards (p:ps)
- = case p of
-        MType{} 
-         -> do  (ps', gs) <- stripParamsToGuards ps
-                return (p : ps', gs)
-
-        MWitness{} 
-         -> do  (ps', gs) <- stripParamsToGuards ps
-                return (p : ps', gs)
-
-        MValue PDefault  _mt
-         -> do  (ps', gs) <- stripParamsToGuards ps
-                return (p : ps', gs)
-
-        MValue (PVar _b) _mt
-         -> do  (ps', gs) <- stripParamsToGuards ps
-                return (p : ps', gs)
-
-        MValue (PData dc psData) mt
-         -> do  (psParam', gsRest) <- stripParamsToGuards ps
-                (psData',  gsData) <- stripPatsToGuards   psData
-                (b, u)             <- newVar "p"
-                return  ( MValue (PVar b) mt : psParam'
-                        , GPat (PData dc psData') (XVar u) : (gsData ++ gsRest))
-
-
--- | Strip out nested patterns from the given pattern list,
---   yielding a list of guards that implement the patterns.
-stripPatsToGuards :: [Pat] -> S ([Pat], [Guard])
-stripPatsToGuards []
- = return ([], [])
-
-stripPatsToGuards (p:ps)
- = case p of
-        PDefault
-         -> do  (ps', gs) <- stripPatsToGuards ps
-                return (p : ps', gs)
-
-        PVar  _b
-         -> do  (ps', gs) <- stripPatsToGuards ps
-                return (p : ps', gs)
-
-        PData dc psData
-         -> do  (psRest', gsRest) <- stripPatsToGuards ps
-                (psData', gsData) <- stripPatsToGuards psData
-                (b, u)            <- newVar "p"
-                return  ( PVar b : psRest'
-                        , GPat (PData dc psData') (XVar u) : (gsData ++ gsRest) )
-
-
-wrapGuards :: [Guard] -> GuardedExp -> GuardedExp
-wrapGuards [] gx        = gx
-wrapGuards (g : gs) gx  = GGuard g (wrapGuards gs gx)
 
 
 ---------------------------------------------------------------------------------------------------
@@ -167,7 +107,7 @@ desugarX sp xx
          -> do  xScrut' <- desugarX sp xScrut
                 (b, u)  <- newVar "xScrut"
 
-                gxsAlt' <- mapM (desugarGX sp)
+                gxsAlt' <- mapM (desugarGX sp >=> (return . cleanGX))
                         $  concat [ map (GGuard (GPat p (XVar u))) gxs
                                   | AAltCase p gxs <- alts]
 
@@ -238,8 +178,18 @@ desugarLts sp lts
 desugarGX :: SP -> GuardedExp -> S GuardedExp
 desugarGX sp gx
  = case gx of
-        GGuard g gx'    -> GGuard <$> desugarG sp g <*> desugarGX sp gx'
-        GExp x          -> GExp   <$> desugarX sp x
+        GGuard (GPat p x) gxInner
+         -> do  x'        <- desugarX sp x
+                (g', gs') <- stripGuardToGuards (GPat p x')
+                gxInner'  <- desugarGX sp gxInner
+                return  $ GGuard g'
+                        $ wrapGuards gs' gxInner'
+
+        GGuard g gx'
+         -> GGuard <$> desugarG sp g <*> desugarGX sp gx'
+
+        GExp x
+         -> GExp   <$> desugarX sp x
 
 
 -- | Desugar a guard.
@@ -255,14 +205,117 @@ desugarG sp g
 -- | Desugar a case alternative.
 desugarAltCase :: SP -> AltCase -> S AltCase
 desugarAltCase sp (AAltCase p gxs)
- = do   gxs'    <- mapM (desugarGX sp) gxs
+ = do   gxs' <- mapM (desugarGX sp >=> (return . cleanGX)) gxs
         pure $ AAltCase p gxs'
 
 
 -- | Desugar a match alternative.
 desugarAltMatch :: SP -> AltMatch -> S AltMatch
 desugarAltMatch sp (AAltMatch gx)
- = do   gx'     <- desugarGX sp gx
+ = do   gx'  <- (desugarGX sp >=> (return . cleanGX)) gx
         pure $ AAltMatch gx'
 
+
+-- | Strip out patterns in the given parameter list, 
+--   yielding a list of guards that implement the patterns.
+stripParamsToGuards :: [Param] -> S ([Param], [Guard])
+stripParamsToGuards []
+ = return ([], [])
+
+stripParamsToGuards (p:ps)
+ = case p of
+        MType{} 
+         -> do  (ps', gs) <- stripParamsToGuards ps
+                return (p : ps', gs)
+
+        MWitness{} 
+         -> do  (ps', gs) <- stripParamsToGuards ps
+                return (p : ps', gs)
+
+        MValue PDefault  _mt
+         -> do  (ps', gs) <- stripParamsToGuards ps
+                return (p : ps', gs)
+
+        MValue (PVar _b) _mt
+         -> do  (ps', gs) <- stripParamsToGuards ps
+                return (p : ps', gs)
+
+        MValue (PData dc psData) mt
+         -> do  (psParam', gsRest) <- stripParamsToGuards ps
+                (psData',  gsData) <- stripPatsToGuards   psData
+                (b, u)             <- newVar "p"
+                return  ( MValue (PVar b) mt : psParam'
+                        , GPat (PData dc psData') (XVar u) : (gsData ++ gsRest))
+
+
+-- | Strip out nested patterns from the given pattern list,
+--   yielding a list of guards that implement the patterns.
+stripPatsToGuards :: [Pat] -> S ([Pat], [Guard])
+stripPatsToGuards []
+ = return ([], [])
+
+stripPatsToGuards (p:ps)
+ = case p of
+        -- Match against defaults directly.
+        PDefault
+         -> do  (ps', gs) <- stripPatsToGuards ps
+                return (p : ps', gs)
+
+        -- Match against vars directly.
+        PVar  _b
+         -> do  (ps', gs) <- stripPatsToGuards ps
+                return (p : ps', gs)
+
+        -- Strip out nested patterns in the arguments of a data constructor.
+        PData dc psData
+         -> do  -- Strip the rest of the patterns.
+                (psRest', gsRest) <- stripPatsToGuards ps
+
+                -- Strip nested patterns out of the arguments.
+                (psData', gsData) <- stripPatsToGuards psData
+
+                -- Make a new name to bind the value we are matching against.
+                (b, u)            <- newVar "p"
+                return  ( PVar b : psRest'
+                        , GPat (PData dc psData') (XVar u) : (gsData ++ gsRest) )
+
+
+-- | Like `stripPatsToGuards` but we take the whole enclosing guards.
+--   This gives us access to the expression being scrutinised, 
+--   which we can match against directly without introducing a new variable.
+stripGuardToGuards :: Guard -> S (Guard, [Guard])
+stripGuardToGuards g
+ = case g of
+        -- Match against defaults and vars directly.
+        GPat PDefault _ -> return (g, [])
+        GPat PVar{} _   -> return (g, [])
+
+        -- As we alerady have the expression being matched we don't 
+        -- need to introduce a new variable to name it.
+        GPat (PData dc psData) x 
+         -> do  (psData', gsData)  <- stripPatsToGuards psData
+                return  ( GPat (PData dc psData') x
+                        , gsData)
+
+        GPred{}         -> return (g, [])
+        GDefault{}      -> return (g, [])
+
+
+-- | Wrap more guards around the outside of a guarded expression.
+wrapGuards :: [Guard] -> GuardedExp -> GuardedExp
+wrapGuards [] gx        = gx
+wrapGuards (g : gs) gx  = GGuard g (wrapGuards gs gx)
+
+
+-- | Clean out default patterns from a guarded expression.
+--
+--   We end up with default patterns in guards when desugaring default
+--   alternatives, but they serve no purpose in the desugared code.
+--
+cleanGX :: GuardedExp -> GuardedExp
+cleanGX gx
+ = case gx of
+        GGuard GDefault gx'     -> cleanGX gx'
+        GGuard g        gx'     -> GGuard g $ cleanGX gx'
+        GExp   x                -> GExp x
 

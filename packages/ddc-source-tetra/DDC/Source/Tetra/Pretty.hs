@@ -223,7 +223,7 @@ instance PrettyLanguage l => Pretty (GExp l) where
         XMatch _ alts xDefault
          -> pprParen' (d > 2)
          $  (nest 2 $ text "match" <+> lbrace <> line
-                <> (vcat $ punctuate semi $ map ppr alts))
+                <> (vcat $ punctuate (semi <> line) $ map ppr alts))
          <> line
          <> rbrace
          <+> text "else" <+> pprPrec 10 xDefault
