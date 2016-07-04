@@ -67,7 +67,7 @@ stake   (n: Nat)
                 Done        -> Done
 
 
-main (() : Unit): S Console Unit
+main ()
  = do   
         xx1     = enumFromTo 0 100
         ss1     = streamOfList xx1

@@ -7,11 +7,8 @@ import Data.Array
 where
 
 
-main (_: Unit): S Console Unit
+main ()
  = private r with { Alloc r; Read r; Write r } in
-   do   
-        arr     = allocArray [r] 10 0
-
+   do   arr     = allocArray [r] 10 0
         writeArray arr 5 100
-
         writel $ showNat (readArray arr 5)

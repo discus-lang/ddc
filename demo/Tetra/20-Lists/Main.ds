@@ -7,7 +7,8 @@ import Data.Ref
 import System.IO.Console
 where
 
-main (_: Unit): S Console Unit
+
+main ()
  = private r with { Alloc r; Read r; Write r } in 
    do
         -- Create a demo list.
@@ -27,6 +28,4 @@ main (_: Unit): S Console Unit
         
         -- Print out the final list length.
         writel $ showNat (readRef ref)
-
-
 

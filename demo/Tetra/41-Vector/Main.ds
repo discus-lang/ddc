@@ -6,7 +6,7 @@ import Data.Function
 where
 
 
-main (_: Unit): S Console Unit
+main ()
  = private r with { Alloc r; Read r; Write r } in
    do   
         vec     = vectorAlloc# [r] 100

@@ -60,7 +60,7 @@ writeListl xs
  = do   forS xs (λn : Nat. write ((showNat n) % " "))
         write "\n"
 
-main (_ : Unit): S Console Unit
+main ()
  = do   forS   (rows 20) writeListl
         writel (showNat (sums 23))
         writel (showNat (sums 123))

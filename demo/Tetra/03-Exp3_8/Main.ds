@@ -12,31 +12,38 @@ data Natural where
         Zero : Natural
         Succ : Natural -> Natural
 
-cAdd (x y : Natural) : Natural
+
+cAdd (x y: Natural): Natural
  = case x of
         Zero    -> y
         Succ x2 -> Succ (cAdd x2 y)
 
-cMul (x y : Natural) : Natural
+
+cMul (x y: Natural): Natural
  = case y of
         Zero    -> Zero
         Succ y2 -> cAdd (cMul x y2) x
 
-cExp (x y : Natural) : Natural
+
+cExp (x y: Natural): Natural
  = case y of
         Zero    -> Succ Zero
         Succ y2 -> cMul x (cExp x y2)
 
-natToInt (x : Natural) : Nat
+
+natToInt (x: Natural): Nat
  = case x of
         Zero    -> 0
         Succ x2 -> 1 + natToInt x2
 
-intToNat (x : Nat) : Natural
+
+intToNat (x: Nat): Natural
  = case x < 1 of
         True    -> Zero
         False   -> Succ (intToNat (x - 1))
+
         
-main (_ : Unit) : S Console Unit
- = writel $ "exp 3 6 = " % showNat (natToInt (cExp (intToNat 3) (intToNat 6)))
+main ()
+ = writel $ "exp 3 6 = " 
+          % showNat (natToInt (cExp (intToNat 3) (intToNat 6)))
 

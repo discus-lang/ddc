@@ -30,13 +30,11 @@ binToGray (b: Nat): Nat
  = bxor b (shr b 1)
 
 
-main (_: Unit): S Console Unit
+main ()
  = do   
         showBinary = showBaseNat 2 digitBinary 5 "0"
 
-        writel $ "   x "
-               %% " grey"
-               %% "   x'"
+        writel $ "   x " %% " grey" %% "   x'"
 
         forS (enumFromTo 0 31)
          (λx: Nat#.

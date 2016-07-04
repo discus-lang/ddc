@@ -49,8 +49,8 @@ isKPrime (k n: Nat): Bool
         $ primes 2
 
 
-main (_: Unit): S Console Unit
- = do   forS (enumFromTo 1 5)
+main ()
+ =      forS (enumFromTo 1 5)
          (λk: Nat#. 
           do    write $ "k = " % showNat k % ": "
                 forS (listOfStream $ stake 10 $ kPrimes k)

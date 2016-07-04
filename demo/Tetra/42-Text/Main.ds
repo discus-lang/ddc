@@ -5,7 +5,7 @@ import System.IO.Console
 where
    
 
-main (_: Unit): S Console Unit
+main ()
  = do   
         -- Write a text tree to console.
         writel  $ "-- Text Tree ---------------------------------"

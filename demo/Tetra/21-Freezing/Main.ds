@@ -29,7 +29,7 @@ rlength [a : Data] [r1 : Region]
         ref
 
 
-main (_ : Unit) : S Console Unit
+main ()
  = private r with { Alloc r; Read r } in 
    do
         -- Create a demo list.

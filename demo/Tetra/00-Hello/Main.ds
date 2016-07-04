@@ -1,10 +1,9 @@
 
 module Main 
 import System.IO.Console
-import Data.Function
 where
 
-main (_ : Unit) : S Console Unit
+main ()
  = do   writel "hello world"
         writel "Καλημέρα κόσμε"
         writel "こんにちは 世界"

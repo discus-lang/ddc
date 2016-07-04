@@ -7,10 +7,9 @@ import Data.Function
 where
 
 
-main (_: Unit): S Console Unit
- = do   
-        writel ("factorial 10            = " % showNat (factorial 10))
-        writel ("choose 20 3             = " % showNat (choose 20 3))
+main ()
+ = do   writel $ "factorial 10            = " % showNat (factorial 10)
+        writel $ "choose 20 3             = " % showNat (choose 20 3)
 
-        writel  $ "chooseMany 10 [5, 2, 3] = " 
-                % showNat (chooseMany 10 (Cons 5 (Cons 2 (Cons 3 Nil))))
+        writel $ "chooseMany 10 [5, 2, 3] = " 
+               % showNat (chooseMany 10 (Cons 5 (Cons 2 (Cons 3 Nil))))

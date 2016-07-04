@@ -27,35 +27,27 @@ data Door where
         Closed  : Door
 
 
-showDoor (d: Door): Text
- = case d of
-        Open    -> "Open"
-        Closed  -> "Closed"
+showDoor   Open   = "Open"
+showDoor   Closed = "Closed"
 
-
-toggleDoor (d: Door): Door
- = case d of
-        Open    -> Closed
-        Closed  -> Open
+toggleDoor Open   = Closed
+toggleDoor Closed = Open
 
 
 toggleEvery (n: Nat) (k: Nat): List Door -> List Door
- = let
+ = zipWith toggleIx (enumFromTo 1 n)
+ where
         toggleIx (i: Nat) (d: Door): Door
-         = if rem i k == 0 
-                then toggleDoor d
-                else d
-
-   in   zipWith toggleIx (enumFromTo 1 n)
+         | rem i k == 0 = toggleDoor d
+         | otherwise    = d
 
 
 runToggle (n: Nat): List Door
  = foldr (toggleEvery n) (replicate n Closed) (enumFromTo 1 n)
 
 
-main (_: Unit): S Console Unit
- = do
-        zipWithS 
+main ()
+ = do   zipWithS 
                 (λn: Nat. λd: Door. 
                         case d of
                          Open   -> writel (showNat n %% showDoor d)

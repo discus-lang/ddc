@@ -4,7 +4,7 @@ import System.IO.Console
 where
 
 -- Reverse the elements of a list, using an accumulator.
-reverseAcc (xx: List a): List a
+reverseAcc  (xx: List a): List a
  = reverseAcc2 Nil xx
 
 reverseAcc2 (acc xx: List a): List a
@@ -21,11 +21,9 @@ dumpListNat (xx: List Nat): S Console Unit
                 dumpListNat xs
 
 
-main (_: Unit): S Console Unit
- = do
-        xs1     = replicate  5 100
+main ()
+ = do   xs1     = replicate  5 100
         xs2     = enumFromTo 10 20
         zs      = append xs1 xs2
-        
         dumpListNat (reverseAcc zs)
         
