@@ -16,7 +16,7 @@ import qualified Control.Monad.State    as S
 import Control.Monad
 
 
----------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 type SP = SP.SourcePos
 type S  = S.State (Text, Int)
 
@@ -36,7 +36,7 @@ newVar pre
         return  (BName name, UName name)
 
 
----------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 -- | Desugar guards in a module.
 desugarGuardsOfModule :: Module Source -> S (Module Source)
 desugarGuardsOfModule mm
@@ -44,7 +44,7 @@ desugarGuardsOfModule mm
         return  $ mm { moduleTops = ts' }
 
 
----------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 -- | Desugar a top-level thing.
 desugarTop    :: Top Source -> S (Top Source)
 desugarTop tt
@@ -54,7 +54,7 @@ desugarTop tt
         TopType{}       -> return tt
 
 
----------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 -- | Desugar a clause.
 desugarCl :: SP -> Clause -> S Clause
 desugarCl _sp cc
@@ -70,11 +70,12 @@ desugarCl _sp cc
                 return $ SLet sp mt ps' gxs'
 
 
----------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 -- | Desugar an expression.
 desugarX :: SP -> Exp -> S Exp
 desugarX sp xx
  = case xx of
+        -- Boilerplate.
         XAnnot sp' x    -> XAnnot sp' <$> desugarX sp' x
         XVar{}          -> pure xx
         XPrim{}         -> pure xx
@@ -90,6 +91,7 @@ desugarX sp xx
         XInfixOp{}      -> pure xx
         XInfixVar{}     -> pure xx
 
+        -- Desugar a case expression.
         XCase xScrut alts
          -- Simple alternatives are ones where we can determine whether they
          -- match just based on the head pattern. If all the alternatives
@@ -104,22 +106,33 @@ desugarX sp xx
          -- other pattern that may fail, and require us to skip to the next
          -- alternatives. These are compiled as per match expressions.
          | otherwise
-         -> do  xScrut' <- desugarX sp xScrut
+         -> do  -- Desugar the scrutinee.
+                xScrut' <- desugarX sp xScrut
+
+                -- We bind the scrutinee to a new variable so we can 
+                -- defer to it multiple times in the body of the match.
                 (b, u)  <- newVar "xScrut"
 
+                -- At the start of each guarded expression we match against
+                -- the pattern from the original case alternative.
                 gxsAlt' <- mapM (desugarGX sp >=> (return . cleanGX))
                         $  concat [ map (GGuard (GPat p (XVar u))) gxs
                                   | AAltCase p gxs <- alts]
 
+                -- Desugar the body of each alternative.
                 alts'   <- mapM (desugarAltMatch sp)
                         $  [AAltMatch gx | gx <- gxsAlt']
 
+                -- Result contains a let-binding to bind the scrutinee,
+                -- then a match expression that implements the complex
+                -- case alternatives.
                 pure    $ XLet (LLet (XBindVarMT b Nothing) xScrut')
                         $ XMatch sp alts'
                         $ makeXErrorDefault
                                 (Text.pack    $ SP.sourcePosSource sp)
                                 (fromIntegral $ SP.sourcePosLine   sp)
 
+        -- Desugar a match expression from the source code.
         XMatch sp' alts xFail
          -> do  alts'     <- mapM (desugarAltMatch sp') alts
                 xFail'    <- desugarX sp' xFail
@@ -155,7 +168,7 @@ isTrivialPat pp
         _               -> False
 
 
----------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 -- | Desugar some let bindings.
 desugarLts :: SP -> Lets -> S Lets
 desugarLts sp lts
@@ -173,7 +186,7 @@ desugarLts sp lts
         LGroup cs       -> LGroup <$> mapM (desugarCl sp) cs
 
 
----------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 -- | Desugar a guarded expression.
 desugarGX :: SP -> GuardedExp -> S GuardedExp
 desugarGX sp gx
@@ -201,7 +214,7 @@ desugarG sp g
         GDefault        -> pure GDefault
 
 
----------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 -- | Desugar a case alternative.
 desugarAltCase :: SP -> AltCase -> S AltCase
 desugarAltCase sp (AAltCase p gxs)
@@ -216,6 +229,7 @@ desugarAltMatch sp (AAltMatch gx)
         pure $ AAltMatch gx'
 
 
+-------------------------------------------------------------------------------
 -- | Strip out patterns in the given parameter list, 
 --   yielding a list of guards that implement the patterns.
 stripParamsToGuards :: [Param] -> S ([Param], [Guard])
@@ -245,7 +259,8 @@ stripParamsToGuards (p:ps)
                 (psData',  gsData) <- stripPatsToGuards   psData
                 (b, u)             <- newVar "p"
                 return  ( MValue (PVar b) mt : psParam'
-                        , GPat (PData dc psData') (XVar u) : (gsData ++ gsRest))
+                        , GPat (PData dc psData') (XVar u) 
+                                : (gsData ++ gsRest))
 
 
 -- | Strip out nested patterns from the given pattern list,
@@ -277,7 +292,8 @@ stripPatsToGuards (p:ps)
                 -- Make a new name to bind the value we are matching against.
                 (b, u)            <- newVar "p"
                 return  ( PVar b : psRest'
-                        , GPat (PData dc psData') (XVar u) : (gsData ++ gsRest) )
+                        , GPat (PData dc psData') (XVar u) 
+                                 : (gsData ++ gsRest) )
 
 
 -- | Like `stripPatsToGuards` but we take the whole enclosing guards.
@@ -311,7 +327,6 @@ wrapGuards (g : gs) gx  = GGuard g (wrapGuards gs gx)
 --
 --   We end up with default patterns in guards when desugaring default
 --   alternatives, but they serve no purpose in the desugared code.
---
 cleanGX :: GuardedExp -> GuardedExp
 cleanGX gx
  = case gx of
