@@ -6,15 +6,15 @@ import Data.Numeric.Nat
 import Data.List
 where
 
+
 -- | Compute the factorial of a number.
 --
 --   factorial n is the number of possible permutations
 --   of a sequence of n things.
 --
-factorial (n: Nat#): Nat#
- = if n == 0
-        then 1
-        else n * factorial (n - 1)
+factorial (n: Nat): Nat
+ | n == 0       = 1
+ | otherwise    = n * factorial (n - 1)
 
 
 -- | Compute the number of ways of choosing r things from n things.
@@ -24,19 +24,18 @@ factorial (n: Nat#): Nat#
 --   but we factor out the (factorial (n - 1)) term beforehand to 
 --   make it easier to compute.
 --
-choose (n r: Nat#): Nat#
- = if r > n 
-        then 0
-        else div (prodRange n (n - (r - 1))) (factorial r)
+choose (n r: Nat): Nat
+ | r > n        = 0
+ | otherwise    = div (prodRange n (n - (r - 1))) (factorial r)
+
 
 -- | Compute the product of the range [n, n-1 .. m] inclusive.
-prodRange (n m: Nat#): Nat#
- = if n == m
-        then n
-        else n * prodRange (n - 1) m
+prodRange (n m: Nat): Nat
+ | n == m       = n
+ | otherwise    = n * prodRange (n - 1) m
 
 
 -- | Compute the number of ways of choosing collections of things
 --   of sizes rs from n things.
-chooseMany (n: Nat#) (rs: List Nat#): Nat#
+chooseMany (n: Nat) (rs: List Nat): Nat
  = div (factorial n) (prod (map factorial rs))

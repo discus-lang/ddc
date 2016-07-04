@@ -126,7 +126,7 @@ textOfWord8 (w8: Word8#): Text
 --   * This is NOT the same as the length of the text string in characters,
 --     as single characters can be encoded using multiple bytes.
 --
-sizeOfText (tt: Text): Nat#
+sizeOfText (tt: Text): Nat
  = case tt of
         TextLit lit
          -> sizeOfTextLit lit
@@ -144,7 +144,7 @@ sizeOfText (tt: Text): Nat#
 -- | Copy a text literal to a mutable vector of utf-8 bytes.
 copyTextToVector 
         [r: Region] (tt: Text) (vec: Vector# r Word8#) (i0: Nat#)
-        : S (Write r) Nat#
+        : S (Write r) Nat
  = case tt of
         TextLit lit
          -> copyTextLitToVector lit  vec i0 0 (sizeOfTextLit lit)
@@ -161,8 +161,8 @@ copyTextToVector
 -- | Copy a text literal to a mutable vector of utf-8 bytes.
 copyTextLitToVector 
         [r: Region] (tt: TextLit) (vec: Vector# r Word8#) 
-        (iDst iSrc nSrc: Nat#)
-        : S (Write r) Nat#
+        (iDst iSrc nSrc: Nat)
+        : S (Write r) Nat
  = case iSrc >= nSrc of
         True  -> iDst
         False 
@@ -176,16 +176,14 @@ copyTextLitToVector
 copyTextVecToVector 
         [r1 r2: Region] 
         (vecSrc: Vector# r1 Word8#) (vecDst: Vector# r2 Word8#)
-        (iDst iSrc nSrc: Nat#)
-        : S (Read r1 + Write r2) Nat#
- = case iSrc >= nSrc of
-        True    -> iDst
+        (iDst iSrc nSrc: Nat)
+        : S (Read r1 + Write r2) Nat
+ | iSrc >= nSrc = iDst
+ | otherwise
+ = do   vectorWrite# vecDst iDst (vectorRead# vecSrc iSrc)
 
-        False   -> do
-                vectorWrite# vecDst iDst (vectorRead# vecSrc iSrc)
-
-                copyTextVecToVector 
-                        vecSrc vecDst (iDst + 1) (iSrc + 1) nSrc
+        copyTextVecToVector 
+                vecSrc vecDst (iDst + 1) (iSrc + 1) nSrc
 
 
 -- Operators ------------------------------------------------------------------
@@ -209,22 +207,22 @@ flattenText (tt: Text): Text
 
 -- Showing --------------------------------------------------------------------
 -- | Convert a Bool to a String.
-showBool (x : Bool#) : Text
+showBool (x : Bool) : Text
  = if x then "True" 
         else "False"
 
 
 -- | Show a natural number.
-showNat (x: Nat#): Text
+showNat (x: Nat): Text
  = showBaseNat 10 digitDecimal 0 "X" x
 
 
 -------------------------------------------------------------------------------
 -- | Show a natural number, in binary.
-showBinaryNat (x: Nat#): Text
+showBinaryNat (x: Nat): Text
  = showBaseNat 2 digitBinary 0 "X" x
 
-digitBinary (n: Nat#): Text
+digitBinary (n: Nat): Text
  = case n of
         0       -> "0"
         1       -> "1"
@@ -232,10 +230,10 @@ digitBinary (n: Nat#): Text
 
 
 -- | Show a natural number in decimal.
-showDecimalNat (x: Nat#): Text
+showDecimalNat (x: Nat): Text
  = showBaseNat 10 digitDecimal 0 "X" x
 
-digitDecimal (n: Nat#): Text
+digitDecimal (n: Nat): Text
  = case n of
         0       -> "0"
         1       -> "1"
@@ -251,10 +249,10 @@ digitDecimal (n: Nat#): Text
 
 
 -- | Show a natural number in hex.
-showHexNat (x: Nat#): Text
- = showBaseNat    16 digitHex 0 "X" x
+showHexNat (x: Nat): Text
+ = showBaseNat 16 digitHex 0 "X" x
 
-digitHex (n: Nat#): Text
+digitHex (n: Nat): Text
  = case n of
         0       -> "0"
         1       -> "1"
@@ -278,11 +276,11 @@ digitHex (n: Nat#): Text
 -------------------------------------------------------------------------------
 -- | Show a natural number using an arbitrary base encoding.
 showBaseNat 
-        (base:  Nat#)           -- ^ Base of encoding.
-        (digit: Nat# -> Text)   -- ^ Show a digit in this base.
-        (width: Nat#)           -- ^ Width of output, or 0 to not pad.
+        (base:  Nat)            -- ^ Base of encoding.
+        (digit: Nat -> Text)    -- ^ Show a digit in this base.
+        (width: Nat)            -- ^ Width of output, or 0 to not pad.
         (pad:   Text)           -- ^ Character to pad output with.
-        (x:     Nat#)           -- ^ Number to print.
+        (x:     Nat)            -- ^ Number to print.
         : Text
 
  = do   s       = showBaseNat' base digit width pad True x
