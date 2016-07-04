@@ -1,0 +1,17 @@
+
+module Main
+import System.IO.Console
+import Data.Function
+where
+
+-- This is an edge-case in pattern matching desugaring.
+-- When we have consecutive clauses where a particular parameter for
+-- the first view is an wildcard then the desugarer needs to introduce
+-- a new variable name to bind the argument.
+derp _ 0 = 1
+derp 1 _ = 2
+derp _ _ = 3
+
+
+main ()
+ = writel $ showNat (derp 1 0)

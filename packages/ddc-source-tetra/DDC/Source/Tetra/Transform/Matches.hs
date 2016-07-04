@@ -1,5 +1,4 @@
 {-# LANGUAGE TypeFamilies, OverloadedStrings #-}
-
 -- | Desugar match expressions to case expressions.
 --
 --   In a match expression if matching fails in one block of guards then
@@ -17,7 +16,6 @@ where
 import DDC.Source.Tetra.Module
 import DDC.Source.Tetra.Prim
 import DDC.Source.Tetra.Exp
-import DDC.Source.Tetra.Transform.BoundX
 import Data.Monoid
 import Data.Text                        (Text)
 import qualified DDC.Data.SourcePos     as SP
@@ -59,7 +57,6 @@ desugarModule mm
         return  $  mm { moduleTops = ts' }
 
 
-
 -------------------------------------------------------------------------------
 -- | Desugar top-level definitions.
 desugarTops :: [Top Source] -> S [Top Source]
@@ -68,6 +65,9 @@ desugarTops ts
         let tsData  = [t          | t@TopData{}     <- ts]
         let spCls   = [(sp, cl)   | TopClause sp cl <- ts]
 
+        -- We may have multiple clauses for the same function in a single
+        -- group, so we need to pass them all to the clause group
+        -- desugarer at once.
         spCls'  <- desugarClGroup spCls
 
         return  $  tsType
@@ -100,10 +100,16 @@ desugarClGroup spcls0
         (_, SLet _sp2 (XBindVarMT b2 _mt2) ps2 [GExp xNext]) : clsRest
           | b1 == b2
           -> do  
-                -- Desugar the inner guarded expressions.
+                -- Flatten out guards, wrapping the next expression
+                -- with case expressions to implement them.
                 xBody_inner <- flattenGXs gxs1 xNext
+
+                -- Recursively desugar the flattened expression
                 xBody_rec   <- desugarX sp xBody_inner
 
+                -- Intoduce new let-bindings to handle the case
+                -- where different clauses name their parameters
+                -- differently.
                 (ps1', _ps2', xBody_join) 
                             <- joinParams ps1 ps2 xBody_rec
 
@@ -116,8 +122,11 @@ desugarClGroup spcls0
                                 (Text.pack    $ SP.sourcePosSource sp1)
                                 (fromIntegral $ SP.sourcePosLine   sp1)
 
-                -- Desugar the inner guarded expressions.
+                -- Flatten out guards, wrapping the error expression
+                -- with case expressions to implement them.
                 xBody_inner <- flattenGXs gxs1 xError
+
+                -- Recursively desugar the flattened expression.
                 xBody'      <- desugarX sp xBody_inner
 
                 return  $ (sp, SLet sp1 (XBindVarMT b1 mt1) ps1
@@ -125,6 +134,8 @@ desugarClGroup spcls0
                         : cls'
 
 
+-- | Given corresponding parameters for earlier and later clauses, 
+--   introduce let bindings to handle differences in parameter naming.
 joinParams ::    [Param] -> [Param] -> Exp 
            -> S ([Param],   [Param],   Exp)
 
@@ -147,24 +158,41 @@ joinParams (p1:ps1) (p2:ps2) xx
           -> return (p1' : ps1', p2' : ps2', XLet lts xx')
 
 
--- | TODO: if the first param does not have a name but the second one does
---         not then create a new one. do not swap as we the name might
---         be shadowing another.
+-- | Given corresponding parameters for earlier and later clauses, 
+--   introduce let bindings to handle differences in parameter naming.
 joinParam :: Param -> Param 
           -> S (Param, Param, Maybe Lets)
 
 joinParam p1 p2
  = case (p1, p2) of
+        -- When an earlier pattern does not bind the argument to a variable
+        -- then we need to introduce a new variable so we can pass the 
+        -- same argument to successive clauses.
+        (  MValue pat1               mt1
+         , MValue (PVar (BName n2))  mt2)
+         | isAnonPat pat1
+         -> do  (b, u)  <- newVar "m"
+                let lts = LLet (XBindVarMT (BName n2) mt2) (XVar u)
+                return (MValue (PVar b) mt1, p2, Just lts)
+
+        -- When earlier clauses bind the argument using a different variable
+        -- than later ones then we need to add a synonym.
         (  MValue (PVar (BName n1)) _mt1
          , MValue (PVar (BName n2)) mt2)
          |   n1 /= n2
-         ->  let lts  = LLet (XBindVarMT (BName n2) mt2) (XVar (UName n1))
-             in  return (p1, p2, Just $ lts)
-
-         |   otherwise
-         ->  return (p1, p2, Nothing)
+         -> do  let lts  = LLet (XBindVarMT (BName n2) mt2) (XVar (UName n1))
+                return (p1, p2, Just lts)
 
         _ -> return (p1, p2, Nothing)
+
+
+-- | Check if this pattern does not bind a variable.
+isAnonPat :: Pat -> Bool
+isAnonPat pp
+ = case pp of
+        PDefault        -> True
+        PVar BAnon      -> True
+        _               -> False
 
 
 -------------------------------------------------------------------------------
@@ -188,10 +216,12 @@ desugarX sp xx
         XInfixOp{}      -> pure xx
         XInfixVar{}     -> pure xx
 
+        -- Desugar case expressions.
         XCase x alts    
          -> XCase  <$> desugarX sp x  
                    <*> mapM (desugarAC sp) alts
 
+        -- Desugar match expressions into case expressions.
         XMatch _ alts xFail
          -> do  let gxs =  [gx | AAltMatch gx <- alts]
                 xFlat   <- flattenGXs gxs xFail
@@ -249,12 +279,8 @@ desugarAC sp (AAltCase p gxs)
 -------------------------------------------------------------------------------
 -- | Desugar some guards to a case-expression.
 --   At runtime, if none of the guards match then run the provided
---   fail action.
-flattenGXs
-        :: [GuardedExp] -- ^ Guarded expressions to desugar.
-        -> Exp          -- ^ Failure action.
-        -> S Exp 
-
+--   fall-though computation.
+flattenGXs :: [GuardedExp] -> Exp -> S Exp 
 flattenGXs gs0 fail0
  = go gs0 fail0
  where
@@ -279,34 +305,30 @@ flattenGXs gs0 fail0
         -- Simple cases where we can avoid introducing the continuation.
         go1 (GGuard (GPred g1)   (GExp x1)) cont
          = return 
-         $ XCase g1
-                [ AAltCase PTrue    [GExp x1]
-                , AAltCase PDefault [GExp cont] ]
+         $ XCase g1 [ AAltCase PTrue    [GExp x1]
+                    , AAltCase PDefault [GExp cont] ]
 
         go1 (GGuard (GPat p1 g1) (GExp x1)) cont
          = return
-         $ XCase g1
-                [ AAltCase p1        [GExp x1]
-                , AAltCase PDefault  [GExp cont]]
+         $ XCase g1 [ AAltCase p1        [GExp x1]
+                    , AAltCase PDefault  [GExp cont]]
 
         -- Cases that use a continuation function as a join point.
         -- We need this when desugaring general pattern alternatives,
         -- as each group of guards can be reached from multiple places.
         go1 (GGuard (GPred x1) gs) cont
          = do   (b, u)  <- newVar "m"
-                x'      <- go1 (liftX 1 gs) (XRun (XVar u))
+                x'      <- go1 gs (XRun (XVar u))
                 return
-                 $ XLet  (LLet (XBindVarMT b Nothing) (XBox cont))
-                 $ XCase (liftX 1 x1)
-                       [ AAltCase PTrue    [GExp x']
-                       , AAltCase PDefault [GExp (XRun (XVar u)) ]]
+                 $ XLet     (LLet (XBindVarMT b Nothing) (XBox cont))
+                 $ XCase x1 [ AAltCase PTrue    [GExp x']
+                            , AAltCase PDefault [GExp (XRun (XVar u)) ]]
 
         go1 (GGuard (GPat p1 x1) gs) cont
          = do   (b, u)  <- newVar "m"
-                x'      <- go1 (liftX 1 gs) (XRun (XVar u))
+                x'      <- go1 gs (XRun (XVar u))
                 return
-                 $ XLet  (LLet (XBindVarMT b Nothing) (XBox cont))
-                 $ XCase (liftX 1 x1)
-                        [ AAltCase p1       [GExp x']
-                        , AAltCase PDefault [GExp (XRun (XVar u)) ]]
+                 $ XLet     (LLet (XBindVarMT b Nothing) (XBox cont))
+                 $ XCase x1 [ AAltCase p1       [GExp x']
+                            , AAltCase PDefault [GExp (XRun (XVar u)) ]]
 
