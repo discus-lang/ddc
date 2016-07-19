@@ -17,6 +17,7 @@ import qualified DDC.Source.Tetra.Transform.Defix       as SDefix
 import qualified DDC.Source.Tetra.Transform.Expand      as SExpand
 import qualified DDC.Source.Tetra.Transform.Guards      as SGuards
 import qualified DDC.Source.Tetra.Transform.Matches     as SMatches
+import qualified DDC.Source.Tetra.Transform.Prep        as SPrep
 import qualified DDC.Source.Tetra.Parser                as SParser
 import qualified DDC.Source.Tetra.Lexer                 as SLexer
 import qualified DDC.Source.Tetra.Pretty                ()
@@ -59,6 +60,7 @@ data PipeText n (err :: * -> *) where
         -> !Sink        -- Sink for expanded source code.
         -> !Sink        -- Sink for guard desugared source code.
         -> !Sink        -- Sink for match desugared source code.
+        -> !Sink        -- Sink for prepped source code.
         -> !Sink        -- Sink for core tetra code after conversion.
         -> !Sink        -- Sink for core tetra code before type checking.
         -> !Sink        -- Sink for type checker trace.
@@ -109,7 +111,7 @@ pipeText !srcName !srcLine !str
 pipeText !srcName !srcLine !str
          (PipeTextLoadSourceTetra 
                 sinkTokens sinkParsed
-                sinkDefix  sinkExpand sinkGuards sinkMatches
+                sinkDefix  sinkExpand sinkGuards sinkMatches sinkPrep
                 sinkCore        
                 sinkPreCheck sinkCheckerTrace 
                 store pipes)
@@ -147,7 +149,7 @@ pipeText !srcName !srcLine !str
                 pipeSink (renderIndent $ ppr mm_expand)  sinkExpand
 
                 -- Desugar guards and patterns to match expressions.
-                let mm_guards   = SGuards.evalState (Text.pack "g")
+                let mm_guards   = SGuards.evalState   (Text.pack "g")
                                 $ SGuards.desugarModule mm_expand
                 pipeSink (renderIndent $ ppr mm_guards) sinkGuards
 
@@ -156,10 +158,15 @@ pipeText !srcName !srcLine !str
                                 $ SMatches.desugarModule mm_guards
                 pipeSink (renderIndent $ ppr mm_match)  sinkMatches
 
+                -- Prepare for conversion to core.
+                let mm_prep     = SPrep.evalState     (Text.pack "p")
+                                $ SPrep.desugarModule mm_match
+                pipeSink (renderIndent $ ppr mm_prep)   sinkPrep
+
                 -- Convert Source Tetra to Core Tetra.
                 -- This source position is used to annotate the 
                 -- let-expression that holds all the top-level bindings.
-                case SConvert.coreOfSourceModule sp mm_match of
+                case SConvert.coreOfSourceModule sp mm_prep of
                  Left err
                   -> return [ErrorLoad err]
 

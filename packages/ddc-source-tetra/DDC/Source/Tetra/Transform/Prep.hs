@@ -2,47 +2,257 @@
 -- | A light simplification pass before conversion of desugared code to Core.
 module DDC.Source.Tetra.Transform.Prep
         ( type S, evalState, newVar
-        , prepModule)
+        , desugarModule)
 where
 import DDC.Source.Tetra.Module
 -- import DDC.Source.Tetra.Prim
 import DDC.Source.Tetra.Exp
 import Data.Monoid
 import Data.Text                        (Text)
+import Data.Map                         (Map)
 -- import qualified DDC.Data.SourcePos     as SP
 import qualified Control.Monad.State    as S
 import qualified Data.Text              as Text
+import qualified Data.Map.Strict        as Map
+import qualified Data.Set               as Set
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | Source position.
 -- type SP = SP.SourcePos
 
 
 -- | State holding a variable name prefix and counter to 
 --   create fresh variable names.
-type S  = S.State (Text, Int)
+type S  = S.State (Bool, Text, Int)
 
 
 -- | Evaluate a desguaring computation,
 --   using the given prefix for freshly introduced variables.
 evalState :: Text -> S a -> a
 evalState n c
- = S.evalState c (n, 0) 
+ = S.evalState c (False, n, 0) 
 
 
 -- | Allocate a new named variable, yielding its associated bind and bound.
 newVar :: Text -> S (Bind, Bound)
 newVar pre
- = do   (n, i)   <- S.get
+ = do   (p, n, i)   <- S.get
         let name = pre <> "$" <> n <> Text.pack (show i)
-        S.put (n, i + 1)
+        S.put (p, n, i + 1)
         return  (BName name, UName name)
 
 
--------------------------------------------------------------------------------
+-- | Set the progress flag in the state.
+progress :: S ()
+progress
+ = do   (_, n, i)       <- S.get
+        S.put (True, n, i)
+
+
+---------------------------------------------------------------------------------------------------
+desugarModule :: Module Source -> S (Module Source)
+desugarModule mm
+ = do   (_, n, i) <- S.get
+        S.put (False, n, i)
+
+        mm'        <- desugarModule1 mm
+        (p', _, _) <- S.get
+
+        if p' then desugarModule mm'
+              else return mm
+
 -- | Prepare a source module for conversion to core.
-prepModule :: Module Source -> S (Module Source)
-prepModule mm
- = return mm
+desugarModule1 :: Module Source -> S (Module Source)
+desugarModule1 mm
+ = do   ts'     <- mapM desugarTop $ moduleTops mm
+        return  $ mm { moduleTops = ts' }
+
+
+---------------------------------------------------------------------------------------------------
+-- | Desugar a top-level definition.
+desugarTop :: Top Source -> S (Top Source)
+desugarTop tt
+ = case tt of
+        TopType{}       -> return tt
+        TopData{}       -> return tt
+        TopClause sp cl -> TopClause sp <$> desugarCl Map.empty cl
+
+
+---------------------------------------------------------------------------------------------------
+-- | Desugar a clause.
+desugarCl 
+        :: Map Name Name
+        -> Clause -> S Clause
+
+desugarCl rns cl
+ = case cl of
+        SSig{}  
+         -> return cl
+
+        SLet a b ps gxs
+         -> do  gxs'    <- mapM (desugarGX rns) gxs
+                return  $  SLet a b ps gxs'
+
+
+---------------------------------------------------------------------------------------------------
+-- | Desugar a guarded expression.
+desugarGX 
+        :: Map Name Name
+        -> GuardedExp -> S GuardedExp
+
+desugarGX rns gx
+ = case gx of
+        GGuard g gx'    -> GGuard <$> desugarG rns g <*> desugarGX rns gx'
+        GExp   x        -> GExp   <$> desugarX rns x
+
+
+---------------------------------------------------------------------------------------------------
+-- | Desugar a guard.
+desugarG :: Map Name Name
+         -> Guard -> S Guard
+
+desugarG rns gg
+ = case gg of
+        GPat p x        -> GPat p <$> desugarX rns x
+        GPred x         -> GPred  <$> desugarX rns x
+        GDefault        -> return GDefault
+
+
+---------------------------------------------------------------------------------------------------
+-- | Desugar an expression.
+desugarX :: Map Name Name       -- ^ Renamed bound variables.
+         -> Exp -> S Exp
+
+desugarX rns xx
+ = case xx of
+        -- Lift out nested box casts.
+        --  This speculatively allocates the inner box, 
+        --  but means it's easier to find (run (box x)) pairs
+        --
+        --    let b1 = box (let b2 = box x3 
+        --                  in  x2)
+        --    in x1
+        --
+        -- => let b2 = box x3 in
+        --    let b1 = box x2 in
+        --    x1
+        --
+        -- TODO: this relies on b2 not being used in x1
+        --       we need to ensure vars are unique before performing
+        --       this transform.
+        --
+        XLet (LLet b1 
+                  (XCast CastBox 
+                        (XLet  (LLet b2 
+                                   (XCast CastBox x3))
+                                x2)))
+                   x1
+         -> do  progress
+                desugarX rns 
+                 $  XLet (LLet b2 (XCast CastBox x3))
+                 $  XLet (LLet b1 (XCast CastBox x2))
+                 $  x1
+
+
+        -- Eliminate trivial v1 = v2 bindings.
+        XLet (LLet (XBindVarMT (BName n1) _) (XVar (UName n2))) x1
+         -> do  let rns'    = Map.insert n1 n2 rns
+                progress
+                desugarX rns' x1
+
+
+        -- The match desugarer introduces case alternatives where the pattern
+        -- is just a variable, which we can convert to a let-expression.
+        XCase x0 
+                [ AAltCase (PVar b) [GExp x1]
+                , AAltCase PDefault _gx2]
+         -> do  progress
+                desugarX rns
+                 $ XLet (LLet (XBindVarMT b Nothing) x0)
+                 $ x1
+
+
+        -- Eliminate (run (box x)) pairs.
+        XCast CastBox (XCast CastRun x)
+         -> do  progress
+                desugarX rns x
+
+
+        -- Lookup renames from the variable rename map.
+        XVar (UName n0)
+         -> let sink entered n
+                 = case Map.lookup n rns of
+                        Just n' 
+                         |  Set.member n' entered
+                         -> n'
+
+                         |  otherwise
+                         -> sink (Set.insert n' entered) n'
+
+                        Nothing -> n
+
+            in do
+                let n0' = sink Set.empty n0
+                if  n0 /= n0'
+                 then do     
+                        progress
+                        return $ XVar (UName n0')
+
+                 else   return xx
+
+
+        -- Boilerplate.
+        XAnnot a x      -> XAnnot a  <$> desugarX rns x
+        XVar{}          -> return xx
+        XPrim{}         -> return xx
+        XCon{}          -> return xx
+        XLAM  mb x      -> XLAM mb   <$> desugarX   rns x
+        XLam  mb x      -> XLam mb   <$> desugarX   rns x
+        XApp  x1 x2     -> XApp      <$> desugarX   rns x1  <*> desugarX rns x2
+        XLet  lts x     -> XLet      <$> desugarLts rns lts <*> desugarX rns x
+        XCase x as      -> XCase     <$> desugarX   rns x   <*> mapM (desugarAC rns) as
+        XCast c x       -> XCast c   <$> desugarX   rns x
+        XType{}         -> return xx
+        XWitness{}      -> return xx
+        XDefix sp xs    -> XDefix sp <$> mapM (desugarX rns) xs
+        XInfixOp{}      -> return xx
+        XInfixVar{}     -> return xx
+        XMatch sp as x  -> XMatch sp <$> mapM (desugarAM rns) as <*> desugarX rns x
+
+
+---------------------------------------------------------------------------------------------------
+-- | Desugar a case alternative.
+desugarAC 
+        :: Map Name Name
+        -> AltCase -> S AltCase
+
+desugarAC rns (AAltCase p gxs)
+        = AAltCase p <$> mapM (desugarGX rns) gxs
+
+
+-- | Desugar a match alternative.
+desugarAM 
+        :: Map Name Name
+        -> AltMatch -> S AltMatch
+
+desugarAM rns (AAltMatch gx)
+        = AAltMatch <$> desugarGX rns gx
+
+
+---------------------------------------------------------------------------------------------------
+-- | Desugar some let-bindings.
+desugarLts
+        :: Map Name Name
+        -> Lets -> S Lets       
+
+desugarLts rns lts
+ = case lts of
+        LLet mb x       -> LLet mb <$> desugarX rns x
+        LPrivate{}      -> return lts
+        LGroup cls      -> LGroup  <$> mapM (desugarCl rns) cls
+        LRec bxs
+         -> do  let (bs, xs)    =  unzip bxs
+                xs'             <- mapM (desugarX rns) xs
+                return          $ LRec $ zip bs xs'
 

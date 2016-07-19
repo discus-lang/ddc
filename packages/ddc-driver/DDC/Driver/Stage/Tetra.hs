@@ -36,9 +36,10 @@ stageSourceTetraLoad config source store pipesTetra
                     (dump config source "dump.0-load-04-expand.dst")
                     (dump config source "dump.0-load-05-guards.dst")
                     (dump config source "dump.0-load-06-matches.dst")
-                    (dump config source "dump.0-load-07-core.dct")
-                    (dump config source "dump.0-load-08-precheck.dct")
-                    (dump config source "dump.0-load-09-trace.txt")
+                    (dump config source "dump.0-load-07-prep.dst")
+                    (dump config source "dump.0-load-08-core.dct")
+                    (dump config source "dump.0-load-09-precheck.dct")
+                    (dump config source "dump.0-load-10-trace.txt")
                     store
    ( PipeCoreOutput pprDefaultMode
                     (dump config source "dump.tetra-load.dct")
