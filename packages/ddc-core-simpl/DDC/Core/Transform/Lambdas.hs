@@ -213,7 +213,7 @@ lambdasLets p c a xBody lts
          -- If all the bindings are lambdas, we can safely convert it to a
          -- sequence of nonrecursive lets, as the recursion will be lifted to the
          -- top level.
-         , Just _ <- sequence $ map (takeXLamFlags . snd) bxs
+         ,  Just _ <- sequence $ map (takeXLamFlags . snd) bxs
          -> let (bxs', r) = lambdasLetRecLiftAll p c a bxs
             in  (map (uncurry LLet) bxs', r)
 
@@ -222,7 +222,7 @@ lambdasLets p c a xBody lts
          | otherwise
          -> let (bxs', r) = lambdasLetRec p c a [] bxs xBody
             in  ([LRec bxs'], r)
-                
+
         LPrivate{}
          -> ([lts], mempty)
 

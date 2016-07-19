@@ -481,7 +481,7 @@ toCoreLts a lts
                 <*> (sequence  $ fmap toCoreTBK bts)
 
         S.LGroup [c]
-         |  [(b, x')] <- stripClause c
+         | [(b, x')] <- stripClause c
          -> toCoreLts a (S.LLet b x')
 
         S.LGroup cs

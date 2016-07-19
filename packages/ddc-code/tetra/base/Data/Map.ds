@@ -1,0 +1,284 @@
+
+module Data.Map
+export  { map_empty;  map_singleton
+        ; map_null;   map_size }
+
+--        ; map_lookup; map_member
+--        ; map_insert; map_insertWithKey }
+import Data.Numeric.Nat
+import Data.Numeric.Bool
+import Data.Text
+import Data.Maybe
+import Data.List
+import Data.Tuple
+where
+
+
+-- | A map from keys @k@ to values @a@.
+data Map (k a: Data) where
+        Bin : Size -> k -> a -> Map k a -> Map k a -> Map k a
+        Tip : Map k a
+
+type Size = Nat
+
+data Ordering where
+        LT      : Ordering
+        GT      : Ordering
+        EQ      : Ordering
+
+
+data Ord (k: Data) where
+        Ord     : (k -> k -> Ordering) -> Ord k
+
+
+-- Construction -----------------------------------------------------------------------------------
+-- | O(1). The empty map.
+map_empty : Map k a
+ = Tip
+
+
+-- | O(1). A map with a single element.
+map_singleton (k: k) (x: a) : Map k a
+ = Bin 1 k x Tip Tip
+
+
+-- Query ------------------------------------------------------------------------------------------
+-- | /O(1)/. Is the map empty?
+--
+-- > Data.Map.null (empty)           == True
+-- > Data.Map.null (singleton 1 'a') == False
+map_null (mp: Map k a): Bool
+ = case mp of
+        Tip             -> True
+        Bin _ _ _ _ _   -> False
+
+
+-- | /O(1)/. The number of elements in the map.
+--
+-- > size empty                                   == 0
+-- > size (singleton 1 'a')                       == 1
+-- > size (fromList([(1,'a'), (2,'c'), (3,'b')])) == 3
+map_size (mp: Map k a): Size
+ = case mp of
+        Tip             -> 0
+        Bin sz _ _ _ _  -> sz
+
+{-                                              -- TODO: block comments break line numbers
+                                                -- in error messages.
+-- | /O(log n)/. Lookup the value at a key in the map.
+--
+-- The function will return the corresponding value as @('Just' value)@,
+-- or 'Nothing' if the key isn't in the map.
+map_lookup (Ord compare: Ord k) (kx: k) (mp: Map k a): Maybe a
+ = go kx mp
+ where  
+        go _ Tip 
+         = Nothing [a]
+
+        go k (Bin _ kx x l r)
+         = case compare k kx of                 -- TODO: need to fix lifting of local letrecs.
+                LT -> go k l
+                GT -> go k r
+                EQ -> Just x
+
+
+-- | /O(log n)/. Is the key a member of the map?
+--
+-- > member 5 (fromList [(5,'a'), (3,'b')]) == True
+-- > member 1 (fromList [(5,'a'), (3,'b')]) == False
+--
+map_member (Ord compare: Ord k) (kx: k) (mp: Map k a): Bool
+ = go kx mp
+ where  
+        go _ Tip 
+         = False
+
+        go k (Bin _ kx _ l r)
+         = case compare k kx of
+                LT -> go k l
+                GT -> go k r
+                EQ -> True
+
+
+-- Insertion --------------------------------------------------------------------------------------
+-- | /O(log n)/. Insert a new key and value in the map.
+--   If the key is already present in the map, the associated value is
+--   replaced with the supplied value. 'insert' is equivalent to
+--   @'insertWith' 'const'@.
+--
+-- > insert 5 'x' (fromList [(5,'a'), (3,'b')]) == fromList [(3, 'b'), (5, 'x')]
+-- > insert 7 'x' (fromList [(5,'a'), (3,'b')]) == fromList [(3, 'b'), (5, 'a'), (7, 'x')]
+-- > insert 5 'x' empty                         == singleton 5 'x'
+--
+map_insert
+        (Ord compare: Ord k) 
+        (kx: k) (x: a) (mp: Map k a): Map k a
+ = go kx x mp
+ where
+        go kx x Tip 
+         = map_singleton kx x
+
+        go kx x (Bin sz ky y l r)
+         = case compare kx ky of
+                LT -> map_balance ky y (go kx x l) r
+                GT -> map_balance ky y l (go kx x r)
+                EQ -> Bin sz kx x l r
+
+
+-- | /O(log n)/. Insert with a function, combining new value and old value.
+--   @'insertWith' f key value mp@
+--   will insert the pair (key, value) into @mp@ if key does
+--   not exist in the map. If the key does exist, the function will
+--   insert the pair @(key, f new_value old_value)@.
+--
+map_insertWith
+        (ord: Ord k)
+        (f: a -> a -> a)
+        (kx: k) (x: a) (mp: Map k a)
+        : Map k a
+ = map_insertWithKey ord
+        (\(_: k) (x' y': a). f x' y')           -- TODO: shouldn't need type annots here
+        kx x mp
+
+
+-- | /O(log n)/. Insert with a function, combining key, new value and old value.
+--   @'insertWithKey' f key value mp@
+--   will insert the pair (key, value) into @mp@ if key does
+--   not exist in the map. If the key does exist, the function will
+--   insert the pair @(key,f key new_value old_value)@.
+--   Note that the key passed to f is the same key passed to 'insertWithKey'.
+--
+map_insertWithKey
+        (Ord compare: Ord k)
+        (f: k -> a -> a -> a)
+        (kx: k) (x: a) (mp: Map k a)
+        : Map k a
+ = go kx x mp
+ where
+        go kx x Tip
+         = map_singleton kx x
+
+        go kx x (Bin sy ky y l r)
+         = case compare kx ky of
+                LT -> map_balance ky y (go kx x l) r
+                GT -> map_balance ky y l (go kx x r)
+                EQ -> Bin sy kx (f kx x y) l r
+
+
+-- Folds ------------------------------------------------------------------------------------------
+-- | /O(n)/. Fold the values in the map using the given right-associative
+--   binary operator.
+--
+-- For example,
+--
+-- > elems map = foldr (:) [] map
+--
+-- > let f a len = len + (length a)
+-- > foldr f 0 (fromList [(5,"a"), (3,"bbb")]) == 4
+--
+                                                        -- TODO: lambda lifter is lifting
+                                                        -- the body of 'go' rather than the
+                                                        -- whole binding.
+map_foldr (f: a -> b -> b) (z: b) (mp: Map k a): b
+ = go f z mp
+ where
+        go f z' Tip             = z'
+        go f z' (Bin _ _ x l r) = go f (f x (go f z' r)) l
+
+
+---------------------------------------------------------------------------------------------------
+map_fromList 
+        (ord: Ord k)
+        (xx: List (Tup2 k a))
+        : Map k a
+ = foldl (\(mp: Map k a) (tp : Tup2 k a).
+                case tp of
+                 T2 kx x -> map_insert ord kx x mp)
+         map_empty xx
+-}
+
+
+---------------------------------------------------------------------------------------------------
+-- [balance l x r] balances two trees with value x.
+--  The sizes of the trees should balance after decreasing the
+--  size of one of them. (a rotation).
+--
+--  [delta] is the maximal relative difference between the sizes of
+--          two trees, it corresponds with the [w] in Adams' paper.
+--
+--  [ratio] is the ratio between an outer and inner sibling of the
+--          heavier subtree in an unbalanced setting. It determines
+--          whether a double or single rotation should be performed
+--          to restore balance. It is corresponds with the inverse
+--          of $\alpha$ in Adam's article.
+--
+--  Note that according to the Adam's paper:
+--  - [delta] should be larger than 4.646 with a [ratio] of 2.
+--  - [delta] should be larger than 3.745 with a [ratio] of 1.534.
+--
+--  But the Adam's paper is erroneous:
+--  - It can be proved that for delta=2 and delta>=5 there does
+--    not exist any ratio that would work.
+--  - Delta=4.5 and ratio=2 does not work.
+--
+--  That leaves two reasonable variants, delta=3 and delta=4,
+--  both with ratio=2.
+--
+--  - A lower [delta] leads to a more 'perfectly' balanced tree.
+--  - A higher [delta] performs less rebalancing.
+--
+--  In the benchmarks, delta=3 is faster on insert operations,
+--  and delta=4 has slightly better deletes. As the insert speedup
+--  is larger, we currently use delta=3.
+--
+--  NOTE: The Haskell implementation from the containers package
+--  contains an unfolded version of balance to optimise pattern 
+--  matching, but there is no point using that until we have the
+--  same sort of pattern matching compiler optimisations as GHC.
+-- 
+delta   = 2
+ratio   = 5
+
+map_balance (k: k) (x: a) (l: Map k a) (r: Map k a): Map k a
+ = do   sizeL = map_size l
+        sizeR = map_size r
+        sizeX = sizeL + sizeR + 1
+
+        match
+         | sizeL + sizeR <= 1    = Bin sizeX k x l r
+         | sizeR > delta*sizeL   = rotateL k x l r
+         | sizeL > delta*sizeR   = rotateR k x l r
+         | otherwise             = Bin sizeX k x l r
+
+
+rotateL (k: k) (x: a) (l: Map k a) (r@(Bin _ _ _ ly ry): Map k a): Map k a
+ | map_size ly < ratio*map_size ry = singleL k x l r
+ | otherwise                       = doubleL k x l r
+
+
+rotateR (k: k) (x: a) (l@(Bin _ _ _ ly ry): Map k a) (r: Map k a): Map k a
+ | map_size ry < ratio*map_size ly = singleR k x l r
+ | otherwise                       = doubleR k x l r
+
+
+singleL (k1: k) (x1: a) (t1: Map k a) (tR: Map k a): Map k a
+ | Bin _ k2 x2 t2 t3 <- tR
+ = bin k2 x2 (bin k1 x1 t1 t2) t3
+
+singleR (k1: k) (x1: a) (tL: Map k a) (t3: Map k a): Map k a
+ | Bin _ k2 x2 t1 t2 <- tL
+ = bin k2 x2 t1 (bin k1 x1 t2 t3)
+
+doubleL (k1: k) (x1: a) (t1: Map k a) (tR: Map k a): Map k a
+ | Bin _ k2 x2 (Bin _ k3 x3 t2 t3) t4 <- tR
+ = bin k3 x3 (bin k1 x1 t1 t2) (bin k2 x2 t3 t4)
+
+doubleR (k1: k) (x1: a) (tL: Map k a) (t4: Map k a): Map k a
+ | Bin _ k2 x2 t1 (Bin _ k3 x3 t2 t3) <- tL
+ = bin k3 x3 (bin k2 x2 t1 t2) (bin k1 x1 t3 t4)
+
+
+-- | The bin constructor maintains the size of the tree
+bin (k: k) (x: a) (l: Map k a) (r: Map k a): Map k a
+ = Bin (map_size l + map_size r + 1) k x l r
+
