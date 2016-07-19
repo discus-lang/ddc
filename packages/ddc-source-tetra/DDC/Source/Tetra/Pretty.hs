@@ -132,7 +132,7 @@ instance PrettyLanguage l => Pretty (Top l) where
  ppr (TopData _ (DataDef name params ctors))
   = (text "data"
         <+> hsep ( ppr name
-                 : map (parens . ppr) params)
+                 : map (pprPrec 10) params)
         <+> text "where"
         <+> lbrace)
   <$> indent 8
@@ -300,30 +300,30 @@ instance PrettyLanguage l => Pretty (GClause l) where
 
 -- Param ------------------------------------------------------------------------------------------
 instance PrettyLanguage l => Pretty (GParam l) where
- ppr (MType    b Nothing)
+ pprPrec _d (MType    b Nothing)
   = text "[" <> ppr b <> text "]"
 
- ppr (MType    b (Just t))
+ pprPrec _d (MType    b (Just t))
   = text "[" <> ppr b <> text ":" <+> ppr t <> text "]"
 
- ppr (MWitness b Nothing)
+ pprPrec _d (MWitness b Nothing)
   = text "<" <> ppr b <> text ">"
 
- ppr (MWitness b (Just t))
+ pprPrec _d (MWitness b (Just t))
   = text "<" <> ppr b <> text ":" <+> ppr t <> text ">"
 
- ppr (MValue   p Nothing)
-  = parens $ ppr p
+ pprPrec d (MValue   p Nothing)
+  = pprPrec d p
 
- ppr (MValue   p (Just t))
-  = parens $ ppr p <> text ":" <+> ppr t
+ pprPrec _ (MValue   p (Just t))
+  = parens $ pprPrec 0 p <> text ":" <+> ppr t
 
 
 -- Pat --------------------------------------------------------------------------------------------
 instance PrettyLanguage l => Pretty (GPat l) where
  pprPrec d pp
   = case pp of
-        PDefault        -> text "__"
+        PDefault        -> text "_"
         PAt   b p       -> ppr b <> text "@" <> ppr p
         PVar  b         -> ppr b
 

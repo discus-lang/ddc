@@ -328,6 +328,13 @@ pPatAtom
         pTok KRoundKet
         return  $ p
 
+        -- Wildcard
+        --   Try this case before the following one for binders
+        --   so that '_' is parsed as the default pattern,
+        --   rather than a wildcard binder.
+ , do   pTok KUnderscore
+        return  $ PDefault
+
         -- Var
  , do   b       <- pBind
         P.choice
@@ -337,10 +344,6 @@ pPatAtom
 
          , do   return  $  PVar b
          ]
-
-        -- Wildcard
- , do   pTok KUnderscore
-        return  $ PDefault
 
         -- Lit
  , do   nLit    <- pDaConBoundLit
