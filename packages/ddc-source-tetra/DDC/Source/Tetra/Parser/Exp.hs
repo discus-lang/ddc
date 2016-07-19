@@ -10,7 +10,6 @@ module DDC.Source.Tetra.Parser.Exp
         , pTypeApp
         , pTypeAtomSP)
 where
--- import DDC.Source.Tetra.Transform.Guards
 import DDC.Source.Tetra.Parser.Type
 import DDC.Source.Tetra.Parser.Witness
 import DDC.Source.Tetra.Parser.Base
@@ -313,9 +312,11 @@ pPat
         ps      <- P.many pPatAtom
         return  $ PData (DaConBound nCon) ps
 
- , do   p       <- pPatAtom
+    -- Atom
+ ,  do  p       <- pPatAtom
         return  p
  ]
+ <?> "a pattern"
 
 
 pPatAtom :: Parser Pat
@@ -327,13 +328,19 @@ pPatAtom
         pTok KRoundKet
         return  $ p
 
+        -- Var
+ , do   b       <- pBind
+        P.choice
+         [ do   _       <- pTokSP KAt
+                p       <- pPatAtom
+                return  $  PAt b p
+
+         , do   return  $  PVar b
+         ]
+
         -- Wildcard
  , do   pTok KUnderscore
         return  $ PDefault
-
-        -- Var
- , do   b       <- pBind
-        return  $ PVar b
 
         -- Lit
  , do   nLit    <- pDaConBoundLit
@@ -347,6 +354,7 @@ pPatAtom
  , do   pTok KDaConUnit
         return  $ PData  dcUnit []
  ]
+ <?> "a pattern"
 
 
 -- Bindings ---------------------------------------------------------------------------------------

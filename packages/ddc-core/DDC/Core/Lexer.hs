@@ -228,6 +228,7 @@ lexText sourceName lineStart xx
                 '\\'            -> Just KBackSlash
                 '='             -> Just KEquals
                 '|'             -> Just KBar
+                '@'             -> Just KAt
                 _               -> Nothing
          = tokA t : lexMore 1 rest
 

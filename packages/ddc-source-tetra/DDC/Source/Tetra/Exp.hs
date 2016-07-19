@@ -6,6 +6,7 @@ module DDC.Source.Tetra.Exp
           Name
         , Bind          (..)
         , Bound         (..)
+        , takeBoundOfBind
 
           -------------------------------------------------
           -- * Types
@@ -233,6 +234,7 @@ module DDC.Source.Tetra.Exp
         , PrettyLanguage
         , NFDataLanguage)
 where
+import DDC.Source.Tetra.Exp.Bind
 import DDC.Source.Tetra.Exp.Source
 import DDC.Source.Tetra.Exp.Predicates
 import DDC.Source.Tetra.Exp.Compounds

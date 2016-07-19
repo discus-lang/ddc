@@ -226,7 +226,7 @@ pPat    :: Ord n
         => Context n -> Parser n (Pat n)
 pPat c
  = P.choice
- [      -- Wildcard
+ [      -- Wildcard Pattern: _
    do   pTok KUnderscore
         return  $ PDefault
 

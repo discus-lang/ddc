@@ -78,6 +78,7 @@ instance NFDataLanguage l => NFData (GPat l) where
  rnf pp
   = case pp of
         PDefault                -> ()
+        PAt   b p               -> rnf b  `seq` rnf p
         PVar  b                 -> rnf b
         PData dc bs             -> rnf dc `seq` rnf bs
 

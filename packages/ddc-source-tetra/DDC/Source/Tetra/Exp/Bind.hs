@@ -3,6 +3,8 @@ module DDC.Source.Tetra.Exp.Bind
         ( Name
         , Bind          (..)
         , Bound         (..)
+        , takeBoundOfBind
+
         , DaConBind     (..)
         , DaConBound    (..)
         , TyConBind     (..)
@@ -32,6 +34,15 @@ data Bound
         -- A hole that we want the type checker to fill in.
         | UHole
         deriving (Eq, Ord, Show)
+
+
+-- | Take the corresponding `Bound` of a `Bind`, if there is one.
+takeBoundOfBind :: Bind -> Maybe Bound
+takeBoundOfBind bb
+ = case bb of
+        BNone    -> Nothing
+        BAnon    -> Just $ UIx 0
+        BName tx -> Just $ UName tx
 
 
 -- | Binding occurrence of a data constructor.

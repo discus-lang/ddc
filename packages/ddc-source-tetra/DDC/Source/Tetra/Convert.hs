@@ -537,9 +537,12 @@ toCoreA sp alt
 toCoreP  :: S.Pat -> ConvertM a (C.Pat C.Name)
 toCoreP pp
  = case pp of
-        S.PDefault        
+        S.PDefault 
          -> pure C.PDefault
-  
+        
+        S.PAt _ _
+         -> error "ddc-source-tetra: cannot convert PAt pattern"
+
         S.PVar _b
          -> error "ddc-source-tetra: cannot convert PVar pattern"
 
@@ -557,13 +560,15 @@ toCorePasB pp
          S.PDefault
           -> pure $ C.BAnon hole
 
+         S.PAt{}
+          -> error $ "ddc-source-tetra: cannot convert at pattern "     ++ Text.ppShow pp
+
          S.PVar b
           -> do b'      <- toCoreB b
                 return  b'
 
          S.PData{}
-          -> error $  "ddc-source-tetra: cannot convert nested pattern"
-                  ++ Text.ppShow pp
+          -> error $ "ddc-source-tetra: cannot convert nested pattern " ++ Text.ppShow pp
 
 
 -- DaCon ------------------------------------------------------------------------------------------

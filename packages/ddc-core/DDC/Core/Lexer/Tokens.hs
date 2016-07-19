@@ -184,6 +184,7 @@ data TokAtom
         | KBackSlash
         | KEquals
         | KBar
+        | KAt
         
         -----------------------------------------
         -- Compound symbols.
@@ -314,6 +315,7 @@ describeTokAtom' ta
 
         KEquals                 -> (Symbol, "=")
         KBar                    -> (Symbol, "|")
+        KAt                     -> (Symbol, "@")
 
         -- symbolic constructors
         KArrowTilde             -> (Constructor, "~>")

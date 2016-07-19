@@ -160,6 +160,7 @@ isSimplePat :: Pat -> Bool
 isSimplePat pp
  = case pp of
         PDefault        -> True
+        PAt{}           -> False
         PVar{}          -> True
         PData _  ps     -> all isTrivialPat ps
 
@@ -260,6 +261,14 @@ stripParamsToGuards (p:ps)
          -> do  (ps', gs) <- stripParamsToGuards ps
                 return (p : ps', gs)
 
+        MValue (PAt b p1) _mt
+         -> do  (psParam', gsRest) <- stripParamsToGuards ps
+                ([p1'],    gsData) <- stripPatsToGuards  [p1]
+                let Just u         = takeBoundOfBind b
+                return  ( MValue (PVar b) _mt : psParam'
+                        , GPat p1' (XVar u) 
+                                : (gsData ++ gsRest))
+
         MValue (PData dc psData) mt
          -> do  (psParam', gsRest) <- stripParamsToGuards ps
                 (psData',  gsData) <- stripPatsToGuards   psData
@@ -286,6 +295,19 @@ stripPatsToGuards (p:ps)
         PVar  _b
          -> do  (ps', gs) <- stripPatsToGuards ps
                 return (p : ps', gs)
+
+        -- Strip at patterns.
+        PAt b p1
+         -> do  -- Strip the rest of the patterns.
+                (psRest', gsRest)   <- stripPatsToGuards ps
+
+                -- Strip nested patterns from the argument.
+                ([p1'],     gsData) <- stripPatsToGuards [p1]
+                let Just u      = takeBoundOfBind b
+
+                return  ( PVar b : psRest'
+                        , GPat p1' (XVar u)
+                                : (gsData ++ gsRest))
 
         -- Strip out nested patterns in the arguments of a data constructor.
         PData dc psData
@@ -314,6 +336,12 @@ stripGuardToGuards g
 
         -- As we alerady have the expression being matched we don't 
         -- need to introduce a new variable to name it.
+        GPat (PAt b p) x  
+         -> do  ([p'], gsData) <- stripPatsToGuards [p]
+                let Just u      = takeBoundOfBind b
+                return  ( GPat (PVar b) x
+                        , GPat p' (XVar u) : gsData)
+
         GPat (PData dc psData) x 
          -> do  (psData', gsData)  <- stripPatsToGuards psData
                 return  ( GPat (PData dc psData') x

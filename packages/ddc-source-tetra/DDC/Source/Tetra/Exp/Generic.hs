@@ -208,6 +208,9 @@ data GPat l
         -- | The default pattern always succeeds.
         = PDefault
 
+        -- | Give a name to the value matched by a pattern.
+        | PAt    !(GXBindVar l) !(GPat l)
+
         -- | The variable pattern always succeeds and binds the value
         --   to the new variable.
         | PVar   !(GXBindVar l) 
