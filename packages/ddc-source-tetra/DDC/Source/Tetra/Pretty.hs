@@ -323,7 +323,7 @@ instance PrettyLanguage l => Pretty (GParam l) where
 instance PrettyLanguage l => Pretty (GPat l) where
  pprPrec d pp
   = case pp of
-        PDefault        -> text "_"
+        PDefault        -> text "__"
         PAt   b p       -> ppr b <> text "@" <> ppr p
         PVar  b         -> ppr b
 

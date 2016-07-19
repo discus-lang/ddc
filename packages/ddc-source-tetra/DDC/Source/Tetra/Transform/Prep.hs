@@ -60,7 +60,7 @@ desugarModule mm
         (p', _, _) <- S.get
 
         if p' then desugarModule mm'
-              else return mm
+              else return mm'
 
 -- | Prepare a source module for conversion to core.
 desugarModule1 :: Module Source -> S (Module Source)
@@ -91,8 +91,17 @@ desugarCl rns cl
          -> return cl
 
         SLet a b ps gxs
-         -> do  gxs'    <- mapM (desugarGX rns) gxs
-                return  $  SLet a b ps gxs'
+         -> do  ps'     <- mapM  desugarP ps
+                gxs'    <- mapM (desugarGX rns) gxs
+                return  $  SLet a b ps' gxs'
+
+
+desugarP :: Param -> S Param
+desugarP pp
+ = case pp of
+        MType{}         -> return pp
+        MWitness{}      -> return pp
+        MValue w mt     -> MValue <$> desugarW w <*> return mt 
 
 
 ---------------------------------------------------------------------------------------------------
@@ -114,7 +123,7 @@ desugarG :: Map Name Name
 
 desugarG rns gg
  = case gg of
-        GPat p x        -> GPat p <$> desugarX rns x
+        GPat p x        -> GPat   <$> desugarW p <*> desugarX rns x
         GPred x         -> GPred  <$> desugarX rns x
         GDefault        -> return GDefault
 
@@ -227,8 +236,10 @@ desugarAC
         :: Map Name Name
         -> AltCase -> S AltCase
 
-desugarAC rns (AAltCase p gxs)
-        = AAltCase p <$> mapM (desugarGX rns) gxs
+desugarAC rns aa
+ = case aa of
+        AAltCase p gxs
+         -> AAltCase <$> desugarW p <*> mapM (desugarGX rns) gxs
 
 
 -- | Desugar a match alternative.
@@ -238,6 +249,23 @@ desugarAM
 
 desugarAM rns (AAltMatch gx)
         = AAltMatch <$> desugarGX rns gx
+
+
+-- | Desugar a pattern.
+desugarW :: Pat -> S Pat
+desugarW pp
+ = case pp of
+        -- Convert var binders where the variable is a wild card to
+        -- the default pattern. We can't convert plain variable patterns
+        -- to core.
+        PVar BNone      
+         -> do  progress
+                return PDefault
+
+        PDefault        -> return PDefault
+        PAt  b p        -> PAt b    <$> desugarW p
+        PVar b          -> return $ PVar b
+        PData dc ps     -> PData dc <$> mapM desugarW ps
 
 
 ---------------------------------------------------------------------------------------------------

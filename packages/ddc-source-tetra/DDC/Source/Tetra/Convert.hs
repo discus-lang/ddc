@@ -526,7 +526,7 @@ toCoreA  :: SP -> S.AltCase -> ConvertM S.Source (C.Alt SP C.Name)
 toCoreA sp alt
  = case alt of
         S.AAltCase w [S.GExp x]
-         -> C.AAlt <$> toCoreP w <*> toCoreX sp x
+         -> C.AAlt <$> toCoreP alt w <*> toCoreX sp x
 
         _ -> error $ unlines
                 [ "ddc-source-tetra: cannot convert sugared alt"       
@@ -534,17 +534,21 @@ toCoreA sp alt
 
 
 -- Pat --------------------------------------------------------------------------------------------
-toCoreP  :: S.Pat -> ConvertM a (C.Pat C.Name)
-toCoreP pp
+toCoreP  :: S.AltCase -> S.Pat -> ConvertM a (C.Pat C.Name)
+toCoreP aa pp
  = case pp of
         S.PDefault 
          -> pure C.PDefault
         
-        S.PAt _ _
-         -> error "ddc-source-tetra: cannot convert PAt pattern"
+        S.PAt{}
+         -> error $ unlines
+                  [ "ddc-source-tetra: cannot convert PAt pattern"
+                  , Text.ppShow pp]
 
-        S.PVar _b
-         -> error "ddc-source-tetra: cannot convert PVar pattern"
+        S.PVar{}
+         -> error $ unlines
+                  [ "ddc-source-tetra: cannot convert PVar pattern"
+                  , Text.ppShow aa]
 
         S.PData dc bs
          -> C.PData <$> toCoreDC dc <*> (sequence $ fmap toCorePasB bs)
