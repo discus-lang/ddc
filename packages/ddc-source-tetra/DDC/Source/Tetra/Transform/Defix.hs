@@ -85,6 +85,7 @@ instance Defix GExp l where
                 Nothing  -> Left $ ErrorNoInfixDef a str
 
         XMatch a gs x   -> liftM2 (XMatch a) (mapM down gs) (down x)
+        XWhere a x cls  -> liftM2 (XWhere a) (down x) (mapM down cls)
 
 
 instance Defix GLets l where

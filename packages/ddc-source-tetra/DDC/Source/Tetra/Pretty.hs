@@ -228,6 +228,16 @@ instance PrettyLanguage l => Pretty (GExp l) where
          <> rbrace
          <+> text "else" <+> pprPrec 10 xDefault
 
+        XWhere _ x cls
+         ->  pprParen' (d > 2)
+         $   ppr x 
+         <+> line
+         <>  (text "where" 
+                <+> text "{" <> line
+                <>  (nest 4 $ vcat $ map ppr cls)
+                <>  line
+                <>  text "}")
+
 
 -- Lets -------------------------------------------------------------------------------------------
 instance PrettyLanguage l => Pretty (GLets l) where

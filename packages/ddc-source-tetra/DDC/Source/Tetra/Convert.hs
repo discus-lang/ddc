@@ -453,7 +453,8 @@ toCoreX a xx
         S.XInfixOp{}    -> Left $ ErrorConvertCannotConvertSugarExp xx
         S.XInfixVar{}   -> Left $ ErrorConvertCannotConvertSugarExp xx
         S.XMatch{}      -> Left $ ErrorConvertCannotConvertSugarExp xx
-
+        S.XWhere{}      -> Left $ ErrorConvertCannotConvertSugarExp xx
+        
 
 -- Lets -------------------------------------------------------------------------------------------
 toCoreLts :: SP -> S.Lets -> ConvertM S.Source (C.Lets SP C.Name)
@@ -480,10 +481,11 @@ toCoreLts a lts
                 <*> (fmap Just $ toCoreT UniverseKind tParent)
                 <*> (sequence  $ fmap toCoreTBK bts)
 
+{-
         S.LGroup [c]
          | [(b, x')] <- stripClause c
          -> toCoreLts a (S.LLet b x')
-
+-}
         S.LGroup cs
          -> do  let bxs = concatMap stripClause cs
                 toCoreLts a (S.LRec bxs)

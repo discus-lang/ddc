@@ -30,19 +30,19 @@ stageSourceTetraLoad
 
 stageSourceTetraLoad config source store pipesTetra
  = PipeTextLoadSourceTetra
-                    (dump config source "dump.0-load-01-tokens.txt")
-                    (dump config source "dump.0-load-02-parsed.dst")
-                    (dump config source "dump.0-load-03-defix.dst")
-                    (dump config source "dump.0-load-04-expand.dst")
-                    (dump config source "dump.0-load-05-guards.dst")
-                    (dump config source "dump.0-load-06-matches.dst")
-                    (dump config source "dump.0-load-07-prep.dst")
-                    (dump config source "dump.0-load-08-core.dct")
-                    (dump config source "dump.0-load-09-precheck.dct")
-                    (dump config source "dump.0-load-10-trace.txt")
+                    (dump config source "dump.0-source-01-tokens.txt")
+                    (dump config source "dump.0-source-02-parsed.dst")
+                    (dump config source "dump.0-source-03-defix.dst")
+                    (dump config source "dump.0-source-04-expand.dst")
+                    (dump config source "dump.0-source-05-guards.dst")
+                    (dump config source "dump.0-source-06-matches.dst")
+                    (dump config source "dump.0-source-07-prep.dst")
+                    (dump config source "dump.0-source-08-core.dct")
+                    (dump config source "dump.0-source-09-precheck.dct")
+                    (dump config source "dump.0-source-10-trace.txt")
                     store
    ( PipeCoreOutput pprDefaultMode
-                    (dump config source "dump.tetra-load.dct")
+                    (dump config source "dump.1-tetra-00-checked.dct")
    : pipesTetra ) 
 
 
@@ -56,10 +56,10 @@ stageTetraLoad
 stageTetraLoad config source pipesTetra
  = PipeTextLoadCore BE.fragment 
         (if configInferTypes config then C.Synth else C.Recon)
-                         (dump config source "dump.tetra-check.dct")
+                         (dump config source "dump.1-tetra-00-check.dct")
  [ PipeCoreReannotate (const ())
         ( PipeCoreOutput pprDefaultMode
-                         (dump config source "dump.tetra-load.dct")
+                         (dump config source "dump.1-tetra-01-load.dct")
         : pipesTetra ) ]
  
 
@@ -82,7 +82,7 @@ stageTetraToSalt config source pipesSalt
          = PipeCoreCheck        BE.fragment C.Recon SinkDiscard
            [ PipeCoreSimplify   BE.fragment (0 :: Int) C.lambdas 
            [ PipeCoreOutput     pprDefaultMode
-                                (dump config source "dump.tetra-lambdas.dct")
+                                (dump config source "dump.1-tetra-02-lambdas.dct")
            , pipe_curry]]
 
         pipe_curry
@@ -90,7 +90,7 @@ stageTetraToSalt config source pipesSalt
            [ PipeCoreAsTetra
            [ PipeTetraCurry
            [ PipeCoreOutput     pprDefaultMode
-                                (dump config source "dump.tetra-curry.dct")
+                                (dump config source "dump.1-tetra-03-curry.dct")
            , pipe_prep ]]]
 
         pipe_prep
@@ -106,10 +106,10 @@ stageTetraToSalt config source pipesSalt
          = PipeCoreAsTetra
            [ PipeTetraBoxing
              [ PipeCoreOutput   pprDefaultMode
-                                (dump config source "dump.tetra-boxing-raw.dct")
+                                (dump config source "dump.1-tetra-04-boxing-raw.dct")
              , PipeCoreSimplify BE.fragment 0 (normalize `mappend` C.flatten)
                [ PipeCoreOutput pprDefaultMode
-                                (dump config source "dump.tetra-boxing-simp.dct")
+                                (dump config source "dump.1-tetra-05-boxing-simp.dct")
                , pipe_toSalt]]]
 
 
@@ -119,6 +119,6 @@ stageTetraToSalt config source pipesSalt
              [ PipeTetraToSalt  (B.buildSpec $ configBuilder config) 
                                 (configRuntime config)
              ( PipeCoreOutput   pprDefaultMode
-                                (dump config source "dump.salt.dcs")
+                                (dump config source "dump.2-salt-00-convert.dcs")
              : pipesSalt)]]
 

@@ -16,7 +16,6 @@ import Data.Function
 import Data.List
 import Data.Set                         (Set)
 import Data.Map                         (Map)
--- import DDC.Core.Env.EnvX                (EnvX)
 import qualified DDC.Core.Check         as Check
 import qualified DDC.Type.Env           as Env
 import qualified Data.Set               as Set
@@ -53,9 +52,15 @@ lambdasModule profile mm
 ---------------------------------------------------------------------------------------------------
 -- | Result of lambda lifter recursion.
 data Result a n
-        = Result 
-           Bool                 -- Whether we've made progress in this pass.
-           [(Bind n, Exp a n)]  -- Lifted bindings
+        = Result
+        { -- | Whether we've made any progress in this pass.
+          _resultProgress       :: Bool        
+
+          -- | Bindings that we've already lifted out, 
+          --   and should be added at top-level.
+        , _resultBindings       :: [(Bind n, Exp a n)]
+        }
+
 
 instance Monoid (Result a n) where
  mempty
@@ -74,11 +79,35 @@ lambdasLoopX
          -> Exp a n             --   Replacement expression.
         
 lambdasLoopX p c xx
- = let  (xx1, Result progress _)   = lambdasX p c xx
+ = let  (xx1, Result progress _)   = lambdasTopX p c xx
    in   if progress then lambdasLoopX p c xx1
                     else xx1
 
+-- | Handle the expression that defines the body of the module
+--   separately. The body is a letrec that contains the top level
+--   bindings, and we don't want to lift them out further.
+lambdasTopX p c xx
+ = case xx of
+        XLet a lts xBody
+         -> let (lts', r1)      = lambdasTopLets p c a xBody lts 
+                (x',   r2)      = enterLetBody   c a lts xBody  (lambdasTopX p)
+            in  ( foldr (XLet a) x' lts'
+                , mappend r1 r2)
 
+        _ -> lambdasX p c xx
+
+
+-- | Handle the top-level group of bindings.
+lambdasTopLets p c a xBody lts
+ = case lts of
+        LRec bxs
+          -> let (bxs', r) = lambdasLetRec p c a [] bxs xBody
+             in  ([LRec bxs'], r)
+
+        _ -> lambdasLets p c a xBody lts
+
+
+---------------------------------------------------------------------------------------------------
 -- | Perform a single pass of lambda lifting in an expression.
 lambdasX :: (Show n, Show a, Pretty n, Pretty a, CompoundName n, Ord n)
          => Profile n           -- ^ Language profile.
@@ -142,7 +171,7 @@ lambdasX p c xx
 
         -- Lift suspensions to top-level.
         --   These behave like zero-arity lambda expressions,
-        --   they suspspend evaluation but do not abstract over a value.
+        --   they suspend evaluation but do not abstract over a value.
         XCast a cc@CastBox x0
          -> enterCastBody c a cc x0 $ \c' x
          -> let (x', r)      = lambdasX p c' x
@@ -202,26 +231,13 @@ lambdasLets
            
 lambdasLets p c a xBody lts
  = case lts of
- 
         LLet b x
          -> let (x', r)   = enterLetLLet c a b x xBody (lambdasX p)
             in  ([LLet b x'], r)
 
         LRec bxs
-         | isLiftyContext (contextCtx c)
-         -- Some fragments only allow letrecs to bind lambdas.
-         -- If all the bindings are lambdas, we can safely convert it to a
-         -- sequence of nonrecursive lets, as the recursion will be lifted to the
-         -- top level.
-         ,  Just _ <- sequence $ map (takeXLamFlags . snd) bxs
          -> let (bxs', r) = lambdasLetRecLiftAll p c a bxs
             in  (map (uncurry LLet) bxs', r)
-
-         -- If any bindings aren't lambdas, we know the fragment must
-         -- allow general recursion in letrecs anyway, and can leave it as a letrec.
-         | otherwise
-         -> let (bxs', r) = lambdasLetRec p c a [] bxs xBody
-            in  ([LRec bxs'], r)
 
         LPrivate{}
          -> ([lts], mempty)
@@ -274,22 +290,38 @@ lambdasLetRecLiftAll p c a bxs
             $ map snd bxs
 
        -- However, the functions we are lifting should not be treated as free variables
-       us'  = Set.filter (\(_,bo) -> not $ any (boundMatchesBind bo . fst) bxs)
+       us'  = Set.filter 
+                (\(_, bo) -> not $ any (boundMatchesBind bo . fst) bxs)
             $ us
 
-       -- Lift each function with a different context
-       lift _before [] = []
+       -- Lift each of the bindings in its own context.
+       --  We allow the group of bindings to contain ones with outer lambda
+       --  abstractions that need to be lifted, along with non-functional
+       --  bindings that stay in place.
+       lift _before [] 
+        = []
 
        lift before ((b, x) : after)
-            = let Just (lams, xx) = takeXLamFlags x
-                  c'       = ctx before b x after
-                  l'       = liftLambda p c' us' a lams xx
-              in (b, l') : lift (before ++ [(b,x)]) after
+        = case takeXLamFlags x of
+                -- The right of this binding has an outer abstraction, 
+                -- so we need to lift it to top-level.
+                Just (lams, xx)
+                 -> let c' = ctx before b x after
+                        l' = liftLambda p c' us' a lams xx
 
-       ls   = lift [] bxs
+                    in  Right (b, l') : lift (before ++ [(b,x)]) after
+
+                -- The right of this binding does not have any outer
+                -- abstractions, so we can leave it in place.
+                Nothing
+                 ->     Left (b, x)   : lift (before ++ [(b, x)]) after
+
+       ls    = lift [] bxs
 
        -- The call to each lifted function
-       calls = map (\(b,(xC,_,_)) -> (b,xC)) ls
+       stripCall (Left  (b, x))          = (b, x)
+       stripCall (Right (b, (xC, _, _))) = (b, xC)
+       calls = map stripCall ls
 
        -- Substitute the original name of the recursive function with a call to its new name,
        -- including passing along any free variables.
@@ -300,7 +332,10 @@ lambdasLetRecLiftAll p c a bxs
                 Nothing         ->                       substituteXXs calls x
 
        -- The result bindings to add at the top-level, with all the new names substituted in
-       res  = map (\(_, (_, bL, xL)) -> (bL, sub xL)) ls
+       stripResult (Left _)                 = Nothing
+       stripResult (Right (_, (_, bL, xL))) = Just (bL, sub xL)
+       res  = mapMaybe stripResult ls
+
    in  (calls, Result True res)
 
  where

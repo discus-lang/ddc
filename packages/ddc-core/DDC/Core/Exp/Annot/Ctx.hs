@@ -67,6 +67,7 @@ data Ctx a n
                         !(Cast a n)
 
 
+
 -- | Check if the context is a top-level let-binding.
 --   All bindings in the top-level chain of lets and letrecs are included.
 isTopLetCtx :: Ctx a n -> Bool

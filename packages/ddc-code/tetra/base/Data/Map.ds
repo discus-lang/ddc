@@ -239,6 +239,7 @@ map_fromList
 delta   = 2
 ratio   = 5
 
+-- TODO: allow multiple-clause non-recursive let.
 map_balance (k: k) (x: a) (l: Map k a) (r: Map k a): Map k a
  = do   sizeL = map_size l
         sizeR = map_size r
@@ -251,12 +252,16 @@ map_balance (k: k) (x: a) (l: Map k a) (r: Map k a): Map k a
          | otherwise             = Bin sizeX k x l r
 
 
-rotateL (k: k) (x: a) (l: Map k a) (r@(Bin _ _ _ ly ry): Map k a): Map k a
+rotateL (k: k) (x: a)
+        (l: Map k a) (r@(Bin _ _ _ ly ry): Map k a)
+        : Map k a
  | map_size ly < ratio*map_size ry = singleL k x l r
  | otherwise                       = doubleL k x l r
 
 
-rotateR (k: k) (x: a) (l@(Bin _ _ _ ly ry): Map k a) (r: Map k a): Map k a
+rotateR (k: k) (x: a)
+        (l@(Bin _ _ _ ly ry): Map k a) (r: Map k a)
+        : Map k a
  | map_size ry < ratio*map_size ly = singleR k x l r
  | otherwise                       = doubleR k x l r
 

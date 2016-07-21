@@ -36,7 +36,7 @@ stageSaltLoad config source pipesSalt
         SinkDiscard
  [ PipeCoreReannotate (const ())
         ( PipeCoreOutput pprDefaultMode
-                         (dump config source "dump.salt-load.dcl")
+                         (dump config source "dump.0-salt-00-load.dcl")
         : pipesSalt ) ]
 
 
@@ -53,7 +53,7 @@ stageSaltOpt config source pipes
         (0 :: Int) 
         (configSimplSalt config)        
         ( PipeCoreOutput  pprDefaultMode 
-                          (dump config source "dump.salt-opt.dcl")
+                          (dump config source "dump.2-salt-01-opt.dcs")
         : pipes )
 
 
@@ -68,10 +68,10 @@ stageSaltToC config source sink
  = PipeCoreSimplify       Salt.fragment 0 normalizeSalt
    [ PipeCoreCheck        Salt.fragment C.Recon SinkDiscard
      [ PipeCoreOutput     pprDefaultMode
-                          (dump config source "dump.salt-normalized.dcs")
+                          (dump config source "dump.2-salt-03-normalized.dcs")
      , PipeCoreAsSalt
        [ PipeSaltTransfer
-         [ PipeSaltOutput (dump config source "dump.salt-transfer.dcs")
+         [ PipeSaltOutput (dump config source "dump.2-salt-04-transfer.dcs")
          , PipeSaltPrint
                 (not $ configSuppressHashImports config)
                 (buildSpec $ configBuilder config)
@@ -93,10 +93,10 @@ stageSaltToLLVM config source pipesLLVM
  = PipeCoreSimplify Salt.fragment 0 normalizeSalt
    [ PipeCoreCheck          Salt.fragment C.Recon SinkDiscard
      [ PipeCoreOutput       pprDefaultMode
-                            (dump config source "dump.salt-normalized.dcs")
+                            (dump config source "dump.2-salt-03-normalized.dcs")
      , PipeCoreAsSalt
        [ PipeSaltTransfer
-         [ PipeSaltOutput   (dump config source "dump.salt-transfer.dcs")
+         [ PipeSaltOutput   (dump config source "dump.2-salt-04-transfer.dcs")
          , PipeSaltToLlvm   (buildSpec $ configBuilder config) 
                             pipesLLVM ]]]]
 
@@ -123,10 +123,10 @@ stageCompileSalt config source filePath shouldLinkExe
         PipeCoreSimplify        Salt.fragment 0 normalizeSalt
          [ PipeCoreCheck        Salt.fragment C.Recon SinkDiscard
            [ PipeCoreOutput     pprDefaultMode
-                                (dump config source "dump.salt-normalized.dcs")
+                                (dump config source "dump.2-salt-03-normalized.dcs")
            , PipeCoreAsSalt
              [ PipeSaltTransfer
-               [ PipeSaltOutput (dump config source "dump.salt-transfer.dcs")
+               [ PipeSaltOutput (dump config source "dump.2-salt-04-transfer.dcs")
                , PipeSaltCompile
                         (buildSpec $ configBuilder config)
                         (configBuilder config)

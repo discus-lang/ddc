@@ -212,7 +212,7 @@ desugarX sp xx
         XCast c x       -> XCast c    <$> desugarX   sp x
         XType{}         -> pure xx
         XWitness{}      -> pure xx
-        XDefix a xs     -> XDefix a   <$> mapM (desugarX sp)  xs
+        XDefix a xs     -> XDefix a   <$> mapM (desugarX sp) xs
         XInfixOp{}      -> pure xx
         XInfixVar{}     -> pure xx
 
@@ -227,6 +227,12 @@ desugarX sp xx
                 xFlat   <- flattenGXs gxs xFail
                 xFlat'  <- desugarX sp xFlat
                 return  xFlat'
+
+        XWhere sp' x cls 
+         -> do  x'        <- desugarX sp' x
+                let spcls =  [(sp', cl) | cl <- cls]
+                spcls'    <- desugarClGroup spcls
+                return   $ XWhere sp' x' (map snd spcls')
 
 
 -------------------------------------------------------------------------------

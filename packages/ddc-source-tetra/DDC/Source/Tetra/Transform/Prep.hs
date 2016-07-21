@@ -211,6 +211,13 @@ desugarX rns xx
                  else   return xx
 
 
+        -- Convert XWhere to let expressions.
+        XWhere _sp x cls 
+         -> do  x'      <- desugarX rns x
+                cls'    <- mapM (desugarCl rns) cls
+                return  $  XLet (LGroup cls') x'
+        
+
         -- Boilerplate.
         XAnnot a x      -> XAnnot a  <$> desugarX rns x
         XVar{}          -> return xx

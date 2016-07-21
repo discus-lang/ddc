@@ -31,12 +31,13 @@ pExp
  = do   xx      <- pExpFront 
 
         P.choice
-         [ do   sp      <- pTokSP KWhere
+         [ do   -- x where GROUP
+                sp      <- pTokSP KWhere
                 pTok KBraceBra
                 cls     <- liftM (map snd)
                         $  P.sepEndBy1 pClauseSP (pTok KSemiColon)
                 pTok KBraceKet
-                return  $ XAnnot sp $ XLet (LGroup cls) xx
+                return  $ XWhere sp xx cls
 
          , do   return  xx ]
 

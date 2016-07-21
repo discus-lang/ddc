@@ -59,12 +59,12 @@ instance HasAnonBind l => MapBoundX GExp l where
 
 downX l f d xx
   = case xx of
-        XAnnot a x      -> XAnnot a (downX l f d x)
-        XVar   u        -> XVar (f d u)
-        XCon   c        -> XCon c
-        XPrim  p        -> XPrim p
-        XApp   x1 x2    -> XApp   (downX l f d x1) (downX l f d x2)
-        XLAM   b  x     -> XLAM b (downX l f d x)
+        XAnnot a x        -> XAnnot a (downX l f d x)
+        XVar   u          -> XVar (f d u)
+        XCon   c          -> XCon c
+        XPrim  p          -> XPrim p
+        XApp   x1 x2      -> XApp   (downX l f d x1) (downX l f d x2)
+        XLAM   b  x       -> XLAM b (downX l f d x)
 
         XLam   b x     
          -> let d'      = d + countBAnonsBM l [b]
@@ -74,15 +74,16 @@ downX l f d xx
          -> let (lets', levels) = mapBoundAtDepthXLets l f d lets 
             in  XLet lets' (mapBoundAtDepthX l f (d + levels) x)
 
-        XCase x alts    -> XCase (downX l f d x)  (map (downA l f d) alts)
-        XCast cc x      -> XCast (downC l f d cc) (downX l f d x)
-        XType t         -> XType t
-        XWitness w      -> XWitness (downW l f d w)
+        XCase x alts      -> XCase (downX l f d x)  (map (downA l f d) alts)
+        XCast cc x        -> XCast (downC l f d cc) (downX l f d x)
+        XType t           -> XType t
+        XWitness w        -> XWitness (downW l f d w)
 
-        XDefix    a xs  -> XDefix    a (map (downX l f d) xs)
-        XInfixOp  a x   -> XInfixOp  a x
-        XInfixVar a x   -> XInfixVar a x
-        XMatch   a gs x -> XMatch    a (map (downMA l f d) gs) (downX l f d x)
+        XDefix    a xs    -> XDefix    a (map (downX l f d) xs)
+        XInfixOp  a x     -> XInfixOp  a x
+        XInfixVar a x     -> XInfixVar a x
+        XMatch    a gs x  -> XMatch    a (map (downMA l f d) gs) (downX l f d x)
+        XWhere    a x cls -> XWhere    a (downX l f d x) (map (downCL l f d) cls)
 
 
 ---------------------------------------------------------------------------------------------------

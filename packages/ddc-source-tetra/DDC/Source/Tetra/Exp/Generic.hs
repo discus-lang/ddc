@@ -155,7 +155,11 @@ data GExp l
         --   fails then we try the next one instead of failing.
         --   If none of the alternatives succeeds then the overall value
         --   is the value of the default expression.
-        | XMatch    !(GXAnnot l) ![GAltMatch l] (GExp l)
+        | XMatch    !(GXAnnot l) ![GAltMatch l] !(GExp l)
+
+        -- | Where expression defines a group of recursive clauses,
+        --   and is desugared to a letrec.
+        | XWhere    !(GXAnnot l) !(GExp l) ![GClause l]
 
 
 -- | Possibly recursive bindings.

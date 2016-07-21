@@ -31,6 +31,7 @@ instance NFDataLanguage l => NFData (GExp l) where
         XInfixOp  a s           -> rnf a   `seq` rnf s
         XInfixVar a s           -> rnf a   `seq` rnf s
         XMatch    a as x        -> rnf a   `seq` rnf as `seq` rnf x
+        XWhere    a cl x        -> rnf a   `seq` rnf cl `seq` rnf x
 
 
 instance NFDataLanguage l => NFData (GXBindVarMT l) where

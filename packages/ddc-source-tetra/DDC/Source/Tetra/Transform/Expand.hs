@@ -188,6 +188,7 @@ downX a env xx
         XInfixVar{}     -> xx
 
         XMatch a' as x  -> XMatch a' (map (downMA a' env) as) (downX a' env x)
+        XWhere a' x cls -> XWhere a' (downX a' env x) (map (downCX a env) cls)
 
 
 ---------------------------------------------------------------------------------------------------
