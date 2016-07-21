@@ -3,29 +3,29 @@ ok
 -- I don't remember the details, but something strange with forwarding was going on here
 module Test with
 letrec {
-  x5$runproc$process : [x5$'$k : Rate].Vector# Nat# -> Nat# -> Nat# -> [x5$PROC : Proc].Unit -> Process# x5$PROC x5$'$k
-    = Λ(x5$'$k : Rate).
-      λ(x6 : Vector# Nat#).λ(x y : Nat#).
-      Λ(x5$PROC : Proc).
-      λ(_ : Unit).
-      let x5$s : Series# x5$PROC x5$'$k Nat#
+  x5$runproc$process: [x5$'$k: Rate].Vector# Nat# -> Nat# -> Nat# -> [x5$PROC: Proc].Unit -> Process# x5$PROC x5$'$k
+    = Λ(x5$'$k: Rate).
+      λ(x6: Vector# Nat#).λ(x y: Nat#).
+      Λ(x5$PROC: Proc).
+      λ(_: Unit).
+      let x5$s: Series# x5$PROC x5$'$k Nat#
             = sgenerate# [x5$PROC] [x5$'$k] [Nat#]
-                  (λ(x3 : Nat#). add# [Nat#] y x3) in
-      let x6$s : Series# x5$PROC x5$'$k Nat#
+                  (λ(x3: Nat#). add# [Nat#] y x3) in
+      let x6$s: Series# x5$PROC x5$'$k Nat#
             = smap# [x5$PROC] [x5$'$k] [Nat#] [Nat#]
-                  (λ(x1 : Nat#). add# [Nat#] x x1) x5$s in
-      let x6$proc : Process# x5$PROC x5$'$k = sfill# [x5$PROC] [x5$'$k] [Nat#] x6 x6$s in
+                  (λ(x1: Nat#). add# [Nat#] x x1) x5$s in
+      let x6$proc: Process# x5$PROC x5$'$k = sfill# [x5$PROC] [x5$'$k] [Nat#] x6 x6$s in
       x6$proc;
   
-  foo : Vector# Nat# -> Nat# -> Vector# Nat#
-    = λ(m : Vector# Nat#).λ(i : Nat#).
-      let x0 : Nat# = add# [Nat#] 2# 1# in
-      let y : Nat# = add# [Nat#] 1# x0 in
-      let x : Nat# = add# [Nat#] y y in
-      let x6 : Vector# Nat# = vnew# [Nat#] i in
-      let x5$runproc : Unit
+  foo: Vector# Nat# -> Nat# -> Vector# Nat#
+    = λ(m: Vector# Nat#).λ(i: Nat#).
+      let x0: Nat# = add# [Nat#] 2# 1# in
+      let y: Nat# = add# [Nat#] 1# x0 in
+      let x: Nat# = add# [Nat#] y y in
+      let x6: Vector# Nat# = vnew# [Nat#] i in
+      let x5$runproc: Unit
             = ratify0# [Unit] i
-                  (Λ(x5$'$k : Rate).
+                  (Λ(x5$'$k: Rate).
                    runProcess# [x5$'$k] (x5$runproc$process [x5$'$k] x6 x y)) in
       x6
 }

@@ -4,27 +4,27 @@ ok
 -- Simple map2
 module Test with
 letrec {
-  x3$runproc$process : [x3$'$k : Rate].RateVec# x3$'$k Int# -> RateVec# x3$'$k Int# -> Vector# Int# -> [x3$PROC : Proc].Unit -> Process# x3$PROC x3$'$k
-    = Λ(x3$'$k : Rate).
-      λ(u1$rv u2$rv : RateVec# x3$'$k Int#).λ(x3 : Vector# Int#).
-      Λ(x3$PROC : Proc).
-      λ(_ : Unit).
-      let u1$s : Series# x3$PROC x3$'$k Int# = series# [x3$PROC] [x3$'$k] [Int#] u1$rv in
-      let u2$s : Series# x3$PROC x3$'$k Int# = series# [x3$PROC] [x3$'$k] [Int#] u2$rv in
-      let x3$s : Series# x3$PROC x3$'$k Int#
+  x3$runproc$process: [x3$'$k: Rate].RateVec# x3$'$k Int# -> RateVec# x3$'$k Int# -> Vector# Int# -> [x3$PROC: Proc].Unit -> Process# x3$PROC x3$'$k
+    = Λ(x3$'$k: Rate).
+      λ(u1$rv u2$rv: RateVec# x3$'$k Int#).λ(x3: Vector# Int#).
+      Λ(x3$PROC: Proc).
+      λ(_: Unit).
+      let u1$s: Series# x3$PROC x3$'$k Int# = series# [x3$PROC] [x3$'$k] [Int#] u1$rv in
+      let u2$s: Series# x3$PROC x3$'$k Int# = series# [x3$PROC] [x3$'$k] [Int#] u2$rv in
+      let x3$s: Series# x3$PROC x3$'$k Int#
             = smap2# [x3$PROC] [x3$'$k] [Int#] [Int#] [Int#]
-                  (λ(x0 x1 : Int#). add# [Int#] x0 x1) u1$s u2$s in
-      let x3$proc : Process# x3$PROC x3$'$k = sfill# [x3$PROC] [x3$'$k] [Int#] x3 x3$s in
+                  (λ(x0 x1: Int#). add# [Int#] x0 x1) u1$s u2$s in
+      let x3$proc: Process# x3$PROC x3$'$k = sfill# [x3$PROC] [x3$'$k] [Int#] x3 x3$s in
       x3$proc;
   
-  test : Vector# Int# -> Vector# Int# -> Vector# Int#
-    = λ(u1 u2 : Vector# Int#).
-      let x3 : Vector# Int#
+  test: Vector# Int# -> Vector# Int# -> Vector# Int#
+    = λ(u1 u2: Vector# Int#).
+      let x3: Vector# Int#
             = vnew# [Int#] (vlength# [Int#] u1) in
-      let x3$runproc : Unit
+      let x3$runproc: Unit
             = ratify2# [Int#] [Int#] [Unit] u1 u2
-                  (Λ(x3$'$k : Rate).
-                   λ(u1$rv u2$rv : RateVec# x3$'$k Int#).
+                  (Λ(x3$'$k: Rate).
+                   λ(u1$rv u2$rv: RateVec# x3$'$k Int#).
                    runProcess# [x3$'$k] (x3$runproc$process [x3$'$k] u1$rv u2$rv x3)) in
       x3
 }
@@ -33,27 +33,27 @@ letrec {
 -- Different vector types
 module Test with
 letrec {
-  x1$runproc$process : [x1$'$k : Rate].RateVec# x1$'$k Int# -> RateVec# x1$'$k Float32# -> Vector# Float32# -> [x1$PROC : Proc].Unit -> Process# x1$PROC x1$'$k
-    = Λ(x1$'$k : Rate).
-      λ(us$rv : RateVec# x1$'$k Int#).λ(vs$rv : RateVec# x1$'$k Float32#).λ(x1 : Vector# Float32#).
-      Λ(x1$PROC : Proc).
-      λ(_ : Unit).
-      let us$s : Series# x1$PROC x1$'$k Int# = series# [x1$PROC] [x1$'$k] [Int#] us$rv in
-      let vs$s : Series# x1$PROC x1$'$k Float32# = series# [x1$PROC] [x1$'$k] [Float32#] vs$rv in
-      let x1$s : Series# x1$PROC x1$'$k Float32#
+  x1$runproc$process: [x1$'$k: Rate].RateVec# x1$'$k Int# -> RateVec# x1$'$k Float32# -> Vector# Float32# -> [x1$PROC: Proc].Unit -> Process# x1$PROC x1$'$k
+    = Λ(x1$'$k: Rate).
+      λ(us$rv: RateVec# x1$'$k Int#).λ(vs$rv: RateVec# x1$'$k Float32#).λ(x1: Vector# Float32#).
+      Λ(x1$PROC: Proc).
+      λ(_: Unit).
+      let us$s: Series# x1$PROC x1$'$k Int# = series# [x1$PROC] [x1$'$k] [Int#] us$rv in
+      let vs$s: Series# x1$PROC x1$'$k Float32# = series# [x1$PROC] [x1$'$k] [Float32#] vs$rv in
+      let x1$s: Series# x1$PROC x1$'$k Float32#
             = smap2# [x1$PROC] [x1$'$k] [Int#] [Float32#] [Float32#]
-                  (λ(u : Int#).λ(v : Float32#). v) us$s vs$s in
-      let x1$proc : Process# x1$PROC x1$'$k = sfill# [x1$PROC] [x1$'$k] [Float32#] x1 x1$s in
+                  (λ(u: Int#).λ(v: Float32#). v) us$s vs$s in
+      let x1$proc: Process# x1$PROC x1$'$k = sfill# [x1$PROC] [x1$'$k] [Float32#] x1 x1$s in
       x1$proc;
   
-  test : Vector# Int# -> Vector# Float32# -> Vector# Float32#
-    = λ(us : Vector# Int#).λ(vs : Vector# Float32#).
-      let x1 : Vector# Float32#
+  test: Vector# Int# -> Vector# Float32# -> Vector# Float32#
+    = λ(us: Vector# Int#).λ(vs: Vector# Float32#).
+      let x1: Vector# Float32#
             = vnew# [Float32#] (vlength# [Int#] us) in
-      let x1$runproc : Unit
+      let x1$runproc: Unit
             = ratify2# [Int#] [Float32#] [Unit] us vs
-                  (Λ(x1$'$k : Rate).
-                   λ(us$rv : RateVec# x1$'$k Int#).λ(vs$rv : RateVec# x1$'$k Float32#).
+                  (Λ(x1$'$k: Rate).
+                   λ(us$rv: RateVec# x1$'$k Int#).λ(vs$rv: RateVec# x1$'$k Float32#).
                    runProcess# [x1$'$k] (x1$runproc$process [x1$'$k] us$rv vs$rv x1)) in
       x1
 }
@@ -62,56 +62,56 @@ letrec {
 -- Some other ops thrown in. Two processes, 'fs' and 'zs' are manifest
 module Test with
 letrec {
-  us'$runproc$process : [zs$'$k : Rate].RateVec# zs$'$k Float32# -> RateVec# zs$'$k Int# -> Ref# Float32# -> Vector# Float32# -> Float32# -> [us'$PROC : Proc].Unit -> Process# us'$PROC zs$'$k
-    = Λ(zs$'$k : Rate).
-      λ(vs$rv : RateVec# zs$'$k Float32#).λ(us$rv : RateVec# zs$'$k Int#).λ(f$ref : Ref# Float32#).λ(fs : Vector# Float32#).λ(z : Float32#).
-      Λ(us'$PROC : Proc).
-      λ(_ : Unit).
-      let vs$s : Series# us'$PROC zs$'$k Float32# = series# [us'$PROC] [zs$'$k] [Float32#] vs$rv in
-      let us$s : Series# us'$PROC zs$'$k Int# = series# [us'$PROC] [zs$'$k] [Int#] us$rv in
-      let us'$s : Series# us'$PROC zs$'$k Int#
+  us'$runproc$process: [zs$'$k: Rate].RateVec# zs$'$k Float32# -> RateVec# zs$'$k Int# -> Ref# Float32# -> Vector# Float32# -> Float32# -> [us'$PROC: Proc].Unit -> Process# us'$PROC zs$'$k
+    = Λ(zs$'$k: Rate).
+      λ(vs$rv: RateVec# zs$'$k Float32#).λ(us$rv: RateVec# zs$'$k Int#).λ(f$ref: Ref# Float32#).λ(fs: Vector# Float32#).λ(z: Float32#).
+      Λ(us'$PROC: Proc).
+      λ(_: Unit).
+      let vs$s: Series# us'$PROC zs$'$k Float32# = series# [us'$PROC] [zs$'$k] [Float32#] vs$rv in
+      let us$s: Series# us'$PROC zs$'$k Int# = series# [us'$PROC] [zs$'$k] [Int#] us$rv in
+      let us'$s: Series# us'$PROC zs$'$k Int#
             = smap# [us'$PROC] [zs$'$k] [Int#] [Int#]
-                  (λ(u : Int#). u) us$s in
-      let fs$s : Series# us'$PROC zs$'$k Float32#
+                  (λ(u: Int#). u) us$s in
+      let fs$s: Series# us'$PROC zs$'$k Float32#
             = smap2# [us'$PROC] [zs$'$k] [Int#] [Float32#] [Float32#]
-                  (λ(u : Int#).λ(v : Float32#). v) us'$s vs$s in
-      let fs$proc : Process# us'$PROC zs$'$k = sfill# [us'$PROC] [zs$'$k] [Float32#] fs fs$s in
-      let f$proc : Process# us'$PROC zs$'$k
+                  (λ(u: Int#).λ(v: Float32#). v) us'$s vs$s in
+      let fs$proc: Process# us'$PROC zs$'$k = sfill# [us'$PROC] [zs$'$k] [Float32#] fs fs$s in
+      let f$proc: Process# us'$PROC zs$'$k
             = sreduce# [us'$PROC] [zs$'$k] [Float32#] f$ref
-                  (λ(x2 x3 : Float32#). add# [Float32#] x2 x3) z fs$s in
+                  (λ(x2 x3: Float32#). add# [Float32#] x2 x3) z fs$s in
       pjoin# [us'$PROC] [zs$'$k] fs$proc f$proc;
   
-  zs$runproc$process : [zs$'$k : Rate].RateVec# zs$'$k Int# -> RateVec# zs$'$k Float32# -> RateVec# zs$'$k Float32# -> Vector# Float32# -> Float32# -> [zs$PROC : Proc].Unit -> Process# zs$PROC zs$'$k
-    = Λ(zs$'$k : Rate).
-      λ(us$rv : RateVec# zs$'$k Int#).λ(vs$rv fs$rv : RateVec# zs$'$k Float32#).λ(zs : Vector# Float32#).λ(f : Float32#).
-      Λ(zs$PROC : Proc).
-      λ(_ : Unit).
-      let us$s : Series# zs$PROC zs$'$k Int# = series# [zs$PROC] [zs$'$k] [Int#] us$rv in
-      let vs$s : Series# zs$PROC zs$'$k Float32# = series# [zs$PROC] [zs$'$k] [Float32#] vs$rv in
-      let fs$s : Series# zs$PROC zs$'$k Float32# = series# [zs$PROC] [zs$'$k] [Float32#] fs$rv in
-      let zs$s : Series# zs$PROC zs$'$k Float32#
+  zs$runproc$process: [zs$'$k: Rate].RateVec# zs$'$k Int# -> RateVec# zs$'$k Float32# -> RateVec# zs$'$k Float32# -> Vector# Float32# -> Float32# -> [zs$PROC: Proc].Unit -> Process# zs$PROC zs$'$k
+    = Λ(zs$'$k: Rate).
+      λ(us$rv: RateVec# zs$'$k Int#).λ(vs$rv fs$rv: RateVec# zs$'$k Float32#).λ(zs: Vector# Float32#).λ(f: Float32#).
+      Λ(zs$PROC: Proc).
+      λ(_: Unit).
+      let us$s: Series# zs$PROC zs$'$k Int# = series# [zs$PROC] [zs$'$k] [Int#] us$rv in
+      let vs$s: Series# zs$PROC zs$'$k Float32# = series# [zs$PROC] [zs$'$k] [Float32#] vs$rv in
+      let fs$s: Series# zs$PROC zs$'$k Float32# = series# [zs$PROC] [zs$'$k] [Float32#] fs$rv in
+      let zs$s: Series# zs$PROC zs$'$k Float32#
             = smap3# [zs$PROC] [zs$'$k] [Int#] [Float32#] [Float32#] [Float32#]
-                  (λ(u : Int#).λ(v ff : Float32#). add# [Float32#] ff f) us$s vs$s fs$s in
-      let zs$proc : Process# zs$PROC zs$'$k = sfill# [zs$PROC] [zs$'$k] [Float32#] zs zs$s in
+                  (λ(u: Int#).λ(v ff: Float32#). add# [Float32#] ff f) us$s vs$s fs$s in
+      let zs$proc: Process# zs$PROC zs$'$k = sfill# [zs$PROC] [zs$'$k] [Float32#] zs zs$s in
       zs$proc;
   
-  test : Vector# Int# -> Vector# Float32# -> Float32# -> Vector# Float32#
-    = λ(us : Vector# Int#).λ(vs : Vector# Float32#).λ(z : Float32#).
-      let fs : Vector# Float32#
+  test: Vector# Int# -> Vector# Float32# -> Float32# -> Vector# Float32#
+    = λ(us: Vector# Int#).λ(vs: Vector# Float32#).λ(z: Float32#).
+      let fs: Vector# Float32#
             = vnew# [Float32#] (vlength# [Float32#] vs) in
-      let f$ref : Ref# Float32# = new# [Float32#] z in
-      let us'$runproc : Unit
+      let f$ref: Ref# Float32# = new# [Float32#] z in
+      let us'$runproc: Unit
             = ratify2# [Float32#] [Int#] [Unit] vs us
-                  (Λ(zs$'$k : Rate).
-                   λ(vs$rv : RateVec# zs$'$k Float32#).λ(us$rv : RateVec# zs$'$k Int#).
+                  (Λ(zs$'$k: Rate).
+                   λ(vs$rv: RateVec# zs$'$k Float32#).λ(us$rv: RateVec# zs$'$k Int#).
                    runProcess# [zs$'$k] (us'$runproc$process [zs$'$k] vs$rv us$rv f$ref fs z)) in
-      let f : Float32# = read# [Float32#] f$ref in
-      let zs : Vector# Float32#
+      let f: Float32# = read# [Float32#] f$ref in
+      let zs: Vector# Float32#
             = vnew# [Float32#] (vlength# [Int#] us) in
-      let zs$runproc : Unit
+      let zs$runproc: Unit
             = ratify3# [Int#] [Float32#] [Float32#] [Unit] us vs fs
-                  (Λ(zs$'$k : Rate).
-                   λ(us$rv : RateVec# zs$'$k Int#).λ(vs$rv fs$rv : RateVec# zs$'$k Float32#).
+                  (Λ(zs$'$k: Rate).
+                   λ(us$rv: RateVec# zs$'$k Int#).λ(vs$rv fs$rv: RateVec# zs$'$k Float32#).
                    runProcess# [zs$'$k] (zs$runproc$process [zs$'$k] us$rv vs$rv fs$rv zs f)) in
       zs
 }

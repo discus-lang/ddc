@@ -5,8 +5,8 @@ ok
 -- Simple Functions.
 module Test with
 letrec {
-  foo : Ptr# rT Obj -> Ptr# rT Obj
-    = λ(x : Ptr# rT Obj).
+  foo: Ptr# rT Obj -> Ptr# rT Obj
+    = λ(x: Ptr# rT Obj).
       let x1
             = let ^ = allocSmall [rT] TAG0# 8# in
               let ^ = payloadSmall [rT] ^0 in
@@ -62,8 +62,8 @@ letrec {
 -- Match aginst literal Bools.
 module Test with
 letrec {
-  neg : Ptr# rT Obj -> Ptr# rT Obj
-    = λ(x : Ptr# rT Obj).
+  neg: Ptr# rT Obj -> Ptr# rT Obj
+    = λ(x: Ptr# rT Obj).
       let x0
             = let ^ = x in
               let ^ = payloadSmall [rT] ^0 in
@@ -90,8 +90,8 @@ letrec {
 -- Match against literal Nat.
 module Test with
 letrec {
-  foo : Ptr# rT Obj -> Ptr# rT Obj
-    = λ(x : Ptr# rT Obj).
+  foo: Ptr# rT Obj -> Ptr# rT Obj
+    = λ(x: Ptr# rT Obj).
       let x0
             = let ^ = x in
               let ^ = payloadSmall [rT] ^0 in
@@ -124,8 +124,8 @@ letrec {
 -- Nested case expression.
 module Test with
 letrec {
-  foo : Ptr# rT Obj -> Ptr# rT Obj -> Ptr# rT Obj
-    = λ(x y : Ptr# rT Obj).
+  foo: Ptr# rT Obj -> Ptr# rT Obj -> Ptr# rT Obj
+    = λ(x y: Ptr# rT Obj).
       let x0
             = let ^ = x in
               let ^ = payloadSmall [rT] ^0 in
@@ -167,8 +167,8 @@ letrec {
 -- Full application of top-level function.
 module Test with
 letrec {
-  add : Ptr# rT Obj -> Ptr# rT Obj -> Ptr# rT Obj
-    = λ(x y : Ptr# rT Obj).
+  add: Ptr# rT Obj -> Ptr# rT Obj -> Ptr# rT Obj
+    = λ(x y: Ptr# rT Obj).
       let x0
             = let ^ = x in
               let ^ = payloadSmall [rT] ^0 in
@@ -188,8 +188,8 @@ letrec {
             = poke# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# x2 in
       ^1;
   
-  foo : Ptr# rT Obj -> Ptr# rT Obj
-    = λ(x : Ptr# rT Obj).
+  foo: Ptr# rT Obj -> Ptr# rT Obj
+    = λ(x: Ptr# rT Obj).
       let x3
             = let ^ = allocSmall [rT] TAG0# 8# in
               let ^ = payloadSmall [rT] ^0 in
@@ -203,8 +203,8 @@ letrec {
 -- Flip an enumerated value.
 module Test with
 letrec {
-  flipit : Ptr# rT Obj -> Ptr# rT Obj
-    = λ(x : Ptr# rT Obj).
+  flipit: Ptr# rT Obj -> Ptr# rT Obj
+    = λ(x: Ptr# rT Obj).
       case getTag [rT] x of {
         TAG0#  
          -> let ^ = allocBoxed [rT] TAG1# 0# in
@@ -221,8 +221,8 @@ letrec {
 -- Function to take the head of a monomorphic list.
 module Test with
 letrec {
-  head : Ptr# rT Obj -> Ptr# rT Obj
-    = λ(xx : Ptr# rT Obj).
+  head: Ptr# rT Obj -> Ptr# rT Obj
+    = λ(xx: Ptr# rT Obj).
       case getTag [rT] xx of {
         TAG0#  
          -> let x = getBoxed [rT] [rT] xx 0# in
@@ -241,9 +241,9 @@ letrec {
 -- Function to take the head of a polymorphic list.
 module Test with
 letrec {
-  head : [a$r : Region].Ptr# rT Obj -> Ptr# rT Obj -> Ptr# rT Obj
-    = Λ(a$r : Region).
-      λ(def xx : Ptr# rT Obj).
+  head: [a$r: Region].Ptr# rT Obj -> Ptr# rT Obj -> Ptr# rT Obj
+    = Λ(a$r: Region).
+      λ(def xx: Ptr# rT Obj).
       case getTag [rT] xx of {
         TAG0#  
          -> let x = getBoxed [rT] [rT] xx 0# in
@@ -259,8 +259,8 @@ letrec {
 -- Need to unbox scrutinee.
 module Test with
 letrec {
-  swap : Ptr# rT Obj -> Ptr# rT Obj
-    = λ(x : Ptr# rT Obj).
+  swap: Ptr# rT Obj -> Ptr# rT Obj
+    = λ(x: Ptr# rT Obj).
       let x0
             = let ^ = x in
               let ^ = payloadSmall [rT] ^0 in
@@ -289,9 +289,9 @@ letrec {
 -- is passed the top level region as the location of the element.
 module Test with
 letrec {
-  head : [a$r : Region].Ptr# rT Obj -> Ptr# rT Obj -> Ptr# rT Obj
-    = Λ(a$r : Region).
-      λ(def xx : Ptr# rT Obj).
+  head: [a$r: Region].Ptr# rT Obj -> Ptr# rT Obj -> Ptr# rT Obj
+    = Λ(a$r: Region).
+      λ(def xx: Ptr# rT Obj).
       case getTag [rT] xx of {
         TAG0#  
          -> let x = getBoxed [rT] [rT] xx 0# in
@@ -301,8 +301,8 @@ letrec {
          -> def
       };
   
-  foo : Ptr# rT Obj -> Ptr# rT Obj
-    = λ(_ : Ptr# rT Obj).
+  foo: Ptr# rT Obj -> Ptr# rT Obj
+    = λ(_: Ptr# rT Obj).
       let x1
             = let ^ = allocBoxed [rT] TAG1# 0# in
               ^0 in
@@ -332,9 +332,9 @@ letrec {
 -- function is passed the top level region as the location of the element.
 module Test with
 letrec {
-  head : [a$r : Region].Ptr# rT Obj -> Ptr# rT Obj -> Ptr# rT Obj
-    = Λ(a$r : Region).
-      λ(def xx : Ptr# rT Obj).
+  head: [a$r: Region].Ptr# rT Obj -> Ptr# rT Obj -> Ptr# rT Obj
+    = Λ(a$r: Region).
+      λ(def xx: Ptr# rT Obj).
       case getTag [rT] xx of {
         TAG0#  
          -> let x = getBoxed [rT] [rT] xx 0# in
@@ -344,9 +344,9 @@ letrec {
          -> def
       };
   
-  foo : [r : Region].Ptr# rT Obj -> Ptr# rT Obj
-    = Λ(r : Region).
-      λ(_ : Ptr# rT Obj).
+  foo: [r: Region].Ptr# rT Obj -> Ptr# rT Obj
+    = Λ(r: Region).
+      λ(_: Ptr# rT Obj).
       let x1
             = let ^ = allocBoxed [rT] TAG0# 0# in
               ^0 in

@@ -1,0 +1,3 @@
+(Cons (T2 40 "red") (Cons (T2 20 "green") (Cons (T2 10 "blue") (Cons (T2 22 "purple") Nil))))
+(Cons (T2 10 "blue") (Cons (T2 20 "green") (Cons (T2 22 "purple") (Cons (T2 40 "red") Nil))))
+(Bin 4 20 "green" (Bin 1 10 "blue" Tip Tip) (Bin 2 40 "red" (Bin 1 22 "purple" Tip Tip) Tip))

@@ -1,21 +1,21 @@
 ok
 
 -- Simple lambda abstraction
-λ(x : Unit). x
+λ(x: Unit). x
 :*: Unit -> Unit
 :!: Pure
 
 
 -- Lambda with multiple binders of the same type.
-Λ(r1 r2 r3 : Region).
-λ(x : Int#). x
-:*: [r1 r2 r3 : Region].Int# -> Int#
+Λ(r1 r2 r3: Region).
+λ(x: Int#). x
+:*: [r1 r2 r3: Region].Int# -> Int#
 :!: Pure
 
 
 -- Lambda with multiple binders after the same lambda token.
-Λ(r1 r2 : Region).
-λ(x : Int#). x
-:*: [r1 r2 : Region].Int# -> Int#
+Λ(r1 r2: Region).
+λ(x: Int#). x
+:*: [r1 r2: Region].Int# -> Int#
 :!: Pure
 

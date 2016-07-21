@@ -4,8 +4,8 @@ ok
 -- Simple addition of literal.
 module Test with
 letrec {
-  f : Nat# -> Nat#
-    = λ(x : Nat#).
+  f: Nat# -> Nat#
+    = λ(x: Nat#).
       convert# [U# Nat#] [Nat#]
           (add## [Nat#]
                (convert# [Nat#] [U# Nat#] x)
@@ -17,8 +17,8 @@ letrec {
 -- Match against literal Bool#, scrutinee needes to be unboxed.
 module Test with
 letrec {
-  neg : Bool# -> Bool#
-    = λ(x : Bool#).
+  neg: Bool# -> Bool#
+    = λ(x: Bool#).
       case convert# [Bool#] [U# Bool#] x of {
         True##  
          -> convert# [U# Bool#] [Bool#] False##;
@@ -31,8 +31,8 @@ letrec {
 -- Match against literal Word32#, with a default pattern.
 module Test with
 letrec {
-  foo : Word32# -> Word32#
-    = λ(x : Word32#).
+  foo: Word32# -> Word32#
+    = λ(x: Word32#).
       case convert# [Word32#] [U# Word32#] x of {
         5w32#  
          -> convert# [U# Word32#] [Word32#] 6w32#;
@@ -47,8 +47,8 @@ letrec {
 -- Nested case-expressions.
 module Test with
 letrec {
-  f : Nat# -> Nat# -> Nat#
-    = λ(x y : Nat#).
+  f: Nat# -> Nat# -> Nat#
+    = λ(x y: Nat#).
       case convert# [Nat#] [U# Nat#] x of {
         0#  
          -> case convert# [Nat#] [U# Nat#] y of {

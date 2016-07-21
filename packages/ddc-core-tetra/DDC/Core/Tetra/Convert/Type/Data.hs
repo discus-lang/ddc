@@ -103,7 +103,9 @@ convertDataT ctx tt
         TApp{}    -> convertDataAppT ctx tt
 
         -- We should not find any polymorphic values.
-        TForall{} -> throw $ ErrorMalformed $ "Invalid polymorphic value type."
+        TForall _b t  
+                  -> convertDataT ctx t
+         -- -> throw $ ErrorMalformed $ "Invalid polymorphic value type."
 
         -- Resentable types always have kind Data, but type sums cannot.
         TSum{}    -> throw $ ErrorUnexpectedSum

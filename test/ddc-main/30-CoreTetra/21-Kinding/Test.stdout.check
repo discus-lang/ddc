@@ -28,7 +28,7 @@ When checking type.
           the body type: Read r
                has kind: Effect
     but it must be Data or Prop
-          when checking: [r : Region].Read r
+          when checking: [r: Region].Read r
 
 
 -- Error: witness implication is invalid.

@@ -2,7 +2,7 @@
 -- See if we've managed to changed modes.
 ok
 add#
-:*: [^ : Data].^0 -> ^0 -> ^0
+:*: [^: Data].^0 -> ^0 -> ^0
 
 -- Type constructors
 Nat# :: Data
@@ -24,10 +24,10 @@ When checking expression.
   Undefined value variable: tailcall0#
 
 tailcall1#
-:*: [^ ^ : Data].(^1 -> ^0) -> ^1 -> ^0
+:*: [^ ^: Data].(^1 -> ^0) -> ^1 -> ^0
 
 tailcall4#
-:*: [^ ^ ^ ^ ^ : Data].(^4 -> ^3 -> ^2 -> ^1 -> ^0) -> ^4 -> ^3 -> ^2 -> ^1 -> ^0
+:*: [^ ^ ^ ^ ^: Data].(^4 -> ^3 -> ^2 -> ^1 -> ^0) -> ^4 -> ^3 -> ^2 -> ^1 -> ^0
 
 
 -- Literals

@@ -14,7 +14,7 @@ When checking expression.
 
 
 -- Ok: should allow variable named 'inc'.
-let inc : Unit = () in
+let inc: Unit = () in
 inc
 :*: Unit
 :!: Pure

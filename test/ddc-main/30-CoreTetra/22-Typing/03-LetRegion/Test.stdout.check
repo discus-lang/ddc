@@ -9,14 +9,14 @@ private r1 in
 
 
 -- Parse private with one witness.
-private r1 with {w1 : Const r1} in
+private r1 with {w1: Const r1} in
 ()
 :*: Unit
 :!: Pure
 
 
 -- Parse private with multiple witnesses.
-private r1 with {w1 : Const r1; w2 : Read r1} in
+private r1 with {w1: Const r1; w2: Read r1} in
 ()
 :*: Unit
 :!: Pure
@@ -24,16 +24,16 @@ private r1 with {w1 : Const r1; w2 : Read r1} in
 
 -- Use the bound region in the body of the expression.
 module Test 
-import data Ref (r : Region) (a : Data) where {
+import data Ref (r: Region) (a: Data) where {
         MkRef : a -> Ref r a;
 }
 with
 letrec {
-  test : Nat#
+  test: Nat#
     = private r1 in
-      let x : Ref r1 Nat# = MkRef [r1] [Nat#] 5 in
+      let x: Ref r1 Nat# = MkRef [r1] [Nat#] 5 in
       case x of {
-        MkRef (y : Nat#) 
+        MkRef (y: Nat#) 
          -> y
       }
 }
@@ -45,10 +45,10 @@ Error loading module
   When checking expression.
     <batch>:43:4
     Region variables shadow existing ones.
-               Region variables: r1 : Region
+               Region variables: r1: Region
          are already in environment
     
-    with: private r1 with {w1 : Write r1} in
+    with: private r1 with {w1: Write r1} in
           writeRef [r1] [Nat#] x 6
 
 
@@ -58,10 +58,10 @@ Error loading module
   When checking expression.
     <batch>:58:4
     Region variables shadow existing ones.
-               Region variables: r : Region
+               Region variables: r: Region
          are already in environment
     
-    with: private r with {w1 : Mutable r} in
+    with: private r with {w1: Mutable r} in
           writeRef [r] [Nat#] x 6
 
 
@@ -71,7 +71,7 @@ Error loading module
   When checking expression.
     <batch>:73:9
     Region variables escape scope of private.
-           The region variables: r : Region
+           The region variables: r: Region
        is free in the body type: Ref r Nat#
     
     with: private r in
@@ -82,10 +82,10 @@ Error loading module
 When checking expression.
   <batch>:81:1
   Invalid witness type with private.
-            The witness: w : c r1
+            The witness: w: c r1
     cannot be created with a private
   
-  with: private r1 with {w : c r1} in
+  with: private r1 with {w: c r1} in
         ()
 
 

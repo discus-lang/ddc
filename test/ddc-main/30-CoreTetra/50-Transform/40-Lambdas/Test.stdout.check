@@ -6,13 +6,13 @@ ok
 -- Simple lifting with just one free variable.
 module Test with
 letrec {
-  test$L0 : Nat# -> Nat# -> Nat#
-    = λ(a x : Nat#). add# [Nat#] a 1;
+  test$L0: Nat# -> Nat# -> Nat#
+    = λ(a x: Nat#). add# [Nat#] a 1;
   
-  test : Unit -> Nat#
-    = λ(_ : Unit).
-      let a : Nat# = 23 in
-      let f : Nat# -> Nat# = test$L0 a in
+  test: Unit -> Nat#
+    = λ(_: Unit).
+      let a: Nat# = 23 in
+      let f: Nat# -> Nat# = test$L0 a in
       f 5
 }
 
@@ -20,19 +20,19 @@ letrec {
 -- Two free variables.
 module Test with
 letrec {
-  test$L0 : Nat# -> Nat# -> Nat# -> Nat#
-    = λ(a1 a2 x : Nat#).
-      let b1 : Nat# = 21 in
-      let b2 : Nat# = 32 in
+  test$L0: Nat# -> Nat# -> Nat# -> Nat#
+    = λ(a1 a2 x: Nat#).
+      let b1: Nat# = 21 in
+      let b2: Nat# = 32 in
       add# [Nat#] a1
           (add# [Nat#] a2
                (add# [Nat#] b1 (add# [Nat#] x b2)));
   
-  test : Unit -> Nat#
-    = λ(_ : Unit).
-      let a1 : Nat# = 10 in
-      let a2 : Nat# = 11 in
-      let f2 : Nat# -> Nat# = test$L0 a1 a2 in
+  test: Unit -> Nat#
+    = λ(_: Unit).
+      let a1: Nat# = 10 in
+      let a2: Nat# = 11 in
+      let f2: Nat# -> Nat# = test$L0 a1 a2 in
       f2 a2
 }
 
@@ -40,23 +40,23 @@ letrec {
 -- Three nested lambda abstractions.
 module Test with
 letrec {
-  test$L0 : Nat# -> Nat# -> Nat#
-    = λ(x y : Nat#).
-      let c1 : Nat# = 42 in
+  test$L0: Nat# -> Nat# -> Nat#
+    = λ(x y: Nat#).
+      let c1: Nat# = 42 in
       add# [Nat#] c1 x;
   
-  test$L1 : Nat# -> Nat#
-    = λ(x : Nat#).
-      let b1 : Nat# = 21 in
-      let b2 : Nat# = 32 in
-      let f3 : Nat# -> Nat# = test$L0 x in
+  test$L1: Nat# -> Nat#
+    = λ(x: Nat#).
+      let b1: Nat# = 21 in
+      let b2: Nat# = 32 in
+      let f3: Nat# -> Nat# = test$L0 x in
       add# [Nat#] (f3 b1) (add# [Nat#] b2 x);
   
-  test : Unit -> Nat#
-    = λ(_ : Unit).
-      let a1 : Nat# = 10 in
-      let a2 : Nat# = 11 in
-      let f2 : Nat# -> Nat# = test$L1 in
+  test: Unit -> Nat#
+    = λ(_: Unit).
+      let a1: Nat# = 10 in
+      let a2: Nat# = 11 in
+      let f2: Nat# -> Nat# = test$L1 in
       f2 a2
 }
 
@@ -64,8 +64,8 @@ letrec {
 -- Single letrec
 module Test with
 letrec {
-  test$L0 : Nat# -> Nat# -> Nat#
-    = λ(x a : Nat#).
+  test$L0: Nat# -> Nat# -> Nat#
+    = λ(x a: Nat#).
       case a of {
         0  
          -> 0;
@@ -74,10 +74,10 @@ letrec {
                 (test$L0 x (sub# [Nat#] a 1))
       };
   
-  test : Unit -> Nat#
-    = λ(_ : Unit).
-      let x : Nat# = 5 in
-      let loop : Nat# -> Nat# = test$L0 x in
+  test: Unit -> Nat#
+    = λ(_: Unit).
+      let x: Nat# = 5 in
+      let loop: Nat# -> Nat# = test$L0 x in
       loop 10
 }
 
@@ -85,8 +85,8 @@ letrec {
 -- Multiple letrecs, union of free vars required
 module Test with
 letrec {
-  test$L0 : Nat# -> Nat# -> Nat# -> Nat#
-    = λ(x y a : Nat#).
+  test$L0: Nat# -> Nat# -> Nat# -> Nat#
+    = λ(x y a: Nat#).
       case a of {
         0  
          -> 0;
@@ -95,8 +95,8 @@ letrec {
                 (test$L1 x y (sub# [Nat#] a 1))
       };
   
-  test$L1 : Nat# -> Nat# -> Nat# -> Nat#
-    = λ(x y a : Nat#).
+  test$L1: Nat# -> Nat# -> Nat# -> Nat#
+    = λ(x y a: Nat#).
       case a of {
         0  
          -> 0;
@@ -105,12 +105,12 @@ letrec {
                 (test$L0 x y (sub# [Nat#] a 1))
       };
   
-  test : Unit -> Nat#
-    = λ(_ : Unit).
-      let x : Nat# = 5 in
-      let y : Nat# = 7 in
-      let loop1 : Nat# -> Nat# = test$L0 x y in
-      let loop2 : Nat# -> Nat# = test$L1 x y in
+  test: Unit -> Nat#
+    = λ(_: Unit).
+      let x: Nat# = 5 in
+      let y: Nat# = 7 in
+      let loop1: Nat# -> Nat# = test$L0 x y in
+      let loop2: Nat# -> Nat# = test$L1 x y in
       loop1 10
 }
 
@@ -118,8 +118,8 @@ letrec {
 -- Single letrec, multiple arguments
 module Test with
 letrec {
-  test$L0 : Nat# -> Nat# -> Nat# -> Nat#
-    = λ(x a b : Nat#).
+  test$L0: Nat# -> Nat# -> Nat# -> Nat#
+    = λ(x a b: Nat#).
       case a of {
         0  
          -> 0;
@@ -128,10 +128,10 @@ letrec {
                 (test$L0 x (sub# [Nat#] a 1) b)
       };
   
-  test : Unit -> Nat#
-    = λ(_ : Unit).
-      let x : Nat# = 5 in
-      let loop : Nat# -> Nat# -> Nat# = test$L0 x in
+  test: Unit -> Nat#
+    = λ(_: Unit).
+      let x: Nat# = 5 in
+      let loop: Nat# -> Nat# -> Nat# = test$L0 x in
       loop 10 2
 }
 

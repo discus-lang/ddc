@@ -88,9 +88,9 @@ stageTetraToSalt config source pipesSalt
         pipe_curry
          = PipeCoreCheck        BE.fragment C.Recon SinkDiscard
            [ PipeCoreAsTetra
-           [ PipeTetraCurry
+           [ PipeTetraCurry     (dump config source "dump.1-tetra-03-unshare.dct")
            [ PipeCoreOutput     pprDefaultMode
-                                (dump config source "dump.1-tetra-03-curry.dct")
+                                (dump config source "dump.1-tetra-04-curry.dct")
            , pipe_prep ]]]
 
         pipe_prep

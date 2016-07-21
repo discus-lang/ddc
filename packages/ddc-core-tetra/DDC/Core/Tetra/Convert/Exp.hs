@@ -72,11 +72,14 @@ convertExp ectx ctx xx
 
         ---------------------------------------------------
         -- Type abstractions can only appear at the top-level of a function.
-        XLAM{}
+        XLAM _ b x
+         -> let ctx'    = extendsTypeEnv [b] ctx
+            in  convertExp ectx ctx' x
+{-
          -> throw $ ErrorUnsupported xx
           $ vcat [ text "Cannot convert type abstraction in this context."
                  , text "The program must be lambda-lifted before conversion." ]
-
+-}
 
         ---------------------------------------------------
         -- Function abstractions can only appear at the top-level of a fucntion.

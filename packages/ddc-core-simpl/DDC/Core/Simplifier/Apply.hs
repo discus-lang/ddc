@@ -15,24 +15,25 @@ import DDC.Core.Transform.AnonymizeX
 import DDC.Core.Transform.Beta
 import DDC.Core.Transform.Bubble
 import DDC.Core.Transform.Elaborate
-import DDC.Core.Transform.Eta           as Eta
+import DDC.Core.Transform.Eta                   as Eta
 import DDC.Core.Transform.Flatten
-import DDC.Core.Transform.Forward       as Forward
+import DDC.Core.Transform.Forward               as Forward
 import DDC.Core.Transform.Inline
 import DDC.Core.Transform.Lambdas
 import DDC.Core.Transform.Namify
 import DDC.Core.Transform.Prune
 import DDC.Core.Transform.Rewrite
-import DDC.Core.Transform.Snip          as Snip
-import DDC.Core.Transform.FoldCase      as FoldCase
-import DDC.Type.Env                     (KindEnv, TypeEnv)
-import Data.Typeable                    (Typeable)
+import qualified DDC.Core.Transform.Snip        as Snip
+import qualified DDC.Core.Transform.FoldCase    as FoldCase
+
+import DDC.Type.Env                             (KindEnv, TypeEnv)
+import Data.Typeable                            (Typeable)
 import Control.Monad.State.Strict
 import DDC.Base.Name
-import qualified DDC.Base.Pretty        as P
-import qualified DDC.Core.Env.EnvX      as EnvX
-import qualified Data.Set               as Set
-import Prelude                          hiding ((<$>))
+import qualified DDC.Base.Pretty                as P
+import qualified DDC.Core.Env.EnvX              as EnvX
+import qualified Data.Set                       as Set
+import Prelude                                  hiding ((<$>))
 
 
 -- Modules --------------------------------------------------------------------
@@ -150,13 +151,13 @@ applyTransform !profile !_kenv !_tenv !spec !mm
          -> let config  = Forward.Config (const FloatAllow) False
             in  return $ forwardModule profile config mm
 
-        FoldCase config  -> res    $ foldCase config mm
+        FoldCase config  -> res    $ FoldCase.foldCase config mm
         Inline getDef    -> res    $ inline getDef Set.empty mm
         Lambdas          -> res    $ lambdasModule profile mm
         Namify namK namT -> namifyUnique namK namT mm >>= res
         Prune            -> res    $ pruneModule profile mm
         Rewrite rules    -> res    $ rewriteModule rules mm
-        Snip config      -> res    $ snip config mm
+        Snip config      -> res    $ Snip.snip config mm
 
 
 -- Expressions ----------------------------------------------------------------
@@ -306,10 +307,11 @@ applyTransformX !profile !kenv !tenv !spec !xx
             in  return $ forwardX profile config xx
 
         Inline  getDef    -> res    $ inline getDef Set.empty xx
-        FoldCase config   -> res    $ foldCase config xx
+        FoldCase config   -> res    $ FoldCase.foldCase config xx
         Lambdas           -> res    $ xx
         Namify  namK namT -> namifyUnique namK namT xx >>= res
         Prune             -> return $ pruneX     profile env xx
         Rewrite rules     -> return $ rewriteX rules xx
-        Snip config       -> res    $ snip config xx
+        Snip config       -> res    $ Snip.snip config xx
+
 

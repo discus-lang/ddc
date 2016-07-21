@@ -8,7 +8,7 @@ Data ~> Data :: Comp
 
 -- Parse witness implication operator.
 -- This needs to be fully applied to have a sort.
-[r : Region].Const r => Int# :: Data
+[r: Region].Const r => Int# :: Data
 
 
 -- Parse type function operator.

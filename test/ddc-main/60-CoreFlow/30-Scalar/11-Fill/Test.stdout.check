@@ -4,14 +4,14 @@ ok
 -- | Single map over input series, writing into existing vector.
 module Test with
 letrec {
-  test : [p : Proc].[k : Rate].Vector# Int# -> RateVec# k Int# -> Unit
-    = Λ(p : Proc).Λ(k : Rate).
-      λ(v : Vector# Int#).λ(s : RateVec# k Int#).
+  test: [p: Proc].[k: Rate].Vector# Int# -> RateVec# k Int# -> Unit
+    = Λ(p: Proc).Λ(k: Rate).
+      λ(v: Vector# Int#).λ(s: RateVec# k Int#).
       let v$buf = vbuf# [Int#] v in
       let x3 = series# [p] [k] [Int#] s in
       let _
             = loop# [k]
-                  (λ(x0 : Nat#).
+                  (λ(x0: Nat#).
                    let x3$elem = next# [Int#] [p] [k] x3 x0 in
                    let x1 = mul# [Int#] x3$elem 2i# in
                    let x4$elem = add# [Int#] x1 1i# in

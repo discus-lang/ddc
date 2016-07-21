@@ -47,7 +47,7 @@ instance (Pretty n, Eq n) => Pretty (Exp a n) where
         XVar  _ u       
          | modeExpVarTypes mode
          , Just t       <- takeTypeOfBound u
-         -> parens $ ppr u <> text " : " <> ppr t
+         -> parens $ ppr u <> text ":" <+> ppr t
 
          | otherwise
          -> ppr u
@@ -55,7 +55,7 @@ instance (Pretty n, Eq n) => Pretty (Exp a n) where
         XCon  _ dc
          | modeExpConTypes mode
          , Just t       <- takeTypeOfDaCon dc
-         -> parens $ ppr dc <> text " : " <> ppr t
+         -> parens $ ppr dc <> text ":" <+> ppr t
         
          | otherwise
          -> ppr dc
@@ -211,8 +211,7 @@ instance (Pretty n, Eq n) => Pretty (Lets a n) where
         LRec bxs
          -> let pprLetRecBind (b, x)
                  =   ppr (binderOfBind b)
-                 <+> text ":"
-                 <+> ppr (typeOfBind b)
+                 <>  text ":" <+> ppr (typeOfBind b)
                  <>  nest 2 (  breakWhen (not $ isSimpleX x)
                             <> text "=" <+> align (pprX x))
         
@@ -289,7 +288,7 @@ pprBinderGroup
 
 pprBinderGroup lam (rs, t)
         =  lam 
-        <> parens ((hsep $ map pprBinder rs) <+> text ":" <+> ppr t) 
+        <> parens ((hsep $ map pprBinder rs) <> text ":" <+> ppr t) 
         <> dot
 
 

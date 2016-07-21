@@ -4,28 +4,28 @@ ok
 -- This was causing a type error, because the types aren't alpha equivalent.
 module Test with
 letrec {
-  f : [a : Data].a -> a
-    = Λ(a : Data).
-      λ(v : a). v;
+  f: [a: Data].a -> a
+    = Λ(a: Data).
+      λ(v: a). v;
   
-  com : ([^ : Data].^0 -> ^0) -> Int#
-    = λ(g : [^ : Data].^0 -> ^0). g [Int#] 0i;
+  com: ([^: Data].^0 -> ^0) -> Int#
+    = λ(g: [^: Data].^0 -> ^0). g [Int#] 0i;
   
-  uuse : ?6 -> Int#
-    = λ(_ : ?6). com f
+  uuse: ?6 -> Int#
+    = λ(_: ?6). com f
 }
 
 
 module Test with
 letrec {
-  f : [a : Data].a -> a
-    = Λ(a : Data).
-      λ(v : a). v;
+  f: [a: Data].a -> a
+    = Λ(a: Data).
+      λ(v: a). v;
   
-  com : ([b : Data].b -> b) -> Int#
-    = λ(g : [b : Data].b -> b). g [Int#] 0i;
+  com: ([b: Data].b -> b) -> Int#
+    = λ(g: [b: Data].b -> b). g [Int#] 0i;
   
-  uuse : ?6 -> Int#
-    = λ(_ : ?6). com f
+  uuse: ?6 -> Int#
+    = λ(_: ?6). com f
 }
 

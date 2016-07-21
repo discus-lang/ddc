@@ -122,7 +122,6 @@ data Transform s a n
         | Snip  Snip.Config
 
 
-
 -- | Function to get the inliner template (unfolding) for the given name.
 type InlinerTemplates a n 
         = (n -> Maybe (Exp a n))

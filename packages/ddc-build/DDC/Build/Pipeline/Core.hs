@@ -255,7 +255,8 @@ data PipeTetra a where
         -- Manage currying of functions.
         PipeTetraCurry
          :: (NFData a, Show a)
-         => ![PipeCore () Tetra.Name]
+         => !Sink               -- Sink for unshared code.
+         -> ![PipeCore () Tetra.Name]
          -> PipeTetra  (C.AnTEC a Tetra.Name)
 
         -- Manage boxing of numeric values.
@@ -292,11 +293,14 @@ pipeTetra !mm !pp
          -> {-# SCC "PipeTetraOutput" #-}
             pipeSink (renderIndent $ ppr mm)  sink
 
-        PipeTetraCurry  !pipes
+        PipeTetraCurry  !sinkUnshare !pipes
          -> {-# SCC "PipeTetraCurry"  #-}
-            case Tetra.curryModule (C.unshareModule mm) of
-             Left err  -> return [ErrorTetraConvert err]
-             Right mm' -> pipeCores mm' pipes
+            do  let mm_unshared     = C.unshareModule mm
+                pipeSink (renderIndent $ ppr mm_unshared) sinkUnshare
+
+                case Tetra.curryModule mm_unshared of
+                 Left err  -> return [ErrorTetraConvert err]
+                 Right mm' -> pipeCores mm' pipes
 
         PipeTetraBoxing !pipes
          -> {-# SCC "PipeTetraBoxing" #-}

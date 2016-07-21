@@ -3,41 +3,41 @@ ok
 
 
 -- Anonymize lambdas and applications.
-λ(^ : [^ : Region].Nat# -> Unit).
-Λ(^ : Region).
-λ(^ : Nat#). ^1 [^0] ^0
+λ(^: [^: Region].Nat# -> Unit).
+Λ(^: Region).
+λ(^: Nat#). ^1 [^0] ^0
 
 
 -- Anonymize lambdas and applications
 -- Spec and value binders have the same name.
-Λ(^ : Region ~> Data).
-λ(^ : [^ : Region].^1 ^0 -> Unit).
-Λ(^ : Region).
-λ(^ : ^1 ^0). ^1 [^0] ^0
+Λ(^: Region ~> Data).
+λ(^: [^: Region].^1 ^0 -> Unit).
+Λ(^: Region).
+λ(^: ^1 ^0). ^1 [^0] ^0
 
 
 -- Anonymize single let binding.
-let ^ : Unit = () in
+let ^: Unit = () in
 ^0
 
 
 -- Anonymize multiple let bindings.
-let ^ : Unit = () in
-let ^ : Unit = () in
+let ^: Unit = () in
+let ^: Unit = () in
 ^1
 
 
 -- Anonymize private region binder.
-Λ(^ : Region ~> Data).
-λ(^ : [^ : Region].^1 ^0).λ(^ : [^ : Region].^1 ^0 -> Nat#).
-private ^ with {^ : Const ^0} in
+Λ(^: Region ~> Data).
+λ(^: [^: Region].^1 ^0).λ(^: [^: Region].^1 ^0 -> Nat#).
+private ^ with {^: Const ^0} in
 ^1 [^0] (^2 [^0])
 
 
 -- Anonymize multiple let bindings that mention private region.
-Λ(^ : Region ~> Data).
-λ(^ : [^ : Region].^1 ^0).λ(^ : [^ : Region].^1 ^0 -> Nat#).
-private ^ with {^ : Const ^0} in
-let ^ : ^1 ^0 = ^2 [^0] in
-let ^ : ^1 ^0 = ^3 [^0] in
+Λ(^: Region ~> Data).
+λ(^: [^: Region].^1 ^0).λ(^: [^: Region].^1 ^0 -> Nat#).
+private ^ with {^: Const ^0} in
+let ^: ^1 ^0 = ^2 [^0] in
+let ^: ^1 ^0 = ^3 [^0] in
 add# [Nat#] (^3 [^0] ^1) (^3 [^0] ^0)

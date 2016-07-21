@@ -38,8 +38,9 @@ cmdTetraCurry config source sourceText
                         (lineStartOfSource source) sourceText
          $ PipeTextLoadCore Tetra.fragment C.Recon SinkDiscard
          [ PipeCoreAsTetra
-         [ PipeTetraCurry
-         [ PipeCoreOutput   pmode (dump config source "dump.tetra-curry.dct")
+         [ PipeTetraCurry   (dump config source "dump.tetra-unshare.dct")       
+         [ PipeCoreOutput   pmode 
+                            (dump config source "dump.tetra-curry.dct")
          , PipeCoreCheck    Tetra.fragment C.Recon SinkDiscard
            [ PipeCoreOutput   pmode SinkStdout ]]]]
 

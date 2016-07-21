@@ -4,23 +4,23 @@ ok
 -- Just a generate
 module Test with
 letrec {
-  x2$runproc$process : [x2$'$k : Rate].Vector# Nat# -> [x2$PROC : Proc].Unit -> Process# x2$PROC x2$'$k
-    = Λ(x2$'$k : Rate).
-      λ(x2 : Vector# Nat#).
-      Λ(x2$PROC : Proc).
-      λ(_ : Unit).
-      let x2$s : Series# x2$PROC x2$'$k Nat#
+  x2$runproc$process: [x2$'$k: Rate].Vector# Nat# -> [x2$PROC: Proc].Unit -> Process# x2$PROC x2$'$k
+    = Λ(x2$'$k: Rate).
+      λ(x2: Vector# Nat#).
+      Λ(x2$PROC: Proc).
+      λ(_: Unit).
+      let x2$s: Series# x2$PROC x2$'$k Nat#
             = sgenerate# [x2$PROC] [x2$'$k] [Nat#]
-                  (λ(x0 : Nat#). add# [Nat#] 1# x0) in
-      let x2$proc : Process# x2$PROC x2$'$k = sfill# [x2$PROC] [x2$'$k] [Nat#] x2 x2$s in
+                  (λ(x0: Nat#). add# [Nat#] 1# x0) in
+      let x2$proc: Process# x2$PROC x2$'$k = sfill# [x2$PROC] [x2$'$k] [Nat#] x2 x2$s in
       x2$proc;
   
-  test : Nat# -> Vector# Nat#
-    = λ(sz : Nat#).
-      let x2 : Vector# Nat# = vnew# [Nat#] sz in
-      let x2$runproc : Unit
+  test: Nat# -> Vector# Nat#
+    = λ(sz: Nat#).
+      let x2: Vector# Nat# = vnew# [Nat#] sz in
+      let x2$runproc: Unit
             = ratify0# [Unit] sz
-                  (Λ(x2$'$k : Rate).
+                  (Λ(x2$'$k: Rate).
                    runProcess# [x2$'$k] (x2$runproc$process [x2$'$k] x2)) in
       x2
 }

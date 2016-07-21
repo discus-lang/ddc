@@ -8,12 +8,12 @@ import DDC.Core.Module
 import DDC.Type.Transform.SubstituteT
 import Data.Map                         (Map)
 import qualified Data.Map.Strict        as Map
-
+-- import Text.Show.Pretty
 
 -------------------------------------------------------------------------------
 -- | Apply the unsharing transform to a module.
 unshareModule 
-        :: (Ord n, Show n)
+        :: (Show a, Ord n, Show n)
         => Module (AnTEC a n) n -> Module (AnTEC a n) n
 
 unshareModule !mm
@@ -180,7 +180,7 @@ addParamsBodyX xx
 --   we've already added an extra unit parameter to. When we find them,
 --   add the matching unit argument.
 --
-addArgsX :: (Show n, Ord n)
+addArgsX :: (Show n, Ord n, Show a)
          =>  Map n (Type n)     -- ^ Map of names of CAFs that we've added 
                                 --   parameters to, to their transformed types.
          ->  Exp (AnTEC a n) n  -- ^ Transform this expression.
@@ -194,9 +194,12 @@ addArgsX nts xx
    in  case xx of
 
         -- Add an extra argument for a monomorphic CAF.
-        XVar _a (UName n)
+        XVar a (UName n)
          -> case Map.lookup n nts of
-                Just tF   -> fst $ wrapAppX xx tF
+                Just tF   
+                 -> let xx'     = XVar (a { annotType = tF }) (UName n)
+                    in  wrapAppX a tF xx'
+
                 Nothing   -> xx
 
         XVar{}            -> xx
@@ -219,11 +222,12 @@ addArgsAppX !nts !xx !ats
  = let  downX   = addArgsX nts
         tA      = annotType $ annotOfExp xx
    in  case xx of
-        XVar _a (UName n)
+        XVar a (UName n)
          -> case Map.lookup n nts of
                 Just tF 
-                 -> let (x1, t1) = wrapAtsX xx tF ats
-                        (x2, _)  = wrapAppX x1 t1 
+                 -> let xx'      = XVar (a { annotType = tF }) (UName n)
+                        (x1, t1) = wrapAtsX xx' tF ats
+                        x2       = wrapAppX a   t1 x1
                     in  x2
 
                 Nothing 
@@ -259,23 +263,36 @@ addArgsAlt nts aa
 
 
 -- Wrap an expression with an application of a unit value.
-wrapAppX :: Exp (AnTEC a n) n 
+wrapAppX :: (Show a, Show n)
+         => AnTEC a n
          -> Type n
-         -> (Exp (AnTEC a n) n,   Type n)
+         -> Exp (AnTEC a n) n 
+         -> Exp (AnTEC a n) n
 
-wrapAppX xF tF
- = case takeTFun tF of
-    Just (_, tResult)
-     -> let a   = annotOfExp xF
-            aR  = a { annotType = tResult }
-            aV  = a { annotType = tF      }
-            aU  = a { annotType = tUnit   }
-            xF' = mapAnnotOfExp (const aV) xF
-        in  ( XApp aR xF' (xUnit aU)
-            , tResult)
+wrapAppX a tF xF
+ | Just (_, tResult)    <- takeTFun tF
+ = let  a'  = annotOfExp xF
+        aR  = a' { annotType = tResult }
+        aV  = a' { annotType = tF      }
+        aU  = a' { annotType = tUnit   }
+        xF' = mapAnnotOfExp (const aV) xF
+   in   XApp aR xF' (xUnit aU)
 
-    Nothing 
-     -> (xF, tF)
+
+ -- TODO: annots are wrong, but doesn't matter for curry transform.
+ | Just (bs, tBody)     <- takeTForalls tF
+ = let  Just us = sequence 
+                $ map takeSubstBoundOfBind bs
+
+        xF'     = makeXLamFlags a [(True, b) | b <- bs] 
+                $ wrapAppX a tBody
+                $ xApps a xF (map (XType a) $ map TVar us)
+
+   in   xF'
+
+
+ | otherwise
+ = xF
 
 
 -- Apply the given type arguments to an expression.

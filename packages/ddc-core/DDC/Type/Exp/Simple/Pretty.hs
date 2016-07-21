@@ -20,7 +20,7 @@ instance (Pretty n, Eq n) => Pretty (Bind n) where
 
   where pprT t
          | isBot t      = empty
-         | otherwise    = text " : " <> ppr t 
+         | otherwise    = text ": " <> ppr t 
 
 -- Binder ---------------------------------------------------------------------
 instance Pretty n => Pretty (Binder n) where
@@ -44,7 +44,7 @@ pprBinderSep bb
 -- | Print a group of binders with the same type.
 pprBinderGroup :: (Pretty n, Eq n) => ([Binder n], Type n) -> Doc
 pprBinderGroup (rs, t)
-        =  (brackets $ (sep $ map pprBinderSep rs) <+> text ":"  <+> ppr t) 
+        =  (brackets $ (sep $ map pprBinderSep rs) <> text ":" <+> ppr t) 
         <> dot
 
 
@@ -113,7 +113,7 @@ instance (Pretty n, Eq n) => Pretty (Type n) where
          -> ppr ts
 
          | isBot tt, otherwise  
-         -> parens $ text "Bot : " <> ppr (Sum.kindOfSum ts)
+         -> parens $ text "Bot: " <> ppr (Sum.kindOfSum ts)
          
          | otherwise
          -> pprParen (d > 9) $  ppr ts
@@ -127,7 +127,7 @@ instance (Pretty n, Eq n) => Pretty (TypeSum n) where
          | isDataKind    $ Sum.kindOfSum ss -> text "Bot"
 
          | otherwise
-         -> parens $ text "Bot : " <> ppr (Sum.kindOfSum ss)
+         -> parens $ text "Bot: " <> ppr (Sum.kindOfSum ss)
          
       ts  -> sep $ punctuate (text " +") (map ppr ts)
 

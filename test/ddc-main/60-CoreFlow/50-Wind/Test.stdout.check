@@ -5,29 +5,29 @@ ok
 -- Simple loop with no scalar results.
 module Main with
 letrec {
-  lower_map_map_rq2 : [p : Proc].[k_d : Rate].Series# p k_d Int# -> Vector# Int#
-    = Λ(p : Proc).Λ(k_d : Rate).
-      λ(s_aub : Series# p k_d Int#).
-      let x6 : Vector# Int#
+  lower_map_map_rq2: [p: Proc].[k_d: Rate].Series# p k_d Int# -> Vector# Int#
+    = Λ(p: Proc).Λ(k_d: Rate).
+      λ(s_aub: Series# p k_d Int#).
+      let x6: Vector# Int#
             = vnewN# [Int#] [k_d] (rateOfSeries# [p] [k_d] [Int#] s_aub) in
-      let x6$buf : Buffer# Int# = vbuf# [Int#] x6 in
-      let loop$length : Nat#
+      let x6$buf: Buffer# Int# = vbuf# [Int#] x6 in
+      let loop$length: Nat#
             = natOfRateNat# [k_d] (rateOfSeries# [p] [k_d] [Int#] s_aub) in
       letrec {
-        loop : Nat# -> Unit
-          = λ(x0 : Nat#).
+        loop: Nat# -> Unit
+          = λ(x0: Nat#).
             case sub# [Nat#] loop$length x0 of {
               0#  
                -> ();
               _ 
-               -> let s_aub__elem : Int# = next# [Int#] [p] [k_d] s_aub x0 in
-                  let x2__elem : Int# = add# [Int#] s_aub__elem 1i# in
-                  let x4__elem : Int# = mul# [Int#] x2__elem 2i# in
-                  let _ : Unit = vwrite# [Int#] x6$buf x0 x4__elem in
+               -> let s_aub__elem: Int# = next# [Int#] [p] [k_d] s_aub x0 in
+                  let x2__elem: Int# = add# [Int#] s_aub__elem 1i# in
+                  let x4__elem: Int# = mul# [Int#] x2__elem 2i# in
+                  let _: Unit = vwrite# [Int#] x6$buf x0 x4__elem in
                   loop (add# [Nat#] x0 1#)
             }
       } in
-      let _ : Unit = loop 0# in
+      let _: Unit = loop 0# in
       x6
 }
 
@@ -37,43 +37,43 @@ module Main
 import value maxx       : Int# -> Int# -> Int#;
 with
 letrec {
-  filterMax : [p : Proc].[k : Rate].Series# p k Int# -> Tuple2# (Vector# Int#) Int#
-    = Λ(p : Proc).Λ(k : Rate).
-      λ(s1 : Series# p k Int#).
-      let k2__count$0 : Nat# = 0# in
-      let x5 : Vector# Int#
+  filterMax: [p: Proc].[k: Rate].Series# p k Int# -> Tuple2# (Vector# Int#) Int#
+    = Λ(p: Proc).Λ(k: Rate).
+      λ(s1: Series# p k Int#).
+      let k2__count$0: Nat# = 0# in
+      let x5: Vector# Int#
             = vnewN# [Int#] [k] (rateOfSeries# [p] [k] [Int#] s1) in
-      let x5$buf : Buffer# Int# = vbuf# [Int#] x5 in
-      let x9__acc$0 : Int# = 0i# in
-      let loop$length : Nat#
+      let x5$buf: Buffer# Int# = vbuf# [Int#] x5 in
+      let x9__acc$0: Int# = 0i# in
+      let loop$length: Nat#
             = natOfRateNat# [k] (rateOfSeries# [p] [k] [Int#] s1) in
       letrec {
-        loop : Nat# -> Nat# -> Int# -> Tuple2# Nat# Int#
-          = λ(x2 k2__count$1 : Nat#).λ(x9__acc$1 : Int#).
+        loop: Nat# -> Nat# -> Int# -> Tuple2# Nat# Int#
+          = λ(x2 k2__count$1: Nat#).λ(x9__acc$1: Int#).
             case sub# [Nat#] loop$length x2 of {
               0#  
                -> T2# [Nat#] [Int#] k2__count$1 x9__acc$1;
               _ 
-               -> let s1__elem : Int# = next# [Int#] [p] [k] s1 x2 in
-                  let x0 : Int# = mod# [Int#] s1__elem 2i# in
-                  let x3__elem : Bool# = eq# [Int#] x0 0i# in
+               -> let s1__elem: Int# = next# [Int#] [p] [k] s1 x2 in
+                  let x0: Int# = mod# [Int#] s1__elem 2i# in
+                  let x3__elem: Bool# = eq# [Int#] x0 0i# in
                   case x3__elem of {
                     True#  
-                     -> let x3 : Nat# = k2__count$1 in
-                        let _ : Unit = vwrite# [Int#] x5$buf x3 s1__elem in
-                        let k2__count$2 : Nat# = add# [Nat#] x3 1# in
-                        let x6 : Int# = x9__acc$1 in
-                        let x9__acc$2 : Int# = maxx x6 s1__elem in
+                     -> let x3: Nat# = k2__count$1 in
+                        let _: Unit = vwrite# [Int#] x5$buf x3 s1__elem in
+                        let k2__count$2: Nat# = add# [Nat#] x3 1# in
+                        let x6: Int# = x9__acc$1 in
+                        let x9__acc$2: Int# = maxx x6 s1__elem in
                         loop (add# [Nat#] x2 1#) k2__count$2 x9__acc$2;
                     _ 
                      -> loop (add# [Nat#] x2 1#) k2__count$1 x9__acc$1
                   }
             }
       } in
-      letcase T2# (k2__count$2 : Nat#) (x9__acc$2 : Int#)  = loop 0# k2__count$0 x9__acc$0 in
-      let x4 : Nat# = k2__count$2 in
-      let _ : Unit = vtrunc# [Int#] x4 x5 in
-      let x9 : Int# = x9__acc$2 in
+      letcase T2# (k2__count$2: Nat#) (x9__acc$2: Int#)  = loop 0# k2__count$0 x9__acc$0 in
+      let x4: Nat# = k2__count$2 in
+      let _: Unit = vtrunc# [Int#] x4 x5 in
+      let x9: Int# = x9__acc$2 in
       T2# [Vector# Int#] [Int#] x5 x9
 }
 
@@ -81,96 +81,96 @@ letrec {
 -- Split loop from the vector scheduler.
 module Test with
 letrec {
-  test : [p : Proc].[k : Rate].RateNat# k -> Ref# Float32# -> Ref# Float32# -> Series# p k Float32# -> Series# p k Float32# -> Unit
-    = Λ(p : Proc).Λ(k : Rate).
-      λ(n : RateNat# k).λ(x1 x2 : Ref# Float32#).λ(s1 s2 : Series# p k Float32#).
+  test: [p: Proc].[k: Rate].RateNat# k -> Ref# Float32# -> Ref# Float32# -> Series# p k Float32# -> Series# p k Float32# -> Unit
+    = Λ(p: Proc).Λ(k: Rate).
+      λ(n: RateNat# k).λ(x1 x2: Ref# Float32#).λ(s1 s2: Series# p k Float32#).
       split$4# [k] n
-          (λ(x4 : RateNat# (Down4# k)).
-           let s1$down : Series# p (Down4# k) Float32# = down$4# [p] [k] [Float32#] x4 s1 in
-           let s2$down : Series# p (Down4# k) Float32# = down$4# [p] [k] [Float32#] x4 s2 in
-           let x13 : Vec4# Float32# = vrep$4# [Float32#] 0.0f32# in
-           let x1$vec$0 : Vec4# Float32# = x13 in
-           let x14 : Vec4# Float32# = vrep$4# [Float32#] 1.0f32# in
-           let x2$vec$0 : Vec4# Float32# = x14 in
-           let loop$length : Nat#
+          (λ(x4: RateNat# (Down4# k)).
+           let s1$down: Series# p (Down4# k) Float32# = down$4# [p] [k] [Float32#] x4 s1 in
+           let s2$down: Series# p (Down4# k) Float32# = down$4# [p] [k] [Float32#] x4 s2 in
+           let x13: Vec4# Float32# = vrep$4# [Float32#] 0.0f32# in
+           let x1$vec$0: Vec4# Float32# = x13 in
+           let x14: Vec4# Float32# = vrep$4# [Float32#] 1.0f32# in
+           let x2$vec$0: Vec4# Float32# = x14 in
+           let loop$length: Nat#
                  = natOfRateNat# [Down4# k] x4 in
            letrec {
-             loop : Nat# -> Vec4# Float32# -> Vec4# Float32# -> Tuple2# (Vec4# Float32#) (Vec4# Float32#)
-               = λ(x5 : Nat#).λ(x1$vec$1 x2$vec$1 : Vec4# Float32#).
+             loop: Nat# -> Vec4# Float32# -> Vec4# Float32# -> Tuple2# (Vec4# Float32#) (Vec4# Float32#)
+               = λ(x5: Nat#).λ(x1$vec$1 x2$vec$1: Vec4# Float32#).
                  case sub# [Nat#] loop$length x5 of {
                    0#  
                     -> T2# [Vec4# Float32#] [Vec4# Float32#] x1$vec$1 x2$vec$1;
                    _ 
-                    -> let s1$elem : Vec4# Float32# = next$4# [Float32#] [p] [k] s1$down x5 in
-                       let s2$elem : Vec4# Float32# = next$4# [Float32#] [p] [k] s2$down x5 in
-                       let x5$elem : Vec4# Float32# = vmul$4# [Float32#] s1$elem s2$elem in
-                       let x1$val : Vec4# Float32# = x1$vec$1 in
-                       let x15 : Vec4# Float32# = vadd$4# [Float32#] x1$val x5$elem in
-                       let x1$vec$2 : Vec4# Float32# = x15 in
-                       let x2$val : Vec4# Float32# = x2$vec$1 in
-                       let x16 : Vec4# Float32# = vmul$4# [Float32#] x2$val x5$elem in
-                       let x2$vec$2 : Vec4# Float32# = x16 in
+                    -> let s1$elem: Vec4# Float32# = next$4# [Float32#] [p] [k] s1$down x5 in
+                       let s2$elem: Vec4# Float32# = next$4# [Float32#] [p] [k] s2$down x5 in
+                       let x5$elem: Vec4# Float32# = vmul$4# [Float32#] s1$elem s2$elem in
+                       let x1$val: Vec4# Float32# = x1$vec$1 in
+                       let x15: Vec4# Float32# = vadd$4# [Float32#] x1$val x5$elem in
+                       let x1$vec$2: Vec4# Float32# = x15 in
+                       let x2$val: Vec4# Float32# = x2$vec$1 in
+                       let x16: Vec4# Float32# = vmul$4# [Float32#] x2$val x5$elem in
+                       let x2$vec$2: Vec4# Float32# = x16 in
                        loop (add# [Nat#] x5 1#) x1$vec$2 x2$vec$2
                  }
            } in
-           letcase T2# (x1$vec$2 : Vec4# Float32#) (x2$vec$2 : Vec4# Float32#)  = loop 0# x1$vec$0 x2$vec$0 in
-           let x1$res : Vec4# Float32# = x1$vec$2 in
-           let x1$init : Float32# = read# [Float32#] x1 in
-           let x18 : Float32# = vproj$4$0# [Float32#] x1$res in
-           let x1$res$0 : Float32# = add# [Float32#] x1$init x18 in
-           let x20 : Float32# = vproj$4$1# [Float32#] x1$res in
-           let x1$res$1 : Float32# = add# [Float32#] x1$res$0 x20 in
-           let x22 : Float32# = vproj$4$2# [Float32#] x1$res in
-           let x1$res$2 : Float32# = add# [Float32#] x1$res$1 x22 in
-           let x24 : Float32# = vproj$4$3# [Float32#] x1$res in
-           let x1$res$3 : Float32# = add# [Float32#] x1$res$2 x24 in
-           let _ : Unit = write# [Float32#] x1 x1$res$3 in
-           let x2$res : Vec4# Float32# = x2$vec$2 in
-           let x2$init : Float32# = read# [Float32#] x2 in
-           let x26 : Float32# = vproj$4$0# [Float32#] x2$res in
-           let x2$res$0 : Float32# = mul# [Float32#] x2$init x26 in
-           let x28 : Float32# = vproj$4$1# [Float32#] x2$res in
-           let x2$res$1 : Float32# = mul# [Float32#] x2$res$0 x28 in
-           let x30 : Float32# = vproj$4$2# [Float32#] x2$res in
-           let x2$res$2 : Float32# = mul# [Float32#] x2$res$1 x30 in
-           let x32 : Float32# = vproj$4$3# [Float32#] x2$res in
-           let x2$res$3 : Float32# = mul# [Float32#] x2$res$2 x32 in
-           let _ : Unit = write# [Float32#] x2 x2$res$3 in
+           letcase T2# (x1$vec$2: Vec4# Float32#) (x2$vec$2: Vec4# Float32#)  = loop 0# x1$vec$0 x2$vec$0 in
+           let x1$res: Vec4# Float32# = x1$vec$2 in
+           let x1$init: Float32# = read# [Float32#] x1 in
+           let x18: Float32# = vproj$4$0# [Float32#] x1$res in
+           let x1$res$0: Float32# = add# [Float32#] x1$init x18 in
+           let x20: Float32# = vproj$4$1# [Float32#] x1$res in
+           let x1$res$1: Float32# = add# [Float32#] x1$res$0 x20 in
+           let x22: Float32# = vproj$4$2# [Float32#] x1$res in
+           let x1$res$2: Float32# = add# [Float32#] x1$res$1 x22 in
+           let x24: Float32# = vproj$4$3# [Float32#] x1$res in
+           let x1$res$3: Float32# = add# [Float32#] x1$res$2 x24 in
+           let _: Unit = write# [Float32#] x1 x1$res$3 in
+           let x2$res: Vec4# Float32# = x2$vec$2 in
+           let x2$init: Float32# = read# [Float32#] x2 in
+           let x26: Float32# = vproj$4$0# [Float32#] x2$res in
+           let x2$res$0: Float32# = mul# [Float32#] x2$init x26 in
+           let x28: Float32# = vproj$4$1# [Float32#] x2$res in
+           let x2$res$1: Float32# = mul# [Float32#] x2$res$0 x28 in
+           let x30: Float32# = vproj$4$2# [Float32#] x2$res in
+           let x2$res$2: Float32# = mul# [Float32#] x2$res$1 x30 in
+           let x32: Float32# = vproj$4$3# [Float32#] x2$res in
+           let x2$res$3: Float32# = mul# [Float32#] x2$res$2 x32 in
+           let _: Unit = write# [Float32#] x2 x2$res$3 in
            ())
-          (λ(x8 : RateNat# (Tail4# k)).
-           let s1$tail : Series# p (Tail4# k) Float32# = tail$4# [p] [k] [Float32#] x8 s1 in
-           let s2$tail : Series# p (Tail4# k) Float32# = tail$4# [p] [k] [Float32#] x8 s2 in
-           let x1$init : Float32# = read# [Float32#] x1 in
-           let x1$acc$0 : Float32# = x1$init in
-           let x2$init : Float32# = read# [Float32#] x2 in
-           let x2$acc$0 : Float32# = x2$init in
-           let loop$length : Nat#
+          (λ(x8: RateNat# (Tail4# k)).
+           let s1$tail: Series# p (Tail4# k) Float32# = tail$4# [p] [k] [Float32#] x8 s1 in
+           let s2$tail: Series# p (Tail4# k) Float32# = tail$4# [p] [k] [Float32#] x8 s2 in
+           let x1$init: Float32# = read# [Float32#] x1 in
+           let x1$acc$0: Float32# = x1$init in
+           let x2$init: Float32# = read# [Float32#] x2 in
+           let x2$acc$0: Float32# = x2$init in
+           let loop$length: Nat#
                  = natOfRateNat# [Tail4# k] x8 in
            letrec {
-             loop : Nat# -> Float32# -> Float32# -> Tuple2# Float32# Float32#
-               = λ(x12 : Nat#).λ(x1$acc$1 x2$acc$1 : Float32#).
+             loop: Nat# -> Float32# -> Float32# -> Tuple2# Float32# Float32#
+               = λ(x12: Nat#).λ(x1$acc$1 x2$acc$1: Float32#).
                  case sub# [Nat#] loop$length x12 of {
                    0#  
                     -> T2# [Float32#] [Float32#] x1$acc$1 x2$acc$1;
                    _ 
-                    -> let s1$elem : Float32#
+                    -> let s1$elem: Float32#
                              = next# [Float32#] [p] [Tail4# k] s1$tail x12 in
-                       let s2$elem : Float32#
+                       let s2$elem: Float32#
                              = next# [Float32#] [p] [Tail4# k] s2$tail x12 in
-                       let x5$elem : Float32# = mul# [Float32#] s1$elem s2$elem in
-                       let x1$val : Float32# = x1$acc$1 in
-                       let x33 : Float32# = add# [Float32#] x1$val x5$elem in
-                       let x1$acc$2 : Float32# = x33 in
-                       let x2$val : Float32# = x2$acc$1 in
-                       let x34 : Float32# = mul# [Float32#] x2$val x5$elem in
-                       let x2$acc$2 : Float32# = x34 in
+                       let x5$elem: Float32# = mul# [Float32#] s1$elem s2$elem in
+                       let x1$val: Float32# = x1$acc$1 in
+                       let x33: Float32# = add# [Float32#] x1$val x5$elem in
+                       let x1$acc$2: Float32# = x33 in
+                       let x2$val: Float32# = x2$acc$1 in
+                       let x34: Float32# = mul# [Float32#] x2$val x5$elem in
+                       let x2$acc$2: Float32# = x34 in
                        loop (add# [Nat#] x12 1#) x1$acc$2 x2$acc$2
                  }
            } in
-           letcase T2# (x1$acc$2 : Float32#) (x2$acc$2 : Float32#)  = loop 0# x1$acc$0 x2$acc$0 in
-           let x1$res : Float32# = x1$acc$2 in
-           let _ : Unit = write# [Float32#] x1 x1$res in
-           let x2$res : Float32# = x2$acc$2 in
-           let _ : Unit = write# [Float32#] x2 x2$res in
+           letcase T2# (x1$acc$2: Float32#) (x2$acc$2: Float32#)  = loop 0# x1$acc$0 x2$acc$0 in
+           let x1$res: Float32# = x1$acc$2 in
+           let _: Unit = write# [Float32#] x1 x1$res in
+           let x2$res: Float32# = x2$acc$2 in
+           let _: Unit = write# [Float32#] x2 x2$res in
            ())
 }

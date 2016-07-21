@@ -22,7 +22,7 @@ When checking expression.
   Scrutinee of case expression is not algebraic data.
        Scrutinee type: Unit -> Unit
   
-  with: case λ(x : Unit). x of {
+  with: case λ(x: Unit). x of {
           _ 
            -> ()
         }
@@ -56,7 +56,7 @@ Error loading module
     with: case xx of {
             Nil  
              -> ();
-            Cons (x : Unit) xs 
+            Cons (x: Unit) xs 
              -> ()
           }
 

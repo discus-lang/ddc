@@ -91,8 +91,6 @@ snipOver  :: Simplifier s a n
 snipOver  = Trans (Snip Snip.configZero { Snip.configSnipOverApplied = True })
 
 
-
-
 -- Compound -------------------------------------------------------------------
 -- | Conversion to administrative normal-form.
 anormalize 

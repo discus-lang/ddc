@@ -1,10 +1,10 @@
 ok
 ok
-let fun : [c : Data].c -> c
-      = Λ(c : Data).
-        λ(v : c). v in
-let something : ([d : Data].d -> d) -> Unit
-      = λ(f : [d : Data].d -> d). f [Unit] () in
+let fun: [c: Data].c -> c
+      = Λ(c: Data).
+        λ(v: c). v in
+let something: ([d: Data].d -> d) -> Unit
+      = λ(f: [d: Data].d -> d). f [Unit] () in
 something
-    (Λ(^ : Data).
-     λ(^ : ^0). fun [^0] ^0)
+    (Λ(^: Data).
+     λ(^: ^0). fun [^0] ^0)

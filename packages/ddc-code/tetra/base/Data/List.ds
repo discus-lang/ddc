@@ -19,6 +19,7 @@ export  { singleton;    replicate
 import  Data.Numeric.Nat
 import  Data.Numeric.Bool
 import  Data.Tuple
+import  Class.Functor
 where
 
 -- | Standard Cons-lists.
@@ -115,6 +116,12 @@ map     (f: a -> b) (xx: List a): List b
  = case xx of
         Nil             -> Nil
         Cons x xs       -> Cons (f x) (map f xs)
+
+
+-- TODO: type checker should be able to deal with the rank-2 type of the
+-- constructor. We shouldn't need to eta-expand the use of 'map'.
+functor_list 
+ = Functor (/\(a b: Data). map [a] [b])
 
 
 -- | Apply a stateful worker function to every element of a list,

@@ -5,21 +5,21 @@ ok
 -- Pack with an existing series of flags.
 module Test with
 letrec {
-  packMe : [p : Proc].[k0 : Rate].[a : Data].RateVec# k0 a -> Vector# a -> RateVec# k0 Bool# -> Unit
-    = Λ(p : Proc).Λ(k0 : Rate).Λ(a : Data).
-      λ(sR : RateVec# k0 a).λ(v : Vector# a).λ(flagR : RateVec# k0 Bool#).
+  packMe: [p: Proc].[k0: Rate].[a: Data].RateVec# k0 a -> Vector# a -> RateVec# k0 Bool# -> Unit
+    = Λ(p: Proc).Λ(k0: Rate).Λ(a: Data).
+      λ(sR: RateVec# k0 a).λ(v: Vector# a).λ(flagR: RateVec# k0 Bool#).
       let v$buf = vbuf# [a] v in
       let v$count = new# [Nat#] 0# in
       let flags = series# [p] [k0] [Bool#] flagR in
       let s = series# [p] [k0] [a] sR in
       let _
             = loop# [k0]
-                  (λ(x0 : Nat#).
+                  (λ(x0: Nat#).
                    let flags$elem = next# [Bool#] [p] [k0] flags x0 in
                    let s$elem = next# [a] [p] [k0] s x0 in
                    let _
                          = guard# flags$elem
-                               (λ(_ : Unit).
+                               (λ(_: Unit).
                                 let ^ = read# [Nat#] v$count in
                                 let _ = vwrite# [a] v$buf ^0 s$elem in
                                 let ^ = read# [Nat#] v$count in
@@ -36,20 +36,20 @@ letrec {
 -- Filter, producing our own flags.
 module Test with
 letrec {
-  filter : [p : Proc].[k0 : Rate].[a : Data].(a -> Bool#) -> Vector# a -> RateVec# k0 a -> Unit
-    = Λ(p : Proc).Λ(k0 : Rate).Λ(a : Data).
-      λ(f : a -> Bool#).λ(v : Vector# a).λ(sR : RateVec# k0 a).
+  filter: [p: Proc].[k0: Rate].[a: Data].(a -> Bool#) -> Vector# a -> RateVec# k0 a -> Unit
+    = Λ(p: Proc).Λ(k0: Rate).Λ(a: Data).
+      λ(f: a -> Bool#).λ(v: Vector# a).λ(sR: RateVec# k0 a).
       let v$buf = vbuf# [a] v in
       let v$count = new# [Nat#] 0# in
       let s = series# [p] [k0] [a] sR in
       let _
             = loop# [k0]
-                  (λ(x1 : Nat#).
+                  (λ(x1: Nat#).
                    let s$elem = next# [a] [p] [k0] s x1 in
                    let flags$elem = f s$elem in
                    let _
                          = guard# flags$elem
-                               (λ(_ : Unit).
+                               (λ(_: Unit).
                                 let x3 = read# [Nat#] v$count in
                                 let _ = vwrite# [a] v$buf x3 s$elem in
                                 let x4 = read# [Nat#] v$count in
@@ -72,24 +72,24 @@ Error transforming core program.
 -- Ensure we can handle nested selector contexts.
 module Test with
 letrec {
-  filter : [p : Proc].[k0 : Rate].[a : Data].(a -> Bool#) -> (a -> Bool#) -> Vector# a -> RateVec# k0 a -> Unit
-    = Λ(p : Proc).Λ(k0 : Rate).Λ(a : Data).
-      λ(f g : a -> Bool#).λ(v : Vector# a).λ(s0R : RateVec# k0 a).
+  filter: [p: Proc].[k0: Rate].[a: Data].(a -> Bool#) -> (a -> Bool#) -> Vector# a -> RateVec# k0 a -> Unit
+    = Λ(p: Proc).Λ(k0: Rate).Λ(a: Data).
+      λ(f g: a -> Bool#).λ(v: Vector# a).λ(s0R: RateVec# k0 a).
       let v$buf = vbuf# [a] v in
       let v$count = new# [Nat#] 0# in
       let s0 = series# [p] [k0] [a] s0R in
       let _
             = loop# [k0]
-                  (λ(x0 : Nat#).
+                  (λ(x0: Nat#).
                    let s0$elem = next# [a] [p] [k0] s0 x0 in
                    let flags1$elem = f s0$elem in
                    let _
                          = guard# flags1$elem
-                               (λ(_ : Unit).
+                               (λ(_: Unit).
                                 let flags2$elem = g s0$elem in
                                 let _
                                       = guard# flags2$elem
-                                            (λ(_ : Unit).
+                                            (λ(_: Unit).
                                              let x3 = read# [Nat#] v$count in
                                              let _ = vwrite# [a] v$buf x3 s0$elem in
                                              let x4 = read# [Nat#] v$count in
@@ -108,9 +108,9 @@ letrec {
 -- Ensure we can handle two selector contexts on the same input.
 module Test with
 letrec {
-  filter : [p : Proc].[k0 : Rate].[a : Data].(a -> Bool#) -> (a -> Bool#) -> Vector# a -> Vector# a -> RateVec# k0 a -> Unit
-    = Λ(p : Proc).Λ(k0 : Rate).Λ(a : Data).
-      λ(f g : a -> Bool#).λ(v1 v2 : Vector# a).λ(s0R : RateVec# k0 a).
+  filter: [p: Proc].[k0: Rate].[a: Data].(a -> Bool#) -> (a -> Bool#) -> Vector# a -> Vector# a -> RateVec# k0 a -> Unit
+    = Λ(p: Proc).Λ(k0: Rate).Λ(a: Data).
+      λ(f g: a -> Bool#).λ(v1 v2: Vector# a).λ(s0R: RateVec# k0 a).
       let v1$buf = vbuf# [a] v1 in
       let v2$buf = vbuf# [a] v2 in
       let v1$count = new# [Nat#] 0# in
@@ -118,13 +118,13 @@ letrec {
       let s0 = series# [p] [k0] [a] s0R in
       let _
             = loop# [k0]
-                  (λ(x1 : Nat#).
+                  (λ(x1: Nat#).
                    let s0$elem = next# [a] [p] [k0] s0 x1 in
                    let flags1$elem = f s0$elem in
                    let flags2$elem = f s0$elem in
                    let _
                          = guard# flags1$elem
-                               (λ(_ : Unit).
+                               (λ(_: Unit).
                                 let x5 = read# [Nat#] v1$count in
                                 let _ = vwrite# [a] v1$buf x5 s0$elem in
                                 let x6 = read# [Nat#] v1$count in
@@ -133,7 +133,7 @@ letrec {
                                 ()) in
                    let _
                          = guard# flags2$elem
-                               (λ(_ : Unit).
+                               (λ(_: Unit).
                                 let x8 = read# [Nat#] v2$count in
                                 let _ = vwrite# [a] v2$buf x8 s0$elem in
                                 let x9 = read# [Nat#] v2$count in

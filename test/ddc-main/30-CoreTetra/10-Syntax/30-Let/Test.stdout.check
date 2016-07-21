@@ -1,54 +1,54 @@
 ok
 
 -- Non-binding let.
-let _ : Unit = () in
+let _: Unit = () in
 ()
 :*: Unit
 :!: Pure
 
 
 -- Binding let.
-let x : Unit = () in
+let x: Unit = () in
 x
 :*: Unit
 :!: Pure
 
 
 -- Let-bound function with full signature.
-let f : Unit -> Unit
-      = λ(x : Unit). x in
+let f: Unit -> Unit
+      = λ(x: Unit). x in
 ()
 :*: Unit
 :!: Pure
 
 
 -- Let using function syntax with a return type.
-let f : Unit -> Unit
-      = λ(x : Unit). x in
+let f: Unit -> Unit
+      = λ(x: Unit). x in
 f ()
 :*: Unit
 :!: Pure
 
 
 -- Let using function syntax without a return type.
-let f : Unit -> Unit
-      = λ(x : Unit). x in
+let f: Unit -> Unit
+      = λ(x: Unit). x in
 f ()
 :*: Unit
 :!: Pure
 
 
 -- Lazy using function syntax without a return type.
-let f : Unit -> Unit
-      = λ(x : Unit). x in
+let f: Unit -> Unit
+      = λ(x: Unit). x in
 f ()
 :*: Unit
 :!: Pure
 
 
 -- Multiple lets.
-let x : Unit = () in
-let y : Unit = () in
+let x: Unit = () in
+let y: Unit = () in
 y
 :*: Unit
 :!: Pure
@@ -57,8 +57,8 @@ y
 -- Mutltiple lets with debruijn indices.
 -- If the bound variable is pushed on the stack when checking
 -- the right of the non-recursive binding then this is mistyped.
-let ^ : Unit = () in
-let ^ : Unit = ^0 in
+let ^: Unit = () in
+let ^: Unit = ^0 in
 ^0
 :*: Unit
 :!: Pure
@@ -72,8 +72,8 @@ private r in
 -- Simple private with letrec using explicit type annotation
 private r in
 letrec {
-  f : Unit -> Nat#
-    = λ(x : Unit). 5
+  f: Unit -> Nat#
+    = λ(x: Unit). 5
 } in
 f ()
 :*: Nat#
@@ -83,8 +83,8 @@ f ()
 -- Simple private with letrec using function syntax.
 private r in
 letrec {
-  f : Unit -> Nat#
-    = λ(u : Unit). 5
+  f: Unit -> Nat#
+    = λ(u: Unit). 5
 } in
 add# [Nat#] (f ()) (f ())
 :*: Nat#
@@ -94,8 +94,8 @@ add# [Nat#] (f ()) (f ())
 -- Letrec with a single binding and no braces around it.
 private r in
 letrec {
-  f : Unit -> Nat#
-    = λ(u : Unit). 5
+  f: Unit -> Nat#
+    = λ(u: Unit). 5
 } in
 add# [Nat#] (f ()) (f ())
 :*: Nat#
@@ -104,16 +104,16 @@ add# [Nat#] (f ()) (f ())
 
 -- Multiple lets and private. 
 private r1 r2 in
-let x1 : Nat# = 2 in
-let x2 : Nat# = 3 in
+let x1: Nat# = 2 in
+let x2: Nat# = 3 in
 add# [Nat#] x1 x2
 :*: Nat#
 :!: Pure
 
 -- As above, but no annots on binders.
 private r1 r2 in
-let x1 : Nat# = 2 in
-let x2 : Nat# = 3 in
+let x1: Nat# = 2 in
+let x2: Nat# = 3 in
 add# [Nat#] x1 x2
 :*: Nat#
 :!: Pure

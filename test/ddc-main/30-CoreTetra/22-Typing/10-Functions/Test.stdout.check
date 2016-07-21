@@ -4,8 +4,8 @@ ok
 -- Check types of primitive arithmetic functions use the correct function constructor.
 module Test with
 letrec {
-  addInt : Int# -> Int# -> Int#
-    = λ(x : Int#). add# [Int#] x
+  addInt: Int# -> Int# -> Int#
+    = λ(x: Int#). add# [Int#] x
 }
 
 
@@ -14,15 +14,15 @@ letrec {
 --  This works only if we insert our own lambda to perform the inner generalisation.
 ok
 module Test 
-data Tuple2 (a : Data) (b : Data) where {
+data Tuple2 (a: Data) (b: Data) where {
         T2 : a -> b -> Tuple2 a b;
 }
 with
 letrec {
-  t1 : [a : Data].a -> [b : Data].b -> Tuple2 a b
-    = Λ(a : Data).
-      λ(x : a).
-      Λ(b : Data). T2 [a] [b] x
+  t1: [a: Data].a -> [b: Data].b -> Tuple2 a b
+    = Λ(a: Data).
+      λ(x: a).
+      Λ(b: Data). T2 [a] [b] x
 }
 
 
@@ -30,17 +30,17 @@ letrec {
 ok
 module Test with
 letrec {
-  thing : ([a : Data].a -> a) -> Unit
-    = λ(id : [a : Data].a -> a).
-      let _ : Nat# = id [Nat#] 5 in
-      let _ : Unit = id [Unit] () in
+  thing: ([a: Data].a -> a) -> Unit
+    = λ(id: [a: Data].a -> a).
+      let _: Nat# = id [Nat#] 5 in
+      let _: Unit = id [Unit] () in
       ();
   
-  foo : Unit -> Unit
-    = λ(x : Unit).
+  foo: Unit -> Unit
+    = λ(x: Unit).
       thing
-          (Λ(a : Data).
-           λ(x : a). x)
+          (Λ(a: Data).
+           λ(x: a). x)
 }
 
 
@@ -48,20 +48,20 @@ letrec {
 ok
 module Test with
 letrec {
-  id : [a : Data].a -> a
-    = Λ(a : Data).
-      λ(x : a). x;
+  id: [a: Data].a -> a
+    = Λ(a: Data).
+      λ(x: a). x;
   
-  thing1 : (([a : Data].a -> a) -> Nat#) -> Nat#
-    = λ(blerk : ([a : Data].a -> a) -> Nat#).
+  thing1: (([a: Data].a -> a) -> Nat#) -> Nat#
+    = λ(blerk: ([a: Data].a -> a) -> Nat#).
       blerk
-          (Λ(a : Data).
-           λ(x : a). x);
+          (Λ(a: Data).
+           λ(x: a). x);
   
-  thing2 : Unit -> Nat#
-    = λ(u : Unit).
+  thing2: Unit -> Nat#
+    = λ(u: Unit).
       thing1
-          (λ(f : [a : Data].a -> a). f [Nat#] 5)
+          (λ(f: [a: Data].a -> a). f [Nat#] 5)
 }
 
 
@@ -71,7 +71,7 @@ When checking expression.
   Missing type annotation on function parameter.
                With paramter: x
   
-  with: λ(x : Bot). x
+  with: λ(x: Bot). x
 
 
 -- Error: cannot shadow spec binders.
@@ -79,10 +79,10 @@ Error loading module
   When checking expression.
     <batch>:66:4
     Cannot shadow named spec variable.
-      binder: r : Region
+      binder: r: Region
       is already in the environment.
-    with: Λ(r : Region).
-          λ(r : Ref r Int#).
+    with: Λ(r: Region).
+          λ(r: Ref r Int#).
           case x of {
             0  
              -> x;

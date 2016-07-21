@@ -92,7 +92,14 @@ saltPrimeRegionOfDataType kenv tt
         , isDataKind k
         = do    return  A.rTop
 
+        -- TODO: This is sketchy.
+        -- We need it to handle polymorphic values eg
+        -- in the definition of the functor dictionary for list.
+        | otherwise
+        = do    return  A.rTop
+
+{-
         | otherwise
         = throw $ ErrorMalformed       
                 $ "Cannot take prime region from " ++ (renderIndent $ ppr tt)
-
+-}

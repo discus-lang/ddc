@@ -6,22 +6,22 @@ export value main       : Unit -> S Pure Unit;
 export value double     : Nat# -> Nat#;
 import value two        : Unit -> Nat#;
 with
-private rt with {w1 : Const rt}
-let one : Nat# = 1
+private rt with {w1: Const rt}
+let one: Nat# = 1
 letrec {
-  main : Unit -> S Pure Unit
-    = λ(_ : Unit).
+  main: Unit -> S Pure Unit
+    = λ(_: Unit).
       box
       private r0 in
       ();
   
-  double : Nat# -> Nat#
-    = λ(x : Nat#).
+  double: Nat# -> Nat#
+    = λ(x: Nat#).
       mul# [Nat#] x (two ());
   
-  thing : [r : Region].Nat# -> Nat#
-    = Λ(r : Region).
-      λ(x : Nat#). add# [Nat#] x one
+  thing: [r: Region].Nat# -> Nat#
+    = Λ(r: Region).
+      λ(x: Nat#). add# [Nat#] x one
 }
 
 
@@ -31,20 +31,20 @@ export value main       : Unit -> S Pure Unit;
 export value double     : Nat# -> Nat#;
 import value two        : Unit -> Nat#;
 with
-private rt with {w1 : Const rt}
-let one : Nat# = 1
+private rt with {w1: Const rt}
+let one: Nat# = 1
 letrec {
-  main : Unit -> S Pure Unit
-    = λ(_ : Unit).
+  main: Unit -> S Pure Unit
+    = λ(_: Unit).
       box
       private r0 in
       ();
   
-  double : Nat# -> Nat#
-    = λ(x : Nat#).
+  double: Nat# -> Nat#
+    = λ(x: Nat#).
       mul# [Nat#] x (two ());
   
-  thing : [r : Region].Nat# -> Nat#
-    = Λ(r : Region).
-      λ(x : Nat#). add# [Nat#] x one
+  thing: [r: Region].Nat# -> Nat#
+    = Λ(r: Region).
+      λ(x: Nat#). add# [Nat#] x one
 }
