@@ -30,7 +30,7 @@ checkLAM !table !ctx0 a b1 x2 Recon
 
         -- The parameter must have an explict kind annotation.
         let kA  = typeOfBind b1
-        when (isBot kA)
+        when (isHoleT config kA)
          $ throw $ ErrorLAMParamUnannotated a xx
 
         -- Check the kind annotation is well-sorted.
@@ -100,7 +100,7 @@ checkLAM !table !ctx0 a b1 x2 Synth
         -- If the annotation is missing then make a new existential for it.
         let kA  = typeOfBind b1
         (kA', sA, ctxA)
-         <- if isBot kA
+         <- if isHoleT config kA
              then do
                 iA       <- newExists sComp
                 let kA'  = typeOfExists iA
@@ -176,14 +176,14 @@ checkLAM !table !ctx0 a b1 x2 (Check (TForall b tBody))
         -- If both the kind annotation is missing and there is no
         -- expected kind then we need to make an existential for it.
         (kA', sA, ctxA)
-         <- if (isBot kParam && isBot kExpected)
+         <- if (isHoleT config kParam && isHoleT config kExpected)
              then do
                 iA       <- newExists sComp
                 let kA'  = typeOfExists iA
                 let ctxA = pushExists   iA ctx0
                 return (kA', sComp, ctxA)
 
-             else if isBot kExpected
+             else if isHoleT config kExpected
               then do
                 checkTypeM config ctx0 UniverseKind kParam Synth
 
