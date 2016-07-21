@@ -13,6 +13,9 @@ import Data.List
 import Data.Tuple
 where
 
+-- TODO: block comments break line numbers
+-- in error messages.
+
 
 -- | A map from keys @k@ to values @a@.
 data Map (k a: Data) where
@@ -62,9 +65,8 @@ map_size (mp: Map k a): Size
  = case mp of
         Tip             -> 0
         Bin sz _ _ _ _  -> sz
+  
 
-{-                                              -- TODO: block comments break line numbers
-                                                -- in error messages.
 -- | /O(log n)/. Lookup the value at a key in the map.
 --
 -- The function will return the corresponding value as @('Just' value)@,
@@ -76,7 +78,7 @@ map_lookup (Ord compare: Ord k) (kx: k) (mp: Map k a): Maybe a
          = Nothing [a]
 
         go k (Bin _ kx x l r)
-         = case compare k kx of                 -- TODO: need to fix lifting of local letrecs.
+         = case compare k kx of
                 LT -> go k l
                 GT -> go k r
                 EQ -> Just x
@@ -176,14 +178,11 @@ map_insertWithKey
 -- > let f a len = len + (length a)
 -- > foldr f 0 (fromList [(5,"a"), (3,"bbb")]) == 4
 --
-                                                        -- TODO: lambda lifter is lifting
-                                                        -- the body of 'go' rather than the
-                                                        -- whole binding.
 map_foldr (f: a -> b -> b) (z: b) (mp: Map k a): b
- = go f z mp
+ = go z mp
  where
-        go f z' Tip             = z'
-        go f z' (Bin _ _ x l r) = go f (f x (go f z' r)) l
+        go z' Tip             = z'
+        go z' (Bin _ _ x l r) = go (f x (go z' r)) l
 
 
 ---------------------------------------------------------------------------------------------------
@@ -195,7 +194,6 @@ map_fromList
                 case tp of
                  T2 kx x -> map_insert ord kx x mp)
          map_empty xx
--}
 
 
 ---------------------------------------------------------------------------------------------------

@@ -1,0 +1,40 @@
+
+-- | Check that we can lambda lift local letrecs.
+module Main
+import Data.Maybe
+import Data.Text
+import System.IO.Console
+where
+
+
+data Ordering where
+        LT      : Ordering
+        GT      : Ordering
+        EQ      : Ordering
+
+
+data Ord (k: Data) where
+        Ord     : (k -> k -> Ordering) -> Ord k
+
+type Size = Nat
+
+data Map (k a: Data) where
+        Bin : Size -> k -> a -> Map k a -> Map k a -> Map k a
+        Tip : Map k a
+
+
+map_lookup (Ord compare: Ord k) (kx: k) (mp: Map k a): Maybe a
+ = go kx mp
+ where  
+        go _ Tip 
+         = Nothing [a]
+
+        go k (Bin _ kx x l r)
+         = case compare k kx of
+                LT -> go k l
+                GT -> go k r
+                EQ -> Just x
+
+
+main ()
+ = writel "dummy"
