@@ -1,0 +1,28 @@
+
+module Main
+import Data.Numeric.Nat
+import Data.Map
+import System.IO.Console
+import Class.Show
+where
+
+
+main ()
+ = do   -- A test list.
+        list1   = Cons (T2 40 "red") 
+                 (Cons (T2 20 "green")
+                 (Cons (T2 10 "blue") 
+                 (Cons (T2 22 "purple") Nil)))
+
+        mp      = map_fromList ord_nat list1
+        list1'  = map_toList mp
+
+        -- Show the lists.
+        show_ld = show_list (show_tup2 show_nat show_text)
+        writel $ show show_ld list1
+        writel $ show show_ld list1'
+
+        -- Show the structure of the map.
+        show_md = show_map  show_nat show_text
+        writel $ show show_md mp
+

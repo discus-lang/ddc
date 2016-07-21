@@ -1,0 +1,14 @@
+
+module Class.Ord
+where
+
+
+data Ordering where
+        LT      : Ordering
+        GT      : Ordering
+        EQ      : Ordering
+
+
+data Ord (k: Data) where
+        Ord     : (k -> k -> Ordering) -> Ord k
+

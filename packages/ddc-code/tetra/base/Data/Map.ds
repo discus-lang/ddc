@@ -1,15 +1,23 @@
 
 module Data.Map
-export  { map_empty;  map_singleton
-        ; map_null;   map_size 
-        ; map_lookup; map_member
-        ; map_insert; map_insertWithKey }
+export  
+{       map_empty;  map_singleton;
+        map_null;   map_size;
+        map_lookup; map_member;
+        map_insert; map_insertWithKey;
+        map_foldr;  map_foldrWithKey; map_foldlWithKey;
+        map_fromList;
+        map_toList; map_toAscList; map_toDescList;
+        show_map;
+}
 import Data.Numeric.Nat
 import Data.Numeric.Bool
 import Data.Text
 import Data.Maybe
 import Data.List
 import Data.Tuple
+import Class.Ord
+import Class.Show
 where
 
 
@@ -18,16 +26,24 @@ data Map (k a: Data) where
         Bin : Size -> k -> a -> Map k a -> Map k a -> Map k a
         Tip : Map k a
 
-type Size = Nat
 
-data Ordering where
-        LT      : Ordering
-        GT      : Ordering
-        EQ      : Ordering
+-- TODO: setting this to plain Nat breaks the Map demo.
+type Size = Nat#
 
 
-data Ord (k: Data) where
-        Ord     : (k -> k -> Ordering) -> Ord k
+show_map (show_k: Show k) (show_a: Show a): Show (Map k a)
+ = Show sh
+ where  
+        sh (Bin s k a l r)
+         = parens $ "Bin"
+                %% show show_nat s
+                %% show show_k   k
+                %% show show_a   a
+                %% show (show_map show_k show_a) l
+                %% show (show_map show_k show_a) r
+
+        sh Tip
+         = "Tip"
 
 
 -- Construction -----------------------------------------------------------------------------------
@@ -110,8 +126,8 @@ map_member (Ord compare: Ord k) (kx: k) (mp: Map k a): Bool
 --
 map_insert
         (Ord compare: Ord k) 
-        (kx: k) (x: a) (mp: Map k a): Map k a
- = go kx x mp
+        (kx0: k) (x0: a) (mp: Map k a): Map k a
+ = go kx0 x0 mp
  where
         go kx x Tip 
          = map_singleton kx x
@@ -167,13 +183,6 @@ map_insertWithKey
 -- | /O(n)/. Fold the values in the map using the given right-associative
 --   binary operator.
 --
--- For example,
---
--- > elems map = foldr (:) [] map
---
--- > let f a len = len + (length a)
--- > foldr f 0 (fromList [(5,"a"), (3,"bbb")]) == 4
---
 map_foldr (f: a -> b -> b) (z: b) (mp: Map k a): b
  = go z mp
  where
@@ -181,7 +190,25 @@ map_foldr (f: a -> b -> b) (z: b) (mp: Map k a): b
         go z' (Bin _ _ x l r) = go (f x (go z' r)) l
 
 
----------------------------------------------------------------------------------------------------
+-- | /O(n)/. Fold the keys and values in the map using the given right-associative
+--   binary operator..
+--
+map_foldrWithKey (f: k -> a -> b -> b) (z: b) (mp: Map k a): b
+ = go z mp
+ where
+        go z' Tip              = z'
+        go z' (Bin _ kx x l r) = go (f kx x (go z' r)) l
+
+
+-- | /O(n)/. Fold the keys and values in the map using the given left-associative
+-- binary operator.
+map_foldlWithKey (f: a -> k -> b -> a) (z: a) (mp: Map k b): a
+ = go z mp
+ where  go z' Tip              = z'
+        go z' (Bin _ kx x l r) = go (f (go z' l) kx x) r
+
+
+-- Conversion -------------------------------------------------------------------------------------
 map_fromList 
         (ord: Ord k)
         (xx: List (Tup2 k a))
@@ -190,6 +217,23 @@ map_fromList
           . case tp of
                  T2 kx x -> map_insert ord kx x mp)
          map_empty xx
+
+
+-- | /O(n)/. Convert the map to a list of key\/value pairs. 
+map_toList (mp: Map k a): List (Tup2 k a)
+        = map_toAscList mp
+
+
+-- | /O(n)/. Convert the map to a list of key\/value pairs where the
+--   keys are in ascending order. 
+map_toAscList (mp: Map k a): List (Tup2 k a)
+        = map_foldrWithKey (\k x xs. Cons (T2 k x) xs) Nil mp
+
+
+-- | /O(n)/. Convert the map to a list of key\/value pairs where the
+--   keys are in descending order.
+map_toDescList (mp: Map k a): List (Tup2 k a)
+        = map_foldlWithKey (\xs k x. Cons (T2 k x) xs) Nil mp
 
 
 ---------------------------------------------------------------------------------------------------

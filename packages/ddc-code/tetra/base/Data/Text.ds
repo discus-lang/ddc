@@ -3,7 +3,7 @@ module Data.Text
 export  
 {       -- * Construction
         textLit; textOfVector; vectorOfText;
-        paste; pastes;
+        paste; pastes; parens;
 
         -- * Projections
         sizeOfText;
@@ -69,6 +69,9 @@ paste  (x y : Text) : Text
 
 pastes (x y : Text) : Text
  = x % " " % y
+
+parens (tx: Text): Text
+ = "(" % tx % ")"
 
 
 -------------------------------------------------------------------------------

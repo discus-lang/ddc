@@ -3,8 +3,10 @@ module Data.Numeric.Nat
 export  { add; sub;  mul; div; rem
         ; eq;  neq; lt;   le;  gt;  ge
         ; shl; shr; band; bor; bxor
-        ; divMod }
+        ; divMod 
+        ; ord_nat }
 import Data.Tuple
+import Class.Ord
 where
 
 type Nat = Nat#
@@ -42,4 +44,13 @@ bxor x y        = bxor# [Nat#] x y
 divMod (n m: Nat): Tup2 Nat Nat
  = T2 (div n m) (rem n m)
 
+
+-------------------------------------------------------------------------------
+-- Type class instances.
+nat_compare n1 n2
+ | n1 > n2      = GT
+ | n1 < n2      = LT
+ | otherwise    = EQ
+
+ord_nat         = Ord nat_compare
 
