@@ -1,0 +1,43 @@
+
+-- | Check that we can define local lambda abstractions without 
+--   type annotations on the parameters.
+module Main
+import Data.Maybe
+import Data.Text
+import System.IO.Console
+where
+
+
+data Ordering where
+        LT      : Ordering
+        GT      : Ordering
+        EQ      : Ordering
+
+
+data Ord (k: Data) where
+        Ord     : (k -> k -> Ordering) -> Ord k
+
+type Size = Nat
+
+data Map (k a: Data) where
+        Bin : Size -> k -> a -> Map k a -> Map k a -> Map k a
+        Tip : Map k a
+
+map_insertWith
+        (ord: Ord k)
+        (f: a -> a -> a)
+        (kx: k) (x: a) (mp: Map k a)
+        : Map k a
+ = map_insertWithKey ord
+        (\_ x' y'. f x' y')
+        kx x mp
+
+map_insertWithKey
+        (Ord compare: Ord k)
+        (f: k -> a -> a -> a)
+        (kx: k) (x: a) (mp: Map k a)
+        : Map k a
+ = mp
+
+main ()
+ = writel "dummy"

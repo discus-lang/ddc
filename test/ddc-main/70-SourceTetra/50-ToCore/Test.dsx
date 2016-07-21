@@ -79,3 +79,13 @@ head (def : a) (xx : List a) : a
 foo (_ : Unit) : Blerk r
  = head Hot (Cons Cold Nil)
 ;;
+
+
+-- Check we can use local lambda expressions without type annotations
+-- on the parameters.
+:to-core..
+module Test where
+test : Unit
+ = (\x y. x) () ()
+;;
+

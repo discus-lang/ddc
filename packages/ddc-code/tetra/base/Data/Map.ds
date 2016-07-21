@@ -1,10 +1,9 @@
 
 module Data.Map
 export  { map_empty;  map_singleton
-        ; map_null;   map_size }
-
---        ; map_lookup; map_member
---        ; map_insert; map_insertWithKey }
+        ; map_null;   map_size 
+        ; map_lookup; map_member
+        ; map_insert; map_insertWithKey }
 import Data.Numeric.Nat
 import Data.Numeric.Bool
 import Data.Text
@@ -12,9 +11,6 @@ import Data.Maybe
 import Data.List
 import Data.Tuple
 where
-
--- TODO: block comments break line numbers
--- in error messages.
 
 
 -- | A map from keys @k@ to values @a@.
@@ -139,7 +135,7 @@ map_insertWith
         (kx: k) (x: a) (mp: Map k a)
         : Map k a
  = map_insertWithKey ord
-        (\(_: k) (x' y': a). f x' y')           -- TODO: shouldn't need type annots here
+        (\_ x' y'. f x' y')
         kx x mp
 
 
@@ -190,8 +186,8 @@ map_fromList
         (ord: Ord k)
         (xx: List (Tup2 k a))
         : Map k a
- = foldl (\(mp: Map k a) (tp : Tup2 k a).
-                case tp of
+ = foldl (\ mp tp
+          . case tp of
                  T2 kx x -> map_insert ord kx x mp)
          map_empty xx
 

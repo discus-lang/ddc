@@ -123,3 +123,13 @@ letrec {
           (Cons [Blerk r] (Cold [r])
                (Nil [Blerk r]))
 }
+
+
+-- Check we can use local lambda expressions without type annotations
+-- on the parameters.
+module Test with
+letrec {
+  test : Unit
+    = (λ(x y : Unit). x) () ()
+}
+

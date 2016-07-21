@@ -87,7 +87,7 @@ checkLam !table !a !ctx !b1 !x2 !Synth
 
         -- If there isn't an existing annotation then make an existential.
         (b1', t1', k1, ctx1)
-         <- if isBot t1
+         <- if isHoleT config t1
              then do
                 -- There is no annotation at all, so make an existential.
                 -- Missing anotations are assumed to have kind Data.
@@ -204,7 +204,7 @@ checkLam !table !a !ctx !b1 !x2 !(Check tExpected)
         -- If it does have an annotation, then the annotation also needs
         --   to match the expected type.
         (b1', t1', ctx0)
-         <- if isBot t1
+         <- if isHoleT config t1
              then
                 return  (replaceTypeOfBind tX1 b1, tX1, ctx)
              else do

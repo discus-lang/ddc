@@ -77,4 +77,3 @@ flipit (x : Blerk r) : Blerk r
         Hot     -> Cold
         Cold    -> Hot
 ;;
-

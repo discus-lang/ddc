@@ -5,6 +5,7 @@ module DDC.Core.Check.Judge.Type.Base
         , Table  (..)
         , returnX
         , runForDemand
+        , isHoleT
 
         , module DDC.Core.Check.Base
         , module DDC.Core.Check.Judge.Inst
@@ -156,6 +157,21 @@ runForDemand config a  DemandRun  xExp tExp eExp
 
  | otherwise
  = return (xExp, tExp, eExp)
+
+
+-------------------------------------------------------------------------------
+isHoleT :: Config n -> Type n -> Bool
+isHoleT config tt
+ = case tt of
+        TVar u
+         -> case u of
+                UName n 
+                 -> case configNameIsHole config of
+                        Nothing -> False 
+                        Just f  -> f n
+                _       -> False
+
+        _ -> isBot tt
 
 
 

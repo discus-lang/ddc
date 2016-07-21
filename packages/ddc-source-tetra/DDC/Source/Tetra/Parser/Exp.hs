@@ -50,6 +50,7 @@ pExpFront
         -- Level-0 lambda abstractions
         --  \(x1 x2 ... : Type) (y1 y2 ... : Type) ... . Exp
         --  \x1 x2 : Type. Exp
+        --  \x1 x2. Exp
  [ do   sp      <- P.choice [ pTokSP KLambda, pTokSP KBackSlash ]
 
         bs      <- P.choice
@@ -63,10 +64,14 @@ pExpFront
                                 | b <- bs']
 
                 , do    bs'     <- P.many1 pBind
-                        pTok (KOp ":")
-                        t       <- pType
-                        return  [ XBindVarMT b (Just t)
-                                | b <- bs']
+                        P.choice
+                         [ do   pTok (KOp ":")
+                                t       <- pType
+                                return  [ XBindVarMT b (Just t) | b <- bs']
+
+                         , do   return  [ XBindVarMT b Nothing  | b <- bs']
+                         ]
+
                 ]
 
         pTok KDot
