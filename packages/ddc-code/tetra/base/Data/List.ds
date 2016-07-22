@@ -1,25 +1,28 @@
 
 module Data.List 
-export  { singleton;    replicate
-        ; enumFromTo
-        ; append
-        ; length
-        ; head
-        ; tail; tail1
-        ; last; index
-        ; reverse 
-        ; map;    mapS
-        ; forS
-        ; zipWith; zipWithS
-        ; foldl;  foldlS;       sum;    prod
-        ; foldr;  foldrS
-        ; scanl
-        ; filter; filterS
-        ; any }
+export
+{       singleton;  replicate;
+        enumFromTo; append;
+        length;
+        head;
+        tail; tail1;
+        last; index;
+        reverse;
+        map; mapS;
+        forS;
+        zipWith; zipWithS;
+        foldl;  foldlS;       sum;    prod;
+        foldr;  foldrS;
+        scanl;
+        filter; filterS;
+        any;
+}
 import  Data.Numeric.Nat
 import  Data.Numeric.Bool
 import  Data.Tuple
+import  Data.Function
 import  Class.Functor
+import  Class.Monad
 where
 
 -- | Standard Cons-lists.
@@ -142,6 +145,19 @@ forS (xx: List a) (f: a -> S e Unit): S e Unit
                 forS xs f
 
 
+-- | Monadic map.
+mapM    (dMonad: Monad m) 
+        (f: a -> m b) (xx: List a): m (List b)
+ = case xx of
+        Nil    
+         -> return dMonad Nil
+
+        Cons x xs
+         -> bind   dMonad (f x) (\x'.
+            bind   dMonad (mapM dMonad f xs) (\xs'.
+            return dMonad (Cons x' xs')))
+
+
 -- Zips -----------------------------------------------------------------------
 zipWith (f: a -> b -> c) 
         (xx: List a) (yy: List b): List c
@@ -152,7 +168,7 @@ zipWith (f: a -> b -> c)
          -> Cons (f x y) (zipWith f xs ys)
 
 
-
+-- | Stateful zipWith.
 zipWithS (f: a -> b -> S e c) 
          (xx: List a) (yy: List b): S e (List c)
  = case T2 xx yy of
@@ -203,6 +219,11 @@ sum (xs: List Nat): Nat
 -- | Take the product of a list of Nats.
 prod (xs: List Nat): Nat
  = foldl (*) 1 xs
+
+
+-- | Monadic sequence.
+sequence (dMonad: Monad m) (xs: List (m a)): m (List a)
+ = mapM dMonad id xs
 
 
 -- Scans ----------------------------------------------------------------------

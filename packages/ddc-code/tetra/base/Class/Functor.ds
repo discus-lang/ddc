@@ -1,5 +1,7 @@
 
-module Class.Functor where
+module Class.Functor 
+export  { fmap }
+where
 
 
 data Functor (f: Data -> Data) where
@@ -9,3 +11,9 @@ fmap    (Functor fmap': Functor f)
         (g: a -> b) (x: f a): f b
  = fmap' g x
 
+
+-- TODO: this fails tetra -> salt conversion, but shoudl be ok.
+{-
+fmap    (Functor fmap': Functor f): (a -> b) -> f a -> f b
+ = fmap'
+-}

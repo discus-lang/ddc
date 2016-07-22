@@ -1,0 +1,38 @@
+
+module Class.Monad
+export  
+{       dFunctorOfMonad; dApplicativeOfMonad;
+        return; bind
+}
+import Class.Functor
+import Class.Applicative
+where
+
+
+data Monad (m: Data -> Data) where
+        Monad
+         :  Applicative m
+         -> ([a: Data].   a   -> m a)                   -- return
+         -> ([a b: Data]. m a -> (a -> m b) -> m b)     -- bind
+         -> Monad m
+
+dFunctorOfMonad (dMonad: Monad m): Functor m
+        = dFunctorOfApplicative (dApplicativeOfMonad dMonad)
+
+
+dApplicativeOfMonad
+        (Monad dApplicative _ _: Monad m)
+        : Applicative m
+        = dApplicative
+
+
+return  (Monad _ return' _: Monad m)
+        (x: a): m a
+ = return' x
+
+
+bind    (Monad _ _ bind': Monad m)
+        (ma: m a) (mf: a -> m b): m b
+ = bind' ma mf
+
+
