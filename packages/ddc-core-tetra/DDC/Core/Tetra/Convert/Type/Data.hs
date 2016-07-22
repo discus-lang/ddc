@@ -235,11 +235,16 @@ convertDataAppT ctx tt
         , Just t' <- Map.lookup n (contextTypeEqns ctx)
         = convertDataAppT ctx t'
 
+        -- TODO: sketchy. needed for applications of abstract constructors
+        --  like (c a)
+        | otherwise
+        = do    return  $ A.tPtr A.rTop A.tObj
+{-
         | otherwise
         =      throw   $ ErrorMalformed 
                        $  "Invalid type constructor application "
                        ++ (renderIndent $ ppr tt)
-
+-}
 
 -- | Convert a primitive type directly to its Salt form.
 convertDataPrimitiveT :: Type E.Name -> ConvertM a (Type A.Name)

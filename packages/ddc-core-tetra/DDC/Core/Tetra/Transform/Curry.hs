@@ -26,7 +26,8 @@ import qualified Data.List                      as List
 --   over applied, and build and evaluate closures as necessary.
 --
 curryModule 
-        :: Module (AnTEC a Name) Name 
+        :: Show a
+        => Module (AnTEC a Name) Name 
         -> Either Error (Module () Name)
 
 curryModule mm
@@ -51,7 +52,8 @@ curryModule mm
 
 -- | Manage higher-order functions in a module body.
 curryBody 
-        :: EnvT Name
+        :: Show a
+        => EnvT Name
         -> Map Name Callable
         -> Exp (AnTEC a Name) Name 
         -> Either Error (Exp () Name)
@@ -78,7 +80,8 @@ curryBody envt callables xx
 
 
 -- | Manage function application in an expression.
-curryX  :: EnvT Name
+curryX  :: Show a
+        => EnvT Name
         -> Map Name Callable
         -> Exp (AnTEC a Name) Name 
         -> Either Error (Exp () Name)
@@ -98,8 +101,8 @@ curryX envt callables xx
         XApp  _ x1 x2
          -> do  result  <- curryX_call envt callables xx
                 case result of
-                 Just xx' -> return xx'
-                 Nothing  -> XApp () <$> down x1 <*> down x2
+                    Just xx' -> return xx'
+                    Nothing  -> XApp () <$> down x1 <*> down x2
 
         XCast _ CastRun x1
          -> do  result  <- curryX_call envt callables xx
@@ -160,13 +163,13 @@ shadowCallables bs callables
 
 -- | Build a function call for the given application expression.
 curryX_call 
-        :: EnvT Name
+        :: Show a
+        => EnvT Name
         -> Map Name Callable
         -> Exp (AnTEC a Name) Name 
         -> Either Error (Maybe (Exp () Name))
 
 curryX_call envt callables xx
-
  -- If this is a call of a named function then split it into the
  --  functional part and arguments, then work out how to call it.
  | (xF, esArgs)         <- Call.takeCallElim xx
@@ -192,7 +195,8 @@ curryX_call envt callables xx
 
 
 -- | Manage function application in a let binding.
-curryLts :: EnvT Name 
+curryLts :: Show a
+         => EnvT Name 
          -> Map Name Callable 
          -> Lets (AnTEC a Name) Name 
          -> Either Error (Lets () Name)
@@ -212,7 +216,8 @@ curryLts envt callables lts
 
 
 -- | Manage function application in a case alternative.
-curryAlt :: EnvT Name
+curryAlt :: Show a
+         => EnvT Name
          -> Map Name Callable 
          -> Alt (AnTEC a Name) Name 
          -> Either Error (Alt () Name)
