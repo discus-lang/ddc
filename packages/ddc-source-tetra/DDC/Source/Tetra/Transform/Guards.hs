@@ -146,11 +146,27 @@ desugarX sp xx
                 xFail'    <- desugarX sp' xFail
                 pure    $ XMatch sp' alts' xFail'
 
-        XLamPat  a p mt x
-         -> XLamPat a p mt <$> desugarX sp x
 
-        XLamCase sp' alts
-         -> XLamCase sp'   <$> mapM (desugarAltCase sp') alts
+        -- Desugar lambda with a pattern for the parameter.
+        XLamPat _a PDefault mt x
+         -> XLam (XBindVarMT BNone mt) <$> desugarX sp x 
+
+        XLamPat _a (PVar b) mt x
+         -> XLam (XBindVarMT b mt)     <$> desugarX sp x
+
+        XLamPat _a p mt x
+         -> do  (b, u)  <- newVar "x"
+                x'      <- desugarX sp x
+                return  $  XLam  (XBindVarMT b mt)
+                        $  XCase (XVar u) [ AAltCase p [GExp x'] ] 
+
+
+        -- Desugar lambda case by inserting the intermediate variable.
+        XLamCase _a alts
+         -> do  (b, u)  <- newVar "x"
+                alts'   <- mapM  (desugarAltCase sp) alts
+                return  $  XLam  (XBindVarMT b Nothing)
+                        $  XCase (XVar u) alts'
 
 
 -- | Check if this is simple Case alternative, which means if the pattern

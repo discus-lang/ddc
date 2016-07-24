@@ -136,29 +136,30 @@ pExpFrontSP
         --  \x1 x2. Exp
  [ do   sp      <- P.choice [ pTokSP KLambda, pTokSP KBackSlash ]
 
-        bs      <- P.choice
-                [ fmap concat $ P.many1 
+        pts     <- P.choice
+                [ P.try
+                   $ fmap concat $ P.many1 
                    $ do pTok KRoundBra
-                        bs'     <- P.many1 pBind
+                        ps      <- P.many1 pPat
                         pTok (KOp ":")
                         t       <- pType
                         pTok KRoundKet
-                        return  [ XBindVarMT b (Just t) | b <- bs']
+                        return  [(p, Just t) | p <- ps]
 
-                , do    bs'     <- P.many1 pBind
+                , do    ps      <- P.many1 pPatAtom
                         P.choice
                          [ do   pTok (KOp ":")
                                 t       <- pType
-                                return  [ XBindVarMT b (Just t) | b <- bs']
+                                return  [(p, Just t)  | p <- ps]
 
-                         , do   return  [ XBindVarMT b Nothing  | b <- bs']
+                         , do   return  [(p, Nothing) | p <- ps]
                          ]
 
                 ]
 
         pTok KDot
         xBody   <- pExp
-        return  (sp, XAnnot sp $ foldr XLam xBody bs)
+        return  (sp, XAnnot sp $ foldr (\(p, mt) -> XLamPat sp p mt) xBody pts)
 
 
         -- Level-1 lambda abstractions.

@@ -241,7 +241,7 @@ instance PrettyLanguage l => Pretty (GExp l) where
         XLamPat _ p mt xBody
          -> pprParen' (d > 1)
          $  text "\\" 
-                <> ppr p 
+                <> pprPrec 2 p 
                 <> (case mt of
                         Just t  -> text ": " <> ppr t
                         Nothing -> empty)
