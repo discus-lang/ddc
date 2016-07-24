@@ -15,15 +15,48 @@ parse (Parser p: Parser t a) (ts: List t): List (Tup2 a (List t))
  = p ts
 
 
-fmap_parser [t a b: Data] (f: a -> b) (parserA: Parser t a): Parser t b
+-- Functor --------------------------------------------------------------------
+-- TODO: type checker should work out the instantiations here.
+-- TODO: if we don't add the [t: Data] quantifier we end up with an existential
+--       at top level, which annot be parser. We should check that all
+--       existentials are instantiated after type checking as multiple modules
+--       could import and instantiate them differently.
+functor_Parser [t: Data]: Functor (Parser t)
+ = Functor (Λa b: Data
+ . (Λt' a' b': Data. parser_fmap [t'] [a'] [b']) [t] [a] [b])
+
+
+parser_fmap [t a b: Data] (f: a -> b) (parserA: Parser t a): Parser t b
  = Parser (λts
  . for (parse parserA ts) $ λ(T2 resultA ts2)
  . T2  (f resultA) ts2)
 
 
--- TODO: type checker should work out the instantiations here.
-functor_parser [t: Data]: Functor (Parser t)
- = Functor (Λa b: Data. (Λt' a' b': Data. fmap_parser [t'] [a'] [b']) [t] [a] [b])
+-- Applicative ----------------------------------------------------------------
+applicative_Parser [t: Data]: Applicative (Parser t)
+ = Applicative 
+        functor_Parser
+        (/\(a: Data).   parser_pure [a])
+        (/\(a b: Data). parser_ap   [a] [b])
+
+
+parser_pure (x: a): Parser t a
+ = Parser (λts. Cons (T2 x ts) Nil)
+
+
+parser_ap   (parserF: Parser t (a -> b)) (parserA: Parser t a): Parser t b
+ = Parser (λts. concat
+ $ for (parse parserF ts)  $ λ(T2 resultF ts2)
+ . for (parse parserA ts2) $ λ(T2 resultA ts3)
+ . T2 (resultF resultA) ts3)
+
+
+-- Monad ----------------------------------------------------------------------
+monad_Parser [t: Data]: Monad (Parser t)
+ = Monad
+        applicative_Parser
+        (/\(a: Data).   parser_return [a])
+        (/\(a b: Data). parser_bind   [a] [b])
 
 
 -- | Produce the given result without returning any input.
@@ -62,6 +95,7 @@ parser_bind2
 -}
 
 
+-------------------------------------------------------------------------------
 -- | Always fail, producing no possible parses.
 zero: Parser t a
  = Parser (λ_. Nil)
@@ -161,7 +195,7 @@ some (parserA: Parser t a): Parser t (List a)
 
 
 -- | Parse one or more things, yielding a list of those things.
-many (parserA: Parser t a): Parser t (List a)
+many [a t: Data] (parserA: Parser t a): Parser t (List a)
  = alt  (parser_bind   parserA        $ λx. 
          parser_bind   (some parserA) $ λxs. 
          parser_return (Cons x xs))
