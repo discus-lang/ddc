@@ -2,13 +2,13 @@
 module Data.List 
 export
 {       singleton;  replicate;
-        enumFromTo; append;
+        enumFromTo; append; concat;
         length;
         head;
         tail; tail1;
         last; index;
         reverse;
-        map; mapS;
+        map; mapS; for;
         forS;
         zipWith; zipWithS;
         foldl;  foldlS;       sum;    prod;
@@ -55,6 +55,34 @@ append (xx yy: List a): List a
  = case xx of
         Nil             -> yy
         Cons x xs       -> Cons x (append xs yy)
+
+{- TODO: pattern matching desugaring fails, xss is not in scope 
+-- | Concatenate a list of lists.
+concat (xss0: List (List a)): List a
+ = case xss0 of
+        Nil             -> Nil
+        Cons xs xss1    -> go xs xss1
+ where
+        go Nil         Nil              = Nil
+        go Nil         (Cons xs' xss')  = go xs' xss'
+        go (Cons x xs) xss              = Cons x (go xs xss)
+-}
+
+-- | Concatenate a list of lists.
+concat (xss0: List (List a)): List a
+ = case xss0 of
+        Nil             -> Nil
+        Cons xs xss1    -> go xs xss1
+ where
+        go xs1 xss2
+         = case xs1 of
+                Nil
+                 -> case xss2 of
+                        Nil             -> Nil
+                        Cons xs' xss'   -> go xs' xss'
+
+                Cons x xs               -> Cons x (go xs xss2)
+
 
 
 -- Projections ----------------------------------------------------------------
@@ -119,6 +147,13 @@ map     (f: a -> b) (xx: List a): List b
  = case xx of
         Nil             -> Nil
         Cons x xs       -> Cons (f x) (map f xs)
+
+
+-- | Like `map`, but with the arguments swapped.
+for     (xx: List a) (f: a -> b): List b
+ = case xx of
+        Nil             -> Nil
+        Cons x xs       -> Cons (f x) (for xs f)
 
 
 -- TODO: type checker should be able to deal with the rank-2 type of the
