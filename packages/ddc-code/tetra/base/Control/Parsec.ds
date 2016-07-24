@@ -38,26 +38,35 @@ parser_bind
         (parserA:   Parser t a)
         (mkParserB: a -> Parser t b)
         : Parser t b
- = Parser
-    (λts. concat
-           (for (parse parserA ts)
-             (λres. case res of
-                        (T2 resultA ts2)
-                         -> for (parse (mkParserB resultA) ts2)
-                             (λres2. case res2 of
-                                        T2 resultB ts3
-                                         -> T2 resultB ts3))))
+ =  Parser (λts. concat  
+ $  for (parse parserA ts)              $ λ(T2 resultA ts2)
+ .  for (parse (mkParserB resultA) ts2) $ λ(T2 resultB ts3)
+ .  T2 resultB ts3)
 
 
--- | Apply a parser, and if it succeeds pass the result to a function
---   that produces a new parser.
---   TODO: this parses but has some type checker problem.
+{-
+parser_bind
+        (parserA:   Parser t a)
+        (mkParserB: a -> Parser t b)
+        : Parser t b
+ =  Parser (λts. concat 
+ $  for (parse parserA ts) $ λres
+ .  case res of
+        T2 resultA ts2
+         -> for (parse (mkParserB resultA) ts2) $  λres2
+         .  case res2 of
+                T2 resultB ts3 -> T2 resultB ts3)
+-}
+
+-- TODO: can't convert partially applied data constructor.
+-- need to eta-expand data contructor applications.
 {-
 parser_bind2
         (parserA: Parser t a)
         (mkParserB: a -> Parser t b)
         : Parser t b
- =  Parser $  λts. concat 
+ =  Parser 
+ $ λts. concat 
  $  for (parse parserA ts) $ λres
  .  case res of
         T2 resultA ts2
@@ -65,6 +74,7 @@ parser_bind2
          .  case res2 of
                 T2 resultB ts3 -> T2 resultB ts3
 -}
+
 
 -- | Always fail, producing no possible parses.
 zero: Parser t a

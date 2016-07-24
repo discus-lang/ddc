@@ -238,6 +238,23 @@ instance PrettyLanguage l => Pretty (GExp l) where
                 <>  line
                 <>  text "}")
 
+        XLamPat _ p mt xBody
+         -> pprParen' (d > 1)
+         $  text "\\" 
+                <> ppr p 
+                <> (case mt of
+                        Just t  -> text ": " <> ppr t
+                        Nothing -> empty)
+                <> text "."
+         <> breakWhen (not $ isSimpleX xBody)
+         <> ppr xBody
+
+        XLamCase _ alts
+         -> pprParen' (d > 1)
+         $  text "λcase." <> lbrace <> line
+                <> (vcat $ punctuate semi $ map ppr alts)
+         <> line <> rbrace
+
 
 -- Lets -------------------------------------------------------------------------------------------
 instance PrettyLanguage l => Pretty (GLets l) where

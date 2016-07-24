@@ -454,7 +454,9 @@ toCoreX a xx
         S.XInfixVar{}   -> Left $ ErrorConvertCannotConvertSugarExp xx
         S.XMatch{}      -> Left $ ErrorConvertCannotConvertSugarExp xx
         S.XWhere{}      -> Left $ ErrorConvertCannotConvertSugarExp xx
-        
+        S.XLamPat{}     -> Left $ ErrorConvertCannotConvertSugarExp xx
+        S.XLamCase{}    -> Left $ ErrorConvertCannotConvertSugarExp xx        
+
 
 -- Lets -------------------------------------------------------------------------------------------
 toCoreLts :: SP -> S.Lets -> ConvertM S.Source (C.Lets SP C.Name)

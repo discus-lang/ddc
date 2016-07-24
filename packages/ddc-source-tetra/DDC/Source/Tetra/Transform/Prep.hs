@@ -219,22 +219,24 @@ desugarX rns xx
         
 
         -- Boilerplate.
-        XAnnot a x      -> XAnnot a  <$> desugarX rns x
-        XVar{}          -> return xx
-        XPrim{}         -> return xx
-        XCon{}          -> return xx
-        XLAM  mb x      -> XLAM mb   <$> desugarX   rns x
-        XLam  mb x      -> XLam mb   <$> desugarX   rns x
-        XApp  x1 x2     -> XApp      <$> desugarX   rns x1  <*> desugarX rns x2
-        XLet  lts x     -> XLet      <$> desugarLts rns lts <*> desugarX rns x
-        XCase x as      -> XCase     <$> desugarX   rns x   <*> mapM (desugarAC rns) as
-        XCast c x       -> XCast c   <$> desugarX   rns x
-        XType{}         -> return xx
-        XWitness{}      -> return xx
-        XDefix sp xs    -> XDefix sp <$> mapM (desugarX rns) xs
-        XInfixOp{}      -> return xx
-        XInfixVar{}     -> return xx
-        XMatch sp as x  -> XMatch sp <$> mapM (desugarAM rns) as <*> desugarX rns x
+        XAnnot a x              -> XAnnot a  <$> desugarX rns x
+        XVar{}                  -> return xx
+        XPrim{}                 -> return xx
+        XCon{}                  -> return xx
+        XLAM  mb x              -> XLAM mb   <$> desugarX   rns x
+        XLam  mb x              -> XLam mb   <$> desugarX   rns x
+        XApp  x1 x2             -> XApp      <$> desugarX   rns x1  <*> desugarX rns x2
+        XLet  lts x             -> XLet      <$> desugarLts rns lts <*> desugarX rns x
+        XCase x as              -> XCase     <$> desugarX   rns x   <*> mapM (desugarAC rns) as
+        XCast c x               -> XCast c   <$> desugarX   rns x
+        XType{}                 -> return xx
+        XWitness{}              -> return xx
+        XDefix sp xs            -> XDefix sp <$> mapM (desugarX rns) xs
+        XInfixOp{}              -> return xx
+        XInfixVar{}             -> return xx
+        XMatch   sp as x        -> XMatch   sp <$> mapM (desugarAM rns) as <*> desugarX rns x
+        XLamPat  sp p mt x      -> XLamPat  sp p mt <$> desugarX rns x
+        XLamCase sp alts        -> XLamCase sp <$> mapM (desugarAC rns) alts
 
 
 ---------------------------------------------------------------------------------------------------

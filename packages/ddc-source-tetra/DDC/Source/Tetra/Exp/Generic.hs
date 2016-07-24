@@ -161,6 +161,14 @@ data GExp l
         --   and is desugared to a letrec.
         | XWhere    !(GXAnnot l) !(GExp l) ![GClause l]
 
+        -- | Lambda abstraction which matches its argument against
+        --   a single pattern.
+        | XLamPat   !(GXAnnot l) !(GPat l) !(Maybe (GType l)) !(GExp l)
+
+        -- | Lambda abstraction that matches its argument against
+        --   the given alternatives.
+        | XLamCase  !(GXAnnot l) ![GAltCase l]
+
 
 -- | Possibly recursive bindings.
 --   Whether these are taken as recursive depends on whether they appear

@@ -146,6 +146,12 @@ desugarX sp xx
                 xFail'    <- desugarX sp' xFail
                 pure    $ XMatch sp' alts' xFail'
 
+        XLamPat  a p mt x
+         -> XLamPat a p mt <$> desugarX sp x
+
+        XLamCase sp' alts
+         -> XLamCase sp'   <$> mapM (desugarAltCase sp') alts
+
 
 -- | Check if this is simple Case alternative, which means if the pattern
 --   matches then we can run the expression on the right instead of needing

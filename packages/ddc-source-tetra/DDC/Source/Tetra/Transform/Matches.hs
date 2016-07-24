@@ -234,6 +234,12 @@ desugarX sp xx
                 spcls'    <- desugarClGroup spcls
                 return   $ XWhere sp' x' (map snd spcls')
 
+        XLamPat  sp' w mt x
+         ->     XLamPat sp' w mt <$> desugarX sp x
+
+        XLamCase sp' alts
+         ->     XLamCase sp' <$> mapM (desugarAC sp) alts
+
 
 -------------------------------------------------------------------------------
 -- | Desugar some let bindings.

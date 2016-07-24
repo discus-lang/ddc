@@ -111,23 +111,25 @@ makeTBot k = TCon (TyConSum k)
 takeAnnotOfExp :: GExp l -> Maybe (GXAnnot l)
 takeAnnotOfExp xx
  = case xx of
-        XAnnot a _      -> Just a
-        XVar{}          -> Nothing
-        XPrim{}         -> Nothing
-        XCon{}          -> Nothing
-        XLAM    _  x    -> takeAnnotOfExp x
-        XLam    _  x    -> takeAnnotOfExp x
-        XApp    x1 x2   -> firstJust $ map takeAnnotOfExp [x1, x2]
-        XLet    _  x    -> takeAnnotOfExp x
-        XCase   x  _    -> takeAnnotOfExp x
-        XCast   _  x    -> takeAnnotOfExp x
-        XType{}         -> Nothing
-        XWitness{}      -> Nothing
-        XDefix    a _   -> Just a
-        XInfixOp  a _   -> Just a
-        XInfixVar a _   -> Just a
-        XMatch    a _ _ -> Just a
-        XWhere    a _ _ -> Just a
+        XAnnot a _              -> Just a
+        XVar{}                  -> Nothing
+        XPrim{}                 -> Nothing
+        XCon{}                  -> Nothing
+        XLAM    _  x            -> takeAnnotOfExp x
+        XLam    _  x            -> takeAnnotOfExp x
+        XApp    x1 x2           -> firstJust $ map takeAnnotOfExp [x1, x2]
+        XLet    _  x            -> takeAnnotOfExp x
+        XCase   x  _            -> takeAnnotOfExp x
+        XCast   _  x            -> takeAnnotOfExp x
+        XType{}                 -> Nothing
+        XWitness{}              -> Nothing
+        XDefix    a _           -> Just a
+        XInfixOp  a _           -> Just a
+        XInfixVar a _           -> Just a
+        XMatch    a _ _         -> Just a
+        XWhere    a _ _         -> Just a
+        XLamPat   a _ _ _       -> Just a
+        XLamCase  a _           -> Just a
 
 
 firstJust = listToMaybe . catMaybes
