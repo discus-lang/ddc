@@ -9,7 +9,6 @@ module DDC.Source.Tetra.Parser
         -- * Expressions
         , pExp
         , pExpApp
-        , pExpAtom
 
         -- * Types
         , pType

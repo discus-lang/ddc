@@ -4,7 +4,7 @@
 module DDC.Source.Tetra.Parser.Exp
         ( pExp
         , pExpApp
-        , pExpAtom,     pExpAtomSP
+        , pExpAtomSP
         , pLetsSP,      pClauseSP
         , pType
         , pTypeApp
@@ -26,9 +26,12 @@ type SP = SourcePos
 
 
 -- Exp --------------------------------------------------------------------------------------------
-pExp :: Parser Exp
-pExp 
- = do   xx      <- pExpFront 
+pExp   :: Parser Exp
+pExp = fmap snd pExpSP
+
+pExpSP :: Parser (SP, Exp)
+pExpSP 
+ = do   (sp1, xx) <- pExpFront 
 
         P.choice
          [ do   -- x where GROUP
@@ -37,13 +40,13 @@ pExp
                 cls     <- liftM (map snd)
                         $  P.sepEndBy1 pClauseSP (pTok KSemiColon)
                 pTok KBraceKet
-                return  $ XWhere sp xx cls
+                return  (sp1, XWhere sp xx cls)
 
-         , do   return  xx ]
+         , do   return  (sp1, xx) ]
 
 
 -- | Parse a Tetra Source language expression.
-pExpFront :: Parser Exp
+pExpFront :: Parser (SP, Exp)
 pExpFront
  = P.choice
 
@@ -60,8 +63,7 @@ pExpFront
                         pTok (KOp ":")
                         t       <- pType
                         pTok KRoundKet
-                        return  [ XBindVarMT b (Just t)
-                                | b <- bs']
+                        return  [ XBindVarMT b (Just t) | b <- bs']
 
                 , do    bs'     <- P.many1 pBind
                         P.choice
@@ -76,7 +78,8 @@ pExpFront
 
         pTok KDot
         xBody   <- pExp
-        return  $ XAnnot sp $ foldr XLam xBody bs
+        return  (sp, XAnnot sp $ foldr XLam xBody bs)
+
 
         -- Level-1 lambda abstractions.
         -- /\(x1 x2 ... : Type) (y1 y2 ... : Type) ... . Exp
@@ -99,21 +102,24 @@ pExpFront
 
         pTok KDot
         xBody   <- pExp
-        return  $ XAnnot sp $ foldr XLAM xBody bs
+        return  (sp, XAnnot sp $ foldr XLAM xBody bs)
+
 
         -- let expression
  , do   (lts, sp) <- pLetsSP
         pTok    KIn
         x2      <- pExp
-        return  $ XAnnot sp $ XLet lts x2
+        return  (sp, XAnnot sp $ XLet lts x2)
+
 
         -- Sugar for a let-expression.
         --  do { Stmt;+ }
- , do   pTok    KDo
+ , do   sp      <- pTokSP KDo
         pTok    KBraceBra
         xx      <- pStmts
         pTok    KBraceKet
-        return  $ xx
+        return  (sp, xx)
+
 
         -- case Exp of { Alt;+ }
  , do   sp      <- pTokSP KCase
@@ -122,7 +128,8 @@ pExpFront
         pTok KBraceBra
         alts    <- P.sepEndBy1 pAltCase (pTok KSemiColon)
         pTok KBraceKet
-        return  $ XAnnot sp $ XCase x alts
+        return  (sp, XAnnot sp $ XCase x alts)
+
 
         -- match { | EXP = EXP | EXP = EXP ... }
         --  Sugar for cascaded case expressions case-expression.
@@ -139,7 +146,8 @@ pExpFront
                         (fromIntegral $ sourcePosLine   sp)
 
         pTok KBraceKet
-        return  $ XAnnot sp $ XMatch sp gxs xError
+        return  (sp, XAnnot sp $ XMatch sp gxs xError)
+
 
  , do   -- if-then-else
         --  Sugar for a case-expression.
@@ -149,9 +157,10 @@ pExpFront
         x2      <- pExp
         pTok KElse
         x3      <- pExp 
-        return  $ XAnnot sp $ XCase x1 
+        return  (sp, XAnnot sp $ XCase x1 
                         [ AAltCase PTrue    [GExp x2]
-                        , AAltCase PDefault [GExp x3]]
+                        , AAltCase PDefault [GExp x3]])
+
 
         -- weakeff [Type] in Exp
  , do   sp      <- pTokSP KWeakEff
@@ -160,24 +169,26 @@ pExpFront
         pTok KSquareKet
         pTok KIn
         x       <- pExp
-        return  $ XAnnot sp $ XCast (CastWeakenEffect t) x
+        return  (sp, XAnnot sp $ XCast (CastWeakenEffect t) x)
+
 
         -- purify Witness in Exp
  , do   sp      <- pTokSP KPurify
         w       <- pWitness
         pTok KIn
         x       <- pExp
-        return  $ XAnnot sp $ XCast (CastPurify w) x
+        return  (sp, XAnnot sp $ XCast (CastPurify w) x)
+
 
         -- box Exp
  , do   sp      <- pTokSP KBox
         x       <- pExp
-        return  $ XAnnot sp $ XCast CastBox x
+        return  (sp, XAnnot sp $ XCast CastBox x)
 
         -- run Exp
  , do   sp      <- pTokSP KRun
         x       <- pExp
-        return  $ XAnnot sp $ XCast CastRun x
+        return  (sp, XAnnot sp $ XCast CastRun x)
 
         -- APP
  , do   pExpApp
@@ -187,107 +198,99 @@ pExpFront
 
 
 -- Applications.
-pExpApp :: Parser Exp
+pExpApp :: Parser (SP, Exp)
 pExpApp
   = do  xps     <- liftM concat $ P.many1 pArgSPs
-        let (xs, sps) = unzip xps
+        let (sps, xs) = unzip xps
         let (sp1 : _) = sps
                 
         case xs of
-         [x]    -> return x
-         _      -> return $ XDefix sp1 xs
+         [x]    -> return (sp1, x)
+         _      -> return (sp1, XDefix sp1 xs)
 
   <?> "an expression or application"
 
 
 -- Comp, Witness or Spec arguments.
-pArgSPs :: Parser [(Exp, SP)]
+pArgSPs :: Parser [(SP, Exp)]
 pArgSPs 
  = P.choice
         -- [Type]
  [ do   sp      <- pTokSP KSquareBra
         t       <- pType
         pTok KSquareKet
-        return  [(XType t, sp)]
+        return  [(sp, XType t)]
 
         -- [: Type0 Type0 ... :]
  , do   sp      <- pTokSP KSquareColonBra
         ts      <- fmap (fst . unzip) $ P.many1 pTypeAtomSP
         pTok KSquareColonKet
-        return  [(XType t, sp) | t <- ts]
+        return  [(sp, XType t) | t <- ts]
         
         -- { Witness }
  , do   sp      <- pTokSP KBraceBra
         w       <- pWitness
         pTok KBraceKet
-        return  [(XWitness w, sp)]
+        return  [(sp, XWitness w)]
                 
         -- {: Witness0 Witness0 ... :}
  , do   sp      <- pTokSP KBraceColonBra
         ws      <- P.many1 pWitnessAtom
         pTok KBraceColonKet
-        return  [(XWitness w, sp) | w <- ws]
+        return  [(sp, XWitness w) | w <- ws]
                
         -- Exp0
- , do   (x, sp)  <- pExpAtomSP
-        return  [(x, sp)]
+ , do   (sp, x)  <- pExpAtomSP
+        return  [(sp, x)]
  ]
  <?> "a type, witness or expression argument"
 
 
--- | Parse a variable, constructor or parenthesised expression.
-pExpAtom :: Parser Exp
-pExpAtom
- = do   (x, _) <- pExpAtomSP
-        return x
-
-
 -- | Parse a variable, constructor or parenthesised expression,
 --   also returning source position.
-pExpAtomSP :: Parser (Exp, SP)
+pExpAtomSP :: Parser (SP, Exp)
 pExpAtomSP
  = P.choice
  [      -- ( Exp2 )
    do   sp      <- pTokSP KRoundBra
         t       <- pExp
         pTok KRoundKet
-        return  (t, sp)
+        return  (sp, t)
 
         -- Infix operator used as a variable.
  , do   (UName tx, sp) <- pBoundNameOpVarSP
-        return  (XInfixVar sp (Text.unpack tx), sp)
+        return  (sp, XInfixVar sp (Text.unpack tx))
 
         -- Infix operator used nekkid.
  , do   (UName tx, sp) <- pBoundNameOpSP
-        return  (XInfixOp  sp (Text.unpack tx), sp)
+        return  (sp, XInfixOp  sp (Text.unpack tx))
   
         -- The unit data constructor.       
  , do   sp              <- pTokSP KDaConUnit
-        return  (XCon  dcUnit, sp)
+        return  (sp, XCon  dcUnit)
 
         -- Named algebraic constructors.
  , do   (con, sp)       <- pDaConBoundNameSP
-        return  (XCon  (DaConBound con), sp)
+        return  (sp, XCon  (DaConBound con))
 
         -- Literals.
         --  We just fill-in the type with a hole for now, and leave it to
         --  We also set the literal as being algebraic, which may not be
         --  true (as for Floats). The spreader also needs to fix this.
  , do   (lit, sp)       <- pDaConBoundLitSP
-        return  (XCon  (DaConPrim lit (TVar UHole)), sp)
+        return  (sp, XCon (DaConPrim lit (TVar UHole)))
 
         -- Primitive names.
  , do   (nPrim, sp)     <- pPrimValSP
-        return  (XPrim nPrim, sp)
+        return  (sp, XPrim nPrim)
 
         -- Named variables.
  , do   (u,  sp)        <- pBoundNameSP
-        return  (XVar u, sp)
+        return  (sp, XVar u)
 
         -- Debruijn indices
  , do   (u, sp)         <- pBoundIxSP
-        return  (XVar u, sp)
-
+        return  (sp, XVar u)
  ]
 
  <?> "a variable, constructor, or parenthesised type"
