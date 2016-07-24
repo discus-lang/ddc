@@ -8,7 +8,7 @@ module DDC.Source.Tetra.Parser
 
         -- * Expressions
         , pExp
-        , pExpApp
+        , pExpAppSP
 
         -- * Types
         , pType

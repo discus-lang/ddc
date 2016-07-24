@@ -3,7 +3,7 @@
 -- | Parser for Source Tetra expressions.
 module DDC.Source.Tetra.Parser.Exp
         ( pExp
-        , pExpApp
+        , pExpAppSP
         , pExpAtomSP
         , pLetsSP,      pClauseSP
         , pType
@@ -27,11 +27,13 @@ type SP = SourcePos
 
 -- Exp --------------------------------------------------------------------------------------------
 pExp   :: Parser Exp
-pExp = fmap snd pExpSP
+pExp = fmap snd pExpWhereSP
 
-pExpSP :: Parser (SP, Exp)
-pExpSP 
- = do   (sp1, xx) <- pExpFront 
+
+-- An expression that may have a trailing where clause.
+pExpWhereSP :: Parser (SP, Exp)
+pExpWhereSP 
+ = do   (sp1, xx) <- pExpAppSP
 
         P.choice
          [ do   -- x where GROUP
@@ -45,9 +47,87 @@ pExpSP
          , do   return  (sp1, xx) ]
 
 
--- | Parse a Tetra Source language expression.
-pExpFront :: Parser (SP, Exp)
-pExpFront
+-- An application of a function to its arguments,
+-- or a plain expression with no arguments.
+pExpAppSP :: Parser (SP, Exp)
+pExpAppSP
+  = do  (spF, (xF, xsArg)) <- pExpAppsSP
+        case xsArg of
+                []     -> return (spF, xF)
+                _      -> return (spF, XDefix spF (xF : xsArg))
+
+  <?> "an expression or application"
+
+
+-- An application of a function to its arguments,
+-- or a plan expression with no arguments.
+pExpAppsSP :: Parser (SP, (Exp, [Exp]))
+pExpAppsSP
+ = do   (spF, xFun) <- pExpFrontSP
+        xsArg       <- pExpArgsSP pExpAtomSP
+        return (spF, (xFun, xsArg))
+
+
+-- A list of arguments.
+pExpArgsSP :: Parser (SP, Exp) -> Parser [Exp]
+pExpArgsSP pX
+ = P.choice
+ [ do   -- After an infix operator we allow the next expression
+        -- to be a compound expression rather than an atom.
+        --  This allows code like (f x $ λy. g x y) as in Haskell.
+        (UName txOp, sp) <- pBoundNameOpSP
+        xsMore           <- pExpArgsSP pExpFrontSP
+        return  (XInfixOp  sp (Text.unpack txOp) : xsMore)
+
+        -- Some arguments.
+ , do   (_, xsArg)       <- pExpArgsSpecSP pX
+        xsMore           <- pExpArgsSP     pExpAtomSP
+        return  (xsArg ++ xsMore)
+
+        -- No more arguments.
+ , do   return  []
+ ]
+
+
+-- Comp, Witness or Spec arguments.
+pExpArgsSpecSP :: Parser (SP, Exp) -> Parser (SP, [Exp])
+pExpArgsSpecSP pX
+ = P.choice
+        -- [Type]
+ [ do   sp      <- pTokSP KSquareBra
+        t       <- pType
+        pTok KSquareKet
+        return  (sp, [XType t])
+
+        -- [: Type0 Type0 ... :]
+ , do   sp      <- pTokSP KSquareColonBra
+        ts      <- fmap (fst . unzip) $ P.many1 pTypeAtomSP
+        pTok KSquareColonKet
+        return  (sp, [XType t | t <- ts])
+        
+        -- { Witness }
+ , do   sp      <- pTokSP KBraceBra
+        w       <- pWitness
+        pTok KBraceKet
+        return  (sp, [XWitness w])
+                
+        -- {: Witness0 Witness0 ... :}
+ , do   sp      <- pTokSP KBraceColonBra
+        ws      <- P.many1 pWitnessAtom
+        pTok KBraceColonKet
+        return  (sp, [XWitness w | w <- ws])
+               
+        -- Exp0
+ , do   (sp, x)  <- pX
+        return  (sp, [x])
+ ]
+ <?> "a type, witness or expression argument"
+
+
+-- | Parse a compound Source Tetra expression.
+--   The first token determines the form of the expression.
+pExpFrontSP :: Parser (SP, Exp)
+pExpFrontSP
  = P.choice
 
         -- Level-0 lambda abstractions
@@ -185,65 +265,16 @@ pExpFront
         x       <- pExp
         return  (sp, XAnnot sp $ XCast CastBox x)
 
+
         -- run Exp
  , do   sp      <- pTokSP KRun
         x       <- pExp
         return  (sp, XAnnot sp $ XCast CastRun x)
 
-        -- APP
- , do   pExpApp
+        -- ATOM
+ , do   pExpAtomSP
  ]
-
  <?> "an expression"
-
-
--- Applications.
-pExpApp :: Parser (SP, Exp)
-pExpApp
-  = do  xps     <- liftM concat $ P.many1 pArgSPs
-        let (sps, xs) = unzip xps
-        let (sp1 : _) = sps
-                
-        case xs of
-         [x]    -> return (sp1, x)
-         _      -> return (sp1, XDefix sp1 xs)
-
-  <?> "an expression or application"
-
-
--- Comp, Witness or Spec arguments.
-pArgSPs :: Parser [(SP, Exp)]
-pArgSPs 
- = P.choice
-        -- [Type]
- [ do   sp      <- pTokSP KSquareBra
-        t       <- pType
-        pTok KSquareKet
-        return  [(sp, XType t)]
-
-        -- [: Type0 Type0 ... :]
- , do   sp      <- pTokSP KSquareColonBra
-        ts      <- fmap (fst . unzip) $ P.many1 pTypeAtomSP
-        pTok KSquareColonKet
-        return  [(sp, XType t) | t <- ts]
-        
-        -- { Witness }
- , do   sp      <- pTokSP KBraceBra
-        w       <- pWitness
-        pTok KBraceKet
-        return  [(sp, XWitness w)]
-                
-        -- {: Witness0 Witness0 ... :}
- , do   sp      <- pTokSP KBraceColonBra
-        ws      <- P.many1 pWitnessAtom
-        pTok KBraceColonKet
-        return  [(sp, XWitness w) | w <- ws]
-               
-        -- Exp0
- , do   (sp, x)  <- pExpAtomSP
-        return  [(sp, x)]
- ]
- <?> "a type, witness or expression argument"
 
 
 -- | Parse a variable, constructor or parenthesised expression,
@@ -251,9 +282,11 @@ pArgSPs
 pExpAtomSP :: Parser (SP, Exp)
 pExpAtomSP
  = P.choice
- [      -- ( Exp2 )
-   do   sp      <- pTokSP KRoundBra
-        t       <- pExp
+ [ 
+
+        -- ( Exp2 )
+   do   pTok KRoundBra
+        (sp, t)  <- pExpWhereSP
         pTok KRoundKet
         return  (sp, t)
 
@@ -291,8 +324,8 @@ pExpAtomSP
         -- Debruijn indices
  , do   (u, sp)         <- pBoundIxSP
         return  (sp, XVar u)
- ]
 
+ ]
  <?> "a variable, constructor, or parenthesised type"
 
 

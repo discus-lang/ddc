@@ -19,7 +19,7 @@ y
 module Test where
 fac (x: Nat)
   = case x of {
-      0 
+      0
         -> 1;
       _
         -> [DEFIX| mul# x [DEFIX| fac [DEFIX| sub# x 1 ] ] ]
@@ -31,7 +31,7 @@ fac (x: Nat)
 module Test where
 fac (x: Nat)
   = case x of {
-      0 
+      0
         -> 1;
       _
         -> [DEFIX| x (INFIXOP "*") [DEFIX| fac [DEFIX| x (INFIXOP "-") 1 ] ] ]
@@ -61,4 +61,26 @@ foo (_: Unit)
     let w32 = 4660w32 in
     let r = "strung" in
     ()
+
+
+
+-- | Check we can use compound expressions mixed with infix ops.
+module Test where
+foo (_: Unit)
+  = [DEFIX| f (INFIXOP "+") case x of {
+      True
+        -> 1;
+      False
+        -> 27
+    } (INFIXOP "+") 5 ]
+
+
+
+-- Check that lambda binder scopes all the way to the right.
+module Test where
+foo (_: Unit)
+  = [DEFIX| f (INFIXOP "$") \x.
+    [DEFIX| g (INFIXOP "$") \y.
+    [DEFIX| T2 x y ] ] ]
+
 

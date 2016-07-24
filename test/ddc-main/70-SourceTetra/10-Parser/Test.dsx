@@ -66,3 +66,20 @@ foo (_ : Unit) : Unit
 
         ()
 ;;
+
+
+-- | Check we can use compound expressions mixed with infix ops.
+:parse..
+module Test where
+foo (_: Unit): Unit
+ = f + case x of { True -> 1; False -> 27 } + 5
+;;
+
+
+-- Check that lambda binder scopes all the way to the right.
+:parse..
+module Test where
+foo (_: Unit): Unit
+ = f $ λx. g $ λy. T2 x y
+;;
+
