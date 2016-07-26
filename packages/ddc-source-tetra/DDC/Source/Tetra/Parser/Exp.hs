@@ -539,7 +539,7 @@ pParamsSP
  , do   pTok    KRoundBra
         ps      <- P.choice
                 [  P.try $ do
-                        ps      <- P.many1 pPat
+                        ps      <- P.many1 pPatAtom
                         pTok (KOp ":")
                         t       <- pType
                         return  [ MValue p (Just t) | p <- ps ]
@@ -553,7 +553,7 @@ pParamsSP
 
 
  , do   -- Value parameter without a type annotation.
-        p       <- pPat
+        p       <- pPatAtom
         return  [MValue p Nothing]
  ]
  <?> "a function parameter"

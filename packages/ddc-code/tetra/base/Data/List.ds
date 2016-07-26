@@ -56,7 +56,7 @@ append (xx yy: List a): List a
         Nil             -> yy
         Cons x xs       -> Cons x (append xs yy)
 
-{- TODO: pattern matching desugaring fails, xss is not in scope 
+
 -- | Concatenate a list of lists.
 concat (xss0: List (List a)): List a
  = case xss0 of
@@ -66,23 +66,6 @@ concat (xss0: List (List a)): List a
         go Nil         Nil              = Nil
         go Nil         (Cons xs' xss')  = go xs' xss'
         go (Cons x xs) xss              = Cons x (go xs xss)
--}
-
--- | Concatenate a list of lists.
-concat (xss0: List (List a)): List a
- = case xss0 of
-        Nil             -> Nil
-        Cons xs xss1    -> go xs xss1
- where
-        go xs1 xss2
-         = case xs1 of
-                Nil
-                 -> case xss2 of
-                        Nil             -> Nil
-                        Cons xs' xss'   -> go xs' xss'
-
-                Cons x xs               -> Cons x (go xs xss2)
-
 
 
 -- Projections ----------------------------------------------------------------

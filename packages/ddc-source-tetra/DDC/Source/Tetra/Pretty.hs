@@ -330,12 +330,12 @@ instance PrettyLanguage l => Pretty (GClause l) where
   = ppr b <+> text ":" <+> ppr t
 
  ppr (SLet _ b ps [GExp x])
-  = ppr b       <+> hsep (map ppr ps) 
+  = ppr b       <+> hsep (map (pprPrec 10) ps) 
                 <>  nest 2 ( breakWhen (not $ isSimpleX x)
                            <> text "=" <+> align (ppr x))
 
  ppr (SLet _ b ps gxs)
-  = ppr b       <+> hsep (map ppr ps) 
+  = ppr b       <+> hsep (map (pprPrec 10) ps) 
                 <>  nest 2 (line <> vcat (map (pprGuardedExp "=") gxs))
 
 
@@ -369,6 +369,7 @@ instance PrettyLanguage l => Pretty (GPat l) where
         PVar  b         -> ppr b
 
         PData u []      -> ppr u
+
         PData u ps
          -> pprParen' (d > 1) 
          $  ppr u <+> sep (map (pprPrec 2) ps)
