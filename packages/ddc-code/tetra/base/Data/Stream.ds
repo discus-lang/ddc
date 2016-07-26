@@ -38,7 +38,7 @@ streamOfList (xx: List a): Stream (List a) a
 
 
 -- | Convert a stream to a list.
-listOfStream (MkStream f s0: Stream s a): List a
+listOfStream ((MkStream f s0): Stream s a): List a
  = case f s0 of
         Yield x s1      -> Cons x (listOfStream (MkStream f s1))
         Skip  s1        -> listOfStream (MkStream f s1)
@@ -66,7 +66,7 @@ arrayOfStream
 
 -- | Unstream all available elements into the given array.
 unstreamToArray
-        (MkStream f s0: Stream s a) (arr: Array r a) (ix: Nat)
+        ((MkStream f s0): Stream s a) (arr: Array r a) (ix: Nat)
         : S (Write r) Unit
  = case f s0 of
         Yield x s1
@@ -98,7 +98,7 @@ srepeat (x: a): Stream a a
 
 
 -- | Cons an element to the front of a stream.
-scons   (x: a) (MkStream stepA sA0: Stream s a)
+scons   (x: a) ((MkStream stepA sA0): Stream s a)
         : Stream (Tup2 s Bool) a
  = MkStream stepA2 (T2 sA0 True)
  where  
@@ -115,7 +115,7 @@ scons   (x: a) (MkStream stepA sA0: Stream s a)
 -- Maps -----------------------------------------------------------------------
 -- | Apply a function to every element of a stream.
 smap    (f: a -> b) 
-        (MkStream stepA sA0: Stream s a)
+        ((MkStream stepA sA0): Stream s a)
         : Stream s b
  = MkStream stepB sA0
  where
@@ -130,7 +130,7 @@ smap    (f: a -> b)
 -- | Like `smap`, but keep a running accumulator as we walk along the stream.
 smapacc (f: a -> b -> Tup2 a c) 
         (z: a) 
-        (MkStream fB sB0: Stream s b)
+        ((MkStream fB sB0): Stream s b)
         : Stream (Tup2 s a) c
  = MkStream stepC (T2 sB0 z)
  where
@@ -148,7 +148,7 @@ smapacc (f: a -> b -> Tup2 a c)
 -- | Fold all the elements from a stream.
 sfold   (f: a -> b -> a) 
         (acc: a) 
-        (MkStream step s0: Stream s b)
+        ((MkStream step s0): Stream s b)
         : a
  = sconsume f acc step s0
 
@@ -170,7 +170,7 @@ sany [s: Data] (ss: Stream s Bool): Bool
 -- Projections ----------------------------------------------------------------
 -- | Take the given number of elements from a stream.
 stake   (n: Nat)
-        (MkStream fA sA0: Stream s a)
+        ((MkStream fA sA0): Stream s a)
         : Stream (Tup2 s Nat) a
 
  = MkStream stepB (T2 sA0 0)
@@ -186,7 +186,7 @@ stake   (n: Nat)
 -- | Take elements from a strem while they match the given predicate.
 stakeWhile 
         (p: a -> Bool) 
-        (MkStream stepA sA0: Stream s a)
+        ((MkStream stepA sA0): Stream s a)
         : Stream s a
 
  = MkStream stepB sA0
@@ -205,7 +205,7 @@ stakeWhile
 --   TODO: the extra type annots should not be nessesary, 
 --         the checker is not unifying the meta variables.
 sfilter (p: a -> Bool)
-        (MkStream stepA sA0: Stream s a)
+        ((MkStream stepA sA0): Stream s a)
         : Stream s a
  = MkStream stepB sA0
  where

@@ -20,17 +20,17 @@ data Applicative (f: Data -> Data) where
          -> Applicative f
 
 dFunctorOfApplicative
-        (Applicative dFunctor _ _: Applicative f)
+        ((Applicative dFunctor _ _): Applicative f)
         : Functor f
  = dFunctor
 
 
-pure    (Applicative _ pure' _: Applicative f) 
+pure    ((Applicative _ pure' _): Applicative f) 
         (x: a): f a
  = pure' x
 
 
-ap      (Applicative _ _ ap':   Applicative f)
+ap      ((Applicative _ _ ap'):   Applicative f)
         (xfab: f (a -> b)) (xfa: f a): f b
  = ap' xfab xfa
 

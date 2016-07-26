@@ -23,7 +23,7 @@ data Map (k a: Data) where
         Tip : Map k a
 
 
-map_lookup (Ord compare: Ord k) (kx: k) (mp: Map k a): Maybe a
+map_lookup ((Ord compare): Ord k) (kx: k) (mp: Map k a): Maybe a
  = go kx mp
  where  
         go _ Tip 

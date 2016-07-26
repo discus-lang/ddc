@@ -33,7 +33,7 @@ map_insertWith
         kx x mp
 
 map_insertWithKey
-        (Ord compare: Ord k)
+        ((Ord compare): Ord k)
         (f: k -> a -> a -> a)
         (kx: k) (x: a) (mp: Map k a)
         : Map k a

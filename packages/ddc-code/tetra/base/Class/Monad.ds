@@ -21,17 +21,17 @@ dFunctorOfMonad (dMonad: Monad m): Functor m
 
 
 dApplicativeOfMonad
-        (Monad dApplicative _ _: Monad m)
+        ((Monad dApplicative _ _): Monad m)
         : Applicative m
         = dApplicative
 
 
-return  (Monad _ return' _: Monad m)
+return  ((Monad _ return' _): Monad m)
         (x: a): m a
  = return' x
 
 
-bind    (Monad _ _ bind': Monad m)
+bind    ((Monad _ _ bind'): Monad m)
         (ma: m a) (mf: a -> m b): m b
  = bind' ma mf
 

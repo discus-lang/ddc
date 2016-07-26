@@ -83,7 +83,7 @@ map_size (mp: Map k a): Size
 --
 -- The function will return the corresponding value as @('Just' value)@,
 -- or 'Nothing' if the key isn't in the map.
-map_lookup (Ord compare: Ord k) (kx: k) (mp: Map k a): Maybe a
+map_lookup ((Ord compare): Ord k) (kx: k) (mp: Map k a): Maybe a
  = go kx mp
  where  
         go _ Tip 
@@ -101,7 +101,7 @@ map_lookup (Ord compare: Ord k) (kx: k) (mp: Map k a): Maybe a
 -- > member 5 (fromList [(5,'a'), (3,'b')]) == True
 -- > member 1 (fromList [(5,'a'), (3,'b')]) == False
 --
-map_member (Ord compare: Ord k) (kx: k) (mp: Map k a): Bool
+map_member ((Ord compare): Ord k) (kx: k) (mp: Map k a): Bool
  = go kx mp
  where  
         go _ Tip 
@@ -125,7 +125,7 @@ map_member (Ord compare: Ord k) (kx: k) (mp: Map k a): Bool
 -- > insert 5 'x' empty                         == singleton 5 'x'
 --
 map_insert
-        (Ord compare: Ord k) 
+        ((Ord compare): Ord k) 
         (kx0: k) (x0: a) (mp: Map k a): Map k a
  = go kx0 x0 mp
  where
@@ -163,7 +163,7 @@ map_insertWith
 --   Note that the key passed to f is the same key passed to 'insertWithKey'.
 --
 map_insertWithKey
-        (Ord compare: Ord k)
+        ((Ord compare): Ord k)
         (f: k -> a -> a -> a)
         (kx: k) (x: a) (mp: Map k a)
         : Map k a
