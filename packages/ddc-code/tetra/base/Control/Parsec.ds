@@ -11,7 +11,7 @@ data Parser (t a: Data) where
 
 
 -- | Apply a parser to a list of input tokens.
-parse (Parser p: Parser t a) (ts: List t): List (Tup2 a (List t))
+parse ((Parser p): Parser t a) (ts: List t): List (Tup2 a (List t))
  = p ts
 
 
@@ -110,13 +110,12 @@ item: Parser t t
 
 -- | A parser that accepts a single token that satisfies the given predicate,
 --   producing the given value if it matches.
--- TODO: if rename ts' -> ts get error about shadowed binders.
 satisfies (pred: t -> Bool): Parser t t
  = Parser (λts
  . case ts of
         Nil            -> Nil
-        Cons t ts'
-         | pred t      -> Cons (T2 t ts') Nil
+        Cons t ts
+         | pred t      -> Cons (T2 t ts) Nil
          | otherwise   -> Nil)
 
 

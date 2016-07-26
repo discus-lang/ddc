@@ -13,6 +13,7 @@ import DDC.Base.Pretty
 import qualified DDC.Build.Transform.Resolve            as B
 
 import qualified DDC.Source.Tetra.Convert               as SConvert
+import qualified DDC.Source.Tetra.Transform.Freshen     as SFreshen
 import qualified DDC.Source.Tetra.Transform.Defix       as SDefix
 import qualified DDC.Source.Tetra.Transform.Expand      as SExpand
 import qualified DDC.Source.Tetra.Transform.Guards      as SGuards
@@ -56,6 +57,7 @@ data PipeText n (err :: * -> *) where
   PipeTextLoadSourceTetra
         :: !Sink        -- Sink for source tokens.
         -> !Sink        -- Sink for parsed source code.
+        -> !Sink        -- Sink for freshened code.
         -> !Sink        -- Sink for defixed source code.
         -> !Sink        -- Sink for expanded source code.
         -> !Sink        -- Sink for guard desugared source code.
@@ -110,7 +112,7 @@ pipeText !srcName !srcLine !str
 -------------------------------------------------------------------------------
 pipeText !srcName !srcLine !str
          (PipeTextLoadSourceTetra 
-                sinkTokens sinkParsed
+                sinkTokens sinkParsed sinkFresh
                 sinkDefix  sinkExpand sinkGuards sinkMatches sinkPrep
                 sinkCore        
                 sinkPreCheck sinkCheckerTrace 
@@ -134,10 +136,15 @@ pipeText !srcName !srcLine !str
                         goDesugar mm
 
         goDesugar mm
-         =      -- Resolve fixity of infix operators.
-           case SDefix.defix SDefix.defaultFixTable mm of
-                Left err  -> return [ErrorLoad err]
-                Right mm' -> goToCore mm'
+         = do   -- Freshen shadowed names and eliminate anonymous binders.
+                let mm_fresh    = SFreshen.evalState (Text.pack "f")
+                                $ SFreshen.freshenModule mm
+                pipeSink (renderIndent $ ppr mm_fresh) sinkFresh
+
+              -- Resolve fixity of infix operators.
+                case SDefix.defix SDefix.defaultFixTable mm_fresh of
+                 Left err  -> return [ErrorLoad err]
+                 Right mm' -> goToCore mm'
 
         goToCore mm_defixed
          = do   -- Dump defixed source code.

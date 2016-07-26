@@ -32,14 +32,15 @@ stageSourceTetraLoad config source store pipesTetra
  = PipeTextLoadSourceTetra
                     (dump config source "dump.0-source-01-tokens.txt")
                     (dump config source "dump.0-source-02-parsed.dst")
-                    (dump config source "dump.0-source-03-defix.dst")
-                    (dump config source "dump.0-source-04-expand.dst")
-                    (dump config source "dump.0-source-05-guards.dst")
-                    (dump config source "dump.0-source-06-matches.dst")
-                    (dump config source "dump.0-source-07-prep.dst")
-                    (dump config source "dump.0-source-08-core.dct")
-                    (dump config source "dump.0-source-09-precheck.dct")
-                    (dump config source "dump.0-source-10-trace.txt")
+                    (dump config source "dump.0-source-03-fresh.dst")
+                    (dump config source "dump.0-source-04-defix.dst")
+                    (dump config source "dump.0-source-05-expand.dst")
+                    (dump config source "dump.0-source-06-guards.dst")
+                    (dump config source "dump.0-source-07-matches.dst")
+                    (dump config source "dump.0-source-08-prep.dst")
+                    (dump config source "dump.0-source-09-core.dct")
+                    (dump config source "dump.0-source-10-precheck.dct")
+                    (dump config source "dump.0-source-11-trace.txt")
                     store
    ( PipeCoreOutput pprDefaultMode
                     (dump config source "dump.1-tetra-00-checked.dct")
