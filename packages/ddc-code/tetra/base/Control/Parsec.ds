@@ -84,7 +84,7 @@ parser_bind2
         (mkParserB: a -> Parser t b)
         : Parser t b
  =  Parser 
- $ λts. concat 
+ $  λts. concat 
  $  for (parse parserA ts) $ λres
  .  case res of
         T2 resultA ts2
@@ -110,15 +110,14 @@ item: Parser t t
 
 -- | A parser that accepts a single token that satisfies the given predicate,
 --   producing the given value if it matches.
-{- TODO: guard desugaring fails for this.
+-- TODO: if rename ts' -> ts get error about shadowed binders.
 satisfies (pred: t -> Bool): Parser t t
  = Parser (λts
  . case ts of
         Nil            -> Nil
-        Cons t ts
-         | pred t      -> Cons (T2 t ts) Nil
+        Cons t ts'
+         | pred t      -> Cons (T2 t ts') Nil
          | otherwise   -> Nil)
--}
 
 
 -- | Use the given function to check whether to accept the next token,

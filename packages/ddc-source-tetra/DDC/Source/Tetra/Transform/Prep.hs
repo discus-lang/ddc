@@ -189,7 +189,7 @@ desugarX rns xx
 
 
         -- Translate out varible patterns.
-        -- The core language deos not include them, so we bind the 
+        -- The core language does not include them, so we bind the 
         -- scrutinee with a new name and substitute that for the
         -- name bound by the variable patterns.
         XCase x0 alts
