@@ -76,14 +76,24 @@ instance PrettyLanguage l => Pretty (GXBindVarMT l) where
 
 -- Type -------------------------------------------------------------------------------------------
 instance PrettyLanguage l => Pretty (GType l) where
- ppr tt
+ pprPrec d tt
   = case tt of
-        TAnnot _ t      -> ppr t
+        TAnnot _ t      -> pprPrec d t
         TCon tc         -> ppr tc
         TVar bv         -> ppr bv
-        TAbs bv k t     -> text "λ" <> ppr bv <> text ":" <+> ppr k <> text "." <+> ppr t
-        TApp t1 t2      -> ppr t1 <+> ppr t2
+
+        TAbs bv k t
+         -> text "λ" <> ppr bv <> text ":" <+> ppr k <> text "." <+> ppr t
+
+        TApp (TApp (TCon TyConFun) t1) t2
+         -> pprParen' (d > 5)
+         $  pprPrec 6  t1 <+> text "->" <+> pprPrec 5 t2
+
+        TApp t1 t2      
+         -> pprParen' (d > 10)
+         $  pprPrec 10 t1 <+> pprPrec 11 t2
  
+
 
 instance PrettyLanguage l => Pretty (GTyCon l) where
  ppr tc
@@ -127,12 +137,12 @@ instance PrettyLanguage l => Pretty (Module l) where
 instance PrettyLanguage l => Pretty (Top l) where
  ppr (TopClause _ c) 
   =  ppr c
-  <> line
+  <> semi <> line
 
  ppr (TopData _ (DataDef name params ctors))
   = (text "data"
         <+> hsep ( ppr name
-                 : map (pprPrec 10) params)
+                 : map pprParam params)
         <+> text "where"
         <+> lbrace)
   <$> indent 8
@@ -143,12 +153,16 @@ instance PrettyLanguage l => Pretty (Top l) where
                                   ++ [ ppr           (dataCtorResultType ctor)]))
                 <> semi
                         | ctor       <- ctors ])
-  <> line
-  <> rbrace
+  <> line <> rbrace <> semi
   <> line
 
  ppr (TopType _ b t)
-  = text "type" <+> ppr b <+> text "=" <+> ppr t
+  =  text "type" <+> ppr b <+> text "=" <+> ppr t
+  <> semi
+  <> line
+
+pprParam (b, t)
+ = parens $ ppr b <> text ":" <+> ppr t
 
 
 -- Exp --------------------------------------------------------------------------------------------
@@ -156,7 +170,7 @@ instance PrettyLanguage l => Pretty (GExp l) where
  pprPrec d xx
   = {-# SCC "ppr[Exp]" #-}
     case xx of
-        XAnnot _ x      -> ppr x
+        XAnnot _ x      -> pprPrec d x
 
         XVar  u         -> ppr u
         XCon  dc        -> ppr dc

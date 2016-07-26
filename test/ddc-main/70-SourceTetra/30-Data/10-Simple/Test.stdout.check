@@ -1,27 +1,27 @@
 
 -- With explicit kind for parameters.
 module Test where
-data List (a,Data) where {
+data List (a: Data) where {
         Nil : List a;
         Cons : a -> List a -> List a;
-}
+};
 
 
 
 -- Maybe type.
 module Test where
-data Maybe (a,Data) where {
+data Maybe (a: Data) where {
         Nothing : Maybe a;
         Just : a -> Maybe a;
-}
+};
 
 
 
 -- Closure.
 module Test where
-data Clo (a,Data) (b,Data) where {
-        Clo : → a b -> Clo a b;
-}
+data Clo (a: Data) (b: Data) where {
+        Clo : (a -> b) -> Clo a b;
+};
 
 
 
@@ -29,7 +29,7 @@ data Clo (a,Data) (b,Data) where {
 module Test where
 data Void where {
         
-}
+};
 
 
 

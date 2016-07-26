@@ -5,66 +5,66 @@
 -- can do it without proper constraint solving.
 -- Convert source to core that includes holes, then fill holes at core level.
 module Test where
-data List (a,Data) where {
+data List (a: Data) where {
         Nil : List a;
         Cons : a -> List a -> List a;
-}
+};
 
-map [a: Data] [b: Data] (f: → a b) (xx: List a)
+map [a: Data] [b: Data] (f: a -> b) (xx: List a)
   = case xs of {
       Nil
         -> Nil;
       Cons x xs
         -> Cons (f x) (map f xs)
-    }
+    };
 
 
 
 -- Function application already has some explicit type arguments.
 module Test where
-data List (a,Data) where {
+data List (a: Data) where {
         Nil : List a;
         Cons : a -> List a -> List a;
-}
+};
 
-map [a: Data] [b: Data] (f: → a b) (xx: List a)
+map [a: Data] [b: Data] (f: a -> b) (xx: List a)
   = case xs of {
       Nil
         -> Nil;
       Cons x xs
         -> Cons [a] (f x) (map [a] f xs)
-    }
+    };
 
 
 
 -- If any type variables are not in scope in a top-level signature,
 -- then insert quantifiers for these.
 module Test where
-data List (a,Data) where {
+data List (a: Data) where {
         Nil : List a;
         Cons : a -> List a -> List a;
-}
+};
 
-map (f: → a b) (xx: List a)
+map (f: a -> b) (xx: List a)
   = case xs of {
       Nil
         -> Nil;
       Cons x xs
         -> Cons (f x) (map f xs)
-    }
+    };
 
 
 
 -- The expanded type for 'add' should be used when expanding the body
 -- of 'length'.
 module Test where
-data List (a,Data) where {
+data List (a: Data) where {
         Nil : List a;
         Cons : a -> List a -> List a;
-}
+};
 
 add (x: a) (y: a)
-  = add# [a] x y
+  = add# [a] x y;
 
 length (xx: List a)
   = case xx of {
@@ -72,17 +72,17 @@ length (xx: List a)
         -> 0;
       Cons x xs
         -> add 1 (length xs)
-    }
+    };
 
 
 
 -- Data type used in function signature has a region variable.
 -- During elaboration we add a region parameter to the front of flipit.
 module Test where
-data Blerk (r,Region) where {
+data Blerk (r: Region) where {
         Hot : Blerk r;
         Cold : Blerk r;
-}
+};
 
 flipit (x: Blerk r)
   = case x of {
@@ -90,5 +90,5 @@ flipit (x: Blerk r)
         -> Cold;
       Cold
         -> Hot
-    }
+    };
 

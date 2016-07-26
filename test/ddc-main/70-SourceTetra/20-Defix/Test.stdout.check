@@ -2,7 +2,7 @@
 
 -- Application of a symbolic operator.
 module Test where
-x  = add a b
+x  = add a b;
 
 
 
@@ -10,28 +10,28 @@ x  = add a b
 module Test where
 x 
   = f add
-        (apply (mul 3) 5)
+        (apply (mul 3) 5);
 
 
 
 -- Plus is left associative.
 module Test where
 x 
-  = add (add a b) c
+  = add (add a b) c;
 
 
 
 -- Multiplication has higher precedence than addition.
 module Test where
 x 
-  = add a (mul b c)
+  = add a (mul b c);
 
 
 
 -- Multiplication has higher precedence than addition.
 module Test where
 x 
-  = add (mul a b) c
+  = add (mul a b) c;
 
 
 
@@ -41,21 +41,21 @@ x
   = add
         (add
              (add a (mul b c))
-             (mul (mul d e) f)) g
+             (mul (mul d e) f)) g;
 
 
 
 -- Defix dollar token.
 module Test where
 x 
-  = apply f (apply g h)
+  = apply f (apply g h);
 
 
 
 -- Equality.
 module Test where
 x 
-  = eq (add 1 2) (add 2 3)
+  = eq (add 1 2) (add 2 3);
 
 
 
@@ -63,7 +63,7 @@ x
 module Test where
 x 
   = add
-        (add (f a) (g b)) (h c)
+        (add (f a) (g b)) (h c);
 
 
 
@@ -71,7 +71,7 @@ x
 module Test where
 x 
   = add (f a1 a2)
-        (mul (g b1 b2) (h c1 c2 c3))
+        (mul (g b1 b2) (h c1 c2 c3));
 
 
 
@@ -81,13 +81,13 @@ x
   = eq
         (add (f a1 a2)
              (mul (g b1 b2)
-                  (h (c1 c2) c3))) (f a3 a4)
+                  (h (c1 c2) c3))) (f a3 a4);
 
 
 
 -- Prefix negation.
 module Test where
-x  = neg a
+x  = neg a;
 
 
 
@@ -95,13 +95,13 @@ x  = neg a
 module Test where
 x 
   = f (neg x) y
-        (g (neg a) b)
+        (g (neg a) b);
 
 
 
 -- Regular infix subtraction (not prefix negation).
 module Test where
-x  = sub a b
+x  = sub a b;
 
 
 

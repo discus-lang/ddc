@@ -8,10 +8,10 @@ module Test where
 -- Parse module with some top-level things.
 -- Top level things are signaled by 'where'.
 module Test where
-x  = 5
+x  = 5;
 
 y 
-  = [DEFIX| add# x x ]
+  = [DEFIX| add# x x ];
 
 
 
@@ -23,7 +23,7 @@ fac (x: Nat)
         -> 1;
       _
         -> [DEFIX| mul# x [DEFIX| fac [DEFIX| sub# x 1 ] ] ]
-    }
+    };
 
 
 
@@ -35,7 +35,7 @@ fac (x: Nat)
         -> 1;
       _
         -> [DEFIX| x (INFIXOP "*") [DEFIX| fac [DEFIX| x (INFIXOP "-") 1 ] ] ]
-    }
+    };
 
 
 
@@ -60,27 +60,27 @@ foo (_: Unit)
     let s1234 = 1234s in
     let w32 = 4660w32 in
     let r = "strung" in
-    ()
+    ();
 
 
 
 -- | Check we can use compound expressions mixed with infix ops.
 module Test where
 foo (_: Unit)
-  = [DEFIX| f (INFIXOP "+") case x of {
-      True
-        -> 1;
-      False
-        -> 27
-    } (INFIXOP "+") 5 ]
+  = [DEFIX| f (INFIXOP "+") (case x of {
+       True
+         -> 1;
+       False
+         -> 27
+     }) (INFIXOP "+") 5 ];
 
 
 
 -- Check that lambda binder scopes all the way to the right.
 module Test where
 foo (_: Unit)
-  = [DEFIX| f (INFIXOP "$") \x.
-    [DEFIX| g (INFIXOP "$") \y.
-    [DEFIX| T2 x y ] ] ]
+  = [DEFIX| f (INFIXOP "$") (\x.
+     [DEFIX| g (INFIXOP "$") (\y.
+      [DEFIX| T2 x y ]) ]) ];
 
 
