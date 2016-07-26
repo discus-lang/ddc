@@ -171,9 +171,9 @@ mapM    (dMonad: Monad m)
          -> return dMonad Nil
 
         Cons x xs
-         -> bind   dMonad (f x) (\x'.
-            bind   dMonad (mapM dMonad f xs) (\xs'.
-            return dMonad (Cons x' xs')))
+         -> bind   dMonad (f x)              $ λx'.
+            bind   dMonad (mapM dMonad f xs) $ λxs'.
+            return dMonad (Cons x' xs')
 
 
 -- Zips -----------------------------------------------------------------------
