@@ -51,6 +51,11 @@ progress
 
 
 ---------------------------------------------------------------------------------------------------
+-- | Desguar a module.
+--
+--   We keep applying the prep transforms we have until they
+--   stop making progress.
+--
 desugarModule :: Module Source -> S (Module Source)
 desugarModule mm
  = do   (_, n, i) <- S.get
@@ -61,6 +66,7 @@ desugarModule mm
 
         if p' then desugarModule mm'
               else return mm'
+
 
 -- | Prepare a source module for conversion to core.
 desugarModule1 :: Module Source -> S (Module Source)
@@ -180,6 +186,43 @@ desugarX rns xx
                 desugarX rns
                  $ XLet (LLet (XBindVarMT b Nothing) x0)
                  $ x1
+
+
+        -- Translate out varible patterns.
+        -- The core language deos not include them, so we bind the 
+        -- scrutinee with a new name and substitute that for the
+        -- name bound by the variable patterns.
+        XCase x0 alts
+         -- Only do the rewrite if at least one expression has
+         -- such a variable pattern.
+         |  ns    <- [n | AAltCase (PVar n) _ <- alts]
+         ,  not $ null ns
+         -> do  
+                progress
+
+                -- Desugar the scrutinee.
+                x0'     <- desugarX rns x0
+
+                -- New variable to bind the scrutinee.
+                (b, u@(UName nScrut)) <- newVar "xScrut"
+
+                -- For each alternative, if it has a variable pattern
+                -- then substitute the new name for it in the alternative.
+                let desugarAlt (AAltCase (PVar (BName n1)) gxs)
+                     = do let rns' =  Map.insert n1 nScrut rns
+                          gxs'     <- mapM (desugarGX rns') gxs
+                          return   $  AAltCase PDefault gxs'
+
+                    desugarAlt (AAltCase p gxs)
+                     = do gxs'     <- mapM (desugarGX rns) gxs
+                          return   $  AAltCase p gxs'
+
+                alts'   <- mapM desugarAlt alts
+
+                -- The final expression.
+                return 
+                 $ XLet  (LLet (XBindVarMT b Nothing) x0')
+                 $ XCase (XVar u) alts'
 
 
         -- Eliminate (run (box x)) pairs.

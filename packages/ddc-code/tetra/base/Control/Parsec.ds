@@ -66,7 +66,6 @@ parser_return (x: a): Parser t a
 
 -- | Apply a parser, and if it succeeds pass the result to a function
 --   that produces a new parser.
---   TODO: use better desugaring.
 parser_bind
         (parserA:   Parser t a)
         (mkParserB: a -> Parser t b)
@@ -143,21 +142,11 @@ plus (parserA parserB: Parser t a): Parser t a
 -- | Combine two argument parsers, producing a new one that accepts
 --   strings parser by either of the argument parser, but not both.
 --   We prefer result produced by the first parser over the second.
-{- TODO: pattern desugaring fails for this
 alt (parserA parserB: Parser t a): Parser t a
  = Parser (λts
  . case parse parserA ts of
         Nil    -> parse parserB ts
         res    -> res)
--}
-
-
-alt (parserA parserB: Parser t a): Parser t a
- = Parser (λts
- . let res = parse parserA ts in
-   case res of
-        Nil    -> parse parserB ts
-        _      -> res)
 
 
 -- | Combine a list of argument parsers, producing a new one that

@@ -22,7 +22,8 @@ module DDC.Source.Tetra.Exp.Predicates
         , isXWitness
 
           -- * Patterns
-        , isPDefault)
+        , isPDefault
+        , isPVar)
 where
 import DDC.Source.Tetra.Exp.Generic
 import DDC.Type.Exp.Generic.Predicates
@@ -125,8 +126,14 @@ isXWitness xx
 
 
 -- Patterns -------------------------------------------------------------------
--- | Check whether an alternative is a `PDefault`.
+-- | Check whether a pattern is a `PDefault`.
 isPDefault :: GPat l -> Bool
 isPDefault PDefault     = True
 isPDefault _            = False
+
+
+-- | Check whether a pattern is a `PVar`.
+isPVar     :: GPat l -> Bool
+isPVar (PVar _)         = True
+isPVar _                = False
 
