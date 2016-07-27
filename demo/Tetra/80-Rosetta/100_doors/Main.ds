@@ -19,13 +19,11 @@ import Data.Text
 import Data.Function
 import Data.Numeric.Bool
 import System.IO.Console
-
 where
 
 data Door where
         Open    : Door
         Closed  : Door
-
 
 showDoor   Open   = "Open"
 showDoor   Closed = "Closed"

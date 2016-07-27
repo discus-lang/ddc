@@ -63,68 +63,63 @@ freshenClauseGroupBinds
         :: [Clause] -> ([Clause] -> S a) -> S a
 
 freshenClauseGroupBinds cls0 cont
- = go [] cls0
+ = do   envTopX <- S.gets stateEnvX
+        go envTopX [] cls0
  where  
-        go clsAcc [] 
+        go _envTopX clsAcc [] 
          = cont (reverse clsAcc)
 
         -- Signatures.
-        go clsAcc (cls@(SSig a b t) : clsRest)
-         = case b of
-            BNone
-             -> go (cls : clsAcc) clsRest
+        go envTopX clsAcc ((SSig a b t) : clsRest)
+         = do   -- Freshen the signature type.
+                t'      <- freshenType t
 
-            BAnon
-             -> bindBX b $ \b'
-             -> go (SSig a b' t : clsAcc) clsRest
+                -- Check if we've already renamed this variable in the
+                -- current clause group.
+                envX    <- S.gets stateEnvX
+                case b of
+                 BName name
+                  -- We've already renamed one of the clauses in the same
+                  -- group to a new name, so use that for matching ones.
+                  | Just name' <- Map.lookup name (envRename envX)
+                  -> do let b'   = BName name'
+                        let cls' = SSig a b' t'
+                        go envTopX (cls' : clsAcc) clsRest
 
-            BName name
-             -> do  t'   <- freshenType t
-                    envX <- S.gets stateEnvX
-                    case Map.lookup name (envRename envX) of
-                     -- We've already rewritten one of the clauses in the
-                     -- same group to a new name, so use that name for 
-                     -- matching ones.
-                     Just name' 
-                      -> do let b' = BName name'
-                            go (SSig a b' t' : clsAcc) clsRest
+                 -- Bind the variable into the current environment,
+                 -- renaming it if it was already visible in the context
+                 -- of the current clause group.
+                 _ 
+                  -> bindCtxBX envTopX b $ \b'
+                  -> do let cls' = SSig a b' t'
+                        go envTopX (cls' : clsAcc) clsRest
 
-                     -- We haven't freshened a clause with this name yet,
-                     -- so just bind it as normal.        
-                     Nothing
-                      -> bindBX b $ \b'
-                      -> go (SSig a b' t' : clsAcc) clsRest
 
         -- Binding Clauses.
-        go clsAcc (cls@(SLet a (XBindVarMT b mt) ps gxs)  : clsRest)
-         = case b of
-            BNone
-             -> go (cls : clsAcc) clsRest
+        go envTopX clsAcc ((SLet a (XBindVarMT b mt) ps gxs) : clsRest)
+         = do   -- Freshen the type on the binder.
+                mt'     <- traverse freshenType mt
+                
+                -- Check if we've already renamed this variable in the
+                -- current clause group.
+                envX    <- S.gets stateEnvX
+                case b of
+                 BName name
+                  -- We've already renamed one of the clauses in the same
+                  -- group to a new name, so use that for matching ones.
+                  |  Just name'  <- Map.lookup name (envRename envX)
+                  -> do let b'   = BName name'
+                        let cls' = SLet a (XBindVarMT b' mt') ps gxs
+                        go envTopX (cls' : clsAcc) clsRest
 
-            BAnon
-             -> do  mt'  <- traverse freshenType mt
-                    bindBX b $ \b'
-                     -> do  let cls' = SLet a (XBindVarMT b' mt') ps gxs
-                            go (cls' : clsAcc) clsRest
+                 -- Bind the variable into the current environment,
+                 -- renaming it if it was already visible in the context
+                 -- of the current clause group.
+                 _
+                  -> bindCtxBX envTopX b $ \b'
+                  -> do let cls' = SLet a (XBindVarMT b' mt') ps gxs
+                        go envTopX (cls' : clsAcc) clsRest
 
-            BName name
-             -> do  mt'  <- traverse freshenType mt
-                    envX <- S.gets stateEnvX
-                    case Map.lookup name (envRename envX) of
-                     -- We've already rewritten one of the clauses in the
-                     -- same group to a new name, so use that name for 
-                     -- matching ones.
-                     Just name'
-                      -> do let b'   = BName name'
-                            let cls' = SLet a (XBindVarMT b' mt') ps gxs
-                            go (cls' : clsAcc) clsRest
-
-                     -- We haven't freshened a clause with this name yet,
-                     -- so just bind it as normal.
-                     Nothing
-                      -> bindBX b $ \b'
-                      -> do let cls' = SLet a (XBindVarMT b' mt') ps gxs
-                            go (cls' : clsAcc) clsRest
 
 -- | Freshen a clause.
 freshenClauseBody :: Clause -> S Clause
@@ -395,12 +390,22 @@ bindBVX (XBindVarMT b mt) cont
          -> cont (XBindVarMT b' mt')
 
 
--- | Bind a new term variable.
+-- | Bind a new term variable,
+--   renaming it if it is already in the current environment.
 bindBX :: Bind -> (Bind -> S a) -> S a
-bindBX b@BNone cont
+bindBX b cont
+ = do   envX    <- S.gets stateEnvX
+        bindCtxBX envX b cont
+
+
+-- | Bind a new term variable,
+--   renaming it if it is already in the given environment.
+bindCtxBX :: Env -> Bind -> (Bind -> S a) -> S a
+
+bindCtxBX _envCtx b@BNone cont
  = cont b
 
-bindBX BAnon cont
+bindCtxBX _envCtx BAnon cont
  = do   -- Create a new name for anonymous binders.
         name    <- newName "x"
 
@@ -409,14 +414,14 @@ bindBX BAnon cont
                         , envStackLen = 1 + envStackLen envX })
          $ cont (BName name)
 
-bindBX (BName name) cont
- =  S.get >>= \state0 
- -> case Set.member name (envNames $ stateEnvX state0) of
+bindCtxBX envCtx (BName name) cont
+ = case Set.member name (envNames envCtx) of
         -- If the binder does not shadow an existing one
         -- then don't bother rewriting it.
-        False -> do
-                withModifiedEnvX
-                 (\envX -> envX { envNames = Set.insert name (envNames envX)})
+        False 
+         -> do  withModifiedEnvX
+                 (\envX -> envX
+                        {  envNames = Set.insert name (envNames envX)})
                  $ cont (BName name)
 
         -- The binder shadows an existing one, so rewrite it.
@@ -427,8 +432,8 @@ bindBX (BName name) cont
                 -- new name.
                 withModifiedEnvX
                  (\envX -> envX 
-                        { envNames  = Set.insert      name' (envNames  envX) 
-                        , envRename = Map.insert name name' (envRename envX)})
+                        {  envNames  = Set.insert      name' (envNames  envX) 
+                        ,  envRename = Map.insert name name' (envRename envX)})
                  $ cont (BName name')
 
 
