@@ -40,8 +40,10 @@ Library
         DDC.Source.Tetra.Transform.BoundX
         DDC.Source.Tetra.Transform.Defix
         DDC.Source.Tetra.Transform.Expand
+        DDC.Source.Tetra.Transform.Freshen
         DDC.Source.Tetra.Transform.Guards
         DDC.Source.Tetra.Transform.Matches
+        DDC.Source.Tetra.Transform.Prep
 
         DDC.Source.Tetra.Convert
         DDC.Source.Tetra.DataDef
@@ -76,6 +78,8 @@ Library
 
         DDC.Source.Tetra.Transform.Defix.Error
         DDC.Source.Tetra.Transform.Defix.FixTable
+
+        DDC.Source.Tetra.Transform.Freshen.State
 
   GHC-options:
         -Wall
