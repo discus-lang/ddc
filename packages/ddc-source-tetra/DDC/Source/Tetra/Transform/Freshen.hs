@@ -50,17 +50,89 @@ isTopClause tt
 -- | Freshen a clause group.
 freshenClauseGroup :: [Clause] -> S [Clause]
 freshenClauseGroup cls
- = do   -- TODO: rename shadowed binders
-        -- remembering that we could have multiple clauses that use
-        -- the same binder.
+ =  freshenClauseGroupBinds cls $ \cls'
+ -> mapM freshenClauseBody cls'
 
-        cls'    <- mapM freshenClause cls
-        return  cls'
 
+-- | Freshen the binders in a group of clauses.
+--
+--   In the group, we may have several clauses that define the same function.
+--   If we freshen the name of one of those clauses, we need to use the same
+--   name for the other associated ones.
+--
+--   All the new names for the clauses are in scope in the continuation,
+--   which can then be used to freshen the bodies.
+--
+freshenClauseGroupBinds 
+        :: [Clause] -> ([Clause] -> S a) -> S a
+
+freshenClauseGroupBinds cls0 cont
+ = go [] cls0
+ where  
+        go clsAcc [] 
+         = cont (reverse clsAcc)
+
+        -- Signatures.
+        go clsAcc (cls@(SSig a b t) : clsRest)
+         = case b of
+            BNone
+             -> go (cls : clsAcc) clsRest
+
+            BAnon
+             -> bindBX b $ \b'
+             -> go (SSig a b' t : clsAcc) clsRest
+
+            BName name
+             -> do  t'   <- freshenType t
+                    envX <- S.gets stateEnvX
+                    case Map.lookup name (envRename envX) of
+                     -- We've already rewritten one of the clauses in the
+                     -- same group to a new name, so use that name for 
+                     -- matching ones.
+                     Just name' 
+                      -> do let b' = BName name'
+                            go (SSig a b' t' : clsAcc) clsRest
+
+                     -- We haven't freshened a clause with this name yet,
+                     -- so just bind it as normal.        
+                     Nothing
+                      -> bindBX b $ \b'
+                      -> go (SSig a b' t' : clsAcc) clsRest
+
+        -- Binding Clauses.
+        go clsAcc (cls@(SLet a (XBindVarMT b mt) ps gxs)  : clsRest)
+         = case b of
+            BNone
+             -> go (cls : clsAcc) clsRest
+
+            BAnon
+             -> do  mt'  <- traverse freshenType mt
+                    bindBX b $ \b'
+                     -> do  let cls' = SLet a (XBindVarMT b' mt') ps gxs
+                            go (cls' : clsAcc) clsRest
+
+            BName name
+             -> do  mt'  <- traverse freshenType mt
+                    envX <- S.gets stateEnvX
+                    case Map.lookup name (envRename envX) of
+                     -- We've already rewritten one of the clauses in the
+                     -- same group to a new name, so use that name for 
+                     -- matching ones.
+                     Just name'
+                      -> do let b'   = BName name'
+                            let cls' = SLet a (XBindVarMT b' mt') ps gxs
+                            go (cls' : clsAcc) clsRest
+
+                     -- We haven't freshened a clause with this name yet,
+                     -- so just bind it as normal.
+                     Nothing
+                      -> bindBX b $ \b'
+                      -> do let cls' = SLet a (XBindVarMT b' mt') ps gxs
+                            go (cls' : clsAcc) clsRest
 
 -- | Freshen a clause.
-freshenClause :: Clause -> S Clause
-freshenClause cl
+freshenClauseBody :: Clause -> S Clause
+freshenClauseBody cl
  = case cl of
         SSig{}
          -> return cl
