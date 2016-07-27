@@ -31,10 +31,10 @@ freshenModule mm
 freshenTops :: [Top Source] -> S [Top Source]
 freshenTops tops
  = do
-        let (topCls, topRest)   = List.partition isTopClause tops
-        let (sps,    cls)       = unzip $ [(sp, cl) | TopClause sp cl <- topCls]
-        cls'    <- freshenClauseGroup cls
-        let topCls'             = zipWith TopClause sps cls'
+        let (topCls, topRest) = List.partition isTopClause tops
+        let (sps,    cls)     = unzip $ [(sp, cl) | TopClause sp cl <- topCls]
+        cls'        <- freshenClauseGroup cls
+        let topCls' =  zipWith TopClause sps cls'
         return  $ topRest ++ topCls'
 
 
@@ -67,7 +67,7 @@ freshenClause cl
 
         SLet a b ps gxs
          -> mapFreshBinds bindParam ps $ \ps'
-         -> SLet a b ps' <$> mapM freshenGX gxs
+         -> SLet a b ps' <$> mapM freshenGuardedExp gxs
 
 
 -------------------------------------------------------------------------------
@@ -77,90 +77,100 @@ bindParam pp cont
  = case pp of
         MType b mt
          -> bindBT b $ \b'
-         -> do  mt'     <- freshenMT mt
+         -> do  mt'     <- traverse freshenType mt
                 cont $ MType b' mt'
 
         MWitness b mt
          -> bindBX b $ \b'
-         -> do  mt'     <- freshenMT mt
+         -> do  mt'     <- traverse freshenType mt
                 cont $ MWitness b' mt'
 
         MValue p mt
          -> bindPat p $ \p'
-         -> do  mt'     <- freshenMT mt
+         -> do  mt'     <- traverse freshenType mt
                 cont $ MValue p' mt'
 
 
 -------------------------------------------------------------------------------
 -- | Freshen a guarded expression.
-freshenGX :: GuardedExp -> S GuardedExp 
-freshenGX gx
+freshenGuardedExp :: GuardedExp -> S GuardedExp 
+freshenGuardedExp gx
  = case gx of
         GGuard g gx'
-         -> freshBindG g $ \g'
-         -> GGuard g' <$> freshenGX gx'
+         -> bindGuard g $ \g'
+         -> GGuard g' <$> freshenGuardedExp gx'
 
         GExp x
-         -> do  x'      <- freshenX x
+         -> do  x'      <- freshenExp x
                 return  $  GExp x'
 
 
 -------------------------------------------------------------------------------
 -- | Freshen an expression.
-freshenX :: Exp -> S Exp
-freshenX xx
+freshenExp :: Exp -> S Exp
+freshenExp xx
  = case xx of
-        XAnnot a x      -> XAnnot a <$> freshenX x
+        XAnnot a x      -> XAnnot a <$> freshenExp x
         XVar u          -> XVar     <$> boundUX u
         XPrim{}         -> return xx
         XCon{}          -> return xx
 
         XLAM (XBindVarMT b mt) x
-         -> do  mt'     <- freshenMT mt
+         -> do  mt'     <- traverse freshenType mt
                 bindBT b $ \b'
-                 -> XLAM (XBindVarMT b' mt') <$> freshenX x
+                 -> XLAM (XBindVarMT b' mt') <$> freshenExp x
 
         XLam (XBindVarMT b mt) x
-         -> do  mt'     <- freshenMT mt
+         -> do  mt'     <- traverse freshenType mt
                 bindBX b $ \b'
-                 -> XLam (XBindVarMT b' mt') <$> freshenX x
+                 -> XLam (XBindVarMT b' mt') <$> freshenExp x
 
-        XApp x1 x2      -> XApp  <$> freshenX x1 <*> freshenX x2
+        XApp x1 x2      -> XApp  <$> freshenExp x1 <*> freshenExp x2
 
         XLet lts x      
-         -> bindLts lts $ \lts'
-         -> XLet lts' <$> freshenX x
+         -> bindLets lts $ \lts'
+         -> XLet lts' <$> freshenExp x
 
-        XCase x alts    -> XCase    <$> freshenX x <*> mapM freshenAC alts
-        XCast c x       -> XCast    <$> freshenC c <*> freshenX x
-        XType t         -> XType    <$> freshenT t
-        XWitness w      -> XWitness <$> freshenW w
-        XDefix a xs     -> XDefix a <$> mapM freshenX xs
+        XCase x alts    -> XCase    <$> freshenExp x 
+                                    <*> mapM freshenAltCase alts
+
+        XCast c x       -> XCast    <$> freshenCast c <*> freshenExp x
+
+        XType t         -> XType    <$> freshenType t
+
+        XWitness w      -> XWitness <$> freshenWitness w
+
+        XDefix a xs     -> XDefix a <$> mapM freshenExp xs
+
         XInfixOp{}      -> return xx
+
         XInfixVar{}     -> return xx
-        XMatch a as x   -> XMatch a <$> mapM freshenAM as <*> freshenX x
-        XWhere a x cl   -> XWhere a <$> freshenX x <*> freshenClauseGroup cl
+
+        XMatch a as x   -> XMatch a <$> mapM freshenAltMatch as 
+                                    <*> freshenExp x
+
+        XWhere a x cl   -> XWhere a <$> freshenExp x <*> freshenClauseGroup cl
 
         XLamPat a p mt x
-         -> do  mt'     <- freshenMT mt
+         -> do  mt'     <- traverse freshenType mt
                 bindPat p $ \p' 
-                 -> XLamPat a p' mt' <$> freshenX x
+                 -> XLamPat a p' mt' <$> freshenExp x
 
         XLamCase a as   
-         -> XLamCase a   <$> mapM freshenAC as
+         -> XLamCase a   <$> mapM freshenAltCase as
 
 
 -------------------------------------------------------------------------------
 -- | Freshen and bind guards.
-freshBindG   :: Guard -> (Guard -> S a) -> S a
-freshBindG gg cont
+bindGuard   :: Guard -> (Guard -> S a) -> S a
+bindGuard gg cont
  = case gg of
         GPat p x       
          -> bindPat p $ \p'
-         -> cont =<< (GPat p' <$> freshenX x)
+         -> cont =<< (GPat p' <$> freshenExp x)
 
         GPred x  
-         -> cont =<< (GPred   <$> freshenX x)
+         -> cont =<< (GPred   <$> freshenExp x)
 
         GDefault 
          -> cont GDefault
@@ -168,25 +178,25 @@ freshBindG gg cont
 
 -------------------------------------------------------------------------------
 -- | Freshen and bind let expressions.
-bindLts :: Lets -> (Lets -> S a) -> S a
-bindLts lts cont
+bindLets :: Lets -> (Lets -> S a) -> S a
+bindLets lts cont
  = case lts of
         LLet (XBindVarMT b mt) x
-         -> do  mt'     <- freshenMT mt        
+         -> do  mt'     <- traverse freshenType mt        
                 bindBX b $ \b' 
-                 -> cont =<< (LLet (XBindVarMT b' mt') <$> freshenX x)
+                 -> cont =<< (LLet (XBindVarMT b' mt') <$> freshenExp x)
 
         LRec bxs
          -> do  let (bs, xs)    = unzip bxs
                 mapFreshBinds bindBVX bs $ \bs'
-                 -> do  xs'     <- mapM freshenX xs
+                 -> do  xs'     <- mapM freshenExp xs
                         cont (LRec $ zip bs' xs')
 
         LPrivate brs mt bwts
-         -> do  mt'     <- freshenMT mt
+         -> do  mt'     <- traverse freshenType mt
                 mapFreshBinds bindBT brs $ \brs'
                  -> do  let (bws, ts)  = unzip bwts
-                        ts'     <- mapM freshenT ts
+                        ts'     <- mapM freshenType ts
                         mapFreshBinds bindBX bws $ \bws'
                          -> cont (LPrivate brs' mt' $ zip bws' ts')
 
@@ -196,66 +206,58 @@ bindLts lts cont
 
 -------------------------------------------------------------------------------
 -- | Freshen a case alternative.
-freshenAC :: AltCase -> S AltCase
-freshenAC (AAltCase p gxs)
+freshenAltCase :: AltCase -> S AltCase
+freshenAltCase (AAltCase p gxs)
  =  bindPat p $ \p'
- -> AAltCase p' <$> mapM freshenGX gxs
+ -> AAltCase p' <$> mapM freshenGuardedExp gxs
 
 
 -- | Freshen a match alternative
-freshenAM :: AltMatch -> S AltMatch
-freshenAM (AAltMatch gx)
- = AAltMatch <$> freshenGX gx
+freshenAltMatch :: AltMatch -> S AltMatch
+freshenAltMatch (AAltMatch gx)
+ = AAltMatch <$> freshenGuardedExp gx
 
 
 -------------------------------------------------------------------------------
 -- | Freshen a cast.
-freshenC :: Cast -> S Cast
-freshenC cc
+freshenCast :: Cast -> S Cast
+freshenCast cc
  = case cc of
-        CastWeakenEffect t -> CastWeakenEffect <$> freshenT t
-        CastPurify w       -> CastPurify       <$> freshenW w
+        CastWeakenEffect t -> CastWeakenEffect <$> freshenType t
+        CastPurify w       -> CastPurify       <$> freshenWitness w
         CastBox            -> return CastBox
         CastRun            -> return CastRun
 
 
 -------------------------------------------------------------------------------
 -- | Freshen a witness.
-freshenW :: Witness -> S Witness
-freshenW ww
+freshenWitness :: Witness -> S Witness
+freshenWitness ww
  = case ww of
-        WAnnot a w      -> WAnnot a <$> freshenW w
+        WAnnot a w      -> WAnnot a <$> freshenWitness w
         WVar  u         -> WVar  <$> boundUX u
         WCon {}         -> return ww
-        WApp  w1 w2     -> WApp  <$> freshenW w1 <*> freshenW w2
-        WType t         -> WType <$> freshenT t
+        WApp  w1 w2     -> WApp  <$> freshenWitness w1 <*> freshenWitness w2
+        WType t         -> WType <$> freshenType t
 
 
 -------------------------------------------------------------------------------
 -- | Freshen a type.
-freshenT :: Type -> S Type
-freshenT tt
+freshenType :: Type -> S Type
+freshenType tt
  = case tt of
-        TAnnot a t      -> TAnnot a <$> freshenT t
+        TAnnot a t      -> TAnnot a <$> freshenType t
 
         TCon{}          -> return tt
 
         TVar u          -> TVar <$> boundUT u
 
         TAbs b t1 t2
-         -> do  t1'     <- freshenT t1
+         -> do  t1'     <- freshenType t1
                 bindBT b $ \b'
-                 -> TAbs b' t1' <$> freshenT t2
+                 -> TAbs b' t1' <$> freshenType t2
 
-        TApp t1 t2      -> TApp <$> freshenT t1 <*> freshenT t2
-
-
--- | Freshen a Maybe type.
-freshenMT :: Maybe Type -> S (Maybe Type)
-freshenMT mt
- = case mt of
-        Nothing -> return Nothing
-        Just t  -> Just <$> freshenT t
+        TApp t1 t2      -> TApp <$> freshenType t1 <*> freshenType t2
 
 
 -------------------------------------------------------------------------------
@@ -298,29 +300,29 @@ bindBT BAnon cont
 bindBT (BName n) cont
  =  S.get >>= \state0 
  -> case Set.member n (envNames $ stateEnvT state0) of
-        -- If the binder does not shadow an existing one
-        -- then don't bother rewriting it.
-        False 
-         ->     withModifiedEnvT
-                 (\envT -> envT { envNames = Set.insert n (envNames envT) })
-                 $ cont (BName n)
+     -- If the binder does not shadow an existing one
+     -- then don't bother rewriting it.
+     False 
+      ->     withModifiedEnvT
+              (\envT -> envT { envNames = Set.insert n (envNames envT) })
+              $ cont (BName n)
 
-        -- The binder shadows an existing one, so rewrite it.
-        True 
-         -> do  name    <- newName "t"
+     -- The binder shadows an existing one, so rewrite it.
+     True 
+      -> do name    <- newName "t"
 
-                -- Run the continuation in the environment extended with the new name.
-                withModifiedEnvT
-                 (\envT -> envT { envNames  = Set.insert   name (envNames  envT) 
-                                , envRename = Map.insert n name (envRename envT) })
-                 $ cont (BName name)
+            -- Run the continuation in the extended environment.
+            withModifiedEnvT
+             (\envT -> envT { envNames  = Set.insert   name (envNames  envT) 
+                            , envRename = Map.insert n name (envRename envT)})
+             $ cont (BName name)
 
 
 -------------------------------------------------------------------------------
 -- | Bind a term variable with its attached type.
 bindBVX :: BindVarMT -> (BindVarMT -> S a) -> S a
 bindBVX (XBindVarMT b mt) cont
- = do   mt'     <- freshenMT mt
+ = do   mt'     <- traverse freshenType mt
         bindBX b $ \b'
          -> cont (XBindVarMT b' mt')
 
@@ -346,7 +348,7 @@ bindBX (BName name) cont
         -- then don't bother rewriting it.
         False -> do
                 withModifiedEnvX
-                 (\envX -> envX { envNames = Set.insert name (envNames envX) })
+                 (\envX -> envX { envNames = Set.insert name (envNames envX)})
                  $ cont (BName name)
 
         -- The binder shadows an existing one, so rewrite it.
@@ -357,8 +359,8 @@ bindBX (BName name) cont
                 -- new name.
                 withModifiedEnvX
                  (\envX -> envX 
-                        { envNames  = Set.insert      name' (envNames envX) 
-                        , envRename = Map.insert name name' (envRename envX) })
+                        { envNames  = Set.insert      name' (envNames  envX) 
+                        , envRename = Map.insert name name' (envRename envX)})
                  $ cont (BName name')
 
 
