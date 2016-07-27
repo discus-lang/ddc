@@ -221,9 +221,10 @@ Fragment violation when converting Tetra module to Salt module.
 -- Error: partial application if user defined data constructors is not supported.
 Fragment violation when converting Tetra module to Salt module.
   Cannot convert expression.
-    Cannot convert partially applied data constructor.
+    Cannot convert function abstraction in this context.
+    The program must be lambda-lifted before conversion.
   
-    with: Thing x0
+    with: λ(thing$Lift_0TtxEr1xLv thing$Lift_1TtxEr1xLv: Nat#). Thing thing$Lift_0TtxEr1xLv thing$Lift_1TtxEr1xLv
 
 
 -- Error: partial application of primitive operators is not supported.

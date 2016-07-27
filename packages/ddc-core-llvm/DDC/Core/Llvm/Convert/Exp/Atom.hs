@@ -147,30 +147,25 @@ mconvAtom ctx xx
 --   to avoid name clashes as the the variables in a single LLVM function
 --   are all bound at the same level.
 --
-bindLocalS :: Context -> String -> A.Type -> ConvertM (Context, Var)
-bindLocalS ctx str t
+bindLocalV :: Context -> A.Name -> A.Type -> ConvertM (Context, Var)
+
+bindLocalV ctx name@(A.NameVar str) t
  = do   t'       <- convertType (contextPlatform ctx) (contextKindEnv ctx) t
         let str'  = A.sanitizeName str
         v        <- newUniqueNamedVar str' t'
-        let name  = A.NameVar str
         let ctx'  = extendTypeEnv (C.BName name t) ctx
         let ctx'' = ctx' { contextNames = Map.insert name v (contextNames ctx') }
         return (ctx'', v)
 
+bindLocalV ctx name@(A.NameExt (A.NameVar str1) _str2) t
+ = do   t'       <- convertType (contextPlatform ctx) (contextKindEnv ctx) t
+        let str'  = A.sanitizeName str1
+        v        <- newUniqueNamedVar str' t'
+        let ctx'  = extendTypeEnv (C.BName name t) ctx
+        let ctx'' = ctx' { contextNames = Map.insert name v (contextNames ctx') }
+        return (ctx'', v)
 
--- | Add a variable and its type to the context,
---   producing the corresponding LLVM variable name.
----
---   We need to sanitize the incoming name because it may include symbols
---   that are not valid for LLVM names. We also need to uniquify them, 
---   to avoid name clashes as the the variables in a single LLVM function
---   are all bound at the same level.
---
-bindLocalV :: Context -> A.Name -> C.Type A.Name -> ConvertM (Context, Var)
-bindLocalV ctx (A.NameVar str) t
- = do   bindLocalS ctx str t
-
-bindLocalV _ _ _
+bindLocalV _ _ _ 
  = error "ddc-core-llvm.bindLocalV: not a regular name."
 
 

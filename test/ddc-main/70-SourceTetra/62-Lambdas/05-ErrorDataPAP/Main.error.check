@@ -1,5 +1,6 @@
 Fragment violation when converting Tetra module to Salt module.
   Cannot convert expression.
-    Cannot convert partially applied data constructor.
+    Cannot convert function abstraction in this context.
+    The program must be lambda-lifted before conversion.
   
-    with: Derp x3
+    with: λ(main$Lift_0TtxEr2xLvxSbxEl main$Lift_1TtxEr2xLvxSbxEl: Nat#). Derp main$Lift_0TtxEr2xLvxSbxEl main$Lift_1TtxEr2xLvxSbxEl

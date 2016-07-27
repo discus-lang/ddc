@@ -9,6 +9,7 @@ import DDC.Core.Module
 import DDC.Core.Exp.Annot.Context
 import DDC.Core.Exp.Annot.Ctx
 import DDC.Core.Exp.Annot
+import DDC.Type.Transform.SubstituteT
 import DDC.Type.Collect
 import DDC.Base.Pretty
 import DDC.Base.Name
@@ -18,6 +19,7 @@ import Data.Set                         (Set)
 import Data.Map                         (Map)
 import qualified DDC.Core.Check         as Check
 import qualified DDC.Type.Env           as Env
+import qualified DDC.Type.DataDef       as DataDef
 import qualified Data.Set               as Set
 import qualified Data.Map               as Map
 import qualified DDC.Core.Env.EnvX      as EnvX
@@ -192,6 +194,66 @@ lambdasX p c xx
                          , Result True (bxs ++ [(bLifted, xLifted)]))
 
                 else (xx', r)
+
+
+        -- Eta-expand partially applied data contructors.
+        XApp a x1 x2
+         | (xCon@(XCon _a (DaConBound nCon)), xsArg)   <- takeXApps1 x1 x2
+         -> let ctx     = contextCtx c
+                envX    = topOfCtx ctx
+                defs    = EnvX.envxDataDefs envX
+
+            in  case Map.lookup nCon (DataDef.dataDefsCtors defs) of
+                 Just dataCtor
+                  -- We check for partial application on the outside of a
+                  -- set of nested applications.
+                  |  case ctx of
+                        CtxAppLeft{}    -> False
+                        _               -> True
+
+                  -- We're expecting an argument for each of the type and term parameters.
+                  ,  arityT <- length $ DataDef.dataCtorTypeParams dataCtor
+                  ,  arityX <- length $ DataDef.dataCtorFieldTypes dataCtor
+                  ,  arity  <- arityT + arityX
+
+                  -- See if we have the correct number of arguments.
+                  ,  args  <- length xsArg
+                  ,  arity /= args
+                  -> let 
+                         -- TODO: needing to generate names like this is ugly.
+                         -- Should have just used a state monad.
+                         bsT       = [ BName (nameOfContext ("Lift_" ++ show i) c) (typeOfBind b)
+                                        | i <- [0 .. arityT - 1]
+                                        | b <- DataDef.dataCtorTypeParams dataCtor ]
+
+                         Just usT  = sequence $ map takeSubstBoundOfBind bsT
+
+                         sub       = zip (DataDef.dataCtorTypeParams dataCtor) 
+                                         (map TVar usT)
+
+                         bsX       = [ BName (nameOfContext ("Lift_" ++ show i) c) 
+                                             (substituteTs sub t)
+                                        | i <- [0 .. arityX - 1]
+                                        | t <- DataDef.dataCtorFieldTypes dataCtor]
+
+                         Just usX     = sequence $ map takeSubstBoundOfBind bsX
+                         downArg xArg = enterAppRight c a x1 xArg (lambdasX p)
+                         (xsArg', rs) = unzip $ map downArg xsArg
+
+                     in ( xApps a
+                                ( xLAMs a bsT $ xLams a bsX 
+                                        $  xApps a xCon
+                                        $  [ XType a (TVar u) | u <- usT]
+                                        ++ [ XVar a u         | u <- usX])
+                                xsArg'
+
+                        , mconcat rs)
+
+                 _
+                  -> let (x1', r1) = enterAppLeft  c a x1 x2 (lambdasX p)
+                         (x2', r2) = enterAppRight c a x1 x2 (lambdasX p)
+                     in  ( XApp a x1' x2'
+                         , mappend r1 r2)
 
 
         -- Boilerplate.
@@ -550,7 +612,21 @@ liftLambda p c fusFree a lams xBody
         , bLifted, xLifted)
 
 
+nameOfContext :: CompoundName n => String -> Context a n -> n
+nameOfContext prefix c
+ = let  ctx             = contextCtx c
+
+        -- Name of the enclosing top-level binding.
+        Just nTop       = takeTopNameOfCtx ctx
+
+        -- Name of the new lifted binding.
+   in   extendName nTop (prefix ++ encodeCtx ctx)
+
+
 ---------------------------------------------------------------------------------------------------
+-- TODO: doing this separate beautify pass was a mistake.
+-- Just use a state monad to generate fresh names.
+
 -- | Beautify the names of lifted lamdba abstractions.
 --   The lifter itself names new abstractions after the context they come from.
 --   This is an easy way of generating unique names, but the names are too

@@ -136,11 +136,13 @@ convertSuperXT    ctx0 xx0 tt0
          -- lambda in Salt which binds the region the object is in.
          | isDataKind $ typeOfBind bParamX
 
-         , BName (E.NameVar strX) _ <- bParamX
+         , BName nX _   <- bParamX
+         , Just strX    <- takeNameStr nX
          , strX'        <-  strX ++ "$r"
          , bParamX'     <-  BName (A.NameVar strX') kRegion
 
-         , BName (E.NameVar strT) _ <- bParamT
+         , BName nT _   <- bParamT
+         , Just strT    <- takeNameStr nT
          , strT'        <-  strT ++ "$r"
          , bParamT'     <-  BName (A.NameVar strT') kRegion
 
@@ -194,6 +196,13 @@ convertSuperXT    ctx0 xx0 tt0
                 tBody'  <- convertDataT ctxT tt
                 return  ( xBody', tBody' )
 
+
+takeNameStr (E.NameVar str)
+                = Just $ str
+
+takeNameStr (E.NameExt (E.NameVar str1) str2)
+                = Just $ str1 ++ "$" ++ str2
+takeNameStr _   = Nothing
 
 -- Note: Binding top-level supers.
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

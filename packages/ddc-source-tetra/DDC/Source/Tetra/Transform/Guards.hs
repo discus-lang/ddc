@@ -17,32 +17,6 @@ import qualified Data.Text              as Text
 
 
 -------------------------------------------------------------------------------
--- | Source position.
-type SP = SP.SourcePos
-
-
--- | State holding a variable name prefix and counter to 
---   create fresh variable names.
-type S  = S.State (Text, Int)
-
-
--- | Evaluate a desguaring computation,
---   using the given prefix for freshly introduced variables.
-evalState :: Text -> S a -> a
-evalState n c
- = S.evalState c (n, 0) 
-
-
--- | Allocate a new named variable, yielding its associated bind and bound.
-newVar :: Text -> S (Bind, Bound)
-newVar pre
- = do   (n, i)   <- S.get
-        let name = pre <> "$" <> n <> Text.pack (show i)
-        S.put (n, i + 1)
-        return  (BName name, UName name)
-
-
--------------------------------------------------------------------------------
 -- | Desugar guards and nested patterns to match expressions.
 desugarModule :: Module Source -> S (Module Source)
 desugarModule mm
@@ -391,4 +365,31 @@ cleanGX gx
         GGuard GDefault gx'     -> cleanGX gx'
         GGuard g        gx'     -> GGuard g $ cleanGX gx'
         GExp   x                -> GExp x
+
+
+-------------------------------------------------------------------------------
+-- | Source position.
+type SP = SP.SourcePos
+
+
+-- | State holding a variable name prefix and counter to 
+--   create fresh variable names.
+type S  = S.State (Text, Int)
+
+
+-- | Evaluate a desguaring computation,
+--   using the given prefix for freshly introduced variables.
+evalState :: Text -> S a -> a
+evalState n c
+ = S.evalState c (n, 0) 
+
+
+-- | Allocate a new named variable, yielding its associated bind and bound.
+newVar :: Text -> S (Bind, Bound)
+newVar pre
+ = do   (n, i)   <- S.get
+        let name = pre <> "$" <> n <> Text.pack (show i)
+        S.put (n, i + 1)
+        return  (BName name, UName name)
+
 
