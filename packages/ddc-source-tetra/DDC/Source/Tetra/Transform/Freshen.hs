@@ -33,7 +33,7 @@ freshenTops tops
  = do
         let (topCls, topRest)   = List.partition isTopClause tops
         let (sps,    cls)       = unzip $ [(sp, cl) | TopClause sp cl <- topCls]
-        cls'    <- freshenClGroup cls
+        cls'    <- freshenClauseGroup cls
         let topCls'             = zipWith TopClause sps cls'
         return  $ topRest ++ topCls'
 
@@ -48,24 +48,47 @@ isTopClause tt
 
 -------------------------------------------------------------------------------
 -- | Freshen a clause group.
-freshenClGroup :: [Clause] -> S [Clause]
-freshenClGroup cls
+freshenClauseGroup :: [Clause] -> S [Clause]
+freshenClauseGroup cls
  = do   -- TODO: rename shadowed binders
+        -- remembering that we could have multiple clauses that use
+        -- the same binder.
 
-        cls'    <- mapM freshenCl cls
+        cls'    <- mapM freshenClause cls
         return  cls'
 
 
 -- | Freshen a clause.
-freshenCl :: Clause -> S Clause
-freshenCl cl
+freshenClause :: Clause -> S Clause
+freshenClause cl
  = case cl of
         SSig{}
          -> return cl
 
-        -- TODO: bind params
         SLet a b ps gxs
-         -> SLet a b ps <$> mapM freshenGX gxs
+         -> mapFreshBinds bindParam ps $ \ps'
+         -> SLet a b ps' <$> mapM freshenGX gxs
+
+
+-------------------------------------------------------------------------------
+-- | Freshen and bind a function parameter.
+bindParam :: Param -> (Param -> S a) -> S a
+bindParam pp cont
+ = case pp of
+        MType b mt
+         -> bindBT b $ \b'
+         -> do  mt'     <- freshenMT mt
+                cont $ MType b' mt'
+
+        MWitness b mt
+         -> bindBX b $ \b'
+         -> do  mt'     <- freshenMT mt
+                cont $ MWitness b' mt'
+
+        MValue p mt
+         -> bindPat p $ \p'
+         -> do  mt'     <- freshenMT mt
+                cont $ MValue p' mt'
 
 
 -------------------------------------------------------------------------------
@@ -74,9 +97,8 @@ freshenGX :: GuardedExp -> S GuardedExp
 freshenGX gx
  = case gx of
         GGuard g gx'
-         -> do  -- TODO: decend into g
-                gx''    <- freshenGX gx'
-                return  $  GGuard g gx''
+         -> freshBindG g $ \g'
+         -> GGuard g' <$> freshenGX gx'
 
         GExp x
          -> do  x'      <- freshenX x
@@ -84,6 +106,7 @@ freshenGX gx
 
 
 -------------------------------------------------------------------------------
+-- | Freshen an expression.
 freshenX :: Exp -> S Exp
 freshenX xx
  = case xx of
@@ -93,17 +116,19 @@ freshenX xx
         XCon{}          -> return xx
 
         XLAM (XBindVarMT b mt) x
-         -> bindBT b $ \b'
-         -> XLAM <$> (XBindVarMT b' <$> freshenMT mt) <*> freshenX x
+         -> do  mt'     <- freshenMT mt
+                bindBT b $ \b'
+                 -> XLAM (XBindVarMT b' mt') <$> freshenX x
 
         XLam (XBindVarMT b mt) x
-         -> bindBX b $ \b'
-         -> XLam <$> (XBindVarMT b' <$> freshenMT mt) <*> freshenX x
+         -> do  mt'     <- freshenMT mt
+                bindBX b $ \b'
+                 -> XLam (XBindVarMT b' mt') <$> freshenX x
 
         XApp x1 x2      -> XApp  <$> freshenX x1 <*> freshenX x2
 
         XLet lts x      
-         -> freshBindLts lts $ \lts'
+         -> bindLts lts $ \lts'
          -> XLet lts' <$> freshenX x
 
         XCase x alts    -> XCase    <$> freshenX x <*> mapM freshenAC alts
@@ -114,29 +139,66 @@ freshenX xx
         XInfixOp{}      -> return xx
         XInfixVar{}     -> return xx
         XMatch a as x   -> XMatch a <$> mapM freshenAM as <*> freshenX x
-        XWhere a x cl   -> XWhere a <$> freshenX x <*> freshenClGroup cl
+        XWhere a x cl   -> XWhere a <$> freshenX x <*> freshenClauseGroup cl
 
         XLamPat a p mt x
-         -> bindP p $ \p' 
-         -> XLamPat a p' <$> freshenMT mt <*> freshenX x
+         -> do  mt'     <- freshenMT mt
+                bindPat p $ \p' 
+                 -> XLamPat a p' mt' <$> freshenX x
 
         XLamCase a as   
          -> XLamCase a   <$> mapM freshenAC as
 
 
 -------------------------------------------------------------------------------
+-- | Freshen and bind guards.
+freshBindG   :: Guard -> (Guard -> S a) -> S a
+freshBindG gg cont
+ = case gg of
+        GPat p x       
+         -> bindPat p $ \p'
+         -> cont =<< (GPat p' <$> freshenX x)
+
+        GPred x  
+         -> cont =<< (GPred   <$> freshenX x)
+
+        GDefault 
+         -> cont GDefault
+
+
+-------------------------------------------------------------------------------
 -- | Freshen and bind let expressions.
-freshBindLts :: Lets -> (Lets -> S a) -> S a
-freshBindLts lts cont
- = cont lts
---  TODO: finish this
+bindLts :: Lets -> (Lets -> S a) -> S a
+bindLts lts cont
+ = case lts of
+        LLet (XBindVarMT b mt) x
+         -> do  mt'     <- freshenMT mt        
+                bindBX b $ \b' 
+                 -> cont =<< (LLet (XBindVarMT b' mt') <$> freshenX x)
+
+        LRec bxs
+         -> do  let (bs, xs)    = unzip bxs
+                mapFreshBinds bindBVX bs $ \bs'
+                 -> do  xs'     <- mapM freshenX xs
+                        cont (LRec $ zip bs' xs')
+
+        LPrivate brs mt bwts
+         -> do  mt'     <- freshenMT mt
+                mapFreshBinds bindBT brs $ \brs'
+                 -> do  let (bws, ts)  = unzip bwts
+                        ts'     <- mapM freshenT ts
+                        mapFreshBinds bindBX bws $ \bws'
+                         -> cont (LPrivate brs' mt' $ zip bws' ts')
+
+        LGroup cls
+         -> cont =<< (LGroup <$> freshenClauseGroup cls)
 
 
 -------------------------------------------------------------------------------
 -- | Freshen a case alternative.
 freshenAC :: AltCase -> S AltCase
 freshenAC (AAltCase p gxs)
- =  bindP p $ \p'
+ =  bindPat p $ \p'
  -> AAltCase p' <$> mapM freshenGX gxs
 
 
@@ -180,7 +242,6 @@ freshenT tt
 
         TVar u          -> TVar <$> boundUT u
 
-        -- Remember that t1 is outside the scope of 'b'.
         TAbs b t1 t2
          -> do  t1'     <- freshenT t1
                 bindBT b $ \b'
@@ -199,34 +260,24 @@ freshenMT mt
 
 -------------------------------------------------------------------------------
 -- | Bind a pattern.
-bindP  :: Pat -> (Pat -> S a) -> S a
-bindP pp cont
+bindPat  :: Pat -> (Pat -> S a) -> S a
+bindPat pp cont
  = case pp of
         PDefault
          -> cont pp
 
         PAt  b p
-         -> bindBX b $ \b'
-         -> bindP  p $ \p'
+         -> bindBX  b $ \b'
+         -> bindPat p $ \p'
          -> cont (PAt b' p')
 
         PVar b
-         -> bindBX b  $ \b'  -> cont (PVar b')
+         -> bindBX b  $ \b'
+         -> cont (PVar b')
 
         PData dc ps     
-         -> bindPs ps $ \ps' -> cont (PData dc ps')
-
-
--- | Bind several patterns in sequence.
-bindPs :: [Pat] -> ([Pat] -> S a) -> S a
-bindPs ps0 cont
- = go [] ps0
- where
-        go psAcc []
-         = cont (reverse psAcc)
-
-        go psAcc (p : ps)
-         = bindP p $ \p' -> go (p' : psAcc) ps
+         -> mapFreshBinds bindPat ps $ \ps' 
+         -> cont (PData dc ps')
 
 
 -------------------------------------------------------------------------------
@@ -266,6 +317,14 @@ bindBT (BName n) cont
 
 
 -------------------------------------------------------------------------------
+-- | Bind a term variable with its attached type.
+bindBVX :: BindVarMT -> (BindVarMT -> S a) -> S a
+bindBVX (XBindVarMT b mt) cont
+ = do   mt'     <- freshenMT mt
+        bindBX b $ \b'
+         -> cont (XBindVarMT b' mt')
+
+
 -- | Bind a new term variable.
 bindBX :: Bind -> (Bind -> S a) -> S a
 bindBX b@BNone cont
@@ -453,4 +512,20 @@ withModifiedEnvX modEnvX cont
         state'  <- S.get
         S.put state' { stateEnvX = envX }
         return result
+
+
+-- | Given a function that binds and freshens a single thing,
+--   binds and freshens a list of things in sequence.
+mapFreshBinds 
+        :: (a  -> ( a  -> S b) -> S b)
+        -> [a] -> ([a] -> S b) -> S b
+
+mapFreshBinds freshBind as0 cont
+ = go [] as0
+ where
+        go asAcc []
+         = cont (reverse asAcc)
+
+        go asAcc (a : as)
+         = freshBind a $ \a' -> go (a' : asAcc) as
 
