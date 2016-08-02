@@ -7,7 +7,7 @@ import Data.Maybe
 where
 
 data Parser (t a: Data) where
-        Parser: (List t -> List (Tup2 a (List t))) -> Parser t a
+        Parser: (List t → List (Tup2 a (List t))) → Parser t a
 
 
 -- | Apply a parser to a list of input tokens.
@@ -22,101 +22,101 @@ parse ((Parser p): Parser t a) (ts: List t): List (Tup2 a (List t))
 --       existentials are instantiated after type checking as multiple modules
 --       could import and instantiate them differently.
 functor_Parser [t: Data]: Functor (Parser t)
- = Functor $ Λa b: Data
- . (Λt' a' b': Data. parser_fmap [t'] [a'] [b']) [t] [a] [b]
+ = Functor $ Λ(a b: Data)
+ → (Λ(t' a' b': Data) → parser_fmap [t'] [a'] [b']) [t] [a] [b]
 
 
-parser_fmap [t a b: Data] (f: a -> b) (parserA: Parser t a): Parser t b
+parser_fmap [t a b: Data] (f: a → b) (parserA: Parser t a): Parser t b
  = Parser $ λts
- . for (parse parserA ts) $ λ(T2 resultA ts2)
- . T2  (f resultA) ts2
+ → for (parse parserA ts) $ λ(T2 resultA ts2)
+ → T2  (f resultA) ts2
 
 
 -- Applicative ----------------------------------------------------------------
 applicative_Parser [t: Data]: Applicative (Parser t)
  = Applicative 
         functor_Parser
-        (/\(a: Data).   parser_pure [a])
-        (/\(a b: Data). parser_ap   [a] [b])
+        (Λ(a: Data)   → parser_pure [a])
+        (Λ(a b: Data) → parser_ap   [a] [b])
 
 
 parser_pure (x: a): Parser t a
- = Parser $ λts. Cons (T2 x ts) Nil
+ = Parser $ λts → Cons (T2 x ts) Nil
 
 
-parser_ap   (parserF: Parser t (a -> b)) (parserA: Parser t a): Parser t b
- = Parser $ λts. concat
+parser_ap   (parserF: Parser t (a → b)) (parserA: Parser t a): Parser t b
+ = Parser $ λts → concat
  $ for (parse parserF ts)  $ λ(T2 resultF ts2)
- . for (parse parserA ts2) $ λ(T2 resultA ts3)
- . T2 (resultF resultA) ts3
+ → for (parse parserA ts2) $ λ(T2 resultA ts3)
+ → T2 (resultF resultA) ts3
 
 
 -- Monad ----------------------------------------------------------------------
 monad_Parser [t: Data]: Monad (Parser t)
  = Monad
         applicative_Parser
-        (/\(a: Data).   parser_return [a])
-        (/\(a b: Data). parser_bind   [a] [b])
+        (Λ(a: Data)   → parser_return [a])
+        (Λ(a b: Data) → parser_bind   [a] [b])
 
 
 -- | Produce the given result without returning any input.
 parser_return (x: a): Parser t a
- = Parser $ λts. Cons (T2 x ts) Nil
+ = Parser $ λts → Cons (T2 x ts) Nil
 
 
 -- | Apply a parser, and if it succeeds pass the result to a function
 --   that produces a new parser.
 parser_bind
         (parserA:   Parser t a)
-        (mkParserB: a -> Parser t b)
+        (mkParserB: a → Parser t b)
         : Parser t b
- =  Parser $ λts. concat  
- $  for (parse parserA ts)              $ λ(T2 resultA ts2)
- .  for (parse (mkParserB resultA) ts2) $ λ(T2 resultB ts3)
- .  T2 resultB ts3
+ = Parser $ λts → concat  
+ $ for (parse parserA ts)              $ λ(T2 resultA ts2)
+ → for (parse (mkParserB resultA) ts2) $ λ(T2 resultB ts3)
+ → T2 resultB ts3
 
 
 -------------------------------------------------------------------------------
 -- | Always fail, producing no possible parses.
 zero: Parser t a
- = Parser $ λ_. Nil
+ = Parser $ λ_ → Nil
 
 
 -- | Consume the first input token, failing if there aren't any.
 item: Parser t t
  = Parser $ λts
- . case ts of
-        Nil            -> Nil
-        Cons t ts'     -> Cons (T2 t ts) Nil
+ → case ts of
+        Nil             → Nil
+        Cons t ts'      → Cons (T2 t ts) Nil
 
 
 -- | A parser that accepts a single token that satisfies the given predicate,
 --   producing the given value if it matches.
-satisfies (pred: t -> Bool): Parser t t
+satisfies (pred: t → Bool): Parser t t
  = Parser $ λts
- . case ts of
-        Nil            -> Nil
+ → case ts of
+        Nil            → Nil
         Cons t ts
-         | pred t      -> Cons (T2 t ts) Nil
-         | otherwise   -> Nil
+         | pred t      → Cons (T2 t ts) Nil
+         | otherwise   → Nil
 
 
 -- | Use the given function to check whether to accept the next token,
 --   returning the result that it produces.
-from (accept: t -> Maybe a): Parser t a
+from (accept: t → Maybe a): Parser t a
  = Parser $ λts
- . case ts of
-        Nil            -> Nil
+ → case ts of
+        Nil            → Nil
         Cons t ts'
-         -> case accept t of
-               Nothing -> Nil
-               Just x  -> Cons (T2 x ts') Nil
+         → case accept t of
+               Nothing → Nil
+               Just x  → Cons (T2 x ts') Nil
 
 
 -- | Combine two argument parsers, producing a new one that accepts
 --   strings parsed by either of the argument parsers.
 plus (parserA parserB: Parser t a): Parser t a
- = Parser $ λts. append (parse parserA ts) (parse parserB ts)
+ = Parser $ λts → append (parse parserA ts) (parse parserB ts)
 
 
 -- | Combine two argument parsers, producing a new one that accepts
@@ -124,50 +124,50 @@ plus (parserA parserB: Parser t a): Parser t a
 --   We prefer result produced by the first parser over the second.
 alt (parserA parserB: Parser t a): Parser t a
  = Parser $ λts
- . case parse parserA ts of
-        Nil    -> parse parserB ts
-        res    -> res
+ → case parse parserA ts of
+        Nil    → parse parserB ts
+        res    → res
 
 
 -- | Combine a list of argument parsers, producing a new one that
 --   gives the result produced by the first matching argument parser.
 alts (parsers: List (Parser t a)): Parser t a
  = case parsers of
-        Nil             -> zero
-        Cons p ps       -> alt p (alts ps)
+        Nil             → zero
+        Cons p ps       → alt p (alts ps)
 
 
 -- | Like `alts`, accept use the given default parser if no 
 --   parser from the first list succeeds.
 altss (parsers: List (Parser t a)) (def: Parser t a): Parser t a
  = case parsers of
-        Nil             -> def
-        Cons p ps       -> alt p (altss ps def)
+        Nil             → def
+        Cons p ps       → alt p (altss ps def)
 
 
 -- | Apply a parser followed by another parser,
 --   producing a tuple that contains both results.
 follows (parserA: Parser t a) (parserB: Parser t b): Parser t (Tup2 a b)
- = Parser $ λts. concat
+ = Parser $ λts → concat
  $ for (parse parserA ts)  $ \(T2 resultA ts2)
- . for (parse parserB ts2) $ \(T2 resultB ts3)
- . T2 (T2 resultA resultB) ts3
+ → for (parse parserB ts2) $ \(T2 resultB ts3)
+ → T2 (T2 resultA resultB) ts3
 
 
 -- | Parse zero or more things, yielding a list of those things.
 --   TODO: fix desugaring, shouldn't need [a] type arg.
 some (parserA: Parser t a): Parser t (List a)
- = alt  (parser_bind   parserA        $ λx. 
-         parser_bind   (some parserA) $ λxs. 
+ = alt  (parser_bind   parserA        $ λx  → 
+         parser_bind   (some parserA) $ λxs →
          parser_return (Cons x xs))
         (parser_return (Nil [a]))
 
 
 -- | Parse one or more things, yielding a list of those things.
 many [a t: Data] (parserA: Parser t a): Parser t (List a)
- = alt  (parser_bind   parserA        $ λx. 
-         parser_bind   (some parserA) $ λxs. 
+ = alt  (parser_bind   parserA        $ λx  →
+         parser_bind   (some parserA) $ λxs →
          parser_return (Cons x xs))
-        (parser_bind parserA          $ λx. 
+        (parser_bind parserA          $ λx  →
          parser_return (Cons x Nil))
 
