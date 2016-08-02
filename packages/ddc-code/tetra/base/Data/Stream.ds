@@ -89,12 +89,12 @@ sgenerate (x: s) (step: s -> Tup2 s a): Stream s a
                 T2 s' x -> Yield x s'
 
 senumFrom (x: Nat): Stream Nat Nat
- = sgenerate x (λs: Nat. T2 (s + 1) s)
+ = sgenerate x (λ(s: Nat) -> T2 (s + 1) s)
 
 
 -- | Create a stream that returns copies of the same value.
 srepeat (x: a): Stream a a
- = sgenerate x (λs: a. T2 s s)
+ = sgenerate x (λ(s: a) -> T2 s s)
 
 
 -- | Cons an element to the front of a stream.

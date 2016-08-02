@@ -142,7 +142,7 @@ for     (xx: List a) (f: a -> b): List b
 -- TODO: type checker should be able to deal with the rank-2 type of the
 -- constructor. We shouldn't need to eta-expand the use of 'map'.
 functor_list 
- = Functor (/\(a b: Data). map [a] [b])
+ = Functor (/\(a b: Data) -> map [a] [b])
 
 
 -- | Apply a stateful worker function to every element of a list,
@@ -171,9 +171,9 @@ mapM    (dMonad: Monad m)
          -> return dMonad Nil
 
         Cons x xs
-         -> bind   dMonad (f x)              $ λx'.
-            bind   dMonad (mapM dMonad f xs) $ λxs'.
-            return dMonad (Cons x' xs')
+         -> bind   dMonad (f x)              $ λx'
+         -> bind   dMonad (mapM dMonad f xs) $ λxs'
+         -> return dMonad (Cons x' xs')
 
 
 -- Zips -----------------------------------------------------------------------

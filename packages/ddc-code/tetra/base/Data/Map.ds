@@ -151,7 +151,7 @@ map_insertWith
         (kx: k) (x: a) (mp: Map k a)
         : Map k a
  = map_insertWithKey ord
-        (\_ x' y'. f x' y')
+        (\_ x' y' -> f x' y')
         kx x mp
 
 
@@ -213,8 +213,8 @@ map_fromList
         (ord: Ord k)
         (xx: List (Tup2 k a))
         : Map k a
- = foldl (\ mp tp
-          . case tp of
+ = foldl (λ  mp tp
+          -> case tp of
                  T2 kx x -> map_insert ord kx x mp)
          map_empty xx
 
@@ -227,13 +227,13 @@ map_toList (mp: Map k a): List (Tup2 k a)
 -- | /O(n)/. Convert the map to a list of key\/value pairs where the
 --   keys are in ascending order. 
 map_toAscList (mp: Map k a): List (Tup2 k a)
-        = map_foldrWithKey (\k x xs. Cons (T2 k x) xs) Nil mp
+        = map_foldrWithKey (λk x xs -> Cons (T2 k x) xs) Nil mp
 
 
 -- | /O(n)/. Convert the map to a list of key\/value pairs where the
 --   keys are in descending order.
 map_toDescList (mp: Map k a): List (Tup2 k a)
-        = map_foldlWithKey (\xs k x. Cons (T2 k x) xs) Nil mp
+        = map_foldlWithKey (λxs k x -> Cons (T2 k x) xs) Nil mp
 
 
 ---------------------------------------------------------------------------------------------------

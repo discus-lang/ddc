@@ -17,7 +17,7 @@ data Maybe (a: Data) where
 -- Functor --------------------------------------------------------------------
 -- TODO: should not need to eta-expand this.
 functor_maybe
- = Functor (/\(a b: Data). maybe_fmap [a] [b])
+ = Functor (/\(a b: Data) -> maybe_fmap [a] [b])
 
 
 -- TODO: cannot make this a local expression in functor_maybe
@@ -33,8 +33,8 @@ maybe_fmap [a b: Data] (f: a -> b) (xx: Maybe a): Maybe b
 applicative_maybe
  = Applicative 
         functor_maybe 
-        (/\(a: Data).   maybe_pure [a])
-        (/\(a b: Data). maybe_ap   [a] [b])
+        (/\(a: Data)   -> maybe_pure [a])
+        (/\(a b: Data) -> maybe_ap   [a] [b])
 
 maybe_pure [a: Data]   (x: a): Maybe a
  = Just x
@@ -53,8 +53,8 @@ maybe_ap   [a b: Data] (mf: Maybe (a -> b)) (ma: Maybe a): Maybe b
 monad_maybe
  = Monad
         applicative_maybe
-        (/\(a: Data).   maybe_return [a])
-        (/\(a b: Data). maybe_bind   [a] [b])
+        (/\(a: Data)   -> maybe_return [a])
+        (/\(a b: Data) -> maybe_bind   [a] [b])
 
 maybe_return [a: Data]   (x: a): Maybe a
  = Just x

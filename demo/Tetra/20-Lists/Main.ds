@@ -15,14 +15,14 @@ main ()
         xx      = enumFromTo 0 100
 
         -- Select only the even elements
-        xx'     = filter (λx: Nat. rem# x 2 == 0) xx
+        xx'     = filter (λ(x: Nat) -> rem# x 2 == 0) xx
 
         -- Mutable reference to hold list length.
         ref     = allocRef [r] [Nat] 0
 
         -- Eat the list, updating the mutable counter while printing
         -- the elements to the console.
-        forS xx' (λx: Nat.
+        forS xx' (λ(x: Nat) ->
           do    writeRef ref ((readRef ref) + 1)
                 writel (showNat x))
         

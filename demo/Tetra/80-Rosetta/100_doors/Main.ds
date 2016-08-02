@@ -46,8 +46,8 @@ runToggle (n: Nat): List Door
 
 main ()
  = do   zipWithS 
-                (λn: Nat. λd: Door. 
-                        case d of
+                (λ  n d
+                 -> case d of
                          Open   -> writel (showNat n %% showDoor d)
                          _      -> ())
                 (enumFromTo 1 100)

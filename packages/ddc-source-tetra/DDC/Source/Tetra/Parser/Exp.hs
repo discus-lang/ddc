@@ -147,17 +147,10 @@ pExpFrontSP
                         return  [(p, Just t) | p <- ps]
 
                 , do    ps      <- P.many1 pPatAtom
-                        P.choice
-                         [ do   pTok (KOp ":")
-                                t       <- pType
-                                return  [(p, Just t)  | p <- ps]
-
-                         , do   return  [(p, Nothing) | p <- ps]
-                         ]
-
+                        return  [(p, Nothing) | p <- ps]
                 ]
 
-        pTok KDot
+        pTok KArrowDash
         xBody   <- pExp
         return  (sp, XAnnot sp $ foldr (\(p, mt) -> XLamPat sp p mt) xBody pts)
 
@@ -176,12 +169,10 @@ pExpFrontSP
                         return  $ map (\b -> XBindVarMT b (Just t)) bs'
 
                 , do    bs'     <- P.many1 pBind
-                        pTok (KOp ":")
-                        t       <- pType
-                        return  $ map (\b -> XBindVarMT b (Just t)) bs'
+                        return  $ map (\b -> XBindVarMT b Nothing) bs'
                 ]
 
-        pTok KDot
+        pTok KArrowDash
         xBody   <- pExp
         return  (sp, XAnnot sp $ foldr XLAM xBody bs)
 

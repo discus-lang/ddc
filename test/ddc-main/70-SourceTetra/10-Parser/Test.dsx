@@ -80,6 +80,6 @@ foo (_: Unit): Unit
 :parse..
 module Test where
 foo (_: Unit): Unit
- = f $ λx. g $ λy. T2 x y
+ = f $ λx -> g $ λy -> T2 x y
 ;;
 

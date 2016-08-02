@@ -86,6 +86,6 @@ foo (_ : Unit) : Blerk r
 :to-core..
 module Test where
 test : Unit
- = (\x y. x) () ()
+ = (\x y -> x) () ()
 ;;
 

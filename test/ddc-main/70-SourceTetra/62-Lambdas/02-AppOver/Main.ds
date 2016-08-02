@@ -9,11 +9,11 @@ where
 
 -- Super that returns a functional value.
 test  (n : Nat#) : Nat# -> Nat#
- = λx : Nat#. x + n
+ = λ(x : Nat#) -> x + n
 
 -- Over-applied super from the same module.
 test2 (x : Nat#) : Nat# -> Nat#
- = λy : Nat#. test x y
+ = λ(y : Nat#) -> test x y
 
 -- Over-applied super from an imported module.
 test3 (n : Nat#) : Nat# -> Nat#

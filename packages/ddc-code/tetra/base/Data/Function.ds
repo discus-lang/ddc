@@ -18,5 +18,5 @@ apply   [a b: Data]   (f: a -> b) (x: a): b
 -- | Compose two functions.
 --   The operator '∘' is desugared to applications of this function.
 compose [a b c: Data] (f: b -> c) (g: a -> b): a -> c
- = λx : a. f (g x)
+ = λ(x : a) -> f (g x)
 
