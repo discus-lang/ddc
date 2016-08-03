@@ -1,7 +1,7 @@
 {-# LANGUAGE TypeFamilies, UndecidableInstances #-}
 
 -- | Look at type signatures and add quantifiers to bind any free type
---   variables. Also add holes for missing type arguments.
+--   variables. 
 --   
 --   Given
 --
@@ -18,7 +18,7 @@
 --    mapS [a e b : ?] (f : a -> S e b) (xx : List a) : S e (List b)
 --     = /\(a e b : ?). box case xx of
 --        Nil        -> Nil
---        Cons x xs  -> Cons (run f x) (run mapS [?] [?] [?] f xs)
+--        Cons x xs  -> Cons (run f x) (run mapS f xs)
 -- @
 --
 module DDC.Source.Tetra.Transform.Expand
@@ -43,9 +43,6 @@ expandModule :: SourcePos -> Module Source -> Module Source
 expandModule sp mm
  = expand sp Env.empty mm
 
-
--- Inhibit addition of type apps for debugging
-inhibitTyApp = False
 
 ---------------------------------------------------------------------------------------------------
 class Expand c where
@@ -117,28 +114,11 @@ downX a env xx
          -> downX a' env x
 
         -- Invoke the expander --------
-        XVar{} 
-         | inhibitTyApp -> xx 
-         | otherwise    -> expandApp a env xx []
-
-        XCon{}
-         | inhibitTyApp -> xx
-         | otherwise    -> expandApp a env xx []
-
-        XPrim{}
-         | inhibitTyApp -> xx
-         | otherwise    -> expandApp a env xx []
+        XVar{}          -> xx 
+        XCon{}          -> xx
+        XPrim{}         -> xx
 
         XApp{}
-         | not inhibitTyApp
-         , (x1, xas)     <- takeXAppsWithAnnots xx
-         , isXVar x1 || isXCon x1
-         ->  -- If the function is a variable or constructor then try to expand
-             -- extra arguments in the application.
-             let   xas'     = [ (expand (fromMaybe a a') env x, a') 
-                                   | (x, a') <- xas ]
-             in    expandApp a env x1 xas'
-
          | (x1, xas)     <- takeXAppsWithAnnots xx
          -> let x1'      = expand a env x1
                 xas'     = [ (expand (fromMaybe a a') env x, a') 
@@ -362,69 +342,3 @@ expandQuantParams env bmBind ps
  | otherwise
  = (bmBind, ps)
 
-
----------------------------------------------------------------------------------------------------
--- | Expand missing type arguments in applications.
---   
---   The thing being applied needs to be a variable or data constructor
---   so we can look up its type in the environment. Given the type, look
---   at the quantifiers out the front and insert new type applications if
---   the expression is missing them.
---
-expandApp 
-        :: SourcePos                    -- ^ Default annotation
-        -> Env                          -- ^ Environment.
-        -> Exp                          -- ^ Functional expression being applied.
-        -> [(Exp, Maybe SourcePos)]     -- ^ Function arguments.
-        -> Exp
-
-expandApp a0 env x0 xas0
- | Just (ma, _x, Just tt) <- slurpVarConBound a0 env x0
- = let
-        go t xas
-         | Just (_kParam, _bParam, tBody) <- takeTForall t
-         = case xas of
-                (x1@(XType _t1'), a1) : xas'
-                 -> (x1, a1) : go tBody xas'
-
-                xas'
-                 -> (XType (TVar UHole), ma) : go tBody xas'
-
-         | otherwise
-         = xas
-
-   in   makeXAppsWithAnnots x0 (go tt xas0)
-
- | otherwise
- = makeXAppsWithAnnots x0 xas0
-
-
--- | Slurp a `Bound` from and `XVar` or `XCon`. 
---   Named data constructors are converted to `UName`s.
-slurpVarConBound 
-        :: SourcePos
-        -> Env -> Exp
-        -> Maybe (Maybe SourcePos, Exp, Maybe Type)
-
-slurpVarConBound a env xx
- = case xx of
-        XAnnot a' x
-         -> slurpVarConBound a' env x
-
-        XVar u 
-         -> let mt = Env.takePresent (Env.lookupDaVar env u)
-            in  Just (Just a, xx, mt)
-
-        XCon dc 
-         -> case dc of
-                DaConUnit
-                 -> Nothing
-
-                DaConBound n
-                 -> let mt = Env.lookupDaCon n env
-                    in  Just (Just a, xx, mt) 
-
-                DaConPrim _n t
-                 -> Just (Just a, xx, Just t)
-
-        _ -> Nothing

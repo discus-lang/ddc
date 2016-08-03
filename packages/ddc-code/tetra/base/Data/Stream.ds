@@ -183,7 +183,7 @@ stake   (n: Nat)
                 Done        -> Done
 
 
--- | Take elements from a strem while they match the given predicate.
+-- | Take elements from a stream while they match the given predicate.
 stakeWhile 
         (p: a -> Bool) 
         ((MkStream stepA sA0): Stream s a)
@@ -195,15 +195,13 @@ stakeWhile
          = case stepA q of
                 Yield x sA1     
                  | p x          -> Yield x sA1
-                 | otherwise    -> Done [s] [a]
+                 | otherwise    -> Done
 
                 Skip sA1        -> Skip    sA1
-                Done            -> Done [s] [a]
+                Done            -> Done
 
 
 -- | Take elements from a stream that match the given predicate.
---   TODO: the extra type annots should not be nessesary, 
---         the checker is not unifying the meta variables.
 sfilter (p: a -> Bool)
         ((MkStream stepA sA0): Stream s a)
         : Stream s a
@@ -213,8 +211,8 @@ sfilter (p: a -> Bool)
          = case stepA q of
                 Yield x sA1     
                  | p x          -> Yield x sA1
-                 | otherwise    -> Skip [s] [a] sA1
+                 | otherwise    -> Skip sA1
 
-                Skip sA1        -> Skip [s] [a] sA1
-                Done            -> Done [s] [a]
+                Skip sA1        -> Skip sA1
+                Done            -> Done 
 

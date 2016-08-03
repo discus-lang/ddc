@@ -231,8 +231,8 @@ When checking expression.
 
 -- As above but also return the function parameter.
 Λ(a: Data).
-λ(x: [b: Data].a). x
-:*: [a: Data].([b: Data].a) -> [b: Data].a
+λ(x: [b: Data].a). x [?2]
+:*: [a: Data].([b: Data].a) -> a
 :!: Pure
 
 

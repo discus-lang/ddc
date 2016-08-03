@@ -1,0 +1,17 @@
+
+module Main where
+
+
+-- | Standard Cons-lists.
+data List (a: Data) where
+        Nil     : List a
+        Cons    : a -> List a -> List a
+
+
+ident (xx: List a): List a
+ = go xx
+ where  go Nil          = Nil
+        go (Cons x xs)  = Cons x (go xs)
+
+main ()
+ = box ()

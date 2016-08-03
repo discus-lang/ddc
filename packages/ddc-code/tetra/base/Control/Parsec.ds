@@ -36,8 +36,8 @@ parser_fmap [t a b: Data] (f: a → b) (parserA: Parser t a): Parser t b
 applicative_Parser [t: Data]: Applicative (Parser t)
  = Applicative 
         functor_Parser
-        (Λ(a: Data)   → parser_pure [a])
-        (Λ(a b: Data) → parser_ap   [a] [b])
+        (Λ(a: Data)   → parser_pure)
+        (Λ(a b: Data) → parser_ap)
 
 
 parser_pure (x: a): Parser t a
@@ -55,8 +55,8 @@ parser_ap   (parserF: Parser t (a → b)) (parserA: Parser t a): Parser t b
 monad_Parser [t: Data]: Monad (Parser t)
  = Monad
         applicative_Parser
-        (Λ(a: Data)   → parser_return [a])
-        (Λ(a b: Data) → parser_bind   [a] [b])
+        (Λ(a: Data)   → parser_return)
+        (Λ(a b: Data) → parser_bind   )
 
 
 -- | Produce the given result without returning any input.
@@ -155,12 +155,11 @@ follows (parserA: Parser t a) (parserB: Parser t b): Parser t (Tup2 a b)
 
 
 -- | Parse zero or more things, yielding a list of those things.
---   TODO: fix desugaring, shouldn't need [a] type arg.
 some (parserA: Parser t a): Parser t (List a)
  = alt  (parser_bind   parserA        $ λx  → 
          parser_bind   (some parserA) $ λxs →
          parser_return (Cons x xs))
-        (parser_return (Nil [a]))
+        (parser_return Nil)
 
 
 -- | Parse one or more things, yielding a list of those things.
