@@ -116,7 +116,8 @@ from (accept: t → Maybe a): Parser t a
 -- | Combine two argument parsers, producing a new one that accepts
 --   strings parsed by either of the argument parsers.
 plus (parserA parserB: Parser t a): Parser t a
- = Parser $ λts → append (parse parserA ts) (parse parserB ts)
+ = Parser $ λts 
+ → append (parse parserA ts) (parse parserB ts)
 
 
 -- | Combine two argument parsers, producing a new one that accepts
@@ -156,17 +157,17 @@ follows (parserA: Parser t a) (parserB: Parser t b): Parser t (Tup2 a b)
 
 -- | Parse zero or more things, yielding a list of those things.
 some (parserA: Parser t a): Parser t (List a)
- = alt  (parser_bind   parserA        $ λx  → 
-         parser_bind   (some parserA) $ λxs →
-         parser_return (Cons x xs))
-        (parser_return Nil)
+ = alt  (bind   monad_Parser parserA        $ λx  → 
+         bind   monad_Parser (some parserA) $ λxs →
+         return monad_Parser (Cons x xs))
+        (return monad_Parser Nil)
 
 
 -- | Parse one or more things, yielding a list of those things.
 many [a t: Data] (parserA: Parser t a): Parser t (List a)
- = alt  (parser_bind   parserA        $ λx  →
-         parser_bind   (some parserA) $ λxs →
-         parser_return (Cons x xs))
-        (parser_bind parserA          $ λx  →
-         parser_return (Cons x Nil))
+ = alt  (bind   monad_Parser parserA        $ λx  →
+         bind   monad_Parser (some parserA) $ λxs →
+         return monad_Parser (Cons x xs))
+        (bind   monad_Parser parserA        $ λx  →
+         return monad_Parser (Cons x Nil))
 
