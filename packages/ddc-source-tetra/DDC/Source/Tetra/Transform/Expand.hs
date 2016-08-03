@@ -44,6 +44,9 @@ expandModule sp mm
  = expand sp Env.empty mm
 
 
+-- Inhibit addition of type apps for debugging
+inhibitTyApp = False
+
 ---------------------------------------------------------------------------------------------------
 class Expand c where
  -- | Add quantifiers to the types of binders. Also add holes for missing
@@ -114,24 +117,33 @@ downX a env xx
          -> downX a' env x
 
         -- Invoke the expander --------
-        XVar{}  -> expandApp a env xx []
-        XCon{}  -> expandApp a env xx []
-        XPrim{} -> expandApp a env xx []
+        XVar{} 
+         | inhibitTyApp -> xx 
+         | otherwise    -> expandApp a env xx []
+
+        XCon{}
+         | inhibitTyApp -> xx
+         | otherwise    -> expandApp a env xx []
+
+        XPrim{}
+         | inhibitTyApp -> xx
+         | otherwise    -> expandApp a env xx []
 
         XApp{}
-         | (x1, xas)     <- takeXAppsWithAnnots xx
-         -> if isXVar x1 || isXCon x1
-             -- If the function is a variable or constructor then try to expand
+         | not inhibitTyApp
+         , (x1, xas)     <- takeXAppsWithAnnots xx
+         , isXVar x1 || isXCon x1
+         ->  -- If the function is a variable or constructor then try to expand
              -- extra arguments in the application.
-             then let   xas'     = [ (expand (fromMaybe a a') env x, a') 
+             let   xas'     = [ (expand (fromMaybe a a') env x, a') 
                                    | (x, a') <- xas ]
-                  in    expandApp a env x1 xas'
+             in    expandApp a env x1 xas'
 
-             -- Otherwise just apply the original arguments.
-             else let   x1'      = expand a env x1
-                        xas'     = [ (expand (fromMaybe a a') env x, a') 
+         | (x1, xas)     <- takeXAppsWithAnnots xx
+         -> let x1'      = expand a env x1
+                xas'     = [ (expand (fromMaybe a a') env x, a') 
                                    | (x, a') <- xas ]
-                  in    makeXAppsWithAnnots x1' xas'
+            in  makeXAppsWithAnnots x1' xas'
 
         XLet (LLet b x1) x2
          -> let x1'     = expand a env x1
@@ -416,4 +428,3 @@ slurpVarConBound a env xx
                  -> Just (Just a, xx, Just t)
 
         _ -> Nothing
-

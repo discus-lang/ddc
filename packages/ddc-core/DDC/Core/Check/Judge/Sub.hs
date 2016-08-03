@@ -201,7 +201,7 @@ makeSub config a ctx0 xL tL tR err
         return (xL, ctx2)
 
 
- -- SubForall
+ -- SubForall-L
  --   Left side is a forall type.
  | TForall b t1 <- tL
  = do
