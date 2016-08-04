@@ -15,9 +15,9 @@ data Maybe (a: Data) where
 
 
 -- Functor --------------------------------------------------------------------
--- TODO: should not need to eta-expand this.
 functor_maybe
- = Functor (/\(a b: Data) -> maybe_fmap [a] [b])
+ = Functor 
+        maybe_fmap
 
 
 -- TODO: cannot make this a local expression in functor_maybe
@@ -29,7 +29,7 @@ maybe_fmap [a b: Data] (f: a -> b) (xx: Maybe a): Maybe b
 
 
 -- Applicative ----------------------------------------------------------------
--- TODO: should not need to eta-expand these.
+-- TODO: removing lambdas stops maybe_pure and maybe_ap being thunkified.
 applicative_maybe
  = Applicative 
         functor_maybe 

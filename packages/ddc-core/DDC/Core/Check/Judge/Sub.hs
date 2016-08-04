@@ -206,7 +206,10 @@ makeSub config a ctx0 xL tL tR err
  | TForall b t1 <- tL
  = do
         ctrace  $ vcat
-                [ text "*>  SubForall"
+                [ text "*>  SubForallL"
+                , text "    xL:     " <> ppr xL
+                , text "    LEFT:   " <> ppr tL
+                , text "    RIGHT:  " <> ppr tR
                 , empty ]
 
         -- Make a new existential to instantiate the quantified
@@ -246,6 +249,48 @@ makeSub config a ctx0 xL tL tR err
                 , empty ]
 
         return (xL2, ctx4)
+
+ -- SubForall-R
+ | TForall bParamR tBodyR  <- tR
+ = do
+        ctrace  $ vcat
+                [ text "*>  SubForallR"
+                , text "    xL:    " <> ppr xL
+                , text "    LEFT:  " <> ppr tL
+                , text "    RIGHT: " <> ppr tR
+                , empty ]
+
+        -- Make a new existential to instantiate the quantified
+        -- variable and substitute it into the body.
+        let Just uParam = takeSubstBoundOfBind bParamR
+        let tA          = TVar uParam
+        let tBodyR'     = substituteT bParamR tA tBodyR
+
+        -- Check the new body against the left type,
+        -- so that the existential is instantiated
+        -- to match the left.
+        let (ctx1, pos1) =  markContext ctx0
+        let ctx2         =  pushType bParamR ctx1
+
+        (xL2, ctx3)      <- makeSub config a ctx2 xL tL tBodyR' err
+        let tR'          =  TForall bParamR tBodyR      
+                                -- TODO: this will be the wrong tBodyR
+                                -- need to get the type produced by makeSub
+        let aApp         =  AnTEC tR' (tBot kEffect) (tBot kClosure) a
+        let xL_abs       =  XLAM aApp bParamR xL2
+
+        -- Pop the existential and constraints above it off the stack.
+        let ctx4        = popToPos pos1 ctx3
+
+        ctrace  $ vcat
+                [ text "*<  SubForallR"
+                , text "    xL:     " <> ppr xL
+                , text "    LEFT:   " <> ppr tL
+                , text "    RIGHT:  " <> ppr tR
+                , text "    xL_abs: " <> ppr xL_abs
+                , empty ]
+
+        return (xL_abs, ctx4)
 
 
  -- Error

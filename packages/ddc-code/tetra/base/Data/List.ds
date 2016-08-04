@@ -139,10 +139,9 @@ for     (xx: List a) (f: a -> b): List b
         Cons x xs       -> Cons (f x) (for xs f)
 
 
--- TODO: type checker should be able to deal with the rank-2 type of the
--- constructor. We shouldn't need to eta-expand the use of 'map'.
+-- | Functor instance for List.
 functor_list 
- = Functor (/\(a b: Data) -> map [a] [b])
+ = Functor map
 
 
 -- | Apply a stateful worker function to every element of a list,
