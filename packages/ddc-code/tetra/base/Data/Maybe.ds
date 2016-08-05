@@ -29,12 +29,11 @@ maybe_fmap [a b: Data] (f: a -> b) (xx: Maybe a): Maybe b
 
 
 -- Applicative ----------------------------------------------------------------
--- TODO: removing lambdas stops maybe_pure and maybe_ap being thunkified.
 applicative_maybe
  = Applicative 
         functor_maybe 
-        (/\(a: Data)   -> maybe_pure [a])
-        (/\(a b: Data) -> maybe_ap   [a] [b])
+        maybe_pure
+        maybe_ap
 
 maybe_pure [a: Data]   (x: a): Maybe a
  = Just x
@@ -49,12 +48,12 @@ maybe_ap   [a b: Data] (mf: Maybe (a -> b)) (ma: Maybe a): Maybe b
 
 
 -- Monad ----------------------------------------------------------------------
--- TODO: should not need to eta-expand these.
 monad_maybe
  = Monad
         applicative_maybe
-        (/\(a: Data)   -> maybe_return [a])
-        (/\(a b: Data) -> maybe_bind   [a] [b])
+        maybe_return
+        maybe_bind
+
 
 maybe_return [a: Data]   (x: a): Maybe a
  = Just x

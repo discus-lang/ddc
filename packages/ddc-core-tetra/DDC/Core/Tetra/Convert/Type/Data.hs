@@ -102,10 +102,11 @@ convertDataT ctx tt
         -- Convert type constructor applications.
         TApp{}    -> convertDataAppT ctx tt
 
-        -- We should not find any polymorphic values.
-        TForall _b t  
-                  -> convertDataT ctx t
-         -- -> throw $ ErrorMalformed $ "Invalid polymorphic value type."
+        -- Polymorphic value.
+        TForall bParam tBody
+         -> let kenv'   = Env.extend bParam (contextKindEnv ctx)
+                ctx'    = ctx { contextKindEnv = kenv' }
+            in  convertDataT ctx' tBody
 
         -- Resentable types always have kind Data, but type sums cannot.
         TSum{}    -> throw $ ErrorUnexpectedSum

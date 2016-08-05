@@ -60,14 +60,9 @@ makeCallSuperUnder
         -> [Call.Elim () Name]  -- ^ Eliminators at call site.
         -> Either Error (Maybe (Exp () Name))
 
+
+-- Under application where we have a type argument for each of the type parameters.
 makeCallSuperUnder nF tF cs es
- -- We have no eliminators at all, 
- -- so this is just a reference to a top-level super that is not 
- -- being applied.
- --  | []   <- es
- -- = return $ Just $ XVar () (UName nF)
-
-
  -- We have more constructors than eliminators.
  | length es <  length cs
 
@@ -115,17 +110,66 @@ makeCallSuperUnder nF tF cs es
          -- We should have at least one argument to apply. 
          -- If not then the arity information is wrong or the super we were
          -- told to call doesn't have any parameters. Either case is a bug.
-         [] -> error $ "ddc-core-tetra.makeCallSuperUnder: no arguments to apply."
+         [] -> error $ "ddc-core-tetra.makeCallSuperUnder: no parameters for super."
 
          tParamFirst : tsParamRest
           -> let tSuperResult    = C.tFunOfParamResult tsParamRest tResult'
              in return
                  $ Just
                  $ makeRuns () (length esRuns)
-                 $ C.xApps  () (C.xFunCurry () tsParamSat tResultClo 
+                 $ C.xApps  () (C.xFunCurry  () tsParamSat  tResultClo 
                                (C.xFunCReify () tParamFirst tSuperResult xFunAPP))
                                xsArgValue
 
- | otherwise
- = return $ Nothing
 
+-- Under application where we don't have any type arguments.
+-- This happens when we have a reference to a polymorphic function:
+-- 
+-- > let f = /\a. \x. x  
+-- > in  g f
+--
+-- We handle the call to f by eta-expanding it,
+-- so that we can apply the reify function.
+--
+-- > let f = /\a. \x. x
+-- > in  g (/\a. curry0# (creify# [a] [a] (f [a])))
+--
+makeCallSuperUnder nF tF cs es
+ -- We don't have any eliminators.
+ | null es
+
+ -- The super must be in standard form.
+ , Just (csType, _csValue, _cBox) <- Call.splitStdCallCons cs
+ 
+ -- There is at least one type parameter.
+ , not $ null csType
+
+ -- All the type parameters must be named.
+ , bsParam      <- [b | Call.ConsType b <- csType]
+ , Just nsParam <- sequence
+                $  map (\b -> case b of
+                                BName n _ -> Just n
+                                _         -> Nothing) bsParam
+
+ , tsArgs        <- [TVar (UName n) | n <- nsParam]
+ , Just tF_inst  <- T.instantiateTs tF tsArgs
+
+ = let  (tsParamLam, tResult) 
+         = C.takeTFunArgResult tF_inst
+
+   in   case tsParamLam of
+         [] -> error $ "ddc-core-tetra.makeCallSuperUnder: no parameters for super"
+
+         tParamFirst : tsParamRest
+          -> let tSuperResult = C.tFunOfParamResult tsParamRest tResult
+             in  return
+                   $ Just
+                   $ C.xLAMs () bsParam 
+                   $ C.xFunCurry () [] tF_inst
+                   $ C.xFunCReify () tParamFirst tSuperResult 
+                        ( xApps () (XVar () (UName nF)) 
+                                $ map (XType ()) tsArgs)
+
+
+makeCallSuperUnder _nF _tF _cs _es
+ = return $ Nothing

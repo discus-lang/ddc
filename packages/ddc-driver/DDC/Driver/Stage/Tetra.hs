@@ -107,10 +107,10 @@ stageTetraToSalt config source pipesSalt
          = PipeCoreAsTetra
            [ PipeTetraBoxing
              [ PipeCoreOutput   pprDefaultMode
-                                (dump config source "dump.1-tetra-04-boxing-raw.dct")
+                                (dump config source "dump.1-tetra-05-boxing-raw.dct")
              , PipeCoreSimplify BE.fragment 0 (normalize `mappend` C.flatten)
                [ PipeCoreOutput pprDefaultMode
-                                (dump config source "dump.1-tetra-05-boxing-simp.dct")
+                                (dump config source "dump.1-tetra-06-boxing-simp.dct")
                , pipe_toSalt]]]
 
 

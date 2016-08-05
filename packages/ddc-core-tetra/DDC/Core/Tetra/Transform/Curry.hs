@@ -27,13 +27,12 @@ import qualified Data.List                      as List
 --
 curryModule 
         :: Show a
-        => Module (AnTEC a Name) Name 
+        => Module (AnTEC a Name) Name   -- ^ Module to transform.
         -> Either Error (Module () Name)
 
 curryModule mm
  = do
         -- Extract the top-level environment for types from the module.
-
         let kenv  = C.profilePrimKinds profile
         let envt  = moduleEnvT kenv mm
 
@@ -53,9 +52,9 @@ curryModule mm
 -- | Manage higher-order functions in a module body.
 curryBody 
         :: Show a
-        => EnvT Name
-        -> Map Name Callable
-        -> Exp (AnTEC a Name) Name 
+        => EnvT Name                    -- ^ Current type environment.
+        -> Map Name Callable            -- ^ Map of directly callable supers
+        -> Exp (AnTEC a Name) Name      -- ^ Expression to transform.
         -> Either Error (Exp () Name)
 
 curryBody envt callables xx
@@ -81,16 +80,16 @@ curryBody envt callables xx
 
 -- | Manage function application in an expression.
 curryX  :: Show a
-        => EnvT Name
-        -> Map Name Callable
-        -> Exp (AnTEC a Name) Name 
+        => EnvT Name                    -- ^ Current type environment.
+        -> Map Name Callable            -- ^ Map of directly callable supers.
+        -> Exp (AnTEC a Name) Name      -- ^ Expression to transform.
         -> Either Error (Exp () Name)
 
 curryX envt callables xx
  = let down x = curryX envt callables x
    in case xx of
         XVar  a (UName nF)
-         -> do  result  <- makeCall envt callables nF (annotType a) []
+         -> do  result    <- makeCall envt callables nF (annotType a) []
                 case result of 
                  Just xx' -> return xx'
                  Nothing  -> return $ XVar () (UName nF)

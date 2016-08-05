@@ -71,15 +71,12 @@ convertExp ectx ctx xx
 
 
         ---------------------------------------------------
-        -- Type abstractions can only appear at the top-level of a function.
+        -- Type abstractions can appear in the body of expressions when
+        -- the Curry transform has eta-expanded a higher-ranked type.
         XLAM _ b x
-         -> let ctx'    = extendsTypeEnv [b] ctx
+         -> let ctx'    = extendsKindEnv [b] ctx
             in  convertExp ectx ctx' x
-{-
-         -> throw $ ErrorUnsupported xx
-          $ vcat [ text "Cannot convert type abstraction in this context."
-                 , text "The program must be lambda-lifted before conversion." ]
--}
+
 
         ---------------------------------------------------
         -- Function abstractions can only appear at the top-level of a fucntion.
