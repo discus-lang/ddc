@@ -16,10 +16,6 @@ parse ((Parser p): Parser t a) (ts: List t): List (Tup2 a (List t))
 
 
 -- Functor --------------------------------------------------------------------
--- TODO: if we don't add the [t: Data] quantifier we end up with an existential
---       at top level, which cannot be parsed back. We should check that all
---       existentials are instantiated after type checking as multiple modules
---       could import and instantiate them differently.
 functor_Parser [t: Data]: Functor (Parser t)
  = Functor parser_fmap
 
