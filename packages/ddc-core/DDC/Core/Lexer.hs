@@ -78,20 +78,21 @@ lexText :: String       -- ^ Name of source file, which is attached to the token
         -> [Token (Tok String)]
 
 lexText sourceName lineStart xx
- = lexWord lineStart 1 xx
- where 
+ = let  sp      = SourcePos sourceName lineStart 1
+   in   lexWord sp xx
 
-  lexWord :: Int -> Int -> Text -> [Token (Tok String)]
-  lexWord line column w
-   = match w
-   where
+
+lexWord :: SourcePos -> Text -> [Token (Tok String)]
+lexWord sp@(SourcePos sourceName line column) w
+ = match w
+ where
         tok t = Token t (SourcePos sourceName line column)
         tokM  = tok . KM
         tokA  = tok . KA
         tokN  = tok . KN
 
         lexMore n rest
-         = lexWord line (column + n) rest
+         = lexWord (SourcePos sourceName line (column + n)) rest
 
         lexUpto pat rest
          = case dropWhile (not . T.isPrefixOf pat) (T.tails rest) of
@@ -131,7 +132,7 @@ lexText sourceName lineStart xx
          = tokM KCommentLineStart       : lexMore 2 rest
 
          | Just ('\n', rest)    <- T.uncons cs
-         = tokM KNewLine                : lexWord (line + 1) 1 rest
+         = tokM KNewLine                : lexWord (SourcePos sourceName (line + 1) 1) rest
 
          -- Double character symbols.
          | not (T.compareLength cs 2 == LT)
@@ -150,7 +151,6 @@ lexText sourceName lineStart xx
                 "()"            -> Just KDaConUnit
                 _               -> Nothing
          = tokA t : lexMore 2 rest
-
 
          -- Wrapped operator symbols.
          -- This needs to come before lexing single character symbols.
@@ -193,7 +193,7 @@ lexText sourceName lineStart xx
 
                  | Just ('"',  xs1)     <- T.uncons xs
                  = tokA (KString (T.pack (reverse acc)))
-                 : lexWord line (column + n) xs1
+                 : lexWord (SourcePos sourceName line (column + n)) xs1
 
                  | Just (c,    xs1)     <- T.uncons xs
                  = eat (n + 1) (c : acc) xs1
@@ -202,6 +202,7 @@ lexText sourceName lineStart xx
                  = [tok $ KErrorUnterm (T.unpack cs)]
 
            in eat 0 [] cc
+
 
          -- Operator symbols.
          | Just (c, cs1)        <- T.uncons cs
@@ -212,28 +213,9 @@ lexText sourceName lineStart xx
          , sym /= T.pack "|"
          = tokA (KOp (T.unpack sym)) : lexMore (1 + T.length body) rest
 
-         -- Single character symbols.
-         | Just (c, rest)       <- T.uncons cs
-         , Just t
-            <- case c of
-                '('             -> Just KRoundBra
-                ')'             -> Just KRoundKet
-                '['             -> Just KSquareBra
-                ']'             -> Just KSquareKet
-                '{'             -> Just KBraceBra
-                '}'             -> Just KBraceKet
-                '.'             -> Just KDot
-                ','             -> Just KComma
-                ';'             -> Just KSemiColon
-                '\\'            -> Just KBackSlash
-                '='             -> Just KEquals
-                '|'             -> Just KBar
-                '@'             -> Just KAt
-                'λ'             -> Just KLambda
-                'Λ'             -> Just KBigLambda
-                '→'             -> Just KArrowDash
-                _               -> Nothing
-         = tokA t : lexMore 1 rest
+         -- Single character punctuation.
+         | Just (tk, sp', rest)  <- lexPunc sp cs
+         = tk : lexWord sp' rest
 
          -- Debruijn indices
          | Just ('^', cs1)      <- T.uncons cs
@@ -308,4 +290,55 @@ lexText sourceName lineStart xx
          = case T.unpack cs of
                 (c : _) -> [tok $ KErrorJunk [c]]
                 _       -> [tok $ KErrorJunk []]
+
+
+
+-------------------------------------------------------------------------------
+-- | Lex a punctuation token.
+--   These are lexed independently of any other following characters.
+lexPunc :: SourcePos -> Text
+        -> Maybe (Token (Tok String), SourcePos, Text)
+
+lexPunc sp@(SourcePos name line col) tx
+ | not (T.compareLength tx 2 == LT)
+ , (cs1, rest)          <- T.splitAt 2 tx
+ , Just t
+   <- case T.unpack cs1 of
+        "[:"            -> Just KSquareColonBra
+        ":]"            -> Just KSquareColonKet
+        "{:"            -> Just KBraceColonBra
+        ":}"            -> Just KBraceColonKet
+        _               -> Nothing
+ = Just ( Token (KA t) sp
+        , SourcePos name line (col + 2)
+        , rest)
+
+ | Just (c, rest) <- T.uncons tx
+ , Just t           
+   <- case c of
+        '('             -> Just KRoundBra
+        ')'             -> Just KRoundKet
+        '['             -> Just KSquareBra
+        ']'             -> Just KSquareKet
+        '{'             -> Just KBraceBra
+        '}'             -> Just KBraceKet
+        '.'             -> Just KDot
+        ','             -> Just KComma
+        ';'             -> Just KSemiColon
+        '@'             -> Just KAt
+        '\\'            -> Just KBackSlash
+        'λ'             -> Just KLambda
+        'Λ'             -> Just KBigLambda
+        '→'             -> Just KArrowDash
+        '='             -> Just KEquals
+        '|'             -> Just KBar
+
+        _               -> Nothing
+ = Just ( Token (KA t) sp
+        , SourcePos name line (col + 1)
+        , rest)
+
+ -- No match.
+ | otherwise
+ = Nothing
 
