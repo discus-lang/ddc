@@ -177,32 +177,9 @@ lexWord sp@(SourcePos sourceName line column) w
                 str            = T.unpack (T.cons '-' body)
            in   tokN (KLit str) : lexMore (length str) rest
 
-         -- Literal strings.
-         -- We force these to be null terminated so the representation is compatable
-         -- with C string functions.
-         | Just ('\"', cc)      <- T.uncons cs
-         = let 
-                eat n acc xs
-                 | Just ('\\', xs1)     <- T.uncons xs
-                 , Just ('"',  xs2)     <- T.uncons xs1
-                 = eat (n + 2) ('"' : acc) xs2
-
-                 | Just ('\\', xs1)     <- T.uncons xs
-                 , Just ('n',  xs2)     <- T.uncons xs1
-                 = eat (n + 2) ('\n' : acc) xs2
-
-                 | Just ('"',  xs1)     <- T.uncons xs
-                 = tokA (KString (T.pack (reverse acc)))
-                 : lexWord (SourcePos sourceName line (column + n)) xs1
-
-                 | Just (c,    xs1)     <- T.uncons xs
-                 = eat (n + 1) (c : acc) xs1
-
-                 | otherwise
-                 = [tok $ KErrorUnterm (T.unpack cs)]
-
-           in eat 0 [] cc
-
+         -- Lex a literal string.
+         | Just (tk, sp', rest) <- lexLitString sp cs
+         = tk : lexWord sp' rest
 
          -- Operator symbols.
          | Just (c, cs1)        <- T.uncons cs
@@ -339,6 +316,44 @@ lexPunc sp@(SourcePos name line col) tx
         , rest)
 
  -- No match.
+ | otherwise
+ = Nothing
+
+
+-------------------------------------------------------------------------------
+-- | Lex a literal string.
+--   We force these to be null terminated so the representation
+--   is compatable with C string functions.
+lexLitString
+        :: SourcePos -> Text
+        -> Maybe (Token (Tok String), SourcePos, Text)
+
+lexLitString sp@(SourcePos name line col) tx 
+ | Just ('\"', cc)      <- T.uncons tx
+ = let 
+        eat n acc xs
+         | Just ('\\', xs1)     <- T.uncons xs
+         , Just ('"',  xs2)     <- T.uncons xs1
+         = eat (n + 2) ('"' : acc) xs2
+
+         | Just ('\\', xs1)     <- T.uncons xs
+         , Just ('n',  xs2)     <- T.uncons xs1
+         = eat (n + 2) ('\n' : acc) xs2
+
+         | Just ('"',  xs1)     <- T.uncons xs
+         = Just ( Token (KA (KString (T.pack (reverse acc)))) sp
+                , SourcePos name line (col + n)
+                , xs1)
+
+         | Just (c,    xs1)     <- T.uncons xs
+         = eat (n + 1) (c : acc) xs1
+
+         | otherwise
+         = Just ( Token (KErrorUnterm (T.unpack tx)) sp
+                , sp, T.empty)
+
+   in eat 0 [] cc
+
  | otherwise
  = Nothing
 
