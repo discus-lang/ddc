@@ -1,0 +1,46 @@
+
+module Step
+export
+{       show_Step;
+        step
+}
+import Exp
+import Data.Text
+where
+
+
+-- | Result of performing a single step for an expression.
+data Step (a: Data) where
+        StepNone        : Step a
+        StepSome        : a -> Step a
+        StepError       : Step a
+
+
+show_Step (show_a: Show a): Show (Step a)
+ =  Show $ \xx
+ -> case xx of
+        StepNone        -> "StepNone"
+        StepSome x      -> parens $ "StepSome" %% show show_a x
+        StepError       -> "StepError"
+
+
+-- | Perform a single step reduction of the given expression.
+step (xx: Exp): Step Exp
+ = case xx of
+        XVar _          -> StepNone
+        XAbs _ _ _      -> StepNone
+
+        XApp (XAbs (Subst ps) nBind xBody) xArg
+         -> let ss' = Subst (Cons (T2 nBind xArg) ps)
+            in  StepSome $ applySubst ss' xBody
+
+        XApp x1 x2
+         -> case step x1 of
+                StepNone
+                 -> case step x2 of
+                        StepNone        -> StepNone
+                        StepSome x2'    -> StepSome $ XApp x1 x2'
+                        StepError       -> StepError
+
+                StepSome x1'            -> StepSome $ XApp x1' x2
+                StepError               -> StepError

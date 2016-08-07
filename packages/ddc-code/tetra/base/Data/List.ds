@@ -7,6 +7,7 @@ export
         head;
         tail; tail1;
         last; index;
+        lookupBy; find;
         reverse;
         map; mapS; for;
         forS;
@@ -20,6 +21,7 @@ export
 import  Data.Numeric.Nat
 import  Data.Numeric.Bool
 import  Data.Tuple
+import  Data.Maybe
 import  Data.Function
 import  Class.Functor
 import  Class.Monad
@@ -68,6 +70,21 @@ concat (xss0: List (List a)): List a
         go (Cons x xs) xss              = Cons x (go xs xss)
 
 
+-- | Generate a list of the given length by repeatedly 
+--   applying a stateful function.
+unfold   (s0: s) (f: s -> Maybe (Tup2 a s)): List a
+ = case f s0 of
+        Nothing         -> Nil
+        Just (T2 a s1)  -> Cons a (unfold s1 f)
+
+
+generate (len: Nat) (f: Nat -> a): List a
+ = unfold 0
+ $ (\ix -> if ix >= len 
+                then Nothing
+                else Just (T2 (f ix) (ix + 1)))
+
+
 -- Projections ----------------------------------------------------------------
 -- | Take the length of a list.
 length (xx: List a): Nat
@@ -113,6 +130,26 @@ index (def: a) (n: Nat) (xx: List a): a
          -> case n of
                 0       -> x
                 _       -> index def (n - 1) xs
+
+
+-- Searches -------------------------------------------------------------------
+-- | Given a list of key value pairs, lookup the first
+--   value whose key is selected by the given predicate.
+lookupBy (f: a -> Bool) (xx: List (Tup2 a b)): Maybe b
+ = case xx of
+        Nil             -> Nothing
+        Cons (T2 x y) xs
+         | f x          -> Just y
+         | otherwise    -> lookupBy f xs
+
+
+-- | Find the first element in a list that matches the given predicate.
+find (f: a -> Bool) (xx: List a): Maybe a
+ = case xx of
+        Nil             -> Nothing
+        Cons x xs
+         | f x          -> Just x
+         | otherwise    -> find f xs
 
 
 -- Transforms -----------------------------------------------------------------

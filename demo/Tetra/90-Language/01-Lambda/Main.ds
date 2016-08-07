@@ -1,0 +1,26 @@
+
+module Main
+import Step
+import Parser
+import Lexer
+import Exp
+import Class.Show
+import Data.Tuple
+import Data.Text
+import System.IO.Console
+where
+
+
+main ()
+ = do  
+        cs      = charListOfText "(/x. x) (/foo. bar foo) derp"
+        ts      = lexTokens cs
+
+        case parseExp ts of
+         Nothing
+          ->    writel "parse error"
+
+         Just xx
+          -> do writel $ show show_Exp xx
+                writel $ show (show_Step show_Exp) (step xx)
+

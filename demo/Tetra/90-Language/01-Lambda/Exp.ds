@@ -1,0 +1,92 @@
+
+module Exp
+export
+{       show_Exp;
+        makeXApps;
+
+        show_Subst;
+        emptySubst;
+        applySubst;
+}
+import Base
+import Class.Show
+import Data.Text
+where
+
+
+-------------------------------------------------------------------------------
+-- | Untyped lambda calculus expressions.
+data Exp where
+        XVar    : Name  -> Exp
+        XAbs    : Subst -> Name -> Exp -> Exp
+        XApp    : Exp   -> Exp -> Exp
+
+data Subst where
+        Subst   : List (Tup2 Name Exp) -> Subst
+
+
+
+show_Exp: Show Exp
+ =  Show $ \xx
+ -> case xx of
+        XVar n     
+         -> parens $ "XVar"
+                %% show show_text n
+        
+        XAbs ss n x
+         -> parens $ "XAbs"
+                %% show show_Subst ss 
+                %% show show_text n
+                %% show show_Exp x
+        
+        XApp x1 x2
+         -> parens $ "XApp"
+                %% show show_Exp x1
+                %% show show_Exp x2
+
+
+show_Subst: Show Subst
+ =  Show $ \xx
+ -> case xx of
+        Subst ls 
+         -> parens $ "Subst" 
+                %% show (show_list (show_tup2 show_text show_Exp)) ls
+
+
+-- | Make an application of a function to the given list of arguments.
+makeXApps (xFun: Exp) (xsArgs: List Exp): Exp
+ = build (reverse xsArgs)
+ where  
+        build xs
+         = case xs of
+                Nil             -> xFun
+                Cons x1 xsArgs' -> XApp (build xsArgs') x1
+
+
+-- | The empty substitution.
+emptySubst: Subst
+ = Subst Nil
+
+
+-- | Apply a substitution to the given expression.
+applySubst (ss@(Subst ps): Subst) (xx: Exp): Exp
+ = case xx of
+        XVar nBind
+         -> case lookupBy (eqText nBind) ps of
+                Nothing -> xx
+                Just x' -> x'
+
+        XAbs (Subst ps') nBind xBody
+         -> let ss'     = Subst $ append (mapSnd (applySubst ss) ps') ps
+            in  XAbs ss' nBind xBody
+
+        XApp xFun xArg
+         -> XApp (applySubst ss xFun) (applySubst ss xArg)
+
+
+-- | Apply a function to the second components of a list of tuples.
+mapSnd (f: a -> b) (xx: List (Tup2 c a)): List (Tup2 c b)
+ = case xx of
+        Nil              -> Nil
+        Cons (T2 x y) xs -> Cons (T2 x (f y)) (mapSnd f xs)
+

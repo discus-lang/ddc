@@ -1,0 +1,111 @@
+
+module Lexer
+export  { show_Token; eqToken
+        ; takeKName
+        ; lexTokens }
+import Base
+import Class.Show
+import Control.Parsec
+import Data.Tuple
+import Data.Text
+where
+
+
+data Token where
+        KName   : Name  -> Token
+        KBra    : Token
+        KKet    : Token
+        KLambda : Token
+        KDot    : Token
+
+
+eqToken (t1 t2: Token): Bool
+ = case T2 t1 t2 of
+        T2 KBra    KBra         -> True
+        T2 KKet    KKet         -> True
+        T2 KLambda KLambda      -> True
+        T2 KDot    KDot         -> True
+        T2 _       _            -> False
+
+        -- TODO: adding this doesn't contrain the scrutinee,
+        --       so inference breaks.
+        -- _                    -> False
+
+
+show_Token: Show Token
+ = Show sh
+ where  sh kk
+         = case kk of
+                KName n         -> parens $ "KName" %% (show show_text n)
+                KBra            -> "KBra"
+                KKet            -> "KKet"
+                KLambda         -> "KLambda"
+                KDot            -> "KDot"
+
+
+takeKName (kk: Token): Maybe Name
+ = case kk of
+        KName n -> Just n
+        _       -> Nothing
+
+
+lexTokens (xx: List Text): List Token
+ = case lexToken xx of
+        Nothing         -> Nil
+        Just (T2 k xs)  -> Cons k (lexTokens xs)
+
+
+-- TODO: escaped backslash \\ does not work.
+lexToken (xx: List Text): Maybe (Tup2 Token (List Text))
+ | Nil       <- xx
+ = Nothing
+
+ | Cons c xs <- xx
+ = match 
+        -- Skip leading whitespace.
+        | eqText c " "  = lexToken xs
+
+        -- Punctuation.
+        | eqText c "("  = Just (T2 KBra    xs)
+        | eqText c ")"  = Just (T2 KKet    xs)
+        | eqText c "/"  = Just (T2 KLambda xs)
+        | eqText c "."  = Just (T2 KDot    xs)
+
+        -- Names.
+        | headLower c   = lexKName xx
+        | otherwise     = Nothing
+
+
+lexKName (xx: List Text): Maybe (Tup2 Token (List Text))
+ = go Nil xx
+ where  
+        go acc Nil              
+         = do   name    = textOfCharList (reverse acc)
+                Just (T2 (KName name) Nil)
+
+        go acc (Cons x xs)   
+         | headLower x
+         = go (Cons x acc) xs
+
+         | otherwise            
+         = do   name    = textOfCharList (reverse acc)
+                Just (T2 (KName name) (Cons x xs))
+
+
+-- TODO: Handle hex literals with size specifiers.
+-- TODO: Define character type, so we can use isDigit etc like Haskell.
+headDigit (tx: Text): Bool
+ = case indexText tx 0 of
+        Nothing -> False
+        Just c  -> ge# c 0x30w8 ∧ le# c 0x39w8
+
+headUpper (tx: Text): Bool
+ = case indexText tx 0 of
+        Nothing -> False
+        Just c  -> ge# c 65w8   ∧ le# c 90w8
+
+headLower (tx: Text): Bool
+ = case indexText tx 0 of
+        Nothing -> False
+        Just c  -> ge# c 97w8   ∧ le# c 122w8
+

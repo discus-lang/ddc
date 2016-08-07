@@ -7,6 +7,7 @@ export
 
         -- * Projections
         sizeOfText;
+        indexText;
 
         -- * Conversions
         copyTextToVector;
@@ -15,6 +16,9 @@ export
 
         -- * Operators
         textOfWord8;
+        charListOfText;
+        textOfCharList;
+        eqText;
 
         -- * Showing
         showBool;
@@ -143,6 +147,23 @@ sizeOfText (tt: Text): Nat
          -> sizeOfText t1 + sizeOfText t2
 
 
+-- | Get a single word8 character from a Text object.
+indexText (tt: Text) (ix: Nat): Maybe Word8#
+ = case tt of
+        TextLit lit
+         | ix >= sizeOfTextLit lit      -> Nothing
+         | otherwise                    -> Just (indexTextLit lit ix)
+
+        TextVec vec
+         | ix >= vectorLength# vec - 1  -> Nothing
+         | otherwise                    -> Just (vectorRead# vec ix)
+
+        TextApp t1 t2
+         -> case indexText t1 ix of
+                Just x                  -> Just x
+                Nothing                 -> indexText t2 (ix - sizeOfText t1)
+
+
 -- Conversions ----------------------------------------------------------------
 -- | Copy a text literal to a mutable vector of utf-8 bytes.
 copyTextToVector 
@@ -153,7 +174,7 @@ copyTextToVector
          -> copyTextLitToVector lit  vec i0 0 (sizeOfTextLit lit)
 
         TextVec vec2
-         -> copyTextVecToVector vec2 vec i0 0 (vectorLength# vec2)
+         -> copyTextVecToVector vec2 vec i0 0 (vectorLength# vec2 - 1)
 
         TextApp t1 t2
          -> do  i1 = copyTextToVector t1 vec i0
@@ -206,6 +227,106 @@ flattenText (tt: Text): Text
         -- Text has an outer append-node, 
         -- so flatten the whole thing.
         TextApp _ _     -> textOfVector (run vectorOfText [RegionText] tt)
+
+
+charListOfTextVec (vec: Vector# r Word8#): S (Read r) (List Text)
+ = go 0
+ where  
+        go (ix: Nat#): S (Read r) (List Text)
+         | ix >= (vectorLength# vec - 1)
+         = Nil
+
+         | otherwise               
+         = do   txChar = textOfWord8 (vectorRead# vec ix)
+                Cons txChar (go (ix + 1))
+
+
+-- TODO: Read RegionText  isn't being coerced with Pure
+-- need dodgy intermediate run/box cast.
+charListOfText (tx: Text): List Text
+ = run box result
+ where  result: List Text
+         = case tx of
+                TextVec vec -> charListOfTextVec vec
+                _           -> charListOfTextVec (vectorOfText [RegionText] tx)
+
+
+-- TODO: using $ between TextVec and body causes segfault.
+textOfCharList (xx: List Text): Text
+ = TextVec
+    (extend RegionText using r with { Alloc r; Read r; Write r }
+     in  vectorOfCharList [r] xx)
+
+
+vectorOfWord8 (w: Word8#): Vector# RegionText Word8#
+ = extend RegionText using r1 with { Alloc r1; Write r1 } in
+   do   -- Allocate the vector to hold the data,
+        -- including an extra null terminator byte.
+        vec     = vectorAlloc# [r1] [Word8#] 2
+
+        -- Write the character.
+        vectorWrite# vec 0 w
+
+        -- Write the null terminator.
+        vectorWrite# vec 1 0w8
+
+        vec
+
+
+vectorOfCharList
+        [r: Region]
+        (xx: List Text)
+        : S (Alloc r + Write r) (Vector# r Word8#)
+ = run box 
+   do
+        len     = length xx
+        vec     = vectorAlloc# [r] (len + 1)
+        fill vec 0 xx
+        vectorWrite# vec len 0w8
+        vec
+ where
+        fill (vec: Vector# r Word8#) 
+             (ix: Nat) (xx: List Text): S (Write r) Unit
+         = case xx of
+                Nil     -> ()
+                Cons x xs
+                 | Just c       <- indexText x 0
+                 -> do  vectorWrite# vec ix c
+                        fill vec (ix + 1) xs
+
+                 | otherwise
+                 -> do  fill vec (ix + 1) xs
+
+
+-- TODO: eliminate bodgy run box cast
+eqText (tx1 tx2: Text): Bool
+ = run box 
+   private r with {Read r; Alloc r} in
+   do   vec1    = vectorOfText  [r] tx1 
+        len1    = vectorLength# vec1
+
+        vec2    = vectorOfText  [r] tx2
+        len2    = vectorLength# vec2
+
+--        False
+        -- TODO: adding a False line here cause pattern match error in parser.
+
+        match
+         | len1 /= len2 = False
+         | len1 == 0    = True
+         | otherwise    = go vec1 vec2 len1 0
+
+ where
+        go (vec1 vec2: Vector# r Word8#)
+           (len: Nat) (ix: Nat): S (Read r) Bool
+         | ix >= (len - 1)
+         = True
+
+         | not (eq# [Word8#] (vectorRead# vec1 ix) (vectorRead# vec2 ix))
+         = False
+
+         | otherwise
+         = go vec1 vec2 len (ix + 1)
 
 
 -- Showing --------------------------------------------------------------------
