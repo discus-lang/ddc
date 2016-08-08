@@ -1,5 +1,6 @@
 {-# LANGUAGE BangPatterns #-}
-module Text.Lexer.Inchworm.Scanner.Char
+-- | Character based scanners.
+module Text.Lexer.Inchworm.Char
         ( scanInteger
         , scanHaskellChar
         , scanHaskellString
@@ -13,15 +14,18 @@ import qualified Numeric                as Numeric
 
 
 -- Integers -------------------------------------------------------------------
--- | Scan a literal integer, with optional '-' and '+' sign specifiers.
-scanInteger :: Scanner IO [Char] Integer
+-- | Scan a decimal integer, with optional @-@ and @+@ sign specifiers.
+scanInteger 
+        :: Monad m 
+        => Scanner m [Char] Integer
+
 scanInteger 
  = munchPred Nothing matchInt acceptInt
  where
-        matchInt  0 c  
+        matchInt  0 !c  
          = c == '-' || c == '+' || Char.isDigit c
 
-        matchInt  _ c           = Char.isDigit c
+        matchInt  _ !c          = Char.isDigit c
 
         acceptInt ('+' : cs)
          | null cs              = Nothing
@@ -36,25 +40,30 @@ scanInteger
 -- | Scan a literal string,    enclosed in double quotes.
 -- 
 --   We handle the escape codes listed in Section 2.6 of the Haskell Report, 
---   but not string gaps.
+--   but not string gaps or the @&@ terminator.
 --
-scanHaskellString :: Scanner IO [Char] String
 scanHaskellString 
- = munchFold Nothing match (' ', True) accept
- where
-        match 0 '\"' _                  = Just ('\"', True)
-        match _ c   (_, False)          = Nothing
+        :: Monad m
+        => Scanner m [Char] String
 
-        match ix c  (cPrev, True)
+scanHaskellString 
+ = munchFold Nothing matchC (' ', True) acceptC
+ where
+        matchC 0 '\"' _                 = Just ('\"', True)
+        matchC _  _  (_, False)         = Nothing
+
+        matchC ix c  (cPrev, True)
          | ix < 1                       = Nothing
          | c == '"' && cPrev == '\\'    = Just ('"', True)
          | c == '"'                     = Just (c,   False)
          | otherwise                    = Just (c,   True)
 
-        accept ('"' : cs)              
+        acceptC ('"' : cs)              
          = case decodeString cs of
                 (str, ('"' : []))       -> Just str
                 _                       -> Nothing
+
+        acceptC _                       = Nothing
 
 
 -- Characters -----------------------------------------------------------------
@@ -62,60 +71,69 @@ scanHaskellString
 --   
 --   We handle the escape codes listed in Section 2.6 of the Haskell Report.
 --
-scanHaskellChar :: Scanner IO [Char] Char
 scanHaskellChar 
- = munchFold Nothing match (' ', True) accept
- where
-        match 0 '\'' _                  = Just ('\'', True)
-        match _ c   (_,     False)      = Nothing
+        :: Monad m
+        => Scanner m [Char] Char
 
-        match ix c  (cPrev, True)
+scanHaskellChar 
+ = munchFold Nothing matchC (' ', True) acceptC
+ where
+        matchC 0 '\'' _                 = Just ('\'', True)
+        matchC _  _  (_,     False)     = Nothing
+
+        matchC ix c  (cPrev, True)
          | ix < 1                       = Nothing
          | c == '\'' && cPrev == '\\'   = Just ('\'', True)
          | c == '\''                    = Just (c,    False)
          | otherwise                    = Just (c,    True)
 
-        accept ('\'' : cs)          
+        acceptC ('\'' : cs)          
          = case readChar cs of
                 Just (c, "\'")          -> Just c
                 _                       -> Nothing
 
-        accept _                        = Nothing
+        acceptC _                       = Nothing
 
 
 -- Comments -------------------------------------------------------------------
 -- | Scan a Haskell block comment.
-scanHaskellCommentBlock :: Scanner IO [Char] String
+scanHaskellCommentBlock 
+        :: Monad m
+        => Scanner m [Char] String
+
 scanHaskellCommentBlock
- = munchFold Nothing match (' ', True) accept
+ = munchFold Nothing matchC (' ', True) acceptC
  where
-        match 0 '{' _                   = Just ('{', True)
-        match 1 '-' ('{', True)         = Just ('-', True)
+        matchC 0 '{' _                  = Just ('{', True)
+        matchC 1 '-' ('{', True)        = Just ('-', True)
 
-        match _  c  (_,     False)      = Nothing
+        matchC _   _  (_,     False)    = Nothing
 
-        match ix  c  (cPrev, True)
+        matchC ix  c  (cPrev, True)
          | ix < 2                       = Nothing
          | cPrev == '-' && c == '}'     = Just ('}', False)
          | otherwise                    = Just (c,   True)
 
-        accept cc@('{' : '-' : cs)      = Just cc
-        accept _                        = Nothing
+        acceptC cc@('{' : '-' : _)      = Just cc
+        acceptC _                       = Nothing
 
 
 -- | Scan a Haskell line comment.
-scanHaskellCommentLine :: Scanner IO [Char] String
 scanHaskellCommentLine 
- = munchPred Nothing match accept
+        :: Monad m
+        => Scanner m [Char] String
+
+scanHaskellCommentLine 
+ = munchPred Nothing matchC acceptC
  where
-        match 0 '-'     = True
-        match 1 '-'     = True
-        match _ '\n'    = False
-        match ix _       
+        matchC 0 '-'     = True
+        matchC 1 '-'     = True
+        matchC _ '\n'    = False
+        matchC ix _       
          | ix < 2       = False
          | otherwise    = True
 
-        accept cs       = Just cs
+        acceptC cs      = Just cs
 
 
 -------------------------------------------------------------------------------
@@ -127,7 +145,7 @@ decodeString ss0
         go !acc []
          = (reverse acc, [])
 
-        go !acc ss@('\"' : cs)
+        go !acc ss@('\"' : _)
          = (reverse acc, ss)
 
         go !acc ss@(c : cs)
@@ -181,7 +199,7 @@ readChar (c : rest)                     = Just (c, rest)
 -- Nothing to read.
 readChar _                              = Nothing
 
-
+escapedChars :: [(String, Char)]
 escapedChars 
  =      [ ("a",   '\a'),   ("b", '\b'),     ("f",   '\f'),   ("n", '\n')
         , ("r",   '\r'),   ("t", '\t'),     ("v",   '\v'),   ("\\",  '\\')

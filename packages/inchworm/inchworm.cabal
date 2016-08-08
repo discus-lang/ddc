@@ -1,0 +1,54 @@
+Name:           inchworm
+Version:        1.0.0.0
+License:        MIT
+License-file:   LICENSE
+Author:         The Disciplined Disciple Compiler Strike Force
+Maintainer:     Ben Lippmeier <benl@ouroborus.net>
+Build-Type:     Simple
+Cabal-Version:  >=1.6
+Stability:      experimental
+Category:       Parsing
+Homepage:       http://disciple.ouroborus.net
+Synopsis:       Inchworm Lexer Framework
+
+Description:    Simple lexer framework and combinators that allow the
+                lexemes to be specified via fold functions.
+
+                Contains just enough functionality to get the lexing job done, 
+                which makes the library small and easy to bootstrap. If you want
+                more combinators then try the @parsec@ or @attoparsec@ packages.
+
+                Comes with matchers for standard lexemes like integers,
+                comments, and Haskell style strings with escape handling. 
+
+                No dependencies other than the Haskell 'base' library.
+
+
+Library
+  Build-Depends: 
+        base            >= 4.8   && < 4.10
+        
+  Exposed-modules:
+        Text.Lexer.Inchworm.Char
+        Text.Lexer.Inchworm
+
+  Other-modules:
+        Text.Lexer.Inchworm.Combinator
+        Text.Lexer.Inchworm.Scanner
+        Text.Lexer.Inchworm.Source
+
+
+  GHC-options:
+        -Wall
+        -fno-warn-orphans
+        -fno-warn-type-defaults
+        -fno-warn-missing-methods
+        -fno-warn-redundant-constraints
+
+  Extensions:
+        ParallelListComp
+        PatternGuards
+        RankNTypes
+        FlexibleContexts
+        KindSignatures
+        BangPatterns

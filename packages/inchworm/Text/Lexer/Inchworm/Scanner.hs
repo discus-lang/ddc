@@ -6,7 +6,8 @@ where
 import Text.Lexer.Inchworm.Source
 
 
--- | Scanner of input tokens.
+-- | Scanner of input tokens. We pull some tokens from the source
+--   and maybe return a value.
 data Scanner m is a
         = Scanner
         { runScanner  :: Source m is -> m (Maybe a) }
@@ -25,7 +26,7 @@ scanSourceToList
         :: Monad m
         => Source m [i] -> Scanner m [i] a -> m [a]
 
-scanSourceToList ss sn@(Scanner load)
+scanSourceToList ss (Scanner load)
  = go []
  where  go acc
          =  load ss >>= \result

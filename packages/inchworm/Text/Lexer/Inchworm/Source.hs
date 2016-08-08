@@ -1,6 +1,6 @@
 {-# LANGUAGE BangPatterns, RankNTypes, TypeFamilies, FlexibleContexts #-}
 module Text.Lexer.Inchworm.Source
-        ( Source   (..), Elem (..)
+        ( Source   (..)
         , Sequence (..)
         , makeListSourceIO)
 where
@@ -10,26 +10,23 @@ import Prelude  hiding (length)
 
 
 ---------------------------------------------------------------------------------------------------
+-- | Class of sequences of things.
 class Sequence is where
+ -- | An element of a sequence.
  type Elem is
+
+ -- | Yield the length of a sequence.
  length :: is -> Int
- index  :: is -> Int -> Maybe (Elem is)
 
 
 instance Sequence [a] where
  type Elem [a]  = a
  length         = List.length
 
- index ss0 ix0
-  = go ss0 ix0
-  where
-        go []       _   = Nothing
-        go (x : xs) 0   = Just x
-        go (x : xs) n   = go xs (n - 1)
 
 
-
--- | Source of data values of type 'i'.
+-- | An abstract source of tokens that we want to perform lexical analysis on.
+--   A sequence of tokens has type @is@, while a single token has type @Elem is@. 
 data Source m is
         = Source
         { -- | Skip over values from the source that match the given predicate.
@@ -46,6 +43,9 @@ data Source m is
 
           -- | Use a fold function to select a some consecutive tokens from the source
           --   that we want to process, also passing the current index to the fold function.
+          -- 
+          --   The maximum number of tokens to select is set by the first argument,
+          --   which can be set to `Nothing` for no maximum.
         , sourcePulls   :: forall s
                         .  Maybe Int 
                         -> (Int -> Elem is -> s -> Maybe s)
@@ -70,7 +70,7 @@ makeListSourceIO cs0
         (pullsListSourceIO ref)
  where
         -- Skip values from the source.
-        skipListSourceIO ref pred
+        skipListSourceIO ref fPred
          = do
                 cc0     <- readIORef ref
                 let eat !cc
@@ -79,7 +79,7 @@ makeListSourceIO cs0
                          -> return ()
 
                         c : cs  
-                         |  pred c
+                         |  fPred c
                          -> eat cs
 
                          | otherwise 
@@ -104,14 +104,14 @@ makeListSourceIO cs0
 
 
         -- Pull a single value from the source.
-        pullListSourceIO ref pred
+        pullListSourceIO ref fPred
          = do  cc      <- readIORef ref
                case cc of
                 []
                  -> return Nothing
 
                 c : cs 
-                 |  pred c 
+                 |  fPred c 
                  -> do writeIORef ref cs
                        return $ Just c
 
