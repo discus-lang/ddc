@@ -28,8 +28,8 @@ instance Sequence [a] where
 
 -- | An abstract source of input tokens that we want to perform lexical analysis on.
 --
---   Each token is associated with a soure location @loc@, and the whole sequence
---   has type @input@. A single token has type @(Elem input)@.
+--   Each token is associated with a source location @loc@.
+--   A a sequence of tokens has type @input@, and a single token type (`Elem` input).
 --
 data Source m loc input
         = Source
@@ -58,7 +58,10 @@ data Source m loc input
                         -> m (Maybe (loc, input))
 
           -- | Bump the source location using the given element.
-        , sourceBumpLoc :: Elem input -> loc -> loc
+        , sourceBumpLoc   :: Elem input -> loc -> loc
+
+          -- | Get the remaining input.
+        , sourceRemaining :: m (loc, input)
         }
 
 
@@ -83,6 +86,7 @@ makeListSourceIO loc00 bumpLoc cs0
                 (pullListSourceIO  refLoc refSrc)
                 (pullsListSourceIO refLoc refSrc)
                 (bumpLoc)
+                (remainingSourceIO refLoc refSrc)
  where
         -- Skip values from the source.
         skipListSourceIO refLoc refSrc fPred
@@ -178,6 +182,16 @@ makeListSourceIO loc00 bumpLoc cs0
                  _  -> do writeIORef refLoc loc'
                           writeIORef refSrc cc'
                           return  $ Just (loc0, acc)
+
+        -- Get the remaining input.
+        remainingSourceIO
+         :: IORef loc -> IORef [i]
+         -> IO (loc, [i])
+
+        remainingSourceIO refLoc refSrc
+         = do   loc     <- readIORef refLoc
+                src     <- readIORef refSrc
+                return  (loc, src)
 
 
 -------------------------------------------------------------------------------

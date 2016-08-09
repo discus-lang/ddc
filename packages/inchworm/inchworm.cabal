@@ -31,12 +31,12 @@ Library
         
   Exposed-modules:
         Text.Lexer.Inchworm.Char
+        Text.Lexer.Inchworm.Scanner
+        Text.Lexer.Inchworm.Source
         Text.Lexer.Inchworm
 
   Other-modules:
         Text.Lexer.Inchworm.Combinator
-        Text.Lexer.Inchworm.Scanner
-        Text.Lexer.Inchworm.Source
 
 
   GHC-options:

@@ -29,7 +29,7 @@ import qualified Numeric                as Numeric
 scanStringIO
         :: String
         -> Scanner IO Location String a
-        -> IO [a]
+        -> IO ([a], Location, String)
 
 scanStringIO str scanner
  = scanListIO

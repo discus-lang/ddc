@@ -9,11 +9,12 @@ data Token
 
 -- | A thing with attached location information.
 data Located a
-        = Located FilePath Loc a
+        = Located FilePath Location a
         deriving Show
 
 -- | Scanner for a lispy language.
-scanner :: FilePath -> Scanner IO Loc [Char] (Located Token)
+scanner :: FilePath
+        -> Scanner IO Location [Char] (Located Token)
 scanner fileName
  = skip Char.isSpace
  $ alts [ fmap (stamp id)   $ accept '(' KBra
@@ -26,7 +27,6 @@ scanner fileName
           $ munchWord (\ix  c -> if ix == 0 then Char.isUpper c
                                             else Char.isAlpha c)
         ]
-
  where  -- Stamp a token with source location information.
         stamp k (l, t) 
           = Located fileName l (k t)
