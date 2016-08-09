@@ -59,7 +59,6 @@ keywords
         , ("private",    KA (KKeyword EPrivate))
         , ("extend",     KA (KKeyword EExtend))
         , ("using",      KA (KKeyword EUsing))
-        , ("withregion", KA (KKeyword EWithRegion))
         , ("let",        KA (KKeyword ELet))
         , ("case",       KA (KKeyword ECase))
         , ("purify",     KA (KKeyword EPurify))

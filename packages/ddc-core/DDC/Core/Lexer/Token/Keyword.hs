@@ -24,7 +24,6 @@ data Keyword
         | EPrivate
         | EExtend
         | EUsing
-        | EWithRegion
         | ECase
         | EOf
         | EWeakEff
@@ -65,7 +64,6 @@ sayKeyword kw
         EPrivate        -> "private"
         EExtend         -> "extend"
         EUsing          -> "using"
-        EWithRegion     -> "withregion"
         ECase           -> "case"
         EOf             -> "of"
         EWeakEff        -> "weakeff"
