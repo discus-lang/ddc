@@ -11,7 +11,7 @@ Category:       Parsing
 Homepage:       http://disciple.ouroborus.net
 Synopsis:       Inchworm Lexer Framework
 
-Description:    Parser combinator framework specialised to lexical analysis.
+Description:    Parser combinator framework specialized to lexical analysis.
                 Tokens can be specified via simple fold functions, 
                 and we include baked in source location handling.
 
