@@ -1,12 +1,11 @@
 
--- | Simple lexer framework and combinators that allow the
---   lexemes to be specified via fold functions, 
---   and has baked in source location tracking.
+-- | Parser combinator framework specialised to lexical analysis.
+--   Tokens can be specified via simple fold functions, 
+--   and we include baked in source location handling.
 --
---   Contains just enough functionality to get the lexing job done, 
---   which makes the library small and easy to bootstrap. If you want
---   more general purpose combinators then try the
---   @parsec@ or @attoparsec@ packages.
+--   If you want to parse expressions instead of tokens then try
+--   try the @parsec@ or @attoparsec@ packages, which have more
+--   general purpose combinators.
 --
 --   Comes with matchers for standard lexemes like integers,
 --   comments, and Haskell style strings with escape handling. 
@@ -19,23 +18,50 @@ module Text.Lexer.Inchworm
         , Scanner  (..)
         , Sequence (..)
 
-          -- * Source Construction
+          -- * Generic Scanning
+        , scanListIO
+
+          -- ** Source Construction
         , makeListSourceIO
 
-          -- * Scanner Evaluation
+          -- ** Scanner Evaluation
         , scanSourceToList
 
           -- * Combinators
+
+          -- ** Basic
         , satisfies,    skip
+
+          -- ** Accept
         , accept,       accepts
+
+          -- ** From
         , from,         froms
+
+          -- ** Alternation
         , alt,          alts
 
-          -- * Munching
-        , munchPred,    munchFold)
+          -- ** Munching
+        , munchPred,    munchWord,      munchFold)
 where
 import Text.Lexer.Inchworm.Source
 import Text.Lexer.Inchworm.Scanner
 import Text.Lexer.Inchworm.Combinator
 
 
+-- | Scan a list of generic input tokens in the IO monad.
+--
+--   NOTE: If you just want to scan a `String` of characters
+--   use @scanStringIO@ from "Text.Lexer.Inchworm.Char"
+--
+scanListIO 
+        :: Eq i
+        => loc                   -- ^ Starting source location.
+        -> (i -> loc -> loc)     -- ^ Function to bump the current location by one input token.
+        -> [i]                   -- ^ List of input tokens.
+        -> Scanner IO loc [i] a  -- ^ Scanner to apply.
+        -> IO [a]
+
+scanListIO loc bump input scanner
+ = do   src     <- makeListSourceIO loc bump input
+        scanSourceToList src scanner

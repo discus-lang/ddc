@@ -41,7 +41,7 @@ scanSourceToList ss (Scanner load)
 
 {-# SPECIALIZE INLINE
      scanSourceToList
-      :: Source  IO Loc [Char]
-      -> Scanner IO Loc [Char] a
+      :: Source  IO Location [Char]
+      -> Scanner IO Location [Char] a
       -> IO [a] 
   #-}

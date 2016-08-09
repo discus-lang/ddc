@@ -4,7 +4,7 @@ module Text.Lexer.Inchworm.Combinator
         , accept,       accepts
         , from,         froms
         , alt,          alts
-        , munchPred,    munchFold)
+        , munchPred,    munchWord,      munchFold)
 where
 import Text.Lexer.Inchworm.Source
 import Text.Lexer.Inchworm.Scanner
@@ -138,7 +138,6 @@ alts (Scanner scan1 : xs)
          Just r         -> return (Just r)
 {-# INLINE alts #-}
 
-
 -------------------------------------------------------------------------------
 -- | Munch input tokens, using a predicate to select the prefix to consider.
 --
@@ -196,6 +195,27 @@ munchPred mLenMax fPred fAccept
         ()
         fAccept
 {-# INLINE munchPred #-}
+
+
+-------------------------------------------------------------------------------
+-- | Like `munchPred`, but we accept prefixes of any length, 
+--   and always accept the input tokens that match.
+--
+munchWord 
+        :: Monad m
+        => (Int -> Elem input -> Bool)
+                -- ^ Predicate to decide whether to accept the next
+                --   input token, also passed the index of the token
+                --   in the prefix.
+        -> Scanner m loc input (loc, input)
+
+munchWord fPred 
+ = munchFold 
+        Nothing 
+        (\ix i s -> if fPred ix i then Just s else Nothing)
+        ()
+        Just
+{-# INLINE munchWord #-}
 
 
 -------------------------------------------------------------------------------

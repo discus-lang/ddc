@@ -1,7 +1,7 @@
 {-# LANGUAGE BangPatterns, RankNTypes, TypeFamilies, FlexibleContexts #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 module Text.Lexer.Inchworm.Source
-        ( Source   (..), Loc (..)
+        ( Source   (..), Location (..)
         , Sequence (..)
         , makeListSourceIO)
 where
@@ -63,14 +63,14 @@ data Source m loc input
 
 
 ---------------------------------------------------------------------------------------------------
--- | Make a source from a list of values,
+-- | Make a source from a list of input tokens,
 --   maintaining the state in the IO monad.
 makeListSourceIO 
         :: forall i loc
         .  Eq i 
         => loc                    -- ^ Starting source location.
         -> (i -> loc -> loc)      -- ^ Function to bump the current location by one input token.
-        -> [i]                    -- ^ Input tokens in a list.
+        -> [i]                    -- ^ List of input tokens.
         -> IO (Source IO loc [i])
 
 makeListSourceIO loc00 bumpLoc cs0
@@ -186,15 +186,17 @@ makeListSourceIO loc00 bumpLoc cs0
 --   We define this here so that we can use it to specialize
 --   makeListSourceIO.
 --
-data Loc 
-        = Loc 
-        { locLine       :: !Int
-        , locColumn     :: !Int }
+data Location
+        = Location   
+                !Int    -- Line.
+                !Int    -- Column.
+        deriving Show
+
 
 {-# SPECIALIZE INLINE
      makeListSourceIO 
-        :: Loc
-        -> (Char -> Loc -> Loc)
+        :: Location
+        -> (Char -> Location -> Location)
         -> [Char]
-        -> IO (Source IO Loc [Char])
+        -> IO (Source IO Location [Char])
  #-}

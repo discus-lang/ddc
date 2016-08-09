@@ -1,9 +1,14 @@
 {-# LANGUAGE BangPatterns #-}
 -- | Character based scanners.
 module Text.Lexer.Inchworm.Char
-        ( -- * Locations
-          Loc (..)
-        , bumpLocWithChar
+        ( module Text.Lexer.Inchworm
+
+          -- * Driver
+        , scanStringIO
+
+          -- * Locations
+        , Location (..)
+        , bumpLocationWithChar
 
           -- * Scanners
         , scanInteger
@@ -19,12 +24,29 @@ import qualified Data.List              as List
 import qualified Numeric                as Numeric
 
 
+-- Driver ---------------------------------------------------------------------
+-- | Scan a string in the IO monad.
+scanStringIO
+        :: String
+        -> Scanner IO Location String a
+        -> IO [a]
+
+scanStringIO str scanner
+ = scanListIO
+        (Location 1 1)
+        bumpLocationWithChar 
+        str scanner
+
+
 -- Locations ------------------------------------------------------------------
-bumpLocWithChar :: Char -> Loc -> Loc
-bumpLocWithChar c (Loc line col)
+-- | Bump a location using the given character,
+--   updating the line and column number as appropriate. 
+--  
+bumpLocationWithChar :: Char -> Location -> Location
+bumpLocationWithChar c (Location line col)
  = case c of 
-        '\n'    -> Loc (line + 1) 1
-        _       -> Loc line (col + 1) 
+        '\n'    -> Location (line + 1) 1
+        _       -> Location line (col + 1) 
 
 
 -- Integers -------------------------------------------------------------------
@@ -50,7 +72,8 @@ scanInteger
         acceptInt cs            = Just $ read cs
 
 {-# SPECIALIZE INLINE
-     scanInteger :: Scanner IO Loc [Char] (Loc, Integer)
+     scanInteger
+        :: Scanner IO Location [Char] (Location, Integer)
   #-}
 
 -- Strings --------------------------------------------------------------------
@@ -83,7 +106,8 @@ scanHaskellString
         acceptC _                       = Nothing
 
 {-# SPECIALIZE INLINE
-     scanHaskellString :: Scanner IO Loc [Char] (Loc, String)  
+     scanHaskellString
+        :: Scanner IO Location [Char] (Location, String)  
   #-}
 
 
@@ -116,7 +140,8 @@ scanHaskellChar
         acceptC _                       = Nothing
 
 {-# SPECIALIZE INLINE
-     scanHaskellChar :: Scanner IO Loc [Char] (Loc, Char)
+     scanHaskellChar
+        :: Scanner IO Location [Char] (Location, Char)
   #-}
 
 
@@ -143,7 +168,8 @@ scanHaskellCommentBlock
         acceptC _                       = Nothing
 
 {-# SPECIALIZE INLINE
-     scanHaskellCommentBlock :: Scanner IO Loc [Char] (Loc, String)
+     scanHaskellCommentBlock 
+        :: Scanner IO Location [Char] (Location, String)
   #-}
 
 
@@ -165,7 +191,8 @@ scanHaskellCommentLine
         acceptC cs      = Just cs
 
 {-# SPECIALIZE INLINE
-     scanHaskellCommentLine :: Scanner IO Loc [Char] (Loc, String)
+     scanHaskellCommentLine
+        :: Scanner IO Location [Char] (Location, String)
   #-}
 
 
