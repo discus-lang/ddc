@@ -150,7 +150,7 @@ alts (Scanner scan1 : xs)
 --   For example, to scan natural numbers use:
 --
 -- @
--- scanNat :: Monad m => Scanner m [Char] Integer
+-- scanNat :: Monad m => Scanner m loc [Char] (loc, Integer)
 -- scanNat = munchPred Nothing match accept
 --         where match _ c = isDigit c
 --               accept cs = Just (read cs)
@@ -159,7 +159,7 @@ alts (Scanner scan1 : xs)
 --   To match Haskell style constructor names use:
 --
 -- @
--- scanCon :: Monad m => Scanner m [Char] String
+-- scanCon :: Monad m => Scanner m loc [Char] (loc, String)
 -- scanCon = munchPred Nothing match accept
 --         where  match 0 c = isUpper    c
 --                match _ c = isAlphaNum c
