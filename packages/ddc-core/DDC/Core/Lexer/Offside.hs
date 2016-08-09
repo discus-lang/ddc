@@ -31,6 +31,7 @@ data Paren
 type Context
         = Int
 
+
 -- | Apply the offside rule to this token stream.
 --
 --    It should have been processed with addStarts first to add the
@@ -50,9 +51,10 @@ applyOffside
 -- Wait for the module header before we start applying the real offside rule. 
 -- This allows us to write 'module Name with letrec' all on the same line.
 applyOffside ps [] (LexemeToken t : ts) 
-        |   isToken t (KA KModule)
+        |   isKeyword t EModule
          || isKNToken t
         = t : applyOffside ps [] ts
+
 
 -- Enter into a top-level block in the module, and start applying the 
 -- offside rule within it.
@@ -64,30 +66,26 @@ applyOffside ps [] (LexemeToken t : ts)
 applyOffside ps [] ls
         | LexemeToken t1 
                 : (LexemeStartBlock n) : ls' <- ls
-        ,   isToken t1 (KA KExport)
-         || isToken t1 (KA KImport) 
-         || isToken t1 (KA KLetRec)
-         || isToken t1 (KA KWhere)
-        = t1 : newCBra ls' 
-                : applyOffside (ParenBrace : ps) [n] ls'
+        ,   isKeyword t1 EExport
+         || isKeyword t1 EImport
+         || isKeyword t1 ELetRec
+         || isKeyword t1 EWhere
+        = t1 : newCBra ls'      : applyOffside (ParenBrace : ps) [n] ls'
 
         -- (import | export) (type | value) { ... }
         | LexemeToken t1 : LexemeToken t2 
                 : LexemeStartBlock n : ls' <- ls
-        , isToken t1 (KA KImport)   || isToken t1 (KA KExport)
-        , isToken t2 (KA KType)     || isToken t2 (KA KValue)
-        = t1 : t2 : newCBra ls'
-                : applyOffside (ParenBrace : ps) [n] ls'
+        , isKeyword t1 EImport   || isKeyword t1 EExport
+        , isKeyword t2 EType     || isKeyword t2 EValue
+        = t1 : t2 : newCBra ls' : applyOffside (ParenBrace : ps) [n] ls'
 
         -- (import | export) foreign X (type | capability | value) { ... }
         | LexemeToken t1 : LexemeToken t2 : LexemeToken t3 : LexemeToken t4
                 : LexemeStartBlock n : ls' <- ls
-        , isToken t1 (KA KImport)  || isToken t1 (KA KExport)
-        , isToken t2 (KA KForeign)
-        , isToken t4 (KA KType)    || isToken t4 (KA KCapability) || isToken t4 (KA KValue)
-        = t1 : t2 : t3 : t4 : newCBra ls' 
-                : applyOffside (ParenBrace : ps) [n] ls'
-
+        , isKeyword t1 EImport   || isKeyword t1 EExport
+        , isKeyword t2 EForeign
+        , isKeyword t4 EType     || isKeyword t4 ECapability  || isKeyword t4 EValue
+        = t1 : t2 : t3 : t4 : newCBra ls' : applyOffside (ParenBrace : ps) [n] ls'
 
 -- At top level without a context.
 -- Skip over everything until we get the 'with' in 'module Name with ...''
@@ -197,6 +195,13 @@ applyOffside ps (_ : ms) []
         = newCKet [] : applyOffside ps ms []
 
 
+isKeyword (Token { tokenTok = tok }) k
+ = case tok of
+        KA (KKeyword k')        -> k == k'
+        _                       -> False
+
+
+
 -- addStarts --------------------------------------------------------------------------------------
 -- | Add block and line start tokens to this stream.
 --
@@ -301,52 +306,74 @@ splitBlockStart
 splitBlockStart toks
 
  -- export type
- |  t1@Token { tokenTok = KA KExport }  : t2@Token { tokenTok = KA KType }    : ts
+ |  t1@Token { tokenTok = KA (KKeyword EExport)  }
+  : t2@Token { tokenTok = KA (KKeyword EType)    }
+  : ts
  <- toks = Just ([t1, t2], ts)
 
  -- export value
- |  t1@Token { tokenTok = KA KExport }  : t2@Token { tokenTok = KA KValue }   : ts
+ |  t1@Token { tokenTok = KA (KKeyword EExport)  }
+  : t2@Token { tokenTok = KA (KKeyword EValue)   }
+  : ts
  <- toks = Just ([t1, t2], ts)
 
  -- export foreign X value
- |  t1@Token { tokenTok = KA KExport }  : t2@Token { tokenTok = KA KForeign }
-  : t3                                  : t4@Token { tokenTok = KA KValue }   : ts
+ |  t1@Token { tokenTok = KA (KKeyword EExport)  }
+  : t2@Token { tokenTok = KA (KKeyword EForeign) }
+  : t3                                  
+  : t4@Token { tokenTok = KA (KKeyword EValue)   }
+  : ts
  <- toks = Just ([t1, t2, t3, t4], ts)
 
  -- import type
- |  t1@Token { tokenTok = KA KImport }  : t2@Token { tokenTok = KA KType  }   : ts
+ |  t1@Token { tokenTok = KA (KKeyword EImport)  }
+  : t2@Token { tokenTok = KA (KKeyword EType)    }
+  : ts
  <- toks = Just ([t1, t2], ts)
 
  -- import value
- |  t1@Token { tokenTok = KA KImport }  : t2@Token { tokenTok = KA KValue }   : ts
+ |  t1@Token { tokenTok = KA (KKeyword EImport)  }
+  : t2@Token { tokenTok = KA (KKeyword EValue)   }
+  : ts
  <- toks = Just ([t1, t2], ts)
 
  -- import data
- |  t1@Token { tokenTok = KA KImport }  : t2@Token { tokenTok = KA KData }    : ts
+ |  t1@Token { tokenTok = KA (KKeyword EImport)  }
+  : t2@Token { tokenTok = KA (KKeyword EData)    }
+  : ts
  <- toks = Just ([t1, t2], ts)
 
  -- import foreign X type
- |  t1@Token { tokenTok = KA KImport }  : t2@Token { tokenTok = KA KForeign }
-  : t3                                  : t4@Token { tokenTok = KA KType }    : ts
+ |  t1@Token { tokenTok = KA (KKeyword EImport)  }  
+  : t2@Token { tokenTok = KA (KKeyword EForeign) }
+  : t3                                  
+  : t4@Token { tokenTok = KA (KKeyword EType)    }    
+  : ts
  <- toks = Just ([t1, t2, t3, t4], ts)
 
  -- import foreign X capability
- |  t1@Token { tokenTok = KA KImport }  : t2@Token { tokenTok = KA KForeign }
-  : t3                                  : t4@Token { tokenTok = KA KCapability } : ts
+ |  t1@Token { tokenTok = KA (KKeyword EImport)  }
+  : t2@Token { tokenTok = KA (KKeyword EForeign) }
+  : t3
+  : t4@Token { tokenTok = KA (KKeyword ECapability) }
+  : ts
  <- toks = Just ([t1, t2, t3, t4], ts)
 
  -- import foreign X value
- |  t1@Token { tokenTok = KA KImport}   : t2@Token { tokenTok = KA KForeign}
-  : t3                                  : t4@Token { tokenTok = KA KValue }   : ts    
+ |  t1@Token { tokenTok = KA (KKeyword EImport)  }   
+  : t2@Token { tokenTok = KA (KKeyword EForeign) }
+  : t3                                  
+  : t4@Token { tokenTok = KA (KKeyword EValue)   }   
+  : ts    
  <- toks = Just ([t1, t2, t3, t4], ts)
  
- |  t1@Token { tokenTok = KA KDo }      : ts    <- toks = Just ([t1], ts)
- |  t1@Token { tokenTok = KA KOf }      : ts    <- toks = Just ([t1], ts)
- |  t1@Token { tokenTok = KA KLetRec }  : ts    <- toks = Just ([t1], ts)
- |  t1@Token { tokenTok = KA KWhere }   : ts    <- toks = Just ([t1], ts)
- |  t1@Token { tokenTok = KA KExport }  : ts    <- toks = Just ([t1], ts)
- |  t1@Token { tokenTok = KA KImport }  : ts    <- toks = Just ([t1], ts)
- |  t1@Token { tokenTok = KA KMatch }   : ts    <- toks = Just ([t1], ts)
+ |  t1@Token { tokenTok = KA (KKeyword EDo) }      : ts    <- toks = Just ([t1], ts)
+ |  t1@Token { tokenTok = KA (KKeyword EOf) }      : ts    <- toks = Just ([t1], ts)
+ |  t1@Token { tokenTok = KA (KKeyword ELetRec) }  : ts    <- toks = Just ([t1], ts)
+ |  t1@Token { tokenTok = KA (KKeyword EWhere) }   : ts    <- toks = Just ([t1], ts)
+ |  t1@Token { tokenTok = KA (KKeyword EExport) }  : ts    <- toks = Just ([t1], ts)
+ |  t1@Token { tokenTok = KA (KKeyword EImport) }  : ts    <- toks = Just ([t1], ts)
+ |  t1@Token { tokenTok = KA (KKeyword EMatch) }   : ts    <- toks = Just ([t1], ts)
 
  | otherwise                                             
  = Nothing

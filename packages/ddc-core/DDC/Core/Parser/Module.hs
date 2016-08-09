@@ -24,9 +24,8 @@ pModule :: (Ord n, Pretty n)
         => Context n
         -> Parser n (Module P.SourcePos n)
 pModule c
- = do   sp      <- pTokSP KModule
+ = do   sp      <- pTokSP (KKeyword EModule)
         name    <- pModuleName
-
 
         -- Parse header declarations
         heads                   <- P.many (pHeadDecl c)
@@ -57,10 +56,10 @@ pModule c
         --  If not, then it is a module header, which doesn't need bindings.
         (lts, isHeader) 
          <- P.choice
-                [ do    pTok KWith
+                [ do    pTok (KKeyword EWith)
 
                         -- LET;+
-                        lts  <- P.sepBy1 (pLetsSP c) (pTok KIn)
+                        lts  <- P.sepBy1 (pLetsSP c) (pTok (KKeyword EIn))
                         return (lts, False)
 
                 , do    return ([],  True) ]
@@ -129,7 +128,7 @@ pHeadDecl ctx
 -- | Parse a type equation.
 pTypeDef :: Ord n => Context n -> Parser n (n, Kind n, Type n)
 pTypeDef c
- = do   pTokSP KType
+ = do   pTokSP (KKeyword EType)
         n       <- pName
         pTokSP (KOp ":")
         k       <- pType c

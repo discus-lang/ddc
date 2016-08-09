@@ -37,7 +37,7 @@ pExpWhereSP
 
         P.choice
          [ do   -- x where GROUP
-                sp      <- pTokSP KWhere
+                sp      <- pTokSP (KKeyword EWhere)
                 pTok KBraceBra
                 cls     <- liftM (map snd)
                         $  P.sepEndBy1 pClauseSP (pTok KSemiColon)
@@ -179,14 +179,14 @@ pExpFrontSP
 
         -- let expression
  , do   (lts, sp) <- pLetsSP
-        pTok    KIn
+        pTok    (KKeyword EIn)
         x2      <- pExp
         return  (sp, XAnnot sp $ XLet lts x2)
 
 
         -- Sugar for a let-expression.
         --  do { Stmt;+ }
- , do   sp      <- pTokSP KDo
+ , do   sp      <- pTokSP (KKeyword EDo)
         pTok    KBraceBra
         xx      <- pStmts
         pTok    KBraceKet
@@ -194,9 +194,9 @@ pExpFrontSP
 
 
         -- case Exp of { Alt;+ }
- , do   sp      <- pTokSP KCase
+ , do   sp      <- pTokSP (KKeyword ECase)
         x       <- pExp
-        pTok KOf 
+        pTok (KKeyword EOf)
         pTok KBraceBra
         alts    <- P.sepEndBy1 pAltCase (pTok KSemiColon)
         pTok KBraceKet
@@ -205,7 +205,7 @@ pExpFrontSP
 
         -- match { | EXP = EXP | EXP = EXP ... }
         --  Sugar for cascaded case expressions case-expression.
- , do   sp      <- pTokSP KMatch
+ , do   sp      <- pTokSP (KKeyword EMatch)
         pTok KBraceBra
 
         gxs     <- liftM (map (AAltMatch . snd))
@@ -223,11 +223,11 @@ pExpFrontSP
 
  , do   -- if-then-else
         --  Sugar for a case-expression.
-        sp      <- pTokSP KIf
+        sp      <- pTokSP (KKeyword EIf)
         x1      <- pExp
-        pTok KThen
+        pTok (KKeyword EThen)
         x2      <- pExp
-        pTok KElse
+        pTok (KKeyword EElse)
         x3      <- pExp 
         return  (sp, XAnnot sp $ XCase x1 
                         [ AAltCase PTrue    [GExp x2]
@@ -235,31 +235,31 @@ pExpFrontSP
 
 
         -- weakeff [Type] in Exp
- , do   sp      <- pTokSP KWeakEff
+ , do   sp      <- pTokSP (KKeyword EWeakEff)
         pTok KSquareBra
         t       <- pType
         pTok KSquareKet
-        pTok KIn
+        pTok (KKeyword EIn)
         x       <- pExp
         return  (sp, XAnnot sp $ XCast (CastWeakenEffect t) x)
 
 
         -- purify Witness in Exp
- , do   sp      <- pTokSP KPurify
+ , do   sp      <- pTokSP (KKeyword EPurify)
         w       <- pWitness
-        pTok KIn
+        pTok (KKeyword EIn)
         x       <- pExp
         return  (sp, XAnnot sp $ XCast (CastPurify w) x)
 
 
         -- box Exp
- , do   sp      <- pTokSP KBox
+ , do   sp      <- pTokSP (KKeyword EBox)
         x       <- pExp
         return  (sp, XAnnot sp $ XCast CastBox x)
 
 
         -- run Exp
- , do   sp      <- pTokSP KRun
+ , do   sp      <- pTokSP (KKeyword ERun)
         x       <- pExp
         return  (sp, XAnnot sp $ XCast CastRun x)
 
@@ -399,12 +399,12 @@ pLetsSP :: Parser (Lets, SP)
 pLetsSP 
  = P.choice
     [ -- non-recursive let
-      do sp       <- pTokSP KLet
+      do sp       <- pTokSP (KKeyword ELet)
          l        <- liftM snd $ pClauseSP
          return (LGroup [l], sp)
 
       -- recursive let
-    , do sp       <- pTokSP KLetRec
+    , do sp       <- pTokSP (KKeyword ELetRec)
          pTok KBraceBra
          ls       <- liftM (map snd)
                   $  P.sepEndBy1 pClauseSP (pTok KSemiColon)
@@ -413,11 +413,15 @@ pLetsSP
 
       -- Private region binding.
       --   private Binder+ (with { Binder : Type ... })? in Exp
-    , do sp     <- pTokSP KPrivate
+    , do sp     <- pTokSP (KKeyword EPrivate)
          
         -- new private region names.
          bs     <- P.manyTill pBind
-                $  P.try $ P.lookAhead $ P.choice [pTok KIn, pTok KWith]
+                $  P.try 
+                        $ P.lookAhead 
+                        $ P.choice 
+                                [ pTok (KKeyword EIn)
+                                , pTok (KKeyword EWith) ]
          
          -- Witness types.
          r      <- pLetWits bs Nothing
@@ -425,16 +429,19 @@ pLetsSP
 
       -- Extend an existing region.
       --   extend Binder+ using Type (with { Binder : Type ...})? in Exp
-    , do sp     <- pTokSP KExtend
+    , do sp     <- pTokSP (KKeyword EExtend)
 
          -- parent region
          t      <- pType
-         pTok KUsing
+         pTok (KKeyword EUsing)
 
          -- new private region names.
          bs     <- P.manyTill pBind
                 $  P.try $ P.lookAhead 
-                         $ P.choice [pTok KUsing, pTok KWith, pTok KIn]
+                         $ P.choice 
+                                [ pTok (KKeyword EUsing)
+                                , pTok (KKeyword EWith)
+                                , pTok (KKeyword EIn) ]
          
          -- witness types
          r      <- pLetWits bs (Just t)
@@ -445,7 +452,7 @@ pLetsSP
 pLetWits :: [Bind] -> Maybe Type -> Parser Lets
 pLetWits bs mParent
  = P.choice 
-    [ do   pTok KWith
+    [ do   pTok (KKeyword EWith)
            pTok KBraceBra
            wits    <- P.sepBy (P.choice
                       [ -- Named witness binder.
@@ -625,7 +632,7 @@ pGuardedExpSP pTermSP
          , do   g       <- pExp
                 return $ GPred g
 
-         , do   pTok KOtherwise
+         , do   pTok (KKeyword EOtherwise)
                 return GDefault ]
 
 
@@ -658,7 +665,7 @@ pStmt
     do  p       <- pPat
         sp      <- pTokSP KArrowDashLeft
         x1      <- pExp
-        pTok KElse
+        pTok (KKeyword EElse)
         x2      <- pExp
         return  $ StmtMatch sp p x1 x2
 

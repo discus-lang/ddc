@@ -48,7 +48,7 @@ pImportSpecs
 pImportSpecs c
  = do   
         -- import ...
-        pTok KImport
+        pTok (KKeyword EImport)
 
         P.choice
          [      -- data ...
@@ -56,40 +56,40 @@ pImportSpecs c
                 return  [ ImportData def ]
 
                 -- type { (NAME :: KIND)+ }
-         , do   P.choice [ pTok KType, return () ]
+         , do   P.choice [ pTok (KKeyword EType), return () ]
                 pTok KBraceBra
                 specs   <- P.sepEndBy1 (pImportType c) (pTok KSemiColon)
                 pTok KBraceKet
                 return specs
 
                 -- value { (NAME :: TYPE)+ }
-         , do   P.choice [ pTok KValue, return () ]
+         , do   P.choice [ pTok (KKeyword EValue), return () ]
                 pTok KBraceBra
                 specs   <- P.sepEndBy1 (pImportValue c) (pTok KSemiColon)
                 pTok KBraceKet
                 return specs
 
                 -- foreign ...
-         , do   pTok KForeign
+         , do   pTok (KKeyword EForeign)
                 src     <- liftM (renderIndent . ppr) pName
 
                 P.choice
                  [      -- import foreign MODE type { (NAME : TYPE)+ }
-                  do    pTok KType
+                  do    pTok (KKeyword EType)
                         pTok KBraceBra
                         sigs <- P.sepEndBy1 (pImportForeignType c src) (pTok KSemiColon)
                         pTok KBraceKet
                         return sigs
         
                         -- import foreign MODE capability { (NAME : TYPE)+ }
-                 , do   pTok KCapability
+                 , do   pTok (KKeyword ECapability)
                         pTok KBraceBra
                         sigs <- P.sepEndBy1 (pImportForeignCap c src) (pTok KSemiColon)
                         pTok KBraceKet
                         return sigs
 
                         -- import foreign MODE value { (NAME : TYPE)+ }
-                 , do   pTok KValue
+                 , do   pTok (KKeyword EValue)
                         pTok KBraceBra
                         sigs <- P.sepEndBy1 (pImportForeignValue c src) (pTok KSemiColon)
                         pTok KBraceKet

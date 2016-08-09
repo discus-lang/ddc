@@ -25,20 +25,20 @@ pExportSpecs
         => Context n -> Parser n [ExportSpec n]
 
 pExportSpecs c
- = do   pTok KExport
+ = do   pTok (KKeyword EExport)
 
         P.choice 
          [      -- export value { (NAME :: TYPE)+ }
-           do   P.choice [ pTok KValue, return () ]
+           do   P.choice [ pTok (KKeyword EValue), return () ]
                 pTok KBraceBra
                 specs   <- P.sepEndBy1 (pExportValue c) (pTok KSemiColon)
                 pTok KBraceKet 
                 return specs
 
                 -- export foreign X value { (NAME :: TYPE)+ }
-         , do   pTok KForeign
+         , do   pTok (KKeyword EForeign)
                 dst     <- liftM (renderIndent . ppr) pName
-                pTok KValue
+                pTok (KKeyword EValue)
                 pTok KBraceBra
                 specs   <- P.sepEndBy1 (pExportForeignValue c dst) (pTok KSemiColon)
                 pTok KBraceKet

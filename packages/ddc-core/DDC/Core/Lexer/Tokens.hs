@@ -15,8 +15,13 @@ module DDC.Core.Lexer.Tokens
 
           -- * Named Tokens
         , TokNamed (..)
-        , describeTokNamed)
+        , describeTokNamed
+
+          -- * Keywords
+        , Keyword  (..)
+        , sayKeyword)
 where
+import DDC.Core.Lexer.Token.Keyword
 import DDC.Core.Pretty
 import DDC.Core.Exp
 import Control.Monad
@@ -206,41 +211,7 @@ data TokAtom
 
         -----------------------------------------
         -- core keywords
-        | KModule
-        | KImport
-        | KExport
-        | KForeign
-        | KType
-        | KCapability
-        | KValue
-        | KData
-        | KWith
-        | KWhere
-        | KIn
-        | KLet
-        | KLetCase
-        | KLetRec
-        | KPrivate
-        | KExtend
-        | KUsing
-        | KWithRegion
-        | KCase
-        | KOf
-        | KWeakEff
-        | KWeakClo
-        | KPurify
-        | KForget
-        | KBox
-        | KRun
-
-        -----------------------------------------
-        -- sugar keywords
-        | KDo
-        | KMatch
-        | KIf
-        | KThen
-        | KElse
-        | KOtherwise
+        | KKeyword Keyword
 
         -----------------------------------------
         -- debruijn indices
@@ -328,40 +299,7 @@ describeTokAtom' ta
         KBotClosure             -> (Constructor, "Empty")
         
         -- expression keywords
-        KModule                 -> (Keyword, "module")
-        KImport                 -> (Keyword, "import")
-        KExport                 -> (Keyword, "export")
-        KForeign                -> (Keyword, "foreign")
-        KType                   -> (Keyword, "type")
-        KCapability             -> (Keyword, "capability")
-        KValue                  -> (Keyword, "value")
-        KData                   -> (Keyword, "data")
-        KWith                   -> (Keyword, "with")
-        KWhere                  -> (Keyword, "where")
-        KIn                     -> (Keyword, "in")
-        KLet                    -> (Keyword, "let")
-        KLetCase                -> (Keyword, "letcase")
-        KLetRec                 -> (Keyword, "letrec")
-        KPrivate                -> (Keyword, "private")
-        KExtend                 -> (Keyword, "extend")
-        KUsing                  -> (Keyword, "using")
-        KWithRegion             -> (Keyword, "withregion")
-        KCase                   -> (Keyword, "case")
-        KOf                     -> (Keyword, "of")
-        KWeakEff                -> (Keyword, "weakeff")
-        KWeakClo                -> (Keyword, "weakclo")
-        KPurify                 -> (Keyword, "purify")
-        KForget                 -> (Keyword, "forget")
-        KBox                    -> (Keyword, "box")
-        KRun                    -> (Keyword, "run")
-
-        -- sugar keywords
-        KDo                     -> (Keyword, "do")
-        KMatch                  -> (Keyword, "match")
-        KIf                     -> (Keyword, "if")
-        KThen                   -> (Keyword, "then")
-        KElse                   -> (Keyword, "else")
-        KOtherwise              -> (Keyword, "otherwise")
+        KKeyword kw             -> (Keyword, sayKeyword kw)
 
         -- debruijn indices
         KIndex  i               -> (Index,   "^" ++ show i)

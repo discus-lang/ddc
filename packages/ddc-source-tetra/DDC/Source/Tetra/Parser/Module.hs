@@ -29,13 +29,13 @@ import DDC.Core.Parser
 pModule :: Parser (Module Source)
 pModule 
  = do   
-        _sp     <- pTokSP KModule
+        _sp     <- pTokSP (KKeyword EModule)
         name    <- pModuleName <?> "a module name"
 
         -- export { VAR;+ }
         tExports 
          <- P.choice
-            [do pTok KExport
+            [do pTok (KKeyword EExport)
                 pTok KBraceBra
                 vars    <- P.sepEndBy1 pBoundName (pTok KSemiColon)
                 pTok KBraceKet
@@ -50,7 +50,7 @@ pModule
         -- top-level declarations.
         tops    
          <- P.choice
-            [do pTok KWhere
+            [do pTok (KKeyword EWhere)
                 pTok KBraceBra
 
                 -- TOP;+
@@ -98,16 +98,16 @@ data ImportSpec
 -- | Parse some import specs.
 pImportSpecs :: Parser [ImportSpec]
 pImportSpecs
- = do   pTok KImport
+ = do   pTok (KKeyword EImport)
 
         P.choice
                 -- import foreign ...
-         [ do   pTok KForeign
+         [ do   pTok (KKeyword EForeign)
                 src    <- liftM (renderIndent . ppr) pName
 
                 P.choice
                  [      -- import foreign X type (NAME :: TYPE)+ 
-                  do    pTok KType
+                  do    pTok (KKeyword EType)
                         pTok KBraceBra
 
                         sigs <- P.sepEndBy1 (pImportType src) (pTok KSemiColon)
@@ -115,7 +115,7 @@ pImportSpecs
                         return sigs
 
                         -- import foreign X capability (NAME :: TYPE)+
-                 , do   pTok KCapability
+                 , do   pTok (KKeyword ECapability)
                         pTok KBraceBra
 
                         sigs <- P.sepEndBy1 (pImportCapability src) (pTok KSemiColon)
@@ -123,7 +123,7 @@ pImportSpecs
                         return sigs
 
                         -- import foreign X value (NAME :: TYPE)+
-                 , do   pTok KValue
+                 , do   pTok (KKeyword EValue)
                         pTok KBraceBra
 
                         sigs <- P.sepEndBy1 (pImportValue src) (pTok KSemiColon)
@@ -209,13 +209,13 @@ pTop
 -- | Parse a data type declaration.
 pDataDef :: Parser (Top Source)
 pDataDef
- = do   sp      <- pTokSP K.KData
+ = do   sp      <- pTokSP (KKeyword EData)
         b       <- pTyConBindName
         ps      <- liftM concat $ P.many pTypeParam
              
         P.choice
          [ -- Data declaration with constructors that have explicit types.
-           do   pTok KWhere
+           do   pTok (KKeyword EWhere)
                 pTok KBraceBra
                 ctors   <- P.sepEndBy1 pDataCtor (pTok KSemiColon)
                 pTok KBraceKet
@@ -242,7 +242,7 @@ pDataCtor
 -- Type -------------------------------------------------------------------------------------------
 pTypeDef :: Parser (Top Source)
 pTypeDef
- = do   sp      <- pTokSP K.KType
+ = do   sp      <- pTokSP (K.KKeyword K.EType)
         bType   <- pTyConBindName
         bsParam <- liftM concat $ P.many pTypeParam
         _       <- pTokSP K.KEquals

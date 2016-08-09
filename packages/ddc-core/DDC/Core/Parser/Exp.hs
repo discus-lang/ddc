@@ -45,22 +45,22 @@ pExp c
 
         -- let expression
  , do   (lts, sp) <- pLetsSP c
-        pTok    KIn
+        pTok    (KKeyword EIn)
         x2      <- pExp c
         return  $ XLet sp lts x2
 
         -- do { STMTS }
         --   Sugar for a let-expression.
- , do   pTok    KDo
+ , do   pTok    (KKeyword EDo)
         pTok    KBraceBra
         xx      <- pStmts c
         pTok    KBraceKet
         return  $ xx
 
         -- case EXP of { ALTS }
- , do   sp      <- pTokSP KCase
+ , do   sp      <- pTokSP (KKeyword ECase)
         x       <- pExp c
-        pTok KOf 
+        pTok (KKeyword EOf)
         pTok KBraceBra
         alts    <- P.sepEndBy1 (pAlt c) (pTok KSemiColon)
         pTok KBraceKet
@@ -68,37 +68,37 @@ pExp c
 
         -- letcase PAT = EXP in EXP
  , do   --  Sugar for a single-alternative case expression.
-        sp      <- pTokSP KLetCase
+        sp      <- pTokSP (KKeyword ELetCase)
         p       <- pPat c
         pTok KEquals
         x1      <- pExp c
-        pTok KIn
+        pTok (KKeyword EIn)
         x2      <- pExp c
         return  $ XCase sp x1 [AAlt p x2]
 
         -- weakeff [TYPE] in EXP
- , do   sp      <- pTokSP KWeakEff
+ , do   sp      <- pTokSP (KKeyword EWeakEff)
         pTok KSquareBra
         t       <- pType c
         pTok KSquareKet
-        pTok KIn
+        pTok (KKeyword EIn)
         x       <- pExp c
         return  $ XCast sp (CastWeakenEffect t) x
 
         -- purify WITNESS in EXP
- , do   sp      <- pTokSP KPurify
+ , do   sp      <- pTokSP (KKeyword EPurify)
         w       <- pWitness c
-        pTok KIn
+        pTok (KKeyword EIn)
         x       <- pExp c
         return  $ XCast sp (CastPurify w) x
 
         -- box EXP
- , do   sp      <- pTokSP KBox
+ , do   sp      <- pTokSP (KKeyword EBox)
         x       <- pExp c
         return  $ XCast sp CastBox x
 
         -- run EXP
- , do   sp      <- pTokSP KRun
+ , do   sp      <- pTokSP (KKeyword ERun)
         x       <- pExp c
         return  $ XCast sp CastRun x
 
@@ -275,12 +275,12 @@ pLetsSP :: Ord n
 pLetsSP c
  = P.choice
     [ -- non-recursive let.
-      do sp       <- pTokSP KLet
+      do sp       <- pTokSP (KKeyword ELet)
          (b1, x1) <- pLetBinding c
          return (LLet b1 x1, sp)
 
       -- recursive let.
-    , do sp     <- pTokSP KLetRec
+    , do sp       <- pTokSP (KKeyword ELetRec)
          P.choice
           -- Multiple bindings in braces
           [ do   pTok KBraceBra
@@ -295,11 +295,13 @@ pLetsSP c
 
       -- Private region binding.
       --   private BINDER+ (with { BINDER : TYPE ... })? in EXP
-    , do sp     <- pTokSP KPrivate
+    , do sp     <- pTokSP (KKeyword EPrivate)
          
          -- new private region names.
          brs    <- P.manyTill pBinder 
-                $  P.try $ P.lookAhead $ P.choice [pTok KIn, pTok KWith]
+                $  P.try $ P.lookAhead $ P.choice 
+                        [ pTok (KKeyword EIn)
+                        , pTok (KKeyword EWith) ]
 
          let bs =  map (flip T.makeBindFromBinder T.kRegion) brs
 
@@ -309,16 +311,19 @@ pLetsSP c
     
       -- Extend an existing region.
       --   extend BINDER+ using TYPE (with { BINDER : TYPE ...})? in EXP
-    , do sp     <- pTokSP KExtend
+    , do sp     <- pTokSP (KKeyword EExtend)
 
          -- parent region
          t      <- pType c
-         pTok KUsing
+         pTok (KKeyword EUsing)
 
          -- new private region names.
          brs    <- P.manyTill pBinder 
                 $  P.try $ P.lookAhead 
-                         $ P.choice [pTok KUsing, pTok KWith, pTok KIn]
+                         $ P.choice 
+                                [ pTok (KKeyword EUsing)
+                                , pTok (KKeyword EWith)
+                                , pTok (KKeyword EIn) ]
 
          let bs =  map (flip T.makeBindFromBinder T.kRegion) brs
          
@@ -335,7 +340,7 @@ pLetWits :: Ord n
 
 pLetWits c bs mParent
  = P.choice 
-    [ do   pTok KWith
+    [ do   pTok (KKeyword EWith)
            pTok KBraceBra
            wits    <- P.sepBy (P.choice
                         [ -- Named witness binder.
@@ -448,7 +453,7 @@ pStmt c
     do  p       <- pPat c
         sp      <- pTokSP KArrowDashLeft
         x1      <- pExp c
-        pTok KElse
+        pTok (KKeyword EElse)
         x2      <- pExp c
         return  $ StmtMatch sp p x1 x2
 

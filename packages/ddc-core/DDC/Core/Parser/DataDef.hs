@@ -15,13 +15,13 @@ import qualified DDC.Base.Parser        as P
 
 pDataDef :: Ord n => Context n -> Parser n (DataDef n)
 pDataDef c
- = do   pTokSP KData
+ = do   pTokSP (KKeyword EData)
         nData   <- pName 
         bsParam <- liftM concat $ P.many (pDataParam c)
 
         P.choice
          [ -- Data declaration with constructors that have explicit types.
-           do   pTok KWhere
+           do   pTok (KKeyword EWhere)
                 pTok KBraceBra
                 ctors      <- P.sepEndBy1 (pDataCtor c nData bsParam) (pTok KSemiColon)
                 let ctors' = [ ctor { dataCtorTag = tag }

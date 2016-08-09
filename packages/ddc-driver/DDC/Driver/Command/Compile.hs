@@ -190,8 +190,7 @@ cmdLoadOrCompile config buildExe store filePath
 
                   -- this is not the top-level module.
                 , not $ takeFileName filePath == "Main.ds"
-                = do
-                        result  <- liftIO $ Store.load filePathDI
+                = do    result  <- liftIO $ Store.load filePathDI
                         case result of
                          Left  err -> throwE $ P.renderIndent $ P.ppr err
                          Right int -> liftIO $ Store.wrap store int
@@ -426,9 +425,12 @@ getModificationTimeIfExists path
 --   because they only represent the body of the module.
 dropBody :: [Token (C.Tok n)] -> [Token (C.Tok n)]
 dropBody toks = go toks
- where  go []                                      = []
-        go (Token { tokenTok = C.KA C.KWhere} : _) = []
-        go (t : moar)                              = t : go moar
+ where  go []           = []
+
+        go (Token { tokenTok = C.KA (C.KKeyword C.EWhere)} : _) 
+                        = []
+
+        go (t : moar)   = t : go moar
 
 
 -- [Note: Timestamp acccuracy during rebuild]
