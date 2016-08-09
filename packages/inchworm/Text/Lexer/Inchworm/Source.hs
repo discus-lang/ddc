@@ -1,6 +1,7 @@
 {-# LANGUAGE BangPatterns, RankNTypes, TypeFamilies, FlexibleContexts #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 module Text.Lexer.Inchworm.Source
-        ( Source   (..)
+        ( Source   (..), Loc (..)
         , Sequence (..)
         , makeListSourceIO)
 where
@@ -25,12 +26,15 @@ instance Sequence [a] where
 
 
 
--- | An abstract source of tokens that we want to perform lexical analysis on.
---   A sequence of tokens has type @is@, while a single token has type @Elem is@. 
-data Source m is
+-- | An abstract source of input tokens that we want to perform lexical analysis on.
+--
+--   Each token is associated with a soure location @loc@, and the whole sequence
+--   has type @input@. A single token has type @(Elem input)@.
+--
+data Source m loc input
         = Source
         { -- | Skip over values from the source that match the given predicate.
-          sourceSkip    :: (Elem is -> Bool) -> m ()
+          sourceSkip    :: (Elem input -> Bool) -> m ()
 
           -- | Try to evaluate the given computation that may pull values
           --   from the source. If it returns Nothing then rewind the 
@@ -39,7 +43,8 @@ data Source m is
 
           -- | Pull a value from the source,
           --   provided it matches the given predicate.
-        , sourcePull    :: (Elem is -> Bool) -> m (Maybe (Elem is))
+        , sourcePull    :: (Elem input -> Bool)
+                        -> m (Maybe (loc, Elem input))
 
           -- | Use a fold function to select a some consecutive tokens from the source
           --   that we want to process, also passing the current index to the fold function.
@@ -48,9 +53,12 @@ data Source m is
           --   which can be set to `Nothing` for no maximum.
         , sourcePulls   :: forall s
                         .  Maybe Int 
-                        -> (Int -> Elem is -> s -> Maybe s)
+                        -> (Int -> Elem input -> s -> Maybe s)
                         -> s
-                        -> m (Maybe is)
+                        -> m (Maybe (loc, input))
+
+          -- | Bump the source location using the given element.
+        , sourceBumpLoc :: Elem input -> loc -> loc
         }
 
 
@@ -58,93 +66,135 @@ data Source m is
 -- | Make a source from a list of values,
 --   maintaining the state in the IO monad.
 makeListSourceIO 
-        :: Eq i => [i] -> IO (Source IO [i])
+        :: forall i loc
+        .  Eq i 
+        => loc                    -- ^ Starting source location.
+        -> (i -> loc -> loc)      -- ^ Function to bump the current location by one input token.
+        -> [i]                    -- ^ Input tokens in a list.
+        -> IO (Source IO loc [i])
 
-makeListSourceIO cs0
- =  newIORef cs0 >>= \ref
- -> return 
- $  Source 
-        (skipListSourceIO  ref)
-        (tryListSourceIO   ref)
-        (pullListSourceIO  ref)
-        (pullsListSourceIO ref)
+makeListSourceIO loc00 bumpLoc cs0
+ =  do  refLoc  <- newIORef loc00
+        refSrc  <- newIORef cs0
+        return  
+         $ Source 
+                (skipListSourceIO  refLoc refSrc)
+                (tryListSourceIO   refLoc refSrc)
+                (pullListSourceIO  refLoc refSrc)
+                (pullsListSourceIO refLoc refSrc)
+                (bumpLoc)
  where
         -- Skip values from the source.
-        skipListSourceIO ref fPred
+        skipListSourceIO refLoc refSrc fPred
          = do
-                cc0     <- readIORef ref
-                let eat !cc
+                loc0    <- readIORef refLoc
+                cc0     <- readIORef refSrc
+
+                let eat !loc !cc
                      = case cc of
                         []      
-                         -> return ()
+                         -> do  writeIORef refLoc loc
+                                writeIORef refSrc []
+                                return ()
 
                         c : cs  
                          |  fPred c
-                         -> eat cs
+                         -> eat (bumpLoc c loc) cs
 
                          | otherwise 
-                         -> do  writeIORef ref (c : cs)
+                         -> do  writeIORef refLoc loc
+                                writeIORef refSrc (c : cs)
                                 return ()
 
-                eat cc0
+                eat loc0 cc0
 
 
         -- Try to run the given computation,
         -- reverting source state changes if it returns Nothing.
-        tryListSourceIO ref comp 
-         = do   cc      <- readIORef ref
+        tryListSourceIO refLoc refSrc comp 
+         = do   loc     <- readIORef refLoc
+                cc      <- readIORef refSrc
                 mx      <- comp
                 case mx of
                  Just i  
                   -> return (Just i)
 
                  Nothing 
-                  -> do writeIORef ref cc
+                  -> do writeIORef refLoc loc
+                        writeIORef refSrc cc
                         return Nothing
 
 
         -- Pull a single value from the source.
-        pullListSourceIO ref fPred
-         = do  cc      <- readIORef ref
-               case cc of
-                []
-                 -> return Nothing
+        pullListSourceIO refLoc refSrc fPred
+         = do   loc     <- readIORef refLoc
+                cc      <- readIORef refSrc
+                case cc of
+                 []
+                  -> return Nothing
 
-                c : cs 
-                 |  fPred c 
-                 -> do writeIORef ref cs
-                       return $ Just c
+                 c : cs 
+                  |  fPred c 
+                  -> do writeIORef refLoc (bumpLoc c loc)
+                        writeIORef refSrc cs
+                        return $ Just (loc, c)
 
-                 | otherwise
-                 ->    return Nothing
+                  | otherwise
+                  ->    return Nothing
 
 
         -- Pull a vector of values that match the given predicate
         -- from the source.
-        pullsListSourceIO ref mLenMax work s0
-         = do   cc0     <- readIORef ref
+        pullsListSourceIO 
+         :: IORef loc -> IORef [i]
+         -> Maybe Int -> (Int -> i -> s -> Maybe s) 
+         -> s         -> IO (Maybe (loc, [i]))
 
-                let eat !ix !cc !acc !s
+        pullsListSourceIO refLoc refSrc mLenMax work s0
+         = do   loc0    <- readIORef refLoc
+                cc0     <- readIORef refSrc
+
+                let eat !ix !(l :: loc) !cc !acc !s
                      | Just mx  <- mLenMax
                      , ix >= mx
-                     = return (ix, cc, reverse acc)
+                     =      return (ix, l, cc, reverse acc)
 
                      | otherwise
                      = case cc of
                         []      
-                         -> return (ix, cc, reverse acc)
+                         -> return (ix, l, cc, reverse acc)
 
                         c : cs
                          -> case work ix c s of
-                                Nothing -> return (ix, cc, reverse acc)
-                                Just s' -> eat (ix + 1) cs (c : acc) s'
+                                Nothing -> return (ix, l, cc, reverse acc)
+                                Just s' -> eat  (ix + 1) (bumpLoc c l)
+                                                cs       (c : acc)       s'
 
-                (len, cc', acc) 
-                 <- eat 0 cc0 [] s0
+                (len, loc', cc', acc) 
+                 <- eat 0 loc0 cc0 [] s0
 
                 case len of
-                 0      -> return Nothing
-                 _      -> do
-                        writeIORef ref cc'
-                        return  $ Just acc
+                 0  -> return Nothing
+                 _  -> do writeIORef refLoc loc'
+                          writeIORef refSrc cc'
+                          return  $ Just (loc0, acc)
 
+
+-------------------------------------------------------------------------------
+-- | A location in a source file.
+---
+--   We define this here so that we can use it to specialize
+--   makeListSourceIO.
+--
+data Loc 
+        = Loc 
+        { locLine       :: !Int
+        , locColumn     :: !Int }
+
+{-# SPECIALIZE INLINE
+     makeListSourceIO 
+        :: Loc
+        -> (Char -> Loc -> Loc)
+        -> [Char]
+        -> IO (Source IO Loc [Char])
+ #-}

@@ -1,23 +1,37 @@
 {-# LANGUAGE BangPatterns #-}
 -- | Character based scanners.
 module Text.Lexer.Inchworm.Char
-        ( scanInteger
+        ( -- * Locations
+          Loc (..)
+        , bumpLocWithChar
+
+          -- * Scanners
+        , scanInteger
         , scanHaskellChar
         , scanHaskellString
         , scanHaskellCommentBlock
         , scanHaskellCommentLine)
 where
 import Text.Lexer.Inchworm
+import Text.Lexer.Inchworm.Source
 import qualified Data.Char              as Char
 import qualified Data.List              as List
 import qualified Numeric                as Numeric
+
+
+-- Locations ------------------------------------------------------------------
+bumpLocWithChar :: Char -> Loc -> Loc
+bumpLocWithChar c (Loc line col)
+ = case c of 
+        '\n'    -> Loc (line + 1) 1
+        _       -> Loc line (col + 1) 
 
 
 -- Integers -------------------------------------------------------------------
 -- | Scan a decimal integer, with optional @-@ and @+@ sign specifiers.
 scanInteger 
         :: Monad m 
-        => Scanner m [Char] Integer
+        => Scanner m loc [Char] (loc, Integer)
 
 scanInteger 
  = munchPred Nothing matchInt acceptInt
@@ -35,6 +49,9 @@ scanInteger
 
         acceptInt cs            = Just $ read cs
 
+{-# SPECIALIZE INLINE
+     scanInteger :: Scanner IO Loc [Char] (Loc, Integer)
+  #-}
 
 -- Strings --------------------------------------------------------------------
 -- | Scan a literal string,    enclosed in double quotes.
@@ -43,8 +60,8 @@ scanInteger
 --   but not string gaps or the @&@ terminator.
 --
 scanHaskellString 
-        :: Monad m
-        => Scanner m [Char] String
+        :: Monad   m
+        => Scanner m loc [Char] (loc, String)
 
 scanHaskellString 
  = munchFold Nothing matchC (' ', True) acceptC
@@ -65,6 +82,10 @@ scanHaskellString
 
         acceptC _                       = Nothing
 
+{-# SPECIALIZE INLINE
+     scanHaskellString :: Scanner IO Loc [Char] (Loc, String)  
+  #-}
+
 
 -- Characters -----------------------------------------------------------------
 -- | Scan a literal character, enclosed in single quotes.
@@ -72,8 +93,8 @@ scanHaskellString
 --   We handle the escape codes listed in Section 2.6 of the Haskell Report.
 --
 scanHaskellChar 
-        :: Monad m
-        => Scanner m [Char] Char
+        :: Monad   m
+        => Scanner m loc [Char] (loc, Char)
 
 scanHaskellChar 
  = munchFold Nothing matchC (' ', True) acceptC
@@ -94,12 +115,16 @@ scanHaskellChar
 
         acceptC _                       = Nothing
 
+{-# SPECIALIZE INLINE
+     scanHaskellChar :: Scanner IO Loc [Char] (Loc, Char)
+  #-}
+
 
 -- Comments -------------------------------------------------------------------
 -- | Scan a Haskell block comment.
 scanHaskellCommentBlock 
-        :: Monad m
-        => Scanner m [Char] String
+        :: Monad   m
+        => Scanner m loc [Char] (loc, String)
 
 scanHaskellCommentBlock
  = munchFold Nothing matchC (' ', True) acceptC
@@ -117,11 +142,15 @@ scanHaskellCommentBlock
         acceptC cc@('{' : '-' : _)      = Just cc
         acceptC _                       = Nothing
 
+{-# SPECIALIZE INLINE
+     scanHaskellCommentBlock :: Scanner IO Loc [Char] (Loc, String)
+  #-}
+
 
 -- | Scan a Haskell line comment.
 scanHaskellCommentLine 
-        :: Monad m
-        => Scanner m [Char] String
+        :: Monad   m
+        => Scanner m loc [Char] (loc, String)
 
 scanHaskellCommentLine 
  = munchPred Nothing matchC acceptC
@@ -134,6 +163,10 @@ scanHaskellCommentLine
          | otherwise    = True
 
         acceptC cs      = Just cs
+
+{-# SPECIALIZE INLINE
+     scanHaskellCommentLine :: Scanner IO Loc [Char] (Loc, String)
+  #-}
 
 
 -------------------------------------------------------------------------------

@@ -1,10 +1,12 @@
 
 -- | Simple lexer framework and combinators that allow the
---   lexemes to be specified via fold functions.
+--   lexemes to be specified via fold functions, 
+--   and has baked in source location tracking.
 --
 --   Contains just enough functionality to get the lexing job done, 
 --   which makes the library small and easy to bootstrap. If you want
---   more combinators then try the @parsec@ or @attoparsec@ packages.
+--   more general purpose combinators then try the
+--   @parsec@ or @attoparsec@ packages.
 --
 --   Comes with matchers for standard lexemes like integers,
 --   comments, and Haskell style strings with escape handling. 

@@ -16,7 +16,8 @@ import Prelude hiding (length)
 --   returning that token as the result.
 satisfies
         :: Monad m 
-        => (Elem is -> Bool) -> Scanner m is (Elem is)
+        => (Elem input -> Bool)
+        -> Scanner m loc input (loc, Elem input)
 
 satisfies fPred
  =  Scanner $ \ss 
@@ -25,10 +26,14 @@ satisfies fPred
 
 
 -------------------------------------------------------------------------------
--- | Skips tokens that match the given predicate,
+-- | Skip tokens that match the given predicate,
 --   before applying the given argument scanner.
+--
+--   When lexing most source languages you can use this to skip whitespace.
+--
 skip    :: Monad m
-        => (Elem i -> Bool) -> Scanner m i a -> Scanner m i a
+        => (Elem input -> Bool) -> Scanner m loc input a
+        -> Scanner m loc input a
 skip fPred (Scanner scan1)
  =  Scanner $ \ss
  -> do  sourceSkip ss fPred
@@ -39,8 +44,9 @@ skip fPred (Scanner scan1)
 -------------------------------------------------------------------------------
 -- | Accept the next input token if it is equal to the given one,
 --   and return a result of type @a@.
-accept  :: (Monad m, Eq (Elem is))
-        => Elem is -> a -> Scanner m is a
+accept  :: (Monad m, Eq (Elem input))
+        => Elem input -> a
+        -> Scanner m loc input (loc, a)
 accept i a
  = from (\i'   -> if i == i'
                         then Just a
@@ -50,8 +56,9 @@ accept i a
 
 -- | Accept a fixed length sequence of tokens that match the 
 --   given sequence, and return a result of type @a@.
-accepts  :: (Monad m, Sequence is, Eq is)
-         => is -> a -> Scanner m is a
+accepts  :: (Monad m, Sequence input, Eq input)
+         => input -> a
+         -> Scanner m loc input (loc, a)
 accepts is a
  = froms (Just (length is))
          (\is' -> if is == is'
@@ -64,7 +71,8 @@ accepts is a
 -- | Use the given function to check whether to accept the next token,
 --   returning the result it produces.
 from    :: Monad m
-        => (Elem is -> Maybe a) -> Scanner m is a
+        => (Elem input -> Maybe a)
+        -> Scanner m loc input (loc, a)
 
 from fAccept 
  =  Scanner $ \ss
@@ -72,7 +80,10 @@ from fAccept
  $  do  mx       <- sourcePull ss (const True)
         case mx of
          Nothing -> return Nothing
-         Just x  -> return $ fAccept x
+         Just (l, x)  
+          -> case fAccept x of
+                Nothing -> return Nothing
+                Just y  -> return $ Just (l, y)
 {-# INLINE from #-}
 
 
@@ -80,15 +91,19 @@ from fAccept
 --   a fixed length sequence of tokens,
 --   returning the result it produces.
 froms   :: Monad m
-        => Maybe Int -> (is -> Maybe a) -> Scanner m is a
+        => Maybe Int -> (input -> Maybe a)
+        -> Scanner m loc input (loc, a)
 
 froms mLen fAccept
  =  Scanner $ \ss
  -> sourceTry ss
  $  do  mx      <- sourcePulls ss mLen (\_ _ _ -> Just ()) ()
         case mx of
-         Nothing -> return Nothing
-         Just xs -> return $ fAccept xs
+         Nothing      -> return Nothing
+         Just (l, xs) 
+          -> case fAccept xs of
+                Nothing -> return Nothing
+                Just y  -> return $ Just (l, y)
 {-# INLINE froms #-}
 
 
@@ -96,7 +111,8 @@ froms mLen fAccept
 -- | Combine two argument scanners into a result scanner,
 --   where the first argument scanner is tried before the second.
 alt     :: Monad m 
-        => Scanner m is a -> Scanner m is a -> Scanner m is a
+        => Scanner m loc input a -> Scanner m loc input a
+        -> Scanner m loc input a
 alt (Scanner scan1) (Scanner scan2)
  =  Scanner $ \ss
  -> do  mx              <- sourceTry ss (scan1 ss)
@@ -110,7 +126,7 @@ alt (Scanner scan1) (Scanner scan2)
 --   where each argument scanner is tried in turn until we find
 --   one that matches (or not).
 alts    :: Monad m
-        => [Scanner m is a] -> Scanner m is a
+        => [Scanner m loc input a] -> Scanner m loc input a
 alts [] 
  = Scanner $ \_ -> return Nothing
 
@@ -128,7 +144,7 @@ alts (Scanner scan1 : xs)
 --
 --   Given @munch (Just n) match accept@, we select a contiguous sequence
 --   of tokens up to length n using the predicate @match@, then pass
---   that sequence to @accept@ to make a token out of it.
+--   that sequence to @accept@ to make a result value out of it.
 --   If @match@ selects no tokens, or @accept@ returns `Nothing`
 --   then the scanner fails and no tokens are consumed from the source.
 --
@@ -160,16 +176,16 @@ munchPred
         => Maybe Int
                 -- ^ Maximum number of tokens to consider,
                 --   or `Nothing` for no maximum.
-        -> (Int -> Elem is -> Bool)
+        -> (Int -> Elem input -> Bool)
                 -- ^ Predicate to decide whether to consider the next
                 --   input token, also passed the index of the token
                 --   in the prefix.
 
-        -> (is  -> Maybe a)
+        -> (input -> Maybe a)
                 -- ^ Take the prefix of input tokens and decide
                 --   whether to produce a result value.
 
-        -> Scanner m is a
+        -> Scanner m loc input (loc, a)
                 -- ^ Scan a prefix of tokens of type @is@, 
                 --   and produce a result of type @a@ if it matches.
 
@@ -196,17 +212,17 @@ munchFold
         => Maybe Int
                 -- ^ Maximum number of tokens to consider,
                 --   or `Nothing` for no maximum.
-        -> (Int -> Elem is -> s -> Maybe s) 
+        -> (Int -> Elem input -> state -> Maybe state) 
                 -- ^ Fold function to decide whether to consider the next
                 --   input token. The next token will be considered if
                 --   the function produces a `Just` with its new state.
                 --   We stop considering tokens the first time it returns
                 --   `Nothing`.
-        -> s    -- ^ Initial state for the fold.
-        -> (is  -> Maybe a)
+        -> state  -- ^ Initial state for the fold.
+        -> (input -> Maybe a)
                 -- ^ Take the prefix of input tokens and decide
                 --   whether to produce a result value.
-        -> Scanner m is a
+        -> Scanner m loc input (loc, a)
                 -- ^ Scan a prefix of tokens of type @is@,
                 --   and produce a result of type @a@ if it matches.
 
@@ -216,9 +232,9 @@ munchFold mLenMax work s0 acceptC
  $  do  mr              <- sourcePulls ss mLenMax work s0
         case mr of
          Nothing        -> return Nothing
-         Just xs
+         Just (l, xs)
           -> case acceptC xs of
                 Nothing -> return Nothing
-                Just x  -> return $ Just x
+                Just x  -> return $ Just (l, x)
 {-# INLINE munchFold #-}
 

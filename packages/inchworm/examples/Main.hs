@@ -1,6 +1,6 @@
 
 import Text.Lexer.Inchworm
-import Text.Lexer.Inchworm.Scanner.Char
+import Text.Lexer.Inchworm.Char
 import qualified Data.Char      as Char
 
 
