@@ -2,7 +2,9 @@
 module DDC.Core.Lexer.Token.Symbol
         ( Symbol (..)
         , saySymbol
-        , scanSymbol)
+        , scanSymbol
+        , acceptSymbol1
+        , acceptSymbol2)
 where
 import Text.Lexer.Inchworm.Char
 
@@ -159,5 +161,7 @@ acceptSymbol1 c
         '='     -> Just SEquals
         ';'     -> Just SSemiColon
         '_'     -> Just SUnderscore
+        '→'     -> Just SArrowDashRight
+        '←'     -> Just SArrowDashLeft
         _       -> Nothing
 

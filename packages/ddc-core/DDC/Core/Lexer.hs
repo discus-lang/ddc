@@ -19,6 +19,7 @@ import DDC.Core.Lexer.Token.Builtin
 import DDC.Core.Lexer.Token.Keyword
 import DDC.Core.Lexer.Token.Operator
 import DDC.Core.Lexer.Token.Names
+import DDC.Core.Lexer.Token.Symbol
 import DDC.Core.Lexer.Offside
 import DDC.Core.Lexer.Comments
 import DDC.Core.Lexer.Names
@@ -138,24 +139,17 @@ lexWord sp@(SourcePos sourceName line column) w
          | Just ('\n', rest)    <- T.uncons cs
          = tokM KNewLine                : lexWord (SourcePos sourceName (line + 1) 1) rest
 
+         -- Unit constructor ().
+         | not (T.compareLength cs 2 == LT)
+         , (cs1, rest)          <- T.splitAt 2 cs
+         , T.unpack cs1 == "()"
+         = tokA (KBuiltin BDaConUnit) : lexMore 2 rest
+
          -- Double character symbols.
          | not (T.compareLength cs 2 == LT)
          , (cs1, rest)          <- T.splitAt 2 cs
-         , Just t      
-            <- case T.unpack cs1 of
-                "[:"            -> Just (KSymbol  SSquareColonBra)
-                ":]"            -> Just (KSymbol  SSquareColonKet)
-                "{:"            -> Just (KSymbol  SBraceColonBra)
-                ":}"            -> Just (KSymbol  SBraceColonKet)
-                "/\\"           -> Just (KSymbol  SBigLambdaSlash)
-                "~>"            -> Just (KSymbol  SArrowTilde)
-                "->"            -> Just (KSymbol  SArrowDashRight)
-                "<-"            -> Just (KSymbol  SArrowDashLeft)
-                "=>"            -> Just (KSymbol  SArrowEquals)
-                "()"            -> Just (KBuiltin BDaConUnit)
-
-                _               -> Nothing
-         = tokA t : lexMore 2 rest
+         , Just s               <- acceptSymbol2 (T.unpack cs1)
+         = tokA (KSymbol s) : lexMore 2 rest
 
          -- Wrapped operator symbols.
          -- This needs to come before lexing single character symbols.
@@ -204,11 +198,6 @@ lexWord sp@(SourcePos sourceName line column) w
          | Just (tk, sp', rest) <- lexPunc sp cs
          = tk : lexWord sp' rest
 
-        
-         -- Operator body symbols.
---         | Just ('^', rest)     <- T.uncons cs
---         = tokA (KSymbol SHat)                  : lexMore 1 rest
-
          -- Named Constructors
          | Just (c, cs1)        <- T.uncons cs
          , isConStart c
@@ -246,6 +235,7 @@ lexWord sp@(SourcePos sourceName line column) w
 
             in  readNamedVar (T.unpack sym)
 
+
          -- Some unrecognised character.
          | otherwise
          = case T.unpack cs of
@@ -262,41 +252,15 @@ lexPunc :: SourcePos -> Text
 
 lexPunc sp@(SourcePos name line col) tx
  | not (T.compareLength tx 2 == LT)
- , (cs1, rest)          <- T.splitAt 2 tx
- , Just t
-   <- case T.unpack cs1 of
-        "[:"            -> Just (KSymbol SSquareColonBra)
-        ":]"            -> Just (KSymbol SSquareColonKet)
-        "{:"            -> Just (KSymbol SBraceColonBra)
-        ":}"            -> Just (KSymbol SBraceColonKet)
-        _               -> Nothing
- = Just ( Located   sp (KA t)
+ , (cs1, rest)    <- T.splitAt 2 tx
+ , Just s         <- acceptSymbol2 (T.unpack cs1)
+ = Just ( Located   sp (KA (KSymbol s))
         , SourcePos name line (col + 2)
         , rest)
 
  | Just (c, rest) <- T.uncons tx
- , Just t           
-   <- case c of
-        '('             -> Just (KSymbol SRoundBra)
-        ')'             -> Just (KSymbol SRoundKet)
-        '['             -> Just (KSymbol SSquareBra)
-        ']'             -> Just (KSymbol SSquareKet)
-        '{'             -> Just (KSymbol SBraceBra)
-        '}'             -> Just (KSymbol SBraceKet)
-        '.'             -> Just (KSymbol SDot)
-        ','             -> Just (KSymbol SComma)
-        ';'             -> Just (KSymbol SSemiColon)
-        '@'             -> Just (KSymbol SAt)
-        '\\'            -> Just (KSymbol SBackSlash)
-        'λ'             -> Just (KSymbol SLambda)
-        'Λ'             -> Just (KSymbol SBigLambda)
-        '='             -> Just (KSymbol SEquals)
-        '|'             -> Just (KSymbol SBar)
-        '→'             -> Just (KSymbol SArrowDashRight)
-        '^'             -> Just (KSymbol SHat)
-
-        _               -> Nothing
- = Just ( Located   sp (KA t)
+ , Just s         <- acceptSymbol1 c
+ = Just ( Located   sp (KA (KSymbol s))
         , SourcePos name line (col + 1)
         , rest)
 
