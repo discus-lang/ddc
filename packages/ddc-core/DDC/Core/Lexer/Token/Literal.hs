@@ -1,15 +1,12 @@
 
-module DDC.Core.Lexer.Names
-        ( -- * Literal names
-          isLitName
+module DDC.Core.Lexer.Token.Literal
+        ( isLitName
         , isLitStart
         , isLitBody)
 where
-import Data.Char
+import qualified Data.Char      as Char
 
 
-
--- Literal names ----------------------------------------------------------------------------------
 -- | String is the name of a literal.
 isLitName :: String -> Bool
 isLitName str
@@ -23,16 +20,18 @@ isLitName str
          | otherwise
          -> False
 
+
 -- | Character can start a literal.
 isLitStart :: Char -> Bool
 isLitStart c
-        =   isDigit c
+        =   Char.isDigit c
         ||  c == '-'
+
 
 -- | Character can be part of a literal body.
 isLitBody :: Char -> Bool
 isLitBody c
-        =  isDigit c
+        =  Char.isDigit c
         || c == 'b' || c == 'o' || c == 'x'
         || c == 'w' || c == 'f' || c == 'i' || c == 's'
         || c == '.'

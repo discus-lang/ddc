@@ -8,13 +8,13 @@
 --
 module DDC.Core.Lexer
         ( module DDC.Core.Lexer.Tokens
-        , module DDC.Core.Lexer.Names
         , Located (..)
 
           -- * Lexer
         , lexModuleWithOffside
         , lexExp)
 where
+import DDC.Core.Lexer.Token.Literal
 import DDC.Core.Lexer.Token.Builtin
 import DDC.Core.Lexer.Token.Keyword
 import DDC.Core.Lexer.Token.Operator
@@ -22,7 +22,6 @@ import DDC.Core.Lexer.Token.Names
 import DDC.Core.Lexer.Token.Symbol
 import DDC.Core.Lexer.Offside
 import DDC.Core.Lexer.Comments
-import DDC.Core.Lexer.Names
 import DDC.Core.Lexer.Tokens
 import DDC.Data.SourcePos
 import Data.Char

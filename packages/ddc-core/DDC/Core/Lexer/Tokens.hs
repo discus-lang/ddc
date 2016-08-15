@@ -141,14 +141,32 @@ describeTokenMeta tm
 --   They don't contain user-defined names or primops specific to the 
 --   language fragment.
 data TokenAtom
-        = KPragma  Text         -- ^ Pragmas.
-        | KKeyword Keyword      -- ^ Keywords.
-        | KSymbol  Symbol       -- ^ Symbols.
-        | KBuiltin Builtin      -- ^ Built in names.
-        | KOp      String       -- ^ Naked operator,   like in 1 + 2.
-        | KOpVar   String       -- ^ Wrapped operator, like in (+) 1 2.
-        | KIndex   Int          -- ^ Debruijn indices.
-        | KString  Text         -- ^ Literal strings.
+        -- | Pragmas.
+        = KPragma  Text
+
+        -- | Symbols.
+        | KSymbol  Symbol
+
+        -- | Keywords.
+        | KKeyword Keyword
+
+        -- | Builtin names.
+        | KBuiltin Builtin
+
+        -- | Infix operators, like in 1 + 2.
+        | KOp      String
+
+        -- | Wrapped operator, like in (+) 1 2.
+        | KOpVar   String       
+
+        -- | Debrujn indices.
+        | KIndex   Int
+
+        -- | Literal strings.
+        | KString  Text
+
+        -- | Literal integers with optional format and size specifiers.
+        | KInteger Integer (Maybe Char) (Maybe Int)
         deriving (Eq, Show)
 
 
@@ -161,6 +179,7 @@ describeTokenAtom ta
 describeTokenAtom' :: TokenAtom -> (TokenFamily, String)
 describeTokenAtom' ta
  = case ta of
+        KPragma p               -> (Pragma,  "{-#" ++ T.unpack p ++ "#-}")
         KSymbol  ss             -> (Symbol,      saySymbol ss)
         KKeyword kw             -> (Keyword,     sayKeyword kw)
         KBuiltin bb             -> (Constructor, sayBuiltin bb)
@@ -168,8 +187,8 @@ describeTokenAtom' ta
         KOpVar op               -> (Symbol, "(" ++ op ++ ")")
         KIndex  i               -> (Index,   "^" ++ show i)
         KString s               -> (Literal, show s)
-        KPragma p               -> (Pragma,  "{-#" ++ T.unpack p ++ "#-}")
-        
+        KInteger i mc mi        -> (Literal, show (i, mc, mi))
+
 
 -- TokNamed -------------------------------------------------------------------
 -- | A token with a user-defined name.

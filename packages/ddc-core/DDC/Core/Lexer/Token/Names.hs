@@ -122,6 +122,7 @@ isConName str
         | otherwise
         -> False
 
+
 -- | Character can start a constructor name.
 isConStart :: Char -> Bool
 isConStart 
