@@ -17,6 +17,8 @@ module DDC.Core.Lexer
 where
 import DDC.Core.Lexer.Token.Builtin
 import DDC.Core.Lexer.Token.Keyword
+import DDC.Core.Lexer.Token.Operator
+import DDC.Core.Lexer.Token.Names
 import DDC.Core.Lexer.Offside
 import DDC.Core.Lexer.Comments
 import DDC.Core.Lexer.Names
@@ -190,9 +192,8 @@ lexWord sp@(SourcePos sourceName line column) w
          , isOpStart c
          , (body, rest)         <- T.span isOpBody cs1
          , sym                  <- T.cons c body
-         , sym /= T.pack "="
-         , sym /= T.pack "|"
-         = tokA (KOp (T.unpack sym)) : lexMore (1 + T.length body) rest
+         , Just str             <- acceptOperator (T.unpack sym)
+         = tokA (KOp str) : lexMore (length str) rest
 
          -- Single character punctuation.
          | Just (tk, sp', rest)  <- lexPunc sp cs
@@ -208,33 +209,22 @@ lexWord sp@(SourcePos sourceName line column) w
          | Just ('^', rest)     <- T.uncons cs
          = tokA (KSymbol SHat)                  : lexMore 1 rest
 
-         -- Bottoms
-{-
-         | Just rest            <- prefix "Pure" cs
-         = tokA (KBuiltin BPure)                : lexMore 4 rest
-
-         | Just rest            <- prefix "Empty" cs
-         = tokA (KBuiltin BEmpty)               : lexMore 5 rest
--}
          -- Named Constructors
          | Just (c, cs1)        <- T.uncons cs
          , isConStart c
          , (body,  rest)        <- T.span isConBody cs1
-         , (body', rest')       <- case T.uncons rest of
-                                        Just ('\'', rest') -> (body <> T.pack "'", rest')
-                                        Just ('#',  rest') -> (body <> T.pack "#", rest')
-                                        _                  -> (body, rest)
-         = let readNamedCon s
-                | Just bb       <- acceptBuiltin s
-                = tokA  (KBuiltin bb)           : lexMore (length s) rest'
+         , sym                  <- T.cons c body
+         = let  readNamedCon s
+                 | Just bb       <- acceptBuiltin s
+                 = tokA  (KBuiltin bb)           : lexMore (length s) rest
                  
-                | Just con     <- readCon s
-                = tokN (KCon con)               : lexMore (length s) rest'
+                 | Just con      <- acceptConName s
+                 = tokN (KCon con)               : lexMore (length s) rest
                
-                | otherwise    
-                = [tok (KErrorJunk [c])]
+                 | otherwise    
+                 = [tok (KErrorJunk [c])]
                  
-            in  readNamedCon (T.unpack (T.cons c body'))
+            in  readNamedCon (T.unpack sym)
 
          -- Keywords, Named Variables and Witness constructors
          | Just (c, cs1)         <- T.uncons cs
@@ -250,7 +240,7 @@ lexWord sp@(SourcePos sourceName line column) w
                  | Just k       <- lookup s keywords
                  = tokA (KKeyword k)          : lexMore (length s) rest'
          
-                 | Just v       <- readVar s
+                 | Just v       <- acceptVarName s
                  = tokN (KVar v)              : lexMore (length s) rest'
 
                  | otherwise
