@@ -158,7 +158,7 @@ lexWord sp@(SourcePos sourceName line column) w
          , (body, cs3)          <- T.span isOpBody cs2
          , Just (')', rest)     <- T.uncons cs3
          = tokA (KOpVar (T.unpack (T.cons c body))) 
-                                                : lexMore (2 + T.length (T.cons c body)) rest
+                : lexMore (2 + T.length (T.cons c body)) rest
 
          -- Literal numeric values
          -- This needs to come before the rule for '-'
@@ -184,7 +184,7 @@ lexWord sp@(SourcePos sourceName line column) w
          , isOpStart c
          , (body, rest)         <- T.span isOpBody cs1
          , sym                  <- T.cons c body
-         , Just str             <- acceptOperator (T.unpack sym)
+         , Just str             <- acceptInfixOperator (T.unpack sym)
          = tokA (KOp str) : lexMore (length str) rest
 
          -- Debruijn indices

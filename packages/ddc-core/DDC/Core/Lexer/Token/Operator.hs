@@ -1,7 +1,8 @@
 
 module DDC.Core.Lexer.Token.Operator
-        ( scanOperator
-        , acceptOperator
+        ( scanPrefixOperator
+        , scanInfixOperator
+        , acceptInfixOperator
         , isOpName
         , isOpStart
         , isOpBody)
@@ -9,23 +10,53 @@ where
 import Text.Lexer.Inchworm.Char
 import DDC.Core.Lexer.Unicode
 import qualified Data.Set       as Set
+import qualified Data.List      as List
 
 
--- | Scanner for operators.
-scanOperator :: Scanner IO Location [Char] (Location, String)
-scanOperator 
- = munchPred Nothing matchOperator acceptOperator
+-------------------------------------------------------------------------------
+-- | Scanner for operators used prefix.
+scanPrefixOperator :: Scanner IO Location [Char] (Location, String)
+scanPrefixOperator 
+ = munchPred Nothing matchPrefixOperator acceptPrefixOperator
+
+
+-- | Patch a prefix operator name.
+matchPrefixOperator :: Int -> Char -> Bool
+matchPrefixOperator 0 c         = c == '('
+matchPrefixOperator _ c         = isOpBody c || c == ')'
+
+
+-- | Accept a prefix operator name.
+acceptPrefixOperator :: String -> Maybe String
+acceptPrefixOperator str
+        | '(' : cs1     <- str
+        , c   : cs2     <- cs1
+        , isOpStart c
+        , (body , cs3)  <- List.span isOpBody cs2
+        , ')' : []      <- cs3
+        = Just body
+
+        | otherwise
+        = Nothing
+
+
+
+-------------------------------------------------------------------------------
+-- | Scanner for operators used infix.
+scanInfixOperator  :: Scanner IO Location [Char] (Location, String)
+scanInfixOperator 
+ = munchPred Nothing matchInfixOperator acceptInfixOperator
 
 
 -- | Match an operator name.
-matchOperator  :: Int -> Char -> Bool
-matchOperator 0 c       = isOpStart c
-matchOperator _ c       = isOpBody  c
+matchInfixOperator  :: Int -> Char -> Bool
+matchInfixOperator 0 c       = isOpStart c
+matchInfixOperator _ c       = isOpBody  c
 
 
 -- | Accept an operator name.
-acceptOperator :: String -> Maybe String
-acceptOperator str
+acceptInfixOperator :: String -> Maybe String
+acceptInfixOperator str
  = case str of
         "="     -> Nothing
         "|"     -> Nothing
