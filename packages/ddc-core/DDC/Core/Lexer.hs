@@ -16,6 +16,7 @@ module DDC.Core.Lexer
         , lexExp)
 where
 import DDC.Core.Lexer.Token.Builtin
+import DDC.Core.Lexer.Token.Keyword
 import DDC.Core.Lexer.Offside
 import DDC.Core.Lexer.Comments
 import DDC.Core.Lexer.Names
@@ -254,11 +255,11 @@ lexWord sp@(SourcePos sourceName line column) w
                  | "_"          <- s
                  = tokA (KSymbol SUnderscore) : lexMore (length s) rest'
 
-                 | Just t       <- lookup s keywords
-                 = tok t                   : lexMore (length s) rest'
+                 | Just k       <- lookup s keywords
+                 = tokA (KKeyword k)          : lexMore (length s) rest'
          
                  | Just v       <- readVar s
-                 = tokN (KVar v)           : lexMore (length s) rest'
+                 = tokN (KVar v)              : lexMore (length s) rest'
 
                  | otherwise
                  = [tok (KErrorJunk [c])]

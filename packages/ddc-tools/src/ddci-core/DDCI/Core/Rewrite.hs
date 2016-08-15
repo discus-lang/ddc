@@ -75,7 +75,7 @@ parseAdd
 
 parseAdd fragment modules str
  | (name, rest) <- parseFirstWord str
- = case BP.runTokenParser describeTok "<interactive>" 
+ = case BP.runTokenParser describeToken "<interactive>" 
         (pRule (C.contextOfProfile (fragmentProfile fragment)))
           (fragmentLexExp fragment "interactive" 0 rest) of
                 Left err -> Left $ renderIndent $ ppr err

@@ -2,7 +2,8 @@
 module DDC.Core.Lexer.Token.Keyword
         ( Keyword (..)
         , sayKeyword
-        , scanKeyword)
+        , scanKeyword
+        , keywords)
 where
 import Text.Lexer.Inchworm.Char
 import qualified Data.Char              as Char
@@ -142,4 +143,45 @@ acceptKeyword str
         "then"          -> Just EThen
 
         _               -> Nothing
+
+
+
+---------------------------------------------------------------------------------------------------
+-- | Textual keywords in the core language.
+--
+--   TODO: kill this once we've moved to Inchworm lexer.
+--
+keywords :: [(String, Keyword)]
+keywords
+ =      [ ("module",     EModule)
+        , ("import",     EImport)
+        , ("export",     EExport)
+        , ("foreign",    EForeign)
+        , ("type",       EType)
+        , ("value",      EValue)
+        , ("capability", ECapability)
+        , ("data",       EData)
+        , ("in",         EIn)
+        , ("of",         EOf)
+        , ("letrec",     ELetRec)
+        , ("letcase",    ELetCase)
+        , ("private",    EPrivate)
+        , ("extend",     EExtend)
+        , ("using",      EUsing)
+        , ("let",        ELet)
+        , ("case",       ECase)
+        , ("purify",     EPurify)
+        , ("box",        EBox)
+        , ("run",        ERun)
+        , ("weakeff",    EWeakEff)
+        , ("with",       EWith)
+        , ("where",      EWhere)
+        , ("do",         EDo)
+        , ("match",      EMatch)
+        , ("if",         EIf)
+        , ("then",       EThen)
+        , ("else",       EElse)
+        , ("otherwise",  EOtherwise) 
+        ]
+
 

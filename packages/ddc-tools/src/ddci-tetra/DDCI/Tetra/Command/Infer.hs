@@ -24,7 +24,7 @@ cmdInfer _state source str
            in   goParse tokens
 
         goParse tokens
-         = case BP.runTokenParser C.describeTok (nameOfSource source) pModule tokens of
+         = case BP.runTokenParser C.describeToken (nameOfSource source) pModule tokens of
                  Left err        -> error $ show err
                  Right mm        -> goDesugar mm
 

@@ -1,10 +1,7 @@
 
 module DDC.Core.Lexer.Names
-        ( -- * Keywords
-          keywords
-
-          -- * Variable names
-        , isVarName
+        ( -- * Variable names
+          isVarName
         , isVarStart
         , isVarBody
         , readVar
@@ -25,46 +22,10 @@ module DDC.Core.Lexer.Names
         , isLitStart
         , isLitBody)
 where
-import DDC.Core.Lexer.Tokens
 import DDC.Core.Lexer.Unicode
 import DDC.Data.ListUtils
 import Data.Char
 import qualified Data.Set               as Set
-
-
----------------------------------------------------------------------------------------------------
--- | Textual keywords in the core language.
-keywords :: [(String, Token n)]
-keywords
- =      [ ("module",     KA (KKeyword EModule))
-        , ("import",     KA (KKeyword EImport))
-        , ("export",     KA (KKeyword EExport))
-        , ("foreign",    KA (KKeyword EForeign))
-        , ("type",       KA (KKeyword EType))
-        , ("value",      KA (KKeyword EValue))
-        , ("capability", KA (KKeyword ECapability))
-        , ("data",       KA (KKeyword EData))
-        , ("in",         KA (KKeyword EIn))
-        , ("of",         KA (KKeyword EOf))
-        , ("letrec",     KA (KKeyword ELetRec))
-        , ("letcase",    KA (KKeyword ELetCase))
-        , ("private",    KA (KKeyword EPrivate))
-        , ("extend",     KA (KKeyword EExtend))
-        , ("using",      KA (KKeyword EUsing))
-        , ("let",        KA (KKeyword ELet))
-        , ("case",       KA (KKeyword ECase))
-        , ("purify",     KA (KKeyword EPurify))
-        , ("box",        KA (KKeyword EBox))
-        , ("run",        KA (KKeyword ERun))
-        , ("weakeff",    KA (KKeyword EWeakEff))
-        , ("with",       KA (KKeyword EWith))
-        , ("where",      KA (KKeyword EWhere) )
-        , ("do",         KA (KKeyword EDo))
-        , ("match",      KA (KKeyword EMatch))
-        , ("if",         KA (KKeyword EIf))
-        , ("then",       KA (KKeyword EThen))
-        , ("else",       KA (KKeyword EElse))
-        , ("otherwise",  KA (KKeyword EOtherwise)) ]
 
 
 -- Variable names ---------------------------------------------------------------------------------
