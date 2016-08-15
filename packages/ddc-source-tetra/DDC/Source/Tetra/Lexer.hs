@@ -91,12 +91,12 @@ readName str
 --   There are a few tokens accepted by one language but not the other,
 --   but it'll do for now.
 --
-lexModuleString :: String -> Int -> String -> [Located (Tok Name)]
+lexModuleString :: String -> Int -> String -> [Located (Token Name)]
 lexModuleString sourceName lineStart str
  = map rn $ lexModuleWithOffside sourceName lineStart str
  where 
         rn (Located sp strTok)
-         = case renameTok readName strTok of
+         = case renameToken readName strTok of
                 Just t' -> Located sp t'
                 Nothing -> Located sp (KErrorJunk "lexical error")
 

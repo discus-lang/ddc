@@ -48,11 +48,11 @@ data Fragment n (err :: * -> *)
         
           -- | Lex module source into tokens,
           --   given the source name and starting line number. 
-        , fragmentLexModule     :: String -> Int -> String -> [Located (Tok n)]
+        , fragmentLexModule     :: String -> Int -> String -> [Located (Token n)]
 
           -- | Lex expression source into tokens,
           --   given the source name and starting line number.
-        , fragmentLexExp        :: String -> Int -> String -> [Located (Tok n)]
+        , fragmentLexExp        :: String -> Int -> String -> [Located (Token n)]
 
           -- | Perform language fragment specific checks on a module.
         , fragmentCheckModule   :: forall a. Module a n -> Maybe (err a)

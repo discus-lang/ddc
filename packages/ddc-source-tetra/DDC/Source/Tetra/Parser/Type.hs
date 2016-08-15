@@ -194,7 +194,7 @@ pTyConBound :: Parser TyCon
 pTyConBound  
         =   P.pTokMaybe f <?> "a bound type constructor"
  where  
-        f :: Tok SL.Name -> Maybe TyCon
+        f :: Token SL.Name -> Maybe TyCon
         f (KN (KCon (SL.NameCon tx)))
          |  Nothing <- C.readPrimTyCon      (T.unpack tx)
          ,  Nothing <- S.readPrimTyConTetra (T.unpack tx)

@@ -9,7 +9,8 @@ import DDC.Data.SourcePos
 
 -- | Drop all the comments and newline tokens in this stream.
 dropComments 
-        :: Eq n => [Located (Tok n)] -> [Located (Tok n)]
+        :: Eq n
+        => [Located (Token n)] -> [Located (Token n)]
 
 dropComments []      = []
 dropComments (t@(Located sourcePos tok) : xs)
@@ -27,9 +28,9 @@ dropComments (t@(Located sourcePos tok) : xs)
 dropCommentBlock 
         :: Eq n
         => SourcePos            -- ^ Position of outer-most block comment start.
-        -> [Located (Tok n)] 
-        ->  Located (Tok n) 
-        -> [Located (Tok n)]
+        -> [Located (Token n)] 
+        ->  Located (Token n) 
+        -> [Located (Token n)]
 
 dropCommentBlock spStart [] _terr
         = [Located spStart (KM KCommentUnterminated)]
@@ -48,7 +49,10 @@ dropCommentBlock spStart (t@(Located _ tok) : xs) terr
 
 
 -- | Drop newline tokens from this list.
-dropNewLines :: Eq n => [Located (Tok n)] -> [Located (Tok n)]
+dropNewLines
+        :: Eq n
+        => [Located (Token n)] -> [Located (Token n)]
+
 dropNewLines [] = []
 dropNewLines (t:ts)
         | isToken t (KM KNewLine)
@@ -58,6 +62,8 @@ dropNewLines (t:ts)
         = t : dropNewLines ts
 
 
-isToken :: Eq n => Located (Tok n) -> Tok n -> Bool
-isToken (Located _ tok) tok2 = tok == tok2
+isToken :: Eq n
+        => Located (Token n) -> Token n -> Bool
+isToken (Located _ tok) tok2
+        = tok == tok2
 

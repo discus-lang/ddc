@@ -34,7 +34,7 @@ import qualified Data.Set               as Set
 
 ---------------------------------------------------------------------------------------------------
 -- | Textual keywords in the core language.
-keywords :: [(String, Tok n)]
+keywords :: [(String, Token n)]
 keywords
  =      [ ("module",     KA (KKeyword EModule))
         , ("import",     KA (KKeyword EImport))

@@ -49,13 +49,13 @@ lexModuleString
          :: String      -- ^ Source file name.
          -> Int         -- ^ Starting line number.
          -> String      -- ^ String to parse.
-         -> [Located (Tok Name)]
+         -> [Located (Token Name)]
 
 lexModuleString sourceName lineStart str
  = map rn $ lexModuleWithOffside sourceName lineStart str
  where
         rn (Located sp strTok) 
-         = case renameTok readName strTok of
+         = case renameToken readName strTok of
                 Just t' -> Located sp t'
                 Nothing -> Located sp (KErrorJunk "lexical error")
 
@@ -65,13 +65,13 @@ lexExpString
          :: String      -- ^ Source file name.
          -> Int         -- ^ Starting line number.
          -> String      -- ^ String to parse.
-         -> [Located (Tok Name)]
+         -> [Located (Token Name)]
 
 lexExpString sourceName lineStart str
  = map rn $ lexExp sourceName lineStart str
  where 
         rn (Located sp strTok) 
-         = case renameTok readName strTok of
+         = case renameToken readName strTok of
                 Just t' -> Located sp t'
                 Nothing -> Located sp (KErrorJunk "lexical error")
 

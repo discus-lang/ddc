@@ -62,12 +62,12 @@ features
 -- | Lex a string to tokens, using primitive names.
 --
 --   The first argument gives the starting source line number.
-lexModuleString :: String -> Int -> String -> [Located (Tok Name)]
+lexModuleString :: String -> Int -> String -> [Located (Token Name)]
 lexModuleString sourceName lineStart str
  = map rn $ lexModuleWithOffside sourceName lineStart str
  where
         rn (Located sp strTok) 
-         = case renameTok readName strTok of
+         = case renameToken readName strTok of
                 Just t' -> Located sp t'
                 Nothing -> Located sp (KErrorJunk "lexical error")
 
@@ -75,12 +75,12 @@ lexModuleString sourceName lineStart str
 -- | Lex a string to tokens, using primitive names.
 --
 --   The first argument gives the starting source line number.
-lexExpString :: String -> Int -> String -> [Located (Tok Name)]
+lexExpString :: String -> Int -> String -> [Located (Token Name)]
 lexExpString sourceName lineStart str
  = map rn $ lexExp sourceName lineStart str
  where 
         rn (Located sp strTok) 
-         = case renameTok readName strTok of
+         = case renameToken readName strTok of
                 Just t' -> Located sp t'
                 Nothing -> Located sp (KErrorJunk "lexical error")
 

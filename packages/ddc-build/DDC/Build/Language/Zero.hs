@@ -93,12 +93,12 @@ instance CompoundName Name where
 -- | Lex a string to tokens, using primitive names.
 --
 --   The first argument gives the starting source line number.
-lexModuleZero :: String -> Int -> String -> [Located (Tok Name)]
+lexModuleZero :: String -> Int -> String -> [Located (Token Name)]
 lexModuleZero srcName srcLine str
  = map rn $ Core.lexModuleWithOffside srcName srcLine str
  where
         rn (Located sp t) 
-         = case renameTok (Just . Name) t of
+         = case renameToken (Just . Name) t of
                 Just t' -> Located sp t'
                 Nothing -> Located sp (KErrorJunk "lexical error")
 
@@ -106,12 +106,12 @@ lexModuleZero srcName srcLine str
 -- | Lex a string to tokens, using primitive names.
 --
 --   The first argument gives the starting source line number.
-lexExpZero :: String -> Int -> String -> [Located (Tok Name)]
+lexExpZero :: String -> Int -> String -> [Located (Token Name)]
 lexExpZero srcName srcLine str
  = map rn $ Core.lexExp srcName srcLine str
  where
         rn (Located sp t) 
-         = case renameTok (Just . Name) t of
+         = case renameToken (Just . Name) t of
                 Just t' -> Located sp t'
                 Nothing -> Located sp (KErrorJunk "lexical error")
 

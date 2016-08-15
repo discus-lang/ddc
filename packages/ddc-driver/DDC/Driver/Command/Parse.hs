@@ -81,7 +81,8 @@ cmdParseSourceTetraFromFile config filePath
          $ liftIO $ writeFile "dump.tetra-parse.tokens" 
                   $ unlines $ map show $ map SP.valueOfLocated toks
                     
-        case BP.runTokenParser C.describeTok filePath ST.pModule toks of
+        case BP.runTokenParser
+                C.describeToken filePath ST.pModule toks of
          Left err 
           ->    throwE (renderIndent $ ppr err)
          
@@ -116,7 +117,7 @@ cmdParseCoreFromFile _config language filePath
         let toks = (C.fragmentLexModule fragment) filePath 1 src
 
         case BP.runTokenParser
-                C.describeTok filePath 
+                C.describeToken filePath 
                 (C.pModule (C.contextOfProfile profile)) toks of
          Left err
           ->    throwE (renderIndent $ ppr err)

@@ -36,7 +36,7 @@ lexModuleWithOffside
         :: FilePath     -- ^ Path to source file, for error messages.
         -> Int          -- ^ Starting line number.
         -> String       -- ^ String containing program text.
-        -> [Located (Tok String)]
+        -> [Located (Token String)]
 
 lexModuleWithOffside sourceName lineStart str
  = applyOffside [] []
@@ -54,7 +54,7 @@ lexModuleWithOffside sourceName lineStart str
 lexExp  :: FilePath     -- ^ Path to source file, for error messages.
         -> Int          -- ^ Starting line number.
         -> String       -- ^ String containing program text.
-        -> [Located (Tok String)]
+        -> [Located (Token String)]
 
 lexExp sourceName lineStart str
  = dropNewLines
@@ -74,7 +74,7 @@ lexExp sourceName lineStart str
 lexText :: String       -- ^ Name of source file, which is attached to the tokens.
         -> Int          -- ^ Starting line number.
         -> Text         -- ^ Text to tokenize.
-        -> [Located (Tok String)]
+        -> [Located (Token String)]
 
 lexText sourceName lineStart xx
  = let  sp      = SourcePos sourceName lineStart 1
@@ -83,7 +83,7 @@ lexText sourceName lineStart xx
 
 lexWord :: SourcePos
         -> Text 
-        -> [Located (Tok String)]
+        -> [Located (Token String)]
 
 lexWord sp@(SourcePos sourceName line column) w
  = match w
@@ -277,7 +277,7 @@ lexWord sp@(SourcePos sourceName line column) w
 -- | Lex a punctuation token.
 --   These are lexed independently of any other following characters.
 lexPunc :: SourcePos -> Text
-        -> Maybe (Located (Tok String), SourcePos, Text)
+        -> Maybe (Located (Token String), SourcePos, Text)
 
 lexPunc sp@(SourcePos name line col) tx
  | not (T.compareLength tx 2 == LT)
@@ -329,7 +329,7 @@ lexPunc sp@(SourcePos name line col) tx
 --   is compatable with C string functions.
 lexLitString
         :: SourcePos -> Text
-        -> Maybe (Located (Tok String), SourcePos, Text)
+        -> Maybe (Located (Token String), SourcePos, Text)
 
 lexLitString sp@(SourcePos name line col) tx 
  | Just ('\"', cc)      <- T.uncons tx

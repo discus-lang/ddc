@@ -12,7 +12,7 @@ import DDC.Data.SourcePos
 ---------------------------------------------------------------------------------------------------
 -- | Holds a real token or start symbol which is used to apply the offside rule.
 data Lexeme n
-        = LexemeToken           (Located (Tok n))
+        = LexemeToken           (Located (Token n))
         | LexemeStartLine       Int
 
         -- | Signal that we're starting a block in this column.
@@ -45,7 +45,7 @@ applyOffside
         => [Paren]              -- ^ What parenthesis we're inside.
         -> [Context]            -- ^ Current layout context.
         -> [Lexeme n]           -- ^ Input lexemes.
-        -> [Located (Tok n)]
+        -> [Located (Token n)]
 
 -- Wait for the module header before we start applying the real offside rule. 
 -- This allows us to write 'module Name with letrec' all on the same line.
@@ -207,7 +207,7 @@ isKeyword (Located _ tok) k
 --   This is identical to the definition in the Haskell98 report,
 --   except that we also use multi-token starting strings like
 --   'imports' 'foreign' 'type'.
-addStarts :: (Eq n, Show n) => [Located (Tok n)] -> [Lexeme n]
+addStarts :: (Eq n, Show n) => [Located (Token n)] -> [Lexeme n]
 addStarts ts
  = case dropNewLines ts of
 
@@ -223,7 +223,7 @@ addStarts ts
         []      -> []
 
 
-addStarts'  :: Eq n => [Located (Tok n)] -> [Lexeme n]
+addStarts'  :: Eq n => [Located (Token n)] -> [Lexeme n]
 addStarts' ts
         -- Block started at end of input.
         | Just (ts1, ts2)       <- splitBlockStart ts
@@ -274,7 +274,7 @@ addStarts' ts
 
 
 -- | Drop newline tokens at the front of this stream.
-dropNewLines :: Eq n => [Located (Tok n)] -> [Located (Tok n)]
+dropNewLines :: Eq n => [Located (Token n)] -> [Located (Token n)]
 dropNewLines []              = []
 dropNewLines (t1:ts)
         | isToken t1 (KM KNewLine)
@@ -299,8 +299,8 @@ dropNewLinesLexeme ll
 
 -- | Check if a token is one that starts a block of statements.
 splitBlockStart 
-        :: [Located (Tok n)] 
-        -> Maybe ([Located (Tok n)], [Located (Tok n)])
+        :: [Located (Token n)] 
+        -> Maybe ([Located (Token n)], [Located (Token n)])
 
 splitBlockStart toks
 
@@ -380,31 +380,32 @@ splitBlockStart toks
 
 -- Utils ------------------------------------------------------------------------------------------
 -- | Test whether this wrapper token matches.
-isToken :: Eq n => Located (Tok n) -> Tok n -> Bool
-isToken (Located _ tok) tok2 = tok == tok2
+isToken :: Eq n => Located (Token n) -> Token n -> Bool
+isToken (Located _ tok) tok2
+        = tok == tok2
 
 
 -- | Test whether this wrapper token matches.
-isKNToken :: Eq n => Located (Tok n) -> Bool
+isKNToken :: Eq n => Located (Token n) -> Bool
 isKNToken (Located _ (KN _))    = True
 isKNToken _                     = False
 
 
 -- | When generating new source tokens, take the position from the first
 --   non-newline token in this list
-newCBra      :: [Lexeme n] -> Located (Tok n)
+newCBra      :: [Lexeme n] -> Located (Token n)
 newCBra ts
  = case takeTok ts of
         Located sp _    -> Located sp (KA (KSymbol SBraceBra))
 
 
-newCKet      :: [Lexeme n] -> Located (Tok n)
+newCKet      :: [Lexeme n] -> Located (Token n)
 newCKet ts
  = case takeTok ts of
         Located sp _    -> Located sp (KA (KSymbol SBraceKet))
 
 
-newSemiColon :: [Lexeme n] -> Located (Tok n)
+newSemiColon :: [Lexeme n] -> Located (Token n)
 newSemiColon ts
  = case takeTok ts of
         Located sp _    -> Located sp (KA (KSymbol SSemiColon))
@@ -412,13 +413,13 @@ newSemiColon ts
 
 -- | This is injected by `applyOffside` when it finds an explit close
 --   brace in a position where it would close a synthetic one.
-newOffsideClosingBrace :: [Lexeme n] -> Located (Tok n)
+newOffsideClosingBrace :: [Lexeme n] -> Located (Token n)
 newOffsideClosingBrace ts
  = case takeTok ts of
         Located sp _    -> Located sp (KM KOffsideClosingBrace)
 
 
-takeTok :: [Lexeme n] -> Located (Tok n)
+takeTok :: [Lexeme n] -> Located (Token n)
 takeTok []      
  = Located (SourcePos "" 0 0) (KErrorJunk "") 
 

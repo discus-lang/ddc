@@ -40,7 +40,8 @@ import DDC.Core.Parser
         , pTok, pTokSP
         , pIndexSP)
 
-type Parser a = P.Parser (Tok Name) a
+type Parser a
+        = P.Parser (Token Name) a
 
 
 -- Type and Term Variables ----------------------------------------------------

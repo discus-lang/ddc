@@ -372,7 +372,9 @@ tasteNeeded filePath src
                 = dropBody
                 $ SE.lexModuleString filePath 1 src
 
-        case BP.runTokenParser C.describeTok filePath SE.pModule tokens of
+        case BP.runTokenParser
+                C.describeToken
+                filePath SE.pModule tokens of
          Left  err  -> throwE $ P.renderIndent $ P.ppr err
          Right mm   -> return $ SE.moduleImportModules mm
 
@@ -413,7 +415,7 @@ getModificationTimeIfExists path
 -- | Drop tokens after and including the first 'where' keyword.
 --   When parsing just the module header we can drop these tokens
 --   because they only represent the body of the module.
-dropBody :: [C.Located (C.Tok n)] -> [C.Located (C.Tok n)]
+dropBody :: [C.Located (C.Token n)] -> [C.Located (C.Token n)]
 dropBody toks = go toks
  where  go []           = []
 

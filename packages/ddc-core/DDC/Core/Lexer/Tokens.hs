@@ -4,21 +4,11 @@ module DDC.Core.Lexer.Tokens
         , columnOfLocated
 
           -- * Tokens
-        , Tok      (..)
-        , renameTok
-        , describeTok
-
-          -- * Meta Tokens
-        , TokMeta  (..)
-        , describeTokMeta
-
-          -- * Atomic Tokens
-        , TokAtom  (..)
-        , describeTokAtom
-
-          -- * Named Tokens
-        , TokNamed (..)
-        , describeTokNamed
+        , Token      (..), describeToken
+        , TokenMeta  (..), describeTokenMeta
+        , TokenAtom  (..), describeTokenAtom
+        , TokenNamed (..), describeTokenNamed
+        , renameToken
 
           -- * Keywords
         , Keyword  (..),        sayKeyword
@@ -61,37 +51,37 @@ describeTokenFamily tf
         Pragma          -> "pragma"
 
 
--- Tok ------------------------------------------------------------------------
+-- Token ------------------------------------------------------------------------
 -- | Tokens accepted by the core language parser.
-data Tok n
+data Token n
         -- | Some junk symbol that isn't part of the language.
-        = KErrorJunk String
+        = KErrorJunk   String
 
         -- | The first part of an unterminated string.
         | KErrorUnterm String
 
         -- | Meta tokens contain out-of-band information that is eliminated
         --   before parsing proper.
-        | KM    !TokMeta
+        | KM    !TokenMeta
 
         -- | Atomic tokens are keywords, punctuation and baked-in 
         --   constructor names.
-        | KA    !TokAtom 
+        | KA    !TokenAtom 
 
         -- | A named token that is specific to the language fragment 
         --   (maybe it's a primop), or a user defined name.
-        | KN    !(TokNamed n)
+        | KN    !(TokenNamed n)
         deriving (Eq, Show)
 
 
 -- | Apply a function to all the names in a `Tok`.
-renameTok
+renameToken
         :: Ord n2
         => (n1 -> Maybe n2) 
-        -> Tok n1 
-        -> Maybe (Tok n2)
+        -> Token n1 
+        -> Maybe (Token n2)
 
-renameTok f kk
+renameToken f kk
  = case kk of
         KErrorJunk s 
          -> Just $ KErrorJunk s
@@ -101,24 +91,24 @@ renameTok f kk
 
         KM t    -> Just $ KM t
         KA t    -> Just $ KA t
-        KN t    -> liftM KN $ renameTokNamed f t
+        KN t    -> liftM KN $ renameTokenNamed f t
 
 
 -- | Describe a token for parser error messages.
-describeTok :: Pretty n => Tok n -> String
-describeTok kk
+describeToken :: Pretty n => Token n -> String
+describeToken kk
  = case kk of
         KErrorJunk c    -> "character " ++ show c
         KErrorUnterm _  -> "unterminated string"
-        KM tm           -> describeTokMeta  tm
-        KA ta           -> describeTokAtom  ta
-        KN tn           -> describeTokNamed tn
+        KM tm           -> describeTokenMeta  tm
+        KA ta           -> describeTokenAtom  ta
+        KN tn           -> describeTokenNamed tn
 
 
 -- TokMeta --------------------------------------------------------------------
 -- | Meta tokens contain out-of-band information that is 
 --   eliminated before parsing proper.
-data TokMeta
+data TokenMeta
         = KNewLine
         | KCommentLineStart
         | KCommentBlockStart
@@ -135,8 +125,8 @@ data TokMeta
 
 
 -- | Describe a TokMeta, for lexer error messages.
-describeTokMeta :: TokMeta -> String
-describeTokMeta tm
+describeTokenMeta :: TokenMeta -> String
+describeTokenMeta tm
  = case tm of
         KNewLine                -> "new line"
         KCommentLineStart       -> "comment start"
@@ -150,7 +140,7 @@ describeTokMeta tm
 -- | Atomic tokens are keywords, punctuation and baked-in constructor names.
 --   They don't contain user-defined names or primops specific to the 
 --   language fragment.
-data TokAtom
+data TokenAtom
         = KPragma  Text         -- ^ Pragmas.
         | KKeyword Keyword      -- ^ Keywords.
         | KSymbol  Symbol       -- ^ Symbols.
@@ -163,13 +153,13 @@ data TokAtom
 
 
 -- | Describe a `TokAtom`, for parser error messages.
-describeTokAtom  :: TokAtom -> String
-describeTokAtom ta
- = let  (family, str)           = describeTokAtom' ta
+describeTokenAtom  :: TokenAtom -> String
+describeTokenAtom ta
+ = let  (family, str)           = describeTokenAtom' ta
    in   describeTokenFamily family ++ " " ++ show str
 
-describeTokAtom' :: TokAtom -> (TokenFamily, String)
-describeTokAtom' ta
+describeTokenAtom' :: TokenAtom -> (TokenFamily, String)
+describeTokenAtom' ta
  = case ta of
         KSymbol  ss             -> (Symbol,      saySymbol ss)
         KKeyword kw             -> (Keyword,     sayKeyword kw)
@@ -183,7 +173,7 @@ describeTokAtom' ta
 
 -- TokNamed -------------------------------------------------------------------
 -- | A token with a user-defined name.
-data TokNamed n
+data TokenNamed n
         = KCon n
         | KVar n
         | KLit n
@@ -191,8 +181,8 @@ data TokNamed n
 
 
 -- | Describe a `TokNamed`, for parser error messages.
-describeTokNamed :: Pretty n => TokNamed n -> String
-describeTokNamed tn
+describeTokenNamed :: Pretty n => TokenNamed n -> String
+describeTokenNamed tn
  = case tn of
         KCon n  -> renderPlain $ text "constructor" <+> (dquotes $ ppr n)
         KVar n  -> renderPlain $ text "variable"    <+> (dquotes $ ppr n)
@@ -200,13 +190,13 @@ describeTokNamed tn
 
 
 -- | Apply a function to all the names in a `TokNamed`.
-renameTokNamed 
+renameTokenNamed 
         :: Ord n2
         => (n1 -> Maybe n2) 
-        -> TokNamed n1 
-        -> Maybe (TokNamed n2)
+        -> TokenNamed n1 
+        -> Maybe (TokenNamed n2)
 
-renameTokNamed f kk
+renameTokenNamed f kk
   = case kk of
         KCon c           -> liftM KCon $ f c
         KVar c           -> liftM KVar $ f c

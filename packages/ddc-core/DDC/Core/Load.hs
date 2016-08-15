@@ -140,7 +140,7 @@ loadModuleFromTokens
         => Fragment n err               -- ^ Language fragment definition.
         -> FilePath                     -- ^ Path to source file for error messages.
         -> Mode n                       -- ^ Type checker mode.
-        -> [Located (Tok n)]            -- ^ Source tokens.
+        -> [Located (Token n)]          -- ^ Source tokens.
         -> ( Either (Error n err) 
                     (Module (C.AnTEC BP.SourcePos n) n)
            , Maybe CheckTrace)
@@ -156,7 +156,7 @@ loadModuleFromTokens fragment sourceName mode toks'
 
         -- Parse the tokens.
         goParse toks                
-         = case BP.runTokenParser describeTok sourceName 
+         = case BP.runTokenParser describeToken sourceName 
                         (C.pModule (C.contextOfProfile profile))
                         toks of
                 Left err        -> (Left (ErrorParser err),     Nothing)
@@ -211,7 +211,7 @@ loadExpFromTokens
                                 --   We add their exports to the environment.
         -> FilePath             -- ^ Path to source file for error messages.
         -> Mode n               -- ^ Type checker mode.
-        -> [Located (Tok n)]    -- ^ Source tokens.
+        -> [Located (Token n)]  -- ^ Source tokens.
         -> ( Either (Error n err) 
                     (Exp (C.AnTEC BP.SourcePos n) n)
            , Maybe CheckTrace)
@@ -234,7 +234,7 @@ loadExpFromTokens fragment modules sourceName mode toks'
 
         -- Parse the tokens.
         goParse toks                
-         = case BP.runTokenParser describeTok sourceName 
+         = case BP.runTokenParser describeToken sourceName 
                         (C.pExp (C.contextOfProfile profile))
                         toks of
                 Left err              -> (Left (ErrorParser err),     Nothing)
@@ -281,7 +281,7 @@ loadTypeFromTokens
         => Fragment n err       -- ^ Language fragment definition.
         -> Universe             -- ^ Universe this type is supposed to be in.
         -> FilePath             -- ^ Path to source file for error messages.
-        -> [Located (Tok n)]    -- ^ Source tokens.
+        -> [Located (Token n)]  -- ^ Source tokens.
         -> Either (Error n err) 
                   (Type n, Kind n)
 
@@ -292,7 +292,7 @@ loadTypeFromTokens fragment uni sourceName toks'
 
         -- Parse the tokens.
         goParse toks                
-         = case BP.runTokenParser describeTok sourceName 
+         = case BP.runTokenParser describeToken sourceName 
                         (C.pType (C.contextOfProfile profile))
                         toks of
                 Left err  -> Left (ErrorParser err)
@@ -325,7 +325,7 @@ loadWitnessFromTokens
         :: (Eq n, Ord n, Show n, Pretty n)
         => Fragment n err       -- ^ Language fragment profile.
         -> FilePath             -- ^ Path to source file for error messages.
-        -> [Located (Tok n)]      -- ^ Source tokens.
+        -> [Located (Token n)]  -- ^ Source tokens.
         -> Either (Error n err) 
                   (Witness (AnT BP.SourcePos n) n, Type n)
 
@@ -345,7 +345,7 @@ loadWitnessFromTokens fragment sourceName toks'
 
         -- Parse the tokens.
         goParse toks                
-         = case BP.runTokenParser describeTok sourceName 
+         = case BP.runTokenParser describeToken sourceName 
                 (C.pWitness (C.contextOfProfile profile)) 
                 toks of
                 Left err  -> Left (ErrorParser err)

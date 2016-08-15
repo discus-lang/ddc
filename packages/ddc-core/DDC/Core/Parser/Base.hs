@@ -25,7 +25,7 @@ import qualified DDC.Base.Parser        as P
 
 -- | A parser of core language tokens.
 type Parser n a
-        = P.Parser (Tok n) a
+        = P.Parser (Token n) a
 
 
 -- | Parse a module name.                               
@@ -180,22 +180,22 @@ pKey kw = P.pTokSP (KA (KKeyword kw))
 
 -------------------------------------------------------------------------------
 -- | Parse an atomic token.
-pTok :: TokAtom -> Parser n ()
+pTok   :: TokenAtom -> Parser n ()
 pTok k     = P.pTok (KA k)
 
 
 -- | Parse an atomic token, yielding its source position.
-pTokSP :: TokAtom -> Parser n SourcePos
+pTokSP :: TokenAtom -> Parser n SourcePos
 pTokSP k   = P.pTokSP (KA k)
 
 
 -- | Parse an atomic token and return some value.
-pTokAs :: TokAtom -> a -> Parser n a
+pTokAs :: TokenAtom -> a -> Parser n a
 pTokAs k x = P.pTokAs (KA k) x
 
 
 -- | Parse an atomic token and return source position and value.
-pTokAsSP :: TokAtom -> a -> Parser n (a, SourcePos)
+pTokAsSP :: TokenAtom -> a -> Parser n (a, SourcePos)
 pTokAsSP k x = P.pTokAsSP (KA k) x
 
 

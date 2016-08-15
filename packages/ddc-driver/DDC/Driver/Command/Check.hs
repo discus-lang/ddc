@@ -219,7 +219,7 @@ cmdTypeEquiv language source ss
         srcLine = lineStartOfSource source
         
         goParse toks
-         = case BP.runTokenParser describeTok (nameOfSource source)
+         = case BP.runTokenParser describeToken (nameOfSource source)
                         (do t1 <- pTypeAtom (contextOfProfile profile)
                             t2 <- pTypeAtom (contextOfProfile profile)
                             return (t1, t2))

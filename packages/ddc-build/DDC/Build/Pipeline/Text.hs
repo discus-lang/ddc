@@ -127,7 +127,7 @@ pipeText !srcName !srcLine !str
                         sinkTokens
 
                 -- Parse the tokens into a Source Tetra module.
-                case BP.runTokenParser C.describeTok srcName
+                case BP.runTokenParser C.describeToken srcName
                         (SParser.pModule) tokens of
                  Left err -> return [ErrorLoad err]
                  Right mm 

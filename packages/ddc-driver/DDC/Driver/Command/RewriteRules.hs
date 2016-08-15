@@ -56,7 +56,7 @@ cmdReadRules_parse filePath frag modu source src
 
 
 parse fragment modu source str
- = case BP.runTokenParser describeTok source' 
+ = case BP.runTokenParser describeToken source' 
         (pRuleMany (C.contextOfProfile (fragmentProfile fragment)))
           (fragmentLexExp fragment source' 0 str) of
                 Left err -> Left $ renderIndent $ ppr err
