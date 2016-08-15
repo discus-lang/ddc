@@ -36,7 +36,6 @@ Library
         DDC.Data.Canned
         DDC.Data.ListUtils
         DDC.Data.SourcePos
-        DDC.Data.Token
 
         DDC.Version
         

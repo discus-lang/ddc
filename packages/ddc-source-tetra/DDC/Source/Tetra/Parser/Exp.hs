@@ -152,7 +152,7 @@ pExpFrontSP
                         return  [(p, Nothing) | p <- ps]
                 ]
 
-        pTok KArrowDash
+        pSym    SArrowDashRight
         xBody   <- pExp
         return  (sp, XAnnot sp $ foldr (\(p, mt) -> XLamPat sp p mt) xBody pts)
 
@@ -176,7 +176,7 @@ pExpFrontSP
                         return  $ map (\b -> XBindVarMT b Nothing) bs'
                 ]
 
-        pTok KArrowDash
+        pSym    SArrowDashRight
         xBody   <- pExp
         return  (sp, XAnnot sp $ foldr XLAM xBody bs)
 
@@ -331,11 +331,11 @@ pAltCase
  = do   p       <- pPat
         P.choice
          [ do   -- Desugar case guards while we're here.
-                spgxs     <- P.many1 (pGuardedExpSP (pTokSP KArrowDash))
+                spgxs     <- P.many1 (pGuardedExpSP (pSym SArrowDashRight))
                 let gxs  = map snd spgxs
                 return  $ AAltCase p gxs 
                 
-         , do   pTok KArrowDash
+         , do   pSym SArrowDashRight
                 x       <- pExp
                 return  $ AAltCase p [GExp x] ]
 
@@ -626,14 +626,14 @@ pGuardedExpSP pTermSP
          = P.choice 
          [ P.try $
            do   p       <- pPat
-                pTok KArrowDashLeft
+                pSym    SArrowDashLeft
                 x       <- pExp
                 return $ GPat p x
 
          , do   g       <- pExp
                 return $ GPred g
 
-         , do   pTok (KKeyword EOtherwise)
+         , do   pKey    EOtherwise
                 return GDefault ]
 
 
@@ -664,7 +664,7 @@ pStmt
    --  as a function name in a non-binding statement.
  , P.try $
     do  p       <- pPat
-        sp      <- pTokSP KArrowDashLeft
+        sp      <- pSym SArrowDashLeft
         x1      <- pExp
         pTok (KKeyword EElse)
         x2      <- pExp

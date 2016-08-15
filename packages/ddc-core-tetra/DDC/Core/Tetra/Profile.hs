@@ -12,10 +12,10 @@ import DDC.Core.Tetra.Env
 import DDC.Core.Fragment
 import DDC.Core.Lexer
 import DDC.Type.Exp
-import DDC.Data.Token
 import Control.Monad.State.Strict
 import DDC.Type.Env             (Env)
 import qualified DDC.Type.Env   as Env
+
 
 -- | Language profile for Disciple Core Tetra.
 profile :: Profile Name 
@@ -62,25 +62,27 @@ features
 -- | Lex a string to tokens, using primitive names.
 --
 --   The first argument gives the starting source line number.
-lexModuleString :: String -> Int -> String -> [Token (Tok Name)]
+lexModuleString :: String -> Int -> String -> [Located (Tok Name)]
 lexModuleString sourceName lineStart str
  = map rn $ lexModuleWithOffside sourceName lineStart str
- where rn (Token strTok sp) 
-        = case renameTok readName strTok of
-                Just t' -> Token t' sp
-                Nothing -> Token (KErrorJunk "lexical error") sp
+ where
+        rn (Located sp strTok) 
+         = case renameTok readName strTok of
+                Just t' -> Located sp t'
+                Nothing -> Located sp (KErrorJunk "lexical error")
 
 
 -- | Lex a string to tokens, using primitive names.
 --
 --   The first argument gives the starting source line number.
-lexExpString :: String -> Int -> String -> [Token (Tok Name)]
+lexExpString :: String -> Int -> String -> [Located (Tok Name)]
 lexExpString sourceName lineStart str
  = map rn $ lexExp sourceName lineStart str
- where rn (Token strTok sp) 
-        = case renameTok readName strTok of
-                Just t' -> Token t' sp
-                Nothing -> Token (KErrorJunk "lexical error") sp
+ where 
+        rn (Located sp strTok) 
+         = case renameTok readName strTok of
+                Just t' -> Located sp t'
+                Nothing -> Located sp (KErrorJunk "lexical error")
 
 
 -- | Create a new type variable name that is not in the given environment.

@@ -9,7 +9,6 @@ import DDC.Core.Salt.Env
 import DDC.Core.Salt.Name
 import DDC.Core.Fragment
 import DDC.Core.Lexer
-import DDC.Data.Token
 
 
 -- | Language profile for Disciple Core Salt.
@@ -50,13 +49,15 @@ lexModuleString
          :: String      -- ^ Source file name.
          -> Int         -- ^ Starting line number.
          -> String      -- ^ String to parse.
-         -> [Token (Tok Name)]
+         -> [Located (Tok Name)]
+
 lexModuleString sourceName lineStart str
  = map rn $ lexModuleWithOffside sourceName lineStart str
- where rn (Token strTok sp) 
-        = case renameTok readName strTok of
-                Just t' -> Token t' sp
-                Nothing -> Token (KErrorJunk "lexical error") sp
+ where
+        rn (Located sp strTok) 
+         = case renameTok readName strTok of
+                Just t' -> Located sp t'
+                Nothing -> Located sp (KErrorJunk "lexical error")
 
 
 -- | Lex a string to tokens, using primitive names.
@@ -64,10 +65,13 @@ lexExpString
          :: String      -- ^ Source file name.
          -> Int         -- ^ Starting line number.
          -> String      -- ^ String to parse.
-         -> [Token (Tok Name)]
+         -> [Located (Tok Name)]
+
 lexExpString sourceName lineStart str
  = map rn $ lexExp sourceName lineStart str
- where rn (Token strTok sp) 
-        = case renameTok readName strTok of
-                Just t' -> Token t' sp
-                Nothing -> Token (KErrorJunk "lexical error") sp
+ where 
+        rn (Located sp strTok) 
+         = case renameTok readName strTok of
+                Just t' -> Located sp t'
+                Nothing -> Located sp (KErrorJunk "lexical error")
+

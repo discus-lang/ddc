@@ -34,7 +34,6 @@ import qualified DDC.Core.Load                          as C
 import qualified DDC.Core.Lexer                         as C
 import qualified DDC.Base.Parser                        as BP
 import qualified DDC.Data.SourcePos                     as SP
-import qualified DDC.Data.Token                         as Token
 
 import qualified Data.Text                              as Text
 import Control.DeepSeq
@@ -124,7 +123,7 @@ pipeText !srcName !srcLine !str
                 let tokens  = SLexer.lexModuleString srcName srcLine str
 
                 -- Dump tokens to file.
-                pipeSink (unlines $ map (show . Token.tokenTok) $ tokens) 
+                pipeSink (unlines $ map (show . SP.valueOfLocated) $ tokens) 
                         sinkTokens
 
                 -- Parse the tokens into a Source Tetra module.

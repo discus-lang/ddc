@@ -3,7 +3,6 @@ module DDC.Core.Simplifier.Lexer
         ( Tok(..)
         , lexSimplifier)
 where
-import DDC.Data.Token
 import DDC.Data.SourcePos
 import Data.Char
 
@@ -11,10 +10,10 @@ import Data.Char
 lexSimplifier 
         :: (String -> Maybe n)  -- ^ Function to read a name.
         -> String               -- ^ String to parse.
-        -> [Token (Tok n)]
+        -> [Located (Tok n)]
 
 lexSimplifier readName str
- = map (\t -> Token t (SourcePos "<simplifier spec>" 0 0)) 
+ = map (\t -> Located (SourcePos "<simplifier spec>" 0 0) t) 
  $ lexer readName str
 
 

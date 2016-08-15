@@ -12,7 +12,6 @@ import DDC.Driver.Interface.Source
 import DDC.Build.Pipeline
 import DDC.Build.Interface.Base
 import DDC.Data.Canned
-import DDC.Data.Token
 import System.FilePath
 import System.Directory
 import Control.Monad
@@ -373,15 +372,6 @@ tasteNeeded filePath src
                 = dropBody
                 $ SE.lexModuleString filePath 1 src
 
-{-
-        let context 
-                = C.Context
-                { C.contextTrackedEffects         = True
-                , C.contextTrackedClosures        = True
-                , C.contextFunctionalEffects      = False
-                , C.contextFunctionalClosures     = False 
-                , C.contextMakeStringName         = Nothing }
--}
         case BP.runTokenParser C.describeTok filePath SE.pModule tokens of
          Left  err  -> throwE $ P.renderIndent $ P.ppr err
          Right mm   -> return $ SE.moduleImportModules mm
@@ -423,11 +413,11 @@ getModificationTimeIfExists path
 -- | Drop tokens after and including the first 'where' keyword.
 --   When parsing just the module header we can drop these tokens
 --   because they only represent the body of the module.
-dropBody :: [Token (C.Tok n)] -> [Token (C.Tok n)]
+dropBody :: [C.Located (C.Tok n)] -> [C.Located (C.Tok n)]
 dropBody toks = go toks
  where  go []           = []
 
-        go (Token { tokenTok = C.KA (C.KKeyword C.EWhere)} : _) 
+        go (C.Located _ (C.KA (C.KKeyword C.EWhere)) : _)
                         = []
 
         go (t : moar)   = t : go moar

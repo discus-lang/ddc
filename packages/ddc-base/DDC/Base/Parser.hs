@@ -12,7 +12,6 @@ module DDC.Base.Parser
         , pTok,         pTokSP)
 where
 import DDC.Base.Pretty
-import DDC.Data.Token
 import DDC.Data.SourcePos       as D
 import Data.Functor.Identity
 import Text.Parsec              hiding (SourcePos)
@@ -24,7 +23,7 @@ import Text.Parsec.Error        as P
 --   parameterised over token and return types.
 type Parser k a
         =  Eq k
-        => P.ParsecT [Token k] (ParserState k) Identity a
+        => P.ParsecT [Located k] (ParserState k) Identity a
 
 
 -- | A parser state that keeps track of the name of the source file.
@@ -40,7 +39,7 @@ runTokenParser
         => (k -> String)        -- ^ Show a token.
         -> String               -- ^ File name for error messages.
         -> Parser k a           -- ^ Parser to run.
-        -> [Token k]            -- ^ Tokens to parse.
+        -> [Located k]          -- ^ Tokens to parse.
         -> Either P.ParseError a
 
 runTokenParser tokenShow fileName parser 
@@ -93,9 +92,9 @@ pTokMaybe :: (k -> Maybe a) -> Parser k a
 pTokMaybe f 
  = do   state   <- P.getState
 
-        P.token (stateTokenShow state . tokenTok)
-                (takeParsecSourcePos)
-                (f . tokenTok)
+        P.token (stateTokenShow state . valueOfLocated)
+                (parsecSourcePosOfLocated)
+                (f . valueOfLocated)
 
 
 -- | Accept a token if the function return `Just`, 
@@ -105,12 +104,12 @@ pTokMaybeSP f
  = do   state   <- P.getState
 
         let f' token' 
-                = case f (tokenTok token') of
+                = case f (valueOfLocated token') of
                         Nothing -> Nothing
-                        Just x  -> Just (x, tokenSourcePos token')
+                        Just x  -> Just (x, sourcePosOfLocated token')
 
-        P.token (stateTokenShow state . tokenTok)
-                (takeParsecSourcePos)
+        P.token (stateTokenShow state . valueOfLocated)
+                (parsecSourcePosOfLocated)
                 f'
 
 

@@ -9,6 +9,7 @@
 module DDC.Core.Lexer
         ( module DDC.Core.Lexer.Tokens
         , module DDC.Core.Lexer.Names
+        , Located (..)
 
           -- * Lexer
         , lexModuleWithOffside
@@ -20,7 +21,6 @@ import DDC.Core.Lexer.Comments
 import DDC.Core.Lexer.Names
 import DDC.Core.Lexer.Tokens
 import DDC.Data.SourcePos
-import DDC.Data.Token
 import Data.Char
 import Data.Text                        (Text)
 import qualified Data.Text              as T
@@ -36,7 +36,7 @@ lexModuleWithOffside
         :: FilePath     -- ^ Path to source file, for error messages.
         -> Int          -- ^ Starting line number.
         -> String       -- ^ String containing program text.
-        -> [Token (Tok String)]
+        -> [Located (Tok String)]
 
 lexModuleWithOffside sourceName lineStart str
  = applyOffside [] []
@@ -54,7 +54,7 @@ lexModuleWithOffside sourceName lineStart str
 lexExp  :: FilePath     -- ^ Path to source file, for error messages.
         -> Int          -- ^ Starting line number.
         -> String       -- ^ String containing program text.
-        -> [Token (Tok String)]
+        -> [Located (Tok String)]
 
 lexExp sourceName lineStart str
  = dropNewLines
@@ -74,18 +74,21 @@ lexExp sourceName lineStart str
 lexText :: String       -- ^ Name of source file, which is attached to the tokens.
         -> Int          -- ^ Starting line number.
         -> Text         -- ^ Text to tokenize.
-        -> [Token (Tok String)]
+        -> [Located (Tok String)]
 
 lexText sourceName lineStart xx
  = let  sp      = SourcePos sourceName lineStart 1
    in   lexWord sp xx
 
 
-lexWord :: SourcePos -> Text -> [Token (Tok String)]
+lexWord :: SourcePos
+        -> Text 
+        -> [Located (Tok String)]
+
 lexWord sp@(SourcePos sourceName line column) w
  = match w
  where
-        tok t = Token t (SourcePos sourceName line column)
+        tok t = Located sp t
         tokM  = tok . KM
         tokA  = tok . KA
         tokN  = tok . KN
@@ -138,17 +141,15 @@ lexWord sp@(SourcePos sourceName line column) w
          , (cs1, rest)          <- T.splitAt 2 cs
          , Just t      
             <- case T.unpack cs1 of
-                "[:"            -> Just (KSymbol SSquareColonBra)
-                ":]"            -> Just (KSymbol SSquareColonKet)
-                "{:"            -> Just (KSymbol SBraceColonBra)
-                ":}"            -> Just (KSymbol SBraceColonKet)
-                "/\\"           -> Just (KSymbol SBigLambdaSlash)
-
-                "~>"            -> Just KArrowTilde
-                "->"            -> Just KArrowDash
-                "<-"            -> Just KArrowDashLeft
-                "=>"            -> Just KArrowEquals
-
+                "[:"            -> Just (KSymbol  SSquareColonBra)
+                ":]"            -> Just (KSymbol  SSquareColonKet)
+                "{:"            -> Just (KSymbol  SBraceColonBra)
+                ":}"            -> Just (KSymbol  SBraceColonKet)
+                "/\\"           -> Just (KSymbol  SBigLambdaSlash)
+                "~>"            -> Just (KSymbol  SArrowTilde)
+                "->"            -> Just (KSymbol  SArrowDashRight)
+                "<-"            -> Just (KSymbol  SArrowDashLeft)
+                "=>"            -> Just (KSymbol  SArrowEquals)
                 "()"            -> Just (KBuiltin BDaConUnit)
 
                 _               -> Nothing
@@ -276,7 +277,7 @@ lexWord sp@(SourcePos sourceName line column) w
 -- | Lex a punctuation token.
 --   These are lexed independently of any other following characters.
 lexPunc :: SourcePos -> Text
-        -> Maybe (Token (Tok String), SourcePos, Text)
+        -> Maybe (Located (Tok String), SourcePos, Text)
 
 lexPunc sp@(SourcePos name line col) tx
  | not (T.compareLength tx 2 == LT)
@@ -288,7 +289,7 @@ lexPunc sp@(SourcePos name line col) tx
         "{:"            -> Just (KSymbol SBraceColonBra)
         ":}"            -> Just (KSymbol SBraceColonKet)
         _               -> Nothing
- = Just ( Token (KA t) sp
+ = Just ( Located   sp (KA t)
         , SourcePos name line (col + 2)
         , rest)
 
@@ -310,11 +311,10 @@ lexPunc sp@(SourcePos name line col) tx
         'Λ'             -> Just (KSymbol SBigLambda)
         '='             -> Just (KSymbol SEquals)
         '|'             -> Just (KSymbol SBar)
-
-        '→'             -> Just KArrowDash
+        '→'             -> Just (KSymbol SArrowDashRight)
 
         _               -> Nothing
- = Just ( Token (KA t) sp
+ = Just ( Located   sp (KA t)
         , SourcePos name line (col + 1)
         , rest)
 
@@ -329,7 +329,7 @@ lexPunc sp@(SourcePos name line col) tx
 --   is compatable with C string functions.
 lexLitString
         :: SourcePos -> Text
-        -> Maybe (Token (Tok String), SourcePos, Text)
+        -> Maybe (Located (Tok String), SourcePos, Text)
 
 lexLitString sp@(SourcePos name line col) tx 
  | Just ('\"', cc)      <- T.uncons tx
@@ -344,7 +344,7 @@ lexLitString sp@(SourcePos name line col) tx
          = eat (n + 2) ('\n' : acc) xs2
 
          | Just ('"',  xs1)     <- T.uncons xs
-         = Just ( Token (KA (KString (T.pack (reverse acc)))) sp
+         = Just ( Located   sp (KA (KString (T.pack (reverse acc))))
                 , SourcePos name line (col + n)
                 , xs1)
 
@@ -352,7 +352,7 @@ lexLitString sp@(SourcePos name line col) tx
          = eat (n + 1) (c : acc) xs1
 
          | otherwise
-         = Just ( Token (KErrorUnterm (T.unpack tx)) sp
+         = Just ( Located sp (KErrorUnterm (T.unpack tx))
                 , sp, T.empty)
 
    in eat 0 [] cc

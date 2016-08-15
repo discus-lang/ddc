@@ -73,7 +73,7 @@ pRuleCsLhs c
  = P.choice
  [ do   cs <- P.many1 $ P.try (do
                 cc <- pTypeApp c
-                pTok KArrowEquals
+                pSym SArrowEquals
                 return cc)
         lhs <- pExp c
         return (cs,lhs)

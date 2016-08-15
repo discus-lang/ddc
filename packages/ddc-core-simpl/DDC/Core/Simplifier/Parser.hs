@@ -9,7 +9,6 @@ import DDC.Core.Simplifier.Base
 import DDC.Core.Module
 import DDC.Type.Env
 import DDC.Core.Simplifier.Lexer
-import DDC.Data.Token
 import DDC.Data.SourcePos
 import DDC.Base.Parser                          (pTok)
 import Data.Set                                 (Set)
@@ -55,7 +54,7 @@ parseSimplifier
         -> Either P.ParseError (Simplifier s a n)
 
 parseSimplifier readName details str
- = let  kend    = Token KEnd (SourcePos "<simplifier spec>" 0 0)
+ = let  kend    = Located (SourcePos "<simplifier spec>" 0 0) KEnd
         toks    = lexSimplifier readName str ++ [kend]
    in   P.runTokenParser show "<simplifier spec>" 
                 (pSimplifier details)

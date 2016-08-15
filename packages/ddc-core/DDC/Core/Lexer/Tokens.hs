@@ -1,7 +1,10 @@
 
 module DDC.Core.Lexer.Tokens
-        ( -- * Tokens
-          Tok      (..)
+        ( Located (..)
+        , columnOfLocated
+
+          -- * Tokens
+        , Tok      (..)
         , renameTok
         , describeTok
 
@@ -22,6 +25,7 @@ module DDC.Core.Lexer.Tokens
         , Symbol   (..),        saySymbol
         , Builtin  (..),        sayBuiltin)
 where
+import DDC.Data.SourcePos
 import DDC.Core.Lexer.Token.Symbol
 import DDC.Core.Lexer.Token.Keyword
 import DDC.Core.Lexer.Token.Builtin
@@ -151,23 +155,10 @@ data TokAtom
         | KKeyword Keyword      -- ^ Keywords.
         | KSymbol  Symbol       -- ^ Symbols.
         | KBuiltin Builtin      -- ^ Built in names.
-
-        -- Operator symbols
-        -- These can be used as part of an infix operator.
         | KOp      String       -- ^ Naked operator,   like in 1 + 2.
         | KOpVar   String       -- ^ Wrapped operator, like in (+) 1 2.
-
-        -- symbolic constructors
-        | KArrowTilde
-        | KArrowDash
-        | KArrowDashLeft
-        | KArrowEquals
-
-        -- debruijn indices
-        | KIndex   Int
-
-        -- literal strings
-        | KString  Text
+        | KIndex   Int          -- ^ Debruijn indices.
+        | KString  Text         -- ^ Literal strings.
         deriving (Eq, Show)
 
 
@@ -183,18 +174,8 @@ describeTokAtom' ta
         KSymbol  ss             -> (Symbol,      saySymbol ss)
         KKeyword kw             -> (Keyword,     sayKeyword kw)
         KBuiltin bb             -> (Constructor, sayBuiltin bb)
-
-        -- operator symbols
         KOp    op               -> (Symbol, op)
         KOpVar op               -> (Symbol, "(" ++ op ++ ")")
-        
-        -- symbolic constructors
-        KArrowTilde             -> (Constructor, "~>")
-        KArrowDash              -> (Constructor, "->")
-        KArrowDashLeft          -> (Constructor, "<-")
-        KArrowEquals            -> (Constructor, "=>")
-        
-        -- debruijn indices
         KIndex  i               -> (Index,   "^" ++ show i)
         KString s               -> (Literal, show s)
         KPragma p               -> (Pragma,  "{-#" ++ T.unpack p ++ "#-}")

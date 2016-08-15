@@ -4,16 +4,15 @@ module DDC.Core.Lexer.Comments
         , dropNewLines)
 where
 import DDC.Core.Lexer.Tokens
-import DDC.Data.Token
 import DDC.Data.SourcePos
 
 
 -- | Drop all the comments and newline tokens in this stream.
 dropComments 
-        :: Eq n => [Token (Tok n)] -> [Token (Tok n)]
+        :: Eq n => [Located (Tok n)] -> [Located (Tok n)]
 
 dropComments []      = []
-dropComments (t@(Token tok sourcePos) : xs)
+dropComments (t@(Located sourcePos tok) : xs)
  = case tok of
         KM KCommentLineStart 
          -> dropComments $ dropWhile (\t' -> not $ isToken t' (KM KNewLine)) xs
@@ -28,14 +27,14 @@ dropComments (t@(Token tok sourcePos) : xs)
 dropCommentBlock 
         :: Eq n
         => SourcePos            -- ^ Position of outer-most block comment start.
-        -> [Token (Tok n)] 
-        -> Token (Tok n) 
-        -> [Token (Tok n)]
+        -> [Located (Tok n)] 
+        ->  Located (Tok n) 
+        -> [Located (Tok n)]
 
 dropCommentBlock spStart [] _terr
-        = [Token (KM KCommentUnterminated) spStart]
+        = [Located spStart (KM KCommentUnterminated)]
 
-dropCommentBlock spStart (t@(Token tok _) : xs) terr
+dropCommentBlock spStart (t@(Located _ tok) : xs) terr
  = case tok of
         -- enter into nested block comments.
         KM KCommentBlockStart
@@ -49,7 +48,7 @@ dropCommentBlock spStart (t@(Token tok _) : xs) terr
 
 
 -- | Drop newline tokens from this list.
-dropNewLines :: Eq n => [Token (Tok n)] -> [Token (Tok n)]
+dropNewLines :: Eq n => [Located (Tok n)] -> [Located (Tok n)]
 dropNewLines [] = []
 dropNewLines (t:ts)
         | isToken t (KM KNewLine)
@@ -59,6 +58,6 @@ dropNewLines (t:ts)
         = t : dropNewLines ts
 
 
-isToken :: Eq n => Token (Tok n) -> Tok n -> Bool
-isToken (Token tok _) tok2 = tok == tok2
+isToken :: Eq n => Located (Tok n) -> Tok n -> Bool
+isToken (Located _ tok) tok2 = tok == tok2
 

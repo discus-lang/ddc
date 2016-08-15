@@ -3,12 +3,11 @@ module DDC.Driver.Command.Scan
 where
 import DDC.Driver.Stage
 import DDC.Source.Tetra.Lexer           as ST
-import DDC.Data.Token                   as Token
 import Control.Monad.Trans.Except
 import Control.Monad.IO.Class
 import System.Directory
 import Control.Monad
-
+import qualified DDC.Data.SourcePos     as SP
 
 -------------------------------------------------------------------------------
 -- | Scan a module.
@@ -34,5 +33,5 @@ cmdScanFromFile _config filePath bPrintLocs
 
         if bPrintLocs 
          then liftIO $ putStr $ unlines $ map show toks
-         else liftIO $ putStr $ unlines $ map show $ map Token.tokenTok toks
+         else liftIO $ putStr $ unlines $ map show $ map SP.valueOfLocated toks
 

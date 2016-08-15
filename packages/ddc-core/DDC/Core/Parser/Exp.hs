@@ -216,7 +216,7 @@ pExpAtomSP c
 pAlt    :: Ord n => Context n -> Parser n (Alt SourcePos n)
 pAlt c
  = do   p       <- pPat c
-        pTok KArrowDash
+        pSym    SArrowDashRight
         x       <- pExp c
         return  $ AAlt p x
 
@@ -451,7 +451,7 @@ pStmt c
    --  as a function name in a non-binding statement.
  , P.try $
     do  p       <- pPat c
-        sp      <- pTokSP KArrowDashLeft
+        sp      <- pSym SArrowDashLeft
         x1      <- pExp c
         pTok (KKeyword EElse)
         x2      <- pExp c

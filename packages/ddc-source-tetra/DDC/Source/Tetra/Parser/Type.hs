@@ -87,17 +87,17 @@ pTypeFun
  = do   t1      <- pTypeApp
         P.choice 
          [ -- T1 ~> T2
-           do   sp      <- pTokSP KArrowTilde
+           do   sp      <- pSym SArrowTilde
                 t2      <- pTypeForall
                 return  $  TAnnot sp $ TFun t1 t2
 
            -- T1 => T2
-         , do   sp      <- pTokSP KArrowEquals
+         , do   sp      <- pSym SArrowEquals
                 t2      <- pTypeForall
                 return  $  TAnnot sp $ TImpl t1 t2
 
            -- T1 -> T2
-         , do   sp      <- pTokSP KArrowDash
+         , do   sp      <- pSym SArrowDashRight
                 t2      <- pTypeForall
                 return  $  TAnnot sp $ TFun  t1 t2
 

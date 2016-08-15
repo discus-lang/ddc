@@ -7,13 +7,12 @@ module DDC.Core.Lexer.Offside
 where
 import DDC.Core.Lexer.Tokens
 import DDC.Data.SourcePos
-import DDC.Data.Token
 
 
 ---------------------------------------------------------------------------------------------------
 -- | Holds a real token or start symbol which is used to apply the offside rule.
 data Lexeme n
-        = LexemeToken           (Token (Tok n))
+        = LexemeToken           (Located (Tok n))
         | LexemeStartLine       Int
 
         -- | Signal that we're starting a block in this column.
@@ -46,7 +45,7 @@ applyOffside
         => [Paren]              -- ^ What parenthesis we're inside.
         -> [Context]            -- ^ Current layout context.
         -> [Lexeme n]           -- ^ Input lexemes.
-        -> [Token (Tok n)]
+        -> [Located (Tok n)]
 
 -- Wait for the module header before we start applying the real offside rule. 
 -- This allows us to write 'module Name with letrec' all on the same line.
@@ -150,12 +149,12 @@ applyOffside ps mm@(m : ms) (LexemeStartBlock n : ts)
 
 -- push context for explicit open brace
 applyOffside ps ms 
-        (LexemeToken t@Token { tokenTok = KA (KSymbol SBraceBra) } : ts)
+        (LexemeToken t@(Located _ (KA (KSymbol SBraceBra))) : ts)
         = t : applyOffside (ParenBrace : ps) (0 : ms) ts
 
 -- pop context from explicit close brace
 applyOffside ps mm 
-        (LexemeToken t@Token { tokenTok = KA (KSymbol SBraceKet) } : ts) 
+        (LexemeToken t@(Located _ (KA (KSymbol SBraceKet))) : ts) 
 
         -- make sure that explict open braces match explicit close braces
         | 0 : ms                <- mm
@@ -169,19 +168,19 @@ applyOffside ps mm
 
 -- push context for explict open paren.
 applyOffside ps ms 
-        (LexemeToken t@Token { tokenTok = KA (KSymbol SRoundBra) } : ts)
+        (    LexemeToken t@(Located _ (KA (KSymbol SRoundBra))) : ts)
         = t : applyOffside (ParenRound : ps) ms ts
 
 -- force close of block on close paren.
 -- This partially handles the crazy (Note 5) rule from the Haskell98 standard.
 applyOffside (ParenBrace : ps) (m : ms)
-        (lt@(LexemeToken Token { tokenTok = KA (KSymbol SRoundKet) }) : ts)
+        (lt@(LexemeToken   (Located _ (KA (KSymbol SRoundKet)))) : ts)
  | m /= 0
  = newCKet ts : applyOffside ps ms (lt : ts)
 
 -- pop context for explicit close paren.
 applyOffside (ParenRound : ps) ms 
-        (LexemeToken t@Token { tokenTok   = KA (KSymbol SRoundKet) } : ts)
+        (    LexemeToken t@(Located _ (KA (KSymbol SRoundKet))) : ts)
         = t : applyOffside ps ms ts
 
 -- pass over tokens.
@@ -195,7 +194,7 @@ applyOffside ps (_ : ms) []
         = newCKet [] : applyOffside ps ms []
 
 
-isKeyword (Token { tokenTok = tok }) k
+isKeyword (Located _ tok) k
  = case tok of
         KA (KKeyword k')        -> k == k'
         _                       -> False
@@ -208,14 +207,14 @@ isKeyword (Token { tokenTok = tok }) k
 --   This is identical to the definition in the Haskell98 report,
 --   except that we also use multi-token starting strings like
 --   'imports' 'foreign' 'type'.
-addStarts :: (Eq n, Show n) => [Token (Tok n)] -> [Lexeme n]
+addStarts :: (Eq n, Show n) => [Located (Tok n)] -> [Lexeme n]
 addStarts ts
  = case dropNewLines ts of
 
         -- If the first lexeme of a module is not '{' then start a new block.
         (t1 : tsRest)
           |  not $ or $ map (isToken t1) [KA (KSymbol SBraceBra)]
-          -> LexemeStartBlock (tokenColumn t1) : addStarts' (t1 : tsRest)
+          -> LexemeStartBlock (columnOfLocated t1) : addStarts' (t1 : tsRest)
 
           | otherwise
           -> addStarts' (t1 : tsRest)
@@ -224,7 +223,7 @@ addStarts ts
         []      -> []
 
 
-addStarts'  :: Eq n => [Token (Tok n)] -> [Lexeme n]
+addStarts'  :: Eq n => [Located (Tok n)] -> [Lexeme n]
 addStarts' ts
         -- Block started at end of input.
         | Just (ts1, ts2)       <- splitBlockStart ts
@@ -239,7 +238,7 @@ addStarts' ts
         , t2 : tsRest           <- dropNewLines ts2
         , not $ isToken t2 (KA (KSymbol SBraceBra))
         = [LexemeToken t | t <- ts1]
-                ++ [LexemeStartBlock (tokenColumn t2)]
+                ++ [LexemeStartBlock (columnOfLocated t2)]
                 ++ addStarts' (t2 : tsRest)
 
         -- check for start of list
@@ -257,7 +256,7 @@ addStarts' ts
         , isToken t1 (KM KNewLine)
         , t2 : tsRest   <- dropNewLines ts'
         , not $ isToken t2 (KA (KSymbol SBraceBra))
-        = LexemeStartLine (tokenColumn t2) 
+        = LexemeStartLine (columnOfLocated t2) 
                 : addStarts' (t2 : tsRest)
 
         -- eat up trailine newlines
@@ -275,7 +274,7 @@ addStarts' ts
 
 
 -- | Drop newline tokens at the front of this stream.
-dropNewLines :: Eq n => [Token (Tok n)] -> [Token (Tok n)]
+dropNewLines :: Eq n => [Located (Tok n)] -> [Located (Tok n)]
 dropNewLines []              = []
 dropNewLines (t1:ts)
         | isToken t1 (KM KNewLine)
@@ -300,80 +299,80 @@ dropNewLinesLexeme ll
 
 -- | Check if a token is one that starts a block of statements.
 splitBlockStart 
-        :: [Token (Tok n)] 
-        -> Maybe ([Token (Tok n)], [Token (Tok n)])
+        :: [Located (Tok n)] 
+        -> Maybe ([Located (Tok n)], [Located (Tok n)])
 
 splitBlockStart toks
 
  -- export type
- |  t1@Token { tokenTok = KA (KKeyword EExport)  }
-  : t2@Token { tokenTok = KA (KKeyword EType)    }
+ |  t1@(Located _ (KA (KKeyword EExport)))
+  : t2@(Located _ (KA (KKeyword EType)))
   : ts
  <- toks = Just ([t1, t2], ts)
 
  -- export value
- |  t1@Token { tokenTok = KA (KKeyword EExport)  }
-  : t2@Token { tokenTok = KA (KKeyword EValue)   }
+ |  t1@(Located _ (KA (KKeyword EExport)))
+  : t2@(Located _ (KA (KKeyword EValue)))
   : ts
  <- toks = Just ([t1, t2], ts)
 
  -- export foreign X value
- |  t1@Token { tokenTok = KA (KKeyword EExport)  }
-  : t2@Token { tokenTok = KA (KKeyword EForeign) }
+ |  t1@(Located _ (KA (KKeyword EExport)))
+  : t2@(Located _ (KA (KKeyword EForeign)))
   : t3                                  
-  : t4@Token { tokenTok = KA (KKeyword EValue)   }
+  : t4@(Located _ (KA (KKeyword EValue)))
   : ts
  <- toks = Just ([t1, t2, t3, t4], ts)
 
  -- import type
- |  t1@Token { tokenTok = KA (KKeyword EImport)  }
-  : t2@Token { tokenTok = KA (KKeyword EType)    }
+ |  t1@(Located _ (KA (KKeyword EImport)))
+  : t2@(Located _ (KA (KKeyword EType)))
   : ts
  <- toks = Just ([t1, t2], ts)
 
  -- import value
- |  t1@Token { tokenTok = KA (KKeyword EImport)  }
-  : t2@Token { tokenTok = KA (KKeyword EValue)   }
+ |  t1@(Located _ (KA (KKeyword EImport)))
+  : t2@(Located _ (KA (KKeyword EValue)))
   : ts
  <- toks = Just ([t1, t2], ts)
 
  -- import data
- |  t1@Token { tokenTok = KA (KKeyword EImport)  }
-  : t2@Token { tokenTok = KA (KKeyword EData)    }
+ |  t1@(Located _ (KA (KKeyword EImport)))
+  : t2@(Located _ (KA (KKeyword EData)))
   : ts
  <- toks = Just ([t1, t2], ts)
 
  -- import foreign X type
- |  t1@Token { tokenTok = KA (KKeyword EImport)  }  
-  : t2@Token { tokenTok = KA (KKeyword EForeign) }
+ |  t1@(Located _ (KA (KKeyword EImport)))
+  : t2@(Located _ (KA (KKeyword EForeign)))
   : t3                                  
-  : t4@Token { tokenTok = KA (KKeyword EType)    }    
+  : t4@(Located _ (KA (KKeyword EType)))
   : ts
  <- toks = Just ([t1, t2, t3, t4], ts)
 
  -- import foreign X capability
- |  t1@Token { tokenTok = KA (KKeyword EImport)  }
-  : t2@Token { tokenTok = KA (KKeyword EForeign) }
+ |  t1@(Located _ (KA (KKeyword EImport)))
+  : t2@(Located _ (KA (KKeyword EForeign)))
   : t3
-  : t4@Token { tokenTok = KA (KKeyword ECapability) }
+  : t4@(Located _ (KA (KKeyword ECapability)))
   : ts
  <- toks = Just ([t1, t2, t3, t4], ts)
 
  -- import foreign X value
- |  t1@Token { tokenTok = KA (KKeyword EImport)  }   
-  : t2@Token { tokenTok = KA (KKeyword EForeign) }
+ |  t1@(Located _ (KA (KKeyword EImport)))
+  : t2@(Located _ (KA (KKeyword EForeign)))
   : t3                                  
-  : t4@Token { tokenTok = KA (KKeyword EValue)   }   
+  : t4@(Located _ (KA (KKeyword EValue)))
   : ts    
  <- toks = Just ([t1, t2, t3, t4], ts)
  
- |  t1@Token { tokenTok = KA (KKeyword EDo) }      : ts    <- toks = Just ([t1], ts)
- |  t1@Token { tokenTok = KA (KKeyword EOf) }      : ts    <- toks = Just ([t1], ts)
- |  t1@Token { tokenTok = KA (KKeyword ELetRec) }  : ts    <- toks = Just ([t1], ts)
- |  t1@Token { tokenTok = KA (KKeyword EWhere) }   : ts    <- toks = Just ([t1], ts)
- |  t1@Token { tokenTok = KA (KKeyword EExport) }  : ts    <- toks = Just ([t1], ts)
- |  t1@Token { tokenTok = KA (KKeyword EImport) }  : ts    <- toks = Just ([t1], ts)
- |  t1@Token { tokenTok = KA (KKeyword EMatch) }   : ts    <- toks = Just ([t1], ts)
+ |  t1@(Located _ (KA (KKeyword EDo)))     : ts    <- toks = Just ([t1], ts)
+ |  t1@(Located _ (KA (KKeyword EOf)))     : ts    <- toks = Just ([t1], ts)
+ |  t1@(Located _ (KA (KKeyword ELetRec))) : ts    <- toks = Just ([t1], ts)
+ |  t1@(Located _ (KA (KKeyword EWhere)))  : ts    <- toks = Just ([t1], ts)
+ |  t1@(Located _ (KA (KKeyword EExport))) : ts    <- toks = Just ([t1], ts)
+ |  t1@(Located _ (KA (KKeyword EImport))) : ts    <- toks = Just ([t1], ts)
+ |  t1@(Located _ (KA (KKeyword EMatch)))  : ts    <- toks = Just ([t1], ts)
 
  | otherwise                                             
  = Nothing
@@ -381,47 +380,51 @@ splitBlockStart toks
 
 -- Utils ------------------------------------------------------------------------------------------
 -- | Test whether this wrapper token matches.
-isToken :: Eq n => Token (Tok n) -> Tok n -> Bool
-isToken (Token tok _) tok2 = tok == tok2
+isToken :: Eq n => Located (Tok n) -> Tok n -> Bool
+isToken (Located _ tok) tok2 = tok == tok2
 
 
 -- | Test whether this wrapper token matches.
-isKNToken :: Eq n => Token (Tok n) -> Bool
-isKNToken (Token (KN _) _)      = True
+isKNToken :: Eq n => Located (Tok n) -> Bool
+isKNToken (Located _ (KN _))    = True
 isKNToken _                     = False
 
 
 -- | When generating new source tokens, take the position from the first
 --   non-newline token in this list
-newCBra :: [Lexeme n] -> Token (Tok n)
+newCBra      :: [Lexeme n] -> Located (Tok n)
 newCBra ts
-        = (takeTok ts) { tokenTok = KA (KSymbol SBraceBra) }
+ = case takeTok ts of
+        Located sp _    -> Located sp (KA (KSymbol SBraceBra))
 
 
-newCKet :: [Lexeme n] -> Token (Tok n)
+newCKet      :: [Lexeme n] -> Located (Tok n)
 newCKet ts
-        = (takeTok ts) { tokenTok = KA (KSymbol SBraceKet) }
+ = case takeTok ts of
+        Located sp _    -> Located sp (KA (KSymbol SBraceKet))
 
 
-newSemiColon :: [Lexeme n] -> Token (Tok n)
-newSemiColon ts 
-        = (takeTok ts) { tokenTok = KA (KSymbol SSemiColon) }
+newSemiColon :: [Lexeme n] -> Located (Tok n)
+newSemiColon ts
+ = case takeTok ts of
+        Located sp _    -> Located sp (KA (KSymbol SSemiColon))
 
 
 -- | This is injected by `applyOffside` when it finds an explit close
 --   brace in a position where it would close a synthetic one.
-newOffsideClosingBrace :: [Lexeme n] -> Token (Tok n)
+newOffsideClosingBrace :: [Lexeme n] -> Located (Tok n)
 newOffsideClosingBrace ts
-        = (takeTok ts) { tokenTok = KM KOffsideClosingBrace }
+ = case takeTok ts of
+        Located sp _    -> Located sp (KM KOffsideClosingBrace)
 
 
-takeTok :: [Lexeme n] -> Token (Tok n)
+takeTok :: [Lexeme n] -> Located (Tok n)
 takeTok []      
- = Token (KErrorJunk "") (SourcePos "" 0 0)
+ = Located (SourcePos "" 0 0) (KErrorJunk "") 
 
 takeTok (l : ls)
  = case l of
-        LexemeToken (Token { tokenTok = KM KNewLine })
+        LexemeToken (Located _ (KM KNewLine))
          -> takeTok ls
 
         LexemeToken t           -> t

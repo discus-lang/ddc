@@ -6,7 +6,6 @@ module DDC.Source.Tetra.Lexer
 where
 import DDC.Source.Tetra.Prim
 import DDC.Core.Lexer
-import DDC.Data.Token
 import DDC.Base.Pretty
 import Control.DeepSeq
 import Data.Char
@@ -92,12 +91,13 @@ readName str
 --   There are a few tokens accepted by one language but not the other,
 --   but it'll do for now.
 --
-lexModuleString :: String -> Int -> String -> [Token (Tok Name)]
+lexModuleString :: String -> Int -> String -> [Located (Tok Name)]
 lexModuleString sourceName lineStart str
  = map rn $ lexModuleWithOffside sourceName lineStart str
- where rn (Token strTok sp)
-        = case renameTok readName strTok of
-                Just t' -> Token t' sp
-                Nothing -> Token (KErrorJunk "lexical error") sp
+ where 
+        rn (Located sp strTok)
+         = case renameTok readName strTok of
+                Just t' -> Located sp t'
+                Nothing -> Located sp (KErrorJunk "lexical error")
 
 

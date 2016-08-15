@@ -31,7 +31,6 @@ import DDC.Core.Fragment.Profile
 import DDC.Core.Module
 import DDC.Core.Exp
 import DDC.Core.Lexer
-import DDC.Data.Token
 
 
 -- | Carries all the information we need to work on a particular 
@@ -49,11 +48,11 @@ data Fragment n (err :: * -> *)
         
           -- | Lex module source into tokens,
           --   given the source name and starting line number. 
-        , fragmentLexModule     :: String -> Int -> String -> [Token (Tok n)]
+        , fragmentLexModule     :: String -> Int -> String -> [Located (Tok n)]
 
           -- | Lex expression source into tokens,
           --   given the source name and starting line number.
-        , fragmentLexExp        :: String -> Int -> String -> [Token (Tok n)]
+        , fragmentLexExp        :: String -> Int -> String -> [Located (Tok n)]
 
           -- | Perform language fragment specific checks on a module.
         , fragmentCheckModule   :: forall a. Module a n -> Maybe (err a)

@@ -108,17 +108,17 @@ pTypeFun c
  = do   t1      <- pTypeApp c
         P.choice 
          [ -- T1 ~> T2
-           do   pTok KArrowTilde
+           do   pSym    SArrowTilde
                 t2      <- pTypeForall c
                 return  $ TApp (TApp (TCon (TyConKind KiConFun)) t1) t2
 
            -- T1 => T2
-         , do   pTok KArrowEquals
+         , do   pSym    SArrowEquals
                 t2      <- pTypeForall c
                 return  $ TApp (TApp (TCon (TyConWitness TwConImpl)) t1) t2
 
            -- T1 -> T2
-         , do   pTok KArrowDash
+         , do   pSym    SArrowDashRight
                 t2      <- pTypeForall c
                 return $ t1 `tFun`   t2
 

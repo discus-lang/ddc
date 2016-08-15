@@ -14,7 +14,6 @@ import DDC.Core.Fragment                hiding (Error)
 import DDC.Core.Transform.Namify
 import DDC.Base.Pretty
 import DDC.Base.Name
-import DDC.Data.Token
 import DDC.Type.Exp
 import Data.Typeable
 import DDC.Type.Env                     (Env)
@@ -94,25 +93,27 @@ instance CompoundName Name where
 -- | Lex a string to tokens, using primitive names.
 --
 --   The first argument gives the starting source line number.
-lexModuleZero :: String -> Int -> String -> [Token (Tok Name)]
+lexModuleZero :: String -> Int -> String -> [Located (Tok Name)]
 lexModuleZero srcName srcLine str
  = map rn $ Core.lexModuleWithOffside srcName srcLine str
- where rn (Token t sp) 
-        = case renameTok (Just . Name) t of
-                Just t' -> Token t' sp
-                Nothing -> Token (KErrorJunk "lexical error") sp
+ where
+        rn (Located sp t) 
+         = case renameTok (Just . Name) t of
+                Just t' -> Located sp t'
+                Nothing -> Located sp (KErrorJunk "lexical error")
 
 
 -- | Lex a string to tokens, using primitive names.
 --
 --   The first argument gives the starting source line number.
-lexExpZero :: String -> Int -> String -> [Token (Tok Name)]
+lexExpZero :: String -> Int -> String -> [Located (Tok Name)]
 lexExpZero srcName srcLine str
  = map rn $ Core.lexExp srcName srcLine str
- where rn (Token t sp) 
-        = case renameTok (Just . Name) t of
-                Just t' -> Token t' sp
-                Nothing -> Token (KErrorJunk "lexical error") sp
+ where
+        rn (Located sp t) 
+         = case renameTok (Just . Name) t of
+                Just t' -> Located sp t'
+                Nothing -> Located sp (KErrorJunk "lexical error")
 
 
 -- | Create a new type variable name that is not in the given environment.

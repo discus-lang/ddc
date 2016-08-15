@@ -13,12 +13,12 @@ import DDC.Core.Fragment                as C
 import DDC.Core.Parser                  as C
 import DDC.Core.Lexer                   as C
 import DDC.Base.Parser                  as BP
-import DDC.Data.Token                   as Token
 import Control.Monad.Trans.Except
 import Control.Monad.IO.Class
 import System.FilePath
 import System.Directory
 import Control.Monad
+import qualified DDC.Data.SourcePos     as SP
 
 
 -------------------------------------------------------------------------------
@@ -79,7 +79,7 @@ cmdParseSourceTetraFromFile config filePath
 
         when (configDump config)
          $ liftIO $ writeFile "dump.tetra-parse.tokens" 
-                  $ unlines $ map show $ map Token.tokenTok toks
+                  $ unlines $ map show $ map SP.valueOfLocated toks
                     
         case BP.runTokenParser C.describeTok filePath ST.pModule toks of
          Left err 

@@ -25,9 +25,11 @@ data Symbol
         | SBraceColonKet        -- ^ Like ':}'
 
         -- Compound symbols.
-        | SLambda               -- ^ Like 'λ'
-        | SBigLambda            -- ^ Like 'Λ'
         | SBigLambdaSlash       -- ^ Like '/\\'
+        | SArrowTilde           -- ^ Like '~>'
+        | SArrowDashRight       -- ^ Like '->'
+        | SArrowDashLeft        -- ^ Like '<-'
+        | SArrowEquals          -- ^ Like '=>'
 
         -- Other punctuation.
         | SAt                   -- ^ Like '@'
@@ -36,8 +38,10 @@ data Symbol
         | SBar                  -- ^ Like '|'
         | SComma                -- ^ Like ','
         | SEquals               -- ^ Like '='
+        | SLambda               -- ^ Like 'λ'
         | SSemiColon            -- ^ Like ';'
         | SBackSlash            -- ^ Like '\\'
+        | SBigLambda            -- ^ Like 'Λ'
         | SUnderscore           -- ^ Like '_'
         deriving (Eq, Show)
 
@@ -61,10 +65,12 @@ saySymbol pp
         SBraceColonBra          -> "{:"
         SBraceColonKet          -> ":}"
 
-        -- Compound symbos.
-        SLambda                 -> "λ"
-        SBigLambda              -> "Λ"
+        -- Compound symbols.
         SBigLambdaSlash         -> "/\\"
+        SArrowTilde             -> "~>"
+        SArrowDashRight         -> "->"
+        SArrowDashLeft          -> "<-"
+        SArrowEquals            -> "=>"
 
         -- Other punctuation.
         SAt                     -> "@"
@@ -73,8 +79,10 @@ saySymbol pp
         SBar                    -> "|"
         SComma                  -> ","
         SEquals                 -> "="
+        SLambda                 -> "λ"
         SSemiColon              -> ";"
         SBackSlash              -> "\\"
+        SBigLambda              -> "Λ"
         SUnderscore             -> "_"
 
 
@@ -93,6 +101,11 @@ matchSymbol2 0 c
         '['     -> True
         '{'     -> True
         ':'     -> True
+        '/'     -> True
+        '~'     -> True
+        '-'     -> True
+        '<'     -> True
+        '='     -> True
         _       -> False
 
 matchSymbol2 1 c
@@ -100,6 +113,9 @@ matchSymbol2 1 c
         ']'     -> True
         '}'     -> True
         ':'     -> True
+        '\\'    -> True
+        '>'     -> True
+        '-'     -> True
         _       -> False
 
 matchSymbol2 _ _
@@ -114,6 +130,11 @@ acceptSymbol2 ss
         ":]"    -> Just SSquareColonKet
         "{:"    -> Just SBraceColonBra
         ":}"    -> Just SBraceColonKet
+        "/\\"   -> Just SBigLambdaSlash
+        "~>"    -> Just SArrowTilde
+        "->"    -> Just SArrowDashRight
+        "<-"    -> Just SArrowDashLeft
+        "=>"    -> Just SArrowEquals
         _       -> Nothing
 
 
