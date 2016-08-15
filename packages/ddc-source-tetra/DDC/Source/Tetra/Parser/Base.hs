@@ -4,6 +4,7 @@ module DDC.Source.Tetra.Parser.Base
         , (<?>), SourcePos(..)
 
           -- * Generic Token parsers
+        , pSym, pKey
         , pTok, pTokSP
 
           -- * Term Variables
@@ -35,7 +36,8 @@ import qualified Data.Text              as Text
 
 
 import DDC.Core.Parser
-        ( pTok,         pTokSP
+        ( pSym, pKey
+        , pTok, pTokSP
         , pIndexSP)
 
 type Parser a = P.Parser (Tok Name) a

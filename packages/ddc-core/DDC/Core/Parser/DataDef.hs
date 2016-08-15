@@ -21,13 +21,14 @@ pDataDef c
 
         P.choice
          [ -- Data declaration with constructors that have explicit types.
-           do   pTok (KKeyword EWhere)
-                pTok KBraceBra
-                ctors      <- P.sepEndBy1 (pDataCtor c nData bsParam) (pTok KSemiColon)
+           do   pKey EWhere
+                pSym SBraceBra
+                ctors      <- P.sepEndBy1 (pDataCtor c nData bsParam) 
+                                          (pSym SSemiColon)
                 let ctors' = [ ctor { dataCtorTag = tag }
                                 | ctor <- ctors
                                 | tag  <- [0..] ]
-                pTok KBraceKet
+                pSym SBraceKet
                 return  $ DataDef 
                         { dataDefTypeName       = nData
                         , dataDefParams         = bsParam 
@@ -47,11 +48,11 @@ pDataDef c
 -- | Parse a type parameter to a data type.
 pDataParam :: Ord n => Context n -> Parser n [Bind n]
 pDataParam c 
- = do   pTok KRoundBra
+ = do   pSym SRoundBra
         ns      <- P.many1 pName
         pTokSP (KOp ":")
         k       <- pType c
-        pTok KRoundKet
+        pSym SRoundKet
         return  [BName n k | n <- ns]
 
 

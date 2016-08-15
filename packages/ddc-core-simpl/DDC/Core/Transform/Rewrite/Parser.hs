@@ -25,7 +25,7 @@ pRule c
  = do   bs       <- pRuleBinders c
         (cs,lhs) <- pRuleCsLhs c
         hole     <- pRuleHole c
-        pTok KEquals
+        pSym SEquals
         rhs      <- pExp c
 
         return $ R.mkRewriteRule bs cs lhs hole rhs
@@ -49,7 +49,7 @@ pRuleMany c
  = P.many (do
         n <- pName
         r <- pRule c
-        pTok KSemiColon
+        pSym SSemiColon
         return (n,r))
 
 
@@ -60,7 +60,7 @@ pRuleBinders
 pRuleBinders c
  = P.choice
  [ do   bs <- P.many1 (pBinders c)
-        pTok KDot
+        pSym SDot
         return $ concat bs
  , return []
  ]
@@ -87,11 +87,11 @@ pRuleHole
         => Context n -> Parser n (Maybe (Exp P.SourcePos n))
 pRuleHole c
  = P.optionMaybe
- $ do   pTok KUnderscore
-        pTok KBraceBra
+ $ do   pSym SUnderscore
+        pSym SBraceBra
         e <- pExp c
-        pTok KBraceKet
-        pTok KUnderscore
+        pSym SBraceKet
+        pSym SUnderscore
         return e
 
 
@@ -106,8 +106,8 @@ pBinders
         => Context n -> Parser n [(R.BindMode, Bind n)]
 pBinders c
  = P.choice
- [ pBindersBetween c R.BMSpec      (pTok KSquareBra) (pTok KSquareKet)
- , pBindersBetween c (R.BMValue 0) (pTok KRoundBra)  (pTok KRoundKet)
+ [ pBindersBetween c R.BMSpec      (pSym SSquareBra) (pSym SSquareKet)
+ , pBindersBetween c (R.BMValue 0) (pSym SRoundBra)  (pSym SRoundKet)
  ]
 
 
@@ -115,8 +115,8 @@ pBindersBetween
         :: Ord n 
         => Context n
         -> R.BindMode 
-        -> Parser n () 
-        -> Parser n () 
+        -> Parser n a 
+        -> Parser n a
         -> Parser n [(R.BindMode,Bind n)]
 
 pBindersBetween c bm bra ket

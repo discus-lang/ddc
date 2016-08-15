@@ -19,8 +19,13 @@ module DDC.Core.Lexer.Tokens
 
           -- * Keywords
         , Keyword  (..)
-        , sayKeyword)
+        , sayKeyword
+
+          -- * Symbols
+        , Symbol   (..)
+        , saySymbol)
 where
+import DDC.Core.Lexer.Token.Symbol
 import DDC.Core.Lexer.Token.Keyword
 import DDC.Core.Pretty
 import DDC.Core.Exp
@@ -145,85 +150,36 @@ describeTokMeta tm
 --   They don't contain user-defined names or primops specific to the 
 --   language fragment.
 data TokAtom
-        -----------------------------------------
-        -- Single char parenthesis
-        = KRoundBra             -- ^ Like '('
-        | KRoundKet             -- ^ Like ')'
-        | KSquareBra            -- ^ Like '['
-        | KSquareKet            -- ^ Like ']'
-        | KBraceBra             -- ^ Like '{'
-        | KBraceKet             -- ^ Like '}'
+        -- Keywords
+        = KKeyword Keyword
 
-        -- Compound parenthesis
-        | KSquareColonBra       -- ^ Like '[:'
-        | KSquareColonKet       -- ^ Like ':]'
-        | KBraceColonBra        -- ^ Like '{:'
-        | KBraceColonKet        -- ^ Like ':}'
+        -- Symbols
+        | KSymbol  Symbol
 
-        -----------------------------------------
         -- Operator symbols
         -- These can be used as part of an infix operator.
-        | KOp     String        -- ^ Naked operator,   like in 1 + 2.
-        | KOpVar  String        -- ^ Wrapped operator, like in (+) 1 2.
-        
-        -----------------------------------------
-        -- Operator body symbols.
-        --   These can be used in an operator body, but cannot start an operator.
-        
-        -- Allowing '^' to start an operator causes problems in type signatures.
-        --   We end up lexing a '^^^' operator with  '[^^^ : Int]'
-        --   and a '^:' operator in                  '[^:Int]'
-        | KHat
+        | KOp      String       -- ^ Naked operator,   like in 1 + 2.
+        | KOpVar   String       -- ^ Wrapped operator, like in (+) 1 2.
 
-        -----------------------------------------
-        -- Punctuation symbols.
-        --   These cannot be used as part of an infix operator.
-        
-        -- Allowing '.' in an operator conflicts with trailing big-lambdas.
-        --   We end up lexing './' as an operator in '\(x:Int)./\(a : Data)'
-        | KDot
-        
-        | KComma           
-        | KSemiColon
-        | KUnderscore
-        | KBackSlash
-        | KEquals
-        | KBar
-        | KAt
-        
-        -----------------------------------------
-        -- Compound symbols.
-        | KBigLambdaSlash
-        | KBigLambda
-        | KLambda
-
-        -----------------------------------------
         -- symbolic constructors
         | KArrowTilde
         | KArrowDash
         | KArrowDashLeft
         | KArrowEquals
 
-        -----------------------------------------
         -- bottoms
         | KBotEffect
         | KBotClosure
 
-        -----------------------------------------
-        -- core keywords
-        | KKeyword Keyword
-
-        -----------------------------------------
         -- debruijn indices
-        | KIndex Int
+        | KIndex   Int
 
         -- literal strings
-        | KString Text
+        | KString  Text
 
         -- pragmas
-        | KPragma Text
+        | KPragma  Text
 
-        -----------------------------------------
         -- builtin names 
         --   sort constructors.
         | KSoConBuiltin SoCon
@@ -251,43 +207,10 @@ describeTokAtom ta
 describeTokAtom' :: TokAtom -> (TokenFamily, String)
 describeTokAtom' ta
  = case ta of
-        -- parens
-        KRoundBra               -> (Symbol, "(")
-        KRoundKet               -> (Symbol, ")")
-        KSquareBra              -> (Symbol, "[")
-        KSquareKet              -> (Symbol, "]")
-        KBraceBra               -> (Symbol, "{")
-        KBraceKet               -> (Symbol, "}")
-        
-        -- compound parens
-        KSquareColonBra         -> (Symbol, "[:")
-        KSquareColonKet         -> (Symbol, ":]")
-        KBraceColonBra          -> (Symbol, "{:")
-        KBraceColonKet          -> (Symbol, ":}")
-
         -- operator symbols
         KOp    op               -> (Symbol, op)
         KOpVar op               -> (Symbol, "(" ++ op ++ ")")
         
-        -- operator body symbols
-        KHat                    -> (Symbol, "^")
-
-        -- punctuation symbols
-        KDot                    -> (Symbol, ".")
-        KComma                  -> (Symbol, ",")
-        KSemiColon              -> (Symbol, ";")
-        KUnderscore             -> (Symbol, "_")
-
-        KBackSlash              -> (Symbol, "\\")
-        KLambda                 -> (Symbol, "λ")
-
-        KBigLambdaSlash         -> (Symbol, "/\\")
-        KBigLambda              -> (Symbol, "Λ")
-
-        KEquals                 -> (Symbol, "=")
-        KBar                    -> (Symbol, "|")
-        KAt                     -> (Symbol, "@")
-
         -- symbolic constructors
         KArrowTilde             -> (Constructor, "~>")
         KArrowDash              -> (Constructor, "->")
@@ -298,6 +221,9 @@ describeTokAtom' ta
         KBotEffect              -> (Constructor, "Pure")
         KBotClosure             -> (Constructor, "Empty")
         
+        -- symbol tokens.
+        KSymbol  ss             -> (Symbol,  saySymbol ss)
+
         -- expression keywords
         KKeyword kw             -> (Keyword, sayKeyword kw)
 

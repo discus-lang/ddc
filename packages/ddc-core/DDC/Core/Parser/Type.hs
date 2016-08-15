@@ -53,11 +53,11 @@ pBinder
                 return  $ RName v
                 
         -- Anonymous binders.
-        , do    pTok KHat
+        , do    pSym    SHat
                 return  $ RAnon 
         
         -- Vacant binders.
-        , do    pTok KUnderscore
+        , do    pSym    SUnderscore
                 return  $ RNone ]
  <?> "a binder"
 
@@ -69,11 +69,11 @@ pTypeForall
 pTypeForall c
  = P.choice
          [ -- Type abstraction.
-           do   pTok KLambda
+           do   pSym SLambda
                 bs      <- P.many1 pBinder
                 pTok (KOp ":")
                 k       <- pTypeSum c
-                pTok KDot
+                pSym SDot
 
                 tBody    <- pTypeForall c
 
@@ -82,12 +82,12 @@ pTypeForall c
 
            -- Universal quantification.
            -- [v1 v1 ... vn : T1]. T2
-         , do   pTok KSquareBra
+         , do   pSym SSquareBra
                 bs      <- P.many1 pBinder
                 pTok (KOp ":")
                 k       <- pTypeSum c
-                pTok KSquareKet
-                pTok KDot
+                pSym SSquareKet
+                pSym SDot
 
                 body    <- pTypeForall c
 
@@ -157,9 +157,9 @@ pTypeAtom c
                 return (TCon $ TyConSpec TcConFun)
 
         -- (TYPE2)
-        , do    pTok KRoundBra
+        , do    pSym SRoundBra
                 t       <- pTypeSum c
-                pTok KRoundKet
+                pSym SRoundKet
                 return t 
 
         -- Named type constructors

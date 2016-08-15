@@ -9,6 +9,7 @@ module DDC.Core.Parser.Base
         , pString,      pStringSP
         , pIndex,       pIndexSP
         , pVar,         pVarSP,         pVarNamedSP
+        , pKey,         pSym
         , pTok,         pTokSP
         , pTokAs,       pTokAsSP
         , pOpSP
@@ -30,7 +31,7 @@ type Parser n a
 -- | Parse a module name.                               
 pModuleName :: Pretty n => Parser n ModuleName
 pModuleName 
- = do   ms      <- P.sepBy1 pModuleName1 (pTok KDot)
+ = do   ms      <- P.sepBy1 pModuleName1 (pTok (KSymbol SDot))
         return  $  ModuleName 
                 $  concat
                 $  map (\(ModuleName ss) -> ss) ms
@@ -54,7 +55,7 @@ pModuleName1 = P.pTokMaybe f
 pQualName :: Pretty n => Parser n (QualName n)
 pQualName
  = do   mn      <- pModuleName
-        pTok KDot
+        pTok    (KSymbol SDot)
         n       <- pName
         return  $ QualName mn n
 
@@ -166,7 +167,18 @@ pPragmaSP = P.pTokMaybeSP f
  where  f (KA (KPragma txt))  = Just txt
         f _                   = Nothing
 
+-------------------------------------------------------------------------------
+-- | Parse a `Symbol`.
+pSym :: Symbol  -> Parser n SourcePos
+pSym ss = P.pTokSP (KA (KSymbol ss))
 
+
+-- | Parse a `Keyword`.
+pKey :: Keyword -> Parser n SourcePos
+pKey kw = P.pTokSP (KA (KKeyword kw))
+
+
+-------------------------------------------------------------------------------
 -- | Parse an atomic token.
 pTok :: TokAtom -> Parser n ()
 pTok k     = P.pTok (KA k)

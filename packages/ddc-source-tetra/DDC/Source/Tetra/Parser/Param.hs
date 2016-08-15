@@ -11,7 +11,7 @@ import DDC.Source.Tetra.Parser.Base
 import DDC.Source.Tetra.Parser.Type
 import DDC.Source.Tetra.Exp.Source
 import Data.Maybe
-import qualified DDC.Core.Lexer.Tokens  as K
+import DDC.Core.Lexer.Tokens            as K
 import qualified DDC.Base.Parser        as P
 
 
@@ -95,30 +95,30 @@ pBindParamSpecAnnot
  = P.choice
         -- Type parameter
         -- [BIND1 BIND2 .. BINDN : TYPE]
- [ do   pTok K.KSquareBra
+ [ do   pSym    SSquareBra
         bs      <- P.many1 pBind
-        pTok (K.KOp ":")
+        pTok    (K.KOp ":")
         t       <- pType
-        pTok K.KSquareKet
+        pSym    SSquareKet
         return  [ ParamType b (Just t) | b <- bs]
 
         -- Witness parameter
         -- {BIND : TYPE}
- , do   pTok K.KBraceBra
+ , do   pSym    SBraceBra
         b       <- pBind
-        pTok (K.KOp ":")
+        pTok    (K.KOp ":")
         t       <- pType
-        pTok K.KBraceKet
+        pSym    SBraceKet
         return  [ ParamWitness b (Just t) ]
 
         -- Value parameter with type annotations.
         -- (BIND1 BIND2 .. BINDN : TYPE) 
         -- (BIND1 BIND2 .. BINDN : TYPE) { TYPE | TYPE }
- , do   pTok K.KRoundBra
+ , do   pSym    SRoundBra
         bs      <- P.many1 pBind
-        pTok (K.KOp ":")
+        pTok    (K.KOp ":")
         t       <- pType
-        pTok K.KRoundKet
+        pSym    SRoundKet
 
         return  $  [ ParamValue b (Just t) | b <- bs ]
  ]

@@ -46,6 +46,7 @@ module DDC.Core.Parser
         , pOpVarSP
 
           -- * Raw Tokens
+        , pSym,         pKey
         , pTok,         pTokSP
         , pTokAs)
 

@@ -56,17 +56,23 @@ pImportSpecs c
                 return  [ ImportData def ]
 
                 -- type { (NAME :: KIND)+ }
-         , do   P.choice [ pTok (KKeyword EType), return () ]
-                pTok KBraceBra
-                specs   <- P.sepEndBy1 (pImportType c) (pTok KSemiColon)
-                pTok KBraceKet
+         , do   P.choice [ do   pKey EType
+                                return ()
+                         ,      return () ]
+
+                pSym    SBraceBra
+                specs   <- P.sepEndBy1 (pImportType c)  (pSym SSemiColon)
+                pSym    SBraceKet
                 return specs
 
                 -- value { (NAME :: TYPE)+ }
-         , do   P.choice [ pTok (KKeyword EValue), return () ]
-                pTok KBraceBra
-                specs   <- P.sepEndBy1 (pImportValue c) (pTok KSemiColon)
-                pTok KBraceKet
+         , do   P.choice [ do   pKey EValue
+                                return ()
+                         ,      return () ]
+
+                pSym SBraceBra
+                specs   <- P.sepEndBy1 (pImportValue c) (pSym SSemiColon)
+                pSym SBraceKet
                 return specs
 
                 -- foreign ...
@@ -75,25 +81,25 @@ pImportSpecs c
 
                 P.choice
                  [      -- import foreign MODE type { (NAME : TYPE)+ }
-                  do    pTok (KKeyword EType)
-                        pTok KBraceBra
-                        sigs <- P.sepEndBy1 (pImportForeignType c src) (pTok KSemiColon)
-                        pTok KBraceKet
-                        return sigs
+                  do    pKey    EType
+                        pSym    SBraceBra
+                        sigs    <- P.sepEndBy1 (pImportForeignType c src)  (pSym SSemiColon)
+                        pSym    SBraceKet
+                        return  sigs
         
                         -- import foreign MODE capability { (NAME : TYPE)+ }
-                 , do   pTok (KKeyword ECapability)
-                        pTok KBraceBra
-                        sigs <- P.sepEndBy1 (pImportForeignCap c src) (pTok KSemiColon)
-                        pTok KBraceKet
-                        return sigs
+                 , do   pKey    ECapability
+                        pSym    SBraceBra
+                        sigs    <- P.sepEndBy1 (pImportForeignCap c src)   (pSym SSemiColon)
+                        pSym    SBraceKet
+                        return  sigs
 
                         -- import foreign MODE value { (NAME : TYPE)+ }
-                 , do   pTok (KKeyword EValue)
-                        pTok KBraceBra
-                        sigs <- P.sepEndBy1 (pImportForeignValue c src) (pTok KSemiColon)
-                        pTok KBraceKet
-                        return sigs
+                 , do   pKey    EValue
+                        pSym    SBraceBra
+                        sigs    <- P.sepEndBy1 (pImportForeignValue c src) (pSym SSemiColon)
+                        pSym    SBraceKet
+                        return  sigs
                  ]
          ]
          P.<?> "something to import"
@@ -155,9 +161,9 @@ pImportType
 
 pImportType c
  = do   n       <- pName
-        pTokSP (KOp ":")
+        pTokSP  (KOp ":")
         k       <- pType c
-        pTokSP KEquals
+        pSym    SEquals
         t       <- pType c
         return  $  ImportType n k t
 

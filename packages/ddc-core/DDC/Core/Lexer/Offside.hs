@@ -150,12 +150,12 @@ applyOffside ps mm@(m : ms) (LexemeStartBlock n : ts)
 
 -- push context for explicit open brace
 applyOffside ps ms 
-        (LexemeToken t@Token { tokenTok = KA KBraceBra } : ts)
+        (LexemeToken t@Token { tokenTok = KA (KSymbol SBraceBra) } : ts)
         = t : applyOffside (ParenBrace : ps) (0 : ms) ts
 
 -- pop context from explicit close brace
 applyOffside ps mm 
-        (LexemeToken t@Token { tokenTok = KA KBraceKet } : ts) 
+        (LexemeToken t@Token { tokenTok = KA (KSymbol SBraceKet) } : ts) 
 
         -- make sure that explict open braces match explicit close braces
         | 0 : ms                <- mm
@@ -169,19 +169,19 @@ applyOffside ps mm
 
 -- push context for explict open paren.
 applyOffside ps ms 
-        (LexemeToken t@Token { tokenTok = KA KRoundBra } : ts)
+        (LexemeToken t@Token { tokenTok = KA (KSymbol SRoundBra) } : ts)
         = t : applyOffside (ParenRound : ps) ms ts
 
 -- force close of block on close paren.
 -- This partially handles the crazy (Note 5) rule from the Haskell98 standard.
 applyOffside (ParenBrace : ps) (m : ms)
-        (lt@(LexemeToken Token { tokenTok = KA KRoundKet }) : ts)
+        (lt@(LexemeToken Token { tokenTok = KA (KSymbol SRoundKet) }) : ts)
  | m /= 0
  = newCKet ts : applyOffside ps ms (lt : ts)
 
 -- pop context for explicit close paren.
 applyOffside (ParenRound : ps) ms 
-        (LexemeToken t@Token { tokenTok = KA KRoundKet } : ts)
+        (LexemeToken t@Token { tokenTok   = KA (KSymbol SRoundKet) } : ts)
         = t : applyOffside ps ms ts
 
 -- pass over tokens.
@@ -214,7 +214,7 @@ addStarts ts
 
         -- If the first lexeme of a module is not '{' then start a new block.
         (t1 : tsRest)
-          |  not $ or $ map (isToken t1) [KA KBraceBra]
+          |  not $ or $ map (isToken t1) [KA (KSymbol SBraceBra)]
           -> LexemeStartBlock (tokenColumn t1) : addStarts' (t1 : tsRest)
 
           | otherwise
@@ -237,26 +237,26 @@ addStarts' ts
         --  insert a new one.
         | Just (ts1, ts2)       <- splitBlockStart ts
         , t2 : tsRest           <- dropNewLines ts2
-        , not $ isToken t2 (KA KBraceBra)
+        , not $ isToken t2 (KA (KSymbol SBraceBra))
         = [LexemeToken t | t <- ts1]
                 ++ [LexemeStartBlock (tokenColumn t2)]
                 ++ addStarts' (t2 : tsRest)
 
         -- check for start of list
         | t1 : ts'              <- ts
-        , isToken t1 (KA KBraceBra)
+        , isToken t1 (KA (KSymbol SBraceBra))
         = LexemeToken t1    : addStarts' ts'
 
         -- check for end of list
         | t1 : ts'              <- ts
-        , isToken t1 (KA KBraceKet)
+        , isToken t1 (KA (KSymbol SBraceKet))
         = LexemeToken t1    : addStarts' ts'
 
         -- check for start of new line
         | t1 : ts'              <- ts
         , isToken t1 (KM KNewLine)
         , t2 : tsRest   <- dropNewLines ts'
-        , not $ isToken t2 (KA KBraceBra)
+        , not $ isToken t2 (KA (KSymbol SBraceBra))
         = LexemeStartLine (tokenColumn t2) 
                 : addStarts' (t2 : tsRest)
 
@@ -395,17 +395,17 @@ isKNToken _                     = False
 --   non-newline token in this list
 newCBra :: [Lexeme n] -> Token (Tok n)
 newCBra ts
-        = (takeTok ts) { tokenTok = KA KBraceBra }
+        = (takeTok ts) { tokenTok = KA (KSymbol SBraceBra) }
 
 
 newCKet :: [Lexeme n] -> Token (Tok n)
 newCKet ts
-        = (takeTok ts) { tokenTok = KA KBraceKet }
+        = (takeTok ts) { tokenTok = KA (KSymbol SBraceKet) }
 
 
 newSemiColon :: [Lexeme n] -> Token (Tok n)
 newSemiColon ts 
-        = (takeTok ts) { tokenTok = KA KSemiColon }
+        = (takeTok ts) { tokenTok = KA (KSymbol SSemiColon) }
 
 
 -- | This is injected by `applyOffside` when it finds an explit close

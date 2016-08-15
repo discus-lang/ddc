@@ -8,7 +8,7 @@ import DDC.Source.Tetra.Parser.Type
 import DDC.Source.Tetra.Parser.Base
 import DDC.Source.Tetra.Exp.Source
 import Control.Monad.Except
-import qualified DDC.Core.Lexer.Tokens  as K
+import DDC.Core.Lexer.Tokens            as K
 import qualified DDC.Base.Parser        as P
 
 type SP = SourcePos
@@ -45,9 +45,9 @@ pWitnessArgSP :: Parser (Witness, SP)
 pWitnessArgSP 
  = P.choice
  [ -- [TYPE]
-   do   sp      <- pTokSP K.KSquareBra
+   do   sp      <- pSym SSquareBra
         t       <- pType
-        pTok K.KSquareKet
+        pSym SSquareKet
         return  (WAnnot sp $ WType t, sp)
 
    -- WITNESS
@@ -66,9 +66,9 @@ pWitnessAtomSP :: Parser (Witness, SP)
 pWitnessAtomSP 
  = P.choice
    -- (WITNESS)
- [ do   sp      <- pTokSP K.KRoundBra
+ [ do   sp      <- pSym SRoundBra
         w       <- pWitness
-        pTok K.KRoundKet
+        pSym SRoundKet
         return  (w, sp)
 
    -- Named constructors

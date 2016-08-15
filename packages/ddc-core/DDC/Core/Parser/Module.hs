@@ -128,13 +128,13 @@ pHeadDecl ctx
 -- | Parse a type equation.
 pTypeDef :: Ord n => Context n -> Parser n (n, Kind n, Type n)
 pTypeDef c
- = do   pTokSP (KKeyword EType)
+ = do   pKey    EType
         n       <- pName
-        pTokSP (KOp ":")
+        pTokSP  (KOp ":")
         k       <- pType c
-        pTokSP KEquals
+        pSym SEquals
         t       <- pType c
-        pTokSP KSemiColon
+        pSym SSemiColon
         return  (n, k, t)
 
 

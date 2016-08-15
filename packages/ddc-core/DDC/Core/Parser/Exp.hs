@@ -29,76 +29,76 @@ pExp c
  = P.choice
         -- Level-0 lambda abstractions
         -- (λBIND.. . EXP) or (\BIND.. . EXP)
- [ do   sp      <- P.choice [ pTokSP KLambda,    pTokSP KBackSlash]
+ [ do   sp      <- P.choice [ pSym SLambda,    pSym SBackSlash]
         bs      <- liftM concat $ P.many1 (pBinds c)
-        pTok KDot
+        pSym    SDot
         xBody   <- pExp c
         return  $ foldr (XLam sp) xBody bs
 
         -- Level-1 lambda abstractions.
         -- (ΛBINDS.. . EXP) or (/\BIND.. . EXP)
- , do   sp      <- P.choice [ pTokSP KBigLambda, pTokSP KBigLambdaSlash] 
+ , do   sp      <- P.choice [ pSym SBigLambda, pSym SBigLambdaSlash] 
         bs      <- liftM concat $ P.many1 (pBinds c)
-        pTok KDot
+        pSym    SDot
         xBody   <- pExp c
         return  $ foldr (XLAM sp) xBody bs
 
         -- let expression
  , do   (lts, sp) <- pLetsSP c
-        pTok    (KKeyword EIn)
+        pKey    EIn
         x2      <- pExp c
         return  $ XLet sp lts x2
 
         -- do { STMTS }
         --   Sugar for a let-expression.
- , do   pTok    (KKeyword EDo)
-        pTok    KBraceBra
+ , do   pKey    EDo
+        pSym    SBraceBra
         xx      <- pStmts c
-        pTok    KBraceKet
+        pSym    SBraceKet
         return  $ xx
 
         -- case EXP of { ALTS }
- , do   sp      <- pTokSP (KKeyword ECase)
+ , do   sp      <- pKey ECase
         x       <- pExp c
-        pTok (KKeyword EOf)
-        pTok KBraceBra
-        alts    <- P.sepEndBy1 (pAlt c) (pTok KSemiColon)
-        pTok KBraceKet
+        pKey    EOf
+        pSym    SBraceBra
+        alts    <- P.sepEndBy1 (pAlt c) (pSym SSemiColon)
+        pSym    SBraceKet
         return  $ XCase sp x alts
 
         -- letcase PAT = EXP in EXP
  , do   --  Sugar for a single-alternative case expression.
-        sp      <- pTokSP (KKeyword ELetCase)
+        sp      <- pKey ELetCase
         p       <- pPat c
-        pTok KEquals
+        pSym    SEquals
         x1      <- pExp c
-        pTok (KKeyword EIn)
+        pKey    EIn
         x2      <- pExp c
         return  $ XCase sp x1 [AAlt p x2]
 
         -- weakeff [TYPE] in EXP
- , do   sp      <- pTokSP (KKeyword EWeakEff)
-        pTok KSquareBra
+ , do   sp      <- pKey EWeakEff
+        pSym    SSquareBra
         t       <- pType c
-        pTok KSquareKet
-        pTok (KKeyword EIn)
+        pSym    SSquareKet
+        pKey    EIn
         x       <- pExp c
         return  $ XCast sp (CastWeakenEffect t) x
 
         -- purify WITNESS in EXP
- , do   sp      <- pTokSP (KKeyword EPurify)
+ , do   sp      <- pKey EPurify
         w       <- pWitness c
         pTok (KKeyword EIn)
         x       <- pExp c
         return  $ XCast sp (CastPurify w) x
 
         -- box EXP
- , do   sp      <- pTokSP (KKeyword EBox)
+ , do   sp      <- pKey EBox
         x       <- pExp c
         return  $ XCast sp CastBox x
 
         -- run EXP
- , do   sp      <- pTokSP (KKeyword ERun)
+ , do   sp      <- pKey ERun
         x       <- pExp c
         return  $ XCast sp CastRun x
 
@@ -128,27 +128,27 @@ pArgSPs :: Ord n => Context n -> Parser n [(Exp SourcePos n, SourcePos)]
 pArgSPs c
  = P.choice
         -- [TYPE]
- [ do   sp      <- pTokSP KSquareBra
+ [ do   sp      <- pSym SSquareBra
         t       <- pType c
-        pTok KSquareKet
+        pSym SSquareKet
         return  [(XType sp t, sp)]
 
         -- [: TYPE0 TYPE0 ... :]
- , do   sp      <- pTokSP KSquareColonBra
+ , do   sp      <- pSym SSquareColonBra
         ts      <- P.many1 (pTypeAtom c)
-        pTok KSquareColonKet
+        pSym SSquareColonKet
         return  [(XType sp t, sp) | t <- ts]
         
         -- {WITNESS}
- , do   sp      <- pTokSP KBraceBra
+ , do   sp      <- pSym SBraceBra
         w       <- pWitness c
-        pTok KBraceKet
+        pSym SBraceKet
         return  [(XWitness sp w, sp)]
                 
         -- {: WITNESS0 WITNESS0 ... :}
- , do   sp      <- pTokSP KBraceColonBra
+ , do   sp      <- pSym SBraceColonBra
         ws      <- P.many1 (pWitnessAtom c)
-        pTok KBraceColonKet
+        pSym SBraceColonKet
         return  [(XWitness sp w, sp) | w <- ws]
                 
         -- EXP0
@@ -175,36 +175,36 @@ pExpAtomSP
 pExpAtomSP c
  = P.choice
         -- (EXP2)
- [ do   sp      <- pTokSP KRoundBra
+ [ do   sp      <- pSym SRoundBra
         t       <- pExp c
-        pTok KRoundKet
+        pSym    SRoundKet
         return  (t, sp)
  
         -- The unit data constructor.       
- , do   sp              <- pTokSP KDaConUnit
+ , do   sp        <- pTokSP KDaConUnit
         return  (XCon sp dcUnit, sp)
 
         -- Named algebraic constructors.
- , do   (con, sp)       <- pConSP
+ , do   (con, sp) <- pConSP
         return  (XCon sp (DaConBound con), sp)
 
         -- Literals.
         --   The attached type is set to Bottom for now, which needs
         --   to be filled in later by the Spread transform.
- , do   (lit, sp)       <- pLitSP
+ , do   (lit, sp) <- pLitSP
         return  (XCon sp (DaConPrim lit (T.tBot T.kData)), sp)
 
- , do   (tx, sp)        <- pStringSP
+ , do   (tx, sp)  <- pStringSP
         let Just mkString = contextMakeStringName c
         let lit           = mkString sp tx
         return  (XCon sp (DaConPrim lit (T.tBot T.kData)), sp)
 
         -- Debruijn indices
- , do   (i, sp)         <- pIndexSP
+ , do   (i, sp)   <- pIndexSP
         return  (XVar sp (UIx   i), sp)
 
         -- Variables
- , do   (var, sp)       <- pVarSP
+ , do   (var, sp) <- pVarSP
         return  (XVar sp (UName var), sp)
  ]
 
@@ -227,7 +227,7 @@ pPat    :: Ord n
 pPat c
  = P.choice
  [      -- Wildcard Pattern: _
-   do   pTok KUnderscore
+   do   pSym    SUnderscore
         return  $ PDefault
 
         -- LIT
@@ -258,11 +258,11 @@ pBinds c
         return  [T.makeBindFromBinder b (T.tBot T.kData) | b <- bs]
 
         -- Binder with type, wrapped in parens.
- , do   pTok KRoundBra
+ , do   pSym SRoundBra
         bs      <- P.many1 pBinder
         pTok (KOp ":")
         t       <- pType c
-        pTok KRoundKet
+        pSym SRoundKet
         return  [T.makeBindFromBinder b t | b <- bs]
  ]
 
@@ -283,9 +283,9 @@ pLetsSP c
     , do sp       <- pTokSP (KKeyword ELetRec)
          P.choice
           -- Multiple bindings in braces
-          [ do   pTok KBraceBra
-                 lets    <- P.sepEndBy1 (pLetBinding c) (pTok KSemiColon)
-                 pTok KBraceKet
+          [ do   pSym SBraceBra
+                 lets    <- P.sepEndBy1 (pLetBinding c) (pSym SSemiColon)
+                 pSym SBraceKet
                  return (LRec lets, sp)
 
           -- A single binding without braces.
@@ -340,8 +340,8 @@ pLetWits :: Ord n
 
 pLetWits c bs mParent
  = P.choice 
-    [ do   pTok (KKeyword EWith)
-           pTok KBraceBra
+    [ do   pKey EWith
+           pSym SBraceBra
            wits    <- P.sepBy (P.choice
                         [ -- Named witness binder.
                           do  b    <- pBinder
@@ -352,8 +352,8 @@ pLetWits c bs mParent
                           -- Ambient witness binding, use for capabilities.
                         , do  t    <- pTypeApp c
                               return  $ BNone t ])
-                      (pTok KSemiColon)
-           pTok KBraceKet
+                      (pSym SSemiColon)
+           pSym SBraceKet
            return (LPrivate bs mParent wits)
     
     , do   return (LPrivate bs mParent [])
@@ -372,9 +372,9 @@ pLetBinding c
         P.choice
          [ do   -- Binding with full type signature.
                 --  BINDER : TYPE = EXP
-                pTok (KOp ":")
+                pTok    (KOp ":")
                 t       <- pType c
-                pTok KEquals
+                pSym    SEquals
                 xBody   <- pExp c
 
                 return  $ (T.makeBindFromBinder b t, xBody) 
@@ -384,7 +384,7 @@ pLetBinding c
                 -- This form can't be used with letrec as we can't use it
                 -- to build the full type sig for the let-bound variable.
                 --  BINDER = EXP
-                pTok KEquals
+                pSym    SEquals
                 xBody   <- pExp c
                 let t   = T.tBot T.kData
                 return  $ (T.makeBindFromBinder b t, xBody)
@@ -401,7 +401,7 @@ pLetBinding c
                         --   BINDER PARAM1 PARAM2 .. PARAMN : TYPE = EXP
                         pTok (KOp ":")
                         tBody   <- pType c
-                        sp      <- pTokSP KEquals
+                        sp      <- pSym SEquals
                         xBody   <- pExp c
 
                         let x   = expOfParams sp ps xBody
@@ -413,7 +413,7 @@ pLetBinding c
                         -- but we can create lambda abstractions with the given 
                         -- parameter types.
                         --  BINDER PARAM1 PARAM2 .. PARAMN = EXP
-                 , do   sp      <- pTokSP KEquals
+                 , do   sp      <- pSym SEquals
                         xBody   <- pExp c
 
                         let x   = expOfParams sp ps xBody
@@ -439,7 +439,7 @@ pStmt c
    --  
    P.try $ 
     do  br      <- pBinder
-        sp      <- pTokSP KEquals
+        sp      <- pSym SEquals
         x1      <- pExp c
         let t   = T.tBot T.kData
         let b   = T.makeBindFromBinder br t
@@ -466,7 +466,7 @@ pStmt c
 -- | Parse some statements.
 pStmts :: Ord n => Context n -> Parser n (Exp SourcePos n)
 pStmts c
- = do   stmts   <- P.sepEndBy1 (pStmt c) (pTok KSemiColon)
+ = do   stmts   <- P.sepEndBy1 (pStmt c) (pSym SSemiColon)
         case makeStmts stmts of
          Nothing -> P.unexpected "do-block must end with a statement"
          Just x  -> return x

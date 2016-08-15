@@ -9,7 +9,7 @@ where
 import DDC.Core.Exp
 import DDC.Core.Parser.Type
 import DDC.Core.Parser.Context
-import DDC.Core.Parser.Base             (Parser)
+import DDC.Core.Parser.Base
 import DDC.Core.Lexer.Tokens
 import qualified DDC.Base.Parser        as P
 import qualified DDC.Type.Exp.Simple    as T
@@ -104,39 +104,39 @@ pBindParamSpecAnnot c
  = P.choice
         -- Type parameter
         -- [BIND1 BIND2 .. BINDN : TYPE]
- [ do   pTok KSquareBra
+ [ do   pSym SSquareBra
         bs      <- P.many1 pBinder
         pTok (KOp ":")
         t       <- pType c
-        pTok KSquareKet
+        pSym SSquareKet
         return  [ ParamType b 
                 | b <- zipWith T.makeBindFromBinder bs (repeat t)]
 
         -- Witness parameter
         -- {BIND : TYPE}
- , do   pTok KBraceBra
+ , do   pSym SBraceBra
         b       <- pBinder
         pTok (KOp ":")
         t       <- pType c
-        pTok KBraceKet
+        pSym SBraceKet
         return  [ ParamWitness $ T.makeBindFromBinder b t]
 
         -- Value parameter with type annotations.
         -- (BIND1 BIND2 .. BINDN : TYPE) 
         -- (BIND1 BIND2 .. BINDN : TYPE) { TYPE | TYPE }
- , do   pTok KRoundBra
+ , do   pSym SRoundBra
         bs      <- P.many1 pBinder
         pTok (KOp ":")
         t       <- pType c
-        pTok KRoundKet
+        pSym SRoundKet
 
         (eff, clo) 
          <- P.choice
-                [ do    pTok KBraceBra
+                [ do    pSym SBraceBra
                         eff'    <- pType c
-                        pTok KBar
+                        pSym SBar
                         clo'    <- pType c
-                        pTok KBraceKet
+                        pSym SBraceKet
                         return  (eff', clo')
                 
                 , do    return  (T.tBot T.kEffect, T.tBot T.kClosure) ]

@@ -4,7 +4,8 @@ module DDC.Core.Lexer.Token.Keyword
         , sayKeyword)
 where
 
--- | Keywords.
+
+-- | Keyword tokens.
 data Keyword
         -- core keywords.
         = EModule
@@ -43,6 +44,7 @@ data Keyword
         deriving (Eq, Show)
 
 
+-- | Yield the string name of a `Keyword`.
 sayKeyword :: Keyword -> String
 sayKeyword kw
  = case kw of

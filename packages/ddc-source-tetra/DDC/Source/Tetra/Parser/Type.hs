@@ -28,11 +28,11 @@ pBind
                 return  $  b
                 
         -- Anonymous binders.
-        , do    pTok KHat
+        , do    pSym SHat
                 return  $  BAnon 
         
         -- Vacant binders.
-        , do    pTok KUnderscore
+        , do    pSym SUnderscore
                 return  $  BNone ]
  <?> "a binder"
 
@@ -62,12 +62,12 @@ pTypeForall
  = P.choice
          [ -- Universal quantification.
            -- [v1 v1 ... vn : T1]. T2
-           do   pTok KSquareBra
+           do   pSym SSquareBra
                 bs      <- P.many1 pBind
                 sp      <- pTokSP (KOp ":")
                 kBind   <- pTypeSum
-                pTok KSquareKet
-                pTok KDot
+                pSym SSquareKet
+                pSym SDot
 
                 tBody   <- pTypeForall
                 return  $ foldr (\b t   -> TAnnot sp 
@@ -133,9 +133,9 @@ pTypeAtomSP
                 return  (TAnnot sp $ TCon TyConFun,  sp)
 
           -- (TYPE2)
-        , do    sp      <- pTokSP KRoundBra
+        , do    sp      <- pSym SRoundBra
                 t       <- pTypeSum
-                pTok KRoundKet
+                pSym SRoundKet
                 return  (t, sp)
 
         -- Named type constructors

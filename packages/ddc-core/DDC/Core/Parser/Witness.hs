@@ -56,9 +56,9 @@ pWitnessArgSP
 pWitnessArgSP c
  = P.choice
  [ -- [TYPE]
-   do   sp      <- pTokSP KSquareBra
+   do   sp      <- pSym SSquareBra
         t       <- pType c
-        pTok KSquareKet
+        pSym    SSquareKet
         return  (WType sp t, sp)
 
    -- WITNESS
@@ -84,9 +84,9 @@ pWitnessAtomSP
 pWitnessAtomSP c
  = P.choice
    -- (WITNESS)
- [ do   sp      <- pTokSP KRoundBra
+ [ do   sp      <- pSym SRoundBra
         w       <- pWitness c
-        pTok KRoundKet
+        pSym SRoundKet
         return  (w, sp)
 
    -- Named constructors

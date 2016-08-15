@@ -29,19 +29,24 @@ pExportSpecs c
 
         P.choice 
          [      -- export value { (NAME :: TYPE)+ }
-           do   P.choice [ pTok (KKeyword EValue), return () ]
-                pTok KBraceBra
-                specs   <- P.sepEndBy1 (pExportValue c) (pTok KSemiColon)
-                pTok KBraceKet 
+           do   P.choice [ do   pKey EValue
+                                return ()
+                         ,      return () ]
+
+                pSym    SBraceBra
+                specs   <- P.sepEndBy1 (pExportValue c)
+                                       (pSym SSemiColon)
+                pSym    SBraceKet 
                 return specs
 
                 -- export foreign X value { (NAME :: TYPE)+ }
-         , do   pTok (KKeyword EForeign)
+         , do   pKey    EForeign
                 dst     <- liftM (renderIndent . ppr) pName
-                pTok (KKeyword EValue)
-                pTok KBraceBra
-                specs   <- P.sepEndBy1 (pExportForeignValue c dst) (pTok KSemiColon)
-                pTok KBraceKet
+                pKey    EValue
+                pSym    SBraceBra
+                specs   <- P.sepEndBy1 (pExportForeignValue c dst) 
+                                       (pSym SSemiColon)
+                pSym    SBraceKet
                 return specs
          ]
 

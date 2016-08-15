@@ -38,8 +38,7 @@ lexModuleWithOffside
         -> [Token (Tok String)]
 
 lexModuleWithOffside sourceName lineStart str
- = {-# SCC lexWithOffside #-}
-        applyOffside [] []
+ = applyOffside [] []
         $ addStarts
         $ dropComments 
         $ lexText sourceName lineStart 
@@ -57,8 +56,7 @@ lexExp  :: FilePath     -- ^ Path to source file, for error messages.
         -> [Token (Tok String)]
 
 lexExp sourceName lineStart str
- = {-# SCC lexExp #-}
-        dropNewLines
+ = dropNewLines
         $ dropComments
         $ lexText sourceName lineStart 
         $ T.pack str
@@ -139,16 +137,19 @@ lexWord sp@(SourcePos sourceName line column) w
          , (cs1, rest)          <- T.splitAt 2 cs
          , Just t      
             <- case T.unpack cs1 of
-                "[:"            -> Just KSquareColonBra
-                ":]"            -> Just KSquareColonKet
-                "{:"            -> Just KBraceColonBra
-                ":}"            -> Just KBraceColonKet
+                "[:"            -> Just (KSymbol SSquareColonBra)
+                ":]"            -> Just (KSymbol SSquareColonKet)
+                "{:"            -> Just (KSymbol SBraceColonBra)
+                ":}"            -> Just (KSymbol SBraceColonKet)
+                "/\\"           -> Just (KSymbol SBigLambdaSlash)
+
                 "~>"            -> Just KArrowTilde
                 "->"            -> Just KArrowDash
                 "<-"            -> Just KArrowDashLeft
                 "=>"            -> Just KArrowEquals
-                "/\\"           -> Just KBigLambdaSlash
+
                 "()"            -> Just KDaConUnit
+
                 _               -> Nothing
          = tokA t : lexMore 2 rest
 
@@ -202,7 +203,7 @@ lexWord sp@(SourcePos sourceName line column) w
         
          -- Operator body symbols.
          | Just ('^', rest)     <- T.uncons cs
-         = tokA KHat                            : lexMore 1 rest
+         = tokA (KSymbol SHat)                  : lexMore 1 rest
 
          -- Bottoms
          | Just rest            <- prefix "Pure" cs
@@ -249,7 +250,7 @@ lexWord sp@(SourcePos sourceName line column) w
                                         _                 -> (body, rest)
          = let readNamedVar s
                  | "_"          <- s
-                 = tokA KUnderscore        : lexMore (length s) rest'
+                 = tokA (KSymbol SUnderscore) : lexMore (length s) rest'
 
                  | Just t       <- lookup s keywords
                  = tok t                   : lexMore (length s) rest'
@@ -281,10 +282,10 @@ lexPunc sp@(SourcePos name line col) tx
  , (cs1, rest)          <- T.splitAt 2 tx
  , Just t
    <- case T.unpack cs1 of
-        "[:"            -> Just KSquareColonBra
-        ":]"            -> Just KSquareColonKet
-        "{:"            -> Just KBraceColonBra
-        ":}"            -> Just KBraceColonKet
+        "[:"            -> Just (KSymbol SSquareColonBra)
+        ":]"            -> Just (KSymbol SSquareColonKet)
+        "{:"            -> Just (KSymbol SBraceColonBra)
+        ":}"            -> Just (KSymbol SBraceColonKet)
         _               -> Nothing
  = Just ( Token (KA t) sp
         , SourcePos name line (col + 2)
@@ -293,22 +294,23 @@ lexPunc sp@(SourcePos name line col) tx
  | Just (c, rest) <- T.uncons tx
  , Just t           
    <- case c of
-        '('             -> Just KRoundBra
-        ')'             -> Just KRoundKet
-        '['             -> Just KSquareBra
-        ']'             -> Just KSquareKet
-        '{'             -> Just KBraceBra
-        '}'             -> Just KBraceKet
-        '.'             -> Just KDot
-        ','             -> Just KComma
-        ';'             -> Just KSemiColon
-        '@'             -> Just KAt
-        '\\'            -> Just KBackSlash
-        'λ'             -> Just KLambda
-        'Λ'             -> Just KBigLambda
+        '('             -> Just (KSymbol SRoundBra)
+        ')'             -> Just (KSymbol SRoundKet)
+        '['             -> Just (KSymbol SSquareBra)
+        ']'             -> Just (KSymbol SSquareKet)
+        '{'             -> Just (KSymbol SBraceBra)
+        '}'             -> Just (KSymbol SBraceKet)
+        '.'             -> Just (KSymbol SDot)
+        ','             -> Just (KSymbol SComma)
+        ';'             -> Just (KSymbol SSemiColon)
+        '@'             -> Just (KSymbol SAt)
+        '\\'            -> Just (KSymbol SBackSlash)
+        'λ'             -> Just (KSymbol SLambda)
+        'Λ'             -> Just (KSymbol SBigLambda)
+        '='             -> Just (KSymbol SEquals)
+        '|'             -> Just (KSymbol SBar)
+
         '→'             -> Just KArrowDash
-        '='             -> Just KEquals
-        '|'             -> Just KBar
 
         _               -> Nothing
  = Just ( Token (KA t) sp
