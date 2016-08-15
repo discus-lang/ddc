@@ -14,6 +14,7 @@ module DDC.Core.Lexer
         , lexModuleWithOffside
         , lexExp)
 where
+import DDC.Core.Lexer.Token.Builtin
 import DDC.Core.Lexer.Offside
 import DDC.Core.Lexer.Comments
 import DDC.Core.Lexer.Names
@@ -221,16 +222,16 @@ lexWord sp@(SourcePos sourceName line column) w
                                         Just ('#',  rest') -> (body <> T.pack "#", rest')
                                         _                  -> (body, rest)
          = let readNamedCon s
-                 | Just socon   <- readSoConBuiltin s
+                 | Just socon   <- acceptSoCon s
                  = tokA (KBuiltin (BSoCon socon))  : lexMore (length s) rest'
 
-                 | Just kicon   <- readKiConBuiltin s
+                 | Just kicon   <- acceptKiCon s
                  = tokA (KBuiltin (BKiCon kicon))  : lexMore (length s) rest'
 
-                 | Just twcon   <- readTwConBuiltin s
+                 | Just twcon   <- acceptTwCon s
                  = tokA (KBuiltin (BTwCon twcon))  : lexMore (length s) rest'
                  
-                 | Just tccon   <- readTcConBuiltin s
+                 | Just tccon   <- acceptTcCon s
                  = tokA (KBuiltin (BTcCon tccon))   : lexMore (length s) rest'
                  
                  | Just con     <- readCon s

@@ -3,12 +3,6 @@ module DDC.Core.Lexer.Names
         ( -- * Keywords
           keywords
 
-          -- * Builtin constructors
-        , readSoConBuiltin
-        , readKiConBuiltin
-        , readTwConBuiltin
-        , readTcConBuiltin
-
           -- * Variable names
         , isVarName
         , isVarStart
@@ -31,12 +25,10 @@ module DDC.Core.Lexer.Names
         , isLitStart
         , isLitBody)
 where
-import DDC.Core.Exp
 import DDC.Core.Lexer.Tokens
 import DDC.Core.Lexer.Unicode
 import DDC.Data.ListUtils
 import Data.Char
-import Data.List
 import qualified Data.Set               as Set
 
 
@@ -73,68 +65,6 @@ keywords
         , ("then",       KA (KKeyword EThen))
         , ("else",       KA (KKeyword EElse))
         , ("otherwise",  KA (KKeyword EOtherwise)) ]
-
-
--- | Read a named sort constructor.
-readSoConBuiltin :: String -> Maybe SoCon
-readSoConBuiltin ss
- = case ss of
-        "Prop"          -> Just SoConProp
-        "Comp"          -> Just SoConComp
-        _               -> Nothing
-
-
--- | Read a named kind constructor.
-readKiConBuiltin :: String -> Maybe KiCon
-readKiConBuiltin ss
- = case ss of
-        "Witness"       -> Just KiConWitness
-        "Data"          -> Just KiConData
-        "Region"        -> Just KiConRegion
-        "Effect"        -> Just KiConEffect
-        "Closure"       -> Just KiConClosure
-        _               -> Nothing
-
-
--- | Read a named witness type constructor.
-readTwConBuiltin :: String -> Maybe TwCon
-readTwConBuiltin ss
- = case ss of
-        "Const"         -> Just TwConConst
-        "DeepConst"     -> Just TwConDeepConst
-        "Mutable"       -> Just TwConMutable
-        "DeepMutable"   -> Just TwConDeepMutable
-        "Purify"        -> Just TwConPure
-        "Disjoint"      -> Just TwConDisjoint
-        "Distinct"      -> Just (TwConDistinct 2)
-        _               -> readTwConWithArity ss
-
-
-readTwConWithArity :: String -> Maybe TwCon
-readTwConWithArity ss
- | Just n <- stripPrefix "Distinct" ss 
- , all isDigit n
- 
- = Just (TwConDistinct $ read n)
- | otherwise = Nothing
- 
- 
--- | Read a builtin type constructor with a non-symbolic name.
---   ie not '->'.
-readTcConBuiltin :: String -> Maybe TcCon
-readTcConBuiltin ss
- = case ss of
-        "Unit"          -> Just TcConUnit
-        "S"             -> Just TcConSusp
-        "Read"          -> Just TcConRead
-        "HeadRead"      -> Just TcConHeadRead
-        "DeepRead"      -> Just TcConDeepRead
-        "Write"         -> Just TcConWrite
-        "DeepWrite"     -> Just TcConDeepWrite
-        "Alloc"         -> Just TcConAlloc
-        "DeepAlloc"     -> Just TcConDeepAlloc
-        _               -> Nothing
-
 
 
 -- Variable names ---------------------------------------------------------------------------------
