@@ -27,7 +27,6 @@ import DDC.Data.SourcePos
 import Data.Char
 import Data.Text                        (Text)
 import qualified Data.Text              as T
-import Data.Monoid
 
 
 -- Module -----------------------------------------------------------------------------------------
@@ -195,19 +194,20 @@ lexWord sp@(SourcePos sourceName line column) w
          , Just str             <- acceptOperator (T.unpack sym)
          = tokA (KOp str) : lexMore (length str) rest
 
-         -- Single character punctuation.
-         | Just (tk, sp', rest)  <- lexPunc sp cs
-         = tk : lexWord sp' rest
-
          -- Debruijn indices
          | Just ('^', cs1)      <- T.uncons cs
          , (ds, rest)           <- T.span isDigit cs1
          , T.length ds >= 1
          = tokA (KIndex (read (T.unpack ds)))   : lexMore (1 + T.length ds) rest         
+
+         -- Single character punctuation.
+         | Just (tk, sp', rest) <- lexPunc sp cs
+         = tk : lexWord sp' rest
+
         
          -- Operator body symbols.
-         | Just ('^', rest)     <- T.uncons cs
-         = tokA (KSymbol SHat)                  : lexMore 1 rest
+--         | Just ('^', rest)     <- T.uncons cs
+--         = tokA (KSymbol SHat)                  : lexMore 1 rest
 
          -- Named Constructors
          | Just (c, cs1)        <- T.uncons cs
@@ -215,10 +215,10 @@ lexWord sp@(SourcePos sourceName line column) w
          , (body,  rest)        <- T.span isConBody cs1
          , sym                  <- T.cons c body
          = let  readNamedCon s
-                 | Just bb       <- acceptBuiltin s
+                 | Just bb      <- acceptBuiltin s
                  = tokA  (KBuiltin bb)           : lexMore (length s) rest
                  
-                 | Just con      <- acceptConName s
+                 | Just con     <- acceptConName s
                  = tokN (KCon con)               : lexMore (length s) rest
                
                  | otherwise    
@@ -227,26 +227,24 @@ lexWord sp@(SourcePos sourceName line column) w
             in  readNamedCon (T.unpack sym)
 
          -- Keywords, Named Variables and Witness constructors
-         | Just (c, cs1)         <- T.uncons cs
+         | Just (c, cs1)        <- T.uncons cs
          , isVarStart c
-         , (body,  rest)         <- T.span isVarBody cs1
-         , (body', rest')        <- case T.uncons rest of
-                                        Just ('#', rest') -> (body <> T.pack "#", rest')
-                                        _                 -> (body, rest)
+         , (body,  rest)        <- T.span isVarBody cs1
+         , sym                  <- T.cons c body
          = let readNamedVar s
                  | "_"          <- s
-                 = tokA (KSymbol SUnderscore) : lexMore (length s) rest'
+                 = tokA (KSymbol SUnderscore) : lexMore (length s) rest
 
                  | Just k       <- lookup s keywords
-                 = tokA (KKeyword k)          : lexMore (length s) rest'
+                 = tokA (KKeyword k)          : lexMore (length s) rest
          
                  | Just v       <- acceptVarName s
-                 = tokN (KVar v)              : lexMore (length s) rest'
+                 = tokN (KVar v)              : lexMore (length s) rest
 
                  | otherwise
                  = [tok (KErrorJunk [c])]
 
-            in  readNamedVar (T.unpack (T.cons c body'))
+            in  readNamedVar (T.unpack sym)
 
          -- Some unrecognised character.
          | otherwise
@@ -295,6 +293,7 @@ lexPunc sp@(SourcePos name line col) tx
         '='             -> Just (KSymbol SEquals)
         '|'             -> Just (KSymbol SBar)
         '→'             -> Just (KSymbol SArrowDashRight)
+        '^'             -> Just (KSymbol SHat)
 
         _               -> Nothing
  = Just ( Located   sp (KA t)
