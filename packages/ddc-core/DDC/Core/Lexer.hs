@@ -105,7 +105,6 @@ lexWord sp@(SourcePos sourceName line column) w
                 _       -> T.empty
 
         txt           = T.pack 
---        prefix str    = T.stripPrefix (T.pack str)
 
         match cs
          | T.null cs
@@ -205,10 +204,10 @@ lexWord sp@(SourcePos sourceName line column) w
          , sym                  <- T.cons c body
          = let  readNamedCon s
                  | Just bb      <- acceptBuiltin s
-                 = tokA  (KBuiltin bb)           : lexMore (length s) rest
+                 = tokA (KBuiltin bb)           : lexMore (length s) rest
                  
                  | Just con     <- acceptConName s
-                 = tokN (KCon con)               : lexMore (length s) rest
+                 = tokN (KCon con)              : lexMore (length s) rest
                
                  | otherwise    
                  = [tok (KErrorJunk [c])]

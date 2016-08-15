@@ -2,10 +2,13 @@
 module DDC.Core.Lexer.Token.Builtin
         ( Builtin (..)
         , sayBuiltin
+        , scanBuiltin
         , acceptBuiltin)
 where
+import DDC.Core.Lexer.Token.Names
 import DDC.Core.Exp
 import DDC.Base.Pretty
+import Text.Lexer.Inchworm.Char
 import qualified Data.List      as List
 import qualified Data.Char      as Char
 
@@ -40,8 +43,14 @@ sayBuiltin bb
 
 
 -------------------------------------------------------------------------------
-acceptBuiltin :: String -> Maybe Builtin
+-- | Scanner for builtin names.
+scanBuiltin   :: Scanner IO Location [Char] (Location, Builtin)
+scanBuiltin
+ = munchPred Nothing matchConName acceptBuiltin
 
+
+-- | Accept a builtin name.
+acceptBuiltin :: String -> Maybe Builtin
 acceptBuiltin str
  | Just cc      <- acceptTwConWithArity str
  = Just (BTwCon cc)

@@ -2,6 +2,7 @@
 module DDC.Core.Lexer.Token.Names
         ( -- * Variable names
           scanVarName
+        , matchVarName
         , acceptVarName
         , isVarName
         , isVarStart
@@ -9,6 +10,7 @@ module DDC.Core.Lexer.Token.Names
 
           -- * Constructor names
         , scanConName
+        , matchConName
         , acceptConName
         , isConName
         , isConStart
