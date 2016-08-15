@@ -18,17 +18,14 @@ module DDC.Core.Lexer.Tokens
         , describeTokNamed
 
           -- * Keywords
-        , Keyword  (..)
-        , sayKeyword
-
-          -- * Symbols
-        , Symbol   (..)
-        , saySymbol)
+        , Keyword  (..),        sayKeyword
+        , Symbol   (..),        saySymbol
+        , Builtin  (..),        sayBuiltin)
 where
 import DDC.Core.Lexer.Token.Symbol
 import DDC.Core.Lexer.Token.Keyword
+import DDC.Core.Lexer.Token.Builtin
 import DDC.Core.Pretty
-import DDC.Core.Exp
 import Control.Monad
 import Data.Text                (Text)
 import qualified Data.Text      as T
@@ -150,11 +147,10 @@ describeTokMeta tm
 --   They don't contain user-defined names or primops specific to the 
 --   language fragment.
 data TokAtom
-        -- Keywords
-        = KKeyword Keyword
-
-        -- Symbols
-        | KSymbol  Symbol
+        = KPragma  Text         -- ^ Pragmas.
+        | KKeyword Keyword      -- ^ Keywords.
+        | KSymbol  Symbol       -- ^ Symbols.
+        | KBuiltin Builtin      -- ^ Built in names.
 
         -- Operator symbols
         -- These can be used as part of an infix operator.
@@ -167,34 +163,11 @@ data TokAtom
         | KArrowDashLeft
         | KArrowEquals
 
-        -- bottoms
-        | KBotEffect
-        | KBotClosure
-
         -- debruijn indices
         | KIndex   Int
 
         -- literal strings
         | KString  Text
-
-        -- pragmas
-        | KPragma  Text
-
-        -- builtin names 
-        --   sort constructors.
-        | KSoConBuiltin SoCon
-
-        --   kind constructors.
-        | KKiConBuiltin KiCon
-
-        --   witness type constructors.
-        | KTwConBuiltin TwCon
-
-        --   other builtin spec constructors.
-        | KTcConBuiltin TcCon
-
-        --   the unit data constructor.
-        | KDaConUnit
         deriving (Eq, Show)
 
 
@@ -207,6 +180,10 @@ describeTokAtom ta
 describeTokAtom' :: TokAtom -> (TokenFamily, String)
 describeTokAtom' ta
  = case ta of
+        KSymbol  ss             -> (Symbol,      saySymbol ss)
+        KKeyword kw             -> (Keyword,     sayKeyword kw)
+        KBuiltin bb             -> (Constructor, sayBuiltin bb)
+
         -- operator symbols
         KOp    op               -> (Symbol, op)
         KOpVar op               -> (Symbol, "(" ++ op ++ ")")
@@ -216,28 +193,11 @@ describeTokAtom' ta
         KArrowDash              -> (Constructor, "->")
         KArrowDashLeft          -> (Constructor, "<-")
         KArrowEquals            -> (Constructor, "=>")
-
-        -- bottoms
-        KBotEffect              -> (Constructor, "Pure")
-        KBotClosure             -> (Constructor, "Empty")
         
-        -- symbol tokens.
-        KSymbol  ss             -> (Symbol,  saySymbol ss)
-
-        -- expression keywords
-        KKeyword kw             -> (Keyword, sayKeyword kw)
-
         -- debruijn indices
         KIndex  i               -> (Index,   "^" ++ show i)
         KString s               -> (Literal, show s)
         KPragma p               -> (Pragma,  "{-#" ++ T.unpack p ++ "#-}")
-
-        -- builtin names
-        KSoConBuiltin so        -> (Constructor, renderPlain $ ppr so)
-        KKiConBuiltin ki        -> (Constructor, renderPlain $ ppr ki)
-        KTwConBuiltin tw        -> (Constructor, renderPlain $ ppr tw)
-        KTcConBuiltin tc        -> (Constructor, renderPlain $ ppr tc)
-        KDaConUnit              -> (Constructor, "()")
         
 
 -- TokNamed -------------------------------------------------------------------

@@ -181,7 +181,7 @@ pExpAtomSP c
         return  (t, sp)
  
         -- The unit data constructor.       
- , do   sp        <- pTokSP KDaConUnit
+ , do   sp        <- pTokSP (KBuiltin BDaConUnit)
         return  (XCon sp dcUnit, sp)
 
         -- Named algebraic constructors.
@@ -237,7 +237,7 @@ pPat c
         return  $ PData (DaConPrim nLit (T.tBot T.kData)) []
 
         -- Unit
- , do   pTok KDaConUnit
+ , do   pTok    (KBuiltin BDaConUnit)
         return  $ PData  dcUnit []
 
         -- CON BIND BIND ...

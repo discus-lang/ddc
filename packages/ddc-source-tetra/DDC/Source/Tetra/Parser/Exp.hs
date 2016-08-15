@@ -294,7 +294,7 @@ pExpAtomSP
         return  (sp, XInfixOp  sp (Text.unpack tx))
   
         -- The unit data constructor.       
- , do   sp              <- pTokSP KDaConUnit
+ , do   sp              <- pTokSP (KBuiltin BDaConUnit)
         return  (sp, XCon  dcUnit)
 
         -- Named algebraic constructors.
@@ -391,7 +391,7 @@ pPatAtom
         return  $ PData (DaConBound nCon) []
 
         -- 'Unit'
- , do   pTok KDaConUnit
+ , do   pTok    (KBuiltin BDaConUnit)
         return  $ PData  dcUnit []
  ]
  <?> "a pattern"

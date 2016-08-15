@@ -143,7 +143,7 @@ pTypeAtomSP
                 return  (TAnnot sp $ TCon tc, sp)
             
         -- Bottoms.
-        , do    sp       <- pTokSP KBotEffect  
+        , do    sp       <- pTokSP (KBuiltin BPure)
                 return  (TAnnot sp $ TBot KEffect, sp)
 
         -- Bound occurrence of a variable.
@@ -165,16 +165,16 @@ pTyConSP  =   P.pTokMaybeSP f <?> "a type constructor"
  where f kk
         = case kk of
                 -- Primitive Ambient TyCons.
-                KA (KSoConBuiltin c)    
+                KA (KBuiltin (BSoCon c))
                  -> Just $ TyConPrim $ PrimTypeSoCon c
 
-                KA (KKiConBuiltin c)    
+                KA (KBuiltin (BKiCon c))
                  -> Just $ TyConPrim $ PrimTypeKiCon c
 
-                KA (KTwConBuiltin c)
+                KA (KBuiltin (BTwCon c))
                  -> Just $ TyConPrim $ PrimTypeTwCon c
 
-                KA (KTcConBuiltin c)
+                KA (KBuiltin (BTcCon c))
                  -> Just $ TyConPrim $ PrimTypeTcCon c
 
                 -- Primitive TyCons.

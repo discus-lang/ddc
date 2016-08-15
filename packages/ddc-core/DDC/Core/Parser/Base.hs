@@ -44,10 +44,10 @@ pModuleName1 = P.pTokMaybe f
 
         -- These names are lexed as constructors
         -- but can be part of a module name.
-        f (KA (KSoConBuiltin c))  = Just $ ModuleName [ renderPlain $ ppr c ]
-        f (KA (KKiConBuiltin c))  = Just $ ModuleName [ renderPlain $ ppr c ]
-        f (KA (KTwConBuiltin c))  = Just $ ModuleName [ renderPlain $ ppr c ]
-        f (KA (KTcConBuiltin c))  = Just $ ModuleName [ renderPlain $ ppr c ]
+        f (KA (KBuiltin (BSoCon c)))  = Just $ ModuleName [ renderPlain $ ppr c ]
+        f (KA (KBuiltin (BKiCon c)))  = Just $ ModuleName [ renderPlain $ ppr c ]
+        f (KA (KBuiltin (BTwCon c)))  = Just $ ModuleName [ renderPlain $ ppr c ]
+        f (KA (KBuiltin (BTcCon c)))  = Just $ ModuleName [ renderPlain $ ppr c ]
         f _                       = Nothing
 
 

@@ -148,7 +148,7 @@ lexWord sp@(SourcePos sourceName line column) w
                 "<-"            -> Just KArrowDashLeft
                 "=>"            -> Just KArrowEquals
 
-                "()"            -> Just KDaConUnit
+                "()"            -> Just (KBuiltin BDaConUnit)
 
                 _               -> Nothing
          = tokA t : lexMore 2 rest
@@ -207,10 +207,10 @@ lexWord sp@(SourcePos sourceName line column) w
 
          -- Bottoms
          | Just rest            <- prefix "Pure" cs
-         = tokA KBotEffect                      : lexMore 4 rest
+         = tokA (KBuiltin BPure)                : lexMore 4 rest
 
          | Just rest            <- prefix "Empty" cs
-         = tokA KBotClosure                     : lexMore 5 rest
+         = tokA (KBuiltin BEmpty)               : lexMore 5 rest
 
          -- Named Constructors
          | Just (c, cs1)        <- T.uncons cs
@@ -222,16 +222,16 @@ lexWord sp@(SourcePos sourceName line column) w
                                         _                  -> (body, rest)
          = let readNamedCon s
                  | Just socon   <- readSoConBuiltin s
-                 = tokA (KSoConBuiltin socon)    : lexMore (length s) rest'
+                 = tokA (KBuiltin (BSoCon socon))  : lexMore (length s) rest'
 
                  | Just kicon   <- readKiConBuiltin s
-                 = tokA (KKiConBuiltin kicon)    : lexMore (length s) rest'
+                 = tokA (KBuiltin (BKiCon kicon))  : lexMore (length s) rest'
 
                  | Just twcon   <- readTwConBuiltin s
-                 = tokA (KTwConBuiltin twcon)    : lexMore (length s) rest'
+                 = tokA (KBuiltin (BTwCon twcon))  : lexMore (length s) rest'
                  
                  | Just tccon   <- readTcConBuiltin s
-                 = tokA (KTcConBuiltin tccon)    : lexMore (length s) rest'
+                 = tokA (KBuiltin (BTcCon tccon))   : lexMore (length s) rest'
                  
                  | Just con     <- readCon s
                  = tokN (KCon con)               : lexMore (length s) rest'

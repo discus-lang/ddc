@@ -179,8 +179,8 @@ pTypeAtom c
                 return  $ TCon tc
             
         -- Bottoms.
-        , do    pTokAs KBotEffect  (tBot kEffect)
-        , do    pTokAs KBotClosure (tBot kClosure)
+        , do    pTokAs (KBuiltin BPure)  (tBot kEffect)
+        , do    pTokAs (KBuiltin BEmpty) (tBot kClosure)
       
         -- Bound occurrence of a variable.
         --  We don't know the kind of this variable yet, so fill in the
@@ -200,32 +200,32 @@ pTypeAtom c
 pSoCon :: Parser n SoCon
 pSoCon  =   P.pTokMaybe f
         <?> "a sort constructor"
- where f (KA (KSoConBuiltin c)) = Just c
-       f _                      = Nothing 
+ where f (KA (KBuiltin (BSoCon c))) = Just c
+       f _                          = Nothing 
 
 
 -- | Parse a builtin kind constructor.
 pKiCon :: Parser n KiCon
 pKiCon  =   P.pTokMaybe f
         <?> "a kind constructor"
- where f (KA (KKiConBuiltin c)) = Just c
-       f _                      = Nothing 
+ where f (KA (KBuiltin (BKiCon c))) = Just c
+       f _                          = Nothing 
 
 
 -- | Parse a builtin type constructor.
 pTcCon :: Parser n TcCon
 pTcCon  =   P.pTokMaybe f
         <?> "a type constructor"
- where f (KA (KTcConBuiltin c)) = Just c
-       f _                      = Nothing 
+ where f (KA (KBuiltin (BTcCon c))) = Just c
+       f _                          = Nothing 
 
 
 -- | Parse a builtin witness type constructor.
 pTwCon :: Parser n TwCon
 pTwCon  =   P.pTokMaybe f
         <?> "a witness constructor"
- where f (KA (KTwConBuiltin c)) = Just c
-       f _                      = Nothing
+ where f (KA (KBuiltin (BTwCon c))) = Just c
+       f _                          = Nothing
 
 
 -- | Parse a user defined type constructor.
