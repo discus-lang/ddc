@@ -2,11 +2,7 @@
 module DDC.Core.Lexer.Token.Builtin
         ( Builtin (..)
         , sayBuiltin
-
-        , acceptSoCon
-        , acceptKiCon
-        , acceptTwCon
-        , acceptTcCon)
+        , acceptBuiltin)
 where
 import DDC.Core.Exp
 import DDC.Base.Pretty
@@ -44,44 +40,59 @@ sayBuiltin bb
 
 
 -------------------------------------------------------------------------------
--- | Accept a named sort constructor.
-acceptSoCon :: String -> Maybe SoCon
-acceptSoCon ss
- = case ss of
-        "Prop"          -> Just SoConProp
-        "Comp"          -> Just SoConComp
+acceptBuiltin :: String -> Maybe Builtin
+
+acceptBuiltin str
+ | Just cc      <- acceptTwConWithArity str
+ = Just (BTwCon cc)
+
+acceptBuiltin str
+ = case str of
+        -- Sort constructors.
+        "Prop"          -> Just (BSoCon SoConProp)
+        "Comp"          -> Just (BSoCon SoConComp)
+
+        -- Kind constructors.
+        "Witness"       -> Just (BKiCon KiConWitness)
+        "Data"          -> Just (BKiCon KiConData)
+        "Region"        -> Just (BKiCon KiConRegion)
+        "Effect"        -> Just (BKiCon KiConEffect)
+        "Closure"       -> Just (BKiCon KiConClosure)
+
+        -- Witness type constructors.
+        "Const"         -> Just (BTwCon TwConConst)
+        "DeepConst"     -> Just (BTwCon TwConDeepConst)
+        "Mutable"       -> Just (BTwCon TwConMutable)
+        "DeepMutable"   -> Just (BTwCon TwConDeepMutable)
+        "Purify"        -> Just (BTwCon TwConPure)
+        "Disjoint"      -> Just (BTwCon TwConDisjoint)
+        "Distinct"      -> Just (BTwCon (TwConDistinct 2))
+
+        -- Type constructors.
+        "Unit"          -> Just (BTcCon (TcConUnit))
+        "S"             -> Just (BTcCon (TcConSusp))
+        "Read"          -> Just (BTcCon (TcConRead))
+        "HeadRead"      -> Just (BTcCon (TcConHeadRead))
+        "DeepRead"      -> Just (BTcCon (TcConDeepRead))
+        "Write"         -> Just (BTcCon (TcConWrite))
+        "DeepWrite"     -> Just (BTcCon (TcConDeepWrite))
+        "Alloc"         -> Just (BTcCon (TcConAlloc))
+        "DeepAlloc"     -> Just (BTcCon (TcConDeepAlloc))
+
+        -- Builtin types.
+        "Pure"          -> Just BPure
+        "Empty"         -> Just BEmpty
+
+        -- Builtin values.
+        "()"            -> Just BDaConUnit
+
         _               -> Nothing
-
-
--- | Accept a named kind constructor.
-acceptKiCon :: String -> Maybe KiCon
-acceptKiCon ss
- = case ss of
-        "Witness"       -> Just KiConWitness
-        "Data"          -> Just KiConData
-        "Region"        -> Just KiConRegion
-        "Effect"        -> Just KiConEffect
-        "Closure"       -> Just KiConClosure
-        _               -> Nothing
-
-
--- | Read a named witness type constructor.
-acceptTwCon :: String -> Maybe TwCon
-acceptTwCon ss
- = case ss of
-        "Const"         -> Just TwConConst
-        "DeepConst"     -> Just TwConDeepConst
-        "Mutable"       -> Just TwConMutable
-        "DeepMutable"   -> Just TwConDeepMutable
-        "Purify"        -> Just TwConPure
-        "Disjoint"      -> Just TwConDisjoint
-        "Distinct"      -> Just (TwConDistinct 2)
-        _               -> acceptTwConWithArity ss
 
 
 acceptTwConWithArity :: String -> Maybe TwCon
 acceptTwConWithArity ss
  | Just n <- List.stripPrefix "Distinct" ss 
+ , not $ null n
  , all Char.isDigit n
  = Just (TwConDistinct $ read n)
 
@@ -89,19 +100,3 @@ acceptTwConWithArity ss
  = Nothing
  
  
--- | Read a builtin type constructor with a non-symbolic name.
---   ie not '->'.
-acceptTcCon :: String -> Maybe TcCon
-acceptTcCon ss
- = case ss of
-        "Unit"          -> Just TcConUnit
-        "S"             -> Just TcConSusp
-        "Read"          -> Just TcConRead
-        "HeadRead"      -> Just TcConHeadRead
-        "DeepRead"      -> Just TcConDeepRead
-        "Write"         -> Just TcConWrite
-        "DeepWrite"     -> Just TcConDeepWrite
-        "Alloc"         -> Just TcConAlloc
-        "DeepAlloc"     -> Just TcConDeepAlloc
-        _               -> Nothing
-

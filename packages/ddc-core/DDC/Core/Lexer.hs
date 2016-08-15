@@ -103,7 +103,7 @@ lexWord sp@(SourcePos sourceName line column) w
                 _       -> T.empty
 
         txt           = T.pack 
-        prefix str    = T.stripPrefix (T.pack str)
+--        prefix str    = T.stripPrefix (T.pack str)
 
         match cs
          | T.null cs
@@ -209,12 +209,13 @@ lexWord sp@(SourcePos sourceName line column) w
          = tokA (KSymbol SHat)                  : lexMore 1 rest
 
          -- Bottoms
+{-
          | Just rest            <- prefix "Pure" cs
          = tokA (KBuiltin BPure)                : lexMore 4 rest
 
          | Just rest            <- prefix "Empty" cs
          = tokA (KBuiltin BEmpty)               : lexMore 5 rest
-
+-}
          -- Named Constructors
          | Just (c, cs1)        <- T.uncons cs
          , isConStart c
@@ -224,23 +225,14 @@ lexWord sp@(SourcePos sourceName line column) w
                                         Just ('#',  rest') -> (body <> T.pack "#", rest')
                                         _                  -> (body, rest)
          = let readNamedCon s
-                 | Just socon   <- acceptSoCon s
-                 = tokA (KBuiltin (BSoCon socon))  : lexMore (length s) rest'
-
-                 | Just kicon   <- acceptKiCon s
-                 = tokA (KBuiltin (BKiCon kicon))  : lexMore (length s) rest'
-
-                 | Just twcon   <- acceptTwCon s
-                 = tokA (KBuiltin (BTwCon twcon))  : lexMore (length s) rest'
+                | Just bb       <- acceptBuiltin s
+                = tokA  (KBuiltin bb)           : lexMore (length s) rest'
                  
-                 | Just tccon   <- acceptTcCon s
-                 = tokA (KBuiltin (BTcCon tccon))   : lexMore (length s) rest'
-                 
-                 | Just con     <- readCon s
-                 = tokN (KCon con)               : lexMore (length s) rest'
+                | Just con     <- readCon s
+                = tokN (KCon con)               : lexMore (length s) rest'
                
-                 | otherwise    
-                 = [tok (KErrorJunk [c])]
+                | otherwise    
+                = [tok (KErrorJunk [c])]
                  
             in  readNamedCon (T.unpack (T.cons c body'))
 
