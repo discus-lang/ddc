@@ -89,7 +89,8 @@ DDC_PACKAGES	:= \
         -package time \
         -package bytestring \
         -package vector \
-        -package pretty-show
+        -package pretty-show \
+        -package inchworm
 
 ifeq "$(DDC_FLOW_USE_LINEAR_SOLVER)" "1"
 DDC_PACKAGES	:= $(DDC_PACKAGES) \

@@ -1,10 +1,14 @@
 
 module DDC.Core.Lexer.Token.Keyword
         ( Keyword (..)
-        , sayKeyword)
+        , sayKeyword
+        , scanKeyword)
 where
+import Text.Lexer.Inchworm.Char
+import qualified Data.Char              as Char
 
 
+-------------------------------------------------------------------------------
 -- | Keyword tokens.
 data Keyword
         -- core keywords.
@@ -44,42 +48,98 @@ data Keyword
         deriving (Eq, Show)
 
 
--- | Yield the string name of a `Keyword`.
+-------------------------------------------------------------------------------
+-- | Yield the string name of a keyword.
 sayKeyword :: Keyword -> String
 sayKeyword kw
  = case kw of
         -- core keywords.
-        EModule         -> "module"
-        EImport         -> "import"
-        EExport         -> "export"
-        EForeign        -> "foreign"
-        EType           -> "type"
+        EBox            -> "box"
         ECapability     -> "capability"
-        EValue          -> "value"
+        ECase           -> "case"
         EData           -> "data"
-        EWith           -> "with"
-        EWhere          -> "where"
+        EExport         -> "export"
+        EExtend         -> "extend"
+        EForeign        -> "foreign"
+        EForget         -> "forget"
+        EImport         -> "import"
         EIn             -> "in"
         ELet            -> "let"
         ELetCase        -> "letcase"
         ELetRec         -> "letrec"
-        EPrivate        -> "private"
-        EExtend         -> "extend"
-        EUsing          -> "using"
-        ECase           -> "case"
+        EModule         -> "module"
         EOf             -> "of"
-        EWeakEff        -> "weakeff"
-        EWeakClo        -> "weakclo"
+        EPrivate        -> "private"
         EPurify         -> "purify"
-        EForget         -> "forget"
-        EBox            -> "box"
         ERun            -> "run"
+        EType           -> "type"
+        EValue          -> "value"
+        EWhere          -> "where"
+        EWeakClo        -> "weakclo"
+        EWeakEff        -> "weakeff"
+        EWith           -> "with"
+        EUsing          -> "using"
 
         -- sugar keywords
         EDo             -> "do"
-        EMatch          -> "match"
-        EIf             -> "if"
-        EThen           -> "then"
         EElse           -> "else"
+        EIf             -> "if"
+        EMatch          -> "match"
         EOtherwise      -> "otherwise"
+        EThen           -> "then"
+
+
+
+-------------------------------------------------------------------------------
+-- | Scanner for a `Keyword`.
+scanKeyword :: Scanner IO Location [Char] (Location, Keyword)
+scanKeyword
+ = munchPred Nothing matchKeyword acceptKeyword
+
+
+-- | Match a potential keyword character.
+matchKeyword  :: Int -> Char -> Bool
+matchKeyword _ix c 
+        = Char.isLower c
+
+-- | Accept a keyword token.
+acceptKeyword :: String -> Maybe Keyword
+acceptKeyword str
+ = case str of
+        -- core keywords
+        "box"           -> Just EBox
+        "capability"    -> Just ECapability
+        "case"          -> Just ECase
+        "data"          -> Just EData
+        "export"        -> Just EExport
+        "extend"        -> Just EExtend
+        "foreign"       -> Just EForeign
+        "forget"        -> Just EForget
+        "import"        -> Just EImport
+        "in"            -> Just EIn
+        "let"           -> Just ELet
+        "letcase"       -> Just ELetCase
+        "letrec"        -> Just ELetRec
+        "module"        -> Just EModule
+        "of"            -> Just EOf
+        "private"       -> Just EPrivate
+        "purify"        -> Just EPurify
+        "run"           -> Just ERun
+        "type"          -> Just EType
+        "value"         -> Just EValue
+        "where"         -> Just EWhere
+        "weakclo"       -> Just EWeakClo
+        "weakeff"       -> Just EWeakEff
+        "with"          -> Just EWith
+        "using"         -> Just EUsing
+
+        -- sugar keywords
+        "do"            -> Just EDo
+        "else"          -> Just EElse
+        "if"            -> Just EIf
+        "match"         -> Just EMatch
+        "otherwise"     -> Just EOtherwise
+        "then"          -> Just EThen
+
+        _               -> Nothing
 

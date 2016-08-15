@@ -28,6 +28,10 @@ data Mode
         -- | Display the help page.
         | ModeHelp
 
+        -- | Scan a module, producing tokens.
+        --   The flag says whether to produce source locations.
+        | ModeScan      FilePath Bool 
+
         -- | Parse a module.
         | ModeParse     FilePath
 

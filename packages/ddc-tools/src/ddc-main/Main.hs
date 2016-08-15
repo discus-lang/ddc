@@ -8,6 +8,7 @@ import DDC.Main.Help
 import DDC.Main.Args
 import DDC.Main.OptLevels
 
+import DDC.Driver.Command.Scan
 import DDC.Driver.Command.Parse
 import DDC.Driver.Command.Check
 import DDC.Driver.Command.Load
@@ -82,6 +83,11 @@ run config
         -- Display the help page.
         ModeHelp
          ->     putStrLn help
+
+        -- Scan a module.
+        ModeScan filePath bPrintLocs
+         -> do  dconfig <- getDriverConfig config (Just filePath)
+                runError $ cmdScanFromFile  dconfig filePath bPrintLocs
 
         -- Parse a module.
         ModeParse filePath

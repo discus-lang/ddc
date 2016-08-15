@@ -120,6 +120,14 @@ parseArgs args config
         $ config { configRuntimeLinkStrategy = LinkStatic }
 
         -- Parsing ------------------------------
+        | "-scan"  : file : rest        <- args
+        = parseArgs rest
+        $ config { configMode   = ModeScan  file True }
+
+        | "-scan-no-locations" : file : rest <- args
+        = parseArgs rest
+        $ config { configMode   = ModeScan  file False }
+
         | "-parse" : file : rest        <- args
         = parseArgs rest
         $ config { configMode   = ModeParse file }
@@ -267,6 +275,8 @@ flagOfMode mode
         ModeVersion{}                   -> Just "-version"
         ModeHelp{}                      -> Just "-help"
         ModeParse{}                     -> Just "-parse"
+        ModeScan _ True                 -> Just "-scan"
+        ModeScan _ False                -> Just "-scan-no-locations"
         ModeCheck{}                     -> Just "-check"
         ModeLoad{}                      -> Just "-load"
         ModeCompile{}                   -> Just "-compile"
