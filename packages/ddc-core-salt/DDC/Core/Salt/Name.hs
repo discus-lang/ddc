@@ -86,8 +86,8 @@ import DDC.Core.Salt.Name.PrimControl
 import DDC.Core.Salt.Name.PrimStore
 import DDC.Core.Salt.Name.PrimTyCon
 import DDC.Core.Salt.Name.PrimVec
-import DDC.Core.Salt.Name.Lit
 import DDC.Core.Lexer.Token.Names       (isVarStart)
+import DDC.Core.Lexer.Token.Literal
 import DDC.Data.ListUtils
 import DDC.Base.Pretty
 import DDC.Base.Name
