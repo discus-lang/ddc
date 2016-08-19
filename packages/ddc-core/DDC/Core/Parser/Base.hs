@@ -6,7 +6,6 @@ module DDC.Core.Parser.Base
         , pName
         , pCon,         pConSP
         , pLit,         pLitSP
-        , pString,      pStringSP
         , pIndex,       pIndexSP
         , pVar,         pVarSP,         pVarNamedSP
         , pKey,         pSym
@@ -80,31 +79,17 @@ pConSP    = P.pTokMaybeSP f
 
 
 -- | Parse a literal.
-pLit :: Parser n n
+pLit :: Parser n (Literal, Bool)
 pLit    = P.pTokMaybe f
- where  f (KN (KLit n)) = Just n
-        f _             = Nothing
+ where  f (KA (KLiteral l b)) = Just (l, b)
+        f _                   = Nothing
 
 
 -- | Parse a numeric literal, with source position.
-pLitSP :: Parser n (n, SourcePos)
+pLitSP :: Parser n ((Literal, Bool), SourcePos)
 pLitSP  = P.pTokMaybeSP f
- where  f (KN (KLit n))    = Just n
-        f _                = Nothing
-
-
--- | Parse a literal.
-pString :: Parser n Text
-pString    = P.pTokMaybe f
- where  f (KA (KString tx)) = Just tx
-        f _                 = Nothing
-
-
--- | Parse a literal string, with source position.
-pStringSP :: Parser n (Text, SourcePos)
-pStringSP  = P.pTokMaybeSP f
- where  f (KA (KString tx)) = Just tx
-        f _                 = Nothing
+ where  f (KA (KLiteral l b)) = Just (l, b)
+        f _                   = Nothing
 
 
 -- | Parse a variable.

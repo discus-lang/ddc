@@ -162,17 +162,18 @@ lexWord sp@(SourcePos sourceName line column) w
          -- Literal numeric values
          -- This needs to come before the rule for '-'
          | Just (c, cs1)        <- T.uncons cs
+         , c == '-'
+         , (body, rest)         <- T.span isLitBody cs1
+         , str                  <- T.unpack (T.cons c body)
+         , Just (lit, u)        <- acceptLiteral str
+         = tokA (KLiteral lit u)  : lexMore (length str) rest
+
+         | Just (c, cs1)        <- T.uncons cs
          , isDigit c
          , (body, rest)         <- T.span isLitBody cs1
-         = let  str             =  T.unpack (T.cons c body)
-           in   tokN (KLit str) : lexMore (length str) rest
-
-         | Just ('-', cs1)      <- T.uncons cs
-         , Just (c,   _)        <- T.uncons cs1
-         , isDigit c
-         = let  (body, rest)   = T.span isLitBody cs1
-                str            = T.unpack (T.cons '-' body)
-           in   tokN (KLit str) : lexMore (length str) rest
+         , str                  <- T.unpack (T.cons c body)
+         , Just (lit, u)        <- acceptLiteral str
+         = tokA (KLiteral lit u)  : lexMore (length str) rest
 
          -- Lex a literal string.
          | Just (tk, sp', rest) <- lexLitString sp cs
@@ -288,7 +289,13 @@ lexLitString sp@(SourcePos name line col) tx
          = eat (n + 2) ('\n' : acc) xs2
 
          | Just ('"',  xs1)     <- T.uncons xs
-         = Just ( Located   sp (KA (KString (T.pack (reverse acc))))
+         , Just ('#',  xs2)     <- T.uncons xs1
+         = Just ( Located   sp (KA (KLiteral (LString (T.pack (reverse acc))) True))
+                , SourcePos name line (col + n)
+                , xs2)
+
+         | Just ('"',  xs1)     <- T.uncons xs
+         = Just ( Located   sp (KA (KLiteral (LString (T.pack (reverse acc))) False))
                 , SourcePos name line (col + n)
                 , xs1)
 

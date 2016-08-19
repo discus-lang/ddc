@@ -1,6 +1,9 @@
 
 module DDC.Core.Lexer.Token.Literal
-        ( isLitName
+        ( Literal       (..)
+        , acceptLiteral
+
+        , isLitName
         , isLitStart
         , isLitBody
 
@@ -13,10 +16,34 @@ module DDC.Core.Lexer.Token.Literal
         , readBinary
         , readHex)
 where
+import DDC.Core.Exp.Literal
 import qualified Data.Char      as Char
 import qualified Data.List      as List
 
 
+-- Literal --------------------------------------------------------------------
+-- | Accept a numeric literal.
+acceptLiteral :: String -> Maybe (Literal, Bool)
+acceptLiteral str
+ | ('#' : str') <- reverse str
+ , Just lit     <- accept  (reverse str')
+ = Just (lit, True)
+
+ | Just lit     <- accept str
+ = Just (lit, False)
+
+ | otherwise
+ = Nothing
+ where accept str'
+        | Just i        <- readLitNat         str'      = Just (LNat   i)
+        | Just i        <- readLitInt         str'      = Just (LInt   i)
+        | Just i        <- readLitSize        str'      = Just (LSize  i)
+        | Just (u, b)   <- readLitWordOfBits  str'      = Just (LWord  u b)
+        | Just (f, b)   <- readLitFloatOfBits str'      = Just (LFloat f b)
+        | otherwise                                     = Nothing
+
+
+-------------------------------------------------------------------------------
 -- | String is the name of a literal.
 isLitName :: String -> Bool
 isLitName str

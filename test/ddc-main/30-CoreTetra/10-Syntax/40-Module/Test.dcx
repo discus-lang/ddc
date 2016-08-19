@@ -12,7 +12,7 @@ import value {
 }
 with
 private rt with { w1 : Const rt } in
-let     one = 1 in
+let     one = 1# in
 letrec { 
         main (_ : Unit) : S Pure Unit
          = box private r0 in
@@ -36,7 +36,7 @@ import value
         two : Unit -> Nat#
 with
 private rt with { w1 : Const rt } in
-let     one = 1 in
+let     one = 1# in
 letrec 
         main (_ : Unit) : S Pure Unit
          = box private r0 in

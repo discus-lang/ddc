@@ -136,12 +136,12 @@ instance Pretty Name where
 
         NameLitBool True        -> text "True#"
         NameLitBool False       -> text "False#"
-        NameLitNat  i           -> integer i
-        NameLitInt  i           -> integer i <> text "i"
-        NameLitSize    s        -> integer s <> text "s"
-        NameLitWord    i bits   -> integer i <> text "w" <> int bits
-        NameLitFloat   f bits   -> double  f <> text "f" <> int bits
-        NameLitTextLit tx       -> text (show $ T.unpack tx)
+        NameLitNat  i           -> integer i             <> text "#"
+        NameLitInt  i           -> integer i <> text "i" <> text "#"
+        NameLitSize    s        -> integer s <> text "s" <> text "#"
+        NameLitWord    i bits   -> integer i <> text "w" <> int bits <> text "#"
+        NameLitFloat   f bits   -> double  f <> text "f" <> int bits <> text "#"
+        NameLitTextLit tx       -> text (show $ T.unpack tx)         <> text "#"
 
         NameLitUnboxed n        -> ppr n <> text "#"
 

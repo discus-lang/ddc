@@ -12,6 +12,7 @@ import DDC.Core.Flow.Env
 import DDC.Core.Fragment
 import DDC.Core.Lexer
 import DDC.Type.Exp
+import DDC.Data.SourcePos
 import Control.Monad.State.Strict
 import DDC.Type.Env             (Env)
 import qualified DDC.Type.Env   as Env
@@ -28,7 +29,21 @@ profile
         , profilePrimTypes              = primTypeEnv
         , profileTypeIsUnboxed          = const False 
         , profileNameIsHole             = Nothing 
-        , profileMakeStringName         = Nothing }
+        , profileMakeLiteralName        = Just makeLiteralName }
+
+
+-- | Convert a literal to a Salt name.
+makeLiteralName :: SourcePos -> Literal -> Bool -> Maybe Name
+makeLiteralName _ lit True
+ = case lit of
+        LNat    n       -> Just $ NameLitNat     n
+        LInt    i       -> Just $ NameLitInt     i
+        LWord   i b     -> Just $ NameLitWord    i b
+        LFloat  f b     -> Just $ NameLitFloat   (toRational f) b
+        _               -> Nothing
+
+makeLiteralName _ _ _
+ = Nothing
 
 
 features :: Features

@@ -16,9 +16,9 @@ letrec {
       λ(xx: List a).
       case xx of {
         Nil  
-         -> 0;
+         -> 0#;
         Cons (x: a) (xs: List a) 
-         -> add [Nat#] 1 (length [a] xs)
+         -> add [Nat#] 1# (length [a] xs)
       }
 }
 

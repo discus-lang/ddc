@@ -9,13 +9,13 @@ module DDC.Core.Fragment.Profile
         , zeroFeatures
         , setFeature)
 where
+import DDC.Core.Exp.Literal
 import DDC.Core.Fragment.Feature
 import DDC.Type.DataDef
 import DDC.Type.Exp
 import DDC.Type.Env                     (KindEnv, TypeEnv)
 import DDC.Data.SourcePos
 import qualified DDC.Type.Env           as Env
-import Data.Text                        (Text)
 
 
 -- | The fragment profile describes the language features and 
@@ -45,8 +45,12 @@ data Profile n
           --   to be filled in by the type checker.
         , profileNameIsHole             :: !(Maybe (n -> Bool)) 
 
-          -- | Embed a literal string in a name.
-        , profileMakeStringName         :: Maybe (SourcePos -> Text -> n) }
+          -- | Convert a literal to a name,
+          --   given the source position, literal value and whether
+          --   the literal should be taken as a language primitive
+          --   (with a trailing '#').
+        , profileMakeLiteralName
+                :: Maybe (SourcePos -> Literal -> Bool -> Maybe n) }
 
 
 -- | Apply a function to the `Features` of a `Profile`.
@@ -69,7 +73,7 @@ zeroProfile
         , profilePrimTypes              = Env.empty
         , profileTypeIsUnboxed          = const False 
         , profileNameIsHole             = Nothing 
-        , profileMakeStringName         = Nothing }
+        , profileMakeLiteralName        = Nothing }
 
 
 -- | A flattened set of features, for easy lookup.

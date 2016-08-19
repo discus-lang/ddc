@@ -33,7 +33,6 @@ module DDC.Core.Parser
           -- * Constructors
         , pCon,         pConSP
         , pLit,         pLitSP
-        , pString,      pStringSP
 
           -- * Variables
         , pIndex,       pIndexSP

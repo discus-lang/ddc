@@ -195,7 +195,7 @@ Fragment violation when converting Tetra module to Salt module.
     The program must be lambda-lifted before conversion.
   
     with: λ(w: Mutable r).λ(x: Unit).
-    convert# [U# Word64#] [Word64#] 42w64#
+    convert# [U# Word64#] [Word64#] 42w64##
 
 
 -------------------------------------------------------------------------------
@@ -215,7 +215,7 @@ Fragment violation when converting Tetra module to Salt module.
   Cannot convert expression.
     Partial application of primitive operators is not supported.
   
-    with: add# [Nat#] 5
+    with: add# [Nat#] 5#
 
 
 -- Error: partial application if user defined data constructors is not supported.
@@ -232,7 +232,7 @@ Fragment violation when converting Tetra module to Salt module.
   Cannot convert expression.
     Partial application of primitive operators is not supported.
   
-    with: add# [Nat#] 5
+    with: add# [Nat#] 5#
 
 
 -- OK: let expressions in nested contexts are normalized on the way in to

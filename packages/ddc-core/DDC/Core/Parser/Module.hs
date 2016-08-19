@@ -149,9 +149,9 @@ pHeadPragma ctx
           |  all isDigit strTypes
           ,  all isDigit strValues
           ,  all isDigit strBoxes
-          , Just makeStringName <- contextMakeStringName ctx
-          -> return $ HeadPragmaArity
-                (makeStringName sp (T.pack name))
+          ,  Just makeLitName <- contextMakeLiteralName ctx
+          ,  Just n           <- makeLitName sp (LString (T.pack name)) True
+          -> return $ HeadPragmaArity n
                 (read strTypes) (read strValues) (read strBoxes)
 
          _ -> P.unexpected $ "pragma " ++ "{-# " ++ T.unpack txt ++ "#-}"

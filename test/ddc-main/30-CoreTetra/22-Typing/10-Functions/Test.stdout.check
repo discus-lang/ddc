@@ -32,7 +32,7 @@ module Test with
 letrec {
   thing: ([a: Data].a -> a) -> Unit
     = λ(id: [a: Data].a -> a).
-      let _: Nat# = id [Nat#] 5 in
+      let _: Nat# = id [Nat#] 5# in
       let _: Unit = id [Unit] () in
       ();
   
@@ -61,7 +61,7 @@ letrec {
   thing2: Unit -> Nat#
     = λ(u: Unit).
       thing1
-          (λ(f: [a: Data].a -> a). f [Nat#] 5)
+          (λ(f: [a: Data].a -> a). f [Nat#] 5#)
 }
 
 
@@ -84,7 +84,7 @@ Error loading module
     with: Λ(r: Region).
           λ(r: Ref r Int#).
           case x of {
-            0  
+            0#  
              -> x;
             _ 
              -> y

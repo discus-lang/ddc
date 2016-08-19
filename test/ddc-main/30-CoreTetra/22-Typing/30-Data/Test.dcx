@@ -34,9 +34,9 @@ letrec {
        \(xx : List a).
       case xx of {
         Nil  
-         -> 0;
+         -> 0#;
         Cons x xs
-         -> add [Nat#] 1 (length [a] xs)
+         -> add [Nat#] 1# (length [a] xs)
       }
 }
 ;;
@@ -54,7 +54,7 @@ with letrec
 
 thing (b : Box)
  = case b of
-        Box f   -> f 5
+        Box f   -> f 5#
 ;;
 
 
@@ -72,7 +72,7 @@ data Nest (a : Data) where
 
 with letrec
 thing (_ : Unit)
- = ConsN 7 (ConsN (T2 1 2) (ConsN (T2 (T2 6 7) (T2 7 4)) NilN))
+ = ConsN 7# (ConsN (T2 1# 2#) (ConsN (T2 (T2 6# 7#) (T2 7# 4#)) NilN))
 ;;
 
 
@@ -90,10 +90,10 @@ data Bush (a : Data) where
 
 with letrec
 thing (_ : Unit)
- = ConsB 4 
-  (ConsB (ConsB 8 
-                (ConsB  (ConsB 5 NilB) 
-                        (ConsB (ConsB (ConsB 3 NilB) 
+ = ConsB 4# 
+  (ConsB (ConsB 8# 
+                (ConsB  (ConsB 5# NilB) 
+                        (ConsB (ConsB (ConsB 3# NilB) 
                                       NilB) 
                                NilB)))
          NilB)

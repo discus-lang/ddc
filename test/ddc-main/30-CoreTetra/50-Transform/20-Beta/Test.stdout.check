@@ -23,7 +23,7 @@ let u: Unit = () in
 -- Beta reduce while avoiding capture of let-bound value variable.
 Λ(thing: Region ~> Data).
 λ(make: [r: Region].Nat# -> thing r).λ(take: [r: Region].thing r -> Nat#).
-let x: Nat# = 5 in
+let x: Nat# = 5# in
 Λ(r0: Region).
 let ^: thing r0 = make [r0] x in
 add# [Nat#] (take [r0] ^0) x

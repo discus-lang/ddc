@@ -10,22 +10,22 @@ True# :: Bool#
 False# :: Bool#
 
 Nat# :: Data
-5 :: Nat#
+5# :: Nat#
 
 Int# :: Data
-5i :: Int#
+5i# :: Int#
 
 Word8# :: Data
-23w8 :: Word8#
+23w8# :: Word8#
 
 Word16# :: Data
-23w16 :: Word16#
+23w16# :: Word16#
 
 Word32# :: Data
-23w32 :: Word32#
+23w32# :: Word32#
 
 Word64# :: Data
-23w64 :: Word64#
+23w64# :: Word64#
 
 
 -- Compuation type.

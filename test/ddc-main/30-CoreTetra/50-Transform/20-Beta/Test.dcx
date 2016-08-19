@@ -27,7 +27,7 @@ let u = () in
 /\(thing : Region ~> Data).
  \(make  : [r : Region]. Nat#  -> thing r).
  \(take  : [r : Region]. thing r -> Nat#).
-let x = 5 in 
+let x = 5# in 
 /\(r0 : Region).
   (/\(r : Region). \(y : Nat#). 
    let x = make [r] x

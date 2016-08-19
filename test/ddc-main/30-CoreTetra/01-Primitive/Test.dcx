@@ -6,26 +6,26 @@
 
 -- Base types.
 :kind Bool#
-:type True
-:type False
+:type True#
+:type False#
 
 :kind Nat#
-:type 5
+:type 5#
 
 :kind Int#
-:type 5i
+:type 5i#
 
 :kind Word8#
-:type 23w8
+:type 23w8#
 
 :kind Word16#
-:type 23w16
+:type 23w16#
 
 :kind Word32#
-:type 23w32
+:type 23w32#
 
 :kind Word64#
-:type 23w64
+:type 23w64#
 
 
 -- Compuation type.

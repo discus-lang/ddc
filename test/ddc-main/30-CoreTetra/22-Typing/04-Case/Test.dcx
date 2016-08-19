@@ -3,9 +3,9 @@
 
 -- Error: types of alternatives are not identical.
 :check..
-case 5 of {
-  5    -> 1;
-  _    -> True;
+case 5# of {
+  5#   -> 1#;
+  _    -> True#;
 };;
 
 
@@ -68,7 +68,7 @@ test (xx : List Nat#) : Unit
 :check..
 \(xx : Nat#).
 case xx of {
-        0       -> ();
+        0#      -> ();
 };;
 
 
@@ -86,9 +86,9 @@ case xx of {
 :check..
 \(xx : Nat#).
 case xx of {
-        5       -> ();
+        5#      -> ();
         _       -> ();
-        0       -> ();
+        0#      -> ();
 };;
 
 
@@ -97,8 +97,8 @@ case xx of {
 :check..
 \(xx : Nat#).
 case xx of {
-        0       -> ();
-        0       -> ();
+        0#      -> ();
+        0#      -> ();
         _       -> ();
 };;
 
@@ -106,11 +106,8 @@ case xx of {
 
 -- Error: type of scrutinee does not match type of pattern.
 :check..
-let x = 5 in
+let x = 5# in
 case x of {
         ()  -> ()
 };;
-
-
-
 

@@ -10,7 +10,7 @@ letrec {
           (add## [Nat#]
                (convert# [Nat#] [U# Nat#] x)
                (convert# [Nat#] [U# Nat#]
-                    (convert# [U# Nat#] [Nat#] 1#)))
+                    (convert# [U# Nat#] [Nat#] 1##)))
 }
 
 
@@ -34,12 +34,12 @@ letrec {
   foo: Word32# -> Word32#
     = λ(x: Word32#).
       case convert# [Word32#] [U# Word32#] x of {
-        5w32#  
-         -> convert# [U# Word32#] [Word32#] 6w32#;
-        7w32#  
-         -> convert# [U# Word32#] [Word32#] 8w32#;
+        5w32##  
+         -> convert# [U# Word32#] [Word32#] 6w32##;
+        7w32##  
+         -> convert# [U# Word32#] [Word32#] 8w32##;
         _ 
-         -> convert# [U# Word32#] [Word32#] 0w32#
+         -> convert# [U# Word32#] [Word32#] 0w32##
       }
 }
 
@@ -50,14 +50,14 @@ letrec {
   f: Nat# -> Nat# -> Nat#
     = λ(x y: Nat#).
       case convert# [Nat#] [U# Nat#] x of {
-        0#  
+        0##  
          -> case convert# [Nat#] [U# Nat#] y of {
-              0#  
-               -> convert# [U# Nat#] [Nat#] 1#;
+              0##  
+               -> convert# [U# Nat#] [Nat#] 1##;
               _ 
-               -> convert# [U# Nat#] [Nat#] 0#
+               -> convert# [U# Nat#] [Nat#] 0##
             };
         _ 
-         -> convert# [U# Nat#] [Nat#] 0#
+         -> convert# [U# Nat#] [Nat#] 0##
       }
 }

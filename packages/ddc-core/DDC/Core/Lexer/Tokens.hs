@@ -10,15 +10,16 @@ module DDC.Core.Lexer.Tokens
         , TokenNamed (..), describeTokenNamed
         , renameToken
 
-          -- * Keywords
         , Keyword  (..),        sayKeyword
         , Symbol   (..),        saySymbol
-        , Builtin  (..),        sayBuiltin)
+        , Builtin  (..),        sayBuiltin
+        , Literal  (..))
 where
 import DDC.Data.SourcePos
 import DDC.Core.Lexer.Token.Symbol
 import DDC.Core.Lexer.Token.Keyword
 import DDC.Core.Lexer.Token.Builtin
+import DDC.Core.Lexer.Token.Literal
 import DDC.Core.Pretty
 import Control.Monad
 import Data.Text                (Text)
@@ -162,11 +163,10 @@ data TokenAtom
         -- | Debrujn indices.
         | KIndex   Int
 
-        -- | Literal strings.
-        | KString  Text
-
-        -- | Literal integers with optional format and size specifiers.
-        | KInteger Integer (Maybe Char) (Maybe Int)
+        -- | Literal values.
+        | KLiteral 
+                Literal         -- Literal value.
+                Bool            -- Trailing '#' prim specifier.
         deriving (Eq, Show)
 
 
@@ -179,15 +179,14 @@ describeTokenAtom ta
 describeTokenAtom' :: TokenAtom -> (TokenFamily, String)
 describeTokenAtom' ta
  = case ta of
-        KPragma p               -> (Pragma,  "{-#" ++ T.unpack p ++ "#-}")
-        KSymbol  ss             -> (Symbol,      saySymbol ss)
-        KKeyword kw             -> (Keyword,     sayKeyword kw)
-        KBuiltin bb             -> (Constructor, sayBuiltin bb)
-        KOp    op               -> (Symbol, op)
-        KOpVar op               -> (Symbol, "(" ++ op ++ ")")
-        KIndex  i               -> (Index,   "^" ++ show i)
-        KString s               -> (Literal, show s)
-        KInteger i mc mi        -> (Literal, show (i, mc, mi))
+        KPragma p       -> (Pragma,  "{-#" ++ T.unpack p ++ "#-}")
+        KSymbol  ss     -> (Symbol,      saySymbol ss)
+        KKeyword kw     -> (Keyword,     sayKeyword kw)
+        KBuiltin bb     -> (Constructor, sayBuiltin bb)
+        KOp      op     -> (Symbol, op)
+        KOpVar   op     -> (Symbol, "(" ++ op ++ ")")
+        KIndex   i      -> (Index,   "^" ++ show i)
+        KLiteral l b    -> (Literal, show (l, b))
 
 
 -- TokNamed -------------------------------------------------------------------
@@ -195,7 +194,6 @@ describeTokenAtom' ta
 data TokenNamed n
         = KCon n
         | KVar n
-        | KLit n
         deriving (Eq, Show)
 
 
@@ -205,7 +203,6 @@ describeTokenNamed tn
  = case tn of
         KCon n  -> renderPlain $ text "constructor" <+> (dquotes $ ppr n)
         KVar n  -> renderPlain $ text "variable"    <+> (dquotes $ ppr n)
-        KLit n  -> renderPlain $ text "literal"     <+> (dquotes $ ppr n)
 
 
 -- | Apply a function to all the names in a `TokNamed`.
@@ -219,5 +216,4 @@ renameTokenNamed f kk
   = case kk of
         KCon c           -> liftM KCon $ f c
         KVar c           -> liftM KVar $ f c
-        KLit c           -> liftM KLit $ f c
 

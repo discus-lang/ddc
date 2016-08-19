@@ -31,7 +31,7 @@ with
 letrec {
   test: Nat#
     = private r1 in
-      let x: Ref r1 Nat# = MkRef [r1] [Nat#] 5 in
+      let x: Ref r1 Nat# = MkRef [r1] [Nat#] 5# in
       case x of {
         MkRef (y: Nat#) 
          -> y
@@ -49,7 +49,7 @@ Error loading module
          are already in environment
     
     with: private r1 with {w1: Write r1} in
-          writeRef [r1] [Nat#] x 6
+          writeRef [r1] [Nat#] x 6#
 
 
 -- Error: private region variable cannot shadow variable that is already 
@@ -62,7 +62,7 @@ Error loading module
          are already in environment
     
     with: private r with {w1: Mutable r} in
-          writeRef [r] [Nat#] x 6
+          writeRef [r] [Nat#] x 6#
 
 
 
@@ -75,7 +75,7 @@ Error loading module
        is free in the body type: Ref r Nat#
     
     with: private r in
-          MkRef [r] [Nat#] 5
+          MkRef [r] [Nat#] 5#
 
 
 -- Error: witness types with a private must use explicit type constructors.

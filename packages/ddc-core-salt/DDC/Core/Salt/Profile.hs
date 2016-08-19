@@ -9,7 +9,7 @@ import DDC.Core.Salt.Env
 import DDC.Core.Salt.Name
 import DDC.Core.Fragment
 import DDC.Core.Lexer
-
+import DDC.Data.SourcePos
 
 -- | Language profile for Disciple Core Salt.
 profile :: Profile Name 
@@ -22,7 +22,22 @@ profile
         , profilePrimTypes              = primTypeEnv 
         , profileTypeIsUnboxed          = typeIsUnboxed 
         , profileNameIsHole             = Nothing 
-        , profileMakeStringName         = Just (\_sp t -> NameLitTextLit t) }
+        , profileMakeLiteralName        = Just makeLiteralName }
+
+
+-- | Convert a literal to a Salt name.
+makeLiteralName :: SourcePos -> Literal -> Bool -> Maybe Name
+makeLiteralName _ lit True
+ = case lit of
+        LNat    n       -> Just $ NameLitNat     n
+        LInt    i       -> Just $ NameLitInt     i
+        LSize   s       -> Just $ NameLitSize    s
+        LWord   i b     -> Just $ NameLitWord    i b
+        LFloat  f b     -> Just $ NameLitFloat   f b
+        LString tx      -> Just $ NameLitTextLit tx
+
+makeLiteralName _ _ _
+ = Nothing
 
 
 -- | The Salt fragment doesn't support many features.

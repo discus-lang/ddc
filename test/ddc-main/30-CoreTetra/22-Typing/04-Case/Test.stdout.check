@@ -8,9 +8,9 @@ When checking expression.
      Type of alternative: Nat#
           does not match: Bool#
   
-  with: case 5 of {
-          5  
-           -> 1;
+  with: case 5# of {
+          5#  
+           -> 1#;
           _ 
            -> True#
         }
@@ -80,7 +80,7 @@ When checking expression.
   Case alternatives are non-exhaustive.
   
   with: case xx of {
-          0  
+          0#  
            -> ()
         }
 
@@ -105,11 +105,11 @@ When checking expression.
   Case alternatives are overlapping.
   
   with: case xx of {
-          5  
+          5#  
            -> ();
           _ 
            -> ();
-          0  
+          0#  
            -> ()
         }
 
@@ -121,9 +121,9 @@ When checking expression.
   Case alternatives are overlapping.
   
   with: case xx of {
-          0  
+          0#  
            -> ();
-          0  
+          0#  
            -> ();
           _ 
            -> ()
@@ -142,7 +142,4 @@ When checking expression.
           ()  
            -> ()
         }
-
-
-
 

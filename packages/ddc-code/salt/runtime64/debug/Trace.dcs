@@ -65,7 +65,7 @@ traceObj [r: Region] (trace: Bool#) (obj: Ptr# r Obj): Nat#
 
                  -- Some format that we don't handle yet, 
                  -- or the header is trashed.
-                 _      -> do   primPutString "Unknown\n"
+                 _      -> do   primPutString "Unknown\n"#
                                 0#
 
 
@@ -78,17 +78,17 @@ traceThunk [r: Region] (trace: Bool#) (obj: Ptr# r Obj): Nat#
         format  = band# header 0x0fw32#
         tag     = shr#  header 8w32#
 
-        primPutString   "Thunk\n"
-        fieldAddr       "{   ptr     = " (takePtr# obj)
-        fieldWord32     "    format  = " format
-        fieldWord32     "    tag     = " tag
-        fieldNat        "    params  = " (paramsThunk obj)
-        fieldNat        "    boxes   = " (boxesThunk  obj)
-        fieldNat        "    args    = " (argsThunk   obj)
-        fieldNat        "    runs    = " (runsThunk   obj)
-        fieldAddr       "    fun     = " (funThunk    obj)
+        primPutString   "Thunk\n"#
+        fieldAddr       "{   ptr     = "# (takePtr# obj)
+        fieldWord32     "    format  = "# format
+        fieldWord32     "    tag     = "# tag
+        fieldNat        "    params  = "# (paramsThunk obj)
+        fieldNat        "    boxes   = "# (boxesThunk  obj)
+        fieldNat        "    args    = "# (argsThunk   obj)
+        fieldNat        "    runs    = "# (runsThunk   obj)
+        fieldAddr       "    fun     = "# (funThunk    obj)
         traceThunkPtrs obj 0#
-        primPutString   "}\n"
+        primPutString   "}\n"#
 
         case trace of
          True#  -> traceThunkPtrss obj 0#
@@ -104,11 +104,11 @@ traceThunkPtrs [r: Region] (obj: Ptr# r Obj) (i: Nat#) : Nat#
 
          False# 
           -> do addr    = takePtr# (getThunk obj i)
-                primPutString "    arg "
+                primPutString "    arg "#
                 primPutString (primShowNat i)
-                primPutString "   = "
+                primPutString "   = "#
                 primPutString (primShowAddr addr)
-                primPutString ";\n"
+                primPutString ";\n"#
                 traceThunkPtrs obj (add# i 1#)
 
 
@@ -134,13 +134,13 @@ traceBoxed [r: Region] (trace: Bool#) (obj: Ptr# r Obj): Nat#
         tag     = shr#  header 8w32#
         arity   = peek# ptr 4#
 
-        primPutString   "Boxed\n"
-        fieldAddr       "{   ptr     = " (takePtr# obj)
-        fieldWord32     "    format  = " format
-        fieldWord32     "    tag     = " tag
-        fieldNat        "    arity   = " (promote# arity)
+        primPutString   "Boxed\n"#
+        fieldAddr       "{   ptr     = "# (takePtr# obj)
+        fieldWord32     "    format  = "# format
+        fieldWord32     "    tag     = "# tag
+        fieldNat        "    arity   = "# (promote# arity)
         traceBoxedPtrs obj (promote# arity) 0#
-        primPutString   "}\n"
+        primPutString   "}\n"#
 
         case trace of
          True#  -> traceBoxedPtrss obj (promote# arity) 0#
@@ -156,11 +156,11 @@ traceBoxedPtrs [r: Region] (obj: Ptr# r Obj) (n: Nat#) (i: Nat#) : Nat#
          False# 
           -> do addr     = takePtr# (getBoxed obj i)
 
-                primPutString "    arg "
+                primPutString "    arg "#
                 primPutString (primShowNat i)
-                primPutString "   = "
+                primPutString "   = "#
                 primPutString (primShowAddr addr)
-                primPutString ";\n"
+                primPutString ";\n"#
                 traceBoxedPtrs obj n (add# i 1#)
 
 
@@ -185,12 +185,12 @@ traceRaw [r: Region] (obj: Ptr# r Obj): Nat#
         tag     = shr#  header 8w32#
         size    = peek# ptr 4#
 
-        primPutString   "Raw\n"
-        fieldAddr       "{   ptr     = " (takePtr# obj)
-        fieldWord32     "    format  = " format
-        fieldWord32     "    tag     = " tag
-        fieldWord32     "    size    = " size
-        primPutString   "}\n"
+        primPutString   "Raw\n"#
+        fieldAddr       "{   ptr     = "# (takePtr# obj)
+        fieldWord32     "    format  = "# format
+        fieldWord32     "    tag     = "# tag
+        fieldWord32     "    size    = "# size
+        primPutString   "}\n"#
         0#
 
 
@@ -203,11 +203,11 @@ traceSmall [r: Region] (obj: Ptr# r Obj): Nat#
         format  =             band# header 0x0fw32#
         size    = shr# 4w32# (band# header 0xf0w32#)
 
-        primPutString   "Small\n"
-        fieldAddr       "{   ptr     = " (takePtr# obj)
-        fieldWord32     "    format  = " format
-        fieldWord32     "    size    = " size
-        primPutString   "}\n"
+        primPutString   "Small\n"#
+        fieldAddr       "{   ptr     = "# (takePtr# obj)
+        fieldWord32     "    format  = "# format
+        fieldWord32     "    size    = "# size
+        primPutString   "}\n"#
         0#
 
 
@@ -216,20 +216,20 @@ traceSmall [r: Region] (obj: Ptr# r Obj): Nat#
 fieldAddr (name: TextLit#) (val: Addr#): Void#
  = do   primPutString name
         primPutString (primShowAddr val)
-        primPutString ";\n"
+        primPutString ";\n"#
 
 
 -- | Print a Nat# field to stdout.
 fieldNat (name: TextLit#) (val: Nat#): Void#
  = do   primPutString name
         primPutString (primShowNat val)
-        primPutString ";\n"
+        primPutString ";\n"#
 
 
 -- | Print a Word32# field to stdout.
 fieldWord32 (name: TextLit#) (val: Word32#): Void#
  = do   primPutString name
         primPutString (primShowWord32 val)
-        primPutString ";\n"
+        primPutString ";\n"#
 
 

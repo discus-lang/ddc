@@ -13,17 +13,17 @@
 
 
 -- Snip primitive operator.
-:trans add# [Nat#] 1 2
+:trans add# [Nat#] 1# 2#
 
 
 -- Snip nested applications
-:trans add# [Nat#] (add# [Nat#] 1 2) (add# [Nat#] 3 4)
+:trans add# [Nat#] (add# [Nat#] 1# 2#) (add# [Nat#] 3# 4#)
 
 
 -- Snip scrutinee of case expression.
 :trans..
 (\(u:Unit). 
- case add# [Nat#] 1 2 of {
-    0 -> 1;
-    _ -> add# [Nat#] 3 4
+ case add# [Nat#] 1# 2# of {
+    0# -> 1#;
+    _  -> add# [Nat#] 3# 4#
 }) ();;

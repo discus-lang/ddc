@@ -55,6 +55,7 @@ module DDC.Source.Tetra.Prim
           -- ** Primitive literals
         , PrimLit (..)
         , readPrimLit
+        , primLitOfLiteral
 
         , pattern PTrue
         , pattern PFalse)

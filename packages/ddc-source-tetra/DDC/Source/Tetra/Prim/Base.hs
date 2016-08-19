@@ -26,9 +26,11 @@ module DDC.Source.Tetra.Prim.Base
         , OpError       (..)
 
           -- ** Primitive literals.
-        , PrimLit       (..))
+        , PrimLit       (..)
+        , primLitOfLiteral)
 where
 import DDC.Type.Exp.TyCon
+import DDC.Core.Exp.Literal
 import DDC.Core.Tetra    
         ( OpFun         (..)
         , OpVector      (..)
@@ -130,4 +132,16 @@ data PrimLit
         -- | Text literals (UTF-8 encoded)
         | PrimLitTextLit        !Text
         deriving (Eq, Ord, Show)
+
+
+-- | Convert a literal to a Tetra name.
+primLitOfLiteral :: Literal -> PrimLit
+primLitOfLiteral lit
+ = case lit of
+        LNat    n       -> PrimLitNat     n
+        LInt    i       -> PrimLitInt     i
+        LSize   s       -> PrimLitSize    s
+        LWord   i b     -> PrimLitWord    i b
+        LFloat  f b     -> PrimLitFloat   f b
+        LString tx      -> PrimLitTextLit tx
 

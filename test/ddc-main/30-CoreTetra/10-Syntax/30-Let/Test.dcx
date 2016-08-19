@@ -53,37 +53,37 @@ private r with {} in
 -- Simple private with letrec using explicit type annotation
 :check..
 private r in
-letrec { f : Unit -> Nat# = \(x : Unit). 5 } 
+letrec { f : Unit -> Nat# = \(x : Unit). 5# } 
 in f ();;
 
 
 -- Simple private with letrec using function syntax.
 :check..
 private r in
-letrec { f (u : Unit) : Nat# = 5 }
+letrec { f (u : Unit) : Nat# = 5# }
 in add# [Nat#] (f ()) (f ());;
 
 
 -- Letrec with a single binding and no braces around it.
 :check..
 private r in
-letrec f (u : Unit) : Nat# = 5 
+letrec f (u : Unit) : Nat# = 5#
 in add# [Nat#] (f ()) (f ());;
 
 
 -- Multiple lets and private. 
 :check..
 private r1 r2 in
-let x1 : Nat# = 2 in
-let x2 : Nat# = 3
+let x1 : Nat# = 2# in
+let x2 : Nat# = 3#
 in add# [Nat#] x1 x2;;
  
 
 -- As above, but no annots on binders.
 :check..
 private r1 r2 in
-let x1 = 2 in
-let x2 = 3 
+let x1 = 2# in
+let x2 = 3# 
 in add# [Nat#] x1 x2;;
 
 

@@ -14,6 +14,7 @@ import DDC.Core.Lexer
 import DDC.Type.Exp
 import Control.Monad.State.Strict
 import DDC.Type.Env             (Env)
+import DDC.Data.SourcePos       
 import qualified DDC.Type.Env   as Env
 
 
@@ -28,7 +29,22 @@ profile
         , profilePrimTypes              = primTypeEnv
         , profileTypeIsUnboxed          = const False 
         , profileNameIsHole             = Just isNameHole 
-        , profileMakeStringName         = Just (\_ t -> NameLitTextLit t) }
+        , profileMakeLiteralName        = Just makeLiteralName }
+
+
+-- | Convert a literal to a Tetra name.
+makeLiteralName :: SourcePos -> Literal -> Bool -> Maybe Name
+makeLiteralName _ lit True
+ = case lit of
+        LNat    n       -> Just $ NameLitNat     n
+        LInt    i       -> Just $ NameLitInt     i
+        LSize   s       -> Just $ NameLitSize    s
+        LWord   i b     -> Just $ NameLitWord    i b
+        LFloat  f b     -> Just $ NameLitFloat   f b
+        LString tx      -> Just $ NameLitTextLit tx
+
+makeLiteralName _ _ _
+ = Nothing
 
 
 features :: Features

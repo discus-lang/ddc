@@ -191,13 +191,11 @@ pExpAtomSP c
         -- Literals.
         --   The attached type is set to Bottom for now, which needs
         --   to be filled in later by the Spread transform.
- , do   (lit, sp) <- pLitSP
-        return  (XCon sp (DaConPrim lit (T.tBot T.kData)), sp)
-
- , do   (tx, sp)  <- pStringSP
-        let Just mkString = contextMakeStringName c
-        let lit           = mkString sp tx
-        return  (XCon sp (DaConPrim lit (T.tBot T.kData)), sp)
+ , do   ((lit, bPrim), sp) <- pLitSP
+        let Just mkLit  = contextMakeLiteralName c
+        case mkLit sp lit bPrim of
+         Just name -> return  (XCon sp (DaConPrim name (T.tBot T.kData)), sp)
+         Nothing   -> P.unexpected "literal"
 
         -- Debruijn indices
  , do   (i, sp)   <- pIndexSP
@@ -233,8 +231,11 @@ pPat c
         -- LIT
  , do   --  The attached type is set to Bottom for now, which needs
         --  to be filled in later by the Spread transform.
-        nLit    <- pLit
-        return  $ PData (DaConPrim nLit (T.tBot T.kData)) []
+        ((lit, bPrim), sp) <- pLitSP
+        let Just mkLit  = contextMakeLiteralName c 
+        case mkLit sp lit bPrim of
+         Just nLit      -> return  $ PData (DaConPrim nLit (T.tBot T.kData)) []
+         _              -> P.unexpected "literal"
 
         -- Unit
  , do   pTok    (KBuiltin BDaConUnit)

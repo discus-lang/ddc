@@ -29,7 +29,7 @@ t1 [a : Data] (x : a) : [b : Data]. b -> Tuple2 a b
 :load..
 module Test with letrec
 thing (id : [a : Data]. a -> a) 
- = do   id 5
+ = do   id 5#
         id ()
         ()
 

@@ -6,7 +6,7 @@
 module Test with letrec
 f = /\(a : Data). \(v : a). v
 
-com = \(g : [^ : Data]. ^0 -> ^0). g 0i
+com = \(g : [^ : Data]. ^0 -> ^0). g 0i#
 
 uuse _ = com f
 ;;
@@ -16,7 +16,7 @@ uuse _ = com f
 module Test with letrec
 f = /\(a : Data). \(v : a). v
 
-com = \(g : [b : Data]. b -> b). g 0i
+com = \(g : [b : Data]. b -> b). g 0i#
 
 uuse _ = com f
 ;;
