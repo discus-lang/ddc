@@ -9,7 +9,8 @@ letrec {
       λ(u1$rv: RateVec# x4$'$k Int#).λ(n$ref: Ref# Int#).
       Λ(n$PROC: Proc).
       λ(_: Unit).
-      let u1$s: Series# n$PROC x4$'$k Int# = series# [n$PROC] [x4$'$k] [Int#] u1$rv in
+      let u1$s: Series# n$PROC x4$'$k Int#
+            = series# [n$PROC] [x4$'$k] [Int#] u1$rv in
       let n$proc: Process# n$PROC x4$'$k
             = sreduce# [n$PROC] [x4$'$k] [Int#] n$ref
                   (λ(x0 x1: Int#). add# [Int#] x0 x1) 0i# u1$s in
@@ -20,22 +21,26 @@ letrec {
       λ(u1$rv: RateVec# x4$'$k Int#).λ(x4: Vector# Int#).λ(n: Int#).
       Λ(x4$PROC: Proc).
       λ(_: Unit).
-      let u1$s: Series# x4$PROC x4$'$k Int# = series# [x4$PROC] [x4$'$k] [Int#] u1$rv in
+      let u1$s: Series# x4$PROC x4$'$k Int#
+            = series# [x4$PROC] [x4$'$k] [Int#] u1$rv in
       let x4$s: Series# x4$PROC x4$'$k Int#
             = smap# [x4$PROC] [x4$'$k] [Int#] [Int#]
                   (λ(x: Int#). div# [Int#] x n) u1$s in
-      let x4$proc: Process# x4$PROC x4$'$k = sfill# [x4$PROC] [x4$'$k] [Int#] x4 x4$s in
+      let x4$proc: Process# x4$PROC x4$'$k
+            = sfill# [x4$PROC] [x4$'$k] [Int#] x4 x4$s in
       x4$proc;
   
   test: Vector# Int# -> Vector# Int#
     = λ(u1: Vector# Int#).
-      let n$ref: Ref# Int# = new# [Int#] 0i# in
+      let n$ref: Ref# Int#
+            = new# [Int#] 0i# in
       let n$runproc: Unit
             = ratify1# [Int#] [Unit] u1
                   (Λ(x4$'$k: Rate).
                    λ(u1$rv: RateVec# x4$'$k Int#).
                    runProcess# [x4$'$k] (n$runproc$process [x4$'$k] u1$rv n$ref)) in
-      let n: Int# = read# [Int#] n$ref in
+      let n: Int#
+            = read# [Int#] n$ref in
       let x4: Vector# Int#
             = vnew# [Int#] (vlength# [Int#] u1) in
       let x4$runproc: Unit
@@ -55,7 +60,8 @@ letrec {
       λ(u1$rv: RateVec# xs$'$k Int#).λ(n$ref: Ref# Int#).
       Λ(n$PROC: Proc).
       λ(_: Unit).
-      let u1$s: Series# n$PROC xs$'$k Int# = series# [n$PROC] [xs$'$k] [Int#] u1$rv in
+      let u1$s: Series# n$PROC xs$'$k Int#
+            = series# [n$PROC] [xs$'$k] [Int#] u1$rv in
       let n$proc: Process# n$PROC xs$'$k
             = sreduce# [n$PROC] [xs$'$k] [Int#] n$ref
                   (λ(x0 x1: Int#). add# [Int#] x0 x1) 0i# u1$s in
@@ -66,11 +72,13 @@ letrec {
       λ(u1$rv: RateVec# xs$'$k Int#).λ(y$ref: Ref# Int#).λ(xs: Vector# Int#).λ(n: Int#).
       Λ(xs$PROC: Proc).
       λ(_: Unit).
-      let u1$s: Series# xs$PROC xs$'$k Int# = series# [xs$PROC] [xs$'$k] [Int#] u1$rv in
+      let u1$s: Series# xs$PROC xs$'$k Int#
+            = series# [xs$PROC] [xs$'$k] [Int#] u1$rv in
       let xs$s: Series# xs$PROC xs$'$k Int#
             = smap# [xs$PROC] [xs$'$k] [Int#] [Int#]
                   (λ(x: Int#). div# [Int#] x n) u1$s in
-      let xs$proc: Process# xs$PROC xs$'$k = sfill# [xs$PROC] [xs$'$k] [Int#] xs xs$s in
+      let xs$proc: Process# xs$PROC xs$'$k
+            = sfill# [xs$PROC] [xs$'$k] [Int#] xs xs$s in
       let y$proc: Process# xs$PROC xs$'$k
             = sreduce# [xs$PROC] [xs$'$k] [Int#] y$ref
                   (λ(x4 x5: Int#). mul# [Int#] x4 x5) 1i# u1$s in
@@ -78,22 +86,26 @@ letrec {
   
   test: Vector# Int# -> Tuple2# (Vector# Int#) Int#
     = λ(u1: Vector# Int#).
-      let n$ref: Ref# Int# = new# [Int#] 0i# in
+      let n$ref: Ref# Int#
+            = new# [Int#] 0i# in
       let n$runproc: Unit
             = ratify1# [Int#] [Unit] u1
                   (Λ(xs$'$k: Rate).
                    λ(u1$rv: RateVec# xs$'$k Int#).
                    runProcess# [xs$'$k] (n$runproc$process [xs$'$k] u1$rv n$ref)) in
-      let n: Int# = read# [Int#] n$ref in
+      let n: Int#
+            = read# [Int#] n$ref in
       let xs: Vector# Int#
             = vnew# [Int#] (vlength# [Int#] u1) in
-      let y$ref: Ref# Int# = new# [Int#] 1i# in
+      let y$ref: Ref# Int#
+            = new# [Int#] 1i# in
       let xs$runproc: Unit
             = ratify1# [Int#] [Unit] u1
                   (Λ(xs$'$k: Rate).
                    λ(u1$rv: RateVec# xs$'$k Int#).
                    runProcess# [xs$'$k] (xs$runproc$process [xs$'$k] u1$rv y$ref xs n)) in
-      let y: Int# = read# [Int#] y$ref in
+      let y: Int#
+            = read# [Int#] y$ref in
       let x7: Tuple2# (Vector# Int#) Int#
             = T2# [Vector# Int#] [Int#] xs y in
       x7

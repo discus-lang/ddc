@@ -26,15 +26,18 @@ letrec {
       λ(us$rv: RateVec# us$k Int#).λ(us': Vector# Int#).
       Λ(us'$PROC: Proc).
       λ(_: Unit).
-      let us$s: Series# us'$PROC us$k Int# = series# [us'$PROC] [us$k] [Int#] us$rv in
+      let us$s: Series# us'$PROC us$k Int#
+            = series# [us'$PROC] [us$k] [Int#] us$rv in
       let us'$flags: Series# us'$PROC us$k Bool#
             = smap# [us'$PROC] [us$k] [Int#] [Bool#]
                   (λ(x0: Int#). gt# [Int#] 1i# x0) us$s in
       smkSel# [us'$PROC] [us$k] [us$k] us'$flags
           (Λ(us'$'$k: Rate).
            λ(us'$sel: Sel1# us'$PROC us$k us'$'$k).
-           let us'$s: Series# us'$PROC us'$'$k Int# = spack# [us'$PROC] [us$k] [us'$'$k] [Int#] us'$sel us$s in
-           let us'$proc: Process# us'$PROC us'$'$k = sfill# [us'$PROC] [us'$'$k] [Int#] us' us'$s in
+           let us'$s: Series# us'$PROC us'$'$k Int#
+                 = spack# [us'$PROC] [us$k] [us'$'$k] [Int#] us'$sel us$s in
+           let us'$proc: Process# us'$PROC us'$'$k
+                 = sfill# [us'$PROC] [us'$'$k] [Int#] us' us'$s in
            presize# [us'$PROC] [us'$'$k] [us$k]
                (rsel1# [us'$PROC] [us'$'$k] [us$k] [us'$'$k] us'$sel (rid# [us'$PROC] [us'$'$k])) us'$proc);
   
@@ -59,18 +62,21 @@ letrec {
       λ(us$rv: RateVec# us$k Int#).λ(us'': Vector# Int#).
       Λ(us'$PROC: Proc).
       λ(_: Unit).
-      let us$s: Series# us'$PROC us$k Int# = series# [us'$PROC] [us$k] [Int#] us$rv in
+      let us$s: Series# us'$PROC us$k Int#
+            = series# [us'$PROC] [us$k] [Int#] us$rv in
       let us'$flags: Series# us'$PROC us$k Bool#
             = smap# [us'$PROC] [us$k] [Int#] [Bool#]
                   (λ(x0: Int#). gt# [Int#] 1i# x0) us$s in
       smkSel# [us'$PROC] [us$k] [us$k] us'$flags
           (Λ(us'$'$k: Rate).
            λ(us'$sel: Sel1# us'$PROC us$k us'$'$k).
-           let us'$s: Series# us'$PROC us'$'$k Int# = spack# [us'$PROC] [us$k] [us'$'$k] [Int#] us'$sel us$s in
+           let us'$s: Series# us'$PROC us'$'$k Int#
+                 = spack# [us'$PROC] [us$k] [us'$'$k] [Int#] us'$sel us$s in
            let us''$s: Series# us'$PROC us'$'$k Int#
                  = smap# [us'$PROC] [us'$'$k] [Int#] [Int#]
                        (λ(x2: Int#). add# [Int#] 2i# x2) us'$s in
-           let us''$proc: Process# us'$PROC us'$'$k = sfill# [us'$PROC] [us'$'$k] [Int#] us'' us''$s in
+           let us''$proc: Process# us'$PROC us'$'$k
+                 = sfill# [us'$PROC] [us'$'$k] [Int#] us'' us''$s in
            presize# [us'$PROC] [us'$'$k] [us$k]
                (rsel1# [us'$PROC] [us'$'$k] [us$k] [us'$'$k] us'$sel (rid# [us'$PROC] [us'$'$k])) us''$proc);
   
@@ -95,23 +101,28 @@ letrec {
       λ(us$rv: RateVec# us$k Int#).λ(us'' us': Vector# Int#).
       Λ(us'$PROC: Proc).
       λ(_: Unit).
-      let us$s: Series# us'$PROC us$k Int# = series# [us'$PROC] [us$k] [Int#] us$rv in
+      let us$s: Series# us'$PROC us$k Int#
+            = series# [us'$PROC] [us$k] [Int#] us$rv in
       let us'$flags: Series# us'$PROC us$k Bool#
             = smap# [us'$PROC] [us$k] [Int#] [Bool#]
                   (λ(x0: Int#). gt# [Int#] 1i# x0) us$s in
       smkSel# [us'$PROC] [us$k] [us$k] us'$flags
           (Λ(us'$'$k: Rate).
            λ(us'$sel: Sel1# us'$PROC us$k us'$'$k).
-           let us'$s: Series# us'$PROC us'$'$k Int# = spack# [us'$PROC] [us$k] [us'$'$k] [Int#] us'$sel us$s in
-           let us'$proc: Process# us'$PROC us'$'$k = sfill# [us'$PROC] [us'$'$k] [Int#] us' us'$s in
+           let us'$s: Series# us'$PROC us'$'$k Int#
+                 = spack# [us'$PROC] [us$k] [us'$'$k] [Int#] us'$sel us$s in
+           let us'$proc: Process# us'$PROC us'$'$k
+                 = sfill# [us'$PROC] [us'$'$k] [Int#] us' us'$s in
            let us''$flags: Series# us'$PROC us'$'$k Bool#
                  = smap# [us'$PROC] [us'$'$k] [Int#] [Bool#]
                        (λ(x2: Int#). gt# [Int#] 2i# x2) us'$s in
            smkSel# [us'$PROC] [us'$'$k] [us$k] us''$flags
                (Λ(us''$'$k: Rate).
                 λ(us''$sel: Sel1# us'$PROC us'$'$k us''$'$k).
-                let us''$s: Series# us'$PROC us''$'$k Int# = spack# [us'$PROC] [us'$'$k] [us''$'$k] [Int#] us''$sel us'$s in
-                let us''$proc: Process# us'$PROC us''$'$k = sfill# [us'$PROC] [us''$'$k] [Int#] us'' us''$s in
+                let us''$s: Series# us'$PROC us''$'$k Int#
+                      = spack# [us'$PROC] [us'$'$k] [us''$'$k] [Int#] us''$sel us'$s in
+                let us''$proc: Process# us'$PROC us''$'$k
+                      = sfill# [us'$PROC] [us''$'$k] [Int#] us'' us''$s in
                 pjoin# [us'$PROC] [us$k]
                     (presize# [us'$PROC] [us'$'$k] [us$k]
                          (rsel1# [us'$PROC] [us'$'$k] [us$k] [us'$'$k] us'$sel (rid# [us'$PROC] [us'$'$k])) us'$proc)
@@ -169,7 +180,8 @@ letrec {
       λ(orig$rv: RateVec# morig$'$k Int#).λ(fold2$ref: Ref# Int#).
       Λ(fold2$PROC: Proc).
       λ(_: Unit).
-      let orig$s: Series# fold2$PROC morig$'$k Int# = series# [fold2$PROC] [morig$'$k] [Int#] orig$rv in
+      let orig$s: Series# fold2$PROC morig$'$k Int#
+            = series# [fold2$PROC] [morig$'$k] [Int#] orig$rv in
       let fold2$proc: Process# fold2$PROC morig$'$k
             = sreduce# [fold2$PROC] [morig$'$k] [Int#] fold2$ref
                   (λ(x5 x6: Int#). add# [Int#] x5 x6) 0i# orig$s in
@@ -180,21 +192,24 @@ letrec {
       λ(orig$rv: RateVec# morig$'$k Int#).λ(mfilt: Vector# Int#).λ(fold$ref: Ref# Int#).λ(fold2: Int#).
       Λ(filt$PROC: Proc).
       λ(_: Unit).
-      let orig$s: Series# filt$PROC morig$'$k Int# = series# [filt$PROC] [morig$'$k] [Int#] orig$rv in
+      let orig$s: Series# filt$PROC morig$'$k Int#
+            = series# [filt$PROC] [morig$'$k] [Int#] orig$rv in
       let filt$flags: Series# filt$PROC morig$'$k Bool#
             = smap# [filt$PROC] [morig$'$k] [Int#] [Bool#]
                   (λ(x0: Int#). gt# [Int#] 1i# x0) orig$s in
       smkSel# [filt$PROC] [morig$'$k] [morig$'$k] filt$flags
           (Λ(filt$'$k: Rate).
            λ(filt$sel: Sel1# filt$PROC morig$'$k filt$'$k).
-           let filt$s: Series# filt$PROC filt$'$k Int# = spack# [filt$PROC] [morig$'$k] [filt$'$k] [Int#] filt$sel orig$s in
+           let filt$s: Series# filt$PROC filt$'$k Int#
+                 = spack# [filt$PROC] [morig$'$k] [filt$'$k] [Int#] filt$sel orig$s in
            let fold$proc: Process# filt$PROC filt$'$k
                  = sreduce# [filt$PROC] [filt$'$k] [Int#] fold$ref
                        (λ(x2 x3: Int#). add# [Int#] x2 x3) 0i# filt$s in
            let mfilt$s: Series# filt$PROC filt$'$k Int#
                  = smap# [filt$PROC] [filt$'$k] [Int#] [Int#]
                        (λ(x10: Int#). add# [Int#] fold2 x10) filt$s in
-           let mfilt$proc: Process# filt$PROC filt$'$k = sfill# [filt$PROC] [filt$'$k] [Int#] mfilt mfilt$s in
+           let mfilt$proc: Process# filt$PROC filt$'$k
+                 = sfill# [filt$PROC] [filt$'$k] [Int#] mfilt mfilt$s in
            pjoin# [filt$PROC] [morig$'$k]
                (presize# [filt$PROC] [filt$'$k] [morig$'$k]
                     (rsel1# [filt$PROC] [filt$'$k] [morig$'$k] [filt$'$k] filt$sel (rid# [filt$PROC] [filt$'$k])) fold$proc)
@@ -206,23 +221,28 @@ letrec {
       λ(orig$rv: RateVec# morig$'$k Int#).λ(morig: Vector# Int#).λ(fold: Int#).
       Λ(morig$PROC: Proc).
       λ(_: Unit).
-      let orig$s: Series# morig$PROC morig$'$k Int# = series# [morig$PROC] [morig$'$k] [Int#] orig$rv in
+      let orig$s: Series# morig$PROC morig$'$k Int#
+            = series# [morig$PROC] [morig$'$k] [Int#] orig$rv in
       let morig$s: Series# morig$PROC morig$'$k Int#
             = smap# [morig$PROC] [morig$'$k] [Int#] [Int#]
                   (λ(x8: Int#). add# [Int#] fold x8) orig$s in
-      let morig$proc: Process# morig$PROC morig$'$k = sfill# [morig$PROC] [morig$'$k] [Int#] morig morig$s in
+      let morig$proc: Process# morig$PROC morig$'$k
+            = sfill# [morig$PROC] [morig$'$k] [Int#] morig morig$s in
       morig$proc;
   
   test: Vector# Int# -> Tuple2# (Vector# Int#) (Vector# Int#)
     = λ(orig: Vector# Int#).
-      let fold2$ref: Ref# Int# = new# [Int#] 0i# in
+      let fold2$ref: Ref# Int#
+            = new# [Int#] 0i# in
       let fold2$runproc: Unit
             = ratify1# [Int#] [Unit] orig
                   (Λ(morig$'$k: Rate).
                    λ(orig$rv: RateVec# morig$'$k Int#).
                    runProcess# [morig$'$k] (fold2$runproc$process [morig$'$k] orig$rv fold2$ref)) in
-      let fold2: Int# = read# [Int#] fold2$ref in
-      let fold$ref: Ref# Int# = new# [Int#] 0i# in
+      let fold2: Int#
+            = read# [Int#] fold2$ref in
+      let fold$ref: Ref# Int#
+            = new# [Int#] 0i# in
       let mfilt: Vector# Int#
             = vnew# [Int#] (vlength# [Int#] orig) in
       let filt$runproc: Unit
@@ -230,7 +250,8 @@ letrec {
                   (Λ(morig$'$k: Rate).
                    λ(orig$rv: RateVec# morig$'$k Int#).
                    runProcess# [morig$'$k] (filt$runproc$process [morig$'$k] orig$rv mfilt fold$ref fold2)) in
-      let fold: Int# = read# [Int#] fold$ref in
+      let fold: Int#
+            = read# [Int#] fold$ref in
       let morig: Vector# Int#
             = vnew# [Int#] (vlength# [Int#] orig) in
       let morig$runproc: Unit

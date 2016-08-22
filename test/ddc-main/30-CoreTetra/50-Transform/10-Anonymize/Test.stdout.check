@@ -17,13 +17,16 @@ ok
 
 
 -- Anonymize single let binding.
-let ^: Unit = () in
+let ^: Unit
+      = () in
 ^0
 
 
 -- Anonymize multiple let bindings.
-let ^: Unit = () in
-let ^: Unit = () in
+let ^: Unit
+      = () in
+let ^: Unit
+      = () in
 ^1
 
 
@@ -38,6 +41,8 @@ private ^ with {^: Const ^0} in
 Λ(^: Region ~> Data).
 λ(^: [^: Region].^1 ^0).λ(^: [^: Region].^1 ^0 -> Nat#).
 private ^ with {^: Const ^0} in
-let ^: ^1 ^0 = ^2 [^0] in
-let ^: ^1 ^0 = ^3 [^0] in
+let ^: ^1 ^0
+      = ^2 [^0] in
+let ^: ^1 ^0
+      = ^3 [^0] in
 add# [Nat#] (^3 [^0] ^1) (^3 [^0] ^0)

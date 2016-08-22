@@ -9,24 +9,31 @@ letrec {
   test: [p: Proc].[k1: Rate].Series# p k1 Nat# -> Vector# Nat# -> Unit
     = Λ(p: Proc).Λ(k1: Rate).
       λ(lens: Series# p k1 Nat#).λ(v: Vector# Nat#).
-      let v$buf = vbuf# [Nat#] v in
-      let v$count = new# [Nat#] 0# in
-      let _
+      let v$buf  
+            = vbuf# [Nat#] v in
+      let v$count
+            = new# [Nat#] 0# in
+      let _      
             = loop# [k1]
                   (λ(x0: Nat#).
-                   let lens$elem = next# [Nat#] [p] [k1] lens x0 in
-                   let _
+                   let lens$elem
+                         = next# [Nat#] [p] [k1] lens x0 in
+                   let _      
                          = segment# lens$elem
                                (λ(x1: Nat#).
-                                let ^ = read# [Nat#] v$count in
-                                let _ = vwrite# [Nat#] v$buf ^0 x1 in
-                                let ^ = read# [Nat#] v$count in
-                                let ^ = add# [Nat#] ^0 1# in
-                                let _ = write# [Nat#] v$count ^0 in
+                                let ^       = read# [Nat#] v$count in
+                                let _      
+                                      = vwrite# [Nat#] v$buf ^0 x1 in
+                                let ^       = read# [Nat#] v$count in
+                                let ^       = add# [Nat#] ^0 1# in
+                                let _      
+                                      = write# [Nat#] v$count ^0 in
                                 ()) in
                    ()) in
-      let x2 = read# [Nat#] v$count in
-      let _ = vtrunc# [Nat#] x2 v in
+      let x2     
+            = read# [Nat#] v$count in
+      let _      
+            = vtrunc# [Nat#] x2 v in
       ()
 }
 
@@ -37,26 +44,35 @@ letrec {
   test: [p: Proc].[k1: Rate].Series# p k1 Nat# -> Series# p k1 Nat# -> Vector# Nat# -> Unit
     = Λ(p: Proc).Λ(k1: Rate).
       λ(lens things: Series# p k1 Nat#).λ(v: Vector# Nat#).
-      let v$buf = vbuf# [Nat#] v in
-      let v$count = new# [Nat#] 0# in
-      let _
+      let v$buf  
+            = vbuf# [Nat#] v in
+      let v$count
+            = new# [Nat#] 0# in
+      let _      
             = loop# [k1]
                   (λ(x2: Nat#).
-                   let lens$elem = next# [Nat#] [p] [k1] lens x2 in
-                   let things$elem = next# [Nat#] [p] [k1] things x2 in
-                   let _
+                   let lens$elem
+                         = next# [Nat#] [p] [k1] lens x2 in
+                   let things$elem
+                         = next# [Nat#] [p] [k1] things x2 in
+                   let _      
                          = segment# lens$elem
                                (λ(x3: Nat#).
-                                let s4$elem = add# [Nat#] x3 things$elem in
-                                let x5 = read# [Nat#] v$count in
-                                let _ = vwrite# [Nat#] v$buf x5 s4$elem in
-                                let x6 = read# [Nat#] v$count in
-                                let x7 = add# [Nat#] x6 1# in
-                                let _ = write# [Nat#] v$count x7 in
+                                let s4$elem
+                                      = add# [Nat#] x3 things$elem in
+                                let x5      = read# [Nat#] v$count in
+                                let _      
+                                      = vwrite# [Nat#] v$buf x5 s4$elem in
+                                let x6      = read# [Nat#] v$count in
+                                let x7      = add# [Nat#] x6 1# in
+                                let _      
+                                      = write# [Nat#] v$count x7 in
                                 ()) in
                    ()) in
-      let x4 = read# [Nat#] v$count in
-      let _ = vtrunc# [Nat#] x4 v in
+      let x4     
+            = read# [Nat#] v$count in
+      let _      
+            = vtrunc# [Nat#] x4 v in
       ()
 }
 
@@ -71,36 +87,53 @@ letrec {
   test: [p: Proc].[k1 kThings: Rate].RateVec# k1 Nat# -> RateVec# k1 Nat# -> RateVec# kThings Float32# -> Vector# Float32# -> Vector# Float32# -> Unit
     = Λ(p: Proc).Λ(k1 kThings: Rate).
       λ(lens base: RateVec# k1 Nat#).λ(things: RateVec# kThings Float32#).λ(out1 out2: Vector# Float32#).
-      let out1$buf = vbuf# [Float32#] out1 in
-      let out2$buf = vbuf# [Float32#] out2 in
-      let out1$count = new# [Nat#] 0# in
-      let lens' = series# [p] [k1] [Nat#] lens in
-      let base' = series# [p] [k1] [Nat#] base in
-      let _
+      let out1$buf
+            = vbuf# [Float32#] out1 in
+      let out2$buf
+            = vbuf# [Float32#] out2 in
+      let out1$count
+            = new# [Nat#] 0# in
+      let lens'  
+            = series# [p] [k1] [Nat#] lens in
+      let base'  
+            = series# [p] [k1] [Nat#] base in
+      let _      
             = loop# [k1]
                   (λ(x2: Nat#).
-                   let lens'$elem = next# [Nat#] [p] [k1] lens' x2 in
-                   let base'$elem = next# [Nat#] [p] [k1] base' x2 in
-                   let x6 = vbufofratevec# [kThings] [Float32#] things in
-                   let firsts$elem = vread# [Float32#] x6 base'$elem in
-                   let _
+                   let lens'$elem
+                         = next# [Nat#] [p] [k1] lens' x2 in
+                   let base'$elem
+                         = next# [Nat#] [p] [k1] base' x2 in
+                   let x6      = vbufofratevec# [kThings] [Float32#] things in
+                   let firsts$elem
+                         = vread# [Float32#] x6 base'$elem in
+                   let _      
                          = segment# lens'$elem
                                (λ(x3: Nat#).
-                                let x7 = read# [Nat#] out1$count in
-                                let _ = vwrite# [Float32#] out2$buf x7 firsts$elem in
-                                let ixs$elem = add# [Nat#] base'$elem x3 in
-                                let x8 = vbufofratevec# [kThings] [Float32#] things in
-                                let results$elem = vread# [Float32#] x8 ixs$elem in
-                                let x9 = read# [Nat#] out1$count in
-                                let _ = vwrite# [Float32#] out1$buf x9 results$elem in
-                                let x10 = read# [Nat#] out1$count in
-                                let x11 = add# [Nat#] x10 1# in
-                                let _ = write# [Nat#] out1$count x11 in
+                                let x7      = read# [Nat#] out1$count in
+                                let _      
+                                      = vwrite# [Float32#] out2$buf x7 firsts$elem in
+                                let ixs$elem
+                                      = add# [Nat#] base'$elem x3 in
+                                let x8      = vbufofratevec# [kThings] [Float32#] things in
+                                let results$elem
+                                      = vread# [Float32#] x8 ixs$elem in
+                                let x9      = read# [Nat#] out1$count in
+                                let _      
+                                      = vwrite# [Float32#] out1$buf x9 results$elem in
+                                let x10     = read# [Nat#] out1$count in
+                                let x11     = add# [Nat#] x10 1# in
+                                let _      
+                                      = write# [Nat#] out1$count x11 in
                                 ()) in
                    ()) in
-      let x4 = read# [Nat#] out1$count in
-      let _ = vtrunc# [Float32#] x4 out1 in
-      let x5 = read# [Nat#] out1$count in
-      let _ = vtrunc# [Float32#] x5 out2 in
+      let x4     
+            = read# [Nat#] out1$count in
+      let _      
+            = vtrunc# [Float32#] x4 out1 in
+      let x5     
+            = read# [Nat#] out1$count in
+      let _      
+            = vtrunc# [Float32#] x5 out2 in
       ()
 }

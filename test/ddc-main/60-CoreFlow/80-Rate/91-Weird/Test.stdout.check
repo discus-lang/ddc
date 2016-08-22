@@ -14,15 +14,20 @@ letrec {
       let x6$s: Series# x5$PROC x5$'$k Nat#
             = smap# [x5$PROC] [x5$'$k] [Nat#] [Nat#]
                   (λ(x1: Nat#). add# [Nat#] x x1) x5$s in
-      let x6$proc: Process# x5$PROC x5$'$k = sfill# [x5$PROC] [x5$'$k] [Nat#] x6 x6$s in
+      let x6$proc: Process# x5$PROC x5$'$k
+            = sfill# [x5$PROC] [x5$'$k] [Nat#] x6 x6$s in
       x6$proc;
   
   foo: Vector# Nat# -> Nat# -> Vector# Nat#
     = λ(m: Vector# Nat#).λ(i: Nat#).
-      let x0: Nat# = add# [Nat#] 2# 1# in
-      let y: Nat# = add# [Nat#] 1# x0 in
-      let x: Nat# = add# [Nat#] y y in
-      let x6: Vector# Nat# = vnew# [Nat#] i in
+      let x0: Nat#
+            = add# [Nat#] 2# 1# in
+      let y: Nat#
+            = add# [Nat#] 1# x0 in
+      let x: Nat#
+            = add# [Nat#] y y in
+      let x6: Vector# Nat#
+            = vnew# [Nat#] i in
       let x5$runproc: Unit
             = ratify0# [Unit] i
                   (Λ(x5$'$k: Rate).

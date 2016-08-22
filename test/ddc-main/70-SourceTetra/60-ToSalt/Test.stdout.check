@@ -7,53 +7,71 @@ module Test with
 letrec {
   foo: Ptr# rT Obj -> Ptr# rT Obj
     = λ(x: Ptr# rT Obj).
-      let x1
-            = let ^ = allocSmall [rT] TAG0# 8# in
-              let ^ = payloadSmall [rT] ^0 in
-              let _
+      let x1     
+            = let ^      
+                    = allocSmall [rT] TAG0# 8# in
+              let ^      
+                    = payloadSmall [rT] ^0 in
+              let _      
                     = poke# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# 3# in
               ^1 in
-      let x2
-            = let ^ = x1 in
-              let ^ = payloadSmall [rT] ^0 in
-              let ^
+      let x2     
+            = let ^      
+                    = x1 in
+              let ^      
+                    = payloadSmall [rT] ^0 in
+              let ^      
                     = peek# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# in
               ^0 in
-      let x3
-            = let ^ = x in
-              let ^ = payloadSmall [rT] ^0 in
-              let ^
+      let x3     
+            = let ^      
+                    = x in
+              let ^      
+                    = payloadSmall [rT] ^0 in
+              let ^      
                     = peek# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# in
               ^0 in
-      let x4 = add# [Nat#] x2 x3 in
-      let x0
-            = let ^ = allocSmall [rT] TAG0# 8# in
-              let ^ = payloadSmall [rT] ^0 in
-              let _
+      let x4     
+            = add# [Nat#] x2 x3 in
+      let x0     
+            = let ^      
+                    = allocSmall [rT] TAG0# 8# in
+              let ^      
+                    = payloadSmall [rT] ^0 in
+              let _      
                     = poke# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# x4 in
               ^1 in
-      let x5
-            = let ^ = allocSmall [rT] TAG0# 8# in
-              let ^ = payloadSmall [rT] ^0 in
-              let _
+      let x5     
+            = let ^      
+                    = allocSmall [rT] TAG0# 8# in
+              let ^      
+                    = payloadSmall [rT] ^0 in
+              let _      
                     = poke# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# 2# in
               ^1 in
-      let x6
-            = let ^ = x5 in
-              let ^ = payloadSmall [rT] ^0 in
-              let ^
+      let x6     
+            = let ^      
+                    = x5 in
+              let ^      
+                    = payloadSmall [rT] ^0 in
+              let ^      
                     = peek# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# in
               ^0 in
-      let x7
-            = let ^ = x0 in
-              let ^ = payloadSmall [rT] ^0 in
-              let ^
+      let x7     
+            = let ^      
+                    = x0 in
+              let ^      
+                    = payloadSmall [rT] ^0 in
+              let ^      
                     = peek# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# in
               ^0 in
-      let x8 = add# [Nat#] x6 x7 in
-      let ^ = allocSmall [rT] TAG0# 8# in
-      let ^ = payloadSmall [rT] ^0 in
-      let _
+      let x8     
+            = add# [Nat#] x6 x7 in
+      let ^      
+            = allocSmall [rT] TAG0# 8# in
+      let ^      
+            = payloadSmall [rT] ^0 in
+      let _      
             = poke# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# x8 in
       ^1
 }
@@ -64,23 +82,29 @@ module Test with
 letrec {
   neg: Ptr# rT Obj -> Ptr# rT Obj
     = λ(x: Ptr# rT Obj).
-      let x0
-            = let ^ = x in
-              let ^ = payloadSmall [rT] ^0 in
-              let ^
+      let x0     
+            = let ^      
+                    = x in
+              let ^      
+                    = payloadSmall [rT] ^0 in
+              let ^      
                     = peek# [rT] [Bool#] (castPtr# [rT] [Bool#] [Word8#] ^0) 0# in
               ^0 in
       case x0 of {
         True#  
-         -> let ^ = allocSmall [rT] TAG0# 8# in
-            let ^ = payloadSmall [rT] ^0 in
-            let _
+         -> let ^      
+                  = allocSmall [rT] TAG0# 8# in
+            let ^      
+                  = payloadSmall [rT] ^0 in
+            let _      
                   = poke# [rT] [Bool#] (castPtr# [rT] [Bool#] [Word8#] ^0) 0# False# in
             ^1;
         _ 
-         -> let ^ = allocSmall [rT] TAG0# 8# in
-            let ^ = payloadSmall [rT] ^0 in
-            let _
+         -> let ^      
+                  = allocSmall [rT] TAG0# 8# in
+            let ^      
+                  = payloadSmall [rT] ^0 in
+            let _      
                   = poke# [rT] [Bool#] (castPtr# [rT] [Bool#] [Word8#] ^0) 0# True# in
             ^1
       }
@@ -92,29 +116,37 @@ module Test with
 letrec {
   foo: Ptr# rT Obj -> Ptr# rT Obj
     = λ(x: Ptr# rT Obj).
-      let x0
-            = let ^ = x in
-              let ^ = payloadSmall [rT] ^0 in
-              let ^
+      let x0     
+            = let ^      
+                    = x in
+              let ^      
+                    = payloadSmall [rT] ^0 in
+              let ^      
                     = peek# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# in
               ^0 in
       case x0 of {
         5#  
-         -> let ^ = allocSmall [rT] TAG0# 8# in
-            let ^ = payloadSmall [rT] ^0 in
-            let _
+         -> let ^      
+                  = allocSmall [rT] TAG0# 8# in
+            let ^      
+                  = payloadSmall [rT] ^0 in
+            let _      
                   = poke# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# 6# in
             ^1;
         6#  
-         -> let ^ = allocSmall [rT] TAG0# 8# in
-            let ^ = payloadSmall [rT] ^0 in
-            let _
+         -> let ^      
+                  = allocSmall [rT] TAG0# 8# in
+            let ^      
+                  = payloadSmall [rT] ^0 in
+            let _      
                   = poke# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# 7# in
             ^1;
         _ 
-         -> let ^ = allocSmall [rT] TAG0# 8# in
-            let ^ = payloadSmall [rT] ^0 in
-            let _
+         -> let ^      
+                  = allocSmall [rT] TAG0# 8# in
+            let ^      
+                  = payloadSmall [rT] ^0 in
+            let _      
                   = poke# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# 0# in
             ^1
       }
@@ -126,38 +158,48 @@ module Test with
 letrec {
   foo: Ptr# rT Obj -> Ptr# rT Obj -> Ptr# rT Obj
     = λ(x y: Ptr# rT Obj).
-      let x0
-            = let ^ = x in
-              let ^ = payloadSmall [rT] ^0 in
-              let ^
+      let x0     
+            = let ^      
+                    = x in
+              let ^      
+                    = payloadSmall [rT] ^0 in
+              let ^      
                     = peek# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# in
               ^0 in
       case x0 of {
         0#  
-         -> let x1
-                  = let ^ = y in
-                    let ^ = payloadSmall [rT] ^0 in
-                    let ^
+         -> let x1     
+                  = let ^      
+                          = y in
+                    let ^      
+                          = payloadSmall [rT] ^0 in
+                    let ^      
                           = peek# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# in
                     ^0 in
             case x1 of {
               0#  
-               -> let ^ = allocSmall [rT] TAG0# 8# in
-                  let ^ = payloadSmall [rT] ^0 in
-                  let _
+               -> let ^      
+                        = allocSmall [rT] TAG0# 8# in
+                  let ^      
+                        = payloadSmall [rT] ^0 in
+                  let _      
                         = poke# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# 1# in
                   ^1;
               _ 
-               -> let ^ = allocSmall [rT] TAG0# 8# in
-                  let ^ = payloadSmall [rT] ^0 in
-                  let _
+               -> let ^      
+                        = allocSmall [rT] TAG0# 8# in
+                  let ^      
+                        = payloadSmall [rT] ^0 in
+                  let _      
                         = poke# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# 0# in
                   ^1
             };
         _ 
-         -> let ^ = allocSmall [rT] TAG0# 8# in
-            let ^ = payloadSmall [rT] ^0 in
-            let _
+         -> let ^      
+                  = allocSmall [rT] TAG0# 8# in
+            let ^      
+                  = payloadSmall [rT] ^0 in
+            let _      
                   = poke# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# 0# in
             ^1
       }
@@ -169,31 +211,40 @@ module Test with
 letrec {
   add: Ptr# rT Obj -> Ptr# rT Obj -> Ptr# rT Obj
     = λ(x y: Ptr# rT Obj).
-      let x0
-            = let ^ = x in
-              let ^ = payloadSmall [rT] ^0 in
-              let ^
+      let x0     
+            = let ^      
+                    = x in
+              let ^      
+                    = payloadSmall [rT] ^0 in
+              let ^      
                     = peek# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# in
               ^0 in
-      let x1
-            = let ^ = y in
-              let ^ = payloadSmall [rT] ^0 in
-              let ^
+      let x1     
+            = let ^      
+                    = y in
+              let ^      
+                    = payloadSmall [rT] ^0 in
+              let ^      
                     = peek# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# in
               ^0 in
-      let x2 = add# [Nat#] x0 x1 in
-      let ^ = allocSmall [rT] TAG0# 8# in
-      let ^ = payloadSmall [rT] ^0 in
-      let _
+      let x2     
+            = add# [Nat#] x0 x1 in
+      let ^      
+            = allocSmall [rT] TAG0# 8# in
+      let ^      
+            = payloadSmall [rT] ^0 in
+      let _      
             = poke# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# x2 in
       ^1;
   
   foo: Ptr# rT Obj -> Ptr# rT Obj
     = λ(x: Ptr# rT Obj).
-      let x3
-            = let ^ = allocSmall [rT] TAG0# 8# in
-              let ^ = payloadSmall [rT] ^0 in
-              let _
+      let x3     
+            = let ^      
+                    = allocSmall [rT] TAG0# 8# in
+              let ^      
+                    = payloadSmall [rT] ^0 in
+              let _      
                     = poke# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# 5# in
               ^1 in
       add x x3
@@ -207,10 +258,12 @@ letrec {
     = λ(x: Ptr# rT Obj).
       case getTag [rT] x of {
         TAG0#  
-         -> let ^ = allocBoxed [rT] TAG1# 0# in
+         -> let ^      
+                  = allocBoxed [rT] TAG1# 0# in
             ^0;
         TAG1#  
-         -> let ^ = allocBoxed [rT] TAG0# 0# in
+         -> let ^      
+                  = allocBoxed [rT] TAG0# 0# in
             ^0;
         _ 
          -> fail# [Ptr# rT Obj]
@@ -225,13 +278,17 @@ letrec {
     = λ(xx: Ptr# rT Obj).
       case getTag [rT] xx of {
         TAG0#  
-         -> let x = getBoxed [rT] [rT] xx 0# in
-            let x0 = getBoxed [rT] [rT] xx 1# in
+         -> let x      
+                  = getBoxed [rT] [rT] xx 0# in
+            let x0     
+                  = getBoxed [rT] [rT] xx 1# in
             x;
         _ 
-         -> let ^ = allocSmall [rT] TAG0# 8# in
-            let ^ = payloadSmall [rT] ^0 in
-            let _
+         -> let ^      
+                  = allocSmall [rT] TAG0# 8# in
+            let ^      
+                  = payloadSmall [rT] ^0 in
+            let _      
                   = poke# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# 0# in
             ^1
       }
@@ -246,8 +303,10 @@ letrec {
       λ(def xx: Ptr# rT Obj).
       case getTag [rT] xx of {
         TAG0#  
-         -> let x = getBoxed [rT] [rT] xx 0# in
-            let x0 = getBoxed [rT] [rT] xx 1# in
+         -> let x      
+                  = getBoxed [rT] [rT] xx 0# in
+            let x0     
+                  = getBoxed [rT] [rT] xx 1# in
             x;
         _ 
          -> def
@@ -261,23 +320,29 @@ module Test with
 letrec {
   swap: Ptr# rT Obj -> Ptr# rT Obj
     = λ(x: Ptr# rT Obj).
-      let x0
-            = let ^ = x in
-              let ^ = payloadSmall [rT] ^0 in
-              let ^
+      let x0     
+            = let ^      
+                    = x in
+              let ^      
+                    = payloadSmall [rT] ^0 in
+              let ^      
                     = peek# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# in
               ^0 in
       case x0 of {
         0#  
-         -> let ^ = allocSmall [rT] TAG0# 8# in
-            let ^ = payloadSmall [rT] ^0 in
-            let _
+         -> let ^      
+                  = allocSmall [rT] TAG0# 8# in
+            let ^      
+                  = payloadSmall [rT] ^0 in
+            let _      
                   = poke# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# 1# in
             ^1;
         _ 
-         -> let ^ = allocSmall [rT] TAG0# 8# in
-            let ^ = payloadSmall [rT] ^0 in
-            let _
+         -> let ^      
+                  = allocSmall [rT] TAG0# 8# in
+            let ^      
+                  = payloadSmall [rT] ^0 in
+            let _      
                   = poke# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# 0# in
             ^1
       }
@@ -294,8 +359,10 @@ letrec {
       λ(def xx: Ptr# rT Obj).
       case getTag [rT] xx of {
         TAG0#  
-         -> let x = getBoxed [rT] [rT] xx 0# in
-            let x0 = getBoxed [rT] [rT] xx 1# in
+         -> let x      
+                  = getBoxed [rT] [rT] xx 0# in
+            let x0     
+                  = getBoxed [rT] [rT] xx 1# in
             x;
         _ 
          -> def
@@ -303,24 +370,32 @@ letrec {
   
   foo: Ptr# rT Obj -> Ptr# rT Obj
     = λ(_: Ptr# rT Obj).
-      let x1
-            = let ^ = allocBoxed [rT] TAG1# 0# in
+      let x1     
+            = let ^      
+                    = allocBoxed [rT] TAG1# 0# in
               ^0 in
-      let x3
-            = let ^ = allocSmall [rT] TAG0# 8# in
-              let ^ = payloadSmall [rT] ^0 in
-              let _
+      let x3     
+            = let ^      
+                    = allocSmall [rT] TAG0# 8# in
+              let ^      
+                    = payloadSmall [rT] ^0 in
+              let _      
                     = poke# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# 1# in
               ^1 in
-      let x2
-            = let ^ = allocBoxed [rT] TAG0# 2# in
-              let _ = setBoxed [rT] [rT] ^0 0# x3 in
-              let _ = setBoxed [rT] [rT] ^0 1# x1 in
+      let x2     
+            = let ^      
+                    = allocBoxed [rT] TAG0# 2# in
+              let _      
+                    = setBoxed [rT] [rT] ^0 0# x3 in
+              let _      
+                    = setBoxed [rT] [rT] ^0 1# x1 in
               ^0 in
-      let x4
-            = let ^ = allocSmall [rT] TAG0# 8# in
-              let ^ = payloadSmall [rT] ^0 in
-              let _
+      let x4     
+            = let ^      
+                    = allocSmall [rT] TAG0# 8# in
+              let ^      
+                    = payloadSmall [rT] ^0 in
+              let _      
                     = poke# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# 0# in
               ^1 in
       head [rT] x4 x2
@@ -337,8 +412,10 @@ letrec {
       λ(def xx: Ptr# rT Obj).
       case getTag [rT] xx of {
         TAG0#  
-         -> let x = getBoxed [rT] [rT] xx 0# in
-            let x0 = getBoxed [rT] [rT] xx 1# in
+         -> let x      
+                  = getBoxed [rT] [rT] xx 0# in
+            let x0     
+                  = getBoxed [rT] [rT] xx 1# in
             x;
         _ 
          -> def
@@ -347,19 +424,25 @@ letrec {
   foo: [r: Region].Ptr# rT Obj -> Ptr# rT Obj
     = Λ(r: Region).
       λ(_: Ptr# rT Obj).
-      let x1
-            = let ^ = allocBoxed [rT] TAG0# 0# in
+      let x1     
+            = let ^      
+                    = allocBoxed [rT] TAG0# 0# in
               ^0 in
-      let x2
-            = let ^ = allocBoxed [rT] TAG1# 0# in
+      let x2     
+            = let ^      
+                    = allocBoxed [rT] TAG1# 0# in
               ^0 in
-      let x3
-            = let ^ = allocBoxed [rT] TAG1# 0# in
+      let x3     
+            = let ^      
+                    = allocBoxed [rT] TAG1# 0# in
               ^0 in
-      let x4
-            = let ^ = allocBoxed [rT] TAG0# 2# in
-              let _ = setBoxed [rT] [rT] ^0 0# x2 in
-              let _ = setBoxed [rT] [rT] ^0 1# x3 in
+      let x4     
+            = let ^      
+                    = allocBoxed [rT] TAG0# 2# in
+              let _      
+                    = setBoxed [rT] [rT] ^0 0# x2 in
+              let _      
+                    = setBoxed [rT] [rT] ^0 1# x3 in
               ^0 in
       head [rT] x1 x4
 }

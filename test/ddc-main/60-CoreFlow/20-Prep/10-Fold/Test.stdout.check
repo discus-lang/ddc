@@ -13,7 +13,8 @@ letrec {
       let x7: Process# p k
             = sreduce# [p] [k] [Int#] u2
                   (λ(x4 x5: Int#). mul# [Int#] x4 x5) 1i# elems in
-      let x8: Process# p k = pjoin# [p] [k] x3 x7 in
+      let x8: Process# p k
+            = pjoin# [p] [k] x3 x7 in
       x8
 }
 

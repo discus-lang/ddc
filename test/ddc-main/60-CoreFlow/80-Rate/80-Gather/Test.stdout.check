@@ -8,10 +8,14 @@ letrec {
       λ(ix$rv: RateVec# flub$'$k Nat#).λ(orig$rv: RateVec# orig$k Int#).λ(flub: Vector# Int#).
       Λ(flub$PROC: Proc).
       λ(_: Unit).
-      let orig$s: Series# flub$PROC orig$k Int# = series# [flub$PROC] [orig$k] [Int#] orig$rv in
-      let ix$s: Series# flub$PROC flub$'$k Nat# = series# [flub$PROC] [flub$'$k] [Nat#] ix$rv in
-      let flub$s: Series# flub$PROC flub$'$k Int# = sgather# [flub$PROC] [orig$k] [flub$'$k] [Int#] orig$rv ix$s in
-      let flub$proc: Process# flub$PROC flub$'$k = sfill# [flub$PROC] [flub$'$k] [Int#] flub flub$s in
+      let orig$s: Series# flub$PROC orig$k Int#
+            = series# [flub$PROC] [orig$k] [Int#] orig$rv in
+      let ix$s: Series# flub$PROC flub$'$k Nat#
+            = series# [flub$PROC] [flub$'$k] [Nat#] ix$rv in
+      let flub$s: Series# flub$PROC flub$'$k Int#
+            = sgather# [flub$PROC] [orig$k] [flub$'$k] [Int#] orig$rv ix$s in
+      let flub$proc: Process# flub$PROC flub$'$k
+            = sfill# [flub$PROC] [flub$'$k] [Int#] flub flub$s in
       flub$proc;
   
   test: Vector# Int# -> Vector# Nat# -> Vector# Int#
@@ -36,23 +40,29 @@ letrec {
       λ(ix$rv: RateVec# ix$k Nat#).λ(orig$rv: RateVec# orig$k Int#).λ(flub: Vector# Int#).λ(len: Nat#).
       Λ(ix'$PROC: Proc).
       λ(_: Unit).
-      let orig$s: Series# ix'$PROC orig$k Int# = series# [ix'$PROC] [orig$k] [Int#] orig$rv in
-      let ix$s: Series# ix'$PROC ix$k Nat# = series# [ix'$PROC] [ix$k] [Nat#] ix$rv in
+      let orig$s: Series# ix'$PROC orig$k Int#
+            = series# [ix'$PROC] [orig$k] [Int#] orig$rv in
+      let ix$s: Series# ix'$PROC ix$k Nat#
+            = series# [ix'$PROC] [ix$k] [Nat#] ix$rv in
       let ix'$flags: Series# ix'$PROC ix$k Bool#
             = smap# [ix'$PROC] [ix$k] [Nat#] [Bool#]
                   (λ(x0: Nat#). gt# [Nat#] len x0) ix$s in
       smkSel# [ix'$PROC] [ix$k] [ix$k] ix'$flags
           (Λ(ix'$'$k: Rate).
            λ(ix'$sel: Sel1# ix'$PROC ix$k ix'$'$k).
-           let ix'$s: Series# ix'$PROC ix'$'$k Nat# = spack# [ix'$PROC] [ix$k] [ix'$'$k] [Nat#] ix'$sel ix$s in
-           let flub$s: Series# ix'$PROC ix'$'$k Int# = sgather# [ix'$PROC] [orig$k] [ix'$'$k] [Int#] orig$rv ix'$s in
-           let flub$proc: Process# ix'$PROC ix'$'$k = sfill# [ix'$PROC] [ix'$'$k] [Int#] flub flub$s in
+           let ix'$s: Series# ix'$PROC ix'$'$k Nat#
+                 = spack# [ix'$PROC] [ix$k] [ix'$'$k] [Nat#] ix'$sel ix$s in
+           let flub$s: Series# ix'$PROC ix'$'$k Int#
+                 = sgather# [ix'$PROC] [orig$k] [ix'$'$k] [Int#] orig$rv ix'$s in
+           let flub$proc: Process# ix'$PROC ix'$'$k
+                 = sfill# [ix'$PROC] [ix'$'$k] [Int#] flub flub$s in
            presize# [ix'$PROC] [ix'$'$k] [ix$k]
                (rsel1# [ix'$PROC] [ix'$'$k] [ix$k] [ix'$'$k] ix'$sel (rid# [ix'$PROC] [ix'$'$k])) flub$proc);
   
   test: Vector# Int# -> Vector# Nat# -> Vector# Int#
     = λ(orig: Vector# Int#).λ(ix: Vector# Nat#).
-      let len: Nat# = vlength# [Int#] orig in
+      let len: Nat#
+            = vlength# [Int#] orig in
       let flub: Vector# Int#
             = vnew# [Int#] (vlength# [Int#] orig) in
       let ix'$runproc: Unit

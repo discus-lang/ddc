@@ -33,6 +33,7 @@ module DDC.Core.Tetra
         , readOpErrorFlag
         , readPrimTyCon,        readPrimTyConStem
         , readPrimArithFlag
+        , readPrimCastFlag
 
         -- * Name Generation
         , freshT

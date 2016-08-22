@@ -183,11 +183,13 @@ instance PrettyLanguage l => Pretty (GLets l) where
  pprModePrec mode _ lts
   = let pprX    = pprModePrec (modeLetsExp mode) 0
     in case lts of
+
+
         LLet b x
          ->  text "let"
-         <+> align (  ppr b
-                 <> nest 2 (  breakWhen (not $ isSimpleX x)
-                           <> text "=" <+> align (pprX x)))
+         <+> align ( ppr b
+                 <>  nest 2 (  -- breakWhen (not $ isSimpleX x)
+                              text "=" <+> align (pprX x)))
 
         LRec bxs
          -> let pprLetRecBind (b, x)

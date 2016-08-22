@@ -167,7 +167,7 @@ textOfWord8 (w8: Word8#): Text
 
 -- | Wrap a single character into a text object.
 textOfChar (c: Word32#): Text
- = "TODO" -- "TODO" textOfWord8 (truncate# c)
+ = "derp" -- textOfWord8 (truncate# c)
 
 
 -- TODO: using $ between TextVec and body causes segfault.

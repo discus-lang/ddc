@@ -80,6 +80,7 @@ import qualified Data.Text              as T
 import DDC.Core.Tetra   
         ( readPrimTyCon
         , readPrimArithFlag
+        , readPrimCastFlag
         , readOpFun
         , readOpErrorFlag
         , readOpVectorFlag)
@@ -163,7 +164,10 @@ readPrimVal str
         | Just (p, False) <- readPrimArithFlag str  
         = Just $ PrimValArith  p
 
-        | Just (p, False) <- readOpVectorFlag str
+        | Just (p, False) <- readPrimCastFlag  str
+        = Just $ PrimValCast   p
+
+        | Just (p, False) <- readOpVectorFlag  str
         = Just $ PrimValVector p
 
         | Just p          <- readOpFun str

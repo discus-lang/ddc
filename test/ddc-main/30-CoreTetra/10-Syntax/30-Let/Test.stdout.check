@@ -1,14 +1,16 @@
 ok
 
 -- Non-binding let.
-let _: Unit = () in
+let _: Unit
+      = () in
 ()
 :*: Unit
 :!: Pure
 
 
 -- Binding let.
-let x: Unit = () in
+let x: Unit
+      = () in
 x
 :*: Unit
 :!: Pure
@@ -47,8 +49,10 @@ f ()
 
 
 -- Multiple lets.
-let x: Unit = () in
-let y: Unit = () in
+let x: Unit
+      = () in
+let y: Unit
+      = () in
 y
 :*: Unit
 :!: Pure
@@ -57,8 +61,10 @@ y
 -- Mutltiple lets with debruijn indices.
 -- If the bound variable is pushed on the stack when checking
 -- the right of the non-recursive binding then this is mistyped.
-let ^: Unit = () in
-let ^: Unit = ^0 in
+let ^: Unit
+      = () in
+let ^: Unit
+      = ^0 in
 ^0
 :*: Unit
 :!: Pure
@@ -104,16 +110,20 @@ add# [Nat#] (f ()) (f ())
 
 -- Multiple lets and private. 
 private r1 r2 in
-let x1: Nat# = 2# in
-let x2: Nat# = 3# in
+let x1: Nat#
+      = 2# in
+let x2: Nat#
+      = 3# in
 add# [Nat#] x1 x2
 :*: Nat#
 :!: Pure
 
 -- As above, but no annots on binders.
 private r1 r2 in
-let x1: Nat# = 2# in
-let x2: Nat# = 3# in
+let x1: Nat#
+      = 2# in
+let x2: Nat#
+      = 3# in
 add# [Nat#] x1 x2
 :*: Nat#
 :!: Pure

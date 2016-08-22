@@ -8,66 +8,90 @@ letrec {
   test: [p: Proc].[k: Rate].RateNat# k -> Ref# Float32# -> Series# p k Float32# -> Series# p k Float32# -> Unit
     = Λ(p: Proc).Λ(k: Rate).
       λ(n: RateNat# k).λ(x1: Ref# Float32#).λ(s1 s2: Series# p k Float32#).
-      let _
+      let _      
             = split$8# [k] n
                   (λ(x3: RateNat# (Down8# k)).
-                   let s1$down = down$8# [p] [k] [Float32#] x3 s1 in
-                   let s2$down = down$8# [p] [k] [Float32#] x3 s2 in
-                   let x10 = vrep$8# [Float32#] 0.0f32# in
-                   let x1$vec
+                   let s1$down
+                         = down$8# [p] [k] [Float32#] x3 s1 in
+                   let s2$down
+                         = down$8# [p] [k] [Float32#] x3 s2 in
+                   let x10     = vrep$8# [Float32#] 0.0f32# in
+                   let x1$vec 
                          = new# [Vec8# Float32#] x10 in
-                   let _
+                   let _      
                          = loop# [Down8# k]
                                (λ(x6: Nat#).
-                                let s1$elem = next$8# [Float32#] [p] [k] s1$down x6 in
-                                let s2$elem = next$8# [Float32#] [p] [k] s2$down x6 in
-                                let s3$elem = vmul$8# [Float32#] s1$elem s2$elem in
-                                let x1$val
+                                let s1$elem
+                                      = next$8# [Float32#] [p] [k] s1$down x6 in
+                                let s2$elem
+                                      = next$8# [Float32#] [p] [k] s2$down x6 in
+                                let s3$elem
+                                      = vmul$8# [Float32#] s1$elem s2$elem in
+                                let x1$val 
                                       = read# [Vec8# Float32#] x1$vec in
-                                let x11 = vadd$8# [Float32#] x1$val s3$elem in
-                                let _
+                                let x11     = vadd$8# [Float32#] x1$val s3$elem in
+                                let _      
                                       = write# [Vec8# Float32#] x1$vec x11 in
                                 ()) in
-                   let x1$res
+                   let x1$res 
                          = read# [Vec8# Float32#] x1$vec in
-                   let x1$init = read# [Float32#] x1 in
-                   let x13 = vproj$8$0# [Float32#] x1$res in
-                   let x1$res$0 = add# [Float32#] x1$init x13 in
-                   let x15 = vproj$8$1# [Float32#] x1$res in
-                   let x1$res$1 = add# [Float32#] x1$res$0 x15 in
-                   let x17 = vproj$8$2# [Float32#] x1$res in
-                   let x1$res$2 = add# [Float32#] x1$res$1 x17 in
-                   let x19 = vproj$8$3# [Float32#] x1$res in
-                   let x1$res$3 = add# [Float32#] x1$res$2 x19 in
-                   let x21 = vproj$8$4# [Float32#] x1$res in
-                   let x1$res$4 = add# [Float32#] x1$res$3 x21 in
-                   let x23 = vproj$8$5# [Float32#] x1$res in
-                   let x1$res$5 = add# [Float32#] x1$res$4 x23 in
-                   let x25 = vproj$8$6# [Float32#] x1$res in
-                   let x1$res$6 = add# [Float32#] x1$res$5 x25 in
-                   let x27 = vproj$8$7# [Float32#] x1$res in
-                   let x1$res$7 = add# [Float32#] x1$res$6 x27 in
-                   let _ = write# [Float32#] x1 x1$res$7 in
+                   let x1$init
+                         = read# [Float32#] x1 in
+                   let x13     = vproj$8$0# [Float32#] x1$res in
+                   let x1$res$0
+                         = add# [Float32#] x1$init x13 in
+                   let x15     = vproj$8$1# [Float32#] x1$res in
+                   let x1$res$1
+                         = add# [Float32#] x1$res$0 x15 in
+                   let x17     = vproj$8$2# [Float32#] x1$res in
+                   let x1$res$2
+                         = add# [Float32#] x1$res$1 x17 in
+                   let x19     = vproj$8$3# [Float32#] x1$res in
+                   let x1$res$3
+                         = add# [Float32#] x1$res$2 x19 in
+                   let x21     = vproj$8$4# [Float32#] x1$res in
+                   let x1$res$4
+                         = add# [Float32#] x1$res$3 x21 in
+                   let x23     = vproj$8$5# [Float32#] x1$res in
+                   let x1$res$5
+                         = add# [Float32#] x1$res$4 x23 in
+                   let x25     = vproj$8$6# [Float32#] x1$res in
+                   let x1$res$6
+                         = add# [Float32#] x1$res$5 x25 in
+                   let x27     = vproj$8$7# [Float32#] x1$res in
+                   let x1$res$7
+                         = add# [Float32#] x1$res$6 x27 in
+                   let _      
+                         = write# [Float32#] x1 x1$res$7 in
                    ())
                   (λ(x8: RateNat# (Tail8# k)).
-                   let s1$tail = tail$8# [p] [k] [Float32#] x8 s1 in
-                   let s2$tail = tail$8# [p] [k] [Float32#] x8 s2 in
-                   let x1$init = read# [Float32#] x1 in
-                   let x1$acc = new# [Float32#] x1$init in
-                   let _
+                   let s1$tail
+                         = tail$8# [p] [k] [Float32#] x8 s1 in
+                   let s2$tail
+                         = tail$8# [p] [k] [Float32#] x8 s2 in
+                   let x1$init
+                         = read# [Float32#] x1 in
+                   let x1$acc 
+                         = new# [Float32#] x1$init in
+                   let _      
                          = loop# [Tail8# k]
                                (λ(x9: Nat#).
                                 let s1$elem
                                       = next# [Float32#] [p] [Tail8# k] s1$tail x9 in
                                 let s2$elem
                                       = next# [Float32#] [p] [Tail8# k] s2$tail x9 in
-                                let s3$elem = mul# [Float32#] s1$elem s2$elem in
-                                let x1$val = read# [Float32#] x1$acc in
-                                let x28 = add# [Float32#] x1$val s3$elem in
-                                let _ = write# [Float32#] x1$acc x28 in
+                                let s3$elem
+                                      = mul# [Float32#] s1$elem s2$elem in
+                                let x1$val 
+                                      = read# [Float32#] x1$acc in
+                                let x28     = add# [Float32#] x1$val s3$elem in
+                                let _      
+                                      = write# [Float32#] x1$acc x28 in
                                 ()) in
-                   let x1$res = read# [Float32#] x1$acc in
-                   let _ = write# [Float32#] x1 x1$res in
+                   let x1$res 
+                         = read# [Float32#] x1$acc in
+                   let _      
+                         = write# [Float32#] x1 x1$res in
                    ()) in
       ()
 }
@@ -78,87 +102,116 @@ letrec {
   eatPoints: [p: Proc].[k: Rate].Float32# -> Float32# -> Vector# Float32# -> Ref# Float32# -> RateNat# k -> Series# p k Float32# -> Series# p k Float32# -> Unit
     = Λ(p: Proc).Λ(k: Rate).
       λ(ox oy: Float32#).λ(v0: Vector# Float32#).λ(r0: Ref# Float32#).λ(dsr: RateNat# k).λ(s1 s2: Series# p k Float32#).
-      let _
+      let _      
             = split$8# [k] dsr
                   (λ(x0: RateNat# (Down8# k)).
-                   let s1$down = down$8# [p] [k] [Float32#] x0 s1 in
-                   let s2$down = down$8# [p] [k] [Float32#] x0 s2 in
-                   let v0$buf = vbuf# [Float32#] v0 in
-                   let x4 = vrep$8# [Float32#] 0.0f32# in
-                   let r0$vec
+                   let s1$down
+                         = down$8# [p] [k] [Float32#] x0 s1 in
+                   let s2$down
+                         = down$8# [p] [k] [Float32#] x0 s2 in
+                   let v0$buf 
+                         = vbuf# [Float32#] v0 in
+                   let x4      = vrep$8# [Float32#] 0.0f32# in
+                   let r0$vec 
                          = new# [Vec8# Float32#] x4 in
-                   let _
+                   let _      
                          = loop# [Down8# k]
                                (λ(x1: Nat#).
-                                let s1$elem = next$8# [Float32#] [p] [k] s1$down x1 in
-                                let s2$elem = next$8# [Float32#] [p] [k] s2$down x1 in
-                                let x5 = vrep$8# [Float32#] ox in
-                                let x6 = vsub$8# [Float32#] s1$elem x5 in
-                                let x7 = vrep$8# [Float32#] ox in
-                                let x8 = vsub$8# [Float32#] s1$elem x7 in
-                                let x9 = vmul$8# [Float32#] x6 x8 in
-                                let x11 = vrep$8# [Float32#] oy in
-                                let x12 = vsub$8# [Float32#] s2$elem x11 in
-                                let x13 = vrep$8# [Float32#] oy in
-                                let x14 = vsub$8# [Float32#] s2$elem x13 in
-                                let x15 = vmul$8# [Float32#] x12 x14 in
-                                let s$elem = vadd$8# [Float32#] x9 x15 in
-                                let _ = vwrite$8# [Float32#] v0$buf x1 s$elem in
-                                let r0$val
+                                let s1$elem
+                                      = next$8# [Float32#] [p] [k] s1$down x1 in
+                                let s2$elem
+                                      = next$8# [Float32#] [p] [k] s2$down x1 in
+                                let x5      = vrep$8# [Float32#] ox in
+                                let x6      = vsub$8# [Float32#] s1$elem x5 in
+                                let x7      = vrep$8# [Float32#] ox in
+                                let x8      = vsub$8# [Float32#] s1$elem x7 in
+                                let x9      = vmul$8# [Float32#] x6 x8 in
+                                let x11     = vrep$8# [Float32#] oy in
+                                let x12     = vsub$8# [Float32#] s2$elem x11 in
+                                let x13     = vrep$8# [Float32#] oy in
+                                let x14     = vsub$8# [Float32#] s2$elem x13 in
+                                let x15     = vmul$8# [Float32#] x12 x14 in
+                                let s$elem 
+                                      = vadd$8# [Float32#] x9 x15 in
+                                let _      
+                                      = vwrite$8# [Float32#] v0$buf x1 s$elem in
+                                let r0$val 
                                       = read# [Vec8# Float32#] r0$vec in
-                                let x16 = vadd$8# [Float32#] r0$val s$elem in
-                                let _
+                                let x16     = vadd$8# [Float32#] r0$val s$elem in
+                                let _      
                                       = write# [Vec8# Float32#] r0$vec x16 in
                                 ()) in
-                   let r0$res
+                   let r0$res 
                          = read# [Vec8# Float32#] r0$vec in
-                   let r0$init = read# [Float32#] r0 in
-                   let x18 = vproj$8$0# [Float32#] r0$res in
-                   let r0$res$0 = add# [Float32#] r0$init x18 in
-                   let x20 = vproj$8$1# [Float32#] r0$res in
-                   let r0$res$1 = add# [Float32#] r0$res$0 x20 in
-                   let x22 = vproj$8$2# [Float32#] r0$res in
-                   let r0$res$2 = add# [Float32#] r0$res$1 x22 in
-                   let x24 = vproj$8$3# [Float32#] r0$res in
-                   let r0$res$3 = add# [Float32#] r0$res$2 x24 in
-                   let x26 = vproj$8$4# [Float32#] r0$res in
-                   let r0$res$4 = add# [Float32#] r0$res$3 x26 in
-                   let x28 = vproj$8$5# [Float32#] r0$res in
-                   let r0$res$5 = add# [Float32#] r0$res$4 x28 in
-                   let x30 = vproj$8$6# [Float32#] r0$res in
-                   let r0$res$6 = add# [Float32#] r0$res$5 x30 in
-                   let x32 = vproj$8$7# [Float32#] r0$res in
-                   let r0$res$7 = add# [Float32#] r0$res$6 x32 in
-                   let _ = write# [Float32#] r0 r0$res$7 in
+                   let r0$init
+                         = read# [Float32#] r0 in
+                   let x18     = vproj$8$0# [Float32#] r0$res in
+                   let r0$res$0
+                         = add# [Float32#] r0$init x18 in
+                   let x20     = vproj$8$1# [Float32#] r0$res in
+                   let r0$res$1
+                         = add# [Float32#] r0$res$0 x20 in
+                   let x22     = vproj$8$2# [Float32#] r0$res in
+                   let r0$res$2
+                         = add# [Float32#] r0$res$1 x22 in
+                   let x24     = vproj$8$3# [Float32#] r0$res in
+                   let r0$res$3
+                         = add# [Float32#] r0$res$2 x24 in
+                   let x26     = vproj$8$4# [Float32#] r0$res in
+                   let r0$res$4
+                         = add# [Float32#] r0$res$3 x26 in
+                   let x28     = vproj$8$5# [Float32#] r0$res in
+                   let r0$res$5
+                         = add# [Float32#] r0$res$4 x28 in
+                   let x30     = vproj$8$6# [Float32#] r0$res in
+                   let r0$res$6
+                         = add# [Float32#] r0$res$5 x30 in
+                   let x32     = vproj$8$7# [Float32#] r0$res in
+                   let r0$res$7
+                         = add# [Float32#] r0$res$6 x32 in
+                   let _      
+                         = write# [Float32#] r0 r0$res$7 in
                    ())
                   (λ(x2: RateNat# (Tail8# k)).
-                   let s1$tail = tail$8# [p] [k] [Float32#] x2 s1 in
-                   let s2$tail = tail$8# [p] [k] [Float32#] x2 s2 in
-                   let v0$tail = vtail8# [k] [Float32#] x2 v0 in
-                   let v0$buf = vbuf# [Float32#] v0$tail in
-                   let r0$init = read# [Float32#] r0 in
-                   let r0$acc = new# [Float32#] r0$init in
-                   let _
+                   let s1$tail
+                         = tail$8# [p] [k] [Float32#] x2 s1 in
+                   let s2$tail
+                         = tail$8# [p] [k] [Float32#] x2 s2 in
+                   let v0$tail
+                         = vtail8# [k] [Float32#] x2 v0 in
+                   let v0$buf 
+                         = vbuf# [Float32#] v0$tail in
+                   let r0$init
+                         = read# [Float32#] r0 in
+                   let r0$acc 
+                         = new# [Float32#] r0$init in
+                   let _      
                          = loop# [Tail8# k]
                                (λ(x3: Nat#).
                                 let s1$elem
                                       = next# [Float32#] [p] [Tail8# k] s1$tail x3 in
                                 let s2$elem
                                       = next# [Float32#] [p] [Tail8# k] s2$tail x3 in
-                                let x33 = sub# [Float32#] s1$elem ox in
-                                let x34 = sub# [Float32#] s1$elem ox in
-                                let x35 = mul# [Float32#] x33 x34 in
-                                let x36 = sub# [Float32#] s2$elem oy in
-                                let x37 = sub# [Float32#] s2$elem oy in
-                                let x38 = mul# [Float32#] x36 x37 in
-                                let s$elem = add# [Float32#] x35 x38 in
-                                let _ = vwrite# [Float32#] v0$buf x3 s$elem in
-                                let r0$val = read# [Float32#] r0$acc in
-                                let x39 = add# [Float32#] r0$val s$elem in
-                                let _ = write# [Float32#] r0$acc x39 in
+                                let x33     = sub# [Float32#] s1$elem ox in
+                                let x34     = sub# [Float32#] s1$elem ox in
+                                let x35     = mul# [Float32#] x33 x34 in
+                                let x36     = sub# [Float32#] s2$elem oy in
+                                let x37     = sub# [Float32#] s2$elem oy in
+                                let x38     = mul# [Float32#] x36 x37 in
+                                let s$elem 
+                                      = add# [Float32#] x35 x38 in
+                                let _      
+                                      = vwrite# [Float32#] v0$buf x3 s$elem in
+                                let r0$val 
+                                      = read# [Float32#] r0$acc in
+                                let x39     = add# [Float32#] r0$val s$elem in
+                                let _      
+                                      = write# [Float32#] r0$acc x39 in
                                 ()) in
-                   let r0$res = read# [Float32#] r0$acc in
-                   let _ = write# [Float32#] r0 r0$res in
+                   let r0$res 
+                         = read# [Float32#] r0$acc in
+                   let _      
+                         = write# [Float32#] r0 r0$res in
                    ()) in
       ()
 }

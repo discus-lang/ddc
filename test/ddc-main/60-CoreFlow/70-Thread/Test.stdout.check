@@ -11,7 +11,8 @@ letrec {
       letcase T2# (^: World#) (k2__count: Ref# Nat#)  = new# [Nat#] 0# ^0 in
       letcase T2# (^: World#) (x4: Vector# a) 
         = vnewN# [a] [k0] (rateOfSeries# [p] [k0] [a] s0) ^0 in
-      let x4$buf: Buffer# a = vbuf# [a] x4 in
+      let x4$buf: Buffer# a
+            = vbuf# [a] x4 in
       letcase T1# (^: World#) 
         = loopn# [k0] (rateOfSeries# [p] [k0] [a] s0)
               (λ(x0: Nat#).λ(^: World#).
@@ -46,7 +47,8 @@ letrec {
       λ(s_aub: Series# p k Int#).λ(^: World#).
       letcase T2# (^: World#) (x6: Vector# Int#) 
         = vnewN# [Int#] [k] (rateOfSeries# [p] [k] [Int#] s_aub) ^0 in
-      let x6$buf: Buffer# Int# = vbuf# [Int#] x6 in
+      let x6$buf: Buffer# Int#
+            = vbuf# [Int#] x6 in
       letrec {
         loop_k: Nat# -> World# -> World#
           = λ(x0: Nat#).λ(^: World#).
@@ -55,8 +57,10 @@ letrec {
                -> ^0;
               _ 
                -> letcase T2# (^: World#) (s_aub__elem: Int#)  = next# [Int#] [p] [k] s_aub x0 ^0 in
-                  let x2__elem: Int# = add# [Int#] s_aub__elem 1i# in
-                  let x4__elem: Int# = mul# [Int#] x2__elem 2i# in
+                  let x2__elem: Int#
+                        = add# [Int#] s_aub__elem 1i# in
+                  let x4__elem: Int#
+                        = mul# [Int#] x2__elem 2i# in
                   letcase T1# (^: World#)  = vwrite# [Int#] x6$buf x0 x4__elem ^0 in
                   loop_k (add# [Nat#] x0 1#) ^0
             }
@@ -74,8 +78,10 @@ letrec {
   lower_ffold_rqB: [p: Proc].[k_c: Rate].Series# p k_c Int# -> World# -> Tuple2# World# Int#
     = Λ(p: Proc).Λ(k_c: Rate).
       λ(s_au5: Series# p k_c Int#).λ(^: World#).
-      let x3__acc_0: Int# = 0i# in
-      let x8__acc_0: Int# = 1i# in
+      let x3__acc_0: Int#
+            = 0i# in
+      let x8__acc_0: Int#
+            = 1i# in
       let k_c_length: Nat#
             = natOfRateNat# [k_c] (rateOfSeries# [p] [k_c] [Int#] s_au5) in
       letrec {
@@ -86,17 +92,24 @@ letrec {
                -> T3# [World#] [Int#] [Int#] ^0 x3__acc_1 x8__acc_1;
               _ 
                -> letcase T2# (^: World#) (s_au5__elem: Int#)  = next# [Int#] [p] [k_c] s_au5 x1 ^0 in
-                  let x0: Int# = x3__acc_1 in
-                  let x3__acc_2: Int# = add# [Int#] x0 s_au5__elem in
-                  let x5: Int# = x8__acc_1 in
-                  let x8__acc_2: Int# = mul# [Int#] x5 s_au5__elem in
+                  let x0: Int#
+                        = x3__acc_1 in
+                  let x3__acc_2: Int#
+                        = add# [Int#] x0 s_au5__elem in
+                  let x5: Int#
+                        = x8__acc_1 in
+                  let x8__acc_2: Int#
+                        = mul# [Int#] x5 s_au5__elem in
                   loop_k_c (add# [Nat#] x1 1#) x3__acc_2 x8__acc_2 ^0
             }
       } in
       letcase T3# (^: World#) (x3__acc_2: Int#) (x8__acc_2: Int#)  = loop_k_c 0# x3__acc_0 x8__acc_0 ^0 in
-      let x3: Int# = x3__acc_2 in
-      let x8: Int# = x8__acc_2 in
-      let x10: Int# = add# [Int#] x3 x8 in
+      let x3: Int#
+            = x3__acc_2 in
+      let x8: Int#
+            = x8__acc_2 in
+      let x10: Int#
+            = add# [Int#] x3 x8 in
       T2# [World#] [Int#] ^0 x10
 }
 

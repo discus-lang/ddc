@@ -199,14 +199,17 @@ instance (Pretty n, Eq n) => Pretty (Lets a n) where
   = let pprX    = pprModePrec (modeLetsExp mode) 0
     in case lts of
         LLet b x
-         -> let dBind = if  isBot (typeOfBind b)
-                         || modeLetsSuppressTypes mode
-                          then ppr (binderOfBind b)
-                          else ppr b
+         -> let bHasType = not $ isBot (typeOfBind b)
+
+                dBind    = if modeLetsSuppressTypes mode || (not bHasType)
+                             then ppr (binderOfBind b)
+                             else ppr b
+
             in  text "let"
-                 <+> align (  dBind
-                           <> nest 2 ( breakWhen (not $ isSimpleX x)
-                                     <> text "=" <+> align (pprX x)))
+                 <+> align (  (padL 7 dBind)
+                           <>  nest (if bHasType then 2 else 6 )
+                                ( breakWhen bHasType
+                                <> text "=" <+> align (pprX x)))
 
         LRec bxs
          -> let pprLetRecBind (b, x)

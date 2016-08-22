@@ -79,7 +79,8 @@ add# [Nat#] 5#
 
 
 -- Let bindings.
-let x: Nat# = 5# in
+let x: Nat#
+      = 5# in
 add# [Nat#] x
 :*: Nat# -> Nat#
 :!: Pure
@@ -317,7 +318,8 @@ f
 -- Kind of 'a' is constrained by its use as the type of a let-binding.
 Λ(a: Data).
 λ(x: a).
-let y: a = x in
+let y: a   
+      = x in
 ()
 :*: [a: Data].a -> Unit
 :!: Pure
@@ -326,8 +328,10 @@ let y: a = x in
 -- As above, but with transitive let-bindings.
 Λ(a: Data).
 λ(x: a).
-let y: a = x in
-let z: a = y in
+let y: a   
+      = x in
+let z: a   
+      = y in
 z
 :*: [a: Data].a -> a
 :!: Pure
@@ -337,7 +341,8 @@ z
 -- of a let-binding. 
 Λ(a: Data).
 λ(x: a).
-let y: Unit = () in
+let y: Unit
+      = () in
 x
 :*: [a: Data].a -> a
 :!: Pure

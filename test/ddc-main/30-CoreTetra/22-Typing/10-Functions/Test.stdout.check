@@ -32,8 +32,10 @@ module Test with
 letrec {
   thing: ([a: Data].a -> a) -> Unit
     = λ(id: [a: Data].a -> a).
-      let _: Nat# = id [Nat#] 5# in
-      let _: Unit = id [Unit] () in
+      let _: Nat#
+            = id [Nat#] 5# in
+      let _: Unit
+            = id [Unit] () in
       ();
   
   foo: Unit -> Unit

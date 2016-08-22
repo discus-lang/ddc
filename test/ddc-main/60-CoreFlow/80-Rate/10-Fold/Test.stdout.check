@@ -9,7 +9,8 @@ letrec {
       λ(u1$rv: RateVec# u1$k Int#).λ(x3$ref: Ref# Int#).
       Λ(x3$PROC: Proc).
       λ(_: Unit).
-      let u1$s: Series# x3$PROC u1$k Int# = series# [x3$PROC] [u1$k] [Int#] u1$rv in
+      let u1$s: Series# x3$PROC u1$k Int#
+            = series# [x3$PROC] [u1$k] [Int#] u1$rv in
       let x3$proc: Process# x3$PROC u1$k
             = sreduce# [x3$PROC] [u1$k] [Int#] x3$ref
                   (λ(x0 x1: Int#). add# [Int#] x0 x1) 0i# u1$s in
@@ -17,13 +18,15 @@ letrec {
   
   test: Vector# Int# -> Int#
     = λ(u1: Vector# Int#).
-      let x3$ref: Ref# Int# = new# [Int#] 0i# in
+      let x3$ref: Ref# Int#
+            = new# [Int#] 0i# in
       let x3$runproc: Unit
             = ratify1# [Int#] [Unit] u1
                   (Λ(u1$k: Rate).
                    λ(u1$rv: RateVec# u1$k Int#).
                    runProcess# [u1$k] (x3$runproc$process [u1$k] u1$rv x3$ref)) in
-      let x3: Int# = read# [Int#] x3$ref in
+      let x3: Int#
+            = read# [Int#] x3$ref in
       x3
 }
 
@@ -36,7 +39,8 @@ letrec {
       λ(u1$rv: RateVec# u1$k Int#).λ(x7$ref x3$ref: Ref# Int#).
       Λ(x3$PROC: Proc).
       λ(_: Unit).
-      let u1$s: Series# x3$PROC u1$k Int# = series# [x3$PROC] [u1$k] [Int#] u1$rv in
+      let u1$s: Series# x3$PROC u1$k Int#
+            = series# [x3$PROC] [u1$k] [Int#] u1$rv in
       let x3$proc: Process# x3$PROC u1$k
             = sreduce# [x3$PROC] [u1$k] [Int#] x3$ref
                   (λ(x0 x1: Int#). add# [Int#] x0 x1) 0i# u1$s in
@@ -47,16 +51,21 @@ letrec {
   
   test: Vector# Int# -> Int#
     = λ(u1: Vector# Int#).
-      let x3$ref: Ref# Int# = new# [Int#] 0i# in
-      let x7$ref: Ref# Int# = new# [Int#] 1i# in
+      let x3$ref: Ref# Int#
+            = new# [Int#] 0i# in
+      let x7$ref: Ref# Int#
+            = new# [Int#] 1i# in
       let x3$runproc: Unit
             = ratify1# [Int#] [Unit] u1
                   (Λ(u1$k: Rate).
                    λ(u1$rv: RateVec# u1$k Int#).
                    runProcess# [u1$k] (x3$runproc$process [u1$k] u1$rv x7$ref x3$ref)) in
-      let x3: Int# = read# [Int#] x3$ref in
-      let x7: Int# = read# [Int#] x7$ref in
-      let x8: Int# = add# [Int#] x3 x7 in
+      let x3: Int#
+            = read# [Int#] x3$ref in
+      let x7: Int#
+            = read# [Int#] x7$ref in
+      let x8: Int#
+            = add# [Int#] x3 x7 in
       x8
 }
 

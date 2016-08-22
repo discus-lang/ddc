@@ -2,8 +2,12 @@ ok
 ok
 
 -- Test simple case.
-let x0: Nat# = add# [Nat#] 2# 1# in
-let c: Tuple2# Nat# Nat# = T2# [Nat#] [Nat#] x0 3# in
-let x: Nat# = x0 in
-let y: Nat# = 3# in
+let x0: Nat#
+      = add# [Nat#] 2# 1# in
+let c: Tuple2# Nat# Nat#
+      = T2# [Nat#] [Nat#] x0 3# in
+let x: Nat#
+      = x0 in
+let y: Nat#
+      = 3# in
 add# [Nat#] x y

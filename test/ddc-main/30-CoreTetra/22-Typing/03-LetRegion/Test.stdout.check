@@ -31,7 +31,8 @@ with
 letrec {
   test: Nat#
     = private r1 in
-      let x: Ref r1 Nat# = MkRef [r1] [Nat#] 5# in
+      let x: Ref r1 Nat#
+            = MkRef [r1] [Nat#] 5# in
       case x of {
         MkRef (y: Nat#) 
          -> y

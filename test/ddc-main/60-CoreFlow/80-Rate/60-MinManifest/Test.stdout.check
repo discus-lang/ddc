@@ -9,7 +9,8 @@ letrec {
       λ(us$rv: RateVec# ys$'$k Int#).λ(y$ref: Ref# Int#).
       Λ(y$PROC: Proc).
       λ(_: Unit).
-      let us$s: Series# y$PROC ys$'$k Int# = series# [y$PROC] [ys$'$k] [Int#] us$rv in
+      let us$s: Series# y$PROC ys$'$k Int#
+            = series# [y$PROC] [ys$'$k] [Int#] us$rv in
       let y$proc: Process# y$PROC ys$'$k
             = sreduce# [y$PROC] [ys$'$k] [Int#] y$ref
                   (λ(x2 x3: Int#). add# [Int#] x2 x3) 0i# us$s in
@@ -20,25 +21,29 @@ letrec {
       λ(us$rv: RateVec# ys$'$k Int#).λ(ys: Vector# Int#).λ(y: Int#).
       Λ(xs$PROC: Proc).
       λ(_: Unit).
-      let us$s: Series# xs$PROC ys$'$k Int# = series# [xs$PROC] [ys$'$k] [Int#] us$rv in
+      let us$s: Series# xs$PROC ys$'$k Int#
+            = series# [xs$PROC] [ys$'$k] [Int#] us$rv in
       let xs$s: Series# xs$PROC ys$'$k Int#
             = smap# [xs$PROC] [ys$'$k] [Int#] [Int#]
                   (λ(x0: Int#). add# [Int#] 1i# x0) us$s in
       let ys$s: Series# xs$PROC ys$'$k Int#
             = smap# [xs$PROC] [ys$'$k] [Int#] [Int#]
                   (λ(x5: Int#). add# [Int#] y x5) xs$s in
-      let ys$proc: Process# xs$PROC ys$'$k = sfill# [xs$PROC] [ys$'$k] [Int#] ys ys$s in
+      let ys$proc: Process# xs$PROC ys$'$k
+            = sfill# [xs$PROC] [ys$'$k] [Int#] ys ys$s in
       ys$proc;
   
   test: Vector# Int# -> Vector# Int#
     = λ(us: Vector# Int#).
-      let y$ref: Ref# Int# = new# [Int#] 0i# in
+      let y$ref: Ref# Int#
+            = new# [Int#] 0i# in
       let y$runproc: Unit
             = ratify1# [Int#] [Unit] us
                   (Λ(ys$'$k: Rate).
                    λ(us$rv: RateVec# ys$'$k Int#).
                    runProcess# [ys$'$k] (y$runproc$process [ys$'$k] us$rv y$ref)) in
-      let y: Int# = read# [Int#] y$ref in
+      let y: Int#
+            = read# [Int#] y$ref in
       let ys: Vector# Int#
             = vnew# [Int#] (vlength# [Int#] us) in
       let xs$runproc: Unit

@@ -8,12 +8,14 @@ When checking expression.
                     has type: Int#
        but the body has type: Nat#
   
-  with: let x: Int# = 5# in
+  with: let x: Int#
+              = 5# in
         x
 
 
 -- Ok: let expression with no type annotation.
-let x: Nat# = 5# in
+let x: Nat#
+      = 5# in
 x
 :*: Nat#
 :!: Pure
@@ -27,7 +29,8 @@ When checking expression.
                     has type: Int#
        but the body has type: Unit
   
-  with: let x: Int# = () in
+  with: let x: Int#
+              = () in
         x
 
 

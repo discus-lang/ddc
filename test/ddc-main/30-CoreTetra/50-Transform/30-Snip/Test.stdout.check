@@ -21,15 +21,18 @@ add# [Nat#] 1# 2#
 
 
 -- Snip nested applications
-let ^: Nat# = add# [Nat#] 1# 2# in
-let ^: Nat# = add# [Nat#] 3# 4# in
+let ^: Nat#
+      = add# [Nat#] 1# 2# in
+let ^: Nat#
+      = add# [Nat#] 3# 4# in
 add# [Nat#] ^1 ^0
 
 
 -- Snip scrutinee of case expression.
 let ^: Unit -> Nat#
       = λ(u: Unit).
-        let ^: Nat# = add# [Nat#] 1# 2# in
+        let ^: Nat#
+              = add# [Nat#] 1# 2# in
         case ^0 of {
           0#  
            -> 1#;
