@@ -22,5 +22,5 @@ main ()
 
          Just xx
           -> do writel $ show show_Exp xx
-                writel $ show (show_Step show_Exp) (step xx)
+                writel $ show (show_SStep show_Exp) (step xx)
 

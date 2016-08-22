@@ -5,9 +5,9 @@ export
 {       showBool;
 
         showNat;
-        showBinaryNat;
-        showDecimalNat;
-        showHexNat;
+        showBinaryNat;  digitBinary;
+        showDecimalNat; digitDecimal;
+        showHexNat;     digitHex;
         showBaseNat;
 }
 import Data.Text.Base
@@ -15,79 +15,83 @@ import Data.Text.Operator
 where
 
 
+-------------------------------------------------------------------------------
 -- | Convert a Bool to a String.
-showBool (x : Bool) : Text
+showBool (x : Bool): Text
  = if x then "True" 
         else "False"
 
 
 -- | Show a natural number.
 showNat (x: Nat): Text
- = showBaseNat 10 digitDecimal 0 "X" x
+ = showBaseNat 10 digitDecimal 0 'X' x
 
 
+-------------------------------------------------------------------------------
 -- | Show a natural number, in binary.
 showBinaryNat (x: Nat): Text
- = showBaseNat 2 digitBinary 0 "X" x
+ = showBaseNat 2 digitBinary 0 'X' x
 
-digitBinary (n: Nat): Text
+digitBinary (n: Nat): Word32#
  = case n of
-        0       -> "0"
-        1       -> "1"
-        _       -> "X"
+        0       -> '0'
+        1       -> '1'
+        _       -> 'X'
 
 
+-------------------------------------------------------------------------------
 -- | Show a natural number in decimal.
 showDecimalNat (x: Nat): Text
- = showBaseNat 10 digitDecimal 0 "X" x
+ = showBaseNat 10 digitDecimal 0 'X' x
 
-digitDecimal (n: Nat): Text
+digitDecimal (n: Nat): Word32#
  = case n of
-        0       -> "0"
-        1       -> "1"
-        2       -> "2"
-        3       -> "3"
-        4       -> "4"
-        5       -> "5"
-        6       -> "6"
-        7       -> "7"
-        8       -> "8"
-        9       -> "9"
-        _       -> "X"
+        0       -> '0'
+        1       -> '1'
+        2       -> '2'
+        3       -> '3'
+        4       -> '4'
+        5       -> '5'
+        6       -> '6'
+        7       -> '7'
+        8       -> '8'
+        9       -> '9'
+        _       -> 'X'
 
 
+-------------------------------------------------------------------------------
 -- | Show a natural number in hex.
 showHexNat (x: Nat): Text
- = showBaseNat 16 digitHex 0 "X" x
+ = showBaseNat 16 digitHex 0 'X' x
 
-digitHex (n: Nat): Text
+digitHex (n: Nat): Word32#
  = case n of
-        0       -> "0"
-        1       -> "1"
-        2       -> "2"
-        3       -> "3"
-        4       -> "4"
-        5       -> "5"
-        6       -> "6"
-        7       -> "7"
-        8       -> "8"
-        9       -> "9"
-        10      -> "a"
-        11      -> "b"
-        12      -> "c"
-        13      -> "d"
-        14      -> "e"
-        15      -> "f"
-        _       -> "X"
+        0       -> '0'
+        1       -> '1'
+        2       -> '2'
+        3       -> '3'
+        4       -> '4'
+        5       -> '5'
+        6       -> '6'
+        7       -> '7'
+        8       -> '8'
+        9       -> '9'
+        10      -> 'a'
+        11      -> 'b'
+        12      -> 'c'
+        13      -> 'd'
+        14      -> 'e'
+        15      -> 'f'
+        _       -> 'X'
 
 
 -------------------------------------------------------------------------------
 -- | Show a natural number using an arbitrary base encoding.
 showBaseNat 
         (base:  Nat)            -- ^ Base of encoding.
-        (digit: Nat -> Text)    -- ^ Show a digit in this base.
+        (digit: Nat -> Word32#) -- ^ Show a digit in this base.
         (width: Nat)            -- ^ Width of output, or 0 to not pad.
-        (pad:   Text)           -- ^ Character to pad output with.
+        (pad:   Word32#)        -- ^ Character to pad output with.
         (x:     Nat)            -- ^ Number to print.
         : Text
  = do   s       = showBaseNat' base digit width pad True x
@@ -102,11 +106,12 @@ showBaseNat' base digit width pad first x
 
  | and (x == 0) (width > 0)
  = showBaseNat' base digit (width - 1) pad False x
-        % pad
+        % textOfChar pad
 
- | x == 0       = ""
+ | x == 0  
+ = ""
 
  | otherwise
  = showBaseNat' base digit (width - 1) pad False (div x base) 
-        % digit (rem x base)
+        % textOfChar (digit (rem x base))
 

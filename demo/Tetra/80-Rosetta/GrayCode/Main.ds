@@ -32,7 +32,7 @@ binToGray (b: Nat): Nat
 
 main ()
  = do   
-        showBinary = showBaseNat 2 digitBinary 5 "0"
+        showBinary = showBaseNat 2 digitBinary 5 '0'
 
         writel $ "   x " %% " grey" %% "   x'"
 

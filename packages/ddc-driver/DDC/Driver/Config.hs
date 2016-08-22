@@ -5,7 +5,7 @@ module DDC.Driver.Config
         , ConfigPretty  (..)
         , defaultConfigPretty
         , prettyModeOfConfig
-        , objectPathOfConfig
+        , objectPathsOfConfig
         , exePathOfConfig
         
         , ViaBackend    (..)
@@ -13,7 +13,7 @@ module DDC.Driver.Config
 where
 import DDC.Build.Builder                        
 import DDC.Core.Simplifier              (Simplifier)
-import DDC.Core.Pretty
+import DDC.Core.Pretty                  hiding ((</>))
 import DDC.Core.Module
 import System.FilePath
 import Data.Maybe
@@ -139,21 +139,44 @@ prettyModeOfConfig config
 
 
 -- | Given the name of a source file, 
---   determine the name of the associated object file.
-objectPathOfConfig :: Config -> FilePath -> FilePath
-objectPathOfConfig config path
- = let  outputDir       = fromMaybe (takeDirectory path) (configOutputDir config)
-        outputDirBase   = dropExtension (replaceDirectory path outputDir)
-   in   outputDirBase ++ ".o"
+--   determine the where the object files should go.
+--
+--   The first component of the result is where we should put produced object files,
+--   The second are paths of where we might find pre-existing objects, 
+--   in preference order.
+
+objectPathsOfConfig 
+        :: Config       -- ^ Compiler config.
+        -> FilePath     -- ^ Path to module source.
+        -> (FilePath, [FilePath])
+
+objectPathsOfConfig config pathSource
+ | Just dirOutput       <- configOutputDir config
+ , takeFileName pathSource == "Main.ds"
+ =      (dirOutput </> "Main.ds", [])
+
+ | Just dirOutput       <- configOutputDir config
+ = let  oFileSource     = replaceExtension pathSource ".o"
+        oFileOverride   = dirOutput </> replaceExtension pathSource ".o"
+   in   (oFileOverride, [oFileSource])
+
+ | otherwise
+ = let  oFileSource     = replaceExtension pathSource ".o"
+   in   (oFileSource,   [])
 
 
 -- | Given the name of a source file,
---   determine the name of an associated executable file.
-exePathOfConfig :: Config -> FilePath -> FilePath
+--   determine where we should put an executable built from it.
+exePathOfConfig 
+        :: Config       -- ^ Compiler config.
+        -> FilePath     -- ^ Path to module source.
+        -> FilePath
+
 exePathOfConfig config path
- = let  oPath           = objectPathOfConfig config path
+ = let  (oPath, _)      = objectPathsOfConfig config path
         exePathDefault  = dropExtension oPath
    in   fromMaybe exePathDefault (configOutputFile config)
+
 
 
 ---------------------------------------------------------------------------------------------------

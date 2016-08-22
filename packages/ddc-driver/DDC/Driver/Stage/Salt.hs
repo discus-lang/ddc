@@ -116,9 +116,9 @@ stageCompileSalt
 
 stageCompileSalt config source filePath shouldLinkExe
  = let  -- Decide where to place the build products.
-        oPath   = objectPathOfConfig config filePath
-        exePath = exePathOfConfig    config filePath
-        cPath   = replaceExtension   oPath  ".ddc.c"
+        (oPath, _)      = objectPathsOfConfig config filePath
+        exePath         = exePathOfConfig    config filePath
+        cPath           = replaceExtension   oPath  ".ddc.c"
    in
         PipeCoreSimplify        Salt.fragment 0 normalizeSalt
          [ PipeCoreCheck        Salt.fragment C.Recon SinkDiscard
@@ -154,10 +154,10 @@ stageCompileLLVM
 
 stageCompileLLVM config _source filePath mOtherExeObjs
  = let  -- Decide where to place the build products.
-        oPath   = objectPathOfConfig config filePath
-        exePath = exePathOfConfig    config filePath
-        llPath  = replaceExtension   oPath  ".ddc.ll"
-        sPath   = replaceExtension   oPath  ".ddc.s"
+        (oPath, _)      = objectPathsOfConfig config filePath
+        exePath         = exePathOfConfig    config filePath
+        llPath          = replaceExtension   oPath  ".ddc.ll"
+        sPath           = replaceExtension   oPath  ".ddc.s"
 
    in   -- Make the pipeline for the final compilation.
         PipeLlvmCompile

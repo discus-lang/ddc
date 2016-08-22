@@ -1,7 +1,7 @@
 
 module Step
 export
-{       show_Step;
+{       show_SStep;
         step
 }
 import Exp
@@ -10,13 +10,15 @@ where
 
 
 -- | Result of performing a single step for an expression.
-data Step (a: Data) where
-        StepNone        : Step a
-        StepSome        : a -> Step a
-        StepError       : Step a
+--   TODO: Naming this 'Step' conflicts with the one in the stream library.
+--   We need separate module namespaces.
+data SStep (a: Data) where
+        StepNone        : SStep a
+        StepSome        : a -> SStep a
+        StepError       : SStep a
 
 
-show_Step (show_a: Show a): Show (Step a)
+show_SStep (show_a: Show a): Show (SStep a)
  =  Show $ \xx
  -> case xx of
         StepNone        -> "StepNone"
@@ -25,7 +27,7 @@ show_Step (show_a: Show a): Show (Step a)
 
 
 -- | Perform a single step reduction of the given expression.
-step (xx: Exp): Step Exp
+step (xx: Exp): SStep Exp
  = case xx of
         XVar _          -> StepNone
         XAbs _ _ _      -> StepNone

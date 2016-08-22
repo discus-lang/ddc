@@ -8,3 +8,7 @@ clean-libs :
 		-o -name "*.o" \
 		-follow \
 		| xargs -n 1 rm -f
+
+.PHONY : libs
+libs: bin/ddc
+	@bin/ddc -build packages/ddc-code/tetra/base/base.build

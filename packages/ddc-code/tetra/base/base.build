@@ -11,14 +11,24 @@ library
  
  tetra-modules:
         Data.Tuple
+        Class.Ord
+        Class.Functor
+        Class.Applicative
+        Class.Monad
+        Data.Function
         Data.Numeric.Bool
         Data.Numeric.Nat
-        Data.Array
-        Data.Function
-        Data.Ref
         Data.Maybe
-        Data.Text
         Data.List
+        Data.Text.Base
+        Data.Text.List
+        Data.Text.Operator
+        Data.Text.Show
+        Data.Text
+        Class.Show
+        Data.Array
+        Data.Ref
+        Data.Map
         Data.Stream
         Math.Combinations
         System.IO.Console

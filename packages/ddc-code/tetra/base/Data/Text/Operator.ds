@@ -15,7 +15,7 @@ import Data.Text.Base
 where
 
 
--- Desguaring -----------------------------------------------------------------
+-- Desuguaring -----------------------------------------------------------------
 -- Names used by the Source Tetra desugarer to implement string literals.
 textLit (x : TextLit#) : Text
  = TextLit (makeTextLit x)

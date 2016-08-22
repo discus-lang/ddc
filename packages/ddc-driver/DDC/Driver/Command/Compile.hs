@@ -82,6 +82,15 @@ cmdCompileRecursiveDS _config _bBuildExe _store []           _fsBlocked
 
 cmdCompileRecursiveDS  config  bBuildExe  store (filePath:fs) fsBlocked
  = do   
+        -- TODO: If the module name and module path does not match
+        -- then the recursive driver gets stuck in a loop.
+--        liftIO $ putStrLn "\n\n* ENTER"
+--        liftIO  $ putStr $ unlines
+--                [ "File            = " ++ show filePath
+--                , "Queue           = " ++ show (filePath : fs)
+--                , "Blocked         = " ++ show fsBlocked ]
+
+
         -- Check if the requested file exists.
         exists  <- liftIO $ doesFileExist filePath
         when (not exists)
@@ -100,6 +109,11 @@ cmdCompileRecursiveDS  config  bBuildExe  store (filePath:fs) fsBlocked
         -- Names of modules that we are missing interfaces for.
         let missing     = filter (\m -> not $ elem m modsNamesHave) 
                         $ modNamesNeeded
+
+--        liftIO  $ putStr $ unlines
+--                [ "Modules Needed  = " ++ show modNamesNeeded
+--                , "Modules Have    = " ++ show modsNamesHave
+--                , "Modules Missing = " ++ show missing ]
 
         case missing of
          -- We've already got all the interfaces needed by the
@@ -152,52 +166,107 @@ cmdLoadOrCompile config buildExe store filePath
         when (not exists)
          $ throwE $ "No such file " ++ show filePath
 
-        -- Read in the source file.
+        -- Read in the source file and get the current timestamp.
         src             <- liftIO $ readFile filePath
         Just timeDS     <- liftIO $ getModificationTimeIfExists filePath
 
-        -- Parse just the header of the module to determine what other modules
-        -- it imports.
+        -- Parse just the header of the module to determine
+        -- what other modules it imports.
         modNamesNeeded  <- tasteNeeded filePath src
 
-        -- It's safe to reload the module from an inteface file if:
-        --  1. There is an existing interface which is fresher than the source.
-        --  2. There is an existing object    which is fresher than the source.
-        --  3. There is an existing interface which is fresher than the 
-        --     interfaces of all dependencies.
-        --
-        -- Additionally, we force rebuild for the top level module, because
-        -- that's what was mentioned on the command line. We're trying to
-        -- follow the principle of least surprise in this regard.
-        --
-        let filePathO   =  objectPathOfConfig config filePath
+        -- Search through the likely paths that might hold a pre-compiled
+        -- interface and object file. If we find it then we can reload it,
+        -- otherwise we'll need to build the module from source again.
+        let search (filePathO : filePathsMoreO)
+             = do  
+                   -- The .di file for the same module should be next to
+                   -- any .o file for it.
+                   let filePathDI = replaceExtension filePathO ".di"
+
+                   -- Check if we have a fresh interface and object
+                   -- at this path.
+                   fresh <- liftIO 
+                         $ interfaceIsFresh
+                                store timeDS modNamesNeeded filePathO
+
+                   -- If we indeed have a fresh interface and object 
+                   -- then we can load it directly. Otherwise search the rest 
+                   -- of the paths.
+                   if fresh && not (takeFileName filePath == "Main.ds")
+                    then do 
+--                         liftIO  $ putStrLn "* Loading"
+                         result  <- liftIO $ Store.load filePathDI
+                         case result of
+                          Left  err -> throwE $ P.renderIndent $ P.ppr err
+                          Right int -> liftIO $ Store.wrap store int
+
+                    else search filePathsMoreO
+
+            -- We're out of places to search for pre-existing interface
+            -- files, so build it gain.
+            search []
+             = do 
+--                  liftIO  $ putStrLn "* Compiling"
+                  cmdCompile config buildExe store filePath
+
+        -- Check the config for where the interface might be.
+        -- It'll either be next to the source file or in the auxilliary
+        -- output directory if that was specified.
+        let (filePathO_output, filePathO_libs)   
+                =  objectPathsOfConfig config filePath
+
+        -- Search all the likely places.
+        search (filePathO_output : filePathO_libs)
+
+
+-- | Look for an interface file in the given directory.
+--   If there's one there see if it's fresh enough to reload (True)
+--   or whether we need to rebuild it (False).
+--
+--  It's safe to reload the module from an inteface file if:
+--   1. There is an existing interface which is fresher than the source.
+--   2. There is an existing object    which is fresher than the source.
+--   3. There is an existing interface which is fresher than the 
+--      interfaces of all dependencies.
+--
+--  Additionally, we force rebuild for the top level module, because
+--  that's what was mentioned on the command line. We're trying to
+--  follow the principle of least surprise in this regard.
+--
+interfaceIsFresh
+        :: Store                -- ^ Current interface store.
+        -> UTCTime              -- ^ Timestamp on original source file.
+        -> [C.ModuleName]       -- ^ Names of modules needed by source.
+        -> FilePath             -- ^ Expected path of object file.
+        -> IO Bool
+
+interfaceIsFresh store timeDS modNamesNeeded filePathO
+ = do   
         let filePathDI  =  replaceExtension filePathO ".di"
         mTimeO          <- liftIO $ getModificationTimeIfExists filePathO
         mTimeDI         <- liftIO $ getModificationTimeIfExists filePathDI
         meta'           <- liftIO $ Store.getMeta store
 
-        let loadOrCompile
-                -- object and interface are fresher than source.
-                | Just timeO    <- mTimeO,      timeDS < timeO
-                , Just timeDI   <- mTimeDI,     timeDS < timeDI
+        -- object is fresher than source
+        let bFreshO     
+                | Just timeO  <- mTimeO,  timeDS < timeO  = True
+                | otherwise                               = False
 
-                  -- Interface at least as fresh than all dependencies.
-                  -- See Note: Timestamp accuracy during rebuild.
-                , and   [ Store.metaTimeStamp m <= timeDI 
+        -- interface is fresher than source.
+        let bFreshDI
+                | Just timeDI <- mTimeDI, timeDS < timeDI = True
+                | otherwise                               = False
+
+        let bFreshDep
+                | Just timeDI <- mTimeDI
+                = and   [ Store.metaTimeStamp m <= timeDI 
                                 | m <- meta'
                                 , elem (Store.metaModuleName m) modNamesNeeded ]
 
-                  -- this is not the top-level module.
-                , not $ takeFileName filePath == "Main.ds"
-                = do    result  <- liftIO $ Store.load filePathDI
-                        case result of
-                         Left  err -> throwE $ P.renderIndent $ P.ppr err
-                         Right int -> liftIO $ Store.wrap store int
-
                 | otherwise
-                = do    cmdCompile config buildExe store filePath
+                = False
 
-        loadOrCompile
+        return  $ and [bFreshO, bFreshDI, bFreshDep]
 
 
 ---------------------------------------------------------------------------------------------------
@@ -247,6 +316,12 @@ cmdCompile config bBuildExe' store filePath
         let otherObjs
                 | buildExe  = Just $ map (\path -> replaceExtension path "o") pathsDI
                 | otherwise = Nothing
+
+        -- Determine directory for build products.
+        let (pathO, _)  = objectPathsOfConfig config filePath
+        let pathDI      = replaceExtension pathO ".di"
+        liftIO $ createDirectoryIfMissing True (takeDirectory pathO)
+
 
         -- During complation of this module the intermediate code will be
         -- stashed in these refs. We will use the intermediate code to build
@@ -327,8 +402,6 @@ cmdCompile config bBuildExe' store filePath
                         , liftM C.moduleName modSalt ]
           -> do
                 -- write out the interface file.
-                let pathO       = objectPathOfConfig config filePath
-                let pathDI      = replaceExtension pathO ".di"
 
                 timeDI  <- liftIO $ getCurrentTime 
                 let int = Interface
@@ -395,6 +468,8 @@ locateModuleFromConfig config mname
                 =  configModuleBaseDirectories config
                 ++ [Builder.buildBaseSrcDir (configBuilder config)
                         </> "tetra" </> "base"]
+
+--        liftIO $ putStrLn $ "base dirs = " ++ show baseDirs
 
         Locate.locateModuleFromPaths baseDirs mname ".ds"
 
