@@ -1,0 +1,51 @@
+
+module Lambda.Exp.Base
+export
+{       show_Exp;
+        show_Subst;
+}
+import Class.Show
+import Data.Text
+import Data.Tuple
+where
+
+
+-- | Represent names as text.
+type Name = Text
+
+
+-- | Untyped lambda calculus expressions.
+data Exp where
+        XVar    : Name  -> Exp
+        XAbs    : Subst -> Name -> Exp -> Exp
+        XApp    : Exp   -> Exp -> Exp
+
+data Subst where
+        Subst   : List (Tup2 Name Exp) -> Subst
+
+
+show_Exp: Show Exp
+ =  Show $ λxx
+ -> case xx of
+        XVar n     
+         -> parens $ "XVar"
+                %% show show_text n
+        
+        XAbs ss n x
+         -> parens $ "XAbs"
+                %% show show_Subst ss 
+                %% show show_text n
+                %% show show_Exp x
+        
+        XApp x1 x2
+         -> parens $ "XApp"
+                %% show show_Exp x1
+                %% show show_Exp x2
+
+
+show_Subst: Show Subst
+ =  Show $ λxx
+ -> case xx of
+        Subst ls 
+         -> parens $ "Subst" 
+                %% show (show_list (show_tup2 show_text show_Exp)) ls

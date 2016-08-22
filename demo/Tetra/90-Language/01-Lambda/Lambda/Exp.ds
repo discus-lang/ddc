@@ -1,56 +1,14 @@
 
-module Exp
+module Lambda.Exp
 export
-{       show_Exp;
-        makeXApps;
-
-        show_Subst;
+{       makeXApps;
         emptySubst;
         applySubst;
 }
-import Base
+import Lambda.Exp.Base
 import Class.Show
 import Data.Text
 where
-
-
--------------------------------------------------------------------------------
--- | Untyped lambda calculus expressions.
-data Exp where
-        XVar    : Name  -> Exp
-        XAbs    : Subst -> Name -> Exp -> Exp
-        XApp    : Exp   -> Exp -> Exp
-
-data Subst where
-        Subst   : List (Tup2 Name Exp) -> Subst
-
-
-
-show_Exp: Show Exp
- =  Show $ \xx
- -> case xx of
-        XVar n     
-         -> parens $ "XVar"
-                %% show show_text n
-        
-        XAbs ss n x
-         -> parens $ "XAbs"
-                %% show show_Subst ss 
-                %% show show_text n
-                %% show show_Exp x
-        
-        XApp x1 x2
-         -> parens $ "XApp"
-                %% show show_Exp x1
-                %% show show_Exp x2
-
-
-show_Subst: Show Subst
- =  Show $ \xx
- -> case xx of
-        Subst ls 
-         -> parens $ "Subst" 
-                %% show (show_list (show_tup2 show_text show_Exp)) ls
 
 
 -- | Make an application of a function to the given list of arguments.

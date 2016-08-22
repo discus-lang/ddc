@@ -1,9 +1,9 @@
 
 module Main
-import Step
-import Parser
-import Lexer
-import Exp
+import Lambda.Source.Parser
+import Lambda.Source.Lexer
+import Lambda.Eval.Step
+import Lambda.Exp
 import Class.Show
 import Data.Tuple
 import Data.Text

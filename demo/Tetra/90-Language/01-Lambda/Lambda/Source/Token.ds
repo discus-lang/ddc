@@ -1,0 +1,52 @@
+
+module Lambda.Source.Token
+export
+{       eqToken; show_Token;
+        takeKName
+}
+import Lambda.Exp.Base
+import Data.Text
+import Data.Maybe
+where
+
+
+-- | Tokens for lambda calculus language.
+data Token where
+        KName   : Name  -> Token        -- ^ Variable name.
+        KBra    : Token                 -- ^ Open  Braket '('
+        KKet    : Token                 -- ^ Close Braket ')'
+        KLambda : Token                 -- ^ Lambda symbol '/'
+        KDot    : Token                 -- ^ Dot stmbol
+
+
+-- | Check if two tokens are equal.
+eqToken (t1 t2: Token): Bool
+ = case T2 t1 t2 of
+        T2 KBra    KBra         -> True
+        T2 KKet    KKet         -> True
+        T2 KLambda KLambda      -> True
+        T2 KDot    KDot         -> True
+        T2 _       _            -> False
+
+        -- TODO: adding this doesn't contrain the scrutinee,
+        --       so inference breaks.
+        -- _                    -> False
+
+
+-- | Show dictionary for tokens.
+show_Token: Show Token
+ = Show $ \kk
+ -> case kk of
+        KName n -> parens $ "KName" %% (show show_text n)
+        KBra    -> "KBra"
+        KKet    -> "KKet"
+        KLambda -> "KLambda"
+        KDot    -> "KDot"
+
+
+-- | Take the name from a token, if any.
+takeKName (kk: Token): Maybe Name
+ = case kk of
+        KName n -> Just n
+        _       -> Nothing
+

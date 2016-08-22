@@ -1,10 +1,10 @@
 
-module Step
+module Lambda.Eval.Step
 export
 {       show_SStep;
         step
 }
-import Exp
+import Lambda.Exp
 import Data.Text
 where
 

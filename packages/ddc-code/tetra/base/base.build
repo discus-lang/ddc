@@ -21,6 +21,7 @@ library
         Data.Maybe
         Data.List
         Data.Text.Base
+        Data.Text.Char
         Data.Text.List
         Data.Text.Operator
         Data.Text.Show

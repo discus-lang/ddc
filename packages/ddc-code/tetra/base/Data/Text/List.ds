@@ -6,12 +6,13 @@ export
         charListOfText;
 }
 import Data.Text.Base
+import Data.Text.Char
 import Data.List
 where
 
 
 -- | Convert a list of characters to a Text object.
-textOfCharList (xx: List Text): Text
+textOfCharList (xx: List Char): Text
  = TextVec
     (extend RegionText using r with { Alloc r; Read r; Write r }
      in  vectorOfCharList [r] xx)
@@ -19,9 +20,9 @@ textOfCharList (xx: List Text): Text
 
 
 -- | O(n). Convert a text object to a list of characters.
-charListOfText (tx: Text): List Text
+charListOfText (tx: Text): List Char
  = run box result
- where  result: List Text
+ where  result: List Char
          = case tx of
                 TextVec vec -> charListOfTextVec vec
                 _           -> charListOfTextVec (vectorOfText [RegionText] tx)
@@ -32,22 +33,22 @@ charListOfText (tx: Text): List Text
 -- | Unpack a list of characters from a vector.
 charListOfTextVec
         (vec: Vector# r Word8#)
-        : S (Read r) (List Text)
+        : S (Read r) (List Char)
  = go 0
  where  
-        go (ix: Nat#): S (Read r) (List Text)
+        go (ix: Nat#): S (Read r) (List Char)
          | ix >= (vectorLength# vec - 1)
          = Nil
 
          | otherwise               
-         = do   txChar = textOfWord8 (vectorRead# vec ix)
+         = do   txChar = promote# (vectorRead# vec ix)
                 Cons txChar (go (ix + 1))
 
 
 -- | Pack a list of characters into a mutable vector.
 vectorOfCharList
         [r: Region]
-        (xx: List Text)
+        (xx: List Char)
         : S (Alloc r + Write r) (Vector# r Word8#)
  = run box 
    do
@@ -58,12 +59,11 @@ vectorOfCharList
         vec
  where
         fill (vec: Vector# r Word8#) 
-             (ix: Nat) (xx: List Text): S (Write r) Unit
+             (ix: Nat) (xx: List Char): S (Write r) Unit
          = case xx of
                 Nil     -> ()
                 Cons x xs
-                 | Just c       <- indexText x 0
-                 -> do  vectorWrite# vec ix c
+                 -> do  vectorWrite# vec ix (truncate# x)
                         fill vec (ix + 1) xs
 
                  | otherwise

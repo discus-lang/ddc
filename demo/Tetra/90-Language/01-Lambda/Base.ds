@@ -1,6 +1,0 @@
-
-module Base
-import Data.Text
-where
-
-type Name = Text

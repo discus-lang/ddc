@@ -1,0 +1,29 @@
+
+module Data.Text.Char
+export
+{       isDigit;
+        isUpper;
+        isLower
+}
+import Data.Numeric.Bool
+where
+
+-- Character literals are special syntax for a unicode codepoint
+-- represented as a 32-bit word.
+type Char = Word32#
+
+
+-- | Check if a character is a digit.
+isDigit (c: Char): Bool
+ = ge# c 0x030w32 ∧ le# c 0x039w32
+
+
+-- | Check if a character is an upper-case letter.
+isUpper (c: Char): Bool
+ = ge# c 65w32    ∧ le# c 90w32
+
+
+-- | Check if a character is a lower-case letter.
+isLower (c: Char): Bool
+ = ge# c 97w32    ∧ le# c 122w32
+-- TODO: Handle hex literals with size specifiers.
