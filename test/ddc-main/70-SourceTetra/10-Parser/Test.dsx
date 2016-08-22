@@ -62,7 +62,9 @@ foo (_ : Unit) : Unit
 
         w32     = 0x1234w32
 
-        r       = "strung"
+        r       = "I am String"
+
+        c       = 'λ'
 
         ()
 ;;

@@ -37,7 +37,6 @@ module DDC.Source.Tetra.Env
 where
 import DDC.Source.Tetra.Prim
 import DDC.Source.Tetra.Exp.Source
--- import DDC.Type.DataDef
 import Data.Map                         (Map)
 import Data.Sequence                    (Seq)
 import Data.Text                        (Text)
@@ -303,11 +302,12 @@ kindOfPrimType tt
 typeOfPrimVal  :: PrimVal -> Type
 typeOfPrimVal dc
  = case dc of
-        PrimValLit    l         -> typeOfPrimLit l
-        PrimValArith  p         -> typePrimArith Source p
-        PrimValError  p         -> typeOpError   Source p
-        PrimValVector p         -> typeOpVector  Source p
-        PrimValFun    p         -> typeOpFun     Source p
+        PrimValLit      l       -> typeOfPrimLit l
+        PrimValArith    p       -> typePrimArith Source p
+        PrimValCast     p       -> typePrimCast  Source p
+        PrimValError    p       -> typeOpError   Source p
+        PrimValVector   p       -> typeOpVector  Source p
+        PrimValFun      p       -> typeOpFun     Source p
 
 
 -- | Take the type of a primitive literal.
@@ -320,15 +320,7 @@ typeOfPrimLit pl
         PrimLitSize     _       -> TSize
         PrimLitFloat    _ bits  -> TFloat bits
         PrimLitWord     _ bits  -> TWord  bits
+        PrimLitChar     _       -> TWord  32
         PrimLitTextLit  _       -> TTextLit
 
 
--- | Data type definition for `Bool`.
-{-
-dataDefBool :: DataDef Name
-dataDefBool
- = makeDataDefAlg (NameTyCon PrimTyConBool) 
-        [] 
-        (Just   [ (NameLitBool True,  []) 
-                , (NameLitBool False, []) ])
--}

@@ -1,9 +1,9 @@
 
 module DDC.Core.Salt.Compounds.Lit
         ( xBool
-        , xNat, xInt, xSize
+        , xNat,  xInt, xSize
         , xWord, xFloat, xTag
-        , xTextLit)
+        , xChar, xTextLit)
 where
 import DDC.Core.Salt.Compounds.PrimTyCon
 import DDC.Core.Salt.Name
@@ -44,6 +44,10 @@ dcNat   :: Integer -> DaCon Name (Type Name)
 dcNat i         = DaConPrim (NameLitNat i) tNat
 
 
+-- | A Character literal.
+xChar    :: a -> Char -> Exp a Name
+xChar    a c    = XCon a (DaConPrim (NameLitChar c) (tWord 32))
+
 -- | A Text literal.
 xTextLit :: a -> Text -> Exp a Name
-xTextLit a tx    = XCon a (DaConPrim (NameLitTextLit tx) tTextLit)
+xTextLit a tx   = XCon a (DaConPrim (NameLitTextLit tx) tTextLit)

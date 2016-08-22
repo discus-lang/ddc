@@ -41,6 +41,7 @@ makeLiteralName _ lit True
         LSize   s       -> Just $ NameLitSize    s
         LWord   i b     -> Just $ NameLitWord    i b
         LFloat  f b     -> Just $ NameLitFloat   f b
+        LChar   c       -> Just $ NameLitChar    c
         LString tx      -> Just $ NameLitTextLit tx
 
 makeLiteralName _ _ _

@@ -1,4 +1,5 @@
 
+-- Demo of the Data.Map library.
 module Main
 import Data.Numeric.Nat
 import Data.Map

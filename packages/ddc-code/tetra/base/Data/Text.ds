@@ -10,14 +10,15 @@ export
         indexText;
 
         -- * Conversions
+        textOfWord8;
+        textOfChar;
+        textOfCharList; charListOfText;
+
         copyTextToVector;
         copyTextLitToVector;
         copyTextVecToVector;
 
         -- * Operators
-        textOfWord8;
-        charListOfText;
-        textOfCharList;
         eqText;
 
         -- * Showing
@@ -109,24 +110,6 @@ vectorOfText [r1: Region] (tt: Text)
         vec
 
 
--- | Wrap a single 8-bit character into a text object.
---
-textOfWord8 (w8: Word8#): Text
- = TextVec
-  (extend RegionText using r1 with { Alloc r1; Write r1 } in
-   do   -- Allocate the vector to hold the data,
-        -- including an extra null terminator byte.
-        vec     = vectorAlloc# [r1] [Word8#] 2
-
-        -- Write the character.
-        vectorWrite# vec 0 w8
-
-        -- Write the null terminator.
-        vectorWrite# vec 1 0w8
-
-        vec)
-
-
 -- Projections ----------------------------------------------------------------
 -- | Get the size of the utf8 data in a Text object, in bytes.
 --
@@ -165,6 +148,45 @@ indexText (tt: Text) (ix: Nat): Maybe Word8#
 
 
 -- Conversions ----------------------------------------------------------------
+-- | Wrap a single 8-bit character into a text object.
+textOfWord8 (w8: Word8#): Text
+ = TextVec
+  (extend RegionText using r1 with { Alloc r1; Write r1 } in
+   do   -- Allocate the vector to hold the data,
+        -- including an extra null terminator byte.
+        vec     = vectorAlloc# [r1] [Word8#] 2
+
+        -- Write the character.
+        vectorWrite# vec 0 w8
+
+        -- Write the null terminator.
+        vectorWrite# vec 1 0w8
+
+        vec)
+
+
+-- | Wrap a single character into a text object.
+textOfChar (c: Word32#): Text
+ = "TODO" -- "TODO" textOfWord8 (truncate# c)
+
+
+-- TODO: using $ between TextVec and body causes segfault.
+textOfCharList (xx: List Text): Text
+ = TextVec
+    (extend RegionText using r with { Alloc r; Read r; Write r }
+     in  vectorOfCharList [r] xx)
+
+
+-- TODO: Read RegionText  isn't being coerced with Pure
+-- need dodgy intermediate run/box cast.
+charListOfText (tx: Text): List Text
+ = run box result
+ where  result: List Text
+         = case tx of
+                TextVec vec -> charListOfTextVec vec
+                _           -> charListOfTextVec (vectorOfText [RegionText] tx)
+
+
 -- | Copy a text literal to a mutable vector of utf-8 bytes.
 copyTextToVector 
         [r: Region] (tt: Text) (vec: Vector# r Word8#) (i0: Nat#)
@@ -241,21 +263,6 @@ charListOfTextVec (vec: Vector# r Word8#): S (Read r) (List Text)
                 Cons txChar (go (ix + 1))
 
 
--- TODO: Read RegionText  isn't being coerced with Pure
--- need dodgy intermediate run/box cast.
-charListOfText (tx: Text): List Text
- = run box result
- where  result: List Text
-         = case tx of
-                TextVec vec -> charListOfTextVec vec
-                _           -> charListOfTextVec (vectorOfText [RegionText] tx)
-
-
--- TODO: using $ between TextVec and body causes segfault.
-textOfCharList (xx: List Text): Text
- = TextVec
-    (extend RegionText using r with { Alloc r; Read r; Write r }
-     in  vectorOfCharList [r] xx)
 
 
 vectorOfWord8 (w: Word8#): Vector# RegionText Word8#

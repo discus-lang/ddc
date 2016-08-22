@@ -51,8 +51,8 @@ module DDC.Core.Tetra.Prim
 
           -- * Primitive numeric casts.
         , PrimCast      (..)
-        , readPrimCast
-        , typePrimCast)
+        , readPrimCastFlag
+        , typePrimCastFlag)
 where
 import DDC.Core.Tetra.Prim.Base
 import DDC.Core.Tetra.Prim.TyConTetra
@@ -93,7 +93,7 @@ instance NFData Name where
 
         NamePrimTyCon  op       -> rnf op
         NamePrimArith  op !_    -> rnf op
-        NamePrimCast   op       -> rnf op
+        NamePrimCast   op !_    -> rnf op
 
         NameLitBool    b        -> rnf b
         NameLitNat     n        -> rnf n
@@ -101,6 +101,7 @@ instance NFData Name where
         NameLitSize    s        -> rnf s
         NameLitWord    i bits   -> rnf i `seq` rnf bits
         NameLitFloat   d bits   -> rnf d `seq` rnf bits
+        NameLitChar    c        -> rnf c
         NameLitTextLit bs       -> rnf bs       
 
         NameLitUnboxed n        -> rnf n
@@ -121,7 +122,6 @@ instance Pretty Name where
         NameOpError    op False -> ppr op
         NameOpError    op True  -> ppr op <> text "#"
 
-
         NameOpFun      op       -> ppr op
 
         NameOpVector   op False -> ppr op
@@ -132,16 +132,18 @@ instance Pretty Name where
         NamePrimArith  op False -> ppr op
         NamePrimArith  op True  -> ppr op <> text "#"
 
-        NamePrimCast   op       -> ppr op
+        NamePrimCast   op False -> ppr op
+        NamePrimCast   op True  -> ppr op <> text "#"
 
-        NameLitBool True        -> text "True#"
-        NameLitBool False       -> text "False#"
-        NameLitNat  i           -> integer i             <> text "#"
-        NameLitInt  i           -> integer i <> text "i" <> text "#"
-        NameLitSize    s        -> integer s <> text "s" <> text "#"
-        NameLitWord    i bits   -> integer i <> text "w" <> int bits <> text "#"
-        NameLitFloat   f bits   -> double  f <> text "f" <> int bits <> text "#"
-        NameLitTextLit tx       -> text (show $ T.unpack tx)         <> text "#"
+        NameLitBool    True     -> text "True#"
+        NameLitBool    False    -> text "False#"
+        NameLitNat     i        -> integer i                            <> text "#"
+        NameLitInt     i        -> integer i <> text "i"                <> text "#"
+        NameLitSize    s        -> integer s <> text "s"                <> text "#"
+        NameLitWord    i bits   -> integer i <> text "w" <> int bits    <> text "#"
+        NameLitFloat   f bits   -> double  f <> text "f" <> int bits    <> text "#"
+        NameLitChar    c        -> text (show c)                        <> text "#"
+        NameLitTextLit tx       -> text (show $ T.unpack tx)            <> text "#"
 
         NameLitUnboxed n        -> ppr n <> text "#"
 
@@ -178,14 +180,14 @@ readName str
         = Just $ NameOpVector p f
 
         -- Primitive names.
-        | Just p <- readPrimTyCon str  
+        | Just p      <- readPrimTyCon     str  
         = Just $ NamePrimTyCon p
 
         | Just (p, f) <- readPrimArithFlag str  
         = Just $ NamePrimArith p f
 
-        | Just p <- readPrimCast  str
-        = Just $ NamePrimCast  p
+        | Just (p, f) <- readPrimCastFlag  str
+        = Just $ NamePrimCast  p f
 
         -- Literal Bools
         | str == "True"  = Just $ NameLitBool True
@@ -253,6 +255,6 @@ takeTypeOfPrimOpName nn
         NameOpFun       op      -> Just (typeOpFun         op)
         NameOpVector    op f    -> Just (typeOpVectorFlag  op f)
         NamePrimArith   op f    -> Just (typePrimArithFlag op f)
-        NamePrimCast    op      -> Just (typePrimCast      op)
+        NamePrimCast    op f    -> Just (typePrimCastFlag  op f)
         _                       -> Nothing
 

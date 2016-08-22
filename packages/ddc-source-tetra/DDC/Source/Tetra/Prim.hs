@@ -39,6 +39,10 @@ module DDC.Source.Tetra.Prim
         , PrimArith     (..)
         , typePrimArith
 
+          -- ** Primitive casting operators.
+        , PrimCast      (..)
+        , typePrimCast
+
           -- ** Primitive vector operators.
         , OpVector      (..)
         , typeOpVector
@@ -65,6 +69,7 @@ import DDC.Source.Tetra.Prim.TyCon
 import DDC.Source.Tetra.Prim.TyConPrim
 import DDC.Source.Tetra.Prim.TyConTetra
 import DDC.Source.Tetra.Prim.OpArith
+import DDC.Source.Tetra.Prim.OpCast
 import DDC.Source.Tetra.Prim.OpFun
 import DDC.Source.Tetra.Prim.OpVector
 import DDC.Source.Tetra.Prim.OpError
@@ -127,21 +132,23 @@ readPrimType str
 instance Pretty PrimVal where
  ppr val
   = case val of
-        PrimValError  p         -> ppr p
-        PrimValLit    lit       -> ppr lit
-        PrimValArith  p         -> ppr p
-        PrimValVector p         -> ppr p
-        PrimValFun    p         -> ppr p
+        PrimValError    p       -> ppr p
+        PrimValLit      lit     -> ppr lit
+        PrimValArith    p       -> ppr p
+        PrimValCast     p       -> ppr p
+        PrimValVector   p       -> ppr p
+        PrimValFun      p       -> ppr p
 
 
 instance NFData PrimVal where
  rnf val
   = case val of
-        PrimValError  p         -> rnf p
-        PrimValLit    lit       -> rnf lit
-        PrimValArith  p         -> rnf p
-        PrimValVector p         -> rnf p
-        PrimValFun    p         -> rnf p
+        PrimValError    p       -> rnf p
+        PrimValLit      lit     -> rnf lit
+        PrimValArith    p       -> rnf p
+        PrimValCast     p       -> rnf p
+        PrimValVector   p       -> rnf p
+        PrimValFun      p       -> rnf p
 
 
 -- | Read the name of a primtive value.
@@ -170,26 +177,28 @@ readPrimVal str
 instance Pretty PrimLit where
  ppr lit
   = case lit of
-        PrimLitBool    True     -> text "True"
-        PrimLitBool    False    -> text "False"
-        PrimLitNat     i        -> integer i
-        PrimLitInt     i        -> integer i <> text "i"
-        PrimLitSize    s        -> integer s <> text "s"
-        PrimLitWord    i bits   -> integer i <> text "w" <> int bits
-        PrimLitFloat   f bits   -> double  f <> text "f" <> int bits
-        PrimLitTextLit tx       -> text (show $ T.unpack tx)
+        PrimLitBool     True    -> text "True"
+        PrimLitBool     False   -> text "False"
+        PrimLitNat      i       -> integer i
+        PrimLitInt      i       -> integer i <> text "i"
+        PrimLitSize     s       -> integer s <> text "s"
+        PrimLitWord     i bits  -> integer i <> text "w" <> int bits
+        PrimLitFloat    f bits  -> double  f <> text "f" <> int bits
+        PrimLitChar     c       -> text (show c)
+        PrimLitTextLit  tx      -> text (show $ T.unpack tx)
 
 
 instance NFData PrimLit where
  rnf lit 
   = case lit of
-        PrimLitBool    b        -> rnf b
-        PrimLitNat     n        -> rnf n
-        PrimLitInt     i        -> rnf i
-        PrimLitSize    s        -> rnf s
-        PrimLitWord    i bits   -> rnf i `seq` rnf bits
-        PrimLitFloat   d bits   -> rnf d `seq` rnf bits
-        PrimLitTextLit bs       -> rnf bs       
+        PrimLitBool     b       -> rnf b
+        PrimLitNat      n       -> rnf n
+        PrimLitInt      i       -> rnf i
+        PrimLitSize     s       -> rnf s
+        PrimLitWord     i bits  -> rnf i `seq` rnf bits
+        PrimLitFloat    d bits  -> rnf d `seq` rnf bits
+        PrimLitChar     c       -> rnf c
+        PrimLitTextLit  bs      -> rnf bs       
 
 
 -- | Read the name of a primitive literal.

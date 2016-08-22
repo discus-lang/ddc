@@ -10,7 +10,8 @@ module DDC.Core.Salt.Compounds
 
           -- * Values
           -- ** Literals
-        , xBool,  xNat, xInt, xSize, xWord, xFloat, xTag, xTextLit
+        , xBool, xNat, xInt, xSize, xWord, xFloat, xTag
+        , xChar, xTextLit
 
           -- ** Primitive arithmetic operators.
         , xNeg

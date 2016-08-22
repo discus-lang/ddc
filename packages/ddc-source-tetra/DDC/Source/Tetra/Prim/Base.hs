@@ -16,6 +16,9 @@ module DDC.Source.Tetra.Prim.Base
           -- ** Primitive arithmetic operators.
         , PrimArith     (..)
 
+          -- ** Primitive casting operators.
+        , PrimCast      (..)
+
           -- ** Primitive vector operators.
         , OpVector      (..)
 
@@ -36,7 +39,8 @@ import DDC.Core.Tetra
         , OpVector      (..)
         , OpError       (..)
         , PrimTyCon     (..)
-        , PrimArith     (..))
+        , PrimArith     (..)
+        , PrimCast      (..))
 
 import Data.Text        (Text)
 
@@ -93,6 +97,9 @@ data PrimVal
         -- | Primitive arithmetic operators.
         | PrimValArith          !PrimArith
 
+        -- | Primitive numeric casting operators.
+        | PrimValCast           !PrimCast
+
         -- | Primitive error handling.
         | PrimValError          !OpError
         
@@ -129,6 +136,9 @@ data PrimLit
         --   with the given number of bits precision.
         | PrimLitFloat          !Double !Int
 
+        -- | A character literal.
+        | PrimLitChar           !Char
+
         -- | Text literals (UTF-8 encoded)
         | PrimLitTextLit        !Text
         deriving (Eq, Ord, Show)
@@ -143,5 +153,6 @@ primLitOfLiteral lit
         LSize   s       -> PrimLitSize    s
         LWord   i b     -> PrimLitWord    i b
         LFloat  f b     -> PrimLitFloat   f b
+        LChar   c       -> PrimLitChar    c
         LString tx      -> PrimLitTextLit tx
 

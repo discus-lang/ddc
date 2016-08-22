@@ -745,6 +745,7 @@ toCorePrimVal :: S.PrimVal -> C.Name
 toCorePrimVal pv
  = case pv of
         S.PrimValArith  p       -> C.NamePrimArith  p False
+        S.PrimValCast   p       -> C.NamePrimCast   p False
         S.PrimValError  p       -> C.NameOpError    p False
         S.PrimValVector p       -> C.NameOpVector   p False
         S.PrimValFun    p       -> C.NameOpFun      p
@@ -761,5 +762,6 @@ toCorePrimLit pl
         S.PrimLitSize    x      -> C.NameLitSize    x
         S.PrimLitWord    x s    -> C.NameLitWord    x s
         S.PrimLitFloat   x s    -> C.NameLitFloat   x s
+        S.PrimLitChar    x      -> C.NameLitChar    x
         S.PrimLitTextLit x      -> C.NameLitTextLit x
 

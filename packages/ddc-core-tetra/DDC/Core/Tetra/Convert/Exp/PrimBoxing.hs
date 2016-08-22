@@ -39,7 +39,7 @@ convertPrimBoxing _ectx ctx xx
         --   We fake-up a data-type declaration so we can use the same data layout
         --   code as for user-defined types.
         XApp a _ _
-         | Just ( E.NamePrimCast E.PrimCastConvert
+         | Just ( E.NamePrimCast E.PrimCastConvert False
                 , [XType _ tUx, XType _ tBx, xArg])     <- takeXPrimApps xx
          , isUnboxedRepType tUx
          , isNumericType    tBx
@@ -59,7 +59,7 @@ convertPrimBoxing _ectx ctx xx
         --   We fake-up a data-type declaration so we can use the same data layout
         --   code as for used-defined types.
         XApp a _ _
-         | Just ( E.NamePrimCast E.PrimCastConvert
+         | Just ( E.NamePrimCast E.PrimCastConvert False
                 , [XType _ tBx, XType _ tUx, xArg])     <- takeXPrimApps xx
          , isUnboxedRepType tUx
          , isNumericType    tBx

@@ -18,6 +18,7 @@ import DDC.Type.Env                     (KindEnv, TypeEnv)
 import DDC.Base.Pretty
 import DDC.Control.Monad.Check          (throw)
 import qualified DDC.Type.Env           as Env
+import qualified Data.Char              as Char
 
 
 -- Config -----------------------------------------------------------------------------------------
@@ -281,6 +282,7 @@ convDaConName nn
         PrimLitNat  i      -> Just $ integer i
 
         PrimLitInt  i      -> Just $ integer i
+        PrimLitChar c      -> Just $ int (Char.ord c)
 
         PrimLitWord i bits
          |  elem bits [8, 16, 32, 64]
@@ -325,6 +327,7 @@ convRValueM config kenv tenv xx
                 PrimLitNat  i   -> return $ integer i
                 PrimLitInt  i   -> return $ integer i
                 PrimLitWord i _ -> return $ integer i
+                PrimLitChar c   -> return $ int (Char.ord c)
                 PrimLitTag  i   -> return $ integer i
                 PrimLitVoid     -> return $ text "void"
                 _               -> throw $ ErrorRValueInvalid xx

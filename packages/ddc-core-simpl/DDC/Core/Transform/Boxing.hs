@@ -109,12 +109,12 @@ boxingX config xx
         -- Convert literals to their unboxed form, followed by a boxing conversion.
         XCon a (DaConPrim n tLit)
          | Just RepBoxed        <- configRepOfType config tLit
-         -> let Just tLitU      = configConvertRepType config RepUnboxed tLit
-                Just nU         = configUnboxLitName   config n
+         , Just tLitU           <- configConvertRepType config RepUnboxed tLit
+         , Just nU              <- configUnboxLitName   config n
 
-                Just xLit       = configConvertRepExp  config RepBoxed a tLitU 
-                                $ XCon a (DaConPrim nU tLitU)
-           in   xLit
+         , Just xLit            <- configConvertRepExp  config RepBoxed a tLitU 
+                                $  XCon a (DaConPrim nU tLitU)
+         -> xLit
 
         -- Use unboxed versions of primops by unboxing their arguments then 
         -- reboxing their results.
@@ -128,6 +128,7 @@ boxingX config xx
                         tPrimBoxed tPrimUnboxed
                         xsArgsAll'
 
+        -- Unbox primitive applications.
         XApp a _ _
          |  Just (n, xsArgsAll) <- takeXPrimApps xx
          ,  Just n'             <- configUnboxPrimOpName config n
@@ -146,7 +147,7 @@ boxingX config xx
          -> let xsArgsAll'      = map (boxingX config) xsArgsAll
             in  boxingForeignSea config a xx xFn tForeign xsArgsAll'
 
-
+        -- Unbox literal patterns in alternatives.
         XCase a xScrut alts
          | p : _         <- [ p  | AAlt (PData p@DaConPrim{} []) _ <- alts]
          , Just tLit1    <- configValueTypeOfLitName config (daConName p)

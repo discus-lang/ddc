@@ -59,7 +59,8 @@ foo (_: Unit)
     let f010 = 0.1f32 in
     let s1234 = 1234s in
     let w32 = 4660w32 in
-    let r = "strung" in
+    let r = "I am String" in
+    let c = '\955' in
     ();
 
 

@@ -58,12 +58,14 @@ data Name
 
         -- | Primitive arithmetic, logic, comparison and
         --   bit-wise operators.
-        --   The flag indicates whether this is the boxed
-        --   (False) or unboxed (True) version.
+        --   The flag indicates whether this is the
+        --   boxed (False) or unboxed (True) version.
         | NamePrimArith         !PrimArith      !Bool
 
         -- | Primitive numeric casting operators.
-        | NamePrimCast          !PrimCast
+        --   The flat indicates whether this is the 
+        --   boxed (False) or unboxed (True) version.
+        | NamePrimCast          !PrimCast       !Bool
 
         -- Literals -----------------------------
         -- | A boolean literal.
@@ -88,6 +90,11 @@ data Name
         -- | A floating point literal,
         --   with the given number of bits precision.
         | NameLitFloat          !Double  !Int
+
+        -- | A character literal,
+        --   These are special syntax for a Word32 expressing a
+        --   Unicode codepoint.
+        | NameLitChar           !Char
 
         -- | A text literal (UTF-8 encoded)
         --   Note that 'Text' and 'TextLit#' are different types. 
@@ -122,6 +129,7 @@ isNameLit nn
         NameLitSize{}    -> True
         NameLitWord{}    -> True
         NameLitFloat{}   -> True
+        NameLitChar{}    -> True
         NameLitTextLit{} -> True
         NameLitUnboxed n -> isNameLit n
         _                -> False

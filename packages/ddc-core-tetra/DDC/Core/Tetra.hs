@@ -22,6 +22,7 @@ module DDC.Core.Tetra
         , OpError       (..)
         , PrimTyCon     (..),   pprPrimTyConStem
         , PrimArith     (..)
+        , PrimCast      (..)
 
           -- * Name Parsing
         , readName

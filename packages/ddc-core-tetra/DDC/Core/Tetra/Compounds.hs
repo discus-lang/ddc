@@ -90,8 +90,8 @@ xFunApply a tsArg tResult xF xsArg
 xCastConvert :: a -> Type Name -> Type Name -> Exp a Name -> Exp a Name 
 xCastConvert a tTo tFrom x
  = xApps a
-        (XVar a (UPrim (NamePrimCast PrimCastConvert) 
-                       (typePrimCast PrimCastConvert)))
+        (XVar a (UPrim (NamePrimCast PrimCastConvert False) 
+                       (typePrimCastFlag PrimCastConvert False)))
         [ XType a tTo
         , XType a tFrom
         , x ]

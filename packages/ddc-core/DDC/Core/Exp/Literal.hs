@@ -17,5 +17,6 @@ data Literal
         | LSize   Integer
         | LWord   Integer Int
         | LFloat  Double  Int
+        | LChar   Char
         | LString Text
         deriving (Eq, Show)

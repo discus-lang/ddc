@@ -26,6 +26,7 @@ convertLitCtor a dc
         E.NameLitSize    i      -> return $ A.xSize    a i
         E.NameLitWord    i bits -> return $ A.xWord    a i bits
         E.NameLitFloat   f bits -> return $ A.xFloat   a f bits
+        E.NameLitChar    c      -> return $ A.xChar    a c
         E.NameLitTextLit bs     -> return $ A.xTextLit a bs
         _                       -> throw $ ErrorMalformed "Invalid literal."
 

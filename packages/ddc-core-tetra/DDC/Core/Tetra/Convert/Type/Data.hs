@@ -59,7 +59,7 @@ convertDataU uu
                   $  Just $ UPrim (A.NamePrimOp (A.PrimArith op)) 
                                   (A.typeOfPrimArith op)
 
-                E.NamePrimCast op
+                E.NamePrimCast op True
                   -> return 
                   $  Just $ UPrim (A.NamePrimOp (A.PrimCast  op)) 
                                   (A.typeOfPrimCast  op)

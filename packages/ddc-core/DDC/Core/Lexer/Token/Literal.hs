@@ -28,7 +28,15 @@ scanLiteral   :: Scanner IO Location [Char] (Location, (Literal, Bool))
 scanLiteral 
  = alts [ munchPred Nothing matchLiteral acceptLiteral
 
-        , do    (loc, str) <- scanHaskellString 
+          -- Character literals with Haskell style escape codes.
+        , do    (loc, c)    <- scanHaskellChar
+                alts [ do _  <- satisfies (\c' -> c' == '#')
+                          return (loc, (LChar  c, True))
+
+                     , do return (loc, (LChar  c, False)) ]
+
+          -- String literals with Haskell style escape codes.
+        , do    (loc, str)  <- scanHaskellString 
                 alts [ do _ <- satisfies (\c -> c == '#')
                           return (loc, (LString (Text.pack str), True))
 

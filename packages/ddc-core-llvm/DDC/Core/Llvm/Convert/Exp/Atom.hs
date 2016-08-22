@@ -24,7 +24,7 @@ import qualified DDC.Core.Module                as C
 import qualified DDC.Core.Exp                   as C
 import qualified Data.Map                       as Map
 import qualified Data.List                      as List
-
+import qualified Data.Char                      as Char
 
 -- Arguments ------------------------------------------------------------------
 -- | Convert a function argument expression
@@ -111,6 +111,12 @@ mconvAtom ctx xx
                  -> Just $ do
                         t' <- convertType pp kenv t
                         return $ XLit (LitFloat t' val)
+
+                -- Literal character
+                A.PrimLitChar c
+                 -> Just $ do
+                        return  $ XLit (LitInt (TInt 32) (fromIntegral $ Char.ord c))
+
 
                 -- A text literal.
                 A.PrimLitTextLit tx
