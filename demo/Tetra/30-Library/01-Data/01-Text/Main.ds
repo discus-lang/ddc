@@ -20,6 +20,12 @@ main ()
         -- Use '%%' (pastes) to paste with a space.
         writel  $ "Hello" %% "World"
 
+        -- Use 'writell' to write with multiple newlines.
+        writell $ "I walked through the forests"
+                %% "with ugly spirits\n"
+                %  ("kissed" %% "their feet and found them") % "\n"
+                %  "calm, calm, calm."
+
 
         writel  "-- Showing -------------------------------"
 
