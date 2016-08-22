@@ -111,6 +111,11 @@ describeToken kk
 --   eliminated before parsing proper.
 data TokenMeta
         = KNewLine
+
+        -- | Comment string.
+        | KComment String
+
+        -- TODO: dump old comment tokens.
         | KCommentLineStart
         | KCommentBlockStart
         | KCommentBlockEnd
@@ -130,6 +135,7 @@ describeTokenMeta :: TokenMeta -> String
 describeTokenMeta tm
  = case tm of
         KNewLine                -> "new line"
+        KComment{}              -> "comment"
         KCommentLineStart       -> "comment start"
         KCommentBlockStart      -> "block comment start"
         KCommentBlockEnd        -> "block comment end"

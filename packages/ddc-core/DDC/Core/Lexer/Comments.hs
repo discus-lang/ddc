@@ -15,6 +15,9 @@ dropComments
 dropComments []      = []
 dropComments (t@(Located sourcePos tok) : xs)
  = case tok of
+        KM (KComment _)
+         -> dropComments xs
+
         KM KCommentLineStart 
          -> dropComments $ dropWhile (\t' -> not $ isToken t' (KM KNewLine)) xs
 

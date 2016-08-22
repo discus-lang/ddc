@@ -6,7 +6,7 @@ module DDC.Core.Lexer.Token.Keyword
         , keywords)
 where
 import Text.Lexer.Inchworm.Char
-import qualified Data.Char              as Char
+import DDC.Core.Lexer.Token.Names
 
 
 -------------------------------------------------------------------------------
@@ -95,13 +95,7 @@ sayKeyword kw
 -- | Scanner for a `Keyword`.
 scanKeyword :: Scanner IO Location [Char] (Location, Keyword)
 scanKeyword
- = munchPred Nothing matchKeyword acceptKeyword
-
-
--- | Match a potential keyword character.
-matchKeyword  :: Int -> Char -> Bool
-matchKeyword _ix c 
-        = Char.isLower c
+ = munchPred Nothing matchVarName acceptKeyword
 
 -- | Accept a keyword token.
 acceptKeyword :: String -> Maybe Keyword

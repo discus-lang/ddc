@@ -92,7 +92,7 @@ saySymbol pp
 -- | Scanner for a `Symbol`.
 scanSymbol :: Scanner IO Location [Char] (Location, Symbol)
 scanSymbol
- = alt  (munchPred (Just 2) matchSymbol2 acceptSymbol2)
+ = alt  (munchPred Nothing matchSymbol2 acceptSymbol2)
         (from      acceptSymbol1)
 
 
@@ -164,4 +164,3 @@ acceptSymbol1 c
         '→'     -> Just SArrowDashRight
         '←'     -> Just SArrowDashLeft
         _       -> Nothing
-

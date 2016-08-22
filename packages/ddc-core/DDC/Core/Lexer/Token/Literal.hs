@@ -1,7 +1,7 @@
 
 module DDC.Core.Lexer.Token.Literal
         ( Literal       (..)
-        , acceptLiteral
+        , scanLiteral
 
         , isLitName
         , isLitStart
@@ -17,24 +17,45 @@ module DDC.Core.Lexer.Token.Literal
         , readHex)
 where
 import DDC.Core.Exp.Literal
-import qualified Data.Char      as Char
-import qualified Data.List      as List
+import Text.Lexer.Inchworm.Char
+import qualified Data.Char                      as Char
+import qualified Data.List                      as List
+import qualified Data.Text                      as Text
 
 
 -- Literal --------------------------------------------------------------------
--- | Accept a numeric literal.
+scanLiteral   :: Scanner IO Location [Char] (Location, (Literal, Bool))
+scanLiteral 
+ = alts [ munchPred Nothing matchLiteral acceptLiteral
+
+        , do    (loc, str) <- scanHaskellString 
+                alts [ do _ <- satisfies (\c -> c == '#')
+                          return (loc, (LString (Text.pack str), True))
+
+                     , do return (loc, (LString (Text.pack str), False))
+                     ]
+        ]
+
+
+-- | Match a literal character.
+matchLiteral  :: Int -> Char -> Bool
+matchLiteral 0 c = isLitStart c
+matchLiteral _ c = isLitBody c
+
+
+-- | Accept a literal.
 acceptLiteral :: String -> Maybe (Literal, Bool)
 acceptLiteral str
  | ('#' : str') <- reverse str
- , Just lit     <- accept  (reverse str')
+ , Just lit     <- acceptLit  (reverse str')
  = Just (lit, True)
 
- | Just lit     <- accept str
+ | Just lit     <- acceptLit str
  = Just (lit, False)
 
  | otherwise
  = Nothing
- where accept str'
+ where acceptLit str'
         | Just i        <- readLitNat         str'      = Just (LNat   i)
         | Just i        <- readLitInt         str'      = Just (LInt   i)
         | Just i        <- readLitSize        str'      = Just (LSize  i)

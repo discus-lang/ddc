@@ -34,7 +34,8 @@ acceptPrefixOperator str
         , isOpStart c
         , (body , cs3)  <- List.span isOpBody cs2
         , ')' : []      <- cs3
-        = Just body
+        , not $ null (c : body)
+        = Just (c : body)
 
         | otherwise
         = Nothing
@@ -60,6 +61,9 @@ acceptInfixOperator str
  = case str of
         "="     -> Nothing
         "|"     -> Nothing
+        "~>"    -> Nothing
+        "->"    -> Nothing
+        "<-"    -> Nothing
         _       -> Just str
 
 

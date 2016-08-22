@@ -92,15 +92,18 @@ pipeText !_srcName !_srcLine !str
 pipeText !srcName !srcLine !str 
          !(PipeTextLoadCore !fragment !mode !sink !pipes)
  = {-# SCC "PipeTextLoadCore" #-}
-   let  toks    = fragmentLexModule fragment srcName srcLine str 
-   in case C.loadModuleFromTokens fragment srcName mode toks of
-        (Left err, mct) 
-         -> do sinkCheckTrace mct sink
-               return [ErrorLoad err]
+   do   let   toks    = fragmentLexModule fragment srcName srcLine str 
 
-        (Right mm, mct) 
-         -> do sinkCheckTrace mct sink
-               pipeCores mm pipes
+--        putStrLn $ unlines $ map (show . SP.valueOfLocated) toks
+
+        case C.loadModuleFromTokens fragment srcName mode toks of
+          (Left err, mct) 
+           -> do sinkCheckTrace mct sink
+                 return [ErrorLoad err]
+
+          (Right mm, mct) 
+           -> do sinkCheckTrace mct sink
+                 pipeCores mm pipes
 
  where  sinkCheckTrace mct sink'
          = case mct of
