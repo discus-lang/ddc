@@ -20,10 +20,10 @@ typePrimCastFlag op bUnboxed
          -> tForalls [kData, kData] $ \[t1, t2] -> fb t1 `tFun` fb t2
 
         PrimCastPromote  
-         -> tForalls [kData, kData] $ \[t1, t2] -> fb t1 `tFun` fb t2
+         -> tForalls [kData, kData] $ \[t1, t2] -> fb t2 `tFun` fb t1
 
         PrimCastTruncate 
-         -> tForalls [kData, kData] $ \[t1, t2] -> fb t1 `tFun` fb t2
+         -> tForalls [kData, kData] $ \[t1, t2] -> fb t2 `tFun` fb t1
 
 
 -- | Read a primitive cast operator.

@@ -90,13 +90,15 @@ convertExp ectx ctx xx
         -- Conversions for primitive operators are defined separately.
         _ 
          |  Just n <- takeNamePrimX xx
-         ,  Just r <- case n of
-                         E.NamePrimArith{} -> convertPrimArith  ectx ctx xx
-                         E.NamePrimCast{}  -> convertPrimBoxing ectx ctx xx
-                         E.NameOpError{}   -> convertPrimError  ectx ctx xx
-                         E.NameOpVector{}  -> convertPrimVector ectx ctx xx 
-                         E.NameOpFun{}     -> convertPrimCall   ectx ctx xx
-                         _                 -> Nothing
+         ,  Just r 
+             <- case n of
+                  E.NamePrimArith{}       -> convertPrimArith  ectx ctx xx
+                  E.NamePrimCast _ True   -> convertPrimArith  ectx ctx xx
+                  E.NamePrimCast _ False  -> convertPrimBoxing ectx ctx xx
+                  E.NameOpError{}         -> convertPrimError  ectx ctx xx
+                  E.NameOpVector{}        -> convertPrimVector ectx ctx xx 
+                  E.NameOpFun{}           -> convertPrimCall   ectx ctx xx
+                  _                       -> Nothing
          -> r
 
         ---------------------------------------------------

@@ -118,19 +118,11 @@ convertRepExp rep a tSource xx
 unboxPrimOpName :: Name -> Maybe Name
 unboxPrimOpName n
  = case n of
-        -- The types of arithmetic operators are already polytypic,
-        -- and can be instantiated at either value types or unboxed types.
-        NamePrimArith op False 
-          -> Just $ NamePrimArith op True
-
-        -- The types of vector operators have different value type and unboxed versions.
-        NameOpVector  op False
-          -> Just $ NameOpVector  op True
-
-        NameOpError   op False
-          -> Just $ NameOpError   op True
-
-        _ -> Nothing
+        NamePrimArith op False  -> Just $ NamePrimArith op True
+        NamePrimCast  op False  -> Just $ NamePrimCast  op True
+        NameOpVector  op False  -> Just $ NameOpVector  op True
+        NameOpError   op False  -> Just $ NameOpError   op True
+        _                       -> Nothing
 
 
 -- | If this is the name of an literal, then produce the unboxed version.
