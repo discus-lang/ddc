@@ -64,6 +64,8 @@ acceptInfixOperator str
         "~>"    -> Nothing
         "->"    -> Nothing
         "<-"    -> Nothing
+        "=>"    -> Nothing
+        "/\\"   -> Nothing
         _       -> Just str
 
 
@@ -100,6 +102,7 @@ isOpBody c
         || c == '*'     || c == '-'     || c == '+'     || c == '='
         || c == ':'     || c == '?'     || c == '/'     || c == '|'
         || c == '<'     || c == '>'
+        || c == '\\'
         || Set.member c unicodeOperatorsInfix
 
 

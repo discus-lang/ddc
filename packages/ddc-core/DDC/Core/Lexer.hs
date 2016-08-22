@@ -14,11 +14,12 @@ module DDC.Core.Lexer
         , lexModuleWithOffside
         , lexExp)
 where
-import DDC.Core.Lexer.Token.Literal
 import DDC.Core.Lexer.Token.Builtin
+import DDC.Core.Lexer.Token.Index
 import DDC.Core.Lexer.Token.Keyword
-import DDC.Core.Lexer.Token.Operator
+import DDC.Core.Lexer.Token.Literal
 import DDC.Core.Lexer.Token.Names
+import DDC.Core.Lexer.Token.Operator
 import DDC.Core.Lexer.Token.Symbol
 
 import DDC.Core.Lexer.Offside
@@ -29,7 +30,6 @@ import Data.Text                                (Text)
 import qualified System.IO.Unsafe               as System
 import qualified Text.Lexer.Inchworm.Char       as I
 import qualified Data.Text                      as Text
-import qualified Data.Char                      as Char
 
 
 -- Module -----------------------------------------------------------------------------------------
@@ -104,16 +104,35 @@ type Scanner a
 
 
 -------------------------------------------------------------------------------
--- | Scanner for script source.
+-- | Scanner for source and core files.
+--
+--   The lexical structure for source and core is a bit different, 
+--   but close enough that there's no point writing a separate lexer yet.
+--
 scanner :: FilePath 
         -> Scanner (Located (Token String))
 
 scanner fileName
- = I.skip (\c -> c == ' ' || c == '\t')
- $ I.alts
+ = let
+        stamp   :: (I.Location, a) -> Located a
+        stamp (I.Location line col, token)
+         = Located (SourcePos fileName line col) token
+        {-# INLINE stamp #-}
+
+        stamp'  :: (a -> b)
+                -> (I.Location, a) -> Located b
+        stamp' k (I.Location line col, token) 
+          = Located (SourcePos fileName line col) (k token)
+        {-# INLINE stamp' #-}
+
+   in I.skip (\c -> c == ' ' || c == '\t')
+        $ I.alts
         [ -- Newlines are scanned to their own tokens because
           -- the transform that manages the offside rule uses them.
-          fmap stamp                    $ scanNewLine
+          fmap stamp                    
+           $ I.from     (\c -> case c of
+                                '\n'        -> return $ KM KNewLine
+                                _           -> Nothing)
 
           -- Scan comments into their own tokens,
           -- these then get dropped by the dropComments function.
@@ -123,6 +142,10 @@ scanner fileName
           -- deBruijn indices.
           --   Needs to come before scanSymbol as '^' is also an operator.
         , fmap (stamp' (KA . KIndex))   $ scanIndex
+
+          -- Literal values.
+        , fmap (stamp' (\(l, b) -> KA (KLiteral l b)))
+           $ scanLiteral
 
           -- Infix operators.
           --   Needs to come before scanSymbol because operators 
@@ -154,47 +177,5 @@ scanner fileName
         , fmap (stamp' (KA . KKeyword)) $ scanKeyword
         , fmap (stamp' (KN . KCon))     $ scanConName
         , fmap (stamp' (KN . KVar))     $ scanVarName
-
-          -- Literal values.
-        , fmap (stamp' (\(l, b) -> KA (KLiteral l b)))
-                $ scanLiteral
-
         ]
- where
-        stamp   :: (I.Location, a) -> Located a
-        stamp (I.Location line col, token)
-         = Located (SourcePos fileName line col) token
-        {-# INLINE stamp #-}
-
-        stamp'  :: (a -> b)
-                -> (I.Location, a) -> Located b
-        stamp' k (I.Location line col, token) 
-          = Located (SourcePos fileName line col) (k token)
-        {-# INLINE stamp' #-}
-
-
--------------------------------------------------------------------------------
--- | Scan a newline.
---   We produce a special token for newlines as the transform that
---   manages the offside rule uses them.
-scanNewLine :: Scanner (I.Location, Token String)
-scanNewLine
- = I.from (\c -> case c of
-                   '\n'   -> return $ KM KNewLine
-                   _      -> Nothing)
-
-
--- | Scan a deBruijn index.
-scanIndex   :: Scanner (I.Location, Int)
-scanIndex
- = I.munchPred Nothing matchIndex acceptIndex
- where
-        matchIndex 0 '^'        = True
-        matchIndex 0 _          = False
-        matchIndex _ c          = Char.isDigit c
-
-        acceptIndex ('^': xs)
-         | not $ null xs        = return (read xs)
-        acceptIndex _           = Nothing
-
 

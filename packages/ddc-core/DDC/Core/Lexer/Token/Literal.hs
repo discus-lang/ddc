@@ -18,9 +18,9 @@ module DDC.Core.Lexer.Token.Literal
 where
 import DDC.Core.Exp.Literal
 import Text.Lexer.Inchworm.Char
-import qualified Data.Char                      as Char
-import qualified Data.List                      as List
-import qualified Data.Text                      as Text
+import qualified Data.Char              as Char
+import qualified Data.List              as List
+import qualified Data.Text              as Text
 
 
 -- Literal --------------------------------------------------------------------
