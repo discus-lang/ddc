@@ -1,0 +1,70 @@
+
+-- | Conversions between Text and Lists.
+module Data.Text.List
+export 
+{       textOfCharList;
+        charListOfText;
+}
+import Data.Text.Base
+import Data.List
+where
+
+
+-- | Convert a list of characters to a Text object.
+textOfCharList (xx: List Text): Text
+ = TextVec
+    (extend RegionText using r with { Alloc r; Read r; Write r }
+     in  vectorOfCharList [r] xx)
+-- TODO: using $ between TextVec and body causes segfault.
+
+
+-- | O(n). Convert a text object to a list of characters.
+charListOfText (tx: Text): List Text
+ = run box result
+ where  result: List Text
+         = case tx of
+                TextVec vec -> charListOfTextVec vec
+                _           -> charListOfTextVec (vectorOfText [RegionText] tx)
+-- TODO: Read RegionText  isn't being coerced with Pure
+-- need dodgy intermediate run/box cast.
+
+
+-- | Unpack a list of characters from a vector.
+charListOfTextVec
+        (vec: Vector# r Word8#)
+        : S (Read r) (List Text)
+ = go 0
+ where  
+        go (ix: Nat#): S (Read r) (List Text)
+         | ix >= (vectorLength# vec - 1)
+         = Nil
+
+         | otherwise               
+         = do   txChar = textOfWord8 (vectorRead# vec ix)
+                Cons txChar (go (ix + 1))
+
+
+-- | Pack a list of characters into a mutable vector.
+vectorOfCharList
+        [r: Region]
+        (xx: List Text)
+        : S (Alloc r + Write r) (Vector# r Word8#)
+ = run box 
+   do
+        len     = length xx
+        vec     = vectorAlloc# [r] (len + 1)
+        fill vec 0 xx
+        vectorWrite# vec len 0w8
+        vec
+ where
+        fill (vec: Vector# r Word8#) 
+             (ix: Nat) (xx: List Text): S (Write r) Unit
+         = case xx of
+                Nil     -> ()
+                Cons x xs
+                 | Just c       <- indexText x 0
+                 -> do  vectorWrite# vec ix c
+                        fill vec (ix + 1) xs
+
+                 | otherwise
+                 -> do  fill vec (ix + 1) xs

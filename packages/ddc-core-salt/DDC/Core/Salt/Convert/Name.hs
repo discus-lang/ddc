@@ -56,6 +56,9 @@ seaNameOfSuper mImport mExport nm
         --
         -- We don't handle the other cases because we would need to
         -- produce a wrapper to conver the names.
+        | Just str                      <- takeNameVar nm
+        = Just $ text str
+
         | otherwise
         = Nothing
 

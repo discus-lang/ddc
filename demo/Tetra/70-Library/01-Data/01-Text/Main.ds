@@ -1,0 +1,60 @@
+
+-- Demo of the Data.Text library.
+module Main
+import Data.Text
+import Data.List
+import Class.Show
+import System.IO.Console
+where
+
+
+main ()
+ = do   writel  "-- Printing ------------------------------"
+        
+        -- Print text with 'writel'.
+        writel  "Hello"
+
+        -- Use '%' (paste) to paste text together.
+        writel  $ "Hello" % "World"
+
+        -- Use '%%' (pastes) to paste with a space.
+        writel  $ "Hello" %% "World"
+
+
+        writel  "-- Showing -------------------------------"
+
+        -- Various show functions
+        writel  $ showBool      True
+        writel  $ showNat       42
+        writel  $ showBinaryNat 1234
+        writel  $ showHexNat    12648430
+
+
+        -- Get the length of some text.
+        writel  $ showNat
+                $ sizeOfText $ "How long" %% "is this string?"
+
+        -- Index into a text object.
+        writel  $ case indexText "ABCDE" 3 of
+                        Nothing -> "sorry"
+                        Just w8 -> textOfWord8 w8
+
+
+        writel  $ "-- Comparisons -------------------------"
+
+        -- Check if two text strings are the same.
+        writel  $ showBool
+                $ eqText "Some Text" ("Some" %% "Text")
+
+
+        writel  $ "-- Conversions -------------------------"
+
+        -- Wrap a Char as a text object.
+        writel  $ textOfChar '$'
+
+        -- Wrap a Word8 as a text object.
+        writel  $ textOfWord8 33w8
+
+        -- Copy text a list of characters.
+        writel  $ show (show_list show_text)
+                $ charListOfText "Hello"

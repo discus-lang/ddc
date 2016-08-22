@@ -244,8 +244,13 @@ takeGlobalV ctx xx
                 let mExport  = lookup nSuper (C.moduleExportValues mm)
 
                 -- Convert local name to sanitized LLVM name.
-                let Just str = liftM renderPlain 
+                let result   = liftM renderPlain 
                              $ A.seaNameOfSuper mImport mExport nSuper
+
+                let str      = case result of
+                                 Just str'      -> str'
+                                 Nothing        -> error "ddc-core-llvm: takeGlobalV"
+
 
                 t'      <- convertType pp kenv t
                 return  $ Var (NameGlobal str) t'

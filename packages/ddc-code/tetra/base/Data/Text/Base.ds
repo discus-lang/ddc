@@ -1,0 +1,248 @@
+
+-- | Basic types and operators on Text objects.
+module Data.Text.Base
+export
+{       -- Runtime operators.
+        makeTextLit;
+        sizeOfTextLit;
+        indexTextLit;
+
+        -- Construction.
+        textOfChar;
+        textOfWord8;
+        textOfVector;
+
+        -- Conversion.
+        vectorOfText;
+
+        -- Projections.
+        sizeOfText;
+        indexText;
+
+        -- Operators.
+        eqText;
+}
+import Data.Numeric.Nat
+import Data.Maybe
+
+
+-------------------------------------------------------------------------------
+-- Foreign imports.
+
+-- | A TextLit is a boxed object that contains a pointer to literal
+--   UTF-8 data in static memory.  
+import foreign boxed type
+        TextLit         : Data
+
+
+-- | Runtime operators for working with unboxed text literals.
+import foreign c value
+
+        -- | Make a text literal.
+        --   The TextLit# type is a pointer to literal UTF-8 data in 
+        --   static memory, which we pack into a boxed object.
+        makeTextLit     : TextLit# -> TextLit
+
+        -- | Get the size of a boxed text literal.
+        sizeOfTextLit   : TextLit  -> Nat#
+
+        -- | Get a single byte from a boxed text literal.
+        --   This is a byte rather than a character,
+        --   as UTF-8 encoded characters can consist of multiple bytes.
+        indexTextLit    : TextLit  -> Nat# -> Word8#
+
+
+-- | Top level region containing text vectors.
+--   All our dynamic character data is in this region.
+import foreign abstract type
+        RegionText      : Region
+
+
+-- | Capabilities to allocate and read top-level text vectors.
+import foreign abstract capability
+        capTopTextAlloc : Alloc RegionText
+        capTopTextRead  : Read  RegionText
+
+where
+
+
+-- Text -----------------------------------------------------------------------
+data Text where
+        -- | Wrap a text literal into a text object.
+        --   The characterdata is stored in static memory.
+        TextLit : TextLit                   -> Text
+
+        -- | Wrap some character data into a text object.
+        --   The character data is stored on the heap.
+        TextVec : Vector# RegionText Word8# -> Text
+
+        -- | Append two text objects.
+        TextApp : Text -> Text              -> Text
+
+
+-- Construction ---------------------------------------------------------------
+-- | O(1). Wrap a single character into a text object.
+--   We're only taking the lowest 8 bit bytes,
+--   rather than doing proper UTF-8 encoding.
+textOfChar (c: Word32#): Text
+ = textOfWord8 (truncate# c)
+
+
+-- | O(1). Wrap a single byte into a text object.
+textOfWord8 (w8: Word8#): Text
+ = TextVec
+  (extend RegionText using r1 with { Alloc r1; Write r1 } in
+   do   -- Allocate the vector to hold the data,
+        -- including an extra null terminator byte.
+        vec     = vectorAlloc# [r1] [Word8#] 2
+
+        -- Write the character.
+        vectorWrite# vec 0 w8
+
+        -- Write the null terminator.
+        vectorWrite# vec 1 0w8
+
+        vec)
+
+
+-- | O(1). Wrap a vector of UTF-8 data into a text object.
+textOfVector (vec: Vector# RegionText Word8#): Text
+ = TextVec vec
+
+
+-- Conversion -----------------------------------------------------------------
+-- | Copy a Text object into a flat vector of UTF-8 data.
+vectorOfText
+        [r1: Region] (tt: Text)
+        : S (Alloc r1) (Vector# r1 Word8#)
+ = extend r1 using r2 with { Alloc r2; Write r2 } in
+   do   
+        -- Allocate a vector to hold all the data, 
+        -- including an extra null terminator byte.
+        vec     = vectorAlloc# [r2] [Word8#] (add (sizeOfText tt) 1)
+
+        -- Copy the text data into the vector.
+        iEnd    = copyTextToVector tt vec 0
+
+        -- Write the null terminator.
+        vectorWrite# vec iEnd 0w8
+
+        vec
+
+
+-- | Copy a text object to a mutable vector of UTF-8 data.
+copyTextToVector 
+        [r: Region] (tt: Text) (vec: Vector# r Word8#) (i0: Nat#)
+        : S (Write r) Nat
+ = case tt of
+        TextLit lit
+         -> copyTextLitToVector lit  vec i0 0 (sizeOfTextLit lit)
+
+        TextVec vec2
+         -> copyTextVecToVector vec2 vec i0 0 (vectorLength# vec2 - 1)
+
+        TextApp t1 t2
+         -> do  i1 = copyTextToVector t1 vec i0
+                i2 = copyTextToVector t2 vec i1
+                i2
+
+
+-- | Copy a text literal to a mutable vector of UTF-8 data.
+copyTextLitToVector 
+        [r: Region] (tt: TextLit) (vec: Vector# r Word8#) 
+        (iDst iSrc nSrc: Nat)
+        : S (Write r) Nat
+ | iSrc >= nSrc = iDst
+ | otherwise
+ = do   vectorWrite# vec iDst (indexTextLit tt iSrc)
+        copyTextLitToVector 
+                tt vec (iDst + 1) (iSrc + 1) nSrc
+
+
+-- | Copy a text source vector to a mutable vector of UTF-8 data.
+copyTextVecToVector 
+        [r1 r2: Region] 
+        (vecSrc: Vector# r1 Word8#) (vecDst: Vector# r2 Word8#)
+        (iDst iSrc nSrc: Nat)
+        : S (Read r1 + Write r2) Nat
+ | iSrc >= nSrc = iDst
+ | otherwise
+ = do   vectorWrite# vecDst iDst (vectorRead# vecSrc iSrc)
+        copyTextVecToVector 
+                vecSrc vecDst (iDst + 1) (iSrc + 1) nSrc
+
+
+-- Projections ----------------------------------------------------------------
+-- | Get the size of the utf8 data in a Text object, in bytes.
+--
+--   * This is NOT the same as the length of the text string in characters,
+--     as single characters can be encoded using multiple bytes.
+--
+sizeOfText (tt: Text): Nat
+ = case tt of
+        TextLit lit
+         -> sizeOfTextLit lit
+
+        -- The size of a text vector is the vector size minus
+        -- the null terminator byte.
+        TextVec vec     
+         -> vectorLength# vec - 1
+
+        TextApp t1 t2
+         -> sizeOfText t1 + sizeOfText t2
+
+
+-- | Get a single word8 character from a Text object.
+indexText (tt: Text) (ix: Nat): Maybe Word8#
+ = case tt of
+        TextLit lit
+         | ix >= sizeOfTextLit lit      -> Nothing
+         | otherwise                    -> Just (indexTextLit lit ix)
+
+        TextVec vec
+         | ix >= vectorLength# vec - 1  -> Nothing
+         | otherwise                    -> Just (vectorRead# vec ix)
+
+        TextApp t1 t2
+         -> case indexText t1 ix of
+                Just x                  -> Just x
+                Nothing                 -> indexText t2 (ix - sizeOfText t1)
+
+-- Comparison -----------------------------------------------------------------
+-- | O(max len1 len2).
+--   Check if two text objects represent the same characters.
+eqText (tx1 tx2: Text): Bool
+ = -- TODO: eliminate bodgy run box cast.
+   -- The type checker isn't crushing all the effects.
+   run box 
+   private r with {Read r; Alloc r} in
+   do   
+        -- We copy both strings into new vectors before doing the comparison.
+        -- It would be better to do it in-place.
+        vec1    = vectorOfText  [r] tx1 
+        len1    = vectorLength# vec1
+
+        vec2    = vectorOfText  [r] tx2
+        len2    = vectorLength# vec2
+
+        -- TODO: adding a False line here cause pattern match error in parser.
+        -- Investigate what is wrong with it.
+        -- False
+
+        match
+         | len1 /= len2 = False
+         | len1 == 0    = True
+         | otherwise    = go vec1 vec2 len1 0
+
+ where
+        go (vec1 vec2: Vector# r Word8#)
+           (len: Nat) (ix: Nat): S (Read r) Bool
+         | ix >= (len - 1)
+         = True
+
+         | not (eq# [Word8#] (vectorRead# vec1 ix) (vectorRead# vec2 ix))
+         = False
+
+         | otherwise
+         = go vec1 vec2 len (ix + 1)
+
