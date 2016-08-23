@@ -20,18 +20,17 @@ DDC compiles several related languages:
    supported with annotations.
 
    Example 
-     [AlmostPrimes](https://github.com/DDCSF/ddc/blob/master/demo/Tetra/80-Rosetta/AlmostPrime/Main.ds)
+     [AlmostPrimes](https://github.com/DDCSF/ddc/blob/master/demo/source/tetra/80-Rosetta/AlmostPrime/Main.ds)
      program and its 
-     [output](https://github.com/DDCSF/ddc/blob/master/demo/Tetra/80-Rosetta/AlmostPrime/Main.stdout.check).
+     [output](https://github.com/DDCSF/ddc/blob/master/demo/source/tetra/80-Rosetta/AlmostPrime/Main.stdout.check).
      
      Example 
-     [GrayCode](https://github.com/DDCSF/ddc/blob/master/demo/Tetra/80-Rosetta/GrayCode/Main.ds)
+     [GrayCode](https://github.com/DDCSF/ddc/blob/master/demo/source/tetra/80-Rosetta/GrayCode/Main.ds)
      program and its 
-     [output](https://github.com/DDCSF/ddc/blob/master/demo/Tetra/80-Rosetta/GrayCode/Main.stdout.check).
+     [output](https://github.com/DDCSF/ddc/blob/master/demo/source/tetra/80-Rosetta/GrayCode/Main.stdout.check).
      
      The [List.ds](https://github.com/DDCSF/ddc/blob/master/packages/ddc-code/tetra/base/Data/List.ds),
-      [Streams.ds](https://github.com/DDCSF/ddc/blob/master/packages/ddc-code/tetra/base/Data/Stream.ds)
-     and [Text.ds](https://github.com/DDCSF/ddc/blob/master/packages/ddc-code/tetra/base/Data/Text.ds)
+      and [Streams.ds](https://github.com/DDCSF/ddc/blob/master/packages/ddc-code/tetra/base/Data/Stream.ds)
      library modules.
 
 * Disciple Core Tetra (.dct)
