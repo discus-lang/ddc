@@ -585,12 +585,12 @@ checkModuleBinds !env !ksExports !tsExports !xx
         XLet _ (LLet b _) x2
          -> do  checkModuleBind (EnvX.envxEnvT env) ksExports tsExports b
                 env'    <- checkModuleBinds env ksExports tsExports x2
-                return  $ EnvX.extend b env'
+                return  $ EnvX.extendX b env'
 
         XLet _ (LRec bxs) x2
          -> do  mapM_ (checkModuleBind (EnvX.envxEnvT env) ksExports tsExports) $ map fst bxs
                 env'    <- checkModuleBinds env ksExports tsExports x2
-                return  $ EnvX.extends (map fst bxs) env'
+                return  $ EnvX.extendsX (map fst bxs) env'
 
         XLet _ (LPrivate _ _ _) x2
          ->     checkModuleBinds env ksExports tsExports x2
@@ -613,7 +613,7 @@ checkModuleBind env !_ksExports !tsExports !b
         Nothing                 -> return ()
         Just tExport
          | equivT env tDef tExport  -> return ()
-         | otherwise                 -> throw $ ErrorExportMismatch n tExport tDef
+         | otherwise                -> throw $ ErrorExportMismatch n tExport tDef
 
  -- Only named bindings can be exported,
  --  so we don't need to worry about non-named ones.

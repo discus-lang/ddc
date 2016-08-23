@@ -12,7 +12,6 @@ module DDC.Core.Env.EnvX
         -- * Construction
         , empty,        fromPrimEnvs
         , singleton
-        , extend,       extends
         , extendX,      extendsX
         , extendT,      extendsT
         , union,        unions
@@ -75,7 +74,6 @@ data EnvX n
         , envxStackLength  :: !Int }
 
 
-
 -- | An empty environment.
 empty :: EnvX n
 empty   = EnvX
@@ -109,19 +107,10 @@ fromPrimEnvs kenv tenv defs
 -- | Construct a singleton type environment.
 singleton :: Ord n => Bind n -> EnvX n
 singleton b
-        = extend b empty
+        = extendX b empty
 
 
 -------------------------------------------------------------------------------
--- | TODO: replace uses with extendX
-extend  :: Ord n => Bind n   -> EnvX n -> EnvX n
-extend  = extendX
-
--- | TODO: replace uses with extendsX
-extends :: Ord n => [Bind n] -> EnvX n -> EnvX n
-extends = extendsX
-
-
 -- | Extend an environment with a new binding.
 --   Replaces bindings with the same name already in the environment.
 extendX :: Ord n => Bind n -> EnvX n -> EnvX n
@@ -168,7 +157,7 @@ isPrim env n
 -- | Convert a list of `Bind`s to an environment.
 fromList :: Ord n => [Bind n] -> EnvX n
 fromList bs
-        = foldr extend empty bs
+        = foldr extendX empty bs
 
 
 -- | Convert a list of name and types into an environment

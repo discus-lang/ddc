@@ -217,7 +217,7 @@ instance Eta Lets where
 
         LRec bxs
          -> do  let bs    = map fst bxs
-                let env'  = EnvX.extends bs env
+                let env'  = EnvX.extendsX bs env
                 xs'       <- mapM (etaM config cconfig env') 
                           $  map snd bxs
                 return    $ LRec (zip bs xs')
@@ -231,7 +231,7 @@ instance Eta Alt where
   = case alt of
         AAlt p x        
          -> do  let bs    = bindsOfPat p
-                let env'  = EnvX.extends bs env
+                let env'  = EnvX.extendsX bs env
                 x'        <- etaM config cconfig env' x
                 return  $ AAlt p x'
 
