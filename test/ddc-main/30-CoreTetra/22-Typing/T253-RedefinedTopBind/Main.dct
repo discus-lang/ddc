@@ -1,12 +1,10 @@
 
 module Main
-export {
-        main      : [r : Region]. Nat# -> Ptr# r String# -> Int#;
-}
+export main      : [e: Effect]. Unit -> S e Unit
 with letrec
 
-main [r : Region] (x : Ptr# r String#) : Int#
- = 5i#
+main [e: Effect] (u: Unit): Unit
+ = u
 
-main [r : Region] (x : Ptr# r String#) : Int#
- = 2i#
+main [e: Effect] (u: Unit): Unit
+ = u

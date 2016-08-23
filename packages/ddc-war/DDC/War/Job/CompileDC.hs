@@ -52,7 +52,8 @@ data Spec
 
 -- | Language fragments that we can compile.
 data Fragment
-        = FragmentSalt          -- File.dct
+        = FragmentSalt          -- File.dcs
+        | FragmentTetra         -- File.dct
         deriving Show
 
 
@@ -106,14 +107,19 @@ build   (Spec   srcDC_ optionsDDC _fragment
         -- The directory holding the Main.dce file.
         let (srcDir, _srcFile)  = splitFileName srcDC
                 
-        -- Touch the .dce and .dcl files to the build directory to ensure they're built.
+        -- Touch everything that looks like a source file to ensure
+        -- it gets rebuilt.
         sources <- io
                 $  liftM (filter (\f -> isSuffixOf ".dcs" f 
+                                     || isSuffixOf ".dct" f
                                      || isSuffixOf ".dcl" f
                                      || isSuffixOf ".ds"  f))
                 $  lsFilesIn srcDir
 
-        ssystemq $ "touch " ++ (intercalate " " sources)
+        when (not $ null sources)
+         $ do   ssystemq $ "touch " ++ (intercalate " " sources)
+                return ()
+
 
         -- ensure the output directory exists
         ensureDir buildDir

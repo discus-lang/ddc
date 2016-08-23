@@ -1,15 +1,15 @@
 Error loading module
   When checking expression.
-    test/ddc-main/22-CoreTetra/T253-RedefinedTopBind/Main.dcl:6:6
-    Redefined binder 'main : [r : Region].Ptr# r String# -> Int#' in letrec.
+    test/ddc-main/30-CoreTetra/22-Typing/T253-RedefinedTopBind/Main.dct:4:6
+    Redefined binder 'main: [e: Effect].Unit -> Unit' in letrec.
     
     with: letrec {
-            main : [r : Region].Ptr# r String# -> Int#
-              = /\(r : Region).
-                 \(x : Ptr# r String#). 5i#;
+            main: [e: Effect].Unit -> Unit
+              = Λ(e: Effect).
+                λ(u: Unit). u;
             
-            main : [r : Region].Ptr# r String# -> Int#
-              = /\(r : Region).
-                 \(x : Ptr# r String#). 2i#
+            main: [e: Effect].Unit -> Unit
+              = Λ(e: Effect).
+                λ(u: Unit). u
           } in
           ()

@@ -6,14 +6,10 @@
 -- brace after the 'do' but there is a manifest user-written one after it.
 
 module Main 
-export {
-        main    : [r : Region]. Nat# -> Ptr# r String# -> Int#;
-}
+export  main    : [r : Region]. Nat# -> Ptr# r Word8# -> Int#;
 with letrec
 
-main    [r : Region] 
-        (argc : Nat#)   
-        (argv : Ptr# r String#)
-        : Int#
+main    [e: Effect] : Unit -> S e Unit
  = do   } 0i#
+
 

@@ -25,6 +25,7 @@ data Spec
         deriving Show
 
 
+-- | Result of a diff process.
 data Result
         = ResultSame
 
@@ -34,6 +35,7 @@ data Result
         , resultFileDiff :: FilePath }
 
 
+-- | Check if this is a successful diff result.
 resultSuccess :: Result -> Bool
 resultSuccess result
  = case result of

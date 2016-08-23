@@ -51,13 +51,13 @@ create  :: Way                  -- ^ Create tests for this way.
         -> [Chain]
 
 create way allFiles filePath
- =      catMaybes
-        [ creat way allFiles filePath
-        | creat <- 
-                [ CreateMainSH.create
-                , CreateMainHS.create
-                , CreateTestDS.create
-                , CreateDCX.create
-                , CreateDSX.create
-                , CreateDC.create  ]]
+ = let  creations
+         = [ CreateMainSH.create
+           , CreateMainHS.create
+           , CreateTestDS.create
+           , CreateDCX.create
+           , CreateDSX.create
+           , CreateDC.create  ]
+
+   in   catMaybes [ creat way allFiles filePath | creat <- creations]
 
