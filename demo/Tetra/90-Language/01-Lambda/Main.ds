@@ -3,6 +3,7 @@ module Main
 import Lambda.Source.Parser
 import Lambda.Source.Lexer
 import Lambda.Eval.Step
+import Lambda.Exp.Pretty
 import Lambda.Exp
 import Class.Show
 import Data.Tuple
@@ -13,7 +14,7 @@ where
 
 main ()
  = do  
-        cs      = charListOfText "(/x. x) (/foo. bar foo) derp"
+        cs      = charListOfText "(\\x. x) (\\foo. bar foo) (\\y. y)"
         ts      = lexTokens cs
 
         case parseExp ts of
@@ -23,4 +24,5 @@ main ()
          Just xx
           -> do writel $ show show_Exp xx
                 writel $ show (show_SStep show_Exp) (step xx)
+                writel $ pprExp xx
 

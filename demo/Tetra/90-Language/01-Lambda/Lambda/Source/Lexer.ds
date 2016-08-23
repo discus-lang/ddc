@@ -1,8 +1,6 @@
 
 module Lambda.Source.Lexer
-export  
-{       lexTokens
-}
+export lexTokens
 import Lambda.Source.Token
 import Lambda.Exp.Base
 import Control.Parsec
@@ -30,13 +28,12 @@ lexToken (xx: List Char): Maybe (Tup2 Token (List Char))
         -- Punctuation.
         | eq# c '('     -> Just (T2 KBra    xs)
         | eq# c ')'     -> Just (T2 KKet    xs)
-        | eq# c '/'     -> Just (T2 KLambda xs)
+        | eq# c '\\'    -> Just (T2 KLambda xs)
         | eq# c '.'     -> Just (T2 KDot    xs)
 
         -- Names.
         | isLower c     -> lexKName xx
         | otherwise     -> Nothing
--- TODO: escaped backslash \\ does not work.
 
 
 -- | Lex a variable name.

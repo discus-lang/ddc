@@ -65,3 +65,19 @@ main ()
         writel  $ show (show_list show_text)
                 $ map textOfChar
                 $ charListOfText "Hello"
+
+
+        writel  $ "-- Escape Codes ------------------------"
+
+        -- Check character escape code handling.
+        writel  $ textOfChar '\n'
+        writel  $ textOfChar '\''
+        writel  $ textOfChar '\\'
+        writel  $ textOfChar 'X' % textOfChar '\b' % textOfChar 'O'
+
+        -- Check string escape code handling.
+        writel  $ "new\nline"
+        writel  $ "back\b\b\b\bagain"
+        writel  $ "the\\slash"
+        writel  $ "some\"\"\"quotes"
+
