@@ -1,0 +1,37 @@
+
+module Main
+import Data.Ref
+import System.IO.Console
+where
+
+
+-- Classic example from Standard ML showing unsafe update of a
+--   polymorphic reference that needs to be rejected by the
+--   type checker.
+--
+-- In Disciple the problem is prevented by not allowing type
+--   abstraction over an effectful expression. In this case the
+--   use of 'allocRef' has an Alloc effect, so we don't allow its
+--   type to be generalized.
+--
+main ()
+ = private r with {Read r; Write r; Alloc r} in
+
+       -- Allocate a reference to a polymorphic function.
+       -- TODO: Allow this to be written with do syntax.
+   let ref [a: Data]: Ref r (a -> a)
+         = run allocRef [r] [a -> a] (λx -> x)
+   in do
+        -- Define a function that has a type which is more 
+        -- specific than the one in the reference.
+        succ = λx -> add# x 1
+
+        -- Write the more specific function into the reference.
+        writeRef ref succ
+
+        -- Try and apply the specific function at the wrong type.
+        readRef  ref True
+
+        -- Everybody dies.
+        writel "boom"
+

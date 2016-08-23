@@ -1,0 +1,8 @@
+Error in transformed module.
+  demo/source/tetra/20-Types/02-Update/Main.ds:17:1
+  Impure Spec abstraction
+             has effect: Alloc r
+  
+  with: Λ(a: Data).
+        run allocRef [r] [a -> a]
+            (λ(x: ?). x)
