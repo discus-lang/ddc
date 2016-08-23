@@ -115,11 +115,6 @@ data TokenMeta
         -- | Comment string.
         | KComment String
 
-        -- TODO: dump old comment tokens.
-        | KCommentLineStart
-        | KCommentBlockStart
-        | KCommentBlockEnd
-
         -- | This is injected by `dropCommentBlock` when it finds
         --   an unterminated block comment.
         | KCommentUnterminated
@@ -136,9 +131,6 @@ describeTokenMeta tm
  = case tm of
         KNewLine                -> "new line"
         KComment{}              -> "comment"
-        KCommentLineStart       -> "comment start"
-        KCommentBlockStart      -> "block comment start"
-        KCommentBlockEnd        -> "block comment end"
         KCommentUnterminated    -> "unterminated block comment"
         KOffsideClosingBrace    -> "closing brace"
 

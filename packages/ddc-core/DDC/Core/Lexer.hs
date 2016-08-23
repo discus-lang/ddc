@@ -23,7 +23,6 @@ import DDC.Core.Lexer.Token.Operator
 import DDC.Core.Lexer.Token.Symbol
 
 import DDC.Core.Lexer.Offside
-import DDC.Core.Lexer.Comments
 import DDC.Core.Lexer.Tokens
 import DDC.Data.SourcePos
 import Data.Text                                (Text)
@@ -46,9 +45,15 @@ lexModuleWithOffside
 lexModuleWithOffside sourceName lineStart str
  = applyOffside [] []
         $ addStarts
-        $ dropComments 
+        $ dropUnused
         $ lexText sourceName lineStart 
         $ Text.pack str
+
+ where  dropUnused ts
+         = case ts of
+                []                              -> []
+                Located _ (KM KComment{}) : ts' -> dropUnused ts'
+                t : ts'                         -> t : dropUnused ts'
 
 
 -- Exp --------------------------------------------------------------------------------------------
@@ -62,10 +67,16 @@ lexExp  :: FilePath     -- ^ Path to source file, for error messages.
         -> [Located (Token String)]
 
 lexExp sourceName lineStart str
- = dropNewLines
-        $ dropComments
+ = dropUnused
         $ lexText sourceName lineStart 
         $ Text.pack str
+
+ where  dropUnused ts
+         = case ts of
+                []                              -> []
+                Located _ (KM KComment{}) : ts' -> dropUnused ts'
+                Located _ (KM KNewLine{}) : ts' -> dropUnused ts' 
+                t : ts'                         -> t : dropUnused ts'
 
 
 -- Generic ----------------------------------------------------------------------------------------
