@@ -5,7 +5,6 @@ where
 import DDC.War.Create.Way
 import DDC.War.Driver
 import System.FilePath
-import Data.List
 import DDC.War.Job                              ()
 import Data.Set                                 (Set)
 import qualified DDC.War.Job.CompileDS          as CompileDS
@@ -16,15 +15,15 @@ import qualified Data.Set                       as Set
 -- | Compile Test.ds files.
 create :: Way -> Set FilePath -> FilePath -> Maybe Chain
 create way allFiles filePath
- | isSuffixOf ".ds" filePath
+ | takeFileName filePath == "Test.ds"
  = let  
         fileName        = takeFileName filePath
         sourceDir       = takeDirectory  filePath
         buildDir        = sourceDir </> "war-" ++ wayName way
         testName        = filePath
 
-        mainDS          = sourceDir </> "Main.ds"
-        mainSH          = sourceDir </> "Main.sh"
+        mainDS          = sourceDir </> "Text.ds"
+        mainSH          = sourceDir </> "Test.sh"
         testErrorCheck  = sourceDir </> replaceExtension fileName ".error.check"
 
         testCompStdout  = buildDir  </> replaceExtension fileName ".compile.stdout"
