@@ -5,7 +5,7 @@
 -- boxed arithmetic.
 --
 module Main 
-export main  : [r1 r2 : Region]. Nat# -> Ptr# r1 Word8# -> Int#
+export main  : [r1: Region]. Nat# -> Ptr# r1 Word8# -> Int#
 
 -- Primitive show functions are defined in the runtime system.
 import foreign c value 
@@ -97,7 +97,7 @@ fac [r1 r2: Region] (x: Ptr# r1 Obj): Ptr# r2 Obj
                 return# n5
 
 
-main [r1 r2: Region] (argc: Nat#) (argv: Ptr# r1 Word8#): Int#
+main [r1: Region] (argc: Nat#) (argv: Ptr# r1 Word8#): Int#
  = do   
         -- Create an initial heap of size 4k.
         create# 4096#

@@ -1,0 +1,102 @@
+
+-- Demo of some basic higher order list functions in Disciple Core Tetra.
+module Main
+
+-- Export the main entry point to C land.
+export main : Unit -> S Console Unit
+
+-- Define the console effect, which is the one we'll use to
+-- classify actions that write to the console.
+import foreign abstract type
+ Console        : Effect
+
+-- Import primitive IO functions from the runtime system.
+import foreign c value
+ primPutString  : TextLit# -> S Console Void#
+ primShowNat    : Nat#     -> TextLit#
+
+-- Standard list data type.
+data List (a: Data) where
+        Nil  : List a
+        Cons : a -> List a -> List a
+
+with letrec
+
+
+-- Wrap the print primitive so that it returns a Unit value
+-- instead of a Void#.
+write (ss: TextLit#): S Console Unit
+ = box do
+        run primPutString ss
+        ()
+
+
+-- Wrap the call of the primitive primShowNat function with a local
+-- super so we can pass it to a higher order function.
+-- The code generator requires all functions passed as arguments
+-- to be compiled by itself.
+showNat (n: Nat#): TextLit#
+ = primShowNat n
+
+
+-- Flip the order of arguments of a binary function.
+flip [a b c: Data] (f: a -> b -> c): b -> a -> c
+ = \xb xa. f xa xb
+
+
+-- Produce a list containing the given range of values.
+range (from to: Nat#): List Nat#
+ = case gt# from to of
+        True#           -> Nil
+        False#          -> Cons from (range (add# from 1#) to)
+
+
+-- Standard map function.
+map [a b: Data] (f: a -> b) (xx: List a): List b
+ = case xx of
+        Nil             -> Nil
+        Cons x xs       -> Cons (f x) (map f xs)
+
+
+-- Standard left fold function.
+foldl [a b: Data] (f: b -> a -> b) (z: b) (xx: List a): b
+ = case xx of
+        Nil             -> z
+        Cons x xs       -> foldl f (f z x) xs
+
+
+-- Reverse a list, the best way.
+reverse [a: Data]: List a -> List a
+ = foldl (flip Cons) Nil
+
+
+-- Print a list, using the given function to show the elements.
+printList 
+        [a : Data]
+        (showElem: a -> TextLit#) (xx: List a)
+        : S Console Unit
+ = box case xx of
+        Nil             
+         ->     ()
+
+        Cons x xs       
+         -> do  run write (showElem x)
+                run write "\n"#
+                run printList showElem xs
+
+
+-- Main function.
+--  We take a unit value and give one back.
+main (_: Unit): S Console Unit
+ = box do  
+        xs      = range 1# 5#
+        run write "Range\n"#
+        run printList showNat xs
+
+        run write "Doubled\n"#
+        run printList showNat (map (λx. mul# 2# x) xs)
+
+        run write "Reversed\n"#
+        run printList showNat (reverse xs)
+        ()
+

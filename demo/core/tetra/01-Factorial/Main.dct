@@ -1,0 +1,40 @@
+
+-- Demo of a simple recursive function in Disciple Core Tetra.
+module Main
+
+-- Export the main entry point to C land.
+export main : Unit -> S Console Unit
+
+-- Define the console effect, which is the one we'll use to
+-- classify actions that write to the console.
+import foreign abstract type
+ Console        : Effect
+
+-- Import primitive IO function from the runtime system.
+import foreign c value
+ primPutString  : TextLit# -> S Console Void#
+ primShowNat    : Nat#     -> TextLit#
+
+with letrec
+
+
+-- Compute the factorial of a natural number.
+fac (x: Nat#): Nat#
+ = case x of
+        0#      -> 1#
+        _       -> mul# x (fac (sub# x 1#))
+
+
+-- Main function.
+--  We take a unit value and give one back.
+main (u: Unit): S Console Unit
+ = box do  
+        -- Run the action. 
+        -- This returns a Void# result, so we can't return it from
+        -- the main function directly.
+        run primPutString (primShowNat (fac 10#))
+        run primPutString "\n"#
+
+        -- Might as well return the unit value we were given.
+        u
+
