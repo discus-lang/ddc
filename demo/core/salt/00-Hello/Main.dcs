@@ -1,0 +1,32 @@
+
+-- Ye'olde Hello World programme, 
+-- written in Disciple Core Salt, which is our lowest level
+-- intermediate language.
+module Main
+
+-- Export the main entry point.
+export main  : [r1: Region]. Nat# -> Ptr# r1 Word8# -> Int#
+
+-- Primitive show functions are defined in the runtime system.
+import foreign c value 
+        primPutTextLit : [r: Region]. TextLit#     -> Void#
+
+with letrec
+
+-- Ye'olde Hello World programme.
+main [r1: Region] (argc: Nat#) (argv: Ptr# r1 Word8#): Int#
+ = do
+        -- If we link in the runtime system then we need to call create#
+        -- so that the code generator initializes the global heap pointers.
+        -- These linker symbols are referred to by the runtime system code.
+        -- 
+        -- If you do your own linking and don't use runtime system functions
+        -- then you won't need this.
+        --
+        create# 0#
+
+        -- Print the greeting.
+        primPutTextLit "Hello World\n"#
+
+        -- Return successfully.
+        return# 0i#

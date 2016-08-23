@@ -1,0 +1,65 @@
+
+-- Simple factorial program using unboxed math.
+module Main
+
+-- Export the main entry point.
+export main  : [r1: Region]. Nat# -> Ptr# r1 Word8# -> Int#
+
+-- Primitive show functions are defined in the runtime system.
+import foreign c value 
+        primPutTextLit  : TextLit# -> Void#
+        primShowNat     : Nat#     -> TextLit#
+
+-- Functions defined in C stdlib.
+import foreign c value
+        free            : TextLit# -> Void#
+
+with letrec
+
+
+-- Compute the factorial of the given natural number, using simple recursion.
+-- Salt primops like eq# mul# and work for all the primitive numeric types.
+fac_rec (x: Nat#): Nat#
+ = case eq# x 0# of
+        True#   -> 1#
+        False#  -> mul# x (fac_rec (sub# x 1#))
+
+
+-- Compute the factorial of the given natural number, using tail recursion
+-- and an accumulating parameter.
+fac_acc (x: Nat#) (acc: Nat#): Nat#
+ = case eq# x 0# of
+        True#   -> acc
+        False#  -> fac_acc (sub# x 1#) (mul# x acc)
+
+
+-- Ye'olde Hello World programme.
+main [r1: Region] (argc: Nat#) (argv: Ptr# r1 Word8#): Int#
+ = do
+        -- If we link in the runtime system then we need to call create#
+        -- so that the code generator initializes the global heap pointers.
+        -- These linker symbols are referred to by the runtime system code.
+        -- 
+        -- If you do your own linking and don't use runtime system functions
+        -- then you won't need this.
+        --
+        create# 0#
+
+        -- Compute factorial using simple recursion.
+        primPutTextLit "fac_rec 10 = "#
+        str1    = primShowNat (fac_rec 10#)
+        primPutTextLit str1
+        free str1
+        primPutTextLit "\n"#
+
+        -- Compute factorial using tail-recursion.
+        primPutTextLit "fac_acc 10 = "#
+        str2    = primShowNat (fac_acc 10# 1#)
+        primPutTextLit str2
+        free str2
+        primPutTextLit "\n"#
+
+
+        -- Return successfully.
+        return# 0i#
+
