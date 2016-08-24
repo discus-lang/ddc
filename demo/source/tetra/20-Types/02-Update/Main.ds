@@ -16,12 +16,12 @@ where
 --
 main ()
  = private r with {Read r; Write r; Alloc r} in
-
-       -- Allocate a reference to a polymorphic function.
-       -- TODO: Allow this to be written with do syntax.
-   let ref [a: Data]: Ref r (a -> a)
+   do   
+        -- Allocate a reference to a polymorphic function.
+        -- (This is rejected by the type checker)
+        ref [a: Data]: Ref r (a -> a)
          = run allocRef [r] [a -> a] (λx -> x)
-   in do
+
         -- Define a function that has a type which is more 
         -- specific than the one in the reference.
         succ = λx -> add# x 1

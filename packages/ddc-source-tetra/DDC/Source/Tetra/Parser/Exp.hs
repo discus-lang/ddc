@@ -638,25 +638,37 @@ pGuardedExpSP pTermSP
 
 
 -- Statements -------------------------------------------------------------------------------------
+-- These are statements inside a do expression.
+--   
+--   A 'do' block behaves much the same way as a 'let' expression,
+--   except we can write effectful statements without binding the
+--   result to anything.
+-- 
+--   We currently desugar do expressions to let-expressions in the parser.
+--
+
+-- | Represent a statement inside a do block.
 data Stmt
-        = StmtBind  SP (GXBindVarMT Source) Exp
-        | StmtMatch SP Pat Exp Exp
-        | StmtNone  SP Exp
+        -- | Let-binding or type signature.
+        = StmtClause SP Clause
+
+        -- | Case match.
+        | StmtMatch  SP Pat Exp Exp
+
+        -- | Plain statement without binding the result.
+        | StmtNone   SP Exp
 
 
 -- | Parse a single statement.
 pStmt :: Parser Stmt
 pStmt
  = P.choice
- [ -- Binder = Exp ;
-   -- We need the 'try' because a VARIABLE binders can also be parsed
-   --   as a function name in a non-binding statement.
-   --  
+ [ -- Clause;
+   -- We need the 'try' because the function and argument names at the front
+   -- of a clause can also be parsed as a function application in a statement.
    P.try $ 
-    do  b       <- pBind
-        sp      <- pSym SEquals
-        x1      <- pExp
-        return  $ StmtBind sp (XBindVarMT b Nothing) x1
+    do  (sp, c)  <- pClauseSP
+        return  $ StmtClause sp c
 
    -- Pat <- Exp else Exp ;
    -- Sugar for a case-expression.
@@ -671,12 +683,7 @@ pStmt
         return  $ StmtMatch sp p x1 x2
 
         -- Exp
- , do   x       <- pExp
-
-        -- This should always succeed because pExp doesn't
-        -- parse plain types or witnesses
-        let Just sp     = takeAnnotOfExp x
-        
+ , do   (sp, x) <- pExpWhereSP
         return  $ StmtNone sp x
  ]
 
@@ -684,32 +691,77 @@ pStmt
 -- | Parse some statements.
 pStmts :: Parser Exp
 pStmts 
- = do   stmts   <- P.sepEndBy1 pStmt (pSym SSemiColon)
-        case makeStmts stmts of
+ = do   -- Parse statements in the block.
+        stmts   <- P.sepEndBy1 pStmt (pSym SSemiColon)
+        
+        -- As in Haskell, we require do blocks to end with a statement
+        -- that gives the overall value.
+        case makeStmts [] stmts of
          Nothing -> P.unexpected "do-block must end with a statement"
          Just x  -> return x
 
 
 -- | Make an expression from some statements.
-makeStmts :: [Stmt] -> Maybe Exp
-makeStmts ss
- = case ss of
+--   We collect consecutive clauses into the same clause group, 
+--   so that we can define functions with multiple clauses at the top
+--   level of a 'do' expression.
+makeStmts :: [Clause] -> [Stmt] -> Maybe Exp
+makeStmts clsAcc ss
+ = let  
+        -- Wrap the clauses we're carrying around the given
+        -- body expression.
+        dropClauses xBody
+         = case clsAcc of
+                []      -> xBody
+                [SLet sp bmt [] [GExp x]]
+                        -> XAnnot sp $ XLet (LLet bmt x) xBody
+                _       -> XLet (LGroup clsAcc) xBody
+   in
+      case ss of
         [StmtNone _ x]    
-         -> Just x
+         -> Just $ dropClauses
+                 $ x
 
         StmtNone sp x1 : rest
-         | Just x2      <- makeStmts rest
-         -> Just $ XAnnot sp $ XLet (LLet (XBindVarMT BNone Nothing) x1) x2
+         |  Just x2     <- makeStmts [] rest
+         -> Just $ XAnnot sp 
+                 $ dropClauses
+                 $ XLet (LLet (XBindVarMT BNone Nothing) x1) x2
 
-        StmtBind sp b x1 : rest
-         | Just x2      <- makeStmts rest
-         -> Just $ XAnnot sp $ XLet (LLet b x1) x2
+        StmtClause _ cl : rest
+         -> case clsAcc of
+                -- Start accumulating successive clauses.
+                [] -> makeStmts (clsAcc ++ [cl]) rest
+
+                (cl1 : _)
+                   -- If this clause is for the same function as
+                   -- the previous one then we'll collect it into
+                   -- at letrec at this point.
+                   |  bindOfClause cl1 == bindOfClause cl
+                   -> makeStmts (clsAcc ++ [cl]) rest
+
+                   -- Otherwise make a standard let-expression.
+                _  | Just x3 <- makeStmts [] rest
+                   -> case cl of
+                        (SLet sp bmt [] [GExp x])
+                         -> Just $ XAnnot sp 
+                         $  dropClauses
+                         $  XLet (LLet bmt x) x3
+
+                        _ -> Nothing
+
+                   | otherwise
+                   -> Nothing
+
 
         StmtMatch sp p x1 x2 : rest
-         | Just x3      <- makeStmts rest
-         -> Just $ XAnnot sp $ XCase x1 
+         |  Just x3      <- makeStmts [] rest
+         -> Just $ XAnnot sp 
+                 $ dropClauses
+                 $ XCase x1 
                  [ AAltCase p        [GExp x3]
                  , AAltCase PDefault [GExp x2] ]
 
         _ -> Nothing
+
 

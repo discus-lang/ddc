@@ -209,6 +209,9 @@ module DDC.Source.Tetra.Exp
         , takeXConApps
         , takeXPrimApps
 
+          -- *** Clauses
+        , bindOfClause
+
           -- *** Casts
         , pattern XRun
         , pattern XBox

@@ -89,9 +89,9 @@ foo (_: Unit)
 -- Check character literal excaping.
 module Test where
 foo (_: Unit)
-  = let c = '\n' in
-    let c = '\'' in
-    let c = '\\' in
+  = let c1 = '\n' in
+    let c2 = '\'' in
+    let c3 = '\\' in
     ();
 
 

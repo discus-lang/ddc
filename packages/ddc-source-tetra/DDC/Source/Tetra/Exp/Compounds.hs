@@ -50,6 +50,9 @@ module DDC.Source.Tetra.Exp.Compounds
         , takeXConApps
         , takeXPrimApps
 
+          -- ** Clauses
+        , bindOfClause
+
           -- ** Casts
         , pattern XRun
         , pattern XBox
@@ -280,6 +283,15 @@ takeXConApps xx
  = case takeXAppsAsList xx of
         XCon dc : xs    -> Just (dc, xs)
         _               -> Nothing
+
+
+-- Clauses --------------------------------------------------------------------
+-- | Take the binding variable of a clause.
+bindOfClause :: GClause l -> GXBindVar l
+bindOfClause cc
+ = case cc of
+        SSig _ b _                      -> b
+        SLet _ (XBindVarMT b _) _ _     -> b
 
 
 -- Casts ----------------------------------------------------------------------

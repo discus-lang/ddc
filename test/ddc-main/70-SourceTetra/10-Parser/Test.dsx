@@ -90,9 +90,9 @@ foo (_ : Unit) : Unit
 :parse..
 module Test where
 foo (_ : Unit): Unit
- = do   c       = '\n'
-        c       = '\''
-        c       = '\\'
+ = do   c1       = '\n'
+        c2       = '\''
+        c3       = '\\'
         ()
 ;;
 
