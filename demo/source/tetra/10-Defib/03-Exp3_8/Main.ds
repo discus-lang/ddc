@@ -5,6 +5,7 @@ import Data.Numeric.Nat
 import Data.Function
 where
 
+
 -- Evaluate 3^6 using church encoding of natural numbers.
 -- Adapted from the nofib benchmark.
 -- NOTE: nofib uses a larger exponent, but we need GC for that.

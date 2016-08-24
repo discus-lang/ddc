@@ -12,6 +12,17 @@ where
 -- initialized, then merged into the original region 'r1'. 
 -- The fact that the reference is destructively initialized is not 
 -- visible to the caller.
+
+{- TODO: when we specify a separate signature for this the 
+         type variable 'a' ends up out of scope.
+
+rlength : [a: Data]. [r1: Region]
+        . List a -> S (Alloc r1) (Ref r1 Nat)
+rlength xx
+ = 
+-}
+
+
 rlength [a : Data] [r1 : Region] 
         (xx : List a) 
         : S (Alloc r1) (Ref r1 Nat)
