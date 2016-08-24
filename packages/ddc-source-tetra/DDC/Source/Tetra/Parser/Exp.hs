@@ -477,14 +477,24 @@ pLetWits bs mParent
 -- | A binding for let expression.
 pClauseSP :: Parser (SP, Clause)
 pClauseSP
- = do   (b, sp0) <- pBindNameSP
+ = do   -- Name of the binding.
+        (b, sp0) <- pBindNameSP
 
         P.choice
-         [ do   -- Non-function binding with full type signature.
-                sp      <- pTokSP (KOp ":")
+         [ do   -- Either 
+                -- 1) a definition with a signature and some clauses.
+                --    foo : Nat -> Nat = ...
+                -- 2) foo : Nat -> Nat
+                --
+                _       <- pTokSP (KOp ":")
                 t       <- pType
-                gxs     <- pTermGuardedExps (pSym SEquals)
-                return  (sp,  SLet sp (XBindVarMT b (Just t)) [] gxs)
+                P.choice
+                 [ do   
+                        gxs     <- pTermGuardedExps (pSym SEquals)
+                        return  (sp0,  SLet sp0 (XBindVarMT b (Just t)) [] gxs)
+
+                 , do   return  (sp0,  SSig sp0 b t)
+                 ]
 
          , do   -- Non-function binding with no type signature.
                 gxs     <- pTermGuardedExps (pSym SEquals)
@@ -512,6 +522,7 @@ pClauseSP
          ]
 
 
+-- Function parameters.
 pParamsSP :: Parser [Param]
 pParamsSP
  = P.choice
