@@ -98,7 +98,13 @@ module DDC.Source.Tetra.Exp
           -------------------------------------------------
           -- * Terms
           -- ** Syntax
+        , Annot,        GXAnnot     (..)
+        , BindVar,      GXBindVar   (..)
         , BindVarMT,    GXBindVarMT (..)
+        , BoundVar,     GXBoundVar  (..)
+        , BindCon,      GXBindCon   (..)
+        , BoundCon,     GXBoundCon  (..)
+        , Prim,         GXPrim      (..)
 
           -- *** Expressions
         , Exp,          GExp        (..)
@@ -138,13 +144,6 @@ module DDC.Source.Tetra.Exp
         , DaCon (..)
         , DaConBind     (..)
         , DaConBound    (..)
-
-          -----------------------------
-          -- ** Term Generics
-        , GXAnnot
-        , GXBindVar,    GXBoundVar
-        , GXBindCon,    GXBoundCon
-        , GXPrim
 
           -----------------------------
           -- ** Term Primitives

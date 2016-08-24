@@ -52,12 +52,13 @@ module DDC.Source.Tetra.Exp.Source
 
           -- * Terms
           -- ** Syntax
-        , GXAnnot
-        , GXBindVar,    GXBoundVar
-        , GXBindCon,    GXBoundCon
-        , GXPrim
-
+        , Annot,        GXAnnot     (..)
         , BindVarMT,    GXBindVarMT (..)
+        , BindVar,      GXBindVar   (..)
+        , BoundVar,     GXBoundVar  (..)
+        , BindCon,      GXBindCon   (..)
+        , BoundCon,     GXBoundCon  (..)
+        , Prim,         GXPrim      (..)
         , Exp,          GExp        (..)
         , Lets,         GLets       (..)
         , Clause,       GClause     (..)
@@ -132,7 +133,13 @@ type instance GTPrim     Source = PrimType
 
 
 -- Term AST -------------------------------------------------------------------
+type Annot      = GXAnnot     Source
+type BindVar    = GXBindVar   Source
 type BindVarMT  = GXBindVarMT Source
+type BoundVar   = GXBoundVar  Source
+type BindCon    = GXBoundCon  Source
+type BoundCon   = GXBoundCon  Source
+type Prim       = GXPrim      Source
 type Exp        = GExp        Source
 type Lets       = GLets       Source
 type Clause     = GClause     Source

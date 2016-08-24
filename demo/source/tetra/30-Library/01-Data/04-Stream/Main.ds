@@ -30,7 +30,7 @@ streamOfList (xx: List a): Stream (List a) a
 
 
 -- | Convert a stream to a list.
-listOfStream : Stream s a -> List a
+listOfStream : [s a: Data]. Stream s a -> List a
 listOfStream (MkStream f s0)
  = case f s0 of
         Yield x s1      -> Cons x (listOfStream (MkStream f s1))
@@ -39,7 +39,7 @@ listOfStream (MkStream f s0)
 
 
 -- | Apply a function to every element of a stream.
-smap : (a -> b) -> Stream s a -> Stream s b
+smap : [s a b: Data]. (a -> b) -> Stream s a -> Stream s b
 smap f (MkStream stepA sA0)
  = MkStream stepB sA0
  where  
@@ -51,7 +51,7 @@ smap f (MkStream stepA sA0)
 
 
 -- | Take the given number of elements from a stream.
-stake : Nat -> Stream s a -> Stream (Tup2 s Nat) a
+stake : [s a: Data]. Nat -> Stream s a -> Stream (Tup2 s Nat) a
 stake n (MkStream fA sA0)
  = MkStream stepB (T2 sA0 0)
  where  

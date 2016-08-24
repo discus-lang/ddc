@@ -9,6 +9,7 @@ module DDC.Source.Tetra.Convert
 where
 import DDC.Source.Tetra.Convert.Error
 import DDC.Source.Tetra.Convert.Witness
+import DDC.Source.Tetra.Convert.Clause
 import DDC.Source.Tetra.Convert.Type
 import DDC.Source.Tetra.Convert.Prim
 import DDC.Source.Tetra.Convert.Base
@@ -25,14 +26,13 @@ import qualified DDC.Core.Exp.Annot                     as C
 import qualified DDC.Type.DataDef                       as C
 import qualified Data.Text                              as Text
 import qualified Text.Show.Pretty                       as Text
-
 import Data.Maybe
+
 import DDC.Core.Module 
         ( ExportSource  (..)
         , ImportType    (..)
         , ImportCap     (..)
         , ImportValue   (..))
-
 
 ---------------------------------------------------------------------------------------------------
 -- | Run a conversion computation.
@@ -142,54 +142,19 @@ coreOfSourceModuleM a mm
 letsOfTops :: [S.Top S.Source] 
            -> ConvertM S.Source (C.Lets SP C.Name)
 letsOfTops tops
- = C.LRec <$> (sequence $ mapMaybe bindOfTop tops)
+ = do   
+        -- Collect up the type signatures defined at top level.
+        let cls         = [cl   | S.TopClause _ cl      <- tops]
+        let sigs        = collectSigsFromClauses      cls
+        let vals        = collectBoundVarsFromClauses cls
 
+        bxps            <- fmap catMaybes 
+                        $  mapM (makeBindingFromClause sigs vals) cls
 
----------------------------------------------------------------------------------------------------
--- | Try to convert a `TopBind` to a top-level binding, 
---   or `Nothing` if it isn't one.
-bindOfTop :: S.Top S.Source
-          -> Maybe (ConvertM S.Source (C.Bind C.Name, C.Exp SP C.Name))
-
-bindOfTop tt
- = case tt of
-        S.TopClause _ (S.SLet a bm ps [S.GExp x])
-         -> Just ((,)   <$> toCoreBM UniverseSpec bm 
-                        <*> toCoreX a (wrapParams ps x))
-
-        S.TopClause _ (S.SLet{})
-         -> error $ unlines
-                [ "bindOfTop: cannot convert top"
-                , Text.ppShow tt]
-
-        -- Sigs don't make bindings.
-        S.TopClause _ S.SSig{}
-         -> Nothing
-
-        S.TopType{}     -> Nothing
-        S.TopData{}     -> Nothing
-
-
-wrapParams :: [S.Param] -> S.Exp -> S.Exp
-wrapParams [] x = x
-wrapParams (p:ps) x
- = case p of
-        S.MType    b mt    
-         -> S.XLAM (S.XBindVarMT b mt)       $ wrapParams ps x
-
-        S.MWitness b mt
-         -> S.XLam (S.XBindVarMT b mt)       $ wrapParams ps x
-
-        S.MValue   S.PDefault mt
-         -> S.XLam (S.XBindVarMT S.BNone mt) $ wrapParams ps x
-
-        S.MValue   (S.PVar b) mt
-         -> S.XLam (S.XBindVarMT b mt)       $ wrapParams ps x
-
-        S.MValue   _ _
-         -> error $ unlines
-                [ "wrapParams: cannot convert pat"
-                , Text.ppShow p ]
+        let (bms, xps)  =  unzip bxps
+        bs'             <- mapM (toCoreBM UniverseSpec) bms
+        xs'             <- mapM (\(sp, x) -> toCoreX sp x) xps
+        return $ C.LRec $ zip bs' xs'
 
 
 -- ImportType -------------------------------------------------------------------------------------
@@ -276,8 +241,6 @@ toCoreDataCtor dataDef tag ctor
          , C.dataCtorTypeParams  = typeParams }
 
 
-
-
 -- Exp --------------------------------------------------------------------------------------------
 toCoreX :: SP -> S.Exp -> ConvertM S.Source (C.Exp SP C.Name)
 toCoreX a xx
@@ -340,13 +303,13 @@ toCoreX a xx
          -> C.XWitness  <$> pure a  <*> toCoreW a w
 
         -- These shouldn't exist in the desugared source tetra code.
-        S.XDefix{}      -> Left $ ErrorConvertCannotConvertSugarExp xx
-        S.XInfixOp{}    -> Left $ ErrorConvertCannotConvertSugarExp xx
-        S.XInfixVar{}   -> Left $ ErrorConvertCannotConvertSugarExp xx
-        S.XMatch{}      -> Left $ ErrorConvertCannotConvertSugarExp xx
-        S.XWhere{}      -> Left $ ErrorConvertCannotConvertSugarExp xx
-        S.XLamPat{}     -> Left $ ErrorConvertCannotConvertSugarExp xx
-        S.XLamCase{}    -> Left $ ErrorConvertCannotConvertSugarExp xx        
+        S.XDefix{}      -> Left $ ErrorConvertSugaredExp xx
+        S.XInfixOp{}    -> Left $ ErrorConvertSugaredExp xx
+        S.XInfixVar{}   -> Left $ ErrorConvertSugaredExp xx
+        S.XMatch{}      -> Left $ ErrorConvertSugaredExp xx
+        S.XWhere{}      -> Left $ ErrorConvertSugaredExp xx
+        S.XLamPat{}     -> Left $ ErrorConvertSugaredExp xx
+        S.XLamCase{}    -> Left $ ErrorConvertSugaredExp xx        
 
 
 -- Lets -------------------------------------------------------------------------------------------
@@ -374,24 +337,15 @@ toCoreLts a lts
                 <*> (fmap Just $ toCoreT UniverseKind tParent)
                 <*> (sequence  $ fmap toCoreTBK bts)
 
-        S.LGroup cs
-         -> do  let bxs = concatMap stripClause cs
-                toCoreLts a (S.LRec bxs)
+        S.LGroup cls
+         -> do  let sigs  = collectSigsFromClauses cls
+                let vals  = collectBoundVarsFromClauses cls
 
+                bxs       <- fmap catMaybes
+                          $  mapM (makeBindingFromClause sigs vals) cls
 
-stripClause :: S.Clause -> [(S.BindVarMT, S.Exp)]
-stripClause cc
- = case cc of
-        S.SLet _ bm ps [S.GExp x]
-         -> [(bm, wrapParams ps x)]
-
-        S.SLet{}       
-         -> error $ unlines
-                [ "stripClause: cannot strip"
-                , Text.ppShow cc]
-
-        S.SSig{}
-         -> []
+                let bxs' = [(b, x) | (b, (_, x)) <- bxs]
+                toCoreLts a (S.LRec bxs')
 
 
 -- Cast -------------------------------------------------------------------------------------------
