@@ -9,10 +9,14 @@ module DDC.Core.Flow.Lower
         , Lifting       (..)
         , lowerModule)
 where
+import DDC.Core.Transform.TransformUpX                  ()
 import DDC.Core.Flow.Transform.Slurp
 import DDC.Core.Flow.Transform.Schedule
 import DDC.Core.Flow.Transform.Schedule.Base
 import DDC.Core.Flow.Transform.Extract
+import DDC.Core.Flow.Transform.TransformUpX
+import DDC.Core.Flow.Transform.Annotate
+import DDC.Core.Flow.Transform.Deannotate
 import DDC.Core.Flow.Process
 import DDC.Core.Flow.Procedure
 import DDC.Core.Flow.Compounds
@@ -21,9 +25,6 @@ import DDC.Core.Flow.Prim
 import DDC.Core.Flow.Exp
 import DDC.Core.Module
 
-import DDC.Core.Transform.TransformUpX
-import DDC.Core.Transform.Annotate
-import DDC.Core.Transform.Deannotate
 
 import qualified DDC.Core.Simplifier                    as C
 import qualified DDC.Core.Simplifier.Recipe             as C

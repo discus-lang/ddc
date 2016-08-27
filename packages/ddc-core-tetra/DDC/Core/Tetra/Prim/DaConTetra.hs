@@ -1,19 +1,19 @@
 
 module DDC.Core.Tetra.Prim.DaConTetra
         ( typeDaConTetra
-        , readDaConTetra
-        , xTuple2
-        , dcTuple2
-        , dcTupleN )
+        , readDaConTetra)
 where
 import DDC.Core.Tetra.Prim.Base
 import DDC.Core.Tetra.Prim.TyConTetra
-import DDC.Core.Exp.Simple.Compounds
-import DDC.Core.Exp.Simple.Exp
+import DDC.Type.Exp.Simple
 import DDC.Base.Pretty
 import Control.DeepSeq
 import Data.Char
 import Data.List
+
+--        , xTuple2
+--        , dcTuple2
+--        , dcTupleN )
 
 
 instance NFData DaConTetra where
@@ -45,7 +45,7 @@ typeDaConTetra (DaConTetraTuple n)
         = tForalls (replicate n kData)
         $ \args -> foldr tFun (tTupleN args) args
 
-
+{-
 -- | Construct a @Tuple2#@
 xTuple2 :: Type Name  -> Type Name 
         -> Exp a Name -> Exp a Name 
@@ -67,5 +67,5 @@ dcTupleN :: Int -> DaCon Name (Type Name)
 dcTupleN n
           = DaConPrim   (NameDaConTetra (DaConTetraTuple n))
                         (typeDaConTetra (DaConTetraTuple n))
-
+-}
 

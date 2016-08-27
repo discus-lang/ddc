@@ -12,7 +12,7 @@ module DDC.Core.Tetra.Prim.TyConPrim
 where
 import DDC.Core.Tetra.Prim.Base
 import DDC.Core.Exp.Annot.Compounds
-import DDC.Core.Exp.Simple.Exp
+import DDC.Type.Exp
 import DDC.Core.Salt.Name
         ( pprPrimTyConStem
         , readPrimTyCon, readPrimTyConStem)

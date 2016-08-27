@@ -13,7 +13,7 @@ import DDC.Core.Flow.Context
 import DDC.Core.Flow.Process
 import DDC.Core.Flow.Compounds
 import DDC.Core.Flow.Exp
-import DDC.Core.Transform.Deannotate
+import DDC.Core.Flow.Transform.Deannotate
 import DDC.Core.Module
 import qualified DDC.Type.Env           as Env
 import DDC.Type.Env                     (TypeEnv)

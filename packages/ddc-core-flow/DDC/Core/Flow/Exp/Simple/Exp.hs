@@ -5,7 +5,7 @@
 --   of the annotations would be empty. General purpose transformations should
 --   deal with the fully annotated version of the AST instead.
 --
-module DDC.Core.Exp.Simple.Exp 
+module DDC.Core.Flow.Exp.Simple.Exp 
         ( module DDC.Type.Exp
 
           -- * Expressions

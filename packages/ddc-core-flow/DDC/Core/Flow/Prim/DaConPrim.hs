@@ -9,8 +9,8 @@ where
 import DDC.Core.Flow.Prim.TyConPrim
 import DDC.Core.Flow.Prim.DaConFlow
 import DDC.Core.Flow.Prim.Base
-import DDC.Core.Exp.Simple.Compounds
-import DDC.Core.Exp.Simple.Exp
+import DDC.Core.Flow.Exp.Simple.Compounds
+import DDC.Core.Flow.Exp.Simple.Exp
 
 
 -- | A literal @Bool#@

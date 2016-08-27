@@ -1,9 +1,9 @@
 
-module DDC.Core.Transform.Annotate
+module DDC.Core.Flow.Transform.Annotate
         (Annotate (..))
 where
 import qualified DDC.Core.Exp.Annot.Exp         as A
-import qualified DDC.Core.Exp.Simple.Exp        as S
+import qualified DDC.Core.Flow.Exp.Simple.Exp   as S
 
 
 -- | Convert the `Simple` version of the AST to the `Annot` version,

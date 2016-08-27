@@ -7,8 +7,8 @@ module DDC.Core.Flow.Transform.Slurp.Resize
 where
 import DDC.Core.Flow.Transform.Slurp.Error
 import DDC.Core.Flow.Prim
-import DDC.Core.Exp.Simple.Compounds
-import DDC.Core.Exp.Simple.Exp
+import DDC.Core.Flow.Exp.Simple.Compounds
+import DDC.Core.Flow.Exp.Simple.Exp
 import qualified Data.Map               as Map
 
 type Ty = Type Name

@@ -2,7 +2,7 @@
 -- | Utilities for constructing and destructing compound expressions.
 --
 --   For the Simple version of the AST.
-module DDC.Core.Exp.Simple.Compounds
+module DDC.Core.Flow.Exp.Simple.Compounds
         ( module DDC.Type.Exp.Simple.Compounds
 
           -- * Lambdas
@@ -49,8 +49,7 @@ module DDC.Core.Exp.Simple.Compounds
         , takeNameOfDaCon
         , takeTypeOfDaCon)
 where
-import DDC.Type.Exp
-import DDC.Core.Exp.Simple.Exp
+import DDC.Core.Flow.Exp.Simple.Exp
 import DDC.Core.Exp.DaCon
 import DDC.Type.Exp.Simple.Compounds
 

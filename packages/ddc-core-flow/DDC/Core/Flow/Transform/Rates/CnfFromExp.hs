@@ -1,6 +1,7 @@
 module DDC.Core.Flow.Transform.Rates.CnfFromExp
         (cnfOfExp, takeXLamFlags_safe) where
 import DDC.Core.Collect
+import DDC.Core.Flow.Exp.Simple.Collect ()
 import DDC.Core.Flow.Compounds
 import DDC.Core.Flow.Prim
 import DDC.Core.Flow.Exp

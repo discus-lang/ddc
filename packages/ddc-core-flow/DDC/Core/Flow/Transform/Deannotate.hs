@@ -1,9 +1,9 @@
 
-module DDC.Core.Transform.Deannotate
+module DDC.Core.Flow.Transform.Deannotate
         (Deannotate(..))
 where
-import qualified DDC.Core.Exp.Annot.Exp    as A
-import qualified DDC.Core.Exp.Simple.Exp   as S
+import qualified DDC.Core.Exp.Annot.Exp         as A
+import qualified DDC.Core.Flow.Exp.Simple.Exp   as S
 
 
 -- | Convert the `Annot` version of the AST to the `Simple` version,
@@ -71,5 +71,4 @@ instance Deannotate A.Cast S.Cast where
         A.CastPurify w          -> S.CastPurify (down w)
         A.CastBox               -> S.CastBox
         A.CastRun               -> S.CastRun
-
 

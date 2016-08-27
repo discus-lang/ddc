@@ -8,8 +8,8 @@ import DDC.Core.Flow.Context
 import DDC.Core.Flow.Transform.Slurp.Error
 import DDC.Core.Flow.Transform.Slurp.Resize
 import DDC.Core.Flow.Prim
-import DDC.Core.Exp.Simple.Compounds
-import DDC.Core.Exp.Simple.Exp
+import DDC.Core.Flow.Exp.Simple.Compounds
+import DDC.Core.Flow.Exp.Simple.Exp
 import Data.List     (nub)
 
 

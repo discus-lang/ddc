@@ -3,7 +3,6 @@ module DDC.Core.Flow.Transform.Rates.SeriesOfVector
         (seriesOfVectorModule
         ,seriesOfVectorFunction)
 where
-import DDC.Core.Collect
 import DDC.Core.Flow.Compounds
 import DDC.Core.Flow.Prim
 import DDC.Core.Flow.Exp                           as DDC
@@ -11,11 +10,12 @@ import DDC.Core.Flow.Transform.Rates.Combinators   as Com
 import DDC.Core.Flow.Transform.Rates.CnfFromExp
 import DDC.Core.Flow.Transform.Rates.Fail
 import DDC.Core.Flow.Transform.Rates.Graph
-import qualified DDC.Core.Flow.Transform.Rates.SizeInference as SI
 import DDC.Core.Flow.Transform.Rates.Clusters
+import DDC.Core.Flow.Transform.Annotate
+import DDC.Core.Flow.Transform.Deannotate
 import DDC.Core.Module
-import DDC.Core.Transform.Annotate
-import DDC.Core.Transform.Deannotate
+import DDC.Core.Collect
+import qualified DDC.Core.Flow.Transform.Rates.SizeInference as SI
 import qualified DDC.Type.Env           as Env
 
 import qualified Data.Map as Map

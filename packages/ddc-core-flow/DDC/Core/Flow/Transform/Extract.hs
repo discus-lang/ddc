@@ -8,7 +8,7 @@ import DDC.Core.Flow.Procedure
 import DDC.Core.Flow.Prim
 import DDC.Core.Flow.Prim.OpStore
 import DDC.Core.Flow.Exp
-import DDC.Core.Transform.Annotate
+import DDC.Core.Flow.Transform.Annotate
 import DDC.Core.Module
 
 

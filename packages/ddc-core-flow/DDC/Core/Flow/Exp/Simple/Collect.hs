@@ -1,10 +1,10 @@
 -- | Collecting sets of variables and constructors.
-module DDC.Core.Collect.Free.Simple
+module DDC.Core.Flow.Exp.Simple.Collect
         ()
 where
 import DDC.Type.Collect
 import DDC.Core.Collect.Free
-import DDC.Core.Exp.Simple.Exp
+import DDC.Core.Flow.Exp.Simple.Exp
 
 
 -- Exp ------------------------------------------------------------------------

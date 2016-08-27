@@ -4,10 +4,10 @@ module DDC.Core.Flow.Transform.Slurp.Error
 where
 import DDC.Core.Flow.Exp
 import DDC.Core.Flow.Prim
-import DDC.Core.Transform.Annotate
-import DDC.Core.Pretty
+import DDC.Core.Flow.Transform.Annotate
 import DDC.Core.Flow.Context
 import DDC.Core.Flow.Process.Pretty ()
+import DDC.Core.Pretty
 
 
 -- | Things that can go wrong when slurping a process spec from

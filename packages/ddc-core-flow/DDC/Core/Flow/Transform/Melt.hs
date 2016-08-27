@@ -7,8 +7,8 @@ import DDC.Core.Flow.Prim
 import DDC.Core.Flow.Exp
 import DDC.Core.Flow.Compounds
 import DDC.Core.Module
-import DDC.Core.Transform.Annotate
-import DDC.Core.Transform.Deannotate
+import DDC.Core.Flow.Transform.Annotate
+import DDC.Core.Flow.Transform.Deannotate
 import Control.Monad.Writer.Strict      hiding (Alt(..))
 import qualified Data.Set               as Set
 import Data.Set                         (Set)

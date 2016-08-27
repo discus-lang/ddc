@@ -6,7 +6,7 @@ import DDC.Core.Module
 import DDC.Core.Flow.Compounds
 import DDC.Core.Flow.Prim
 import DDC.Core.Flow.Exp
-import DDC.Core.Transform.TransformUpX
+import DDC.Core.Flow.Transform.TransformUpX
 import DDC.Core.Env.EnvX                (EnvX)
 import qualified DDC.Core.Env.EnvX      as EnvX
 import qualified Data.Map               as Map
