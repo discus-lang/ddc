@@ -38,7 +38,7 @@ checkVarCon !table !ctx mode demand xx@(XVar a u)
                         ctx
 
  -- Look in the global environment.
- | Just t      <- EnvX.lookup u (contextEnvX ctx)
+ | Just t      <- EnvX.lookupX u (contextEnvX ctx)
  = case mode of
         -- Check subsumption against an existing type.
         -- This may instantiate existentials in the exising type.

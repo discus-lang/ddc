@@ -26,9 +26,9 @@ module DDC.Core.Env.EnvX
 
         -- * Projections 
         , depth
-        , member,       memberBind
-        , lookup,       lookupName
-        , lookupT,      lookupX
+        , lookupT
+        , lookupX,      lookupNameX
+        , memberX,      memberBindX
 
         -- * Primitives
         , setPrimFun
@@ -208,23 +208,18 @@ unions envs
 
 
 -- | Check whether a bound variable is present in an environment.
-member :: Ord n => Bound n -> EnvX n -> Bool
-member uu env
-        = isJust $ lookup uu env
+memberX :: Ord n => Bound n -> EnvX n -> Bool
+memberX uu env
+        = isJust $ lookupX uu env
 
 
 -- | Check whether a binder is already present in the an environment.
 --   This can only return True for named binders, not anonymous or primitive ones.
-memberBind :: Ord n => Bind n -> EnvX n -> Bool
-memberBind uu env
+memberBindX :: Ord n => Bind n -> EnvX n -> Bool
+memberBindX uu env
  = case uu of
         BName n _ -> Map.member n (envxMap env)
         _         -> False
-
-
--- | TODO: refactor uses to use lookupX
-lookup :: Ord n => Bound n -> EnvX n -> Maybe (Type n)
-lookup = lookupX
 
 
 -- | Lookup a bound variable from an environment.
@@ -246,8 +241,8 @@ lookupX uu env
 
 
 -- | Lookup a bound name from an environment.
-lookupName :: Ord n => n -> EnvX n -> Maybe (Type n)
-lookupName n env
+lookupNameX :: Ord n => n -> EnvX n -> Maybe (Type n)
+lookupNameX n env
           = Map.lookup n (envxMap env)
 
 

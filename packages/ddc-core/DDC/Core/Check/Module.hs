@@ -235,7 +235,7 @@ checkModuleM !config mm@ModuleCore{} !mode
         -- If exported names are missing types then fill them in.
         let updateExportSource e
                 | ExportSourceLocalNoType n <- e
-                , Just t  <- EnvX.lookup (UName n) envX_binds
+                , Just t  <- EnvX.lookupX (UName n) envX_binds
                 = ExportSourceLocal n t
 
                 | otherwise = e
@@ -630,7 +630,7 @@ checkBindDefined
         -> CheckM a n ()
 
 checkBindDefined envx n
- = case EnvX.lookup (UName n) envx of
+ = case EnvX.lookupX (UName n) envx of
         Just _  -> return ()
         _       -> throw $ ErrorExportUndefined n
 
