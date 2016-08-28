@@ -226,10 +226,6 @@ eqText (tx1 tx2: Text): Bool
         vec2    = vectorOfText  [r] tx2
         len2    = vectorLength# vec2
 
-        -- TODO: adding a False line here cause pattern match error in parser.
-        -- Investigate what is wrong with it.
-        -- False
-
         match
          | len1 /= len2 = False
          | len1 == 0    = True
