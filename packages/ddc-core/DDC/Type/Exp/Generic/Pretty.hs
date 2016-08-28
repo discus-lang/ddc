@@ -50,7 +50,7 @@ pprRawC cc
         TyConFun        -> text "→"
         TyConUnit       -> text "1"
         TyConVoid       -> text "0"
-        TyConSum    k   -> text "∨" <> braces (pprRawT k)
+        TyConUnion  k   -> text "∨" <> braces (pprRawT k)
         TyConBot    k   -> text "⊥" <> braces (pprRawT k)
         TyConForall k   -> text "∀" <> braces (pprRawT k)
         TyConExists k   -> text "∃" <> braces (pprRawT k)

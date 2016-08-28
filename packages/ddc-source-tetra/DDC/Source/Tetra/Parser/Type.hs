@@ -2,7 +2,7 @@
 module DDC.Source.Tetra.Parser.Type
         ( pBind
         , pType
-        , pTypeSum
+        , pTypeUnion
         , pTypeApp
         , pTypeAtomSP
         , pTyConSP
@@ -36,21 +36,22 @@ pBind
                 return  $  BNone ]
  <?> "a binder"
 
+
 -- | Parse a type.
 pType :: Parser Type
-pType = pTypeSum
+pType = pTypeUnion
 
 
--- | Parse a type sum.
-pTypeSum :: Parser Type
-pTypeSum
+-- | Parse a type union.
+pTypeUnion :: Parser Type
+pTypeUnion
  = do   t1      <- pTypeForall
         P.choice 
          [ -- Type sums.
            -- T2 + T3
            do   sp      <- pTokSP (KOp "+")
-                t2      <- pTypeSum
-                return  $  TAnnot sp $ TSum KEffect t1 t2
+                t2      <- pTypeUnion
+                return  $  TAnnot sp $ TUnion KEffect t1 t2
 
          , do   return t1 ]
  <?> "a type"
@@ -65,7 +66,7 @@ pTypeForall
            do   pSym SSquareBra
                 bs      <- P.many1 pBind
                 sp      <- pTokSP (KOp ":")
-                kBind   <- pTypeSum
+                kBind   <- pTypeUnion
                 pSym SSquareKet
                 pSym SDot
 
@@ -134,7 +135,7 @@ pTypeAtomSP
 
           -- (TYPE2)
         , do    sp      <- pSym SRoundBra
-                t       <- pTypeSum
+                t       <- pTypeUnion
                 pSym SRoundKet
                 return  (t, sp)
 

@@ -22,7 +22,7 @@ module DDC.Source.Tetra.Exp.Generic
 
         , pattern TVoid, pattern TUnit
         , pattern TFun
-        , pattern TBot,  pattern TSum
+        , pattern TBot,  pattern TUnion
         , pattern TPrim
 
           -- ** Dictionaries

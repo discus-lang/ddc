@@ -26,10 +26,10 @@ module DDC.Source.Tetra.Exp.Compounds
           -- ** Exists Types
         , T.makeTExists, T.takeTExists
 
-          -- ** Sum types
-        , T.takeTSum
-        , T.makeTSums,    T.takeTSums
-        , T.splitTSumsOfKind
+          -- ** Union types
+        , T.takeTUnion
+        , T.makeTUnions, T.takeTUnions
+        , T.splitTUnionsOfKind
 
           -- * Terms
           -- ** Lambdas
@@ -102,9 +102,9 @@ takeTypeOfBindMT (XBindVarMT _g mt) = mt
 
 
 -- Types ----------------------------------------------------------------------
--- | Make an empty sum type of the given kind.
+-- | Make an empty union type of the given kind.
 makeTBot  :: GType l -> GType l
-makeTBot k = TCon (TyConSum k)
+makeTBot k = TCon (TyConUnion k)
 
 
 

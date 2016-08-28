@@ -74,7 +74,7 @@ toCoreT uu tt
             in  C.TForall <$> toCoreBM uu' (S.XBindVarMT b (Just k)) <*> toCoreT uu t
 
         S.TApp{}
-         | Just (k, ts) <- S.takeTSums tt
+         | Just (k, ts) <- S.takeTUnions tt
          -> do  let uu' =  universeUp uu
                 k'      <- toCoreT uu' k
                 ts'     <- sequence $ fmap (toCoreT uu) ts
@@ -100,7 +100,7 @@ toCoreTC uu tc
                 _               -> return Nothing
 
 
-        S.TyConSum _     -> return Nothing
+        S.TyConUnion _   -> return Nothing
 
         S.TyConBot _k    -> return Nothing
         S.TyConForall _k -> return Nothing

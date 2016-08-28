@@ -49,7 +49,7 @@ module DDC.Source.Tetra.Exp
 
         , pattern TVoid, pattern TUnit
         , pattern TFun
-        , pattern TBot,  pattern TSum
+        , pattern TBot,  pattern TUnion
         , pattern TPrim
 
         , pattern KData, pattern KRegion, pattern KEffect
@@ -89,10 +89,10 @@ module DDC.Source.Tetra.Exp
           -- *** Exists Types
         , makeTExists,  takeTExists
 
-          -- *** Sum types
-        , takeTSum
-        , makeTSums,    takeTSums
-        , splitTSumsOfKind
+          -- *** Union types
+        , takeTUnion
+        , makeTUnions,  takeTUnions
+        , splitTUnionsOfKind
         , makeTBot
 
           -------------------------------------------------

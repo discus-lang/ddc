@@ -29,7 +29,7 @@ instance NFDataLanguage l => NFData (GTyCon l) where
         TyConUnit       -> ()
         TyConVoid       -> ()
         TyConFun        -> ()
-        TyConSum    t   -> rnf t
+        TyConUnion  t   -> rnf t
         TyConBot    t   -> rnf t
         TyConForall t   -> rnf t
         TyConExists t   -> rnf t

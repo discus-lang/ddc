@@ -22,7 +22,7 @@ module DDC.Type.Exp.Generic.Exp
         , pattern TUnit
         , pattern TFun
         , pattern TBot
-        , pattern TSum
+        , pattern TUnion
         , pattern TPrim
 
           -- * Classes
@@ -104,8 +104,7 @@ data GTyCon l
         | TyConFun
 
         -- | Take the least upper bound at the given kind.
-        --   TODO: Rename this to Union, as it's really a type constructor for a union.
-        | TyConSum    !(GType l)
+        | TyConUnion  !(GType l)
 
         -- | The least element of the given kind.
         | TyConBot    !(GType l)
@@ -141,8 +140,8 @@ pattern TFun t1 t2      = TApp (TApp (TCon TyConFun) t1) t2
 -- | Representation of the bottom type at a given kind.
 pattern TBot k          = TCon (TyConBot k)
 
--- | Representation of a sum of two types.
-pattern TSum k t1 t2    = TApp (TApp (TCon (TyConSum k)) t1) t2
+-- | Representation of a union of two types.
+pattern TUnion k t1 t2  = TApp (TApp (TCon (TyConUnion k)) t1) t2
 
 -- | Representation of primitive type constructors.
 pattern TPrim   p       = TCon (TyConPrim p)
