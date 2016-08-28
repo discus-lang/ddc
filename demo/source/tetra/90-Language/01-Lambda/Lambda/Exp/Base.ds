@@ -50,4 +50,3 @@ show_Subst: Show Subst
          -> parens $ "Subst" 
                 %% show (show_list (show_tup2 show_text show_Exp)) ls
 
-

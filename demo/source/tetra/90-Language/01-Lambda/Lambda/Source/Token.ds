@@ -26,11 +26,7 @@ eqToken (t1 t2: Token): Bool
         T2 KKet    KKet         -> True
         T2 KLambda KLambda      -> True
         T2 KDot    KDot         -> True
-        T2 _       _            -> False
-
-        -- TODO: adding this doesn't contrain the scrutinee,
-        --       so inference breaks.
-        -- _                    -> False
+        _                       -> False
 
 
 -- | Show dictionary for tokens.

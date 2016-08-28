@@ -277,13 +277,12 @@ map_toDescList (mp: Map k a): List (Tup2 k a)
 delta   = 2
 ratio   = 5
 
--- TODO: allow multiple-clause non-recursive let.
-map_balance (k: k) (x: a) (l: Map k a) (r: Map k a): Map k a
- = do   sizeL = map_size l
-        sizeR = map_size r
-        sizeX = sizeL + sizeR + 1
 
-        match
+map_balance (k: k) (x: a) (l: Map k a) (r: Map k a): Map k a
+ = let  sizeL = map_size l in
+   let  sizeR = map_size r in
+   let  sizeX = sizeL + sizeR + 1 
+   in   match
          | sizeL + sizeR <= 1    = Bin sizeX k x l r
          | sizeR > delta*sizeL   = rotateL k x l r
          | sizeL > delta*sizeR   = rotateR k x l r

@@ -179,14 +179,19 @@ desugarX rns xx
 
         -- The match desugarer introduces case alternatives where the pattern
         -- is just a variable, which we can convert to a let-expression.
-        XCase x0 
-                [ AAltCase (PVar b) [GExp x1]
-                , AAltCase PDefault _gx2]
+        XCase x0 ( AAltCase (PVar b) [GExp x1] : _)
          -> do  progress
                 desugarX rns
                  $ XLet (LLet (XBindVarMT b Nothing) x0)
                  $ x1
 
+        -- If the first pattern is a default and none of the other alternatives
+        -- constrain the type of the scrutinee then the core type inferencer
+        -- won't be able to determine the match type. 
+        XCase _x0 alts@(AAltCase PDefault [GExp x1] : _)
+         | null [ p | AAltCase p@(PData _ _) _ <- alts]
+         -> do  progress
+                desugarX rns x1
 
         -- Translate out varible patterns.
         -- The core language does not include them, so we bind the 
