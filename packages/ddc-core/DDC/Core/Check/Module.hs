@@ -459,11 +459,11 @@ checkKindsOfTypeDefs config env nkts
          = do   (t', k', _) 
                  <- checkTypeM config ctx UniverseSpec t Recon
 
-                -- TODO: If the kind was specified then check it against the reconstructed one.
+                -- ISSUE #374: Check specified kinds of type equations against inferred kinds.
                 return (n, (k', t'))
 
    in do
-        -- TODO: We need to sort these into dependency order.
+        -- ISSUE #373: Check that type equations are not recursive.
         nkts' <- mapM check nkts
         return nkts'
 
