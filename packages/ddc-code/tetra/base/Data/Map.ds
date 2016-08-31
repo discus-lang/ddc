@@ -27,8 +27,7 @@ data Map (k a: Data) where
         Tip : Map k a
 
 
--- TODO: setting this to plain Nat breaks the Map demo.
-type Size = Nat#
+type Size = Nat
 
 
 show_map (show_k: Show k) (show_a: Show a): Show (Map k a)

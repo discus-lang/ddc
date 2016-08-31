@@ -57,6 +57,9 @@ checkModuleM !config mm@ModuleCore{} !mode
                         = \n -> Env.lookupName n (configPrimKinds config) }
 
         -- Check sorts of imported types --------------------------------------
+        ctrace  $ vcat
+                [ text "* Checking Sorts of Imported Types" ]
+
         --   These have explicit kind annotations on the type parameters,
         --   which we can sort check directly.
         nitsImportType'
@@ -67,11 +70,18 @@ checkModuleM !config mm@ModuleCore{} !mode
                 = [(n, kindOfImportType i) | (n, i) <- nitsImportType']
 
         -- Check sorts of imported data types ---------------------------------
+        ctrace  $ vcat
+                [ text "* Checking Sorts of Imported Data Types." ]
+
         --   These have explicit kind annotations on the type parameters,
         --   which we can sort check directly.
         nksImportDataDef'   
                 <- checkSortsOfDataTypes config mode
                 $  moduleImportDataDefs  mm
+
+
+        ctrace  $ vcat
+                [ text "* Checking Sorts of Local Data Types." ]
 
         nksLocalDataDef'
                 <- checkSortsOfDataTypes config mode
@@ -88,9 +98,16 @@ checkModuleM !config mm@ModuleCore{} !mode
         --   The right of each type equation can mention both imported abstract
         --   types and data type definitions, so we need to include them in
         --   the kind environment as well.
+        ctrace  $ vcat
+                [ text "* Checking Kinds of Imported Type Equations."]
 
+        -- Imported type equations may mention each other.
         nktsImportTypeDef'
-                <- checkKindsOfTypeDefs config envT_dataDefs
+                <- checkKindsOfTypeDefs 
+                        config 
+                        envT_dataDefs
+                          { EnvT.envtEquations 
+                          = Map.map snd $ Map.fromList $ moduleImportTypeDefs mm }
                 $  moduleImportTypeDefs mm
 
         let envT_importedTypeDefs
@@ -105,11 +122,17 @@ checkModuleM !config mm@ModuleCore{} !mode
         -- Check kinds of local type equations --------------------------------
         --   The right of each type equation can mention
         --   imported abstract types, imported and local data type definitions.
+        ctrace  $ vcat
+                [ text "* Checking Kinds of Local Type Equations."]
 
         -- Kinds of type constructors in scope in the
         -- locally defined type equations.
         nktsLocalTypeDef'
-                <- checkKindsOfTypeDefs config envT_importedTypeDefs
+                <- checkKindsOfTypeDefs
+                        config 
+                        envT_importedTypeDefs
+                         { EnvT.envtEquations
+                         = Map.map snd $ Map.fromList $ moduleTypeDefsLocal mm }
                 $  moduleTypeDefsLocal  mm
 
         let envT_localTypeDefs
@@ -118,12 +141,16 @@ checkModuleM !config mm@ModuleCore{} !mode
                 , EnvT.fromListNT [ (n, k) | (n, (k, _)) <- nktsLocalTypeDef']
                 , EnvT.empty
                         { EnvT.envtEquations
-                        = Map.fromList    [ (n, t) | (n, (_, t)) <- nktsLocalTypeDef']}]
+                        = Map.unions
+                                [ Map.fromList [ (n, t) | (n, (_, t)) <- nktsLocalTypeDef']
+                                , Map.fromList [ (n, t) | (n, (_, t)) <- nktsImportTypeDef' ]]
+                        }
+                ]
 
 
         -- Check imported data type defs --------------------------------------
-        -- TODO: The types of constructors can refer to imported abstract
-        --       types as well as type equations.
+        ctrace  $ vcat
+                [ text "* Checking Kinds of Imported Data Types."]
 
         let dataDefsImported = moduleImportDataDefs mm
         dataDefsImported'  
@@ -133,6 +160,9 @@ checkModuleM !config mm@ModuleCore{} !mode
 
 
         -- Check the local data defs ------------------------------------------
+        ctrace  $ vcat
+                [ text "* Checking Kinds of Local Data Types."]
+
         let dataDefsLocal    = moduleDataDefsLocal mm
         dataDefsLocal'  
          <- case checkDataDefs config envT_localTypeDefs dataDefsLocal of
@@ -146,6 +176,9 @@ checkModuleM !config mm@ModuleCore{} !mode
 
 
         -- Check types of imported capabilities -------------------------------
+        ctrace  $ vcat
+                [ text "* Checking Kinds of Imported Capabilities."]
+
         ntsImportCap'   
                 <- checkImportCaps   config  envT_localTypeDefs mode
                 $  moduleImportCaps  mm
@@ -160,6 +193,9 @@ checkModuleM !config mm@ModuleCore{} !mode
 
 
         -- Check types of imported values ------------------------------------
+        ctrace  $ vcat
+                [ text "* Checking Types of Imported Values."]
+
         ntsImportValue'
                 <- checkImportValues  config envT_importCaps mode
                 $  moduleImportValues mm

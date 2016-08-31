@@ -170,31 +170,31 @@ checkTypeM config ctx0 uni tt@(TCon tc) mode
         getActual
          -- Sort constructors don't have a higher classification.
          -- We should never try to check these.
-         | TyConSort _           <- tc
-         , UniverseSort          <- uni
+         | TyConSort _          <- tc
+         , UniverseSort         <- uni
          = throw $ ErrorNakedSort tt
 
          -- Baked-in kind constructors.
          -- We can't sort-check a naked kind function constructor because
          -- the sort of a fully applied one depends on the argument kind.
-         | TyConKind kc          <- tc
-         , UniverseKind          <- uni
+         | TyConKind kc         <- tc
+         , UniverseKind         <- uni
          = case takeSortOfKiCon kc of
                 Just s   -> return (tt, s)
                 Nothing  -> throw $ ErrorUnappliedKindFun
 
          -- Baked-in witness type constructors.
-         | TyConWitness tcw      <- tc
-         , UniverseSpec          <- uni
+         | TyConWitness tcw     <- tc
+         , UniverseSpec         <- uni
          = return (tt, kindOfTwCon tcw)
 
          -- Baked-in spec type constructors.
-         | TyConSpec    tcc      <- tc
-         , UniverseSpec          <- uni
+         | TyConSpec    tcc     <- tc
+         , UniverseSpec         <- uni
          = return (tt, kindOfTcCon tcc)
 
          -- Fragment specific, or user defined constructors.
-         | TyConBound u k        <- tc
+         | TyConBound u k       <- tc
          = case u of
             UName n
              -- User defined data type constructors must be in the set of
@@ -211,6 +211,12 @@ checkTypeM config ctx0 uni tt@(TCon tc) mode
              | Just k'          <- EnvT.lookupName n (contextEnvT ctx0)
              , UniverseSpec     <- uni
              -> return (TCon (TyConBound u k'), k')
+
+             -- For type synonyms, just re-check the right of the binding.
+             | Just t'          <- Map.lookup n $ EnvT.envtEquations
+                                                $ contextEnvT ctx0
+             -> do  (tt', k', _) <- checkTypeM config ctx0 uni t' mode
+                    return (tt', k')
 
              -- We don't have a type for this constructor.
              | otherwise

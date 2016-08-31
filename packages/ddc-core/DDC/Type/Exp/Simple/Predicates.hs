@@ -186,7 +186,6 @@ isDistinctWitType tt
         
 
 -- | Check if this is the TyFun or KiFun constructor.
---   TODO: We're migrating to use the same constructor for both levels.
 isFunishTCon :: Type n -> Bool
 isFunishTCon tt
  = case tt of
