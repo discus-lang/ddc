@@ -4,6 +4,7 @@ module DDC.Core.Check.ErrorMessage
 where
 import DDC.Core.Pretty
 import DDC.Core.Check.Error
+import DDC.Type.Check.ErrorMessage      ()
 import DDC.Type.Exp.Simple
 import DDC.Type.Universe
 

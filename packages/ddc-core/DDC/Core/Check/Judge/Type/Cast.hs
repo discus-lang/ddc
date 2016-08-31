@@ -2,6 +2,7 @@
 module DDC.Core.Check.Judge.Type.Cast
         ( checkCast)
 where
+import DDC.Type.Check.Judge.Kind
 import DDC.Core.Check.Judge.Type.Sub
 import DDC.Core.Check.Judge.Type.Base
 import qualified DDC.Type.Sum   as Sum

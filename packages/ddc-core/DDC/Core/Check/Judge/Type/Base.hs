@@ -6,6 +6,8 @@ module DDC.Core.Check.Judge.Type.Base
         , returnX
         , runForDemand
         , isHoleT
+        , checkTypeM
+        , checkBindM
 
         , module DDC.Core.Check.Base
         , module DDC.Core.Check.Judge.Inst
@@ -31,6 +33,7 @@ import DDC.Core.Transform.Reannotate
 import DDC.Core.Transform.SubstituteTX
 import DDC.Core.Exp.Annot.AnTEC
 
+import DDC.Type.Check.Judge.Kind
 import DDC.Type.Transform.SubstituteT
 import DDC.Type.Transform.Instantiate
 import DDC.Type.Transform.BoundT
@@ -174,4 +177,17 @@ isHoleT config tt
         _ -> isBot tt
 
 
+-- | Check the type of a bind.
+checkBindM
+        :: (Ord n, Show n, Pretty n)
+        => Config n     -- ^ Checker configuration.
+        -> Context n    -- ^ Type context.
+        -> Universe     -- ^ Universe for the type of the bind.
+        -> Bind n       -- ^ Check this bind.
+        -> Mode n       -- ^ Mode for bidirectional checking.
+        -> CheckM a n (Bind n, Type n, Context n)
+
+checkBindM config ctx uni bb mode
+ = do   (t', k, ctx')  <- checkTypeM config ctx uni (typeOfBind bb) mode
+        return (replaceTypeOfBind t' bb, k, ctx')
 

@@ -53,7 +53,7 @@ import System.Directory
 data Error n err
         = ErrorRead       !String
         | ErrorParser     !BP.ParseError
-        | ErrorCheckType  !(T.Error n)      
+        | ErrorCheckType  !(C.Error BP.SourcePos n)      
         | ErrorCheckExp   !(C.Error BP.SourcePos n)
         | ErrorCompliance !(F.Error (C.AnTEC BP.SourcePos n) n)
         | ErrorFragment   !(err (C.AnTEC BP.SourcePos n))

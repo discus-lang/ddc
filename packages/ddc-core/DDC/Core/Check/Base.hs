@@ -13,9 +13,6 @@ module DDC.Core.Check.Base
         , CheckTrace (..)
         , ctrace
 
-        , checkTypeM
-        , checkBindM
-
           -- Things defined elsewhere.
         , throw, runCheck, evalCheck
         , EnvX,  EnvT, TypeEnv, KindEnv
@@ -38,7 +35,7 @@ import DDC.Core.Collect
 import DDC.Core.Pretty
 import DDC.Core.Exp.Annot
 import DDC.Type.Check.Context
-import DDC.Type.Check                           (Config (..), configOfProfile)
+import DDC.Type.Check.Config
 import DDC.Core.Env.EnvT                        (EnvT)
 import DDC.Core.Env.EnvX                        (EnvX)
 import DDC.Type.Env                             (TypeEnv, KindEnv)
@@ -53,7 +50,8 @@ import Data.Monoid                              hiding ((<>))
 import Data.Maybe
 import Data.Set                                 (Set)
 import qualified Data.Set                       as Set
-import qualified DDC.Type.Check                 as T
+import qualified DDC.Type.Check.Error           as T
+import qualified DDC.Type.Check.ErrorMessage    ()
 import qualified DDC.Control.Monad.Check        as G
 import Prelude                                  hiding ((<$>))
 
@@ -122,55 +120,4 @@ ctrace doc'
         let tr' = tr { checkTraceDoc = checkTraceDoc tr <$> doc' }
         G.put (tr', ix, pos)
         return  ()
-
-
--- Bind -----------------------------------------------------------------------
--- | Check the type of a bind.
-checkBindM
-        :: (Ord n, Show n, Pretty n)
-        => Config n     -- ^ Checker configuration.
-        -> Context n    -- ^ Type context.
-        -> Universe     -- ^ Universe for the type of the bind.
-        -> Bind n       -- ^ Check this bind.
-        -> Mode n       -- ^ Mode for bidirectional checking.
-        -> CheckM a n (Bind n, Type n, Context n)
-
-checkBindM config ctx uni bb mode
- = do   (t', k, ctx')   
-         <- checkTypeM config ctx uni (typeOfBind bb) mode
-        return (replaceTypeOfBind t' bb, k, ctx')
-
-
--- Type -----------------------------------------------------------------------
--- | Check a type in the exp checking monad, returning its kind.
-checkTypeM
-        :: (Ord n, Show n, Pretty n)
-        => Config n     -- ^ Checker configuration.
-        -> Context n    -- ^ Type context.
-        -> Universe     -- ^ Universe the type is supposed to be in.
-        -> Type n       -- ^ Check this type.
-        -> Mode n       -- ^ Mode for bidirectional checking
-        -> CheckM a n (Type n, Kind n, Context n)
-
-checkTypeM config ctx uni tt mode
- = do
-        -- Run the inner type/kind checker computation,
-        -- giving it our current values for the existential and position
-        -- generators.
-        (tr, ix, pos)   <- G.get
-
-        let ((ix', pos'), result)
-                = G.runCheck (ix, pos)
-                $ T.checkTypeM config ctx uni tt mode
-
-        G.put (tr, ix', pos')
-
-        -- If the type/kind checker returns an error then wrap it
-        -- so we can throw it from our exp/type checker.
-        case result of
-         Left err
-          -> throw $ ErrorType err
-
-         Right (t, k, ctx')
-          -> return (t, k, ctx')
 

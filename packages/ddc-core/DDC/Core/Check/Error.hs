@@ -4,7 +4,7 @@ module DDC.Core.Check.Error
 where
 import DDC.Core.Exp
 import DDC.Type.Universe
-import qualified DDC.Type.Check as T
+import qualified DDC.Type.Check.Error   as T
 
 
 -- | All the things that can go wrong when type checking an expression

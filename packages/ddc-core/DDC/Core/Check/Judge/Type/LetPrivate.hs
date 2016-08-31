@@ -2,6 +2,7 @@
 module DDC.Core.Check.Judge.Type.LetPrivate
         (checkLetPrivate)
 where
+import DDC.Type.Check.Judge.Kind
 import DDC.Core.Check.Judge.Type.Base
 import qualified DDC.Core.Env.EnvT      as EnvT
 import qualified DDC.Type.Sum           as Sum
@@ -239,4 +240,6 @@ checkWitnessBindsM !config !a !ctx !xx !uRegions !bsWit
              -> checkWitnessArg bWit t2
 
             _ -> throw $ ErrorLetRegionWitnessInvalid a xx bWit
+
+
 

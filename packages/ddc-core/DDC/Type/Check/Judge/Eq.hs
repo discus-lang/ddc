@@ -3,7 +3,10 @@ module DDC.Type.Check.Judge.Eq
         (makeEq)
 where
 import DDC.Type.Check.Config
-import DDC.Type.Check.Base
+import DDC.Type.Check.Context
+import DDC.Type.Exp
+import DDC.Base.Pretty
+import qualified DDC.Core.Check.Base    as C
 
 
 -- | Make two types equivalent to each other,
@@ -13,20 +16,20 @@ makeEq  :: (Eq n, Ord n, Pretty n)
         -> Context n
         -> Type n
         -> Type n
-        -> Error n
-        -> CheckM n (Context n)
+        -> C.Error  a n
+        -> C.CheckM a n (Context n)
 
 makeEq config ctx0 tL tR err
 
  -- EqLSolve
  | Just iL <- takeExists tL
- , not $ isTExists tR
+ , not $ C.isTExists tR
  = do   let Just ctx1   = updateExists [] iL tR ctx0
         return ctx1
 
  -- EqRSolve
  | Just iR <- takeExists tR
- , not $ isTExists tL
+ , not $ C.isTExists tL
  = do   let Just ctx1   = updateExists [] iR tL ctx0
         return ctx1
 
@@ -59,7 +62,7 @@ makeEq config ctx0 tL tR err
  -- EqCon
  | TCon tc1     <- tL
  , TCon tc2     <- tR
- , equivTyCon tc1 tc2
+ , C.equivTyCon tc1 tc2
  =      return ctx0
 
  -- EqApp
@@ -67,13 +70,13 @@ makeEq config ctx0 tL tR err
  , TApp tR1 tR2 <- tR
  = do
         ctx1    <- makeEq config ctx0 tL1  tR1  err
-        tL2'    <- applyContext ctx1 tL2
-        tR2'    <- applyContext ctx1 tR2
+        tL2'    <- C.applyContext ctx1 tL2
+        tR2'    <- C.applyContext ctx1 tR2
         ctx2    <- makeEq config ctx0 tL2' tR2' err
 
         return ctx2
 
  -- Error
  | otherwise
- =      throw err
+ =      C.throw err
 

@@ -240,7 +240,7 @@ cmdTypeEquiv language source ss
 
         checkT t
          = case T.checkSpec config (spreadT kenv t) of
-                Left err 
+                Left (err :: C.Error () n)
                  -> do  outDocLn $ ppr err
                         return False
 

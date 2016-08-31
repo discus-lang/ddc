@@ -1,23 +1,31 @@
 module DDC.Type.Check.Judge.Kind
         (checkTypeM)
 where
+import DDC.Type.Exp
+import DDC.Type.Exp.Simple.Compounds
 import DDC.Type.DataDef
 import DDC.Type.Check.Context
 import DDC.Type.Check.Error
 import DDC.Type.Check.ErrorMessage      ()
 import DDC.Type.Check.CheckCon
 import DDC.Type.Check.Config
-import DDC.Type.Check.Base
 import DDC.Type.Check.Judge.Eq
 import DDC.Type.Exp.Simple.Predicates
 import DDC.Type.Universe
 import Data.List
 import Control.Monad
-import qualified DDC.Type.Sum            as TS
-import qualified DDC.Core.Env.EnvX       as EnvX
-import qualified DDC.Core.Env.EnvT       as EnvT
-import qualified Data.Map                as Map
+import DDC.Base.Pretty
+import DDC.Core.Check.Base              (CheckM)
+import qualified DDC.Core.Check.Base    as C
+import qualified DDC.Type.Sum           as TS
+import qualified DDC.Core.Env.EnvX      as EnvX
+import qualified DDC.Core.Env.EnvT      as EnvT
+import qualified Data.Map               as Map
 
+import DDC.Core.Check.Base
+        ( throw
+        , newExists
+        , applyContext)
 
 -- | Check a type returning its kind, or a kind returning its sort.
 --
@@ -42,7 +50,7 @@ checkTypeM
         -> Universe     -- ^ What universe the type to check is in.
         -> Type n       -- ^ The type to check (can be a Spec or Kind)
         -> Mode n       -- ^ Type checker mode.
-        -> CheckM n 
+        -> CheckM a n 
                 ( Type n
                 , Kind n
                 , Context n)
@@ -61,7 +69,7 @@ checkTypeM config ctx0 uni tt@(TVar u) mode
         -- We don't infer kind holes in recon mode.
         -- The program should have complete kind annotations.
         Recon
-         -> do  throw $ ErrorUndefined u
+         -> do  throw $ C.ErrorType $ ErrorUndefined u
 
         -- Synthesised kinds are assumed to have sort Comp.
         Synth
@@ -89,7 +97,7 @@ checkTypeM config ctx0 uni tt@(TVar u) mode
         -- We don't infer spec holes in recon mode.
         -- The program should have complete spec annotations.
         Recon
-         -> do  throw $ ErrorUndefined u
+         -> do  throw $ C.ErrorType $ ErrorUndefined u
 
         -- Synthesised types could have an arbitrary kind, 
         -- so we need to make two existentials.
@@ -138,7 +146,7 @@ checkTypeM config ctx0 uni tt@(TVar u) mode
 
          -- Type variable is no where to be found.
          | otherwise
-         = throw $ ErrorUndefined u
+         = throw $ C.ErrorType $ ErrorUndefined u
 
    in do
         kActual  <- getActual
@@ -151,7 +159,7 @@ checkTypeM config ctx0 uni tt@(TVar u) mode
           -> do 
                 kExpected' <- applyContext ctx0 kExpected
                 ctx1       <- makeEq config ctx0 kActual' kExpected'
-                           $  ErrorMismatch uni  kActual' kExpected' tt
+                           $  C.ErrorType $ ErrorMismatch uni  kActual' kExpected' tt
 
                 return (tt, kActual', ctx1)
  
@@ -159,7 +167,7 @@ checkTypeM config ctx0 uni tt@(TVar u) mode
 
  -- Type variables are not a part of this universe.
  | otherwise
- = throw $ ErrorUniverseMalfunction tt uni
+ = throw $ C.ErrorType $ ErrorUniverseMalfunction tt uni
 
 
 -- Constructors ---------------------------------
@@ -172,7 +180,7 @@ checkTypeM config ctx0 uni tt@(TCon tc) mode
          -- We should never try to check these.
          | TyConSort _          <- tc
          , UniverseSort         <- uni
-         = throw $ ErrorNakedSort tt
+         = throw $ C.ErrorType $ ErrorNakedSort tt
 
          -- Baked-in kind constructors.
          -- We can't sort-check a naked kind function constructor because
@@ -181,7 +189,7 @@ checkTypeM config ctx0 uni tt@(TCon tc) mode
          , UniverseKind         <- uni
          = case takeSortOfKiCon kc of
                 Just s   -> return (tt, s)
-                Nothing  -> throw $ ErrorUnappliedKindFun
+                Nothing  -> throw $ C.ErrorType $ ErrorUnappliedKindFun
 
          -- Baked-in witness type constructors.
          | TyConWitness tcw     <- tc
@@ -220,14 +228,14 @@ checkTypeM config ctx0 uni tt@(TCon tc) mode
 
              -- We don't have a type for this constructor.
              | otherwise
-             -> throw $ ErrorUndefinedTypeCtor u
+             -> throw $ C.ErrorType $ ErrorUndefinedTypeCtor u
 
             -- The kinds of primitive type constructors are directly attached.
             UPrim{} -> return (tt, k)
 
             -- Type constructors are always defined at top-level and not
             -- by anonymous debruijn binding.
-            UIx{}   -> throw $ ErrorUndefinedTypeCtor u
+            UIx{}   -> throw $ C.ErrorType $ ErrorUndefinedTypeCtor u
 
          -- Existentials can be either in the Spec or Kind universe,
          -- and their kinds/sorts are directly attached.
@@ -237,7 +245,7 @@ checkTypeM config ctx0 uni tt@(TCon tc) mode
 
          -- Whatever constructor we were given wasn't in the expected universe.
          | otherwise
-         = throw $ ErrorUniverseMalfunction tt uni
+         = throw $ C.ErrorType $ ErrorUniverseMalfunction tt uni
  in do
         -- Get the actual kind/sort of the constructor according to the 
         -- constructor definition.
@@ -250,7 +258,7 @@ checkTypeM config ctx0 uni tt@(TCon tc) mode
            -> do 
                  kExpected' <- applyContext ctx0 kExpected
                  ctx1   <- makeEq config ctx0 kActual' kExpected'
-                        $  ErrorMismatch uni  kActual' kExpected' tt
+                        $  C.ErrorType $ ErrorMismatch uni  kActual' kExpected' tt
                  return (tt', kActual', ctx1)
 
          -- In Recon and Synth mode just return the actual kind.
@@ -276,7 +284,7 @@ checkTypeM config ctx0 uni@UniverseSpec
         k2'             <- applyContext ctx3 k2
         when ( not (isDataKind k2')
             && not (isWitnessKind k2'))
-         $ throw $ ErrorForallKindInvalid tt t2 k2'
+         $ throw $ C.ErrorType $ ErrorForallKindInvalid tt t2 k2'
 
         -- Pop the quantified type off the context.
         let ctx_cut      = popToPos pos1 ctx3
@@ -303,7 +311,7 @@ checkTypeM config ctx0 uni@UniverseSpec
          <- if isTExists k2'
              then do
                 ctx5    <- makeEq config ctx4 k2' kData
-                        $  ErrorMismatch uni  k2' kData tt
+                        $  C.ErrorType $ ErrorMismatch uni  k2' kData tt
 
                 k2''    <- applyContext ctx5 k2'
                 return (k2'', ctx5)
@@ -314,7 +322,7 @@ checkTypeM config ctx0 uni@UniverseSpec
         -- The above horror show needs to have worked.
         when ( not (isDataKind k2'')
             && not (isWitnessKind k2''))
-         $ throw $ ErrorForallKindInvalid tt t2 k2''
+         $ throw $ C.ErrorType $ ErrorForallKindInvalid tt t2 k2''
 
         -- Pop the quantified type off the context.
         let ctx_cut      = popToPos pos1 ctx5
@@ -343,17 +351,17 @@ checkTypeM config ctx0 uni@UniverseSpec
          <- if isTExists k2' && isTExists kExpected
              then do
                 ctx'    <- makeEq config ctx4 k2' kExpected
-                        $  ErrorMismatch uni  k2' kExpected tt
+                        $  C.ErrorType $ ErrorMismatch uni  k2' kExpected tt
 
                 ctx5    <- makeEq config ctx' k2' kData 
-                        $  ErrorMismatch uni  k2' kData  tt
+                        $  C.ErrorType $ ErrorMismatch uni  k2' kData  tt
 
                 k2''    <- applyContext ctx5 k2'
                 return (k2'', ctx5)
 
              else do
                 ctx5    <- makeEq config ctx4 k2' kExpected
-                        $  ErrorMismatch uni  k2' kExpected tt
+                        $  C.ErrorType $ ErrorMismatch uni  k2' kExpected tt
 
                 k2''    <- applyContext ctx5 k2'
                 return (k2'', ctx4)
@@ -361,7 +369,7 @@ checkTypeM config ctx0 uni@UniverseSpec
         -- The above horror show needs to have worked.
         when ( not (isDataKind k2'')
             && not (isWitnessKind k2''))
-         $ throw $ ErrorForallKindInvalid tt t2 k2'
+         $ throw $ C.ErrorType $ ErrorForallKindInvalid tt t2 k2'
 
         -- Pop the quantified type off the context.
         let ctx_cut      = popToPos pos1 ctx5
@@ -414,7 +422,7 @@ checkTypeM config ctx0 uni@UniverseSpec
          then     return (tt', kWitness, ctx2)
         else if isWitnessKind k1 && isDataKind k2
          then     return (tt', kData, ctx2)
-        else    throw $ ErrorWitnessImplInvalid tt t1 k1 t2 k2
+        else    throw $ C.ErrorType $ ErrorWitnessImplInvalid tt t1 k1 t2 k2
 
     Synth
      -> do
@@ -449,13 +457,13 @@ checkTypeM config ctx0 UniverseSpec
         case kFn of
          TApp (TApp ttFun kParam) kBody
            |  isFunishTCon ttFun 
-           ,  equivT (contextEnvT ctx2) kParam kArg
+           ,  C.equivT (contextEnvT ctx2) kParam kArg
            -> return (tApp tFn' tArg', kBody, ctx2)
 
            | otherwise
-           -> throw $ ErrorAppArgMismatch tt tFn' kFn tArg' kArg
+           -> throw $ C.ErrorType $ ErrorAppArgMismatch tt tFn' kFn tArg' kArg
 
-         _ -> throw $ ErrorAppNotFun tt tFn' kFn tArg'
+         _ -> throw $ C.ErrorType $ ErrorAppNotFun tt tFn' kFn tArg'
 
     Synth
      -> do
@@ -480,7 +488,7 @@ checkTypeM config ctx0 UniverseSpec
         k1'         <- applyContext ctx1 k1
         kExpected'  <- applyContext ctx1 kExpected
         ctx2        <- makeEq config ctx1         k1' kExpected'
-                    $  ErrorMismatch UniverseSpec k1' kExpected' tt
+                    $  C.ErrorType $ ErrorMismatch UniverseSpec k1' kExpected' tt
 
         return (t1', k1', ctx2)
 
@@ -501,13 +509,13 @@ checkTypeM config ctx0 UniverseSpec tt@(TSum ss) mode
         k'      <- case nub ks of     
                      []     -> return $ TS.kindOfSum ss
                      [k]    -> return k
-                     _      -> throw $ ErrorSumKindMismatch kExpect ss ks
+                     _      -> throw $ C.ErrorType $ ErrorSumKindMismatch kExpect ss ks
 
         -- Check that the kind of the elements is a valid one.
         -- Only effects and closures can be summed.
         if (k' == kEffect || k' == kClosure)
          then return (TSum (TS.fromList k' ts'), k', ctx1)
-         else throw $ ErrorSumKindInvalid ss k'
+         else throw $ C.ErrorType $ ErrorSumKindInvalid ss k'
 
     Synth
      -> do
@@ -547,15 +555,15 @@ checkTypeM config ctx0 UniverseSpec tt@(TSum ss) mode
         -- Force the synthesised kind to match the expected one.
         k1'         <- applyContext ctx1 k1
         kExpected'  <- applyContext ctx1 kExpected
-        ctx2    <- makeEq config ctx1         k1' kExpected'
-                $  ErrorMismatch UniverseSpec k1' kExpected' tt
+        ctx2        <- makeEq config ctx1         k1' kExpected'
+                    $  C.ErrorType $ ErrorMismatch UniverseSpec k1' kExpected' tt
 
         return  (t1', k1, ctx2)
 
 
 -- Whatever type we were given wasn't in the specified universe.
 checkTypeM _ _ uni tt _mode
-        = throw $ ErrorUniverseMalfunction tt uni
+        = throw $ C.ErrorType $ ErrorUniverseMalfunction tt uni
 
 
 -------------------------------------------------------------------------------
@@ -567,7 +575,7 @@ checkTypesM
         -> Universe             -- ^ What universe the types to check are in.
         -> Mode n               -- ^ Type checker mode.
         -> [Type n]             -- ^ The types to check.
-        -> CheckM n 
+        -> CheckM a n 
                 ( [Type n]
                 , [Kind n]
                 , Context n)
@@ -590,7 +598,7 @@ synthTAppArg
         -> Type n               -- Type function.
         -> Kind n               -- Kind of functional part.
         -> Type n               -- Type argument.
-        -> CheckM n
+        -> CheckM a n
                 ( Kind n        -- Kind of result.
                 , Type n        -- Checked type argument.
                 , Context n)    -- Result context. 
@@ -628,7 +636,7 @@ synthTAppArg config ctx0 tFn kFn tArg
         return (kBody, tArg', ctx1)
 
  | otherwise
- = throw $ ErrorAppNotFun (TApp tFn tArg) tFn kFn tArg 
+ = throw $ C.ErrorType $ ErrorAppNotFun (TApp tFn tArg) tFn kFn tArg 
 
 
 -- [Note: Defaulting the kind of quantified types]

@@ -23,12 +23,13 @@ module DDC.Type.Check
 where
 import DDC.Type.Check.Judge.Kind
 import DDC.Type.Check.Context
-import DDC.Type.Check.Error
+import DDC.Type.Check.Error             (ErrorData (..))
 import DDC.Type.Check.ErrorMessage      ()
 import DDC.Type.Check.CheckCon
 import DDC.Type.Check.Config
 import DDC.Type.Exp.Simple
 import DDC.Type.Universe
+import DDC.Core.Check.Error
 import DDC.Base.Pretty
 import DDC.Control.Monad.Check           (evalCheck)
 
@@ -38,10 +39,10 @@ import DDC.Control.Monad.Check           (evalCheck)
 --   depeding on the universe of the type being checked.
 checkType  :: (Ord n, Show n, Pretty n)
            => Config n -> Universe -> Type n
-           -> Either (Error n) (Type n, Type n)
+           -> Either (Error a n) (Type n, Type n)
 
 checkType config uni tt
- = evalCheck (0, 0)
+ = evalCheck (mempty, 0, 0)
  $ do   (t, k, _) <- checkTypeM config emptyContext uni tt Recon
         return (t, k)
 
@@ -49,10 +50,10 @@ checkType config uni tt
 -- | Check a spec in the given environment, returning an error or its kind.
 checkSpec  :: (Ord n, Show n, Pretty n) 
            => Config n -> Type n
-           -> Either (Error n) (Type n, Kind n)
+           -> Either (Error a n) (Type n, Kind n)
 
 checkSpec config tt 
- = evalCheck (0, 0)
+ = evalCheck (mempty, 0, 0)
  $ do   (t, k, _) <- checkTypeM config emptyContext UniverseSpec tt Recon
         return (t, k)
 
@@ -61,10 +62,10 @@ checkSpec config tt
 kindOfSpec
         :: (Ord n, Show n, Pretty n) 
         => Config n -> Type n 
-        -> Either (Error n) (Kind n)
+        -> Either (Error a n) (Kind n)
 
 kindOfSpec config tt
- = evalCheck (0, 0)
+ = evalCheck (mempty, 0, 0)
  $ do   (_, k, _) <- checkTypeM config emptyContext UniverseSpec tt Recon
         return k
 
@@ -73,10 +74,10 @@ kindOfSpec config tt
 sortOfKind 
         :: (Ord n, Show n, Pretty n)
         => Config n -> Kind n
-        -> Either (Error n) (Sort n)
+        -> Either (Error a n) (Sort n)
 
 sortOfKind config tt
- = evalCheck (0, 0)
+ = evalCheck (mempty, 0, 0)
  $ do   (_, s, _) <- checkTypeM config emptyContext UniverseKind tt Recon
         return s
 

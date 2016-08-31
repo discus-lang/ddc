@@ -3,6 +3,7 @@ module DDC.Core.Check.Module
         ( checkModule
         , checkModuleM)
 where
+import DDC.Core.Check.Judge.Type.Base   (checkTypeM)
 import DDC.Core.Check.Base
 import DDC.Core.Check.Exp
 import DDC.Core.Transform.Reannotate
