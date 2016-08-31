@@ -10,8 +10,6 @@ where
 
 
 -- | Result of performing a single step for an expression.
---   TODO: Naming this 'Step' conflicts with the one in the stream library.
---   We need separate module namespaces.
 data SStep (a: Data) where
         StepNone        : SStep a
         StepSome        : a -> SStep a
