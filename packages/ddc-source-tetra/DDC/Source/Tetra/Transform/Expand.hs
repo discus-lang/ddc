@@ -314,13 +314,13 @@ expandQuantParams env bmBind ps
  , not $ Set.null fvs
  = let  
         -- Make new binders for each of the free type variables.
-        --  TODO: handle free debruijn indices. Find the maximum index and
-        --  add enough anonymous binders to cover it.
+        --   We shouldn't have any holes or indices in the incoming type, 
+        --   but don't have a way to specify this in the type of the AST.
         makeBind u
          = case u of 
                 UName n -> Just $ BName n
-                UHole   -> error "ddc-source-tetra.expandQuant: holes should not be free"
-                UIx{}   -> error "ddc-source-tetra.expandQuant: not expanding deBruijn tyvar"
+                UHole   -> error "ddc-source-tetra.expandQuant: not expanding hole in type"
+                UIx{}   -> error "ddc-source-tetra.expandQuant: not expanding deBruijn type var"
 
         Just bsNew = sequence $ map makeBind $ Set.toList fvs
 
