@@ -7,8 +7,11 @@ import foreign boxed type
  Array : Region ~> Data ~> Data
 
 import foreign c value
- -- TODO: Can't set these Nat# to Nat synonym as the Tetra-> Salt conversion
- --       is not looking throught the synonym, which causes a segfault.
+ -- ISSUE #377: Use type equations during Tetra to Salt transform.
+ -- The Tetra to Salt transform isn't looking through type equations,
+ -- so types of primitives that use type synonyms break. Eg if we use
+ -- 'Nat' here instead of 'Nat#' the transform won't know these primtives
+ -- accept unboxed values.
  allocArray : [r: Region]. [a: Data]. Nat# -> a -> S (Alloc r) (Array r a)
  readArray  : [r: Region]. [a: Data]. Array r a -> Nat# -> S (Read r) a
  writeArray : [r: Region]. [a: Data]. Array r a -> Nat# -> a -> S (Write r) Void#
