@@ -9,9 +9,6 @@ import Class.Functor
 where
 
 
--- TODO: if we add an extra 'b' arg to the type of pure
---       we end up with an existential in the interface file,
---       which cannot be parsed.
 data Applicative (f: Data -> Data) where
         Applicative
          :  Functor f 
