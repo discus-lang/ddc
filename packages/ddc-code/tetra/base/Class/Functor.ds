@@ -7,13 +7,5 @@ where
 data Functor (f: Data -> Data) where
         Functor: ([a b: Data]. (a -> b) -> f a -> f b) -> Functor f
 
-fmap    ((Functor fmap'): Functor f)
-        (g: a -> b) (x: f a): f b
- = fmap' g x
-
-
--- TODO: this fails tetra -> salt conversion, but shoudl be ok.
-{-
 fmap    ((Functor fmap'): Functor f): (a -> b) -> f a -> f b
  = fmap'
--}

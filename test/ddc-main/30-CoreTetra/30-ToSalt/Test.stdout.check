@@ -246,11 +246,13 @@ letrec {
 
 
 -- Error: partial application of primitive data constructors is not supported.
-Fragment violation when converting Tetra module to Salt module.
-  Cannot convert expression.
-    Partial application of primitive operators is not supported.
+Error in transformed module.
+  ()
+  Type mismatch in application.
+       Function expects: U# Nat#
+        but argument is: U# Nat# -> U# Nat#
   
-    with: add# [Nat#] 5#
+  with: convert# [U# Nat#] [Nat#] x2
 
 
 -- Error: partial application if user defined data constructors is not supported.
@@ -263,11 +265,13 @@ Fragment violation when converting Tetra module to Salt module.
 
 
 -- Error: partial application of primitive operators is not supported.
-Fragment violation when converting Tetra module to Salt module.
-  Cannot convert expression.
-    Partial application of primitive operators is not supported.
+Error in transformed module.
+  ()
+  Type mismatch in application.
+       Function expects: U# Nat#
+        but argument is: U# Nat# -> U# Nat#
   
-    with: add# [Nat#] 5#
+  with: convert# [U# Nat#] [Nat#] x2
 
 
 -- OK: let expressions in nested contexts are normalized on the way in to

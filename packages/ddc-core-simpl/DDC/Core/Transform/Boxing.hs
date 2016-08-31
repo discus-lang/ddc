@@ -72,7 +72,7 @@ data Config a n
 -- Module -----------------------------------------------------------------------------------------
 -- | Manage boxing in a module.
 boxingModule 
-        :: Ord n
+        :: (Show a, Show n, Ord n)
         => Config a n -> Module a n -> Module a n
 
 boxingModule config mm
@@ -187,7 +187,7 @@ boxingAlt config alt
 --   * Assumes that the type of the primitive is in prenex form.
 --
 boxingPrimitive
-        :: Ord n
+        :: (Show a, Show n, Ord n)
         => Config a n -> a
         -> Bool         -- ^ Primitive is being run at the call site.
         -> Exp a n      -- ^ Whole primitive application, for debugging.
@@ -212,7 +212,7 @@ boxingPrimitive config a bRun xx xFn tPrimBoxed tPrimUnboxed xsArgsAll
 
         -- Get the unboxed version of the types of parameters and return value.
         tPrimUnboxedInst <- instantiateTs tPrimUnboxed tsArgs
-        let (tsParamUnboxed, tResultUnboxed)
+        let (_tsParamUnboxed, tResultUnboxed)
                         = takeTFunArgResult tPrimUnboxedInst
 
         -- If the primitive is being run at the call site then we need to 
@@ -227,10 +227,10 @@ boxingPrimitive config a bRun xx xFn tPrimBoxed tPrimUnboxed xsArgsAll
         -- If not then the primop is partially applied or something else is wrong.
         -- The Tetra to Salt conversion will give a proper error message
         -- if the primop is indeed partially applied.
-        (if not (  length xsArgs == length tsParamBoxed
-                && length xsArgs == length tsParamUnboxed)
-           then Nothing
-           else Just ())
+--        (if not (  length xsArgs == length tsParamBoxed
+--                && length xsArgs == length tsParamUnboxed)
+--           then Nothing
+--           else Just ())
 
         -- We got a type for each argument, so the primop is fully applied
         -- and we can do the boxing/unboxing transform.
