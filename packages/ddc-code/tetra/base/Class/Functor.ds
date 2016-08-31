@@ -3,9 +3,9 @@ module Class.Functor
 export  { fmap }
 where
 
-
 data Functor (f: Data -> Data) where
         Functor: ([a b: Data]. (a -> b) -> f a -> f b) -> Functor f
 
-fmap    ((Functor fmap'): Functor f): (a -> b) -> f a -> f b
+fmap ((Functor fmap') : Functor f): (a -> b) -> f a -> f b
  = fmap'
+

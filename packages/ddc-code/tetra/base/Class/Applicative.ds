@@ -32,9 +32,7 @@ ap      ((Applicative _ _ ap'):   Applicative f)
  = ap' xfab xfa
 
 
--- TODO: cannot elide the binding of f without providing the return type.
-liftA   [f: Data -> Data] [a b: Data] 
-        (dapp: Applicative f) (f: a -> b) (xa: f a): f b
+liftA   (dapp: Applicative f) (f: a -> b) (xa: f a): f b
  = ap dapp (pure dapp f) xa
 
 
