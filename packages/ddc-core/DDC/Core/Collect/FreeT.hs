@@ -3,6 +3,7 @@ module DDC.Core.Collect.FreeT
         ( FreeVarConT(..)
         , freeVarsT)
 where
+import DDC.Core.Collect.BindStruct
 import DDC.Type.Exp
 import DDC.Type.Env             (KindEnv)
 import Data.Set                 (Set)
@@ -18,6 +19,24 @@ freeVarsT
         -> Set (Bound n)
 freeVarsT kenv tt
  = fst $ freeVarConT kenv tt
+
+
+instance BindStruct (Type n) n where
+ slurpBindTree tt
+  = case tt of
+        TVar u          -> [BindUse BoundSpec u]
+        TCon tc         -> slurpBindTree tc
+        TAbs b t        -> [bindDefT BindTAbs   [b] [t]]
+        TApp t1 t2      -> slurpBindTree t1 ++ slurpBindTree t2
+        TForall b t     -> [bindDefT BindForall [b] [t]]
+        TSum ts         -> concatMap slurpBindTree $ Sum.toList ts
+
+
+instance BindStruct (TyCon n) n where
+ slurpBindTree tc
+  = case tc of
+        TyConBound u k  -> [BindCon BoundSpec u (Just k)]
+        _               -> []
 
 
 class FreeVarConT (c :: * -> *) where

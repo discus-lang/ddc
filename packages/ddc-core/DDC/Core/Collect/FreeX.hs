@@ -3,8 +3,9 @@ module DDC.Core.Collect.FreeX
         ( freeX
         , bindDefX)
 where
-import DDC.Type.Collect
 import DDC.Type.Exp.Simple
+import DDC.Core.Collect.BindStruct
+import DDC.Core.Collect.FreeT           ()
 import DDC.Core.Module
 import DDC.Core.Exp
 import DDC.Type.Env                     (Env)

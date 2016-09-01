@@ -8,7 +8,7 @@ module DDC.Core.Transform.Namify
 where
 import DDC.Core.Module
 import DDC.Core.Exp
-import DDC.Type.Collect
+import DDC.Core.Collect
 import DDC.Type.Exp.Simple
 import Control.Monad
 import DDC.Type.Env             (Env, KindEnv, TypeEnv)

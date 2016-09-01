@@ -10,7 +10,7 @@ import DDC.Core.Exp.Annot.Context
 import DDC.Core.Exp.Annot.Ctx
 import DDC.Core.Exp.Annot
 import DDC.Type.Transform.SubstituteT
-import DDC.Type.Collect
+import DDC.Core.Collect
 import DDC.Base.Pretty
 import DDC.Base.Name
 import Data.Function

@@ -11,7 +11,7 @@ module DDC.Type.Transform.SubstituteT
         , pushBinds
         , substBound)
 where
-import DDC.Type.Collect
+import DDC.Core.Collect
 import DDC.Type.Transform.BoundT
 import DDC.Type.Transform.Rename
 import DDC.Type.Exp.Simple

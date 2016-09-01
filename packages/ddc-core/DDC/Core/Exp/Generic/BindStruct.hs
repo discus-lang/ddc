@@ -4,7 +4,7 @@ module DDC.Core.Exp.Generic.BindStruct where
 import DDC.Core.Exp.Generic.Exp
 import DDC.Core.Exp.DaCon
 import DDC.Core.Collect.FreeX
-import DDC.Type.Collect
+import DDC.Core.Collect.BindStruct
 import qualified DDC.Type.Exp           as T
 import Data.Maybe
 

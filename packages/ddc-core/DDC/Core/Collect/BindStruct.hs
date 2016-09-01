@@ -1,27 +1,23 @@
 
 -- | Collecting sets of variables and constructors.
-module DDC.Type.Collect
-        ( freeT
-        , freeVarsT
-
-        , FreeVarConT (..)
-
-        , collectBound
-        , collectBinds
-        , BindTree   (..)
+module DDC.Core.Collect.BindStruct
+        ( BindTree   (..)
         , BindWay    (..)
-        , BindStruct (..)
-
         , BoundLevel (..)
+        , BindStruct (..)
         , isBoundExpWit
         , boundLevelOfBindWay
-        , bindDefT)
+        , bindDefT
+
+        , freeT
+        , freeOfTreeT
+
+        , collectBound
+        , collectBinds)
 where
 import DDC.Type.Exp
-import DDC.Core.Collect.FreeT
 import DDC.Type.Env                     (Env)
 import qualified DDC.Type.Env           as Env
-import qualified DDC.Type.Sum           as Sum
 import qualified Data.Set               as Set
 import Data.Set                         (Set)
 
@@ -87,24 +83,6 @@ boundLevelOfBindWay way
 -- BindStruct -----------------------------------------------------------------
 class BindStruct c n | c -> n where
  slurpBindTree :: c -> [BindTree n]
-
-
-instance BindStruct (Type n) n where
- slurpBindTree tt
-  = case tt of
-        TVar u          -> [BindUse BoundSpec u]
-        TCon tc         -> slurpBindTree tc
-        TAbs b t        -> [bindDefT BindTAbs   [b] [t]]
-        TApp t1 t2      -> slurpBindTree t1 ++ slurpBindTree t2
-        TForall b t     -> [bindDefT BindForall [b] [t]]
-        TSum ts         -> concatMap slurpBindTree $ Sum.toList ts
-
-
-instance BindStruct (TyCon n) n where
- slurpBindTree tc
-  = case tc of
-        TyConBound u k  -> [BindCon BoundSpec u (Just k)]
-        _               -> []
 
 
 -- | Helper for constructing the `BindTree` for a type binder.

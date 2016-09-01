@@ -6,7 +6,7 @@ module DDC.Core.Llvm.Metadata.Tbaa
 where
 import DDC.Llvm.Syntax.Metadata
 import DDC.Llvm.Pretty.Metadata         ()
-import DDC.Type.Collect
+import DDC.Core.Collect
 import DDC.Type.Env                     (KindEnv)
 import DDC.Type.Exp.Simple
 import DDC.Core.Llvm.Metadata.Graph
