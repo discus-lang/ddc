@@ -205,10 +205,10 @@ makeSub config a ctx0 xL tL tR err
                 [ text "*>  SubApp"
                 , empty ]
 
-        ctx1    <- makeEqX config a ctx0 tL1 tR1 err
-        tL2'    <- applyContext ctx1 tL2
-        tR2'    <- applyContext ctx1 tR2
-        ctx2    <- makeEqX config a ctx1 tL2' tR2' err
+        (xL1, ctx1)     <- makeEqX config a ctx0 xL  tL1  tR1  err
+        tL2'            <- applyContext ctx1 tL2
+        tR2'            <- applyContext ctx1 tR2
+        (xL2, ctx2)     <- makeEqX config a ctx1 xL1 tL2' tR2' err
 
         ctrace  $ vcat
                 [ text "*<  SubApp"
@@ -220,7 +220,7 @@ makeSub config a ctx0 xL tL tR err
                 , indent 4 $ ppr ctx2
                 , empty ]
 
-        return  ( xL
+        return  ( xL2
                 , Sum.empty kEffect
                 , ctx2)
 

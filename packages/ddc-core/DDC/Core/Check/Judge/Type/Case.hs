@@ -4,6 +4,7 @@ module DDC.Core.Check.Judge.Type.Case
 where
 import DDC.Core.Check.Judge.Kind
 import DDC.Core.Check.Judge.Type.Base
+import DDC.Core.Check.Judge.EqT
 import DDC.Type.Exp.Simple.Equiv
 import qualified DDC.Type.Sum           as Sum
 import qualified DDC.Core.Env.EnvX      as EnvX
@@ -357,8 +358,8 @@ checkFieldAnnots table bidir a xx tts ctx0
                 let config      = tableConfig table
                 (tAnnot', _, ctx2) <- checkTypeM config ctx UniverseSpec tAnnot Synth
 
-                ctx3    <- makeEqX (tableConfig table) a ctx2 tAnnot' tActual
-                        $  ErrorCaseFieldTypeMismatch  a xx   tAnnot' tActual
+                ctx3    <- makeEqT config ctx2             tAnnot' tActual
+                        $  ErrorCaseFieldTypeMismatch a xx tAnnot' tActual
 
                 tField  <- applyContext ctx3 tActual
                 return  (tField, ctx3)

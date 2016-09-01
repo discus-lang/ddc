@@ -4,9 +4,10 @@ module DDC.Core.Check.Judge.EqT
 where
 import DDC.Core.Check.Config
 import DDC.Core.Check.Context
-import DDC.Type.Exp
-import DDC.Base.Pretty
+import DDC.Core.Check.Base
+import qualified DDC.Core.Env.EnvT      as EnvT
 import qualified DDC.Core.Check.Base    as C
+import qualified Data.Map.Strict        as Map
 
 
 -- | Make two types equivalent to each other,
@@ -20,6 +21,16 @@ makeEqT :: (Eq n, Ord n, Pretty n)
         -> C.CheckM a n (Context n)
 
 makeEqT config ctx0 tL tR err
+
+ -- Expand type equations.
+ | TCon (TyConBound (UName n) _) <- tL
+ , Just tL' <- Map.lookup n $ EnvT.envtEquations $ contextEnvT ctx0
+ = makeEqT config ctx0 tL' tR err
+
+ | TCon (TyConBound (UName n) _) <- tR
+ , Just tR' <- Map.lookup n $ EnvT.envtEquations $ contextEnvT ctx0
+ = makeEqT config ctx0 tL tR' err
+
 
  -- EqLSolve
  | Just iL <- takeExists tL
@@ -75,6 +86,10 @@ makeEqT config ctx0 tL tR err
         ctx2    <- makeEqT config ctx0 tL2' tR2' err
 
         return ctx2
+
+ -- EqEquiv
+ | equivT (contextEnvT ctx0) tL tR
+ = return ctx0
 
  -- Error
  | otherwise

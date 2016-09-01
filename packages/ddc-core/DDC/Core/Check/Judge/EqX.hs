@@ -2,7 +2,10 @@
 module DDC.Core.Check.Judge.EqX
         (makeEqX)
 where
+import DDC.Core.Check.Config
 import DDC.Core.Check.Base
+import DDC.Core.Check.Judge.EqT
+import DDC.Core.Exp.Annot.AnTEC
 import qualified DDC.Core.Env.EnvT      as EnvT
 import qualified DDC.Type.Sum           as Sum
 import qualified Data.Map.Strict        as Map
@@ -14,22 +17,25 @@ makeEqX :: (Eq n, Ord n, Pretty n, Show n)
         => Config n                     -- ^ Type checker configuration.
         -> a                            -- ^ Current annotation.
         -> Context n                    -- ^ Input context.
+        -> Exp (AnTEC a n) n            -- ^ Expression that we've inferred the type of.
         -> Type n                       -- ^ Inferred type of expression.
         -> Type n                       -- ^ Expected type of expression.
         -> Error a n                    -- ^ Error to throw if we can't force equality.
-        -> CheckM a n (Context n)
+        -> CheckM a n 
+                ( Exp (AnTEC a n) n     -- ^ Expression after instantiations and running.
+                , Context n)
 
-makeEqX config a ctx0 tL tR err
+makeEqX config a ctx0 xL tL tR err
 
  -- Expand type equations.
  | TCon (TyConBound (UName n) _) <- tL
  , Just tL' <- Map.lookup n $ EnvT.envtEquations $ contextEnvT ctx0
- = makeEqX config a ctx0 tL' tR err
+ = makeEqX config a ctx0 xL tL' tR err
 
 
  | TCon (TyConBound (UName n) _) <- tR
  , Just tR' <- Map.lookup n $ EnvT.envtEquations $ contextEnvT ctx0
- = makeEqX config a ctx0 tL tR' err
+ = makeEqX config a ctx0 xL tL tR' err
 
 
  -- EqLSolve
@@ -46,7 +52,8 @@ makeEqX config a ctx0 tL tR err
                 , indent 4 $ ppr ctx1
                 , empty ]
 
-        return ctx1
+        return  ( xL
+                , ctx1)
 
 
  -- EqRSolve
@@ -63,7 +70,8 @@ makeEqX config a ctx0 tL tR err
                 , indent 4 $ ppr ctx1
                 , empty ]
 
-        return ctx1
+        return  ( xL
+                , ctx1)
 
 
  -- EqLReach
@@ -86,7 +94,8 @@ makeEqX config a ctx0 tL tR err
                 , indent 4 $ ppr ctx1
                 , empty ]
 
-        return ctx1
+        return  ( xL
+                , ctx1)
 
  -- EqRReach
  --  Both types are existentials, and the right is bound earlier in the stack.
@@ -108,7 +117,8 @@ makeEqX config a ctx0 tL tR err
                 , indent 4 $ ppr ctx1
                 , empty ]
 
-        return ctx1
+        return  ( xL
+                , ctx1)
 
 
  -- EqVar
@@ -123,7 +133,8 @@ makeEqX config a ctx0 tL tR err
                 , indent 4 $ ppr ctx0
                 , empty ]
 
-        return ctx0
+        return  ( xL
+                , ctx0)
 
 
  -- EqCon
@@ -138,7 +149,8 @@ makeEqX config a ctx0 tL tR err
                 , indent 4 $ ppr ctx0
                 , empty ]
 
-        return ctx0
+        return  ( xL
+                , ctx0)
 
 
  -- EqApp
@@ -149,10 +161,10 @@ makeEqX config a ctx0 tL tR err
                 [ text "*>  EqApp" 
                 , empty ]
 
-        ctx1    <- makeEqX config a ctx0 tL1 tR1 err
+        ctx1    <- makeEqT config ctx0 tL1 tR1 err
         tL2'    <- applyContext ctx1 tL2
         tR2'    <- applyContext ctx1 tR2
-        ctx2    <- makeEqX config a ctx1 tL2' tR2' err
+        ctx2    <- makeEqT config ctx1 tL2' tR2' err
 
         ctrace  $ vcat
                 [ text "*<  EqApp"
@@ -162,7 +174,8 @@ makeEqX config a ctx0 tL tR err
                 , indent 4 $ ppr ctx2
                 , empty ]
 
-        return ctx2
+        return  ( xL
+                , ctx2)
 
 
  -- EqEquiv
@@ -170,7 +183,8 @@ makeEqX config a ctx0 tL tR err
  = do   ctrace  $ vcat
                 [ text "**  EqEquiv" ]
 
-        return ctx0
+        return  ( xL
+                , ctx0)
 
 
  -- Error

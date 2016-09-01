@@ -72,15 +72,15 @@ checkCast !table !ctx mode _demand
 -- Box a computation,
 -- capturing its effects in a computation type.
 checkCast !table ctx0 mode _demand 
-        xx@(XCast a CastBox x1)
+        xx@(XCast a CastBox xBody0)
  = case mode of
     Check tExpected
      -> do
         let config      = tableConfig table
 
         -- Check the body.
-        (x1', tBody, effs, ctx1)
-         <- tableCheckExp table table ctx0 Synth DemandRun x1
+        (xBody1, tBody, effs, ctx1)
+         <- tableCheckExp table table ctx0 Synth DemandRun xBody0
 
         let effs_crush 
                 = Sum.fromList kEffect
@@ -94,19 +94,23 @@ checkCast !table ctx0 mode _demand
         -- The actual type needs to match the expected type.
         -- We're treating the S constructor as invariant in both positions,
         --  so we use 'makeEq' here instead of 'makeSub'
-        tExpected'  <- applyContext ctx1 tExpected
-        ctx2        <- makeEqX config a ctx1 tActual tExpected'
-                    $  ErrorMismatch a       tActual tExpected' xx
+        tExpected'
+         <- applyContext ctx1 tExpected
 
-        returnX a (\z -> XCast z CastBox x1')
+        (xBody2, ctx2)
+         <- makeEqX config a ctx1 xBody1 tActual tExpected'
+         $  ErrorMismatch  a             tActual tExpected' xx
+
+        returnX a 
+                (\z -> XCast z CastBox xBody2)
                 tExpected (Sum.empty kEffect) ctx2
 
     -- Recon and Synth mode.
     _
      -> do
         -- Check the body.
-        (x1', t1, effs,  ctx1)
-         <- tableCheckExp table table ctx0 mode DemandRun x1
+        (xBody1, t1, effs,  ctx1)
+         <- tableCheckExp table table ctx0 mode DemandRun xBody0
 
         let effs_crush 
                 = Sum.fromList kEffect
@@ -116,7 +120,8 @@ checkCast !table ctx0 mode _demand
         let tS  = tApps (TCon (TyConSpec TcConSusp))
                         [TSum effs_crush, t1]
 
-        returnX a (\z -> XCast z CastBox x1')
+        returnX a 
+                (\z -> XCast z CastBox xBody1)
                 tS (Sum.empty kEffect) ctx1
 
 
