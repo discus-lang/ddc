@@ -2,16 +2,16 @@
 module DDC.Core.Check.Judge.Kind
         (checkTypeM)
 where
-import DDC.Type.Exp
-import DDC.Type.Exp.Simple.Compounds
-import DDC.Type.DataDef
+import DDC.Core.Check.Judge.Kind.TyCon
+import DDC.Core.Check.Judge.EqT
 import DDC.Core.Check.Context
 import DDC.Core.Check.Error
-import DDC.Core.Check.CheckCon
 import DDC.Core.Check.Config
-import DDC.Core.Check.Judge.EqT
+import DDC.Type.Exp.Simple.Compounds
 import DDC.Type.Exp.Simple.Predicates
+import DDC.Type.DataDef
 import DDC.Type.Universe
+import DDC.Type.Exp
 import Data.List
 import Control.Monad
 import DDC.Base.Pretty

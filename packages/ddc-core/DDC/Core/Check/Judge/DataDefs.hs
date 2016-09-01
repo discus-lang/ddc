@@ -1,5 +1,5 @@
 
-module DDC.Core.Check.Data
+module DDC.Core.Check.Judge.DataDefs
         (checkDataDefs)
 where
 import DDC.Core.Check.Config

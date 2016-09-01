@@ -2,7 +2,7 @@
 module DDC.Core.Check.Judge.Type.Witness
         (checkWit)
 where
-import DDC.Core.Check.Witness
+import DDC.Core.Check.Judge.Witness
 import DDC.Core.Check.Judge.Type.Base
 import qualified DDC.Type.Sum           as Sum
 

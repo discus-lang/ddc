@@ -1,25 +1,11 @@
 
-module DDC.Core.Check.CheckCon
+module DDC.Core.Check.Judge.Kind.TyCon
         ( takeKindOfTyCon
         , takeSortOfKiCon
         , kindOfTwCon
         , kindOfTcCon)
 where
 import DDC.Type.Exp.Simple
-
-
--- | Take the kind of a `TyCon`, if there is one.
-takeKindOfTyCon :: TyCon n -> Maybe (Kind n)
-takeKindOfTyCon tt
- = case tt of        
-        -- Sorts don't have a higher classification.
-        TyConSort    _   -> Nothing
- 
-        TyConKind    kc  -> takeSortOfKiCon kc
-        TyConWitness tc  -> Just $ kindOfTwCon tc
-        TyConSpec    tc  -> Just $ kindOfTcCon tc
-        TyConBound   _ k -> Just k
-        TyConExists  _ k -> Just k
 
 
 -- | Take the superkind of an atomic kind constructor.
@@ -35,6 +21,20 @@ takeSortOfKiCon kc
         KiConEffect     -> Just sComp
         KiConClosure    -> Just sComp
         KiConWitness    -> Just sProp
+
+
+-- | Take the kind of a `TyCon`, if there is one.
+takeKindOfTyCon :: TyCon n -> Maybe (Kind n)
+takeKindOfTyCon tt
+ = case tt of        
+        -- Sorts don't have a higher classification.
+        TyConSort    _   -> Nothing
+ 
+        TyConKind    kc  -> takeSortOfKiCon kc
+        TyConWitness tc  -> Just $ kindOfTwCon tc
+        TyConSpec    tc  -> Just $ kindOfTcCon tc
+        TyConBound   _ k -> Just k
+        TyConExists  _ k -> Just k
 
 
 -- | Take the kind of a witness type constructor.
@@ -65,4 +65,3 @@ kindOfTcCon tc
         TcConDeepWrite  -> kData    `kFun` kEffect
         TcConAlloc      -> kRegion  `kFun` kEffect
         TcConDeepAlloc  -> kData    `kFun` kEffect
-

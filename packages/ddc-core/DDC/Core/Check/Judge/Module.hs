@@ -1,15 +1,15 @@
 
-module DDC.Core.Check.Module
+module DDC.Core.Check.Judge.Module
         ( checkModule
         , checkModuleM)
 where
 import DDC.Core.Check.Judge.Type.Base   (checkTypeM)
+import DDC.Core.Check.Judge.DataDefs
 import DDC.Core.Check.Base
 import DDC.Core.Check.Exp
 import DDC.Core.Transform.Reannotate
 import DDC.Core.Transform.MapT
 import DDC.Core.Module
-import DDC.Core.Check.Data
 import DDC.Core.Env.EnvX        (EnvX)
 import DDC.Control.Monad.Check  (runCheck, throw)
 

@@ -43,11 +43,11 @@ module DDC.Core.Check
         , ErrorData     (..))
 where
 import DDC.Core.Check.Judge.Kind
+import DDC.Core.Check.Judge.Kind.TyCon
+import DDC.Core.Check.Judge.Module
+import DDC.Core.Check.Judge.Witness
 import DDC.Core.Check.Error
-import DDC.Core.Check.Module
 import DDC.Core.Check.Exp
-import DDC.Core.Check.Witness
-import DDC.Core.Check.CheckCon
 import DDC.Core.Check.Base
 
 

@@ -9,12 +9,13 @@ module DDC.Core.Check.Judge.Type.Base
         , checkTypeM
         , checkBindM
 
-        , module DDC.Core.Check.Base
         , module DDC.Core.Check.Judge.Inst
         , module DDC.Core.Check.Judge.Sub
         , module DDC.Core.Check.Judge.EqX
-        , module DDC.Core.Check.Witness
+        , module DDC.Core.Check.Judge.Witness
         , module DDC.Core.Check.Error
+        , module DDC.Core.Check.Base
+
         , module DDC.Core.Transform.Reannotate
         , module DDC.Core.Transform.SubstituteTX
         , module DDC.Core.Exp.Annot.AnTEC
@@ -23,12 +24,13 @@ module DDC.Core.Check.Judge.Type.Base
         , module DDC.Type.Transform.Instantiate
         , module DDC.Type.Transform.BoundT)
 where
-import DDC.Core.Check.Base
 import DDC.Core.Check.Judge.Inst
 import DDC.Core.Check.Judge.Sub
 import DDC.Core.Check.Judge.EqX
-import DDC.Core.Check.Witness
+import DDC.Core.Check.Judge.Witness
 import DDC.Core.Check.Error
+import DDC.Core.Check.Base
+
 import DDC.Core.Transform.Reannotate
 import DDC.Core.Transform.SubstituteTX
 import DDC.Core.Exp.Annot.AnTEC
