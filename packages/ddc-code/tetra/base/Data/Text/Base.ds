@@ -213,10 +213,7 @@ indexText (tt: Text) (ix: Nat): Maybe Word8#
 -- | O(max len1 len2).
 --   Check if two text objects represent the same characters.
 eqText (tx1 tx2: Text): Bool
- = -- TODO: eliminate bodgy run box cast.
-   -- The type checker isn't crushing all the effects.
-   run box 
-   private r with {Read r; Alloc r} in
+ = private r with {Read r; Alloc r} in
    do   
         -- We copy both strings into new vectors before doing the comparison.
         -- It would be better to do it in-place.

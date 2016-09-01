@@ -10,21 +10,31 @@ import DDC.Core.Check.Base
 import qualified DDC.Core.Check.Context as Context
 import qualified DDC.Core.Env.EnvT      as EnvT
 import qualified Data.Map.Strict        as Map
+import qualified DDC.Type.Sum           as Sum
 
 
 -- | Make the left type a subtype of the right type,
 --   or throw the provided error if this is not possible.
+--
+--   The inferred type may already be a subtype of the expected type,
+--   and in that case we don't need to do anything extra.
+--
+--   If the inferred type is a 'S e a' computation type and the expected
+--   type is 'a' then we can force the inferred type to be the expected one
+--   by running the computation. In this case we end up with more effects.
+--
 makeSub :: (Eq n, Ord n, Show n, Pretty n)
-        => Config n
-        -> a
-        -> Context n
-        -> Exp  (AnTEC a n) n
-        -> Type n
-        -> Type n
-        -> Error a n
+        => Config n                     -- ^ Type checker context.
+        -> a                            -- ^ Current annotation.
+        -> Context n                    -- ^ Input context.
+        -> Exp  (AnTEC a n) n           -- ^ Expression that we've inferred the type of.
+        -> Type n                       -- ^ Inferred type of the expression.
+        -> Type n                       -- ^ Expected type of the expression.
+        -> Error a n                    -- ^ Error to throw if we can't force subsumption.
         -> CheckM a n
-                ( Exp (AnTEC a n) n
-                , Context n)
+                ( Exp (AnTEC a n) n     --   Expression after instantiations and running.
+                , TypeSum n             --   More effects we might get from running the computation.
+                , Context n)            --   Output context.
 
 -- NOTE: The order of cases matters here.
 --       For example, we do something different when both sides are
@@ -58,7 +68,9 @@ makeSub config a ctx0 xL tL tR err
                 , indent 4 $ ppr ctx0
                 , empty ]
 
-        return (xL, ctx0)
+        return  ( xL
+                , Sum.empty kEffect
+                , ctx0)
 
 
  -- SubInstL
@@ -75,7 +87,9 @@ makeSub config a ctx0 xL tL tR err
                 , indent 4 $ ppr ctx1
                 , empty ]
 
-        return (xL, ctx1)
+        return  ( xL
+                , Sum.empty kEffect
+                , ctx1)
 
 
  -- SubInstR
@@ -92,7 +106,9 @@ makeSub config a ctx0 xL tL tR err
                 , indent 4 $ ppr ctx1
                 , empty ]
 
-        return (xL, ctx1)
+        return  ( xL
+                , Sum.empty kEffect
+                , ctx1)
 
 
  -- SubCon
@@ -109,7 +125,9 @@ makeSub config a ctx0 xL tL tR err
                 , indent 4 $ ppr ctx0
                 , empty ]
 
-        return (xL, ctx0)
+        return  ( xL
+                , Sum.empty kEffect
+                , ctx0)
 
 
  -- SubVar
@@ -126,8 +144,9 @@ makeSub config a ctx0 xL tL tR err
                 , indent 4 $ ppr ctx0
                 , empty ]
 
-        return (xL, ctx0)
-
+        return  ( xL
+                , Sum.empty kEffect
+                , ctx0)
 
 
  -- SubEquiv
@@ -142,8 +161,9 @@ makeSub config a ctx0 xL tL tR err
                 , indent 4 $ ppr ctx0
                 , empty ]
 
-        return (xL, ctx0)
-
+        return  ( xL
+                , Sum.empty kEffect
+                , ctx0)
 
 
  -- SubArr
@@ -155,10 +175,10 @@ makeSub config a ctx0 xL tL tR err
                 [ text "*>  SubArr"
                 , empty ]
 
-        (_, ctx1) <- makeSub config a ctx0 xL tR1 tL1 err
-        tL2'      <- applyContext     ctx1 tL2
-        tR2'      <- applyContext     ctx1 tR2
-        (_, ctx2) <- makeSub config a ctx1 xL tL2' tR2' err
+        (_, effs1, ctx1) <- makeSub config a ctx0 xL tR1 tL1 err
+        tL2'             <- applyContext     ctx1 tL2
+        tR2'             <- applyContext     ctx1 tR2
+        (_, effs2, ctx2) <- makeSub config a ctx1 xL tL2' tR2' err
 
         ctrace  $ vcat
                 [ text "*<  SubArr"
@@ -170,7 +190,9 @@ makeSub config a ctx0 xL tL tR err
                 , indent 4 $ ppr ctx2
                 , empty ]
 
-        return (xL, ctx2)
+        return  ( xL
+                , Sum.union effs1 effs2
+                , ctx2)
 
 
  -- SubApp
@@ -198,7 +220,9 @@ makeSub config a ctx0 xL tL tR err
                 , indent 4 $ ppr ctx2
                 , empty ]
 
-        return (xL, ctx2)
+        return  ( xL
+                , Sum.empty kEffect
+                , ctx2)
 
 
  -- SubForall-L
@@ -232,7 +256,7 @@ makeSub config a ctx0 xL tL tR err
         let aArg = AnTEC (typeOfBind b) (tBot kEffect) (tBot kClosure) a
         let xL1  = XApp aFn xL (XType aArg tA)
 
-        (xL2, ctx3) <- makeSub config a ctx2 xL1 t1' tR err
+        (xL2, effs3, ctx3) <- makeSub config a ctx2 xL1 t1' tR err
 
         -- Pop the existential and constraints above it back off
         -- the stack.
@@ -248,7 +272,10 @@ makeSub config a ctx0 xL tL tR err
                 , indent 4 $ ppr ctx4
                 , empty ]
 
-        return (xL2, ctx4)
+        return  ( xL2
+                , effs3
+                , ctx4)
+
 
  -- SubForall-R
  | TForall bParamR tBodyR  <- tR
@@ -269,15 +296,18 @@ makeSub config a ctx0 xL tL tR err
         -- Check the new body against the left type,
         -- so that the existential is instantiated
         -- to match the left.
-        let (ctx1, pos1) =  markContext ctx0
-        let ctx2         =  pushType bParamR ctx1
+        let (ctx1, pos1)  =  markContext ctx0
+        let ctx2          =  pushType bParamR ctx1
 
-        (xL2, ctx3)      <- makeSub config a ctx2 xL tL tBodyR' err
-        let tR'          =  TForall bParamR tBodyR      
+        (xL2, eff2, ctx3) <- makeSub config a ctx2 xL tL tBodyR' err
+        when (not $ eff2 == Sum.empty kEffect)
+         $ error "makeSub: body is not pure"
+
+        let tR'           =  TForall bParamR tBodyR      
                                 -- TODO: this will be the wrong tBodyR
                                 -- need to get the type produced by makeSub
-        let aApp         =  AnTEC tR' (tBot kEffect) (tBot kClosure) a
-        let xL_abs       =  XLAM aApp bParamR xL2
+        let aApp          =  AnTEC tR' (tBot kEffect) (tBot kClosure) a
+        let xL_abs        =  XLAM aApp bParamR xL2
 
         -- Pop the existential and constraints above it off the stack.
         let ctx4        = popToPos pos1 ctx3
@@ -290,8 +320,33 @@ makeSub config a ctx0 xL tL tR err
                 , text "    xL_abs: " <> ppr xL_abs
                 , empty ]
 
-        return (xL_abs, ctx4)
+        return  ( xL_abs
+                , Sum.empty kEffect
+                , ctx4)
 
+ -- SubRun
+ | Just (tEffect, tResult) <- takeTSusp tL
+ = do   
+        ctrace  $ vcat
+                [ text "**  SubRun"
+                , text "    xL:      " <> ppr xL
+                , text "    tL:      " <> ppr tL
+                , text "    tEffect: " <> ppr tEffect
+                , text "    tResult: " <> ppr tResult
+                , empty ]
+
+        let aRun    = AnTEC tResult tEffect (tBot kClosure) a
+        let xL_run  = XCast aRun CastRun xL
+
+        (xL2, eff2, ctx2) <- makeSub config a ctx0 xL_run tResult tR err
+
+        let eff = Sum.unions    kEffect
+                [ Sum.singleton kEffect tEffect
+                , eff2 ]
+
+        return  ( xL2
+                , eff
+                , ctx2)
 
  -- Error
  | otherwise

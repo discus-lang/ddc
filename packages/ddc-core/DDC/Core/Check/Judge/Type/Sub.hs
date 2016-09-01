@@ -3,6 +3,7 @@ module DDC.Core.Check.Judge.Type.Sub
         (checkSub)
 where
 import DDC.Core.Check.Judge.Type.Base
+import qualified DDC.Type.Sum           as Sum
 
 
 -- This is the subtyping rule for the type checking judgment.
@@ -17,7 +18,7 @@ checkSub table !a ctx0 demand xx0 tExpect
         let config      = tableConfig table
 
         -- Synthesise a type for the expression.
-        (xx1, tSynth, eff, ctx1)
+        (xx1, tSynth, effs1, ctx1)
          <- tableCheckExp table table ctx0 Synth demand xx0 
 
         -- Substitute context into synthesised and expected types.
@@ -39,9 +40,11 @@ checkSub table !a ctx0 demand xx0 tExpect
                 , empty ]
 
         -- Make the synthesised type a subtype of the expected one.
-        (xx2, ctx3)
+        (xx2, effs3, ctx3)
          <- makeSub config a ctx2 xx_dequant tDequant tExpect_ctx1
          $  ErrorMismatch  a tDequant tExpect_ctx1 xx0
+
+        let effs' = Sum.union effs1 effs3
 
         ctrace  $ vcat
                 [ text "*<  Sub"
@@ -59,7 +62,7 @@ checkSub table !a ctx0 demand xx0 tExpect
         returnX a
                 (\_ -> xx2)
                 tExpect
-                eff ctx3
+                effs' ctx3
 
 
 dequantify !_table !aApp ctx0 xx0 tSynth tExpect 
