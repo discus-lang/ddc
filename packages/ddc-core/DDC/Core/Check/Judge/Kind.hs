@@ -1,15 +1,16 @@
-module DDC.Type.Check.Judge.Kind
+
+module DDC.Core.Check.Judge.Kind
         (checkTypeM)
 where
 import DDC.Type.Exp
 import DDC.Type.Exp.Simple.Compounds
 import DDC.Type.DataDef
-import DDC.Type.Check.Context
+import DDC.Core.Check.Context
 import DDC.Type.Check.Error
 import DDC.Type.Check.ErrorMessage      ()
-import DDC.Type.Check.CheckCon
-import DDC.Type.Check.Config
-import DDC.Type.Check.Judge.Eq
+import DDC.Core.Check.CheckCon
+import DDC.Core.Check.Config
+import DDC.Core.Check.Judge.EqT
 import DDC.Type.Exp.Simple.Predicates
 import DDC.Type.Universe
 import Data.List
@@ -158,7 +159,7 @@ checkTypeM config ctx0 uni tt@(TVar u) mode
          Check kExpected
           -> do 
                 kExpected' <- applyContext ctx0 kExpected
-                ctx1       <- makeEq config ctx0 kActual' kExpected'
+                ctx1       <- makeEqT config ctx0 kActual' kExpected'
                            $  C.ErrorType $ ErrorMismatch uni  kActual' kExpected' tt
 
                 return (tt, kActual', ctx1)
@@ -257,7 +258,7 @@ checkTypeM config ctx0 uni tt@(TCon tc) mode
          Check kExpected
            -> do 
                  kExpected' <- applyContext ctx0 kExpected
-                 ctx1   <- makeEq config ctx0 kActual' kExpected'
+                 ctx1   <- makeEqT config ctx0 kActual' kExpected'
                         $  C.ErrorType $ ErrorMismatch uni  kActual' kExpected' tt
                  return (tt', kActual', ctx1)
 
@@ -310,7 +311,7 @@ checkTypeM config ctx0 uni@UniverseSpec
         (k2'', ctx5)
          <- if isTExists k2'
              then do
-                ctx5    <- makeEq config ctx4 k2' kData
+                ctx5    <- makeEqT config ctx4 k2' kData
                         $  C.ErrorType $ ErrorMismatch uni  k2' kData tt
 
                 k2''    <- applyContext ctx5 k2'
@@ -350,17 +351,17 @@ checkTypeM config ctx0 uni@UniverseSpec
         (k2'', ctx5)
          <- if isTExists k2' && isTExists kExpected
              then do
-                ctx'    <- makeEq config ctx4 k2' kExpected
+                ctx'    <- makeEqT config ctx4 k2' kExpected
                         $  C.ErrorType $ ErrorMismatch uni  k2' kExpected tt
 
-                ctx5    <- makeEq config ctx' k2' kData 
+                ctx5    <- makeEqT config ctx' k2' kData 
                         $  C.ErrorType $ ErrorMismatch uni  k2' kData  tt
 
                 k2''    <- applyContext ctx5 k2'
                 return (k2'', ctx5)
 
              else do
-                ctx5    <- makeEq config ctx4 k2' kExpected
+                ctx5    <- makeEqT config ctx4 k2' kExpected
                         $  C.ErrorType $ ErrorMismatch uni  k2' kExpected tt
 
                 k2''    <- applyContext ctx5 k2'
@@ -485,9 +486,9 @@ checkTypeM config ctx0 UniverseSpec
          <- checkTypeM config ctx0 UniverseSpec tt Synth
 
         -- Force the synthesised kind to be the same as the expected one.
-        k1'         <- applyContext ctx1 k1
-        kExpected'  <- applyContext ctx1 kExpected
-        ctx2        <- makeEq config ctx1         k1' kExpected'
+        k1'         <- applyContext   ctx1 k1
+        kExpected'  <- applyContext   ctx1 kExpected
+        ctx2        <- makeEqT config ctx1 k1' kExpected'
                     $  C.ErrorType $ ErrorMismatch UniverseSpec k1' kExpected' tt
 
         return (t1', k1', ctx2)
@@ -553,9 +554,9 @@ checkTypeM config ctx0 UniverseSpec tt@(TSum ss) mode
                 <- checkTypeM config ctx0 UniverseSpec tt Synth
 
         -- Force the synthesised kind to match the expected one.
-        k1'         <- applyContext ctx1 k1
-        kExpected'  <- applyContext ctx1 kExpected
-        ctx2        <- makeEq config ctx1         k1' kExpected'
+        k1'         <- applyContext   ctx1 k1
+        kExpected'  <- applyContext   ctx1 kExpected
+        ctx2        <- makeEqT config ctx1 k1' kExpected'
                     $  C.ErrorType $ ErrorMismatch UniverseSpec k1' kExpected' tt
 
         return  (t1', k1, ctx2)

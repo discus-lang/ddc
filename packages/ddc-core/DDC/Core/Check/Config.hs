@@ -1,5 +1,5 @@
 
-module DDC.Type.Check.Config
+module DDC.Core.Check.Config
         ( Config (..)
         , configOfProfile)
 where

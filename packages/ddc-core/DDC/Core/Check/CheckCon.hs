@@ -1,5 +1,5 @@
 
-module DDC.Type.Check.CheckCon
+module DDC.Core.Check.CheckCon
         ( takeKindOfTyCon
         , takeSortOfKiCon
         , kindOfTwCon

@@ -45,7 +45,6 @@ import System.FilePath
 import System.Directory
 import DDC.Build.Interface.Store        (Store)
 import qualified DDC.Base.Parser        as BP
-import qualified DDC.Type.Check         as T
 import qualified DDC.Core.Check         as C
 import qualified DDC.Core.Env.EnvT      as EnvT
 
@@ -235,11 +234,11 @@ cmdTypeEquiv language source ss
                  else return ()
 
 
-        config  = T.configOfProfile profile
+        config  = C.configOfProfile profile
         kenv    = profilePrimKinds    profile
 
         checkT t
-         = case T.checkSpec config (spreadT kenv t) of
+         = case C.checkSpec config (spreadT kenv t) of
                 Left (err :: C.Error () n)
                  -> do  outDocLn $ ppr err
                         return False

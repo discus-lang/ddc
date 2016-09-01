@@ -27,7 +27,6 @@ import qualified DDC.Core.Analysis.Usage        as U
 import qualified DDC.Core.Check                 as C
 import qualified DDC.Core.Collect               as C
 import qualified DDC.Core.Transform.SpreadX     as S
-import qualified DDC.Type.Check                 as T
 import qualified DDC.Type.Env                   as T
 import qualified DDC.Type.Exp.Simple            as T
 import qualified DDC.Type.Transform.SpreadT     as S
@@ -304,7 +303,7 @@ checkConstraint
         -> Either (Error a n) (Kind n)
 
 checkConstraint config tt
- = case T.checkSpec config tt of
+ = case C.checkSpec config tt of
         Left _err               -> Left $ ErrorBadConstraint tt
         Right (_, k)
          | T.isWitnessType tt   -> return k
@@ -413,7 +412,7 @@ removeEffects config
   remove _env x
 
    | XType a et    <- x
-   , Right (_, k)  <- T.checkSpec config et
+   , Right (_, k)  <- C.checkSpec config et
    , T.isEffectKind k
    = XType a $ T.tBot T.kEffect
 

@@ -1,15 +1,15 @@
 
 module DDC.Core.Check.Judge.Sub
-        ( makeSub)
+        (makeSub)
 where
 import DDC.Type.Transform.SubstituteT
 import DDC.Core.Exp.Annot.AnTEC
-import DDC.Core.Check.Judge.Eq
+import DDC.Core.Check.Judge.EqX
 import DDC.Core.Check.Judge.Inst
 import DDC.Core.Check.Base
-import qualified Data.Map.Strict        as Map
-import qualified DDC.Type.Check.Context as Context
+import qualified DDC.Core.Check.Context as Context
 import qualified DDC.Core.Env.EnvT      as EnvT
+import qualified Data.Map.Strict        as Map
 
 
 -- | Make the left type a subtype of the right type,

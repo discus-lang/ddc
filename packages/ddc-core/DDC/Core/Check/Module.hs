@@ -9,7 +9,7 @@ import DDC.Core.Check.Exp
 import DDC.Core.Transform.Reannotate
 import DDC.Core.Transform.MapT
 import DDC.Core.Module
-import DDC.Type.Check.Data
+import DDC.Core.Check.Data
 import DDC.Core.Env.EnvX        (EnvX)
 import DDC.Control.Monad.Check  (runCheck, throw)
 

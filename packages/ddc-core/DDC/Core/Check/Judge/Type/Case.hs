@@ -2,7 +2,7 @@
 module DDC.Core.Check.Judge.Type.Case
         (checkCase)
 where
-import DDC.Type.Check.Judge.Kind
+import DDC.Core.Check.Judge.Kind
 import DDC.Core.Check.Judge.Type.Base
 import DDC.Type.Exp.Simple.Equiv
 import qualified DDC.Type.Sum           as Sum

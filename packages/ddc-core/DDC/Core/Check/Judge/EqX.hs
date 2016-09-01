@@ -1,5 +1,5 @@
 
-module DDC.Core.Check.Judge.Eq
+module DDC.Core.Check.Judge.EqX
         (makeEq)
 where
 import DDC.Core.Check.Base

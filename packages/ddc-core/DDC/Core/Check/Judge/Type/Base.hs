@@ -12,7 +12,7 @@ module DDC.Core.Check.Judge.Type.Base
         , module DDC.Core.Check.Base
         , module DDC.Core.Check.Judge.Inst
         , module DDC.Core.Check.Judge.Sub
-        , module DDC.Core.Check.Judge.Eq
+        , module DDC.Core.Check.Judge.EqX
         , module DDC.Core.Check.Witness
         , module DDC.Core.Check.Error
         , module DDC.Core.Transform.Reannotate
@@ -26,14 +26,14 @@ where
 import DDC.Core.Check.Base
 import DDC.Core.Check.Judge.Inst
 import DDC.Core.Check.Judge.Sub
-import DDC.Core.Check.Judge.Eq
+import DDC.Core.Check.Judge.EqX
 import DDC.Core.Check.Witness
 import DDC.Core.Check.Error
 import DDC.Core.Transform.Reannotate
 import DDC.Core.Transform.SubstituteTX
 import DDC.Core.Exp.Annot.AnTEC
 
-import DDC.Type.Check.Judge.Kind
+import DDC.Core.Check.Judge.Kind
 import DDC.Type.Transform.SubstituteT
 import DDC.Type.Transform.Instantiate
 import DDC.Type.Transform.BoundT

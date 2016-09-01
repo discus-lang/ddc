@@ -1,11 +1,11 @@
 
-module DDC.Type.Check.Data
+module DDC.Core.Check.Data
         (checkDataDefs)
 where
+import DDC.Core.Check.Config
 import DDC.Type.Check.Error
-import DDC.Type.Check.Config
-import DDC.Type.Exp.Simple
 import DDC.Type.DataDef
+import DDC.Type.Exp.Simple
 import DDC.Base.Pretty
 import Data.Maybe
 import DDC.Core.Env.EnvT                (EnvT)

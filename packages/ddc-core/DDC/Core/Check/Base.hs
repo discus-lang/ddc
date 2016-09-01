@@ -21,7 +21,8 @@ module DDC.Core.Check.Base
         , module DDC.Core.Collect
         , module DDC.Core.Pretty
         , module DDC.Core.Exp.Annot
-        , module DDC.Type.Check.Context
+        , module DDC.Core.Check.Context
+
         , module DDC.Type.DataDef
         , module DDC.Type.Universe
         , module DDC.Type.Exp.Simple
@@ -34,10 +35,11 @@ import DDC.Core.Check.Error
 import DDC.Core.Collect
 import DDC.Core.Pretty
 import DDC.Core.Exp.Annot
-import DDC.Type.Check.Context
-import DDC.Type.Check.Config
+import DDC.Core.Check.Context
+import DDC.Core.Check.Config
 import DDC.Core.Env.EnvT                        (EnvT)
 import DDC.Core.Env.EnvX                        (EnvX)
+
 import DDC.Type.Env                             (TypeEnv, KindEnv)
 import DDC.Type.DataDef
 import DDC.Type.Universe

@@ -1,9 +1,9 @@
 
-module DDC.Type.Check.Judge.Eq
-        (makeEq)
+module DDC.Core.Check.Judge.EqT
+        (makeEqT)
 where
-import DDC.Type.Check.Config
-import DDC.Type.Check.Context
+import DDC.Core.Check.Config
+import DDC.Core.Check.Context
 import DDC.Type.Exp
 import DDC.Base.Pretty
 import qualified DDC.Core.Check.Base    as C
@@ -11,7 +11,7 @@ import qualified DDC.Core.Check.Base    as C
 
 -- | Make two types equivalent to each other,
 --   or throw the provided error if this is not possible.
-makeEq  :: (Eq n, Ord n, Pretty n)
+makeEqT :: (Eq n, Ord n, Pretty n)
         => Config n
         -> Context n
         -> Type n
@@ -19,7 +19,7 @@ makeEq  :: (Eq n, Ord n, Pretty n)
         -> C.Error  a n
         -> C.CheckM a n (Context n)
 
-makeEq config ctx0 tL tR err
+makeEqT config ctx0 tL tR err
 
  -- EqLSolve
  | Just iL <- takeExists tL
@@ -69,10 +69,10 @@ makeEq config ctx0 tL tR err
  | TApp tL1 tL2 <- tL
  , TApp tR1 tR2 <- tR
  = do
-        ctx1    <- makeEq config ctx0 tL1  tR1  err
+        ctx1    <- makeEqT config ctx0 tL1  tR1  err
         tL2'    <- C.applyContext ctx1 tL2
         tR2'    <- C.applyContext ctx1 tR2
-        ctx2    <- makeEq config ctx0 tL2' tR2' err
+        ctx2    <- makeEqT config ctx0 tL2' tR2' err
 
         return ctx2
 

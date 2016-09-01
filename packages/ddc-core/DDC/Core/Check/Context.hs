@@ -1,5 +1,5 @@
 
-module DDC.Type.Check.Context
+module DDC.Core.Check.Context
         ( Mode    (..)
 
         -- * Existentials

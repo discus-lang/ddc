@@ -2,7 +2,7 @@
 module DDC.Core.Check.Judge.Type.LetPrivate
         (checkLetPrivate)
 where
-import DDC.Type.Check.Judge.Kind
+import DDC.Core.Check.Judge.Kind
 import DDC.Core.Check.Judge.Type.Base
 import qualified DDC.Core.Env.EnvT      as EnvT
 import qualified DDC.Type.Sum           as Sum
