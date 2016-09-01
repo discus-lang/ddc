@@ -84,7 +84,7 @@ applyContext :: Ord n => Context n -> Type n -> CheckM a n (Type n)
 applyContext ctx tt
  = case applyContextEither ctx Set.empty tt of
         Left  (tExt, tBind)       
-                -> throw $ ErrorType $ T.ErrorInfinite tExt tBind
+                -> throw $ ErrorType $ T.ErrorTypeInfinite tExt tBind
         Right t -> return t
 
 
@@ -93,7 +93,7 @@ applySolved :: Ord n => Context n -> Type n -> CheckM a n (Type n)
 applySolved ctx tt
  = case applySolvedEither ctx Set.empty tt of
         Left  (tExt, tBind)
-                -> throw $ ErrorType $ T.ErrorInfinite tExt tBind
+                -> throw $ ErrorType $ T.ErrorTypeInfinite tExt tBind
         Right t -> return t
 
 

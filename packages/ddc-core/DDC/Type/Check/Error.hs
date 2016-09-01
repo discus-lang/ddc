@@ -13,51 +13,51 @@ data Error n
         -- Generic Problems ---------------------
         -- | Tried to check a type using the wrong universe, 
         --   for example: asking for the kind of a kind.
-        = ErrorUniverseMalfunction
+        = ErrorTypeUniverseMalfunction
         { errorType             :: Type n
         , errorUniverse         :: Universe }
 
         -- | Generic kind mismatch.
-        | ErrorMismatch
+        | ErrorTypeMismatch
         { errorUniverse         :: Universe
         , errorInferred         :: Type n
         , errorExpected         :: Type n
         , errorChecking         :: Type n }
 
         -- | Cannot construct infinite type.
-        | ErrorInfinite
+        | ErrorTypeInfinite
         { errorTypeVar          :: Type n
         , errorTypeBind         :: Type n }
 
         -- Variables ----------------------------
         -- | An undefined type variable.
-        | ErrorUndefined        
+        | ErrorTypeUndefined        
         { errorBound            :: Bound n }
 
 
         -- Constructors -------------------------
         -- | Found an unapplied kind function constructor.
-        | ErrorUnappliedKindFun 
+        | ErrorTypeUnappliedKindFun 
 
         -- | Found a naked sort constructor.
-        | ErrorNakedSort
+        | ErrorTypeNakedSort
         { errorSort             :: Sort n }
 
         -- | An undefined type constructor.
-        | ErrorUndefinedTypeCtor
+        | ErrorTypeUndefinedTypeCtor
         { errorBound            :: Bound n }
 
 
         -- Applications -------------------------
         -- | A type application where the thing being applied is not a function.
-        | ErrorAppNotFun
+        | ErrorTypeAppNotFun
         { errorChecking         :: Type n
         , errorFunType          :: Type n
         , errorFunTypeKind      :: Kind n
         , errorArgType          :: Type n }
 
         -- | A type application where the parameter and argument kinds don't match.
-        | ErrorAppArgMismatch   
+        | ErrorTypeAppArgMismatch   
         { errorChecking         :: Type n
         , errorFunType          :: Type n
         , errorFunKind          :: Kind n
@@ -66,7 +66,7 @@ data Error n
 
         -- | A witness implication where the premise or conclusion has an
         --   invalid kind.
-        | ErrorWitnessImplInvalid
+        | ErrorTypeWitnessImplInvalid
         { errorChecking         :: Type n
         , errorLeftType         :: Type n
         , errorLeftKind         :: Kind n
@@ -76,7 +76,7 @@ data Error n
 
         -- Quantifiers --------------------------
         -- | A forall where the body does not have data or witness kind.
-        | ErrorForallKindInvalid
+        | ErrorTypeForallKindInvalid
         { errorChecking         :: Type n
         , errorBody             :: Type n
         , errorKind             :: Kind n }
@@ -84,13 +84,13 @@ data Error n
 
         -- Sums ---------------------------------
         -- | A type sum where the components have differing kinds.
-        | ErrorSumKindMismatch
+        | ErrorTypeSumKindMismatch
         { errorKindExpected     :: Kind n
         , errorTypeSum          :: TypeSum n
         , errorKinds            :: [Kind n] }
         
         -- | A type sum that does not have effect or closure kind.
-        | ErrorSumKindInvalid
+        | ErrorTypeSumKindInvalid
         { errorCheckingSum      :: TypeSum n
         , errorKind             :: Kind n }
         deriving Show

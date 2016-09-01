@@ -10,12 +10,12 @@ instance (Eq n, Show n, Pretty n) => Pretty (Error n) where
  ppr err
   = case err of
         -- Generic Problems ---------------------
-        ErrorUniverseMalfunction t u
+        ErrorTypeUniverseMalfunction t u
          -> vcat [ text "Universe malfunction."
                  , text "               Type: " <> ppr t
                  , text " is not in universe: " <> ppr u ]
 
-        ErrorMismatch uni tInferred tExpected tt
+        ErrorTypeMismatch uni tInferred tExpected tt
          -> let (thing, thing')   
                  = case uni of
                         UniverseSpec    -> ("Kind", "kind")
@@ -30,35 +30,35 @@ instance (Eq n, Show n, Pretty n) => Pretty (Error n) where
                 , empty
                 , text "with: "                         <> align (ppr tt) ]
 
-        ErrorInfinite tExt tBind
+        ErrorTypeInfinite tExt tBind
          -> vcat [ text "Cannot construct infinite type."
                  , text "  " <> ppr tExt <+> text "=" <+> ppr tBind ]
 
         -- Variables ----------------------------
-        ErrorUndefined u
+        ErrorTypeUndefined u
          -> text "Undefined type variable: " <> ppr u
 
 
         -- Constructors -------------------------
-        ErrorUnappliedKindFun 
+        ErrorTypeUnappliedKindFun 
          -> text "Can't take sort of unapplied kind function constructor."
 
-        ErrorNakedSort s
+        ErrorTypeNakedSort s
          -> text "Can't check a naked sort: " <> ppr s
                 
-        ErrorUndefinedTypeCtor u
+        ErrorTypeUndefinedTypeCtor u
          -> text "Undefined type constructor: " <> ppr u
 
 
         -- Applications -------------------------
-        ErrorAppNotFun tt t1 k1 t2
+        ErrorTypeAppNotFun tt t1 k1 t2
          -> vcat [ text "Type function used in application has invalid kind."
                  , text "    In application: "          <> ppr tt
                  , text " cannot apply type: "          <> ppr t1
                  , text "           of kind: "          <> ppr k1
                  , text "           to type: "          <> ppr t2 ]
  
-        ErrorAppArgMismatch tt tFn kFn tArg kArg
+        ErrorTypeAppArgMismatch tt tFn kFn tArg kArg
          -> vcat [ text "Kind mismatch in type application."
                  , text "    In application: "          <> ppr tt
                  , text " cannot apply type: "          <> ppr tFn
@@ -67,7 +67,7 @@ instance (Eq n, Show n, Pretty n) => Pretty (Error n) where
                  , text "         with kind: "          <> ppr kArg ]         
 
 
-        ErrorWitnessImplInvalid tt t1 k1 t2 k2
+        ErrorTypeWitnessImplInvalid tt t1 k1 t2 k2
          -> vcat [ text "Invalid args for witness implication."
                  , text "            left type: " <> ppr t1
                  , text "             has kind: " <> ppr k1
@@ -77,7 +77,7 @@ instance (Eq n, Show n, Pretty n) => Pretty (Error n) where
 
 
         -- Quantifiers --------------------------
-        ErrorForallKindInvalid tt t k
+        ErrorTypeForallKindInvalid tt t k
          -> vcat [ text "Invalid kind for body of quantified type."
                  , text "        the body type: " <> ppr t
                  , text "             has kind: " <> ppr k
@@ -86,7 +86,7 @@ instance (Eq n, Show n, Pretty n) => Pretty (Error n) where
 
 
         -- Sums ---------------------------------                    
-        ErrorSumKindMismatch k ts ks
+        ErrorTypeSumKindMismatch k ts ks
          -> vcat $ [ text "Kind mismatch in type sum."
                  , text " found multiple types: " <> ppr ts
                  , text " with differing kinds: " <> ppr ks ]
@@ -94,7 +94,7 @@ instance (Eq n, Show n, Pretty n) => Pretty (Error n) where
                         then [text "        expected kind: " <> ppr k ]
                         else [])
                 
-        ErrorSumKindInvalid ts k
+        ErrorTypeSumKindInvalid ts k
          -> vcat [ text "Invalid kind for type sum."
                  , text "         the type sum: " <> ppr ts
                  , text "             has kind: " <> ppr k
