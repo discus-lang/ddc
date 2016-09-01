@@ -18,7 +18,7 @@ module DDC.Type.Collect
         , bindDefT)
 where
 import DDC.Type.Exp
-import DDC.Type.Collect.FreeT
+import DDC.Core.Collect.FreeT
 import DDC.Type.Env                     (Env)
 import qualified DDC.Type.Env           as Env
 import qualified DDC.Type.Sum           as Sum

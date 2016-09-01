@@ -13,6 +13,6 @@ module DDC.Core.Collect
         , Support       (..)
         , SupportX      (..))
 where
-import DDC.Core.Collect.Free
+import DDC.Core.Collect.FreeX
 import DDC.Core.Collect.Support
 import DDC.Type.Collect

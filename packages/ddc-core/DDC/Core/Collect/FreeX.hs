@@ -1,5 +1,5 @@
 -- | Collecting sets of variables and constructors.
-module DDC.Core.Collect.Free
+module DDC.Core.Collect.FreeX
         ( freeX
         , bindDefX)
 where

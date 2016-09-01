@@ -6,7 +6,7 @@ module DDC.Core.Collect.Support
 where
 import DDC.Core.Module
 import DDC.Core.Exp.Annot
-import DDC.Type.Collect.FreeT
+import DDC.Core.Collect.FreeT
 import Data.Set                 (Set)
 import DDC.Type.Env             (KindEnv, TypeEnv)
 import qualified DDC.Type.Env   as Env

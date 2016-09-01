@@ -3,7 +3,7 @@ module DDC.Core.Flow.Exp.Simple.Collect
         ()
 where
 import DDC.Type.Collect
-import DDC.Core.Collect.Free
+import DDC.Core.Collect.FreeX
 import DDC.Core.Flow.Exp.Simple.Exp
 
 

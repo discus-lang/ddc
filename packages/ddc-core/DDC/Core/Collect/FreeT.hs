@@ -1,11 +1,11 @@
 
-module DDC.Type.Collect.FreeT
+module DDC.Core.Collect.FreeT
         ( FreeVarConT(..)
         , freeVarsT)
 where
 import DDC.Type.Exp
-import Data.Set                 (Set)
 import DDC.Type.Env             (KindEnv)
+import Data.Set                 (Set)
 import qualified DDC.Type.Env   as Env
 import qualified DDC.Type.Sum   as Sum
 import qualified Data.Set       as Set
