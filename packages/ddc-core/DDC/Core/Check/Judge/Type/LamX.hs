@@ -210,7 +210,7 @@ checkLam !table !a !ctx !b1 !x2 !(Check tExpected)
                 return  (replaceTypeOfBind tX1 b1, tX1, ctx)
              else do
                 ctx0    <- makeEqT config ctx t1 tX1
-                        $  ErrorMismatch  a t1 tExpected (XLam a b1 x2)
+                        $  ErrorMismatch  a   t1 tExpected (XLam a b1 x2)
                 return  (b1, t1, ctx0)
 
         -- Check the body ----------------------
