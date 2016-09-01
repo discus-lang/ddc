@@ -39,18 +39,16 @@ module DDC.Core.Check
 
           -- * Error messages
         , Error         (..)
+        , ErrorType     (..)
         , ErrorData     (..))
 where
 import DDC.Core.Check.Judge.Kind
 import DDC.Core.Check.Error
-import DDC.Core.Check.ErrorMessage      ()
 import DDC.Core.Check.Module
 import DDC.Core.Check.Exp
 import DDC.Core.Check.Witness
 import DDC.Core.Check.CheckCon
 import DDC.Core.Check.Base
-import DDC.Type.Check.Error             (ErrorData (..))
-import DDC.Type.Check.ErrorMessage      ()
 
 
 -- | Check a type in the given universe with the given environment

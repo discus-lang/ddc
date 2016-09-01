@@ -6,8 +6,7 @@ import DDC.Type.Exp
 import DDC.Type.Exp.Simple.Compounds
 import DDC.Type.DataDef
 import DDC.Core.Check.Context
-import DDC.Type.Check.Error
-import DDC.Type.Check.ErrorMessage      ()
+import DDC.Core.Check.Error
 import DDC.Core.Check.CheckCon
 import DDC.Core.Check.Config
 import DDC.Core.Check.Judge.EqT

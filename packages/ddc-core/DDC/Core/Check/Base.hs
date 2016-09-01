@@ -52,8 +52,6 @@ import Data.Monoid                              hiding ((<>))
 import Data.Maybe
 import Data.Set                                 (Set)
 import qualified Data.Set                       as Set
-import qualified DDC.Type.Check.Error           as T
-import qualified DDC.Type.Check.ErrorMessage    ()
 import qualified DDC.Control.Monad.Check        as G
 import Prelude                                  hiding ((<$>))
 
@@ -84,7 +82,7 @@ applyContext :: Ord n => Context n -> Type n -> CheckM a n (Type n)
 applyContext ctx tt
  = case applyContextEither ctx Set.empty tt of
         Left  (tExt, tBind)       
-                -> throw $ ErrorType $ T.ErrorTypeInfinite tExt tBind
+                -> throw $ ErrorType $ ErrorTypeInfinite tExt tBind
         Right t -> return t
 
 
@@ -93,7 +91,7 @@ applySolved :: Ord n => Context n -> Type n -> CheckM a n (Type n)
 applySolved ctx tt
  = case applySolvedEither ctx Set.empty tt of
         Left  (tExt, tBind)
-                -> throw $ ErrorType $ T.ErrorTypeInfinite tExt tBind
+                -> throw $ ErrorType $ ErrorTypeInfinite tExt tBind
         Right t -> return t
 
 

@@ -7,7 +7,6 @@ module DDC.Core.Check.Witness
 where
 import DDC.Core.Exp.Annot.AnT
 import DDC.Core.Check.Error
-import DDC.Core.Check.ErrorMessage              ()
 import DDC.Core.Check.Base
 import DDC.Core.Check.Judge.Kind
 import DDC.Type.Transform.SubstituteT
