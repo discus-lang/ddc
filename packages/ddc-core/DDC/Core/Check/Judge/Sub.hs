@@ -24,7 +24,7 @@ import qualified DDC.Type.Sum           as Sum
 --   by running the computation. In this case we end up with more effects.
 --
 makeSub :: (Eq n, Ord n, Show n, Pretty n)
-        => Config n                     -- ^ Type checker context.
+        => Config n                     -- ^ Type checker configuration.
         -> a                            -- ^ Current annotation.
         -> Context n                    -- ^ Input context.
         -> Exp  (AnTEC a n) n           -- ^ Expression that we've inferred the type of.
@@ -205,10 +205,10 @@ makeSub config a ctx0 xL tL tR err
                 [ text "*>  SubApp"
                 , empty ]
 
-        ctx1    <- makeEq config a ctx0 tL1 tR1 err
+        ctx1    <- makeEqX config a ctx0 tL1 tR1 err
         tL2'    <- applyContext ctx1 tL2
         tR2'    <- applyContext ctx1 tR2
-        ctx2    <- makeEq config a ctx1 tL2' tR2' err
+        ctx2    <- makeEqX config a ctx1 tL2' tR2' err
 
         ctrace  $ vcat
                 [ text "*<  SubApp"

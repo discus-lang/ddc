@@ -1,6 +1,6 @@
 
 module DDC.Core.Check.Judge.EqX
-        (makeEq)
+        (makeEqX)
 where
 import DDC.Core.Check.Base
 import qualified DDC.Core.Env.EnvT      as EnvT
@@ -10,32 +10,33 @@ import qualified Data.Map.Strict        as Map
 
 -- | Make two types equivalent to each other,
 --   or throw the provided error if this is not possible.
-makeEq  :: (Eq n, Ord n, Pretty n, Show n)
-        => Config n
-        -> a
-        -> Context n
-        -> Type n
-        -> Type n
-        -> Error a n
+makeEqX :: (Eq n, Ord n, Pretty n, Show n)
+        => Config n                     -- ^ Type checker configuration.
+        -> a                            -- ^ Current annotation.
+        -> Context n                    -- ^ Input context.
+        -> Type n                       -- ^ Inferred type of expression.
+        -> Type n                       -- ^ Expected type of expression.
+        -> Error a n                    -- ^ Error to throw if we can't force equality.
         -> CheckM a n (Context n)
 
-makeEq config a ctx0 tL tR err
+makeEqX config a ctx0 tL tR err
 
  -- Expand type equations.
  | TCon (TyConBound (UName n) _) <- tL
  , Just tL' <- Map.lookup n $ EnvT.envtEquations $ contextEnvT ctx0
- = makeEq config a ctx0 tL' tR err
+ = makeEqX config a ctx0 tL' tR err
 
 
  | TCon (TyConBound (UName n) _) <- tR
  , Just tR' <- Map.lookup n $ EnvT.envtEquations $ contextEnvT ctx0
- = makeEq config a ctx0 tL tR' err
+ = makeEqX config a ctx0 tL tR' err
 
 
  -- EqLSolve
  | Just iL <- takeExists tL
  , not $ isTExists tR
- = do   let Just ctx1   = updateExists [] iL tR ctx0
+ = do   
+        let Just ctx1   = updateExists [] iL tR ctx0
 
         ctrace  $ vcat
                 [ text "**  EqLSolve"
@@ -51,7 +52,8 @@ makeEq config a ctx0 tL tR err
  -- EqRSolve
  | Just iR <- takeExists tR
  , not $ isTExists tL
- = do   let Just ctx1   = updateExists [] iR tL ctx0
+ = do   
+        let Just ctx1   = updateExists [] iR tL ctx0
 
         ctrace  $ vcat
                 [ text "**  EqRSolve"
@@ -147,10 +149,10 @@ makeEq config a ctx0 tL tR err
                 [ text "*>  EqApp" 
                 , empty ]
 
-        ctx1    <- makeEq config a ctx0 tL1 tR1 err
+        ctx1    <- makeEqX config a ctx0 tL1 tR1 err
         tL2'    <- applyContext ctx1 tL2
         tR2'    <- applyContext ctx1 tR2
-        ctx2    <- makeEq config a ctx1 tL2' tR2' err
+        ctx2    <- makeEqX config a ctx1 tL2' tR2' err
 
         ctrace  $ vcat
                 [ text "*<  EqApp"

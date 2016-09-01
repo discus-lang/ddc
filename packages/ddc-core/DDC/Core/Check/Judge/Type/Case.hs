@@ -357,8 +357,8 @@ checkFieldAnnots table bidir a xx tts ctx0
                 let config      = tableConfig table
                 (tAnnot', _, ctx2) <- checkTypeM config ctx UniverseSpec tAnnot Synth
 
-                ctx3    <- makeEq (tableConfig table) a ctx2 tAnnot' tActual
-                        $  ErrorCaseFieldTypeMismatch a xx   tAnnot' tActual
+                ctx3    <- makeEqX (tableConfig table) a ctx2 tAnnot' tActual
+                        $  ErrorCaseFieldTypeMismatch  a xx   tAnnot' tActual
 
                 tField  <- applyContext ctx3 tActual
                 return  (tField, ctx3)

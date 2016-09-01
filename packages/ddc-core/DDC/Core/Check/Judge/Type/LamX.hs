@@ -145,7 +145,7 @@ checkLam !table !a !ctx !b1 !x2 !Synth
         (k1'', ctx6)
          <- if isTExists k1'
              then do
-                ctx6    <- makeEq config a ctx5 k1' kData
+                ctx6    <- makeEqX config a ctx5 k1' kData
                         $  ErrorMismatch a k1' kData xx
 
                 k1''    <- applyContext ctx6 k1'
@@ -208,7 +208,7 @@ checkLam !table !a !ctx !b1 !x2 !(Check tExpected)
              then
                 return  (replaceTypeOfBind tX1 b1, tX1, ctx)
              else do
-                ctx0    <- makeEq config a ctx t1 tX1
+                ctx0    <- makeEqX config a ctx t1 tX1
                         $  ErrorMismatch a t1 tExpected (XLam a b1 x2)
                 return  (b1, t1, ctx0)
 
@@ -241,7 +241,7 @@ checkLam !table !a !ctx !b1 !x2 !(Check tExpected)
                     -- existential, so we need to unify it against the reconstructed
                     -- effect to instantiate it.
                     let e2Actual_crushed = TSum es2Actual_crushed
-                    ctx2' <- makeEq config a ctx2 e2Expected e2Actual_crushed
+                    ctx2' <- makeEqX config a ctx2 e2Expected e2Actual_crushed
                           $  ErrorMismatch a e2Actual_crushed e2Expected x2
 
                     return (x2', t2', es2Actual_crushed, ctx2')
@@ -273,7 +273,7 @@ checkLam !table !a !ctx !b1 !x2 !(Check tExpected)
         (k1'', ctx4)
          <- if isTExists k1'
              then do
-                ctx4    <- makeEq config a ctx3 k1' kData
+                ctx4    <- makeEqX config a ctx3 k1' kData
                         $  ErrorMismatch a k1' kData xx
 
                 k1''    <- applyContext ctx4 k1'
@@ -302,7 +302,7 @@ checkLam !table !a !ctx !b1 !x2 !(Check tExpected)
         --   The `makeFunction` can also insert implicit box casts, so we 
         --   need to check that the result of doing this is as expected.
         -- 
-        ctx5    <- makeEq config a ctx4 tAbs tExpected
+        ctx5    <- makeEqX config a ctx4 tAbs tExpected
                 $  ErrorMismatch a tAbs tExpected xx
 
         tAbs'   <- applyContext ctx4 tAbs

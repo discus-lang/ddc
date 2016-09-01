@@ -110,7 +110,7 @@ checkLetPrivate !table !ctx mode demand
         -- Check that the result matches any expected type.
         ctx6    <- case mode of
                     Check tExpected
-                     -> do  makeEq config a ctx5 tExpected tBody_final
+                     -> do  makeEqX config a ctx5 tExpected tBody_final
                              $  ErrorMismatch a tExpected tBody_final xx
 
                     _ -> return ctx5

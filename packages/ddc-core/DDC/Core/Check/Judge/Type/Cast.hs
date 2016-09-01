@@ -95,8 +95,8 @@ checkCast !table ctx0 mode _demand
         -- We're treating the S constructor as invariant in both positions,
         --  so we use 'makeEq' here instead of 'makeSub'
         tExpected'  <- applyContext ctx1 tExpected
-        ctx2        <- makeEq config a ctx1 tActual tExpected'
-                    $  ErrorMismatch a      tActual tExpected' xx
+        ctx2        <- makeEqX config a ctx1 tActual tExpected'
+                    $  ErrorMismatch a       tActual tExpected' xx
 
         returnX a (\z -> XCast z CastBox x1')
                 tExpected (Sum.empty kEffect) ctx2
