@@ -19,6 +19,7 @@ module DDC.Core.Check.Context.Base
         , pushKind,   pushKinds
         , pushExists
         , pushExistsBefore
+        , pushExistsScope
 
           -- * Marking
         , markContext
@@ -214,6 +215,26 @@ pushExistsBefore i (Exists n _) ctx
 
         go (e : es)     = e : go es
         go []           = []
+
+
+pushExistsScope :: Exists n -> [Exists n] -> Context n -> Context n
+pushExistsScope i scope ctx
+ = ctx { contextElems 
+                = go    (ElemExistsDecl i : contextElems ctx) 
+                        []
+                        (contextElems ctx) 
+       }
+ where  
+        go cs' acc (e : es)
+         | Just i' <- takeExistsOfElem e
+         , elem i' scope        
+         = go (reverse acc ++ (e : ElemExistsDecl i : es)) (e : acc) es
+
+         | otherwise
+         = go cs' (e : acc) es
+
+        go cs' _acc []
+         = cs'
 
 
 -- Mark / Pop -----------------------------------------------------------------

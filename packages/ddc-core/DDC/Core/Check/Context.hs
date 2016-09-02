@@ -14,6 +14,7 @@ module DDC.Core.Check.Context
         , Exists  (..)
         , typeOfExists
         , takeExists
+        , slurpExists
 
           -- * Context Elements.
         , Elem    (..)
@@ -36,7 +37,7 @@ module DDC.Core.Check.Context
           -- * Pushing
         , pushType,   pushTypes
         , pushKind,   pushKinds
-        , pushExists, pushExistsBefore
+        , pushExists, pushExistsBefore, pushExistsScope
 
           -- * Marking
         , markContext

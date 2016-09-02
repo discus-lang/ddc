@@ -10,12 +10,15 @@ module DDC.Core.Check.Context.Elem
         , Exists (..)
         , typeOfExists
         , takeExists
+        , slurpExists
 
           -- * Context elements.
-        , Elem   (..))
+        , Elem   (..)
+        , takeExistsOfElem)
 where
 import DDC.Type.Exp.Simple
 import DDC.Base.Pretty
+import qualified DDC.Type.Sum   as Sum
 
 
 -- Positions --------------------------------------------------------------------------------------
@@ -88,6 +91,20 @@ takeExists tt
         _                       -> Nothing
 
 
+-- | Slurp all the existential variables from this type.
+slurpExists :: Type n -> [Exists n]
+slurpExists tt
+ = case tt of
+        TCon (TyConExists n k)  -> [Exists n k]
+        TCon _                  -> []
+        TVar {}                 -> []
+        TAbs b xBody            -> slurpExists (typeOfBind b) ++ slurpExists xBody
+        TApp t1 t2              -> slurpExists t1 ++ slurpExists t2
+        TForall b xBody         -> slurpExists (typeOfBind b) ++ slurpExists xBody
+        TSum ts                 -> concatMap slurpExists $ Sum.toList ts
+
+
+
 -- Elem -------------------------------------------------------------------------------------------
 -- | An element in the type checker context.
 data Elem n
@@ -131,3 +148,11 @@ instance (Pretty n, Eq n) => Pretty (Elem n) where
         ElemExistsEq i t 
          -> ppr i <+> text "=" <+> ppr t
 
+
+-- | Take the existential from this context element, if there is one.
+takeExistsOfElem :: Elem n -> Maybe (Exists n)
+takeExistsOfElem ee
+ = case ee of
+        ElemExistsDecl i        -> Just i
+        ElemExistsEq   i _      -> Just i
+        _                       -> Nothing

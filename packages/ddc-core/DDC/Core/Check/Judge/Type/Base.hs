@@ -50,6 +50,10 @@ data Demand
         | DemandNone
         deriving Show
 
+instance Pretty Demand where
+ ppr DemandRun  = text "Run"
+ ppr DemandNone = text "None"
+
 
 -- | Type of the function that checks some node of the core AST.
 type Checker a n
