@@ -56,7 +56,7 @@ cmdReadModule_parse printErrors config filePath fragment source src
  = do   ref     <- newIORef Nothing
         errs    <- pipeText (nameOfSource source) (lineStartOfSource source) src
                 $  PipeTextLoadCore fragment
-                        (if configInferTypes config then C.Synth else C.Recon)
+                        (if configInferTypes config then C.Synth [] else C.Recon)
                         SinkDiscard
                    [ PipeCoreHacks (Canned (\m -> writeIORef ref (Just m) >> return m)) 
                      [PipeCoreOutput pprDefaultMode SinkDiscard] ]

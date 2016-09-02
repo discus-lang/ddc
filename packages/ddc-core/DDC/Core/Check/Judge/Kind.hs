@@ -72,7 +72,7 @@ checkTypeM config ctx0 uni tt@(TVar u) mode
          -> do  throw $ C.ErrorType $ ErrorTypeUndefined u
 
         -- Synthesised kinds are assumed to have sort Comp.
-        Synth
+        Synth _
          -> do  i        <- newExists sComp
                 let t    = typeOfExists i
                 let ctx' = pushExists i ctx0
@@ -101,7 +101,7 @@ checkTypeM config ctx0 uni tt@(TVar u) mode
 
         -- Synthesised types could have an arbitrary kind, 
         -- so we need to make two existentials.
-        Synth
+        Synth _
          -> do  iK       <- newExists sComp
                 let k    =  typeOfExists iK
                 let ctx1 =  pushExists iK ctx0
@@ -291,18 +291,18 @@ checkTypeM config ctx0 uni@UniverseSpec
 
         return (TForall b1 t2', k2', ctx_cut)
 
-    Synth
+    Synth{}
      -> do
         -- Synthesise a sort for the binder.
         let k1  = typeOfBind b1
-        (k1', _s1, ctx1) <- checkTypeM config ctx0 UniverseKind k1 Synth
+        (k1', _s1, ctx1) <- checkTypeM config ctx0 UniverseKind k1 (Synth [])
                 
         let b1' = replaceTypeOfBind k1' b1
 
         -- Check the body with the binder in scope.
         let (ctx2, pos1) = markContext ctx1
         let ctx3         = pushKind b1' RoleAbstract ctx2
-        (t2', k2, ctx4) <- checkTypeM config ctx3 UniverseSpec t2 Synth
+        (t2', k2, ctx4) <- checkTypeM config ctx3 UniverseSpec t2 (Synth [])
 
         -- If the kind of the body is unconstrained then default it to Data.
         -- See [Note: Defaulting the kind of quantified types]
@@ -333,14 +333,14 @@ checkTypeM config ctx0 uni@UniverseSpec
      -> do
         -- Synthesise a sort for the binder.
         let k1  = typeOfBind b1
-        (k1', _s1, ctx1) <- checkTypeM config ctx0 UniverseKind k1 Synth
+        (k1', _s1, ctx1) <- checkTypeM config ctx0 UniverseKind k1 (Synth [])
 
         let b1' = replaceTypeOfBind k1' b1
 
         -- Check the body with the binder in scope.
         let (ctx2, pos1) = markContext ctx1
         let ctx3         = pushKind b1' RoleAbstract ctx2
-        (t2', k2, ctx4) <- checkTypeM config ctx3 UniverseSpec t2 Synth
+        (t2', k2, ctx4) <- checkTypeM config ctx3 UniverseSpec t2 (Synth [])
 
         -- In Check mode if *both* the current kind of the body and the expected
         -- kind are existentials then force them both to be data. Otherwise make
@@ -391,15 +391,15 @@ checkTypeM config ctx0 uni@UniverseKind
         (_, s2, _)      <- checkTypeM config ctx0 uni k2 Recon
         return  (tt, s2, ctx0)
 
-    Synth
+    Synth{}
      -> do
-        (k1',  _, ctx1) <- checkTypeM config ctx0 uni k1 Synth
-        (k2', s2, ctx2) <- checkTypeM config ctx1 uni k2 Synth
+        (k1',  _, ctx1) <- checkTypeM config ctx0 uni k1 (Synth [])
+        (k2', s2, ctx2) <- checkTypeM config ctx1 uni k2 (Synth [])
         return  (kFun k1' k2', s2, ctx2)
 
     Check sExpected
      -> do
-        (k1',  _, ctx1) <- checkTypeM config ctx0 uni k1 Synth
+        (k1',  _, ctx1) <- checkTypeM config ctx0 uni k1 (Synth [])
         (k2', s2, ctx2) <- checkTypeM config ctx1 uni k2 (Check sExpected)
         return  (kFun k1' k2', s2, ctx2)
 
@@ -424,16 +424,17 @@ checkTypeM config ctx0 uni@UniverseSpec
          then     return (tt', kData, ctx2)
         else    throw $ C.ErrorType $ ErrorTypeWitnessImplInvalid tt t1 k1 t2 k2
 
-    Synth
+    Synth{}
      -> do
-        (t1', _k1, ctx1) <- checkTypeM config ctx0 uni t1 Synth
-        (t2', k2,  ctx2) <- checkTypeM config ctx1 uni t2 Synth
+        (t1', _k1, ctx1) <- checkTypeM config ctx0 uni t1 mode
+        (t2', k2,  ctx2) <- checkTypeM config ctx1 uni t2 mode
 
         return (tImpl t1' t2', k2, ctx2)
 
     Check kExpected
      -> do
-        (t1', _k1, ctx1) <- checkTypeM config ctx0 uni t1 Synth
+        -- When checking type functions we don't need to worry about scopes.
+        (t1', _k1, ctx1) <- checkTypeM config ctx0 uni t1 (Synth [])
         (t2', k2,  ctx2) <- checkTypeM config ctx1 uni t2 (Check kExpected)
 
         return (tImpl t1' t2', k2, ctx2)
@@ -465,11 +466,11 @@ checkTypeM config ctx0 UniverseSpec
 
          _ -> throw $ C.ErrorType $ ErrorTypeAppNotFun tt tFn' kFn tArg'
 
-    Synth
+    Synth{}
      -> do
         -- Synthesise a kind for the functional part.
         (tFn', kFn, ctx1) 
-         <- checkTypeM config ctx0 UniverseSpec tFn Synth
+         <- checkTypeM config ctx0 UniverseSpec tFn (Synth [])
 
         -- Apply the argument to the function.
         kFn'    <- applyContext ctx1 kFn
@@ -482,7 +483,7 @@ checkTypeM config ctx0 UniverseSpec
      -> do
         -- Synthesise a kind for the overall type.
         (t1', k1, ctx1) 
-         <- checkTypeM config ctx0 UniverseSpec tt Synth
+         <- checkTypeM config ctx0 UniverseSpec tt (Synth [])
 
         -- Force the synthesised kind to be the same as the expected one.
         k1'         <- applyContext   ctx1 k1
@@ -517,12 +518,12 @@ checkTypeM config ctx0 UniverseSpec tt@(TSum ss) mode
          then return (TSum (TS.fromList k' ts'), k', ctx1)
          else throw $ C.ErrorType $ ErrorTypeSumKindInvalid ss k'
 
-    Synth
+    Synth{}
      -> do
         -- Synthesise a kind for all the elements,
         --  threading the context from left to right.
         (ts, ks, ctx1)
-                <- checkTypesM config ctx0 UniverseSpec Synth
+                <- checkTypesM config ctx0 UniverseSpec (Synth [])
                 $  TS.toList ss
 
         case ks of
@@ -550,7 +551,7 @@ checkTypeM config ctx0 UniverseSpec tt@(TSum ss) mode
      -> do
         -- Synthesise a kind for the overall type.
         (t1', k1, ctx1)
-                <- checkTypeM config ctx0 UniverseSpec tt Synth
+                <- checkTypeM config ctx0 UniverseSpec tt (Synth [])
 
         -- Force the synthesised kind to match the expected one.
         k1'         <- applyContext   ctx1 k1

@@ -93,7 +93,7 @@ checkVarCon !table !ctx (Check tExpect) demand xx@(XCon a _)
 
 
 -- Synthesise the type of a data constructor.
-checkVarCon !table !ctx mode@Synth _demand xx@(XCon a dc) 
+checkVarCon !table !ctx mode@(Synth {}) _demand xx@(XCon a dc) 
  = do
         let config      = tableConfig table
 

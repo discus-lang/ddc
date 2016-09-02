@@ -86,7 +86,7 @@ checkCase !table !ctx0 mode demand
          <- case mode of
                 Recon   -> return (mode, ctx2)
                 Check{} -> return (mode, ctx2)
-                Synth
+                Synth{}
                  -> do  iA       <- newExists kData
                         let tA   = typeOfExists iA
                         let ctx3 = pushExists iA ctx2
@@ -180,7 +180,7 @@ takeDiscrimCheckModeFromAlts table a ctx mode alts
          -- so will need to synthesise the type of the discrim without
          -- an expected type.
          []
-          -> return (Synth, ctx)
+          -> return (Synth [], ctx)
 
          -- We have at least one non-default pattern, which we can use to
          -- determine how many existentials are needed to instantiate
@@ -380,7 +380,8 @@ checkFieldAnnots table bidir a xx tts ctx0
         | bidir
         = do    -- Check the type of the annotation.
                 let config      = tableConfig table
-                (tAnnot', _, ctx2) <- checkTypeM config ctx UniverseSpec tAnnot Synth
+                (tAnnot', _, ctx2) 
+                        <- checkTypeM config ctx UniverseSpec tAnnot (Synth [])
 
                 ctx3    <- makeEqX (tableConfig table) a ctx2 tAnnot' tActual
                         $  ErrorCaseFieldTypeMismatch  a xx   tAnnot' tActual

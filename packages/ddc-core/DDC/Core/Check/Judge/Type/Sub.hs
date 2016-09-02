@@ -20,7 +20,7 @@ checkSub table !a ctx0 demand xx0 tExpect
 
         -- Synthesise a type for the expression.
         (xx1, tSynth, effs1, ctx1)
-         <- tableCheckExp table table ctx0 Synth demand xx0 
+         <- tableCheckExp table table ctx0 (Synth []) demand xx0 
 
         -- Substitute context into synthesised and expected types.
         tSynth_ctx1     <- applyContext ctx1 tSynth

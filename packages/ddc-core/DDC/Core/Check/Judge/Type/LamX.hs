@@ -73,7 +73,7 @@ checkLam !table !a !ctx !b1 !x2 !Recon
 
 -- When synthesizing the type of a lambda abstraction
 --   we produce a type (?1 -> ?2) with new unification variables.
-checkLam !table !a !ctx !b1 !x2 !Synth
+checkLam !table !a !ctx !b1 !x2 !(Synth {})
  = do
         ctrace  $ vcat
                 [ text "*>  Lam SYNTH"
@@ -103,7 +103,7 @@ checkLam !table !a !ctx !b1 !x2 !Synth
                 --   The parameter must have Data or Witness kind,
                 --   which is checked by 'makeFunctionType' below.
                 (t1', k1, ctx1)
-                        <- checkTypeM config ctx UniverseSpec t1 Synth
+                        <- checkTypeM config ctx UniverseSpec t1 (Synth [])
                 let b1' = replaceTypeOfBind t1' b1
                 return (b1', t1', k1, ctx1)
 
@@ -268,7 +268,7 @@ checkLam !table !a !ctx !b1 !x2 !(Check tExpected)
         -- Make the result type -----------------
         -- If the kind of the parameter is unconstrained then default it
         -- to Data. This handles  "/\f. \(a : f Int#). ()"
-        (_, k1, _)      <- checkTypeM config ctx3 UniverseSpec t1' Synth
+        (_, k1, _)      <- checkTypeM config ctx3 UniverseSpec t1' (Synth [])
         k1'             <- applyContext ctx3 k1
         (k1'', ctx4)
          <- if isTExists k1'

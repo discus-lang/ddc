@@ -32,7 +32,7 @@ stageSaltLoad
 
 stageSaltLoad config source pipesSalt
  = PipeTextLoadCore Salt.fragment 
-        (if configInferTypes config then C.Synth else C.Recon)
+        (if configInferTypes config then C.Synth [] else C.Recon)
         SinkDiscard
  [ PipeCoreReannotate (const ())
         ( PipeCoreOutput pprDefaultMode

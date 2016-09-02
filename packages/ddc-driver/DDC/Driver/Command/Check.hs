@@ -142,7 +142,7 @@ cmdCheckCoreFromFile config language filePath
  = do
         mModule <- liftIO 
                 $ loadModuleFromFile fragment filePath 
-                $ (if configInferTypes config then C.Synth else C.Recon)
+                $ (if configInferTypes config then C.Synth [] else C.Recon)
         
         case mModule of
                 (Left  err, _ct) -> throwE (renderIndent $ ppr err)
@@ -343,7 +343,7 @@ cmdShowSpec language showMode checkMode shouldPrintTrace source ss
         -- We don't pass the mode directly because the Mode type is
         -- also parameterised over the type of names.
         mode    = case checkMode of
-                        True    -> Synth
+                        True    -> Synth []
                         False   -> Recon
 
         goResult fragment (Just x, Just ct)

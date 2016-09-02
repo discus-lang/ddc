@@ -21,8 +21,8 @@ checkCast !table !ctx0 mode _demand
          <- checkTypeM config ctx0 UniverseSpec eff
           $ case mode of
                 Recon   -> Recon
-                Synth   -> Check kEffect
-                Check _ -> Check kEffect
+                Synth{} -> Check kEffect
+                Check{} -> Check kEffect
 
         -- Check the body.
         (x1', t1, effs, ctx2)
@@ -80,7 +80,7 @@ checkCast !table ctx0 mode _demand
 
         -- Check the body.
         (x1', tBody, effs, ctx1)
-         <- tableCheckExp table table ctx0 Synth DemandRun x1
+         <- tableCheckExp table table ctx0 (Synth []) DemandRun x1
 
         let effs_crush 
                 = Sum.fromList kEffect
@@ -150,11 +150,11 @@ checkCast !table !ctx0 mode _demand
 
          _ -> throw $ ErrorRunNotSuspension a xx tBody
 
-    Synth
+    Synth{}
      -> do
         -- Synthesize a type for the body.
         (xBody', tBody, effs, ctx1)
-         <- tableCheckExp table table ctx0 Synth DemandNone xBody
+         <- tableCheckExp table table ctx0 (Synth []) DemandNone xBody
 
         -- Run the body,
         -- which needs to have been resolved to a computation type.

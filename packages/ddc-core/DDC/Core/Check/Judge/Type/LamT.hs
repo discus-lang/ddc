@@ -87,7 +87,7 @@ checkLAM !table !ctx0 a b1 x2 Recon
                 tResult (Sum.empty kEffect) ctx_cut
 
 
-checkLAM !table !ctx0 a b1 x2 Synth
+checkLAM !table !ctx0 a b1 x2 (Synth {})
  = do   let config      = tableConfig table
         let xx          = XLAM a b1 x2
 
@@ -108,7 +108,7 @@ checkLAM !table !ctx0 a b1 x2 Synth
                 return (kA', sComp, ctxA)
 
              else
-                checkTypeM config ctx0 UniverseKind kA Synth
+                checkTypeM config ctx0 UniverseKind kA (Synth [])
 
         let b1'         = replaceTypeOfBind kA' b1
 
@@ -125,7 +125,7 @@ checkLAM !table !ctx0 a b1 x2 Synth
         -- suspensions. If the body of a type abstraction has any effects
         -- then this is a type error.
         (x2', t2, e2,ctx5)
-         <- tableCheckExp table table ctx4 Synth DemandNone x2 
+         <- tableCheckExp table table ctx4 (Synth []) DemandNone x2 
 
         -- Force the kind of the body to be data.
         --  This is needed when the type of the body is an existential
@@ -185,10 +185,10 @@ checkLAM !table !ctx0 a b1 x2 (Check (TForall b tBody))
 
              else if isHoleT config kExpected
               then do
-                checkTypeM config ctx0 UniverseKind kParam Synth
+                checkTypeM config ctx0 UniverseKind kParam    (Synth [])
 
               else do
-                checkTypeM config ctx0 UniverseKind kExpected Synth
+                checkTypeM config ctx0 UniverseKind kExpected (Synth [])
 
         let b1' = replaceTypeOfBind kA' b1
 

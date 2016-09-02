@@ -207,7 +207,7 @@ cmdLoadCoreFromString config language source str
         pipeLoad
          = pipeText     (nameOfSource source) (lineStartOfSource source) str
          $ PipeTextLoadCore  fragment 
-                        (if configInferTypes config then C.Synth else C.Recon) 
+                        (if configInferTypes config then C.Synth [] else C.Recon) 
                         SinkDiscard
          [ PipeCoreReannotate (\a -> a { annotTail = () })
          [ PipeCoreSimplify  fragment (bundleStateInit bundle)

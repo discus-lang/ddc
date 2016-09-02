@@ -27,7 +27,7 @@ stageFlowLoad
 
 stageFlowLoad config source pipesFlow
  = PipeTextLoadCore Flow.fragment 
-        (if configInferTypes config then C.Synth else C.Recon)
+        (if configInferTypes config then C.Synth [] else C.Recon)
                          (dump config source "dump.flow-check.txt")
    [ PipeCoreReannotate  (const ()) 
         ( PipeCoreOutput pprDefaultMode

@@ -470,8 +470,9 @@ pipeFlow !mm !pp
                       -> let mm_stripped = C.reannotate (const ()) mm'
                              mm_flow     = fst $ Flow.seriesOfVectorModule mm_stripped
                            
+                             config      = C.configOfProfile Flow.profile
                             -- Synthesise the types of any newly created bindings.
-                         in case C.checkModule (C.configOfProfile Flow.profile) mm_flow C.Synth of
+                         in case C.checkModule config mm_flow (C.Synth [])  of
                              (Left err, _ct)         
                               -> return [ErrorCoreTransform err]
                             

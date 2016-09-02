@@ -62,12 +62,12 @@ checkAppT !table !ctx0 Recon demand
                 (\z -> XApp z xFn' (XType aArg' tArg'))
                 tResult effsFn ctx2
 
-checkAppT !table !ctx0 Synth demand 
+checkAppT !table !ctx0 (Synth {}) demand 
         xx@(XApp aApp xFn (XType aArg tArg))
  = do
         -- Check the functional expression.
         (xFn', tFn, effsFn, ctx1)
-         <- tableCheckExp table table ctx0 Synth demand xFn
+         <- tableCheckExp table table ctx0 (Synth []) demand xFn
 
         -- Apply the type argument to the type of the function.
         tFn' <- applyContext ctx1 tFn

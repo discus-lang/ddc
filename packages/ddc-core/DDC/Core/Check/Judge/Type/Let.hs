@@ -32,7 +32,7 @@ checkLet !table !ctx0 mode demand xx@(XLet a lts xBody)
                 = case mode of
                         Recon   -> False
                         Check{} -> True
-                        Synth   -> True
+                        Synth{} -> True
 
         (lts', _bs', effsBinds, pos1, ctx1)
          <- checkLetsM useBidirChecking xx table ctx0 demand lts
@@ -65,7 +65,7 @@ checkLet !table !ctx0 mode demand xx@(XLet a lts xBody)
         -- Run the body if needed ---------------
         (xBodyRun, tBodyRun, eBodyRun)
          <- case mode of
-                Synth   -> runForDemand (tableConfig table) a demand
+                Synth{} -> runForDemand (tableConfig table) a demand
                                 xBody' tBody' (TSum effsBody)
 
                 _       -> return (xBody', tBody', TSum effsBody)
@@ -176,7 +176,7 @@ checkLetsM !bidir xx !table !ctx0 !demand (LLet b xBind)
         (mode, ctx1)
          <- if isBot tAnnot
              -- There is no annotation on the binder.
-             then return (Synth, ctx0)
+             then return (Synth [], ctx0)
 
              -- Check the type annotation on the binder,
              -- expecting the kind to be Data.

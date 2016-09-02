@@ -56,7 +56,7 @@ stageTetraLoad
 
 stageTetraLoad config source pipesTetra
  = PipeTextLoadCore BE.fragment 
-        (if configInferTypes config then C.Synth else C.Recon)
+        (if configInferTypes config then C.Synth [] else C.Recon)
                          (dump config source "dump.1-tetra-00-check.dct")
  [ PipeCoreReannotate (const ())
         ( PipeCoreOutput pprDefaultMode

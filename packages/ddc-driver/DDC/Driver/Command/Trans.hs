@@ -81,7 +81,7 @@ cmdTransModule config language _shouldPrintInfo source str
         pipeTrans
          = pipeText (nameOfSource source) (lineStartOfSource source) str
          $ PipeTextLoadCore fragment 
-                (if configInferTypes config then C.Synth else C.Recon) 
+                (if configInferTypes config then C.Synth [] else C.Recon) 
                 SinkDiscard
          [  PipeCoreReannotate (\a -> a { annotTail = ()})
          [  PipeCoreSimplify  fragment zero simpl

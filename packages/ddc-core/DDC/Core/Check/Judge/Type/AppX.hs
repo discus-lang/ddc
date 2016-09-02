@@ -46,7 +46,7 @@ checkAppX !table !ctx Recon demand
                 ctx2
 
 
-checkAppX !table !ctx0 Synth demand 
+checkAppX !table !ctx0 Synth{} demand 
         xx@(XApp a xFn xArg)
  = do
         ctrace  $ vcat
@@ -56,7 +56,7 @@ checkAppX !table !ctx0 Synth demand
 
         -- Synth a type for the functional expression.
         (xFn', tFn, effsFn, ctx1)
-         <- tableCheckExp table table ctx0 Synth demand xFn
+         <- tableCheckExp table table ctx0 (Synth []) demand xFn
 
         -- Substitute context into synthesised type.
         tFn' <- applyContext ctx1 tFn

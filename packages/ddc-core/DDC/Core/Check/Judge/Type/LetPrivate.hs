@@ -73,7 +73,7 @@ checkLetPrivate !table !ctx mode demand
         --   construct.
         let ctx3        = pushTypes bsWit' ctx2
         (xBody3, tBody3, effs3, ctx4)
-          <- tableCheckExp table table ctx3 Synth demand x
+          <- tableCheckExp table table ctx3 (Synth []) demand x
 
         -- The body type must have data kind.
         (tBody4, kBody4, ctx5)

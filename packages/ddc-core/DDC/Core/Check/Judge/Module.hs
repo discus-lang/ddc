@@ -370,7 +370,7 @@ checkImportTypes config env mode nisrcs
         modeCheckImportTypes
          = case mode of
                 Recon   -> Recon
-                _       -> Synth
+                _       -> Synth []
 
         -- Check an import definition.
         check (n, isrc)
@@ -428,7 +428,7 @@ checkSortsOfDataTypes config mode defs
         modeCheckDataTypes
          = case mode of
                 Recon   -> Recon
-                _       -> Synth
+                _       -> Synth []
 
         -- Check kind of a data type constructor.
         check def
