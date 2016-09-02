@@ -18,6 +18,7 @@ module DDC.Core.Check.Context.Base
         , pushType,   pushTypes
         , pushKind,   pushKinds
         , pushExists
+        , pushExistsBefore
 
           -- * Marking
         , markContext
@@ -197,6 +198,22 @@ pushKinds brs ctx
 pushExists :: Exists n -> Context n -> Context n
 pushExists i ctx
  = ctx { contextElems = ElemExistsDecl i : contextElems ctx }
+
+
+-- | Push the first existential into the context just before the
+--   declaration of the second one.
+pushExistsBefore :: Exists n -> Exists n -> Context n -> Context n
+pushExistsBefore i (Exists n _) ctx
+ = ctx { contextElems = go (contextElems ctx) }
+ where
+        go (ElemExistsDecl i'@(Exists n' _)   : es)
+         | n' == n      = ElemExistsDecl i'   : ElemExistsDecl i : es
+
+        go (ElemExistsEq   i'@(Exists n' _) t : es)
+         | n' == n      = ElemExistsEq   i' t : ElemExistsDecl i : es
+
+        go (e : es)     = e : go es
+        go []           = []
 
 
 -- Mark / Pop -----------------------------------------------------------------

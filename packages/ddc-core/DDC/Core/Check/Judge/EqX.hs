@@ -92,6 +92,9 @@ makeEqX config a ctx0 tL tR err
  = do   
         let Just ctx1   = updateExists [] iR tL ctx0
 
+        when (locationOfExists iR ctx0 == Nothing)
+         $ ctrace (text "!!  BOGUS EACHL")
+
         ctrace  $ vcat
                 [ text "**  EqX_EachL"
                 , text "    tL: " <> ppr tL
@@ -114,6 +117,9 @@ makeEqX config a ctx0 tL tR err
                 Nothing -> True         -- Left has already been popped off.
  = do
         let Just ctx1   = updateExists [] iL tR ctx0
+
+        when (locationOfExists iL ctx0 == Nothing)
+         $ ctrace (text "!!  BOGUS EACHL")
 
         ctrace  $ vcat
                 [ text "**  EqX_EachR"

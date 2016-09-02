@@ -25,11 +25,17 @@ checkSub table !a ctx0 demand xx0 tExpect
         tSynth_ctx1     <- applyContext ctx1 tSynth
         tExpect_ctx1    <- applyContext ctx1 tExpect
 
-        -- If the synthesised type is not quantified, 
-        -- but the expected one is then instantiate it at some
-        -- new existentials.
+        -- If the synthesised type is not quantified,
+        -- but the expected one is then instantiate it at some new existentials.
+        -- The expected type needs to be an existential so we know where to 
+        -- insert the new existentials we create into the context.
         (xx_dequant, tDequant, ctx2)
-         <- dequantify table a ctx1 xx1 tSynth_ctx1 tExpect_ctx1
+         <- case takeExists tExpect of
+                Just iExpect
+                 -> dequantify table a ctx1 iExpect xx1 tSynth_ctx1 tExpect_ctx1
+
+                Nothing
+                 -> return (xx1, tSynth_ctx1, ctx1)
 
         ctrace  $ vcat
                 [ text "*.  Sub Check"
@@ -65,14 +71,14 @@ checkSub table !a ctx0 demand xx0 tExpect
                 effs' ctx3
 
 
-dequantify !_table !aApp ctx0 xx0 tSynth tExpect 
+dequantify !_table !aApp ctx0 iBefore xx0 tSynth tExpect 
  | TCon (TyConExists _n _k)  <- tExpect
  , shouldDequantifyX xx0
  = do   
         (bsParam, tBody)     <- stripQuantifiers tSynth
         case bsParam of
          []     -> return (xx0, tSynth, ctx0)
-         _      -> addTypeApps aApp ctx0 xx0 (reverse bsParam) tBody
+         _      -> addTypeApps aApp ctx0 iBefore xx0 (reverse bsParam) tBody
 
  | otherwise
  = return (xx0, tSynth, ctx0)
@@ -85,11 +91,16 @@ shouldDequantifyX xx
         _       -> True
 
 
--- | Add applications of type existentials to the given expression.
+-- | Apply the given expression to existentials to instantiate its type.
+--
+--   The new existentials are inserted into the context just before
+--   the given one so that the context scoping works out.
+--
 addTypeApps 
         :: Ord n
         => a                    -- ^ Annotation for new AST nodes.
         -> Context n            -- ^ Current type checker context.
+        -> Exists n             -- ^ Add new existentials before this one.
         -> Exp (AnTEC a n) n    -- ^ Expression to add type applications to.
         -> [Bind n]             -- ^ Forall quantifiers.
         -> Type n               -- ^ Body of the forall.
@@ -98,25 +109,25 @@ addTypeApps
                 , Type n
                 , Context n)
 
-addTypeApps !_aApp ctx0 xx0 [] tBody
+addTypeApps !_aApp ctx0 _ xx0 [] tBody
  = return (xx0, tBody, ctx0)
 
-addTypeApps !aApp ctx0 xx0 (bParam : bsParam) tBody
+addTypeApps !aApp  ctx0 iBefore xx0 (bParam : bsParam) tBody
  = do   
         let kParam = typeOfBind bParam
 
         (xx1, tBody', ctx1)
-         <- addTypeApps aApp ctx0 xx0 bsParam tBody 
+         <- addTypeApps aApp ctx0 iBefore xx0 bsParam tBody 
 
-        iArg      <- newExists kParam
-        let tArg  =  typeOfExists iArg
-        let ctx2  =  pushExists iArg ctx1
+        iArg        <- newExists kParam
+        let tArg    =  typeOfExists iArg
+        let ctx2    =  pushExistsBefore iArg iBefore ctx1
 
-        let tResult = substituteT bParam tArg tBody'
+        let tResult =  substituteT bParam tArg tBody'
 
-        let aApp' = AnTEC tResult (tBot kEffect) (tBot kClosure) aApp
-        let aArg' = AnTEC kParam  (tBot kEffect) (tBot kClosure) aApp
-        let xx2   = XApp aApp' xx1 (XType aArg' tArg)
+        let aApp'   = AnTEC tResult (tBot kEffect) (tBot kClosure) aApp
+        let aArg'   = AnTEC kParam  (tBot kEffect) (tBot kClosure) aApp
+        let xx2     = XApp aApp' xx1 (XType aArg' tArg)
 
         return (xx2, tResult, ctx2)
 

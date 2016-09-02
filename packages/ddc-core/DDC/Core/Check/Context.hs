@@ -36,7 +36,7 @@ module DDC.Core.Check.Context
           -- * Pushing
         , pushType,   pushTypes
         , pushKind,   pushKinds
-        , pushExists
+        , pushExists, pushExistsBefore
 
           -- * Marking
         , markContext
