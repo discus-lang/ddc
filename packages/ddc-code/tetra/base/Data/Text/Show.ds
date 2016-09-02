@@ -10,6 +10,7 @@ export
         showHexNat;     digitHex;
         showBaseNat;
 }
+import Data.Numeric.Word
 import Data.Text.Base
 import Data.Text.Operator
 where

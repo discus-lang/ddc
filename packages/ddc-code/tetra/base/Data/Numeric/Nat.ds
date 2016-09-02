@@ -1,10 +1,12 @@
 
 module Data.Numeric.Nat
-export  { add; sub;  mul; div; rem
-        ; eq;  neq; lt;   le;  gt;  ge
-        ; shl; shr; band; bor; bxor
-        ; divMod 
-        ; ord_nat }
+export  
+{       add; sub;  mul; div; rem;
+        eq;  neq; lt;   le;  gt;  ge;
+        shl; shr; band; bor; bxor;
+        divMod;
+        ord_nat;
+}
 import Data.Tuple
 import Class.Ord
 where

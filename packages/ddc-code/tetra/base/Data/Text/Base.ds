@@ -24,6 +24,7 @@ export
 }
 import Data.Text.Char
 import Data.Numeric.Nat
+import Data.Numeric.Word
 import Data.Maybe
 
 
@@ -95,7 +96,7 @@ textOfWord8 (w8: Word8#): Text
   (extend RegionText using r1 with { Alloc r1; Write r1 } in
    do   -- Allocate the vector to hold the data,
         -- including an extra null terminator byte.
-        vec     = vectorAlloc# [r1] [Word8#] 2
+        vec     = vectorAlloc# [r1] 2
 
         -- Write the character.
         vectorWrite# vec 0 w8
@@ -120,7 +121,7 @@ vectorOfText
    do   
         -- Allocate a vector to hold all the data, 
         -- including an extra null terminator byte.
-        vec     = vectorAlloc# [r2] [Word8#] (add (sizeOfText tt) 1)
+        vec     = vectorAlloc# [r2] (add (sizeOfText tt) 1)
 
         -- Copy the text data into the vector.
         iEnd    = copyTextToVector tt vec 0
@@ -133,7 +134,7 @@ vectorOfText
 
 -- | Copy a text object to a mutable vector of UTF-8 data.
 copyTextToVector 
-        [r: Region] (tt: Text) (vec: Vector# r Word8#) (i0: Nat#)
+        [r: Region] (tt: Text) (vec: Vector# r Word8#) (i0: Nat)
         : S (Write r) Nat
  = case tt of
         TextLit lit
@@ -234,7 +235,7 @@ eqText (tx1 tx2: Text): Bool
          | ix >= (len - 1)
          = True
 
-         | not (eq# [Word8#] (vectorRead# vec1 ix) (vectorRead# vec2 ix))
+         | not (eq# (vectorRead# vec1 ix) (vectorRead# vec2 ix))
          = False
 
          | otherwise

@@ -5,6 +5,7 @@ export
 {       textOfCharList;
         charListOfText;
 }
+import Data.Numeric.Word
 import Data.Text.Base
 import Data.Text.Char
 import Data.List
@@ -34,7 +35,7 @@ charListOfTextVec
         : S (Read r) (List Char)
  = go 0
  where  
-        go (ix: Nat#): S (Read r) (List Char)
+        go (ix: Nat): S (Read r) (List Char)
          | ix >= (vectorLength# vec - 1)
          = Nil
 
