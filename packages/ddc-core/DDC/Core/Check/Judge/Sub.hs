@@ -226,6 +226,37 @@ makeSub config a ctx0 xL tL tR err
                 , Sum.union effs1 effs2
                 , ctx2)
 
+ -- Sub_Run
+ --   The left (inferred) type is a suspension, but the right it not.
+ --   We run the suspension to get the result value and check if the
+ --   result has the expected type. Running the suspension causes some more
+ --   effects which we pass pack to the caller.
+ --
+ | Just    (tEffect, tResult)   <- takeTSusp tL
+ , Nothing                      <- takeTSusp tR
+ = do   
+        ctrace  $ vcat
+                [ text "**  Sub_Run"
+                , text "    tL:      " <> ppr tL
+                , text "    tR:      " <> ppr tR
+                , text "    xL:      " <> ppr xL
+                , text "    tEffect: " <> ppr tEffect
+                , text "    tResult: " <> ppr tResult
+                , empty ]
+
+        let aRun    = AnTEC tResult tEffect (tBot kClosure) a
+        let xL_run  = XCast aRun CastRun xL
+
+        (xL2, eff2, ctx2) <- makeSub config a ctx0 xL_run tResult tR err
+
+        let eff = Sum.unions    kEffect
+                [ Sum.singleton kEffect tEffect
+                , eff2 ]
+
+        return  ( xL2
+                , eff
+                , ctx2)
+
 
  -- Sub_App
  --   ISSUE #379: Track variance information in type synonyms.
@@ -367,35 +398,6 @@ makeSub config a ctx0 xL tL tR err
                 , Sum.empty kEffect
                 , ctx4)
 
- -- Sub_Run
- --   The left (inferred) type is a suspension, but the right it not.
- --   We run the suspension to get the result value and check if the
- --   result has the expected type. Running the suspension causes some more
- --   effects which we pass pack to the caller.
- --
- | Just (tEffect, tResult) <- takeTSusp tL
- = do   
-        ctrace  $ vcat
-                [ text "**  Sub_Run"
-                , text "    tL:      " <> ppr tL
-                , text "    tR:      " <> ppr tR
-                , text "    xL:      " <> ppr xL
-                , text "    tEffect: " <> ppr tEffect
-                , text "    tResult: " <> ppr tResult
-                , empty ]
-
-        let aRun    = AnTEC tResult tEffect (tBot kClosure) a
-        let xL_run  = XCast aRun CastRun xL
-
-        (xL2, eff2, ctx2) <- makeSub config a ctx0 xL_run tResult tR err
-
-        let eff = Sum.unions    kEffect
-                [ Sum.singleton kEffect tEffect
-                , eff2 ]
-
-        return  ( xL2
-                , eff
-                , ctx2)
 
  -- Sub_Fail
  --   No other rule matched, so this expression is ill-typed.

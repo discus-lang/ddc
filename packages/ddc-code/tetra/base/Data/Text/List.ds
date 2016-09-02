@@ -21,13 +21,11 @@ textOfCharList (xx: List Char): Text
 
 -- | O(n). Convert a text object to a list of characters.
 charListOfText (tx: Text): List Char
- = run box result
+ = result
  where  result: List Char
          = case tx of
                 TextVec vec -> charListOfTextVec vec
                 _           -> charListOfTextVec (vectorOfText [RegionText] tx)
--- TODO: Read RegionText  isn't being coerced with Pure
--- need dodgy intermediate run/box cast.
 
 
 -- | Unpack a list of characters from a vector.
@@ -50,8 +48,7 @@ vectorOfCharList
         [r: Region]
         (xx: List Char)
         : S (Alloc r + Write r) (Vector# r Word8#)
- = run box 
-   do
+ = do
         len     = length xx
         vec     = vectorAlloc# [r] (len + 1)
         fill vec 0 xx
