@@ -282,9 +282,10 @@ makeSub config a ctx0 xL tL tR err
 
         -- Check the new body against the right type,
         -- so that the existential we just made is instantiated
-        -- to match the right.
+        -- to match the right. The new existential is used to constrain the
+        -- expected type, so it needs to be in the correct scope.
         let (ctx1, pos1) =  markContext ctx0
-        let ctx2         =  pushExists  iA ctx1
+        let ctx2         =  pushExistsScope iA (slurpExists tR) ctx1
 
         -- Wrap the expression with a type application to cause
         -- the instantiation.
@@ -294,7 +295,8 @@ makeSub config a ctx0 xL tL tR err
         let aArg = AnTEC (typeOfBind b) (tBot kEffect) (tBot kClosure) a
         let xL1  = XApp aFn xL (XType aArg tA)
 
-        (xL2, effs3, ctx3) <- makeSub config a ctx2 xL1 t1' tR err
+        (xL2, effs3, ctx3) 
+         <- makeSub config a ctx2 xL1 t1' tR err
 
         -- Pop the existential and constraints above it back off
         -- the stack.
