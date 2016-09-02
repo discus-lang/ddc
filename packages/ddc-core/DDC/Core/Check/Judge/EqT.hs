@@ -3,6 +3,8 @@ module DDC.Core.Check.Judge.EqT
         (makeEqT)
 where
 import DDC.Core.Check.Base 
+import qualified DDC.Core.Env.EnvT      as EnvT
+import qualified Data.Map.Strict        as Map
 
 
 -- | Make two types equivalent to each other,
@@ -16,6 +18,35 @@ makeEqT :: (Eq n, Ord n, Pretty n)
         -> CheckM a n (Context n)
 
 makeEqT config ctx0 tL tR err
+
+ -- EqT_SynL
+ --   Expand type synonym on the left.
+ | TCon (TyConBound (UName n) _) <- tL
+ , Just tL' <- Map.lookup n $ EnvT.envtEquations $ contextEnvT ctx0
+ = do
+        ctrace  $ vcat
+                [ text "**  EqT_SynL"
+                , text "    tL : " <> ppr tL
+                , text "    tL': " <> ppr tL'
+                , text "    tR : " <> ppr tR
+                , empty ]
+
+        makeEqT config ctx0 tL' tR err
+
+
+ -- EqT_SynR
+ --   Expand type synonym on the right.
+ | TCon (TyConBound (UName n) _) <- tR
+ , Just tR' <- Map.lookup n $ EnvT.envtEquations $ contextEnvT ctx0
+ = do
+        ctrace  $ vcat
+                [ text "**  EqT_SynR"
+                , text "    tL : " <> ppr tL
+                , text "    tR : " <> ppr tR
+                , text "    tR': " <> ppr tR'
+                , empty ]
+
+        makeEqT config ctx0 tL tR' err
 
  -- EqT_SolveL
  | Just iL <- takeExists tL
@@ -87,14 +118,14 @@ makeEqT config ctx0 tL tR err
         return ctx1
 
 
- -- EqVar
+ -- EqT_Var
  | TVar u1      <- tL
  , TVar u2      <- tR
  , u1 == u2
  = do   
         -- Suppress tracing of boring rule.
         -- ctrace  $ vcat
-        --         [ text "**  EqX_Var"
+        --         [ text "**  EqT_Var"
         --         , text "    tL: " <> ppr tL
         --         , text "    tR: " <> ppr tR
         --         , indent 4 $ ppr ctx0
@@ -103,7 +134,7 @@ makeEqT config ctx0 tL tR err
         return ctx0
 
 
- -- EqCon
+ -- EqT_Con
  | TCon tc1     <- tL
  , TCon tc2     <- tR
  , equivTyCon tc1 tc2
@@ -119,7 +150,7 @@ makeEqT config ctx0 tL tR err
         return ctx0
 
 
- -- EqApp
+ -- EqT_App
  | TApp tL1 tL2 <- tL
  , TApp tR1 tR2 <- tR
  = do
@@ -145,7 +176,26 @@ makeEqT config ctx0 tL tR err
         return ctx2
 
 
- -- Error
+ -- EqT_Equiv
+ | equivT (contextEnvT ctx0) tL tR 
+ = do   ctrace  $ vcat
+                [ text "**  EqT_Equiv" 
+                , text "    tL: " <> ppr tL
+                , text "    tR: " <> ppr tR
+                , empty ]
+
+        return ctx0
+
+
+ -- EqT_Fail
  | otherwise
- =      throw err
+ = do
+        ctrace  $ vcat
+                [ text "EqT_Fail"
+                , text "  tL: " <> ppr tL
+                , text "  tR: " <> ppr tR
+                , indent 2 $ ppr ctx0
+                , empty ]
+
+        throw err
 
