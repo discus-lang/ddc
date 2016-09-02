@@ -4,8 +4,10 @@ module DDC.Core.Check.Judge.EqX
 where
 import DDC.Core.Check.Base
 import DDC.Core.Check.Judge.EqT
+import DDC.Core.Exp.Annot.AnTEC
 import qualified DDC.Core.Env.EnvT      as EnvT
 import qualified Data.Map.Strict        as Map
+import qualified DDC.Type.Sum           as Sum
 
 
 -- | Make two types equivalent to each other,
@@ -14,12 +16,16 @@ makeEqX :: (Eq n, Ord n, Pretty n, Show n)
         => Config n                     -- ^ Type checker configuration.
         -> a                            -- ^ Current annotation.
         -> Context n                    -- ^ Input context.
+        -> Exp (AnTEC a n) n
         -> Type n                       -- ^ Inferred type of expression.
         -> Type n                       -- ^ Expected type of expression.
         -> Error a n                    -- ^ Error to throw if we can't force equality.
-        -> CheckM a n (Context n)
+        -> CheckM a n 
+                ( Exp (AnTEC a n) n     --   Expression after instantiations and running.
+                , TypeSum n             --   More effects we might get from running the computation.
+                , Context n )           --   Output context.
 
-makeEqX config a ctx0 tL tR err
+makeEqX config a ctx0 xL tL tR err
 
  -- EqX_SynL
  --   Expand type synonym on the left.
@@ -33,7 +39,7 @@ makeEqX config a ctx0 tL tR err
                 , text "    tR : " <> ppr tR
                 , empty ]
 
-        makeEqX config a ctx0 tL' tR err
+        makeEqX config a ctx0 xL tL' tR err
 
 
  -- EqX_SynR
@@ -48,7 +54,7 @@ makeEqX config a ctx0 tL tR err
                 , text "    tR': " <> ppr tR'
                 , empty ]
 
-        makeEqX config a ctx0 tL tR' err
+        makeEqX config a ctx0 xL tL tR' err
 
 
  -- EqX_SolveL
@@ -63,7 +69,9 @@ makeEqX config a ctx0 tL tR err
 
         let Just ctx1   = updateExists [] iL tR ctx0
 
-        return ctx1
+        return  ( xL
+                , Sum.empty kEffect
+                , ctx1)
 
 
  -- EqX_SolveR
@@ -78,7 +86,9 @@ makeEqX config a ctx0 tL tR err
 
         let Just ctx1   = updateExists [] iR tL ctx0
 
-        return ctx1
+        return  ( xL
+                , Sum.empty kEffect
+                , ctx1)
 
 
  -- EqX_EachL
@@ -98,7 +108,9 @@ makeEqX config a ctx0 tL tR err
                 , indent 4 $ ppr ctx1
                 , empty ]
 
-        return ctx1
+        return  ( xL
+                , Sum.empty kEffect
+                , ctx1)
 
 
  -- EqX_EachR
@@ -118,7 +130,9 @@ makeEqX config a ctx0 tL tR err
                 , indent 4 $ ppr ctx1
                 , empty ]
 
-        return ctx1
+        return  ( xL
+                , Sum.empty kEffect
+                , ctx1)
 
 
  -- EqX_Var
@@ -136,7 +150,9 @@ makeEqX config a ctx0 tL tR err
         --         , indent 4 $ ppr ctx0
         --         , empty ]
 
-        return ctx0
+        return  ( xL
+                , Sum.empty kEffect
+                , ctx0)
 
 
  -- EqX_Con
@@ -156,7 +172,9 @@ makeEqX config a ctx0 tL tR err
                 , text "    tR: " <> ppr tR
                 , empty ]
 
-        return ctx0
+        return  ( xL
+                , Sum.empty kEffect
+                , ctx0)
 
 
  -- EqX_App
@@ -182,7 +200,9 @@ makeEqX config a ctx0 tL tR err
                 , indent 4 $ ppr ctx2
                 , empty ]
 
-        return ctx2
+        return  ( xL
+                , Sum.empty kEffect
+                , ctx2)
 
 
  -- EqX_Equiv
@@ -193,7 +213,9 @@ makeEqX config a ctx0 tL tR err
                 , text "    tR: " <> ppr tR
                 , empty ]
 
-        return ctx0
+        return  ( xL
+                , Sum.empty kEffect
+                , ctx0)
 
 
  -- EqX_Fail

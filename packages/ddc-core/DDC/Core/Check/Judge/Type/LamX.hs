@@ -241,8 +241,8 @@ checkLam !table !a !ctx !b1 !x2 !(Check tExpected)
                     -- existential, so we need to unify it against the reconstructed
                     -- effect to instantiate it.
                     let e2Actual_crushed = TSum es2Actual_crushed
-                    ctx2' <- makeEqX config a ctx2 e2Expected e2Actual_crushed
-                          $  ErrorMismatch a e2Actual_crushed e2Expected x2
+                    ctx2' <- makeEqT config ctx2 e2Expected e2Actual_crushed
+                          $  ErrorMismatch  a    e2Actual_crushed e2Expected x2
 
                     return (x2', t2', es2Actual_crushed, ctx2')
 
@@ -302,8 +302,8 @@ checkLam !table !a !ctx !b1 !x2 !(Check tExpected)
         --   The `makeFunction` can also insert implicit box casts, so we 
         --   need to check that the result of doing this is as expected.
         -- 
-        ctx5    <- makeEqX config a ctx4 tAbs tExpected
-                $  ErrorMismatch a tAbs tExpected xx
+        ctx5    <- makeEqT config ctx4 tAbs tExpected
+                $  ErrorMismatch  a    tAbs tExpected xx
 
         tAbs'   <- applyContext ctx4 tAbs
 
