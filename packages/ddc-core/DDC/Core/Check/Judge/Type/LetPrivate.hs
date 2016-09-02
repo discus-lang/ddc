@@ -4,7 +4,6 @@ module DDC.Core.Check.Judge.Type.LetPrivate
 where
 import DDC.Core.Check.Judge.Kind
 import DDC.Core.Check.Judge.Type.Base
-import DDC.Core.Check.Judge.EqT
 import qualified DDC.Core.Env.EnvT      as EnvT
 import qualified DDC.Type.Sum           as Sum
 import qualified DDC.Type.Env           as Env
@@ -111,8 +110,8 @@ checkLetPrivate !table !ctx mode demand
         -- Check that the result matches any expected type.
         ctx6    <- case mode of
                     Check tExpected
-                     -> do  makeEqT config    ctx5 tExpected tBody_final
-                             $  ErrorMismatch a    tExpected tBody_final xx
+                     -> do  makeEqX config a ctx5 tExpected tBody_final
+                             $  ErrorMismatch a tExpected tBody_final xx
 
                     _ -> return ctx5
 
