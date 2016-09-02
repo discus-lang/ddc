@@ -31,6 +31,7 @@ makeEqT config ctx0 tL tR err
         
         return ctx1
 
+
  -- EqT_SolveR
  | Just iR <- takeExists tR
  , not $ isTExists tL
@@ -44,6 +45,7 @@ makeEqT config ctx0 tL tR err
         let Just ctx1   = updateExists [] iR tL ctx0
         
         return ctx1
+
 
  -- EqT_EachL
  --  Both types are existentials, and the left is bound earlier in the stack.
@@ -64,6 +66,7 @@ makeEqT config ctx0 tL tR err
 
         return ctx1
 
+
  -- EqT_EachR
  --  Both types are existentials, and the right is bound earlier in the stack.
  --  CAREFUL: The returned location is relative to the top of the stack,
@@ -83,6 +86,7 @@ makeEqT config ctx0 tL tR err
 
         return ctx1
 
+
  -- EqVar
  | TVar u1      <- tL
  , TVar u2      <- tR
@@ -98,6 +102,7 @@ makeEqT config ctx0 tL tR err
 
         return ctx0
 
+
  -- EqCon
  | TCon tc1     <- tL
  , TCon tc2     <- tR
@@ -112,6 +117,7 @@ makeEqT config ctx0 tL tR err
                 , empty ]
 
         return ctx0
+
 
  -- EqApp
  | TApp tL1 tL2 <- tL
@@ -137,6 +143,7 @@ makeEqT config ctx0 tL tR err
                 , empty ]
 
         return ctx2
+
 
  -- Error
  | otherwise

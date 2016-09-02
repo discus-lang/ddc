@@ -87,18 +87,7 @@ makeEqX config a ctx0 tL tR err
  | Just iL <- takeExists tL,    Just lL <- locationOfExists iL ctx0
  , Just iR <- takeExists tR,    Just lR <- locationOfExists iR ctx0
  , lL > lR
-
---- | Just iL <- takeExists tL,    Just lL <- locationOfExists iL ctx0
---- , Just iR <- takeExists tR
---- , True    <- case locationOfExists iR ctx0 of
----                Just lR -> lL > lR      -- Left is earlier in the stack.
----                Nothing -> True         -- Right has already been popped off.
-
- = do   
-        let Just ctx1   = updateExists [] iR tL ctx0
-
-        when (locationOfExists iR ctx0 == Nothing)
-         $ do   ctrace (text "!!  BOGUS EACHL")
+ = do   let Just ctx1 = updateExists [] iR tL ctx0
 
         ctrace  $ vcat
                 [ text "**  EqX_EachL"
@@ -118,18 +107,7 @@ makeEqX config a ctx0 tL tR err
  | Just iL <- takeExists tL,    Just lL <- locationOfExists iL ctx0
  , Just iR <- takeExists tR,    Just lR <- locationOfExists iR ctx0
  , lR > lL
-
--- | Just iL <- takeExists tL
--- , Just iR <- takeExists tR,    Just lR <- locationOfExists iR ctx0
--- , True    <- case locationOfExists iL ctx0 of
---                Just lL -> lR > lL      -- Right is earlier in the stack.
---                Nothing -> True         -- Left has already been popped off.
-
- = do
-        let Just ctx1   = updateExists [] iL tR ctx0
-
-        when (locationOfExists iL ctx0 == Nothing)
-         $ do   ctrace (text "!!  BOGUS EACHL")
+ = do   let Just ctx1 = updateExists [] iL tR ctx0
 
         ctrace  $ vcat
                 [ text "**  EqX_EachR"
