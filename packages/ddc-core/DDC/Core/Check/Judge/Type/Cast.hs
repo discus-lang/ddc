@@ -12,7 +12,8 @@ checkCast :: Checker a n
 
 -- WeakenEffect ---------------------------------------------------------------
 -- Weaken the effect of an expression.
-checkCast !table !ctx0 mode _demand
+checkCast !table !ctx0 
+        mode _demand
         xx@(XCast a (CastWeakenEffect eff) x1)
  = do   let config      = tableConfig  table
 
@@ -45,7 +46,8 @@ checkCast !table !ctx0 mode _demand
 -- EXPERIMENTAL: The Tetra language doesn't have purification casts yet,
 --               so proper type inference isn't implemented.
 --
-checkCast !table !ctx mode _demand 
+checkCast !table !ctx
+        mode _demand 
         xx@(XCast a (CastPurify w) x1)
  = do   let config      = tableConfig table
 
@@ -71,7 +73,8 @@ checkCast !table !ctx mode _demand
 -- Box ------------------------------------------------------------------------
 -- Box a computation,
 -- capturing its effects in a computation type.
-checkCast !table ctx0 mode _demand 
+checkCast !table ctx0 
+        mode _demand 
         xx@(XCast a CastBox x1)
  = case mode of
     Check tExpected
@@ -80,7 +83,8 @@ checkCast !table ctx0 mode _demand
 
         -- Check the body.
         (x1', tBody, effs, ctx1)
-         <- tableCheckExp table table ctx0 (Synth []) DemandRun x1
+         <- tableCheckExp table table ctx0
+                (Synth $ slurpExists tExpected) DemandRun x1
 
         let effs_crush 
                 = Sum.fromList kEffect
@@ -154,7 +158,8 @@ checkCast !table !ctx0 mode _demand
      -> do
         -- Synthesize a type for the body.
         (xBody', tBody, effs, ctx1)
-         <- tableCheckExp table table ctx0 (Synth []) DemandNone xBody
+         <- tableCheckExp table table ctx0
+                mode DemandNone xBody
 
         -- Run the body,
         -- which needs to have been resolved to a computation type.
