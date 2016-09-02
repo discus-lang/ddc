@@ -162,11 +162,7 @@ equivTyCon tc1 tc2
 
 
 ---------------------------------------------------------------------------------------------------
--- | Head normal reduction of the given type,
---    expanding out type equations,
---    reducing applications,
---    and normalizing effects.
-
+-- | Crush effects in the given type.
 crushHeadT :: Ord n => EnvT n -> Type n -> Type n
 crushHeadT env tt
  = case tt of
@@ -181,7 +177,6 @@ crushHeadT env tt
 
         TAbs{}  -> tt
 
-        -- TODO: apply type abstractions.
         TApp t1 t2
          -> let t1'     = crushHeadT env t1
                 t2'     = crushHeadT env t2

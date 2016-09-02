@@ -8,7 +8,7 @@ import DDC.Core.Module
 import DDC.Type.Transform.SubstituteT
 import Data.Map                         (Map)
 import qualified Data.Map.Strict        as Map
--- import Text.Show.Pretty
+
 
 -------------------------------------------------------------------------------
 -- | Apply the unsharing transform to a module.
@@ -279,7 +279,7 @@ wrapAppX a tF xF
    in   XApp aR xF' (xUnit aU)
 
 
- -- TODO: annots are wrong, but doesn't matter for curry transform.
+ -- ISSUE #384: Unshare transform produces AST node with wrong type annotation.
  | Just (bs, tBody)     <- takeTForalls tF
  = let  Just us = sequence 
                 $ map takeSubstBoundOfBind bs

@@ -137,6 +137,7 @@ addTypeApps !aApp  ctx0 iBefore xx0 (bParam : bsParam) tBody
 
 -- | Strip quantifiers from the front of a type.
 --   TODO: need to look through type synonyms when checking for foralls.
+--         Take the env from the context and look through synonyms along the way.
 stripQuantifiers :: Type n -> CheckM a n ([Bind n], Type n)
 stripQuantifiers tt
  = case tt of

@@ -16,7 +16,7 @@ textOfCharList (xx: List Char): Text
  = TextVec
     (extend RegionText using r with { Alloc r; Read r; Write r }
      in  vectorOfCharList [r] xx)
--- TODO: using $ between TextVec and body causes segfault.
+-- ISSUE #382: Using '$' between constructor and its argument causes a segfault.
 
 
 -- | O(n). Convert a text object to a list of characters.

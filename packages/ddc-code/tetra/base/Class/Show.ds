@@ -25,7 +25,7 @@ show_bool       = Show showBool
 show_nat        = Show showNat
 
 
--- TODO: escape non-printable characters.
+-- ISSUE: #381: Escape non-printable characters in base Show library.
 show_text: Show Text
  = Show sh
  where  sh tx           = "\"" % tx % "\""
@@ -35,12 +35,12 @@ show_tup2 ((Show sh_a): Show a) ((Show sh_b): Show b)
         : Show (Tup2 a b)
  = Show sh
  where  
-        sh (T2 x y)    = parens $ "T2" %% sh_a x %% sh_b y
+        sh (T2 x y)     = parens $ "T2" %% sh_a x %% sh_b y
 
 
 show_list ((Show sh_a): Show a): Show (List a)
  = Show sh
  where  
-        sh Nil         = "Nil"
-        sh (Cons x xs) = parens $ "Cons" %% sh_a x %% sh xs
+        sh Nil          = "Nil"
+        sh (Cons x xs)  = parens $ "Cons" %% sh_a x %% sh xs
 

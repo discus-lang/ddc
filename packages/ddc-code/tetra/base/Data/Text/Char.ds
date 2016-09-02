@@ -26,4 +26,3 @@ isUpper (c: Char): Bool
 -- | Check if a character is a lower-case letter.
 isLower (c: Char): Bool
  = ge# c 97w32    ∧ le# c 122w32
--- TODO: Handle hex literals with size specifiers.

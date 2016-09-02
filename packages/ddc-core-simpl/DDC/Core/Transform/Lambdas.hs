@@ -220,7 +220,7 @@ lambdasX p c xx
                   ,  args  <- length xsArg
                   ,  arity /= args
                   -> let 
-                         -- TODO: needing to generate names like this is ugly.
+                         -- ISSUE #383: Redo name generation in lambda lifter.
                          -- Should have just used a state monad.
                          bsT       = [ BName (nameOfContext ("Lift_" ++ show i) c) (typeOfBind b)
                                         | i <- [0 .. arityT - 1]
@@ -624,8 +624,7 @@ nameOfContext prefix c
 
 
 ---------------------------------------------------------------------------------------------------
--- TODO: doing this separate beautify pass was a mistake.
--- Just use a state monad to generate fresh names.
+-- ISSUE #383: Redo name generation in Lambda lifter.
 
 -- | Beautify the names of lifted lamdba abstractions.
 --   The lifter itself names new abstractions after the context they come from.
