@@ -42,29 +42,33 @@ makeSub :: (Eq n, Ord n, Show n, Pretty n)
 makeSub config a ctx0 xL tL tR err
 
  -- Sub_SynL
- --   Expand out type synonym on the left.
+ --   Expand type synonym on the left.
  | TCon (TyConBound (UName n) _) <- tL
  , Just tL'  <- Map.lookup n $ EnvT.envtEquations
                              $ Context.contextEnvT ctx0
  = do
         ctrace  $ vcat
                 [ text "**  Sub_SynL"
-                , text "    tL: " <> ppr tL
-                , text "    tR: " <> ppr tR ]
+                , text "    tL:  " <> ppr tL
+                , text "    tL': " <> ppr tL'
+                , text "    tR:  " <> ppr tR
+                , empty ]
 
         makeSub config a ctx0 xL tL' tR err
 
 
  -- Sub_SynR
- --   Expand out type synonym on the right.
+ --   Expand type synonym on the right.
  | TCon (TyConBound (UName n) _) <- tR
  , Just tR'  <- Map.lookup n $ EnvT.envtEquations
                              $ Context.contextEnvT ctx0
  = do
         ctrace  $ vcat
                 [ text "**  Sub_SynR"
-                , text "    tL: " <> ppr tL
-                , text "    tR: " <> ppr tR ]
+                , text "    tL:  " <> ppr tL
+                , text "    tR:  " <> ppr tR 
+                , text "    tR': " <> ppr tR
+                , empty ]
 
         makeSub config a ctx0 xL tL tR' err
 
@@ -138,12 +142,13 @@ makeSub config a ctx0 xL tL tR err
  , TCon tc2     <- tR
  , equivTyCon tc1 tc2
  = do
-        ctrace  $ vcat
+        -- Only trace rule if it's done something interesting.
+        when (not $ tc1 == tc2)
+         $ ctrace  $ vcat
                 [ text "**  Sub_Con"
                 , text "    tL: " <> ppr tL
                 , text "    tR: " <> ppr tR
                 , text "    xL: " <> ppr xL
-                , indent 4 $ ppr ctx0
                 , empty ]
 
         return  ( xL
@@ -158,13 +163,13 @@ makeSub config a ctx0 xL tL tR err
  , TVar u2      <- tR
  , u1 == u2
  = do
-        ctrace  $ vcat
-                [ text "**  Sub_Var"
-                , text "    tL: " <> ppr tL
-                , text "    tR: " <> ppr tR
-                , text "    xL: " <> ppr xL
-                , indent 4 $ ppr ctx0
-                , empty ]
+        -- Suppress tracing of noisy rule.
+        -- ctrace  $ vcat
+        --         [ text "**  Sub_Var"
+        --         , text "    tL: " <> ppr tL
+        --         , text "    tR: " <> ppr tR
+        --         , text "    xL: " <> ppr xL
+        --         , empty ]
 
         return  ( xL
                 , Sum.empty kEffect
@@ -347,9 +352,9 @@ makeSub config a ctx0 xL tL tR err
 
         ctrace  $ vcat
                 [ text "*<  SubForallR"
+                , text "    tL:     " <> ppr tL
+                , text "    tR:     " <> ppr tR
                 , text "    xL:     " <> ppr xL
-                , text "    LEFT:   " <> ppr tL
-                , text "    RIGHT:  " <> ppr tR
                 , text "    xL_abs: " <> ppr xL_abs
                 , empty ]
 
@@ -394,7 +399,8 @@ makeSub config a ctx0 xL tL tR err
         ctrace  $ vcat
                 [ text "**  Sub_Fail"
                 , text "    tL: " <> ppr tL
-                , text "    tR: " <> ppr tR ]
+                , text "    tR: " <> ppr tR
+                , empty ]
 
         throw err
 
