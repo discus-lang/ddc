@@ -50,7 +50,8 @@ vectorOfCharList
         [r: Region]
         (xx: List Char)
         : S (Alloc r + Write r) (Vector# r Word8#)
- = do
+ = run box 
+   do
         len     = length xx
         vec     = vectorAlloc# [r] (len + 1)
         fill vec 0 xx
