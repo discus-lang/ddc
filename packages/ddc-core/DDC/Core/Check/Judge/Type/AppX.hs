@@ -51,6 +51,7 @@ checkAppX !table !ctx0 Synth demand
  = do
         ctrace  $ vcat
                 [ text "*>  App Synth"
+                , text "    xx    : " <> ppr xx
                 , empty ]
 
         -- Synth a type for the functional expression.
@@ -170,10 +171,6 @@ synthAppArg table a xx ctx0 demand xFn tFn effsFn xArg
  --  We need to inject a new type argument.
  | TForall b tBody      <- tFn
  = do
-        ctrace  $ vcat
-                [ text "*>  App Synth Forall"
-                , empty ]
-
         -- Make a new existential for the type of the argument,
         -- and push it onto the context.
         iA         <- newExists (typeOfBind b)
@@ -190,6 +187,15 @@ synthAppArg table a xx ctx0 demand xFn tFn effsFn xArg
         let aFn    = AnTEC tFn (TSum effsFn) (tBot kClosure) a
         let aArg   = AnTEC (typeOfBind b) (tBot kEffect) (tBot kClosure) a
         let xFnTy  = XApp aFn xFn (XType aArg tA)
+
+        ctrace  $ vcat
+                [ text "*>  App Synth Forall"
+                , text "    xFn     : " <> ppr xFn
+                , text "    xArg    : " <> ppr xArg
+                , text "    iA      : " <> ppr iA
+                , text "    tBody'  : " <> ppr tBody'
+                , text "    xResult : " <> ppr xFnTy
+                , empty ]
 
         -- Synthesise the result type of a function being applied to its
         -- argument. We know the type of the function up-front, but we pass
@@ -218,6 +224,7 @@ synthAppArg table a xx ctx0 demand xFn tFn effsFn xArg
  = do
         ctrace  $ vcat
                 [ text "*>  App Synth Fun"
+                , text "    tFn     : " <> ppr tFn
                 , empty ]
 
         -- Check the argument.

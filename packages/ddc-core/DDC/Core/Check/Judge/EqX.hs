@@ -84,11 +84,16 @@ makeEqX config a ctx0 tL tR err
  --   Both types are existentials, and the left is bound earlier in the stack.
  --   CAREFUL: The returned location is relative to the top of the stack,
  --            hence we need lL > lR here.
+--  | Just iL <- takeExists tL,    Just lL <- locationOfExists iL ctx0
+--  , Just iR <- takeExists tR,    Just lR <- locationOfExists iR ctx0
+--  , lL > lR
+
  | Just iL <- takeExists tL,    Just lL <- locationOfExists iL ctx0
  , Just iR <- takeExists tR
  , True    <- case locationOfExists iR ctx0 of
                 Just lR -> lL > lR      -- Left is earlier in the stack.
                 Nothing -> True         -- Right has already been popped off.
+
  = do   
         let Just ctx1   = updateExists [] iR tL ctx0
 
@@ -110,11 +115,16 @@ makeEqX config a ctx0 tL tR err
  --   Both types are existentials, and the right is bound earlier in the stack.
  --   CAREFUL: The returned location is relative to the top of the stack,
  --            hence we need lR > lL here.
+--  | Just iL <- takeExists tL,    Just lL <- locationOfExists iL ctx0
+--  , Just iR <- takeExists tR,    Just lR <- locationOfExists iR ctx0
+--  , lR > lL
+
  | Just iL <- takeExists tL
  , Just iR <- takeExists tR,    Just lR <- locationOfExists iR ctx0
  , True    <- case locationOfExists iL ctx0 of
                 Just lL -> lR > lL      -- Right is earlier in the stack.
                 Nothing -> True         -- Left has already been popped off.
+
  = do
         let Just ctx1   = updateExists [] iL tR ctx0
 

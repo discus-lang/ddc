@@ -265,18 +265,20 @@ makeSub config a ctx0 xL tL tR err
  --
  | TForall b t1 <- tL
  = do
-        ctrace  $ vcat
-                [ text "*>  Sub_ForallL"
-                , text "    tL:  " <> ppr tL
-                , text "    tR:  " <> ppr tR
-                , text "    xL:  " <> ppr xL
-                , empty ]
-
         -- Make a new existential to instantiate the quantified
         -- variable and substitute it into the body.
         iA        <- newExists (typeOfBind b)
         let tA    = typeOfExists iA
         let t1'   = substituteT b tA t1
+
+        ctrace  $ vcat
+                [ text "*>  Sub_ForallL"
+                , text "    tL:  " <> ppr tL
+                , text "    tR:  " <> ppr tR
+                , text "    xL:  " <> ppr xL
+                , text "    iA:  " <> ppr iA
+                , text "    t1': " <> ppr t1'
+                , empty ]
 
         -- Check the new body against the right type,
         -- so that the existential we just made is instantiated

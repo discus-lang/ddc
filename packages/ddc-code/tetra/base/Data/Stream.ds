@@ -1,10 +1,13 @@
 
 module Data.Stream
-export  { streamOfList; listOfStream
-        ; sgenerate; senumFrom; srepeat; scons
-        ; smap; smapacc
-        ; sfold; sany
-        ; stake; stakeWhile; sfilter }
+export  
+{       -- streamOfList; listOfStream;
+        -- sgenerate; senumFrom; srepeat; scons;
+        -- smap; smapacc;
+        -- sfold; sany;
+        -- stake; stakeWhile; 
+        sfilter
+}
 import Data.Numeric.Nat
 import Data.List
 import Data.Maybe
@@ -26,7 +29,7 @@ data Step (s a: Data) where
         Skip    : s -> Step s a 
         Done    : Step s a
 
-
+{-
 -- Conversions ----------------------------------------------------------------
 -- | Convert a list to a stream.
 streamOfList (xx: List a): Stream (List a) a
@@ -199,7 +202,7 @@ stakeWhile
 
                 Skip sA1        -> Skip    sA1
                 Done            -> Done
-
+-}
 
 -- | Take elements from a stream that match the given predicate.
 sfilter (p: a -> Bool)

@@ -270,6 +270,12 @@ checkAltsM !table !a !xx !tDiscrim !tsArgs !mode !demand !alts0 !ctx
 
   checkAltM alt@(AAlt (PData dc bsArg) xBody) !ctx0
    = do
+        ctrace  $ vcat
+                [ text "*>  Alt"
+                , text "    mode:   " <+> ppr mode
+                , indent 4 $ ppr ctx
+                , empty ]
+
         -- Get the constructor type associated with this pattern.
         Just tCtor <- ctorTypeOfPat table ctx a (PData dc bsArg)
 
@@ -310,21 +316,21 @@ checkAltsM !table !a !xx !tDiscrim !tsArgs !mode !demand !alts0 !ctx
                 ctx0
 
         -- Extend the environment with the field types.
-        let bsArg'         = zipWith replaceTypeOfBind tsFields bsArg
-        let (ctx2, posArg) = markContext ctx1
-        let ctxArg         = pushTypes bsArg' ctx2
+        let bsArg'  = zipWith replaceTypeOfBind tsFields bsArg
+        let ctxArg  = pushTypes bsArg' ctx1
 
         -- Check the body in this new environment.
-        (xBody', tBody, effsBody, ctxBody)
-                <- tableCheckExp table table ctxArg mode demand xBody
+        let (ctxBody, posArg) = markContext ctxArg
+        (xBody', tBody, effsBody, ctxBody')
+                <- tableCheckExp table table ctxBody mode demand xBody
 
-        tBody'  <- applyContext ctxBody tBody
+        tBody'  <- applyContext ctxBody' tBody
 
         -- Pop the argument types from the context.
-        let ctx_cut     = popToPos posArg ctxBody
+        let ctx_cut     = popToPos posArg ctxBody'
 
         ctrace  $ vcat
-                [ text "* Alt"
+                [ text "*<  Alt"
                 , ppr alt
                 , text "  MODE:   " <+> ppr mode
                 , text "  tBody': " <+> ppr tBody'
