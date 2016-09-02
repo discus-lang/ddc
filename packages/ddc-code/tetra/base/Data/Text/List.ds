@@ -34,8 +34,7 @@ charListOfTextVec
         (vec: Vector# r Word8#)
         : S (Read r) (List Char)
  = go 0
- where  
-        go (ix: Nat): S (Read r) (List Char)
+ where  go (ix: Nat): S (Read r) (List Char)
          | ix >= (vectorLength# vec - 1)
          = Nil
 
@@ -52,17 +51,18 @@ vectorOfCharList
  = do
         len     = length xx
         vec     = vectorAlloc# [r] (len + 1)
-        fill vec 0 xx
-        vectorWrite# vec len 0w8
-        vec
- where
-        fill (vec: Vector# r Word8#) 
-             (ix: Nat) (xx: List Char): S (Write r) Unit
+
+        fill (ix: Nat) (xx: List Char): S (Write r) Unit
          = case xx of
                 Nil     -> ()
                 Cons x xs
                  -> do  vectorWrite# vec ix (truncate# x)
-                        fill vec (ix + 1) xs
+                        fill (ix + 1) xs
 
                  | otherwise
-                 -> do  fill vec (ix + 1) xs
+                 -> do  fill (ix + 1) xs
+        fill 0 xx
+
+        vectorWrite# vec len 0w8
+        vec
+        
