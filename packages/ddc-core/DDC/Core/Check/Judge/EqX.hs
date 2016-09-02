@@ -93,7 +93,7 @@ makeEqX config a ctx0 tL tR err
         let Just ctx1   = updateExists [] iR tL ctx0
 
         when (locationOfExists iR ctx0 == Nothing)
-         $ ctrace (text "!!  BOGUS EACHL")
+         $ do   ctrace (text "!!  BOGUS EACHL")
 
         ctrace  $ vcat
                 [ text "**  EqX_EachL"
@@ -119,7 +119,7 @@ makeEqX config a ctx0 tL tR err
         let Just ctx1   = updateExists [] iL tR ctx0
 
         when (locationOfExists iL ctx0 == Nothing)
-         $ ctrace (text "!!  BOGUS EACHL")
+         $ do   ctrace (text "!!  BOGUS EACHL")
 
         ctrace  $ vcat
                 [ text "**  EqX_EachR"

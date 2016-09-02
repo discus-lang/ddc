@@ -16,6 +16,13 @@ checkCase :: Checker a n
 checkCase !table !ctx0 mode demand 
         xx@(XCase a xDiscrim alts)
  = do   
+        ctrace  $ vcat
+                [ text "*>  Case"
+                , text "    xDiscrim: " <> ppr xDiscrim
+                , text "    mode:     " <> ppr mode
+                , indent 2 $ ppr ctx0
+                , empty ]
+
         -- There must be at least one alternative, even if there are no data
         -- constructors. The rest of the checking code assumes this, and will
         -- throw an unhelpful error if there are no alternatives.
@@ -117,9 +124,9 @@ checkCase !table !ctx0 mode demand
                 $ effsDiscrim : effsMatch : effss
 
         ctrace  $ vcat
-                [ text "* Case"
-                , text "  modeDiscrim"  <+> ppr modeDiscrim
-                , text "  tAlt = "      <+> ppr tAlt
+                [ text "*<  Case"
+                , text "    modeDiscrim"  <+> ppr modeDiscrim
+                , text "    tAlt = "      <+> ppr tAlt
                 , indent 2 $ ppr ctx0
                 , indent 2 $ ppr ctx1
                 , indent 2 $ ppr ctx2
@@ -179,6 +186,18 @@ takeDiscrimCheckModeFromAlts table a ctx mode alts
          -- determine how many existentials are needed to instantiate
          -- the quantifiers of its type.
          tPat : _
+          | Just (bs, tBody) <- takeTForalls tPat
+          , Check tExpect    <- mode
+          , Just iExpect     <- takeExists tExpect
+          -> do
+                -- existentials for all of the type parameters.
+                is        <- mapM  (\_ -> newExists kData) bs
+                let ts     = map typeOfExists is
+                let ctx'   = foldl (\ctxx i -> pushExistsBefore i iExpect ctxx) ctx is
+                let tBody' = substituteTs (zip bs ts) tBody
+                return (Check tBody', ctx')
+
+
           | Just (bs, tBody) <- takeTForalls tPat
           -> do
                 -- existentials for all of the type parameters.

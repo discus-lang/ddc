@@ -13,6 +13,7 @@ checkSub table !a ctx0 demand xx0 tExpect
                 [ text "*>  Sub Check"
                 , text "    demand:  " <> (text $ show demand)
                 , text "    tExpect: " <> (ppr tExpect) 
+                , indent 4 $ ppr ctx0
                 , empty ]
 
         let config      = tableConfig table
