@@ -41,30 +41,46 @@ makeSub :: (Eq n, Ord n, Show n, Pretty n)
 --       existentials, vs the case when only one side is an existential.
 makeSub config a ctx0 xL tL tR err
 
- -- Expand type equations.
+ -- Sub_SynL
+ --   Expand out type synonym on the left.
  | TCon (TyConBound (UName n) _) <- tL
  , Just tL'  <- Map.lookup n $ EnvT.envtEquations
                              $ Context.contextEnvT ctx0
- = makeSub config a ctx0 xL tL' tR err
+ = do
+        ctrace  $ vcat
+                [ text "**  Sub_SynL"
+                , text "    tL: " <> ppr tL
+                , text "    tR: " <> ppr tR ]
+
+        makeSub config a ctx0 xL tL' tR err
 
 
+ -- Sub_SynR
+ --   Expand out type synonym on the right.
  | TCon (TyConBound (UName n) _) <- tR
  , Just tR'  <- Map.lookup n $ EnvT.envtEquations
                              $ Context.contextEnvT ctx0
- = makeSub config a ctx0 xL tL tR' err
+ = do
+        ctrace  $ vcat
+                [ text "**  Sub_SynR"
+                , text "    tL: " <> ppr tL
+                , text "    tR: " <> ppr tR ]
+
+        makeSub config a ctx0 xL tL tR' err
 
 
- -- SubExVar
- --  Both sides are the same existential.
+ -- Sub_ExVar
+ --   Both sides are already the same existential,
+ --   so we don't need to do anything further.
  | Just iL <- takeExists tL
  , Just iR <- takeExists tR
  , iL == iR
  = do
         ctrace  $ vcat
-                [ text "**  SubExVar"
-                , text "    xL: " <> ppr xL
+                [ text "**  Sub_ExVar"
                 , text "    tL: " <> ppr tL
                 , text "    tR: " <> ppr tR
+                , text "    xL: " <> ppr xL
                 , indent 4 $ ppr ctx0
                 , empty ]
 
@@ -74,15 +90,15 @@ makeSub config a ctx0 xL tL tR err
 
 
  -- SubInstL
- --  Left is an existential.
+ --   Left is an existential.
  | isTExists tL
  = do   ctx1    <- makeInst config a ctx0 tR tL err
 
         ctrace  $ vcat
-                [ text "**  SubInstL"
-                , text "    xL: " <> ppr xL
+                [ text "**  Sub_InstL"
                 , text "    tL: " <> ppr tL
                 , text "    tR: " <> ppr tR
+                , text "    xL: " <> ppr xL
                 , indent 4 $ ppr ctx0
                 , indent 4 $ ppr ctx1
                 , empty ]
@@ -93,15 +109,15 @@ makeSub config a ctx0 xL tL tR err
 
 
  -- SubInstR
- --  Right is an existential.
+ --   Right is an existential.
  | isTExists tR
  = do   ctx1    <- makeInst config a ctx0 tL tR err
 
         ctrace  $ vcat
-                [ text "**  SubInstR"
-                , text "    xL: " <> ppr xL
+                [ text "**  Sub_InstR"
                 , text "    tL: " <> ppr tL
                 , text "    tR: " <> ppr tR
+                , text "    xL: " <> ppr xL
                 , indent 4 $ ppr ctx0
                 , indent 4 $ ppr ctx1
                 , empty ]
@@ -111,17 +127,22 @@ makeSub config a ctx0 xL tL tR err
                 , ctx1)
 
 
- -- SubCon
- --  Both sides are the same type constructor.
+ -- Sub_Con
+ --   Both sides are type constructors which are equivalent.
+ --   
+ --   ISSUE #378: Complete merging (~>) and (->) type constructors.
+ --   The equivTyCon function already treats these equivalent, 
+ --   but we should just use (->) at all levels and ditch (~>).
+ --
  | TCon tc1     <- tL
  , TCon tc2     <- tR
  , equivTyCon tc1 tc2
  = do
         ctrace  $ vcat
-                [ text "**  SubCon"
-                , text "    xL: " <> ppr xL
+                [ text "**  Sub_Con"
                 , text "    tL: " <> ppr tL
                 , text "    tR: " <> ppr tR
+                , text "    xL: " <> ppr xL
                 , indent 4 $ ppr ctx0
                 , empty ]
 
@@ -130,17 +151,18 @@ makeSub config a ctx0 xL tL tR err
                 , ctx0)
 
 
- -- SubVar
- --  Both sides are the same (rigid) type variable.
+ -- Sub_Var
+ --   Both sides are the same (rigid) type variable,
+ --   so we don't need to do anything further.
  | TVar u1      <- tL
  , TVar u2      <- tR
  , u1 == u2
  = do
         ctrace  $ vcat
-                [ text "**  SubVar"
-                , text "    xL: " <> ppr xL
+                [ text "**  Sub_Var"
                 , text "    tL: " <> ppr tL
                 , text "    tR: " <> ppr tR
+                , text "    xL: " <> ppr xL
                 , indent 4 $ ppr ctx0
                 , empty ]
 
@@ -148,16 +170,18 @@ makeSub config a ctx0 xL tL tR err
                 , Sum.empty kEffect
                 , ctx0)
 
-
- -- SubEquiv
- --  Both sides are equivalent
+ -- Sub_Equiv
+ --   Both sides are equivalent.
+ --   The `equivT` function will also crush any effect types, 
+ --   and handle comparing type sums for equivalence.
+ --
  | equivT (contextEnvT ctx0) tL tR
  = do
         ctrace  $ vcat
-                [ text "**  SubEquiv"
-                , text "    xL: " <> ppr xL
+                [ text "**  Sub_Equiv"
                 , text "    tL: " <> ppr tL
                 , text "    tR: " <> ppr tR
+                , text "    xL: " <> ppr xL
                 , indent 4 $ ppr ctx0
                 , empty ]
 
@@ -166,13 +190,18 @@ makeSub config a ctx0 xL tL tR err
                 , ctx0)
 
 
- -- SubArr
- --  Both sides are arrow types.
+ -- Sub_Arr
+ --   Both sides are arrow types.
+ --   Make sure to check the parameter type contravariantly.
+ --
  | Just (tL1, tL2)  <- takeTFun tL
  , Just (tR1, tR2)  <- takeTFun tR
  = do
         ctrace  $ vcat
-                [ text "*>  SubArr"
+                [ text "*>  Sub_Arr"
+                , text "    tL: " <> ppr tL
+                , text "    tR: " <> ppr tR
+                , text "    xL: " <> ppr xL
                 , empty ]
 
         (_, effs1, ctx1) <- makeSub config a ctx0 xL tR1 tL1 err
@@ -181,10 +210,7 @@ makeSub config a ctx0 xL tL tR err
         (_, effs2, ctx2) <- makeSub config a ctx1 xL tL2' tR2' err
 
         ctrace  $ vcat
-                [ text "*<  SubArr"
-                , text "    xL: " <> ppr xL
-                , text "    tL: " <> ppr tL
-                , text "    tR: " <> ppr tR
+                [ text "*<  Sub_Arr"
                 , indent 4 $ ppr ctx0
                 , indent 4 $ ppr ctx1
                 , indent 4 $ ppr ctx2
@@ -195,14 +221,19 @@ makeSub config a ctx0 xL tL tR err
                 , ctx2)
 
 
- -- SubApp
- --   Both sides are type applications.
- --   Assumes non-function type constructors are invariant.
+ -- Sub_App
+ --   ISSUE #379: Track variance information in type synonyms.
+ --   We're treating all non-function types as invariant, so use makeEqT
+ --   rather than checking for subsumption.
+ --   
  | TApp tL1 tL2 <- tL
  , TApp tR1 tR2 <- tR
  = do
         ctrace  $ vcat
-                [ text "*>  SubApp"
+                [ text "*>  Sub_App"
+                , text "    tL: " <> ppr tL
+                , text "    tR: " <> ppr tR
+                , text "    xL: " <> ppr xL
                 , empty ]
 
         ctx1    <- makeEqX config a ctx0 tL1 tR1 err
@@ -211,10 +242,7 @@ makeSub config a ctx0 xL tL tR err
         ctx2    <- makeEqX config a ctx1 tL2' tR2' err
 
         ctrace  $ vcat
-                [ text "*<  SubApp"
-                , text "    xL: " <> ppr xL
-                , text "    tL: " <> ppr tL
-                , text "    tR: " <> ppr tR
+                [ text "*<  Sub_App"
                 , indent 4 $ ppr ctx0
                 , indent 4 $ ppr ctx1
                 , indent 4 $ ppr ctx2
@@ -225,15 +253,18 @@ makeSub config a ctx0 xL tL tR err
                 , ctx2)
 
 
- -- SubForall-L
- --   Left side is a forall type.
+ -- Sub_ForallL
+ --   Left (inferred) type is a forall type.
+ --   Apply the expression to a new existential to instantiate it, 
+ --   then check the new instantiated type against the expected one.
+ --
  | TForall b t1 <- tL
  = do
         ctrace  $ vcat
-                [ text "*>  SubForallL"
-                , text "    xL:     " <> ppr xL
-                , text "    LEFT:   " <> ppr tL
-                , text "    RIGHT:  " <> ppr tR
+                [ text "*>  Sub_ForallL"
+                , text "    tL:  " <> ppr tL
+                , text "    tR:  " <> ppr tR
+                , text "    xL:  " <> ppr xL
                 , empty ]
 
         -- Make a new existential to instantiate the quantified
@@ -263,11 +294,11 @@ makeSub config a ctx0 xL tL tR err
         let ctx4  = popToPos pos1 ctx3
 
         ctrace  $ vcat
-                [ text "*<  SubForall"
-                , text "    xL:    " <> ppr xL
-                , text "    LEFT:  " <> ppr tL
-                , text "    RIGHT: " <> ppr tR
-                , text "    xL2:   " <> ppr xL2
+                [ text "*<  Sub_ForallL"
+                , text "    tL:  " <> ppr tL
+                , text "    tR:  " <> ppr tR
+                , text "    xL:  " <> ppr xL
+                , text "    xL2: " <> ppr xL2
                 , indent 4 $ ppr ctx0
                 , indent 4 $ ppr ctx4
                 , empty ]
@@ -277,14 +308,16 @@ makeSub config a ctx0 xL tL tR err
                 , ctx4)
 
 
- -- SubForall-R
+ -- Sub_ForallR
+ --   The right (expected) type is a forall type.
+ --   
  | TForall bParamR tBodyR  <- tR
  = do
         ctrace  $ vcat
-                [ text "*>  SubForallR"
-                , text "    xL:    " <> ppr xL
-                , text "    LEFT:  " <> ppr tL
-                , text "    RIGHT: " <> ppr tR
+                [ text "*>  Sub_ForallR"
+                , text "    tL: " <> ppr tL
+                , text "    tR: " <> ppr tR
+                , text "    xL: " <> ppr xL
                 , empty ]
 
         -- Make a new existential to instantiate the quantified
@@ -324,13 +357,19 @@ makeSub config a ctx0 xL tL tR err
                 , Sum.empty kEffect
                 , ctx4)
 
- -- SubRun
+ -- Sub_Run
+ --   The left (inferred) type is a suspension, but the right it not.
+ --   We run the suspension to get the result value and check if the
+ --   result has the expected type. Running the suspension causes some more
+ --   effects which we pass pack to the caller.
+ --
  | Just (tEffect, tResult) <- takeTSusp tL
  = do   
         ctrace  $ vcat
-                [ text "**  SubRun"
-                , text "    xL:      " <> ppr xL
+                [ text "**  Sub_Run"
                 , text "    tL:      " <> ppr tL
+                , text "    tR:      " <> ppr tR
+                , text "    xL:      " <> ppr xL
                 , text "    tEffect: " <> ppr tEffect
                 , text "    tResult: " <> ppr tResult
                 , empty ]
@@ -348,12 +387,14 @@ makeSub config a ctx0 xL tL tR err
                 , eff
                 , ctx2)
 
- -- Error
+ -- Sub_Fail
+ --   No other rule matched, so this expression is ill-typed.
  | otherwise
- = do   ctrace  $ vcat
-                [ text "DDC.Core.Check.Exp.Inst.makeSub: no match"
-                , text "  LEFT:   " <> ppr tL
-                , text "  RIGHT:  " <> ppr tR ]
+ = do   
+        ctrace  $ vcat
+                [ text "**  Sub_Fail"
+                , text "    tL: " <> ppr tL
+                , text "    tR: " <> ppr tR ]
 
         throw err
 
