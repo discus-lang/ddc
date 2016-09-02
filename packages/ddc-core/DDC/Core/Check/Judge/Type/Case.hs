@@ -3,6 +3,7 @@ module DDC.Core.Check.Judge.Type.Case
         (checkCase)
 where
 import DDC.Core.Check.Judge.Kind
+import DDC.Core.Check.Judge.EqT
 import DDC.Core.Check.Judge.Type.Base
 import DDC.Type.Exp.Simple.Equiv
 import qualified DDC.Type.Sum           as Sum
@@ -383,7 +384,7 @@ checkFieldAnnots table bidir a xx tts ctx0
                 (tAnnot', _, ctx2) 
                         <- checkTypeM config ctx UniverseSpec tAnnot (Synth [])
 
-                ctx3    <- makeEqX (tableConfig table) a ctx2 tAnnot' tActual
+                ctx3    <- makeEqT (tableConfig table)   ctx2 tAnnot' tActual
                         $  ErrorCaseFieldTypeMismatch  a xx   tAnnot' tActual
 
                 tField  <- applyContext ctx3 tActual

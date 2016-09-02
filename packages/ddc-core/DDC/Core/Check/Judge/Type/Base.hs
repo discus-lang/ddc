@@ -12,6 +12,7 @@ module DDC.Core.Check.Judge.Type.Base
         , module DDC.Core.Check.Judge.Inst
         , module DDC.Core.Check.Judge.Sub
         , module DDC.Core.Check.Judge.EqX
+        , module DDC.Core.Check.Judge.EqT
         , module DDC.Core.Check.Judge.Witness
         , module DDC.Core.Check.Error
         , module DDC.Core.Check.Base
@@ -27,6 +28,7 @@ where
 import DDC.Core.Check.Judge.Inst
 import DDC.Core.Check.Judge.Sub
 import DDC.Core.Check.Judge.EqX
+import DDC.Core.Check.Judge.EqT
 import DDC.Core.Check.Judge.Witness
 import DDC.Core.Check.Error
 import DDC.Core.Check.Base

@@ -3,6 +3,7 @@ module DDC.Core.Check.Judge.Type.Cast
         ( checkCast)
 where
 import DDC.Core.Check.Judge.Kind
+import DDC.Core.Check.Judge.EqT
 import DDC.Core.Check.Judge.Type.Sub
 import DDC.Core.Check.Judge.Type.Base
 import qualified DDC.Type.Sum   as Sum
@@ -99,8 +100,8 @@ checkCast !table ctx0
         -- We're treating the S constructor as invariant in both positions,
         --  so we use 'makeEq' here instead of 'makeSub'
         tExpected'  <- applyContext ctx1 tExpected
-        ctx2        <- makeEqX config a ctx1 tActual tExpected'
-                    $  ErrorMismatch a       tActual tExpected' xx
+        ctx2        <- makeEqT config ctx1 tActual tExpected'
+                    $  ErrorMismatch  a    tActual tExpected' xx
 
         returnX a (\z -> XCast z CastBox x1')
                 tExpected (Sum.empty kEffect) ctx2

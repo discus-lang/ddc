@@ -3,8 +3,9 @@ module DDC.Core.Check.Judge.Sub
         (makeSub)
 where
 import DDC.Type.Transform.SubstituteT
+import DDC.Core.Check.Judge.EqT
 import DDC.Core.Exp.Annot.AnTEC
-import DDC.Core.Check.Judge.EqX
+-- import DDC.Core.Check.Judge.EqX
 import DDC.Core.Check.Judge.Inst
 import DDC.Core.Check.Base
 import qualified DDC.Core.Check.Context as Context
@@ -241,10 +242,10 @@ makeSub config a ctx0 xL tL tR err
                 , text "    xL: " <> ppr xL
                 , empty ]
 
-        ctx1    <- makeEqX config a ctx0 tL1 tR1 err
+        ctx1    <- makeEqT config ctx0 tL1 tR1 err
         tL2'    <- applyContext ctx1 tL2
         tR2'    <- applyContext ctx1 tR2
-        ctx2    <- makeEqX config a ctx1 tL2' tR2' err
+        ctx2    <- makeEqT config ctx1 tL2' tR2' err
 
         ctrace  $ vcat
                 [ text "*<  Sub_App"

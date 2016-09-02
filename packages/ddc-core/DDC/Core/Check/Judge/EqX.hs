@@ -3,6 +3,7 @@ module DDC.Core.Check.Judge.EqX
         (makeEqX)
 where
 import DDC.Core.Check.Base
+import DDC.Core.Check.Judge.EqT
 import qualified DDC.Core.Env.EnvT      as EnvT
 import qualified Data.Map.Strict        as Map
 
@@ -168,10 +169,10 @@ makeEqX config a ctx0 tL tR err
                 , text "    tR: " <> ppr tR
                 , empty ]
 
-        ctx1    <- makeEqX config a ctx0 tL1 tR1 err
+        ctx1    <- makeEqT config ctx0 tL1 tR1 err
         tL2'    <- applyContext ctx1 tL2
         tR2'    <- applyContext ctx1 tR2
-        ctx2    <- makeEqX config a ctx1 tL2' tR2' err
+        ctx2    <- makeEqT config ctx1 tL2' tR2' err
 
         ctrace  $ vcat
                 [ text "*<  EqX_App"

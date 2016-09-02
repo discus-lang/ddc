@@ -145,8 +145,8 @@ checkLam !table !a !ctx !b1 !x2 !(Synth {})
         (k1'', ctx6)
          <- if isTExists k1'
              then do
-                ctx6    <- makeEqX config a ctx5 k1' kData
-                        $  ErrorMismatch a k1' kData xx
+                ctx6    <- makeEqT config ctx5 k1' kData
+                        $  ErrorMismatch a     k1' kData xx
 
                 k1''    <- applyContext ctx6 k1'
 
@@ -208,8 +208,8 @@ checkLam !table !a !ctx !b1 !x2 !(Check tExpected)
              then
                 return  (replaceTypeOfBind tX1 b1, tX1, ctx)
              else do
-                ctx0    <- makeEqX config a ctx t1 tX1
-                        $  ErrorMismatch a t1 tExpected (XLam a b1 x2)
+                ctx0    <- makeEqT config ctx t1 tX1
+                        $  ErrorMismatch a    t1 tExpected (XLam a b1 x2)
                 return  (b1, t1, ctx0)
 
         -- Check the body ----------------------
@@ -273,8 +273,8 @@ checkLam !table !a !ctx !b1 !x2 !(Check tExpected)
         (k1'', ctx4)
          <- if isTExists k1'
              then do
-                ctx4    <- makeEqX config a ctx3 k1' kData
-                        $  ErrorMismatch a k1' kData xx
+                ctx4    <- makeEqT config ctx3 k1' kData
+                        $  ErrorMismatch a     k1' kData xx
 
                 k1''    <- applyContext ctx4 k1'
 
