@@ -65,4 +65,4 @@ vectorOfCharList
 
         vectorWrite# vec len 0w8
         vec
-        
+
