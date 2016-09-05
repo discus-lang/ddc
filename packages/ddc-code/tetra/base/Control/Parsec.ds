@@ -24,11 +24,10 @@ parse ((Parser p): Parser t a) (ts: List t): List (Tup2 a (List t))
 functor_Parser [t: Data]: Functor (Parser t)
  = Functor parser_fmap
 
-
-parser_fmap [t a b: Data] (f: a → b) (parserA: Parser t a): Parser t b
- = Parser $ λts
- → for (parse parserA ts) $ λ(T2 resultA ts2)
- → T2  (f resultA) ts2
+ where  parser_fmap [t a b: Data] (f: a → b) (parserA: Parser t a): Parser t b
+         = Parser $ λts
+         → for (parse parserA ts) $ λ(T2 resultA ts2)
+         → T2  (f resultA) ts2
 
 
 -- Applicative ----------------------------------------------------------------
@@ -38,16 +37,16 @@ applicative_Parser [t: Data]: Applicative (Parser t)
         parser_pure
         parser_ap
 
+ where  parser_pure (x: a): Parser t' a
+         = Parser $ λts → Cons (T2 x ts) Nil
 
-parser_pure (x: a): Parser t a
- = Parser $ λts → Cons (T2 x ts) Nil
-
-
-parser_ap   (parserF: Parser t (a → b)) (parserA: Parser t a): Parser t b
- = Parser $ λts → concat
- $ for (parse parserF ts)  $ λ(T2 resultF ts2)
- → for (parse parserA ts2) $ λ(T2 resultA ts3)
- → T2 (resultF resultA) ts3
+        parser_ap   (parserF: Parser t' (a → b))
+                    (parserA: Parser t' a)
+                    : Parser t' b
+         = Parser $ λts → concat
+         $ for (parse parserF ts)  $ λ(T2 resultF ts2)
+         → for (parse parserA ts2) $ λ(T2 resultA ts3)
+         → T2 (resultF resultA) ts3
 
 
 -- Monad ----------------------------------------------------------------------
@@ -56,22 +55,17 @@ monad_Parser [t: Data]: Monad (Parser t)
          parser_return
          parser_bind
 
+ where  parser_return (x: a): Parser t' a
+         = Parser $ λts → Cons (T2 x ts) Nil
 
--- | Produce the given result without returning any input.
-parser_return (x: a): Parser t a
- = Parser $ λts → Cons (T2 x ts) Nil
-
-
--- | Apply a parser, and if it succeeds pass the result to a function
---   that produces a new parser.
-parser_bind
-        (parserA:   Parser t a)
-        (mkParserB: a → Parser t b)
-        : Parser t b
- = Parser $ λts → concat  
- $ for (parse parserA ts)              $ λ(T2 resultA ts2)
- → for (parse (mkParserB resultA) ts2) $ λ(T2 resultB ts3)
- → T2 resultB ts3
+        parser_bind
+                (parserA:   Parser t' a)
+                (mkParserB: a → Parser t' b)
+                : Parser t' b
+         = Parser $ λts → concat  
+         $ for (parse parserA ts)              $ λ(T2 resultA ts2)
+         → for (parse (mkParserB resultA) ts2) $ λ(T2 resultB ts3)
+         → T2 resultB ts3
 
 
 -------------------------------------------------------------------------------

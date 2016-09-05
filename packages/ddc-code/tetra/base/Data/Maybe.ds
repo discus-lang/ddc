@@ -31,17 +31,17 @@ applicative_maybe
         functor_maybe 
         maybe_pure
         maybe_ap
+ where
+        maybe_pure [a: Data]   (x: a): Maybe a
+         = Just x
 
-maybe_pure [a: Data]   (x: a): Maybe a
- = Just x
+        maybe_ap   [a b: Data] (mf: Maybe (a -> b)) (ma: Maybe a): Maybe b
+         | Just xf      <- mf
+         , Just xa      <- ma
+         = Just (xf xa)
 
-maybe_ap   [a b: Data] (mf: Maybe (a -> b)) (ma: Maybe a): Maybe b
- | Just xf      <- mf
- , Just xa      <- ma
- = Just (xf xa)
-
- | otherwise
- = Nothing
+         | otherwise
+         = Nothing
 
 
 -- Monad ----------------------------------------------------------------------
@@ -50,15 +50,14 @@ monad_maybe
         applicative_maybe
         maybe_return
         maybe_bind
+ where  
+        maybe_return [a: Data]   (x: a): Maybe a
+         = Just x
 
-
-maybe_return [a: Data]   (x: a): Maybe a
- = Just x
-
-maybe_bind   [a b: Data] (ma: Maybe a) (f: a -> Maybe b): Maybe b
- = case ma of
-        Nothing -> Nothing
-        Just xa -> f xa
+        maybe_bind   [a b: Data] (ma: Maybe a) (f: a -> Maybe b): Maybe b
+         = case ma of
+                Nothing -> Nothing
+                Just xa -> f xa
 
 
 -- Predicates -----------------------------------------------------------------
