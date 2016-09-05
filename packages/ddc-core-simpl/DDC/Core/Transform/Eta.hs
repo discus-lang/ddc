@@ -146,9 +146,9 @@ class Eta (c :: * -> * -> *) where
 
 instance Eta Module where
  etaM config cconfig envx mm
-  = do  -- TODO: add top level env of module.
-        let envx'   = envx
-        xx'             <- etaM config cconfig envx' (moduleBody mm)
+  = do  -- The top level environment of the module is added
+        -- by the etaModule wrapper, so we don't need to do it again.
+        xx' <- etaM config cconfig envx (moduleBody mm)
         return  $ mm { moduleBody = xx' }
 
 
