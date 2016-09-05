@@ -42,7 +42,8 @@ streamOfList (xx: List a): Stream (List a) a
 
 
 -- | Convert a stream to a list.
-listOfStream ((MkStream f s0): Stream s a): List a
+listOfStream (ss: Stream s a): List a
+ | MkStream f s0 <- ss
  = case f s0 of
         Yield x s1      -> Cons x (listOfStream (MkStream f s1))
         Skip  s1        -> listOfStream (MkStream f s1)
@@ -70,8 +71,9 @@ arrayOfStream
 
 -- | Unstream all available elements into the given array.
 unstreamToArray
-        ((MkStream f s0): Stream s a) (arr: Array r a) (ix: Nat)
+        (ss: Stream s a) (arr: Array r a) (ix: Nat)
         : S (Write r) Unit
+ | MkStream f s0  <- ss
  = go s0 0
  where  
         go (s: s) (ix: Nat): S (Write r) Unit
@@ -106,8 +108,9 @@ srepeat (x: a): Stream a a
 
 
 -- | Cons an element to the front of a stream.
-scons   (x: a) ((MkStream stepA sA0): Stream s a)
+scons   (x: a) (ss: Stream s a)
         : Stream (Tup2 s Bool) a
+ | MkStream stepA  sA0 <- ss
  = MkStream stepA2 (T2 sA0 True)
  where  
         stepA2 (T2 sA1 True)
@@ -123,8 +126,9 @@ scons   (x: a) ((MkStream stepA sA0): Stream s a)
 -- Maps -----------------------------------------------------------------------
 -- | Apply a function to every element of a stream.
 smap    (f: a -> b) 
-        ((MkStream stepA sA0): Stream s a)
+        (ss: Stream s a)
         : Stream s b
+ | MkStream stepA sA0 <- ss
  = MkStream stepB sA0
  where
         stepB q 
@@ -136,10 +140,13 @@ smap    (f: a -> b)
 
 -- Scans ----------------------------------------------------------------------
 -- | Like `smap`, but keep a running accumulator as we walk along the stream.
-smapacc (f: a -> b -> Tup2 a c) 
-        (z: a) 
-        ((MkStream fB sB0): Stream s b)
-        : Stream (Tup2 s a) c
+smapacc :  [a b c s: Data]
+        .  (a -> b -> Tup2 a c)
+        -> a
+        -> Stream s b
+        -> Stream (Tup2 s a) c
+
+smapacc f z (MkStream fB sB0)
  = MkStream stepC (T2 sB0 z)
  where
         stepC (T2 sB1 xA1)
