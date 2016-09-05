@@ -3,7 +3,9 @@ module DDC.Core.Check.Judge.Type.Sub
         (checkSub)
 where
 import DDC.Core.Check.Judge.Type.Base
+import qualified DDC.Core.Env.EnvT      as EnvT
 import qualified DDC.Type.Sum           as Sum
+import qualified Data.Map               as Map
 
 
 -- This is the subtyping rule for the type checking judgment.
@@ -78,7 +80,7 @@ dequantify !_table !aApp ctx0 iBefore xx0 tSynth tExpect
  | TCon (TyConExists _n _k)  <- tExpect
  , shouldDequantifyX xx0
  = do   
-        (bsParam, tBody)     <- stripQuantifiers tSynth
+        (bsParam, tBody)     <- stripQuantifiers ctx0 tSynth
         case bsParam of
          []     -> return (xx0, tSynth, ctx0)
          _      -> addTypeApps aApp ctx0 iBefore xx0 (reverse bsParam) tBody
@@ -135,16 +137,32 @@ addTypeApps !aApp  ctx0 iBefore xx0 (bParam : bsParam) tBody
         return (xx2, tResult, ctx2)
 
 
--- | Strip quantifiers from the front of a type.
---   TODO: need to look through type synonyms when checking for foralls.
---         Take the env from the context and look through synonyms along the way.
-stripQuantifiers :: Type n -> CheckM a n ([Bind n], Type n)
-stripQuantifiers tt
+-- | Strip quantifiers from the front of a type, looking through any type synonyms.
+--
+--   ISSUE #385: Make type inference work for non trivial type synonyms.
+--   If the synonym is higher kinded then we need to reduce the application.
+--   trying to strip the TForall.
+--
+stripQuantifiers 
+        :: Ord n 
+        => Context n
+        -> Type n 
+        -> CheckM a n ([Bind n], Type n)
+
+stripQuantifiers ctx tt
  = case tt of
+        -- Look through type synonyms.
+        TCon (TyConBound (UName n) _)
+         | Just tt' <- Map.lookup n 
+                    $  EnvT.envtEquations $ contextEnvT ctx
+         -> stripQuantifiers ctx tt'
+
+        -- Strip quantifier.
         TForall bParam tBody
          -> do  (bsParam, tBody')
-                 <- stripQuantifiers tBody
+                 <- stripQuantifiers ctx tBody
                 return (bParam : bsParam, tBody')
 
         _ ->    return ([], tt)
+
 
