@@ -1,5 +1,5 @@
 
-module Test where
+module Main where
 
 data Moar (a : Data) where
         Moar    : a -> Moar a

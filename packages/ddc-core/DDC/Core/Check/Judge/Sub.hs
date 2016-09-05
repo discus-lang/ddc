@@ -5,7 +5,6 @@ where
 import DDC.Type.Transform.SubstituteT
 import DDC.Core.Check.Judge.EqT
 import DDC.Core.Exp.Annot.AnTEC
--- import DDC.Core.Check.Judge.EqX
 import DDC.Core.Check.Judge.Inst
 import DDC.Core.Check.Base
 import qualified DDC.Core.Check.Context as Context

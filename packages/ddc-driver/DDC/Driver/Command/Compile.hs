@@ -26,6 +26,7 @@ import qualified DDC.Source.Tetra.Lexer         as SE
 import qualified DDC.Source.Tetra.Parser        as SE
 import qualified DDC.Core.Pretty                as P
 import qualified DDC.Core.Module                as C
+import qualified DDC.Core.Module.Name           as C
 import qualified DDC.Core.Lexer                 as C
 import qualified DDC.Base.Parser                as BP
 import qualified DDC.Version                    as Version
@@ -82,14 +83,11 @@ cmdCompileRecursiveDS _config _bBuildExe _store []           _fsBlocked
 
 cmdCompileRecursiveDS  config  bBuildExe  store (filePath:fs) fsBlocked
  = do   
-        -- TODO: If the module name and module path does not match
-        -- then the recursive driver gets stuck in a loop.
 --        liftIO $ putStrLn "\n\n* ENTER"
 --        liftIO  $ putStr $ unlines
 --                [ "File            = " ++ show filePath
 --                , "Queue           = " ++ show (filePath : fs)
 --                , "Blocked         = " ++ show fsBlocked ]
-
 
         -- Check if the requested file exists.
         exists  <- liftIO $ doesFileExist filePath
@@ -449,7 +447,19 @@ tasteNeeded filePath src
                 C.describeToken
                 filePath SE.pModule tokens of
          Left  err  -> throwE $ P.renderIndent $ P.ppr err
-         Right mm   -> return $ SE.moduleImportModules mm
+         Right mm   
+          -> do 
+                -- Check that the module name matches the file path where
+                -- we found the module. If they don't match then the compilation
+                -- driver will go into a loop as it can never load a module
+                -- with the name it needs.
+                when (not $ C.moduleNameMatchesPath filePath (SE.moduleName mm))
+                 $ error $ unlines
+                 [ "Module name does not match file path."
+                 , "  module name = " ++ show (SE.moduleName mm)
+                 , "  file path   = " ++ show filePath ]
+
+                return $ SE.moduleImportModules mm
 
  | otherwise
  = return []
@@ -468,8 +478,6 @@ locateModuleFromConfig config mname
                 =  configModuleBaseDirectories config
                 ++ [Builder.buildBaseSrcDir (configBuilder config)
                         </> "tetra" </> "base"]
-
---        liftIO $ putStrLn $ "base dirs = " ++ show baseDirs
 
         Locate.locateModuleFromPaths baseDirs mname ".ds"
 

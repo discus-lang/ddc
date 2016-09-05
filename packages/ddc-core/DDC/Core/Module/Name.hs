@@ -3,11 +3,14 @@ module DDC.Core.Module.Name
         ( ModuleName    (..)
         , readModuleName
         , isMainModuleName
+        , moduleNameMatchesPath
 
         , QualName      (..))
 where
 import Data.Typeable
 import Control.DeepSeq
+import qualified Data.List              as List
+import qualified System.FilePath        as System
 
 
 -- ModuleName -------------------------------------------------------------------------------------
@@ -42,6 +45,31 @@ isMainModuleName mn
  = case mn of
         ModuleName ["Main"]     -> True
         _                       -> False
+
+
+-- | Check whether a module name matches the given file path of the module.
+--
+--   If the module is named M1.M2.M3 then the file needs to be called
+--   PATH/M1/M2/M3.EXT for some base PATH and extension EXT.
+--
+moduleNameMatchesPath :: FilePath -> ModuleName -> Bool
+moduleNameMatchesPath filePath (ModuleName mnParts)
+ = checkParts (reverse fsParts) (reverse mnParts)
+ where
+        -- Split out the directory parts from the filename.
+        fsParts 
+                = map (\f -> case List.stripPrefix "/" (reverse f) of
+                                Just f' -> reverse f'
+                                Nothing -> f)
+                $ System.splitPath 
+                $ System.dropExtension filePath
+
+        -- Check that the directory parts match the module name parts.
+        checkParts [] _     = True
+        checkParts _  []    = True
+        checkParts (f: fs) (m : ms)
+         | f == m           = checkParts fs ms
+         | otherwise        = False
 
 
 -- QualName ---------------------------------------------------------------------------------------
