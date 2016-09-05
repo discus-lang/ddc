@@ -4,6 +4,8 @@ module DDC.Core.Transform.Lambdas
         , evalState
         , newVar)
 where
+import DDC.Core.Transform.Lambdas.Lift
+import DDC.Core.Transform.Lambdas.Base
 import DDC.Core.Fragment
 import DDC.Core.Collect.Support
 import DDC.Core.Transform.SubstituteXX
@@ -12,62 +14,14 @@ import DDC.Core.Exp.Annot.Context
 import DDC.Core.Exp.Annot.Ctx
 import DDC.Core.Exp.Annot
 import DDC.Type.Transform.SubstituteT
-import DDC.Core.Collect
 import DDC.Base.Pretty
 import DDC.Base.Name
-import Data.Function
-import Data.List
-import Data.Set                                 (Set)
-import qualified Control.Monad.State.Strict     as S
-import qualified DDC.Core.Check                 as Check
 import qualified DDC.Type.Env                   as Env
 import qualified DDC.Type.DataDef               as DataDef
 import qualified DDC.Core.Env.EnvX              as EnvX
 import qualified Data.Set                       as Set
 import qualified Data.Map                       as Map
 import Data.Maybe
-
-
----------------------------------------------------------------------------------------------------
--- | State holding a variable name prefix and counter to 
---   create fresh variable names.
-type S  = S.State (String, Int)
-
-
--- | Evaluate a desguaring computation,
---   using the given prefix for freshly introduced variables.
-evalState :: String -> S a -> a
-evalState n c
- = S.evalState c (n, 0) 
-
-
--- | Allocate a new named variable, yielding its associated bind and bound.
-newVar 
-        :: CompoundName n
-        => String       -- ^ Informational name to add.
-        -> Type n       -- ^ Type of the new binder.
-        -> S (Bind n, Bound n)
-
-newVar prefix t
- = do   (n, i)   <- S.get
-        let name' = newVarName (n ++ "$" ++ prefix ++ "$" ++ show i)
-        S.put (n, i + 1)
-        return  (BName name' t, UName name')
-
-
--- | Allocate a new named variable, yielding its associated bind and bound.
-newVarExtend
-        :: CompoundName n
-        => n            -- ^ Base name.
-        -> String       -- ^ Informational name to ad.
-        -> Type n       -- ^ Type of the new binder.
-        -> S (Bind n, Bound n)
-
-newVarExtend name prefix t
- = do   (n, i)   <- S.get
-        let name' = extendName name (n ++ "$" ++ prefix ++ "$" ++ show i)
-        S.put (n, i + 1)
-        return  (BName name' t, UName name')
 
 
 ---------------------------------------------------------------------------------------------------
@@ -514,160 +468,4 @@ lambdasCast p c a cc x
          -> do  (x', r) <- enterCastBody c a cc x (lambdasX p)
                 return (XCast a cc x',  r)
 
-
----------------------------------------------------------------------------------------------------
--- | Check if this is a context that we should lift lambda abstractions out of.
-isLiftyContext :: Ctx a n -> Bool
-isLiftyContext ctx
- = case ctx of
-        -- Don't lift out of the top-level context.
-        -- There's nowhere else to lift to.
-        CtxTop{}        -> False
-        CtxLetLLet{}    -> not $ isTopLetCtx ctx
-        CtxLetLRec{}    -> not $ isTopLetCtx ctx
-
-        -- Don't lift if we're inside more lambdas.
-        --  We want to lift the whole binding group together.
-        CtxLAM{}        -> False
-        CtxLam{}        -> False
-   
-        -- We can't do code generation for abstractions in these contexts,
-        -- so they need to be lifted.
-        CtxAppLeft{}    -> True
-        CtxAppRight{}   -> True
-        CtxLetBody{}    -> True
-        CtxCaseScrut{}  -> True
-        CtxCaseAlt{}    -> True
-        CtxCastBody{}   -> True
-
-
----------------------------------------------------------------------------------------------------
--- | Construct the call site, and new lifted binding for a lambda lifted
---   abstraction.
-liftLambda 
-        :: (Show a, Show n, Pretty n, Ord n, CompoundName n, Pretty a)
-        => Profile n            -- ^ Language profile.
-        -> Context a n          -- ^ Context of the original abstraction.
-        -> Set (Bool, Bound n)  -- ^ Free variables in the body of the abstraction.
-        -> a
-        -> [(Bool, Bind n)]     -- ^ The lambdas, and whether they are type or value
-        -> Exp a n
-        -> S ( Exp a n
-             , Bind n, Exp a n)
-
-liftLambda p c fusFree a lams xBody
- = do   let ctx             = contextCtx c
-
-        -- The complete abstraction that we're lifting out.
-        let xLambda         = makeXLamFlags a lams xBody
-
-        -- Name of the enclosing top-level binding.
-        let Just nTop       = takeTopNameOfCtx ctx
-
-        -- Names of other supers bound at top-level.
-        let nsSuper         = takeTopLetEnvNamesOfCtx ctx
-
-        -- Build the type checker configuration for this context.
-        let config          = Check.configOfProfile p
-        let env             = contextEnv c
-
-        -- Function to get the type of an expression in this context.
-        -- If there are type errors in the input program then some 
-        -- either the lambda lifter is broken or some other transform
-        -- has messed up.
-        let typeOfExp x
-             = case Check.typeOfExp config env x
-                of  Left err
-                     -> error $ renderIndent $ vcat
-                              [ text "ddc-core-simpl.liftLambda: type error in lifted expression"
-                              , ppr err]
-                    Right t -> t
-
-
-        -- Decide whether we want to bind the given variable as a new parameter
-        -- on the lifted super. We don't need to bind primitives, other supers,
-        -- or any variable bound by the abstraction itself.
-        let keepVar fu@(_, u)
-             | (False, UName n) <- fu      = not $ Set.member n nsSuper
-             | (_,     UPrim{}) <- fu      = False
-             | any (boundMatchesBind u . snd) lams
-                                           = False
-             | otherwise                   = True
-
-        let fusFree_filtered
-                = filter keepVar
-                $ Set.toList fusFree
-
-
-        -- Join in the types of the free variables.
-        let joinType (f, u)
-             = case f of
-                True    | Just t <- EnvX.lookupT u env
-                        -> ((f, u), t)
-
-                False   | Just t <- EnvX.lookupX u env
-                        -> ((f, u), t)
-                
-                _       -> error $ unlines
-                            [ "ddc-core-simpl.joinType: cannot find type of free var."
-                            , show (f, u)
-                            , show (Map.keys $ EnvX.envxMap env) ]
-
-        let futsFree_types
-                = map joinType fusFree_filtered
-
-
-        -- Add in type variables that are free in the types of free value variables.
-        -- We need to bind these as well in the new super.
-        let expandFree ((f, u), t)
-             | False <- f   =  [(f, u)]
-                            ++ [(True, ut) | ut  <- Set.toList
-                                                 $  freeVarsT Env.empty t]
-             | otherwise    =  [(f, u)]
-    
-        let fusFree_body    =  [(True, ut) | ut  <- Set.toList 
-                                             $  freeVarsT Env.empty $ typeOfExp xLambda]
-
-        let futsFree_expandFree
-                =  map joinType
-                $  Set.toList $ Set.fromList
-                $  (concatMap expandFree $ futsFree_types)
-                ++ fusFree_body
-
-        -- Sort free vars so the type variables come out the front.
-        let futsFree
-                = sortBy (compare `on` (not . fst . fst))
-                $ futsFree_expandFree
-
-        -- ISSUE #330: Lambda lifter doesn't work with anonymous binders.
-        -- For the lifted abstraction, wrap it in new lambdas to bind all of
-        -- its free variables. 
-        let makeBind ((True,  (UName n)), t) = (True,  BName n t)
-            makeBind ((False, (UName n)), t) = (False, BName n t)
-            makeBind fut
-                    = error $ "ddc-core-simpl.liftLamba: unhandled binder " ++ show fut
-        
-        -- Make the new super.
-        let bsParam = map makeBind futsFree
-        let xLifted = makeXLamFlags a bsParam xLambda
-
-
-        -- Get the type of the bound expression, which we need when building
-        -- the type of the new super.
-        let tLifted = typeOfExp xLifted
-  
-
-        -- At the call site, apply all the free variables of the lifted
-        -- function as new arguments.    
-        let makeArg  (True,  u) = XType a (TVar u)
-            makeArg  (False, u) = XVar a u
-
-        -- Name of the new lifted binding.
-        (bLifted, uLifted)  <- newVarExtend nTop "L" tLifted 
-        
-        let xCall   = xApps a (XVar a uLifted)
-                    $ map makeArg $ map fst futsFree
-        
-        return  ( xCall
-                , bLifted, xLifted)
 

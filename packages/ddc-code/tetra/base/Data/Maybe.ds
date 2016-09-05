@@ -19,10 +19,10 @@ functor_maybe
  = Functor 
         maybe_fmap
 
-maybe_fmap [a b: Data] (f: a -> b) (xx: Maybe a): Maybe b
- = case xx of
-        Nothing -> Nothing
-        Just x  -> Just (f x)
+ where maybe_fmap [a b: Data] (f: a -> b) (xx: Maybe a): Maybe b
+        = case xx of
+               Nothing -> Nothing
+               Just x  -> Just (f x)
 
 
 -- Applicative ----------------------------------------------------------------

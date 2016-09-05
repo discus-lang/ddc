@@ -24,7 +24,7 @@ import qualified DDC.Core.Salt.Name             as A
 
 import DDC.Type.DataDef
 import DDC.Base.Pretty
-import Text.Show.Pretty
+-- import Text.Show.Pretty
 import Control.Monad
 import Data.Maybe
 import DDC.Control.Monad.Check                  (throw)
@@ -318,7 +318,10 @@ convertExpSuperCall xx _ectx ctx isRun a nFun xsArgs
  | Just (arityVal, boxings)
     <- case Map.lookup nFun (contextCallable ctx) of
         Just (Callable _src _ty cs)
-           |  Just (_, csVal, csBox)      <- Call.splitStdCallCons cs
+           |  Just (_, csVal, csBox)      
+                <- Call.splitStdCallCons 
+                $  filter (not . Call.isConsType) cs
+
            -> Just (length csVal, length csBox)
 
         _  -> Nothing
@@ -351,7 +354,6 @@ convertExpSuperCall xx _ectx ctx isRun a nFun xsArgs
         , text "xx:        " <> ppr xx
         , text "fun:       " <> ppr nFun
         , text "args:      " <> ppr xsArgs
-        , text "callables: " <> text (ppShow $ contextCallable  ctx)
         ]
 
 
