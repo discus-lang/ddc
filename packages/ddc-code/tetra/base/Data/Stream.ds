@@ -34,7 +34,8 @@ data Step (s a: Data) where
 -- | Convert a list to a stream.
 streamOfList (xx: List a): Stream (List a) a
  = MkStream step xx
- where  step (s1: List a)
+ where  
+        step (s1: List a)
          = case s1 of
                 Nil       -> Done
                 Cons x xs -> Yield x xs
@@ -71,23 +72,27 @@ arrayOfStream
 unstreamToArray
         ((MkStream f s0): Stream s a) (arr: Array r a) (ix: Nat)
         : S (Write r) Unit
- = case f s0 of
-        Yield x s1
-         -> do  writeArray arr ix x
-                unstreamToArray (MkStream f s1) arr (ix + 1)
+ = go s0 0
+ where  
+        go (s: s) (ix: Nat): S (Write r) Unit
+         = case f s of
+                Yield x s1
+                 -> do  writeArray arr ix x
+                        go s1 (ix + 1)
 
-        Skip s1
-         ->     unstreamToArray (MkStream f s1)  arr ix
+                Skip s1
+                 ->     go s1 ix 
 
-        Done
-         ->     ()
+                Done
+                 ->     ()
 
 
 -- Constructors ---------------------------------------------------------------
 -- | Generate a stream, given a starting value and a stepper function.
 sgenerate (x: s) (step: s -> Tup2 s a): Stream s a
  = MkStream step' x
- where  step' sA
+ where  
+        step' sA
          = case step sA of
                 T2 s' x -> Yield x s'
 
@@ -177,7 +182,8 @@ stake   (n: Nat)
         : Stream (Tup2 s Nat) a
 
  = MkStream stepB (T2 sA0 0)
- where  stepB (T2 sA ix)
+ where  
+        stepB (T2 sA ix)
          | ix >= n   = Done
          | otherwise 
          = case fA sA of
