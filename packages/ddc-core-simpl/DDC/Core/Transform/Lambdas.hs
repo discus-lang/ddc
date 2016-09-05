@@ -1,6 +1,8 @@
 
 module DDC.Core.Transform.Lambdas
-        (lambdasModule)
+        ( lambdasModule
+        , evalState
+        , newVar)
 where
 import DDC.Core.Fragment
 import DDC.Core.Collect.Support
@@ -15,15 +17,43 @@ import DDC.Base.Pretty
 import DDC.Base.Name
 import Data.Function
 import Data.List
-import Data.Set                         (Set)
-import Data.Map                         (Map)
-import qualified DDC.Core.Check         as Check
-import qualified DDC.Type.Env           as Env
-import qualified DDC.Type.DataDef       as DataDef
-import qualified Data.Set               as Set
-import qualified Data.Map               as Map
-import qualified DDC.Core.Env.EnvX      as EnvX
+import Data.Set                                 (Set)
+import Data.Map                                 (Map)
+import qualified Control.Monad.State.Strict     as S
+import qualified DDC.Core.Check                 as Check
+import qualified DDC.Type.Env                   as Env
+import qualified DDC.Type.DataDef               as DataDef
+import qualified DDC.Core.Env.EnvX              as EnvX
+import qualified Data.Set                       as Set
+import qualified Data.Map                       as Map
 import Data.Maybe
+
+
+---------------------------------------------------------------------------------------------------
+-- | State holding a variable name prefix and counter to 
+--   create fresh variable names.
+type S  = S.State (String, Int)
+
+
+-- | Evaluate a desguaring computation,
+--   using the given prefix for freshly introduced variables.
+evalState :: String -> S a -> a
+evalState n c
+ = S.evalState c (n, 0) 
+
+
+-- | Allocate a new named variable, yielding its associated bind and bound.
+newVar  :: CompoundName n
+        => n            -- ^ Original name to base the new one on.
+        -> String       -- ^ Informational name to add.
+        -> Type n       -- ^ Type of the new binder.
+        -> S (Bind n, Bound n)
+
+newVar name prefix t
+ = do   (n, i)   <- S.get
+        let name' = extendName name (n ++ "$" ++ prefix ++ "$" ++ show i)
+        S.put (n, i + 1)
+        return  (BName name' t, UName name')
 
 
 ---------------------------------------------------------------------------------------------------
@@ -32,22 +62,23 @@ lambdasModule
         :: ( Show a, Pretty a
            , Show n, Pretty n, Ord n, CompoundName n)
         => Profile n
-        -> Module a n -> Module a n
+        -> Module a n 
+        -> S (Module a n)
 
 lambdasModule profile mm
- = let  
+ = do
         -- Take the top-level environment of the module.
-        env     = moduleEnvX 
+        let env = moduleEnvX 
                         (profilePrimKinds    profile)
                         (profilePrimTypes    profile)
                         (profilePrimDataDefs profile)
                         mm
 
-        c       = Context env (CtxTop env)
+        let c   = Context env (CtxTop env)
+        x'      <- lambdasLoopX profile c $ moduleBody mm
 
-        x'      = lambdasLoopX profile c $ moduleBody mm
-
-   in   beautifyModule
+        return 
+         $ beautifyModule
          $ mm { moduleBody = x' }
 
 
@@ -78,12 +109,15 @@ lambdasLoopX
          => Profile n           -- ^ Language profile.
          -> Context a n         -- ^ Enclosing context.
          -> Exp a n             -- ^ Expression to perform lambda lifting on.
-         -> Exp a n             --   Replacement expression.
+         -> S (Exp a n)         --   Replacement expression.
         
 lambdasLoopX p c xx
- = let  (xx1, Result progress _)   = lambdasTopX p c xx
-   in   if progress then lambdasLoopX p c xx1
-                    else xx1
+ = do   (xx1, Result progress _)
+         <- lambdasTopX p c xx
+
+        if progress 
+         then lambdasLoopX p c xx1
+         else return xx1
 
 -- | Handle the expression that defines the body of the module
 --   separately. The body is a letrec that contains the top level
@@ -91,10 +125,10 @@ lambdasLoopX p c xx
 lambdasTopX p c xx
  = case xx of
         XLet a lts xBody
-         -> let (lts', r1)      = lambdasTopLets p c a xBody lts 
-                (x',   r2)      = enterLetBody   c a lts xBody  (lambdasTopX p)
-            in  ( foldr (XLet a) x' lts'
-                , mappend r1 r2)
+         -> do  (lts', r1) <- lambdasTopLets p c a xBody lts 
+                (x',   r2) <- enterLetBody   c a lts xBody (lambdasTopX p)
+                return  ( foldr (XLet a) x' lts'
+                        , mappend r1 r2)
 
         _ -> lambdasX p c xx
 
@@ -103,8 +137,8 @@ lambdasTopX p c xx
 lambdasTopLets p c a xBody lts
  = case lts of
         LRec bxs
-          -> let (bxs', r) = lambdasLetRec p c a [] bxs xBody
-             in  ([LRec bxs'], r)
+          -> do (bxs', r)  <- lambdasLetRec p c a [] bxs xBody
+                return ([LRec bxs'], r)
 
         _ -> lambdasLets p c a xBody lts
 
@@ -115,60 +149,65 @@ lambdasX :: (Show n, Show a, Pretty n, Pretty a, CompoundName n, Ord n)
          => Profile n           -- ^ Language profile.
          -> Context a n         -- ^ Enclosing context.
          -> Exp a n             -- ^ Expression to perform lambda lifting on.
-         -> ( Exp a n           --   Replacement expression
-            , Result a n)       --   Lifter result.
+         -> S ( Exp a n         --   Replacement expression
+              , Result a n)     --   Lifter result.
          
 lambdasX p c xx
  = case xx of
-        XVar{}  -> (xx, mempty)
-        XCon{}  -> (xx, mempty)
+        XVar{}  
+         -> return (xx, mempty)
+
+        XCon{}  
+         -> return (xx, mempty)
          
         -- Lift type lambdas to top-level.
         XLAM a b x0
          -> enterLAM c a b x0 $ \c' x
-         -> let (x', r)      = lambdasX p c' x
-                xx'          = XLAM a b x'
-                Result _ bxs = r
+         -> do  (x', r)         <- lambdasX p c' x
+                let xx'          = XLAM a b x'
+                let Result _ bxs = r
                 
                 -- Decide whether to lift this lambda to top-level.
                 -- If there are multiple nested lambdas then we want to lift
                 -- the whole group at once, rather than lifting each one 
                 -- individually.
-                liftMe       =  isLiftyContext (contextCtx c)   && null bxs
-                
-            in if liftMe
-                then  let us'   = supportEnvFlags
-                                $ support Env.empty Env.empty xx'
+                let liftMe       = isLiftyContext (contextCtx c)   && null bxs
+                if liftMe
+                 then do
+                        let us'   = supportEnvFlags
+                                  $ support Env.empty Env.empty xx'
                           
-                          (xCall, bLifted, xLifted)
-                                = liftLambda p c us' a [(True, b)] x'
+                        (xCall, bLifted, xLifted)
+                         <- liftLambda p c us' a [(True, b)] x'
 
-                      in  ( xCall
-                          , Result True (bxs ++ [(bLifted, xLifted)]))
+                        return  ( xCall
+                                , Result True (bxs ++ [(bLifted, xLifted)]))
 
-                else (xx', r)
+                 else   return  (xx', r)
 
 
         -- Lift value lambdas to top-level.
         XLam a b x0
          -> enterLam c a b x0 $ \c' x
-         -> let (x', r)      = lambdasX p c' x
-                xx'          = XLam a b x'
-                Result _ bxs = r
+         -> do  (x', r)      <- lambdasX p c' x
+                let xx'          = XLam a b x'
+                let Result _ bxs = r
                 
                 -- Decide whether to lift this lambda to top-level.
-                liftMe       =  isLiftyContext (contextCtx c)  && null bxs
+                let liftMe       =  isLiftyContext (contextCtx c)  && null bxs
 
-            in if liftMe
-                then  let us'   = supportEnvFlags
+                if liftMe
+                 then do
+                        let us' = supportEnvFlags
                                 $ support Env.empty Env.empty xx'
 
-                          (xCall, bLifted, xLifted)
-                                = liftLambda p c us' a [(False, b)] x'
+                        (xCall, bLifted, xLifted)
+                         <- liftLambda p c us' a [(False, b)] x'
                       
-                      in  ( xCall
-                          , Result True (bxs ++ [(bLifted, xLifted)]))
-                else (xx', r)
+                        return  ( xCall
+                                , Result True (bxs ++ [(bLifted, xLifted)]))
+
+                 else   return  (xx', r)
 
 
         -- Lift suspensions to top-level.
@@ -176,34 +215,35 @@ lambdasX p c xx
         --   they suspend evaluation but do not abstract over a value.
         XCast a cc@CastBox x0
          -> enterCastBody c a cc x0 $ \c' x
-         -> let (x', r)      = lambdasX p c' x
-                xx'          = XCast a CastBox x'
-                Result _ bxs = r
+         -> do  (x', r)      <- lambdasX p c' x
+                let xx'          = XCast a CastBox x'
+                let Result _ bxs = r
 
                 -- Decide whether to lift this box to top-level.
-                liftMe       =  isLiftyContext (contextCtx c)  && null bxs
+                let liftMe       =  isLiftyContext (contextCtx c)  && null bxs
 
-            in if liftMe 
-                then let us' = supportEnvFlags
-                             $ support Env.empty Env.empty xx'
+                if liftMe 
+                 then do
+                        let us' = supportEnvFlags
+                                $ support Env.empty Env.empty xx'
 
-                         (xCall, bLifted, xLifted)
-                             = liftLambda p c us' a [] (XCast a CastBox x')
+                        (xCall, bLifted, xLifted)
+                         <- liftLambda p c us' a [] (XCast a CastBox x')
 
-                     in  ( xCall
-                         , Result True (bxs ++ [(bLifted, xLifted)]))
+                        return  ( xCall
+                                , Result True (bxs ++ [(bLifted, xLifted)]))
 
-                else (xx', r)
+                 else    return  (xx', r)
 
 
         -- Eta-expand partially applied data contructors.
         XApp a x1 x2
          | (xCon@(XCon _a (DaConBound nCon)), xsArg)   <- takeXApps1 x1 x2
-         -> let ctx     = contextCtx c
-                envX    = topOfCtx ctx
-                defs    = EnvX.envxDataDefs envX
+         -> do  let ctx     = contextCtx c
+                let envX    = topOfCtx ctx
+                let defs    = EnvX.envxDataDefs envX
 
-            in  case Map.lookup nCon (DataDef.dataDefsCtors defs) of
+                case Map.lookup nCon (DataDef.dataDefsCtors defs) of
                  Just dataCtor
                   -- We check for partial application on the outside of a
                   -- set of nested applications.
@@ -219,67 +259,70 @@ lambdasX p c xx
                   -- See if we have the correct number of arguments.
                   ,  args  <- length xsArg
                   ,  arity /= args
-                  -> let 
+                  -> do
                          -- ISSUE #383: Redo name generation in lambda lifter.
                          -- Should have just used a state monad.
-                         bsT       = [ BName (nameOfContext ("Lift_" ++ show i) c) (typeOfBind b)
+                        let bsT       = [ BName (nameOfContext ("Lift_" ++ show i) c) (typeOfBind b)
                                         | i <- [0 .. arityT - 1]
                                         | b <- DataDef.dataCtorTypeParams dataCtor ]
 
-                         Just usT  = sequence $ map takeSubstBoundOfBind bsT
+                        let Just usT  = sequence $ map takeSubstBoundOfBind bsT
 
-                         sub       = zip (DataDef.dataCtorTypeParams dataCtor) 
-                                         (map TVar usT)
+                        let sub       = zip (DataDef.dataCtorTypeParams dataCtor) 
+                                             (map TVar usT)
 
-                         bsX       = [ BName (nameOfContext ("Lift_" ++ show i) c) 
-                                             (substituteTs sub t)
-                                        | i <- [0 .. arityX - 1]
-                                        | t <- DataDef.dataCtorFieldTypes dataCtor]
+                        let bsX       = [ BName (nameOfContext ("Lift_" ++ show i) c) 
+                                                (substituteTs sub t)
+                                           | i <- [0 .. arityX - 1]
+                                           | t <- DataDef.dataCtorFieldTypes dataCtor]
 
-                         Just usX     = sequence $ map takeSubstBoundOfBind bsX
-                         downArg xArg = enterAppRight c a x1 xArg (lambdasX p)
-                         (xsArg', rs) = unzip $ map downArg xsArg
+                        let Just usX     = sequence $ map takeSubstBoundOfBind bsX
+                        let downArg xArg = enterAppRight c a x1 xArg (lambdasX p)
+                        (xsArg', rs)     <- fmap unzip $ mapM downArg xsArg
 
-                     in ( xApps a
-                                ( xLAMs a bsT $ xLams a bsX 
-                                        $  xApps a xCon
-                                        $  [ XType a (TVar u) | u <- usT]
-                                        ++ [ XVar a u         | u <- usX])
-                                xsArg'
+                        return  ( xApps a
+                                        ( xLAMs a bsT $ xLams a bsX 
+                                                $  xApps a xCon
+                                                $  [ XType a (TVar u) | u <- usT]
+                                                ++ [ XVar a u         | u <- usX])
+                                        xsArg'
 
-                        , mconcat rs)
+                                , mconcat rs)
 
                  _
-                  -> let (x1', r1) = enterAppLeft  c a x1 x2 (lambdasX p)
-                         (x2', r2) = enterAppRight c a x1 x2 (lambdasX p)
-                     in  ( XApp a x1' x2'
-                         , mappend r1 r2)
+                  -> do (x1', r1) <- enterAppLeft  c a x1 x2 (lambdasX p)
+                        (x2', r2) <- enterAppRight c a x1 x2 (lambdasX p)
+                        return  ( XApp a x1' x2'
+                                , mappend r1 r2)
 
 
         -- Boilerplate.
         XApp a x1 x2
-         -> let (x1', r1)       = enterAppLeft  c a x1 x2 (lambdasX p)
-                (x2', r2)       = enterAppRight c a x1 x2 (lambdasX p)
-            in  ( XApp a x1' x2'
-                , mappend r1 r2)
+         -> do  (x1', r1)   <- enterAppLeft  c a x1 x2 (lambdasX p)
+                (x2', r2)   <- enterAppRight c a x1 x2 (lambdasX p)
+                return  ( XApp a x1' x2'
+                        , mappend r1 r2)
                 
         XLet a lts x
-         -> let (lts', r1)      = lambdasLets  p c a x lts 
-                (x',   r2)      = enterLetBody c a lts x  (lambdasX p)
-            in  ( foldr (XLet a) x' lts'
-                , mappend r1 r2)
+         -> do  (lts', r1)  <- lambdasLets  p c a x lts 
+                (x',   r2)  <- enterLetBody c a lts x  (lambdasX p)
+                return  ( foldr (XLet a) x' lts'
+                        , mappend r1 r2)
                 
         XCase a x alts
-         -> let (x',    r1)     = enterCaseScrut c a x alts (lambdasX p)
-                (alts', r2)     = lambdasAlts  p c a x [] alts
-            in  ( XCase a x' alts'
-                , mappend r1 r2)
+         -> do  (x',    r1) <- enterCaseScrut c a x alts (lambdasX p)
+                (alts', r2) <- lambdasAlts  p c a x [] alts
+                return  ( XCase a x' alts'
+                        , mappend r1 r2)
 
         XCast a cc x
          ->     lambdasCast p c a cc x
                 
-        XType{}         -> (xx, mempty)
-        XWitness{}      -> (xx, mempty)
+        XType{}         
+         ->     return  (xx, mempty)
+
+        XWitness{}      
+         ->     return  (xx, mempty)
 
 
 -- Lets -------------------------------------------------------------------------------------------
@@ -289,20 +332,20 @@ lambdasLets
         => Profile n -> Context a n
         -> a -> Exp a n
         -> Lets a n
-        -> ([Lets a n], Result a n)
+        -> S ([Lets a n], Result a n)
            
 lambdasLets p c a xBody lts
  = case lts of
         LLet b x
-         -> let (x', r)   = enterLetLLet c a b x xBody (lambdasX p)
-            in  ([LLet b x'], r)
+         -> do  (x', r)   <- enterLetLLet c a b x xBody (lambdasX p)
+                return  ([LLet b x'], r)
 
         LRec bxs
-         -> let (bxs', r) = lambdasLetRecLiftAll p c a bxs
-            in  (map (uncurry LLet) bxs', r)
+         -> do  (bxs', r) <- lambdasLetRecLiftAll p c a bxs
+                return  (map (uncurry LLet) bxs', r)
 
         LPrivate{}
-         -> ([lts], mempty)
+         ->     return  ([lts], mempty)
 
 
 -- LetRec -----------------------------------------------------------------------------------------
@@ -311,28 +354,30 @@ lambdasLetRec
         :: (Show a, Show n, Ord n, Pretty n, Pretty a, CompoundName n)
         => Profile n -> Context a n
         -> a -> [(Bind n, Exp a n)] -> [(Bind n, Exp a n)] -> Exp a n
-        -> ([(Bind n, Exp a n)], Result a n)
+        -> S ([(Bind n, Exp a n)], Result a n)
 
 lambdasLetRec _ _ _ _ [] _
-        = ([], mempty)
+        = return ([], mempty)
 
 lambdasLetRec p c a bxsAcc ((b, x) : bxsMore) xBody
- = let  (x',   r1) = enterLetLRec  c a bxsAcc b x bxsMore xBody (lambdasX p)
+ = do   (x',   r1) 
+         <- enterLetLRec  c a bxsAcc b x bxsMore xBody (lambdasX p)
 
-   in   case contextCtx c of
+        case contextCtx c of
 
          -- If we're at top-level then drop lifted bindings here.
          CtxTop{}
-          -> let  (bxs', Result p2 bxs2) 
-                        = lambdasLetRec p c a ((b, x') : bxsAcc) bxsMore xBody
-                  Result p1 bxsLifted = r1
-             in   ( bxsLifted ++ ((b, x') : bxs')
-                  , Result (p1 || p2) bxs2 )
+          -> do (bxs', Result p2 bxs2) 
+                 <- lambdasLetRec p c a ((b, x') : bxsAcc) bxsMore xBody
+                let Result p1 bxsLifted = r1
+                return  ( bxsLifted ++ ((b, x') : bxs')
+                        , Result (p1 || p2) bxs2 )
 
          _
-          -> let  (bxs', r2) = lambdasLetRec p c a ((b, x') : bxsAcc) bxsMore xBody
-             in   ( (b, x') : bxs'
-                  , mappend r1 r2 )
+          -> do (bxs', r2) 
+                 <- lambdasLetRec p c a ((b, x') : bxsAcc) bxsMore xBody
+                return  ( (b, x') : bxs'
+                        , mappend r1 r2 )
 
 
 -- | When all the bindings in a letrec are lambdas, lift them all together.
@@ -341,69 +386,71 @@ lambdasLetRecLiftAll
         => Profile n -> Context a n
         -> a
         -> [(Bind n, Exp a n)]
-        -> ([(Bind n, Exp a n)], Result a n)
+        -> S ([(Bind n, Exp a n)], Result a n)
 
 lambdasLetRecLiftAll p c a bxs
- = let 
+ = let  -- Wrap the context in the letrec
+        ctx before b x after
+         = enterLetLRec c a before b x after x (\c' _ -> c')
+   in do
+
        -- The union of free variables of all the mutually recursive bindings must be used,
        -- as any lifted function may call the other lifted functions.
-       us   = Set.unions
-            $ map (supportEnvFlags . support Env.empty Env.empty)
-            $ map snd bxs
+       let us   = Set.unions
+                $ map (supportEnvFlags . support Env.empty Env.empty)
+                $ map snd bxs
 
        -- However, the functions we are lifting should not be treated as free variables
-       us'  = Set.filter 
-                (\(_, bo) -> not $ any (boundMatchesBind bo . fst) bxs)
-            $ us
+       let us'  = Set.filter 
+                        (\(_, bo) -> not $ any (boundMatchesBind bo . fst) bxs)
+                $ us
 
        -- Lift each of the bindings in its own context.
        --  We allow the group of bindings to contain ones with outer lambda
        --  abstractions that need to be lifted, along with non-functional
        --  bindings that stay in place.
-       lift _before [] 
-        = []
+       let lift _before [] 
+             = return []
 
-       lift before ((b, x) : after)
-        = case takeXLamFlags x of
+           lift before ((b, x) : after)
+            = case takeXLamFlags x of
                 -- The right of this binding has an outer abstraction, 
                 -- so we need to lift it to top-level.
                 Just (lams, xx)
-                 -> let c' = ctx before b x after
-                        l' = liftLambda p c' us' a lams xx
-
-                    in  Right (b, l') : lift (before ++ [(b,x)]) after
+                 -> do  let c'  =  ctx before b x after
+                        l'      <- liftLambda p c' us' a lams xx
+                        ls      <- lift (before ++ [(b,x)]) after
+                        return  $ Right (b, l') : ls
 
                 -- The right of this binding does not have any outer
                 -- abstractions, so we can leave it in place.
                 Nothing
-                 ->     Left (b, x)   : lift (before ++ [(b, x)]) after
+                 -> do  ls      <- lift (before ++ [(b, x)]) after
+                        return  $ Left (b, x)   : ls
 
-       ls    = lift [] bxs
+       ls   <-  lift [] bxs
 
        -- The call to each lifted function
-       stripCall (Left  (b, x))          = (b, x)
-       stripCall (Right (b, (xC, _, _))) = (b, xC)
-       calls = map stripCall ls
+       let stripCall (Left  (b, x))          = (b, x)
+           stripCall (Right (b, (xC, _, _))) = (b, xC)
+       let calls = map stripCall ls
 
        -- Substitute the original name of the recursive function with a call to its new name,
        -- including passing along any free variables.
        -- Here, we need to unwrap the newly-created lambdas for the free variables,
        -- as capture-avoiding substitution would rename them - the opposite of what we want.
-       sub x = case takeXLamFlags x of
-                Just (lams, xx) -> makeXLamFlags a lams (substituteXXs calls xx)
-                Nothing         ->                       substituteXXs calls x
+       let sub x = case takeXLamFlags x of
+                    Just (lams, xx) -> makeXLamFlags a lams (substituteXXs calls xx)
+                    Nothing         ->                       substituteXXs calls x
 
        -- The result bindings to add at the top-level, with all the new names substituted in
-       stripResult (Left _)                 = Nothing
-       stripResult (Right (_, (_, bL, xL))) = Just (bL, sub xL)
-       res  = mapMaybe stripResult ls
+       let stripResult (Left _)                 = Nothing
+           stripResult (Right (_, (_, bL, xL))) = Just (bL, sub xL)
 
-   in  (calls, Result True res)
+       let res  = mapMaybe stripResult ls
 
- where
-  -- Wrap the context in the letrec
-  ctx before b x after
-   = enterLetLRec c a before b x after x (\c' _ -> c')
+       return (calls, Result True res)
+
 
 
 -- Alts -------------------------------------------------------------------------------------------
@@ -412,16 +459,16 @@ lambdasAlts
         :: (Show a, Show n, Ord n, Pretty n, Pretty a, CompoundName n)
         => Profile n -> Context a n
         -> a -> Exp a n -> [Alt a n] -> [Alt a n]
-        -> ([Alt a n], Result a n)
+        -> S ([Alt a n], Result a n)
            
 lambdasAlts _ _ _ _ _ []
-        = ([], mempty)
+        = return ([], mempty)
 
 lambdasAlts p c a xScrut altsAcc (AAlt w x : altsMore)
- = let  (x', r1)    = enterCaseAlt   c a xScrut altsAcc w x altsMore (lambdasX p)
-        (alts', r2) = lambdasAlts  p c a xScrut (AAlt w x' : altsAcc) altsMore
-   in   ( AAlt w x' : alts'
-        , mappend r1 r2)
+ = do   (x', r1)    <- enterCaseAlt   c a xScrut altsAcc w x altsMore (lambdasX p)
+        (alts', r2) <- lambdasAlts  p c a xScrut (AAlt w x' : altsAcc) altsMore
+        return  ( AAlt w x' : alts'
+                , mappend r1 r2)
 
 
 -- Cast -------------------------------------------------------------------------------------------
@@ -430,25 +477,25 @@ lambdasCast
         :: (Show a, Show n, Ord n, Pretty n, Pretty a, CompoundName n)
         => Profile n -> Context a n
         -> a -> Cast a n -> Exp a n
-        -> (Exp a n, Result a n)
+        -> S (Exp a n, Result a n)
 
 lambdasCast p c a cc x
   = case cc of
         CastWeakenEffect{}    
-         -> let (x', r) = enterCastBody c a cc x  (lambdasX p)
-            in  ( XCast a cc x', r)
+         -> do  (x', r) <- enterCastBody c a cc x  (lambdasX p)
+                return ( XCast a cc x', r)
 
         CastPurify{}
-         -> let (x', r) = enterCastBody c a cc x  (lambdasX p)
-            in  (XCast a cc x',  r)
+         -> do  (x', r) <- enterCastBody c a cc x  (lambdasX p)
+                return (XCast a cc x',  r)
 
         CastBox 
-         -> let (x', r) = enterCastBody  c a cc x (lambdasX p)
-            in  (XCast a cc x',  r)
+         -> do  (x', r) <- enterCastBody  c a cc x (lambdasX p)
+                return (XCast a cc x',  r)
        
         CastRun 
-         -> let (x', r)  = enterCastBody c a cc x (lambdasX p)
-            in  (XCast a cc x',  r)
+         -> do  (x', r) <- enterCastBody c a cc x (lambdasX p)
+                return (XCast a cc x',  r)
 
 
 ---------------------------------------------------------------------------------------------------
@@ -488,128 +535,127 @@ liftLambda
         -> a
         -> [(Bool, Bind n)]     -- ^ The lambdas, and whether they are type or value
         -> Exp a n
-        -> (  Exp a n
-            , Bind n, Exp a n)
+        -> S (  Exp a n
+             , Bind n, Exp a n)
 
 liftLambda p c fusFree a lams xBody
- = let  ctx             = contextCtx c
+ = do   let ctx             = contextCtx c
 
         -- The complete abstraction that we're lifting out.
-        xLambda         = makeXLamFlags a lams xBody
+        let xLambda         = makeXLamFlags a lams xBody
 
         -- Name of the enclosing top-level binding.
-        Just nTop       = takeTopNameOfCtx ctx
+        let Just nTop       = takeTopNameOfCtx ctx
 
         -- Names of other supers bound at top-level.
-        nsSuper         = takeTopLetEnvNamesOfCtx ctx
+        let nsSuper         = takeTopLetEnvNamesOfCtx ctx
 
         -- Name of the new lifted binding.
-        nLifted         = extendName nTop ("Lift_" ++ encodeCtx ctx)
-        uLifted         = UName nLifted
+        let nLifted         = extendName nTop ("Lift_" ++ encodeCtx ctx)
+        let uLifted         = UName nLifted
 
         -- Build the type checker configuration for this context.
-        config          = Check.configOfProfile p
-        env             = contextEnv c
+        let config          = Check.configOfProfile p
+        let env             = contextEnv c
 
         -- Function to get the type of an expression in this context.
         -- If there are type errors in the input program then some 
         -- either the lambda lifter is broken or some other transform
         -- has messed up.
-        typeOfExp x
-         = case Check.typeOfExp config env x
-            of  Left err
-                 -> error $ renderIndent $ vcat
-                          [ text "ddc-core-simpl.liftLambda: type error in lifted expression"
-                          , ppr err]
-                Right t -> t
+        let typeOfExp x
+             = case Check.typeOfExp config env x
+                of  Left err
+                     -> error $ renderIndent $ vcat
+                              [ text "ddc-core-simpl.liftLambda: type error in lifted expression"
+                              , ppr err]
+                    Right t -> t
 
 
         -- Decide whether we want to bind the given variable as a new parameter
         -- on the lifted super. We don't need to bind primitives, other supers,
         -- or any variable bound by the abstraction itself.
-        keepVar fu@(_, u)
-         | (False, UName n) <- fu      = not $ Set.member n nsSuper
-         | (_,     UPrim{}) <- fu      = False
-         | any (boundMatchesBind u . snd) lams
-                                       = False
-         | otherwise                   = True
+        let keepVar fu@(_, u)
+             | (False, UName n) <- fu      = not $ Set.member n nsSuper
+             | (_,     UPrim{}) <- fu      = False
+             | any (boundMatchesBind u . snd) lams
+                                           = False
+             | otherwise                   = True
 
-        fusFree_filtered
+        let fusFree_filtered
                 = filter keepVar
                 $ Set.toList fusFree
 
 
         -- Join in the types of the free variables.
-        joinType (f, u)
-         = case f of
-            True    | Just t <- EnvX.lookupT u env
-                    -> ((f, u), t)
+        let joinType (f, u)
+             = case f of
+                True    | Just t <- EnvX.lookupT u env
+                        -> ((f, u), t)
 
-            False   | Just t <- EnvX.lookupX u env
-                    -> ((f, u), t)
+                False   | Just t <- EnvX.lookupX u env
+                        -> ((f, u), t)
                 
-            _       -> error $ unlines
-                        [ "ddc-core-simpl.joinType: cannot find type of free var."
-                        , show (f, u)
-                        , show (Map.keys $ EnvX.envxMap env) ]
+                _       -> error $ unlines
+                            [ "ddc-core-simpl.joinType: cannot find type of free var."
+                            , show (f, u)
+                            , show (Map.keys $ EnvX.envxMap env) ]
 
-        futsFree_types
+        let futsFree_types
                 = map joinType fusFree_filtered
 
 
         -- Add in type variables that are free in the types of free value variables.
         -- We need to bind these as well in the new super.
-        expandFree ((f, u), t)
-         | False <- f   =  [(f, u)]
-                        ++ [(True, ut) | ut  <- Set.toList
-                                             $  freeVarsT Env.empty t]
-         | otherwise    =  [(f, u)]
+        let expandFree ((f, u), t)
+             | False <- f   =  [(f, u)]
+                            ++ [(True, ut) | ut  <- Set.toList
+                                                 $  freeVarsT Env.empty t]
+             | otherwise    =  [(f, u)]
     
-        fusFree_body    =  [(True, ut) | ut  <- Set.toList 
+        let fusFree_body    =  [(True, ut) | ut  <- Set.toList 
                                              $  freeVarsT Env.empty $ typeOfExp xLambda]
 
-        futsFree_expandFree
+        let futsFree_expandFree
                 =  map joinType
                 $  Set.toList $ Set.fromList
                 $  (concatMap expandFree $ futsFree_types)
                 ++ fusFree_body
 
         -- Sort free vars so the type variables come out the front.
-        futsFree
+        let futsFree
                 = sortBy (compare `on` (not . fst . fst))
                 $ futsFree_expandFree
 
 
         -- At the call site, apply all the free variables of the lifted
         -- function as new arguments.    
-        makeArg  (True,  u) = XType a (TVar u)
-        makeArg  (False, u) = XVar a u
+        let makeArg  (True,  u) = XType a (TVar u)
+            makeArg  (False, u) = XVar a u
         
-        xCall   = xApps a (XVar a uLifted)
-                $ map makeArg $ map fst futsFree
-
+        let xCall   = xApps a (XVar a uLifted)
+                    $ map makeArg $ map fst futsFree
 
         -- ISSUE #330: Lambda lifter doesn't work with anonymous binders.
         -- For the lifted abstraction, wrap it in new lambdas to bind all of
         -- its free variables. 
-        makeBind ((True,  (UName n)), t) = (True,  BName n t)
-        makeBind ((False, (UName n)), t) = (False, BName n t)
-        makeBind fut
-                = error $ "ddc-core-simpl.liftLamba: unhandled binder " ++ show fut
+        let makeBind ((True,  (UName n)), t) = (True,  BName n t)
+            makeBind ((False, (UName n)), t) = (False, BName n t)
+            makeBind fut
+                    = error $ "ddc-core-simpl.liftLamba: unhandled binder " ++ show fut
         
         -- Make the new super.
-        bsParam = map makeBind futsFree
+        let bsParam = map makeBind futsFree
 
-        xLifted = makeXLamFlags a bsParam xLambda
+        let xLifted = makeXLamFlags a bsParam xLambda
 
 
         -- Get the type of the bound expression, which we need when building
         -- the type of the new super.
-        tLifted = typeOfExp xLifted
-        bLifted = BName nLifted tLifted
+        let tLifted = typeOfExp xLifted
+        let bLifted = BName nLifted tLifted
         
-    in  ( xCall
-        , bLifted, xLifted)
+        return  ( xCall
+                , bLifted, xLifted)
 
 
 nameOfContext :: CompoundName n => String -> Context a n -> n

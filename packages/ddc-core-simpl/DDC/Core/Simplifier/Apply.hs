@@ -19,7 +19,7 @@ import DDC.Core.Transform.Eta                   as Eta
 import DDC.Core.Transform.Flatten
 import DDC.Core.Transform.Forward               as Forward
 import DDC.Core.Transform.Inline
-import DDC.Core.Transform.Lambdas
+import qualified DDC.Core.Transform.Lambdas     as Lambdas
 import DDC.Core.Transform.Namify
 import DDC.Core.Transform.Prune
 import DDC.Core.Transform.Rewrite
@@ -153,7 +153,12 @@ applyTransform !profile !_kenv !_tenv !spec !mm
 
         FoldCase config  -> res    $ FoldCase.foldCase config mm
         Inline getDef    -> res    $ inline getDef Set.empty mm
-        Lambdas          -> res    $ lambdasModule profile mm
+
+        Lambdas
+         -> res
+         $  Lambdas.evalState "l"
+         $  Lambdas.lambdasModule profile mm
+
         Namify namK namT -> namifyUnique namK namT mm >>= res
         Prune            -> res    $ pruneModule profile mm
         Rewrite rules    -> res    $ rewriteModule rules mm

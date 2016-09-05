@@ -19,9 +19,6 @@ functor_maybe
  = Functor 
         maybe_fmap
 
-
--- TODO: cannot make this a local expression in functor_maybe
--- using a 'where'.
 maybe_fmap [a b: Data] (f: a -> b) (xx: Maybe a): Maybe b
  = case xx of
         Nothing -> Nothing

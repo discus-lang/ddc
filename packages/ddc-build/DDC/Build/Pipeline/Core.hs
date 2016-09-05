@@ -517,7 +517,8 @@ pipeFlow !mm !pp
 
 
                 -- Lift up any remaining lambdas
-                mm_lift         = Lambdas.lambdasModule Flow.profile mm_eta
+                mm_lift         = Lambdas.evalState "fl"
+                                $ Lambdas.lambdasModule Flow.profile mm_eta
 
                 -- Snip program so arguments and case scrutinees are just variables
                 mm_snip         = Flatten.flatten 

@@ -5,23 +5,17 @@ module DDC.Source.Tetra.Transform.Prep
         , desugarModule)
 where
 import DDC.Source.Tetra.Module
--- import DDC.Source.Tetra.Prim
 import DDC.Source.Tetra.Exp
 import Data.Monoid
-import Data.Text                        (Text)
-import Data.Map                         (Map)
--- import qualified DDC.Data.SourcePos     as SP
-import qualified Control.Monad.State    as S
-import qualified Data.Text              as Text
-import qualified Data.Map.Strict        as Map
-import qualified Data.Set               as Set
+import Data.Text                                (Text)
+import Data.Map                                 (Map)
+import qualified Control.Monad.State.Strict     as S
+import qualified Data.Text                      as Text
+import qualified Data.Map.Strict                as Map
+import qualified Data.Set                       as Set
 
 
 ---------------------------------------------------------------------------------------------------
--- | Source position.
--- type SP = SP.SourcePos
-
-
 -- | State holding a variable name prefix and counter to 
 --   create fresh variable names.
 type S  = S.State (Bool, Text, Int)
