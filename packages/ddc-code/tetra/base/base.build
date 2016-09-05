@@ -18,6 +18,7 @@ library
         Data.Function
         Data.Numeric.Bool
         Data.Numeric.Nat
+        Data.Numeric.Word
         Data.Maybe
         Data.List
         Data.Text.Base

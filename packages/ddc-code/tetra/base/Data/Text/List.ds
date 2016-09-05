@@ -31,7 +31,7 @@ charListOfText (tx: Text): List Char
 
 -- | Unpack a list of characters from a vector.
 charListOfTextVec
-        (vec: Vector# r Word8#)
+        (vec: Vector# r Word8)
         : S (Read r) (List Char)
  = go 0
  where  go (ix: Nat): S (Read r) (List Char)
@@ -47,7 +47,7 @@ charListOfTextVec
 vectorOfCharList
         [r: Region]
         (xx: List Char)
-        : S (Alloc r + Write r) (Vector# r Word8#)
+        : S (Alloc r + Write r) (Vector# r Word8)
  = do
         len     = length xx
         vec     = vectorAlloc# [r] (len + 1)

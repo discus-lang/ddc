@@ -86,12 +86,12 @@ data Text where
 -- | O(1). Wrap a single character into a text object.
 --   We're only taking the lowest 8 bit bytes,
 --   rather than doing proper UTF-8 encoding.
-textOfChar (c: Word32#): Text
+textOfChar (c: Word32): Text
  = textOfWord8 (truncate# c)
 
 
 -- | O(1). Wrap a single byte into a text object.
-textOfWord8 (w8: Word8#): Text
+textOfWord8 (w8: Word8): Text
  = TextVec
   (extend RegionText using r1 with { Alloc r1; Write r1 } in
    do   -- Allocate the vector to hold the data,
@@ -108,7 +108,7 @@ textOfWord8 (w8: Word8#): Text
 
 
 -- | O(1). Wrap a vector of UTF-8 data into a text object.
-textOfVector (vec: Vector# RegionText Word8#): Text
+textOfVector (vec: Vector# RegionText Word8): Text
  = TextVec vec
 
 
@@ -116,7 +116,7 @@ textOfVector (vec: Vector# RegionText Word8#): Text
 -- | Copy a Text object into a flat vector of UTF-8 data.
 vectorOfText
         [r1: Region] (tt: Text)
-        : S (Alloc r1) (Vector# r1 Word8#)
+        : S (Alloc r1) (Vector# r1 Word8)
  = extend r1 using r2 with { Alloc r2; Write r2 } in
    do   
         -- Allocate a vector to hold all the data, 
@@ -134,7 +134,7 @@ vectorOfText
 
 -- | Copy a text object to a mutable vector of UTF-8 data.
 copyTextToVector 
-        [r: Region] (tt: Text) (vec: Vector# r Word8#) (i0: Nat)
+        [r: Region] (tt: Text) (vec: Vector# r Word8) (i0: Nat)
         : S (Write r) Nat
  = case tt of
         TextLit lit
@@ -151,7 +151,7 @@ copyTextToVector
 
 -- | Copy a text literal to a mutable vector of UTF-8 data.
 copyTextLitToVector 
-        [r: Region] (tt: TextLit) (vec: Vector# r Word8#) 
+        [r: Region] (tt: TextLit) (vec: Vector# r Word8) 
         (iDst iSrc nSrc: Nat)
         : S (Write r) Nat
  | iSrc >= nSrc = iDst
@@ -164,7 +164,7 @@ copyTextLitToVector
 -- | Copy a text source vector to a mutable vector of UTF-8 data.
 copyTextVecToVector 
         [r1 r2: Region] 
-        (vecSrc: Vector# r1 Word8#) (vecDst: Vector# r2 Word8#)
+        (vecSrc: Vector# r1 Word8) (vecDst: Vector# r2 Word8)
         (iDst iSrc nSrc: Nat)
         : S (Read r1 + Write r2) Nat
  | iSrc >= nSrc = iDst
@@ -195,7 +195,7 @@ sizeOfText (tt: Text): Nat
 
 
 -- | Get a single word8 character from a Text object.
-indexText (tt: Text) (ix: Nat): Maybe Word8#
+indexText (tt: Text) (ix: Nat): Maybe Word8
  = case tt of
         TextLit lit
          | ix >= sizeOfTextLit lit      -> Nothing
@@ -209,6 +209,7 @@ indexText (tt: Text) (ix: Nat): Maybe Word8#
          -> case indexText t1 ix of
                 Just x                  -> Just x
                 Nothing                 -> indexText t2 (ix - sizeOfText t1)
+
 
 -- Comparison -----------------------------------------------------------------
 -- | O(max len1 len2).
@@ -230,7 +231,7 @@ eqText (tx1 tx2: Text): Bool
          | otherwise    = go vec1 vec2 len1 0
 
  where
-        go (vec1 vec2: Vector# r Word8#)
+        go (vec1 vec2: Vector# r Word8)
            (len: Nat) (ix: Nat): S (Read r) Bool
          | ix >= (len - 1)
          = True

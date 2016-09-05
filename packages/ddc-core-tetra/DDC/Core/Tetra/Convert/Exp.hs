@@ -24,7 +24,6 @@ import qualified DDC.Core.Salt.Name             as A
 
 import DDC.Type.DataDef
 import DDC.Base.Pretty
--- import Text.Show.Pretty
 import Control.Monad
 import Data.Maybe
 import DDC.Control.Monad.Check                  (throw)

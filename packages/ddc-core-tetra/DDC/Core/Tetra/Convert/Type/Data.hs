@@ -231,7 +231,7 @@ convertDataAppT ctx tt
         , Map.member n (dataDefsTypes $ contextDataDefs ctx)
         = do   return  $ A.tPtr A.rTop A.tObj
 
-        -- TODO: If the left is a type function we need to normalise it.
+        -- ISSUE #377: Look through type equations during Tetra to Salt transform.
         | Just (TyConBound (UName n) _, []) <- takeTyConApps tt
         , Just t' <- Map.lookup n (contextTypeEqns ctx)
         = convertDataAppT ctx t'
@@ -242,9 +242,9 @@ convertDataAppT ctx tt
         = do    return  $ A.tPtr A.rTop A.tObj
 
         | otherwise
-        =      throw   $ ErrorMalformed 
-                       $  "Invalid type constructor application "
-                       ++ (renderIndent $ ppr tt)
+        = throw   $ ErrorMalformed 
+                  $  "Invalid type constructor application "
+                  ++ (renderIndent $ ppr tt)
 
 
 -- | Convert a primitive type directly to its Salt form.
@@ -261,10 +261,12 @@ convertDataPrimitiveT tt
 
                 E.PrimTyConTextLit      -> return $ A.tTextLit
 
-                _ -> throw $ ErrorMalformed 
-                           $ "Invalid primitive type " ++ (renderIndent $ ppr tt)
+                _ -> throw $  ErrorMalformed 
+                           $  "Invalid primitive type "
+                           ++ (renderIndent $ ppr tt)
 
         | otherwise
-        = throw $ ErrorMalformed 
-                $ "Invalid primitive type " ++ (renderIndent $ ppr tt)
+        = throw $  ErrorMalformed 
+                $  "Invalid primitive type "
+                ++ (renderIndent $ ppr tt)
 
