@@ -9,6 +9,7 @@ import Class.Functor
 where
 
 
+-- A functor with application.
 data Applicative (f: Data -> Data) where
         Applicative
          :  Functor f 
@@ -16,22 +17,33 @@ data Applicative (f: Data -> Data) where
          -> ([a b: Data]. f (a -> b) -> f a -> f b)     -- ap
          -> Applicative f
 
-dFunctorOfApplicative
-        ((Applicative dFunctor _ _): Applicative f)
-        : Functor f
+
+-- | Take the Functor dictionary from an Applicative dictionary.
+dFunctorOfApplicative 
+        : [f: Data -> Data]
+        . Applicative f -> Functor f
+
+dFunctorOfApplicative (Applicative dFunctor _ _)
  = dFunctor
 
 
-pure    ((Applicative _ pure' _): Applicative f) 
-        (x: a): f a
+-- | Return a value in the carrier.
+pure    : [f: Data -> Data]. [a: Data]
+        . Applicative f -> a -> f a
+
+pure    (Applicative _ pure' _) x
  = pure' x
 
 
-ap      ((Applicative _ _ ap'):   Applicative f)
-        (xfab: f (a -> b)) (xfa: f a): f b
+-- | Apply a function in the carrier its argument in another carrier.
+ap      : [f: Data -> Data]. [a b: Data]
+        . Applicative f -> f (a -> b) -> f a -> f b
+
+ap      (Applicative _ _ ap') xfab xfa
  = ap' xfab xfa
 
 
+-- Lifting functions.
 liftA   (dapp: Applicative f) (f: a -> b) (xa: f a): f b
  = ap dapp (pure dapp f) xa
 

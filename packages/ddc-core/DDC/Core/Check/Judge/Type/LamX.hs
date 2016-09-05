@@ -77,7 +77,8 @@ checkLam !table !a !ctx !b1 !x2 !(Synth {})
  = do
         ctrace  $ vcat
                 [ text "*>  Lam SYNTH"
-                , text "    in  bind = " <+> ppr b1 ]
+                , text "    in  bind = " <+> ppr b1
+                , empty ]
 
         let config      = tableConfig table
         let xx          = XLam a b1 x2

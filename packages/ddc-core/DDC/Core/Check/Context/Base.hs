@@ -99,7 +99,7 @@ instance (Pretty n, Eq n) => Pretty (Context n) where
   <$> text "  genPos    = " <> int genPos
   <$> text "  genExists = " <> int genExists
   <$> indent 2 
-        (vcat $ [int i  <> (indent 4 $ ppr l)
+        (vcat $ [padL 4 (int i)  <+> ppr l
                         | l <- reverse ls
                         | i <- [0..]])
 

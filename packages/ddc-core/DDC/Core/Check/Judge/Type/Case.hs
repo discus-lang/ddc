@@ -189,10 +189,10 @@ takeDiscrimCheckModeFromAlts table a ctx mode alts
          tPat : _
           | Just (bs, tBody) <- takeTForalls tPat
           , Check tExpect    <- mode
-          , Just iExpect     <- takeExists tExpect
+          , Just  iExpect    <- takeExists tExpect
           -> do
                 -- existentials for all of the type parameters.
-                is        <- mapM  (\_ -> newExists kData) bs
+                is        <- mapM  (\b -> newExists (typeOfBind b)) bs
                 let ts     = map typeOfExists is
                 let ctx'   = foldl (\ctxx i -> pushExistsBefore i iExpect ctxx) ctx is
                 let tBody' = substituteTs (zip bs ts) tBody
@@ -202,7 +202,7 @@ takeDiscrimCheckModeFromAlts table a ctx mode alts
           | Just (bs, tBody) <- takeTForalls tPat
           -> do
                 -- existentials for all of the type parameters.
-                is        <- mapM  (\_ -> newExists kData) bs
+                is        <- mapM  (\b -> newExists (typeOfBind b)) bs
                 let ts     = map typeOfExists is
                 let ctx'   = foldl (flip pushExists) ctx is
                 let tBody' = substituteTs (zip bs ts) tBody

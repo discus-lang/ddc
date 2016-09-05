@@ -132,21 +132,21 @@ instance (Pretty n, Eq n) => Pretty (Elem n) where
          -> ppr p
 
         ElemKind b role  
-         -> ppr (binderOfBind b) 
-                <+> text "::" 
+         -> (padL 4 $ ppr (binderOfBind b))
+                <+> text ":" 
                 <+> (ppr $ typeOfBind b)
                 <+> text "@" <> ppr role
 
         ElemType b
-         -> ppr (binderOfBind b)
-                <+> text "::"
+         -> (padL 4 $ ppr (binderOfBind b))
+                <+> text ":"
                 <+> (ppr $ typeOfBind b)
 
-        ElemExistsDecl i
-         -> ppr i
+        ElemExistsDecl (Exists i k)
+         -> padL 4 (text "?" <> ppr i) <+> text ":" <+> ppr k
 
-        ElemExistsEq i t 
-         -> ppr i <+> text "=" <+> ppr t
+        ElemExistsEq (Exists i k) t 
+         -> padL 4 (text "?" <> ppr i) <+> text ":" <+> ppr k <+> text "=" <+> ppr t
 
 
 -- | Take the existential from this context element, if there is one.
