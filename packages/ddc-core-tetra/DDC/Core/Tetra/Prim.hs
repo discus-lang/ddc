@@ -155,6 +155,9 @@ instance CompoundName Name where
  extendName n str       
   = NameExt n str
  
+ newVarName str
+  = NameVar str
+
  splitName nn
   = case nn of
         NameExt n str   -> Just (n, str)

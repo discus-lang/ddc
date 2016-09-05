@@ -18,7 +18,6 @@ import DDC.Base.Name
 import Data.Function
 import Data.List
 import Data.Set                                 (Set)
-import Data.Map                                 (Map)
 import qualified Control.Monad.State.Strict     as S
 import qualified DDC.Core.Check                 as Check
 import qualified DDC.Type.Env                   as Env
@@ -43,13 +42,28 @@ evalState n c
 
 
 -- | Allocate a new named variable, yielding its associated bind and bound.
-newVar  :: CompoundName n
-        => n            -- ^ Original name to base the new one on.
-        -> String       -- ^ Informational name to add.
+newVar 
+        :: CompoundName n
+        => String       -- ^ Informational name to add.
         -> Type n       -- ^ Type of the new binder.
         -> S (Bind n, Bound n)
 
-newVar name prefix t
+newVar prefix t
+ = do   (n, i)   <- S.get
+        let name' = newVarName (n ++ "$" ++ prefix ++ "$" ++ show i)
+        S.put (n, i + 1)
+        return  (BName name' t, UName name')
+
+
+-- | Allocate a new named variable, yielding its associated bind and bound.
+newVarExtend
+        :: CompoundName n
+        => n            -- ^ Base name.
+        -> String       -- ^ Informational name to ad.
+        -> Type n       -- ^ Type of the new binder.
+        -> S (Bind n, Bound n)
+
+newVarExtend name prefix t
  = do   (n, i)   <- S.get
         let name' = extendName name (n ++ "$" ++ prefix ++ "$" ++ show i)
         S.put (n, i + 1)
@@ -78,7 +92,6 @@ lambdasModule profile mm
         x'      <- lambdasLoopX profile c $ moduleBody mm
 
         return 
-         $ beautifyModule
          $ mm { moduleBody = x' }
 
 
@@ -260,26 +273,30 @@ lambdasX p c xx
                   ,  args  <- length xsArg
                   ,  arity /= args
                   -> do
-                         -- ISSUE #383: Redo name generation in lambda lifter.
-                         -- Should have just used a state monad.
-                        let bsT       = [ BName (nameOfContext ("Lift_" ++ show i) c) (typeOfBind b)
-                                        | i <- [0 .. arityT - 1]
+                        -- Make binders for the new type parameters.
+                        (bsT, usT)
+                                <- fmap unzip
+                                $  mapM (\(i, t) -> newVar (show i) t)
+                                $  [ (i, typeOfBind b)
+                                        | i <- [0..arityT - 1]
                                         | b <- DataDef.dataCtorTypeParams dataCtor ]
 
-                        let Just usT  = sequence $ map takeSubstBoundOfBind bsT
+                        let sub = zip (DataDef.dataCtorTypeParams dataCtor) 
+                                      (map TVar usT)
 
-                        let sub       = zip (DataDef.dataCtorTypeParams dataCtor) 
-                                             (map TVar usT)
+                        -- Make binders for the new term parameters.
+                        (bsX, usX)
+                                <- fmap unzip
+                                $  mapM (\(i, t) -> newVar (show i) (substituteTs sub t))
+                                $  [ (i, t)
+                                        | i <- [0 .. arityX - 1]
+                                        | t <- DataDef.dataCtorFieldTypes dataCtor ]
 
-                        let bsX       = [ BName (nameOfContext ("Lift_" ++ show i) c) 
-                                                (substituteTs sub t)
-                                           | i <- [0 .. arityX - 1]
-                                           | t <- DataDef.dataCtorFieldTypes dataCtor]
-
-                        let Just usX     = sequence $ map takeSubstBoundOfBind bsX
+                        -- Transform all the arguments.
                         let downArg xArg = enterAppRight c a x1 xArg (lambdasX p)
-                        (xsArg', rs)     <- fmap unzip $ mapM downArg xsArg
+                        (xsArg', rs)    <- fmap unzip $ mapM downArg xsArg
 
+                        -- Build application of our new abstraction.
                         return  ( xApps a
                                         ( xLAMs a bsT $ xLams a bsX 
                                                 $  xApps a xCon
@@ -535,7 +552,7 @@ liftLambda
         -> a
         -> [(Bool, Bind n)]     -- ^ The lambdas, and whether they are type or value
         -> Exp a n
-        -> S (  Exp a n
+        -> S ( Exp a n
              , Bind n, Exp a n)
 
 liftLambda p c fusFree a lams xBody
@@ -549,10 +566,6 @@ liftLambda p c fusFree a lams xBody
 
         -- Names of other supers bound at top-level.
         let nsSuper         = takeTopLetEnvNamesOfCtx ctx
-
-        -- Name of the new lifted binding.
-        let nLifted         = extendName nTop ("Lift_" ++ encodeCtx ctx)
-        let uLifted         = UName nLifted
 
         -- Build the type checker configuration for this context.
         let config          = Check.configOfProfile p
@@ -626,15 +639,6 @@ liftLambda p c fusFree a lams xBody
                 = sortBy (compare `on` (not . fst . fst))
                 $ futsFree_expandFree
 
-
-        -- At the call site, apply all the free variables of the lifted
-        -- function as new arguments.    
-        let makeArg  (True,  u) = XType a (TVar u)
-            makeArg  (False, u) = XVar a u
-        
-        let xCall   = xApps a (XVar a uLifted)
-                    $ map makeArg $ map fst futsFree
-
         -- ISSUE #330: Lambda lifter doesn't work with anonymous binders.
         -- For the lifted abstraction, wrap it in new lambdas to bind all of
         -- its free variables. 
@@ -645,103 +649,25 @@ liftLambda p c fusFree a lams xBody
         
         -- Make the new super.
         let bsParam = map makeBind futsFree
-
         let xLifted = makeXLamFlags a bsParam xLambda
 
 
         -- Get the type of the bound expression, which we need when building
         -- the type of the new super.
         let tLifted = typeOfExp xLifted
-        let bLifted = BName nLifted tLifted
+  
+
+        -- At the call site, apply all the free variables of the lifted
+        -- function as new arguments.    
+        let makeArg  (True,  u) = XType a (TVar u)
+            makeArg  (False, u) = XVar a u
+
+        -- Name of the new lifted binding.
+        (bLifted, uLifted)  <- newVarExtend nTop "L" tLifted 
+        
+        let xCall   = xApps a (XVar a uLifted)
+                    $ map makeArg $ map fst futsFree
         
         return  ( xCall
                 , bLifted, xLifted)
-
-
-nameOfContext :: CompoundName n => String -> Context a n -> n
-nameOfContext prefix c
- = let  ctx             = contextCtx c
-
-        -- Name of the enclosing top-level binding.
-        Just nTop       = takeTopNameOfCtx ctx
-
-        -- Name of the new lifted binding.
-   in   extendName nTop (prefix ++ encodeCtx ctx)
-
-
----------------------------------------------------------------------------------------------------
--- ISSUE #383: Redo name generation in Lambda lifter.
-
--- | Beautify the names of lifted lamdba abstractions.
---   The lifter itself names new abstractions after the context they come from.
---   This is an easy way of generating unique names, but the names are too
---   verbose to want to show to users, or put in the symbol table of the
---   resulting binary.
---   
---   The beautifier renames the bindings of lifted abstractions to
---    fun$L0, fun$L1 etc, where 'fun' is the name of the top-level binding
---   it was lifted out of.
---
-beautifyModule 
-        :: forall a n. (Ord n, CompoundName n)
-        => Module a n -> Module a n
-
-beautifyModule mm
- = mm { moduleBody = beautifyX $ moduleBody mm }
-
- where
-  -- If the given binder is for an abstraction that we have lifted, 
-  -- then produce a new nice name for it.
-  makeRenamer 
-        ::  Map n Int -> Bind n 
-        -> (Map n Int, Maybe (n, (n, Type n)))
-
-  makeRenamer acc b
-        | BName n t         <- b
-        , Just (nBase, str) <- splitName n
-        , isPrefixOf "Lift_" str
-        = case Map.lookup nBase acc of
-           Nothing  -> ( Map.insert nBase 0 acc
-                       , Just (  extendName nBase str
-                              , (extendName nBase ("L" ++ show (0 :: Int)), t)))
-
-           Just n'  -> ( Map.insert nBase (n' + 1) acc
-                       , Just (  extendName nBase str
-                              , (extendName nBase ("L" ++ show (n' + 1)),   t)))
-
-        | otherwise = (acc, Nothing)
-
-  -- Beautify bindings.
-  beautifyBXs a bxs
-   = let bsRenames   :: [(n, (n, Type n))]
-         bsRenames   = catMaybes $ snd
-                     $ mapAccumL makeRenamer (Map.empty :: Map n Int)
-                     $ map fst bxs
-
-         bxsSubsts   :: [(Bind n, Exp a n)]
-         bxsSubsts   =  [ (BName n t, XVar a (UName n'))
-                                | (n, (n', t))  <- bsRenames]   
-
-         renameBind (b, x)
-                | BName n t     <- b
-                , Just  (n', _) <- lookup n bsRenames
-                = (BName n' t, x)
-                
-                | otherwise = (b, x)
-            
-     in  map (\(b, x) -> (b, substituteXXs bxsSubsts x))
-          $ map renameBind bxs
-
-  -- Beautify bindings in top-level let-expressions.
-  beautifyX xx
-   = case xx of
-        XLet a (LRec bxs) xBody
-         -> let bxs'    = beautifyBXs a bxs
-            in  XLet a (LRec bxs')  (beautifyX xBody)
-
-        XLet a (LLet b x) xBody
-         -> let [(b', x')] = beautifyBXs a [(b, x)]
-            in  XLet a (LLet b' x') (beautifyX xBody)
-
-        _ -> xx
 

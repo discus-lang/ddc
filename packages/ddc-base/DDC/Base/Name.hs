@@ -16,6 +16,9 @@ class CompoundName n where
         -- | Build a new name based on the given one.
         extendName      :: n -> String -> n
         
+        -- | Build a new name from the given string.
+        newVarName      :: String -> n
+
         -- | Split the extension string from a name.
         splitName       :: n -> Maybe (n, String)
 
