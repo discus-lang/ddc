@@ -34,36 +34,14 @@ convertRegionT ctx tt
 -- | Given the type of some data value, determine what prime region to use 
 --   for the object in the Salt language. The supplied type must have kind
 --   Data, else you'll get a bogus result.
---
---   Boxed data types whose first parameter is a region, by convention that
---   region is the prime one.
---     List r1 a  =>  r1 
---
---   Boxed data types that do not have a region as the first parameter,
---   these are allocated into the top-level region.
---     Unit       => rTop
---     B# Nat#    => rTop
---     
---   Functions are also allocated into the top-level region.
---     a -> b     => rTop
---     forall ... => rTop
---
---   For completely parametric data types we use a region named after the
---   associated type variable.
---     a          => a$r
---
---   For types with an abstract constructor, we currently reject them outright.
---   There's no way to tell what region an object of such a type should be 
---   allocated into. In future we should add a supertype of regions, and treat
---   such objects as belong to the Any region.
---   See [Note: Salt conversion for higher kinded type arguments]
---     c a b      => ** NOTHING **
+-- 
+--   NOTE: This used to do something more useful, but was changed so that
+--   all values go into rTop. The problem is that given a type like (m Nat)
+--   we can't know what region the value will be allocated into as the
+--   type is too polymorphic. We need to implement a region subtyping system
+--   so that the Top region can be treated as an Any/DontKnow specifier
+--   rather than a specific region that is distinct from all others.
 --   
---   Unboxed and index types don't refer to boxed objects, so they don't have
---   associated prime regions.
---     Nat#       => ** NOTHING **
---     U# Nat#    => ** NOTHING **
---
 saltPrimeRegionOfDataType
         :: KindEnv E.Name 
         -> Type E.Name 
@@ -74,16 +52,6 @@ saltPrimeRegionOfDataType kenv tt
         | TCon _ : TVar u : _   <- takeTApps tt
         , Just k                <- Env.lookup u kenv
         , isRegionKind k
-        = do    -- u'      <- convertTypeU u
-                return  A.rTop
-
-        -- Boxed data types without an attached primary region variable.
-        -- This also covers the function case.
-        | TCon _ : _           <- takeTApps tt
-        = do    return  A.rTop
-
-        -- Quantified types.
-        | TForall{}     <- tt
         = do    return  A.rTop
 
         -- Completely parametric data types.
@@ -92,14 +60,22 @@ saltPrimeRegionOfDataType kenv tt
         , isDataKind k
         = do    return  A.rTop
 
-        -- TODO: This is sketchy.
-        -- We need it to handle polymorphic values eg
-        -- in the definition of the functor dictionary for list.
-        | otherwise
+        -- Boxed data types without an attached primary region variable.
+        --   For applications of abstract type constructors like in 
+        --   (m Nat), we can't know what constructor 'm' will be instantiated
+        --   with, nor what region the resulting value will be allocated into.
+        | TCon{}  <- tt
         = do    return  A.rTop
 
-{-
+        | TApp{}   <- tt
+        = do    return  A.rTop
+
+        -- Quantified types.
+        | TForall{}     <- tt
+        = do    return  A.rTop
+
+        -- Type variable which is not in the environment.
         | otherwise
         = throw $ ErrorMalformed       
                 $ "Cannot take prime region from " ++ (renderIndent $ ppr tt)
--}
+
