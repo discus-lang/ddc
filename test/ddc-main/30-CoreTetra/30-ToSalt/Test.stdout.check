@@ -255,13 +255,40 @@ Error in transformed module.
   with: convert# [U# Nat#] [Nat#] x2
 
 
--- Error: partial application if user defined data constructors is not supported.
-Fragment violation when converting Tetra module to Salt module.
-  Cannot convert expression.
-    Cannot convert function abstraction in this context.
-    The program must be lambda-lifted before conversion.
+-- OK: partial application if user defined data constructors is now supported.
+module Test with
+letrec {
+  thing$l$L$2: Ptr# rT Obj -> Ptr# rT Obj -> Ptr# rT Obj
+    = λ(l$0$0 l$1$1: Ptr# rT Obj).
+      let ^: Ptr# rT Obj
+            = allocBoxed [rT] TAG0# 2# in
+      let _: Void#
+            = setBoxed [rT] [rT] ^0 0# l$0$0 in
+      let _: Void#
+            = setBoxed [rT] [rT] ^0 1# l$1$1 in
+      ^0;
   
-    with: λ(l$0$0 l$1$1: Nat#). Thing l$0$0 l$1$1
+  thing: Ptr# rT Obj -> Ptr# rT Obj
+    = λ(_: Ptr# rT Obj).
+      let x0: Ptr# rT Obj
+            = allocThunk [rT]
+                  (convert# [Addr#] [Ptr# rT Obj -> Ptr# rT Obj -> Ptr# rT Obj] thing$l$L$2) 2# 0# 0# 0# in
+      let x1: Ptr# rT Obj
+            = let ^: Ptr# rT Obj
+                    = allocSmall [rT] TAG0# 8# in
+              let ^: Ptr# rT Word8#
+                    = payloadSmall [rT] ^0 in
+              let _: Void#
+                    = poke# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# 5# in
+              ^1 in
+      let ^: Ptr# rT Obj
+            = extendThunk [rT] [rT] x0 1# in
+      let ^: Nat#
+            = argsThunk [rT] x0 in
+      let _: Void#
+            = setThunk [rT] [rT] ^1 ^0 0# x1 in
+      ^1
+}
 
 
 -- Error: partial application of primitive operators is not supported.

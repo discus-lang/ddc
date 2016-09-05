@@ -49,27 +49,6 @@ lambdasModule profile mm
          $ mm { moduleBody = x' }
 
 
----------------------------------------------------------------------------------------------------
--- | Result of lambda lifter recursion.
-data Result a n
-        = Result
-        { -- | Whether we've made any progress in this pass.
-          _resultProgress       :: Bool        
-
-          -- | Bindings that we've already lifted out, 
-          --   and should be added at top-level.
-        , _resultBindings       :: [(Bind n, Exp a n)]
-        }
-
-
-instance Monoid (Result a n) where
- mempty
-  = Result False []
- 
- mappend (Result p1 lts1) (Result p2 lts2)
-  = Result (p1 || p2) (lts1 ++ lts2)
-
-
 -- Exp --------------------------------------------------------------------------------------------
 lambdasLoopX
          :: (Show n, Show a, Pretty n, Pretty a, CompoundName n, Ord n)
@@ -124,7 +103,13 @@ lambdasX p c xx
         XVar{}  
          -> return (xx, mempty)
 
-        XCon{}  
+        XCon a (DaConBound nCon)  
+         -> do  mResult <- etaXConApp p c a xx nCon []
+                case mResult of
+                 Nothing        -> return (xx, mempty)
+                 Just result    -> return result
+
+        XCon{}
          -> return (xx, mempty)
          
         -- Lift type lambdas to top-level.
@@ -205,66 +190,17 @@ lambdasX p c xx
 
         -- Eta-expand partially applied data contructors.
         XApp a x1 x2
-         | (xCon@(XCon _a (DaConBound nCon)), xsArg)   <- takeXApps1 x1 x2
-         -> do  let ctx     = contextCtx c
-                let envX    = topOfCtx ctx
-                let defs    = EnvX.envxDataDefs envX
+         | (XCon _a (DaConBound nCon), xsArg)   <- takeXApps1 x1 x2
+         -> do
+                mResult <- etaXConApp p c a x1 nCon xsArg
+                case mResult of
+                 Just result    
+                   -> return result
 
-                case Map.lookup nCon (DataDef.dataDefsCtors defs) of
-                 Just dataCtor
-                  -- We check for partial application on the outside of a
-                  -- set of nested applications.
-                  |  case ctx of
-                        CtxAppLeft{}    -> False
-                        _               -> True
-
-                  -- We're expecting an argument for each of the type and term parameters.
-                  ,  arityT <- length $ DataDef.dataCtorTypeParams dataCtor
-                  ,  arityX <- length $ DataDef.dataCtorFieldTypes dataCtor
-                  ,  arity  <- arityT + arityX
-
-                  -- See if we have the correct number of arguments.
-                  ,  args  <- length xsArg
-                  ,  arity /= args
-                  -> do
-                        -- Make binders for the new type parameters.
-                        (bsT, usT)
-                                <- fmap unzip
-                                $  mapM (\(i, t) -> newVar (show i) t)
-                                $  [ (i, typeOfBind b)
-                                        | i <- [0..arityT - 1]
-                                        | b <- DataDef.dataCtorTypeParams dataCtor ]
-
-                        let sub = zip (DataDef.dataCtorTypeParams dataCtor) 
-                                      (map TVar usT)
-
-                        -- Make binders for the new term parameters.
-                        (bsX, usX)
-                                <- fmap unzip
-                                $  mapM (\(i, t) -> newVar (show i) (substituteTs sub t))
-                                $  [ (i, t)
-                                        | i <- [0 .. arityX - 1]
-                                        | t <- DataDef.dataCtorFieldTypes dataCtor ]
-
-                        -- Transform all the arguments.
-                        let downArg xArg = enterAppRight c a x1 xArg (lambdasX p)
-                        (xsArg', rs)    <- fmap unzip $ mapM downArg xsArg
-
-                        -- Build application of our new abstraction.
-                        return  ( xApps a
-                                        ( xLAMs a bsT $ xLams a bsX 
-                                                $  xApps a xCon
-                                                $  [ XType a (TVar u) | u <- usT]
-                                                ++ [ XVar a u         | u <- usX])
-                                        xsArg'
-
-                                , mconcat rs)
-
-                 _
-                  -> do (x1', r1) <- enterAppLeft  c a x1 x2 (lambdasX p)
-                        (x2', r2) <- enterAppRight c a x1 x2 (lambdasX p)
-                        return  ( XApp a x1' x2'
-                                , mappend r1 r2)
+                 _ ->  do (x1', r1) <- enterAppLeft  c a x1 x2 (lambdasX p)
+                          (x2', r2) <- enterAppRight c a x1 x2 (lambdasX p)
+                          return  ( XApp a x1' x2'
+                                  , mappend r1 r2)
 
 
         -- Boilerplate.
@@ -468,4 +404,78 @@ lambdasCast p c a cc x
          -> do  (x', r) <- enterCastBody c a cc x (lambdasX p)
                 return (XCast a cc x',  r)
 
+
+-------------------------------------------------------------------------------
+-- | Eta-expand partially applied data constructors.
+--   The code generator only handles fully applied data constructors,
+--   so we eta-expand partially applied ones so that they get turned
+--   into thunks.
+etaXConApp 
+        :: (Show a, Pretty a, Pretty n, Ord n, Show n, CompoundName n)
+        => Profile n    -- ^ Language Profile.
+        -> Context a n  -- ^ Current context of transform.
+        -> a            -- ^ Annotation from constructor applicatin onde.
+        -> Exp a n      -- ^ Expression holding constructor.
+        -> n            -- ^ Name of constructor.
+        -> [Exp a n]    -- ^ Arguments to constructor.
+        -> S  (Maybe ( Exp a n
+                     , Result a n))
+
+etaXConApp !p !c !a !x1 !nCon !xsArg
+ -- Lookup the type of the constructor.
+ | ctx              <- contextCtx c
+ , case ctx of
+    CtxAppLeft{}    -> False
+    _               -> True
+
+ , envX             <- topOfCtx ctx
+ , defs             <- EnvX.envxDataDefs envX
+ , Just dataCtor    <- Map.lookup nCon (DataDef.dataDefsCtors defs)
+
+ -- We're expecting an argument for each of the type and term parameters.
+ , arityT <- length $ DataDef.dataCtorTypeParams dataCtor
+ , arityX <- length $ DataDef.dataCtorFieldTypes dataCtor
+ , arity  <- arityT + arityX
+
+ -- Check if the constructor is partially applied.
+ , arityX >= 1
+ , args   <- length xsArg
+ , args   /= arity
+ = do
+        -- Make binders for the new type parameters.
+        (bsT, usT)
+                <- fmap unzip
+                $  mapM (\(i, t) -> newVar (show i) t)
+                $  [ (i, typeOfBind b)
+                        | i <- [0..arityT - 1]
+                        | b <- DataDef.dataCtorTypeParams dataCtor ]
+
+        let sub = zip (DataDef.dataCtorTypeParams dataCtor) 
+                      (map TVar usT)
+
+        -- Make binders for the new term parameters.
+        (bsX, usX)
+                <- fmap unzip
+                $  mapM (\(i, t) -> newVar (show i) (substituteTs sub t))
+                $  [ (i, t)
+                        | i <- [0 .. arityX - 1]
+                        | t <- DataDef.dataCtorFieldTypes dataCtor ]
+
+        -- Transform all the arguments.
+        let downArg xArg = enterAppRight c a x1 xArg (lambdasX p)
+        (xsArg', rs)    <- fmap unzip $ mapM downArg xsArg
+
+        -- Build application of our new abstraction.
+        return  $ Just
+                $ ( xApps a
+                        ( xLAMs a bsT $ xLams a bsX 
+                                $  xApps a (XCon a (DaConBound nCon))
+                                $  [ XType a (TVar u) | u <- usT]
+                                ++ [ XVar a u         | u <- usX])
+                        xsArg'
+
+                , mconcat (Result True [] : rs))
+
+ | otherwise
+ = return Nothing
 

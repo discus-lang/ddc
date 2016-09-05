@@ -3,7 +3,7 @@ module Data.Text.Char
 export
 {       isDigit;
         isUpper;
-        isLower
+        isLower;
 }
 import Data.Numeric.Bool
 where

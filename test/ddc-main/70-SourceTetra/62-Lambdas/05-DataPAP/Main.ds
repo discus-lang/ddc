@@ -1,4 +1,6 @@
 
+
+-- Check partial application of data constructor.
 module Main
 import Data.Numeric.Nat
 import System.IO.Console

@@ -1,13 +1,15 @@
 
 module Class.Show
-export  { show
-        ; show_bool; show_nat
-        ; show_text
-        ; show_tup2
-        ; show_list }
+export
+{       show; show_bool; show_nat;
+        show_text;
+        show_tup2;
+        show_list;
+}
 import Data.Text
 import Data.List
 where
+
 
 -- | Class dictionary for Show.
 data Show (a: Data) where

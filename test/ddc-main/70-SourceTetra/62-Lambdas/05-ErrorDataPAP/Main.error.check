@@ -1,6 +1,0 @@
-Fragment violation when converting Tetra module to Salt module.
-  Cannot convert expression.
-    Cannot convert function abstraction in this context.
-    The program must be lambda-lifted before conversion.
-  
-    with: λ(l$0$0 l$1$1: Nat#). Derp l$0$0 l$1$1

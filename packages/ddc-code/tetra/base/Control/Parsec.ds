@@ -4,7 +4,7 @@ export
 {       parse; zero; item; satisfies;
         from; alt;
         monad_Parser;
-        some; many 
+        some; many;
 }
 import Class.Monad
 import Data.List

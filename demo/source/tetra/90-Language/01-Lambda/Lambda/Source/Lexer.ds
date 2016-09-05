@@ -43,7 +43,7 @@ lexKName (xx: List Char)
  where  
         go acc Nil              
          = do   name    = textOfCharList (reverse acc)
-                Just (T2 (KName name) Nil)
+                Just $ T2 (KName name) Nil
 
         go acc (Cons x xs)   
          | isLower x
@@ -51,5 +51,5 @@ lexKName (xx: List Char)
 
          | otherwise            
          = do   name    = textOfCharList (reverse acc)
-                Just (T2 (KName name) (Cons x xs))
+                Just $ T2 (KName name) (Cons x xs)
 

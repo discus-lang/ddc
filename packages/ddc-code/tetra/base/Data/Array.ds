@@ -1,6 +1,6 @@
 
 module Data.Array
-export { allocArray; readArray; writeArray }
+export { allocArray; readArray; writeArray; }
 import Data.Numeric.Nat
 
 import foreign boxed type

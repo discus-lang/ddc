@@ -6,7 +6,7 @@ export
         smap; smapacc;
         sfold; sany;
         stake; stakeWhile; 
-        sfilter
+        sfilter;
 }
 import Data.Numeric.Nat
 import Data.List

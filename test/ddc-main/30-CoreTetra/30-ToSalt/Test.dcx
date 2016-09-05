@@ -114,7 +114,7 @@ thing (_ : Unit) : Nat# -> Nat#
 ;;
 
 
--- Error: partial application if user defined data constructors is not supported.
+-- OK: partial application if user defined data constructors is now supported.
 :to-salt..
 module Test 
 data Thing where

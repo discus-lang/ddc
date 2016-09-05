@@ -15,18 +15,15 @@ where
 -- | Convert a list of characters to a Text object.
 textOfCharList (xx: List Char): Text
  = TextVec
-    (extend RegionText using r with { Alloc r; Read r; Write r }
-     in  vectorOfCharList [r] xx)
--- ISSUE #382: Using '$' between constructor and its argument causes a segfault.
+ $ extend RegionText using r with { Alloc r; Read r; Write r }
+   in  vectorOfCharList [r] xx
 
 
 -- | O(n). Convert a text object to a list of characters.
 charListOfText (tx: Text): List Char
- = result
- where  result: List Char
-         = case tx of
-                TextVec vec -> charListOfTextVec vec
-                _           -> charListOfTextVec (vectorOfText [RegionText] tx)
+ = case tx of
+        TextVec vec -> charListOfTextVec vec
+        _           -> charListOfTextVec (vectorOfText [RegionText] tx)
 
 
 -- | Unpack a list of characters from a vector.
@@ -34,7 +31,8 @@ charListOfTextVec
         (vec: Vector# r Word8)
         : S (Read r) (List Char)
  = go 0
- where  go (ix: Nat): S (Read r) (List Char)
+ where  
+        go (ix: Nat): S (Read r) (List Char)
          | ix >= (vectorLength# vec - 1)
          = Nil
 

@@ -1,6 +1,6 @@
 
 module  Data.Function
-export  { id; apply; compose }
+export  { id; apply; compose; }
 where
 
 

@@ -3,6 +3,7 @@ module DDC.Core.Transform.Lambdas.Base
         ( S (..), evalState
         , newVar
         , newVarExtend
+        , Result (..)
         , isLiftyContext)
 where
 import DDC.Core.Exp.Annot.Ctx
@@ -51,6 +52,28 @@ newVarExtend name prefix t
         let name' = extendName name (n ++ "$" ++ prefix ++ "$" ++ show i)
         S.put (n, i + 1)
         return  (BName name' t, UName name')
+
+
+
+---------------------------------------------------------------------------------------------------
+-- | Result of lambda lifter recursion.
+data Result a n
+        = Result
+        { -- | Whether we've made any progress in this pass.
+          _resultProgress       :: Bool        
+
+          -- | Bindings that we've already lifted out, 
+          --   and should be added at top-level.
+        , _resultBindings       :: [(Bind n, Exp a n)]
+        }
+
+
+instance Monoid (Result a n) where
+ mempty
+  = Result False []
+ 
+ mappend (Result p1 lts1) (Result p2 lts2)
+  = Result (p1 || p2) (lts1 ++ lts2)
 
 
 ---------------------------------------------------------------------------------------------------

@@ -93,7 +93,7 @@ textOfChar (c: Word32): Text
 -- | O(1). Wrap a single byte into a text object.
 textOfWord8 (w8: Word8): Text
  = TextVec
-  (extend RegionText using r1 with { Alloc r1; Write r1 } in
+ $ extend RegionText using r1 with { Alloc r1; Write r1 } in
    do   -- Allocate the vector to hold the data,
         -- including an extra null terminator byte.
         vec     = vectorAlloc# [r1] 2
@@ -104,7 +104,7 @@ textOfWord8 (w8: Word8): Text
         -- Write the null terminator.
         vectorWrite# vec 1 0w8
 
-        vec)
+        vec
 
 
 -- | O(1). Wrap a vector of UTF-8 data into a text object.
