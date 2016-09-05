@@ -147,20 +147,25 @@ desugarX rns xx
         --    let b1 = box x2 in
         --    x1
         --
-        -- TODO: this relies on b2 not being used in x1
-        --       we need to ensure vars are unique before performing
-        --       this transform.
+        --    This transform makes b2 scope over x1 where it didn't before,
+        --    so we rename it along the way to avoid variable clashes.
         --
         XLet (LLet b1 
                   (XCast CastBox 
-                        (XLet  (LLet b2 
-                                   (XCast CastBox x3))
+                        (XLet  (LLet (XBindVarMT (BName n2) mt2)
+                                     (XCast CastBox x3))
                                 x2)))
                    x1
-         -> do  progress
+         -> do  
+                progress
+
+                -- Make a new name for b2 and desugar x2 to force the rename.
+                (b2', (UName n2')) <- newVar "x"
+                x2'     <- desugarX (Map.insert n2 n2' rns) x2
+
                 desugarX rns 
-                 $  XLet (LLet b2 (XCast CastBox x3))
-                 $  XLet (LLet b1 (XCast CastBox x2))
+                 $  XLet (LLet (XBindVarMT b2' mt2) (XCast CastBox x3))
+                 $  XLet (LLet b1                   (XCast CastBox x2'))
                  $  x1
 
 
