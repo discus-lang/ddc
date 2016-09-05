@@ -9,6 +9,7 @@ import Class.Applicative
 where
 
 
+-- | Class of types that support associative sequencing.
 data Monad (m: Data -> Data) where
         Monad
          :  Applicative m
@@ -16,23 +17,38 @@ data Monad (m: Data -> Data) where
          -> ([a b: Data]. m a -> (a -> m b) -> m b)     -- bind
          -> Monad m
 
-dFunctorOfMonad (dMonad: Monad m): Functor m
+
+-- | Take the Functor dictionary from a Monad dictionary.
+dFunctorOfMonad 
+        : [m: Data -> Data]
+        . Monad m -> Functor m
+
+dFunctorOfMonad dMonad
         = dFunctorOfApplicative (dApplicativeOfMonad dMonad)
 
 
+-- | Take the Applicative dictionary from a Monad dictionary.
 dApplicativeOfMonad
-        ((Monad dApplicative _ _): Monad m)
-        : Applicative m
+        : [m: Data -> Data]
+        . Monad m -> Applicative m
+
+dApplicativeOfMonad (Monad dApplicative _ _)
         = dApplicative
 
 
-return  ((Monad _ return' _): Monad m)
-        (x: a): m a
+-- | Return a value in a monad.
+return  : [m: Data -> Data]. [a: Data]
+        . Monad m -> a -> m a
+
+return (Monad _ return' _) x
  = return' x
 
 
-bind    ((Monad _ _ bind'): Monad m)
-        (ma: m a) (mf: a -> m b): m b
- = bind' ma mf
+-- | Evaluate a monadic compuation and pass the result to 
+--   a function that produces a new monadic computation.
+bind    : [m: Data -> Data]. [a b: Data]
+        . Monad m -> m a -> (a -> m b) -> m b
 
+bind    (Monad _ _ bind') ma mf 
+ = bind' ma mf
 
