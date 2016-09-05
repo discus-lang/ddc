@@ -52,7 +52,7 @@ checkSub table !a ctx0 demand xx0 tExpect
 
         -- Make the synthesised type a subtype of the expected one.
         (xx2, effs3, ctx3)
-         <- makeSub config a ctx2 xx_dequant tDequant tExpect_ctx1
+         <- makeSub config a ctx2 xx0 xx_dequant tDequant tExpect_ctx1
          $  ErrorMismatch  a tDequant tExpect_ctx1 xx0
 
         let effs' = Sum.union effs1 effs3

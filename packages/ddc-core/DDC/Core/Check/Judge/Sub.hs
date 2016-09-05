@@ -28,6 +28,7 @@ makeSub :: (Eq n, Ord n, Show n, Pretty n)
         => Config n                     -- ^ Type checker configuration.
         -> a                            -- ^ Current annotation.
         -> Context n                    -- ^ Input context.
+        -> Exp a n                      -- ^ Original expression, for error reporting.
         -> Exp  (AnTEC a n) n           -- ^ Expression that we've inferred the type of.
         -> Type n                       -- ^ Inferred type of the expression.
         -> Type n                       -- ^ Expected type of the expression.
@@ -40,7 +41,7 @@ makeSub :: (Eq n, Ord n, Show n, Pretty n)
 -- NOTE: The order of cases matters here.
 --       For example, we do something different when both sides are
 --       existentials, vs the case when only one side is an existential.
-makeSub config a ctx0 xL tL tR err
+makeSub config a ctx0 x0 xL tL tR err
 
  -- Sub_SynL
  --   Expand type synonym on the left.
@@ -55,7 +56,7 @@ makeSub config a ctx0 xL tL tR err
                 , text "    tR:  " <> ppr tR
                 , empty ]
 
-        makeSub config a ctx0 xL tL' tR err
+        makeSub config a ctx0 x0 xL tL' tR err
 
 
  -- Sub_SynR
@@ -71,7 +72,7 @@ makeSub config a ctx0 xL tL tR err
                 , text "    tR': " <> ppr tR
                 , empty ]
 
-        makeSub config a ctx0 xL tL tR' err
+        makeSub config a ctx0 x0 xL tL tR' err
 
 
  -- Sub_ExVar
@@ -210,10 +211,10 @@ makeSub config a ctx0 xL tL tR err
                 , text "    xL: " <> ppr xL
                 , empty ]
 
-        (_, effs1, ctx1) <- makeSub config a ctx0 xL tR1 tL1 err
+        (_, effs1, ctx1) <- makeSub config a ctx0 x0 xL tR1 tL1 err
         tL2'             <- applyContext     ctx1 tL2
         tR2'             <- applyContext     ctx1 tR2
-        (_, effs2, ctx2) <- makeSub config a ctx1 xL tL2' tR2' err
+        (_, effs2, ctx2) <- makeSub config a ctx1 x0 xL tL2' tR2' err
 
         ctrace  $ vcat
                 [ text "*<  Sub_Arr"
@@ -247,7 +248,8 @@ makeSub config a ctx0 xL tL tR err
         let aRun    = AnTEC tResult tEffect (tBot kClosure) a
         let xL_run  = XCast aRun CastRun xL
 
-        (xL2, eff2, ctx2) <- makeSub config a ctx0 xL_run tResult tR err
+        (xL2, eff2, ctx2)
+         <- makeSub config a ctx0 x0 xL_run tResult tR err
 
         let eff = Sum.unions    kEffect
                 [ Sum.singleton kEffect tEffect
@@ -328,7 +330,7 @@ makeSub config a ctx0 xL tL tR err
         let xL1  = XApp aFn xL (XType aArg tA)
 
         (xL2, effs3, ctx3) 
-         <- makeSub config a ctx2 xL1 t1' tR err
+         <- makeSub config a ctx2 x0 xL1 t1' tR err
 
         -- Pop the existential and constraints above it back off
         -- the stack.
@@ -373,13 +375,14 @@ makeSub config a ctx0 xL tL tR err
         let (ctx1, pos1)  =  markContext ctx0
         let ctx2          =  pushType bParamR ctx1
 
-        (xL2, eff2, ctx3) <- makeSub config a ctx2 xL tL tBodyR' err
-        when (not $ eff2 == Sum.empty kEffect)
-         $ error "makeSub: body is not pure"
+        (xL2, eff2, ctx3) <- makeSub config a ctx2 x0 xL tL tBodyR' err
 
-        let tR'           =  TForall bParamR tBodyR      
-                                -- TODO: this will be the wrong tBodyR
-                                -- need to get the type produced by makeSub
+        -- The body of our new type abstraction must be pure.
+        when (not $ eff2 == Sum.empty kEffect)
+         $ throw $ ErrorLamNotPure a x0 UniverseSpec (TSum eff2)
+
+        tBodyR_ctx3       <- applyContext ctx3 tBodyR'
+        let tR'           =  TForall bParamR tBodyR_ctx3
         let aApp          =  AnTEC tR' (tBot kEffect) (tBot kClosure) a
         let xL_abs        =  XLAM aApp bParamR xL2
 
