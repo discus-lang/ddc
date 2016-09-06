@@ -1,6 +1,6 @@
-# The Disciplined Disciple Compiler 0.4.2
+# The Disciplined Disciple Compiler 0.4.3
  
-RELEASE NOTES 30/04/2016
+RELEASE NOTES 06/09/2016
 
 DDC is a research compiler used to investigate program transformation in the 
 presence of computational effects. This is a development release. There is
@@ -68,115 +68,84 @@ You need a recent version of GHC, and an LLVM suite 3.5 - 3.8 in your path. Easi
 
 If you want to build from the git repo then see [the wiki](http://disciple.ouroborus.net).
 
-## Main changes since 0.4.1
 
-* Added code generation for higher order functions.
- 
-* Added automatic insert of run and box casts.
+Main changes since 0.4.3
+~~~~~~~~~~~~~~~~~~~~~~~~
 
-* Added multi-module compilation.
+ * Added desugaring of nested patterns and guards.
 
-* Added desugaring of guards.
+ * Better type inference and desugaring for higher ranked types,
+   which allows dictionaries for Functor, Applicative, Monad and friends
+   to be written easily.
 
-* Added primitives for dealing with arrays of boxed values and vectors
-   of primitive unboxed values.
+ * Automatic insertion of run and box casts is now more well baked.
 
-* Added first cut PHP code generator.
+ * Added code generation for partial applications of data constructors.
 
-* Added case-of-known-constructor transform.
+ * Added support for simple type synonyms.
 
-* Clustering and rate inference for Core Flow.
+ * Changed to Haskell-style syntax for lambda expressions.
 
-* Source programs now accept unicode lambdas and dumps of intermediate code
-   use lambdas for both term and type binders.
-
-* Removed the old 'Eval' and 'Lite' language fragments.
+ * Automatic interrogation of LLVM compiler version, and generation
+   of matching LLVM assembly syntax.
 
 
-## What works in this release
+What works in this release
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-* Compilation for the Tetra, and Salt languages.
+ * Compilation for the Tetra, and Salt languages.
 
-* Type checking and data flow fusion for the Flow language.
+ * Type checking and data flow fusion for the Flow language.
 
-* Program transformations: Anonymize (remove names), Beta (substitute), 
+ * Program transformations: Anonymize (remove names), Beta (substitute), 
    Bubble (move type-casts), Elaborate (add witnesses), Flatten (eliminate
    nested bindings), Forward (let-floating), Namify (add names), Prune
    (dead-code elimination), Snip (eliminate nested applications), Rewrite
    rules, cross-module inlining.
 
 
-## What doesn't
+What doesn't
+~~~~~~~~~~~~
 
-* No storage management.
+ * No storage management.
    There is a fixed 64MB heap and when you've allocated that much space the
    runtime just calls abort().
 
-* No pattern matching desugaring.
-   You can write case expressions with guards, but nested patterns are not 
-   desugared.
+
+Previous Releases
+~~~~~~~~~~~~~~~~~
+
+ * 2016/04 DDC 0.4.2: Added code generation for higher order functions.
+ * 2014/03 DDC 0.4.1: Added bi-directional type inference and region extension.
+ * 2013/07 DDC 0.3.2: Added Tetra and Flow language fragments.
+ * 2012/12 DDC 0.3.1: Added Lite fragment, compilation to C and LLVM.
+ * 2012/02 DDC 0.2.0: Project reboot. New core language, working interpreter.
+ * 2008/07 DDC 0.1.1: Alpha compiler, constructor classes, more examples.
+ * 2008/03 DDC 0.1.0: Alpha compiler, used dependently kinded core language.
 
 
-## Previous Releases
+Immediate Plans
+~~~~~~~~~~~~~~~
 
-* 2014/03 DDC 0.4.1: Added bi-directional type inference and region extension.
-* 2013/07 DDC 0.3.2: Added Tetra and Flow language fragments.
-* 2012/12 DDC 0.3.1: Added Lite fragment, compilation to C and LLVM.
-* 2012/02 DDC 0.2.0: Project reboot. New core language, working interpreter.
-* 2008/07 DDC 0.1.1: Alpha compiler, constructor classes, more examples.
-* 2008/03 DDC 0.1.0: Alpha compiler, used dependently kinded core language.
+ 1. Implement garbage collection.
+
+ 2. Implement basic name spacing.
 
 
-## Immediate Plans
+How you can help
+~~~~~~~~~~~~~~~~
 
-1. Implement type synonyms.
+ 1. Work through the tutorial on the web-site and send any comments to the
+    mailing list.] http://disciple.ouroborus.net/wiki/Tutorial
 
-2. Implement desugaring for pattern matching.
-
-
-## How you can help
-
-1. Work through the tutorial on the web-site and send any comments to the
-    mailing list. http://disciple.ouroborus.net/wiki/Tutorial
-
-2. Say hello on the mailing list and we can help you get started on any of
+ 2. Say hello on the mailing list and we can help you get started on any of
     the main missing features. These are all interesting projects.
 
-3. Tell your friends.
+ 3. Tell your friends.
 
 
-## People
-
-The following people contributed to DDC since the last major release:
-
-
-* Amos Robinson
-  * PHP code generator.
-  * Clustering and rate inference for Core Flow.
-
-* Max Swadling           
-  * Added -run-static-link option for statically linked runtime.
-
-* Kyle Van Berendonck    
-  * Added case-of-known-constructor transform.
-
-* Jacob Stanley
-  * Code generation and build system fixes.
-
-* Viktar Basharymau      
-  * Documentation fixes.
-
-* Erik de Castro Lopo
-  * Documentation fixes.
-
-* Ben Lippmeier          
-  * Added lambda lifter and code generation for higher order functions.
-  * Automatic insertion of run and box casts.
-  * Multi module compilation.
-  * Desugaring of guards.
-
-
-## More Information:
+More Information
+~~~~~~~~~~~~~~~~
 
  See the web-site:        http://disciple.ouroborus.net
  
