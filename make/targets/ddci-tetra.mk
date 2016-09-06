@@ -2,7 +2,6 @@
 
 # Find source files for ddci-tetra.
 ddci-tetra_packages = \
-	packages/ddc-base/DDC \
 	packages/ddc-core/DDC \
 	packages/ddc-core-babel/DDC \
 	packages/ddc-core-simpl/DDC \

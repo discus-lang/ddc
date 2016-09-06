@@ -2,7 +2,6 @@
 
 # Find source files for ddci-core.
 ddci-core_packages = \
-	packages/ddc-base/DDC \
 	packages/ddc-core/DDC \
 	packages/ddc-core-babel/DDC \
 	packages/ddc-core-simpl/DDC \

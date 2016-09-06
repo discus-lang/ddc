@@ -11,7 +11,6 @@ docs	:
 
 docs-core :
 	@haddock -w -h -o doc/haddock-core \
-			--optghc=-ipackages/ddc-base \
 			--optghc=-ipackages/ddc-build \
 			--optghc=-ipackages/ddc-core \
 			--optghc=-ipackages/ddc-core-llvm \
@@ -33,7 +32,6 @@ docs-hoogle	:
 
 docs-hoogle-core :
 	@haddock --hoogle -w -o doc/hoogle-core \
-			--optghc=-ipackages/ddc-base \
 			--optghc=-ipackages/ddc-build \
 			--optghc=-ipackages/ddc-core \
 			--optghc=-ipackages/ddc-core-llvm \

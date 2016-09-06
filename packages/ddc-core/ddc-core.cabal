@@ -34,6 +34,20 @@ Library
         ddc-base        == 0.4.3.*
 
   Exposed-modules:
+        DDC.Base.Env
+        DDC.Base.Name
+        DDC.Base.Panic
+        DDC.Base.Parser
+        DDC.Base.Pretty
+
+        DDC.Control.Monad.Check
+
+        DDC.Data.Canned
+        DDC.Data.ListUtils
+        DDC.Data.SourcePos
+
+        DDC.Version
+
         DDC.Core.Collect.Support
 
         DDC.Core.Exp.Annot.AnT
