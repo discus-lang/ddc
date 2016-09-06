@@ -1,5 +1,5 @@
 Name:           ddc-driver
-Version:        0.4.3.1
+Version:        0.4.4.0
 License:        MIT
 License-file:   LICENSE
 Author:         The Disciplined Disciple Compiler Strike Force
@@ -26,14 +26,14 @@ Library
         mtl              == 2.2.1.*,
         directory        == 1.2.*,
         transformers     == 0.5.*,
-        ddc-core         == 0.4.3.*,
-        ddc-core-simpl   == 0.4.3.*,
-        ddc-core-salt    == 0.4.3.*,
-        ddc-core-llvm    == 0.4.3.*,
-        ddc-core-flow    == 0.4.3.*,
-        ddc-core-tetra   == 0.4.3.*,
-        ddc-source-tetra == 0.4.3.*,
-        ddc-build        == 0.4.3.*
+        ddc-core         == 0.4.4.*,
+        ddc-core-simpl   == 0.4.4.*,
+        ddc-core-salt    == 0.4.4.*,
+        ddc-core-llvm    == 0.4.4.*,
+        ddc-core-flow    == 0.4.4.*,
+        ddc-core-tetra   == 0.4.4.*,
+        ddc-source-tetra == 0.4.4.*,
+        ddc-build        == 0.4.4.*
   
   Exposed-modules:
         DDC.Driver.Build.Locate
