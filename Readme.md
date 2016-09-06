@@ -72,85 +72,85 @@ If you want to build from the git repo then see [the wiki](http://disciple.ourob
 Main changes since 0.4.3
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
- * Added desugaring of nested patterns and guards.
+* Added desugaring of nested patterns and guards.
 
- * Better type inference and desugaring for higher ranked types,
-   which allows dictionaries for Functor, Applicative, Monad and friends
-   to be written easily.
+* Better type inference and desugaring for higher ranked types,
+  which allows dictionaries for Functor, Applicative, Monad and friends
+  to be written easily.
 
- * Automatic insertion of run and box casts is now more well baked.
+* Automatic insertion of run and box casts is now more well baked.
 
- * Added code generation for partial applications of data constructors.
+* Added code generation for partial applications of data constructors.
 
- * Added support for simple type synonyms.
+* Added support for simple type synonyms.
 
- * Changed to Haskell-style syntax for lambda expressions.
+* Changed to Haskell-style syntax for lambda expressions.
 
- * Automatic interrogation of LLVM compiler version, and generation
-   of matching LLVM assembly syntax.
+* Automatic interrogation of LLVM compiler version, and generation
+  of matching LLVM assembly syntax.
 
 
 What works in this release
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
- * Compilation for the Tetra, and Salt languages.
+* Compilation for the Tetra, and Salt languages.
 
- * Type checking and data flow fusion for the Flow language.
+* Type checking and data flow fusion for the Flow language.
 
- * Program transformations: Anonymize (remove names), Beta (substitute), 
-   Bubble (move type-casts), Elaborate (add witnesses), Flatten (eliminate
-   nested bindings), Forward (let-floating), Namify (add names), Prune
-   (dead-code elimination), Snip (eliminate nested applications), Rewrite
-   rules, cross-module inlining.
+* Program transformations: Anonymize (remove names), Beta (substitute), 
+  Bubble (move type-casts), Elaborate (add witnesses), Flatten (eliminate
+  nested bindings), Forward (let-floating), Namify (add names), Prune
+  (dead-code elimination), Snip (eliminate nested applications), Rewrite
+  rules, cross-module inlining.
 
 
 What doesn't
 ~~~~~~~~~~~~
 
- * No storage management.
-   There is a fixed 64MB heap and when you've allocated that much space the
-   runtime just calls abort().
+* No storage management.
+  There is a fixed 64MB heap and when you've allocated that much space the
+  runtime just calls abort().
 
 
 Previous Releases
 ~~~~~~~~~~~~~~~~~
 
- * 2016/04 DDC 0.4.2: Added code generation for higher order functions.
- * 2014/03 DDC 0.4.1: Added bi-directional type inference and region extension.
- * 2013/07 DDC 0.3.2: Added Tetra and Flow language fragments.
- * 2012/12 DDC 0.3.1: Added Lite fragment, compilation to C and LLVM.
- * 2012/02 DDC 0.2.0: Project reboot. New core language, working interpreter.
- * 2008/07 DDC 0.1.1: Alpha compiler, constructor classes, more examples.
- * 2008/03 DDC 0.1.0: Alpha compiler, used dependently kinded core language.
+* 2016/04 DDC 0.4.2: Added code generation for higher order functions.
+* 2014/03 DDC 0.4.1: Added bi-directional type inference and region extension.
+* 2013/07 DDC 0.3.2: Added Tetra and Flow language fragments.
+* 2012/12 DDC 0.3.1: Added Lite fragment, compilation to C and LLVM.
+* 2012/02 DDC 0.2.0: Project reboot. New core language, working interpreter.
+* 2008/07 DDC 0.1.1: Alpha compiler, constructor classes, more examples.
+* 2008/03 DDC 0.1.0: Alpha compiler, used dependently kinded core language.
 
 
 Immediate Plans
 ~~~~~~~~~~~~~~~
 
- 1. Implement garbage collection.
+1. Implement garbage collection.
 
- 2. Implement basic name spacing.
+2. Implement basic name spacing.
 
 
 How you can help
 ~~~~~~~~~~~~~~~~
 
- 1. Work through the tutorial on the web-site and send any comments to the
-    mailing list.] http://disciple.ouroborus.net/wiki/Tutorial
+1. Work through the tutorial on the web-site and send any comments to the
+   mailing list.] http://disciple.ouroborus.net/wiki/Tutorial
 
- 2. Say hello on the mailing list and we can help you get started on any of
-    the main missing features. These are all interesting projects.
+2. Say hello on the mailing list and we can help you get started on any of
+   the main missing features. These are all interesting projects.
 
- 3. Tell your friends.
+3. Tell your friends.
 
 
 More Information
 ~~~~~~~~~~~~~~~~
 
- See the web-site:        http://disciple.ouroborus.net
+See the web-site:        http://disciple.ouroborus.net
  
- Read the mailing list:   http://groups.google.com/group/disciple-cafe
+Read the mailing list:   http://groups.google.com/group/disciple-cafe
 
- Check the blog:          http://disciple-devel.blogspot.com.au/
+Check the blog:          http://disciple-devel.blogspot.com.au/
  
  
