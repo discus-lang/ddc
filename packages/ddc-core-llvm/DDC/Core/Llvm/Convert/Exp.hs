@@ -19,7 +19,6 @@ import DDC.Core.Llvm.Convert.Context
 import DDC.Core.Llvm.Convert.Type
 import DDC.Core.Llvm.Convert.Base
 import DDC.Llvm.Syntax
-import DDC.Core.Exp.Generic.Compounds
 import Control.Applicative
 import Data.Sequence                            (Seq, (|>), (><))
 import qualified DDC.Core.Salt                  as A
@@ -54,10 +53,10 @@ convertBody ctx ectx blocks label instrs xx
          --   We must be at the top-level of the function.
          A.XApp{}
           |  ExpTop{}                           <- ectx
-          ,  Just (p, as)                       <- takeXPrimApps xx
+          ,  Just (p, as)                       <- A.takeXPrimApps xx
           ,  A.PrimControl A.PrimControlReturn  <- p
           ,  [A.RType{}, A.RExp (A.XCon dc)]    <- as
-          ,  Just (A.NamePrimLit A.PrimLitVoid) <- takeNameOfDaCon dc
+          ,  Just (A.NamePrimLit A.PrimLitVoid) <- A.takeNameOfDaCon dc
           -> return  $   blocks 
                      |>  Block label 
                                (instrs |> (annotNil $ IReturn Nothing))
@@ -67,7 +66,7 @@ convertBody ctx ectx blocks label instrs xx
          --   We must be at the top-level of the function.
          A.XApp{}
           |  ExpTop{}                           <- ectx
-          ,  Just (p, as)                       <- takeXPrimApps xx
+          ,  Just (p, as)                       <- A.takeXPrimApps xx
           ,  A.PrimControl A.PrimControlReturn  <- p
           ,  [A.RType t, A.RExp x2]             <- as
           ,  isVoidT t
@@ -80,7 +79,7 @@ convertBody ctx ectx blocks label instrs xx
          --   We must be at the top-level of the function.
          A.XApp{}
           |  ExpTop{}                           <- ectx
-          ,  Just (p, as)                       <- takeXPrimApps xx
+          ,  Just (p, as)                       <- A.takeXPrimApps xx
           ,  A.PrimControl A.PrimControlReturn  <- p
           ,  [A.RType t, A.RExp x]              <- as
           -> do t'      <- convertType pp kenv t
@@ -93,7 +92,7 @@ convertBody ctx ectx blocks label instrs xx
          -- Fail and abort the program.
          --   Allow this inside an expression as well as from the top level.
          A.XApp{}
-          |  Just (p, as)                       <- takeXPrimApps xx
+          |  Just (p, as)                       <- A.takeXPrimApps xx
           ,  A.PrimControl A.PrimControlFail    <- p
           ,  [A.RType _tResult]                 <- as
           -> let 
@@ -118,12 +117,12 @@ convertBody ctx ectx blocks label instrs xx
          -- Tailcall a function.
          --   We must be at the top-level of the function.
          A.XApp{}
-          |  Just (p, args)                     <- takeXPrimApps xx
+          |  Just (p, args)                     <- A.takeXPrimApps xx
           ,  A.PrimCall (A.PrimCallTail arity)  <- p
           ,  _tsArgs                            <- take arity args
           ,  A.RType tResult : A.RExp xFunTys : xsArgs 
                                                 <- drop arity args
-          ,  (xFun, _xsTys)                     <- splitXApps xFunTys
+          ,  (xFun, _xsTys)                     <- A.splitXApps xFunTys
           ,  Just mFun                          <- takeGlobalV ctx xFun
           ,  Just msArgs                        <- sequence $ map (mconvArg ctx) xsArgs
           -> do 
@@ -152,7 +151,7 @@ convertBody ctx ectx blocks label instrs xx
          -- Assignment ------------------------------------
          -- Read from a pointer, with integrated bounds check.
          A.XLet (A.LLet (C.BName nDst _) x1) x2
-          | Just (p, as)                         <- takeXPrimApps x1
+          | Just (p, as)                         <- A.takeXPrimApps x1
           , A.PrimStore A.PrimStorePeekBounded   <- p
           , A.RType{} : A.RType tDst : args      <- as
           , Just [mPtr, mOffset, mLength]        <- atomsR args
@@ -203,7 +202,7 @@ convertBody ctx ectx blocks label instrs xx
 
          -- Write to a pointer, with integrated bounds check.
          A.XLet (A.LLet _ x1) x2
-          | Just (p, as)                         <- takeXPrimApps x1
+          | Just (p, as)                         <- A.takeXPrimApps x1
           , A.PrimStore A.PrimStorePokeBounded   <- p
           , A.RType{} : A.RType tVal : args      <- as
           , Just [mPtr, mOffset, mLength, mVal]  <- atomsR args
@@ -303,7 +302,7 @@ convertBody ctx ectx blocks label instrs xx
          -- stashed in the context until we find a conversion that needs them.
          -- See [Note: Binding top-level supers]
          A.XLet (A.LLet (C.BName nBind _) x1) x2
-          | (xF, asArgs)                <- splitXApps x1
+          | (xF, asArgs)                <- A.splitXApps x1
           , A.XVar (C.UName nSuper)     <- xF
           , tsArgs  <- [t | A.RType t   <- asArgs]
           , length tsArgs > 0
@@ -388,7 +387,7 @@ convertSimple ctx ectx xx
 
          -- Primitive operators.
          A.XApp{}
-          | Just (p, args) <- takeXPrimApps xx
+          | Just (p, args) <- A.takeXPrimApps xx
           , mDst        <- takeNonVoidVarOfContext ectx
           , Just go     <- foldl (<|>) empty
                                 [ convPrimCall  ctx mDst p args
@@ -398,7 +397,7 @@ convertSimple ctx ectx xx
           -> go
 
           -- Call to top-level super.
-          | (xFun@(A.XVar u), xsArgs) <- splitXApps xx
+          | (xFun@(A.XVar u), xsArgs) <- A.splitXApps xx
           , Just tSuper         <- Env.lookup u tenv
           , Just msArgs_value   <- sequence $ map (mconvArg ctx) $ eraseTypeWitArgs xsArgs
           , Just mFun           <- takeGlobalV ctx xFun

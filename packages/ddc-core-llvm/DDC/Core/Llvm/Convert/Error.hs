@@ -4,7 +4,7 @@ module DDC.Core.Llvm.Convert.Error
 where
 import DDC.Core.Module
 import DDC.Core.Exp
-import DDC.Core.Exp.Generic.Pretty      ()
+import DDC.Core.Exp.Generic             ()
 import DDC.Data.Pretty
 import Data.Maybe
 import qualified DDC.Core.Salt          as A

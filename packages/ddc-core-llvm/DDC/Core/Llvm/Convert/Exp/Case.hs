@@ -7,7 +7,6 @@ import DDC.Core.Llvm.Convert.Context
 import DDC.Core.Llvm.Convert.Base
 import DDC.Llvm.Syntax
 import DDC.Core.Salt.Platform
-import DDC.Core.Exp.Annot.Compounds
 import DDC.Data.ListUtils
 import Control.Monad
 import Data.Maybe
@@ -139,7 +138,7 @@ convertAlt ctx ectx aa
                 return  $  AltDefault label blocks
 
         A.AAlt (A.PData dc []) x
-         | Just n       <- takeNameOfDaCon dc
+         | Just n       <- A.takeNameOfDaCon dc
          , Just lit     <- convPatName pp n
          -> do  label   <- newUniqueLabel "alt"
                 blocks  <- convBodyM ctx ectx Seq.empty label Seq.empty x
