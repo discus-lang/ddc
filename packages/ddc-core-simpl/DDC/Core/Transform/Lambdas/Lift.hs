@@ -8,8 +8,8 @@ import DDC.Core.Exp.Annot.Context
 import DDC.Core.Exp.Annot.Ctx
 import DDC.Core.Exp.Annot
 import DDC.Core.Collect
-import DDC.Base.Pretty
-import DDC.Base.Name
+import DDC.Data.Pretty
+import DDC.Data.Name
 import Data.Function
 import Data.List
 import Data.Set                                 (Set)

@@ -8,7 +8,7 @@ where
 import DDC.Build.Interface.Base
 import DDC.Core.Check                           (AnTEC)
 import DDC.Core.Module
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 import DDC.Core.Transform.Reannotate
 import Data.Time.Clock
 import Control.Monad

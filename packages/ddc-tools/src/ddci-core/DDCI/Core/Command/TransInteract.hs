@@ -13,7 +13,7 @@ import DDC.Core.Transform.Reannotate
 import DDC.Core.Exp.Annot
 import DDC.Core.Check
 import DDC.Core.Module
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 import qualified Data.Map.Strict        as Map
 import qualified Data.Set               as Set
 

@@ -2,7 +2,7 @@
 module DDC.Llvm.Pretty.Type where
 import DDC.Llvm.Syntax.Type
 import DDC.Llvm.Pretty.Attr     ()
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 
 
 instance Pretty Param where

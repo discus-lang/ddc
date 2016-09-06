@@ -5,9 +5,10 @@ module DDC.Core.Flow.Transform.Rates.SizeInference
     , lookupV
     , iter
     , parents
-    , trans ) where
-import DDC.Base.Pretty
+    , trans ) 
+where
 import DDC.Core.Flow.Transform.Rates.Combinators
+import DDC.Data.Pretty
 
 import Data.List
 import Data.Function (on)

@@ -4,7 +4,7 @@ module DDC.Core.Tetra.Convert.Error
         ,  Error (..))
 where
 import DDC.Core.Exp
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 import DDC.Core.Check                                   (AnTEC(..))
 import DDC.Core.Tetra.Prim                              as E
 import qualified DDC.Core.Tetra.Transform.Curry.Error   as Curry

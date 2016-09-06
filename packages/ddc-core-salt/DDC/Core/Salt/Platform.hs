@@ -4,7 +4,8 @@ module DDC.Core.Salt.Platform
         , platform32
         , platform64)
 where
-import DDC.Base.Pretty
+import DDC.Data.Pretty
+
 
 -- | Enough information about the platform to generate code for it.
 --   We need to know the pointer size and alignment constraints

@@ -10,7 +10,7 @@ import DDC.Build.Language.Flow
 import Control.Monad.Trans.Except
 import Control.Monad.IO.Class
 import qualified DDC.Core.Check         as C
-import qualified DDC.Base.Pretty        as P
+import qualified DDC.Data.Pretty        as P
 
 
 -- | Thread a state token through the given flow program.

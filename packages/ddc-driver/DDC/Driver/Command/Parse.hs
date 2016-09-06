@@ -12,7 +12,7 @@ import DDC.Source.Tetra.Parser          as ST
 import DDC.Core.Fragment                as C
 import DDC.Core.Parser                  as C
 import DDC.Core.Lexer                   as C
-import DDC.Base.Parser                  as BP
+import DDC.Control.Parser               as BP
 import Control.Monad.Trans.Except
 import Control.Monad.IO.Class
 import System.FilePath

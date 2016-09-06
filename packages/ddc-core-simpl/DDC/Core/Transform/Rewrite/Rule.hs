@@ -22,7 +22,7 @@ import DDC.Core.Pretty                          ()
 import DDC.Core.Collect
 import DDC.Core.Pretty                          ()
 import DDC.Core.Env.EnvX                        (EnvX)
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 import qualified DDC.Core.Analysis.Usage        as U
 import qualified DDC.Core.Check                 as C
 import qualified DDC.Core.Collect               as C

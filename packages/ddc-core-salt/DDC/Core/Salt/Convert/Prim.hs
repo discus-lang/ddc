@@ -6,7 +6,7 @@ module DDC.Core.Salt.Convert.Prim
         , convPrimStore)
 where
 import DDC.Core.Salt.Name
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 
 
 -- | Convert a primitive type constructor to C source text.

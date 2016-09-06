@@ -5,7 +5,7 @@ module DDC.Core.Flow.Convert.Base
         ,  withRateXLAM, isRateXLAM
         ,  withSuspFns,   isSuspFn)
 where
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 import DDC.Core.Exp.Annot.Compounds
 import DDC.Type.Exp
 import DDC.Core.Flow.Prim                       as F

@@ -20,8 +20,8 @@ import DDC.Core.Simplifier
 import DDC.Core.Module
 import DDC.Core.Exp.Annot
 import DDC.Type.Exp.Simple
-import DDC.Base.Pretty
-import DDC.Base.Name
+import DDC.Data.Pretty
+import DDC.Data.Name
 import Data.Typeable
 import Control.Monad
 import Control.Monad.Trans.Except

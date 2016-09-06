@@ -19,7 +19,7 @@ import DDC.Core.Transform.Rewrite.Rule
 import DDC.Core.Transform.Namify
 import DDC.Core.Exp
 import DDC.Type.Env
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 import qualified DDC.Core.Transform.Snip        as Snip
 import qualified DDC.Core.Transform.Eta         as Eta
 import qualified DDC.Core.Transform.Beta        as Beta

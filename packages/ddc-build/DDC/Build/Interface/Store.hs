@@ -11,7 +11,7 @@ module DDC.Build.Interface.Store
         , Super (..)
         , findSuper)
 where
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 import DDC.Build.Interface.Base         
 import DDC.Build.Interface.Load
 import DDC.Core.Call

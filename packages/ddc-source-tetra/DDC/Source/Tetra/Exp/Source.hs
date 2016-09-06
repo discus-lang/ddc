@@ -95,7 +95,7 @@ import DDC.Source.Tetra.Exp.Bind
 import DDC.Source.Tetra.Prim
 import DDC.Type.Exp.TyCon               as T
 import DDC.Data.SourcePos
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 
 
 -- Language -------------------------------------------------------------------

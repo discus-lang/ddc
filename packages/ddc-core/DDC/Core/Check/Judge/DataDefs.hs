@@ -6,7 +6,7 @@ import DDC.Core.Check.Config
 import DDC.Core.Check.Error
 import DDC.Type.DataDef
 import DDC.Type.Exp.Simple
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 import Data.Maybe
 import DDC.Core.Env.EnvT                (EnvT)
 import Data.Set                         (Set)

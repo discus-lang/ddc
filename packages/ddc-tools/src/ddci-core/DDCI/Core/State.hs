@@ -28,8 +28,8 @@ import DDC.Build.Language
 import DDC.Core.Exp
 import DDC.Core.Module
 import DDC.Core.Simplifier
-import DDC.Base.Pretty                          hiding ((</>))
-import DDC.Base.Name
+import DDC.Data.Pretty                          hiding ((</>))
+import DDC.Data.Name
 import Data.Typeable
 import System.FilePath
 import Data.Map                                 (Map)

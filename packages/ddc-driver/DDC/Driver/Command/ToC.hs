@@ -12,7 +12,7 @@ import DDC.Driver.Interface.Source
 import DDC.Build.Pipeline
 import DDC.Build.Language
 import DDC.Core.Fragment
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 import System.FilePath
 import System.Directory
 import Control.Monad.Trans.Except

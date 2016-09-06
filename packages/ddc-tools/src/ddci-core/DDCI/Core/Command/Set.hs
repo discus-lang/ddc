@@ -10,7 +10,7 @@ import DDCI.Core.Output
 import DDC.Core.Fragment
 import DDC.Core.Simplifier.Parser
 import DDC.Core.Transform.Reannotate
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 import Control.Monad
 import Data.Char
 import Data.List

@@ -14,9 +14,9 @@ import DDC.Source.Tetra.Module          as S
 import DDC.Source.Tetra.DataDef         as S
 import DDC.Source.Tetra.Exp             as S
 import DDC.Core.Lexer.Tokens            as K
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 import Control.Monad
-import qualified DDC.Base.Parser        as P
+import qualified DDC.Control.Parser     as P
 import qualified Data.Text              as Text
 
 import DDC.Core.Parser

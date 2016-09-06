@@ -6,7 +6,7 @@ where
 import DDC.Core.Exp
 import DDC.Core.Parser
 import DDC.Core.Lexer.Tokens
-import qualified DDC.Base.Parser                 as P
+import qualified DDC.Control.Parser              as P
 import qualified DDC.Type.Exp.Simple             as T
 import qualified DDC.Core.Transform.Rewrite.Rule as R
 

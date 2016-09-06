@@ -9,7 +9,7 @@ import DDC.Source.Tetra.Parser.Base
 import DDC.Source.Tetra.Exp.Source
 import Control.Monad.Except
 import DDC.Core.Lexer.Tokens            as K
-import qualified DDC.Base.Parser        as P
+import qualified DDC.Control.Parser     as P
 
 type SP = SourcePos
 

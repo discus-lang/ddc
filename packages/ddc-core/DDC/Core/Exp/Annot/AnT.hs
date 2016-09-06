@@ -3,7 +3,7 @@ module DDC.Core.Exp.Annot.AnT
         (AnT (..))
 where
 import DDC.Type.Exp
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 import Control.DeepSeq
 import Data.Typeable
 

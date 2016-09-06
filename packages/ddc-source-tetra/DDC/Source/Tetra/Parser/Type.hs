@@ -15,7 +15,7 @@ import DDC.Core.Lexer.Tokens            as K
 import qualified DDC.Source.Tetra.Lexer as SL
 
 import qualified DDC.Core.Tetra         as C
-import qualified DDC.Base.Parser        as P
+import qualified DDC.Control.Parser     as P
 import qualified Data.Text              as T
 
 

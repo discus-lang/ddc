@@ -2,14 +2,14 @@
 module DDCI.Tetra.Command.Parse
         (cmdParse)
 where
-import DDC.Driver.Interface.Source
 import DDCI.Tetra.State
-import DDC.Base.Pretty
+import DDC.Driver.Interface.Source
+import DDC.Data.Pretty
 import DDC.Source.Tetra.Lexer
 import DDC.Source.Tetra.Parser
 import DDC.Source.Tetra.Pretty          ()
 import qualified DDC.Core.Lexer         as C
-import qualified DDC.Base.Parser        as BP
+import qualified DDC.Control.Parser        as BP
 
 
 cmdParse :: State -> Source -> String -> IO ()

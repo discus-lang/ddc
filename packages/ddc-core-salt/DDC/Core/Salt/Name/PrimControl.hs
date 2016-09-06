@@ -3,7 +3,7 @@ module DDC.Core.Salt.Name.PrimControl
         ( PrimControl (..)
         , readPrimControl)
 where
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 import Control.DeepSeq
 
 

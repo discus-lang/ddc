@@ -16,7 +16,7 @@ import Control.Monad
 import Data.IORef
 import System.Directory
 import System.IO
-import qualified DDC.Base.Parser                as BP
+import qualified DDC.Control.Parser             as BP
 import qualified DDC.Core.Check                 as C
 
 

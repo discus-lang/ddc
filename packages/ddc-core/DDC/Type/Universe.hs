@@ -8,7 +8,7 @@ module DDC.Type.Universe
         , universeOfType)
 where
 import DDC.Type.Exp
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 import DDC.Type.Env             as Env
 import qualified DDC.Type.Sum   as T
 

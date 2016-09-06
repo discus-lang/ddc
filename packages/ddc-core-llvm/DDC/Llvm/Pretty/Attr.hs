@@ -2,7 +2,7 @@
 -- | Attributes for functions and parameters.
 module DDC.Llvm.Pretty.Attr where
 import DDC.Llvm.Syntax.Attr
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 
 
 instance Pretty FuncAttr where

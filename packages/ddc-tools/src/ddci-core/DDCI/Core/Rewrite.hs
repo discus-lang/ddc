@@ -5,7 +5,7 @@ module DDCI.Core.Rewrite
         , parseRewrite
         , showRule )
 where
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 import DDC.Build.Language
 import DDC.Core.Lexer
 import DDC.Core.Fragment                hiding (Error)
@@ -16,7 +16,7 @@ import DDCI.Core.Output
 import Data.Char
 import qualified DDC.Core.Check         as C
 import qualified DDC.Core.Parser        as C
-import qualified DDC.Base.Parser        as BP
+import qualified DDC.Control.Parser     as BP
 import qualified Data.Map.Strict        as Map
 
 import DDC.Core.Module

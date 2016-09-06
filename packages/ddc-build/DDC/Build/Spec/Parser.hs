@@ -5,7 +5,7 @@ module DDC.Build.Spec.Parser
         , Error(..) )
 where
 import DDC.Build.Spec.Base
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 import Control.Monad
 import Data.List
 import Data.Char

@@ -8,10 +8,10 @@ import DDC.Driver.Interface.Source
 import DDC.Build.Pipeline
 import Control.Monad.Trans.Except
 import Control.Monad.IO.Class
-import qualified DDC.Base.Pretty                as P
-import qualified DDC.Core.Check                 as C
 import qualified DDC.Build.Language.Flow        as Flow
+import qualified DDC.Core.Check                 as C
 import qualified DDC.Core.Flow                  as Flow
+import qualified DDC.Data.Pretty                as P
 
 
 -- | Lower a flow program to loop code.

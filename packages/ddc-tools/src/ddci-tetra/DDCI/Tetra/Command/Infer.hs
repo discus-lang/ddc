@@ -4,16 +4,13 @@ module DDCI.Tetra.Command.Infer
 where
 import DDCI.Tetra.State
 import DDC.Driver.Interface.Source
-import DDC.Base.Pretty
--- import DDC.Source.Tetra.Env
+import DDC.Data.Pretty
 import DDC.Source.Tetra.Lexer
 import DDC.Source.Tetra.Parser
 import DDC.Source.Tetra.Pretty                  ()
 import DDC.Source.Tetra.Transform.Defix
--- import DDC.Source.Tetra.Transform.Expand        as Expand
 import qualified DDC.Core.Lexer                 as C
-import qualified DDC.Base.Parser                as BP
--- import qualified DDC.Data.SourcePos             as SP
+import qualified DDC.Control.Parser             as BP
 
 
 cmdInfer :: State -> Source -> String -> IO ()
@@ -34,10 +31,5 @@ cmdInfer _state source str
             Right mm'   -> goExpand mm'
 
         goExpand mm
-         = do   -- let sp            = SP.SourcePos "<top level>" 1 1
-
-{-                let mm' = Expand.expand Expand.configDefault sp
-                                primKindEnv primTypeEnv mm
--}
-                putStrLn (renderIndent $ ppr mm)
+         = do   putStrLn (renderIndent $ ppr mm)
 

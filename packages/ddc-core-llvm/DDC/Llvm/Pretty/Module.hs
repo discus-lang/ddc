@@ -7,7 +7,7 @@ import DDC.Llvm.Pretty.Function
 import DDC.Llvm.Pretty.Exp      ()
 import DDC.Llvm.Pretty.Metadata
 import DDC.Llvm.Pretty.Base
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 
 
 -------------------------------------------------------------------------------

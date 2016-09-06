@@ -93,8 +93,8 @@ import DDC.Core.Salt.Name
         , readLitWordOfBits
         , readLitFloatOfBits)
         
-import DDC.Base.Pretty
-import DDC.Base.Name
+import DDC.Data.Name
+import DDC.Data.Pretty
 import DDC.Data.ListUtils
 import Control.DeepSeq
 import Data.Char        

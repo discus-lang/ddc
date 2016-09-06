@@ -7,7 +7,7 @@ where
 import DDC.Core.Flow.Prim.Base
 import DDC.Core.Flow.Exp.Simple.Exp
 import DDC.Type.Exp.Simple.Compounds
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 import Control.DeepSeq
 
 

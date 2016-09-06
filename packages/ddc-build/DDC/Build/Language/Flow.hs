@@ -14,7 +14,7 @@ import DDC.Core.Transform.Namify
 import DDC.Core.Fragment                hiding (Error(..))
 import DDC.Core.Flow                    as Flow
 import DDC.Core.Flow.Profile            as Flow
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 import qualified Data.Map               as Map
 
 

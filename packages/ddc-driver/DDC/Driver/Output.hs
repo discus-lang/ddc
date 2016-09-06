@@ -4,7 +4,7 @@ module DDC.Driver.Output
         , outStr, outStrLn
         , chatStrLn)
 where
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 
 
 -- | Output a document to the console.

@@ -16,8 +16,8 @@ import DDC.Core.Parser.Type
 import DDC.Core.Parser.Context
 import DDC.Core.Parser.Base
 import DDC.Core.Lexer.Tokens
-import DDC.Base.Parser                  ((<?>), SourcePos)
-import qualified DDC.Base.Parser        as P
+import DDC.Control.Parser               ((<?>), SourcePos)
+import qualified DDC.Control.Parser     as P
 import qualified DDC.Type.Exp.Simple    as T
 import Control.Monad.Except
 

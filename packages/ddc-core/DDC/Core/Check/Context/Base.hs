@@ -51,7 +51,7 @@ import DDC.Core.Env.EnvX                (EnvT)
 import DDC.Type.Transform.BoundT
 import DDC.Type.Exp.Simple
 import DDC.Type.DataDef
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 import qualified DDC.Core.Env.EnvT      as EnvT
 import qualified DDC.Core.Env.EnvX      as EnvX
 import qualified DDC.Type.Env           as Env

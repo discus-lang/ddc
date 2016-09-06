@@ -12,11 +12,11 @@ import DDC.Core.Parser.DataDef
 import DDC.Core.Module
 import DDC.Core.Lexer.Tokens
 import DDC.Core.Exp.Annot
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 import Data.Char
 import qualified Data.Map               as Map
-import qualified DDC.Base.Parser        as P
 import qualified Data.Text              as T
+import qualified DDC.Control.Parser     as P
 
 
 -- | Parse a core module.

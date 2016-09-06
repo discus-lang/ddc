@@ -3,7 +3,7 @@ module DDC.Llvm.Pretty.Metadata where
 import DDC.Llvm.Syntax.Metadata
 import DDC.Llvm.Pretty.Type             ()
 import DDC.Llvm.Pretty.Base
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 
 
 -------------------------------------------------------------------------------

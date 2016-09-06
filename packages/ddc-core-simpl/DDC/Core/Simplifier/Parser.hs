@@ -10,13 +10,13 @@ import DDC.Core.Module
 import DDC.Type.Env
 import DDC.Core.Simplifier.Lexer
 import DDC.Data.SourcePos
-import DDC.Base.Parser                          (pTok)
+import DDC.Control.Parser                       (pTok)
 import Data.Set                                 (Set)
 import qualified DDC.Core.Transform.Snip        as Snip
 import qualified DDC.Core.Transform.Beta        as Beta
 import qualified DDC.Core.Transform.Eta         as Eta
 import qualified DDC.Core.Transform.FoldCase    as FoldCase
-import qualified DDC.Base.Parser                as P
+import qualified DDC.Control.Parser             as P
 import qualified Data.Map                       as Map
 import qualified Data.Set                       as Set
 

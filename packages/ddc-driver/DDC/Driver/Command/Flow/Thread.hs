@@ -14,7 +14,7 @@ import Control.Monad.IO.Class
 import qualified DDC.Core.Transform.Thread      as Thread
 import qualified DDC.Core.Flow.Transform.Thread as Flow
 import qualified DDC.Core.Check                 as C
-import qualified DDC.Base.Pretty                as P
+import qualified DDC.Data.Pretty                as P
 
 
 -- | Thread a state token through the given flow program.

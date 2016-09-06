@@ -6,7 +6,7 @@ module DDCI.Core.Output
 where
 import DDCI.Core.State
 import DDC.Driver.Interface.Input
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 import qualified Data.Set       as Set
 
 

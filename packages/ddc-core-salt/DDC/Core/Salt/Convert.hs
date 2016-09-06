@@ -26,7 +26,7 @@ import DDC.Core.Salt.Name
 import DDC.Core.Salt.Platform
 import DDC.Core.Module                          as C
 import DDC.Core.Exp.Annot
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 import DDC.Control.Monad.Check                  (throw, evalCheck)
 import qualified DDC.Type.Env                   as Env
 

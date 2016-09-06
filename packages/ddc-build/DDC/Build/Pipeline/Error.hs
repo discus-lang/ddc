@@ -2,7 +2,7 @@
 module DDC.Build.Pipeline.Error
         (Error (..)) 
 where
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 import DDC.Data.SourcePos
 import qualified DDC.Core.Salt          as Salt
 import qualified DDC.Core.Load          as CL

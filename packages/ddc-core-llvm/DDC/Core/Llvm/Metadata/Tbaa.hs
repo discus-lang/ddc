@@ -11,7 +11,7 @@ import DDC.Type.Env                     (KindEnv)
 import DDC.Type.Exp.Simple
 import DDC.Core.Llvm.Metadata.Graph
 import DDC.Core.Llvm.Convert.Base
-import DDC.Base.Pretty                  hiding (empty)
+import DDC.Data.Pretty                  hiding (empty)
 import qualified DDC.Type.Env           as Env
 import qualified DDC.Core.Salt          as A
 import qualified DDC.Llvm.Syntax        as V

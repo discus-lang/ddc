@@ -7,7 +7,7 @@ module DDC.Core.Salt.Name.PrimCast
 where
 import DDC.Core.Salt.Name.PrimTyCon
 import DDC.Core.Salt.Platform
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 import Control.DeepSeq
 
 

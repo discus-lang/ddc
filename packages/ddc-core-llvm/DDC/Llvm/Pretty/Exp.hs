@@ -5,7 +5,7 @@ module DDC.Llvm.Pretty.Exp
 where
 import DDC.Llvm.Syntax.Exp
 import DDC.Llvm.Pretty.Type             ()
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 import Data.Text                        (Text)
 import qualified Data.Text              as T
 

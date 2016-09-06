@@ -7,7 +7,7 @@ module DDC.Core.Salt.Name.PrimVec
         , lowerPrimVecToArith)
 where
 import DDC.Core.Salt.Name.PrimArith
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 import Control.DeepSeq
 import Data.List
 import Data.Char

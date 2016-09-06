@@ -14,7 +14,7 @@ import DDC.Core.Llvm.Convert.Context
 import DDC.Core.Llvm.Convert.Base
 import DDC.Core.Salt.Platform
 import DDC.Control.Monad.Check
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 import Control.Monad
 import Data.Maybe
 import qualified DDC.Type.Env                   as Env

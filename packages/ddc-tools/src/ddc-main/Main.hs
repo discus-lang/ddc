@@ -34,7 +34,7 @@ import DDC.Driver.Command.ToPHP
 
 import DDC.Driver.Interface.Source
 import DDC.Build.Builder
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 import System.Environment
 import System.IO
 import System.Exit

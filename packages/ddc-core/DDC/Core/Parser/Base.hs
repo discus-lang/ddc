@@ -15,12 +15,12 @@ module DDC.Core.Parser.Base
         , pOpVarSP
         , pPragmaSP)
 where
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 import DDC.Core.Module
 import DDC.Core.Lexer.Tokens
-import DDC.Base.Parser                  ((<?>), SourcePos)
+import DDC.Control.Parser               ((<?>), SourcePos)
 import Data.Text                        (Text)
-import qualified DDC.Base.Parser        as P
+import qualified DDC.Control.Parser     as P
 
 -- | A parser of core language tokens.
 type Parser n a

@@ -7,7 +7,7 @@ module DDC.Core.Lexer.Token.Builtin
 where
 import DDC.Core.Lexer.Token.Names
 import DDC.Core.Exp
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 import Text.Lexer.Inchworm.Char
 import qualified Data.List      as List
 import qualified Data.Char      as Char

@@ -18,7 +18,7 @@ import DDC.Core.Fragment
 import DDC.Core.Check
 import DDC.Core.Module
 import DDC.Core.Exp
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 import Data.Typeable
 import Control.Monad.Writer                             (Writer, runWriter, tell)
 import DDC.Core.Env.EnvX                                (EnvX)

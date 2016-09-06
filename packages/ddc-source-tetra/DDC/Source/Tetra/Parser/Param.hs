@@ -12,7 +12,7 @@ import DDC.Source.Tetra.Parser.Type
 import DDC.Source.Tetra.Exp.Source
 import Data.Maybe
 import DDC.Core.Lexer.Tokens            as K
-import qualified DDC.Base.Parser        as P
+import qualified DDC.Control.Parser     as P
 
 
 -- | Specification of a function parameter.

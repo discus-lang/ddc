@@ -5,7 +5,7 @@ import DDC.Llvm.Syntax.Type
 import DDC.Llvm.Pretty.Attr             ()
 import DDC.Llvm.Pretty.Instr
 import DDC.Llvm.Pretty.Base
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 import Prelude                          hiding ((<$>))
 
 

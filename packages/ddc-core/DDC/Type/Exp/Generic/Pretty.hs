@@ -7,7 +7,7 @@ module DDC.Type.Exp.Generic.Pretty
         , pprRawC)
 where
 import DDC.Type.Exp.Generic.Exp
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 
 
 -- | Synonym for pretty constraints on the configurable types.

@@ -4,7 +4,7 @@ module DDC.Core.Tetra.Transform.Curry.Error
 where
 import DDC.Core.Tetra.Prim
 import DDC.Type.Exp
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 import qualified DDC.Core.Call          as Call
 
 

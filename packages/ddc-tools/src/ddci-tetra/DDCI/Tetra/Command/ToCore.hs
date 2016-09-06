@@ -5,7 +5,7 @@ import DDCI.Tetra.State
 import DDC.Driver.Interface.Source
 import DDC.Driver.Stage
 import DDC.Build.Pipeline   
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 import qualified DDC.Driver.Config      as D
 import DDC.Build.Interface.Store        (Store)
 

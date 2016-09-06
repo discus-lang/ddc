@@ -1,7 +1,7 @@
 
 module DDC.Llvm.Pretty.Prim where
 import DDC.Llvm.Syntax.Prim
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 
 
 instance Pretty Op where

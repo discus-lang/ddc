@@ -10,9 +10,9 @@ import DDC.Core.Parser.Base
 import DDC.Core.Parser.DataDef
 import DDC.Core.Lexer.Tokens
 import DDC.Type.Exp.Simple
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 import Control.Monad
-import qualified DDC.Base.Parser        as P
+import qualified DDC.Control.Parser     as P
 
 
 ---------------------------------------------------------------------------------------------------

@@ -9,13 +9,13 @@ import DDC.Core.Check
 import DDC.Core.Simplifier
 import DDC.Core.Transform.Namify
 import DDC.Core.Transform.Rewrite
-import DDC.Base.Pretty
-import DDC.Base.Name
+import DDC.Data.Pretty
+import DDC.Data.Name
 import Control.DeepSeq
 import Data.Typeable
 import Data.Map                         (Map)
 import DDC.Type.Env                     (Env)
-import qualified DDC.Base.Parser        as BP
+import qualified DDC.Control.Parser     as BP
 
 
 -- | Existential container for a language fragment, and the dictionaries

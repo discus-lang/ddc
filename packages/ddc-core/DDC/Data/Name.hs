@@ -1,5 +1,5 @@
 
-module DDC.Base.Name
+module DDC.Data.Name
         ( StringName   (..)
         , CompoundName (..))
 where

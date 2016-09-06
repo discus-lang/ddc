@@ -35,13 +35,13 @@ import DDC.Core.Exp.Annot.AnT                   (AnT)
 import DDC.Type.Transform.SpreadT
 import DDC.Type.Universe
 import DDC.Core.Module
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 import DDC.Core.Fragment                        (Fragment)
 import qualified DDC.Core.Env.EnvX              as EnvX
 import qualified DDC.Core.Fragment              as F
 import qualified DDC.Core.Parser                as C
 import qualified DDC.Core.Check                 as C
-import qualified DDC.Base.Parser                as BP
+import qualified DDC.Control.Parser             as BP
 import qualified Data.Map.Strict                as Map
 import Data.Map.Strict                          (Map)
 import System.Directory

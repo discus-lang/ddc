@@ -12,7 +12,7 @@ import DDC.Source.Tetra.Prim.Base
 import DDC.Source.Tetra.Exp.Generic
 import DDC.Source.Tetra.Exp.Compounds
 
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 import Data.Char
 import Data.List
 import Control.DeepSeq

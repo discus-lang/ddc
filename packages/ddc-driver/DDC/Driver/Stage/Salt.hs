@@ -13,7 +13,7 @@ import DDC.Driver.Interface.Source
 import DDC.Build.Builder
 import DDC.Build.Pipeline
 import DDC.Core.Transform.Namify
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 import System.FilePath
 import Data.Maybe
 import qualified DDC.Build.Language.Salt        as Salt

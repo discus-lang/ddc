@@ -1,7 +1,7 @@
 
 module DDC.Core.Check.Error.ErrorDataMessage where
 import DDC.Core.Check.Error.ErrorData
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 
 
 instance (Eq n, Show n, Pretty n) 

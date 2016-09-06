@@ -8,9 +8,8 @@ where
 import DDC.Core.Salt.Name
 import DDC.Core.Module
 import DDC.Type.Exp.Simple.Exp
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 import Data.Maybe
-
 
 
 -- | Like 'sanitizeGlobal' but indicate that the name is going to be visible

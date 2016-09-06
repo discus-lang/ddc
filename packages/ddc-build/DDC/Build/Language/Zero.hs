@@ -12,8 +12,8 @@ import DDC.Core.Simplifier
 import DDC.Build.Language.Base
 import DDC.Core.Fragment                hiding (Error)
 import DDC.Core.Transform.Namify
-import DDC.Base.Pretty
-import DDC.Base.Name
+import DDC.Data.Pretty
+import DDC.Data.Name
 import DDC.Type.Exp
 import Data.Typeable
 import DDC.Type.Env                     (Env)

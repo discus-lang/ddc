@@ -4,7 +4,7 @@ module DDC.Core.Check.Error.ErrorTypeMessage where
 import DDC.Core.Check.Error.ErrorType
 import DDC.Type.Exp.Simple
 import DDC.Type.Universe
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 
 
 instance (Eq n, Show n, Pretty n) 

@@ -12,7 +12,7 @@ import DDC.Control.Monad.Check                  (throw)
 import qualified DDC.Core.Tetra.Prim            as E
 import qualified DDC.Core.Salt.Name             as A
 import Control.Monad
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 
 
 -- | Convert a witness binder.

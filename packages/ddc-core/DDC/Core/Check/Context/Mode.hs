@@ -4,7 +4,7 @@ module DDC.Core.Check.Context.Mode
 where
 import DDC.Core.Check.Context.Elem
 import DDC.Type.Exp.Simple
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 
 
 -- | What mode we're performing type checking/inference in.

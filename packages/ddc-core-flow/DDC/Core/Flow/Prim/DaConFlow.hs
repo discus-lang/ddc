@@ -7,7 +7,7 @@ import DDC.Core.Flow.Prim.TyConFlow
 import DDC.Core.Flow.Prim.Base
 import DDC.Core.Flow.Exp.Simple.Exp
 import DDC.Core.Flow.Exp.Simple.Compounds
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 import Data.List
 import Data.Char
 import Control.DeepSeq

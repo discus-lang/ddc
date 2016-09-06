@@ -9,7 +9,7 @@ module DDC.Data.SourcePos
         , columnOfLocated
         , valueOfLocated)
 where
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 import Control.DeepSeq
 import qualified Text.Parsec.Pos        as Parsec
 

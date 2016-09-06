@@ -18,7 +18,7 @@ import DDC.Source.Tetra.Prim            as S
 import DDC.Core.Lexer.Tokens
 import Control.Monad.Except
 import Data.Maybe
-import qualified DDC.Base.Parser        as P
+import qualified DDC.Control.Parser     as P
 import qualified Data.Text              as Text
 
 

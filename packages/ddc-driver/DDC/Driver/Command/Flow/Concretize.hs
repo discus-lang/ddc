@@ -12,7 +12,7 @@ import Control.Monad.Trans.Except
 import Control.Monad.IO.Class
 import qualified DDC.Core.Flow.Transform.Concretize     as Concretize
 import qualified DDC.Core.Check                         as C
-import qualified DDC.Base.Pretty                        as P
+import qualified DDC.Data.Pretty                        as P
 
 
 -- | Concretize rate variables to loop indices.

@@ -7,7 +7,7 @@ module DDC.Core.Transform.Forward
         , forwardModule
         , forwardX)
 where
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 import DDC.Core.Analysis.Usage
 import DDC.Core.Exp.Annot
 import DDC.Core.Module

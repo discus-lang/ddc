@@ -73,7 +73,7 @@ import DDC.Source.Tetra.Prim.OpCast
 import DDC.Source.Tetra.Prim.OpFun
 import DDC.Source.Tetra.Prim.OpVector
 import DDC.Source.Tetra.Prim.OpError
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 import Control.DeepSeq
 import qualified Data.Text              as T
 

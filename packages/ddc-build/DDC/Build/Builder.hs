@@ -10,7 +10,7 @@ module DDC.Build.Builder
         , determineDefaultBuilderHost)
 where
 import DDC.Build.Platform
-import DDC.Base.Pretty                          hiding ((</>))
+import DDC.Data.Pretty                          hiding ((</>))
 import Data.List
 import System.FilePath                         
 import System.Exit                              hiding (die)

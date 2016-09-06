@@ -22,7 +22,7 @@ import qualified DDC.Type.Env                   as Env
 import qualified Data.Map                       as Map
 import qualified Data.Set                       as Set
 import Control.Monad
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 
 
 -- | Convert a value binder with a representable type.

@@ -2,12 +2,12 @@
 
 -- | Pretty printing for annotated expressions.
 module DDC.Core.Exp.Annot.Pretty
-        ( module DDC.Base.Pretty
+        ( module DDC.Data.Pretty
         , PrettyMode (..))
 where
 import DDC.Core.Exp.Annot
 import DDC.Type.Exp.Simple.Pretty       ()
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 import Data.List
 import Prelude                          hiding ((<$>))
 

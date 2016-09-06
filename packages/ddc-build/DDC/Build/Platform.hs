@@ -15,7 +15,7 @@ module DDC.Build.Platform
         , determineHostOs
         , determineHostLlvmVersion)
 where
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 import Data.List                as List
 import Data.Maybe               as Maybe
 import Data.Char                as Char

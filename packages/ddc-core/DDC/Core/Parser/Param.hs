@@ -11,8 +11,8 @@ import DDC.Core.Parser.Type
 import DDC.Core.Parser.Context
 import DDC.Core.Parser.Base
 import DDC.Core.Lexer.Tokens
-import qualified DDC.Base.Parser        as P
 import qualified DDC.Type.Exp.Simple    as T
+import qualified DDC.Control.Parser     as P
 
 
 -- | Specification of a function parameter.

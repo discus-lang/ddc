@@ -5,7 +5,7 @@ module DDC.Core.Transform.Rewrite
         , rewriteModule
         , rewriteX)
 where
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 import DDC.Core.Exp.Annot                               as X
 import DDC.Core.Module
 import Data.Map                                         (Map)

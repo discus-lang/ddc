@@ -3,7 +3,7 @@
 -- | Pretty printing for Tetra modules and expressions.
 module DDC.Source.Tetra.Pretty
         ( module DDC.Core.Pretty
-        , module DDC.Base.Pretty 
+        , module DDC.Data.Pretty 
         , PrettyLanguage)
 where
 import DDC.Source.Tetra.Exp.Predicates
@@ -12,7 +12,7 @@ import DDC.Source.Tetra.Module
 import DDC.Source.Tetra.Exp.Source
 import DDC.Type.Exp.Generic.Pretty
 import DDC.Core.Pretty
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 import Prelude                                  hiding ((<$>))
 import qualified Data.Text                      as Text
 

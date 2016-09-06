@@ -3,7 +3,7 @@ module DDC.Core.Flow.Transform.Rates.Clusters.Linear
     (solve_linear)
  where
 
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 import DDC.Core.Flow.Transform.Rates.Graph
 import DDC.Core.Flow.Transform.Rates.Clusters.Base
 

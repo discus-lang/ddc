@@ -15,8 +15,8 @@ import DDC.Build.Pipeline.Sink
 import DDC.Build.Pipeline.Salt
 import DDC.Build.Language
 import DDC.Core.Simplifier
-import DDC.Base.Pretty
-import DDC.Base.Name
+import DDC.Data.Pretty
+import DDC.Data.Name
 import DDC.Data.Canned
 import DDC.Llvm.Pretty                                  ()
 

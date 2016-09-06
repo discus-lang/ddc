@@ -10,7 +10,7 @@ import DDC.Core.Llvm.Convert.Base
 import DDC.Llvm.Syntax
 import DDC.Core.Salt.Platform
 import DDC.Type.Exp.Simple.Predicates
-import DDC.Base.Pretty                          hiding (align)
+import DDC.Data.Pretty                          hiding (align)
 import qualified DDC.Core.Llvm.Metadata.Tbaa    as Tbaa
 import qualified DDC.Core.Salt                  as A
 import qualified DDC.Core.Salt.Convert          as A

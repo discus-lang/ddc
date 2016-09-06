@@ -13,7 +13,7 @@ import DDC.Core.Flow.Prim.Base
 import DDC.Core.Flow.Exp.Simple.Compounds
 import DDC.Core.Flow.Exp.Simple.Exp
 import DDC.Core.Transform.BoundT
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 import Control.DeepSeq
 import Data.List
 import Data.Char        

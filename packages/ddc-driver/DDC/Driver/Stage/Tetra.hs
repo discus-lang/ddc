@@ -9,7 +9,7 @@ import DDC.Driver.Config
 import DDC.Driver.Interface.Source
 import DDC.Build.Interface.Store                (Store)
 import DDC.Build.Pipeline
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 import qualified DDC.Build.Language.Tetra       as BE
 import qualified DDC.Build.Builder              as B
 import qualified DDC.Core.Tetra                 as CE
@@ -17,7 +17,7 @@ import qualified DDC.Core.Salt                  as CS
 import qualified DDC.Core.Check                 as C
 import qualified DDC.Core.Simplifier.Recipe     as C
 import qualified DDC.Core.Transform.Namify      as C
-import qualified DDC.Base.Parser                as BP
+import qualified DDC.Control.Parser                as BP
 
 
 ---------------------------------------------------------------------------------------------------

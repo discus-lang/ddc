@@ -7,7 +7,7 @@ import DDC.Build.Pipeline.Error
 import DDC.Build.Pipeline.Sink
 import DDC.Build.Pipeline.Llvm
 import DDC.Build.Builder
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 import DDC.Llvm.Pretty                          ()
 import DDC.Core.Check                           (AnTEC)
 import qualified DDC.Core.Transform.Reannotate  as C

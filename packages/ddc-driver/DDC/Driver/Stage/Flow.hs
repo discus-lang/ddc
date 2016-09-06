@@ -11,7 +11,7 @@ import DDC.Driver.Dump
 import DDC.Driver.Config
 import DDC.Driver.Interface.Source
 import DDC.Build.Pipeline
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 import qualified DDC.Core.Check                 as C
 import qualified DDC.Core.Flow                  as Flow
 import qualified DDC.Build.Language.Flow        as Flow

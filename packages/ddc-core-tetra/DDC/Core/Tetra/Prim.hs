@@ -20,10 +20,6 @@ module DDC.Core.Tetra.Prim
         , readDaConTetra
         , typeDaConTetra
 
---        , xTuple2
---        , dcTuple2
---        , dcTupleN 
-
           -- * Baked-in function operators.
         , OpFun         (..)
         , readOpFun
@@ -64,10 +60,10 @@ import DDC.Core.Tetra.Prim.OpArith
 import DDC.Core.Tetra.Prim.OpCast
 import DDC.Core.Tetra.Prim.OpFun
 import DDC.Core.Tetra.Prim.OpVector
-import DDC.Data.ListUtils
 import DDC.Type.Exp
-import DDC.Base.Pretty
-import DDC.Base.Name
+import DDC.Data.ListUtils
+import DDC.Data.Pretty
+import DDC.Data.Name
 import Control.DeepSeq
 import Data.Char        
 import qualified Data.Text              as T

@@ -1,7 +1,7 @@
 
 module DDC.Type.Exp.Pretty where
 import DDC.Type.Exp.TyCon
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 
 
 instance Pretty SoCon where

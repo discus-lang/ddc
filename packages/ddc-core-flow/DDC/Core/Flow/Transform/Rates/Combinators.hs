@@ -10,7 +10,7 @@ module DDC.Core.Flow.Transform.Rates.Combinators
         , seriesInputsOfCluster
         ) 
 where
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 import DDC.Core.Flow.Exp (ExpF)
 import Data.Maybe (catMaybes)
 import Data.List  (nub)

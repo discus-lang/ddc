@@ -8,7 +8,7 @@ import DDC.Build.Pipeline.Sink
 import DDC.Build.Pipeline.Core
 import DDC.Build.Language
 import DDC.Build.Interface.Store                        (Store)
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 
 import qualified DDC.Build.Transform.Resolve            as B
 
@@ -32,7 +32,7 @@ import qualified DDC.Core.Transform.SpreadX             as C
 import qualified DDC.Core.Check                         as C
 import qualified DDC.Core.Load                          as C
 import qualified DDC.Core.Lexer                         as C
-import qualified DDC.Base.Parser                        as BP
+import qualified DDC.Control.Parser                     as BP
 import qualified DDC.Data.SourcePos                     as SP
 
 import qualified Data.Text                              as Text

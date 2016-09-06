@@ -42,7 +42,7 @@ import DDC.Core.Salt.Compounds
 import DDC.Core.Salt.Name
 import DDC.Core.Exp.Annot
 import DDC.Core.Module
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 import qualified Data.Map       as Map
 import Data.Map                 (Map)
 

@@ -5,9 +5,9 @@ module DDC.Core.Simplifier.Result
         , NoInformation
         , resultDone)
 where
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 import Data.Typeable
-import qualified DDC.Base.Pretty                as P
+import qualified DDC.Data.Pretty        as P
 
 
 -- TransformResult ------------------------------------------------------------

@@ -90,8 +90,8 @@ import DDC.Core.Salt.Name.PrimVec
 import DDC.Core.Lexer.Token.Names       (isVarStart)
 import DDC.Core.Lexer.Token.Literal
 import DDC.Data.ListUtils
-import DDC.Base.Pretty
-import DDC.Base.Name
+import DDC.Data.Pretty
+import DDC.Data.Name
 import Data.Typeable
 import Data.Char
 import Data.List

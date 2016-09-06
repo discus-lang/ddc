@@ -11,7 +11,7 @@ module DDC.Core.Transform.Thread
 where
 import DDC.Core.Module
 import DDC.Core.Exp.Annot
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 import DDC.Core.Transform.Reannotate
 import DDC.Core.Check           (AnTEC (..))
 import DDC.Type.Env             (KindEnv, TypeEnv)

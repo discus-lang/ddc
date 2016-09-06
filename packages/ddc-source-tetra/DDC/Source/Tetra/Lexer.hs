@@ -7,7 +7,7 @@ where
 import DDC.Source.Tetra.Prim
 import DDC.Core.Lexer
 import DDC.Core.Lexer.Token.Names
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 import Control.DeepSeq
 import Data.Char
 import Data.Text                (Text)

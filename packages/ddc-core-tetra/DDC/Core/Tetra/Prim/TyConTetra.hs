@@ -10,7 +10,7 @@ module DDC.Core.Tetra.Prim.TyConTetra
 where
 import DDC.Core.Tetra.Prim.Base
 import DDC.Type.Exp.Simple
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 import Control.DeepSeq
 import Data.List
 import Data.Char

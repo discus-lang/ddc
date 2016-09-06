@@ -6,7 +6,7 @@ module DDCI.Tetra.Output
 where
 import DDCI.Tetra.State
 import DDC.Driver.Interface.Input
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 
 
 -- | Output a document to the console.

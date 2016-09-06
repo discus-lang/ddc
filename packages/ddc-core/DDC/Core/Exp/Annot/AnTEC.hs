@@ -4,7 +4,7 @@ module DDC.Core.Exp.Annot.AnTEC
         , fromAnT)
 where
 import DDC.Type.Exp.Simple
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 import Control.DeepSeq
 import Data.Typeable
 import DDC.Core.Exp.Annot.AnT           (AnT)

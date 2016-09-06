@@ -4,7 +4,7 @@ module DDCI.Tetra.Command.Set
 where
 import DDCI.Tetra.State
 import DDCI.Tetra.Mode
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 import Data.Char
 import Data.List
 import qualified DDC.Build.Builder      as Build

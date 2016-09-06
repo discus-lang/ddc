@@ -29,9 +29,9 @@ import DDC.Source.Tetra.Exp.Bind        hiding (Name)
 import DDC.Source.Tetra.Prim
 import DDC.Source.Tetra.Lexer
 import DDC.Core.Lexer.Tokens
-import DDC.Base.Parser                  ((<?>))
-import DDC.Base.Parser                  (SourcePos(..))
-import qualified DDC.Base.Parser        as P
+import DDC.Control.Parser               ((<?>))
+import DDC.Control.Parser               (SourcePos(..))
+import qualified DDC.Control.Parser     as P
 import qualified Data.Text              as Text
 
 

@@ -1,12 +1,12 @@
 
 module DDC.Type.Exp.Simple.Pretty 
-        (module DDC.Base.Pretty)
+        (module DDC.Data.Pretty)
 where
 import DDC.Type.Exp.Simple.Exp
 import DDC.Type.Exp.Simple.Predicates
 import DDC.Type.Exp.Simple.Compounds
 import DDC.Type.Exp.Pretty              ()
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 import qualified DDC.Type.Sum           as Sum
 
 

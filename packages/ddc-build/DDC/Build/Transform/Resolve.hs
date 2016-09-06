@@ -10,8 +10,8 @@ import DDC.Core.Exp
 import DDC.Core.Collect.Support
 import DDC.Type.DataDef
 import DDC.Type.Env                             (KindEnv, TypeEnv)
-import DDC.Base.Pretty
-import DDC.Base.Panic
+import DDC.Data.Pretty
+import DDC.Control.Panic
 import Data.Map                                 (Map)
 import DDC.Build.Interface.Store                (Store)
 import DDC.Build.Interface.Base                 (Interface (..))

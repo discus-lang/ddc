@@ -17,7 +17,7 @@ module DDC.Core.Check.Context.Elem
         , takeExistsOfElem)
 where
 import DDC.Type.Exp.Simple
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 import qualified DDC.Type.Sum   as Sum
 
 

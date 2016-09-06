@@ -1,8 +1,8 @@
 
-module DDC.Base.Panic
+module DDC.Control.Panic
         (panic)
 where
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 
 
 -- | Print an error message and exit the compiler, ungracefully.

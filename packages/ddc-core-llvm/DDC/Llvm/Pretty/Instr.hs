@@ -10,9 +10,9 @@ import DDC.Llvm.Pretty.Exp
 import DDC.Llvm.Pretty.Prim     ()
 import DDC.Llvm.Pretty.Metadata ()
 import DDC.Llvm.Pretty.Base
+import DDC.Data.Pretty
 import Data.List
 import qualified Data.Foldable  as Seq
-import DDC.Base.Pretty
 
 
 -------------------------------------------------------------------------------

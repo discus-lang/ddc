@@ -11,12 +11,11 @@ import DDC.Core.Collect
 import DDC.Core.Module
 import DDC.Core.Exp.Annot
 import DDC.Type.Env                     (KindEnv, TypeEnv)
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 import DDC.Control.Monad.Check          (throw)
 import qualified DDC.Type.Env           as Env
 import Control.Monad
 import Data.Maybe
-
 
 
 -- | Convert a supercombinator definition to C source text.

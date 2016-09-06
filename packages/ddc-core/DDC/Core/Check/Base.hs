@@ -26,7 +26,7 @@ module DDC.Core.Check.Base
         , module DDC.Type.DataDef
         , module DDC.Type.Universe
         , module DDC.Type.Exp.Simple
-        , module DDC.Base.Pretty
+        , module DDC.Data.Pretty
         , module DDC.Data.ListUtils
         , module Control.Monad
         , module Data.Maybe)
@@ -44,9 +44,10 @@ import DDC.Type.Env                             (TypeEnv, KindEnv)
 import DDC.Type.DataDef
 import DDC.Type.Universe
 import DDC.Type.Exp.Simple
-import DDC.Base.Pretty
 import DDC.Control.Monad.Check                  (throw, runCheck, evalCheck)
+import DDC.Data.Pretty
 import DDC.Data.ListUtils
+
 import Control.Monad
 import Data.Monoid                              hiding ((<>))
 import Data.Maybe

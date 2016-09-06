@@ -3,7 +3,7 @@
 -- | Pretty printing for core modules and expressions.
 module DDC.Core.Pretty 
         ( module DDC.Type.Exp.Simple.Pretty
-        , module DDC.Base.Pretty
+        , module DDC.Data.Pretty
         , PrettyMode (..)
         , pprExportType, pprExportValue
         , pprImportType, pprImportValue
@@ -16,7 +16,7 @@ import DDC.Core.Exp.Annot.Pretty
 import DDC.Core.Exp.Annot.Compounds
 import DDC.Type.Exp.Simple.Pretty
 import DDC.Type.DataDef
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 import Data.List
 import Prelude          hiding ((<$>))
 

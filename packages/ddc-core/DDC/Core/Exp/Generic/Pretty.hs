@@ -6,7 +6,7 @@ import DDC.Core.Exp.Generic.Exp
 import DDC.Core.Exp.DaCon
 import DDC.Type.Exp.Simple      ()
 import DDC.Type.Exp.Simple.Exp
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 import Prelude                  hiding ((<$>))
 
 

@@ -27,7 +27,7 @@ import DDC.Core.Salt.Platform
 import DDC.Type.Env
 import DDC.Type.Exp.Simple.Compounds
 import DDC.Type.Exp.Simple.Predicates
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 import qualified DDC.Core.Salt          as A
 import qualified DDC.Core.Salt.Name     as A
 import qualified DDC.Core.Salt.Convert  as A

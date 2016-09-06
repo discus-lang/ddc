@@ -5,7 +5,7 @@ module DDC.Core.Flow.Transform.Rates.Fail
         , warn, run)
 where
 import DDC.Core.Flow.Prim
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 import Control.Monad.Writer
 import Data.List
 

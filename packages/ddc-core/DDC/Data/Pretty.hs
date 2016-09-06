@@ -4,7 +4,7 @@
 --
 --   This is a re-export of Daan Leijen's pretty printer package (@wl-pprint@),
 --   but with a `Pretty` class that includes a `pprPrec` function.
-module DDC.Base.Pretty
+module DDC.Data.Pretty
         ( module Text.PrettyPrint.Leijen
         , Pretty(..)
         , pprParen

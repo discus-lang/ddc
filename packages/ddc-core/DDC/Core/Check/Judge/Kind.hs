@@ -12,9 +12,9 @@ import DDC.Type.Exp.Simple.Predicates
 import DDC.Type.DataDef
 import DDC.Type.Universe
 import DDC.Type.Exp
-import Data.List
+import DDC.Data.Pretty
 import Control.Monad
-import DDC.Base.Pretty
+import Data.List
 import DDC.Core.Check.Base              (CheckM)
 import qualified DDC.Core.Check.Base    as C
 import qualified DDC.Type.Sum           as TS

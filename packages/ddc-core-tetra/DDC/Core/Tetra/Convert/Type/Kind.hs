@@ -7,7 +7,7 @@ where
 import DDC.Core.Tetra.Convert.Type.Base
 import DDC.Core.Tetra.Convert.Error
 import DDC.Type.Exp
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 import DDC.Control.Monad.Check                  (throw)
 import Control.Monad
 import qualified DDC.Core.Tetra.Prim            as E

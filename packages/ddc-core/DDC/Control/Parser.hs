@@ -1,7 +1,7 @@
 {-# LANGUAGE TypeFamilies #-}
 
 -- | Parser utilities.
-module DDC.Base.Parser
+module DDC.Control.Parser
         ( module Text.Parsec
         , Parser
         , ParserState   (..)
@@ -11,7 +11,7 @@ module DDC.Base.Parser
         , pTokAs,       pTokAsSP
         , pTok,         pTokSP)
 where
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 import DDC.Data.SourcePos       as D
 import Data.Functor.Identity
 import Text.Parsec              hiding (SourcePos)

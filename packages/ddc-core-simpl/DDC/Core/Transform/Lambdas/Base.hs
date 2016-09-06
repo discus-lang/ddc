@@ -8,7 +8,7 @@ module DDC.Core.Transform.Lambdas.Base
 where
 import DDC.Core.Exp.Annot.Ctx
 import DDC.Core.Exp.Annot
-import DDC.Base.Name
+import DDC.Data.Name
 import qualified Control.Monad.State.Strict     as S
 
 

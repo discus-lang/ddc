@@ -13,8 +13,8 @@ import DDC.Core.Parser.Context
 import DDC.Core.Parser.Base
 import DDC.Core.Lexer.Tokens   
 import DDC.Type.Exp.Simple
-import DDC.Base.Parser                  ((<?>))
-import qualified DDC.Base.Parser        as P
+import DDC.Control.Parser               ((<?>))
+import qualified DDC.Control.Parser     as P
 import qualified DDC.Type.Sum           as TS
 
 

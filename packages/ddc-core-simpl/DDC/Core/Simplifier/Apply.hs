@@ -6,7 +6,7 @@ module DDC.Core.Simplifier.Apply
         , applySimplifierX
         , applyTransformX)
 where
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 import DDC.Core.Module
 import DDC.Core.Exp
 import DDC.Core.Fragment
@@ -19,18 +19,18 @@ import DDC.Core.Transform.Eta                   as Eta
 import DDC.Core.Transform.Flatten
 import DDC.Core.Transform.Forward               as Forward
 import DDC.Core.Transform.Inline
-import qualified DDC.Core.Transform.Lambdas     as Lambdas
 import DDC.Core.Transform.Namify
 import DDC.Core.Transform.Prune
 import DDC.Core.Transform.Rewrite
+import qualified DDC.Core.Transform.Lambdas     as Lambdas
 import qualified DDC.Core.Transform.Snip        as Snip
 import qualified DDC.Core.Transform.FoldCase    as FoldCase
 
+import DDC.Data.Name
 import DDC.Type.Env                             (KindEnv, TypeEnv)
 import Data.Typeable                            (Typeable)
 import Control.Monad.State.Strict
-import DDC.Base.Name
-import qualified DDC.Base.Pretty                as P
+import qualified DDC.Data.Pretty                as P
 import qualified DDC.Core.Env.EnvX              as EnvX
 import qualified Data.Set                       as Set
 import Prelude                                  hiding ((<$>))

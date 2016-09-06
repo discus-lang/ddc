@@ -1,7 +1,7 @@
 
 -- | Generic environment that handles both named and anonymous
 --   de-bruijn binders.
-module DDC.Base.Env
+module DDC.Data.Env
         ( -- * Types
           Bind   (..)
         , Bound  (..)

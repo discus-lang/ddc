@@ -15,7 +15,7 @@ import DDC.Core.Transform.Rewrite.Rule  hiding (Error)
 import DDC.Core.Transform.Rewrite.Parser
 import System.Directory
 import System.IO
-import qualified DDC.Base.Parser        as BP
+import qualified DDC.Control.Parser     as BP
 import qualified DDC.Core.Check         as C
 import qualified DDC.Core.Parser        as C
 import qualified DDC.Type.Env           as Env

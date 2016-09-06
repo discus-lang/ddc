@@ -5,7 +5,7 @@ module DDC.Build.Pipeline.Llvm
 where
 import DDC.Build.Pipeline.Error
 import DDC.Build.Pipeline.Sink
-import DDC.Base.Pretty
+import DDC.Data.Pretty
 import Control.Monad
 import qualified DDC.Build.Builder              as Build
 import qualified DDC.Llvm.Pretty                as Llvm

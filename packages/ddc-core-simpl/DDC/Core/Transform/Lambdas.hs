@@ -14,8 +14,8 @@ import DDC.Core.Exp.Annot.Context
 import DDC.Core.Exp.Annot.Ctx
 import DDC.Core.Exp.Annot
 import DDC.Type.Transform.SubstituteT
-import DDC.Base.Pretty
-import DDC.Base.Name
+import DDC.Data.Pretty
+import DDC.Data.Name
 import qualified DDC.Type.Env                   as Env
 import qualified DDC.Type.DataDef               as DataDef
 import qualified DDC.Core.Env.EnvX              as EnvX
