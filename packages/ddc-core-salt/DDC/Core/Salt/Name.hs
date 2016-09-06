@@ -57,12 +57,12 @@ module DDC.Core.Salt.Name
           -- * Primitive Literals
         , PrimLit       (..)
         , readPrimLit
-        , readLitInteger
-        , readLitNat
-        , readLitInt
-        , readLitSize
-        , readLitWordOfBits
-        , readLitFloatOfBits
+        , K.readLitInteger
+        , K.readLitNat
+        , K.readLitInt
+        , K.readLitSize
+        , K.readLitWordOfBits
+        , K.readLitFloatOfBits
 
         , pattern NameLitVoid
         , pattern NameLitBool
@@ -87,8 +87,6 @@ import DDC.Core.Salt.Name.PrimControl
 import DDC.Core.Salt.Name.PrimStore
 import DDC.Core.Salt.Name.PrimTyCon
 import DDC.Core.Salt.Name.PrimVec
-import DDC.Core.Lexer.Token.Names       (isVarStart)
-import DDC.Core.Lexer.Token.Literal
 import DDC.Data.ListUtils
 import DDC.Data.Pretty
 import DDC.Data.Name
@@ -97,6 +95,7 @@ import Data.Char
 import Data.List
 import Control.DeepSeq
 import Data.Text                        (Text)
+import qualified DDC.Core.Lexer.Tokens  as K
 import qualified Data.Text              as T
 
 
@@ -178,7 +177,7 @@ readName str
 
         -- Variables.
         | c : _         <- str
-        , isVarStart c  || c == '_'
+        , K.isVarStart c  || c == '_'
         = Just $ NameVar str
 
         | otherwise
@@ -396,28 +395,28 @@ readPrimLit str
 
         -- Literal Nats
         | Just str'     <- stripSuffix "#" str
-        , Just val      <- readLitNat str'
+        , Just val      <- K.readLitNat str'
         = Just $ PrimLitNat  val
 
         -- Literal Ints
         | Just str'     <- stripSuffix "#" str
-        , Just val      <- readLitInt str'
+        , Just val      <- K.readLitInt str'
         = Just $ PrimLitInt  val
 
         -- Literal Sizes
         | Just str'     <- stripSuffix "s#" str
-        , Just val      <- readLitSize str'
+        , Just val      <- K.readLitSize str'
         = Just $ PrimLitSize val
 
         -- Literal Words
         | Just str'        <- stripSuffix "#" str
-        , Just (val, bits) <- readLitWordOfBits str'
+        , Just (val, bits) <- K.readLitWordOfBits str'
         , elem bits [8, 16, 32, 64]
         = Just $ PrimLitWord val bits
 
         -- Literal Floats
         | Just str'        <- stripSuffix "#" str
-        , Just (val, bits) <- readLitFloatOfBits str'
+        , Just (val, bits) <- K.readLitFloatOfBits str'
         , elem bits [32, 64]
         = Just $ PrimLitFloat val bits
 

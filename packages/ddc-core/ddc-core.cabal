@@ -216,7 +216,9 @@ Library
         DDC.Core.Parser.Type
         DDC.Core.Parser.Witness
 
-                  
+        DDC.Type.Exp.Simple.NFData
+        DDC.Type.Exp.Simple.Pretty
+
   GHC-options:
         -Wall
         -fno-warn-orphans

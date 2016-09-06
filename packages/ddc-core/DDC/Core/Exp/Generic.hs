@@ -1,9 +1,12 @@
 
 module DDC.Core.Exp.Generic
         ( -- * Abstract Syntax
-          module DDC.Type.Exp
-
           -- ** Expressions
+          GAnnot
+        , GBind
+        , GBound
+        , GPrim
+
         , GExp          (..)
         , GAbs          (..)
         , GArg          (..)
@@ -60,7 +63,6 @@ module DDC.Core.Exp.Generic
           -- * Dictionaries
         , ShowLanguage)
 where
-import DDC.Type.Exp
 import DDC.Core.Exp.Generic.Exp
 import DDC.Core.Exp.Generic.Predicates
 import DDC.Core.Exp.Generic.Compounds   

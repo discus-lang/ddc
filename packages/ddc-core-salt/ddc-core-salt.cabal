@@ -1,5 +1,5 @@
 Name:           ddc-core-salt
-Version:        0.4.3.0
+Version:        0.4.3.1
 License:        MIT
 License-file:   LICENSE
 Author:         The Disciplined Disciple Compiler Strike Force
@@ -21,7 +21,6 @@ Library
         text            >= 1.0 && < 1.3,
         transformers    == 0.5.*,
         mtl             == 2.2.1.*,
-        ddc-base        == 0.4.3.*,
         ddc-core        == 0.4.3.*
 
   Exposed-modules:
@@ -52,7 +51,6 @@ Library
         DDC.Core.Salt.Convert.Super
         DDC.Core.Salt.Convert.Type
         
-        DDC.Core.Salt.Name.Lit
         DDC.Core.Salt.Name.PrimArith
         DDC.Core.Salt.Name.PrimCall
         DDC.Core.Salt.Name.PrimCast
@@ -60,10 +58,7 @@ Library
         DDC.Core.Salt.Name.PrimStore
         DDC.Core.Salt.Name.PrimTyCon
         DDC.Core.Salt.Name.PrimVec
-        
-        DDC.Core.Salt.Convert.Base
-        
-                  
+                          
   GHC-options:
         -Wall
         -fno-warn-orphans

@@ -1,7 +1,7 @@
 {-# LANGUAGE TypeFamilies #-}
 
 module DDC.Core.Salt.Exp 
-        ( module DDC.Core.Exp.Generic.Exp
+        ( module DDC.Core.Exp.Generic
         , FromAnnot (..)
         , ErrorFromAnnot (..)
 
@@ -9,33 +9,33 @@ module DDC.Core.Salt.Exp
         , Exp, Abs, Arg, Lets, Alt, Pat, Cast, Witness, WiCon
         , Type)
 where
-import DDC.Core.Exp.Generic.Exp
-import qualified DDC.Core.Exp.Generic.Exp       as G
+import DDC.Core.Exp.Generic
+import qualified DDC.Core.Exp.Generic           as G
 import qualified DDC.Core.Salt.Name             as A
-import qualified DDC.Core.Exp.Annot.Exp         as N
+import qualified DDC.Core.Exp.Annot             as N
 import qualified DDC.Type.Exp                   as C
 
 
 ---------------------------------------------------------------------------------------------------
 -- Type synonyms for the Salt fragment.
-type instance GAnnot A.Name  = ()
-type instance GBind  A.Name  = C.Bind  A.Name
-type instance GBound A.Name  = C.Bound A.Name
-type instance GPrim  A.Name  = A.PrimOp
+type instance G.GAnnot A.Name  = ()
+type instance G.GBind  A.Name  = C.Bind  A.Name
+type instance G.GBound A.Name  = C.Bound A.Name
+type instance G.GPrim  A.Name  = A.PrimOp
 
-type Annot      = GAnnot    A.Name
-type Bind       = GBind     A.Name
-type Bound      = GBound    A.Name
-type Prim       = GPrim     A.Name
-type Exp        = GExp      A.Name
-type Abs        = GAbs      A.Name
-type Arg        = GArg      A.Name
-type Lets       = GLets     A.Name
-type Alt        = GAlt      A.Name
-type Pat        = GPat      A.Name
-type Cast       = GCast     A.Name
-type Witness    = GWitness  A.Name
-type WiCon      = GWiCon    A.Name
+type Annot      = G.GAnnot   A.Name
+type Bind       = G.GBind    A.Name
+type Bound      = G.GBound   A.Name
+type Prim       = G.GPrim    A.Name
+type Exp        = G.GExp     A.Name
+type Abs        = G.GAbs     A.Name
+type Arg        = G.GArg     A.Name
+type Lets       = G.GLets    A.Name
+type Alt        = G.GAlt     A.Name
+type Pat        = G.GPat     A.Name
+type Cast       = G.GCast    A.Name
+type Witness    = G.GWitness A.Name
+type WiCon      = G.GWiCon   A.Name
 
 type Type       = C.Type    A.Name
 

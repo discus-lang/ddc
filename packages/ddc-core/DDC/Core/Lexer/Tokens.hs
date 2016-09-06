@@ -4,22 +4,57 @@ module DDC.Core.Lexer.Tokens
         , columnOfLocated
 
           -- * Tokens
-        , Token      (..), describeToken
-        , TokenMeta  (..), describeTokenMeta
-        , TokenAtom  (..), describeTokenAtom
-        , TokenNamed (..), describeTokenNamed
+        , Token         (..)      
+        , TokenMeta     (..)      
+        , TokenAtom     (..)      
+        , TokenNamed    (..)    
+
+        , Keyword       (..)
+        , Symbol        (..)
+        , Builtin       (..)
+        , Literal       (..)
+
+          -- ** Description
+        , describeToken
+        , describeTokenMeta
+        , describeTokenAtom
+        , describeTokenNamed
+        , sayKeyword
+        , saySymbol
+        , sayBuiltin
+
+          -- ** Renaming
         , renameToken
 
-        , Keyword  (..),        sayKeyword
-        , Symbol   (..),        saySymbol
-        , Builtin  (..),        sayBuiltin
-        , Literal  (..))
+          -- ** Predicates
+        , isVarName
+        , isVarStart
+        , isVarBody
+
+        , isConName
+        , isConStart
+        , isConBody
+
+        , isLitName
+        , isLitStart
+        , isLitBody
+
+          -- ** Literal Reading
+        , readLitInteger
+        , readLitNat
+        , readLitInt
+        , readLitSize
+        , readLitWordOfBits
+        , readLitFloatOfBits
+        , readBinary
+        , readHex)
 where
 import DDC.Data.SourcePos
 import DDC.Core.Lexer.Token.Symbol
 import DDC.Core.Lexer.Token.Keyword
 import DDC.Core.Lexer.Token.Builtin
 import DDC.Core.Lexer.Token.Literal
+import DDC.Core.Lexer.Token.Names
 import DDC.Core.Pretty
 import Control.Monad
 import Data.Text                (Text)

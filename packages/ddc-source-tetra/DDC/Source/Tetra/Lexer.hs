@@ -6,7 +6,6 @@ module DDC.Source.Tetra.Lexer
 where
 import DDC.Source.Tetra.Prim
 import DDC.Core.Lexer
-import DDC.Core.Lexer.Token.Names
 import DDC.Data.Pretty
 import Control.DeepSeq
 import Data.Char
