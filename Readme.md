@@ -69,14 +69,11 @@ You need a recent version of GHC, and an LLVM suite 3.5 - 3.8 in your path. Easi
 If you want to build from the git repo then see [the wiki](http://disciple.ouroborus.net).
 
 
-Main changes since 0.4.3
-~~~~~~~~~~~~~~~~~~~~~~~~
+## Main changes since 0.4.3
 
 * Added desugaring of nested patterns and guards.
 
-* Better type inference and desugaring for higher ranked types,
-  which allows dictionaries for Functor, Applicative, Monad and friends
-  to be written easily.
+* Better type inference and desugaring for higher ranked types,  which allows dictionaries for Functor, Applicative, Monad and friends to be written easily.
 
 * Automatic insertion of run and box casts is now more well baked.
 
@@ -90,8 +87,7 @@ Main changes since 0.4.3
   of matching LLVM assembly syntax.
 
 
-What works in this release
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+## What works in this release
 
 * Compilation for the Tetra, and Salt languages.
 
@@ -104,16 +100,14 @@ What works in this release
   rules, cross-module inlining.
 
 
-What doesn't
-~~~~~~~~~~~~
+## What doesn't
 
 * No storage management.
   There is a fixed 64MB heap and when you've allocated that much space the
   runtime just calls abort().
 
 
-Previous Releases
-~~~~~~~~~~~~~~~~~
+## Previous Releases
 
 * 2016/04 DDC 0.4.2: Added code generation for higher order functions.
 * 2014/03 DDC 0.4.1: Added bi-directional type inference and region extension.
@@ -124,16 +118,14 @@ Previous Releases
 * 2008/03 DDC 0.1.0: Alpha compiler, used dependently kinded core language.
 
 
-Immediate Plans
-~~~~~~~~~~~~~~~
+## Immediate Plans
 
 1. Implement garbage collection.
 
 2. Implement basic name spacing.
 
 
-How you can help
-~~~~~~~~~~~~~~~~
+## How you can help
 
 1. Work through the tutorial on the web-site and send any comments to the
    mailing list.] http://disciple.ouroborus.net/wiki/Tutorial
@@ -144,8 +136,7 @@ How you can help
 3. Tell your friends.
 
 
-More Information
-~~~~~~~~~~~~~~~~
+## More Information
 
 See the web-site:        http://disciple.ouroborus.net
  
