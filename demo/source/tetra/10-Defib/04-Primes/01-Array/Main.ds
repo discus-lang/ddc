@@ -1,0 +1,66 @@
+
+module Main 
+import Data.Array
+import System.IO.Console
+where
+
+
+-- | Print out the 1000th prime number.
+main ()
+ = private r with {Read r; Write r; Alloc r} in
+   do
+        -- We want the 1000th prime number, which has index 999
+        -- starting from 0.
+        max     = 999
+
+        -- Allocate an array to hold the primes we've found so far.
+        primes  = allocArray [r] (max + 1) 0
+
+        -- Write the first prime into the first slot.
+        writeArray primes 0 2
+
+        -- Fill the array with prime numbers.
+        fill primes max
+
+        -- Print out the highest value in the array.
+        writel $ showNat (readArray primes max)
+
+
+-- | Check if the given number is a multiple of any
+--   of the others in an array.
+check   (primes: Array r Nat)   -- ^ Array of primes.
+        (len: Nat)              -- ^ Length of array.
+        (val: Nat)              -- ^ Value to check.
+        : S (Read r) Bool
+ = loop 0
+ where  
+        loop (ix: Nat): S (Read r) Bool
+         | ix >= len    = False
+         | rem# val (readArray primes ix) == 0  
+                        = True
+         | otherwise    = loop (ix + 1)
+
+
+-- | Fill the given array with prime numbers up to a maximum 
+fill    (primes: Array r Nat)   -- ^ Array of primes.
+        (len: Nat)              -- ^ Length of array.
+        : S (Read r + Write r) Unit
+ = loop 1 2
+ where  
+        loop (high: Nat)        -- ^ Highest value filled so far.
+             (i:    Nat)        -- ^ Current position in the array.
+         : S (Read r + Write r) Unit
+
+         -- We've already filled all the slots.
+         | high > len   = ()
+
+         -- If the current value is not divisible by any of the
+         -- primes already in the array then add it.
+         | not (check primes high i)
+         = do   writeArray primes high i
+                loop (high + 1) (i + 1)
+
+         -- Current value is not prime, try the next candidate.
+         | otherwise
+         =      loop high (i + 1)
+
