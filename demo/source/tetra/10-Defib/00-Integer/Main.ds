@@ -12,7 +12,7 @@ main ()
  = do   writel $ "fac 10     = " % showNat (fac 10)
         writel $ "ack 3 2    = " % showNat (ack 3   2)
         writel $ "gcd 100 28 = " % showNat (gcd 100 28)
-
+        writel $ "tak 12 8 4 = " % showNat (tak 12 8 4)
 
 -- Factorial.
 fac  (n: Nat): Nat
@@ -38,3 +38,11 @@ gcd (x y: Nat): Nat
  | x > y        = gcd y (rem x y)
  | otherwise    = gcd x (rem y x) 
 
+
+-- Tak
+tak (x y z: Nat): Nat
+ | not (y < x)  = z
+ | otherwise    
+ = tak  (tak (x - 1) y z) 
+        (tak (y - 1) z x)
+        (tak (z - 1) x y)

@@ -1,0 +1,36 @@
+
+module Main
+import System.IO.Console
+import Data.Ref
+where
+
+
+-- Factorial by back patching
+--   From Relational Semantics for Effect-Based Program
+--   Transformations: Higher Order Store.
+--   Benton, Kennedy, Beringer, Hofmann. PPDP 2009.
+--
+fac   [r: Region] () 
+ = do   
+        -- Create reference that can hold a function that performs
+        -- a read from region 'r'.
+        ref     
+         = allocRef [r] 
+         $ λx -> weakeff [Read r] in 0
+
+        -- Write a new function into the reference that captures the
+        -- reference itself in the closure. We use the reference
+        -- to tie the knot for the recursive call.
+        writeRef ref
+         $ λx -> if x == 0
+                        then 1
+                        else x * (readRef ref) (x - 1)
+
+        -- Our real factorial function is now stored in the reference.
+        readRef ref
+
+
+main ()
+ = private r with {Read r; Write r; Alloc r} in
+   do   writel $ showNat $ fac [r] () 5
+
