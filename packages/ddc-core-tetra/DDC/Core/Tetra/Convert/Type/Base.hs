@@ -8,7 +8,7 @@ where
 import DDC.Core.Tetra.Convert.Error
 import DDC.Type.Exp
 import DDC.Type.DataDef
-import DDC.Control.Monad.Check                  (throw)
+import DDC.Control.Check                        (throw)
 import DDC.Type.Env                             (KindEnv)
 import Data.Set                                 (Set)
 import Data.Map.Strict                          (Map)

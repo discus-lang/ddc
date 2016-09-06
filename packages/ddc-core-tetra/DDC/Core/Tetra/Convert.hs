@@ -27,7 +27,7 @@ import DDC.Type.DataDef
 import DDC.Type.Env                                     (KindEnv, TypeEnv)
 import qualified DDC.Type.Env                           as Env
 
-import DDC.Control.Monad.Check                          (throw, evalCheck)
+import DDC.Control.Check                                (throw, evalCheck)
 import Data.Map                                         (Map)
 import qualified Data.Map.Strict                        as Map
 import qualified Data.Set                               as Set

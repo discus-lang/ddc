@@ -37,24 +37,24 @@ import DDC.Core.Pretty
 import DDC.Core.Exp.Annot
 import DDC.Core.Check.Context
 import DDC.Core.Check.Config
-import DDC.Core.Env.EnvT                        (EnvT)
-import DDC.Core.Env.EnvX                        (EnvX)
+import DDC.Core.Env.EnvT                (EnvT)
+import DDC.Core.Env.EnvX                (EnvX)
 
-import DDC.Type.Env                             (TypeEnv, KindEnv)
+import DDC.Type.Env                     (TypeEnv, KindEnv)
 import DDC.Type.DataDef
 import DDC.Type.Universe
 import DDC.Type.Exp.Simple
-import DDC.Control.Monad.Check                  (throw, runCheck, evalCheck)
+import DDC.Control.Check                (throw, runCheck, evalCheck)
 import DDC.Data.Pretty
 import DDC.Data.ListUtils
 
 import Control.Monad
-import Data.Monoid                              hiding ((<>))
+import Data.Monoid                      hiding ((<>))
 import Data.Maybe
-import Data.Set                                 (Set)
-import qualified Data.Set                       as Set
-import qualified DDC.Control.Monad.Check        as G
-import Prelude                                  hiding ((<$>))
+import Data.Set                         (Set)
+import qualified Data.Set               as Set
+import qualified DDC.Control.Check      as G
+import Prelude                          hiding ((<$>))
 
 
 -- | Type checker monad.

@@ -16,7 +16,7 @@ module DDC.Core.Llvm.Convert.Base
 where
 import DDC.Core.Llvm.Convert.Error
 import DDC.Llvm.Syntax
-import DDC.Control.Monad.Check
+import DDC.Control.Check
 import Data.Map                 (Map)
 import qualified Data.Map       as Map
 

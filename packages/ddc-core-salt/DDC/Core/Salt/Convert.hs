@@ -24,11 +24,11 @@ import DDC.Core.Salt.Convert.Super
 import DDC.Core.Salt.Convert.Base
 import DDC.Core.Salt.Name
 import DDC.Core.Salt.Platform
-import DDC.Core.Module                          as C
+import DDC.Core.Module                  as C
 import DDC.Core.Exp.Annot
 import DDC.Data.Pretty
-import DDC.Control.Monad.Check                  (throw, evalCheck)
-import qualified DDC.Type.Env                   as Env
+import DDC.Control.Check                (throw, evalCheck)
+import qualified DDC.Type.Env           as Env
 
 
 -- | Convert a Disciple Core Salt module to C-source text.

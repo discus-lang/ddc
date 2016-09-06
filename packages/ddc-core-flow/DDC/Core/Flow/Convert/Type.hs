@@ -12,7 +12,7 @@ module DDC.Core.Flow.Convert.Type
 where
 import DDC.Core.Flow.Convert.Base
 import DDC.Core.Exp.Annot
-import DDC.Control.Monad.Check                  (throw)
+import DDC.Control.Check                        (throw)
 import DDC.Type.Transform.BoundT
 
 import qualified DDC.Core.Flow.Prim             as F

@@ -8,7 +8,7 @@ import DDC.Data.Pretty
 import DDC.Core.Check                                   (AnTEC(..))
 import DDC.Core.Tetra.Prim                              as E
 import qualified DDC.Core.Tetra.Transform.Curry.Error   as Curry
-import qualified DDC.Control.Monad.Check                as G
+import qualified DDC.Control.Check                      as G
 
 -- | Conversion Monad
 type ConvertM a x = G.CheckM () (Error a) x

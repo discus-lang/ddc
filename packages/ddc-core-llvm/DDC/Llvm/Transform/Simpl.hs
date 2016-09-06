@@ -13,7 +13,7 @@ module DDC.Llvm.Transform.Simpl
 where
 import DDC.Llvm.Syntax
 import DDC.Llvm.Analysis.Defs
-import DDC.Control.Monad.Check
+import DDC.Control.Check
 import Data.Sequence            (Seq, (|>))
 import Data.Map                 (Map)
 import qualified Data.Map       as Map

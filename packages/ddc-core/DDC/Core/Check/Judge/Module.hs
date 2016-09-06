@@ -10,8 +10,8 @@ import DDC.Core.Check.Exp
 import DDC.Core.Transform.Reannotate
 import DDC.Core.Transform.MapT
 import DDC.Core.Module
-import DDC.Core.Env.EnvX        (EnvX)
-import DDC.Control.Monad.Check  (runCheck, throw)
+import DDC.Core.Env.EnvX                (EnvX)
+import DDC.Control.Check                (runCheck, throw)
 
 import qualified DDC.Type.Env           as Env
 import qualified DDC.Core.Env.EnvT      as EnvT

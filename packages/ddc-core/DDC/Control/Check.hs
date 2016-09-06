@@ -1,6 +1,6 @@
 
 -- | A simple exception monad.
-module DDC.Control.Monad.Check
+module DDC.Control.Check
         ( CheckM (..)
         , throw
         , runCheck

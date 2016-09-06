@@ -11,7 +11,7 @@ import DDC.Core.Salt.Name
 import DDC.Core.Pretty
 import DDC.Core.Module
 import DDC.Core.Exp
-import qualified DDC.Control.Monad.Check        as G
+import qualified DDC.Control.Check        as G
 
 
 -- | Conversion Monad

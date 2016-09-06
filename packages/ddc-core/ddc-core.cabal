@@ -1,5 +1,5 @@
 Name:           ddc-core
-Version:        0.4.3.0
+Version:        0.4.3.1
 License:        MIT
 License-file:   LICENSE
 Author:         The Disciplined Disciple Compiler Strike Force
@@ -37,7 +37,7 @@ Library
         parsec          >= 3.1   && < 3.2
 
   Exposed-modules:
-        DDC.Control.Monad.Check
+        DDC.Control.Check
         DDC.Control.Panic
         DDC.Control.Parser
 
@@ -48,20 +48,13 @@ Library
 
         DDC.Core.Exp.Annot.AnT
         DDC.Core.Exp.Annot.AnTEC
-        DDC.Core.Exp.Annot.Compounds
         DDC.Core.Exp.Annot.Context
         DDC.Core.Exp.Annot.Ctx
-        DDC.Core.Exp.Annot.Exp
-        DDC.Core.Exp.Annot.Predicates
-        DDC.Core.Exp.Annot.Pretty
                
         DDC.Core.Exp.Generic.BindStruct
-        DDC.Core.Exp.Generic.Compounds
-        DDC.Core.Exp.Generic.Exp
-        DDC.Core.Exp.Generic.Predicates
-        DDC.Core.Exp.Generic.Pretty
 
         DDC.Core.Exp.Annot
+        DDC.Core.Exp.Generic
         DDC.Core.Exp.Literal        
 
         DDC.Core.Lexer.Offside
@@ -181,6 +174,16 @@ Library
         DDC.Core.Collect.BindStruct
         DDC.Core.Collect.FreeT
         DDC.Core.Collect.FreeX
+
+        DDC.Core.Exp.Annot.Exp
+        DDC.Core.Exp.Annot.Compounds
+        DDC.Core.Exp.Annot.Predicates
+        DDC.Core.Exp.Annot.Pretty
+
+        DDC.Core.Exp.Generic.Exp
+        DDC.Core.Exp.Generic.Compounds
+        DDC.Core.Exp.Generic.Predicates
+        DDC.Core.Exp.Generic.Pretty
 
         DDC.Core.Exp.DaCon        
         DDC.Core.Exp.WiCon

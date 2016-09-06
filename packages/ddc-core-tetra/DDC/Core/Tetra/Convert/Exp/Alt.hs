@@ -9,7 +9,7 @@ import DDC.Core.Tetra.Convert.Error
 import DDC.Core.Exp.Annot
 import DDC.Type.DataDef
 import DDC.Core.Check                    (AnTEC(..))
-import DDC.Control.Monad.Check           (throw)
+import DDC.Control.Check                (throw)
 import qualified DDC.Core.Tetra.Prim     as E
 import qualified DDC.Core.Salt.Name      as A
 import qualified DDC.Core.Salt.Compounds as A

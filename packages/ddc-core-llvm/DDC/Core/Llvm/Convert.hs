@@ -14,7 +14,7 @@ import DDC.Core.Llvm.Runtime
 import DDC.Core.Salt.Platform
 import DDC.Core.Exp.Annot.Compounds
 import DDC.Llvm.Syntax
-import DDC.Control.Monad.Check
+import DDC.Control.Check
 import qualified Control.Monad.State.Strict     as State
 import Control.Monad
 import Data.Map                                 (Map)

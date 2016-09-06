@@ -10,7 +10,7 @@ import DDC.Core.Flow.Convert.Type
 import DDC.Core.Flow.Convert.Exp
 import DDC.Core.Exp.Annot
 import DDC.Core.Module
-import DDC.Control.Monad.Check
+import DDC.Control.Check
 
 import qualified DDC.Core.Flow.Prim      as F
 import qualified DDC.Core.Salt.Name      as T

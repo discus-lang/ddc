@@ -8,10 +8,10 @@ import DDC.Core.Tetra.Convert.Boxing
 import DDC.Core.Tetra.Convert.Error
 import DDC.Core.Pretty
 import DDC.Core.Exp.Annot
-import DDC.Core.Check                    (AnTEC(..))
-import DDC.Control.Monad.Check           (throw)
-import qualified DDC.Core.Tetra.Prim     as E
-import qualified DDC.Core.Salt.Name      as A
+import DDC.Core.Check                   (AnTEC(..))
+import DDC.Control.Check                (throw)
+import qualified DDC.Core.Tetra.Prim    as E
+import qualified DDC.Core.Salt.Name     as A
 
 
 -- | Convert a Tetra arithmetic or logic primop to Salt.

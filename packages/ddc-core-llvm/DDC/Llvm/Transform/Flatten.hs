@@ -13,7 +13,7 @@ module DDC.Llvm.Transform.Flatten
         (flatten)
 where
 import DDC.Llvm.Syntax
-import DDC.Control.Monad.Check
+import DDC.Control.Check
 import Data.Sequence            (Seq, (|>), (><))
 import Control.Monad
 import qualified Data.Sequence  as Seq

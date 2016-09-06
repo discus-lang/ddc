@@ -26,7 +26,7 @@ import DDC.Type.DataDef
 import DDC.Data.Pretty
 import Control.Monad
 import Data.Maybe
-import DDC.Control.Monad.Check                  (throw)
+import DDC.Control.Check                        (throw)
 import qualified Data.Map                       as Map
 
 

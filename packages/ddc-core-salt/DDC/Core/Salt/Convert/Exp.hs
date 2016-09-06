@@ -16,7 +16,7 @@ import DDC.Core.Module
 import DDC.Core.Exp.Annot
 import DDC.Type.Env                     (KindEnv, TypeEnv)
 import DDC.Data.Pretty
-import DDC.Control.Monad.Check          (throw)
+import DDC.Control.Check                (throw)
 import qualified DDC.Type.Env           as Env
 import qualified Data.Char              as Char
 

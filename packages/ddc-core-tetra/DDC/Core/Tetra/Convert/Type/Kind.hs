@@ -8,7 +8,7 @@ import DDC.Core.Tetra.Convert.Type.Base
 import DDC.Core.Tetra.Convert.Error
 import DDC.Type.Exp
 import DDC.Data.Pretty
-import DDC.Control.Monad.Check                  (throw)
+import DDC.Control.Check                        (throw)
 import Control.Monad
 import qualified DDC.Core.Tetra.Prim            as E
 import qualified DDC.Core.Salt.Name             as A

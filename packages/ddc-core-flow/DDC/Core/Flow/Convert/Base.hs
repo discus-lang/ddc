@@ -9,7 +9,7 @@ import DDC.Data.Pretty
 import DDC.Core.Exp.Annot.Compounds
 import DDC.Type.Exp
 import DDC.Core.Flow.Prim                       as F
-import qualified DDC.Control.Monad.Check        as G
+import qualified DDC.Control.Check              as G
 
 import qualified Data.Set                       as S
 import Data.Maybe

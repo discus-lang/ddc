@@ -17,7 +17,7 @@ import qualified DDC.Core.Salt.Compounds as A
 
 import DDC.Type.DataDef
 
-import DDC.Control.Monad.Check           (throw)
+import DDC.Control.Check                (throw)
 import qualified Data.Map                as Map
 
 
