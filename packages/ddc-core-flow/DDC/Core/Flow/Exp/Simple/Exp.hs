@@ -24,8 +24,8 @@ module DDC.Core.Flow.Exp.Simple.Exp
           -- * Witness Constructors
         , WiCon         (..))
 where
-import DDC.Core.Exp.WiCon
-import DDC.Core.Exp.DaCon
+import DDC.Core.Exp             (WiCon (..))
+import DDC.Core.Exp             (DaCon (..))
 import DDC.Type.Exp
 import DDC.Type.Sum             ()
 import Control.DeepSeq

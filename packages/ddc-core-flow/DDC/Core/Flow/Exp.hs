@@ -16,7 +16,8 @@ where
 import DDC.Core.Module
 import DDC.Core.Flow.Prim
 import DDC.Core.Flow.Exp.Simple.Exp
-import DDC.Type.Env             (Env)
+import DDC.Core.Flow.Exp.Simple.Collect ()
+import DDC.Type.Env                     (Env)
 
 type KindEnvF   = Env Name
 type TypeEnvF   = Env Name

@@ -1,5 +1,5 @@
 Name:           ddc-core-flow
-Version:        0.4.3.0
+Version:        0.4.3.1
 License:        MIT
 License-file:   LICENSE
 Author:         The Disciplined Disciple Compiler Strike Force
@@ -38,7 +38,6 @@ Library
         limp-cbc        == 0.3.2.*,
         transformers    == 0.5.*,
         mtl             == 2.2.1.*,
-        ddc-base        == 0.4.3.*,
         ddc-core        == 0.4.3.*,
         ddc-core-salt   == 0.4.3.*,
         ddc-core-simpl  == 0.4.3.*,
@@ -64,13 +63,16 @@ Library
         DDC.Core.Flow.Transform.Rates.SeriesOfVector
         DDC.Core.Flow.Transform.Rates.SizeInference
 
+        DDC.Core.Flow.Transform.Annotate
         DDC.Core.Flow.Transform.Concretize
+        DDC.Core.Flow.Transform.Deannotate
         DDC.Core.Flow.Transform.Extract
         DDC.Core.Flow.Transform.Forward
         DDC.Core.Flow.Transform.Melt
         DDC.Core.Flow.Transform.Schedule
         DDC.Core.Flow.Transform.Slurp
         DDC.Core.Flow.Transform.Thread
+        DDC.Core.Flow.Transform.TransformUpX
         DDC.Core.Flow.Transform.Wind
 
         DDC.Core.Flow.Compounds
@@ -116,6 +118,10 @@ Library
         DDC.Core.Flow.Transform.Slurp.Operator
         DDC.Core.Flow.Transform.Slurp.Resize
 
+        DDC.Core.Flow.Exp.Simple.Collect
+        DDC.Core.Flow.Exp.Simple.Compounds
+        DDC.Core.Flow.Exp.Simple.Exp
+        
 
   GHC-options:
         -Wall
@@ -125,13 +131,16 @@ Library
         -fno-warn-unused-do-bind
 
   Extensions:
-        KindSignatures
         NoMonomorphismRestriction
+        FunctionalDependencies
+        MultiParamTypeClasses
+        FlexibleContexts
         ScopedTypeVariables
         StandaloneDeriving
-        PatternGuards
-        ParallelListComp
         DeriveDataTypeable
-        ViewPatterns
         FlexibleInstances
+        ParallelListComp
+        KindSignatures
+        PatternGuards
+        ViewPatterns
         BangPatterns

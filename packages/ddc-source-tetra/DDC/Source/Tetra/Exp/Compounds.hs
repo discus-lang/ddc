@@ -76,7 +76,7 @@ import DDC.Source.Tetra.Exp.Generic
 import Data.Maybe
 import qualified DDC.Type.Exp.Generic.Compounds as T
 
-import DDC.Core.Exp.Annot.Compounds
+import DDC.Core.Exp.Annot
         ( dcUnit
         , takeNameOfDaCon
         , takeTypeOfDaCon

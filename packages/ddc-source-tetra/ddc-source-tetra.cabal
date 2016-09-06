@@ -1,5 +1,5 @@
 Name:           ddc-source-tetra
-Version:        0.4.3.0
+Version:        0.4.3.1
 License:        MIT
 License-file:   LICENSE
 Author:         The Disciplined Disciple Compiler Strike Force
@@ -20,22 +20,22 @@ Library
         base             >= 4.6   && < 4.10,
         array            >= 0.4   && < 0.6,
         deepseq          >= 1.3   && < 1.5,
-        containers       == 0.5.*,
         text             >= 1.0   && < 1.3,
+        containers       == 0.5.*,
         transformers     == 0.5.*,
+        pretty-show      >= 1.6.10 && < 1.7,
         mtl              == 2.2.1.*,
-        ddc-base         == 0.4.3.*,
         ddc-core         == 0.4.3.*,
         ddc-core-salt    == 0.4.3.*,
         ddc-core-tetra   == 0.4.3.*
 
   Exposed-modules:
         DDC.Source.Tetra.Exp.Bind
+        DDC.Source.Tetra.Exp.Compounds
         DDC.Source.Tetra.Exp.Generic
         DDC.Source.Tetra.Exp.NFData
-        DDC.Source.Tetra.Exp.Source
-        DDC.Source.Tetra.Exp.Compounds
         DDC.Source.Tetra.Exp.Predicates
+        DDC.Source.Tetra.Exp.Source
 
         DDC.Source.Tetra.Transform.BoundX
         DDC.Source.Tetra.Transform.Defix
@@ -58,7 +58,12 @@ Library
   Other-modules:
         DDC.Source.Tetra.Collect.FreeVars
 
+        DDC.Source.Tetra.Convert.Base
+        DDC.Source.Tetra.Convert.Clause
         DDC.Source.Tetra.Convert.Error
+        DDC.Source.Tetra.Convert.Prim
+        DDC.Source.Tetra.Convert.Type
+        DDC.Source.Tetra.Convert.Witness
 
         DDC.Source.Tetra.Parser.Base
         DDC.Source.Tetra.Parser.Exp
@@ -69,6 +74,7 @@ Library
 
         DDC.Source.Tetra.Prim.Base
         DDC.Source.Tetra.Prim.OpArith
+        DDC.Source.Tetra.Prim.OpCast
         DDC.Source.Tetra.Prim.OpError
         DDC.Source.Tetra.Prim.OpFun
         DDC.Source.Tetra.Prim.OpVector
@@ -80,6 +86,8 @@ Library
         DDC.Source.Tetra.Transform.Defix.FixTable
 
         DDC.Source.Tetra.Transform.Freshen.State
+
+
 
   GHC-options:
         -Wall

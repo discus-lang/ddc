@@ -20,7 +20,8 @@ module DDC.Core.Module
         , ModuleName    (..)
         , readModuleName
         , isMainModuleName
-
+        , moduleNameMatchesPath
+        
          -- * Qualified names.
         , QualName      (..)
 

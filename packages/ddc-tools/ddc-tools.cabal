@@ -1,5 +1,5 @@
 Name:           ddc-tools
-Version:        0.4.3.0
+Version:        0.4.3.1
 License:        MIT
 License-file:   LICENSE
 Author:         The Disciplined Disciple Compiler Strike Force
@@ -43,7 +43,6 @@ Executable ddc
         directory       == 1.2.*,
         mtl             == 2.2.1.*,
         transformers    == 0.5.*,
-        ddc-base        == 0.4.3.*,
         ddc-core        == 0.4.3.*,
         ddc-core-simpl  == 0.4.3.*,
         ddc-core-salt   == 0.4.3.*,
@@ -77,7 +76,6 @@ Executable ddci-core
         haskeline       == 0.7.*,
         directory       == 1.2.*,
         mtl             == 2.2.1.*,
-        ddc-base        == 0.4.3.*,
         ddc-core        == 0.4.3.*,
         ddc-core-simpl  == 0.4.3.*,
         ddc-core-salt   == 0.4.3.*,
@@ -137,12 +135,11 @@ Executable ddci-tetra
     Build-depends:
         base             >= 4.6 && < 4.10,
         process          >= 1.4 && < 1.5,
-        containers       == 0.5.*,
         filepath         >= 1.3 && < 1.5,
+        containers       == 0.5.*,
         haskeline        == 0.7.*,
         directory        == 1.2.*,
         mtl              == 2.2.1.*,
-        ddc-base         == 0.4.3.*,
         ddc-core         == 0.4.3.*,
         ddc-core-simpl   == 0.4.3.*,
         ddc-core-salt    == 0.4.3.*,

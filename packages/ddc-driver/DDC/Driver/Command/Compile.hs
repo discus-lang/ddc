@@ -26,7 +26,6 @@ import qualified DDC.Source.Tetra.Lexer         as SE
 import qualified DDC.Source.Tetra.Parser        as SE
 import qualified DDC.Core.Pretty                as P
 import qualified DDC.Core.Module                as C
-import qualified DDC.Core.Module.Name           as C
 import qualified DDC.Core.Lexer                 as C
 import qualified DDC.Control.Parser             as BP
 import qualified DDC.Version                    as Version

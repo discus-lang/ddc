@@ -1,5 +1,5 @@
 Name:           ddc-driver
-Version:        0.4.3.0
+Version:        0.4.3.1
 License:        MIT
 License-file:   LICENSE
 Author:         The Disciplined Disciple Compiler Strike Force
@@ -20,13 +20,12 @@ Library
         base             >= 4.6 && < 4.10,
         process          >= 1.4 && < 1.5,
         deepseq          >= 1.3 && < 1.5,
-        containers       == 0.5.*,
+        time             >= 1.6 && < 1.7,
         filepath         >= 1.3 && < 1.5,
+        containers       == 0.5.*,
         mtl              == 2.2.1.*,
         directory        == 1.2.*,
         transformers     == 0.5.*,
-        time             >= 1.6 && < 1.7,
-        ddc-base         == 0.4.3.*,
         ddc-core         == 0.4.3.*,
         ddc-core-simpl   == 0.4.3.*,
         ddc-core-salt    == 0.4.3.*,
@@ -39,9 +38,6 @@ Library
   Exposed-modules:
         DDC.Driver.Build.Locate
         DDC.Driver.Build.Main
-
-        DDC.Driver.Interface.Input
-        DDC.Driver.Interface.Source
         
         DDC.Driver.Command.Flow.Concretize
         DDC.Driver.Command.Flow.Lower
@@ -63,11 +59,15 @@ Library
         DDC.Driver.Command.Parse
         DDC.Driver.Command.Read
         DDC.Driver.Command.RewriteRules
+        DDC.Driver.Command.Scan
         DDC.Driver.Command.ToC
         DDC.Driver.Command.ToLlvm
         DDC.Driver.Command.ToPHP
         DDC.Driver.Command.ToSalt
         DDC.Driver.Command.Trans
+
+        DDC.Driver.Interface.Input
+        DDC.Driver.Interface.Source
 
         DDC.Driver.Stage.Flow
         DDC.Driver.Stage.Salt
@@ -80,6 +80,7 @@ Library
       
   Extensions:
         ExistentialQuantification
+        ScopedTypeVariables
         RankNTypes
         PatternGuards
 

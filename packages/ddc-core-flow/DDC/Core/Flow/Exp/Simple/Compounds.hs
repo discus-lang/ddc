@@ -45,13 +45,13 @@ module DDC.Core.Flow.Exp.Simple.Compounds
         , takeXType
 
           -- * Data Constructors
-        , xUnit, dcUnit
-        , takeNameOfDaCon
-        , takeTypeOfDaCon)
+        , xUnit, C.dcUnit
+        , C.takeNameOfDaCon
+        , C.takeTypeOfDaCon)
 where
 import DDC.Core.Flow.Exp.Simple.Exp
-import DDC.Core.Exp.DaCon
 import DDC.Type.Exp.Simple.Compounds
+import qualified DDC.Core.Exp.Annot     as C
 
 
 -- Lambdas ---------------------------------------------------------------------
@@ -220,7 +220,7 @@ valwitBindsOfLets ll
 takeCtorNameOfAlt :: Alt a n -> Maybe n
 takeCtorNameOfAlt aa
  = case aa of
-        AAlt (PData dc _) _     -> takeNameOfDaCon dc
+        AAlt (PData dc _) _     -> C.takeNameOfDaCon dc
         _                       -> Nothing
 
 
@@ -284,4 +284,4 @@ takeXType xx
 -- Units -----------------------------------------------------------------------
 -- | Construct a value of unit type.
 xUnit   :: Exp a n
-xUnit = XCon dcUnit
+xUnit = XCon C.dcUnit

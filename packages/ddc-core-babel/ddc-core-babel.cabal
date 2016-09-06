@@ -1,5 +1,5 @@
 Name:           ddc-core-babel
-Version:        0.4.3.0
+Version:        0.4.3.1
 License:        MIT
 License-file:   LICENSE
 Author:         The Disciplined Disciple Compiler Strike Force
@@ -16,7 +16,6 @@ Library
   Build-Depends:
         base            >= 4.6 && < 4.10,
         containers      == 0.5.*,
-        ddc-base        == 0.4.3.*,
         ddc-core        == 0.4.3.*,
         ddc-core-tetra  == 0.4.3.*
 

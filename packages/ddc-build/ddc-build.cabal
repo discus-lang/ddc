@@ -1,5 +1,5 @@
 Name:           ddc-build
-Version:        0.4.3.0
+Version:        0.4.3.1
 License:        MIT
 License-file:   LICENSE
 Author:         The Disciplined Disciple Compiler Strike Force
@@ -22,7 +22,7 @@ Library
         directory        == 1.2.*,
         mtl              == 2.2.1.*,
         time             >= 1.6 && < 1.7,
-        ddc-base         == 0.4.3.*,
+        text             >= 1.2.2 && < 1.3,
         ddc-core         == 0.4.3.*,
         ddc-core-simpl   == 0.4.3.*,
         ddc-core-salt    == 0.4.3.*,

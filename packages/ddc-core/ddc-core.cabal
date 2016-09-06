@@ -42,6 +42,9 @@ Library
         DDC.Control.Parser
 
         DDC.Core.Collect.Support
+        DDC.Core.Collect.BindStruct
+        DDC.Core.Collect.FreeT
+        DDC.Core.Collect.FreeX
 
         DDC.Core.Env.EnvT
         DDC.Core.Env.EnvX
@@ -170,10 +173,6 @@ Library
         DDC.Core.Check.Context
         DDC.Core.Check.Error
         DDC.Core.Check.Exp
-
-        DDC.Core.Collect.BindStruct
-        DDC.Core.Collect.FreeT
-        DDC.Core.Collect.FreeX
 
         DDC.Core.Exp.Annot.Exp
         DDC.Core.Exp.Annot.Compounds

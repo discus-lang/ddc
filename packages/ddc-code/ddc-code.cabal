@@ -1,5 +1,5 @@
 Name:           ddc-code
-Version:        0.4.3.0
+Version:        0.4.3.1
 License:        MIT
 License-file:   LICENSE
 Author:         The Disciplined Disciple Compiler Strike Force
@@ -28,11 +28,28 @@ data-files:
         sea/primitive/Primitive.h
         sea/runtime/Runtime.h
 
+        tetra/base/Class/Applicative.ds
+        tetra/base/Class/Functor.ds
+        tetra/base/Class/Monad.ds
+        tetra/base/Class/Ord.ds
+        tetra/base/Class/Show.ds
+
+        tetra/base/Control/Parsec.ds
+
         tetra/base/Data/Numeric/Bool.ds
         tetra/base/Data/Numeric/Nat.ds
+        tetra/base/Data/Numeric/Word.ds
+
+        tetra/base/data/Text/Base.ds
+        tetra/base/data/Text/Char.ds
+        tetra/base/data/Text/List.ds
+        tetra/base/data/Text/Operator.ds
+        tetra/base/data/Text/Show.ds
+
         tetra/base/Data/Array.ds
         tetra/base/Data/Function.ds
         tetra/base/Data/List.ds
+        tetra/base/Data/Map.ds
         tetra/base/Data/Maybe.ds
         tetra/base/Data/Ref.ds
         tetra/base/Data/Stream.ds

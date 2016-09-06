@@ -2,7 +2,7 @@
 module DDC.Core.Flow.Transform.Deannotate
         (Deannotate(..))
 where
-import qualified DDC.Core.Exp.Annot.Exp         as A
+import qualified DDC.Core.Exp.Annot             as A
 import qualified DDC.Core.Flow.Exp.Simple.Exp   as S
 
 

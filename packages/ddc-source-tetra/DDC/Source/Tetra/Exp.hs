@@ -98,13 +98,13 @@ module DDC.Source.Tetra.Exp
           -------------------------------------------------
           -- * Terms
           -- ** Syntax
-        , Annot,        GXAnnot     (..)
-        , BindVar,      GXBindVar   (..)
+        , Annot,        GXAnnot
+        , BindVar,      GXBindVar
         , BindVarMT,    GXBindVarMT (..)
-        , BoundVar,     GXBoundVar  (..)
-        , BindCon,      GXBindCon   (..)
-        , BoundCon,     GXBoundCon  (..)
-        , Prim,         GXPrim      (..)
+        , BoundVar,     GXBoundVar
+        , BindCon,      GXBindCon
+        , BoundCon,     GXBoundCon
+        , Prim,         GXPrim
 
           -- *** Expressions
         , Exp,          GExp        (..)
