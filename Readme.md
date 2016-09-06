@@ -127,7 +127,7 @@ If you want to build from the git repo then see [the wiki](http://disciple.ourob
 
 ## How you can help
 
-1. Work through the [tutorial](http://disciple.ouroborus.net/wiki/Tutorial tutorial) on the web-site and send any comments to the   mailing list. 
+1. Work through the [tutorial](http://disciple.ouroborus.net/wiki/Tutorial) on the web-site and send any comments to the   mailing list. 
 2. Say hello on the mailing list and we can help you get started on any of
    the main missing features. These are all interesting projects.
 
