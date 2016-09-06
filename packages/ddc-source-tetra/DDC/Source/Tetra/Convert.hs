@@ -22,7 +22,6 @@ import qualified DDC.Source.Tetra.Env                   as Env
 import qualified DDC.Core.Tetra.Compounds               as C
 import qualified DDC.Core.Tetra.Prim                    as C
 import qualified DDC.Core.Module                        as C
-import qualified DDC.Core.Exp.Annot                     as C
 import qualified DDC.Type.DataDef                       as C
 import qualified Data.Text                              as Text
 import qualified Text.Show.Pretty                       as Text

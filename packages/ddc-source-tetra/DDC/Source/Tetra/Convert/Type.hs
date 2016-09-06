@@ -24,7 +24,6 @@ import qualified DDC.Source.Tetra.Prim                  as S
 
 import qualified DDC.Core.Tetra.Compounds               as C
 import qualified DDC.Core.Tetra.Prim                    as C
-import qualified DDC.Core.Exp.Annot                     as C
 import qualified DDC.Type.Sum                           as CSum
 import qualified Data.Text                              as Text
 
