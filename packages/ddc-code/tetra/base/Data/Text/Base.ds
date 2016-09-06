@@ -25,6 +25,7 @@ export
 import Data.Text.Char
 import Data.Numeric.Nat
 import Data.Numeric.Word
+import Data.Function
 import Data.Maybe
 
 
