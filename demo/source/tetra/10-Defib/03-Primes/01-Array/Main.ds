@@ -34,6 +34,8 @@ check   (primes: Array r Nat)   -- ^ Array of primes.
         : S (Read r) Bool
  = loop 0
  where  
+        -- ISSUE #386: Work out why we need a local type signature for this loop.
+        -- Also for the one in the 'fill' function.
         loop (ix: Nat): S (Read r) Bool
          | ix >= len    = False
          | rem# val (readArray primes ix) == 0  
@@ -63,4 +65,3 @@ fill    (primes: Array r Nat)   -- ^ Array of primes.
          -- Current value is not prime, try the next candidate.
          | otherwise
          =      loop high (i + 1)
-
