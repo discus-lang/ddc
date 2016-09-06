@@ -1,5 +1,5 @@
 Name:           ddc-core-simpl
-Version:        0.4.3.0
+Version:        0.4.3.1
 License:        MIT
 License-file:   LICENSE
 Author:         The Disciplined Disciple Compiler Strike Force
@@ -20,7 +20,6 @@ Library
         containers      == 0.5.*,
         transformers    == 0.5.*,
         mtl             == 2.2.1.*,
-        ddc-base        == 0.4.3.*,
         ddc-core        == 0.4.3.*
 
   Exposed-modules:
@@ -57,6 +56,7 @@ Library
         DDC.Core.Transform.TransformModX
         DDC.Core.Transform.TransformUpX
         DDC.Core.Transform.Unshare
+
         DDC.Core.Simplifier
 
         DDC.Type.Transform.Alpha
@@ -68,6 +68,8 @@ Library
         DDC.Core.Simplifier.Lexer
 
         DDC.Core.Transform.Inline.Templates
+        DDC.Core.Transform.Lambdas.Base
+        DDC.Core.Transform.Lambdas.Lift
         DDC.Core.Transform.Rewrite.Error
 
   GHC-options:

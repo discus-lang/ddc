@@ -72,7 +72,7 @@ data Config a n
 -- Module -----------------------------------------------------------------------------------------
 -- | Manage boxing in a module.
 boxingModule 
-        :: (Show a, Show n, Ord n)
+        :: Ord n
         => Config a n -> Module a n -> Module a n
 
 boxingModule config mm
@@ -187,7 +187,7 @@ boxingAlt config alt
 --   * Assumes that the type of the primitive is in prenex form.
 --
 boxingPrimitive
-        :: (Show a, Show n, Ord n)
+        :: Ord n
         => Config a n -> a
         -> Bool         -- ^ Primitive is being run at the call site.
         -> Exp a n      -- ^ Whole primitive application, for debugging.

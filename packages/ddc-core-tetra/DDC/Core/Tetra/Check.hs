@@ -6,7 +6,6 @@ import DDC.Core.Tetra.Compounds
 import DDC.Core.Tetra.Error
 import DDC.Core.Tetra.Prim
 import DDC.Core.Module
-import DDC.Type.Exp
 
 
 -- | Perform Core Tetra specific checks on a module.

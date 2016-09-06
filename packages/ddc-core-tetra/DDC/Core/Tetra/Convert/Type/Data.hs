@@ -9,9 +9,8 @@ import DDC.Core.Tetra.Convert.Type.Region
 import DDC.Core.Tetra.Convert.Type.Base
 import DDC.Core.Tetra.Convert.Boxing
 import DDC.Core.Tetra.Convert.Error
-import DDC.Core.Exp.Annot.Exp
+import DDC.Core.Exp.Annot
 import DDC.Type.DataDef
-import DDC.Type.Exp.Simple
 import DDC.Control.Check                        (throw)
 import qualified DDC.Core.Tetra.Prim            as E
 import qualified DDC.Core.Salt.Compounds        as A

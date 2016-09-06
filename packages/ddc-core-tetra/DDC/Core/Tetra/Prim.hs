@@ -68,7 +68,7 @@ import Control.DeepSeq
 import Data.Char        
 import qualified Data.Text              as T
 
-import DDC.Core.Lexer.Token.Names       (isVarStart)
+import DDC.Core.Lexer.Tokens            (isVarStart)
 import DDC.Core.Salt.Name 
         ( readLitNat
         , readLitInt

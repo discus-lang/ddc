@@ -1,6 +1,6 @@
 
 module DDC.Core.Transform.Lambdas.Base
-        ( S (..), evalState
+        ( S, evalState
         , newVar
         , newVarExtend
         , Result (..)

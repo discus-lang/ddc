@@ -10,7 +10,6 @@ where
 import DDC.Core.Tetra.Prim
 import DDC.Core.Tetra.Compounds
 import DDC.Type.DataDef
-import DDC.Type.Exp
 import DDC.Type.Env             (Env)
 import qualified DDC.Type.Env   as Env
 

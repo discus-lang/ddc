@@ -26,7 +26,6 @@ where
 import DDC.Core.Tetra.Prim
 import DDC.Core.Tetra.Compounds
 import DDC.Type.DataDef
-import DDC.Type.Exp
 
 
 -- Predicates -----------------------------------------------------------------

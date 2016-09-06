@@ -5,13 +5,12 @@ where
 import DDC.Core.Tetra.Compounds
 import DDC.Core.Tetra.Prim
 import DDC.Core.Module
-import DDC.Core.Exp
 import DDC.Core.Transform.Boxing           (Rep(..), Config(..))
 import qualified DDC.Core.Transform.Boxing as Boxing
 
 
 -- | Manage boxing of numeric values in a module.
-boxingModule :: Show a => Module a Name -> Module a Name
+boxingModule :: Module a Name -> Module a Name
 boxingModule mm 
  = let
         tsForeignSea    
