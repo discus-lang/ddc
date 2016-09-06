@@ -1,5 +1,5 @@
 Name:           ddc-code
-Version:        0.4.3.1
+Version:        0.4.3.2
 License:        MIT
 License-file:   LICENSE
 Author:         The Disciplined Disciple Compiler Strike Force
@@ -40,11 +40,11 @@ data-files:
         tetra/base/Data/Numeric/Nat.ds
         tetra/base/Data/Numeric/Word.ds
 
-        tetra/base/data/Text/Base.ds
-        tetra/base/data/Text/Char.ds
-        tetra/base/data/Text/List.ds
-        tetra/base/data/Text/Operator.ds
-        tetra/base/data/Text/Show.ds
+        tetra/base/Data/Text/Base.ds
+        tetra/base/Data/Text/Char.ds
+        tetra/base/Data/Text/List.ds
+        tetra/base/Data/Text/Operator.ds
+        tetra/base/Data/Text/Show.ds
 
         tetra/base/Data/Array.ds
         tetra/base/Data/Function.ds
