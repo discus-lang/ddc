@@ -171,13 +171,14 @@ convPrimStore ctx mdst p as
 
         -- Copy a block of memory.
         A.PrimStore A.PrimStoreCopy
-         | Just [mDst, mSrc, mLen]      <- atoms xs
+         | Just [mDst, mSrc, mLen]      <- atomsR as
          -> Just $ do
                 xDst'    <- mDst
                 xSrc'    <- mSrc
                 xLen'    <- mLen
                 vDstPtr  <- newUniqueNamedVar "dst" (TPointer (TInt 8))
                 vSrcPtr  <- newUniqueNamedVar "src" (TPointer (TInt 8))
+
                 -- Alignment of zero means unaligned
                 let xAlign      = XLit (LitInt (TInt 32) 0)
                 let xVolatile   = XLit (LitInt (TInt 1)  0)

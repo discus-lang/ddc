@@ -2,9 +2,9 @@
 module DDC.Core.Llvm.Runtime
         ( nameGlobalHeapTop,    varGlobalHeapTop
         , nameGlobalHeapMax,    varGlobalHeapMax
-        , nameGlobalSlotBase,   varGlobalSlotBase
-        , nameGlobalSlotTop,    varGlobalSlotTop
-        , nameGlobalSlotMax,    varGlobalSlotMax
+--        , nameGlobalSlotBase,   varGlobalSlotBase
+--        , nameGlobalSlotTop,    varGlobalSlotTop
+--        , nameGlobalSlotMax,    varGlobalSlotMax
         , nameGlobalMalloc
         , nameGlobalMemcpy
         , nameGlobalGcroot)
