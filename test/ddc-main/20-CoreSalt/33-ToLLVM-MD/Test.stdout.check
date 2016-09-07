@@ -17,7 +17,7 @@ declare external ccc void @abort() align 8
 declare external void @llvm.gcroot(i8** , i8* )
 declare external void @llvm.memcpy.p0i8.p0i8.i64(i8* , i8* , i64 , i32 , i1 )
 
-define internal fastcc i64 @x_plus_y_square(i64*  %x, i64*  %y, i64*  %z) align 8 gc "shadow-stack"  
+define internal fastcc i64 @x_plus_y_square(i64*  %_v1.x, i64*  %_v2.y, i64*  %_v3.z) align 8 gc "shadow-stack"  
 {
 l9.entry:
         %_v10.xval1.addr1 = ptrtoint i64* %_v1.x to i64
@@ -64,13 +64,13 @@ declare external ccc void @abort() align 8
 declare external void @llvm.gcroot(i8** , i8* )
 declare external void @llvm.memcpy.p0i8.p0i8.i64(i8* , i8* , i64 , i32 , i1 )
 
-define internal fastcc i64 @nothing(i64*  %x) align 8 gc "shadow-stack"  
+define internal fastcc i64 @nothing(i64*  %_v1.x) align 8 gc "shadow-stack"  
 {
 l5.entry:
         ret i64 42
 }
 
-define internal fastcc i64 @three_x_plus_one(i64*  %x) align 8 gc "shadow-stack"  
+define internal fastcc i64 @three_x_plus_one(i64*  %_v7.x) align 8 gc "shadow-stack"  
 {
 l11.entry:
         %_v12.a.addr1 = ptrtoint i64* %_v7.x to i64
@@ -106,7 +106,7 @@ declare external ccc void @abort() align 8
 declare external void @llvm.gcroot(i8** , i8* )
 declare external void @llvm.memcpy.p0i8.p0i8.i64(i8* , i8* , i64 , i32 , i1 )
 
-define internal fastcc i64 @go(i64*  %a, i64*  %x, i64*  %y, i64  %i) align 8 gc "shadow-stack"  
+define internal fastcc i64 @go(i64*  %_v1.a, i64*  %_v2.x, i64*  %_v3.y, i64  %_v4.i) align 8 gc "shadow-stack"  
 {
 l10.entry:
         switch i64 %_v4.i, label %l13.default [ i64 42,label %l11.alt ]

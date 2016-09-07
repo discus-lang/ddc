@@ -191,7 +191,8 @@ primDecls pp
         , declReturnType        = tAddr pp
         , declParamListType     = FixedArgs
         , declParams            = [Param (tNat pp) []]
-        , declAlign             = AlignBytes (platformAlignBytes pp) }
+        , declAlign             = AlignBytes (platformAlignBytes pp)
+        , declGarbageCollector  = Nothing }
 
    ,    FunctionDecl
         { declName              = "abort"
