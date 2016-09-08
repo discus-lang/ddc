@@ -10,8 +10,15 @@ ok
 --
 ok
 %s.Obj = type <{i64}>
+@_DDC__heapBase = external global  i64
 @_DDC__heapTop = external global  i64
 @_DDC__heapMax = external global  i64
+@_DDC__heapBackBase = external global  i64
+@_DDC__heapBackTop = external global  i64
+@_DDC__heapBackMax = external global  i64
+@_DDC__slotBase = external global  i64
+@_DDC__slotTop = external global  i64
+@_DDC__slotMax = external global  i64
 declare external ccc i64 @malloc(i64 ) align 8
 declare external ccc void @abort() align 8
 declare external void @llvm.gcroot(i8** , i8* )
@@ -57,8 +64,15 @@ l9.entry:
 -- Observable optimisations: GVN - constprop behaviour
 ok
 %s.Obj = type <{i64}>
+@_DDC__heapBase = external global  i64
 @_DDC__heapTop = external global  i64
 @_DDC__heapMax = external global  i64
+@_DDC__heapBackBase = external global  i64
+@_DDC__heapBackTop = external global  i64
+@_DDC__heapBackMax = external global  i64
+@_DDC__slotBase = external global  i64
+@_DDC__slotTop = external global  i64
+@_DDC__slotMax = external global  i64
 declare external ccc i64 @malloc(i64 ) align 8
 declare external ccc void @abort() align 8
 declare external void @llvm.gcroot(i8** , i8* )
@@ -99,8 +113,15 @@ l11.entry:
 -- Observarble optimisations: LICM
 ok
 %s.Obj = type <{i64}>
+@_DDC__heapBase = external global  i64
 @_DDC__heapTop = external global  i64
 @_DDC__heapMax = external global  i64
+@_DDC__heapBackBase = external global  i64
+@_DDC__heapBackTop = external global  i64
+@_DDC__heapBackMax = external global  i64
+@_DDC__slotBase = external global  i64
+@_DDC__slotTop = external global  i64
+@_DDC__slotMax = external global  i64
 declare external ccc i64 @malloc(i64 ) align 8
 declare external ccc void @abort() align 8
 declare external void @llvm.gcroot(i8** , i8* )
