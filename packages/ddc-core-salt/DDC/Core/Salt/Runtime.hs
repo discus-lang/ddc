@@ -35,6 +35,11 @@ module DDC.Core.Salt.Runtime
         , xApplyThunk
         , xRunThunk
 
+          -- ** Allocator
+        , xAllocInit
+        , xAllocCollect
+        , xCollectInit
+
           -- ** Error handling
         , xErrorDefault
 
@@ -82,6 +87,7 @@ runtimeImportTypes :: Map Name (ImportValue Name (Type Name))
 runtimeImportTypes
  = Map.fromList 
    [ rn utTagOfObject
+
    , rn utAllocBoxed
    , rn utGetFieldOfBoxed
    , rn utSetFieldOfBoxed
@@ -104,6 +110,11 @@ runtimeImportTypes
    , rn (utApplyThunk 2)
    , rn (utApplyThunk 3)
    , rn (utApplyThunk 4) 
+
+   , rn utAllocInit
+   , rn utAllocCollect
+   , rn utCollectInit
+   , rn utTagOfObject
 
    , rn utErrorDefault]
 
@@ -398,6 +409,40 @@ utPayloadOfSmall :: (Bound Name, Type Name)
 utPayloadOfSmall
  =      ( UName (NameVar "payloadSmall")
         , tForall kRegion $ \r -> (tFun (tPtr r tObj) (tPtr r (tWord 8))))
+
+
+-- Garbage Collector  -----------------------------------------------------------------------------
+-- | Create the two-space heap.
+xAllocInit :: a -> Integer -> Exp a Name
+xAllocInit a bytes
+ = XApp a (XVar a $ fst utAllocInit)
+          (xNat a bytes)
+
+utAllocInit :: (Bound Name, Type Name)
+utAllocInit
+ =      ( UName (NameVar "allocInit")
+        , tNat `tFun` tUnit )
+
+-- | Check if allocation is possible, if not perform garbage collection.
+xAllocCollect :: a -> Exp a Name -> Exp a Name
+xAllocCollect a bytes
+ = XApp a (XVar a $ fst utAllocCollect) bytes
+
+utAllocCollect :: (Bound Name, Type Name)
+utAllocCollect
+ =      ( UName (NameVar "allocCollect")
+        , tNat `tFun` tUnit )
+
+-- | Create the slot stack.
+xCollectInit :: a -> Integer -> Exp a Name
+xCollectInit a bytes
+ = XApp a (XVar a $ fst utCollectInit)
+          (xNat a bytes)
+
+utCollectInit :: (Bound Name, Type Name)
+utCollectInit
+ =      ( UName (NameVar "collectInit")
+        , tNat `tFun` tUnit )
 
 
 -- Error ------------------------------------------------------------------------------------------
