@@ -36,6 +36,7 @@ module DDC.Core.Salt.Runtime
         , xRunThunk
 
           -- ** Allocator
+        , xddcInit
         , xAllocInit
         , xAllocCollect
         , xCollectInit
@@ -121,6 +122,7 @@ runtimeImportTypes
    , rn (utApplyThunk 3)
    , rn (utApplyThunk 4) 
 
+   , rn utddcInit
    , rn utAllocInit
    , rn utAllocCollect
    , rn utCollectInit
@@ -422,6 +424,19 @@ utPayloadOfSmall
 
 
 -- Garbage Collector  -----------------------------------------------------------------------------
+xddcInit   :: a -> Integer -> Integer -> Exp a Name
+xddcInit a bytesHeap slotsMax
+ = xApps a (XVar a $ fst $ utddcInit)
+           [ xNat a bytesHeap
+           , xNat a slotsMax ]
+
+utddcInit :: (Bound Name, Type Name)
+utddcInit
+ =      ( UName (NameVar "ddcInit")
+        , tNat `tFun` tNat `tFun` tUnit )
+
+
+
 -- | Create the two-space heap.
 xAllocInit :: a -> Integer -> Exp a Name
 xAllocInit a bytes

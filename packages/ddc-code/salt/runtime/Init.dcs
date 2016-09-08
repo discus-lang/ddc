@@ -27,11 +27,10 @@
 --
 module Init
 export value
- allocInit   :  Nat#    -- ^ Maximum heap size.
-             -> Unit
-
- collectInit :  Nat#    -- ^ Maximum number of slots in the slot stack.
-             -> Unit
+ ddcInit 
+        :  Nat#         -- ^ Maximum heap size.
+        -> Nat#         -- ^ Maximum number of slots in the slot stack.
+        -> Unit
 
 import foreign c value
    malloc      : Nat# -> Addr#
@@ -39,8 +38,14 @@ import foreign c value
 with letrec
 
 
+ddcInit (heapSize maxGCSlots: Nat#): Unit
+ = do   ddcAllocInit   heapSize
+        ddcCollectInit maxGCSlots
+        ()
+
+
 -- | Initialise the allocation system and allocate the heap.
-allocInit (heapSize : Nat#) : Unit
+ddcAllocInit (heapSize : Nat#) : Unit
  = do
         pHeapBaseA      = malloc heapSize
         pHeapMaxA       = plusAddr# pHeapBaseA (sub# heapSize 1#)
@@ -60,7 +65,7 @@ allocInit (heapSize : Nat#) : Unit
 
 
 -- | Allocate and initialise the current GC slot stack.
-collectInit (maxGCSlots : Nat#) : Unit
+ddcCollectInit (maxGCSlots : Nat#) : Unit
  = do
         pSlotBaseA      = malloc (mul# maxGCSlots (size# [Addr#]))
         pSlotMaxA       = plusAddr# pSlotBaseA (sub# maxGCSlots 1#)

@@ -9,6 +9,7 @@ export main  : [r1: Region]. Nat# -> Ptr# r1 Word8# -> Int#
 
 -- Primitive show functions are defined in the runtime system.
 import foreign c value 
+        ddcInit        : Nat# -> Nat# -> Unit
         primShowInt    : [r: Region]. Int# -> Ptr# r Word8#
         primPutString  : [r: Region]. Ptr# r Word8# -> Void#
         primPutTextLit : [r: Region]. TextLit#     -> Void#
@@ -99,9 +100,8 @@ fac [r1 r2: Region] (x: Ptr# r1 Obj): Ptr# r2 Obj
 
 main [r1: Region] (argc: Nat#) (argv: Ptr# r1 Word8#): Int#
  = do   
-        -- Initialize the allocation system and garbage collector.
-        allocInit   4096#
-        collectInit 1024#
+        -- Initialize the runtime system.
+        ddcInit 4096# 1024#
 
         -- Apply the factorial function.
         x2      = fac (boxWord32 10w32#)

@@ -4,6 +4,7 @@ export {
         main      : [r1 r2 : Region]. Nat# -> Ptr# r1 (Ptr# r1 Word8#) -> Int#;
 }
 import foreign c value {
+        ddcInit        : Nat# -> Nat# -> Unit;
         primShowInt   : [r : Region].Int# -> Ptr# r Word8#;
         primPutString : [r : Region].Ptr# r Word8# -> Void#;
 }
@@ -94,7 +95,7 @@ fac [r1 r2 : Region] (x: Ptr# r1 Obj) : Ptr# r2 Obj
 
 -- needs support for private
 main [r1 r2 : Region] (argc : Nat#) (argv : Ptr# r1 (Ptr# r1 Word8#)) : Int#
- = do { create# 1000#;
+ = do { ddcInit 4096# 1024#;
         x       = boxWord32 [r1] 10w32#;
         x2      = fac [r1] [r2] x;
         x2u     = unboxWord32 [r2] x2;

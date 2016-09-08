@@ -99,8 +99,9 @@ makeMainEntryX :: Config -> a -> Exp a Name
 makeMainEntryX config a
  = XLam a  (BName (NameVar "argc") tInt)
  $ XLam a  (BName (NameVar "argv") (tPtr rTop (tWord 8)))
- $ XLet a  (LLet  (BNone tUnit)    (xAllocInit   a (configHeapSize      config)))
- $ XLet a  (LLet  (BNone tUnit)    (xCollectInit a (configSlotStackSize config)))
+ $ XLet a  (LLet  (BNone tUnit)    
+                  (xddcInit a   (configHeapSize config)
+                                (configSlotStackSize config)))
  $ XLet a  (LLet  (BNone (tBot kData)) 
                   (xApps a (XVar a (UName (NameVar "_main"))) 
                            [xU]))

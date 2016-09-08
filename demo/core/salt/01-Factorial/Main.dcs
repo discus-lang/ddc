@@ -7,10 +7,9 @@ export main  : [r1: Region]. Nat# -> Ptr# r1 Word8# -> Int#
 
 -- Primitive show functions are defined in the runtime system.
 import foreign c value 
+        ddcInit        : Nat# -> Nat# -> Unit
         primPutTextLit  : TextLit# -> Void#
         primShowNat     : Nat#     -> TextLit#
-        allocInit      : Nat# -> Unit
-        collectInit    : Nat# -> Unit
 
 -- Functions defined in C stdlib.
 import foreign c value
@@ -38,9 +37,8 @@ fac_acc (x: Nat#) (acc: Nat#): Nat#
 -- Ye'olde Hello World programme.
 main [r1: Region] (argc: Nat#) (argv: Ptr# r1 Word8#): Int#
  = do
-        -- Initialize the allocation system and garbage collector.
-        allocInit   4096#
-        collectInit 1024#
+        -- Initialize the runtime system.
+        ddcInit 4096# 1024#
 
         -- Compute factorial using simple recursion.
         primPutTextLit "fac_rec 10 = "#
