@@ -32,6 +32,7 @@ import qualified Data.Map                       as Map
 import qualified Data.Set                       as Set
 import qualified Data.List                      as List
 
+
 -- | Convert a Salt module to LLVM.
 -- 
 --   If anything goes wrong in the convertion then this function will
@@ -101,25 +102,64 @@ convertModuleM pp mm@(C.ModuleCore{})
  = do   
         -- Globals for the runtime --------------
         --   If this is the main module then we define the globals for the
-        --   runtime system, otherwise tread them as external symbols.
+        --   runtime system, otherwise import them as external symbols.
+
+        -- Holds the pointer to the start of the heap.
+        --  This first object is allocated at this address.
+        let vHeapBase           = Var nameGlobalHeapBase (tAddr pp)
 
         -- Holds the pointer to the current top of the heap.
         --  This is the byte _after_ the last byte used by an object.
-        let vHeapTop    = Var nameGlobalHeapTop (tAddr pp)
+        let vHeapTop            = Var nameGlobalHeapTop (tAddr pp)
 
         -- Holds the pointer to the maximum heap.
         --  This is the byte _after_ the last byte avaiable in the heap.
-        let vHeapMax    = Var nameGlobalHeapMax (tAddr pp)
+        let vHeapMax            = Var nameGlobalHeapMax (tAddr pp)
+
+        -- Holds the pointer to the start of the back heap.
+        let vHeapBackBase       = Var nameGlobalHeapBackBase (tAddr pp)
+
+        -- Holds the pointer to the current top of the back heap.
+        let vHeapBackTop        = Var nameGlobalHeapBackTop (tAddr pp)
+
+        -- Holds the pointer to the maximum of the back heap.
+        let vHeapBackMax        = Var nameGlobalHeapBackMax (tAddr pp)
+
+        -- Holds the pointer to the base of the slot stack.
+        let vSlotBase           = Var nameGlobalSlotBase (tAddr pp)
+
+        -- Holds the pointer to the top of the slot stack.
+        --  This is the byte _after_ the last byte used by a slot.
+        let vSlotTop            = Var nameGlobalSlotTop (tAddr pp)
+
+        -- Holds the pointer to the maximum slot stack.
+        --  This is the byte _after_ the last byte available in the slot stack.
+        let vSlotMax            = Var nameGlobalSlotMax (tAddr pp)
 
         let globalsRts
                 | C.moduleName mm == C.ModuleName ["Main"]
-                = [ GlobalStatic   vHeapTop (StaticLit (LitInt (tAddr pp) 0))
-                  , GlobalStatic   vHeapMax (StaticLit (LitInt (tAddr pp) 0)) ]
+                = [ GlobalStatic   vHeapBase     (StaticLit (LitInt (tAddr pp) 0))
+                  , GlobalStatic   vHeapTop      (StaticLit (LitInt (tAddr pp) 0))
+                  , GlobalStatic   vHeapMax      (StaticLit (LitInt (tAddr pp) 0))
+                  , GlobalStatic   vHeapBackBase (StaticLit (LitInt (tAddr pp) 0))
+                  , GlobalStatic   vHeapBackTop  (StaticLit (LitInt (tAddr pp) 0))
+                  , GlobalStatic   vHeapBackMax  (StaticLit (LitInt (tAddr pp) 0))
+                  , GlobalStatic   vSlotBase     (StaticLit (LitInt (tAddr pp) 0))
+                  , GlobalStatic   vSlotTop      (StaticLit (LitInt (tAddr pp) 0))
+                  , GlobalStatic   vSlotMax      (StaticLit (LitInt (tAddr pp) 0)) ]
 
                 | otherwise
-                = [ GlobalExternal vHeapTop 
-                  , GlobalExternal vHeapMax ]
-        
+                = [ GlobalExternal vHeapBase
+                  , GlobalExternal vHeapTop
+                  , GlobalExternal vHeapMax
+                  , GlobalExternal vHeapBackBase
+                  , GlobalExternal vHeapBackTop
+                  , GlobalExternal vHeapBackMax
+                  , GlobalExternal vSlotBase
+                  , GlobalExternal vSlotTop
+                  , GlobalExternal vSlotMax ]
+
+
         -- Import external symbols --------------
         let kenv        = C.moduleKindEnv mm
         let tenv        = C.moduleTypeEnv mm `Env.union` (Env.fromList $ map fst bxs)
@@ -134,6 +174,7 @@ convertModuleM pp mm@(C.ModuleCore{})
                   | (n, isrc)    <- C.moduleImportValues mm ]
 
         importDecls <- sequence msImportDecls
+
 
         -- Convert super definitions ---------
         --   This is the code for locally defined functions.
@@ -161,6 +202,7 @@ convertModuleM pp mm@(C.ModuleCore{})
         (functions, mdecls)
                 <- liftM unzip 
                 $  mapM (uncurry (convertSuper' ctx)) bxs
+
 
         -- Stitch everything together -----------
         return  $ Module 
