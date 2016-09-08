@@ -15,6 +15,7 @@ Description:    Disciplined Disciple Compiler base libraries.
 data-files:
         LICENSE
 
+
         salt/runtime32/Object.dcs
 
         salt/runtime64/debug/Trace.dcs
@@ -23,6 +24,8 @@ data-files:
         salt/runtime64/primitive/Text.dcs
         salt/runtime64/Apply.dcs
         salt/runtime64/Object.dcs
+
+        salt/runtime/Collect.dcs
 
         sea/primitive/Primitive.c
         sea/primitive/Primitive.h

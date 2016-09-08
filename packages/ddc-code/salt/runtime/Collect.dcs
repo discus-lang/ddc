@@ -1,0 +1,324 @@
+
+-- | The Garbage Collector
+module Collect
+
+export value
+  collectInit : Nat#  -- ^ Maximum number of slots in the slot stack.
+             -> Unit
+
+  collectHeap : Addr# -- ^ @Word*@  Start of the from-space.
+             -> Addr# -- ^ @Word*@  Where the next object in from-space would be allocated.
+             -> Addr# -- ^ @Word*@  Start of the to-space.
+             -> Addr# -- ^ @Word**@ Where the next object in to-space will be allocated.
+             -> Unit
+
+import foreign c value
+  malloc           : Nat# -> Addr#
+
+  formatOfObject   : [r     : Region]. Ptr# r  Obj -> Nat#
+  sizeOfObject     : [r     : Region]. Ptr# r  Obj -> Nat#
+
+  readBrokenHeart  : [r1 r2 : Region]. Ptr# r1 Obj -> Ptr# r2 Obj
+  writeBrokenHeart : [r1 r2 : Region]. Ptr# r1 Obj -> Ptr# r2 Obj -> Void#
+
+  isAnchored       : [r     : Region]. Ptr# r  Obj -> Bool#
+
+  argsOfThunk      : [r     : Region]. Ptr# r  Obj -> Nat#
+  fieldOfThunk     : [r     : Region]. Ptr# r  Obj -> Nat# -> Addr#
+
+  arityOfBoxed     : [r     : Region]. Ptr# r  Obj -> Nat#
+  fieldOfBoxed     : [r     : Region]. Ptr# r  Obj -> Nat# -> Ptr# r Obj
+
+  arityOfMixed     : [r     : Region]. Ptr# r  Obj -> Nat#
+  fieldOfMixed     : [r     : Region]. Ptr# r  Obj -> Nat# -> Ptr# r Obj
+
+with letrec
+
+
+-- | Allocate and initialise the current GC slot stack.
+collectInit (maxGCSlots : Nat#) : Unit
+ = do
+        pSlotBaseA      = malloc (mul# maxGCSlots (size# [Addr#]))
+        pSlotMaxA       = plusAddr# pSlotBaseA (sub# maxGCSlots 1#)
+
+        write# slotBase# 0# pSlotBaseA
+        write# slotTop#  0# pSlotBaseA
+        write# slotMax#  0# pSlotMaxA
+
+        ()
+
+
+-- | Perform a collection on on this heap.
+--   This is a simple Cheney-scan collection.
+collectHeap
+        (pHeapBaseA : Addr#) -- Word8*
+        (pHeapTopA  : Addr#) -- Word8*
+        (pBackBaseA : Addr#) -- Word8*
+        (ppBackTopA : Addr#) -- Word8**
+                    : Unit
+ = do
+        -- Check sanity before we start the GC.
+        -- _DEBUG (_lintHeap  (heapBase, heapPtr));
+        -- _DEBUG (_lintSlots (_ddcSlotBase, _ddcSlotPtr, heapBase, heapPtr));
+
+        -- Reset the to-space
+        write# ppBackTopA 0# pBackBaseA
+
+        -- Copy all the root objects to the to-space..
+        pSlotTopA       = read# slotTop# 0#
+        evacuateRoots slotBase# pSlotTopA ppBackTopA
+
+        -- Recursively follow pointers in to-space,
+        --   copying out any reachable objects in the from-space.
+        scanHeap pBackBaseA ppBackTopA
+
+        -- Update collection counter
+        -- _PROFILE_GC (count++);
+
+        -- Check sanity again now the GC is finished.
+        -- _DEBUG(_lintHeap  (heapBackBase, *heapBackPtr));
+        -- _DEBUG(_lintSlots (_ddcSlotBase, _ddcSlotPtr, heapBackBase, *heapBackPtr));
+
+
+-- | Recursively follow pointers in the to-space, copying
+--   out any reachable objects in the from-space.
+evacuateRoots
+        (ppSlotA   : Addr#) -- Obj**
+        (pSlotTopA : Addr#) -- Obj*
+        (ppBackA   : Addr#) -- Word8**
+                   : Unit
+ = do
+        pSlotA          = read# ppSlotA 0#
+
+        -- Every object directly reachable from the slock stack is a root.
+        case ge# pSlotA pSlotTopA of
+          True#  -> ()
+          False# -> do
+            null        = promote# 0#
+
+            -- Skip nulls which are present in the stack.
+            case eq# pSlotA null of
+              True#  -> ()
+              False# -> do
+                pSlotA' = evacuateObject pSlotA ppBackA
+                write# ppSlotA 0# pSlotA'
+                ()
+
+            -- Move to the next slot in the stack.
+            ppSlotA' = plusAddr# ppSlotA (size# [Addr#])
+            evacuateRoots ppSlotA' pSlotTopA ppBackA
+
+
+-- | Evacuate a single object and update the to-space
+--   to point to the word _after_ the new copy.
+evacuateObject
+        (pObjA   : Addr#) -- Obj*
+        (ppBackA : Addr#) -- Word8**
+                 : Addr#  -- Obj*
+ = do
+        -- _DEBUG(assert(obj != 0));
+        -- _DEBUG(assert(toPtr != 0));
+
+        pObj    = makePtr# pObjA
+        format  = formatOfObject pObj
+
+        -- #if _DDC_DEBUG
+        -- bool anchored = _objIsAnchored (obj);
+        -- if (objType == _ObjTypeForward || !anchored) {
+        --         if (obj < (Obj*)_ddcHeapBase)
+        --                 _PANIC ("Obj %p to be evacuated lies before start of heap.\n", obj);
+        --
+        --         if (obj > (Obj*)_ddcHeapPtr)
+        --                 _PANIC ("Obj %p to be evacuated lies after end of heap.\n", obj);
+        -- }
+        -- #endif
+
+        case format of
+          -- Forwarding Pointer
+          1# -> do
+                -- If this object is a broken heart then return the forwarding pointer.
+                --   We have a "broken heart" because the object we were expecting to be here
+                --   has aready been copied out to the to-space. The old header in the from-space
+                --   will have been over-written by the address of where it is now in the to-space.
+
+                -- Get the address in the to-space of where the object is now.
+                pNewObj0 = readBrokenHeart pObj
+
+                -- #if _DDC_DEBUG
+                -- // If the thing the forwarding address points to is also a forwarding
+                -- // address then we're screwed. Following it could put us in an endless loop.
+                -- if (_objType (objR) == _ObjTypeForward) {
+                --      _ERROR ("Forwarded object is also a forward.\n");
+                --      _ERROR ("  obj  = %p\n", obj);
+                --      _ERROR ("  objR = %p\n", objR);
+                -- }
+                -- assert (_objType (objR) != _ObjTypeForward);
+                -- #endif
+
+                takePtr# pNewObj0
+
+          -- All Other Objects
+          _  ->
+                case isAnchored pObj of
+                  True#  ->
+                        -- If the object is anchored then leave it alone.
+                        --   Anchored objects are allocated outside of the DDC
+                        --   heap, and are thus out of our juristiction.
+                        pObjA
+
+                  False# -> do
+                        -- Otherwise it's one of ours, so copy it to the to-heap.
+
+                        -- The size of the whole object.
+                        size            = sizeOfObject pObj
+
+                        -- Where we're going to copy it to in the to-heap.
+                        pNewObj         = read# ppBackA 0#
+                        pNewObjA        = takePtr# pNewObj
+
+                        -- Copy the sucker.
+                        copy# pNewObjA pObjA size
+
+                        -- Advance the to-pointer to point to the first word of
+                        -- where the next object is going to be.
+                        write# ppBackA 0# (plusAddr# pNewObjA size)
+
+                        -- _PROFILE_GC (copyCount++);
+                        -- _PROFILE_GC (copyBytes += size);
+
+                        -- Leave a broken-heart behind.
+                        --   This says where we've copied the object, so
+                        --   if we come back here again then we'll know
+                        --   where it's gone.
+                        writeBrokenHeart pObj pNewObj
+
+                        pNewObjA
+
+
+-- Scan functions -------------------------------------------------------------
+--   "Scanning" means to look at the other objects this one points to and also
+--   copy those to the to-space.
+--
+--   There is one scan function for each object format in the heap.
+
+-- | Scan all the objects in the to space.
+--     This copies in the data that is reachable from the object already there.
+scanHeap
+        (pScanA     : Addr#)
+        (ppBackTopA : Addr#)
+                    : Unit
+ = do
+        pBackTopA       = read# ppBackTopA 0#
+
+        case ge# pScanA pBackTopA of
+          True#  -> ()
+          False# -> do
+            pScan       = makePtr# pScanA
+
+            scanObject pScan ppBackTopA
+            pScanA'     = plusAddr# pScanA (sizeOfObject pScan)
+
+            scanHeap pScanA' ppBackTopA
+
+
+-- | Scan an arbitrary object.
+--   This examines the tag of the object to determine what sort it is, then
+--   calls the scan function specific to that object.
+scanObject
+        [r          : Region]
+        (pObj       : Ptr# r Obj)
+        (ppBackTopA : Addr#)
+                    : Unit
+  =     case formatOfObject pObj of
+          0# -> fail#   -- unknown object.
+          1# -> fail#   -- broken heart.
+          2# -> scanThunk pObj ppBackTopA
+          3# -> scanBoxed pObj ppBackTopA
+          4# -> ()      -- raw data contains no pointers to scan.
+          5# -> scanMixed pObj ppBackTopA
+          6# -> ()      -- small raw data contains no pointers to scan.
+       -- 7# -> ???     -- ISSUE #341: SuspIndir not implemented
+          _  -> fail#   -- invalid format
+
+
+-- | Scan a thunk.
+scanThunk
+        [r          : Region]
+        (pObj       : Ptr# r Obj)
+        (ppBackTopA : Addr#)
+                    : Unit
+ =      scanThunk_arg pObj (argsOfThunk pObj) ppBackTopA
+
+-- | Scan a thunk argument.
+scanThunk_arg
+        [r             : Region]
+        (pObj          : Ptr# r Obj)
+        (argsRemaining : Nat#)
+        (ppBackTopA    : Addr#)
+                       : Unit
+ = do
+        case eq# argsRemaining 0# of
+          True#  -> ()
+          False# -> do
+            argIx   = sub# argsRemaining 1#
+            pFieldA = fieldOfThunk pObj argIx
+
+            evacuateObject pFieldA ppBackTopA
+
+            scanThunk_arg pObj argIx ppBackTopA
+
+
+-- | Scan a boxed data object.
+scanBoxed
+        [r          : Region]
+        (pObj       : Ptr# r Obj)
+        (ppBackTopA : Addr#)
+                    : Unit
+ =      scanBoxed_arg pObj (arityOfBoxed pObj) ppBackTopA
+
+-- | Scan a boxed argument.
+scanBoxed_arg
+        [r             : Region]
+        (pObj          : Ptr# r Obj)
+        (argsRemaining : Nat#)
+        (ppBackTopA    : Addr#)
+                       : Unit
+ = do
+        case eq# argsRemaining 0# of
+          True#  -> ()
+          False# -> do
+            argIx   = sub# argsRemaining 1#
+            pFieldA = takePtr# (fieldOfBoxed pObj argIx)
+
+            evacuateObject pFieldA ppBackTopA
+
+            scanBoxed_arg pObj argIx ppBackTopA
+
+
+-- | Scan a mixed data object.
+scanMixed
+        [r          : Region]
+        (pObj       : Ptr# r Obj)
+        (ppBackTopA : Addr#)
+                    : Unit
+ =      scanMixed_arg pObj (arityOfMixed pObj) ppBackTopA
+
+-- | Scan a boxed argument.
+scanMixed_arg
+        [r             : Region]
+        (pObj          : Ptr# r Obj)
+        (argsRemaining : Nat#)
+        (ppBackTopA    : Addr#)
+                       : Unit
+ = do
+        case eq# argsRemaining 0# of
+          True#  -> ()
+          False# -> do
+            argIx   = sub# argsRemaining 1#
+            pFieldA = takePtr# (fieldOfMixed pObj argIx)
+
+            evacuateObject pFieldA ppBackTopA
+
+            scanMixed_arg pObj argIx ppBackTopA
+
+            

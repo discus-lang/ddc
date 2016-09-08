@@ -3,12 +3,13 @@
 # -----------------------------------------------------------------------------
 # Runtime Core Salt sources.
 salt-runtime_dcs = \
-	$(shell find packages/ddc-code/salt/runtime${BITS}     -name "*.dcs")
+	$(shell find packages/ddc-code/salt/runtime${BITS} -name "*.dcs") \
+	$(shell find packages/ddc-code/salt/runtime        -name "*.dcs")
 
 
 # Runtime C sources.
 salt-runtime_c   = \
-        $(shell find packages/ddc-code/sea/primitive           -name "*.c")
+        $(shell find packages/ddc-code/sea/primitive       -name "*.c")
 
 
 # Runtime object file outputs.

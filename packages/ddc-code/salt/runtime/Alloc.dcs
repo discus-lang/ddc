@@ -1,0 +1,100 @@
+
+-- | The Allocation System
+module Alloc
+
+export value
+  allocInit    : Nat#  -- ^ Maximum heap size.
+              -> Unit
+
+  allocCollect : Nat# -- ^ How much space must be left after collection.
+              -> Unit
+
+import foreign c value
+  malloc      : Nat# -> Addr#
+
+  collectHeap : Addr# -- Word8*
+             -> Addr# -- Word8*
+             -> Addr# -- Word8*
+             -> Addr# -- Word8**
+             -> Unit
+
+with letrec
+
+
+-- | Initialise the allocation system and allocate the heap.
+allocInit (heapSize : Nat#) : Unit
+ = do
+        pHeapBaseA      = malloc heapSize
+        pHeapMaxA       = plusAddr# pHeapBaseA (sub# heapSize 1#)
+
+        write# heapBase# 0# pHeapBaseA
+        write# heapTop#  0# pHeapBaseA
+        write# heapMax#  0# pHeapMaxA
+
+        pHeapBackBaseA  = malloc heapSize
+        pHeapBackMaxA   = plusAddr# pHeapBackBaseA (sub# heapSize 1#)
+
+        write# heapBackBase# 0# pHeapBackBaseA
+        write# heapBackTop#  0# pHeapBackBaseA
+        write# heapBackMax#  0# pHeapBackMaxA
+
+        ()
+
+-- | Perform a garbage collection.
+--     If we don't free up at least as much space as requested, the runtime
+--     system will panic.
+allocCollect (byteCount : Nat#) : Unit
+ = do
+        -- Check how much data is in the heap before collection.
+        pHeapBaseA      = read# heapBase# 0#
+        pHeapTopA       = read# heapTop#  0#
+        heapUsageStart  = sub# pHeapTopA pHeapBaseA
+
+        -- #if _DDC_PROFILE_GC
+        -- _ddcProfileMutatorEnd();
+        -- _ddcProfileCollectorStart();
+        -- #endif
+        -- _PROFILE_GC (allocBytes += heapUsageStart - _ddcProfile ->gc.lastCompactionSize);
+
+        -- Copy out the live data to the new heap.
+        pHeapBackBaseA  = read# heapBackBase# 0#
+        ppHeapBackTopA  = heapBackTop#
+
+        collectHeap pHeapBaseA
+                    pHeapTopA
+                    pHeapBackBaseA
+                    ppHeapBackTopA
+
+        -- #if _DDC_PROFILE_GC
+        -- _ddcProfileCollectorEnd();
+        -- _ddcProfileMutatorStart();
+        -- #endif
+
+        -- Flip the front and back heap buffers
+        pHeapMaxA       = read# heapMax#     0#
+        pHeapBackTopA   = read# heapBackTop# 0#
+        pHeapBackMaxA   = read# heapBackMax# 0#
+
+        write# [Addr#] heapBase#     0# pHeapBackBaseA
+        write# [Addr#] heapBackBase# 0# pHeapBaseA
+
+        write# [Addr#] heapTop#      0# pHeapBackTopA
+        write# [Addr#] heapBackTop#  0# pHeapTopA
+
+        write# [Addr#] heapMax#      0# pHeapBackMaxA
+        write# [Addr#] heapBackMax#  0# pHeapMaxA
+
+        -- // Check how much data is in the heap after collection.
+        -- Word64 heapUsageEnd  = _ddcHeapPtr - _ddcHeapBase;
+        -- _PROFILE_GC (lastCompactionSize = heapUsageEnd);
+
+        -- If we haven't recovered enough space, then the allocation that
+        --   triggered this collection won't be able to complete, so we're
+        --   screwed.
+        -- TODO: instead of just panicing we should grow the heap.
+        pPostAllocMaxA  = plusAddr# pHeapBackTopA byteCount
+        case gt# pPostAllocMaxA pHeapBackMaxA of
+          True#  -> fail#
+          False# -> ()
+
+
