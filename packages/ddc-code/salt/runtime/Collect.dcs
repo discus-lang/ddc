@@ -4,31 +4,32 @@ module Collect
 
 export value
 
-  collectHeap : Addr# -- ^ @Word*@  Start of the from-space.
-             -> Addr# -- ^ @Word*@  Where the next object in from-space would be allocated.
-             -> Addr# -- ^ @Word*@  Start of the to-space.
-             -> Addr# -- ^ @Word**@ Where the next object in to-space will be allocated.
-             -> Unit
+  ddcCollectHeap 
+        :  Addr# -- ^ @Word*@  Start of the from-space.
+        -> Addr# -- ^ @Word*@  Where the next object in from-space would be allocated.
+        -> Addr# -- ^ @Word*@  Start of the to-space.
+        -> Addr# -- ^ @Word**@ Where the next object in to-space will be allocated.
+        -> Unit
 
 import foreign c value
   malloc           : Nat# -> Addr#
 
-  formatOfObject   : [r     : Region]. Ptr# r  Obj -> Nat#
-  sizeOfObject     : [r     : Region]. Ptr# r  Obj -> Nat#
+  ddcFormatOfObject   : [r     : Region]. Ptr# r  Obj -> Nat#
+  ddcSizeOfObject     : [r     : Region]. Ptr# r  Obj -> Nat#
 
-  readBrokenHeart  : [r1 r2 : Region]. Ptr# r1 Obj -> Ptr# r2 Obj
-  writeBrokenHeart : [r1 r2 : Region]. Ptr# r1 Obj -> Ptr# r2 Obj -> Void#
+  ddcReadBrokenHeart  : [r1 r2 : Region]. Ptr# r1 Obj -> Ptr# r2 Obj
+  ddcWriteBrokenHeart : [r1 r2 : Region]. Ptr# r1 Obj -> Ptr# r2 Obj -> Void#
 
-  isAnchored       : [r     : Region]. Ptr# r  Obj -> Bool#
+  ddcIsAnchored       : [r     : Region]. Ptr# r  Obj -> Bool#
 
-  argsOfThunk      : [r     : Region]. Ptr# r  Obj -> Nat#
-  fieldOfThunk     : [r     : Region]. Ptr# r  Obj -> Nat# -> Addr#
+  ddcArgsThunk        : [r     : Region]. Ptr# r  Obj -> Nat#
+  ddcGetThunk         : [r     : Region]. Ptr# r  Obj -> Nat# -> Addr#
 
-  arityOfBoxed     : [r     : Region]. Ptr# r  Obj -> Nat#
-  fieldOfBoxed     : [r     : Region]. Ptr# r  Obj -> Nat# -> Ptr# r Obj
+  ddcArityOfBoxed     : [r     : Region]. Ptr# r  Obj -> Nat#
+  ddcGetBoxed         : [r1 r2 : Region]. Ptr# r1 Obj -> Nat# -> Ptr# r2 Obj
 
-  arityOfMixed     : [r     : Region]. Ptr# r  Obj -> Nat#
-  fieldOfMixed     : [r     : Region]. Ptr# r  Obj -> Nat# -> Ptr# r Obj
+  ddcArityOfMixed     : [r     : Region]. Ptr# r  Obj -> Nat#
+  ddcGetMixed         : [r1 r2 : Region]. Ptr# r1 Obj -> Nat# -> Ptr# r2 Obj
 
 
 with letrec
@@ -36,7 +37,7 @@ with letrec
 
 -- | Perform a collection on on this heap.
 --   This is a simple Cheney-scan collection.
-collectHeap
+ddcCollectHeap
         (pHeapBaseA : Addr#) -- Word8*
         (pHeapTopA  : Addr#) -- Word8*
         (pBackBaseA : Addr#) -- Word8*
@@ -52,11 +53,11 @@ collectHeap
 
         -- Copy all the root objects to the to-space..
         pSlotTopA       = read# slotTop# 0#
-        evacuateRoots slotBase# pSlotTopA ppBackTopA
+        ddcEvacuateRoots slotBase# pSlotTopA ppBackTopA
 
         -- Recursively follow pointers in to-space,
         --   copying out any reachable objects in the from-space.
-        scanHeap pBackBaseA ppBackTopA
+        ddcScanHeap pBackBaseA ppBackTopA
 
         -- Update collection counter
         -- _PROFILE_GC (count++);
@@ -68,7 +69,7 @@ collectHeap
 
 -- | Recursively follow pointers in the to-space, copying
 --   out any reachable objects in the from-space.
-evacuateRoots
+ddcEvacuateRoots
         (ppSlotA   : Addr#) -- Obj**
         (pSlotTopA : Addr#) -- Obj*
         (ppBackA   : Addr#) -- Word8**
@@ -86,18 +87,18 @@ evacuateRoots
             case eq# pSlotA null of
               True#  -> ()
               False# -> do
-                pSlotA' = evacuateObject pSlotA ppBackA
+                pSlotA' = ddcEvacuateObject pSlotA ppBackA
                 write# ppSlotA 0# pSlotA'
                 ()
 
             -- Move to the next slot in the stack.
             ppSlotA' = plusAddr# ppSlotA (size# [Addr#])
-            evacuateRoots ppSlotA' pSlotTopA ppBackA
+            ddcEvacuateRoots ppSlotA' pSlotTopA ppBackA
 
 
 -- | Evacuate a single object and update the to-space
 --   to point to the word _after_ the new copy.
-evacuateObject
+ddcEvacuateObject
         (pObjA   : Addr#) -- Obj*
         (ppBackA : Addr#) -- Word8**
                  : Addr#  -- Obj*
@@ -106,7 +107,7 @@ evacuateObject
         -- _DEBUG(assert(toPtr != 0));
 
         pObj    = makePtr# pObjA
-        format  = formatOfObject pObj
+        format  = ddcFormatOfObject pObj
 
         -- #if _DDC_DEBUG
         -- bool anchored = _objIsAnchored (obj);
@@ -128,7 +129,7 @@ evacuateObject
                 --   will have been over-written by the address of where it is now in the to-space.
 
                 -- Get the address in the to-space of where the object is now.
-                pNewObj0 = readBrokenHeart pObj
+                pNewObj0 = ddcReadBrokenHeart pObj
 
                 -- #if _DDC_DEBUG
                 -- // If the thing the forwarding address points to is also a forwarding
@@ -145,7 +146,7 @@ evacuateObject
 
           -- All Other Objects
           _  ->
-                case isAnchored pObj of
+                case ddcIsAnchored pObj of
                   True#  ->
                         -- If the object is anchored then leave it alone.
                         --   Anchored objects are allocated outside of the DDC
@@ -156,7 +157,7 @@ evacuateObject
                         -- Otherwise it's one of ours, so copy it to the to-heap.
 
                         -- The size of the whole object.
-                        size            = sizeOfObject pObj
+                        size            = ddcSizeOfObject pObj
 
                         -- Where we're going to copy it to in the to-heap.
                         pNewObj         = read# ppBackA 0#
@@ -176,7 +177,7 @@ evacuateObject
                         --   This says where we've copied the object, so
                         --   if we come back here again then we'll know
                         --   where it's gone.
-                        writeBrokenHeart pObj pNewObj
+                        ddcWriteBrokenHeart pObj pNewObj
 
                         pNewObjA
 
@@ -189,7 +190,7 @@ evacuateObject
 
 -- | Scan all the objects in the to space.
 --     This copies in the data that is reachable from the object already there.
-scanHeap
+ddcScanHeap
         (pScanA     : Addr#)
         (ppBackTopA : Addr#)
                     : Unit
@@ -201,42 +202,42 @@ scanHeap
           False# -> do
             pScan       = makePtr# pScanA
 
-            scanObject pScan ppBackTopA
-            pScanA'     = plusAddr# pScanA (sizeOfObject pScan)
+            ddcScanObject pScan ppBackTopA
+            pScanA'     = plusAddr# pScanA (ddcSizeOfObject pScan)
 
-            scanHeap pScanA' ppBackTopA
+            ddcScanHeap pScanA' ppBackTopA
 
 
 -- | Scan an arbitrary object.
 --   This examines the tag of the object to determine what sort it is, then
 --   calls the scan function specific to that object.
-scanObject
+ddcScanObject
         [r          : Region]
         (pObj       : Ptr# r Obj)
         (ppBackTopA : Addr#)
                     : Unit
-  =     case formatOfObject pObj of
+  =     case ddcFormatOfObject pObj of
           0# -> fail#   -- unknown object.
           1# -> fail#   -- broken heart.
-          2# -> scanThunk pObj ppBackTopA
-          3# -> scanBoxed pObj ppBackTopA
+          2# -> ddcScanThunk pObj ppBackTopA
+          3# -> ddcScanBoxed pObj ppBackTopA
           4# -> ()      -- raw data contains no pointers to scan.
-          5# -> scanMixed pObj ppBackTopA
+          5# -> ddcScanMixed pObj ppBackTopA
           6# -> ()      -- small raw data contains no pointers to scan.
        -- 7# -> ???     -- ISSUE #341: SuspIndir not implemented
           _  -> fail#   -- invalid format
 
 
 -- | Scan a thunk.
-scanThunk
+ddcScanThunk
         [r          : Region]
         (pObj       : Ptr# r Obj)
         (ppBackTopA : Addr#)
                     : Unit
- =      scanThunk_arg pObj (argsOfThunk pObj) ppBackTopA
+ =      ddcScanThunk_arg pObj (ddcArgsThunk pObj) ppBackTopA
 
 -- | Scan a thunk argument.
-scanThunk_arg
+ddcScanThunk_arg
         [r             : Region]
         (pObj          : Ptr# r Obj)
         (argsRemaining : Nat#)
@@ -247,23 +248,23 @@ scanThunk_arg
           True#  -> ()
           False# -> do
             argIx   = sub# argsRemaining 1#
-            pFieldA = fieldOfThunk pObj argIx
+            pFieldA = ddcGetThunk pObj argIx
 
-            evacuateObject pFieldA ppBackTopA
+            ddcEvacuateObject pFieldA ppBackTopA
 
-            scanThunk_arg pObj argIx ppBackTopA
+            ddcScanThunk_arg pObj argIx ppBackTopA
 
 
 -- | Scan a boxed data object.
-scanBoxed
+ddcScanBoxed
         [r          : Region]
         (pObj       : Ptr# r Obj)
         (ppBackTopA : Addr#)
                     : Unit
- =      scanBoxed_arg pObj (arityOfBoxed pObj) ppBackTopA
+ =      ddcScanBoxed_arg pObj (ddcArityOfBoxed pObj) ppBackTopA
 
 -- | Scan a boxed argument.
-scanBoxed_arg
+ddcScanBoxed_arg
         [r             : Region]
         (pObj          : Ptr# r Obj)
         (argsRemaining : Nat#)
@@ -274,23 +275,23 @@ scanBoxed_arg
           True#  -> ()
           False# -> do
             argIx   = sub# argsRemaining 1#
-            pFieldA = takePtr# (fieldOfBoxed pObj argIx)
+            pFieldA = takePtr# (ddcGetBoxed pObj argIx)
 
-            evacuateObject pFieldA ppBackTopA
+            ddcEvacuateObject pFieldA ppBackTopA
 
-            scanBoxed_arg pObj argIx ppBackTopA
+            ddcScanBoxed_arg pObj argIx ppBackTopA
 
 
 -- | Scan a mixed data object.
-scanMixed
+ddcScanMixed
         [r          : Region]
         (pObj       : Ptr# r Obj)
         (ppBackTopA : Addr#)
                     : Unit
- =      scanMixed_arg pObj (arityOfMixed pObj) ppBackTopA
+ =      ddcScanMixed_arg pObj (ddcArityOfMixed pObj) ppBackTopA
 
 -- | Scan a boxed argument.
-scanMixed_arg
+ddcScanMixed_arg
         [r             : Region]
         (pObj          : Ptr# r Obj)
         (argsRemaining : Nat#)
@@ -301,10 +302,10 @@ scanMixed_arg
           True#  -> ()
           False# -> do
             argIx   = sub# argsRemaining 1#
-            pFieldA = takePtr# (fieldOfMixed pObj argIx)
+            pFieldA = takePtr# (ddcGetMixed pObj argIx)
 
-            evacuateObject pFieldA ppBackTopA
+            ddcEvacuateObject pFieldA ppBackTopA
 
-            scanMixed_arg pObj argIx ppBackTopA
+            ddcScanMixed_arg pObj argIx ppBackTopA
 
             

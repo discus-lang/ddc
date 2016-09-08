@@ -84,56 +84,55 @@ module Runtime.Object
 
 export value
  -- Get the tag of an object.
- tagOfObject       : [r:    Region].  Ptr# r Obj  -> Tag#
- formatOfObject    : [r:    Region].  Ptr# r Obj  -> Nat#
- sizeOfObject      : [r:    Region].  Ptr# r Obj  -> Nat#
- readBrokenHeart   : [r1 r2: Region]. Ptr# r1 Obj -> Ptr# r2 Obj
- writeBrokenHeart  : [r1 r2: Region]. Ptr# r1 Obj -> Ptr# r2 Obj -> Void#
+ ddcTagOfObject      : [r:    Region].  Ptr# r Obj  -> Tag#
+ ddcFormatOfObject   : [r:    Region].  Ptr# r Obj  -> Nat#
+ ddcSizeOfObject     : [r:    Region].  Ptr# r Obj  -> Nat#
+ ddcReadBrokenHeart  : [r1 r2: Region]. Ptr# r1 Obj -> Ptr# r2 Obj
+ ddcWriteBrokenHeart : [r1 r2: Region]. Ptr# r1 Obj -> Ptr# r2 Obj -> Void#
  
- isAnchored        : [r : Region].    Ptr# r Obj  -> Bool#
+ ddcIsAnchored       : [r : Region].    Ptr# r Obj  -> Bool#
   
  -- Thunk initialization.
- allocThunk        : [r1:    Region]. Addr# -> Nat# -> Nat# -> Nat# -> Nat# -> Ptr# r1 Obj
- copyThunk         : [r1 r2: Region]. Ptr# r1 Obj -> Ptr# r2 Obj -> Nat# -> Nat# -> Ptr# r2 Obj
- extendThunk       : [r1 r2: Region]. Ptr# r1 Obj -> Nat# -> Ptr# r2 Obj
+ ddcAllocThunk       : [r1:    Region]. Addr# -> Nat# -> Nat# -> Nat# -> Nat# -> Ptr# r1 Obj
+ ddcCopyThunk        : [r1 r2: Region]. Ptr# r1 Obj -> Ptr# r2 Obj -> Nat# -> Nat# -> Ptr# r2 Obj
+ ddcExtendThunk      : [r1 r2: Region]. Ptr# r1 Obj -> Nat# -> Ptr# r2 Obj
 
- funThunk          : [r1:    Region]. Ptr# r1 Obj -> Addr#
- paramsThunk       : [r1:    Region]. Ptr# r1 Obj -> Nat#
- boxesThunk        : [r1:    Region]. Ptr# r1 Obj -> Nat#
- argsThunk         : [r1:    Region]. Ptr# r1 Obj -> Nat#
- runsThunk         : [r1:    Region]. Ptr# r1 Obj -> Nat#
+ ddcFunThunk         : [r1:    Region]. Ptr# r1 Obj -> Addr#
+ ddcParamsThunk      : [r1:    Region]. Ptr# r1 Obj -> Nat#
+ ddcBoxesThunk       : [r1:    Region]. Ptr# r1 Obj -> Nat#
+ ddcArgsThunk        : [r1:    Region]. Ptr# r1 Obj -> Nat#
+ ddcRunsThunk        : [r1:    Region]. Ptr# r1 Obj -> Nat#
 
- setThunk          : [r1 r2: Region]. Ptr# r1 Obj -> Nat# -> Nat# -> Ptr# r2 Obj -> Void#
- getThunk          : [r1 r2: Region]. Ptr# r1 Obj -> Nat# -> Ptr# r2 Obj
+ ddcSetThunk         : [r1 r2: Region]. Ptr# r1 Obj -> Nat# -> Nat# -> Ptr# r2 Obj -> Void#
+ ddcGetThunk         : [r1 r2: Region]. Ptr# r1 Obj -> Nat# -> Ptr# r2 Obj
 
  -- Objects with just pointers to boxed things.
- allocBoxed        : [r1:    Region]. Tag# -> Nat# -> Ptr# r1 Obj
- arityOfBoxed      : [r:     Region]. Ptr# r Obj   -> Nat#
- fieldOfBoxed      : [r:     Region]. Ptr# r Obj   -> Nat# -> Ptr# r Obj
- getBoxed          : [r1 r2: Region]. Ptr# r1 Obj  -> Nat# -> Ptr# r2 Obj
- setBoxed          : [r1 r2: Region]. Ptr# r1 Obj  -> Nat# -> Ptr# r2 Obj -> Void#
+ ddcAllocBoxed       : [r1:    Region]. Tag# -> Nat# -> Ptr# r1 Obj
+ ddcArityOfBoxed     : [r:     Region]. Ptr# r Obj   -> Nat#
+ ddcGetBoxed         : [r1 r2: Region]. Ptr# r1 Obj  -> Nat# -> Ptr# r2 Obj
+ ddcSetBoxed         : [r1 r2: Region]. Ptr# r1 Obj  -> Nat# -> Ptr# r2 Obj -> Void#
 
  -- Object with mixed pointers and raw, non-pointer data.
- allocMixed        : [r1:    Region]. Tag# -> Nat# -> Nat# -> Ptr# r1 Obj
- arityOfMixed      : [r:     Region]. Ptr# r Obj   -> Nat#
- getMixed          : [r1 r2: Region]. Ptr# r1 Obj  -> Nat# -> Ptr# r2 Obj
- payloadMixed      : [r1:    Region]. Ptr# r1 Obj  -> Ptr# r1 Word8# 
+ ddcAllocMixed       : [r1:    Region]. Tag# -> Nat# -> Nat# -> Ptr# r1 Obj
+ ddcArityOfMixed     : [r:     Region]. Ptr# r Obj   -> Nat#
+ ddcGetMixed         : [r1 r2: Region]. Ptr# r1 Obj  -> Nat# -> Ptr# r2 Obj
+ ddcPayloadMixed     : [r1:    Region]. Ptr# r1 Obj  -> Ptr# r1 Word8# 
 
  -- Objects containing raw non-pointer data.
- allocRaw          : [r1:    Region]. Tag# -> Nat# -> Ptr# r1 Obj
- payloadRaw        : [r1:    Region]. Ptr# r1 Obj  -> Ptr# r1 Word8#
- payloadSizeRaw    : [r1:    Region]. Ptr# r1 Obj  -> Nat#
+ ddcAllocRaw         : [r1:    Region]. Tag# -> Nat# -> Ptr# r1 Obj
+ ddcPayloadRaw       : [r1:    Region]. Ptr# r1 Obj  -> Ptr# r1 Word8#
+ ddcPayloadSizeRaw   : [r1:    Region]. Ptr# r1 Obj  -> Nat#
 
  -- Objects with small, raw non-pointer data.
- allocSmall        : [r1:    Region]. Tag# -> Nat# -> Ptr# r1 Obj
- payloadSmall      : [r1:    Region]. Ptr# r1 Obj  -> Ptr# r1 Word8#
+ ddcAllocSmall       : [r1:    Region]. Tag# -> Nat# -> Ptr# r1 Obj
+ ddcPayloadSmall     : [r1:    Region]. Ptr# r1 Obj  -> Ptr# r1 Word8#
 
 
 import value
  -- Invoke the garbage collector.
  -- We need to relaim at least the given number of bytes,
  -- otherwise we cannot continue execution.
- allocCollect      : Nat# -> Unit
+ ddcAllocCollect      : Nat# -> Unit
 
 
 with letrec
@@ -141,48 +140,48 @@ with letrec
 
 -- Object ---------------------------------------------------------------------
 -- | Get the header bits of an object.
-headerOfObject [r : Region] (obj : Ptr# r Obj) : Word32#
+ddcHeaderOfObject [r : Region] (obj : Ptr# r Obj) : Word32#
  = do
         ptr             = castPtr# obj
         peek# ptr 0#
 
 
 -- | Get the constructor tag of an object.
-tagOfObject [r: Region] (obj: Ptr# r Obj): Tag#
+ddcTagOfObject [r: Region] (obj: Ptr# r Obj): Tag#
  = do   
-        header          = headerOfObject obj
+        header          = ddcHeaderOfObject obj
         tag32           = shr#  header 8w32#
         promote# tag32
 
 
 --| Get the format field bits of an object.
-formatFieldOfObject [r : Region] (obj : Ptr# r Obj) : Word8#
+ddcFormatFieldOfObject [r : Region] (obj : Ptr# r Obj) : Word8#
  = do
-        header          = headerOfObject obj
+        header          = ddcHeaderOfObject obj
         truncate# [Word8#] [Word32#] header
 
 
 -- | Get the arg portion of an object's format field.
-argOfObject [r : Region] (obj : Ptr# r Obj) : Nat#
+ddcArgOfObject [r : Region] (obj : Ptr# r Obj) : Nat#
  = do
-        formatField     = formatFieldOfObject obj
+        formatField     = ddcFormatFieldOfObject obj
         arg8            = shl# (band# formatField 0b11110000w8#) 4w8#
 
         promote# arg8
 
 
 --| Get the format of an object.
-formatOfObject [r : Region] (obj : Ptr# r Obj) : Nat#
+ddcFormatOfObject [r : Region] (obj : Ptr# r Obj) : Nat#
  = do
-        formatField     = formatFieldOfObject obj
+        formatField     = ddcFormatFieldOfObject obj
 
         case band# formatField 0b11w8# of
           0b00w8# -> 1# -- Forward
-          0b01w8# -> formatOfObject_arg formatField
+          0b01w8# -> ddcFormatOfObject_arg formatField
           0b11w8# -> 6# -- DataRawSmall
           _       -> 0# -- Unknown
 
-formatOfObject_arg [r : Region] (formatField : Word8#) : Nat#
+ddcFormatOfObject_arg [r : Region] (formatField : Word8#) : Nat#
  = do
         case band# formatField 0b11110000w8# of
           0b00010000w8# -> 2# -- Thunk
@@ -194,15 +193,15 @@ formatOfObject_arg [r : Region] (formatField : Word8#) : Nat#
 
 
 --| Get the size of an object.
-sizeOfObject [r : Region] (obj : Ptr# r Obj) : Nat#
+ddcSizeOfObject [r : Region] (obj : Ptr# r Obj) : Nat#
   = do
-        s = case formatOfObject obj of
-              2# -> sizeOfThunk     obj
-              3# -> sizeOfBoxed     obj
-              4# -> sizeOfRaw       obj
-              5# -> sizeOfMixed     obj
-              6# -> sizeOfRawSmall  obj
-           -- 7# -> sizeOfSuspIndir obj -- ISSUE #341: SuspIndir not implemented
+        s = case ddcFormatOfObject obj of
+              2# -> ddcSizeOfThunk     obj
+              3# -> ddcSizeOfBoxed     obj
+              4# -> ddcSizeOfRaw       obj
+              5# -> ddcSizeOfMixed     obj
+              6# -> ddcSizeOfRawSmall  obj
+           -- 7# -> ddcSizeOfSuspIndir obj -- ISSUE #341: SuspIndir not implemented
               _  -> fail#
 
         case eq# s 0# of
@@ -228,13 +227,13 @@ sizeOfObject [r : Region] (obj : Ptr# r Obj) : Nat#
 
 
 -- | Reads a forwarding pointer from an overwritten heap object.
-readBrokenHeart
+ddcReadBrokenHeart
         [r1 r2 : Region]
         (obj   : Ptr# r1 Obj)
                : Ptr# r2 Obj
- =      readBrokenHeart_le obj
+ =      ddcReadBrokenHeart_le obj
 
-readBrokenHeart_le
+ddcReadBrokenHeart_le
         [r1 r2 : Region]
         (obj   : Ptr# r1 Obj)
                : Ptr# r2 Obj
@@ -242,14 +241,14 @@ readBrokenHeart_le
 
 
 -- | Replaces a heap object with a forwarding pointer to its new location.
-writeBrokenHeart
+ddcWriteBrokenHeart
         [r1 r2  : Region]
         (obj    : Ptr# r1 Obj)
         (newObj : Ptr# r2 Obj)
                 : Void#
- =      writeBrokenHeart_le obj newObj
+ =      ddcWriteBrokenHeart_le obj newObj
 
-writeBrokenHeart_le
+ddcWriteBrokenHeart_le
         [r1 r2  : Region]
         (obj    : Ptr# r1 Obj)
         (newObj : Ptr# r2 Obj)
@@ -261,9 +260,9 @@ writeBrokenHeart_le
 -- | Check if an object is anchored. Anchored objects are allocated outside of
 --   the DDC heap and will be left alone by the garbage collector.
 --
-isAnchored [r : Region] (obj : Ptr# r Obj) : Bool#
+ddcIsAnchored [r : Region] (obj : Ptr# r Obj) : Bool#
  = do
-        formatField     = formatFieldOfObject obj
+        formatField     = ddcFormatFieldOfObject obj
 
         case band# formatField 0b1000w8# of
           0b1000w8# -> True#
@@ -313,23 +312,24 @@ isAnchored [r : Region] (obj : Ptr# r Obj) : Bool#
 --       Obj*      payload[];     // Pointers to available arguments.
 --   } Thunk;
 --
-allocThunk [r: Region] (fun: Addr#) 
+ddcAllocThunk 
+        [r: Region] (fun: Addr#) 
         (params: Nat#) (boxes: Nat#) 
         (args:   Nat#) (runs:  Nat#)
         : Ptr# r Obj
  = do
         -- The payload needs to be big enough to store pointers to the 
         -- current available args.
-        bytesObj        = sizeOfThunk_args args
+        bytesObj        = ddcSizeOfThunk_args args
 
         case check# bytesObj of
          True#  -> ()
-         False# -> allocCollect bytesObj
+         False# -> ddcAllocCollect bytesObj
 
-        allocThunk_ok fun params boxes args runs bytesObj
+        ddcAllocThunk_ok fun params boxes args runs bytesObj
 
 
-allocThunk_ok [r: Region] (fun:  Addr#) 
+ddcAllocThunk_ok [r: Region] (fun:  Addr#) 
         (params:   Nat#) (boxes: Nat#)
         (args:     Nat#) (runs:  Nat#)
         (bytesObj: Nat#)
@@ -366,12 +366,12 @@ allocThunk_ok [r: Region] (fun:  Addr#)
 
 
 -- | Determine the total size of a thunk.
-sizeOfThunk [r : Region] (obj : Ptr# r Obj) : Nat#
- =      sizeOfThunk_args (argsThunk obj)
+ddcSizeOfThunk [r : Region] (obj : Ptr# r Obj) : Nat#
+ =      ddcSizeOfThunk_args (ddcArgsThunk obj)
 
 
 -- | Determine the total size of a thunk, given the number of arguments it has.
-sizeOfThunk_args (args : Nat#) : Nat#
+ddcSizeOfThunk_args (args : Nat#) : Nat#
  = do
         -- The payload needs to be big enough to store pointers to the 
         -- current available args.
@@ -386,7 +386,7 @@ sizeOfThunk_args (args : Nat#) : Nat#
 
 
 -- | Copy the available arguments from one thunk to another.
-copyThunk
+ddcCopyThunk
         [rSrc rDst: Region]
         (src: Ptr# rSrc Obj) (dst: Ptr# rDst Obj) 
         (index: Nat#)        (len: Nat#)
@@ -394,59 +394,59 @@ copyThunk
  = case ge# index len of
         True#   -> dst
         False# 
-         -> do  ptr     = getThunk src index
-                setThunk dst 0#  index ptr
-                copyThunk src dst (add# index 1#) len
+         -> do  ptr     = ddcGetThunk src index
+                ddcSetThunk dst 0#  index ptr
+                ddcCopyThunk src dst (add# index 1#) len
 
 
 -- | Copy a thunk while extending the number of available argument slots.
 --   This is used when implementing both the curryN# and applyN# core primops.
-extendThunk 
+ddcExtendThunk 
         [rSrc rDst: Region] 
         (src: Ptr# rSrc Obj) (more: Nat#) 
         : Ptr# rDst Obj
  = do
         -- Function pointer and arity of that function.
-        fun     = funThunk    src
-        params  = paramsThunk src
-        boxes   = boxesThunk  src
+        fun     = ddcFunThunk    src
+        params  = ddcParamsThunk src
+        boxes   = ddcBoxesThunk  src
 
         -- Available arguments in source and destination.
-        args    = argsThunk   src
-        args'   = add# args     more
+        args    = ddcArgsThunk   src
+        args'   = add# args      more
 
         -- Number of times the thunk has been run
-        runs    = runsThunk src
+        runs    = ddcRunsThunk   src
 
         -- Allocate a new thunk with the orignal function and arity.
-        dst     = allocThunk [rDst] (funThunk src) params boxes args' runs
+        dst     = ddcAllocThunk [rDst] (ddcFunThunk src) params boxes args' runs
 
         -- Copy argument pointers from the source into the new thunk.
-        copyThunk src dst 0# args
+        ddcCopyThunk src dst 0# args
 
 
 -- | Get the function pointer from a thunk.
-funThunk        [r: Region] (obj: Ptr# r Obj): Addr#
+ddcFunThunk        [r: Region] (obj: Ptr# r Obj): Addr#
  =      read#    [Addr#] (takePtr# obj) 8#
 
 
 -- | Get the arity of the function in a thunk.
-paramsThunk     [r: Region] (obj: Ptr# r Obj): Nat#
+ddcParamsThunk     [r: Region] (obj: Ptr# r Obj): Nat#
  =      promote# (read# [Word8#] (takePtr# obj) 4#)
 
 
 -- | Get the count of available arguments in a thunk.
-boxesThunk      [r: Region] (obj: Ptr# r Obj): Nat#
+ddcBoxesThunk      [r: Region] (obj: Ptr# r Obj): Nat#
  =      promote# (read# [Word8#] (takePtr# obj) 5#)
 
 
 -- | Get the count of available arguments in a thunk.
-argsThunk       [r: Region] (obj: Ptr# r Obj): Nat#
+ddcArgsThunk       [r: Region] (obj: Ptr# r Obj): Nat#
  =      promote# (read# [Word8#] (takePtr# obj) 6#)
 
 
 -- | Get the count of available arguments in a thunk.
-runsThunk       [r: Region] (obj: Ptr# r Obj): Nat#
+ddcRunsThunk       [r: Region] (obj: Ptr# r Obj): Nat#
  =      promote# (read# [Word8#] (takePtr# obj) 7#)
 
 
@@ -456,7 +456,7 @@ runsThunk       [r: Region] (obj: Ptr# r Obj): Nat#
 --   pointers for the first time the pointer values in the thunk are undefined.
 --   This takes a 'base' and 'offset' parameter separately to allow for easier
 --   code generation.
-setThunk
+ddcSetThunk
         [r1 r2: Region] 
         (obj: Ptr# r1 Obj) (base: Nat#) (offset: Nat#) (val: Ptr# r2 Obj): Void#
  =      write# (takePtr# obj)
@@ -465,7 +465,7 @@ setThunk
 
 
 -- | Get one of the arguments from a thunk.
-getThunk
+ddcGetThunk
         [r1 r2: Region]
         (obj:   Ptr# r1 Obj) (index: Nat#): Ptr# r2 Obj
  =      read#  (takePtr# obj)
@@ -487,20 +487,20 @@ getThunk
 --        ObjData   payload[];    
 --   } DataBoxed;
 --    
-allocBoxed
+ddcAllocBoxed
         [r: Region]
         (tag: Tag#) (arity: Nat#): Ptr# r Obj
  = do   
         -- Multiple arity by 8 bytes-per-pointer to get size of payload.
-        bytesObj        = sizeOfBoxed_arity arity
+        bytesObj        = ddcSizeOfBoxed_arity arity
 
         case check# bytesObj of
          True#  -> ()
-         False# -> allocCollect bytesObj
+         False# -> ddcAllocCollect bytesObj
 
-        allocBoxed_ok tag arity bytesObj
+        ddcAllocBoxed_ok tag arity bytesObj
 
-allocBoxed_ok
+ddcAllocBoxed_ok
         [r: Region]
         (tag: Tag#) (arity: Nat#) (bytesObj: Nat#): Ptr# r Obj
  = do   
@@ -519,13 +519,13 @@ allocBoxed_ok
 
 
 -- | Determine the total size of a boxed data object.
-sizeOfBoxed [r : Region] (obj : Ptr# r Obj) : Nat#
- =      sizeOfBoxed_arity (arityOfBoxed obj)
+ddcSizeOfBoxed [r : Region] (obj : Ptr# r Obj) : Nat#
+ =      ddcSizeOfBoxed_arity (ddcArityOfBoxed obj)
 
 
 -- | Determine the total size of a boxed data object, given the number of
 --   pointers in its payload.
-sizeOfBoxed_arity (arity : Nat#) : Nat#
+ddcSizeOfBoxed_arity (arity : Nat#) : Nat#
  = do
         -- Multiple arity by 8 bytes-per-pointer to get size of payload.
         bytesPayload    = shl# arity (size2# [Addr#])
@@ -534,19 +534,8 @@ sizeOfBoxed_arity (arity : Nat#) : Nat#
 
         bytesObj
 
-
 -- | Get one of the pointers from a boxed data object.
-fieldOfBoxed
-        [r     : Region]
-        (obj   : Ptr# r Obj)
-        (index : Nat#)
-               : Ptr# r Obj
- =      read#  (takePtr# obj)
-               (add# 8# (shl# index (size2# [Addr#])))
-
-
----- | Get one of the pointers from a boxed data object.
-getBoxed 
+ddcGetBoxed 
         [r1 r2: Region]
         (obj: Ptr# r1 Obj) (index: Nat#) 
         : Ptr# r2 Obj
@@ -555,7 +544,7 @@ getBoxed
 
 
 -- | Set one of the pointers from a boxed data object.
-setBoxed 
+ddcSetBoxed 
         [r1 r2: Region]
         (obj: Ptr# r1 Obj) (index: Nat#) (val: Ptr# r2 Obj): Void#
  =      write# (takePtr# obj)
@@ -564,7 +553,7 @@ setBoxed
 
 
 -- | Get the number of pointers in a boxed data object's payload.
-arityOfBoxed [r : Region] (obj : Ptr# r Obj) : Nat#
+ddcArityOfBoxed [r : Region] (obj : Ptr# r Obj) : Nat#
  =      promote# (read# [Word32#] (takePtr# obj) 4#)
 
 
@@ -582,7 +571,7 @@ arityOfBoxed [r : Region] (obj : Ptr# r Obj) : Nat#
 --     ObjData   payload[]; // Contains ptrCount pointers, then raw data.
 --   } DataMixed;
 --
-allocMixed 
+ddcAllocMixed 
         [r: Region]
         (tag: Tag#) (arity: Nat#) (bytesRaw: Nat#) 
         : Ptr# r Obj
@@ -595,12 +584,12 @@ allocMixed
 
         case check# bytesObj of
          True#  -> ()
-         False# -> allocCollect bytesObj
+         False# -> ddcAllocCollect bytesObj
 
-        allocMixed_ok [r] tag arity bytesObj
+        ddcAllocMixed_ok [r] tag arity bytesObj
 
 
-allocMixed_ok
+ddcAllocMixed_ok
         [r: Region]
         (tag: Tag#) (arity: Nat#) (bytesObj: Nat#) 
         : Ptr# r Obj
@@ -622,23 +611,23 @@ allocMixed_ok
 
 
 -- | Determine the total size of a mixed data object.
-sizeOfMixed [r : Region] (obj : Ptr# r Obj) : Nat#
+ddcSizeOfMixed [r : Region] (obj : Ptr# r Obj) : Nat#
  =      promote# (read# [Word64#] (takePtr# obj) 8#)
 
 
 -- | Get one of the pointers from a mixed data object.
-getMixed [r1 r2: Region] (obj: Ptr# r1 Obj) (index: Nat#): Ptr# r2 Obj
+ddcGetMixed [r1 r2: Region] (obj: Ptr# r1 Obj) (index: Nat#): Ptr# r2 Obj
  =      read#   (takePtr# obj)
                 (add# 16# (shl# index (size2# [Addr#])))
 
 
 -- | Get the number of pointers in a mixed data object's payload.
-arityOfMixed [r : Region] (obj : Ptr# r Obj) : Nat#
+ddcArityOfMixed [r : Region] (obj : Ptr# r Obj) : Nat#
  =      promote# (read# [Word32#] (takePtr# obj) 4#)
 
 
 -- | Get the address of the raw data payload from a mixed object.
-payloadMixed [r: Region] (obj: Ptr# r Obj): Ptr# r Word8#
+ddcPayloadMixed [r: Region] (obj: Ptr# r Obj): Ptr# r Word8#
  =      plusPtr# (castPtr# obj) 16#
 
 
@@ -655,7 +644,7 @@ payloadMixed [r: Region] (obj: Ptr# r Obj): Ptr# r Word8#
 --     uint8_t   payload[];  // Raw data that does not contain heap pointers.
 --   } DataRaw;
 --
-allocRaw
+ddcAllocRaw
         [r: Region] (tag: Tag#) (bytesPayload: Nat#): Ptr# r Obj
  = do   
         bytesObj        = add# (size# [Word32#])
@@ -663,11 +652,11 @@ allocRaw
 
         case check# bytesObj of
          True#  -> ()
-         False# -> allocCollect bytesObj
+         False# -> ddcAllocCollect bytesObj
 
-        allocRaw_ok tag bytesObj
+        ddcAllocRaw_ok tag bytesObj
 
-allocRaw_ok 
+ddcAllocRaw_ok 
         [r: Region] (tag: Tag#) (bytesObj: Nat#): Ptr# r Obj
  = do
         addr            = alloc# bytesObj
@@ -684,17 +673,17 @@ allocRaw_ok
 
 
 -- | Determine the total size of a raw data object.
-sizeOfRaw [r : Region] (obj : Ptr# r Obj) : Nat#
+ddcSizeOfRaw [r : Region] (obj : Ptr# r Obj) : Nat#
  =      promote# (read# [Word32#] (takePtr# obj) 4#)
 
 
 -- | Get the payload data from a raw object.
-payloadRaw [r: Region] (obj: Ptr# r Obj): Ptr# r Word8#
+ddcPayloadRaw [r: Region] (obj: Ptr# r Obj): Ptr# r Word8#
  =      plusPtr# (castPtr# obj) 8#
 
 
 -- | Get the size of the payload of a raw object, in bytes.
-payloadSizeRaw [r: Region] (obj: Ptr# r Obj): Nat#
+ddcPayloadSizeRaw [r: Region] (obj: Ptr# r Obj): Nat#
  =      promote# (read# [Word32#] (takePtr# obj) 4#)
 
 
@@ -710,7 +699,7 @@ payloadSizeRaw [r: Region] (obj: Ptr# r Obj): Nat#
 --     uint8_t   payload[];  // Raw data that does not contain heap pointers.
 --   } DataRawSmall;
 --
-allocSmall
+ddcAllocSmall
         [r: Region] 
         (tag: Tag#) (bytesPayload: Nat#): Ptr# r Obj
  = do   
@@ -718,12 +707,12 @@ allocSmall
 
         case check# bytesObj of
          True#   -> ()
-         False#  -> allocCollect bytesObj
+         False#  -> ddcAllocCollect bytesObj
 
-        allocSmall_ok tag bytesPayload bytesObj
+        ddcAllocSmall_ok tag bytesPayload bytesObj
 
 
-allocSmall_ok
+ddcAllocSmall_ok
         [r: Region] 
         (tag: Tag#) (bytesPayload: Nat#) (bytesObj: Nat#): Ptr# r Obj
  = do   
@@ -741,15 +730,15 @@ allocSmall_ok
 
 
 -- | Determine the size of a raw small object.
-sizeOfRawSmall [r : Region] (obj : Ptr# r Obj) : Nat#
+ddcSizeOfRawSmall [r : Region] (obj : Ptr# r Obj) : Nat#
  = do
-        wordsPayload    = argOfObject obj
+        wordsPayload    = ddcArgOfObject obj
         bytesPayload    = shl# wordsPayload 2#
 
         bytesPayload
 
 
 -- | Get the payload data from a raw small object.
-payloadSmall [r: Region] (obj: Ptr# r Obj): Ptr# r Word8#
+ddcPayloadSmall [r: Region] (obj: Ptr# r Obj): Ptr# r Word8#
  =      plusPtr# (castPtr# obj) 4#
 

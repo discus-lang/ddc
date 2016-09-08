@@ -8,8 +8,8 @@ export value
  fillArray      : [r1 r2 : Region]. Ptr# r1 Obj -> Nat# -> Nat# -> Ptr# r2 Obj -> Ptr# r1 Obj
 
 import value
- allocBoxed     : [r1    : Region]. Tag# -> Nat# -> Ptr# r1 Obj
- setBoxed       : [r1 r2 : Region]. Ptr# r1 Obj  -> Nat# -> Ptr# r2 Obj -> Void#
+ ddcAllocBoxed  : [r1    : Region]. Tag# -> Nat# -> Ptr# r1 Obj
+ ddcSetBoxed    : [r1 r2 : Region]. Ptr# r1 Obj  -> Nat# -> Ptr# r2 Obj -> Void#
 
 with letrec
 
@@ -19,7 +19,7 @@ with letrec
 allocArray 
         [r1 r2: Region]
         (len: Nat#) (val: Ptr# r1 Obj): Ptr# r2 Obj
- = do   arr     = allocBoxed [r2] (truncate# 0#) len
+ = do   arr     = ddcAllocBoxed [r2] (truncate# 0#) len
         fillArray arr 0# len val
         arr
 
@@ -64,6 +64,6 @@ fillArray
  = case ge# start end of
         True#   -> arr
         False#  -> do
-                setBoxed arr start val
+                ddcSetBoxed arr start val
                 fillArray arr (add# start 1#) end val
 

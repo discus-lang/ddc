@@ -3,26 +3,28 @@
 module Alloc
 
 export value
-  allocCollect : Nat# -- ^ How much space must be left after collection.
-              -> Unit
+  ddcAllocCollect 
+        :  Nat# -- ^ How much space must be left after collection.
+        -> Unit
 
 import foreign c value
-  malloc      : Nat# -> Addr#
+  malloc      
+        : Nat# -> Addr#
 
-  collectHeap : Addr# -- Word8*
-             -> Addr# -- Word8*
-             -> Addr# -- Word8*
-             -> Addr# -- Word8**
-             -> Unit
+  ddcCollectHeap 
+        :  Addr# -- Word8*
+        -> Addr# -- Word8*
+        -> Addr# -- Word8*
+        -> Addr# -- Word8**
+        -> Unit
 
 with letrec
-
 
 
 -- | Perform a garbage collection.
 --     If we don't free up at least as much space as requested, the runtime
 --     system will panic.
-allocCollect (byteCount : Nat#) : Unit
+ddcAllocCollect (byteCount : Nat#) : Unit
  = do
         -- Check how much data is in the heap before collection.
         pHeapBaseA      = read# heapBase# 0#
@@ -39,10 +41,9 @@ allocCollect (byteCount : Nat#) : Unit
         pHeapBackBaseA  = read# heapBackBase# 0#
         ppHeapBackTopA  = heapBackTop#
 
-        collectHeap pHeapBaseA
-                    pHeapTopA
-                    pHeapBackBaseA
-                    ppHeapBackTopA
+        ddcCollectHeap 
+                pHeapBaseA     pHeapTopA
+                pHeapBackBaseA ppHeapBackTopA
 
         -- #if _DDC_PROFILE_GC
         -- _ddcProfileCollectorEnd();

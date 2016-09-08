@@ -1,16 +1,16 @@
 
 module Runtime.Prim.Text
 export value
- makeTextLit    : [r1: Region]. Addr# -> Ptr# r1 Obj
- takeTextLit    : [r1: Region]. Ptr# r1 Obj -> Addr#
- sizeOfTextLit  : [r1: Region]. Ptr# r1 Obj -> Nat#
- indexTextLit   : [r1: Region]. Ptr# r1 Obj -> Nat# -> Word8#
+ makeTextLit       : [r1: Region]. Addr# -> Ptr# r1 Obj
+ takeTextLit       : [r1: Region]. Ptr# r1 Obj -> Addr#
+ sizeOfTextLit     : [r1: Region]. Ptr# r1 Obj -> Nat#
+ indexTextLit      : [r1: Region]. Ptr# r1 Obj -> Nat# -> Word8#
 
 import value 
  -- Objects with raw, non-pointer data.
- allocRaw       : [r1: Region]. Tag# -> Nat# -> Ptr# r1 Obj
- payloadRaw     : [r1: Region]. Ptr# r1 Obj  -> Ptr# r1 Word8#
- payloadSizeRaw : [r1: Region]. Ptr# r1 Obj  -> Nat#
+ ddcAllocRaw       : [r1: Region]. Tag# -> Nat# -> Ptr# r1 Obj
+ ddcPayloadRaw     : [r1: Region]. Ptr# r1 Obj  -> Ptr# r1 Word8#
+ ddcPayloadSizeRaw : [r1: Region]. Ptr# r1 Obj  -> Nat#
 
 with letrec
 
@@ -31,8 +31,8 @@ with letrec
 makeTextLit [r1: Region] (addrString: Addr#): Ptr# r1 Obj
  = do
         len     = sizeOfString 0# addrString
-        obj     = allocRaw (truncate# 0#) (add# 4# (size# [Addr#]))
-        payload = takePtr# (payloadRaw obj)
+        obj     = ddcAllocRaw (truncate# 0#) (add# 4# (size# [Addr#]))
+        payload = takePtr# (ddcPayloadRaw obj)
         write# [Word32#] payload 0# (truncate# len)
         write# [Addr#]   payload 4# addrString
         obj
@@ -41,14 +41,14 @@ makeTextLit [r1: Region] (addrString: Addr#): Ptr# r1 Obj
 -- | Take the pointer from a text literal.
 takeTextLit [r1: Region] (obj: Ptr# r1 Obj): Addr#
  = do   
-        payload = takePtr# (payloadRaw obj)
+        payload = takePtr# (ddcPayloadRaw obj)
         read# [Addr#] payload 4#
 
 
 -- | Get the size of a text literal, in bytes.
 sizeOfTextLit [r1: Region] (obj: Ptr# r1 Obj): Nat#
  = do
-        payload = takePtr# (payloadRaw obj)
+        payload = takePtr# (ddcPayloadRaw obj)
         promote# (read# [Word32#] payload 0#)
 
 

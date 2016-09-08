@@ -7,26 +7,26 @@ export value
 
 import value 
  -- Primitives imported from C-land.
- primPutString  : TextLit# -> Void#
- primShowAddr   : Addr#    -> TextLit#
- primShowNat    : Nat#     -> TextLit#
- primShowWord32 : Word32#  -> TextLit#
+ primPutString     : TextLit# -> Void#
+ primShowAddr      : Addr#    -> TextLit#
+ primShowNat       : Nat#     -> TextLit#
+ primShowWord32    : Word32#  -> TextLit#
 
  -- Generic objects.
- getTag : [r : Region]. Ptr# r Obj -> Tag#
+ ddcGetTag         : [r : Region]. Ptr# r Obj -> Tag#
 
  -- Thunk objects.
- paramsThunk    : [r: Region]. Ptr# r Obj -> Nat#
- boxesThunk     : [r: Region]. Ptr# r Obj -> Nat#
- argsThunk      : [r: Region]. Ptr# r Obj -> Nat#
- runsThunk      : [r: Region]. Ptr# r Obj -> Nat#
- funThunk       : [r: Region]. Ptr# r Obj -> Addr#
- getThunk       : [r1 r2 : Region]. Ptr# r1 Obj -> Nat# -> Ptr# r2 Obj
+ ddcParamsThunk    : [r: Region]. Ptr# r Obj -> Nat#
+ ddcBoxesThunk     : [r: Region]. Ptr# r Obj -> Nat#
+ ddcArgsThunk      : [r: Region]. Ptr# r Obj -> Nat#
+ ddcRunsThunk      : [r: Region]. Ptr# r Obj -> Nat#
+ ddcFunThunk       : [r: Region]. Ptr# r Obj -> Addr#
+ ddcGetThunk       : [r1 r2 : Region]. Ptr# r1 Obj -> Nat# -> Ptr# r2 Obj
 
  -- Boxed objects.
- allocBoxed     : [r1    : Region]. Tag# -> Nat# -> Ptr# r1 Obj
- getBoxed       : [r1 r2 : Region]. Ptr# r1 Obj  -> Nat# -> Ptr# r2 Obj
- setBoxed       : [r1 r2 : Region]. Ptr# r1 Obj  -> Nat# -> Ptr# r2 Obj -> Void#
+ ddcAllocBoxed     : [r1    : Region]. Tag# -> Nat# -> Ptr# r1 Obj
+ ddcGetBoxed       : [r1 r2 : Region]. Ptr# r1 Obj  -> Nat# -> Ptr# r2 Obj
+ ddcSetBoxed       : [r1 r2 : Region]. Ptr# r1 Obj  -> Nat# -> Ptr# r2 Obj -> Void#
 
 with letrec
 
@@ -82,11 +82,11 @@ traceThunk [r: Region] (trace: Bool#) (obj: Ptr# r Obj): Nat#
         fieldAddr       "{   ptr     = "# (takePtr# obj)
         fieldWord32     "    format  = "# format
         fieldWord32     "    tag     = "# tag
-        fieldNat        "    params  = "# (paramsThunk obj)
-        fieldNat        "    boxes   = "# (boxesThunk  obj)
-        fieldNat        "    args    = "# (argsThunk   obj)
-        fieldNat        "    runs    = "# (runsThunk   obj)
-        fieldAddr       "    fun     = "# (funThunk    obj)
+        fieldNat        "    params  = "# (ddcParamsThunk obj)
+        fieldNat        "    boxes   = "# (ddcBoxesThunk  obj)
+        fieldNat        "    args    = "# (ddcArgsThunk   obj)
+        fieldNat        "    runs    = "# (ddcRunsThunk   obj)
+        fieldAddr       "    fun     = "# (ddcFunThunk    obj)
         traceThunkPtrs obj 0#
         primPutString   "}\n"#
 
@@ -97,13 +97,13 @@ traceThunk [r: Region] (trace: Bool#) (obj: Ptr# r Obj): Nat#
 
 -- | Print pointers in a thunk object, which point to more objects.
 traceThunkPtrs [r: Region] (obj: Ptr# r Obj) (i: Nat#) : Nat#
- = do   args    = argsThunk obj
+ = do   args    = ddcArgsThunk obj
         case eq# args i of
          True#  
           ->    0#
 
          False# 
-          -> do addr    = takePtr# (getThunk obj i)
+          -> do addr    = takePtr# (ddcGetThunk obj i)
                 primPutString "    arg "#
                 primPutString (primShowNat i)
                 primPutString "   = "#
@@ -114,13 +114,13 @@ traceThunkPtrs [r: Region] (obj: Ptr# r Obj) (i: Nat#) : Nat#
 
 -- | Trace out the objects that this one refers to.
 traceThunkPtrss [r: Region] (obj: Ptr# r Obj) (i: Nat#) : Nat#
- = do   args    = argsThunk obj
+ = do   args    = ddcArgsThunk obj
         case eq# args i of
          True#  
           ->    0#
 
          False# 
-          -> do traceObj True# (getThunk obj i)
+          -> do traceObj True# (ddcGetThunk obj i)
                 traceThunkPtrss obj (add# i 1#)
 
 
@@ -154,7 +154,7 @@ traceBoxedPtrs [r: Region] (obj: Ptr# r Obj) (n: Nat#) (i: Nat#) : Nat#
           ->    0#
 
          False# 
-          -> do addr     = takePtr# (getBoxed obj i)
+          -> do addr     = takePtr# (ddcGetBoxed obj i)
 
                 primPutString "    arg "#
                 primPutString (primShowNat i)
@@ -171,7 +171,7 @@ traceBoxedPtrss [r: Region] (obj: Ptr# r Obj) (n: Nat#) (i: Nat#) : Nat#
           ->    0#
 
          False# 
-          -> do traceObj True# (getBoxed obj i)
+          -> do traceObj True# (ddcGetBoxed obj i)
                 traceBoxedPtrss obj n (add# i 1#)
 
 

@@ -15,32 +15,32 @@ letrec {
             = let ^: Ptr# rT Obj
                     = x in
               let ^: Ptr# rT Word8#
-                    = payloadSmall [rT] ^0 in
+                    = ddcPayloadSmall [rT] ^0 in
               let ^: Word16#
                     = peek# [rT] [Word16#] (castPtr# [rT] [Word16#] [Word8#] ^0) 0# in
               ^0 in
       case x0 of {
         5w16#  
          -> let ^: Ptr# rT Obj
-                  = allocSmall [rT] TAG0# 8# in
+                  = ddcAllocSmall [rT] TAG0# 8# in
             let ^: Ptr# rT Word8#
-                  = payloadSmall [rT] ^0 in
+                  = ddcPayloadSmall [rT] ^0 in
             let _: Void#
                   = poke# [rT] [Word16#] (castPtr# [rT] [Word16#] [Word8#] ^0) 0# 6w16# in
             ^1;
         7w16#  
          -> let ^: Ptr# rT Obj
-                  = allocSmall [rT] TAG0# 8# in
+                  = ddcAllocSmall [rT] TAG0# 8# in
             let ^: Ptr# rT Word8#
-                  = payloadSmall [rT] ^0 in
+                  = ddcPayloadSmall [rT] ^0 in
             let _: Void#
                   = poke# [rT] [Word16#] (castPtr# [rT] [Word16#] [Word8#] ^0) 0# 8w16# in
             ^1;
         _ 
          -> let ^: Ptr# rT Obj
-                  = allocSmall [rT] TAG0# 8# in
+                  = ddcAllocSmall [rT] TAG0# 8# in
             let ^: Ptr# rT Word8#
-                  = payloadSmall [rT] ^0 in
+                  = ddcPayloadSmall [rT] ^0 in
             let _: Void#
                   = poke# [rT] [Word16#] (castPtr# [rT] [Word16#] [Word8#] ^0) 0# 0w16# in
             ^1
@@ -56,32 +56,32 @@ letrec {
             = let ^: Ptr# rT Obj
                     = x in
               let ^: Ptr# rT Word8#
-                    = payloadSmall [rT] ^0 in
+                    = ddcPayloadSmall [rT] ^0 in
               let ^: Word32#
                     = peek# [rT] [Word32#] (castPtr# [rT] [Word32#] [Word8#] ^0) 0# in
               ^0 in
       case x0 of {
         5w32#  
          -> let ^: Ptr# rT Obj
-                  = allocSmall [rT] TAG0# 8# in
+                  = ddcAllocSmall [rT] TAG0# 8# in
             let ^: Ptr# rT Word8#
-                  = payloadSmall [rT] ^0 in
+                  = ddcPayloadSmall [rT] ^0 in
             let _: Void#
                   = poke# [rT] [Word32#] (castPtr# [rT] [Word32#] [Word8#] ^0) 0# 6w32# in
             ^1;
         7w32#  
          -> let ^: Ptr# rT Obj
-                  = allocSmall [rT] TAG0# 8# in
+                  = ddcAllocSmall [rT] TAG0# 8# in
             let ^: Ptr# rT Word8#
-                  = payloadSmall [rT] ^0 in
+                  = ddcPayloadSmall [rT] ^0 in
             let _: Void#
                   = poke# [rT] [Word32#] (castPtr# [rT] [Word32#] [Word8#] ^0) 0# 8w32# in
             ^1;
         _ 
          -> let ^: Ptr# rT Obj
-                  = allocSmall [rT] TAG0# 8# in
+                  = ddcAllocSmall [rT] TAG0# 8# in
             let ^: Ptr# rT Word8#
-                  = payloadSmall [rT] ^0 in
+                  = ddcPayloadSmall [rT] ^0 in
             let _: Void#
                   = poke# [rT] [Word32#] (castPtr# [rT] [Word32#] [Word8#] ^0) 0# 0w32# in
             ^1
@@ -97,32 +97,32 @@ letrec {
             = let ^: Ptr# rT Obj
                     = x in
               let ^: Ptr# rT Word8#
-                    = payloadSmall [rT] ^0 in
+                    = ddcPayloadSmall [rT] ^0 in
               let ^: Word64#
                     = peek# [rT] [Word64#] (castPtr# [rT] [Word64#] [Word8#] ^0) 0# in
               ^0 in
       case x0 of {
         5w64#  
          -> let ^: Ptr# rT Obj
-                  = allocSmall [rT] TAG0# 8# in
+                  = ddcAllocSmall [rT] TAG0# 8# in
             let ^: Ptr# rT Word8#
-                  = payloadSmall [rT] ^0 in
+                  = ddcPayloadSmall [rT] ^0 in
             let _: Void#
                   = poke# [rT] [Word64#] (castPtr# [rT] [Word64#] [Word8#] ^0) 0# 6w64# in
             ^1;
         7w64#  
          -> let ^: Ptr# rT Obj
-                  = allocSmall [rT] TAG0# 8# in
+                  = ddcAllocSmall [rT] TAG0# 8# in
             let ^: Ptr# rT Word8#
-                  = payloadSmall [rT] ^0 in
+                  = ddcPayloadSmall [rT] ^0 in
             let _: Void#
                   = poke# [rT] [Word64#] (castPtr# [rT] [Word64#] [Word8#] ^0) 0# 8w64# in
             ^1;
         _ 
          -> let ^: Ptr# rT Obj
-                  = allocSmall [rT] TAG0# 8# in
+                  = ddcAllocSmall [rT] TAG0# 8# in
             let ^: Ptr# rT Word8#
-                  = payloadSmall [rT] ^0 in
+                  = ddcPayloadSmall [rT] ^0 in
             let _: Void#
                   = poke# [rT] [Word64#] (castPtr# [rT] [Word64#] [Word8#] ^0) 0# 0w64# in
             ^1
@@ -139,24 +139,24 @@ letrec {
             = let ^: Ptr# rT Obj
                     = x in
               let ^: Ptr# rT Word8#
-                    = payloadSmall [rT] ^0 in
+                    = ddcPayloadSmall [rT] ^0 in
               let ^: Bool#
                     = peek# [rT] [Bool#] (castPtr# [rT] [Bool#] [Word8#] ^0) 0# in
               ^0 in
       case x0 of {
         True#  
          -> let ^: Ptr# rT Obj
-                  = allocSmall [rT] TAG0# 8# in
+                  = ddcAllocSmall [rT] TAG0# 8# in
             let ^: Ptr# rT Word8#
-                  = payloadSmall [rT] ^0 in
+                  = ddcPayloadSmall [rT] ^0 in
             let _: Void#
                   = poke# [rT] [Bool#] (castPtr# [rT] [Bool#] [Word8#] ^0) 0# False# in
             ^1;
         _ 
          -> let ^: Ptr# rT Obj
-                  = allocSmall [rT] TAG0# 8# in
+                  = ddcAllocSmall [rT] TAG0# 8# in
             let ^: Ptr# rT Word8#
-                  = payloadSmall [rT] ^0 in
+                  = ddcPayloadSmall [rT] ^0 in
             let _: Void#
                   = poke# [rT] [Bool#] (castPtr# [rT] [Bool#] [Word8#] ^0) 0# True# in
             ^1
@@ -180,7 +180,7 @@ module Test with
 letrec {
   app: [a$r b$r: Region].Ptr# rT Obj -> Ptr# rT Obj -> Ptr# rT Obj
     = Λ(a$r b$r: Region).
-      λ(f x: Ptr# rT Obj). apply1 [rT] [rT] [rT] f x
+      λ(f x: Ptr# rT Obj). ddcApply1 [rT] [rT] [rT] f x
 }
 
 
@@ -192,14 +192,14 @@ letrec {
     = λ(x: Ptr# rT Obj).
       let x0: Ptr# rT Obj
             = let ^: Ptr# rT Obj
-                    = allocBoxed [rT] TAG0# 0# in
+                    = ddcAllocBoxed [rT] TAG0# 0# in
               ^0 in
       let ^: Ptr# rT Obj
-            = allocBoxed [rT] TAG1# 2# in
+            = ddcAllocBoxed [rT] TAG1# 2# in
       let _: Void#
-            = setBoxed [rT] [rT] ^0 0# x in
+            = ddcSetBoxed [rT] [rT] ^0 0# x in
       let _: Void#
-            = setBoxed [rT] [rT] ^0 1# x0 in
+            = ddcSetBoxed [rT] [rT] ^0 1# x0 in
       ^0
 }
 
@@ -210,13 +210,13 @@ module Test with
 letrec {
   headUnit: Ptr# rT Obj -> Ptr# rT Obj
     = λ(xx: Ptr# rT Obj).
-      case tagOfObject [rT] xx of {
+      case ddcTagOfObject [rT] xx of {
         TAG1#  
          -> let x: Ptr# rT Obj
-                  = getBoxed [rT] [rT] xx 0# in
+                  = ddcGetBoxed [rT] [rT] xx 0# in
             x;
         TAG0#  
-         -> allocBoxed [rT] TAG0# 0#;
+         -> ddcAllocBoxed [rT] TAG0# 0#;
         _ 
          -> fail# [Ptr# rT Obj]
       }
@@ -261,32 +261,32 @@ letrec {
   thing$l$L$2: Ptr# rT Obj -> Ptr# rT Obj -> Ptr# rT Obj
     = λ(l$0$0 l$1$1: Ptr# rT Obj).
       let ^: Ptr# rT Obj
-            = allocBoxed [rT] TAG0# 2# in
+            = ddcAllocBoxed [rT] TAG0# 2# in
       let _: Void#
-            = setBoxed [rT] [rT] ^0 0# l$0$0 in
+            = ddcSetBoxed [rT] [rT] ^0 0# l$0$0 in
       let _: Void#
-            = setBoxed [rT] [rT] ^0 1# l$1$1 in
+            = ddcSetBoxed [rT] [rT] ^0 1# l$1$1 in
       ^0;
   
   thing: Ptr# rT Obj -> Ptr# rT Obj
     = λ(_: Ptr# rT Obj).
       let x0: Ptr# rT Obj
-            = allocThunk [rT]
+            = ddcAllocThunk [rT]
                   (convert# [Addr#] [Ptr# rT Obj -> Ptr# rT Obj -> Ptr# rT Obj] thing$l$L$2) 2# 0# 0# 0# in
       let x1: Ptr# rT Obj
             = let ^: Ptr# rT Obj
-                    = allocSmall [rT] TAG0# 8# in
+                    = ddcAllocSmall [rT] TAG0# 8# in
               let ^: Ptr# rT Word8#
-                    = payloadSmall [rT] ^0 in
+                    = ddcPayloadSmall [rT] ^0 in
               let _: Void#
                     = poke# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# 5# in
               ^1 in
       let ^: Ptr# rT Obj
-            = extendThunk [rT] [rT] x0 1# in
+            = ddcExtendThunk [rT] [rT] x0 1# in
       let ^: Nat#
-            = argsThunk [rT] x0 in
+            = ddcArgsThunk [rT] x0 in
       let _: Void#
-            = setThunk [rT] [rT] ^1 ^0 0# x1 in
+            = ddcSetThunk [rT] [rT] ^1 ^0 0# x1 in
       ^1
 }
 
@@ -313,9 +313,9 @@ letrec {
     = λ(_: Ptr# rT Obj).
       let x0: Ptr# rT Obj
             = let ^: Ptr# rT Obj
-                    = allocSmall [rT] TAG0# 8# in
+                    = ddcAllocSmall [rT] TAG0# 8# in
               let ^: Ptr# rT Word8#
-                    = payloadSmall [rT] ^0 in
+                    = ddcPayloadSmall [rT] ^0 in
               let _: Void#
                     = poke# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# 5# in
               ^1 in
@@ -334,9 +334,9 @@ letrec {
     = λ(_: Ptr# rT Obj).
       let x0: Ptr# rT Obj
             = let ^: Ptr# rT Obj
-                    = allocSmall [rT] TAG0# 8# in
+                    = ddcAllocSmall [rT] TAG0# 8# in
               let ^: Ptr# rT Word8#
-                    = payloadSmall [rT] ^0 in
+                    = ddcPayloadSmall [rT] ^0 in
               let _: Void#
                     = poke# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# 5# in
               ^1 in
@@ -352,9 +352,9 @@ letrec {
   blerk: Ptr# rT Obj -> Ptr# rT Obj
     = λ(_: Ptr# rT Obj).
       let ^: Ptr# rT Obj
-            = allocSmall [rT] TAG0# 8# in
+            = ddcAllocSmall [rT] TAG0# 8# in
       let ^: Ptr# rT Word8#
-            = payloadSmall [rT] ^0 in
+            = ddcPayloadSmall [rT] ^0 in
       let _: Void#
             = poke# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# 5# in
       ^1

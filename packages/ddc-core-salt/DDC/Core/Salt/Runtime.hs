@@ -143,7 +143,7 @@ xTagOfObject a tR x2
 
 utTagOfObject :: (Bound Name, Type Name)
 utTagOfObject
- =      ( UName (NameVar "tagOfObject")
+ =      ( UName (NameVar "ddcTagOfObject")
         ,       tForall kRegion $ \r -> tPtr r tObj `tFun` tTag)
 
 
@@ -165,7 +165,7 @@ xAllocThunk a tR xFun xParam xBoxes xArgs xRun
 
 utAllocThunk :: (Bound Name, Type Name)
 utAllocThunk
- =      ( UName (NameVar "allocThunk")
+ =      ( UName (NameVar "ddcAllocThunk")
         , tForall kRegion 
            $ \tR -> (tAddr `tFun` tNat `tFun` tNat `tFun` tNat 
                            `tFun` tNat `tFun` tPtr tR tObj))
@@ -183,7 +183,7 @@ xCopyArgsOfThunk a tRSrc tRDst xSrc xDst xIndex xLen
 
 utCopyArgsOfThunk :: (Bound Name, Type Name)
 utCopyArgsOfThunk
- =      ( UName (NameVar "copyThunk")
+ =      ( UName (NameVar "ddcCopyThunk")
         , tForalls [kRegion, kRegion]
            $ \[tR1, tR2] -> (tPtr tR1 tObj 
                                 `tFun` tPtr tR2 tObj
@@ -202,7 +202,7 @@ xExtendThunk a tRSrc tRDst xSrc xMore
 
 utExtendThunk :: (Bound Name, Type Name)
 utExtendThunk
- =      ( UName (NameVar "extendThunk")
+ =      ( UName (NameVar "ddcExtendThunk")
         , tForalls [kRegion, kRegion]
            $ \[tR1, tR2] -> (tPtr tR1 tObj `tFun` tNat `tFun` tPtr tR2 tObj))
 
@@ -218,7 +218,7 @@ xArgsOfThunk a tR xThunk
 
 utArgsOfThunk :: (Bound Name, Type Name)
 utArgsOfThunk
- =      ( UName (NameVar "argsThunk")
+ =      ( UName (NameVar "ddcArgsThunk")
         , tForall kRegion
            $ \tR -> (tPtr tR tObj `tFun` tNat))
 
@@ -240,7 +240,7 @@ xSetFieldOfThunk a tR tC xObj xBase xIndex xVal
 
 utSetFieldOfThunk :: (Bound Name, Type Name)
 utSetFieldOfThunk
- =      ( UName (NameVar "setThunk")
+ =      ( UName (NameVar "ddcSetThunk")
         , tForalls [kRegion, kRegion]
            $ \[tR1, tR2] 
            -> (tPtr tR1 tObj 
@@ -273,7 +273,7 @@ utApplyThunk arity
                                 ++ [tPtr rResult tObj]
                    in   t'
 
-   in   ( UName (NameVar $ "apply" ++ show arity)
+   in   ( UName (NameVar $ "ddcApply" ++ show arity)
         , t )
 
 
@@ -291,7 +291,7 @@ xRunThunk a trThunk trResult xArg
 
 utRunThunk :: (Bound Name, Type Name)
 utRunThunk 
- =      ( UName (NameVar $ "runThunk")
+ =      ( UName (NameVar $ "ddcRunThunk")
         , tForalls [kRegion, kRegion] 
                 $ \[tR1, tR2] -> tPtr tR1 tObj `tFun` tPtr tR2 tObj)
 
@@ -307,7 +307,7 @@ xAllocBoxed a tR tag x2
 
 utAllocBoxed :: (Bound Name, Type Name)
 utAllocBoxed
- =      ( UName (NameVar "allocBoxed")
+ =      ( UName (NameVar "ddcAllocBoxed")
         , tForall kRegion $ \r -> (tTag `tFun` tNat `tFun` tPtr r tObj))
 
 
@@ -328,7 +328,7 @@ xGetFieldOfBoxed a trPrime trField x2 offset
 
 utGetFieldOfBoxed :: (Bound Name, Type Name)
 utGetFieldOfBoxed 
- =      ( UName (NameVar "getBoxed")
+ =      ( UName (NameVar "ddcGetBoxed")
         , tForalls [kRegion, kRegion]
                 $ \[r1, r2] 
                 -> tPtr r1 tObj
@@ -355,7 +355,7 @@ xSetFieldOfBoxed a trPrime trField x2 offset val
 
 utSetFieldOfBoxed :: (Bound Name, Type Name)
 utSetFieldOfBoxed 
- =      ( UName (NameVar "setBoxed")
+ =      ( UName (NameVar "ddcSetBoxed")
         , tForalls [kRegion, kRegion]
             $ \[r1, t2] -> tPtr r1 tObj `tFun` tNat `tFun` tPtr t2 tObj `tFun` tVoid)
 
@@ -369,7 +369,7 @@ xAllocRaw a tR tag x2
 
 utAllocRaw :: (Bound Name, Type Name)
 utAllocRaw
- =      ( UName (NameVar "allocRaw")
+ =      ( UName (NameVar "ddcAllocRaw")
         , tForall kRegion $ \r -> (tTag `tFun` tNat `tFun` tPtr r tObj))
 
 
@@ -381,7 +381,7 @@ xPayloadOfRaw a tR x2
  
 utPayloadOfRaw :: (Bound Name, Type Name)
 utPayloadOfRaw
- =      ( UName (NameVar "payloadRaw")
+ =      ( UName (NameVar "ddcPayloadRaw")
         , tForall kRegion $ \r -> (tFun (tPtr r tObj) (tPtr r (tWord 8))))
 
 
@@ -407,7 +407,7 @@ xAllocSmall a tR tag x2
 
 utAllocSmall :: (Bound Name, Type Name)
 utAllocSmall
- =      ( UName (NameVar "allocSmall")
+ =      ( UName (NameVar "ddcAllocSmall")
         , tForall kRegion $ \r -> (tTag `tFun` tNat `tFun` tPtr r tObj))
 
 
@@ -419,7 +419,7 @@ xPayloadOfSmall a tR x2
  
 utPayloadOfSmall :: (Bound Name, Type Name)
 utPayloadOfSmall
- =      ( UName (NameVar "payloadSmall")
+ =      ( UName (NameVar "ddcPayloadSmall")
         , tForall kRegion $ \r -> (tFun (tPtr r tObj) (tPtr r (tWord 8))))
 
 
@@ -445,7 +445,7 @@ xAllocInit a bytes
 
 utAllocInit :: (Bound Name, Type Name)
 utAllocInit
- =      ( UName (NameVar "allocInit")
+ =      ( UName (NameVar "ddcAllocInit")
         , tNat `tFun` tUnit )
 
 -- | Check if allocation is possible, if not perform garbage collection.
@@ -466,7 +466,7 @@ xCollectInit a bytes
 
 utCollectInit :: (Bound Name, Type Name)
 utCollectInit
- =      ( UName (NameVar "collectInit")
+ =      ( UName (NameVar "ddcCollectInit")
         , tNat `tFun` tUnit )
 
 
