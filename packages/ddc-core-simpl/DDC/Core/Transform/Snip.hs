@@ -209,7 +209,8 @@ buildNormalisedApp config arities f0 args@( (_, annot) : _)
 --   Unlike the `buildNormalisedFunApp` function above, this one
 --   wants the function part to be normalised as well.
 buildNormalisedFunApp
-        :: Config         -- ^ Snipper configuration.
+        :: Ord n
+        => Config         -- ^ Snipper configuration.
         -> a              -- ^ Annotation to use.
         -> Int            -- ^ Arity of the function part.
         -> Exp a n        -- ^ Function part.
@@ -283,7 +284,7 @@ buildNormalisedFunApp config an funArity xFun xsArgs
 -- | Sort function arguments into either the atomic ones, 
 --   or compound ones.
 splitArgs 
-        :: Config               
+        :: Ord n => Config               
         -> [(Exp a n, a)] 
         -> [( Exp a n            -- Expression to use as the new argument.
             , a                  -- Annoation for the argument application.
@@ -308,7 +309,7 @@ splitArgs config args
 
 -- | If `snipLetResults` is set and this is not an atomic expression then
 --   introduce a new binding for it.
-snipLetBody :: Config -> a -> Exp a n -> Exp a n
+snipLetBody :: Ord n => Config -> a -> Exp a n -> Exp a n
 snipLetBody config a xx
         | configSnipLetBody config
         , not (isAtom xx)
@@ -323,16 +324,21 @@ snipLetBody config a xx
 
 -- | Check if an expression needs a binding, or if it's simple enough to be
 --   applied as-is.
-isAtom :: Exp a n -> Bool
+isAtom :: Ord n => Exp a n -> Bool
 isAtom xx
  = case xx of
-        XVar{}          -> True
         XCon{}          -> True
         XType{}         -> True
         XWitness{}      -> True
 
-        -- Keep applications of variables to their types together.
---        XApp _ x1 XType{} -> isAtom x1
+        XVar _ x
+         | UPrim _ t    <- x
+         , Just 0       <- arityFromType t
+         -> False
+
+         | otherwise
+         -> True
+
 
         -- Casts are ignored by code generator, so we can leave them in if
         -- their subexpression is normal

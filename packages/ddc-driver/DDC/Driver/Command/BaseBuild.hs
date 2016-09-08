@@ -17,13 +17,16 @@ import DDC.Build.Interface.Store        (Store)
 baseSaltFiles :: Builder -> [FilePath]
 baseSaltFiles builder
  = let  bits    = show $ archPointerWidth $ platformArch $ buildTarget builder
-        runtime = "salt" </> "runtime" ++ bits
-   in   [ runtime </> "debug"           </> "Trace.dcs"
-        , runtime </> "primitive"       </> "Array.dcs"
-        , runtime </> "primitive"       </> "Ref.dcs"
-        , runtime </> "primitive"       </> "Text.dcs"
-        , runtime </> "Apply.dcs"
-        , runtime </> "Object.dcs" ]
+        runtime = "salt"  </> "runtime"
+   in   [ runtime         </> "Alloc.dcs"
+        , runtime         </> "Collect.dcs"
+        , runtime         </> "Init.dcs"
+        , runtime ++ bits </> "debug"           </> "Trace.dcs"
+        , runtime ++ bits </> "primitive"       </> "Array.dcs"
+        , runtime ++ bits </> "primitive"       </> "Ref.dcs"
+        , runtime ++ bits </> "primitive"       </> "Text.dcs"
+        , runtime ++ bits </> "Apply.dcs"
+        , runtime ++ bits </> "Object.dcs" ]
 
 
 baseSeaFiles  :: Builder -> [FilePath]

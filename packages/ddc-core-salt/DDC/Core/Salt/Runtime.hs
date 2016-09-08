@@ -68,8 +68,18 @@ import Data.Map                 (Map)
 -- | Runtime system configuration
 data Config
         = Config
-        { -- | Used a fixed-size heap of this many bytes.
-          configHeapSize        :: Integer 
+        { -- | Use two fixed-size heaps of this many bytes. We allocate two
+          --   heaps as the garbage collector is a two-space copying collector.
+          configHeapSize        :: Integer
+
+          -- | How many pointers to heap objects can we hold in the slot
+          --   stack.
+          --
+          --   The slot stack mirrors the actual stack, but differs in
+          --   that it only contains pointers to heap objects. The garbage
+          --   collector uses this information to determine which heap objects
+          --   are still live in the program.
+        , configSlotStackSize   :: Integer
         }
 
 

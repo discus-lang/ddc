@@ -385,6 +385,16 @@ convertSimple ctx ectx xx
                  return $ Seq.singleton $ annotNil 
                         $ ISet vDst x'
 
+         -- Primitive values.
+         A.XPrim p  
+          | mDst        <- takeNonVoidVarOfContext ectx
+          , Just go     <- foldl (<|>) empty
+                                [ convPrimCall  ctx mDst p []
+                                , convPrimArith ctx mDst p []
+                                , convPrimCast  ctx mDst p []
+                                , convPrimStore ctx mDst p [] ]
+          -> go
+
          -- Primitive operators.
          A.XApp{}
           | Just (p, args) <- A.takeXPrimApps xx

@@ -60,6 +60,7 @@ lookupCallConv name mm
 data Global
         = GlobalStatic   Var Static
         | GlobalExternal Var 
+        deriving Show
 
 
 -- | Return the 'LlvmType' of the 'LMGlobal'

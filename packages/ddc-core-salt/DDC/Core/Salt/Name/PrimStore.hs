@@ -16,6 +16,7 @@ data PrimStore
         -- | Log2 of number of bytes need to store a value of a primitive type.
         | PrimStoreSize2
 
+
         -- Allocation -----------------
         -- | Create a heap of the given size.
         --     This must be called before @alloc#@ below, and has global side effect. 
@@ -36,6 +37,7 @@ data PrimStore
         -- | Allocate a pointer on the stack for a GC root.
         | PrimStoreAllocSlot
 
+
         -- Addr operations ------------
         -- | Read a value from the store at the given address and offset.
         | PrimStoreRead
@@ -51,6 +53,7 @@ data PrimStore
 
         -- | Subtract an offset in bytes from an address.
         | PrimStoreMinusAddr
+
 
         -- Ptr operations -------------
         -- | Read a value from a pointer plus offset.
@@ -79,6 +82,38 @@ data PrimStore
 
         -- | Cast between pointer types.
         | PrimStoreCastPtr
+
+
+        -- Slot Stack -----------------
+        -- | Base address of the slot stack.
+        | PrimStoreSlotBase
+
+        -- | The top of the slot stack.
+        --     The next slot is allocated here.
+        | PrimStoreSlotTop
+
+        -- | The maximum value that slotTop# can take without overflowing the stack.
+        | PrimStoreSlotMax
+
+
+        -- Heap -----------------------
+        -- | Front Heap: The first object is allocated at this address.
+        | PrimStoreHeapBase
+
+        -- | Front Heap: The next object is allocated starting from this address.
+        | PrimStoreHeapTop
+
+        -- | Front Heap: Points to the last byte in the heap which can be allocated.
+        | PrimStoreHeapMax
+
+        -- | Back Heap: The first object is allocated at this address.
+        | PrimStoreHeapBackBase
+
+        -- | Back Heap: The next object is allocated starting from this address.
+        | PrimStoreHeapBackTop
+
+        -- | Back Heap: Points to the last byte in the heap which can be allocated.
+        | PrimStoreHeapBackMax
         deriving (Eq, Ord, Show)
 
 
@@ -113,6 +148,16 @@ instance Pretty PrimStore where
         PrimStoreTakePtr        -> text "takePtr#"
         PrimStoreCastPtr        -> text "castPtr#"
 
+        PrimStoreSlotBase       -> text "slotBase#"
+        PrimStoreSlotTop        -> text "slotTop#"
+        PrimStoreSlotMax        -> text "slotMax#"
+        PrimStoreHeapBase       -> text "heapBase#"
+        PrimStoreHeapTop        -> text "heapTop#"
+        PrimStoreHeapMax        -> text "heapMax#"
+        PrimStoreHeapBackBase   -> text "heapBackBase#"
+        PrimStoreHeapBackTop    -> text "heapBackTop#"
+        PrimStoreHeapBackMax    -> text "heapBackMax#"
+
 
 readPrimStore :: String -> Maybe PrimStore
 readPrimStore str
@@ -141,6 +186,16 @@ readPrimStore str
         "makePtr#"              -> Just PrimStoreMakePtr
         "takePtr#"              -> Just PrimStoreTakePtr
         "castPtr#"              -> Just PrimStoreCastPtr
+
+        "slotBase#"             -> Just PrimStoreSlotBase
+        "slotTop#"              -> Just PrimStoreSlotTop
+        "slotMax#"              -> Just PrimStoreSlotMax
+        "heapBase#"             -> Just PrimStoreHeapBase
+        "heapTop#"              -> Just PrimStoreHeapTop
+        "heapMax#"              -> Just PrimStoreHeapMax
+        "heapBackBase#"         -> Just PrimStoreHeapBackBase
+        "heapBackTop#"          -> Just PrimStoreHeapBackTop
+        "heapBackMax#"          -> Just PrimStoreHeapBackMax
 
         _                       -> Nothing
 

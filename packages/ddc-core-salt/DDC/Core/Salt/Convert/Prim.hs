@@ -72,7 +72,7 @@ convPrimStore pp
         PrimStoreWrite          -> text "_WRITE"
         PrimStoreCopy           -> text "_COPY"
         PrimStorePlusAddr       -> text "_PLUSADDR"
-        PrimStoreMinusAddr      -> text "_MINUSADDr"
+        PrimStoreMinusAddr      -> text "_MINUSADDR"
         PrimStorePeek           -> text "_PEEK"
         PrimStorePoke           -> text "_POKE"
         PrimStorePeekBounded    -> text "_PEEKBOUNDED"
@@ -82,4 +82,13 @@ convPrimStore pp
         PrimStoreMakePtr        -> text "_MAKEPTR"
         PrimStoreTakePtr        -> text "_TAKEPTR"
         PrimStoreCastPtr        -> text "_CASTPTR"
-
+        PrimStoreSlotBase       -> text "_SLOTBASE"
+        PrimStoreSlotTop        -> text "_SLOTTOP"
+        PrimStoreSlotMax        -> text "_SLOTMAX"
+        PrimStoreHeapBase       -> text "_HEAPBASE"
+        PrimStoreHeapTop        -> text "_HEAPTOP"
+        PrimStoreHeapMax        -> text "_HEAPMAX"
+        PrimStoreHeapBackBase   -> text "_HEAPBACKBASE"
+        PrimStoreHeapBackTop    -> text "_HEAPBACKTOP"
+        PrimStoreHeapBackMax    -> text "_HEAPBACKMAX"
+  

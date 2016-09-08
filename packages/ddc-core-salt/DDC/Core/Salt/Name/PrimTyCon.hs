@@ -175,6 +175,8 @@ primTyConIsIntegral tc
         PrimTyConSize           -> True
         PrimTyConWord{}         -> True
         PrimTyConTag            -> True
+        PrimTyConAddr           -> True
+        PrimTyConPtr            -> True
         _                       -> False
 
 
@@ -199,6 +201,8 @@ primTyConIsUnsigned tc
         PrimTyConSize           -> True
         PrimTyConWord{}         -> True
         PrimTyConTag            -> True
+        PrimTyConAddr           -> True
+        PrimTyConPtr            -> True
         _                       -> False
 
 -- | Signed integral constructors.

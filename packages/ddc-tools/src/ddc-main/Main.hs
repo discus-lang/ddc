@@ -264,7 +264,8 @@ getDriverConfig config mFilePath
         -- The default runtime system config.
         let runtimeConfig
              = Runtime.Config
-             { Runtime.configHeapSize             = configRuntimeHeapSize config }
+             { Runtime.configHeapSize             = configRuntimeHeapSize config
+             , Runtime.configSlotStackSize        = configRuntimeSlotStackSize config }
 
         -- Build driver config.
         let dconfig

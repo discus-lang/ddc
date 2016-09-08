@@ -101,8 +101,9 @@ convertModuleM pp mm@(C.ModuleCore{})
  | ([C.LRec bxs], _)    <- splitXLets $ C.moduleBody mm
  = do   
         -- Globals for the runtime --------------
-        --   If this is the main module then we define the globals for the
-        --   runtime system, otherwise import them as external symbols.
+        --   If this is the Init module in the runtime system then define the
+        --   globals for the allocator and garbage collector, 
+        --   otherwise import them as external symbols.
 
         -- Holds the pointer to the start of the heap.
         --  This first object is allocated at this address.
@@ -137,7 +138,7 @@ convertModuleM pp mm@(C.ModuleCore{})
         let vSlotMax            = Var nameGlobalSlotMax (tAddr pp)
 
         let globalsRts
-                | C.moduleName mm == C.ModuleName ["Main"]
+                | C.moduleName mm == C.ModuleName ["Init"]
                 = [ GlobalStatic   vHeapBase     (StaticLit (LitInt (tAddr pp) 0))
                   , GlobalStatic   vHeapTop      (StaticLit (LitInt (tAddr pp) 0))
                   , GlobalStatic   vHeapMax      (StaticLit (LitInt (tAddr pp) 0))
@@ -227,16 +228,6 @@ primDeclsMap pp
 primDecls :: Platform -> [FunctionDecl]
 primDecls pp 
  = [    FunctionDecl
-        { declName              = textOfName nameGlobalMalloc
-        , declLinkage           = External
-        , declCallConv          = CC_Ccc
-        , declReturnType        = tAddr pp
-        , declParamListType     = FixedArgs
-        , declParams            = [Param (tNat pp) []]
-        , declAlign             = AlignBytes (platformAlignBytes pp)
-        , declGarbageCollector  = Nothing }
-
-   ,    FunctionDecl
         { declName              = "abort"
         , declLinkage           = External
         , declCallConv          = CC_Ccc

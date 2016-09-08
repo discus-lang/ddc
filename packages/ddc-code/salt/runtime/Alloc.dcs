@@ -3,9 +3,6 @@
 module Alloc
 
 export value
-  allocInit    : Nat#  -- ^ Maximum heap size.
-              -> Unit
-
   allocCollect : Nat# -- ^ How much space must be left after collection.
               -> Unit
 
@@ -21,24 +18,6 @@ import foreign c value
 with letrec
 
 
--- | Initialise the allocation system and allocate the heap.
-allocInit (heapSize : Nat#) : Unit
- = do
-        pHeapBaseA      = malloc heapSize
-        pHeapMaxA       = plusAddr# pHeapBaseA (sub# heapSize 1#)
-
-        write# heapBase# 0# pHeapBaseA
-        write# heapTop#  0# pHeapBaseA
-        write# heapMax#  0# pHeapMaxA
-
-        pHeapBackBaseA  = malloc heapSize
-        pHeapBackMaxA   = plusAddr# pHeapBackBaseA (sub# heapSize 1#)
-
-        write# heapBackBase# 0# pHeapBackBaseA
-        write# heapBackTop#  0# pHeapBackBaseA
-        write# heapBackMax#  0# pHeapBackMaxA
-
-        ()
 
 -- | Perform a garbage collection.
 --     If we don't free up at least as much space as requested, the runtime

@@ -188,3 +188,30 @@ typeOfPrimStore jj
          -> tForalls [kRegion, kData, kData] 
          $ \[r,t1,t2] -> tPtr r t2 `tFun` tPtr r t1
 
+        PrimStoreSlotBase
+         -> tAddr
+
+        PrimStoreSlotTop
+         -> tAddr
+
+        PrimStoreSlotMax
+         -> tAddr
+
+        PrimStoreHeapBase
+         -> tAddr
+
+        PrimStoreHeapTop
+         -> tAddr
+
+        PrimStoreHeapMax
+         -> tAddr
+
+        PrimStoreHeapBackBase
+         -> tAddr
+
+        PrimStoreHeapBackTop
+         -> tAddr
+
+        PrimStoreHeapBackMax
+         -> tAddr
+

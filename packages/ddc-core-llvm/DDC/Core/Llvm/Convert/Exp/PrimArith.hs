@@ -143,7 +143,7 @@ convPrimICond op t
 -- | Convert a floating point comparison from Core Sea to LLVM form.
 convPrimFCond :: A.PrimArith -> C.Type A.Name -> Maybe FCond
 convPrimFCond op t
- | isIntegralT t
+ | isFloatingT t
  = case op of
         A.PrimArithEq                   -> Just FCondOeq
         A.PrimArithNeq                  -> Just FCondOne

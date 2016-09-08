@@ -339,7 +339,97 @@ convPrimStore ctx mdst p as
                 return  $ Seq.singleton $ annotNil
                         $ IConv vDst ConvBitcast xPtr'
 
-        _ -> Nothing
+
+        -- The base of the front heap.
+        A.PrimStore A.PrimStoreHeapBase
+         | []            <- as
+         , Just vDst     <- mdst
+         -> Just $ do
+                 let vBasePtr = varGlobalHeapBase pp
+                 return  $ Seq.singleton $ annotNil
+                         $ IConv vDst ConvPtrtoint (XVar vBasePtr)
+
+
+        -- The top of the front heap.
+        A.PrimStore A.PrimStoreHeapTop
+         | []            <- as
+         , Just vDst     <- mdst
+         -> Just $ do
+                 let vTopPtr = varGlobalHeapTop pp
+                 return  $ Seq.singleton $ annotNil
+                         $ IConv vDst ConvPtrtoint (XVar vTopPtr)
+
+
+        -- The maximum top of the front heap.
+        A.PrimStore A.PrimStoreHeapMax
+         | []            <- as
+         , Just vDst     <- mdst
+         -> Just $ do
+                 let vMaxPtr = varGlobalHeapMax pp
+                 return  $ Seq.singleton $ annotNil
+                         $ IConv vDst ConvPtrtoint (XVar vMaxPtr)
+
+
+        -- The base of the back heap.
+        A.PrimStore A.PrimStoreHeapBackBase
+         | []            <- as
+         , Just vDst     <- mdst
+         -> Just $ do
+                 let vBasePtr = varGlobalHeapBackBase pp
+                 return  $ Seq.singleton $ annotNil
+                         $ IConv vDst ConvPtrtoint (XVar vBasePtr)
+
+
+        -- The top of the back heap.
+        A.PrimStore A.PrimStoreHeapBackTop
+         | []            <- as
+         , Just vDst     <- mdst
+         -> Just $ do
+                 let vTopPtr = varGlobalHeapBackTop pp
+                 return  $ Seq.singleton $ annotNil
+                         $ IConv vDst ConvPtrtoint (XVar vTopPtr)
+
+
+        -- The maximum top of the back heap.
+        A.PrimStore A.PrimStoreHeapBackMax
+         | []            <- as
+         , Just vDst     <- mdst
+         -> Just $ do
+                 let vMaxPtr = varGlobalHeapBackMax pp
+                 return  $ Seq.singleton $ annotNil
+                         $ IConv vDst ConvPtrtoint (XVar vMaxPtr)
+
+
+        -- The base of the slot stack.
+        A.PrimStore A.PrimStoreSlotBase
+         | []            <- as
+         , Just vDst     <- mdst
+         -> Just $ do
+                 let vBasePtr = varGlobalSlotBase pp
+                 return  $ Seq.singleton $ annotNil
+                         $ IConv vDst ConvPtrtoint (XVar vBasePtr)
+
+
+        -- The top of the slot stack.
+        A.PrimStore A.PrimStoreSlotTop
+         | []            <- as
+         , Just vDst     <- mdst
+         -> Just $ do
+                 let vTopPtr = varGlobalSlotTop pp
+                 return  $ Seq.singleton $ annotNil
+                         $ IConv vDst ConvPtrtoint (XVar vTopPtr)
+
+
+        -- The maximum top of the slot stack.
+        A.PrimStore A.PrimStoreSlotMax
+         | []            <- as
+         , Just vDst     <- mdst
+         -> Just $ do
+                 let vMaxPtr = varGlobalSlotMax pp
+                 return  $ Seq.singleton $ annotNil
+                         $ IConv vDst ConvPtrtoint (XVar vMaxPtr)
+
+        _ -> error (show (p, as)) -- Nothing
 
 
 -- | Append the given string to a name.

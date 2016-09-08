@@ -33,8 +33,8 @@ callsInstr    :: Module -> AnnotInstr -> AnnotInstr
 callsInstr mm ai@(AnnotInstr i annots)
  = case i of
         ICall mv ct mcc t n xs ats
-         -> let Just cc2 = callConvOfName mm n
-                cc'      = mergeCallConvs mcc cc2
+         | Just cc2     <- callConvOfName mm n
+         -> let cc'      = mergeCallConvs mcc cc2
             in  AnnotInstr (ICall mv ct (Just cc') t n xs ats)
                            annots
 

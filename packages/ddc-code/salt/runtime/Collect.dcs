@@ -3,8 +3,6 @@
 module Collect
 
 export value
-  collectInit : Nat#  -- ^ Maximum number of slots in the slot stack.
-             -> Unit
 
   collectHeap : Addr# -- ^ @Word*@  Start of the from-space.
              -> Addr# -- ^ @Word*@  Where the next object in from-space would be allocated.
@@ -32,20 +30,8 @@ import foreign c value
   arityOfMixed     : [r     : Region]. Ptr# r  Obj -> Nat#
   fieldOfMixed     : [r     : Region]. Ptr# r  Obj -> Nat# -> Ptr# r Obj
 
+
 with letrec
-
-
--- | Allocate and initialise the current GC slot stack.
-collectInit (maxGCSlots : Nat#) : Unit
- = do
-        pSlotBaseA      = malloc (mul# maxGCSlots (size# [Addr#]))
-        pSlotMaxA       = plusAddr# pSlotBaseA (sub# maxGCSlots 1#)
-
-        write# slotBase# 0# pSlotBaseA
-        write# slotTop#  0# pSlotBaseA
-        write# slotMax#  0# pSlotMaxA
-
-        ()
 
 
 -- | Perform a collection on on this heap.

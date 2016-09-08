@@ -17,7 +17,7 @@ with letrec
 
 
 -- | Allocate a boxed object to hold a raw unboxed value.
-allocRaw [r: Region] (tag: Tag#) (bytesPayload: Nat#): Ptr# r Obj
+allocRawLocal [r: Region] (tag: Tag#) (bytesPayload: Nat#): Ptr# r Obj
  = do   
         -- Size of the heap object.
         -- For general objects we use a 64-bit header so that a 64-bit 
@@ -27,10 +27,10 @@ allocRaw [r: Region] (tag: Tag#) (bytesPayload: Nat#): Ptr# r Obj
         -- Check there is enough space available on the heap.
         -- If not, invoke fail# which will abort the program.
         case check# bytesObj of
-         True#  -> allocRaw_ok tag bytesObj
+         True#  -> allocRawLocal_ok tag bytesObj
          False# -> fail#
 
-allocRaw_ok [r: Region] (tag: Tag#) (bytesObj: Nat#): Ptr# r Obj
+allocRawLocal_ok [r: Region] (tag: Tag#) (bytesObj: Nat#): Ptr# r Obj
  = do   
         -- Allocate the object.
         --  This returns a raw Addr#.
@@ -54,7 +54,7 @@ allocRaw_ok [r: Region] (tag: Tag#) (bytesObj: Nat#): Ptr# r Obj
 
 -- | Box a Word32.
 boxWord32 [r: Region] (x: Word32#): Ptr# r Obj
- = do   obj     = allocRaw TAG0# 4#
+ = do   obj     = allocRawLocal TAG0# 4#
         addr    = takePtr# obj
         write#  addr 8# x
         return# obj
@@ -99,8 +99,9 @@ fac [r1 r2: Region] (x: Ptr# r1 Obj): Ptr# r2 Obj
 
 main [r1: Region] (argc: Nat#) (argv: Ptr# r1 Word8#): Int#
  = do   
-        -- Create an initial heap of size 4k.
-        create# 4096#
+        -- Initialize the allocation system and garbage collector.
+        allocInit   4096#
+        collectInit 1024#
 
         -- Apply the factorial function.
         x2      = fac (boxWord32 10w32#)

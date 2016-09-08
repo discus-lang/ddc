@@ -1,0 +1,74 @@
+
+-- Initialization functions for the runtime system.
+--
+--   This module is treated specially by the LLVM code generator. 
+--
+--   When compiling this module the global symbols used by the runtime
+--   system are declared statically, and exported with external linkage.
+--   For all other modules the symbols are imported.
+--
+--   This module must contain uses of those global symbols, otherwise
+--   the system linker will forget about the symbols when building 
+--   the runtime system .dylib library.
+--
+--   The global symbols are:
+--
+--   Linker Symbol              DDC primitive.
+--   __DDC__heapBackBase        heapBackBase#
+--   __DDC__heapBackMax         heapBackMax#
+--   __DDC__heapBackTop         heapBackTop#
+--   __DDC__heapBase            heapBase#
+--   __DDC__heapMax             heapMax#
+--   __DDC__heapTop             heapTop#
+--
+--   __DDC__slotBase            slotBase#
+--   __DDC__slotMax             slotMax#
+--   __DDC__slotTop             slotTop#
+--
+module Init
+export value
+ allocInit   :  Nat#    -- ^ Maximum heap size.
+             -> Unit
+
+ collectInit :  Nat#    -- ^ Maximum number of slots in the slot stack.
+             -> Unit
+
+import foreign c value
+   malloc      : Nat# -> Addr#
+
+with letrec
+
+
+-- | Initialise the allocation system and allocate the heap.
+allocInit (heapSize : Nat#) : Unit
+ = do
+        pHeapBaseA      = malloc heapSize
+        pHeapMaxA       = plusAddr# pHeapBaseA (sub# heapSize 1#)
+
+        write# heapBase#     0# pHeapBaseA
+        write# heapTop#      0# pHeapBaseA
+        write# heapMax#      0# pHeapMaxA
+
+        pHeapBackBaseA  = malloc heapSize
+        pHeapBackMaxA   = plusAddr# pHeapBackBaseA (sub# heapSize 1#)
+
+        write# heapBackBase# 0# pHeapBackBaseA
+        write# heapBackTop#  0# pHeapBackBaseA
+        write# heapBackMax#  0# pHeapBackMaxA
+
+        ()
+
+
+-- | Allocate and initialise the current GC slot stack.
+collectInit (maxGCSlots : Nat#) : Unit
+ = do
+        pSlotBaseA      = malloc (mul# maxGCSlots (size# [Addr#]))
+        pSlotMaxA       = plusAddr# pSlotBaseA (sub# maxGCSlots 1#)
+
+        write# slotBase#     0# pSlotBaseA
+        write# slotTop#      0# pSlotBaseA
+        write# slotMax#      0# pSlotMaxA
+
+        ()
+
+

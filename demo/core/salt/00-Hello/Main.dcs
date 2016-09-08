@@ -10,20 +10,17 @@ export main  : [r1: Region]. Nat# -> Ptr# r1 Word8# -> Int#
 -- Primitive show functions are defined in the runtime system.
 import foreign c value 
         primPutTextLit : [r: Region]. TextLit#     -> Void#
+        allocInit      : Nat# -> Unit
+        collectInit    : Nat# -> Unit
 
 with letrec
 
 -- Ye'olde Hello World programme.
 main [r1: Region] (argc: Nat#) (argv: Ptr# r1 Word8#): Int#
  = do
-        -- If we link in the runtime system then we need to call create#
-        -- so that the code generator initializes the global heap pointers.
-        -- These linker symbols are referred to by the runtime system code.
-        -- 
-        -- If you do your own linking and don't use runtime system functions
-        -- then you won't need this.
-        --
-        create# 0#
+        -- Initialize the allocation system and garbage collector.
+        allocInit   4096#
+        collectInit 1024#
 
         -- Print the greeting.
         primPutTextLit "Hello World\n"#
