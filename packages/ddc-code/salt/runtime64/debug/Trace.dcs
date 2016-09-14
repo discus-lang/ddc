@@ -4,6 +4,7 @@ module Trace
 
 export value 
  ddcTraceObj            : [r : Region]. Bool# -> Bool# -> Ptr# r Obj -> Unit
+ ddcTraceSlots          : Bool# -> Unit
  ddcTraceHeap           : Bool# -> Unit
 
 import value 
@@ -74,10 +75,32 @@ ddcTraceObj
                  fail#)
         ()
 
+---------------------------------------------------------------------------------------------------
+-- | Trace the objects directly reachable from the GC slot stack,
+--   checking that they're well formed.
+--
+--   Also print the slot stack and the objects if requested.
+--
+ddcTraceSlots (print: Bool#): Unit
+ = do   
+        pSlotBaseA      = read# slotBase# 0#
+        pSlotTopA       = read# slotTop#  0#
+
+        (case print of
+          False# -> ()
+          True#  -> do
+                primPutString "Slots\n"#
+                fieldAddr     "{   slot base = "#  pSlotBaseA
+                fieldAddr     "    slot top  = "#  pSlotTopA
+                primPutString "}\n"#
+                ())
+
 
 ---------------------------------------------------------------------------------------------------
 -- | Trace all objects in the heap, checking that the are well format.
+--
 --   Also print out a descripton of each object if requested.
+--
 ddcTraceHeap (print: Bool#): Unit
  = do   
         pHeapBaseA      = read# heapBase# 0#
@@ -87,8 +110,8 @@ ddcTraceHeap (print: Bool#): Unit
           False# -> ()
           True#  -> do
                 primPutString "Heap\n"#
-                fieldAddr     "{   heapBase = "# pHeapBaseA
-                fieldAddr     "    heapTop  = "# pHeapTopA
+                fieldAddr     "{   heapBase = "#  pHeapBaseA
+                fieldAddr     "    heapTop  = "#  pHeapTopA
                 primPutString "}\n"#
                 ()) 
 

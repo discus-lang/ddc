@@ -34,3 +34,4 @@ library
         Data.Stream
         Math.Combinations
         System.IO.Console
+        System.Runtime

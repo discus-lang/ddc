@@ -1,0 +1,51 @@
+
+module System.Runtime
+export
+{       runtimeTraceObj;
+        runtimeTraceSlots;
+        runtimeTraceHeap;
+}
+
+import foreign abstract type
+ -- | Effect assigned to actions that perform direct access to the runtime
+ --   system. Such functions may read and write raw heap objects, and observe
+ --   that objects have been moved around during garbage collection.
+ Runtime : Effect
+
+
+import foreign c value
+
+ -- | Trace the object graph starting from the object at the given address.
+ ddcTraceObj  
+        :  [a: Data] 
+        .  Bool#                -- ^ Recursively trace reachable objects.
+        -> Bool#                -- ^ Print a description of each object as we go.
+        -> a                    -- ^ Object to start from.
+        -> S Runtime Unit
+
+
+ -- | Trace the objects directly reachable from the GC slot stack,
+ --   checking that they're well formed.
+ --
+ --   Also print the slot stack and the objects if requested.
+ --
+ ddcTraceSlots: Bool# -> S Runtime Unit
+
+
+ -- | Trace all objects in the heap, checking that the are well format.
+ --
+ --   Also print a description of each object if requested.
+ --
+ ddcTraceHeap:  Bool# -> S Runtime Unit
+
+where
+
+runtimeTraceObj (recurse print: Bool) (obj: a): S Runtime Unit
+ = ddcTraceObj recurse print obj
+
+runtimeTraceSlots (print: Bool): S Runtime Unit
+ = ddcTraceSlots print
+
+runtimeTraceHeap  (print: Bool): S Runtime Unit
+ = ddcTraceHeap  print
+
