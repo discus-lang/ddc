@@ -80,6 +80,12 @@ void primPutString (string_t* str)
 }
 
 
+// Print a C string to stderr.
+// Use this when printing an error from the runtime system.
+void primFailString(string_t* str)
+{       fputs(str, stderr);
+}
+
 // Print a text literal to stdout.
 void primPutTextLit (string_t* str)
 {       fputs(str, stdout);

@@ -429,7 +429,7 @@ convPrimStore ctx mdst p as
                  return  $ Seq.singleton $ annotNil
                          $ IConv vDst ConvPtrtoint (XVar vMaxPtr)
 
-        _ -> error (show (p, as)) -- Nothing
+        _ -> Nothing
 
 
 -- | Append the given string to a name.

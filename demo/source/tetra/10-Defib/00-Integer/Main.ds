@@ -5,14 +5,22 @@ import Data.Numeric.Bool
 import Data.Function
 import Data.Text
 import System.IO.Console
-where
 
+import foreign abstract type
+ Heap : Effect
+
+import foreign c value
+ ddcTraceHeap : Bool# -> S Heap Unit
+
+
+where
 
 main ()
  = do   writel $ "fac 10     = " % showNat (fac 10)
         writel $ "ack 3 2    = " % showNat (ack 3   2)
         writel $ "gcd 100 28 = " % showNat (gcd 100 28)
         writel $ "tak 12 8 4 = " % showNat (tak 12 8 4)
+
 
 -- Factorial.
 fac  (n: Nat): Nat

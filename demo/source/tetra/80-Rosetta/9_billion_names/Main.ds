@@ -65,6 +65,6 @@ main ()
         writel (showNat (sums 23))
         writel (showNat (sums 123))
 
-        -- writel (showNat (sums 1234))     -- runs out of space.
-        -- writel (showNat (sums 12345))    -- runs out of space.
+--        writel (showNat (sums 1234))     -- runs out of space.
+--        writel (showNat (sums 12345))    -- runs out of space.
 

@@ -21,10 +21,11 @@ baseSaltFiles builder
    in   [ runtime         </> "Alloc.dcs"
         , runtime         </> "Collect.dcs"
         , runtime         </> "Init.dcs"
-        , runtime ++ bits </> "debug"           </> "Trace.dcs"
-        , runtime ++ bits </> "primitive"       </> "Array.dcs"
-        , runtime ++ bits </> "primitive"       </> "Ref.dcs"
-        , runtime ++ bits </> "primitive"       </> "Text.dcs"
+        , runtime ++ bits </> "debug"     </> "Check.dcs"
+        , runtime ++ bits </> "debug"     </> "Trace.dcs"
+        , runtime ++ bits </> "primitive" </> "Array.dcs"
+        , runtime ++ bits </> "primitive" </> "Ref.dcs"
+        , runtime ++ bits </> "primitive" </> "Text.dcs"
         , runtime ++ bits </> "Apply.dcs"
         , runtime ++ bits </> "Object.dcs" ]
 

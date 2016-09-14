@@ -14,7 +14,6 @@
 --   byte    3    2    1     0          (in MSB order)
 --          TAG2 TAG1 TAG0 FORMAT ... 
 --
---
 --   FORMAT field
 --   ~~~~~~~~~~~~
 --   bit     7  6  5  4  3  2  1  0
@@ -84,14 +83,15 @@ module Runtime.Object
 
 export value
  -- Get the tag of an object.
- ddcTagOfObject      : [r:    Region].  Ptr# r Obj  -> Tag#
- ddcFormatOfObject   : [r:    Region].  Ptr# r Obj  -> Nat#
- ddcSizeOfObject     : [r:    Region].  Ptr# r Obj  -> Nat#
- ddcReadBrokenHeart  : [r1 r2: Region]. Ptr# r1 Obj -> Ptr# r2 Obj
- ddcWriteBrokenHeart : [r1 r2: Region]. Ptr# r1 Obj -> Ptr# r2 Obj -> Void#
- 
- ddcIsAnchored       : [r : Region].    Ptr# r Obj  -> Bool#
-  
+ ddcTagOfObject         : [r: Region]. Ptr# r Obj  -> Tag#
+ ddcFormatOfObject      : [r: Region]. Ptr# r Obj  -> Nat#
+ ddcFormatFieldOfObject : [r: Region]. Ptr# r Obj  -> Word8#
+ ddcIsAnchored          : [r: Region]. Ptr# r Obj  -> Bool#
+
+ ddcSizeOfObject        : [r:    Region].  Ptr# r Obj  -> Nat#
+ ddcReadBrokenHeart     : [r1 r2: Region]. Ptr# r1 Obj -> Ptr# r2 Obj
+ ddcWriteBrokenHeart    : [r1 r2: Region]. Ptr# r1 Obj -> Ptr# r2 Obj -> Void#
+   
  -- Thunk initialization.
  ddcAllocThunk       : [r1:    Region]. Addr# -> Nat# -> Nat# -> Nat# -> Nat# -> Ptr# r1 Obj
  ddcCopyThunk        : [r1 r2: Region]. Ptr# r1 Obj -> Ptr# r2 Obj -> Nat# -> Nat# -> Ptr# r2 Obj
@@ -126,6 +126,7 @@ export value
  -- Objects with small, raw non-pointer data.
  ddcAllocSmall       : [r1:    Region]. Tag# -> Nat# -> Ptr# r1 Obj
  ddcPayloadSmall     : [r1:    Region]. Ptr# r1 Obj  -> Ptr# r1 Word8#
+ ddcPayloadSizeSmall : [r1:    Region]. Ptr# r1 Obj  -> Nat#
 
 
 import value
@@ -133,6 +134,7 @@ import value
  -- We need to relaim at least the given number of bytes,
  -- otherwise we cannot continue execution.
  ddcAllocCollect      : Nat# -> Unit
+ primFailString       : TextLit# -> Void#
 
 
 with letrec
@@ -165,8 +167,7 @@ ddcFormatFieldOfObject [r : Region] (obj : Ptr# r Obj) : Word8#
 ddcArgOfObject [r : Region] (obj : Ptr# r Obj) : Nat#
  = do
         formatField     = ddcFormatFieldOfObject obj
-        arg8            = shl# (band# formatField 0b11110000w8#) 4w8#
-
+        arg8            = shr# (band# formatField 0b11110000w8#) 4w8#
         promote# arg8
 
 
@@ -176,10 +177,10 @@ ddcFormatOfObject [r : Region] (obj : Ptr# r Obj) : Nat#
         formatField     = ddcFormatFieldOfObject obj
 
         case band# formatField 0b11w8# of
-          0b00w8# -> 1# -- Forward
-          0b01w8# -> ddcFormatOfObject_arg formatField
-          0b11w8# -> 6# -- DataRawSmall
-          _       -> 0# -- Unknown
+          0b00w8#       -> 1# -- Forward
+          0b01w8#       -> ddcFormatOfObject_arg formatField
+          0b11w8#       -> 6# -- DataRawSmall
+          _             -> 0# -- Unknown
 
 ddcFormatOfObject_arg [r : Region] (formatField : Word8#) : Nat#
  = do
@@ -194,19 +195,16 @@ ddcFormatOfObject_arg [r : Region] (formatField : Word8#) : Nat#
 
 --| Get the size of an object.
 ddcSizeOfObject [r : Region] (obj : Ptr# r Obj) : Nat#
-  = do
-        s = case ddcFormatOfObject obj of
-              2# -> ddcSizeOfThunk     obj
-              3# -> ddcSizeOfBoxed     obj
-              4# -> ddcSizeOfRaw       obj
-              5# -> ddcSizeOfMixed     obj
-              6# -> ddcSizeOfRawSmall  obj
-           -- 7# -> ddcSizeOfSuspIndir obj -- ISSUE #341: SuspIndir not implemented
-              _  -> fail#
-
-        case eq# s 0# of
-          True#  -> fail#
-          False# -> s
+  = case ddcFormatOfObject obj of
+        2# -> ddcSizeOfThunk  obj
+        3# -> ddcSizeOfBoxed  obj
+        4# -> ddcSizeOfRaw    obj
+        5# -> ddcSizeOfMixed  obj
+        6# -> ddcSizeOfSmall  obj
+--      7# -> ddcSizeOfSuspIndir obj -- ISSUE #341: SuspIndir not implemented
+        _  -> do
+                primFailString "ddc-runtime.ddcSizeOfObject: unrecognized object format\n"#
+                fail#
 
 
 -- Forwarding Pointers --------------------------------------------------------
@@ -729,16 +727,18 @@ ddcAllocSmall_ok
         makePtr# addr
 
 
--- | Determine the size of a raw small object.
-ddcSizeOfRawSmall [r : Region] (obj : Ptr# r Obj) : Nat#
- = do
-        wordsPayload    = ddcArgOfObject obj
-        bytesPayload    = shl# wordsPayload 2#
-
-        bytesPayload
+ddcSizeOfSmall [r: Region] (obj: Ptr# r Obj): Nat#
+ = do   add# 4# (ddcPayloadSizeSmall obj)
 
 
--- | Get the payload data from a raw small object.
+-- | Get a pointer to the payload data from a raw small object.
 ddcPayloadSmall [r: Region] (obj: Ptr# r Obj): Ptr# r Word8#
  =      plusPtr# (castPtr# obj) 4#
 
+
+-- | Determine the size of a raw small object.
+ddcPayloadSizeSmall [r: Region] (obj: Ptr# r Obj): Nat#
+ = do
+        wordsPayload    = ddcArgOfObject obj
+        bytesPayload    = shl# wordsPayload 2#
+        bytesPayload

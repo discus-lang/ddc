@@ -31,8 +31,24 @@ import foreign c value
   ddcArityOfMixed     : [r     : Region]. Ptr# r  Obj -> Nat#
   ddcGetMixed         : [r1 r2 : Region]. Ptr# r1 Obj -> Nat# -> Ptr# r2 Obj
 
+  primPutString       : TextLit# -> Void#
+  primShowAddr        : Addr#    -> TextLit#
+
+  traceObj            : Bool# -> Addr# -> Nat#
 
 with letrec
+
+ddcTraceAlloc (_: Unit): Unit
+ = do   
+        primPutString "* ddcDumpAlloc\n"#
+        ddcPrintAddr  "  heapBaseA      = "#  (read# heapBase#     0#)
+        ddcPrintAddr  "  heapTopA       = "#  (read# heapTop#      0#)
+        ddcPrintAddr  "  backBaseA      = "#  (read# heapBackBase# 0#)
+        ddcPrintAddr  "  backTopA       = "#  (read# heapBackTop#  0#)
+        ddcPrintAddr  "  slotBaseA      = "#  (read# slotBase#     0#)
+        ddcPrintAddr  "  slotTopA       = "#  (read# slotTop#      0#)
+        primPutString "\n"#
+        ()
 
 
 -- | Perform a collection on on this heap.
@@ -44,6 +60,11 @@ ddcCollectHeap
         (ppBackTopA : Addr#) -- Word8**
                     : Unit
  = do
+        primPutString "* ddcCollectHeap start\n"#
+
+        ddcTraceAlloc ()
+        traceObj True# (read# heapBase# 0#)
+
         -- Check sanity before we start the GC.
         -- _DEBUG (_lintHeap  (heapBase, heapPtr));
         -- _DEBUG (_lintSlots (_ddcSlotBase, _ddcSlotPtr, heapBase, heapPtr));
@@ -52,12 +73,15 @@ ddcCollectHeap
         write# ppBackTopA 0# pBackBaseA
 
         -- Copy all the root objects to the to-space..
-        pSlotTopA       = read# slotTop# 0#
+        pSlotTopA = read# slotTop# 0#
         ddcEvacuateRoots slotBase# pSlotTopA ppBackTopA
 
         -- Recursively follow pointers in to-space,
         --   copying out any reachable objects in the from-space.
         ddcScanHeap pBackBaseA ppBackTopA
+
+        primPutString "* ddcCollectHeap end\n"#
+        ()
 
         -- Update collection counter
         -- _PROFILE_GC (count++);
@@ -65,6 +89,11 @@ ddcCollectHeap
         -- Check sanity again now the GC is finished.
         -- _DEBUG(_lintHeap  (heapBackBase, *heapBackPtr));
         -- _DEBUG(_lintSlots (_ddcSlotBase, _ddcSlotPtr, heapBackBase, *heapBackPtr));
+
+ddcPrintAddr (name: TextLit#) (addr: Addr#): Void#
+ = do   primPutString name
+        primPutString (primShowAddr addr)
+        primPutString "\n"#
 
 
 -- | Recursively follow pointers in the to-space, copying
@@ -75,6 +104,8 @@ ddcEvacuateRoots
         (ppBackA   : Addr#) -- Word8**
                    : Unit
  = do
+        primPutString "* ddcEvacutateRoots\n"#
+
         pSlotA          = read# ppSlotA 0#
 
         -- Every object directly reachable from the slock stack is a root.
@@ -103,6 +134,8 @@ ddcEvacuateObject
         (ppBackA : Addr#) -- Word8**
                  : Addr#  -- Obj*
  = do
+        primPutString "* ddcEvacuateObject\n"#
+
         -- _DEBUG(assert(obj != 0));
         -- _DEBUG(assert(toPtr != 0));
 
@@ -244,6 +277,8 @@ ddcScanThunk_arg
         (ppBackTopA    : Addr#)
                        : Unit
  = do
+        primPutString "* scan thunk\n"#
+
         case eq# argsRemaining 0# of
           True#  -> ()
           False# -> do
@@ -271,6 +306,8 @@ ddcScanBoxed_arg
         (ppBackTopA    : Addr#)
                        : Unit
  = do
+        primPutString "* scan boxed\n"#
+
         case eq# argsRemaining 0# of
           True#  -> ()
           False# -> do

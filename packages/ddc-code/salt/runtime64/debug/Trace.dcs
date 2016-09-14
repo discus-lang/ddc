@@ -1,217 +1,291 @@
 
 -- | Dumping of the runtime object graph.
-module Dump
+module Trace
 
 export value 
- traceObj       : [r : Region]. Bool# -> Ptr# r Obj -> Nat#
+ ddcTraceObj            : [r : Region]. Bool# -> Bool# -> Ptr# r Obj -> Unit
+ ddcTraceHeap           : Bool# -> Unit
 
 import value 
  -- Primitives imported from C-land.
- primPutString     : TextLit# -> Void#
- primShowAddr      : Addr#    -> TextLit#
- primShowNat       : Nat#     -> TextLit#
- primShowWord32    : Word32#  -> TextLit#
+ primPutString          : TextLit# -> Void#
+ primFailString         : TextLit# -> Void#
+ primShowAddr           : Addr#    -> TextLit#
+ primShowNat            : Nat#     -> TextLit#
+ primShowWord32         : Word32#  -> TextLit#
+
+ -- Object checking functions.
+ ddcCheckObjHeader      : [r: Region]. Ptr# r Obj -> Word32#
+ ddcCheckObjExtent      : [r: Region]. Ptr# r Obj -> Nat# -> Unit
 
  -- Generic objects.
- ddcGetTag         : [r : Region]. Ptr# r Obj -> Tag#
+ ddcTagOfObject         : [r: Region]. Ptr# r Obj -> Tag#
+ ddcFormatOfObject      : [r: Region]. Ptr# r Obj -> Nat#
+ ddcFormatFieldOfObject : [r: Region]. Ptr# r Obj -> Word8#
+ ddcSizeOfObject        : [r: Region]. Ptr# r Obj  -> Nat#
+ ddcGetTag              : [r: Region]. Ptr# r Obj -> Tag#
 
  -- Thunk objects.
- ddcParamsThunk    : [r: Region]. Ptr# r Obj -> Nat#
- ddcBoxesThunk     : [r: Region]. Ptr# r Obj -> Nat#
- ddcArgsThunk      : [r: Region]. Ptr# r Obj -> Nat#
- ddcRunsThunk      : [r: Region]. Ptr# r Obj -> Nat#
- ddcFunThunk       : [r: Region]. Ptr# r Obj -> Addr#
- ddcGetThunk       : [r1 r2 : Region]. Ptr# r1 Obj -> Nat# -> Ptr# r2 Obj
+ ddcParamsThunk         : [r: Region]. Ptr# r Obj -> Nat#
+ ddcBoxesThunk          : [r: Region]. Ptr# r Obj -> Nat#
+ ddcArgsThunk           : [r: Region]. Ptr# r Obj -> Nat#
+ ddcRunsThunk           : [r: Region]. Ptr# r Obj -> Nat#
+ ddcFunThunk            : [r: Region]. Ptr# r Obj -> Addr#
+ ddcGetThunk            : [r1 r2 : Region]. Ptr# r1 Obj -> Nat# -> Ptr# r2 Obj
 
  -- Boxed objects.
- ddcAllocBoxed     : [r1    : Region]. Tag# -> Nat# -> Ptr# r1 Obj
- ddcGetBoxed       : [r1 r2 : Region]. Ptr# r1 Obj  -> Nat# -> Ptr# r2 Obj
- ddcSetBoxed       : [r1 r2 : Region]. Ptr# r1 Obj  -> Nat# -> Ptr# r2 Obj -> Void#
+ ddcAllocBoxed          : [r1    : Region]. Tag# -> Nat# -> Ptr# r1 Obj
+ ddcArityOfBoxed        : [r1    : Region]. Ptr# r1 Obj  -> Nat#
+ ddcGetBoxed            : [r1 r2 : Region]. Ptr# r1 Obj  -> Nat# -> Ptr# r2 Obj
+ ddcSetBoxed            : [r1 r2 : Region]. Ptr# r1 Obj  -> Nat# -> Ptr# r2 Obj -> Void#
+
+ -- Raw Objects.
+ ddcPayloadSizeRaw      : [r1:    Region]. Ptr# r1 Obj  -> Nat#
+
+import foreign abstract type
+ Top : Region
 
 with letrec
 
 
--------------------------------------------------------------------------------
--- | Dump an object to stdout.
-traceObj [r: Region] (trace: Bool#) (obj: Ptr# r Obj): Nat#
+---------------------------------------------------------------------------------------------------
+-- | Trace the object graph starting from this objet.
+ddcTraceObj 
+        [r: Region] 
+        (recurse: Bool#)        -- ^ Recursively trace reachable objects. 
+        (print:   Bool#)        -- ^ Print out a description of each object as we go.
+        (obj: Ptr# r Obj)
+        : Unit
  = do   
-        ptr      = castPtr# obj
-        header   = peek# ptr 0#
+        -- Check that the header is in range before we read the
+        -- format field from it.
+        ddcCheckObjHeader obj
 
-        -- Get the object format, masking out the anchor flag.
-        wFormat  = band# header 0b11110111w32#
-        nFormat  = promote# wFormat
-
-        case nFormat of
-         -- Thunk format.
-         0b00010001w32# -> traceThunk trace obj
-
-         -- Boxed object format.
-         0b00100001w32# -> traceBoxed trace obj
-
-         -- Raw format.
-         -- Payload contains raw unboxed data.
-         0b00110001w32# -> traceRaw   obj
-
-         -- Small format, with the size in the top nibble.
-         -- Payload contains raw unboxed data.
-         _ -> do
-                wFormatLow      =              band# wFormat 0b00001111w32#
-                wFormatHigh     = shr#  4w32# (band# wFormat 0b11110000w32#)
-
-                case wFormatLow of
-                 0b0011w32# 
-                        -> traceSmall obj
-
-                 -- Some format that we don't handle yet, 
-                 -- or the header is trashed.
-                 _      -> do   primPutString "Unknown\n"#
-                                0#
+        format = ddcFormatOfObject obj
+        (case format of
+          2#     -> traceThunk recurse print obj
+          3#     -> traceBoxed recurse print obj
+          4#     -> traceRaw   print obj
+          6#     -> traceSmall print obj
+          _      -> do
+                 primFailString "ddc-runtime.ddcTraceObj: Unrecognized object format.\n"#
+                 primPutString  (primShowNat format)
+                 fail#)
+        ()
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
+-- | Trace all objects in the heap, checking that the are well format.
+--   Also print out a descripton of each object if requested.
+ddcTraceHeap (print: Bool#): Unit
+ = do   
+        pHeapBaseA      = read# heapBase# 0#
+        pHeapTopA       = read# heapTop#  0#
+
+        (case print of
+          False# -> ()
+          True#  -> do
+                primPutString "Heap\n"#
+                fieldAddr     "{   heapBase = "# pHeapBaseA
+                fieldAddr     "    heapTop  = "# pHeapTopA
+                primPutString "}\n"#
+                ()) 
+
+        pObj    = makePtr# [Top] pHeapBaseA
+        traceHeap print pObj pHeapTopA
+        ()
+
+traceHeap 
+        [r: Region]
+        (print:    Bool#)
+        (pObj:     Ptr# r Obj)
+        (aHeapTop: Addr#)
+        : Unit
+
+ = case ge# (takePtr# pObj) aHeapTop of
+    True#  -> ()
+    False# -> do
+        -- Print the current object.
+        -- Doing this also checks that it is well formed.
+        ddcTraceObj False# print pObj
+
+        -- Advance to the next object.
+        -- The current object must have a non-zero size otherwise we'll loop forever.
+        size    = ddcSizeOfObject pObj
+
+        case eq# size 0# of
+         True# -> do
+                primFailString "ddc-runtime.traceHeap: object has zero size\n."#
+                fail#
+
+         False# -> do
+                pNext   = plusPtr# pObj size
+                traceHeap print pNext aHeapTop
+
+
+---------------------------------------------------------------------------------------------------
 -- | Print a thunk object to stdout.
-traceThunk [r: Region] (trace: Bool#) (obj: Ptr# r Obj): Nat#
+traceThunk 
+        [r: Region]
+        (recurse print: Bool#) (obj: Ptr# r Obj): Unit
  = do   
-        ptr     = castPtr# obj
-        header  = peek# ptr 0#
-        format  = band# header 0x0fw32#
-        tag     = shr#  header 8w32#
+        (case print of
+          False# -> ()
+          True#  -> do        
+                primPutString "Thunk\n"#
+                fieldAddr     "{   ptr            = "# (takePtr# obj)
+                fieldWord32   "    header         = "# (read# (takePtr# obj) 0#)
+                fieldWord32   "    tag            = "# (promote# (ddcTagOfObject obj))
+                fieldWord32   "    format         = "# (promote# (ddcFormatFieldOfObject obj))
+                fieldNat      "    params         = "# (ddcParamsThunk obj)
+                fieldNat      "    boxes          = "# (ddcBoxesThunk  obj)
+                fieldNat      "    args           = "# (ddcArgsThunk   obj)
+                fieldNat      "    runs           = "# (ddcRunsThunk   obj)
+                fieldAddr     "    fun            = "# (ddcFunThunk    obj)
+                fieldNat      "    (object size)  = "# (ddcSizeOfObject obj)
+                traceThunkPtrs recurse print obj 0#
+                primPutString "}\n"#
+                ())
 
-        primPutString   "Thunk\n"#
-        fieldAddr       "{   ptr     = "# (takePtr# obj)
-        fieldWord32     "    format  = "# format
-        fieldWord32     "    tag     = "# tag
-        fieldNat        "    params  = "# (ddcParamsThunk obj)
-        fieldNat        "    boxes   = "# (ddcBoxesThunk  obj)
-        fieldNat        "    args    = "# (ddcArgsThunk   obj)
-        fieldNat        "    runs    = "# (ddcRunsThunk   obj)
-        fieldAddr       "    fun     = "# (ddcFunThunk    obj)
-        traceThunkPtrs obj 0#
-        primPutString   "}\n"#
-
-        case trace of
-         True#  -> traceThunkPtrss obj 0#
-         False# -> 0#
+        case recurse of
+         True#  -> traceThunkPtrss recurse print obj 0#
+         False# -> ()
 
 
 -- | Print pointers in a thunk object, which point to more objects.
-traceThunkPtrs [r: Region] (obj: Ptr# r Obj) (i: Nat#) : Nat#
- = do   args    = ddcArgsThunk obj
-        case eq# args i of
-         True#  
-          ->    0#
+traceThunkPtrs 
+        [r: Region] 
+        (recurse print: Bool#) 
+        (obj: Ptr# r Obj) (i: Nat#): Unit
+ = case eq# (ddcArgsThunk obj) i of
+        True#  -> ()
+        False# 
+         -> do  addr    = takePtr# (ddcGetThunk obj i)
 
-         False# 
-          -> do addr    = takePtr# (ddcGetThunk obj i)
-                primPutString "    arg "#
-                primPutString (primShowNat i)
-                primPutString "   = "#
-                primPutString (primShowAddr addr)
-                primPutString ";\n"#
-                traceThunkPtrs obj (add# i 1#)
+                (case print of
+                  False# -> ()
+                  True#  -> do
+                        primPutString "    arg "#
+                        primPutString (primShowNat i)
+                        primPutString "          = "#
+                        primPutString (primShowAddr addr)
+                        primPutString ";\n"#
+                        ())
+
+                traceThunkPtrs recurse print obj (add# i 1#)
 
 
 -- | Trace out the objects that this one refers to.
-traceThunkPtrss [r: Region] (obj: Ptr# r Obj) (i: Nat#) : Nat#
- = do   args    = ddcArgsThunk obj
-        case eq# args i of
-         True#  
-          ->    0#
-
+traceThunkPtrss 
+        [r: Region] 
+        (recurse print: Bool#)
+        (obj: Ptr# r Obj) (i: Nat#): Unit
+ = case eq# (ddcArgsThunk obj) i of
+         True# -> ()
          False# 
-          -> do traceObj True# (ddcGetThunk obj i)
-                traceThunkPtrss obj (add# i 1#)
+          -> do ddcTraceObj True# print (ddcGetThunk obj i)
+                traceThunkPtrss recurse print obj (add# i 1#)
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | Print a Boxed object to stdout.
-traceBoxed [r: Region] (trace: Bool#) (obj: Ptr# r Obj): Nat#
+traceBoxed 
+        [r: Region] 
+        (recurse print: Bool#) 
+        (obj: Ptr# r Obj): Unit
  = do
-        ptr     = castPtr# obj
-        header  = peek# ptr 0#
-        format  = band# header 0x0fw32#
-        tag     = shr#  header 8w32#
-        arity   = peek# ptr 4#
+        arity   = ddcArityOfBoxed obj
 
-        primPutString   "Boxed\n"#
-        fieldAddr       "{   ptr     = "# (takePtr# obj)
-        fieldWord32     "    format  = "# format
-        fieldWord32     "    tag     = "# tag
-        fieldNat        "    arity   = "# (promote# arity)
-        traceBoxedPtrs obj (promote# arity) 0#
-        primPutString   "}\n"#
+        (case print of
+          False# -> ()
+          True#  -> do
+                primPutString "Boxed\n"#
+                fieldAddr     "{   ptr            = "# (takePtr# obj)
+                fieldWord32   "    header         = "# (read# (takePtr# obj) 0#)
+                fieldWord32   "    format         = "# (promote# (ddcFormatFieldOfObject obj))
+                fieldWord32   "    tag            = "# (promote# (ddcTagOfObject obj))
+                fieldNat      "    arity          = "# arity
+                traceBoxedPtrs print obj (promote# arity) 0#
+                fieldNat      "    (object size)  = "# (ddcSizeOfObject obj)
+                primPutString "}\n"#
+                ())
 
-        case trace of
-         True#  -> traceBoxedPtrss obj (promote# arity) 0#
-         False# -> 0#
+        case recurse of
+         True#  -> traceBoxedPtrss recurse print obj (promote# arity) 0#
+         False# -> ()
 
 
 -- | Print pointers in a boxed object, which point to more objects.
-traceBoxedPtrs [r: Region] (obj: Ptr# r Obj) (n: Nat#) (i: Nat#) : Nat#
+traceBoxedPtrs 
+        [r: Region] 
+        (print: Bool#) 
+        (obj: Ptr# r Obj) (n: Nat#) (i: Nat#): Unit
  = case eq# n i of
          True#  
-          ->    0#
+          ->    ()
 
          False# 
           -> do addr     = takePtr# (ddcGetBoxed obj i)
-
-                primPutString "    arg "#
-                primPutString (primShowNat i)
-                primPutString "   = "#
-                primPutString (primShowAddr addr)
-                primPutString ";\n"#
-                traceBoxedPtrs obj n (add# i 1#)
+                (case print of
+                  False# -> ()
+                  True#  -> do
+                        primPutString "    arg "#
+                        primPutString (primShowNat i)
+                        primPutString "          = "#
+                        primPutString (primShowAddr addr)
+                        primPutString ";\n"#
+                        traceBoxedPtrs print obj n (add# i 1#))
 
 
 -- | Trace out the objects that this one refers to.
-traceBoxedPtrss [r: Region] (obj: Ptr# r Obj) (n: Nat#) (i: Nat#) : Nat#
+traceBoxedPtrss 
+        [r: Region] 
+        (recurse print: Bool#)
+        (obj: Ptr# r Obj) (n: Nat#) (i: Nat#): Unit
  = case eq# n i of
          True#  
-          ->    0#
+          -> ()
 
          False# 
-          -> do traceObj True# (ddcGetBoxed obj i)
-                traceBoxedPtrss obj n (add# i 1#)
+          -> do ddcTraceObj     recurse print (ddcGetBoxed obj i)
+                traceBoxedPtrss recurse print obj n (add# i 1#)
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | Print a Raw object to stdout.
-traceRaw [r: Region] (obj: Ptr# r Obj): Nat#
+traceRaw [r: Region] (print: Bool#) (obj: Ptr# r Obj): Unit
  = do
-        ptr     = castPtr# obj
-        header  = peek# ptr 0#
-        format  = band# header 0x0fw32#
-        tag     = shr#  header 8w32#
-        size    = peek# ptr 4#
+        (case print of
+          False#  -> ()
+          True#   -> do
+                primPutString "Raw\n"#
+                fieldAddr     "{   ptr            = "# (takePtr#  obj)
+                fieldWord32   "    header         = "# (read# (takePtr# obj) 0#)
+                fieldWord32   "    format         = "# (promote#  (ddcFormatFieldOfObject obj))
+                fieldWord32   "    tag            = "# (promote#  (ddcTagOfObject obj))
+                fieldWord32   "    payload size   = "# (truncate# (ddcPayloadSizeRaw obj))
+                fieldNat      "    (object size)  = "# (ddcSizeOfObject obj)
+                primPutString "}\n"#
+                ())
 
-        primPutString   "Raw\n"#
-        fieldAddr       "{   ptr     = "# (takePtr# obj)
-        fieldWord32     "    format  = "# format
-        fieldWord32     "    tag     = "# tag
-        fieldWord32     "    size    = "# size
-        primPutString   "}\n"#
-        0#
 
-
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | Print a Small object to stdout.
-traceSmall [r: Region] (obj: Ptr# r Obj): Nat#
+traceSmall [r: Region] (print: Bool#) (obj: Ptr# r Obj): Unit
  = do
-        ptr     = castPtr# obj
-        header  = peek# ptr 0#
-        format  =             band# header 0x0fw32#
-        size    = shr# 4w32# (band# header 0xf0w32#)
+        (case print of
+          False#  -> ()
+          True#   -> do
+                primPutString "Small\n"#
+                fieldAddr     "{   ptr            = "# (takePtr# obj)
+                fieldWord32   "    header         = "# (read# (takePtr# obj) 0#)
+                fieldWord32   "    format         = "# (promote# (ddcFormatFieldOfObject obj))
+                fieldNat      "    (object size)  = "# (ddcSizeOfObject obj)
+                primPutString "}\n"#
+                ())
 
-        primPutString   "Small\n"#
-        fieldAddr       "{   ptr     = "# (takePtr# obj)
-        fieldWord32     "    format  = "# format
-        fieldWord32     "    size    = "# size
-        primPutString   "}\n"#
-        0#
 
-
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | Print an Addr# field to stdout.
 fieldAddr (name: TextLit#) (val: Addr#): Void#
  = do   primPutString name
@@ -231,5 +305,4 @@ fieldWord32 (name: TextLit#) (val: Word32#): Void#
  = do   primPutString name
         primPutString (primShowWord32 val)
         primPutString ";\n"#
-
 
