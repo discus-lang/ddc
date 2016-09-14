@@ -88,7 +88,8 @@ export value
  ddcFormatFieldOfObject : [r: Region]. Ptr# r Obj  -> Word8#
  ddcIsAnchored          : [r: Region]. Ptr# r Obj  -> Bool#
 
- ddcSizeOfObject        : [r:    Region].  Ptr# r Obj  -> Nat#
+ ddcSizeOfObject        : [r:     Region]. Ptr# r Obj  -> Nat#
+ ddcHeaderSizeOfObject  : [r:     Region]. Ptr# r Obj  -> Nat#
  ddcReadBrokenHeart     : [r1 r2: Region]. Ptr# r1 Obj -> Ptr# r2 Obj
  ddcWriteBrokenHeart    : [r1 r2: Region]. Ptr# r1 Obj -> Ptr# r2 Obj -> Void#
    
@@ -182,6 +183,7 @@ ddcFormatOfObject [r : Region] (obj : Ptr# r Obj) : Nat#
           0b11w8#       -> 6# -- DataRawSmall
           _             -> 0# -- Unknown
 
+
 ddcFormatOfObject_arg [r : Region] (formatField : Word8#) : Nat#
  = do
         case band# formatField 0b11110000w8# of
@@ -194,17 +196,38 @@ ddcFormatOfObject_arg [r : Region] (formatField : Word8#) : Nat#
 
 
 --| Get the size of an object.
-ddcSizeOfObject [r : Region] (obj : Ptr# r Obj) : Nat#
-  = case ddcFormatOfObject obj of
+ddcSizeOfObject [r: Region] (obj: Ptr# r Obj): Nat#
+ = case ddcFormatOfObject obj of
         2# -> ddcSizeOfThunk  obj
         3# -> ddcSizeOfBoxed  obj
         4# -> ddcSizeOfRaw    obj
         5# -> ddcSizeOfMixed  obj
         6# -> ddcSizeOfSmall  obj
---      7# -> ddcSizeOfSuspIndir obj -- ISSUE #341: SuspIndir not implemented
         _  -> do
                 primFailString "ddc-runtime.ddcSizeOfObject: unrecognized object format\n"#
                 fail#
+
+
+-- | Get the header size of an object, in bytes.
+--   This is also the minimum size an object of that format could be.
+--
+--   This function only reads the first 32-bit word of the object,
+--   which contains the format field, and can determine the header length
+--   based on just this word. As it does not need to read any other fields,
+--   this function can be used as the first step in validating a possibly
+--   corrupted object.
+--
+ddcHeaderSizeOfObject [r: Region] (obj: Ptr# r Obj): Nat#
+ = case ddcFormatOfObject obj of
+        2# -> 16#       -- Thunk
+        3# -> 8#        -- Boxed
+        4# -> 16#       -- Raw
+        5# -> 16#       -- Mixed
+        6# -> 4#        -- Small
+        _  -> do
+                primFailString "ddc-runtime.ddcSizeOfObject: unrecognized object format\n"#
+                fail#
+
 
 
 -- Forwarding Pointers --------------------------------------------------------
@@ -685,8 +708,8 @@ ddcPayloadSizeRaw [r: Region] (obj: Ptr# r Obj): Nat#
  =      promote# (read# [Word32#] (takePtr# obj) 4#)
 
 
--- RawSmall -------------------------------------------------------------------
--- | A Small Raw object.
+-- Small ----------------------------------------------------------------------
+-- | A Small object, which an only hold raw, non-pointer data.
 --   The object size is encoded as part of format field
 --   This saves us from needing to include a separate arity field.
 --

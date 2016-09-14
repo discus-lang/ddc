@@ -41,7 +41,7 @@ ddcCheckObjHeader [r: Region] (obj: Ptr# r Obj): Word32#
                 fail#
 
 
--- | Given a pointer to an object and the objects length,
+-- | Given a pointer to an object and the object's length,
 --   check that the whole object is within the current allocated heap,
 --   and fail# if it is out of range.
 ddcCheckObjExtent [r: Region] (obj: Ptr# r Obj) (len: Nat#): Unit
