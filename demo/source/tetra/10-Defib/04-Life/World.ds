@@ -1,0 +1,128 @@
+
+module World 
+export
+{       newWorld;
+        getCell; setCell;
+        getNeighbours;
+
+        stepLocation; stepWorld;
+        mapWorld;
+        showWorld
+}
+import Data.List
+import Data.Array
+where
+
+
+-- | A 2D world of cells.
+data World (r: Region) where
+ World  :  Nat                  -- ^ Width of world.    
+        -> Nat                  -- ^ Height of world.
+        -> Array r Cell         -- ^ Linear array of cells.
+        -> World r
+
+
+-- | Convert 2D coordinates to linear coordinates.
+--   TODO: don't read head region when matching with case expression.
+linear (world: World r) (x y: Nat): S (Read r) Nat
+ | World width _ _      <- world
+ = weakeff [Read r] in x + y * width
+
+
+-- Create a new world.
+newWorld (width height: Nat): S (Alloc r) (World r)
+ = do   arr     = allocArray [r] (width * height) CellEmpty
+        World width height arr
+
+
+-- | Get a single cell from the world.
+getCell (world: World r) (x y: Nat)
+        : S (Read r) Cell
+ | World width height arr       <- world
+ = match 
+        | x >= width    = CellEmpty
+        | y >= height   = CellEmpty
+        | otherwise     = readArray arr (linear world x y)
+
+
+-- | Set a single cell in the world.
+--   TODO: don't read head region when matching with case expression.
+setCell (world: World r) (x y: Nat) (c: Cell)
+        : S (Read r + Write r) Unit
+ | World width height arr       <- world
+ = weakeff [Read r] in 
+    match
+        | x >= width    = ()
+        | y >= height   = ()
+        | otherwise     
+         = do   writeArray arr (linear world x y) c
+                ()
+
+
+-- | Get the neighbours of the given location.
+getNeighbours
+        (world: World r) (x y: Nat)
+        : S (Read r) (List Cell)
+ = mapS (λ(T2 x' y') -> getCell world x' y')
+ $ Cons (T2 (x - 1) (y - 1)) $ Cons (T2 x (y - 1)) $ Cons (T2 (x + 1) (y - 1))
+ $ Cons (T2 (x - 1)  y)                            $ Cons (T2 (x + 1)  y)
+ $ Cons (T2 (x - 1) (y + 1)) $ Cons (T2 x (y + 1)) $ Cons (T2 (x + 1) (y + 1))
+ $ Nil
+
+
+-- | Step a single location forward in time,
+--   returning a new cell for that location.
+stepLocation
+        (world: World r) (x y: Nat)
+        : S (Read r) Cell
+ = do   
+        cell            = getCell world x y
+        neighbours      = getNeighbours world x y
+        stepCell cell neighbours
+
+
+-- | Step a world forward in time,
+--   returning a new world.
+stepWorld    
+        (world: World r)
+        : S (Read r + Alloc r) (World r)
+ =      mapWorld (stepLocation world) world
+
+
+-- | Compute a new world by applying the given worker function
+--   to every available location.
+mapWorld 
+        (f:     Nat -> Nat -> S (Read r) Cell) 
+        (world: World r)
+        : S (Read r + Alloc r) (World r)
+ | World width height arr       <- world
+ = weakeff [Read r] in
+   extend r using r' with { Alloc r'; Read r'; Write r'} in
+   let  
+        world'  = run newWorld [r'] width height in
+        
+   let  go (x y: Nat): S (Read r + Read r' + Write r' + Alloc r') Unit
+         | x >= width   = go 0 (y + 1)
+         | y >= height  = ()
+         | otherwise    = do    setCell world' x y (f x y)
+                                go (x + 1) y
+   in do 
+        go 0 0
+        world'
+
+
+-- Show a world as a text string.
+showWorld (world: World r): S (Read r) Text
+ | World width height arr       <- world
+ = go 0 0 ""
+ where  
+        go (x: Nat) (y: Nat) (acc: Text): S (Read r) Text
+         | x >= width   = go 0 (y + 1) (acc % "\n")
+         | y >= height  = acc
+         | otherwise    
+         = do   b       = readArray arr (x + y * width)
+                c       = case b of 
+                           CellEmpty -> ". "
+                           CellAlive -> "X "
+                go (x + 1) y (acc % c)
+

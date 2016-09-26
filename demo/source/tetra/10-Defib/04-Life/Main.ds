@@ -1,0 +1,27 @@
+
+module Main
+import Cell
+import World
+import Data.Array
+import Data.List
+import System.IO.Console
+where
+
+
+
+-------------------------------------------------------------------------------
+main ()
+ = private r with {Read r; Write r; Alloc r}
+   in do   
+        world   = newWorld [r] 20 20
+        setCell world 5 5 CellAlive
+        setCell world 4 5 CellAlive
+        setCell world 6 5 CellAlive
+        setCell world 7 5 CellAlive
+
+        world2  = stepWorld world
+        world3  = stepWorld world2
+
+        writel (showWorld world3)
+
+

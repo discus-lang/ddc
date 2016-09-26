@@ -1,0 +1,39 @@
+
+module Cell
+export 
+{       isEmpty; isAlive;
+        stepCell
+}
+import Data.Function
+where
+
+data Cell where
+        CellEmpty : Cell
+        CellAlive : Cell
+
+
+isEmpty (cell: Cell): Bool
+ = case cell of
+        CellEmpty       -> True
+        _               -> False
+
+
+isAlive (cell: Cell): Bool
+ = case cell of
+        CellAlive       -> True
+        _               -> False
+
+
+stepCell (cell: Cell) (neighbours: List Cell): Cell
+ = do   
+        nAlive  = length 
+                $ filter isAlive $ neighbours
+
+        case cell of
+         CellAlive      
+          | nAlive == 2 ∨ nAlive == 3   -> CellAlive
+          | otherwise                   -> CellEmpty
+
+         CellEmpty
+          | nAlive == 3                 -> CellAlive
+          | otherwise                   -> CellEmpty
