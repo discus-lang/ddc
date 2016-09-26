@@ -116,13 +116,13 @@ showWorld (world: World r): S (Read r) Text
  | World width height arr       <- world
  = go 0 0 ""
  where  
-        go (x: Nat) (y: Nat) (acc: Text): S (Read r) Text
+        go (x y: Nat) (acc: Text): S (Read r) Text
          | x >= width   = go 0 (y + 1) (acc % "\n")
          | y >= height  = acc
          | otherwise    
-         = do   b       = readArray arr (x + y * width)
-                c       = case b of 
-                           CellEmpty -> ". "
-                           CellAlive -> "X "
-                go (x + 1) y (acc % c)
+         = go (x + 1) y
+         $ acc % case getCell world x y of 
+                  CellEmpty -> ". "
+                  CellAlive -> "X "
+
 
