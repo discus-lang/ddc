@@ -1,0 +1,140 @@
+
+-- | Demo that uses SKI combinators to add two Church-encoded natural numbers.
+module Main
+import Data.Numeric.Nat
+import System.IO.Console
+where
+
+
+-- | Named Variables.
+type Var = Text
+
+
+-- | Untyped lambda calculus with SKI combinators.
+data Exp where
+        XS      : Exp
+        XK      : Exp
+        XI      : Exp
+        XVar    : Var -> Exp
+        XApp    : Exp -> Exp -> Exp
+        XAbs    : Var -> Exp -> Exp
+
+
+-- | Pretty print an expression.
+ppExp : Exp -> Text
+ppExp xx
+ = case xx of
+        XS              -> "S"
+        XK              -> "K"
+        XI              -> "I"
+        XVar v          -> v
+        XApp x1 x2      -> "("  % ppExp x1    %% ppExp x2 % ")"
+        XAbs v1 x2      -> "(λ" %  v1 %% " →" %% ppExp x2 % ")" 
+
+
+-- | Convert lambda expressions to SKI combinator form.
+convert : Exp -> Exp
+convert xx
+ = case xx of
+        XS              -> xx
+        XK              -> xx
+        XI              -> xx
+        XVar x          -> XVar x
+
+        XApp x1 x2      
+         -> XApp (convert x1) (convert x2)
+
+        XAbs v1 x2
+         |  not $ occursFree v1 x2
+         -> XApp XK (convert x2)
+
+        XAbs v1 (XVar v2)
+         |  eqText v1 v2 -> XI
+
+        XAbs v1 (XAbs v2 x2)
+         |  occursFree v1 x2
+         -> convert (XAbs v1 (convert (XAbs v2 x2)))
+
+        XAbs v1 (XApp x1 x2)
+         -> XApp (XApp XS (convert $ XAbs v1 x1)) (convert $ XAbs v1 x2)
+
+        _ -> xx
+
+
+-- | Check if a variable occurs free in the given expression.
+occursFree var xx
+ = case xx of
+        XApp x1 x2
+         -> occursFree var x1 ∨ occursFree var x2
+
+        XAbs v1 x2     
+         | eqText v1 var        -> False
+         | otherwise            -> occursFree var x2
+
+        XVar v2                 -> eqText var v2
+         | eqText var v2        -> True
+
+        _                       -> False
+
+
+-- | Single step an SKI expression.
+step : Exp -> Exp
+step xx
+ = case xx of
+        XApp XI x                       
+         -> x
+
+        XApp (XApp XK x) y
+         -> x
+
+        XApp (XApp (XApp XS x) y) z
+         -> step (XApp (XApp x z) (XApp y z))
+
+        XApp x1 x2
+         -> XApp (step x1) (step x2)
+
+        _ -> xx
+
+
+main ()
+ = do   
+        -- Church encoded two.
+        xtwo    = XAbs "s" $ XAbs "z"
+                $ XApp (XVar "s") (XApp (XVar "s") (XVar "z"))
+
+        writel  $ "two     = " 
+                % (ppExp   $ convert xtwo)
+
+        writel  $ "two'    = " 
+                % (ppExp   $ step $ step $ step $ step
+                           $ XApp (XApp (convert xtwo) (XVar "s")) (XVar "z"))
+
+
+        -- Church encoded three.
+        xthree  = XAbs "s" $ XAbs "z"
+                $ XApp (XVar "s") (XApp (XVar "s") (XApp (XVar "s") (XVar "z")))
+
+        writel  $ "three   = "
+                % (ppExp   $ convert xthree)
+
+        writel  $ "three'  = "
+                % (ppExp   $ step $ step $ step $ step $ step 
+                           $ XApp (XApp (convert xthree) (XVar "s")) (XVar "z"))
+
+
+        -- Church encoded plus.
+        xplus   = XAbs "m" $ XAbs "n" $ XAbs "s" $ XAbs "z" 
+                $ XApp (XApp (XVar "m") (XVar "s")) 
+                       (XApp (XApp (XVar "n") (XVar "s")) (XVar "z"))
+
+        writel  $ "plus    = "
+                % (ppExp   $ convert xplus)
+
+
+        -- Add two and three by evaluating the SK combinator version.
+        xfive   = XApp (XApp xplus xtwo) xthree
+
+        writel  $ "five'   = " 
+                % (ppExp   $ step $ step $ step $ step $ step $ step $ step
+                           $ XApp (XApp (convert xfive) (XVar "s")) (XVar "z"))
+

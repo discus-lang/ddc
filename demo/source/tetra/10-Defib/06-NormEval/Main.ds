@@ -1,0 +1,129 @@
+
+module Main
+import Data.Numeric.Nat
+import System.IO.Console
+where
+
+
+-------------------------------------------------------------------------------
+-- | Syntax of expressions.
+data Syn where
+        SS      : Syn
+        SK      : Syn
+        SApp    : Syn -> Syn -> Syn
+        SZero   : Syn
+        SSucc   : Syn
+        SRec    : Syn
+
+ppSyn : Syn -> Text
+ppSyn ss
+ = case ss of
+        SS              -> "S"
+        SK              -> "K"
+        SApp s1 s2      -> "(" % ppSyn s1 %% ppSyn s2 % ")"
+        SZero           -> "Zero"
+        SSucc           -> "Succ"
+        SRec            -> "Rec"
+
+
+-------------------------------------------------------------------------------
+-- | Semantic values.
+data Sem where
+        MFun    : Syn -> (Sem -> Sem) -> Sem
+        MNat    : Nat -> Sem
+
+
+-- | Reify a semantic value back into syntax.
+--
+--   Semantic functions are paired with the syntactic version, 
+--   so we can return that directly.
+--
+--   For natural numbers we produce the unary syntactic version from
+--   the native meta-level representation.
+--
+reify : Sem -> Syn
+reify (MFun syn _ )     = syn
+reify (MNat n)  
+ = reifyNat n
+ where  reifyNat 0      = SZero
+        reifyNat n      = SApp SSucc (reifyNat (n - 1))
+
+
+-------------------------------------------------------------------------------
+-- Semantic operators.
+-- These are all partial functions. If the expression is ill-typed then
+-- we'll just get an inexhaustive case match error.
+
+
+-- | Apply a semantic function.
+appsem  (MFun _ f) arg  = f arg
+
+
+-- | Take the successor of a semantic natural number.
+succsem (MNat n)        = MNat (n + 1)
+
+
+-- | Primitive recursion for a semantic natural number.
+recsem : [a: Data]. a -> (Nat -> a -> a) -> Sem -> a
+recsem z s (MNat n)     = primrec z s n
+
+
+-------------------------------------------------------------------------------
+-- Meta-level combinators.
+
+-- | Primitive recursion combinator for natural numbers.
+primrec (z: a) (s: Nat -> a -> a): Nat -> a
+ = walk
+ where  walk 0  = z
+        walk n  = let p = n - 1
+                  in  s p (walk p)
+
+
+-------------------------------------------------------------------------------
+-- The non-standard interpretation function.
+--
+eval : Syn -> Sem
+
+eval SS
+ = MFun SS
+ $ \f -> let sf = SApp SS (reify f)
+         in  MFun sf 
+             $ \g -> let sfg = SApp sf (reify g)
+                     in  MFun sfg  
+                         $ \x -> appsem (appsem f x) (appsem g x)
+eval SK
+ = MFun SK 
+ $ \x -> let kx = SApp SK (reify x)
+         in  MFun kx (\_ -> x)
+
+eval (SApp e0 e1)
+ = appsem (eval e0) (eval e1)
+
+eval SZero
+ = MNat 0
+
+eval SSucc
+ = MFun SSucc succsem
+
+eval SRec 
+ = MFun SRec 
+ $ \z -> let recz = SApp SRec (reify z)
+         in  MFun recz
+             $ \s -> let reczs = SApp recz (reify s)
+                     in  MFun reczs
+                         $ recsem z $ \n -> \c -> appsem (appsem s (MNat n)) c
+
+
+-- The normalization function.
+norm : Syn -> Syn
+norm e = reify (eval e)
+
+
+-------------------------------------------------------------------------------
+main ()
+ = do   xadd    = SRec 
+
+        writel $ ppSyn $ norm $ SApp (SApp SK SZero) SZero
+
+
+
