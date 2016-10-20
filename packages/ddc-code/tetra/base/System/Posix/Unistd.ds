@@ -1,0 +1,11 @@
+
+module System.Posix.Unistd
+export usleep
+
+
+import foreign abstract type
+ Sleep  : Effect
+
+import foreign c value 
+ usleep : Nat# -> S Sleep Int#
+

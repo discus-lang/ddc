@@ -5,6 +5,7 @@ import World
 import Data.Array
 import Data.List
 import System.IO.Console
+import System.Posix.Unistd
 where
 
 
@@ -13,15 +14,32 @@ where
 main ()
  = private r with {Read r; Write r; Alloc r}
    in do   
-        world   = newWorld [r] 20 20
-        setCell world 5 5 CellAlive
-        setCell world 4 5 CellAlive
-        setCell world 6 5 CellAlive
-        setCell world 7 5 CellAlive
+        world   = newWorld [r] 30 30
+        setCell world 10 10 CellAlive
+        setCell world 11 10 CellAlive
+        setCell world 12 10 CellAlive
+        setCell world 13 10 CellAlive
+        setCell world 14 10 CellAlive
+        setCell world 15 10 CellAlive
+        setCell world 16 10 CellAlive
+        setCell world 17 10 CellAlive
 
-        world2  = stepWorld world
-        world3  = stepWorld world2
+        animate world 0 5
 
-        writel (showWorld world3)
+        ()
+
+
+animate (world:     World r)
+        (frame max: Nat)
+        : S (Read r + Alloc r + Sleep + Console) Unit
+ | frame >= max
+ = do   writel $ showWorld world
+
+ | otherwise
+ = do   writel  $ showWorld world
+        world'  = stepWorld world
+--        usleep 200000
+        animate world' (frame + 1) max
+
 
 

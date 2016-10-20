@@ -123,6 +123,6 @@ showWorld (world: World r): S (Read r) Text
          = go (x + 1) y
          $ acc % case getCell world x y of 
                   CellEmpty -> ". "
-                  CellAlive -> "X "
+                  CellAlive -> "O "
 
 
