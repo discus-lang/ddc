@@ -1,0 +1,27 @@
+% Disciple-BD.tex
+\begin{hcarentry}[section,updated]{Disciple}
+\report{Ben Lippmeier}%05/16
+\status{experimental, active development}
+\participants{
+        Ben Lippmeier, Jacob Stanley}
+\makeheader
+
+The Disciplined Disciple Compiler (DDC) is a research compiler used to investigate program transformation in the presence of computational effects. It compiles a family of strict functional core languages and supports region and effect typing. This extra information provides a handle on the operational behaviour of code that isn't available in other languages. Programs can be written in either a pure/functional or effectful/imperative style, and one of our goals is to provide both styles coherently in the same language.
+
+\WhatsNew
+
+DDC is in an experimental, pre-alpha state, though parts of it do work. In September this year we released DDC 0.4.3, with the following new features:
+
+\begin{compactitem}
+\item Completed desugaring of pattern alternatives.
+\item Better type inference for higher ranked types, which allows explicit dictonaries
+      for Functor, Applicative, Monad and friends to be written easily.
+\item Automatic insertion of run and box casts is now more well baked.
+\item Automatic interrogation of LLVM compiler version and generation of matching LLVM assembly syntax.
+\item Added code generation for partial applications of data constructors.
+\item Added support for simple type synonyms.
+\end{compactitem}
+
+\FurtherReading
+  \url{http://disciple.ouroborus.net}
+\end{hcarentry}
