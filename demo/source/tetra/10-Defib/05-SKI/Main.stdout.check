@@ -1,0 +1,6 @@
+two     = ((S ((S (K S)) ((S (K K)) I))) ((S ((S (K S)) ((S (K K)) I))) (K I)))
+two'    = (s (s z))
+three   = ((S ((S (K S)) ((S (K K)) I))) ((S ((S (K S)) ((S (K K)) I))) ((S ((S (K S)) ((S (K K)) I))) (K I))))
+three'  = (s (s (s z)))
+plus    = ((S ((S (K S)) ((S (K K)) ((S (K S)) ((S (K (S (K S)))) ((S (K (S (K K)))) ((S ((S (K S)) ((S (K K)) I))) (K I)))))))) (K ((S ((S (K S)) ((S (K (S (K S)))) ((S (K (S (K K)))) ((S ((S (K S)) ((S (K K)) I))) (K I)))))) (K (K I)))))
+five'   = (s (s (s (s (s z)))))

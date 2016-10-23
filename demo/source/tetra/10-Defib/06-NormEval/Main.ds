@@ -1,4 +1,12 @@
 
+-- Normalization by Evaluation demo.
+-- Based on the first part of:
+--
+-- Normalization and Partial Evaluation
+-- Peter Dybjer and Andrzej Filinski, 
+-- Applied Semantics, 2002.
+--
+
 module Main
 import Data.Numeric.Nat
 import System.IO.Console
@@ -121,9 +129,10 @@ norm e = reify (eval e)
 
 -------------------------------------------------------------------------------
 main ()
- = do   xadd    = SRec 
+ = do   xadd    = SApp (SApp SS SRec) (SApp SK (SApp SK SSucc))
+        xone    = SApp SSucc SZero
+        xtwo    = SApp SSucc xone
+        xthree  = SApp SSucc xtwo
 
-        writel $ ppSyn $ norm $ SApp (SApp SK SZero) SZero
-
-
+        writel $ ppSyn $ norm $ SApp (SApp xadd xtwo) xthree
 
