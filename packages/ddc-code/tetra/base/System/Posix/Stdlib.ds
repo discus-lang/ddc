@@ -1,0 +1,10 @@
+
+module System.Posix.Stdlib
+export exit
+
+
+import foreign abstract type
+ Process : Effect
+
+import foreign c value
+ exit    : Int# -> S Process Void#

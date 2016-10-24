@@ -34,13 +34,18 @@ import foreign c value
   primPutString       : TextLit# -> Void#
   primShowAddr        : Addr#    -> TextLit#
 
-  traceObj            : Bool# -> Addr# -> Nat#
+  ddcTraceObj         : Bool# -> Bool# -> Addr# -> Nat#
+
+  exit                : Int# -> Void#
 
 with letrec
 
+
+-- | Trace state of the allocator. 
+--   Print out the addresses of the current heap and slot stack.
 ddcTraceAlloc (_: Unit): Unit
  = do   
-        primPutString "* ddcDumpAlloc\n"#
+        primPutString "* ddc-runtime.ddcTraceAlloc\n"#
         ddcPrintAddr  "  heapBaseA      = "#  (read# heapBase#     0#)
         ddcPrintAddr  "  heapTopA       = "#  (read# heapTop#      0#)
         ddcPrintAddr  "  backBaseA      = "#  (read# heapBackBase# 0#)
@@ -60,10 +65,15 @@ ddcCollectHeap
         (ppBackTopA : Addr#) -- Word8**
                     : Unit
  = do
-        primPutString "* ddcCollectHeap start\n"#
+        primPutString "* ddc-runtime.ddcCollectHeap start\n"#
+        ddcPrintAddr  "  pHeapBaseA     = "#  pHeapBaseA
+        ddcPrintAddr  "  pHeapTopA      = "#  pHeapTopA
+        ddcPrintAddr  "  pBackBaseA     = "#  pBackBaseA
+        ddcPrintAddr  "  ppBackTopA     = "#  ppBackTopA
+        primPutString "\n"#
 
         ddcTraceAlloc ()
-        traceObj True# (read# heapBase# 0#)
+        ddcTraceObj True# True# (read# heapBase# 0#)
 
         -- Check sanity before we start the GC.
         -- _DEBUG (_lintHeap  (heapBase, heapPtr));
@@ -80,7 +90,10 @@ ddcCollectHeap
         --   copying out any reachable objects in the from-space.
         ddcScanHeap pBackBaseA ppBackTopA
 
-        primPutString "* ddcCollectHeap end\n"#
+        primPutString "* ddc-runtime.ddcCollectHeap end\n"#
+        ddcTraceAlloc ()
+
+        exit 0i#
         ()
 
         -- Update collection counter
@@ -104,7 +117,7 @@ ddcEvacuateRoots
         (ppBackA   : Addr#) -- Word8**
                    : Unit
  = do
-        primPutString "* ddcEvacutateRoots\n"#
+        primPutString "* ddc-runtime.ddcEvacutateRoots\n"#
 
         pSlotA          = read# ppSlotA 0#
 

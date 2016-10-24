@@ -35,9 +35,9 @@ ddcCheckObjHeader [r: Region] (obj: Ptr# r Obj): Word32#
 
          False#         
           -> do ddcFailMessage "checkObjHeader"#  "pointer out of range."#
-                ddcFailField   "object start"#    (primShowAddr objA)
-                ddcFailField   "heap base"#       (primShowAddr pHeapBaseA)
-                ddcFailField   "heap top"#        (primShowAddr pHeapTopA)
+                ddcFailField   "object start   "#  (primShowAddr objA)
+                ddcFailField   "heap base      "#  (primShowAddr pHeapBaseA)
+                ddcFailField   "heap top       "#  (primShowAddr pHeapTopA)
                 fail#
 
 
@@ -61,11 +61,11 @@ ddcCheckObjExtent [r: Region] (obj: Ptr# r Obj) (len: Nat#): Unit
 
          False# 
           -> do ddcFailMessage "checkObjExtent"#  "object is not within active heap"#
-                ddcFailField   "object start"#    (primShowAddr objStartA)
-                ddcFailField   "object length"#   (primShowNat  len)
-                ddcFailField   "object end"#      (primShowAddr objEndA)
-                ddcFailField   "heap base"#       (primShowAddr pHeapBaseA)
-                ddcFailField   "heap top"#        (primShowAddr pHeapTopA)
+                ddcFailField   "object start   "#  (primShowAddr objStartA)
+                ddcFailField   "object length  "#  (primShowNat  len)
+                ddcFailField   "object end     "#  (primShowAddr objEndA)
+                ddcFailField   "heap base      "#  (primShowAddr pHeapBaseA)
+                ddcFailField   "heap top       "#  (primShowAddr pHeapTopA)
                 fail#
 
 
@@ -74,7 +74,7 @@ ddcFailMessage
         (src: TextLit#)         -- ^ Place in the runtime that we encountered the error.
         (msg: TextLit#)         -- ^ Message to print.
         : Void#
- = do   primFailString "ddc-runtime."#
+ = do   primFailString "* ddc-runtime."#
         primFailString src
         primFailString ": "#
         primFailString msg
@@ -90,4 +90,5 @@ ddcFailField
         primFailString name
         primFailString ": "#
         primFailString val
+        primFailString "\n"#
 
