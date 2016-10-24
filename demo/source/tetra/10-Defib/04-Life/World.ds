@@ -23,10 +23,9 @@ data World (r: Region) where
 
 
 -- | Convert 2D coordinates to linear coordinates.
---   TODO: don't read head region when matching with case expression.
-linear (world: World r) (x y: Nat): S (Read r) Nat
+linear (world: World r) (x y: Nat): Nat
  | World width _ _      <- world
- = weakeff [Read r] in x + y * width
+ = x + y * width
 
 
 -- Create a new world.
@@ -46,12 +45,10 @@ getCell (world: World r) (x y: Nat)
 
 
 -- | Set a single cell in the world.
---   TODO: don't read head region when matching with case expression.
 setCell (world: World r) (x y: Nat) (c: Cell)
-        : S (Read r + Write r) Unit
+        : S (Write r) Unit
  | World width height arr       <- world
- = weakeff [Read r] in 
-    match
+ = match
         | x >= width    = ()
         | y >= height   = ()
         | otherwise     
@@ -96,8 +93,7 @@ mapWorld
         (world: World r)
         : S (Read r + Alloc r) (World r)
  | World width height arr       <- world
- = weakeff [Read r] in
-   extend r using r' with { Alloc r'; Read r'; Write r'} in
+ = extend r using r' with { Alloc r'; Read r'; Write r'} in
    let  
         world'  = run newWorld [r'] width height in
         

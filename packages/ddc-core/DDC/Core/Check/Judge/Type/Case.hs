@@ -94,7 +94,7 @@ checkCase !table !ctx0 mode demand
                         return (Check tA, ctx3)
 
         -- Check the alternatives.
-        (alts', tsAlts, effss, ctx4)
+        (alts', tsAlts, effssAlts, ctx4)
          <- checkAltsM table a xx tDiscrim tsArgs modeAlts demand alts ctx3
 
         -- Check that all the alternatives have the same type.
@@ -113,16 +113,11 @@ checkCase !table !ctx0 mode demand
         -- Check that alternatives are exhaustive.
         checkAltsExhaustive a xx dataMode alts
 
-        -- Effect due to inspecting the scrutinee.
-        let effsMatch
-                = Sum.singleton kEffect
-                $ tHeadRead tDiscrim
-
         -- Effect of overall expression.
         let effTotal
                 = crushEffect (contextEnvT ctx4)
                 $ TSum $ Sum.unions kEffect
-                $ effsDiscrim : effsMatch : effss
+                $ effsDiscrim : effssAlts
 
         ctrace  $ vcat
                 [ text "*<  Case"
