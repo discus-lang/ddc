@@ -70,9 +70,9 @@ ddcCollectInit (maxGCSlots : Nat#) : Unit
         pSlotBaseA      = malloc (mul# maxGCSlots (size# [Addr#]))
         pSlotMaxA       = plusAddr# pSlotBaseA (sub# maxGCSlots 1#)
 
-        write# slotBase#     0# pSlotBaseA
-        write# slotTop#      0# pSlotBaseA
-        write# slotMax#      0# pSlotMaxA
+--        write# slotBase#     0# pSlotBaseA
+--        write# slotTop#      0# pSlotBaseA
+--        write# slotMax#      0# pSlotMaxA
 
         ()
 

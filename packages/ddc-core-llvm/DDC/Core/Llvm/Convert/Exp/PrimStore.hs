@@ -399,36 +399,6 @@ convPrimStore ctx mdst p as
                  return  $ Seq.singleton $ annotNil
                          $ IConv vDst ConvPtrtoint (XVar vMaxPtr)
 
-
-        -- The base of the slot stack.
-        A.PrimStore A.PrimStoreSlotBase
-         | []            <- as
-         , Just vDst     <- mdst
-         -> Just $ do
-                 let vBasePtr = varGlobalSlotBase pp
-                 return  $ Seq.singleton $ annotNil
-                         $ IConv vDst ConvPtrtoint (XVar vBasePtr)
-
-
-        -- The top of the slot stack.
-        A.PrimStore A.PrimStoreSlotTop
-         | []            <- as
-         , Just vDst     <- mdst
-         -> Just $ do
-                 let vTopPtr = varGlobalSlotTop pp
-                 return  $ Seq.singleton $ annotNil
-                         $ IConv vDst ConvPtrtoint (XVar vTopPtr)
-
-
-        -- The maximum top of the slot stack.
-        A.PrimStore A.PrimStoreSlotMax
-         | []            <- as
-         , Just vDst     <- mdst
-         -> Just $ do
-                 let vMaxPtr = varGlobalSlotMax pp
-                 return  $ Seq.singleton $ annotNil
-                         $ IConv vDst ConvPtrtoint (XVar vMaxPtr)
-
         _ -> Nothing
 
 

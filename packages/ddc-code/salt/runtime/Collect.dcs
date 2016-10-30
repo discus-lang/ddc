@@ -12,7 +12,7 @@ export value
         -> Unit
 
 import foreign c value
-  malloc           : Nat# -> Addr#
+  malloc              : Nat# -> Addr#
 
   ddcFormatOfObject   : [r     : Region]. Ptr# r  Obj -> Nat#
   ddcSizeOfObject     : [r     : Region]. Ptr# r  Obj -> Nat#
@@ -46,12 +46,11 @@ with letrec
 ddcTraceAlloc (_: Unit): Unit
  = do   
         primPutString "* ddc-runtime.ddcTraceAlloc\n"#
+--        ddcPrintAddr  "  llvm_gc_root_chain = "# llvm_gc_root_chain
         ddcPrintAddr  "  heapBaseA      = "#  (read# heapBase#     0#)
         ddcPrintAddr  "  heapTopA       = "#  (read# heapTop#      0#)
         ddcPrintAddr  "  backBaseA      = "#  (read# heapBackBase# 0#)
         ddcPrintAddr  "  backTopA       = "#  (read# heapBackTop#  0#)
-        ddcPrintAddr  "  slotBaseA      = "#  (read# slotBase#     0#)
-        ddcPrintAddr  "  slotTopA       = "#  (read# slotTop#      0#)
         primPutString "\n"#
         ()
 
@@ -83,8 +82,8 @@ ddcCollectHeap
         write# ppBackTopA 0# pBackBaseA
 
         -- Copy all the root objects to the to-space..
-        pSlotTopA = read# slotTop# 0#
-        ddcEvacuateRoots slotBase# pSlotTopA ppBackTopA
+--        pSlotTopA = read# slotTop# 0#
+--        ddcEvacuateRoots slotBase# pSlotTopA ppBackTopA
 
         -- Recursively follow pointers in to-space,
         --   copying out any reachable objects in the from-space.

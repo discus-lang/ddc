@@ -84,16 +84,9 @@ data PrimStore
         | PrimStoreCastPtr
 
 
-        -- Slot Stack -----------------
-        -- | Base address of the slot stack.
-        | PrimStoreSlotBase
-
-        -- | The top of the slot stack.
-        --     The next slot is allocated here.
-        | PrimStoreSlotTop
-
-        -- | The maximum value that slotTop# can take without overflowing the stack.
-        | PrimStoreSlotMax
+        -- GC Root Chain --------------
+        -- | Starting address of the GC root chain.
+        | PrimStoreRootChain
 
 
         -- Heap -----------------------
@@ -148,9 +141,8 @@ instance Pretty PrimStore where
         PrimStoreTakePtr        -> text "takePtr#"
         PrimStoreCastPtr        -> text "castPtr#"
 
-        PrimStoreSlotBase       -> text "slotBase#"
-        PrimStoreSlotTop        -> text "slotTop#"
-        PrimStoreSlotMax        -> text "slotMax#"
+        PrimStoreRootChain      -> text "rootChain#"
+
         PrimStoreHeapBase       -> text "heapBase#"
         PrimStoreHeapTop        -> text "heapTop#"
         PrimStoreHeapMax        -> text "heapMax#"
@@ -187,9 +179,8 @@ readPrimStore str
         "takePtr#"              -> Just PrimStoreTakePtr
         "castPtr#"              -> Just PrimStoreCastPtr
 
-        "slotBase#"             -> Just PrimStoreSlotBase
-        "slotTop#"              -> Just PrimStoreSlotTop
-        "slotMax#"              -> Just PrimStoreSlotMax
+        "rootChain#"            -> Just PrimStoreRootChain
+
         "heapBase#"             -> Just PrimStoreHeapBase
         "heapTop#"              -> Just PrimStoreHeapTop
         "heapMax#"              -> Just PrimStoreHeapMax

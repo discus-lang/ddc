@@ -83,17 +83,18 @@ ddcTraceObj
 --
 ddcTraceSlots (print: Bool#): Unit
  = do   
-        pSlotBaseA      = read# slotBase# 0#
-        pSlotTopA       = read# slotTop#  0#
+--        pSlotBaseA      = read# slotBase# 0#
+--        pSlotTopA       = read# slotTop#  0#
 
-        (case print of
-          False# -> ()
-          True#  -> do
-                primPutString "Slots\n"#
-                fieldAddr     "{   slot base = "#  pSlotBaseA
-                fieldAddr     "    slot top  = "#  pSlotTopA
-                primPutString "}\n"#
-                ())
+--        (case print of
+--          False# -> ()
+--          True#  -> do
+--                primPutString "Slots\n"#
+--                fieldAddr     "{   slot base = "#  pSlotBaseA
+--                fieldAddr     "    slot top  = "#  pSlotTopA
+--                primPutString "}\n"#
+--                ())
+        ()
 
 
 ---------------------------------------------------------------------------------------------------
