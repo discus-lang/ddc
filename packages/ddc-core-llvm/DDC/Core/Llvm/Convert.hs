@@ -126,28 +126,18 @@ convertModuleM pp mm@(C.ModuleCore{})
         -- Holds the pointer to the maximum of the back heap.
         let vHeapBackMax        = Var nameGlobalHeapBackMax (tAddr pp)
 
-        -- Holds the pointer to the base of the slot stack.
-        let vSlotBase           = Var nameGlobalSlotBase (tAddr pp)
-
-        -- Holds the pointer to the top of the slot stack.
-        --  This is the byte _after_ the last byte used by a slot.
-        let vSlotTop            = Var nameGlobalSlotTop (tAddr pp)
-
-        -- Holds the pointer to the maximum slot stack.
-        --  This is the byte _after_ the last byte available in the slot stack.
-        let vSlotMax            = Var nameGlobalSlotMax (tAddr pp)
+        -- Holds the pointer to the LLVM GC root chain.
+--        let vLlvmRootChain      = Var nameGlobalLlvmRootChain (TPointer (TInt 8))
 
         let globalsRts
                 | C.moduleName mm == C.ModuleName ["Init"]
-                = [ GlobalStatic   vHeapBase     (StaticLit (LitInt (tAddr pp) 0))
-                  , GlobalStatic   vHeapTop      (StaticLit (LitInt (tAddr pp) 0))
-                  , GlobalStatic   vHeapMax      (StaticLit (LitInt (tAddr pp) 0))
-                  , GlobalStatic   vHeapBackBase (StaticLit (LitInt (tAddr pp) 0))
-                  , GlobalStatic   vHeapBackTop  (StaticLit (LitInt (tAddr pp) 0))
-                  , GlobalStatic   vHeapBackMax  (StaticLit (LitInt (tAddr pp) 0))
-                  , GlobalStatic   vSlotBase     (StaticLit (LitInt (tAddr pp) 0))
-                  , GlobalStatic   vSlotTop      (StaticLit (LitInt (tAddr pp) 0))
-                  , GlobalStatic   vSlotMax      (StaticLit (LitInt (tAddr pp) 0)) ]
+                = [ GlobalStatic   vHeapBase      (StaticLit (LitInt (tAddr pp) 0))
+                  , GlobalStatic   vHeapTop       (StaticLit (LitInt (tAddr pp) 0))
+                  , GlobalStatic   vHeapMax       (StaticLit (LitInt (tAddr pp) 0))
+                  , GlobalStatic   vHeapBackBase  (StaticLit (LitInt (tAddr pp) 0))
+                  , GlobalStatic   vHeapBackTop   (StaticLit (LitInt (tAddr pp) 0))
+                  , GlobalStatic   vHeapBackMax   (StaticLit (LitInt (tAddr pp) 0)) ]
+--                  , GlobalExternal vLlvmRootChain ]
 
                 | otherwise
                 = [ GlobalExternal vHeapBase
@@ -155,10 +145,8 @@ convertModuleM pp mm@(C.ModuleCore{})
                   , GlobalExternal vHeapMax
                   , GlobalExternal vHeapBackBase
                   , GlobalExternal vHeapBackTop
-                  , GlobalExternal vHeapBackMax
-                  , GlobalExternal vSlotBase
-                  , GlobalExternal vSlotTop
-                  , GlobalExternal vSlotMax ]
+                  , GlobalExternal vHeapBackMax ]
+--                   , GlobalExternal vLlvmRootChain ]
 
 
         -- Import external symbols --------------

@@ -340,10 +340,21 @@ convPrimStore ctx mdst p as
                         $ IConv vDst ConvBitcast xPtr'
 
 
+        -- The GC root chain.
+        A.PrimStore A.PrimStoreRootChain
+         | []           <- as
+         , Just vDst    <- mdst
+         -> Just $ do
+                let vRootPtr = varGlobalLlvmRootChain pp
+                return  $ Seq.singleton $ annotNil
+                        $ IConv vDst ConvPtrtoint (XVar vRootPtr)
+--                        XVar vRootPtr)
+
+
         -- The base of the front heap.
         A.PrimStore A.PrimStoreHeapBase
-         | []            <- as
-         , Just vDst     <- mdst
+         | []           <- as
+         , Just vDst    <- mdst
          -> Just $ do
                  let vBasePtr = varGlobalHeapBase pp
                  return  $ Seq.singleton $ annotNil
@@ -352,8 +363,8 @@ convPrimStore ctx mdst p as
 
         -- The top of the front heap.
         A.PrimStore A.PrimStoreHeapTop
-         | []            <- as
-         , Just vDst     <- mdst
+         | []           <- as
+         , Just vDst    <- mdst
          -> Just $ do
                  let vTopPtr = varGlobalHeapTop pp
                  return  $ Seq.singleton $ annotNil
@@ -362,8 +373,8 @@ convPrimStore ctx mdst p as
 
         -- The maximum top of the front heap.
         A.PrimStore A.PrimStoreHeapMax
-         | []            <- as
-         , Just vDst     <- mdst
+         | []           <- as
+         , Just vDst    <- mdst
          -> Just $ do
                  let vMaxPtr = varGlobalHeapMax pp
                  return  $ Seq.singleton $ annotNil
@@ -372,8 +383,8 @@ convPrimStore ctx mdst p as
 
         -- The base of the back heap.
         A.PrimStore A.PrimStoreHeapBackBase
-         | []            <- as
-         , Just vDst     <- mdst
+         | []           <- as
+         , Just vDst    <- mdst
          -> Just $ do
                  let vBasePtr = varGlobalHeapBackBase pp
                  return  $ Seq.singleton $ annotNil
@@ -382,8 +393,8 @@ convPrimStore ctx mdst p as
 
         -- The top of the back heap.
         A.PrimStore A.PrimStoreHeapBackTop
-         | []            <- as
-         , Just vDst     <- mdst
+         | []           <- as
+         , Just vDst    <- mdst
          -> Just $ do
                  let vTopPtr = varGlobalHeapBackTop pp
                  return  $ Seq.singleton $ annotNil
@@ -392,8 +403,8 @@ convPrimStore ctx mdst p as
 
         -- The maximum top of the back heap.
         A.PrimStore A.PrimStoreHeapBackMax
-         | []            <- as
-         , Just vDst     <- mdst
+         | []           <- as
+         , Just vDst    <- mdst
          -> Just $ do
                  let vMaxPtr = varGlobalHeapBackMax pp
                  return  $ Seq.singleton $ annotNil

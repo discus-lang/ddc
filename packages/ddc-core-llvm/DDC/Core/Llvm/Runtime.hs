@@ -1,7 +1,10 @@
 
 module DDC.Core.Llvm.Runtime
-        ( -- * Front Heap
-          nameGlobalHeapBase,           varGlobalHeapBase
+        ( -- * GC Root chain
+          nameGlobalLlvmRootChain,      varGlobalLlvmRootChain
+
+          -- * Front Heap
+        , nameGlobalHeapBase,           varGlobalHeapBase
         , nameGlobalHeapTop,            varGlobalHeapTop
         , nameGlobalHeapMax,            varGlobalHeapMax
 
@@ -9,11 +12,6 @@ module DDC.Core.Llvm.Runtime
         , nameGlobalHeapBackBase,       varGlobalHeapBackBase
         , nameGlobalHeapBackTop,        varGlobalHeapBackTop
         , nameGlobalHeapBackMax,        varGlobalHeapBackMax
-
-          -- * Slot Stack       
-        , nameGlobalSlotBase,           varGlobalSlotBase
-        , nameGlobalSlotTop,            varGlobalSlotTop
-        , nameGlobalSlotMax,            varGlobalSlotMax
 
           -- * Intrinsics
         , nameGlobalMalloc
@@ -23,6 +21,17 @@ where
 import DDC.Llvm.Syntax
 import DDC.Core.Llvm.Convert.Type
 import DDC.Core.Salt.Platform
+
+
+-- Root Stack ------------------------------------------------------------------
+-- | Name of the GC root chain provided by the LLVM runtime system.
+nameGlobalLlvmRootChain :: Name
+nameGlobalLlvmRootChain = NameGlobal "llvm_gc_root_chain"
+
+
+-- | Make the variable that points to the GC root chain.
+varGlobalLlvmRootChain :: Platform -> Var
+varGlobalLlvmRootChain _pp = Var nameGlobalLlvmRootChain (TPointer (TPointer (TInt 8)))
 
 
 -- Front Heap ------------------------------------------------------------------
@@ -91,40 +100,6 @@ nameGlobalHeapBackMax = NameGlobal "_DDC__heapBackMax"
 --   the back heap.
 varGlobalHeapBackMax :: Platform -> Var
 varGlobalHeapBackMax pp = Var nameGlobalHeapBackMax (TPointer (tAddr pp))
-
-
--- Slot Stack ------------------------------------------------------------------
--- | Name of the global variable that points to the base
---   address of the slot stack.
-nameGlobalSlotBase :: Name
-nameGlobalSlotBase = NameGlobal "_DDC__slotBase"
-
--- | Make the variable that points to the base
---   address of the slot stack.
-varGlobalSlotBase :: Platform -> Var
-varGlobalSlotBase pp = Var nameGlobalSlotBase (TPointer (tAddr pp))
-
-
--- | Name of the global variable that points to the next
---   available address on the slot stack.
-nameGlobalSlotTop :: Name
-nameGlobalSlotTop = NameGlobal "_DDC__slotTop"
-
--- | Make the variable that points to the next
---   available address on the slot stack.
-varGlobalSlotTop :: Platform -> Var
-varGlobalSlotTop pp = Var nameGlobalSlotTop (TPointer (tAddr pp))
-
-
--- | Name of the global variable that points to the maximum
---   possible address of the slot stack.
-nameGlobalSlotMax :: Name
-nameGlobalSlotMax = NameGlobal "_DDC__slotMax"
-
--- | Make the variable that points to the maximum
---   possible address of the slot stack.
-varGlobalSlotMax :: Platform -> Var
-varGlobalSlotMax pp = Var nameGlobalSlotMax (TPointer (tAddr pp))
 
 
 -- Intrinsics -----------------------------------------------------------------

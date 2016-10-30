@@ -35,6 +35,7 @@ import foreign c value
   primShowAddr        : Addr#    -> TextLit#
 
   ddcTraceObj         : Bool# -> Bool# -> Addr# -> Nat#
+  ddcTraceRoots       : Bool# -> Unit
 
   exit                : Int# -> Void#
 
@@ -51,6 +52,9 @@ ddcTraceAlloc (_: Unit): Unit
         ddcPrintAddr  "  heapTopA       = "#  (read# heapTop#      0#)
         ddcPrintAddr  "  backBaseA      = "#  (read# heapBackBase# 0#)
         ddcPrintAddr  "  backTopA       = "#  (read# heapBackTop#  0#)
+
+        ddcTraceRoots True#
+
         primPutString "\n"#
         ()
 
