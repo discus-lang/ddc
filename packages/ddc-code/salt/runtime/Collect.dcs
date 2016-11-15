@@ -5,10 +5,13 @@ module Collect
 export value
 
   ddcCollectHeap 
-        :  Addr# -- ^ @Word*@  Start of the from-space.
-        -> Addr# -- ^ @Word*@  Where the next object in from-space would be allocated.
-        -> Addr# -- ^ @Word*@  Start of the to-space.
-        -> Addr# -- ^ @Word**@ Where the next object in to-space will be allocated.
+        :  Addr# -- ^ Start of root chain.
+        -> Addr# -- ^ @Word**@  From Base -- first byte in from space.
+        -> Addr# -- ^ @Word**@  From Top  -- addr of next byte to be allocated.
+        -> Addr# -- ^ @Word**@  From Max  -- addr of last byte that can be allocated.
+        -> Addr# -- ^ @Word**@  To   Base -- first byte that can be allocated.
+        -> Addr# -- ^ @Word**@  To   Top  -- addr of next byte to be allocated (during evac)
+        -> Addr# -- ^ @Word**@  To   Max  -- addr of last byte that can be allocated.
         -> Unit
 
 import foreign c value
@@ -31,70 +34,65 @@ import foreign c value
   ddcArityOfMixed     : [r     : Region]. Ptr# r  Obj -> Nat#
   ddcGetMixed         : [r1 r2 : Region]. Ptr# r1 Obj -> Nat# -> Ptr# r2 Obj
 
-  primPutString       : TextLit# -> Void#
-  primShowAddr        : Addr#    -> TextLit#
+  ddcTraceAlloc  
+        :  Bool# -> Addr#
+        -> Addr# -> Addr# -> Addr#
+        -> Addr# -> Addr# -> Addr#
+        -> Unit
 
   ddcTraceObj         : Bool# -> Bool# -> Addr# -> Nat#
   ddcTraceRoots       : Bool# -> Unit
+
+  ddcLlvmRootIsEnd       : Addr# -> Bool#
+
+  primPutString       : TextLit# -> Void#
+  primShowAddr        : Addr#    -> TextLit#
+  primShowNat         : Nat#     -> TextLit#
+  primShowWord32      : Word32#  -> TextLit#
 
   exit                : Int# -> Void#
 
 with letrec
 
 
--- | Trace state of the allocator. 
---   Print out the addresses of the current heap and slot stack.
-ddcTraceAlloc (_: Unit): Unit
- = do   
-        primPutString "* ddc-runtime.ddcTraceAlloc\n"#
---        ddcPrintAddr  "  llvm_gc_root_chain = "# llvm_gc_root_chain
-        ddcPrintAddr  "  heapBaseA      = "#  (read# heapBase#     0#)
-        ddcPrintAddr  "  heapTopA       = "#  (read# heapTop#      0#)
-        ddcPrintAddr  "  backBaseA      = "#  (read# heapBackBase# 0#)
-        ddcPrintAddr  "  backTopA       = "#  (read# heapBackTop#  0#)
-
-        ddcTraceRoots True#
-
-        primPutString "\n"#
-        ()
-
-
 -- | Perform a collection on on this heap.
 --   This is a simple Cheney-scan collection.
 ddcCollectHeap
-        (pHeapBaseA : Addr#) -- Word8*
-        (pHeapTopA  : Addr#) -- Word8*
-        (pBackBaseA : Addr#) -- Word8*
-        (ppBackTopA : Addr#) -- Word8**
-                    : Unit
+        (aRootStart                      : Addr#)
+        (aaHeapBase aaHeapTop aaHeapMax  : Addr#)
+        (aaBackBase aaBackTop aaBackMax  : Addr#) : Unit
  = do
         primPutString "* ddc-runtime.ddcCollectHeap start\n"#
-        ddcPrintAddr  "  pHeapBaseA     = "#  pHeapBaseA
-        ddcPrintAddr  "  pHeapTopA      = "#  pHeapTopA
-        ddcPrintAddr  "  pBackBaseA     = "#  pBackBaseA
-        ddcPrintAddr  "  ppBackTopA     = "#  ppBackTopA
-        primPutString "\n"#
 
-        ddcTraceAlloc ()
-        ddcTraceObj True# True# (read# heapBase# 0#)
+        -- Trace the allocator state before we start.
+        ddcTraceAlloc
+                False#
+                aRootStart
+                aaHeapBase aaHeapTop aaHeapMax
+                aaBackBase aaBackTop aaBackMax
 
-        -- Check sanity before we start the GC.
-        -- _DEBUG (_lintHeap  (heapBase, heapPtr));
-        -- _DEBUG (_lintSlots (_ddcSlotBase, _ddcSlotPtr, heapBase, heapPtr));
-
-        -- Reset the to-space
-        write# ppBackTopA 0# pBackBaseA
-
-        -- Copy all the root objects to the to-space..
---        pSlotTopA = read# slotTop# 0#
---        ddcEvacuateRoots slotBase# pSlotTopA ppBackTopA
+        -- Evacuate all the root objects to the to-space.
+        ddcEvacuateRoots
+                aRootStart
+                (read# aaBackBase 0#)
+                aaBackTop 
+                (read# aaBackMax  0#)
 
         -- Recursively follow pointers in to-space,
         --   copying out any reachable objects in the from-space.
-        ddcScanHeap pBackBaseA ppBackTopA
+        ddcScanHeap 
+                (read# aaBackBase 0#)
+                (read# aaBackTop  0#)
 
         primPutString "* ddc-runtime.ddcCollectHeap end\n"#
-        ddcTraceAlloc ()
+
+{-
+        ddcTraceAlloc 
+                True#
+                pRootStart
+                ppHeapBase ppHeapTop ppHeapMax
+                ppBackBase ppBackTop ppBackMax
+-}
 
         exit 0i#
         ()
@@ -106,129 +104,171 @@ ddcCollectHeap
         -- _DEBUG(_lintHeap  (heapBackBase, *heapBackPtr));
         -- _DEBUG(_lintSlots (_ddcSlotBase, _ddcSlotPtr, heapBackBase, *heapBackPtr));
 
-ddcPrintAddr (name: TextLit#) (addr: Addr#): Void#
- = do   primPutString name
-        primPutString (primShowAddr addr)
-        primPutString "\n"#
 
 
 -- | Recursively follow pointers in the to-space, copying
 --   out any reachable objects in the from-space.
 ddcEvacuateRoots
-        (ppSlotA   : Addr#) -- Obj**
-        (pSlotTopA : Addr#) -- Obj*
-        (ppBackA   : Addr#) -- Word8**
-                   : Unit
+        (aRootStart     : Addr#)
+        (aBackBase      : Addr#)
+        (aaBackTop      : Addr#)
+        (aBackMax       : Addr#) : Unit
  = do
         primPutString "* ddc-runtime.ddcEvacutateRoots\n"#
 
-        pSlotA          = read# ppSlotA 0#
+        ddcEvacuateStackEntry
+                aaBackTop
+                aRootStart
 
-        -- Every object directly reachable from the slock stack is a root.
-        case ge# pSlotA pSlotTopA of
-          True#  -> ()
-          False# -> do
-            null        = promote# 0#
+        ()
 
-            -- Skip nulls which are present in the stack.
-            case eq# pSlotA null of
-              True#  -> ()
-              False# -> do
-                pSlotA' = ddcEvacuateObject pSlotA ppBackA
-                write# ppSlotA 0# pSlotA'
+-- | Evacuate the roots from the given stack entry.
+ddcEvacuateStackEntry
+        (aaBackTop      : Addr#)
+        (aEntry         : Addr#) : Unit
+ = do
+        -- Address of next entry in the chain.
+        aEntryNext      = read#     aEntry       0#
+
+        -- Address of frame that hold the number of roots, and meta-data.
+        aEntryFrame     = read#     aEntry            (size# [Addr#])
+
+        -- Address of array of roots for this frame.
+        aEntryRoots     = plusAddr# aEntry      (add# (size# [Addr#]) (size# [Addr#]))
+
+        -- Number of roots without meta-data in the frame.
+        numRoots        = read#     aEntryFrame  0#
+
+        -- Number of roots with meta-data in the frame.
+        numMeta         = read#     aEntryFrame (size# [Word32#])
+
+        -- Print the current stack entry.
+        primPutString "Entry\n"#
+        fieldAddr     "{ pEntry      = "# aEntry
+        fieldAddr     "  pEntryNext  = "# aEntryNext
+        fieldAddr     "  pEntryFrame = "# aEntryFrame
+        fieldAddr     "  pEntryRoots = "# aEntryRoots
+        fieldWord32   "  numRoots    = "# numRoots
+        fieldWord32   "  numMeta     = "# numMeta
+
+        ddcEvacuateRootFrame 
+                aaBackTop
+                aEntryRoots
+                0#
+                (promote# numRoots)
+
+        -- If we have not reached the end of the chain then go
+        -- to the next frame.
+        case ddcLlvmRootIsEnd aEntryNext of
+         True#  -> ()
+         False# -> ddcEvacuateStackEntry aaBackTop aEntryNext
+
+
+-- Evacuate all the roots in the given stack frame.
+ddcEvacuateRootFrame 
+        (aaBackTop:     Addr#)  -- Top of back heap.
+        (aaObj:         Addr#)  -- Current address in frame.
+        (ix:            Nat#)   -- Number of roots evacuated so far.
+        (n:             Nat#)   -- Total number of roots to evacuate.
+        : Unit
+ = case sub# n ix of
+    0#  -> ()
+    _   -> do
+        ddcEvacuateRoot 
+                aaBackTop
+                aaObj
+
+        ddcEvacuateRootFrame
+                aaBackTop
+                (plusAddr# aaObj (size# [Addr#]))
+                (add# ix 1#)
+                n
+
+
+-- Evacuate the object pointed to by a single root.
+ddcEvacuateRoot
+        (aaBackTop:     Addr#)
+        (aaObj:         Addr#)
+        : Unit
+ = do
+        -- Read the pointer to the object from the root slot.
+        aObj    = read# aaObj 0#
+
+        -- Skip slot stack values that have been assigned null values.
+        case eq# aObj (promote# 0#) of
+         True#  -> ()
+         False# 
+          -> do 
+                -- Evacuate an object, returning its new address in the to-space.
+                aObjNew = ddcEvacuateObject aaBackTop aObj
+
+                -- Update the slot entry to point to the new location.
+                write# aaObj 0# aObjNew
+
+                primPutString "* ddcEvacuateRoot\n"#
+                fieldAddr     "  aObj        = "# aObj
+                fieldAddr     "  aObjNew     = "# aObjNew
+
                 ()
-
-            -- Move to the next slot in the stack.
-            ppSlotA' = plusAddr# ppSlotA (size# [Addr#])
-            ddcEvacuateRoots ppSlotA' pSlotTopA ppBackA
 
 
 -- | Evacuate a single object and update the to-space
 --   to point to the word _after_ the new copy.
 ddcEvacuateObject
-        (pObjA   : Addr#) -- Obj*
-        (ppBackA : Addr#) -- Word8**
-                 : Addr#  -- Obj*
+        (aaBackTop      : Addr#)
+        (aObj           : Addr#)
+                        : Addr#
  = do
-        primPutString "* ddcEvacuateObject\n"#
-
-        -- _DEBUG(assert(obj != 0));
-        -- _DEBUG(assert(toPtr != 0));
-
-        pObj    = makePtr# pObjA
+        pObj    = makePtr# aObj
         format  = ddcFormatOfObject pObj
 
-        -- #if _DDC_DEBUG
-        -- bool anchored = _objIsAnchored (obj);
-        -- if (objType == _ObjTypeForward || !anchored) {
-        --         if (obj < (Obj*)_ddcHeapBase)
-        --                 _PANIC ("Obj %p to be evacuated lies before start of heap.\n", obj);
-        --
-        --         if (obj > (Obj*)_ddcHeapPtr)
-        --                 _PANIC ("Obj %p to be evacuated lies after end of heap.\n", obj);
-        -- }
-        -- #endif
+        -- If this object is a broken heart then return the forwarding pointer.
+        --   We have a "broken heart" because the object we were expecting
+        --   to be here has aready been copied out to the to-space. The old 
+        --   header in the from-space will have been over-written by the
+        --   address of where it is now in the to-space.
+        case format of 
+         1# -> do       pNewObj0 = ddcReadBrokenHeart (makePtr# aObj)
+                        takePtr# pNewObj0
 
-        case format of
-          -- Forwarding Pointer
-          1# -> do
-                -- If this object is a broken heart then return the forwarding pointer.
-                --   We have a "broken heart" because the object we were expecting to be here
-                --   has aready been copied out to the to-space. The old header in the from-space
-                --   will have been over-written by the address of where it is now in the to-space.
+         _  -> case ddcIsAnchored (makePtr# aObj) of
+                -- If the object is anchored then leave it alone.
+                --   Anchored objects are allocated outside of our heap,
+                --   and are outside our juristiction.
+                True# 
+                 ->     aObj
 
-                -- Get the address in the to-space of where the object is now.
-                pNewObj0 = ddcReadBrokenHeart pObj
+                -- This is a real object in the from-space,
+                -- so evacuate it to the to-space.
+                False#
+                 ->     ddcEvacuateCopy aaBackTop aObj 
 
-                -- #if _DDC_DEBUG
-                -- // If the thing the forwarding address points to is also a forwarding
-                -- // address then we're screwed. Following it could put us in an endless loop.
-                -- if (_objType (objR) == _ObjTypeForward) {
-                --      _ERROR ("Forwarded object is also a forward.\n");
-                --      _ERROR ("  obj  = %p\n", obj);
-                --      _ERROR ("  objR = %p\n", objR);
-                -- }
-                -- assert (_objType (objR) != _ObjTypeForward);
-                -- #endif
 
-                takePtr# pNewObj0
+-- | Copy a single object from the from-space to the to-space.
+ddcEvacuateCopy 
+        (aaBackTop      : Addr#)
+        (aObj           : Addr#)
+                        : Addr#
 
-          -- All Other Objects
-          _  ->
-                case ddcIsAnchored pObj of
-                  True#  ->
-                        -- If the object is anchored then leave it alone.
-                        --   Anchored objects are allocated outside of the DDC
-                        --   heap, and are thus out of our juristiction.
-                        pObjA
+ = do   -- Get the size of the whole object.
+        size    = ddcSizeOfObject (makePtr# aObj)
 
-                  False# -> do
-                        -- Otherwise it's one of ours, so copy it to the to-heap.
+        -- Where we're going to copy it to in the to-space.
+        aObjNew = read# aaBackTop 0#
 
-                        -- The size of the whole object.
-                        size            = ddcSizeOfObject pObj
+        -- Copy the sucker.
+        copy# aObjNew aObj size
 
-                        -- Where we're going to copy it to in the to-heap.
-                        pNewObj         = read# ppBackA 0#
-                        pNewObjA        = takePtr# pNewObj
+        -- Advance the to-pointer to point to the first byte of
+        -- where the next object could be copied to.
+        write# aaBackTop 0# (plusAddr# aObjNew size)
 
-                        -- Copy the sucker.
-                        copy# pNewObjA pObjA size
+        -- Overwrite the object header with a broken heart.
+        --   This records the fact that we've copied the object,
+        --   so if we come back here again we'll know where it's gone.
+        ddcWriteBrokenHeart (makePtr# aObj) (makePtr# aObjNew)
 
-                        -- Advance the to-pointer to point to the first word of
-                        -- where the next object is going to be.
-                        write# ppBackA 0# (plusAddr# pNewObjA size)
-
-                        -- _PROFILE_GC (copyCount++);
-                        -- _PROFILE_GC (copyBytes += size);
-
-                        -- Leave a broken-heart behind.
-                        --   This says where we've copied the object, so
-                        --   if we come back here again then we'll know
-                        --   where it's gone.
-                        ddcWriteBrokenHeart pObj pNewObj
-
-                        pNewObjA
+        aObjNew
 
 
 -- Scan functions -------------------------------------------------------------
@@ -360,5 +400,27 @@ ddcScanMixed_arg
             ddcEvacuateObject pFieldA ppBackTopA
 
             ddcScanMixed_arg pObj argIx ppBackTopA
+
+
+---------------------------------------------------------------------------------------------------
+-- | Print an Addr# field to stdout.
+fieldAddr (name: TextLit#) (val: Addr#): Void#
+ = do   primPutString name
+        primPutString (primShowAddr val)
+        primPutString ";\n"#
+
+
+-- | Print a Nat# field to stdout.
+fieldNat (name: TextLit#) (val: Nat#): Void#
+ = do   primPutString name
+        primPutString (primShowNat val)
+        primPutString ";\n"#
+
+
+-- | Print a Word32# field to stdout.
+fieldWord32 (name: TextLit#) (val: Word32#): Void#
+ = do   primPutString name
+        primPutString (primShowWord32 val)
+        primPutString ";\n"#
 
             

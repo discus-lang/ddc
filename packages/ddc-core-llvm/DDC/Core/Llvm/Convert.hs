@@ -107,27 +107,24 @@ convertModuleM pp mm@(C.ModuleCore{})
 
         -- Holds the pointer to the start of the heap.
         --  This first object is allocated at this address.
-        let vHeapBase           = Var nameGlobalHeapBase (tAddr pp)
+        let vHeapBase           = Var nameGlobalHeapBase     (tAddr pp)
 
         -- Holds the pointer to the current top of the heap.
         --  This is the byte _after_ the last byte used by an object.
-        let vHeapTop            = Var nameGlobalHeapTop (tAddr pp)
+        let vHeapTop            = Var nameGlobalHeapTop      (tAddr pp)
 
         -- Holds the pointer to the maximum heap.
         --  This is the byte _after_ the last byte avaiable in the heap.
-        let vHeapMax            = Var nameGlobalHeapMax (tAddr pp)
+        let vHeapMax            = Var nameGlobalHeapMax      (tAddr pp)
 
         -- Holds the pointer to the start of the back heap.
         let vHeapBackBase       = Var nameGlobalHeapBackBase (tAddr pp)
 
         -- Holds the pointer to the current top of the back heap.
-        let vHeapBackTop        = Var nameGlobalHeapBackTop (tAddr pp)
+        let vHeapBackTop        = Var nameGlobalHeapBackTop  (tAddr pp)
 
         -- Holds the pointer to the maximum of the back heap.
-        let vHeapBackMax        = Var nameGlobalHeapBackMax (tAddr pp)
-
-        -- Holds the pointer to the LLVM GC root chain.
---        let vLlvmRootChain      = Var nameGlobalLlvmRootChain (TPointer (TInt 8))
+        let vHeapBackMax        = Var nameGlobalHeapBackMax  (tAddr pp)
 
         let globalsRts
                 | C.moduleName mm == C.ModuleName ["Init"]
@@ -137,7 +134,6 @@ convertModuleM pp mm@(C.ModuleCore{})
                   , GlobalStatic   vHeapBackBase  (StaticLit (LitInt (tAddr pp) 0))
                   , GlobalStatic   vHeapBackTop   (StaticLit (LitInt (tAddr pp) 0))
                   , GlobalStatic   vHeapBackMax   (StaticLit (LitInt (tAddr pp) 0)) ]
---                  , GlobalExternal vLlvmRootChain ]
 
                 | otherwise
                 = [ GlobalExternal vHeapBase
@@ -146,7 +142,6 @@ convertModuleM pp mm@(C.ModuleCore{})
                   , GlobalExternal vHeapBackBase
                   , GlobalExternal vHeapBackTop
                   , GlobalExternal vHeapBackMax ]
---                   , GlobalExternal vLlvmRootChain ]
 
 
         -- Import external symbols --------------
@@ -249,6 +244,5 @@ primDecls pp
                                   , Param (TInt 1)   [] ]
         , declAlign             = AlignNone
         , declGarbageCollector  = Nothing }
-
    ]
 

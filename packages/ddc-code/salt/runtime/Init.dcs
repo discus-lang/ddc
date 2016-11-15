@@ -48,7 +48,7 @@ ddcInit (heapSize maxGCSlots: Nat#): Unit
 ddcAllocInit (heapSize : Nat#) : Unit
  = do
         pHeapBaseA      = malloc heapSize
-        pHeapMaxA       = plusAddr# pHeapBaseA (sub# heapSize 1#)
+        pHeapMaxA       = plusAddr# pHeapBaseA     (sub# heapSize 1#)
 
         write# heapBase#     0# pHeapBaseA
         write# heapTop#      0# pHeapBaseA

@@ -3,6 +3,13 @@
 module Trace
 
 export value 
+
+ ddcTraceAlloc  
+        :  Bool# -> Addr#
+        -> Addr# -> Addr# -> Addr#
+        -> Addr# -> Addr# -> Addr#
+        -> Unit
+
  ddcTraceObj            : [r : Region]. Bool# -> Bool# -> Ptr# r Obj -> Unit
  ddcTraceRoots          : Bool# -> Unit
  ddcTraceHeap           : Bool# -> Unit
@@ -53,6 +60,42 @@ import foreign abstract type
  Top : Region
 
 with letrec
+
+
+-- | Trace state of the allocator. 
+--   Print out the addresses of the current heap and slot stack.
+ddcTraceAlloc 
+        (print                           : Bool#)
+        (pRootStart                      : Addr#)
+        (ppHeapBase ppHeapTop ppHeapMax  : Addr#)
+        (ppBackBase ppBackTop ppBackMax  : Addr#) : Unit
+ = do   
+        (case print of
+         False# -> ()
+         True#  
+          -> do primPutString "* ddc-runtime.ddcTraceAlloc\n"#
+                ddcPrintAddr  "  pHeapBase      = "#  (read# ppHeapBase 0#)
+                ddcPrintAddr  "  pHeapTop       = "#  (read# ppHeapTop  0#)
+                ddcPrintAddr  "  pHeapMax       = "#  (read# ppHeapMax  0#)
+                ddcPrintAddr  "  pBackBase      = "#  (read# ppBackBase 0#)
+                ddcPrintAddr  "  pBackTop       = "#  (read# ppBackTop  0#)
+                ddcPrintAddr  "  pBackMax       = "#  (read# ppBackMax  0#)
+                ())
+
+--        ddcTraceRoots print
+
+        (case print of
+         False# -> ()
+         True#  
+          -> do primPutString "\n"#
+                ())
+
+        ()
+
+ddcPrintAddr (name: TextLit#) (addr: Addr#): Void#
+ = do   primPutString name
+        primPutString (primShowAddr addr)
+        primPutString "\n"#
 
 
 ---------------------------------------------------------------------------------------------------

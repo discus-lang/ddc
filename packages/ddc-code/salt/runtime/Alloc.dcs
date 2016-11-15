@@ -12,11 +12,12 @@ import foreign c value
         : Nat# -> Addr#
 
   ddcCollectHeap 
-        :  Addr# -- Word8*
-        -> Addr# -- Word8*
-        -> Addr# -- Word8*
-        -> Addr# -- Word8**
+        :  Addr#
+        -> Addr# -> Addr# -> Addr#
+        -> Addr# -> Addr# -> Addr#
         -> Unit
+
+  ddcLlvmRootGetStart    : Nat#  -> Addr#
 
 with letrec
 
@@ -41,9 +42,10 @@ ddcAllocCollect (byteCount : Nat#) : Unit
         pHeapBackBaseA  = read# heapBackBase# 0#
         ppHeapBackTopA  = heapBackTop#
 
-        ddcCollectHeap 
-                pHeapBaseA     pHeapTopA
-                pHeapBackBaseA ppHeapBackTopA
+        ddcCollectHeap  
+                (ddcLlvmRootGetStart 0#)
+                heapBase#     heapTop#     heapMax#
+                heapBackBase# heapBackTop# heapBackMax#
 
         -- #if _DDC_PROFILE_GC
         -- _ddcProfileCollectorEnd();

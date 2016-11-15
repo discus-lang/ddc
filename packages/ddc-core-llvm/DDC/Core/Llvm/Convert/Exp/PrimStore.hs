@@ -348,7 +348,6 @@ convPrimStore ctx mdst p as
                 let vRootPtr = varGlobalLlvmRootChain pp
                 return  $ Seq.singleton $ annotNil
                         $ IConv vDst ConvPtrtoint (XVar vRootPtr)
---                        XVar vRootPtr)
 
 
         -- The base of the front heap.
