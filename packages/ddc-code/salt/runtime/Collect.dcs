@@ -15,45 +15,45 @@ export value
         -> Unit
 
 import foreign c value
-  malloc              : Nat# -> Addr#
+  malloc                : Nat# -> Addr#
 
-  ddcFormatOfObject   : [r     : Region]. Ptr# r  Obj -> Nat#
-  ddcSizeOfObject     : [r     : Region]. Ptr# r  Obj -> Nat#
+  ddcFormatOfObject     : Addr# -> Nat#
+  ddcSizeOfObject       : Addr# -> Nat#
 
-  ddcReadBrokenHeart  : [r1 r2 : Region]. Ptr# r1 Obj -> Ptr# r2 Obj
-  ddcWriteBrokenHeart : [r1 r2 : Region]. Ptr# r1 Obj -> Ptr# r2 Obj -> Void#
+  ddcReadBrokenHeart    : Addr# -> Addr#
+  ddcWriteBrokenHeart   : Addr# -> Addr# -> Void#
 
-  ddcIsAnchored       : [r     : Region]. Ptr# r  Obj -> Bool#
+  ddcIsAnchored         : Addr# -> Bool#
 
-  ddcArgsThunk        : [r     : Region]. Ptr# r  Obj -> Nat#
-  ddcGetThunk         : [r     : Region]. Ptr# r  Obj -> Nat# -> Addr#
+  ddcArgsThunk          : Addr# -> Nat# 
+  ddcGetThunk           : Addr# -> Nat# -> Addr#
+  ddcSetThunk           : Addr# -> Nat# -> Nat# -> Addr# -> Void#
 
-  ddcArityOfBoxed     : [r     : Region]. Ptr# r  Obj -> Nat#
-  ddcGetBoxed         : [r1 r2 : Region]. Ptr# r1 Obj -> Nat# -> Ptr# r2 Obj
+  ddcArityOfBoxed       : Addr# -> Nat#
+  ddcGetBoxed           : Addr# -> Nat# -> Addr#
+  ddcSetBoxed           : Addr# -> Nat# -> Addr# -> Void#
 
-  ddcArityOfMixed     : [r     : Region]. Ptr# r  Obj -> Nat#
-  ddcGetMixed         : [r1 r2 : Region]. Ptr# r1 Obj -> Nat# -> Ptr# r2 Obj
+  ddcArityOfMixed       : Addr# -> Nat#
+  ddcGetMixed           : Addr# -> Nat# -> Addr#
 
-  ddcTraceAlloc  
-        :  Bool# -> Addr#
-        -> Addr# -> Addr# -> Addr#
-        -> Addr# -> Addr# -> Addr#
-        -> Unit
+  ddcTraceAlloc         :  Bool# -> Addr#
+                        -> Addr# -> Addr# -> Addr#
+                        -> Addr# -> Addr# -> Addr#
+                        -> Unit
 
-  ddcTraceObj         : Bool# -> Bool# -> Addr# -> Nat#
-  ddcTraceRoots       : Bool# -> Unit
+  ddcTraceObj           : Bool# -> Bool# -> Addr# -> Nat#
+  ddcTraceRoots         :  Bool# -> Unit
 
-  ddcLlvmRootIsEnd       : Addr# -> Bool#
+  ddcLlvmRootIsEnd      : Addr# -> Bool#
 
-  primPutString       : TextLit# -> Void#
-  primShowAddr        : Addr#    -> TextLit#
-  primShowNat         : Nat#     -> TextLit#
-  primShowWord32      : Word32#  -> TextLit#
+  primPutString         : TextLit# -> Void#
+  primShowAddr          : Addr#    -> TextLit#
+  primShowNat           : Nat#     -> TextLit#
+  primShowWord32        : Word32#  -> TextLit#
 
-  exit                : Int# -> Void#
+  exit                  : Int# -> Void#
 
 with letrec
-
 
 -- | Perform a collection on on this heap.
 --   This is a simple Cheney-scan collection.
@@ -79,10 +79,10 @@ ddcCollectHeap
                 (read# aaBackMax  0#)
 
         -- Recursively follow pointers in to-space,
-        --   copying out any reachable objects in the from-space.
+        --   copying out any reachable objects from the from-space.
         ddcScanHeap 
+                aaBackTop
                 (read# aaBackBase 0#)
-                (read# aaBackTop  0#)
 
         primPutString "* ddc-runtime.ddcCollectHeap end\n"#
 
@@ -114,8 +114,6 @@ ddcEvacuateRoots
         (aaBackTop      : Addr#)
         (aBackMax       : Addr#) : Unit
  = do
-        primPutString "* ddc-runtime.ddcEvacutateRoots\n"#
-
         ddcEvacuateStackEntry
                 aaBackTop
                 aRootStart
@@ -128,28 +126,28 @@ ddcEvacuateStackEntry
         (aEntry         : Addr#) : Unit
  = do
         -- Address of next entry in the chain.
-        aEntryNext      = read#     aEntry       0#
+        aEntryNext      = read#     [Addr#] aEntry       0#
 
         -- Address of frame that hold the number of roots, and meta-data.
-        aEntryFrame     = read#     aEntry            (size# [Addr#])
+        aEntryFrame     = read#     [Addr#] aEntry            (size# [Addr#])
 
         -- Address of array of roots for this frame.
         aEntryRoots     = plusAddr# aEntry      (add# (size# [Addr#]) (size# [Addr#]))
 
         -- Number of roots without meta-data in the frame.
-        numRoots        = read#     aEntryFrame  0#
+        numRoots        = read#     [Word32#] aEntryFrame  0#
 
         -- Number of roots with meta-data in the frame.
-        numMeta         = read#     aEntryFrame (size# [Word32#])
+        numMeta         = read#     [Word32#] aEntryFrame (size# [Word32#])
 
         -- Print the current stack entry.
-        primPutString "Entry\n"#
-        fieldAddr     "{ pEntry      = "# aEntry
-        fieldAddr     "  pEntryNext  = "# aEntryNext
-        fieldAddr     "  pEntryFrame = "# aEntryFrame
-        fieldAddr     "  pEntryRoots = "# aEntryRoots
-        fieldWord32   "  numRoots    = "# numRoots
-        fieldWord32   "  numMeta     = "# numMeta
+        -- primPutString "Entry\n"#
+        -- fieldAddr     "{ pEntry      = "# aEntry
+        -- fieldAddr     "  pEntryNext  = "# aEntryNext
+        -- fieldAddr     "  pEntryFrame = "# aEntryFrame
+        -- fieldAddr     "  pEntryRoots = "# aEntryRoots
+        -- fieldWord32   "  numRoots    = "# numRoots
+        -- fieldWord32   "  numMeta     = "# numMeta
 
         ddcEvacuateRootFrame 
                 aaBackTop
@@ -205,9 +203,9 @@ ddcEvacuateRoot
                 -- Update the slot entry to point to the new location.
                 write# aaObj 0# aObjNew
 
-                primPutString "* ddcEvacuateRoot\n"#
-                fieldAddr     "  aObj        = "# aObj
-                fieldAddr     "  aObjNew     = "# aObjNew
+--                 primPutString "* ddcEvacuateRoot\n"#
+--                 fieldAddr     "  aObj        = "# aObj
+--                 fieldAddr     "  aObjNew     = "# aObjNew
 
                 ()
 
@@ -215,12 +213,11 @@ ddcEvacuateRoot
 -- | Evacuate a single object and update the to-space
 --   to point to the word _after_ the new copy.
 ddcEvacuateObject
-        (aaBackTop      : Addr#)
-        (aObj           : Addr#)
-                        : Addr#
+        (aaBackTop      : Addr#)        -- Address of the back heap top pointer.
+        (aObj           : Addr#)        -- Address of the object to evacuate.
+                        : Addr#         -- Address that the object has been evacuated to.
  = do
-        pObj    = makePtr# aObj
-        format  = ddcFormatOfObject pObj
+        format  = ddcFormatOfObject aObj
 
         -- If this object is a broken heart then return the forwarding pointer.
         --   We have a "broken heart" because the object we were expecting
@@ -228,10 +225,9 @@ ddcEvacuateObject
         --   header in the from-space will have been over-written by the
         --   address of where it is now in the to-space.
         case format of 
-         1# -> do       pNewObj0 = ddcReadBrokenHeart (makePtr# aObj)
-                        takePtr# pNewObj0
+         1# -> ddcReadBrokenHeart aObj
 
-         _  -> case ddcIsAnchored (makePtr# aObj) of
+         _  -> case ddcIsAnchored aObj of
                 -- If the object is anchored then leave it alone.
                 --   Anchored objects are allocated outside of our heap,
                 --   and are outside our juristiction.
@@ -246,12 +242,12 @@ ddcEvacuateObject
 
 -- | Copy a single object from the from-space to the to-space.
 ddcEvacuateCopy 
-        (aaBackTop      : Addr#)
-        (aObj           : Addr#)
-                        : Addr#
+        (aaBackTop      : Addr#)        -- Address of the back heap top pointer.
+        (aObj           : Addr#)        -- Address of the object to copy.
+                        : Addr#         -- Address that the object has been copied to.
 
  = do   -- Get the size of the whole object.
-        size    = ddcSizeOfObject (makePtr# aObj)
+        size    = ddcSizeOfObject aObj
 
         -- Where we're going to copy it to in the to-space.
         aObjNew = read# aaBackTop 0#
@@ -266,12 +262,12 @@ ddcEvacuateCopy
         -- Overwrite the object header with a broken heart.
         --   This records the fact that we've copied the object,
         --   so if we come back here again we'll know where it's gone.
-        ddcWriteBrokenHeart (makePtr# aObj) (makePtr# aObjNew)
+        ddcWriteBrokenHeart aObj aObjNew 
 
         aObjNew
 
 
--- Scan functions -------------------------------------------------------------
+-- Scan functions ---------------------------------------------------------------------------------
 --   "Scanning" means to look at the other objects this one points to and also
 --   copy those to the to-space.
 --
@@ -280,101 +276,121 @@ ddcEvacuateCopy
 -- | Scan all the objects in the to space.
 --     This copies in the data that is reachable from the object already there.
 ddcScanHeap
-        (pScanA     : Addr#)
-        (ppBackTopA : Addr#)
-                    : Unit
- = do
-        pBackTopA       = read# ppBackTopA 0#
+        (aaToSpaceTop   : Addr#)        -- ^ Address of the pointer to the top of the to-space.
+        (aObjScan       : Addr#)        -- ^ Address of the next object we need to scan.
+                        : Unit
+ = case ge# aObjScan (read# aaToSpaceTop 0#) of
+    -- When the next object pointer is past the top of the to-space
+    -- then the scanning process is complete.
+    True#  -> ()
 
-        case ge# pScanA pBackTopA of
-          True#  -> ()
-          False# -> do
-            pScan       = makePtr# pScanA
+    False# -> do
 
-            ddcScanObject pScan ppBackTopA
-            pScanA'     = plusAddr# pScanA (ddcSizeOfObject pScan)
+        -- Scan an object in the to-space and copy any object that
+        -- it refers to from the from-space to the to-space.
+        ddcScanObject aaToSpaceTop aObjScan
 
-            ddcScanHeap pScanA' ppBackTopA
+        -- Go to the next object to scan.
+        size            = ddcSizeOfObject aObjScan
+        aObjNext        = plusAddr# aObjScan size
+
+        ddcScanHeap aaToSpaceTop aObjNext
 
 
 -- | Scan an arbitrary object.
---   This examines the tag of the object to determine what sort it is, then
---   calls the scan function specific to that object.
+--   This examines the tag of the object to determine what sort it is,
+--   then calls the scan function specific to that object.
 ddcScanObject
-        [r          : Region]
-        (pObj       : Ptr# r Obj)
-        (ppBackTopA : Addr#)
-                    : Unit
-  =     case ddcFormatOfObject pObj of
+        (aaToSpaceTop   : Addr#)        -- ^ Address of the pointer to the top of the to-space.
+        (aObjScan       : Addr#)        -- ^ Address of the next object we need to scan.
+                        : Unit
+  =     case ddcFormatOfObject aObjScan of
           0# -> fail#   -- unknown object.
           1# -> fail#   -- broken heart.
-          2# -> ddcScanThunk pObj ppBackTopA
-          3# -> ddcScanBoxed pObj ppBackTopA
+  
+          2# -> ddcScanThunk aaToSpaceTop aObjScan
+          3# -> ddcScanBoxed aaToSpaceTop aObjScan
+
           4# -> ()      -- raw data contains no pointers to scan.
-          5# -> ddcScanMixed pObj ppBackTopA
+          5# -> fail#   -- ddcScanMixed aaToSpaceTop aObjScan           TODO: implement mixed
           6# -> ()      -- small raw data contains no pointers to scan.
        -- 7# -> ???     -- ISSUE #341: SuspIndir not implemented
           _  -> fail#   -- invalid format
 
 
+---------------------------------------------------------------------------------------------------
 -- | Scan a thunk.
 ddcScanThunk
-        [r          : Region]
-        (pObj       : Ptr# r Obj)
-        (ppBackTopA : Addr#)
-                    : Unit
- =      ddcScanThunk_arg pObj (ddcArgsThunk pObj) ppBackTopA
+        (aaToSpaceTop   : Addr#)        -- ^ Address of the pointer to the top of the to-space.
+        (aObjScan       : Addr#)        -- ^ Address of the thunk being scanned.
+                        : Unit          -- ^ Number of thunk arguments we still need to evacuate.
+ =      ddcScanThunk_arg 
+                aaToSpaceTop 
+                aObjScan 
+                (ddcArgsThunk aObjScan)
+
 
 -- | Scan a thunk argument.
 ddcScanThunk_arg
-        [r             : Region]
-        (pObj          : Ptr# r Obj)
-        (argsRemaining : Nat#)
-        (ppBackTopA    : Addr#)
-                       : Unit
- = do
-        primPutString "* scan thunk\n"#
+        (aaToSpaceTop   : Addr#)        -- ^ Address of the pointer to the top of the to-space.
+        (aObjScan       : Addr#)        -- ^ Address of the thunk being scanned.
+        (nArgsRemaining : Nat#)         -- ^ Number of thunk arguments we still need to evacuate.
+                        : Unit
+ = case le# nArgsRemaining 0# of
+    True#  -> ()
+    False# -> do
+        argIx       = sub# nArgsRemaining 1#
 
-        case eq# argsRemaining 0# of
-          True#  -> ()
-          False# -> do
-            argIx   = sub# argsRemaining 1#
-            pFieldA = ddcGetThunk pObj argIx
+        -- Address where thunk argument is in the from-space.
+        aArgFrom    = ddcGetThunk aObjScan argIx
 
-            ddcEvacuateObject pFieldA ppBackTopA
+        -- Evacuate the argument to the to-space.
+        aArgTo      = ddcEvacuateObject aaToSpaceTop aArgFrom
 
-            ddcScanThunk_arg pObj argIx ppBackTopA
+        -- Update the thunk to point to the copied object in the to-space.
+        ddcSetThunk aObjScan 0# argIx aArgTo
+
+        ddcScanThunk_arg aaToSpaceTop aObjScan argIx 
 
 
+---------------------------------------------------------------------------------------------------
 -- | Scan a boxed data object.
 ddcScanBoxed
-        [r          : Region]
-        (pObj       : Ptr# r Obj)
-        (ppBackTopA : Addr#)
-                    : Unit
- =      ddcScanBoxed_arg pObj (ddcArityOfBoxed pObj) ppBackTopA
+        (aaToSpaceTop   : Addr#)        -- ^ Address of the pointer to the top of the to-space.
+        (aObjScan       : Addr#)        -- ^ Address of the boxed object being scanned.
+                        : Unit
+ = do   primPutString "scan boxed\n"# 
+        ddcScanBoxed_arg 
+                aaToSpaceTop
+                aObjScan
+                (ddcArityOfBoxed aObjScan)
 
--- | Scan a boxed argument.
+
+-- | Scan an argument of a boxed object.
 ddcScanBoxed_arg
-        [r             : Region]
-        (pObj          : Ptr# r Obj)
-        (argsRemaining : Nat#)
-        (ppBackTopA    : Addr#)
-                       : Unit
- = do
-        primPutString "* scan boxed\n"#
+        (aaToSpaceTop   : Addr#)        -- ^ Address of the pointer to the top of the to-space.
+        (aObjScan       : Addr#)        -- ^ Address of the boxed object being scanned.
+        (nArgsRemaining : Nat#)
+                        : Unit
+ = case le# nArgsRemaining 0# of
+    True#  -> ()
+    False# -> do
+        argIx     = sub# nArgsRemaining 1#
+        
+        -- Address where the object argument is in the from-space.
+        aArgFrom  = ddcGetBoxed aObjScan argIx
 
-        case eq# argsRemaining 0# of
-          True#  -> ()
-          False# -> do
-            argIx   = sub# argsRemaining 1#
-            pFieldA = takePtr# (ddcGetBoxed pObj argIx)
+        -- Evacuate the argument to the to-space.
+        aArgTo    = ddcEvacuateObject aaToSpaceTop aArgFrom
 
-            ddcEvacuateObject pFieldA ppBackTopA
+        -- Update the argument field boxed object to the copied version of the argument.
+        ddcSetBoxed aObjScan argIx aArgTo
 
-            ddcScanBoxed_arg pObj argIx ppBackTopA
+        ddcScanBoxed_arg aaToSpaceTop aObjScan argIx
 
 
+---------------------------------------------------------------------------------------------------
+{-
 -- | Scan a mixed data object.
 ddcScanMixed
         [r          : Region]
@@ -400,7 +416,7 @@ ddcScanMixed_arg
             ddcEvacuateObject pFieldA ppBackTopA
 
             ddcScanMixed_arg pObj argIx ppBackTopA
-
+-}
 
 ---------------------------------------------------------------------------------------------------
 -- | Print an Addr# field to stdout.
