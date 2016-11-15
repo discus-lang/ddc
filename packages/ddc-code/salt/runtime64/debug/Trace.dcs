@@ -230,18 +230,25 @@ traceBoxed
         -- which will also read the tag/format field.
         ddcCheckObjExtent obj (ddcHeaderSizeOfObject obj)
 
+        -- Now it's safe to get the arity.
+        arity   = ddcArityOfBoxed obj
+        size    = ddcSizeOfObject obj
+        (case print of
+          False# -> ()
+          True#  -> do
+                fieldNat      "    arity          = "# arity
+                fieldNat      "    (object size)  = "# size
+                ())
+
         -- Check that the payload is also within the heap,
         -- which will also read the rest of the header.
         ddcCheckObjExtent obj (ddcSizeOfObject obj)
 
         -- Now it's safe to print the rest of the object.
-        arity   = ddcArityOfBoxed obj
         (case print of
           False# -> ()
           True#  -> do
-                fieldNat      "    arity          = "# arity
                 traceBoxedPtrs print obj (promote# arity) 0#
-                fieldNat      "    (object size)  = "# (ddcSizeOfObject obj)
                 primPutString "}\n"#
                 ())
 
@@ -445,6 +452,7 @@ ddcTraceHeap (print: Bool#): Unit
  = do   
         pHeapBaseA      = read# heapBase# 0#
         pHeapTopA       = read# heapTop#  0#
+        pHeapMaxA       = read# heapMax#  0#
 
         (case print of
           False# -> ()
@@ -452,6 +460,7 @@ ddcTraceHeap (print: Bool#): Unit
                 primPutString "Heap\n"#
                 fieldAddr     "{   heapBase = "#  pHeapBaseA
                 fieldAddr     "    heapTop  = "#  pHeapTopA
+                fieldAddr     "    heapMax  = "#  pHeapMaxA
                 primPutString "}\n"#
                 ()) 
 

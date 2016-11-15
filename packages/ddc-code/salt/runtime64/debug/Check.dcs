@@ -45,15 +45,29 @@ ddcCheckObjHeader [r: Region] (obj: Ptr# r Obj): Word32#
 --   check that the whole object is within the current allocated heap,
 --   and fail# if it is out of range.
 ddcCheckObjExtent [r: Region] (obj: Ptr# r Obj) (len: Nat#): Unit
- = do   
+ = case eq# len 0# of
+    -- The subsequent check depends on the object having a non-zero size.
+    True# -> do
+        ddcFailMessage "checkObjExtent"#  "object has length zero"#
+        ddcFailField   "object start   "#  (primShowAddr (takePtr# obj))
+        ()
+
+    -- Check objects of some non-zero size.
+    False# -> do
+        -- Base of heap is the first byte which can be allocated.
         pHeapBaseA      = read# heapBase# 0#
+
+        -- Top of heap is the byte after the last one that has been allocated.
         pHeapTopA       = read# heapTop#  0#
 
-        objStartA       = takePtr# obj
-        objEndA         = plusAddr# objStartA len
+        -- First byte of the object.
+        objFirstA       = takePtr# obj
 
-        valid           = mul# (ge# objStartA pHeapBaseA)
-                               (lt# objEndA   pHeapTopA)
+        -- Last byte of the object.
+        objLastA        = plusAddr# objFirstA (sub# len 1#)
+
+        valid           = mul# (ge# objFirstA pHeapBaseA)
+                               (lt# objLastA  pHeapTopA)
 
         case valid of
          True#          
@@ -61,11 +75,11 @@ ddcCheckObjExtent [r: Region] (obj: Ptr# r Obj) (len: Nat#): Unit
 
          False# 
           -> do ddcFailMessage "checkObjExtent"#  "object is not within active heap"#
-                ddcFailField   "object start   "#  (primShowAddr objStartA)
-                ddcFailField   "object length  "#  (primShowNat  len)
-                ddcFailField   "object end     "#  (primShowAddr objEndA)
                 ddcFailField   "heap base      "#  (primShowAddr pHeapBaseA)
                 ddcFailField   "heap top       "#  (primShowAddr pHeapTopA)
+                ddcFailField   "object first   "#  (primShowAddr objFirstA)
+                ddcFailField   "object length  "#  (primShowNat  len)
+                ddcFailField   "object last    "#  (primShowAddr objLastA)
                 fail#
 
 

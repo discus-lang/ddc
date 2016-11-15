@@ -36,15 +36,18 @@ import foreign c value
   ddcArityOfMixed       : Addr# -> Nat#
   ddcGetMixed           : Addr# -> Nat# -> Addr#
 
+  ddcLlvmRootIsEnd      : Addr# -> Bool#
+
   ddcTraceAlloc         :  Bool# -> Addr#
                         -> Addr# -> Addr# -> Addr#
                         -> Addr# -> Addr# -> Addr#
                         -> Unit
 
-  ddcTraceObj           : Bool# -> Bool# -> Addr# -> Nat#
-  ddcTraceRoots         :  Bool# -> Unit
+  ddcTraceHeap          : Bool# -> Unit
 
-  ddcLlvmRootIsEnd      : Addr# -> Bool#
+  ddcTraceObj           : Bool# -> Bool# -> Addr# -> Nat#
+  ddcTraceRoots         : Bool# -> Unit
+
 
   primPutString         : TextLit# -> Void#
   primShowAddr          : Addr#    -> TextLit#
@@ -66,10 +69,17 @@ ddcCollectHeap
 
         -- Trace the allocator state before we start.
         ddcTraceAlloc
-                False#
+                True#
                 aRootStart
                 aaHeapBase aaHeapTop aaHeapMax
                 aaBackBase aaBackTop aaBackMax
+
+        ddcTraceHeap True#
+
+        -- Reset the top of the to-heap as we're about to overwrite 
+        -- what's already there.
+        aBackBase'      = read# [Addr#] aaBackBase 0#
+        write# aaBackTop 0# aBackBase'
 
         -- Evacuate all the root objects to the to-space.
         ddcEvacuateRoots
@@ -80,30 +90,35 @@ ddcCollectHeap
 
         -- Recursively follow pointers in to-space,
         --   copying out any reachable objects from the from-space.
-        ddcScanHeap 
-                aaBackTop
-                (read# aaBackBase 0#)
+--        ddcScanHeap 
+--                aaBackTop
+--                (read# aaBackBase 0#)
+
+        -- Flip the front and back heaps.
+        aHeapBase       = read# [Addr#] aaHeapBase 0#
+        aHeapTop        = read# [Addr#] aaHeapTop  0#
+        aHeapMax        = read# [Addr#] aaHeapMax  0#
+
+        aBackBase       = read# [Addr#] aaBackBase 0#
+        aBackTop        = read# [Addr#] aaBackTop  0#
+        aBackMax        = read# [Addr#] aaBackMax  0#
+
+        write# [Addr#] aaHeapBase 0# aBackBase
+        write# [Addr#] aaHeapTop  0# aBackTop
+        write# [Addr#] aaHeapMax  0# aBackMax
+
+        write# [Addr#] aaBackBase 0# aHeapBase
+        write# [Addr#] aaBackTop  0# aHeapTop
+        write# [Addr#] aaBackMax  0# aHeapMax
 
         primPutString "* ddc-runtime.ddcCollectHeap end\n"#
+        fieldAddr  " aHeapBase "#  aHeapBase
+        fieldAddr  " aHeapTop  "#  aHeapTop
+        fieldAddr  " aBackBase "#  aBackBase
+        fieldAddr  " aBackTop  "#  aBackTop
 
-{-
-        ddcTraceAlloc 
-                True#
-                pRootStart
-                ppHeapBase ppHeapTop ppHeapMax
-                ppBackBase ppBackTop ppBackMax
--}
-
-        exit 0i#
+        ddcTraceHeap True#
         ()
-
-        -- Update collection counter
-        -- _PROFILE_GC (count++);
-
-        -- Check sanity again now the GC is finished.
-        -- _DEBUG(_lintHeap  (heapBackBase, *heapBackPtr));
-        -- _DEBUG(_lintSlots (_ddcSlotBase, _ddcSlotPtr, heapBackBase, *heapBackPtr));
-
 
 
 -- | Recursively follow pointers in the to-space, copying
@@ -359,8 +374,7 @@ ddcScanBoxed
         (aaToSpaceTop   : Addr#)        -- ^ Address of the pointer to the top of the to-space.
         (aObjScan       : Addr#)        -- ^ Address of the boxed object being scanned.
                         : Unit
- = do   primPutString "scan boxed\n"# 
-        ddcScanBoxed_arg 
+ = do   ddcScanBoxed_arg 
                 aaToSpaceTop
                 aObjScan
                 (ddcArityOfBoxed aObjScan)

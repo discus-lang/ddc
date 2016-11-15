@@ -3,21 +3,19 @@
 module Alloc
 
 export value
-  ddcAllocCollect 
-        :  Nat# -- ^ How much space must be left after collection.
-        -> Unit
+  ddcAllocCollect       :  Nat# -- ^ How much space must be left after collection.
+                        -> Unit
 
 import foreign c value
-  malloc      
-        : Nat# -> Addr#
+  ddcCollectHeap        :  Addr#
+                        -> Addr# -> Addr# -> Addr#
+                        -> Addr# -> Addr# -> Addr#
+                        -> Unit
 
-  ddcCollectHeap 
-        :  Addr#
-        -> Addr# -> Addr# -> Addr#
-        -> Addr# -> Addr# -> Addr#
-        -> Unit
+  ddcLlvmRootGetStart   : Nat#  -> Addr#
 
-  ddcLlvmRootGetStart    : Nat#  -> Addr#
+  primFailString        : TextLit# -> Void# 
+  primPutString         : TextLit# -> Void# 
 
 with letrec
 
@@ -27,56 +25,25 @@ with letrec
 --     system will panic.
 ddcAllocCollect (byteCount : Nat#) : Unit
  = do
-        -- Check how much data is in the heap before collection.
-        pHeapBaseA      = read# heapBase# 0#
-        pHeapTopA       = read# heapTop#  0#
-        heapUsageStart  = sub# pHeapTopA pHeapBaseA
-
-        -- #if _DDC_PROFILE_GC
-        -- _ddcProfileMutatorEnd();
-        -- _ddcProfileCollectorStart();
-        -- #endif
-        -- _PROFILE_GC (allocBytes += heapUsageStart - _ddcProfile ->gc.lastCompactionSize);
-
-        -- Copy out the live data to the new heap.
-        pHeapBackBaseA  = read# heapBackBase# 0#
-        ppHeapBackTopA  = heapBackTop#
-
+        -- Run a garbage collection cycle.
+        --   This copies live objects from the front heap to the back heap
+        --   then flips the heap. Once it's done the live objects are in the
+        --   front heap.
         ddcCollectHeap  
                 (ddcLlvmRootGetStart 0#)
                 heapBase#     heapTop#     heapMax#
                 heapBackBase# heapBackTop# heapBackMax#
 
-        -- #if _DDC_PROFILE_GC
-        -- _ddcProfileCollectorEnd();
-        -- _ddcProfileMutatorStart();
-        -- #endif
+        -- Check that we've recovered enough space to perform the
+        -- required allocation. If not then we're screwed.
+        -- If not then 
+        aNewTop         = read# heapBase#     0#
+        aNewMax         = read# heapMax#      0#
 
-        -- Flip the front and back heap buffers
-        pHeapMaxA       = read# heapMax#     0#
-        pHeapBackTopA   = read# heapBackTop# 0#
-        pHeapBackMaxA   = read# heapBackMax# 0#
+        case gt# (plusAddr# aNewTop byteCount) aNewMax of
+         True#  -> do   primFailString "Out of space\n"# 
+                        fail#
 
-        write# [Addr#] heapBase#     0# pHeapBackBaseA
-        write# [Addr#] heapBackBase# 0# pHeapBaseA
-
-        write# [Addr#] heapTop#      0# pHeapBackTopA
-        write# [Addr#] heapBackTop#  0# pHeapTopA
-
-        write# [Addr#] heapMax#      0# pHeapBackMaxA
-        write# [Addr#] heapBackMax#  0# pHeapMaxA
-
-        -- // Check how much data is in the heap after collection.
-        -- Word64 heapUsageEnd  = _ddcHeapPtr - _ddcHeapBase;
-        -- _PROFILE_GC (lastCompactionSize = heapUsageEnd);
-
-        -- If we haven't recovered enough space, then the allocation that
-        --   triggered this collection won't be able to complete, so we're
-        --   screwed.
-        -- TODO: instead of just panicing we should grow the heap.
-        pPostAllocMaxA  = plusAddr# pHeapBackTopA byteCount
-        case gt# pPostAllocMaxA pHeapBackMaxA of
-          True#  -> fail#
-          False# -> ()
-
+         False# -> do   primPutString "* GC completed\n"#
+                        ()
 

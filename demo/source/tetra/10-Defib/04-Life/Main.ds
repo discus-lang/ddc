@@ -6,6 +6,7 @@ import Data.Array
 import Data.List
 import System.IO.Console
 import System.Posix.Unistd
+import System.Runtime
 where
 
 
@@ -31,12 +32,17 @@ main ()
 
 animate (world:     World r)
         (frame max: Nat)
-        : S (Read r + Alloc r + Sleep + Console) Unit
+        : S (Read r + Alloc r + Sleep + Console + Runtime) Unit
  | frame >= max
  = do   writel $ showWorld world
 
  | otherwise
- = do   writel  $ showWorld world
+ = do   writel "world"
+
+-- runtimeTraceHeap True
+--        runtimeTraceObj  True True world
+
+        writel  $ showWorld world
         world'  = stepWorld world
 --        usleep 200000
         animate world' (frame + 1) max
