@@ -136,7 +136,9 @@ import value
  -- otherwise we cannot continue execution.
  ddcAllocCollect      : Nat# -> Unit
  primFailString       : TextLit# -> Void#
-
+ primPutString        : TextLit# -> Void#
+ primShowAddr         : Addr# -> TextLit#
+ primShowNat          : Nat#  -> TextLit#
 
 with letrec
 
@@ -383,7 +385,17 @@ ddcAllocThunk_ok [r: Region] (fun:  Addr#)
         -- Write the function pointer.
         write# addr 8# fun
 
-        makePtr# addr
+        sane    = mul#  (lt# params 16#)
+                        (lt# boxes  8#)
+
+        case sane of 
+         False# 
+          -> do primFailString "! Dodgy Thunk Allocation\n"#
+                fail#
+
+         True#  -> makePtr# addr
+
+
 
 
 -- | Determine the total size of a thunk.

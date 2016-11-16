@@ -4,6 +4,8 @@ module Collect
 
 export value
 
+  ddcPerformGC : Unit -> Unit
+
   ddcCollectHeap 
         :  Addr# -- ^ Start of root chain.
         -> Addr# -- ^ @Word**@  From Base -- first byte in from space.
@@ -48,6 +50,7 @@ import foreign c value
   ddcTraceObj           : Bool# -> Bool# -> Addr# -> Nat#
   ddcTraceRoots         : Bool# -> Unit
 
+  ddcLlvmRootGetStart   : Nat#  -> Addr#
 
   primPutString         : TextLit# -> Void#
   primShowAddr          : Addr#    -> TextLit#
@@ -57,6 +60,18 @@ import foreign c value
   exit                  : Int# -> Void#
 
 with letrec
+
+
+-- | Force garbage collection of the current heap.
+ddcPerformGC (u: Unit): Unit
+ = do   
+        ddcCollectHeap  
+                (ddcLlvmRootGetStart 0#)
+                heapBase#     heapTop#     heapMax#
+                heapBackBase# heapBackTop# heapBackMax#
+        u
+
+
 
 -- | Perform a collection on on this heap.
 --   This is a simple Cheney-scan collection.
@@ -90,9 +105,9 @@ ddcCollectHeap
 
         -- Recursively follow pointers in to-space,
         --   copying out any reachable objects from the from-space.
---        ddcScanHeap 
---                aaBackTop
---                (read# aaBackBase 0#)
+        ddcScanHeap 
+                aaBackTop
+                (read# aaBackBase 0#)
 
         -- Flip the front and back heaps.
         aHeapBase       = read# [Addr#] aaHeapBase 0#
@@ -111,13 +126,21 @@ ddcCollectHeap
         write# [Addr#] aaBackTop  0# aHeapTop
         write# [Addr#] aaBackMax  0# aHeapMax
 
-        primPutString "* ddc-runtime.ddcCollectHeap end\n"#
-        fieldAddr  " aHeapBase "#  aHeapBase
-        fieldAddr  " aHeapTop  "#  aHeapTop
-        fieldAddr  " aBackBase "#  aBackBase
-        fieldAddr  " aBackTop  "#  aBackTop
+        primPutString "* ddc-runtime.ddcCollectHeap dump\n"#
+        fieldAddr  " aHeapBase (new) "#  aBackBase
+        fieldAddr  " aHeapTop  (new) "#  aBackTop
+        fieldAddr  " aBackBase (new) "#  aHeapBase
+        fieldAddr  " aBackTop  (new) "#  aHeapTop
+
+        ddcTraceAlloc
+                True#
+                aRootStart
+                aaHeapBase aaHeapTop aaHeapMax
+                aaBackBase aaBackTop aaBackMax
 
         ddcTraceHeap True#
+        primPutString "* ddc-runtime.ddcCollectHeap end\n"#
+
         ()
 
 
@@ -342,6 +365,7 @@ ddcScanThunk
  =      ddcScanThunk_arg 
                 aaToSpaceTop 
                 aObjScan 
+                0#
                 (ddcArgsThunk aObjScan)
 
 
@@ -349,23 +373,21 @@ ddcScanThunk
 ddcScanThunk_arg
         (aaToSpaceTop   : Addr#)        -- ^ Address of the pointer to the top of the to-space.
         (aObjScan       : Addr#)        -- ^ Address of the thunk being scanned.
-        (nArgsRemaining : Nat#)         -- ^ Number of thunk arguments we still need to evacuate.
+        (iArg nArgs     : Nat#)
                         : Unit
- = case le# nArgsRemaining 0# of
+ = case ge# iArg nArgs of
     True#  -> ()
     False# -> do
-        argIx       = sub# nArgsRemaining 1#
-
         -- Address where thunk argument is in the from-space.
-        aArgFrom    = ddcGetThunk aObjScan argIx
+        aArgFrom    = ddcGetThunk aObjScan iArg
 
         -- Evacuate the argument to the to-space.
         aArgTo      = ddcEvacuateObject aaToSpaceTop aArgFrom
 
         -- Update the thunk to point to the copied object in the to-space.
-        ddcSetThunk aObjScan 0# argIx aArgTo
+        ddcSetThunk aObjScan 0# iArg aArgTo
 
-        ddcScanThunk_arg aaToSpaceTop aObjScan argIx 
+        ddcScanThunk_arg aaToSpaceTop aObjScan (add# iArg 1#) nArgs
 
 
 ---------------------------------------------------------------------------------------------------
@@ -377,6 +399,7 @@ ddcScanBoxed
  = do   ddcScanBoxed_arg 
                 aaToSpaceTop
                 aObjScan
+                0#
                 (ddcArityOfBoxed aObjScan)
 
 
@@ -384,23 +407,22 @@ ddcScanBoxed
 ddcScanBoxed_arg
         (aaToSpaceTop   : Addr#)        -- ^ Address of the pointer to the top of the to-space.
         (aObjScan       : Addr#)        -- ^ Address of the boxed object being scanned.
-        (nArgsRemaining : Nat#)
+        (iArg           : Nat#)
+        (nArgs          : Nat#)
                         : Unit
- = case le# nArgsRemaining 0# of
+ = case ge# iArg nArgs of
     True#  -> ()
     False# -> do
-        argIx     = sub# nArgsRemaining 1#
-        
         -- Address where the object argument is in the from-space.
-        aArgFrom  = ddcGetBoxed aObjScan argIx
+        aArgFrom  = ddcGetBoxed aObjScan iArg
 
         -- Evacuate the argument to the to-space.
         aArgTo    = ddcEvacuateObject aaToSpaceTop aArgFrom
 
         -- Update the argument field boxed object to the copied version of the argument.
-        ddcSetBoxed aObjScan argIx aArgTo
+        ddcSetBoxed aObjScan iArg aArgTo
 
-        ddcScanBoxed_arg aaToSpaceTop aObjScan argIx
+        ddcScanBoxed_arg aaToSpaceTop aObjScan (add# iArg 1#) nArgs
 
 
 ---------------------------------------------------------------------------------------------------
