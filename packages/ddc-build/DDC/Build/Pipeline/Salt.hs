@@ -8,15 +8,15 @@ import DDC.Build.Pipeline.Sink
 import DDC.Build.Pipeline.Llvm
 import DDC.Build.Builder
 import DDC.Data.Pretty
-import DDC.Llvm.Pretty                          ()
-import DDC.Core.Check                           (AnTEC)
-import qualified DDC.Core.Transform.Reannotate  as C
-import qualified DDC.Core.Module                as C
-import qualified DDC.Core.Llvm.Convert          as Llvm
-import qualified DDC.Core.Salt.Transfer         as Salt
-import qualified DDC.Core.Salt.Slotify          as Salt
-import qualified DDC.Core.Salt.Platform         as Salt
-import qualified DDC.Core.Salt                  as Salt
+import DDC.Llvm.Pretty                                  ()
+import DDC.Core.Check                                   (AnTEC)
+import qualified DDC.Core.Transform.Reannotate          as C
+import qualified DDC.Core.Module                        as C
+import qualified DDC.Core.Llvm.Convert                  as Llvm
+import qualified DDC.Core.Salt.Transfer                 as Salt
+import qualified DDC.Core.Salt.Transform.Slotify        as Salt
+import qualified DDC.Core.Salt.Platform                 as Salt
+import qualified DDC.Core.Salt                          as Salt
 import Control.Monad
 import Control.DeepSeq
 import System.Directory

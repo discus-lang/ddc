@@ -72,8 +72,7 @@ ddcPerformGC (u: Unit): Unit
         u
 
 
-
--- | Perform a collection on on this heap.
+-- | Perform garbage collection on the specified heap.
 --   This is a simple Cheney-scan collection.
 ddcCollectHeap
         (aRootStart                      : Addr#)
@@ -126,6 +125,9 @@ ddcCollectHeap
         write# [Addr#] aaBackTop  0# aHeapTop
         write# [Addr#] aaBackMax  0# aHeapMax
 
+
+        -- Trace the allocator after we've finished.
+        -- This also checks that the result heap is well formed.
         primPutString "* ddc-runtime.ddcCollectHeap dump\n"#
         fieldAddr  " aHeapBase (new) "#  aBackBase
         fieldAddr  " aHeapTop  (new) "#  aBackTop
@@ -177,15 +179,6 @@ ddcEvacuateStackEntry
 
         -- Number of roots with meta-data in the frame.
         numMeta         = read#     [Word32#] aEntryFrame (size# [Word32#])
-
-        -- Print the current stack entry.
-        -- primPutString "Entry\n"#
-        -- fieldAddr     "{ pEntry      = "# aEntry
-        -- fieldAddr     "  pEntryNext  = "# aEntryNext
-        -- fieldAddr     "  pEntryFrame = "# aEntryFrame
-        -- fieldAddr     "  pEntryRoots = "# aEntryRoots
-        -- fieldWord32   "  numRoots    = "# numRoots
-        -- fieldWord32   "  numMeta     = "# numMeta
 
         ddcEvacuateRootFrame 
                 aaBackTop
@@ -240,10 +233,6 @@ ddcEvacuateRoot
 
                 -- Update the slot entry to point to the new location.
                 write# aaObj 0# aObjNew
-
---                 primPutString "* ddcEvacuateRoot\n"#
---                 fieldAddr     "  aObj        = "# aObj
---                 fieldAddr     "  aObjNew     = "# aObjNew
 
                 ()
 

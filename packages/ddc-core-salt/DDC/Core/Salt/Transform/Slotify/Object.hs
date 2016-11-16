@@ -1,5 +1,5 @@
 
-module DDC.Core.Salt.Object
+module DDC.Core.Salt.Transform.Slotify.Object
         (objectsOfExp)
 where
 import DDC.Core.Exp
@@ -8,7 +8,8 @@ import qualified DDC.Core.Salt.Compounds        as A
 import Data.Map                 (Map)
 import qualified Data.Map       as Map
 
--- Exp ------------------------------------------------------------------------
+
+-- Exp --------------------------------------------------------------------------------------------
 objectsOfExp
         :: Exp a A.Name
         -> Map A.Name (Type A.Name)
@@ -26,7 +27,8 @@ objectsOfExp xx
         XType{}         -> Map.empty
         XWitness{}      -> Map.empty
 
--- Let ------------------------------------------------------------------------
+
+-- Let --------------------------------------------------------------------------------------------
 objectsOfLets
         :: Lets a A.Name
         -> Map A.Name (Type A.Name)
@@ -38,7 +40,7 @@ objectsOfLets lts
         LPrivate{}      -> Map.empty
 
 
--- Alt ------------------------------------------------------------------------
+-- Alt --------------------------------------------------------------------------------------------
 objectsOfAlt
         :: Alt a A.Name
         -> Map A.Name (Type A.Name)
@@ -48,7 +50,7 @@ objectsOfAlt aa
         AAlt p x        -> Map.union (objectsOfPat p) (objectsOfExp x)
 
 
--- Alt ------------------------------------------------------------------------
+-- Alt --------------------------------------------------------------------------------------------
 objectsOfPat
         :: Pat A.Name
         -> Map A.Name (Type A.Name)
@@ -59,7 +61,7 @@ objectsOfPat pp
         PData _ bs      -> Map.unions (map objectsOfBind bs)
 
 
--- Bind -----------------------------------------------------------------------
+-- Bind -------------------------------------------------------------------------------------------
 objectsOfBind
         :: Bind A.Name
         -> Map  A.Name (Type A.Name)
@@ -72,7 +74,7 @@ objectsOfBind bb
         BAnon t
          | isHeapObject t
          -> error "objectsOfBind: found anonymous heap object"
-         -- TODO how to report this error correctly
+         -- TODO report this properly
 
          | otherwise
          -> Map.empty
@@ -85,7 +87,7 @@ objectsOfBind bb
          -> Map.empty
 
 
--- Utils ----------------------------------------------------------------------
+-- Utils ------------------------------------------------------------------------------------------
 -- | Checks if we have a `Ptr# r Obj`.
 isHeapObject :: Type A.Name -> Bool
 isHeapObject t

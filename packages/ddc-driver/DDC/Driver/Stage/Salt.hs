@@ -97,9 +97,9 @@ stageSaltToLLVM config source pipesLLVM
                             (dump config source "dump.2-salt-03-normalized.dcs")
      , PipeCoreAsSalt
        [ PipeSaltSlotify
-         [ PipeSaltOutput   (dump config source "dump.salt-slotify.dcs")
+         [ PipeSaltOutput   (dump config source "dump.2-salt-04-slotify.dcs")
          , PipeSaltTransfer
-           [ PipeSaltOutput (dump config source "dump.salt-transfer.dcs")
+           [ PipeSaltOutput (dump config source "dump.2-salt-05-transfer.dcs")
            , PipeSaltToLlvm (buildSpec $ configBuilder config)
                             pipesLLVM ]]]]]
  where  normalizeSalt

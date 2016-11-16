@@ -1,14 +1,15 @@
 {-# OPTIONS_GHC -w #-}
-module DDC.Core.Salt.Slotify
+module DDC.Core.Salt.Transform.Slotify
         (slotifyModule)
 where
 import DDC.Data.Pretty
 import DDC.Core.Exp.Annot.AnTEC
 import DDC.Core.Exp.Annot
 import DDC.Core.Module
+import qualified DDC.Core.Salt.Transform.Slotify.Inject as A
+import qualified DDC.Core.Salt.Transform.Slotify.Object as A
 import qualified DDC.Core.Salt                          as A
 import qualified DDC.Core.Salt.Compounds                as A    
-import qualified DDC.Core.Salt.Object                   as A
 import qualified DDC.Core.Salt.Runtime                  as A
 import qualified DDC.Core.Check                         as Check
 import qualified DDC.Core.Simplifier                    as Simp
@@ -24,6 +25,9 @@ import qualified Data.Map                               as Map
 import Data.Set                                         (Set)
 import qualified Data.Set                               as Set
 
+import Data.List
+
+import Debug.Trace
 
 ---------------------------------------------------------------------------------------------------
 -- | Insert slot allocations for heap objects.
@@ -49,7 +53,9 @@ slotifyModule a mm@ModuleCore{}
                         $ Simp.applySimplifier
                                 A.profile Env.empty Env.empty anorm mmSlots
 
-          in    case Check.checkModule (Check.configOfProfile A.profile) mmANF Check.Recon of
+          in    case Check.checkModule 
+                        (Check.configOfProfile A.profile) 
+                        mmANF Check.Recon of
 
                 -- Couldn't reconstruct type annotations.
                 (Left err, _checkTrace)
@@ -65,7 +71,8 @@ slotifyModule a mm@ModuleCore{}
 
 -- Top level let bindings ------------------------------------------------------
 slotifyLet
-        :: a
+        :: Show a
+        => a
         -> (Bind A.Name, Exp a A.Name)
         -> (Bind A.Name, Exp a A.Name)
 
@@ -78,7 +85,8 @@ slotifyLet a bx
 
 -- Super -----------------------------------------------------------------------
 slotifySuper
-        :: a
+        :: Show a
+        => a
         -> Exp a A.Name
         -> Exp a A.Name
 
@@ -104,13 +112,17 @@ slotifySuper a xx
         peeks           = [ (BName n t, xPeekSlot n t)
                           | (n, t)              <- objs' ]
 
+
+        -- TODO: This won't work because the bound occurrences of each of the
+        -- variables in the substitution are not free.
         substPeeks x    = Subst.substituteXXs peeks x
+
 
         pokes           = Map.fromList
                           [ (n, xPokeSlot' n t)
                           | (n, t)              <- objs' ]
 
-        injectPokesL x  = injectX pokes x
+        injectPokesL x  = A.injectX pokes x
 
    in  case takeXLamFlags xx of
          Nothing
@@ -130,52 +142,4 @@ slotifySuper a xx
                                    $ injectPokesA
                                    $ injectPokesL
                                    $ substPeeks xx'
-
-
----------------------------------------------------------------------------------------------------
--- Inject a code transformation just after a name is bound
-
-injectX :: Map A.Name (Exp a A.Name -> Exp a A.Name)
-        -> Exp a A.Name
-        -> Exp a A.Name
-
-injectX injs xx
- = case xx of
-        XVar{}          -> xx
-        XCon{}          -> xx
-        XLAM  a b x     -> XLAM  a b   (injectX injs x) -- Should we error? Salt
-        XLam  a b x     -> XLam  a b   (injectX injs x) -- doesn't have lambdas.
-        XApp  a x1 x2   -> XApp  a     (injectX injs x1)          (injectX injs x2)
-        XLet  a lts x   -> XLet  a lts (injectionsOfLets injs lts (injectX injs x))
-        XCase a x alts  -> XCase a     (injectX injs x)      (map (injectA injs) alts)
-        XCast a c x     -> XCast a c   (injectX injs x)
-        XType{}         -> xx
-        XWitness{}      -> xx
-
-
-injectA :: Map A.Name (Exp a A.Name -> Exp a A.Name)
-        -> Alt a A.Name
-        -> Alt a A.Name
-
-injectA injs (AAlt pp xx)
- = AAlt pp (injectionsOfPat injs pp (injectX injs xx))
-
-
----------------------------------------------------------------------------------------------------
--- Construct the transformation to inject, given a set of names
-
-injectionsOfLets  :: Map A.Name (exp -> exp) -> Lets a A.Name -> exp -> exp
-injectionsOfLets injs lts = injectionsOfBinds injs (valwitBindsOfLets lts)
-
-injectionsOfPat   :: Map A.Name (exp -> exp) -> Pat A.Name -> exp -> exp
-injectionsOfPat injs pp = injectionsOfBinds injs (bindsOfPat pp)
-
-injectionsOfBinds :: Map A.Name (exp -> exp) -> [Bind A.Name] -> exp -> exp
-injectionsOfBinds injs binds
- = let
-        names   = Map.fromList [(n, ()) | BName n _ <- binds]
-        matches = injs `Map.intersection` names
-   in
-        Map.foldr (.) id matches
-
 
