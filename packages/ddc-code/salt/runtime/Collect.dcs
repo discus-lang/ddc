@@ -63,6 +63,14 @@ with letrec
 
 
 -- | Force garbage collection of the current heap.
+--
+--   This is a simple Cheney-scan semi-space collector.
+--
+--   We trace all live objects reachable from the root stack,
+--   copy them from the from-space to the to-space,
+--   update the root stack to point to the copied objects in the to-space,
+--   then swap the from-space with the o-space
+--
 ddcPerformGC (u: Unit): Unit
  = do   
         ddcCollectHeap  
@@ -73,7 +81,6 @@ ddcPerformGC (u: Unit): Unit
 
 
 -- | Perform garbage collection on the specified heap.
---   This is a simple Cheney-scan collection.
 ddcCollectHeap
         (aRootStart                      : Addr#)
         (aaHeapBase aaHeapTop aaHeapMax  : Addr#)
@@ -89,6 +96,7 @@ ddcCollectHeap
                 aaBackBase aaBackTop aaBackMax
 
         ddcTraceHeap True#
+
 
         -- Reset the top of the to-heap as we're about to overwrite 
         -- what's already there.
