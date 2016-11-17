@@ -24,14 +24,6 @@ import foreign c value
         -> S Runtime Unit
 
 
- -- | Trace the objects directly reachable from the GC slot stack,
- --   checking that they're well formed.
- --
- --   Also print the slot stack and the objects if requested.
- --
- ddcTraceSlots: Bool# -> S Runtime Unit
-
-
  -- | Trace all objects in the heap, checking that the are well format.
  --
  --   Also print a description of each object if requested.
@@ -42,9 +34,6 @@ where
 
 runtimeTraceObj (recurse print: Bool) (obj: a): S Runtime Unit
  = ddcTraceObj recurse print obj
-
-runtimeTraceSlots (print: Bool): S Runtime Unit
- = ddcTraceSlots print
 
 runtimeTraceHeap  (print: Bool): S Runtime Unit
  = ddcTraceHeap  print
