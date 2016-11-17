@@ -2,10 +2,10 @@
 module DDC.Core.Salt.Transform.Slotify.Inject
         (injectX)
 where
-import qualified DDC.Core.Salt                          as A
-import Data.Map                                         (Map)
-import qualified Data.Map                               as Map
 import DDC.Core.Exp.Annot
+import Data.Map                         (Map)
+import qualified DDC.Core.Salt          as A
+import qualified Data.Map               as Map
 
 
 ---------------------------------------------------------------------------------------------------

@@ -2,12 +2,15 @@
 module DDC.Core.Salt.Transform.Slotify
         (slotifyModule)
 where
-import DDC.Data.Pretty
+import DDC.Core.Salt.Transform.Slotify.Inject
+import DDC.Core.Salt.Transform.Slotify.Object
+import DDC.Core.Salt.Transform.Slotify.Replace
 import DDC.Core.Exp.Annot.AnTEC
 import DDC.Core.Exp.Annot
 import DDC.Core.Module
-import qualified DDC.Core.Salt.Transform.Slotify.Inject as A
-import qualified DDC.Core.Salt.Transform.Slotify.Object as A
+import DDC.Data.Pretty
+import Data.Map                                         (Map)
+import Data.Set                                         (Set)
 import qualified DDC.Core.Salt                          as A
 import qualified DDC.Core.Salt.Compounds                as A    
 import qualified DDC.Core.Salt.Runtime                  as A
@@ -20,9 +23,7 @@ import qualified DDC.Core.Transform.SubstituteXX        as Subst
 import qualified DDC.Core.Transform.Reannotate          as Reannotate
 import qualified DDC.Type.Env                           as Env
 import qualified Control.Monad.State.Strict             as State
-import Data.Map                                         (Map)
 import qualified Data.Map                               as Map
-import Data.Set                                         (Set)
 import qualified Data.Set                               as Set
 
 import Data.List
@@ -91,7 +92,7 @@ slotifySuper
         -> Exp a A.Name
 
 slotifySuper a xx
- = let  objs            = A.objectsOfExp xx
+ = let  objs            = objectsOfExp xx
         objs'           = Map.toList objs
 
         nSlot n         = A.NameExt n "slot"
@@ -109,20 +110,19 @@ slotifySuper a xx
 
         allocSlots x    = foldr ($) x allocs
 
-        peeks           = [ (BName n t, xPeekSlot n t)
+        peeks           = Map.fromList
+                        $ [ (n, xPeekSlot n t)
                           | (n, t)              <- objs' ]
 
 
-        -- TODO: This won't work because the bound occurrences of each of the
-        -- variables in the substitution are not free.
-        substPeeks x    = Subst.substituteXXs peeks x
+        substPeeks x    = replaceX peeks x
 
 
         pokes           = Map.fromList
                           [ (n, xPokeSlot' n t)
                           | (n, t)              <- objs' ]
 
-        injectPokesL x  = A.injectX pokes x
+        injectPokesL x  = injectX pokes x
 
    in  case takeXLamFlags xx of
          Nothing
