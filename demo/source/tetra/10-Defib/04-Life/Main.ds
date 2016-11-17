@@ -47,5 +47,3 @@ animate (world:     World r)
 --        usleep 200000
         animate world' (frame + 1) max
 
-
-

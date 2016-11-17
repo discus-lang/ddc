@@ -223,7 +223,7 @@ ddcHeaderSizeOfObject [r: Region] (obj: Ptr# r Obj): Nat#
  = case ddcFormatOfObject obj of
         2# -> 16#       -- Thunk
         3# -> 8#        -- Boxed
-        4# -> 16#       -- Raw
+        4# -> 8#        -- Raw
         5# -> 16#       -- Mixed
         6# -> 4#        -- Small
         _  -> do
@@ -645,7 +645,7 @@ ddcAllocMixed_ok
 
 -- | Determine the total size of a mixed data object.
 ddcSizeOfMixed [r : Region] (obj : Ptr# r Obj) : Nat#
- =      promote# (read# [Word64#] (takePtr# obj) 8#)
+ = do   promote# (read# [Word64#] (takePtr# obj) 8#)
 
 
 -- | Get one of the pointers from a mixed data object.

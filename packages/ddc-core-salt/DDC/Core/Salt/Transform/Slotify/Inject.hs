@@ -22,29 +22,43 @@ injectX injs xx
         XLAM  a b x     -> XLAM  a b   (injectX injs x) -- Should we error? Salt
         XLam  a b x     -> XLam  a b   (injectX injs x) -- doesn't have lambdas.
         XApp  a x1 x2   -> XApp  a     (injectX injs x1)          (injectX injs x2)
-        XLet  a lts x   -> XLet  a lts (injectionsOfLets injs lts (injectX injs x))
+        XLet  a lts x   -> XLet  a     (injectLts injs lts) 
+                                       (injectionsOfLets injs lts (injectX injs x))
         XCase a x alts  -> XCase a     (injectX injs x)      (map (injectA injs) alts)
         XCast a c x     -> XCast a c   (injectX injs x)
         XType{}         -> xx
         XWitness{}      -> xx
 
 
-injectA :: Map A.Name (Exp a A.Name -> Exp a A.Name)
-        -> Alt a A.Name
-        -> Alt a A.Name
+injectA   :: Map A.Name (Exp a A.Name -> Exp a A.Name)
+          -> Alt a A.Name
+          -> Alt a A.Name
 
 injectA injs (AAlt pp xx)
  = AAlt pp (injectionsOfPat injs pp (injectX injs xx))
+
+
+injectLts :: Map A.Name (Exp a A.Name -> Exp a A.Name)
+          -> Lets a A.Name
+          -> Lets a A.Name
+
+injectLts injs lts
+ = case lts of
+        LLet b x        -> LLet b (injectX injs x)
+        LRec bxs        -> LRec [(b, injectX injs x) | (b, x) <- bxs]
+        LPrivate{}      -> lts
 
 
 ---------------------------------------------------------------------------------------------------
 -- Construct the transformation to inject, given a set of names
 
 injectionsOfLets  :: Map A.Name (exp -> exp) -> Lets a A.Name -> exp -> exp
-injectionsOfLets injs lts = injectionsOfBinds injs (valwitBindsOfLets lts)
+injectionsOfLets injs lts 
+        = injectionsOfBinds injs (valwitBindsOfLets lts)
 
 injectionsOfPat   :: Map A.Name (exp -> exp) -> Pat A.Name -> exp -> exp
-injectionsOfPat injs pp = injectionsOfBinds injs (bindsOfPat pp)
+injectionsOfPat injs pp 
+        = injectionsOfBinds injs (bindsOfPat pp)
 
 injectionsOfBinds :: Map A.Name (exp -> exp) -> [Bind A.Name] -> exp -> exp
 injectionsOfBinds injs binds

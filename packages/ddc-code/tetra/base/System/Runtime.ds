@@ -2,7 +2,6 @@
 module System.Runtime
 export
 {       runtimeTraceObj;
-        runtimeTraceSlots;
         runtimeTraceHeap;
 }
 
