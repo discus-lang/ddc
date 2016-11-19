@@ -145,6 +145,7 @@ convPrimStore ctx mdst p as
                 let vRoot       = Var (bumpName nDst "i8") (tPtr (tPtr (TInt 8)))
                 return  $ Seq.fromList $ map annotNil
                         [ IAlloca vDst (tPtr (tObj pp))
+                        , IStore  (XVar vDst) (XLit (LitNull (tPtr (tObj pp))))
                         , IConv   vRoot ConvBitcast (XVar vDst)
                         , ICall Nothing CallTypeStd Nothing
                                 TVoid nameGlobalGcroot

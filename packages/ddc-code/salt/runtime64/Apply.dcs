@@ -46,27 +46,37 @@ with letrec
 --
 ddcRunThunk 
         [r1 r2 : Region]
-        (src   : Ptr# r1 Obj) : Ptr# r2 Obj
+        (pSrc  : Ptr# r1 Obj) : Ptr# r2 Obj
  = do   
-        boxes   = ddcBoxesThunk src
+        boxes   = ddcBoxesThunk pSrc
         case boxes of
 
          -- The thunk is not boxed,
          -- so running it would be a type error.
          0# ->  fail#
 
-         -- We don't know what region the result is going to be allocated
-         -- into, so need to assign it to rT.
-         1# ->  ddcEval0 src
+         -- This was the final run, so call the embedded function.
+         --   We don't know what region the result is going to be allocated
+         --   into, so need to assign it to rT.
+         1# ->  ddcEval0 pSrc
 
+         -- Create a new thunk with a decremented run counter.
          _ -> do
-                fun     = ddcFunThunk    src
-                params  = ddcParamsThunk src
-                args    = ddcArgsThunk   src
-                runs'   = add# (ddcRunsThunk src) 1#
+                fun     = ddcFunThunk    pSrc
+                params  = ddcParamsThunk pSrc
+                args    = ddcArgsThunk   pSrc
+                runs'   = add# (ddcRunsThunk pSrc) 1#
 
-                dst     = ddcAllocThunk [r2] fun params boxes args runs'
-                ddcCopyThunk src dst 0# args
+                -- Allocate a new thunk with the original function and arity,
+                --  but with a decremented run counter,
+                --  holding the source pointer in a slot across the allocation.
+                sSrc    = allocSlot# [r1]
+                poke# sSrc 0# pSrc
+                pDst    = ddcAllocThunk [r2] fun params boxes args runs'
+                pSrc'   = peek# sSrc 0#
+
+                -- Copy argument pointers from the source to the new thunk.
+                ddcCopyThunk pSrc' pDst 0# args
 
 
 -------------------------------------------------------------------------------
@@ -141,42 +151,55 @@ ddcApply1 [r0 r1 r2 : Region]
                 ddcEval1 t arg1;
 
         False# ->
-        do      t' = ddcExtendThunk t 1#
-                ddcSetThunk t' a 0# arg1
+        do      sArg    = allocSlot# [r1]
+
+                poke# sArg 0# arg1
+                t' = ddcExtendThunk t 1#
+                arg1'   = peek# sArg 0#
+
+                ddcSetThunk t' a 0# arg1'
                 t'
         }
 
 -- | Evaluate a saturated thunk, given one more argument.
 ddcEval1  [r0 r1 r2 : Region] 
-          (t : Ptr# r0 Obj) (arg1 : Ptr# r1 Obj) 
+          (t : Ptr# r0 Obj) (pArg1 : Ptr# r1 Obj) 
           : Ptr# r2 Obj
  = do   
         f       = ddcFunThunk    t
         p       = ddcParamsThunk t
         a       = ddcArgsThunk   t
         case p of
-         0# -> ddcApply1 (ddcCallP0 f) arg1
+         0# -> do
+                sArg1   = allocSlot# [r1]
 
-         1# -> ddcCallP1 f             arg1
+                poke# sArg1 0# pArg1
+                t'      = ddcCallP0 f
+                pArg1'  = peek# sArg1 0#
 
-         2# -> ddcCallP2 f             (ddcGetThunk t 0#)  arg1
+                ddcApply1 t' pArg1'
+
+
+         1# -> ddcCallP1 f             pArg1
+
+         2# -> ddcCallP2 f             (ddcGetThunk t 0#)  pArg1
 
          3# -> ddcCallP3 f             (ddcGetThunk t 0#) (ddcGetThunk t 1#) 
-                                        arg1
+                                        pArg1
 
          4# -> ddcCallP4 f             (ddcGetThunk t 0#) (ddcGetThunk t 1#)
-                                       (ddcGetThunk t 2#)  arg1
+                                       (ddcGetThunk t 2#)  pArg1
 
          _  -> ddcEvalZ t f p          (ddcGetThunk t (sub# a 3#))
                                        (ddcGetThunk t (sub# a 2#))
                                        (ddcGetThunk t (sub# a 1#))
-                                        arg1
+                                        pArg1
 
 
 ----------------------------------------------------------- 2
 ddcApply2 [r0 r1 r2 r3 : Region]
-          (t    : Ptr# r0 Obj) 
-          (arg1 : Ptr# r1 Obj) (arg2 : Ptr# r2 Obj)
+          (t     : Ptr# r0 Obj) 
+          (pArg1 : Ptr# r1 Obj) (pArg2 : Ptr# r2 Obj)
           : Ptr# r3 Obj
  = do   
         p       = ddcParamsThunk t
@@ -185,21 +208,38 @@ ddcApply2 [r0 r1 r2 r3 : Region]
         r       = ddcRunsThunk   t
 
         case eq#  (add# a 1#) p of { True# ->
-                ddcApply1 (ddcEval1 t arg1) arg2;
+        do {
+                sArg2   = allocSlot# [r2];
+
+                poke# sArg2 0# pArg2;
+                t'      = ddcEval1 t pArg1;
+                pArg2'  = peek# sArg2 0#;
+
+                ddcApply1 t' pArg2';
+        };
 
         False# ->
         case mul# (eq# (add# a 2#) p) (eq# b r) of { True# ->
-                ddcEval2 t arg1 arg2;  
+                ddcEval2 t pArg1 pArg2;  
 
         False# ->
-        do      t' = ddcExtendThunk t 2#
-                ddcSetThunk t' a 0# arg1
-                ddcSetThunk t' a 1# arg2
+        do      sArg1   = allocSlot# [r1]
+                sArg2   = allocSlot# [r2]
+
+                poke# sArg1 0# pArg1
+                poke# sArg2 0# pArg2
+                t' = ddcExtendThunk t 2#
+                pArg1'  = peek# sArg1 0#
+                pArg2'  = peek# sArg2 0#
+
+                ddcSetThunk t' a 0# pArg1'
+                ddcSetThunk t' a 1# pArg2'
                 t'
         }}
 
 
 -- | Evaluate a saturated thunk, given two more arguments.
+--    TODO: slotify this code *************************************
 ddcEval2 [r0 r1 r2 r3 : Region]
          (t    : Ptr# r0 Obj)
          (arg1 : Ptr# r1 Obj) (arg2 : Ptr# r2 Obj)

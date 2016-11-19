@@ -12,6 +12,8 @@ import value
  ddcPayloadRaw     : [r1: Region]. Ptr# r1 Obj  -> Ptr# r1 Word8#
  ddcPayloadSizeRaw : [r1: Region]. Ptr# r1 Obj  -> Nat#
 
+ primPutString     : TextLit# -> Void#
+
 with letrec
 
 

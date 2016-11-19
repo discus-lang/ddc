@@ -335,38 +335,41 @@ cmdCompile config bBuildExe' store filePath
                 $ stageSourceTetraLoad config source store
                 [ PipeCoreHacks      (Canned $ \m -> writeIORef refTetra (Just m) >> return m)
                 [ PipeCoreReannotate (const ())
-                [ stageTetraToSalt    config source pipesSalt ]]]
+                [ stageTetraToSalt    config source (pipesSalt True) ]]]
 
                 -- Compile a Core Tetra module.
                 | ext == ".dct"
                 = liftIO
                 $ pipeText (nameOfSource source) (lineStartOfSource source) src
                 $ stageTetraLoad    config source
-                [ stageTetraToSalt  config source pipesSalt ]
+                [ stageTetraToSalt  config source (pipesSalt True) ]
 
                 -- Compile a Core Salt module.
                 | ext == ".dcs"
                 = liftIO 
                 $ pipeText (nameOfSource source) (lineStartOfSource source) src
-                $ stageSaltLoad     config source pipesSalt
+                $ stageSaltLoad     config source (pipesSalt False)
 
                 -- Compile a Core Salt module.
                 | ext == ".dcf"
                 = liftIO 
                 $ pipeText (nameOfSource source) (lineStartOfSource source) src
-                $ pipelineFlowToTetra config Flow.defaultConfigScalar source pipesSalt
+                $ pipelineFlowToTetra config Flow.defaultConfigScalar source 
+                        (pipesSalt False)
 
                 -- Unrecognised.
                 | otherwise
                 = throwE $ "Cannot compile '" ++ ext ++ "' files."
 
-            pipesSalt
+            pipesSalt bSlotify
              = case configViaBackend config of
                 ViaLLVM
                  -> [ PipeCoreReannotate (const ())
                     [ stageSaltOpt     config source
                     [ PipeCoreHacks    (Canned $ \m -> writeIORef refSalt (Just m) >> return m)
-                    [ stageSaltToLLVM  config source 
+                    [ (if bSlotify 
+                         then stageSaltToSlottedLLVM   config source 
+                         else stageSaltToUnSlottedLLVM config source)
                     [ stageCompileLLVM config source filePath otherObjs ]]]]]
 
                 ViaC

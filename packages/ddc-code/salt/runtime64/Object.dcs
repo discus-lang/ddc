@@ -199,12 +199,18 @@ ddcFormatOfObject_arg [r : Region] (formatField : Word8#) : Nat#
 
 --| Get the size of an object.
 ddcSizeOfObject [r: Region] (obj: Ptr# r Obj): Nat#
- = case ddcFormatOfObject obj of
+ = let  n       = ddcFormatOfObject obj
+   in case n of
+        1# -> do
+                primFailString "ddc-runtime.ddcSizeOfObject: unexpected forward\n"#
+                fail#
+
         2# -> ddcSizeOfThunk  obj
         3# -> ddcSizeOfBoxed  obj
         4# -> ddcSizeOfRaw    obj
         5# -> ddcSizeOfMixed  obj
         6# -> ddcSizeOfSmall  obj
+
         _  -> do
                 primFailString "ddc-runtime.ddcSizeOfObject: unrecognized object format\n"#
                 fail#
@@ -221,15 +227,19 @@ ddcSizeOfObject [r: Region] (obj: Ptr# r Obj): Nat#
 --
 ddcHeaderSizeOfObject [r: Region] (obj: Ptr# r Obj): Nat#
  = case ddcFormatOfObject obj of
+        1# -> do
+                primFailString "ddc-runtime.ddcHeaderSizeOfObject: unexpected forward\n"#
+                fail#
+
         2# -> 16#       -- Thunk
         3# -> 8#        -- Boxed
         4# -> 8#        -- Raw
         5# -> 16#       -- Mixed
         6# -> 4#        -- Small
-        _  -> do
-                primFailString "ddc-runtime.ddcSizeOfObject: unrecognized object format\n"#
-                fail#
 
+        _  -> do
+                primFailString "ddc-runtime.ddcHeaderSizeOfObject: unrecognized object format\n"#
+                fail#
 
 
 -- Forwarding Pointers --------------------------------------------------------
@@ -436,26 +446,33 @@ ddcCopyThunk
 --   This is used when implementing both the curryN# and applyN# core primops.
 ddcExtendThunk 
         [rSrc rDst: Region] 
-        (src: Ptr# rSrc Obj) (more: Nat#) 
+        (pSrc: Ptr# rSrc Obj) (more: Nat#) 
         : Ptr# rDst Obj
  = do
         -- Function pointer and arity of that function.
-        fun     = ddcFunThunk    src
-        params  = ddcParamsThunk src
-        boxes   = ddcBoxesThunk  src
+        fun     = ddcFunThunk    pSrc
+        params  = ddcParamsThunk pSrc
+        boxes   = ddcBoxesThunk  pSrc
 
         -- Available arguments in source and destination.
-        args    = ddcArgsThunk   src
+        args    = ddcArgsThunk   pSrc
         args'   = add# args      more
 
         -- Number of times the thunk has been run
-        runs    = ddcRunsThunk   src
+        runs    = ddcRunsThunk   pSrc
 
-        -- Allocate a new thunk with the orignal function and arity.
-        dst     = ddcAllocThunk [rDst] (ddcFunThunk src) params boxes args' runs
+        -- Function pointer.
+        aFun    = ddcFunThunk pSrc
+
+        -- Allocate a new thunk with the orignal function and arity,
+        --  holding the source pointer in a slot over the allocation.
+        sSrc    = allocSlot# [rSrc]
+        poke# sSrc 0# pSrc 
+        pDst    = ddcAllocThunk [rDst] aFun params boxes args' runs
+        pSrc'   = peek# sSrc 0#
 
         -- Copy argument pointers from the source into the new thunk.
-        ddcCopyThunk src dst 0# args
+        ddcCopyThunk pSrc' pDst 0# args
 
 
 -- | Get the function pointer from a thunk.
@@ -566,6 +583,7 @@ ddcSizeOfBoxed_arity (arity : Nat#) : Nat#
                          (add# (size# [Word32#]) bytesPayload)
 
         bytesObj
+
 
 -- | Get one of the pointers from a boxed data object.
 ddcGetBoxed 
@@ -717,7 +735,8 @@ ddcPayloadRaw [r: Region] (obj: Ptr# r Obj): Ptr# r Word8#
 
 -- | Get the size of the payload of a raw object, in bytes.
 ddcPayloadSizeRaw [r: Region] (obj: Ptr# r Obj): Nat#
- =      promote# (read# [Word32#] (takePtr# obj) 4#)
+ =      sub#    (promote# (read# [Word32#] (takePtr# obj) 4#))
+                8#
 
 
 -- Small ----------------------------------------------------------------------

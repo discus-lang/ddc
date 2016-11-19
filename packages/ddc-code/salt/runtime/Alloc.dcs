@@ -37,13 +37,13 @@ ddcAllocCollect (byteCount : Nat#) : Unit
         -- Check that we've recovered enough space to perform the
         -- required allocation. If not then we're screwed.
         -- If not then 
-        aNewTop         = read# heapBase#     0#
-        aNewMax         = read# heapMax#      0#
+        aNewTop         = read# heapTop#  0#
+        aNewMax         = read# heapMax#  0#
 
         case gt# (plusAddr# aNewTop byteCount) aNewMax of
          True#  -> do   primFailString "Out of space\n"# 
                         fail#
 
-         False# -> do   primPutString "* GC completed\n"#
+         False# -> do   -- primPutString "* GC completed\n"#
                         ()
 

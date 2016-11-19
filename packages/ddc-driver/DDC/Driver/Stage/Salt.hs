@@ -3,7 +3,8 @@ module DDC.Driver.Stage.Salt
         ( stageSaltLoad
         , stageSaltOpt
         , stageSaltToC
-        , stageSaltToLLVM
+        , stageSaltToSlottedLLVM
+        , stageSaltToUnSlottedLLVM
         , stageCompileSalt
         , stageCompileLLVM)
 where
@@ -85,12 +86,12 @@ stageSaltToC config source sink
 
 ---------------------------------------------------------------------------------------------------
 -- | Convert Core Salt to LLVM.
-stageSaltToLLVM
+stageSaltToSlottedLLVM
         :: Config -> Source
         -> [PipeLlvm]
         -> PipeCore () Salt.Name
 
-stageSaltToLLVM config source pipesLLVM
+stageSaltToSlottedLLVM config source pipesLLVM
  = PipeCoreSimplify Salt.fragment 0 normalizeSalt
    [ PipeCoreCheck          Salt.fragment C.Recon SinkDiscard
      [ PipeCoreOutput       pprDefaultMode
@@ -102,6 +103,26 @@ stageSaltToLLVM config source pipesLLVM
            [ PipeSaltOutput (dump config source "dump.2-salt-05-transfer.dcs")
            , PipeSaltToLlvm (buildSpec $ configBuilder config)
                             pipesLLVM ]]]]]
+ where  normalizeSalt
+         = S.anormalize (makeNamifier Salt.freshT) 
+                        (makeNamifier Salt.freshX)
+
+
+stageSaltToUnSlottedLLVM
+        :: Config -> Source
+        -> [PipeLlvm]
+        -> PipeCore () Salt.Name
+
+stageSaltToUnSlottedLLVM config source pipesLLVM
+ = PipeCoreSimplify Salt.fragment 0 normalizeSalt
+   [ PipeCoreCheck          Salt.fragment C.Recon SinkDiscard
+     [ PipeCoreOutput       pprDefaultMode
+                            (dump config source "dump.2-salt-03-normalized.dcs")
+     , PipeCoreAsSalt
+       [ PipeSaltTransfer
+           [ PipeSaltOutput (dump config source "dump.2-salt-04-transfer.dcs")
+           , PipeSaltToLlvm (buildSpec $ configBuilder config)
+                            pipesLLVM ]]]]
  where  normalizeSalt
          = S.anormalize (makeNamifier Salt.freshT) 
                         (makeNamifier Salt.freshX)

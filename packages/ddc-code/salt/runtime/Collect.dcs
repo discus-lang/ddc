@@ -86,17 +86,17 @@ ddcCollectHeap
         (aaHeapBase aaHeapTop aaHeapMax  : Addr#)
         (aaBackBase aaBackTop aaBackMax  : Addr#) : Unit
  = do
-        primPutString "* ddc-runtime.ddcCollectHeap start\n"#
+--      primPutString "* ddc-runtime.ddcCollectHeap start\n"#
 
         -- Trace the allocator state before we start.
-        ddcTraceAlloc
+{-        ddcTraceAlloc
                 True#
                 aRootStart
                 aaHeapBase aaHeapTop aaHeapMax
                 aaBackBase aaBackTop aaBackMax
 
         ddcTraceHeap True#
-
+-}
 
         -- Reset the top of the to-heap as we're about to overwrite 
         -- what's already there.
@@ -136,6 +136,7 @@ ddcCollectHeap
 
         -- Trace the allocator after we've finished.
         -- This also checks that the result heap is well formed.
+{-
         primPutString "* ddc-runtime.ddcCollectHeap dump\n"#
         fieldAddr  " aHeapBase (new) "#  aBackBase
         fieldAddr  " aHeapTop  (new) "#  aBackTop
@@ -149,7 +150,8 @@ ddcCollectHeap
                 aaBackBase aaBackTop aaBackMax
 
         ddcTraceHeap True#
-        primPutString "* ddc-runtime.ddcCollectHeap end\n"#
+--        primPutString "* ddc-runtime.ddcCollectHeap end\n"#
+-}
 
         ()
 

@@ -379,6 +379,9 @@ traceSmall [r: Region] (print: Bool#) (obj: Ptr# r Obj): Ptr# r Obj
         obj
 
 
+        -- TODO: Check extent is within heap.
+        
+
 ---------------------------------------------------------------------------------------------------
 -- | Trace the objects directly reachable from the GC slot stack,
 --   checking that they're well formed.

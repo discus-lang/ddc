@@ -91,9 +91,9 @@ cmdToLlvmSourceTetraFromString config store source str
          = pipeText (nameOfSource source) (lineStartOfSource source) str
          $ stageSourceTetraLoad config source store
          [ PipeCoreReannotate (const ())
-         [ stageTetraToSalt     config source 
-         [ stageSaltOpt         config source
-         [ stageSaltToLLVM      config source
+         [ stageTetraToSalt       config source 
+         [ stageSaltOpt           config source
+         [ stageSaltToSlottedLLVM config source
          [ PipeLlvmPrint SinkStdout]]]]]
    
    in do
@@ -155,19 +155,19 @@ cmdToLlvmCoreFromString config language source str
                 | fragName == "Tetra"
                 = liftIO
                 $ pipeText (nameOfSource source) (lineStartOfSource source) str
-                $ stageTetraLoad     config source
-                [ stageTetraToSalt   config source
-                [ stageSaltOpt       config source
-                [ stageSaltToLLVM    config source
+                $ stageTetraLoad         config source
+                [ stageTetraToSalt       config source
+                [ stageSaltOpt           config source
+                [ stageSaltToSlottedLLVM  config source
                 [ PipeLlvmPrint      SinkStdout]]]]
 
                 -- Convert a Core Salt module to LLVM.
                 | fragName == "Salt"
                 = liftIO
                 $ pipeText (nameOfSource source) (lineStartOfSource source) str
-                $ stageSaltLoad      config source
-                [ stageSaltOpt       config source
-                [ stageSaltToLLVM    config source
+                $ stageSaltLoad            config source
+                [ stageSaltOpt             config source
+                [ stageSaltToUnSlottedLLVM config source
                 [ PipeLlvmPrint      SinkStdout]]]
 
                 -- Unrecognised.
