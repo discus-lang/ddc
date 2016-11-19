@@ -15,6 +15,19 @@ export value
         -> Addr# -- ^ @Word**@  To   Top  -- addr of next byte to be allocated (during evac)
         -> Addr# -- ^ @Word**@  To   Max  -- addr of last byte that can be allocated.
         -> Unit
+ 
+  ddcEvacuateRoots
+        :  Addr# -> Addr# -> Addr# -> Addr# -> Unit
+
+  ddcEvacuateRoot
+        :  Addr# -> Addr# -> Unit
+
+  ddcEvacuateRootFrame 
+        : Addr# -> Addr# -> Nat# -> Nat# -> Unit
+
+  ddcEvacuateStackEntry
+        : Addr# -> Addr# -> Unit
+        
 
 import foreign c value
   malloc                : Nat# -> Addr#

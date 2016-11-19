@@ -16,14 +16,15 @@ main ()
  = private r with {Read r; Write r; Alloc r}
    in do   
         world   = newWorld [r] 30 30
-        setCell world 10 10 CellAlive
-        setCell world 11 10 CellAlive
-        setCell world 12 10 CellAlive
-        setCell world 13 10 CellAlive
-        setCell world 14 10 CellAlive
-        setCell world 15 10 CellAlive
-        setCell world 16 10 CellAlive
-        setCell world 17 10 CellAlive
+        setCell world 10 14 CellAlive
+        setCell world 11 14 CellAlive
+        setCell world 12 14 CellAlive
+        setCell world 13 14 CellAlive
+        setCell world 14 14 CellAlive
+        setCell world 14 15 CellAlive
+        setCell world 16 14 CellAlive
+        setCell world 16 15 CellAlive
+        setCell world 16 16 CellAlive
 
         animate world 0 100
 
