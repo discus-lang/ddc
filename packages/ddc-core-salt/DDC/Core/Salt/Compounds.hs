@@ -36,6 +36,7 @@ module DDC.Core.Salt.Compounds
         , xCreate
         , xRead, xWrite
         , xPeek, xPeekBounded, xPoke, xPokeBounded
+        , xPlusPtr
         , xCastPtr)
 where
 import DDC.Core.Salt.Compounds.Lit

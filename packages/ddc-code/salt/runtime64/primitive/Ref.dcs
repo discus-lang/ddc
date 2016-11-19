@@ -19,9 +19,9 @@ allocRef [r1 r2: Region] (pVal: Ptr# r1 Obj): Ptr# r2 Obj
  = do   
         sVal    = allocSlot# [r1]
 
-        poke# sVal 0# pVal
+        poke# sVal pVal
         ref     = ddcAllocBoxed [r2] (truncate# 0#) 1#
-        pVal'   = peek# sVal 0#
+        pVal'   = peek# sVal
 
         ddcSetBoxed ref 0# pVal'
         ref

@@ -50,9 +50,8 @@ module DDC.Core.Salt.Runtime
         , xRead
         , xWrite
         , xPeek
-        , xPeekBuffer
         , xPoke
-        , xPokeBuffer
+        , xCast
         , xFail
         , xReturn)
 where
@@ -484,20 +483,6 @@ utErrorDefault
 
 
 -- Primops ----------------------------------------------------------------------------------------
--- | Peek a value from a buffer pointer plus offset
-xPeekBuffer :: a -> Type Name -> Type Name -> Exp a Name -> Integer -> Exp a Name
-xPeekBuffer a r t xPtr offset
- = let castedPtr = xCast a r t (tWord 8) xPtr
-   in  xPeek a r t castedPtr (xNat a offset)
-
-
--- | Poke a value from a buffer pointer plus offset
-xPokeBuffer :: a -> Type Name -> Type Name -> Exp a Name -> Integer -> Exp a Name -> Exp a Name
-xPokeBuffer a r t xPtr offset xVal
- = let castedPtr = xCast a r t (tWord 8) xPtr
-   in  xPoke a r t castedPtr (xNat a offset) xVal
-
-
 -- | Cast a pointer
 xCast :: a -> Type Name -> Type Name -> Type Name -> Exp a Name -> Exp a Name
 xCast a r toType fromType xPtr

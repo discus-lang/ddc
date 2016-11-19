@@ -148,7 +148,7 @@ with letrec
 ddcHeaderOfObject [r : Region] (obj : Ptr# r Obj) : Word32#
  = do
         ptr             = castPtr# obj
-        peek# ptr 0#
+        peek# ptr
 
 
 -- | Get the constructor tag of an object.
@@ -468,9 +468,9 @@ ddcExtendThunk
 
         -- Allocate a new thunk with the orignal function and arity,
         --  holding the source pointer in a slot over the allocation.
-        poke# sSrc 0# pSrc 
+        poke# sSrc pSrc 
         pDst    = ddcAllocThunk [rDst] aFun params boxes args' runs
-        pSrc'   = peek# sSrc 0#
+        pSrc'   = peek# sSrc
 
         -- Copy argument pointers from the source into the new thunk.
         ddcCopyThunk pSrc' pDst 0# args

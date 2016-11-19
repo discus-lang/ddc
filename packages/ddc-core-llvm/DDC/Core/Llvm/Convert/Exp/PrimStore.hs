@@ -238,19 +238,16 @@ convPrimStore ctx mdst p as
         A.PrimStore A.PrimStorePeek
          | A.RType{} : A.RType tDst : args      <- as
          , Just vDst@(Var nDst _)               <- mdst
-         , Just [mPtr, mOffset]                 <- atomsR args
+         , Just [mPtr]                          <- atomsR args
          -> Just $ do
                 tDst'        <- convertType   pp kenv tDst
                 xPtr'        <- mPtr
-                xOffset'     <- mOffset
-                let vAddr1   = Var (bumpName nDst "addr1") (tAddr pp)
-                let vAddr2   = Var (bumpName nDst "addr2") (tAddr pp)
+                let vAddr    = Var (bumpName nDst "addr") (tAddr pp)
                 let vPtr     = Var (bumpName nDst "ptr")   (tPtr tDst')
                 return  $ Seq.fromList
                         $ (map annotNil
-                        [ IConv vAddr1 ConvPtrtoint xPtr'
-                        , IOp   vAddr2 OpAdd (XVar vAddr1) xOffset'
-                        , IConv vPtr   ConvInttoptr (XVar vAddr2) ])
+                        [ IConv vAddr ConvPtrtoint xPtr'
+                        , IConv vPtr  ConvInttoptr (XVar vAddr) ])
                         ++ [(annot kenv mdsup as
                         ( ILoad vDst  (XVar vPtr)))]
 
@@ -258,20 +255,17 @@ convPrimStore ctx mdst p as
         -- Write to a raw address.
         A.PrimStore A.PrimStorePoke
          | A.RType{} : A.RType tDst : args      <- as
-         , Just [mPtr, mOffset, mVal]           <- atomsR args
+         , Just [mPtr, mVal]                    <- atomsR args
          -> Just $ do
                 tDst'    <- convertType pp kenv tDst
                 xPtr'    <- mPtr
-                xOffset' <- mOffset
                 xVal'    <- mVal
-                vAddr1   <- newUniqueNamedVar "addr1" (tAddr pp)
-                vAddr2   <- newUniqueNamedVar "addr2" (tAddr pp)
+                vAddr    <- newUniqueNamedVar "addr"  (tAddr pp)
                 vPtr     <- newUniqueNamedVar "ptr"   (tPtr tDst')
                 return  $ Seq.fromList
                         $ (map annotNil
-                        [ IConv vAddr1 ConvPtrtoint xPtr'
-                        , IOp   vAddr2 OpAdd (XVar vAddr1) xOffset'
-                        , IConv vPtr   ConvInttoptr (XVar vAddr2) ])
+                        [ IConv vAddr ConvPtrtoint xPtr'
+                        , IConv vPtr  ConvInttoptr (XVar vAddr) ])
                         ++ [(annot kenv mdsup as
                         ( IStore (XVar vPtr) xVal' ))]
 

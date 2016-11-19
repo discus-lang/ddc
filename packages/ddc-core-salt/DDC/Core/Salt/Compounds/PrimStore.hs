@@ -7,7 +7,9 @@ module DDC.Core.Salt.Compounds.PrimStore
         , xStoreSize, xStoreSize2
         , xCreate
         , xRead, xWrite
-        , xPeek, xPeekBounded, xPoke, xPokeBounded
+        , xPeek, xPoke
+        , xPeekBounded, xPokeBounded
+        , xPlusPtr
         , xCastPtr
 
         , typeOfPrimStore)
@@ -70,10 +72,18 @@ xWrite a tField xAddr xOffset xVal
                 
 
 -- | Peek a value from a buffer pointer plus offset.
-xPeek :: a -> Type Name -> Type Name -> Exp a Name -> Exp a Name -> Exp a Name
-xPeek a r t xPtr xOffset
+xPeek :: a -> Type Name -> Type Name -> Exp a Name -> Exp a Name
+xPeek a r t xPtr
  = xApps a      (xPrimStore a PrimStorePeek)
-                [ XType a r, XType a t, xPtr, xOffset ]
+                [ XType a r, XType a t, xPtr ]
+
+
+-- | Poke a value from a buffer pointer plus offset.
+xPoke   :: a -> Type Name -> Type Name
+        -> Exp a Name -> Exp a Name -> Exp a Name
+xPoke a r t xPtr xVal
+ = xApps a      (xPrimStore a PrimStorePoke)
+                [ XType a r, XType a t, xPtr, xVal]
 
 
 -- | Peek a value from a buffer pointer plus offset.
@@ -86,20 +96,20 @@ xPeekBounded a r t xPtr xOffset xLimit
 
 
 -- | Poke a value from a buffer pointer plus offset.
-xPoke   :: a -> Type Name -> Type Name
-        -> Exp a Name -> Exp a Name -> Exp a Name -> Exp a Name
-xPoke a r t xPtr xOffset xVal
- = xApps a      (xPrimStore a PrimStorePoke)
-                [ XType a r, XType a t, xPtr, xOffset, xVal]
-
-
--- | Poke a value from a buffer pointer plus offset.
 xPokeBounded
         :: a -> Type Name -> Type Name
         -> Exp a Name -> Exp a Name -> Exp a Name -> Exp a Name -> Exp a Name
 xPokeBounded a r t xPtr xOffset xLimit xVal
  = xApps a      (xPrimStore a PrimStorePokeBounded)
                 [ XType a r, XType a t, xPtr, xOffset, xLimit, xVal]
+
+
+-- | Add a byte offset to a pointer.
+xPlusPtr :: a -> Type Name -> Type Name
+         -> Exp a Name -> Exp a Name -> Exp a Name
+xPlusPtr a r t xPtr xOffset
+ = xApps a      (xPrimStore a PrimStorePlusPtr)
+                [ XType a r, XType a t, xPtr, xOffset ]
 
 
 -- | Cast a pointer to a different element ype.
@@ -154,11 +164,11 @@ typeOfPrimStore jj
 
         PrimStorePeek
          -> tForalls [kRegion, kData]
-         $ \[r,t] -> tPtr r t `tFun` tNat `tFun` t
+         $ \[r,t] -> tPtr r t `tFun` t
 
         PrimStorePoke
          -> tForalls [kRegion, kData] 
-         $ \[r,t] -> tPtr r t `tFun` tNat `tFun` t `tFun` tVoid
+         $ \[r,t] -> tPtr r t `tFun` t `tFun` tVoid
 
         PrimStorePeekBounded
          -> tForalls [kRegion, kData]

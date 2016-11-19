@@ -22,9 +22,9 @@ allocArray
  = do   
         sVal    = allocSlot# [r1]
 
-        poke# sVal 0# pVal
+        poke# sVal pVal
         arr     = ddcAllocBoxed [r2] (truncate# 0#) len
-        pVal'   = peek# sVal 0#
+        pVal'   = peek# sVal
 
         fillArray arr 0# len pVal'
         arr
@@ -36,7 +36,7 @@ writeArray
         (obj: Ptr# r1 Obj) (ix: Nat#) (val: Ptr# r2 Obj): Ptr# r1 Obj
  = do   
         -- Get address of the first byte after the end of the array.
-        len     = promote# (peek# [r1] [Word32#] (castPtr# obj) 4#)
+        len     = promote# (peek# [r1] [Word32#] (plusPtr# (castPtr# obj) 4#))
         top     = add# 8#  (shl# len (size2# [Addr#]))
 
         -- Bounded poke.
@@ -52,7 +52,7 @@ readArray
         (obj: Ptr# r1 Obj) (ix: Nat#): Ptr# r2 Obj
  = do   
         -- Get address of the first byte after the end of the array.
-        len     = promote# (peek# [r1] [Word32#] (castPtr# obj) 4#) 
+        len     = promote# (peek# [r1] [Word32#] (plusPtr# (castPtr# obj) 4#) )
         top     = add# 8#  (shl#  len  (size2# [Addr#]))
 
         -- Bounded peek.

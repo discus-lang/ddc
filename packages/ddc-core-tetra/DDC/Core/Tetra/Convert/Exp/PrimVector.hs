@@ -168,8 +168,9 @@ xVectorLength a rVec xVec
         xLengthObject  
                 = A.xPromote a A.tNat (A.tWord 32)
                 $ A.xPeek a rVec (A.tWord 32) 
-                        (A.xCastPtr a rVec (A.tWord 32) A.tObj xVec)
-                        (A.xNat a 4)
+                        (A.xPlusPtr a rVec (A.tWord 32)
+                                (A.xCastPtr a rVec (A.tWord 32) A.tObj xVec)
+                                (A.xNat a 4))
 
         -- Subtract the size of the object header,
         -- so we get payload length in bytes.

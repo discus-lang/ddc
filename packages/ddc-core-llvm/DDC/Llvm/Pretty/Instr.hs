@@ -217,7 +217,7 @@ instance Pretty Instr where
         ICall mdst callType callConv tResult name xsArgs attrs
          -> let call'
                  = case callType of
-                        CallTypeTail -> text "tail call"
+                        CallTypeTail -> text "musttail call"
                         _            -> text "call"
                 dst'
                  = case mdst of

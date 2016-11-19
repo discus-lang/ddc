@@ -100,8 +100,8 @@ slotifySuper a xx
         tSlot t         = A.tPtr A.rTop t
         bSlot n t       = BName (nSlot n) (tSlot t)
 
-        xPeekSlot  n t  = A.xPeek a A.rTop t (xSlot n) (A.xNat a 0)
-        xPokeSlot  n t  = A.xPoke a A.rTop t (xSlot n) (A.xNat a 0) (XVar a (UName n))
+        xPeekSlot  n t  = A.xPeek a A.rTop t (xSlot n) 
+        xPokeSlot  n t  = A.xPoke a A.rTop t (xSlot n) (XVar a (UName n))
         xPokeSlot' n t  = XLet a (LLet (BNone A.tVoid) (xPokeSlot n t))
 
         allocs          = [ XLet a (LLet (bSlot n t) (A.xAllocSlot a tR))

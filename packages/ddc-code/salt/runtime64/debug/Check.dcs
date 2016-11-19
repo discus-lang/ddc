@@ -31,7 +31,7 @@ ddcCheckObjHeader [r: Region] (obj: Ptr# r Obj): Word32#
                                (lt# objA (minusAddr# pHeapTopA 4#))
         case valid of
          True#          
-          -> peek# (castPtr# obj) 0#
+          -> peek# (castPtr# obj)
 
          False#         
           -> do ddcFailMessage "checkObjHeader"#  "pointer out of range."#
@@ -71,7 +71,7 @@ ddcCheckObjExtent [r: Region] (obj: Ptr# r Obj) (len: Nat#): Unit
 
         case valid of
          True#          
-          -> peek# (castPtr# obj) 0#
+          -> peek# (castPtr# obj)
 
          False# 
           -> do ddcFailMessage "checkObjExtent"#  "object is not within active heap"#
