@@ -15,10 +15,17 @@ with letrec
 
 
 -- | Allocate a new reference to some boxed value.
-allocRef [r1 r2: Region] (val: Ptr# r1 Obj): Ptr# r2 Obj
- = do   ref     = ddcAllocBoxed [r2] (truncate# 0#) 1#
-        ddcSetBoxed ref 0# val
+allocRef [r1 r2: Region] (pVal: Ptr# r1 Obj): Ptr# r2 Obj
+ = do   
+        sVal    = allocSlot# [r1]
+
+        poke# sVal 0# pVal
+        ref     = ddcAllocBoxed [r2] (truncate# 0#) 1#
+        pVal'   = peek# sVal 0#
+
+        ddcSetBoxed ref 0# pVal'
         ref
+
 
 -- | Read the value from a reference.
 readRef  [r1 r2: Region] (ref: Ptr# r1 Obj): Ptr# r2 Obj

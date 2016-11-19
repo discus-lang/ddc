@@ -449,6 +449,8 @@ ddcExtendThunk
         (pSrc: Ptr# rSrc Obj) (more: Nat#) 
         : Ptr# rDst Obj
  = do
+        sSrc    = allocSlot# [rSrc]
+
         -- Function pointer and arity of that function.
         fun     = ddcFunThunk    pSrc
         params  = ddcParamsThunk pSrc
@@ -466,7 +468,6 @@ ddcExtendThunk
 
         -- Allocate a new thunk with the orignal function and arity,
         --  holding the source pointer in a slot over the allocation.
-        sSrc    = allocSlot# [rSrc]
         poke# sSrc 0# pSrc 
         pDst    = ddcAllocThunk [rDst] aFun params boxes args' runs
         pSrc'   = peek# sSrc 0#

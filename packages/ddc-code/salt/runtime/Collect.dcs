@@ -110,7 +110,6 @@ ddcCollectHeap
 
         ddcTraceHeap True#
 -}
-
         -- Reset the top of the to-heap as we're about to overwrite 
         -- what's already there.
         aBackBase'      = read# [Addr#] aaBackBase 0#

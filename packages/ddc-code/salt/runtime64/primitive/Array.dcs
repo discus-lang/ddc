@@ -18,9 +18,15 @@ with letrec
 --   for all positions.
 allocArray 
         [r1 r2: Region]
-        (len: Nat#) (val: Ptr# r1 Obj): Ptr# r2 Obj
- = do   arr     = ddcAllocBoxed [r2] (truncate# 0#) len
-        fillArray arr 0# len val
+        (len: Nat#) (pVal: Ptr# r1 Obj): Ptr# r2 Obj
+ = do   
+        sVal    = allocSlot# [r1]
+
+        poke# sVal 0# pVal
+        arr     = ddcAllocBoxed [r2] (truncate# 0#) len
+        pVal'   = peek# sVal 0#
+
+        fillArray arr 0# len pVal'
         arr
 
 

@@ -48,6 +48,8 @@ ddcRunThunk
         [r1 r2 : Region]
         (pSrc  : Ptr# r1 Obj) : Ptr# r2 Obj
  = do   
+        sSrc    = allocSlot# [r1]
+
         boxes   = ddcBoxesThunk pSrc
         case boxes of
 
@@ -61,23 +63,22 @@ ddcRunThunk
          1# ->  ddcEval0 pSrc
 
          -- Create a new thunk with a decremented run counter.
-         _ -> do
-                fun     = ddcFunThunk    pSrc
-                params  = ddcParamsThunk pSrc
-                args    = ddcArgsThunk   pSrc
-                runs'   = add# (ddcRunsThunk pSrc) 1#
+         _ -> do {
+                fun     = ddcFunThunk    pSrc;
+                params  = ddcParamsThunk pSrc;
+                args    = ddcArgsThunk   pSrc;
+                runs'   = add# (ddcRunsThunk pSrc) 1#;
 
                 -- Allocate a new thunk with the original function and arity,
                 --  but with a decremented run counter,
                 --  holding the source pointer in a slot across the allocation.
-                sSrc    = allocSlot# [r1]
+                poke# sSrc 0# pSrc;
 
-                poke# sSrc 0# pSrc
-                pDst    = ddcAllocThunk [r2] fun params boxes args runs'
-                pSrc'   = peek# sSrc 0#
+                pDst    = ddcAllocThunk [r2] fun params boxes args runs';
 
                 -- Copy argument pointers from the source to the new thunk.
-                ddcCopyThunk pSrc' pDst 0# args
+                ddcCopyThunk (peek# sSrc 0#) pDst 0# args;
+        }
 
 
 -------------------------------------------------------------------------------
@@ -141,7 +142,9 @@ ddcEval0  [r0 r1 : Region]
 ddcApply1 [r0 r1 r2 : Region] 
           (t : Ptr# r0 Obj) (pArg1 : Ptr# r1 Obj)
           : Ptr# r2 Obj
- = do
+ = do 
+        sArg1   = allocSlot# [r1]
+
         p       = ddcParamsThunk t
         a       = ddcArgsThunk   t
         b       = ddcBoxesThunk  t
@@ -152,30 +155,28 @@ ddcApply1 [r0 r1 r2 : Region]
                 ddcEval1 t pArg1;
 
         False# ->
-        do {    sArg1   = allocSlot# [r1]; poke# sArg1 0# pArg1;
-
+        do {    poke# sArg1 0# pArg1;
                 t'      = ddcExtendThunk t 1#;
-
                 ddcSetThunk t' a 0# (peek# sArg1 0#);
                 t';
         }}
+
 
 -- | Evaluate a saturated thunk, given one more argument.
 ddcEval1  [r0 r1 r2 : Region] 
           (t : Ptr# r0 Obj) (pArg1 : Ptr# r1 Obj) 
           : Ptr# r2 Obj
  = do   
+        sArg1   = allocSlot# [r1]
+
         f       = ddcFunThunk    t
         p       = ddcParamsThunk t
         a       = ddcArgsThunk   t
         case p of
-         0# -> do {   
-                sArg1   = allocSlot# [r1]; poke# sArg1 0# pArg1;
-
-                t'      = ddcCallP0 f;
-
-                ddcApply1 t' (peek# sArg1 0#);
-         }
+         0# -> do
+                poke# sArg1 0# pArg1
+                t'      = ddcCallP0 f
+                ddcApply1 t' (peek# sArg1 0#)
 
          1# -> ddcCallP1 f      pArg1
 
@@ -199,17 +200,17 @@ ddcApply2 [r0 r1 r2 r3 : Region]
           (pArg1 : Ptr# r1 Obj) (pArg2 : Ptr# r2 Obj)
           : Ptr# r3 Obj
  = do   
+        sArg1   = allocSlot# [r1]
+        sArg2   = allocSlot# [r2]
+
         p       = ddcParamsThunk t
         a       = ddcArgsThunk   t
         b       = ddcBoxesThunk  t
         r       = ddcRunsThunk   t
 
         case eq#  (add# a 1#) p of { True# ->
-        do {
-                sArg2   = allocSlot# [r2]; poke# sArg2 0# pArg2;
-
+        do {    poke# sArg2 0# pArg2;
                 t'      = ddcEval1 t pArg1;
-
                 ddcApply1 t' (peek# sArg2 0#);
         };
 
@@ -218,11 +219,9 @@ ddcApply2 [r0 r1 r2 r3 : Region]
                 ddcEval2 t pArg1 pArg2;  
 
         False# ->
-        do  {   sArg1   = allocSlot# [r1]; poke# sArg1 0# pArg1;
-                sArg2   = allocSlot# [r2]; poke# sArg2 0# pArg2;
-
+        do  {   poke# sArg1 0# pArg1;
+                poke# sArg2 0# pArg2;
                 t'      = ddcExtendThunk t 2#;
-
                 ddcSetThunk t' a 0# (peek# sArg1 0#);
                 ddcSetThunk t' a 1# (peek# sArg2 0#);
                 t';
@@ -235,24 +234,23 @@ ddcEval2 [r0 r1 r2 r3 : Region]
          (pArg1 : Ptr# r1 Obj) (pArg2 : Ptr# r2 Obj)
          : Ptr# r3 Obj
  = do   
+        sArg1   = allocSlot# [r1]
+        sArg2   = allocSlot# [r2]
+
         f       = ddcFunThunk      t
         p       = ddcParamsThunk   t
         a       = ddcArgsThunk     t
         case p of
          0# -> do {
-                sArg1   = allocSlot# [r1]; poke# sArg1 0# pArg1;
-                sArg2   = allocSlot# [r2]; poke# sArg2 0# pArg2;
-
+                poke# sArg1 0# pArg1;
+                poke# sArg2 0# pArg2;
                 t'      = ddcCallP0 f;
-
                 ddcApply2 t' (peek# sArg1 0#) (peek# sArg2 0#)
          }
 
          1# -> do {
-                sArg2   = allocSlot# [r2]; poke# sArg2 0# pArg2;
-
+                poke# sArg2 0# pArg2;
                 t'      = ddcCallP1 f pArg1;
-
                 ddcApply1 t' (peek# sArg2 0#);
          }
 
@@ -277,28 +275,27 @@ ddcApply3 [r0 r1 r2 r3 r4 : Region]
           (pArg3 : Ptr# r3 Obj)
           : Ptr# r4 Obj
  = do
+        sArg1   = allocSlot# [r1]
+        sArg2   = allocSlot# [r2]
+        sArg3   = allocSlot# [r3]
+
         p       = ddcParamsThunk t
         a       = ddcArgsThunk   t
         b       = ddcBoxesThunk  t
         r       = ddcRunsThunk   t
 
         case eq#  (add# a 2#) p of { True# ->
-        do {
-                sArg3   = allocSlot# [r3]; poke# sArg3 0# pArg3;
-
+        do {    poke# sArg3 0# pArg3;
                 t'      = ddcEval2 t pArg1 pArg2;
-
                 ddcApply1 t' (peek# sArg3 0#);
         };
 
         False# ->
         case eq#  (add# a 1#) p of { True# ->
         do {
-                sArg2   = allocSlot# [r2]; poke# sArg2 0# pArg2;
-                sArg3   = allocSlot# [r3]; poke# sArg3 0# pArg3;
-
+                poke# sArg2 0# pArg2;
+                poke# sArg3 0# pArg3;
                 t'      = ddcEval1 t pArg1;
-
                 ddcApply2 t' (peek# sArg2 0#) (peek# sArg3 0#);
         };
 
@@ -308,12 +305,10 @@ ddcApply3 [r0 r1 r2 r3 r4 : Region]
 
         False# ->
         do {
-                sArg1   = allocSlot# [r1]; poke# sArg1 0# pArg1;
-                sArg2   = allocSlot# [r2]; poke# sArg2 0# pArg2;
-                sArg3   = allocSlot# [r3]; poke# sArg3 0# pArg3;
-
+                poke# sArg1 0# pArg1;
+                poke# sArg2 0# pArg2;
+                poke# sArg3 0# pArg3;
                 t'      = ddcExtendThunk t 3#;
-
                 ddcSetThunk t' a 0# (peek# sArg1 0#);
                 ddcSetThunk t' a 1# (peek# sArg2 0#);
                 ddcSetThunk t' a 2# (peek# sArg3 0#);
@@ -328,45 +323,43 @@ ddcEval3 [r0 r1 r2 r3 r4 : Region]
          (pArg3 : Ptr# r3 Obj)
          : Ptr# r4 Obj
  = do   
+        sArg1   = allocSlot# [r1]
+        sArg2   = allocSlot# [r2]
+        sArg3   = allocSlot# [r3]
+
         f       = ddcFunThunk    t
         p       = ddcParamsThunk t
         a       = ddcArgsThunk   t
         case p of
          0# -> do {
-                sArg1   = allocSlot# [r1]; poke# sArg1 0# pArg1;
-                sArg2   = allocSlot# [r2]; poke# sArg2 0# pArg2;
-                sArg3   = allocSlot# [r3]; poke# sArg3 0# pArg3;
-
+                poke# sArg1 0# pArg1;
+                poke# sArg2 0# pArg2;
+                poke# sArg3 0# pArg3;
                 t'      = ddcCallP0 f;
-
                 ddcApply3 t' (peek# sArg1 0#) (peek# sArg2 0#) (peek# sArg3 0#);
 
          }
 
          1# -> do {
-                sArg2   = allocSlot# [r2]; poke# sArg2 0# pArg2;
-                sArg3   = allocSlot# [r3]; poke# sArg3 0# pArg3;
-
+                poke# sArg2 0# pArg2;
+                poke# sArg3 0# pArg3;
                 t'      = ddcCallP1 f pArg1;
-
                 ddcApply2 t' (peek# sArg2 0#) (peek# sArg3 0#);
          }
 
          2# -> do {
-                sArg3   = allocSlot# [r3]; poke# sArg3 0# pArg3;
-
+                poke# sArg3 0# pArg3;
                 t'      = ddcCallP2 f pArg1 pArg2;
-
                 ddcApply1 t' (peek# sArg3 0#);
          }
 
-         3# -> ddcCallP3 f             pArg1  pArg2  pArg3
+         3# -> ddcCallP3 f       pArg1  pArg2  pArg3
 
-         4# -> ddcCallP4 f            (ddcGetThunk t 0#) 
-                                       pArg1  pArg2  pArg3
+         4# -> ddcCallP4 f      (ddcGetThunk t 0#) 
+                                 pArg1  pArg2  pArg3
 
-         _  -> ddcEvalZ  t f p        (ddcGetThunk t (sub# a 1#))
-                                       pArg1  pArg2  pArg3
+         _  -> ddcEvalZ  t f p  (ddcGetThunk t (sub# a 1#))
+                                 pArg1  pArg2  pArg3
 
 
 ----------------------------------------------------------- 4
@@ -377,40 +370,36 @@ ddcApply4 [r0 r1 r2 r3 r4 r5 : Region]
           (pArg3 : Ptr# r3 Obj) (pArg4 : Ptr# r4 Obj) 
           : Ptr# r5 Obj
  = do
+        sArg1   = allocSlot# [r1] 
+        sArg2   = allocSlot# [r2]
+        sArg3   = allocSlot# [r3] 
+        sArg4   = allocSlot# [r4]
+
         p       = ddcParamsThunk t
         a       = ddcArgsThunk   t
         b       = ddcBoxesThunk  t
         r       = ddcRunsThunk   t
 
         case eq# (add# a 3#) p of { True# ->
-        do {
-                sArg4   = allocSlot# [r4]; poke# sArg4 0# pArg4;
-
+        do {    poke# sArg4 0# pArg4;
                 t'      = ddcEval3 t pArg1 pArg2 pArg3;
-
                 ddcApply1 t' (peek# sArg4 0#);
         };
 
         False# ->
         case eq# (add# a 2#) p of { True# ->
-        do {
-                sArg3   = allocSlot# [r3]; poke# sArg3 0# pArg3;
-                sArg4   = allocSlot# [r4]; poke# sArg4 0# pArg4;
-
+        do {    poke# sArg3 0# pArg3;
+                poke# sArg4 0# pArg4;
                 t'      = ddcEval2 t pArg1 pArg2;
-
                 ddcApply2 t' (peek# sArg3 0#) (peek# sArg4 0#);
         };
 
         False# ->
         case eq# (add# a 1#) p of { True# ->
-        do {
-                sArg2   = allocSlot# [r2]; poke# sArg2 0# pArg2;
-                sArg3   = allocSlot# [r3]; poke# sArg3 0# pArg3;
-                sArg4   = allocSlot# [r4]; poke# sArg4 0# pArg4;
-
+        do {    poke# sArg2 0# pArg2;
+                poke# sArg3 0# pArg3;
+                poke# sArg4 0# pArg4;
                 t'      = ddcEval1 t pArg1;
-
                 ddcApply3 t' (peek# sArg2 0#) (peek# sArg3 0#) (peek# sArg4 0#);
         };
 
@@ -419,14 +408,11 @@ ddcApply4 [r0 r1 r2 r3 r4 r5 : Region]
                 ddcEval4 t pArg1 pArg2 pArg3 pArg4;
 
         False# ->
-        do {    
-                sArg1   = allocSlot# [r1]; poke# sArg1 0# pArg1;
-                sArg2   = allocSlot# [r2]; poke# sArg2 0# pArg2;
-                sArg3   = allocSlot# [r3]; poke# sArg3 0# pArg3;
-                sArg4   = allocSlot# [r4]; poke# sArg4 0# pArg4;
-
-                t' = ddcExtendThunk t 4#;
-
+        do {    poke# sArg1 0# pArg1;
+                poke# sArg2 0# pArg2;
+                poke# sArg3 0# pArg3;
+                poke# sArg4 0# pArg4;
+                t'      = ddcExtendThunk t 4#;
                 ddcSetThunk t' a 0# (peek# sArg1 0#);
                 ddcSetThunk t' a 1# (peek# sArg2 0#);
                 ddcSetThunk t' a 2# (peek# sArg3 0#);
@@ -442,46 +428,43 @@ ddcEval4  [r0 r1 r2 r3 r4 r5 : Region]
           (pArg3 : Ptr# r3 Obj) (pArg4 : Ptr# r4 Obj)
           : Ptr# r5 Obj
  = do   
+        sArg1   = allocSlot# [r1]
+        sArg2   = allocSlot# [r2]
+        sArg3   = allocSlot# [r3]
+        sArg4   = allocSlot# [r4]
+
         f       = ddcFunThunk    t
         p       = ddcParamsThunk t
         case p of
          0# -> do {
-                sArg1   = allocSlot# [r1]; poke# sArg1 0# pArg1;
-                sArg2   = allocSlot# [r2]; poke# sArg2 0# pArg2;
-                sArg3   = allocSlot# [r3]; poke# sArg3 0# pArg3;
-                sArg4   = allocSlot# [r4]; poke# sArg4 0# pArg4;
-
+                poke# sArg1 0# pArg1;
+                poke# sArg2 0# pArg2;
+                poke# sArg3 0# pArg3;
+                poke# sArg4 0# pArg4;
                 t'      = ddcCallP0 f;
-
                 ddcApply4 t' (peek# sArg1 0#) (peek# sArg2 0#)
                              (peek# sArg3 0#) (peek# sArg4 0#);
          }
 
          1# -> do {
-                sArg2   = allocSlot# [r2]; poke# sArg2 0# pArg2;
-                sArg3   = allocSlot# [r3]; poke# sArg3 0# pArg3;
-                sArg4   = allocSlot# [r4]; poke# sArg4 0# pArg4;
-
+                poke# sArg2 0# pArg2;
+                poke# sArg3 0# pArg3;
+                poke# sArg4 0# pArg4;
                 t'      = ddcCallP1 f pArg1;
-
                 ddcApply3 t' (peek# sArg2 0#) (peek# sArg3 0#) 
                              (peek# sArg4 0#);
          }
 
          2# -> do {
-                sArg3   = allocSlot# [r3]; poke# sArg3 0# pArg3;
-                sArg4   = allocSlot# [r4]; poke# sArg4 0# pArg4;
-
+                poke# sArg3 0# pArg3;
+                poke# sArg4 0# pArg4;
                 t'      = ddcCallP2 f pArg1 pArg2;
-
                 ddcApply2 t' (peek# sArg3 0#) (peek# sArg4 0#);
          }
 
          3# -> do {
-                sArg4   = allocSlot# [r4]; poke# sArg4 0# pArg4;
-
+                poke# sArg4 0# pArg4;
                 t'      = ddcCallP3 f pArg1 pArg3 pArg3;
-
                 ddcApply1 t' (peek# sArg4 0#);
          }
 

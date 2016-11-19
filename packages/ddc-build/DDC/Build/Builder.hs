@@ -285,7 +285,7 @@ builder_X8664_Darwin config host mVersion
                 -> doCmd "LLVM compiler"        [(2, BuilderCanceled)]
                 [ "opt -O3"
                 , llFile
-                , "| llc -O3 -march=x86-64 -relocation-model=pic"
+                , "| llc -march=x86-64 -relocation-model=pic"   -- TODO: reenable opts.
                 , "-o", sFile ]
 
         , buildCC
