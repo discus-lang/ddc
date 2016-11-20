@@ -67,4 +67,4 @@ instance Pretty CallType where
  ppr ct
   = case ct of
         CallTypeStd     -> empty
-        CallTypeTail    -> text "musttail"
+        CallTypeTail    -> text "tail"

@@ -283,9 +283,9 @@ builder_X8664_Darwin config host mVersion
         , buildLlc    
                 = \llFile sFile
                 -> doCmd "LLVM compiler"        [(2, BuilderCanceled)]
-                [ "opt -O3 -tailcallopt"
+                [ "opt -O3"
                 , llFile
-                , "| llc -O3 -tailcallopt -march=x86-64 -relocation-model=pic"
+                , "| llc -O3 -march=x86-64 -relocation-model=pic"
                 , "-o", sFile ]
 
         , buildCC

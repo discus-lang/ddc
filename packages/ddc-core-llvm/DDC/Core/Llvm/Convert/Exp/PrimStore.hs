@@ -236,38 +236,26 @@ convPrimStore ctx mdst p as
 
         -- Read from a raw address.
         A.PrimStore A.PrimStorePeek
-         | A.RType{} : A.RType tDst : args      <- as
-         , Just vDst@(Var nDst _)               <- mdst
-         , Just [mPtr]                          <- atomsR args
+         | A.RType{} : A.RType _tDst : args <- as
+         , Just vDst                        <- mdst
+         , Just [mPtr]                      <- atomsR args
          -> Just $ do
-                tDst'        <- convertType   pp kenv tDst
                 xPtr'        <- mPtr
-                let vAddr    = Var (bumpName nDst "addr") (tAddr pp)
-                let vPtr     = Var (bumpName nDst "ptr")   (tPtr tDst')
                 return  $ Seq.fromList
-                        $ (map annotNil
-                        [ IConv vAddr ConvPtrtoint xPtr'
-                        , IConv vPtr  ConvInttoptr (XVar vAddr) ])
-                        ++ [(annot kenv mdsup as
-                        ( ILoad vDst  (XVar vPtr)))]
+                        $ [(annot kenv mdsup as
+                        ( ILoad vDst  xPtr'))]
 
 
         -- Write to a raw address.
         A.PrimStore A.PrimStorePoke
-         | A.RType{} : A.RType tDst : args      <- as
+         | A.RType{} : A.RType _tDst : args     <- as
          , Just [mPtr, mVal]                    <- atomsR args
          -> Just $ do
-                tDst'    <- convertType pp kenv tDst
                 xPtr'    <- mPtr
                 xVal'    <- mVal
-                vAddr    <- newUniqueNamedVar "addr"  (tAddr pp)
-                vPtr     <- newUniqueNamedVar "ptr"   (tPtr tDst')
                 return  $ Seq.fromList
-                        $ (map annotNil
-                        [ IConv vAddr ConvPtrtoint xPtr'
-                        , IConv vPtr  ConvInttoptr (XVar vAddr) ])
-                        ++ [(annot kenv mdsup as
-                        ( IStore (XVar vPtr) xVal' ))]
+                        $  [(annot kenv mdsup as
+                        ( IStore xPtr' xVal' ))]
 
 
         -- Add an offset to a raw address.

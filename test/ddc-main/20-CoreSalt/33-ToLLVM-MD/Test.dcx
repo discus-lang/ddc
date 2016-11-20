@@ -20,12 +20,12 @@ x_plus_y_square
     (y : Ptr# ry Int#)                      -- of type pointer to int
     (z : Ptr# rz Int#)
     : Int#
- = do { xval1 = peek# [rx] [Int#] x 0#;     -- Compute (x + y)
-        yval1 = peek# [ry] [Int#] y 0#;
+ = do { xval1 = peek# [rx] [Int#] x;        -- Compute (x + y)
+        yval1 = peek# [ry] [Int#] y;
         a     = add# [Int#] xval1 yval1;        
-        poke# [rz] [Int#] z 0# a;           -- Modify z        
-        xval2 = peek# [rx] [Int#] x 0#;     -- Compute (x + y) again
-        yval2 = peek# [ry] [Int#] y 0#;
+        poke# [rz] [Int#] z a;              -- Modify z        
+        xval2 = peek# [rx] [Int#] x;        -- Compute (x + y) again
+        yval2 = peek# [ry] [Int#] y;
         b     = add# [Int#] xval2 yval2;        
         mul# [Int#] a b;                    -- Result is (x + y)^2
       };
@@ -44,10 +44,10 @@ module Constprop with letrec {
       {w : Const rx}
       (x : Ptr# rx Int#)
       : Int#
-    = do { a = peek# [rx] [Int#] x 0#;
+    = do { a = peek# [rx] [Int#] x;
            b = add# [Int#] a 1i#;
            nothing [rx] x;
-           c = peek# [rx] [Int#] x 0#;
+           c = peek# [rx] [Int#] x;
            d = mul# [Int#] c 2i#;
            add# [Int#] b d;
          };
@@ -64,12 +64,12 @@ go  [ra rx ry : Region]
   = case i of {
       42# -> i;      
       _    -> 
-        do { yval     = peek# [ry] [Nat#] y 0#;
+        do { yval     = peek# [ry] [Nat#] y;
              yplustwo = add# [Nat#] yval 2#;
 
-             poke# [rx] [Nat#] x 0# yplustwo;
+             poke# [rx] [Nat#] x yplustwo;
 
-             poke# [ra] [Nat#] a i i;
+             poke# [ra] [Nat#] (plusPtr# [ra] [Nat#] a i) i;
 
              nexti    = add# [Nat#] i 1#;
              go [ra] [rx] [ry] {w} a x y nexti;

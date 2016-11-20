@@ -13,7 +13,8 @@ letrec {
               let ^      
                     = ddcPayloadSmall [rT] ^0 in
               let _      
-                    = poke# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# 3# in
+                    = poke# [rT] [Nat#]
+                          (plusPtr# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0#) 3# in
               ^1 in
       let x2     
             = let ^      
@@ -21,7 +22,8 @@ letrec {
               let ^      
                     = ddcPayloadSmall [rT] ^0 in
               let ^      
-                    = peek# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# in
+                    = peek# [rT] [Nat#]
+                          (plusPtr# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0#) in
               ^0 in
       let x3     
             = let ^      
@@ -29,7 +31,8 @@ letrec {
               let ^      
                     = ddcPayloadSmall [rT] ^0 in
               let ^      
-                    = peek# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# in
+                    = peek# [rT] [Nat#]
+                          (plusPtr# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0#) in
               ^0 in
       let x4     
             = add# [Nat#] x2 x3 in
@@ -39,7 +42,8 @@ letrec {
               let ^      
                     = ddcPayloadSmall [rT] ^0 in
               let _      
-                    = poke# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# x4 in
+                    = poke# [rT] [Nat#]
+                          (plusPtr# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0#) x4 in
               ^1 in
       let x5     
             = let ^      
@@ -47,7 +51,8 @@ letrec {
               let ^      
                     = ddcPayloadSmall [rT] ^0 in
               let _      
-                    = poke# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# 2# in
+                    = poke# [rT] [Nat#]
+                          (plusPtr# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0#) 2# in
               ^1 in
       let x6     
             = let ^      
@@ -55,7 +60,8 @@ letrec {
               let ^      
                     = ddcPayloadSmall [rT] ^0 in
               let ^      
-                    = peek# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# in
+                    = peek# [rT] [Nat#]
+                          (plusPtr# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0#) in
               ^0 in
       let x7     
             = let ^      
@@ -63,7 +69,8 @@ letrec {
               let ^      
                     = ddcPayloadSmall [rT] ^0 in
               let ^      
-                    = peek# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# in
+                    = peek# [rT] [Nat#]
+                          (plusPtr# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0#) in
               ^0 in
       let x8     
             = add# [Nat#] x6 x7 in
@@ -72,7 +79,8 @@ letrec {
       let ^      
             = ddcPayloadSmall [rT] ^0 in
       let _      
-            = poke# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# x8 in
+            = poke# [rT] [Nat#]
+                  (plusPtr# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0#) x8 in
       ^1
 }
 
@@ -88,7 +96,8 @@ letrec {
               let ^      
                     = ddcPayloadSmall [rT] ^0 in
               let ^      
-                    = peek# [rT] [Bool#] (castPtr# [rT] [Bool#] [Word8#] ^0) 0# in
+                    = peek# [rT] [Bool#]
+                          (plusPtr# [rT] [Bool#] (castPtr# [rT] [Bool#] [Word8#] ^0) 0#) in
               ^0 in
       case x0 of {
         True#  
@@ -97,7 +106,8 @@ letrec {
             let ^      
                   = ddcPayloadSmall [rT] ^0 in
             let _      
-                  = poke# [rT] [Bool#] (castPtr# [rT] [Bool#] [Word8#] ^0) 0# False# in
+                  = poke# [rT] [Bool#]
+                        (plusPtr# [rT] [Bool#] (castPtr# [rT] [Bool#] [Word8#] ^0) 0#) False# in
             ^1;
         _ 
          -> let ^      
@@ -105,7 +115,8 @@ letrec {
             let ^      
                   = ddcPayloadSmall [rT] ^0 in
             let _      
-                  = poke# [rT] [Bool#] (castPtr# [rT] [Bool#] [Word8#] ^0) 0# True# in
+                  = poke# [rT] [Bool#]
+                        (plusPtr# [rT] [Bool#] (castPtr# [rT] [Bool#] [Word8#] ^0) 0#) True# in
             ^1
       }
 }
@@ -122,7 +133,8 @@ letrec {
               let ^      
                     = ddcPayloadSmall [rT] ^0 in
               let ^      
-                    = peek# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# in
+                    = peek# [rT] [Nat#]
+                          (plusPtr# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0#) in
               ^0 in
       case x0 of {
         5#  
@@ -131,7 +143,8 @@ letrec {
             let ^      
                   = ddcPayloadSmall [rT] ^0 in
             let _      
-                  = poke# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# 6# in
+                  = poke# [rT] [Nat#]
+                        (plusPtr# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0#) 6# in
             ^1;
         6#  
          -> let ^      
@@ -139,7 +152,8 @@ letrec {
             let ^      
                   = ddcPayloadSmall [rT] ^0 in
             let _      
-                  = poke# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# 7# in
+                  = poke# [rT] [Nat#]
+                        (plusPtr# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0#) 7# in
             ^1;
         _ 
          -> let ^      
@@ -147,7 +161,8 @@ letrec {
             let ^      
                   = ddcPayloadSmall [rT] ^0 in
             let _      
-                  = poke# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# 0# in
+                  = poke# [rT] [Nat#]
+                        (plusPtr# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0#) 0# in
             ^1
       }
 }
@@ -164,7 +179,8 @@ letrec {
               let ^      
                     = ddcPayloadSmall [rT] ^0 in
               let ^      
-                    = peek# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# in
+                    = peek# [rT] [Nat#]
+                          (plusPtr# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0#) in
               ^0 in
       case x0 of {
         0#  
@@ -174,7 +190,8 @@ letrec {
                     let ^      
                           = ddcPayloadSmall [rT] ^0 in
                     let ^      
-                          = peek# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# in
+                          = peek# [rT] [Nat#]
+                                (plusPtr# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0#) in
                     ^0 in
             case x1 of {
               0#  
@@ -183,7 +200,8 @@ letrec {
                   let ^      
                         = ddcPayloadSmall [rT] ^0 in
                   let _      
-                        = poke# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# 1# in
+                        = poke# [rT] [Nat#]
+                              (plusPtr# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0#) 1# in
                   ^1;
               _ 
                -> let ^      
@@ -191,7 +209,8 @@ letrec {
                   let ^      
                         = ddcPayloadSmall [rT] ^0 in
                   let _      
-                        = poke# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# 0# in
+                        = poke# [rT] [Nat#]
+                              (plusPtr# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0#) 0# in
                   ^1
             };
         _ 
@@ -200,7 +219,8 @@ letrec {
             let ^      
                   = ddcPayloadSmall [rT] ^0 in
             let _      
-                  = poke# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# 0# in
+                  = poke# [rT] [Nat#]
+                        (plusPtr# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0#) 0# in
             ^1
       }
 }
@@ -217,7 +237,8 @@ letrec {
               let ^      
                     = ddcPayloadSmall [rT] ^0 in
               let ^      
-                    = peek# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# in
+                    = peek# [rT] [Nat#]
+                          (plusPtr# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0#) in
               ^0 in
       let x1     
             = let ^      
@@ -225,7 +246,8 @@ letrec {
               let ^      
                     = ddcPayloadSmall [rT] ^0 in
               let ^      
-                    = peek# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# in
+                    = peek# [rT] [Nat#]
+                          (plusPtr# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0#) in
               ^0 in
       let x2     
             = add# [Nat#] x0 x1 in
@@ -234,7 +256,8 @@ letrec {
       let ^      
             = ddcPayloadSmall [rT] ^0 in
       let _      
-            = poke# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# x2 in
+            = poke# [rT] [Nat#]
+                  (plusPtr# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0#) x2 in
       ^1;
   
   foo: Ptr# rT Obj -> Ptr# rT Obj
@@ -245,7 +268,8 @@ letrec {
               let ^      
                     = ddcPayloadSmall [rT] ^0 in
               let _      
-                    = poke# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# 5# in
+                    = poke# [rT] [Nat#]
+                          (plusPtr# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0#) 5# in
               ^1 in
       add x x3
 }
@@ -289,7 +313,8 @@ letrec {
             let ^      
                   = ddcPayloadSmall [rT] ^0 in
             let _      
-                  = poke# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# 0# in
+                  = poke# [rT] [Nat#]
+                        (plusPtr# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0#) 0# in
             ^1
       }
 }
@@ -326,7 +351,8 @@ letrec {
               let ^      
                     = ddcPayloadSmall [rT] ^0 in
               let ^      
-                    = peek# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# in
+                    = peek# [rT] [Nat#]
+                          (plusPtr# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0#) in
               ^0 in
       case x0 of {
         0#  
@@ -335,7 +361,8 @@ letrec {
             let ^      
                   = ddcPayloadSmall [rT] ^0 in
             let _      
-                  = poke# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# 1# in
+                  = poke# [rT] [Nat#]
+                        (plusPtr# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0#) 1# in
             ^1;
         _ 
          -> let ^      
@@ -343,7 +370,8 @@ letrec {
             let ^      
                   = ddcPayloadSmall [rT] ^0 in
             let _      
-                  = poke# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# 0# in
+                  = poke# [rT] [Nat#]
+                        (plusPtr# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0#) 0# in
             ^1
       }
 }
@@ -380,7 +408,8 @@ letrec {
               let ^      
                     = ddcPayloadSmall [rT] ^0 in
               let _      
-                    = poke# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# 1# in
+                    = poke# [rT] [Nat#]
+                          (plusPtr# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0#) 1# in
               ^1 in
       let x2     
             = let ^      
@@ -396,7 +425,8 @@ letrec {
               let ^      
                     = ddcPayloadSmall [rT] ^0 in
               let _      
-                    = poke# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0# 0# in
+                    = poke# [rT] [Nat#]
+                          (plusPtr# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0#) 0# in
               ^1 in
       head [rT] x4 x2
 }

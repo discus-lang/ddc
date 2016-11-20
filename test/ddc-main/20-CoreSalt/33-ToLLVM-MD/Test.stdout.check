@@ -23,30 +23,15 @@ declare external void @llvm.memcpy.p0i8.p0i8.i64(i8* , i8* , i64 , i32 , i1 )
 define internal fastcc i64 @x_plus_y_square(i64*  %_v1.x, i64*  %_v2.y, i64*  %_v3.z) align 8 gc "shadow-stack"  
 {
 l9.entry:
-        %_v10.xval1.addr1 = ptrtoint i64* %_v1.x to i64
-        %_v10.xval1.addr2 = add i64 %_v10.xval1.addr1, 0
-        %_v10.xval1.ptr = inttoptr i64 %_v10.xval1.addr2 to i64*
-        %_v10.xval1  = load i64, i64* %_v10.xval1.ptr,    !tbaa !7
-        %_v11.yval1.addr1 = ptrtoint i64* %_v2.y to i64
-        %_v11.yval1.addr2 = add i64 %_v11.yval1.addr1, 0
-        %_v11.yval1.ptr = inttoptr i64 %_v11.yval1.addr2 to i64*
-        %_v11.yval1  = load i64, i64* %_v11.yval1.ptr,    !tbaa !6
+        %_v10.xval1  = load i64, i64* %_v1.x,    !tbaa !7
+        %_v11.yval1  = load i64, i64* %_v2.y,    !tbaa !6
         %_v12.a      = add i64 %_v10.xval1, %_v11.yval1
-        %_v13.addr1  = ptrtoint i64* %_v3.z to i64
-        %_v14.addr2  = add i64 %_v13.addr1, 0
-        %_v15.ptr    = inttoptr i64 %_v14.addr2 to i64*
-        store i64 %_v12.a, i64* %_v15.ptr,    !tbaa !8
-        %_v16.xval2.addr1 = ptrtoint i64* %_v1.x to i64
-        %_v16.xval2.addr2 = add i64 %_v16.xval2.addr1, 0
-        %_v16.xval2.ptr = inttoptr i64 %_v16.xval2.addr2 to i64*
-        %_v16.xval2  = load i64, i64* %_v16.xval2.ptr,    !tbaa !7
-        %_v17.yval2.addr1 = ptrtoint i64* %_v2.y to i64
-        %_v17.yval2.addr2 = add i64 %_v17.yval2.addr1, 0
-        %_v17.yval2.ptr = inttoptr i64 %_v17.yval2.addr2 to i64*
-        %_v17.yval2  = load i64, i64* %_v17.yval2.ptr,    !tbaa !6
-        %_v18.b      = add i64 %_v16.xval2, %_v17.yval2
-        %_v19        = mul i64 %_v12.a, %_v18.b
-        ret i64 %_v19
+        store i64 %_v12.a, i64* %_v3.z,    !tbaa !8
+        %_v13.xval2  = load i64, i64* %_v1.x,    !tbaa !7
+        %_v14.yval2  = load i64, i64* %_v2.y,    !tbaa !6
+        %_v15.b      = add i64 %_v13.xval2, %_v14.yval2
+        %_v16        = mul i64 %_v12.a, %_v15.b
+        ret i64 %_v16
 }
 
 
@@ -79,16 +64,10 @@ l5.entry:
 define internal fastcc i64 @three_x_plus_one(i64*  %_v7.x) align 8 gc "shadow-stack"  
 {
 l11.entry:
-        %_v12.a.addr1 = ptrtoint i64* %_v7.x to i64
-        %_v12.a.addr2 = add i64 %_v12.a.addr1, 0
-        %_v12.a.ptr  = inttoptr i64 %_v12.a.addr2 to i64*
-        %_v12.a      = load i64, i64* %_v12.a.ptr,    !tbaa !10
+        %_v12.a      = load i64, i64* %_v7.x,    !tbaa !10
         %_v13.b      = add i64 %_v12.a, 1
         %_v15._d14   = call fastcc i64 @nothing (i64* %_v7.x) 
-        %_v16.c.addr1 = ptrtoint i64* %_v7.x to i64
-        %_v16.c.addr2 = add i64 %_v16.c.addr1, 0
-        %_v16.c.ptr  = inttoptr i64 %_v16.c.addr2 to i64*
-        %_v16.c      = load i64, i64* %_v16.c.ptr,    !tbaa !10
+        %_v16.c      = load i64, i64* %_v7.x,    !tbaa !10
         %_v17.d      = mul i64 %_v16.c, 2
         %_v18        = add i64 %_v13.b, %_v17.d
         ret i64 %_v18
@@ -122,22 +101,16 @@ l10.entry:
 l11.alt:
         ret i64 %_v4.i
 l13.default:
-        %_v14.yval.addr1 = ptrtoint i64* %_v3.y to i64
-        %_v14.yval.addr2 = add i64 %_v14.yval.addr1, 0
-        %_v14.yval.ptr = inttoptr i64 %_v14.yval.addr2 to i64*
-        %_v14.yval   = load i64, i64* %_v14.yval.ptr,    !tbaa !9
+        %_v14.yval   = load i64, i64* %_v3.y,    !tbaa !9
         %_v15.yplustwo = add i64 %_v14.yval, 2
-        %_v16.addr1  = ptrtoint i64* %_v2.x to i64
-        %_v17.addr2  = add i64 %_v16.addr1, 0
-        %_v18.ptr    = inttoptr i64 %_v17.addr2 to i64*
-        store i64 %_v15.yplustwo, i64* %_v18.ptr,    !tbaa !8
-        %_v19.addr1  = ptrtoint i64* %_v1.a to i64
-        %_v20.addr2  = add i64 %_v19.addr1, %_v4.i
-        %_v21.ptr    = inttoptr i64 %_v20.addr2 to i64*
-        store i64 %_v4.i, i64* %_v21.ptr,    !tbaa !7
-        %_v22.nexti  = add i64 %_v4.i, 1
-        %_v23        = tail call fastcc i64 @go (i64* %_v1.a, i64* %_v2.x, i64* %_v3.y, i64 %_v22.nexti) 
-        ret i64 %_v23
+        store i64 %_v15.yplustwo, i64* %_v2.x,    !tbaa !8
+        %_v17.addr   = ptrtoint i64* %_v1.a to i64
+        %_v18.addr2  = add i64 %_v17.addr, %_v4.i
+        %_v16.x0     = inttoptr i64 %_v18.addr2 to i64*
+        store i64 %_v4.i, i64* %_v16.x0,    !tbaa !7
+        %_v19.nexti  = add i64 %_v4.i, 1
+        %_v20        = tail call fastcc i64 @go (i64* %_v1.a, i64* %_v2.x, i64* %_v3.y, i64 %_v19.nexti) 
+        ret i64 %_v20
 }
 
 
