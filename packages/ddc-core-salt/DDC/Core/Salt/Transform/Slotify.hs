@@ -21,7 +21,7 @@ import qualified Control.Monad.State.Strict             as State
 import qualified Data.Map                               as Map
 
 
----------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 -- | Insert slot allocations for heap objects.
 slotifyModule
         :: (Show a, Pretty a)
@@ -31,34 +31,34 @@ slotifyModule
                   (Module (AnTEC a A.Name) A.Name)
 
 slotifyModule a mm@ModuleCore{}
-        | mmStrip               <- Reannotate.reannotate annotTail mm
-        , XLet aa (LRec bxs) x1 <- moduleBody mmStrip
-        = let
-                bxs'    = map (slotifyLet a) bxs
-                mmSlots = mmStrip { moduleBody = XLet aa (LRec bxs') x1 }
+ | mmStrip               <- Reannotate.reannotate annotTail mm
+ , XLet aa (LRec bxs) x1 <- moduleBody mmStrip
+ = let
+        bxs'    = map (slotifyLet a) bxs
+        mmSlots = mmStrip { moduleBody = XLet aa (LRec bxs') x1 }
 
-                anorm   = Simp.anormalize (Namify.makeNamifier A.freshT)
+        anorm   = Simp.anormalize (Namify.makeNamifier A.freshT)
                                           (Namify.makeNamifier A.freshX)
 
-                mmANF   = Simp.result $ fst
-                        $ flip State.runState 0
-                        $ Simp.applySimplifier
-                                A.profile Env.empty Env.empty anorm mmSlots
+        mmANF   = Simp.result $ fst
+                $ flip State.runState 0
+                $ Simp.applySimplifier
+                        A.profile Env.empty Env.empty anorm mmSlots
 
-          in    case Check.checkModule 
-                        (Check.configOfProfile A.profile) 
-                        mmANF Check.Recon of
+   in    case Check.checkModule 
+                (Check.configOfProfile A.profile) 
+                mmANF Check.Recon of
 
-                -- Couldn't reconstruct type annotations.
-                (Left err, _checkTrace)
-                  -> error ("slotifyModule:\n" ++ renderIndent (ppr err)) 
-                        -- TODO how to report error properly
+           -- Couldn't reconstruct type annotations.
+           (Left err, _checkTrace)
+             -> error ("slotifyModule:\n" ++ renderIndent (ppr err)) 
+                   -- TODO how to report error properly
 
-                (Right mmCheck, _checkTrace)
-                  -> Right mmCheck
+           (Right mmCheck, _checkTrace)
+             -> Right mmCheck
 
-        | otherwise
-        = Left (A.ErrorNoTopLevelLetrec mm)
+ | otherwise
+ = Left (A.ErrorNoTopLevelLetrec mm)
 
 
 -- Top level let bindings ------------------------------------------------------
@@ -111,7 +111,8 @@ slotifySuper a xx
         -- slots for each of the arguments passed to the super.
         allocSlotsArg x
                 = foldr ($) x
-                $ [ XLet a (LLet (bSlot n t) (A.xAllocSlotVal a tR (XVar a (UName n))))
+                $ [ XLet a (LLet (bSlot n t) 
+                                 (A.xAllocSlotVal a tR (XVar a (UName n))))
                   | (n, t)       <- Map.toList $ ntsObj `Map.intersection` args
                   , Just (tR, _) <- [A.takeTPtr t] ]
 
@@ -123,13 +124,14 @@ slotifySuper a xx
                   | (n, t)       <- Map.toList $ ntsObj `Map.difference`   args
                   , Just (tR, _) <- [A.takeTPtr t] ]
 
-        -- Function to find bound occurrences of a variable that is being represented
-        -- by a stack slot and peek the current from the slot at every occurrence.
+        -- Function to find bound occurrences of a variable that is being
+        -- represented by a stack slot and peek the current from the slot at
+        -- every occurrence.
         substPeeks x    
                 = flip replaceX x 
                 $ Map.fromList
                 $ [ (n, xPeekSlot n t)
-                  | (n, t)              <- ntsObj' ]
+                  | (n, t)      <- ntsObj' ]
 
         -- Function to find the binding occurrences of variables that are being 
         -- represented by stack slots and poke the value into the slot as soon
@@ -138,7 +140,7 @@ slotifySuper a xx
                 = flip injectX x 
                 $ Map.fromList
                   [ (n, wrapPokeSlot n t)
-                  | (n, t)              <- ntsObj' ]
+                  | (n, t)      <- ntsObj' ]
 
    in   makeXLamFlags a bsParam
                 $ allocSlotsArg
