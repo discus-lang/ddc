@@ -47,6 +47,7 @@ module DDC.Core.Salt.Runtime
           -- * Calls to primops.
         , xCreate
         , xAllocSlot
+        , xAllocSlotVal
         , xRead
         , xWrite
         , xPeek
@@ -394,6 +395,17 @@ uAllocSlot :: Bound Name
 uAllocSlot
  = UPrim (NamePrimOp $ PrimStore $ PrimStoreAllocSlot)
          (typeOfPrimStore PrimStoreAllocSlot)
+
+
+-- | Allocate a pointer on the stack for a GC root.
+xAllocSlotVal :: a -> Region Name -> Exp a Name -> Exp a Name
+xAllocSlotVal a tR xVal
+ = XApp a (XApp a (XVar a uAllocSlotVal) (XType a tR)) xVal
+
+uAllocSlotVal :: Bound Name
+uAllocSlotVal
+ = UPrim (NamePrimOp $ PrimStore $ PrimStoreAllocSlotVal)
+         (typeOfPrimStore PrimStoreAllocSlotVal)
 
 
 -- Small ------------------------------------------------------------------------------------------

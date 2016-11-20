@@ -145,6 +145,10 @@ typeOfPrimStore jj
          -> tForall kRegion 
          $  \r -> tPtr rTop (tPtr r tObj)
 
+        PrimStoreAllocSlotVal
+         -> tForall kRegion 
+         $  \r -> tPtr r tObj `tFun` tPtr rTop (tPtr r tObj)
+
         PrimStoreRead           
          -> tForall kData 
          $ \t -> tAddr `tFun` tNat `tFun` t

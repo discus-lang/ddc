@@ -68,6 +68,7 @@ convPrimStore pp
         PrimStoreRecover        -> text "_RECOVER"
         PrimStoreAlloc          -> text "_ALLOC"
         PrimStoreAllocSlot      -> text "_ALLOCSLOT"
+        PrimStoreAllocSlotVal   -> text "_ALLOCSLOTVAL"
         PrimStoreRead           -> text "_READ"
         PrimStoreWrite          -> text "_WRITE"
         PrimStoreCopy           -> text "_COPY"

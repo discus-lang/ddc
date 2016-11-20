@@ -92,8 +92,15 @@ slotifySuper
         -> Exp a A.Name
 
 slotifySuper a xx
- = let  objs            = objectsOfExp xx
-        objs'           = Map.toList objs
+ = let  
+        -- Split super parameters frm the body expression.
+        (bsParam, xBody)  
+                = case takeXLamFlags xx of
+                        Nothing         -> ([], xx)
+                        Just (bs, x)    -> (bs, x)
+
+        ntsObj          = objectsOfExp xx
+        ntsObj'         = Map.toList ntsObj
 
         nSlot n         = A.NameExt n "slot"
         xSlot n         = XVar a (UName (nSlot n))
@@ -102,44 +109,44 @@ slotifySuper a xx
 
         xPeekSlot  n t  = A.xPeek a A.rTop t (xSlot n) 
         xPokeSlot  n t  = A.xPoke a A.rTop t (xSlot n) (XVar a (UName n))
-        xPokeSlot' n t  = XLet a (LLet (BNone A.tVoid) (xPokeSlot n t))
 
-        allocs          = [ XLet a (LLet (bSlot n t) (A.xAllocSlot a tR))
-                          | (n, t)              <- objs'
-                          , Just (tR, _)        <- [A.takeTPtr t] ]
+        wrapPokeSlot n t x
+                = XLet a (LLet (BNone A.tVoid) (xPokeSlot n t)) x
 
-        allocSlots x    = foldr ($) x allocs
+        allocSlots x    
+                = foldr ($) x
+                $ [ XLet a (LLet (bSlot n t) (A.xAllocSlot a tR))
+                  | (n, t)              <- ntsObj'
+                  , Just (tR, _)        <- [A.takeTPtr t] ]
 
-        peeks           = Map.fromList
-                        $ [ (n, xPeekSlot n t)
-                          | (n, t)              <- objs' ]
+        substPeeks x    
+                = flip replaceX x 
+                $ Map.fromList
+                $ [ (n, xPeekSlot n t)
+                  | (n, t)              <- ntsObj' ]
 
 
-        substPeeks x    = replaceX peeks x
+        injectPokesL x  
+                =  flip injectX x 
+                $  Map.fromList
+                   [ (n, wrapPokeSlot n t)
+                   | (n, t)              <- ntsObj' ]
 
 
-        pokes           = Map.fromList
-                          [ (n, xPokeSlot' n t)
-                          | (n, t)              <- objs' ]
+        -- Get level-0 binders
+        args    = Map.fromList [ (n, ()) | (False, BName n _) <- bsParam ]
 
-        injectPokesL x  = injectX pokes x
+        -- Instructions to poke the initial value of each argument 
+        -- into its associate slot.
+        injectPokesA x
+                = foldr ($) x 
+                $ [ wrapPokeSlot n t
+                  | (n, t)      <- Map.toList (ntsObj `Map.intersection` args) ]
 
-   in  case takeXLamFlags xx of
-         Nothing
-          -> allocSlots $ injectPokesL $ substPeeks xx
 
-         Just (bs, xx')
-          -> let
-                -- Get level-0 binders
-                args            = Map.fromList [ (n, ()) | (False, BName n _) <- bs ]
-
-                pokes           = [ xPokeSlot' n t
-                                  | (n, t)      <- Map.toList (objs `Map.intersection` args) ]
-
-                injectPokesA x  = foldr ($) x pokes
-
-             in makeXLamFlags a bs $ allocSlots
-                                   $ injectPokesA
-                                   $ injectPokesL
-                                   $ substPeeks xx'
+   in   makeXLamFlags a bsParam
+                $ allocSlots
+                $ injectPokesA
+                $ injectPokesL
+                $ substPeeks xBody
 

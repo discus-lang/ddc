@@ -34,9 +34,11 @@ data PrimStore
         --   There must be enough space available, else undefined.
         | PrimStoreAlloc
 
-        -- | Allocate a pointer on the stack for a GC root.
+        -- | Allocate space on the stack for a GC root and set it to zero.
         | PrimStoreAllocSlot
 
+        -- | Allocate space on the stack for a GC root and set it to the given value.
+        | PrimStoreAllocSlotVal
 
         -- Addr operations ------------
         -- | Read a value from the store at the given address and offset.
@@ -124,6 +126,7 @@ instance Pretty PrimStore where
         PrimStoreRecover        -> text "recover#"
         PrimStoreAlloc          -> text "alloc#"
         PrimStoreAllocSlot      -> text "allocSlot#"
+        PrimStoreAllocSlotVal   -> text "allocSlotVal#"
 
         PrimStoreRead           -> text "read#"
         PrimStoreWrite          -> text "write#"
@@ -162,6 +165,7 @@ readPrimStore str
         "recover#"              -> Just PrimStoreRecover
         "alloc#"                -> Just PrimStoreAlloc
         "allocSlot#"            -> Just PrimStoreAllocSlot
+        "allocSlotVal#"         -> Just PrimStoreAllocSlotVal
 
         "read#"                 -> Just PrimStoreRead
         "write#"                -> Just PrimStoreWrite
