@@ -154,6 +154,25 @@ convPrimStore ctx mdst p as
                                 ] [] ]
 
 
+        -- Allocate a new gcroot and set it to the given value.
+        A.PrimStore A.PrimStoreAllocSlotVal
+         | Just vDst@(Var nDst _)       <- mdst
+         , A.RType{} : args             <- as
+         , Just [mVal]                  <- atomsR args
+         -> Just $ do
+                xVal'           <- mVal
+                let vRoot       = Var (bumpName nDst "i8") (tPtr (tPtr (TInt 8)))
+                return  $ Seq.fromList $ map annotNil
+                        [ IAlloca vDst (tPtr (tObj pp))
+                        , IStore  (XVar vDst) xVal'
+                        , IConv   vRoot ConvBitcast (XVar vDst)
+                        , ICall Nothing CallTypeStd Nothing
+                                TVoid nameGlobalGcroot
+                                [ XVar vRoot
+                                , XLit (LitNull (tPtr (TInt 8)))
+                                ] [] ]
+
+
         -- Read a value via a pointer.
         A.PrimStore A.PrimStoreRead
          | A.RType{} : args             <- as

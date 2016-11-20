@@ -1,4 +1,3 @@
-{-# OPTIONS_GHC -w #-}
 module DDC.Core.Salt.Transform.Slotify
         (slotifyModule)
 where
@@ -9,26 +8,18 @@ import DDC.Core.Exp.Annot.AnTEC
 import DDC.Core.Exp.Annot
 import DDC.Core.Module
 import DDC.Data.Pretty
-import Data.Map                                         (Map)
-import Data.Set                                         (Set)
 import qualified DDC.Core.Salt                          as A
 import qualified DDC.Core.Salt.Compounds                as A    
 import qualified DDC.Core.Salt.Runtime                  as A
 import qualified DDC.Core.Check                         as Check
 import qualified DDC.Core.Simplifier                    as Simp
 import qualified DDC.Core.Simplifier.Recipe             as Simp
-import qualified DDC.Core.Transform.Snip                as Snip
 import qualified DDC.Core.Transform.Namify              as Namify
-import qualified DDC.Core.Transform.SubstituteXX        as Subst
 import qualified DDC.Core.Transform.Reannotate          as Reannotate
 import qualified DDC.Type.Env                           as Env
 import qualified Control.Monad.State.Strict             as State
 import qualified Data.Map                               as Map
-import qualified Data.Set                               as Set
 
-import Data.List
-
-import Debug.Trace
 
 ---------------------------------------------------------------------------------------------------
 -- | Insert slot allocations for heap objects.
@@ -80,7 +71,7 @@ slotifyLet
 slotifyLet a (BName n t, x)
  = (BName n t, slotifySuper a x)
 
-slotifyLet a bx
+slotifyLet _a bx
  = bx
 
 
@@ -113,40 +104,45 @@ slotifySuper a xx
         wrapPokeSlot n t x
                 = XLet a (LLet (BNone A.tVoid) (xPokeSlot n t)) x
 
-        allocSlots x    
+        -- Get level-0 binders
+        args    = Map.fromList [ (n, ()) | (False, BName n _) <- bsParam ]
+
+        -- Function to wrap an expression in let-bindings that create stack
+        -- slots for each of the arguments passed to the super.
+        allocSlotsArg x
+                = foldr ($) x
+                $ [ XLet a (LLet (bSlot n t) (A.xAllocSlotVal a tR (XVar a (UName n))))
+                  | (n, t)       <- Map.toList $ ntsObj `Map.intersection` args
+                  , Just (tR, _) <- [A.takeTPtr t] ]
+
+        -- Function to wrap an expression in let-bindings that create stack
+        -- slots for each of the boxed values bound in the body of the super.
+        allocSlotsBody x    
                 = foldr ($) x
                 $ [ XLet a (LLet (bSlot n t) (A.xAllocSlot a tR))
-                  | (n, t)              <- ntsObj'
-                  , Just (tR, _)        <- [A.takeTPtr t] ]
+                  | (n, t)       <- Map.toList $ ntsObj `Map.difference`   args
+                  , Just (tR, _) <- [A.takeTPtr t] ]
 
+        -- Function to find bound occurrences of a variable that is being represented
+        -- by a stack slot and peek the current from the slot at every occurrence.
         substPeeks x    
                 = flip replaceX x 
                 $ Map.fromList
                 $ [ (n, xPeekSlot n t)
                   | (n, t)              <- ntsObj' ]
 
-
+        -- Function to find the binding occurrences of variables that are being 
+        -- represented by stack slots and poke the value into the slot as soon
+        -- as it is defined.
         injectPokesL x  
-                =  flip injectX x 
-                $  Map.fromList
-                   [ (n, wrapPokeSlot n t)
-                   | (n, t)              <- ntsObj' ]
-
-
-        -- Get level-0 binders
-        args    = Map.fromList [ (n, ()) | (False, BName n _) <- bsParam ]
-
-        -- Instructions to poke the initial value of each argument 
-        -- into its associate slot.
-        injectPokesA x
-                = foldr ($) x 
-                $ [ wrapPokeSlot n t
-                  | (n, t)      <- Map.toList (ntsObj `Map.intersection` args) ]
-
+                = flip injectX x 
+                $ Map.fromList
+                  [ (n, wrapPokeSlot n t)
+                  | (n, t)              <- ntsObj' ]
 
    in   makeXLamFlags a bsParam
-                $ allocSlots
-                $ injectPokesA
+                $ allocSlotsArg
+                $ allocSlotsBody
                 $ injectPokesL
                 $ substPeeks xBody
 
