@@ -104,24 +104,29 @@ slotifySuper a xx
         wrapPokeSlot n t x
                 = XLet a (LLet (BNone A.tVoid) (xPokeSlot n t)) x
 
-        -- Get level-0 binders
-        args    = Map.fromList [ (n, ()) | (False, BName n _) <- bsParam ]
-
         -- Function to wrap an expression in let-bindings that create stack
         -- slots for each of the arguments passed to the super.
+        --   We only need slots for pointers to objects, not pointers to other things.
+        --
+        --   We need the slots to be created in the same order in which the parameters
+        --   are defined, as the tail-call handling in the Salt->LLVM code generator 
+        --   depends on this.
         allocSlotsArg x
                 = foldr ($) x
-                $ [ XLet a (LLet (bSlot n t) 
-                                 (A.xAllocSlotVal a tR (XVar a (UName n))))
-                  | (n, t)       <- Map.toList $ ntsObj `Map.intersection` args
-                  , Just (tR, _) <- [A.takeTPtr t] ]
+                $ [ XLet a (LLet (bSlot nParam tParam) 
+                                 (A.xAllocSlotVal a tR (XVar a (UName nParam))))
+                  | (False, BName nParam tParam) <- bsParam
+                  , Just (tR, tVal)              <- [A.takeTPtr tParam]
+                  , tVal == A.tObj ]
+
 
         -- Function to wrap an expression in let-bindings that create stack
         -- slots for each of the boxed values bound in the body of the super.
+        args    = [ (n, ()) | (False, BName n _) <- bsParam ]
         allocSlotsBody x    
                 = foldr ($) x
                 $ [ XLet a (LLet (bSlot n t) (A.xAllocSlot a tR))
-                  | (n, t)       <- Map.toList $ ntsObj `Map.difference`   args
+                  | (n, t)       <- Map.toList $ ntsObj `Map.difference` (Map.fromList args)
                   , Just (tR, _) <- [A.takeTPtr t] ]
 
         -- Function to find bound occurrences of a variable that is being

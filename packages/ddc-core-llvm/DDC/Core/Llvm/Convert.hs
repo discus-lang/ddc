@@ -175,7 +175,7 @@ convertModuleM pp mm@(C.ModuleCore{})
                 , contextMDSuper        = MDSuper Map.empty [] 
                 , contextSuperName      = Nothing
                 , contextSuperBodyLabel = Nothing
-                , contextSuperParamSlots = Map.empty
+                , contextSuperParamSlots = []
                 , contextSuperBinds      = Map.empty
                 , contextPrimDecls      = primDeclsMap pp
                 , contextConvertBody    = convertSuperBody

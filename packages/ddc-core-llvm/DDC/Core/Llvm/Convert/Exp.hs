@@ -2,7 +2,7 @@
 -- In GHC 8 we need to turn of the pattern match checker because the new algorithm
 -- runs out of stack space when checking this module.
 -- https://ghc.haskell.org/trac/ghc/ticket/11822
-{-# OPTIONS_GHC -fno-warn-incomplete-patterns -fno-warn-overlapping-patterns #-}
+{-# OPTIONS_GHC -fno-warn-incomplete-patterns -fno-warn-overlapping-patterns -w #-}
 
 module DDC.Core.Llvm.Convert.Exp
         ( Context (..)
@@ -23,12 +23,14 @@ import DDC.Llvm.Syntax
 import Control.Applicative
 import Data.Sequence                            (Seq, (|>), (><))
 import qualified DDC.Core.Salt                  as A
+import qualified DDC.Core.Salt.Compounds        as A
 import qualified DDC.Core.Exp                   as C
 import qualified DDC.Type.Env                   as Env
 import qualified Data.Sequence                  as Seq
 import qualified Data.Set                       as Set
 import qualified Data.Map                       as Map
 
+import Debug.Trace
 
 ---------------------------------------------------------------------------------------------------
 -- | Convert the body of a supercombinator to LLVM blocks.
@@ -94,9 +96,7 @@ convertSuperAllocs ctx instrs xx
 
                 let ctx'' = ctx'
                           { contextSuperParamSlots 
-                          = Map.insert nParam vSlot
-                                (contextSuperParamSlots ctx') }
-
+                          = contextSuperParamSlots ctx' ++ [(nParam, vSlot)] }
 
                 -- Convert the body of the let-expression.
                 --   This is done in the new context, with the let-bound variable.
@@ -244,21 +244,85 @@ convertSuperBody ctx ectx blocks label instrs xx
 
 
          -- Calls -----------------------------------------
-         -- Tailcall a function.
-         --   We must be at the top-level of the function.
+         -- Perform a self tailcall.
+         --  This is when the current super being converted tail calls itself.
+         --  To perform the call we can just assign the new arguments to their
+         --  corresponding shadow stack slots and jump back to the start 
+         --  of the super body. This avoids pushing new arguments or slots onto
+         --  the stack, so the call runs in constant stack space.
+         --
          A.XApp{}
-          |  Just (p, args)                     <- A.takeXPrimApps xx
-          ,  A.PrimCall (A.PrimCallTail arity)  <- p
-          ,  _tsArgs                            <- take arity args
-          ,  A.RType tResult : A.RExp xFunTys : xsArgs 
-                                                <- drop arity args
-          ,  (xFun, _xsTys)                     <- A.splitXApps xFunTys
-          ,  Just mFun                          <- takeGlobalV ctx xFun
-          ,  Just msArgs                        <- sequence $ map (mconvArg ctx) xsArgs
+          |  Just (prim, args)                          <- A.takeXPrimApps xx
+          ,  A.PrimCall (A.PrimCallTail arity)          <- prim
+          ,  arity > 0
+
+          -- Split the arguments to the tailcall# primitive. 
+          ,  tsArgs                                     <- take arity args
+          ,  A.RType _tResult : A.RExp xFunTys : xsArgs <- drop arity args
+
+          -- Get the name of the super being called and check that this is
+          -- also the name of the super we're currently converting.
+          -- If it is then we can perform a self tail-call.
+          ,  (A.XVar (C.UName nSuperCalled), _xsTys)    <- A.splitXApps xFunTys
+          ,  Just nSuperCurrent                         <- contextSuperName ctx
+          ,  nSuperCalled == nSuperCurrent
+
+          -- We only do this self tailcall optimisation when all the parameters
+          -- are boxed object and the Slotify transform has introduced a stack
+          -- slot for each of them.
+          ,  all (\t -> t == A.tPtr A.rTop A.tObj) 
+                 [t | A.RType t <- tsArgs]
+          ,  arity == length (contextSuperParamSlots ctx)
+          ,  arity == length tsArgs
+
+          -- Lookup the label we need to jump to to re-start the super.
+          ,  Just lSuperBody    <- contextSuperBodyLabel ctx
+
+          -- Actions to convert each of the arguments.
+          ,  Just msArgs        <- sequence $ map (mconvArg ctx) xsArgs
+          -> do 
+                -- Convert each of the arguments.
+                xsArgs'         <- sequence msArgs
+
+                -- Build a tail call that writes the new arguments to the corresponding
+                -- shadow stack slots and jumps back to the start of the function.
+                let isCall      
+                        = Seq.fromList
+                                [ annotNil $ IStore (XVar nDst) xSrc
+                                        | nDst  <- map snd $ contextSuperParamSlots ctx
+                                        | xSrc  <- xsArgs' ]
+                        |> (annotNil $ IBranch lSuperBody)
+
+                return  $ blocks
+                        |> (Block label $ instrs >< isCall)
+
+
+         -- Perform a non-self tailcall.
+         --   This is a tail call to some other super besides the one
+         --   currently being converted. Although we can avoid allocating
+         --   stack space for the formal parameters, when we call the super
+         --   it may allocate more space on the stack for its own shadow stack
+         --   slots.
+         A.XApp{}
+          | Just (prim, args)                           <- A.takeXPrimApps xx
+          , A.PrimCall (A.PrimCallTail arity)           <- prim
+          , arity > 0
+
+          -- Split the arguments to the tail-call primitive.
+          , _tsArgs                                     <- take arity args
+          , A.RType tResult : A.RExp xFunTys : xsArgs   <- drop arity args
+
+          -- Action to get the name of the super we're calling.
+          , (xFun, _xsTys)      <- A.splitXApps xFunTys
+          , Just mFun           <- takeGlobalV ctx xFun
+
+          -- Actions to convert each of the arguments.
+          , Just msArgs         <- sequence $ map (mconvArg ctx) xsArgs
           -> do 
                 Var nFun _      <- mFun
                 xsArgs'         <- sequence msArgs
                 tResult'        <- convertType pp kenv tResult
+
                 if isVoidT tResult
                   -- Tail called function returns void.
                   then do

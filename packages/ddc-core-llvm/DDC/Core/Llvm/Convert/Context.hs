@@ -73,7 +73,7 @@ data Context
           --   maps names of the super parameters to the names of the shadow stack
           --   slots used to hold pointer so the associated arguments.
           --   This is used when performing a self tail-call. 
-        , contextSuperParamSlots :: Map A.Name Var
+        , contextSuperParamSlots :: [(A.Name, Var)]
 
           -- | C library functions that are used directly by the generated code without
           --   having an import declaration in the header of the converted module.

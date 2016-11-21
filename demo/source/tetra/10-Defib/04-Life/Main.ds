@@ -40,5 +40,6 @@ animate (world:     World r)
  = do   
         writel  $ showWorld world
         world'  = stepWorld world
+--        usleep 100000
         animate world' (frame + 1) max
 
