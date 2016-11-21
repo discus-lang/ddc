@@ -14,66 +14,61 @@
 --   The global symbols are:
 --
 --   Linker Symbol              DDC primitive.
---   __DDC__heapBackBase        heapBackBase#
---   __DDC__heapBackMax         heapBackMax#
---   __DDC__heapBackTop         heapBackTop#
 --   __DDC__heapBase            heapBase#
 --   __DDC__heapMax             heapMax#
 --   __DDC__heapTop             heapTop#
---
---   __DDC__slotBase            slotBase#
---   __DDC__slotMax             slotMax#
---   __DDC__slotTop             slotTop#
+--   __DDC__heapBackBase        heapBackBase#
+--   __DDC__heapBackMax         heapBackMax#
+--   __DDC__heapBackTop         heapBackTop#
 --
 module Init
 export value
- ddcInit 
-        :  Nat#         -- ^ Maximum heap size.
-        -> Nat#         -- ^ Maximum number of slots in the slot stack.
-        -> Unit
+ ddcInit        :  Nat# -> Unit
+ ddcExit        :  Nat# -> Void#
 
 import foreign c value
-   malloc      : Nat# -> Addr#
-
+ malloc         : Nat#  -> Addr#
+ free           : Addr# -> Void#
+ exit           : Nat#  -> Void#
 with letrec
 
 
-ddcInit (heapSize maxGCSlots: Nat#): Unit
+-------------------------------------------------------------------------------
+-- | Initialize the DDC runtime system.
+ddcInit (heapSize :Nat#): Unit
  = do   ddcAllocInit   heapSize
-        ddcCollectInit maxGCSlots
         ()
 
 
 -- | Initialise the allocation system and allocate the heap.
 ddcAllocInit (heapSize : Nat#) : Unit
  = do
+        -- Create the front heap.
         pHeapBaseA      = malloc heapSize
-        pHeapMaxA       = plusAddr# pHeapBaseA     (sub# heapSize 1#)
-
         write# heapBase#     0# pHeapBaseA
         write# heapTop#      0# pHeapBaseA
-        write# heapMax#      0# pHeapMaxA
+        write# heapMax#      0# (plusAddr# pHeapBaseA    (sub# heapSize 1#))
 
+        -- Create the back heap.
         pHeapBackBaseA  = malloc heapSize
-        pHeapBackMaxA   = plusAddr# pHeapBackBaseA (sub# heapSize 1#)
-
         write# heapBackBase# 0# pHeapBackBaseA
         write# heapBackTop#  0# pHeapBackBaseA
-        write# heapBackMax#  0# pHeapBackMaxA
+        write# heapBackMax#  0# (plusAddr# pHeapBackBaseA (sub# heapSize 1#))
 
         ()
 
 
--- | Allocate and initialise the current GC slot stack.
-ddcCollectInit (maxGCSlots : Nat#) : Unit
- = do
-        pSlotBaseA      = malloc (mul# maxGCSlots (size# [Addr#]))
-        pSlotMaxA       = plusAddr# pSlotBaseA (sub# maxGCSlots 1#)
+-------------------------------------------------------------------------------
+-- | Shutdown the runtime system and exit cleanly.
+ddcExit (code: Nat#): Void#
+ = do   
+        -- Free the space for the heaps.
+        pHeapBaseA      = read# heapBase#     0#
+        pHeapBackBaseA  = read# heapBackBase# 0#
 
---        write# slotBase#     0# pSlotBaseA
---        write# slotTop#      0# pSlotBaseA
---        write# slotMax#      0# pSlotMaxA
+        free pHeapBaseA
+        free pHeapBackBaseA
 
-        ()
-
+        -- Use the system exit function to exit cleanly.
+        exit code
 

@@ -21,11 +21,7 @@ main ()
         setCell world 30 19 CellAlive
         setCell world 31 19 CellAlive
 
-        -- TODO: If we set this to 1000 frames then we eventually run out of space.
-        -- The generated code for 'animate' allocates shadow stack slots for every
-        -- iteration and slots deeper in the stack hold onto all the intermediate
-        -- frames.
-        animate world 0 100
+        animate world 0 10
 
         ()
 
@@ -40,6 +36,6 @@ animate (world:     World r)
  = do   
         writel  $ showWorld world
         world'  = stepWorld world
---        usleep 100000
+        usleep 100000
         animate world' (frame + 1) max
 

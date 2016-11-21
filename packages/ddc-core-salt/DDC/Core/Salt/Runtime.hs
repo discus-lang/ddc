@@ -37,9 +37,8 @@ module DDC.Core.Salt.Runtime
 
           -- ** Allocator
         , xddcInit
-        , xAllocInit
+        , xddcExit
         , xAllocCollect
-        , xCollectInit
 
           -- ** Error handling
         , xErrorDefault
@@ -123,9 +122,7 @@ runtimeImportTypes
    , rn (utApplyThunk 4) 
 
    , rn utddcInit
-   , rn utAllocInit
-   , rn utAllocCollect
-   , rn utCollectInit
+   , rn utddcExit
    , rn utTagOfObject
 
    , rn utErrorDefault]
@@ -435,29 +432,30 @@ utPayloadOfSmall
 
 
 -- Garbage Collector  -----------------------------------------------------------------------------
-xddcInit   :: a -> Integer -> Integer -> Exp a Name
-xddcInit a bytesHeap slotsMax
+
+-- Initialize the runtime system.
+xddcInit   :: a -> Integer -> Exp a Name
+xddcInit a bytesHeap
  = xApps a (XVar a $ fst $ utddcInit)
-           [ xNat a bytesHeap
-           , xNat a slotsMax ]
+           [ xNat a bytesHeap ]
 
 utddcInit :: (Bound Name, Type Name)
 utddcInit
  =      ( UName (NameVar "ddcInit")
-        , tNat `tFun` tNat `tFun` tUnit )
-
-
-
--- | Create the two-space heap.
-xAllocInit :: a -> Integer -> Exp a Name
-xAllocInit a bytes
- = XApp a (XVar a $ fst utAllocInit)
-          (xNat a bytes)
-
-utAllocInit :: (Bound Name, Type Name)
-utAllocInit
- =      ( UName (NameVar "ddcAllocInit")
         , tNat `tFun` tUnit )
+
+
+-- Shutdown the runtime system and exit cleanly with the given exit code.
+xddcExit   :: a -> Integer -> Exp a Name
+xddcExit a code
+ = xApps a (XVar a $ fst $ utddcExit)
+           [ xNat a code ]
+
+utddcExit :: (Bound Name, Type Name)
+utddcExit
+ =      ( UName (NameVar "ddcExit")
+        , tNat `tFun` tVoid )
+
 
 -- | Check if allocation is possible, if not perform garbage collection.
 xAllocCollect :: a -> Exp a Name -> Exp a Name
@@ -467,17 +465,6 @@ xAllocCollect a bytes
 utAllocCollect :: (Bound Name, Type Name)
 utAllocCollect
  =      ( UName (NameVar "allocCollect")
-        , tNat `tFun` tUnit )
-
--- | Create the slot stack.
-xCollectInit :: a -> Integer -> Exp a Name
-xCollectInit a bytes
- = XApp a (XVar a $ fst utCollectInit)
-          (xNat a bytes)
-
-utCollectInit :: (Bound Name, Type Name)
-utCollectInit
- =      ( UName (NameVar "ddcCollectInit")
         , tNat `tFun` tUnit )
 
 

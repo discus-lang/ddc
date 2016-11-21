@@ -7,7 +7,7 @@ export main  : [r1: Region]. Nat# -> Ptr# r1 Word8# -> Int#
 
 -- Primitive show functions are defined in the runtime system.
 import foreign c value 
-        ddcInit        : Nat# -> Nat# -> Unit
+        ddcInit         : Nat# -> Unit
         primPutTextLit  : TextLit# -> Void#
         primShowNat     : Nat#     -> TextLit#
 
@@ -38,7 +38,7 @@ fac_acc (x: Nat#) (acc: Nat#): Nat#
 main [r1: Region] (argc: Nat#) (argv: Ptr# r1 Word8#): Int#
  = do
         -- Initialize the runtime system.
-        ddcInit 4096# 1024#
+        ddcInit 4096#
 
         -- Compute factorial using simple recursion.
         primPutTextLit "fac_rec 10 = "#

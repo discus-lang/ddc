@@ -97,15 +97,16 @@ isMainBind bb
 --   which is the entry point to the executable.
 makeMainEntryX :: Config -> a -> Exp a Name
 makeMainEntryX config a
- = XLam a  (BName (NameVar "argc") tInt)
- $ XLam a  (BName (NameVar "argv") (tPtr rTop (tWord 8)))
- $ XLet a  (LLet  (BNone tUnit)    
-                  (xddcInit a   (configHeapSize config)
-                                (configSlotStackSize config)))
- $ XLet a  (LLet  (BNone (tBot kData)) 
-                  (xApps a (XVar a (UName (NameVar "_main"))) 
-                           [xU]))
-           (xInt a 0)
+        = XLam a  (BName (NameVar "argc") tInt)
+        $ XLam a  (BName (NameVar "argv") (tPtr rTop (tWord 8)))
+        $ XLet a  (LLet  (BNone tUnit)    
+                         (xddcInit a   (configHeapSize config)))
+        $ XLet a  (LLet  (BNone (tBot kData)) 
+                         (xApps a (XVar a (UName (NameVar "_main"))) 
+                                  [xU]))
+        $ XLet a  (LLet  (BNone tVoid)
+                         (xddcExit a  0))
+        $ xInt a 0
 
  where xU       = xAllocBoxed a rTop 0 (xNat a 0)
 
