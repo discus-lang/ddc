@@ -35,17 +35,29 @@ convertPrimVector _ectx ctx xxExp
                 let a'   =  annotTail a
 
                 -- The element type of the vector.
-                tElem'  <- convertDataPrimitiveT tElem
+                tElem'          <- convertDataPrimitiveT tElem
 
                 -- Length of the vector payload, in elements.
-                xLengthElems'     <- convertX ExpArg ctx xLength         
+                xLengthElems'   <- convertX ExpArg ctx xLength         
 
                 -- Length of the vector payload, in bytes.
-                let xLengthBytes' = A.xShl a' A.tNat xLengthElems' 
-                                        (A.xStoreSize2 a' tElem')
+                --   Note that the runtime system may allocate a larger object to
+                --   preserve alignment constraints.
+                let xLengthBytes' 
+                        = A.xAdd a' A.tNat (A.xNat a' 4)
+                        $ A.xShl a' A.tNat xLengthElems' (A.xStoreSize2 a' tElem')
+
+                -- Pointer to the vector length field, in elements.
+                let xPayloadLength' xVec
+                        = A.xCastPtr a' A.rTop A.tNat (A.tWord 8)
+                        $ A.xPayloadOfRaw a' A.rTop xVec
 
                 return  $ XLet a' (LLet  (BAnon (A.tPtr  A.rTop A.tObj))
                                          (A.xAllocRaw a' A.rTop 0 xLengthBytes'))
+                        $ XLet a' (LLet  (BNone A.tVoid)
+                                         (A.xPoke a' A.rTop A.tNat
+                                                    (xPayloadLength' (XVar a' (UIx 0))) 
+                                                    xLengthElems'))
                         $ XVar a' (UIx 0)
 
 
@@ -58,18 +70,15 @@ convertPrimVector _ectx ctx xxExp
          -> Just $ do
                 let a'  =  annotTail a
 
-                -- The element type of the vector.
-                tElem'  <- convertDataPrimitiveT tElem
-
                 -- Pointer to the vector object.
                 xVec'   <- convertX ExpArg ctx xVec
 
-                -- Size of the vector payload, in bytes.
-                let xLengthBytes = xVectorLength a' A.rTop xVec'
+                -- Pointer to the vector length field, in elements.
+                let xPayloadLength'
+                        = A.xCastPtr a' A.rTop A.tNat (A.tWord 8)
+                        $ A.xPayloadOfRaw a' A.rTop xVec'
 
-                -- Shift down the length-in-bytes so we get length-in-elements.
-                return  $ A.xShr a' A.tNat xLengthBytes 
-                                (A.xStoreSize2 a' tElem')
+                return  $ A.xPeek a' A.rTop A.tNat xPayloadLength'
 
 
         -- Vector read.
@@ -90,24 +99,29 @@ convertPrimVector _ectx ctx xxExp
                 -- Index of the element that we want.
                 xIndex' <- convertX ExpArg ctx xIndex
 
-                -- Pointer to the start of the object payload,
-                -- which is the unboxed vector data.
-                let xPayload'   = A.xCastPtr a' A.rTop tElem' (A.tWord 8)
-                                        (A.xPayloadOfRaw a' A.rTop xVec')
+                -- Pointer to the vector length field, in elements.
+                let xPayloadLength'   
+                        = A.xCastPtr a' A.rTop (A.tWord 32) (A.tWord 8)
+                        $ A.xPayloadOfRaw a' A.rTop xVec'
 
-                -- Offset to the starting byte of the word we want,
-                -- relative to the start of the payload.
-                let xStart'     = A.xShl a' A.tNat xIndex'
-                                        (A.xStoreSize2 a' tElem')
+                -- Pointer to the first element value.
+                let xPayloadElems'
+                        = A.xCastPtr a' A.rTop tElem' (A.tWord 8)
+                        $ A.xPlusPtr a' A.rTop (A.tWord 8) 
+                                (A.xPayloadOfRaw a' A.rTop xVec')
+                                (A.xNat a' 4)
 
-                -- Length of the vector payload, in bytes.
-                -- If xStart' is higher than this then we have an out-of-bounds error,
-                -- which the peekBounded primop will detect.
-                let xTop'       = xVectorLength a' A.rTop xVec'
+                -- Offset to the element that we want.
+                let xStart'
+                        = A.xShl a' A.tNat xIndex'
+                        $ A.xStoreSize2 a' tElem'
 
-                -- Read the value.
-                return $ A.xPeekBounded a' A.rTop tElem' xPayload' xStart' xTop'
-
+                return  $ XLet a' (LLet  (BAnon (A.tWord 32))
+                                         (A.xPeek a' A.rTop (A.tWord 32) xPayloadLength'))
+                        $ A.xPeekBounded a' A.rTop tElem'
+                                xPayloadElems'
+                                xStart'
+                                (A.xPromote a' A.tNat (A.tWord 32) (XVar a' (UIx 0)))
 
         -- Vector write.
         XCast _ CastRun xxApp@(XApp a _ _)
@@ -130,24 +144,31 @@ convertPrimVector _ectx ctx xxExp
                 -- The value to write.
                 xValue'         <- convertX ExpArg ctx xValue
 
-                -- Pointer to the start of the object payload,
-                -- which is the unboxed vector data.
-                let xPayload'   = A.xCastPtr a' A.rTop tElem' (A.tWord 8)
-                                        (A.xPayloadOfRaw a' A.rTop xVec')
+                -- Pointer to the vector length field, in elements.
+                let xPayloadLength'   
+                        = A.xCastPtr a' A.rTop (A.tWord 32) (A.tWord 8)
+                        $ A.xPayloadOfRaw a' A.rTop xVec'
 
-                -- Offset to the starting byte of the word we want,
-                -- relative to the start of the payload.
-                let xStart'     = A.xShl a' A.tNat xIndex'
-                                        (A.xStoreSize2 a' tElem')
+                -- Pointer to the first element value.
+                let xPayloadElems'
+                        = A.xCastPtr a' A.rTop tElem' (A.tWord 8)
+                        $ A.xPlusPtr a' A.rTop (A.tWord 8) 
+                                (A.xPayloadOfRaw a' A.rTop xVec')
+                                (A.xNat a' 4)
 
-                -- Length of the vector payload, in bytes.
-                -- If xStart' is higher than this then we have an out-of-bounds error,
-                -- which the peekBounded primop will detect.
-                let xTop'       = xVectorLength a' A.rTop xVec'
+                -- Offset to the element that we want.
+                let xStart'
+                        = A.xShl a' A.tNat xIndex'
+                        $ A.xStoreSize2 a' tElem'
 
                 -- Write the value.
-                return $ A.xPokeBounded a' A.rTop tElem' xPayload' xStart' xTop' xValue'
-
+                return  $ XLet a' (LLet  (BAnon (A.tWord 32))
+                                        (A.xPeek a' A.rTop (A.tWord 32) xPayloadLength'))
+                        $ A.xPokeBounded a' A.rTop tElem'
+                                xPayloadElems'
+                                xStart'
+                                (A.xPromote a' A.tNat (A.tWord 32) (XVar a' (UIx 0)))
+                                xValue'
 
         _ -> Nothing
 
@@ -157,6 +178,7 @@ convertPrimVector _ectx ctx xxExp
 -- * This contains the hard-coded length of the raw object payload in bytes,
 --   as well as a hard-coded offset to the size field of the header.
 --
+{-
 xVectorLength   
         :: a -> Type A.Name
         -> Exp a A.Name -> Exp a A.Name
@@ -175,4 +197,4 @@ xVectorLength a rVec xVec
         -- Subtract the size of the object header,
         -- so we get payload length in bytes.
    in   A.xSub a A.tNat xLengthObject (A.xNat a 8)
-
+-}

@@ -70,7 +70,7 @@ ddcAllocResize
                                 -- we've already got.
         : Unit
  = do   
-        primPutString "* ddcAllocResize start\n"#
+--      primPutString "* ddcAllocResize start\n"#
 
         aCurBase        = read# [Addr#] heapBase# 0#
         aCurTop         = read# [Addr#] heapTop#  0#
@@ -121,7 +121,7 @@ ddcAllocResize
         write# heapBackTop#  0# aHeapBackBase2_new
         write# heapBackMax#  0# (plusAddr# aHeapBackBase2_new (sub# newSize 1#))
 
-        primPutString "* ddcAllocResize done\n"#
+--      primPutString "* ddcAllocResize done\n"#
 
         ()
 

@@ -104,6 +104,7 @@ ddcCollectHeap
         aBackBase'      = read# [Addr#] aaBackBase 0#
         write# aaBackTop 0# aBackBase'
 
+--      primPutString "* ddc-runtime.ddcCollectHeap evacuating roots\n"#
         -- Evacuate all the root objects to the to-space.
         ddcEvacuateRoots
                 aRootStart
@@ -111,11 +112,15 @@ ddcCollectHeap
                 aaBackTop 
                 (read# aaBackMax  0#)
 
+--      primPutString "* ddc-runtime.ddcCollectHeap scanning heap\n"#
+
         -- Recursively follow pointers in to-space,
         --   copying out any reachable objects from the from-space.
         ddcScanHeap 
                 aaBackTop
                 (read# aaBackBase 0#)
+
+--      primPutString "* ddc-runtime.ddcCollectHeap flipping buffers\n"#
 
         -- Flip the front and back heaps.
         aHeapBase       = read# [Addr#] aaHeapBase 0#
@@ -137,16 +142,14 @@ ddcCollectHeap
 
         -- Trace the allocator after we've finished.
         -- This also checks that the result heap is well formed.
-{-
-        primPutString "* ddc-runtime.ddcCollectHeap dump\n"#
+{-      primPutString "* ddc-runtime.ddcCollectHeap dump\n"#
         fieldAddr  " aHeapBase (new) "#  aBackBase
         fieldAddr  " aHeapTop  (new) "#  aBackTop
         fieldAddr  " aHeapMax  (new) "#  aBackMax
         fieldAddr  " aBackBase (new) "#  aHeapBase
         fieldAddr  " aBackTop  (new) "#  aHeapTop
         fieldAddr  " aBackMax  (new) "#  aHeapMax
--}
-{-
+
         ddcTraceAlloc
                 True#
                 aRootStart
@@ -344,7 +347,7 @@ ddcScanObject
         (aaToSpaceTop   : Addr#)        -- ^ Address of the pointer to the top of the to-space.
         (aObjScan       : Addr#)        -- ^ Address of the next object we need to scan.
                         : Unit
-  =     case ddcFormatOfObject aObjScan of
+  = case ddcFormatOfObject aObjScan of
           0# -> fail#   -- unknown object.
           1# -> fail#   -- broken heart.
   

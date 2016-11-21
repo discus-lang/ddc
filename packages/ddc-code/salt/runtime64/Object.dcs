@@ -139,6 +139,7 @@ import value
  primPutString        : TextLit# -> Void#
  primShowAddr         : Addr# -> TextLit#
  primShowNat          : Nat#  -> TextLit#
+ primShowWord32       : Word32#  -> TextLit#
 
 with letrec
 
@@ -183,7 +184,15 @@ ddcFormatOfObject [r : Region] (obj : Ptr# r Obj) : Nat#
           0b00w8#       -> 1# -- Forward
           0b01w8#       -> ddcFormatOfObject_arg formatField
           0b11w8#       -> 6# -- DataRawSmall
-          _             -> 0# -- Unknown
+          _ -> do 
+                  header = ddcHeaderOfObject obj
+                  primPutString "header = "#
+                  primPutString (primShowWord32 header)
+                  primPutString " "#
+                  primPutString (primShowWord32 (promote# formatField))
+                  primPutString "\n"#
+                  ddcFailObj obj "ddcFormatOfObject"# "unrecognized object format"#
+                  0#
 
 
 ddcFormatOfObject_arg [r : Region] (formatField : Word8#) : Nat#
@@ -706,13 +715,23 @@ ddcPayloadMixed [r: Region] (obj: Ptr# r Obj): Ptr# r Word8#
 ddcAllocRaw
         [r: Region] (tag: Tag#) (bytesPayload: Nat#): Ptr# r Obj
  = do   
-        bytesObj        = add# (size# [Word32#])
+        -- The overall size of the object.
+        bytesReq        = add# (size# [Word32#])
                          (add# (size# [Word32#]) bytesPayload)
 
+        bytesTail       = promote# [Nat#] (band# (truncate# bytesReq) 0b11w32#)
+
+        bytesObj        = case eq# bytesTail 0# of
+                                True#   -> bytesReq
+                                False#  -> add# bytesReq (sub# 4# bytesTail)
+
+        -- Check that there's enough space on the heap,
+        -- and perform a collection if needed.
         case check# bytesObj of
          True#  -> ()
          False# -> ddcAllocCollect bytesObj
 
+        -- We're good to allocate the object.
         ddcAllocRaw_ok tag bytesObj
 
 ddcAllocRaw_ok 
@@ -764,6 +783,9 @@ ddcAllocSmall
         (tag: Tag#) (bytesPayload: Nat#): Ptr# r Obj
  = do   
         bytesObj        = add# 4# bytesPayload
+
+        -- TODO: check that we're not going to misalign the heap.
+        -- The total object must be at least 8 bytes long.
 
         case check# bytesObj of
          True#   -> ()

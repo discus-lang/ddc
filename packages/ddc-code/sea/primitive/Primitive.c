@@ -176,7 +176,8 @@ void primPutTextLit (string_t* str)
 
 // Print a text vector to stdout.
 void primPutVector (Obj* obj)
-{       string_t* str = (string_t*) _payloadRaw(obj);
+{       string_t* str 
+                = (string_t*) (_payloadRaw(obj) + 4);
         fputs(str, stdout);
         fflush(stdout);
 }
