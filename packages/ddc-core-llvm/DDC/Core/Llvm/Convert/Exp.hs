@@ -6,7 +6,8 @@
 
 module DDC.Core.Llvm.Convert.Exp
         ( Context (..)
-        , convertBody
+        , convertSuperInit
+        , convertSuperBody
         , convertSimple
         , bindLocalA, bindLocalAs)
 where
@@ -30,8 +31,64 @@ import qualified Data.Map                       as Map
 
 
 ---------------------------------------------------------------------------------------------------
--- | Convert a function body to LLVM blocks.
-convertBody
+-- | Convert the body of a supercombinator to LLVM blocks.
+convertSuperInit
+        :: Context
+        -> A.Exp
+        -> ConvertM (Seq Block)
+
+convertSuperInit ctx xBody
+ = do   label   <- newUniqueLabel "init"
+
+        convertSuperAllocs 
+                ctx 
+                Seq.empty 
+                label 
+                Seq.empty 
+                xBody
+
+
+---------------------------------------------------------------------------------------------------
+-- | Convert the prelude of a supercombinator body to LLVM blocks.
+--   which consists of bindings that allocate slots on the shadow stack.
+convertSuperAllocs
+        :: Context
+        -> Seq Block
+        -> Label
+        -> Seq AnnotInstr
+        -> A.Exp
+        -> ConvertM (Seq Block)
+
+convertSuperAllocs ctx blocks label instrs xx
+ = case xx of
+        -- See if the current binding allocates a slot on the shadow stack.
+        A.XLet (A.LLet  (C.BName nm t) x1) x2
+         | Just (A.PrimStore prim, _)   <- A.takeXPrimApps x1
+         ,   prim == A.PrimStoreAllocSlot 
+          || prim == A.PrimStoreAllocSlotVal
+         -> do
+                -- Bind the Salt name, allocating a new LLVM variable name for it.
+                (ctx', vDst) <- bindLocalV ctx nm t
+
+                -- Convert the bound expression.
+                --   As the let-binding is non-recursive, the bound expression
+                --   is converted in the original context, without the let-bound
+                --   variable (ctx).
+                instrs'  <- convertSimple ctx (ExpAssign ExpTop vDst) x1
+                
+                -- Convert the body of the let-expression.
+                --   This is done in the new context, with the let-bound variable.
+                convertSuperAllocs ctx' blocks label (instrs >< instrs') x2
+
+        -- The current binding does not allocate a slot on the shadow stack,
+        -- so go to the main conversion function.
+        _ ->    convertSuperBody ctx  ExpTop blocks label instrs xx
+
+
+---------------------------------------------------------------------------------------------------
+-- | Convert the body of a supercombinator to LLVM blocks.
+--   This is after we've already converted the prelude that allocates shadow stack slots.
+convertSuperBody
         :: Context
         -> ExpContext
         -> Seq Block            -- ^ Previous blocks.
@@ -40,7 +97,7 @@ convertBody
         -> A.Exp                -- ^ Expression being converted.
         -> ConvertM (Seq Block) -- ^ Final blocks of function body.
 
-convertBody ctx ectx blocks label instrs xx
+convertSuperBody ctx ectx blocks label instrs xx
  = let  pp           = contextPlatform    ctx 
         kenv         = contextKindEnv     ctx
         convertCase  = contextConvertCase ctx
@@ -195,7 +252,7 @@ convertBody ctx ectx blocks label instrs xx
                                 , IConv     vPtr   ConvInttoptr (XVar vAddr2)
                                 , ILoad     vDst   (XVar vPtr)]
 
-                convertBody ctx' ectx 
+                convertSuperBody ctx' ectx 
                         (blocks |> blockEntry |> blockFail) 
                         labelOk instrsCont x2
 
@@ -245,7 +302,7 @@ convertBody ctx ectx blocks label instrs xx
                                 , IConv     vPtr   ConvInttoptr (XVar vAddr2)
                                 , IStore    (XVar vPtr)  xVal' ]
 
-                convertBody ctx ectx
+                convertSuperBody ctx ectx
                         (blocks |> blockEntry |> blockFail) 
                         labelOk instrsCont x2
 
@@ -254,7 +311,7 @@ convertBody ctx ectx blocks label instrs xx
          A.XLet (A.LLet (C.BNone t) x1) x2
           | isVoidT t
           -> do instrs' <- convertSimple ctx ectx x1
-                convertBody ctx ectx blocks label
+                convertSuperBody ctx ectx blocks label
                         (instrs >< instrs') x2
 
 
@@ -267,7 +324,7 @@ convertBody ctx ectx blocks label instrs xx
           -> do n       <- newUnique
                 let b   = C.BName (A.NameVar ("_d" ++ show n)) t
 
-                convertBody ctx ectx blocks label instrs 
+                convertSuperBody ctx ectx blocks label instrs 
                         (A.XLet (A.LLet b x1) x2)
 
 
@@ -292,7 +349,7 @@ convertBody ctx ectx blocks label instrs xx
 
                 -- Convert the body of the let-expression.
                 --   This is done in the new context, with the let-bound variable.
-                convertBody ctx' ectx
+                convertSuperBody ctx' ectx
                         (blocks >< blocksCase) 
                         lCont Seq.empty x2
 
@@ -312,7 +369,7 @@ convertBody ctx ectx blocks label instrs xx
           -> do let ctx'   = ctx { contextSuperBinds 
                                     = Map.insert nBind (nSuper, tsArgs)
                                         (contextSuperBinds ctx) }
-                convertBody ctx' ectx blocks label instrs x2 
+                convertSuperBody ctx' ectx blocks label instrs x2 
 
 
          -- Variable assignment from some other expression.
@@ -329,13 +386,13 @@ convertBody ctx ectx blocks label instrs xx
                 
                 -- Convert the body of the let-expression.
                 --   This is done in the new context, with the let-bound variable.
-                convertBody ctx' ectx blocks label (instrs >< instrs') x2
+                convertSuperBody ctx' ectx blocks label (instrs >< instrs') x2
 
 
          -- Letregions ------------------------------------
          A.XLet (A.LPrivate bsType _mt _) x2
           -> do let ctx'  = extendsKindEnv bsType ctx
-                convertBody ctx' ectx blocks label instrs x2
+                convertSuperBody ctx' ectx blocks label instrs x2
 
 
          -- Case ------------------------------------------
@@ -346,7 +403,7 @@ convertBody ctx ectx blocks label instrs xx
 
          -- Cast -------------------------------------------
          A.XCast _ x
-          -> convertBody ctx ectx blocks label instrs x
+          -> convertSuperBody ctx ectx blocks label instrs x
 
          _ 
           | ExpNest _ vDst label' <- ectx

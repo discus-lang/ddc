@@ -5,7 +5,6 @@ module DDC.Core.Llvm.Convert.Super
 where
 import DDC.Core.Llvm.Convert.Exp
 import DDC.Core.Llvm.Convert.Type
-import DDC.Core.Llvm.Convert.Context
 import DDC.Core.Llvm.Convert.Base
 import DDC.Llvm.Syntax
 import DDC.Core.Salt.Platform
@@ -17,7 +16,6 @@ import qualified DDC.Core.Salt.Convert          as A
 import qualified DDC.Core.Module                as C
 import qualified DDC.Core.Exp                   as C
 import qualified Data.Set                       as Set
-import qualified Data.Sequence                  as Seq
 import qualified Data.Foldable                  as Seq
 
 
@@ -55,8 +53,7 @@ convertSuper ctx (C.BName nSuper tSuper) x
         let ctx'' = ctx' { contextMDSuper = mdsup }
 
         -- Convert function body to basic blocks.
-        label     <- newUniqueLabel "entry"
-        blocks    <- convertBody ctx'' ExpTop Seq.empty label Seq.empty xBody
+        blocks    <- convertSuperInit ctx'' xBody
 
         -- Split off the argument and result types of the super.
         (tsParam, tResult)   
