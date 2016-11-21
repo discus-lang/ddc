@@ -22,25 +22,33 @@ declare external void @llvm.memcpy.p0i8.p0i8.i64(i8* , i8* , i64 , i32 , i1 )
 
 define internal fastcc i64 @nat(%s.Obj*  %_v1._arg) align 8 gc "shadow-stack"  
 {
-l2.entry:
+l2.init:
+        br label %l3.body
+l3.body:
         ret i64 8
 }
 
-define internal fastcc i64 @int(%s.Obj*  %_v4._arg) align 8 gc "shadow-stack"  
+define internal fastcc i64 @int(%s.Obj*  %_v5._arg) align 8 gc "shadow-stack"  
 {
-l5.entry:
+l6.init:
+        br label %l7.body
+l7.body:
         ret i64 8
 }
 
-define internal fastcc i64 @word16(%s.Obj*  %_v7._arg) align 8 gc "shadow-stack"  
+define internal fastcc i64 @word16(%s.Obj*  %_v9._arg) align 8 gc "shadow-stack"  
 {
-l8.entry:
+l10.init:
+        br label %l11.body
+l11.body:
         ret i64 2
 }
 
-define internal fastcc i64 @tag(%s.Obj*  %_v10._arg) align 8 gc "shadow-stack"  
+define internal fastcc i64 @tag(%s.Obj*  %_v13._arg) align 8 gc "shadow-stack"  
 {
-l11.entry:
+l14.init:
+        br label %l15.body
+l15.body:
         ret i64 4
 }
 
@@ -64,44 +72,56 @@ declare external void @llvm.memcpy.p0i8.p0i8.i64(i8* , i8* , i64 , i32 , i1 )
 
 define internal fastcc i64 @nat(%s.Obj*  %_v1._arg) align 8 gc "shadow-stack"  
 {
-l2.entry:
+l2.init:
+        br label %l3.body
+l3.body:
         ret i64 3
 }
 
-define internal fastcc i64 @int(%s.Obj*  %_v4._arg) align 8 gc "shadow-stack"  
+define internal fastcc i64 @int(%s.Obj*  %_v5._arg) align 8 gc "shadow-stack"  
 {
-l5.entry:
+l6.init:
+        br label %l7.body
+l7.body:
         ret i64 3
 }
 
-define internal fastcc i64 @word8(%s.Obj*  %_v7._arg) align 8 gc "shadow-stack"  
+define internal fastcc i64 @word8(%s.Obj*  %_v9._arg) align 8 gc "shadow-stack"  
 {
-l8.entry:
+l10.init:
+        br label %l11.body
+l11.body:
         ret i64 0
 }
 
-define internal fastcc i64 @word16(%s.Obj*  %_v10._arg) align 8 gc "shadow-stack"  
+define internal fastcc i64 @word16(%s.Obj*  %_v13._arg) align 8 gc "shadow-stack"  
 {
-l11.entry:
+l14.init:
+        br label %l15.body
+l15.body:
         ret i64 1
 }
 
-define internal fastcc i64 @ptr(%s.Obj*  %_v13._arg) align 8 gc "shadow-stack"  
+define internal fastcc i64 @ptr(%s.Obj*  %_v17._arg) align 8 gc "shadow-stack"  
 {
-l17.entry:
+l21.init:
+        br label %l22.body
+l22.body:
         ret i64 3
 }
 
-define internal fastcc i64 @tag(%s.Obj*  %_v19._arg) align 8 gc "shadow-stack"  
+define internal fastcc i64 @tag(%s.Obj*  %_v24._arg) align 8 gc "shadow-stack"  
 {
-l20.entry:
+l25.init:
+        br label %l26.body
+l26.body:
         ret i64 2
 }
 
 
 
-!16 = !{!"ptr_r",  !15, i32 0}
-!15 = !{!"ptr_ROOT_14", null, i32 1}
+!20 = !{!"ptr_r",  !19, i32 0}
+!19 = !{!"ptr_ROOT_18", null, i32 1}
 
 
 
@@ -119,7 +139,9 @@ declare external void @llvm.memcpy.p0i8.p0i8.i64(i8* , i8* , i64 , i32 , i1 )
 
 define internal fastcc i64 @blerk(%s.Obj*  %_v1._arg) align 8 gc "shadow-stack"  
 {
-l2.entry:
+l2.init:
+        br label %l3.body
+l3.body:
         ret i64 3
 }
 

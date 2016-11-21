@@ -32,20 +32,31 @@ import qualified Data.Map                       as Map
 
 ---------------------------------------------------------------------------------------------------
 -- | Convert the body of a supercombinator to LLVM blocks.
+--
+--   The result contains an initial block that contains instructions that allocate
+--   and initialize shadow stack slots, then more blocks that implement the rest
+--   of the super. We put the slot allocation instructions in a separate block so
+--   that we can jump past them when performing a tail call, and this re-use the
+--   existing slots for each recursive call.
+--
+--   The LLVM code for the body of the super then looks like:
+--
+-- @ l??.init:
+--      v???.var = alloca %s.Obj*       -- allocate a stack slot
+--      ...                             -- more allocation and init of stack slots
+--
+--   l??.body:
+--      ...                             -- code for the super proper
+--
+-- @
+--
 convertSuperInit
         :: Context
         -> A.Exp
         -> ConvertM (Seq Block)
 
 convertSuperInit ctx xBody
- = do   label   <- newUniqueLabel "init"
-
-        convertSuperAllocs 
-                ctx 
-                Seq.empty 
-                label 
-                Seq.empty 
-                xBody
+ = do   convertSuperAllocs ctx Seq.empty xBody
 
 
 ---------------------------------------------------------------------------------------------------
@@ -53,13 +64,11 @@ convertSuperInit ctx xBody
 --   which consists of bindings that allocate slots on the shadow stack.
 convertSuperAllocs
         :: Context
-        -> Seq Block
-        -> Label
         -> Seq AnnotInstr
         -> A.Exp
         -> ConvertM (Seq Block)
 
-convertSuperAllocs ctx blocks label instrs xx
+convertSuperAllocs ctx instrs xx
  = case xx of
         -- See if the current binding allocates a slot on the shadow stack.
         A.XLet (A.LLet  (C.BName nm t) x1) x2
@@ -78,11 +87,30 @@ convertSuperAllocs ctx blocks label instrs xx
                 
                 -- Convert the body of the let-expression.
                 --   This is done in the new context, with the let-bound variable.
-                convertSuperAllocs ctx' blocks label (instrs >< instrs') x2
+                convertSuperAllocs ctx' (instrs >< instrs') x2
 
-        -- The current binding does not allocate a slot on the shadow stack,
-        -- so go to the main conversion function.
-        _ ->    convertSuperBody ctx  ExpTop blocks label instrs xx
+
+        -- The current binding does not allocate a new slot on the shadow stack,
+        -- so assume what we've already seen all the slot allocations in this super.
+        --
+        --   We create a new block for all the slot allocations,
+        --   then branch to the body of the super proper.
+        _ -> do 
+                -- Label for the block that allocates all the shadow stack slots.
+                lInit   <- newUniqueLabel "init"
+
+                -- Label for the first block in the super proper.
+                lBody   <- newUniqueLabel "body"
+
+                -- Create the block that allcoates all the slots.
+                let blkInit     
+                        = Block lInit 
+                                (instrs |> (annotNil $ IBranch lBody))
+
+                -- Convert the main body of the super.
+                convertSuperBody ctx ExpTop 
+                        (Seq.singleton blkInit)
+                        lBody Seq.empty xx
 
 
 ---------------------------------------------------------------------------------------------------
