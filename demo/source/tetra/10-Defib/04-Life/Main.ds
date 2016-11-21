@@ -21,7 +21,7 @@ main ()
         setCell world 30 19 CellAlive
         setCell world 31 19 CellAlive
 
-        animate world 0 10
+        animate world 0 100
 
         ()
 

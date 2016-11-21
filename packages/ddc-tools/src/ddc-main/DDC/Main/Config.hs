@@ -152,9 +152,6 @@ data Config
           -- | Default size of heap for compiled program.
         , configRuntimeHeapSize      :: Integer
 
-          -- | Defult size of the slock stack for compiled programs.
-        , configRuntimeSlotStackSize :: Integer
-
           -- | Strategy for linking the runtime.
         , configRuntimeLinkStrategy  :: D.RuntimeLinkStrategy
 
@@ -188,40 +185,39 @@ getDefaultConfig
  = do   baseDir <- locateBaseLibrary
 
         return $ Config
-          { configMode            = ModeNone 
+          { configMode                  = ModeNone 
  
             -- Language -----------------
-          , configInferTypes      = True
+          , configInferTypes            = True
 
             -- Compilation --------------
-          , configBaseDir         = baseDir
-          , configOutputFile      = Nothing
-          , configOutputDir       = Nothing
-          , configViaBackend      = D.ViaLLVM
+          , configBaseDir               = baseDir
+          , configOutputFile            = Nothing
+          , configOutputDir             = Nothing
+          , configViaBackend            = D.ViaLLVM
  
             -- Optimisation -------------
-          , configOptLevelSalt    = OptLevel0
-          , configWithSalt        = []
+          , configOptLevelSalt          = OptLevel0
+          , configWithSalt              = []
  
             -- Runtime ------------------
-          , configRuntimeHeapSize       = 64 * 1024 * 1024
-          , configRuntimeSlotStackSize  = 1024 * 1024
+          , configRuntimeHeapSize       = 64 * 1024
           , configRuntimeLinkStrategy   = D.LinkDefault
  
             -- Intermediates ------------
-          , configKeepLlvmFiles   = False
-          , configKeepSeaFiles    = False
-          , configKeepAsmFiles    = False
+          , configKeepLlvmFiles         = False
+          , configKeepSeaFiles          = False
+          , configKeepAsmFiles          = False
  
             -- Transformation -----------
-          , configTrans           = Nothing
-          , configWith            = []
+          , configTrans                 = Nothing
+          , configWith                  = []
  
             -- Debugging ----------------
-          , configDump            = False 
+          , configDump                  = False 
 
             -- Taints -------------------
-          , configTaintAvoidTypeChecks = False }
+          , configTaintAvoidTypeChecks  = False }
 
 
 -- | Get the builder configuation from the ddc configuration.

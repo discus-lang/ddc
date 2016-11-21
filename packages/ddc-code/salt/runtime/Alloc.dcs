@@ -14,8 +14,13 @@ import foreign c value
 
   ddcLlvmRootGetStart   : Nat#  -> Addr#
 
+  free                  : Addr# -> Void#
+  malloc                : Nat#  -> Addr#
+
   primFailString        : TextLit# -> Void# 
   primPutString         : TextLit# -> Void# 
+  primShowNat           : Nat#     -> TextLit#
+
 
 with letrec
 
@@ -34,16 +39,86 @@ ddcAllocCollect (byteCount : Nat#) : Unit
                 heapBase#     heapTop#     heapMax#
                 heapBackBase# heapBackTop# heapBackMax#
 
-        -- Check that we've recovered enough space to perform the
-        -- required allocation. If not then we're screwed.
-        -- If not then 
+        -- Check that we've recovered enough space to perform the required
+        -- allocation.
         aNewTop         = read# heapTop#  0#
         aNewMax         = read# heapMax#  0#
 
         case gt# (plusAddr# aNewTop byteCount) aNewMax of
-         True#  -> do   primFailString "Out of space\n"# 
-                        fail#
+         -- If there isn't enough space in the collected heap then we 
+         -- allocate some more space from the operating system.
+         --
+         -- Once we've done this we need to call the collector again to
+         -- copy the live objects into this newly allocated space.
+         -- We can't just 'memcpy' because we also need to adjust all the 
+         -- internal pointers to reflect that fact that we've moved the
+         -- objects.
+         --
+         True#  
+          ->    ddcAllocResize  byteCount
 
-         False# -> do   -- primPutString "* GC completed\n"#
-                        ()
+         False# 
+          -> do -- primPutString "* GC completed\n"#
+                ()
+
+
+-- | Given that we've just performed a GC cycle and don't have enough space
+--   to perform the next allocation, grow the heap by requesting more space
+--   from the OS so that the next allocation will be possible.
+ddcAllocResize 
+        (minAlloc: Nat#)        -- Minimum extra space needed above what
+                                -- we've already got.
+        : Unit
+ = do   
+        aCurBase        = read# [Addr#] heapBase# 0#
+        aCurTop         = read# [Addr#] heapTop#  0#
+        aCurMax         = read# [Addr#] heapMax#  0#
+               
+        -- Current size of the heap.
+        curSize         = add# 1# (truncate# [Nat#] (sub# aCurMax aCurBase))
+
+        -- Current usage of the heap.
+        --   When we call ddcAllocResize we've just collected the heap, 
+        --   so this is the exact amount of live data.
+        curUsage        = truncate# [Nat#] (sub# aCurTop aCurBase)
+
+        -- Minimum size of the heap we need to continue the program.
+        --   This is the current size of live data plus the space we need
+        --   to complete the next allocation.
+        newMin          = add# curUsage minAlloc
+
+        -- Choose the new heap size to be twice the required minimum size
+        -- for the next allocation.
+        newSize         = mul# newMin 2#
+
+        -- Reallocate the back buffer to have the new size.
+        --   We want to perform 'free' first before the new 'malloc'
+        --   so the malloc implementation has a chance to reuse the pages
+        --   that we've already got.
+        aHeapBackBase1_old      = read# heapBackBase# 0#
+        free aHeapBackBase1_old
+        aHeapBackBase1_new      = malloc newSize
+        write# heapBackBase# 0# aHeapBackBase1_new
+        write# heapBackTop#  0# aHeapBackBase1_new
+        write# heapBackMax#  0# (plusAddr# aHeapBackBase1_new (sub# newSize 1#))
+
+        -- Run the collector again to copy live objects into the new back buffer.
+        --   This also flips the buffers, so after the collection our freshly
+        --   allocated buffer is now the one reachable from the front pointers.
+        ddcCollectHeap  
+                (ddcLlvmRootGetStart 0#)
+                heapBase#     heapTop#     heapMax#
+                heapBackBase# heapBackTop# heapBackMax#
+
+        -- After the flip, the old front buffer is now reachable from the back
+        -- pointers, so resize that as well.
+        aHeapBackBase2_old      = read# heapBackBase# 0#
+        free aHeapBackBase2_old
+        aHeapBackBase2_new      = malloc newSize
+        write# heapBackBase# 0# aHeapBackBase2_new
+        write# heapBackTop#  0# aHeapBackBase2_new
+        write# heapBackMax#  0# (plusAddr# aHeapBackBase2_new (sub# newSize 1#))
+
+        ()
+
 

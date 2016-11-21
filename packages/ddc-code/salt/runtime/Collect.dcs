@@ -16,19 +16,6 @@ export value
         -> Addr# -- ^ @Word**@  To   Max  -- addr of last byte that can be allocated.
         -> Unit
  
-  ddcEvacuateRoots
-        :  Addr# -> Addr# -> Addr# -> Addr# -> Unit
-
-  ddcEvacuateRoot
-        :  Addr# -> Addr# -> Unit
-
-  ddcEvacuateRootFrame 
-        : Addr# -> Addr# -> Nat# -> Nat# -> Unit
-
-  ddcEvacuateStackEntry
-        : Addr# -> Addr# -> Unit
-        
-
 import foreign c value
   malloc                : Nat# -> Addr#
 
@@ -154,7 +141,8 @@ ddcCollectHeap
         fieldAddr  " aHeapTop  (new) "#  aBackTop
         fieldAddr  " aBackBase (new) "#  aHeapBase
         fieldAddr  " aBackTop  (new) "#  aHeapTop
-
+-}
+{-
         ddcTraceAlloc
                 True#
                 aRootStart
