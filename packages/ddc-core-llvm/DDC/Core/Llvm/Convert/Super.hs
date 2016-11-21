@@ -50,7 +50,9 @@ convertSuper ctx (C.BName nSuper tSuper) x
 
         -- Add super meta-data to the context.
         mdsup     <- Tbaa.deriveMD (renderPlain nSuper') x
-        let ctx'' = ctx' { contextMDSuper = mdsup }
+        let ctx'' = ctx' 
+                  { contextMDSuper      = mdsup 
+                  , contextSuperName    = Just nSuper }
 
         -- Convert function body to basic blocks.
         blocks    <- convertSuperInit ctx'' xBody

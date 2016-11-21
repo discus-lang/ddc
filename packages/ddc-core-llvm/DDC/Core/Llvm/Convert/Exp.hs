@@ -70,11 +70,48 @@ convertSuperAllocs
 
 convertSuperAllocs ctx instrs xx
  = case xx of
-        -- See if the current binding allocates a slot on the shadow stack.
+        -- A binding that allocates a slot on the shadow stack and 
+        -- associates a Salt level variable name with it.
+        -- These slots are used to hold pointers to the super arguments.
+        A.XLet (A.LLet  (C.BName nm t) x1) x2
+         | Just (A.PrimStore prim, xsArg) <- A.takeXPrimApps x1
+         , A.PrimStoreAllocSlotVal        <- prim
+         -> do
+                -- Bind the Salt name for the slot,
+                -- allocating a new LLVM variable name for it.
+                (ctx', vSlot)  <- bindLocalV ctx nm t
+
+                -- Convert the bound expression.
+                --   As the let-binding is non-recursive, the bound expression
+                --   is converted in the original context, without the let-bound
+                --   variable (ctx).
+                instrs'         <- convertSimple ctx' (ExpAssign ExpTop vSlot) x1
+
+
+                -- Remember the name of the parameter being written to this new slot.
+                let [A.RType _rObj, A.RExp (A.XVar (C.UName nParam))] 
+                          = xsArg
+
+                let ctx'' = ctx'
+                          { contextSuperParamSlots 
+                          = Map.insert nParam vSlot
+                                (contextSuperParamSlots ctx') }
+
+
+                -- Convert the body of the let-expression.
+                --   This is done in the new context, with the let-bound variable.
+                --   If we need to perform a tail call we can use the mapping between
+                --   parameter names and their slots to just update the slots and
+                --   jump back to the start of the body of the super.
+                convertSuperAllocs ctx'' (instrs >< instrs') x2
+
+
+        -- A binding that allocates a slot on the shadow stack and 
+        -- just initializes it to null.
+        -- These slots are used to objects created in the body of the super.
         A.XLet (A.LLet  (C.BName nm t) x1) x2
          | Just (A.PrimStore prim, _)   <- A.takeXPrimApps x1
-         ,   prim == A.PrimStoreAllocSlot 
-          || prim == A.PrimStoreAllocSlotVal
+         , A.PrimStoreAllocSlot         <- prim
          -> do
                 -- Bind the Salt name, allocating a new LLVM variable name for it.
                 (ctx', vDst) <- bindLocalV ctx nm t
@@ -83,7 +120,7 @@ convertSuperAllocs ctx instrs xx
                 --   As the let-binding is non-recursive, the bound expression
                 --   is converted in the original context, without the let-bound
                 --   variable (ctx).
-                instrs'  <- convertSimple ctx (ExpAssign ExpTop vDst) x1
+                instrs'      <- convertSimple ctx (ExpAssign ExpTop vDst) x1
                 
                 -- Convert the body of the let-expression.
                 --   This is done in the new context, with the let-bound variable.
@@ -104,11 +141,19 @@ convertSuperAllocs ctx instrs xx
 
                 -- Create the block that allcoates all the slots.
                 let blkInit     
-                        = Block lInit 
+                         = Block lInit 
                                 (instrs |> (annotNil $ IBranch lBody))
 
+                -- Add the super body label to the context.
+                -- If we need to perform a self-tail call we can jump back to this
+                -- label instead of needing to perform a proper function call.
+                let ctx' = ctx
+                         { contextSuperBodyLabel = Just lBody }
+
                 -- Convert the main body of the super.
-                convertSuperBody ctx ExpTop 
+                convertSuperBody 
+                        ctx' 
+                        ExpTop 
                         (Seq.singleton blkInit)
                         lBody Seq.empty xx
 

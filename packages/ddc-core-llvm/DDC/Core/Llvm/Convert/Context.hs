@@ -55,15 +55,29 @@ data Context
           -- | Current type environment.
         , contextTypeEnv        :: TypeEnv  A.Name 
 
-          -- | Map between core level variable names and LLVM names.
+          -- | Map between Core Salt variable names and the LLVM names used to implement them.
         , contextNames          :: Map A.Name Var
 
           -- | Super meta data
         , contextMDSuper        :: MDSuper 
 
+          -- | When we're converting the body of a super,
+          --   holds the name of the super being converted.
+        , contextSuperName       :: Maybe A.Name
+
+          -- | When we're converting the body of a super,
+          --   holds the label that we can jump to to perform a self tail-call.
+        , contextSuperBodyLabel  :: Maybe Label
+
+          -- | When we're converting the body of a super,
+          --   maps names of the super parameters to the names of the shadow stack
+          --   slots used to hold pointer so the associated arguments.
+          --   This is used when performing a self tail-call. 
+        , contextSuperParamSlots :: Map A.Name Var
+
           -- | C library functions that are used directly by the generated code without
           --   having an import declaration in the header of the converted module.
-        , contextPrimDecls      :: Map String FunctionDecl
+        , contextPrimDecls       :: Map String FunctionDecl
 
           -- | Re-bindings of top-level supers.
           --   This is used to handle let-expressions like 'f = g [t]' where

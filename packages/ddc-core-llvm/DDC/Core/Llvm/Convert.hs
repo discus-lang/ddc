@@ -173,7 +173,10 @@ convertModuleM pp mm@(C.ModuleCore{})
                 , contextTypeEnv        = tenv
                 , contextNames          = Map.empty
                 , contextMDSuper        = MDSuper Map.empty [] 
-                , contextSuperBinds     = Map.empty
+                , contextSuperName      = Nothing
+                , contextSuperBodyLabel = Nothing
+                , contextSuperParamSlots = Map.empty
+                , contextSuperBinds      = Map.empty
                 , contextPrimDecls      = primDeclsMap pp
                 , contextConvertBody    = convertSuperBody
                 , contextConvertExp     = convertSimple
