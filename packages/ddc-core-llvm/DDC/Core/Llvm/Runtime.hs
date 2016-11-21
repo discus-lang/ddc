@@ -16,6 +16,7 @@ module DDC.Core.Llvm.Runtime
           -- * Intrinsics
         , nameGlobalMalloc
         , nameGlobalMemcpy
+        , nameGlobalMemset
         , nameGlobalGcroot)
 where
 import DDC.Llvm.Syntax
@@ -112,6 +113,12 @@ nameGlobalMalloc  = NameGlobal "malloc"
 nameGlobalMemcpy :: Platform -> Name
 nameGlobalMemcpy pp 
  = NameGlobal ("llvm.memcpy.p0i8.p0i8.i" ++ show (8 * platformNatBytes pp))
+
+
+-- | Get the name of the memcpy instrinsic for a given platform.
+nameGlobalMemset :: Platform -> Name
+nameGlobalMemset pp 
+ = NameGlobal ("llvm.memset.p0i8.i" ++ show (8 * platformNatBytes pp))
 
 
 -- | Get the name of the gcroot instrinsic.

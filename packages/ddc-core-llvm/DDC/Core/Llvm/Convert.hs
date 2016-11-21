@@ -247,5 +247,19 @@ primDecls pp
                                   , Param (TInt 1)   [] ]
         , declAlign             = AlignNone
         , declGarbageCollector  = Nothing }
+
+   ,    FunctionDecl
+        { declName              = textOfName (nameGlobalMemset pp)
+        , declLinkage           = External
+        , declCallConv          = CC_Intrinsic
+        , declReturnType        = TVoid
+        , declParamListType     = FixedArgs
+        , declParams            = [ Param (TPointer (TInt 8)) []
+                                  , Param (TInt 8)   []
+                                  , Param (tNat pp)  []
+                                  , Param (TInt 32)  []
+                                  , Param (TInt 1)   [] ]
+        , declAlign             = AlignNone
+        , declGarbageCollector  = Nothing }
    ]
 

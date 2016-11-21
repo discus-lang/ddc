@@ -201,9 +201,8 @@ ddcFormatOfObject_arg [r : Region] (formatField : Word8#) : Nat#
 ddcSizeOfObject [r: Region] (obj: Ptr# r Obj): Nat#
  = let  n       = ddcFormatOfObject obj
    in case n of
-        1# -> do
-                primFailString "ddc-runtime.ddcSizeOfObject: unexpected forward\n"#
-                fail#
+        1# -> do ddcFailObj obj "ddcSizeOfObject"# "unexpected forward"#
+                 0#
 
         2# -> ddcSizeOfThunk  obj
         3# -> ddcSizeOfBoxed  obj
@@ -211,10 +210,8 @@ ddcSizeOfObject [r: Region] (obj: Ptr# r Obj): Nat#
         5# -> ddcSizeOfMixed  obj
         6# -> ddcSizeOfSmall  obj
 
-        _  -> do
-                primFailString "ddc-runtime.ddcSizeOfObject: unrecognized object format\n"#
-                fail#
-
+        _  -> do ddcFailObj obj "ddcSizeOfObject"# "unrecognized object"#
+                 0#
 
 -- | Get the header size of an object, in bytes.
 --   This is also the minimum size an object of that format could be.
@@ -227,9 +224,8 @@ ddcSizeOfObject [r: Region] (obj: Ptr# r Obj): Nat#
 --
 ddcHeaderSizeOfObject [r: Region] (obj: Ptr# r Obj): Nat#
  = case ddcFormatOfObject obj of
-        1# -> do
-                primFailString "ddc-runtime.ddcHeaderSizeOfObject: unexpected forward\n"#
-                fail#
+        1# -> do ddcFailObj obj  "ddcHeaderSizeOfObject"# "unexpected forward"#
+                 0#
 
         2# -> 16#       -- Thunk
         3# -> 8#        -- Boxed
@@ -237,9 +233,8 @@ ddcHeaderSizeOfObject [r: Region] (obj: Ptr# r Obj): Nat#
         5# -> 16#       -- Mixed
         6# -> 4#        -- Small
 
-        _  -> do
-                primFailString "ddc-runtime.ddcHeaderSizeOfObject: unrecognized object format\n"#
-                fail#
+        _  -> do ddcFailObj obj "ddcHeaderSizeOfObject"# "unrecognized object"#
+                 0#
 
 
 -- Forwarding Pointers --------------------------------------------------------
@@ -368,7 +363,11 @@ ddcAllocThunk_ok [r: Region] (fun:  Addr#)
         (bytesObj: Nat#)
         : Ptr# r Obj
  = do   
+        -- Alloc and zero whole object because the Salt code generator
+        -- does not guarantee that no more allocations will be performed
+        -- before the argument pointers have been written.
         addr            = alloc# bytesObj
+        set# addr 0w8# bytesObj
 
         -- The tag of thunks is set to all 1 bits to make them easy to identify.
         tag32           = 0xffffff00w32#
@@ -555,7 +554,11 @@ ddcAllocBoxed_ok
         [r: Region]
         (tag: Tag#) (arity: Nat#) (bytesObj: Nat#): Ptr# r Obj
  = do   
+        -- Alloc and zero whole object because the Salt code generator
+        -- does not guarantee that no more allocations will be performed
+        -- before the argument pointers have been written.
         addr            = alloc# bytesObj
+        set# addr 0w8# bytesObj
 
         tag32           = promote# [Word32#] [Tag#] tag
         format          = 0b00100001w32#
@@ -646,7 +649,11 @@ ddcAllocMixed_ok
         (tag: Tag#) (arity: Nat#) (bytesObj: Nat#) 
         : Ptr# r Obj
  = do
+        -- Alloc and zero whole object because the Salt code generator
+        -- does not guarantee that no more allocations will be performed
+        -- before the argument pointers have been written.
         addr            = alloc# bytesObj
+        set# addr 0w8# bytesObj
 
         tag32           = promote# tag
         format          = 0b01000001w32#
@@ -797,3 +804,21 @@ ddcPayloadSizeSmall [r: Region] (obj: Ptr# r Obj): Nat#
         wordsPayload    = ddcArgOfObject obj
         bytesPayload    = shl# wordsPayload 2#
         bytesPayload
+
+
+-- Failure --------------------------------------------------------------------
+-- | Report a bogus object and abort the program.
+ddcFailObj [r: Region]
+           (obj: Ptr# r Obj) (fn: TextLit#) (msg: TextLit#): Unit
+ = do   
+        primFailString "ddc-runtime."#
+        primFailString fn
+        primFailString " "# 
+        primFailString msg
+        primFailString "\n"#
+        primFailString "    obj = "#
+        primFailString (primShowAddr (takePtr# obj))
+        primFailString "\n"#
+        fail#
+
+

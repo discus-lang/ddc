@@ -160,6 +160,9 @@ typeOfPrimStore jj
         PrimStoreCopy
          -> tAddr  `tFun` tAddr `tFun` tNat `tFun` tVoid
 
+        PrimStoreSet
+         -> tAddr  `tFun` tWord 8 `tFun` tNat `tFun` tVoid
+
         PrimStorePlusAddr
          -> tAddr  `tFun` tNat `tFun` tAddr
 

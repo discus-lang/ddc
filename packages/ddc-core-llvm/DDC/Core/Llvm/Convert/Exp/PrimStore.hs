@@ -231,6 +231,30 @@ convPrimStore ctx mdst p as
                                 ] [] ]
 
 
+        -- Copy a block of memory.
+        A.PrimStore A.PrimStoreSet
+         | Just [mDst, mVal, mLen]      <- atomsR as
+         -> Just $ do
+                xDst'    <- mDst
+                xVal'    <- mVal
+                xLen'    <- mLen
+                vDstPtr  <- newUniqueNamedVar "dst" (TPointer (TInt 8))
+
+                -- Alignment of zero means unaligned
+                let xAlign      = XLit (LitInt (TInt 32) 0)
+                let xVolatile   = XLit (LitInt (TInt 1)  0)
+                return  $ Seq.fromList $ map annotNil
+                        [ IConv  vDstPtr ConvInttoptr xDst'
+                        , ICall Nothing CallTypeStd Nothing
+                                TVoid (nameGlobalMemset pp)
+                                [ XVar vDstPtr
+                                , xVal'
+                                , xLen'
+                                , xAlign
+                                , xVolatile
+                                ] [] ]
+
+
         -- Add an offset in bytes to a pointer.
         A.PrimStore A.PrimStorePlusAddr
          | Just vDst                    <- mdst

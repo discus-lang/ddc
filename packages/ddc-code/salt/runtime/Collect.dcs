@@ -86,10 +86,12 @@ ddcCollectHeap
         (aaHeapBase aaHeapTop aaHeapMax  : Addr#)
         (aaBackBase aaBackTop aaBackMax  : Addr#) : Unit
  = do
---      primPutString "* ddc-runtime.ddcCollectHeap start\n"#
 
         -- Trace the allocator state before we start.
-{-        ddcTraceAlloc
+{-
+        primPutString "* ddc-runtime.ddcCollectHeap start\n"#
+
+        ddcTraceAlloc
                 True#
                 aRootStart
                 aaHeapBase aaHeapTop aaHeapMax
@@ -139,8 +141,10 @@ ddcCollectHeap
         primPutString "* ddc-runtime.ddcCollectHeap dump\n"#
         fieldAddr  " aHeapBase (new) "#  aBackBase
         fieldAddr  " aHeapTop  (new) "#  aBackTop
+        fieldAddr  " aHeapMax  (new) "#  aBackMax
         fieldAddr  " aBackBase (new) "#  aHeapBase
         fieldAddr  " aBackTop  (new) "#  aHeapTop
+        fieldAddr  " aBackMax  (new) "#  aHeapMax
 -}
 {-
         ddcTraceAlloc
@@ -150,9 +154,8 @@ ddcCollectHeap
                 aaBackBase aaBackTop aaBackMax
 
         ddcTraceHeap True#
---        primPutString "* ddc-runtime.ddcCollectHeap end\n"#
+        primPutString "* ddc-runtime.ddcCollectHeap end\n"#
 -}
-
         ()
 
 
@@ -380,13 +383,22 @@ ddcScanThunk_arg
         -- Address where thunk argument is in the from-space.
         aArgFrom    = ddcGetThunk aObjScan iArg
 
-        -- Evacuate the argument to the to-space.
-        aArgTo      = ddcEvacuateObject aaToSpaceTop aArgFrom
+        -- Skip over null pointer arguments in the thunk.
+        --   When the thunk is initially allocated the argument pointers are
+        --   set to null so that if a GC cycle runs before the thunk is
+        --   properly constructed then we won't read uninitialized memory here.
+        case eq# (truncate# aArgFrom) 0# of
+         True#  -> do
+                ddcScanThunk_arg aaToSpaceTop aObjScan (add# iArg 1#) nArgs
 
-        -- Update the thunk to point to the copied object in the to-space.
-        ddcSetThunk aObjScan 0# iArg aArgTo
+         False# -> do
+                -- Evacuate the argument to the to-space.
+                aArgTo      = ddcEvacuateObject aaToSpaceTop aArgFrom
 
-        ddcScanThunk_arg aaToSpaceTop aObjScan (add# iArg 1#) nArgs
+                -- Update the thunk to point to the copied object in the to-space.
+                ddcSetThunk aObjScan 0# iArg aArgTo
+
+                ddcScanThunk_arg aaToSpaceTop aObjScan (add# iArg 1#) nArgs
 
 
 ---------------------------------------------------------------------------------------------------
@@ -415,13 +427,22 @@ ddcScanBoxed_arg
         -- Address where the object argument is in the from-space.
         aArgFrom  = ddcGetBoxed aObjScan iArg
 
-        -- Evacuate the argument to the to-space.
-        aArgTo    = ddcEvacuateObject aaToSpaceTop aArgFrom
+        -- Skip over null pointer arguments in the boxed object.
+        --   When the object is initially allocated the argument pointers are
+        --   set to null so that if a GC cycle runs before the thunk is
+        --   properly constructed then we won't read uninitialized memory here.
+        case eq# (truncate# aArgFrom) 0# of
+         True#  -> do
+                ddcScanBoxed_arg aaToSpaceTop aObjScan (add# iArg 1#) nArgs
 
-        -- Update the argument field boxed object to the copied version of the argument.
-        ddcSetBoxed aObjScan iArg aArgTo
+         False# -> do
+                -- Evacuate the argument to the to-space.
+                aArgTo    = ddcEvacuateObject aaToSpaceTop aArgFrom
 
-        ddcScanBoxed_arg aaToSpaceTop aObjScan (add# iArg 1#) nArgs
+                -- Update the argument field boxed object to the copied version of the argument.
+                ddcSetBoxed aObjScan iArg aArgTo
+
+                ddcScanBoxed_arg aaToSpaceTop aObjScan (add# iArg 1#) nArgs
 
 
 ---------------------------------------------------------------------------------------------------

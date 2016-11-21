@@ -157,6 +157,7 @@ string_t* primShowWord8 (uint8_t w)
 // Print a C string to stdout.
 void primPutString (string_t* str)
 {       fputs(str, stdout);
+        fflush(stdout);
 }
 
 
@@ -164,15 +165,18 @@ void primPutString (string_t* str)
 // Use this when printing an error from the runtime system.
 void primFailString(string_t* str)
 {       fputs(str, stderr);
+        fflush(stderr);
 }
 
 // Print a text literal to stdout.
 void primPutTextLit (string_t* str)
 {       fputs(str, stdout);
+        fflush(stdout);
 }
 
 // Print a text vector to stdout.
 void primPutVector (Obj* obj)
 {       string_t* str = (string_t*) _payloadRaw(obj);
         fputs(str, stdout);
+        fflush(stdout);
 }
