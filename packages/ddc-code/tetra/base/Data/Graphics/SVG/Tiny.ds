@@ -1,0 +1,70 @@
+
+module Data.Graphics.SVG.Tiny 
+export renderSVG
+import Data.Function
+import Data.List
+import Data.Text
+where
+
+-- | SVG Documents.
+data SVG where
+        SVG     :  Nat          -- ^ Width
+                -> Nat          -- ^ Height
+                -> List Shape
+                -> SVG
+
+
+-- | SVG Shape elements.
+data Shape where
+        Circle 
+                :  Nat          -- ^ x-axis coordinate of centre of circle.
+                -> Nat          -- ^ y-axis coordinate of centre of circle.
+                -> Nat          -- ^ radius of circle.
+                -> Shape
+
+
+-- | SVG Attribute values.
+data Value where
+        VNat    : Nat -> Value
+
+
+-- | Render a SVG Document.
+renderSVG (svg: SVG): Text
+ | SVG width height shapes      <- svg
+ = "<?xml version=\"1.0\"?>\n"
+ % "<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.2\" baseProfile=\"tiny\">\n"
+ % (foldl paste "" $ map renderShape shapes)
+ % "</svg>"
+
+
+-- | Render a SVG Shape.
+renderShape (shape: Shape): Text
+ = case shape of
+        Circle x y r
+         -> renderElement "circle"
+                $ Cons (T2 "cx" (VNat x))
+                $ Cons (T2 "cy" (VNat y))
+                $ Cons (T2 "r"  (VNat r))
+                $ Nil
+
+
+-- | Render an element of the given name and value.
+renderElement 
+        (name: Text) 
+        (attrs: List (Tup2 Text Value))
+        : Text
+ = "<" % name %% (foldr paste "" $ map renderAttr attrs) % "/>"
+ % "\n"
+
+
+-- | Render an attribute of the given name and value.
+renderAttr (attr: Tup2 Text Value): Text
+ | T2 name val  <- attr
+ = name % "=" % renderValue val % " "
+
+
+-- | Render a value.
+renderValue (val: Value): Text
+  = case val of
+        VNat n  -> "\"" % showNat n % "\""
+

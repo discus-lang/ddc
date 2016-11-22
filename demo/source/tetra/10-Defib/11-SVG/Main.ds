@@ -1,0 +1,13 @@
+
+module Main
+import Data.Graphics.SVG.Tiny
+import System.IO.Console
+where
+
+
+main ()
+ = writel
+        $ renderSVG
+        $ SVG   200 200
+        $ Cons (Circle 100 100 50) Nil
+
