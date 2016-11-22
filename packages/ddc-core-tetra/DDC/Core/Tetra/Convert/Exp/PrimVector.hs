@@ -49,15 +49,15 @@ convertPrimVector _ectx ctx xxExp
 
                 -- Pointer to the vector length field, in elements.
                 let xPayloadLength' xVec
-                        = A.xCastPtr a' A.rTop A.tNat (A.tWord 8)
+                        = A.xCastPtr a' A.rTop (A.tWord 32) (A.tWord 8)
                         $ A.xPayloadOfRaw a' A.rTop xVec
 
                 return  $ XLet a' (LLet  (BAnon (A.tPtr  A.rTop A.tObj))
                                          (A.xAllocRaw a' A.rTop 0 xLengthBytes'))
                         $ XLet a' (LLet  (BNone A.tVoid)
-                                         (A.xPoke a' A.rTop A.tNat
-                                                    (xPayloadLength' (XVar a' (UIx 0))) 
-                                                    xLengthElems'))
+                                         (A.xPoke a' A.rTop (A.tWord 32)
+                                                (xPayloadLength' (XVar a' (UIx 0)))
+                                                (A.xTruncate a' (A.tWord 32) A.tNat xLengthElems')))
                         $ XVar a' (UIx 0)
 
 
@@ -75,10 +75,11 @@ convertPrimVector _ectx ctx xxExp
 
                 -- Pointer to the vector length field, in elements.
                 let xPayloadLength'
-                        = A.xCastPtr a' A.rTop A.tNat (A.tWord 8)
+                        = A.xCastPtr a' A.rTop (A.tWord 32) (A.tWord 8)
                         $ A.xPayloadOfRaw a' A.rTop xVec'
 
-                return  $ A.xPeek a' A.rTop A.tNat xPayloadLength'
+                return  $ A.xPromote a' A.tNat (A.tWord 32)
+                        $ A.xPeek a' A.rTop (A.tWord 32) xPayloadLength'
 
 
         -- Vector read.
@@ -121,7 +122,9 @@ convertPrimVector _ectx ctx xxExp
                         $ A.xPeekBounded a' A.rTop tElem'
                                 xPayloadElems'
                                 xStart'
-                                (A.xPromote a' A.tNat (A.tWord 32) (XVar a' (UIx 0)))
+                                (A.xShl a' A.tNat
+                                        (A.xPromote a' A.tNat (A.tWord 32) (XVar a' (UIx 0)))
+                                        (A.xStoreSize2 a' tElem'))
 
         -- Vector write.
         XCast _ CastRun xxApp@(XApp a _ _)
@@ -167,7 +170,9 @@ convertPrimVector _ectx ctx xxExp
                         $ A.xPokeBounded a' A.rTop tElem'
                                 xPayloadElems'
                                 xStart'
-                                (A.xPromote a' A.tNat (A.tWord 32) (XVar a' (UIx 0)))
+                                (A.xShl a' A.tNat
+                                        (A.xPromote a' A.tNat (A.tWord 32) (XVar a' (UIx 0)))
+                                        (A.xStoreSize2 a' tElem'))
                                 xValue'
 
         _ -> Nothing
