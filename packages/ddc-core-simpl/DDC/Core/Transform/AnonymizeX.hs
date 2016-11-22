@@ -37,11 +37,17 @@ class AnonymizeX (c :: * -> *) where
 instance AnonymizeX (Module a) where
  anonymizeWithX keep kstack tstack mm@ModuleCore{}
   = let
+
+        -- Keep names defined at top level as these may be exported.
+        -- They're also guaranteed not to shadow any other names.
+        nsTop    = moduleTopBinds mm
+
+        -- Keep exported names as we can't export anonymous values.
+        nsExport = Set.fromList $ map fst $ moduleExportTypes mm
+
         -- We need to keep exported names,
         -- because the export list can't deal with anonymous binders.
-        keep'   = Set.union keep
-                        $ Set.fromList
-                        $ map fst $ moduleExportTypes mm
+        keep'   = Set.unions [ keep, nsTop, nsExport ] 
 
         x'      = anonymizeWithX keep' kstack tstack (moduleBody mm)
 
