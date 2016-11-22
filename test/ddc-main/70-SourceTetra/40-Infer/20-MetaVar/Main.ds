@@ -1,0 +1,8 @@
+
+module Main where
+
+-- This will fail the compilance check because the type of the 
+-- parameter is unconstrained and we don't do type generalization.
+foo x = x
+
+main = ()
