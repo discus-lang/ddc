@@ -56,6 +56,7 @@ features
         , featuresEffectCapabilities    = False
         , featuresImplicitRun           = False
         , featuresImplicitBox           = False
+        , featuresMetaVariables         = False
         , featuresPartialPrims          = True
         , featuresPartialApplication    = True
         , featuresGeneralApplication    = True

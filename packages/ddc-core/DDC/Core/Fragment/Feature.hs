@@ -28,6 +28,9 @@ data Feature
         -- | Insert implicit box casts for bodies of abstractions.
         | ImplicitBox
 
+        -- | Allow unresolved meta-variables in types.
+        | MetaVariables
+
         -- General features -------------------------------
         -- | Partially applied primitive operators.
         | PartialPrims

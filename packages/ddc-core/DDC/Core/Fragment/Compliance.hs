@@ -14,9 +14,11 @@ import Data.Maybe
 import DDC.Type.Env                     (Env)
 import Data.Set                         (Set)
 import qualified DDC.Type.Env           as Env
+import qualified DDC.Type.Sum           as Sum
 import qualified Data.Set               as Set
 
 
+-------------------------------------------------------------------------------
 -- | Check whether a core thing complies with a language fragment profile.
 complies 
         :: (Ord n, Show n, Complies c)
@@ -50,7 +52,6 @@ compliesWithEnvs profile kenv tenv thing
    in   case merr of
          Left err -> Just err
          Right _  -> Nothing
-
 
 
 -- Complies -------------------------------------------------------------------
@@ -159,6 +160,7 @@ instance Complies Exp where
                                         context' x
 
                 vUsed'          <- checkBind profile tenv b vUsed
+                _               <- compliesT profile (typeOfBind b)
                 return (tUsed, vUsed')
        
         -- application --------------------------
@@ -220,8 +222,9 @@ instance Complies Exp where
          -> do  (tUsed1,  vUsed1)  
                  <- compliesX profile kenv tenv (reset context) x1
 
-                (tUseds2, vUseds2) <- liftM unzip 
-                                   $  mapM (compliesX profile kenv tenv (reset context)) alts
+                (tUseds2, vUseds2)
+                 <- liftM unzip 
+                 $  mapM (compliesX profile kenv tenv (reset context)) alts
 
                 return  ( Set.unions $ tUsed1 : tUseds2
                         , Set.unions $ vUsed1 : vUseds2)
@@ -250,6 +253,47 @@ instance Complies Alt where
                 return (tUsed1, vUsed1')
 
 
+-- Type -----------------------------------------------------------------------
+compliesT
+        :: Ord n
+        => Profile n
+        -> Type n 
+        -> CheckM a n (Set n)
+
+compliesT profile tt
+ = let has f   = f $ profileFeatures profile
+   in case tt of
+        TCon (TyConExists{})
+         |  not $ has featuresMetaVariables 
+         -> throw $ ErrorUnsupported MetaVariables
+
+        TCon{}          
+         -> return Set.empty
+
+        TVar (UName u)  
+         -> return $ Set.singleton u
+
+        TVar{}
+         -> return $ Set.empty
+
+        TAbs _b t
+         -> compliesT profile t
+
+        TApp t1 t2
+         -> do  nsUsed1 <- compliesT profile t1
+                nsUsed2 <- compliesT profile t2
+                return  $ Set.union nsUsed1 nsUsed2
+
+        TForall _b t
+         -> compliesT profile t
+
+        TSum ts
+         -> do  ss      <- mapM (compliesT profile) 
+                        $  Sum.toList ts
+
+                return  $ Set.unions ss
+
+
 -- Bind -----------------------------------------------------------------------
 -- | Check for compliance violations at a binding site.
 checkBind 
@@ -273,11 +317,14 @@ checkBind profile env bb used
          -> throw $ ErrorShadowedBind n
 
          | otherwise
-         -> return $ Set.delete n used
+         -> do  return $ Set.delete n used
 
         BAnon{}
-         | not $ has featuresDebruijnBinders
+         |  not $ has featuresDebruijnBinders
          -> throw $ ErrorUnsupported DebruijnBinders
+
+         | otherwise
+         -> do  return  $ used
 
         _ -> return used
 

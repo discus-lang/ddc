@@ -207,7 +207,7 @@ traceThunkPtrs
  = case eq# (ddcArgsThunk obj) i of
         True#  -> ()
         False# 
-         -> do  addr    = takePtr# (ddcGetThunk obj i)
+         -> do  addr    = takePtr# (ddcGetThunk [r] obj i)
 
                 (case print of
                   False# -> ()
@@ -230,7 +230,7 @@ traceThunkPtrss
  = case eq# (ddcArgsThunk obj) i of
          True# -> ()
          False# 
-          -> do ddcTraceObj True# print (ddcGetThunk obj i)
+          -> do ddcTraceObj True# print (ddcGetThunk [r] obj i)
                 traceThunkPtrss recurse print obj (add# i 1#)
 
 
@@ -298,7 +298,7 @@ traceBoxedPtrs
           ->    ()
 
          False# 
-          -> do addr     = takePtr# (ddcGetBoxed obj i)
+          -> do addr     = takePtr# (ddcGetBoxed [r] obj i)
                 (case print of
                   False# -> ()
                   True#  -> do
@@ -320,7 +320,7 @@ traceBoxedPtrss
           -> ()
 
          False# 
-          -> do ddcTraceObj     recurse print (ddcGetBoxed obj i)
+          -> do ddcTraceObj     recurse print (ddcGetBoxed [r] obj i)
                 traceBoxedPtrss recurse print obj n (add# i 1#)
 
 

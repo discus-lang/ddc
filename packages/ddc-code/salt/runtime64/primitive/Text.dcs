@@ -60,7 +60,7 @@ indexTextLit [r1: Region] (obj: Ptr# r1 Obj) (ix: Nat#): Word8#
         charPtr = takeTextLit obj
         size    = sizeOfTextLit obj
 
-        char    = peekBounded# (makePtr# charPtr) ix size
+        char    = peekBounded# (makePtr# [r1] charPtr) ix size
         char
 
 

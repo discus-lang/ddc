@@ -46,7 +46,6 @@ data Bind n
         deriving Show
 
 
-
 -- | A bound occurrence of a variable, with its type.
 --
 --   If variable hasn't been annotated with its real type then this 

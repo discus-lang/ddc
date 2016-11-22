@@ -86,6 +86,7 @@ data Features
         , featuresEffectCapabilities    :: Bool
         , featuresImplicitRun           :: Bool
         , featuresImplicitBox           :: Bool
+        , featuresMetaVariables         :: Bool
         , featuresPartialPrims          :: Bool
         , featuresPartialApplication    :: Bool
         , featuresGeneralApplication    :: Bool
@@ -111,6 +112,7 @@ zeroFeatures
         , featuresEffectCapabilities    = False
         , featuresImplicitRun           = False
         , featuresImplicitBox           = False
+        , featuresMetaVariables         = False
         , featuresPartialPrims          = False
         , featuresPartialApplication    = False
         , featuresGeneralApplication    = False
@@ -135,6 +137,7 @@ setFeature feature val features
         EffectCapabilities      -> features { featuresEffectCapabilities   = val }
         ImplicitRun             -> features { featuresImplicitRun          = val }
         ImplicitBox             -> features { featuresImplicitBox          = val }
+        MetaVariables           -> features { featuresMetaVariables        = val }
         PartialPrims            -> features { featuresPartialPrims         = val }
         PartialApplication      -> features { featuresPartialApplication   = val }
         GeneralApplication      -> features { featuresGeneralApplication   = val }

@@ -11,8 +11,8 @@ letrec {
   com: ([^: Data].^0 -> ^0) -> Int#
     = λ(g: [^: Data].^0 -> ^0). g [Int#] 0i#;
   
-  uuse: ?6 -> Int#
-    = λ(_: ?6). com f
+  uuse: Nat# -> Int#
+    = λ(_: Nat#). com f
 }
 
 
@@ -25,7 +25,7 @@ letrec {
   com: ([b: Data].b -> b) -> Int#
     = λ(g: [b: Data].b -> b). g [Int#] 0i#;
   
-  uuse: ?6 -> Int#
-    = λ(_: ?6). com f
+  uuse: Nat# -> Int#
+    = λ(_: Nat#). com f
 }
 

@@ -283,8 +283,12 @@ cmdParseCheckExp
         -- told to do so.
         profile   = fragmentProfile fragment
         features  = profileFeatures profile
+
+        -- Allow meta-variables when we're just showing the types of expressions.
         features' = features { featuresPartialPrims 
-                             = featuresPartialPrims features || permitPartialPrims}
+                             = featuresPartialPrims features || permitPartialPrims
+                             , featuresMetaVariables = True }
+
         profile'  = profile  { profileFeatures  = features' }
         fragment' = fragment { fragmentProfile  = profile'  }
 
