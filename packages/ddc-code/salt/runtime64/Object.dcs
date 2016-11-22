@@ -738,6 +738,7 @@ ddcAllocRaw_ok
         [r: Region] (tag: Tag#) (bytesObj: Nat#): Ptr# r Obj
  = do
         addr            = alloc# bytesObj
+        set# addr 0w8# bytesObj
 
         tag32           = promote# tag
         format          = 0b00110001w32#

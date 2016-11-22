@@ -25,7 +25,8 @@ convertPrimVector _ectx ctx xxExp
    in case xxExp of
 
         -- Vector allocate.
-        -- ISSUE #349: Zero the payload of unboxed vectors when we allocate them.
+        --   The runtime system zeroes the object when it allocates the space
+        --   so we don't need to zero the elements separately.
         XCast _ CastRun xxApp@(XApp a _ _)
          |  Just ( E.NameOpVector E.OpVectorAlloc True
                  , [XType _ _rPrime, XType _ tElem, xLength])    
