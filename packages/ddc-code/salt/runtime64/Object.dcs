@@ -784,8 +784,10 @@ ddcAllocSmall
  = do   
         bytesObj        = add# 4# bytesPayload
 
-        -- TODO: check that we're not going to misalign the heap.
-        -- The total object must be at least 8 bytes long.
+        -- TODO: Check that we're not going to misalign the heap.
+        -- The total object must be at least 8 bytes long and 4-byte aligned.
+        -- The current compiler shouldn't try to allocate such an object, 
+        -- but do the check anyway.
 
         case check# bytesObj of
          True#   -> ()

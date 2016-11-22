@@ -4,8 +4,11 @@ module Collect
 
 export value
 
-  ddcPerformGC : Unit -> Unit
+  -- | Garbage Collect the current heap.
+  ddcPerformGC 
+        : Unit -> Unit
 
+  -- | Garbage Colllect the specified heap.
   ddcCollectHeap 
         :  Addr# -- ^ Start of root chain.
         -> Addr# -- ^ @Word**@  From Base -- first byte in from space.
@@ -21,11 +24,10 @@ import foreign c value
 
   ddcFormatOfObject     : Addr# -> Nat#
   ddcSizeOfObject       : Addr# -> Nat#
+  ddcIsAnchored         : Addr# -> Bool#
 
   ddcReadBrokenHeart    : Addr# -> Addr#
   ddcWriteBrokenHeart   : Addr# -> Addr# -> Void#
-
-  ddcIsAnchored         : Addr# -> Bool#
 
   ddcArgsThunk          : Addr# -> Nat# 
   ddcGetThunk           : Addr# -> Nat# -> Addr#
@@ -39,25 +41,7 @@ import foreign c value
   ddcGetMixed           : Addr# -> Nat# -> Addr#
 
   ddcLlvmRootIsEnd      : Addr# -> Bool#
-
-  ddcTraceAlloc         :  Bool# -> Addr#
-                        -> Addr# -> Addr# -> Addr#
-                        -> Addr# -> Addr# -> Addr#
-                        -> Unit
-
-  ddcTraceHeap          : Bool# -> Unit
-
-  ddcTraceObj           : Bool# -> Bool# -> Addr# -> Nat#
-  ddcTraceRoots         : Bool# -> Unit
-
   ddcLlvmRootGetStart   : Nat#  -> Addr#
-
-  primPutString         : TextLit# -> Void#
-  primShowAddr          : Addr#    -> TextLit#
-  primShowNat           : Nat#     -> TextLit#
-  primShowWord32        : Word32#  -> TextLit#
-
-  exit                  : Int# -> Void#
 
 with letrec
 
@@ -86,25 +70,11 @@ ddcCollectHeap
         (aaHeapBase aaHeapTop aaHeapMax  : Addr#)
         (aaBackBase aaBackTop aaBackMax  : Addr#) : Unit
  = do
-
-        -- Trace the allocator state before we start.
-{-
-        primPutString "* ddc-runtime.ddcCollectHeap start\n"#
-
-        ddcTraceAlloc
-                True#
-                aRootStart
-                aaHeapBase aaHeapTop aaHeapMax
-                aaBackBase aaBackTop aaBackMax
-
-        ddcTraceHeap True#
--}
         -- Reset the top of the to-heap as we're about to overwrite 
         -- what's already there.
         aBackBase'      = read# [Addr#] aaBackBase 0#
         write# aaBackTop 0# aBackBase'
 
---      primPutString "* ddc-runtime.ddcCollectHeap evacuating roots\n"#
         -- Evacuate all the root objects to the to-space.
         ddcEvacuateRoots
                 aRootStart
@@ -112,15 +82,11 @@ ddcCollectHeap
                 aaBackTop 
                 (read# aaBackMax  0#)
 
---      primPutString "* ddc-runtime.ddcCollectHeap scanning heap\n"#
-
         -- Recursively follow pointers in to-space,
         --   copying out any reachable objects from the from-space.
         ddcScanHeap 
                 aaBackTop
                 (read# aaBackBase 0#)
-
---      primPutString "* ddc-runtime.ddcCollectHeap flipping buffers\n"#
 
         -- Flip the front and back heaps.
         aHeapBase       = read# [Addr#] aaHeapBase 0#
@@ -139,26 +105,6 @@ ddcCollectHeap
         write# [Addr#] aaBackTop  0# aHeapTop
         write# [Addr#] aaBackMax  0# aHeapMax
 
-
-        -- Trace the allocator after we've finished.
-        -- This also checks that the result heap is well formed.
-{-      primPutString "* ddc-runtime.ddcCollectHeap dump\n"#
-        fieldAddr  " aHeapBase (new) "#  aBackBase
-        fieldAddr  " aHeapTop  (new) "#  aBackTop
-        fieldAddr  " aHeapMax  (new) "#  aBackMax
-        fieldAddr  " aBackBase (new) "#  aHeapBase
-        fieldAddr  " aBackTop  (new) "#  aHeapTop
-        fieldAddr  " aBackMax  (new) "#  aHeapMax
-
-        ddcTraceAlloc
-                True#
-                aRootStart
-                aaHeapBase aaHeapTop aaHeapMax
-                aaBackBase aaBackTop aaBackMax
-
-        ddcTraceHeap True#
-        primPutString "* ddc-runtime.ddcCollectHeap end\n"#
--}
         ()
 
 
@@ -169,12 +115,9 @@ ddcEvacuateRoots
         (aBackBase      : Addr#)
         (aaBackTop      : Addr#)
         (aBackMax       : Addr#) : Unit
- = do
-        ddcEvacuateStackEntry
-                aaBackTop
-                aRootStart
-
-        ()
+ = ddcEvacuateStackEntry
+        aaBackTop
+        aRootStart
 
 -- | Evacuate the roots from the given stack entry.
 ddcEvacuateStackEntry
@@ -182,10 +125,10 @@ ddcEvacuateStackEntry
         (aEntry         : Addr#) : Unit
  = do
         -- Address of next entry in the chain.
-        aEntryNext      = read#     [Addr#] aEntry       0#
+        aEntryNext      = read#     [Addr#] aEntry 0#
 
         -- Address of frame that hold the number of roots, and meta-data.
-        aEntryFrame     = read#     [Addr#] aEntry            (size# [Addr#])
+        aEntryFrame     = read#     [Addr#] aEntry (size# [Addr#])
 
         -- Address of array of roots for this frame.
         aEntryRoots     = plusAddr# aEntry      (add# (size# [Addr#]) (size# [Addr#]))
@@ -211,10 +154,10 @@ ddcEvacuateStackEntry
 
 -- Evacuate all the roots in the given stack frame.
 ddcEvacuateRootFrame 
-        (aaBackTop:     Addr#)  -- Top of back heap.
-        (aaObj:         Addr#)  -- Current address in frame.
-        (ix:            Nat#)   -- Number of roots evacuated so far.
-        (n:             Nat#)   -- Total number of roots to evacuate.
+        (aaBackTop      : Addr#)    -- ^ Top of back heap.
+        (aaObj          : Addr#)    -- ^ Current address in frame.
+        (ix             : Nat#)     -- ^ Number of roots evacuated so far.
+        (n              : Nat#)     -- ^ Total number of roots to evacuate.
         : Unit
  = case sub# n ix of
     0#  -> ()
@@ -232,8 +175,8 @@ ddcEvacuateRootFrame
 
 -- Evacuate the object pointed to by a single root.
 ddcEvacuateRoot
-        (aaBackTop:     Addr#)
-        (aaObj:         Addr#)
+        (aaBackTop      : Addr#)    -- ^ Top of back heap.
+        (aaObj          : Addr#)    -- ^ Current address in frame.
         : Unit
  = do
         -- Read the pointer to the object from the root slot.
@@ -256,9 +199,9 @@ ddcEvacuateRoot
 -- | Evacuate a single object and update the to-space
 --   to point to the word _after_ the new copy.
 ddcEvacuateObject
-        (aaBackTop      : Addr#)        -- Address of the back heap top pointer.
-        (aObj           : Addr#)        -- Address of the object to evacuate.
-                        : Addr#         -- Address that the object has been evacuated to.
+        (aaBackTop      : Addr#)    -- ^ Address of the back heap top pointer.
+        (aObj           : Addr#)    -- ^ Address of the object to evacuate.
+                        : Addr#     -- ^ Address that the object has been evacuated to.
  = do
         format  = ddcFormatOfObject aObj
 
@@ -285,9 +228,9 @@ ddcEvacuateObject
 
 -- | Copy a single object from the from-space to the to-space.
 ddcEvacuateCopy 
-        (aaBackTop      : Addr#)        -- Address of the back heap top pointer.
-        (aObj           : Addr#)        -- Address of the object to copy.
-                        : Addr#         -- Address that the object has been copied to.
+        (aaBackTop      : Addr#)    -- ^ Address of the back heap top pointer.
+        (aObj           : Addr#)    -- ^ Address of the object to copy.
+                        : Addr#     -- ^ Address that the object has been copied to.
 
  = do   -- Get the size of the whole object.
         size    = ddcSizeOfObject aObj
@@ -319,8 +262,8 @@ ddcEvacuateCopy
 -- | Scan all the objects in the to space.
 --     This copies in the data that is reachable from the object already there.
 ddcScanHeap
-        (aaToSpaceTop   : Addr#)        -- ^ Address of the pointer to the top of the to-space.
-        (aObjScan       : Addr#)        -- ^ Address of the next object we need to scan.
+        (aaToSpaceTop   : Addr#)    -- ^ Address of the pointer to the top of the to-space.
+        (aObjScan       : Addr#)    -- ^ Address of the next object we need to scan.
                         : Unit
  = case ge# aObjScan (read# aaToSpaceTop 0#) of
     -- When the next object pointer is past the top of the to-space
@@ -344,8 +287,8 @@ ddcScanHeap
 --   This examines the tag of the object to determine what sort it is,
 --   then calls the scan function specific to that object.
 ddcScanObject
-        (aaToSpaceTop   : Addr#)        -- ^ Address of the pointer to the top of the to-space.
-        (aObjScan       : Addr#)        -- ^ Address of the next object we need to scan.
+        (aaToSpaceTop   : Addr#)    -- ^ Address of the pointer to the top of the to-space.
+        (aObjScan       : Addr#)    -- ^ Address of the next object we need to scan.
                         : Unit
   = case ddcFormatOfObject aObjScan of
           0# -> fail#   -- unknown object.
@@ -355,18 +298,17 @@ ddcScanObject
           3# -> ddcScanBoxed aaToSpaceTop aObjScan
 
           4# -> ()      -- raw data contains no pointers to scan.
-          5# -> fail#   -- ddcScanMixed aaToSpaceTop aObjScan           TODO: implement mixed
+          5# -> fail#   -- we don't allocated mixed objects yet.
           6# -> ()      -- small raw data contains no pointers to scan.
-       -- 7# -> ???     -- ISSUE #341: SuspIndir not implemented
           _  -> fail#   -- invalid format
 
 
 ---------------------------------------------------------------------------------------------------
 -- | Scan a thunk.
 ddcScanThunk
-        (aaToSpaceTop   : Addr#)        -- ^ Address of the pointer to the top of the to-space.
-        (aObjScan       : Addr#)        -- ^ Address of the thunk being scanned.
-                        : Unit          -- ^ Number of thunk arguments we still need to evacuate.
+        (aaToSpaceTop   : Addr#)    -- ^ Address of the pointer to the top of the to-space.
+        (aObjScan       : Addr#)    -- ^ Address of the thunk being scanned.
+                        : Unit      -- ^ Number of thunk arguments we still need to evacuate.
  =      ddcScanThunk_arg 
                 aaToSpaceTop 
                 aObjScan 
@@ -376,8 +318,8 @@ ddcScanThunk
 
 -- | Scan a thunk argument.
 ddcScanThunk_arg
-        (aaToSpaceTop   : Addr#)        -- ^ Address of the pointer to the top of the to-space.
-        (aObjScan       : Addr#)        -- ^ Address of the thunk being scanned.
+        (aaToSpaceTop   : Addr#)    -- ^ Address of the pointer to the top of the to-space.
+        (aObjScan       : Addr#)    -- ^ Address of the thunk being scanned.
         (iArg nArgs     : Nat#)
                         : Unit
  = case ge# iArg nArgs of
@@ -407,8 +349,8 @@ ddcScanThunk_arg
 ---------------------------------------------------------------------------------------------------
 -- | Scan a boxed data object.
 ddcScanBoxed
-        (aaToSpaceTop   : Addr#)        -- ^ Address of the pointer to the top of the to-space.
-        (aObjScan       : Addr#)        -- ^ Address of the boxed object being scanned.
+        (aaToSpaceTop   : Addr#)    -- ^ Address of the pointer to the top of the to-space.
+        (aObjScan       : Addr#)    -- ^ Address of the boxed object being scanned.
                         : Unit
  = do   ddcScanBoxed_arg 
                 aaToSpaceTop
@@ -419,8 +361,8 @@ ddcScanBoxed
 
 -- | Scan an argument of a boxed object.
 ddcScanBoxed_arg
-        (aaToSpaceTop   : Addr#)        -- ^ Address of the pointer to the top of the to-space.
-        (aObjScan       : Addr#)        -- ^ Address of the boxed object being scanned.
+        (aaToSpaceTop   : Addr#)    -- ^ Address of the pointer to the top of the to-space.
+        (aObjScan       : Addr#)    -- ^ Address of the boxed object being scanned.
         (iArg           : Nat#)
         (nArgs          : Nat#)
                         : Unit
@@ -477,25 +419,3 @@ ddcScanMixed_arg
             ddcScanMixed_arg pObj argIx ppBackTopA
 -}
 
----------------------------------------------------------------------------------------------------
--- | Print an Addr# field to stdout.
-fieldAddr (name: TextLit#) (val: Addr#): Void#
- = do   primPutString name
-        primPutString (primShowAddr val)
-        primPutString ";\n"#
-
-
--- | Print a Nat# field to stdout.
-fieldNat (name: TextLit#) (val: Nat#): Void#
- = do   primPutString name
-        primPutString (primShowNat val)
-        primPutString ";\n"#
-
-
--- | Print a Word32# field to stdout.
-fieldWord32 (name: TextLit#) (val: Word32#): Void#
- = do   primPutString name
-        primPutString (primShowWord32 val)
-        primPutString ";\n"#
-
-            

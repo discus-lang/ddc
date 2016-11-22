@@ -3,24 +3,25 @@
 module Alloc
 
 export value
-  ddcAllocCollect       :  Nat# -- ^ How much space must be left after collection.
-                        -> Unit
+  -- | Garbage Collect the current heap and possibly resize it so that
+  --   we have at least the given amount of free space available 
+  --   for allocation.
+  ddcAllocCollect       
+        :  Nat# -- ^ How much space must be left after collection.
+        -> Unit
 
 import foreign c value
-  ddcCollectHeap        :  Addr#
-                        -> Addr# -> Addr# -> Addr#
-                        -> Addr# -> Addr# -> Addr#
-                        -> Unit
+  ddcCollectHeap        
+        :  Addr#
+        -> Addr# -> Addr# -> Addr#
+        -> Addr# -> Addr# -> Addr#
+        -> Unit
 
-  ddcLlvmRootGetStart   : Nat#  -> Addr#
+  ddcLlvmRootGetStart   
+         : Nat#  -> Addr#
 
-  free                  : Addr# -> Void#
-  malloc                : Nat#  -> Addr#
-
-  primFailString        : TextLit# -> Void# 
-  primPutString         : TextLit# -> Void# 
-  primShowNat           : Nat#     -> TextLit#
-
+  free   : Addr# -> Void#
+  malloc : Nat#  -> Addr#
 
 with letrec
 
@@ -58,8 +59,7 @@ ddcAllocCollect (byteCount : Nat#) : Unit
           ->    ddcAllocResize  byteCount
 
          False# 
-          -> do -- primPutString "* GC completed\n"#
-                ()
+          ->    ()
 
 
 -- | Given that we've just performed a GC cycle and don't have enough space
@@ -70,8 +70,6 @@ ddcAllocResize
                                 -- we've already got.
         : Unit
  = do   
---      primPutString "* ddcAllocResize start\n"#
-
         aCurBase        = read# [Addr#] heapBase# 0#
         aCurTop         = read# [Addr#] heapTop#  0#
         aCurMax         = read# [Addr#] heapMax#  0#
@@ -121,8 +119,4 @@ ddcAllocResize
         write# heapBackTop#  0# aHeapBackBase2_new
         write# heapBackMax#  0# (plusAddr# aHeapBackBase2_new (sub# newSize 1#))
 
---      primPutString "* ddcAllocResize done\n"#
-
         ()
-
-
