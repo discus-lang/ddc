@@ -1,0 +1,31 @@
+
+module Main 
+import Data.Ref
+import System.IO.Console
+
+import foreign c value
+ ddcPerformGC : Unit -> Unit
+ ddcTraceObj  : [a: Data]. Bool# -> Bool# -> a -> a
+
+where
+
+-- Allocate a simple object and perform a single GC cycle.
+--   We don't have an 'expected output' file for this because
+--   the object pointers will be different on different platforms
+--   and even between different runs.
+main (_ : Unit)
+ = private r with { Alloc r; Read r; Write r } in
+   do   
+        -- Allocate a reference to a a small object.
+        writel "* Before GC"
+        ref     = allocRef [r] 93
+        ddcTraceObj True True ref
+
+        writel "* Doing GC"
+        ddcPerformGC ()
+
+        writel "* After GC"
+        ddcTraceObj True True ref
+
+        writel "* Done"
+        ()

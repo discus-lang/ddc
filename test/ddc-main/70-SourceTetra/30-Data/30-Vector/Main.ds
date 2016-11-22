@@ -1,0 +1,20 @@
+
+module Main
+import Data.Numeric.Nat
+import Data.Text
+import System.IO.Console
+where
+
+
+-- Check that the vector primitives work for single byte elements.
+-- At one stage the 'length' field was being written with the wrong
+-- word size.
+main ()
+ = private r with {Read r; Write r; Alloc r} in
+   do
+        vec     = vectorAlloc# [r] [Word8#] 4
+        vectorWrite# vec 3 27w8
+        vectorWrite# vec 0 0w8
+        writel  (showNat (promote# (vectorRead#   vec 3)))
+        writel  (showNat (promote# (vectorLength# vec)))
+
