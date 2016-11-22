@@ -88,6 +88,8 @@ stepWorld
 
 -- | Compute a new world by applying the given worker function
 --   to every available location.
+--
+--   ISSUE #389: Fix parsing of local recursive functions in 'do' syntax.
 mapWorld 
         (f:     Nat -> Nat -> S (Read r) Cell) 
         (world: World r)
