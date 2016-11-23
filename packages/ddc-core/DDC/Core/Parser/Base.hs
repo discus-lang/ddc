@@ -7,7 +7,8 @@ module DDC.Core.Parser.Base
         , pCon,         pConSP
         , pLit,         pLitSP
         , pIndex,       pIndexSP
-        , pVar,         pVarSP,         pVarNamedSP
+        , pVar,         pVarSP
+        , pVarName,     pVarNamedSP
         , pKey,         pSym
         , pTok,         pTokSP
         , pTokAs,       pTokAsSP
@@ -21,6 +22,8 @@ import DDC.Core.Lexer.Tokens
 import DDC.Control.Parser               ((<?>), SourcePos)
 import Data.Text                        (Text)
 import qualified DDC.Control.Parser     as P
+import qualified Data.Text              as Text
+
 
 -- | A parser of core language tokens.
 type Parser n a
@@ -114,6 +117,14 @@ pVarNamedSP str
         = fmap snd (P.pTokMaybeSP f <?> "a variable")
  where  f (KN (KVar n)) | n == str = Just n
         f _                        = Nothing
+
+
+-- | Parse a variable-like name as a flat string.
+pVarName   :: Pretty n => Parser n Text
+pVarName  =  P.pTokMaybe f
+         <?> "a name"
+ where  f (KN (KVar n))         = Just $ (Text.pack $ renderPlain $ ppr n)
+        f _                     = Nothing
 
 
 -- | Parse a deBruijn index.

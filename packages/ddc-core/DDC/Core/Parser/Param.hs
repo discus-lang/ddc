@@ -11,6 +11,7 @@ import DDC.Core.Parser.Type
 import DDC.Core.Parser.Context
 import DDC.Core.Parser.Base
 import DDC.Core.Lexer.Tokens
+import DDC.Data.Pretty
 import qualified DDC.Type.Exp.Simple    as T
 import qualified DDC.Control.Parser     as P
 
@@ -74,7 +75,7 @@ funTypeOfParams c (p:ps) tBody
 -- | Parse a function parameter specification,
 --   with an optional type (or kind) annotation.
 pBindParamSpec
-        :: Ord n
+        :: (Ord n, Pretty n)
         => Context n -> Parser n [ParamSpec n]
 
 pBindParamSpec c
@@ -97,7 +98,7 @@ pBindParamSpec c
 --   or  (BIND : TYPE) { EFFECT | CLOSURE }
 --
 pBindParamSpecAnnot 
-        :: Ord n 
+        :: (Ord n, Pretty n)
         => Context n -> Parser n [ParamSpec n]
 
 pBindParamSpecAnnot c

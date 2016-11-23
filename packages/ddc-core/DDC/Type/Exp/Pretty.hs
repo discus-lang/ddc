@@ -2,7 +2,7 @@
 module DDC.Type.Exp.Pretty where
 import DDC.Type.Exp.TyCon
 import DDC.Data.Pretty
-
+import qualified Data.Text      as Text
 
 instance Pretty SoCon where
  ppr sc 
@@ -41,6 +41,12 @@ instance Pretty TcCon where
         TcConUnit       -> text "Unit"
         TcConFun        -> text "(->)"
         TcConSusp       -> text "S"
+
+        TcConRecord nn  
+         -> text "{" 
+         <> (hcat $ punctuate (text ",") $ map (text . Text.unpack) nn) 
+         <> text "}#"
+
         TcConRead       -> text "Read"
         TcConHeadRead   -> text "HeadRead"
         TcConDeepRead   -> text "DeepRead"

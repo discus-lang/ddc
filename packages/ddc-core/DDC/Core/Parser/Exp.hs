@@ -16,6 +16,7 @@ import DDC.Core.Parser.Type
 import DDC.Core.Parser.Context
 import DDC.Core.Parser.Base
 import DDC.Core.Lexer.Tokens
+import DDC.Data.Pretty
 import DDC.Control.Parser               ((<?>), SourcePos)
 import qualified DDC.Control.Parser     as P
 import qualified DDC.Type.Exp.Simple    as T
@@ -24,7 +25,8 @@ import Control.Monad.Except
 
 -- Exp --------------------------------------------------------------------------------------------
 -- | Parse a core language expression.
-pExp    :: Ord n => Context n -> Parser n (Exp SourcePos n)
+pExp    :: (Ord n, Pretty n)
+        => Context n -> Parser n (Exp SourcePos n)
 pExp c
  = P.choice
         -- Level-0 lambda abstractions
@@ -110,7 +112,8 @@ pExp c
 
 
 -- | Parse a function application.
-pExpApp :: Ord n => Context n -> Parser n (Exp SourcePos n)
+pExpApp :: (Ord n, Pretty n)
+        => Context n -> Parser n (Exp SourcePos n)
 pExpApp c
   = do  (x1, _)        <- pExpAtomSP c
         
@@ -124,7 +127,8 @@ pExpApp c
 
 
 -- Comp, Witness or Spec arguments.
-pArgSPs :: Ord n => Context n -> Parser n [(Exp SourcePos n, SourcePos)]
+pArgSPs :: (Ord n, Pretty n)
+        => Context n -> Parser n [(Exp SourcePos n, SourcePos)]
 pArgSPs c
  = P.choice
         -- [TYPE]
@@ -159,7 +163,8 @@ pArgSPs c
 
 
 -- | Parse a variable, constructor or parenthesised expression.
-pExpAtom   :: Ord n => Context n -> Parser n (Exp SourcePos n)
+pExpAtom :: (Ord n, Pretty n)
+         => Context n -> Parser n (Exp SourcePos n)
 pExpAtom c
  = do   (x, _) <- pExpAtomSP c
         return x
@@ -168,7 +173,7 @@ pExpAtom c
 -- | Parse a variable, constructor or parenthesised expression,
 --   also returning source position.
 pExpAtomSP 
-        :: Ord n 
+        :: (Ord n, Pretty n)
         => Context n 
         -> Parser n (Exp SourcePos n, SourcePos)
 
@@ -183,6 +188,13 @@ pExpAtomSP c
         -- The unit data constructor.       
  , do   sp        <- pTokSP (KBuiltin BDaConUnit)
         return  (XCon sp dcUnit, sp)
+
+        -- Record data constructor.
+ , do   sp      <- pSym SBraceBra
+        ns      <- P.sepBy pVarName (pSym SComma)
+        pSym SBraceKet
+        pSym SHash
+        return  (XCon sp (DaConRecord ns), sp)
 
         -- Named algebraic constructors.
  , do   (con, sp) <- pConSP
@@ -211,7 +223,8 @@ pExpAtomSP c
 
 -- Alt --------------------------------------------------------------------------------------------
 -- Case alternatives.
-pAlt    :: Ord n => Context n -> Parser n (Alt SourcePos n)
+pAlt    :: (Ord n, Pretty n)
+        => Context n -> Parser n (Alt SourcePos n)
 pAlt c
  = do   p       <- pPat c
         pSym    SArrowDashRight
@@ -220,7 +233,7 @@ pAlt c
 
 
 -- Patterns.
-pPat    :: Ord n 
+pPat    :: (Ord n, Pretty n)
         => Context n -> Parser n (Pat n)
 pPat c
  = P.choice
@@ -249,8 +262,7 @@ pPat c
 
 -- Binds in patterns can have no type annotation,
 -- or can have an annotation if the whole thing is in parens.
-pBinds
-        :: Ord n 
+pBinds  :: (Ord n, Pretty n)
         => Context n -> Parser n [Bind n]
 pBinds c
  = P.choice
@@ -271,7 +283,7 @@ pBinds c
 -- Bindings ---------------------------------------------------------------------------------------
 -- | Parse some `Lets`, also returning the source position where they
 --   started.
-pLetsSP :: Ord n 
+pLetsSP :: (Ord n, Pretty n)
         => Context n -> Parser n (Lets SourcePos n, SourcePos)
 pLetsSP c
  = P.choice
@@ -334,7 +346,8 @@ pLetsSP c
     ]
     
     
-pLetWits :: Ord n 
+pLetWits 
+        :: (Ord n, Pretty n)
         => Context n
         -> [Bind n] -> Maybe (Type n) 
         -> Parser n (Lets SourcePos n)
@@ -363,7 +376,7 @@ pLetWits c bs mParent
 
 -- | A binding for let expression.
 pLetBinding 
-        :: Ord n 
+        :: (Ord n, Pretty n)
         => Context n
         -> Parser n ( Bind n
                     , Exp SourcePos n)
@@ -431,7 +444,8 @@ data Stmt n
 
 
 -- | Parse a single statement.
-pStmt :: Ord n => Context n -> Parser n (Stmt n)
+pStmt   :: (Ord n, Pretty n)
+        => Context n -> Parser n (Stmt n)
 pStmt c
  = P.choice
  [ -- BINDER = EXP ;
@@ -465,7 +479,8 @@ pStmt c
 
 
 -- | Parse some statements.
-pStmts :: Ord n => Context n -> Parser n (Exp SourcePos n)
+pStmts  :: (Ord n, Pretty n)
+        => Context n -> Parser n (Exp SourcePos n)
 pStmts c
  = do   stmts   <- P.sepEndBy1 (pStmt c) (pSym SSemiColon)
         case makeStmts stmts of

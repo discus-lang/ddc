@@ -14,12 +14,13 @@ import DDC.Core.Parser.Base
 import DDC.Core.Lexer.Tokens   
 import DDC.Type.Exp.Simple
 import DDC.Control.Parser               ((<?>))
+import DDC.Data.Pretty
 import qualified DDC.Control.Parser     as P
 import qualified DDC.Type.Sum           as TS
 
 
 -- | Parse a type.
-pType   :: Ord n 
+pType   :: (Ord n, Pretty n)
         => Context n -> Parser n (Type n)
 
 pType c  
@@ -29,7 +30,7 @@ pType c
 
 --  | Parse a type sum.
 pTypeSum 
-        :: Ord n 
+        :: (Ord n, Pretty n)
         => Context n -> Parser n (Type n)
 pTypeSum c
  = do   t1      <- pTypeForall c
@@ -45,7 +46,8 @@ pTypeSum c
 
 
 -- | Parse a binder.
-pBinder :: Ord n => Parser n (Binder n)
+pBinder :: (Ord n, Pretty n)
+        => Parser n (Binder n)
 pBinder
  = P.choice
         -- Named binders.
@@ -64,7 +66,7 @@ pBinder
 
 -- | Parse a quantified type.
 pTypeForall 
-        :: Ord n 
+        :: (Ord n, Pretty n)
         => Context n -> Parser n (Type n)
 pTypeForall c
  = P.choice
@@ -101,7 +103,7 @@ pTypeForall c
 
 -- | Parse a function type.
 pTypeFun 
-        :: Ord n 
+        :: (Ord n, Pretty n)
         => Context n -> Parser n (Type n)
 
 pTypeFun c
@@ -129,7 +131,7 @@ pTypeFun c
 
 -- | Parse a type application.
 pTypeApp 
-        :: Ord n 
+        :: (Ord n, Pretty n)
         => Context n -> Parser n (Type n)
 pTypeApp c
  = do   (t:ts)  <- P.many1 (pTypeAtom c)
@@ -139,7 +141,7 @@ pTypeApp c
 
 -- | Parse a variable, constructor or parenthesised type.
 pTypeAtom 
-        :: Ord n 
+        :: (Ord n, Pretty n)
         => Context n -> Parser n (Type n)
 pTypeAtom c
  = P.choice
@@ -161,6 +163,13 @@ pTypeAtom c
                 t       <- pTypeSum c
                 pSym SRoundKet
                 return t 
+
+        -- Record type constructor.
+        , do    pSym SBraceBra
+                ns      <- P.sepBy pVarName (pSym SComma)
+                pSym SBraceKet
+                pSym SHash
+                return  $ TCon (TyConSpec (TcConRecord ns))
 
         -- Named type constructors
         , do    so      <- pSoCon

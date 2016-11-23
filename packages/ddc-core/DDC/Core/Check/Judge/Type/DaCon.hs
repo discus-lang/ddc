@@ -22,6 +22,10 @@ checkDaConM _config ctx xx a dc
     DaConUnit
      -> return tUnit
 
+    DaConRecord{}
+     -> do let Just t   = takeTypeOfDaCon dc
+           return t
+
     -- Primitive data constructors need to have a corresponding data type,
     -- but there may be too many constructors to list, like with Int literals.
     --

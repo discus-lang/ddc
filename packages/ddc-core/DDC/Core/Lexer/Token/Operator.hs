@@ -86,7 +86,7 @@ isOpName str
 -- | Character can start an operator.
 isOpStart :: Char -> Bool
 isOpStart c
-        =  c == '~'     || c == '!'                     || c == '#'     
+        =  c == '~'     || c == '!'
         || c == '$'     || c == '%'                     || c == '&'     
         || c == '*'     || c == '-'     || c == '+'     || c == '='
         || c == ':'                     || c == '/'     || c == '|'

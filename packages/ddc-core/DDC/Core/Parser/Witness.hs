@@ -9,6 +9,7 @@ import DDC.Core.Parser.Context
 import DDC.Core.Parser.Base
 import DDC.Core.Lexer.Tokens
 import DDC.Core.Exp
+import DDC.Data.Pretty
 import DDC.Control.Parser               ((<?>), SourcePos)
 import qualified DDC.Control.Parser     as P
 import qualified DDC.Type.Exp.Simple    as T
@@ -17,14 +18,14 @@ import Control.Monad
 
 -- | Parse a witness expression.
 pWitness 
-        :: Ord n  
+        :: (Ord n, Pretty n)
         => Context n -> Parser n (Witness SourcePos n)
 pWitness c = pWitnessJoin c
 
 
 -- | Parse a witness join.
 pWitnessJoin 
-        :: Ord n 
+        :: (Ord n, Pretty n)
         => Context n -> Parser n (Witness SourcePos n)
 pWitnessJoin c
    -- WITNESS  or  WITNESS & WITNESS
@@ -35,7 +36,7 @@ pWitnessJoin c
 
 -- | Parse a witness application.
 pWitnessApp 
-        :: Ord n 
+        :: (Ord n, Pretty n)
         => Context n -> Parser n (Witness SourcePos n)
 
 pWitnessApp c
@@ -50,7 +51,7 @@ pWitnessApp c
 
 -- | Parse a witness argument.
 pWitnessArgSP 
-        :: Ord n 
+        :: (Ord n, Pretty n)
         => Context n -> Parser n (Witness SourcePos n, SourcePos)
 
 pWitnessArgSP c
@@ -68,7 +69,7 @@ pWitnessArgSP c
 
 -- | Parse a variable, constructor or parenthesised witness.
 pWitnessAtom   
-        :: Ord n 
+        :: (Ord n, Pretty n)
         => Context n -> Parser n (Witness SourcePos n)
 
 pWitnessAtom c   
@@ -78,7 +79,7 @@ pWitnessAtom c
 -- | Parse a variable, constructor or parenthesised witness,
 --   also returning source position.
 pWitnessAtomSP 
-        :: Ord n 
+        :: (Ord n, Pretty n)
         => Context n -> Parser n (Witness SourcePos n, SourcePos)
 
 pWitnessAtomSP c

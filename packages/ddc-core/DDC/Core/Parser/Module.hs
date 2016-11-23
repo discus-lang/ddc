@@ -126,7 +126,8 @@ pHeadDecl ctx
 
 
 -- | Parse a type equation.
-pTypeDef :: Ord n => Context n -> Parser n (n, Kind n, Type n)
+pTypeDef :: (Ord n, Pretty n)
+         => Context n -> Parser n (n, Kind n, Type n)
 pTypeDef c
  = do   pKey    EType
         n       <- pName

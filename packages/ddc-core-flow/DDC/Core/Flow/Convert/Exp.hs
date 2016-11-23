@@ -274,10 +274,12 @@ convertDaCon
         -> ConvertM (DaCon T.Name (Type T.Name))
 convertDaCon dd
  = case dd of
-   DaConUnit
-    -> return DaConUnit
+   DaConUnit      -> return   DaConUnit
+   DaConRecord ns -> return $ DaConRecord ns
+
    DaConPrim n t
     -> DaConPrim  <$> convertName n <*> convertType t
+
    DaConBound n
     -> DaConBound <$> convertName n
 

@@ -38,6 +38,7 @@ data Symbol
         | SHat                  -- ^ Like '^'
         | SDot                  -- ^ Like '.'
         | SBar                  -- ^ Like '|'
+        | SHash                 -- ^ Like '#'
         | SComma                -- ^ Like ','
         | SEquals               -- ^ Like '='
         | SLambda               -- ^ Like 'λ'
@@ -79,6 +80,7 @@ saySymbol pp
         SHat                    -> "^"
         SDot                    -> "."
         SBar                    -> "|"
+        SHash                   -> "#"
         SComma                  -> ","
         SEquals                 -> "="
         SLambda                 -> "λ"
@@ -108,6 +110,7 @@ matchSymbol2 0 c
         '-'     -> True
         '<'     -> True
         '='     -> True
+        '#'     -> True
         _       -> False
 
 matchSymbol2 1 c
@@ -157,6 +160,7 @@ acceptSymbol1 c
         '^'     -> Just SHat
         '.'     -> Just SDot
         '|'     -> Just SBar
+        '#'     -> Just SHash
         ','     -> Just SComma
         '='     -> Just SEquals
         ';'     -> Just SSemiColon
@@ -164,3 +168,4 @@ acceptSymbol1 c
         '→'     -> Just SArrowDashRight
         '←'     -> Just SArrowDashLeft
         _       -> Nothing
+

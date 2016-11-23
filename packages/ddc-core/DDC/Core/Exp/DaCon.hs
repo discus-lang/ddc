@@ -9,12 +9,17 @@ module DDC.Core.Exp.DaCon
 where
 import DDC.Type.Exp.Simple
 import Control.DeepSeq
+import Data.Text                (Text)
 
 
 -- | Data constructors.
 data DaCon n t
         -- | Baked in unit data constructor.
         = DaConUnit
+
+        -- | Baked in record data constructor,
+        --   with the given field names.
+        | DaConRecord   [Text]
 
         -- | Primitive data constructor used for literals and baked-in
         --   constructors. 
@@ -44,7 +49,8 @@ instance (NFData n, NFData t) => NFData (DaCon n t) where
  rnf !dc
   = case dc of
         DaConUnit       -> ()
-        DaConPrim  n t  -> rnf n `seq` rnf t
+        DaConRecord ns  -> rnf ns 
+        DaConPrim  n t  -> rnf n  `seq` rnf t
         DaConBound n    -> rnf n
 
 
@@ -54,6 +60,7 @@ takeNameOfDaCon :: DaCon n t -> Maybe n
 takeNameOfDaCon dc
  = case dc of
         DaConUnit       -> Nothing
+        DaConRecord{}   -> Nothing
         DaConPrim{}     -> Just $ daConName dc
         DaConBound{}    -> Just $ daConName dc
 
@@ -64,6 +71,12 @@ takeTypeOfDaCon :: DaCon n (Type n) -> Maybe (Type n)
 takeTypeOfDaCon dc  
  = case dc of
         DaConUnit       -> Just $ tUnit
+
+        DaConRecord ns  
+         -> Just $  tForalls (map (const kData) ns)
+                 $  \tsArg -> tFunOfParamResult tsArg
+                           $  tApps (TCon (TyConSpec (TcConRecord ns))) tsArg
+
         DaConPrim{}     -> Just $ daConType dc
         DaConBound{}    -> Nothing
 

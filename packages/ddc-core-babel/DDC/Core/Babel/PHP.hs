@@ -233,8 +233,13 @@ phpOfAlts scrut alts ctx m
 
   cond DaConUnit
    = text "true"
+
+  cond DaConRecord{}
+   = error "ddc-core-babel: records not implemented"
+
   cond (DaConPrim n _t)
    = var_name_t scrut <> text " == " <> (sanitise_prim n)
+
   cond (DaConBound n)
    = obj_field_tt scrut "tag" <> text " == " <> string_of n
 

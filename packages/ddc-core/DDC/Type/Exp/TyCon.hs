@@ -1,6 +1,6 @@
 
 module DDC.Type.Exp.TyCon where
-
+import Data.Text (Text)
 
 -- | Sort constructor.
 data SoCon
@@ -76,6 +76,10 @@ data TcCon
 
         -- | A suspended computation.
         | TcConSusp             -- 'S     :: Effect ~> Data ~> Data'
+
+        -- | A record type constructor,
+        --   with the given field names.
+        | TcConRecord [Text]    -- '{n1 .. nn} :: Data ~> ... Data ~> Data
 
         -- Effect type constructors -------------
         -- | Read of some region.

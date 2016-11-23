@@ -87,8 +87,8 @@ convertDaCon
 
 convertDaCon ctx dc
  = case dc of
-        DaConUnit       
-         -> return DaConUnit
+        DaConUnit       -> return $ DaConUnit
+        DaConRecord ns  -> return $ DaConRecord ns
 
         DaConPrim n t
          -> do  n'      <- convertDaConNameM dc n

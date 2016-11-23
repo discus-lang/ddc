@@ -144,8 +144,8 @@ instance SpreadX (Exp a) where
 ---------------------------------------------------------------------------------------------------
 spreadDaCon _kenv tenv dc
   = case dc of
-        DaConUnit       
-         -> dc
+        DaConUnit       -> dc
+        DaConRecord{}   -> dc
 
         DaConPrim n t
          -> let u | Env.isPrim tenv n   = UPrim n t

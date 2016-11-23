@@ -1,0 +1,23 @@
+ok
+
+-- Check kinds of primitive record type constructors.
+{}# :: Data
+{x}# :: Data ~> Data
+{x,y}# :: Data ~> Data ~> Data
+{x,y,z}# :: Data ~> Data ~> Data ~> Data
+{x,x,x}# :: Data ~> Data ~> Data ~> Data
+
+{x,y,z}# Nat# :: Data ~> Data ~> Data
+{x,y,z}# Nat# Bool# :: Data ~> Data
+
+
+-- Check types of primitive record data constructors.
+{}# :: {}#
+{x}# :: [^: Data].^0 -> {x}# ^0
+{x,y}# :: [^ ^: Data].^1 -> ^0 -> {x,y}# ^1 ^0
+{x,y,z}# :: [^ ^ ^: Data].^2 -> ^1 -> ^0 -> {x,y,z}# ^2 ^1 ^0
+{x,x,x}# :: [^ ^ ^: Data].^2 -> ^1 -> ^0 -> {x,x,x}# ^2 ^1 ^0
+
+{x}# [Nat#] 3# :: {x}# Nat#
+{x,y}# [Nat#] [Bool#] 3# True# :: {x,y}# Nat# Bool#
+

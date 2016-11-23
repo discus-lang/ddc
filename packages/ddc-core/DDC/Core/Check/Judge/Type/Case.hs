@@ -412,8 +412,15 @@ ctorTypeOfPat
 
 ctorTypeOfPat _table ctx a (PData dc _)
  = case dc of
-        DaConUnit   -> return $ Just $ tUnit
-        DaConPrim{} -> return $ Just $ daConType dc
+        DaConUnit       
+         -> return $ Just $ tUnit
+
+        DaConRecord{} 
+         -> do  let Just t = takeTypeOfDaCon dc
+                return (Just t)
+
+        DaConPrim{}     
+         -> return $ Just $ daConType dc
 
         DaConBound n
          -- Types of algebraic data ctors should be in the defs table.

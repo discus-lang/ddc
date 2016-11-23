@@ -1,0 +1,23 @@
+:set lang Tetra
+
+-- Check kinds of primitive record type constructors.
+:kind {}#
+:kind {x}#
+:kind {x,y}#
+:kind {x,y,z}#
+:kind {x,x,x}#
+
+:kind {x,y,z}# Nat#
+:kind {x,y,z}# Nat# Bool#
+
+
+-- Check types of primitive record data constructors.
+:type {}#
+:type {x}#
+:type {x,y}#
+:type {x,y,z}#
+:type {x,x,x}#
+
+:type {x}#   [Nat#] 3#
+:type {x,y}# [Nat#] [Bool#] 3# True#
+

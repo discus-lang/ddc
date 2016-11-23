@@ -411,8 +411,7 @@ toCorePasB pp
           -> error $ "ddc-source-tetra: cannot convert at pattern "     ++ Text.ppShow pp
 
          S.PVar b
-          -> do b'      <- toCoreB b
-                return  b'
+          -> toCoreB b
 
          S.PData{}
           -> error $ "ddc-source-tetra: cannot convert nested pattern " ++ Text.ppShow pp
@@ -426,6 +425,9 @@ toCoreDC dc
  = case dc of
         S.DaConUnit
          -> pure $ C.DaConUnit
+
+        S.DaConRecord ns
+         -> pure $ C.DaConRecord ns
 
         S.DaConPrim  n t 
          -> C.DaConPrim  <$> (pure $ toCoreDaConBound n) <*> toCoreT UniverseSpec t

@@ -16,10 +16,10 @@ import qualified Data.Char      as Char
 -------------------------------------------------------------------------------
 -- | Builtin name tokens.
 data Builtin
-        = BSoCon        SoCon
-        | BKiCon        KiCon
-        | BTwCon        TwCon
-        | BTcCon        TcCon
+        = BSoCon SoCon
+        | BKiCon KiCon
+        | BTwCon TwCon
+        | BTcCon TcCon
 
         | BPure
         | BEmpty

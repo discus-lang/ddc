@@ -58,6 +58,7 @@ kindOfTcCon tc
         TcConUnit       -> kData
         TcConFun        -> kData    `kFun` kData `kFun` kData
         TcConSusp       -> kEffect  `kFun` kData `kFun` kData
+        TcConRecord ns  -> map (const kData) ns  `kFuns` kData
         TcConRead       -> kRegion  `kFun` kEffect
         TcConHeadRead   -> kData    `kFun` kEffect
         TcConDeepRead   -> kData    `kFun` kEffect

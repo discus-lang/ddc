@@ -132,7 +132,12 @@ checkDaConType config ctx a dc
         case dc of
          DaConUnit   -> return tUnit
 
-         DaConPrim{} -> return $ daConType dc
+         DaConRecord{}
+          -> do let Just t   = takeTypeOfDaCon dc
+                return t
+
+         DaConPrim{} 
+          -> return $ daConType dc
 
          DaConBound n
           -- Types of algebraic data ctors should be in the defs table.

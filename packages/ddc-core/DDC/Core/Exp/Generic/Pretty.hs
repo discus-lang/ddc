@@ -7,6 +7,7 @@ import DDC.Core.Exp.DaCon
 import DDC.Type.Exp.Simple      ()
 import DDC.Type.Exp.Simple.Exp
 import DDC.Data.Pretty
+import qualified Data.Text      as Text
 import Prelude                  hiding ((<$>))
 
 
@@ -251,6 +252,12 @@ instance PrettyLanguage l => Pretty (DaCon l (Type l)) where
  ppr dc
   = case dc of
         DaConUnit       -> text "()"
+
+        DaConRecord ns
+         -> text "{" 
+         <> (hcat $ punctuate (text ",") $ map (text . Text.unpack) ns) 
+         <> text "}"
+
         DaConPrim  n _  -> ppr n
         DaConBound n    -> ppr n
 

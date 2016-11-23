@@ -9,11 +9,14 @@ import DDC.Core.Parser.Context
 import DDC.Core.Parser.Base
 import DDC.Core.Lexer.Tokens
 import DDC.Type.DataDef
+import DDC.Data.Pretty
 import Control.Monad
 import qualified DDC.Control.Parser     as P
 
 
-pDataDef :: Ord n => Context n -> Parser n (DataDef n)
+pDataDef 
+        :: (Ord n, Pretty n)
+        => Context n -> Parser n (DataDef n)
 pDataDef c
  = do   pTokSP (KKeyword EData)
         nData   <- pName 
@@ -46,7 +49,9 @@ pDataDef c
 
 
 -- | Parse a type parameter to a data type.
-pDataParam :: Ord n => Context n -> Parser n [Bind n]
+pDataParam 
+        :: (Ord n, Pretty n)
+        => Context n -> Parser n [Bind n]
 pDataParam c 
  = do   pSym SRoundBra
         ns      <- P.many1 pName
@@ -58,7 +63,7 @@ pDataParam c
 
 -- | Parse a data constructor declaration.
 pDataCtor 
-        :: Ord n 
+        :: (Ord n, Pretty n)
         => Context n
         -> n                    -- ^ Name of data type constructor.
         -> [Bind n]             -- ^ Type parameters of data type constructor.
