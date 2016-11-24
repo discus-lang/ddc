@@ -179,8 +179,24 @@ pExpAtomSP
 
 pExpAtomSP c
  = P.choice
-        -- (EXP2)
- [ do   sp      <- pSym SRoundBra
+        
+ [      -- Record data constructor.
+   P.try $ do
+        sp      <- pSym SRoundBra
+        ns      <- P.sepBy pVarName (pSym SComma)
+        pSym SRoundKet
+        pSym SHash
+        return  (XCon sp (DaConRecord ns), sp)
+
+        -- The syntax for the nullary record type constructor '()#' overlaps
+        -- with that of the unit data construtor '()', so try the former first.
+ , P.try $ do
+        sp      <- pTokSP (KBuiltin BDaConUnit)
+        pSym SHash
+        return  (XCon sp (DaConRecord []), sp)
+
+      -- (EXP2)
+ , do   sp      <- pSym SRoundBra
         t       <- pExp c
         pSym    SRoundKet
         return  (t, sp)
@@ -189,12 +205,6 @@ pExpAtomSP c
  , do   sp        <- pTokSP (KBuiltin BDaConUnit)
         return  (XCon sp dcUnit, sp)
 
-        -- Record data constructor.
- , do   sp      <- pSym SBraceBra
-        ns      <- P.sepBy pVarName (pSym SComma)
-        pSym SBraceKet
-        pSym SHash
-        return  (XCon sp (DaConRecord ns), sp)
 
         -- Named algebraic constructors.
  , do   (con, sp) <- pConSP

@@ -25,8 +25,8 @@ While parsing.
 
 -- Error: Data constructor used as a type constructor.
 While parsing.
-  Parse error in "<batch>" (line 1, column 1)
-  Unexpected constructor "()".
+  Parse error in "<batch>" (line 20, column 2)
+  Unexpected .
   Expected a type.
 
 

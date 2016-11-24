@@ -43,9 +43,9 @@ instance Pretty TcCon where
         TcConSusp       -> text "S"
 
         TcConRecord nn  
-         -> text "{" 
+         -> text "(" 
          <> (hcat $ punctuate (text ",") $ map (text . Text.unpack) nn) 
-         <> text "}#"
+         <> text ")#"
 
         TcConRead       -> text "Read"
         TcConHeadRead   -> text "HeadRead"

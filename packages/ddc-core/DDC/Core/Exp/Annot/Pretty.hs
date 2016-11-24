@@ -165,9 +165,9 @@ instance (Pretty n, Eq n) => Pretty (DaCon n (Type n)) where
         DaConUnit       -> text "()"
 
         DaConRecord ns
-         -> text "{" 
+         -> text "(" 
          <> (hcat $ punctuate (text ",") $ map (text . Text.unpack) ns) 
-         <> text "}#"
+         <> text ")#"
 
         DaConPrim  n _  -> ppr n
         DaConBound n    -> ppr n

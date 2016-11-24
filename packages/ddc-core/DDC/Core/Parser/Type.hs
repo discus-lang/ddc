@@ -158,18 +158,26 @@ pTypeAtom c
         , do    pTok (KOpVar "->")
                 return (TCon $ TyConSpec TcConFun)
 
+        -- Record type constructors.
+        , P.try
+           $ do pSym SRoundBra
+                ns      <- P.sepBy pVarName (pSym SComma)
+                pSym SRoundKet
+                pSym SHash
+                return  $ TCon (TyConSpec (TcConRecord ns))
+
+        -- The syntax for the nullary record type constructor '()#' overlaps
+        -- with that of the unit data construtor '()', so try the former first.
+        , P.try
+           $ do pTok (KBuiltin BDaConUnit)
+                pSym SHash
+                return  $ TCon (TyConSpec (TcConRecord []))
+
         -- (TYPE2)
         , do    pSym SRoundBra
                 t       <- pTypeSum c
                 pSym SRoundKet
                 return t 
-
-        -- Record type constructor.
-        , do    pSym SBraceBra
-                ns      <- P.sepBy pVarName (pSym SComma)
-                pSym SBraceKet
-                pSym SHash
-                return  $ TCon (TyConSpec (TcConRecord ns))
 
         -- Named type constructors
         , do    so      <- pSoCon
