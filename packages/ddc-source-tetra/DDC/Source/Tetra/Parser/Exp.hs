@@ -410,7 +410,37 @@ pPat
 pPatAtom :: Parser Pat
 pPatAtom
  = P.choice
- [ do   -- ( PAT )
+ [ 
+        -- Primitive record pattern.
+        -- like (x,y,z)# a b c
+    P.try $ do
+        _       <- pSym SRoundBra
+        nsField <- fmap (map fst) $ P.sepBy pVarNameSP (pSym SComma)
+        pSym SRoundKet
+        pSym SHash
+        psField <- P.many pPatAtom
+        return  $ PData (DaConRecord nsField) psField
+
+
+        -- Sugared record pattern.
+        -- like (x = a, y = b, z = c)
+ , P.try $ do
+        _       <- pSym SRoundBra
+
+        (nsField, psField) 
+         <- fmap unzip
+          $ P.sepBy 
+                (do (n, _)  <- pVarNameSP
+                    _       <- pSym SEquals
+                    p       <- pPatAtom
+                    return (n, p))
+                (pSym SComma)
+
+        pSym SRoundKet
+        return  $ PData (DaConRecord nsField) psField
+
+        -- ( PAT )
+ , P.try $ do   
         pSym SRoundBra
         p       <- pPat
         pSym SRoundKet
@@ -578,7 +608,7 @@ pParamsSP :: Parser [Param]
 pParamsSP
  = P.choice
         -- Type parameter
-        -- [BIND1 BIND2 .. BINDN : TYPE]
+        --   [BIND1 BIND2 .. BINDN : TYPE]
  [ do   pSym SSquareBra
         bs      <- P.many1 pBind
         pTok (KOp ":")
@@ -586,14 +616,24 @@ pParamsSP
         pSym SSquareKet
         return  [ MType b (Just t) | b <- bs]
 
+
         -- Witness parameter
-        -- {BIND : TYPE}
+        --   {BIND : TYPE}
  , do   pSym  SBraceBra
         b       <- pBind
         pTok (KOp ":")
         t       <- pType
         pSym  SBraceKet
         return  [ MWitness b (Just t) ]
+
+
+        -- Value parameter without a type annotation.
+        --   This needs to come before the case for value patterns with type
+        --   annotations because both records and the unit data constructor
+        --   pattern start with a '('.
+ , do   p       <- pPatAtom
+        return  [MValue p Nothing]
+
 
         -- Value pattern with type annotations.
         -- (BIND1 BIND2 .. BINDN : TYPE) 
@@ -611,11 +651,6 @@ pParamsSP
 
         pSym    SRoundKet
         return ps
-
-
- , do   -- Value parameter without a type annotation.
-        p       <- pPatAtom
-        return  [MValue p Nothing]
  ]
  <?> "a function parameter"
 
