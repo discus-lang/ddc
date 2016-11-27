@@ -17,6 +17,7 @@ import Prelude                                  hiding ((<$>))
 import qualified Data.Text                      as Text
 
 
+---------------------------------------------------------------------------------------------------
 type PrettyLanguage l 
  =      ( Pretty l
         , Pretty (GTAnnot    l)
@@ -455,9 +456,9 @@ instance Pretty n => Pretty (DaCon n t) where
         DaConUnit       -> text "()"
 
         DaConRecord ns
-         -> text "{"
+         -> text "("
          <> (hcat $ punctuate (text ",") $ map (text . Text.unpack) ns)
-         <> text "}"
+         <> text ")#"
 
         DaConPrim n _   -> ppr n
         DaConBound n    -> ppr n

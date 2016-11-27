@@ -13,6 +13,7 @@ module DDC.Source.Tetra.Parser.Base
         , pBoundIxSP
         , pBoundNameOpVarSP
         , pBoundNameOpSP
+        , pVarNameSP
 
           -- * TyCons
         , pTyConBindName,       pTyConBindNameSP
@@ -31,6 +32,7 @@ import DDC.Source.Tetra.Lexer
 import DDC.Core.Lexer.Tokens
 import DDC.Control.Parser               ((<?>))
 import DDC.Control.Parser               (SourcePos(..))
+import Data.Text                        (Text)
 import qualified DDC.Control.Parser     as P
 import qualified Data.Text              as Text
 
@@ -84,6 +86,13 @@ pBoundNameOpSP = P.pTokMaybeSP f
 pBoundNameOpVarSP :: Parser (Bound, SourcePos)
 pBoundNameOpVarSP = P.pTokMaybeSP f
  where  f (KA (KOpVar s))               = Just (UName (Text.pack s))
+        f _                             = Nothing
+
+
+-- | Parse a variable-like name as a flat string.
+pVarNameSP :: Parser (Text, SourcePos)
+pVarNameSP  =  P.pTokMaybeSP f <?> "a name"
+ where  f (KN (KVar (NameVar s)))       = Just s
         f _                             = Nothing
 
 

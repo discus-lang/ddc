@@ -96,3 +96,8 @@ foo (_: Unit)
 
 
 
+module Test where
+foo (_: Unit)
+  = [DEFIX| (x,y,z)# [Nat] [Nat] [Nat] 1 2 3 ];
+
+

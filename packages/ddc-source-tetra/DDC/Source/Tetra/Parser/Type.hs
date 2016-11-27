@@ -23,17 +23,18 @@ import qualified Data.Text              as T
 pBind :: Parser Bind
 pBind
  = P.choice
-        -- Named binders.
-        [ do    (b, _)  <- pBindNameSP
-                return  $  b
+ -- Named binders.
+ [ do    (b, _)  <- pBindNameSP
+         return b
                 
-        -- Anonymous binders.
-        , do    pSym SHat
-                return  $  BAnon 
+ -- Anonymous binders.
+ , do    pSym SHat
+         return BAnon 
         
-        -- Vacant binders.
-        , do    pSym SUnderscore
-                return  $  BNone ]
+ -- Vacant binders.
+ , do    pSym SUnderscore
+         return BNone 
+ ]
  <?> "a binder"
 
 
@@ -61,24 +62,24 @@ pTypeUnion
 pTypeForall :: Parser Type
 pTypeForall
  = P.choice
-         [ -- Universal quantification.
-           -- [v1 v1 ... vn : T1]. T2
-           do   pSym SSquareBra
-                bs      <- P.many1 pBind
-                sp      <- pTokSP (KOp ":")
-                kBind   <- pTypeUnion
-                pSym SSquareKet
-                pSym SDot
+ [ -- Universal quantification.
+   -- [v1 v1 ... vn : T1]. T2
+   do   pSym SSquareBra
+        bs      <- P.many1 pBind
+        sp      <- pTokSP (KOp ":")
+        kBind   <- pTypeUnion
+        pSym SSquareKet
+        pSym SDot
 
-                tBody   <- pTypeForall
-                return  $ foldr (\b t   -> TAnnot sp 
-                                        $  TApp (TCon (TyConForall kBind)) 
-                                                (TAbs b kBind t)) 
-                                tBody bs
+        tBody   <- pTypeForall
+        return  $ foldr (\b t -> TAnnot sp 
+                              $  TApp (TCon (TyConForall kBind)) 
+                                      (TAbs b kBind t))
+                        tBody bs
 
-           -- Body type
-         , do   pTypeFun
-         ]
+   -- Body type
+ , do   pTypeFun
+ ]
  <?> "a type"
 
 
@@ -120,43 +121,60 @@ pTypeApp
 pTypeAtomSP :: Parser (Type, SourcePos)
 pTypeAtomSP
  = P.choice
-        -- (~>) and (=>) and (->) and (TYPE2)
-        [ -- (~>)
-          do    sp      <- pTokSP $ KOpVar "~>"
-                return  (TAnnot sp $ TCon  TyConFun,  sp)
+ -- (~>) and (=>) and (->) and (TYPE2)
+ [ -- (~>)
+   do    sp      <- pTokSP $ KOpVar "~>"
+         return  (TAnnot sp $ TCon  TyConFun,  sp)
 
-          -- (=>)
-        , do    sp      <- pTokSP $ KOpVar "=>"
-                return  (TAnnot sp $ TCon (TyConPrim (PrimTypeTwCon TwConImpl)), sp)
+   -- (=>)
+ , do    sp      <- pTokSP $ KOpVar "=>"
+         return  (TAnnot sp $ TCon (TyConPrim (PrimTypeTwCon TwConImpl)), sp)
 
-          -- (->)
-        , do    sp      <- pTokSP $ KOpVar "->"
-                return  (TAnnot sp $ TCon TyConFun,  sp)
+   -- (->)
+ , do    sp      <- pTokSP $ KOpVar "->"
+         return  (TAnnot sp $ TCon TyConFun,  sp)
 
-          -- (TYPE2)
-        , do    sp      <- pSym SRoundBra
-                t       <- pTypeUnion
-                pSym SRoundKet
-                return  (t, sp)
+ -- Record type constructors.
+ , P.try
+    $ do sp     <- pSym SRoundBra
+         ns     <- fmap (map fst) $ P.sepBy pVarNameSP (pSym SComma)
+         pSym SRoundKet
+         pSym SHash
+         return ( TCon (TyConPrim (PrimTypeTcCon (TcConRecord ns)))
+                , sp)
 
-        -- Named type constructors
-        , do    (tc, sp) <- pTyConSP 
-                return  (TAnnot sp $ TCon tc, sp)
+ -- The syntax for the nullary record type constructor '()#' overlaps
+ -- with that of the unit data construtor '()', so try the former first.
+ , P.try
+    $ do sp     <- pTokSP $ KBuiltin BDaConUnit
+         pSym SHash
+         return ( TCon (TyConPrim (PrimTypeTcCon (TcConRecord [])))
+                , sp)
+
+   -- (TYPE2)
+ , do    sp      <- pSym SRoundBra
+         t       <- pTypeUnion
+         pSym SRoundKet
+         return  (t, sp)
+
+ -- Named type constructors
+ , do    (tc, sp) <- pTyConSP 
+         return  (TAnnot sp $ TCon tc, sp)
             
-        -- Bottoms.
-        , do    sp       <- pTokSP (KBuiltin BPure)
-                return  (TAnnot sp $ TBot KEffect, sp)
+ -- Bottoms.
+ , do    sp       <- pTokSP (KBuiltin BPure)
+         return  (TAnnot sp $ TBot KEffect, sp)
 
-        -- Bound occurrence of a variable.
-        --  We don't know the kind of this variable yet, so fill in the
-        --  field with the bottom element of computation kinds. This isn't
-        --  really part of the language, but makes sense implentation-wise.
-        , do    (u, sp) <- pBoundNameSP
-                return  (TAnnot sp $ TVar u, sp)
+ -- Bound occurrence of a variable.
+ --  We don't know the kind of this variable yet, so fill in the
+ --  field with the bottom element of computation kinds. This isn't
+ --  really part of the language, but makes sense implentation-wise.
+ , do    (u, sp) <- pBoundNameSP
+         return  (TAnnot sp $ TVar u, sp)
 
-        , do    (u, sp) <- pBoundIxSP
-                return  (TAnnot sp $ TVar u, sp)
-        ]
+ , do    (u, sp) <- pBoundIxSP
+         return  (TAnnot sp $ TVar u, sp)
+ ]
  <?> "an atomic type"
 
 

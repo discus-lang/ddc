@@ -278,9 +278,23 @@ pExpFrontSP
 pExpAtomSP :: Parser (SP, Exp)
 pExpAtomSP
  = P.choice
- [ 
+ [      -- Record data constructor.
+   P.try $ do
+        sp      <- pSym SRoundBra
+        ns      <- fmap (map fst) $ P.sepBy pVarNameSP (pSym SComma)
+        pSym SRoundKet
+        pSym SHash
+        return  (sp, XCon (DaConRecord ns))
+
+        -- The syntax for the nullary record type constructor '()#' overlaps
+        -- with that of the unit data construtor '()', so try the former first.
+ , P.try $ do
+        sp      <- pTokSP (KBuiltin BDaConUnit)
+        pSym SHash
+        return  (sp, XCon (DaConRecord []))
+
         -- ( Exp2 )
-   do   pSym SRoundBra
+ , do   pSym SRoundBra
         (sp, t)  <- pExpWhereSP
         pSym SRoundKet
         return  (sp, t)
