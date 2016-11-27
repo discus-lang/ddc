@@ -119,10 +119,15 @@ convertDataAppT ctx tt
         | Just (TyConSpec TcConUnit, [])                <- takeTyConApps tt
         =       return $ A.tPtr A.rTop A.tObj
 
-        -- The Suspended computation type.
+        -- The suspended computation type.
         | Just (TyConSpec TcConSusp, [_tEff, tResult])  <- takeTyConApps tt
         = do   convertDataT ctx tResult
         
+        -- Record types.
+        | Just (TyConSpec (TcConRecord ns), tsArgs)     <- takeTyConApps tt
+        , length ns == length tsArgs
+        = do    return $ A.tPtr A.rTop A.tObj
+
 
         -- Primitive TyCons -------------------------------
         -- We don't handle the numeric types here, because they should have

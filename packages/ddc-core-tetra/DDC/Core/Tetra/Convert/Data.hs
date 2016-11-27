@@ -8,7 +8,6 @@ import DDC.Core.Tetra.Convert.Layout
 import DDC.Core.Salt.Platform
 import DDC.Core.Transform.BoundX
 import DDC.Core.Exp
-import DDC.Type.Env
 import DDC.Type.Exp.Simple
 import DDC.Type.DataDef
 import qualified DDC.Core.Tetra.Prim            as E
@@ -23,17 +22,14 @@ import Data.Maybe
 constructData
         :: Show a
         => Platform                     -- ^ Platform definition.
-        -> KindEnv  E.Name              -- ^ Kind environment.
-        -> TypeEnv  E.Name              -- ^ Type environment.
         -> a                            -- ^ Annotation to use on expressions.
-        -> DataType E.Name              -- ^ Data Type definition of object.
         -> DataCtor E.Name              -- ^ Constructor definition of object.
         -> Type     A.Name              -- ^ Prime region variable.
         -> [Exp a   A.Name]             -- ^ Field values.
         -> [Type    A.Name]             -- ^ Field types.
         -> ConvertM a (Exp a A.Name)
 
-constructData pp _kenv _tenv a _dataDef ctorDef rPrime xsFields tsFields
+constructData pp a ctorDef rPrime xsFields tsFields
  | Just HeapObjectBoxed <- heapObjectOfDataCtor pp ctorDef
  = do
         -- Allocate the object.
@@ -165,3 +161,4 @@ destructData pp a ctorDef uScrut trPrime bsFields xBody
         , "  heapObject = " ++ (show $ heapObjectOfDataCtor  pp ctorDef) 
         , "  fields     = " ++ (show $ dataCtorFieldTypes ctorDef)
         , "  size       = " ++ (show $ payloadSizeOfDataCtor pp ctorDef) ]
+

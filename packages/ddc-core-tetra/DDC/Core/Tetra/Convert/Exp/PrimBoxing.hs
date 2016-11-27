@@ -26,8 +26,6 @@ convertPrimBoxing
 
 convertPrimBoxing _ectx ctx xx
  = let  pp        = contextPlatform ctx
-        kenv      = contextKindEnv  ctx
-        tenv      = contextTypeEnv  ctx
  
         convertX  = contextConvertExp  ctx
         downArgX  = convertX           ExpArg ctx 
@@ -43,15 +41,14 @@ convertPrimBoxing _ectx ctx xx
                 , [XType _ tUx, XType _ tBx, xArg])     <- takeXPrimApps xx
          , isUnboxedRepType tUx
          , isNumericType    tBx
-         , Just dt      <- makeBoxedPrimDataType tBx
          , Just dc      <- makeBoxedPrimDataCtor tBx
          -> Just $ do  
                 let a'  = annotTail a
                 xArg'   <- downArgX xArg
                 tUx'    <- convertDataPrimitiveT tBx
 
-                constructData pp kenv tenv a'
-                        dt dc A.rTop [xArg'] [tUx']
+                constructData pp a'
+                        dc A.rTop [xArg'] [tUx']
 
 
         -- Unboxing of boxed values.

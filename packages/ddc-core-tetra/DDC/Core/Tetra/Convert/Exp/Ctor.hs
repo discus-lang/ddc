@@ -31,30 +31,69 @@ convertCtorApp
         -> ConvertM a (Exp a A.Name)
 
 convertCtorApp ctx (AnTEC tResult _ _ a) dc xsArgsAll
- -- Handle the unit constructor.
- | DaConUnit     <- dc
+
+ -- The unit constructor.
+ | DaConUnit      <- dc
  = do    return  $ A.xAllocBoxed a A.rTop 0 (A.xNat a 0)
+
 
  -- Literal values
  | DaConPrim n _  <- dc
  , E.isNameLitUnboxed n
  =      convertLitCtor a dc
 
+
+ -- Applications of the record constructor.
+ --   These must be fully applied.
+ | DaConRecord ns <- dc
+ , xsArgsTypes    <- [x | x@XType{} <- xsArgsAll]
+ , xsArgsValues   <- drop (length xsArgsTypes) xsArgsAll
+ , length ns      == length xsArgsTypes
+ , length ns      == length xsArgsValues
+ = do
+        let pp          = contextPlatform   ctx
+        let convertX    = contextConvertExp ctx
+        let tctx        = typeContext       ctx
+
+        let tsArgsValues = [t | XType _ t <- xsArgsTypes]
+
+        -- Convert all the constructor arguments to Salt.
+        xsArgsValues'   <- mapM (convertX ExpArg ctx) 
+                        $  xsArgsValues
+
+        -- Determine the Salt type for each of the arguments.
+        tsArgsValues'   <- mapM (convertDataT tctx)
+                        $  map  (annotType . annotOfExp) xsArgsValues
+
+        -- TODO: Refactor 'constructData' below to only take the fields it uses.
+        -- We can't make a real CtorDef for records because they don't have real 
+        -- fragment specific names. However, the constructData fn is not using
+        -- the name field, so we shouldn't have to supply this bogus info.
+        let ctorDef     = DataCtor
+                        { dataCtorName          = E.NameCon "Record"    -- bogus name.
+                        , dataCtorTag           = 0
+                        , dataCtorFieldTypes    = tsArgsValues
+                        , dataCtorResultType    = tResult
+                        , dataCtorTypeName      = E.NameCon "Record"    -- bogus name.
+                        , dataCtorTypeParams    = [BAnon t | t <- tsArgsValues] }
+
+        constructData pp a
+                ctorDef
+                A.rTop xsArgsValues' tsArgsValues'
+
+
  -- Construct algebraic data.
  | Just nCtor    <- takeNameOfDaCon dc
  , Just ctorDef  <- Map.lookup nCtor $ dataDefsCtors (contextDataDefs ctx)
- , Just dataDef  <- Map.lookup (dataCtorTypeName ctorDef) 
-                 $  dataDefsTypes (contextDataDefs ctx)
  = do   
-        let pp           = contextPlatform ctx
-        let kenv         = contextKindEnv  ctx
-        let tenv         = contextTypeEnv  ctx
-        let convertX     = contextConvertExp ctx
-        let tctx         = typeContext ctx
+        let pp          = contextPlatform ctx
+        let kenv        = contextKindEnv  ctx
+        let convertX    = contextConvertExp ctx
+        let tctx        = typeContext ctx
 
         -- Get the prime region variable.
         -- The prime region holds the outermost constructor of the object.
-        trPrime          <- saltPrimeRegionOfDataType kenv tResult
+        trPrime         <- saltPrimeRegionOfDataType kenv tResult
 
         -- Split the constructor arguments into the type and value args.
         let xsArgsTypes  = [x | x@XType{} <- xsArgsAll]
@@ -68,13 +107,15 @@ convertCtorApp ctx (AnTEC tResult _ _ a) dc xsArgsAll
         tsArgsValues'    <- mapM (convertDataT tctx) 
                          $  map  (annotType . annotOfExp) xsArgsValues
 
-        constructData pp kenv tenv a
-                dataDef ctorDef
+        constructData pp a
+                ctorDef
                 trPrime xsArgsValues' tsArgsValues'
 
 
 -- If this fails then the provided constructor args list is probably malformed.
 -- This shouldn't happen in type-checked code.
 convertCtorApp _ _ dc xsArgsAll
-        = throw $ ErrorMalformed 
-                $ "Invalid constructor application " ++ (renderIndent $ ppr (dc, xsArgsAll))
+ = throw $  ErrorMalformed 
+         $  "Invalid constructor application "
+         ++ (renderIndent $ ppr (dc, xsArgsAll))
+
