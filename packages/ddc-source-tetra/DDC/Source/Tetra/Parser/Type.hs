@@ -9,6 +9,7 @@ module DDC.Source.Tetra.Parser.Type
         , pTyConBound)
 where
 import DDC.Source.Tetra.Parser.Base     as S
+import DDC.Source.Tetra.Exp.Compounds   as S
 import DDC.Source.Tetra.Exp.Source      as S
 import DDC.Source.Tetra.Prim.TyConTetra as S
 import DDC.Core.Lexer.Tokens            as K
@@ -123,39 +124,16 @@ pTypeAtomSP
  = P.choice
  -- (~>) and (=>) and (->) and (TYPE2)
  [ -- (~>)
-   do    sp      <- pTokSP $ KOpVar "~>"
-         return  (TAnnot sp $ TCon  TyConFun,  sp)
+   do   sp      <- pTokSP $ KOpVar "~>"
+        return  (TAnnot sp $ TCon  TyConFun,  sp)
 
    -- (=>)
- , do    sp      <- pTokSP $ KOpVar "=>"
-         return  (TAnnot sp $ TCon (TyConPrim (PrimTypeTwCon TwConImpl)), sp)
+ , do   sp      <- pTokSP $ KOpVar "=>"
+        return  (TAnnot sp $ TCon (TyConPrim (PrimTypeTwCon TwConImpl)), sp)
 
    -- (->)
- , do    sp      <- pTokSP $ KOpVar "->"
-         return  (TAnnot sp $ TCon TyConFun,  sp)
-
- -- Record type constructors.
- , P.try
-    $ do sp     <- pSym SRoundBra
-         ns     <- fmap (map fst) $ P.sepBy pVarNameSP (pSym SComma)
-         pSym SRoundKet
-         pSym SHash
-         return ( TCon (TyConPrim (PrimTypeTcCon (TcConRecord ns)))
-                , sp)
-
- -- The syntax for the nullary record type constructor '()#' overlaps
- -- with that of the unit data construtor '()', so try the former first.
- , P.try
-    $ do sp     <- pTokSP $ KBuiltin BDaConUnit
-         pSym SHash
-         return ( TCon (TyConPrim (PrimTypeTcCon (TcConRecord [])))
-                , sp)
-
-   -- (TYPE2)
- , do    sp      <- pSym SRoundBra
-         t       <- pTypeUnion
-         pSym SRoundKet
-         return  (t, sp)
+ , do   sp      <- pTokSP $ KOpVar "->"
+        return  (TAnnot sp $ TCon TyConFun,  sp)
 
  -- Named type constructors
  , do    (tc, sp) <- pTyConSP 
@@ -174,6 +152,48 @@ pTypeAtomSP
 
  , do    (u, sp) <- pBoundIxSP
          return  (TAnnot sp $ TVar u, sp)
+
+ -- Primitive record type constructor.
+ --  like (x,y,z)# 
+ , P.try $ do 
+        sp     <- pSym SRoundBra
+        ns     <- fmap (map fst) $ P.sepBy pVarNameSP (pSym SComma)
+        pSym SRoundKet
+        pSym SHash
+        return ( TCon (TyConPrim (PrimTypeTcCon (TcConRecord ns)))
+               , sp)
+
+ -- Full application of a primitive record type constructor.
+ --   like (x : Nat, y : Nat, z : Nat)
+ , P.try $ do
+        sp       <- pSym SRoundBra
+        (nsField, tsField) 
+                <- fmap unzip
+                $  P.sepBy 
+                        (do (n, _)  <- pVarNameSP
+                            _       <- pTokSP (KOp ":")
+                            t       <- pType
+                            return  (n, t))
+                        (pSym SComma)
+        pSym SRoundKet
+        let tRecord = TCon (TyConPrim (PrimTypeTcCon (TcConRecord nsField)))
+        return  ( makeTApps tRecord tsField
+                , sp)
+
+ -- The syntax for the nullary record type constructor '()#' overlaps
+ -- with that of the unit data construtor '()', so try the former first.
+ , P.try
+    $ do sp     <- pTokSP $ KBuiltin BDaConUnit
+         pSym SHash
+         return ( TCon (TyConPrim (PrimTypeTcCon (TcConRecord [])))
+                , sp)
+
+   -- (TYPE2)
+ , do    sp      <- pSym SRoundBra
+         t       <- pTypeUnion
+         pSym SRoundKet
+         return  (t, sp)
+
  ]
  <?> "an atomic type"
 

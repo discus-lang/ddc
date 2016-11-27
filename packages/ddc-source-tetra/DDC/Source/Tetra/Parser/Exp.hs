@@ -278,42 +278,10 @@ pExpFrontSP
 pExpAtomSP :: Parser (SP, Exp)
 pExpAtomSP
  = P.choice
- [      -- Record data constructor.
-   P.try $ do
-        sp      <- pSym SRoundBra
-        ns      <- fmap (map fst) $ P.sepBy pVarNameSP (pSym SComma)
-        pSym SRoundKet
-        pSym SHash
-        return  (sp, XCon (DaConRecord ns))
-
-        -- The syntax for the nullary record type constructor '()#' overlaps
-        -- with that of the unit data construtor '()', so try the former first.
- , P.try $ do
-        sp      <- pTokSP (KBuiltin BDaConUnit)
-        pSym SHash
-        return  (sp, XCon (DaConRecord []))
-
-        -- ( Exp2 )
- , do   pSym SRoundBra
-        (sp, t)  <- pExpWhereSP
-        pSym SRoundKet
-        return  (sp, t)
-
-        -- Infix operator used as a variable.
- , do   (UName tx, sp) <- pBoundNameOpVarSP
-        return  (sp, XInfixVar sp (Text.unpack tx))
-
-        -- Infix operator used nekkid.
- , do   (UName tx, sp) <- pBoundNameOpSP
-        return  (sp, XInfixOp  sp (Text.unpack tx))
-  
-        -- The unit data constructor.       
- , do   sp              <- pTokSP (KBuiltin BDaConUnit)
-        return  (sp, XCon  dcUnit)
-
-        -- Named algebraic constructors.
- , do   (con, sp)       <- pDaConBoundNameSP
+ [      -- Named algebraic constructors.
+   do   (con, sp)       <- pDaConBoundNameSP
         return  (sp, XCon  (DaConBound con))
+
 
         -- Literals.
         --  We just fill-in the type with a hole for now, and leave it to
@@ -322,18 +290,87 @@ pExpAtomSP
  , do   (lit, sp)       <- pDaConBoundLitSP
         return  (sp, XCon (DaConPrim lit (TVar UHole)))
 
+
         -- Primitive names.
  , do   (nPrim, sp)     <- pPrimValSP
         return  (sp, XPrim nPrim)
+
 
         -- Named variables.
  , do   (u,  sp)        <- pBoundNameSP
         return  (sp, XVar u)
 
+
         -- Debruijn indices
  , do   (u, sp)         <- pBoundIxSP
         return  (sp, XVar u)
 
+
+       -- Primitive record data constructor.
+       --  like (x,y,z)# 
+ , P.try $ do
+        sp      <- pSym SRoundBra
+        ns      <- fmap (map fst) $ P.sepBy pVarNameSP (pSym SComma)
+        pSym SRoundKet
+        pSym SHash
+        return  (sp, XCon (DaConRecord ns))
+
+
+ -- Full application of a record data constructor.
+ --   like (x = e1, y = e2, z = e3)
+ , P.try $ do
+        sp       <- pSym SRoundBra
+
+        (nsField, tsField, xsField) 
+         <- fmap unzip3
+          $ P.sepBy 
+                (do (n, _)  <- pVarNameSP
+                    P.choice
+                     [ do _      <- pTokSP (KOp ":")
+                          t      <- pType
+                          _      <- pSym SEquals
+                          x      <- pExp
+                          return (n, t, x)
+
+                     , do _      <- pSym SEquals
+                          x      <- pExp
+                          return (n, TVar UHole, x)])
+                (pSym SComma)
+
+        pSym SRoundKet
+        let xRecord = XCon (DaConRecord nsField)
+        return  ( sp
+                , makeXApps xRecord (map XType tsField ++ xsField))
+
+
+        -- The syntax for the nullary record type constructor '()#' overlaps
+        -- with that of the unit data construtor '()', so try the former first.
+ , P.try $ do
+        sp      <- pTokSP (KBuiltin BDaConUnit)
+        pSym SHash
+        return  (sp, XCon (DaConRecord []))
+
+
+        -- ( Exp2 )
+ , do   pSym SRoundBra
+        (sp, t)  <- pExpWhereSP
+        pSym SRoundKet
+        return  (sp, t)
+
+
+        -- Infix operator used as a variable.
+ , do   (UName tx, sp) <- pBoundNameOpVarSP
+        return  (sp, XInfixVar sp (Text.unpack tx))
+
+
+        -- Infix operator used nekkid.
+ , do   (UName tx, sp) <- pBoundNameOpSP
+        return  (sp, XInfixOp  sp (Text.unpack tx))
+
+  
+        -- The unit data constructor.       
+ , do   sp              <- pTokSP (KBuiltin BDaConUnit)
+        return  (sp, XCon  dcUnit)
  ]
  <?> "a variable, constructor, or parenthesised type"
 
