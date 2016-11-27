@@ -47,21 +47,22 @@ convertCtorApp ctx (AnTEC tResult _ _ a) dc xsArgsAll
  --   These must be fully applied.
  | DaConRecord ns <- dc
  , xsArgsTypes    <- [x | x@XType{} <- xsArgsAll]
+ , tsArgsValues   <- [t | XType _ t <- xsArgsTypes]
  , xsArgsValues   <- drop (length xsArgsTypes) xsArgsAll
- , length ns      == length xsArgsTypes
- , length ns      == length xsArgsValues
+ , arity          <- length ns
+ , length xsArgsTypes  == arity
+ , length xsArgsValues == arity
  = do
-        let pp          = contextPlatform   ctx
-        let convertX    = contextConvertExp ctx
-        let tctx        = typeContext       ctx
-
-        let tsArgsValues = [t | XType _ t <- xsArgsTypes]
+        let pp           = contextPlatform   ctx
+        let convertX     = contextConvertExp ctx
+        let tctx         = typeContext       ctx
 
         -- Convert all the constructor arguments to Salt.
         xsArgsValues'   <- mapM (convertX ExpArg ctx) 
                         $  xsArgsValues
 
         -- Determine the Salt type for each of the arguments.
+
         tsArgsValues'   <- mapM (convertDataT tctx)
                         $  map  (annotType . annotOfExp) xsArgsValues
 
@@ -78,26 +79,21 @@ convertCtorApp ctx (AnTEC tResult _ _ a) dc xsArgsAll
                         , dataCtorTypeParams    = [BAnon t | t <- tsArgsValues] }
 
         constructData pp a
-                ctorDef
-                A.rTop xsArgsValues' tsArgsValues'
+                ctorDef A.rTop
+                xsArgsValues' tsArgsValues'
 
 
  -- Construct algebraic data.
  | Just nCtor    <- takeNameOfDaCon dc
  , Just ctorDef  <- Map.lookup nCtor $ dataDefsCtors (contextDataDefs ctx)
+ , xsArgsTypes   <- [x | x@XType{} <- xsArgsAll]
+ , xsArgsValues  <- drop (length xsArgsTypes) xsArgsAll
+ , arity         <- length (dataCtorFieldTypes ctorDef)
+ , length xsArgsValues == arity
  = do   
         let pp          = contextPlatform ctx
-        let kenv        = contextKindEnv  ctx
         let convertX    = contextConvertExp ctx
         let tctx        = typeContext ctx
-
-        -- Get the prime region variable.
-        -- The prime region holds the outermost constructor of the object.
-        trPrime         <- saltPrimeRegionOfDataType kenv tResult
-
-        -- Split the constructor arguments into the type and value args.
-        let xsArgsTypes  = [x | x@XType{} <- xsArgsAll]
-        let xsArgsValues = drop (length xsArgsTypes) xsArgsAll
 
         -- Convert all the constructor arguments to Salt.
         xsArgsValues'    <- mapM (convertX ExpArg ctx) 
@@ -108,8 +104,8 @@ convertCtorApp ctx (AnTEC tResult _ _ a) dc xsArgsAll
                          $  map  (annotType . annotOfExp) xsArgsValues
 
         constructData pp a
-                ctorDef
-                trPrime xsArgsValues' tsArgsValues'
+                ctorDef A.rTop
+                xsArgsValues' tsArgsValues'
 
 
 -- If this fails then the provided constructor args list is probably malformed.
