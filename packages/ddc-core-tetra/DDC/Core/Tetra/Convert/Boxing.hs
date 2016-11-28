@@ -57,12 +57,12 @@ isBoxedRepType tt
         | TVar{}        <- tt   = True
         | TForall{}     <- tt   = True
 
-        -- Unit data type.
-        | Just (TyConSpec TcConUnit, _)    <- takeTyConApps tt
-        = True
-
-        -- User defined data types.
-        | Just (TyConBound (UName _) _, _) <- takeTyConApps tt
+        -- Constructed data.
+        | (case takeTyConApps tt of
+                Just (TyConSpec  TcConUnit,         _)  -> True
+                Just (TyConSpec  (TcConRecord _ns), _)  -> True
+                Just (TyConBound (UName _) _,       _)  -> True
+                _                                       -> False)
         = True
 
         -- Boxed numeric types

@@ -1,0 +1,69 @@
+
+module Main
+import System.IO.Console
+where
+
+
+-------------------------------------------------------------------------------
+flipit  [a b: Data] 
+          (foo = a, bar = b) 
+        = (foo = b, bar = a)
+
+pair    = (foo = "fooish", bar = "barish")
+triple  = (x = 3, y = 4, z = 5)
+
+
+-------------------------------------------------------------------------------
+data Point where
+        Point   : (x: Nat, y: Nat)       -> Point
+
+showPoint (Point (x = x, y = y))
+        = parens $ "Point" %% showNat x %% showNat y
+
+data Shape where
+        Circle  : (p:  Point, r:  Nat)   -> Shape
+        Line    : (p1: Point, p2: Point) -> Shape
+
+-- TODO: use  "showShape (Circle ..) = " syntax to auto pun the field names.
+showShape (Circle (p = p,   r = r))
+        = parens $ "Circle" %% showPoint p %%  showNat r
+
+showShape (Line   (p1 = p1, p2 = p2))
+        = parens $ "Line"   %% showPoint p1 %% showPoint p2
+
+
+-------------------------------------------------------------------------------
+main ()
+ = do   writel "Records tests"
+
+        -- Test full record construction and elimination.
+        -- For these tests we don't need support for projections.
+        case pair of
+         (foo = a, bar = b)
+          -> writel $ a %% b
+
+        case flipit pair of
+         (foo = a, bar = b)
+          -> writel $ a %% b
+
+        case triple of
+         (x = a, y = b, z = c)
+          -> writel (showNat (a + b + c))
+
+
+        -- Test records embeded in algebraic data.
+        -- TODO: auto-promote tuples to records,
+        --       using the order of fields to populate them.
+        someCircle      
+         = Circle 
+                ( p  = Point (x = 1, y = 2)
+                , r  = 27)
+
+        writel $ showShape someCircle
+
+        someLine
+         = Line ( p1 = Point (x = 1, y = 2)
+                , p2 = Point (x = 3, y = 4))
+
+        writel $ showShape someLine
+

@@ -42,6 +42,7 @@ convertAlt a uScrut tScrut ectx ctx alt
                 let dcTag       = DaConPrim (A.NamePrimLit $ A.PrimLitTag 0) A.tTag
                 return  $ AAlt (PData dcTag []) xBody
 
+
         -- Match against literal unboxed values.
         AAlt (PData dc []) x
          | Just nCtor           <- takeNameOfDaCon dc
@@ -49,6 +50,46 @@ convertAlt a uScrut tScrut ectx ctx alt
          -> do  dc'             <- convertDaCon tctx dc
                 xBody1          <- convertX     ectx ctx  x
                 return  $ AAlt (PData dc' []) xBody1
+
+
+        -- Match against records.
+        AAlt (PData dc bsFields) x
+         | DaConRecord _nsFields   <- dc
+         , (_tRecord : tsArgs)     <- takeTApps tScrut
+         -> do   
+                -- Convert the scrutinee.
+                uScrut'         <-  convertDataU uScrut
+                                >>= maybe (throw $ ErrorInvalidBound uScrut) return
+
+                let dcTag       = DaConPrim (A.NamePrimLit $ A.PrimLitTag 0) A.tTag
+
+                -- Get the address of the payload.
+                bsFields'       <- mapM (convertDataB tctx) bsFields       
+
+                -- Convert the right of the alternative, 
+                -- with all all the pattern variables in scope.
+                let ctx'        =  extendsTypeEnv bsFields ctx
+                xBody1          <- convertX ectx ctx' x
+
+                -- TODO: Refactor 'destructData' below to only take the fields it needs.
+                -- We can't make a real CtorDef for records.
+                let ctorDef     = DataCtor
+                                { dataCtorName          = E.NameCon "Record"    -- bogus name.
+                                , dataCtorTag           = 0
+                                , dataCtorFieldTypes    = tsArgs
+                                , dataCtorResultType    = tScrut
+                                , dataCtorTypeName      = E.NameCon "Record"    -- bogus name.
+                                , dataCtorTypeParams    = [BAnon t | t <- tsArgs] }
+
+                -- Wrap the body expression with let-bindings that bind
+                -- each of the fields of the data constructor.
+                xBody2          <- destructData pp a
+                                        ctorDef uScrut' 
+                                        A.rTop
+                                        bsFields' xBody1
+
+                return  $ AAlt (PData dcTag []) xBody2
+
 
         -- Match against user-defined algebraic data.
         AAlt (PData dc bsFields) x
@@ -59,7 +100,6 @@ convertAlt a uScrut tScrut ectx ctx alt
                 uScrut'         <-  convertDataU uScrut
                                 >>= maybe (throw $ ErrorInvalidBound uScrut) return
 
-
                 -- Get the tag of this alternative.
                 let iTag        = fromIntegral $ dataCtorTag ctorDef
                 let dcTag       = DaConPrim (A.NamePrimLit $ A.PrimLitTag iTag) A.tTag
@@ -69,7 +109,7 @@ convertAlt a uScrut tScrut ectx ctx alt
 
                 -- Convert the right of the alternative, 
                 -- with all all the pattern variables in scope.
-                let ctx'        = extendsTypeEnv bsFields ctx
+                let ctx'        =  extendsTypeEnv bsFields ctx
                 xBody1          <- convertX ectx ctx' x
 
                 -- Determine the prime region of the scrutinee.
