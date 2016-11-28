@@ -152,7 +152,8 @@ data DataDefs n
 --   In this case we don't ever expect them all to be enumerated
 --   as case alternatives.
 data DataMode n
-        = DataModeSmall ![n]
+        = DataModeSingle
+        | DataModeSmall ![n]
         | DataModeLarge
         deriving Show
 

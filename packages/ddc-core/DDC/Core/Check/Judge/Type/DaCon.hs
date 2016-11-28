@@ -43,6 +43,8 @@ checkDaConM _config ctx xx a dc
                 | Just nType     <- takeNameOfBound u
                 , Just dataType  <- Map.lookup nType $ dataDefsTypes $ contextDataDefs ctx
                 -> case dataTypeMode dataType of
+                    DataModeSingle  -> return t
+
                     DataModeSmall nsCtors
                         | L.elem nCtor nsCtors -> return t
                         | otherwise            -> throw $ ErrorUndefinedCtor a xx

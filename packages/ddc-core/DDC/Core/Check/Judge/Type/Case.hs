@@ -58,6 +58,11 @@ checkCase !table !ctx0 mode demand
               -> return ( Just (DataModeSmall [])
                         , [] )
 
+              -- Primitive record types.
+              | TyConSpec (TcConRecord _)   <- tc
+              -> return ( Just DataModeSingle
+                        , ts)
+
               -- User defined or imported data types.
               | TyConBound (UName nTyCon) _ <- tc
               , Just dataType  <- Map.lookup nTyCon $ dataDefsTypes dataDefs
@@ -517,6 +522,9 @@ checkAltsExhaustive a xx mode alts
 
         -- Check that alternatives are exhaustive.
         case mode of
+
+          DataModeSingle
+           -> return ()
 
           -- Small types have some finite number of constructors.
           DataModeSmall nsCtors
