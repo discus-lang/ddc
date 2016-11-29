@@ -54,6 +54,10 @@ main ()
         -- Test records embeded in algebraic data.
         -- TODO: auto-promote tuples to records,
         --       using the order of fields to populate them.
+        --
+        -- define a shuffle cast to do this.
+        --  shuffle [(x: Nat, y: Bool)] [(y: Bool, x: Nat)]
+        --      
         someCircle      
          = Circle 
                 ( p  = Point (x = 1, y = 2)

@@ -122,6 +122,28 @@ data GCast l
         -- | Run a computation, releasing its effects into the context.
         | CastRun
 
+        -- | Primitive cast operators.
+        | CastPrim            GCastPrim
+
+
+-- | Primitive cast operators.
+--   These are primitive operators in the ambient calculus.
+--   They don't depend on machine primitives, so can be treated directly.
+data GCastPrim 
+        -- | Project fields from a record.
+        --     project# (x1,x2,x3,x4)# (x1,x2,x4)#  
+        --      : [a b c d: Data]. (x1,x2,x3,x4)# a b c d -> (x1,x2,x4)# a b d
+        = CastPrimProject
+
+        -- | Combine two records into a compound one.
+        --     combine# (x1,x3)# (x2,x4)# (x1,x2,x3,x4)# 
+        --      : [a b c d: Data]. (x1,x3)# a b -> (x2,x4)# c d -> (x1,x2,x3,x4)# a c b d
+        | CastPrimCombine
+
+        -- | Unpack the value from a record with a single field.
+        --     unpack# (x)# : [a: Data]. (x)# a -> a
+        | CastPrimUnpack
+
 
 -- | Witnesses.
 data GWitness l
@@ -163,4 +185,5 @@ deriving instance ShowLanguage l => Show (GPat     l)
 deriving instance ShowLanguage l => Show (GCast    l)
 deriving instance ShowLanguage l => Show (GWitness l)
 deriving instance ShowLanguage l => Show (GWiCon   l)
+deriving instance Show GCastPrim
 

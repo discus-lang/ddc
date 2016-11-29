@@ -158,17 +158,16 @@ instance PrettyLanguage l => Pretty (GAlt l) where
 instance PrettyLanguage l => Pretty (GCast l) where
  ppr cc
   = case cc of
-        CastWeakenEffect  eff   
-         -> text "weakeff" <+> brackets (ppr eff)
+        CastWeakenEffect  eff   -> text "weakeff" <+> brackets (ppr eff)
+        CastPurify w            -> text "purify"  <+> angles   (ppr w)
+        CastBox                 -> text "box"
+        CastRun                 -> text "run"
 
-        CastPurify w
-         -> text "purify"  <+> angles   (ppr w)
-
-        CastBox
-         -> text "box"
-
-        CastRun
-         -> text "run"
+        CastPrim pp             
+         -> case pp of
+                CastPrimProject -> text "project#"
+                CastPrimCombine -> text "combine#"
+                CastPrimUnpack  -> text "unpack#"
 
 
 -- Lets -------------------------------------------------------------------------------------------

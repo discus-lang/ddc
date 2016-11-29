@@ -73,6 +73,7 @@ instance (GBind l ~ T.Bind l, GBound l ~ T.Bound l)
         CastPurify w            -> slurpBindTree w
         CastBox                 -> []
         CastRun                 -> []
+        CastPrim{}              -> []
 
 
 instance (GBind l ~ T.Bind l, GBound l ~ T.Bound l)
