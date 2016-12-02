@@ -115,8 +115,9 @@ takeAnnotOfExp :: GExp l -> Maybe (GXAnnot l)
 takeAnnotOfExp xx
  = case xx of
         XAnnot a _              -> Just a
-        XVar{}                  -> Nothing
+        XPrim{}                 -> Nothing
         XFrag{}                 -> Nothing
+        XVar{}                  -> Nothing
         XCon{}                  -> Nothing
         XLAM    _  x            -> takeAnnotOfExp x
         XLam    _  x            -> takeAnnotOfExp x

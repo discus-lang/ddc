@@ -16,8 +16,9 @@ instance NFDataLanguage l => NFData (GExp l) where
  rnf xx
   = case xx of
         XAnnot    a x           -> rnf a `seq` rnf x
-        XVar      u             -> rnf u
+        XPrim     _             -> ()
         XFrag     p             -> rnf p
+        XVar      u             -> rnf u
         XCon      dc            -> rnf dc
         XLAM      b x           -> rnf b   `seq` rnf x
         XLam      b x           -> rnf b   `seq` rnf x

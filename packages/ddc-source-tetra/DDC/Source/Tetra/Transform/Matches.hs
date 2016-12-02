@@ -176,8 +176,9 @@ desugarX sp xx
  = case xx of
         -- Boilerplate.
         XAnnot sp' x    -> XAnnot sp' <$> desugarX sp' x
-        XVar{}          -> pure xx
+        XPrim{}         -> pure xx
         XFrag{}         -> pure xx
+        XVar{}          -> pure xx
         XCon{}          -> pure xx
         XLam  b x       -> XLam b     <$> desugarX sp x
         XLAM  b x       -> XLAM b     <$> desugarX sp x

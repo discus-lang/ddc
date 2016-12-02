@@ -60,9 +60,10 @@ instance HasAnonBind l => MapBoundX GExp l where
 downX l f d xx
   = case xx of
         XAnnot a x        -> XAnnot  a (downX l f d x)
+        XPrim  p          -> XPrim   p
+        XFrag  p          -> XFrag   p
         XVar   u          -> XVar   (f d u)
         XCon   c          -> XCon    c
-        XFrag  p          -> XFrag   p
         XApp   x1 x2      -> XApp   (downX l f d x1) (downX l f d x2)
         XLAM   b  x       -> XLAM b (downX l f d x)
 

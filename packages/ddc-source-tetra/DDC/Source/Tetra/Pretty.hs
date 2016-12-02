@@ -173,9 +173,12 @@ instance PrettyLanguage l => Pretty (GExp l) where
     case xx of
         XAnnot _ x      -> pprPrec d x
 
+        XPrim p         -> ppr p
+        XFrag u         -> ppr u
+
+
         XVar  u         -> ppr u
         XCon  dc        -> ppr dc
-        XFrag u         -> ppr u
         
         XLAM  b xBody
          -> pprParen' (d > 1)

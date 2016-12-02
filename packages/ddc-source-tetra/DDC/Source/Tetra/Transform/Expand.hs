@@ -114,9 +114,10 @@ downX a env xx
          -> downX a' env x
 
         -- Invoke the expander --------
+        XPrim{}         -> xx
+        XFrag{}         -> xx
         XVar{}          -> xx 
         XCon{}          -> xx
-        XFrag{}         -> xx
 
         XApp{}
          | (x1, xas)     <- takeXAppsWithAnnots xx

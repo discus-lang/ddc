@@ -56,22 +56,23 @@ desugarX :: SP -> Exp -> S Exp
 desugarX sp xx
  = case xx of
         -- Boilerplate.
-        XAnnot sp' x     -> XAnnot sp' <$> desugarX sp' x
-        XVar{}           -> pure xx
-        XFrag{}          -> pure xx
-        XCon{}           -> pure xx
-        XLam  b x        -> XLam b     <$> pure x
-        XLAM  b x        -> XLAM b     <$> pure x
-        XApp  x1 x2      -> XApp       <$> desugarX   sp x1  <*> desugarX sp x2
-        XLet  lts x      -> XLet       <$> desugarLts sp lts <*> desugarX sp x
-        XCast c x        -> XCast c    <$> desugarX   sp x
-        XType{}          -> pure xx
-        XWitness{}       -> pure xx
-        XDefix a xs      -> XDefix a   <$> mapM (desugarX sp)  xs
-        XInfixOp{}       -> pure xx
-        XInfixVar{}      -> pure xx
-        XWhere a x cls   -> XWhere a   <$> desugarX sp x 
-                                       <*> mapM (desugarCl sp) cls
+        XAnnot sp' x    -> XAnnot sp' <$> desugarX sp' x
+        XPrim{}         -> pure xx
+        XFrag{}         -> pure xx
+        XVar{}          -> pure xx
+        XCon{}          -> pure xx
+        XLam  b x       -> XLam b     <$> pure x
+        XLAM  b x       -> XLAM b     <$> pure x
+        XApp  x1 x2     -> XApp       <$> desugarX   sp x1  <*> desugarX sp x2
+        XLet  lts x     -> XLet       <$> desugarLts sp lts <*> desugarX sp x
+        XCast c x       -> XCast c    <$> desugarX   sp x
+        XType{}         -> pure xx
+        XWitness{}      -> pure xx
+        XDefix a xs     -> XDefix a   <$> mapM (desugarX sp)  xs
+        XInfixOp{}      -> pure xx
+        XInfixVar{}     -> pure xx
+        XWhere a x cls  -> XWhere a   <$> desugarX sp x 
+                                      <*> mapM (desugarCl sp) cls
 
         -- Desugar a case expression.
         XCase xScrut alts

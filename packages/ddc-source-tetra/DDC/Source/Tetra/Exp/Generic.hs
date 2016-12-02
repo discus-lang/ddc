@@ -56,7 +56,7 @@ module DDC.Source.Tetra.Exp.Generic
 where
 import DDC.Type.Exp.Generic.Binding
 import DDC.Type.Exp.Generic.Exp
-import DDC.Core.Exp                     (DaCon (..))
+import DDC.Core.Exp                     (DaCon (..), Prim (..))
 
 
 -------------------------------------------------------------------------------
@@ -100,11 +100,14 @@ data GExp l
         --
         = XAnnot    !(GXAnnot l) !(GExp   l)
 
-        -- | Value variable   or primitive operation.
-        | XVar      !(GXBoundVar l)
+        -- | Primitives in the ambient calculus.
+        | XPrim     !Prim
 
-        -- | Langauge fragment specific primitives.
+        -- | Primitives specific to the language fragment.
         | XFrag     !(GXFrag  l)
+
+        -- | Value variable.
+        | XVar      !(GXBoundVar l)
 
         -- | Data constructor or literal.
         | XCon      !(DaCon (GXBoundCon l) (GType l))
