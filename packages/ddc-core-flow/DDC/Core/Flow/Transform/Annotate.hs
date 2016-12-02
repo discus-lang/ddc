@@ -21,6 +21,7 @@ instance Annotate S.Exp A.Exp where
     in case xx of
         S.XAnnot _ (S.XAnnot a x)       -> down (S.XAnnot a x)
         S.XAnnot a (S.XVar   u)         -> A.XVar      a u
+        S.XAnnot a (S.XPrim  p)         -> A.XPrim     a p
         S.XAnnot a (S.XCon   dc)        -> A.XCon      a dc
         S.XAnnot a (S.XLAM   b x)       -> A.XLAM      a b   (down x)
         S.XAnnot a (S.XLam   b x)       -> A.XLam      a b   (down x)
@@ -32,6 +33,7 @@ instance Annotate S.Exp A.Exp where
         S.XAnnot a (S.XWitness w)       -> A.XWitness  a (down w)
 
         S.XVar  u                       -> A.XVar      def u
+        S.XPrim p                       -> A.XPrim     def p
         S.XCon  dc                      -> A.XCon      def dc
         S.XLAM  b x                     -> A.XLAM      def b (down x)
         S.XLam  b x                     -> A.XLam      def b (down x)

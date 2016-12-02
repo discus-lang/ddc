@@ -215,6 +215,8 @@ convertX xx
  = case xx of
    XVar a b
     -> XVar a <$> convertBound b
+   XPrim a b
+    -> return $ XPrim a b
    XCon a c
     -> XCon a <$> convertDaCon c
    XLAM a b x

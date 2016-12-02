@@ -460,6 +460,7 @@ checkValidPattern :: Exp a n -> Either (Error a n) ()
 checkValidPattern expr
  = go expr
  where  go (XVar _ _)           = return ()
+        go XPrim{}              = return ()
         go (XCon _ _)           = return ()
         go x@(XLAM _ _ _)       = Left $ ErrorNotFirstOrder x
         go x@(XLam _ _ _)       = Left $ ErrorNotFirstOrder x

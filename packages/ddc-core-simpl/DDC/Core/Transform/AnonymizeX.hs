@@ -60,6 +60,7 @@ instance AnonymizeX (Exp a) where
     let down = anonymizeWithX keep kstack tstack
     in case xx of
         XVar _ UPrim{}  -> xx
+        XPrim{}         -> xx
         XCon{}          -> xx
 
         XVar a u@(UName{})

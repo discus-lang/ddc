@@ -65,6 +65,7 @@ instance Monad m => TransformUpMX m Exp where
   = (f env =<<)
   $ case xx of
         XVar{}          -> return xx
+        XPrim{}         -> return xx
         XCon{}          -> return xx
 
         XLAM a b x1

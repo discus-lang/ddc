@@ -172,11 +172,12 @@ instance Forward Exp where
                 Nothing         ->
                     return $ XVar (snd a) u
 
-        XVar a u        -> return $ XVar (snd a) u
-        XCon a u        -> return $ XCon (snd a) u
-        XLAM a b x      -> liftM    (XLAM (snd a) b) (down x)
-        XLam a b x      -> liftM    (XLam (snd a) b) (down x)
-        XApp a x1 x2    -> liftM2   (XApp (snd a))   (down x1) (down x2)
+        XVar  a u       -> return $ XVar  (snd a) u
+        XPrim a p       -> return $ XPrim (snd a) p
+        XCon  a u       -> return $ XCon  (snd a) u
+        XLAM  a b x     -> liftM    (XLAM (snd a) b) (down x)
+        XLam  a b x     -> liftM    (XLam (snd a) b) (down x)
+        XApp  a x1 x2   -> liftM2   (XApp (snd a))   (down x1) (down x2)
 
         -- Always float last let-binding into its use.
         --   let x = exp in x => exp

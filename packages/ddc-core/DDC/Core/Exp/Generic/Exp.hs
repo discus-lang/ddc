@@ -127,22 +127,23 @@ data GCast l
 
 
 -- | Primitive cast operators.
---   These are primitive operators in the ambient calculus.
---   They don't depend on machine primitives, so can be treated directly.
+--   Each instance can be assigned a regular function type, 
+--   but the result type depends polytypically on the parameter types.
 data GCastPrim 
-        -- | Project fields from a record.
-        --     project# (x1,x2,x3,x4)# (x1,x2,x4)#  
-        --      : [a b c d: Data]. (x1,x2,x3,x4)# a b c d -> (x1,x2,x4)# a b d
+        -- | Project out a single field from a record.
+        --     project# (x1,x2,x3,x4)# (x3)# 
+        --      : [a b c d: Data]. (x1,x2,x3,x4)# a b c d -> c
         = CastPrimProject
+
+        -- | Shuffle fields in a record.
+        --     shuffle# (x1,x2,x3,x4)# (x1,x2,x4)#  
+        --      : [a b c d: Data]. (x1,x2,x3,x4)# a b c d -> (x1,x2,x4)# a b d
+        | CastPrimShuffle
 
         -- | Combine two records into a compound one.
         --     combine# (x1,x3)# (x2,x4)# (x1,x2,x3,x4)# 
         --      : [a b c d: Data]. (x1,x3)# a b -> (x2,x4)# c d -> (x1,x2,x3,x4)# a c b d
         | CastPrimCombine
-
-        -- | Unpack the value from a record with a single field.
-        --     unpack# (x)# : [a: Data]. (x)# a -> a
-        | CastPrimUnpack
 
 
 -- | Witnesses.

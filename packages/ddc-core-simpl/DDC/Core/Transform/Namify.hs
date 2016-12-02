@@ -122,6 +122,7 @@ instance Namify (Exp a) where
     let down = namify tnam xnam
     in case xx of
         XVar a u        -> liftM2 XVar (return a) (rewriteX tnam xnam u)
+        XPrim{}         -> return xx
         XCon{}          -> return xx
 
         XLAM a b x

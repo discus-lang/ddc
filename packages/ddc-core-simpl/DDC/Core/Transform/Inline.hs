@@ -43,6 +43,7 @@ instance Inline Exp where
             in  inline get inside' xx'
 
         XVar{}          -> xx
+        XPrim{}         -> xx
         XCon{}          -> xx
         XLAM  a b x     -> XLAM  a b (down x)
         XLam  a b x     -> XLam  a b (down x)

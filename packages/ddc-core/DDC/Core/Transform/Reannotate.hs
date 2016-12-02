@@ -38,6 +38,7 @@ instance Reannotate Exp where
   = let down x   = reannotateM f x
     in case xx of
         XVar     a u            -> XVar     <$> f a <*> pure u
+        XPrim    a p            -> XPrim    <$> f a <*> pure p
         XCon     a u            -> XCon     <$> f a <*> pure u
         XLAM     a b x          -> XLAM     <$> f a <*> pure b <*> down x
         XLam     a b x          -> XLam     <$> f a <*> pure b <*> down x

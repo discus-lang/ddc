@@ -140,6 +140,7 @@ instance Melt (Exp () Name) where
         XLet  lts x     -> liftM2 XLet       (melt lts) (melt x)
         XApp  x1 x2     -> liftM2 XApp       (melt x1)  (melt x2)
         XVar  u         -> return $ XVar u
+        XPrim p         -> return $ XPrim p
         XCon  dc        -> return $ XCon dc
         XLAM  b x       -> liftM  (XLAM b)   (melt x)
         XLam  b x       -> liftM  (XLam b)   (melt x)

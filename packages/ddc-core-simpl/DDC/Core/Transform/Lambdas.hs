@@ -103,6 +103,9 @@ lambdasX p c xx
         XVar{}  
          -> return (xx, mempty)
 
+        XPrim{}
+         -> return (xx, mempty)
+
         XCon a (DaConBound nCon)  
          -> do  mResult <- etaXConApp p c a xx nCon []
                 case mResult of

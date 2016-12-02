@@ -24,7 +24,7 @@ module DDC.Core.Flow.Exp.Simple.Exp
           -- * Witness Constructors
         , WiCon         (..))
 where
-import DDC.Core.Exp             (WiCon (..))
+import DDC.Core.Exp             (WiCon (..), Prim (..))
 import DDC.Core.Exp             (DaCon (..))
 import DDC.Type.Exp
 import DDC.Type.Sum             ()
@@ -37,8 +37,11 @@ data Exp a n
         -- | Annotation.
         = XAnnot a (Exp a n)
 
-        -- | Value variable   or primitive operation.
+        -- | Value variable or fragment specific primitive operation.
         | XVar  !(Bound n)
+
+        -- | Primitive operator of the ambient calculus.
+        | XPrim !Prim
 
         -- | Data constructor or literal.
         | XCon  !(DaCon n (Type n))
@@ -144,6 +147,7 @@ instance (NFData a, NFData n) => NFData (Exp a n) where
   = case xx of
         XAnnot a x      -> rnf a   `seq` rnf x
         XVar   u        -> rnf u
+        XPrim  _        -> ()
         XCon   dc       -> rnf dc
         XLAM   b x      -> rnf b   `seq` rnf x
         XLam   b x      -> rnf b   `seq` rnf x

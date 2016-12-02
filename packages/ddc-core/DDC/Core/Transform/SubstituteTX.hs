@@ -70,6 +70,7 @@ instance SubstituteTX (Exp a) where
     let down x   = substituteWithTX tArg x
     in case xx of
         XVar a u        -> XVar a u
+        XPrim{}         -> xx
         XCon{}          -> xx
         XApp a x1 x2    -> XApp a (down sub x1) (down sub x2)
 

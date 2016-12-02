@@ -63,6 +63,13 @@ convertExp ectx ctx xx
 
 
         ---------------------------------------------------
+        -- Ambient primitives.
+        XPrim a p
+         -> do  let a'  = annotTail a
+                return  $ XPrim a' p
+
+
+        ---------------------------------------------------
         -- Unapplied data constructor.
         XCon a dc
          -> do  xx'     <- downCtorApp a dc []

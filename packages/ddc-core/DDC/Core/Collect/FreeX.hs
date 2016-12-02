@@ -51,8 +51,8 @@ instance BindStruct (Module a n) n where
 instance BindStruct (Exp a n) n where
  slurpBindTree xx
   = case xx of
-        XVar _ u
-         -> [BindUse BoundExp u]
+        XVar _ u        -> [BindUse BoundExp u]
+        XPrim{}         -> []
 
         XCon _ dc
          -> case dc of

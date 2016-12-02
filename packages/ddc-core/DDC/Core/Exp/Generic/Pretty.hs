@@ -166,8 +166,8 @@ instance PrettyLanguage l => Pretty (GCast l) where
         CastPrim pp             
          -> case pp of
                 CastPrimProject -> text "project#"
+                CastPrimShuffle -> text "shuffle#"
                 CastPrimCombine -> text "combine#"
-                CastPrimUnpack  -> text "unpack#"
 
 
 -- Lets -------------------------------------------------------------------------------------------

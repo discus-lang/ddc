@@ -407,6 +407,7 @@ windBodyX refMap context xx
 
         -- Boilerplate --------------------------
         XVar{}          -> xx
+        XPrim{}         -> xx
         XCon{}          -> xx
         XLAM a b x      -> XLAM a b (down x)
         XLam a b x      -> XLam a b (down x)

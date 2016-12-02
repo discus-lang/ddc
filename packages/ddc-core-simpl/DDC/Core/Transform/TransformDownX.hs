@@ -72,6 +72,7 @@ instance Monad m => TransformDownMX m Exp where
     f kenv tenv xx >>= \xx' -> 
      case xx' of
         XVar{}          -> return xx'
+        XPrim{}         -> return xx'
         XCon{}          -> return xx'
 
         XLAM a b x1

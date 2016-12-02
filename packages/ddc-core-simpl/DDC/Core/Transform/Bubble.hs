@@ -60,6 +60,7 @@ instance Bubble Exp where
   = {-# SCC bubble #-}
     case xx of
         XVar{}  -> ([], xx)
+        XPrim{} -> ([], xx)
         XCon{}  -> ([], xx)
 
         -- Drop casts before we leave lambda abstractions, because the

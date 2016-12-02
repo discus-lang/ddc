@@ -117,6 +117,9 @@ instance Complies Exp where
 
         XVar{}          -> ok
 
+        -- primitives ---------------------------
+        XPrim{}         -> ok
+
         -- constructors -------------------------
         XCon{}          -> ok
 

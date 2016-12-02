@@ -110,8 +110,9 @@ instance SubstituteXX Exp where
                 Left  u' -> XVar a u'
                 Right x  -> x
 
-        XCon{}           -> xx
-        XApp a x1 x2     -> XApp a (down sub x1) (down sub x2)
+        XPrim{}         -> xx
+        XCon{}          -> xx
+        XApp a x1 x2    -> XApp a (down sub x1) (down sub x2)
 
         XLAM a b x
          -> let (sub1, b')      = bind1 sub b

@@ -129,6 +129,9 @@ rewriteX' ignore_toplevel rules x0
         go env x@XVar{}   args  _toplevel
          =      rewrites env x args
 
+        go env x@XPrim{}  args  _toplevel
+         =      rewrites env x args
+
         go env x@XCon{}   args  _toplevel
          =      rewrites env x args
 

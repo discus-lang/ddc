@@ -97,6 +97,9 @@ curryX envt callables xx
         XVar  _ u
          ->     return $ XVar () u
 
+        XPrim _ p
+         ->     return $ XPrim () p
+
         XApp  _ x1 x2
          -> do  result  <- curryX_call envt callables xx
                 case result of

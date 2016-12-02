@@ -74,16 +74,17 @@ import DDC.Type.Exp.Simple.Compounds
 annotOfExp :: Exp a n -> a
 annotOfExp xx
  = case xx of
-        XVar     a _      -> a
-        XCon     a _      -> a
-        XLAM     a _ _    -> a
-        XLam     a _ _    -> a
-        XApp     a _ _    -> a
-        XLet     a _ _    -> a
-        XCase    a _ _    -> a
-        XCast    a _ _    -> a
-        XType    a _      -> a
-        XWitness a _      -> a
+        XVar     a _    -> a
+        XPrim    a _    -> a
+        XCon     a _    -> a
+        XLAM     a _ _  -> a
+        XLam     a _ _  -> a
+        XApp     a _ _  -> a
+        XLet     a _ _  -> a
+        XCase    a _ _  -> a
+        XCast    a _ _  -> a
+        XType    a _    -> a
+        XWitness a _    -> a
 
 
 -- | Apply a function to the annotation of an expression.
@@ -91,6 +92,7 @@ mapAnnotOfExp :: (a -> a) -> Exp a n -> Exp a n
 mapAnnotOfExp f xx
  = case xx of
         XVar     a u      -> XVar     (f a) u
+        XPrim    a p      -> XPrim    (f a) p
         XCon     a c      -> XCon     (f a) c
         XLAM     a b  x   -> XLAM     (f a) b  x
         XLam     a b  x   -> XLam     (f a) b  x

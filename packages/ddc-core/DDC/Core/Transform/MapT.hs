@@ -21,8 +21,9 @@ instance Monad m => MapT m (Exp a) where
   = let down :: forall (c :: * -> *). (Monad m, MapT m c) => c n -> m (c n)
         down = mapT f
     in case xx of  
-        XVar  a u       -> pure (XVar a u)
-        XCon  a c       -> pure (XCon a c)
+        XVar  a u       -> pure (XVar  a u)
+        XPrim a p       -> pure (XPrim a p)
+        XCon  a c       -> pure (XCon  a c)
         XApp  a x1 x2   -> XApp     a <$> down x1  <*> down x2
         XLAM  a b x     -> XLAM     a <$> down b   <*> down x
         XLam  a b x     -> XLam     a <$> down b   <*> down x

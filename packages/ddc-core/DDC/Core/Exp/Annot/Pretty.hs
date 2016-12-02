@@ -53,6 +53,9 @@ instance (Pretty n, Eq n) => Pretty (Exp a n) where
          | otherwise
          -> ppr u
 
+        XPrim _ p
+         -> ppr p
+
         XCon  _ dc
          | modeExpConTypes mode
          , Just t       <- takeTypeOfDaCon dc
@@ -125,6 +128,15 @@ instance (Pretty n, Eq n) => Pretty (Exp a n) where
 
         XType    _ t    -> text "[" <> ppr t <> text "]"
         XWitness _ w    -> text "<" <> ppr w <> text ">"
+
+
+-- Prim -------------------------------------------------------------------------------------------
+instance Pretty Prim where
+ ppr pp
+  = case pp of
+        PProject        -> text "project#"
+        PShuffle        -> text "shuffle#"
+        PCombine        -> text "combine#"
 
 
 -- Pat --------------------------------------------------------------------------------------------

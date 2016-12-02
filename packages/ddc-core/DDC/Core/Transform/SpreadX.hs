@@ -117,9 +117,10 @@ instance SpreadX (Exp a) where
   = {-# SCC spreadX #-}
     let down x = spreadX kenv tenv x
     in case xx of
-        XVar a u        -> XVar a (down u)
-        XCon a d        -> XCon a (spreadDaCon kenv tenv d)
-        XApp a x1 x2    -> XApp a (down x1) (down x2)
+        XVar  a u       -> XVar  a (down u)
+        XPrim a p       -> XPrim a p
+        XCon  a d       -> XCon  a (spreadDaCon kenv tenv d)
+        XApp  a x1 x2   -> XApp  a (down x1) (down x2)
 
         XLAM a b x
          -> let b'      = spreadT kenv b

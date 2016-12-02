@@ -13,8 +13,12 @@ instance BindStruct (Exp a n) n where
   = case xx of
         XAnnot _ x
          -> slurpBindTree x
+
         XVar u
          -> [BindUse BoundExp u]
+
+        XPrim{}
+         -> []
 
         XCon dc
          -> case dc of

@@ -64,6 +64,9 @@ instance FromAnnot (N.Exp a A.Name) Exp where
         N.XVar  _ u
          -> G.XVar  <$> fromAnnot u
 
+        N.XPrim _ _
+         -> error "ddc-core-salt: fromAnnot finish me"
+
         N.XCon  _ c
          -> G.XCon  <$> fromAnnot c
 

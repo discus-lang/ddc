@@ -17,6 +17,7 @@ objectsOfExp
 objectsOfExp xx
  = case xx of
         XVar  _ _       -> Map.empty
+        XPrim{}         -> Map.empty
         XCon  _ _       -> Map.empty
         XLAM  _ _ x     -> objectsOfExp x
         XLam  _ b x     -> Map.union  (objectsOfBind b)   (objectsOfExp x)

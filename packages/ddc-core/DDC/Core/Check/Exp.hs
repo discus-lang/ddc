@@ -139,6 +139,7 @@ checkExpM
 checkExpM !table !ctx !mode !demand !xx 
  = case xx of
     XVar{}              -> tableCheckVarCon     table table ctx mode demand xx
+    XPrim{}             -> error "checkExpM: handle XPrim"
     XCon{}              -> tableCheckVarCon     table table ctx mode demand xx
     XApp _ _ XType{}    -> tableCheckAppT       table table ctx mode demand xx
     XApp{}              -> tableCheckAppX       table table ctx mode demand xx

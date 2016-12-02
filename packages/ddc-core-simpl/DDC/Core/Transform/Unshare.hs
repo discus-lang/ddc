@@ -203,6 +203,7 @@ addArgsX nts xx
                 Nothing   -> xx
 
         XVar{}            -> xx
+        XPrim{}           -> xx
         XCon{}            -> xx
 
         XApp{}            -> addArgsAppX nts xx []

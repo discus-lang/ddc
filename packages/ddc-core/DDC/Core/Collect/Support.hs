@@ -107,6 +107,9 @@ instance SupportX (Exp a) where
          | Env.member u tenv    -> mempty
          | otherwise            -> mempty { supportDaVar = Set.singleton u}
 
+        XPrim{}
+         -> mempty
+
         XCon{}                  
          -> mempty
 
@@ -181,17 +184,10 @@ instance SupportX (Witness a) where
 instance SupportX (Cast a) where
  support kenv tenv cc
   = case cc of
-        CastWeakenEffect eff
-         -> support kenv tenv eff
-
-        CastPurify w
-         -> support kenv tenv w
-
-        CastBox
-         -> mempty
-
-        CastRun
-         -> mempty
+        CastWeakenEffect eff    -> support kenv tenv eff
+        CastPurify w            -> support kenv tenv w
+        CastBox                 -> mempty
+        CastRun                 -> mempty
          
 
 instance SupportX (Lets a) where

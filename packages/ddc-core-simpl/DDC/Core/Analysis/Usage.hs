@@ -137,9 +137,13 @@ usageX' xx
          -> ( used
             , XVar (used, a) u)
 
+        XPrim a p
+         -> ( empty
+            , XPrim (empty, a) p)
+
         XCon a u
          -> ( empty
-            , XCon (empty, a) u)
+            , XCon  (empty, a) u)
 
         -- Wrap usages from the body in UsedInLambda to singla that if we move
         -- the definition here then it might not be demanded at runtime.

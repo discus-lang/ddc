@@ -73,6 +73,9 @@ transSuper tails xx
         -- Return a constructor value.
         XCon a _        -> xReturn a (annotType a) xx
 
+        -- Return a primitive value.
+        XPrim a _       -> xReturn a (annotType a) xx
+
         XLAM  a b x     -> XLAM  a b $ down x
         XLam  a b x     -> XLam  a b $ down x
 
@@ -163,6 +166,7 @@ transX tails xx
  = let down     = transX tails
    in case xx of
         XVar{}          -> xx
+        XPrim{}         -> xx
         XCon{}          -> xx
         XLAM{}          -> xx
         XLam{}          -> xx 

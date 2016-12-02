@@ -89,6 +89,7 @@ instance MapBoundX (Exp a) n where
   = let down = mapBoundAtDepthX f d
     in case xx of
         XVar a u        -> XVar a (f d u)
+        XPrim{}         -> xx
         XCon{}          -> xx
         XApp a x1 x2    -> XApp a (down x1) (down x2)
         XLAM a b x      -> XLAM a b (down x)

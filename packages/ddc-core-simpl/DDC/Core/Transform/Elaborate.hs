@@ -38,6 +38,7 @@ instance Elaborate (Exp a) where
     let down = elaborate us 
     in case xx of
         XVar{}            -> xx
+        XPrim{}           -> xx
         XCon{}            -> xx    
         XLAM  a b    x    -> XLAM a b (down x)
         XLam  a b    x    -> XLam a b (down x)

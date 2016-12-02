@@ -157,6 +157,7 @@ boxingX config xx
 
         -- Boilerplate.
         XVar{}          -> xx
+        XPrim{}         -> xx
         XCon{}          -> xx
         XLAM a b x      -> XLAM a b  (boxingX   config x)
         XLam a b x      -> XLam a b  (boxingX   config x)

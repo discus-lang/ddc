@@ -20,6 +20,7 @@ module DDC.Core.Exp.Annot.Exp
 
          -- * Expressions
         , Exp           (..)
+        , Prim          (..)
         , Lets          (..)
         , Alt           (..)
         , Pat           (..)
@@ -44,8 +45,11 @@ import Control.DeepSeq
 -- Values ---------------------------------------------------------------------
 -- | Well-typed expressions have types of kind `Data`.
 data Exp a n
-        -- | Value variable   or primitive operation.
+        -- | Value variable or fragment specific primitive operation.
         = XVar     !a !(Bound n)
+
+        -- | Primitive operator of the ambient calculus.
+        | XPrim    !a !Prim
 
         -- | Data constructor or literal.
         | XCon     !a !(DaCon n (Type n))
@@ -73,6 +77,21 @@ data Exp a n
 
         -- | Witness can appear as the argument of an application.
         | XWitness !a !(Witness a n)
+        deriving (Show, Eq)
+
+
+-- | Primitive operator of the ambient calculus.
+--   These operators can be assigned standard functional types,
+--   but might have some special handing in the type checker.
+data Prim
+        -- | Project a field from a record.
+        = PProject
+
+        -- | Shuffle fields of a record.
+        | PShuffle
+
+        -- | Combine two records into a new one.
+        | PCombine
         deriving (Show, Eq)
 
 
@@ -114,7 +133,7 @@ data Cast a n
         = CastWeakenEffect  !(Effect n)
 
         -- | Purify the effect (action) of an expression.
-        | CastPurify !(Witness a n)
+        | CastPurify    !(Witness a n)
 
         -- | Box up a computation,
         --   capturing its effects in the S computation type.
@@ -148,6 +167,7 @@ instance (NFData a, NFData n) => NFData (Exp a n) where
  rnf xx
   = case xx of
         XVar  a u       -> rnf a `seq` rnf u
+        XPrim a _       -> rnf a 
         XCon  a dc      -> rnf a `seq` rnf dc
         XLAM  a b x     -> rnf a `seq` rnf b   `seq` rnf x
         XLam  a b x     -> rnf a `seq` rnf b   `seq` rnf x

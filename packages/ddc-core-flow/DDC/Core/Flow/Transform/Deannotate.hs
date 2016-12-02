@@ -23,6 +23,7 @@ instance Deannotate A.Exp S.Exp where
                         Just a' -> S.XAnnot a' x
     in case xx of
         A.XVar  a u             -> wrap a (S.XVar u)
+        A.XPrim a p             -> wrap a (S.XPrim p)
         A.XCon  a dc            -> wrap a (S.XCon dc)
         A.XLAM  a b x           -> wrap a (S.XLAM b (down x))
         A.XLam  a b x           -> wrap a (S.XLam b (down x))

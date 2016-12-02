@@ -18,6 +18,7 @@ injectX :: Map A.Name (Exp a A.Name -> Exp a A.Name)
 injectX injs xx
  = case xx of
         XVar{}          -> xx
+        XPrim{}         -> xx
         XCon{}          -> xx
         XLAM  a b x     -> XLAM  a b   (injectX injs x) -- Should we error? Salt
         XLam  a b x     -> XLam  a b   (injectX injs x) -- doesn't have lambdas.

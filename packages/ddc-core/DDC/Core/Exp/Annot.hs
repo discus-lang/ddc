@@ -7,6 +7,7 @@ module DDC.Core.Exp.Annot
 
          -- ** Expressions
         , Exp           (..)
+        , Prim          (..)
         , Lets          (..)
         , Alt           (..)
         , Pat           (..)
