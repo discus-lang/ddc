@@ -48,7 +48,7 @@ module DDC.Source.Tetra.Exp.Compounds
         , takeXAppsAsList
         , takeXAppsWithAnnots
         , takeXConApps
-        , takeXPrimApps
+        , takeXFragApps
 
           -- ** Clauses
         , bindOfClause
@@ -116,7 +116,7 @@ takeAnnotOfExp xx
  = case xx of
         XAnnot a _              -> Just a
         XVar{}                  -> Nothing
-        XPrim{}                 -> Nothing
+        XFrag{}                 -> Nothing
         XCon{}                  -> Nothing
         XLAM    _  x            -> takeAnnotOfExp x
         XLam    _  x            -> takeAnnotOfExp x
@@ -268,10 +268,10 @@ takeXAppsWithAnnots xx
 --   and its arguments.
 --   
 --   Returns `Nothing` if the expression isn't a primop application.
-takeXPrimApps :: GExp l -> Maybe (GXPrim l, [GExp l])
-takeXPrimApps xx
+takeXFragApps :: GExp l -> Maybe (GXFrag l, [GExp l])
+takeXFragApps xx
  = case takeXAppsAsList xx of
-        XPrim p : xs    -> Just (p, xs)
+        XFrag p : xs    -> Just (p, xs)
         _               -> Nothing
 
 -- | Flatten an application of a data constructor into the constructor

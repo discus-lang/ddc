@@ -58,7 +58,7 @@ desugarX sp xx
         -- Boilerplate.
         XAnnot sp' x     -> XAnnot sp' <$> desugarX sp' x
         XVar{}           -> pure xx
-        XPrim{}          -> pure xx
+        XFrag{}          -> pure xx
         XCon{}           -> pure xx
         XLam  b x        -> XLam b     <$> pure x
         XLAM  b x        -> XLAM b     <$> pure x

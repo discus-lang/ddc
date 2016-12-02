@@ -257,7 +257,7 @@ toCoreX a xx
                         <*> (C.XVar <$> pure a <*> (pure $ C.UName (C.NameVar "textLit")))
                         <*> (C.XCon <$> pure a <*> (toCoreDC dc))
 
-        S.XPrim p
+        S.XFrag p
          -> do  let p'  =  toCorePrimVal p 
                 t'      <- toCoreT UniverseSpec  $ Env.typeOfPrimVal p
                 return  $ C.XVar a (C.UPrim p' t')
@@ -276,8 +276,8 @@ toCoreX a xx
         S.XApp  _ _
          |  Just ( p@(S.PrimValError S.OpErrorDefault)
                  , [S.XCon dc1, S.XCon dc2])
-                 <- S.takeXPrimApps xx
-         -> do  xPrim'  <- toCoreX  a (S.XPrim p)
+                 <- S.takeXFragApps xx
+         -> do  xPrim'  <- toCoreX  a (S.XFrag p)
                 dc1'    <- toCoreDC dc1
                 dc2'    <- toCoreDC dc2
                 return  $  C.xApps a xPrim' [C.XCon a dc1', C.XCon a dc2']

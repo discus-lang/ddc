@@ -76,12 +76,12 @@ pattern PFalse = PData (DaConPrim (DaConBoundLit (PrimLitBool False)) TBool) []
 -- Primitives -------------------------------------------------------------------------------------
 makeXErrorDefault 
         :: ( GXBoundCon l ~ DaConBound
-           , GXPrim l     ~ PrimVal
+           , GXFrag l     ~ PrimVal
            , GTPrim l     ~ PrimType)
         => Text -> Integer -> GExp l
 makeXErrorDefault name n
  = makeXApps
-        (XPrim (PrimValError OpErrorDefault))
+        (XFrag (PrimValError OpErrorDefault))
         [ XCon (DaConPrim (DaConBoundLit (PrimLitTextLit name)) (TBot KData))
         , XCon (DaConPrim (DaConBoundLit (PrimLitNat     n))    (TBot KData))]
 

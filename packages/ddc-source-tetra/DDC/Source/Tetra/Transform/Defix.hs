@@ -62,7 +62,7 @@ instance Defix GExp l where
         XAnnot a x      -> liftM  (XAnnot a) (defix table x)
         XVar{}          -> return xx
         XCon{}          -> return xx
-        XPrim{}         -> return xx
+        XFrag{}         -> return xx
         XLAM  b x       -> liftM  (XLAM  b) (down x)
         XLam  b x       -> liftM  (XLam  b) (down x)
         XApp  x1 x2     -> liftM2  XApp     (down x1)  (down x2)

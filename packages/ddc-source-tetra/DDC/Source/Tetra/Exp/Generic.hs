@@ -33,7 +33,7 @@ module DDC.Source.Tetra.Exp.Generic
         , GXAnnot
         , GXBindVar, GXBoundVar
         , GXBindCon, GXBoundCon
-        , GXPrim
+        , GXFrag
 
           -- ** Syntax
         , GXBindVarMT   (..)
@@ -77,8 +77,8 @@ type family GXBindCon  l
 -- | Yield the type of bound occurrences of constructors.
 type family GXBoundCon l
 
--- | Yield the type of primitive operator names.
-type family GXPrim     l
+-- | Yield the type of fragment specific primitive names.
+type family GXFrag     l
 
 
 class HasAnonBind l where
@@ -103,8 +103,8 @@ data GExp l
         -- | Value variable   or primitive operation.
         | XVar      !(GXBoundVar l)
 
-        -- | Primitive values.
-        | XPrim     !(GXPrim  l)
+        -- | Langauge fragment specific primitives.
+        | XFrag     !(GXFrag  l)
 
         -- | Data constructor or literal.
         | XCon      !(DaCon (GXBoundCon l) (GType l))
@@ -310,7 +310,7 @@ type ShowLanguage l
           , Show (GXAnnot    l)
           , Show (GXBindVar l), Show (GXBoundVar l)
           , Show (GXBindCon l), Show (GXBoundCon l)
-          , Show (GXPrim l))
+          , Show (GXFrag l))
 
 deriving instance ShowLanguage l => Show (GExp         l)
 deriving instance ShowLanguage l => Show (GLets        l)

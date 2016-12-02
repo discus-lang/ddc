@@ -291,9 +291,9 @@ pExpAtomSP
         return  (sp, XCon (DaConPrim lit (TVar UHole)))
 
 
-        -- Primitive names.
+        -- Fragment specific primitive names.
  , do   (nPrim, sp)     <- pPrimValSP
-        return  (sp, XPrim nPrim)
+        return  (sp, XFrag nPrim)
 
 
         -- Named variables.

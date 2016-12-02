@@ -10,14 +10,14 @@ type NFDataLanguage l
           , NFData (GXAnnot   l)
           , NFData (GXBindVar l),  NFData (GXBoundVar l)
           , NFData (GXBindCon l),  NFData (GXBoundCon l)
-          , NFData (GXPrim    l))
+          , NFData (GXFrag    l))
 
 instance NFDataLanguage l => NFData (GExp l) where
  rnf xx
   = case xx of
         XAnnot    a x           -> rnf a `seq` rnf x
         XVar      u             -> rnf u
-        XPrim     p             -> rnf p
+        XFrag     p             -> rnf p
         XCon      dc            -> rnf dc
         XLAM      b x           -> rnf b   `seq` rnf x
         XLam      b x           -> rnf b   `seq` rnf x

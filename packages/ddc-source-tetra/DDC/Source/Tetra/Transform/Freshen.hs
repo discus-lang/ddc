@@ -175,7 +175,7 @@ freshenExp xx
  = case xx of
         XAnnot a x      -> XAnnot a <$> freshenExp x
         XVar u          -> XVar     <$> boundUX u
-        XPrim{}         -> return xx
+        XFrag{}         -> return xx
         XCon{}          -> return xx
 
         XLAM (XBindVarMT b mt) x

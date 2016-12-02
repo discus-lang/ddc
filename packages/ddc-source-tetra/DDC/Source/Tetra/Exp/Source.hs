@@ -58,7 +58,7 @@ module DDC.Source.Tetra.Exp.Source
         , BoundVar,     GXBoundVar
         , BindCon,      GXBindCon
         , BoundCon,     GXBoundCon
-        , Prim,         GXPrim
+        , Frag,         GXFrag
         , Exp,          GExp        (..)
         , Lets,         GLets       (..)
         , Clause,       GClause     (..)
@@ -139,7 +139,7 @@ type BindVarMT  = GXBindVarMT Source
 type BoundVar   = GXBoundVar  Source
 type BindCon    = GXBoundCon  Source
 type BoundCon   = GXBoundCon  Source
-type Prim       = GXPrim      Source
+type Frag       = GXFrag      Source
 type Exp        = GExp        Source
 type Lets       = GLets       Source
 type Clause     = GClause     Source
@@ -158,5 +158,5 @@ type instance GXBindVar  Source = Bind
 type instance GXBoundVar Source = Bound
 type instance GXBindCon  Source = DaConBind
 type instance GXBoundCon Source = DaConBound
-type instance GXPrim     Source = PrimVal
+type instance GXFrag     Source = PrimVal
 

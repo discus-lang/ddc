@@ -28,7 +28,7 @@ type PrettyLanguage l
         , Pretty (GXAnnot    l)
         , Pretty (GXBindVar  l), Pretty (GXBoundVar l)
         , Pretty (GXBindCon  l), Pretty (GXBoundCon l)
-        , Pretty (GXPrim l)
+        , Pretty (GXFrag l)
         , Pretty (DaCon (GXBoundCon l) (GType l)))
 
 
@@ -175,7 +175,7 @@ instance PrettyLanguage l => Pretty (GExp l) where
 
         XVar  u         -> ppr u
         XCon  dc        -> ppr dc
-        XPrim u         -> ppr u
+        XFrag u         -> ppr u
         
         XLAM  b xBody
          -> pprParen' (d > 1)

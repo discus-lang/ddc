@@ -104,7 +104,7 @@ module DDC.Source.Tetra.Exp
         , BoundVar,     GXBoundVar
         , BindCon,      GXBindCon
         , BoundCon,     GXBoundCon
-        , Prim,         GXPrim
+        , Frag,         GXFrag
 
           -- *** Expressions
         , Exp,          GExp        (..)
@@ -206,7 +206,7 @@ module DDC.Source.Tetra.Exp
         , takeXAppsAsList
         , takeXAppsWithAnnots
         , takeXConApps
-        , takeXPrimApps
+        , takeXFragApps
 
           -- *** Clauses
         , bindOfClause

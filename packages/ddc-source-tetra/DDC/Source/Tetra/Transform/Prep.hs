@@ -268,7 +268,7 @@ desugarX rns xx
         -- Boilerplate.
         XAnnot a x              -> XAnnot a  <$> desugarX rns x
         XVar{}                  -> return xx
-        XPrim{}                 -> return xx
+        XFrag{}                 -> return xx
         XCon{}                  -> return xx
         XLAM  mb x              -> XLAM mb   <$> desugarX   rns x
         XLam  mb x              -> XLam mb   <$> desugarX   rns x
