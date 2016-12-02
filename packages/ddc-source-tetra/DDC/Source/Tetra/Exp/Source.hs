@@ -72,6 +72,7 @@ module DDC.Source.Tetra.Exp.Source
         , Witness,      GWitness    (..)
         , WiCon,        GWiCon      (..)
         , DaCon (..)
+        , Prim  (..)
 
         , DaConBind     (..)
         , DaConBound    (..)

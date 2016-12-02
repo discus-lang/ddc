@@ -50,6 +50,7 @@ module DDC.Source.Tetra.Exp.Generic
         , GWitness      (..)
         , GWiCon        (..)
         , DaCon         (..)
+        , Prim          (..)
 
           -- * Dictionaries
         , ShowLanguage)

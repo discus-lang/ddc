@@ -145,6 +145,9 @@ module DDC.Source.Tetra.Exp
         , DaConBind     (..)
         , DaConBound    (..)
 
+          -- ** Primitives
+        , Prim          (..)
+
           -----------------------------
           -- ** Term Primitives
         , PrimVal       (..)

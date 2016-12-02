@@ -298,7 +298,16 @@ pExpAtomSP
 
         -- Named variables.
  , do   (u,  sp)        <- pBoundNameSP
-        return  (sp, XVar u)
+
+        -- Detect names of primitives in the ambient calculus.
+        if      u == (UName $ Text.pack "project#") 
+                then return (sp, XPrim PProject)
+        else if u == (UName $ Text.pack "shuffle#")
+                then return (sp, XPrim PShuffle)
+        else if u == (UName $ Text.pack "combine#")
+                then return (sp, XPrim PCombine)
+
+        else return (sp, XVar u)
 
 
         -- Debruijn indices
