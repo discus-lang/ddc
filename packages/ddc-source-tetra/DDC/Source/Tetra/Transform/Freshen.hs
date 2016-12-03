@@ -220,10 +220,10 @@ freshenExp xx
 
         XWhere a x cl   -> XWhere a <$> freshenExp x <*> freshenClauseGroup cl
 
-        XLamPat a p mt x
+        XAbsPat a ps p mt x
          -> do  mt'     <- traverse freshenType mt
                 bindPat p $ \p' 
-                 -> XLamPat a p' mt' <$> freshenExp x
+                 -> XAbsPat a ps p' mt' <$> freshenExp x
 
         XLamCase a as   
          -> XLamCase a   <$> mapM freshenAltCase as

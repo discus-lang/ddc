@@ -92,9 +92,9 @@ downX l f d xx
         XMatch    a gs x  -> XMatch    a (map (downMA l f d) gs) (downX l f d x)
         XWhere    a x cls -> XWhere    a (downX l f d x) (map (downCL l f d) cls)
 
-        XLamPat   a p mt x  
+        XAbsPat   a ps p mt x  
          -> let d'      = d + countBAnonsP l p
-            in  XLamPat a p mt (downX l f d' x)
+            in  XAbsPat a ps p mt (downX l f d' x)
 
         XLamCase  a alts
          -> XLamCase a (map (downA l f d) alts)

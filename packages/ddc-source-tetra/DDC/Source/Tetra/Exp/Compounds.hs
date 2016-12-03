@@ -132,7 +132,7 @@ takeAnnotOfExp xx
         XInfixVar a _           -> Just a
         XMatch    a _ _         -> Just a
         XWhere    a _ _         -> Just a
-        XLamPat   a _ _ _       -> Just a
+        XAbsPat   a _ _ _ _     -> Just a
         XLamCase  a _           -> Just a
 
 

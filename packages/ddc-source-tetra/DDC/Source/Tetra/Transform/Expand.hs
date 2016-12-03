@@ -188,9 +188,9 @@ downX a env xx
         XMatch a' as x   -> XMatch  a' (map (downMA a' env) as) (downX a' env x)
         XWhere a' x cls  -> XWhere  a' (downX a' env x) (map (downCX a env) cls)
 
-        XLamPat a' p mt x
+        XAbsPat a' ps p mt x
          -> let env'     = extendPat p env
-            in  XLamPat a' p mt (downX a' env' x)
+            in  XAbsPat a' ps p mt (downX a' env' x)
 
         XLamCase a' alts -> XLamCase a (map (downA a' env) alts)
 

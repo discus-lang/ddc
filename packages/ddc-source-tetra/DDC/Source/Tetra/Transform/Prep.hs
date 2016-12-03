@@ -282,7 +282,7 @@ desugarX rns xx
         XInfixOp{}              -> return xx
         XInfixVar{}             -> return xx
         XMatch   sp as x        -> XMatch   sp <$> mapM (desugarAM rns) as <*> desugarX rns x
-        XLamPat  sp p mt x      -> XLamPat  sp p mt <$> desugarX rns x
+        XAbsPat  sp ps p mt x   -> XAbsPat  sp ps p mt <$> desugarX rns x
         XLamCase sp alts        -> XLamCase sp <$> mapM (desugarAC rns) alts
 
 

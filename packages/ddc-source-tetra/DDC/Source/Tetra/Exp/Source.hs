@@ -62,7 +62,7 @@ module DDC.Source.Tetra.Exp.Source
         , Exp,          GExp        (..)
         , Lets,         GLets       (..)
         , Clause,       GClause     (..)
-        , Param,        GParam      (..)
+        , Param,        GParam      (..),       ParamSort (..)
         , Pat,          GPat        (..)
         , Guard,        GGuard      (..)
         , GuardedExp,   GGuardedExp (..)

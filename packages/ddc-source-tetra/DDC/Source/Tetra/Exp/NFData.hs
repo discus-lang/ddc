@@ -32,7 +32,7 @@ instance NFDataLanguage l => NFData (GExp l) where
         XInfixVar a s           -> rnf a   `seq` rnf s
         XMatch    a as x        -> rnf a   `seq` rnf as `seq` rnf x
         XWhere    a cl x        -> rnf a   `seq` rnf cl `seq` rnf x
-        XLamPat   a w mt x      -> rnf a   `seq` rnf w  `seq` rnf mt `seq` rnf x
+        XAbsPat   a _ps w mt x  -> rnf a   `seq` rnf w  `seq` rnf mt `seq` rnf x
         XLamCase  a as          -> rnf a   `seq` rnf as
 
 

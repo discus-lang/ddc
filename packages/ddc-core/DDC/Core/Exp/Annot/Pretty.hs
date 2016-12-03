@@ -85,7 +85,7 @@ instance (Pretty n, Eq n) => Pretty (Exp a n) where
 
         XAbs _ (MImplicit b) xBody
          -> pprParen' (d > 1)
-                $  text "\955{" <> ppr b <> text "} -> "
+                $  text "\955{" <> ppr b <> text "}."
                 <> breakWhen (not $ isSimpleX xBody)
                 <> pprX xBody
 

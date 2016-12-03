@@ -77,17 +77,17 @@ instance Defix GExp l where
                 xs_apps <- defixApps a table xs'
                 defixExps a table xs_apps
 
-        XInfixOp{}      -> return xx
+        XInfixOp{}              -> return xx
         
         XInfixVar a str
          -> case lookupDefInfixOfSymbol table str of
-                Just def -> return (fixDefExp def a)
-                Nothing  -> Left $ ErrorNoInfixDef a str
+                Just def        -> return (fixDefExp def a)
+                Nothing         -> Left $ ErrorNoInfixDef a str
 
-        XMatch   a gs x   -> liftM2 (XMatch a) (mapM down gs) (down x)
-        XWhere   a x cls  -> liftM2 (XWhere a) (down x) (mapM down cls)
-        XLamPat  a p mt x -> liftM  (XLamPat a p mt) (down x)
-        XLamCase a alts   -> liftM  (XLamCase a) (mapM down alts)
+        XMatch   a gs x         -> liftM2 (XMatch a) (mapM down gs) (down x)
+        XWhere   a x cls        -> liftM2 (XWhere a) (down x) (mapM down cls)
+        XAbsPat  a ps p mt x    -> liftM  (XAbsPat a ps p mt) (down x)
+        XLamCase a alts         -> liftM  (XLamCase a) (mapM down alts)
 
 
 

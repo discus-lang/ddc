@@ -307,7 +307,7 @@ toCoreX a xx
         S.XInfixVar{}   -> Left $ ErrorConvertSugaredExp xx
         S.XMatch{}      -> Left $ ErrorConvertSugaredExp xx
         S.XWhere{}      -> Left $ ErrorConvertSugaredExp xx
-        S.XLamPat{}     -> Left $ ErrorConvertSugaredExp xx
+        S.XAbsPat{}     -> Left $ ErrorConvertSugaredExp xx
         S.XLamCase{}    -> Left $ ErrorConvertSugaredExp xx        
 
 

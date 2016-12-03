@@ -137,24 +137,12 @@ pExpFrontSP
  [ do   sp      <- P.choice 
                         [ pSym SLambda
                         , pSym SBackSlash ]
-
-        pts     <- P.choice
-                [ P.try
-                   $ fmap concat $ P.many1 
-                   $ do pSym SRoundBra
-                        ps      <- P.many1 pPat
-                        pTok (KOp ":")
-                        t       <- pType
-                        pSym SRoundKet
-                        return  [(p, Just t) | p <- ps]
-
-                , do    ps      <- P.many1 pPatAtom
-                        return  [(p, Nothing) | p <- ps]
-                ]
-
+        pts     <- fmap concat $ P.many1 pTermParam
         pSym    SArrowDashRight
         xBody   <- pExp
-        return  (sp, XAnnot sp $ foldr (\(p, mt) -> XLamPat sp p mt) xBody pts)
+        return  (sp, XAnnot sp 
+                        $ foldr (\(ps, p, mt) -> XAbsPat sp ps p mt) 
+                                xBody pts)
 
 
         -- Level-1 lambda abstractions.
@@ -179,7 +167,8 @@ pExpFrontSP
         pSym    SArrowDashRight
         xBody   <- pExp
         return  (sp, XAnnot sp 
-                        $ foldr (\(b, mt) x -> XAbs (MType b mt) x) xBody bmts)
+                        $ foldr (\(b, mt) x -> XAbs (MType b mt) x) 
+                                xBody bmts)
 
 
         -- let expression
@@ -272,6 +261,30 @@ pExpFrontSP
  , do   pExpAtomSP
  ]
  <?> "an expression"
+
+
+pTermParam :: Parser [(ParamSort, Pat, Maybe Type)]
+pTermParam
+ = P.choice
+ [ P.try $ do 
+         pSym SRoundBra
+         ps   <- P.many1 pPat
+         pTok (KOp ":")
+         t    <- pType
+         pSym SRoundKet
+         return  [(MSTerm, p, Just t) | p <- ps]
+
+ , P.try $ do
+         pSym SBraceBra
+         ps   <- P.many1 pPat
+         pTok (KOp ":")
+         t    <- pType
+         pSym SBraceKet
+         return  [(MSImplicit, p, Just t) | p <- ps]
+
+ , do    ps      <- P.many1 pPatAtom
+         return  [(MSTerm, p, Nothing) | p <- ps]
+ ]
 
 
 -- | Parse a variable, constructor or parenthesised expression,
@@ -638,16 +651,23 @@ pParamsSP
         pSym SSquareKet
         return  [ MType b (Just t) | b <- bs]
 
-{-
-        -- Witness parameter
+
+        -- Implicit term parameter
         --   {BIND : TYPE}
  , do   pSym  SBraceBra
-        b       <- pBind
-        pTok (KOp ":")
-        t       <- pType
+        ps      <- P.choice
+                [  P.try $ do
+                        ps      <- P.many1 pPatAtom
+                        pTok (KOp ":")
+                        t       <- pType
+                        return  [ MImplicit p (Just t) | p <- ps ]
+
+                , do    p       <- pPat
+                        return  [ MImplicit p Nothing ]
+                ]
         pSym  SBraceKet
-        return  [ MWitness b (Just t) ]
--}
+        return  ps
+
 
         -- Value parameter without a type annotation.
         --   This needs to come before the case for value patterns with type

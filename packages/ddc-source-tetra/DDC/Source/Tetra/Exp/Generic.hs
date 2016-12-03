@@ -51,6 +51,7 @@ module DDC.Source.Tetra.Exp.Generic
         , GWiCon        (..)
         , DaCon         (..)
         , Prim          (..)
+        , ParamSort     (..)
 
           -- * Dictionaries
         , ShowLanguage)
@@ -162,16 +163,15 @@ data GExp l
         --   and is desugared to a letrec.
         | XWhere    !(GXAnnot l) !(GExp l) ![GClause l]
 
-        -- | Lambda abstraction which matches its argument against
-        --   a single pattern.
-        | XLamPat   !(GXAnnot l) !(GPat l) !(Maybe (GType l)) !(GExp l)
+        -- | Abstraction which matches its argument against a single pattern.
+        | XAbsPat   !(GXAnnot l) !ParamSort !(GPat l) !(Maybe (GType l)) !(GExp l)
 
         -- | Lambda abstraction that matches its argument against
         --   the given alternatives.
         | XLamCase  !(GXAnnot l) ![GAltCase l]
 
 
--- | Parameter for a binding.
+-- | Parameter for an abstraction.
 data GParam l
         -- | Type parameter with optional kind.
         = MType     !(GXBindVar l) !(Maybe (GType l))
@@ -182,6 +182,13 @@ data GParam l
         -- | Implicit term pattern with optional type.
         | MImplicit !(GPat l)      !(Maybe (GType l))
 
+
+-- | Sorts of parameters that we have.
+data ParamSort
+        = MSType
+        | MSTerm
+        | MSImplicit
+        deriving Show
 
 
 -- | Possibly recursive bindings.

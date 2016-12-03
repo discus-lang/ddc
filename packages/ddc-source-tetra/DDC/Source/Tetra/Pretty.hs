@@ -261,13 +261,21 @@ instance PrettyLanguage l => Pretty (GExp l) where
                 <>  line
                 <>  text "}")
 
-        XLamPat _ p mt xBody
+        XAbsPat _ ps p mt xBody
          -> pprParen' (d > 1)
          $  text "\\" 
+                <> (case ps of 
+                        MSType          -> text "["
+                        MSTerm          -> text "("
+                        MSImplicit      -> text "{")
                 <> pprPrec 2 p 
                 <> (case mt of
                         Just t  -> text ": " <> ppr t
                         Nothing -> empty)
+                <> (case ps of 
+                        MSType          -> text "]"
+                        MSTerm          -> text ")"
+                        MSImplicit      -> text "}")
                 <> text "."
          <> breakWhen (not $ isSimpleX xBody)
          <> ppr xBody

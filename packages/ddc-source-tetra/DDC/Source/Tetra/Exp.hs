@@ -117,6 +117,7 @@ module DDC.Source.Tetra.Exp
 
           -- *** Parameters
         , Param,        GParam      (..)
+        , ParamSort     (..)
 
           -- *** Patterns
         , Pat,          GPat        (..)

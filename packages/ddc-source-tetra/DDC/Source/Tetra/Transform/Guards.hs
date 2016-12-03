@@ -122,17 +122,32 @@ desugarX sp xx
 
 
         -- Desugar lambda with a pattern for the parameter.
-        XLamPat _a PDefault mt x
-         -> XAbs (MTerm PDefault mt) <$> desugarX sp x 
+        XAbsPat _a MSTerm     PDefault mt x
+         -> XAbs  (MTerm      PDefault mt) <$> desugarX sp x 
 
-        XLamPat _a (PVar b) mt x
-         -> XAbs (MTerm (PVar b) mt) <$> desugarX sp x
+        XAbsPat _a MSTerm     (PVar b) mt x
+         -> XAbs  (MTerm      (PVar b) mt) <$> desugarX sp x
 
-        XLamPat _a p mt x
+        XAbsPat _a MSImplicit PDefault mt x
+         -> XAbs  (MImplicit  PDefault mt) <$> desugarX sp x
+
+        XAbsPat _a MSImplicit (PVar b) mt x
+         -> XAbs  (MImplicit  (PVar b) mt) <$> desugarX sp x
+
+        XAbsPat _a ps p mt x
          -> do  (b, u)  <- newVar "x"
                 x'      <- desugarX sp x
-                return  $  XAbs  (MTerm (PVar b) mt)
-                        $  XCase (XVar u) [ AAltCase p [GExp x'] ] 
+                case ps of
+                 MSType 
+                  -> return xx
+
+                 MSTerm
+                  -> return $  XAbs  (MTerm (PVar b) mt)
+                            $  XCase (XVar u) [ AAltCase p [GExp x'] ] 
+
+                 MSImplicit
+                  -> return $  XAbs  (MImplicit (PVar b) mt)
+                            $  XCase (XVar u) [ AAltCase p [GExp x'] ] 
 
 
         -- Desugar lambda case by inserting the intermediate variable.
