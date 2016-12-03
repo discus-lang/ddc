@@ -163,22 +163,23 @@ pExpFrontSP
                         [ pSym SBigLambda
                         , pSym SBigLambdaSlash ]
 
-        bs      <- P.choice
+        bmts    <- P.choice
                 [ fmap concat $ P.many1
                    $ do pSym SRoundBra
                         bs'     <- P.many1 pBind
                         pTok (KOp ":")
                         t       <- pType
                         pSym SRoundKet
-                        return  $ map (\b -> XBindVarMT b (Just t)) bs'
+                        return  [(b, Just t)  | b <- bs']
 
                 , do    bs'     <- P.many1 pBind
-                        return  $ map (\b -> XBindVarMT b Nothing) bs'
+                        return  [(b, Nothing) | b <- bs']
                 ]
 
         pSym    SArrowDashRight
         xBody   <- pExp
-        return  (sp, XAnnot sp $ foldr XLAM xBody bs)
+        return  (sp, XAnnot sp 
+                        $ foldr (\(b, mt) x -> XAbs (MType b mt) x) xBody bmts)
 
 
         -- let expression
@@ -692,10 +693,15 @@ funTypeOfParams (p:ps) tBody
             in  TApp (TCon (TyConForall k)) (TAbs b k $ funTypeOfParams ps tBody)
 
         MWitness  _ mt
-         -> let k       = fromMaybe (TBot S.KData) mt
+         -> let k        = fromMaybe (TBot S.KData) mt
             in  TImpl k $ funTypeOfParams ps tBody
 
-        MValue    _ mt
+        MValue     _ mt
+         -> let k       = fromMaybe (TBot S.KData) mt
+            in  TFun k  $ funTypeOfParams ps tBody
+
+        -- TODO: fix this
+        MImplicit  _ mt
          -> let k       = fromMaybe (TBot S.KData) mt
             in  TFun k  $ funTypeOfParams ps tBody
 

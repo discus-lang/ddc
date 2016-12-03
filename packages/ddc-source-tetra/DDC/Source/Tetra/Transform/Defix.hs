@@ -64,8 +64,7 @@ instance Defix GExp l where
         XFrag{}         -> return xx
         XVar{}          -> return xx
         XCon{}          -> return xx
-        XLAM  b x       -> liftM  (XLAM  b) (down x)
-        XLam  b x       -> liftM  (XLam  b) (down x)
+        XAbs  b x       -> liftM  (XAbs  b) (down x)
         XApp  x1 x2     -> liftM2  XApp     (down x1)  (down x2)
         XLet  lts x     -> liftM2  XLet     (down lts) (down x)
         XCase x alts    -> liftM2  XCase    (down x)   (mapM down alts)

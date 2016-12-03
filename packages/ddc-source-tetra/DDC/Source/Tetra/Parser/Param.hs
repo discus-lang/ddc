@@ -35,13 +35,13 @@ expOfParams [] xBody            = xBody
 expOfParams (p:ps) xBody
  = case p of
         ParamType    b mt
-         -> XLAM (XBindVarMT b mt) $ expOfParams ps xBody
+         -> XAbs (MType    b mt) $ expOfParams ps xBody
         
         ParamWitness b mt
-         -> XLam (XBindVarMT b mt) $ expOfParams ps xBody
+         -> XAbs (MWitness b mt) $ expOfParams ps xBody
 
         ParamValue   b mt
-         -> XLam (XBindVarMT b mt) $ expOfParams ps xBody
+         -> XAbs (MValue   (PVar b) mt) $ expOfParams ps xBody
 
 
 -- | Build the type of a function from specifications of its parameters,

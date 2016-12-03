@@ -38,10 +38,10 @@ module DDC.Source.Tetra.Exp.Generic
           -- ** Syntax
         , GXBindVarMT   (..)
         , GExp          (..)
+        , GParam        (..)
         , GLets         (..)
         , GPat          (..)
         , GClause       (..)
-        , GParam        (..)
         , GGuard        (..)
         , GGuardedExp   (..)
         , GAltMatch     (..)
@@ -113,13 +113,10 @@ data GExp l
         -- | Data constructor or literal.
         | XCon      !(DaCon (GXBoundCon l) (GType l))
 
-        -- | Type abstraction (level-1).
-        | XLAM      !(GXBindVarMT l) !(GExp l)
+        -- | Function abstraction.
+        | XAbs      !(GParam l)  !(GExp l)
 
-        -- | Value and Witness abstraction (level-0).
-        | XLam      !(GXBindVarMT l) !(GExp l)
-
-        -- | Application.
+        -- | Function application.
         | XApp      !(GExp  l)   !(GExp l)
 
         -- | A non-recursive let-binding.
@@ -174,6 +171,23 @@ data GExp l
         | XLamCase  !(GXAnnot l) ![GAltCase l]
 
 
+-- | Parameter for a binding.
+--   TODO: Dump witness binder, I don't think we're using it for anything.
+data GParam l
+        -- | Type parameter with optional kind.
+        = MType     !(GXBindVar l) !(Maybe (GType l))
+
+        -- | Witness parameter with optional type.
+        | MWitness  !(GXBindVar l) !(Maybe (GType l))
+
+        -- | Value pattern with optional type.
+        | MValue    !(GPat l)      !(Maybe (GType l))
+
+        -- | Implicit value pattern with optional type.
+        | MImplicit !(GPat l)      !(Maybe (GType l))
+
+
+
 -- | Possibly recursive bindings.
 --   Whether these are taken as recursive depends on whether they appear
 --   in an XLet or XLetrec group.
@@ -205,18 +219,6 @@ data GClause l
 
         -- | A function binding using pattern matching and guards.
         | SLet   !(GXAnnot l) !(GXBindVarMT l) ![GParam l] ![GGuardedExp l]
-
-
--- | Parameter for a binding.
-data GParam l
-        -- | Type parameter with optional kind.
-        = MType    !(GXBindVar l) (Maybe (GType l))
-
-        -- | Witness parameter with optional type.
-        | MWitness !(GXBindVar l) (Maybe (GType l))
-
-        -- | Value paatter with optional type.
-        | MValue   !(GPat l)      (Maybe (GType l))
 
 
 -- | Patterns.

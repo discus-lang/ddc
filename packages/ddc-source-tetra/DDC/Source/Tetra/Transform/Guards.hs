@@ -61,8 +61,7 @@ desugarX sp xx
         XFrag{}         -> pure xx
         XVar{}          -> pure xx
         XCon{}          -> pure xx
-        XLam  b x       -> XLam b     <$> pure x
-        XLAM  b x       -> XLAM b     <$> pure x
+        XAbs  b x       -> XAbs b     <$> pure x
         XApp  x1 x2     -> XApp       <$> desugarX   sp x1  <*> desugarX sp x2
         XLet  lts x     -> XLet       <$> desugarLts sp lts <*> desugarX sp x
         XCast c x       -> XCast c    <$> desugarX   sp x
@@ -124,15 +123,15 @@ desugarX sp xx
 
         -- Desugar lambda with a pattern for the parameter.
         XLamPat _a PDefault mt x
-         -> XLam (XBindVarMT BNone mt) <$> desugarX sp x 
+         -> XAbs (MValue PDefault mt) <$> desugarX sp x 
 
         XLamPat _a (PVar b) mt x
-         -> XLam (XBindVarMT b mt)     <$> desugarX sp x
+         -> XAbs (MValue (PVar b) mt) <$> desugarX sp x
 
         XLamPat _a p mt x
          -> do  (b, u)  <- newVar "x"
                 x'      <- desugarX sp x
-                return  $  XLam  (XBindVarMT b mt)
+                return  $  XAbs  (MValue (PVar b) mt)
                         $  XCase (XVar u) [ AAltCase p [GExp x'] ] 
 
 
@@ -140,7 +139,7 @@ desugarX sp xx
         XLamCase _a alts
          -> do  (b, u)  <- newVar "x"
                 alts'   <- mapM  (desugarAltCase sp) alts
-                return  $  XLam  (XBindVarMT b Nothing)
+                return  $  XAbs  (MValue (PVar b) Nothing)
                         $  XCase (XVar u) alts'
 
 
@@ -252,28 +251,36 @@ stripParamsToGuards (p:ps)
          -> do  (ps', gs) <- stripParamsToGuards ps
                 return (p : ps', gs)
 
-        MValue PDefault  _mt
-         -> do  (ps', gs) <- stripParamsToGuards ps
-                return (p : ps', gs)
+        MValue b mt
+         -> stripValue MValue    b mt
 
-        MValue (PVar _b) _mt
-         -> do  (ps', gs) <- stripParamsToGuards ps
-                return (p : ps', gs)
+        MImplicit b mt
+         -> stripValue MImplicit b mt
 
-        MValue (PAt b p1) _mt
-         -> do  (psParam', gsRest) <- stripParamsToGuards ps
-                ([p1'],    gsData) <- stripPatsToGuards  [p1]
-                let Just u         = takeBoundOfBind b
-                return  ( MValue (PVar b) _mt : psParam'
-                        , GPat p1' (XVar u) 
+ where stripValue make p' mt
+        = case p' of
+           PDefault
+            -> do (ps', gs) <- stripParamsToGuards ps
+                  return (p : ps', gs)
+
+           PVar _b
+            -> do (ps', gs) <- stripParamsToGuards ps
+                  return (p : ps', gs)
+
+           PAt b p1
+            -> do (psParam', gsRest) <- stripParamsToGuards ps
+                  ([p1'],    gsData) <- stripPatsToGuards  [p1]
+                  let Just u         = takeBoundOfBind b
+                  return  ( make (PVar b) mt : psParam'
+                          , GPat p1' (XVar u) 
                                 : (gsData ++ gsRest))
 
-        MValue (PData dc psData) mt
-         -> do  (psParam', gsRest) <- stripParamsToGuards ps
-                (psData',  gsData) <- stripPatsToGuards   psData
-                (b, u)             <- newVar "p"
-                return  ( MValue (PVar b) mt : psParam'
-                        , GPat (PData dc psData') (XVar u) 
+           PData dc psData
+            -> do (psParam', gsRest) <- stripParamsToGuards ps
+                  (psData',  gsData) <- stripPatsToGuards   psData
+                  (b, u)             <- newVar "p"
+                  return  ( make (PVar b) mt : psParam'
+                          , GPat (PData dc psData') (XVar u) 
                                 : (gsData ++ gsRest))
 
 

@@ -65,11 +65,21 @@ downX l f d xx
         XVar   u          -> XVar   (f d u)
         XCon   c          -> XCon    c
         XApp   x1 x2      -> XApp   (downX l f d x1) (downX l f d x2)
-        XLAM   b  x       -> XLAM b (downX l f d x)
 
-        XLam   b x     
-         -> let d'      = d + countBAnonsBM l [b]
-            in  XLam b (mapBoundAtDepthX l f d' x)
+        XAbs     (MType  b mt) x       
+         -> XAbs (MType  b mt) (downX l f d x)
+
+        XAbs     m@(MWitness b _mt) x     
+         -> let d'      = d + countBAnonsB l [b]
+            in  XAbs m (mapBoundAtDepthX l f d' x)
+
+        XAbs     m@(MValue p _mt) x     
+         -> let d'      = d + countBAnonsP l p
+            in  XAbs m (mapBoundAtDepthX l f d' x)
+
+        XAbs     m@(MImplicit p _mt) x     
+         -> let d'      = d + countBAnonsP l p
+            in  XAbs m (mapBoundAtDepthX l f d' x)
 
         XLet   lets x   
          -> let (lets', levels) = mapBoundAtDepthXLets l f d lets 

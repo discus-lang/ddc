@@ -168,9 +168,10 @@ module DDC.Source.Tetra.Exp
         , isXVar,       isXCon
         , isAtomX,      isAtomW
 
-          -- *** Lambdas
-        , isXLAM, isXLam
-        , isLambdaX
+          -- *** Abstractions
+          , isXAbs
+--        , isXLAM, isXLam
+--        , isLambdaX
 
           -- *** Applications
         , isXApp
@@ -194,13 +195,14 @@ module DDC.Source.Tetra.Exp
         , takeTypeOfBindMT
 
           -- *** Lambdas
+{-
         , makeXLAMs
         , makeXLams
         , makeXLamFlags
         , takeXLAMs
         , takeXLams
         , takeXLamFlags
-
+-}
           -- *** Applications
         , makeXApps
         , makeXAppsWithAnnots

@@ -153,6 +153,11 @@ bindParam pp cont
          -> do  mt'     <- traverse freshenType mt
                 cont $ MValue p' mt'
 
+        MImplicit p mt
+         -> bindPat p $ \p'
+         -> do  mt'     <- traverse freshenType mt
+                cont $ MImplicit p' mt'
+
 
 -------------------------------------------------------------------------------
 -- | Freshen a guarded expression.
@@ -179,15 +184,25 @@ freshenExp xx
         XVar u          -> XVar     <$> boundUX u
         XCon{}          -> return xx
 
-        XLAM (XBindVarMT b mt) x
+        XAbs (MType b mt) x
          -> do  mt'     <- traverse freshenType mt
                 bindBT b $ \b'
-                 -> XLAM (XBindVarMT b' mt') <$> freshenExp x
+                 -> XAbs (MType b' mt') <$> freshenExp x
 
-        XLam (XBindVarMT b mt) x
+        XAbs (MWitness b mt) x
          -> do  mt'     <- traverse freshenType mt
                 bindBX b $ \b'
-                 -> XLam (XBindVarMT b' mt') <$> freshenExp x
+                 -> XAbs (MWitness b' mt') <$> freshenExp x
+
+        XAbs (MValue p mt) x
+         -> do  mt'     <- traverse freshenType mt
+                bindPat p $ \p'
+                 -> XAbs (MValue p' mt') <$> freshenExp x
+
+        XAbs (MImplicit p mt) x
+         -> do  mt'     <- traverse freshenType mt
+                bindPat p $ \p'
+                 -> XAbs (MImplicit p' mt') <$> freshenExp x
 
         XApp x1 x2      -> XApp  <$> freshenExp x1 <*> freshenExp x2
 

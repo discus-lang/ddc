@@ -10,6 +10,7 @@ module DDC.Source.Tetra.Convert.Type
 
         , toCoreTBK
 
+        , toCoreParam
         , toCoreB,      toCoreBM
         , toCoreU
         , toCoreDaConBind
@@ -182,6 +183,49 @@ toCoreB bb
         S.BNone   -> return $ C.BNone hole
         S.BAnon   -> return $ C.BAnon hole
         S.BName n -> return $ C.BName (C.NameVar (Text.unpack n)) hole
+
+
+-- | Convert a parameter to core.
+toCoreParam  :: S.Param -> ConvertM a (C.Param C.Name)
+toCoreParam pp
+ = case pp of
+        S.MType b mt
+         -> C.MType     <$> toCoreBT UniverseKind b mt
+
+        S.MWitness b mt
+         -> C.MTerm     <$> toCoreBT UniverseSpec b mt
+
+        S.MValue p mt
+         -> C.MTerm     <$> toCorePT UniverseSpec p mt
+
+        S.MImplicit p mt
+         -> C.MImplicit <$> toCorePT UniverseSpec p mt
+
+
+toCorePT :: Universe -> S.Pat -> Maybe S.Type -> ConvertM a (C.Bind C.Name)
+toCorePT uu p mt
+ = do   t' <- case mt of
+               Nothing -> return $ C.TVar (C.UName C.NameHole)
+               Just t  -> toCoreT uu t
+
+        case p of
+         S.PDefault         -> return $ C.BNone t'
+         S.PVar (S.BNone)   -> return $ C.BNone t'
+         S.PVar (S.BAnon)   -> return $ C.BAnon t'
+         S.PVar (S.BName n) -> return $ C.BName (C.NameVar (Text.unpack n)) t'
+         _                  -> error "ddc-source-tetra.toCorePT: bad pattern"
+
+
+toCoreBT :: Universe -> S.Bind -> Maybe S.Type -> ConvertM a (C.Bind C.Name)
+toCoreBT uu b mt
+ = do   t' <- case mt of
+               Nothing -> return $ C.TVar (C.UName C.NameHole)
+               Just t  -> toCoreT uu t
+
+        case b of
+         S.BNone        -> return $ C.BNone t'
+         S.BAnon        -> return $ C.BAnon t'
+         S.BName n      -> return $ C.BName (C.NameVar (Text.unpack n)) t'
 
 
 -- | Convert a possibly annoted binding occurrence of a variable to core.

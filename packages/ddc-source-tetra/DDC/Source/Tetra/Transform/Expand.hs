@@ -153,15 +153,25 @@ downX a env xx
 
 
         -- Boilerplate ----------------
-        XLAM bm@(XBindVarMT b _) x
+        XAbs bm@(MType b _) x
          -> let env'    = env   & Env.extendTyVar' b
                 x'      = expand a env' x
-            in  XLAM bm x'
+            in  XAbs bm x'
 
-        XLam bm@(XBindVarMT b _) x
-         -> let env'    = env   & Env.extendDaVar' b 
+        XAbs bm@(MValue p _) x
+         -> let env'    = env   & extendPat p
                 x'      = expand a env' x
-            in  XLam bm x'
+            in  XAbs bm x'
+
+        XAbs bm@(MWitness b _) x
+         -> let env'    = env   & Env.extendDaVar' b
+                x'      = expand a env' x
+            in  XAbs bm x'
+
+        XAbs bm@(MImplicit p _) x
+         -> let env'    = env   & extendPat p
+                x'      = expand a env' x
+            in  XAbs bm x'
 
         XLet (LPrivate bts mR bxs) x2
          -> let env'    = env   & Env.extendsTyVar' bts
@@ -273,9 +283,10 @@ extendPat ww env
 extendParam :: Param -> Env -> Env
 extendParam pp env
  = case pp of
-        MType    b _    -> Env.union env (Env.singletonTyVar' b)
-        MWitness b _    -> Env.union env (Env.singletonDaVar' b)
-        MValue   p _    -> extendPat p env
+        MType      b _  -> Env.union env (Env.singletonTyVar' b)
+        MWitness   b _  -> Env.union env (Env.singletonDaVar' b)
+        MValue     p _  -> extendPat p env
+        MImplicit  p _  -> extendPat p env
 
 
 -- | Extend a type environment with the variables bound by the given guard.

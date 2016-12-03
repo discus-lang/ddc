@@ -180,8 +180,7 @@ desugarX sp xx
         XFrag{}         -> pure xx
         XVar{}          -> pure xx
         XCon{}          -> pure xx
-        XLam  b x       -> XLam b     <$> desugarX sp x
-        XLAM  b x       -> XLAM b     <$> desugarX sp x
+        XAbs  b x       -> XAbs b     <$> desugarX sp x
         XApp  x1 x2     -> XApp       <$> desugarX   sp x1  <*> desugarX sp x2
         XLet  lts x     -> XLet       <$> desugarLts sp lts <*> desugarX sp x
         XCast c x       -> XCast c    <$> desugarX   sp x

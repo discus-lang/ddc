@@ -180,18 +180,29 @@ instance PrettyLanguage l => Pretty (GExp l) where
         XVar  u         -> ppr u
         XCon  dc        -> ppr dc
         
-        XLAM  b xBody
+        XAbs  (MType b _) xBody
          -> pprParen' (d > 1)
                  $   text "/\\" <>  ppr b <> text "."
-                 <>  (if      isXLAM    xBody then empty
-                      else if isXLam    xBody then line <> space
+                 <>  (if      isXAbs    xBody then line <> space
                       else if isSimpleX xBody then space
                       else    line)
                  <>  ppr xBody
 
-        XLam b xBody
+        XAbs (MValue b _) xBody
          -> pprParen' (d > 1)
                  $  text "\\" <> ppr b <> text "."
+                 <> breakWhen (not $ isSimpleX xBody)
+                 <> ppr xBody
+
+        XAbs (MWitness b _) xBody
+         -> pprParen' (d > 1)
+                 $  text "\\" <> ppr b <> text "."
+                 <> breakWhen (not $ isSimpleX xBody)
+                 <> ppr xBody
+
+        XAbs (MImplicit b _) xBody
+         -> pprParen' (d > 1)
+                 $  text "\\{" <> ppr b <> text "}."
                  <> breakWhen (not $ isSimpleX xBody)
                  <> ppr xBody
 
@@ -362,6 +373,12 @@ instance PrettyLanguage l => Pretty (GParam l) where
 
  pprPrec _ (MValue   p (Just t))
   = parens $ pprPrec 0 p <> text ":" <+> ppr t
+
+ pprPrec _d (MImplicit b Nothing)
+  = text "{" <> ppr b <> text "}"
+
+ pprPrec _d (MImplicit b (Just t))
+  = text "{" <> ppr b <> text ":" <+> ppr t <> text "}"
 
 
 -- Pat --------------------------------------------------------------------------------------------

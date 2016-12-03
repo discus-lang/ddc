@@ -101,7 +101,8 @@ desugarP pp
  = case pp of
         MType{}         -> return pp
         MWitness{}      -> return pp
-        MValue w mt     -> MValue <$> desugarW w <*> return mt 
+        MValue w mt     -> MValue    <$> desugarW w <*> return mt 
+        MImplicit w mt  -> MImplicit <$> desugarW w <*> return mt 
 
 
 ---------------------------------------------------------------------------------------------------
@@ -271,8 +272,7 @@ desugarX rns xx
         XFrag{}                 -> return xx
         XVar{}                  -> return xx
         XCon{}                  -> return xx
-        XLAM  mb x              -> XLAM mb   <$> desugarX   rns x
-        XLam  mb x              -> XLam mb   <$> desugarX   rns x
+        XAbs  mb x              -> XAbs mb   <$> desugarX   rns x
         XApp  x1 x2             -> XApp      <$> desugarX   rns x1  <*> desugarX rns x2
         XLet  lts x             -> XLet      <$> desugarLts rns lts <*> desugarX rns x
         XCase x as              -> XCase     <$> desugarX   rns x   <*> mapM (desugarAC rns) as

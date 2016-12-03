@@ -268,11 +268,8 @@ toCoreX a xx
         S.XCon  dc
          -> C.XCon      <$> pure a <*> toCoreDC dc
 
-        S.XLAM  bm x
-         -> C.XLAM      <$> pure a <*> toCoreBM UniverseKind bm  <*> toCoreX a x
-
-        S.XLam  bm x
-         -> C.XLam      <$> pure a <*> toCoreBM UniverseSpec bm  <*> toCoreX a x
+        S.XAbs  p x
+         -> C.XAbs      <$> pure a <*> toCoreParam p  <*> toCoreX a x
 
         -- We don't want to wrap the source file path passed to the default# prim
         -- in a Text constructor, so detect this case separately.

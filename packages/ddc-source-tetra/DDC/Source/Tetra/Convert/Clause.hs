@@ -73,8 +73,7 @@ makeBindingFromClause sigs vals cc
          | otherwise            -> Left   $ ErrorTypeSignatureLacksBinding sp b
 
 
--- | Wrap an expression with lambda abstractions for each 
---   of the given parameters.
+-- | Wrap an expression with lambda abstractions for each of the given parameters.
 wrapParams :: [S.Param] -> S.Exp -> Maybe S.Exp
 wrapParams [] x 
  = pure x
@@ -82,18 +81,16 @@ wrapParams [] x
 wrapParams (p:ps) x
  = case p of
         S.MType    b mt    
-         -> S.XLAM (S.XBindVarMT b mt)       <$> wrapParams ps x
+         -> S.XAbs (S.MType b mt)       <$> wrapParams ps x
 
         S.MWitness b mt
-         -> S.XLam (S.XBindVarMT b mt)       <$> wrapParams ps x
+         -> S.XAbs (S.MWitness b mt)    <$> wrapParams ps x
 
-        S.MValue   S.PDefault mt
-         -> S.XLam (S.XBindVarMT S.BNone mt) <$> wrapParams ps x
+        S.MValue   p' mt
+         -> S.XAbs (S.MValue p' mt)       <$> wrapParams ps x
 
-        S.MValue   (S.PVar b) mt
-         -> S.XLam (S.XBindVarMT b mt)       <$> wrapParams ps x
+        S.MImplicit   p' mt
+         -> S.XAbs (S.MImplicit p' mt)       <$> wrapParams ps x
 
-        -- Some pattern that should have been desugared earlier.
-        S.MValue   _ _
-         -> Nothing
+
 

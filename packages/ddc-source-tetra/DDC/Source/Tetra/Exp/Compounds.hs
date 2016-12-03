@@ -33,13 +33,14 @@ module DDC.Source.Tetra.Exp.Compounds
 
           -- * Terms
           -- ** Lambdas
+{-
         , makeXLAMs
         , makeXLams
         , makeXLamFlags
         , takeXLAMs
         , takeXLams
         , takeXLamFlags
-
+-}
           -- ** Applications
         , makeXApps
         , makeXAppsWithAnnots
@@ -119,8 +120,7 @@ takeAnnotOfExp xx
         XFrag{}                 -> Nothing
         XVar{}                  -> Nothing
         XCon{}                  -> Nothing
-        XLAM    _  x            -> takeAnnotOfExp x
-        XLam    _  x            -> takeAnnotOfExp x
+        XAbs    _  x            -> takeAnnotOfExp x
         XApp    x1 x2           -> firstJust $ map takeAnnotOfExp [x1, x2]
         XLet    _  x            -> takeAnnotOfExp x
         XCase   x  _            -> takeAnnotOfExp x
@@ -139,6 +139,7 @@ takeAnnotOfExp xx
 firstJust = listToMaybe . catMaybes
 
 -- Lambdas ---------------------------------------------------------------------
+{-
 -- | Make some nested type lambdas.
 makeXLAMs :: [GXBindVarMT l] -> GExp l -> GExp l
 makeXLAMs bs x = foldr XLAM x bs
@@ -173,7 +174,6 @@ takeXLams xx
          ([], _)        -> Nothing
          (bs, body)     -> Just (bs, body)
 
-
 -- | Make some nested lambda abstractions,
 --   using a flag to indicate whether the lambda is a
 --   level-1 (True), or level-0 (False) binder.
@@ -201,7 +201,7 @@ takeXLamFlags xx
    in   case go [] xx of
          ([], _)        -> Nothing
          (bs, body)     -> Just (bs, body)
-
+-}
 
 -- Applications ---------------------------------------------------------------
 -- | Build sequence of value applications.

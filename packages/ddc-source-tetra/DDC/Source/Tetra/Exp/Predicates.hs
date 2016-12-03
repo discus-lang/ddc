@@ -7,9 +7,8 @@ module DDC.Source.Tetra.Exp.Predicates
         , isXVar,       isXCon
         , isAtomX,      isAtomW
 
-          -- * Lambdas
-        , isXLAM, isXLam
-        , isLambdaX
+          -- * Abstractions
+        , isXAbs
 
           -- * Applications
         , isXApp
@@ -67,15 +66,15 @@ isAtomW ww
         _               -> False
 
 
--- Lambdas --------------------------------------------------------------------
--- | Check whether an expression is a spec abstraction (level-1).
-isXLAM :: GExp l -> Bool
-isXLAM xx
+-- Abstractions----------------------------------------------------------------
+-- | Check whether an expression is an abstraction.
+isXAbs :: GExp l -> Bool
+isXAbs xx
  = case xx of
-        XLAM{}  -> True
+        XAbs{}  -> True
         _       -> False
 
-
+{-
 -- | Check whether an expression is a value or witness abstraction (level-0).
 isXLam :: GExp l -> Bool
 isXLam xx
@@ -88,7 +87,7 @@ isXLam xx
 isLambdaX :: GExp l -> Bool
 isLambdaX xx
         = isXLAM xx || isXLam xx
-
+-}
 
 -- Applications ---------------------------------------------------------------
 -- | Check whether an expression is an `XApp`.
