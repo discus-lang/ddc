@@ -219,10 +219,16 @@ convertX xx
     -> return $ XPrim a b
    XCon a c
     -> XCon a <$> convertDaCon c
-   XLAM a b x
-    -> XLAM a <$> convertBind  b <*> convertX x
-   XLam a b x
-    -> XLam a <$> convertBind  b <*> convertX x
+
+   XAbs a (MType b) x
+    -> XAbs a <$> (fmap MType $ convertBind  b) <*> convertX x
+
+   XAbs a (MTerm b) x
+    -> XAbs a <$> (fmap MTerm $ convertBind  b) <*> convertX x
+
+   XAbs a (MImplicit b) x
+    -> XAbs a <$> (fmap MImplicit $ convertBind  b) <*> convertX x
+
    XApp a p q
     -> XApp a <$> convertX     p <*> convertX q
    XLet a ls x

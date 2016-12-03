@@ -70,11 +70,14 @@ instance FromAnnot (N.Exp a A.Name) Exp where
         N.XCon  _ c
          -> G.XCon  <$> fromAnnot c
 
-        N.XLAM  _ b x
+        N.XAbs  _ (N.MType b) x
          -> G.XAbs  <$> (G.ALAM <$> fromAnnot b) <*> fromAnnot x
 
-        N.XLam  _ b x
+        N.XAbs  _ (N.MTerm b) x
          -> G.XAbs  <$> (G.ALam <$> fromAnnot b) <*> fromAnnot x
+
+        N.XAbs  _ (N.MImplicit _) _
+         -> error "ddc-core-salt.fromAnnot: not converting implict binder to salt"
 
         N.XApp  _ x1 (N.XType _ t) 
          -> G.XApp  <$> fromAnnot x1  <*> (G.RType    <$> fromAnnot t)

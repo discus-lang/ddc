@@ -7,11 +7,14 @@ module DDC.Core.Exp.Annot
 
          -- ** Expressions
         , Exp           (..)
+        , Param         (..)
         , Prim          (..)
         , Lets          (..)
         , Alt           (..)
         , Pat           (..)
         , Cast          (..)
+        , pattern XLam
+        , pattern XLAM
 
           -- ** Witnesses
         , Witness       (..)
@@ -68,8 +71,8 @@ module DDC.Core.Exp.Annot
         , takeXLams
         , takeXLamFlags
 
-        , Param(..)
-        , takeXLamParam
+        , ParamTVB(..)
+        , takeXLamParamTVB
 
           -- ** Applications
         , xApps

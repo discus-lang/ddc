@@ -76,8 +76,7 @@ transSuper tails xx
         -- Return a primitive value.
         XPrim a _       -> xReturn a (annotType a) xx
 
-        XLAM  a b x     -> XLAM  a b $ down x
-        XLam  a b x     -> XLam  a b $ down x
+        XAbs  a b x     -> XAbs  a b $ down x
 
         -- Tail-call a supercombinator.
         --   The super must have its arguments in standard order,
@@ -168,8 +167,7 @@ transX tails xx
         XVar{}          -> xx
         XPrim{}         -> xx
         XCon{}          -> xx
-        XLAM{}          -> xx
-        XLam{}          -> xx 
+        XAbs{}          -> xx
         XApp  a x1 x2   -> XApp  a (down x1) (down x2)
         XLet{}          -> xx 
         XCase{}         -> xx

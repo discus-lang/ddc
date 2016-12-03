@@ -19,8 +19,10 @@ instance Ord n => MapBoundT (Exp a) n where
         XPrim{}                 -> xx
         XCon{}                  -> xx
         XApp a x1 x2            -> XApp a   (down x1) (down x2)
-        XLAM a b x              -> XLAM a b (mapBoundAtDepthT f (d + countBAnons [b]) x)
-        XLam a b x              -> XLam a   (down b) (down x)
+
+        XAbs a (MType b) x      -> XAbs a (MType b) (mapBoundAtDepthT f (d + countBAnons [b]) x)
+        XAbs a (MTerm b) x      -> XAbs a (MTerm     (down b)) (down x)
+        XAbs a (MImplicit b) x  -> XAbs a (MImplicit (down b)) (down x)
          
         XLet a lets x   
          -> let (lets', levels) = mapBoundAtDepthTLets f d lets 

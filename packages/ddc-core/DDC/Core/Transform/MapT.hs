@@ -24,14 +24,22 @@ instance Monad m => MapT m (Exp a) where
         XVar  a u       -> pure (XVar  a u)
         XPrim a p       -> pure (XPrim a p)
         XCon  a c       -> pure (XCon  a c)
+        XAbs  a b x     -> XAbs     a <$> down b   <*> down x
         XApp  a x1 x2   -> XApp     a <$> down x1  <*> down x2
-        XLAM  a b x     -> XLAM     a <$> down b   <*> down x
-        XLam  a b x     -> XLam     a <$> down b   <*> down x
         XLet  a lts x   -> XLet     a <$> down lts <*> down x
         XCase a x alts  -> XCase    a <$> down x   <*> mapM down alts
         XCast a cc x    -> XCast    a <$> down cc  <*> down x
         XType a t       -> XType    a <$> f t
         XWitness a w    -> XWitness a <$> down w
+
+
+instance Monad m => MapT m Param where
+ mapT :: forall n. MAPT m Param n
+ mapT f pp
+  = case pp of
+        MType b         -> MType     <$> mapT f b
+        MTerm b         -> MTerm     <$> mapT f b
+        MImplicit b     -> MImplicit <$> mapT f b
 
 
 instance Monad m => MapT m (Lets a) where

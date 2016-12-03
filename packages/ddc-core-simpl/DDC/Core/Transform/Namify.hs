@@ -125,15 +125,20 @@ instance Namify (Exp a) where
         XPrim{}         -> return xx
         XCon{}          -> return xx
 
-        XLAM a b x
+        XAbs a (MType b) x
          -> do  (tnam', b')     <- pushT  tnam b
                 x'              <- namify tnam' xnam x
-                return $ XLAM a b' x'
+                return $ XAbs a (MType b') x'
 
-        XLam a b x
+        XAbs a (MTerm b) x
          -> do  (xnam', b')     <- pushX  tnam xnam b
                 x'              <- namify tnam xnam' x
-                return $ XLam a b' x'
+                return $ XAbs a (MTerm b') x'
+
+        XAbs a (MImplicit b) x
+         -> do  (xnam', b')     <- pushX  tnam xnam b
+                x'              <- namify tnam xnam' x
+                return $ XAbs a (MImplicit b') x'
 
         XApp  a x1 x2   
          ->     liftM3 XApp     (return a) (down x1)  (down x2)

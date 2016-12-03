@@ -159,8 +159,7 @@ boxingX config xx
         XVar{}          -> xx
         XPrim{}         -> xx
         XCon{}          -> xx
-        XLAM a b x      -> XLAM a b  (boxingX   config x)
-        XLam a b x      -> XLam a b  (boxingX   config x)
+        XAbs a b x      -> XAbs a b  (boxingX   config x)
         XApp a x1 x2    -> XApp a    (boxingX   config x1)  (boxingX config x2)
         XLet a lts x    -> XLet a    (boxingLts config lts) (boxingX config x)
         XCase a x alts  -> XCase a   (boxingX   config x)   (map (boxingAlt config) alts)

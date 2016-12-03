@@ -25,8 +25,7 @@ replaceX sub xx
         XVar{}          -> xx
         XPrim{}         -> xx
         XCon{}          -> xx
-        XLAM  a b x     -> XLAM  a b (down x)
-        XLam  a b x     -> XLam  a b (down x)
+        XAbs  a b x     -> XAbs  a b (down x)
         XApp  a x1 x2   -> XApp  a   (down x1) (down x2)
         XLet  a lts x2  -> XLet  a   (replaceL sub lts) (down x2)
         XCase a x alts  -> XCase a   (down x) (map (replaceA sub) alts)

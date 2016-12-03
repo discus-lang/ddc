@@ -135,13 +135,17 @@ rewriteX' ignore_toplevel rules x0
         go env x@XCon{}   args  _toplevel
          =      rewrites env x args
 
-        go env (XLAM a b e) args _toplevel
+        go env (XAbs a (MType b) e) args _toplevel
          = do   e' <- down (RE.lift b env) e 
-                rewrites env (XLAM a b e') args
+                rewrites env (XAbs a (MType b) e') args
 
-        go env (XLam a b e) args _toplevel
+        go env (XAbs a (MTerm b) e) args _toplevel
          = do   e' <- down (RE.extend b env) e
-                rewrites env (XLam a b e') args
+                rewrites env (XAbs a (MTerm b) e') args
+
+        go env (XAbs a (MImplicit b) e) args _toplevel
+         = do   e' <- down (RE.extend b env) e
+                rewrites env (XAbs a (MImplicit b) e') args
 
         go env (XLet a l@(LRec _) e) args toplevel
          = do   -- Don't add the @letrec@'s bindings to the rule shadow list if we're at the top-level

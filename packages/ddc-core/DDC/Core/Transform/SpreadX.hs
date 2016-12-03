@@ -122,13 +122,17 @@ instance SpreadX (Exp a) where
         XCon  a d       -> XCon  a (spreadDaCon kenv tenv d)
         XApp  a x1 x2   -> XApp  a (down x1) (down x2)
 
-        XLAM a b x
+        XAbs a (MType b) x
          -> let b'      = spreadT kenv b
-            in  XLAM a b' (spreadX (Env.extend b' kenv) tenv x)
+            in  XAbs a (MType b')     (spreadX (Env.extend b' kenv) tenv x)
 
-        XLam a b x      
+        XAbs a (MTerm b) x      
          -> let b'      = down b
-            in  XLam a b' (spreadX kenv (Env.extend b' tenv) x)
+            in  XAbs a (MTerm b')     (spreadX kenv (Env.extend b' tenv) x)
+
+        XAbs a (MImplicit b) x      
+         -> let b'      = down b
+            in  XAbs a (MImplicit b') (spreadX kenv (Env.extend b' tenv) x)
             
         XLet a lts x
          -> let lts'    = down lts

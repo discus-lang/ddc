@@ -98,18 +98,16 @@ enterX config arities xx
          -> error "ddc-core-simpl.Snip: snipX shouldn't give us an XApp"
 
         -- leafy constructors
-        XVar{}          -> xx
-        XPrim{}         -> xx
-        XCon{}          -> xx
-        XType{}         -> xx
-        XWitness{}      -> xx
+        XVar{}                  -> xx
+        XPrim{}                 -> xx
+        XCon{}                  -> xx
+        XType{}                 -> xx
+        XWitness{}              -> xx
 
         -- lambdas
-        XLAM a b e
-         -> XLAM a b (down [(b,0)] e)
-
-        XLam a b e
-         -> XLam a b (down [(b,0)] e)
+        XAbs a (MType b)     e  -> XAbs a (MType b)     (down [(b,0)] e)
+        XAbs a (MTerm b)     e  -> XAbs a (MTerm b)     (down [(b,0)] e)
+        XAbs a (MImplicit b) e  -> XAbs a (MImplicit b) (down [(b,0)] e)
 
         -- non-recursive let
         XLet a (LLet b x1) x2

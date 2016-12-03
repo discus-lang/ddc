@@ -462,8 +462,7 @@ checkValidPattern expr
  where  go (XVar _ _)           = return ()
         go XPrim{}              = return ()
         go (XCon _ _)           = return ()
-        go x@(XLAM _ _ _)       = Left $ ErrorNotFirstOrder x
-        go x@(XLam _ _ _)       = Left $ ErrorNotFirstOrder x
+        go x@(XAbs _ _ _)       = Left $ ErrorNotFirstOrder x
         go (XApp _ l r)         = go l >> go r
         go x@(XLet _ _ _)       = Left $ ErrorNotFirstOrder x
         go x@(XCase _ _ _)      = Left $ ErrorNotFirstOrder x

@@ -210,8 +210,7 @@ addArgsX nts xx
 
         -- For the rest of the constructs their types do not
         -- change during the transform so we can resuse the old ones.
-        XLAM a b xBody    -> XLAM  a b (downX xBody)
-        XLam a b xBody    -> XLam  a b (downX xBody)
+        XAbs a b xBody    -> XAbs  a b (downX xBody)
         XLet a lts xBody  -> XLet  a   (downLts lts)  (downX xBody)
         XCase a xScrut as -> XCase a   (downX xScrut) (map downA as)
         XCast a c x       -> XCast a c (downX x)

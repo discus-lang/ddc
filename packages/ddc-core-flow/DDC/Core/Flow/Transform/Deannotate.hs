@@ -22,17 +22,18 @@ instance Deannotate A.Exp S.Exp where
                         Nothing -> x
                         Just a' -> S.XAnnot a' x
     in case xx of
-        A.XVar  a u             -> wrap a (S.XVar u)
-        A.XPrim a p             -> wrap a (S.XPrim p)
-        A.XCon  a dc            -> wrap a (S.XCon dc)
-        A.XLAM  a b x           -> wrap a (S.XLAM b (down x))
-        A.XLam  a b x           -> wrap a (S.XLam b (down x))
-        A.XApp  a x1 x2         -> wrap a (S.XApp   (down x1)  (down x2))
-        A.XLet  a lts x2        -> wrap a (S.XLet   (down lts) (down x2))
-        A.XCase a x alts        -> wrap a (S.XCase  (down x)   (map down alts))
-        A.XCast a cc x          -> wrap a (S.XCast  (down cc)  (down x))
-        A.XType a t             -> wrap a (S.XType t)
-        A.XWitness a w          -> wrap a (S.XWitness (down w))
+        A.XVar  a u                     -> wrap a (S.XVar u)
+        A.XPrim a p                     -> wrap a (S.XPrim p)
+        A.XCon  a dc                    -> wrap a (S.XCon dc)
+        A.XAbs  a (A.MType b) x         -> wrap a (S.XLAM b (down x))
+        A.XAbs  a (A.MTerm b) x         -> wrap a (S.XLam b (down x))
+        A.XAbs  a (A.MImplicit b) x     -> wrap a (S.XLam b (down x))
+        A.XApp  a x1 x2                 -> wrap a (S.XApp   (down x1)  (down x2))
+        A.XLet  a lts x2                -> wrap a (S.XLet   (down lts) (down x2))
+        A.XCase a x alts                -> wrap a (S.XCase  (down x)   (map down alts))
+        A.XCast a cc x                  -> wrap a (S.XCast  (down cc)  (down x))
+        A.XType a t                     -> wrap a (S.XType t)
+        A.XWitness a w                  -> wrap a (S.XWitness (down w))
 
 
 instance Deannotate A.Lets S.Lets where

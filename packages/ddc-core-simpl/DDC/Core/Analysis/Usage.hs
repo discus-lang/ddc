@@ -147,23 +147,31 @@ usageX' xx
 
         -- Wrap usages from the body in UsedInLambda to singla that if we move
         -- the definition here then it might not be demanded at runtime.
-        XLAM a b1 x2
+        XAbs a (MType b1) x2
          |  ( used2, x2')  <- usageX' x2
          ,  UsedMap us2    <- used2
          ,  used2'         <- UsedMap (Map.map (map UsedInLambda) us2)
          ,  cleared        <- removeUsedMap used2' [b1]
          -> ( cleared
-            , XLAM (used2', a) b1 x2')
+            , XAbs (used2', a) (MType b1) x2')
 
         -- Wrap usages from the body in UsedInLambda to signal that if we move
         -- the definition here then it might not be demanded at runtime.
-        XLam a b1 x2
+        XAbs a (MTerm b1) x2
          |  ( used2, x2')  <- usageX' x2
          ,  UsedMap us2    <- used2
          ,  used2'         <- UsedMap (Map.map (map UsedInLambda) us2)
          ,  cleared        <- removeUsedMap used2' [b1]
          -> ( cleared
-            , XLam (used2', a) b1 x2')
+            , XAbs (used2', a) (MTerm b1) x2')
+
+        XAbs a (MImplicit b1) x2
+         |  ( used2, x2')  <- usageX' x2
+         ,  UsedMap us2    <- used2
+         ,  used2'         <- UsedMap (Map.map (map UsedInLambda) us2)
+         ,  cleared        <- removeUsedMap used2' [b1]
+         -> ( cleared
+            , XAbs (used2', a) (MImplicit b1) x2')
 
         XApp a x1 x2
          -- application of a function variable.

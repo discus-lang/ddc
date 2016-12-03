@@ -19,8 +19,16 @@ objectsOfExp xx
         XVar  _ _       -> Map.empty
         XPrim{}         -> Map.empty
         XCon  _ _       -> Map.empty
-        XLAM  _ _ x     -> objectsOfExp x
-        XLam  _ b x     -> Map.union  (objectsOfBind b)   (objectsOfExp x)
+
+        XAbs  _ (MType _) x
+         -> objectsOfExp x
+
+        XAbs  _ (MTerm b) x
+         -> Map.union  (objectsOfBind b)   (objectsOfExp x)
+
+        XAbs  _ (MImplicit b) x
+         -> Map.union  (objectsOfBind b)   (objectsOfExp x)
+
         XApp  _ x1 x2   -> Map.union  (objectsOfExp x1)   (objectsOfExp x2)
         XLet  _ lts x   -> Map.union  (objectsOfLets lts) (objectsOfExp x)
         XCase _ x alts  -> Map.unions (objectsOfExp x : map objectsOfAlt alts)

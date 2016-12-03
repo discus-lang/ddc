@@ -66,15 +66,20 @@ instance Bubble Exp where
         -- Drop casts before we leave lambda abstractions, because the
         -- function type depends on the effect and closure of the body.
         -- The cast could also reference the bound variable.
-        XLAM a b x
+        XAbs a (MType b) x
          -> let kenv'           = Env.extend b kenv
                 (cs, x')        = bubble kenv' tenv x
-            in  ([], XLAM a b (dropAllCasts kenv' tenv a cs x'))
+            in  ([], XAbs a (MType b) (dropAllCasts kenv' tenv a cs x'))
 
-        XLam a b x
+        XAbs a (MTerm b) x
          -> let tenv'           = Env.extend b tenv
                 (cs, x')        = bubble kenv tenv' x
-            in  ([], XLam a b (dropAllCasts kenv tenv' a cs x'))
+            in  ([], XAbs a (MTerm b) (dropAllCasts kenv tenv' a cs x'))
+
+        XAbs a (MImplicit b) x
+         -> let tenv'           = Env.extend b tenv
+                (cs, x')        = bubble kenv tenv' x
+            in  ([], XAbs a (MImplicit b) (dropAllCasts kenv tenv' a cs x'))
 
         -- Decend into applications.
         XApp a x1 x2

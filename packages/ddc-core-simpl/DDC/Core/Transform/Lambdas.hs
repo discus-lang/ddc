@@ -116,7 +116,7 @@ lambdasX p c xx
          -> return (xx, mempty)
          
         -- Lift type lambdas to top-level.
-        XLAM a b x0
+        XAbs a (MType b) x0
          -> enterLAM c a b x0 $ \c' x
          -> do  (x', r)         <- lambdasX p c' x
                 let xx'          = XLAM a b x'
@@ -142,10 +142,32 @@ lambdasX p c xx
 
 
         -- Lift value lambdas to top-level.
-        XLam a b x0
+        XAbs a (MTerm b) x0
          -> enterLam c a b x0 $ \c' x
          -> do  (x', r)      <- lambdasX p c' x
                 let xx'          = XLam a b x'
+                let Result _ bxs = r
+                
+                -- Decide whether to lift this lambda to top-level.
+                let liftMe       =  isLiftyContext (contextCtx c)  && null bxs
+
+                if liftMe
+                 then do
+                        let us' = supportEnvFlags
+                                $ support Env.empty Env.empty xx'
+
+                        (xCall, bLifted, xLifted)
+                         <- liftLambda p c us' a [(False, b)] x'
+                      
+                        return  ( xCall
+                                , Result True (bxs ++ [(bLifted, xLifted)]))
+
+                 else   return  (xx', r)
+
+        XAbs a (MImplicit b) x0
+         -> enterLam c a b x0 $ \c' x
+         -> do  (x', r)      <- lambdasX p c' x
+                let xx'          = XAbs a (MImplicit b) x'
                 let Result _ bxs = r
                 
                 -- Decide whether to lift this lambda to top-level.

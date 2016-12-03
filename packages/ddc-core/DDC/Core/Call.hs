@@ -89,10 +89,14 @@ isConsBox cc
 takeCallConsFromExp :: Exp a n -> [Cons n]
 takeCallConsFromExp xx
  = case xx of
-        XLAM _ b x         
+        XAbs _ (MType b) x         
          ->     ConsType  b : takeCallConsFromExp x
 
-        XLam _ b x         
+        XAbs _ (MTerm b) x         
+         -> let t       = typeOfBind b
+            in  ConsValue t : takeCallConsFromExp x
+
+        XAbs _ (MImplicit b) x         
          -> let t       = typeOfBind b
             in  ConsValue t : takeCallConsFromExp x
 

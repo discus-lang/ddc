@@ -40,8 +40,7 @@ instance Reannotate Exp where
         XVar     a u            -> XVar     <$> f a <*> pure u
         XPrim    a p            -> XPrim    <$> f a <*> pure p
         XCon     a u            -> XCon     <$> f a <*> pure u
-        XLAM     a b x          -> XLAM     <$> f a <*> pure b <*> down x
-        XLam     a b x          -> XLam     <$> f a <*> pure b <*> down x
+        XAbs     a b x          -> XAbs     <$> f a <*> pure b <*> down x
         XApp     a x1 x2        -> XApp     <$> f a            <*> down x1  <*> down x2
         XLet     a lts x        -> XLet     <$> f a            <*> down lts <*> down x
         XCase    a x alts       -> XCase    <$> f a            <*> down x   <*> mapM down alts

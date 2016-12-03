@@ -113,11 +113,15 @@ instance SupportX (Exp a) where
         XCon{}                  
          -> mempty
 
-        XLAM _ b x
+        XAbs _ (MType b) x
          -> support kenv tenv b 
          <> support (Env.extend b kenv) tenv x
 
-        XLam _ b x
+        XAbs _ (MTerm b) x
+         -> support kenv tenv b
+         <> support kenv (Env.extend b tenv) x
+
+        XAbs _ (MImplicit b) x
          -> support kenv tenv b
          <> support kenv (Env.extend b tenv) x
 

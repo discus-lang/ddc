@@ -116,12 +116,17 @@ curryX envt callables xx
         XCon     _ c     
          -> return $ XCon     () c
 
-        XLam     _ b xBody   
-         -> let callables' = shadowCallables [b] callables
-            in  XLam () b <$> curryX   envt callables' xBody
+        XAbs     _ (MType b) xBody
+         ->     XAbs () (MType b) <$> curryX   envt callables  xBody
 
-        XLAM     _ b xBody
-         ->     XLAM () b <$> curryX   envt callables  xBody
+        XAbs     _ (MTerm b) xBody   
+         -> let callables' = shadowCallables [b] callables
+            in  XAbs () (MTerm b) <$> curryX   envt callables' xBody
+
+        XAbs     _ (MImplicit b) xBody   
+         -> let callables' = shadowCallables [b] callables
+            in  XAbs () (MImplicit b) <$> curryX   envt callables' xBody
+
 
         XLet     _ lts@(LLet b _) xBody
          -> let callables' = shadowCallables [b] callables

@@ -75,12 +75,16 @@ instance Monad m => TransformDownMX m Exp where
         XPrim{}         -> return xx'
         XCon{}          -> return xx'
 
-        XLAM a b x1
-         -> liftM3 XLAM (return a) (return b)
+        XAbs a (MType b) x1
+         -> liftM3 XAbs (return a) (return (MType b))
                         (transformDownMX f (Env.extend b kenv) tenv x1)
 
-        XLam a b  x1    
-         -> liftM3 XLam (return a) (return b) 
+        XAbs a (MTerm b) x1    
+         -> liftM3 XAbs (return a) (return (MTerm b))
+                        (transformDownMX f kenv (Env.extend b tenv) x1)
+
+        XAbs a (MImplicit b) x1    
+         -> liftM3 XAbs (return a) (return (MImplicit b))
                         (transformDownMX f kenv (Env.extend b tenv) x1)
 
         XApp a x1 x2    

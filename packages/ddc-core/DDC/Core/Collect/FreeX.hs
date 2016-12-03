@@ -60,8 +60,10 @@ instance BindStruct (Exp a n) n where
                 _               -> []
 
         XApp _ x1 x2            -> slurpBindTree x1 ++ slurpBindTree x2
-        XLAM _ b x              -> [bindDefT BindLAM [b] [x]]
-        XLam _ b x              -> [bindDefX BindLam [b] [x]]      
+
+        XAbs _ (MType     b) x  -> [bindDefT BindLAM [b] [x]]
+        XAbs _ (MTerm     b) x  -> [bindDefX BindLam [b] [x]]      
+        XAbs _ (MImplicit b) x  -> [bindDefX BindLam [b] [x]]      
 
         XLet _ (LLet b x1) x2
          -> slurpBindTree x1

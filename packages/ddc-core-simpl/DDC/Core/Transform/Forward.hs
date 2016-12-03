@@ -175,8 +175,7 @@ instance Forward Exp where
         XVar  a u       -> return $ XVar  (snd a) u
         XPrim a p       -> return $ XPrim (snd a) p
         XCon  a u       -> return $ XCon  (snd a) u
-        XLAM  a b x     -> liftM    (XLAM (snd a) b) (down x)
-        XLam  a b x     -> liftM    (XLam (snd a) b) (down x)
+        XAbs  a b x     -> liftM    (XAbs (snd a) b) (down x)
         XApp  a x1 x2   -> liftM2   (XApp (snd a))   (down x1) (down x2)
 
         -- Always float last let-binding into its use.

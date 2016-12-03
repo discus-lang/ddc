@@ -40,8 +40,7 @@ instance Elaborate (Exp a) where
         XVar{}            -> xx
         XPrim{}           -> xx
         XCon{}            -> xx    
-        XLAM  a b    x    -> XLAM a b (down x)
-        XLam  a b    x    -> XLam a b (down x)
+        XAbs  a b    x    -> XAbs a b (down x)
         XApp  a x1   x2   -> XApp a (down x1) (down x2)
 
         XLet  a lts  x2 

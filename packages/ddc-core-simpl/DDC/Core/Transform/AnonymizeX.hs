@@ -72,13 +72,17 @@ instance AnonymizeX (Exp a) where
 
         XApp a x1 x2    -> XApp a (down x1) (down x2)
 
-        XLAM a b x
+        XAbs a (MType b) x
          -> let (kstack', b')   = pushAnonymizeBindT kstack b
-            in  XLAM a b'   (anonymizeWithX keep kstack' tstack x)
+            in  XAbs a (MType b') (anonymizeWithX keep kstack' tstack x)
 
-        XLam a b x
+        XAbs a (MTerm b) x
          -> let (tstack', b')   = pushAnonymizeBindX keep kstack tstack b
-            in  XLam a b'   (anonymizeWithX keep kstack tstack' x)
+            in  XAbs a (MTerm b') (anonymizeWithX keep kstack tstack' x)
+
+        XAbs a (MImplicit b) x
+         -> let (tstack', b')   = pushAnonymizeBindX keep kstack tstack b
+            in  XAbs a (MImplicit b') (anonymizeWithX keep kstack tstack' x)
 
         XLet a lts x
          -> let (kstack', tstack', lts')

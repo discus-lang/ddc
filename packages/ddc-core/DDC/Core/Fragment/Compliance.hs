@@ -124,7 +124,7 @@ instance Complies Exp where
         XCon{}          -> ok
 
         -- spec binders -------------------------
-        XLAM _ b x
+        XAbs _ (MType b) x
          | contextAbsBody context
          , not $ has featuresNestedFunctions
          -> throw $ ErrorUnsupported NestedFunctions
@@ -145,7 +145,29 @@ instance Complies Exp where
                 return (tUsed', vUsed)
 
         -- value and witness abstraction --------
-        XLam _ b x
+        XAbs _ (MTerm b) x
+         | contextAbsBody context
+         , not $ has featuresNestedFunctions
+         -> throw $ ErrorUnsupported NestedFunctions
+
+         | otherwise
+         -> do  
+                -- If the body isn't another lambda then remember
+                -- that we've entered into a function.
+                let context'
+                     | isXLAM x || isXLam x = context
+                     | otherwise            = setBody context
+
+                (tUsed, vUsed)  <- compliesX profile 
+                                        kenv (Env.extend b tenv)
+                                        context' x
+
+                vUsed'          <- checkBind profile tenv b vUsed
+                _               <- compliesT profile (typeOfBind b)
+                return (tUsed, vUsed')
+
+        -- implicit term binding.
+        XAbs _ (MImplicit b) x
          | contextAbsBody context
          , not $ has featuresNestedFunctions
          -> throw $ ErrorUnsupported NestedFunctions

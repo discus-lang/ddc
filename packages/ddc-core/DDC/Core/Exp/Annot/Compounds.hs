@@ -18,8 +18,8 @@ module DDC.Core.Exp.Annot.Compounds
         , takeXLams
         , takeXLamFlags
 
-        , Param(..)
-        , takeXLamParam
+        , ParamTVB(..)
+        , takeXLamParamTVB
 
           -- * Applications
         , xApps
@@ -78,8 +78,7 @@ annotOfExp xx
         XVar     a _    -> a
         XPrim    a _    -> a
         XCon     a _    -> a
-        XLAM     a _ _  -> a
-        XLam     a _ _  -> a
+        XAbs     a _ _  -> a
         XApp     a _ _  -> a
         XLet     a _ _  -> a
         XCase    a _ _  -> a
@@ -95,8 +94,7 @@ mapAnnotOfExp f xx
         XVar     a u      -> XVar     (f a) u
         XPrim    a p      -> XPrim    (f a) p
         XCon     a c      -> XCon     (f a) c
-        XLAM     a b  x   -> XLAM     (f a) b  x
-        XLam     a b  x   -> XLam     (f a) b  x
+        XAbs     a b  x   -> XAbs     (f a) b  x
         XApp     a x1 x2  -> XApp     (f a) x1 x2
         XLet     a lt x   -> XLet     (f a) lt x
         XCase    a x  as  -> XCase    (f a) x  as
@@ -165,7 +163,7 @@ takeXLamFlags xx
 
 
 -- | Parameters of a function.
-data Param n
+data ParamTVB n
         = ParamType  (Bind n)
         | ParamValue (Bind n)
         | ParamBox
@@ -173,8 +171,8 @@ data Param n
 
 
 -- | Take the parameters of a function.
-takeXLamParam :: Exp a n -> Maybe ([Param n], Exp a n)
-takeXLamParam xx
+takeXLamParamTVB :: Exp a n -> Maybe ([ParamTVB n], Exp a n)
+takeXLamParamTVB xx
  = let  go bs (XLAM  _ b x)       = go (ParamType  b : bs) x
         go bs (XLam  _ b x)       = go (ParamValue b : bs) x
         go bs (XCast _ CastBox x) = go (ParamBox     : bs) x

@@ -80,15 +80,20 @@ instance SubstituteWX Exp where
         XCon{}          -> xx
         XApp a x1 x2    -> XApp a (down sub x1) (down sub x2)
 
-        XLAM a b x
+        XAbs a (MType b) x
          -> let (sub1, b')      = bind1 sub b
                 x'              = down  sub1 x
-            in  XLAM a b' x'
+            in  XAbs a (MType b') x'
 
-        XLam a b x
+        XAbs a (MTerm b) x
          -> let (sub1, b')      = bind0 sub  b
                 x'              = down  sub1 x
-            in  XLam a b' x'
+            in  XAbs a (MTerm b') x'
+
+        XAbs a (MImplicit b) x
+         -> let (sub1, b')      = bind0 sub  b
+                x'              = down  sub1 x
+            in  XAbs a (MImplicit b') x'
 
         XLet a (LLet b x1) x2
          -> let x1'             = down  sub  x1

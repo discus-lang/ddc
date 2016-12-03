@@ -20,8 +20,7 @@ injectX injs xx
         XVar{}          -> xx
         XPrim{}         -> xx
         XCon{}          -> xx
-        XLAM  a b x     -> XLAM  a b   (injectX injs x) -- Should we error? Salt
-        XLam  a b x     -> XLam  a b   (injectX injs x) -- doesn't have lambdas.
+        XAbs  a b x     -> XAbs  a b   (injectX injs x) -- Should we error? Salt doesn't have lambdas.
         XApp  a x1 x2   -> XApp  a     (injectX injs x1)          (injectX injs x2)
         XLet  a lts x   -> XLet  a     (injectLts injs lts) 
                                        (injectionsOfLets injs lts (injectX injs x))

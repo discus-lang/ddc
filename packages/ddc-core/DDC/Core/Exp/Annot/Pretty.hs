@@ -64,7 +64,7 @@ instance (Pretty n, Eq n) => Pretty (Exp a n) where
          | otherwise
          -> ppr dc
         
-        XLAM{}
+        XAbs _ (MType _) _
          -> let Just (bs, xBody) = takeXLAMs xx
                 groups = partitionBindsByType bs
             in  pprParen' (d > 1)
@@ -75,13 +75,19 @@ instance (Pretty n, Eq n) => Pretty (Exp a n) where
                       else    line)
                  <>  pprX xBody
 
-        XLam{}
+        XAbs _ (MTerm _) _
          -> let Just (bs, xBody) = takeXLams xx
                 groups = partitionBindsByType bs
             in  pprParen' (d > 1)
                  $  (cat $ map (pprBinderGroup (text "\955")) groups) 
                  <> breakWhen (not $ isSimpleX xBody)
                  <> pprX xBody
+
+        XAbs _ (MImplicit b) xBody
+         -> pprParen' (d > 1)
+                $  text "\955{" <> ppr b <> text "} -> "
+                <> breakWhen (not $ isSimpleX xBody)
+                <> pprX xBody
 
         XApp _ x1 x2
          -> pprParen' (d > 10)
