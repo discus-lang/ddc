@@ -3,7 +3,7 @@ ok
 
 -- Parse kind function operator.
 -- This needs to be fully applied to have a sort.
-Data ~> Data :: Comp
+Data -> Data :: Comp
 
 
 -- Parse witness implication operator.
@@ -12,4 +12,4 @@ Data ~> Data :: Comp
 
 
 -- Parse type function operator.
-(->) :: Data ~> Data ~> Data
+(->) :: Data -> Data -> Data

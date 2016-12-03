@@ -1,7 +1,7 @@
 ok
 
 -- Pure function type.
-(->) :: Data ~> Data ~> Data
+(->) :: Data -> Data -> Data
 
 
 -- Base types.
@@ -29,13 +29,13 @@ Word64# :: Data
 
 
 -- Compuation type.
-S :: Effect ~> Data ~> Data
+S :: Effect -> Data -> Data
 
 
 -- Effect types.
-Read :: Region ~> Effect
-Write :: Region ~> Effect
-Alloc :: Region ~> Effect
+Read :: Region -> Effect
+Write :: Region -> Effect
+Alloc :: Region -> Effect
 
 
 -- Arithmetic operators.

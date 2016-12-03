@@ -24,7 +24,7 @@ let u = () in
 
 -- Beta reduce while avoiding capture of let-bound value variable.
 :trans..
-/\(thing : Region ~> Data).
+/\(thing : Region -> Data).
  \(make  : [r : Region]. Nat#  -> thing r).
  \(take  : [r : Region]. thing r -> Nat#).
 let x = 5# in 
@@ -50,6 +50,6 @@ let x = 5# in
 
 -- Rewrite variables on types of value binders.
 :trans..
-/\(thing : Region ~> Data). 
+/\(thing : Region -> Data). 
   (\(x : Unit -> Unit). /\(r : Region). \(y : thing r). y)
         (\(_ : Unit). private r in ());;

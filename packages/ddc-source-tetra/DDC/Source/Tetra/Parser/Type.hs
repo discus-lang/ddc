@@ -89,13 +89,15 @@ pTypeFun :: Parser Type
 pTypeFun
  = do   t1      <- pTypeApp
         P.choice 
-         [ -- T1 ~> T2
+         [ 
+
+{-           -- T1 ~> T2
            do   sp      <- pSym SArrowTilde
                 t2      <- pTypeForall
                 return  $  TAnnot sp $ TFun t1 t2
-
+-}
            -- T1 => T2
-         , do   sp      <- pSym SArrowEquals
+           do   sp      <- pSym SArrowEquals
                 t2      <- pTypeForall
                 return  $  TAnnot sp $ TImpl t1 t2
 
@@ -123,12 +125,14 @@ pTypeAtomSP :: Parser (Type, SourcePos)
 pTypeAtomSP
  = P.choice
  -- (~>) and (=>) and (->) and (TYPE2)
- [ -- (~>)
+ [
+{-
+   -- (~>)
    do   sp      <- pTokSP $ KOpVar "~>"
         return  (TAnnot sp $ TCon  TyConFun,  sp)
-
+-}
    -- (=>)
- , do   sp      <- pTokSP $ KOpVar "=>"
+   do   sp      <- pTokSP $ KOpVar "=>"
         return  (TAnnot sp $ TCon (TyConPrim (PrimTypeTwCon TwConImpl)), sp)
 
    -- (->)

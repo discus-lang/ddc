@@ -32,7 +32,7 @@ pExp c
         -- Level-0 lambda abstractions
         -- (λBIND.. . EXP) or (\BIND.. . EXP)
  [ do   sp      <- P.choice [ pSym SLambda,    pSym SBackSlash]
-        bs      <- liftM concat $ P.many1 (pBinds c)
+        bs      <- liftM concat $ P.many1 (pTermBinds c)
         pSym    SDot
         xBody   <- pExp c
         return  $ foldr (XLam sp) xBody bs
@@ -40,7 +40,7 @@ pExp c
         -- Level-1 lambda abstractions.
         -- (ΛBINDS.. . EXP) or (/\BIND.. . EXP)
  , do   sp      <- P.choice [ pSym SBigLambda, pSym SBigLambdaSlash] 
-        bs      <- liftM concat $ P.many1 (pBinds c)
+        bs      <- liftM concat $ P.many1 (pTypeBinds c)
         pSym    SDot
         xBody   <- pExp c
         return  $ foldr (XLAM sp) xBody bs
@@ -266,15 +266,35 @@ pPat c
 
         -- CON BIND BIND ...
  , do   nCon    <- pCon 
-        bs      <- liftM concat $ P.many (pBinds c)
+        bs      <- liftM concat $ P.many (pTermBinds c)
         return  $ PData (DaConBound nCon) bs]
+
+
+-- Type Binds in patterns can have no kind annotations
+-- or can have an annotation if the whole thing is in parens.
+pTypeBinds  :: (Ord n, Pretty n)
+            => Context n -> Parser n [Bind n]
+pTypeBinds c
+ = P.choice
+        -- Plain binder.
+ [ do   bs      <- P.many1 pBinder
+        return  [T.makeBindFromBinder b (T.tBot T.kData) | b <- bs]
+
+        -- Binder with kind, wrapped in parens.
+ , do   pSym SRoundBra
+        bs      <- P.many1 pBinder
+        pTok (KOp ":")
+        t       <- pKind c
+        pSym SRoundKet
+        return  [T.makeBindFromBinder b t | b <- bs]
+ ]
 
 
 -- Binds in patterns can have no type annotation,
 -- or can have an annotation if the whole thing is in parens.
-pBinds  :: (Ord n, Pretty n)
-        => Context n -> Parser n [Bind n]
-pBinds c
+pTermBinds  :: (Ord n, Pretty n)
+            => Context n -> Parser n [Bind n]
+pTermBinds c
  = P.choice
         -- Plain binder.
  [ do   bs      <- P.many1 pBinder

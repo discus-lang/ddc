@@ -3,7 +3,7 @@ module Data.Ref
 export { allocRef; readRef; writeRef }
 
 import foreign boxed type
- Ref       : Region ~> Data ~> Data
+ Ref       : Region -> Data -> Data
 
 import foreign c value
  allocRef  : [r: Region]. [a: Data]. a  -> S (Alloc r) (Ref r a)

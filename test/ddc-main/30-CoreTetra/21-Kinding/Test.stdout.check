@@ -19,7 +19,9 @@ When checking type.
 -- because its sort depends on how it's instantiated, 
 -- and we don't have sort polymorphism.
 When checking type.
-  Can't take sort of unapplied kind function constructor.
+  Universe malfunction.
+                 Type: (->)
+   is not in universe: Kind
 
 
 -- Error: body of a forall must have data or witness kind.
@@ -55,7 +57,7 @@ When checking type.
 When checking type.
   Invalid kind for type sum.
            the type sum: Const
-               has kind: Region ~> Witness
+               has kind: Region -> Witness
     but it must be Effect or Closure
 
 

@@ -239,23 +239,23 @@ When checking expression.
 
 -- Result kind of 'f' is defaulted to Data because the result is used
 -- as the type of a function parameter.
-Λ(f: Data ~> Data).
+Λ(f: Data -> Data).
 λ(a: f Int#). ()
-:*: [f: Data ~> Data].f Int# -> Unit
+:*: [f: Data -> Data].f Int# -> Unit
 :!: Pure
 
 
 -- As above, but with an explicit hole.
-Λ(f: Data ~> Data).
+Λ(f: Data -> Data).
 λ(a: f Int#). ()
-:*: [f: Data ~> Data].f Int# -> Unit
+:*: [f: Data -> Data].f Int# -> Unit
 :!: Pure
 
 
 -- As above, but with a more specific kind.
-Λ(f: Data ~> Data).
+Λ(f: Data -> Data).
 λ(a: f Int#). ()
-:*: [f: Data ~> Data].f Int# -> Unit
+:*: [f: Data -> Data].f Int# -> Unit
 :!: Pure
 
 
@@ -267,9 +267,9 @@ When checking expression.
 
 
 -- Kind of 'a' is unconstrained, but kind of 'x' is defaulted to Data.
-Λ(f: ?2 ~> Data).Λ(a: ?2).
+Λ(f: ?2 -> Data).Λ(a: ?2).
 λ(x: f a). ()
-:*: [f: ?2 ~> Data].[a: ?2].f a -> Unit
+:*: [f: ?2 -> Data].[a: ?2].f a -> Unit
 :!: Pure
 
 
@@ -385,32 +385,32 @@ x
 
 
 -- Combo 1.
-Λ(r: Region).Λ(e: Effect).Λ(g: Region ~> Effect).
+Λ(r: Region).Λ(e: Effect).Λ(g: Region -> Effect).
 λ(f: ?9 -> ?10).λ(x: ?9).
 box
 weakeff [Read r + e + g r] in
 f x
-:*: [r: Region].[e: Effect].[g: Region ~> Effect].(?9 -> ?10) -> ?9 -> S (Read r + e + g r) ?10
+:*: [r: Region].[e: Effect].[g: Region -> Effect].(?9 -> ?10) -> ?9 -> S (Read r + e + g r) ?10
 :!: Pure
 
 
 -- Combo 2.
-Λ(f: ?3 ~> Data).Λ(a: ?3).
+Λ(f: ?3 -> Data).Λ(a: ?3).
 λ(x: [w: Data].f a).λ(g: f a -> Nat# -> ?11).
 let y: Nat# -> ?11
       = g (x [Nat#]) in
 y 5#
-:*: [f: ?3 ~> Data].[a: ?3].([w: Data].f a) -> (f a -> Nat# -> ?11) -> ?11
+:*: [f: ?3 -> Data].[a: ?3].([w: Data].f a) -> (f a -> Nat# -> ?11) -> ?11
 :!: Pure
 
 
 -- Combo 3.
-Λ(f: Data ~> Region).Λ(a: Data).
+Λ(f: Data -> Region).Λ(a: Data).
 λ(x: [w: Region].a).λ(g: a -> Nat# -> ?10).
 let y: Nat# -> ?10
       = g
             (x [f a]) in
 y 5#
-:*: [f: Data ~> Region].[a: Data].([w: Region].a) -> (a -> Nat# -> ?10) -> ?10
+:*: [f: Data -> Region].[a: Data].([w: Region].a) -> (a -> Nat# -> ?10) -> ?10
 :!: Pure
 

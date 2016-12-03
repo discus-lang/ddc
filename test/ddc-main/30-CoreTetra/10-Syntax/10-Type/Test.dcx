@@ -3,7 +3,7 @@
 
 -- Parse kind function operator.
 -- This needs to be fully applied to have a sort.
-:sort (~>) Data Data
+:sort (->) Data Data
 
 
 -- Parse witness implication operator.

@@ -77,7 +77,7 @@ test : Unit
 
 -- Error: witness types with a private must use explicit type constructors.
 :check..
-/\(c : Region ~> Witness).
+/\(c : Region -> Witness).
 private r1 with { w : c r1 } in
 ();;
 

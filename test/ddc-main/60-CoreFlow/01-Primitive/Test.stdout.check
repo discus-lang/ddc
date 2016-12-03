@@ -9,8 +9,8 @@ Int# :: Data
 Nat# :: Data
 Float32# :: Data
 Float64# :: Data
-Vec4# :: Data ~> Data
-Vec8# :: Data ~> Data
+Vec4# :: Data -> Data
+Vec8# :: Data -> Data
 Vec4# Float64# :: Data
 Vec8# Float32# :: Data
 
@@ -26,19 +26,19 @@ vsub$4# :: [^: Data].Vec4# ^0 -> Vec4# ^0 -> Vec4# ^0
 
 
 -- Flow type constructors
-Tuple2# :: Data ~> Data ~> Data
-Vector# :: Data ~> Data
-Series# :: Proc ~> Rate ~> Data ~> Data
-Segd# :: Rate ~> Rate ~> Data
-Sel1# :: Proc ~> Rate ~> Rate ~> Data
-Ref# :: Data ~> Data
+Tuple2# :: Data -> Data -> Data
+Vector# :: Data -> Data
+Series# :: Proc -> Rate -> Data -> Data
+Segd# :: Rate -> Rate -> Data
+Sel1# :: Proc -> Rate -> Rate -> Data
+Ref# :: Data -> Data
 World# :: Data
-RateNat# :: Rate ~> Data
-Down4# :: Rate ~> Rate
-Down8# :: Rate ~> Rate
-RateAppend# :: Rate ~> Rate ~> Rate
-RateCross# :: Rate ~> Rate ~> Rate
-Resize# :: Proc ~> Rate ~> Rate ~> Data
+RateNat# :: Rate -> Data
+Down4# :: Rate -> Rate
+Down8# :: Rate -> Rate
+RateAppend# :: Rate -> Rate -> Rate
+RateCross# :: Rate -> Rate -> Rate
+Resize# :: Proc -> Rate -> Rate -> Data
 
 
 -- Primitive data constructors

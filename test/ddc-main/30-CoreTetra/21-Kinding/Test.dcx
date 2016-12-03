@@ -12,7 +12,7 @@
 -- Error: can't sort-check the naked kind function, 
 -- because its sort depends on how it's instantiated, 
 -- and we don't have sort polymorphism.
-:sort (~>)
+:sort (->)
 
 
 -- Error: body of a forall must have data or witness kind.

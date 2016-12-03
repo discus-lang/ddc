@@ -16,7 +16,7 @@ data SoCon
 data KiCon
         -- | Function kind constructor.
         --   This is only well formed when it is fully applied.
-        = KiConFun              -- (~>)
+        = KiConFun              -- (->)
 
         -- Witness kinds ------------------------
         -- | Kind of witnesses.
@@ -83,24 +83,24 @@ data TcCon
 
         -- Effect type constructors -------------
         -- | Read of some region.
-        | TcConRead             -- :: 'Region ~> Effect'
+        | TcConRead             -- Read      :: 'Region ~> Effect'
 
         -- | Read the head region in a data type.
-        | TcConHeadRead         -- :: 'Data   ~> Effect'
+        | TcConHeadRead         -- HeadRead  :: 'Data   ~> Effect'
 
         -- | Read of all material regions in a data type.
-        | TcConDeepRead         -- :: 'Data   ~> Effect'
+        | TcConDeepRead         -- DeepRead  :: 'Data   ~> Effect'
         
         -- | Write of some region.
-        | TcConWrite            -- :: 'Region ~> Effect'
+        | TcConWrite            -- Write     :: 'Region ~> Effect'
 
         -- | Write to all material regions in some data type.
-        | TcConDeepWrite        -- :: 'Data   ~> Effect'
+        | TcConDeepWrite        -- DeepWrite :: 'Data   ~> Effect'
         
         -- | Allocation into some region.
-        | TcConAlloc            -- :: 'Region ~> Effect'
+        | TcConAlloc            -- Alloc     :: 'Region ~> Effect'
 
         -- | Allocation into all material regions in some data type.
-        | TcConDeepAlloc        -- :: 'Data   ~> Effect'
+        | TcConDeepAlloc        -- DeepAlloc :: 'Data   ~> Effect'
         deriving (Eq, Ord, Show)
 

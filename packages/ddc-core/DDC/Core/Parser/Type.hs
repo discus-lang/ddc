@@ -1,9 +1,8 @@
 
 -- | Parser for type expressions.
 module DDC.Core.Parser.Type
-        ( pType
-        , pTypeAtom
-        , pTypeApp
+        ( pKind, pKindAtom
+        , pType, pTypeAtom, pTypeApp
         , pBinder
         , pIndex
         , pTok
@@ -19,6 +18,65 @@ import qualified DDC.Control.Parser     as P
 import qualified DDC.Type.Sum           as TS
 
 
+---------------------------------------------------------------------------------------------------
+-- | Parse a kind.
+pKind   :: (Ord n, Pretty n)
+        => Context n -> Parser n (Kind n)
+pKind c
+ = do     pKindFun c
+ <?> "a kind"
+
+
+-- | Parse a function type.
+pKindFun 
+        :: (Ord n, Pretty n)
+        => Context n -> Parser n (Type n)
+
+pKindFun c
+ = do   t1      <- pKindAtom c
+        P.choice 
+         [ -- T1 -> T2
+           do   pSym    SArrowDashRight
+                t2      <- pKindFun c
+                return $ t1 `kFun`   t2
+
+           -- Body type
+         , do   return t1 ]
+ <?> "an atomic kind or kind application"
+
+
+-- | Parse a variable, constructor or parenthesised type.
+pKindAtom 
+        :: (Ord n, Pretty n)
+        => Context n -> Parser n (Type n)
+pKindAtom c
+ = P.choice
+        [ -- (->)
+          do    pTok (KOpVar "->")
+                return  $ TCon $ TyConKind KiConFun
+
+        -- (TYPE2)
+        , do    pSym SRoundBra
+                t       <- pKindFun c
+                pSym SRoundKet
+                return t 
+
+        -- Named type constructors
+        , do    ki      <- pKiCon
+                return  $ TCon (TyConKind ki)
+
+        , do    tc      <- pTyConNamed
+                return  $ TCon tc
+
+        -- Variables (and existentials)
+        , do    v       <- pVar
+                return  $  TVar (UName v)
+
+        ]
+ <?> "an atomic kind"
+
+
+---------------------------------------------------------------------------------------------------
 -- | Parse a type.
 pType   :: (Ord n, Pretty n)
         => Context n -> Parser n (Type n)
@@ -45,25 +103,6 @@ pTypeSum c
  <?> "a type"
 
 
--- | Parse a binder.
-pBinder :: (Ord n, Pretty n)
-        => Parser n (Binder n)
-pBinder
- = P.choice
-        -- Named binders.
-        [ do    v       <- pVar
-                return  $ RName v
-                
-        -- Anonymous binders.
-        , do    pSym    SHat
-                return  $ RAnon 
-        
-        -- Vacant binders.
-        , do    pSym    SUnderscore
-                return  $ RNone ]
- <?> "a binder"
-
-
 -- | Parse a quantified type.
 pTypeForall 
         :: (Ord n, Pretty n)
@@ -74,7 +113,7 @@ pTypeForall c
            do   pSym SLambda
                 bs      <- P.many1 pBinder
                 pTok (KOp ":")
-                k       <- pTypeSum c
+                k       <- pKind c
                 pSym SDot
 
                 tBody    <- pTypeForall c
@@ -87,7 +126,7 @@ pTypeForall c
          , do   pSym SSquareBra
                 bs      <- P.many1 pBinder
                 pTok (KOp ":")
-                k       <- pTypeSum c
+                k       <- pKind c
                 pSym SSquareKet
                 pSym SDot
 
@@ -109,13 +148,16 @@ pTypeFun
 pTypeFun c
  = do   t1      <- pTypeApp c
         P.choice 
-         [ -- T1 ~> T2
+         [ 
+
+{-           -- T1 ~> T2
+           -- ** Change this to TyConImplicit *************
            do   pSym    SArrowTilde
                 t2      <- pTypeForall c
                 return  $ TApp (TApp (TCon (TyConKind KiConFun)) t1) t2
-
+-}
            -- T1 => T2
-         , do   pSym    SArrowEquals
+           do   pSym    SArrowEquals
                 t2      <- pTypeForall c
                 return  $ TApp (TApp (TCon (TyConWitness TwConImpl)) t1) t2
 
@@ -145,13 +187,9 @@ pTypeAtom
         => Context n -> Parser n (Type n)
 pTypeAtom c
  = P.choice
-        -- (~>) and (=>) and (->) and (TYPE2)
-        [ -- (~>)
-          do    pTok (KOpVar "~>")
-                return (TCon $ TyConKind KiConFun)
-
-          -- (=>)
-        , do    pTok (KOpVar "=>")
+        -- (=>) and (->) and (TYPE2)
+        [ -- (=>)
+          do    pTok (KOpVar "=>")
                 return (TCon $ TyConWitness TwConImpl)
 
           -- (->)
@@ -210,6 +248,26 @@ pTypeAtom c
                 return  $  TVar (UIx i)
         ]
  <?> "an atomic type"
+
+
+-------------------------------------------------------------------------------
+-- | Parse a binder.
+pBinder :: (Ord n, Pretty n)
+        => Parser n (Binder n)
+pBinder
+ = P.choice
+        -- Named binders.
+        [ do    v       <- pVar
+                return  $ RName v
+                
+        -- Anonymous binders.
+        , do    pSym    SHat
+                return  $ RAnon 
+        
+        -- Vacant binders.
+        , do    pSym    SUnderscore
+                return  $ RNone ]
+ <?> "a binder"
 
 
 -------------------------------------------------------------------------------

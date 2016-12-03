@@ -14,7 +14,7 @@ instance Pretty SoCon where
 instance Pretty KiCon where
  ppr kc
   = case kc of
-        KiConFun        -> text "(~>)"
+        KiConFun        -> text "(->)"
         KiConData       -> text "Data"
         KiConRegion     -> text "Region"
         KiConEffect     -> text "Effect"

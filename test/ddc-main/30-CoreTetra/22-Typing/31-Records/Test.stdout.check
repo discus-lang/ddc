@@ -2,13 +2,13 @@ ok
 
 -- Check kinds of primitive record type constructors.
 ()# :: Data
-(x)# :: Data ~> Data
-(x,y)# :: Data ~> Data ~> Data
-(x,y,z)# :: Data ~> Data ~> Data ~> Data
-(x,x,x)# :: Data ~> Data ~> Data ~> Data
+(x)# :: Data -> Data
+(x,y)# :: Data -> Data -> Data
+(x,y,z)# :: Data -> Data -> Data -> Data
+(x,x,x)# :: Data -> Data -> Data -> Data
 
-(x,y,z)# Nat# :: Data ~> Data ~> Data
-(x,y,z)# Nat# Bool# :: Data ~> Data
+(x,y,z)# Nat# :: Data -> Data -> Data
+(x,y,z)# Nat# Bool# :: Data -> Data
 
 
 -- Check types of primitive record data constructors.

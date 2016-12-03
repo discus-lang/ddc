@@ -56,7 +56,7 @@ pDataParam c
  = do   pSym SRoundBra
         ns      <- P.many1 pName
         pTokSP (KOp ":")
-        k       <- pType c
+        k       <- pKind c
         pSym SRoundKet
         return  [BName n k | n <- ns]
 

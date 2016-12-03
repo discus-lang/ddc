@@ -61,7 +61,7 @@ pImportSpecs c
                          ,      return () ]
 
                 pSym    SBraceBra
-                specs   <- P.sepEndBy1 (pImportType c)  (pSym SSemiColon)
+                specs   <- P.sepEndBy1 (pImportType c) (pSym SSemiColon)
                 pSym    SBraceKet
                 return specs
 
@@ -80,7 +80,7 @@ pImportSpecs c
                 src     <- liftM (renderIndent . ppr) pName
 
                 P.choice
-                 [      -- import foreign MODE type { (NAME : TYPE)+ }
+                 [      -- import foreign MODE type { (NAME : KIND)+ }
                   do    pKey    EType
                         pSym    SBraceBra
                         sigs    <- P.sepEndBy1 (pImportForeignType c src)  (pSym SSemiColon)
@@ -119,7 +119,7 @@ pImportForeignType c src
         | "abstract"    <- src
         = do    n       <- pName
                 pTokSP (KOp ":")
-                k       <- pType c
+                k       <- pKind c
                 return  $ ImportForeignType n (ImportTypeAbstract k)
 
         -- Boxed types are associate with values that follow the standard
@@ -127,7 +127,7 @@ pImportForeignType c src
         | "boxed"       <- src
         = do    n       <- pName
                 pTokSP (KOp ":")
-                k       <- pType c
+                k       <- pKind c
                 return  $ ImportForeignType n (ImportTypeBoxed k)
 
         | otherwise
@@ -162,7 +162,7 @@ pImportType
 pImportType c
  = do   n       <- pName
         pTokSP  (KOp ":")
-        k       <- pType c
+        k       <- pKind c
         pSym    SEquals
         t       <- pType c
         return  $  ImportType n k t

@@ -54,8 +54,8 @@ foo (_: Unit)
 -- Check that lambda binder scopes all the way to the right.
 module Test where
 foo (_: Unit)
-  = [DEFIX| f (INFIXOP "$") (\x.
-     [DEFIX| g (INFIXOP "$") (\y.
+  = [DEFIX| f (INFIXOP "$") (\(x).
+     [DEFIX| g (INFIXOP "$") (\(y).
       [DEFIX| T2 x y ]) ]) ];
 
 

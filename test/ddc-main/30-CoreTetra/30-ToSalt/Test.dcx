@@ -151,7 +151,7 @@ module Test
 data List (a : Data) where
         Nil : a -> List a
 with letrec
-nothin [a : Data ~> Data] [b : Data] (x : b) : b
+nothin [a : Data -> Data] [b : Data] (x : b) : b
  = x
 
 foo (_ : Unit) : Nat#

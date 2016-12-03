@@ -72,16 +72,17 @@ instance (Pretty n, Eq n) => Pretty (Type n) where
          $  text "λ" <> ppr b <> dot <+> ppr t
 
         -- Full application of function constructors are printed infix.
-        TApp (TApp (TCon (TyConKind KiConFun)) k1) k2
+        TApp (TApp (TCon (TyConKind    KiConFun)) k1) k2
          -> pprParen (d > 5)
-         $  ppr k1 <+> text "~>" <+> ppr k2
+         $  pprPrec 6 k1 <+> text "->" <+> ppr k2
 
+        -- Witness abstraction.
         TApp (TApp (TCon (TyConWitness TwConImpl)) t1) t2
          -> pprParen (d > 5)
          $  pprPrec 6 t1 <+> text "=>" </> pprPrec 5 t2
 
-        -- Pure function.
-        TApp (TApp (TCon (TyConSpec TcConFun)) t1) t2
+        -- Term abstraction.
+        TApp (TApp (TCon (TyConSpec    TcConFun)) t1) t2
          -> pprParen (d > 5)
          $  pprPrec 6 t1 <+> text "->" </> pprPrec 5 t2
  

@@ -23,7 +23,7 @@ let u: Unit
 
 
 -- Beta reduce while avoiding capture of let-bound value variable.
-Λ(thing: Region ~> Data).
+Λ(thing: Region -> Data).
 λ(make: [r: Region].Nat# -> thing r).λ(take: [r: Region].thing r -> Nat#).
 let x: Nat#
       = 5# in
@@ -45,5 +45,5 @@ add# [Nat#] (take [r0] ^0) x
 
 
 -- Rewrite variables on types of value binders.
-Λ(thing: Region ~> Data).Λ(^: Region).
+Λ(thing: Region -> Data).Λ(^: Region).
 λ(y: thing ^0). y

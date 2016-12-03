@@ -180,7 +180,7 @@ case T2# 2# 3# of
 
 -- As above, but with a more specific kind.
 :synth..
-/\(f : ? ~> ?). \(a : f Int#). ()
+/\(f : ? -> ?). \(a : f Int#). ()
 ;;
 
 

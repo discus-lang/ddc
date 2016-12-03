@@ -12,7 +12,7 @@
 -- Anonymize lambdas and applications
 -- Spec and value binders have the same name.
 :trans..
-/\(ref : Region ~> Data).
+/\(ref : Region -> Data).
 \ (f   : [r : Region]. ref r -> Unit).
 /\(x   : Region). \(x : ref x). f [x] x
 ;;
@@ -32,7 +32,7 @@ x;;
 
 -- Anonymize private region binder.
 :trans..
-/\(thing : Region ~> Data).
+/\(thing : Region -> Data).
  \(make  : [r : Region]. thing r).
  \(take  : [r : Region]. thing r -> Nat#).
 private r with { w : Const r } in
@@ -42,7 +42,7 @@ take [r] (make [r])
 
 -- Anonymize multiple let bindings that mention private region.
 :trans..
-/\(thing : Region ~> Data).
+/\(thing : Region -> Data).
  \(make  : [r : Region]. thing r).
  \(take  : [r : Region]. thing r -> Nat#).
 private r with { w : Const r } in
