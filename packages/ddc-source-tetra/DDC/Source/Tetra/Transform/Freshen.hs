@@ -143,15 +143,10 @@ bindParam pp cont
          -> do  mt'     <- traverse freshenType mt
                 cont $ MType b' mt'
 
-        MWitness b mt
-         -> bindBX b $ \b'
-         -> do  mt'     <- traverse freshenType mt
-                cont $ MWitness b' mt'
-
-        MValue p mt
+        MTerm p mt
          -> bindPat p $ \p'
          -> do  mt'     <- traverse freshenType mt
-                cont $ MValue p' mt'
+                cont $ MTerm p' mt'
 
         MImplicit p mt
          -> bindPat p $ \p'
@@ -189,15 +184,10 @@ freshenExp xx
                 bindBT b $ \b'
                  -> XAbs (MType b' mt') <$> freshenExp x
 
-        XAbs (MWitness b mt) x
-         -> do  mt'     <- traverse freshenType mt
-                bindBX b $ \b'
-                 -> XAbs (MWitness b' mt') <$> freshenExp x
-
-        XAbs (MValue p mt) x
+        XAbs (MTerm p mt) x
          -> do  mt'     <- traverse freshenType mt
                 bindPat p $ \p'
-                 -> XAbs (MValue p' mt') <$> freshenExp x
+                 -> XAbs (MTerm p' mt') <$> freshenExp x
 
         XAbs (MImplicit p mt) x
          -> do  mt'     <- traverse freshenType mt

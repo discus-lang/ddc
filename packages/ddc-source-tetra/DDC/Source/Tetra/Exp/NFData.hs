@@ -52,8 +52,7 @@ instance NFDataLanguage l => NFData (GParam l) where
  rnf pp
   = case pp of
         MType     b mt          -> rnf b `seq` rnf mt
-        MWitness  b mt          -> rnf b `seq` rnf mt
-        MValue    p mt          -> rnf p `seq` rnf mt
+        MTerm     p mt          -> rnf p `seq` rnf mt
         MImplicit p mt          -> rnf p `seq` rnf mt
 
 instance NFDataLanguage l => NFData (GLets l) where

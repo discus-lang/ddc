@@ -80,17 +80,14 @@ wrapParams [] x
 
 wrapParams (p:ps) x
  = case p of
-        S.MType    b mt    
+        S.MType  b mt    
          -> S.XAbs (S.MType b mt)       <$> wrapParams ps x
 
-        S.MWitness b mt
-         -> S.XAbs (S.MWitness b mt)    <$> wrapParams ps x
-
-        S.MValue   p' mt
-         -> S.XAbs (S.MValue p' mt)       <$> wrapParams ps x
+        S.MTerm  p' mt
+         -> S.XAbs (S.MTerm p' mt)      <$> wrapParams ps x
 
         S.MImplicit   p' mt
-         -> S.XAbs (S.MImplicit p' mt)       <$> wrapParams ps x
+         -> S.XAbs (S.MImplicit p' mt)  <$> wrapParams ps x
 
 
 

@@ -100,8 +100,7 @@ desugarP :: Param -> S Param
 desugarP pp
  = case pp of
         MType{}         -> return pp
-        MWitness{}      -> return pp
-        MValue w mt     -> MValue    <$> desugarW w <*> return mt 
+        MTerm w mt      -> MTerm     <$> desugarW w <*> return mt 
         MImplicit w mt  -> MImplicit <$> desugarW w <*> return mt 
 
 

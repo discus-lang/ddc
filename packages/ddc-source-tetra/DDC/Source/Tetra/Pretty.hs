@@ -188,13 +188,7 @@ instance PrettyLanguage l => Pretty (GExp l) where
                       else    line)
                  <>  ppr xBody
 
-        XAbs (MValue b _) xBody
-         -> pprParen' (d > 1)
-                 $  text "\\" <> ppr b <> text "."
-                 <> breakWhen (not $ isSimpleX xBody)
-                 <> ppr xBody
-
-        XAbs (MWitness b _) xBody
+        XAbs (MTerm b _) xBody
          -> pprParen' (d > 1)
                  $  text "\\" <> ppr b <> text "."
                  <> breakWhen (not $ isSimpleX xBody)
@@ -362,16 +356,10 @@ instance PrettyLanguage l => Pretty (GParam l) where
  pprPrec _d (MType    b (Just t))
   = text "[" <> ppr b <> text ":" <+> ppr t <> text "]"
 
- pprPrec _d (MWitness b Nothing)
-  = text "<" <> ppr b <> text ">"
-
- pprPrec _d (MWitness b (Just t))
-  = text "<" <> ppr b <> text ":" <+> ppr t <> text ">"
-
- pprPrec d (MValue   p Nothing)
+ pprPrec d  (MTerm    p Nothing)
   = pprPrec d p
 
- pprPrec _ (MValue   p (Just t))
+ pprPrec _  (MTerm    p (Just t))
   = parens $ pprPrec 0 p <> text ":" <+> ppr t
 
  pprPrec _d (MImplicit b Nothing)

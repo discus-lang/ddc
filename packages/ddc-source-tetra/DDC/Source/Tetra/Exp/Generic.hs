@@ -107,11 +107,11 @@ data GExp l
         -- | Primitives specific to the language fragment.
         | XFrag     !(GXFrag  l)
 
-        -- | Value variable.
-        | XVar      !(GXBoundVar l)
-
         -- | Data constructor or literal.
         | XCon      !(DaCon (GXBoundCon l) (GType l))
+
+        -- | Value variable.
+        | XVar      !(GXBoundVar l)
 
         -- | Function abstraction.
         | XAbs      !(GParam l)  !(GExp l)
@@ -172,18 +172,14 @@ data GExp l
 
 
 -- | Parameter for a binding.
---   TODO: Dump witness binder, I don't think we're using it for anything.
 data GParam l
         -- | Type parameter with optional kind.
         = MType     !(GXBindVar l) !(Maybe (GType l))
 
-        -- | Witness parameter with optional type.
-        | MWitness  !(GXBindVar l) !(Maybe (GType l))
+        -- | Term pattern with optional type.
+        | MTerm     !(GPat l)      !(Maybe (GType l))
 
-        -- | Value pattern with optional type.
-        | MValue    !(GPat l)      !(Maybe (GType l))
-
-        -- | Implicit value pattern with optional type.
+        -- | Implicit term pattern with optional type.
         | MImplicit !(GPat l)      !(Maybe (GType l))
 
 

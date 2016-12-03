@@ -20,7 +20,6 @@ import qualified DDC.Control.Parser     as P
 --   as well as its expression based on the parameter.
 data ParamSpec
         = ParamType    Bind (Maybe Type)
-        | ParamWitness Bind (Maybe Type)
         | ParamValue   Bind (Maybe Type)
 
 
@@ -36,12 +35,9 @@ expOfParams (p:ps) xBody
  = case p of
         ParamType    b mt
          -> XAbs (MType    b mt) $ expOfParams ps xBody
-        
-        ParamWitness b mt
-         -> XAbs (MWitness b mt) $ expOfParams ps xBody
 
         ParamValue   b mt
-         -> XAbs (MValue   (PVar b) mt) $ expOfParams ps xBody
+         -> XAbs (MTerm   (PVar b) mt) $ expOfParams ps xBody
 
 
 -- | Build the type of a function from specifications of its parameters,
@@ -59,10 +55,6 @@ funTypeOfParams (p:ps) tBody
         ParamType     b mt
          -> let k       = fromMaybe (TBot KData) mt
             in  TApp (TCon (TyConForall k)) (TAbs b k $ funTypeOfParams ps tBody)
-
-        ParamWitness  _ mt
-         -> TImpl (fromMaybe (TBot KData) mt)
-          $ funTypeOfParams ps tBody
 
         ParamValue    _ mt
          -> TFun  (fromMaybe (TBot KData) mt)
@@ -102,6 +94,7 @@ pBindParamSpecAnnot
         pSym    SSquareKet
         return  [ ParamType b (Just t) | b <- bs]
 
+{-
         -- Witness parameter
         -- {BIND : TYPE}
  , do   pSym    SBraceBra
@@ -110,7 +103,7 @@ pBindParamSpecAnnot
         t       <- pType
         pSym    SBraceKet
         return  [ ParamWitness b (Just t) ]
-
+-}
         -- Value parameter with type annotations.
         -- (BIND1 BIND2 .. BINDN : TYPE) 
         -- (BIND1 BIND2 .. BINDN : TYPE) { TYPE | TYPE }

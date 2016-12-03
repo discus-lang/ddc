@@ -123,15 +123,15 @@ desugarX sp xx
 
         -- Desugar lambda with a pattern for the parameter.
         XLamPat _a PDefault mt x
-         -> XAbs (MValue PDefault mt) <$> desugarX sp x 
+         -> XAbs (MTerm PDefault mt) <$> desugarX sp x 
 
         XLamPat _a (PVar b) mt x
-         -> XAbs (MValue (PVar b) mt) <$> desugarX sp x
+         -> XAbs (MTerm (PVar b) mt) <$> desugarX sp x
 
         XLamPat _a p mt x
          -> do  (b, u)  <- newVar "x"
                 x'      <- desugarX sp x
-                return  $  XAbs  (MValue (PVar b) mt)
+                return  $  XAbs  (MTerm (PVar b) mt)
                         $  XCase (XVar u) [ AAltCase p [GExp x'] ] 
 
 
@@ -139,7 +139,7 @@ desugarX sp xx
         XLamCase _a alts
          -> do  (b, u)  <- newVar "x"
                 alts'   <- mapM  (desugarAltCase sp) alts
-                return  $  XAbs  (MValue (PVar b) Nothing)
+                return  $  XAbs  (MTerm (PVar b) Nothing)
                         $  XCase (XVar u) alts'
 
 
@@ -247,12 +247,8 @@ stripParamsToGuards (p:ps)
          -> do  (ps', gs) <- stripParamsToGuards ps
                 return (p : ps', gs)
 
-        MWitness{} 
-         -> do  (ps', gs) <- stripParamsToGuards ps
-                return (p : ps', gs)
-
-        MValue b mt
-         -> stripValue MValue    b mt
+        MTerm b mt
+         -> stripValue MTerm     b mt
 
         MImplicit b mt
          -> stripValue MImplicit b mt

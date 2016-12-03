@@ -69,11 +69,7 @@ downX l f d xx
         XAbs     (MType  b mt) x       
          -> XAbs (MType  b mt) (downX l f d x)
 
-        XAbs     m@(MWitness b _mt) x     
-         -> let d'      = d + countBAnonsB l [b]
-            in  XAbs m (mapBoundAtDepthX l f d' x)
-
-        XAbs     m@(MValue p _mt) x     
+        XAbs     m@(MTerm p _mt) x     
          -> let d'      = d + countBAnonsP l p
             in  XAbs m (mapBoundAtDepthX l f d' x)
 

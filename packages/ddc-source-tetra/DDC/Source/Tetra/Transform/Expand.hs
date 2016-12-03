@@ -158,13 +158,8 @@ downX a env xx
                 x'      = expand a env' x
             in  XAbs bm x'
 
-        XAbs bm@(MValue p _) x
+        XAbs bm@(MTerm p _) x
          -> let env'    = env   & extendPat p
-                x'      = expand a env' x
-            in  XAbs bm x'
-
-        XAbs bm@(MWitness b _) x
-         -> let env'    = env   & Env.extendDaVar' b
                 x'      = expand a env' x
             in  XAbs bm x'
 
@@ -284,8 +279,7 @@ extendParam :: Param -> Env -> Env
 extendParam pp env
  = case pp of
         MType      b _  -> Env.union env (Env.singletonTyVar' b)
-        MWitness   b _  -> Env.union env (Env.singletonDaVar' b)
-        MValue     p _  -> extendPat p env
+        MTerm      p _  -> extendPat p env
         MImplicit  p _  -> extendPat p env
 
 

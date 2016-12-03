@@ -142,17 +142,17 @@ joinParam p1 p2
         -- When an earlier pattern does not bind the argument to a variable
         -- then we need to introduce a new variable so we can pass the 
         -- same argument to successive clauses.
-        (  MValue pat1               mt1
-         , MValue (PVar (BName n2))  mt2)
+        (  MTerm pat1               mt1
+         , MTerm (PVar (BName n2))  mt2)
          | isAnonPat pat1
          -> do  (b, u)  <- newVar "m"
                 let lts = LLet (XBindVarMT (BName n2) mt2) (XVar u)
-                return (MValue (PVar b) mt1, p2, Just lts)
+                return (MTerm (PVar b) mt1, p2, Just lts)
 
         -- When earlier clauses bind the argument using a different variable
         -- than later ones then we need to add a synonym.
-        (  MValue (PVar (BName n1)) _mt1
-         , MValue (PVar (BName n2)) mt2)
+        (  MTerm (PVar (BName n1)) _mt1
+         , MTerm (PVar (BName n2)) mt2)
          |   n1 /= n2
          -> do  let lts  = LLet (XBindVarMT (BName n2) mt2) (XVar (UName n1))
                 return (p1, p2, Just lts)

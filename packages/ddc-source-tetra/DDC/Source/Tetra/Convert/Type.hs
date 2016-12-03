@@ -192,10 +192,7 @@ toCoreParam pp
         S.MType b mt
          -> C.MType     <$> toCoreBT UniverseKind b mt
 
-        S.MWitness b mt
-         -> C.MTerm     <$> toCoreBT UniverseSpec b mt
-
-        S.MValue p mt
+        S.MTerm p mt
          -> C.MTerm     <$> toCorePT UniverseSpec p mt
 
         S.MImplicit p mt

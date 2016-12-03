@@ -638,7 +638,7 @@ pParamsSP
         pSym SSquareKet
         return  [ MType b (Just t) | b <- bs]
 
-
+{-
         -- Witness parameter
         --   {BIND : TYPE}
  , do   pSym  SBraceBra
@@ -647,17 +647,17 @@ pParamsSP
         t       <- pType
         pSym  SBraceKet
         return  [ MWitness b (Just t) ]
-
+-}
 
         -- Value parameter without a type annotation.
         --   This needs to come before the case for value patterns with type
         --   annotations because both records and the unit data constructor
         --   pattern start with a '('.
  , do   p       <- pPatAtom
-        return  [MValue p Nothing]
+        return  [MTerm p Nothing]
 
 
-        -- Value pattern with type annotations.
+        -- Term pattern with type annotations.
         -- (BIND1 BIND2 .. BINDN : TYPE) 
  , do   pSym    SRoundBra
         ps      <- P.choice
@@ -665,10 +665,10 @@ pParamsSP
                         ps      <- P.many1 pPatAtom
                         pTok (KOp ":")
                         t       <- pType
-                        return  [ MValue p (Just t) | p <- ps ]
+                        return  [ MTerm p (Just t) | p <- ps ]
 
                 , do    p       <- pPat
-                        return  [ MValue p Nothing ]
+                        return  [ MTerm p Nothing ]
                 ]
 
         pSym    SRoundKet
@@ -692,11 +692,7 @@ funTypeOfParams (p:ps) tBody
          -> let k       = fromMaybe (TBot S.KData) mt
             in  TApp (TCon (TyConForall k)) (TAbs b k $ funTypeOfParams ps tBody)
 
-        MWitness  _ mt
-         -> let k        = fromMaybe (TBot S.KData) mt
-            in  TImpl k $ funTypeOfParams ps tBody
-
-        MValue     _ mt
+        MTerm     _ mt
          -> let k       = fromMaybe (TBot S.KData) mt
             in  TFun k  $ funTypeOfParams ps tBody
 
