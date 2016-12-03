@@ -229,7 +229,7 @@ windBodyX refMap context xx
         --
         XLet a (LLet (BName nRef _) x) x2
          | Just ( NameOpStore OpStoreNew
-                , [XType _ tElem, xVal] ) <- takeXPrimApps x
+                , [XType _ tElem, xVal] ) <- takeXFragApps x
          -> let 
                 -- Add the new ref record to the map.
                 info        = RefInfo 
@@ -256,7 +256,7 @@ windBodyX refMap context xx
         XLet a (LLet bResult x) x2
          | Just ( NameOpStore OpStoreRead
                 , [XType _ _tElem, XVar _ (UName nRef)] )   
-                                        <- takeXPrimApps x
+                                        <- takeXFragApps x
          , Just info    <- lookupRefInfo refMap nRef
          , Just nVal    <- nameOfRefInfo info
          ->     XLet a  (LLet bResult (XVar a (UName nVal)))
@@ -269,7 +269,7 @@ windBodyX refMap context xx
         XLet a (LLet (BNone _) x) x2
          | Just ( NameOpStore OpStoreWrite 
                 , [XType _ _tElem, XVar _ (UName nRef), xVal])
-                                        <- takeXPrimApps x
+                                        <- takeXFragApps x
          , refMap'      <- bumpVersionInRefMap nRef refMap
          , Just info    <- lookupRefInfo refMap' nRef
          , Just nVal    <- nameOfRefInfo info
@@ -283,7 +283,8 @@ windBodyX refMap context xx
         XLet a (LLet (BNone _) x) x2
          | Just ( NameOpControl OpControlLoopN
                 , [ XType _ tK, xLength
-                  , XLam  _ bIx@(BName nIx _) xBody]) <- takeXPrimApps x
+                  , XLam  _ bIx@(BName nIx _) xBody]) 
+                                        <- takeXFragApps x
          -> let 
                 -- Name of the new loop function.
                 nLoop           = NameVar "loop"
@@ -371,7 +372,7 @@ windBodyX refMap context xx
         XLet a (LLet (BNone _) x) x2
          | Just ( NameOpControl OpControlGuard
                 , [ xFlag
-                  , XLam _ _unit xBody ])       <- takeXPrimApps x
+                  , XLam _ _unit xBody ])       <- takeXFragApps x
          -> let 
                 context' = context
                          ++ [ ContextGuard
@@ -399,7 +400,7 @@ windBodyX refMap context xx
         -- Enter into both branches of a split.
         XApp{}
          | Just ( NameOpControl (OpControlSplit n)
-                , [ XType _ tK, xN, xBranch1, xBranch2 ]) <- takeXPrimApps xx
+                , [ XType _ tK, xN, xBranch1, xBranch2 ]) <- takeXFragApps xx
          -> let xBranch1'       = down xBranch1
                 xBranch2'       = down xBranch2
             in  xSplit n tK xN xBranch1' xBranch2'

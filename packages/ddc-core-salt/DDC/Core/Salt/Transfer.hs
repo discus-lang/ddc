@@ -126,7 +126,7 @@ addReturnX a t xx
 
         -- If there is already a control transfer primitive here then
         -- don't add another one.
-        | Just (NamePrimOp p, _)  <- takeXPrimApps xx
+        | Just (NamePrimOp p, _)  <- takeXFragApps xx
         , PrimControl{}           <- p
         = xx
 

@@ -295,7 +295,19 @@ pExpAtomSP
  , do   (nPrim, sp)     <- pPrimValSP
         return  (sp, XFrag nPrim)
 
+ , do   (u, sp)         <- pBoundNameSP 
+        case u of 
+         UName tx
+          |  Text.pack "project" == tx
+          -> do pSym SRoundBra
+                n    <- fmap fst $ pVarNameSP
+                pSym SRoundKet
+                pSym SHash
+                return (sp, XPrim (PProject n))
 
+         _      -> return (sp, XVar u)
+
+{-
         -- Named variables.
  , do   (u,  sp)        <- pBoundNameSP
 
@@ -308,7 +320,7 @@ pExpAtomSP
                 then return (sp, XPrim PCombine)
 
         else return (sp, XVar u)
-
+-}
 
         -- Debruijn indices
  , do   (u, sp)         <- pBoundIxSP

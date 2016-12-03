@@ -329,6 +329,7 @@ isAtom :: Ord n => Exp a n -> Bool
 isAtom xx
  = case xx of
         XCon{}          -> True
+        XPrim{}         -> True
         XType{}         -> True
         XWitness{}      -> True
 

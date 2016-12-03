@@ -169,7 +169,7 @@ instance Complies Exp where
         -- application --------------------------
         XApp _ x1 (XType _ t2)
          | profileTypeIsUnboxed profile t2
-         , Nothing      <- takeXPrimApps xx
+         , Nothing      <- takeXFragApps xx
          -> throw $ ErrorUnsupported UnboxedInstantiation
 
          | otherwise

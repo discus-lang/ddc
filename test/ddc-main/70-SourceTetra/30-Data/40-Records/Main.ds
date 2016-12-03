@@ -71,7 +71,6 @@ main ()
 
         writel $ showShape someLine
 
-
         -- Test projection operators.
-        writel $ showNat (project# [(x,y,z)#] [(x)#] triple) 
+        writel $ showNat $ project(z)# triple
 

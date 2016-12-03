@@ -27,7 +27,7 @@ convertPrimError _ectx ctx xx
         case xx of
         XApp a _ _
          | Just ( E.NameOpError E.OpErrorDefault True
-                , [_, xStr, xLine]) <- takeXPrimApps xx
+                , [_, xStr, xLine]) <- takeXFragApps xx
          -> Just $ do
                 xStr'   <- downArgX xStr
                 xLine'  <- downArgX xLine

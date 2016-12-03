@@ -9,6 +9,7 @@ import DDC.Core.Tetra.Convert.Exp.PrimCall
 import DDC.Core.Tetra.Convert.Exp.PrimArith
 import DDC.Core.Tetra.Convert.Exp.PrimVector
 import DDC.Core.Tetra.Convert.Exp.PrimBoxing
+import DDC.Core.Tetra.Convert.Exp.PrimRecord
 import DDC.Core.Tetra.Convert.Exp.PrimError
 import DDC.Core.Tetra.Convert.Exp.Base
 import DDC.Core.Tetra.Convert.Boxing
@@ -28,7 +29,7 @@ import Control.Monad
 import Data.Maybe
 import DDC.Control.Check                        (throw)
 import qualified Data.Map                       as Map
-
+import Text.Show.Pretty
 
 ---------------------------------------------------------------------------------------------------
 -- | Convert the body of a supercombinator to Salt.
@@ -93,9 +94,18 @@ convertExp ectx ctx xx
 
 
         ---------------------------------------------------
-        -- Conversions for primitive operators are defined separately.
-        _ 
-         |  Just n <- takeNamePrimX xx
+        _
+         -- Conversions for primitives in the ambient calculus.
+         |  Just p      <- takeNamePrimAppX xx
+         ,  Just r
+             <- case p of
+                  PProject{}              -> convertPrimRecord ectx ctx xx
+                  PShuffle{}              -> convertPrimRecord ectx ctx xx
+                  PCombine{}              -> convertPrimRecord ectx ctx xx
+         -> r
+
+         -- Conversions for fragment specific primitive operators.
+         |  Just n      <- takeNameFragAppX xx
          ,  Just r 
              <- case n of
                   E.NamePrimArith{}       -> convertPrimArith  ectx ctx xx
@@ -174,7 +184,7 @@ convertExp ectx ctx xx
          | otherwise
          -> throw $ ErrorUnsupported xx 
          $  vcat [ text "Cannot convert application."
-                 , text "fun:       " <> ppr xa
+                 , text "fun:       " <> text (ppShow xa)
                  , text "args:      " <> ppr xb ]
 
 
@@ -364,18 +374,30 @@ convertExpSuperCall xx _ectx ctx isRun a nFun xsArgs
 
 
 ---------------------------------------------------------------------------------------------------
--- | If this is an application of a primitive or 
+-- | If this is an application of a fragment specific primitive or 
 --   the result of running one then take its name.
-takeNamePrimX :: Exp a E.Name -> Maybe E.Name
-takeNamePrimX xx
+takeNameFragAppX :: Exp a E.Name -> Maybe E.Name
+takeNameFragAppX xx
  = case xx of
         XApp{}
-          -> case takeXPrimApps xx of
+          -> case takeXFragApps xx of
                 Just (n, _)     -> Just n
                 Nothing         -> Nothing
 
         XCast _ CastRun xx'@XApp{}
-          -> takeNamePrimX xx'
+          -> takeNameFragAppX xx'
 
         _ -> Nothing
 
+
+-- | If this is an application of an ambient primitive, 
+--   then return its name.
+takeNamePrimAppX :: Exp a E.Name -> Maybe Prim
+takeNamePrimAppX xx
+ = case xx of
+        XApp{}
+          -> case takeXPrimApps xx of
+                Just (p, _)     -> Just p
+                Nothing         -> Nothing
+
+        _ -> Nothing

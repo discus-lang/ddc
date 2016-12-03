@@ -73,7 +73,7 @@ convBlockM config context kenv tenv xx
          -- At the top-level of a function body then the last statement
          -- explicitly passes control.
          | ContextTop      <- context
-         -> case takeXPrimApps xx of
+         -> case takeXFragApps xx of
                 Just (NamePrimOp p, xs)
                  |  isControlPrim p || isCallPrim p
                  -> do  x1      <- convPrimCallM config kenv tenv p xs
@@ -86,7 +86,7 @@ convBlockM config context kenv tenv xx
          -- passes control then it doesn't produce a value to assign to 
          -- any result var.
          | ContextNest{}            <- context
-         , Just (NamePrimOp p, xs)  <- takeXPrimApps xx
+         , Just (NamePrimOp p, xs)  <- takeXFragApps xx
          , isControlPrim p || isCallPrim p
          -> do  x1      <- convPrimCallM config kenv tenv p xs
                 return  $ x1 <> semi
@@ -334,7 +334,7 @@ convRValueM config kenv tenv xx
 
         -- Primop application.
         XApp{}
-         |  Just (NamePrimOp p, args)   <- takeXPrimApps xx
+         |  Just (NamePrimOp p, args)   <- takeXFragApps xx
          -> convPrimCallM config kenv tenv p args
 
         -- Super application.

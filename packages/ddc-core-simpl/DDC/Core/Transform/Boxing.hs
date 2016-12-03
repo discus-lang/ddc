@@ -119,7 +119,7 @@ boxingX config xx
         -- Use unboxed versions of primops by unboxing their arguments then 
         -- reboxing their results.
         XCast _ CastRun xx'@(XApp a _ _)
-         |  Just (n, xsArgsAll) <- takeXPrimApps xx'
+         |  Just (n, xsArgsAll) <- takeXFragApps xx'
          ,  Just n'             <- configUnboxPrimOpName config n
          -> let Just tPrimBoxed    = configValueTypeOfPrimOpName config n
                 Just tPrimUnboxed  = configValueTypeOfPrimOpName config n'
@@ -130,7 +130,7 @@ boxingX config xx
 
         -- Unbox primitive applications.
         XApp a _ _
-         |  Just (n, xsArgsAll) <- takeXPrimApps xx
+         |  Just (n, xsArgsAll) <- takeXFragApps xx
          ,  Just n'             <- configUnboxPrimOpName config n
          -> let Just tPrimBoxed    = configValueTypeOfPrimOpName config n
                 Just tPrimUnboxed  = configValueTypeOfPrimOpName config n'

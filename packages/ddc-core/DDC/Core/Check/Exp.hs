@@ -34,6 +34,7 @@ module DDC.Core.Check.Exp
         , checkExpM
         , CheckTrace    (..))
 where
+import DDC.Core.Check.Judge.Type.Prim
 import DDC.Core.Check.Judge.Type.VarCon
 import DDC.Core.Check.Judge.Type.LamT
 import DDC.Core.Check.Judge.Type.LamX
@@ -139,7 +140,7 @@ checkExpM
 checkExpM !table !ctx !mode !demand !xx 
  = case xx of
     XVar{}              -> tableCheckVarCon     table table ctx mode demand xx
-    XPrim{}             -> error "checkExpM: handle XPrim"
+    XPrim{}             -> tableCheckPrim       table table ctx mode demand xx
     XCon{}              -> tableCheckVarCon     table table ctx mode demand xx
     XApp _ _ XType{}    -> tableCheckAppT       table table ctx mode demand xx
     XApp{}              -> tableCheckAppX       table table ctx mode demand xx
@@ -159,6 +160,7 @@ makeTable config
         = Table
         { tableConfig           = config
         , tableCheckExp         = checkExpM
+        , tableCheckPrim        = checkPrim
         , tableCheckVarCon      = checkVarCon
         , tableCheckAppT        = checkAppT
         , tableCheckAppX        = checkAppX

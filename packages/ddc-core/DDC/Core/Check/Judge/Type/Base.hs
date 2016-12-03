@@ -86,6 +86,7 @@ data Table a n
         = Table
         { tableConfig           :: Config n
         , tableCheckExp         :: Checker a n
+        , tableCheckPrim        :: Checker a n
         , tableCheckVarCon      :: Checker a n
         , tableCheckAppT        :: Checker a n
         , tableCheckAppX        :: Checker a n

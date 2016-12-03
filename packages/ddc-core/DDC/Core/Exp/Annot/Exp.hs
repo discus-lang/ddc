@@ -39,6 +39,7 @@ import DDC.Core.Exp.WiCon
 import DDC.Core.Exp.DaCon
 import DDC.Type.Exp
 import DDC.Type.Sum             ()
+import Data.Text                (Text)
 import Control.DeepSeq
 
 
@@ -85,7 +86,7 @@ data Exp a n
 --   but might have some special handing in the type checker.
 data Prim
         -- | Project a field from a record.
-        = PProject
+        = PProject Text
 
         -- | Shuffle fields of a record.
         | PShuffle

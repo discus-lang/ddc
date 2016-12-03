@@ -134,7 +134,9 @@ instance (Pretty n, Eq n) => Pretty (Exp a n) where
 instance Pretty Prim where
  ppr pp
   = case pp of
-        PProject        -> text "project#"
+        PProject n      
+         -> text "project(" <> text (Text.unpack n) <> text ")#"
+
         PShuffle        -> text "shuffle#"
         PCombine        -> text "combine#"
 

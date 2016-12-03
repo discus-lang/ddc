@@ -80,6 +80,7 @@ module DDC.Core.Exp.Annot
         , takeXAppsWithAnnots
         , takeXConApps
         , takeXPrimApps
+        , takeXFragApps
 
           -- ** Lets
         , xLets

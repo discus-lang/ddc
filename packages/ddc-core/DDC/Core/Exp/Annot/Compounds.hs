@@ -30,6 +30,7 @@ module DDC.Core.Exp.Annot.Compounds
         , takeXAppsWithAnnots
         , takeXConApps
         , takeXPrimApps
+        , takeXFragApps
 
           -- * Lets
         , xLets,               xLetsAnnot
@@ -239,12 +240,23 @@ takeXAppsWithAnnots xx
         _ -> (xx, [])
 
 
--- | Flatten an application of a primop into the variable
+-- | Flatten an application of an ambient primitive into the primitive name
+--   and its arguments.
+--
+--   Returns `Nothing` if the expression isn't a primitive application.
+takeXPrimApps :: Exp a n -> Maybe (Prim, [Exp a n])
+takeXPrimApps xx
+ = case takeXAppsAsList xx of
+        XPrim _ p : xs          -> Just (p, xs)
+        _                       -> Nothing
+
+
+-- | Flatten an application of a fragment specific primop into the variable
 --   and its arguments.
 --
 --   Returns `Nothing` if the expression isn't a primop application.
-takeXPrimApps :: Exp a n -> Maybe (n, [Exp a n])
-takeXPrimApps xx
+takeXFragApps :: Exp a n -> Maybe (n, [Exp a n])
+takeXFragApps xx
  = case takeXAppsAsList xx of
         XVar _ (UPrim p _) : xs -> Just (p, xs)
         _                       -> Nothing
