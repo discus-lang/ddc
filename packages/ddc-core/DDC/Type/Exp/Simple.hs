@@ -144,6 +144,7 @@ module DDC.Type.Exp.Simple
 
           -- ** Implications
         , tImpl
+        , takeTImpl
 
           -- ** Units
         , tUnit

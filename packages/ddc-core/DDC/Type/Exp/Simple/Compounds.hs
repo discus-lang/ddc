@@ -60,6 +60,7 @@ module DDC.Type.Exp.Simple.Compounds
 
           -- * Implications
         , tImpl
+        , takeTImpl
 
           -- * Units
         , tUnit
@@ -549,6 +550,15 @@ tImpl :: Type n -> Type n -> Type n
 tImpl t1 t2      
         = ((TCon $ TyConWitness TwConImpl) `tApp` t1) `tApp` t2
 infixr `tImpl`
+
+
+-- | Yield the argument and result type of an implication.
+takeTImpl :: Type n -> Maybe (Type n, Type n)
+takeTImpl tt
+ = case tt of
+        TApp (TApp (TCon (TyConWitness TwConImpl)) t1) t2
+          -> Just (t1, t2)
+        _ -> Nothing
 
 
 -- Suspensions ----------------------------------------------------------------

@@ -7,21 +7,20 @@ import DDC.Core.Check.Judge.Type.Base
 import qualified DDC.Type.Sum   as Sum
 
 
--------------------------------------------------------------------------------
 -- | Check a value expression application.
 checkAppX :: Checker a n
 
 checkAppX !table !ctx
         Recon demand
-        xx@(XApp a xFn (RTerm xArg))
+        xx@(XApp a xFn arg)
  = do
         -- Check the functional expression.
         (xFn',  tFn,  effsFn, ctx1)
          <- tableCheckExp table table ctx  Recon demand xFn
 
         -- Check the argument.
-        (xArg', tArg, effsArg, ctx2)
-         <- tableCheckExp table table ctx1 Recon DemandNone xArg
+        (arg', tArg, effsArg, ctx2)
+         <- checkArg table ctx1 Recon DemandNone arg
 
         -- The type of the parameter must match that of the argument.
         (tResult, effsLatent)
@@ -42,7 +41,7 @@ checkAppX !table !ctx
                 $ [effsFn, effsArg, Sum.singleton kEffect effsLatent]
 
         returnX a
-                (\z -> XApp z xFn' (RTerm xArg'))
+                (\z -> XApp z xFn' arg')
                 tResult effsResult
                 ctx2
 
@@ -50,7 +49,7 @@ checkAppX !table !ctx
 checkAppX !table !ctx0 
         mode@(Synth isScope)
         demand 
-        xx@(XApp a xFn (RTerm xArg))
+        xx@(XApp a xFn arg)
  = do
         ctrace  $ vcat
                 [ text "*>  App Synth"
@@ -69,7 +68,7 @@ checkAppX !table !ctx0
         (xResult, tResult, esResult, ctx2)
          <- synthAppArg table a xx
                 ctx1 demand isScope
-                xFn' tFn' effsFn xArg
+                xFn' tFn' effsFn arg
 
         ctrace  $ vcat
                 [ text "*<  App Synth"
@@ -77,7 +76,7 @@ checkAppX !table !ctx0
                 , text "    demand  = " <> (text $ show demand)
                 , indent 4 $ ppr xx
                 , text "    tFn     = " <> ppr tFn'
-                , text "    tArg    = " <> ppr xArg
+                , text "    arg     = " <> ppr arg
                 , text "    xResult = " <> ppr xResult
                 , text "    tResult = " <> ppr tResult
                 , indent 4 $ ppr ctx0
@@ -108,6 +107,22 @@ checkAppX _ _ _ _ _
  = error "ddc-core.checkApp: no match"
 
 
+checkArg  table ctx mode demand arg
+ = case arg of
+        RTerm x
+          -> do (x', t', effs', ctx')
+                 <- tableCheckExp table table ctx mode demand x
+                return (RTerm x',     t', effs', ctx')
+
+        RImplicit x
+          -> do (x', t', effs', ctx')
+                 <- tableCheckExp table table ctx mode demand x
+                return (RImplicit x', t', effs', ctx')
+
+        _ -> error "checkArg: nope"
+
+
+
 -------------------------------------------------------------------------------
 -- | Synthesize the type of a function applied to its argument.
 synthAppArg
@@ -121,7 +136,7 @@ synthAppArg
         -> Exp (AnTEC a n) n         -- Checked functional expression.
                 -> Type n            -- Type of functional expression.
                 -> TypeSum n         -- Effect of functional expression.
-        -> Exp a n                   -- Function argument.
+        -> Arg a n                   -- Function argument.
         -> CheckM a n
                 ( Exp (AnTEC a n) n  -- Checked application.
                 , Type n             -- Type of result.
@@ -131,7 +146,7 @@ synthAppArg
 synthAppArg table 
         a xx ctx0
         demand isScope
-        xFn tFn effsFn xArg
+        xFn tFn effsFn arg
 
  -- Rule (App Synth exists)
  --  Functional type is an existential.
@@ -155,23 +170,22 @@ synthAppArg table
         let Just ctx1 = updateExists [iA2, iA1] iFn (tFun tA1 tA2) ctx0
 
         -- Check the argument under the new context.
-        (xArg', _, effsArg, ctx2)
-         <- tableCheckExp table table ctx1 (Check tA1) DemandRun xArg
+        (arg', _, effsArg, ctx2)
+         <- checkArg table ctx1 (Check tA1) DemandRun arg
 
         -- Effect and closure of the overall function application.
         let esResult    = effsFn `Sum.union` effsArg
 
         -- Result expression.
         let xResult    = XApp   (AnTEC tA2 (TSum esResult) (tBot kClosure) a)
-                                xFn 
-                                (RTerm xArg')
+                                xFn arg'
 
         ctrace  $ vcat
                 [ text "*<  App Synth Exists"
                 , text "    xFn     ="  <> ppr xFn
                 , text "    tFn     ="  <> ppr tFn
-                , text "    xArg    ="  <> ppr xArg
-                , text "    xArg'   ="  <> ppr xArg'
+                , text "    arg     ="  <> ppr arg
+                , text "    arg'    ="  <> ppr arg'
                 , text "    xResult ="  <> ppr xResult
                 , indent 4 $ ppr xx
                 , indent 4 $ ppr ctx2
@@ -207,7 +221,7 @@ synthAppArg table
                 , text "    demand  = " <> ppr demand
                 , text "    scope   = " <> ppr isScope
                 , text "    xFn     = " <> ppr xFn
-                , text "    xArg    = " <> ppr xArg
+                , text "    arg     = " <> ppr arg
                 , text "    iA      = " <> ppr iA
                 , text "    tBody'  = " <> ppr tBody'
                 , text "    xResult = " <> ppr xFnTy
@@ -217,7 +231,7 @@ synthAppArg table
         -- argument. We know the type of the function up-front, but we pass
         -- in the whole argument expression.
         (xResult, tResult, esResult, ctx2)
-         <- synthAppArg table a xx ctx1 demand isScope xFnTy tBody' effsFn xArg
+         <- synthAppArg table a xx ctx1 demand isScope xFnTy tBody' effsFn arg
 
         -- Result expression.
         ctrace  $ vcat
@@ -226,7 +240,7 @@ synthAppArg table
                 , text "    scope   = " <> ppr isScope
                 , text "    xFn     = " <> ppr xFn
                 , text "    tFn     = " <> ppr tFn
-                , text "    xArg    = " <> ppr xArg
+                , text "    arg     = " <> ppr arg
                 , text "    xResult = " <> ppr xResult
                 , text "    tResult = " <> ppr tResult
                 , indent 4 $ ppr ctx2
@@ -237,7 +251,10 @@ synthAppArg table
 
  -- Rule (App Synth Fun)
  --  Function already has a concrete function type.
- | Just (tParam, tResult)   <- takeTFun tFn
+ | Just (tParam, tResult) 
+     <- case takeTFun tFn of
+         Just r  -> Just r
+         Nothing -> takeTImpl tFn
  = do
         ctrace  $ vcat
                 [ text "*>  App Synth Fun"
@@ -247,8 +264,8 @@ synthAppArg table
                 , empty ]
 
         -- Check the argument.
-        (xArg', tArg, esArg, ctx1)
-         <- tableCheckExp table table ctx0 (Check tParam) DemandRun xArg
+        (arg', tArg, esArg, ctx1)
+         <- checkArg table ctx0 (Check tParam) DemandRun arg
 
         tFn'     <- applyContext ctx1 tFn
         tArg'    <- applyContext ctx1 tArg
@@ -275,8 +292,7 @@ synthAppArg table
 
         -- The checked application.
         let xExp'       = XApp  (AnTEC tResult' (TSum esExp) (tBot kClosure) a)
-                                xFn 
-                                (RTerm xArg')
+                                xFn arg'
 
         -- If the function returns a suspension then automatically run it.
         let (xExpRun, tExpRun, esExpRun)
@@ -301,10 +317,10 @@ synthAppArg table
                 , indent 4 $ ppr xx
                 , text "    demand  = " <> ppr demand
                 , text "    scope   = " <> ppr isScope
-                , text "    xArg    = " <> ppr xArg
+                , text "    arg     = " <> ppr arg
                 , text "    tFn'    = " <> ppr tFn'
                 , text "    tArg'   = " <> ppr tArg'
-                , text "    xArg'   = " <> ppr xArg'
+                , text "    arg'    = " <> ppr arg'
                 , text "    xExpRun = " <> ppr xExpRun
                 , text "    tExpRun = " <> ppr tExpRun
                 , indent 4 $ ppr ctx1
@@ -315,7 +331,7 @@ synthAppArg table
 
  -- Applied expression is not a function.
  | otherwise
- =      throw $ ErrorAppNotFun a xx tFn
+ =      error "non function" -- throw $ ErrorAppNotFun a xx tFn
 
 
 -------------------------------------------------------------------------------

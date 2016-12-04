@@ -49,34 +49,21 @@ data GExp l
         | XCast    !(GCast l)  !(GExp l)
 
 
--- | Abstractions.
---
---   This indicates what sort of object is being abstracted over in an XAbs.
---
-data GParam l
-        -- | Level-1 abstraction (spec)
-        = MType    !(GBind l)
-
-        -- | Level-0 abstraction (value and witness)
-        | MTerm    !(GBind l)
-
 pattern XLAM b x = XAbs (MType b) x
 pattern XLam b x = XAbs (MTerm b) x
 
 
--- | Arguments.
---
---   Carries an argument that can be supplied to a function.
---
+-- | Parameter of an abstraction.
+data GParam l
+        = MType    !(GBind l)           -- ^ Type binder.
+        | MTerm    !(GBind l)           -- ^ Term binder.
+
+
+-- | Argumenet of an application.
 data GArg l
-        -- | Type argument.
-        = RType    !(T.Type l)
-
-        -- | Value argument.
-        | RExp     !(GExp l)
-
-        -- | Witness argument.
-        | RWitness !(GWitness l)
+        = RType    !(T.Type l)          -- ^ Type argument.
+        | RExp     !(GExp l)            -- ^ Term argument.
+        | RWitness !(GWitness l)        -- ^ Witness argument
 
 
 -- | Possibly recursive bindings.
