@@ -83,8 +83,8 @@ transSuper tails xx
         --   being type arguments, then witness arguments, then value arguments.
         --   We need this so we can split off just the value arguments and 
         --   pass them to the appropriate tailcallN# primitive.
-        XApp{}
-         | Just (xv@(XVar a (UName n)), args) <- takeXApps xx
+        XApp _ x1 x2
+         | (xv@(XVar a (UName n)), args) <- takeXApps1 x1 x2
          , Just tF                  <- Map.lookup n tails
 
          -- Split off args and check they are in standard order.
@@ -107,8 +107,8 @@ transSuper tails xx
         -- Return the result of this application.
         XApp  a x1 x2   
          -> let x1'     = transX   tails x1
-                x2'     = transArg tails x2
-            in  addReturnX a (annotType a) (XApp a x1' x2')
+                a2'     = transArg tails x2
+            in  addReturnX a (annotType a) (XApp a x1' a2')
 
         XLet  a lts x   -> XLet  a (transL tails lts) (down x)
         XCase a x alts  -> XCase a (transX tails x) (map (transA tails) alts)
@@ -183,7 +183,4 @@ transArg tails aa
         RWitness{}      -> aa
         RTerm x         -> RTerm     $ transX tails x
         RImplicit x     -> RImplicit $ transX tails x
-
-
-
 

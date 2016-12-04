@@ -115,10 +115,10 @@ stageSaltToUnSlottedLLVM
 
 stageSaltToUnSlottedLLVM config source pipesLLVM
  = PipeCoreSimplify Salt.fragment 0 normalizeSalt
-   [ PipeCoreOutput         pprDefaultMode
+   [ PipeCoreCheck          "SaltToUnslottedLLVM" Salt.fragment C.Recon SinkDiscard
+     [ PipeCoreOutput        pprDefaultMode
                             (dump config source "dump.2-salt-03-normalized.dcs")
-   , PipeCoreCheck          "SaltToUnslottedLLVM" Salt.fragment C.Recon SinkDiscard
-     [ PipeCoreAsSalt
+     , PipeCoreAsSalt
        [ PipeSaltTransfer
            [ PipeSaltOutput (dump config source "dump.2-salt-04-transfer.dcs")
            , PipeSaltToLlvm (buildSpec $ configBuilder config)

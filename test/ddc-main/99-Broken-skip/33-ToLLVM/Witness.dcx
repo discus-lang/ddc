@@ -1,0 +1,26 @@
+-- TODO: This is broken because we've changed the syntax for witnesses.
+
+-- Observarble optimisations: LICM
+:set lang Salt
+:to-llvm..
+module Licm with letrec {
+go  [ra rx ry : Region]
+    {w : Distinct3 ra rx ry}
+    (a : Ptr# ra Nat#) (x : Ptr# rx Nat#) (y : Ptr# ry Nat#) (i : Nat#)
+    : Nat#
+  = case i of {
+      42# -> i;      
+      _    -> 
+        do { yval     = peek# [ry] [Nat#] y;
+             yplustwo = add# [Nat#] yval 2#;
+
+             poke# [rx] [Nat#] x yplustwo;
+
+             poke# [ra] [Nat#] (plusPtr# [ra] [Nat#] a i) i;
+
+             nexti    = add# [Nat#] i 1#;
+             go [ra] [rx] [ry] {w} a x y nexti;
+           };
+    };
+};;
+

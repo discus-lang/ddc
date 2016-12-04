@@ -89,47 +89,4 @@ l13.body:
 !10 = !{!"three_x_plus_one_ROOT_9", null, i32 1}
 
 
--- Observarble optimisations: LICM
-ok
-%s.Obj = type <{i64}>
-@_DDC__heapBase = external global  i64
-@_DDC__heapTop = external global  i64
-@_DDC__heapMax = external global  i64
-@_DDC__heapBackBase = external global  i64
-@_DDC__heapBackTop = external global  i64
-@_DDC__heapBackMax = external global  i64
-declare external ccc void @abort() align 8
-declare external void @llvm.gcroot(i8** , i8* )
-declare external void @llvm.memcpy.p0i8.p0i8.i64(i8* , i8* , i64 , i32 , i1 )
-declare external void @llvm.memset.p0i8.i64(i8* , i8 , i64 , i32 , i1 )
-
-define internal fastcc i64 @go(i64*  %_v1.a, i64*  %_v2.x, i64*  %_v3.y, i64  %_v4.i) align 8 gc "shadow-stack"  
-{
-l10.init:
-        br label %l11.body
-l11.body:
-        switch i64 %_v4.i, label %l14.default [ i64 42,label %l12.alt ]
-l12.alt:
-        ret i64 %_v4.i
-l14.default:
-        %_v15.yval   = load i64, i64* %_v3.y,    !tbaa !9
-        %_v16.yplustwo = add i64 %_v15.yval, 2
-        store i64 %_v16.yplustwo, i64* %_v2.x,    !tbaa !8
-        %_v18.addr   = ptrtoint i64* %_v1.a to i64
-        %_v19.addr2  = add i64 %_v18.addr, %_v4.i
-        %_v17.x0     = inttoptr i64 %_v19.addr2 to i64*
-        store i64 %_v4.i, i64* %_v17.x0,    !tbaa !7
-        %_v20.nexti  = add i64 %_v4.i, 1
-        %_v21        = tail call fastcc i64 @go (i64* %_v1.a, i64* %_v2.x, i64* %_v3.y, i64 %_v20.nexti) 
-        ret i64 %_v21
-}
-
-
-
-!9 = !{!"go_ry",  !6, i32 0}
-!8 = !{!"go_rx",  !6, i32 0}
-!7 = !{!"go_ra",  !6, i32 0}
-!6 = !{!"go_ROOT_5", null, i32 1}
-
-
 
