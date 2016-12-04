@@ -25,7 +25,7 @@ convertPrimRecord _ectx ctx xxExp
         XApp a _ _
          -- Unpack the application of the projection primitive.
          | Just ( PProject  nField
-                , [XType _  tRecord, XType _ _tField, xRecord])
+                , [RType tRecord, RType _tField, RTerm xRecord])
                 <- takeXPrimApps xxExp
 
          -- Get the list of fields from the record that we are projecting from.

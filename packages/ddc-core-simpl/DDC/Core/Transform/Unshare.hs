@@ -214,8 +214,6 @@ addArgsX nts xx
         XLet a lts xBody  -> XLet  a   (downLts lts)  (downX xBody)
         XCase a xScrut as -> XCase a   (downX xScrut) (map downA as)
         XCast a c x       -> XCast a c (downX x)
-        XType{}           -> xx
-        XWitness{}        -> xx
 
 
 addArgsAppX !nts !xx !ats
@@ -239,11 +237,12 @@ addArgsAppX !nts !xx !ats
         XCon{} 
           -> fst $ wrapAtsX xx tA ats
 
-        XApp _a1 x1 (XType a2 t)
-          -> addArgsAppX nts x1 ((a2, t) : ats)
+        XApp a1 x1 (RType t)
+          -> addArgsAppX nts x1 ((a1, t) : ats)
 
-        XApp a x1 x2
-          -> XApp a (addArgsAppX nts x1 ats) (downX x2)
+        XApp  a x1 (RTerm x2)
+          -> XApp a (addArgsAppX nts x1 ats) 
+                    (RTerm (downX x2))
 
         _ -> fst $ wrapAtsX xx tA ats
 
@@ -276,7 +275,7 @@ wrapAppX a tF xF
         aV  = a' { annotType = tF      }
         aU  = a' { annotType = tUnit   }
         xF' = mapAnnotOfExp (const aV) xF
-   in   XApp aR xF' (xUnit aU)
+   in   XApp aR xF' (RTerm (xUnit aU))
 
 
  -- ISSUE #384: Unshare transform produces AST node with wrong type annotation.
@@ -286,7 +285,7 @@ wrapAppX a tF xF
 
         xF'     = makeXLamFlags a [(True, b) | b <- bs] 
                 $ wrapAppX a tBody
-                $ xApps a xF (map (XType a) $ map TVar us)
+                $ xApps a xF (map RType $ map TVar us)
 
    in   xF'
 
@@ -299,7 +298,7 @@ wrapAppX a tF xF
 wrapAtsX !xF !tF []
  = (xF, tF)
 
-wrapAtsX !xF !tF ((aArg, tArg): ats)
+wrapAtsX !xF !tF ((_aArg, tArg): ats)
  = case tF of 
     TForall bParam tBody
      -> let a   = annotOfExp xF
@@ -308,7 +307,7 @@ wrapAtsX !xF !tF ((aArg, tArg): ats)
             aV  = a { annotType = tF }
             xF' = mapAnnotOfExp (const aV) xF
         in  wrapAtsX
-                (XApp aR xF' (XType aArg tArg))
+                (XApp aR xF' (RType tArg))
                 tR ats
 
     _ -> (xF, tF)

@@ -10,7 +10,7 @@ import DDC.Core.Check.Judge.Type.Base
 checkAppT :: Checker a n
 
 checkAppT !table !ctx0 Recon demand
-        xx@(XApp aApp xFn (XType aArg tArg))
+        xx@(XApp aApp xFn (RType tArg))
  = do   
         let config      = tableConfig table
 
@@ -45,8 +45,7 @@ checkAppT !table !ctx0 Recon demand
 
         -- Build an annotated version of the type application.
         let aApp' = AnTEC tResult (TSum effsFn)  (tBot kClosure) aApp
-        let aArg' = AnTEC kArg    (tBot kEffect) (tBot kClosure) aArg
-        let xx'   = XApp aApp' xFn' (XType aArg' tArg')
+        let xx'   = XApp aApp' xFn' (RType tArg')
 
         ctrace  $ vcat
                 [ text "* APP Recon"
@@ -59,11 +58,11 @@ checkAppT !table !ctx0 Recon demand
                 , empty ]
 
         returnX aApp
-                (\z -> XApp z xFn' (XType aArg' tArg'))
+                (\z -> XApp z xFn' (RType tArg'))
                 tResult effsFn ctx2
 
 checkAppT !table !ctx0 (Synth {}) demand 
-        xx@(XApp aApp xFn (XType aArg tArg))
+        xx@(XApp aApp xFn (RType tArg))
  = do
         -- Check the functional expression.
         (xFn', tFn, effsFn, ctx1)
@@ -71,13 +70,12 @@ checkAppT !table !ctx0 (Synth {}) demand
 
         -- Apply the type argument to the type of the function.
         tFn' <- applyContext ctx1 tFn
-        (tResult, tArg', kArg, ctx2)
+        (tResult, tArg', _kArg, ctx2)
              <- synthAppArgT table aApp xx ctx1 tFn' tArg
 
         -- Build an annotated version of the type application.
         let aApp' = AnTEC tResult (TSum effsFn)  (tBot kClosure) aApp
-        let aArg' = AnTEC kArg    (tBot kEffect) (tBot kClosure) aArg
-        let xx'   = XApp aApp' xFn' (XType aArg' tArg')
+        let xx'   = XApp aApp' xFn' (RType tArg')
 
         ctrace  $ vcat
                 [ text "* APP Synth"
@@ -90,12 +88,12 @@ checkAppT !table !ctx0 (Synth {}) demand
                 , empty ]
 
         returnX aApp
-                (\z -> XApp z xFn' (XType aArg' tArg'))
+                (\z -> XApp z xFn' (RType tArg'))
                 tResult effsFn ctx2
 
 
 checkAppT !table !ctx0 (Check tExpected) demand 
-        xx@(XApp aApp _ (XType _ _)) 
+        xx@(XApp aApp _ (RType _)) 
  =      checkSub table aApp ctx0 demand xx tExpected
 
 checkAppT _ _ _ _ _

@@ -45,8 +45,16 @@ instance Reannotate Exp where
         XLet     a lts x        -> XLet     <$> f a            <*> down lts <*> down x
         XCase    a x alts       -> XCase    <$> f a            <*> down x   <*> mapM down alts
         XCast    a c x          -> XCast    <$> f a            <*> down c   <*> down x
-        XType    a t            -> XType    <$> f a <*> pure t
-        XWitness a w            -> XWitness <$> f a <*> down w
+
+
+instance Reannotate Arg where
+ reannotateM f aa
+  = let down x  = reannotateM f x
+    in case aa of
+        RType t                 -> RType     <$> pure t
+        RTerm x                 -> RTerm     <$> down x
+        RImplicit x             -> RImplicit <$> down x
+        RWitness  x             -> RWitness  <$> down x
 
 
 instance Reannotate Lets where

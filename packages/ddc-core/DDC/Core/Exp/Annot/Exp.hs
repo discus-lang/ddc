@@ -21,6 +21,7 @@ module DDC.Core.Exp.Annot.Exp
          -- * Expressions
         , Exp           (..)
         , Param         (..)
+        , Arg           (..)
         , Prim          (..)
         , Lets          (..)
         , Alt           (..)
@@ -58,11 +59,11 @@ data Exp a n
         -- | Data constructor or literal.
         | XCon     !a !(DaCon n (Type n))
 
-        -- | Function Abstraction.
+        -- | Function abstraction.
         | XAbs     !a !(Param n)  !(Exp a n)
 
-        -- | Function Application.
-        | XApp     !a !(Exp a n)  !(Exp a n)
+        -- | Function application.
+        | XApp     !a !(Exp a n)  !(Arg a n)
 
         -- | Possibly recursive bindings.
         | XLet     !a !(Lets a n) !(Exp a n)
@@ -72,12 +73,6 @@ data Exp a n
 
         -- | Type cast.
         | XCast    !a !(Cast a n) !(Exp a n)
-
-        -- | Type can appear as the argument of an application.
-        | XType    !a !(Type n)
-
-        -- | Witness can appear as the argument of an application.
-        | XWitness !a !(Witness a n)
         deriving (Show, Eq)
 
 
@@ -87,9 +82,18 @@ pattern XLAM  a b x     = XAbs a (MType b) x
 
 -- | Parameter of an abstraction.
 data Param n
-        = MTerm         !(Bind n)       -- ^ Term binder.
-        | MType         !(Bind n)       -- ^ Type binder.
+        = MType         !(Bind n)       -- ^ Type binder.
+        | MTerm         !(Bind n)       -- ^ Term binder.
         | MImplicit     !(Bind n)       -- ^ Implicit term binder.
+        deriving (Show, Eq)
+
+
+-- | Argument of an application.
+data Arg a n
+        = RType         (Type      n)   -- ^ Type argument.
+        | RTerm         (Exp     a n)   -- ^ Term argument.
+        | RImplicit     (Exp     a n)   -- ^ Implicit term argument.
+        | RWitness      (Witness a n)   -- ^ Witness argument.
         deriving (Show, Eq)
 
 
@@ -187,10 +191,18 @@ instance (NFData a, NFData n) => NFData (Exp a n) where
         XLet  a lts x   -> rnf a `seq` rnf lts `seq` rnf x
         XCase a x alts  -> rnf a `seq` rnf x   `seq` rnf alts
         XCast a c x     -> rnf a `seq` rnf c   `seq` rnf x
-        XType a t       -> rnf a `seq` rnf t
-        XWitness a w    -> rnf a `seq` rnf w
 
-instance (NFData n) => NFData (Param n) where
+
+instance (NFData a, NFData n) => NFData (Arg a n) where
+ rnf rr
+  = case rr of
+        RType t                 -> rnf t
+        RTerm x                 -> rnf x
+        RImplicit x             -> rnf x
+        RWitness  x             -> rnf x
+
+
+instance (NFData n)  => NFData (Param n) where
  rnf mm
   = case mm of
         MTerm b                 -> rnf b

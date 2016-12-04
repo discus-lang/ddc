@@ -49,8 +49,15 @@ instance Elaborate (Exp a) where
             
         XCase a x    alts -> XCase a (down x) (map down alts)
         XCast a cst  x2   -> XCast a (down cst) (down x2)
-        XType{}           -> xx
-        XWitness{}        -> xx
+
+
+instance Elaborate (Arg a) where
+ elaborate us aa
+  = case aa of
+        RType{}         -> aa
+        RWitness{}      -> aa
+        RTerm x         -> RTerm (elaborate us x)
+        RImplicit x     -> RTerm (elaborate us x)
 
 
 instance Elaborate (Cast a) where

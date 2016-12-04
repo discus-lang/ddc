@@ -138,24 +138,24 @@ betaReduce1 _profile config _env xx
         --  If the type argument of the redex does not appear as an 
         --  argument of the result then we need to add a closure weakening
         --  for the case where t2 was a region variable or handle.
-        XApp _a (XLAM _ b11 x12) (XType _a2 t2)
+        XApp _a (XLAM _ b11 x12) (RType t2)
          | isRegionKind $ typeOfBind b11
          -> ret mempty { infoTypes = 1}
               $ substituteTX b11 t2 x12
 
         -- Substitute type arguments into type abstractions,
         --  Where the argument is not a region type.
-        XApp _a (XLAM _ b11 x12) (XType _ t2)
+        XApp _a (XLAM _ b11 x12) (RType t2)
          -> ret mempty { infoTypes = 1 }
               $ substituteTX b11 t2 x12
 
         -- Substitute witness arguments into witness abstractions.
-        XApp _a (XLam _ b11 x12) (XWitness _a2 w2)
+        XApp _a (XLam _ b11 x12) (RWitness w2)
          -> ret mempty { infoWits = 1 }
               $ substituteWX b11 w2 x12
 
         -- Substitute value arguments into value abstractions.
-        XApp a (XLam _ b11 x12) x2
+        XApp a (XLam _ b11 x12) (RTerm x2)
          |  canBetaSubstX x2
          -> ret mempty { infoValues = 1 }
               $ substituteXX b11 x2 x12
@@ -181,16 +181,11 @@ betaReduce1 _profile config _env xx
 canBetaSubstX :: Exp a n -> Bool
 canBetaSubstX xx
  = case xx of
-        XVar{}  -> True
-        XCon{}  -> True
-        XLam{}  -> True
-        XLAM{}  -> True
-
-        XApp _ x1 XType{}
-         -> canBetaSubstX x1
-
-        XApp _ x1 XWitness{}
-         -> canBetaSubstX x1 
-
-        _       -> False
+        XVar{}                  -> True
+        XCon{}                  -> True
+        XLam{}                  -> True
+        XLAM{}                  -> True
+        XApp _ x1 RType{}       -> canBetaSubstX x1
+        XApp _ x1 RWitness{}    -> canBetaSubstX x1 
+        _                       -> False
 

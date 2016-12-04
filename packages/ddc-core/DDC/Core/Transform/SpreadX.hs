@@ -114,8 +114,7 @@ spreadImportValueX kenv _tenv isrc
 ---------------------------------------------------------------------------------------------------
 instance SpreadX (Exp a) where
  spreadX kenv tenv xx 
-  = {-# SCC spreadX #-}
-    let down x = spreadX kenv tenv x
+  = let down x = spreadX kenv tenv x
     in case xx of
         XVar  a u       -> XVar  a (down u)
         XPrim a p       -> XPrim a p
@@ -142,8 +141,15 @@ instance SpreadX (Exp a) where
          
         XCase a x alts  -> XCase    a (down x) (map down alts)
         XCast a c x     -> XCast    a (down c) (down x)
-        XType a t       -> XType    a (spreadT kenv t)
-        XWitness a w    -> XWitness a (down w)
+
+
+instance SpreadX (Arg a) where
+ spreadX kenv tenv aa
+  = case aa of
+        RType t         -> RType     $ spreadT kenv t
+        RTerm x         -> RTerm     $ spreadX kenv tenv x
+        RImplicit x     -> RImplicit $ spreadX kenv tenv x
+        RWitness  x     -> RWitness  $ spreadX kenv tenv x
 
 
 ---------------------------------------------------------------------------------------------------

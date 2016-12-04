@@ -5,7 +5,8 @@ module DDC.Core.Transform.Rewrite.Match
         , emptySubstInfo 
 
           -- * Matching
-        , match)
+        , match
+        , matchArg)
 where
 import DDC.Core.Exp
 import Data.Set                                 (Set)
@@ -69,29 +70,37 @@ match m bs (XVar _ (UName n)) r
            then Just m
            else Nothing
 
-match m _ (XVar _ v1) (XVar _ v2)
+match m _  (XVar _ v1) (XVar _ v2)
  | v1 == v2      = Just m
 
-match m _ (XCon _ c1) (XCon _ c2)
+match m _  (XCon _ c1) (XCon _ c2)
  | c1 == c2      = Just m
 
 match m bs (XApp _ x11 x12) (XApp _ x21 x22)
  = do   m' <- match m bs x11 x21
-        match m' bs x12 x22
+        matchArg m' bs x12 x22
 
 match m bs (XCast _ c1 x1) (XCast _ c2 x2)
  | eqCast c1 c2 
  = match m bs x1 x2
 
-match (xs, tys) bs (XType _ t1) (XType _ t2)
- = do   tys' <- matchT t1 t2 bs tys
-        return (xs, tys')
-
-match m _ (XWitness _ w1) (XWitness _ w2)
- | eqWit w1 w2  = return m
-
 match _ _ _ _ 
  = Nothing
+
+
+matchArg (xs, tys) bs (RType t1) (RType t2)
+ = do   tys'    <- matchT t1 t2 bs tys
+        return (xs, tys')
+
+matchArg m bs         (RTerm x1) (RTerm x2)
+ = do   match m bs x1 x2
+
+matchArg m _          (RWitness w1) (RWitness w2)
+ | eqWit w1 w2  = return m
+
+matchArg _ _ _ _
+ = Nothing
+
 
 
 eqCast :: Ord n => Cast a n -> Cast a n -> Bool

@@ -13,7 +13,7 @@ checkAppX :: Checker a n
 
 checkAppX !table !ctx
         Recon demand
-        xx@(XApp a xFn xArg)
+        xx@(XApp a xFn (RTerm xArg))
  = do
         -- Check the functional expression.
         (xFn',  tFn,  effsFn, ctx1)
@@ -42,7 +42,7 @@ checkAppX !table !ctx
                 $ [effsFn, effsArg, Sum.singleton kEffect effsLatent]
 
         returnX a
-                (\z -> XApp z xFn' xArg')
+                (\z -> XApp z xFn' (RTerm xArg'))
                 tResult effsResult
                 ctx2
 
@@ -50,7 +50,7 @@ checkAppX !table !ctx
 checkAppX !table !ctx0 
         mode@(Synth isScope)
         demand 
-        xx@(XApp a xFn xArg)
+        xx@(XApp a xFn (RTerm xArg))
  = do
         ctrace  $ vcat
                 [ text "*>  App Synth"
@@ -162,8 +162,9 @@ synthAppArg table
         let esResult    = effsFn `Sum.union` effsArg
 
         -- Result expression.
-        let xResult    = XApp  (AnTEC tA2 (TSum esResult) (tBot kClosure) a)
-                                xFn xArg'
+        let xResult    = XApp   (AnTEC tA2 (TSum esResult) (tBot kClosure) a)
+                                xFn 
+                                (RTerm xArg')
 
         ctrace  $ vcat
                 [ text "*<  App Synth Exists"
@@ -199,8 +200,7 @@ synthAppArg table
         --  and the type of the function was quantified, we know there should
         --  be a type application here.
         let aFn    = AnTEC tFn (TSum effsFn) (tBot kClosure) a
-        let aArg   = AnTEC (typeOfBind b) (tBot kEffect) (tBot kClosure) a
-        let xFnTy  = XApp aFn xFn (XType aArg tA)
+        let xFnTy  = XApp aFn xFn (RType tA)
 
         ctrace  $ vcat
                 [ text "*>  App Synth Forall"
@@ -275,7 +275,8 @@ synthAppArg table
 
         -- The checked application.
         let xExp'       = XApp  (AnTEC tResult' (TSum esExp) (tBot kClosure) a)
-                                xFn xArg'
+                                xFn 
+                                (RTerm xArg')
 
         -- If the function returns a suspension then automatically run it.
         let (xExpRun, tExpRun, esExpRun)

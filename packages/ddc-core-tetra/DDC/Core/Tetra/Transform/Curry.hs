@@ -100,11 +100,11 @@ curryX envt callables xx
         XPrim _ p
          ->     return $ XPrim () p
 
-        XApp  _ x1 x2
+        XApp  _ x1 a2
          -> do  result  <- curryX_call envt callables xx
                 case result of
                     Just xx' -> return xx'
-                    Nothing  -> XApp () <$> down x1 <*> down x2
+                    Nothing  -> XApp () <$> down x1 <*> curryArg envt callables a2
 
         XCast _ CastRun x1
          -> do  result  <- curryX_call envt callables xx
@@ -151,11 +151,19 @@ curryX envt callables xx
          ->     XCast ()  <$> return (reannotate (const ()) c)
                           <*> curryX envt callables xBody
 
-        XType    _ t
-         -> return $ XType    () t
 
-        XWitness _ w
-         -> return $ XWitness () (reannotate (const ()) w)
+curryArg  :: Show a
+        => EnvT Name                    -- ^ Current type environment.
+        -> Map Name Callable            -- ^ Map of directly callable supers.
+        -> Arg (AnTEC a Name) Name      -- ^ Expression to transform.
+        -> Either Error (Arg () Name)
+
+curryArg envt callables aa
+ = case aa of
+        RType t         -> return $ RType t
+        RWitness w      -> return $ RWitness $ reannotate (const ()) w
+        RTerm x         -> fmap RTerm     $ curryX envt callables x
+        RImplicit x     -> fmap RImplicit $ curryX envt callables x
 
 
 -- If we introduce a locally bound name with the same name as one of
@@ -190,8 +198,8 @@ curryX_call envt callables xx
 
  where  downElim ee
          = case ee of
-                Call.ElimType  _ _ t 
-                 -> return $ Call.ElimType  () () t
+                Call.ElimType  _ t 
+                 -> return $ Call.ElimType  () t
 
                 Call.ElimValue _ x   
                  ->  Call.ElimValue () 

@@ -89,11 +89,27 @@ instance (Pretty n, Eq n) => Pretty (Exp a n) where
                 <> breakWhen (not $ isSimpleX xBody)
                 <> pprX xBody
 
-        XApp _ x1 x2
+        XApp _ x1 (RTerm x2)
          -> pprParen' (d > 10)
          $  pprModePrec mode 10 x1 
                 <> nest 4 (breakWhen (not $ isSimpleX x2) 
                           <> pprModePrec mode 11 x2)
+
+        XApp _ x1 (RType x2)
+         -> pprParen' (d > 10)
+         $  pprModePrec mode 10 x1 
+                <> text "[" <> ppr x2 <> text "]"
+
+        XApp _ x1 (RWitness x2)
+         -> pprParen' (d > 10)
+         $  pprModePrec mode 10 x1 
+                <> text "<" <> ppr x2 <> text ">"
+
+        XApp _ x1 (RImplicit x2)
+         -> pprParen' (d > 10)
+         $  pprModePrec mode 10 x1 
+                <> nest 4 (breakWhen (not $ isSimpleX x2) 
+                          <> text "{" <> pprModePrec mode 11 x2 <> text "}")
 
         XLet _ lts x
          ->  pprParen' (d > 2)
@@ -132,8 +148,15 @@ instance (Pretty n, Eq n) => Pretty (Exp a n) where
          $   ppr cc <+> text "in"
          <$> pprX x
 
-        XType    _ t    -> text "[" <> ppr t <> text "]"
-        XWitness _ w    -> text "<" <> ppr w <> text ">"
+
+-- Arg --------------------------------------------------------------------------------------------
+instance (Pretty n, Eq n) => Pretty (Arg a n) where
+ ppr aa
+  = case aa of
+        RType t         -> text "[" <> ppr t <> text "]"
+        RWitness w      -> text "<" <> ppr w <> text ">"
+        RTerm x         -> text "(" <> ppr x <> text ")"
+        RImplicit x     -> text "{" <> ppr x <> text "}"
 
 
 -- Prim -------------------------------------------------------------------------------------------
@@ -331,12 +354,13 @@ breakWhen False  = space
 isSimpleX :: Exp a n -> Bool
 isSimpleX xx
  = case xx of
-        XVar{}          -> True
-        XCon{}          -> True
-        XType{}         -> True
-        XWitness{}      -> True
-        XApp _ x1 x2    -> isSimpleX x1 && isAtomX x2
-        _               -> False
+        XVar{}                   -> True
+        XCon{}                   -> True
+        XApp _ _  RType{}        -> True
+        XApp _ x1 (RTerm x2)     -> isSimpleX x1 && isAtomX x2
+        XApp _ x1 (RImplicit x2) -> isSimpleX x1 && isAtomX x2
+        XApp _ x1 (RWitness _w2) -> isSimpleX x1
+        _                        -> False
 
 
 parens' :: Doc -> Doc

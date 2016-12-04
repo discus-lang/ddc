@@ -131,8 +131,7 @@ addTypeApps !aApp  ctx0 iBefore xx0 (bParam : bsParam) tBody
         let tResult =  substituteT bParam tArg tBody'
 
         let aApp'   = AnTEC tResult (tBot kEffect) (tBot kClosure) aApp
-        let aArg'   = AnTEC kParam  (tBot kEffect) (tBot kClosure) aApp
-        let xx2     = XApp aApp' xx1 (XType aArg' tArg)
+        let xx2     = XApp aApp' xx1 (RType tArg)
 
         return (xx2, tResult, ctx2)
 

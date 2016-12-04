@@ -88,33 +88,31 @@ transSuper tails xx
          , Just tF                  <- Map.lookup n tails
 
          -- Split off args and check they are in standard order.
-         , (xsArgsType, xsArgsMore) <- span isXType    args
-         , (xsArgsWit,  xsArgsVal)  <- span isXWitness xsArgsMore
-         , not $ any isXType    xsArgsVal
-         , not $ any isXWitness xsArgsVal
+         , (asArgsType, asArgsMore) <- span isRType    args
+         , (asArgsWit,  asArgsVal)  <- span isRWitness asArgsMore
+         , not $ any isRType    asArgsVal
+         , not $ any isRWitness asArgsVal
 
          -- Get the types of the value parameters.
          , (_, tsValArgs, tResult)  <- takeTFunWitArgResult $ eraseTForalls tF
 
-         -> let arity   = length xsArgsVal
+         -> let arity   = length asArgsVal
                 p       = PrimCallTail arity
                 u       = UPrim (NamePrimOp (PrimCall p)) (typeOfPrimCall p)
             in  xApps a (XVar a u) 
-                        $  (map (XType a) (tsValArgs ++ [tResult])) 
-                        ++ [xApps a xv (xsArgsType ++ xsArgsWit)] 
-                        ++ xsArgsVal
+                        $  (map RType  (tsValArgs  ++ [tResult])) 
+                        ++ [RTerm $ xApps a xv (asArgsType ++ asArgsWit)] 
+                        ++ asArgsVal
 
         -- Return the result of this application.
         XApp  a x1 x2   
-         -> let x1'     = transX tails x1
-                x2'     = transX tails x2
+         -> let x1'     = transX   tails x1
+                x2'     = transArg tails x2
             in  addReturnX a (annotType a) (XApp a x1' x2')
 
         XLet  a lts x   -> XLet  a (transL tails lts) (down x)
         XCase a x alts  -> XCase a (transX tails x) (map (transA tails) alts)
         XCast a c x     -> XCast a c (transSuper tails x)
-        XType{}         -> xx
-        XWitness{}      -> xx
 
 
 -- | Add a statment to return this value, 
@@ -168,10 +166,24 @@ transX tails xx
         XPrim{}         -> xx
         XCon{}          -> xx
         XAbs{}          -> xx
-        XApp  a x1 x2   -> XApp  a (down x1) (down x2)
+        XApp  a x1 x2   -> XApp  a (down x1) (transArg tails x2)
         XLet{}          -> xx 
         XCase{}         -> xx
         XCast{}         -> xx
-        XType{}         -> xx
-        XWitness{}      -> xx
+
+
+-- Arg ------------------------------------------------------------------------
+transArg :: Map Name (Type Name)
+         -> Arg (AnTEC a Name) Name
+         -> Arg (AnTEC a Name) Name
+
+transArg tails aa
+ = case aa of
+        RType{}         -> aa
+        RWitness{}      -> aa
+        RTerm x         -> RTerm     $ transX tails x
+        RImplicit x     -> RImplicit $ transX tails x
+
+
+
 

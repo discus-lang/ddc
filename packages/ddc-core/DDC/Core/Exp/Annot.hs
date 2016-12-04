@@ -8,6 +8,7 @@ module DDC.Core.Exp.Annot
          -- ** Expressions
         , Exp           (..)
         , Param         (..)
+        , Arg           (..)
         , Prim          (..)
         , Lets          (..)
         , Alt           (..)
@@ -40,6 +41,12 @@ module DDC.Core.Exp.Annot
           -- ** Applications
         , isXApp
 
+          -- ** Arguments
+        , isRType
+        , isRWitness
+        , isRTerm
+        , isRImplicit
+
           -- ** Cast
         , isXCast
         , isXCastBox
@@ -50,10 +57,6 @@ module DDC.Core.Exp.Annot
 
           -- ** Patterns
         , isPDefault
-
-          -- ** Types and Witnesses
-        , isXType
-        , isXWitness
 
           ---------------------------------------
           -- * Compounds
@@ -85,6 +88,13 @@ module DDC.Core.Exp.Annot
         , takeXPrimApps
         , takeXFragApps
 
+          -- ** Arguments
+        , takeRType
+        , takeRTerm
+        , takeRWitness
+        , takeRImplicit
+        , takeExpFromArg
+
           -- ** Lets
         , xLets
         , xLetsAnnot
@@ -108,12 +118,8 @@ module DDC.Core.Exp.Annot
         , wApp
         , wApps
         , annotOfWitness
-        , takeXWitness
         , takeWAppsAsList
         , takePrimWiConApps
-
-          -- ** Types
-        , takeXType
 
           -- ** Data Constructors
         , xUnit, dcUnit

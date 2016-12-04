@@ -18,36 +18,45 @@ import qualified DDC.Core.Salt.Runtime  as A
 --   return Nothing which indicates it should be discarded.
 convertOrDiscardSuperArgX
         :: Context a                    -- ^ Type context of the conversion.
-        -> Exp (AnTEC a E.Name) E.Name  -- ^ Expression to convert.
-        -> ConvertM a (Maybe (Exp a A.Name))
+        -> ( Arg (AnTEC a E.Name) E.Name
+           , Type E.Name)               -- ^ Argument to convert along with its type.
+        -> ConvertM a (Maybe (Arg a A.Name))
 
-convertOrDiscardSuperArgX ctx xx
+convertOrDiscardSuperArgX ctx (aa, tArg)
+ = case aa of
 
-        -- In the salt code everything currently goes into the top-level region.
-        | XType a _     <- xx
-        , isRegionKind (annotType a)
-        = do    return  $ Just $ XType (annotTail a) A.rTop
+        -- Convert Type arguments.
+        RType t
 
-        -- If we have a data type argument where the type is boxed,
-        -- then we pass the region the corresponding Salt object is in.
-        | XType a t     <- xx
-        , isDataKind   (annotType a)
-        = do    let kenv =  contextKindEnv ctx
+          -- In the salt code everything currently goes into the top-level region.
+         | isRegionKind tArg
+         -> do  return  $ Just $ RType A.rTop
+ 
+         -- If we have a data type argument where the type is boxed,
+         -- then we pass the region the corresponding Salt object is in.
+         | isDataKind   tArg
+         -> do  let kenv =  contextKindEnv ctx
                 t'       <- saltPrimeRegionOfDataType kenv t
-                return   $ Just (XType (annotTail a) t')
+                return   $ Just $ RType t'
 
-        -- Drop other type arguments.
-        | XType{}       <- xx
-        = return Nothing
-        
-        -- Drop witneses.
-        | XWitness{}    <- xx
-        = return Nothing
+         -- Drop other type arguments.
+         | otherwise
+         ->     return Nothing
 
-        -- Expression arguments.
-        | otherwise
-        = do    x'      <- contextConvertExp ctx ExpArg ctx xx
-                return  $ Just x'
+
+        -- Drop Witness arguments.
+        RWitness{}
+         ->     return Nothing
+
+
+        -- Convert Term arguments.
+        RTerm x
+         -> do  x'      <- contextConvertExp ctx ExpArg ctx x
+                return  $ Just $ RTerm x'
+
+        RImplicit x
+         -> do  x'      <- contextConvertExp ctx ExpArg ctx x
+                return  $ Just $ RImplicit x'
 
 
 ---------------------------------------------------------------------------------------------------

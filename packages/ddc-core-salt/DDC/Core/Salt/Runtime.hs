@@ -127,7 +127,7 @@ runtimeImportTypes
 xTagOfObject :: a -> Type Name -> Exp a Name -> Exp a Name
 xTagOfObject a tR x2
  = xApps a (XVar a $ fst utTagOfObject)
-        [ XType a tR, x2 ]
+        [ RType tR, RTerm x2 ]
 
 utTagOfObject :: (Bound Name, Type Name)
 utTagOfObject
@@ -149,7 +149,8 @@ xAllocThunk
 
 xAllocThunk a tR xFun xParam xBoxes xArgs xRun
  = xApps a (XVar a $ fst utAllocThunk)
-        [ XType a tR, xFun, xParam, xBoxes, xArgs, xRun]
+        [ RType tR
+        , RTerm xFun, RTerm xParam, RTerm xBoxes, RTerm xArgs, RTerm xRun]
 
 utAllocThunk :: (Bound Name, Type Name)
 utAllocThunk
@@ -166,7 +167,8 @@ xCopyArgsOfThunk
 
 xCopyArgsOfThunk a tRSrc tRDst xSrc xDst xIndex xLen
  = xApps a (XVar a $ fst utCopyArgsOfThunk)
-        [ XType a tRSrc, XType a tRDst, xSrc, xDst, xIndex, xLen ]
+        [ RType tRSrc, RType tRDst
+        , RTerm xSrc,  RTerm xDst, RTerm xIndex, RTerm xLen ]
 
 
 utCopyArgsOfThunk :: (Bound Name, Type Name)
@@ -186,7 +188,7 @@ xExtendThunk
 
 xExtendThunk a tRSrc tRDst xSrc xMore
  = xApps a (XVar a $ fst utExtendThunk)
-        [ XType a tRSrc, XType a tRDst, xSrc, xMore ]
+        [ RType tRSrc, RType tRDst, RTerm xSrc, RTerm xMore ]
 
 utExtendThunk :: (Bound Name, Type Name)
 utExtendThunk
@@ -202,7 +204,7 @@ xArgsOfThunk
 
 xArgsOfThunk a tR xThunk
  = xApps a (XVar a $ fst utArgsOfThunk)
-        [ XType a tR, xThunk ]
+        [ RType tR, RTerm xThunk ]
 
 utArgsOfThunk :: (Bound Name, Type Name)
 utArgsOfThunk
@@ -224,7 +226,8 @@ xSetFieldOfThunk
 
 xSetFieldOfThunk a tR tC xObj xBase xIndex xVal
  = xApps a (XVar a $ fst utSetFieldOfThunk)
-        [ XType a tR, XType a tC, xObj, xBase, xIndex, xVal]
+        [ RType tR,   RType tC
+        , RTerm xObj, RTerm xBase, RTerm xIndex, RTerm xVal]
 
 utSetFieldOfThunk :: (Bound Name, Type Name)
 utSetFieldOfThunk
@@ -239,10 +242,21 @@ utSetFieldOfThunk
 -- | Apply a thunk to some more arguments.
 xApplyThunk
         :: a -> Int
-        -> [Exp a Name] -> Exp a Name
+        ->  Type Name   -- ^ Region containing source thunk.
+        -> [Type Name]  -- ^ Regions of arguments.
+        ->  Type Name   -- ^ Region of result.
+        ->  Exp a Name  -- ^ Source Thunk
+        -> [Exp a Name] -- ^ Arguments to apply.
+        ->  Exp a Name  -- ^ Result think
 
-xApplyThunk a arity xsArgs
- = xApps a (XVar a $ fst (utApplyThunk arity)) xsArgs
+xApplyThunk a arity rThunk rsArgs rResult xThunk xsArgs
+ = xApps a (XVar a $ fst (utApplyThunk arity)) 
+ $ concat [ [RType rThunk]
+          , map RType rsArgs
+          , [RType rResult]
+          , [RTerm xThunk]
+          , map RTerm xsArgs]
+
 
 utApplyThunk :: Int -> (Bound Name, Type Name)
 utApplyThunk arity
@@ -275,7 +289,9 @@ xRunThunk
 
 xRunThunk a trThunk trResult xArg
  = xApps a (XVar a $ fst utRunThunk) 
-        [XType a trThunk, XType a trResult, xArg]
+        [ RType trThunk
+        , RType trResult
+        , RTerm xArg]
 
 utRunThunk :: (Bound Name, Type Name)
 utRunThunk 
@@ -289,9 +305,9 @@ utRunThunk
 xAllocBoxed :: a -> Type Name -> Integer -> Exp a Name -> Exp a Name
 xAllocBoxed a tR tag x2
  = xApps a (XVar a $ fst utAllocBoxed)
-        [ XType a tR
-        , XCon a (DaConPrim (NamePrimLit (PrimLitTag tag)) tTag)
-        , x2]
+        [ RType tR
+        , RTerm $ XCon a (DaConPrim (NamePrimLit (PrimLitTag tag)) tTag)
+        , RTerm x2]
 
 utAllocBoxed :: (Bound Name, Type Name)
 utAllocBoxed
@@ -310,9 +326,10 @@ xGetFieldOfBoxed
 
 xGetFieldOfBoxed a trPrime trField x2 offset
  = xApps a (XVar a $ fst utGetFieldOfBoxed) 
-        [ XType a trPrime, XType a trField
-        , x2
-        , xNat a offset ]
+        [ RType trPrime
+        , RType trField
+        , RTerm x2
+        , RTerm $ xNat a offset ]
 
 utGetFieldOfBoxed :: (Bound Name, Type Name)
 utGetFieldOfBoxed 
@@ -336,10 +353,11 @@ xSetFieldOfBoxed
 
 xSetFieldOfBoxed a trPrime trField x2 offset val
  = xApps a (XVar a $ fst utSetFieldOfBoxed) 
-        [ XType a trPrime, XType a trField
-        , x2
-        , xNat a offset
-        , val]
+        [ RType trPrime
+        , RType trField
+        , RTerm x2
+        , RTerm $ xNat a offset
+        , RTerm val]
 
 utSetFieldOfBoxed :: (Bound Name, Type Name)
 utSetFieldOfBoxed 
@@ -353,7 +371,7 @@ utSetFieldOfBoxed
 xAllocRaw :: a -> Type Name -> Integer -> Exp a Name -> Exp a Name
 xAllocRaw a tR tag x2
  = xApps a (XVar a $ fst utAllocRaw)
-        [ XType a tR, xTag a tag, x2]
+        [ RType tR, RTerm $ xTag a tag, RTerm x2]
 
 utAllocRaw :: (Bound Name, Type Name)
 utAllocRaw
@@ -365,7 +383,7 @@ utAllocRaw
 xPayloadOfRaw :: a -> Type Name -> Exp a Name -> Exp a Name
 xPayloadOfRaw a tR x2 
  = xApps a (XVar a $ fst utPayloadOfRaw) 
-        [XType a tR, x2]
+        [RType tR, RTerm x2]
  
 utPayloadOfRaw :: (Bound Name, Type Name)
 utPayloadOfRaw
@@ -377,7 +395,7 @@ utPayloadOfRaw
 -- | Allocate a pointer on the stack for a GC root.
 xAllocSlot :: a -> Region Name -> Exp a Name
 xAllocSlot a tR
- = XApp a (XVar a uAllocSlot) (XType a tR)
+ = XApp a (XVar a uAllocSlot) (RType tR)
 
 uAllocSlot :: Bound Name
 uAllocSlot
@@ -388,7 +406,7 @@ uAllocSlot
 -- | Allocate a pointer on the stack for a GC root.
 xAllocSlotVal :: a -> Region Name -> Exp a Name -> Exp a Name
 xAllocSlotVal a tR xVal
- = XApp a (XApp a (XVar a uAllocSlotVal) (XType a tR)) xVal
+ = XApp a (XApp a (XVar a uAllocSlotVal) (RType tR)) (RTerm xVal)
 
 uAllocSlotVal :: Bound Name
 uAllocSlotVal
@@ -401,7 +419,7 @@ uAllocSlotVal
 xAllocSmall :: a -> Type Name -> Integer -> Exp a Name -> Exp a Name
 xAllocSmall a tR tag x2
  = xApps a (XVar a $ fst utAllocSmall)
-        [ XType a tR, xTag a tag, x2]
+        [ RType tR, RTerm $ xTag a tag, RTerm x2]
 
 
 utAllocSmall :: (Bound Name, Type Name)
@@ -414,7 +432,7 @@ utAllocSmall
 xPayloadOfSmall :: a -> Type Name -> Exp a Name -> Exp a Name
 xPayloadOfSmall a tR x2 
  = xApps a (XVar a $ fst utPayloadOfSmall) 
-        [XType a tR, x2]
+        [RType tR, RTerm x2]
  
 utPayloadOfSmall :: (Bound Name, Type Name)
 utPayloadOfSmall
@@ -428,7 +446,7 @@ utPayloadOfSmall
 xddcInit   :: a -> Integer -> Exp a Name
 xddcInit a bytesHeap
  = xApps a (XVar a $ fst $ utddcInit)
-           [ xNat a bytesHeap ]
+           [ RTerm $ xNat a bytesHeap ]
 
 utddcInit :: (Bound Name, Type Name)
 utddcInit
@@ -440,7 +458,7 @@ utddcInit
 xddcExit   :: a -> Integer -> Exp a Name
 xddcExit a code
  = xApps a (XVar a $ fst $ utddcExit)
-           [ xNat a code ]
+           [ RTerm $ xNat a code ]
 
 utddcExit :: (Bound Name, Type Name)
 utddcExit
@@ -451,7 +469,7 @@ utddcExit
 -- | Check if allocation is possible, if not perform garbage collection.
 xAllocCollect :: a -> Exp a Name -> Exp a Name
 xAllocCollect a bytes
- = XApp a (XVar a $ fst utAllocCollect) bytes
+ = XApp a (XVar a $ fst utAllocCollect) (RTerm bytes)
 
 utAllocCollect :: (Bound Name, Type Name)
 utAllocCollect
@@ -464,7 +482,7 @@ utAllocCollect
 xErrorDefault :: a -> Exp a Name -> Exp a Name -> Exp a Name
 xErrorDefault a xStr xLine
  = xApps a (XVar a $ fst utErrorDefault) 
-           [xStr, xLine]
+           [RTerm xStr, RTerm xLine]
  
 utErrorDefault :: (Bound Name, Type Name)
 utErrorDefault
@@ -477,10 +495,10 @@ utErrorDefault
 xCast :: a -> Type Name -> Type Name -> Type Name -> Exp a Name -> Exp a Name
 xCast a r toType fromType xPtr
  =     XApp a (XApp a (XApp a (XApp a (XVar a uCast)
-                                      (XType a r)) 
-                              (XType a toType))
-                      (XType a fromType))
-              xPtr           
+                                      (RType r)) 
+                              (RType toType))
+                      (RType fromType))
+              (RTerm xPtr)
                       
 uCast :: Bound Name
 uCast = UPrim (NamePrimOp $ PrimStore $ PrimStoreCastPtr)

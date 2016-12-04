@@ -351,21 +351,31 @@ convRValueM config kenv tenv xx
                            nSuper
 
                 -- Ditch type and witness arguments
-                args'   <- mapM (convRValueM config kenv tenv) 
+                args'   <- mapM (convRValueArgM config kenv tenv) 
                         $  filter keepFunArgX args
 
                 return  $ nSuper' <> parenss args'
-
-        -- Type argument.
-        XType _ t
-         -> do  t'      <- convTypeM kenv t
-                return  $ t'
 
         -- Ditch casts.
         XCast _ _ x
          -> convRValueM config kenv tenv x
 
         _ -> throw $ ErrorRValueInvalid xx
+
+
+convRValueArgM 
+        :: Show a
+        => Config a
+        -> KindEnv Name -> TypeEnv Name
+        -> Arg a Name
+        -> ConvertM a Doc
+
+convRValueArgM config kenv tenv aa
+ = case aa of
+        RType t         -> convTypeM   kenv t
+        RTerm x         -> convRValueM config kenv tenv x
+        RImplicit x     -> convRValueM config kenv tenv x
+        RWitness{}      -> error "convRValueArgM: R value invalid"
 
 
 -- | Check if some expression is an r-value, 
@@ -381,11 +391,11 @@ isRValue xx
 
 
 -- | We don't need to pass types and witnesses to top-level supers.
-keepFunArgX :: Exp a n -> Bool
+keepFunArgX :: Arg a n -> Bool
 keepFunArgX xx
  = case xx of
-        XType{}         -> False
-        XWitness{}      -> False
+        RType{}         -> False
+        RWitness{}      -> False
         _               -> True
 
 
@@ -395,17 +405,17 @@ convPrimCallM
         :: Show a 
         => Config a
         -> KindEnv Name -> TypeEnv Name
-        -> PrimOp       -> [Exp a Name] 
+        -> PrimOp       -> [Arg a Name] 
         -> ConvertM a Doc
 
-convPrimCallM config kenv tenv p xs
+convPrimCallM config kenv tenv p args
  = let pp       = configPlatform config
    in case p of
 
         -- Binary arithmetic primops.
         PrimArith op
-         | [XType _ _, x1, x2]  <- xs
-         , Just op'             <- convPrimArith2 op
+         | [RType _, RTerm x1, RTerm x2]  <- args
+         , Just op'     <- convPrimArith2 op
          -> do  x1'     <- convRValueM config kenv tenv x1
                 x2'     <- convRValueM config kenv tenv x2
                 return  $ parens (x1' <+> op' <+> x2')
@@ -413,7 +423,7 @@ convPrimCallM config kenv tenv p xs
 
         -- Cast primops.
         PrimCast PrimCastPromote
-         | [XType _ tDst, XType _ tSrc, x1]    <- xs
+         | [RType tDst, RType tSrc, RTerm x1] <- args
          , Just (NamePrimTyCon tcSrc, _) <- takePrimTyConApps tSrc
          , Just (NamePrimTyCon tcDst, _) <- takePrimTyConApps tDst 
          , primCastPromoteIsValid pp tcSrc tcDst
@@ -422,7 +432,7 @@ convPrimCallM config kenv tenv p xs
                 return  $  parens tDst' <> parens x1'
 
         PrimCast PrimCastTruncate
-         | [XType _ tDst, XType _ tSrc, x1] <- xs
+         | [RType tDst, RType tSrc, RTerm x1] <- args
          , Just (NamePrimTyCon tcSrc, _) <- takePrimTyConApps tSrc
          , Just (NamePrimTyCon tcDst, _) <- takePrimTyConApps tDst 
          , primCastTruncateIsValid pp tcSrc tcDst
@@ -433,12 +443,12 @@ convPrimCallM config kenv tenv p xs
 
         -- Control primops.
         PrimControl PrimControlReturn
-         | [XType _ _, x1]       <- xs
+         | [RType _, RTerm x1] <- args
          -> do  x1'     <- convRValueM config kenv tenv x1
                 return  $ text "return" <+> x1'
 
         PrimControl PrimControlFail
-         | [XType _ _]           <- xs
+         | [RType _]           <- args
          -> do  return  $ text "_FAIL()"
 
 
@@ -448,7 +458,7 @@ convPrimCallM config kenv tenv p xs
         --   For straight tail-recursion we need to overwrite the parameters
         --   with the new arguments and jump back to the start of the function.
         PrimCall (PrimCallTail arity)
-         | xFunTys : xsArgs      <- drop (arity + 1) xs
+         | RTerm xFunTys : xsArgs      <- drop (arity + 1) args
          , Just (xFun, _)        <- takeXApps xFunTys
          , XVar _ (UName nSuper) <- xFun
          -> do  
@@ -460,29 +470,29 @@ convPrimCallM config kenv tenv p xs
                            (lookup nSuper $ moduleExportValues $ configModule config)
                            nSuper
 
-                xsArgs'         <- mapM (convRValueM config kenv tenv) xsArgs
+                xsArgs'         <- mapM (convRValueArgM config kenv tenv) xsArgs
                 return  $  text "return" <+> nSuper' <> parenss xsArgs'
 
 
         -- Store primops.
         PrimStore op
          -> do  let op'  = convPrimStore op
-                xs'     <- mapM (convRValueM config kenv tenv) 
-                        $  filter (keepPrimArgX kenv) xs
+                xs'     <- mapM   (convRValueArgM config kenv tenv) 
+                        $  filter (keepPrimArgX kenv) args
                 return  $ op' <> parenss xs'
 
-        _ -> throw $ ErrorPrimCallInvalid p xs
+        _ -> throw $ ErrorPrimCallInvalid p args
 
 
 -- | Ditch region arguments.
-keepPrimArgX :: KindEnv Name -> Exp a Name -> Bool
-keepPrimArgX kenv xx
- = case xx of
-        XType _ (TVar u)
+keepPrimArgX :: KindEnv Name -> Arg a Name -> Bool
+keepPrimArgX kenv aa
+ = case aa of
+        RType (TVar u)
          |  Just k       <- Env.lookup u kenv
          -> isDataKind k 
 
-        XWitness{}       -> False
+        RWitness{}       -> False
         _                -> True
 
 

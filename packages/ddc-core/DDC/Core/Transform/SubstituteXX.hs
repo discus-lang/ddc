@@ -74,19 +74,20 @@ substituteXXs bts x
 --    and witness substitution for an `XWitness`
 substituteXArg 
         :: (Ord n, SubstituteXX c, SubstituteWX c, SubstituteTX (c a))
-        => Bind n -> Exp a n -> c a n -> c a n
+        => Bind n -> Arg a n -> c a n -> c a n
 
 substituteXArg b arg x
  = case arg of
-        XType    _ t    -> substituteTX  b t x
-        XWitness _ w    -> substituteWX  b w x
-        _               -> substituteXX  b arg x
+        RType     t    -> substituteTX  b t    x
+        RWitness  w    -> substituteWX  b w    x
+        RTerm     xArg -> substituteXX  b xArg x
+        RImplicit xArg -> substituteXX  b xArg x
 
 
 -- | Wrapper for `substituteXArgs` to substitute multiple arguments.
 substituteXArgs
         :: (Ord n, SubstituteXX c, SubstituteWX c, SubstituteTX (c a))
-        => [(Bind n, Exp a n)] -> c a n -> c a n
+        => [(Bind n, Arg a n)] -> c a n -> c a n
 
 substituteXArgs bas x
         = foldr (uncurry substituteXArg) x bas
@@ -151,11 +152,23 @@ instance SubstituteXX Exp where
                 x2'             = down   sub2 x2
             in  XLet a (LPrivate b' mT' bs') x2'
 
-        XCase    a x1 alts      -> XCase    a (down sub x1) (map (down sub) alts)
-        XCast    a cc x1        -> XCast    a (down sub cc) (down sub x1)
-        XType    a t            -> XType    a (into sub t)
-        XWitness a w            -> XWitness a (into sub w)
- 
+        XCase     a x1 alts
+         -> XCase a (down sub x1) (map (down sub) alts)
+
+        XCast     a cc x1 
+         -> XCast a (down sub cc) (down sub x1)
+
+
+instance SubstituteXX Arg where
+ substituteWithXX xArg sub aa
+  = let down s x   = substituteWithXX xArg s x
+        into s x   = renameWith s x
+    in case aa of
+        RType t         -> RType     (into sub t)
+        RTerm x         -> RTerm     (down sub x)
+        RWitness w      -> RWitness  (into sub w)
+        RImplicit x     -> RImplicit (down sub x)
+
 
 instance SubstituteXX Alt where
  substituteWithXX xArg sub aa

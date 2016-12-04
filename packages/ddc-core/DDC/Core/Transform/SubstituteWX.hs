@@ -78,7 +78,6 @@ instance SubstituteWX Exp where
         XVar a u        -> XVar a u
         XPrim{}         -> xx
         XCon{}          -> xx
-        XApp a x1 x2    -> XApp a (down sub x1) (down sub x2)
 
         XAbs a (MType b) x
          -> let (sub1, b')      = bind1 sub b
@@ -94,6 +93,8 @@ instance SubstituteWX Exp where
          -> let (sub1, b')      = bind0 sub  b
                 x'              = down  sub1 x
             in  XAbs a (MImplicit b') x'
+
+        XApp a x1 x2    -> XApp a (down sub x1) (down sub x2)
 
         XLet a (LLet b x1) x2
          -> let x1'             = down  sub  x1
@@ -117,8 +118,17 @@ instance SubstituteWX Exp where
 
         XCase    a x1 alts      -> XCase    a (down sub x1) (map (down sub) alts)
         XCast    a cc x1        -> XCast    a (down sub cc) (down sub x1)
-        XType    a t            -> XType    a (into sub t)
-        XWitness a w            -> XWitness a (down sub w)
+
+
+instance SubstituteWX Arg where
+ substituteWithWX wArg sub aa
+  = let down s x = substituteWithWX wArg s x
+        into s x   = renameWith s x
+    in case aa of
+        RType t         -> RType     (into sub t)
+        RTerm x         -> RTerm     (down sub x)
+        RImplicit x     -> RImplicit (down sub x)
+        RWitness  x     -> RWitness  (down sub x)
 
 
 instance SubstituteWX Alt where

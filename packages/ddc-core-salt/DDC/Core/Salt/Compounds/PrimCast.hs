@@ -20,21 +20,21 @@ xPrimCast a p
 xConvert :: a -> Type Name -> Type Name -> Exp a Name -> Exp a Name
 xConvert a t1 t2 x
  = xApps a      (xPrimCast a PrimCastConvert)
-                [XType a t1, XType a t2, x]
+                [RType t1, RType t2, RTerm x]
 
 
 -- | Promote a value to a wider type.
 xPromote :: a -> Type Name -> Type Name -> Exp a Name -> Exp a Name
 xPromote a t1 t2 x
  = xApps a      (xPrimCast a PrimCastPromote)
-                [XType a t1, XType a t2, x]
+                [RType t1, RType t2, RTerm x]
 
 
 -- | Truncate a value to a narrower type.
 xTruncate :: a -> Type Name -> Type Name -> Exp a Name -> Exp a Name
 xTruncate a t1 t2 x
  = xApps a      (xPrimCast a PrimCastTruncate)
-                [XType a t1, XType a t2, x]
+                [RType t1, RType t2, RTerm x]
 
 
 -- | Take the type of a primitive cast.

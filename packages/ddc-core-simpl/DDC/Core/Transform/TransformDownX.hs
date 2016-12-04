@@ -109,8 +109,15 @@ instance Monad m => TransformDownMX m Exp where
                         (return a) (return c)
                         (transformDownMX f kenv tenv x)
 
-        XType{}         -> return xx'
-        XWitness{}      -> return xx'
+
+instance Monad m => TransformDownMX m Arg where
+ transformDownMX f kenv tenv aa
+  = case aa of
+        RType{}         -> return aa
+        RTerm x         -> fmap RTerm     $ transformDownMX f kenv tenv x
+        RImplicit x     -> fmap RImplicit $ transformDownMX f kenv tenv x
+        RWitness{}      -> return aa
+
 
 
 instance Monad m => TransformDownMX m Lets where

@@ -18,14 +18,14 @@ xPrimControl a p
 xFail   :: a -> Type Name -> Exp a Name
 xFail a t
  = xApps a      (xPrimControl a PrimControlFail)
-                [XType a t]
+                [RType t]
 
 
 -- | Return a value.
 xReturn :: a -> Type Name -> Exp a Name -> Exp a Name
 xReturn a t x
  = xApps a      (xPrimControl a PrimControlReturn)
-                [XType a t, x]
+                [RType t, RTerm x]
 
 
 typeOfPrimControl :: PrimControl -> Type Name

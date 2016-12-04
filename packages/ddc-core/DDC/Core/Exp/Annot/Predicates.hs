@@ -14,6 +14,12 @@ module DDC.Core.Exp.Annot.Predicates
           -- * Applications
         , isXApp
 
+          -- * Arguments
+        , isRType
+        , isRWitness
+        , isRTerm
+        , isRImplicit
+
           -- * Cast
         , isXCast
         , isXCastBox
@@ -23,11 +29,7 @@ module DDC.Core.Exp.Annot.Predicates
         , isXLet
 
           -- * Patterns
-        , isPDefault
-
-          -- * Types and Witnesses
-        , isXType
-        , isXWitness)
+        , isPDefault)
 where
 import DDC.Core.Exp.Annot.Exp
 import DDC.Type.Exp.Simple.Predicates
@@ -57,8 +59,6 @@ isAtomX xx
  = case xx of
         XVar{}          -> True
         XCon{}          -> True
-        XType    _ t    -> isAtomT t
-        XWitness _ w    -> isAtomW w
         _               -> False
 
 
@@ -103,6 +103,39 @@ isXApp xx
         _       -> False
 
 
+-- Arguments ------------------------------------------------------------------
+-- | Check whether this argument is an `RType`.
+isRType :: Arg a n -> Bool
+isRType aa
+ = case aa of
+        RType{}         -> True
+        _               -> False
+
+
+-- | Check whether this argument is an `RWitness`.
+isRWitness :: Arg a n -> Bool
+isRWitness aa
+ = case aa of
+        RWitness{}      -> True
+        _               -> False
+
+
+-- | Check whether this argument is an `RTerm`.
+isRTerm :: Arg a n -> Bool
+isRTerm aa
+ = case aa of
+        RTerm{}         -> True
+        _               -> False
+
+
+-- | Check whether this argument is an `RImplicit`.
+isRImplicit :: Arg a n -> Bool
+isRImplicit aa
+ = case aa of
+        RImplicit{}     -> True
+        _               -> False
+
+
 -- Casts ----------------------------------------------------------------------
 -- | Check whether this is a cast expression.
 isXCast :: Exp a n -> Bool
@@ -135,23 +168,6 @@ isXLet xx
  = case xx of
         XLet{}  -> True
         _       -> False
-
-
--- Type and Witness -----------------------------------------------------------
--- | Check whether an expression is an `XType`.
-isXType :: Exp a n -> Bool
-isXType xx
- = case xx of
-        XType{}         -> True
-        _               -> False
-
-
--- | Check whether an expression is an `XWitness`.
-isXWitness :: Exp a n -> Bool
-isXWitness xx
- = case xx of
-        XWitness{}      -> True
-        _               -> False
 
 
 -- Patterns -------------------------------------------------------------------

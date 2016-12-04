@@ -173,21 +173,21 @@ usageX' xx
          -> ( cleared
             , XAbs (used2', a) (MImplicit b1) x2')
 
-        XApp a x1 x2
+        XApp a x1 arg2
          -- application of a function variable.
          |  XVar a1 u      <- x1
          ,  used1          <- accUsed u UsedFunction empty
-         ,  (used2, x2')   <- usageX' x2
+         ,  (used2, arg2') <- usageArg' arg2
          ,  used'          <- used1 `plusUsedMap` used2
          -> ( used'
-            , XApp (used', a) (XVar (used1, a1) u) x2')
+            , XApp (used', a) (XVar (used1, a1) u) arg2')
 
          -- General application.
-         |  ( used1, x1')  <- usageX' x1
-         ,  ( used2, x2')  <- usageX' x2
-         ,  used'          <- used1 `plusUsedMap` used2
+         |  ( used1, x1')   <- usageX' x1
+         ,  ( used2, arg2') <- usageArg' arg2
+         ,  used'           <- used1 `plusUsedMap` used2
          -> ( used'
-            , XApp (used', a) x1' x2')
+            , XApp (used', a) x1' arg2')
 
         XLet a lts x2
          |  ( used1, lts')  <- usageLets lts
@@ -216,14 +216,26 @@ usageX' xx
          -> ( used'
             , XCast (used', a) c' x1')
 
-        XType a t        
-         -> ( empty
-            , XType (empty, a) t)
 
-        XWitness a w     
-         | (used', w')    <- usageWitness w
-         -> ( used'
-            , XWitness (used', a) w')
+usageArg' :: Ord n 
+        => Arg a n 
+        -> (UsedMap n, Arg (UsedMap n, a) n)
+
+usageArg' aa
+ = case aa of
+        RType t         -> (empty, RType t)
+
+        RTerm x
+         -> let (used', x')     = usageX' x
+            in  (used', RTerm x')
+
+        RWitness w    
+         -> let (used', w')     = usageWitness w
+            in  (used', RWitness w')
+
+        RImplicit x
+         -> let (used', x')     = usageX' x
+            in  (used', RImplicit x')
 
 
 -- | Annotate binding occurences of named variables with usage information.

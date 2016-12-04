@@ -29,12 +29,20 @@ objectsOfExp xx
         XAbs  _ (MImplicit b) x
          -> Map.union  (objectsOfBind b)   (objectsOfExp x)
 
-        XApp  _ x1 x2   -> Map.union  (objectsOfExp x1)   (objectsOfExp x2)
+        XApp  _ x1 x2   -> Map.union  (objectsOfExp x1)   (objectsOfArg x2)
         XLet  _ lts x   -> Map.union  (objectsOfLets lts) (objectsOfExp x)
         XCase _ x alts  -> Map.unions (objectsOfExp x : map objectsOfAlt alts)
         XCast _ _ x     -> objectsOfExp x
-        XType{}         -> Map.empty
-        XWitness{}      -> Map.empty
+
+
+-- Arg --------------------------------------------------------------------------------------------
+objectsOfArg :: Arg a A.Name -> Map A.Name (Type A.Name)
+objectsOfArg aa
+ = case aa of
+        RType{}         -> Map.empty
+        RWitness{}      -> Map.empty
+        RTerm x         -> objectsOfExp x
+        RImplicit x     -> objectsOfExp x
 
 
 -- Let --------------------------------------------------------------------------------------------
@@ -50,19 +58,14 @@ objectsOfLets lts
 
 
 -- Alt --------------------------------------------------------------------------------------------
-objectsOfAlt
-        :: Alt a A.Name
-        -> Map A.Name (Type A.Name)
-
+objectsOfAlt :: Alt a A.Name -> Map A.Name (Type A.Name)
 objectsOfAlt aa
  = case aa of
         AAlt p x        -> Map.union (objectsOfPat p) (objectsOfExp x)
 
 
--- Alt --------------------------------------------------------------------------------------------
-objectsOfPat
-        :: Pat A.Name
-        -> Map A.Name (Type A.Name)
+-- Pat --------------------------------------------------------------------------------------------
+objectsOfPat :: Pat A.Name  -> Map A.Name (Type A.Name)
 
 objectsOfPat pp
  = case pp of

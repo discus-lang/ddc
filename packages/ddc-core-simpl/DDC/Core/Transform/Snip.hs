@@ -64,10 +64,10 @@ instance Snip (Exp a) where
 
 -- | Convert an expression into A-normal form.
 snipX   :: Ord n
-        => Config
-        -> Arities n      -- ^ Arities of functions in environment.
-        -> Exp a n        -- ^ Expression to transform.
-        -> [(Exp a n, a)] -- ^ Arguments being applied to current expression.
+        => Config               -- ^ Snipper configuration.
+        -> Arities n            -- ^ Arities of functions in environment.
+        -> Exp a n              -- ^ Expression to transform.
+        -> [(Arg a n, a)]       -- ^ Arguments being applied to current expression.
         -> Exp a n
 
 snipX config arities x args
@@ -75,8 +75,8 @@ snipX config arities x args
         --   applied to, and decend into the function part.
         --   This unzips application nodes as we decend into the tree.
         | XApp a fun arg        <- x
-        = snipX  config arities fun 
-                $ (snipX config arities arg [], a) : args
+        =  snipX config arities fun 
+        $ (snipA config arities arg, a) : args
 
         -- Some non-application node with no arguments.
         | null args
@@ -86,6 +86,22 @@ snipX config arities x args
         | otherwise
         = let   x'      = enterX config arities x
           in    buildNormalisedApp config arities x' args
+
+
+-- | Convert a function argument to A-normal form.
+snipA   :: Ord n
+        => Config               -- ^ Snipper configuration.
+        -> Arities n            -- ^ Arities of functions in environment.
+        -> Arg a n              -- ^ Argument to transform.
+        -> Arg a n
+
+snipA config arities aa
+ = case aa of
+        RType{}         -> aa
+        RWitness{}      -> aa
+        RTerm x         -> RTerm     $ snipX config arities x []
+        RImplicit x     -> RImplicit $ snipX config arities x []
+
 
 -- Enter into a non-application.
 enterX config arities xx
@@ -101,8 +117,6 @@ enterX config arities xx
         XVar{}                  -> xx
         XPrim{}                 -> xx
         XCon{}                  -> xx
-        XType{}                 -> xx
-        XWitness{}              -> xx
 
         -- lambdas
         XAbs a (MType b)     e  -> XAbs a (MType b)     (down [(b,0)] e)
@@ -165,7 +179,7 @@ buildNormalisedApp
         => Config          -- ^ Snipper config.
         -> Arities n       -- ^ environment, arities of bound variables
         -> Exp a n         -- ^ function
-        -> [(Exp a n,a)]   -- ^ arguments being applied to current expression
+        -> [(Arg a n, a)]  -- ^ arguments being applied to current expression
         -> Exp a n
 
 buildNormalisedApp _ _  f0 [] = f0
@@ -213,7 +227,7 @@ buildNormalisedFunApp
         -> a              -- ^ Annotation to use.
         -> Int            -- ^ Arity of the function part.
         -> Exp a n        -- ^ Function part.
-        -> [(Exp a n, a)] -- ^ Arguments to apply
+        -> [(Arg a n, a)] -- ^ Arguments to apply
         -> Exp a n
 
 buildNormalisedFunApp config an funArity xFun xsArgs
@@ -257,7 +271,7 @@ buildNormalisedFunApp config an funArity xFun xsArgs
          , length xsArgs' > funArity
          , (xsSat, xsOver)      <- splitAt funArity xsArgs'
          = XLet an (LLet (BAnon tBot') 
-                        (makeXAppsWithAnnots xFun' xsSat))
+                         (makeXAppsWithAnnots xFun' xsSat))
                    (snipLetBody config an
                     $ makeXAppsWithAnnots 
                         (XVar an (UIx 0)) 
@@ -284,8 +298,8 @@ buildNormalisedFunApp config an funArity xFun xsArgs
 --   or compound ones.
 splitArgs 
         :: Ord n => Config               
-        -> [(Exp a n, a)] 
-        -> [( Exp a n            -- Expression to use as the new argument.
+        -> [( Arg a n, a)] 
+        -> [( Arg a n            -- Expression to use as the new argument.
             , a                  -- Annoation for the argument application.
             , Bool               -- Whether this argument was already atomic.
             , Maybe (Exp a n))]  -- New expression to let-bind.
@@ -294,16 +308,24 @@ splitArgs config args
  = reverse $ go 0 $ reverse args
  where  
         go _n [] = []
-        go n ((xArg, a) : xsArgs)
+
+        go n ((aArg, a) : asArgs)
+         = case aArg of
+                RType{}         -> (aArg, a, True, Nothing) : go n asArgs
+                RWitness{}      -> (aArg, a, True, Nothing) : go n asArgs
+                RTerm x         -> go_snip RTerm     n x a asArgs
+                RImplicit x     -> go_snip RImplicit n x a asArgs
+
+        go_snip make n xArg a asArgs
          | isAtom xArg
-         = (xArg,           a, True,  Nothing)    : go n       xsArgs
+         = (make xArg,             a, True,  Nothing)    : go n       asArgs
 
          | configPreserveLambdas config
          , isXLam xArg || isXLAM xArg
-         = (xArg,           a, True,  Nothing)    : go n       xsArgs
+         = (make xArg,             a, True,  Nothing)    : go n       asArgs
 
          | otherwise
-         = (XVar a (UIx n), a, False, Just xArg)  : go (n + 1) xsArgs
+         = (make $ XVar a (UIx n), a, False, Just xArg)  : go (n + 1) asArgs
 
 
 -- | If `snipLetResults` is set and this is not an atomic expression then
@@ -328,8 +350,6 @@ isAtom xx
  = case xx of
         XCon{}          -> True
         XPrim{}         -> True
-        XType{}         -> True
-        XWitness{}      -> True
 
         XVar _ x
          | UPrim _ t    <- x

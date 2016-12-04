@@ -79,13 +79,16 @@ instance FromAnnot (N.Exp a A.Name) Exp where
         N.XAbs  _ (N.MImplicit _) _
          -> error "ddc-core-salt.fromAnnot: not converting implict binder to salt"
 
-        N.XApp  _ x1 (N.XType _ t) 
+        N.XApp  _ x1 (N.RType t) 
          -> G.XApp  <$> fromAnnot x1  <*> (G.RType    <$> fromAnnot t)
 
-        N.XApp  _ x1 (N.XWitness _ w)
+        N.XApp  _ x1 (N.RWitness w)
          -> G.XApp  <$> fromAnnot x1  <*> (G.RWitness <$> fromAnnot w)    
 
-        N.XApp  _ x1 x2         
+        N.XApp  _ x1 (N.RTerm x2)
+         -> G.XApp  <$> fromAnnot x1  <*> (G.RExp     <$> fromAnnot x2)
+
+        N.XApp  _ x1 (N.RImplicit x2)
          -> G.XApp  <$> fromAnnot x1  <*> (G.RExp     <$> fromAnnot x2)
 
         N.XLet  _ lts x
@@ -96,12 +99,6 @@ instance FromAnnot (N.Exp a A.Name) Exp where
 
         N.XCast _ c x
          -> G.XCast <$> fromAnnot c   <*> fromAnnot x
-
-        N.XType{}
-         -> Left $ ErrorFromAnnotFoundNakedType
-
-        N.XWitness{}
-         -> Left $ ErrorFromAnnotFoundNakedWitness
 
 
 instance FromAnnot (N.Lets a A.Name) Lets where

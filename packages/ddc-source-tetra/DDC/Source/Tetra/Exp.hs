@@ -232,7 +232,7 @@ module DDC.Source.Tetra.Exp
           -- *** Witnesses
         , wApp
         , wApps
-        , takeXWitness
+--        , takeXWitness
         , takeWAppsAsList
         , takePrimWiConApps
 

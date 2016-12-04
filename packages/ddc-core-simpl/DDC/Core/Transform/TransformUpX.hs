@@ -105,8 +105,14 @@ instance Monad m => TransformUpMX m Exp where
                         (return a) (return c)
                         (transformUpMX f env x)
 
-        XType{}         -> return xx
-        XWitness{}      -> return xx
+
+instance Monad m => TransformUpMX m Arg  where
+ transformUpMX f env aa
+  = case aa of
+        RType{}         -> return aa
+        RWitness{}      -> return aa
+        RTerm x         -> RTerm     <$> transformUpMX f env x
+        RImplicit x     -> RImplicit <$> transformUpMX f env x
 
 
 instance Monad m => TransformUpMX m Lets where

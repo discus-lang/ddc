@@ -46,12 +46,19 @@ instance Inline Exp where
         XPrim{}         -> xx
         XCon{}          -> xx
         XAbs  a b x     -> XAbs  a b (down x)
-        XApp  a x1 x2   -> XApp  a (down x1)  (down x2)
-        XLet  a lts x2  -> XLet  a (down lts) (down x2)
-        XCase a x alts  -> XCase a (down x)   (map down alts)
-        XCast a c x     -> XCast a c          (down x)
-        XType{}         -> xx
-        XWitness{}      -> xx
+        XApp  a x1 x2   -> XApp  a   (down x1)  (down x2)
+        XLet  a lts x2  -> XLet  a   (down lts) (down x2)
+        XCase a x alts  -> XCase a   (down x)   (map down alts)
+        XCast a c x     -> XCast a c            (down x)
+
+
+instance Inline Arg  where
+ inline get inside aa
+  = case aa of
+        RType{}         -> aa
+        RWitness{}      -> aa
+        RTerm     x     -> RTerm     $ inline get inside x
+        RImplicit x     -> RImplicit $ inline get inside x
 
 
 instance Inline Lets where

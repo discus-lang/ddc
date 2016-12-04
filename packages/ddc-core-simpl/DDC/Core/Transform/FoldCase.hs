@@ -50,7 +50,7 @@ foldCaseX _
         x@(XLet _ (LLet (BName b _) ex) _)
  | Just (dc, args) <- takeXConApps ex
  = do
-        modify (M.insert b (dc, args))
+        modify (M.insert b (dc, [x' | RTerm x' <- args]))
         return x
 
 
@@ -75,10 +75,12 @@ foldCaseX config
         return $ case seen of
           Just (dc', args') | dc == dc'
            -> foldr (\(x', bnd) next -> XLet (annotOfExp x') (LLet bnd x') next)
-                rest (zip (filter (not . isXType) args') binds)
+                rest 
+                (zip args' binds)
 
           _ -> x
 
 
 -- Default case.
 foldCaseX _ x = return x
+

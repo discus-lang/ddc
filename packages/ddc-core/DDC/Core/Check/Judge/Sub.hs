@@ -325,8 +325,7 @@ makeSub config a ctx0 x0 xL tL tR err
         let AnTEC _ e0 c0 _
                  = annotOfExp xL
         let aFn  = AnTEC t1' (substituteT b tA e0) (substituteT b tA c0) a
-        let aArg = AnTEC (typeOfBind b) (tBot kEffect) (tBot kClosure) a
-        let xL1  = XApp aFn xL (XType aArg tA)
+        let xL1  = XApp aFn xL (RType tA)
 
         (xL2, effs3, ctx3) 
          <- makeSub config a ctx2 x0 xL1 t1' tR err

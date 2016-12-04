@@ -18,11 +18,12 @@ instance Ord n => MapBoundT (Exp a) n where
         XVar a u                -> XVar a   u
         XPrim{}                 -> xx
         XCon{}                  -> xx
-        XApp a x1 x2            -> XApp a   (down x1) (down x2)
 
         XAbs a (MType b) x      -> XAbs a (MType b) (mapBoundAtDepthT f (d + countBAnons [b]) x)
         XAbs a (MTerm b) x      -> XAbs a (MTerm     (down b)) (down x)
         XAbs a (MImplicit b) x  -> XAbs a (MImplicit (down b)) (down x)
+
+        XApp a x1 x2            -> XApp a (down x1) (down x2)
          
         XLet a lets x   
          -> let (lets', levels) = mapBoundAtDepthTLets f d lets 
@@ -30,8 +31,16 @@ instance Ord n => MapBoundT (Exp a) n where
 
         XCase    a x alts       -> XCase    a (down x)  (map down alts)
         XCast    a cc x         -> XCast    a (down cc) (down x)
-        XType    a t            -> XType    a (down t)
-        XWitness a w            -> XWitness a (down w)
+
+
+instance Ord n => MapBoundT (Arg a) n where
+ mapBoundAtDepthT f d aa
+  = let down = mapBoundAtDepthT f d
+    in case aa of
+        RType t                 -> RType     (down t)
+        RTerm x                 -> RTerm     (down x)
+        RImplicit x             -> RImplicit (down x)
+        RWitness  x             -> RWitness  (down x)
 
          
 instance Ord n => MapBoundT (Witness a) n where

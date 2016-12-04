@@ -11,7 +11,8 @@ import qualified DDC.Type.Env as Env
 import qualified Data.Set as Set
 import qualified Data.Map as Map
 
-import Data.Maybe (isNothing)
+-- import Data.Maybe (isNothing)
+
 
 phpOfModule
         :: (Show a)
@@ -117,6 +118,7 @@ phpOfExp xx ctx m
      -- (" <> var_name_b b <> text ")/* Lam " <+> text (show a) 
      --   <+> text "*/ {" <+> phpOfExp x CRet <+> text " }, 1)"
 
+{-
     XApp _ f x
      | (f',xs) <- takeXApps1 f x
      , xs'     <- noTypes xs
@@ -139,6 +141,7 @@ phpOfExp xx ctx m
      | (f',xs) <- takeXApps1 f x
      , xs'     <- noTypes xs
      -> wrap $ phpOfExp f' CExp m <> parenss (map (\arg -> phpOfExp arg CExp m) xs')
+-}
 
     XLet a lets x
      | (ldocs, m') <- phpOfLets lets ctx m
@@ -168,6 +171,7 @@ phpOfExp xx ctx m
      CLet (BNone _) -> d <> text ";"
      CLet b     -> var_name_b b <> text " = " <> d <> text ";"
      CRet       -> text "return " <> d <> text ";"
+
 
 phpOfLets
         :: (Show a)
@@ -280,9 +284,10 @@ makeFunction nm bs x m
        -> text ""
 
 noTypes :: [Exp a T.Name] -> [Exp a T.Name]
-noTypes xs
-  = filter (isNothing.takeXWitness)
-  $ filter (isNothing.takeXType) xs
+noTypes _xs
+  = error "ddc-core-babel.noTypes: fixme"
+--  filter (isNothing.takeXWitness)
+--  $ filter (isNothing.takeXType) xs
 
 
 -- todo strip out

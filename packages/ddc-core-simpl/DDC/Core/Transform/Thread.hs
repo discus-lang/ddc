@@ -169,14 +169,14 @@ threadArg
         => Config a n
         -> [Context n]
         -> KindEnv n -> TypeEnv n
-        -> Type n    -> Exp (AnTEC a n) n
-        -> Exp a n
+        -> Type n    -> Arg (AnTEC a n) n
+        -> Arg a n
 
-threadArg config context kenv tenv t xx
- = case xx of
-        XLam{}  -> threadProcArg config context kenv tenv t xx
-        XLAM{}  -> threadProcArg config context kenv tenv t xx
-        _       -> reannotate annotTail xx
+threadArg config context kenv tenv t aa
+ = case aa of
+        RTerm x@XLam{}  -> RTerm $ threadProcArg config context kenv tenv t x
+        RTerm x@XLAM{}  -> RTerm $ threadProcArg config context kenv tenv t x
+        _               -> reannotate annotTail aa
 
 threadProcArg config context kenv tenv t xx
  = let  tsArgs  = fst $ takeTFunAllArgResult t
@@ -260,7 +260,7 @@ threadProcBody config context kenv tenv xx
 
         -- A statement in the procedure body.
         XLet _ (LLet b x) x2
-         |  Just (XVar a u, xsArgs) <- takeXApps x
+         |  Just (XVar a u, asArgs) <- takeXApps x
          ,  Just n       <- takeNameOfBound u
          ,  Just tOld    <- Env.lookup u tenv
          ,  Just tNew    <- configThreadMe  config n tOld
@@ -269,15 +269,20 @@ threadProcBody config context kenv tenv xx
                 tWorld  = configTokenType config
 
                 -- Add world token as final argument 
-                xsArgs' = xsArgs ++ [XVar a (UIx 0)]
+                asArgs' = asArgs ++ [RTerm $ XVar a (UIx 0)]
 
                 -- Thread into possibly higher order arguments.
                 tsArgs   = fst $ takeTFunAllArgResult tNew
-                xsArgs'' = zipWith (threadArg config context kenv tenv) tsArgs xsArgs'
+
+                asArgs'' = zipWith 
+                                (threadArg config context kenv tenv) 
+                                tsArgs asArgs'
 
                 -- Build the final expression.
                 u'      = replaceTypeOfBound tNew u
-                x'      = xApps (annotTail a) (XVar (annotTail a) u') xsArgs''
+                x'      = xApps (annotTail a) 
+                                (XVar (annotTail a) u') 
+                                asArgs''
 
                 -- Thread into let-expression body.
                 tenv'   = Env.extend b tenv
@@ -295,7 +300,10 @@ threadProcBody config context kenv tenv xx
          -> let 
                 tWorld  = configTokenType config
                 a'      = annotTail a
-                x1'     = XApp a' (reannotate annotTail x1) (XVar a' (UIx 0))
+
+                x1'     = XApp a' (reannotate annotTail x1) 
+                                  (RTerm (XVar a' (UIx 0)))
+
                 x2'     = threadProcBody config context kenv tenv x2
                 pat'    = mkPat (BAnon tWorld) [b]
 
@@ -320,7 +328,10 @@ threadProcBody config context kenv tenv xx
          -> let 
                 a'      = annotTail a
                 tWorld  = configTokenType config
-                xScrut' = XApp a' (reannotate annotTail xScrut) (XVar a' (UIx 0))
+
+                xScrut' = XApp a' (reannotate annotTail xScrut) 
+                                  (RTerm (XVar a' (UIx 0)))
+
                 pat'    = mkPat (BAnon tWorld) bs
                 alt'    = threadAlt config context kenv tenv 
                                 (AAlt pat' xBody)
@@ -339,11 +350,6 @@ threadProcBody config context kenv tenv xx
         XLam{}          -> error "ddc-core-simpl.Thread: unexpected XLam"
         XCast{}         -> error "ddc-core-simpl.Thread: unexpected cast."
 
-        XType a t       
-         -> XType    (annotTail a) t
-        
-        XWitness a w      
-         -> XWitness (annotTail a) (reannotate annotTail w)
 
         -- Tailcalls
         XApp a _ _
@@ -351,8 +357,15 @@ threadProcBody config context kenv tenv xx
          , elem (ContextRec n) context
          -> let a'      = annotTail a
             in  XApp a' (reannotate annotTail xx)
-                        (XVar a' (UIx 0))
+                        (RTerm (XVar a' (UIx 0)))
 
+{-
+        XType a t       
+         -> XType    (annotTail a) t
+        
+        XWitness a w      
+         -> XWitness (annotTail a) (reannotate annotTail w)
+-}
 
         -- For XVar, XCon, XApp as result value of function.
         _

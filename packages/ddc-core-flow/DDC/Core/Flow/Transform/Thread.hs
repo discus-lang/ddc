@@ -70,14 +70,12 @@ wrapResultExp xWorld xResult
           , x >= 2
           -> let (b, a) = splitAt (x `quot` 2) xa
              in C.xApps () (XCon () (dcTupleN $ n + 1))
-                 $  XType (annotTail aWorld) tWorld' : b   -- World# : a1 a2 ..
-                 ++ xWorld'                          : a   -- world  : x1 x2 ..
+                 $  RType tWorld'   : b   -- World# : a1 a2 ..
+                 ++ (RTerm xWorld') : a   -- world  : x1 x2 ..
 
          _ -> C.xApps () (XCon () (dcTupleN 2))
-                         [ XType (annotTail aWorld) tWorld'
-                         , XType (annotTail aResult) tResult
-                         , xWorld'
-                         , xResult' ]
+                         [ RType tWorld', RType tResult
+                         , RTerm xWorld', RTerm xResult' ]
 
  | otherwise
  = error "ddc-core-flow: wrapResultExp can't get type annotations"

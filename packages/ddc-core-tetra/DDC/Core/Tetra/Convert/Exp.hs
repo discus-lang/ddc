@@ -31,6 +31,7 @@ import DDC.Control.Check                        (throw)
 import qualified Data.Map                       as Map
 import Text.Show.Pretty
 
+
 ---------------------------------------------------------------------------------------------------
 -- | Convert the body of a supercombinator to Salt.
 convertExp 
@@ -125,9 +126,9 @@ convertExp ectx ctx xx
         --  let expressions. See [Note: Binding top-level supers]
         --
         XApp _ xa xb
-         | (xF, xsArgs) <- takeXApps1 xa xb
-         , tsArgs       <- [t | XType _ t <- xsArgs]
-         , length xsArgs == length tsArgs
+         | (xF, asArgs) <- takeXApps1 xa xb
+         , tsArgs       <- [t | RType t <- asArgs]
+         , length asArgs == length tsArgs
          , XVar _ (UName n)     <- xF
          , not $ Map.member n (contextCallable ctx)
          -> convertX ExpBody ctx xF
@@ -179,7 +180,9 @@ convertExp ectx ctx xx
          -- at top-level, or imported directly.
          , XVar _ (UName nF) <- x1
          , Map.member nF (contextCallable ctx)
-         -> convertExpSuperCall xx ectx ctx False a' nF xsArgs
+         , (tsArgs, _)       <- takeTFunAllArgResult (annotType $ annotOfExp xa)
+         -> convertExpSuperCall xx ectx ctx False a' nF 
+                $ zip xsArgs tsArgs
 
          | otherwise
          -> throw $ ErrorUnsupported xx 
@@ -277,13 +280,15 @@ convertExp ectx ctx xx
         -- Type casts
         -- Run an application of a top-level super.
         XCast _ CastRun (XApp (AnTEC _t _ _ a') xa xb)
-         | (x1, xsArgs) <- takeXApps1 xa xb
+         | (x1, asArgs) <- takeXApps1 xa xb
          
          -- The thing being applied is a named function that is defined
          -- at top-level, or imported directly.
          , XVar _ (UName nSuper) <- x1
          , Map.member nSuper (contextCallable ctx)
-         -> convertExpSuperCall xx ectx ctx True a' nSuper xsArgs
+         , (tsArgs, _)          <- takeTFunAllArgResult (annotType $ annotOfExp xa)
+         -> convertExpSuperCall xx ectx ctx True a' nSuper 
+                $ zip asArgs tsArgs
 
         -- Run a suspended computation.
         --   This isn't a super call, so the argument itself will be
@@ -299,30 +304,20 @@ convertExp ectx ctx xx
          -> convertX (min ectx ExpBody) ctx x
 
 
-        ---------------------------------------------------
-        -- We shouldn't find any naked types.
-        -- These are handled above in the XApp case.
-        XType{}
-          -> throw $ ErrorMalformed "Found a naked type argument."
-
-
-        -- We shouldn't find any naked witnesses.
-        XWitness{}
-          -> throw $ ErrorMalformed "Found a naked witness."
-
 
 ---------------------------------------------------------------------------------------------------
 convertExpSuperCall
         :: Exp (AnTEC a E.Name) E.Name
-        -> ExpContext                    -- ^ The surrounding expression context.
-        -> Context a                     -- ^ Types and values in the environment.
-        -> Bool                          -- ^ Whether this is call is directly inside a 'run'
-        ->  a                            -- ^ Annotation from application node.
-        ->  E.Name                       -- ^ Name of super.
-        -> [Exp (AnTEC a E.Name) E.Name] -- ^ Arguments to super.
+        -> ExpContext                     -- ^ The surrounding expression context.
+        -> Context a                      -- ^ Types and values in the environment.
+        -> Bool                           -- ^ Whether this is call is directly inside a 'run'
+        ->  a                             -- ^ Annotation from application node.
+        ->  E.Name                        -- ^ Name of super.
+        -> [ ( Arg (AnTEC a E.Name) E.Name
+             , Type E.Name) ]             -- ^ Arguments to super, along with their types.
         -> ConvertM a (Exp a A.Name)
 
-convertExpSuperCall xx _ectx ctx isRun a nFun xsArgs
+convertExpSuperCall xx _ectx ctx isRun a nFun atsArgs
 
  -- EITHER Saturated super call where call site is running the result, 
  --        and the super itself directly produces a boxed computation.
@@ -343,7 +338,7 @@ convertExpSuperCall xx _ectx ctx isRun a nFun xsArgs
         _  -> Nothing
 
  -- super call is saturated.
- , xsArgsVal        <- filter (not . isXType) xsArgs
+ , xsArgsVal        <- filter isRTerm $ map fst atsArgs
  , length xsArgsVal == arityVal
 
  -- no run/box to get in the way.
@@ -357,7 +352,8 @@ convertExpSuperCall xx _ectx ctx isRun a nFun xsArgs
         -- Convert the arguments.
         -- Effect type and witness arguments are discarded here.
         xsArgs' <- liftM catMaybes 
-                $  mapM (convertOrDiscardSuperArgX ctx) xsArgs
+                $  mapM (convertOrDiscardSuperArgX ctx) 
+                        atsArgs
                         
         return  $ xApps a (XVar a uF) xsArgs'
 
@@ -369,7 +365,7 @@ convertExpSuperCall xx _ectx ctx isRun a nFun xsArgs
  $ vcat [ text "Cannot convert application."
         , text "xx:        " <> ppr xx
         , text "fun:       " <> ppr nFun
-        , text "args:      " <> ppr xsArgs
+        , text "args:      " <> ppr atsArgs
         ]
 
 

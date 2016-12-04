@@ -69,7 +69,7 @@ module DDC.Source.Tetra.Exp.Compounds
           -- * Witnesses
         , wApp
         , wApps
-        , takeXWitness
+--        , takeXWitness
         , takeWAppsAsList
         , takePrimWiConApps)
 where
@@ -86,7 +86,7 @@ import DDC.Core.Exp.Annot
 
         , wApp
         , wApps
-        , takeXWitness
+--        , takeXWitness
         , takeWAppsAsList
         , takePrimWiConApps)
         

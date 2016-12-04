@@ -119,8 +119,8 @@ liftLambda p c fusFree a bfsParam xBody
         
         -- At the point where the original abstraction group was, 
         -- call our new lifted super instead.
-        let makeArg  (True,  u) = XType a (TVar u)
-            makeArg  (False, u) = XVar a u
+        let makeArg  (True,  u) = RType (TVar u)
+            makeArg  (False, u) = RTerm (XVar a u)
 
         let xCall = xApps a (XVar a uLifted)
                   $ map makeArg $ map fst futsFree

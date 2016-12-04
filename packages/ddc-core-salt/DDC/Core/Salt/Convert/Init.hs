@@ -103,7 +103,7 @@ makeMainEntryX config a
                          (xddcInit a   (configHeapSize config)))
         $ XLet a  (LLet  (BNone (tBot kData)) 
                          (xApps a (XVar a (UName (NameVar "_main"))) 
-                                  [xU]))
+                                  [RTerm xU]))
         $ XLet a  (LLet  (BNone tVoid)
                          (xddcExit a  0))
         $ xInt a 0

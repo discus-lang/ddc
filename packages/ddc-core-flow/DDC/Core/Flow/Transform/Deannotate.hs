@@ -32,8 +32,15 @@ instance Deannotate A.Exp S.Exp where
         A.XLet  a lts x2                -> wrap a (S.XLet   (down lts) (down x2))
         A.XCase a x alts                -> wrap a (S.XCase  (down x)   (map down alts))
         A.XCast a cc x                  -> wrap a (S.XCast  (down cc)  (down x))
-        A.XType a t                     -> wrap a (S.XType t)
-        A.XWitness a w                  -> wrap a (S.XWitness (down w))
+
+
+instance Deannotate A.Arg S.Exp where
+ deannotate f aa
+  = case aa of
+        A.RType t               -> S.XType t
+        A.RWitness w            -> S.XWitness (deannotate f w)
+        A.RTerm x               -> deannotate f x
+        A.RImplicit x           -> deannotate f x
 
 
 instance Deannotate A.Lets S.Lets where

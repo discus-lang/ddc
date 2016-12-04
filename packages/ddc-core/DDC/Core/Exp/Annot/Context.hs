@@ -51,24 +51,23 @@ enterLam c a b x f
 -- | Enter the left of an application.
 enterAppLeft   
         :: Context a n
-        -> a -> Exp a n -> Exp a n
+        -> a -> Exp a n -> Arg a n
         -> (Context a n -> Exp a n -> b) -> b
 
 enterAppLeft c a x1 x2 f
  = let  c' = c  { contextCtx     = CtxAppLeft (contextCtx c) a x2 }
-
    in   f c' x1
 
 
 -- | Enter the right of an application.
 enterAppRight
         :: Context a n
-        -> a -> Exp a n -> Exp a n
-        -> (Context a n -> Exp a n -> b) -> b
+        -> a -> Exp a n -> Arg a n
+        -> (Context a n -> Arg a n -> b) -> b
 
-enterAppRight c a x1 x2 f
+enterAppRight c a x1 a2 f
  = let  c' = c  { contextCtx    = CtxAppRight (contextCtx c) a x1 }
-   in   f c' x2
+   in   f c' a2
 
 
 -- | Enter the body of a let-expression.

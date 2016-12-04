@@ -111,8 +111,16 @@ instance SubstituteTX (Exp a) where
 
         XCase a x1 alts -> XCase    a (down sub x1) (map (down sub) alts)
         XCast a cc x1   -> XCast    a (down sub cc) (down sub x1)
-        XType    a t    -> XType    a (down sub t)
-        XWitness a w    -> XWitness a (down sub w)
+
+
+instance SubstituteTX (Arg a) where
+ substituteWithTX tArg sub aa
+  = let down x = substituteWithTX tArg x
+    in case aa of
+        RType t                 -> RType     (down sub t)
+        RTerm x                 -> RTerm     (down sub x)
+        RImplicit x             -> RImplicit (down sub x)
+        RWitness x              -> RWitness  (down sub x)
 
 
 instance SubstituteTX (Alt a) where

@@ -74,15 +74,15 @@ makeCallSuperUnder nF tF cs es
  , length esType == length csType
 
  -- Instantiate the type of the function.
- , Just tF_inst  <- T.instantiateTs tF [t | Call.ElimType _ _ t <- esType]
+ , Just tF_inst  <- T.instantiateTs tF [t | Call.ElimType _ t <- esType]
  = let
         -- Split the quantifiers, parameter type, and body type
         -- from the type of the super.
         (tsParam,  tResult) = C.takeTFunArgResult tF_inst
 
         iArity          = length cs
-        xsArgType       = [XType at t  | Call.ElimType  _ at t  <- esType]
-        xsArgValue      = [x           | Call.ElimValue _ x     <- esValue]
+        asArgType       = [RType t  | Call.ElimType  _ t  <- esType]
+        asArgValue      = [RTerm x  | Call.ElimValue _ x  <- esValue]
 
         -- Split the value parameters into ones accepted by the super,
         -- and ones that are accepted by the returned closures.
@@ -93,13 +93,13 @@ makeCallSuperUnder nF tF cs es
         tResult'        = C.tFunOfParamResult tsParamClo tResult
         
         -- Instantiate all the type parameters.
-        xFunAPP         = C.xApps () (XVar () (UName nF)) xsArgType
+        xFunAPP         = C.xApps () (XVar () (UName nF)) asArgType
 
         -- Split types of the super parameters into the ones that can be
         -- satisfied by this application, and the remaining parameters that
         -- are still waiting for arguments.
         (tsParamSat, tsParamRemain)     
-                        = splitAt (length xsArgValue) tsParamLam
+                        = splitAt (length asArgValue) tsParamLam
 
         -- The type of the result after performing this application.
         -- If there are remaining, un-saturated parameters the result
@@ -119,7 +119,7 @@ makeCallSuperUnder nF tF cs es
                  $ makeRuns () (length esRuns)
                  $ C.xApps  () (C.xFunCurry  () tsParamSat  tResultClo 
                                (C.xFunCReify () tParamFirst tSuperResult xFunAPP))
-                               xsArgValue
+                               asArgValue
 
 
 -- Under application where we don't have any type arguments.
@@ -168,7 +168,7 @@ makeCallSuperUnder nF tF cs es
                    $ C.xFunCurry () [] tF_inst
                    $ C.xFunCReify () tParamFirst tSuperResult 
                         ( xApps () (XVar () (UName nF)) 
-                                $ map (XType ()) tsArgs)
+                                $ map RType tsArgs)
 
 
 makeCallSuperUnder _nF _tF _cs _es

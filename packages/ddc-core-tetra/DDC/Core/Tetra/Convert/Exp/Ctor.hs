@@ -27,10 +27,10 @@ convertCtorApp
         => Context a
         -> AnTEC a  E.Name                -- ^ Annot from deconstructed app node.
         -> DaCon    E.Name (Type E.Name)  -- ^ Data constructor being applied.
-        -> [Exp (AnTEC a E.Name) E.Name]  -- ^ Data constructor arguments.
+        -> [Arg (AnTEC a E.Name) E.Name]  -- ^ Data constructor arguments.
         -> ConvertM a (Exp a A.Name)
 
-convertCtorApp ctx (AnTEC tResult _ _ a) dc xsArgsAll
+convertCtorApp ctx (AnTEC tResult _ _ a) dc asArgsAll
 
  -- The unit constructor.
  | DaConUnit      <- dc
@@ -46,11 +46,10 @@ convertCtorApp ctx (AnTEC tResult _ _ a) dc xsArgsAll
  -- Applications of the record constructor.
  --   These must be fully applied.
  | DaConRecord ns <- dc
- , xsArgsTypes    <- [x | x@XType{} <- xsArgsAll]
- , tsArgsValues   <- [t | XType _ t <- xsArgsTypes]
- , xsArgsValues   <- drop (length xsArgsTypes) xsArgsAll
+ , tsArgsValues   <- [t | RType t <- asArgsAll]
+ , xsArgsValues   <- [x | RTerm x <- drop (length tsArgsValues) asArgsAll]
  , arity          <- length ns
- , length xsArgsTypes  == arity
+ , length tsArgsValues == arity
  , length xsArgsValues == arity
  = do
         let pp           = contextPlatform   ctx
@@ -86,8 +85,8 @@ convertCtorApp ctx (AnTEC tResult _ _ a) dc xsArgsAll
  -- Construct algebraic data.
  | Just nCtor    <- takeNameOfDaCon dc
  , Just ctorDef  <- Map.lookup nCtor $ dataDefsCtors (contextDataDefs ctx)
- , xsArgsTypes   <- [x | x@XType{} <- xsArgsAll]
- , xsArgsValues  <- drop (length xsArgsTypes) xsArgsAll
+ , tsArgsTypes   <- [t | RType t <- asArgsAll]
+ , xsArgsValues  <- [x | RTerm x <- drop (length tsArgsTypes) asArgsAll]
  , arity         <- length (dataCtorFieldTypes ctorDef)
  , length xsArgsValues == arity
  = do   

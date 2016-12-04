@@ -1,12 +1,12 @@
 
 module DDC.Core.Check.Judge.Type.Witness
-        (checkWit)
+--        (checkWit)
 where
-import DDC.Core.Check.Judge.Witness
-import DDC.Core.Check.Judge.Type.Base
-import qualified DDC.Type.Sum           as Sum
+-- import DDC.Core.Check.Judge.Witness
+-- import DDC.Core.Check.Judge.Type.Base
+-- import qualified DDC.Type.Sum           as Sum
 
-
+{-
 checkWit :: Checker a n
 checkWit !table !ctx _mode _demand 
         (XWitness a w1)
@@ -24,3 +24,4 @@ checkWit !table !ctx _mode _demand
 
 checkWit _ _ _ _ _
  = error "ddc-core.checkWit: no match"
+-}

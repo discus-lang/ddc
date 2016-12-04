@@ -259,14 +259,21 @@ instance Forward Exp where
 
         XCase a x alts  -> liftM2 (XCase    (snd a)) (down x) (mapM down alts)
         XCast a c x     -> liftM2 (XCast    (snd a)) (down c) (down x)
-        XType a t       -> return (XType    (snd a) t)
-        XWitness a w    -> return (XWitness (snd a) (reannotate snd w))
 
 
 filterUsedInCasts :: [Used] -> [Used]
 filterUsedInCasts = filter notCast
  where  notCast UsedInCast      = False
         notCast _               = True
+
+
+instance Forward Arg where
+ forwardWith profile config bindings aa
+  = case aa of
+        RType    t      -> return $ RType    t
+        RWitness w      -> return $ RWitness (reannotate snd w)
+        RTerm x         -> fmap RTerm     $ forwardWith profile config bindings x
+        RImplicit x     -> fmap RImplicit $ forwardWith profile config bindings x
 
 
 instance Forward Cast where

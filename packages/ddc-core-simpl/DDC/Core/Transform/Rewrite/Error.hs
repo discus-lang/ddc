@@ -30,6 +30,10 @@ data Error a n
         | ErrorNotFirstOrder
         { errorExp          :: Exp a n }
 
+        -- | No binders allowed in left-hand side (right is fine, eg @let@s)
+        | ErrorNotFirstOrderType
+        { errorType         :: Type n }
+
         -- | All variables must be mentioned in left-hand side,
         --   otherwise they won't get bound.
         | ErrorVarUnmentioned
@@ -72,6 +76,10 @@ instance (Pretty a, Pretty n, Show n, Eq n)
         ErrorNotFirstOrder x
          -> vcat [ text "No binders allowed in left-hand side."
                  , text "While checking " <> ppr x ]
+
+        ErrorNotFirstOrderType t
+         -> vcat [ text "No type binders allowed in left-hand side."
+                 , text "While checking " <> ppr t ]
 
         ErrorVarUnmentioned 
          ->        text "All variables in rule should be mentioned in left-hand side."

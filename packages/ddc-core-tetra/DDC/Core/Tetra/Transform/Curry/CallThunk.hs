@@ -25,7 +25,7 @@ makeCallThunk xF tF esArgs
  -- Split the eliminators according to the standard call pattern.
  | Just (esType, esValue, esRun)  
                 <- Call.splitStdCallElims esArgs
- , Just tF_inst <- T.instantiateTs tF [t | Call.ElimType _ _ t <- esType]
+ , Just tF_inst <- T.instantiateTs tF [t | Call.ElimType _ t <- esType]
  = let  
         (tsParam, tResult)       = C.takeTFunArgResult tF_inst
 
@@ -46,7 +46,7 @@ makeCallThunk xF tF esArgs
          $ Just 
          $ makeRuns    () (length esRun)
          $ C.xFunApply () tsParamArg tResultClo 
-                (xApps () xF [XType () t | Call.ElimType _ _ t <- esType])
+                (xApps () xF [RType t | Call.ElimType _ t <- esType])
                 xsArgs
 
  | otherwise

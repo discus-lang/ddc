@@ -164,8 +164,16 @@ instance Namify (Exp a) where
 
         XCase a x1 alts -> liftM2 (XCase    a) (down x1)  (mapM down alts)
         XCast a c  x    -> liftM2 (XCast    a) (down c)   (down x)
-        XType a t       -> liftM  (XType    a) (down t)
-        XWitness a w    -> liftM  (XWitness a) (down w)
+
+
+instance Namify (Arg a) where
+ namify tnam xnam aa
+  = let down = namify tnam xnam
+    in case aa of
+        RType     t     -> fmap RType     $ down t
+        RTerm     x     -> fmap RTerm     $ down x
+        RImplicit x     -> fmap RImplicit $ down x
+        RWitness  w     -> fmap RWitness  $ down w
 
 
 instance Namify (Alt a) where

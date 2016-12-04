@@ -35,13 +35,13 @@ convertPrimCall _ectx ctx xx
         ---------------------------------------------------
         -- Reify a top-level super.
         XApp (AnTEC _t _ _ a)  xa xb
-         | (xR,   [XType _ _, XType _ _, xF])   <- takeXApps1 xa xb
+         | (xR,   [RType _, RType _, RTerm xF]) <- takeXApps1 xa xb
          , XVar _ (UPrim nR _tPrim)     <- xR
          , E.NameOpFun E.OpFunCReify    <- nR
 
            -- Given the expression defining the super, retrieve its
            -- value arity and any extra type arguments we need to apply.
-         , Just (xF_super, tSuper, csCall, atsArg)
+         , Just (xF_super, tSuper, csCall, tksArgs)
             <- case xF of
                 XVar aF (UName nF)
                  -- This variable was let-bound to the application of a super
@@ -60,7 +60,7 @@ convertPrimCall _ectx ctx xx
                  --    to see the other type args. These should really be 
                  --    inlined in a pre-process.
                  --
-                 |  Just (nSuper, atsArgs) 
+                 |  Just (nSuper, tksArgs) 
                         <- Map.lookup nF (contextSuperBinds ctx) 
                  -> let 
                         uSuper          = UName nSuper
@@ -74,7 +74,7 @@ convertPrimCall _ectx ctx xx
                         tSuper          = typeOfCallable callable
                         csSuper         = consOfCallable callable
 
-                    in  Just (xF', tSuper, csSuper, atsArgs)
+                    in  Just (xF', tSuper, csSuper, tksArgs)
 
                  -- The name is that of an existing top-level super, either
                  -- defined in this module or imported from somewhere else.
@@ -98,19 +98,19 @@ convertPrimCall _ectx ctx xx
                 xF_super'   <- downArgX xF_super
 
                 xsArgs'     <- fmap catMaybes
-                            $  mapM (convertOrDiscardSuperArgX ctx) 
-                            $  [XType aArg tArg | (aArg, tArg) <- atsArg]
+                            $  mapM (convertOrDiscardSuperArgX ctx)
+                                [ (RType tArg, kArg) | (tArg, kArg) <- tksArgs]
 
                 let xF'     = xApps a xF_super' xsArgs'
 
                 -- Type of the super with its type args applied.
-                let Just tSuper' = instantiateTs tSuper $ map snd atsArg
+                let Just tSuper' = instantiateTs tSuper $ map fst tksArgs
 
                 -- Discharge type abstractions with type args that are applied
                 -- directly to the super.
                 let (csCall', []) 
                         = Call.dischargeConsWithElims csCall 
-                        $ [Call.ElimType a a t | t <- map snd atsArg]
+                        $ [Call.ElimType a t | t <- map fst tksArgs]
 
                 let Just (_csType, csValue, csBoxes)
                         = Call.splitStdCallCons csCall
@@ -134,7 +134,7 @@ convertPrimCall _ectx ctx xx
         --   This works for both the 'curryN#' and 'extendN#' primops,
         --   as they differ only in the Tetra-level closure type.
         XApp (AnTEC _t _ _ a) xa xb
-         | (x1, xs)                     <- takeXApps1 xa xb
+         | (x1, args)                   <- takeXApps1 xa xb
          , XVar _ (UPrim nPrim _tPrim)  <- x1
 
          , Just nArgs   
@@ -144,8 +144,8 @@ convertPrimCall _ectx ctx xx
                 E.NameOpFun (E.OpFunCExtend nArgs) -> Just nArgs
                 _                                  -> Nothing
 
-         , tsArg              <- [tArg | XType _ tArg <- take nArgs xs]
-         , (xThunk : xsArg)   <- drop (nArgs + 1) xs
+         , Just tsArg            <- sequence $ map takeRType $ take nArgs args
+         , Just (xThunk : xsArg) <- sequence $ map takeRTerm $ drop (nArgs + 1) args
          , nArgs == length xsArg
          -> Just $ do  
                 xThunk'         <- downArgX xThunk
@@ -181,16 +181,16 @@ convertPrimCall _ectx ctx xx
         ---------------------------------------------------
         -- Apply a thunk.
         XApp (AnTEC _t _ _ a) xa xb
-         | (x1, xs)                           <- takeXApps1 xa xb
-         , XVar _ (UPrim nPrim _tPrim)        <- x1
+         | (x1, args)                   <- takeXApps1 xa xb
+         , XVar _ (UPrim nPrim _tPrim)  <- x1
          , Just nArgs
             <- case nPrim of
                 E.NameOpFun (E.OpFunApply  nArgs) -> Just nArgs
                 E.NameOpFun (E.OpFunCApply nArgs) -> Just nArgs
                 _                                 -> Nothing
 
-         , tsArg                <- [tArg | XType _ tArg <- take nArgs xs]
-         , xF : xsArgs          <- drop (nArgs + 1) xs
+         , Just tsArg           <- sequence $ map takeRType $ take nArgs args
+         , Just (xF : xsArgs)   <- sequence $ map takeRTerm $ drop (nArgs + 1) args
          -> Just $ do
                 -- Functional expression.
                 xF'             <- downArgX xF
@@ -202,14 +202,12 @@ convertPrimCall _ectx ctx xx
                 -- Evaluate a thunk, returning the resulting Addr#, 
                 -- then cast it back to a pointer of the appropriate type
                 return  $ A.xApplyThunk a nArgs 
-                        $   [ XType a A.rTop ]
-
-                         ++ [ XType a $ fromMaybe A.rTop $ takePrimeRegion tArg'
-                                | tArg'         <- tsArg']
-
-                         ++ [ XType a A.rTop ]
-                         ++ [ xF' ]
-                         ++ xsArg'
+                                A.rTop
+                                [  fromMaybe A.rTop $ takePrimeRegion tArg'
+                                        | tArg'         <- tsArg']
+                                A.rTop
+                                xF'
+                                xsArg'
 
 
         ---------------------------------------------------

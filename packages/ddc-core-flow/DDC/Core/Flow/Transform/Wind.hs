@@ -124,8 +124,7 @@ makeTailCallFromContexts a refMap context@(ContextLoop nLoop _ _ : _)
  = let  
         xLoop   = XVar a (UName nLoop)
         xArgs   = slurpArgUpdates a refMap [] context
-
-   in   xApps a xLoop xArgs
+   in   xApps a xLoop $ map RTerm xArgs
    
 makeTailCallFromContexts _ _ contexts
  = error $ unlines
@@ -180,14 +179,14 @@ xIncrement :: a -> Exp a Name -> Exp a Name
 xIncrement a xx
         = xApps a (XVar a (UPrim (NamePrimArith PrimArithAdd) 
                                  (typePrimArith PrimArithAdd)))
-                  [ XType a tNat, xx, XCon a (dcNat 1) ]
+                  [ RType tNat, RTerm xx, RTerm (XCon a (dcNat 1)) ]
 
 -- | Build an expression that substracts two integers.
 xSubInt    :: a -> Exp a Name -> Exp a Name -> Exp a Name
 xSubInt a x1 x2
         = xApps a (XVar a (UPrim (NamePrimArith PrimArithSub)
                                  (typePrimArith PrimArithSub)))
-                  [ XType a tNat, x1, x2]
+                  [ RType tNat, RTerm x1, RTerm x2]
 
 
 -------------------------------------------------------------------------------
@@ -229,7 +228,7 @@ windBodyX refMap context xx
         --
         XLet a (LLet (BName nRef _) x) x2
          | Just ( NameOpStore OpStoreNew
-                , [XType _ tElem, xVal] ) <- takeXFragApps x
+                , [RType tElem, RTerm xVal] ) <- takeXFragApps x
          -> let 
                 -- Add the new ref record to the map.
                 info        = RefInfo 
@@ -255,7 +254,8 @@ windBodyX refMap context xx
         --
         XLet a (LLet bResult x) x2
          | Just ( NameOpStore OpStoreRead
-                , [XType _ _tElem, XVar _ (UName nRef)] )   
+                , [ RType _tElem
+                  , RTerm (XVar _ (UName nRef))] )   
                                         <- takeXFragApps x
          , Just info    <- lookupRefInfo refMap nRef
          , Just nVal    <- nameOfRefInfo info
@@ -268,8 +268,9 @@ windBodyX refMap context xx
         --  to just bind the new value.
         XLet a (LLet (BNone _) x) x2
          | Just ( NameOpStore OpStoreWrite 
-                , [XType _ _tElem, XVar _ (UName nRef), xVal])
-                                        <- takeXFragApps x
+                , [RType _tElem
+                ,  RTerm (XVar _ (UName nRef))
+                ,  RTerm xVal])         <- takeXFragApps x
          , refMap'      <- bumpVersionInRefMap nRef refMap
          , Just info    <- lookupRefInfo refMap' nRef
          , Just nVal    <- nameOfRefInfo info
@@ -282,8 +283,9 @@ windBodyX refMap context xx
         -- Detect loop combinator.
         XLet a (LLet (BNone _) x) x2
          | Just ( NameOpControl OpControlLoopN
-                , [ XType _ tK, xLength
-                  , XLam  _ bIx@(BName nIx _) xBody]) 
+                , [ RType tK
+                  , RTerm xLength
+                  , RTerm (XLam  _ bIx@(BName nIx _) xBody)]) 
                                         <- takeXFragApps x
          -> let 
                 -- Name of the new loop function.
@@ -362,7 +364,8 @@ windBodyX refMap context xx
               $ runUnpackLoop 
                         a 
                         tsAccs                          -- Types of accumulators.
-                        (xApps a (XVar a uLoop) xsInit) -- Expression to invoke loop
+                        (xApps a (XVar a uLoop) 
+                          $ map RTerm xsInit) -- Expression to invoke loop
                         bsFinal                         -- Binders for final accumulators
                         x2'                             -- Continuation expression
 
@@ -371,8 +374,8 @@ windBodyX refMap context xx
         -- Detect guard combinator.
         XLet a (LLet (BNone _) x) x2
          | Just ( NameOpControl OpControlGuard
-                , [ xFlag
-                  , XLam _ _unit xBody ])       <- takeXFragApps x
+                , [ RTerm xFlag
+                  , RTerm (XLam _ _unit xBody) ]) <- takeXFragApps x
          -> let 
                 context' = context
                          ++ [ ContextGuard
@@ -400,7 +403,8 @@ windBodyX refMap context xx
         -- Enter into both branches of a split.
         XApp{}
          | Just ( NameOpControl (OpControlSplit n)
-                , [ XType _ tK, xN, xBranch1, xBranch2 ]) <- takeXFragApps xx
+                , [ RType tK, RTerm xN, RTerm xBranch1, RTerm xBranch2 ])
+                        <- takeXFragApps xx
          -> let xBranch1'       = down xBranch1
                 xBranch2'       = down xBranch2
             in  xSplit n tK xN xBranch1' xBranch2'
@@ -437,10 +441,6 @@ windBodyX refMap context xx
          -> let  x'      = windBodyX refMap context x
             in  XCast a c x'
 
-        XType{}         -> xx
-        XWitness{}      -> xx
-
-
 
 -------------------------------------------------------------------------------
 type TypeF      = Type Name
@@ -450,7 +450,7 @@ xNatOfRateNat :: Type Name -> Exp () Name -> Exp () Name
 xNatOfRateNat tK xR
         = xApps () 
                 (xVarOpConcrete OpConcreteNatOfRateNat)
-                [XType () tK, xR]
+                [RType tK, RTerm xR]
 
 xVarOpConcrete :: OpConcrete -> Exp () Name
 xVarOpConcrete op
@@ -465,7 +465,7 @@ xSplit  :: Int
 xSplit n tK xRN xDownFn xTailFn 
         = xApps () 
                 (xVarOpControl $ OpControlSplit n)
-                [ XType () tK, xRN, xDownFn, xTailFn ]
+                [ RType tK, RTerm xRN, RTerm xDownFn, RTerm xTailFn ]
 
 
 xVarOpControl :: OpControl -> Exp () Name
@@ -497,7 +497,8 @@ loopResultX a tsAccs xsAccs
         []      -> xUnit a
         [x]     -> x
         _       -> xApps a (XCon a (dcTupleN $ length tsAccs)) 
-                           ([XType a t  | t <- tsAccs] ++ xsAccs)
+                           (   [RType t  | t <- tsAccs] 
+                            ++ map RTerm xsAccs)
 
 
 -- | Call a loop, and unpack its result.

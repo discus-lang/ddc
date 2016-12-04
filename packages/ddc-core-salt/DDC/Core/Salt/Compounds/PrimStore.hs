@@ -41,41 +41,41 @@ xPrimStore a p
 xStoreSize :: a -> Type Name  -> Exp a Name
 xStoreSize a tElem
  = xApps a      (xPrimStore a PrimStoreSize) 
-                [XType a tElem]
+                [RType tElem]
 
 
 -- | Log2 of the number of bytes needed to store a value of primitive type.
 xStoreSize2 :: a -> Type Name  -> Exp a Name
 xStoreSize2 a tElem
  = xApps a      (xPrimStore a PrimStoreSize2) 
-                [XType a tElem]
+                [RType tElem]
 
 -- | Create the heap.
 xCreate :: a -> Exp a Name -> Exp a Name
 xCreate a xLength
  = xApps a      (xPrimStore a PrimStoreCreate)
-                [xLength]
+                [RTerm xLength]
 
 
 -- | Read a value from an address plus offset.
 xRead   :: a -> Type Name -> Exp a Name -> Exp a Name -> Exp a Name
 xRead a tField xAddr xOffset
  = xApps a      (xPrimStore a PrimStoreRead)
-                [ XType a tField, xAddr, xOffset ]
+                [ RType tField, RTerm  xAddr, RTerm xOffset ]
 
 
 -- | Write a value to an address plus offset.
 xWrite   :: a -> Type Name -> Exp a Name -> Exp a Name -> Exp a Name -> Exp a Name
 xWrite a tField xAddr xOffset xVal
  = xApps a      (xPrimStore a PrimStoreWrite)
-                [ XType a tField, xAddr, xOffset, xVal ]
+                [ RType tField, RTerm xAddr, RTerm xOffset, RTerm xVal ]
                 
 
 -- | Peek a value from a buffer pointer plus offset.
 xPeek :: a -> Type Name -> Type Name -> Exp a Name -> Exp a Name
 xPeek a r t xPtr
  = xApps a      (xPrimStore a PrimStorePeek)
-                [ XType a r, XType a t, xPtr ]
+                [ RType r, RType t, RTerm xPtr ]
 
 
 -- | Poke a value from a buffer pointer plus offset.
@@ -83,7 +83,7 @@ xPoke   :: a -> Type Name -> Type Name
         -> Exp a Name -> Exp a Name -> Exp a Name
 xPoke a r t xPtr xVal
  = xApps a      (xPrimStore a PrimStorePoke)
-                [ XType a r, XType a t, xPtr, xVal]
+                [ RType r, RType t, RTerm xPtr, RTerm xVal]
 
 
 -- | Peek a value from a buffer pointer plus offset.
@@ -92,7 +92,7 @@ xPeekBounded
         -> Exp a Name -> Exp a Name -> Exp a Name -> Exp a Name
 xPeekBounded a r t xPtr xOffset xLimit
  = xApps a      (xPrimStore a PrimStorePeekBounded)
-                [ XType a r, XType a t, xPtr, xOffset, xLimit ]
+                [ RType r, RType t, RTerm xPtr, RTerm xOffset, RTerm xLimit ]
 
 
 -- | Poke a value from a buffer pointer plus offset.
@@ -101,7 +101,7 @@ xPokeBounded
         -> Exp a Name -> Exp a Name -> Exp a Name -> Exp a Name -> Exp a Name
 xPokeBounded a r t xPtr xOffset xLimit xVal
  = xApps a      (xPrimStore a PrimStorePokeBounded)
-                [ XType a r, XType a t, xPtr, xOffset, xLimit, xVal]
+                [ RType r, RType t, RTerm xPtr, RTerm xOffset, RTerm xLimit, RTerm xVal]
 
 
 -- | Add a byte offset to a pointer.
@@ -109,14 +109,14 @@ xPlusPtr :: a -> Type Name -> Type Name
          -> Exp a Name -> Exp a Name -> Exp a Name
 xPlusPtr a r t xPtr xOffset
  = xApps a      (xPrimStore a PrimStorePlusPtr)
-                [ XType a r, XType a t, xPtr, xOffset ]
+                [ RType r, RType t, RTerm xPtr, RTerm xOffset ]
 
 
 -- | Cast a pointer to a different element ype.
 xCastPtr :: a -> Type Name -> Type Name -> Type Name -> Exp a Name -> Exp a Name
 xCastPtr a r toType fromType xPtr
  = xApps a      (xPrimStore a PrimStoreCastPtr)
-                [ XType a r, XType a toType, XType a fromType, xPtr ]
+                [ RType r, RType toType, RType fromType, RTerm xPtr ]
 
 
 -- | Take the type of a primitive projection.

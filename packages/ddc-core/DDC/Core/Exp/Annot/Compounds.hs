@@ -32,6 +32,13 @@ module DDC.Core.Exp.Annot.Compounds
         , takeXPrimApps
         , takeXFragApps
 
+          -- * Arguments
+        , takeRType
+        , takeRTerm
+        , takeRWitness
+        , takeRImplicit
+        , takeExpFromArg
+
           -- * Lets
         , xLets,               xLetsAnnot
         , splitXLets,          splitXLetsAnnot
@@ -53,12 +60,8 @@ module DDC.Core.Exp.Annot.Compounds
         , wApp
         , wApps
         , annotOfWitness
-        , takeXWitness
         , takeWAppsAsList
         , takePrimWiConApps
-
-          -- * Types
-        , takeXType
 
           -- * Data Constructors
         , xUnit, dcUnit
@@ -83,8 +86,6 @@ annotOfExp xx
         XLet     a _ _  -> a
         XCase    a _ _  -> a
         XCast    a _ _  -> a
-        XType    a _    -> a
-        XWitness a _    -> a
 
 
 -- | Apply a function to the annotation of an expression.
@@ -99,8 +100,6 @@ mapAnnotOfExp f xx
         XLet     a lt x   -> XLet     (f a) lt x
         XCase    a x  as  -> XCase    (f a) x  as
         XCast    a c  x   -> XCast    (f a) c  x
-        XType    a t      -> XType    (f a) t
-        XWitness a w      -> XWitness (f a) w
 
 
 -- Lambdas ---------------------------------------------------------------------
@@ -184,51 +183,54 @@ takeXLamParamTVB xx
 
 -- Applications ---------------------------------------------------------------
 -- | Build sequence of value applications.
-xApps   :: a -> Exp a n -> [Exp a n] -> Exp a n
+xApps   :: a -> Exp a n -> [Arg a n] -> Exp a n
 xApps a t1 ts     = foldl (XApp a) t1 ts
 
 
 -- | Build sequence of applications.
 --   Similar to `xApps` but also takes list of annotations for
 --   the `XApp` constructors.
-makeXAppsWithAnnots :: Exp a n -> [(Exp a n, a)] -> Exp a n
+makeXAppsWithAnnots :: Exp a n -> [(Arg a n, a)] -> Exp a n
 makeXAppsWithAnnots f xas
  = case xas of
         []              -> f
-        (arg,a ) : as   -> makeXAppsWithAnnots (XApp a f arg) as
+        (arg, a) : as   -> makeXAppsWithAnnots (XApp a f arg) as
 
 
 -- | Flatten an application into the function part and its arguments.
 --
 --   Returns `Nothing` if there is no outer application.
-takeXApps :: Exp a n -> Maybe (Exp a n, [Exp a n])
+takeXApps :: Exp a n -> Maybe (Exp a n, [Arg a n])
 takeXApps xx
  = case takeXAppsAsList xx of
-        (x1 : xsArgs)   -> Just (x1, xsArgs)
-        _               -> Nothing
+        (_,  [])        -> Nothing
+        (x1, as)        -> Just (x1, as)
+
+
+-- | Flatten an application into the function part and its arguments, if any.
+takeXAppsAsList :: Exp a n -> (Exp a n, [Arg a n])
+takeXAppsAsList xx
+ = case xx of
+        XApp _ x1 x2  
+         -> let (f', args') = takeXAppsAsList x1
+            in  (f', args' ++ [x2])
+
+        _ -> (xx, [])
 
 
 -- | Flatten an application into the function part and its arguments.
 --
 --   This is like `takeXApps` above, except we know there is at least one argument.
-takeXApps1 :: Exp a n -> Exp a n -> (Exp a n, [Exp a n])
+takeXApps1 :: Exp a n -> Arg a n -> (Exp a n, [Arg a n])
 takeXApps1 x1 x2
  = case takeXApps x1 of
         Nothing          -> (x1,  [x2])
         Just (x11, x12s) -> (x11, x12s ++ [x2])
 
 
--- | Flatten an application into the function parts and arguments, if any.
-takeXAppsAsList  :: Exp a n -> [Exp a n]
-takeXAppsAsList xx
- = case xx of
-        XApp _ x1 x2    -> takeXAppsAsList x1 ++ [x2]
-        _               -> [xx]
-
-
 -- | Destruct sequence of applications.
 --   Similar to `takeXAppsAsList` but also keeps annotations for later.
-takeXAppsWithAnnots :: Exp a n -> (Exp a n, [(Exp a n, a)])
+takeXAppsWithAnnots :: Exp a n -> (Exp a n, [(Arg a n, a)])
 takeXAppsWithAnnots xx
  = case xx of
         XApp a f arg
@@ -242,10 +244,10 @@ takeXAppsWithAnnots xx
 --   and its arguments.
 --
 --   Returns `Nothing` if the expression isn't a primitive application.
-takeXPrimApps :: Exp a n -> Maybe (Prim, [Exp a n])
+takeXPrimApps :: Exp a n -> Maybe (Prim, [Arg a n])
 takeXPrimApps xx
- = case takeXAppsAsList xx of
-        XPrim _ p : xs          -> Just (p, xs)
+ = case takeXApps xx of
+        Just (XPrim _ p, as)    -> Just (p, as)
         _                       -> Nothing
 
 
@@ -253,22 +255,63 @@ takeXPrimApps xx
 --   and its arguments.
 --
 --   Returns `Nothing` if the expression isn't a primop application.
-takeXFragApps :: Exp a n -> Maybe (n, [Exp a n])
+takeXFragApps :: Exp a n -> Maybe (n, [Arg a n])
 takeXFragApps xx
- = case takeXAppsAsList xx of
-        XVar _ (UPrim p _) : xs -> Just (p, xs)
-        _                       -> Nothing
+ = case takeXApps xx of
+        Just (XVar _ (UPrim p _), as)   -> Just (p, as)
+        _                               -> Nothing
 
 -- | Flatten an application of a data constructor into the constructor
 --   and its arguments.
 --
 --   Returns `Nothing` if the expression isn't a constructor application.
-takeXConApps :: Exp a n -> Maybe (DaCon n (Type n), [Exp a n])
+takeXConApps :: Exp a n -> Maybe (DaCon n (Type n), [Arg a n])
 takeXConApps xx
- = case takeXAppsAsList xx of
-        XCon _ dc : xs  -> Just (dc, xs)
+ = case takeXApps xx of
+        Just (XCon _ dc, as)            -> Just (dc, as)
+        _                               -> Nothing
+
+
+-- Arguments ------------------------------------------------------------------
+-- | Take the type of a type argument, if it is one.
+takeRType :: Arg a n -> Maybe (Type n)
+takeRType aa
+ = case aa of
+        RType t         -> Just t
         _               -> Nothing
 
+
+-- | Take a witness from an argument, if it is one.
+takeRWitness :: Arg a n -> Maybe (Witness a n)
+takeRWitness aa
+ = case aa of
+        RWitness w      -> Just w
+        _               -> Nothing
+
+
+-- | Take a witness from an argument, if it is one.
+takeRTerm :: Arg a n -> Maybe (Exp a n)
+takeRTerm aa
+ = case aa of
+        RTerm x         -> Just x
+        _               -> Nothing
+
+
+-- | Take a witness from an argument, if it is one.
+takeRImplicit :: Arg a n -> Maybe (Exp a n)
+takeRImplicit aa
+ = case aa of
+        RImplicit x     -> Just x
+        _               -> Nothing
+
+
+-- | Take the expression from a `RTerm` or `RImplicit argument.
+takeExpFromArg :: Arg a n -> Maybe (Exp a n)
+takeExpFromArg aa
+ = case aa of
+        RTerm x         -> Just x
+        RImplicit x     -> Just x
+        _               -> Nothing
 
 -- Lets -----------------------------------------------------------------------
 -- | Wrap some let-bindings around an expression.
@@ -383,14 +426,6 @@ annotOfWitness ww
         WType a _       -> a
 
 
--- | Take the witness from an `XWitness` argument, if any.
-takeXWitness :: Exp a n -> Maybe (Witness a n)
-takeXWitness xx
- = case xx of
-        XWitness _ t -> Just t
-        _            -> Nothing
-
-
 -- | Flatten an application into the function parts and arguments, if any.
 takeWAppsAsList :: Witness a n -> [Witness a n]
 takeWAppsAsList ww
@@ -409,15 +444,6 @@ takePrimWiConApps ww
         WCon _ wc : args | WiConBound (UPrim n _) _ <- wc
           -> Just (n, args)
         _ -> Nothing
-
-
--- Types ----------------------------------------------------------------------
--- | Take the type from an `XType` argument, if any.
-takeXType :: Exp a n -> Maybe (Type n)
-takeXType xx
- = case xx of
-        XType _ t -> Just t
-        _         -> Nothing
 
 
 -- Units -----------------------------------------------------------------------

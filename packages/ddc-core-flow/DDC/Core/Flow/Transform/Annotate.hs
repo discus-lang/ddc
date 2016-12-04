@@ -25,24 +25,31 @@ instance Annotate S.Exp A.Exp where
         S.XAnnot a (S.XCon   dc)        -> A.XCon      a dc
         S.XAnnot a (S.XLAM   b x)       -> A.XLAM      a b   (down x)
         S.XAnnot a (S.XLam   b x)       -> A.XLam      a b   (down x)
-        S.XAnnot a (S.XApp   x1 x2)     -> A.XApp      a     (down x1)  (down x2)
+        S.XAnnot a (S.XApp   x1 x2)     -> A.XApp      a     (down x1)  (annotateArg def x2)
         S.XAnnot a (S.XLet   lts x)     -> A.XLet      a     (down lts) (down x)
         S.XAnnot a (S.XCase  x alts)    -> A.XCase     a     (down x)   (map down alts)
         S.XAnnot a (S.XCast  c x)       -> A.XCast     a     (down c)   (down x)
-        S.XAnnot a (S.XType    t)       -> A.XType     a t
-        S.XAnnot a (S.XWitness w)       -> A.XWitness  a (down w)
+        S.XAnnot a x'                   -> annotate a x'
 
         S.XVar  u                       -> A.XVar      def u
         S.XPrim p                       -> A.XPrim     def p
         S.XCon  dc                      -> A.XCon      def dc
         S.XLAM  b x                     -> A.XLAM      def b (down x)
         S.XLam  b x                     -> A.XLam      def b (down x)
-        S.XApp  x1 x2                   -> A.XApp      def   (down x1)  (down x2)
+        S.XApp  x1 x2                   -> A.XApp      def   (down x1)  (annotateArg def x2)
         S.XLet  lts x                   -> A.XLet      def   (down lts) (down x)
         S.XCase x alts                  -> A.XCase     def   (down x)   (map down alts)
         S.XCast c x                     -> A.XCast     def   (down c)   (down x)
-        S.XType t                       -> A.XType     def t
-        S.XWitness w                    -> A.XWitness  def (down w)
+
+        S.XType    _                    -> error "ddc-core-flow.annotate: naked Xtype"
+        S.XWitness _                    -> error "ddc-core-flow.annotate: naked Xwitness"
+
+
+annotateArg def xx
+  = case xx of
+        S.XType t                       -> A.RType t
+        S.XWitness w                    -> A.RWitness (annotate def w)
+        _                               -> A.RTerm    (annotate def xx)
 
 
 instance Annotate S.Cast A.Cast where

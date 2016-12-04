@@ -36,7 +36,7 @@ xFunCReify a tParam tResult xF
  = xApps a
         (XVar a (UPrim  (NameOpFun OpFunCReify)
                         (typeOpFun OpFunCReify)))
-        [XType a tParam, XType a tResult, xF]
+        [RType tParam, RType tResult, RTerm xF]
 
 
 -- | Construct a closure consisting of a top-level super and some arguments.
@@ -51,7 +51,7 @@ xFunCCurry a tsParam tResult xF
  = xApps a
          (XVar a (UPrim  (NameOpFun (OpFunCCurry (length tsParam)))
                          (typeOpFun (OpFunCCurry (length tsParam)))))
-         ((map (XType a) tsParam) ++ [XType a tResult] ++ [xF])
+         ((map RType tsParam) ++ [RType tResult] ++ [RTerm xF])
 
 
 -- | Construct a closure consisting of a top-level super and some arguments.
@@ -66,7 +66,7 @@ xFunCurry a tsParam tResult xF
  = xApps a
          (XVar a (UPrim  (NameOpFun (OpFunCurry (length tsParam)))
                          (typeOpFun (OpFunCurry (length tsParam)))))
-         ((map (XType a) tsParam) ++ [XType a tResult] ++ [xF])
+         ((map RType tsParam) ++ [RType tResult] ++ [RTerm xF])
 
 
 
@@ -83,7 +83,7 @@ xFunApply a tsArg tResult xF xsArg
  = xApps a
          (XVar a (UPrim  (NameOpFun (OpFunApply (length xsArg)))
                          (typeOpFun (OpFunApply (length xsArg)))))
-         ((map (XType a) tsArg) ++ [XType a tResult] ++ [xF] ++ xsArg)
+         ((map RType tsArg) ++ [RType tResult] ++ [RTerm xF] ++ (map RTerm xsArg))
 
 
 xCastConvert :: a -> Type Name -> Type Name -> Exp a Name -> Exp a Name 
@@ -91,7 +91,6 @@ xCastConvert a tTo tFrom x
  = xApps a
         (XVar a (UPrim (NamePrimCast PrimCastConvert False) 
                        (typePrimCastFlag PrimCastConvert False)))
-        [ XType a tTo
-        , XType a tFrom
-        , x ]
+        [ RType tTo, RType tFrom
+        , RTerm x ]
 

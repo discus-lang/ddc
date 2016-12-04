@@ -32,7 +32,11 @@ data Error a
         -- | The program wasn't normalised, or we don't support the feature.
         | ErrorUnsupported
         { errorExp      :: Exp (AnTEC a E.Name) E.Name
-        , errorDor      :: Doc }
+        , errorDoc      :: Doc }
+
+        | ErrorUnsupportedArg
+        { errorArg      :: Arg (AnTEC a E.Name) E.Name
+        , errorDoc      :: Doc }
 
         -- | The program has bottom (missing) type annotations.
         | ErrorBotAnnot
@@ -82,6 +86,12 @@ instance Show a => Pretty (Error a) where
                  , indent 2 $ doc
                  , empty
                  , indent 2 $ text "with:" <+> ppr xx ]
+
+        ErrorUnsupportedArg aa doc
+         -> vcat [ text "Cannot convert argument."
+                 , indent 2 $ doc
+                 , empty
+                 , indent 2 $ text "with:" <+> ppr aa ]
 
         ErrorBotAnnot
          -> vcat [ text "Found bottom type annotation."

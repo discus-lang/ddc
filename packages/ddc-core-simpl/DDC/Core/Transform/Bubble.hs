@@ -116,8 +116,23 @@ instance Bubble Exp where
                 fc              = FvsCast c fvsT fvsX
             in  (fc : cs, x')
 
-        XType{}         -> ([], xx)
-        XWitness{}      -> ([], xx)
+
+instance Bubble Arg where
+ bubble kenv tenv aa
+  = case aa of
+        RType{}
+         ->     ([], aa)
+
+        RWitness{}
+         ->     ([], aa)
+
+        RTerm x 
+         -> let (cs, x') = bubble kenv tenv x
+            in  (cs, RTerm x')
+
+        RImplicit x
+         -> let (cs, x') = bubble kenv tenv x
+            in  (cs, RImplicit x')
 
 
 instance Bubble Lets where

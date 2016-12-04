@@ -81,8 +81,15 @@ instance BindStruct (Exp a n) n where
 
         XCase _ x alts  -> slurpBindTree x ++ concatMap slurpBindTree alts
         XCast _ c x     -> slurpBindTree c ++ slurpBindTree x
-        XType _ t       -> slurpBindTree t
-        XWitness _ w    -> slurpBindTree w
+
+
+instance BindStruct (Arg a n) n where
+ slurpBindTree aa
+  = case aa of
+        RType t                 -> slurpBindTree t
+        RTerm x                 -> slurpBindTree x
+        RImplicit x             -> slurpBindTree x
+        RWitness  w             -> slurpBindTree w
 
 
 instance BindStruct (Cast a n) n where

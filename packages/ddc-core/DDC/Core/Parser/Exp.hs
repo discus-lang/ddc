@@ -128,36 +128,36 @@ pExpApp c
 
 -- Comp, Witness or Spec arguments.
 pArgSPs :: (Ord n, Pretty n)
-        => Context n -> Parser n [(Exp SourcePos n, SourcePos)]
+        => Context n -> Parser n [(Arg SourcePos n, SourcePos)]
 pArgSPs c
  = P.choice
         -- [TYPE]
  [ do   sp      <- pSym SSquareBra
         t       <- pType c
         pSym SSquareKet
-        return  [(XType sp t, sp)]
+        return  [(RType t, sp)]
 
         -- [: TYPE0 TYPE0 ... :]
  , do   sp      <- pSym SSquareColonBra
         ts      <- P.many1 (pTypeAtom c)
         pSym SSquareColonKet
-        return  [(XType sp t, sp) | t <- ts]
+        return  [(RType t, sp) | t <- ts]
         
-        -- {WITNESS}
- , do   sp      <- pSym SBraceBra
+        -- <WITNESS>
+ , do   sp      <- pTokSP (KOp "<")
         w       <- pWitness c
+        pTok (KOp ">")
+        return  [(RWitness w, sp)]
+
+        -- {EXP}
+ , do   sp      <- pSym SBraceBra
+        x       <- pExp c
         pSym SBraceKet
-        return  [(XWitness sp w, sp)]
-                
-        -- {: WITNESS0 WITNESS0 ... :}
- , do   sp      <- pSym SBraceColonBra
-        ws      <- P.many1 (pWitnessAtom c)
-        pSym SBraceColonKet
-        return  [(XWitness sp w, sp) | w <- ws]
-                
+        return  [(RImplicit x, sp)]
+                                
         -- EXP0
  , do   (x, sp)  <- pExpAtomSP c
-        return  [(x, sp)]
+        return  [(RTerm x, sp)]
  ]
  <?> "a type, witness or expression argument"
 

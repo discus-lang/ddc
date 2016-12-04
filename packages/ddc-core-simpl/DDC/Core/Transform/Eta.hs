@@ -169,11 +169,11 @@ instance Eta Exp where
                 -- Decend into the arguments first.
                 --   We don't need to decend into the function part because
                 --   we're eta-expanding that here.
-                let (x : xs)    =  takeXAppsAsList xx
-                xs_eta          <- mapM down xs
+                let (x, as)    =  takeXAppsAsList xx
+                as_eta          <- mapM down as
 
                 -- Now eta expand the result.
-                etaExpand a tX $ xApps a x xs_eta
+                etaExpand a tX $ xApps a x as_eta
 
         XLAM a b x
          -> do  let env'        = EnvX.extendT b env
@@ -205,6 +205,15 @@ instance Eta Exp where
                 return $ XCast a cc x'
 
         _ -> return xx
+
+instance Eta Arg where
+ etaM config cconfig env aa
+  = let down    = etaM config cconfig env
+    in case aa of
+        RType{}         -> return aa
+        RWitness{}      -> return aa
+        RTerm x         -> fmap RTerm     $ down x
+        RImplicit x     -> fmap RImplicit $ down x
 
 
 instance Eta Lets where
@@ -272,7 +281,7 @@ etaExpand'
         => a                -- ^ Annotation to use for the new AST nodes.
         -> Int              -- ^ Number of level-1 lambdas we've added so far.
         -> Int              -- ^ Number of level-0 lambdas we've added so far.
-        -> [Exp a n]        -- ^ Accumulate arguments we need to add to the
+        -> [Arg a n]        -- ^ Accumulate arguments we need to add to the
                             --      inner expression.
         -> [(Bool, Type n)] -- ^ Types of bindings we need to add, along with
                             --   a flag to indicate level-1 or level-0 binder
@@ -286,7 +295,7 @@ etaExpand' a levels1 levels0 args [] xx
 etaExpand' a levels1 levels0 args ((True, t) : ts) xx
  = do   let depth1 = length $ filter ((== True) . fst) ts
         xx'     <- etaExpand' a (levels1 + 1) levels0 
-                        (args ++ [XType a (TVar (UIx depth1))]) 
+                        (args ++ [RType (TVar (UIx depth1))]) 
                         ts
                         xx
 
@@ -297,7 +306,7 @@ etaExpand' a levels1 levels0 args ((False, t) : ts) xx
  = do   let depth0 = length $ filter ((== False) . fst) ts
         xx'     <- etaExpand' a 
                         levels1 (levels0 + 1) 
-                        (args ++ [XVar a (UIx depth0)])
+                        (args ++ [RTerm (XVar a (UIx depth0))])
                         ts
                         xx
 

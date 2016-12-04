@@ -16,10 +16,10 @@ module DDC.Core.Transform.Rewrite.Rule
 where
 import DDC.Core.Transform.Rewrite.Error
 import DDC.Core.Transform.Reannotate
-import DDC.Core.Transform.TransformUpX
+-- import DDC.Core.Transform.TransformUpX
 import DDC.Core.Exp.Annot
 import DDC.Core.Pretty                          ()
-import DDC.Core.Collect
+-- import DDC.Core.Collect
 import DDC.Core.Pretty                          ()
 import DDC.Core.Env.EnvX                        (EnvX)
 import DDC.Data.Pretty
@@ -33,9 +33,10 @@ import qualified DDC.Type.Transform.SpreadT     as S
 import qualified Data.Map                       as Map
 import qualified Data.Maybe                     as Maybe
 import qualified Data.Set                       as Set
-import qualified DDC.Type.Env                   as Env
+-- import qualified DDC.Type.Env                   as Env
 import qualified DDC.Core.Env.EnvT              as EnvT
 import qualified DDC.Core.Env.EnvX              as EnvX
+
 
 -- | A rewrite rule. For example:
 --
@@ -192,7 +193,7 @@ checkRewriteRule config env
         -- Build application from lhs and the hole so we can check its
         -- type against rhs
         let a           = annotOfExp lhs
-        let lhs_full    = maybe lhs (XApp a lhs) hole
+        let lhs_full    = maybe lhs (XApp a lhs) (fmap RTerm hole)
 
         -- Check the full left hand side.
         (lhs_full', tLeft, effLeft)
@@ -213,10 +214,10 @@ checkRewriteRule config env
         -- of the left, and add a weakeff cast if nessesary
         effWeak        <- makeEffectWeakening  T.kEffect effLeft effRight err
 
-        -- Check that the closure of the right is smaller than that
+{-        -- Check that the closure of the right is smaller than that
         -- of the left, and add a weakclo cast if nessesary.
         cloWeak        <- makeClosureWeakening config env' lhs_full' rhs'
-
+-}
         -- Check that all the bound variables are mentioned
         -- in the left-hand side.
         checkUnmentionedBinders bs' lhs_full'
@@ -245,7 +246,7 @@ checkRewriteRule config env
         return  $ RewriteRule 
                         bs'' csSpread
                         lhs' hole' rhs'
-                        effWeak cloWeak
+                        effWeak []
                         freeVars
 
 
@@ -356,7 +357,7 @@ makeEffectWeakening k effLeft effRight onError
         | otherwise
         = Left onError
 
-
+{-
 -- | Make the closure weakening for a rule.
 --   This contains a closure term for all variables that are present
 --   in the left of a rule but not in the right.
@@ -395,7 +396,6 @@ makeClosureWeakening config env lhs rhs
          ++ [XType a (TVar u)
                 | u <- Set.toList $ spLeft `Set.difference` spRight ]
 
-
 -- | Replace all effects with !0.
 --   This is done so that when @makeClosureWeakening@ finds free variables,
 --   it ignores those only mentioned in effects.
@@ -411,13 +411,14 @@ removeEffects config
  where
   remove _env x
 
-   | XType a et    <- x
+   | XApp a1 x1 (RType et)    <- x
    , Right (_, k)  <- C.checkSpec config et
    , T.isEffectKind k
-   = XType a $ T.tBot T.kEffect
+   = XApp a1 x1 (RType $ T.tBot T.kEffect)
 
    | otherwise
    = x
+-}
 
 
 -- Structural Checks ----------------------------------------------------------
@@ -463,19 +464,22 @@ checkValidPattern expr
         go XPrim{}              = return ()
         go (XCon _ _)           = return ()
         go x@(XAbs _ _ _)       = Left $ ErrorNotFirstOrder x
-        go (XApp _ l r)         = go l >> go r
+        go (XApp _ l r)         = go l >> go_a r
         go x@(XLet _ _ _)       = Left $ ErrorNotFirstOrder x
         go x@(XCase _ _ _)      = Left $ ErrorNotFirstOrder x
         go (XCast _ _ x)        = go x
-        go (XType a t)          = go_t a t
-        go (XWitness _ _)       = return ()
 
-        go_t _ (TVar _)         = return ()
-        go_t _ (TCon _)         = return ()
-        go_t a t@(TAbs _ _)     = Left $ ErrorNotFirstOrder (XType a t)
-        go_t a (TApp l r)       = go_t a l >> go_t a r
-        go_t a t@(TForall _ _)  = Left $ ErrorNotFirstOrder (XType a t)
-        go_t _ (TSum _)         = return ()
+        go_t (TVar _)           = return ()
+        go_t (TCon _)           = return ()
+        go_t t@(TAbs _ _)       = Left $ ErrorNotFirstOrderType t
+        go_t (TApp l r)         = go_t l >> go_t r
+        go_t t@(TForall _ _)    = Left $ ErrorNotFirstOrderType t
+        go_t (TSum _)           = return ()
+
+        go_a (RType t)          = go_t t
+        go_a (RWitness _)       = return ()
+        go_a (RTerm x)          = go x
+        go_a (RImplicit x)      = go x
 
 
 -- | Count how many times each binder is used in right-hand side.

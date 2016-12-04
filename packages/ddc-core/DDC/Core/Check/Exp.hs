@@ -44,7 +44,6 @@ import DDC.Core.Check.Judge.Type.Let
 import DDC.Core.Check.Judge.Type.LetPrivate
 import DDC.Core.Check.Judge.Type.Case
 import DDC.Core.Check.Judge.Type.Cast
-import DDC.Core.Check.Judge.Type.Witness
 import DDC.Core.Check.Judge.Type.Base
 import DDC.Core.Transform.MapT
 
@@ -142,7 +141,7 @@ checkExpM !table !ctx !mode !demand !xx
     XVar{}                 -> tableCheckVarCon     table table ctx mode demand xx
     XPrim{}                -> tableCheckPrim       table table ctx mode demand xx
     XCon{}                 -> tableCheckVarCon     table table ctx mode demand xx
-    XApp _ _ XType{}       -> tableCheckAppT       table table ctx mode demand xx
+    XApp _ _ RType{}       -> tableCheckAppT       table table ctx mode demand xx
     XApp{}                 -> tableCheckAppX       table table ctx mode demand xx
     XAbs _ (MType _) _     -> tableCheckLamT       table table ctx mode demand xx
     XAbs _ (MTerm _) _     -> tableCheckLamX       table table ctx mode demand xx
@@ -151,8 +150,6 @@ checkExpM !table !ctx !mode !demand !xx
     XLet{}                 -> tableCheckLet        table table ctx mode demand xx
     XCase{}                -> tableCheckCase       table table ctx mode demand xx
     XCast{}                -> tableCheckCast       table table ctx mode demand xx
-    XWitness{}             -> tableCheckWitness    table table ctx mode demand xx
-    XType    a _           -> throw $ ErrorNakedType    a xx
 
 
 -- Table ----------------------------------------------------------------------
@@ -171,5 +168,6 @@ makeTable config
         , tableCheckLetPrivate  = checkLetPrivate
         , tableCheckCase        = checkCase
         , tableCheckCast        = checkCast
-        , tableCheckWitness     = checkWit }
+        , tableCheckWitness     = error "makeTable: not checking witness" }
+                                        -- TODO: kill this
 

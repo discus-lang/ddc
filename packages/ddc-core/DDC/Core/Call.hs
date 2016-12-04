@@ -241,7 +241,7 @@ takeStdCallConsFromTypeArity tt0 nTypes0 nValues0 nBoxes0
 -- | One component of a super call.
 data Elim a n
         = -- | Give a type to a type lambda.
-          ElimType    a a (Type n)
+          ElimType    a (Type n)
 
           -- | Give a value to a value lambda.
         | ElimValue   a (Exp a n)
@@ -279,9 +279,9 @@ isElimRun ee
 applyElim :: Exp a n -> Elim a n -> Exp a n
 applyElim xx e
  = case e of
-        ElimType  a at t -> XApp a xx (XType at t)
-        ElimValue a x    -> XApp a xx x
-        ElimRun   a      -> XCast a CastRun xx
+        ElimType  a t   -> XApp a xx (RType t)
+        ElimValue a x   -> XApp a xx (RTerm x)
+        ElimRun   a     -> XCast a CastRun xx
 
 
 -- | Split the application of some object into the object being
@@ -289,11 +289,11 @@ applyElim xx e
 takeCallElim :: Exp a n -> (Exp a n, [Elim a n])
 takeCallElim xx
  = case xx of
-        XApp a x1 (XType at t2)
+        XApp a x1 (RType t2)
          -> let (xF, xArgs)     = takeCallElim x1
-            in  (xF, xArgs ++ [ElimType a at t2])
+            in  (xF, xArgs ++ [ElimType a t2])
 
-        XApp a x1 x2            
+        XApp a x1 (RTerm x2)
          -> let (xF, xArgs)     = takeCallElim x1
             in  (xF, xArgs ++ [ElimValue a x2])
 
@@ -380,7 +380,7 @@ dischargeConsWithElims
 
 dischargeConsWithElims (c : cs) (e : es)
  = case (c, e) of
-        (ConsType  b1, ElimType  _ _ t2)
+        (ConsType  b1, ElimType  _ t2)
           -> dischargeConsWithElims 
                 (map (instantiateConsT b1 t2) cs) 
                 es
@@ -417,7 +417,7 @@ dischargeTypeWithElims
         -> [Elim a n]
         -> Maybe (Type n)
 
-dischargeTypeWithElims tt (ElimType  _ _ tArg : es)
+dischargeTypeWithElims tt (ElimType  _ tArg : es)
         | TForall b tBody         <- tt
         = dischargeTypeWithElims 
                 (substituteT b tArg tBody) 

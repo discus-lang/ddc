@@ -262,8 +262,8 @@ toCoreX a xx
         -- The 'textLit' variable refers to whatever is in scope.
         S.XCon dc@(C.DaConPrim (S.DaConBoundLit (S.PrimLitTextLit{})) _)
          -> C.XApp      <$> pure a 
-                        <*> (C.XVar <$> pure a <*> (pure $ C.UName (C.NameVar "textLit")))
-                        <*> (C.XCon <$> pure a <*> (toCoreDC dc))
+                        <*> (C.XVar  <$> pure a <*> (pure $ C.UName (C.NameVar "textLit")))
+                        <*> (C.RTerm <$> (C.XCon <$> pure a <*> (toCoreDC dc)))
 
         S.XCon  dc
          -> C.XCon      <$> pure a <*> toCoreDC dc
@@ -280,10 +280,11 @@ toCoreX a xx
          -> do  xPrim'  <- toCoreX  a (S.XFrag p)
                 dc1'    <- toCoreDC dc1
                 dc2'    <- toCoreDC dc2
-                return  $  C.xApps a xPrim' [C.XCon a dc1', C.XCon a dc2']
-
+                return  $  C.xApps a xPrim' 
+                                [ C.RTerm (C.XCon a dc1')
+                                , C.RTerm (C.XCon a dc2')]
         S.XApp x1 x2
-         -> C.XApp      <$> pure a  <*> toCoreX a x1 <*> toCoreX a x2
+         -> C.XApp      <$> pure a  <*> toCoreX a x1 <*> toCoreArg a x2
 
         S.XLet lts x
          -> C.XLet      <$> pure a  <*> toCoreLts a lts <*> toCoreX a x
@@ -295,11 +296,9 @@ toCoreX a xx
         S.XCast c x
          -> C.XCast     <$> pure a  <*> toCoreC a c <*> toCoreX a x
 
-        S.XType t
-         -> C.XType     <$> pure a  <*> toCoreT UniverseSpec t
-
-        S.XWitness w
-         -> C.XWitness  <$> pure a  <*> toCoreW a w
+        -- These shouldn't appear separately from an application.
+        S.XType{}       -> Left $ ErrorConvertSugaredExp xx
+        S.XWitness{}    -> Left $ ErrorConvertSugaredExp xx
 
         -- These shouldn't exist in the desugared source tetra code.
         S.XDefix{}      -> Left $ ErrorConvertSugaredExp xx
@@ -310,6 +309,18 @@ toCoreX a xx
         S.XAbsPat{}     -> Left $ ErrorConvertSugaredExp xx
         S.XLamCase{}    -> Left $ ErrorConvertSugaredExp xx        
 
+
+-- Arg --------------------------------------------------------------------------------------------
+toCoreArg :: SP -> S.Exp  -> ConvertM S.Source (C.Arg  SP C.Name)
+toCoreArg sp xx
+ = case xx of
+        S.XType t
+          -> C.RType     <$> toCoreT UniverseSpec t
+
+        S.XWitness w
+          -> C.RWitness  <$> toCoreW sp w
+
+        _ -> C.RTerm     <$> toCoreX sp xx
 
 -- Lets -------------------------------------------------------------------------------------------
 toCoreLts :: SP -> S.Lets -> ConvertM S.Source (C.Lets SP C.Name)

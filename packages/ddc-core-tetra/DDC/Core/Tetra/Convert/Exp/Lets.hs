@@ -32,16 +32,18 @@ convertLets ctx lts
         --  Polymorphic instantiation of a top-level super.
         --  See [Note: Binding top-level supers]
         LLet (BName nBind _) (XApp _ xa xb)
-         | (xF, xsArgs) <- takeXApps1 xa xb
-         , atsArgs      <- [(a, t) | XType a t <- xsArgs]
-         , tsArgs       <- map snd atsArgs
+         | (xF, asArgs) <- takeXApps1 xa xb
+
+         , tsArgs       <- [t | RType t <- asArgs]
+         , (ksArgs, _)  <- takeTFunAllArgResult (annotType $ annotOfExp xa)
+
          , length tsArgs > 0
-         , length xsArgs == length tsArgs
+         , length tsArgs == length asArgs
          , XVar _ (UName nSuper)     <- xF
          , Map.member nSuper (contextCallable ctx)
          ->     return  ( Nothing
                         , ctx { contextSuperBinds
-                                 = Map.insert nBind (nSuper, atsArgs) 
+                                 = Map.insert nBind (nSuper, zip tsArgs ksArgs) 
                                                     (contextSuperBinds ctx) })
 
         -- Standard non-recursive let-binding.

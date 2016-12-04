@@ -38,7 +38,7 @@ convertPrimBoxing _ectx ctx xx
         --   code as for user-defined types.
         XApp a _ _
          | Just ( E.NamePrimCast E.PrimCastConvert False
-                , [XType _ tUx, XType _ tBx, xArg])     <- takeXFragApps xx
+                , [RType tUx, RType tBx, RTerm xArg])   <- takeXFragApps xx
          , isUnboxedRepType tUx
          , isNumericType    tBx
          , Just dc      <- makeBoxedPrimDataCtor tBx
@@ -57,7 +57,7 @@ convertPrimBoxing _ectx ctx xx
         --   code as for used-defined types.
         XApp a _ _
          | Just ( E.NamePrimCast E.PrimCastConvert False
-                , [XType _ tBx, XType _ tUx, xArg])     <- takeXFragApps xx
+                , [RType tBx, RType tUx, RTerm xArg])   <- takeXFragApps xx
          , isUnboxedRepType tUx
          , isNumericType    tBx
          , Just dc      <- makeBoxedPrimDataCtor tBx

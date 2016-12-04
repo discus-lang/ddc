@@ -21,27 +21,31 @@ injectX injs xx
         XPrim{}         -> xx
         XCon{}          -> xx
         XAbs  a b x     -> XAbs  a b   (injectX injs x) -- Should we error? Salt doesn't have lambdas.
-        XApp  a x1 x2   -> XApp  a     (injectX injs x1)          (injectX injs x2)
+        XApp  a x1 x2   -> XApp  a     (injectX injs x1)          (injectArg injs x2)
         XLet  a lts x   -> XLet  a     (injectLts injs lts) 
                                        (injectionsOfLets injs lts (injectX injs x))
         XCase a x alts  -> XCase a     (injectX injs x)      (map (injectA injs) alts)
         XCast a c x     -> XCast a c   (injectX injs x)
-        XType{}         -> xx
-        XWitness{}      -> xx
+
+
+injectArg :: Map A.Name (Exp a A.Name -> Exp a A.Name)
+          -> Arg a A.Name -> Arg a A.Name
+injectArg injs aa
+ = case aa of
+        RType{}         -> aa
+        RWitness{}      -> aa
+        RTerm x         -> RTerm     $ injectX injs x
+        RImplicit x     -> RImplicit $ injectX injs x
 
 
 injectA   :: Map A.Name (Exp a A.Name -> Exp a A.Name)
-          -> Alt a A.Name
-          -> Alt a A.Name
-
+          -> Alt a A.Name -> Alt a A.Name
 injectA injs (AAlt pp xx)
  = AAlt pp (injectionsOfPat injs pp (injectX injs xx))
 
 
 injectLts :: Map A.Name (Exp a A.Name -> Exp a A.Name)
-          -> Lets a A.Name
-          -> Lets a A.Name
-
+          -> Lets a A.Name -> Lets a A.Name
 injectLts injs lts
  = case lts of
         LLet b x        -> LLet b (injectX injs x)

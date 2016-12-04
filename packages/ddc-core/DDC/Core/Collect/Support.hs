@@ -148,12 +148,17 @@ instance SupportX (Exp a) where
                 s2              = support kenv tenv x2
             in  mappend s1 s2
 
-        XType _ t 
+instance SupportX (Arg a) where
+ support kenv tenv aa
+  = case aa of
+        RType t
          -> let sup = support kenv tenv t
             in  sup { supportTyConXArg  = supportTyCon sup
                     , supportSpVarXArg  = supportSpVar sup }
 
-        XWitness _ w    -> support kenv tenv w
+        RTerm x         -> support kenv tenv x
+        RImplicit x     -> support kenv tenv x
+        RWitness  w     -> support kenv tenv w
 
 
 instance SupportX (Alt a) where

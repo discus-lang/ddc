@@ -74,11 +74,11 @@ instance AnonymizeX (Exp a) where
 
         XAbs a (MType b) x
          -> let (kstack', b')   = pushAnonymizeBindT kstack b
-            in  XAbs a (MType b') (anonymizeWithX keep kstack' tstack x)
+            in  XAbs a (MType b')     (anonymizeWithX keep kstack' tstack x)
 
         XAbs a (MTerm b) x
          -> let (tstack', b')   = pushAnonymizeBindX keep kstack tstack b
-            in  XAbs a (MTerm b') (anonymizeWithX keep kstack tstack' x)
+            in  XAbs a (MTerm b')     (anonymizeWithX keep kstack tstack' x)
 
         XAbs a (MImplicit b) x
          -> let (tstack', b')   = pushAnonymizeBindX keep kstack tstack b
@@ -91,8 +91,15 @@ instance AnonymizeX (Exp a) where
 
         XCase a x alts  -> XCase a    (down x) (map down alts)
         XCast a c x     -> XCast a    (down c) (down x)
-        XType a t       -> XType a    (anonymizeWithT kstack t)
-        XWitness a w    -> XWitness a (down w)
+
+
+instance AnonymizeX (Arg a) where
+ anonymizeWithX keep kstack tstack aa
+  = case aa of
+        RType t         -> RType     (anonymizeWithT kstack t)
+        RTerm x         -> RTerm     (anonymizeWithX keep kstack tstack x)
+        RImplicit x     -> RImplicit (anonymizeWithX keep kstack tstack x)
+        RWitness  w     -> RWitness  (anonymizeWithX keep kstack tstack w)
 
 
 instance AnonymizeX (Cast a) where

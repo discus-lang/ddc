@@ -214,25 +214,25 @@ lambdasX p c xx
 
 
         -- Eta-expand partially applied data contructors.
-        XApp a x1 x2
-         | (XCon _a (DaConBound nCon), xsArg)   <- takeXApps1 x1 x2
+        XApp a x1 a2
+         | (XCon _a (DaConBound nCon), xsArg)   <- takeXApps1 x1 a2
          -> do
                 mResult <- etaXConApp p c a x1 nCon xsArg
                 case mResult of
                  Just result    
                    -> return result
 
-                 _ ->  do (x1', r1) <- enterAppLeft  c a x1 x2 (lambdasX p)
-                          (x2', r2) <- enterAppRight c a x1 x2 (lambdasX p)
-                          return  ( XApp a x1' x2'
+                 _ ->  do (x1', r1) <- enterAppLeft  c a x1 a2 (lambdasX p)
+                          (a2', r2) <- enterAppRight c a x1 a2 (lambdasR p)
+                          return  ( XApp a x1' a2'
                                   , mappend r1 r2)
 
 
         -- Boilerplate.
-        XApp a x1 x2
-         -> do  (x1', r1)   <- enterAppLeft  c a x1 x2 (lambdasX p)
-                (x2', r2)   <- enterAppRight c a x1 x2 (lambdasX p)
-                return  ( XApp a x1' x2'
+        XApp a x1 a2
+         -> do  (x1', r1)   <- enterAppLeft  c a x1 a2 (lambdasX p)
+                (a2', r2)   <- enterAppRight c a x1 a2 (lambdasR p)
+                return  ( XApp a x1' a2'
                         , mappend r1 r2)
                 
         XLet a lts x
@@ -249,13 +249,31 @@ lambdasX p c xx
 
         XCast a cc x
          ->     lambdasCast p c a cc x
-                
-        XType{}         
-         ->     return  (xx, mempty)
 
-        XWitness{}      
-         ->     return  (xx, mempty)
 
+
+lambdasR :: (Show n, Show a, Pretty n, Pretty a, CompoundName n, Ord n)
+         => Profile n           -- ^ Language profile.
+         -> Context a n         -- ^ Enclosing context.
+         -> Arg a n             -- ^ Expression to perform lambda lifting on.
+         -> S ( Arg a n         --   Replacement argument.
+              , Result a n)     --   Lifter result.
+
+lambdasR p c aa
+ = case aa of
+        RType t
+         ->     return  (RType t, mempty)
+
+        RTerm x         
+         -> do  (x', result)    <- lambdasX p c x
+                return  (RTerm x', result)
+
+        RImplicit x         
+         -> do  (x', result)    <- lambdasX p c x
+                return  (RImplicit x', result)
+
+        RWitness w
+         ->     return  (RWitness w, mempty)
 
 -- Lets -------------------------------------------------------------------------------------------
 -- | Perform lambda lifting in some let-bindings.
@@ -442,7 +460,7 @@ etaXConApp
         -> a            -- ^ Annotation from constructor applicatin onde.
         -> Exp a n      -- ^ Expression holding constructor.
         -> n            -- ^ Name of constructor.
-        -> [Exp a n]    -- ^ Arguments to constructor.
+        -> [Arg a n]    -- ^ Arguments to constructor.
         -> S  (Maybe ( Exp a n
                      , Result a n))
 
@@ -487,7 +505,7 @@ etaXConApp !p !c !a !x1 !nCon !xsArg
                         | t <- DataDef.dataCtorFieldTypes dataCtor ]
 
         -- Transform all the arguments.
-        let downArg xArg = enterAppRight c a x1 xArg (lambdasX p)
+        let downArg xArg = enterAppRight c a x1 xArg (lambdasR p)
         (xsArg', rs)    <- fmap unzip $ mapM downArg xsArg
 
         -- Build application of our new abstraction.
@@ -495,8 +513,8 @@ etaXConApp !p !c !a !x1 !nCon !xsArg
                 $ ( xApps a
                         ( xLAMs a bsT $ xLams a bsX 
                                 $  xApps a (XCon a (DaConBound nCon))
-                                $  [ XType a (TVar u) | u <- usT]
-                                ++ [ XVar a u         | u <- usX])
+                                $  [ RType (TVar u)    | u <- usT]
+                                ++ [ RTerm (XVar  a u) | u <- usX])
                         xsArg'
 
                 , mconcat (Result True [] : rs))

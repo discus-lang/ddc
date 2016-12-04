@@ -189,7 +189,7 @@ instance Complies Exp where
                 return (tUsed, vUsed')
        
         -- application --------------------------
-        XApp _ x1 (XType _ t2)
+        XApp _ x1 (RType t2)
          | profileTypeIsUnboxed profile t2
          , Nothing      <- takeXFragApps xx
          -> throw $ ErrorUnsupported UnboxedInstantiation
@@ -198,11 +198,18 @@ instance Complies Exp where
          -> do  checkFunction profile x1
                 compliesX     profile kenv tenv (addArg context) x1
 
-        XApp _ x1 XWitness{}
+        XApp _ x1 RWitness{}
          -> do  checkFunction profile x1
                 compliesX     profile kenv tenv (addArg context) x1
 
-        XApp _ x1 x2
+        XApp _ x1 (RTerm x2)
+         -> do  checkFunction profile x1
+                (tUsed1, vUsed1) <- compliesX profile kenv tenv (addArg context) x1
+                (tUsed2, vUsed2) <- compliesX profile kenv tenv context x2
+                return  ( Set.union tUsed1 tUsed2
+                        , Set.union vUsed1 vUsed2)
+
+        XApp _ x1 (RImplicit x2)
          -> do  checkFunction profile x1
                 (tUsed1, vUsed1) <- compliesX profile kenv tenv (addArg context) x1
                 (tUsed2, vUsed2) <- compliesX profile kenv tenv context x2
@@ -258,9 +265,6 @@ instance Complies Exp where
         -- cast ---------------------------------
         XCast _ _ x     -> compliesX profile kenv tenv (reset context) x
 
-        -- type and witness ---------------------
-        XType    _ t    -> throw $ ErrorNakedType    t
-        XWitness _ w    -> throw $ ErrorNakedWitness w
 
 
 instance Complies Alt where

@@ -8,6 +8,7 @@ import DDC.Core.Tetra.Convert.Boxing
 import DDC.Core.Tetra.Convert.Error
 import DDC.Core.Pretty
 import DDC.Core.Exp.Annot
+import Data.Maybe
 import DDC.Core.Check                   (AnTEC(..))
 import DDC.Control.Check                (throw)
 import qualified DDC.Core.Tetra.Prim    as E
@@ -30,32 +31,32 @@ convertPrimArith _ectx ctx xx
         ---------------------------------------------------
         -- Saturated application of a primitive operator.
         XApp a xa xb
-         | (x1, xsArgs)               <- takeXApps1 xa xb
+         | (x1, asArgs)               <- takeXApps1 xa xb
          , XVar _ (UPrim nPrim tPrim) <- x1
 
          -- All the value arguments have representatable types.
          , all isSomeRepType
                 $  map (annotType . annotOfExp)
-                $  filter (not . isXType) xsArgs
+                $  mapMaybe takeExpFromArg asArgs
 
          -- The result is representable.
          , isSomeRepType (annotType a)
 
          -> Just $ if -- Check that the primop is saturated.
-             length xsArgs == arityOfType tPrim
+             length asArgs == arityOfType tPrim
              then do
                 x1'     <- downArgX x1
-                xsArgs' <- mapM downPrimArgX xsArgs
+                asArgs' <- mapM downPrimArgX asArgs
                 
                 case nPrim of
                  E.NamePrimArith o False
                   |  elem o [ E.PrimArithEq, E.PrimArithNeq
                             , E.PrimArithGt, E.PrimArithLt
                             , E.PrimArithLe, E.PrimArithGe ]
-                  ,  [t1, z1, z2] <- xsArgs'
+                  ,  [t1, z1, z2] <- asArgs'
                   ->  return $ xApps (annotTail a) x1' [t1, z1, z2]
 
-                 _ -> return $ xApps (annotTail a) x1' xsArgs'
+                 _ -> return $ xApps (annotTail a) x1' asArgs'
 
              else throw $ ErrorUnsupported xx
                    $ text "Partial application of primitive operators is not supported."
@@ -71,20 +72,27 @@ convertPrimArith _ectx ctx xx
 convertPrimArgX 
         :: Context a
         -> ExpContext                   -- ^ What context we're converting in.
-        -> Exp (AnTEC a E.Name) E.Name  -- ^ Expression to convert.
-        -> ConvertM a (Exp a A.Name)
+        -> Arg (AnTEC a E.Name) E.Name  -- ^ Expression to convert.
+        -> ConvertM a (Arg a A.Name)
 
-convertPrimArgX ctx ectx xx
+convertPrimArgX ctx ectx aa
  = let  convertX = contextConvertExp ctx
-   in case xx of
-        XType a t
+   in case aa of
+        RType t
          -> do  t'      <- convertDataPrimitiveT t
-                return  $ XType (annotTail a) t'
+                return  $ RType t'
 
-        XWitness{}
-         -> throw $ ErrorUnsupported xx
+        RWitness{}
+         -> throw $ ErrorUnsupportedArg aa
                   $ text "Witness expressions are not part of the Tetra language."
 
-        _ -> convertX ectx ctx xx
+        RTerm x
+         -> do  x'      <- convertX ectx ctx x
+                return  $ RTerm x'
+
+        RImplicit x
+         -> do  x'      <- convertX ectx ctx x
+                return  $ RImplicit x'
+
 
 

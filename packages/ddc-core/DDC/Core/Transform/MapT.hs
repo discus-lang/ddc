@@ -29,8 +29,6 @@ instance Monad m => MapT m (Exp a) where
         XLet  a lts x   -> XLet     a <$> down lts <*> down x
         XCase a x alts  -> XCase    a <$> down x   <*> mapM down alts
         XCast a cc x    -> XCast    a <$> down cc  <*> down x
-        XType a t       -> XType    a <$> f t
-        XWitness a w    -> XWitness a <$> down w
 
 
 instance Monad m => MapT m Param where
@@ -40,6 +38,16 @@ instance Monad m => MapT m Param where
         MType b         -> MType     <$> mapT f b
         MTerm b         -> MTerm     <$> mapT f b
         MImplicit b     -> MImplicit <$> mapT f b
+
+
+instance Monad m => MapT m (Arg a) where
+ mapT :: forall n. MAPT m (Arg a) n
+ mapT f aa
+  = case aa of
+        RType t         -> RType     <$> f t
+        RTerm x         -> RTerm     <$> mapT f x
+        RImplicit x     -> RImplicit <$> mapT f x
+        RWitness  w     -> RWitness  <$> mapT f w
 
 
 instance Monad m => MapT m (Lets a) where

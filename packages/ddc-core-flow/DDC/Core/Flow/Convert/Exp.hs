@@ -20,6 +20,7 @@ import qualified DDC.Core.Salt.Env             as T
 import Control.Monad
 
 
+---------------------------------------------------------------------------------------------------
 convertX :: Exp a F.Name -> ConvertM (Exp a T.Name)
 convertX xx
  -- Remove any /\(k : Rate). They are not needed any more.
@@ -30,64 +31,72 @@ convertX xx
  -- Operators that just need a region added as first argument
  | Just (op, xs@(_:_)) <- takeXFragApps xx
  = case op of
+
     F.NameOpStore F.OpStoreNew
-     | [ ty, val ] <- xs
-     , Just tY     <- takeXType ty
+     | [ RType tY, RTerm val ] <- xs
      -> do  tY'    <- convertType tY
-            val'   <- convertX val
+            val'   <- convertX    val
             return $ allocRef anno tY' val'
 
+
     F.NameOpStore F.OpStoreRead
-     | [ ty, ref ] <- xs
-     -> do  ty'  <- convertX ty
-            ref' <- convertX ref
+     | [ RType ty, RTerm ref ] <- xs
+     -> do  ty'  <- convertType ty
+            ref' <- convertX    ref
 
             return $ mk (T.PrimStore T.PrimStorePeek)
-                     [ xRTop anno, ty', ref', T.xNat anno 0 ]
+                [ RType rTop, RType ty'
+                , RTerm ref', RTerm $ T.xNat anno 0 ]
+
 
     F.NameOpStore F.OpStoreWrite
-     | [ ty, ref, val ] <- xs
-     -> do  ty'  <- convertX ty
-            ref' <- convertX ref
-            val' <- convertX val
+     | [ RType ty, RTerm ref, RTerm val ] <- xs
+     -> do  ty'  <- convertType ty
+            ref' <- convertX    ref
+            val' <- convertX    val
 
             return
              $ XLet anno
                     (LLet (BNone T.tVoid)
-                    $  mk (T.PrimStore T.PrimStorePoke)
-                       [ xRTop anno, ty', ref', T.xNat anno 0, val' ])
+                    $ mk (T.PrimStore T.PrimStorePoke)
+                       [ RType rTop, RType ty'
+                       , RTerm ref', RTerm $ T.xNat anno 0, RTerm val' ])
                (XCon anno $ DaConUnit)
 
 
     -- natOfRateNat becomes a noop, as RateNats become Nats.
     F.NameOpConcrete F.OpConcreteNatOfRateNat
-     | [ _r, n ] <- xs
+     | [RType _r, RTerm n ] <- xs
      -> convertX n
 
+
     F.NameOpConcrete (F.OpConcreteNext 1)
-     | [t, _r, v, i] <- xs
-     -> do  v'      <- convertX v
-            i'      <- convertX i
-            t'      <- convertX t
+     | [RType t, RType _r, RTerm v, RTerm i] <- xs
+     -> do  v'      <- convertX    v
+            i'      <- convertX    i
+            t'      <- convertType t
             return $ mk (T.PrimStore T.PrimStorePeek)
-                     [ xRTop anno, t', v'
-                     , mk (T.PrimArith T.PrimArithMul)
-                       [ XType anno T.tNat, i'
-                       , mk (T.PrimStore T.PrimStoreSize) [t'] ] ]
+                     [ RType rTop
+                     , RType t'
+                     , RTerm v'
+                     , RTerm $ mk (T.PrimArith T.PrimArithMul)
+                                [ RType T.tNat
+                                , RTerm i'
+                                , RTerm $ mk (T.PrimStore T.PrimStoreSize) [RType t'] ] ]
+
 
     -- vlength# [t] vec
     -- becomes a projection
     F.NameOpVector F.OpVectorLength
-     | [xt, v] <- xs
-     , Just t               <- takeXType xt
+     | [RType t, RTerm v] <- xs
      -> do  t'      <- convertType t
             v'      <- convertX    v
             return $ xVecLen t' v'
 
+
     -- vwrite# [t] buf ix val
     F.NameOpStore (F.OpStoreWriteVector 1)
-     | [xt, buf, ix, val] <- xs
-     , Just t             <- takeXType xt
+     | [RType t, RTerm buf, RTerm ix, RTerm val] <- xs
      -> do  t'      <- convertType t
             buf'    <- convertX    buf
             ix'     <- convertX    ix
@@ -97,30 +106,29 @@ convertX xx
              $ XLet anno
                     (LLet (BNone T.tVoid)
                     $  mk (T.PrimStore T.PrimStorePoke)
-                       [ xRTop anno
-                       , XType anno t'
-                       , buf'
-                       , mk (T.PrimArith T.PrimArithMul)
-                         [ XType anno T.tNat, ix'
-                         , mk (T.PrimStore T.PrimStoreSize) [XType anno t'] ]
-                       , val' ])
+                       [ RType rTop
+                       , RType t'
+                       , RTerm buf'
+                       , RTerm $ mk (T.PrimArith T.PrimArithMul)
+                                  [ RType T.tNat
+                                  , RTerm ix'
+                                  , RTerm $ mk (T.PrimStore T.PrimStoreSize) [RType t'] ]
+                       , RTerm val' ])
                (XCon anno DaConUnit)
+
 
     -- vbuf# [t] vec
     F.NameOpStore F.OpStoreBufOfVector
-     | [xt, vec]          <- xs
-     , Just t             <- takeXType xt
+     | [RType t, RTerm vec] <- xs
      -> do  t'      <- convertType t
             vec'    <- convertX    vec
-
             return
              $ xVecPtr t' vec'
 
 
     -- vnew# [t] len
     F.NameOpStore F.OpStoreNewVector
-     | [xt, sz] <- xs
-     , Just t   <- takeXType xt
+     | [RType t, RTerm sz] <- xs
      -> do  t'      <- convertType t
             sz'     <- convertX    sz
 
@@ -129,10 +137,10 @@ convertX xx
                 tup  = allocTupleN anno [(tRef rTop T.tNat, lenR), (T.tPtr rTop t', datR)]
             return tup
 
+
     -- vtrunc# [t] len vec
     F.NameOpStore F.OpStoreTruncVector
-     | [xt, sz, v]  <- xs
-     , Just t       <- takeXType xt
+     | [RType t, RTerm sz, RTerm v]  <- xs
      -> do  _t'     <- convertType t
             sz'     <- convertX    sz
             v'      <- convertX    v
@@ -141,18 +149,17 @@ convertX xx
              $ XLet anno
                 (LLet (BNone T.tVoid)
                     $  mk (T.PrimStore T.PrimStorePoke)
-                       [ xRTop anno
-                       , XType anno T.tNat
-                       , projTuple anno v' 0 (T.tPtr rTop T.tNat)
-                       , T.xNat anno 0
-                       , sz' ])
+                       [ RType rTop 
+                       , RType T.tNat
+                       , RTerm $ projTuple anno v' 0 (T.tPtr rTop T.tNat)
+                       , RTerm $ T.xNat anno 0
+                       , RTerm $ sz' ])
                (XCon anno $ DaConUnit)
 
     F.NameOpSeries F.OpSeriesRunProcess
-     | [proc]               <- xs
+     | [RTerm proc] <- xs
      -> do  proc'   <- convertX proc
-            return
-               $ XApp anno proc' $ XCon anno $ DaConUnit
+            return  $  XApp anno proc' (RTerm (XCon anno $ DaConUnit))
 
 {-
     -- runKernelN# [ty1]...[tyN] v1...vN proc
@@ -187,12 +194,12 @@ convertX xx
     (DaConPrim (F.NameDaConFlow (F.DaConFlowTuple n)) _
     , args)                                             <- takeXConApps xx
  , length args == n * 2
- , (xts, xs)            <- splitAt n args
- , Just ts              <- mapM takeXType xts
+ , (xts, as)            <- splitAt n args
+ , Just ts              <- mapM takeRType xts
  = do   ts' <- mapM convertType ts
-        xs' <- mapM convertX    xs
+        as' <- mapM convertArg  as
         return
-         $ allocTupleN anno (ts' `zip` xs')
+         $ allocTupleN anno (ts' `zip` [x | RTerm x <- as'])
 
  | Just (f, args@(_:_)) <- takeXApps xx
  = convertApp f args
@@ -215,8 +222,10 @@ convertX xx
  = case xx of
    XVar a b
     -> XVar a <$> convertBound b
+
    XPrim a b
     -> return $ XPrim a b
+
    XCon a c
     -> XCon a <$> convertDaCon c
 
@@ -230,39 +239,52 @@ convertX xx
     -> XAbs a <$> (fmap MImplicit $ convertBind  b) <*> convertX x
 
    XApp a p q
-    -> XApp a <$> convertX     p <*> convertX q
+    -> XApp a <$> convertX     p <*> convertArg q
+
    XLet a ls x
     -> let bs = valwitBindsOfLets ls
        in  withSuspFns bs $ XLet a <$> convertLets ls <*> convertX x
+
    XCase a x as
     -> XCase a<$> convertX     x <*> mapM convertAlt as
+
    XCast a c x
     -> XCast a<$> convertCast  c <*> convertX x
-   XType a t
-    -> XType a<$> convertType  t
-   XWitness a w
-    -> XWitness a <$> convertWit w
+
  where
   anno = annotOfExp xx
 
   mk = prim anno
+
 
 prim anno n args
  = let t = T.typeOfPrimOp n
    in      xApps anno (XVar anno (UPrim (T.NamePrimOp n) t)) args
 
 
-convertApp :: Exp a F.Name -> [Exp a F.Name] -> ConvertM (Exp a T.Name)
+---------------------------------------------------------------------------------------------------
+convertArg :: Arg a F.Name -> ConvertM (Arg a T.Name)
+convertArg aa
+ = case aa of
+        RType t         -> RType     <$> convertType t
+        RWitness w      -> RWitness  <$> convertWit w
+        RTerm x         -> RTerm     <$> convertX x
+        RImplicit x     -> RImplicit <$> convertX x
+
+
+---------------------------------------------------------------------------------------------------
+convertApp :: Exp a F.Name -> [Arg a F.Name] -> ConvertM (Exp a T.Name)
 convertApp f args
  = do   f'      <- convertX f
         -- filter out any type args that reference deleted XLAMs
         let checkT arg
-             | XType _ (TVar (UName n)) <- arg
+             | RType (TVar (UName n)) <- arg
              = not <$> isRateXLAM n
              | otherwise
              = return True
+
         args'   <-  filterM checkT args
-                >>= mapM convertX
+                >>= mapM convertArg
 
         let checkF
              | XVar _ (UName n) <- f
@@ -277,6 +299,8 @@ convertApp f args
  where
   anno = annotOfExp f
 
+
+---------------------------------------------------------------------------------------------------
 convertDaCon 
         :: DaCon F.Name (Type F.Name)
         -> ConvertM (DaCon T.Name (Type T.Name))
@@ -291,6 +315,8 @@ convertDaCon dd
    DaConBound n
     -> DaConBound <$> convertName n
 
+
+---------------------------------------------------------------------------------------------------
 convertLets :: Lets a F.Name -> ConvertM (Lets a T.Name)
 convertLets ll
  = case ll of
@@ -315,12 +341,16 @@ convertLets ll
   both f g
    = \(a,b) -> (,) <$> f a <*> g b
 
+
+---------------------------------------------------------------------------------------------------
 convertAlt  :: Alt a F.Name -> ConvertM (Alt a T.Name)
 convertAlt aa
  = case aa of
    AAlt p x
     -> AAlt <$> convertPat p <*> convertX x
 
+
+---------------------------------------------------------------------------------------------------
 convertPat :: Pat F.Name -> ConvertM (Pat T.Name)
 convertPat pp
  = case pp of
@@ -329,6 +359,8 @@ convertPat pp
    PData dc bs
     -> PData <$> convertDaCon dc <*> mapM convertBind bs
 
+
+---------------------------------------------------------------------------------------------------
 convertCast :: Cast a F.Name -> ConvertM (Cast a T.Name)
 convertCast cc
  = case cc of
@@ -345,11 +377,16 @@ convertCast cc
     -> return $ CastRun
 
 
+
+---------------------------------------------------------------------------------------------------
 convertWit :: Witness a F.Name -> ConvertM (Witness a T.Name)
 convertWit = error "ddc-core-flow.convertWit: cannot convert witness from core flow program"
 
 
--- | When replacing @/\(b : Rate). x@ with @x@, if @b@ is a de bruijn index then any type vars in @x@ must be lowered.
+
+---------------------------------------------------------------------------------------------------
+-- | When replacing @/\(b : Rate). x@ with @x@, if @b@ is a de bruijn index 
+--   then any type vars in @x@ must be lowered.
 -- @b@ must not be mentioned in @x@.
 removeXLAM :: Bind F.Name -> Exp a T.Name -> Exp a T.Name
 removeXLAM b t
@@ -360,17 +397,13 @@ removeXLAM b t
     ->          t
 
 
--- | Type of the top-level region.
-xRTop :: a -> Exp a T.Name
-xRTop a = XType a rTop
-
 -- | Get the Nat# of length from a Vector
 xVecLen :: Type T.Name -> Exp a T.Name -> Exp a T.Name
 xVecLen _t x
  = prim anno (T.PrimStore T.PrimStorePeek)
- [ xRTop anno, XType anno T.tNat
- , projTuple anno x 0 (T.tPtr rTop T.tNat)
- , T.xNat anno 0 ]
+        [ RType rTop, RType T.tNat
+        , RTerm $ projTuple anno x 0 (T.tPtr rTop T.tNat)
+        , RTerm $ T.xNat anno 0 ]
  where
   anno = annotOfExp x
 
@@ -381,35 +414,45 @@ xVecPtr t x
  where
   anno = annotOfExp x
 
+
 allocRef :: a -> Type T.Name -> Exp a T.Name -> Exp a T.Name
 allocRef anno tY val
- = let ty  = XType anno tY
+ = let 
+       sz   = prim anno (T.PrimStore T.PrimStoreSize)  
+                [RType tY]
 
-       sz   = prim anno (T.PrimStore T.PrimStoreSize)  [ty]
-       addr = prim anno (T.PrimStore T.PrimStoreAlloc) [sz]
+       addr = prim anno (T.PrimStore T.PrimStoreAlloc) 
+                [RTerm sz]
+
        ptr  = prim anno (T.PrimStore T.PrimStoreMakePtr)
-                 [ xRTop anno, ty, addr ]
+                [RType rTop, RType tY, RTerm addr]
                 
        ll   = LLet (BAnon $ T.tPtr rTop tY)
                    ptr
 
        ptr' = XVar anno $ UIx 0
+
        poke = prim anno (T.PrimStore T.PrimStorePoke)
-               [ xRTop anno, ty, ptr', T.xNat anno 0, val ]
+               [ RType rTop, RType tY
+               , RTerm ptr', RTerm $ T.xNat anno 0, RTerm val ]
+
    in  XLet anno ll
      $ XLet anno (LLet (BNone T.tVoid) poke) 
        ptr'
 
+
 allocPtr :: a -> Type T.Name -> Exp a T.Name -> Exp a T.Name
 allocPtr anno tY elts
- = let ty  = XType anno tY
+ = let 
+       sz   = prim anno (T.PrimStore T.PrimStoreSize)
+                [ RType tY ]
 
-       sz   = prim anno (T.PrimStore T.PrimStoreSize)  [ty]
        addr = prim anno (T.PrimStore T.PrimStoreAlloc)
-                 [ prim anno (T.PrimArith T.PrimArithMul)
-                    [ XType anno T.tNat, elts, sz] ]
+                [ RTerm $ prim anno (T.PrimArith T.PrimArithMul)
+                    [ RType T.tNat, RTerm elts, RTerm sz] ]
+
        ptr  = prim anno (T.PrimStore T.PrimStoreMakePtr)
-                 [ xRTop anno, ty, addr ]
+                [ RType rTop, RType tY, RTerm addr ]
                 
    in  ptr
 
@@ -436,8 +479,8 @@ tryunbox anno t x
  = x
  | otherwise
  = prim anno (T.PrimStore T.PrimStorePeek)
- [ xRTop anno, XType anno t
- , x, T.xNat anno 0 ]
+        [ RType rTop, RType t
+        , RTerm x,    RTerm $ T.xNat anno 0 ]
 
 projTuple :: a -> Exp a T.Name -> Integer -> Type T.Name -> Exp a T.Name
 projTuple anno x i t
@@ -445,13 +488,16 @@ projTuple anno x i t
  in tryunbox anno t
   $ castPtr  anno t' T.tObj
   $ xApps    anno (XVar anno $ UName $ T.NameVar "getFieldOfBoxed")
-    [ xRTop anno, XType anno $ T.tPtr rTop T.tObj, x, T.xNat anno i ]
+        [ RType rTop, RType $ T.tPtr rTop T.tObj
+        , RTerm x,    RTerm $ T.xNat anno i ]
 
 
 allocTupleN :: a -> [(Type T.Name, Exp a T.Name)] -> Exp a T.Name
 allocTupleN anno txs
  = let tup  = xApps anno (XVar anno $ UName $ T.NameVar "allocBoxed")
-              [ xRTop anno, T.xTag anno 0, T.xNat anno (fromIntegral $ length txs) ]
+                [ RType rTop 
+                , RTerm $ T.xTag anno 0
+                , RTerm $ T.xNat anno (fromIntegral $ length txs) ]
 
        tup' = XVar anno $ UIx 0
     
@@ -459,8 +505,9 @@ allocTupleN anno txs
         = let t' = unptr t
               x' = trybox anno t x
           in xApps anno (XVar anno $ UName $ T.NameVar "setFieldOfBoxed")
-              [ xRTop anno, XType anno (T.tPtr rTop T.tObj), tup', T.xNat anno i
-              , castPtr anno T.tObj t' x' ]
+              [ RType rTop, RType (T.tPtr rTop T.tObj)
+              , RTerm tup', RTerm (T.xNat anno i)
+              , RTerm (castPtr anno T.tObj t' x') ]
                 
    in  XLet anno (LLet (BAnon $ T.tPtr rTop T.tObj) tup)
      $ xLets anno
@@ -471,5 +518,6 @@ allocTupleN anno txs
 castPtr :: a -> Type T.Name -> Type T.Name -> Exp a T.Name -> Exp a T.Name
 castPtr anno to from x
  = prim anno (T.PrimStore T.PrimStoreCastPtr)
-    [ xRTop anno, XType anno to, XType anno from, x ]
+        [ RType rTop, RType to, RType from, RTerm x ]
+
 

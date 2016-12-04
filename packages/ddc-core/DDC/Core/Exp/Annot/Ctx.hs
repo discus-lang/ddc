@@ -32,7 +32,7 @@ data Ctx a n
 
         -- | Left of an application.
         | CtxAppLeft    !(Ctx a n) !a
-                        !(Exp a n)
+                        !(Arg a n)
 
         -- | Right of an application.
         | CtxAppRight   !(Ctx a n) !a

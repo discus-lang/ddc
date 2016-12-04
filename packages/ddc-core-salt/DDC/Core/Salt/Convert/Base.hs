@@ -75,7 +75,7 @@ data Error a
         -- | An invalid primitive call
         | ErrorPrimCallInvalid
         { errorPrimOp   :: PrimOp
-        , errorArgs     :: [Exp a Name]}
+        , errorArgs     :: [Arg a Name]}
         deriving Show
 
 

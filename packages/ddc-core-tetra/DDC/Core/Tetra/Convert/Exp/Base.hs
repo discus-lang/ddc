@@ -72,7 +72,7 @@ data Context a
           --   Maps the left hand variable to the right hand one, eg f -> g,
           --   along with its unpacked type arguments.
         , contextSuperBinds     
-                :: Map E.Name (E.Name, [(AnTEC a E.Name, Type E.Name)])
+                :: Map E.Name (E.Name, [(Type E.Name, Kind E.Name)])
 
           -- Functions to convert the various parts of the AST.
           -- We tie the recursive knot though this `Context` type so that
@@ -151,20 +151,20 @@ xConvert :: a -> Type A.Name -> Type A.Name -> Exp a A.Name -> Exp a A.Name
 xConvert a t1 t2 x1
         = xApps a (XVar a  (UPrim (A.NamePrimOp $ A.PrimCast $ A.PrimCastConvert)
                                   (A.typeOfPrimCast A.PrimCastConvert)))
-                  [ XType a t1, XType a t2, x1 ]
+                  [ RType t1, RType t2, RTerm x1 ]
 
 
 xTakePtr :: a -> Type A.Name -> Type A.Name -> Exp a A.Name -> Exp a A.Name
 xTakePtr a tR tA x1
         = xApps a (XVar a  (UPrim (A.NamePrimOp $ A.PrimStore A.PrimStoreTakePtr)
                                   (A.typeOfPrimStore A.PrimStoreTakePtr)))
-                  [ XType a tR, XType a tA, x1 ]
+                  [ RType tR, RType tA, RTerm x1 ]
 
 
 xMakePtr :: a -> Type A.Name -> Type A.Name -> Exp a A.Name -> Exp a A.Name
 xMakePtr a tR tA x1
         = xApps a (XVar a  (UPrim (A.NamePrimOp $ A.PrimStore A.PrimStoreMakePtr)
                                   (A.typeOfPrimStore A.PrimStoreMakePtr)))
-                  [ XType a tR, XType a tA, x1 ]
+                  [ RType tR, RType tA, RTerm x1 ]
 
 
