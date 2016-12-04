@@ -186,20 +186,20 @@ bindLocalB ctx b
 
 
 -- | Add the binder for a thing to the context.
-bindLocalA  :: Context -> A.Abs -> ConvertM (Context, Maybe Var)
+bindLocalA  :: Context -> A.Param -> ConvertM (Context, Maybe Var)
 bindLocalA ctx aa
  = case aa of
-        A.ALAM b
+        A.MType b
          -> return ( ctx { contextKindEnv = Env.extend b $ contextKindEnv ctx }
                    , Nothing)
 
-        A.ALam b
+        A.MTerm b
          -> do  (ctx', v')      <- bindLocalB ctx b
                 return (ctx', Just v')
 
 
 -- | Add the binders for some things to the context.
-bindLocalAs :: Context -> [A.Abs] -> ConvertM (Context, [Var])
+bindLocalAs :: Context -> [A.Param] -> ConvertM (Context, [Var])
 bindLocalAs ctx []      = return (ctx, [])
 bindLocalAs ctx (a : as)
  = do   (ctx',  mv)     <- bindLocalA  ctx a

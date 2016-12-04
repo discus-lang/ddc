@@ -8,7 +8,7 @@ module DDC.Core.Exp.Generic
         , GPrim
 
         , GExp          (..)
-        , GAbs          (..)
+        , GParam        (..)
         , GArg          (..)
         , GLets         (..)
         , GAlt          (..)

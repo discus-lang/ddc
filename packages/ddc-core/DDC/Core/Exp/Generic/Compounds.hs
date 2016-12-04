@@ -31,14 +31,14 @@ import Data.Maybe
 
 -- Abstractions ---------------------------------------------------------------
 -- | Make some nested abstractions.
-makeXAbs  :: [GAbs l] -> GExp l -> GExp l
+makeXAbs  :: [GParam l] -> GExp l -> GExp l
 makeXAbs as xx
  = foldr XAbs xx as
 
 
 -- | Split type and value/witness abstractions from the front of an expression,
 --   or `Nothing` if there aren't any.
-takeXAbs  :: GExp l -> Maybe ([GAbs l], GExp l)
+takeXAbs  :: GExp l -> Maybe ([GParam l], GExp l)
 takeXAbs xx
  = let  go as (XAbs a x)   = go (a : as) x
         go as x            = (reverse as, x)

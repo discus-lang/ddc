@@ -26,9 +26,8 @@ instance (GBind l ~ T.Bind l, GBound l ~ T.Bound l)
 
         XApp x1 a2              -> slurpBindTree x1 ++ slurpBindTree a2
 
-        XAbs (ALAM b) x         -> [bindDefT BindLAM [b] [x]]
-
-        XAbs (ALam b) x         -> [bindDefX BindLam [b] [x]]      
+        XAbs (MType b) x        -> [bindDefT BindLAM [b] [x]]
+        XAbs (MTerm b) x        -> [bindDefX BindLam [b] [x]]      
 
         XLet (LLet b x1) x2
          -> slurpBindTree x1

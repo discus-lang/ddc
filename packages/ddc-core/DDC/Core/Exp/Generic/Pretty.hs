@@ -56,7 +56,7 @@ instance PrettyLanguage l => Pretty (GExp l) where
         XCon   dc       -> ppr dc
         XPrim  p        -> ppr p
         
-        XAbs (ALAM b) xBody
+        XAbs (MType b) xBody
          -> pprParen' (d > 1)
                 $  text "/\\" 
                 <> ppr b
@@ -66,7 +66,7 @@ instance PrettyLanguage l => Pretty (GExp l) where
                      else    line)
                 <> pprX xBody
 
-        XAbs (ALam b) xBody
+        XAbs (MTerm b) xBody
          -> pprParen' (d > 1)
                 $  text "\\"
                 <> ppr b

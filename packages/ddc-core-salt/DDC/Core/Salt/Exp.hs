@@ -6,7 +6,7 @@ module DDC.Core.Salt.Exp
         , ErrorFromAnnot (..)
 
         , Annot, Bind, Bound, Prim
-        , Exp, Abs, Arg, Lets, Alt, Pat, Cast, Witness, WiCon
+        , Exp, Param, Arg, Lets, Alt, Pat, Cast, Witness, WiCon
         , Type)
 where
 import DDC.Core.Exp.Generic
@@ -28,7 +28,7 @@ type Bind       = G.GBind    A.Name
 type Bound      = G.GBound   A.Name
 type Prim       = G.GPrim    A.Name
 type Exp        = G.GExp     A.Name
-type Abs        = G.GAbs     A.Name
+type Param      = G.GParam   A.Name
 type Arg        = G.GArg     A.Name
 type Lets       = G.GLets    A.Name
 type Alt        = G.GAlt     A.Name
@@ -71,10 +71,10 @@ instance FromAnnot (N.Exp a A.Name) Exp where
          -> G.XCon  <$> fromAnnot c
 
         N.XAbs  _ (N.MType b) x
-         -> G.XAbs  <$> (G.ALAM <$> fromAnnot b) <*> fromAnnot x
+         -> G.XAbs  <$> (G.MType <$> fromAnnot b) <*> fromAnnot x
 
         N.XAbs  _ (N.MTerm b) x
-         -> G.XAbs  <$> (G.ALam <$> fromAnnot b) <*> fromAnnot x
+         -> G.XAbs  <$> (G.MTerm <$> fromAnnot b) <*> fromAnnot x
 
         N.XAbs  _ (N.MImplicit _) _
          -> error "ddc-core-salt.fromAnnot: not converting implict binder to salt"

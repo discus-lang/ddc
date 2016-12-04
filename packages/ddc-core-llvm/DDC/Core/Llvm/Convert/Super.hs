@@ -116,11 +116,13 @@ convertSuper _ b x
 
 ---------------------------------------------------------------------------------------------------
 -- | Erase witness bindings
-eraseWitBinds :: [A.GAbs A.Name] -> [A.GAbs A.Name]
+eraseWitBinds :: [A.GParam A.Name] -> [A.GParam A.Name]
 eraseWitBinds
  = let 
-        isBindWit (A.ALAM _) = False
-        isBindWit (A.ALam b) 
+        isBindWit (A.MType _) 
+         = False
+
+        isBindWit (A.MTerm b) 
           = case b of
                  C.BName _ t | isWitnessType t -> True
                  _                             -> False

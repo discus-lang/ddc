@@ -34,7 +34,7 @@ data GExp l
         | XVar     !(GBound l)
 
         -- | Function abstraction.
-        | XAbs     !(GAbs  l)  !(GExp l)
+        | XAbs     !(GParam l) !(GExp l)
 
         -- | Function application.
         | XApp     !(GExp  l)  !(GArg l)
@@ -53,15 +53,15 @@ data GExp l
 --
 --   This indicates what sort of object is being abstracted over in an XAbs.
 --
-data GAbs l
+data GParam l
         -- | Level-1 abstraction (spec)
-        = ALAM     !(GBind l)
+        = MType    !(GBind l)
 
         -- | Level-0 abstraction (value and witness)
-        | ALam     !(GBind l)
+        | MTerm    !(GBind l)
 
-pattern XLAM b x = XAbs (ALAM b) x
-pattern XLam b x = XAbs (ALam b) x
+pattern XLAM b x = XAbs (MType b) x
+pattern XLam b x = XAbs (MTerm b) x
 
 
 -- | Arguments.
@@ -77,7 +77,6 @@ data GArg l
 
         -- | Witness argument.
         | RWitness !(GWitness l)
-
 
 
 -- | Possibly recursive bindings.
@@ -178,7 +177,7 @@ type ShowLanguage l
           , Show (GPrim l))
 
 deriving instance ShowLanguage l => Show (GExp     l)
-deriving instance ShowLanguage l => Show (GAbs     l)
+deriving instance ShowLanguage l => Show (GParam   l)
 deriving instance ShowLanguage l => Show (GArg     l)
 deriving instance ShowLanguage l => Show (GLets    l)
 deriving instance ShowLanguage l => Show (GAlt     l)
