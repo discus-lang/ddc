@@ -34,7 +34,7 @@ cmdFlowLower
                     sourceText
          $  stageFlowLoad  configDriver source 
          [  stageFlowPrep  configDriver source
-         [  PipeCoreCheck  Flow.fragment C.Recon SinkDiscard
+         [  PipeCoreCheck  "FlowLower" Flow.fragment C.Recon SinkDiscard
          [  stageFlowLower configDriver configLower source
          [ PipeCoreOutput pmode SinkStdout , pipeFinal ]]]]
          -- [ pipeFinal ]]]]
@@ -44,7 +44,7 @@ cmdFlowLower
          = PipeCoreOutput   pmode SinkStdout 
 
          | otherwise
-         = PipeCoreCheck    Flow.fragment C.Recon SinkDiscard
+         = PipeCoreCheck    "FlowLower" Flow.fragment C.Recon SinkDiscard
          [] -- [ PipeCoreOutput   pmode SinkStdout ]
 
    in do        

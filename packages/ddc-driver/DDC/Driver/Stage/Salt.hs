@@ -68,7 +68,7 @@ stageSaltToC
 
 stageSaltToC config source sink
  = PipeCoreSimplify       Salt.fragment 0 normalizeSalt
-   [ PipeCoreCheck        Salt.fragment C.Recon SinkDiscard
+   [ PipeCoreCheck        "SaltToC" Salt.fragment C.Recon SinkDiscard
      [ PipeCoreOutput     pprDefaultMode
                           (dump config source "dump.2-salt-03-normalized.dcs")
      , PipeCoreAsSalt
@@ -93,10 +93,10 @@ stageSaltToSlottedLLVM
 
 stageSaltToSlottedLLVM config source pipesLLVM
  = PipeCoreSimplify Salt.fragment 0 normalizeSalt
-   [ PipeCoreCheck          Salt.fragment C.Recon SinkDiscard
-     [ PipeCoreOutput       pprDefaultMode
+   [ PipeCoreOutput       pprDefaultMode
                             (dump config source "dump.2-salt-03-normalized.dcs")
-     , PipeCoreAsSalt
+   , PipeCoreCheck          "SaltToSlottedLLVM" Salt.fragment C.Recon SinkDiscard
+     [ PipeCoreAsSalt
        [ PipeSaltSlotify
          [ PipeSaltOutput   (dump config source "dump.2-salt-04-slotify.dcs")
          , PipeSaltTransfer
@@ -115,10 +115,10 @@ stageSaltToUnSlottedLLVM
 
 stageSaltToUnSlottedLLVM config source pipesLLVM
  = PipeCoreSimplify Salt.fragment 0 normalizeSalt
-   [ PipeCoreCheck          Salt.fragment C.Recon SinkDiscard
-     [ PipeCoreOutput       pprDefaultMode
+   [ PipeCoreOutput         pprDefaultMode
                             (dump config source "dump.2-salt-03-normalized.dcs")
-     , PipeCoreAsSalt
+   , PipeCoreCheck          "SaltToUnslottedLLVM" Salt.fragment C.Recon SinkDiscard
+     [ PipeCoreAsSalt
        [ PipeSaltTransfer
            [ PipeSaltOutput (dump config source "dump.2-salt-04-transfer.dcs")
            , PipeSaltToLlvm (buildSpec $ configBuilder config)
@@ -144,7 +144,7 @@ stageCompileSalt config source filePath shouldLinkExe
         cPath           = replaceExtension   oPath  ".ddc.c"
    in
         PipeCoreSimplify        Salt.fragment 0 normalizeSalt
-         [ PipeCoreCheck        Salt.fragment C.Recon SinkDiscard
+         [ PipeCoreCheck        "CompileSalt" Salt.fragment C.Recon SinkDiscard
            [ PipeCoreOutput     pprDefaultMode
                                 (dump config source "dump.2-salt-03-normalized.dcs")
            , PipeCoreAsSalt

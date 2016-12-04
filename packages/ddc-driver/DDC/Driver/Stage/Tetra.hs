@@ -77,17 +77,17 @@ stageTetraToSalt
         -> PipeCore  () CE.Name
 
 stageTetraToSalt config source pipesSalt
- = pipe_lambdas
+ =  pipe_lambdas
  where
         pipe_lambdas
-         = PipeCoreCheck        BE.fragment C.Recon SinkDiscard
+         = PipeCoreCheck        "TetraToSalt/lambdas" BE.fragment C.Recon SinkDiscard
            [ PipeCoreSimplify   BE.fragment (0 :: Int) C.lambdas 
            [ PipeCoreOutput     pprDefaultMode
-                                (dump config source "dump.1-tetra-02-lambdas.dct")
+                                (dump config source "dump.1-tetra-02-lambdas.dct") 
            , pipe_curry]]
 
         pipe_curry
-         = PipeCoreCheck        BE.fragment C.Recon SinkDiscard
+         = PipeCoreCheck        "TetraToSalt/curry" BE.fragment C.Recon SinkDiscard
            [ PipeCoreAsTetra
            [ PipeTetraCurry     (dump config source "dump.1-tetra-03-unshare.dct")
            [ PipeCoreOutput     pprDefaultMode
@@ -115,11 +115,10 @@ stageTetraToSalt config source pipesSalt
 
 
         pipe_toSalt           
-         = PipeCoreCheck        BE.fragment C.Recon SinkDiscard
+         = PipeCoreCheck        "TetraToSalt/toSalt" BE.fragment C.Recon SinkDiscard
            [ PipeCoreAsTetra
              [ PipeTetraToSalt  (B.buildSpec $ configBuilder config) 
                                 (configRuntime config)
              ( PipeCoreOutput   pprDefaultMode
                                 (dump config source "dump.2-salt-00-convert.dcs")
              : pipesSalt)]]
-

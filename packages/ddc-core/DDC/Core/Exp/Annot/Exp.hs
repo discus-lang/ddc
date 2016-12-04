@@ -50,14 +50,14 @@ import Control.DeepSeq
 -- Values ---------------------------------------------------------------------
 -- | Well-typed expressions have types of kind `Data`.
 data Exp a n
-        -- | Value variable or fragment specific primitive operation.
-        = XVar     !a !(Bound n)
-
         -- | Primitive operator of the ambient calculus.
-        | XPrim    !a !Prim
+        = XPrim    !a !Prim
 
         -- | Data constructor or literal.
         | XCon     !a !(DaCon n (Type n))
+
+        -- | Value variable or fragment specific primitive operation.
+        | XVar     !a !(Bound n)
 
         -- | Function abstraction.
         | XAbs     !a !(Param n)  !(Exp a n)

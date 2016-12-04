@@ -244,8 +244,7 @@ Fragment violation when converting Tetra module to Salt module.
     Cannot convert function abstraction in this context.
     The program must be lambda-lifted before conversion.
   
-    with: λ(w: Mutable r).λ(x: Unit).
-    convert# [U# Word64#] [Word64#] 42w64##
+    with: λ(w: Mutable r).λ(x: Unit). convert# [U# Word64#] [Word64#] 42w64##
 
 
 -------------------------------------------------------------------------------
@@ -262,6 +261,8 @@ letrec {
 
 -- Error: partial application of primitive data constructors is not supported.
 Error in transformed module.
+  in stage TetraToSalt/toSalt
+  in pipe  PipeCoreCheck/Check
   ()
   Type mismatch in application.
        Function expects: U# Nat#
@@ -286,8 +287,7 @@ letrec {
   thing: Ptr# rT Obj -> Ptr# rT Obj
     = λ(_: Ptr# rT Obj).
       let x0: Ptr# rT Obj
-            = ddcAllocThunk [rT]
-                  (convert# [Addr#] [Ptr# rT Obj -> Ptr# rT Obj -> Ptr# rT Obj] thing$l$L$2) 2# 0# 0# 0# in
+            = ddcAllocThunk [rT] (convert# [Addr#] [Ptr# rT Obj -> Ptr# rT Obj -> Ptr# rT Obj] thing$l$L$2) 2# 0# 0# 0# in
       let x1: Ptr# rT Obj
             = let ^: Ptr# rT Obj
                     = ddcAllocSmall [rT] TAG0# 8# in
@@ -309,6 +309,8 @@ letrec {
 
 -- Error: partial application of primitive operators is not supported.
 Error in transformed module.
+  in stage TetraToSalt/toSalt
+  in pipe  PipeCoreCheck/Check
   ()
   Type mismatch in application.
        Function expects: U# Nat#

@@ -31,10 +31,10 @@ cmdFlowMelt config source sourceText
                     (lineStartOfSource source)
                     sourceText
          $ stageFlowLoad  config source 
-         [ PipeCoreCheck  fragment C.Recon SinkDiscard
+         [ PipeCoreCheck  "FlowMelt" fragment C.Recon SinkDiscard
          [ PipeCoreAsFlow 
          [ PipeFlowMelt
-         [ PipeCoreCheck  fragment C.Recon SinkDiscard
+         [ PipeCoreCheck  "FlowMelt" fragment C.Recon SinkDiscard
          [ PipeCoreOutput pmode SinkStdout ]]]]]
 
    in do

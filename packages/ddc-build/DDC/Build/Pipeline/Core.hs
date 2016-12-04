@@ -80,7 +80,8 @@ data PipeCore a n where
   -- Type check a module.
   PipeCoreCheck      
         :: (Pretty a, Pretty (err (C.AnTEC a n)))
-        => !(Fragment n err)            -- Language fragment to check against.
+        => !String                      -- Name of compiler stage.
+        -> !(Fragment n err)            -- Language fragment to check against.
         -> !(C.Mode n)                  -- Checker mode.
         -> !Sink                        -- Sink for checker trace.
         -> ![PipeCore (C.AnTEC a n) n]  -- Pipes for result.
@@ -156,7 +157,7 @@ pipeCore !mm !pp
          -> {-# SCC "PipeCoreOutput" #-}
             pipeSink (renderIndent $ pprModePrec mode 0 mm) sink
 
-        PipeCoreCheck !fragment !mode !sinkTrace !pipes
+        PipeCoreCheck !stage !fragment !mode !sinkTrace !pipes
          -> {-# SCC "PipeCoreCheck" #-}
             let profile         = fragmentProfile fragment
 
@@ -166,7 +167,7 @@ pipeCore !mm !pp
                  = case C.checkModule (C.configOfProfile profile) mm1 mode of
                         (Left err,  C.CheckTrace doc) 
                          -> do  pipeSink (renderIndent doc) sinkTrace
-                                return [ErrorLint err]
+                                return [ErrorLint stage "PipeCoreCheck/Check" err]
                         
                         (Right mm2, C.CheckTrace doc) 
                          -> do  pipeSink (renderIndent doc) sinkTrace
@@ -175,21 +176,21 @@ pipeCore !mm !pp
                 -- Check the module compiles with the language profile.
                 goComplies mm1
                  = case C.complies profile mm1 of
-                        Just err         -> return [ErrorLint err]
-                        Nothing          -> goFragment mm1
+                        Just err -> return [ErrorLint stage "PipeCoreCheck/Complies" err]
+                        Nothing  -> goFragment mm1
 
                 -- Check the module satisfies fragment specific checks.
                 goFragment mm1
                  = case fragmentCheckModule fragment mm1 of
-                        Just err         -> return [ErrorLint err]
-                        Nothing          -> pipeCores mm1 pipes
+                        Just err -> return [ErrorLint stage "PipeCoreCheck/Fragment" err]
+                        Nothing  -> pipeCores mm1 pipes
 
              in goCheck mm
 
         PipeCoreReCheck !fragment !mode !pipes
          -> {-# SCC "PipeCoreReCheck" #-}
             pipeCore (C.reannotate C.annotTail mm)
-         $  PipeCoreCheck fragment mode SinkDiscard pipes 
+         $  PipeCoreCheck "PipeCoreRecheck" fragment mode SinkDiscard pipes 
 
         PipeCoreReannotate f !pipes
          -> {-# SCC "PipeCoreStrip" #-}

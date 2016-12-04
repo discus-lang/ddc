@@ -108,7 +108,7 @@ cmdFlowToTetraCoreFromString config configLower language source str
                 = liftIO
                 $ pipeText (nameOfSource source) (lineStartOfSource source) str
                 $ pipelineFlowToTetra config configLower source
-                [ PipeCoreCheck    Salt.fragment C.Recon SinkDiscard
+                [ PipeCoreCheck    "FlowToTetra" Salt.fragment C.Recon SinkDiscard
                   []
                 , PipeCoreOutput   pmode SinkStdout]
 
@@ -134,11 +134,11 @@ pipelineFlowToTetra config configLower source pipesSalt
  = stageFlowLoad    config source
  [ stageFlowRate    config source
  [ stageFlowPrep  config source
- [ PipeCoreCheck  Flow.fragment C.Recon SinkDiscard
+ [ PipeCoreCheck    "FlowToTetra" Flow.fragment C.Recon SinkDiscard
  [ stageFlowLower   config configLower source
  [ PipeCoreHacks (Canned $ \m -> return $ Concretize.concretizeModule m)
- [ PipeCoreCheck    Flow.fragment C.Recon SinkDiscard
+ [ PipeCoreCheck    "FlowToTetra" Flow.fragment C.Recon SinkDiscard
  [ stageFlowWind    config source
- [ PipeCoreCheck    Flow.fragment C.Recon SinkDiscard
+ [ PipeCoreCheck    "FlowToTetra" Flow.fragment C.Recon SinkDiscard
  [ stageFlowToTetra config source
    pipesSalt]]]]]]]]]

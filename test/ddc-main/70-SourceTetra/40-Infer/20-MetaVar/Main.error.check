@@ -1,2 +1,4 @@
 Error in transformed module.
+  in stage pipeText
+  in pipe  PipeCoreCheck/Complies
   Unsupported feature: MetaVariables

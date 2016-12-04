@@ -16,7 +16,7 @@ data Error
 
         -- | Error when type checking a transformed module.
         --   Blame it on the compiler.
-        | forall err. Pretty err => ErrorLint !err
+        | forall err. Pretty err => ErrorLint String String !err
 
         | forall err. Pretty (err (CL.AnTEC SourcePos Salt.Name))
         => ErrorSaltLoad  (CL.Error Salt.Name err)
@@ -42,8 +42,10 @@ instance Pretty Error where
          -> vcat [ text "Error loading module"
                  , indent 2 (ppr err') ]
 
-        ErrorLint err'
+        ErrorLint stage pipe err'
          -> vcat [ text "Error in transformed module."
+                 , text "  in stage " <> text stage
+                 , text "  in pipe  " <> text pipe
                  , indent 2 (ppr err') ]
 
         ErrorSaltLoad err'

@@ -45,7 +45,6 @@ letrec {
                 let above: Series# p k2 (Tuple2# Float64# Float64#)
                       = spack# [p] [k1] [k2] [Tuple2# Float64# Float64#] sel points in
                 presize# [p] [k2] [k1]
-                    (rsel1# [p] [k2] [k1] [k2] sel (rid# [p] [k2]))
-                    (sfill# [p] [k2] [Tuple2# Float64# Float64#] vec above)))
+                    (rsel1# [p] [k2] [k1] [k2] sel (rid# [p] [k2])) (sfill# [p] [k2] [Tuple2# Float64# Float64#] vec above)))
           (sreduce# [p] [k1] [Float64#] mx max (promote# [Float64#] [Nat#] 0#) dets)
 }

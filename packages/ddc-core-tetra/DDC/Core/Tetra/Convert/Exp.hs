@@ -120,7 +120,7 @@ convertExp ectx ctx xx
 
         ---------------------------------------------------
         -- Polymorphic instantiation.
-        --  A polymorphic function is being applied without any associated type
+        --  A polymorphic function is being applied without any associated value
         --  arguments. In the Salt code this is a no-op, so just return the 
         --  functional value itself. The other cases are handled when converting
         --  let expressions. See [Note: Binding top-level supers]
@@ -174,15 +174,15 @@ convertExp ectx ctx xx
         --  of the above cases.
         --
         XApp (AnTEC _t _ _ a') xa xb
-         | (x1, xsArgs) <- takeXApps1 xa xb
+         | (x1, asArgs)      <- takeXApps1 xa xb
          
          -- The thing being applied is a named function that is defined
          -- at top-level, or imported directly.
          , XVar _ (UName nF) <- x1
          , Map.member nF (contextCallable ctx)
-         , (tsArgs, _)       <- takeTFunAllArgResult (annotType $ annotOfExp xa)
+         , (tsArgs, _)       <- takeTFunAllArgResult (annotType $ annotOfExp x1)
          -> convertExpSuperCall xx ectx ctx False a' nF 
-                $ zip xsArgs tsArgs
+                $ zip asArgs tsArgs
 
          | otherwise
          -> throw $ ErrorUnsupported xx 
@@ -280,13 +280,13 @@ convertExp ectx ctx xx
         -- Type casts
         -- Run an application of a top-level super.
         XCast _ CastRun (XApp (AnTEC _t _ _ a') xa xb)
-         | (x1, asArgs) <- takeXApps1 xa xb
+         | (xFun, asArgs) <- takeXApps1 xa xb
          
          -- The thing being applied is a named function that is defined
          -- at top-level, or imported directly.
-         , XVar _ (UName nSuper) <- x1
+         , XVar _ (UName nSuper) <- xFun
          , Map.member nSuper (contextCallable ctx)
-         , (tsArgs, _)          <- takeTFunAllArgResult (annotType $ annotOfExp xa)
+         , (tsArgs, _)          <- takeTFunAllArgResult (annotType $ annotOfExp xFun)
          -> convertExpSuperCall xx ectx ctx True a' nSuper 
                 $ zip asArgs tsArgs
 
@@ -307,7 +307,8 @@ convertExp ectx ctx xx
 
 ---------------------------------------------------------------------------------------------------
 convertExpSuperCall
-        :: Exp (AnTEC a E.Name) E.Name
+        :: Show a
+        => Exp (AnTEC a E.Name) E.Name
         -> ExpContext                     -- ^ The surrounding expression context.
         -> Context a                      -- ^ Types and values in the environment.
         -> Bool                           -- ^ Whether this is call is directly inside a 'run'
@@ -362,7 +363,7 @@ convertExpSuperCall xx _ectx ctx isRun a nFun atsArgs
  -- so emit some debugging info.
  | otherwise
  = throw $ ErrorUnsupported xx
- $ vcat [ text "Cannot convert application."
+ $ vcat [ text "Cannot convert application for super call."
         , text "xx:        " <> ppr xx
         , text "fun:       " <> ppr nFun
         , text "args:      " <> ppr atsArgs

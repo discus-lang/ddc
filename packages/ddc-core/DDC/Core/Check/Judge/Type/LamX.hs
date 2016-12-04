@@ -12,9 +12,12 @@ checkLamX :: Checker a n
 
 checkLamX !table !ctx mode _demand xx
  = case xx of
-        XLam a b1 x2
+        XAbs a (MTerm b1) x2
           -> checkLam table a ctx b1 x2 mode
-        _ -> error "ddc-core.checkLamX: no match."
+
+        _ -> error $ unlines
+                  [ "ddc-core.checkLamX: no match"
+                  , show xx]
 
 
 -- When reconstructing the type of a lambda abstraction,
@@ -355,7 +358,7 @@ makeFunction
         -> Kind n               -- ^ Kind of the parameter.
         -> Exp  (AnTEC a n) n   -- ^ Body of the function.
         -> Type n               -- ^ Result type of the function.
-        -> TypeSum n            -- ^ Effect sum.
+        -> TypeSum n            -- ^ Sum of effects of the body expression.
         -> CheckM a n (Exp (AnTEC a n) n, Type n)
 
 makeFunction config a xx bParam tParam kParam xBody tBody eBody

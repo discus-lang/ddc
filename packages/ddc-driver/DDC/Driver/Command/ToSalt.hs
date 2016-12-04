@@ -98,7 +98,8 @@ cmdToSaltSourceTetraFromString config store source str
          [ PipeCoreReannotate (const ())
          [ stageTetraToSalt     config source 
          [ stageSaltOpt         config source
-         [ PipeCoreCheck        Salt.fragment C.Recon SinkDiscard
+         [ PipeCoreCheck        "ToSaltSourceTetraFromString" 
+                                Salt.fragment C.Recon SinkDiscard
          [ PipeCoreOutput pmode SinkStdout ]]]]]
 
    in do
@@ -164,7 +165,7 @@ cmdToSaltCoreFromString config language source str
                 $ stageTetraLoad   config source
                 [ stageTetraToSalt config source
                 [ stageSaltOpt     config source
-                [ PipeCoreCheck    Salt.fragment C.Recon SinkDiscard
+                [ PipeCoreCheck    "ToSaltCoreFromSTring" Salt.fragment C.Recon SinkDiscard
                 [ PipeCoreOutput   pmode SinkStdout]]]]
                 
                 -- Unrecognised fragment name or file extension.

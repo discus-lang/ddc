@@ -1,3 +1,5 @@
 Error in transformed module.
+  in stage pipeText
+  in pipe  PipeCoreCheck/Check
   Cannot construct infinite type.
     ?1 = Moar ?1

@@ -211,5 +211,5 @@ pipeText !srcName !srcLine !str
                           . C.setFeature C.ImplicitBox True)
 
                 pipeCore mm_spread
-                  $ PipeCoreCheck fragment_implicit (C.Synth []) sinkCheckerTrace pipes
+                  $ PipeCoreCheck "pipeText" fragment_implicit (C.Synth []) sinkCheckerTrace pipes
 

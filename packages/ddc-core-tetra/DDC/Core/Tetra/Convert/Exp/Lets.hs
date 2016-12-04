@@ -35,7 +35,7 @@ convertLets ctx lts
          | (xF, asArgs) <- takeXApps1 xa xb
 
          , tsArgs       <- [t | RType t <- asArgs]
-         , (ksArgs, _)  <- takeTFunAllArgResult (annotType $ annotOfExp xa)
+         , (ksArgs, _)  <- takeTFunAllArgResult (annotType $ annotOfExp xF)
 
          , length tsArgs > 0
          , length tsArgs == length asArgs

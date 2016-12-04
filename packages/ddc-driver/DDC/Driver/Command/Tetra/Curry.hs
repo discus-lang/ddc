@@ -41,7 +41,7 @@ cmdTetraCurry config source sourceText
          [ PipeTetraCurry   (dump config source "dump.tetra-unshare.dct")       
          [ PipeCoreOutput   pmode 
                             (dump config source "dump.tetra-curry.dct")
-         , PipeCoreCheck    Tetra.fragment C.Recon SinkDiscard
+         , PipeCoreCheck    "TetraCurry" Tetra.fragment C.Recon SinkDiscard
            [ PipeCoreOutput   pmode SinkStdout ]]]]
 
    in do

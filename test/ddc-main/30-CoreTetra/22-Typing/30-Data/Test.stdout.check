@@ -81,8 +81,7 @@ letrec {
       ConsN [Nat#] 7#
           (ConsN [Tuple2 Nat# Nat#] (T2 [Nat#] [Nat#] 1# 2#)
                (ConsN [Tuple2 (Tuple2 Nat# Nat#) (Tuple2 Nat# Nat#)]
-                    (T2 [Tuple2 Nat# Nat#] [Tuple2 Nat# Nat#] (T2 [Nat#] [Nat#] 6# 7#) (T2 [Nat#] [Nat#] 7# 4#))
-                    (NilN [Tuple2 (Tuple2 (Tuple2 Nat# Nat#) (Tuple2 Nat# Nat#)) (Tuple2 (Tuple2 Nat# Nat#) (Tuple2 Nat# Nat#))])))
+                    (T2 [Tuple2 Nat# Nat#] [Tuple2 Nat# Nat#] (T2 [Nat#] [Nat#] 6# 7#) (T2 [Nat#] [Nat#] 7# 4#)) (NilN [Tuple2 (Tuple2 (Tuple2 Nat# Nat#) (Tuple2 Nat# Nat#)) (Tuple2 (Tuple2 Nat# Nat#) (Tuple2 Nat# Nat#))])))
 }
 
 
@@ -106,15 +105,10 @@ letrec {
           (ConsB [Bush Nat#]
                (ConsB [Nat#] 8#
                     (ConsB [Bush Nat#]
-                         (ConsB [Nat#] 5#
-                              (NilB [Bush Nat#]))
+                         (ConsB [Nat#] 5# (NilB [Bush Nat#]))
                          (ConsB [Bush (Bush Nat#)]
                               (ConsB [Bush Nat#]
-                                   (ConsB [Nat#] 3#
-                                        (NilB [Bush Nat#]))
-                                   (NilB [Bush (Bush Nat#)]))
-                              (NilB [Bush (Bush (Bush Nat#))]))))
-               (NilB [Bush (Bush Nat#)]))
+                                   (ConsB [Nat#] 3# (NilB [Bush Nat#])) (NilB [Bush (Bush Nat#)])) (NilB [Bush (Bush (Bush Nat#))])))) (NilB [Bush (Bush Nat#)]))
 }
 
 

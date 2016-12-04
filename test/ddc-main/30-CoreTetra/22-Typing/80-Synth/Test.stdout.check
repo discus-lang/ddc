@@ -408,8 +408,7 @@ y 5#
 Λ(f: Data -> Region).Λ(a: Data).
 λ(x: [w: Region].a).λ(g: a -> Nat# -> ?10).
 let y: Nat# -> ?10
-      = g
-            (x [f a]) in
+      = g (x [f a]) in
 y 5#
 :*: [f: Data -> Region].[a: Data].([w: Region].a) -> (a -> Nat# -> ?10) -> ?10
 :!: Pure

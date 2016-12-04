@@ -34,8 +34,7 @@ add# [Nat#] (take [r0] ^0) x
 
 
 -- Rewrite outer type binder to avoid shadow conflict on type lambda.
-Λ(^: Data).
-(Λ(a: Data).
+Λ(^: Data). (Λ(a: Data).
  λ(_: Unit). ()) [^0] ()
 
 

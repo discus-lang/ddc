@@ -38,7 +38,7 @@ cmdTetraBoxing config source sourceText
          $ PipeTextLoadCore Tetra.fragment C.Recon SinkDiscard
          [ PipeCoreAsTetra
          [ PipeTetraBoxing
-         [ PipeCoreCheck  Tetra.fragment C.Recon SinkDiscard
+         [ PipeCoreCheck  "TetraBoxing" Tetra.fragment C.Recon SinkDiscard
          [ PipeCoreOutput pmode SinkStdout ]]]]
    in do
         errs    <- liftIO pipeBoxing

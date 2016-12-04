@@ -31,7 +31,7 @@ cmdFlowRate config source sourceText
                     sourceText
          $ stageFlowLoad  config source 
          [ stageFlowRate  config source 
-         [ PipeCoreCheck  Flow.fragment C.Recon SinkDiscard
+         [ PipeCoreCheck  "FlowRate" Flow.fragment C.Recon SinkDiscard
          [ PipeCoreOutput pmode SinkStdout ]]]
    
    in do
@@ -59,9 +59,9 @@ cmdFlowRateLower config configLower source sourceText
          $ stageFlowLoad  config source 
          [ stageFlowRate  config source 
          [ stageFlowPrep  config source
-         [ PipeCoreCheck  Flow.fragment C.Recon SinkDiscard
+         [ PipeCoreCheck  "FlowRateLower" Flow.fragment C.Recon SinkDiscard
          [ stageFlowLower config configLower source
-         [ PipeCoreCheck  Flow.fragment C.Recon SinkDiscard
+         [ PipeCoreCheck  "FlowRateLower" Flow.fragment C.Recon SinkDiscard
          [ PipeCoreOutput pmode SinkStdout ]]]]]]
    
    in do

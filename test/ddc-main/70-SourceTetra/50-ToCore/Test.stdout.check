@@ -120,8 +120,7 @@ letrec {
     = Λ(r: Region).
       λ(_: Unit).
       head [Blerk r] (Hot [r])
-          (Cons [Blerk r] (Cold [r])
-               (Nil [Blerk r]))
+          (Cons [Blerk r] (Cold [r]) (Nil [Blerk r]))
 }
 
 
