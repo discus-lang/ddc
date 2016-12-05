@@ -16,7 +16,6 @@ data WiCon n
         deriving (Show, Eq)
 
 
--- NFData ---------------------------------------------------------------------
 instance NFData n => NFData (WiCon n) where
  rnf wi
   = case wi of

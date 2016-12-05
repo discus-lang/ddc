@@ -1,6 +1,7 @@
 
 module DDC.Core.Exp.Generic
-        ( -- * Abstract Syntax
+        ( ---------------------------------------
+          -- * Abstract Syntax
           -- ** Expressions
           GAnnot
         , GBind

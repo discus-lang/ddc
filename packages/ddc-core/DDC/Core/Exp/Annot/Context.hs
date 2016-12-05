@@ -18,13 +18,19 @@ import DDC.Core.Exp.Annot.Compounds
 import DDC.Core.Env.EnvX                (EnvX)
 import qualified DDC.Core.Env.EnvX      as EnvX
 
+
+-- | Context of an expression, 
+--   including the top-level environment.
 data Context a n
         = Context
-        { contextEnv    :: EnvX n
+        { -- | The top-level environment.
+          contextEnv    :: EnvX n
+
+          -- | Context of an expression.
         , contextCtx    :: Ctx a n }
 
 
--- | Enter the body of a type lambda.
+-- | Enter the body of a type abstraction.
 enterLAM 
         :: Ord n => Context a n
         -> a -> Bind n -> Exp a n
@@ -36,7 +42,7 @@ enterLAM c a b x f
    in   f c' x
 
 
--- | Enter the body of a value lambda.
+-- | Enter the body of a term abstracion.
 enterLam
         :: Ord n => Context a n
         -> a -> Bind n -> Exp a n
@@ -81,7 +87,7 @@ enterLetBody c a lts x f
         c' = c  { contextEnv    = EnvX.extendsX bs0 
                                 $ EnvX.extendsT bs1
                                 $ contextEnv c
-                , contextCtx      = CtxLetBody (contextCtx c) a lts }
+                , contextCtx    = CtxLetBody (contextCtx c) a lts }
    in   f c' x
 
 
@@ -147,3 +153,4 @@ enterCastBody
 enterCastBody c a cc x f
  = let  c' = c  { contextCtx    = CtxCastBody (contextCtx c) a cc }
    in   f c' x
+

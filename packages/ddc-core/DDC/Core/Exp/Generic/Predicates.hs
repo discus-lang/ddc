@@ -117,6 +117,6 @@ isXLet xx
 isPDefault :: GPat l -> Bool
 isPDefault pp
  = case pp of
-        PDefault        -> True
-        _               -> False
+        PDefault -> True
+        _        -> False
 

@@ -1,5 +1,4 @@
 {-# LANGUAGE TypeFamilies #-}
-
 -- | Pretty printing for annotated expressions.
 module DDC.Core.Exp.Annot.Pretty
         ( module DDC.Data.Pretty
@@ -13,7 +12,7 @@ import qualified Data.Text              as Text
 import Prelude                          hiding ((<$>))
 
 
--- Exp --------------------------------------------------------------------------------------------
+-- Exp ------------------------------------------------------------------------
 instance (Pretty n, Eq n) => Pretty (Exp a n) where
  data PrettyMode (Exp a n)
         = PrettyModeExp
@@ -149,7 +148,7 @@ instance (Pretty n, Eq n) => Pretty (Exp a n) where
          <$> pprX x
 
 
--- Arg --------------------------------------------------------------------------------------------
+-- Arg ------------------------------------------------------------------------
 instance (Pretty n, Eq n) => Pretty (Arg a n) where
  ppr aa
   = case aa of
@@ -159,7 +158,7 @@ instance (Pretty n, Eq n) => Pretty (Arg a n) where
         RImplicit x     -> text "{" <> ppr x <> text "}"
 
 
--- Prim -------------------------------------------------------------------------------------------
+-- Prim -----------------------------------------------------------------------
 instance Pretty Prim where
  ppr pp
   = case pp of
@@ -170,7 +169,7 @@ instance Pretty Prim where
         PCombine        -> text "combine#"
 
 
--- Pat --------------------------------------------------------------------------------------------
+-- Pat ------------------------------------------------------------------------
 instance (Pretty n, Eq n) => Pretty (Pat n) where
  ppr pp
   = case pp of
@@ -186,7 +185,7 @@ pprPatBind b
         | otherwise             = parens $ ppr b
 
 
--- Alt --------------------------------------------------------------------------------------------
+-- Alt ------------------------------------------------------------------------
 instance (Pretty n, Eq n) => Pretty (Alt a n) where
  data PrettyMode (Alt a n)
         = PrettyModeAlt
@@ -201,7 +200,7 @@ instance (Pretty n, Eq n) => Pretty (Alt a n) where
     in  ppr p <+> nest 1 (line <> nest 3 (text "->" <+> pprX x))
 
 
--- DaCon ------------------------------------------------------------------------------------------
+-- DaCon ----------------------------------------------------------------------
 instance (Pretty n, Eq n) => Pretty (DaCon n (Type n)) where
  ppr dc
   = case dc of
@@ -216,7 +215,7 @@ instance (Pretty n, Eq n) => Pretty (DaCon n (Type n)) where
         DaConBound n    -> ppr n
 
 
--- Cast -------------------------------------------------------------------------------------------
+-- Cast -----------------------------------------------------------------------
 instance (Pretty n, Eq n) => Pretty (Cast a n) where
  ppr cc
   = case cc of
@@ -233,7 +232,7 @@ instance (Pretty n, Eq n) => Pretty (Cast a n) where
          -> text "run"
 
 
--- Lets -------------------------------------------------------------------------------------------
+-- Lets -----------------------------------------------------------------------
 instance (Pretty n, Eq n) => Pretty (Lets a n) where
  data PrettyMode (Lets a n)
         = PrettyModeLets
@@ -309,7 +308,7 @@ pprWitBind b
         _       -> ppr b
 
 
--- Witness ----------------------------------------------------------------------------------------
+-- Witness --------------------------------------------------------------------
 instance (Pretty n, Eq n) => Pretty (Witness a n) where
  pprPrec d ww
   = case ww of
@@ -325,7 +324,8 @@ instance (Pretty n, Eq n) => Pretty (WiCon n) where
         WiConBound   u  _ -> ppr u
 
 
--- Binder -----------------------------------------------------------------------------------------
+-- Binder ---------------------------------------------------------------------
+-- | Preey print a binder.
 pprBinder   :: Pretty n => Binder n -> Doc
 pprBinder bb
  = case bb of
@@ -345,12 +345,15 @@ pprBinderGroup lam (rs, t)
         <> dot
 
 
--- Utils ------------------------------------------------------------------------------------------
+-- Utils ----------------------------------------------------------------------
+-- | Produce an expression break character.
 breakWhen :: Bool -> Doc
 breakWhen True   = line
 breakWhen False  = space
 
 
+-- | Check if an expression is simple enough to not worry about
+--   starting a separate line for.
 isSimpleX :: Exp a n -> Bool
 isSimpleX xx
  = case xx of
@@ -363,6 +366,7 @@ isSimpleX xx
         _                        -> False
 
 
+-- | Wrap a document in parenthesis.
 parens' :: Doc -> Doc
 parens' d = lparen <> nest 1 d <> rparen
 

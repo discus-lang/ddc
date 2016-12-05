@@ -8,7 +8,6 @@ import Control.DeepSeq
 import Data.Typeable
 
 
--- Annot ----------------------------------------------------------------------
 -- | The type checker for witnesses adds this annotation to every node in the,
 --   giving the type of each component of the witness.
 ---

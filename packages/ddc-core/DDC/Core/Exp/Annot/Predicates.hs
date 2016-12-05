@@ -57,18 +57,18 @@ isXCon xx
 isAtomX :: Exp a n -> Bool
 isAtomX xx
  = case xx of
-        XVar{}          -> True
-        XCon{}          -> True
-        _               -> False
+        XVar{}  -> True
+        XCon{}  -> True
+        _       -> False
 
 
 -- | Check whether a witness is a `WVar` or `WCon`.
 isAtomW :: Witness a n -> Bool
 isAtomW ww
  = case ww of
-        WVar{}          -> True
-        WCon{}          -> True
-        _               -> False
+        WVar{}  -> True
+        WCon{}  -> True
+        _       -> False
 
 
 -- Lambdas --------------------------------------------------------------------
@@ -141,8 +141,8 @@ isRImplicit aa
 isXCast :: Exp a n -> Bool
 isXCast xx
  = case xx of
-        XCast{} -> True
-        _       -> False
+        XCast{}         -> True
+        _               -> False
 
 
 -- | Check whether this is a box cast.
@@ -166,8 +166,8 @@ isXCastRun xx
 isXLet :: Exp a n -> Bool
 isXLet xx
  = case xx of
-        XLet{}  -> True
-        _       -> False
+        XLet{}          -> True
+        _               -> False
 
 
 -- Patterns -------------------------------------------------------------------

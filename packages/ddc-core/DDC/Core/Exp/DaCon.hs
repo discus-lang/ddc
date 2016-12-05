@@ -11,7 +11,7 @@ import DDC.Type.Exp.Simple
 import Control.DeepSeq
 import Data.Text                (Text)
 
-
+-------------------------------------------------------------------------------
 -- | Data constructors.
 data DaCon n t
         -- | Baked in unit data constructor.
@@ -25,9 +25,9 @@ data DaCon n t
         --   constructors. 
         --
         --   The type of the constructor needs to be attached to handle the
-        --   case where there are too many constructors in the data type to list, 
-        --   like for Int literals. In this case we determine what data type
-        --   it belongs to from the attached type of the data constructor.
+        --   case where there are too many constructors in the data type to
+        --   list, like for Int literals. In this case we determine what data
+        --   type it belongs to from the attached type of the data constructor.
         --   
         | DaConPrim
         { -- | Name of the data constructor.
@@ -54,6 +54,7 @@ instance (NFData n, NFData t) => NFData (DaCon n t) where
         DaConBound n    -> rnf n
 
 
+-------------------------------------------------------------------------------
 -- | Take the name of data constructor,
 --   if there is one.
 takeNameOfDaCon :: DaCon n t -> Maybe n

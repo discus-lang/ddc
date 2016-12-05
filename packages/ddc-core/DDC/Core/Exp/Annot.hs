@@ -127,7 +127,7 @@ module DDC.Core.Exp.Annot
         , takeTypeOfDaCon)
 where
 import DDC.Core.Exp.Annot.Exp
-import DDC.Core.Exp.Annot.NFData                ()
+import DDC.Core.Exp.Annot.NFData        ()
 import DDC.Core.Exp.Annot.Compounds
 import DDC.Core.Exp.Annot.Predicates
 import DDC.Type.Exp.Simple.Compounds

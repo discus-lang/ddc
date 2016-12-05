@@ -1,5 +1,4 @@
 {-# LANGUAGE TypeFamilies, UndecidableInstances #-}
-
 module DDC.Core.Exp.Generic.Pretty where
 import DDC.Core.Exp.Generic.Predicates
 import DDC.Core.Exp.Generic.Exp
@@ -11,6 +10,7 @@ import qualified Data.Text      as Text
 import Prelude                  hiding ((<$>))
 
 
+-------------------------------------------------------------------------------
 -- | Synonym for Pretty constraints on all language types.
 type PrettyLanguage l
         = ( Eq l
@@ -19,7 +19,7 @@ type PrettyLanguage l
           , Pretty (GBind l), Pretty (GBound l), Pretty (GPrim l))
 
 
--- Exp --------------------------------------------------------------------------------------------
+-- Exp ------------------------------------------------------------------------
 instance PrettyLanguage l => Pretty (GExp l) where
 
  data PrettyMode (GExp l)
@@ -117,7 +117,7 @@ instance PrettyLanguage l => Pretty (GExp l) where
          <$> pprX x
 
 
--- Arg --------------------------------------------------------------------------------------------
+-- Arg ------------------------------------------------------------------------
 instance PrettyLanguage l => Pretty (GArg l) where
 
  data PrettyMode (GArg l)
@@ -131,7 +131,7 @@ instance PrettyLanguage l => Pretty (GArg l) where
         RWitness w      -> text "<" <> ppr w <> text ">"
 
 
--- Pat --------------------------------------------------------------------------------------------
+-- Pat ------------------------------------------------------------------------
 instance PrettyLanguage l => Pretty (GPat l) where
  ppr pp
   = case pp of
@@ -139,7 +139,7 @@ instance PrettyLanguage l => Pretty (GPat l) where
         PData u bs      -> ppr u <+> sep (map ppr bs)
 
 
--- Alt --------------------------------------------------------------------------------------------
+-- Alt ------------------------------------------------------------------------
 instance PrettyLanguage l => Pretty (GAlt l) where
  data PrettyMode (GAlt l)
         = PrettyModeAlt
@@ -154,7 +154,7 @@ instance PrettyLanguage l => Pretty (GAlt l) where
     in  ppr p <+> nest 1 (line <> nest 3 (text "->" <+> pprX x))
 
 
--- Cast -------------------------------------------------------------------------------------------
+-- Cast -----------------------------------------------------------------------
 instance PrettyLanguage l => Pretty (GCast l) where
  ppr cc
   = case cc of
@@ -170,7 +170,7 @@ instance PrettyLanguage l => Pretty (GCast l) where
                 CastPrimCombine -> text "combine#"
 
 
--- Lets -------------------------------------------------------------------------------------------
+-- Lets -----------------------------------------------------------------------
 instance PrettyLanguage l => Pretty (GLets l) where
  data PrettyMode (GLets l)
         = PrettyModeLets
@@ -183,13 +183,10 @@ instance PrettyLanguage l => Pretty (GLets l) where
  pprModePrec mode _ lts
   = let pprX    = pprModePrec (modeLetsExp mode) 0
     in case lts of
-
-
         LLet b x
          ->  text "let"
          <+> align ( ppr b
-                 <>  nest 2 (  -- breakWhen (not $ isSimpleX x)
-                              text "=" <+> align (pprX x)))
+                 <>  nest 2 ( text "=" <+> align (pprX x)))
 
         LRec bxs
          -> let pprLetRecBind (b, x)
@@ -229,7 +226,7 @@ instance PrettyLanguage l => Pretty (GLets l) where
                 <+> braces (cat $ punctuate (text "; ") $ map ppr bws)
         
 
--- Witness ----------------------------------------------------------------------------------------
+-- Witness --------------------------------------------------------------------
 instance PrettyLanguage l => Pretty (GWitness l) where
  pprPrec d ww
   = case ww of
@@ -239,14 +236,14 @@ instance PrettyLanguage l => Pretty (GWitness l) where
         WType t         -> text "[" <> ppr t <> text "]"
 
 
--- WiCon ------------------------------------------------------------------------------------------
+-- WiCon ----------------------------------------------------------------------
 instance PrettyLanguage l => Pretty (GWiCon l) where
  ppr wc
   = case wc of
         WiConBound u  _ -> ppr u
 
 
--- DaCon ------------------------------------------------------------------------------------------
+-- DaCon ----------------------------------------------------------------------
 instance PrettyLanguage l => Pretty (DaCon l (Type l)) where
  ppr dc
   = case dc of
@@ -261,7 +258,7 @@ instance PrettyLanguage l => Pretty (DaCon l (Type l)) where
         DaConBound n    -> ppr n
 
 
--- Utils ------------------------------------------------------------------------------------------
+-- Utils ----------------------------------------------------------------------
 -- | Insert a line or a space depending on a boolean argument.
 breakWhen :: Bool -> Doc
 breakWhen True   = line

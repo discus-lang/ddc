@@ -11,7 +11,6 @@ import DDC.Core.Exp.Annot.AnT           (AnT)
 import qualified DDC.Core.Exp.Annot.AnT as AnT
 
 
--- Annot ----------------------------------------------------------------------
 -- | The type checker adds this annotation to every node in the AST,
 --   giving its type, effect and closure.
 ---
