@@ -1,0 +1,60 @@
+
+module DDC.Core.Codec.SExp.Parser.Base
+import Data.Text
+import Data.Ref
+
+-- TODO: need a proper exception mechanism.
+import foreign c value
+ exit    : [a: Data]. Nat# -> a
+
+where
+
+
+-- | Parser state holds a reference to a list of avaliable tokens.
+data State (r: Region) (a: Data) where
+        State   :  Ref r (List a)
+                -> State r a
+
+
+-- | Peek the next token if there is one available.
+peek ((State ref): State r a): S (Read r) (Maybe a)
+ = case readRef ref of
+        Nil             -> Nothing
+        Cons x xs       -> Just x
+
+
+-- | Take the next token.
+next ((State ref): State r a): S (Read r + Write r) a
+ = case readRef ref of
+        -- TODO: throw unexpected end of input.
+        Nil
+         -> exit 1
+
+        Cons x xs       
+         -> do  writeRef ref xs
+                x
+
+
+-- | Take the next token if it matches the given predicate, otherwise fail.
+take    (s:     State r a)
+        (want:  a -> Bool)
+        : S (Read r + Write r) (Maybe a)
+ = case peek s of
+        Nothing         -> Nothing
+        Just t
+         | want t       -> Just (next s)
+         | otherwise    -> Nothing
+
+
+-- | Take tokens that match the given predicate.
+takeWhile 
+        (s:     State r a)
+        (want:  a -> Bool)
+        : S (Read r + Write r) (List a)
+ = case peek s of
+        Nothing         -> Nil
+        Just t
+         | want t       -> Cons (next s) (takeWhile s want)
+         | otherwise    -> Nil
+
+
