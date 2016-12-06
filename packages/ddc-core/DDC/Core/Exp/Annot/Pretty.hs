@@ -148,6 +148,15 @@ instance (Pretty n, Eq n) => Pretty (Exp a n) where
          <$> pprX x
 
 
+-- Param ----------------------------------------------------------------------
+instance (Pretty n, Eq n) => Pretty (Param n) where
+ ppr mm
+  = case mm of
+        MType b         -> text "{*" <+> ppr b <> text "}"
+        MTerm b         -> text "("  <+> ppr b <> text ")"
+        MImplicit b     -> text "{"  <+> ppr b <> text "}"
+
+
 -- Arg ------------------------------------------------------------------------
 instance (Pretty n, Eq n) => Pretty (Arg a n) where
  ppr aa

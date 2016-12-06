@@ -12,8 +12,8 @@ checkLamX :: Checker a n
 
 checkLamX !table !ctx mode _demand xx
  = case xx of
-        XAbs a (MTerm b1) x2
-          -> checkLam table a ctx b1 x2 mode
+        XAbs a m1 x2
+          -> checkLam table a ctx m1 x2 mode
 
         _ -> error $ unlines
                   [ "ddc-core.checkLamX: no match"
@@ -21,27 +21,27 @@ checkLamX !table !ctx mode _demand xx
 
 
 -- When reconstructing the type of a lambda abstraction,
---  the formal parameter must have a type annotation: eg (\v : T. x2)
-checkLam !table !a !ctx !b1 !x2 !Recon
+--  the formal parameter must have a type annotation: eg (λ(v : T) -> x2)
+checkLam !table !a !ctx !m1 !x2 !Recon
  = do
         let config      = tableConfig table
-        let xx          = XLam a b1 x2
+        let xx          = XAbs a m1 x2
 
         -- Check the parameter ------------------
-        let t1          = typeOfBind b1
+        let t1          = typeOfParam m1
 
         -- The formal parameter must have a type annotation.
         when (isBot t1)
-         $ throw $ ErrorLamParamUnannotated a xx b1
+         $ throw $ ErrorLamParamUnannotated a xx (bindOfParam m1)
 
         -- Determine the kind of the parameter.
         (t1', k1, _)    <- checkTypeM config ctx UniverseSpec t1 Recon
-        let b1'         = replaceTypeOfBind t1' b1
+        let m1'         = replaceTypeOfParam t1' m1
 
         -- Check the body -----------------------
         -- Reconstruct a type for the body, under the extended environment.
         let (ctx', pos1) = markContext ctx
-        let ctx1         = pushType b1 ctx'
+        let ctx1         = pushType (bindOfParam m1) ctx'
 
         -- It doesn't matter what we set the demand to at this point
         -- because the 'Recon' mode doesn't use it. We'll just set it 
@@ -56,7 +56,7 @@ checkLam !table !a !ctx !b1 !x2 !Recon
         -- The body of the function must produce data.
         (_, k2, _)      <- checkTypeM config ctx2 UniverseSpec t2 Recon
         when (not $ isDataKind k2)
-         $ throw $ ErrorLamBodyNotData a xx b1 t2 k2
+         $ throw $ ErrorLamBodyNotData a xx (bindOfParam m1) t2 k2
 
         -- Cut the bound type and elems under it from the context.
         let ctx_cut     = popToPos pos1 ctx2
@@ -66,7 +66,7 @@ checkLam !table !a !ctx !b1 !x2 !Recon
         --   The way the effect and closure term is captured depends on
         --   the configuration flags.
         (xAbs', tAbs) 
-         <- makeFunction config a xx b1' t1 k1 x2' t2 e2_crush
+         <- makeFunction config a xx m1' t1 k1 x2' t2 e2_crush
 
         return  ( xAbs'
                 , tAbs
@@ -76,30 +76,30 @@ checkLam !table !a !ctx !b1 !x2 !Recon
 
 -- When synthesizing the type of a lambda abstraction
 --   we produce a type (?1 -> ?2) with new unification variables.
-checkLam !table !a !ctx !b1 !x2 !(Synth {})
+checkLam !table !a !ctx !m1 !x2 !(Synth {})
  = do
         ctrace  $ vcat
                 [ text "*>  Lam SYNTH"
-                , text "    in  bind = " <+> ppr b1
+                , text "    in  bind = " <+> ppr m1
                 , empty ]
 
         let config      = tableConfig table
-        let xx          = XLam a b1 x2
+        let xx          = XAbs a m1 x2
 
         -- Check the parameter ------------------
-        let t1          = typeOfBind b1
+        let t1          = typeOfParam m1
 
         -- If there isn't an existing annotation then make an existential.
-        (b1', t1', k1, ctx1)
+        (m1', t1', k1, ctx1)
          <- if isHoleT config t1
              then do
                 -- There is no annotation at all, so make an existential.
                 -- Missing anotations are assumed to have kind Data.
                 i1      <- newExists kData
                 let t1'  = typeOfExists i1
-                let b1'  = replaceTypeOfBind t1' b1
+                let m1'  = replaceTypeOfParam t1' m1
                 let ctx1 = pushExists i1 ctx
-                return (b1', t1', kData, ctx1)
+                return (m1', t1', kData, ctx1)
 
              else do
                 -- Check the existing annotation.
@@ -108,8 +108,8 @@ checkLam !table !a !ctx !b1 !x2 !(Synth {})
                 --   which is checked by 'makeFunctionType' below.
                 (t1', k1, ctx1)
                         <- checkTypeM config ctx UniverseSpec t1 (Synth [])
-                let b1' = replaceTypeOfBind t1' b1
-                return (b1', t1', k1, ctx1)
+                let m1' = replaceTypeOfParam t1' m1
+                return (m1', t1', k1, ctx1)
 
         -- Check the body -----------------------
         -- Make an existential for the result type.
@@ -121,7 +121,7 @@ checkLam !table !a !ctx !b1 !x2 !(Synth {})
         -- and parameter type onto the context.
         let (ctx2, pos1) = markContext 
                          $ pushExists i2 ctx1
-        let ctx3         = pushType   b1' ctx2
+        let ctx3         = pushType   (bindOfParam m1') ctx2
 
         -- Check the body against the existential for it.
         --   Set the demand to 'Run' to force out any suspensions.
@@ -167,13 +167,13 @@ checkLam !table !a !ctx !b1 !x2 !(Synth {})
         --  the context to 'k1' to ensure it has all available information.
         (xAbs', tAbs)
          <- makeFunction 
-                config a (XLam a b1' x2)
-                b1' t1' k1''
+                config a (XAbs a m1' x2)
+                m1' t1' k1''
                 x2' t2' e2_crush
 
         ctrace  $ vcat
                 [ text "*<  Lam SYNTH"
-                , text "    in  bind = " <+> ppr b1
+                , text "    in  bind = " <+> ppr m1
                 , text "    out type = " <+> ppr tAbs
                 , indent 4 $ ppr ctx
                 , indent 4 $ ppr ctx_cut
@@ -188,38 +188,38 @@ checkLam !table !a !ctx !b1 !x2 !(Synth {})
 -- When checking type type of a lambda abstraction against an existing
 --   functional type we allow the formal paramter to be missing its
 --   type annotation, and in this case we replace it with the expected type.
-checkLam !table !a !ctx !b1 !x2 !(Check tExpected)
+checkLam !table !a !ctx !m1 !x2 !(Check tExpected)
  | Just (tX1, tX2)      <- takeTFun tExpected
  = do   
         ctrace  $ vcat
                 [ text "*>  Lam CHECK"
-                , text "    in bind =" <+> ppr b1
+                , text "    in bind =" <+> ppr m1
                 , text "    in type =" <+> ppr tExpected 
                 , empty ]
 
         let config      = tableConfig table
-        let xx          = XLam a b1 x2
+        let xx          = XAbs a m1 x2
 
         -- Check the parameter ------------------
-        let t1          = typeOfBind b1
+        let t1          = typeOfParam m1
 
         -- If the parameter has no type annotation at all then we can
         --   use the expected type we were passed down from above.
         -- If it does have an annotation, then the annotation also needs
         --   to match the expected type.
-        (b1', t1', ctx0)
+        (m1', t1', ctx0)
          <- if isHoleT config t1
              then
-                return  (replaceTypeOfBind tX1 b1, tX1, ctx)
+                return  (replaceTypeOfParam tX1 m1, tX1, ctx)
              else do
                 ctx0    <- makeEqT config ctx t1 tX1
-                        $  ErrorMismatch a    t1 tExpected (XLam a b1 x2)
-                return  (b1, t1, ctx0)
+                        $  ErrorMismatch a    t1 tExpected (XAbs a m1 x2)
+                return  (m1, t1, ctx0)
 
         -- Check the body ----------------------
         -- Check the body of the abstraction under the extended environment.
         let (ctx', pos1) = markContext ctx0
-        let ctx1         = pushType b1' ctx'
+        let ctx1         = pushType (bindOfParam m1') ctx'
 
         -- Check the body against the type we have for it.
         (x2', t2, e2, ctx2)
@@ -293,8 +293,8 @@ checkLam !table !a !ctx !b1 !x2 !(Check tExpected)
         --  the context to 'k1' to ensure it has all available information.
         (xAbs', tAbs)
          <- makeFunction
-                config a (XLam a b1' x2)
-                b1' t1' k1'' 
+                config a (XAbs a m1' x2)
+                m1' t1' k1''
                 x2' t2  e2
 
 
@@ -331,11 +331,11 @@ checkLam !table !a !ctx !b1 !x2 !(Check tExpected)
 -- The expected type is not a functional type, yet we have a lambda
 -- abstraction. Fall through to the subsumtion checker which will
 -- throw the error message.
-checkLam !table !a !ctx !b1 !x2 !(Check tExpected)
+checkLam !table !a !ctx !m1 !x2 !(Check tExpected)
  = do   ctrace  $ vcat
                 [ text "*>  Lam Check (not function)" ]
 
-        checkSub table a ctx DemandNone (XLam a b1 x2) tExpected
+        checkSub table a ctx DemandNone (XAbs a m1 x2) tExpected
 
 
 -------------------------------------------------------------------------------
@@ -353,7 +353,7 @@ makeFunction
         => Config n             -- ^ Type checker config.
         -> a                    -- ^ Annotation for error messages.
         -> Exp  a n             -- ^ Expression for error messages.
-        -> Bind n               -- ^ Binder of the function parameter.
+        -> Param n              -- ^ Parameter of the function.
         -> Type n               -- ^ Parameter type of the function.
         -> Kind n               -- ^ Kind of the parameter.
         -> Exp  (AnTEC a n) n   -- ^ Body of the function.
@@ -361,7 +361,7 @@ makeFunction
         -> TypeSum n            -- ^ Sum of effects of the body expression.
         -> CheckM a n (Exp (AnTEC a n) n, Type n)
 
-makeFunction config a xx bParam tParam kParam xBody tBody eBody
+makeFunction config a xx mParam tParam kParam xBody tBody eBody
  | isTExists kParam
  = throw $ ErrorLamBindBadKind a xx tParam kParam
 
@@ -387,7 +387,7 @@ makeFunction config a xx bParam tParam kParam xBody tBody eBody
                 && eCaptured == tBot kEffect)
          then let tAbs  = tFun tParam tBody
                   aAbs  = AnTEC tAbs (tBot kEffect) (tBot kClosure) a
-              in  return ( XLam aAbs bParam xBody
+              in  return ( XAbs aAbs mParam xBody
                          , tAbs)
 
         -- Witness abstractions must always be pure,
@@ -396,7 +396,7 @@ makeFunction config a xx bParam tParam kParam xBody tBody eBody
                 && eCaptured == tBot kEffect)
          then let tAbs  = tImpl tParam tBody
                   aAbs  = AnTEC tAbs (tBot kEffect) (tBot kClosure) a
-              in  return ( XLam aAbs bParam xBody
+              in  return ( XAbs aAbs mParam xBody
                          , tAbs)
 
         -- Handle ImplicitBoxBodies
@@ -419,7 +419,7 @@ makeFunction config a xx bParam tParam kParam xBody tBody eBody
                         tAbs      = tFun tParam tBodySusp
                         aAbs      = AnTEC tAbs      (tBot kEffect) (tBot kClosure) a
 
-                    in  return  ( XLam aAbs bParam (XCast aBox CastBox xBody)
+                    in  return  ( XAbs aAbs mParam (XCast aBox CastBox xBody)
                                 , tAbs)
 
                 -- The body itself produces another suspension.
@@ -440,7 +440,7 @@ makeFunction config a xx bParam tParam kParam xBody tBody eBody
                         tAbs      = tFun tParam tBodySusp
                         aAbs      = AnTEC tAbs      (tBot kEffect) (tBot kClosure) a
 
-                    in  return  ( XLam aAbs bParam 
+                    in  return  ( XAbs aAbs mParam 
                                         $ XCast aBox CastBox 
                                         $ XCast aRun CastRun 
                                         $ xBody

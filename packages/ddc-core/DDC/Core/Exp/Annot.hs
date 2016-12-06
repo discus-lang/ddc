@@ -74,6 +74,10 @@ module DDC.Core.Exp.Annot
         , takeXLams
         , takeXLamFlags
 
+          -- ** Parameters
+        , bindOfParam
+        , typeOfParam
+        , replaceTypeOfParam 
         , ParamTVB(..)
         , takeXLamParamTVB
 

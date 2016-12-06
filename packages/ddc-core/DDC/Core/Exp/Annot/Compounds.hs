@@ -18,6 +18,10 @@ module DDC.Core.Exp.Annot.Compounds
         , takeXLams
         , takeXLamFlags
 
+          -- ** Parameters
+        , bindOfParam
+        , typeOfParam
+        , replaceTypeOfParam
         , ParamTVB(..)
         , takeXLamParamTVB
 
@@ -32,7 +36,7 @@ module DDC.Core.Exp.Annot.Compounds
         , takeXPrimApps
         , takeXFragApps
 
-          -- * Arguments
+          -- ** Arguments
         , takeRType
         , takeRTerm
         , takeRWitness
@@ -159,6 +163,31 @@ takeXLamFlags xx
    in   case go [] xx of
          ([], _)        -> Nothing
          (bs, body)     -> Just (bs, body)
+
+
+-- Parameters -----------------------------------------------------------------
+-- | Take the binder of a parameter.
+bindOfParam :: Param n -> Bind n
+bindOfParam mm
+ = case mm of
+        MType b         -> b
+        MTerm b         -> b
+        MImplicit b     -> b
+
+
+-- | Take the type of a parameter.
+typeOfParam :: Param n -> Type n
+typeOfParam mm
+        = typeOfBind $ bindOfParam mm
+
+
+-- | Replace the type of a parameter.
+replaceTypeOfParam :: Type n -> Param n -> Param n
+replaceTypeOfParam t mm
+ = case mm of
+        MType b         -> MType     $ replaceTypeOfBind t b
+        MTerm b         -> MTerm     $ replaceTypeOfBind t b
+        MImplicit b     -> MImplicit $ replaceTypeOfBind t b
 
 
 -- | Parameters of a function.
