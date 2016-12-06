@@ -1,0 +1,124 @@
+
+module DDC.Core.Exp where
+
+
+-- | Names used for variables and constructors.
+data Name where
+        Name    : Text          -> Name
+
+
+-- | Bound occurrence of a variable.
+data Bound where
+        -- | Bound occurrence of a variable with a name and bump counter.
+        Bound   : Name  -> Nat  -> Bound
+
+
+-- | Binding occurrence of a variable.
+data Bind where
+        Bind    : Name          -> Bind
+
+
+-- | Expressions, used for both types and terms.
+data Exp (a: Data) (p: Data) where
+
+        -- | Expression annotation.
+        XAnnot  : a         -> Exp a p          -> Exp a p
+
+        -- | Atomic primitive or data constructor.
+        XAtom   : Atom  p                       -> Exp a p
+
+        -- | Bound occurrence of a variable.
+        XVar    : Bound                         -> Exp a p
+
+        -- | Function abstraction.
+        XAbs    : Param a p -> Exp a p          -> Exp a p
+
+        -- | Function application.
+        XApp    : Exp a p   -> Arg a p          -> Exp a p
+
+        -- | Possibly recursive bindings.
+        XLet    : Lets a p  -> Exp a p          -> Exp a p
+
+        -- | Case branching.
+        XCase   : Exp a p   -> List (Alt a p)   -> Exp a p
+
+        -- | Type casting.
+        XCast   : Cast a p  -> Exp a p          -> Exp a p
+
+
+-- | Atomic constructs that have no free variables.
+data Atom (p: Data) where
+
+        -- | Primitive in the ambient calculus.
+        APrim   : Prim  -> Atom p
+
+        -- | Data constructor.
+        ACtor   : Name  -> Atom p
+
+        -- | A language fragment specific primitive.
+        AFrag   : p     -> Atom p
+
+
+-- | Parameter of an abstraction.
+data Param (a p: Data) where
+        -- | Explicit parameter.
+        MExp      : Bind -> Exp a p             -> Param a p
+
+        -- | Implicit term parameter.
+        MImplicit : Bind -> Exp a p             -> Param a p
+
+
+-- | Argument of an application.
+data Arg (a p: Data) where
+        -- | Explicit argument.
+        RArg      : Exp  a p                    -> Arg a p
+
+        -- | Implicit term argument.
+        RImplicit : Exp  a p                    -> Arg a p
+
+
+-- | Let-bindings.
+data Lets  (a p: Data) where
+        LLet      : Bind -> Exp a p             -> Lets a p
+        LRec      : List (Tup2 Bind (Exp a p))  -> Lets a p
+
+        LPrivate  :  List Bind 
+                  -> (Maybe (Exp a p)) 
+                  -> List (Tup2 Bind (Exp a p))
+                  -> Lets a p
+
+-- | Case-alternatives.
+data Alt (a p: Data) where
+        AAlt    : Pat a p -> Exp a p            -> Alt a p
+
+
+-- | Pattern matching.
+data Pat (a p: Data) where
+        -- | The default pattern always matches.
+        PDefault :                                 Pat a p
+
+        -- | Match a data constructor and bind its arguments.
+        PData    : Name -> List Bind            -> Pat a p
+
+
+-- | Type casts.
+data Cast (a p: Data) where
+        -- | Weaken an effect.
+        CEffect : Exp a p                       -> Cast a p
+
+        -- | Box up a computation.
+        CBox    :                                  Cast a p
+
+        -- | Run a computation.
+        CRun    :                                  Cast a p
+
+
+data Prim where
+        -- | Type constructors.
+        PrimTyVoid      : Prim
+        PrimTyUnit      : Prim
+        PrimTyArr       : Prim
+
+        -- | Data constructors.
+        PrimDaUnit      : Prim
+

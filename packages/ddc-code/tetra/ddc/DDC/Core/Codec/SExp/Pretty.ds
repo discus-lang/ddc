@@ -1,0 +1,141 @@
+
+-- | S-expression pretty printer for core expressions.
+module DDC.Core.Codec.SExp.Pretty 
+export  { ppNat;  ppName; ppBound; ppBind
+        ; ppExp;  ppAtom; ppParam; ppArg
+        ; ppLets; ppAlt;  ppPat;   ppCast; ppPrim }
+import DDC.Core.Codec.SExp.Pretty.Base
+import DDC.Core.Exp
+import Data.Text
+where
+
+
+-- | Pretty print a natural number.
+ppNat  n
+ = sexp1 "nat" (showNat n)
+
+
+-- | Pretty print a name.
+ppName ((Name n) : Name): Text
+ = sexp1 "name" ("\"" % n % "\"")
+
+
+-- | Pretty print a bound occurrence of a variable.
+ppBound ((Bound n i): Bound): Text
+ = sexp2 "bound" (ppName n) (ppNat i)
+
+
+-- | Pretty print a binding occurrence of a variable.
+ppBind  ((Bind n): Bind): Text
+ = sexp1 "bind" (ppName n)
+
+
+-- | Pretty print an expression.
+ppExp   (ppAnnot: a -> Text)
+        (ppFrag:  p -> Text)
+        (xx:      Exp a p)
+        : Text
+ = let  downX   = ppExp ppAnnot ppFrag in
+   let  downA   = ppAlt ppAnnot ppFrag
+   in case xx of
+        XAnnot a x      -> sexp2 "annot"    (ppAnnot a) (downX x)
+        XAtom  m        -> sexp1 "atom"     (ppAtom ppFrag m)
+        XVar   b        -> sexp1 "var"      (ppBound b)
+        XAbs   m x      -> sexp2 "abs"      (ppParam ppAnnot ppFrag m)  (downX x)
+        XApp   x a      -> sexp2 "app"      (downX x) (ppArg ppAnnot ppFrag a)
+        XLet   lts x    -> sexp2 "let"      (ppLets ppAnnot ppFrag lts) (downX x)
+        XCase  x alts   -> sexp2 "case"     (downX x) (ppList downA alts)
+        XCast  c x      -> sexp2 "cast"     (ppCast ppAnnot ppFrag c)   (downX x)
+
+
+-- | Pretty print an atom.
+ppAtom  (ppFrag:  p -> Text)
+        (aa:      Atom p)
+        : Text
+ = case aa of
+        APrim p         -> sexp1 "prim"     (ppPrim p)
+        ACtor n         -> sexp1 "ctor"     (ppName n)
+        AFrag f         -> sexp1 "frag"     (ppFrag f)
+
+
+-- | Pretty print a parameter.
+ppParam (ppAnnot: a -> Text)
+        (ppFrag:  p -> Text)
+        (mm:      Param a p)
+        : Text
+ = case mm of
+        MExp b x        -> sexp1 "exp"      (ppExp ppAnnot ppFrag x)
+        MImplicit b x   -> sexp1 "implicit" (ppExp ppAnnot ppFrag x)
+
+
+-- | Pretty print an argument.
+ppArg   (ppAnnot: a -> Text)
+        (ppFrag:  p -> Text)
+        (aa:      Arg a p)
+        : Text
+ = case aa of
+        RArg x          -> sexp1 "arg"      (ppExp ppAnnot ppFrag x)
+        RImplicit x     -> sexp1 "implicit" (ppExp ppAnnot ppFrag x)
+
+
+-- | Pretty print some let-bindings.
+ppLets  (ppAnnot: a -> Text)
+        (ppFrag:  p -> Text)
+        (lts:     Lets a p)
+        : Text
+ = case lts of
+        LLet b x
+         -> sexp2 "let"
+                (ppBind b)
+                (ppExp ppAnnot ppFrag x)
+
+        LRec bxs
+         -> sexp1 "rec"
+                (ppList (ppTup2 ppBind (ppExp ppAnnot ppFrag)) bxs)
+
+        LPrivate bs mt bxs 
+         -> sexp3 "private"
+                (ppList  ppBind bs)
+                (ppMaybe (ppExp ppAnnot ppFrag) mt)
+                (ppList  (ppTup2 ppBind (ppExp ppAnnot ppFrag))  bxs)
+
+
+-- | Pretty print an alternative.
+ppAlt   (ppAnnot: a -> Text)
+        (ppFrag:  p -> Text)
+        (alt:     Alt a p)
+        : Text
+ = case alt of
+        AAlt w x        -> sexp2 "alt"  (ppPat w) (ppExp ppAnnot ppFrag x)
+
+
+-- | Pretty print a pattern.
+ppPat   (pp:    Pat a p)
+        : Text
+ = case pp of
+        PDefault        -> "default"
+        PData n bs      -> sexp2 "data" (ppName n) (ppList ppBind bs)
+
+
+-- | Pretty print a cast.
+ppCast  (ppAnnot: a -> Text)
+        (ppFrag:  p -> Text)
+        (cc:      Cast a p)
+        : Text
+ = case cc of
+        CEffect x       -> sexp1 "effect" (ppExp ppAnnot ppFrag x)
+        CBox            -> "box"
+        CRun            -> "run"
+
+
+-- | Pretty print a primitive in the ambient calculus.
+ppPrim  (pp: Prim): Text
+ = case pp of
+        -- Type constructors.
+        PrimTyVoid      -> "ty_Void"
+        PrimTyUnit      -> "ty_Uoid"
+        PrimTyArr       -> "ty_Arr"
+
+        -- Data constructors.
+        PrimDaUnit      -> "da_Unit"
+

@@ -1,0 +1,20 @@
+
+
+module Main 
+import DDC.Core.Exp
+import DDC.Core.Codec.SExp.Pretty
+import System.IO.Console
+import Data.Function
+where
+
+data Frag where
+        FTyNat  : Frag
+
+ppAnnot (_: Frag): Text = "()"
+ppFrag  FTyNat  = "ty_Nat"
+
+main ()
+ = do   exp     = XAbs  (MExp (Bind  (Name "x")) (XAtom (AFrag FTyNat)))
+                        (XVar (Bound (Name "x") 0))
+        
+        writel $ ppExp ppAnnot ppFrag exp
