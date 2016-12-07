@@ -8,6 +8,7 @@ PACKAGES = \
 	ddc-core-llvm \
 	ddc-core-tetra \
 	ddc-core-flow \
+	ddc-core-machine \
 	ddc-core-babel \
         ddc-source-tetra \
 	ddc-build \
@@ -94,6 +95,13 @@ packages/ddc-core-flow/%.o : packages/ddc-core-flow/%.hs
 		      -ipackages/ddc-core-flow \
 		      -ipackages/ddc-core-tetra
 
+packages/ddc-core-machine/%.o : packages/ddc-core-machine/%.hs
+	@echo "* Compiling $<"
+	@$(GHC) $(GHC_FLAGS) $(GHC_WARNINGS2) $(DDC_PACKAGES) $(GHC_INCDIRS) \
+		-c $< -ipackages/ddc-core \
+		      -ipackages/ddc-core-simpl \
+		      -ipackages/ddc-core-machine
+
 packages/ddc-core-babel/%.o : packages/ddc-core-babel/%.hs
 	@echo "* Compiling $<"
 	@$(GHC) $(GHC_FLAGS) $(GHC_WARNINGS2) $(DDC_PACKAGES) $(GHC_INCDIRS) \
@@ -127,6 +135,7 @@ packages/ddc-build/%.o : packages/ddc-build/%.hs
 		      -ipackages/ddc-core-salt \
 		      -ipackages/ddc-core-llvm \
 		      -ipackages/ddc-core-flow \
+		      -ipackages/ddc-core-machine \
 		      -ipackages/ddc-core-tetra \
 		      -ipackages/ddc-core-babel \
                       -ipackages/ddc-source-tetra \
@@ -140,6 +149,7 @@ packages/ddc-driver/%.o : packages/ddc-driver/%.hs
 		      -ipackages/ddc-core-salt \
 		      -ipackages/ddc-core-llvm \
 		      -ipackages/ddc-core-flow \
+		      -ipackages/ddc-core-machine \
 		      -ipackages/ddc-core-tetra \
 		      -ipackages/ddc-core-babel \
                       -ipackages/ddc-source-tetra \

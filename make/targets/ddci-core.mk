@@ -8,6 +8,7 @@ ddci-core_packages = \
 	packages/ddc-core-salt/DDC \
 	packages/ddc-core-llvm/DDC \
 	packages/ddc-core-flow/DDC \
+	packages/ddc-core-machine/DDC \
 	packages/ddc-core-tetra/DDC \
         packages/ddc-source-tetra/DDC \
 	packages/ddc-build/DDC \
@@ -45,6 +46,7 @@ packages/ddc-tools/src/ddci-core/%.o : packages/ddc-tools/src/ddci-core/%.hs
 		      -ipackages/ddc-core-salt \
 		      -ipackages/ddc-core-llvm \
 		      -ipackages/ddc-core-flow \
+		      -ipackages/ddc-core-machine \
 		      -ipackages/ddc-core-tetra \
 		      -ipackages/ddc-core-babel \
                       -ipackages/ddc-source-tetra \

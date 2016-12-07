@@ -1,0 +1,55 @@
+Name:           ddc-core-machine
+Version:        0.4.4.0
+License:        MIT
+License-file:   LICENSE
+Author:         The Disciplined Disciple Compiler Strike Force
+Maintainer:     Ben Lippmeier <benl@ouroborus.net>
+Build-Type:     Simple
+Cabal-Version:  >=1.6
+Stability:      experimental
+Category:       Compilers/Interpreters
+Homepage:       http://disciple.ouroborus.net
+Synopsis:       Disciplined Disciple Compiler: Machine fusion
+Description:    
+        Machine fusion.
+ 
+
+Library
+  Build-Depends: 
+        base            >= 4.6 && < 4.10,
+        array           >= 0.4 && < 0.6,
+        deepseq         >= 1.3 && < 1.5,
+        containers      == 0.5.*,
+        transformers    == 0.5.*,
+        mtl             == 2.2.1.*,
+        ddc-core        == 0.4.4.*,
+        ddc-core-simpl  == 0.4.4.*,
+
+  Exposed-modules:
+        DDC.Core.Machine
+        DDC.Core.Machine.Env
+        DDC.Core.Machine.Prim
+        DDC.Core.Machine.Profile
+
+
+  GHC-options:
+        -Wall
+        -fno-warn-orphans
+        -fno-warn-missing-signatures
+        -fno-warn-missing-methods
+        -fno-warn-unused-do-bind
+
+  Extensions:
+        NoMonomorphismRestriction
+        FunctionalDependencies
+        MultiParamTypeClasses
+        FlexibleContexts
+        ScopedTypeVariables
+        StandaloneDeriving
+        DeriveDataTypeable
+        FlexibleInstances
+        ParallelListComp
+        KindSignatures
+        PatternGuards
+        ViewPatterns
+        BangPatterns
