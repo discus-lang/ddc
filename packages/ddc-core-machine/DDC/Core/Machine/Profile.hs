@@ -37,7 +37,14 @@ features
         , featuresImplicitBox           = False
         , featuresMetaVariables         = False
         , featuresPartialPrims          = False
-        , featuresPartialApplication    = False
+        -- TODO: not sure yet which of these we want.
+        -- Looks like partial application allows
+        -- (if f is 3 argument function)
+        -- > foo (f x)
+        -- but not 
+        -- > let zz = f x
+        -- > in foo
+        , featuresPartialApplication    = True
         , featuresGeneralApplication    = False
         , featuresNestedFunctions       = True
         , featuresGeneralLetRec         = True

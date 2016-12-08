@@ -1,0 +1,39 @@
+ok
+ok
+ok
+ok
+
+module Map with
+letrec {
+  map: [a b: Data].(a -> b) -> Stream# a -> Tuple1# (Stream# b)
+    = Λ(a b: Data).
+      λ(f: a -> b).λ(as: Stream# a).
+      let x1      = λ(inp: Source# a).λ(out: Sink# b).
+                    letrec {
+                      p1: Process# = pull# [a] inp p2;
+                      
+                      p2: a -> Process#
+                        = λ(v: a).
+                          let x0      = f v in
+                          push# [b] out x0 p3;
+                      
+                      p3: Process# = drop# [a] inp p1
+                    } in
+                    p1 in
+      stream_1_1# [a] [b] x1 as;
+  
+  mapmap: [a b c: Data].(a -> b) -> (b -> c) -> Stream# a -> Tuple1# (Stream# c)
+    = Λ(a b c: Data).
+      λ(f: a -> b).λ(g: b -> c).λ(xs: Stream# a).
+      let x2      = map [a] [b] f xs in
+      letcase T1# (ys: Stream# b)  = x2 in
+      let x3      = map [b] [c] g ys in
+      letcase T1# (zs: Stream# c)  = x3 in
+      T1# [Stream# c] zs;
+  
+  exec: [a b c: Data].(a -> b) -> (b -> c) -> Source# a -> Sink# c -> Process#
+    = Λ(a b c: Data).
+      λ(f: a -> b).λ(g: b -> c).λ(ins: Source# a).λ(outs: Sink# c).
+      let x4      = mapmap [a] [b] [c] f g in
+      process_1_1# [a] [c] x4 ins outs
+}

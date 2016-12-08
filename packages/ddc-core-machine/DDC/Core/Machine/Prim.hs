@@ -383,7 +383,7 @@ typeOpMachine op
         -- push# : [a : Data]. Sink a -> a -> Process -> Process
         OpPush 
          -> tForall kData $ \tA 
-         -> tSource tA `tFun` tA `tFun` tProcess `tFun` tProcess
+         -> tSink tA `tFun` tA `tFun` tProcess `tFun` tProcess
 
         -- drop# : [a : Data]. Source a -> Process -> Process
         OpDrop 

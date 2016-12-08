@@ -30,7 +30,7 @@ process_2_2# :: [^ ^ ^ ^: Data].(Stream# ^3 -> Stream# ^2 -> Tuple2# (Stream# ^1
 
 
 pull# :: [^: Data].Source# ^0 -> (^0 -> Process#) -> Process#
-push# :: [^: Data].Source# ^0 -> ^0 -> Process# -> Process#
+push# :: [^: Data].Sink# ^0 -> ^0 -> Process# -> Process#
 drop# :: [^: Data].Source# ^0 -> Process# -> Process#
 
 T1# :: [^: Data].^0 -> Tuple1# ^0
