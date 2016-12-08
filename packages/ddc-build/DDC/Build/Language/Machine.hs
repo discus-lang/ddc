@@ -13,13 +13,9 @@ import DDC.Core.Simplifier
 import DDC.Core.Transform.Namify
 import DDC.Core.Fragment                hiding (Error(..))
 import DDC.Core.Machine                 as Machine
+import DDC.Core.Machine.Profile         as Machine
 import DDC.Data.Pretty
 import qualified Data.Map               as Map
-
-import DDC.Type.Exp
-import DDC.Type.Env                     (Env)
-import qualified DDC.Type.Env           as Env
-import Control.Monad.State.Strict
 
 
 -- | Language definition for Disciple Core Machine.
@@ -58,25 +54,4 @@ data Error a
 
 instance Pretty (Error a) where
  ppr Error  = text (show Error)
-
--- | Create a new type variable name that is not in the given environment.
-freshT :: Env Name -> Bind Name -> State Int Name
-freshT env bb
- = do   i       <- get
-        put (i + 1)
-        let n =  NameVar $ "t" ++ show i
-        case Env.lookupName n env of
-         Nothing -> return n
-         _       -> freshT env bb
-
-
--- | Create a new value variable name that is not in the given environment.
-freshX :: Env Name -> Bind Name -> State Int Name
-freshX env bb
- = do   i       <- get
-        put (i + 1)
-        let n = NameVar $ "x" ++ show i
-        case Env.lookupName n env of
-         Nothing -> return n
-         _       -> freshX env bb
 

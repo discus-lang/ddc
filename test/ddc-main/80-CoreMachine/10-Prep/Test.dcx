@@ -1,0 +1,24 @@
+:set lang Machine
+:set PrettyUseLetCase
+:set Synth
+
+:machine-prep..
+module Map
+with letrec
+
+map [a b : Data] (f : a -> b) (as : Stream# a) : Tuple1# (Stream# b)
+ = stream_1_1# (\inp out. letrec
+    p1   = pull# inp p2
+    p2 v = push# out (f v) p3
+    p3   = drop# inp p1
+ in p1) as
+
+mapmap [a b c : Data] (f : a -> b) (g : b -> c) xs
+ =  letcase T1# ys = map f xs
+ in letcase T1# zs = map g ys
+ in T1# zs
+
+exec [a b c : Data] (f : a -> b) (g : b -> c) (ins : Source# a) (outs : Sink# c)
+ = process_1_1# (mapmap f g) ins outs
+;;
+

@@ -8,7 +8,10 @@ module DDC.Build.Pipeline.Core
         , pipeTetra
 
         , PipeFlow (..)
-        , pipeFlow)
+        , pipeFlow
+        
+        , PipeMachine (..)
+        , pipeMachine)
 where
 import DDC.Build.Pipeline.Error
 import DDC.Build.Pipeline.Sink
@@ -27,6 +30,9 @@ import qualified DDC.Core.Flow.Transform.Melt           as Flow
 import qualified DDC.Core.Flow.Transform.Wind           as Flow
 import qualified DDC.Core.Flow.Transform.Rates.SeriesOfVector as Flow
 import qualified DDC.Core.Flow.Convert                  as Flow
+
+import qualified DDC.Core.Machine                       as Machine
+import qualified DDC.Core.Machine.Profile               as Machine
 
 import qualified DDC.Core.Tetra.Transform.Curry         as Tetra
 import qualified DDC.Core.Tetra.Transform.Boxing        as Tetra
@@ -121,6 +127,12 @@ data PipeCore a n where
         :: Pretty a
         => ![PipeFlow a]
         -> PipeCore a Flow.Name
+
+  -- Treat a module as belonging to the Core Machine fragment from now on.
+  PipeCoreAsMachine 
+        :: Pretty a
+        => ![PipeMachine a]
+        -> PipeCore a Machine.Name
 
   -- Treat a module as belonging to the Core Salt fragment from now on.
   PipeCoreAsSalt
@@ -221,6 +233,10 @@ pipeCore !mm !pp
         PipeCoreAsFlow !pipes
          -> {-# SCC "PipeCoreAsFlow" #-}
             liftM concat $ mapM (pipeFlow mm) pipes
+
+        PipeCoreAsMachine !pipes
+         -> {-# SCC "PipeCoreAsMachine" #-}
+            liftM concat $ mapM (pipeMachine mm) pipes
 
         PipeCoreAsSalt !pipes
          -> {-# SCC "PipeCoreAsSalt" #-}
@@ -569,4 +585,50 @@ pipeFlows !mm !pipes
          = do   !err     <- pipeFlow mm pipe
                 go (errs ++ err) rest
 
+
+-- PipeMachine ---------------------------------------------------------------------------------------
+-- | Process a Core Machine module.
+data PipeMachine a where
+  -- Output the module in core language syntax.
+  PipeMachineOutput 
+        :: Sink
+        -> PipeMachine a
+
+  -- Run the prep transform to expose flow operators.
+  PipeMachinePrep
+        :: [PipeCore () Machine.Name] 
+        -> PipeMachine ()
+
+
+-- | Process a Core Machine module.
+pipeMachine :: C.Module a Machine.Name
+         -> PipeMachine a
+         -> IO [Error]
+
+pipeMachine !mm !pp
+ = case pp of
+        PipeMachineOutput !sink
+         -> {-# SCC "PipeMachineOutput" #-}
+            pipeSink (renderIndent $ ppr mm) sink
+
+        PipeMachinePrep  !pipes
+         -> {-# SCC "PipeMachinePrep"   #-}
+            let 
+                -- Eta-expand so all workers have explicit parameter names.
+                mm_eta          = C.result $ Eta.etaModule Machine.profile
+                                        (Eta.configZero { Eta.configExpand = True})
+                                        mm
+
+                -- Snip program to expose intermediate bindings.
+                mm_snip         = Flatten.flatten 
+                                $ Snip.snip 
+                                        (Snip.configZero { Snip.configSnipLetBody = True })
+                                        mm_eta
+
+                -- The floater needs bindings to be fully named.
+                namifierT       = C.makeNamifier Machine.freshT Env.empty
+                namifierX       = C.makeNamifier Machine.freshX Env.empty
+                mm_namified     = S.evalState (C.namify namifierT namifierX mm_snip) 0
+
+            in  pipeCores mm_namified pipes
 

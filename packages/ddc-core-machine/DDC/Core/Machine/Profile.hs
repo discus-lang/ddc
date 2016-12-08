@@ -3,12 +3,19 @@
 module DDC.Core.Machine.Profile
         ( profile
         , lexModuleString
-        , lexExpString)
+        , lexExpString
+        
+        , freshT
+        , freshX)
 where
 import DDC.Core.Machine.Prim
 import DDC.Core.Machine.Env
 import DDC.Core.Fragment
 import DDC.Core.Lexer
+import DDC.Type.Exp
+import Control.Monad.State.Strict
+import DDC.Type.Env             (Env)
+import qualified DDC.Type.Env   as Env
 
 
 -- | Language profile for Disciple Core Machine.
@@ -81,4 +88,25 @@ lexExpString sourceName lineStart str
                 Just t' -> Located sp t'
                 Nothing -> Located sp (KErrorJunk "lexical error")
 
+
+-- | Create a new type variable name that is not in the given environment.
+freshT :: Env Name -> Bind Name -> State Int Name
+freshT env bb
+ = do   i       <- get
+        put (i + 1)
+        let n =  NameVar ("t" ++ show i)
+        case Env.lookupName n env of
+         Nothing -> return n
+         _       -> freshT env bb
+
+
+-- | Create a new value variable name that is not in the given environment.
+freshX :: Env Name -> Bind Name -> State Int Name
+freshX env bb
+ = do   i       <- get
+        put (i + 1)
+        let n = NameVar ("x" ++ show i)
+        case Env.lookupName n env of
+         Nothing -> return n
+         _       -> freshX env bb
 

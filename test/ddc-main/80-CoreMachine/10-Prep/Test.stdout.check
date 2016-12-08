@@ -1,0 +1,68 @@
+ok
+ok
+ok
+
+module Map with
+letrec {
+  map: [a b: Data].(a -> b) -> Stream# a -> Tuple1# (Stream# b)
+    = Λ(a b: Data).
+      λ(f: a -> b).λ(as: Stream# a).
+      let x5: Source# a -> Sink# b -> Process#
+            = λ(inp: Source# a).λ(out: Sink# b).
+              letrec {
+                p1: Process#
+                  = let x1: a -> Process#
+                          = λ(x0: a). p2 x0 in
+                    let x2: Process#
+                          = pull# [a] inp x1 in
+                    x2;
+                
+                p2: a -> Process#
+                  = λ(v: a).
+                    let x3: b  
+                          = f v in
+                    let x4: Process#
+                          = push# [b] out x3 p3 in
+                    x4;
+                
+                p3: Process# = drop# [a] inp p1
+              } in
+              p1 in
+      let x6: Tuple1# (Stream# b)
+            = stream_1_1# [a] [b] x5 as in
+      x6;
+  
+  mapmap: [a b c: Data].(a -> b) -> (b -> c) -> Stream# a -> Tuple1# (Stream# c)
+    = Λ(a b c: Data).
+      λ(f: a -> b).λ(g: b -> c).λ(xs: Stream# a).
+      let x8: a -> b
+            = λ(x7: a). f x7 in
+      let x9: Tuple1# (Stream# b)
+            = map [a] [b] x8 xs in
+      letcase T1# (x10: Stream# b)  = x9 in
+      let x12: b -> c
+            = λ(x11: b). g x11 in
+      let x13: Tuple1# (Stream# c)
+            = map [b] [c] x12 x10 in
+      letcase T1# (x14: Stream# c)  = x13 in
+      let x15: Tuple1# (Stream# c)
+            = T1# [Stream# c] x14 in
+      x15;
+  
+  exec: [a b c: Data].(a -> b) -> (b -> c) -> Source# a -> Sink# c -> Process#
+    = Λ(a b c: Data).
+      λ(f: a -> b).λ(g: b -> c).λ(ins: Source# a).λ(outs: Sink# c).
+      let x22: Stream# a -> Tuple1# (Stream# c)
+            = λ(x16: Stream# a).
+              let x18: a -> b
+                    = λ(x17: a). f x17 in
+              let x20: b -> c
+                    = λ(x19: b). g x19 in
+              let x21: Tuple1# (Stream# c)
+                    = mapmap [a] [b] [c] x18 x20 x16 in
+              x21 in
+      let x23: Process#
+            = process_1_1# [a] [c] x22 ins outs in
+      x23
+}
+
