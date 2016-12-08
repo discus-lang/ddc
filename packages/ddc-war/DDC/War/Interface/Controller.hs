@@ -81,10 +81,14 @@ controller config gang chainsTotal chanResult
                 gangState       <- getGangState gang
                 if gangState == GangFinished
 
-                 -- No job results in channel, and the gang has finished.
-                 -- We're done, so return to caller.
+                 -- Just because the gang loop has finished doesn't mean that all the workers have.
+                 -- Wait for the workers to finish, then read the remaining bits off the queue.
                  then do
-                        return jobResults
+                        waitForGangState gang GangFinished
+                        -- After the gang is finished we cannot wait on it again.
+                        -- So just read off the rest of the queue.
+                        -- (This might be a bug in the gang)
+                        go_finish jobResults
 
                  -- No job results in channel, but the gang is still running.
                  -- Spin until something else happens.
@@ -103,6 +107,20 @@ controller config gang chainsTotal chanResult
                         killGang gang
                         return (jobResult : jobResults)
 
+        -- The gang has been joined - it is really finished now.
+        -- We just need to pull off the remaining results and return.
+        go_finish jobResults
+         =  (atomically $ isEmptyTChan chanResult) >>= \empty'
+         -> if empty'
+             then return jobResults
+             -- We've got a job result from the input channel.
+             -- Read the result and pass it off to the result handler.
+             else do
+                jobResult <- atomically $ readTChan chanResult
+                keepGoing <- handleResult config gang chainsTotal jobResult
+                if keepGoing
+                 then go_finish (jobResult : jobResults)
+                 else return (jobResult : jobResults)
 
 -- | Handle a job result.
 --   Returns True if the controller should continue, 

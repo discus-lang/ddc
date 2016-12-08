@@ -12,7 +12,6 @@ import DDC.War.Driver                           (Chain(..))
 import qualified DDC.War.Driver                 as Driver
 import qualified DDC.War.Driver.Gang            as Driver
 
-import BuildBox.Control.Gang
 import BuildBox.IO.Directory
 import BuildBox.Pretty
 import BuildBox
@@ -194,9 +193,5 @@ runChainsWithControllerIO prefix spec chains
 
         -- Wait for the controller to finish.
         results <- takeMVar varResults
-
-        -- Wait until the gang is finished running chains, 
-        -- or has been killed by the controller.
-        joinGang gang
 
         return results
