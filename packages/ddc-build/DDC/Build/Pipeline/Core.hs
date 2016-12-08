@@ -620,15 +620,49 @@ pipeMachine !mm !pp
                                         mm
 
                 -- Snip program to expose intermediate bindings.
-                mm_snip         = Flatten.flatten 
-                                $ Snip.snip 
-                                        (Snip.configZero { Snip.configSnipLetBody = True })
-                                        mm_eta
+                -- mm_snip         = Flatten.flatten 
+                --                 $ Snip.snip 
+                --                         (Snip.configZero { Snip.configSnipLetBody = True })
+                --                         mm_eta
+
 
                 -- The floater needs bindings to be fully named.
                 namifierT       = C.makeNamifier Machine.freshT Env.empty
                 namifierX       = C.makeNamifier Machine.freshX Env.empty
-                mm_namified     = S.evalState (C.namify namifierT namifierX mm_snip) 0
+                mm_namified     = S.evalState (C.namify namifierT namifierX mm_eta) 0
 
-            in  pipeCores mm_namified pipes
+                {-
+                takeRet t
+                  | Just (_,ret) <- C.takeTForalls t
+                  = takeRet ret
+                  | Just (_,ret) <- C.takeTFun t
+                  = takeRet ret
+                  | otherwise
+                  = t
+                -}
+
+                floatControl l
+                  = case l of
+                    C.LLet _ x
+                     | Just (_,xx) <- C.takeXLamFlags x
+                     , Just (prim,_) <- C.takeXFragApps xx
+                     , Machine.NameOpMachine Machine.OpProcess{} <- prim
+                     -> Forward.FloatDeny
+                     --  | ret <- takeRet $ C.typeOfBind b
+                     --  , trace (show ret) True
+                     --  , ret == Machine.tProcess
+                     --  -> Forward.FloatDeny
+                    _ -> Forward.FloatForce
+
+                mm_float        = C.result
+                                $ Forward.forwardModule Machine.profile
+                                    (Forward.Config floatControl False)
+                                    $ C.reannotate (const ()) mm_namified
+
+                -- Apply resulting lambdas
+                mm_beta         = C.result $ Beta.betaReduce Machine.profile
+                                        (Beta.configZero { Beta.configBindRedexes = True})
+                                        mm_float
+
+            in  pipeCores mm_beta pipes
 

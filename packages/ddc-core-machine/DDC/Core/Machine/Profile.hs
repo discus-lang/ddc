@@ -52,7 +52,7 @@ features
         -- > let zz = f x
         -- > in foo
         , featuresPartialApplication    = True
-        , featuresGeneralApplication    = False
+        , featuresGeneralApplication    = True
         , featuresNestedFunctions       = True
         , featuresGeneralLetRec         = True
         , featuresDebruijnBinders       = True
