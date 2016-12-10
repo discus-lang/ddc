@@ -32,7 +32,6 @@ import qualified DDC.Core.Flow.Transform.Rates.SeriesOfVector as Flow
 import qualified DDC.Core.Flow.Convert                  as Flow
 
 import qualified DDC.Core.Machine                       as Machine
-import qualified DDC.Core.Machine.Profile               as Machine
 
 import qualified DDC.Core.Tetra.Transform.Curry         as Tetra
 import qualified DDC.Core.Tetra.Transform.Boxing        as Tetra
@@ -614,24 +613,17 @@ pipeMachine !mm !pp
         PipeMachinePrep  !pipes
          -> {-# SCC "PipeMachinePrep"   #-}
             let 
-                -- Eta-expand so all workers have explicit parameter names.
-                mm_eta          = C.result $ Eta.etaModule Machine.profile
-                                        (Eta.configZero { Eta.configExpand = True})
-                                        mm
+                -- Start by forwarding all process and stream definitions computations
+                -- into the top-level process_i_o# "exec" functions.
+                -- Forward doesn't handle letrecs so we have to write these in terms of lets.
+                -- We should have a pre-step that splits out strongly connected components into
+                -- their own lets and letrec groups.
+                --
+                -- We should also find calls to process_i_o# and raise them to top-level
+                -- functions so that they can be slurped.
 
-                -- Snip program to expose intermediate bindings.
-                -- mm_snip         = Flatten.flatten 
-                --                 $ Snip.snip 
-                --                         (Snip.configZero { Snip.configSnipLetBody = True })
-                --                         mm_eta
-
-
-                -- The floater needs bindings to be fully named.
-                namifierT       = C.makeNamifier Machine.freshT Env.empty
-                namifierX       = C.makeNamifier Machine.freshX Env.empty
-                mm_namified     = S.evalState (C.namify namifierT namifierX mm_eta) 0
-
-                {-
+                -- Take the actual return type of a function binding
+                -- (or if it's not a function, just the type itself)
                 takeRet t
                   | Just (_,ret) <- C.takeTForalls t
                   = takeRet ret
@@ -639,30 +631,65 @@ pipeMachine !mm !pp
                   = takeRet ret
                   | otherwise
                   = t
-                -}
+
+                -- Check whether a type requires forwarding.
+                -- Basically if it is some kind of Stream computation.
+                -- The types are:
+                --   Process#; Stream# a; Sink# a; Source# a; and Tuple# [Stream# a...]
+                forwardType t
+                 | Just (con,args) <- C.takePrimTyConApps $ takeRet t
+                 , Machine.NameTyConMachine tycon <- con
+                 = case tycon of
+                    Machine.TyConProcess -> True
+                    Machine.TyConStream  -> True
+                    Machine.TyConSink    -> True
+                    Machine.TyConSource  -> True
+                    Machine.TyConTuple _ -> any forwardType args
+                 | otherwise
+                 = False
 
                 floatControl l
                   = case l of
-                    C.LLet _ x
+                    C.LLet b x
+                     -- Do not forward anything that is exported.
+                     -- If we forced it to be forwarded, it would disappear.
+                     | Just n <- C.takeNameOfBind b
+                     , Just _ <- lookup n (C.moduleExportValues mm)
+                     -> Forward.FloatDeny
+
+                     -- Do not forward top-level processes
+                     -- as these are what will be slurped and fused
+                     -- (They should probably be exported anyway)
                      | Just (_,xx) <- C.takeXLamFlags x
                      , Just (prim,_) <- C.takeXFragApps xx
                      , Machine.NameOpMachine Machine.OpProcess{} <- prim
                      -> Forward.FloatDeny
-                     --  | ret <- takeRet $ C.typeOfBind b
-                     --  , trace (show ret) True
-                     --  , ret == Machine.tProcess
-                     --  -> Forward.FloatDeny
-                    _ -> Forward.FloatForce
+
+                     -- Otherwise check whether the return is a Process, Stream, Source, or Sink.
+                     -- If so force it to be forwarded, as it affects the structure of the process.
+                     | forwardType $ C.typeOfBind b
+                     -> Forward.FloatForce
+
+                    -- Everything else can be inlined, but doesn't need to be.
+                    _ -> Forward.FloatAllow
 
                 mm_float        = C.result
                                 $ Forward.forwardModule Machine.profile
                                     (Forward.Config floatControl False)
-                                    $ C.reannotate (const ()) mm_namified
+                                    $ C.reannotate (const ()) mm
 
-                -- Apply resulting lambdas
-                mm_beta         = C.result $ Beta.betaReduce Machine.profile
-                                        (Beta.configZero { Beta.configBindRedexes = True})
-                                        mm_float
+                -- After forwarding we end up with a lot of opportunity for
+                -- beta reduction, so we want to run it in a fixpoint.
+                primKindEnv     = C.profilePrimKinds      Machine.profile
+                primTypeEnv     = C.profilePrimTypes      Machine.profile
+                evalSimplifier simpl mm0
+                                = result . flip S.evalState ()
+                                $ applySimplifier Machine.profile primKindEnv primTypeEnv simpl mm0
+
+                betaS           = Trans $ Beta $ Beta.configZero { Beta.configBindRedexes = True}
+
+                mm_beta         = evalSimplifier (Fix 10 betaS)
+                                  mm_float
 
             in  pipeCores mm_beta pipes
 
