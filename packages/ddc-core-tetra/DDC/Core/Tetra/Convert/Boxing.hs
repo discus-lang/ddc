@@ -61,6 +61,7 @@ isBoxedRepType tt
         | (case takeTyConApps tt of
                 Just (TyConSpec  TcConUnit,         _)  -> True
                 Just (TyConSpec  (TcConRecord _ns), _)  -> True
+                Just (TyConSpec  TcConSusp,         _)  -> True
                 Just (TyConBound (UName _) _,       _)  -> True
                 _                                       -> False)
         = True
