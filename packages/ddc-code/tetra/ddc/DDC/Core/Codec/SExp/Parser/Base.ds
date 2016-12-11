@@ -1,5 +1,6 @@
 
 module DDC.Core.Codec.SExp.Parser.Base
+export { peek; shift; next; take; takeWhile }
 import Data.Text
 import Data.Ref
 
@@ -10,29 +11,55 @@ import foreign c value
 where
 
 
+-------------------------------------------------------------------------------
 -- | Parser state holds a reference to a list of avaliable tokens.
 data State (r: Region) (a: Data) where
-        State   :  Ref r (List a)
-                -> State r a
+        State   
+         :      (S (Read r)             (Maybe a))      -- ^ peek
+         ->     (S (Read r + Write r)   (Maybe a))      -- ^ next
+         ->     State r a
 
 
--- | Peek the next token if there is one available.
-peek ((State ref): State r a): S (Read r) (Maybe a)
+stateOfList 
+        [r: Region] [a: Data]
+        (xx: List a): S (Alloc r) (State r a)
+ = do   ref     = allocRef [r] xx
+
+        -- TODO: shouldn't need the boxes here as the expected types
+        -- of the fields are of suspended computations.
+        State [r] [a] (box peekRef [r] ref) (box nextRef [r] ref)
+
+
+peekRef [r: Region] [a: Data] 
+        (ref: Ref r (List a)): S (Read r) (Maybe a)
  = case readRef ref of
         Nil             -> Nothing
-        Cons x xs       -> Just x
+        Cons x _        -> Just x
+
+
+nextRef [r: Region] [a: Data]
+        (ref: Ref r (List a)): S (Read r + Write r) (Maybe a)
+ = case readRef ref of
+        Nil             -> Nothing
+        Cons x xs       -> do { writeRef ref xs; Just x }
+
+
+-------------------------------------------------------------------------------
+-- | Peek the next token if there is one available.
+peek ((State peek' _):  State r a): S (Read r) (Maybe a)
+ = peek'
 
 
 -- | Take the next token.
-next ((State ref): State r a): S (Read r + Write r) a
- = case readRef ref of
-        -- TODO: throw unexpected end of input.
-        Nil
-         -> exit 1
+next  ((State _ next'): State r a): S (Read r + Write r) (Maybe a)
+ = next'
 
-        Cons x xs       
-         -> do  writeRef ref xs
-                x
+
+-- | Consume the next token.
+shift (s: State r a): S (Read r + Write r) a
+ = case next s of
+        Nothing -> exit 0
+        Just x  -> x
 
 
 -- | Take the next token if it matches the given predicate, otherwise fail.
@@ -42,7 +69,7 @@ take    (s:     State r a)
  = case peek s of
         Nothing         -> Nothing
         Just t
-         | want t       -> Just (next s)
+         | want t       -> Just (shift s)
          | otherwise    -> Nothing
 
 
@@ -54,7 +81,6 @@ takeWhile
  = case peek s of
         Nothing         -> Nil
         Just t
-         | want t       -> Cons (next s) (takeWhile s want)
+         | want t       -> Cons (shift s) (takeWhile s want)
          | otherwise    -> Nil
-
 

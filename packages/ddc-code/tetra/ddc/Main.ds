@@ -3,6 +3,9 @@
 module Main 
 import DDC.Core.Exp
 import DDC.Core.Codec.SExp.Pretty
+import DDC.Core.Codec.SExp.Lexer
+import DDC.Core.Codec.SExp.Lexer.Token
+import DDC.Core.Codec.SExp.Parser
 import System.IO.Console
 import Data.Function
 where
@@ -18,3 +21,8 @@ main ()
                         (XVar (Bound (Name "x") 0))
         
         writel $ ppExp ppAnnot ppFrag exp
+
+
+        toks    = lexText "(abs (exp (atom (frag ty_Nat))) (var (bound (name \"x\") (nat \"0\"))))"
+        writel $ show (show_list show_token) toks
+

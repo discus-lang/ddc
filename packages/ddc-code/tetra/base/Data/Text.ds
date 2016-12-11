@@ -4,3 +4,4 @@ import Data.Text.Base
 import Data.Text.List
 import Data.Text.Operator
 import Data.Text.Show
+

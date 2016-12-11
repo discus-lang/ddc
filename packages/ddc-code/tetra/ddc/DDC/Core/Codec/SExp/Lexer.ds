@@ -1,0 +1,77 @@
+
+module DDC.Core.Codec.SExp.Lexer
+export { lexText; lexList; lexSingle }
+import DDC.Core.Codec.SExp.Lexer.Token
+import DDC.Core.Codec.SExp.Parser.Base
+import Class.Show
+import Data.Text
+import Data.Ref
+where
+
+
+-- | Lex text into SExp tokens.
+--
+--   TODO: We need the extra 'toks' here to force a run that crushes the
+--   effects out of the return value.
+--
+lexText (tx: Text): List Token
+ = private r with {Read r; Write r; Alloc r} in
+   do   toks    = lexList (State $ allocRef [r] $ charListOfText tx)
+        toks
+
+
+lexList   (s: State r Char)
+          : S (Read r + Write r) (List Token)
+ = case lexSingle s of
+    Nothing     -> Nil
+    Just t      -> Cons t (lexList s)
+
+
+lexSingle (s: State r Char)
+          : S (Read r + Write r) (Maybe Token)
+ = case peek s of
+    Nothing 
+        ->      Nothing
+
+    Just c 
+        -- Skip over whitespace.
+        | isSpace c
+        -> do   shift s
+                lexSingle s
+
+        -- Open parens.
+        | eqChar c '(' 
+        -> do   shift s
+                Just KBra
+
+        -- Close parens.
+        | eqChar c ')' 
+        -> do   shift s
+                Just KKet
+
+        -- s-exp constructor.
+        | isConStart c
+        -> do   cs      = takeWhile s isConBody
+                tx      = textOfCharList cs
+                Just (KWord tx)
+
+        -- String.
+        | eqChar c '"'
+        -> do   shift s
+                cs      = takeWhile s (\c' -> not $ eq# c' '"')
+                tx      = textOfCharList cs
+                shift s
+                Just (KString tx)
+
+        | otherwise    
+        ->      Nothing
+
+
+-- | Character can start an s-exp constructor.
+isConStart c
+ = isLower c
+
+-- | Character can be part of the body of an s-exp constructor.
+isConBody  c
+ = isLower c ∨ isUpper c ∨ eqChar c '_'
+

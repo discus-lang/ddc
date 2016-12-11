@@ -1,0 +1,24 @@
+
+module DDC.Core.Codec.SExp.Lexer.Token
+export show_token
+import Class.Show
+import Data.Text
+where
+
+
+data Token where
+        KBra    : Token
+        KKet    : Token
+        KWord   : Text  -> Token
+        KString : Text  -> Token
+
+
+show_token
+ =  Show $ \t
+ -> case t of
+        KBra            -> "KBra"
+        KKet            -> "KKet"
+        KWord t         -> parens ("KWord"   %% show show_text t)
+        KString t       -> parens ("KString" %% show show_text t)
+
+

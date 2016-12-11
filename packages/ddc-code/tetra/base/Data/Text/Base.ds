@@ -20,6 +20,7 @@ export
         indexText;
 
         -- Operators.
+        eqChar;
         eqText;
 }
 import Data.Text.Char
@@ -213,6 +214,10 @@ indexText (tt: Text) (ix: Nat): Maybe Word8
 
 
 -- Comparison -----------------------------------------------------------------
+eqChar (c1 c2: Char): Bool
+ = eqText (textOfChar c1) (textOfChar c2)
+
+
 -- | O(max len1 len2).
 --   Check if two text objects represent the same characters.
 eqText (tx1 tx2: Text): Bool

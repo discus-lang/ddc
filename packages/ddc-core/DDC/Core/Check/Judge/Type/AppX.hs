@@ -331,7 +331,7 @@ synthAppArg table
 
  -- Applied expression is not a function.
  | otherwise
- =      error "non function" -- throw $ ErrorAppNotFun a xx tFn
+ =      throw $ ErrorAppNotFun a xx tFn
 
 
 -------------------------------------------------------------------------------

@@ -4,6 +4,7 @@ export
 {       isDigit;
         isUpper;
         isLower;
+        isSpace;
 }
 import Data.Numeric.Bool
 where
@@ -26,3 +27,11 @@ isUpper (c: Char): Bool
 -- | Check if a character is a lower-case letter.
 isLower (c: Char): Bool
  = ge# c 97w32    ∧ le# c 122w32
+
+
+-- | Check if a character is white-space.
+isSpace (c: Char): Bool
+ = eq# c ' '
+ ∨ eq# c '\t'
+ ∨ eq# c '\n' 
+
