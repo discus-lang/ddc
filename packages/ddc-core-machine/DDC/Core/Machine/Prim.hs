@@ -22,7 +22,7 @@ module DDC.Core.Machine.Prim
         , OpMachine    (..)
         , readOpMachine
         , typeOpMachine
-        
+
           -- * Compounds
         , kStatic
         , tTupleN

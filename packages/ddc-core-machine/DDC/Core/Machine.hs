@@ -17,8 +17,14 @@ module DDC.Core.Machine
 
           -- * Program Lexing
         , lexModuleString
-        , lexExpString)
+        , lexExpString
+
+          -- * Processes
+        , Process       (..)
+        , Network       (..)
+        )
 
 where
 import DDC.Core.Machine.Prim
 import DDC.Core.Machine.Profile
+import DDC.Core.Machine.Process
