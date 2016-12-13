@@ -39,7 +39,6 @@ in let mapmap xs
  in letcase T1# zs = map g0 ys
  in T1# zs
 
-in let exec  (ins : Source# a0) (outs : Sink# c0) 
- = process_1_1# mapmap ins outs
+in let exec = process_1_1# mapmap
 ;;
 

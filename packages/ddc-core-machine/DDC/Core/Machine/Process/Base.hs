@@ -25,7 +25,7 @@ newtype Label
 
 newtype Channel
     = Channel
-    { unChannel :: Int }
+    { unChannel :: Name }
 
 data ChannelType
     = ChannelInput | ChannelOutput | ChannelIgnore

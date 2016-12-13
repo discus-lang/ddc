@@ -43,7 +43,7 @@ features
         , featuresImplicitRun           = False
         , featuresImplicitBox           = False
         , featuresMetaVariables         = False
-        , featuresPartialPrims          = False
+        , featuresPartialPrims          = True
         -- TODO: not sure yet which of these we want.
         -- Looks like partial application allows
         -- (if f is 3 argument function)

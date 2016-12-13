@@ -70,7 +70,11 @@ module DDC.Core.Exp.Annot.Compounds
           -- * Data Constructors
         , xUnit, dcUnit
         , takeNameOfDaCon
-        , takeTypeOfDaCon)
+        , takeTypeOfDaCon
+
+          -- * Bound Variables
+        , takeBoundOfExp
+        , takeNameOfExp)
 where
 import DDC.Core.Exp.Annot.Exp
 import DDC.Core.Exp.DaCon
@@ -479,4 +483,19 @@ takePrimWiConApps ww
 -- | Construct a value of unit type.
 xUnit   :: a -> Exp a n
 xUnit a = XCon a dcUnit
+
+
+-- Bound Variables -------------------------------------------------------------
+-- | Pull a variable out of an expression
+takeBoundOfExp :: Exp a n -> Maybe (Bound n)
+takeBoundOfExp xx
+ = case xx of
+        -- Should this look through casts?
+        XVar _ b -> Just b
+        _        -> Nothing
+
+-- | Extract user variable out of an expression
+takeNameOfExp :: Exp a n -> Maybe n
+takeNameOfExp xx
+ = takeBoundOfExp xx >>= takeNameOfBound
 

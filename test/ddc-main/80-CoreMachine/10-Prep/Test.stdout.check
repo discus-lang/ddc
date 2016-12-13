@@ -24,8 +24,7 @@ import value f0         : a0 -> b0;
 import value g0         : b0 -> c0;
 with
 let exec: Source# a0 -> Sink# c0 -> Process#
-      = λ(ins: Source# a0).λ(outs: Sink# c0).
-        process_1_1# [a0] [c0]
+      = process_1_1# [a0] [c0]
             (λ(xs: Stream# a0).
              letcase T1# (ys: Stream# b0) 
                = stream_1_1# [a0] [b0]
@@ -53,5 +52,5 @@ let exec: Source# a0 -> Sink# c0 -> Process#
                         p3: Process# = drop# [b0] inp p1
                       } in
                       p1) ys in
-             T1# [Stream# c0] zs) ins outs
+             T1# [Stream# c0] zs)
 
