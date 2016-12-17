@@ -29,6 +29,7 @@ import DDC.Driver.Command.Flow.Melt
 import DDC.Driver.Command.Flow.Thread
 import DDC.Driver.Command.Flow.ToTetra
 import DDC.Driver.Command.Machine.Prep
+import DDC.Driver.Command.Machine.Slurp
 import DDC.Type.Universe
 
 import qualified DDC.Build.Interface.Store      as Store
@@ -98,6 +99,7 @@ data Command
                                 -- ^ Convert to Disciple Tetra, which can then be converted to Salt
 
         | CommandMachinePrep    -- ^ Prepare a Core Machine module for fusion.
+        | CommandMachineOutputSlurp -- ^ Prepare a Core Machine module for fusion.
 
         -- Inline control
         | CommandWith           -- ^ Add a module to the inliner table.
@@ -153,6 +155,7 @@ commands
         , (":flow-tetra",        CommandFlowToTetra Flow.defaultConfigScalar)
 
         , (":machine-prep",      CommandMachinePrep)
+        , (":machine-slurp",     CommandMachineOutputSlurp)
 
         -- Make and Compile
         , (":compile",          CommandCompile)
@@ -350,6 +353,10 @@ handleCmd1 state cmd source line
                 runError $ cmdMachinePrep config source line
                 return state
 
+        CommandMachineOutputSlurp
+         -> do  config  <- getDriverConfigOfState state
+                runError $ cmdMachineOutputSlurp config source line
+                return state
 
         -- Make and Compile ---------------------
         CommandCompile

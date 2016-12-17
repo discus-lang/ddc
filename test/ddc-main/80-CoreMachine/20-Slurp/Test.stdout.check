@@ -1,0 +1,33 @@
+ok
+ok
+ok
+
+-- Needed to lift these to top-level rather than on each function.
+-- Looks like substitution or beta for nested data binders is broken
+-- Maybe forward just needs to anonymize the payload before moving
+-- Mark the top-level function as an export so it won't be forwarded
+-- These need to be lets, not letrec because Forward (rightly) doesn't
+-- forward recursive definitions.
+-- Another pass that converts non-recursive letrecs into lets would be ideal.
+[(exec: Source# a0 -> Sink# c0 -> Process#,Network
+ inputs:  [xs]
+ outputs: [zs]
+  Process
+   init:   p1
+   blocks:
+    p1  = pull# xs p2
+    p2 v: a0 = push# ys f0 v p3
+    p3  = drop# xs p1
+   channels:
+    xs = Input
+    ys = Output
+  Process
+   init:   p1
+   blocks:
+    p1  = pull# ys p2
+    p2 v: b0 = push# zs g0 v p3
+    p3  = drop# ys p1
+   channels:
+    ys = Input
+    zs = Output)]
+

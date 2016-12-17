@@ -598,6 +598,10 @@ data PipeMachine a where
         :: [PipeCore () Machine.Name] 
         -> PipeMachine ()
 
+  -- Show the slurp stuff
+  PipeMachineOutputSlurp
+        :: Sink
+        -> PipeMachine ()
 
 -- | Process a Core Machine module.
 pipeMachine :: C.Module a Machine.Name
@@ -693,4 +697,11 @@ pipeMachine !mm !pp
                                   mm_float
 
             in  pipeCores mm_beta pipes
+
+        PipeMachineOutputSlurp !sink
+         -> {-# SCC "PipeMachineOutputSlurp" #-}
+            case Machine.slurpNetworks mm of
+             Left e -> pipeSink (renderIndent $ text "Slurp error:" <> line <> ppr e) sink
+             Right r -> pipeSink (renderIndent $ ppr r) sink
+
 

@@ -1,7 +1,8 @@
 
 module DDC.Driver.Stage.Machine
         ( stageMachineLoad
-        , stageMachinePrep)
+        , stageMachinePrep
+        , stageMachineOutputSlurp)
 where
 import DDC.Driver.Dump
 import DDC.Driver.Config
@@ -44,4 +45,14 @@ stageMachinePrep config source pipesMachine
      ( PipeCoreOutput   pprDefaultMode
                         (dump config source "dump.flow-prep.dcf")
      : pipesMachine)]]
+
+---------------------------------------------------------------------------------------------------
+-- | Prepare a Core Machine module for lowering.
+stageMachineOutputSlurp
+        :: Sink
+        -> PipeCore () Machine.Name
+
+stageMachineOutputSlurp sink
+ = PipeCoreAsMachine
+   [ PipeMachineOutputSlurp sink]
 

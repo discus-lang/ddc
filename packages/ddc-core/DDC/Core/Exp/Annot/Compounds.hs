@@ -42,6 +42,7 @@ module DDC.Core.Exp.Annot.Compounds
         , takeRWitness
         , takeRImplicit
         , takeExpFromArg
+        , takeExpsFromArgs
 
           -- * Lets
         , xLets,               xLetsAnnot
@@ -79,6 +80,7 @@ where
 import DDC.Core.Exp.Annot.Exp
 import DDC.Core.Exp.DaCon
 import DDC.Type.Exp.Simple.Compounds
+import Data.Maybe (catMaybes)
 
 
 -- Annotations ----------------------------------------------------------------
@@ -345,6 +347,11 @@ takeExpFromArg aa
         RTerm x         -> Just x
         RImplicit x     -> Just x
         _               -> Nothing
+
+-- | Take any expression arguments
+takeExpsFromArgs :: [Arg a n] -> [Exp a n]
+takeExpsFromArgs
+ = catMaybes . map takeExpFromArg
 
 -- Lets -----------------------------------------------------------------------
 -- | Wrap some let-bindings around an expression.

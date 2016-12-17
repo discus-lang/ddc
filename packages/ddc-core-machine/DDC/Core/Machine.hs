@@ -22,6 +22,7 @@ module DDC.Core.Machine
           -- * Processes
         , Process       (..)
         , Network       (..)
+        , slurpNetworks
         )
 
 where

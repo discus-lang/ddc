@@ -21,11 +21,13 @@ import DDC.Data.Pretty
 
 newtype Label
     = Label
-    { unLabel :: Int }
+    { unLabel :: Name }
+    deriving (Eq, Ord, Show)
 
 newtype Channel
     = Channel
     { unChannel :: Name }
+    deriving (Eq, Ord, Show)
 
 data ChannelType
     = ChannelInput | ChannelOutput | ChannelIgnore
@@ -66,10 +68,10 @@ data Network
 
 
 instance Pretty Label where
- ppr (Label i) = text "l" <> ppr i
+ ppr (Label i) = ppr i
 
 instance Pretty Channel where
- ppr (Channel i) = text "c" <> ppr i
+ ppr (Channel i) = ppr i
 
 instance Pretty ChannelType where
  ppr ChannelInput  = text "Input"

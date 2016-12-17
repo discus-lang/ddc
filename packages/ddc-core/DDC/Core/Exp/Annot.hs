@@ -98,6 +98,7 @@ module DDC.Core.Exp.Annot
         , takeRWitness
         , takeRImplicit
         , takeExpFromArg
+        , takeExpsFromArgs
 
           -- ** Lets
         , xLets
