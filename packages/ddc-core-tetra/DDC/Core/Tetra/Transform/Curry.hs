@@ -123,10 +123,8 @@ curryX envt callables xx
          -> let callables' = shadowCallables [b] callables
             in  XAbs () (MTerm b) <$> curryX   envt callables' xBody
 
-        XAbs     _ (MImplicit b) xBody   
-         -> let callables' = shadowCallables [b] callables
-            in  XAbs () (MImplicit b) <$> curryX   envt callables' xBody
-
+        XAbs     _ (MImplicit b) _
+         -> Left $ ErrorSuperImplicitParams b
 
         XLet     _ lts@(LLet b _) xBody
          -> let callables' = shadowCallables [b] callables

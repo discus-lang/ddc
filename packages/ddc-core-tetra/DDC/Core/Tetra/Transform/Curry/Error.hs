@@ -8,6 +8,7 @@ import DDC.Data.Pretty
 import qualified DDC.Core.Call          as Call
 
 
+---------------------------------------------------------------------------------------------------
 data Error
         -- | Super is not fully named.
         = ErrorSuperUnnamed
@@ -15,6 +16,12 @@ data Error
 
         -- | Super is not in prenex form.
         | ErrorSuperNotPrenex
+        { errorBind     :: Bind Name }
+
+        -- | Super has implicit parameters.
+        --   We require all parameters and arguments to be made explicit
+        --   before applying the curry transform.
+        | ErrorSuperImplicitParams
         { errorBind     :: Bind Name }
 
         -- | The arity information that we have for a super does not match 
@@ -42,32 +49,44 @@ data Error
         deriving (Show)
 
 
+---------------------------------------------------------------------------------------------------
 instance Pretty Error where
  ppr err
   = case err of
         ErrorSuperUnnamed b
-         -> vcat [ text "Super with binder " 
+         -> vcat [ text "During curry transform."
+                 , text " Super with binder " 
                         <> (squotes $ ppr b) <> text " lacks a name." ]
 
         ErrorSuperNotPrenex b
-         -> vcat [ text "Super " 
+         -> vcat [ text "During curry transform."
+                 , text " Super " 
                         <> (squotes $ ppr b) <> text " is not in prenex form." ]
 
+        ErrorSuperImplicitParams b
+         -> vcat [ text "During curry transform."
+                 , text " Found implicit parameter " 
+                        <> (squotes $ ppr b) ]
+
         ErrorSuperArityMismatch n t arity
-         -> vcat [ text "Arity information for " 
+         -> vcat [ text "During curry transform."
+                 , text " Arity information for " 
                         <> ppr n   <> text " does not match its type."
-                 , text " type:  " <> ppr t
-                 , text " arity: " <> text (show arity) ]
+                 , text "  type:  " <> ppr t
+                 , text "  arity: " <> text (show arity) ]
 
         ErrorSuperTypeMismatch n tAnnot tTable
-         -> vcat [ text "Type mismatch for "    
+         -> vcat [ text "During curry transform."
+                 , text " Type mismatch for "    
                         <> ppr n   <> text " in super type annotation"
-                 , text " type on annotation: " <> ppr tAnnot
-                 , text " type of callable:   " <> ppr tTable ]
+                 , text "  type on annotation: " <> ppr tAnnot
+                 , text "  type of callable:   " <> ppr tTable ]
 
         ErrorSuperCallPatternMismatch n t cs es
-         -> vcat [ text "Call pattern mismatch when calling " <> ppr n
-                 , text " call type:  " <> text (show t)
-                 , text " call cons:  " <> text (show cs)
-                 , text " call elims: " <> text (show es) ]
+         -> vcat [ text "During curry transform."
+                 , text " Call pattern mismatch when calling " <> ppr n
+                 , text "  call type:  " <> text (show t)
+                 , text "  call cons:  " <> text (show cs)
+                 , text "  call elims: " <> text (show es) ]
+
 
