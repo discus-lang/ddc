@@ -1,0 +1,56 @@
+ok
+ok
+ok
+
+-- Needed to lift these to top-level rather than on each function.
+-- Looks like substitution or beta for nested data binders is broken
+-- Maybe forward just needs to anonymize the payload before moving
+-- Mark the top-level function as an export so it won't be forwarded
+-- These need to be lets, not letrec because Forward (rightly) doesn't
+-- forward recursive definitions.
+-- Another pass that converts non-recursive letrecs into lets would be ideal.
+module Map 
+export value exec       : Source# a0 -> Sink# c0 -> Process#;
+import foreign abstract type
+        a0 : Data;
+
+import foreign abstract type
+        b0 : Data;
+
+import foreign abstract type
+        c0 : Data;
+
+import value f0         : a0 -> b0;
+import value g0         : b0 -> c0;
+with
+let exec: Source# a0 -> Sink# c0 -> Process#
+      = process_1_1# [a0] [c0]
+            (λ(xs: Stream# a0).
+             letcase T1# (ys: Stream# b0) 
+               = stream_1_1# [a0] [b0]
+                     (λ(inp: Source# a0).λ(out: Sink# b0).
+                      letrec {
+                        p1: Process# = pull# [a0] inp p2;
+                        
+                        p2: a0 -> Process#
+                          = λ(v: a0).
+                            push# [b0] out (f0 v) p3;
+                        
+                        p3: Process# = drop# [a0] inp p1
+                      } in
+                      p1) xs in
+             letcase T1# (zs: Stream# c0) 
+               = stream_1_1# [b0] [c0]
+                     (λ(inp: Source# b0).λ(out: Sink# c0).
+                      letrec {
+                        p1: Process# = pull# [b0] inp p2;
+                        
+                        p2: b0 -> Process#
+                          = λ(v: b0).
+                            push# [c0] out (g0 v) p3;
+                        
+                        p3: Process# = drop# [b0] inp p1
+                      } in
+                      p1) ys in
+             T1# [Stream# c0] zs)
+

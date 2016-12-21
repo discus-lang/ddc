@@ -24,6 +24,10 @@ module DDC.Driver.Stage
         , stageFlowWind
         , stageFlowToTetra
 
+        , stageMachineLoad
+        , stageMachinePrep
+        , stageMachineOutputSlurp
+
           -- * Salt stages
         , stageSaltLoad
         , stageSaltOpt
@@ -38,4 +42,5 @@ where
 import DDC.Driver.Config
 import DDC.Driver.Stage.Tetra
 import DDC.Driver.Stage.Flow
+import DDC.Driver.Stage.Machine
 import DDC.Driver.Stage.Salt

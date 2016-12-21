@@ -1,0 +1,37 @@
+:set lang Machine
+
+-- Primitive kinds
+:sort Static
+:sort Data
+
+-- Machine type constructors
+:kind Stream#
+:kind Source#
+:kind Sink#
+:kind Process#
+
+-- Tuple type constructors
+:kind Tuple1#
+:kind Tuple2#
+
+
+-- Primitive operators
+:type stream_0_1#
+:type process_0_1#
+
+:type stream_1_1#
+:type process_1_1#
+
+:type stream_2_2#
+:type process_2_2#
+
+:type /\(in1 out1 : Data). stream_1_1# [in1] [out1]
+:type /\(in1 out1 out2 : Data). stream_1_2# [in1] [out1] [out2]
+
+
+:type pull#
+:type push#
+:type drop#
+
+:type T1#
+:type T2#

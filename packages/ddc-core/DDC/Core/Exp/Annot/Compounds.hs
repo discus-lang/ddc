@@ -42,6 +42,7 @@ module DDC.Core.Exp.Annot.Compounds
         , takeRWitness
         , takeRImplicit
         , takeExpFromArg
+        , takeExpsFromArgs
 
           -- * Lets
         , xLets,               xLetsAnnot
@@ -70,11 +71,16 @@ module DDC.Core.Exp.Annot.Compounds
           -- * Data Constructors
         , xUnit, dcUnit
         , takeNameOfDaCon
-        , takeTypeOfDaCon)
+        , takeTypeOfDaCon
+
+          -- * Bound Variables
+        , takeBoundOfExp
+        , takeNameOfExp)
 where
 import DDC.Core.Exp.Annot.Exp
 import DDC.Core.Exp.DaCon
 import DDC.Type.Exp.Simple.Compounds
+import Data.Maybe (catMaybes)
 
 
 -- Annotations ----------------------------------------------------------------
@@ -342,6 +348,11 @@ takeExpFromArg aa
         RImplicit x     -> Just x
         _               -> Nothing
 
+-- | Take any expression arguments
+takeExpsFromArgs :: [Arg a n] -> [Exp a n]
+takeExpsFromArgs
+ = catMaybes . map takeExpFromArg
+
 -- Lets -----------------------------------------------------------------------
 -- | Wrap some let-bindings around an expression.
 xLets :: a -> [Lets a n] -> Exp a n -> Exp a n
@@ -479,4 +490,19 @@ takePrimWiConApps ww
 -- | Construct a value of unit type.
 xUnit   :: a -> Exp a n
 xUnit a = XCon a dcUnit
+
+
+-- Bound Variables -------------------------------------------------------------
+-- | Pull a variable out of an expression
+takeBoundOfExp :: Exp a n -> Maybe (Bound n)
+takeBoundOfExp xx
+ = case xx of
+        -- Should this look through casts?
+        XVar _ b -> Just b
+        _        -> Nothing
+
+-- | Extract user variable out of an expression
+takeNameOfExp :: Exp a n -> Maybe n
+takeNameOfExp xx
+ = takeBoundOfExp xx >>= takeNameOfBound
 

@@ -25,6 +25,10 @@ module DDC.Build.Pipeline
         , PipeFlow        (..)
         , pipeFlow
 
+          -- * Core Machine modules
+        , PipeMachine     (..)
+        , pipeMachine
+
           -- * Core Salt modules
         , PipeSalt        (..)
         , pipeSalt

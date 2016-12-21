@@ -98,6 +98,7 @@ module DDC.Core.Exp.Annot
         , takeRWitness
         , takeRImplicit
         , takeExpFromArg
+        , takeExpsFromArgs
 
           -- ** Lets
         , xLets
@@ -128,7 +129,11 @@ module DDC.Core.Exp.Annot
           -- ** Data Constructors
         , xUnit, dcUnit
         , takeNameOfDaCon
-        , takeTypeOfDaCon)
+        , takeTypeOfDaCon
+
+          -- ** Bound Variables
+        , takeBoundOfExp
+        , takeNameOfExp)
 where
 import DDC.Core.Exp.Annot.Exp
 import DDC.Core.Exp.Annot.NFData        ()

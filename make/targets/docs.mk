@@ -17,6 +17,7 @@ docs-core :
 			--optghc=-ipackages/ddc-core-salt \
 			--optghc=-ipackages/ddc-core-simpl \
 			--optghc=-ipackages/ddc-core-flow \
+			--optghc=-ipackages/ddc-core-machine \
 			--optghc=-ipackages/ddc-core-tetra \
                         --optghc=-ipackages/ddc-source-tetra \
 			--optghc=-ipackages/ddc-driver \
@@ -38,6 +39,7 @@ docs-hoogle-core :
 			--optghc=-ipackages/ddc-core-salt \
 			--optghc=-ipackages/ddc-core-simpl \
 			--optghc=-ipackages/ddc-core-flow \
+			--optghc=-ipackages/ddc-core-machine \
 			--optghc=-ipackages/ddc-core-tetra \
                         --optghc=-ipackages/ddc-source-tetra \
 			--optghc=-ipackages/ddc-driver \

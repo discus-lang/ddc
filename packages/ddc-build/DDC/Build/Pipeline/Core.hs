@@ -8,7 +8,10 @@ module DDC.Build.Pipeline.Core
         , pipeTetra
 
         , PipeFlow (..)
-        , pipeFlow)
+        , pipeFlow
+        
+        , PipeMachine (..)
+        , pipeMachine)
 where
 import DDC.Build.Pipeline.Error
 import DDC.Build.Pipeline.Sink
@@ -27,6 +30,8 @@ import qualified DDC.Core.Flow.Transform.Melt           as Flow
 import qualified DDC.Core.Flow.Transform.Wind           as Flow
 import qualified DDC.Core.Flow.Transform.Rates.SeriesOfVector as Flow
 import qualified DDC.Core.Flow.Convert                  as Flow
+
+import qualified DDC.Core.Machine                       as Machine
 
 import qualified DDC.Core.Tetra.Transform.Curry         as Tetra
 import qualified DDC.Core.Tetra.Transform.Boxing        as Tetra
@@ -121,6 +126,12 @@ data PipeCore a n where
         :: Pretty a
         => ![PipeFlow a]
         -> PipeCore a Flow.Name
+
+  -- Treat a module as belonging to the Core Machine fragment from now on.
+  PipeCoreAsMachine 
+        :: Pretty a
+        => ![PipeMachine a]
+        -> PipeCore a Machine.Name
 
   -- Treat a module as belonging to the Core Salt fragment from now on.
   PipeCoreAsSalt
@@ -221,6 +232,10 @@ pipeCore !mm !pp
         PipeCoreAsFlow !pipes
          -> {-# SCC "PipeCoreAsFlow" #-}
             liftM concat $ mapM (pipeFlow mm) pipes
+
+        PipeCoreAsMachine !pipes
+         -> {-# SCC "PipeCoreAsMachine" #-}
+            liftM concat $ mapM (pipeMachine mm) pipes
 
         PipeCoreAsSalt !pipes
          -> {-# SCC "PipeCoreAsSalt" #-}
@@ -568,5 +583,125 @@ pipeFlows !mm !pipes
         go !errs (pipe : rest)
          = do   !err     <- pipeFlow mm pipe
                 go (errs ++ err) rest
+
+
+-- PipeMachine ---------------------------------------------------------------------------------------
+-- | Process a Core Machine module.
+data PipeMachine a where
+  -- Output the module in core language syntax.
+  PipeMachineOutput 
+        :: Sink
+        -> PipeMachine a
+
+  -- Run the prep transform to expose flow operators.
+  PipeMachinePrep
+        :: [PipeCore () Machine.Name] 
+        -> PipeMachine ()
+
+  -- Show the slurp stuff
+  PipeMachineOutputSlurp
+        :: Sink
+        -> PipeMachine ()
+
+-- | Process a Core Machine module.
+pipeMachine :: C.Module a Machine.Name
+         -> PipeMachine a
+         -> IO [Error]
+
+pipeMachine !mm !pp
+ = case pp of
+        PipeMachineOutput !sink
+         -> {-# SCC "PipeMachineOutput" #-}
+            pipeSink (renderIndent $ ppr mm) sink
+
+        PipeMachinePrep  !pipes
+         -> {-# SCC "PipeMachinePrep"   #-}
+            let 
+                -- Start by forwarding all process and stream definitions computations
+                -- into the top-level process_i_o# "exec" functions.
+                -- Forward doesn't handle letrecs so we have to write these in terms of lets.
+                -- We should have a pre-step that splits out strongly connected components into
+                -- their own lets and letrec groups.
+                --
+                -- We should also find calls to process_i_o# and raise them to top-level
+                -- functions so that they can be slurped.
+
+                -- Take the actual return type of a function binding
+                -- (or if it's not a function, just the type itself)
+                takeRet t
+                  | Just (_,ret) <- C.takeTForalls t
+                  = takeRet ret
+                  | Just (_,ret) <- C.takeTFun t
+                  = takeRet ret
+                  | otherwise
+                  = t
+
+                -- Check whether a type requires forwarding.
+                -- Basically if it is some kind of Stream computation.
+                -- The types are:
+                --   Process#; Stream# a; Sink# a; Source# a; and Tuple# [Stream# a...]
+                forwardType t
+                 | Just (con,args) <- C.takePrimTyConApps $ takeRet t
+                 , Machine.NameTyConMachine tycon <- con
+                 = case tycon of
+                    Machine.TyConProcess -> True
+                    Machine.TyConStream  -> True
+                    Machine.TyConSink    -> True
+                    Machine.TyConSource  -> True
+                    Machine.TyConTuple _ -> any forwardType args
+                 | otherwise
+                 = False
+
+                floatControl l
+                  = case l of
+                    C.LLet b x
+                     -- Do not forward anything that is exported.
+                     -- If we forced it to be forwarded, it would disappear.
+                     | Just n <- C.takeNameOfBind b
+                     , Just _ <- lookup n (C.moduleExportValues mm)
+                     -> Forward.FloatDeny
+
+                     -- Do not forward top-level processes
+                     -- as these are what will be slurped and fused
+                     -- (They should probably be exported anyway)
+                     | Just (_,xx) <- C.takeXLamFlags x
+                     , Just (prim,_) <- C.takeXFragApps xx
+                     , Machine.NameOpMachine Machine.OpProcess{} <- prim
+                     -> Forward.FloatDeny
+
+                     -- Otherwise check whether the return is a Process, Stream, Source, or Sink.
+                     -- If so force it to be forwarded, as it affects the structure of the process.
+                     | forwardType $ C.typeOfBind b
+                     -> Forward.FloatForce
+
+                    -- Everything else can be inlined, but doesn't need to be.
+                    _ -> Forward.FloatAllow
+
+                mm_float        = C.result
+                                $ Forward.forwardModule Machine.profile
+                                    (Forward.Config floatControl False)
+                                    $ C.reannotate (const ()) mm
+
+                -- After forwarding we end up with a lot of opportunity for
+                -- beta reduction, so we want to run it in a fixpoint.
+                primKindEnv     = C.profilePrimKinds      Machine.profile
+                primTypeEnv     = C.profilePrimTypes      Machine.profile
+                evalSimplifier simpl mm0
+                                = result . flip S.evalState ()
+                                $ applySimplifier Machine.profile primKindEnv primTypeEnv simpl mm0
+
+                betaS           = Trans $ Beta $ Beta.configZero { Beta.configBindRedexes = True}
+
+                -- TODO: should namify here - or before forwarding
+                mm_beta         = evalSimplifier (Fix 10 betaS)
+                                  mm_float
+
+            in  pipeCores mm_beta pipes
+
+        PipeMachineOutputSlurp !sink
+         -> {-# SCC "PipeMachineOutputSlurp" #-}
+            case Machine.slurpNetworks mm of
+             Left e -> pipeSink (renderIndent $ text "Slurp error:" <> line <> ppr e) sink
+             Right r -> pipeSink (renderIndent $ ppr r) sink
 
 

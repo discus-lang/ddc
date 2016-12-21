@@ -1,0 +1,37 @@
+ok
+
+-- Primitive kinds
+Static :: Prop
+Data :: Comp
+
+-- Machine type constructors
+Stream# :: Data -> Data
+Source# :: Data -> Data
+Sink# :: Data -> Data
+Process# :: Data
+
+-- Tuple type constructors
+Tuple1# :: Data -> Data
+Tuple2# :: Data -> Data -> Data
+
+
+-- Primitive operators
+stream_0_1# :: [^: Data].(Sink# ^0 -> Process#) -> Tuple1# (Stream# ^0)
+process_0_1# :: [^: Data].Tuple1# (Stream# ^0) -> Sink# ^0 -> Process#
+
+stream_1_1# :: [^ ^: Data].(Source# ^1 -> Sink# ^0 -> Process#) -> Stream# ^1 -> Tuple1# (Stream# ^0)
+process_1_1# :: [^ ^: Data].(Stream# ^1 -> Tuple1# (Stream# ^0)) -> Source# ^1 -> Sink# ^0 -> Process#
+
+stream_2_2# :: [^ ^ ^ ^: Data].(Source# ^3 -> Source# ^2 -> Sink# ^1 -> Sink# ^0 -> Process#) -> Stream# ^3 -> Stream# ^2 -> Tuple2# (Stream# ^1) (Stream# ^0)
+process_2_2# :: [^ ^ ^ ^: Data].(Stream# ^3 -> Stream# ^2 -> Tuple2# (Stream# ^1) (Stream# ^0)) -> Source# ^3 -> Source# ^2 -> Sink# ^1 -> Sink# ^0 -> Process#
+
+Λ(in1 out1: Data). stream_1_1# [in1] [out1] :: [in1 out1: Data].(Source# in1 -> Sink# out1 -> Process#) -> Stream# in1 -> Tuple1# (Stream# out1)
+Λ(in1 out1 out2: Data). stream_1_2# [in1] [out1] [out2] :: [in1 out1 out2: Data].(Source# in1 -> Sink# out1 -> Sink# out2 -> Process#) -> Stream# in1 -> Tuple2# (Stream# out1) (Stream# out2)
+
+
+pull# :: [^: Data].Source# ^0 -> (^0 -> Process#) -> Process#
+push# :: [^: Data].Sink# ^0 -> ^0 -> Process# -> Process#
+drop# :: [^: Data].Source# ^0 -> Process# -> Process#
+
+T1# :: [^: Data].^0 -> Tuple1# ^0
+T2# :: [^ ^: Data].^1 -> ^0 -> Tuple2# ^1 ^0

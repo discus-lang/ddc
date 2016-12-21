@@ -38,6 +38,7 @@ Library
         DDC.Build.Interface.Store
 
         DDC.Build.Language.Flow
+        DDC.Build.Language.Machine
         DDC.Build.Language.Salt
         DDC.Build.Language.Tetra
         DDC.Build.Language.Zero
