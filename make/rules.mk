@@ -15,8 +15,20 @@ packages/ddc-code/sea/%.o : packages/ddc-code/sea/%.c
 	@alex -g $<
 
 
+# Add a dependency from .hi to .o because ghc produces dependencies like
+# > A.o : B.hi
+# when module A depends on B.
+#
+# However, this creates a circular dependency because GHC might
+# output the .hi before the .o!
+# This causes make to rebuild the .hi since the .o is newer.
+#
+# So in the rule below we touch the .hi file after building the .o.
+# This way the .o is older and will not cause a rebuild.
 %.hi : %.o
 	@true
+%.o : %.hs
+	touch $(patsubst %.o,%.hi,$@)
 
 
 %.dep : %.c
