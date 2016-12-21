@@ -73,8 +73,9 @@ instance NFData (DataCtor n) where
 typeOfDataCtor :: DataDef l -> DataCtor l -> GType l
 typeOfDataCtor def ctor
         = foldr (\(b, k) t -> TApp (TCon (TyConForall k)) (TAbs b k t))
-                (foldr TFun (dataCtorResultType ctor)
-                            (dataCtorFieldTypes ctor))
+                (foldr TFunExplicit 
+                        (dataCtorResultType ctor)
+                        (dataCtorFieldTypes ctor))
                 (dataDefParams def)
 
 

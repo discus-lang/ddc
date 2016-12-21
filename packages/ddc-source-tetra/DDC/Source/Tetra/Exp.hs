@@ -48,9 +48,10 @@ module DDC.Source.Tetra.Exp
         , pattern TApp4, pattern TApp5
 
         , pattern TVoid, pattern TUnit
-        , pattern TFun
         , pattern TBot,  pattern TUnion
         , pattern TPrim
+        , pattern TFunExplicit
+        , pattern TFunImplicit
 
         , pattern KData, pattern KRegion, pattern KEffect
         , pattern TImpl

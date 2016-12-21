@@ -38,20 +38,21 @@ instance Pretty TwCon where
 instance Pretty TcCon where
  ppr tc 
   = case tc of
-        TcConUnit       -> text "Unit"
-        TcConFun        -> text "(->)"
-        TcConSusp       -> text "S"
+        TcConUnit        -> text "Unit"
+        TcConSusp        -> text "S"
+        TcConFunExplicit -> text "(->)"
+        TcConFunImplicit -> text "(~>)"
 
         TcConRecord nn  
          -> text "(" 
          <> (hcat $ punctuate (text ",") $ map (text . Text.unpack) nn) 
          <> text ")#"
 
-        TcConRead       -> text "Read"
-        TcConHeadRead   -> text "HeadRead"
-        TcConDeepRead   -> text "DeepRead"
-        TcConWrite      -> text "Write"
-        TcConDeepWrite  -> text "DeepWrite"
-        TcConAlloc      -> text "Alloc"
-        TcConDeepAlloc  -> text "DeepAlloc"
+        TcConRead        -> text "Read"
+        TcConHeadRead    -> text "HeadRead"
+        TcConDeepRead    -> text "DeepRead"
+        TcConWrite       -> text "Write"
+        TcConDeepWrite   -> text "DeepWrite"
+        TcConAlloc       -> text "Alloc"
+        TcConDeepAlloc   -> text "DeepAlloc"
 

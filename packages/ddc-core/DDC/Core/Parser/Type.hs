@@ -187,14 +187,17 @@ pTypeAtom
         => Context n -> Parser n (Type n)
 pTypeAtom c
  = P.choice
-        -- (=>) and (->) and (TYPE2)
-        [ -- (=>)
+        [ -- (=>) Witness implication.
           do    pTok (KOpVar "=>")
                 return (TCon $ TyConWitness TwConImpl)
 
-          -- (->)
+          -- (->) Explicit function type constructor.
         , do    pTok (KOpVar "->")
-                return (TCon $ TyConSpec TcConFun)
+                return (TCon $ TyConSpec TcConFunExplicit)
+
+          -- (~>) Implicit function type constructor.
+        , do    pTok (KOpVar "~>")
+                return (TCon $ TyConSpec TcConFunImplicit)
 
         -- Record type constructors.
         , P.try

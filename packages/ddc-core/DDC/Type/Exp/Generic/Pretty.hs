@@ -47,13 +47,14 @@ pprRawPrecT d tt
 pprRawC :: PrettyConfig l => GTyCon l -> Doc
 pprRawC cc
   = case cc of
-        TyConFun        -> text "→"
-        TyConUnit       -> text "1"
-        TyConVoid       -> text "0"
-        TyConUnion  k   -> text "∨" <> braces (pprRawT k)
-        TyConBot    k   -> text "⊥" <> braces (pprRawT k)
-        TyConForall k   -> text "∀" <> braces (pprRawT k)
-        TyConExists k   -> text "∃" <> braces (pprRawT k)
-        TyConPrim   p   -> ppr p
-        TyConBound  u   -> ppr u
+        TyConFunExplicit -> text "->"
+        TyConFunImplicit -> text "~>"
+        TyConUnit        -> text "1"
+        TyConVoid        -> text "0"
+        TyConUnion  k    -> text "∨" <> braces (pprRawT k)
+        TyConBot    k    -> text "⊥" <> braces (pprRawT k)
+        TyConForall k    -> text "∀" <> braces (pprRawT k)
+        TyConExists k    -> text "∃" <> braces (pprRawT k)
+        TyConPrim   p    -> ppr p
+        TyConBound  u    -> ppr u
 

@@ -11,12 +11,13 @@ module DDC.Type.Exp.Generic
         , GType (..), GTyCon (..)
 
           -- ** Syntactic Sugar
-        , pattern TFun
         , pattern TUnit
         , pattern TVoid
         , pattern TBot
         , pattern TPrim
-
+        , pattern TFunExplicit
+        , pattern TFunImplicit 
+        
           -- * Compounds
           -- ** Type Applications
         , makeTApps,    takeTApps

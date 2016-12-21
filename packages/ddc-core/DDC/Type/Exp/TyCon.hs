@@ -40,28 +40,28 @@ data KiCon
 -- | Witness type constructors.
 data TwCon
         -- Witness implication.
-        = TwConImpl             -- :: '(=>) :: Witness ~> Data'
+        = TwConImpl             -- :: '(=>) :: Witness -> Data'
 
         -- | Purity of some effect.
-        | TwConPure             -- :: Effect  ~> Witness
+        | TwConPure             -- :: Effect  -> Witness
 
         -- | Constancy of some region.
-        | TwConConst            -- :: Region  ~> Witness
+        | TwConConst            -- :: Region  -> Witness
 
         -- | Constancy of material regions in some type
-        | TwConDeepConst        -- :: Data    ~> Witness
+        | TwConDeepConst        -- :: Data    -> Witness
 
         -- | Mutability of some region.
-        | TwConMutable          -- :: Region  ~> Witness
+        | TwConMutable          -- :: Region  -> Witness
 
         -- | Mutability of material regions in some type.
-        | TwConDeepMutable      -- :: Data    ~> Witness
+        | TwConDeepMutable      -- :: Data    -> Witness
 
         -- | Distinctness of some n regions
-        | TwConDistinct Int     -- :: Data    ~> [Region] ~> Witness
+        | TwConDistinct Int     -- :: Data    -> [Region] -> Witness
         
         -- | Non-interfering effects are disjoint. Used for rewrite rules.
-        | TwConDisjoint         -- :: Effect  ~> Effect ~> Witness
+        | TwConDisjoint         -- :: Effect  -> Effect   -> Witness
         deriving (Eq, Ord, Show)
 
 
@@ -71,36 +71,39 @@ data TcCon
         -- | The unit data type constructor is baked in.
         = TcConUnit             -- 'Unit :: Data'
 
-        -- | Pure function.
-        | TcConFun              -- '(->)' :: Data ~> Data ~> Data
+        -- | Pure function, with explicitly provided argument.
+        | TcConFunExplicit      -- '(->)' :: Data -> Data -> Data
+
+        -- | Pure function, with implicitly provided argument.
+        | TcConFunImplicit      -- '(~>)' :: Data -> Data -> Data
 
         -- | A suspended computation.
-        | TcConSusp             -- 'S     :: Effect ~> Data ~> Data'
+        | TcConSusp             -- 'S     :: Effect -> Data -> Data'
 
         -- | A record type constructor,
         --   with the given field names.
-        | TcConRecord [Text]    -- '{n1 .. nn} :: Data ~> ... Data ~> Data
+        | TcConRecord [Text]    -- '{n1 .. nn} :: Data -> ... Data -> Data
 
         -- Effect type constructors -------------
         -- | Read of some region.
-        | TcConRead             -- Read      :: 'Region ~> Effect'
+        | TcConRead             -- Read      :: 'Region -> Effect'
 
         -- | Read the head region in a data type.
-        | TcConHeadRead         -- HeadRead  :: 'Data   ~> Effect'
+        | TcConHeadRead         -- HeadRead  :: 'Data   -> Effect'
 
         -- | Read of all material regions in a data type.
-        | TcConDeepRead         -- DeepRead  :: 'Data   ~> Effect'
+        | TcConDeepRead         -- DeepRead  :: 'Data   -> Effect'
         
         -- | Write of some region.
-        | TcConWrite            -- Write     :: 'Region ~> Effect'
+        | TcConWrite            -- Write     :: 'Region -> Effect'
 
         -- | Write to all material regions in some data type.
-        | TcConDeepWrite        -- DeepWrite :: 'Data   ~> Effect'
+        | TcConDeepWrite        -- DeepWrite :: 'Data   -> Effect'
         
         -- | Allocation into some region.
-        | TcConAlloc            -- Alloc     :: 'Region ~> Effect'
+        | TcConAlloc            -- Alloc     :: 'Region -> Effect'
 
         -- | Allocation into all material regions in some data type.
-        | TcConDeepAlloc        -- DeepAlloc :: 'Data   ~> Effect'
+        | TcConDeepAlloc        -- DeepAlloc :: 'Data   -> Effect'
         deriving (Eq, Ord, Show)
 

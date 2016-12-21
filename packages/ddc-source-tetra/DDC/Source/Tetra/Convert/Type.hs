@@ -93,10 +93,15 @@ toCoreTC uu tc
         S.TyConVoid             -> return Nothing
         S.TyConUnit             -> return $ Just $ C.TyConSpec C.TcConUnit
 
-        S.TyConFun       
+        S.TyConFunExplicit
          -> case uu of
-                UniverseSpec    -> return $ Just $ C.TyConSpec C.TcConFun
+                UniverseSpec    -> return $ Just $ C.TyConSpec C.TcConFunExplicit
                 UniverseKind    -> return $ Just $ C.TyConKind C.KiConFun
+                _               -> return Nothing
+
+        S.TyConFunImplicit
+         -> case uu of
+                UniverseSpec    -> return $ Just $ C.TyConSpec C.TcConFunImplicit
                 _               -> return Nothing
 
 

@@ -55,14 +55,15 @@ kindOfTwCon tc
 kindOfTcCon :: TcCon -> Kind n
 kindOfTcCon tc
  = case tc of
-        TcConUnit       -> kData
-        TcConFun        -> kData    `kFun` kData `kFun` kData
-        TcConSusp       -> kEffect  `kFun` kData `kFun` kData
-        TcConRecord ns  -> map (const kData) ns  `kFuns` kData
-        TcConRead       -> kRegion  `kFun` kEffect
-        TcConHeadRead   -> kData    `kFun` kEffect
-        TcConDeepRead   -> kData    `kFun` kEffect
-        TcConWrite      -> kRegion  `kFun` kEffect
-        TcConDeepWrite  -> kData    `kFun` kEffect
-        TcConAlloc      -> kRegion  `kFun` kEffect
-        TcConDeepAlloc  -> kData    `kFun` kEffect
+        TcConUnit        -> kData
+        TcConSusp        -> kEffect  `kFun` kData `kFun` kData
+        TcConFunExplicit -> kData    `kFun` kData `kFun` kData
+        TcConFunImplicit -> kData    `kFun` kData `kFun` kData
+        TcConRecord ns   -> map (const kData) ns  `kFuns` kData
+        TcConRead        -> kRegion  `kFun` kEffect
+        TcConHeadRead    -> kData    `kFun` kEffect
+        TcConDeepRead    -> kData    `kFun` kEffect
+        TcConWrite       -> kRegion  `kFun` kEffect
+        TcConDeepWrite   -> kData    `kFun` kEffect
+        TcConAlloc       -> kRegion  `kFun` kEffect
+        TcConDeepAlloc   -> kData    `kFun` kEffect

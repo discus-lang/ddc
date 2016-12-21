@@ -91,11 +91,6 @@ pTypeFun
         P.choice 
          [ 
 
-{-           -- T1 ~> T2
-           do   sp      <- pSym SArrowTilde
-                t2      <- pTypeForall
-                return  $  TAnnot sp $ TFun t1 t2
--}
            -- T1 => T2
            do   sp      <- pSym SArrowEquals
                 t2      <- pTypeForall
@@ -104,7 +99,12 @@ pTypeFun
            -- T1 -> T2
          , do   sp      <- pSym SArrowDashRight
                 t2      <- pTypeForall
-                return  $  TAnnot sp $ TFun  t1 t2
+                return  $  TAnnot sp $ TFunExplicit  t1 t2
+
+           -- T1 ~> T2
+         , do   sp      <- pSym SArrowTilde
+                t2      <- pTypeForall
+                return  $  TAnnot sp $ TFunImplicit t1 t2
 
            -- Body type
          , do   return t1 
@@ -124,20 +124,18 @@ pTypeApp
 pTypeAtomSP :: Parser (Type, SourcePos)
 pTypeAtomSP
  = P.choice
- -- (~>) and (=>) and (->) and (TYPE2)
  [
-{-
-   -- (~>)
-   do   sp      <- pTokSP $ KOpVar "~>"
-        return  (TAnnot sp $ TCon  TyConFun,  sp)
--}
    -- (=>)
    do   sp      <- pTokSP $ KOpVar "=>"
         return  (TAnnot sp $ TCon (TyConPrim (PrimTypeTwCon TwConImpl)), sp)
 
    -- (->)
  , do   sp      <- pTokSP $ KOpVar "->"
-        return  (TAnnot sp $ TCon TyConFun,  sp)
+        return  (TAnnot sp $ TCon TyConFunExplicit, sp)
+
+   -- (~>)
+ , do   sp      <- pTokSP $ KOpVar "~>"
+        return  (TAnnot sp $ TCon TyConFunImplicit, sp)
 
  -- Named type constructors
  , do    (tc, sp) <- pTyConSP 

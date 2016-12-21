@@ -714,13 +714,11 @@ funTypeOfParams (p:ps) tBody
 
         MTerm     _ mt
          -> let k       = fromMaybe (TBot S.KData) mt
-            in  TFun k  $ funTypeOfParams ps tBody
+            in  TFunExplicit k  $ funTypeOfParams ps tBody
 
-        -- TODO: fix this
         MImplicit  _ mt
          -> let k       = fromMaybe (TBot S.KData) mt
-            in  TFun k  $ funTypeOfParams ps tBody
-
+            in  TFunImplicit k  $ funTypeOfParams ps tBody
 
 
 -- Guards -----------------------------------------------------------------------------------------

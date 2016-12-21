@@ -189,7 +189,7 @@ isDistinctWitType tt
 isFunishTCon :: Type n -> Bool
 isFunishTCon tt
  = case tt of
-        TCon (TyConSpec TcConFun)               -> True
+        TCon (TyConSpec TcConFunExplicit)       -> True
         TCon (TyConKind KiConFun)               -> True
         _                                       -> False
 

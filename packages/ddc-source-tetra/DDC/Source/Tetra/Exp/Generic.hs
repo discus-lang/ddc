@@ -21,9 +21,10 @@ module DDC.Source.Tetra.Exp.Generic
         , pattern TApp4, pattern TApp5
 
         , pattern TVoid, pattern TUnit
-        , pattern TFun
         , pattern TBot,  pattern TUnion
         , pattern TPrim
+        , pattern TFunExplicit
+        , pattern TFunImplicit
 
           -- ** Dictionaries
         , ShowGType

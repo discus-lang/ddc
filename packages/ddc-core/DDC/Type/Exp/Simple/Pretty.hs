@@ -81,10 +81,15 @@ instance (Pretty n, Eq n) => Pretty (Type n) where
          -> pprParen (d > 5)
          $  pprPrec 6 t1 <+> text "=>" </> pprPrec 5 t2
 
-        -- Term abstraction.
-        TApp (TApp (TCon (TyConSpec    TcConFun)) t1) t2
+        -- Explicit term abstraction.
+        TApp (TApp (TCon (TyConSpec    TcConFunExplicit)) t1) t2
          -> pprParen (d > 5)
          $  pprPrec 6 t1 <+> text "->" </> pprPrec 5 t2
+
+        -- Implicit term abstraction.
+        TApp (TApp (TCon (TyConSpec    TcConFunImplicit)) t1) t2
+         -> pprParen (d > 5)
+         $  pprPrec 6 t1 <+> text "~>" </> pprPrec 5 t2
  
         TApp t1 t2
          -> pprParen (d > 10)

@@ -20,10 +20,11 @@ module DDC.Type.Exp.Generic.Exp
 
         , pattern TVoid
         , pattern TUnit
-        , pattern TFun
         , pattern TBot
         , pattern TUnion
         , pattern TPrim
+        , pattern TFunExplicit
+        , pattern TFunImplicit
 
           -- * Classes
         , ShowGType)
@@ -100,8 +101,11 @@ data GTyCon l
         -- | The unit constructor.
         | TyConUnit
 
-        -- | The function constructor.
-        | TyConFun
+        -- | The explicit function type constructor.
+        | TyConFunExplicit
+
+        -- | The implicit function type constructor.
+        | TyConFunImplicit
 
         -- | Take the least upper bound at the given kind.
         | TyConUnion  !(GType l)
@@ -134,9 +138,6 @@ pattern TVoid           = TCon TyConVoid
 -- | Representation of the unit type.
 pattern TUnit           = TCon TyConUnit
 
--- | Representation of the function type.
-pattern TFun t1 t2      = TApp (TApp (TCon TyConFun) t1) t2
-
 -- | Representation of the bottom type at a given kind.
 pattern TBot k          = TCon (TyConBot k)
 
@@ -145,6 +146,12 @@ pattern TUnion k t1 t2  = TApp (TApp (TCon (TyConUnion k)) t1) t2
 
 -- | Representation of primitive type constructors.
 pattern TPrim   p       = TCon (TyConPrim p)
+
+-- | Representation of the explicit function type.
+pattern TFunExplicit t1 t2  = TApp (TApp (TCon TyConFunExplicit) t1) t2
+
+-- | Representation of the implicit function type.
+pattern TFunImplicit t1 t2  = TApp (TApp (TCon TyConFunImplicit) t1) t2
 
 
 ---------------------------------------------------------------------------------------------------

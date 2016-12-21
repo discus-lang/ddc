@@ -429,7 +429,7 @@ takeResultKind kk
 -- | Construct a pure function type.
 tFun      :: Type n -> Type n -> Type n
 tFun t1 t2
-        = (TCon $ TyConSpec TcConFun)  `tApps` [t1, t2]
+        = (TCon $ TyConSpec TcConFunExplicit)  `tApps` [t1, t2]
 infixr `tFun`
 
 
@@ -458,7 +458,7 @@ tFunOfList ts
 takeTFun :: Type n -> Maybe (Type n, Type n)
 takeTFun tt
  = case tt of
-        TApp (TApp (TCon (TyConSpec TcConFun)) t1) t2
+        TApp (TApp (TCon (TyConSpec TcConFunExplicit)) t1) t2
           -> Just (t1, t2)
         _ -> Nothing
 
@@ -467,7 +467,7 @@ takeTFun tt
 takeTFunArgResult :: Type n -> ([Type n], Type n)
 takeTFunArgResult tt
  = case tt of
-        TApp (TApp (TCon (TyConSpec TcConFun)) t1) t2
+        TApp (TApp (TCon (TyConSpec TcConFunExplicit)) t1) t2
           -> let (tsMore, tResult) = takeTFunArgResult t2
              in  (t1 : tsMore, tResult)
         _ -> ([], tt)
@@ -502,7 +502,7 @@ takeTFunAllArgResult tt
          -> let (tsMore, tResult)       = takeTFunAllArgResult t
             in  (typeOfBind b : tsMore, tResult)
 
-        TApp (TApp (TCon (TyConSpec TcConFun)) t1) t2
+        TApp (TApp (TCon (TyConSpec TcConFunExplicit)) t1) t2
          -> let (tsMore, tResult) = takeTFunAllArgResult t2
             in  (t1 : tsMore, tResult)
 
@@ -535,7 +535,7 @@ dataArityOfType tt
 
         TForall _ t     -> dataArityOfType t
 
-        TApp (TApp (TCon (TyConSpec TcConFun)) _) t2
+        TApp (TApp (TCon (TyConSpec    TcConFunExplicit)) _) t2
          -> 1 + dataArityOfType t2
 
         TApp (TApp (TCon (TyConWitness TwConImpl)) _) t2

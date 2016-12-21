@@ -344,7 +344,10 @@ splitFunType tt
         TApp (TApp (TCon (TyConWitness TwConImpl)) t11) t12
           -> Just (t11, tBot kEffect, tBot kClosure, t12)
 
-        TApp (TApp (TCon (TyConSpec TcConFun)) t11) t12
+        TApp (TApp (TCon (TyConSpec TcConFunExplicit)) t11) t12
+          -> Just (t11, tBot kEffect, tBot kClosure, t12)
+
+        TApp (TApp (TCon (TyConSpec TcConFunImplicit)) t11) t12
           -> Just (t11, tBot kEffect, tBot kClosure, t12)
 
         _ -> Nothing

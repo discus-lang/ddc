@@ -86,9 +86,13 @@ instance PrettyLanguage l => Pretty (GType l) where
         TAbs bv k t
          -> text "λ" <> ppr bv <> text ":" <+> ppr k <> text "." <+> ppr t
 
-        TApp (TApp (TCon TyConFun) t1) t2
+        TApp (TApp (TCon TyConFunExplicit) t1) t2
          -> pprParen' (d > 5)
          $  pprPrec 6  t1 <+> text "->" <+> pprPrec 5 t2
+
+        TApp (TApp (TCon TyConFunImplicit) t1) t2
+         -> pprParen' (d > 5)
+         $  pprPrec 6  t1 <+> text "~>" <+> pprPrec 5 t2
 
         TApp t1 t2      
          -> pprParen' (d > 10)

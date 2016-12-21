@@ -84,7 +84,7 @@ takeTApps tt
 -- Function Types -------------------------------------------------------------
 -- | Construct a function type with the given parameter and result type.
 makeTFun :: GType l -> GType l -> GType l
-makeTFun t1 t2           = TFun t1 t2
+makeTFun t1 t2           = TFunExplicit t1 t2
 infixr `makeTFun`
 
 (~>) = makeTFun
@@ -109,8 +109,8 @@ makeTFuns' ts
 --   returning `Nothing` if this isn't a function type.
 takeTFun :: GType l -> Maybe (GType l, GType l)
 takeTFun tt
-        | Just (t1f, t2)               <- takeTApp tt
-        , Just (TCon TyConFun, t1)     <- takeTApp t1f
+        | Just (t1f, t2)                   <- takeTApp tt
+        , Just (TCon TyConFunExplicit, t1) <- takeTApp t1f
         = Just (t1, t2)
 
         | otherwise

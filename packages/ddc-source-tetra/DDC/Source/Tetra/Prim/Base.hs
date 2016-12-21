@@ -63,7 +63,7 @@ data PrimType
         -- | Primitive machine type constructors.
         | PrimTypeTyCon         !PrimTyCon
 
-        -- | Primtiive type constructors specific to the Tetra fragment.
+        -- | Primtive type constructors specific to the Tetra fragment.
         | PrimTypeTyConTetra    !PrimTyConTetra
         deriving (Eq, Ord, Show)
 
