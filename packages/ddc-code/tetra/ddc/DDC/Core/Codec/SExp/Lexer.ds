@@ -8,6 +8,8 @@ import Data.Text
 import Data.Ref
 where
 
+eqChar (c1 c2: Char): Bool
+ = eqText (textOfChar c1) (textOfChar c2)
 
 -- | Lex text into SExp tokens.
 --
@@ -16,7 +18,7 @@ where
 --
 lexText (tx: Text): List Token
  = private r with {Read r; Write r; Alloc r} in
-   do   toks    = lexList (State $ allocRef [r] $ charListOfText tx)
+   do   toks    = lexList (run (stateOfList [r] $ charListOfText tx))
         toks
 
 

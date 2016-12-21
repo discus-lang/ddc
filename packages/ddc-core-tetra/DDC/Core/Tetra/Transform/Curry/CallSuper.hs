@@ -64,14 +64,18 @@ makeCallSuperUnder
 -- Under application where we have a type argument for each of the type parameters.
 makeCallSuperUnder nF tF cs es
  -- We have more constructors than eliminators.
- | length es <  length cs
+ | length cs > length es
 
  -- The super and call  must be in standard form.
  , Just (esType, esValue,  esRuns) <- Call.splitStdCallElims es
- , Just (csType, _csValue, _cBox)  <- Call.splitStdCallCons  cs
+ , Just (csType, _csValue, csBox)  <- Call.splitStdCallCons  cs
 
  -- There must be types to satisfy all of the type parameters of the super.
  , length esType == length csType
+
+ -- We must not have more runs than boxes,
+ -- otherwise that would be over application.
+ , length esRuns <= length csBox 
 
  -- Instantiate the type of the function.
  , Just tF_inst  <- T.instantiateTs tF [t | Call.ElimType _ t <- esType]
@@ -164,10 +168,10 @@ makeCallSuperUnder nF tF cs es
           -> let tSuperResult = C.tFunOfParamResult tsParamRest tResult
              in  return
                    $ Just
-                   $ C.xLAMs () bsParam 
-                   $ C.xFunCurry () [] tF_inst
+                   $ C.xLAMs      () bsParam 
+                   $ C.xFunCurry  () [] tF_inst
                    $ C.xFunCReify () tParamFirst tSuperResult 
-                        ( xApps () (XVar () (UName nF)) 
+                        (xApps () (XVar () (UName nF)) 
                                 $ map RType tsArgs)
 
 

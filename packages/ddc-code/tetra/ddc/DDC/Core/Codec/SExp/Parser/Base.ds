@@ -1,6 +1,7 @@
 
 module DDC.Core.Codec.SExp.Parser.Base
-export { peek; shift; next; take; takeWhile }
+export { stateOfList;
+         peek; shift; next; take; takeWhile }
 import Data.Text
 import Data.Ref
 
