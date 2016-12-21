@@ -149,8 +149,8 @@ addParamsBodyX xx
  = case xx of
         -- This binding already has an outer value abstraction,
         -- so we don't need to add any more.
-        XLam{}  
-         -> Nothing
+        XAbs _ MTerm{}     _ -> Nothing
+        XAbs _ MImplicit{} _ -> Nothing
 
         -- Decend under type abstractions. To keep the supers
         -- in standard form with all the type abstractions first, 
