@@ -42,9 +42,13 @@ stageSourceTetraLoad config source store pipesTetra
                     (dump config source "dump.0-source-10-precheck.dct")
                     (dump config source "dump.0-source-11-trace.txt")
                     store
-   ( PipeCoreOutput pprDefaultMode
+   [ PipeCoreOutput pprDefaultMode
                     (dump config source "dump.1-tetra-00-checked.dct")
-   : pipesTetra ) 
+   , PipeCoreResolve "SourceTetraLoad" BE.fragment
+      (PipeCoreOutput   pprDefaultMode
+                        (dump config source "dump.1-tetra-01-resolve.dct")
+      : pipesTetra)]
+        
 
 
 ---------------------------------------------------------------------------------------------------
@@ -58,11 +62,12 @@ stageTetraLoad config source pipesTetra
  = PipeTextLoadCore BE.fragment 
         (if configInferTypes config then C.Synth [] else C.Recon)
                          (dump config source "dump.1-tetra-00-check.dct")
- [ PipeCoreReannotate (const ())
-        ( PipeCoreOutput pprDefaultMode
-                         (dump config source "dump.1-tetra-01-load.dct")
-        : pipesTetra ) ]
- 
+
+ [ PipeCoreResolve "TetraLoad" BE.fragment
+   [ PipeCoreOutput     pprDefaultMode
+                        (dump config source "dump.1-tetra-01-resolve.dct")
+   , PipeCoreReannotate (const ()) pipesTetra ]]
+
 
 ---------------------------------------------------------------------------------------------------
 -- | Convert a Core Tetra module to Core Salt.

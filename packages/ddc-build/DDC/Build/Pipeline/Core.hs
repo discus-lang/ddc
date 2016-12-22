@@ -52,6 +52,7 @@ import qualified DDC.Core.Transform.Eta                 as Eta
 import qualified DDC.Core.Transform.Beta                as Beta
 import qualified DDC.Core.Transform.Lambdas             as Lambdas
 import qualified DDC.Core.Transform.Forward             as Forward
+import qualified DDC.Core.Transform.Resolve             as Resolve
 import qualified DDC.Core.Simplifier                    as C
 
 import qualified DDC.Core.Fragment                      as C
@@ -106,6 +107,14 @@ data PipeCore a n where
         => (a -> b)
         -> ![PipeCore b n]
         ->  PipeCore  a n
+
+  -- Resolve elaborations in a module.
+  PipeCoreResolve
+        :: (Pretty a)
+        => !String                      -- Name of compiler stage.
+        -> !(Fragment n arr)            -- Language fragment to use.
+        -> ![PipeCore a n]             -- Pipes for result.
+        -> PipeCore a n
 
   -- Apply a simplifier to a module.
   PipeCoreSimplify  
@@ -207,6 +216,12 @@ pipeCore !mm !pp
          -> {-# SCC "PipeCoreStrip" #-}
             let mm' = (C.reannotate f mm)
             in  pipeCores mm' pipes
+
+        PipeCoreResolve  !stage !_fragment !pipes
+         -> {-# SCC "PipeCoreResolve" #-}
+            case Resolve.resolveModule mm of
+                Left err        -> return [ErrorLint stage "PipeCoreResolve" err]
+                Right mm'       -> pipeCores mm' pipes
 
         PipeCoreSimplify !fragment !nameZero !simpl !pipes
          -> {-# SCC "PipeCoreSimplify" #-}

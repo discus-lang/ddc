@@ -68,12 +68,8 @@ module DDC.Core.Check.Context
         , applySolvedEither
 
           -- * Effects
-        , effectSupported
-
-          -- * Implicits
-        , findImplicitOfType)
+        , effectSupported)
 where
-import DDC.Core.Check.Context.Implicit
 import DDC.Core.Check.Context.Effect
 import DDC.Core.Check.Context.Apply
 import DDC.Core.Check.Context.Elem

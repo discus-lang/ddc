@@ -1,4 +1,13 @@
 
+-- | Expliciation is the of converting all implicit paramters and arguments
+--   to explicit ones, and also substituting in type equations. We do this
+--   as a prep stage before converting a module to a lower level fragment
+--   like Core Salt.
+--   
+--   When converting implicit arguments to explicit ones we do not actually
+--   search the context for an appropriate binder, we just convert the form
+--   of the parameters and arguments to explicit ones.
+--
 module DDC.Core.Transform.Expliciate
         ( expliciateModule
         , expliciateType
@@ -90,12 +99,7 @@ expliciateBind eqns bb
 
 
 ---------------------------------------------------------------------------------------------------
--- | Make an expression fully explicit by converting all implicit parameters
---   and arguments to explicit ones, and also substituting in type equations.
---   
---   When converting implicit arguments to explicit ones we do not actually
---   search the context for an appropriate binder, we just convert the form
---   of the parameters and arguments to explicit ones.
+-- | Expliciate an expression.
 expliciateExp
         :: Ord n
         => Map n (Type n)
@@ -145,10 +149,10 @@ expliciateArg
 
 expliciateArg eqns arg
  = case arg of
-        RType t                 -> RType $ expliciateType eqns t
-        RTerm x                 -> RTerm $ expliciateExp  eqns x
-        RWitness{}              -> arg
-        RImplicit arg'          -> expliciateArg  eqns arg'
+        RType t         -> RType $ expliciateType eqns t
+        RTerm x         -> RTerm $ expliciateExp  eqns x
+        RWitness{}      -> arg
+        RImplicit arg'  -> expliciateArg  eqns arg'
 
 
 -- | Expliciate some let bindings.
