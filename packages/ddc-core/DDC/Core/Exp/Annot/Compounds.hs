@@ -24,6 +24,7 @@ module DDC.Core.Exp.Annot.Compounds
         , replaceTypeOfParam
         , ParamTVB(..)
         , takeXLamParamTVB
+        , makeTFunParams
 
           -- * Applications
         , xApps
@@ -214,6 +215,29 @@ takeXLamParamTVB xx
    in   case go [] xx of
          ([], _)        -> Nothing
          (bs, body)     -> Just (bs, body)
+
+
+-- | Construct a function type from a list of parameter types and the
+--   return type.
+makeTFunParams :: [Param n] -> Type n -> Type n
+makeTFunParams msParam tResult
+ = tFuns' msParam 
+ where
+        tFuns' []       
+         = tResult
+
+        tFuns' (m : ms) 
+         = case m of
+                MType b 
+                 ->  TForall b (tFuns' ms)
+
+                MTerm b 
+                 -> (TCon $ TyConSpec TcConFunExplicit) 
+                        `tApps` [typeOfBind b, tFuns' ms]
+
+                MImplicit b
+                 -> (TCon $ TyConSpec TcConFunImplicit)
+                        `tApps` [typeOfBind b, tFuns' ms]
 
 
 -- Applications ---------------------------------------------------------------

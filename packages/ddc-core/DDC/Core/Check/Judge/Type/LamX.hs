@@ -36,7 +36,7 @@ checkLam !table !a !ctx !m1 !x2 !Recon
 
         -- Determine the kind of the parameter.
         (t1', k1, _)    <- checkTypeM config ctx UniverseSpec t1 Recon
-        let m1'         = replaceTypeOfParam t1' m1
+        let m1'         =  replaceTypeOfParam t1' m1
 
         -- Check the body -----------------------
         -- Reconstruct a type for the body, under the extended environment.
@@ -66,7 +66,7 @@ checkLam !table !a !ctx !m1 !x2 !Recon
         --   The way the effect and closure term is captured depends on
         --   the configuration flags.
         (xAbs', tAbs) 
-         <- makeFunction config a xx m1' t1 k1 x2' t2 e2_crush
+         <- makeFunction config a xx m1' k1 x2' t2 e2_crush
 
         return  ( xAbs'
                 , tAbs
@@ -90,7 +90,7 @@ checkLam !table !a !ctx !m1 !x2 !(Synth {})
         let t1          = typeOfParam m1
 
         -- If there isn't an existing annotation then make an existential.
-        (m1', t1', k1, ctx1)
+        (m1', _t1', k1, ctx1)
          <- if isHoleT config t1
              then do
                 -- There is no annotation at all, so make an existential.
@@ -168,7 +168,7 @@ checkLam !table !a !ctx !m1 !x2 !(Synth {})
         (xAbs', tAbs)
          <- makeFunction 
                 config a (XAbs a m1' x2)
-                m1' t1' k1''
+                m1' k1''
                 x2' t2' e2_crush
 
         ctrace  $ vcat
@@ -294,7 +294,7 @@ checkLam !table !a !ctx !m1 !x2 !(Check tExpected)
         (xAbs', tAbs)
          <- makeFunction
                 config a (XAbs a m1' x2)
-                m1' t1' k1''
+                m1' k1''
                 x2' t2  e2
 
 
@@ -354,24 +354,24 @@ makeFunction
         -> a                    -- ^ Annotation for error messages.
         -> Exp  a n             -- ^ Expression for error messages.
         -> Param n              -- ^ Parameter of the function.
-        -> Type n               -- ^ Parameter type of the function.
         -> Kind n               -- ^ Kind of the parameter.
         -> Exp  (AnTEC a n) n   -- ^ Body of the function.
         -> Type n               -- ^ Result type of the function.
         -> TypeSum n            -- ^ Sum of effects of the body expression.
         -> CheckM a n (Exp (AnTEC a n) n, Type n)
 
-makeFunction config a xx mParam tParam kParam xBody tBody eBody
+makeFunction config a xx mParam kParam xBody tBody eBody
  | isTExists kParam
- = throw $ ErrorLamBindBadKind a xx tParam kParam
+ = throw $ ErrorLamBindBadKind a xx (typeOfParam mParam) kParam
 
  | not (kParam == kData) && not (kParam == kWitness)
- = throw $ ErrorLamBindBadKind a xx tParam kParam
+ = throw $ ErrorLamBindBadKind a xx (typeOfParam mParam) kParam
 
  | otherwise
  = do
         -- Get the universe the parameter value belongs to.
-        let Just uniParam    = universeFromType2 kParam
+        let Just uniParam
+                = universeFromType2 kParam
 
         -- The effects due to evaluating the body that are 
         -- captured by this abstraction.
@@ -385,7 +385,7 @@ makeFunction config a xx mParam tParam kParam xBody tBody eBody
         -- fragment does not suport latent effects or closures.
         if (    kParam == kData
                 && eCaptured == tBot kEffect)
-         then let tAbs  = tFun tParam tBody
+         then let tAbs  = makeTFunParams [mParam] tBody
                   aAbs  = AnTEC tAbs (tBot kEffect) (tBot kClosure) a
               in  return ( XAbs aAbs mParam xBody
                          , tAbs)
@@ -394,7 +394,7 @@ makeFunction config a xx mParam tParam kParam xBody tBody eBody
         --  but closures are passed through.
         else if (  kParam == kWitness
                 && eCaptured == tBot kEffect)
-         then let tAbs  = tImpl tParam tBody
+         then let tAbs  = tImpl (typeOfParam mParam) tBody
                   aAbs  = AnTEC tAbs (tBot kEffect) (tBot kClosure) a
               in  return ( XAbs aAbs mParam xBody
                          , tAbs)
@@ -416,7 +416,7 @@ makeFunction config a xx mParam tParam kParam xBody tBody eBody
                  -> let tBodySusp = tSusp eCaptured tBody
                         aBox      = AnTEC tBodySusp (tBot kEffect) (tBot kClosure) a
 
-                        tAbs      = tFun tParam tBodySusp
+                        tAbs      = makeTFunParams [mParam] tBodySusp
                         aAbs      = AnTEC tAbs      (tBot kEffect) (tBot kClosure) a
 
                     in  return  ( XAbs aAbs mParam (XCast aBox CastBox xBody)
@@ -437,7 +437,7 @@ makeFunction config a xx mParam tParam kParam xBody tBody eBody
                         tBodySusp = tSusp eTotal tResult
                         aBox      = AnTEC tBodySusp (tBot kEffect) (tBot kClosure) a
 
-                        tAbs      = tFun tParam tBodySusp
+                        tAbs      = makeTFunParams [mParam] tBodySusp
                         aAbs      = AnTEC tAbs      (tBot kEffect) (tBot kClosure) a
 
                     in  return  ( XAbs aAbs mParam 

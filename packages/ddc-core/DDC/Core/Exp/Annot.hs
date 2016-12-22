@@ -80,6 +80,7 @@ module DDC.Core.Exp.Annot
         , replaceTypeOfParam 
         , ParamTVB(..)
         , takeXLamParamTVB
+        , makeTFunParams
 
           -- ** Applications
         , xApps
