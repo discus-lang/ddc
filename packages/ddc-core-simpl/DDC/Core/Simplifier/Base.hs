@@ -81,6 +81,10 @@ data Transform s a n
         -- | Perform eta expansion and reduction.
         | Eta    Eta.Config
 
+        -- | Inline type equations 
+        --   and convert to explicit abstraction and application.
+        | Expliciate
+
         -- | Flatten nested let and case expressions.
         | Flatten
 
@@ -140,6 +144,7 @@ instance Pretty (Transform s a n) where
         Bubble          -> text "Bubble"
         Elaborate       -> text "Elaborate"
         Eta{}           -> text "Eta"
+        Expliciate      -> text "Expliciate"
         Flatten         -> text "Flatten"
         Forward         -> text "Forward"
         FoldCase{}      -> text "FoldCase"

@@ -2,6 +2,7 @@
 -- | Algebraic data type definitions.
 module DDC.Type.DataDef
         ( DataDef    (..)
+        , mapTypeOfDataDef
         , kindOfDataDef
         , dataTypeOfDataDef
         , dataCtorNamesOfDataDef
@@ -22,6 +23,7 @@ module DDC.Type.DataDef
         , lookupModeOfDataType
 
         , DataCtor   (..)
+        , mapTypeOfDataCtor
         , typeOfDataCtor)
 where
 import DDC.Type.Exp
@@ -60,6 +62,12 @@ instance NFData n => NFData (DataDef n) where
         `seq`   rnf (dataDefParams      def)
         `seq`   rnf (dataDefCtors       def)
         `seq`   rnf (dataDefIsAlgebraic def)
+
+
+-- | Apply a function to all types in a data def.
+mapTypeOfDataDef :: (Type n -> Type n) -> DataDef n -> DataDef n
+mapTypeOfDataDef f def
+ = def { dataDefCtors   = fmap (map (mapTypeOfDataCtor f)) (dataDefCtors def) }
 
 
 -- | Get the kind of the type constructor defined by a `DataDef`.
@@ -197,6 +205,13 @@ data DataCtor n
           -- | Parameters of data type 
         , dataCtorTypeParams :: ![Bind n] }
         deriving Show
+
+
+-- | Apply a function to all types in a data ctor.
+mapTypeOfDataCtor :: (Type n -> Type n) -> DataCtor n -> DataCtor n
+mapTypeOfDataCtor f ctor
+ = ctor { dataCtorFieldTypes    = map f (dataCtorFieldTypes ctor)
+        , dataCtorResultType    = f (dataCtorResultType ctor) }
 
 
 -- | Get the type of `DataCtor`

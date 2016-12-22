@@ -16,6 +16,7 @@ import DDC.Core.Transform.Beta
 import DDC.Core.Transform.Bubble
 import DDC.Core.Transform.Elaborate
 import DDC.Core.Transform.Eta                   as Eta
+import DDC.Core.Transform.Expliciate            as Expliciate
 import DDC.Core.Transform.Flatten
 import DDC.Core.Transform.Forward               as Forward
 import DDC.Core.Transform.Inline
@@ -33,6 +34,7 @@ import Control.Monad.State.Strict
 import qualified DDC.Data.Pretty                as P
 import qualified DDC.Core.Env.EnvX              as EnvX
 import qualified Data.Set                       as Set
+import qualified Data.Map                       as Map
 import Prelude                                  hiding ((<$>))
 
 
@@ -145,6 +147,7 @@ applyTransform !profile !_kenv !_tenv !spec !mm
         Bubble           -> res    $ bubbleModule mm
         Elaborate        -> res    $ elaborateModule mm
         Eta  config      -> return $ Eta.etaModule profile config mm
+        Expliciate       -> res    $ Expliciate.expliciateModule mm
         Flatten          -> res    $ flatten mm
 
         Forward          
@@ -305,6 +308,7 @@ applyTransformX !profile !kenv !tenv !spec !xx
         Bubble            -> res    $ bubbleX kenv tenv xx
         Elaborate{}       -> res    $ elaborateX xx
         Eta  config       -> return $ Eta.etaX   profile config env xx
+        Expliciate        -> res    $ Expliciate.expliciateExp (Map.empty) xx
         Flatten           -> res    $ flatten xx
 
         Forward          

@@ -149,22 +149,21 @@ pTypeFun c
  = do   t1      <- pTypeApp c
         P.choice 
          [ 
-
-{-           -- T1 ~> T2
-           -- ** Change this to TyConImplicit *************
-           do   pSym    SArrowTilde
+           -- T1 -> T2
+           do   pSym    SArrowDashRight
                 t2      <- pTypeForall c
-                return  $ TApp (TApp (TCon (TyConKind KiConFun)) t1) t2
--}
+                return  $ TApp (TApp (TCon (TyConSpec TcConFunExplicit)) t1) t2
+
+           -- T1 ~> T2
+         , do   pSym    SArrowTilde
+                t2      <- pTypeForall c
+                return  $ TApp (TApp (TCon (TyConSpec TcConFunImplicit)) t1) t2
+
            -- T1 => T2
-           do   pSym    SArrowEquals
+         , do   pSym    SArrowEquals
                 t2      <- pTypeForall c
                 return  $ TApp (TApp (TCon (TyConWitness TwConImpl)) t1) t2
 
-           -- T1 -> T2
-         , do   pSym    SArrowDashRight
-                t2      <- pTypeForall c
-                return $ t1 `tFun`   t2
 
            -- Body type
          , do   return t1 ]

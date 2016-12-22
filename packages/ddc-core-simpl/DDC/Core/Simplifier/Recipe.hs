@@ -8,6 +8,7 @@ module DDC.Core.Simplifier.Recipe
         , betaLets
         , bubble
         , elaborate
+        , expliciate
         , flatten
         , forward
         , lambdas
@@ -59,6 +60,11 @@ bubble   = Trans Bubble
 --   otherwise in the program.
 elaborate :: Simplifier s a n
 elaborate = Trans Elaborate
+
+
+-- | Inline type equations and convert to explicit abstraction and application.
+expliciate :: Simplifier s a n
+expliciate = Trans Expliciate
 
 
 -- | Flatten nested let and case expressions.

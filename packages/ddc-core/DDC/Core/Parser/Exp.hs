@@ -32,10 +32,10 @@ pExp c
         -- Level-0 lambda abstractions
         -- (λBIND.. . EXP) or (\BIND.. . EXP)
  [ do   sp      <- P.choice [ pSym SLambda,    pSym SBackSlash]
-        bs      <- liftM concat $ P.many1 (pTermBinds c)
+        params  <- liftM concat $ P.many1 (pParams c)
         pSym    SDot
         xBody   <- pExp c
-        return  $ foldr (XLam sp) xBody bs
+        return  $ foldr (XAbs sp) xBody params
 
         -- Level-1 lambda abstractions.
         -- (ΛBINDS.. . EXP) or (/\BIND.. . EXP)
@@ -307,6 +307,33 @@ pTermBinds c
         t       <- pType c
         pSym SRoundKet
         return  [T.makeBindFromBinder b t | b <- bs]
+ ]
+
+
+-- Parameters of an abstraction.
+pParams  :: (Ord n, Pretty n)
+         => Context n -> Parser n [Param n]
+pParams c
+ = P.choice
+        -- Plain binder.
+ [ do   bs      <- P.many1 pBinder
+        return  [MTerm (T.makeBindFromBinder b (T.tBot T.kData)) | b <- bs]
+
+        -- Binder with type, wrapped in parens.
+ , do   pSym SRoundBra
+        bs      <- P.many1 pBinder
+        pTok (KOp ":")
+        t       <- pType c
+        pSym SRoundKet
+        return  [MTerm (T.makeBindFromBinder b t) | b <- bs]
+
+        -- Binder with type, wrapped in braces.
+ , do   pSym SBraceBra
+        bs      <- P.many1 pBinder
+        pTok (KOp ":")
+        t       <- pType c
+        pSym SBraceKet
+        return  [MImplicit (T.makeBindFromBinder b t) | b <- bs]
  ]
 
 
