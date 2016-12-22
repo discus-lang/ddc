@@ -206,7 +206,7 @@ instance PrettyLanguage l => Pretty (GExp l) where
 
         XApp x1 r2
          -> pprParen' (d > 10)
-         $  pprPrec 10 x1 <> nest 4 (pprPrec 11 r2)
+         $  pprPrec 10 x1 <+> nest 4 (pprPrec 11 r2)
 
         XLet lts x
          ->  pprParen' (d > 2)
@@ -300,7 +300,7 @@ instance PrettyLanguage l => Pretty (GArg l) where
          -> (text "{" <> ppr x <> text "}")
 
         RTerm x
-         -> ppr x
+         -> pprPrec 11 x
 
 
 -- Lets -------------------------------------------------------------------------------------------
