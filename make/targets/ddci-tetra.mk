@@ -32,7 +32,7 @@ make/deps/Makefile-ddci-tetra.deps : $(ddci-tetra_src_hs_all)
 		-M $^ -dep-makefile make/deps/Makefile-ddci-tetra.deps \
                 -dep-suffix "" $(GHC_INCDIRS)
 	@rm -f make/deps/Makefile-ddci-tetra.deps.bak
-	@cp make/deps/Makefile-ddci-tetra.deps make/deps/Makefile-ddci-tetra.deps.inc
+	@$(GHC_DEPS_HI_TO_O) make/deps/Makefile-ddci-tetra.deps > make/deps/Makefile-ddci-tetra.deps.inc
 
 
 # Build object files.

@@ -26,7 +26,7 @@ make/deps/Makefile-ddc-check.deps : $(ddc-check_src_hs_all)
 		-M $^ -dep-makefile make/deps/Makefile-ddc-check.deps \
                 -dep-suffix "" $(GHC_INCDIRS)
 	@rm -f make/deps/Makefile-ddc-check.deps.bak
-	@cp make/deps/Makefile-ddc-check.deps make/deps/Makefile-ddc-check.deps.inc
+	@$(GHC_DEPS_HI_TO_O) make/deps/Makefile-ddc-check.deps > make/deps/Makefile-ddc-check.deps.inc
 
 
 # Build object files.

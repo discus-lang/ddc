@@ -28,7 +28,7 @@ make/deps/Makefile-ddc-main.deps : $(ddc-main_src_hs_all)
 		-M $^ -dep-makefile make/deps/Makefile-ddc-main.deps \
                 -dep-suffix "" $(GHC_INCDIRS)
 	@rm -f make/deps/Makefile-ddc-main.deps.bak
-	@cp make/deps/Makefile-ddc-main.deps make/deps/Makefile-ddc-main.deps.inc
+	@$(GHC_DEPS_HI_TO_O) make/deps/Makefile-ddc-main.deps > make/deps/Makefile-ddc-main.deps.inc
 
 
 # Build object files.

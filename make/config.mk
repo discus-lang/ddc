@@ -25,6 +25,7 @@ GHCI		= ghci
 GHC_VERSION	= $(shell $(GHC) --version | sed -e "s/.* //g" -e "s/\..*//")
 GHC_VERSION_FLAGS = -rtsopts
 
+GHC_DEPS_HI_TO_O = sed 's/\.hi$$/.o/'
 
 # Linear solver time
 DDC_FLOW_USE_LINEAR_SOLVER = 1

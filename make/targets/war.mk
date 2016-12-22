@@ -9,7 +9,7 @@ make/deps/Makefile-war.deps : $(war_src_hs_all)
 	@$(GHC) -M $^ -dep-makefile make/deps/Makefile-war.deps \
                 -dep-suffix "" $(GHC_INCDIRS)
 	@rm -f make/deps/Makefile-war.deps.bak
-	@cp make/deps/Makefile-war.deps make/deps/Makefile-war.deps.inc
+	@$(GHC_DEPS_HI_TO_O) make/deps/Makefile-war.deps > make/deps/Makefile-war.deps.inc
 
 
 # -- Link war -------------------------------------------------------------------------------------
