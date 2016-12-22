@@ -194,76 +194,28 @@ synthAppArg table
         return  (xResult, tA2, esResult, ctx2)
 
 
- -- Rule (App Synth Forall)
- --  Function has a quantified type, but we're applying an expression to it.
- --  We need to inject a new type argument.
- | TForall b tBody      <- tFn
- = do
-        -- Make a new existential for the type of the argument, and push it
-        -- onto the context. The new existential may appear in some other
-        -- type constraint, so make sure to add it to the correct scope.
-        iA         <- newExists (typeOfBind b)
-        let tA     =  typeOfExists iA
-        let ctx1   =  pushExistsScope iA isScope ctx0
-
-        -- Instantiate the type of the function with the new existential.
-        let tBody' =  substituteT b tA tBody
-
-        -- Add the missing type application.
-        --  Because we were applying a function to an expression argument,
-        --  and the type of the function was quantified, we know there should
-        --  be a type application here.
-        let aFn    = AnTEC tFn (TSum effsFn) (tBot kClosure) a
-        let xFnTy  = XApp aFn xFn (RType tA)
-
-        ctrace  $ vcat
-                [ text "*>  App Synth Forall"
-                , text "    demand  = " <> ppr demand
-                , text "    scope   = " <> ppr isScope
-                , text "    xFn     = " <> ppr xFn
-                , text "    arg     = " <> ppr arg
-                , text "    iA      = " <> ppr iA
-                , text "    tBody'  = " <> ppr tBody'
-                , text "    xResult = " <> ppr xFnTy
-                , empty ]
-
-        -- Synthesise the result type of a function being applied to its
-        -- argument. We know the type of the function up-front, but we pass
-        -- in the whole argument expression.
-        (xResult, tResult, esResult, ctx2)
-         <- synthAppArg table a xx ctx1 demand isScope xFnTy tBody' effsFn arg
-
-        -- Result expression.
-        ctrace  $ vcat
-                [ text "*<  App Synth Forall"
-                , text "    demand  = " <> ppr demand
-                , text "    scope   = " <> ppr isScope
-                , text "    xFn     = " <> ppr xFn
-                , text "    tFn     = " <> ppr tFn
-                , text "    arg     = " <> ppr arg
-                , text "    xResult = " <> ppr xResult
-                , text "    tResult = " <> ppr tResult
-                , indent 4 $ ppr ctx2
-                , empty ]
-
-        return  (xResult, tResult, esResult, ctx2)
-
-
- -- Rule (App Synth Fun)
- --  Function already has a concrete function type.
- | Just (tParam, tResult) 
-     <- case takeTFun tFn of
-         Just r  -> Just r
-         Nothing -> takeTImpl tFn
+ -- Rule (App Synth Match)
+ --  The sort of argument we have matches the mode of the function.
+ | Just (paramSort, paramMode, bParam, tResult)
+        <- splitParamOfType tFn
+ , case (paramSort, paramMode, arg) of
+        (ParamSortTerm, ParamModeExplicit, RTerm{})     -> True
+        (ParamSortTerm, ParamModeImplicit, RImplicit{}) -> True
+        _                                               -> False
  = do
         ctrace  $ vcat
-                [ text "*>  App Synth Fun"
-                , text "    demand  = " <> ppr demand
-                , text "    scope   = " <> ppr isScope
-                , text "    tFn     = " <> ppr tFn
+                [ text "*>  App Synth Match"
+                , text "    demand    = " <> ppr demand
+                , text "    scope     = " <> ppr isScope
+                , text "    tFn       = " <> ppr tFn
+                , text "    paramSort = " <> text (show paramSort)
+                , text "    paramMode = " <> text (show paramMode)
+                , text "    bParam    = " <> ppr bParam
+                , text "    tResult   = " <> ppr tResult
                 , empty ]
 
         -- Check the argument.
+        let tParam = typeOfBind bParam
         (arg', tArg, esArg, ctx1)
          <- checkArg table ctx0 (Check tParam) DemandRun arg
 
@@ -283,7 +235,6 @@ synthAppArg table
              -- the current context to it as above should not change this.
              Nothing
               -> error "ddc-core.synthAppArg: unexpected type of function."
-
 
         -- Result of evaluating the functional expression applied
         -- to its argument.
@@ -313,7 +264,7 @@ synthAppArg table
                         , esExp)
 
         ctrace  $ vcat
-                [ text "*<  App Synth Fun"
+                [ text "*<  App Synth Match"
                 , indent 4 $ ppr xx
                 , text "    demand  = " <> ppr demand
                 , text "    scope   = " <> ppr isScope
@@ -327,6 +278,125 @@ synthAppArg table
                 , empty ]
 
         return  (xExpRun, tExpRun, esExpRun, ctx1)
+
+
+ -- Rule (App Synth Implicit Term)
+ --  Function is an implicit term abstraction, but the argument does not satisfy it.
+ --  Find a term in the context of the type of the abstraction, and apply it to that.
+ | Just (ParamSortTerm, ParamModeImplicit, bParam, tBody)
+        <- splitParamOfType tFn
+ , case arg of
+        RType{}         -> True
+        RTerm{}         -> True
+        RWitness{}      -> True
+        RImplicit{}     -> False
+ = do   
+        ctrace  $ vcat
+                [ text "*>  App Synth Implicit Term"
+                , text "    demand  = " <> ppr demand
+                , text "    scope   = " <> ppr isScope
+                , text "    xFn     = " <> ppr xFn
+                , text "    arg     = " <> ppr arg
+                , empty ]
+
+        -- Try to find a binder in the context with the required type.
+        bArgImplicit    
+         <- case findImplicitOfType ctx0 (typeOfBind bParam) of
+                Nothing         -> error "TODO: can't find implicit of desired type."
+                Just x          -> return x
+
+        -- Build an implicit argument that references the binder.
+        let aArgImpl    = AnTEC (typeOfBind bParam) (tBot kEffect) (tBot kClosure) a
+        xArgImplicit
+         <- case bArgImplicit of
+                BName n _       -> return $ XVar aArgImpl (UName n)
+                _               -> error "TODO: can't build implicit argument."
+
+        -- Add the implicit type argument.
+        let aFn         = AnTEC tFn (TSum effsFn) (tBot kClosure) a
+        let xFnArg      = XApp aFn xFn (RImplicit xArgImplicit)
+
+        -- Synthesise the result type of a function being applied to its
+        -- argument. We know the type of the function up-front, but we pass
+        -- in the whole argument expression.
+        (xResult, tResult, esResult, ctx1)
+         <- synthAppArg table a xx ctx0 demand isScope xFnArg tBody effsFn arg
+
+        -- Result expression.
+        ctrace  $ vcat
+                [ text "*<  App Synth Implicit Term"
+                , text "    demand  = " <> ppr demand
+                , text "    scope   = " <> ppr isScope
+                , text "    xFn     = " <> ppr xFn
+                , text "    arg     = " <> ppr arg
+                , text "    xResult = " <> ppr xResult
+                , text "    tResult = " <> ppr tResult
+                , indent 4 $ ppr ctx1
+                , empty ]
+
+        return  (xResult, tResult, esResult, ctx1)
+
+
+ -- Rule (App Synth Elaborate Type)
+ --  Function is an elaborative type abstraction, but the argument does not satisfy it.
+ --  We need to inject a new type argument first.
+ | Just (ParamSortType, ParamModeElaborate, bParam, tBody)
+        <- splitParamOfType tFn
+ , case arg of
+        RType{}         -> False
+        RTerm{}         -> True
+        RWitness{}      -> True
+        RImplicit{}     -> True
+
+ = do
+        -- Make a new existential for the type of the argument, and push it
+        -- onto the context. The new existential may appear in some other
+        -- type constraint, so make sure to add it to the correct scope.
+        iA         <- newExists (typeOfBind bParam)
+        let tA     =  typeOfExists    iA
+        let ctx1   =  pushExistsScope iA isScope ctx0
+
+        -- Instantiate the type of the function with the new existential.
+        let tBody' =  substituteT bParam tA tBody
+
+        -- Add the missing type application.
+        --  Because we were applying a function to an expression argument,
+        --  and the type of the function was quantified, we know there should
+        --  be a type application here.
+        let aFn    = AnTEC tFn (TSum effsFn) (tBot kClosure) a
+        let xFnTy  = XApp aFn xFn (RType tA)
+
+        ctrace  $ vcat
+                [ text "*>  App Synth Elaborate Type"
+                , text "    demand  = " <> ppr demand
+                , text "    scope   = " <> ppr isScope
+                , text "    xFn     = " <> ppr xFn
+                , text "    arg     = " <> ppr arg
+                , text "    iA      = " <> ppr iA
+                , text "    tBody'  = " <> ppr tBody'
+                , text "    xResult = " <> ppr xFnTy
+                , empty ]
+
+        -- Synthesise the result type of a function being applied to its
+        -- argument. We know the type of the function up-front, but we pass
+        -- in the whole argument expression.
+        (xResult, tResult, esResult, ctx2)
+         <- synthAppArg table a xx ctx1 demand isScope xFnTy tBody' effsFn arg
+
+        -- Result expression.
+        ctrace  $ vcat
+                [ text "*<  App Synth Elaborate Type"
+                , text "    demand  = " <> ppr demand
+                , text "    scope   = " <> ppr isScope
+                , text "    xFn     = " <> ppr xFn
+                , text "    tFn     = " <> ppr tFn
+                , text "    arg     = " <> ppr arg
+                , text "    xResult = " <> ppr xResult
+                , text "    tResult = " <> ppr tResult
+                , indent 4 $ ppr ctx2
+                , empty ]
+
+        return  (xResult, tResult, esResult, ctx2)
 
 
  -- Applied expression is not a function.

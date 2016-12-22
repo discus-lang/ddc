@@ -21,6 +21,8 @@ module DDC.Core.Exp.Annot.Exp
 
          -- * Expressions
         , Exp           (..)
+        , ParamSort     (..)
+        , ParamMode     (..)
         , Param         (..)
         , Arg           (..)
         , Prim          (..)
@@ -77,6 +79,22 @@ data Exp a n
 
 pattern XLam  a b x     = XAbs a (MTerm b) x
 pattern XLAM  a b x     = XAbs a (MType b) x
+
+
+-- | Parameter sort.
+data ParamSort 
+        = ParamSortType
+        | ParamSortTerm
+        | ParamSortWitness
+        deriving (Show, Eq)
+
+
+-- | Parameter mode.
+data ParamMode
+        = ParamModeExplicit
+        | ParamModeImplicit
+        | ParamModeElaborate
+        deriving (Show, Eq)
 
 
 -- | Parameter of an abstraction.

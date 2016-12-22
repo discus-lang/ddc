@@ -24,6 +24,7 @@ module DDC.Core.Exp.Annot.Compounds
         , replaceTypeOfParam
         , ParamTVB(..)
         , takeXLamParamTVB
+        , splitParamOfType
         , makeTFunParams
 
           -- * Applications
@@ -215,6 +216,33 @@ takeXLamParamTVB xx
    in   case go [] xx of
          ([], _)        -> Nothing
          (bs, body)     -> Just (bs, body)
+
+
+-- | Given the type of an abstraction, 
+--   determine how the abstraction parameterises its body.
+splitParamOfType 
+        :: Type n 
+        -> Maybe (ParamSort, ParamMode, Bind n, Type n)
+
+splitParamOfType tt
+ = case tt of
+        TApp (TApp (TCon tycon) t1) t2
+         -> case tycon of
+                TyConSpec    TcConFunExplicit
+                  -> Just (ParamSortTerm,    ParamModeExplicit, BNone t1, t2)
+
+                TyConSpec    TcConFunImplicit
+                  -> Just (ParamSortTerm,    ParamModeImplicit, BNone t1, t2)
+
+                TyConWitness TwConImpl
+                  -> Just (ParamSortWitness, ParamModeExplicit, BNone t1, t2)
+
+                _ -> Nothing
+
+        TForall b t2
+         -> Just (ParamSortType, ParamModeElaborate, b, t2)
+
+        _ -> Nothing
 
 
 -- | Construct a function type from a list of parameter types and the

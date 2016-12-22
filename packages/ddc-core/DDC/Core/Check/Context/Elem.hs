@@ -104,7 +104,6 @@ slurpExists tt
         TSum ts                 -> concatMap slurpExists $ Sum.toList ts
 
 
-
 -- Elem -------------------------------------------------------------------------------------------
 -- | An element in the type checker context.
 data Elem n

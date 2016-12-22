@@ -131,6 +131,7 @@ module DDC.Type.Exp.Simple
         , tFunOfList
         , tFunOfParamResult
         , takeTFun
+        , takeTFunCon
         , takeTFunArgResult
         , takeTFunWitArgResult
         , takeTFunAllArgResult

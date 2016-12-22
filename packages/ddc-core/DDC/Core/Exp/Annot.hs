@@ -7,6 +7,8 @@ module DDC.Core.Exp.Annot
 
          -- ** Expressions
         , Exp           (..)
+        , ParamSort     (..)
+        , ParamMode     (..)
         , Param         (..)
         , Arg           (..)
         , Prim          (..)
@@ -81,6 +83,7 @@ module DDC.Core.Exp.Annot
         , ParamTVB(..)
         , takeXLamParamTVB
         , makeTFunParams
+        , splitParamOfType
 
           -- ** Applications
         , xApps

@@ -47,6 +47,7 @@ module DDC.Type.Exp.Simple.Compounds
         , tFunOfList
         , tFunOfParamResult
         , takeTFun
+        , takeTFunCon
         , takeTFunArgResult
         , takeTFunWitArgResult
         , takeTFunAllArgResult
@@ -461,6 +462,20 @@ takeTFun tt
         TApp (TApp (TCon (TyConSpec TcConFunExplicit)) t1) t2
           -> Just (t1, t2)
         _ -> Nothing
+
+
+-- | Split a function type into the function type constructor, 
+--   parameter and result types.
+--   This works for both the Explicit and Implicit function constructors.
+takeTFunCon :: Type n -> Maybe (TcCon, Type n, Type n)
+takeTFunCon tt
+ = case tt of
+        TApp (TApp (TCon (TyConSpec tc)) t1) t2
+         -> case tc of
+                TcConFunExplicit  -> Just (tc, t1, t2)
+                TcConFunImplicit  -> Just (tc, t1, t2)
+                _                 -> Nothing
+        _                         -> Nothing
 
 
 -- | Destruct the type of a function, returning just the argument and result types.
