@@ -15,8 +15,10 @@ packages/ddc-code/sea/%.o : packages/ddc-code/sea/%.c
 	@alex -g $<
 
 
+# This ':' is equivalent to 'true', but much faster.
+# Strange.
 %.hi : %.o
-	@true
+	@:
 
 
 %.dep : %.c
