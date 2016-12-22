@@ -92,7 +92,7 @@ instance (Pretty n, Eq n) => Pretty (Exp a n) where
          -> pprParen' (d > 10)
          $  pprModePrec mode 10 x1 
                 <> nest 4 (breakWhen (not $ isSimpleX x2) 
-                          <> pprModePrec mode 11 x2)
+                <> pprModePrec mode 11 x2)
 
         XApp _ x1 (RType x2)
          -> pprParen' (d > 10)
@@ -108,7 +108,7 @@ instance (Pretty n, Eq n) => Pretty (Exp a n) where
          -> pprParen' (d > 10)
          $  pprModePrec mode 10 x1 
                 <> nest 4 (breakWhen (not $ isSimpleX x2) 
-                        <> text " {" <> pprModePrec mode 11 x2 <> text "}")
+                        <> text " {" <> ppr x2 <> text "}")
 
         XLet _ lts x
          ->  pprParen' (d > 2)

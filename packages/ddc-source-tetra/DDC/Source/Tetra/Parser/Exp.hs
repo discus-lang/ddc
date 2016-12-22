@@ -104,18 +104,20 @@ pExpArgsSpecSP pX
         ts      <- fmap (fst . unzip) $ P.many1 pTypeAtomSP
         pSym    SSquareColonKet
         return  (sp, [RType t | t <- ts])
-        
-        -- { Witness }
+
+        -- {^ Witness }
  , do   sp      <- pSym SBraceBra
-        w       <- pWitness
-        pSym    SBraceKet
-        return  (sp, [RWitness w])
-                
-        -- {: Witness0 Witness0 ... :}
- , do   sp      <- pSym SBraceColonBra
-        ws      <- P.many1 pWitnessAtom
-        pSym    SBraceColonKet
-        return  (sp, [RWitness w | w <- ws])
+        P.choice
+         [ do   _       <- pSym SHat
+                w       <- pWitness
+                pSym SBraceKet
+                return  (sp, [RWitness w])
+
+                -- { Exp }
+         , do   x       <- pExp
+                pSym    SBraceKet
+                return  (sp, [RImplicit x])
+         ]
                
         -- Exp0
  , do   (sp, x)  <- pX
