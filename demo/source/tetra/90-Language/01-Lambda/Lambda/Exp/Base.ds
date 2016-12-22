@@ -29,18 +29,18 @@ show_Exp: Show Exp
  -> case xx of
         XVar n     
          -> parens $ "XVar"
-                %% show show_text n
+                %% show {show_text} n
         
         XAbs ss n x
          -> parens $ "XAbs"
-                %% show show_Subst ss 
-                %% show show_text n
-                %% show show_Exp x
+                %% show [Subst] ss 
+                %% show {show_text} n
+                %% show [Exp]   x
         
         XApp x1 x2
          -> parens $ "XApp"
-                %% show show_Exp x1
-                %% show show_Exp x2
+                %% show [Exp] x1
+                %% show [Exp] x2
 
 
 show_Subst: Show Subst
@@ -48,5 +48,5 @@ show_Subst: Show Subst
  -> case xx of
         Subst ls 
          -> parens $ "Subst" 
-                %% show (show_list (show_tup2 show_text show_Exp)) ls
+                %% show {show_list {show_tup2 {show_text} {show_Exp}}} ls
 

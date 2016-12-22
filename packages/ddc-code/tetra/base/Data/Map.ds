@@ -35,11 +35,11 @@ show_map (show_k: Show k) (show_a: Show a): Show (Map k a)
  where  
         sh (Bin s k a l r)
          = parens $ "Bin"
-                %% show show_nat s
-                %% show show_k   k
-                %% show show_a   a
-                %% show (show_map show_k show_a) l
-                %% show (show_map show_k show_a) r
+                %% show {show_nat} s
+                %% show {show_k}   k
+                %% show {show_a}   a
+                %% show {show_map show_k show_a} l
+                %% show {show_map show_k show_a} r
 
         sh Tip
          = "Tip"

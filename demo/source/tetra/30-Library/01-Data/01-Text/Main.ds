@@ -62,7 +62,7 @@ main ()
         writel  $ textOfWord8 33w8
 
         -- Copy text a list of characters.
-        writel  $ show (show_list show_text)
+        writel  $ show {show_list {show_text}}
                 $ map textOfChar
                 $ charListOfText "Hello"
 

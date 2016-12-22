@@ -15,7 +15,7 @@ where
 data Show (a: Data) where
         Show    : (a -> Text) -> Show a
 
-show ((Show sh): Show a) (x: a): Text
+show {(Show sh): Show a} (x: a): Text
  = sh x
 
 
@@ -33,14 +33,14 @@ show_text: Show Text
  where  sh tx           = "\"" % tx % "\""
 
 
-show_tup2 ((Show sh_a): Show a) ((Show sh_b): Show b)
+show_tup2 {(Show sh_a): Show a} {(Show sh_b): Show b}
         : Show (Tup2 a b)
  = Show sh
  where  
         sh (T2 x y)     = parens $ "T2" %% sh_a x %% sh_b y
 
 
-show_list ((Show sh_a): Show a): Show (List a)
+show_list {(Show sh_a): Show a}: Show (List a)
  = Show sh
  where  
         sh Nil          = "Nil"

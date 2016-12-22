@@ -110,6 +110,12 @@ ppr' (ErrorAppCannotInferPolymorphic a xx)
         , text "  part to have a quantified type."
         , text "with: "                        <> align (ppr xx) ]
 
+ppr' (ErrorAppCannotFindImplicit a t xx)
+ = vcat [ ppr a
+        , text "Cannot find implicit term"
+        , text "   of type: "                   <> ppr t
+        , text "with: "                         <> align (ppr xx) ]
+
 
 -- Lambda ---------------------------------------------------------------------
 ppr' (ErrorLamShadow a xx b)

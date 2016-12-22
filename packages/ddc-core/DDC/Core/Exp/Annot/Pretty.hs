@@ -108,7 +108,7 @@ instance (Pretty n, Eq n) => Pretty (Exp a n) where
          -> pprParen' (d > 10)
          $  pprModePrec mode 10 x1 
                 <> nest 4 (breakWhen (not $ isSimpleX x2) 
-                        <> text " {" <> ppr x2 <> text "}")
+                <> text "{" <> ppr x2 <> text "}")
 
         XLet _ lts x
          ->  pprParen' (d > 2)

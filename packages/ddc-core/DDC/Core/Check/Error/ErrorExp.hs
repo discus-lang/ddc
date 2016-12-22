@@ -91,6 +91,13 @@ data Error a n
         { errorAnnot            :: a
         , errorChecking         :: Exp a n }
 
+        -- | Cannot find implicit of required type.
+        | ErrorAppCannotFindImplicit
+        { errorAnnot            :: a
+        , errorType             :: Type n 
+        , errorChecking         :: Exp a n }
+
+
         -- Lambda -----------------------------------------
         -- | A type abstraction that tries to shadow a type variable that is
         --   already in the environment.

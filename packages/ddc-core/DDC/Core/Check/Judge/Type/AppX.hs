@@ -302,15 +302,15 @@ synthAppArg table
         -- Try to find a binder in the context with the required type.
         bArgImplicit    
          <- case findImplicitOfType ctx0 (typeOfBind bParam) of
-                Nothing         -> error "TODO: can't find implicit of desired type."
-                Just x          -> return x
+                Nothing   -> throw $ ErrorAppCannotFindImplicit a (typeOfBind bParam) xx
+                Just x    -> return x
 
         -- Build an implicit argument that references the binder.
         let aArgImpl    = AnTEC (typeOfBind bParam) (tBot kEffect) (tBot kClosure) a
         xArgImplicit
          <- case bArgImplicit of
-                BName n _       -> return $ XVar aArgImpl (UName n)
-                _               -> error "TODO: can't build implicit argument."
+                BName n _ -> return $ XVar aArgImpl (UName n)
+                _         -> error "TODO: can't build implicit argument."
 
         -- Add the implicit type argument.
         let aFn         = AnTEC tFn (TSum effsFn) (tBot kClosure) a

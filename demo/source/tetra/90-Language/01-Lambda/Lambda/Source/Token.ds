@@ -33,7 +33,7 @@ eqToken (t1 t2: Token): Bool
 show_Token: Show Token
  = Show $ \kk
  -> case kk of
-        KName n -> parens $ "KName" %% (show show_text n)
+        KName n -> parens $ "KName" %% (show {show_text} n)
         KBra    -> "KBra"
         KKet    -> "KKet"
         KLambda -> "KLambda"
