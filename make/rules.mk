@@ -15,10 +15,6 @@ packages/ddc-code/sea/%.o : packages/ddc-code/sea/%.c
 	@alex -g $<
 
 
-%.hi : %.o
-	@true
-
-
 %.dep : %.c
 	@echo "* Dependencies for $<"
 	@gcc $(GCC_FLAGS) -MM $< -MT $(patsubst %.dep,%.o,$@) -o $@
