@@ -266,24 +266,36 @@ desugarX rns xx
         
 
         -- Boilerplate.
-        XAnnot a x              -> XAnnot a  <$> desugarX rns x
+        XAnnot a x              -> XAnnot a    <$> desugarX rns x
         XPrim{}                 -> return xx
         XFrag{}                 -> return xx
         XVar{}                  -> return xx
         XCon{}                  -> return xx
-        XAbs  mb x              -> XAbs mb   <$> desugarX   rns x
-        XApp  x1 x2             -> XApp      <$> desugarX   rns x1  <*> desugarX rns x2
-        XLet  lts x             -> XLet      <$> desugarLts rns lts <*> desugarX rns x
-        XCase x as              -> XCase     <$> desugarX   rns x   <*> mapM (desugarAC rns) as
-        XCast c x               -> XCast c   <$> desugarX   rns x
-        XType{}                 -> return xx
-        XWitness{}              -> return xx
-        XDefix sp xs            -> XDefix sp <$> mapM (desugarX rns) xs
+        XAbs  mb x              -> XAbs mb     <$> desugarX   rns x
+        XApp  x1 x2             -> XApp        <$> desugarX   rns x1  <*> desugarArg rns x2
+        XLet  lts x             -> XLet        <$> desugarLts rns lts <*> desugarX   rns x
+        XCase x as              -> XCase       <$> desugarX   rns x   <*> mapM (desugarAC rns) as
+        XCast c x               -> XCast c     <$> desugarX   rns x
+        XDefix sp xs            -> XDefix sp   <$> mapM (desugarArg rns) xs
         XInfixOp{}              -> return xx
         XInfixVar{}             -> return xx
         XMatch   sp as x        -> XMatch   sp <$> mapM (desugarAM rns) as <*> desugarX rns x
         XAbsPat  sp ps p mt x   -> XAbsPat  sp ps p mt <$> desugarX rns x
         XLamCase sp alts        -> XLamCase sp <$> mapM (desugarAC rns) alts
+
+
+---------------------------------------------------------------------------------------------------
+-- | Desugar an argument.
+desugarArg 
+        :: Map Name Name
+        -> Arg -> S Arg
+
+desugarArg rns rr
+ = case rr of
+        RType{}         -> return rr
+        RWitness{}      -> return rr
+        RTerm x         -> RTerm     <$> desugarX rns x
+        RImplicit x     -> RImplicit <$> desugarX rns x
 
 
 ---------------------------------------------------------------------------------------------------

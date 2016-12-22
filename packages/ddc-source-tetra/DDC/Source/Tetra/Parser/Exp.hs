@@ -51,17 +51,17 @@ pExpWhereSP
 -- or a plain expression with no arguments.
 pExpAppSP :: Parser (SP, Exp)
 pExpAppSP
-  = do  (spF, (xF, xsArg)) <- pExpAppsSP
-        case xsArg of
+  = do  (spF, (xF, asArg)) <- pExpAppsSP
+        case asArg of
                 []     -> return (spF, xF)
-                _      -> return (spF, XDefix spF (xF : xsArg))
+                _      -> return (spF, XDefix spF (RTerm xF : asArg))
 
   <?> "an expression or application"
 
 
 -- An application of a function to its arguments,
 -- or a plan expression with no arguments.
-pExpAppsSP :: Parser (SP, (Exp, [Exp]))
+pExpAppsSP :: Parser (SP, (Exp, [Arg]))
 pExpAppsSP
  = do   (spF, xFun) <- pExpFrontSP
         xsArg       <- pExpArgsSP pExpAtomSP
@@ -69,7 +69,7 @@ pExpAppsSP
 
 
 -- A list of arguments.
-pExpArgsSP :: Parser (SP, Exp) -> Parser [Exp]
+pExpArgsSP :: Parser (SP, Exp) -> Parser [Arg]
 pExpArgsSP pX
  = P.choice
  [ do   -- After an infix operator we allow the next expression
@@ -77,7 +77,7 @@ pExpArgsSP pX
         --  This allows code like (f x $ λy. g x y) as in Haskell.
         (UName txOp, sp) <- pBoundNameOpSP
         xsMore           <- pExpArgsSP pExpFrontSP
-        return  (XInfixOp  sp (Text.unpack txOp) : xsMore)
+        return  (RTerm (XInfixOp  sp (Text.unpack txOp)) : xsMore)
 
         -- Some arguments.
  , do   (_, xsArg)       <- pExpArgsSpecSP pX
@@ -90,36 +90,36 @@ pExpArgsSP pX
 
 
 -- Comp, Witness or Spec arguments.
-pExpArgsSpecSP :: Parser (SP, Exp) -> Parser (SP, [Exp])
+pExpArgsSpecSP :: Parser (SP, Exp) -> Parser (SP, [Arg])
 pExpArgsSpecSP pX
  = P.choice
         -- [Type]
  [ do   sp      <- pSym SSquareBra
         t       <- pType
         pSym    SSquareKet
-        return  (sp, [XType t])
+        return  (sp, [RType t])
 
         -- [: Type0 Type0 ... :]
  , do   sp      <- pSym SSquareColonBra
         ts      <- fmap (fst . unzip) $ P.many1 pTypeAtomSP
         pSym    SSquareColonKet
-        return  (sp, [XType t | t <- ts])
+        return  (sp, [RType t | t <- ts])
         
         -- { Witness }
  , do   sp      <- pSym SBraceBra
         w       <- pWitness
         pSym    SBraceKet
-        return  (sp, [XWitness w])
+        return  (sp, [RWitness w])
                 
         -- {: Witness0 Witness0 ... :}
  , do   sp      <- pSym SBraceColonBra
         ws      <- P.many1 pWitnessAtom
         pSym    SBraceColonKet
-        return  (sp, [XWitness w | w <- ws])
+        return  (sp, [RWitness w | w <- ws])
                
         -- Exp0
  , do   (sp, x)  <- pX
-        return  (sp, [x])
+        return  (sp, [RTerm x])
  ]
  <?> "a type, witness or expression argument"
 
@@ -375,7 +375,7 @@ pExpAtomSP
         pSym SRoundKet
         let xRecord = XCon (DaConRecord nsField)
         return  ( sp
-                , makeXApps xRecord (map XType tsField ++ xsField))
+                , makeXApps xRecord (map RType tsField ++ map RTerm xsField))
 
 
         -- The syntax for the nullary record type constructor '()#' overlaps

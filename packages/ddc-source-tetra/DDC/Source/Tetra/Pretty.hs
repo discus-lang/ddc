@@ -204,11 +204,9 @@ instance PrettyLanguage l => Pretty (GExp l) where
                  <> breakWhen (not $ isSimpleX xBody)
                  <> ppr xBody
 
-        XApp x1 x2
+        XApp x1 r2
          -> pprParen' (d > 10)
-         $  pprPrec 10 x1 
-                <> nest 4 (breakWhen (not $ isSimpleX x2) 
-                           <> pprPrec 11 x2)
+         $  pprPrec 10 x1 <> nest 4 (pprPrec 11 r2)
 
         XLet lts x
          ->  pprParen' (d > 2)
@@ -234,9 +232,6 @@ instance PrettyLanguage l => Pretty (GExp l) where
          ->  pprParen' (d > 2)
          $   ppr cc <+> text "in"
          <$> ppr x
-
-        XType    t    -> text "[" <> ppr t <> text "]"
-        XWitness w    -> text "<" <> ppr w <> text ">"
 
         XDefix    _ xs
          -> text "[" <> text "DEFIX|" <+> hsep (map (pprPrec 11) xs) <+> text "]"
@@ -289,6 +284,23 @@ instance PrettyLanguage l => Pretty (GExp l) where
          $  text "λcase." <> lbrace <> line
                 <> (vcat $ punctuate semi $ map ppr alts)
          <> line <> rbrace
+
+
+-- Arg --------------------------------------------------------------------------------------------
+instance PrettyLanguage l => Pretty (GArg l) where
+ ppr rr
+  = case rr of
+        RType t
+         -> (text "[" <> ppr t <> text "]")
+
+        RWitness w
+         -> (text "<" <> ppr w <> text ">")
+
+        RImplicit x
+         -> (text "{" <> ppr x <> text "}")
+
+        RTerm x
+         -> ppr x
 
 
 -- Lets -------------------------------------------------------------------------------------------
@@ -493,13 +505,12 @@ breakWhen False  = space
 isSimpleX :: GExp l -> Bool
 isSimpleX xx
  = case xx of
-        XAnnot _ x      -> isSimpleX x
-        XVar{}          -> True
-        XCon{}          -> True
-        XType{}         -> True
-        XWitness{}      -> True
-        XApp x1 x2      -> isSimpleX x1 && isAtomX x2
-        _               -> False
+        XAnnot _ x              -> isSimpleX x
+        XVar{}                  -> True
+        XCon{}                  -> True
+        XApp x1 (RTerm x2)      -> isSimpleX x1 && isAtomX x2
+        XApp x1 _               -> isSimpleX x1
+        _                       -> False
 
 
 parens' :: Doc -> Doc

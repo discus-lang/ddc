@@ -110,15 +110,18 @@ module DDC.Source.Tetra.Exp
           -- *** Expressions
         , Exp,          GExp        (..)
 
+          -- *** Parameters
+        , ParamSort     (..)
+        , Param,        GParam      (..)
+
+          -- *** Arguments
+        , Arg,          GArg        (..)
+
           -- *** Let-binding
         , Lets,         GLets       (..)
 
           -- *** Clauses
         , Clause,       GClause     (..)
-
-          -- *** Parameters
-        , Param,        GParam      (..)
-        , ParamSort     (..)
 
           -- *** Patterns
         , Pat,          GPat        (..)
@@ -172,18 +175,12 @@ module DDC.Source.Tetra.Exp
 
           -- *** Abstractions
           , isXAbs
---        , isXLAM, isXLam
---        , isLambdaX
 
           -- *** Applications
         , isXApp
 
           -- *** Let bindings
         , isXLet
-
-          -- *** Types and Witnesses
-        , isXType
-        , isXWitness
 
           -- *** Patterns
         , isPDefault
@@ -196,15 +193,6 @@ module DDC.Source.Tetra.Exp
         , bindOfBindMT
         , takeTypeOfBindMT
 
-          -- *** Lambdas
-{-
-        , makeXLAMs
-        , makeXLams
-        , makeXLamFlags
-        , takeXLAMs
-        , takeXLams
-        , takeXLamFlags
--}
           -- *** Applications
         , makeXApps
         , makeXAppsWithAnnots
@@ -233,7 +221,6 @@ module DDC.Source.Tetra.Exp
           -- *** Witnesses
         , wApp
         , wApps
---        , takeXWitness
         , takeWAppsAsList
         , takePrimWiConApps
 

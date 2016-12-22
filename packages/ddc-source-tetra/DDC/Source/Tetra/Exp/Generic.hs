@@ -40,6 +40,7 @@ module DDC.Source.Tetra.Exp.Generic
         , GXBindVarMT   (..)
         , GExp          (..)
         , GParam        (..)
+        , GArg          (..)
         , GLets         (..)
         , GPat          (..)
         , GClause       (..)
@@ -119,7 +120,7 @@ data GExp l
         | XAbs      !(GParam l)  !(GExp l)
 
         -- | Function application.
-        | XApp      !(GExp  l)   !(GExp l)
+        | XApp      !(GExp  l)   !(GArg l)
 
         -- | A non-recursive let-binding.
         | XLet      !(GLets l)   !(GExp l)
@@ -130,12 +131,6 @@ data GExp l
         -- | Type cast.
         | XCast     !(GCast l)   !(GExp l)
 
-        -- | Type can appear as the argument of an application.
-        | XType     !(GType l)
-
-        -- | Witness can appear as the argument of an application.
-        | XWitness  !(GWitness l)
-
 
         ---------------------------------------------------
         -- Sugar Constructs.
@@ -143,7 +138,7 @@ data GExp l
         --
         -- | Some expressions and infix operators that need to be resolved
         --   into proper function applications.
-        | XDefix    !(GXAnnot l) [GExp l]
+        | XDefix    !(GXAnnot l) [GArg l]
 
         -- | Use of a naked infix operator, like in 1 + 2.
         --   INVARIANT: only appears in the list of an XDefix node.
@@ -172,6 +167,14 @@ data GExp l
         | XLamCase  !(GXAnnot l) ![GAltCase l]
 
 
+-- | Sorts of parameters that we have.
+data ParamSort
+        = MSType
+        | MSTerm
+        | MSImplicit
+        deriving Show
+
+
 -- | Parameter for an abstraction.
 data GParam l
         -- | Type parameter with optional kind.
@@ -184,12 +187,19 @@ data GParam l
         | MImplicit !(GPat l)      !(Maybe (GType l))
 
 
--- | Sorts of parameters that we have.
-data ParamSort
-        = MSType
-        | MSTerm
-        | MSImplicit
-        deriving Show
+-- | Argument of an application.
+data GArg l
+        -- | Type argument.
+        = RType     !(GType l)
+
+        -- | Term argument.
+        | RTerm     !(GExp  l)
+
+        -- | Implicit term argument.
+        | RImplicit !(GExp  l)
+
+        -- | Witness argument.
+        | RWitness  !(GWitness l)
 
 
 -- | Possibly recursive bindings.
@@ -326,6 +336,7 @@ deriving instance ShowLanguage l => Show (GExp         l)
 deriving instance ShowLanguage l => Show (GLets        l)
 deriving instance ShowLanguage l => Show (GClause      l)
 deriving instance ShowLanguage l => Show (GParam       l)
+deriving instance ShowLanguage l => Show (GArg         l)
 deriving instance ShowLanguage l => Show (GAltCase     l)
 deriving instance ShowLanguage l => Show (GAltMatch    l)
 deriving instance ShowLanguage l => Show (GGuardedExp  l)

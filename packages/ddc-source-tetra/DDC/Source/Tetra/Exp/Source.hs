@@ -61,9 +61,10 @@ module DDC.Source.Tetra.Exp.Source
         , BoundCon,     GXBoundCon
         , Frag,         GXFrag
         , Exp,          GExp        (..)
+        , Param,        GParam      (..),       ParamSort (..)
+        , Arg,          GArg        (..)
         , Lets,         GLets       (..)
         , Clause,       GClause     (..)
-        , Param,        GParam      (..),       ParamSort (..)
         , Pat,          GPat        (..)
         , Guard,        GGuard      (..)
         , GuardedExp,   GGuardedExp (..)
@@ -143,9 +144,10 @@ type BindCon    = GXBoundCon  Source
 type BoundCon   = GXBoundCon  Source
 type Frag       = GXFrag      Source
 type Exp        = GExp        Source
+type Param      = GParam      Source
+type Arg        = GArg        Source
 type Lets       = GLets       Source
 type Clause     = GClause     Source
-type Param      = GParam      Source
 type Pat        = GPat        Source
 type Guard      = GGuard      Source
 type GuardedExp = GGuardedExp Source

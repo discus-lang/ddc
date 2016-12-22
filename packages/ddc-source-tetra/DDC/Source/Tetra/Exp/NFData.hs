@@ -21,12 +21,10 @@ instance NFDataLanguage l => NFData (GExp l) where
         XVar      u             -> rnf u
         XCon      dc            -> rnf dc
         XAbs      p x           -> rnf p   `seq` rnf x
-        XApp      x1 x2         -> rnf x1  `seq` rnf x2
+        XApp      x1 a2         -> rnf x1  `seq` rnf a2
         XLet      lts x         -> rnf lts `seq` rnf x
         XCase     x alts        -> rnf x   `seq` rnf alts
         XCast     c x           -> rnf c   `seq` rnf x
-        XType     t             -> rnf t
-        XWitness  w             -> rnf w
         XDefix    a xs          -> rnf a   `seq` rnf xs
         XInfixOp  a s           -> rnf a   `seq` rnf s
         XInfixVar a s           -> rnf a   `seq` rnf s
@@ -54,6 +52,16 @@ instance NFDataLanguage l => NFData (GParam l) where
         MType     b mt          -> rnf b `seq` rnf mt
         MTerm     p mt          -> rnf p `seq` rnf mt
         MImplicit p mt          -> rnf p `seq` rnf mt
+
+
+instance NFDataLanguage l => NFData (GArg l) where
+ rnf aa
+  = case aa of
+        RType t                 -> rnf t 
+        RTerm x                 -> rnf x
+        RImplicit x             -> rnf x
+        RWitness  w             -> rnf w
+
 
 instance NFDataLanguage l => NFData (GLets l) where
  rnf lts

@@ -16,10 +16,6 @@ module DDC.Source.Tetra.Exp.Predicates
           -- * Let bindings
         , isXLet
 
-          -- * Types and Witnesses
-        , isXType
-        , isXWitness
-
           -- * Patterns
         , isPDefault
         , isPVar)
@@ -52,8 +48,6 @@ isAtomX xx
  = case xx of
         XVar{}          -> True
         XCon{}          -> True
-        XType    t      -> isAtomT t
-        XWitness w      -> isAtomW w
         _               -> False
 
 
@@ -74,20 +68,6 @@ isXAbs xx
         XAbs{}  -> True
         _       -> False
 
-{-
--- | Check whether an expression is a value or witness abstraction (level-0).
-isXLam :: GExp l -> Bool
-isXLam xx
- = case xx of
-        XLam{}  -> True
-        _       -> False
-
-
--- | Check whether an expression is a spec, value, or witness abstraction.
-isLambdaX :: GExp l -> Bool
-isLambdaX xx
-        = isXLAM xx || isXLam xx
--}
 
 -- Applications ---------------------------------------------------------------
 -- | Check whether an expression is an `XApp`.
@@ -106,23 +86,6 @@ isXLet xx
         XLet{}  -> True
         _       -> False
         
-
--- Type and Witness -----------------------------------------------------------
--- | Check whether an expression is an `XType`
-isXType :: GExp l -> Bool
-isXType xx
- = case xx of
-        XType{}         -> True
-        _               -> False
-
-
--- | Check whether an expression is an `XWitness`
-isXWitness :: GExp l -> Bool
-isXWitness xx
- = case xx of
-        XWitness{}      -> True
-        _               -> False
-
 
 -- Patterns -------------------------------------------------------------------
 -- | Check whether a pattern is a `PDefault`.

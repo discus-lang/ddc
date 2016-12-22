@@ -275,7 +275,7 @@ toCoreX a xx
         -- in a Text constructor, so detect this case separately.
         S.XApp  _ _
          |  Just ( p@(S.PrimValError S.OpErrorDefault)
-                 , [S.XCon dc1, S.XCon dc2])
+                 , [S.RTerm (S.XCon dc1), S.RTerm (S.XCon dc2)])
                  <- S.takeXFragApps xx
          -> do  xPrim'  <- toCoreX  a (S.XFrag p)
                 dc1'    <- toCoreDC dc1
@@ -296,10 +296,6 @@ toCoreX a xx
         S.XCast c x
          -> C.XCast     <$> pure a  <*> toCoreC a c <*> toCoreX a x
 
-        -- These shouldn't appear separately from an application.
-        S.XType{}       -> Left $ ErrorConvertSugaredExp xx
-        S.XWitness{}    -> Left $ ErrorConvertSugaredExp xx
-
         -- These shouldn't exist in the desugared source tetra code.
         S.XDefix{}      -> Left $ ErrorConvertSugaredExp xx
         S.XInfixOp{}    -> Left $ ErrorConvertSugaredExp xx
@@ -311,16 +307,20 @@ toCoreX a xx
 
 
 -- Arg --------------------------------------------------------------------------------------------
-toCoreArg :: SP -> S.Exp  -> ConvertM S.Source (C.Arg  SP C.Name)
+toCoreArg :: SP -> S.Arg  -> ConvertM S.Source (C.Arg  SP C.Name)
 toCoreArg sp xx
  = case xx of
-        S.XType t
+        S.RType t
           -> C.RType     <$> toCoreT UniverseSpec t
 
-        S.XWitness w
+        S.RWitness w
           -> C.RWitness  <$> toCoreW sp w
 
-        _ -> C.RTerm     <$> toCoreX sp xx
+        S.RTerm x
+          -> C.RTerm     <$> toCoreX sp x
+
+        S.RImplicit x
+          -> C.RImplicit <$> toCoreX sp x
 
 -- Lets -------------------------------------------------------------------------------------------
 toCoreLts :: SP -> S.Lets -> ConvertM S.Source (C.Lets SP C.Name)

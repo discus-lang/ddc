@@ -372,6 +372,7 @@ takeExpFromArg aa
         RImplicit x     -> Just x
         _               -> Nothing
 
+ 
 -- | Take any expression arguments
 takeExpsFromArgs :: [Arg a n] -> [Exp a n]
 takeExpsFromArgs

@@ -59,12 +59,12 @@ instance HasAnonBind l => MapBoundX GExp l where
 
 downX l f d xx
   = case xx of
-        XAnnot a x        -> XAnnot  a (downX l f d x)
-        XPrim  p          -> XPrim   p
-        XFrag  p          -> XFrag   p
-        XVar   u          -> XVar   (f d u)
-        XCon   c          -> XCon    c
-        XApp   x1 x2      -> XApp   (downX l f d x1) (downX l f d x2)
+        XAnnot a x      -> XAnnot  a (downX l f d x)
+        XPrim  p        -> XPrim   p
+        XFrag  p        -> XFrag   p
+        XVar   u        -> XVar   (f d u)
+        XCon   c        -> XCon    c
+        XApp   x1 r2    -> XApp x1 (downR l f d r2)
 
         XAbs     (MType  b mt) x       
          -> XAbs (MType  b mt) (downX l f d x)
@@ -83,10 +83,8 @@ downX l f d xx
 
         XCase x alts      -> XCase (downX l f d x)  (map (downA l f d) alts)
         XCast cc x        -> XCast (downC l f d cc) (downX l f d x)
-        XType t           -> XType t
-        XWitness w        -> XWitness (downW l f d w)
 
-        XDefix    a xs    -> XDefix    a (map (downX l f d) xs)
+        XDefix    a rs    -> XDefix    a (map (downR l f d) rs)
         XInfixOp  a x     -> XInfixOp  a x
         XInfixVar a x     -> XInfixVar a x
         XMatch    a gs x  -> XMatch    a (map (downMA l f d) gs) (downX l f d x)
@@ -98,6 +96,17 @@ downX l f d xx
 
         XLamCase  a alts
          -> XLamCase a (map (downA l f d) alts)
+
+
+instance HasAnonBind l => MapBoundX GArg l where
+ mapBoundAtDepthX = downR
+
+downR  l f d rr
+ = case rr of
+        RType{}         -> rr
+        RWitness w      -> RWitness  (downW l f d w)
+        RTerm x         -> RTerm     (downX l f d x)
+        RImplicit x     -> RImplicit (downX l f d x)
 
 
 ---------------------------------------------------------------------------------------------------

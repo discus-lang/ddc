@@ -82,6 +82,6 @@ makeXErrorDefault
 makeXErrorDefault name n
  = makeXApps
         (XFrag (PrimValError OpErrorDefault))
-        [ XCon (DaConPrim (DaConBoundLit (PrimLitTextLit name)) (TBot KData))
-        , XCon (DaConPrim (DaConBoundLit (PrimLitNat     n))    (TBot KData))]
+        [ RTerm $ XCon (DaConPrim (DaConBoundLit (PrimLitTextLit name)) (TBot KData))
+        , RTerm $ XCon (DaConPrim (DaConBoundLit (PrimLitNat     n))    (TBot KData))]
 

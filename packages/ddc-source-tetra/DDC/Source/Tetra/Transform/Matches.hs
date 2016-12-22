@@ -181,12 +181,10 @@ desugarX sp xx
         XVar{}          -> pure xx
         XCon{}          -> pure xx
         XAbs  b x       -> XAbs b     <$> desugarX sp x
-        XApp  x1 x2     -> XApp       <$> desugarX   sp x1  <*> desugarX sp x2
+        XApp  x1 x2     -> XApp       <$> desugarX   sp x1  <*> desugarR sp x2
         XLet  lts x     -> XLet       <$> desugarLts sp lts <*> desugarX sp x
         XCast c x       -> XCast c    <$> desugarX   sp x
-        XType{}         -> pure xx
-        XWitness{}      -> pure xx
-        XDefix a xs     -> XDefix a   <$> mapM (desugarX sp) xs
+        XDefix a xs     -> XDefix a   <$> mapM (desugarR sp) xs
         XInfixOp{}      -> pure xx
         XInfixVar{}     -> pure xx
 
@@ -213,6 +211,17 @@ desugarX sp xx
 
         XLamCase sp' alts
          ->     XLamCase sp' <$> mapM (desugarAC sp) alts
+
+
+-------------------------------------------------------------------------------
+-- | Desugar an argument.
+desugarR :: SP -> Arg -> S Arg
+desugarR sp rr
+ = case rr of
+        RType{}         -> return rr
+        RWitness{}      -> return rr
+        RTerm x         -> RTerm     <$> desugarX sp x
+        RImplicit x     -> RImplicit <$> desugarX sp x
 
 
 -------------------------------------------------------------------------------

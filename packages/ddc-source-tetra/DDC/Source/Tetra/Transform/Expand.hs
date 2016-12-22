@@ -178,10 +178,8 @@ downX a env xx
                                   (map (downA a env) alts)
 
         XCast  c x      -> XCast  c (downX a env x)
-        XType{}         -> xx
-        XWitness{}      -> xx
 
-        XDefix a' xs    -> XDefix a' (map (downX a' env) xs)
+        XDefix a' xs    -> XDefix a' (map (downR a' env) xs)
         XInfixOp{}      -> xx
         XInfixVar{}     -> xx
 
@@ -193,6 +191,18 @@ downX a env xx
             in  XAbsPat a' ps p mt (downX a' env' x)
 
         XLamCase a' alts -> XLamCase a (map (downA a' env) alts)
+
+
+---------------------------------------------------------------------------------------------------
+instance Expand Arg where
+ expand = downR
+
+downR a env rr
+ = case rr of
+        RType{}         -> rr
+        RWitness{}      -> rr
+        RTerm x         -> RTerm     (downX a env x)
+        RImplicit x     -> RImplicit (downX a env x)
 
 
 ---------------------------------------------------------------------------------------------------

@@ -194,7 +194,7 @@ freshenExp xx
                 bindPat p $ \p'
                  -> XAbs (MImplicit p' mt') <$> freshenExp x
 
-        XApp x1 x2      -> XApp  <$> freshenExp x1 <*> freshenExp x2
+        XApp x1 a2      -> XApp  <$> freshenExp x1 <*> freshenArg a2
 
         XLet lts x      
          -> bindLets lts $ \lts'
@@ -205,11 +205,7 @@ freshenExp xx
 
         XCast c x       -> XCast    <$> freshenCast c <*> freshenExp x
 
-        XType t         -> XType    <$> freshenType t
-
-        XWitness w      -> XWitness <$> freshenWitness w
-
-        XDefix a xs     -> XDefix a <$> mapM freshenExp xs
+        XDefix a rs     -> XDefix a <$> mapM freshenArg rs
 
         XInfixOp{}      -> return xx
 
@@ -227,6 +223,17 @@ freshenExp xx
 
         XLamCase a as   
          -> XLamCase a   <$> mapM freshenAltCase as
+
+
+-------------------------------------------------------------------------------
+-- | Freshen an argument.
+freshenArg :: Arg -> S Arg
+freshenArg rr
+ = case rr of
+        RType     t     -> RType     <$> freshenType    t
+        RWitness  w     -> RWitness  <$> freshenWitness w
+        RTerm     x     -> RTerm     <$> freshenExp     x
+        RImplicit x     -> RImplicit <$> freshenExp     x
 
 
 -------------------------------------------------------------------------------
