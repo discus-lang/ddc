@@ -125,7 +125,7 @@ rewriteX' ignore_toplevel rules x0
                 RType{}         -> return aa
                 RWitness{}      -> return aa
                 RTerm x         -> fmap RTerm     $ downX env x
-                RImplicit x     -> fmap RImplicit $ downX env x
+                RImplicit arg'  -> fmap RImplicit $ downA env arg'
 
         -- Decend into the expression, looking for applications that we 
         -- might be able to apply rewrites to.

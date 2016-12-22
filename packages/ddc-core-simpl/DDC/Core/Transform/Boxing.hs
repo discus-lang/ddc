@@ -171,7 +171,7 @@ boxingA config aa
         RType{}         -> aa
         RWitness{}      -> aa
         RTerm x         -> RTerm     $ boxingX config x
-        RImplicit x     -> RImplicit $ boxingX config x
+        RImplicit arg'  -> RImplicit $ boxingA config arg'
 
 
 boxingLts config lts

@@ -116,7 +116,7 @@ pExpArgsSpecSP pX
                 -- { Exp }
          , do   x       <- pExp
                 pSym    SBraceKet
-                return  (sp, [RImplicit x])
+                return  (sp, [RImplicit (RTerm x)])
          ]
                
         -- Exp0
@@ -311,6 +311,7 @@ pExpAtomSP
  , do   (nPrim, sp)     <- pPrimValSP
         return  (sp, XFrag nPrim)
 
+        -- Primitive names.
  , do   (u, sp)         <- pBoundNameSP 
         case u of 
          UName tx
@@ -321,22 +322,25 @@ pExpAtomSP
                 pSym SHash
                 return (sp, XPrim (PProject n))
 
+          | Text.pack "elaborate#" == tx
+          -> do return (sp, XPrim (PElaborate))
+
          _      -> return (sp, XVar u)
 
-{-
         -- Named variables.
  , do   (u,  sp)        <- pBoundNameSP
 
         -- Detect names of primitives in the ambient calculus.
-        if      u == (UName $ Text.pack "project#") 
-                then return (sp, XPrim PProject)
+        if      u == (UName $ Text.pack "elaborate#")
+                then return (sp, XPrim PElaborate)
+        else if u == (UName $ Text.pack "project#") 
+                then return (sp, XPrim (PProject (Text.pack "field_TODO")))
         else if u == (UName $ Text.pack "shuffle#")
                 then return (sp, XPrim PShuffle)
         else if u == (UName $ Text.pack "combine#")
                 then return (sp, XPrim PCombine)
 
         else return (sp, XVar u)
--}
 
         -- Debruijn indices
  , do   (u, sp)         <- pBoundIxSP

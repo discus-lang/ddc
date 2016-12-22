@@ -23,9 +23,8 @@ instance (NFData a, NFData n) => NFData (Arg a n) where
   = case rr of
         RType t                 -> rnf t
         RTerm x                 -> rnf x
-        RImplicit x             -> rnf x
         RWitness  x             -> rnf x
-
+        RImplicit x             -> rnf x
 
 instance (NFData n)  => NFData (Param n) where
  rnf mm

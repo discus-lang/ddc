@@ -33,14 +33,14 @@ show_Exp: Show Exp
         
         XAbs ss n x
          -> parens $ "XAbs"
-                %% show [Subst] ss 
+                %% show {show_Subst} ss 
                 %% show {show_text} n
-                %% show [Exp]   x
+                %% show {show_Exp}   x
         
         XApp x1 x2
          -> parens $ "XApp"
-                %% show [Exp] x1
-                %% show [Exp] x2
+                %% show {show_Exp} x1
+                %% show {show_Exp} x2
 
 
 show_Subst: Show Subst

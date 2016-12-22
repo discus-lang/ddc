@@ -136,12 +136,12 @@ firstJust = listToMaybe . catMaybes
 -- | Take the outermost annotation from an argument,
 --   if there is one.
 takeAnnotOfArg :: GArg l -> Maybe (GXAnnot l)
-takeAnnotOfArg aa
- = case aa of
+takeAnnotOfArg arg
+ = case arg of
         RType _             -> Nothing
         RTerm x             -> takeAnnotOfExp x
-        RImplicit x         -> takeAnnotOfExp x
         RWitness  _         -> Nothing 
+        RImplicit arg'      -> takeAnnotOfArg arg'
 
 
 -- Applications ---------------------------------------------------------------
@@ -257,11 +257,11 @@ takeRTerm aa
         _               -> Nothing
 
 
--- | Take a witness from an argument, if it is one.
-takeRImplicit :: GArg l -> Maybe (GExp l)
-takeRImplicit aa
- = case aa of
-        RImplicit x     -> Just x
+-- | Unwrap an implicit argument, if this is one.
+takeRImplicit :: GArg l -> Maybe (GArg l)
+takeRImplicit arg
+ = case arg of
+        RImplicit arg'  -> Just arg'
         _               -> Nothing
 
 

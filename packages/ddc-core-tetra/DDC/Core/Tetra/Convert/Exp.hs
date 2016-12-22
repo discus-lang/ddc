@@ -100,6 +100,7 @@ convertExp ectx ctx xx
          |  Just p      <- takeNamePrimAppX xx
          ,  Just r
              <- case p of
+                  PElaborate{}            -> Nothing
                   PProject{}              -> convertPrimRecord ectx ctx xx
                   PShuffle{}              -> convertPrimRecord ectx ctx xx
                   PCombine{}              -> convertPrimRecord ectx ctx xx

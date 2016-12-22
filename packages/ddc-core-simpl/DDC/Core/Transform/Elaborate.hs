@@ -56,8 +56,8 @@ instance Elaborate (Arg a) where
   = case aa of
         RType{}         -> aa
         RWitness{}      -> aa
-        RTerm x         -> RTerm (elaborate us x)
-        RImplicit x     -> RTerm (elaborate us x)
+        RTerm x         -> RTerm     (elaborate us x)
+        RImplicit arg'  -> RImplicit (elaborate us arg')
 
 
 instance Elaborate (Cast a) where

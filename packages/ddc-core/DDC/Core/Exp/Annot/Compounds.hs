@@ -385,7 +385,7 @@ takeRTerm aa
 
 
 -- | Take a witness from an argument, if it is one.
-takeRImplicit :: Arg a n -> Maybe (Exp a n)
+takeRImplicit :: Arg a n -> Maybe (Arg a n)
 takeRImplicit aa
  = case aa of
         RImplicit x     -> Just x
@@ -397,7 +397,7 @@ takeExpFromArg :: Arg a n -> Maybe (Exp a n)
 takeExpFromArg aa
  = case aa of
         RTerm x         -> Just x
-        RImplicit x     -> Just x
+        RImplicit a     -> takeExpFromArg a
         _               -> Nothing
 
  

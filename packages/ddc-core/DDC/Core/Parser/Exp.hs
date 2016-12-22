@@ -153,7 +153,7 @@ pArgSPs c
  , do   sp      <- pSym SBraceBra
         x       <- pExp c
         pSym SBraceKet
-        return  [(RImplicit x, sp)]
+        return  [(RImplicit (RTerm x), sp)]
                                 
         -- EXP0
  , do   (x, sp)  <- pExpAtomSP c

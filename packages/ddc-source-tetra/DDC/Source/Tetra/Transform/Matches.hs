@@ -175,18 +175,18 @@ desugarX :: SP -> Exp -> S Exp
 desugarX sp xx
  = case xx of
         -- Boilerplate.
-        XAnnot sp' x    -> XAnnot sp' <$> desugarX sp' x
-        XPrim{}         -> pure xx
-        XFrag{}         -> pure xx
-        XVar{}          -> pure xx
-        XCon{}          -> pure xx
-        XAbs  b x       -> XAbs b     <$> desugarX sp x
-        XApp  x1 x2     -> XApp       <$> desugarX   sp x1  <*> desugarR sp x2
-        XLet  lts x     -> XLet       <$> desugarLts sp lts <*> desugarX sp x
-        XCast c x       -> XCast c    <$> desugarX   sp x
-        XDefix a xs     -> XDefix a   <$> mapM (desugarR sp) xs
-        XInfixOp{}      -> pure xx
-        XInfixVar{}     -> pure xx
+        XAnnot sp' x -> XAnnot sp' <$> desugarX sp' x
+        XPrim{}      -> pure xx
+        XFrag{}      -> pure xx
+        XVar{}       -> pure xx
+        XCon{}       -> pure xx
+        XAbs  b x    -> XAbs b     <$> desugarX sp x
+        XApp  x1 a2  -> XApp       <$> desugarX   sp x1  <*> desugarArg sp a2
+        XLet  lts x  -> XLet       <$> desugarLts sp lts <*> desugarX sp x
+        XCast c x    -> XCast c    <$> desugarX   sp x
+        XDefix a xs  -> XDefix a   <$> mapM (desugarArg sp) xs
+        XInfixOp{}   -> pure xx
+        XInfixVar{}  -> pure xx
 
         -- Desugar case expressions.
         XCase x alts    
@@ -215,13 +215,13 @@ desugarX sp xx
 
 -------------------------------------------------------------------------------
 -- | Desugar an argument.
-desugarR :: SP -> Arg -> S Arg
-desugarR sp rr
- = case rr of
-        RType{}         -> return rr
-        RWitness{}      -> return rr
-        RTerm x         -> RTerm     <$> desugarX sp x
-        RImplicit x     -> RImplicit <$> desugarX sp x
+desugarArg :: SP -> Arg -> S Arg
+desugarArg sp arg
+ = case arg of
+        RType{}         -> return arg
+        RWitness{}      -> return arg
+        RTerm x         -> RTerm     <$> desugarX   sp x
+        RImplicit arg'  -> RImplicit <$> desugarArg sp arg'
 
 
 -------------------------------------------------------------------------------

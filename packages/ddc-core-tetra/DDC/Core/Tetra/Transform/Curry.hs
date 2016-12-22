@@ -156,12 +156,12 @@ curryArg  :: Show a
         -> Arg (AnTEC a Name) Name      -- ^ Expression to transform.
         -> Either Error (Arg () Name)
 
-curryArg envt callables aa
- = case aa of
+curryArg envt callables arg
+ = case arg of
         RType t         -> return $ RType t
         RWitness w      -> return $ RWitness $ reannotate (const ()) w
-        RTerm x         -> fmap RTerm     $ curryX envt callables x
-        RImplicit x     -> fmap RImplicit $ curryX envt callables x
+        RTerm x         -> fmap RTerm     $ curryX   envt callables x
+        RImplicit arg'  -> fmap RImplicit $ curryArg envt callables arg'
 
 
 -- If we introduce a locally bound name with the same name as one of

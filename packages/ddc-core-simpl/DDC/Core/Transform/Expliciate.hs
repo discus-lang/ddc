@@ -145,10 +145,10 @@ expliciateArg
 
 expliciateArg eqns arg
  = case arg of
-        RType t         -> RType $ expliciateType eqns t
-        RTerm x         -> RTerm $ expliciateExp  eqns x
-        RImplicit x     -> RTerm $ expliciateExp  eqns x
-        RWitness{}      -> arg
+        RType t                 -> RType $ expliciateType eqns t
+        RTerm x                 -> RTerm $ expliciateExp  eqns x
+        RWitness{}              -> arg
+        RImplicit arg'          -> expliciateArg  eqns arg'
 
 
 -- | Expliciate some let bindings.

@@ -104,11 +104,16 @@ instance (Pretty n, Eq n) => Pretty (Exp a n) where
          $  pprModePrec mode 10 x1 
                 <> text " <" <> ppr x2 <> text ">"
 
-        XApp _ x1 (RImplicit x2)
+        XApp _ x1 (RImplicit (RTerm x2))
          -> pprParen' (d > 10)
          $  pprModePrec mode 10 x1 
                 <> nest 4 (breakWhen (not $ isSimpleX x2) 
                 <> text "{" <> ppr x2 <> text "}")
+
+        XApp _ x1 a2
+         -> pprParen' (d > 10)
+         $  pprModePrec mode 10 x1
+                <> ppr a2
 
         XLet _ lts x
          ->  pprParen' (d > 2)
@@ -161,19 +166,28 @@ instance (Pretty n, Eq n) => Pretty (Param n) where
 instance (Pretty n, Eq n) => Pretty (Arg a n) where
  ppr aa
   = case aa of
-        RType t         -> text "[" <> ppr t <> text "]"
-        RWitness w      -> text "<" <> ppr w <> text ">"
-        RTerm x         -> text "(" <> ppr x <> text ")"
-        RImplicit x     -> text "{" <> ppr x <> text "}"
+        RType t
+         -> text "["  <> ppr t <> text "]"
+
+        RTerm x
+         -> text "("  <> ppr x <> text ")"
+
+        RWitness w 
+         -> text "<"  <> ppr w <> text ">"
+
+        -- An implicit term.
+        RImplicit (RTerm x)    
+          -> text "{"  <> ppr x <> text "}"
+
+        _ -> text "INVALID"
 
 
 -- Prim -----------------------------------------------------------------------
 instance Pretty Prim where
  ppr pp
   = case pp of
-        PProject n      
-         -> text "project(" <> text (Text.unpack n) <> text ")#"
-
+        PElaborate      -> text "elaborate#"
+        PProject n      -> text "project(" <> text (Text.unpack n) <> text ")#"
         PShuffle        -> text "shuffle#"
         PCombine        -> text "combine#"
 
@@ -370,9 +384,13 @@ isSimpleX xx
         XCon{}                   -> True
         XApp _ _  RType{}        -> True
         XApp _ x1 (RTerm x2)     -> isSimpleX x1 && isAtomX x2
-        XApp _ x1 (RImplicit x2) -> isSimpleX x1 && isAtomX x2
-        XApp _ x1 (RWitness _w2) -> isSimpleX x1
-        _                        -> False
+
+        XApp _ x1 (RImplicit (RTerm x2)) 
+                -> isSimpleX x1 && isAtomX x2
+
+        XApp _ x1 (RWitness _w2) 
+                -> isSimpleX x1
+        _       -> False
 
 
 -- | Wrap a document in parenthesis.

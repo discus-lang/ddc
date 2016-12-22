@@ -221,35 +221,35 @@ convertX xx
  | otherwise
  = case xx of
    XVar a b
-    -> XVar a <$> convertBound b
+    -> XVar a  <$> convertBound b
 
    XPrim a b
     -> return $ XPrim a b
 
    XCon a c
-    -> XCon a <$> convertDaCon c
+    -> XCon a  <$> convertDaCon c
 
    XAbs a (MType b) x
-    -> XAbs a <$> (fmap MType $ convertBind  b) <*> convertX x
+    -> XAbs a  <$> (fmap MType     $ convertBind  b) <*> convertX x
 
    XAbs a (MTerm b) x
-    -> XAbs a <$> (fmap MTerm $ convertBind  b) <*> convertX x
+    -> XAbs a  <$> (fmap MTerm     $ convertBind  b) <*> convertX x
 
    XAbs a (MImplicit b) x
-    -> XAbs a <$> (fmap MImplicit $ convertBind  b) <*> convertX x
+    -> XAbs a  <$> (fmap MImplicit $ convertBind  b) <*> convertX x
 
    XApp a p q
-    -> XApp a <$> convertX     p <*> convertArg q
+    -> XApp a  <$> convertX     p <*> convertArg q
 
    XLet a ls x
     -> let bs = valwitBindsOfLets ls
        in  withSuspFns bs $ XLet a <$> convertLets ls <*> convertX x
 
    XCase a x as
-    -> XCase a<$> convertX     x <*> mapM convertAlt as
+    -> XCase a <$> convertX     x <*> mapM convertAlt as
 
    XCast a c x
-    -> XCast a<$> convertCast  c <*> convertX x
+    -> XCast a <$> convertCast  c <*> convertX x
 
  where
   anno = annotOfExp xx
@@ -264,12 +264,12 @@ prim anno n args
 
 ---------------------------------------------------------------------------------------------------
 convertArg :: Arg a F.Name -> ConvertM (Arg a T.Name)
-convertArg aa
- = case aa of
+convertArg arg
+ = case arg of
         RType t         -> RType     <$> convertType t
-        RWitness w      -> RWitness  <$> convertWit w
-        RTerm x         -> RTerm     <$> convertX x
-        RImplicit x     -> RImplicit <$> convertX x
+        RWitness w      -> RWitness  <$> convertWit  w
+        RTerm x         -> RTerm     <$> convertX    x
+        RImplicit arg'  -> RImplicit <$> convertArg  arg'
 
 
 ---------------------------------------------------------------------------------------------------

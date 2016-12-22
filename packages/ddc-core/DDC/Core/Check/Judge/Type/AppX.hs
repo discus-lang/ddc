@@ -3,6 +3,7 @@ module DDC.Core.Check.Judge.Type.AppX
         (checkAppX)
 where
 import DDC.Core.Check.Judge.Type.Sub
+import DDC.Core.Check.Judge.Type.Prim
 import DDC.Core.Check.Judge.Type.Base
 import qualified DDC.Type.Sum   as Sum
 
@@ -114,10 +115,10 @@ checkArg  table ctx mode demand arg
                  <- tableCheckExp table table ctx mode demand x
                 return (RTerm x',     t', effs', ctx')
 
-        RImplicit x
+        RImplicit (RTerm x)
           -> do (x', t', effs', ctx')
                  <- tableCheckExp table table ctx mode demand x
-                return (RImplicit x', t', effs', ctx')
+                return (RImplicit (RTerm x'), t', effs', ctx')
 
         _ -> error "checkArg: nope"
 
@@ -299,22 +300,19 @@ synthAppArg table
                 , text "    arg     = " <> ppr arg
                 , empty ]
 
-        -- Try to find a binder in the context with the required type.
-        bArgImplicit    
-         <- case findImplicitOfType ctx0 (typeOfBind bParam) of
-                Nothing   -> throw $ ErrorAppCannotFindImplicit a (typeOfBind bParam) xx
-                Just x    -> return x
-
-        -- Build an implicit argument that references the binder.
-        let aArgImpl    = AnTEC (typeOfBind bParam) (tBot kEffect) (tBot kClosure) a
-        xArgImplicit
-         <- case bArgImplicit of
-                BName n _ -> return $ XVar aArgImpl (UName n)
-                _         -> error "TODO: can't build implicit argument."
+        -- Build an argument (elaborate# [t]) where t is the desired argument type.
+        --  This argument will then be replaced by a real term after type checking,
+        --  by the Resolve transform. Note that we can't nessesarally construct
+        --  the desired term during type checking as they types we have may still
+        --  contain existentials, so we might night have enough informaiton to decide
+        --  whether a given binding has the desired type.
+        let aArg         = AnTEC (typeOfBind  bParam)     (tBot kEffect) (tBot kClosure) a
+        let aFnElab      = AnTEC (shapeOfPrim PElaborate) (tBot kEffect) (tBot kClosure) a
+        let xArgImplicit = XApp aArg (XPrim aFnElab PElaborate) (RType (typeOfBind bParam))
 
         -- Add the implicit type argument.
-        let aFn         = AnTEC tFn (TSum effsFn) (tBot kClosure) a
-        let xFnArg      = XApp aFn xFn (RImplicit xArgImplicit)
+        let aFn          = AnTEC tFn (TSum effsFn) (tBot kClosure) a
+        let xFnArg       = XApp aFn xFn (RImplicit (RTerm xArgImplicit))
 
         -- Synthesise the result type of a function being applied to its
         -- argument. We know the type of the function up-front, but we pass

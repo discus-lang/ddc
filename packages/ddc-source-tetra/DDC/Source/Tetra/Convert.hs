@@ -319,8 +319,8 @@ toCoreArg sp xx
         S.RTerm x
           -> C.RTerm     <$> toCoreX sp x
 
-        S.RImplicit x
-          -> C.RImplicit <$> toCoreX sp x
+        S.RImplicit arg'
+          -> C.RImplicit <$> toCoreArg sp arg'
 
 -- Lets -------------------------------------------------------------------------------------------
 toCoreLts :: SP -> S.Lets -> ConvertM S.Source (C.Lets SP C.Name)

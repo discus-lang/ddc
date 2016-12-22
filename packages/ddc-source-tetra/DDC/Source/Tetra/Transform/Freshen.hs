@@ -228,12 +228,12 @@ freshenExp xx
 -------------------------------------------------------------------------------
 -- | Freshen an argument.
 freshenArg :: Arg -> S Arg
-freshenArg rr
- = case rr of
+freshenArg arg
+ = case arg of
         RType     t     -> RType     <$> freshenType    t
         RWitness  w     -> RWitness  <$> freshenWitness w
         RTerm     x     -> RTerm     <$> freshenExp     x
-        RImplicit x     -> RImplicit <$> freshenExp     x
+        RImplicit arg'  -> RImplicit <$> freshenArg     arg'
 
 
 -------------------------------------------------------------------------------

@@ -157,8 +157,8 @@ instance SupportX (Arg a) where
                     , supportSpVarXArg  = supportSpVar sup }
 
         RTerm x         -> support kenv tenv x
-        RImplicit x     -> support kenv tenv x
         RWitness  w     -> support kenv tenv w
+        RImplicit x     -> support kenv tenv x
 
 
 instance SupportX (Alt a) where

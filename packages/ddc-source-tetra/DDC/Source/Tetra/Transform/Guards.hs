@@ -189,12 +189,12 @@ isTrivialPat pp
 -------------------------------------------------------------------------------
 -- | Desguar an argument.
 desugarArg :: SP -> Arg  -> S Arg
-desugarArg sp rr
- = case rr of
-        RType{}         -> return rr
-        RWitness{}      -> return rr
-        RTerm x         -> RTerm     <$> desugarX sp x
-        RImplicit x     -> RImplicit <$> desugarX sp x
+desugarArg sp arg
+ = case arg of
+        RType{}         -> return arg
+        RWitness{}      -> return arg
+        RTerm x         -> RTerm     <$> desugarX   sp x
+        RImplicit arg'  -> RImplicit <$> desugarArg sp arg'
 
 
 -------------------------------------------------------------------------------

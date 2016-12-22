@@ -36,12 +36,12 @@ replaceX sub xx
 replaceArg :: Map A.Name (Exp a A.Name)
            -> Arg a A.Name -> Arg a A.Name
 
-replaceArg sub aa
- = case aa of
-        RType{}         -> aa
-        RWitness{}      -> aa
-        RTerm x         -> RTerm     $ replaceX sub x
-        RImplicit x     -> RImplicit $ replaceX sub x
+replaceArg sub arg
+ = case arg of
+        RType{}         -> arg
+        RWitness{}      -> arg
+        RTerm x         -> RTerm     $ replaceX   sub x
+        RImplicit arg'  -> RImplicit $ replaceArg sub arg'
 
 
 -- | Replace variables with expressions in the given let bindings.

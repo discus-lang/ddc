@@ -78,10 +78,10 @@ substituteXArg
 
 substituteXArg b arg x
  = case arg of
-        RType     t    -> substituteTX  b t    x
-        RWitness  w    -> substituteWX  b w    x
-        RTerm     xArg -> substituteXX  b xArg x
-        RImplicit xArg -> substituteXX  b xArg x
+        RType     t    -> substituteTX   b t    x
+        RWitness  w    -> substituteWX   b w    x
+        RTerm     xArg -> substituteXX   b xArg x
+        RImplicit a    -> substituteXArg b a    x
 
 
 -- | Wrapper for `substituteXArgs` to substitute multiple arguments.

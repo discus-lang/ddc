@@ -190,16 +190,16 @@ data GParam l
 -- | Argument of an application.
 data GArg l
         -- | Type argument.
-        = RType     !(GType l)
+        = RType     !(GType    l)
 
         -- | Term argument.
-        | RTerm     !(GExp  l)
-
-        -- | Implicit term argument.
-        | RImplicit !(GExp  l)
+        | RTerm     !(GExp     l)
 
         -- | Witness argument.
         | RWitness  !(GWitness l)
+
+        -- | Implicit argument.
+        | RImplicit !(GArg     l)
 
 
 -- | Possibly recursive bindings.

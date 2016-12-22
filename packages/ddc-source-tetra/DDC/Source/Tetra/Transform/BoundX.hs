@@ -64,7 +64,7 @@ downX l f d xx
         XFrag  p        -> XFrag   p
         XVar   u        -> XVar   (f d u)
         XCon   c        -> XCon    c
-        XApp   x1 r2    -> XApp x1 (downR l f d r2)
+        XApp   x1 r2    -> XApp x1 (downArg l f d r2)
 
         XAbs     (MType  b mt) x       
          -> XAbs (MType  b mt) (downX l f d x)
@@ -84,7 +84,7 @@ downX l f d xx
         XCase x alts      -> XCase (downX l f d x)  (map (downA l f d) alts)
         XCast cc x        -> XCast (downC l f d cc) (downX l f d x)
 
-        XDefix    a rs    -> XDefix    a (map (downR l f d) rs)
+        XDefix    a rs    -> XDefix    a (map (downArg l f d) rs)
         XInfixOp  a x     -> XInfixOp  a x
         XInfixVar a x     -> XInfixVar a x
         XMatch    a gs x  -> XMatch    a (map (downMA l f d) gs) (downX l f d x)
@@ -99,14 +99,14 @@ downX l f d xx
 
 
 instance HasAnonBind l => MapBoundX GArg l where
- mapBoundAtDepthX = downR
+ mapBoundAtDepthX = downArg
 
-downR  l f d rr
- = case rr of
-        RType{}         -> rr
-        RWitness w      -> RWitness  (downW l f d w)
-        RTerm x         -> RTerm     (downX l f d x)
-        RImplicit x     -> RImplicit (downX l f d x)
+downArg l f d arg
+ = case arg of
+        RType{}         -> arg
+        RWitness w      -> RWitness  (downW   l f d w)
+        RTerm x         -> RTerm     (downX   l f d x)
+        RImplicit arg'  -> RImplicit (downArg l f d arg')
 
 
 ---------------------------------------------------------------------------------------------------

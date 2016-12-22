@@ -88,8 +88,8 @@ instance BindStruct (Arg a n) n where
   = case aa of
         RType t                 -> slurpBindTree t
         RTerm x                 -> slurpBindTree x
-        RImplicit x             -> slurpBindTree x
         RWitness  w             -> slurpBindTree w
+        RImplicit x             -> slurpBindTree x
 
 
 instance BindStruct (Cast a n) n where

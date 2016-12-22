@@ -479,7 +479,8 @@ checkValidPattern expr
         go_a (RType t)          = go_t t
         go_a (RWitness _)       = return ()
         go_a (RTerm x)          = go x
-        go_a (RImplicit x)      = go x
+        go_a (RImplicit (RTerm x)) = go x
+        go_a (RImplicit _)      = return ()
 
 
 -- | Count how many times each binder is used in right-hand side.

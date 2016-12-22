@@ -179,7 +179,7 @@ downX a env xx
 
         XCast  c x      -> XCast  c (downX a env x)
 
-        XDefix a' xs    -> XDefix a' (map (downR a' env) xs)
+        XDefix a' xs    -> XDefix a' (map (downArg a' env) xs)
         XInfixOp{}      -> xx
         XInfixVar{}     -> xx
 
@@ -195,14 +195,14 @@ downX a env xx
 
 ---------------------------------------------------------------------------------------------------
 instance Expand Arg where
- expand = downR
+ expand = downArg
 
-downR a env rr
- = case rr of
-        RType{}         -> rr
-        RWitness{}      -> rr
-        RTerm x         -> RTerm     (downX a env x)
-        RImplicit x     -> RImplicit (downX a env x)
+downArg a env arg
+ = case arg of
+        RType{}         -> arg
+        RWitness{}      -> arg
+        RTerm x         -> RTerm     (downX   a env x)
+        RImplicit arg'  -> RImplicit (downArg a env arg')
 
 
 ---------------------------------------------------------------------------------------------------

@@ -374,8 +374,8 @@ convRValueArgM config kenv tenv aa
  = case aa of
         RType t         -> convTypeM   kenv t
         RTerm x         -> convRValueM config kenv tenv x
-        RImplicit x     -> convRValueM config kenv tenv x
         RWitness{}      -> error "convRValueArgM: R value invalid"
+        RImplicit{}     -> error "convRValueArgM: R value invalid"
 
 
 -- | Check if some expression is an r-value, 

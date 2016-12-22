@@ -233,9 +233,9 @@ usageArg' aa
          -> let (used', w')     = usageWitness w
             in  (used', RWitness w')
 
-        RImplicit x
-         -> let (used', x')     = usageX' x
-            in  (used', RImplicit x')
+        RImplicit a
+         -> let (used', a')     = usageArg' a
+            in  (used', RImplicit a')
 
 
 -- | Annotate binding occurences of named variables with usage information.

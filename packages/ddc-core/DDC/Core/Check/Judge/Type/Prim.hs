@@ -1,6 +1,7 @@
 
 module DDC.Core.Check.Judge.Type.Prim
-        (checkPrim)
+        ( checkPrim
+        , shapeOfPrim) 
 where
 import DDC.Core.Check.Judge.Type.Base
 import qualified DDC.Type.Sum           as Sum
@@ -24,8 +25,12 @@ checkPrim _ _ _ _ _
 shapeOfPrim :: Prim -> Type n
 shapeOfPrim p
  = case p of
+        PElaborate
+         -> tForall kData
+         $  \tVal -> tVal
+
         PProject _     
          -> tForalls [kData, kData]
          $  \[tObj, tResult] -> tObj `tFun` tResult
 
-        _ -> error "sup"
+        _ -> error "shapeOfPrim: no match"

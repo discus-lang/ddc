@@ -181,6 +181,6 @@ transArg tails aa
  = case aa of
         RType{}         -> aa
         RWitness{}      -> aa
-        RTerm x         -> RTerm     $ transX tails x
-        RImplicit x     -> RImplicit $ transX tails x
+        RTerm x         -> RTerm     $ transX   tails x
+        RImplicit x     -> RImplicit $ transArg tails x
 

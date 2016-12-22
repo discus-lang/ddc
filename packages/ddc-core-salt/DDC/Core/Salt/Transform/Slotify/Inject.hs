@@ -30,12 +30,12 @@ injectX injs xx
 
 injectArg :: Map A.Name (Exp a A.Name -> Exp a A.Name)
           -> Arg a A.Name -> Arg a A.Name
-injectArg injs aa
- = case aa of
-        RType{}         -> aa
-        RWitness{}      -> aa
-        RTerm x         -> RTerm     $ injectX injs x
-        RImplicit x     -> RImplicit $ injectX injs x
+injectArg injs arg
+ = case arg of
+        RType{}         -> arg
+        RWitness{}      -> arg
+        RTerm x         -> RTerm     $ injectX   injs x
+        RImplicit arg'  -> RImplicit $ injectArg injs arg'
 
 
 injectA   :: Map A.Name (Exp a A.Name -> Exp a A.Name)

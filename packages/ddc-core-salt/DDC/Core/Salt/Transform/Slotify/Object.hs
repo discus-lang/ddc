@@ -42,7 +42,7 @@ objectsOfArg aa
         RType{}         -> Map.empty
         RWitness{}      -> Map.empty
         RTerm x         -> objectsOfExp x
-        RImplicit x     -> objectsOfExp x
+        RImplicit arg'  -> objectsOfArg arg'
 
 
 -- Let --------------------------------------------------------------------------------------------

@@ -109,8 +109,8 @@ data Param n
 data Arg a n
         = RType         (Type      n)   -- ^ Type argument.
         | RTerm         (Exp     a n)   -- ^ Term argument.
-        | RImplicit     (Exp     a n)   -- ^ Implicit term argument.
         | RWitness      (Witness a n)   -- ^ Witness argument.
+        | RImplicit     (Arg a n)       -- ^ Indicate an implicit argument.             
         deriving (Show, Eq)
 
 
@@ -118,8 +118,11 @@ data Arg a n
 --   These operators can be assigned standard functional types,
 --   but might have some special handing in the type checker.
 data Prim
+        -- | Produce a value by elaboration.
+        = PElaborate 
+
         -- | Project a field from a record.
-        = PProject Text
+        | PProject Text
 
         -- | Shuffle fields of a record.
         | PShuffle

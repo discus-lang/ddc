@@ -54,9 +54,9 @@ convertOrDiscardSuperArgX ctx (aa, tArg)
          -> do  x'      <- contextConvertExp ctx ExpArg ctx x
                 return  $ Just $ RTerm x'
 
-        RImplicit x
-         -> do  x'      <- contextConvertExp ctx ExpArg ctx x
-                return  $ Just $ RImplicit x'
+        -- We shouldn't have any explicit args at this stage.
+        RImplicit _
+         ->     return Nothing
 
 
 ---------------------------------------------------------------------------------------------------

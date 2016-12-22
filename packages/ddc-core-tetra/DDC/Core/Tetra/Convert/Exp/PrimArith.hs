@@ -90,9 +90,9 @@ convertPrimArgX ctx ectx aa
          -> do  x'      <- convertX ectx ctx x
                 return  $ RTerm x'
 
-        RImplicit x
-         -> do  x'      <- convertX ectx ctx x
-                return  $ RImplicit x'
+        RImplicit arg
+         -> do  arg'    <- convertPrimArgX ctx ectx arg
+                return  $ RImplicit arg'
 
 
 

@@ -290,12 +290,12 @@ desugarArg
         :: Map Name Name
         -> Arg -> S Arg
 
-desugarArg rns rr
- = case rr of
-        RType{}         -> return rr
-        RWitness{}      -> return rr
-        RTerm x         -> RTerm     <$> desugarX rns x
-        RImplicit x     -> RImplicit <$> desugarX rns x
+desugarArg rns arg
+ = case arg of
+        RType{}         -> return arg
+        RWitness{}      -> return arg
+        RTerm x         -> RTerm     <$> desugarX   rns x
+        RImplicit arg'  -> RImplicit <$> desugarArg rns arg'
 
 
 ---------------------------------------------------------------------------------------------------

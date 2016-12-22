@@ -209,12 +209,15 @@ instance Complies Exp where
                 return  ( Set.union tUsed1 tUsed2
                         , Set.union vUsed1 vUsed2)
 
-        XApp _ x1 (RImplicit x2)
+        XApp _ x1 (RImplicit (RTerm x2))
          -> do  checkFunction profile x1
                 (tUsed1, vUsed1) <- compliesX profile kenv tenv (addArg context) x1
                 (tUsed2, vUsed2) <- compliesX profile kenv tenv context x2
                 return  ( Set.union tUsed1 tUsed2
                         , Set.union vUsed1 vUsed2)
+
+        XApp _ _ a2
+         -> throw $ ErrorUnsupportedArg a2
 
         -- let ----------------------------------
         XLet _ (LLet b1 x1) x2

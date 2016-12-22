@@ -88,8 +88,8 @@ instance FromAnnot (N.Exp a A.Name) Exp where
         N.XApp  _ x1 (N.RTerm x2)
          -> G.XApp  <$> fromAnnot x1  <*> (G.RExp     <$> fromAnnot x2)
 
-        N.XApp  _ x1 (N.RImplicit x2)
-         -> G.XApp  <$> fromAnnot x1  <*> (G.RExp     <$> fromAnnot x2)
+        N.XApp  _ _  (N.RImplicit _)
+         -> error "ddc-core-salt.fromAnnot: not converting implicit arg to salt"
 
         N.XLet  _ lts x
          -> G.XLet  <$> fromAnnot lts <*> fromAnnot x
@@ -99,7 +99,7 @@ instance FromAnnot (N.Exp a A.Name) Exp where
 
         N.XCast _ c x
          -> G.XCast <$> fromAnnot c   <*> fromAnnot x
-
+ 
 
 instance FromAnnot (N.Lets a A.Name) Lets where
  fromAnnot lts

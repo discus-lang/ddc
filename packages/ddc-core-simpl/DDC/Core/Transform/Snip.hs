@@ -100,7 +100,7 @@ snipA config arities aa
         RType{}         -> aa
         RWitness{}      -> aa
         RTerm x         -> RTerm     $ snipX config arities x []
-        RImplicit x     -> RImplicit $ snipX config arities x []
+        RImplicit a     -> RImplicit $ snipA config arities a
 
 
 -- Enter into a non-application.
@@ -311,10 +311,11 @@ splitArgs config args
 
         go n ((aArg, a) : asArgs)
          = case aArg of
-                RType{}         -> (aArg, a, True, Nothing) : go n asArgs
-                RWitness{}      -> (aArg, a, True, Nothing) : go n asArgs
-                RTerm x         -> go_snip RTerm     n x a asArgs
-                RImplicit x     -> go_snip RImplicit n x a asArgs
+                RType{}                 -> (aArg, a, True, Nothing) : go n asArgs
+                RWitness{}              -> (aArg, a, True, Nothing) : go n asArgs
+                RTerm x                 -> go_snip RTerm               n x a asArgs
+                RImplicit (RTerm x)     -> go_snip (RImplicit . RTerm) n x a asArgs
+                _                       -> error "ddc-core-simpl: splitArgs invalid arg"
 
         go_snip make n xArg a asArgs
          | isAtom xArg

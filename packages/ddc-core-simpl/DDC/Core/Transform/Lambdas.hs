@@ -222,16 +222,16 @@ lambdasX p c xx
                  Just result    
                    -> return result
 
-                 _ ->  do (x1', r1) <- enterAppLeft  c a x1 a2 (lambdasX p)
-                          (a2', r2) <- enterAppRight c a x1 a2 (lambdasR p)
+                 _ ->  do (x1', r1) <- enterAppLeft  c a x1 a2 (lambdasX   p)
+                          (a2', r2) <- enterAppRight c a x1 a2 (lambdasArg p)
                           return  ( XApp a x1' a2'
                                   , mappend r1 r2)
 
 
         -- Boilerplate.
         XApp a x1 a2
-         -> do  (x1', r1)   <- enterAppLeft  c a x1 a2 (lambdasX p)
-                (a2', r2)   <- enterAppRight c a x1 a2 (lambdasR p)
+         -> do  (x1', r1)   <- enterAppLeft  c a x1 a2 (lambdasX   p)
+                (a2', r2)   <- enterAppRight c a x1 a2 (lambdasArg p)
                 return  ( XApp a x1' a2'
                         , mappend r1 r2)
                 
@@ -252,14 +252,15 @@ lambdasX p c xx
 
 
 
-lambdasR :: (Show n, Show a, Pretty n, Pretty a, CompoundName n, Ord n)
-         => Profile n           -- ^ Language profile.
-         -> Context a n         -- ^ Enclosing context.
-         -> Arg a n             -- ^ Expression to perform lambda lifting on.
-         -> S ( Arg a n         --   Replacement argument.
+lambdasArg 
+        :: (Show n, Show a, Pretty n, Pretty a, CompoundName n, Ord n)
+        => Profile n           -- ^ Language profile.
+        -> Context a n         -- ^ Enclosing context.
+        -> Arg a n             -- ^ Expression to perform lambda lifting on.
+        -> S ( Arg a n         --   Replacement argument.
               , Result a n)     --   Lifter result.
 
-lambdasR p c aa
+lambdasArg p c aa
  = case aa of
         RType t
          ->     return  (RType t, mempty)
@@ -268,12 +269,13 @@ lambdasR p c aa
          -> do  (x', result)    <- lambdasX p c x
                 return  (RTerm x', result)
 
-        RImplicit x         
-         -> do  (x', result)    <- lambdasX p c x
-                return  (RImplicit x', result)
-
         RWitness w
          ->     return  (RWitness w, mempty)
+
+        RImplicit arg'
+         -> do  (arg'', result)    <- lambdasArg p c arg'
+                return  (RImplicit arg'', result)
+
 
 -- Lets -------------------------------------------------------------------------------------------
 -- | Perform lambda lifting in some let-bindings.
@@ -505,7 +507,7 @@ etaXConApp !p !c !a !x1 !nCon !xsArg
                         | t <- DataDef.dataCtorFieldTypes dataCtor ]
 
         -- Transform all the arguments.
-        let downArg xArg = enterAppRight c a x1 xArg (lambdasR p)
+        let downArg xArg = enterAppRight c a x1 xArg (lambdasArg p)
         (xsArg', rs)    <- fmap unzip $ mapM downArg xsArg
 
         -- Build application of our new abstraction.

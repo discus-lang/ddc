@@ -31,6 +31,10 @@ data Error a n
 
         -- | Found a naked witness that isn't used as a function argument.
         | ErrorNakedWitness     !(Witness a n)
+
+        -- | Unsupported argument.
+        | ErrorUnsupportedArg   !(Arg a n)
+
         deriving Show
 
 
@@ -57,3 +61,6 @@ instance (Pretty n, Eq n) => Pretty (Error a n) where
 
         ErrorNakedWitness w
          -> vcat [ text "Naked witness is not a function argument: " <> ppr w ]
+
+        ErrorUnsupportedArg a
+         -> vcat [ text "Unsupported argument mode: " <> ppr a ]
