@@ -217,9 +217,9 @@ pipeCore !mm !pp
             let mm' = (C.reannotate f mm)
             in  pipeCores mm' pipes
 
-        PipeCoreResolve  !stage !_fragment !pipes
+        PipeCoreResolve  !stage !fragment !pipes
          -> {-# SCC "PipeCoreResolve" #-}
-            case Resolve.resolveModule mm of
+            case Resolve.resolveModule  (fragmentProfile fragment) mm of
                 Left err        -> return [ErrorLint stage "PipeCoreResolve" err]
                 Right mm'       -> pipeCores mm' pipes
 
