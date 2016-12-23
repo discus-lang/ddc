@@ -9,7 +9,8 @@ import DDC.Core.Exp
 import DDC.Core.Module
 import DDC.Core.Fragment.Profile
 import DDC.Type.Exp.Simple.Equiv
-import DDC.Data.Pretty  hiding ((<$>))
+import DDC.Data.Pretty                  hiding ((<$>))
+import Control.Monad.Trans.Except
 
 
 ---------------------------------------------------------------------------------------------------
@@ -17,10 +18,25 @@ import DDC.Data.Pretty  hiding ((<$>))
 resolveModule 
         :: Ord n
         => Profile n
-        -> Module a n
-        -> Either (Error a n) (Module a n)
+        -> Module a n -> IO (Either (Error a n) (Module a n))
 
 resolveModule profile mm
+ = runExceptT (resolveModuleM profile mm)
+
+
+---------------------------------------------------------------------------------------------------
+-- | Monad used during resolution.
+--     We need IO so that we can search external interface during elaboration.
+type S a n b = ExceptT (Error a n) IO b
+
+
+-- | Resolve elaborations in a module.
+resolveModuleM
+        :: Ord n
+        => Profile n
+        -> Module a n -> S a n (Module a n)
+
+resolveModuleM profile mm
  = do   xBody'  <- resolveExp (contextOfModule profile mm) 
                               (moduleBody mm)
         return  $  mm { moduleBody = xBody' }
@@ -30,15 +46,14 @@ resolveModule profile mm
 resolveExp 
         :: Ord n
         => Context n
-        -> Exp a n -> Either (Error a n) (Exp a n)
+        -> Exp a n -> S a n (Exp a n)
 
-resolveExp ctx xx
+resolveExp !ctx xx
  = case xx of
 
         -- Try to resolve an elaboration.
         XApp a (XPrim _ PElaborate) (RType tWant)
          -> contextResolve a ctx tWant
-
 
         -- Boilerplate traversal.
         XPrim{}         -> return xx
@@ -55,9 +70,9 @@ resolveExp ctx xx
 resolveArg 
         :: Ord n
         => Context n
-        -> Arg a n -> Either (Error a n) (Arg a n)
+        -> Arg a n -> S a n (Arg a n)
 
-resolveArg ctx arg
+resolveArg !ctx arg
  = case arg of
         RType{}         -> return arg
         RTerm x         -> RTerm     <$> resolveExp ctx x
@@ -69,9 +84,9 @@ resolveArg ctx arg
 resolveLts
         :: Ord n
         => Context n
-        -> Lets a n -> Either (Error a n) (Lets a n)
+        -> Lets a n -> S a n (Lets a n)
 
-resolveLts ctx lts
+resolveLts !ctx lts
  = case lts of
         LLet b x        -> LLet b <$> resolveExp ctx x
 
@@ -89,9 +104,9 @@ resolveLts ctx lts
 resolveAlt 
         :: Ord n
         => Context n
-        -> Alt a n -> Either (Error a n) (Alt a n)
+        -> Alt a n -> S a n (Alt a n)
 
-resolveAlt ctx alt
+resolveAlt !ctx alt
  = case alt of
         AAlt w x        -> AAlt w <$> resolveExp (contextPushPat w ctx) x
 
@@ -112,9 +127,8 @@ contextOfModule
         :: Ord n 
         => Profile n -> Module a n -> Context n
 
-contextOfModule profile mm
- = let
-        ntsImport       = [ (n, t)      | (n, ImportValueModule _ _ t _) 
+contextOfModule !profile !mm
+ = let  ntsImport       = [ (n, t)      | (n, ImportValueModule _ _ t _) 
                                         <- moduleImportValues mm ]
    in   Context
         { contextEnvT           = moduleEnvT (profilePrimKinds profile) mm
@@ -124,7 +138,7 @@ contextOfModule profile mm
 -- | Push some bindings onto the context.
 --   These can then be used to resolve elaborations.
 contextPushBinds :: [Bind n] -> Context n -> Context n
-contextPushBinds bs ctx
+contextPushBinds !bs !ctx
  = let  es   = [ (n, t) | BName n t <- bs ]
    in   ctx { contextBinds = es : contextBinds ctx }
 
@@ -132,7 +146,7 @@ contextPushBinds bs ctx
 -- | Push a parameter onto the context.
 --   This can then be used to resolve elaborations.
 contextPushParam :: Param n ->  Context n -> Context n
-contextPushParam pp ctx
+contextPushParam !pp !ctx
  = case pp of
         MTerm (BName n t)      
           -> ctx { contextBinds = [(n, t)] : contextBinds ctx }
@@ -146,7 +160,7 @@ contextPushParam pp ctx
 -- | Push bindings of a pattern onto the context.
 --   These can then be used to resolve elaborations.
 contextPushPat  :: Pat n -> Context n -> Context n
-contextPushPat ww ctx
+contextPushPat !ww !ctx
  = case ww of
         PDefault        -> ctx
         PData _ bs      -> contextPushBinds bs ctx
@@ -159,13 +173,13 @@ contextResolve
         => a 
         -> Context n 
         -> Type n 
-        -> Either (Error a n) (Exp a n)
+        -> S a n (Exp a n)
 
-contextResolve a ctx tWant
+contextResolve !a !ctx !tWant
  = searchStack (contextBinds ctx)
  where
         searchStack []
-         = Left $ ErrorCannotResolve tWant
+         = throwE $ ErrorCannotResolve tWant
 
         searchStack (g : gs)
          = case searchGroup g of

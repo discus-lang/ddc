@@ -219,9 +219,10 @@ pipeCore !mm !pp
 
         PipeCoreResolve  !stage !fragment !pipes
          -> {-# SCC "PipeCoreResolve" #-}
-            case Resolve.resolveModule  (fragmentProfile fragment) mm of
-                Left err        -> return [ErrorLint stage "PipeCoreResolve" err]
-                Right mm'       -> pipeCores mm' pipes
+            do  res  <- Resolve.resolveModule (fragmentProfile fragment) mm
+                case res of
+                 Left  err       -> return [ErrorLint stage "PipeCoreResolve" err]
+                 Right mm'       -> pipeCores mm' pipes
 
         PipeCoreSimplify !fragment !nameZero !simpl !pipes
          -> {-# SCC "PipeCoreSimplify" #-}

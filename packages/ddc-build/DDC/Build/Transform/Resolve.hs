@@ -3,7 +3,7 @@
 --   in the imported modules. Add explicit imports that refer to the module where
 --   each name is bound.
 module DDC.Build.Transform.Resolve
-        ( resolveNamesInModule )
+        (resolveNamesInModule )
 where
 import DDC.Core.Module
 import DDC.Core.Exp
