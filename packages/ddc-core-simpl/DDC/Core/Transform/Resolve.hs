@@ -4,16 +4,10 @@ module DDC.Core.Transform.Resolve
         ( resolveModule
         , Error (..))
 where
-import DDC.Core.Env.EnvT
-import DDC.Core.Exp
-import DDC.Core.Module
-import DDC.Core.Fragment.Profile
-import DDC.Type.Exp.Simple.Equiv
-import DDC.Data.Pretty                  hiding ((<$>))
-import Control.Monad.Trans.Except
+import DDC.Core.Transform.Resolve.Context
+import DDC.Core.Transform.Resolve.Base
 
 
----------------------------------------------------------------------------------------------------
 -- | Resolve elaborations in a module.
 resolveModule 
         :: Ord n
@@ -22,12 +16,6 @@ resolveModule
 
 resolveModule profile mm
  = runExceptT (resolveModuleM profile mm)
-
-
----------------------------------------------------------------------------------------------------
--- | Monad used during resolution.
---     We need IO so that we can search external interface during elaboration.
-type S a n b = ExceptT (Error a n) IO b
 
 
 -- | Resolve elaborations in a module.
@@ -109,98 +97,4 @@ resolveAlt
 resolveAlt !ctx alt
  = case alt of
         AAlt w x        -> AAlt w <$> resolveExp (contextPushPat w ctx) x
-
-
----------------------------------------------------------------------------------------------------
-data Context n
-        = Context
-        { -- | Current type environment.
-          contextEnvT           :: EnvT n
-
-          -- | Stack of binding groups in the environment,
-          --   Each of of the inner groups are from bindings at the same level.
-        , contextBinds          :: [ [(n, Type n)] ] }
-
-
--- | Create the initial context from the given module.
-contextOfModule 
-        :: Ord n 
-        => Profile n -> Module a n -> Context n
-
-contextOfModule !profile !mm
- = let  ntsImport       = [ (n, t)      | (n, ImportValueModule _ _ t _) 
-                                        <- moduleImportValues mm ]
-   in   Context
-        { contextEnvT           = moduleEnvT (profilePrimKinds profile) mm
-        , contextBinds          = [ntsImport] }
-
-
--- | Push some bindings onto the context.
---   These can then be used to resolve elaborations.
-contextPushBinds :: [Bind n] -> Context n -> Context n
-contextPushBinds !bs !ctx
- = let  es   = [ (n, t) | BName n t <- bs ]
-   in   ctx { contextBinds = es : contextBinds ctx }
-
-
--- | Push a parameter onto the context.
---   This can then be used to resolve elaborations.
-contextPushParam :: Param n ->  Context n -> Context n
-contextPushParam !pp !ctx
- = case pp of
-        MTerm (BName n t)      
-          -> ctx { contextBinds = [(n, t)] : contextBinds ctx }
-
-        MImplicit (BName n t)
-          -> ctx { contextBinds = [(n, t)] : contextBinds ctx }
-
-        _ -> ctx
-
-
--- | Push bindings of a pattern onto the context.
---   These can then be used to resolve elaborations.
-contextPushPat  :: Pat n -> Context n -> Context n
-contextPushPat !ww !ctx
- = case ww of
-        PDefault        -> ctx
-        PData _ bs      -> contextPushBinds bs ctx
-
-
--- | Try to build a term of the given type, 
---   out of the terms available in the context.
-contextResolve 
-        :: Ord n
-        => a 
-        -> Context n 
-        -> Type n 
-        -> S a n (Exp a n)
-
-contextResolve !a !ctx !tWant
- = searchStack (contextBinds ctx)
- where
-        searchStack []
-         = throwE $ ErrorCannotResolve tWant
-
-        searchStack (g : gs)
-         = case searchGroup g of
-                Nothing -> searchStack gs
-                Just x  -> return x
-
-
-        searchGroup []
-         = Nothing
-
-        searchGroup ((nBind, tBind) : nts)
-         = if equivT (contextEnvT ctx) tBind tWant 
-                then Just (XVar a (UName nBind))
-                else searchGroup nts
-
-
----------------------------------------------------------------------------------------------------
-data Error a n
-        = ErrorCannotResolve    (Type n)
-
-instance Pretty (Error a n) where
- ppr (ErrorCannotResolve _)
-  = text "Cannot resolve elaboration"
 
