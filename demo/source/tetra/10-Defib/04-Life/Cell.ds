@@ -5,6 +5,7 @@ export
         stepCell
 }
 import Data.Function
+import Data.List
 where
 
 data Cell where

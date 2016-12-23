@@ -1,0 +1,41 @@
+
+module Class.Eq
+export
+{       eq; neq;
+        eq_nat;
+}
+import Data.Numeric.Bool
+import Data.Numeric.Nat
+where
+
+
+-------------------------------------------------------------------------------
+-- | Dictionary for equality test.
+--
+--   We keep separate equality and not-equality functions as sometimes
+--   for not-equality directly can be faster than testing for equality
+--   and then negating the answer, and vis-versa.
+--
+data Eq (a: Data) where
+        Eq      :  (a -> a -> Bool)     -- ^ eq  function.
+                -> (a -> a -> Bool)     -- ^ neq function.
+                -> Eq a
+
+
+-- | Check whether two values are equal.
+eq  {(Eq eq' _):  Eq a} (x1 x2: a): Bool
+ = eq'  x1 x2
+
+
+-- | Check whether two values are not equal.
+neq {(Eq _ neq'): Eq a} (x1 x2: a): Bool
+ = neq' x1 x2
+
+
+-------------------------------------------------------------------------------
+-- Dictionaries for primitive types.
+
+-- TODO: we shouldn't need to eta-expand these.
+eq_nat          
+ = Eq (\a b -> eq# [Nat#] a b) (\a b -> neq# [Nat#] a b)
+

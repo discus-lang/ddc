@@ -1,0 +1,8 @@
+
+module Prelude.Numeric
+import Data.Numeric.Nat
+import Data.Numeric.Bool
+import Class.Eq
+import Class.Ord
+where
+

@@ -25,6 +25,8 @@ import  Data.Maybe
 import  Data.Function
 import  Class.Functor
 import  Class.Monad
+import  Class.Ord
+import  Class.Eq
 where
 
 -- | Standard Cons-lists.

@@ -11,6 +11,7 @@ import Data.List
 where
 
 
+-------------------------------------------------------------------------------
 -- | Class dictionary for Show.
 data Show (a: Data) where
         Show    : (a -> Text) -> Show a

@@ -11,14 +11,15 @@ library
  
  tetra-modules:
         Data.Tuple
+        Data.Numeric.Word
+        Data.Numeric.Bool
+        Data.Numeric.Nat
+        Class.Eq
         Class.Ord
         Class.Functor
         Class.Applicative
         Class.Monad
         Data.Function
-        Data.Numeric.Bool
-        Data.Numeric.Nat
-        Data.Numeric.Word
         Data.Maybe
         Data.List
         Data.Text.Base

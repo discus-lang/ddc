@@ -1,14 +1,72 @@
 
 module Class.Ord
+export 
+{       lt; le; gt; ge;
+        ord_bool; ord_nat 
+}
+import Data.Numeric.Bool
+import Data.Numeric.Nat
 where
 
 
+-------------------------------------------------------------------------------
+-- | Dictionary for ordering test.
+data Ord (k: Data) where
+        Ord     : (k -> k -> Ordering) -> Ord k
+
+
+-- | Result of an ordering test.
 data Ordering where
         LT      : Ordering
         GT      : Ordering
         EQ      : Ordering
 
 
-data Ord (k: Data) where
-        Ord     : (k -> k -> Ordering) -> Ord k
+-- | Check whether the first value is less than the second.
+lt {(Ord compare'): Ord a} (x1 x2: a): Bool
+ = case compare' x1 x2 of
+        LT      -> True
+        _       -> False
+
+
+-- | Check whether the first value is less than or equal to the second.
+le {(Ord compare'): Ord a} (x1 x2: a): Bool
+ = case compare' x1 x2 of
+        LT      -> True
+        EQ      -> True
+        _       -> False
+
+
+-- | Check whether the first value is greater than the second.
+gt {(Ord compare'): Ord a} (x1 x2: a): Bool
+ = case compare' x1 x2 of
+        GT      -> True
+        _       -> False
+
+
+-- | Check whether the first value is greater than or equal to the second.
+ge {(Ord compare'): Ord a} (x1 x2: a): Bool
+ = case compare' x1 x2 of
+        GT      -> True
+        EQ      -> True
+        _       -> False
+
+
+-------------------------------------------------------------------------------
+-- | Dictionaries for primitive types.
+ord_bool: Ord Bool
+ = Ord  compare'
+ where  compare' x1 x2
+         | True  <- x1, True  <- x2  = EQ
+         | True  <- x1, False <- x2  = GT
+         | False <- x1, True  <- x2  = LT
+         | False <- x1, False <- x2  = EQ
+
+
+ord_nat:  Ord Nat        
+ = Ord  compare'
+ where  compare' n1 n2
+         | gt# [Nat#] n1 n2     = GT
+         | lt# [Nat#] n1 n2     = LT
+         | otherwise            = EQ
 
