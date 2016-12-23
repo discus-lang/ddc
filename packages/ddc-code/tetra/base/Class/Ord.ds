@@ -1,7 +1,7 @@
 
 module Class.Ord
 export 
-{       lt; le; gt; ge;
+{       compare; lt; le; gt; ge;
         ord_bool; ord_nat 
 }
 import Data.Numeric.Bool
@@ -20,6 +20,11 @@ data Ordering where
         LT      : Ordering
         GT      : Ordering
         EQ      : Ordering
+
+
+-- | Compare the given values for ordering.
+compare {(Ord compare'): Ord a} (x1 x2: a): Ordering
+ = compare' x1 x2
 
 
 -- | Check whether the first value is less than the second.
@@ -53,16 +58,18 @@ ge {(Ord compare'): Ord a} (x1 x2: a): Bool
 
 
 -------------------------------------------------------------------------------
--- | Dictionaries for primitive types.
+-- Dictionaries for primitive types.
+
+-- | Ord dictionary for Bool.
 ord_bool: Ord Bool
  = Ord  compare'
- where  compare' x1 x2
-         | True  <- x1, True  <- x2  = EQ
-         | True  <- x1, False <- x2  = GT
-         | False <- x1, True  <- x2  = LT
-         | False <- x1, False <- x2  = EQ
+ where  compare' True  True     = EQ
+        compare' True  False    = GT
+        compare' False True     = LT
+        compare' False False    = EQ
 
 
+-- | Ord dictionary for Nat.
 ord_nat:  Ord Nat        
  = Ord  compare'
  where  compare' n1 n2

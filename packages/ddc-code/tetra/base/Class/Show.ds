@@ -21,19 +21,26 @@ show {(Show sh): Show a} (x: a): Text
 
 
 -------------------------------------------------------------------------------
--- Instances for basic types.
--- We define these in this module to avoid making it recursive
--- with the modules that define basic data types.
-show_bool       = Show showBool
-show_nat        = Show showNat
+-- Dictionaries for primitive types.
+
+-- | Show dictionary for Bool.
+show_bool: Show Bool
+  = Show showBool
 
 
+-- | Show dictionary for Nat.
+show_nat: Show Nat
+ = Show showNat
+
+
+-- | Show dictionary for Text.
 -- ISSUE: #381: Escape non-printable characters in base Show library.
 show_text: Show Text
  = Show sh
  where  sh tx           = "\"" % tx % "\""
 
 
+-- | Show dictionary for Tup2.
 show_tup2 {(Show sh_a): Show a} {(Show sh_b): Show b}
         : Show (Tup2 a b)
  = Show sh
@@ -41,6 +48,7 @@ show_tup2 {(Show sh_a): Show a} {(Show sh_b): Show b}
         sh (T2 x y)     = parens $ "T2" %% sh_a x %% sh_b y
 
 
+-- | Show dictionary for List.
 show_list {(Show sh_a): Show a}: Show (List a)
  = Show sh
  where  
