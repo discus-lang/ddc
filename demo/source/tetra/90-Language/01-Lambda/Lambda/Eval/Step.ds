@@ -16,11 +16,11 @@ data SStep (a: Data) where
         StepError       : SStep a
 
 
-show_SStep (show_a: Show a): Show (SStep a)
+show_SStep {show_a: Show a}: Show (SStep a)
  =  Show $ \xx
  -> case xx of
         StepNone        -> "StepNone"
-        StepSome x      -> parens $ "StepSome" %% show {show_a} x
+        StepSome x      -> parens $ "StepSome" %% show x
         StepError       -> "StepError"
 
 

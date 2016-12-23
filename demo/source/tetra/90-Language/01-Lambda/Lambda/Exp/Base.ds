@@ -28,25 +28,22 @@ show_Exp: Show Exp
  =  Show $ λxx
  -> case xx of
         XVar n     
-         -> parens $ "XVar"
-                %% show {show_text} n
+         -> parens $ "XVar" %% show n
         
         XAbs ss n x
-         -> parens $ "XAbs"
-                %% show {show_Subst} ss 
-                %% show {show_text} n
-                %% show {show_Exp}   x
+         -> parens $ "XAbs" %% show ss %% show n %% show x
         
         XApp x1 x2
-         -> parens $ "XApp"
-                %% show {show_Exp} x1
-                %% show {show_Exp} x2
+         -> parens $ "XApp" %% show x1 %% show x2
 
+
+-- TODO: elaborator can't build this yet.
+show_ltns: Show (List (Tup2 Name Exp))
+ =  show_list {show_tup2 {show_text} {show_Exp}}
 
 show_Subst: Show Subst
  =  Show $ λxx
  -> case xx of
         Subst ls 
-         -> parens $ "Subst" 
-                %% show {show_list {show_tup2 {show_text} {show_Exp}}} ls
+         -> parens $ "Subst" %% show ls
 

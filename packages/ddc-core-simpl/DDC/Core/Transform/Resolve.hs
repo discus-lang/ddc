@@ -137,6 +137,9 @@ contextPushParam pp ctx
         MTerm (BName n t)      
           -> ctx { contextBinds = [(n, t)] : contextBinds ctx }
 
+        MImplicit (BName n t)
+          -> ctx { contextBinds = [(n, t)] : contextBinds ctx }
+
         _ -> ctx
 
 
