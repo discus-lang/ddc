@@ -6,28 +6,55 @@ module DDC.Core.Transform.Resolve
 where
 import DDC.Core.Transform.Resolve.Context
 import DDC.Core.Transform.Resolve.Base
+import qualified Data.Map                       as Map
+import Control.Monad.IO.Class
+import Data.IORef
 
 
 -- | Resolve elaborations in a module.
 resolveModule 
         :: Ord n
-        => Profile n
-        -> Module a n -> IO (Either (Error a n) (Module a n))
+        => Profile n                      -- ^ Language profile.
+        -> [(n, ImportValue n (Type n))]  -- ^ Top-level context from imported modules.
+        -> Module a n                     -- ^ Module to resolve elaborations in.
+        -> IO (Either (Error a n) (Module a n))
 
-resolveModule profile mm
- = runExceptT (resolveModuleM profile mm)
+resolveModule profile ntsTop mm
+ = runExceptT 
+ $ resolveModuleM profile ntsTop mm
 
 
 -- | Resolve elaborations in a module.
 resolveModuleM
         :: Ord n
-        => Profile n
-        -> Module a n -> S a n (Module a n)
+        => Profile n                      -- ^ Language profile.
+        -> [(n, ImportValue n (Type n))]  -- ^ Top-level context from imported modules.
+        -> Module a n                     -- ^ Module to resolve elaborations in.
+        -> S a n (Module a n)
 
-resolveModuleM profile mm
- = do   xBody'  <- resolveExp (contextOfModule profile mm) 
-                              (moduleBody mm)
-        return  $  mm { moduleBody = xBody' }
+resolveModuleM profile ntsTop mm
+ = do   
+        -- Build the initial context,
+        --   which also gathers up the set of top-level declarations
+        --   available in other modules.
+        ctx     <- makeContextOfModule profile ntsTop mm
+
+        -- Decend into the expression.
+        xBody'  <- resolveExp ctx (moduleBody mm)
+
+        -- Read back the list of bindings that we've used from other modules.
+        --   The module that we've processed may not have import declarations
+        --   for all of these bindings, so we add and de-duplicate them here.
+        topUsed <- liftIO $ readIORef (contextTopUsed ctx)
+        let importValues'
+                = Map.toList
+                $ Map.union (Map.fromList (moduleImportValues mm))
+                            (Map.fromList topUsed)
+
+        -- Return the resolved module.
+        return  $ mm
+                { moduleBody            = xBody' 
+                , moduleImportValues    = importValues' }
 
 
 -- | Resolve elaborations in an expression.
@@ -38,7 +65,6 @@ resolveExp
 
 resolveExp !ctx xx
  = case xx of
-
         -- Try to resolve an elaboration.
         XApp a (XPrim _ PElaborate) (RType tWant)
          -> contextResolve a ctx tWant

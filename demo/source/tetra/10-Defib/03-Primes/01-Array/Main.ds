@@ -1,6 +1,7 @@
 
 module Main 
 import Data.Array
+import Class.Show
 import System.IO.Console
 where
 
@@ -23,7 +24,7 @@ main ()
         fill primes max
 
         -- Print out the highest value in the array.
-        writel $ showNat (readArray primes max)
+        writel $ show (readArray primes max)
 
 
 -- | Check if the given number is a multiple of any

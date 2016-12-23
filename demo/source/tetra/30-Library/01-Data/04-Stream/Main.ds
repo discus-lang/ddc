@@ -2,6 +2,7 @@
 module Main 
 import System.IO.Console
 import Data.List
+import Class.Show
 where
 
 
@@ -72,5 +73,5 @@ main ()
         ss1     = streamOfList xx1
         ss2     = stake 10 (smap (add 1) ss1)
         xx2     = listOfStream ss2
-        writel (showNat (foldl add 0 xx2))
+        writel (show (foldl add 0 xx2))
 

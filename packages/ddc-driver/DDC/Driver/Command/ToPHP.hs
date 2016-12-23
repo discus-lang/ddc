@@ -20,6 +20,7 @@ import Control.Monad.IO.Class
 import Control.Monad
 import DDC.Build.Interface.Store        (Store)
 import DDC.Core.Exp.Annot.AnTEC
+import qualified DDC.Build.Interface.Store      as Store
 
 
 -------------------------------------------------------------------------------
@@ -145,14 +146,15 @@ cmdToPHPCoreFromString config language source str
  , profile              <- fragmentProfile fragment
  = do   
         let fragName = profileName profile
-        
+        store   <- liftIO Store.new
+
         -- Decide what to do based on file extension and current fragment.
         let compile
                 -- Convert a Core Tetra module to PHP.
                 | fragName == "Tetra"
                 = liftIO
                 $ pipeText (nameOfSource source) (lineStartOfSource source) str
-                $ stageTetraLoad     config source
+                $ stageTetraLoad     config source store
                 [ PipeCoreReannotate (const ())
                 [ PipeCoreAsTetra
                 [ PipeTetraToPHP     SinkStdout ]]]

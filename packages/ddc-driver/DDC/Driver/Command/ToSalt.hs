@@ -20,6 +20,7 @@ import Control.Monad.Trans.Except
 import Control.Monad.IO.Class
 import Control.Monad
 import DDC.Build.Interface.Store                (Store)
+import qualified DDC.Build.Interface.Store      as Store
 import qualified DDC.Build.Language.Salt        as Salt
 import qualified DDC.Core.Check                 as C
 
@@ -152,6 +153,7 @@ cmdToSaltCoreFromString config language source str
  = do   
         -- Language fragment name.
         let fragName    = profileName profile
+        store           <- liftIO Store.new 
 
         -- Pretty printer mode.
         let pmode       = prettyModeOfConfig $ configPretty config
@@ -162,10 +164,10 @@ cmdToSaltCoreFromString config language source str
                 | fragName == "Tetra"
                 = liftIO
                 $ pipeText (nameOfSource source) (lineStartOfSource source) str
-                $ stageTetraLoad   config source
+                $ stageTetraLoad   config source store
                 [ stageTetraToSalt config source
                 [ stageSaltOpt     config source
-                [ PipeCoreCheck    "ToSaltCoreFromSTring" Salt.fragment C.Recon SinkDiscard
+                [ PipeCoreCheck    "ToSaltCoreFromString" Salt.fragment C.Recon SinkDiscard
                 [ PipeCoreOutput   pmode SinkStdout]]]]
                 
                 -- Unrecognised fragment name or file extension.

@@ -22,7 +22,6 @@ import DDC.Data.Pretty
 import DDC.Data.Name
 import DDC.Data.Canned
 import DDC.Llvm.Pretty                                  ()
-
 import qualified DDC.Core.Flow                          as Flow
 import qualified DDC.Core.Flow.Profile                  as Flow
 import qualified DDC.Core.Flow.Transform.Forward        as Flow
@@ -113,7 +112,9 @@ data PipeCore a n where
         :: (Pretty a)
         => !String                      -- Name of compiler stage.
         -> !(Fragment n arr)            -- Language fragment to use.
-        -> ![PipeCore a n]             -- Pipes for result.
+        -> !(IO [(n, C.ImportValue n (C.Type n))])        
+                                        -- Top level env from other modules.
+        -> ![PipeCore a n]              -- Pipes for result.
         -> PipeCore a n
 
   -- Apply a simplifier to a module.
@@ -217,9 +218,13 @@ pipeCore !mm !pp
             let mm' = (C.reannotate f mm)
             in  pipeCores mm' pipes
 
-        PipeCoreResolve  !stage !fragment !pipes
+        PipeCoreResolve  !stage !fragment !makeNtsTop !pipes
          -> {-# SCC "PipeCoreResolve" #-}
-            do  res  <- Resolve.resolveModule (fragmentProfile fragment) mm
+            do  ntsTop  <- makeNtsTop
+                res     <- Resolve.resolveModule 
+                                (fragmentProfile fragment) 
+                                ntsTop 
+                                mm
                 case res of
                  Left  err       -> return [ErrorLint stage "PipeCoreResolve" err]
                  Right mm'       -> pipeCores mm' pipes

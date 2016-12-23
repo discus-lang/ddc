@@ -3,6 +3,7 @@ module Main
 import System.IO.Console
 import Data.Numeric.Nat
 import Data.Function
+import Class.Show
 where
 
 
@@ -46,5 +47,5 @@ intToNat (x: Nat): Natural
         
 main ()
  = writel $ "exp 3 6 = " 
-          % showNat (natToInt (cExp (intToNat 3) (intToNat 6)))
+          % show (natToInt (cExp (intToNat 3) (intToNat 6)))
 

@@ -18,7 +18,7 @@ show_token
  -> case t of
         KBra            -> "KBra"
         KKet            -> "KKet"
-        KWord t         -> parens ("KWord"   %% show show_text t)
-        KString t       -> parens ("KString" %% show show_text t)
+        KWord t         -> parens ("KWord"   %% show t)
+        KString t       -> parens ("KString" %% show t)
 
 

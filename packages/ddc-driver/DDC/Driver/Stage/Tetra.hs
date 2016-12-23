@@ -10,6 +10,7 @@ import DDC.Driver.Interface.Source
 import DDC.Build.Interface.Store                (Store)
 import DDC.Build.Pipeline
 import DDC.Data.Pretty
+import qualified DDC.Build.Interface.Store      as Store
 import qualified DDC.Build.Language.Tetra       as BE
 import qualified DDC.Build.Builder              as B
 import qualified DDC.Core.Tetra                 as CE
@@ -44,7 +45,7 @@ stageSourceTetraLoad config source store pipesTetra
                     store
    [ PipeCoreOutput pprDefaultMode
                     (dump config source "dump.1-tetra-00-checked.dct")
-   , PipeCoreResolve "SourceTetraLoad" BE.fragment
+   , PipeCoreResolve "SourceTetraLoad" BE.fragment (Store.importValuesOfStore store)
       (PipeCoreOutput   pprDefaultMode
                         (dump config source "dump.1-tetra-01-resolve.dct")
       : pipesTetra)]
@@ -54,19 +55,21 @@ stageSourceTetraLoad config source store pipesTetra
 ---------------------------------------------------------------------------------------------------
 -- | Load and type check a Core Tetra module.
 stageTetraLoad
-        :: Config -> Source
+        :: Config -> Source 
+        -> Store
         -> [PipeCore () CE.Name]
         -> PipeText CE.Name CE.Error
 
-stageTetraLoad config source pipesTetra
+stageTetraLoad config source store pipesTetra
  = PipeTextLoadCore BE.fragment 
         (if configInferTypes config then C.Synth [] else C.Recon)
                          (dump config source "dump.1-tetra-00-check.dct")
 
- [ PipeCoreResolve "TetraLoad" BE.fragment
+ [ PipeCoreResolve "TetraLoad" BE.fragment (Store.importValuesOfStore store)
    [ PipeCoreOutput     pprDefaultMode
                         (dump config source "dump.1-tetra-01-resolve.dct")
    , PipeCoreReannotate (const ()) pipesTetra ]]
+
 
 
 ---------------------------------------------------------------------------------------------------

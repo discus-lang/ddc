@@ -28,9 +28,10 @@
 -- function by displaying: G(23), G(123), G(1234), and G(12345).
 --
 module Main 
+import System.IO.Console
+import Class.Show
 import Data.List
 import Data.Numeric.Nat
-import System.IO.Console
 where
 
 
@@ -57,13 +58,13 @@ sums n  = foldl add 0 (last (Nil [Nat]) (rows n))
 
 -- | Write a list to the console.
 writeListl xs
- = do   forS xs (λ(n : Nat) -> write ((showNat n) % " "))
+ = do   forS xs (λ(n : Nat) -> write (show n % " "))
         write "\n"
 
 main ()
  = do   forS   (rows 20) writeListl
-        writel (showNat (sums 23))
-        writel (showNat (sums 123))
+        writel (show (sums 23))
+        writel (show (sums 123))
 
 --        writel (showNat (sums 1234))     -- runs out of space.
 --        writel (showNat (sums 12345))    -- runs out of space.

@@ -1,5 +1,6 @@
 module Main 
 import Data.Maybe; Data.List; Data.Numeric.Nat
+import Class.Show
 import System.IO.Console
 where
 
@@ -17,7 +18,7 @@ dumpListNat (xx: List Nat): S Console Unit
  = case xx of
         Nil             -> ()
         Cons x xs       
-         -> do  writel (showNat x)
+         -> do  writel (show x)
                 dumpListNat xs
 
 

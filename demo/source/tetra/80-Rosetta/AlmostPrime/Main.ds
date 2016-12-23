@@ -9,11 +9,12 @@
 -- members of k-Almost primes for 1<=K<=5.
 --
 module Main
+import System.IO.Console
+import Class.Show
 import Data.List
 import Data.Text
 import Data.Function
 import Data.Stream
-import System.IO.Console
 where
 
 
@@ -52,8 +53,8 @@ isKPrime (k n: Nat): Bool
 main ()
  =      forS (enumFromTo 1 5)
          (λ(k: Nat#) ->
-          do    write $ "k = " % showNat k % ": "
+          do    write $ "k = " % show k % ": "
                 forS (listOfStream $ stake 10 $ kPrimes k)
-                        (λ(x: Nat#) -> write $ showNat x % " ")
+                        (λ(x: Nat#) -> write $ show x % " ")
                 write "\n")
 

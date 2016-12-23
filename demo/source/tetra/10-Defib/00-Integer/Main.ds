@@ -4,19 +4,15 @@ import Data.Numeric.Nat
 import Data.Numeric.Bool
 import Data.Function
 import Data.Text
+import Class.Show
 import System.IO.Console
-
-import foreign abstract type
- Heap : Effect
-
-
 where
 
 main ()
- = do   writel $ "fac 15     = " % showNat (fac 15)
-        writel $ "ack 3 4    = " % showNat (ack 3   4)
-        writel $ "gcd 100 28 = " % showNat (gcd 100 28)
-        writel $ "tak 12 8 4 = " % showNat (tak 24 16 8)
+ = do   writel $ "fac 15     = " % show (fac 15)
+        writel $ "ack 3 4    = " % show (ack 3   4)
+        writel $ "gcd 100 28 = " % show (gcd 100 28)
+        writel $ "tak 12 8 4 = " % show (tak 24 16 8)
 
 
 -- Factorial.

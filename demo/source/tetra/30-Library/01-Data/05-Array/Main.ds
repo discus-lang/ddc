@@ -1,6 +1,7 @@
 
 module Main
 import System.IO.Console
+import Class.Show
 import Data.Numeric.Nat
 import Data.Function
 import Data.Array
@@ -11,4 +12,4 @@ main ()
  = private r with { Alloc r; Read r; Write r } in
    do   arr     = allocArray [r] 10 0
         writeArray arr 5 100
-        writel $ showNat (readArray arr 5)
+        writel $ show (readArray arr 5)

@@ -1,6 +1,7 @@
 
 module Main
 import System.IO.Console
+import Class.Show
 import Data.Numeric.Nat
 import Data.Function
 where
@@ -10,8 +11,8 @@ main ()
  = private r with { Alloc r; Read r; Write r } in
    do   
         vec     = vectorAlloc# [r] 100
-        writel $ "length = " % showNat (vectorLength# vec)
+        writel $ "length = "  % show (vectorLength# vec)
 
         vectorWrite# vec 99 27
-        writel $ "value  = "  % showNat (vectorRead# vec 99)
+        writel $ "value  = "  % show (vectorRead# vec 99)
 

@@ -3,6 +3,7 @@
 module Main 
 import Data.Numeric.Nat
 import Data.Ref; Data.List; Data.Maybe
+import Class.Show
 import System.IO.Console
 where
 
@@ -41,4 +42,4 @@ main ()
         ref     = rlength [Nat#] [r] xx
 
         -- Print out the final list length.
-        writel (showNat (readRef ref))
+        writel (show (readRef ref))

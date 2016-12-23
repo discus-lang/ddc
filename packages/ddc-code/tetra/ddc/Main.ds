@@ -22,7 +22,6 @@ main ()
         
         writel $ ppExp ppAnnot ppFrag exp
 
-
         toks    = lexText "(abs (exp (atom (frag ty_Nat))) (var (bound (name \"x\") (nat \"0\"))))"
-        writel $ show (show_list show_token) toks
+        writel $ show {show_list {show_token}} toks
 

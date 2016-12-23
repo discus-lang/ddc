@@ -18,7 +18,8 @@ import System.FilePath
 import Control.Monad.Trans.Except
 import Control.Monad.IO.Class
 import Control.Monad
-import DDC.Build.Interface.Store        (Store)
+import DDC.Build.Interface.Store                (Store)
+import qualified DDC.Build.Interface.Store      as Store
 
 
 -------------------------------------------------------------------------------
@@ -148,14 +149,15 @@ cmdToLlvmCoreFromString config language source str
  = do   
         -- Language fragment name.
         let fragName = profileName profile
-        
+        store           <- liftIO $ Store.new
+
         -- Decide what to do based on file extension and current fragment.
         let compile
                 -- Convert a Core Tetra module to LLVM.
                 | fragName == "Tetra"
                 = liftIO
                 $ pipeText (nameOfSource source) (lineStartOfSource source) str
-                $ stageTetraLoad         config source
+                $ stageTetraLoad         config source store
                 [ stageTetraToSalt       config source
                 [ stageSaltOpt           config source
                 [ stageSaltToSlottedLLVM  config source

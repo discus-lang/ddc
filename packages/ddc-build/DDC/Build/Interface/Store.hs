@@ -2,6 +2,7 @@
 module DDC.Build.Interface.Store
         ( Store
         , new, wrap, load
+        , importValuesOfStore
 
         , Meta  (..)
         , getMeta
@@ -46,6 +47,19 @@ data Store
           --   In future we want to load parts of interface files on demand, 
           --   and not the whole lot.
         , storeInterfaces :: IORef [InterfaceAA] }
+
+
+-- | Get a list of types of all top-level supers in all modules in the store.
+importValuesOfStore 
+        :: Store 
+        -> IO [(E.Name, ImportValue E.Name (Type E.Name))]
+
+importValuesOfStore store
+ = do   mnns            <- readIORef $ storeSupers store
+        let mns         =  Map.elems mnns
+        let supers      =  concatMap Map.elems mns
+        return $ [ (superName s, superImportValue s)
+                        | s <- supers ]
 
 
 ---------------------------------------------------------------------------------------------------

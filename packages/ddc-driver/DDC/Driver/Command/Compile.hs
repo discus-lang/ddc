@@ -341,7 +341,7 @@ cmdCompile config bBuildExe' store filePath
                 | ext == ".dct"
                 = liftIO
                 $ pipeText (nameOfSource source) (lineStartOfSource source) src
-                $ stageTetraLoad    config source
+                $ stageTetraLoad    config source store
                 [ stageTetraToSalt  config source (pipesSalt True) ]
 
                 -- Compile a Core Salt module.
