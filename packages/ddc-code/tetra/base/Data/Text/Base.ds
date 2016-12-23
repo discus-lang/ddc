@@ -49,12 +49,12 @@ import foreign c value
         makeTextLit     : TextLit# -> TextLit
 
         -- | Get the size of a boxed text literal.
-        sizeOfTextLit   : TextLit  -> Nat#
+        sizeOfTextLit   : TextLit  -> Nat
 
         -- | Get a single byte from a boxed text literal.
         --   This is a byte rather than a character,
         --   as UTF-8 encoded characters can consist of multiple bytes.
-        indexTextLit    : TextLit  -> Nat# -> Word8#
+        indexTextLit    : TextLit  -> Nat -> Word8
 
 
 -- | Top level region containing text vectors.
@@ -79,7 +79,7 @@ data Text where
 
         -- | Wrap some character data into a text object.
         --   The character data is stored on the heap.
-        TextVec : Vector# RegionText Word8# -> Text
+        TextVec : Vector# RegionText Word8  -> Text
 
         -- | Append two text objects.
         TextApp : Text -> Text              -> Text

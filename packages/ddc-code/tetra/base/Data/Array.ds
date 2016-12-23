@@ -12,7 +12,7 @@ import foreign c value
  -- so types of primitives that use type synonyms break. Eg if we use
  -- 'Nat' here instead of 'Nat#' the transform won't know these primtives
  -- accept unboxed values.
- allocArray : [r: Region]. [a: Data]. Nat# -> a -> S (Alloc r) (Array r a)
- readArray  : [r: Region]. [a: Data]. Array r a -> Nat# -> S (Read r) a
- writeArray : [r: Region]. [a: Data]. Array r a -> Nat# -> a -> S (Write r) Void#
+ allocArray : [r: Region]. [a: Data]. Nat -> a -> S (Alloc r) (Array r a)
+ readArray  : [r: Region]. [a: Data]. Array r a -> Nat -> S (Read r) a
+ writeArray : [r: Region]. [a: Data]. Array r a -> Nat -> a -> S (Write r) Void#
 
