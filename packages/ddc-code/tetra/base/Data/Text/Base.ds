@@ -28,6 +28,7 @@ import Data.Numeric.Nat
 import Data.Numeric.Word
 import Data.Function
 import Data.Maybe
+import Class.Ord
 import Class.Eq
 
 -------------------------------------------------------------------------------
