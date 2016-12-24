@@ -6,6 +6,7 @@ import DDC.Type.Transform.SubstituteT
 import DDC.Core.Check.Judge.EqT
 import DDC.Core.Exp.Annot.AnTEC
 import DDC.Core.Check.Judge.Inst
+import DDC.Core.Check.Judge.Type.Prim
 import DDC.Core.Check.Base
 import qualified DDC.Core.Check.Context as Context
 import qualified DDC.Core.Env.EnvT      as EnvT
@@ -225,6 +226,52 @@ makeSub config a ctx0 x0 xL tL tR err
         return  ( xL
                 , Sum.union effs1 effs2
                 , ctx2)
+
+
+ -- Sub_Implicit_Arg
+ --
+ --   The inferred type  is   (A ~> B)
+ --   while expected type is  (D t1'..tn')
+ --   where D is not (~>) and not a type synonym.
+ --
+ --   We'll inject a new implicit argument that tries to elaborate a value
+ --   of type 'A', then hope that B can be made a subtype of (D t1'..tn').
+ -- 
+ --   TODO: unfold all available synonyms on the right.
+ -- 
+ | Just (TcConFunImplicit, tL1, tL2)    <- takeTFunCon tL
+ , Nothing                              <- takeTFunCon tR
+ = do
+        ctrace  $ vcat
+                [ text "*>  Sub_Implicit_Arg"
+                , text "    tL:      " <> ppr tL
+                , text "    tR:      " <> ppr tR
+                , text "    xL:      " <> ppr xL
+                , empty ]
+
+        let tArg        = tL1
+        let tElaborate  = shapeOfPrim PElaborate
+        let aArg        = AnTEC tArg       (tBot kEffect) (tBot kClosure) a
+        let aFnElab     = AnTEC tElaborate (tBot kEffect) (tBot kClosure) a
+        let xArgElab    = XApp aArg (XPrim aFnElab PElaborate) (RType tArg)
+
+        -- TODO: this assumes the functional expression has no effects.
+        let aFn         = AnTEC tL    (tBot kEffect) (tBot kClosure) a
+        let xL_elab     = XApp aFn xL (RImplicit (RTerm xArgElab))
+
+        (xL_elab', effs1, ctx1) 
+                <- makeSub config a ctx0 x0 xL_elab tL2 tR err 
+
+        ctrace  $ vcat
+                [ text "*<  Sub_Implicit_Arg"
+                , text "    tL:       " <> ppr tL
+                , text "    tR:       " <> ppr tR
+                , text "    xL_elab': " <> ppr xL_elab'
+                , empty ]
+
+        return  ( xL_elab'
+                , effs1
+                , ctx1)
 
  -- Sub_Run
  --   The left (inferred) type is a suspension, but the right it not.

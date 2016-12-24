@@ -37,26 +37,26 @@ pretty_Exp
  =  Pretty $ \xx
  -> case xx of
         XAnnot a x      -> sexp2 "annot"    (ppr a) 
-                                            (ppr {pretty_Exp  {ppA} {ppP}} x)
+                                            (ppr {pretty_Exp}   x)
 
-        XAtom  m        -> sexp1 "atom"     (ppr {pretty_Atom {ppP}} m)
+        XAtom  m        -> sexp1 "atom"     (ppr {pretty_Atom}  m)
 
         XVar   b        -> sexp1 "var"      (ppr b)
 
-        XAbs   m x      -> sexp2 "abs"      (ppr {pretty_Param {ppA} {ppP}} m) 
-                                            (ppr {pretty_Exp   {ppA} {ppP}} x)
+        XAbs   m x      -> sexp2 "abs"      (ppr {pretty_Param} m) 
+                                            (ppr {pretty_Exp}   x)
 
-        XApp   x a      -> sexp2 "app"      (ppr {pretty_Exp   {ppA} {ppP}} x) 
-                                            (ppr {pretty_Arg   {ppA} {ppP}} a)
+        XApp   x a      -> sexp2 "app"      (ppr {pretty_Exp}   x) 
+                                            (ppr {pretty_Arg}   a)
 
-        XLet   lts x    -> sexp2 "let"      (ppr {pretty_Lets  {ppA} {ppP}} lts)
-                                            (ppr {pretty_Exp   {ppA} {ppP}} x)
+        XLet   lts x    -> sexp2 "let"      (ppr {pretty_Lets}  lts)
+                                            (ppr {pretty_Exp}   x)
 
-        XCase  x alts   -> sexp2 "case"     (ppr {pretty_Exp   {ppA} {ppP}} x) 
-                                            (ppr {pretty_List  {pretty_Alt {ppA} {ppP}}} alts)
+        XCase  x alts   -> sexp2 "case"     (ppr {pretty_Exp}   x) 
+                                            (ppr {pretty_List   {pretty_Alt}} alts)
 
-        XCast  c x      -> sexp2 "cast"     (ppr {pretty_Cast  {ppA} {ppP}} c)
-                                            (ppr {pretty_Exp   {ppA} {ppP}} x)
+        XCast  c x      -> sexp2 "cast"     (ppr {pretty_Cast}  c)
+                                            (ppr {pretty_Exp}   x)
 
 
 pretty_Atom {ppP: Pretty p}: Pretty (Atom p)
@@ -72,8 +72,8 @@ pretty_Param
         : Pretty (Param a p)
  =  Pretty $ \mm
  -> case mm of
-        MExp b x        -> sexp1 "exp"      (ppr {pretty_Exp {ppA} {ppP}} x)
-        MImplicit b x   -> sexp1 "implicit" (ppr {pretty_Exp {ppA} {ppP}} x)
+        MExp b x        -> sexp1 "exp"      (ppr {pretty_Exp} x)
+        MImplicit b x   -> sexp1 "implicit" (ppr {pretty_Exp} x)
 
 
 pretty_Arg
@@ -81,8 +81,8 @@ pretty_Arg
         : Pretty (Arg a p)
  =  Pretty $ \arg
  -> case arg of
-        RArg x          -> sexp1 "arg"      (ppr {pretty_Exp {ppA} {ppP}} x)
-        RImplicit x     -> sexp1 "implicit" (ppr {pretty_Exp {ppA} {ppP}} x)
+        RArg x          -> sexp1 "arg"      (ppr {pretty_Exp} x)
+        RImplicit x     -> sexp1 "implicit" (ppr {pretty_Exp} x)
 
 
 pretty_Lets
@@ -93,17 +93,17 @@ pretty_Lets
         LLet b x
          -> sexp2 "let"
                 (ppr b)
-                (ppr {pretty_Exp   {ppA} {ppP}} x)
+                (ppr {pretty_Exp} x)
 
         LRec bxs
          -> sexp1 "rec"
-                (ppr {pretty_List  {pretty_Tup2 {pretty_Bind} {pretty_Exp {ppA} {ppP}}}} bxs)
+                (ppr {pretty_List  {pretty_Tup2 {pretty_Bind} {pretty_Exp}}} bxs)
 
         LPrivate bs mt bxs 
          -> sexp3 "private"
                 (ppr {pretty_List  {pretty_Bind}}            bs)
-                (ppr {pretty_Maybe {pretty_Exp  {ppA} {ppP}}} mt)
-                (ppr {pretty_List  {pretty_Tup2 {pretty_Bind} {pretty_Exp {ppA} {ppP}}}} bxs)
+                (ppr {pretty_Maybe {pretty_Exp}} mt)
+                (ppr {pretty_List  {pretty_Tup2 {pretty_Bind} {pretty_Exp}}} bxs)
 
 
 pretty_Alt
@@ -111,16 +111,16 @@ pretty_Alt
         : Pretty (Alt a p)
  =  Pretty $ \alt
  -> case alt of
-        AAlt w x        -> sexp2 "alt"      (ppr {pretty_Pat} w)
-                                            (ppr {pretty_Exp {ppA} {ppP}} x)
+        AAlt w x        -> sexp2 "alt"     (ppr {pretty_Pat} w)
+                                           (ppr {pretty_Exp} x)
 
 
 pretty_Pat: Pretty (Pat a p)
  =  Pretty $ \pat
  -> case pat of
         PDefault        -> "default"
-        PData n bs      -> sexp2 "data"     (ppr {pretty_Name} n) 
-                                            (ppr {pretty_List {pretty_Bind}} bs)
+        PData n bs      -> sexp2 "data"    (ppr {pretty_Name} n) 
+                                           (ppr {pretty_List} bs)
 
 
 pretty_Cast
@@ -128,7 +128,7 @@ pretty_Cast
         : Pretty (Cast a p)
  =  Pretty $ \cc
  -> case cc of
-        CEffect x       -> sexp1 "effect"   (ppr {pretty_Exp {ppA} {ppP}} x)
+        CEffect x       -> sexp1 "effect"   (ppr {pretty_Exp} x)
         CBox            -> "box"
         CRun            -> "run"
 
