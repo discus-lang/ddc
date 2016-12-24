@@ -6,7 +6,6 @@ import DDC.Type.Transform.SubstituteT
 import DDC.Core.Check.Judge.EqT
 import DDC.Core.Exp.Annot.AnTEC
 import DDC.Core.Check.Judge.Inst
-import DDC.Core.Check.Judge.Type.Prim
 import DDC.Core.Check.Base
 import qualified DDC.Core.Check.Context as Context
 import qualified DDC.Core.Env.EnvT      as EnvT
@@ -250,7 +249,7 @@ makeSub config a ctx0 x0 xL tL tR err
                 , empty ]
 
         let tArg        = tL1
-        let tElaborate  = shapeOfPrim PElaborate
+        let tElaborate  = tForall kData $ \tA -> tA
         let aArg        = AnTEC tArg       (tBot kEffect) (tBot kClosure) a
         let aFnElab     = AnTEC tElaborate (tBot kEffect) (tBot kClosure) a
         let xArgElab    = XApp aArg (XPrim aFnElab PElaborate) (RType tArg)
