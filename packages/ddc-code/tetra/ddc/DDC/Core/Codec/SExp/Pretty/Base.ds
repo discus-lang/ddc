@@ -1,9 +1,16 @@
 
 module DDC.Core.Codec.SExp.Pretty.Base
 export  { sexp1;  sexp2;  sexp3
-        ; ppTup2; ppList; ppMaybe }
+        ; ppr
+        ; pretty_Tup2; pretty_List; pretty_Maybe }
 import Data.Text
 where
+
+data Pretty (a: Data) where
+        Pretty  : (a -> Text) -> Pretty a
+
+ppr     {(Pretty ppr'): Pretty a} (x: a): Text
+ = ppr' x
 
 
 -- | Make an S-expression of one argument.
@@ -18,25 +25,28 @@ sexp2 n t1 t2    = parens $ n %% t1 %% t2
 sexp3 n t1 t2 t3 = parens $ n %% t1 %% t2 %% t3
 
 
--- | Pretty print a tuple of things.
-ppTup2  (ppA:   a -> Text)
-        (ppB:   b -> Text)
-        ((T2 xa xb): Tup2 a b)
-        : Text
- = sexp2 "tup2" (ppA xa) (ppB xb)
+-- | Pretty dictionary for Tup2.
+pretty_Tup2 
+        {ppA: Pretty a} {ppB: Pretty b}
+        : Pretty (Tup2 a b)
+ = Pretty pp
+ where  pp ((T2 xa xb): Tup2 a b)
+         = sexp2 "tup2" (ppr xa) (ppr xb)
 
 
--- | Pretty print a list of things.
-ppList  (ppA:   a -> Text)
-        (xx:    List a)
-        : Text
- = sexp1 "list" (foldl pastes "" $ map ppA xx)
+-- | Pretty dictionary for List.
+pretty_List 
+        {ppA: Pretty a}: Pretty (List a)
+ =  Pretty $ \xx
+ ->     sexp1 "list" (foldl pastes "" $ map (ppr [a] {ppA}) xx)
+        -- TODO: the args to ppr should have been resolved.
 
 
--- | Pretty print a maybe.
-ppMaybe (ppA:   a -> Text)
-        (xx:    Maybe a)
-        : Text
- = case xx of
+-- | Pretty dictionary for Maybe.
+pretty_Maybe
+        {ppA: Pretty a}: Pretty (Maybe a)
+ =  Pretty $ \xx
+ -> case xx of
         Nothing -> "nothing"
-        Just x  -> sexp1 "just" (ppA x)
+        Just x  -> sexp1 "just" (ppr x)
+

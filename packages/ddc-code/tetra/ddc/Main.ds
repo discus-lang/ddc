@@ -10,17 +10,26 @@ import System.IO.Console
 import Data.Function
 where
 
+data Annot where
+        Annot   : Annot
+
 data Frag where
         FTyNat  : Frag
 
-ppAnnot (_: Frag): Text = "()"
-ppFrag  FTyNat  = "ty_Nat"
+pretty_Annot: Pretty Annot
+ =  Pretty $ \_
+ -> "()"
+
+pretty_Frag: Pretty Frag
+ = Pretty $ \ff
+ -> case ff of
+        FTyNat  -> "ty_Nat"
 
 main ()
  = do   exp     = XAbs  (MExp (Bind  (Name "x")) (XAtom (AFrag FTyNat)))
                         (XVar (Bound (Name "x") 0))
         
-        writel $ ppExp ppAnnot ppFrag exp
+        writel $ ppr {pretty_Exp {pretty_Annot} {pretty_Frag}} exp
 
         toks    = lexText "(abs (exp (atom (frag ty_Nat))) (var (bound (name \"x\") (nat \"0\"))))"
         writel $ show {show_list {show_token}} toks
