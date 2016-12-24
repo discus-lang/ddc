@@ -31,9 +31,9 @@ eqToken (t1 t2: Token): Bool
 
 -- | Show dictionary for tokens.
 show_Token: Show Token
- = Show $ \kk
+ =  Show $ \kk
  -> case kk of
-        KName n -> parens $ "KName" %% (show {show_text} n)
+        KName n -> parens $ "KName" %% show n
         KBra    -> "KBra"
         KKet    -> "KKet"
         KLambda -> "KLambda"

@@ -42,12 +42,12 @@ lexSingle (s: State r Char)
                 lexSingle s
 
         -- Open parens.
-        | eqChar c '(' 
+        | c == '(' 
         -> do   shift s
                 Just KBra
 
         -- Close parens.
-        | eqChar c ')' 
+        | c == ')' 
         -> do   shift s
                 Just KKet
 
@@ -58,9 +58,9 @@ lexSingle (s: State r Char)
                 Just (KWord tx)
 
         -- String.
-        | eqChar c '"'
+        | c == '"'
         -> do   shift s
-                cs      = takeWhile s (\c' -> not $ eq# c' '"')
+                cs      = takeWhile s (\c' -> c' /= '"')
                 tx      = textOfCharList cs
                 shift s
                 Just (KString tx)
@@ -75,5 +75,5 @@ isConStart c
 
 -- | Character can be part of the body of an s-exp constructor.
 isConBody  c
- = isLower c ∨ isUpper c ∨ eqChar c '_'
+ = isLower c ∨ isUpper c ∨ (c == '_')
 

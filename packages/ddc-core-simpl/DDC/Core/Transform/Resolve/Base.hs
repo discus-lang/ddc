@@ -27,9 +27,11 @@ type S a n b = ExceptT (Error a n) IO b
 
 ---------------------------------------------------------------------------------------------------
 data Error a n
-        = ErrorCannotResolve    (Type n)
+        = ErrorCannotResolve (Type n)
 
-instance Pretty (Error a n) where
- ppr (ErrorCannotResolve _)
-  = text "Cannot resolve elaboration"
+instance (Eq n, Pretty n) => Pretty (Error a n) where
+ ppr (ErrorCannotResolve tWanted)
+  = vcat
+  [ text "Cannot resolve elaboration"
+  , text " of type: " <> ppr tWanted ]
 

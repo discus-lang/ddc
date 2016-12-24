@@ -1,7 +1,22 @@
 
 module Data.Text 
+export {eq_char; eq_text}
 import Data.Text.Base
 import Data.Text.List
 import Data.Text.Operator
 import Data.Text.Show
+import Class.Eq
+where
 
+
+-- | Eq dictionary for Char.
+eq_char: Eq Char
+ = Eq eq' neq'
+ where  eq'  x1 x2 = eqChar x1 x2
+        neq' x1 x2 = not (eqChar x1 x2)
+
+-- | Eq dictionary for Text.
+eq_text: Eq Text
+ = Eq eq' neq'
+ where  eq'  x1 x2 = eqText x1 x2
+        neq' x1 x2 = not (eqText x1 x2)
