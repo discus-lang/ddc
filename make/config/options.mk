@@ -91,8 +91,7 @@ DDC_PACKAGES	:= \
         -package bytestring \
         -package vector \
         -package pretty-show \
-        -package inchworm \
-        -package data-default
+        -package inchworm 
 
 ifeq "$(DDC_FLOW_USE_LINEAR_SOLVER)" "1"
 DDC_PACKAGES	:= $(DDC_PACKAGES) \
