@@ -3,6 +3,7 @@ module DDC.Build.Pipeline.Core
         ( PipeCore (..)
         , pipeCore
         , pipeCores
+        , coreCheck
 
         , PipeTetra (..)
         , pipeTetra
@@ -16,6 +17,8 @@ where
 import DDC.Build.Pipeline.Error
 import DDC.Build.Pipeline.Sink
 import DDC.Build.Pipeline.Salt
+import DDC.Build.Stage.Core
+
 import DDC.Build.Language
 import DDC.Core.Simplifier
 import DDC.Data.Pretty
@@ -65,6 +68,7 @@ import qualified DDC.Type.Env                           as Env
 
 import qualified Control.Monad.State.Strict             as S
 import Control.Monad
+import Control.Monad.Trans.Except
 import Control.DeepSeq
 
 
@@ -179,34 +183,12 @@ pipeCore !mm !pp
             pipeSink (renderIndent $ pprModePrec mode 0 mm) sink
 
         PipeCoreCheck !stage !fragment !mode !sinkTrace !pipes
-         -> {-# SCC "PipeCoreCheck" #-}
-            let profile         = fragmentProfile fragment
+         -> do  result'  <- runExceptT 
+                        $   coreCheck stage fragment mode sinkTrace  mm
+                case result' of
+                 Left  errs     -> return errs
+                 Right mm'      -> pipeCores mm' pipes
 
-                -- Check the module is type correct, 
-                --  using the generic core type checker.
-                goCheck mm1
-                 = case C.checkModule (C.configOfProfile profile) mm1 mode of
-                        (Left err,  C.CheckTrace doc) 
-                         -> do  pipeSink (renderIndent doc) sinkTrace
-                                return [ErrorLint stage "PipeCoreCheck/Check" err]
-                        
-                        (Right mm2, C.CheckTrace doc) 
-                         -> do  pipeSink (renderIndent doc) sinkTrace
-                                goComplies mm2
-
-                -- Check the module compiles with the language profile.
-                goComplies mm1
-                 = case C.complies profile mm1 of
-                        Just err -> return [ErrorLint stage "PipeCoreCheck/Complies" err]
-                        Nothing  -> goFragment mm1
-
-                -- Check the module satisfies fragment specific checks.
-                goFragment mm1
-                 = case fragmentCheckModule fragment mm1 of
-                        Just err -> return [ErrorLint stage "PipeCoreCheck/Fragment" err]
-                        Nothing  -> pipeCores mm1 pipes
-
-             in goCheck mm
 
         PipeCoreReCheck !fragment !mode !pipes
          -> {-# SCC "PipeCoreReCheck" #-}
