@@ -55,6 +55,6 @@ main ()
          (λ(k: Nat#) ->
           do    write $ "k = " % show k % ": "
                 forS (listOfStream $ stake 10 $ kPrimes k)
-                        (λ(x: Nat#) -> write $ show x % " ")
+                        (λ(x: Nat) -> write $ show x % " ")
                 write "\n")
 

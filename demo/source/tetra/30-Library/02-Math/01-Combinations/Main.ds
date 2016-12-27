@@ -9,8 +9,8 @@ where
 
 
 main ()
- = do   writel $ "factorial 10            = " % showNat (factorial 10)
-        writel $ "choose 20 3             = " % showNat (choose 20 3)
+ = do   writel $ "factorial 10            = " % show (factorial 10)
+        writel $ "choose 20 3             = " % show (choose 20 3)
 
         writel $ "chooseMany 10 [5, 2, 3] = " 
                % show (chooseMany 10 (Cons 5 (Cons 2 (Cons 3 Nil))))

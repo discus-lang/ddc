@@ -19,11 +19,9 @@ main ()
         list1'  = map_toList mp
 
         -- Show the lists.
-        show_ld = show_list {show_tup2 {show_nat} {show_text}}
-        writel $ show {show_ld} list1
-        writel $ show {show_ld} list1'
+        writel $ show list1
+        writel $ show list1'
 
         -- Show the structure of the map.
-        show_md = show_map  show_nat show_text
-        writel $ show {show_md} mp
+        writel $ show mp
 

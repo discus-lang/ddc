@@ -37,7 +37,7 @@ main ()
         writel $ "   x " %% " grey" %% "   x'"
 
         forS (enumFromTo 0 31)
-         (λ(x: Nat#) ->
+         (λ(x: Nat) ->
                 writel  $  showBinary x
                         %% showBinary (binToGray x)
                         %% showBinary (grayToBin (binToGray x)))

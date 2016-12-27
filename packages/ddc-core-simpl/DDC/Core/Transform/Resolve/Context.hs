@@ -14,6 +14,7 @@ import DDC.Core.Pretty
 import Control.Monad.IO.Class
 import Data.IORef
 import qualified DDC.Type.Sum   as Sum
+import qualified Data.Map       as Map
 
 
 -- | Context of resolve process.
@@ -244,14 +245,31 @@ unifyExistsRight
         -> Type n -> Type n 
         -> Maybe [(Int, Type n)]
 
-unifyExistsRight envt tL tR
- = case (tL, tR) of
+unifyExistsRight envt tL_ tR_
+ = let  
+        tL      = case tL_ of
+                   TCon (TyConBound (UName n1) _)
+                     -> case Map.lookup n1 (envtEquations envt) of
+                         Nothing  -> tL_
+                         Just tL' -> tL'
+                   _ ->  tL_
+
+        tR      = case tR_ of
+                   TCon (TyConBound (UName n2) _)
+                     -> case Map.lookup n2 (envtEquations envt) of
+                         Nothing   -> tR_
+                         Just tR'  -> tR'
+                   _ ->  tR_
+
+   in case (tL, tR) of
+
         (t1, TCon (TyConExists i2 _k2))
           -> Just [(i2, t1)]
 
         (TCon (TyConBound u1 _k1), TCon (TyConBound u2 _k2))
          | u1 == u2     -> Just []
          | otherwise    -> Nothing
+
 
         (TCon tc1, TCon tc2)      
          | tc1 == tc2   -> Just []

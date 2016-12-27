@@ -37,10 +37,6 @@ show_Exp: Show Exp
          -> parens $ "XApp" %% show x1 %% show x2
 
 
--- TODO: elaborator can't build this yet.
-show_ltns: Show (List (Tup2 Name Exp))
- =  show_list {show_tup2 {show_text} {show_Exp}}
-
 show_Subst: Show Subst
  =  Show $ λxx
  -> case xx of

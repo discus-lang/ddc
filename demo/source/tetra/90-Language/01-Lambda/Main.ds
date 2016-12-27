@@ -23,6 +23,6 @@ main ()
 
          Just xx
           -> do writel $ show xx
-                writel $ show {show_SStep {show_Exp}} (step xx)
+                writel $ show (step xx)
                 writel $ pprExp xx
 

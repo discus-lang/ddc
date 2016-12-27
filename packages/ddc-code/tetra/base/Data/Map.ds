@@ -30,7 +30,9 @@ data Map (k a: Data) where
 type Size = Nat
 
 
-show_map (show_k: Show k) (show_a: Show a): Show (Map k a)
+show_map 
+        {show_k: Show k} {show_a: Show a}
+        : Show (Map k a)
  = Show sh
  where  
         sh (Bin s k a l r)
@@ -38,8 +40,8 @@ show_map (show_k: Show k) (show_a: Show a): Show (Map k a)
                 %% show {show_nat} s
                 %% show {show_k}   k
                 %% show {show_a}   a
-                %% show {show_map show_k show_a} l
-                %% show {show_map show_k show_a} r
+                %% show {show_map {show_k} {show_a}} l
+                %% show {show_map {show_k} {show_a}} r
 
         sh Tip
          = "Tip"
