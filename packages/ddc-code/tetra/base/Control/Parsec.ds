@@ -150,17 +150,17 @@ follows (parserA: Parser t a) (parserB: Parser t b): Parser t (Tup2 a b)
 
 -- | Parse zero or more things, yielding a list of those things.
 some (parserA: Parser t a): Parser t (List a)
- = alt  (bind   monad_Parser parserA        $ λx  → 
-         bind   monad_Parser (some parserA) $ λxs →
-         return monad_Parser (Cons x xs))
-        (return monad_Parser Nil)
+ = alt  (bind   parserA        $ λx  → 
+         bind   (some parserA) $ λxs →
+         return (Cons x xs))
+        (return Nil)
 
 
 -- | Parse one or more things, yielding a list of those things.
 many [a t: Data] (parserA: Parser t a): Parser t (List a)
- = alt  (bind   monad_Parser parserA        $ λx  →
-         bind   monad_Parser (some parserA) $ λxs →
-         return monad_Parser (Cons x xs))
-        (bind   monad_Parser parserA        $ λx  →
-         return monad_Parser (Cons x Nil))
+ = alt  (bind   parserA        $ λx  →
+         bind   (some parserA) $ λxs →
+         return (Cons x xs))
+        (bind   parserA        $ λx  →
+         return (Cons x Nil))
 

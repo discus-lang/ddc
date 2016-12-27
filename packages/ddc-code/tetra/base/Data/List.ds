@@ -203,16 +203,17 @@ forS (xx: List a) (f: a -> S e Unit): S e Unit
 
 
 -- | Monadic map.
-mapM    (dMonad: Monad m) 
+--   TODO: allow dMonad name to be elided.
+mapM    {dMonad: Monad m}
         (f: a -> m b) (xx: List a): m (List b)
  = case xx of
         Nil    
-         -> return dMonad Nil
+         -> return Nil
 
         Cons x xs
-         -> bind   dMonad (f x)              $ λx'
-         -> bind   dMonad (mapM dMonad f xs) $ λxs'
-         -> return dMonad (Cons x' xs')
+         -> bind   (f x)       $ λx'
+         -> bind   (mapM f xs) $ λxs'
+         -> return (Cons x' xs')
 
 
 -- Zips -----------------------------------------------------------------------
@@ -279,8 +280,8 @@ prod (xs: List Nat): Nat
 
 
 -- | Monadic sequence.
-sequence (dMonad: Monad m) (xs: List (m a)): m (List a)
- = mapM dMonad id xs
+sequence {dMonad: Monad m} (xs: List (m a)): m (List a)
+ = mapM id xs
 
 
 -- Scans ----------------------------------------------------------------------

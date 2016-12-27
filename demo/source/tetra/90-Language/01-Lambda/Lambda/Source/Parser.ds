@@ -22,30 +22,30 @@ parseExp (ts: List Token): Maybe Exp
 
 -- | Parse an expression.
 pExp : Parser Token Exp
- = alt  (bind   monad_Parser (satisfies (eqToken KLambda)) $ λ kLam  -> 
-         bind   monad_Parser (from takeKName)              $ λ n     ->
-         bind   monad_Parser (satisfies (eqToken KDot))    $ λ kDot  ->
-         bind   monad_Parser pExp                          $ λ xBody ->
-         return monad_Parser (XAbs emptySubst n xBody))
+ = alt  (bind   (satisfies (eqToken KLambda)) $ λ kLam  -> 
+         bind   (from takeKName)              $ λ n     ->
+         bind   (satisfies (eqToken KDot))    $ λ kDot  ->
+         bind   pExp                          $ λ xBody ->
+         return (XAbs emptySubst n xBody))
 
  $       pExpApp
 
 
 -- | Parse an application.
 pExpApp  : Parser Token Exp
- = do   (bind   monad_Parser pExpAtom                      $ λ xFun   ->
-         bind   monad_Parser (some pExpAtom)               $ λ xsArgs ->
-         return monad_Parser (makeXApps xFun xsArgs))
+ = do   (bind   pExpAtom                      $ λ xFun   ->
+         bind   (some pExpAtom)               $ λ xsArgs ->
+         return (makeXApps xFun xsArgs))
 
 
 -- | Parse an atomic expression.
 pExpAtom : Parser Token Exp
- = alt  (bind   monad_Parser (satisfies (eqToken KBra))    $ λ xBra   ->
-         bind   monad_Parser pExp                          $ λ xx     ->
-         bind   monad_Parser (satisfies (eqToken KKet))    $ λ xKet   ->
-         return monad_Parser xx)
+ = alt  (bind   (satisfies (eqToken KBra))    $ λ xBra   ->
+         bind   pExp                          $ λ xx     ->
+         bind   (satisfies (eqToken KKet))    $ λ xKet   ->
+         return xx)
 
- $      (bind   monad_Parser (from takeKName)              $ λ n      ->
-         return monad_Parser (XVar n))
+ $      (bind   (from takeKName)              $ λ n      ->
+         return (XVar n))
 
 

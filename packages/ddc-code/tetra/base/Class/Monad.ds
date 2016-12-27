@@ -37,18 +37,23 @@ dApplicativeOfMonad (Monad dApplicative _ _)
 
 
 -- | Return a value in a monad.
-return  : [m: Data -> Data]. [a: Data]
-        . Monad m -> a -> m a
-
-return (Monad _ return' _) x
+-- return  : [m: Data -> Data]. [a: Data]
+--         . Monad m ~> a -> m a
+--
+-- TODO: fix separate signature.
+--
+return  [m: Data -> Data] [a: Data] {(Monad _ return' _): Monad m} (x: a): m a
  = return' x
 
 
 -- | Evaluate a monadic compuation and pass the result to 
 --   a function that produces a new monadic computation.
-bind    : [m: Data -> Data]. [a b: Data]
-        . Monad m -> m a -> (a -> m b) -> m b
-
-bind    (Monad _ _ bind') ma mf 
+-- bind    : [m: Data -> Data]. [a b: Data]
+--         . Monad m ~> m a -> (a -> m b) -> m b
+--
+-- TODO: fix separate signature.
+--
+bind    [m: Data -> Data] [a b: Data] {(Monad _ _ bind') : Monad m} 
+        (ma: m a) (mf: a -> m b): m b
  = bind' ma mf
 
