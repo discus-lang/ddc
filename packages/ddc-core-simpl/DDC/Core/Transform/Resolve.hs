@@ -6,14 +6,15 @@ module DDC.Core.Transform.Resolve
 where
 import DDC.Core.Transform.Resolve.Context
 import DDC.Core.Transform.Resolve.Base
-import qualified Data.Map                       as Map
+import DDC.Core.Pretty                          hiding ((<$>))
 import Control.Monad.IO.Class
 import Data.IORef
+import qualified Data.Map                       as Map
 
 
 -- | Resolve elaborations in a module.
 resolveModule 
-        :: Ord n
+        :: (Ord n, Pretty n, Show n)
         => Profile n                      -- ^ Language profile.
         -> [(n, ImportValue n (Type n))]  -- ^ Top-level context from imported modules.
         -> Module a n                     -- ^ Module to resolve elaborations in.
@@ -26,7 +27,7 @@ resolveModule profile ntsTop mm
 
 -- | Resolve elaborations in a module.
 resolveModuleM
-        :: Ord n
+        :: (Ord n, Pretty n, Show n)
         => Profile n                      -- ^ Language profile.
         -> [(n, ImportValue n (Type n))]  -- ^ Top-level context from imported modules.
         -> Module a n                     -- ^ Module to resolve elaborations in.
@@ -59,7 +60,7 @@ resolveModuleM profile ntsTop mm
 
 -- | Resolve elaborations in an expression.
 resolveExp 
-        :: Ord n
+        :: (Ord n, Pretty n, Show n)
         => Context n
         -> Exp a n -> S a n (Exp a n)
 
@@ -82,7 +83,7 @@ resolveExp !ctx xx
 
 -- | Resolve elaborations in an argument.
 resolveArg 
-        :: Ord n
+        :: (Ord n, Pretty n, Show n)
         => Context n
         -> Arg a n -> S a n (Arg a n)
 
@@ -96,7 +97,7 @@ resolveArg !ctx arg
 
 -- | Resolve elaborations in some let bindings.
 resolveLts
-        :: Ord n
+        :: (Ord n, Pretty n, Show n)
         => Context n
         -> Lets a n -> S a n (Lets a n)
 
@@ -116,7 +117,7 @@ resolveLts !ctx lts
 
 -- | Resolve elaborations in an alternative.
 resolveAlt 
-        :: Ord n
+        :: (Ord n, Pretty n, Show n)
         => Context n
         -> Alt a n -> S a n (Alt a n)
 
