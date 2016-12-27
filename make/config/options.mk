@@ -23,7 +23,8 @@ GHC_LANGUAGE	:= \
         -XTupleSections \
         -XInstanceSigs \
         -XPatternSynonyms \
-        -XConstraintKinds
+        -XConstraintKinds \
+        -XDuplicateRecordFields
 
 
 # -- Warnings -----------------------------------------------------------------
@@ -90,7 +91,8 @@ DDC_PACKAGES	:= \
         -package bytestring \
         -package vector \
         -package pretty-show \
-        -package inchworm
+        -package inchworm \
+        -package data-default
 
 ifeq "$(DDC_FLOW_USE_LINEAR_SOLVER)" "1"
 DDC_PACKAGES	:= $(DDC_PACKAGES) \
