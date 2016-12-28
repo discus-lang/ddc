@@ -29,7 +29,6 @@ import qualified DDC.Core.Tetra.Transform.Boxing        as EBoxing
 import qualified DDC.Core.Tetra.Transform.Curry         as ECurry
 
 
----------------------------------------------------------------------------------------------------
 data ConfigTetraToSalt
         = ConfigTetraToSalt
         { configSinkExplicit    :: B.Sink       -- ^ Sink after making explicit.
@@ -42,6 +41,7 @@ data ConfigTetraToSalt
         , configSinkSalt        :: B.Sink       -- ^ Sinl after conversion to salt.
         }
 
+
 -- | Convert Core Tetra to Core Salt.
 tetraToSalt
         :: A.Platform           -- ^ Platform configuation.
@@ -53,6 +53,8 @@ tetraToSalt
 tetraToSalt platform runtimeConfig mm config
  = do
         -- Expliciate the core module.
+        --   This converts implicit function parameters and arguments to explicit ones
+        --   as well as substituting in all type equations.
         mm_explicit     
          <- B.coreSimplify 
                 BE.fragment (0 :: Int) C.expliciate
@@ -61,7 +63,9 @@ tetraToSalt platform runtimeConfig mm config
         liftIO $ B.pipeSink (renderIndent $ ppr mm_explicit)
                             (configSinkExplicit config)
 
+
         -- Re-check the module before lambda lifting.
+        --   The lambda lifter needs every node annotated with its type.
         mm_checked_lambdas
          <-  B.coreCheck    
                 "TetraToSalt/lambdas" BE.fragment C.Recon 
@@ -70,6 +74,8 @@ tetraToSalt platform runtimeConfig mm config
 
 
         -- Perform lambda lifting.
+        --   This hoists out nested lambda abstractions to top-level, 
+        --   producing supercombinators which are top-level functions.
         mm_lambdas
          <-  B.coreSimplify
                 BE.fragment (0 :: Int) C.lambdas mm_checked_lambdas
@@ -78,7 +84,8 @@ tetraToSalt platform runtimeConfig mm config
                             (configSinkLambdas config)
 
 
-        -- Re-check the module before performing unsharing
+        -- Re-check the module before performing unsharing.
+        --   The unsharing transform needs every node annotated with its type.
         mm_checked_unshare
          <- B.coreCheck
                 "TetraToSalt/unshare" BE.fragment C.Recon
@@ -87,6 +94,8 @@ tetraToSalt platform runtimeConfig mm config
 
 
         -- Perform the unsharing transform.
+        --   This adds extra unit parameters to all top-level bindings 
+        --   which are not functions, to make them functions.
         let mm_unshare  = CUnshare.unshareModule mm_checked_unshare
 
         liftIO $ B.pipeSink (renderIndent $ ppr mm_checked_unshare)
@@ -94,6 +103,8 @@ tetraToSalt platform runtimeConfig mm config
 
 
         -- Perform the curry transform.
+        --   This introduces special primops to handle partial application
+        --   of our top-level supercombinators.
         mm_curry    
          <- case ECurry.curryModule mm_unshare of
                 Left err        -> throwE [B.ErrorTetraConvert err]
@@ -104,6 +115,7 @@ tetraToSalt platform runtimeConfig mm config
 
 
         -- Prep before boxing transform.
+        --   The boxing transform needs the program to be a-normalized.
         mm_prep_boxing
          <- B.coreSimplify BE.fragment (0 :: Int) 
                 (C.anormalize
@@ -113,6 +125,8 @@ tetraToSalt platform runtimeConfig mm config
 
 
         -- Perform the boxing transform.
+        --   This introduces explicitly unboxed values, using types (U# Nat#), 
+        --   and makes the original types like Nat# mean explicitly boxed objects.
         let mm_boxing
                 = EBoxing.boxingModule mm_prep_boxing
         
@@ -121,6 +135,7 @@ tetraToSalt platform runtimeConfig mm config
 
 
         -- Prep before conversion to salt.
+        --   The to-salt conversion needs the program to be a-normalized.
         mm_prep_salt
          <- B.coreSimplify BE.fragment (0 :: Int)
                 (  C.anormalize
@@ -134,6 +149,7 @@ tetraToSalt platform runtimeConfig mm config
 
 
         -- Re-check before conversion to salt.
+        --   The to-salt conversion needs every node annotated with its type.
         mm_checked_salt
          <- B.coreCheck
                 "TetraToSalt/toSalt" BE.fragment C.Recon
@@ -144,7 +160,7 @@ tetraToSalt platform runtimeConfig mm config
                             (configSinkChecked config)
 
 
-        -- Convert core tetra to core salt.
+        -- Convert Core Tetra to Core Salt.
         mm_salt
          <- case E.saltOfTetraModule platform runtimeConfig
                 (C.profilePrimDataDefs E.profile)
