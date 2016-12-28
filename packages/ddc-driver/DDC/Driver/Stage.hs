@@ -12,7 +12,6 @@ module DDC.Driver.Stage
         , RuntimeLinkStrategy (..)
 
           -- * Tetra stages
-        , stageSourceTetraLoad
         , stageTetraLoad
         , stageTetraToSalt
 

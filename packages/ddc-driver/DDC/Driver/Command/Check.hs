@@ -47,6 +47,7 @@ import DDC.Build.Interface.Store        (Store)
 import qualified DDC.Control.Parser     as BP
 import qualified DDC.Core.Check         as C
 import qualified DDC.Core.Env.EnvT      as EnvT
+import qualified DDC.Driver.Stage.Tetra         as DE
 
 
 -- Module -----------------------------------------------------------------------------------------
@@ -114,18 +115,18 @@ cmdCheckSourceTetraFromString
         -> ExceptT String IO ()
 
 cmdCheckSourceTetraFromString config store source str
- = let
-        pmode   = prettyModeOfConfig $ configPretty config
+ = withExceptT (renderIndent . vcat . map ppr)
+ $ do   
+        let pmode   = prettyModeOfConfig $ configPretty config
 
-        pipeLoad
-         = pipeText     (nameOfSource source) (lineStartOfSource source) str
-         $ stageSourceTetraLoad config source store
-         [ PipeCoreOutput pmode SinkDiscard ]
-   in do
-        errs    <- liftIO pipeLoad
+        modTetra  <- DE.sourceLoadText config store source str
+
+        errs      <- liftIO $ pipeCore modTetra
+                  $  PipeCoreOutput pmode SinkDiscard 
+
         case errs of
-         [] -> return ()
-         es -> throwE $ renderIndent $ vcat $ map ppr es
+         []     -> return ()
+         _      -> throwE errs
  
 
 ---------------------------------------------------------------------------------------------------

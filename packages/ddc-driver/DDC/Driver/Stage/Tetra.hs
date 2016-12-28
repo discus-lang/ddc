@@ -1,7 +1,6 @@
 
 module DDC.Driver.Stage.Tetra
-        ( stageSourceTetraLoad
-        , sourceLoadText
+        ( sourceLoadText
 
         , stageTetraLoad
         , tetraLoadText
@@ -13,7 +12,6 @@ import DDC.Data.Pretty
 import Control.Monad.Trans.Except
 
 import qualified DDC.Data.SourcePos             as SP
-import qualified DDC.Control.Parser             as BP
 
 import DDC.Driver.Dump
 import DDC.Driver.Config
@@ -34,41 +32,11 @@ import qualified DDC.Core.Transform.Namify      as C
 import qualified DDC.Core.Module                as C
 import qualified DDC.Core.Tetra                 as E
 import qualified DDC.Core.Salt                  as A
+import qualified DDC.Core.Transform.Reannotate  as CReannotate
 
 
 
 ---------------------------------------------------------------------------------------------------
--- | Load and type check a Source Tetra module.
-stageSourceTetraLoad
-        :: Config       -- ^ Driver config.
-        -> D.Source     -- ^ Source file meta-data.
-        -> B.Store      -- ^ Interface store.
-        -> [PipeCore (C.AnTEC BP.SourcePos E.Name) E.Name]
-        -> PipeText E.Name E.Error
-
-stageSourceTetraLoad config source store pipesTetra
- = PipeTextLoadSourceTetra
-                    (dump config source "dump.0-source-01-tokens.txt")
-                    (dump config source "dump.0-source-02-parsed.dst")
-                    (dump config source "dump.0-source-03-fresh.dst")
-                    (dump config source "dump.0-source-04-defix.dst")
-                    (dump config source "dump.0-source-05-expand.dst")
-                    (dump config source "dump.0-source-06-guards.dst")
-                    (dump config source "dump.0-source-07-matches.dst")
-                    (dump config source "dump.0-source-08-prep.dst")
-                    (dump config source "dump.0-source-09-core.dct")
-                    (dump config source "dump.0-source-10-precheck.dct")
-                    (dump config source "dump.0-source-11-trace.txt")
-                    store
-   [ PipeCoreOutput pprDefaultMode
-                    (dump config source "dump.1-tetra-00-checked.dct")
-   , PipeCoreResolve "SourceTetraLoad" BE.fragment (B.importValuesOfStore store)
-      (PipeCoreOutput   pprDefaultMode
-                        (dump config source "dump.1-tetra-01-resolve.dct")
-      : pipesTetra)]
-        
-
-
 -- | Load and type-check a source tetra module.
 sourceLoadText
         :: Config               -- ^ Driver config.
@@ -212,14 +180,14 @@ stageTetraToSalt config source pipesSalt
 tetraToSalt
         :: Config
         -> D.Source
-        -> C.Module () E.Name
+        -> C.Module a E.Name
         -> ExceptT [B.Error] IO (C.Module () A.Name)
 
 tetraToSalt config source mm
  = BCT.tetraToSalt
         (B.buildSpec $ configBuilder config)
         (configRuntime config)
-        mm
+        (CReannotate.reannotate (const ()) mm)
  $ BCT.ConfigTetraToSalt
         { BCT.configSinkExplicit        = dump config source "dump-1-tetra-02-explicit.dct"
         , BCT.configSinkLambdas         = dump config source "dump-1-tetra-03-lambdas.dct"

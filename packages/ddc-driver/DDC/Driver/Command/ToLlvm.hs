@@ -20,6 +20,7 @@ import Control.Monad.IO.Class
 import Control.Monad
 import DDC.Build.Interface.Store                (Store)
 import qualified DDC.Build.Interface.Store      as Store
+import qualified DDC.Driver.Stage.Tetra         as DE
 
 
 -------------------------------------------------------------------------------
@@ -87,21 +88,22 @@ cmdToLlvmSourceTetraFromString
         -> ExceptT String IO ()
 
 cmdToLlvmSourceTetraFromString config store source str
- = let  
-        pipeLoad
-         = pipeText (nameOfSource source) (lineStartOfSource source) str
-         $ stageSourceTetraLoad config source store
-         [ PipeCoreReannotate (const ())
-         [ stageTetraToSalt       config source 
-         [ stageSaltOpt           config source
-         [ stageSaltToSlottedLLVM config source
-         [ PipeLlvmPrint SinkStdout]]]]]
-   
-   in do
-        errs    <- liftIO pipeLoad
+ = withExceptT (renderIndent . vcat . map ppr)
+ $ do  
+        modSalt' 
+         <- do  modTetra <- DE.sourceLoadText config store  source str
+                modSalt  <- DE.tetraToSalt    config source modTetra
+                return modSalt
+
+        errs
+         <- liftIO $ pipeCore modSalt'
+         $  stageSaltOpt           config source
+          [ stageSaltToSlottedLLVM config source
+          [ PipeLlvmPrint SinkStdout]]
+ 
         case errs of
          []     -> return ()
-         es     -> throwE $ renderIndent $ vcat $ map ppr es
+         _      -> throwE errs
 
 
 -------------------------------------------------------------------------------

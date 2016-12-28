@@ -21,6 +21,7 @@ import Control.Monad
 import DDC.Build.Interface.Store        (Store)
 import DDC.Core.Exp.Annot.AnTEC
 import qualified DDC.Build.Interface.Store      as Store
+import qualified DDC.Driver.Stage.Tetra         as DE
 
 
 -------------------------------------------------------------------------------
@@ -88,19 +89,21 @@ cmdToPHPSourceTetraFromString
         -> ExceptT String IO ()
 
 cmdToPHPSourceTetraFromString config store source str
- = let  
-        pipeLoad
-         = pipeText (nameOfSource source) (lineStartOfSource source) str
-         $ stageSourceTetraLoad config source store
-         [ PipeCoreReannotate annotTail
-         [ PipeCoreAsTetra
-         [ PipeTetraToPHP     SinkStdout ]]]
-         
-   in do
-        errs    <- liftIO pipeLoad
+ = withExceptT (renderIndent . vcat . map ppr)
+ $ do  
+        modSalt' 
+         <- do  modTetra <- DE.sourceLoadText config store  source str
+                return modTetra
+
+        errs
+         <- liftIO $ pipeCore modSalt'
+         $   PipeCoreReannotate annotTail
+              [ PipeCoreAsTetra
+              [ PipeTetraToPHP     SinkStdout ]]
+
         case errs of
          []     -> return ()
-         es     -> throwE $ renderIndent $ vcat $ map ppr es
+         _      -> throwE errs
 
 
 -------------------------------------------------------------------------------

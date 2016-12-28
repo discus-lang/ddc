@@ -33,6 +33,7 @@ import qualified DDC.Build.Language.Tetra       as Tetra
 import qualified DDC.Build.Spec.Parser          as Spec
 import qualified DDC.Build.Interface.Load       as Interface
 import qualified DDC.Core.Tetra                 as Tetra
+import qualified DDC.Driver.Stage.Tetra         as DE
 
 
 ---------------------------------------------------------------------------------------------------
@@ -148,22 +149,22 @@ cmdLoadSourceTetraFromString
         -> ExceptT String IO ()
 
 cmdLoadSourceTetraFromString config store bundle source str
- = let
-        pmode   = prettyModeOfConfig $ configPretty config
+ = withExceptT (renderIndent . vcat . map ppr)
+ $ do   
+        let pmode   = prettyModeOfConfig $ configPretty config
 
-        pipeLoad
-         = pipeText     (nameOfSource source) (lineStartOfSource source) str
-         $ stageSourceTetraLoad config source store
-         [ PipeCoreReannotate (\a -> a { annotTail = () })
-         [ PipeCoreSimplify   Tetra.fragment    (bundleStateInit  bundle) 
-                                                (bundleSimplifier bundle)
-         [ PipeCoreOutput pmode SinkStdout ]]]
+        modTetra  <- DE.sourceLoadText config store source str
 
-   in do
-        errs    <- liftIO pipeLoad
+        errs     <- liftIO $ pipeCore modTetra
+                 $ PipeCoreReannotate (\a -> a { annotTail = () })
+                 [ PipeCoreSimplify   Tetra.fragment    (bundleStateInit  bundle) 
+                                                        (bundleSimplifier bundle)
+                 [ PipeCoreOutput pmode SinkStdout ]]
+
         case errs of
-         [] -> return ()
-         es -> throwE $ renderIndent $ vcat $ map ppr es
+         []     -> return ()
+         _      -> throwE errs
+
  
 
 ---------------------------------------------------------------------------------------------------
