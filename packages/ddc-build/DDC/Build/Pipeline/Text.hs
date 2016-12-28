@@ -10,6 +10,7 @@ import DDC.Build.Pipeline.Core
 import DDC.Build.Language
 import DDC.Build.Interface.Store                        (Store)
 import DDC.Data.Pretty
+import Control.Monad.Trans.Except
 
 import qualified DDC.Source.Tetra.Pretty                ()
 
@@ -90,7 +91,8 @@ pipeText !srcName !srcLine !str
                 sinkPreCheck sinkCheckerTrace 
                 store pipes)
  = do   
-        result  <- sourceLoadText srcName srcLine str store 
+        result  <- runExceptT 
+                $  sourceLoadText srcName srcLine str store 
                 $  ConfigLoadSourceTetra
                         { configSinkTokens              = sinkTokens
                         , configSinkParsed              = sinkParsed

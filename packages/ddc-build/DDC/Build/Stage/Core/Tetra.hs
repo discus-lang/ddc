@@ -1,6 +1,7 @@
 
 module DDC.Build.Stage.Core.Tetra
-        (tetraToSalt)
+        ( ConfigTetraToSalt (..)
+        , tetraToSalt)
 where
 import Control.Monad.Trans.Except
 import Control.Monad.IO.Class
@@ -29,28 +30,27 @@ import qualified DDC.Core.Tetra.Transform.Curry         as ECurry
 
 
 ---------------------------------------------------------------------------------------------------
+data ConfigTetraToSalt
+        = ConfigTetraToSalt
+        { configSinkExplicit    :: B.Sink       -- ^ Sink after making explicit.
+        , configSinkLambdas     :: B.Sink       -- ^ Sink after lambda lifting.
+        , configSinkUnshare     :: B.Sink       -- ^ Sink after unsharing.
+        , configSinkCurry       :: B.Sink       -- ^ Sink after curry transform.
+        , configSinkBoxing      :: B.Sink       -- ^ Sink after boxing transform.
+        , configSinkPrep        :: B.Sink       -- ^ Sink after prep before to-salt conversion.
+        , configSinkChecked     :: B.Sink       -- ^ Sink after checking before to-salt converion.
+        , configSinkSalt        :: B.Sink       -- ^ Sinl after conversion to salt.
+        }
+
 -- | Convert Core Tetra to Core Salt.
 tetraToSalt
-        :: B.Sink               -- ^ Sink after making explicit.
-        -> B.Sink               -- ^ Sink after lambda lifting.
-        -> B.Sink               -- ^ Sink after unsharing.
-        -> B.Sink               -- ^ Sink after the curry transform.
-        -> B.Sink               -- ^ Sink after the boxing transform.
-        -> B.Sink               -- ^ Sink after prep before to-salt conversion.
-        -> B.Sink               -- ^ Sink after checking before to-salt conversion.
-        -> B.Sink               -- ^ Sink after conversion to salt.
-        -> A.Platform           -- ^ Platform configuation.
+        :: A.Platform           -- ^ Platform configuation.
         -> A.Config             -- ^ Runtime config.
         -> C.Module () E.Name   -- ^ Core tetra module.
+        -> ConfigTetraToSalt    -- ^ Sinker config.
         -> ExceptT [B.Error] IO (C.Module () A.Name)
 
-tetraToSalt 
-        sinkExplicit sinkLambdas sinkUnshare
-        sinkCurry    sinkBoxing  
-        sinkPrepSalt sinkCheckedSalt
-        sinkSalt
-        platform     runtimeConfig
-        mm
+tetraToSalt platform runtimeConfig mm config
  = do
         -- Expliciate the core module.
         mm_explicit     
@@ -58,8 +58,8 @@ tetraToSalt
                 BE.fragment (0 :: Int) C.expliciate
                 mm
 
-        liftIO $ B.pipeSink (renderIndent $ ppr mm_explicit) sinkExplicit
-
+        liftIO $ B.pipeSink (renderIndent $ ppr mm_explicit)
+                            (configSinkExplicit config)
 
         -- Re-check the module before lambda lifting.
         mm_checked_lambdas
@@ -74,7 +74,8 @@ tetraToSalt
          <-  B.coreSimplify
                 BE.fragment (0 :: Int) C.lambdas mm_checked_lambdas
 
-        liftIO $ B.pipeSink (renderIndent $ ppr mm_lambdas) sinkLambdas
+        liftIO $ B.pipeSink (renderIndent $ ppr mm_lambdas)
+                            (configSinkLambdas config)
 
 
         -- Re-check the module before performing unsharing
@@ -88,7 +89,8 @@ tetraToSalt
         -- Perform the unsharing transform.
         let mm_unshare  = CUnshare.unshareModule mm_checked_unshare
 
-        liftIO $ B.pipeSink (renderIndent $ ppr mm_checked_unshare) sinkUnshare
+        liftIO $ B.pipeSink (renderIndent $ ppr mm_checked_unshare)
+                            (configSinkUnshare config)
 
 
         -- Perform the curry transform.
@@ -97,7 +99,8 @@ tetraToSalt
                 Left err        -> throwE [B.ErrorTetraConvert err]
                 Right mm'       -> return mm'
 
-        liftIO $ B.pipeSink (renderIndent $ ppr mm_curry) sinkCurry
+        liftIO $ B.pipeSink (renderIndent $ ppr mm_curry)
+                            (configSinkCurry config)
 
 
         -- Prep before boxing transform.
@@ -113,7 +116,8 @@ tetraToSalt
         let mm_boxing
                 = EBoxing.boxingModule mm_prep_boxing
         
-        liftIO $ B.pipeSink (renderIndent $ ppr mm_boxing) sinkBoxing                
+        liftIO $ B.pipeSink (renderIndent $ ppr mm_boxing)      
+                            (configSinkBoxing config)
 
 
         -- Prep before conversion to salt.
@@ -125,7 +129,8 @@ tetraToSalt
                 `mappend` C.flatten)
                 mm_boxing
 
-        liftIO $ B.pipeSink (renderIndent $ ppr mm_prep_salt) sinkPrepSalt
+        liftIO $ B.pipeSink (renderIndent $ ppr mm_prep_salt)
+                            (configSinkPrep config)
 
 
         -- Re-check before conversion to salt.
@@ -135,7 +140,8 @@ tetraToSalt
                 B.SinkDiscard B.SinkDiscard
                 mm_prep_salt
 
-        liftIO $ B.pipeSink (renderIndent $ ppr mm_checked_salt) sinkCheckedSalt
+        liftIO $ B.pipeSink (renderIndent $ ppr mm_checked_salt)
+                            (configSinkChecked config)
 
 
         -- Convert core tetra to core salt.
@@ -147,8 +153,8 @@ tetraToSalt
                 Left err        -> throwE [B.ErrorTetraConvert err]
                 Right mm'       -> return mm'
 
-        liftIO $ B.pipeSink (renderIndent $ ppr mm_salt) sinkSalt
-
+        liftIO $ B.pipeSink (renderIndent $ ppr mm_salt)
+                            (configSinkSalt config)
 
         return mm_salt
 

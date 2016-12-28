@@ -74,45 +74,57 @@ sourceLoadText
         -> String                       -- ^ Text of source file.
         -> B.Store                      -- ^ Interface store.
         -> ConfigLoadSourceTetra        -- ^ Sinker config.
-        -> IO (Either [B.Error]
-                      (C.Module (C.AnTEC SP.SourcePos CE.Name) CE.Name))
+        -> ExceptT [B.Error] IO
+                   (C.Module (C.AnTEC SP.SourcePos CE.Name) CE.Name)
         
 sourceLoadText srcName srcLine str store config
- = runExceptT goParse
- where 
-        goParse 
-         =   sourceParseText 
+ = do   
+        -- Parse text to source.
+        mm_source       
+         <- sourceParseText 
                 srcName srcLine str
                 (configSinkTokens config)
                 (configSinkParsed config)
 
-         >>= sourceDesugar 
+
+        -- Desugar source.
+        mm_desugared
+         <- sourceDesugar 
                 (configSinkFresh   config)
                 (configSinkDefix   config)
                 (configSinkExpand  config)
                 (configSinkGuards  config)
                 (configSinkMatches config)
                 (configSinkPrep    config)
+                mm_source
 
-         >>= sourceLower 
+
+        -- Lower source to core.
+        mm_core
+         <- sourceLower 
                 store
                 (configSinkCore     config)
                 (configSinkPreCheck config)
+                mm_desugared
 
-         >>= BS.coreCheck 
+
+        -- Check core.
+        let fragment_implicit
+                = flip C.mapProfileOfFragment BE.fragment
+                $ C.mapFeaturesOfProfile 
+                $ ( C.setFeature C.ImplicitRun True
+                  . C.setFeature C.ImplicitBox True)
+
+        mm_checked
+         <- BS.coreCheck 
                 "sourceLoadText"
                 fragment_implicit
                 (C.Synth [])
                 (configSinkCheckerTrace config)
                 (configSinkChecked      config)
+                mm_core
 
-        -- Type check the code, synthesising missing type annotation    s.
-        --  Insert casts to implicitly run suspended bindings along the way.
-        fragment_implicit
-                = flip C.mapProfileOfFragment BE.fragment
-                $ C.mapFeaturesOfProfile 
-                $ ( C.setFeature C.ImplicitRun True
-                  . C.setFeature C.ImplicitBox True)
+        return mm_checked
 
 
 ---------------------------------------------------------------------------------------------------
