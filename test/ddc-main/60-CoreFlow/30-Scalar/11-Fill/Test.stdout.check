@@ -11,15 +11,15 @@ letrec {
             = vbuf# [Int#] v in
       let x3     
             = series# [p] [k] [Int#] s in
-      let _      
+      let x2     
             = loop# [k]
                   (λ(x0: Nat#).
                    let x3$elem
                          = next# [Int#] [p] [k] x3 x0 in
-                   let x1      = mul# [Int#] x3$elem 2i# in
+                   let x4      = mul# [Int#] x3$elem 2i# in
                    let x4$elem
-                         = add# [Int#] x1 1i# in
-                   let _      
+                         = add# [Int#] x4 1i# in
+                   let x1     
                          = vwrite# [Int#] v$buf x0 x4$elem in
                    ()) in
       ()

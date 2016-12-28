@@ -1,7 +1,7 @@
 Error in transformed module.
   in stage SourceLoadText
   in pipe  PipeCoreCheck/Check
-  demo/source/tetra/20-Types/02-Update/Main.ds:17:1
+  ()
   Impure Spec abstraction
              has effect: Alloc r
   

@@ -165,9 +165,9 @@ saltCompileViaLlvm config source mOtherExeObjs
                 bSlotify
                 (D.configKeepLlvmFiles config)
                 (D.configKeepAsmFiles  config)
-                (D.dump config source "dump-2-salt-06-prep.dcs")
-                (D.dump config source "dump-2-salt-07-slotify.dcs")
-                (D.dump config source "dump-2-salt-07-transfer.dcs")
+                (D.dump config source "dump.2-salt-06-prep.dcs")
+                (D.dump config source "dump.2-salt-07-slotify.dcs")
+                (D.dump config source "dump.2-salt-07-transfer.dcs")
                 mm
 
 

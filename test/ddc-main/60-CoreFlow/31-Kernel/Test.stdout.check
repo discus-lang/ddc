@@ -11,7 +11,7 @@ letrec {
       λ(n: RateNat# k).λ(v: Vector# Float32#).λ(s1 s2: Series# p (Down8# k) Float32#).
       let v$buf  
             = vbuf# [Float32#] v in
-      let _      
+      let x4     
             = loop# [Down8# k]
                   (λ(x2: Nat#).
                    let s1$elem
@@ -20,7 +20,7 @@ letrec {
                          = next$8# [Float32#] [p] [k] s2 x2 in
                    let x3$elem
                          = vmul$8# [Float32#] s1$elem s2$elem in
-                   let _      
+                   let x3     
                          = vwrite$8# [Float32#] v$buf x2 x3$elem in
                    ()) in
       ()
@@ -35,7 +35,7 @@ letrec {
       λ(n: RateNat# k).λ(v: Vector# Float32#).λ(s1 s2: Series# p (Down8# k) Float32#).
       let v$buf  
             = vbuf# [Float32#] v in
-      let _      
+      let x5     
             = loop# [Down8# k]
                   (λ(x2: Nat#).
                    let s1$elem
@@ -44,10 +44,10 @@ letrec {
                          = next$8# [Float32#] [p] [k] s2 x2 in
                    let s2$elem
                          = vmul$8# [Float32#] s1$elem s2$elem in
-                   let x3      = vrep$8# [Float32#] 2.0f32# in
+                   let x6      = vrep$8# [Float32#] 2.0f32# in
                    let s3$elem
-                         = vadd$8# [Float32#] x3 s2$elem in
-                   let _      
+                         = vadd$8# [Float32#] x6 s2$elem in
+                   let x4     
                          = vwrite$8# [Float32#] v$buf x2 s3$elem in
                    ()) in
       ()
@@ -62,17 +62,17 @@ letrec {
       λ(n: RateNat# k).λ(v1: RateVec# k2 Float32#).λ(v2: Vector# Float32#).λ(s1: Series# p (Down8# k) Nat#).
       let v2$buf 
             = vbuf# [Float32#] v2 in
-      let _      
+      let x3     
             = loop# [Down8# k]
                   (λ(x1: Nat#).
                    let s1$elem
                          = next$8# [Nat#] [p] [k] s1 x1 in
                    let s2$elem
                          = vgather$8# [k2] [Float32#] v1 s1$elem in
-                   let x2      = vrep$8# [Float32#] 2.0f32# in
+                   let x4      = vrep$8# [Float32#] 2.0f32# in
                    let s3$elem
-                         = vadd$8# [Float32#] x2 s2$elem in
-                   let _      
+                         = vadd$8# [Float32#] x4 s2$elem in
+                   let x2     
                          = vwrite$8# [Float32#] v2$buf x1 s3$elem in
                    ()) in
       ()
@@ -87,17 +87,17 @@ letrec {
       λ(n: RateNat# k).λ(v1: Vector# Float32#).λ(s1: Series# p (Down8# k) Nat#).λ(s2: Series# p (Down8# k) Float32#).
       let v1$buf 
             = vbuf# [Float32#] v1 in
-      let _      
+      let x4     
             = loop# [Down8# k]
                   (λ(x1: Nat#).
                    let s1$elem
                          = next$8# [Nat#] [p] [k] s1 x1 in
                    let s2$elem
                          = next$8# [Float32#] [p] [k] s2 x1 in
-                   let x2      = vrep$8# [Float32#] 2.0f32# in
+                   let x5      = vrep$8# [Float32#] 2.0f32# in
                    let s3$elem
-                         = vadd$8# [Float32#] x2 s2$elem in
-                   let _      
+                         = vadd$8# [Float32#] x5 s2$elem in
+                   let x3     
                          = vscatter$8# [Float32#] v1 s1$elem s3$elem in
                    ()) in
       ()
@@ -110,198 +110,19 @@ letrec {
   test: [p: Proc].[k: Rate].RateNat# k -> Ref# Float32# -> Series# p (Down8# k) Float32# -> Unit
     = Λ(p: Proc).Λ(k: Rate).
       λ(n: RateNat# k).λ(x1: Ref# Float32#).λ(s1: Series# p (Down8# k) Float32#).
-      let x4      = vrep$8# [Float32#] 0.0f32# in
+      let x8      = vrep$8# [Float32#] 0.0f32# in
       let x1$vec 
-            = new# [Vec8# Float32#] x4 in
-      let _      
+            = new# [Vec8# Float32#] x8 in
+      let x6     
             = loop# [Down8# k]
                   (λ(x3: Nat#).
                    let s1$elem
                          = next$8# [Float32#] [p] [k] s1 x3 in
                    let x1$val 
                          = read# [Vec8# Float32#] x1$vec in
-                   let x5      = vadd$8# [Float32#] x1$val s1$elem in
-                   let _      
-                         = write# [Vec8# Float32#] x1$vec x5 in
-                   ()) in
-      let x1$res 
-            = read# [Vec8# Float32#] x1$vec in
-      let x1$init
-            = read# [Float32#] x1 in
-      let x7      = vproj$8$0# [Float32#] x1$res in
-      let x1$res$0
-            = add# [Float32#] x1$init x7 in
-      let x9      = vproj$8$1# [Float32#] x1$res in
-      let x1$res$1
-            = add# [Float32#] x1$res$0 x9 in
-      let x11     = vproj$8$2# [Float32#] x1$res in
-      let x1$res$2
-            = add# [Float32#] x1$res$1 x11 in
-      let x13     = vproj$8$3# [Float32#] x1$res in
-      let x1$res$3
-            = add# [Float32#] x1$res$2 x13 in
-      let x15     = vproj$8$4# [Float32#] x1$res in
-      let x1$res$4
-            = add# [Float32#] x1$res$3 x15 in
-      let x17     = vproj$8$5# [Float32#] x1$res in
-      let x1$res$5
-            = add# [Float32#] x1$res$4 x17 in
-      let x19     = vproj$8$6# [Float32#] x1$res in
-      let x1$res$6
-            = add# [Float32#] x1$res$5 x19 in
-      let x21     = vproj$8$7# [Float32#] x1$res in
-      let x1$res$7
-            = add# [Float32#] x1$res$6 x21 in
-      let _      
-            = write# [Float32#] x1 x1$res$7 in
-      ()
-}
-
-
--- Fuse gather, map and reduce in one.
-module Test with
-letrec {
-  test: [p: Proc].[k k2: Rate].RateNat# k -> Ref# Float32# -> RateVec# k2 Float32# -> Series# p (Down8# k) Nat# -> Unit
-    = Λ(p: Proc).Λ(k k2: Rate).
-      λ(n: RateNat# k).λ(x1: Ref# Float32#).λ(v1: RateVec# k2 Float32#).λ(s1: Series# p (Down8# k) Nat#).
-      let x3      = vrep$8# [Float32#] 0.0f32# in
-      let x1$vec 
-            = new# [Vec8# Float32#] x3 in
-      let _      
-            = loop# [Down8# k]
-                  (λ(x2: Nat#).
-                   let s1$elem
-                         = next$8# [Nat#] [p] [k] s1 x2 in
-                   let s2$elem
-                         = vgather$8# [k2] [Float32#] v1 s1$elem in
-                   let x5      = vrep$8# [Float32#] 2.0f32# in
-                   let s3$elem
-                         = vmul$8# [Float32#] x5 s2$elem in
-                   let x1$val 
-                         = read# [Vec8# Float32#] x1$vec in
-                   let x6      = vadd$8# [Float32#] x1$val s3$elem in
-                   let _      
-                         = write# [Vec8# Float32#] x1$vec x6 in
-                   ()) in
-      let x1$res 
-            = read# [Vec8# Float32#] x1$vec in
-      let x1$init
-            = read# [Float32#] x1 in
-      let x8      = vproj$8$0# [Float32#] x1$res in
-      let x1$res$0
-            = add# [Float32#] x1$init x8 in
-      let x10     = vproj$8$1# [Float32#] x1$res in
-      let x1$res$1
-            = add# [Float32#] x1$res$0 x10 in
-      let x12     = vproj$8$2# [Float32#] x1$res in
-      let x1$res$2
-            = add# [Float32#] x1$res$1 x12 in
-      let x14     = vproj$8$3# [Float32#] x1$res in
-      let x1$res$3
-            = add# [Float32#] x1$res$2 x14 in
-      let x16     = vproj$8$4# [Float32#] x1$res in
-      let x1$res$4
-            = add# [Float32#] x1$res$3 x16 in
-      let x18     = vproj$8$5# [Float32#] x1$res in
-      let x1$res$5
-            = add# [Float32#] x1$res$4 x18 in
-      let x20     = vproj$8$6# [Float32#] x1$res in
-      let x1$res$6
-            = add# [Float32#] x1$res$5 x20 in
-      let x22     = vproj$8$7# [Float32#] x1$res in
-      let x1$res$7
-            = add# [Float32#] x1$res$6 x22 in
-      let _      
-            = write# [Float32#] x1 x1$res$7 in
-      ()
-}
-
-
--- Dot product.
-module Test with
-letrec {
-  test: [p: Proc].[k: Rate].RateNat# k -> Ref# Float32# -> Series# p (Down8# k) Float32# -> Series# p (Down8# k) Float32# -> Unit
-    = Λ(p: Proc).Λ(k: Rate).
-      λ(n: RateNat# k).λ(x1: Ref# Float32#).λ(s1 s2: Series# p (Down8# k) Float32#).
-      let x4      = vrep$8# [Float32#] 0.0f32# in
-      let x1$vec 
-            = new# [Vec8# Float32#] x4 in
-      let _      
-            = loop# [Down8# k]
-                  (λ(x3: Nat#).
-                   let s1$elem
-                         = next$8# [Float32#] [p] [k] s1 x3 in
-                   let s2$elem
-                         = next$8# [Float32#] [p] [k] s2 x3 in
-                   let s3$elem
-                         = vmul$8# [Float32#] s1$elem s2$elem in
-                   let x1$val 
-                         = read# [Vec8# Float32#] x1$vec in
-                   let x6      = vadd$8# [Float32#] x1$val s3$elem in
-                   let _      
-                         = write# [Vec8# Float32#] x1$vec x6 in
-                   ()) in
-      let x1$res 
-            = read# [Vec8# Float32#] x1$vec in
-      let x1$init
-            = read# [Float32#] x1 in
-      let x8      = vproj$8$0# [Float32#] x1$res in
-      let x1$res$0
-            = add# [Float32#] x1$init x8 in
-      let x10     = vproj$8$1# [Float32#] x1$res in
-      let x1$res$1
-            = add# [Float32#] x1$res$0 x10 in
-      let x12     = vproj$8$2# [Float32#] x1$res in
-      let x1$res$2
-            = add# [Float32#] x1$res$1 x12 in
-      let x14     = vproj$8$3# [Float32#] x1$res in
-      let x1$res$3
-            = add# [Float32#] x1$res$2 x14 in
-      let x16     = vproj$8$4# [Float32#] x1$res in
-      let x1$res$4
-            = add# [Float32#] x1$res$3 x16 in
-      let x18     = vproj$8$5# [Float32#] x1$res in
-      let x1$res$5
-            = add# [Float32#] x1$res$4 x18 in
-      let x20     = vproj$8$6# [Float32#] x1$res in
-      let x1$res$6
-            = add# [Float32#] x1$res$5 x20 in
-      let x22     = vproj$8$7# [Float32#] x1$res in
-      let x1$res$7
-            = add# [Float32#] x1$res$6 x22 in
-      let _      
-            = write# [Float32#] x1 x1$res$7 in
-      ()
-}
-
-
--- Fuse sum and product.
-module Test with
-letrec {
-  test: [p: Proc].[k: Rate].RateNat# k -> Ref# Float32# -> Ref# Float32# -> Series# p (Down8# k) Float32# -> Unit
-    = Λ(p: Proc).Λ(k: Rate).
-      λ(n: RateNat# k).λ(x1 x2: Ref# Float32#).λ(s1: Series# p (Down8# k) Float32#).
-      let x5      = vrep$8# [Float32#] 0.0f32# in
-      let x1$vec 
-            = new# [Vec8# Float32#] x5 in
-      let x6      = vrep$8# [Float32#] 1.0f32# in
-      let x2$vec 
-            = new# [Vec8# Float32#] x6 in
-      let _      
-            = loop# [Down8# k]
-                  (λ(x4: Nat#).
-                   let s1$elem
-                         = next$8# [Float32#] [p] [k] s1 x4 in
-                   let x1$val 
-                         = read# [Vec8# Float32#] x1$vec in
-                   let x8      = vadd$8# [Float32#] x1$val s1$elem in
-                   let _      
-                         = write# [Vec8# Float32#] x1$vec x8 in
-                   let x2$val 
-                         = read# [Vec8# Float32#] x2$vec in
-                   let x9      = vmul$8# [Float32#] x2$val s1$elem in
-                   let _      
-                         = write# [Vec8# Float32#] x2$vec x9 in
+                   let x9      = vadd$8# [Float32#] x1$val s1$elem in
+                   let x5     
+                         = write# [Vec8# Float32#] x1$vec x9 in
                    ()) in
       let x1$res 
             = read# [Vec8# Float32#] x1$vec in
@@ -331,37 +152,216 @@ letrec {
       let x25     = vproj$8$7# [Float32#] x1$res in
       let x1$res$7
             = add# [Float32#] x1$res$6 x25 in
-      let _      
+      let x7     
+            = write# [Float32#] x1 x1$res$7 in
+      ()
+}
+
+
+-- Fuse gather, map and reduce in one.
+module Test with
+letrec {
+  test: [p: Proc].[k k2: Rate].RateNat# k -> Ref# Float32# -> RateVec# k2 Float32# -> Series# p (Down8# k) Nat# -> Unit
+    = Λ(p: Proc).Λ(k k2: Rate).
+      λ(n: RateNat# k).λ(x1: Ref# Float32#).λ(v1: RateVec# k2 Float32#).λ(s1: Series# p (Down8# k) Nat#).
+      let x9      = vrep$8# [Float32#] 0.0f32# in
+      let x1$vec 
+            = new# [Vec8# Float32#] x9 in
+      let x7     
+            = loop# [Down8# k]
+                  (λ(x2: Nat#).
+                   let s1$elem
+                         = next$8# [Nat#] [p] [k] s1 x2 in
+                   let s2$elem
+                         = vgather$8# [k2] [Float32#] v1 s1$elem in
+                   let x10     = vrep$8# [Float32#] 2.0f32# in
+                   let s3$elem
+                         = vmul$8# [Float32#] x10 s2$elem in
+                   let x1$val 
+                         = read# [Vec8# Float32#] x1$vec in
+                   let x11     = vadd$8# [Float32#] x1$val s3$elem in
+                   let x5     
+                         = write# [Vec8# Float32#] x1$vec x11 in
+                   ()) in
+      let x1$res 
+            = read# [Vec8# Float32#] x1$vec in
+      let x1$init
+            = read# [Float32#] x1 in
+      let x13     = vproj$8$0# [Float32#] x1$res in
+      let x1$res$0
+            = add# [Float32#] x1$init x13 in
+      let x15     = vproj$8$1# [Float32#] x1$res in
+      let x1$res$1
+            = add# [Float32#] x1$res$0 x15 in
+      let x17     = vproj$8$2# [Float32#] x1$res in
+      let x1$res$2
+            = add# [Float32#] x1$res$1 x17 in
+      let x19     = vproj$8$3# [Float32#] x1$res in
+      let x1$res$3
+            = add# [Float32#] x1$res$2 x19 in
+      let x21     = vproj$8$4# [Float32#] x1$res in
+      let x1$res$4
+            = add# [Float32#] x1$res$3 x21 in
+      let x23     = vproj$8$5# [Float32#] x1$res in
+      let x1$res$5
+            = add# [Float32#] x1$res$4 x23 in
+      let x25     = vproj$8$6# [Float32#] x1$res in
+      let x1$res$6
+            = add# [Float32#] x1$res$5 x25 in
+      let x27     = vproj$8$7# [Float32#] x1$res in
+      let x1$res$7
+            = add# [Float32#] x1$res$6 x27 in
+      let x8     
+            = write# [Float32#] x1 x1$res$7 in
+      ()
+}
+
+
+-- Dot product.
+module Test with
+letrec {
+  test: [p: Proc].[k: Rate].RateNat# k -> Ref# Float32# -> Series# p (Down8# k) Float32# -> Series# p (Down8# k) Float32# -> Unit
+    = Λ(p: Proc).Λ(k: Rate).
+      λ(n: RateNat# k).λ(x1: Ref# Float32#).λ(s1 s2: Series# p (Down8# k) Float32#).
+      let x10     = vrep$8# [Float32#] 0.0f32# in
+      let x1$vec 
+            = new# [Vec8# Float32#] x10 in
+      let x8     
+            = loop# [Down8# k]
+                  (λ(x3: Nat#).
+                   let s1$elem
+                         = next$8# [Float32#] [p] [k] s1 x3 in
+                   let s2$elem
+                         = next$8# [Float32#] [p] [k] s2 x3 in
+                   let s3$elem
+                         = vmul$8# [Float32#] s1$elem s2$elem in
+                   let x1$val 
+                         = read# [Vec8# Float32#] x1$vec in
+                   let x11     = vadd$8# [Float32#] x1$val s3$elem in
+                   let x6     
+                         = write# [Vec8# Float32#] x1$vec x11 in
+                   ()) in
+      let x1$res 
+            = read# [Vec8# Float32#] x1$vec in
+      let x1$init
+            = read# [Float32#] x1 in
+      let x13     = vproj$8$0# [Float32#] x1$res in
+      let x1$res$0
+            = add# [Float32#] x1$init x13 in
+      let x15     = vproj$8$1# [Float32#] x1$res in
+      let x1$res$1
+            = add# [Float32#] x1$res$0 x15 in
+      let x17     = vproj$8$2# [Float32#] x1$res in
+      let x1$res$2
+            = add# [Float32#] x1$res$1 x17 in
+      let x19     = vproj$8$3# [Float32#] x1$res in
+      let x1$res$3
+            = add# [Float32#] x1$res$2 x19 in
+      let x21     = vproj$8$4# [Float32#] x1$res in
+      let x1$res$4
+            = add# [Float32#] x1$res$3 x21 in
+      let x23     = vproj$8$5# [Float32#] x1$res in
+      let x1$res$5
+            = add# [Float32#] x1$res$4 x23 in
+      let x25     = vproj$8$6# [Float32#] x1$res in
+      let x1$res$6
+            = add# [Float32#] x1$res$5 x25 in
+      let x27     = vproj$8$7# [Float32#] x1$res in
+      let x1$res$7
+            = add# [Float32#] x1$res$6 x27 in
+      let x9     
+            = write# [Float32#] x1 x1$res$7 in
+      ()
+}
+
+
+-- Fuse sum and product.
+module Test with
+letrec {
+  test: [p: Proc].[k: Rate].RateNat# k -> Ref# Float32# -> Ref# Float32# -> Series# p (Down8# k) Float32# -> Unit
+    = Λ(p: Proc).Λ(k: Rate).
+      λ(n: RateNat# k).λ(x1 x2: Ref# Float32#).λ(s1: Series# p (Down8# k) Float32#).
+      let x14     = vrep$8# [Float32#] 0.0f32# in
+      let x1$vec 
+            = new# [Vec8# Float32#] x14 in
+      let x15     = vrep$8# [Float32#] 1.0f32# in
+      let x2$vec 
+            = new# [Vec8# Float32#] x15 in
+      let x11    
+            = loop# [Down8# k]
+                  (λ(x4: Nat#).
+                   let s1$elem
+                         = next$8# [Float32#] [p] [k] s1 x4 in
+                   let x1$val 
+                         = read# [Vec8# Float32#] x1$vec in
+                   let x16     = vadd$8# [Float32#] x1$val s1$elem in
+                   let x8     
+                         = write# [Vec8# Float32#] x1$vec x16 in
+                   let x2$val 
+                         = read# [Vec8# Float32#] x2$vec in
+                   let x17     = vmul$8# [Float32#] x2$val s1$elem in
+                   let x10    
+                         = write# [Vec8# Float32#] x2$vec x17 in
+                   ()) in
+      let x1$res 
+            = read# [Vec8# Float32#] x1$vec in
+      let x1$init
+            = read# [Float32#] x1 in
+      let x19     = vproj$8$0# [Float32#] x1$res in
+      let x1$res$0
+            = add# [Float32#] x1$init x19 in
+      let x21     = vproj$8$1# [Float32#] x1$res in
+      let x1$res$1
+            = add# [Float32#] x1$res$0 x21 in
+      let x23     = vproj$8$2# [Float32#] x1$res in
+      let x1$res$2
+            = add# [Float32#] x1$res$1 x23 in
+      let x25     = vproj$8$3# [Float32#] x1$res in
+      let x1$res$3
+            = add# [Float32#] x1$res$2 x25 in
+      let x27     = vproj$8$4# [Float32#] x1$res in
+      let x1$res$4
+            = add# [Float32#] x1$res$3 x27 in
+      let x29     = vproj$8$5# [Float32#] x1$res in
+      let x1$res$5
+            = add# [Float32#] x1$res$4 x29 in
+      let x31     = vproj$8$6# [Float32#] x1$res in
+      let x1$res$6
+            = add# [Float32#] x1$res$5 x31 in
+      let x33     = vproj$8$7# [Float32#] x1$res in
+      let x1$res$7
+            = add# [Float32#] x1$res$6 x33 in
+      let x12    
             = write# [Float32#] x1 x1$res$7 in
       let x2$res 
             = read# [Vec8# Float32#] x2$vec in
       let x2$init
             = read# [Float32#] x2 in
-      let x27     = vproj$8$0# [Float32#] x2$res in
+      let x35     = vproj$8$0# [Float32#] x2$res in
       let x2$res$0
-            = mul# [Float32#] x2$init x27 in
-      let x29     = vproj$8$1# [Float32#] x2$res in
+            = mul# [Float32#] x2$init x35 in
+      let x37     = vproj$8$1# [Float32#] x2$res in
       let x2$res$1
-            = mul# [Float32#] x2$res$0 x29 in
-      let x31     = vproj$8$2# [Float32#] x2$res in
+            = mul# [Float32#] x2$res$0 x37 in
+      let x39     = vproj$8$2# [Float32#] x2$res in
       let x2$res$2
-            = mul# [Float32#] x2$res$1 x31 in
-      let x33     = vproj$8$3# [Float32#] x2$res in
+            = mul# [Float32#] x2$res$1 x39 in
+      let x41     = vproj$8$3# [Float32#] x2$res in
       let x2$res$3
-            = mul# [Float32#] x2$res$2 x33 in
-      let x35     = vproj$8$4# [Float32#] x2$res in
+            = mul# [Float32#] x2$res$2 x41 in
+      let x43     = vproj$8$4# [Float32#] x2$res in
       let x2$res$4
-            = mul# [Float32#] x2$res$3 x35 in
-      let x37     = vproj$8$5# [Float32#] x2$res in
+            = mul# [Float32#] x2$res$3 x43 in
+      let x45     = vproj$8$5# [Float32#] x2$res in
       let x2$res$5
-            = mul# [Float32#] x2$res$4 x37 in
-      let x39     = vproj$8$6# [Float32#] x2$res in
+            = mul# [Float32#] x2$res$4 x45 in
+      let x47     = vproj$8$6# [Float32#] x2$res in
       let x2$res$6
-            = mul# [Float32#] x2$res$5 x39 in
-      let x41     = vproj$8$7# [Float32#] x2$res in
+            = mul# [Float32#] x2$res$5 x47 in
+      let x49     = vproj$8$7# [Float32#] x2$res in
       let x2$res$7
-            = mul# [Float32#] x2$res$6 x41 in
-      let _      
+            = mul# [Float32#] x2$res$6 x49 in
+      let x13    
             = write# [Float32#] x2 x2$res$7 in
       ()
 }
@@ -373,13 +373,13 @@ letrec {
   test: [p: Proc].[k: Rate].RateNat# k -> Ref# Float32# -> Ref# Float32# -> Series# p (Down8# k) Float32# -> Series# p (Down8# k) Float32# -> Unit
     = Λ(p: Proc).Λ(k: Rate).
       λ(n: RateNat# k).λ(x1 x2: Ref# Float32#).λ(s1 s2: Series# p (Down8# k) Float32#).
-      let x5      = vrep$8# [Float32#] 0.0f32# in
+      let x16     = vrep$8# [Float32#] 0.0f32# in
       let x1$vec 
-            = new# [Vec8# Float32#] x5 in
-      let x7      = vrep$8# [Float32#] 0.0f32# in
+            = new# [Vec8# Float32#] x16 in
+      let x17     = vrep$8# [Float32#] 0.0f32# in
       let x2$vec 
-            = new# [Vec8# Float32#] x7 in
-      let _      
+            = new# [Vec8# Float32#] x17 in
+      let x13    
             = loop# [Down8# k]
                   (λ(x4: Nat#).
                    let s1$elem
@@ -390,74 +390,74 @@ letrec {
                          = vmul$8# [Float32#] s1$elem s2$elem in
                    let x1$val 
                          = read# [Vec8# Float32#] x1$vec in
-                   let x8      = vadd$8# [Float32#] x1$val s3$elem in
-                   let _      
-                         = write# [Vec8# Float32#] x1$vec x8 in
+                   let x18     = vadd$8# [Float32#] x1$val s3$elem in
+                   let x7     
+                         = write# [Vec8# Float32#] x1$vec x18 in
                    let x2$val 
                          = read# [Vec8# Float32#] x2$vec in
-                   let x9      = vadd$8# [Float32#] x2$val s1$elem in
-                   let _      
-                         = write# [Vec8# Float32#] x2$vec x9 in
+                   let x19     = vadd$8# [Float32#] x2$val s1$elem in
+                   let x11    
+                         = write# [Vec8# Float32#] x2$vec x19 in
                    ()) in
       let x1$res 
             = read# [Vec8# Float32#] x1$vec in
       let x1$init
             = read# [Float32#] x1 in
-      let x12     = vproj$8$0# [Float32#] x1$res in
+      let x21     = vproj$8$0# [Float32#] x1$res in
       let x1$res$0
-            = add# [Float32#] x1$init x12 in
-      let x14     = vproj$8$1# [Float32#] x1$res in
+            = add# [Float32#] x1$init x21 in
+      let x23     = vproj$8$1# [Float32#] x1$res in
       let x1$res$1
-            = add# [Float32#] x1$res$0 x14 in
-      let x16     = vproj$8$2# [Float32#] x1$res in
+            = add# [Float32#] x1$res$0 x23 in
+      let x25     = vproj$8$2# [Float32#] x1$res in
       let x1$res$2
-            = add# [Float32#] x1$res$1 x16 in
-      let x18     = vproj$8$3# [Float32#] x1$res in
+            = add# [Float32#] x1$res$1 x25 in
+      let x27     = vproj$8$3# [Float32#] x1$res in
       let x1$res$3
-            = add# [Float32#] x1$res$2 x18 in
-      let x20     = vproj$8$4# [Float32#] x1$res in
+            = add# [Float32#] x1$res$2 x27 in
+      let x29     = vproj$8$4# [Float32#] x1$res in
       let x1$res$4
-            = add# [Float32#] x1$res$3 x20 in
-      let x22     = vproj$8$5# [Float32#] x1$res in
+            = add# [Float32#] x1$res$3 x29 in
+      let x31     = vproj$8$5# [Float32#] x1$res in
       let x1$res$5
-            = add# [Float32#] x1$res$4 x22 in
-      let x24     = vproj$8$6# [Float32#] x1$res in
+            = add# [Float32#] x1$res$4 x31 in
+      let x33     = vproj$8$6# [Float32#] x1$res in
       let x1$res$6
-            = add# [Float32#] x1$res$5 x24 in
-      let x26     = vproj$8$7# [Float32#] x1$res in
+            = add# [Float32#] x1$res$5 x33 in
+      let x35     = vproj$8$7# [Float32#] x1$res in
       let x1$res$7
-            = add# [Float32#] x1$res$6 x26 in
-      let _      
+            = add# [Float32#] x1$res$6 x35 in
+      let x14    
             = write# [Float32#] x1 x1$res$7 in
       let x2$res 
             = read# [Vec8# Float32#] x2$vec in
       let x2$init
             = read# [Float32#] x2 in
-      let x28     = vproj$8$0# [Float32#] x2$res in
+      let x37     = vproj$8$0# [Float32#] x2$res in
       let x2$res$0
-            = add# [Float32#] x2$init x28 in
-      let x30     = vproj$8$1# [Float32#] x2$res in
+            = add# [Float32#] x2$init x37 in
+      let x39     = vproj$8$1# [Float32#] x2$res in
       let x2$res$1
-            = add# [Float32#] x2$res$0 x30 in
-      let x32     = vproj$8$2# [Float32#] x2$res in
+            = add# [Float32#] x2$res$0 x39 in
+      let x41     = vproj$8$2# [Float32#] x2$res in
       let x2$res$2
-            = add# [Float32#] x2$res$1 x32 in
-      let x34     = vproj$8$3# [Float32#] x2$res in
+            = add# [Float32#] x2$res$1 x41 in
+      let x43     = vproj$8$3# [Float32#] x2$res in
       let x2$res$3
-            = add# [Float32#] x2$res$2 x34 in
-      let x36     = vproj$8$4# [Float32#] x2$res in
+            = add# [Float32#] x2$res$2 x43 in
+      let x45     = vproj$8$4# [Float32#] x2$res in
       let x2$res$4
-            = add# [Float32#] x2$res$3 x36 in
-      let x38     = vproj$8$5# [Float32#] x2$res in
+            = add# [Float32#] x2$res$3 x45 in
+      let x47     = vproj$8$5# [Float32#] x2$res in
       let x2$res$5
-            = add# [Float32#] x2$res$4 x38 in
-      let x40     = vproj$8$6# [Float32#] x2$res in
+            = add# [Float32#] x2$res$4 x47 in
+      let x49     = vproj$8$6# [Float32#] x2$res in
       let x2$res$6
-            = add# [Float32#] x2$res$5 x40 in
-      let x42     = vproj$8$7# [Float32#] x2$res in
+            = add# [Float32#] x2$res$5 x49 in
+      let x51     = vproj$8$7# [Float32#] x2$res in
       let x2$res$7
-            = add# [Float32#] x2$res$6 x42 in
-      let _      
+            = add# [Float32#] x2$res$6 x51 in
+      let x15    
             = write# [Float32#] x2 x2$res$7 in
       ()
 }

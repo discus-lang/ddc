@@ -1,6 +1,7 @@
 
 module Data.Graphics.SVG.Tiny 
-export renderSVG
+export {render; render_SVG}
+import Class.Show
 import Data.Function
 import Data.List
 import Data.Text
@@ -28,24 +29,43 @@ data Value where
         VNat    : Nat -> Value
 
 
+-- | Class of values that can be rendered to text.
+data Render (a: Data) where
+        Render: (a -> Text) -> Render a
+
+render {(Render render'): Render a} (x: a): Text
+ = render' x
+
+
 -- | Render a SVG Document.
-renderSVG (svg: SVG): Text
- | SVG width height shapes      <- svg
- = "<?xml version=\"1.0\"?>\n"
- % "<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.2\" baseProfile=\"tiny\">\n"
- % (foldl paste "" $ map renderShape shapes)
- % "</svg>"
+--   TODO: shouldn't need to pass explicit dictionary.
+render_SVG: Render SVG
+ =  Render $ \svg 
+ -> case svg of
+        SVG width height shapes
+         -> "<?xml version=\"1.0\"?>\n"
+          % "<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.2\" baseProfile=\"tiny\">\n"
+          % (foldl paste "" $ map (render {render_Shape}) shapes)
+          % "</svg>"
 
 
 -- | Render a SVG Shape.
-renderShape (shape: Shape): Text
- = case shape of
+render_Shape: Render Shape
+ =  Render $ \shape
+ -> case shape of
         Circle x y r
          -> renderElement "circle"
                 $ Cons (T2 "cx" (VNat x))
                 $ Cons (T2 "cy" (VNat y))
                 $ Cons (T2 "r"  (VNat r))
                 $ Nil
+
+
+-- | Render a value.
+render_Value: Render Value
+ =  Render $ \val
+ -> case val of
+        VNat n  -> "\"" % show n % "\""
 
 
 -- | Render an element of the given name and value.
@@ -60,11 +80,5 @@ renderElement
 -- | Render an attribute of the given name and value.
 renderAttr (attr: Tup2 Text Value): Text
  | T2 name val  <- attr
- = name % "=" % renderValue val % " "
-
-
--- | Render a value.
-renderValue (val: Value): Text
-  = case val of
-        VNat n  -> "\"" % showNat n % "\""
+ = name % "=" % render val % " "
 

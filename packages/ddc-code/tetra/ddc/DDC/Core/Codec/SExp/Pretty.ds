@@ -33,9 +33,7 @@ pretty_Bind: Pretty Bind
  -> sexp1 "bind" (ppr n)
 
 
-pretty_Exp 
-        {ppA: Pretty a} {ppP: Pretty p}
-        : Pretty (Exp a p)
+pretty_Exp      {Pretty a} {Pretty p}: Pretty (Exp a p)
  =  Pretty $ \xx
  -> case xx of
         XAnnot a x      -> sexp2 "annot"    (ppr a) (ppr x)
@@ -48,7 +46,7 @@ pretty_Exp
         XCast  c x      -> sexp2 "cast"     (ppr c)   (ppr x)
 
 
-pretty_Atom {ppP: Pretty p}: Pretty (Atom p)
+pretty_Atom  {Pretty p}: Pretty (Atom p)
  =  Pretty $ \atom
  -> case atom of
         APrim m         -> sexp1 "prim"     (ppr m)
@@ -56,27 +54,21 @@ pretty_Atom {ppP: Pretty p}: Pretty (Atom p)
         AFrag p         -> sexp1 "frag"     (ppr p)
 
 
-pretty_Param 
-        {ppA: Pretty a} {ppP: Pretty p}
-        : Pretty (Param a p)
+pretty_Param {Pretty a} {Pretty p}: Pretty (Param a p)
  =  Pretty $ \mm
  -> case mm of
         MExp b x        -> sexp1 "exp"      (ppr x)
         MImplicit b x   -> sexp1 "implicit" (ppr x)
 
 
-pretty_Arg
-        {ppA: Pretty a} {ppP: Pretty p}
-        : Pretty (Arg a p)
+pretty_Arg   {Pretty a} {Pretty p}: Pretty (Arg a p)
  =  Pretty $ \arg
  -> case arg of
         RArg x          -> sexp1 "arg"      (ppr x)
         RImplicit x     -> sexp1 "implicit" (ppr x)
 
 
-pretty_Lets
-        {ppA: Pretty a} {ppP: Pretty p}
-        : Pretty (Lets a p)
+pretty_Lets  {Pretty a} {Pretty p}: Pretty (Lets a p)
  =  Pretty $ \lts
  -> case lts of
         LLet b x
@@ -89,9 +81,7 @@ pretty_Lets
          -> sexp3 "private" (ppr bs) (ppr mt) (ppr bxs)
 
 
-pretty_Alt
-        {ppA: Pretty a} {ppP: Pretty p}
-        : Pretty (Alt a p)
+pretty_Alt  {Pretty a} {Pretty p}: Pretty (Alt a p)
  =  Pretty $ \alt
  -> case alt of
         AAlt w x        -> sexp2 "alt"    (ppr w) (ppr x)
@@ -104,9 +94,7 @@ pretty_Pat: Pretty (Pat a p)
         PData n bs      -> sexp2 "data"   (ppr n) (ppr bs)
 
 
-pretty_Cast
-        {ppA: Pretty a} {ppP: Pretty p}
-        : Pretty (Cast a p)
+pretty_Cast {Pretty a} {Pretty p}: Pretty (Cast a p)
  =  Pretty $ \cc
  -> case cc of
         CEffect x       -> sexp1 "effect" (ppr x)

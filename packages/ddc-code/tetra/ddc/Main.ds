@@ -29,8 +29,9 @@ main ()
  = do   exp     = XAbs  (MExp (Bind  (Name "x")) (XAtom (AFrag FTyNat)))
                         (XVar (Bound (Name "x") 0))
         
+        -- TODO: find out why we can't elide this dictionary.
         writel $ ppr {pretty_Exp {pretty_Annot} {pretty_Frag}} exp
 
         toks    = lexText "(abs (exp (atom (frag ty_Nat))) (var (bound (name \"x\") (nat \"0\"))))"
-        writel $ show {show_list {show_token}} toks
+        writel $ show toks
 

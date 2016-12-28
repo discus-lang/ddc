@@ -7,7 +7,7 @@ export
         head;
         tail; tail1;
         last; index;
-        lookupBy; find;
+        lookup; find;
         reverse;
         map; mapS; for;
         forS;
@@ -138,12 +138,12 @@ index (def: a) (n: Nat) (xx: List a): a
 -- Searches -------------------------------------------------------------------
 -- | Given a list of key value pairs, lookup the first
 --   value whose key is selected by the given predicate.
-lookupBy (f: a -> Bool) (xx: List (Tup2 a b)): Maybe b
+lookup {Eq a} (k: a) (xx: List (Tup2 a b)): Maybe b
  = case xx of
         Nil             -> Nothing
-        Cons (T2 x y) xs
-         | f x          -> Just y
-         | otherwise    -> lookupBy f xs
+        Cons (T2 k' y) xs
+         | k == k'      -> Just y
+         | otherwise    -> lookup k xs
 
 
 -- | Find the first element in a list that matches the given predicate.

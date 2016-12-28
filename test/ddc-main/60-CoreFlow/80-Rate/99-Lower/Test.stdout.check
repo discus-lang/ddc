@@ -9,28 +9,28 @@ letrec {
     = Λ(u1$k: Rate).
       λ(u1$rv: RateVec# u1$k Int#).λ(x3$ref: Ref# Int#).
       Λ(x3$PROC: Proc).
-      λ(_: Unit).
+      λ(x0: Unit).
       let u1$s: Series# x3$PROC u1$k Int#
             = series# [x3$PROC] [u1$k] [Int#] u1$rv in
       let x3$ref$init: Int#
             = read# [Int#] x3$ref in
       let x3$ref$acc: Ref# Int#
             = new# [Int#] x3$ref$init in
-      let _: Unit
+      let x7: Unit
             = loop# [u1$k]
-                  (λ(x5: Nat#).
+                  (λ(x2: Nat#).
                    let u1$s$elem: Int#
-                         = next# [Int#] [x3$PROC] [u1$k] u1$s x5 in
+                         = next# [Int#] [x3$PROC] [u1$k] u1$s x2 in
                    let x3$ref$val: Int#
                          = read# [Int#] x3$ref$acc in
-                   let x6: Int#
+                   let x9: Int#
                          = add# [Int#] x3$ref$val u1$s$elem in
-                   let _: Unit
-                         = write# [Int#] x3$ref$acc x6 in
+                   let x6: Unit
+                         = write# [Int#] x3$ref$acc x9 in
                    ()) in
       let x3$ref$res: Int#
             = read# [Int#] x3$ref$acc in
-      let _: Unit
+      let x8: Unit
             = write# [Int#] x3$ref x3$ref$res in
       ();
   
@@ -42,12 +42,12 @@ letrec {
             = ratify1# [Int#] [Unit] u1
                   (Λ(u1$k: Rate).
                    λ(u1$rv: RateVec# u1$k Int#).
-                   let x3: [t1: Proc].Unit -> Unit
-                         = Λ(t1: Proc).
-                           λ(x2: Unit). x3$runproc$process [u1$k] u1$rv x3$ref [t1] x2 in
-                   let x4: Unit
-                         = runProcessUnit# [u1$k] x3 in
-                   x4) in
+                   let x4: [t2: Proc].Unit -> Unit
+                         = Λ(t2: Proc).
+                           λ(x3: Unit). x3$runproc$process [u1$k] u1$rv x3$ref [t2] x3 in
+                   let x5: Unit
+                         = runProcessUnit# [u1$k] x4 in
+                   x5) in
       let x3: Int#
             = read# [Int#] x3$ref in
       x3
@@ -61,28 +61,28 @@ letrec {
     = Λ(x4$'$k: Rate).
       λ(us$rv: RateVec# x4$'$k Int#).λ(n$ref: Ref# Int#).
       Λ(n$PROC: Proc).
-      λ(_: Unit).
+      λ(x0: Unit).
       let us$s: Series# n$PROC x4$'$k Int#
             = series# [n$PROC] [x4$'$k] [Int#] us$rv in
       let n$ref$init: Int#
             = read# [Int#] n$ref in
       let n$ref$acc: Ref# Int#
             = new# [Int#] n$ref$init in
-      let _: Unit
+      let x10: Unit
             = loop# [x4$'$k]
-                  (λ(x2: Nat#).
+                  (λ(x3: Nat#).
                    let us$s$elem: Int#
-                         = next# [Int#] [n$PROC] [x4$'$k] us$s x2 in
+                         = next# [Int#] [n$PROC] [x4$'$k] us$s x3 in
                    let n$ref$val: Int#
                          = read# [Int#] n$ref$acc in
-                   let x8: Int#
+                   let x18: Int#
                          = add# [Int#] n$ref$val us$s$elem in
-                   let _: Unit
-                         = write# [Int#] n$ref$acc x8 in
+                   let x8: Unit
+                         = write# [Int#] n$ref$acc x18 in
                    ()) in
       let n$ref$res: Int#
             = read# [Int#] n$ref$acc in
-      let _: Unit
+      let x14: Unit
             = write# [Int#] n$ref n$ref$res in
       ();
   
@@ -90,20 +90,20 @@ letrec {
     = Λ(x4$'$k: Rate).
       λ(us$rv: RateVec# x4$'$k Int#).λ(x4: Vector# Int#).λ(n: Int#).
       Λ(x4$PROC: Proc).
-      λ(_: Unit).
+      λ(x2: Unit).
       let x4$buf: Buffer# Int#
             = vbuf# [Int#] x4 in
       let us$s: Series# x4$PROC x4$'$k Int#
             = series# [x4$PROC] [x4$'$k] [Int#] us$rv in
-      let _: Unit
+      let x17: Unit
             = loop# [x4$'$k]
-                  (λ(x6: Nat#).
+                  (λ(x15: Nat#).
                    let us$s$elem: Int#
-                         = next# [Int#] [x4$PROC] [x4$'$k] us$s x6 in
+                         = next# [Int#] [x4$PROC] [x4$'$k] us$s x15 in
                    let x4$s$elem: Int#
                          = div# [Int#] us$s$elem n in
-                   let _: Unit
-                         = vwrite# [Int#] x4$buf x6 x4$s$elem in
+                   let x16: Unit
+                         = vwrite# [Int#] x4$buf x15 x4$s$elem in
                    ()) in
       ();
   
@@ -115,28 +115,28 @@ letrec {
             = ratify1# [Int#] [Unit] us
                   (Λ(x4$'$k: Rate).
                    λ(us$rv: RateVec# x4$'$k Int#).
-                   let x4: [t2: Proc].Unit -> Unit
-                         = Λ(t2: Proc).
-                           λ(x3: Unit). n$runproc$process [x4$'$k] us$rv n$ref [t2] x3 in
-                   let x5: Unit
-                         = runProcessUnit# [x4$'$k] x4 in
-                   x5) in
+                   let x6: [t4: Proc].Unit -> Unit
+                         = Λ(t4: Proc).
+                           λ(x5: Unit). n$runproc$process [x4$'$k] us$rv n$ref [t4] x5 in
+                   let x7: Unit
+                         = runProcessUnit# [x4$'$k] x6 in
+                   x7) in
       let n: Int#
             = read# [Int#] n$ref in
-      let x7: Nat#
+      let x9: Nat#
             = vlength# [Int#] us in
       let x4: Vector# Int#
-            = vnew# [Int#] x7 in
+            = vnew# [Int#] x9 in
       let x4$runproc: Unit
             = ratify1# [Int#] [Unit] us
                   (Λ(x4$'$k: Rate).
                    λ(us$rv: RateVec# x4$'$k Int#).
-                   let x10: [t8: Proc].Unit -> Unit
-                         = Λ(t8: Proc).
-                           λ(x9: Unit). x4$runproc$process [x4$'$k] us$rv x4 n [t8] x9 in
-                   let x11: Unit
-                         = runProcessUnit# [x4$'$k] x10 in
-                   x11) in
+                   let x12: [t10: Proc].Unit -> Unit
+                         = Λ(t10: Proc).
+                           λ(x11: Unit). x4$runproc$process [x4$'$k] us$rv x4 n [t10] x11 in
+                   let x13: Unit
+                         = runProcessUnit# [x4$'$k] x12 in
+                   x13) in
       x4
 }
 
@@ -145,163 +145,14 @@ letrec {
 -- 1- filter, fold, fold
 -- 2- map original
 -- 3- map filtered
-module Test with
-letrec {
-  fold2$runproc$process: [morig$'$k: Rate].RateVec# morig$'$k Int# -> Ref# Int# -> [fold2$PROC: Proc].Unit -> Unit
-    = Λ(morig$'$k: Rate).
-      λ(orig$rv: RateVec# morig$'$k Int#).λ(fold2$ref: Ref# Int#).
-      Λ(fold2$PROC: Proc).
-      λ(_: Unit).
-      let orig$s: Series# fold2$PROC morig$'$k Int#
-            = series# [fold2$PROC] [morig$'$k] [Int#] orig$rv in
-      let fold2$ref$init: Int#
-            = read# [Int#] fold2$ref in
-      let fold2$ref$acc: Ref# Int#
-            = new# [Int#] fold2$ref$init in
-      let _: Unit
-            = loop# [morig$'$k]
-                  (λ(x1: Nat#).
-                   let orig$s$elem: Int#
-                         = next# [Int#] [fold2$PROC] [morig$'$k] orig$s x1 in
-                   let fold2$ref$val: Int#
-                         = read# [Int#] fold2$ref$acc in
-                   let x10: Int#
-                         = add# [Int#] fold2$ref$val orig$s$elem in
-                   let _: Unit
-                         = write# [Int#] fold2$ref$acc x10 in
-                   ()) in
-      let fold2$ref$res: Int#
-            = read# [Int#] fold2$ref$acc in
-      let _: Unit
-            = write# [Int#] fold2$ref fold2$ref$res in
-      ();
+Error in transformed module.
+  in stage FlowRateLower
+  in pipe  PipeCoreCheck/Check
+  ()
+  Type mismatch in application.
+       Function expects: Int#
+        but argument is: Int# -> Bool#
   
-  filt$runproc$process: [morig$'$k: Rate].RateVec# morig$'$k Int# -> Vector# Int# -> Ref# Int# -> Int# -> [filt$PROC: Proc].Unit -> Unit
-    = Λ(morig$'$k: Rate).
-      λ(orig$rv: RateVec# morig$'$k Int#).λ(mfilt: Vector# Int#).λ(fold$ref: Ref# Int#).λ(fold2: Int#).
-      Λ(filt$PROC: Proc).
-      λ(_: Unit).
-      let mfilt$buf: Buffer# Int#
-            = vbuf# [Int#] mfilt in
-      let mfilt$count: Ref# Nat#
-            = new# [Nat#] 0# in
-      let orig$s: Series# filt$PROC morig$'$k Int#
-            = series# [filt$PROC] [morig$'$k] [Int#] orig$rv in
-      let fold$ref$init: Int#
-            = read# [Int#] fold$ref in
-      let fold$ref$acc: Ref# Int#
-            = new# [Int#] fold$ref$init in
-      let _: Unit
-            = loop# [morig$'$k]
-                  (λ(x4: Nat#).
-                   let orig$s$elem: Int#
-                         = next# [Int#] [filt$PROC] [morig$'$k] orig$s x4 in
-                   let filt$flags$elem: Bool#
-                         = gt# [Int#] 1i# orig$s$elem in
-                   let _: Unit
-                         = guard# filt$flags$elem
-                               (λ(_: Unit).
-                                let mfilt$s$elem: Int#
-                                      = add# [Int#] fold2 orig$s$elem in
-                                let x11: Nat#
-                                      = read# [Nat#] mfilt$count in
-                                let _: Unit
-                                      = vwrite# [Int#] mfilt$buf x11 mfilt$s$elem in
-                                let x13: Nat#
-                                      = read# [Nat#] mfilt$count in
-                                let x14: Nat#
-                                      = add# [Nat#] x13 1# in
-                                let _: Unit
-                                      = write# [Nat#] mfilt$count x14 in
-                                let fold$ref$val: Int#
-                                      = read# [Int#] fold$ref$acc in
-                                let x18: Int#
-                                      = add# [Int#] fold$ref$val orig$s$elem in
-                                let _: Unit
-                                      = write# [Int#] fold$ref$acc x18 in
-                                ()) in
-                   ()) in
-      let x7: Nat#
-            = read# [Nat#] mfilt$count in
-      let _: Unit
-            = vtrunc# [Int#] x7 mfilt in
-      let fold$ref$res: Int#
-            = read# [Int#] fold$ref$acc in
-      let _: Unit
-            = write# [Int#] fold$ref fold$ref$res in
-      ();
-  
-  morig$runproc$process: [morig$'$k: Rate].RateVec# morig$'$k Int# -> Vector# Int# -> Int# -> [morig$PROC: Proc].Unit -> Unit
-    = Λ(morig$'$k: Rate).
-      λ(orig$rv: RateVec# morig$'$k Int#).λ(morig: Vector# Int#).λ(fold: Int#).
-      Λ(morig$PROC: Proc).
-      λ(_: Unit).
-      let morig$buf: Buffer# Int#
-            = vbuf# [Int#] morig in
-      let orig$s: Series# morig$PROC morig$'$k Int#
-            = series# [morig$PROC] [morig$'$k] [Int#] orig$rv in
-      let _: Unit
-            = loop# [morig$'$k]
-                  (λ(x9: Nat#).
-                   let orig$s$elem: Int#
-                         = next# [Int#] [morig$PROC] [morig$'$k] orig$s x9 in
-                   let morig$s$elem: Int#
-                         = add# [Int#] fold orig$s$elem in
-                   let _: Unit
-                         = vwrite# [Int#] morig$buf x9 morig$s$elem in
-                   ()) in
-      ();
-  
-  test: Vector# Int# -> Tuple2# (Vector# Int#) (Vector# Int#)
-    = λ(orig: Vector# Int#).
-      let fold2$ref: Ref# Int#
-            = new# [Int#] 0i# in
-      let fold2$runproc: Unit
-            = ratify1# [Int#] [Unit] orig
-                  (Λ(morig$'$k: Rate).
-                   λ(orig$rv: RateVec# morig$'$k Int#).
-                   let x16: [t14: Proc].Unit -> Unit
-                         = Λ(t14: Proc).
-                           λ(x15: Unit). fold2$runproc$process [morig$'$k] orig$rv fold2$ref [t14] x15 in
-                   let x17: Unit
-                         = runProcessUnit# [morig$'$k] x16 in
-                   x17) in
-      let fold2: Int#
-            = read# [Int#] fold2$ref in
-      let fold$ref: Ref# Int#
-            = new# [Int#] 0i# in
-      let x19: Nat#
-            = vlength# [Int#] orig in
-      let mfilt: Vector# Int#
-            = vnew# [Int#] x19 in
-      let filt$runproc: Unit
-            = ratify1# [Int#] [Unit] orig
-                  (Λ(morig$'$k: Rate).
-                   λ(orig$rv: RateVec# morig$'$k Int#).
-                   let x22: [t20: Proc].Unit -> Unit
-                         = Λ(t20: Proc).
-                           λ(x21: Unit). filt$runproc$process [morig$'$k] orig$rv mfilt fold$ref fold2 [t20] x21 in
-                   let x23: Unit
-                         = runProcessUnit# [morig$'$k] x22 in
-                   x23) in
-      let fold: Int#
-            = read# [Int#] fold$ref in
-      let x25: Nat#
-            = vlength# [Int#] orig in
-      let morig: Vector# Int#
-            = vnew# [Int#] x25 in
-      let morig$runproc: Unit
-            = ratify1# [Int#] [Unit] orig
-                  (Λ(morig$'$k: Rate).
-                   λ(orig$rv: RateVec# morig$'$k Int#).
-                   let x28: [t26: Proc].Unit -> Unit
-                         = Λ(t26: Proc).
-                           λ(x27: Unit). morig$runproc$process [morig$'$k] orig$rv morig fold [t26] x27 in
-                   let x29: Unit
-                         = runProcessUnit# [morig$'$k] x28 in
-                   x29) in
-      let x12: Tuple2# (Vector# Int#) (Vector# Int#)
-            = T2# [Vector# Int#] [Vector# Int#] morig mfilt in
-      x12
-}
+  with: add# [Int#] x2
+            (λ(x0: Int#). gt# [Int#] 1i# x0)
 

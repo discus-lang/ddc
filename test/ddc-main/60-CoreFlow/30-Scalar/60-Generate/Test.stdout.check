@@ -10,12 +10,12 @@ letrec {
       λ(v: Vector# Nat#).
       let v$buf  
             = vbuf# [Nat#] v in
-      let _      
+      let x3     
             = loop# [k]
                   (λ(x1: Nat#).
                    let s$elem 
                          = mul# [Nat#] 2# x1 in
-                   let _      
+                   let x2     
                          = vwrite# [Nat#] v$buf x1 s$elem in
                    ()) in
       ()
@@ -29,14 +29,14 @@ letrec {
       λ(v: Vector# Nat#).
       let v$buf  
             = vbuf# [Nat#] v in
-      let _      
+      let x4     
             = loop# [k]
                   (λ(x1: Nat#).
                    let s$elem 
                          = mul# [Nat#] 2# x1 in
                    let t$elem 
                          = add# [Nat#] 1# s$elem in
-                   let _      
+                   let x3     
                          = vwrite# [Nat#] v$buf x1 t$elem in
                    ()) in
       ()
@@ -50,7 +50,7 @@ letrec {
       λ(s1: Series# p k Nat#).λ(v: Vector# Nat#).
       let v$buf  
             = vbuf# [Nat#] v in
-      let _      
+      let x5     
             = loop# [k]
                   (λ(x1: Nat#).
                    let s1$elem
@@ -59,7 +59,7 @@ letrec {
                          = mul# [Nat#] 2# x1 in
                    let t$elem 
                          = add# [Nat#] s1$elem s2$elem in
-                   let _      
+                   let x4     
                          = vwrite# [Nat#] v$buf x1 t$elem in
                    ()) in
       ()

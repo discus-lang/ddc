@@ -11,14 +11,14 @@ letrec {
       λ(s: Series# p k1 Float32#).λ(v: Vector# Float32#).
       let v$buf  
             = vbuf# [Float32#] v in
-      let _      
+      let x4     
             = loop# [k1]
                   (λ(x2: Nat#).
                    let s$elem 
                          = next# [Float32#] [p] [k1] s x2 in
                    let x4$elem
                          = mul# [Float32#] 23.0f32# s$elem in
-                   let _      
+                   let x3     
                          = vwrite# [Float32#] v$buf x2 x4$elem in
                    ()) in
       ()
@@ -35,31 +35,31 @@ letrec {
             = vbuf# [Float32#] v in
       let v$count
             = new# [Nat#] 0# in
-      let _      
+      let x6     
             = loop# [k1]
                   (λ(x1: Nat#).
                    let lens$elem
                          = next# [Nat#] [p] [k1] lens x1 in
                    let s1$elem
                          = next# [Float32#] [p] [k1] s1 x1 in
-                   let _      
+                   let x5     
                          = segment# lens$elem
                                (λ(x2: Nat#).
                                 let s3$elem
                                       = mul# [Float32#] 2.0f32# s1$elem in
-                                let x4      = read# [Nat#] v$count in
-                                let _      
-                                      = vwrite# [Float32#] v$buf x4 s3$elem in
-                                let x5      = read# [Nat#] v$count in
-                                let x6      = add# [Nat#] x5 1# in
-                                let _      
-                                      = write# [Nat#] v$count x6 in
+                                let x9      = read# [Nat#] v$count in
+                                let x3     
+                                      = vwrite# [Float32#] v$buf x9 s3$elem in
+                                let x10     = read# [Nat#] v$count in
+                                let x11     = add# [Nat#] x10 1# in
+                                let x4     
+                                      = write# [Nat#] v$count x11 in
                                 ()) in
                    ()) in
-      let x3     
+      let x7     
             = read# [Nat#] v$count in
-      let _      
-            = vtrunc# [Float32#] x3 v in
+      let x8     
+            = vtrunc# [Float32#] x7 v in
       ()
 }
 
@@ -75,7 +75,7 @@ letrec {
             = vbuf# [Float32#] v in
       let v$count
             = new# [Nat#] 0# in
-      let _      
+      let x7     
             = loop# [k1]
                   (λ(x2: Nat#).
                    let lens$elem
@@ -84,24 +84,24 @@ letrec {
                          = next# [Float32#] [p] [k1] s1 x2 in
                    let s2$elem
                          = next# [Float32#] [p] [k1] s2 x2 in
-                   let _      
+                   let x6     
                          = segment# lens$elem
                                (λ(x3: Nat#).
                                 let s3$elem
                                       = mul# [Float32#] s1$elem s2$elem in
-                                let x5      = read# [Nat#] v$count in
-                                let _      
-                                      = vwrite# [Float32#] v$buf x5 s3$elem in
-                                let x6      = read# [Nat#] v$count in
-                                let x7      = add# [Nat#] x6 1# in
-                                let _      
-                                      = write# [Nat#] v$count x7 in
+                                let x10     = read# [Nat#] v$count in
+                                let x4     
+                                      = vwrite# [Float32#] v$buf x10 s3$elem in
+                                let x11     = read# [Nat#] v$count in
+                                let x12     = add# [Nat#] x11 1# in
+                                let x5     
+                                      = write# [Nat#] v$count x12 in
                                 ()) in
                    ()) in
-      let x4     
+      let x8     
             = read# [Nat#] v$count in
-      let _      
-            = vtrunc# [Float32#] x4 v in
+      let x9     
+            = vtrunc# [Float32#] x8 v in
       ()
 }
 
@@ -116,7 +116,7 @@ letrec {
             = vbuf# [Float32#] v in
       let v$count
             = new# [Nat#] 0# in
-      let _      
+      let x7     
             = loop# [k1]
                   (λ(x2: Nat#).
                    let lens$elem
@@ -127,21 +127,21 @@ letrec {
                          = next# [Float32#] [p] [k1] s2 x2 in
                    let s3$elem
                          = mul# [Float32#] s1$elem s2$elem in
-                   let _      
+                   let x6     
                          = segment# lens$elem
                                (λ(x3: Nat#).
-                                let x5      = read# [Nat#] v$count in
-                                let _      
-                                      = vwrite# [Float32#] v$buf x5 s3$elem in
-                                let x6      = read# [Nat#] v$count in
-                                let x7      = add# [Nat#] x6 1# in
-                                let _      
-                                      = write# [Nat#] v$count x7 in
+                                let x10     = read# [Nat#] v$count in
+                                let x4     
+                                      = vwrite# [Float32#] v$buf x10 s3$elem in
+                                let x11     = read# [Nat#] v$count in
+                                let x12     = add# [Nat#] x11 1# in
+                                let x5     
+                                      = write# [Nat#] v$count x12 in
                                 ()) in
                    ()) in
-      let x4     
+      let x8     
             = read# [Nat#] v$count in
-      let _      
-            = vtrunc# [Float32#] x4 v in
+      let x9     
+            = vtrunc# [Float32#] x8 v in
       ()
 }

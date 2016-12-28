@@ -101,13 +101,13 @@ tetraToSalt config source mm
         (D.configRuntime config)
         (CReannotate.reannotate (const ()) mm)
  $ BCT.ConfigTetraToSalt
-        { BCT.configSinkExplicit        = D.dump config source "dump-1-tetra-02-explicit.dct"
-        , BCT.configSinkLambdas         = D.dump config source "dump-1-tetra-03-lambdas.dct"
-        , BCT.configSinkUnshare         = D.dump config source "dump-1-tetra-04-unshare.dct"
-        , BCT.configSinkCurry           = D.dump config source "dump-1-tetra-05-curry.dct"
-        , BCT.configSinkBoxing          = D.dump config source "dump-1-tetra-06-boxing.dct"
-        , BCT.configSinkPrep            = D.dump config source "dump-1-tetra-07-prep.dct"
-        , BCT.configSinkChecked         = D.dump config source "dump-1-tetra-08-checked.dct"
-        , BCT.configSinkSalt            = D.dump config source "dump-2-salt-00-convert.dcs"
+        { BCT.configSinkExplicit        = D.dump config source "dump.1-tetra-02-explicit.dct"
+        , BCT.configSinkLambdas         = D.dump config source "dump.1-tetra-03-lambdas.dct"
+        , BCT.configSinkUnshare         = D.dump config source "dump.1-tetra-04-unshare.dct"
+        , BCT.configSinkCurry           = D.dump config source "dump.1-tetra-05-curry.dct"
+        , BCT.configSinkBoxing          = D.dump config source "dump.1-tetra-06-boxing.dct"
+        , BCT.configSinkPrep            = D.dump config source "dump.1-tetra-07-prep.dct"
+        , BCT.configSinkChecked         = D.dump config source "dump.1-tetra-08-checked.dct"
+        , BCT.configSinkSalt            = D.dump config source "dump.2-salt-00-convert.dcs"
         }
 

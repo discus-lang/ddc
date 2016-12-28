@@ -13,8 +13,8 @@ where
 -- | Tokens for lambda calculus language.
 data Token where
         KName   : Name  -> Token        -- ^ Variable name.
-        KBra    : Token                 -- ^ Open  Braket '('
-        KKet    : Token                 -- ^ Close Braket ')'
+        KBra    : Token                 -- ^ Open  Bracket '('
+        KKet    : Token                 -- ^ Close Bracket ')'
         KLambda : Token                 -- ^ Lambda symbol '/'
         KDot    : Token                 -- ^ Dot stmbol
 

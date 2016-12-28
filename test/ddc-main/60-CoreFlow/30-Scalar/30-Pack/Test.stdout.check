@@ -16,29 +16,29 @@ letrec {
             = series# [p] [k0] [Bool#] flagR in
       let s      
             = series# [p] [k0] [a] sR in
-      let _      
+      let x5     
             = loop# [k0]
                   (λ(x0: Nat#).
                    let flags$elem
                          = next# [Bool#] [p] [k0] flags x0 in
                    let s$elem 
                          = next# [a] [p] [k0] s x0 in
-                   let _      
+                   let x4     
                          = guard# flags$elem
-                               (λ(_: Unit).
+                               (λ(x1: Unit).
                                 let ^       = read# [Nat#] v$count in
-                                let _      
+                                let x2     
                                       = vwrite# [a] v$buf ^0 s$elem in
                                 let ^       = read# [Nat#] v$count in
                                 let ^       = add# [Nat#] ^0 1# in
-                                let _      
+                                let x3     
                                       = write# [Nat#] v$count ^0 in
                                 ()) in
                    ()) in
-      let x1     
+      let x6     
             = read# [Nat#] v$count in
-      let _      
-            = vtrunc# [a] x1 v in
+      let x7     
+            = vtrunc# [a] x6 v in
       ()
 }
 
@@ -55,29 +55,29 @@ letrec {
             = new# [Nat#] 0# in
       let s      
             = series# [p] [k0] [a] sR in
-      let _      
+      let x6     
             = loop# [k0]
                   (λ(x1: Nat#).
                    let s$elem 
                          = next# [a] [p] [k0] s x1 in
                    let flags$elem
                          = f s$elem in
-                   let _      
+                   let x5     
                          = guard# flags$elem
-                               (λ(_: Unit).
-                                let x3      = read# [Nat#] v$count in
-                                let _      
-                                      = vwrite# [a] v$buf x3 s$elem in
-                                let x4      = read# [Nat#] v$count in
-                                let x5      = add# [Nat#] x4 1# in
-                                let _      
-                                      = write# [Nat#] v$count x5 in
+                               (λ(x2: Unit).
+                                let x9      = read# [Nat#] v$count in
+                                let x3     
+                                      = vwrite# [a] v$buf x9 s$elem in
+                                let x10     = read# [Nat#] v$count in
+                                let x11     = add# [Nat#] x10 1# in
+                                let x4     
+                                      = write# [Nat#] v$count x11 in
                                 ()) in
                    ()) in
-      let x2     
+      let x7     
             = read# [Nat#] v$count in
-      let _      
-            = vtrunc# [a] x2 v in
+      let x8     
+            = vtrunc# [a] x7 v in
       ()
 }
 
@@ -100,35 +100,35 @@ letrec {
             = new# [Nat#] 0# in
       let s0     
             = series# [p] [k0] [a] s0R in
-      let _      
+      let x8     
             = loop# [k0]
                   (λ(x0: Nat#).
                    let s0$elem
                          = next# [a] [p] [k0] s0 x0 in
                    let flags1$elem
                          = f s0$elem in
-                   let _      
+                   let x7     
                          = guard# flags1$elem
-                               (λ(_: Unit).
+                               (λ(x2: Unit).
                                 let flags2$elem
                                       = g s0$elem in
-                                let _      
+                                let x6     
                                       = guard# flags2$elem
-                                            (λ(_: Unit).
-                                             let x3      = read# [Nat#] v$count in
-                                             let _      
-                                                   = vwrite# [a] v$buf x3 s0$elem in
-                                             let x4      = read# [Nat#] v$count in
-                                             let x5      = add# [Nat#] x4 1# in
-                                             let _      
-                                                   = write# [Nat#] v$count x5 in
+                                            (λ(x3: Unit).
+                                             let x11     = read# [Nat#] v$count in
+                                             let x4     
+                                                   = vwrite# [a] v$buf x11 s0$elem in
+                                             let x12     = read# [Nat#] v$count in
+                                             let x13     = add# [Nat#] x12 1# in
+                                             let x5     
+                                                   = write# [Nat#] v$count x13 in
                                              ()) in
                                 ()) in
                    ()) in
-      let x2     
+      let x9     
             = read# [Nat#] v$count in
-      let _      
-            = vtrunc# [a] x2 v in
+      let x10    
+            = vtrunc# [a] x9 v in
       ()
 }
 
@@ -150,7 +150,7 @@ letrec {
             = new# [Nat#] 0# in
       let s0     
             = series# [p] [k0] [a] s0R in
-      let _      
+      let x11    
             = loop# [k0]
                   (λ(x1: Nat#).
                    let s0$elem
@@ -159,37 +159,37 @@ letrec {
                          = f s0$elem in
                    let flags2$elem
                          = f s0$elem in
-                   let _      
+                   let x6     
                          = guard# flags1$elem
-                               (λ(_: Unit).
-                                let x5      = read# [Nat#] v1$count in
-                                let _      
-                                      = vwrite# [a] v1$buf x5 s0$elem in
-                                let x6      = read# [Nat#] v1$count in
-                                let x7      = add# [Nat#] x6 1# in
-                                let _      
-                                      = write# [Nat#] v1$count x7 in
+                               (λ(x3: Unit).
+                                let x16     = read# [Nat#] v1$count in
+                                let x4     
+                                      = vwrite# [a] v1$buf x16 s0$elem in
+                                let x17     = read# [Nat#] v1$count in
+                                let x18     = add# [Nat#] x17 1# in
+                                let x5     
+                                      = write# [Nat#] v1$count x18 in
                                 ()) in
-                   let _      
+                   let x10    
                          = guard# flags2$elem
-                               (λ(_: Unit).
-                                let x8      = read# [Nat#] v2$count in
-                                let _      
-                                      = vwrite# [a] v2$buf x8 s0$elem in
-                                let x9      = read# [Nat#] v2$count in
-                                let x10     = add# [Nat#] x9 1# in
-                                let _      
-                                      = write# [Nat#] v2$count x10 in
+                               (λ(x7: Unit).
+                                let x19     = read# [Nat#] v2$count in
+                                let x8     
+                                      = vwrite# [a] v2$buf x19 s0$elem in
+                                let x20     = read# [Nat#] v2$count in
+                                let x21     = add# [Nat#] x20 1# in
+                                let x9     
+                                      = write# [Nat#] v2$count x21 in
                                 ()) in
                    ()) in
-      let x3     
+      let x12    
             = read# [Nat#] v1$count in
-      let _      
-            = vtrunc# [a] x3 v1 in
-      let x4     
+      let x13    
+            = vtrunc# [a] x12 v1 in
+      let x14    
             = read# [Nat#] v2$count in
-      let _      
-            = vtrunc# [a] x4 v2 in
+      let x15    
+            = vtrunc# [a] x14 v2 in
       ()
 }
 

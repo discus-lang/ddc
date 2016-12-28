@@ -12,15 +12,15 @@ letrec {
             = vbuf# [Int#] v in
       let x3     
             = series# [p] [k] [Int#] ins in
-      let _      
+      let x2     
             = loop# [k]
                   (λ(x0: Nat#).
                    let x3$elem
                          = next# [Int#] [p] [k] x3 x0 in
-                   let x1      = mul# [Int#] x3$elem 2i# in
+                   let x4      = mul# [Int#] x3$elem 2i# in
                    let x4$elem
-                         = add# [Int#] x1 1i# in
-                   let _      
+                         = add# [Int#] x4 1i# in
+                   let x1     
                          = vwrite# [Int#] v$buf x0 x4$elem in
                    ()) in
       ()
@@ -39,7 +39,7 @@ letrec {
             = read# [Int#] x in
       let x$acc  
             = new# [Int#] x$init in
-      let _      
+      let x5     
             = loop# [k]
                   (λ(x2: Nat#).
                    let x4$elem
@@ -48,13 +48,13 @@ letrec {
                          = mul# [Int#] x4$elem 2i# in
                    let x$val  
                          = read# [Int#] x$acc in
-                   let x3      = add# [Int#] x$val x5$elem in
-                   let _      
-                         = write# [Int#] x$acc x3 in
+                   let x7      = add# [Int#] x$val x5$elem in
+                   let x3     
+                         = write# [Int#] x$acc x7 in
                    ()) in
       let x$res  
             = read# [Int#] x$acc in
-      let _      
+      let x6     
             = write# [Int#] x x$res in
       ()
 }
@@ -70,7 +70,7 @@ letrec {
             = vbuf# [Int#] v in
       let x4     
             = series# [p] [k] [Int#] ins in
-      let _      
+      let x5     
             = loop# [k]
                   (λ(x1: Nat#).
                    let x4$elem
@@ -79,7 +79,7 @@ letrec {
                          = add# [Int#] 1i# x4$elem in
                    let x6$elem
                          = mul# [Int#] 2i# x5$elem in
-                   let _      
+                   let x3     
                          = vwrite# [Int#] v$buf x1 x6$elem in
                    ()) in
       ()
@@ -100,26 +100,26 @@ letrec {
             = read# [Int#] x in
       let x$acc  
             = new# [Int#] x$init in
-      let _      
+      let x7     
             = loop# [k]
                   (λ(x1: Nat#).
                    let s$elem 
                          = next# [Int#] [p] [k] s x1 in
                    let x$val  
                          = read# [Int#] x$acc in
-                   let x2      = add# [Int#] x$val s$elem in
-                   let _      
-                         = write# [Int#] x$acc x2 in
+                   let x9      = add# [Int#] x$val s$elem in
+                   let x3     
+                         = write# [Int#] x$acc x9 in
                    let s2$elem
                          = mul# [Int#] 2i# s$elem in
                    let s3$elem
                          = add# [Int#] 1i# s2$elem in
-                   let _      
+                   let x6     
                          = vwrite# [Int#] v$buf x1 s3$elem in
                    ()) in
       let x$res  
             = read# [Int#] x$acc in
-      let _      
+      let x8     
             = write# [Int#] x x$res in
       ()
 }

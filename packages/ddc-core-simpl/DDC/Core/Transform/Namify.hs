@@ -239,6 +239,12 @@ pushX   :: Ord n
         -> Bind n
         -> State s (Namifier s n, Bind n) 
 
+pushX tnam xnam b@(BNone t)
+ = do   t'      <- namify tnam xnam t
+        nx      <- namifierNew xnam (namifierEnv xnam) b
+        let b'  = BName nx t'
+        push xnam b'
+
 pushX tnam xnam b
  = do   t'      <- namify tnam xnam (typeOfBind b)
         let b'  = replaceTypeOfBind t' b
@@ -295,5 +301,8 @@ push nam b
                 return  ( nam { namifierStack = b' : namifierStack nam 
                               , namifierEnv   = Env.extend b (namifierEnv nam) }
                         , b' )
+
         _ ->    return  ( nam { namifierEnv   = Env.extend b (namifierEnv nam) }
                         , b)
+
+

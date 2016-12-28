@@ -30,18 +30,11 @@ data Map (k a: Data) where
 type Size = Nat
 
 
-show_map 
-        {show_k: Show k} {show_a: Show a}
-        : Show (Map k a)
+show_map {Show k} {Show a}: Show (Map k a)
  = Show sh
  where  
         sh (Bin s k a l r)
-         = parens $ "Bin"
-                %% show {show_nat} s
-                %% show {show_k}   k
-                %% show {show_a}   a
-                %% show {show_map {show_k} {show_a}} l
-                %% show {show_map {show_k} {show_a}} r
+         = parens $ "Bin" %% show s %% show k %% show a %% show l %% show r
 
         sh Tip
          = "Tip"
@@ -84,7 +77,7 @@ map_size (mp: Map k a): Size
 --
 -- The function will return the corresponding value as @('Just' value)@,
 -- or 'Nothing' if the key isn't in the map.
-map_lookup ((Ord compare): Ord k) (kx: k) (mp: Map k a): Maybe a
+map_lookup {Ord k} (kx: k) (mp: Map k a): Maybe a
  = go kx mp
  where  
         go _ Tip 
@@ -102,7 +95,7 @@ map_lookup ((Ord compare): Ord k) (kx: k) (mp: Map k a): Maybe a
 -- > member 5 (fromList [(5,'a'), (3,'b')]) == True
 -- > member 1 (fromList [(5,'a'), (3,'b')]) == False
 --
-map_member ((Ord compare): Ord k) (kx: k) (mp: Map k a): Bool
+map_member {Ord k} (kx: k) (mp: Map k a): Bool
  = go kx mp
  where  
         go _ Tip 
@@ -126,7 +119,7 @@ map_member ((Ord compare): Ord k) (kx: k) (mp: Map k a): Bool
 -- > insert 5 'x' empty                         == singleton 5 'x'
 --
 map_insert
-        ((Ord compare): Ord k) 
+        {Ord k}
         (kx0: k) (x0: a) (mp: Map k a): Map k a
  = go kx0 x0 mp
  where
@@ -147,11 +140,10 @@ map_insert
 --   insert the pair @(key, f new_value old_value)@.
 --
 map_insertWith
-        (ord: Ord k)
-        (f: a -> a -> a)
-        (kx: k) (x: a) (mp: Map k a)
+        {Ord k}
+        (f: a -> a -> a) (kx: k) (x: a) (mp: Map k a)
         : Map k a
- = map_insertWithKey ord
+ = map_insertWithKey
         (\_ x' y' -> f x' y')
         kx x mp
 
@@ -164,9 +156,8 @@ map_insertWith
 --   Note that the key passed to f is the same key passed to 'insertWithKey'.
 --
 map_insertWithKey
-        ((Ord compare): Ord k)
-        (f: k -> a -> a -> a)
-        (kx: k) (x: a) (mp: Map k a)
+        {Ord k}
+        (f: k -> a -> a -> a) (kx: k) (x: a) (mp: Map k a)
         : Map k a
  = go kx x mp
  where
@@ -211,12 +202,11 @@ map_foldlWithKey (f: a -> k -> b -> a) (z: a) (mp: Map k b): a
 
 -- Conversion -------------------------------------------------------------------------------------
 map_fromList 
-        (ord: Ord k)
-        (xx: List (Tup2 k a))
-        : Map k a
+        {Ord k}
+        (xx: List (Tup2 k a)) : Map k a
  = foldl (λ  mp tp
           -> case tp of
-                 T2 kx x -> map_insert ord kx x mp)
+                 T2 kx x -> map_insert kx x mp)
          map_empty xx
 
 

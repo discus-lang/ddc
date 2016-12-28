@@ -397,27 +397,10 @@ letrec {
       };
   
   foo: Ptr# rT Obj -> Ptr# rT Obj
-    = λ(_: Ptr# rT Obj).
-      let x1     
-            = let ^      
-                    = ddcAllocBoxed [rT] TAG1# 0# in
-              ^0 in
-      let x3     
-            = let ^      
-                    = ddcAllocSmall [rT] TAG0# 8# in
-              let ^      
-                    = ddcPayloadSmall [rT] ^0 in
-              let _      
-                    = poke# [rT] [Nat#]
-                          (plusPtr# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0#) 1# in
-              ^1 in
+    = λ(x1: Ptr# rT Obj).
       let x2     
             = let ^      
-                    = ddcAllocBoxed [rT] TAG0# 2# in
-              let _      
-                    = ddcSetBoxed [rT] [rT] ^0 0# x3 in
-              let _      
-                    = ddcSetBoxed [rT] [rT] ^0 1# x1 in
+                    = ddcAllocBoxed [rT] TAG1# 0# in
               ^0 in
       let x4     
             = let ^      
@@ -426,9 +409,26 @@ letrec {
                     = ddcPayloadSmall [rT] ^0 in
               let _      
                     = poke# [rT] [Nat#]
+                          (plusPtr# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0#) 1# in
+              ^1 in
+      let x3     
+            = let ^      
+                    = ddcAllocBoxed [rT] TAG0# 2# in
+              let _      
+                    = ddcSetBoxed [rT] [rT] ^0 0# x4 in
+              let _      
+                    = ddcSetBoxed [rT] [rT] ^0 1# x2 in
+              ^0 in
+      let x5     
+            = let ^      
+                    = ddcAllocSmall [rT] TAG0# 8# in
+              let ^      
+                    = ddcPayloadSmall [rT] ^0 in
+              let _      
+                    = poke# [rT] [Nat#]
                           (plusPtr# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0#) 0# in
               ^1 in
-      head [rT] x4 x2
+      head [rT] x5 x3
 }
 
 
@@ -453,14 +453,10 @@ letrec {
   
   foo: [r: Region].Ptr# rT Obj -> Ptr# rT Obj
     = Λ(r: Region).
-      λ(_: Ptr# rT Obj).
-      let x1     
-            = let ^      
-                    = ddcAllocBoxed [rT] TAG0# 0# in
-              ^0 in
+      λ(x1: Ptr# rT Obj).
       let x2     
             = let ^      
-                    = ddcAllocBoxed [rT] TAG1# 0# in
+                    = ddcAllocBoxed [rT] TAG0# 0# in
               ^0 in
       let x3     
             = let ^      
@@ -468,12 +464,16 @@ letrec {
               ^0 in
       let x4     
             = let ^      
+                    = ddcAllocBoxed [rT] TAG1# 0# in
+              ^0 in
+      let x5     
+            = let ^      
                     = ddcAllocBoxed [rT] TAG0# 2# in
               let _      
-                    = ddcSetBoxed [rT] [rT] ^0 0# x2 in
+                    = ddcSetBoxed [rT] [rT] ^0 0# x3 in
               let _      
-                    = ddcSetBoxed [rT] [rT] ^0 1# x3 in
+                    = ddcSetBoxed [rT] [rT] ^0 1# x4 in
               ^0 in
-      head [rT] x1 x4
+      head [rT] x2 x5
 }
 

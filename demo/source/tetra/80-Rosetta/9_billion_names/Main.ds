@@ -51,14 +51,15 @@ make    (n: Nat) (acc: List (List Nat)) (prev: List Nat)
 rows n  = Cons (singleton 1) (make n Nil (singleton 1))
 
 -- | Make cumulative sums.
-cumu n  = map (scanl add 0) (rows n)
+cumu n  = map  (scanl add 0) (rows n)
 
 -- | Get sum of the nth row.
-sums n  = foldl add 0 (last (Nil [Nat]) (rows n))
+sums n  = foldl add 0 (last Nil (rows n))
 
 -- | Write a list to the console.
 writeListl xs
- = do   forS xs (λ(n : Nat) -> write (show n % " "))
+ = do   forS xs $ λn 
+         -> write (show n % " ")
         write "\n"
 
 main ()

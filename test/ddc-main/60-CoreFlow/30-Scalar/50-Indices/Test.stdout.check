@@ -13,27 +13,27 @@ letrec {
             = vbuf# [Nat#] v in
       let v$count
             = new# [Nat#] 0# in
-      let _      
+      let x5     
             = loop# [k1]
                   (λ(x0: Nat#).
                    let lens$elem
                          = next# [Nat#] [p] [k1] lens x0 in
-                   let _      
+                   let x4     
                          = segment# lens$elem
                                (λ(x1: Nat#).
                                 let ^       = read# [Nat#] v$count in
-                                let _      
+                                let x2     
                                       = vwrite# [Nat#] v$buf ^0 x1 in
                                 let ^       = read# [Nat#] v$count in
                                 let ^       = add# [Nat#] ^0 1# in
-                                let _      
+                                let x3     
                                       = write# [Nat#] v$count ^0 in
                                 ()) in
                    ()) in
-      let x2     
+      let x6     
             = read# [Nat#] v$count in
-      let _      
-            = vtrunc# [Nat#] x2 v in
+      let x7     
+            = vtrunc# [Nat#] x6 v in
       ()
 }
 
@@ -48,31 +48,31 @@ letrec {
             = vbuf# [Nat#] v in
       let v$count
             = new# [Nat#] 0# in
-      let _      
+      let x7     
             = loop# [k1]
                   (λ(x2: Nat#).
                    let lens$elem
                          = next# [Nat#] [p] [k1] lens x2 in
                    let things$elem
                          = next# [Nat#] [p] [k1] things x2 in
-                   let _      
+                   let x6     
                          = segment# lens$elem
                                (λ(x3: Nat#).
                                 let s4$elem
                                       = add# [Nat#] x3 things$elem in
-                                let x5      = read# [Nat#] v$count in
-                                let _      
-                                      = vwrite# [Nat#] v$buf x5 s4$elem in
-                                let x6      = read# [Nat#] v$count in
-                                let x7      = add# [Nat#] x6 1# in
-                                let _      
-                                      = write# [Nat#] v$count x7 in
+                                let x10     = read# [Nat#] v$count in
+                                let x4     
+                                      = vwrite# [Nat#] v$buf x10 s4$elem in
+                                let x11     = read# [Nat#] v$count in
+                                let x12     = add# [Nat#] x11 1# in
+                                let x5     
+                                      = write# [Nat#] v$count x12 in
                                 ()) in
                    ()) in
-      let x4     
+      let x8     
             = read# [Nat#] v$count in
-      let _      
-            = vtrunc# [Nat#] x4 v in
+      let x9     
+            = vtrunc# [Nat#] x8 v in
       ()
 }
 
@@ -97,43 +97,43 @@ letrec {
             = series# [p] [k1] [Nat#] lens in
       let base'  
             = series# [p] [k1] [Nat#] base in
-      let _      
+      let x8     
             = loop# [k1]
                   (λ(x2: Nat#).
                    let lens'$elem
                          = next# [Nat#] [p] [k1] lens' x2 in
                    let base'$elem
                          = next# [Nat#] [p] [k1] base' x2 in
-                   let x6      = vbufofratevec# [kThings] [Float32#] things in
+                   let x13     = vbufofratevec# [kThings] [Float32#] things in
                    let firsts$elem
-                         = vread# [Float32#] x6 base'$elem in
-                   let _      
+                         = vread# [Float32#] x13 base'$elem in
+                   let x7     
                          = segment# lens'$elem
                                (λ(x3: Nat#).
-                                let x7      = read# [Nat#] out1$count in
-                                let _      
-                                      = vwrite# [Float32#] out2$buf x7 firsts$elem in
+                                let x14     = read# [Nat#] out1$count in
+                                let x4     
+                                      = vwrite# [Float32#] out2$buf x14 firsts$elem in
                                 let ixs$elem
                                       = add# [Nat#] base'$elem x3 in
-                                let x8      = vbufofratevec# [kThings] [Float32#] things in
+                                let x15     = vbufofratevec# [kThings] [Float32#] things in
                                 let results$elem
-                                      = vread# [Float32#] x8 ixs$elem in
-                                let x9      = read# [Nat#] out1$count in
-                                let _      
-                                      = vwrite# [Float32#] out1$buf x9 results$elem in
-                                let x10     = read# [Nat#] out1$count in
-                                let x11     = add# [Nat#] x10 1# in
-                                let _      
-                                      = write# [Nat#] out1$count x11 in
+                                      = vread# [Float32#] x15 ixs$elem in
+                                let x16     = read# [Nat#] out1$count in
+                                let x5     
+                                      = vwrite# [Float32#] out1$buf x16 results$elem in
+                                let x17     = read# [Nat#] out1$count in
+                                let x18     = add# [Nat#] x17 1# in
+                                let x6     
+                                      = write# [Nat#] out1$count x18 in
                                 ()) in
                    ()) in
-      let x4     
+      let x9     
             = read# [Nat#] out1$count in
-      let _      
-            = vtrunc# [Float32#] x4 out1 in
-      let x5     
+      let x10    
+            = vtrunc# [Float32#] x9 out1 in
+      let x11    
             = read# [Nat#] out1$count in
-      let _      
-            = vtrunc# [Float32#] x5 out2 in
+      let x12    
+            = vtrunc# [Float32#] x11 out2 in
       ()
 }

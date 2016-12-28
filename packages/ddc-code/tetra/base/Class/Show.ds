@@ -41,17 +41,16 @@ show_text: Show Text
 
 
 -- | Show dictionary for Tup2.
-show_tup2 {(Show sh_a): Show a} {(Show sh_b): Show b}
-        : Show (Tup2 a b)
+show_tup2 {Show a} {Show b}: Show (Tup2 a b)
  = Show sh
  where  
-        sh (T2 x y)     = parens $ "T2" %% sh_a x %% sh_b y
+        sh (T2 x y)     = parens $ "T2" %% show x %% show y
 
 
 -- | Show dictionary for List.
-show_list {(Show sh_a): Show a}: Show (List a)
+show_list {Show a}: Show (List a)
  = Show sh
  where  
         sh Nil          = "Nil"
-        sh (Cons x xs)  = parens $ "Cons" %% sh_a x %% sh xs
+        sh (Cons x xs)  = parens $ "Cons" %% show x %% show xs
 

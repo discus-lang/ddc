@@ -118,7 +118,7 @@ letrec {
   
   foo: [r: Region].Unit -> Blerk r
     = Λ(r: Region).
-      λ(_: Unit).
+      λ(x1: Unit).
       head [Blerk r] (Hot [r])
           (Cons [Blerk r] (Cold [r]) (Nil [Blerk r]))
 }

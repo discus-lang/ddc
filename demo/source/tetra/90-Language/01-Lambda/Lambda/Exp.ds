@@ -30,7 +30,7 @@ emptySubst: Subst
 applySubst (ss@(Subst ps): Subst) (xx: Exp): Exp
  = case xx of
         XVar nBind
-         -> case lookupBy (eqText nBind) ps of
+         -> case lookup nBind ps of
                 Nothing -> xx
                 Just x' -> x'
 

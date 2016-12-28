@@ -27,7 +27,7 @@ primes (c0: Nat): Stream Nat Nat
 --   Use Wilson's theorem to check for primality, being sure to take
 --   the mod of the running sum to avoid integer overflow.
 isPrime (n: Nat): Bool
- =  foldl (λ(acc x: Nat) -> rem (x * acc) n) 1 (enumFromTo 1 (n - 1))
+ =  foldl (λacc x -> rem (x * acc) n) 1 (enumFromTo 1 (n - 1))
  == (n - 1)
 
 
@@ -46,15 +46,13 @@ isKPrime (k n: Nat): Bool
         $ smap       fst
         $ sfilter    (eq 0 ∘ snd)
         $ smap       (divMod n)
-        $ stakeWhile (λ(x: Nat) -> x < n)
+        $ stakeWhile (λx -> x < n)
         $ primes 2
 
-
 main ()
- =      forS (enumFromTo 1 5)
-         (λ(k: Nat#) ->
-          do    write $ "k = " % show k % ": "
-                forS (listOfStream $ stake 10 $ kPrimes k)
-                        (λ(x: Nat) -> write $ show x % " ")
-                write "\n")
+ =  forS (enumFromTo 1 5) $ λk 
+ -> do  write $ "k = " % show k % ": "
+        forS (listOfStream $ stake 10 $ kPrimes k) $ λx
+         ->     write $ show x % " "
+        write "\n"
 

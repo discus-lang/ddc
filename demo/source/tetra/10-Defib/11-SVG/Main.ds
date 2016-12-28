@@ -4,10 +4,10 @@ import Data.Graphics.SVG.Tiny
 import System.IO.Console
 where
 
-
+-- TODO: shouldn't need to pass explicit dictionary.
 main ()
  = writel
-        $ renderSVG
+        $ render [SVG] {render_SVG}
         $ SVG   200 200
         $ Cons (Circle 100 100 50) Nil
 

@@ -26,25 +26,21 @@ sexp3 n t1 t2 t3 = parens $ n %% t1 %% t2 %% t3
 
 
 -- | Pretty dictionary for Tup2.
-pretty_Tup2 
-        {ppA: Pretty a} {ppB: Pretty b}
-        : Pretty (Tup2 a b)
+pretty_Tup2  {Pretty a} {Pretty b}: Pretty (Tup2 a b)
  = Pretty pp
  where  pp ((T2 xa xb): Tup2 a b)
          = sexp2 "tup2" (ppr xa) (ppr xb)
 
 
 -- | Pretty dictionary for List.
-pretty_List 
-        {ppA: Pretty a}: Pretty (List a)
+pretty_List  {ppA: Pretty a}: Pretty (List a)
  =  Pretty $ \xx
  ->     sexp1 "list" (foldl pastes "" $ map (ppr [a] {ppA}) xx)
         -- TODO: the args to ppr should have been resolved.
 
 
 -- | Pretty dictionary for Maybe.
-pretty_Maybe
-        {ppA: Pretty a}: Pretty (Maybe a)
+pretty_Maybe {Pretty a}: Pretty (Maybe a)
  =  Pretty $ \xx
  -> case xx of
         Nothing -> "nothing"

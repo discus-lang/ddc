@@ -30,11 +30,11 @@ l10.body:
         %_v12.yval1  = load i64, i64* %_v2.y,    !tbaa !6
         %_v13.a      = add i64 %_v11.xval1, %_v12.yval1
         store i64 %_v13.a, i64* %_v3.z,    !tbaa !8
-        %_v14.xval2  = load i64, i64* %_v1.x,    !tbaa !7
-        %_v15.yval2  = load i64, i64* %_v2.y,    !tbaa !6
-        %_v16.b      = add i64 %_v14.xval2, %_v15.yval2
-        %_v17        = mul i64 %_v13.a, %_v16.b
-        ret i64 %_v17
+        %_v15.xval2  = load i64, i64* %_v1.x,    !tbaa !7
+        %_v16.yval2  = load i64, i64* %_v2.y,    !tbaa !6
+        %_v17.b      = add i64 %_v15.xval2, %_v16.yval2
+        %_v18        = mul i64 %_v13.a, %_v17.b
+        ret i64 %_v18
 }
 
 
@@ -74,11 +74,11 @@ l12.init:
 l13.body:
         %_v14.a      = load i64, i64* %_v8.x,    !tbaa !11
         %_v15.b      = add i64 %_v14.a, 1
-        %_v17._d16   = call fastcc i64 @nothing (i64* %_v8.x) 
-        %_v18.c      = load i64, i64* %_v8.x,    !tbaa !11
-        %_v19.d      = mul i64 %_v18.c, 2
-        %_v20        = add i64 %_v15.b, %_v19.d
-        ret i64 %_v20
+        %_v16.x0     = call fastcc i64 @nothing (i64* %_v8.x) 
+        %_v17.c      = load i64, i64* %_v8.x,    !tbaa !11
+        %_v18.d      = mul i64 %_v17.c, 2
+        %_v19        = add i64 %_v15.b, %_v18.d
+        ret i64 %_v19
 }
 
 

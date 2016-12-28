@@ -668,8 +668,8 @@ pParamsSP
                         t       <- pType
                         return  [ MImplicit p (Just t) | p <- ps ]
 
-                , do    p       <- pPat
-                        return  [ MImplicit p Nothing ]
+                , do    t       <- pType
+                        return  [ MImplicit PDefault (Just t) ]
                 ]
         pSym  SBraceKet
         return  ps
