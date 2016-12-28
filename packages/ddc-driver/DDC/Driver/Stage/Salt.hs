@@ -1,9 +1,8 @@
 
 module DDC.Driver.Stage.Salt
-        ( stageSaltLoad
-        , saltLoadText
+        ( saltLoadText
+        , saltSimplify
 
-        , stageSaltOpt
         , stageSaltToC
         , stageSaltToSlottedLLVM
         , stageSaltToUnSlottedLLVM
@@ -29,32 +28,15 @@ import DDC.Build.Interface.Store                as B
 import qualified DDC.Core.Check                 as C
 import qualified DDC.Core.Module                as C
 import qualified DDC.Core.Simplifier.Recipe     as S
+import qualified DDC.Core.Transform.Reannotate  as CReannotate
 
 import qualified DDC.Core.Salt.Name             as A
-import qualified DDC.Core.Salt.Convert          as A
 import qualified DDC.Core.Salt.Profile          as A
 
 import qualified DDC.Build.Stage.Core           as B
 import qualified DDC.Build.Language.Salt        as BA
 
-
 ---------------------------------------------------------------------------------------------------
--- | Load and type check a Core Salt module.
-stageSaltLoad
-        :: Config -> Source
-        -> [PipeCore () A.Name]
-        -> PipeText A.Name A.Error
-
-stageSaltLoad config source pipesSalt
- = PipeTextLoadCore BA.fragment 
-        (if configInferTypes config then C.Synth [] else C.Recon)
-        SinkDiscard
- [ PipeCoreReannotate (const ())
-        ( PipeCoreOutput pprDefaultMode
-                         (dump config source "dump.0-salt-00-load.dcl")
-        : pipesSalt ) ]
-
-
 -- | Load and type-check a core tetra module.
 saltLoadText 
         :: Config               -- ^ Driver config.
@@ -80,20 +62,18 @@ saltLoadText config _store source str
 
 
 ---------------------------------------------------------------------------------------------------
--- | Optimise Core Salt.
-stageSaltOpt
-        :: Config -> Source
-        -> [PipeCore () A.Name]
-        -> PipeCore  () A.Name
+saltSimplify
+        :: Config               -- ^ Driver config.
+        -> D.Source             -- ^ Source file meta-data.
+        -> C.Module a A.Name   -- ^ Module to simplify.
+        -> ExceptT [B.Error] IO (C.Module () A.Name)
 
-stageSaltOpt config source pipes
- = PipeCoreSimplify 
+saltSimplify config _source mm
+ = B.coreSimplify
         BA.fragment
-        (0 :: Int) 
-        (configSimplSalt config)        
-        ( PipeCoreOutput  pprDefaultMode 
-                          (dump config source "dump.2-salt-01-opt.dcs")
-        : pipes )
+        (0 :: Int)
+        (configSimplSalt config)
+        (CReannotate.reannotate (const ()) mm)
 
 
 ---------------------------------------------------------------------------------------------------

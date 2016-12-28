@@ -25,7 +25,6 @@ import qualified DDC.Build.Language.Salt        as Salt
 import qualified DDC.Core.Check                 as C
 import qualified DDC.Driver.Stage.Tetra         as DE
 import qualified DDC.Driver.Stage.Salt          as DA
-import qualified DDC.Core.Transform.Reannotate  as CReannotate
 
 
 -------------------------------------------------------------------------------
@@ -97,16 +96,15 @@ cmdToSaltSourceTetraFromString config store source str
         let pmode   = prettyModeOfConfig $ configPretty config
 
         modSalt' 
-         <- do  modTetra <- DE.sourceLoadText config store  source str
-                modSalt  <- DE.tetraToSalt    config source modTetra
-                return modSalt
+         <-  DA.saltSimplify   config source
+         =<< DE.tetraToSalt    config source 
+         =<< DE.sourceLoadText config store  source str
 
         errs
          <- liftIO $ pipeCore modSalt'
-         $  stageSaltOpt         config source
-           [ PipeCoreCheck      "ToSaltSourceTetraFromString" 
+         $   PipeCoreCheck      "ToSaltSourceTetraFromString" 
                                 Salt.fragment C.Recon SinkDiscard
-           [ PipeCoreOutput pmode SinkStdout ]]
+           [ PipeCoreOutput pmode SinkStdout ]
 
         case errs of
          []     -> return ()
@@ -165,12 +163,13 @@ cmdToSaltCoreFromString config language source str
         -- Make salt from the input file.
         let makeSalt
                 |   fragName == "Tetra"
-                =   DE.tetraToSalt   config source
+                =   DA.saltSimplify  config source
+                =<< DE.tetraToSalt   config source
                 =<< DE.tetraLoadText config store source str
 
                 |   fragName == "Salt"
-                =   fmap (CReannotate.reannotate (const ()))
-                $   DA.saltLoadText  config store source str
+                =   DA.saltSimplify  config source
+                =<< DA.saltLoadText  config store source str
 
                 -- Unrecognised.
                 | otherwise
@@ -179,8 +178,7 @@ cmdToSaltCoreFromString config language source str
         modSalt <- makeSalt
 
         errs    <- liftIO $ pipeCore modSalt
-                $  stageSaltOpt config source 
-                [  PipeCoreOutput pmode SinkStdout ]
+                $  PipeCoreOutput pmode SinkStdout 
 
         -- Throw any errors that arose during compilation
         case errs of

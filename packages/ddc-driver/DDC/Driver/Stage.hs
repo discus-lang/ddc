@@ -29,8 +29,9 @@ module DDC.Driver.Stage
         , stageMachineOutputSlurp
 
           -- * Salt stages
-        , stageSaltLoad
-        , stageSaltOpt
+        , saltLoadText
+        , saltSimplify
+
         , stageSaltToC
         , stageSaltToSlottedLLVM
         , stageSaltToUnSlottedLLVM

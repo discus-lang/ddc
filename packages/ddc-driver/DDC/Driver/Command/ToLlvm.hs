@@ -22,7 +22,6 @@ import DDC.Build.Interface.Store                (Store)
 import qualified DDC.Build.Interface.Store      as Store
 import qualified DDC.Driver.Stage.Tetra         as DE
 import qualified DDC.Driver.Stage.Salt          as DA
-import qualified DDC.Core.Transform.Reannotate  as CReannotate
 
 
 -------------------------------------------------------------------------------
@@ -93,15 +92,14 @@ cmdToLlvmSourceTetraFromString config store source str
  = withExceptT (renderIndent . vcat . map ppr)
  $ do  
         modSalt' 
-         <- do  modTetra <- DE.sourceLoadText config store  source str
-                modSalt  <- DE.tetraToSalt    config source modTetra
-                return modSalt
+         <-  DA.saltSimplify   config source
+         =<< DE.tetraToSalt    config source 
+         =<< DE.sourceLoadText config store  source str
 
         errs
          <- liftIO $ pipeCore modSalt'
-         $  stageSaltOpt           config source
-          [ stageSaltToSlottedLLVM config source
-          [ PipeLlvmPrint SinkStdout]]
+         $  stageSaltToSlottedLLVM config source
+          [ PipeLlvmPrint SinkStdout]
  
         case errs of
          []     -> return ()
@@ -158,12 +156,13 @@ cmdToLlvmCoreFromString config language source str
         -- Decide what to do based on file extension and current fragment.
         let makeSalt
                 |   fragName == "Tetra"
-                =   DE.tetraToSalt   config source
+                =   DA.saltSimplify  config source
+                =<< DE.tetraToSalt   config source
                 =<< DE.tetraLoadText config store source str
 
                 |   fragName == "Salt"
-                =   fmap (CReannotate.reannotate (const ()))
-                $   DA.saltLoadText  config store source str
+                =   DA.saltSimplify  config source
+                =<< DA.saltLoadText  config store source str
 
                 -- Unrecognised.
                 | otherwise
@@ -172,11 +171,10 @@ cmdToLlvmCoreFromString config language source str
         modSalt <- makeSalt
 
         errs    <- liftIO $ pipeCore modSalt
-                $  stageSaltOpt config source 
-                 [ (if fragName == "Tetra" 
+                $  (if fragName == "Tetra" 
                         then stageSaltToSlottedLLVM   config source
                         else stageSaltToUnSlottedLLVM config source)
-                 [ PipeLlvmPrint      SinkStdout]]
+                 [ PipeLlvmPrint      SinkStdout]
 
         -- Throw any errors that arose during compilation
         case errs of

@@ -347,8 +347,9 @@ cmdCompile config bBuildExe' store filePath
         -- Convert Core Tetra to Core Salt.
         let makeSalt
                 | ext == ".dcs"
-                = fmap (CReannotate.reannotate (const ()))
-                $ DA.saltLoadText config store source src
+                =   fmap (CReannotate.reannotate (const ()))
+                $   DA.saltSimplify config source
+                =<< DA.saltLoadText config store source src
 
                 | Just modTetra <- mModTetra
                 = DE.tetraToSalt  config source  
@@ -372,17 +373,15 @@ cmdCompile config bBuildExe' store filePath
                 ViaLLVM
                  -> liftIO $ pipeCore modSalt
                  $  PipeCoreReannotate (const ())
-                     [ stageSaltOpt     config source
                      [ (if bSlotify 
                           then stageSaltToSlottedLLVM   config source 
                           else stageSaltToUnSlottedLLVM config source)
-                     [ stageCompileLLVM config source filePath otherObjs ]]]
+                     [ stageCompileLLVM config source filePath otherObjs ]]
 
                 ViaC
                  -> liftIO $ pipeCore modSalt
                  $  PipeCoreReannotate (const ())
-                     [ stageSaltOpt     config source
-                     [ stageCompileSalt config source filePath False ]]
+                     [ stageCompileSalt config source filePath False ]
 
         (case errs of
          []     -> return ()
