@@ -287,12 +287,12 @@ cmdCompile
         -> ExceptT String IO ()
 
 cmdCompile config bBuildExe' store filePath
- = do   
-        let buildExe
-                =  takeBaseName filePath == "Main"
-                && bBuildExe'
+ = withExceptT (P.renderIndent . P.vcat . map P.ppr)
+ $ do   
+        let bBuildExe
+                =  takeBaseName filePath == "Main" && bBuildExe'
 
-        if buildExe 
+        if bBuildExe 
          then liftIO $ putStrLn $ "* Compiling " ++ filePath ++ " as executable"
          else liftIO $ putStrLn $ "* Compiling " ++ filePath
 
@@ -303,17 +303,17 @@ cmdCompile config bBuildExe' store filePath
         -- Read in the source file.
         exists  <- liftIO $ doesFileExist filePath
         when (not exists)
-         $ throwE $ "No such file " ++ show filePath
+         $ throwE [ErrorLoad $ "No such file " ++ show filePath]
 
         src     <- liftIO $ readFile filePath
 
 
         -- If we're building an executable, then get paths to the other object
         -- files that we need to link with.
-        metas   <- liftIO $ Store.getMeta store
-        let pathsDI     = map Store.metaFilePath metas
+        metas           <- liftIO $ Store.getMeta store
+        let pathsDI     =  map Store.metaFilePath metas
         let otherObjs
-                | buildExe  = Just $ map (\path -> replaceExtension path "o") pathsDI
+                | bBuildExe = Just $ map (\path -> replaceExtension path "o") pathsDI
                 | otherwise = Nothing
 
 
@@ -340,8 +340,7 @@ cmdCompile config bBuildExe' store filePath
                 | otherwise
                 = throwE [ErrorLoad $ "Cannot compile '" ++ ext ++ "' files."]
 
-        mModTetra <- withExceptT (P.renderIndent . P.vcat . map P.ppr) 
-                  $  makeTetra
+        mModTetra <- makeTetra
 
 
         -- Convert Core Tetra to Core Salt.
@@ -358,8 +357,7 @@ cmdCompile config bBuildExe' store filePath
                 | otherwise
                 = throwE [ErrorLoad $ "no tetra file"]
 
-        modSalt <- withExceptT (P.renderIndent . P.vcat . map P.ppr)
-                $  makeSalt
+        modSalt <- makeSalt
 
 
         -- Convert Core Salt into object code.
@@ -368,31 +366,15 @@ cmdCompile config bBuildExe' store filePath
                         ".dcs"  -> False
                         _       -> True
         
-        errs
-         <- case configViaBackend config of
-             ViaLLVM
-              -> do mm_llvm 
-                     <- withExceptT (P.renderIndent . P.vcat . map P.ppr)
-                     $  DA.saltToLlvm config source bSlotify modSalt
+        (case configViaBackend config of
+             ViaLLVM -> DA.saltCompileViaLlvm config source otherObjs
+                                bSlotify bBuildExe modSalt
 
-                    liftIO $ pipeLlvm mm_llvm
-                           $ stageCompileLLVM config source filePath otherObjs 
-
-             ViaC
-              -> do withExceptT (P.renderIndent . P.vcat . map P.ppr)
-                     $  saltCompileViaSea config source False modSalt
-
-                    return []
-
-
-        (case errs of
-         []     -> return ()
-         _      -> throwE $ P.renderIndent $ P.vcat $ map P.ppr errs)
+             ViaC    -> DA.saltCompileViaSea  config source False modSalt)
 
 
         -- Get current time stamp for interface file.
         timeDI  <- liftIO $ getCurrentTime
-
 
         -- Write out the interface file.
         let int = Interface

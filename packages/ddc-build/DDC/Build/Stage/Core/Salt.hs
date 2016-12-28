@@ -1,6 +1,7 @@
 
 module DDC.Build.Stage.Core.Salt
         ( saltCompileViaSea
+        , saltCompileViaLlvm
         , saltToSea 
         , saltToLlvm)
 where
@@ -32,6 +33,7 @@ import qualified DDC.Core.Salt.Transform.Slotify        as ASlotify
 import qualified DDC.Core.Llvm.Convert                  as ALlvm
 
 import qualified DDC.Llvm.Syntax                        as L
+import qualified DDC.Llvm.Pretty                        as L
 
 
 ---------------------------------------------------------------------------------------------------
@@ -49,7 +51,8 @@ saltCompileViaSea
 
 saltCompileViaSea 
         srcName builder 
-        pathO mPathExe mPathsOther bKeepSeaFiles mm
+        pathO mPathExe mPathsOther
+        bKeepSeaFiles mm
  = do
         -- Decide where to place the build products.
         let pathC       = FilePath.replaceExtension pathO  ".ddc.c"        
@@ -73,6 +76,74 @@ saltCompileViaSea
         -- Remove intermediate .c files if we weren't asked for them.
         when (not bKeepSeaFiles)
          $ liftIO $ System.removeFile pathC
+
+        return ()
+
+
+---------------------------------------------------------------------------------------------------
+-- | Compile Salt Code using the system Llvm compiler.
+saltCompileViaLlvm
+        :: (Show a, Pretty a)
+        => String               -- ^ Name of source module, for error messages.
+        -> B.Builder            -- ^ Builder for target platform.
+        -> FilePath             -- ^ Path for object file.
+        -> Maybe  FilePath      -- ^ Path for executable file.
+        -> Maybe [FilePath]     -- ^ Paths of other object files to link with.
+        -> Bool                 -- ^ Whether to add stack slot code.
+        -> Bool                 -- ^ Whether to keep intermediate Llvm files.
+        -> Bool                 -- ^ Whether to keep intermediate Asm files.
+        -> B.Sink               -- ^ Sink after prep simplification.
+        -> B.Sink               -- ^ Sink after introducing stack slots.
+        -> B.Sink               -- ^ Sink after transfer transform.
+        -> C.Module a A.Name    -- ^ Core Salt module.
+        -> ExceptT [B.Error] IO ()
+
+saltCompileViaLlvm
+        srcName builder pathO mPathExe mPathsOther 
+        bSlotify bKeepLlvmFiles bKeepAsmFiles
+        sinkPrep sinkSlots sinkTransfer
+        mm 
+
+ = do
+        -- Decide where to place the build products.
+        let pathLL      = FilePath.replaceExtension pathO ".ddc.ll"
+        let pathS       = FilePath.replaceExtension pathO ".ddc.s"
+
+        -- Convert Salt code to Llvm code.
+        let platform    = B.buildSpec builder
+        mm_llvm         
+         <- saltToLlvm
+                srcName platform bSlotify
+                sinkPrep sinkSlots sinkTransfer
+                mm
+
+        -- Render Llvm module as a string.
+        let llConfig    = L.configOfVersion $ Just $ B.buildLlvmVersion builder
+        let llMode      = L.prettyModeModuleOfConfig llConfig
+        let strLlvm     = renderIndent $ pprModePrec llMode (0 :: Int) mm_llvm
+
+        -- Write out Llvm source file.
+        liftIO $ writeFile pathLL strLlvm
+
+        -- Compile Llvm source file into .s file.
+        liftIO $ B.buildLlc builder pathLL pathS
+
+        -- Assemble .s file into .o file.
+        liftIO $ B.buildAs  builder pathS  pathO
+
+        -- Link .o file into an executable if we were asked for one.
+        let pathsO = pathO : (concat $ maybeToList mPathsOther)
+        (case mPathExe of
+          Nothing       -> return ()
+          Just pathExe  -> liftIO $ B.buildLdExe builder pathsO pathExe)
+
+        -- Remove intermediate .ll files if we weren't asked for them.
+        when (not bKeepLlvmFiles)
+         $ liftIO $ System.removeFile pathLL
+
+        -- Remove intermediate .asm files if we weren't asked for them.
+        when (not bKeepAsmFiles)
+         $ liftIO $ System.removeFile pathS
 
         return ()
 

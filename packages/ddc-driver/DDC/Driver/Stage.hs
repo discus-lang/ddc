@@ -34,9 +34,7 @@ module DDC.Driver.Stage
         , saltToSea
         , saltToLlvm
         , saltCompileViaSea
-
-          -- * LLVM stages
-        , stageCompileLLVM)
+        , saltCompileViaLlvm)
 where
 import DDC.Driver.Config
 import DDC.Driver.Stage.Tetra

@@ -97,13 +97,8 @@ cmdToLlvmSourceTetraFromString config store source str
          =<< DE.tetraToSalt    config source 
          =<< DE.sourceLoadText config store  source str
 
-        errs
-         <- liftIO $ pipeLlvm modLlvm'
-         $  PipeLlvmPrint SinkStdout
+        liftIO $ putStrLn (renderIndent $ ppr modLlvm')
  
-        case errs of
-         []     -> return ()
-         _      -> throwE errs
 
 
 -------------------------------------------------------------------------------
@@ -171,16 +166,10 @@ cmdToLlvmCoreFromString config language source str
         modSalt <- makeSalt
 
         -- Convert Core Salt to LLVM.
-        let bSlotify
-                = fragName == "Tetra"
-
+        let bSlotify = fragName == "Tetra"
         modLlvm <- DA.saltToLlvm config source bSlotify modSalt
 
-        errs    <- liftIO $ pipeLlvm modLlvm
-                $  PipeLlvmPrint SinkStdout
+        -- Print LLVM code to stdout.
+        liftIO $ putStrLn (renderIndent $ ppr modLlvm)
 
-        -- Throw any errors that arose during compilation
-        case errs of
-         []     -> return ()
-         _      -> throwE errs
 
