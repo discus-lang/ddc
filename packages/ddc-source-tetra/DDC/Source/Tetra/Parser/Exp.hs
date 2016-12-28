@@ -334,7 +334,7 @@ pExpAtomSP
         if      u == (UName $ Text.pack "elaborate#")
                 then return (sp, XPrim PElaborate)
         else if u == (UName $ Text.pack "project#") 
-                then return (sp, XPrim (PProject (Text.pack "field_TODO")))
+                then return (sp, XPrim (PProject (Text.pack "field")))
         else if u == (UName $ Text.pack "shuffle#")
                 then return (sp, XPrim PShuffle)
         else if u == (UName $ Text.pack "combine#")
