@@ -16,7 +16,6 @@ module DDC.Build.Pipeline.Core
 where
 import DDC.Build.Pipeline.Error
 import DDC.Build.Pipeline.Sink
-import DDC.Build.Pipeline.Salt
 import DDC.Build.Stage.Core
 
 import DDC.Build.Language
@@ -117,12 +116,6 @@ data PipeCore a n where
         => ![PipeMachine a]
         -> PipeCore a Machine.Name
 
-  -- Treat a module as belonging to the Core Salt fragment from now on.
-  PipeCoreAsSalt
-        :: Pretty a 
-        => ![PipeSalt a] 
-        -> PipeCore a Salt.Name
-
   -- Apply a canned function to a module.
   -- This is helpful for debugging, and tweaking the output before pretty printing.
   -- More reusable transforms should be made into their own pipeline stage.
@@ -188,10 +181,6 @@ pipeCore !mm !pp
         PipeCoreAsMachine !pipes
          -> {-# SCC "PipeCoreAsMachine" #-}
             liftM concat $ mapM (pipeMachine mm) pipes
-
-        PipeCoreAsSalt !pipes
-         -> {-# SCC "PipeCoreAsSalt" #-}
-            liftM concat $ mapM (pipeSalt mm) pipes
 
         PipeCoreHacks !(Canned f) !pipes
          -> {-# SCC "PipeCoreHacks" #-} 

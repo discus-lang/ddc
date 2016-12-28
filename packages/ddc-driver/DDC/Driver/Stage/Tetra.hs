@@ -1,4 +1,5 @@
 
+-- | Plumb driver configuration into the Tetra specific build stages.
 module DDC.Driver.Stage.Tetra
         ( sourceLoadText
         , tetraLoadText

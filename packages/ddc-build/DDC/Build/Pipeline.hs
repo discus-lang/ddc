@@ -29,10 +29,6 @@ module DDC.Build.Pipeline
         , PipeMachine     (..)
         , pipeMachine
 
-          -- * Core Salt modules
-        , PipeSalt        (..)
-        , pipeSalt
-
           -- * LLVM modules
         , PipeLlvm        (..)
         , pipeLlvm
@@ -43,7 +39,6 @@ module DDC.Build.Pipeline
 where
 import DDC.Build.Pipeline.Text
 import DDC.Build.Pipeline.Core
-import DDC.Build.Pipeline.Salt
 import DDC.Build.Pipeline.Llvm
 import DDC.Build.Pipeline.Sink
 import DDC.Build.Pipeline.Error

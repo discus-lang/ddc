@@ -1,15 +1,21 @@
 
 module DDC.Build.Stage.Core.Salt
-        ( saltToSea 
+        ( saltCompileViaSea
+        , saltToSea 
         , saltToLlvm)
 where
 import Control.Monad.Trans.Except
 import Control.Monad.IO.Class
+import Control.Monad
+import Data.Maybe
+import qualified System.Directory                       as System
+import qualified System.FilePath                        as FilePath
 
 import DDC.Data.Pretty
 
 import qualified DDC.Build.Pipeline.Error               as B
 import qualified DDC.Build.Pipeline.Sink                as B
+import qualified DDC.Build.Builder                      as B
 import qualified DDC.Build.Stage.Core                   as BC
 import qualified DDC.Build.Language.Salt                as BA
 
@@ -26,6 +32,49 @@ import qualified DDC.Core.Salt.Transform.Slotify        as ASlotify
 import qualified DDC.Core.Llvm.Convert                  as ALlvm
 
 import qualified DDC.Llvm.Syntax                        as L
+
+
+---------------------------------------------------------------------------------------------------
+-- | Compile Salt Code using the system Sea compiler.
+saltCompileViaSea
+        :: (Show a, Pretty a)
+        => String               -- ^ Name of source module, for error messages.
+        -> B.Builder            -- ^ Builder for target platform.
+        -> FilePath             -- ^ Path for object file.
+        -> Maybe  FilePath      -- ^ Path for executable file.
+        -> Maybe [FilePath]     -- ^ Paths of other object files to link with.
+        -> Bool                 -- ^ Whether to keep intermediate C files.
+        -> C.Module a A.Name    -- ^ Core Salt module.
+        -> ExceptT [B.Error] IO ()
+
+saltCompileViaSea 
+        srcName builder 
+        pathO mPathExe mPathsOther bKeepSeaFiles mm
+ = do
+        -- Decide where to place the build products.
+        let pathC       = FilePath.replaceExtension pathO  ".ddc.c"        
+
+        -- Convert Salt code to Sea text.
+        let platform    = B.buildSpec builder
+        strSea          <- saltToSea srcName platform mm
+
+        -- Write the C file to the output path.
+        liftIO $ writeFile pathC strSea
+
+        -- Compile .c source file into .o object file.
+        liftIO $ B.buildCC builder pathC pathO
+
+        -- Link .o file into an executable if we were asked for one.
+        let pathsO = pathO : (concat $ maybeToList mPathsOther)
+        (case mPathExe of
+          Nothing       -> return ()
+          Just pathExe  -> liftIO $ B.buildLdExe builder pathsO pathExe)
+
+        -- Remove intermediate .c files if we weren't asked for them.
+        when (not bKeepSeaFiles)
+         $ liftIO $ System.removeFile pathC
+
+        return ()
 
 
 ---------------------------------------------------------------------------------------------------
@@ -132,4 +181,5 @@ saltToLlvm
                 Right mm'       -> return mm'
 
         return srcLlvm
+
 

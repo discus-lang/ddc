@@ -1,11 +1,12 @@
 
+-- | Plumb driver configuration into the Salt specific build stages.
 module DDC.Driver.Stage.Salt
         ( saltLoadText
         , saltSimplify
         , saltToSea
         , saltToLlvm
+        , saltCompileViaSea
 
-        , stageCompileSalt
         , stageCompileLLVM)
 where
 import Control.Monad.Trans.Except
@@ -15,7 +16,6 @@ import DDC.Driver.Config                        as D
 import DDC.Driver.Interface.Source              as D
 import DDC.Build.Builder                        as B
 import DDC.Build.Pipeline                       as B
-import DDC.Core.Transform.Namify
 import DDC.Data.Pretty
 import System.FilePath
 import Data.Maybe
@@ -26,11 +26,9 @@ import DDC.Build.Interface.Store                as B
 
 import qualified DDC.Core.Check                 as C
 import qualified DDC.Core.Module                as C
-import qualified DDC.Core.Simplifier.Recipe     as S
 import qualified DDC.Core.Transform.Reannotate  as CReannotate
 
 import qualified DDC.Core.Salt.Name             as A
-import qualified DDC.Core.Salt.Profile          as A
 
 import qualified DDC.Build.Stage.Core           as B
 import qualified DDC.Build.Stage.Core.Salt      as BA
@@ -117,41 +115,28 @@ saltToLlvm config source bAddSlots mm
 
 
 ---------------------------------------------------------------------------------------------------
--- | Compile Core Salt via C code.
-stageCompileSalt
-        :: Config -> Source
-        -> FilePath             -- ^ Path of original source file.
-                                --   Build products are placed into the same dir.
-        -> Bool                 -- ^ Should we link this into an executable
-        -> PipeCore () A.Name
+-- | Compile Core Salt code using the system C compiler.
+saltCompileViaSea
+        :: (Show a, Pretty a)
+        => Config               -- ^ Driver config.
+        -> D.Source             -- ^ Source file meta data.
+        -> Bool                 -- ^ Whether we should link into an executable.
+        -> C.Module a A.Name    -- ^ Module to convert.
+        -> ExceptT [B.Error] IO ()
 
-stageCompileSalt config source filePath shouldLinkExe
- = let  -- Decide where to place the build products.
-        (oPath, _)      = objectPathsOfConfig config filePath
-        exePath         = exePathOfConfig    config filePath
-        cPath           = replaceExtension   oPath  ".ddc.c"
-   in
-        PipeCoreSimplify        BA.fragment 0 normalizeSalt
-         [ PipeCoreCheck        "CompileSalt" BA.fragment C.Recon SinkDiscard
-           [ PipeCoreOutput     pprDefaultMode
-                                (dump config source "dump.2-salt-03-normalized.dcs")
-           , PipeCoreAsSalt
-             [ PipeSaltTransfer
-               [ PipeSaltOutput (dump config source "dump.2-salt-04-transfer.dcs")
-               , PipeSaltCompile
-                        (buildSpec $ configBuilder config)
-                        (configBuilder config)
-                        cPath
-                        oPath
-                        (if shouldLinkExe 
-                                then Just exePath 
-                                else Nothing) 
-                        (configKeepSeaFiles config)
-                        ]]]]
+saltCompileViaSea config source bShouldLinkExe mm
+ = do
+        let (oPath, _)  = objectPathsOfConfig config (D.nameOfSource source)
+        let mExePath    = if bShouldLinkExe
+                                then Just $ exePathOfConfig config oPath
+                                else Nothing
 
- where  normalizeSalt
-         = S.anormalize (makeNamifier A.freshT) 
-                        (makeNamifier A.freshX)
+        BA.saltCompileViaSea
+                (D.nameOfSource source)
+                (configBuilder config)
+                oPath mExePath Nothing 
+                (configKeepSeaFiles config)
+                mm
 
 
 ---------------------------------------------------------------------------------------------------

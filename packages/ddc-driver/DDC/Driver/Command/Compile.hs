@@ -379,9 +379,11 @@ cmdCompile config bBuildExe' store filePath
                            $ stageCompileLLVM config source filePath otherObjs 
 
              ViaC
-              -> liftIO $ pipeCore modSalt
-               $  PipeCoreReannotate (const ())
-                     [ stageCompileSalt config source filePath False ]
+              -> do withExceptT (P.renderIndent . P.vcat . map P.ppr)
+                     $  saltCompileViaSea config source False modSalt
+
+                    return []
+
 
         (case errs of
          []     -> return ()
