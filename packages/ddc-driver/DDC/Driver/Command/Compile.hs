@@ -382,7 +382,7 @@ cmdCompile config bBuildExe' store filePath
                 , interfaceFilePath     = pathDI
                 , interfaceTimeStamp    = timeDI
                 , interfaceModuleName   = C.moduleName modSalt
-                , interfaceTetraModule  = mModTetra 
+                , interfaceTetraModule  = fmap (CReannotate.reannotate (const ())) mModTetra 
                 , interfaceSaltModule   = Just modSalt  }
 
         liftIO  $ writeFile pathDI

@@ -6,7 +6,6 @@ module DDC.Driver.Stage.Tetra
         , tetraToSalt)
 where
 import Control.Monad.Trans.Except
-import qualified DDC.Data.SourcePos             as SP
 
 import qualified DDC.Driver.Dump                as D
 import qualified DDC.Driver.Config              as D
@@ -35,7 +34,7 @@ sourceLoadText
         -> D.Source             -- ^ Source file meta-data.
         -> String               -- ^ Source file text.
         -> ExceptT [B.Error] IO 
-                   (C.Module (C.AnTEC SP.SourcePos CE.Name) CE.Name)
+                   (C.Module (C.AnTEC () CE.Name) CE.Name)
 
 sourceLoadText config store source str
  = BST.sourceLoad
@@ -56,7 +55,8 @@ sourceLoadText config store source str
         , BST.configSinkPreCheck        = D.dump config source "dump.0-source-10-precheck.dct"
         , BST.configSinkCheckerTrace    = D.dump config source "dump.0-source-11-trace.txt"
         , BST.configSinkChecked         = D.dump config source "dump.0-source-12-checked.dct"
-        , BST.configSinkElaborated      = D.dump config source "dump.0-source-13-elaborated.dct"
+        , BST.configSinkNamified        = D.dump config source "dump.0-source-13-namified.dct"
+        , BST.configSinkElaborated      = D.dump config source "dump.0-source-14-elaborated.dct"
         }
 
 
@@ -67,11 +67,12 @@ tetraLoadText
         -> B.Store              -- ^ Interface store.
         -> D.Source             -- ^ Source file meta-data.
         -> String               -- ^ Source file text.
-        -> ExceptT [B.Error] IO
-                   (C.Module (C.AnTEC SP.SourcePos CE.Name) CE.Name)
+        -> ExceptT [B.Error] IO 
+                   (C.Module (C.AnTEC () CE.Name) CE.Name)
 
 tetraLoadText config _store source str
- = B.coreLoad
+ = fmap (CReannotate.reannotate (\a -> a { C.annotTail = ()}))
+ $ B.coreLoad
         "TetraLoad"
         BE.fragment
         (if D.configInferTypes config then C.Synth [] else C.Recon)

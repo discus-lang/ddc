@@ -98,7 +98,7 @@ type Parser a
 --   As don't store full Salt code in interface files,
 --   we just set the annotation for it to ()
 type InterfaceAA 
-        = Interface (AnTEC BP.SourcePos Tetra.Name) ()
+        = Interface () ()
 
 
 ---------------------------------------------------------------------------------------------------
@@ -156,7 +156,7 @@ pInterface pathInt timeStamp ((n, str) : rest)
                         , interfaceTimeStamp    = timeStamp
                         , interfaceVersion      = version
                         , interfaceModuleName   = modName
-                        , interfaceTetraModule  = mTetra
+                        , interfaceTetraModule  = liftM (reannotate (const ())) mTetra
                         , interfaceSaltModule   = liftM (reannotate (const ())) mSalt }
 
         | otherwise

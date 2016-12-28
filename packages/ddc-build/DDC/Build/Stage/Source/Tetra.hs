@@ -19,13 +19,11 @@ import qualified DDC.Build.Pipeline.Sink                as B
 import qualified DDC.Build.Pipeline.Error               as B
 import qualified DDC.Build.Interface.Store              as B
 import qualified DDC.Build.Language.Tetra               as BE
-import qualified DDC.Build.Stage.Core                   as BS
-
+import qualified DDC.Build.Stage.Core                   as BC
 import qualified DDC.Build.Transform.Resolve            as BResolve
 
 import qualified DDC.Source.Tetra.Exp                   as S
 import qualified DDC.Source.Tetra.Module                as S
-
 import qualified DDC.Source.Tetra.Transform.Freshen     as SFreshen
 import qualified DDC.Source.Tetra.Transform.Defix       as SDefix
 import qualified DDC.Source.Tetra.Transform.Expand      as SExpand
@@ -40,10 +38,12 @@ import qualified DDC.Core.Fragment                      as C
 import qualified DDC.Core.Check                         as C
 import qualified DDC.Core.Module                        as C
 import qualified DDC.Core.Lexer                         as C
+import qualified DDC.Core.Simplifier                    as C
 import qualified DDC.Core.Tetra                         as CE
 import qualified DDC.Core.Tetra.Env                     as CE
 import qualified DDC.Core.Transform.Resolve             as CResolve
 import qualified DDC.Core.Transform.SpreadX             as CSpread
+import qualified DDC.Core.Transform.Namify              as CNamify
 
 
 ---------------------------------------------------------------------------------------------------
@@ -61,6 +61,7 @@ data ConfigLoadSourceTetra
         , configSinkPreCheck     :: B.Sink      -- ^ Sink for core code before checking.
         , configSinkCheckerTrace :: B.Sink      -- ^ Sink for checker trace.
         , configSinkChecked      :: B.Sink      -- ^ Sink for checked core code.
+        , configSinkNamified     :: B.Sink      -- ^ Sink for namified code.
         , configSinkElaborated   :: B.Sink      -- ^ Sink for elaborated core code.
         }
 
@@ -74,7 +75,7 @@ sourceLoad
         -> B.Store                      -- ^ Interface store.
         -> ConfigLoadSourceTetra        -- ^ Sinker config.
         -> ExceptT [B.Error] IO
-                   (C.Module (C.AnTEC SP.SourcePos CE.Name) CE.Name)
+                   (C.Module (C.AnTEC () CE.Name) CE.Name)
         
 sourceLoad srcName srcLine str store config
  = do   
@@ -113,15 +114,27 @@ sourceLoad srcName srcLine str store config
                 $ ( C.setFeature C.ImplicitRun True
                   . C.setFeature C.ImplicitBox True)
 
+        -- Introduce names for anonymous binders.
+        --   The resolve transform needs to be able to refer to implicitly
+        --   bound parameters by their names, even if there were no names
+        --   for them in the source program.
+        mm_namified
+         <- BC.coreSimplify fragment (0 :: Int)
+                (C.Trans (C.Namify (CNamify.makeNamifier CE.freshT)
+                                   (CNamify.makeNamifier CE.freshX)))
+                mm_core
+
         mm_checked
-         <- BS.coreCheck 
+         <- BC.coreCheck 
                 "SourceLoadText"
                 fragment
                 (C.Synth [])
                 (configSinkCheckerTrace config)
                 (configSinkChecked      config)
-                mm_core
+                mm_namified
 
+        liftIO $ B.pipeSink (renderIndent $ ppr mm_namified) 
+                            (configSinkNamified config)
 
         -- Resolve elaborations in module.
         mm_resolved
@@ -133,7 +146,7 @@ sourceLoad srcName srcLine str store config
                  Left err  -> throwE [B.ErrorLint "SourceLoadText" "CoreResolve" err]
                  Right mm' -> return mm'
 
-        return mm_resolved
+        return $ mm_resolved
 
 
 ---------------------------------------------------------------------------------------------------
