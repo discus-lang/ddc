@@ -92,7 +92,7 @@ pipeText !srcName !srcLine !str
                 store pipes)
  = do   
         result  <- runExceptT 
-                $  sourceLoadText srcName srcLine str store 
+                $  sourceLoad srcName srcLine str store 
                 $  ConfigLoadSourceTetra
                         { configSinkTokens              = sinkTokens
                         , configSinkParsed              = sinkParsed

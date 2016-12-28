@@ -1,9 +1,8 @@
 
 module DDC.Build.Stage.Source.Tetra
         ( ConfigLoadSourceTetra (..)
-        , sourceLoadText
-
-        , sourceParseText
+        , sourceLoad
+        , sourceParse
         , sourceDesugar
         , sourceLower)
 where
@@ -68,7 +67,7 @@ data ConfigLoadSourceTetra
 
 -- | Load source tetra text, desugar and type check it to produce
 --   core tetra.
-sourceLoadText
+sourceLoad
         :: String                       -- ^ Name of source file.
         -> Int                          -- ^ Line number in source file.
         -> String                       -- ^ Text of source file.
@@ -77,14 +76,13 @@ sourceLoadText
         -> ExceptT [B.Error] IO
                    (C.Module (C.AnTEC SP.SourcePos CE.Name) CE.Name)
         
-sourceLoadText srcName srcLine str store config
+sourceLoad srcName srcLine str store config
  = do   
         -- Parse text to source.
         mm_source       
-         <- sourceParseText 
+         <- sourceParse 
                 srcName srcLine str
-                (configSinkTokens config)
-                (configSinkParsed config)
+                (configSinkTokens  config)
 
 
         -- Desugar source.
@@ -140,35 +138,30 @@ sourceLoadText srcName srcLine str store config
 
 ---------------------------------------------------------------------------------------------------
 -- | Parse a text file into source tetra code.
-sourceParseText
+sourceParse
         :: String               -- ^ Name of source file.
         -> Int                  -- ^ Line number in source file.
         -> String               -- ^ Text of source file.
         -> B.Sink               -- ^ Sink for tokens.
-        -> B.Sink               -- ^ Sink for parsed source.
         -> ExceptT [B.Error] IO (S.Module S.Source)
 
-sourceParseText
+sourceParse
         srcName srcLine str
-        sinkTokens sinkSource
+        sinkTokens
  = do   
         -- Lex the input text into source tokens.
         let tokens  = SLexer.lexModuleString srcName srcLine str
 
         -- Dump tokens to file.
-        liftIO $ B.pipeSink (unlines $ map (show . SP.valueOfLocated) $ tokens) 
+        liftIO $ B.pipeSink 
+                        (unlines $ map (show . SP.valueOfLocated) $ tokens) 
                         sinkTokens
 
         -- Parse the tokens into a Source Tetra module.
         case Parser.runTokenParser C.describeToken srcName 
                         (SParser.pModule) tokens of
-         Left err 
-          ->    throwE [B.ErrorLoad err]
-
-         Right mm 
-          -> do liftIO $ B.pipeSink (renderIndent $ ppr mm) 
-                        sinkSource
-                return mm
+         Left err -> throwE [B.ErrorLoad err]
+         Right mm -> return mm
 
 
 ---------------------------------------------------------------------------------------------------

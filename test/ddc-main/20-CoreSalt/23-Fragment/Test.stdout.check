@@ -75,33 +75,38 @@ nat_t foo (nat_t _x)
 
 
 -- Error: assignment from primop.
-Error loading module
-  During fragment compliance check.
-    Unsupported feature: PartialPrims
+Error in transformed module.
+  in stage CoreLoad
+  in pipe  PipeCoreCheck/Complies
+  Unsupported feature: PartialPrims
 
 
 -- Error: name shadowing in function definition
-Error loading module
-  During fragment compliance check.
-    Binding shadows existing name: x
+Error in transformed module.
+  in stage CoreLoad
+  in pipe  PipeCoreCheck/Complies
+  Binding shadows existing name: x
 
 
 -- Error: name shadowing in let-expression
-Error loading module
-  During fragment compliance check.
-    Binding shadows existing name: x
+Error in transformed module.
+  in stage CoreLoad
+  in pipe  PipeCoreCheck/Complies
+  Binding shadows existing name: x
 
 
 -- Error: general application
-Error loading module
-  During fragment compliance check.
-    Unsupported feature: GeneralApplication
+Error in transformed module.
+  in stage CoreLoad
+  in pipe  PipeCoreCheck/Complies
+  Unsupported feature: GeneralApplication
 
 
 -- Error: partially applied primop
-Error loading module
-  During fragment compliance check.
-    Unsupported feature: PartialPrims
+Error in transformed module.
+  in stage CoreLoad
+  in pipe  PipeCoreCheck/Complies
+  Unsupported feature: PartialPrims
 
 
 -- Error: partial application not supported in Salt.
@@ -112,12 +117,25 @@ Fragment violation when converting Salt module to target code.
 
 
 -- Error: cannot instantiate a type variable at an unboxed type.
-Error loading module
-  During fragment compliance check.
-    Unsupported feature: UnboxedInstantiation
+// Code for locally defined supers. -----------------------------------
+Obj* id (Obj* _x)
+{
+        
+
+        return _x;
+}
+
+int_t foo (int_t _x)
+{
+        
+
+        return id(_x);
+}
+
 
 
 -- Error: nested functions
-Error loading module
-  During fragment compliance check.
-    Unsupported feature: NestedFunctions
+Error in transformed module.
+  in stage CoreLoad
+  in pipe  PipeCoreCheck/Complies
+  Unsupported feature: NestedFunctions

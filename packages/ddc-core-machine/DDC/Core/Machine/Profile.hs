@@ -57,7 +57,6 @@ features
         , featuresGeneralLetRec         = True
         , featuresDebruijnBinders       = True
         , featuresUnboundLevel0Vars     = False
-        , featuresUnboxedInstantiation  = True
         , featuresNameShadowing         = False
         , featuresUnusedBindings        = True
         , featuresUnusedMatches         = True }

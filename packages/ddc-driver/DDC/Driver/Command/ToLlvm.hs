@@ -21,6 +21,8 @@ import Control.Monad
 import DDC.Build.Interface.Store                (Store)
 import qualified DDC.Build.Interface.Store      as Store
 import qualified DDC.Driver.Stage.Tetra         as DE
+import qualified DDC.Driver.Stage.Salt          as DA
+import qualified DDC.Core.Transform.Reannotate  as CReannotate
 
 
 -------------------------------------------------------------------------------
@@ -148,39 +150,36 @@ cmdToLlvmCoreFromString config language source str
  | Language bundle      <- language
  , fragment             <- bundleFragment  bundle
  , profile              <- fragmentProfile fragment
- = do   
-        -- Language fragment name.
-        let fragName = profileName profile
+ = withExceptT (renderIndent . vcat . map ppr)
+ $ do   
+        let fragName    =  profileName profile
         store           <- liftIO $ Store.new
 
         -- Decide what to do based on file extension and current fragment.
-        let compile
-                -- Convert a Core Tetra module to LLVM.
-                | fragName == "Tetra"
-                = liftIO
-                $ pipeText (nameOfSource source) (lineStartOfSource source) str
-                $ stageTetraLoad         config source store
-                [ stageTetraToSalt       config source
-                [ stageSaltOpt           config source
-                [ stageSaltToSlottedLLVM  config source
-                [ PipeLlvmPrint      SinkStdout]]]]
+        let makeSalt
+                |   fragName == "Tetra"
+                =   DE.tetraToSalt   config source
+                =<< DE.tetraLoadText config store source str
 
-                -- Convert a Core Salt module to LLVM.
-                | fragName == "Salt"
-                = liftIO
-                $ pipeText (nameOfSource source) (lineStartOfSource source) str
-                $ stageSaltLoad            config source
-                [ stageSaltOpt             config source
-                [ stageSaltToUnSlottedLLVM config source
-                [ PipeLlvmPrint      SinkStdout]]]
+                |   fragName == "Salt"
+                =   fmap (CReannotate.reannotate (const ()))
+                $   DA.saltLoadText  config store source str
 
                 -- Unrecognised.
                 | otherwise
-                = throwE $ "Cannot convert '" ++ fragName ++ "' modules to LLVM."
+                = throwE [ErrorLoad $ "Cannot convert '" ++ fragName ++ "'modules to C."]
+
+        modSalt <- makeSalt
+
+        errs    <- liftIO $ pipeCore modSalt
+                $  stageSaltOpt config source 
+                 [ (if fragName == "Tetra" 
+                        then stageSaltToSlottedLLVM   config source
+                        else stageSaltToUnSlottedLLVM config source)
+                 [ PipeLlvmPrint      SinkStdout]]
 
         -- Throw any errors that arose during compilation
-        errs <- compile
         case errs of
          []     -> return ()
-         es     -> throwE $ renderIndent $ vcat $ map ppr es
+         _      -> throwE errs
 

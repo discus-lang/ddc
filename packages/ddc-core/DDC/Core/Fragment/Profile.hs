@@ -94,7 +94,6 @@ data Features
         , featuresGeneralLetRec         :: Bool
         , featuresDebruijnBinders       :: Bool
         , featuresUnboundLevel0Vars     :: Bool
-        , featuresUnboxedInstantiation  :: Bool
         , featuresNameShadowing         :: Bool
         , featuresUnusedBindings        :: Bool
         , featuresUnusedMatches         :: Bool
@@ -120,7 +119,6 @@ zeroFeatures
         , featuresGeneralLetRec         = False
         , featuresDebruijnBinders       = False
         , featuresUnboundLevel0Vars     = False
-        , featuresUnboxedInstantiation  = False
         , featuresNameShadowing         = False
         , featuresUnusedBindings        = False
         , featuresUnusedMatches         = False }
@@ -145,7 +143,6 @@ setFeature feature val features
         GeneralLetRec           -> features { featuresGeneralLetRec        = val }
         DebruijnBinders         -> features { featuresDebruijnBinders      = val }
         UnboundLevel0Vars       -> features { featuresUnboundLevel0Vars    = val }
-        UnboxedInstantiation    -> features { featuresUnboxedInstantiation = val }
         NameShadowing           -> features { featuresNameShadowing        = val }
         UnusedBindings          -> features { featuresUnusedBindings       = val }
         UnusedMatches           -> features { featuresUnusedMatches        = val }

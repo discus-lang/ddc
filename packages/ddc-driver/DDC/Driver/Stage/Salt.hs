@@ -71,7 +71,10 @@ saltLoadText config _store source str
         (if configInferTypes config then C.Synth [] else C.Recon)
         (D.nameOfSource source)
         (D.lineStartOfSource source)
-        (dump config source "dump.1-salt-00-check.dct")
+        (dump config source "dump.1-salt-00-tokens.txt")
+        (dump config source "dump.1-salt-01-parsed.dct")
+        (dump config source "dump.1-salt-02-checked.dct")
+        (dump config source "dump.1-salt-03-trace.txt")
         str
 
 

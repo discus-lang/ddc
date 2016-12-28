@@ -189,12 +189,7 @@ instance Complies Exp where
                 return (tUsed, vUsed')
        
         -- application --------------------------
-        XApp _ x1 (RType t2)
-         | profileTypeIsUnboxed profile t2
-         , Nothing      <- takeXFragApps xx
-         -> throw $ ErrorUnsupported UnboxedInstantiation
-
-         | otherwise
+        XApp _ x1 (RType _t2)
          -> do  checkFunction profile x1
                 compliesX     profile kenv tenv (addArg context) x1
 

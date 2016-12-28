@@ -22,6 +22,7 @@ import DDC.Build.Interface.Store        (Store)
 import DDC.Core.Exp.Annot.AnTEC
 import qualified DDC.Build.Interface.Store      as Store
 import qualified DDC.Driver.Stage.Tetra         as DE
+import qualified DDC.Core.Transform.Reannotate  as CReannotate
 
 
 -------------------------------------------------------------------------------
@@ -147,29 +148,29 @@ cmdToPHPCoreFromString config language source str
  | Language bundle      <- language
  , fragment             <- bundleFragment  bundle
  , profile              <- fragmentProfile fragment
- = do   
+ = withExceptT (renderIndent . vcat . map ppr)
+ $ do   
         let fragName = profileName profile
         store   <- liftIO Store.new
 
         -- Decide what to do based on file extension and current fragment.
-        let compile
-                -- Convert a Core Tetra module to PHP.
-                | fragName == "Tetra"
-                = liftIO
-                $ pipeText (nameOfSource source) (lineStartOfSource source) str
-                $ stageTetraLoad     config source store
-                [ PipeCoreReannotate (const ())
-                [ PipeCoreAsTetra
-                [ PipeTetraToPHP     SinkStdout ]]]
+        let makeSalt
+                |  fragName == "Tetra"
+                =  fmap (CReannotate.reannotate (const ()))
+                $  DE.tetraLoadText config store source str
 
                 -- Unrecognised.
                 | otherwise
-                = throwE $ "Cannot convert '" ++ fragName ++ "'modules to PHP."
+                = throwE [ErrorLoad $ "Cannot convert '" ++ fragName ++ "'modules to C."]
 
+        modTetra <- makeSalt
+
+        errs    <-  liftIO $ pipeCore modTetra
+                $   PipeCoreAsTetra
+                [   PipeTetraToPHP     SinkStdout]
 
         -- Throw any errors that arose during compilation
-        errs <- compile
         case errs of
          []     -> return ()
-         es     -> throwE $ renderIndent $ vcat $ map ppr es
+         _      -> throwE errs
 

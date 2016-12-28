@@ -1,6 +1,7 @@
 
 module DDC.Build.Stage.Core
         ( coreLoad
+
         , coreCheck
         , coreReCheck
         , coreResolve
@@ -12,6 +13,7 @@ import Control.DeepSeq
 
 import DDC.Data.Pretty
 import DDC.Data.Name
+import qualified DDC.Control.Parser                     as Parser
 
 import qualified DDC.Data.SourcePos                     as SP
 
@@ -21,13 +23,14 @@ import qualified DDC.Build.Pipeline.Error               as B
 import qualified DDC.Core.Fragment                      as C
 import qualified DDC.Core.Check                         as C
 import qualified DDC.Core.Module                        as C
-import qualified DDC.Core.Load                          as C
 import qualified DDC.Core.Exp                           as C
+import qualified DDC.Core.Parser                        as C
+import qualified DDC.Core.Lexer                         as C
 import qualified DDC.Core.Simplifier                    as C
 
 import qualified DDC.Core.Transform.Reannotate          as CReannotate
 import qualified DDC.Core.Transform.Resolve             as CResolve
-
+import qualified DDC.Core.Transform.SpreadX             as CSpread
 
 
 ---------------------------------------------------------------------------------------------------
@@ -39,32 +42,67 @@ coreLoad
         -> C.Mode n                     -- ^ Checker mode.
         -> String                       -- ^ Name of source file.
         -> Int                          -- ^ Line of source file.
+        -> B.Sink                       -- ^ Sink for tokens.
+        -> B.Sink                       -- ^ Sink for parsed code.
+        -> B.Sink                       -- ^ Sink for checked code.
         -> B.Sink                       -- ^ Sink for checker trace.
         -> String                       -- ^ Textual core code.
         -> ExceptT [B.Error] IO (C.Module (C.AnTEC SP.SourcePos n) n)
 
-coreLoad !_stage !fragment !mode !srcName !srcLine !sinkTrace !str
+coreLoad 
+        !_stage !fragment !mode !srcName !srcLine 
+        !sinkTokens !sinkParsed !sinkChecked !sinkTrace
+        !str
  = do   
-        -- Lex the module to tokens, then parse and type-check it.
-        let (eError, mTrace) 
-                = C.loadModuleFromTokens fragment srcName mode
-                $ C.fragmentLexModule    fragment srcName srcLine str 
+        -- Parse the module.
+        mm_core    <- coreParse fragment srcName srcLine sinkTokens str
+        liftIO $ B.pipeSink (renderIndent $ ppr mm_core) sinkParsed
 
-        -- Dump the type checker trace.
-        _       <- case mTrace of
-                        Nothing       
-                         -> return []
+        -- Type check the module.
+        mm_checked <- coreCheck "CoreLoad" fragment mode
+                                sinkTrace sinkChecked  
+                                mm_core
 
-                        Just (C.CheckTrace doc)
-                         -> liftIO $ B.pipeSink (renderIndent doc) sinkTrace
+        return mm_checked
 
-        -- Check if there were errors on load.
-        case eError of
-         Left err
-          -> throwE [B.ErrorLoad err]
 
-         Right mm
-          -> return mm
+---------------------------------------------------------------------------------------------------
+-- | Parse a text file as core code.
+coreParse 
+        :: (Eq n, Ord n, Pretty n, Show n)
+        => C.Fragment n err             -- ^ Language fragment.
+        -> String                       -- ^ Name of source file.
+        -> Int                          -- ^ Line number in source file.
+        -> B.Sink                       -- ^ Sink for tokens.
+        -> String                       -- ^ Text of source file.
+        -> ExceptT [B.Error] IO (C.Module SP.SourcePos n)
+
+coreParse fragment srcName srcLine sinkTokens str
+ = do   
+        -- Lex the input text into tokens.
+        let tokens = C.fragmentLexModule fragment srcName srcLine str
+
+        -- Dump tokens to file.
+        liftIO $ B.pipeSink 
+                        (unlines $ map (show . SP.valueOfLocated) $ tokens)
+                        sinkTokens
+
+        -- Parse the tokens into a Core Tetra module.
+        let profile = C.fragmentProfile fragment
+        let context = C.contextOfProfile profile
+
+        -- Parse core module.
+        mm_parsed <- case Parser.runTokenParser 
+                                C.describeToken srcName (C.pModule context) tokens of
+                        Left err -> throwE [B.ErrorLoad err]
+                        Right mm -> return mm
+
+        -- Detect names of primitives values and types in parsed code.
+        let kenv      = C.profilePrimKinds profile
+        let tenv      = C.profilePrimTypes profile
+        let mm_spread = CSpread.spreadX kenv tenv mm_parsed
+
+        return mm_spread
 
 
 ---------------------------------------------------------------------------------------------------
@@ -94,8 +132,10 @@ coreCheck !stage !fragment !mode !sinkTrace !sinkChecked !mm
                         throwE $ [B.ErrorLint stage "PipeCoreCheck/Check" err]
                         
                 (Right mm', C.CheckTrace doc) 
-                 -> do  liftIO $ B.pipeSink (renderIndent doc) sinkTrace
+                 -> do  liftIO $ B.pipeSink (renderIndent doc)  sinkTrace
                         return mm'
+
+        liftIO $ B.pipeSink (renderIndent $ ppr mm_checked) sinkChecked
 
 
         -- Check that the module compiles with the language profile.
@@ -110,8 +150,6 @@ coreCheck !stage !fragment !mode !sinkTrace !sinkChecked !mm
          <- case C.fragmentCheckModule fragment mm_complies of
                 Just err -> throwE [B.ErrorLint stage "PipeCoreCheck/Fragment" err]
                 Nothing  -> return mm_complies
-
-        liftIO $ B.pipeSink (renderIndent $ ppr mm_fragment) sinkChecked
 
         return mm_fragment
 

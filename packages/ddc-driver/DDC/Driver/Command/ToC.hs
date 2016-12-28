@@ -21,6 +21,8 @@ import Control.Monad
 import DDC.Build.Interface.Store                (Store)
 import qualified DDC.Build.Interface.Store      as Store
 import qualified DDC.Driver.Stage.Tetra         as DE
+import qualified DDC.Driver.Stage.Salt          as DA
+import qualified DDC.Core.Transform.Reannotate  as CReannotate
 
 
 -------------------------------------------------------------------------------
@@ -147,37 +149,34 @@ cmdToSeaCoreFromString config language source str
  | Language bundle      <- language
  , fragment             <- bundleFragment  bundle
  , profile              <- fragmentProfile fragment
- = do   
+ = withExceptT (renderIndent . vcat . map ppr)
+ $ do   
         let fragName    =  profileName profile
         store           <- liftIO $ Store.new
 
         -- Decide what to do based on file extension and current fragment.
-        let compile
-                -- Convert a Core Tetra module to C.
-                | fragName == "Tetra"
-                = liftIO
-                $ pipeText (nameOfSource source) (lineStartOfSource source) str
-                $ stageTetraLoad     config source store
-                [ stageTetraToSalt   config source
-                [ stageSaltOpt       config source
-                [ stageSaltToC       config source SinkStdout]]]
-                
-                -- Convert a Core Salt module to C
+        let makeSalt
+                |   fragName == "Tetra"
+                =   DE.tetraToSalt   config source
+                =<< DE.tetraLoadText config store source str
+
                 | fragName == "Salt"
-                = liftIO
-                $ pipeText (nameOfSource source) (lineStartOfSource source) str
-                $ stageSaltLoad      config source
-                [ stageSaltOpt       config source
-                [ stageSaltToC       config source SinkStdout]]
+                =   fmap (CReannotate.reannotate (const ()))
+                $   DA.saltLoadText  config store source str
 
                 -- Unrecognised.
                 | otherwise
-                = throwE $ "Cannot convert '" ++ fragName ++ "'modules to C."
+                = throwE [ErrorLoad $ "Cannot convert '" ++ fragName ++ "'modules to C."]
 
+        modSalt <- makeSalt
+
+        errs    <- liftIO $ pipeCore modSalt
+                $  stageSaltOpt config source 
+                [  stageSaltToC config source SinkStdout ]
 
         -- Throw any errors that arose during compilation
-        errs <- compile
         case errs of
          []     -> return ()
-         es     -> throwE $ renderIndent $ vcat $ map ppr es
+         _      -> throwE errs
+
 

@@ -61,11 +61,6 @@ data Feature
         --   us work with open terms.
         | UnboundLevel0Vars
 
-        -- | Allow non-primitive functions to be instantiated at unboxed types.
-        --   Our existing backends can't handle this, because boxed and unboxed
-        --   objects have different representations.
-        | UnboxedInstantiation
-
         -- Sanity -----------------------------------------
         -- | Allow name shadowing.
         | NameShadowing
