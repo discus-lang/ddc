@@ -7,18 +7,19 @@ module DDC.Driver.Command.Compile
         , getModificationTimeIfExists)
 where
 import DDC.Driver.Stage
+import qualified DDC.Driver.Stage.Tetra         as DE
+import qualified DDC.Driver.Stage.Salt          as DA
+
 import DDC.Driver.Config
 import DDC.Driver.Interface.Source
 import DDC.Build.Pipeline
 import DDC.Build.Interface.Base
-import DDC.Data.Canned
 import System.FilePath
 import System.Directory
 import Control.Monad
 import Control.Monad.Trans.Except
 import Control.Monad.IO.Class
 import Data.Time.Clock
-import Data.IORef
 import qualified DDC.Driver.Build.Locate        as Locate
 import qualified DDC.Build.Builder              as Builder
 import qualified DDC.Source.Tetra.Module        as SE
@@ -31,8 +32,7 @@ import qualified DDC.Control.Parser             as BP
 import qualified DDC.Version                    as Version
 import qualified Data.List                      as List
 
-import DDC.Driver.Command.Flow.ToTetra
-import qualified DDC.Core.Flow                  as Flow
+import qualified DDC.Core.Transform.Reannotate  as CReannotate
 
 import DDC.Build.Interface.Store                (Store)
 import qualified DDC.Build.Interface.Store      as Store
@@ -299,12 +299,14 @@ cmdCompile config bBuildExe' store filePath
         let ext         = takeExtension filePath
         let source      = SourceFile filePath
 
+
         -- Read in the source file.
         exists  <- liftIO $ doesFileExist filePath
         when (not exists)
          $ throwE $ "No such file " ++ show filePath
 
         src     <- liftIO $ readFile filePath
+
 
         -- If we're building an executable, then get paths to the other object
         -- files that we need to link with.
@@ -314,116 +316,99 @@ cmdCompile config bBuildExe' store filePath
                 | buildExe  = Just $ map (\path -> replaceExtension path "o") pathsDI
                 | otherwise = Nothing
 
+
         -- Determine directory for build products.
         let (pathO, _)  = objectPathsOfConfig config filePath
         let pathDI      = replaceExtension pathO ".di"
         liftIO $ createDirectoryIfMissing True (takeDirectory pathO)
 
 
-        -- During complation of this module the intermediate code will be
-        -- stashed in these refs. We will use the intermediate code to build
-        -- the interface for this module.
-        refTetra <- liftIO $ newIORef Nothing
-        refSalt  <- liftIO $ newIORef Nothing
-
-        -- Use the file extension to decide what compilation pipeline to use.
-        let make
-                -- Compile a Source Tetra module.
+        -- Load text source and compile to a Core Tetra file, if appropriate.
+        let makeTetra
+                -- Load a Source Tetra module to Core Tetra.
                 | ext == ".ds"
-                = liftIO
-                $ pipeText (nameOfSource source) (lineStartOfSource source) src
-                $ stageSourceTetraLoad config source store
-                [ PipeCoreHacks      (Canned $ \m -> writeIORef refTetra (Just m) >> return m)
-                [ PipeCoreReannotate (const ())
-                [ stageTetraToSalt    config source (pipesSalt True) ]]]
+                = fmap Just $ DE.sourceLoadText config store source src
 
-                -- Compile a Core Tetra module.
+                -- Load a Core Tetra module.
                 | ext == ".dct"
-                = liftIO
-                $ pipeText (nameOfSource source) (lineStartOfSource source) src
-                $ stageTetraLoad    config source store
-                [ stageTetraToSalt  config source (pipesSalt True) ]
+                = fmap Just $ DE.tetraLoadText   config store source src
 
-                -- Compile a Core Salt module.
+                -- Load a Core Salt module
                 | ext == ".dcs"
-                = liftIO 
-                $ pipeText (nameOfSource source) (lineStartOfSource source) src
-                $ stageSaltLoad     config source (pipesSalt False)
+                = return Nothing
 
-                -- Compile a Core Salt module.
-                | ext == ".dcf"
-                = liftIO 
-                $ pipeText (nameOfSource source) (lineStartOfSource source) src
-                $ pipelineFlowToTetra config Flow.defaultConfigScalar source 
-                        (pipesSalt False)
-
-                -- Unrecognised.
                 | otherwise
-                = throwE $ "Cannot compile '" ++ ext ++ "' files."
+                = throwE [ErrorLoad $ "Cannot compile '" ++ ext ++ "' files."]
 
-            pipesSalt bSlotify
-             = case configViaBackend config of
+        mModTetra <- withExceptT (P.renderIndent . P.vcat . map P.ppr) 
+                  $  makeTetra
+
+
+        -- Convert Core Tetra to Core Salt.
+        let makeSalt
+                | ext == ".dcs"
+                = fmap (CReannotate.reannotate (const ()))
+                $ DA.saltLoadText config store source src
+
+                | Just modTetra <- mModTetra
+                = DE.tetraToSalt  config source  
+                $ CReannotate.reannotate (const ()) modTetra
+
+                | otherwise
+                = throwE [ErrorLoad $ "no tetra file"]
+
+        modSalt <- withExceptT (P.renderIndent . P.vcat . map P.ppr)
+                $  makeSalt
+
+
+        -- Convert Core Salt into object code.
+        let bSlotify 
+                = case ext of
+                        ".dcs"  -> False
+                        _       -> True
+        
+        errs
+         <- case configViaBackend config of
                 ViaLLVM
-                 -> [ PipeCoreReannotate (const ())
-                    [ stageSaltOpt     config source
-                    [ PipeCoreHacks    (Canned $ \m -> writeIORef refSalt (Just m) >> return m)
-                    [ (if bSlotify 
-                         then stageSaltToSlottedLLVM   config source 
-                         else stageSaltToUnSlottedLLVM config source)
-                    [ stageCompileLLVM config source filePath otherObjs ]]]]]
+                 -> liftIO $ pipeCore modSalt
+                 $  PipeCoreReannotate (const ())
+                     [ stageSaltOpt     config source
+                     [ (if bSlotify 
+                          then stageSaltToSlottedLLVM   config source 
+                          else stageSaltToUnSlottedLLVM config source)
+                     [ stageCompileLLVM config source filePath otherObjs ]]]
 
                 ViaC
-                 -> [ PipeCoreReannotate (const ())
-                    [ stageSaltOpt     config source
-                    [ stageCompileSalt config source filePath False ]]]
+                 -> liftIO $ pipeCore modSalt
+                 $  PipeCoreReannotate (const ())
+                     [ stageSaltOpt     config source
+                     [ stageCompileSalt config source filePath False ]]
 
-        -- Run the compilation pipeline.
-        errs <- make
+        (case errs of
+         []     -> return ()
+         _      -> throwE $ P.renderIndent $ P.vcat $ map P.ppr errs)
 
 
-        -- Read back intermediate code from our refs.
-        --   This will be written out as part of the interface file for this module.
-        modTetra  <- liftIO $ readIORef refTetra
-        modSalt   <- liftIO $ readIORef refSalt
+        -- Get current time stamp for interface file.
+        timeDI  <- liftIO $ getCurrentTime
 
-        -- Handle errors ------------------------
-        case errs of
-         -- There was some error during compilation.
-         es@(_:_)     
-          -> throwE $ P.renderIndent $ P.vcat $ map P.ppr es
 
-         -- Compilation was successful, 
-         --  but we need to have produced at least a Tetra or Salt module
-         --  before we can build the interface file.
-         []    
-          | Just (mn : _)       
-                <- sequence 
-                        [ liftM C.moduleName modTetra
-                        , liftM C.moduleName modSalt ]
-          -> do
-                -- write out the interface file.
+        -- Write out the interface file.
+        let int = Interface
+                { interfaceVersion      = Version.version
+                , interfaceFilePath     = pathDI
+                , interfaceTimeStamp    = timeDI
+                , interfaceModuleName   = C.moduleName modSalt
+                , interfaceTetraModule  = mModTetra 
+                , interfaceSaltModule   = Just modSalt  }
 
-                timeDI  <- liftIO $ getCurrentTime 
-                let int = Interface
-                        { interfaceVersion      = Version.version
-                        , interfaceFilePath     = pathDI
-                        , interfaceTimeStamp    = timeDI
-                        , interfaceModuleName   = mn
-                        , interfaceTetraModule  = modTetra 
-                        , interfaceSaltModule   = modSalt  }
+        liftIO  $ writeFile pathDI
+                $ P.renderIndent $ P.ppr int
 
-                liftIO  $ writeFile pathDI
-                        $ P.renderIndent $ P.ppr int
+        -- Add the new interface to the store.
+        liftIO $ Store.wrap store int
 
-                -- Add the new interface to the store.
-                liftIO $ Store.wrap store int
-
-                return ()
-
-          -- Compilation was successful,
-          --  but we didn't get enough build products to produce an interface file.
-          | otherwise
-          -> return ()
+        return ()
 
 
 ---------------------------------------------------------------------------------------------------

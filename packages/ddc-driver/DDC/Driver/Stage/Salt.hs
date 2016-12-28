@@ -1,6 +1,8 @@
 
 module DDC.Driver.Stage.Salt
         ( stageSaltLoad
+        , saltLoadText
+
         , stageSaltOpt
         , stageSaltToC
         , stageSaltToSlottedLLVM
@@ -8,32 +10,43 @@ module DDC.Driver.Stage.Salt
         , stageCompileSalt
         , stageCompileLLVM)
 where
+import Control.Monad.Trans.Except
+
 import DDC.Driver.Dump
-import DDC.Driver.Config
-import DDC.Driver.Interface.Source
-import DDC.Build.Builder
-import DDC.Build.Pipeline
+import DDC.Driver.Config                        as D
+import DDC.Driver.Interface.Source              as D
+import DDC.Build.Builder                        as B
+import DDC.Build.Pipeline                       as B
 import DDC.Core.Transform.Namify
 import DDC.Data.Pretty
 import System.FilePath
 import Data.Maybe
-import qualified DDC.Build.Language.Salt        as Salt
-import qualified DDC.Core.Salt.Name             as Salt
-import qualified DDC.Core.Salt.Convert          as Salt
-import qualified DDC.Core.Salt.Profile          as Salt
+
+import qualified DDC.Data.SourcePos             as SP
+
+import DDC.Build.Interface.Store                as B
+
 import qualified DDC.Core.Check                 as C
+import qualified DDC.Core.Module                as C
 import qualified DDC.Core.Simplifier.Recipe     as S
+
+import qualified DDC.Core.Salt.Name             as A
+import qualified DDC.Core.Salt.Convert          as A
+import qualified DDC.Core.Salt.Profile          as A
+
+import qualified DDC.Build.Stage.Core           as B
+import qualified DDC.Build.Language.Salt        as BA
 
 
 ---------------------------------------------------------------------------------------------------
 -- | Load and type check a Core Salt module.
 stageSaltLoad
         :: Config -> Source
-        -> [PipeCore () Salt.Name]
-        -> PipeText Salt.Name Salt.Error
+        -> [PipeCore () A.Name]
+        -> PipeText A.Name A.Error
 
 stageSaltLoad config source pipesSalt
- = PipeTextLoadCore Salt.fragment 
+ = PipeTextLoadCore BA.fragment 
         (if configInferTypes config then C.Synth [] else C.Recon)
         SinkDiscard
  [ PipeCoreReannotate (const ())
@@ -42,16 +55,36 @@ stageSaltLoad config source pipesSalt
         : pipesSalt ) ]
 
 
+-- | Load and type-check a core tetra module.
+saltLoadText 
+        :: Config               -- ^ Driver config.
+        -> B.Store              -- ^ Interface store.
+        -> D.Source             -- ^ Source file meta-data.
+        -> String               -- ^ Source file text.
+        -> ExceptT [B.Error] IO
+                   (C.Module (C.AnTEC SP.SourcePos A.Name) A.Name)
+
+saltLoadText config _store source str
+ = B.coreLoad
+        "SaltLoad"
+        BA.fragment
+        (if configInferTypes config then C.Synth [] else C.Recon)
+        (D.nameOfSource source)
+        (D.lineStartOfSource source)
+        (dump config source "dump.1-salt-00-check.dct")
+        str
+
+
 ---------------------------------------------------------------------------------------------------
 -- | Optimise Core Salt.
 stageSaltOpt
         :: Config -> Source
-        -> [PipeCore () Salt.Name]
-        -> PipeCore  () Salt.Name
+        -> [PipeCore () A.Name]
+        -> PipeCore  () A.Name
 
 stageSaltOpt config source pipes
  = PipeCoreSimplify 
-        Salt.fragment
+        BA.fragment
         (0 :: Int) 
         (configSimplSalt config)        
         ( PipeCoreOutput  pprDefaultMode 
@@ -64,11 +97,11 @@ stageSaltOpt config source pipes
 stageSaltToC
         :: Config -> Source
         -> Sink
-        -> PipeCore () Salt.Name
+        -> PipeCore () A.Name
 
 stageSaltToC config source sink
- = PipeCoreSimplify       Salt.fragment 0 normalizeSalt
-   [ PipeCoreCheck        "SaltToC" Salt.fragment C.Recon SinkDiscard
+ = PipeCoreSimplify       BA.fragment 0 normalizeSalt
+   [ PipeCoreCheck        "SaltToC" BA.fragment C.Recon SinkDiscard
      [ PipeCoreOutput     pprDefaultMode
                           (dump config source "dump.2-salt-03-normalized.dcs")
      , PipeCoreAsSalt
@@ -80,8 +113,8 @@ stageSaltToC config source sink
                 sink ]]]]
 
  where  normalizeSalt
-         = S.anormalize (makeNamifier Salt.freshT) 
-                        (makeNamifier Salt.freshX)
+         = S.anormalize (makeNamifier A.freshT) 
+                        (makeNamifier A.freshX)
 
 
 ---------------------------------------------------------------------------------------------------
@@ -89,13 +122,13 @@ stageSaltToC config source sink
 stageSaltToSlottedLLVM
         :: Config -> Source
         -> [PipeLlvm]
-        -> PipeCore () Salt.Name
+        -> PipeCore () A.Name
 
 stageSaltToSlottedLLVM config source pipesLLVM
- = PipeCoreSimplify Salt.fragment 0 normalizeSalt
+ = PipeCoreSimplify BA.fragment 0 normalizeSalt
    [ PipeCoreOutput       pprDefaultMode
                             (dump config source "dump.2-salt-03-normalized.dcs")
-   , PipeCoreCheck          "SaltToSlottedLLVM" Salt.fragment C.Recon SinkDiscard
+   , PipeCoreCheck          "SaltToSlottedLLVM" BA.fragment C.Recon SinkDiscard
      [ PipeCoreAsSalt
        [ PipeSaltSlotify
          [ PipeSaltOutput   (dump config source "dump.2-salt-04-slotify.dcs")
@@ -104,18 +137,18 @@ stageSaltToSlottedLLVM config source pipesLLVM
            , PipeSaltToLlvm (buildSpec $ configBuilder config)
                             pipesLLVM ]]]]]
  where  normalizeSalt
-         = S.anormalize (makeNamifier Salt.freshT) 
-                        (makeNamifier Salt.freshX)
+         = S.anormalize (makeNamifier A.freshT) 
+                        (makeNamifier A.freshX)
 
 
 stageSaltToUnSlottedLLVM
         :: Config -> Source
         -> [PipeLlvm]
-        -> PipeCore () Salt.Name
+        -> PipeCore () A.Name
 
 stageSaltToUnSlottedLLVM config source pipesLLVM
- = PipeCoreSimplify Salt.fragment 0 normalizeSalt
-   [ PipeCoreCheck          "SaltToUnslottedLLVM" Salt.fragment C.Recon SinkDiscard
+ = PipeCoreSimplify BA.fragment 0 normalizeSalt
+   [ PipeCoreCheck          "SaltToUnslottedLLVM" BA.fragment C.Recon SinkDiscard
      [ PipeCoreOutput        pprDefaultMode
                             (dump config source "dump.2-salt-03-normalized.dcs")
      , PipeCoreAsSalt
@@ -124,8 +157,8 @@ stageSaltToUnSlottedLLVM config source pipesLLVM
            , PipeSaltToLlvm (buildSpec $ configBuilder config)
                             pipesLLVM ]]]]
  where  normalizeSalt
-         = S.anormalize (makeNamifier Salt.freshT) 
-                        (makeNamifier Salt.freshX)
+         = S.anormalize (makeNamifier A.freshT) 
+                        (makeNamifier A.freshX)
 
 
 ---------------------------------------------------------------------------------------------------
@@ -135,7 +168,7 @@ stageCompileSalt
         -> FilePath             -- ^ Path of original source file.
                                 --   Build products are placed into the same dir.
         -> Bool                 -- ^ Should we link this into an executable
-        -> PipeCore () Salt.Name
+        -> PipeCore () A.Name
 
 stageCompileSalt config source filePath shouldLinkExe
  = let  -- Decide where to place the build products.
@@ -143,8 +176,8 @@ stageCompileSalt config source filePath shouldLinkExe
         exePath         = exePathOfConfig    config filePath
         cPath           = replaceExtension   oPath  ".ddc.c"
    in
-        PipeCoreSimplify        Salt.fragment 0 normalizeSalt
-         [ PipeCoreCheck        "CompileSalt" Salt.fragment C.Recon SinkDiscard
+        PipeCoreSimplify        BA.fragment 0 normalizeSalt
+         [ PipeCoreCheck        "CompileSalt" BA.fragment C.Recon SinkDiscard
            [ PipeCoreOutput     pprDefaultMode
                                 (dump config source "dump.2-salt-03-normalized.dcs")
            , PipeCoreAsSalt
@@ -162,8 +195,8 @@ stageCompileSalt config source filePath shouldLinkExe
                         ]]]]
 
  where  normalizeSalt
-         = S.anormalize (makeNamifier Salt.freshT) 
-                        (makeNamifier Salt.freshX)
+         = S.anormalize (makeNamifier A.freshT) 
+                        (makeNamifier A.freshX)
 
 
 ---------------------------------------------------------------------------------------------------

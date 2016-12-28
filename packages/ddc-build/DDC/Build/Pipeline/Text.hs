@@ -105,7 +105,8 @@ pipeText !srcName !srcLine !str
                         , configSinkCore                = sinkCore
                         , configSinkPreCheck            = sinkPreCheck
                         , configSinkCheckerTrace        = sinkCheckerTrace 
-                        , configSinkChecked             = SinkDiscard }
+                        , configSinkChecked             = SinkDiscard 
+                        , configSinkElaborated          = SinkDiscard }
 
         case result of
          Left errs      -> return errs

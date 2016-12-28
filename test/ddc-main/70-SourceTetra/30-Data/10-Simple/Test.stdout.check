@@ -35,7 +35,7 @@ data Void where {
 
 -- Error: duplicate data type definition.
 Error in transformed module.
-  in stage pipeText
+  in stage SourceLoadText
   in pipe  PipeCoreCheck/Check
   Duplicate data type definition.
     A constructor with name: Blerk
@@ -44,7 +44,7 @@ Error in transformed module.
 
 -- Error: data constructor name reused in the same type.
 [Error in transformed module.
-  in stage pipeText
+  in stage SourceLoadText
   in pipe  PipeCoreCheck/Check
   Duplicate data constructor definition.
     A constructor with name: Foo
@@ -52,7 +52,7 @@ Error in transformed module.
 
 -- Error: data constructor redefined in a different type.
 [Error in transformed module.
-  in stage pipeText
+  in stage SourceLoadText
   in pipe  PipeCoreCheck/Check
   Duplicate data constructor definition.
     A constructor with name: Bar

@@ -19,11 +19,14 @@ import DDC.Driver.Dump
 import DDC.Driver.Config
 import qualified DDC.Driver.Interface.Source    as D
 
+import DDC.Build.Pipeline
 import qualified DDC.Build.Interface.Store      as B
 import qualified DDC.Build.Pipeline.Error       as B
 import qualified DDC.Build.Builder              as B
+import qualified DDC.Build.Stage.Core           as B
 import qualified DDC.Build.Language.Tetra       as BE
-import DDC.Build.Pipeline
+import qualified DDC.Build.Stage.Source.Tetra   as BST
+import qualified DDC.Build.Stage.Core.Tetra     as BCT
 
 import qualified DDC.Core.Check                 as C
 import qualified DDC.Core.Simplifier.Recipe     as C
@@ -32,9 +35,6 @@ import qualified DDC.Core.Module                as C
 import qualified DDC.Core.Tetra                 as E
 import qualified DDC.Core.Salt                  as A
 
-import qualified DDC.Build.Stage.Core           as B
-import qualified DDC.Build.Stage.Source.Tetra   as BST
-import qualified DDC.Build.Stage.Core.Tetra     as BCT
 
 
 ---------------------------------------------------------------------------------------------------
@@ -97,6 +97,7 @@ sourceLoadText config store source str
         , BST.configSinkPreCheck        = dump config source "dump.0-source-10-precheck.dct"
         , BST.configSinkCheckerTrace    = dump config source "dump.0-source-11-trace.txt"
         , BST.configSinkChecked         = dump config source "dump.0-source-12-checked.dct"
+        , BST.configSinkElaborated      = dump config source "dump.0-source-13-elaborated.dct"
         }
 
 

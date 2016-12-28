@@ -41,10 +41,9 @@ import qualified DDC.Core.Fragment                      as C
 import qualified DDC.Core.Check                         as C
 import qualified DDC.Core.Module                        as C
 import qualified DDC.Core.Lexer                         as C
-
 import qualified DDC.Core.Tetra                         as CE
 import qualified DDC.Core.Tetra.Env                     as CE
-
+import qualified DDC.Core.Transform.Resolve             as CResolve
 import qualified DDC.Core.Transform.SpreadX             as CSpread
 
 
@@ -63,6 +62,7 @@ data ConfigLoadSourceTetra
         , configSinkPreCheck     :: B.Sink      -- ^ Sink for core code before checking.
         , configSinkCheckerTrace :: B.Sink      -- ^ Sink for checker trace.
         , configSinkChecked      :: B.Sink      -- ^ Sink for checked core code.
+        , configSinkElaborated   :: B.Sink      -- ^ Sink for elaborated core code.
         }
 
 
@@ -109,7 +109,7 @@ sourceLoadText srcName srcLine str store config
 
 
         -- Check core.
-        let fragment_implicit
+        let fragment
                 = flip C.mapProfileOfFragment BE.fragment
                 $ C.mapFeaturesOfProfile 
                 $ ( C.setFeature C.ImplicitRun True
@@ -117,14 +117,25 @@ sourceLoadText srcName srcLine str store config
 
         mm_checked
          <- BS.coreCheck 
-                "sourceLoadText"
-                fragment_implicit
+                "SourceLoadText"
+                fragment
                 (C.Synth [])
                 (configSinkCheckerTrace config)
                 (configSinkChecked      config)
                 mm_core
 
-        return mm_checked
+
+        -- Resolve elaborations in module.
+        mm_resolved
+         <- do  ntsTop  <- liftIO $ B.importValuesOfStore store
+                res     <- liftIO $ CResolve.resolveModule
+                                (C.fragmentProfile BE.fragment)
+                                ntsTop mm_checked
+                case res of
+                 Left err  -> throwE [B.ErrorLint "SourceLoadText" "CoreResolve" err]
+                 Right mm' -> return mm'
+
+        return mm_resolved
 
 
 ---------------------------------------------------------------------------------------------------
