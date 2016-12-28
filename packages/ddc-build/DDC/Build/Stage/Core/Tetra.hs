@@ -1,7 +1,7 @@
 
 module DDC.Build.Stage.Core.Tetra
-        ( ConfigTetraToSalt (..)
-        , tetraToSalt)
+        ( tetraToSalt
+        , ConfigTetraToSalt (..))
 where
 import Control.Monad.Trans.Except
 import Control.Monad.IO.Class

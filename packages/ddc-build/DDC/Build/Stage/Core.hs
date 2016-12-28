@@ -1,6 +1,7 @@
 
 module DDC.Build.Stage.Core
         ( coreLoad
+        , ConfigCoreLoad (..)
 
         , coreCheck
         , coreReCheck
@@ -34,6 +35,14 @@ import qualified DDC.Core.Transform.SpreadX             as CSpread
 
 
 ---------------------------------------------------------------------------------------------------
+data ConfigCoreLoad
+        = ConfigCoreLoad
+        { configSinkTokens      :: B.Sink       -- ^ Sink for source tokens.
+        , configSinkParsed      :: B.Sink       -- ^ Sink after parsing.
+        , configSinkChecked     :: B.Sink       -- ^ Sink after type checking.
+        , configSinkTrace       :: B.Sink       -- ^ Sink for type checker trace.
+        }
+
 -- | Load a core module from text.
 coreLoad
         :: (Ord n, Show n, Pretty n, Pretty (err (C.AnTEC SP.SourcePos n)))
@@ -42,26 +51,25 @@ coreLoad
         -> C.Mode n                     -- ^ Checker mode.
         -> String                       -- ^ Name of source file.
         -> Int                          -- ^ Line of source file.
-        -> B.Sink                       -- ^ Sink for tokens.
-        -> B.Sink                       -- ^ Sink for parsed code.
-        -> B.Sink                       -- ^ Sink for checked code.
-        -> B.Sink                       -- ^ Sink for checker trace.
         -> String                       -- ^ Textual core code.
+        -> ConfigCoreLoad               -- ^ Sinked config.
         -> ExceptT [B.Error] IO (C.Module (C.AnTEC SP.SourcePos n) n)
 
-coreLoad 
-        !_stage !fragment !mode !srcName !srcLine 
-        !sinkTokens !sinkParsed !sinkChecked !sinkTrace
-        !str
+coreLoad !_stage !fragment !mode !srcName !srcLine !str !config 
  = do   
         -- Parse the module.
-        mm_core    <- coreParse fragment srcName srcLine sinkTokens str
-        liftIO $ B.pipeSink (renderIndent $ ppr mm_core) sinkParsed
+        mm_core    <- coreParse fragment srcName srcLine 
+                        (configSinkTokens config)
+                        str
+
+        liftIO $ B.pipeSink (renderIndent $ ppr mm_core) 
+                            (configSinkParsed config)
 
         -- Type check the module.
         mm_checked <- coreCheck "CoreLoad" fragment mode
-                                sinkTrace sinkChecked  
-                                mm_core
+                        (configSinkTrace   config)
+                        (configSinkChecked config)  
+                        mm_core
 
         return mm_checked
 

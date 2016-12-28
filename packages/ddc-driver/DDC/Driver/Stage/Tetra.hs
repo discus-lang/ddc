@@ -76,11 +76,13 @@ tetraLoadText config _store source str
         (if D.configInferTypes config then C.Synth [] else C.Recon)
         (D.nameOfSource source)
         (D.lineStartOfSource source)
-        (D.dump config source "dump.1-tetra-00-tokens.txt")
-        (D.dump config source "dump.1-tetra-01-parsed.dct")
-        (D.dump config source "dump.1-tetra-02-checked.dct")
-        (D.dump config source "dump.1-tetra-03-trace.txt")
         str
+ $ B.ConfigCoreLoad
+        { B.configSinkTokens            = D.dump config source "dump.1-tetra-00-tokens.txt"
+        , B.configSinkParsed            = D.dump config source "dump.1-tetra-01-parsed.dct"
+        , B.configSinkChecked           = D.dump config source "dump.1-tetra-02-checked.dct"
+        , B.configSinkTrace             = D.dump config source "dump.1-tetra-03-trace.txt"
+        }
 
 
 ---------------------------------------------------------------------------------------------------
