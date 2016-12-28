@@ -92,17 +92,18 @@ pipeText !srcName !srcLine !str
  = do   
         result  <- sourceLoadText srcName srcLine str store 
                 $  ConfigLoadSourceTetra
-                        { configSinkTokens             = sinkTokens
-                        , configSinkParsed             = sinkParsed
-                        , configSinkFresh              = sinkFresh
-                        , configSinkDefix              = sinkDefix
-                        , configSinkExpand             = sinkExpand
-                        , configSinkGuards             = sinkGuards
-                        , configSinkMatches            = sinkMatches
-                        , configSinkPrep               = sinkPrep
-                        , configSinkCore               = sinkCore
-                        , configSinkPreCheck           = sinkPreCheck
-                        , configSinkCheckerTrace       = sinkCheckerTrace }
+                        { configSinkTokens              = sinkTokens
+                        , configSinkParsed              = sinkParsed
+                        , configSinkFresh               = sinkFresh
+                        , configSinkDefix               = sinkDefix
+                        , configSinkExpand              = sinkExpand
+                        , configSinkGuards              = sinkGuards
+                        , configSinkMatches             = sinkMatches
+                        , configSinkPrep                = sinkPrep
+                        , configSinkCore                = sinkCore
+                        , configSinkPreCheck            = sinkPreCheck
+                        , configSinkCheckerTrace        = sinkCheckerTrace 
+                        , configSinkChecked             = SinkDiscard }
 
         case result of
          Left errs      -> return errs

@@ -184,7 +184,7 @@ pipeCore !mm !pp
 
         PipeCoreCheck !stage !fragment !mode !sinkTrace !pipes
          -> do  result'  <- runExceptT 
-                        $   coreCheck stage fragment mode sinkTrace  mm
+                        $   coreCheck stage fragment mode sinkTrace  SinkDiscard mm
                 case result' of
                  Left  errs     -> return errs
                  Right mm'      -> pipeCores mm' pipes

@@ -11,7 +11,6 @@ import DDC.Data.Pretty
 import Control.Monad.Trans.Except
 import Control.Monad.IO.Class
 
-
 import qualified Data.Text                              as Text
 
 import qualified DDC.Data.SourcePos                     as SP
@@ -28,14 +27,6 @@ import qualified DDC.Build.Transform.Resolve            as BResolve
 import qualified DDC.Source.Tetra.Exp                   as S
 import qualified DDC.Source.Tetra.Module                as S
 
-import qualified DDC.Core.Fragment                      as C
-import qualified DDC.Core.Check                         as C
-import qualified DDC.Core.Module                        as C
-import qualified DDC.Core.Lexer                         as C
-
-import qualified DDC.Core.Tetra                         as CE
-import qualified DDC.Core.Tetra.Env                     as CE
-
 import qualified DDC.Source.Tetra.Transform.Freshen     as SFreshen
 import qualified DDC.Source.Tetra.Transform.Defix       as SDefix
 import qualified DDC.Source.Tetra.Transform.Expand      as SExpand
@@ -45,6 +36,14 @@ import qualified DDC.Source.Tetra.Transform.Prep        as SPrep
 import qualified DDC.Source.Tetra.Convert               as SConvert
 import qualified DDC.Source.Tetra.Parser                as SParser
 import qualified DDC.Source.Tetra.Lexer                 as SLexer
+
+import qualified DDC.Core.Fragment                      as C
+import qualified DDC.Core.Check                         as C
+import qualified DDC.Core.Module                        as C
+import qualified DDC.Core.Lexer                         as C
+
+import qualified DDC.Core.Tetra                         as CE
+import qualified DDC.Core.Tetra.Env                     as CE
 
 import qualified DDC.Core.Transform.SpreadX             as CSpread
 
@@ -63,6 +62,7 @@ data ConfigLoadSourceTetra
         , configSinkCore         :: B.Sink      -- ^ Sink for core code.
         , configSinkPreCheck     :: B.Sink      -- ^ Sink for core code before checking.
         , configSinkCheckerTrace :: B.Sink      -- ^ Sink for checker trace.
+        , configSinkChecked      :: B.Sink      -- ^ Sink for checked core code.
         }
 
 
@@ -104,6 +104,7 @@ sourceLoadText srcName srcLine str store config
                 fragment_implicit
                 (C.Synth [])
                 (configSinkCheckerTrace config)
+                (configSinkChecked      config)
 
         -- Type check the code, synthesising missing type annotation    s.
         --  Insert casts to implicitly run suspended bindings along the way.
