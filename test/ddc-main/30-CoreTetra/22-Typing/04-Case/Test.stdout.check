@@ -29,49 +29,52 @@ When checking expression.
 
 
 -- Error: pattern binds more fields than provided by constructor.
-Error loading module
-  When checking expression.
-    <batch>:29:4
-    Pattern has more binders than there are fields in the constructor.
-         Contructor: Cons
-                has: 2 fields
-      but there are: 3 binders in the pattern
-    
-    with: case xx of {
-            Nil  
-             -> ();
-            Cons x xs ys 
-             -> ()
-          }
+Error in transformed module.
+  in stage CoreLoad
+  in pipe  PipeCoreCheck/Check
+  <batch>:29:4
+  Pattern has more binders than there are fields in the constructor.
+       Contructor: Cons
+              has: 2 fields
+    but there are: 3 binders in the pattern
+  
+  with: case xx of {
+          Nil  
+           -> ();
+          Cons x xs ys 
+           -> ()
+        }
 
 
 -- Error: annotation on pattern variable does not match field type  of constructor.
-Error loading module
-  When checking expression.
-    <batch>:46:4
-    Annotation on pattern variable does not match type of field.
-           Annotation type: Unit
-                Field type: Nat#
-    
-    with: case xx of {
-            Nil  
-             -> ();
-            Cons (x: Unit) xs 
-             -> ()
-          }
+Error in transformed module.
+  in stage CoreLoad
+  in pipe  PipeCoreCheck/Check
+  <batch>:46:4
+  Annotation on pattern variable does not match type of field.
+         Annotation type: Unit
+              Field type: Nat#
+  
+  with: case xx of {
+          Nil  
+           -> ();
+          Cons (x: Unit) xs 
+           -> ()
+        }
 
 
 -- Error: alternatives are not exhaustive, for a small type.
-Error loading module
-  When checking expression.
-    <batch>:62:4
-    Case alternatives are non-exhaustive.
-     Constructors not matched: Nil
-    
-    with: case xx of {
-            Cons _ _ 
-             -> ()
-          }
+Error in transformed module.
+  in stage CoreLoad
+  in pipe  PipeCoreCheck/Check
+  <batch>:62:4
+  Case alternatives are non-exhaustive.
+   Constructors not matched: Nil
+  
+  with: case xx of {
+          Cons _ _ 
+           -> ()
+        }
 
 
 -- Error: alternatives are not exhaustive, for a Large type.

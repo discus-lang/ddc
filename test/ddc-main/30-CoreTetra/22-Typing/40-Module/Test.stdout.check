@@ -14,21 +14,24 @@ letrec {
 
 
 -- Error: No main function.
-Error loading module
-  During fragment specific check.
-    Main module does not export a 'main' function.
+Error in transformed module.
+  in stage CoreLoad
+  in pipe  PipeCoreCheck/Fragment
+  Main module does not export a 'main' function.
 
 
 -- Error: Main function has invalid type.
-Error loading module
-  During fragment specific check.
-    Invalid type of main function in Main module.
-      Type of main function: Nat# -> Nat# -> S Pure Unit
-      is not an instance of: [e : Effect]. Unit -> S e Unit
+Error in transformed module.
+  in stage CoreLoad
+  in pipe  PipeCoreCheck/Fragment
+  Invalid type of main function in Main module.
+    Type of main function: Nat# -> Nat# -> S Pure Unit
+    is not an instance of: [e : Effect]. Unit -> S e Unit
 
 
 -- Error: duplicate export of name.
 -- #295: Check for duplicate exported names in module parser.
-Error loading module
-  When checking expression.
-    Duplicate exported name 'main'.
+Error in transformed module.
+  in stage CoreLoad
+  in pipe  PipeCoreCheck/Check
+  Duplicate exported name 'main'.

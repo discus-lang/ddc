@@ -77,18 +77,19 @@ When checking expression.
 
 
 -- Error: cannot shadow spec binders.
-Error loading module
-  When checking expression.
-    <batch>:66:4
-    Cannot shadow named spec variable.
-      binder: r: Region
-      is already in the environment.
-    with: Λ(r: Region).
-          λ(r: Ref r Int#).
-          case x of {
-            0#  
-             -> x;
-            _ 
-             -> y
-          }
+Error in transformed module.
+  in stage CoreLoad
+  in pipe  PipeCoreCheck/Check
+  <batch>:66:4
+  Cannot shadow named spec variable.
+    binder: r: Region
+    is already in the environment.
+  with: Λ(r: Region).
+        λ(r: Ref r Int#).
+        case x of {
+          0#  
+           -> x;
+          _ 
+           -> y
+        }
 

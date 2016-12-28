@@ -180,14 +180,15 @@ letrec {
 
 
 -- Compile nested function via lambda lifting.
-Error loading module
-  When checking expression.
-    <batch>:53:12
-    Cannot apply non-function
-                  of type: [a: Data].a -> a
-    
-    with: id
-              (λ(x: Nat#). x)
+Error in transformed module.
+  in stage CoreLoad
+  in pipe  PipeCoreCheck/Check
+  <batch>:53:12
+  Cannot apply non-function
+                of type: [a: Data].a -> a
+  
+  with: id
+            (λ(x: Nat#). x)
 
 
 -- Compile application of anonymous function.

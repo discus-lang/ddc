@@ -42,41 +42,44 @@ letrec {
 
 -- Error: private cannot shadow region variables that are already in the
 -- environment because the new witnesses may conflict with the old ones.
-Error loading module
-  When checking expression.
-    <batch>:43:4
-    Region variables shadow existing ones.
-               Region variables: r1: Region
-         are already in environment
-    
-    with: private r1 with {w1: Write r1} in
-          writeRef [r1] [Nat#] x 6#
+Error in transformed module.
+  in stage CoreLoad
+  in pipe  PipeCoreCheck/Check
+  <batch>:43:4
+  Region variables shadow existing ones.
+             Region variables: r1: Region
+       are already in environment
+  
+  with: private r1 with {w1: Write r1} in
+        writeRef [r1] [Nat#] x 6#
 
 
 -- Error: private region variable cannot shadow variable that is already 
 -- in the environment.
-Error loading module
-  When checking expression.
-    <batch>:58:4
-    Region variables shadow existing ones.
-               Region variables: r: Region
-         are already in environment
-    
-    with: private r with {w1: Mutable r} in
-          writeRef [r] [Nat#] x 6#
+Error in transformed module.
+  in stage CoreLoad
+  in pipe  PipeCoreCheck/Check
+  <batch>:58:4
+  Region variables shadow existing ones.
+             Region variables: r: Region
+       are already in environment
+  
+  with: private r with {w1: Mutable r} in
+        writeRef [r] [Nat#] x 6#
 
 
 
 -- Error: private region variable is free in the type of the returned value.
-Error loading module
-  When checking expression.
-    <batch>:73:9
-    Region variables escape scope of private.
-           The region variables: r: Region
-       is free in the body type: Ref r Nat#
-    
-    with: private r in
-          MkRef [r] [Nat#] 5#
+Error in transformed module.
+  in stage CoreLoad
+  in pipe  PipeCoreCheck/Check
+  <batch>:73:9
+  Region variables escape scope of private.
+         The region variables: r: Region
+     is free in the body type: Ref r Nat#
+  
+  with: private r in
+        MkRef [r] [Nat#] 5#
 
 
 -- Error: witness types with a private must use explicit type constructors.

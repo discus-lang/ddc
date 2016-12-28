@@ -3,7 +3,9 @@ module DDC.Build.Pipeline.Text
         ( PipeText (..)
         , pipeText)
 where
-import DDC.Build.Stage.Source.Tetra
+import qualified DDC.Build.Stage.Source.Tetra           as BSE
+import qualified DDC.Build.Stage.Core                   as BC
+
 import DDC.Build.Pipeline.Error
 import DDC.Build.Pipeline.Sink
 import DDC.Build.Pipeline.Core
@@ -16,7 +18,6 @@ import qualified DDC.Source.Tetra.Pretty                ()
 
 import qualified DDC.Core.Tetra                         as CE
 import qualified DDC.Core.Check                         as C
-import qualified DDC.Core.Load                          as C
 import qualified DDC.Control.Parser                     as BP
 import qualified DDC.Data.SourcePos                     as SP
 
@@ -61,27 +62,18 @@ pipeText
         -> PipeText n err
         -> IO [Error]
 
--------------------------------------------------------------------------------
 pipeText !srcName !srcLine !str 
          !(PipeTextLoadCore !fragment !mode !sink !pipes)
- = {-# SCC "PipeTextLoadCore" #-}
-   do   let   toks    = fragmentLexModule fragment srcName srcLine str 
+ = do  
+        result  <- runExceptT
+                $  BC.coreLoad "TextLoadCore" fragment mode srcName srcLine
+                     SinkDiscard sink SinkDiscard SinkDiscard 
+                     str
 
---        putStrLn $ unlines $ map (show . SP.valueOfLocated) toks
+        case result of
+         Left errs      -> return errs
+         Right mm       -> fmap concat $ mapM (pipeCore mm) pipes
 
-        case C.loadModuleFromTokens fragment srcName mode toks of
-          (Left err, mct) 
-           -> do sinkCheckTrace mct sink
-                 return [ErrorLoad err]
-
-          (Right mm, mct) 
-           -> do sinkCheckTrace mct sink
-                 pipeCores mm pipes
-
- where  sinkCheckTrace mct sink'
-         = case mct of
-                Nothing                 -> return []
-                Just (C.CheckTrace doc) -> pipeSink (renderIndent doc) sink'
 
 pipeText !srcName !srcLine !str 
          (PipeTextLoadSourceTetra 
@@ -92,21 +84,21 @@ pipeText !srcName !srcLine !str
                 store pipes)
  = do   
         result  <- runExceptT 
-                $  sourceLoad srcName srcLine str store 
-                $  ConfigLoadSourceTetra
-                        { configSinkTokens              = sinkTokens
-                        , configSinkParsed              = sinkParsed
-                        , configSinkFresh               = sinkFresh
-                        , configSinkDefix               = sinkDefix
-                        , configSinkExpand              = sinkExpand
-                        , configSinkGuards              = sinkGuards
-                        , configSinkMatches             = sinkMatches
-                        , configSinkPrep                = sinkPrep
-                        , configSinkCore                = sinkCore
-                        , configSinkPreCheck            = sinkPreCheck
-                        , configSinkCheckerTrace        = sinkCheckerTrace 
-                        , configSinkChecked             = SinkDiscard 
-                        , configSinkElaborated          = SinkDiscard }
+                $  BSE.sourceLoad srcName srcLine str store 
+                $  BSE.ConfigLoadSourceTetra
+                        { BSE.configSinkTokens          = sinkTokens
+                        , BSE.configSinkParsed          = sinkParsed
+                        , BSE.configSinkFresh           = sinkFresh
+                        , BSE.configSinkDefix           = sinkDefix
+                        , BSE.configSinkExpand          = sinkExpand
+                        , BSE.configSinkGuards          = sinkGuards
+                        , BSE.configSinkMatches         = sinkMatches
+                        , BSE.configSinkPrep            = sinkPrep
+                        , BSE.configSinkCore            = sinkCore
+                        , BSE.configSinkPreCheck        = sinkPreCheck
+                        , BSE.configSinkCheckerTrace    = sinkCheckerTrace 
+                        , BSE.configSinkChecked         = SinkDiscard 
+                        , BSE.configSinkElaborated      = SinkDiscard }
 
         case result of
          Left errs      -> return errs

@@ -160,6 +160,9 @@ cmdToSaltCoreFromString config language source str
         store           <- liftIO Store.new 
 
         -- Pretty printer mode.
+        let pmode       = prettyModeOfConfig $ configPretty config
+
+        -- Make salt from the input file.
         let makeSalt
                 |   fragName == "Tetra"
                 =   DE.tetraToSalt   config source
@@ -177,7 +180,7 @@ cmdToSaltCoreFromString config language source str
 
         errs    <- liftIO $ pipeCore modSalt
                 $  stageSaltOpt config source 
-                [  stageSaltToC config source SinkStdout ]
+                [  PipeCoreOutput pmode SinkStdout ]
 
         -- Throw any errors that arose during compilation
         case errs of

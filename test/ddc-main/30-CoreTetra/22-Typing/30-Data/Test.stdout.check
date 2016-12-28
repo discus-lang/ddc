@@ -114,12 +114,13 @@ letrec {
 
 -- Error: constructor does not produce enclosing data type.
 ok
-Error loading module
-  When checking expression.
-    Invalid result type for data constructor.
-           The data constructor: C
-                has result type: NotTheThing
-      but the enclosing type is: TheThing
+Error in transformed module.
+  in stage CoreLoad
+  in pipe  PipeCoreCheck/Check
+  Invalid result type for data constructor.
+         The data constructor: C
+              has result type: NotTheThing
+    but the enclosing type is: TheThing
 
 
 -- Error: constructor does not produce enclosing data type.
@@ -127,10 +128,11 @@ Error loading module
 --   existential quantifier, but for now we're happy with an inoffensive
 --   error message.
 ok
-Error loading module
-  When checking expression.
-    Invalid result type for data constructor.
-           The data constructor: C
-                has result type: [b: Data].a -> b -> Foo a
-      but the enclosing type is: Foo a
+Error in transformed module.
+  in stage CoreLoad
+  in pipe  PipeCoreCheck/Check
+  Invalid result type for data constructor.
+         The data constructor: C
+              has result type: [b: Data].a -> b -> Foo a
+    but the enclosing type is: Foo a
 
