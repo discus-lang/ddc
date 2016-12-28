@@ -16,6 +16,19 @@ Fragment violation when converting Salt module to target code.
 
 
 -- Ok: Function finishes with a return statement.
+// Includes for helper macros and the runtime system. -----------------
+#include "Runtime.h"
+#include "Primitive.h"
+
+// Definitions of the runtime system variables. -----------------------
+addr_t _DDC__heapTop = 0;
+addr_t _DDC__heapMax = 0;
+
+// External definitions for imported symbols. -------------------------
+
+// Function prototypes for locally defined supers. --------------------
+int_t foo (int_t);
+
 // Code for locally defined supers. -----------------------------------
 int_t foo (int_t _x)
 {
@@ -27,6 +40,19 @@ int_t foo (int_t _x)
 
 
 -- Ok: Statements in function.
+// Includes for helper macros and the runtime system. -----------------
+#include "Runtime.h"
+#include "Primitive.h"
+
+// Definitions of the runtime system variables. -----------------------
+addr_t _DDC__heapTop = 0;
+addr_t _DDC__heapMax = 0;
+
+// External definitions for imported symbols. -------------------------
+
+// Function prototypes for locally defined supers. --------------------
+int_t foo (int_t);
+
 // Code for locally defined supers. -----------------------------------
 int_t foo (int_t _x)
 {
@@ -39,6 +65,19 @@ int_t foo (int_t _x)
 
 
 -- Ok: Function explicitly fails.
+// Includes for helper macros and the runtime system. -----------------
+#include "Runtime.h"
+#include "Primitive.h"
+
+// Definitions of the runtime system variables. -----------------------
+addr_t _DDC__heapTop = 0;
+addr_t _DDC__heapMax = 0;
+
+// External definitions for imported symbols. -------------------------
+
+// Function prototypes for locally defined supers. --------------------
+int_t foo (int_t);
+
 // Code for locally defined supers. -----------------------------------
 int_t foo (int_t _x)
 {
@@ -51,6 +90,19 @@ int_t foo (int_t _x)
 
 
 -- Ok: assignment between variables.
+// Includes for helper macros and the runtime system. -----------------
+#include "Runtime.h"
+#include "Primitive.h"
+
+// Definitions of the runtime system variables. -----------------------
+addr_t _DDC__heapTop = 0;
+addr_t _DDC__heapMax = 0;
+
+// External definitions for imported symbols. -------------------------
+
+// Function prototypes for locally defined supers. --------------------
+int_t foo (int_t);
+
 // Code for locally defined supers. -----------------------------------
 int_t foo (int_t _x)
 {
@@ -63,6 +115,19 @@ int_t foo (int_t _x)
 
 
 -- Ok: assignment from a literal.
+// Includes for helper macros and the runtime system. -----------------
+#include "Runtime.h"
+#include "Primitive.h"
+
+// Definitions of the runtime system variables. -----------------------
+addr_t _DDC__heapTop = 0;
+addr_t _DDC__heapMax = 0;
+
+// External definitions for imported symbols. -------------------------
+
+// Function prototypes for locally defined supers. --------------------
+nat_t foo (nat_t);
+
 // Code for locally defined supers. -----------------------------------
 nat_t foo (nat_t _x)
 {
@@ -117,6 +182,20 @@ Fragment violation when converting Salt module to target code.
 
 
 -- Error: cannot instantiate a type variable at an unboxed type.
+// Includes for helper macros and the runtime system. -----------------
+#include "Runtime.h"
+#include "Primitive.h"
+
+// Definitions of the runtime system variables. -----------------------
+addr_t _DDC__heapTop = 0;
+addr_t _DDC__heapMax = 0;
+
+// External definitions for imported symbols. -------------------------
+
+// Function prototypes for locally defined supers. --------------------
+Obj* id (Obj*);
+int_t foo (int_t);
+
 // Code for locally defined supers. -----------------------------------
 Obj* id (Obj* _x)
 {

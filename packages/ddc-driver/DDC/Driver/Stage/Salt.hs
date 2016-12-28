@@ -2,8 +2,8 @@
 module DDC.Driver.Stage.Salt
         ( saltLoadText
         , saltSimplify
+        , saltToSea
 
-        , stageSaltToC
         , stageSaltToSlottedLLVM
         , stageSaltToUnSlottedLLVM
         , stageCompileSalt
@@ -34,6 +34,7 @@ import qualified DDC.Core.Salt.Name             as A
 import qualified DDC.Core.Salt.Profile          as A
 
 import qualified DDC.Build.Stage.Core           as B
+import qualified DDC.Build.Stage.Core.Salt      as BA
 import qualified DDC.Build.Language.Salt        as BA
 
 ---------------------------------------------------------------------------------------------------
@@ -65,7 +66,7 @@ saltLoadText config _store source str
 saltSimplify
         :: Config               -- ^ Driver config.
         -> D.Source             -- ^ Source file meta-data.
-        -> C.Module a A.Name   -- ^ Module to simplify.
+        -> C.Module a A.Name    -- ^ Module to simplify.
         -> ExceptT [B.Error] IO (C.Module () A.Name)
 
 saltSimplify config _source mm
@@ -77,28 +78,19 @@ saltSimplify config _source mm
 
 
 ---------------------------------------------------------------------------------------------------
--- | Convert Core Salt to C code.
-stageSaltToC
-        :: Config -> Source
-        -> Sink
-        -> PipeCore () A.Name
+-- | Convert a Salt module to Sea text.
+saltToSea
+        :: (Show a, Pretty a)
+        => Config               -- ^ Driver config.
+        -> D.Source             -- ^ Source file meta data.
+        -> C.Module a A.Name    -- ^ Module to convert.
+        -> ExceptT [B.Error] IO String
 
-stageSaltToC config source sink
- = PipeCoreSimplify       BA.fragment 0 normalizeSalt
-   [ PipeCoreCheck        "SaltToC" BA.fragment C.Recon SinkDiscard
-     [ PipeCoreOutput     pprDefaultMode
-                          (dump config source "dump.2-salt-03-normalized.dcs")
-     , PipeCoreAsSalt
-       [ PipeSaltTransfer
-         [ PipeSaltOutput (dump config source "dump.2-salt-04-transfer.dcs")
-         , PipeSaltPrint
-                (not $ configSuppressHashImports config)
-                (buildSpec $ configBuilder config)
-                sink ]]]]
-
- where  normalizeSalt
-         = S.anormalize (makeNamifier A.freshT) 
-                        (makeNamifier A.freshX)
+saltToSea config source mm
+ = BA.saltToSea
+        (D.nameOfSource source)
+        (buildSpec $ configBuilder config)
+        mm
 
 
 ---------------------------------------------------------------------------------------------------

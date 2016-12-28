@@ -90,19 +90,16 @@ cmdToSeaSourceTetraFromString
 
 cmdToSeaSourceTetraFromString config store source str
  = withExceptT (renderIndent . vcat . map ppr)
- $ do  
-        modSalt' 
-         <-  DA.saltSimplify   config source 
+ $ do   
+        -- Load Source Tetra code and convert to Sea.
+        strSea
+         <-  DA.saltToSea      config source
+         =<< DA.saltSimplify   config source 
          =<< DE.tetraToSalt    config source 
          =<< DE.sourceLoadText config store  source str
 
-        errs
-         <- liftIO $ pipeCore modSalt'
-         $  stageSaltToC       config source SinkStdout
- 
-        case errs of
-         []     -> return ()
-         _      -> throwE errs
+        -- Print Sea code to stdout.
+        liftIO $ putStrLn strSea
 
 
 
@@ -167,14 +164,13 @@ cmdToSeaCoreFromString config language source str
                 | otherwise
                 = throwE [ErrorLoad $ "Cannot convert '" ++ fragName ++ "'modules to C."]
 
-        modSalt <- makeSalt
+        mm_salt <- makeSalt
 
-        errs    <- liftIO $ pipeCore modSalt
-                $  stageSaltToC config source SinkStdout 
+        -- Convert Salt code to Sea.
+        strSea  <- DA.saltToSea config source mm_salt
 
-        -- Throw any errors that arose during compilation
-        case errs of
-         []     -> return ()
-         _      -> throwE errs
+        -- Print Sea code to console.
+        liftIO $ putStrLn strSea
+
 
 
