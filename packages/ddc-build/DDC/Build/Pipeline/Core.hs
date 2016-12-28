@@ -35,17 +35,11 @@ import qualified DDC.Core.Flow.Convert                  as Flow
 
 import qualified DDC.Core.Machine                       as Machine
 
-import qualified DDC.Core.Tetra.Transform.Curry         as Tetra
-import qualified DDC.Core.Tetra.Transform.Boxing        as Tetra
 import qualified DDC.Core.Tetra                         as Tetra
 
 import qualified DDC.Core.Babel.PHP                     as PHP
-
-import qualified DDC.Core.Salt.Platform                 as Salt
-import qualified DDC.Core.Salt.Runtime                  as Salt
 import qualified DDC.Core.Salt                          as Salt
 
-import qualified DDC.Core.Transform.Unshare             as C
 import qualified DDC.Core.Transform.Reannotate          as C
 import qualified DDC.Core.Transform.Namify              as C
 import qualified DDC.Core.Transform.Snip                as Snip
@@ -54,7 +48,6 @@ import qualified DDC.Core.Transform.Eta                 as Eta
 import qualified DDC.Core.Transform.Beta                as Beta
 import qualified DDC.Core.Transform.Lambdas             as Lambdas
 import qualified DDC.Core.Transform.Forward             as Forward
-import qualified DDC.Core.Transform.Resolve             as Resolve
 import qualified DDC.Core.Simplifier                    as C
 
 import qualified DDC.Core.Fragment                      as C
@@ -75,11 +68,6 @@ import Control.DeepSeq
 ---------------------------------------------------------------------------------------------------
 -- | Process a core module.
 data PipeCore a n where
-  -- Plumb the module on without transforming it.
-  PipeCoreId
-        :: ![PipeCore a n]
-        -> PipeCore a n
-
   -- Output a module to console or file.
   PipeCoreOutput    
         :: !(C.PrettyMode (C.Module a n))
@@ -96,30 +84,12 @@ data PipeCore a n where
         -> ![PipeCore (C.AnTEC a n) n]  -- Pipes for result.
         -> PipeCore a n
 
-  -- Type check a module, discarding previous per-node type annotations.
-  PipeCoreReCheck
-        :: (NFData a, Show a, Pretty a, Pretty (err (C.AnTEC a n)))
-        => !(Fragment n err)
-        -> !(C.Mode n)
-        -> ![PipeCore (C.AnTEC a n)  n]
-        -> PipeCore  (C.AnTEC a n') n
-
   -- Reannotate a module module.
   PipeCoreReannotate
         :: (NFData b, Show b)
         => (a -> b)
         -> ![PipeCore b n]
         ->  PipeCore  a n
-
-  -- Resolve elaborations in a module.
-  PipeCoreResolve
-        :: (Pretty a)
-        => !String                      -- Name of compiler stage.
-        -> !(Fragment n arr)            -- Language fragment to use.
-        -> !(IO [(n, C.ImportValue n (C.Type n))])        
-                                        -- Top level env from other modules.
-        -> ![PipeCore a n]              -- Pipes for result.
-        -> PipeCore a n
 
   -- Apply a simplifier to a module.
   PipeCoreSimplify  
@@ -174,10 +144,6 @@ pipeCore
 
 pipeCore !mm !pp
  = case pp of
-        PipeCoreId !pipes
-         -> {-# SCC "PipeCoreId" #-}
-            pipeCores mm pipes
-
         PipeCoreOutput !mode !sink
          -> {-# SCC "PipeCoreOutput" #-}
             pipeSink (renderIndent $ pprModePrec mode 0 mm) sink
@@ -189,27 +155,10 @@ pipeCore !mm !pp
                  Left  errs     -> return errs
                  Right mm'      -> pipeCores mm' pipes
 
-
-        PipeCoreReCheck !fragment !mode !pipes
-         -> {-# SCC "PipeCoreReCheck" #-}
-            pipeCore (C.reannotate C.annotTail mm)
-         $  PipeCoreCheck "PipeCoreRecheck" fragment mode SinkDiscard pipes 
-
         PipeCoreReannotate f !pipes
          -> {-# SCC "PipeCoreStrip" #-}
             let mm' = (C.reannotate f mm)
             in  pipeCores mm' pipes
-
-        PipeCoreResolve  !stage !fragment !makeNtsTop !pipes
-         -> {-# SCC "PipeCoreResolve" #-}
-            do  ntsTop  <- makeNtsTop
-                res     <- Resolve.resolveModule 
-                                (fragmentProfile fragment) 
-                                ntsTop 
-                                mm
-                case res of
-                 Left  err       -> return [ErrorLint stage "PipeCoreResolve" err]
-                 Right mm'       -> pipeCores mm' pipes
 
         PipeCoreSimplify !fragment !nameZero !simpl !pipes
          -> {-# SCC "PipeCoreSimplify" #-}
@@ -266,38 +215,11 @@ pipeCores !mm !pipes
 -- PipeTetra --------------------------------------------------------------------------------------
 -- | Process a Core Tetra module.
 data PipeTetra a where
-        -- Output the module in core language syntax.
-        PipeTetraOutput 
-         :: !Sink
-         -> PipeTetra a
-
-        -- Manage currying of functions.
-        PipeTetraCurry
-         :: (NFData a, Show a)
-         => !Sink               -- Sink for unshared code.
-         -> ![PipeCore () Tetra.Name]
-         -> PipeTetra  (C.AnTEC a Tetra.Name)
-
-        -- Manage boxing of numeric values.
-        PipeTetraBoxing
-         :: (NFData a, Show a)
-         => ![PipeCore a Tetra.Name]
-         -> PipeTetra a
-
-        -- Convert the module to the Core Salt Fragment.
-        PipeTetraToSalt 
-         :: (NFData a, Show a)
-         => !Salt.Platform 
-         -> !Salt.Config
-         -> ![PipeCore a Salt.Name]
-         -> PipeTetra  (C.AnTEC a Tetra.Name)
-
         -- Print as PHP code
         PipeTetraToPHP
          :: (NFData a, Show a)
          => !Sink
          -> PipeTetra a
-
 
 
 -- | Process a Core Tetra module.
@@ -308,33 +230,6 @@ pipeTetra
 
 pipeTetra !mm !pp
  = case pp of
-        PipeTetraOutput !sink
-         -> {-# SCC "PipeTetraOutput" #-}
-            pipeSink (renderIndent $ ppr mm)  sink
-
-        PipeTetraCurry  !sinkUnshare !pipes
-         -> {-# SCC "PipeTetraCurry"  #-}
-            do  let mm_unshared     = C.unshareModule mm
-                pipeSink (renderIndent $ ppr mm_unshared) sinkUnshare
-
-                case Tetra.curryModule mm_unshared of
-                 Left err  -> return [ErrorTetraConvert err]
-                 Right mm' -> pipeCores mm' pipes
-
-        PipeTetraBoxing !pipes
-         -> {-# SCC "PipeTetraBoxing" #-}
-            pipeCores (Tetra.boxingModule mm) pipes
-
-        PipeTetraToSalt !platform !runConfig !pipes
-         -> {-# SCC "PipeTetraToSalt" #-}
-            case Tetra.saltOfTetraModule platform runConfig 
-                        (C.profilePrimDataDefs Tetra.profile) 
-                        (C.profilePrimKinds    Tetra.profile)
-                        (C.profilePrimTypes    Tetra.profile)
-                        mm 
-             of  Left  err  -> return [ErrorTetraConvert err]
-                 Right mm'  -> pipeCores mm' pipes 
-
         PipeTetraToPHP !sink
          -> {-# SCC "PipeTetraToPHP" #-}
             let -- Snip program to expose intermediate bindings.

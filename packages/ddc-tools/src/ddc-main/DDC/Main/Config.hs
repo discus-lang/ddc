@@ -63,14 +63,6 @@ data Mode
         | ModeToPHP     FilePath
 
 
-        -- Disciple Core Tetra specific ---------
-        -- | Manage higher order functions.
-        | ModeTetraCurry        FilePath
-
-        -- | Manage boxing.
-        | ModeTetraBoxing       FilePath
-
-
         -- Disciple Core Flow specific ----------
         -- | Prepare a Flow program for lowering.
         | ModeFlowPrep          FilePath

@@ -19,7 +19,6 @@ import DDC.Driver.Command.Compile
 import DDC.Driver.Command.ToSalt
 import DDC.Driver.Command.ToC
 import DDC.Driver.Command.ToLlvm
-import DDC.Driver.Command.Tetra.Boxing
 import DDC.Driver.Command.Flow.Prep
 import DDC.Driver.Command.Flow.Rate
 import DDC.Driver.Command.Flow.Lower
@@ -72,9 +71,6 @@ data Command
         | CommandToSalt         -- ^ Convert a module to Disciple Salt.
         | CommandToC            -- ^ Convert a module to C code.
         | CommandToLlvm         -- ^ Convert a module to LLVM code.
-
-        -- Core Tetra specific passes.
-        | CommandTetraBoxing            -- ^ Manage boxing of numeric types.
 
         -- Core Flow specific passes 
         | CommandFlowRate       -- ^ Perform rate inference
@@ -137,9 +133,6 @@ commands
         , (":to-salt",          CommandToSalt)
         , (":to-c",             CommandToC)
         , (":to-llvm",          CommandToLlvm) 
-
-        -- Core Tetra specific passes
-        , (":tetra-boxing",     CommandTetraBoxing)
 
         -- Core Flow specific passes
         , (":flow-rate-lower",   CommandFlowRateLower Flow.defaultConfigScalar)
@@ -295,11 +288,6 @@ handleCmd1 state cmd source line
                 runError $ cmdToLlvmCoreFromString config lang source line
                 return state
 
-        -- Core Tetra specific passes -----------
-        CommandTetraBoxing
-         -> do  configDriver  <- getDriverConfigOfState state
-                runError $ cmdTetraBoxing configDriver source line
-                return state
 
         -- Core Flow specific passes ------------
         CommandFlowRate

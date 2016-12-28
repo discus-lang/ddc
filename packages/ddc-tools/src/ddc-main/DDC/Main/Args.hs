@@ -150,15 +150,6 @@ parseArgs args config
         = parseArgs rest
         $ config { configWith  = configWith config ++ [file] }
 
-        -- Tetra --------------------------------
-        | "-tetra-boxing"  : file : rest <- args
-        = parseArgs rest
-        $ setMode config $ ModeTetraBoxing file
-
-        | "-tetra-curry"  : file : rest <- args
-        = parseArgs rest
-        $ setMode config $ ModeTetraCurry  file
-
         -- Flow ---------------------------------
         | "-flow-prep" : file : rest    <- args
         = parseArgs rest
@@ -286,8 +277,6 @@ flagOfMode mode
         ModeToC{}                       -> Just "-to-c"
         ModeToLLVM{}                    -> Just "-to-llvm"
         ModeToPHP{}                     -> Just "-to-php"
-        ModeTetraCurry{}                -> Just "-tetra-curry"
-        ModeTetraBoxing{}               -> Just "-tetra-boxing"
         ModeFlowPrep{}                  -> Just "-flow-prep"
         ModeFlowLower{}                 -> Just "-flow-lower"
         ModeFlowLowerKernel{}           -> Just "-flow-lower-kernel"

@@ -15,10 +15,6 @@ import DDC.Driver.Command.Load
 import DDC.Driver.Command.Compile
 import DDC.Driver.Command.Build
 import DDC.Driver.Command.BaseBuild
-
-import DDC.Driver.Command.Tetra.Curry
-import DDC.Driver.Command.Tetra.Boxing
-
 import DDC.Driver.Command.Flow.Prep
 import DDC.Driver.Command.Flow.Lower
 import DDC.Driver.Command.Flow.Concretize
@@ -161,17 +157,6 @@ run config
                 store   <- Store.new
                 runError $ cmdToPHPFromFile  dconfig store filePath
 
-
-        -- Tetra specific -----------------------------------------------------
-        ModeTetraCurry filePath
-         -> do  dconfig <- getDriverConfig config (Just filePath)
-                str     <- readFile filePath
-                runError $ cmdTetraCurry dconfig (SourceFile filePath) str
-
-        ModeTetraBoxing filePath
-         -> do  dconfig <- getDriverConfig config (Just filePath)
-                str     <- readFile filePath
-                runError $ cmdTetraBoxing dconfig (SourceFile filePath) str
 
         -- Flow specific ------------------------------------------------------
         -- Prepare a Disciple Core Flow program for lowering.
