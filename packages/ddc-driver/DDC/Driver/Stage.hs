@@ -32,9 +32,8 @@ module DDC.Driver.Stage
         , saltLoadText
         , saltSimplify
         , saltToSea
-
-        , stageSaltToSlottedLLVM
-        , stageSaltToUnSlottedLLVM
+        , saltToLlvm
+        
         , stageCompileSalt
 
           -- * LLVM stages

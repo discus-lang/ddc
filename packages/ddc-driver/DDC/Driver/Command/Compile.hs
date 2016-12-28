@@ -370,17 +370,17 @@ cmdCompile config bBuildExe' store filePath
         
         errs
          <- case configViaBackend config of
-                ViaLLVM
-                 -> liftIO $ pipeCore modSalt
-                 $  PipeCoreReannotate (const ())
-                     [ (if bSlotify 
-                          then stageSaltToSlottedLLVM   config source 
-                          else stageSaltToUnSlottedLLVM config source)
-                     [ stageCompileLLVM config source filePath otherObjs ]]
+             ViaLLVM
+              -> do mm_llvm 
+                     <- withExceptT (P.renderIndent . P.vcat . map P.ppr)
+                     $  DA.saltToLlvm config source bSlotify modSalt
 
-                ViaC
-                 -> liftIO $ pipeCore modSalt
-                 $  PipeCoreReannotate (const ())
+                    liftIO $ pipeLlvm mm_llvm
+                           $ stageCompileLLVM config source filePath otherObjs 
+
+             ViaC
+              -> liftIO $ pipeCore modSalt
+               $  PipeCoreReannotate (const ())
                      [ stageCompileSalt config source filePath False ]
 
         (case errs of

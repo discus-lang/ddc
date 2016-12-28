@@ -3,9 +3,8 @@ module DDC.Driver.Stage.Salt
         ( saltLoadText
         , saltSimplify
         , saltToSea
+        , saltToLlvm
 
-        , stageSaltToSlottedLLVM
-        , stageSaltToUnSlottedLLVM
         , stageCompileSalt
         , stageCompileLLVM)
 where
@@ -36,6 +35,9 @@ import qualified DDC.Core.Salt.Profile          as A
 import qualified DDC.Build.Stage.Core           as B
 import qualified DDC.Build.Stage.Core.Salt      as BA
 import qualified DDC.Build.Language.Salt        as BA
+
+import qualified DDC.Llvm.Syntax                as L
+
 
 ---------------------------------------------------------------------------------------------------
 -- | Load and type-check a core tetra module.
@@ -94,47 +96,24 @@ saltToSea config source mm
 
 
 ---------------------------------------------------------------------------------------------------
--- | Convert Core Salt to LLVM.
-stageSaltToSlottedLLVM
-        :: Config -> Source
-        -> [PipeLlvm]
-        -> PipeCore () A.Name
+-- | Convert a Salt module to a LLVM module.
+saltToLlvm 
+        :: (Show a, Pretty a)
+        => Config               -- ^ Driver config.
+        -> D.Source             -- ^ Source file meta data.
+        -> Bool                 -- ^ Whether to introduce stack slots.
+        -> C.Module a A.Name    -- ^ Module to convert.
+        -> ExceptT [B.Error] IO L.Module
 
-stageSaltToSlottedLLVM config source pipesLLVM
- = PipeCoreSimplify BA.fragment 0 normalizeSalt
-   [ PipeCoreOutput       pprDefaultMode
-                            (dump config source "dump.2-salt-03-normalized.dcs")
-   , PipeCoreCheck          "SaltToSlottedLLVM" BA.fragment C.Recon SinkDiscard
-     [ PipeCoreAsSalt
-       [ PipeSaltSlotify
-         [ PipeSaltOutput   (dump config source "dump.2-salt-04-slotify.dcs")
-         , PipeSaltTransfer
-           [ PipeSaltOutput (dump config source "dump.2-salt-05-transfer.dcs")
-           , PipeSaltToLlvm (buildSpec $ configBuilder config)
-                            pipesLLVM ]]]]]
- where  normalizeSalt
-         = S.anormalize (makeNamifier A.freshT) 
-                        (makeNamifier A.freshX)
-
-
-stageSaltToUnSlottedLLVM
-        :: Config -> Source
-        -> [PipeLlvm]
-        -> PipeCore () A.Name
-
-stageSaltToUnSlottedLLVM config source pipesLLVM
- = PipeCoreSimplify BA.fragment 0 normalizeSalt
-   [ PipeCoreCheck          "SaltToUnslottedLLVM" BA.fragment C.Recon SinkDiscard
-     [ PipeCoreOutput        pprDefaultMode
-                            (dump config source "dump.2-salt-03-normalized.dcs")
-     , PipeCoreAsSalt
-       [ PipeSaltTransfer
-           [ PipeSaltOutput (dump config source "dump.2-salt-04-transfer.dcs")
-           , PipeSaltToLlvm (buildSpec $ configBuilder config)
-                            pipesLLVM ]]]]
- where  normalizeSalt
-         = S.anormalize (makeNamifier A.freshT) 
-                        (makeNamifier A.freshX)
+saltToLlvm config source bAddSlots mm
+ = BA.saltToLlvm
+        (D.nameOfSource source)
+        (buildSpec $ configBuilder config)
+        bAddSlots
+        (dump config source "dump.2-salt-03-normalized.dcs")
+        (dump config source "dump.2-salt-04-slotify.dcs")
+        (dump config source "dump.2-salt-05-transfer.dcs")
+        mm
 
 
 ---------------------------------------------------------------------------------------------------

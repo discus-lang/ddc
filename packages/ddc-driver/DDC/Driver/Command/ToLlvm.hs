@@ -91,15 +91,15 @@ cmdToLlvmSourceTetraFromString
 cmdToLlvmSourceTetraFromString config store source str
  = withExceptT (renderIndent . vcat . map ppr)
  $ do  
-        modSalt' 
-         <-  DA.saltSimplify   config source
+        modLlvm' 
+         <-  DA.saltToLlvm     config source True 
+         =<< DA.saltSimplify   config source
          =<< DE.tetraToSalt    config source 
          =<< DE.sourceLoadText config store  source str
 
         errs
-         <- liftIO $ pipeCore modSalt'
-         $  stageSaltToSlottedLLVM config source
-          [ PipeLlvmPrint SinkStdout]
+         <- liftIO $ pipeLlvm modLlvm'
+         $  PipeLlvmPrint SinkStdout
  
         case errs of
          []     -> return ()
@@ -170,11 +170,14 @@ cmdToLlvmCoreFromString config language source str
 
         modSalt <- makeSalt
 
-        errs    <- liftIO $ pipeCore modSalt
-                $  (if fragName == "Tetra" 
-                        then stageSaltToSlottedLLVM   config source
-                        else stageSaltToUnSlottedLLVM config source)
-                 [ PipeLlvmPrint      SinkStdout]
+        -- Convert Core Salt to LLVM.
+        let bSlotify
+                = fragName == "Tetra"
+
+        modLlvm <- DA.saltToLlvm config source bSlotify modSalt
+
+        errs    <- liftIO $ pipeLlvm modLlvm
+                $  PipeLlvmPrint SinkStdout
 
         -- Throw any errors that arose during compilation
         case errs of
