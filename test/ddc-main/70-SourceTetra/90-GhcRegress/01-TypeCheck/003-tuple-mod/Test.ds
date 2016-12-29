@@ -1,0 +1,9 @@
+module Test
+import Prelude.Numeric
+where
+
+-- this is supposed to test monomorphism restriction, which we don't have.
+-- mod: can't use pattern at top level of decl.
+f : [a b: Data]. Tup2 a b -> Tup2 Nat Nat
+f c@(T2 d e) = if True then T2 1 2 else T2 1 3
+

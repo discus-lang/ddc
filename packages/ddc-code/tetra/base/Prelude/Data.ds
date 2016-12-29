@@ -1,0 +1,10 @@
+-- | Prelude with numeric and simple data types.
+module Prelude.Data
+import Prelude.Numeric
+import Data.Array
+import Data.Function
+import Data.List
+import Data.Maybe
+import Data.Ref
+import Data.Text
+import Data.Tuple

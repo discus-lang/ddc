@@ -1,4 +1,4 @@
-
+-- | Prelude with numeric types.
 module Prelude.Numeric
 import Data.Numeric.Nat
 import Data.Numeric.Bool

@@ -1,0 +1,7 @@
+module Test 
+import Prelude.Data
+where
+
+-- mod: tuple syntax
+o (T2 True  x) = x
+o (T2 False y) = y + 1

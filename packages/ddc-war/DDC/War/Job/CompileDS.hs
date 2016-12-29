@@ -70,14 +70,14 @@ instance Pretty Result where
 
 -- | Compile a Disciple source file.
 build :: Spec -> Build Result
-build (Spec     srcDS optionsDDC optionsRTS
+build (Spec     srcDS optionsDDC _optionsRTS
                 buildDir mainCompOut mainCompErr
                 mMainBin shouldSucceed)
 
- = do   let ddcaExe = "bin/ddc-alpha" <.> exe
+ = do   let ddcExe = "bin/ddc" <.> exe
 
         needs srcDS
-        needs ddcaExe
+        needs ddcExe
         
         -- The directory holding the Main.ds file.
         let (srcDir, _srcFile)  = splitFileName srcDS
@@ -102,12 +102,11 @@ build (Spec     srcDS optionsDDC optionsRTS
                         -- Build the program.
                         timeBuild 
                          $ systemTee False 
-                                (ddcaExe
-                                ++ " -v -make "   ++ srcDS
-                                ++ " -o "         ++ mainBin
-                                ++ " -outputdir " ++ buildDir
-                                ++ " "            ++ intercalate " " optionsDDC
-                                ++ " +RTS "       ++ intercalate " " optionsRTS)
+                                (ddcExe
+                                ++ " "             ++ intercalate " " optionsDDC
+                                ++ " -output "     ++ mainBin
+                                ++ " -output-dir " ++ buildDir
+                                ++ " -make "       ++ srcDS)
                                 ""
 
 
@@ -115,11 +114,10 @@ build (Spec     srcDS optionsDDC optionsRTS
                 | otherwise
                 = do    timeBuild
                          $ systemTee False
-                                (ddcaExe
-                                ++ " -c "         ++ srcDS
-                                ++ " -outputdir " ++ buildDir
-                                ++ " "            ++ intercalate " " optionsDDC
-                                ++ " +RTS "       ++ intercalate " " optionsRTS)
+                                (ddcExe
+                                ++ " "             ++ intercalate " " optionsDDC
+                                ++ " -output-dir " ++ buildDir
+                                ++ " -c "          ++ srcDS)
                                 ""
 
         (time, (code, strOut, strErr))

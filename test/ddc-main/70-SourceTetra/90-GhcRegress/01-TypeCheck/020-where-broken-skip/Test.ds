@@ -1,0 +1,8 @@
+module Test
+import Prelude.Data
+where
+
+-- mod: type signature.
+-- broken: where expressions should be recursive
+f : [a: Data]. a -> List a
+f x = a where a = Cons x a

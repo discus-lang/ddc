@@ -1,0 +1,8 @@
+module Test 
+import Prelude.Data
+where
+
+j       = 2
+k       = Cons 1 (Cons j l)
+l       = Cons 0 k
+m       = j + j

@@ -66,6 +66,7 @@ data-files:
         tetra/base/Math/Combinations.ds
 
         tetra/base/Prelude/Numeric.ds
+        tetra/base/Prelude/Data.ds
 
         tetra/base/System/IO/Console.ds
         tetra/base/System/Posix/Stdlib.ds

@@ -1,0 +1,7 @@
+module Test
+import Prelude.Numeric
+where
+
+-- mod: We need to swap the order of bindings as they're not lazy.
+w = a where y = 2
+            a = y

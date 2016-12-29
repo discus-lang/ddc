@@ -1,0 +1,7 @@
+module Test
+import Prelude.Numeric
+where
+
+n True  = 1
+n False = 0
+
