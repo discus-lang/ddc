@@ -40,6 +40,7 @@ data PrimStore
         -- | Allocate space on the stack for a GC root and set it to the given value.
         | PrimStoreAllocSlotVal
 
+
         -- Addr operations ------------
         -- | Read a value from the store at the given address and offset.
         | PrimStoreRead

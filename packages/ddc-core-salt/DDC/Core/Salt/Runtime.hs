@@ -443,15 +443,16 @@ utPayloadOfSmall
 -- Garbage Collector  -----------------------------------------------------------------------------
 
 -- Initialize the runtime system.
-xddcInit   :: a -> Integer -> Exp a Name
-xddcInit a bytesHeap
+xddcInit   :: a -> Integer -> Exp a Name -> Exp a Name -> Exp a Name
+xddcInit a bytesHeap xargc xargv
  = xApps a (XVar a $ fst $ utddcInit)
-           [ RTerm $ xNat a bytesHeap ]
+           [ RTerm $ xNat a bytesHeap
+           , RTerm xargc, RTerm xargv ]
 
 utddcInit :: (Bound Name, Type Name)
 utddcInit
  =      ( UName (NameVar "ddcInit")
-        , tNat `tFun` tUnit )
+        , tNat `tFun` tNat `tFun` tAddr `tFun` tUnit )
 
 
 -- Shutdown the runtime system and exit cleanly with the given exit code.

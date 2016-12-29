@@ -23,7 +23,7 @@
 --
 module Init
 export value
- ddcInit        :  Nat# -> Unit
+ ddcInit        :  Nat# -> Nat# -> Addr# -> Unit
  ddcExit        :  Nat# -> Void#
 
 import foreign c value
@@ -35,8 +35,12 @@ with letrec
 
 -------------------------------------------------------------------------------
 -- | Initialize the DDC runtime system.
-ddcInit (heapSize :Nat#): Unit
- = do   ddcAllocInit   heapSize
+ddcInit (defaultHeapSize: Nat#) -- Default heap size set at compile time.
+        (argc: Nat#)            -- Number of command line arguments.
+        (argv: Addr#)           -- Pointer to array of command line arguments.
+        : Unit
+ = do   
+        ddcAllocInit   defaultHeapSize
         ()
 
 
