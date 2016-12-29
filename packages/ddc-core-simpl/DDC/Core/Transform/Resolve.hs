@@ -6,6 +6,7 @@ module DDC.Core.Transform.Resolve
 where
 import DDC.Core.Transform.Resolve.Context
 import DDC.Core.Transform.Resolve.Base
+import DDC.Core.Fragment                        (Profile (..))
 import DDC.Core.Pretty                          hiding ((<$>))
 import Control.Monad.IO.Class
 import Data.IORef

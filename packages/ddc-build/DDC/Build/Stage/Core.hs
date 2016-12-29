@@ -77,7 +77,7 @@ coreLoad !_stage !fragment !mode !srcName !srcLine !str !config
 ---------------------------------------------------------------------------------------------------
 -- | Parse a text file as core code.
 coreParse 
-        :: (Eq n, Ord n, Pretty n, Show n)
+        :: (Ord n, Pretty n, Show n)
         => C.Fragment n err             -- ^ Language fragment.
         -> String                       -- ^ Name of source file.
         -> Int                          -- ^ Line number in source file.
@@ -186,7 +186,7 @@ coreReCheck !stage !fragment !mode !sinkTrace !sinkChecked !mm
 ---------------------------------------------------------------------------------------------------
 -- | Resolve elaborations in a core module.
 coreResolve
-        :: (Pretty a, Eq n, Ord n, Show n, Pretty n)
+        :: (Ord n, Show n, Pretty n)
         => String                       -- ^ Name of compiler stage.
         -> C.Fragment n arr             -- ^ Language fragment to use.
         -> IO [(n, C.ImportValue n (C.Type n))]        

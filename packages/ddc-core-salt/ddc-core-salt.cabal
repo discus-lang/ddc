@@ -30,12 +30,11 @@ Library
         DDC.Core.Salt.Env
         DDC.Core.Salt.Exp
         DDC.Core.Salt.Name
-        DDC.Core.Salt.Object
         DDC.Core.Salt.Platform
         DDC.Core.Salt.Profile
         DDC.Core.Salt.Runtime
-        DDC.Core.Salt.Slotify
-        DDC.Core.Salt.Transfer
+        DDC.Core.Salt.Transform.Slotify
+        DDC.Core.Salt.Transform.Transfer
         DDC.Core.Salt
 
   Other-modules:
@@ -61,7 +60,12 @@ Library
         DDC.Core.Salt.Name.PrimStore
         DDC.Core.Salt.Name.PrimTyCon
         DDC.Core.Salt.Name.PrimVec
-                          
+
+        DDC.Core.Salt.Transform.Slotify.Inject
+        DDC.Core.Salt.Transform.Slotify.Object
+        DDC.Core.Salt.Transform.Slotify.Replace
+
+             
   GHC-options:
         -Wall
         -fno-warn-orphans

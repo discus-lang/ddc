@@ -21,6 +21,7 @@ data-files:
 
         salt/runtime32/Object.dcs
 
+        salt/runtime64/debug/Check.dcs
         salt/runtime64/debug/Trace.dcs
         salt/runtime64/primitive/Array.dcs
         salt/runtime64/primitive/Ref.dcs
@@ -33,6 +34,7 @@ data-files:
         sea/runtime/Runtime.h
 
         tetra/base/Class/Applicative.ds
+        tetra/base/Class/Eq.ds
         tetra/base/Class/Functor.ds
         tetra/base/Class/Monad.ds
         tetra/base/Class/Ord.ds
@@ -40,6 +42,7 @@ data-files:
 
         tetra/base/Control/Parsec.ds
 
+        tetra/base/Data/Graphics/SVG/Tiny.ds
         tetra/base/Data/Numeric/Bool.ds
         tetra/base/Data/Numeric/Nat.ds
         tetra/base/Data/Numeric/Word.ds
@@ -62,7 +65,13 @@ data-files:
 
         tetra/base/Math/Combinations.ds
 
+        tetra/base/Prelude/Numeric.ds
+
         tetra/base/System/IO/Console.ds
+        tetra/base/System/Posix/Stdlib.ds
+        tetra/base/System/Posix/Unistd.ds
+
+        tetra/base/System/Runtime.ds
 
 
 Library

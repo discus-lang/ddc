@@ -28,7 +28,7 @@ import qualified DDC.Core.Transform.Reannotate          as CReannotate
 
 import qualified DDC.Core.Salt                          as A
 import qualified DDC.Core.Salt.Platform                 as A
-import qualified DDC.Core.Salt.Transfer                 as ATransfer
+import qualified DDC.Core.Salt.Transform.Transfer       as ATransfer
 import qualified DDC.Core.Salt.Transform.Slotify        as ASlotify
 import qualified DDC.Core.Llvm.Convert                  as ALlvm
 
@@ -252,5 +252,4 @@ saltToLlvm
                 Right mm'       -> return mm'
 
         return srcLlvm
-
 

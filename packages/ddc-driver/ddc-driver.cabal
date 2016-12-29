@@ -50,9 +50,7 @@ Library
         DDC.Driver.Command.Flow.Wind
 
         DDC.Driver.Command.Machine.Prep
-
-        DDC.Driver.Command.Tetra.Boxing
-        DDC.Driver.Command.Tetra.Curry
+        DDC.Driver.Command.Machine.Slurp
 
         DDC.Driver.Command.BaseBuild
         DDC.Driver.Command.Build
@@ -85,8 +83,8 @@ Library
   Extensions:
         ExistentialQuantification
         ScopedTypeVariables
-        RankNTypes
         PatternGuards
+        RankNTypes
 
   ghc-options:
         -Wall

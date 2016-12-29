@@ -42,6 +42,7 @@ Library
         DDC.Core.Transform.Bubble
         DDC.Core.Transform.Elaborate
         DDC.Core.Transform.Eta
+        DDC.Core.Transform.Expliciate
         DDC.Core.Transform.Flatten
         DDC.Core.Transform.FoldCase
         DDC.Core.Transform.Forward
@@ -49,6 +50,7 @@ Library
         DDC.Core.Transform.Lambdas
         DDC.Core.Transform.Namify
         DDC.Core.Transform.Prune
+        DDC.Core.Transform.Resolve
         DDC.Core.Transform.Rewrite
         DDC.Core.Transform.Snip
         DDC.Core.Transform.Thread
@@ -70,6 +72,8 @@ Library
         DDC.Core.Transform.Inline.Templates
         DDC.Core.Transform.Lambdas.Base
         DDC.Core.Transform.Lambdas.Lift
+        DDC.Core.Transform.Resolve.Base
+        DDC.Core.Transform.Resolve.Context
         DDC.Core.Transform.Rewrite.Error
 
   GHC-options:

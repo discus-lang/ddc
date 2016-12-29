@@ -9,6 +9,7 @@ module DDC.Core.Transform.Resolve.Context
 where
 import DDC.Core.Transform.Resolve.Base
 import DDC.Type.Transform.Instantiate
+import DDC.Core.Fragment                (Profile (..))
 import DDC.Core.Exp.Annot
 import DDC.Core.Pretty
 import Control.Monad.IO.Class
@@ -163,7 +164,7 @@ contextResolve !a !ctx !tWant
 
 
 matchBind 
-        :: (Ord n, Pretty n, Show n)
+        :: Ord n
         => a 
         -> EnvT n               -- ^ Type environment.
         -> Type n               -- ^ Wanted type.
@@ -185,7 +186,7 @@ matchBind a envt tWant' nBind  tBind'
 
 -- | Match a wanted type against an available scheme.
 matchScheme 
-        :: (Ord n, Pretty n, Show n)
+        :: Ord n
         => EnvT n               -- ^ Type environment.
         -> Type n               -- ^ Wanted type.
         -> Type n               -- ^ Available scheme.

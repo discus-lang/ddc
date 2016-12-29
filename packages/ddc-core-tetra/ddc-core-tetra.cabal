@@ -47,6 +47,8 @@ Library
         DDC.Core.Tetra.Convert.Exp.PrimArith
         DDC.Core.Tetra.Convert.Exp.PrimBoxing
         DDC.Core.Tetra.Convert.Exp.PrimCall
+        DDC.Core.Tetra.Convert.Exp.PrimError
+        DDC.Core.Tetra.Convert.Exp.PrimRecord
         DDC.Core.Tetra.Convert.Exp.PrimVector
         DDC.Core.Tetra.Convert.Exp.PrimError
 
@@ -81,8 +83,8 @@ Library
         DDC.Core.Tetra.Transform.Curry.CallThunk
         DDC.Core.Tetra.Transform.Curry.Error
 
-        DDC.Core.Tetra.Profile
         DDC.Core.Tetra.Error
+        DDC.Core.Tetra.Profile
 
   GHC-options:
         -Wall

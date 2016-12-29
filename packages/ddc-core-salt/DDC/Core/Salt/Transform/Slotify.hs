@@ -63,8 +63,7 @@ slotifyModule a mm@ModuleCore{}
 
 -- Top level let bindings ------------------------------------------------------
 slotifyLet
-        :: Show a
-        => a
+        :: a
         -> (Bind A.Name, Exp a A.Name)
         -> (Bind A.Name, Exp a A.Name)
 
@@ -77,8 +76,7 @@ slotifyLet _a bx
 
 -- Super -----------------------------------------------------------------------
 slotifySuper
-        :: Show a
-        => a
+        :: a
         -> Exp a A.Name
         -> Exp a A.Name
 

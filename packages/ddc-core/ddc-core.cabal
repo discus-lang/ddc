@@ -156,6 +156,7 @@ Library
         DDC.Core.Check.Judge.Type.LamX
         DDC.Core.Check.Judge.Type.Let
         DDC.Core.Check.Judge.Type.LetPrivate
+        DDC.Core.Check.Judge.Type.Prim
         DDC.Core.Check.Judge.Type.Sub
         DDC.Core.Check.Judge.Type.VarCon
         DDC.Core.Check.Judge.Type.Witness
@@ -174,8 +175,9 @@ Library
         DDC.Core.Check.Error
         DDC.Core.Check.Exp
 
-        DDC.Core.Exp.Annot.Exp
         DDC.Core.Exp.Annot.Compounds
+        DDC.Core.Exp.Annot.Exp
+        DDC.Core.Exp.Annot.NFData
         DDC.Core.Exp.Annot.Predicates
         DDC.Core.Exp.Annot.Pretty
 

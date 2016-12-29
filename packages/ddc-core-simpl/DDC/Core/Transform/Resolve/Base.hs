@@ -1,18 +1,16 @@
 
 module DDC.Core.Transform.Resolve.Base
         ( module DDC.Core.Env.EnvT
-        , module DDC.Core.Fragment.Profile
         , module DDC.Core.Module
         , module DDC.Core.Exp
         , module DDC.Type.Exp.Simple.Equiv
         , module Control.Monad.Trans.Except
 
-        , S     (..)
+        , S
         , Error (..))
 where
 import DDC.Core.Env.EnvT
 import DDC.Core.Module
-import DDC.Core.Fragment.Profile
 import DDC.Core.Exp
 import DDC.Type.Exp.Simple.Equiv
 import DDC.Data.Pretty                  hiding ((<$>))

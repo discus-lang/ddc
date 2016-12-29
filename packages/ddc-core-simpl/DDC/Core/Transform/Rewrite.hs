@@ -23,7 +23,7 @@ import qualified Data.Map                               as Map
 import qualified Data.Set                               as Set
 import Data.Maybe
 import Control.Monad
-import Control.Monad.Writer (tell, runWriter, Writer (..))
+import Control.Monad.Writer (tell, runWriter, Writer)
 import Data.List
 import Data.Typeable
 import Prelude                                          hiding ((<$>))

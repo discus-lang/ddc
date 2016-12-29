@@ -1,5 +1,5 @@
 
-module DDC.Core.Salt.Transfer
+module DDC.Core.Salt.Transform.Transfer
         (transferModule)
 where
 import DDC.Core.Salt.Convert.Base

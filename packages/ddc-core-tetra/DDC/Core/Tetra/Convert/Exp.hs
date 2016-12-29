@@ -308,8 +308,7 @@ convertExp ectx ctx xx
 
 ---------------------------------------------------------------------------------------------------
 convertExpSuperCall
-        :: Show a
-        => Exp (AnTEC a E.Name) E.Name
+        :: Exp (AnTEC a E.Name) E.Name
         -> ExpContext                     -- ^ The surrounding expression context.
         -> Context a                      -- ^ Types and values in the environment.
         -> Bool                           -- ^ Whether this is call is directly inside a 'run'
