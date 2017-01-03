@@ -1,0 +1,27 @@
+
+
+Existential Regions
+~~~~~~~~~~~~~~~~~~~
+
+The type of this function from the runtime system works in practice, 
+but is morally wrong.
+
+ ddcGetBoxed: [r1 r2: Region]. Ptr# r1 Obj  -> Nat# -> Ptr# r2 Obj
+
+Given a boxed object that contains pointers to other objects, we read one of
+the pointers. At the Salt level we won't know what the real region for 'r2'
+is supposed to be. 
+
+If we passed runtime region handles then we could imagine that the function
+takes the handle bound to 'r2' and checks that the returned pointer is really
+for the associated region, and throw an exception otherwise, but we don't
+do this in practice.
+
+The type really wants to be:
+
+ ddcGetBoxed: ∀(r1: Region). Ptr# r1 Obj -> Nat# -> (∃(r2: Region). Ptr# r2 Obj)
+
+but we don't support existential regions. Maybe we should.
+
+
+

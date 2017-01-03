@@ -1,0 +1,50 @@
+
+Quantifiers
+~~~~~~~~~~~
+
+In Source Tetra we need a new syntax for type quantifiers so that we can
+reclaim the [] syntax for collections.
+
+
+Others
+~~~~~~
+
+# Implicits in Idris
+map : {a b : Data} -> (a -> b) -> List a -> List b
+
+These work as type quantifiers as Idris is dependently typed.
+
+# The Idris record syntax {} overlaps with implicit {}.
+foo : {x : Nat, y : Nat} -> (a -> b) -> List a -> List b
+
+
+Ideas
+~~~~~
+
+Use '>' for type binders.
+sort {>a: Data} {ord : Ord a} (x: List a): List a = ...
+
+
+Bind a dictionary and open it into the scope.
+sort {>a: Data} {&ord : Ord a} (x: List a): List a = ...
+
+
+Bind a dictionary and automatically open it without naming.
+sort {>a : Data} {Ord a} (x: List a): List a = ...
+
+
+foo = /\(a : Data) ~> ...) specifies as implicit type binder.
+bar =  \(x : Nat)  ~> ...) specifies implicit term binder.
+
+
+Application
+sort {> Nat} {dict} xs
+
+
+Use GHC style '@' for type arguments, but include brackets for implicits.
+sort @{Nat} {dict} xs
+
+Maybe use '@' for type binders as well.
+sort: @(a: Data) ~> Ord a ~> List a -> List a
+
+

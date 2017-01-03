@@ -1,0 +1,17 @@
+
+Documentation
+~~~~~~~~~~~~~
+
+Docs should be stored in interface files so that the REPL can access them,
+similarly to database REPLs.
+
+:describe fac
+fac (x: Nat): Nat
+Compute the factorial of 'x'.
+
+:describe more fac
+fac (x: Nat): Nat
+Compute the factorial of 'x'
+Example fac 10 = ...
+
+
