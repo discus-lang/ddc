@@ -107,70 +107,74 @@ slurpProcessBody xx ins outs
                     $ (map (,ChannelInput) ins ++ map (,ChannelOutput) outs)
         let body'   = substNames (zip sourceSinks (ins ++ outs)) body
         let (ls,l0) = takeLetsAll body'
-        l0' <- takeBlockNext l0
-
         let (lbs,lxs) = unzip ls
         let mkLbl x = Label <$> takeNameOfBind x
         let erLbl = SlurpErrorOther (text "Get label of process blocks: " <> ppr lbs) xx
         labels <- just erLbl $ mapM mkLbl lbs
-        blocks <- mapM takeBlockInfo lxs
+        args   <- mapM takeLabelArgs lxs
+        let largs = Map.fromList $ zip labels args
+
+        blocks <- mapM (takeBlock largs . snd . takeXLams') lxs
+        l0' <- takeBlockNext largs l0
         return $ Process l0' (Map.fromList $ zip labels blocks)  chans
  | otherwise
  = Left $ SlurpErrorProcessBodyNotFunction xx
 
+takeLabelArgs :: Exp () Name -> Either SlurpError [Variable]
+takeLabelArgs xx
+ = do   let mkVar b = Variable <$> takeNameOfBind b
+        let (lams,_) = takeXLams' xx
+        let err = SlurpErrorOther (text "Can't get label arguments") xx
+        just err $ mapM mkVar lams
 
-takeBlockNext :: Exp () Name -> Either SlurpError BlockNext
-takeBlockNext xx
+takeBlockNext :: Map.Map Label [Variable] -> Exp () Name -> Either SlurpError BlockNext
+takeBlockNext largs xx
  | Just (l,args) <- takeXApps xx
  , Just l'       <- takeNameOfExp l
  , args'         <- takeExpsFromArgs args
- = return $ BlockNext (Label l') args'
+ , Just vars     <- Map.lookup (Label l') largs
+ -- TODO: check args and vars are same length.
+ -- Except for pull the args must actually be one shorter than vars because of the extra on the end
+ = return $ BlockNext (Label l') (Map.fromList $ zip vars args')
  | Just l'       <- takeNameOfExp xx
- = return $ BlockNext (Label l') []
+ = return $ BlockNext (Label l') Map.empty
  | otherwise
  = Left $ SlurpErrorOther (text "takeBlockNext") xx
 
-takeBlockInfo :: Exp () Name -> Either SlurpError BlockInfo
-takeBlockInfo xx
- = let (binds,block) = takeXLams' xx
-   in BlockInfo binds <$> takeBlock block
- where
-  takeXLams' xxx
-   = case takeXLams xxx of
-     Nothing  -> ([],xxx)
-     Just ret -> ret
-
-takeBlock :: Exp () Name -> Either SlurpError Block
-takeBlock block
- = do   (prim,args) <- just (SlurpErrorOther (text "takeBlockInfo takeXFragApps" <> ppr block) block) $ takeXFragApps block
+takeBlock :: Map.Map Label [Variable] -> Exp () Name -> Either SlurpError Block
+takeBlock largs block
+ = do   (prim,args) <- just (SlurpErrorOther (text "takeBlock takeXNameApps " <> ppr block) block) $ takeXNameApps block
         case prim of
          NameOpMachine OpPull
           | [chan, next] <- takeExpsFromArgs args
           , Just chan' <- takeNameOfExp chan
-          -> BlockPull (Channel chan') <$> takeBlockNext next
+          , Right next' <- takeBlockNext largs next
+          , Just pullargs <- Map.lookup (bnLabel next') largs
+          , pullvar : _   <- reverse pullargs
+          -> return $ BlockPull (Channel chan') pullvar next'
           | otherwise
-          -> Left $ SlurpErrorOther (text "takeBlockInfo pull bad arguments: " <> ppr args) block
+          -> Left $ SlurpErrorOther (text "takeBlock pull bad arguments: " <> ppr args) block
 
          NameOpMachine OpPush
           | [chan, val, next] <- takeExpsFromArgs args
           , Just chan' <- takeNameOfExp chan
-          -> BlockPush (Channel chan') val <$> takeBlockNext next
+          -> BlockPush (Channel chan') val <$> takeBlockNext largs next
           | otherwise
-          -> Left $ SlurpErrorOther (text "takeBlockInfo push bad arguments: " <> ppr args) block
+          -> Left $ SlurpErrorOther (text "takeBlock push bad arguments: " <> ppr args) block
 
          NameOpMachine OpDrop
           | [chan, next] <- takeExpsFromArgs args
           , Just chan' <- takeNameOfExp chan
-          -> BlockDrop (Channel chan') <$> takeBlockNext next
+          -> BlockDrop (Channel chan') <$> takeBlockNext largs next
           | otherwise
-          -> Left $ SlurpErrorOther (text "takeBlockInfo drop bad arguments: " <> ppr args) block
+          -> Left $ SlurpErrorOther (text "takeBlock drop bad arguments: " <> ppr args) block
 
             
 
-         NameVar{}      -> BlockJump <$> takeBlockNext block
-         NameVarMod{}   -> BlockJump <$> takeBlockNext block
+         NameVar{}      -> BlockJump <$> takeBlockNext largs block
+         NameVarMod{}   -> BlockJump <$> takeBlockNext largs block
 
-         _ -> Left $ SlurpErrorOther (text "takeBlockInfo non-block primitive: " <> ppr prim) block
+         _ -> Left $ SlurpErrorOther (text "takeBlock non-block primitive: " <> ppr prim) block
             
 
 
@@ -184,6 +188,19 @@ takeLetsAll xx
              LLet b x   -> ((b,x) :  binds', xrest')
              LPrivate{} ->          (binds', xrest')
     _ -> ([], xx)
+
+takeXLams' :: Exp () Name -> ([Bind Name], Exp () Name)
+takeXLams' xx
+ = case takeXLams xx of
+   Nothing  -> ([],xx)
+   Just ret -> ret
+
+takeXNameApps :: Exp a n -> Maybe (n, [Arg a n])
+takeXNameApps xx
+ = do (f,as)    <- takeXApps xx
+      n         <- takeNameOfExp f
+      return (n, as)
+
 
 substNames :: [(Bind Name, Name)] -> Exp () Name -> Exp () Name
 substNames bs xx

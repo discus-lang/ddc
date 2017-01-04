@@ -2,16 +2,15 @@
 module DDC.Core.Machine.Process.Base
         ( Label         (..)
         , Channel       (..)
+        , Variable      (..)
         , ChannelType   (..)
         , BlockNext     (..)
         , Block         (..)
-        , BlockInfo     (..)
         , Process       (..)
         , Network       (..)
         )
 where
 import DDC.Core.Machine.Prim
-import DDC.Type.Exp
 import DDC.Core.Exp
 
 import qualified Data.Map as Map
@@ -29,32 +28,31 @@ newtype Channel
     { unChannel :: Name }
     deriving (Eq, Ord, Show)
 
+newtype Variable
+    = Variable
+    { unVariable :: Name }
+    deriving (Eq, Ord, Show)
+
 data ChannelType
     = ChannelInput | ChannelOutput | ChannelIgnore
 
 data BlockNext
     = BlockNext
     { bnLabel     :: Label
-    , bnArguments :: [Exp () Name]
+    , bnArguments :: Map.Map Variable (Exp () Name)
     }
 
 data Block
-    = BlockPull Channel BlockNext
+    = BlockPull Channel Variable BlockNext
     | BlockPush Channel (Exp () Name) BlockNext
     | BlockDrop Channel BlockNext
     | BlockJump BlockNext
     -- TODO: if/case
 
-data BlockInfo
-    = BlockInfo
-    { biArguments :: [Bind Name]
-    , biBlock     :: Block
-    }
-
 data Process
     = Process
     { pInit         :: BlockNext
-    , pBlocks       :: Map.Map Label BlockInfo
+    , pBlocks       :: Map.Map Label Block
     -- TODO: this should be computed based on pBlocks
     , pChannelTypes :: Map.Map Channel ChannelType
     }
@@ -73,6 +71,9 @@ instance Pretty Label where
 instance Pretty Channel where
  ppr (Channel i) = ppr i
 
+instance Pretty Variable where
+ ppr (Variable i) = ppr i
+
 instance Pretty ChannelType where
  ppr ChannelInput  = text "Input"
  ppr ChannelOutput = text "Output"
@@ -85,21 +86,23 @@ instance Pretty BlockNext where
   | otherwise
   = parens
   $ hcat    $ punctuate space
-  $ ppr lbl : map ppr args
+  $ ppr lbl : map pprPair (Map.toList args)
+  where
+   pprPair (k,v) = text "{" <> ppr k <> text "=" <> ppr v <> text "}"
 
 instance Pretty Block where
- ppr (BlockPull c n)
-  = text "pull#" <+> ppr c <+> ppr n
+ ppr (BlockPull c v n)
+  = text "pull#" <+> ppr c <+> ppr v <+> ppr n
  ppr (BlockPush c x n)
-  = text "push#" <+> ppr c <+> ppr x <+> ppr n
+  = text "push#" <+> ppr c <+> pprPrec 11 x <+> ppr n
  ppr (BlockDrop c n)
   = text "drop#" <+> ppr c <+> ppr n
  ppr (BlockJump n)
   = ppr n
 
-pprBlockInfoPair :: Label -> BlockInfo -> Doc
-pprBlockInfoPair lbl (BlockInfo args block)
- = ppr lbl <+> hcat (punctuate space $ fmap ppr args) <+> text "=" <+> ppr block
+pprBlockPair :: Label -> Block -> Doc
+pprBlockPair lbl block
+ = ppr lbl <+> text "=" <+> ppr block
 
 pprChannelTypePair :: Channel -> ChannelType -> Doc
 pprChannelTypePair c t
@@ -111,7 +114,7 @@ instance Pretty Process where
   $  [ text "Process"
      , text " init: " <> indent 2 (ppr start)
      , text " blocks:"]
-  ++ map (indent 2 . uncurry pprBlockInfoPair) (Map.toList blocks)
+  ++ map (indent 2 . uncurry pprBlockPair) (Map.toList blocks)
   ++ [ text " channels:" ]
   ++ map (indent 2 . uncurry pprChannelTypePair) (Map.toList chans)
 

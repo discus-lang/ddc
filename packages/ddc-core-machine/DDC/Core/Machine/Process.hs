@@ -5,7 +5,6 @@ module DDC.Core.Machine.Process
         , ChannelType   (..)
         , BlockNext     (..)
         , Block         (..)
-        , BlockInfo     (..)
         , Process       (..)
         , Network       (..)
         , SlurpError    (..)
