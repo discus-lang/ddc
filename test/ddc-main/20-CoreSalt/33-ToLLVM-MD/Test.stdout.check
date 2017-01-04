@@ -10,12 +10,8 @@ ok
 --
 ok
 %s.Obj = type <{i64}>
-@_DDC__heapBase = external global  i64
-@_DDC__heapTop = external global  i64
-@_DDC__heapMax = external global  i64
-@_DDC__heapBackBase = external global  i64
-@_DDC__heapBackTop = external global  i64
-@_DDC__heapBackMax = external global  i64
+@ddcHeapMax = external global  i64
+@ddcHeapTop = external global  i64
 declare external ccc void @abort() align 8
 declare external void @llvm.gcroot(i8** , i8* )
 declare external void @llvm.memcpy.p0i8.p0i8.i64(i8* , i8* , i64 , i32 , i1 )
@@ -48,12 +44,8 @@ l10.body:
 -- Observable optimisations: GVN - constprop behaviour
 ok
 %s.Obj = type <{i64}>
-@_DDC__heapBase = external global  i64
-@_DDC__heapTop = external global  i64
-@_DDC__heapMax = external global  i64
-@_DDC__heapBackBase = external global  i64
-@_DDC__heapBackTop = external global  i64
-@_DDC__heapBackMax = external global  i64
+@ddcHeapMax = external global  i64
+@ddcHeapTop = external global  i64
 declare external ccc void @abort() align 8
 declare external void @llvm.gcroot(i8** , i8* )
 declare external void @llvm.memcpy.p0i8.p0i8.i64(i8* , i8* , i64 , i32 , i1 )

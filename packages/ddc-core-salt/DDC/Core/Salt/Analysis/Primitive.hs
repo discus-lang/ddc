@@ -42,7 +42,7 @@ collectExp :: Exp a A.Name -> Support
 collectExp xx
  -- Collect names of global variables defined with the static# primitive.
  | Just ( A.NamePrimOp (A.PrimStore A.PrimStoreGlobal)
-        , [RTerm x])                       <- takeXFragApps xx
+        , [RType _t, RTerm x])             <- takeXFragApps xx
  , XCon _ (C.DaConPrim name _)             <- x
  , A.NamePrimLit (A.PrimLitTextLit txName) <- name
  = mempty { supportGlobal = Set.singleton txName }

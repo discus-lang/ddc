@@ -207,5 +207,7 @@ typeOfPrimStore jj
 
         PrimStoreRootChain      -> tAddr
 
-        PrimStoreGlobal         -> tTextLit `tFun` tAddr
+        PrimStoreGlobal         
+         -> tForall kData
+         $ \_t -> tTextLit `tFun` tAddr
 

@@ -40,16 +40,16 @@ ddcAllocInit (heapSize : Nat#) : Unit
  = do
         -- Create the front heap.
         pHeapBaseA      = malloc heapSize
-        write# (global# "ddcHeapBase"#)     0# pHeapBaseA
-        write# (global# "ddcHeapTop"#)      0# pHeapBaseA
-        write# (global# "ddcHeapMax"#)      0# 
+        write# (global# [Addr#] "ddcHeapBase"#)     0# pHeapBaseA
+        write# (global# [Addr#] "ddcHeapTop"#)      0# pHeapBaseA
+        write# (global# [Addr#] "ddcHeapMax"#)      0# 
                (plusAddr# pHeapBaseA    (sub# heapSize 1#))
 
         -- Create the back heap.
         pHeapBackBaseA  = malloc heapSize
-        write# (global# "ddcHeapBackBase"#) 0# pHeapBackBaseA
-        write# (global# "ddcHeapBackTop"#)  0# pHeapBackBaseA
-        write# (global# "ddcHeapBackMax"#)  0#
+        write# (global# [Addr#] "ddcHeapBackBase"#) 0# pHeapBackBaseA
+        write# (global# [Addr#] "ddcHeapBackTop"#)  0# pHeapBackBaseA
+        write# (global# [Addr#] "ddcHeapBackMax"#)  0#
                (plusAddr# pHeapBackBaseA (sub# heapSize 1#))
 
         ()
@@ -60,8 +60,8 @@ ddcAllocInit (heapSize : Nat#) : Unit
 ddcExit (code: Nat#): Void#
  = do   
         -- Free the space for the heaps.
-        pHeapBaseA      = read# (global# "ddcHeapBase"#)     0#
-        pHeapBackBaseA  = read# (global# "ddcHeapBackBase"#) 0#
+        pHeapBaseA      = read# (global# [Addr#] "ddcHeapBase"#)     0#
+        pHeapBackBaseA  = read# (global# [Addr#] "ddcHeapBackBase"#) 0#
 
         free pHeapBaseA
         free pHeapBackBaseA
