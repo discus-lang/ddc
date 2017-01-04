@@ -1,7 +1,10 @@
 
 module DDC.Core.Llvm.Runtime
-        ( -- * GC Root chain
-          nameGlobalLlvmRootChain,      varGlobalLlvmRootChain
+        ( -- * Global variables
+          nameGlobal,                   varGlobal
+
+          -- * GC Root chain
+        , nameGlobalLlvmRootChain,      varGlobalLlvmRootChain
 
           -- * Front Heap
         , nameGlobalHeapBase,           varGlobalHeapBase
@@ -22,6 +25,18 @@ where
 import DDC.Llvm.Syntax
 import DDC.Core.Llvm.Convert.Type
 import DDC.Core.Salt.Platform
+
+
+-- Globals --------------------------------------------------------------------
+-- | Build a global variable.
+varGlobal  :: String -> Type -> Var
+varGlobal  name ty = Var (nameGlobal name) ty
+
+
+-- | Build a global variable name.
+nameGlobal :: String -> Name
+nameGlobal name    = NameGlobal ("_DDC__" ++ name)
+
 
 
 -- Root Stack ------------------------------------------------------------------

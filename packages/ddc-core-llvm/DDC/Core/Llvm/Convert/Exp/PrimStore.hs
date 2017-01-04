@@ -13,7 +13,9 @@ import DDC.Core.Salt.Platform
 import DDC.Core.Exp.Generic.BindStruct  ()
 import Data.Sequence                    (Seq)
 import qualified DDC.Core.Salt          as A
+import qualified DDC.Core.Exp           as C
 import qualified Data.Sequence          as Seq
+import qualified Data.Text              as Text
 
 
 -- | Convert a primitive store operation to LLVM, 
@@ -375,65 +377,16 @@ convPrimStore ctx mdst p as
                 return  $ Seq.singleton $ annotNil
                         $ IConv vDst ConvPtrtoint (XVar vRootPtr)
 
-
-        -- The base of the front heap.
-        A.PrimStore A.PrimStoreHeapBase
-         | []           <- as
-         , Just vDst    <- mdst
+        -- Refer to a global variable.
+        A.PrimStore A.PrimStoreGlobal
+         | [A.RExp x]                   <- as
+         ,  A.XCon (C.DaConPrim n _)    <- x
+         ,  A.NamePrimLit (A.PrimLitTextLit txName) <- n
+         ,  Just vDst   <- mdst
          -> Just $ do
-                 let vBasePtr = varGlobalHeapBase pp
-                 return  $ Seq.singleton $ annotNil
-                         $ IConv vDst ConvPtrtoint (XVar vBasePtr)
-
-
-        -- The top of the front heap.
-        A.PrimStore A.PrimStoreHeapTop
-         | []           <- as
-         , Just vDst    <- mdst
-         -> Just $ do
-                 let vTopPtr = varGlobalHeapTop pp
-                 return  $ Seq.singleton $ annotNil
-                         $ IConv vDst ConvPtrtoint (XVar vTopPtr)
-
-
-        -- The maximum top of the front heap.
-        A.PrimStore A.PrimStoreHeapMax
-         | []           <- as
-         , Just vDst    <- mdst
-         -> Just $ do
-                 let vMaxPtr = varGlobalHeapMax pp
-                 return  $ Seq.singleton $ annotNil
-                         $ IConv vDst ConvPtrtoint (XVar vMaxPtr)
-
-
-        -- The base of the back heap.
-        A.PrimStore A.PrimStoreHeapBackBase
-         | []           <- as
-         , Just vDst    <- mdst
-         -> Just $ do
-                 let vBasePtr = varGlobalHeapBackBase pp
-                 return  $ Seq.singleton $ annotNil
-                         $ IConv vDst ConvPtrtoint (XVar vBasePtr)
-
-
-        -- The top of the back heap.
-        A.PrimStore A.PrimStoreHeapBackTop
-         | []           <- as
-         , Just vDst    <- mdst
-         -> Just $ do
-                 let vTopPtr = varGlobalHeapBackTop pp
-                 return  $ Seq.singleton $ annotNil
-                         $ IConv vDst ConvPtrtoint (XVar vTopPtr)
-
-
-        -- The maximum top of the back heap.
-        A.PrimStore A.PrimStoreHeapBackMax
-         | []           <- as
-         , Just vDst    <- mdst
-         -> Just $ do
-                 let vMaxPtr = varGlobalHeapBackMax pp
-                 return  $ Seq.singleton $ annotNil
-                         $ IConv vDst ConvPtrtoint (XVar vMaxPtr)
+                let vPtr = varGlobal (Text.unpack txName) (TPointer (tAddr pp))
+                return  $ Seq.singleton $ annotNil
+                        $ IConv vDst ConvPtrtoint (XVar vPtr)
 
         _ -> Nothing
 

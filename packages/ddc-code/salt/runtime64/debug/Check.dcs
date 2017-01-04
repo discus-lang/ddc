@@ -23,8 +23,8 @@ with letrec
 --
 ddcCheckObjHeader [r: Region] (obj: Ptr# r Obj): Word32#
  = do
-        pHeapBaseA      = read# heapBase# 0#
-        pHeapTopA       = read# heapTop#  0#
+        pHeapBaseA      = read# (global# "heapBase"#) 0#
+        pHeapTopA       = read# (global# "heapTop"#)  0#
         objA            = takePtr# obj
 
         valid           = mul# (ge# objA pHeapBaseA)
@@ -55,10 +55,10 @@ ddcCheckObjExtent [r: Region] (obj: Ptr# r Obj) (len: Nat#): Unit
     -- Check objects of some non-zero size.
     False# -> do
         -- Base of heap is the first byte which can be allocated.
-        pHeapBaseA      = read# heapBase# 0#
+        pHeapBaseA      = read# (global# "heapBase"#) 0#
 
         -- Top of heap is the byte after the last one that has been allocated.
-        pHeapTopA       = read# heapTop#  0#
+        pHeapTopA       = read# (global# "heapTop"#)  0#
 
         -- First byte of the object.
         objFirstA       = takePtr# obj

@@ -205,24 +205,8 @@ typeOfPrimStore jj
          -> tForalls [kRegion, kData, kData] 
          $ \[r,t1,t2] -> tPtr r t2 `tFun` tPtr r t1
 
-        PrimStoreRootChain
-         -> tAddr
+        PrimStoreRootChain      -> tAddr
 
-        PrimStoreHeapBase
-         -> tAddr
-
-        PrimStoreHeapTop
-         -> tAddr
-
-        PrimStoreHeapMax
-         -> tAddr
-
-        PrimStoreHeapBackBase
-         -> tAddr
-
-        PrimStoreHeapBackTop
-         -> tAddr
-
-        PrimStoreHeapBackMax
-         -> tAddr
+        PrimStoreGlobal         -> tTextLit `tFun` tAddr
+        PrimStoreStatic         -> tTextLit `tFun` tVoid
 

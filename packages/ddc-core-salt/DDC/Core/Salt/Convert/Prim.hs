@@ -85,10 +85,6 @@ convPrimStore pp
         PrimStoreTakePtr        -> text "_TAKEPTR"
         PrimStoreCastPtr        -> text "_CASTPTR"
         PrimStoreRootChain      -> text "_ROOTCHAIN"
-        PrimStoreHeapBase       -> text "_HEAPBASE"
-        PrimStoreHeapTop        -> text "_HEAPTOP"
-        PrimStoreHeapMax        -> text "_HEAPMAX"
-        PrimStoreHeapBackBase   -> text "_HEAPBACKBASE"
-        PrimStoreHeapBackTop    -> text "_HEAPBACKTOP"
-        PrimStoreHeapBackMax    -> text "_HEAPBACKMAX"
+        PrimStoreGlobal         -> text "_GLOBAL"
+        PrimStoreStatic         -> text "_STATIC"
   

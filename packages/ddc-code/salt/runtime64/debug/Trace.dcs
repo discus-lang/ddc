@@ -487,9 +487,9 @@ ddcTraceRootFrame
 --
 ddcTraceHeap (print: Bool#): Unit
  = do   
-        pHeapBaseA      = read# heapBase# 0#
-        pHeapTopA       = read# heapTop#  0#
-        pHeapMaxA       = read# heapMax#  0#
+        pHeapBaseA      = read# (global# "heapBase"#) 0#
+        pHeapTopA       = read# (global# "heapTop"#)  0#
+        pHeapMaxA       = read# (global# "heapMax"#)  0#
 
         (case print of
           False# -> ()

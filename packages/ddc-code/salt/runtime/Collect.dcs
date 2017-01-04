@@ -59,8 +59,12 @@ ddcPerformGC (u: Unit): Unit
  = do   
         ddcCollectHeap  
                 (ddcLlvmRootGetStart 0#)
-                heapBase#     heapTop#     heapMax#
-                heapBackBase# heapBackTop# heapBackMax#
+                (global# "heapBase"#)
+                (global# "heapTop"#)
+                (global# "heapMax"#)
+                (global# "heapBackBase"#)
+                (global# "heapBackTop"#)
+                (global# "heapBackMax"#)
         u
 
 

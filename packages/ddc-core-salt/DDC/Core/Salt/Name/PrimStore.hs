@@ -17,30 +17,6 @@ data PrimStore
         | PrimStoreSize2
 
 
-        -- Allocation -----------------
-        -- | Create a heap of the given size.
-        --     This must be called before @alloc#@ below, and has global side effect. 
-        --     Calling it twice in the same program is undefined.
-        | PrimStoreCreate
-
-        -- | Check whether there are at least this many bytes still available
-        --   on the heap.
-        | PrimStoreCheck
-
-        -- | Force a garbage collection to recover at least this many bytes.
-        | PrimStoreRecover
-
-        -- | Allocate some space on the heap.
-        --   There must be enough space available, else undefined.
-        | PrimStoreAlloc
-
-        -- | Allocate space on the stack for a GC root and set it to zero.
-        | PrimStoreAllocSlot
-
-        -- | Allocate space on the stack for a GC root and set it to the given value.
-        | PrimStoreAllocSlotVal
-
-
         -- Addr operations ------------
         -- | Read a value from the store at the given address and offset.
         | PrimStoreRead
@@ -90,29 +66,40 @@ data PrimStore
         | PrimStoreCastPtr
 
 
+        -- Allocation -----------------
+        -- | Create a heap of the given size.
+        --     This must be called before @alloc#@ below, and has global side effect. 
+        --     Calling it twice in the same program is undefined.
+        | PrimStoreCreate
+
+        -- | Check whether there are at least this many bytes still available
+        --   on the heap.
+        | PrimStoreCheck
+
+        -- | Force a garbage collection to recover at least this many bytes.
+        | PrimStoreRecover
+
+        -- | Allocate some space on the heap.
+        --   There must be enough space available, else undefined.
+        | PrimStoreAlloc
+
+        -- | Allocate space on the stack for a GC root and set it to zero.
+        | PrimStoreAllocSlot
+
+        -- | Allocate space on the stack for a GC root and set it to the given value.
+        | PrimStoreAllocSlotVal
+
+
         -- GC Root Chain --------------
         -- | Starting address of the GC root chain.
         | PrimStoreRootChain
 
+        -- Global Variables -----------
+        -- | Reference to a global
+        | PrimStoreGlobal
 
-        -- Heap -----------------------
-        -- | Front Heap: The first object is allocated at this address.
-        | PrimStoreHeapBase
-
-        -- | Front Heap: The next object is allocated starting from this address.
-        | PrimStoreHeapTop
-
-        -- | Front Heap: Points to the last byte in the heap which can be allocated.
-        | PrimStoreHeapMax
-
-        -- | Back Heap: The first object is allocated at this address.
-        | PrimStoreHeapBackBase
-
-        -- | Back Heap: The next object is allocated starting from this address.
-        | PrimStoreHeapBackTop
-
-        -- | Back Heap: Points to the last byte in the heap which can be allocated.
-        | PrimStoreHeapBackMax
+        -- | Allocate a global in static memory.
+        | PrimStoreStatic 
         deriving (Eq, Ord, Show)
 
 
@@ -151,12 +138,9 @@ instance Pretty PrimStore where
 
         PrimStoreRootChain      -> text "rootChain#"
 
-        PrimStoreHeapBase       -> text "heapBase#"
-        PrimStoreHeapTop        -> text "heapTop#"
-        PrimStoreHeapMax        -> text "heapMax#"
-        PrimStoreHeapBackBase   -> text "heapBackBase#"
-        PrimStoreHeapBackTop    -> text "heapBackTop#"
-        PrimStoreHeapBackMax    -> text "heapBackMax#"
+        PrimStoreGlobal         -> text "global#"
+        PrimStoreStatic         -> text "static#"
+
 
 
 readPrimStore :: String -> Maybe PrimStore
@@ -191,12 +175,8 @@ readPrimStore str
 
         "rootChain#"            -> Just PrimStoreRootChain
 
-        "heapBase#"             -> Just PrimStoreHeapBase
-        "heapTop#"              -> Just PrimStoreHeapTop
-        "heapMax#"              -> Just PrimStoreHeapMax
-        "heapBackBase#"         -> Just PrimStoreHeapBackBase
-        "heapBackTop#"          -> Just PrimStoreHeapBackTop
-        "heapBackMax#"          -> Just PrimStoreHeapBackMax
+        "global#"               -> Just PrimStoreGlobal
+        "static#"               -> Just PrimStoreStatic
 
         _                       -> Nothing
 
