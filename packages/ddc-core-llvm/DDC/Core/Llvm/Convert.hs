@@ -12,25 +12,27 @@ import DDC.Core.Llvm.Convert.Type
 import DDC.Core.Llvm.Convert.Base
 import DDC.Core.Llvm.Runtime
 import DDC.Core.Salt.Platform
-import DDC.Core.Exp.Annot                       as A
+import DDC.Core.Exp.Annot                               as A
 import DDC.Llvm.Syntax
 import DDC.Control.Check
-import qualified Control.Monad.State.Strict     as State
+import qualified Control.Monad.State.Strict             as State
 import Control.Monad
-import Data.Map                                 (Map)
+import Data.Map                                         (Map)
 
-import qualified DDC.Llvm.Transform.Calls       as Calls
-import qualified DDC.Llvm.Transform.Flatten     as Flatten
-import qualified DDC.Llvm.Transform.Simpl       as Simpl
+import qualified DDC.Llvm.Transform.Calls               as Calls
+import qualified DDC.Llvm.Transform.Flatten             as Flatten
+import qualified DDC.Llvm.Transform.Simpl               as Simpl
 
-import qualified DDC.Core.Salt                  as A
-import qualified DDC.Core.Module                as C
-import qualified DDC.Core.Exp                   as C
-import qualified DDC.Type.Env                   as Env
-import qualified DDC.Core.Simplifier            as Simp
-import qualified Data.Map                       as Map
-import qualified Data.Set                       as Set
-import qualified Data.List                      as List
+import qualified DDC.Core.Salt.Analysis.Primitive       as APrimitive
+import qualified DDC.Core.Salt                          as A
+import qualified DDC.Core.Module                        as C
+import qualified DDC.Core.Exp                           as C
+import qualified DDC.Type.Env                           as Env
+import qualified DDC.Core.Simplifier                    as Simp
+import qualified Data.Map                               as Map
+import qualified Data.Set                               as Set
+import qualified Data.List                              as List
+import qualified Data.Text                              as Text
 
 
 -- | Convert a Salt module to LLVM.
@@ -100,53 +102,42 @@ convertModuleM
 convertModuleM pp mm@(C.ModuleCore{})
  | ([C.LRec bxs], _)    <- splitXLets $ C.moduleBody mm
  = do   
-        -- Globals for the runtime --------------
-        --   If this is the Init module in the runtime system then define the
-        --   globals for the allocator and garbage collector, 
-        --   otherwise import them as external symbols.
+        -- Define global variables.
+        --
+        --   In the Salt code global variables are referred to like
+        --   (global# "someName"#). We collect up all such occurrences
+        --   and define a static symbol for them.
+        --
+        --   We need to always include 'ddcHeapMax' and 'ddcHeapTop'
+        --   as these are used in the LLVM code for th alloc# primitive.
 
-        -- Holds the pointer to the start of the heap.
-        --  This first object is allocated at this address.
-        let vHeapBase           = Var nameGlobalHeapBase     (tAddr pp)
+        let support
+                = APrimitive.collectModule mm
 
-        -- Holds the pointer to the current top of the heap.
-        --  This is the byte _after_ the last byte used by an object.
-        let vHeapTop            = Var nameGlobalHeapTop      (tAddr pp)
+        let globalNames 
+                = Set.union (APrimitive.supportGlobal support)
+                $ Set.fromList 
+                        [ Text.pack "ddcHeapMax"
+                        , Text.pack "ddcHeapTop" ]
 
-        -- Holds the pointer to the maximum heap.
-        --  This is the byte _after_ the last byte avaiable in the heap.
-        let vHeapMax            = Var nameGlobalHeapMax      (tAddr pp)
-
-        -- Holds the pointer to the start of the back heap.
-        let vHeapBackBase       = Var nameGlobalHeapBackBase (tAddr pp)
-
-        -- Holds the pointer to the current top of the back heap.
-        let vHeapBackTop        = Var nameGlobalHeapBackTop  (tAddr pp)
-
-        -- Holds the pointer to the maximum of the back heap.
-        let vHeapBackMax        = Var nameGlobalHeapBackMax  (tAddr pp)
-
-        let globalsRts
+        let globals
+                -- When compiling the Init module, allocate space for each global.
                 | C.moduleName mm == C.ModuleName ["Init"]
-                = [ GlobalStatic   vHeapBase      (StaticLit (LitInt (tAddr pp) 0))
-                  , GlobalStatic   vHeapTop       (StaticLit (LitInt (tAddr pp) 0))
-                  , GlobalStatic   vHeapMax       (StaticLit (LitInt (tAddr pp) 0))
-                  , GlobalStatic   vHeapBackBase  (StaticLit (LitInt (tAddr pp) 0))
-                  , GlobalStatic   vHeapBackTop   (StaticLit (LitInt (tAddr pp) 0))
-                  , GlobalStatic   vHeapBackMax   (StaticLit (LitInt (tAddr pp) 0)) ]
+                = [ GlobalStatic   (Var (NameGlobal (Text.unpack name))
+                                        (TPointer (tAddr pp)))
+                                   (StaticLit (LitInt (tAddr pp) 0))
+                  | name <- Set.toList globalNames ]
 
+                -- For other modules just treat each global as an external symbol.
                 | otherwise
-                = [ GlobalExternal vHeapBase
-                  , GlobalExternal vHeapTop
-                  , GlobalExternal vHeapMax
-                  , GlobalExternal vHeapBackBase
-                  , GlobalExternal vHeapBackTop
-                  , GlobalExternal vHeapBackMax ]
+                = [ GlobalExternal (Var (NameGlobal (Text.unpack name))
+                                        (tAddr pp))
+                  | name <- Set.toList globalNames ]
 
 
         -- Import external symbols --------------
-        let kenv        = C.moduleKindEnv mm
-        let tenv        = C.moduleTypeEnv mm `Env.union` (Env.fromList $ map fst bxs)
+        let kenv = C.moduleKindEnv mm
+        let tenv = C.moduleTypeEnv mm `Env.union` (Env.fromList $ map fst bxs)
 
         let Just msImportDecls 
                 = sequence
@@ -195,7 +186,7 @@ convertModuleM pp mm@(C.ModuleCore{})
         return  $ Module 
                 { modComments           = []
                 , modAliases            = [aObj pp]
-                , modGlobals            = globalsRts
+                , modGlobals            = globals
                 , modFwdDecls           = primDecls pp ++ importDecls 
                 , modFuncs              = functions 
                 , modMDecls             = concat mdecls }

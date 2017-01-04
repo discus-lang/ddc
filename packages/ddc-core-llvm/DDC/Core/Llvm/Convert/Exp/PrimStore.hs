@@ -90,8 +90,8 @@ convPrimStore ctx mdst p as
                 xBytes'     <- mBytes
                 vAddr       <- newUniqueNamedVar "addr" (tAddr pp)
                 vMax        <- newUniqueNamedVar "max"  (tAddr pp)
-                let vTopPtr =  varGlobalHeapTop pp
-                let vMaxPtr =  varGlobalHeapMax pp
+                let vTopPtr =  varGlobal pp "ddcHeapTop"
+                let vMaxPtr =  varGlobal pp "ddcHeapMax" 
                 return  $ Seq.fromList
                         $ map annotNil
                         [ ICall (Just vAddr) CallTypeStd Nothing
@@ -116,8 +116,8 @@ convPrimStore ctx mdst p as
                 let vTop    = Var (bumpName nDst "top") (tAddr pp)
                 let vMin    = Var (bumpName nDst "min") (tAddr pp)
                 let vMax    = Var (bumpName nDst "max") (tAddr pp)
-                let vTopPtr = varGlobalHeapTop pp
-                let vMaxPtr = varGlobalHeapMax pp
+                let vTopPtr = varGlobal pp "ddcHeapTop"
+                let vMaxPtr = varGlobal pp "ddcHeapMax"
                 return  $ Seq.fromList $ map annotNil
                         [ ILoad vTop (XVar vTopPtr)
                         , IOp   vMin OpAdd (XVar vTop) xBytes'
@@ -132,7 +132,7 @@ convPrimStore ctx mdst p as
          -> Just $ do
                 xBytes'     <- mBytes
                 let vBump   = Var (bumpName nDst "bump") (tAddr pp)
-                let vTopPtr = varGlobalHeapTop pp
+                let vTopPtr = varGlobal pp "ddcHeapTop"
                 return  $ Seq.fromList $ map annotNil
                         [ ILoad  vDst  (XVar vTopPtr)
                         , IOp    vBump OpAdd (XVar vDst) xBytes'
@@ -384,7 +384,7 @@ convPrimStore ctx mdst p as
          ,  A.NamePrimLit (A.PrimLitTextLit txName) <- n
          ,  Just vDst   <- mdst
          -> Just $ do
-                let vPtr = varGlobal (Text.unpack txName) (TPointer (tAddr pp))
+                let vPtr = Var (NameGlobal (Text.unpack txName)) (TPointer (tAddr pp))
                 return  $ Seq.singleton $ annotNil
                         $ IConv vDst ConvPtrtoint (XVar vPtr)
 

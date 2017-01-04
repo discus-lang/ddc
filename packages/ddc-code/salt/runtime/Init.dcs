@@ -11,16 +11,6 @@
 --   the system linker will forget about the symbols when building 
 --   the runtime system .dylib library.
 --
---   The global symbols are:
---
---   Linker Symbol              DDC primitive.
---   __DDC__heapBase            global# "heapBase"#
---   __DDC__heapMax             global# "heapMax"#
---   __DDC__heapTop             global# "heapTop"#
---   __DDC__heapBackBase        global# "heapBackBase"#
---   __DDC__heapBackMax         global# "heapBackMax"#
---   __DDC__heapBackTop         global# "heapBackTop"#
---
 module Init
 export value
  ddcInit        :  Nat# -> Nat# -> Addr# -> Unit
@@ -30,6 +20,7 @@ import foreign c value
  malloc         : Nat#  -> Addr#
  free           : Addr# -> Void#
  exit           : Nat#  -> Void#
+
 with letrec
 
 
@@ -49,16 +40,16 @@ ddcAllocInit (heapSize : Nat#) : Unit
  = do
         -- Create the front heap.
         pHeapBaseA      = malloc heapSize
-        write# (global# "heapBase"#)     0# pHeapBaseA
-        write# (global# "heapTop"#)      0# pHeapBaseA
-        write# (global# "heapMax"#)      0# 
+        write# (global# "ddcHeapBase"#)     0# pHeapBaseA
+        write# (global# "ddcHeapTop"#)      0# pHeapBaseA
+        write# (global# "ddcHeapMax"#)      0# 
                (plusAddr# pHeapBaseA    (sub# heapSize 1#))
 
         -- Create the back heap.
         pHeapBackBaseA  = malloc heapSize
-        write# (global# "heapBackBase"#) 0# pHeapBackBaseA
-        write# (global# "heapBackTop"#)  0# pHeapBackBaseA
-        write# (global# "heapBackMax"#)  0#
+        write# (global# "ddcHeapBackBase"#) 0# pHeapBackBaseA
+        write# (global# "ddcHeapBackTop"#)  0# pHeapBackBaseA
+        write# (global# "ddcHeapBackMax"#)  0#
                (plusAddr# pHeapBackBaseA (sub# heapSize 1#))
 
         ()
@@ -69,8 +60,8 @@ ddcAllocInit (heapSize : Nat#) : Unit
 ddcExit (code: Nat#): Void#
  = do   
         -- Free the space for the heaps.
-        pHeapBaseA      = read# (global# "heapBase"#)     0#
-        pHeapBackBaseA  = read# (global# "heapBackBase"#) 0#
+        pHeapBaseA      = read# (global# "ddcHeapBase"#)     0#
+        pHeapBackBaseA  = read# (global# "ddcHeapBackBase"#) 0#
 
         free pHeapBaseA
         free pHeapBackBaseA

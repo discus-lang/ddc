@@ -37,17 +37,17 @@ ddcAllocCollect (byteCount : Nat#) : Unit
         --   front heap.
         ddcCollectHeap  
                 (ddcLlvmRootGetStart 0#)
-                (global# "heapBase"#)
-                (global# "heapTop"#)
-                (global# "heapMax"#)
-                (global# "heapBackBase"#)
-                (global# "heapBackTop"#)
-                (global# "heapBackMax"#)
+                (global# "ddcHeapBase"#)
+                (global# "ddcHeapTop"#)
+                (global# "ddcHeapMax"#)
+                (global# "ddcHeapBackBase"#)
+                (global# "ddcHeapBackTop"#)
+                (global# "ddcHeapBackMax"#)
 
         -- Check that we've recovered enough space to perform the required
         -- allocation.
-        aNewTop         = read# [Addr#] (global# "heapTop"#) 0#
-        aNewMax         = read# [Addr#] (global# "heapMax"#) 0#
+        aNewTop         = read# [Addr#] (global# "ddcHeapTop"#) 0#
+        aNewMax         = read# [Addr#] (global# "ddcHeapMax"#) 0#
 
         case gt# (plusAddr# aNewTop byteCount) aNewMax of
          -- If there isn't enough space in the collected heap then we 
@@ -74,9 +74,9 @@ ddcAllocResize
                                 -- we've already got.
         : Unit
  = do   
-        aCurBase        = read# [Addr#] (global# "heapBase"#) 0#
-        aCurTop         = read# [Addr#] (global# "heapTop"#)  0#
-        aCurMax         = read# [Addr#] (global# "heapMax"#)  0#
+        aCurBase        = read# [Addr#] (global# "ddcHeapBase"#) 0#
+        aCurTop         = read# [Addr#] (global# "ddcHeapTop"#)  0#
+        aCurMax         = read# [Addr#] (global# "ddcHeapMax"#)  0#
                
         -- Current size of the heap.
         curSize         = add# 1# (truncate# [Nat#] (sub# aCurMax aCurBase))
@@ -99,32 +99,34 @@ ddcAllocResize
         --   We want to perform 'free' first before the new 'malloc'
         --   so the malloc implementation has a chance to reuse the pages
         --   that we've already got.
-        aHeapBackBase1_old      = read# (global# "heapBackBase"#) 0#
+        aHeapBackBase1_old      = read# (global# "ddcHeapBackBase"#) 0#
         free aHeapBackBase1_old
         aHeapBackBase1_new      = malloc newSize
-        write# (global# "heapBackBase"#) 0# aHeapBackBase1_new
-        write# (global# "heapBackTop"#)  0# aHeapBackBase1_new
-        write# (global# "heapBackMax"#)  0# (plusAddr# aHeapBackBase1_new (sub# newSize 1#))
+        write#  (global# "ddcHeapBackBase"#) 0# aHeapBackBase1_new
+        write#  (global# "ddcHeapBackTop"#)  0# aHeapBackBase1_new
+        write#  (global# "ddcHeapBackMax"#)  0# 
+                (plusAddr# aHeapBackBase1_new (sub# newSize 1#))
 
         -- Run the collector again to copy live objects into the new back buffer.
         --   This also flips the buffers, so after the collection our freshly
         --   allocated buffer is now the one reachable from the front pointers.
         ddcCollectHeap  
                 (ddcLlvmRootGetStart 0#)
-                (global# "heapBase"#)
-                (global# "heapTop"#)
-                (global# "heapMax"#)
-                (global# "heapBackBase"#)
-                (global# "heapBackTop"#)
-                (global# "heapBackMax"#)
+                (global# "ddcHeapBase"#)
+                (global# "ddcHeapTop"#)
+                (global# "ddcHeapMax"#)
+                (global# "ddcHeapBackBase"#)
+                (global# "ddcHeapBackTop"#)
+                (global# "ddcHeapBackMax"#)
 
         -- After the flip, the old front buffer is now reachable from the back
         -- pointers, so resize that as well.
-        aHeapBackBase2_old      = read# (global# "heapBackBase"#) 0#
+        aHeapBackBase2_old      = read# (global# "ddcHeapBackBase"#) 0#
         free aHeapBackBase2_old
         aHeapBackBase2_new      = malloc newSize
-        write# (global# "heapBackBase"#) 0# aHeapBackBase2_new
-        write# (global# "heapBackTop"#)  0# aHeapBackBase2_new
-        write# (global# "heapBackMax"#)  0# (plusAddr# aHeapBackBase2_new (sub# newSize 1#))
+        write#  (global# "ddcHeapBackBase"#) 0# aHeapBackBase2_new
+        write#  (global# "ddcHeapBackTop"#)  0# aHeapBackBase2_new
+        write#  (global# "ddcHeapBackMax"#)  0#
+                (plusAddr# aHeapBackBase2_new (sub# newSize 1#))
 
         ()

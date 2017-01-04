@@ -86,5 +86,4 @@ convPrimStore pp
         PrimStoreCastPtr        -> text "_CASTPTR"
         PrimStoreRootChain      -> text "_ROOTCHAIN"
         PrimStoreGlobal         -> text "_GLOBAL"
-        PrimStoreStatic         -> text "_STATIC"
   

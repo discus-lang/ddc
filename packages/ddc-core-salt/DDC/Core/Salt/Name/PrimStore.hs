@@ -97,9 +97,6 @@ data PrimStore
         -- Global Variables -----------
         -- | Reference to a global
         | PrimStoreGlobal
-
-        -- | Allocate a global in static memory.
-        | PrimStoreStatic 
         deriving (Eq, Ord, Show)
 
 
@@ -139,7 +136,6 @@ instance Pretty PrimStore where
         PrimStoreRootChain      -> text "rootChain#"
 
         PrimStoreGlobal         -> text "global#"
-        PrimStoreStatic         -> text "static#"
 
 
 
@@ -176,7 +172,6 @@ readPrimStore str
         "rootChain#"            -> Just PrimStoreRootChain
 
         "global#"               -> Just PrimStoreGlobal
-        "static#"               -> Just PrimStoreStatic
 
         _                       -> Nothing
 

@@ -208,5 +208,4 @@ typeOfPrimStore jj
         PrimStoreRootChain      -> tAddr
 
         PrimStoreGlobal         -> tTextLit `tFun` tAddr
-        PrimStoreStatic         -> tTextLit `tFun` tVoid
 

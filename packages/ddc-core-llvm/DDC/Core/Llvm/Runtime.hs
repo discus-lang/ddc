@@ -1,20 +1,9 @@
 
 module DDC.Core.Llvm.Runtime
-        ( -- * Global variables
-          nameGlobal,                   varGlobal
+        ( varGlobal
 
-          -- * GC Root chain
+         -- * GC Root chain
         , nameGlobalLlvmRootChain,      varGlobalLlvmRootChain
-
-          -- * Front Heap
-        , nameGlobalHeapBase,           varGlobalHeapBase
-        , nameGlobalHeapTop,            varGlobalHeapTop
-        , nameGlobalHeapMax,            varGlobalHeapMax
-
-          -- * Back Heap
-        , nameGlobalHeapBackBase,       varGlobalHeapBackBase
-        , nameGlobalHeapBackTop,        varGlobalHeapBackTop
-        , nameGlobalHeapBackMax,        varGlobalHeapBackMax
 
           -- * Intrinsics
         , nameGlobalMalloc
@@ -27,16 +16,10 @@ import DDC.Core.Llvm.Convert.Type
 import DDC.Core.Salt.Platform
 
 
--- Globals --------------------------------------------------------------------
--- | Build a global variable.
-varGlobal  :: String -> Type -> Var
-varGlobal  name ty = Var (nameGlobal name) ty
-
-
--- | Build a global variable name.
-nameGlobal :: String -> Name
-nameGlobal name    = NameGlobal ("_DDC__" ++ name)
-
+-- Globals ---------------------------------------------------------------------
+-- | Refer to a global variable.
+varGlobal :: Platform -> String -> Var
+varGlobal pp name = Var (NameGlobal name) (TPointer (tAddr pp))
 
 
 -- Root Stack ------------------------------------------------------------------
@@ -48,74 +31,6 @@ nameGlobalLlvmRootChain = NameGlobal "llvm_gc_root_chain"
 -- | Make the variable that points to the GC root chain.
 varGlobalLlvmRootChain :: Platform -> Var
 varGlobalLlvmRootChain _pp = Var nameGlobalLlvmRootChain (TPointer (TPointer (TInt 8)))
-
-
--- Front Heap ------------------------------------------------------------------
--- | Name of the global variable that points to the first byte that can
---   be allocated on the front heap.
-nameGlobalHeapBase :: Name
-nameGlobalHeapBase = NameGlobal "_DDC__heapBase"
-
--- | Make the variable that points to the first byte that can be allocated on
---   the front heap.
-varGlobalHeapBase :: Platform -> Var
-varGlobalHeapBase pp = Var nameGlobalHeapBase (TPointer (tAddr pp))
-
-
--- | Name of the global variable that points to the next byte that can
---   be allocated on the front heap.
-nameGlobalHeapTop :: Name
-nameGlobalHeapTop = NameGlobal "_DDC__heapTop"
-
--- | Make the variable that points to the next byte that can be allocated
---   on the front heap.
-varGlobalHeapTop :: Platform -> Var
-varGlobalHeapTop pp = Var nameGlobalHeapTop (TPointer (tAddr pp))
-
-
--- | Name of the global variable that points to the highest
---   byte that can be allocated on the front heap.
-nameGlobalHeapMax :: Name
-nameGlobalHeapMax = NameGlobal "_DDC__heapMax"
-
--- | Make the variable that points to the highest byte that can be allocated
---   on the front heap.
-varGlobalHeapMax :: Platform -> Var
-varGlobalHeapMax pp = Var nameGlobalHeapMax (TPointer (tAddr pp))
-
-
--- Back Heap -------------------------------------------------------------------
--- | Name of the global variable that points to the first byte that can
---   be allocated on the back heap.
-nameGlobalHeapBackBase :: Name
-nameGlobalHeapBackBase = NameGlobal "_DDC__heapBackBase"
-
--- | Make the variable that points to the first byte that can be allocated on
---   the back heap.
-varGlobalHeapBackBase :: Platform -> Var
-varGlobalHeapBackBase pp = Var nameGlobalHeapBackBase (TPointer (tAddr pp))
-
-
--- | Name of the global variable that points to the next byte that can
---   be allocated on the back heap.
-nameGlobalHeapBackTop :: Name
-nameGlobalHeapBackTop = NameGlobal "_DDC__heapBackTop"
-
--- | Make the variable that points to the next byte that can be allocated on
---   the back heap.
-varGlobalHeapBackTop :: Platform -> Var
-varGlobalHeapBackTop pp = Var nameGlobalHeapBackTop (TPointer (tAddr pp))
-
-
--- | Name of the global variable that points to the highest
---   byte that can be allocated on the back heap.
-nameGlobalHeapBackMax :: Name
-nameGlobalHeapBackMax = NameGlobal "_DDC__heapBackMax"
-
--- | Make the variable that points to the highest byte that can be allocated on
---   the back heap.
-varGlobalHeapBackMax :: Platform -> Var
-varGlobalHeapBackMax pp = Var nameGlobalHeapBackMax (TPointer (tAddr pp))
 
 
 -- Intrinsics -----------------------------------------------------------------
