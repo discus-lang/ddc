@@ -34,7 +34,7 @@ newtype Variable
     deriving (Eq, Ord, Show)
 
 data ChannelType
-    = ChannelInput | ChannelOutput | ChannelIgnore
+    = ChannelInput | ChannelOutput
 
 data BlockNext
     = BlockNext
@@ -48,6 +48,7 @@ data Block
     | BlockDrop Channel BlockNext
     | BlockJump BlockNext
     -- TODO: if/case
+
 
 data Process
     = Process
@@ -77,7 +78,6 @@ instance Pretty Variable where
 instance Pretty ChannelType where
  ppr ChannelInput  = text "Input"
  ppr ChannelOutput = text "Output"
- ppr ChannelIgnore = text "Ignore"
 
 instance Pretty BlockNext where
  ppr (BlockNext lbl args)
