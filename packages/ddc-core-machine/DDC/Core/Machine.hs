@@ -23,6 +23,7 @@ module DDC.Core.Machine
         , Process       (..)
         , Network       (..)
         , slurpNetworks
+        , fuseNetwork
         )
 
 where

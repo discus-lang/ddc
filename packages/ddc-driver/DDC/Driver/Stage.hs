@@ -27,6 +27,7 @@ module DDC.Driver.Stage
         , stageMachineLoad
         , stageMachinePrep
         , stageMachineOutputSlurp
+        , stageMachineOutputFused
 
           -- * Salt stages
         , saltLoadText

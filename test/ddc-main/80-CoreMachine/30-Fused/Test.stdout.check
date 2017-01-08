@@ -1,0 +1,21 @@
+ok
+ok
+ok
+
+[(exec: Source# a0 -> Sink# c0 -> Process#,Network
+ inputs:  [xs]
+ outputs: [zs]
+  Process
+   init:   p1__p1_
+   blocks:
+    p1__p1_ = pull# xs v p2__p1_
+    p1__p1_ys_is_pending = (p1__p2_ys_is_have {v=ys$_buf})
+    p1__p2_ys_is_have = push# zs (g0 v) p1__p3_ys_is_have
+    p1__p3_ys_is_have = p1__p1_
+    p2__p1_ = push# ys (f0 v) (p3__p1_ys_is_pending {ys$_buf=f0 v})
+    p3__p1_ys_is_pending = drop# xs p1__p1_ys_is_pending
+   channels:
+    xs = Input
+    ys = Output
+    zs = Output)]
+

@@ -1,6 +1,7 @@
 {-# OPTIONS_GHC -Wwarn #-}
 module DDC.Core.Machine.Process.Fuse
-        ( fusePair
+        ( fuseNetwork
+        , fusePair
         , FuseError (..)
         )
 where
@@ -11,13 +12,33 @@ import DDC.Core.Exp
 
 import Control.Monad (foldM)
 
+import DDC.Core.Pretty          ()
+import DDC.Data.Pretty (Pretty(..), ppr, text, (<>), vcat, punctuate, hcat, renderIndent)
+
 data FuseError
  = FuseErrorInternalError String
  | FuseErrorNoSuchBlock Label Label
  | FuseErrorNeither FuseLabel FuseErrorStep FuseErrorStep
 
+instance Pretty FuseError where
+ ppr (FuseErrorInternalError str)
+  = text ("Internal error: " ++ str)
+ ppr (FuseErrorNoSuchBlock lp lq)
+  = text "Malformed input process: no such block at label " <> ppr lp <> text " or " <> ppr lq
+ ppr (FuseErrorNeither l s1 s2)
+  = vcat
+  [ text "Neither machine can progress."
+  , text "  label:     " <> ppr l
+  , text "  process 1: " <> ppr s1
+  , text "  process 2: " <> ppr s2
+  ]
+
 data FuseErrorStep
  = FuseErrorStep String
+
+instance Pretty FuseErrorStep where
+ ppr (FuseErrorStep str)
+  = text str
 
 -- | Static input state.
 -- "None" is encoded as not in map
@@ -26,14 +47,28 @@ data InputState
     | IS'Have
     deriving (Eq, Ord, Show)
 
+instance Pretty InputState where
+ ppr IS'Pending = text "pending"
+ ppr IS'Have    = text "have"
+
 data FuseLabel
     = FuseLabel Label (Map.Map Channel InputState) Label (Map.Map Channel InputState)
     deriving (Eq, Ord)
 
+instance Pretty FuseLabel where
+ ppr (FuseLabel lp sp lq sq)
+  = ppr lp <> text "_" <> pprMap sp <> text "_" <> ppr lq <> text "_" <> pprMap sq
+  where
+   pprMap ss
+    = hcat
+    $ punctuate (text "_")
+    $ map (\(k,v) -> ppr k <> text "_is_" <> ppr v)
+    $ Map.toList ss
+
 labelOfFuseLabel :: FuseLabel -> Label
-labelOfFuseLabel (FuseLabel lp sp lq sq)
- -- the worst thing ever!!!
- = Label $ NameVar (show lp ++ show sp ++ show lq ++ show sq)
+labelOfFuseLabel l
+ -- TODO: the worst thing ever!!! We could probably just add FuseLabel as a constructor to Name.
+ = Label $ NameVar $ renderIndent (ppr l)
 
 data ChannelType2
  = In1 | In2 | In1Out1 | Out1
@@ -65,6 +100,14 @@ getChannels1
   chan1 In1Out1 = ChannelOutput
   chan1 Out1    = ChannelOutput
 
+
+fuseNetwork :: Network -> Either FuseError Network
+fuseNetwork (Network ins outs [])
+ = return $ Network ins outs []
+fuseNetwork (Network ins outs (p:procs))
+ -- TODO order properly
+ = do   p' <- foldM fusePair p procs
+        return $ Network ins outs [p']
 
 -- | Fuse a pair of processes
 fusePair :: Process -> Process -> Either FuseError Process
@@ -185,6 +228,7 @@ tryStep flipper cs lp sp lq sq bp = case bp of
 
   vchanVar c = Variable $ chanVar c
   xchanVar c = XVar () $ UName $ chanVar c
+  -- TODO: also bad
   chanVar (Channel c) = NameVarMod c "_buf"
 
   goto l sp' sq'

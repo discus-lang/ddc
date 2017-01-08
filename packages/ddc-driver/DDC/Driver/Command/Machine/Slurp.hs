@@ -1,6 +1,8 @@
 
+-- TODO: rename module to Output / render or move fused into other module
 module DDC.Driver.Command.Machine.Slurp
-        (cmdMachineOutputSlurp)
+        ( cmdMachineOutputSlurp
+        , cmdMachineOutputFused)
 where
 import DDC.Driver.Stage
 import DDC.Driver.Interface.Source
@@ -25,6 +27,28 @@ cmdMachineOutputSlurp config source sourceText
          $ stageMachineLoad  config source 
          [ stageMachinePrep  config source
          [ stageMachineOutputSlurp SinkStdout ]]
+   in do
+        errs    <- liftIO pipePrep
+        case errs of
+         []     -> return ()
+         es     -> throwE $ P.renderIndent $ P.vcat $ map P.ppr es
+
+
+-- | Prepare a Disciple Core Machine module for lowering.
+cmdMachineOutputFused
+        :: Config               -- ^ Driver config.
+        -> Source               -- ^ Source of the code.
+        -> String               -- ^ Program module text.
+        -> ExceptT String IO ()
+
+cmdMachineOutputFused config source sourceText
+ = let  pipePrep
+         = pipeText (nameOfSource source)
+                     (lineStartOfSource source)
+                     sourceText
+         $ stageMachineLoad  config source 
+         [ stageMachinePrep  config source
+         [ stageMachineOutputFused SinkStdout ]]
    in do
         errs    <- liftIO pipePrep
         case errs of

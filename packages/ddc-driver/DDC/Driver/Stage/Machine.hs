@@ -2,7 +2,8 @@
 module DDC.Driver.Stage.Machine
         ( stageMachineLoad
         , stageMachinePrep
-        , stageMachineOutputSlurp)
+        , stageMachineOutputSlurp
+        , stageMachineOutputFused)
 where
 import DDC.Driver.Dump
 import DDC.Driver.Config
@@ -32,7 +33,7 @@ stageMachineLoad config source pipesMachine
 
 
 ---------------------------------------------------------------------------------------------------
--- | Prepare a Core Machine module for lowering.
+-- | Prepare a Core Machine module for slurping.
 stageMachinePrep
         :: Config -> Source
         -> [PipeCore () Machine.Name]
@@ -47,7 +48,7 @@ stageMachinePrep config source pipesMachine
      : pipesMachine)]]
 
 ---------------------------------------------------------------------------------------------------
--- | Prepare a Core Machine module for lowering.
+-- | Slurp into abstract processes and display result
 stageMachineOutputSlurp
         :: Sink
         -> PipeCore () Machine.Name
@@ -55,4 +56,14 @@ stageMachineOutputSlurp
 stageMachineOutputSlurp sink
  = PipeCoreAsMachine
    [ PipeMachineOutputSlurp sink]
+
+---------------------------------------------------------------------------------------------------
+-- | Fuse abstract processes and display result
+stageMachineOutputFused
+        :: Sink
+        -> PipeCore () Machine.Name
+
+stageMachineOutputFused sink
+ = PipeCoreAsMachine
+   [ PipeMachineOutputFused sink]
 

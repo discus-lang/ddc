@@ -490,6 +490,12 @@ data PipeMachine a where
         :: Sink
         -> PipeMachine ()
 
+  -- Show the fused stuff
+  PipeMachineOutputFused
+        :: Sink
+        -> PipeMachine ()
+
+
 -- | Process a Core Machine module.
 pipeMachine :: C.Module a Machine.Name
          -> PipeMachine a
@@ -587,8 +593,28 @@ pipeMachine !mm !pp
 
         PipeMachineOutputSlurp !sink
          -> {-# SCC "PipeMachineOutputSlurp" #-}
-            case Machine.slurpNetworks mm of
-             Left e -> pipeSink (renderIndent $ text "Slurp error:" <> line <> ppr e) sink
-             Right r -> pipeSink (renderIndent $ ppr r) sink
+            pipeRender sink (slurp mm)
 
+        PipeMachineOutputFused !sink
+         -> {-# SCC "PipeMachineOutputFused" #-}
+            pipeRender sink $ do
+              nets <- slurp mm
+              fuses nets
+
+ where
+  slurp mm' = mapLeftErr (text "Slurp error") $ Machine.slurpNetworks mm'
+  fuses nets = mapM fuse1 nets
+  fuse1 (b,net) = do
+      net' <- mapLeftErr (text "Fuse error for " <> ppr b) $ Machine.fuseNetwork net
+      return (b,net')
+
+  mapLeftErr t x
+   = case x of
+      Left err -> Left $ t <> line <> ppr err
+      Right v  -> Right v
+
+  pipeRender sink x
+   = case x of
+      Left err -> pipeSink (renderIndent err)     sink
+      Right r  -> pipeSink (renderIndent $ ppr r) sink
 

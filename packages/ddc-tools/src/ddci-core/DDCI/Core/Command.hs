@@ -96,6 +96,7 @@ data Command
 
         | CommandMachinePrep    -- ^ Prepare a Core Machine module for fusion.
         | CommandMachineOutputSlurp -- ^ Prepare a Core Machine module for fusion.
+        | CommandMachineOutputFused -- ^ Prepare a Core Machine module for fusion.
 
         -- Inline control
         | CommandWith           -- ^ Add a module to the inliner table.
@@ -149,6 +150,7 @@ commands
 
         , (":machine-prep",      CommandMachinePrep)
         , (":machine-slurp",     CommandMachineOutputSlurp)
+        , (":machine-fused",     CommandMachineOutputFused)
 
         -- Make and Compile
         , (":compile",          CommandCompile)
@@ -345,6 +347,12 @@ handleCmd1 state cmd source line
          -> do  config  <- getDriverConfigOfState state
                 runError $ cmdMachineOutputSlurp config source line
                 return state
+
+        CommandMachineOutputFused
+         -> do  config  <- getDriverConfigOfState state
+                runError $ cmdMachineOutputFused config source line
+                return state
+
 
         -- Make and Compile ---------------------
         CommandCompile
