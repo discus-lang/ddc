@@ -32,6 +32,8 @@ ddcInit (defaultHeapSize: Nat#) -- Default heap size set at compile time.
         : Unit
  = do   
         ddcAllocInit   defaultHeapSize
+        write# (global# [Nat#]  "ddcEnvArgC"#)      0# argc
+        write# (global# [Addr#] "ddcEnvArgV"#)      0# argv
         ()
 
 

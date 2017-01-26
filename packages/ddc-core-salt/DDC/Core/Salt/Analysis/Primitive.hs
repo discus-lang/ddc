@@ -8,9 +8,9 @@ import DDC.Core.Module                  as C
 import DDC.Core.Exp.Annot               as C
 
 import Data.Text                        (Text)
-import Data.Set                         (Set)
+import Data.Map                         (Map)
 import qualified DDC.Core.Salt.Name     as A
-import qualified Data.Set               as Set
+import qualified Data.Map               as Map
 
 
 -------------------------------------------------------------------------------
@@ -18,16 +18,18 @@ import qualified Data.Set               as Set
 data Support
         = Support
         { -- | Names of static globals mentioned using the global# primitive.
-          supportGlobal :: Set Text
+          supportGlobal :: Map Text [Type A.Name]
         }
         deriving Show
 
+
 instance Monoid Support where
- mempty = Support Set.empty
+ mempty = Support Map.empty
 
  mappend s1 s2
         = Support 
-        { supportGlobal = Set.union (supportGlobal s1) (supportGlobal s2) }
+        { supportGlobal 
+          = Map.unionWith (++) (supportGlobal s1) (supportGlobal s2) }
 
 
 -------------------------------------------------------------------------------
@@ -42,10 +44,10 @@ collectExp :: Exp a A.Name -> Support
 collectExp xx
  -- Collect names of global variables defined with the static# primitive.
  | Just ( A.NamePrimOp (A.PrimStore A.PrimStoreGlobal)
-        , [RType _t, RTerm x])             <- takeXFragApps xx
+        , [RType t, RTerm x])              <- takeXFragApps xx
  , XCon _ (C.DaConPrim name _)             <- x
  , A.NamePrimLit (A.PrimLitTextLit txName) <- name
- = mempty { supportGlobal = Set.singleton txName }
+ = mempty { supportGlobal = Map.singleton txName [t] }
 
  -- boilerplate.
  | otherwise

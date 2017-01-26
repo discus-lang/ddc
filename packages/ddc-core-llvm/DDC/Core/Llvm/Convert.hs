@@ -24,6 +24,7 @@ import qualified DDC.Llvm.Transform.Flatten             as Flatten
 import qualified DDC.Llvm.Transform.Simpl               as Simpl
 
 import qualified DDC.Core.Salt.Analysis.Primitive       as APrimitive
+import qualified DDC.Core.Salt.Compounds                as A
 import qualified DDC.Core.Salt                          as A
 import qualified DDC.Core.Module                        as C
 import qualified DDC.Core.Exp                           as C
@@ -102,38 +103,9 @@ convertModuleM
 convertModuleM pp mm@(C.ModuleCore{})
  | ([C.LRec bxs], _)    <- splitXLets $ C.moduleBody mm
  = do   
-        -- Define global variables.
-        --
-        --   In the Salt code global variables are referred to like
-        --   (global# "someName"#). We collect up all such occurrences
-        --   and define a static symbol for them.
-        --
-        --   We need to always include 'ddcHeapMax' and 'ddcHeapTop'
-        --   as these are used in the LLVM code for th alloc# primitive.
-
-        let support
-                = APrimitive.collectModule mm
-
-        let globalNames 
-                = Set.union (APrimitive.supportGlobal support)
-                $ Set.fromList 
-                        [ Text.pack "ddcHeapMax"
-                        , Text.pack "ddcHeapTop" ]
-
-        let globals
-                -- When compiling the Init module, allocate space for each global.
-                | C.moduleName mm == C.ModuleName ["Init"]
-                = [ GlobalStatic   (Var (NameGlobal (Text.unpack name))
-                                        (TPointer (tAddr pp)))
-                                   (StaticLit (LitInt (tAddr pp) 0))
-                  | name <- Set.toList globalNames ]
-
-                -- For other modules just treat each global as an external symbol.
-                | otherwise
-                = [ GlobalExternal (Var (NameGlobal (Text.unpack name))
-                                        (tAddr pp))
-                  | name <- Set.toList globalNames ]
-
+        -- Collect uses of global variables and create LLVM definitions
+        -- for each of them.
+        globals <- collectGlobalsOfModule pp mm
 
         -- Import external symbols --------------
         let kenv = C.moduleKindEnv mm
@@ -195,6 +167,56 @@ convertModuleM pp mm@(C.ModuleCore{})
  = throw $ ErrorInvalidModule mm
 
 
+---------------------------------------------------------------------------------------------------
+-- | Build definitions of global variables used in the module.
+--
+--   In the Salt code global variables are referred to like
+--   (global# [Type] "someName"#). We collect up all such occurrences
+--   and define a static symbol for them.
+--
+--   We need to always include 'ddcHeapMax' and 'ddcHeapTop'
+--   as these are used in the LLVM code for th alloc# primitive.
+--
+collectGlobalsOfModule 
+        :: Platform -> C.Module () A.Name
+        -> ConvertM [Global]
+
+collectGlobalsOfModule pp mm
+ = do
+        -- Collect up the names of global variables along with the
+        -- types that they are used at.
+        let globals_salt
+                = Map.unionWith (++)
+                        ( APrimitive.supportGlobal 
+                        $ APrimitive.collectModule mm)
+                $ Map.fromList 
+                        [ (Text.pack "ddcHeapMax",  [A.tAddr])
+                        , (Text.pack "ddcHeapTop",  [A.tAddr]) ]
+
+        -- Convert the Salt types of each global to their equivalent
+        -- LLVM types. TODO: also check for type mismatch in uses.
+        globals_llvm 
+         <- forM (Map.toList globals_salt)
+         $  \(name, ts)
+         -> do  _ts'@(t' : _)  <- mapM (convertType pp Env.empty) ts
+                return  (name, t')
+
+        if C.moduleName mm == C.ModuleName ["Init"]
+         -- When compiling the Init module, allocate space for each global.
+         then return 
+                [ GlobalStatic   (Var (NameGlobal (Text.unpack name))
+                                      (TPointer tGlobal))
+                                 (StaticLit (LitInt (tAddr pp) 0))
+                | (name, tGlobal) <- globals_llvm ]
+
+         -- Otherwise refer to the global as an external symbol.
+         else return
+                [ GlobalExternal (Var (NameGlobal (Text.unpack name))
+                                 tGlobal)
+                | (name, tGlobal) <- globals_llvm ]
+
+
+---------------------------------------------------------------------------------------------------
 -- | C library functions that are used directly by the generated code without
 --   having an import declaration in the header of the converted module.
 primDeclsMap :: Platform -> Map String FunctionDecl

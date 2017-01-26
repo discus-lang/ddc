@@ -30,7 +30,7 @@ isPrime (n: Nat): Bool
  =  foldl (λacc x -> rem (x * acc) n) 1 (enumFromTo 1 (n - 1))
  == (n - 1)
 
-
+ 
 -- | A stream of k-almost-prime numbers.
 kPrimes (k: Nat): Stream Nat Nat
  = sfilter (isKPrime k) (senumFrom 2) 
