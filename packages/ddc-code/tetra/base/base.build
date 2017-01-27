@@ -45,4 +45,5 @@ library
         System.Env
         System.IO.Console
         System.Posix.Stdlib
+        System.Posix.Stdio
         System.Posix.Unistd

@@ -31,6 +31,7 @@ import Data.Maybe
 import Class.Ord
 import Class.Eq
 
+
 -------------------------------------------------------------------------------
 -- Foreign imports.
 

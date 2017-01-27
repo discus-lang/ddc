@@ -70,6 +70,7 @@ data-files:
 
         tetra/base/System/IO/Console.ds
         tetra/base/System/Posix/Stdlib.ds
+        tetra/base/System/Posix/Stdio.ds
         tetra/base/System/Posix/Unistd.ds
 
         tetra/base/System/Runtime.ds
