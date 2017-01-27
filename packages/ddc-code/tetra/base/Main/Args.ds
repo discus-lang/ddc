@@ -1,6 +1,10 @@
 
 module Main.Args
-export { show_ArgError; mainArgs_load; mainArgs_parse }
+export {
+        show_ArgError;
+        mainArgs_load;
+        mainArgs_parse;
+}
 import Data.List
 import Data.Map
 import Data.Either
@@ -10,15 +14,24 @@ import System.Env
 where
 
 
+-------------------------------------------------------------------------------
 -- | Describes arguments to an executable.
 data Arg (mode: Data) where
 
+        -- A natural number argument.
         ArgNat  :  Text                         -- name
                 -> Text                         -- description
                 -> (Nat -> mode -> mode)        -- fold with argument value
                 -> Arg mode
 
 
+-- | Get the name of an argument.
+mainArgs_nameOfArg (arg: Arg mode): Text
+ = case arg of
+        ArgNat name _ _  -> name
+
+
+-------------------------------------------------------------------------------
 -- | Things that can go wrong when parsing arguments.
 data ArgError where
         -- | Unrecognised argument.
@@ -45,12 +58,7 @@ show_ArgError: Show ArgError
          = parens $ "ArgCannotParse"  %% show name %% show val
 
 
--- | Get the name of an argument.
-mainArgs_nameOfArg (arg: Arg mode): Text
- = case arg of
-        ArgNat name _ _  -> name
-
-
+-------------------------------------------------------------------------------
 -- | Load the command-line arguments from the environemnt into the given mode.
 mainArgs_load
         (m:    mode)

@@ -7,35 +7,56 @@ import Data.List
 import System.IO.Console
 import System.Posix.Unistd
 import System.Runtime
+import Main.Args
 where
 
 
 main ()
  = private r with {Read r; Write r; Alloc r}
    in do   
-        world   = newWorld [r] 60 40
+        -- Load command-line arguments.
+        mSteps 
+         = mainArgs_load Nothing
+         $ Cons (ArgNat "-steps" "number of steps" (\n _ -> (Just n)))
+                Nil
 
+        -- Create the initial world.
+        world   = newWorld [r] 60 40
         setCell world 30 20 CellAlive
         setCell world 29 20 CellAlive
         setCell world 30 21 CellAlive
         setCell world 30 19 CellAlive
         setCell world 31 19 CellAlive
 
-        animate world 0 10
+        -- Enter main animation loop.
+        animate world 0 
+                (fromMaybe 10 mSteps)
+                (isJust mSteps)
 
-        ()
 
-
+-- The main animation loop.
 animate (world:     World r)
         (frame max: Nat)
-        : S (Read r + Alloc r + Sleep + Console + Runtime) Unit
+        (delay:     Bool)
+        : S (Console + Sleep + Read r + Alloc r) Unit
+
+ -- We've already displayed all the frames.
  | frame >= max
  = do   writel $ showWorld world
 
+ -- Display the next frame.
  | otherwise
  = do   
+        -- Print the current world.
         writel  $ showWorld world
+
+        -- Insert a frame-delay if we were asked for one.
+        (if delay 
+          then do usleep 50000
+                  ()
+          else    ())
+
+        -- Step to the next state.
         world'  = stepWorld world
-        usleep 100000
-        animate world' (frame + 1) max
+        animate world' (frame + 1) max delay
 

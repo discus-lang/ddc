@@ -8,27 +8,32 @@ import Data.Function
 import Data.List
 where
 
+
+-- | A cell in the world can be empty or alive.
 data Cell where
         CellEmpty : Cell
         CellAlive : Cell
 
 
+-- | Check if the given cell is empty.
 isEmpty (cell: Cell): Bool
  = case cell of
         CellEmpty       -> True
         _               -> False
 
 
+-- | Check if the given cell is alive.
 isAlive (cell: Cell): Bool
  = case cell of
         CellAlive       -> True
         _               -> False
 
 
+-- | Step a single cell to the next time step,
+--   given a list of its eight immediate neighbours.
 stepCell (cell: Cell) (neighbours: List Cell): Cell
  = do   
-        nAlive  = length 
-                $ filter isAlive $ neighbours
+        nAlive  = length $ filter isAlive $ neighbours
 
         case cell of
          CellAlive      
