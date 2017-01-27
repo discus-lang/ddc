@@ -2,7 +2,9 @@
 module Data.Array.Store
 export { 
         allocStoreArray;  readStoreArray; writeStoreArray;
-        arrayStore_alloc; arrayStore_write;
+        arrayStore_alloc;
+        arrayStore_compute;
+        arrayStore_write;
 }
 import Data.Array.Base
 import Data.Array.Delayed
@@ -50,19 +52,9 @@ arrayStore_alloc
                         else def)
 
 
--- | Write an element to a stored array.
-arrayStore_write
-        (arr: Array (Store r a) (S (Read r) a))
-        (ix:  Nat) (x: a)
-        : S (Write r) Unit
- | Store sarr   <- array_rep arr
- = do
-        writeStoreArray sarr ix x
-        ()
-
-
 -- | Compute the contents of a delayed array, writing it into the store.
 arrayStore_compute
+        [r: Region] [a: Data]
         (arr: Array Delayed a)
         : S (Alloc r + Write r)
             (Array (Store r a) (S (Read r) a))
@@ -82,4 +74,17 @@ arrayStore_compute
          = do   x       = array_index      src ix
                 arrayStore_write dst ix x
                 fill dst src (ix + 1)
+
+
+-- | Write an element to a stored array.
+arrayStore_write
+        (arr: Array (Store r a) (S (Read r) a))
+        (ix:  Nat) (x: a)
+        : S (Write r) Unit
+ | Store sarr   <- array_rep arr
+ = do
+        writeStoreArray sarr ix x
+        ()
+
+
 

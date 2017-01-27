@@ -3,6 +3,7 @@ module Data.Array.Bulk
 export {
         arrayBulk_alloc;
         arrayBulk_freeze;
+        arrayBulk_compute;
 }
 import Data.Array.Store
 import Data.Array.Base
@@ -43,3 +44,13 @@ arrayBulk_freeze
         (array_def arr)
         (array_size arr)
         (\ix -> array_index arr ix)
+
+
+-- | Compute the contents of a delayed array,
+--   writing it to the bulk store.
+arrayBulk_compute 
+        (arr: Array Delayed a): Array Bulk a
+ = arrayBulk_freeze
+ $ extend RegionBulk using r with {Alloc r; Write r}
+   in   arrayStore_compute [r] arr
+
