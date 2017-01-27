@@ -2,7 +2,8 @@
 module Class.Ord
 export 
 {       compare; lt; le; gt; ge;
-        ord_bool; ord_nat 
+        ord_bool; ord_nat;
+        min; max
 }
 import Data.Numeric.Bool
 import Data.Numeric.Nat
@@ -76,4 +77,15 @@ ord_nat:  Ord Nat
          | gt# [Nat#] n1 n2     = GT
          | lt# [Nat#] n1 n2     = LT
          | otherwise            = EQ
+
+
+-------------------------------------------------------------------------------
+-- Functions on ordered things.
+min {Ord a} (x y: a): a
+ = if x <= y    then x  else y
+
+max {Ord a} (x y: a): a
+ = if x >= y    then x  else y
+
+
 

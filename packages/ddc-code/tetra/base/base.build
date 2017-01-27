@@ -29,6 +29,10 @@ library
         Data.Text.Show
         Data.Text
         Class.Show
+        Data.Array.Base
+        Data.Array.Delayed
+        Data.Array.Store
+        Data.Array.Bulk
         Data.Array
         Data.Ref
         Data.Map

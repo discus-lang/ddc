@@ -1,0 +1,42 @@
+
+module Data.Array.Delayed
+export  { array_from; array_map; array_map2 }
+import Data.Array.Base
+where
+
+
+-- | Representation of a delayed array.
+data Delayed where
+ Delayed : Delayed
+
+
+-- | Yield an array from a function that produces the value at each index.
+array_from 
+        (def: a) (size: Nat) (f: Nat -> a): Array Delayed a
+ = MkArray
+        Delayed def size
+        (\ix -> if ix < size then f ix else def)
+
+
+-- | Apply a function to every element of an array,
+--   yielding a new array.
+array_map
+        (f: a -> b)
+        (arr: Array r a): Array Delayed b
+ = MkArray 
+        Delayed
+        (f (array_def arr))
+        (array_size arr)
+        (\ix -> f (array_index arr ix))
+
+
+-- | Apply a function to corresponding elements of two arrays,
+--   yielding a new array.
+array_map2 
+        (f: a -> b -> c)
+        (arr1: Array r1 a) (arr2: Array r2 b): Array Delayed c
+ = MkArray
+        Delayed
+        (f   (array_def arr1)  (array_def arr2))
+        (min (array_size arr1) (array_size arr2))
+        (\ix -> f (array_index arr1 ix) (array_index arr2 ix))

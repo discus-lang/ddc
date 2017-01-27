@@ -1,0 +1,45 @@
+
+module Data.Array.Bulk 
+export {
+        arrayBulk_alloc;
+        arrayBulk_freeze;
+}
+import Data.Array.Store
+import Data.Array.Base
+
+import foreign abstract type
+        RegionBulk              : Region
+
+import foreign abstract capability
+        capRegionBulkAlloc      : Alloc RegionBulk
+        capRegionBulkRead       : Read  RegionBulk
+
+where
+
+
+-- | Representation of a bulk array.
+data Bulk where
+ Bulk   : Bulk
+
+
+-- | Allocate a bulk array.
+arrayBulk_alloc
+        (size: Nat) (def: a)
+        : Array Bulk a
+ = do
+        sarr    = allocStoreArray [RegionBulk] size def
+        MkArray Bulk def size
+                (\ix -> if ix < size
+                        then readStoreArray sarr ix
+                        else def)
+
+
+-- | Freeze an array stored in the bulk region to a bulk array.
+arrayBulk_freeze
+        (arr: Array (Store RegionBulk a) (S (Read RegionBulk) a))
+        : Array Bulk a
+ = MkArray
+        Bulk
+        (array_def arr)
+        (array_size arr)
+        (\ix -> array_index arr ix)

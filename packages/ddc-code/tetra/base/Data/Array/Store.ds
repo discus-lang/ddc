@@ -1,0 +1,85 @@
+
+module Data.Array.Store
+export { 
+        allocStoreArray;  readStoreArray; writeStoreArray;
+        arrayStore_alloc; arrayStore_write;
+}
+import Data.Array.Base
+import Data.Array.Delayed
+import Data.Numeric.Nat
+
+
+import foreign boxed type
+ StoreArray : Region -> Data -> Data
+
+
+import foreign c value
+ allocStoreArray : [r: Region]. [a: Data]. Nat -> a -> S (Alloc r) (StoreArray r a)
+ readStoreArray  : [r: Region]. [a: Data]. StoreArray r a -> Nat -> S (Read r) a
+ writeStoreArray : [r: Region]. [a: Data]. StoreArray r a -> Nat -> a -> S (Write r) Void#
+
+where
+
+
+-- | Representation of stored arrays.
+--
+--   This contains a reference to a primitive, heap-allocated array.
+--
+data Store (r: Region) (a: Data) where
+ Store  :  StoreArray r a
+        -> Store      r a
+
+
+-- | Allocate a stored array.
+-- 
+--   We treat the array as a collection of read computations that will each
+--   produce the current value stored at that position. This means that we
+--   can reuse the common array combinators like 'map' and 'fold', as well 
+--   as all index-space transformations without needing to change their types.
+--
+arrayStore_alloc
+        [r: Region] [a: Data]
+        (size: Nat) (def: a)
+        : S (Alloc r) (Array (Store r a) (S (Read r) a))
+ = do
+        sarr    = allocStoreArray [r] size def
+        MkArray (Store sarr)
+                (box weakeff [Read r] in def) size
+                (\ix -> if ix < size 
+                        then readStoreArray sarr ix
+                        else def)
+
+
+-- | Write an element to a stored array.
+arrayStore_write
+        (arr: Array (Store r a) (S (Read r) a))
+        (ix:  Nat) (x: a)
+        : S (Write r) Unit
+ | Store sarr   <- array_rep arr
+ = do
+        writeStoreArray sarr ix x
+        ()
+
+
+-- | Compute the contents of a delayed array, writing it into the store.
+arrayStore_compute
+        (arr: Array Delayed a)
+        : S (Alloc r + Write r)
+            (Array (Store r a) (S (Read r) a))
+ = do
+        arr'    = arrayStore_alloc [r] (array_size arr) (array_def arr)
+        fill arr' arr 0
+        arr'
+
+ where  fill    (dst: Array (Store r a) (S (Read r) a))
+                (src: Array Delayed a)
+                (ix:  Nat)
+                : S (Write r) Unit
+         | ix >= array_size dst
+         = ()
+
+         | otherwise
+         = do   x       = array_index      src ix
+                arrayStore_write dst ix x
+                fill dst src (ix + 1)
+

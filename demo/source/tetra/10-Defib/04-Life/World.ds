@@ -18,7 +18,8 @@ where
 data World (r: Region) where
  World  :  Nat                  -- ^ Width of world.    
         -> Nat                  -- ^ Height of world.
-        -> Array r Cell         -- ^ Linear array of cells.
+        -> Array (Store r Cell) (S (Read r) Cell)
+                                -- ^ Linear array of cells.
         -> World r
 
 
@@ -30,7 +31,7 @@ linear (world: World r) (x y: Nat): Nat
 
 -- Create a new world.
 newWorld (width height: Nat): S (Alloc r) (World r)
- = do   arr     = allocArray [r] (width * height) CellEmpty
+ = do   arr     = arrayStore_alloc [r] (width * height) CellEmpty
         World width height arr
 
 
@@ -41,7 +42,7 @@ getCell (world: World r) (x y: Nat)
  = match 
         | x >= width    = CellEmpty
         | y >= height   = CellEmpty
-        | otherwise     = readArray arr (linear world x y)
+        | otherwise     = array_index arr (linear world x y)
 
 
 -- | Set a single cell in the world.
@@ -52,7 +53,7 @@ setCell (world: World r) (x y: Nat) (c: Cell)
         | x >= width    = ()
         | y >= height   = ()
         | otherwise     
-         = do   writeArray arr (linear world x y) c
+         = do   arrayStore_write arr (linear world x y) c
                 ()
 
 

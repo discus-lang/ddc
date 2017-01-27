@@ -2,21 +2,21 @@
 -- | Arrays of pointers to boxed values.
 module Runtime.Prim.Array
 export value
- allocArray     : [r1 r2 : Region]. Nat# -> Ptr# r1 Obj -> Ptr# r2 Obj
- writeArray     : [r1 r2 : Region]. Ptr# r1 Obj -> Nat# -> Ptr# r2 Obj -> Ptr# r1 Obj
- readArray      : [r1 r2 : Region]. Ptr# r1 Obj -> Nat# -> Ptr# r2 Obj
- fillArray      : [r1 r2 : Region]. Ptr# r1 Obj -> Nat# -> Nat# -> Ptr# r2 Obj -> Ptr# r1 Obj
+ allocStoreArray : [r1 r2 : Region]. Nat# -> Ptr# r1 Obj -> Ptr# r2 Obj
+ writeStoreArray : [r1 r2 : Region]. Ptr# r1 Obj -> Nat# -> Ptr# r2 Obj -> Ptr# r1 Obj
+ readStoreArray  : [r1 r2 : Region]. Ptr# r1 Obj -> Nat# -> Ptr# r2 Obj
+ fillStoreArray  : [r1 r2 : Region]. Ptr# r1 Obj -> Nat# -> Nat# -> Ptr# r2 Obj -> Ptr# r1 Obj
 
 import value
- ddcAllocBoxed  : [r1    : Region]. Tag# -> Nat# -> Ptr# r1 Obj
- ddcSetBoxed    : [r1 r2 : Region]. Ptr# r1 Obj  -> Nat# -> Ptr# r2 Obj -> Void#
+ ddcAllocBoxed   : [r1    : Region]. Tag# -> Nat# -> Ptr# r1 Obj
+ ddcSetBoxed     : [r1 r2 : Region]. Ptr# r1 Obj  -> Nat# -> Ptr# r2 Obj -> Void#
 
 with letrec
 
 
 -- | Allocate an array of boxed values, consisting of the same element
 --   for all positions.
-allocArray 
+allocStoreArray 
         [r1 r2: Region]
         (len: Nat#) (pVal: Ptr# r1 Obj): Ptr# r2 Obj
  = do   
@@ -26,12 +26,12 @@ allocArray
         arr     = ddcAllocBoxed [r2] (truncate# 0#) len
         pVal'   = peek# sVal
 
-        fillArray arr 0# len pVal'
+        fillStoreArray arr 0# len pVal'
         arr
 
 
 -- | Write an element into an array.
-writeArray 
+writeStoreArray 
         [r1 r2: Region] 
         (obj: Ptr# r1 Obj) (ix: Nat#) (val: Ptr# r2 Obj): Ptr# r1 Obj
  = do   
@@ -47,7 +47,7 @@ writeArray
 
 
 -- | Read an element from an array.
-readArray 
+readStoreArray 
         [r1 r2: Region]
         (obj: Ptr# r1 Obj) (ix: Nat#): Ptr# r2 Obj
  = do   
@@ -63,7 +63,7 @@ readArray
 
 
 -- | Fill all elements of an array with the same value.
-fillArray
+fillStoreArray
         [r1 r2: Region]
         (arr: Ptr# r1 Obj) (start end: Nat#) (val: Ptr# r2 Obj): Ptr# r1 Obj
 
@@ -71,5 +71,5 @@ fillArray
         True#   -> arr
         False#  -> do
                 ddcSetBoxed arr start val
-                fillArray arr (add# start 1#) end val
+                fillStoreArray arr (add# start 1#) end val
 
