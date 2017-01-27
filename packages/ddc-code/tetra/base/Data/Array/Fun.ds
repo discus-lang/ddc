@@ -1,20 +1,20 @@
 
-module Data.Array.Delayed
+module Data.Array.Fun
 export  { array_from; array_map; array_map2 }
 import Data.Array.Base
 where
 
 
 -- | Representation of a delayed array.
-data Delayed where
- Delayed : Delayed
+data Fun where
+ Fun : Fun
 
 
 -- | Yield an array from a function that produces the value at each index.
 array_from 
-        (def: a) (size: Nat) (f: Nat -> a): Array Delayed a
+        (def: a) (size: Nat) (f: Nat -> a): Array Fun a
  = MkArray
-        Delayed def size
+        Fun def size
         (\ix -> if ix < size then f ix else def)
 
 
@@ -22,9 +22,9 @@ array_from
 --   yielding a new array.
 array_map
         (f: a -> b)
-        (arr: Array r a): Array Delayed b
+        (arr: Array r a): Array Fun b
  = MkArray 
-        Delayed
+        Fun
         (f (array_def arr))
         (array_size arr)
         (\ix -> f (array_index arr ix))
@@ -34,9 +34,9 @@ array_map
 --   yielding a new array.
 array_map2 
         (f: a -> b -> c)
-        (arr1: Array r1 a) (arr2: Array r2 b): Array Delayed c
+        (arr1: Array r1 a) (arr2: Array r2 b): Array Fun c
  = MkArray
-        Delayed
+        Fun
         (f   (array_def arr1)  (array_def arr2))
         (min (array_size arr1) (array_size arr2))
         (\ix -> f (array_index arr1 ix) (array_index arr2 ix))

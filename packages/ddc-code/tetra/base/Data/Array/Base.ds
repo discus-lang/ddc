@@ -23,21 +23,28 @@ data Array (rep: Data) (elem: Data) where
         -> Array rep elem
 
 
+-- | Take the representation of an array.
 array_rep   (arr: Array rep elem): rep
  = case arr of
         MkArray rep _ _ _       -> rep
 
 
+-- | Take the default value of an array.
 array_def   (arr: Array rep elem): elem
  = case arr of
         MkArray _ def _ _       -> def
 
 
+-- | Take the size of an array.
 array_size  (arr: Array rep elem): Nat
  = case arr of
         MkArray _ _ size _      -> size
 
 
+-- | Index into an array.
+--
+--   If the index is out-of bounds this function yield the default value.
+--
 array_index [rep: Data] [elem: Data] 
         (arr: Array rep elem) (ix: Nat): elem
  = case arr of

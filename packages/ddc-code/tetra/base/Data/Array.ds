@@ -1,7 +1,7 @@
 
 module Data.Array
 import Data.Array.Base
+import Data.Array.Fun
 import Data.Array.Bulk
 import Data.Array.Store
-import Data.Array.Delayed
 

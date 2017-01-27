@@ -1,0 +1,46 @@
+
+module Data.Map.Base
+export {
+        map_rep;
+        map_lookup;
+        map_foldKeys;
+}
+import Data.Maybe
+where
+
+
+-- | Generic finite-map interface.
+--
+--   A finite map represents a finite set of key-element associations, 
+--   and (hopefully) has a mechanism to lookup the element associated
+--   with a key in less-than-linear time.
+--
+data Map (rep: Data) (key: Data) (elem: Data) where
+ MkMap
+        :  rep                          -- ^ Representation.
+        -> ([a: Data]. (key -> elem -> a -> a) -> a -> a)
+                                        -- ^ Fold the key-elem associations.
+        -> (key -> Maybe elem)          -- ^ Lookup the element associated with a key.
+        -> Map rep key elem
+
+
+-- | Take the representation of a finite-map.
+map_rep (mp: Map rep key elem): rep
+ = case mp of
+        MkMap rep _ _           -> rep
+
+
+-- | Lookup the element associated with the given key.
+map_lookup (mp: Map rep key elem) (k: key): Maybe elem
+ = case mp of
+        MkMap _ _ lookup        -> lookup k
+
+
+-- | Fold all the key-element associations of a finite-map.
+map_foldKeys
+        (mp: Map rep key elem) 
+        (f: key -> elem -> a -> a)
+        (z: a)
+        : a
+ = case mp of
+        MkMap _ fold _          -> fold f z 

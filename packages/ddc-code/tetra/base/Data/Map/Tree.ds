@@ -1,13 +1,13 @@
 
-module Data.Map
+module Data.Map.Tree
 export  
-{       map_empty;  map_singleton;
-        map_null;   map_size;
-        map_lookup; map_member;
-        map_insert; map_insertWithKey;
-        map_foldr;  map_foldrWithKey; map_foldlWithKey;
-        map_fromList;
-        map_toList; map_toAscList; map_toDescList;
+{       mapTree_empty;  mapTree_singleton;
+        mapTree_null;   mapTree_size;
+        mapTree_lookup; mapTree_member;
+        mapTree_insert; mapTree_insertWithKey;
+        mapTree_foldr;  mapTree_foldrWithKey; mapTree_foldlWithKey;
+        mapTree_fromList;
+        mapTree_toList; mapTree_toAscList; mapTree_toDescList;
         show_map;
 }
 import Data.Numeric.Nat
@@ -20,7 +20,7 @@ import Class.Ord
 import Class.Show
 where
 
-
+---------------------------------------------------------------------------------------------------
 -- | A map from keys @k@ to values @a@.
 data Map (k a: Data) where
         Bin : Size -> k -> a -> Map k a -> Map k a -> Map k a
@@ -42,12 +42,12 @@ show_map {Show k} {Show a}: Show (Map k a)
 
 -- Construction -----------------------------------------------------------------------------------
 -- | O(1). The empty map.
-map_empty : Map k a
+mapTree_empty : Map k a
  = Tip
 
 
 -- | O(1). A map with a single element.
-map_singleton (k: k) (x: a) : Map k a
+mapTree_singleton (k: k) (x: a) : Map k a
  = Bin 1 k x Tip Tip
 
 
@@ -56,7 +56,7 @@ map_singleton (k: k) (x: a) : Map k a
 --
 -- > Data.Map.null (empty)           == True
 -- > Data.Map.null (singleton 1 'a') == False
-map_null (mp: Map k a): Bool
+mapTree_null (mp: Map k a): Bool
  = case mp of
         Tip             -> True
         Bin _ _ _ _ _   -> False
@@ -67,7 +67,7 @@ map_null (mp: Map k a): Bool
 -- > size empty                                   == 0
 -- > size (singleton 1 'a')                       == 1
 -- > size (fromList([(1,'a'), (2,'c'), (3,'b')])) == 3
-map_size (mp: Map k a): Size
+mapTree_size (mp: Map k a): Size
  = case mp of
         Tip             -> 0
         Bin sz _ _ _ _  -> sz
@@ -77,7 +77,7 @@ map_size (mp: Map k a): Size
 --
 -- The function will return the corresponding value as @('Just' value)@,
 -- or 'Nothing' if the key isn't in the map.
-map_lookup {Ord k} (kx: k) (mp: Map k a): Maybe a
+mapTree_lookup {Ord k} (kx: k) (mp: Map k a): Maybe a
  = go kx mp
  where  
         go _ Tip 
@@ -95,7 +95,7 @@ map_lookup {Ord k} (kx: k) (mp: Map k a): Maybe a
 -- > member 5 (fromList [(5,'a'), (3,'b')]) == True
 -- > member 1 (fromList [(5,'a'), (3,'b')]) == False
 --
-map_member {Ord k} (kx: k) (mp: Map k a): Bool
+mapTree_member {Ord k} (kx: k) (mp: Map k a): Bool
  = go kx mp
  where  
         go _ Tip 
@@ -118,18 +118,18 @@ map_member {Ord k} (kx: k) (mp: Map k a): Bool
 -- > insert 7 'x' (fromList [(5,'a'), (3,'b')]) == fromList [(3, 'b'), (5, 'a'), (7, 'x')]
 -- > insert 5 'x' empty                         == singleton 5 'x'
 --
-map_insert
+mapTree_insert
         {Ord k}
         (kx0: k) (x0: a) (mp: Map k a): Map k a
  = go kx0 x0 mp
  where
         go kx x Tip 
-         = map_singleton kx x
+         = mapTree_singleton kx x
 
         go kx x (Bin sz ky y l r)
          = case compare kx ky of
-                LT -> map_balance ky y (go kx x l) r
-                GT -> map_balance ky y l (go kx x r)
+                LT -> mapTree_balance ky y (go kx x l) r
+                GT -> mapTree_balance ky y l (go kx x r)
                 EQ -> Bin sz kx x l r
 
 
@@ -139,11 +139,11 @@ map_insert
 --   not exist in the map. If the key does exist, the function will
 --   insert the pair @(key, f new_value old_value)@.
 --
-map_insertWith
+mapTree_insertWith
         {Ord k}
         (f: a -> a -> a) (kx: k) (x: a) (mp: Map k a)
         : Map k a
- = map_insertWithKey
+ = mapTree_insertWithKey
         (\_ x' y' -> f x' y')
         kx x mp
 
@@ -155,19 +155,19 @@ map_insertWith
 --   insert the pair @(key,f key new_value old_value)@.
 --   Note that the key passed to f is the same key passed to 'insertWithKey'.
 --
-map_insertWithKey
+mapTree_insertWithKey
         {Ord k}
         (f: k -> a -> a -> a) (kx: k) (x: a) (mp: Map k a)
         : Map k a
  = go kx x mp
  where
         go kx x Tip
-         = map_singleton kx x
+         = mapTree_singleton kx x
 
         go kx x (Bin sy ky y l r)
          = case compare kx ky of
-                LT -> map_balance ky y (go kx x l) r
-                GT -> map_balance ky y l (go kx x r)
+                LT -> mapTree_balance ky y (go kx x l) r
+                GT -> mapTree_balance ky y l (go kx x r)
                 EQ -> Bin sy kx (f kx x y) l r
 
 
@@ -175,7 +175,7 @@ map_insertWithKey
 -- | /O(n)/. Fold the values in the map using the given right-associative
 --   binary operator.
 --
-map_foldr (f: a -> b -> b) (z: b) (mp: Map k a): b
+mapTree_foldr (f: a -> b -> b) (z: b) (mp: Map k a): b
  = go z mp
  where
         go z' Tip             = z'
@@ -185,7 +185,7 @@ map_foldr (f: a -> b -> b) (z: b) (mp: Map k a): b
 -- | /O(n)/. Fold the keys and values in the map using the given right-associative
 --   binary operator..
 --
-map_foldrWithKey (f: k -> a -> b -> b) (z: b) (mp: Map k a): b
+mapTree_foldrWithKey (f: k -> a -> b -> b) (z: b) (mp: Map k a): b
  = go z mp
  where
         go z' Tip              = z'
@@ -194,37 +194,37 @@ map_foldrWithKey (f: k -> a -> b -> b) (z: b) (mp: Map k a): b
 
 -- | /O(n)/. Fold the keys and values in the map using the given left-associative
 -- binary operator.
-map_foldlWithKey (f: a -> k -> b -> a) (z: a) (mp: Map k b): a
+mapTree_foldlWithKey (f: a -> k -> b -> a) (z: a) (mp: Map k b): a
  = go z mp
  where  go z' Tip              = z'
         go z' (Bin _ kx x l r) = go (f (go z' l) kx x) r
 
 
 -- Conversion -------------------------------------------------------------------------------------
-map_fromList 
+mapTree_fromList 
         {Ord k}
         (xx: List (Tup2 k a)) : Map k a
  = foldl (λ  mp tp
           -> case tp of
-                 T2 kx x -> map_insert kx x mp)
-         map_empty xx
+                 T2 kx x -> mapTree_insert kx x mp)
+         mapTree_empty xx
 
 
 -- | /O(n)/. Convert the map to a list of key\/value pairs. 
-map_toList (mp: Map k a): List (Tup2 k a)
-        = map_toAscList mp
+mapTree_toList (mp: Map k a): List (Tup2 k a)
+        = mapTree_toAscList mp
 
 
 -- | /O(n)/. Convert the map to a list of key\/value pairs where the
 --   keys are in ascending order. 
-map_toAscList (mp: Map k a): List (Tup2 k a)
-        = map_foldrWithKey (λk x xs -> Cons (T2 k x) xs) Nil mp
+mapTree_toAscList (mp: Map k a): List (Tup2 k a)
+        = mapTree_foldrWithKey (λk x xs -> Cons (T2 k x) xs) Nil mp
 
 
 -- | /O(n)/. Convert the map to a list of key\/value pairs where the
 --   keys are in descending order.
-map_toDescList (mp: Map k a): List (Tup2 k a)
-        = map_foldlWithKey (λxs k x -> Cons (T2 k x) xs) Nil mp
+mapTree_toDescList (mp: Map k a): List (Tup2 k a)
+        = mapTree_foldlWithKey (λxs k x -> Cons (T2 k x) xs) Nil mp
 
 
 ---------------------------------------------------------------------------------------------------
@@ -269,9 +269,9 @@ delta   = 2
 ratio   = 5
 
 
-map_balance (k: k) (x: a) (l: Map k a) (r: Map k a): Map k a
- = let  sizeL = map_size l in
-   let  sizeR = map_size r in
+mapTree_balance (k: k) (x: a) (l: Map k a) (r: Map k a): Map k a
+ = let  sizeL = mapTree_size l in
+   let  sizeR = mapTree_size r in
    let  sizeX = sizeL + sizeR + 1 
    in   match
          | sizeL + sizeR <= 1    = Bin sizeX k x l r
@@ -283,14 +283,14 @@ map_balance (k: k) (x: a) (l: Map k a) (r: Map k a): Map k a
 rotateL (k: k) (x: a)
         (l: Map k a) (r@(Bin _ _ _ ly ry): Map k a)
         : Map k a
- | map_size ly < ratio*map_size ry = singleL k x l r
+ | mapTree_size ly < ratio*mapTree_size ry = singleL k x l r
  | otherwise                       = doubleL k x l r
 
 
 rotateR (k: k) (x: a)
         (l@(Bin _ _ _ ly ry): Map k a) (r: Map k a)
         : Map k a
- | map_size ry < ratio*map_size ly = singleR k x l r
+ | mapTree_size ry < ratio*mapTree_size ly = singleR k x l r
  | otherwise                       = doubleR k x l r
 
 
@@ -313,5 +313,5 @@ doubleR (k1: k) (x1: a) (tL: Map k a) (t4: Map k a): Map k a
 
 -- | The bin constructor maintains the size of the tree
 bin (k: k) (x: a) (l: Map k a) (r: Map k a): Map k a
- = Bin (map_size l + map_size r + 1) k x l r
+ = Bin (mapTree_size l + mapTree_size r + 1) k x l r
 

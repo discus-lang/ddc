@@ -1,0 +1,110 @@
+
+module Data.Map.Fun
+export {
+        mapFun_singleton;
+        mapFun_from;
+        mapFun_fromIndexed;
+}
+import Data.Map.Base
+import Data.Array.Fun
+import Class.Eq
+where
+
+
+-------------------------------------------------------------------------------
+-- | Construct a singleton map.
+mapFun_singleton {Eq key} (k: key) (e: elem): Map Fun key elem
+ = MkMap Fun (mapFun_singleton_fold' k e) lookup'
+ where
+        lookup' ix
+         | ix == k      = Just e
+         | otherwise    = Nothing
+
+
+mapFun_singleton_fold'
+        [acc key elem: Data]
+        (k: key) (e: elem)
+        (f: key -> elem -> acc -> acc) (z: acc): acc
+ = f k e z
+
+
+-------------------------------------------------------------------------------
+-- | Contruct a map from functions that fold the key-element associations
+--   and a function that looks up the element associated with a key.
+mapFun_from 
+        (foldKeys: [a: Data]. (key -> elem -> a -> a) -> a -> a)
+        (lookup:   key -> Maybe elem)
+        : Map Fun key elem
+ = MkMap
+        Fun
+        foldKeys lookup
+
+
+-------------------------------------------------------------------------------
+-- | Construct a map from a natural number giving its size, 
+--   and a function to produce element associated with each index.
+mapFun_fromIndexed
+        (size:    Nat)
+        (lookup:  Nat -> elem)
+        : Map Fun Nat elem
+ = MkMap Fun (mapFun_fromIndexed_fold' size lookup) lookup'
+ where
+        lookup' ix
+         | ix >= size   = Nothing
+         | otherwise    = Just (lookup ix)
+
+
+-- TODO: If shift this into the body of map_fromIndexed the 
+-- lambda lifted breaks.
+mapFun_fromIndexed_fold'
+        [acc elem: Data] 
+        (size:   Nat)
+        (lookup: Nat -> elem) 
+        (f: Nat -> elem -> acc -> acc) (z: acc): acc
+ = go 0 z
+ where  go ix acc
+          | ix >= size = acc
+          | otherwise  = go (ix + 1) (f ix (lookup ix) acc)
+
+
+-------------------------------------------------------------------------------
+-- | Form the left-biased union of two maps.
+--
+--   When indexing into the result map we try the first original map,
+--   then the second.
+--
+mapFun_union 
+        (mp1: Map rep1 key elem)
+        (mp2: Map rep2 key elem)
+        : Map Fun key elem
+ = MkMap Fun (mapFun_union_fold' mp1 mp2) lookup'
+ where
+        lookup' k
+         = case map_lookup mp1 k of
+                Just x' -> Just x'
+                Nothing -> map_lookup mp2 k
+
+mapFun_union_fold' 
+        [rep1 rep2 acc key elem: Data]
+        (mp1: Map rep1 key elem)
+        (mp2: Map rep2 key elem)
+        (f: key -> elem -> acc -> acc) (z: acc): acc
+ = do
+        -- Accumulate all the associations from the first map.
+        acc1    = map_foldKeys mp1 f z
+
+        -- Accumulate the remaining associations from the second map.
+        -- The map is left-biased, if there is an association for a
+        -- particular key in the first map we don't want to include
+        -- one that might exist in the second.
+        acc2    = map_foldKeys mp2 
+                   (\k e acc
+                    -> case map_lookup mp1 k of
+                         Nothing        -> f k e acc
+                         Just _         -> acc)
+                   z
+
+        acc2
+
+
+

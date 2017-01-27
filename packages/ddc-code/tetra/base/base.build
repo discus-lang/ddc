@@ -29,13 +29,13 @@ library
         Data.Text.Show
         Data.Text
         Class.Show
+        Data.Ref
         Data.Array.Base
-        Data.Array.Delayed
+        Data.Array.Fun
         Data.Array.Store
         Data.Array.Bulk
         Data.Array
-        Data.Ref
-        Data.Map
+        Data.Map.Tree
         Data.Stream
         Math.Combinations
         System.IO.Console
