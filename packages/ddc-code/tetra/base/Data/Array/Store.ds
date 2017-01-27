@@ -7,7 +7,7 @@ export {
         arrayStore_write;
 }
 import Data.Array.Base
-import Data.Array.Delayed
+import Data.Array.Fun
 import Data.Numeric.Nat
 
 
@@ -52,10 +52,10 @@ arrayStore_alloc
                         else def)
 
 
--- | Compute the contents of a delayed array, writing it into the store.
+-- | Compute the contents of a functional array, writing it into the store.
 arrayStore_compute
         [r: Region] [a: Data]
-        (arr: Array Delayed a)
+        (arr: Array Fun a)
         : S (Alloc r + Write r)
             (Array (Store r a) (S (Read r) a))
  = do
@@ -64,7 +64,7 @@ arrayStore_compute
         arr'
 
  where  fill    (dst: Array (Store r a) (S (Read r) a))
-                (src: Array Delayed a)
+                (src: Array Fun a)
                 (ix:  Nat)
                 : S (Write r) Unit
          | ix >= array_size dst

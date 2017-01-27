@@ -5,6 +5,7 @@ where
 
 type Bool = Bool#
 
+
 -- | Boolean NOT.
 not (x: Bool): Bool
  = if x then False  

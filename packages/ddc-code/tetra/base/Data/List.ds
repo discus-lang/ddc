@@ -3,6 +3,7 @@ module Data.List
 export
 {       singleton;  replicate;
         enumFromTo; append; concat;
+        unfold; generate; intersperse;
         length;
         head;
         tail; tail1;
@@ -85,6 +86,19 @@ generate (len: Nat) (f: Nat -> a): List a
  $ (\ix -> if ix >= len 
                 then Nothing
                 else Just (T2 (f ix) (ix + 1)))
+
+
+-- | Intersperse the given element between all elements of a list.
+intersperse (c: a) (xx: List a): List a
+ = case xx of
+        Nil
+         -> Nil
+
+        Cons x Nil
+         -> Cons x Nil
+
+        Cons x (Cons y xs)
+         -> Cons x (Cons c (intersperse c (Cons y xs)))
 
 
 -- Projections ----------------------------------------------------------------

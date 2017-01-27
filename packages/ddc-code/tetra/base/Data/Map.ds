@@ -1,0 +1,27 @@
+
+module Data.Map
+export {show_map}
+import Data.Map.Base
+import Data.Map.Fun
+import Data.Map.Tree
+import Data.List
+import Class.Show
+where
+
+
+-- | Show instance for Generic Finite Maps.
+show_map {Show key} {Show elem}: Show (Map rep key elem)
+ = Show sh
+ where
+        sh mp
+         | map_size mp == 0
+         = "(_)"
+
+         | otherwise
+         = parens
+         $ foldl (%) ""
+         $ intersperse ", "
+         $ reverse
+         $ map_foldKeys mp (\k e x -> Cons (show k %% ":=" %% show e) x) Nil
+
+

@@ -35,10 +35,14 @@ library
         Data.Array.Store
         Data.Array.Bulk
         Data.Array
+        Data.Map.Base
+        Data.Map.Fun
         Data.Map.Tree
+        Data.Map
         Data.Stream
         Math.Combinations
-        System.IO.Console
         System.Runtime
+        System.Env
+        System.IO.Console
         System.Posix.Stdlib
         System.Posix.Unistd

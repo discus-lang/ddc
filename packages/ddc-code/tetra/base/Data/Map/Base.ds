@@ -4,6 +4,7 @@ export {
         map_rep;
         map_lookup;
         map_foldKeys;
+        map_size;
 }
 import Data.Maybe
 where
@@ -44,3 +45,10 @@ map_foldKeys
         : a
  = case mp of
         MkMap _ fold _          -> fold f z 
+
+
+-- | Count the number of associations in a map.
+map_size 
+        (mp: Map rep key elem): Nat
+ = map_foldKeys mp (\k e n -> n + 1) 0
+
