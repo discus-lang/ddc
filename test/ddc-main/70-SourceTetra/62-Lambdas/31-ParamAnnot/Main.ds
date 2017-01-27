@@ -19,15 +19,15 @@ data Ord (k: Data) where
 
 type Size = Nat
 
-data Map (k a: Data) where
-        Bin : Size -> k -> a -> Map k a -> Map k a -> Map k a
-        Tip : Map k a
+data TestMap (k a: Data) where
+        Bin2 : Size -> k -> a -> TestMap k a -> TestMap k a -> TestMap k a
+        Tip2 : TestMap k a
 
 map_insertWith
         (ord: Ord k)
         (f: a -> a -> a)
-        (kx: k) (x: a) (mp: Map k a)
-        : Map k a
+        (kx: k) (x: a) (mp: TestMap k a)
+        : TestMap k a
  = map_insertWithKey ord
         (\_ x' y' -> f x' y')
         kx x mp
@@ -35,8 +35,8 @@ map_insertWith
 map_insertWithKey
         ((Ord compare): Ord k)
         (f: k -> a -> a -> a)
-        (kx: k) (x: a) (mp: Map k a)
-        : Map k a
+        (kx: k) (x: a) (mp: TestMap k a)
+        : TestMap k a
  = mp
 
 main ()

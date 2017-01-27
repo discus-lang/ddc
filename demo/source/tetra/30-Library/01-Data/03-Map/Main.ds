@@ -15,8 +15,8 @@ main ()
                  (Cons (T2 10 "blue") 
                  (Cons (T2 22 "purple") Nil)))
 
-        mp      = map_fromList list1
-        list1'  = map_toList   mp
+        mp      = mapTree_fromList list1
+        list1'  = mapTree_toList   mp
 
         -- Show the lists.
         writel $ show list1

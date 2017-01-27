@@ -18,18 +18,18 @@ data Ord (k: Data) where
 
 type Size = Nat
 
-data Map (k a: Data) where
-        Bin : Size -> k -> a -> Map k a -> Map k a -> Map k a
-        Tip : Map k a
+data TestMap (k a: Data) where
+        Bin2 : Size -> k -> a -> TestMap k a -> TestMap k a -> TestMap k a
+        Tip2 : TestMap k a
 
 
-map_lookup ((Ord compare): Ord k) (kx: k) (mp: Map k a): Maybe a
+map_lookup ((Ord compare): Ord k) (kx: k) (mp: TestMap k a): Maybe a
  = go kx mp
  where  
-        go _ Tip 
+        go _ Tip2 
          = Nothing [a]
 
-        go k (Bin _ kx x l r)
+        go k (Bin2 _ kx x l r)
          = case compare k kx of
                 LT -> go k l
                 GT -> go k r
