@@ -1,0 +1,102 @@
+
+module Main.Args
+export { show_ArgError; mainArgs_load; mainArgs_parse }
+import Data.List
+import Data.Map
+import Data.Either
+import Data.Tuple
+import System.Posix.Stdlib
+import System.Env
+where
+
+
+-- | Describes arguments to an executable.
+data Arg (mode: Data) where
+
+        ArgNat  :  Text                         -- name
+                -> Text                         -- description
+                -> (Nat -> mode -> mode)        -- fold with argument value
+                -> Arg mode
+
+
+-- | Things that can go wrong when parsing arguments.
+data ArgError where
+        -- | Unrecognised argument.
+        ArgUnrecognised         : Text  -> ArgError
+
+        -- | Missing argument value.
+        ArgMissing              : Text  -> ArgError
+
+        -- | Cannot parse argument value.
+        ArgCannotParse          : Text  -> Text -> ArgError
+
+
+-- | Show dictionary for ArgError.
+show_ArgError: Show ArgError
+ = Show sh
+ where 
+        sh (ArgUnrecognised name)
+         = parens $ "ArgUnrecognised" %% show name
+
+        sh (ArgMissing      name)
+         = parens $ "ArgMissing"      %% show name
+
+        sh (ArgCannotParse  name val)
+         = parens $ "ArgCannotParse"  %% show name %% show val
+
+
+-- | Get the name of an argument.
+mainArgs_nameOfArg (arg: Arg mode): Text
+ = case arg of
+        ArgNat name _ _  -> name
+
+
+-- | Load the command-line arguments from the environemnt into the given mode.
+mainArgs_load
+        (m:    mode)
+        (defs: List (Arg mode))
+        : S (Env + Process + Console) mode
+ = case mainArgs_parse (run env_getArgs) m defs of
+        Right m'        -> m'
+
+        Left  err
+         -> do  writel (show err)
+                exit 0
+                m
+
+
+-- | Parse the given command-line arguments.
+mainArgs_parse
+        (args: Map  rep Nat Text) 
+        (z:    mode) 
+        (defs: List (Arg mode))
+        : Either ArgError mode
+ = go_name z (map snd $ map_toList args)
+ where 
+        -- TODO: can't separate these by '$', need to instantiate with new existentials.
+        decls_map
+         = mapFun_fromList 
+            (map (\arg -> T2 (mainArgs_nameOfArg arg) arg) defs)
+
+
+        -- Try to match the argument name.
+        go_name mode Nil
+         = Right mode
+
+        go_name mode (Cons a as')
+         = case map_lookup decls_map a of
+                Nothing   -> Left (ArgUnrecognised a)
+                Just decl -> go_decl mode decl as'
+
+
+        -- Try to parse the argument value.
+        go_decl mode (ArgNat name _ _)    Nil 
+         = Left (ArgMissing name)
+
+        go_decl mode (ArgNat name desc f) (Cons arg as') 
+         | Just nat     <- readNat arg
+         = go_name (f nat mode) as'
+
+         | otherwise
+         = Left (ArgCannotParse name arg)
+

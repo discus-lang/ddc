@@ -5,8 +5,11 @@ export {
         map_lookup;
         map_foldKeys;
         map_size;
+        map_toList;
 }
 import Data.Maybe
+import Data.List
+import Data.Tuple
 where
 
 
@@ -52,3 +55,8 @@ map_size
         (mp: Map rep key elem): Nat
  = map_foldKeys mp (\k e n -> n + 1) 0
 
+
+-- | Yield a list of key-element associations from a map.
+map_toList (mp: Map rep key elem): List (Tup2 key elem)
+ = reverse
+ $ map_foldKeys mp (\k e xs -> Cons (T2 k e) xs) Nil

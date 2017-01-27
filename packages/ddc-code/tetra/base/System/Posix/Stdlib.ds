@@ -12,7 +12,7 @@ import foreign abstract type
  Process : Effect
 
 import foreign c value
- exit    : Int#      -> S Process Void#
+ exit    : Nat#      -> S Process Void#
  atoi    : Nat#      -> Nat#
 
 import foreign c value

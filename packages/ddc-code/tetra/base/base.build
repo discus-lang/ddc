@@ -21,6 +21,7 @@ library
         Class.Monad
         Data.Function
         Data.Maybe
+        Data.Either
         Data.List
         Data.Text.Char
         Data.Text.Base
@@ -47,3 +48,4 @@ library
         System.Posix.Stdlib
         System.Posix.Stdio
         System.Posix.Unistd
+        Main.Args

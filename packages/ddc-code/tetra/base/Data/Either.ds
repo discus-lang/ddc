@@ -1,0 +1,31 @@
+
+module Data.Either
+export { either; isLeft; isRight }
+where
+
+
+-- | The Either type represents two possibilities. 
+data Either (a b: Data) where
+        Left    : a -> Either a b
+        Right   : b -> Either a b
+
+
+-- | Case analysis on the Either type.
+either (left: a -> c) (right: b -> c) (e: Either a b): c
+ = case e of
+        Left  xa        -> left  xa
+        Right xb        -> right xb
+
+
+-- | Return True if the given value is Left, otherwise return False.
+isLeft (e: Either a b): Bool
+ = case e of
+        Left _          -> True
+        _               -> False
+
+
+-- | Return True if the given value is Right, otherwise return False
+isRight (e: Either a b): Bool
+ = case e of
+        Right _         -> True
+        _               -> False

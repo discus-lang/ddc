@@ -4,6 +4,7 @@ export {
         mapFun_singleton;
         mapFun_from;
         mapFun_fromIndexed;
+        mapFun_fromList;
 }
 import Data.Map.Base
 import Data.Array.Fun
@@ -65,6 +66,30 @@ mapFun_fromIndexed_fold'
  where  go ix acc
           | ix >= size = acc
           | otherwise  = go (ix + 1) (f ix (lookup ix) acc)
+
+
+-------------------------------------------------------------------------------
+-- | Construct a Map from a list of associations.
+mapFun_fromList 
+        {Eq key}
+        (list0:  List (Tup2 key elem))
+        : Map Fun key elem
+ = MkMap Fun (mapFun_fromList_fold' list0) (lookup' list0)
+ where
+        lookup' Nil ix  = Nothing
+        lookup' (Cons (T2 k e) xs) ix
+         | k == ix      = Just e
+         | otherwise    = lookup' xs ix
+
+
+mapFun_fromList_fold' 
+        [acc key elem: Data]
+        (list0: List (Tup2 key elem))
+        (f: key -> elem -> acc -> acc) (z: acc): acc
+ = go z list0
+ where  
+        go acc Nil                = acc
+        go acc (Cons (T2 k e) xs) = go (f k e acc) xs
 
 
 -------------------------------------------------------------------------------

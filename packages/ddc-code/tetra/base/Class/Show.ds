@@ -1,12 +1,18 @@
 
 module Class.Show
 export
-{       show; show_bool; show_nat;
-        show_text;
-        show_tup2;
-        show_list;
+{       show;
+        show_Bool;
+        show_Nat;
+        show_Text;
+        show_Tup2;
+        show_Maybe;
+        show_Either;
+        show_List;
 }
 import Data.Text
+import Data.Maybe
+import Data.Either
 import Data.List
 where
 
@@ -24,31 +30,47 @@ show {(Show sh): Show a} (x: a): Text
 -- Dictionaries for primitive types.
 
 -- | Show dictionary for Bool.
-show_bool: Show Bool
+show_Bool: Show Bool
   = Show showBool
 
 
 -- | Show dictionary for Nat.
-show_nat: Show Nat
+show_Nat: Show Nat
  = Show showNat
 
 
 -- | Show dictionary for Text.
 --   ISSUE: #381: Escape non-printable characters in base Show library.
-show_text: Show Text
+show_Text: Show Text
  = Show sh
  where  sh tx           = "\"" % tx % "\""
 
 
 -- | Show dictionary for Tup2.
-show_tup2 {Show a} {Show b}: Show (Tup2 a b)
+show_Tup2 {Show a} {Show b}: Show (Tup2 a b)
  = Show sh
  where  
         sh (T2 x y)     = parens $ "T2" %% show x %% show y
 
 
+-- | Show dictionary for Maybe.
+show_Maybe {Show a}: Show (Maybe a)
+ = Show sh
+ where
+        sh Nothing      = "Nothing"
+        sh (Just x)     = parens $ "Just" %% show x
+
+
+-- | Show dictionary for Either.
+show_Either {Show a} {Show b}: Show (Either a b)
+ = Show sh
+ where
+        sh (Left  x)    = parens $ "Left"  %% show x
+        sh (Right x)    = parens $ "Right" %% show x
+
+
 -- | Show dictionary for List.
-show_list {Show a}: Show (List a)
+show_List {Show a}: Show (List a)
  = Show sh
  where  
         sh Nil          = "Nil"

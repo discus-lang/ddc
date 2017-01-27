@@ -5,6 +5,7 @@ import Data.Array
 import Data.Function
 import Data.List
 import Data.Maybe
+import Data.Either
 import Data.Ref
 import Data.Text
 import Data.Tuple
