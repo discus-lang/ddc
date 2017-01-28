@@ -18,8 +18,9 @@ library
         Class.Functor
         Class.Applicative
         Class.Monad
-        Data.Numeric.Word
+        Data.Numeric.Int
         Data.Numeric.Nat
+        Data.Numeric.Word
         Data.Function
         Data.Maybe
         Data.Either

@@ -11,6 +11,8 @@ import Data.Tuple
 import Class.Numeric
 where
 
+
+-- | Default Nat type is an alias for the primitive Nat type.
 type Nat = Nat#
 
 

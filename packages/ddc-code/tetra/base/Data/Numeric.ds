@@ -1,0 +1,7 @@
+
+module Data.Numeric
+import Data.Numeric.Bool
+import Data.Numeric.Int
+import Data.Numeric.Nat
+import Data.Numeric.Word
+
