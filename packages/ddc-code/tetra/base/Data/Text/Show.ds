@@ -10,7 +10,7 @@ export
         showHexNat;     digitHex;
         showBaseNat;
 }
-import Data.Numeric.Word
+import Data.Numeric.Word8
 import Data.Text.Base
 import Data.Text.Char
 import Data.Text.Operator

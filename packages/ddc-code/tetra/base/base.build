@@ -20,7 +20,10 @@ library
         Class.Monad
         Data.Numeric.Int
         Data.Numeric.Nat
-        Data.Numeric.Word
+        Data.Numeric.Word8
+        Data.Numeric.Word16
+        Data.Numeric.Word32
+        Data.Numeric.Word64
         Data.Function
         Data.Maybe
         Data.Either

@@ -9,6 +9,7 @@ import Class.Functor
 where
 
 
+-------------------------------------------------------------------------------
 -- A functor with application.
 data Applicative (f: Data -> Data) where
         Applicative
@@ -43,6 +44,7 @@ ap      (Applicative _ _ ap') xfab xfa
  = ap' xfab xfa
 
 
+-------------------------------------------------------------------------------
 -- Lifting functions.
 liftA   (dapp: Applicative f) (f: a -> b) (xa: f a): f b
  = ap dapp (pure dapp f) xa

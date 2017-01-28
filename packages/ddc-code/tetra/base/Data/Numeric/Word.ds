@@ -1,9 +1,0 @@
-
-module Data.Numeric.Word
-where
-
-type Word8      = Word8#
-type Word16     = Word16#
-type Word32     = Word32#
-type Word64     = Word64#
-

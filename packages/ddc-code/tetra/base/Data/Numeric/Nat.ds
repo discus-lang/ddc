@@ -5,9 +5,7 @@ export
         add_Nat; sub_Nat; mul_Nat; div_Nat; rem_Nat;
 
         shl; shr; band; bor; bxor;
-        divMod;
 }
-import Data.Tuple
 import Class.Numeric
 where
 
@@ -67,9 +65,4 @@ shr  x y        = shr#  [Nat#] x y
 band x y        = band# [Nat#] x y
 bor  x y        = bor#  [Nat#] x y
 bxor x y        = bxor# [Nat#] x y 
-
-
-divMod (n m: Nat): Tup2 Nat Nat
- = T2 (div n m) (rem n m)
-
 

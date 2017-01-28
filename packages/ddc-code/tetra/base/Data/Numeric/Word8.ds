@@ -1,0 +1,56 @@
+
+module Data.Numeric.Word8
+export
+{       eq_Word8;  ord_Word8;
+        add_Word8; sub_Word8; mul_Word8; div_Word8; rem_Word8
+}
+import Class.Numeric
+where
+
+
+-- | Default Word8 type is an alias for the primitive type.
+type Word8      = Word8#
+
+
+-- | Eq dictionary for Word8.
+eq_Word8:  Eq Word8
+ = Eq eq' neq'
+ where  eq'  a b        = eq#  [Word8#] a b
+        neq' a b        = neq# [Word8#] a b
+
+
+-- | Ord dictionary for Word8.
+ord_Word8:  Ord Word8
+ = Ord  compare'
+ where  compare' n1 n2
+         | gt# [Word8#] n1 n2     = GT
+         | lt# [Word8#] n1 n2     = LT
+         | otherwise            = EQ
+
+
+-- | Add dictionary for Word8.
+add_Word8: Add Word8
+ = Add (\x y -> add# [Word8#] x y)
+
+
+-- | Sub dictionary for Nat.
+sub_Word8: Sub Word8 
+ = Sub (\x y -> if gt# [Word8#] y x
+                 then 0w8
+                 else sub# [Word8#] x y)
+
+
+-- | Mul dictionary for Word8.
+mul_Word8: Mul Word8 
+ = Mul (\x y -> mul# [Word8#] x y)
+
+
+-- | Div dictionary for Word8.
+div_Word8: Div Word8 
+ = Div (\x y -> div# [Word8#] x y)
+
+
+-- | Rem dictionary for Word8.
+rem_Word8: Rem Word8
+ = Rem (\x y -> rem# [Word8#] x y)
+

@@ -2,10 +2,15 @@
 -- Defines numeric type classes and the names used by the Source Tetra
 -- desugarer to implement infix operators.
 module Class.Numeric
-export {add; sub; mul; div; rem}
+export 
+{       add; sub; mul; div; rem;
+        divMod
+}
+import Data.Tuple
 where
 
 
+-------------------------------------------------------------------------------
 -- | Dictionary for addition.
 data Add (a: Data) where
  Add : (a -> a -> a) -> Add a
@@ -44,4 +49,9 @@ data Rem (a: Data) where
 
 rem {(Rem rem'): Rem a} (x y: a): a
  = rem' x y
+
+
+-------------------------------------------------------------------------------
+divMod {Div a} {Rem a} (n m: a): Tup2 a a
+ = T2 (div n m) (rem n m)
 

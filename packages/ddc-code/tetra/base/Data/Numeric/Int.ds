@@ -4,17 +4,14 @@ export
 {       eq_Int;  ord_Int;
         add_Int; sub_Int; mul_Int; div_Int; rem_Int;
 }
-import Data.Tuple
 import Class.Numeric
 where
 
 
--------------------------------------------------------------------------------
 -- | Default Int type is an an alias for the primitive integer type.
 type Int = Int#
 
 
--------------------------------------------------------------------------------
 -- | Eq dictionary for Int.
 eq_Int:  Eq Int
  = Eq eq' neq'

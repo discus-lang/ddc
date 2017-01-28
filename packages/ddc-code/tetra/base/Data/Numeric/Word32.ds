@@ -1,0 +1,56 @@
+
+module Data.Numeric.Word32
+export
+{       eq_Word32;  ord_Word32;
+        add_Word32; sub_Word32; mul_Word32; div_Word32; rem_Word32
+}
+import Class.Numeric
+where
+
+
+-- | Default Word32 type is an alias for the primitive type.
+type Word32      = Word32#
+
+
+-- | Eq dictionary for Word32.
+eq_Word32:  Eq Word32
+ = Eq eq' neq'
+ where  eq'  a b        = eq#  [Word32#] a b
+        neq' a b        = neq# [Word32#] a b
+
+
+-- | Ord dictionary for Word32.
+ord_Word32:  Ord Word32
+ = Ord  compare'
+ where  compare' n1 n2
+         | gt# [Word32#] n1 n2     = GT
+         | lt# [Word32#] n1 n2     = LT
+         | otherwise            = EQ
+
+
+-- | Add dictionary for Word32.
+add_Word32: Add Word32
+ = Add (\x y -> add# [Word32#] x y)
+
+
+-- | Sub dictionary for Nat.
+sub_Word32: Sub Word32 
+ = Sub (\x y -> if gt# [Word32#] y x
+                 then 0w32
+                 else sub# [Word32#] x y)
+
+
+-- | Mul dictionary for Word32.
+mul_Word32: Mul Word32 
+ = Mul (\x y -> mul# [Word32#] x y)
+
+
+-- | Div dictionary for Word32.
+div_Word32: Div Word32 
+ = Div (\x y -> div# [Word32#] x y)
+
+
+-- | Rem dictionary for Word32.
+rem_Word32: Rem Word32
+ = Rem (\x y -> rem# [Word32#] x y)
+

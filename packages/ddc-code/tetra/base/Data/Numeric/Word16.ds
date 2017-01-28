@@ -1,0 +1,56 @@
+
+module Data.Numeric.Word16
+export
+{       eq_Word16;  ord_Word16;
+        add_Word16; sub_Word16; mul_Word16; div_Word16; rem_Word16
+}
+import Class.Numeric
+where
+
+
+-- | Default Word16 type is an alias for the primitive type.
+type Word16      = Word16#
+
+
+-- | Eq dictionary for Word16.
+eq_Word16:  Eq Word16
+ = Eq eq' neq'
+ where  eq'  a b        = eq#  [Word16#] a b
+        neq' a b        = neq# [Word16#] a b
+
+
+-- | Ord dictionary for Word16.
+ord_Word16:  Ord Word16
+ = Ord  compare'
+ where  compare' n1 n2
+         | gt# [Word16#] n1 n2     = GT
+         | lt# [Word16#] n1 n2     = LT
+         | otherwise            = EQ
+
+
+-- | Add dictionary for Word16.
+add_Word16: Add Word16
+ = Add (\x y -> add# [Word16#] x y)
+
+
+-- | Sub dictionary for Nat.
+sub_Word16: Sub Word16 
+ = Sub (\x y -> if gt# [Word16#] y x
+                 then 0w16
+                 else sub# [Word16#] x y)
+
+
+-- | Mul dictionary for Word16.
+mul_Word16: Mul Word16 
+ = Mul (\x y -> mul# [Word16#] x y)
+
+
+-- | Div dictionary for Word16.
+div_Word16: Div Word16 
+ = Div (\x y -> div# [Word16#] x y)
+
+
+-- | Rem dictionary for Word16.
+rem_Word16: Rem Word16
+ = Rem (\x y -> rem# [Word16#] x y)
+

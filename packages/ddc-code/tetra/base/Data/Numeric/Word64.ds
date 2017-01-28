@@ -1,0 +1,56 @@
+
+module Data.Numeric.Word64
+export
+{       eq_Word64;  ord_Word64;
+        add_Word64; sub_Word64; mul_Word64; div_Word64; rem_Word64
+}
+import Class.Numeric
+where
+
+
+-- | Default Word64 type is an alias for the primitive type.
+type Word64      = Word64#
+
+
+-- | Eq dictionary for Word64.
+eq_Word64:  Eq Word64
+ = Eq eq' neq'
+ where  eq'  a b        = eq#  [Word64#] a b
+        neq' a b        = neq# [Word64#] a b
+
+
+-- | Ord dictionary for Word64.
+ord_Word64:  Ord Word64
+ = Ord  compare'
+ where  compare' n1 n2
+         | gt# [Word64#] n1 n2     = GT
+         | lt# [Word64#] n1 n2     = LT
+         | otherwise            = EQ
+
+
+-- | Add dictionary for Word64.
+add_Word64: Add Word64
+ = Add (\x y -> add# [Word64#] x y)
+
+
+-- | Sub dictionary for Nat.
+sub_Word64: Sub Word64 
+ = Sub (\x y -> if gt# [Word64#] y x
+                 then 0w64
+                 else sub# [Word64#] x y)
+
+
+-- | Mul dictionary for Word64.
+mul_Word64: Mul Word64 
+ = Mul (\x y -> mul# [Word64#] x y)
+
+
+-- | Div dictionary for Word64.
+div_Word64: Div Word64 
+ = Div (\x y -> div# [Word64#] x y)
+
+
+-- | Rem dictionary for Word64.
+rem_Word64: Rem Word64
+ = Rem (\x y -> rem# [Word64#] x y)
+
