@@ -15,6 +15,7 @@ library
         Class.Eq
         Class.Ord
         Class.Numeric
+        Class.Bits
         Class.Functor
         Class.Applicative
         Class.Monad

@@ -3,10 +3,10 @@ module Data.Numeric.Nat
 export  
 {       eq_Nat;  ord_Nat;
         add_Nat; sub_Nat; mul_Nat; div_Nat; rem_Nat;
-
-        shl; shr; band; bor; bxor;
+        bits_Nat;
 }
 import Class.Numeric
+import Class.Bits
 where
 
 
@@ -14,7 +14,6 @@ where
 type Nat = Nat#
 
 
--------------------------------------------------------------------------------
 -- | Eq dictionary for Nat.
 eq_Nat:  Eq Nat
  = Eq eq' neq'
@@ -58,11 +57,10 @@ rem_Nat: Rem Nat
  = Rem (\x y -> rem# [Nat#] x y)
 
 
--------------------------------------------------------------------------------
--- Aliases for other arithmetic functions
-shl  x y        = shl#  [Nat#] x y
-shr  x y        = shr#  [Nat#] x y
-band x y        = band# [Nat#] x y
-bor  x y        = bor#  [Nat#] x y
-bxor x y        = bxor# [Nat#] x y 
-
+-- | Bits dictionary for Nat.
+bits_Nat: Bits Nat
+ = Bits (\x y -> shl#  [Nat#] x y)
+        (\x y -> shr#  [Nat#] x y)
+        (\x y -> band# [Nat#] x y)
+        (\x y -> bor#  [Nat#] x y)
+        (\x y -> bxor# [Nat#] x y)

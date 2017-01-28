@@ -2,7 +2,8 @@
 module Data.Numeric.Word16
 export
 {       eq_Word16;  ord_Word16;
-        add_Word16; sub_Word16; mul_Word16; div_Word16; rem_Word16
+        add_Word16; sub_Word16; mul_Word16; div_Word16; rem_Word16;
+        bits_Word16;
 }
 import Class.Numeric
 where
@@ -54,3 +55,11 @@ div_Word16: Div Word16
 rem_Word16: Rem Word16
  = Rem (\x y -> rem# [Word16#] x y)
 
+
+-- | Bits dictionary for Word16.
+bits_Word16: Bits Word16
+ = Bits (\x y -> shl#  [Word16#] x y)
+        (\x y -> shr#  [Word16#] x y)
+        (\x y -> band# [Word16#] x y)
+        (\x y -> bor#  [Word16#] x y)
+        (\x y -> bxor# [Word16#] x y)

@@ -2,7 +2,8 @@
 module Data.Numeric.Word8
 export
 {       eq_Word8;  ord_Word8;
-        add_Word8; sub_Word8; mul_Word8; div_Word8; rem_Word8
+        add_Word8; sub_Word8; mul_Word8; div_Word8; rem_Word8;
+        bits_Word8;
 }
 import Class.Numeric
 where
@@ -53,4 +54,13 @@ div_Word8: Div Word8
 -- | Rem dictionary for Word8.
 rem_Word8: Rem Word8
  = Rem (\x y -> rem# [Word8#] x y)
+
+
+-- | Bits dictionary for Word8.
+bits_Word8: Bits Word8
+ = Bits (\x y -> shl#  [Word8#] x y)
+        (\x y -> shr#  [Word8#] x y)
+        (\x y -> band# [Word8#] x y)
+        (\x y -> bor#  [Word8#] x y)
+        (\x y -> bxor# [Word8#] x y)
 

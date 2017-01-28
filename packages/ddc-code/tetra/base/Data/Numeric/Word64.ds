@@ -2,7 +2,8 @@
 module Data.Numeric.Word64
 export
 {       eq_Word64;  ord_Word64;
-        add_Word64; sub_Word64; mul_Word64; div_Word64; rem_Word64
+        add_Word64; sub_Word64; mul_Word64; div_Word64; rem_Word64;
+        bits_Word64;
 }
 import Class.Numeric
 where
@@ -53,4 +54,13 @@ div_Word64: Div Word64
 -- | Rem dictionary for Word64.
 rem_Word64: Rem Word64
  = Rem (\x y -> rem# [Word64#] x y)
+
+
+-- | Bits dictionary for Word64;
+bits_Word64: Bits Word64
+ = Bits (\x y -> shl#  [Word64#] x y)
+        (\x y -> shr#  [Word64#] x y)
+        (\x y -> band# [Word64#] x y)
+        (\x y -> bor#  [Word64#] x y)
+        (\x y -> bxor# [Word64#] x y)
 

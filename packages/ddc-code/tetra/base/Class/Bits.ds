@@ -1,0 +1,41 @@
+
+module Class.Bits
+export
+{       shl; shr; band; bor; bxor
+}
+where
+
+
+-- | Dictionary for bitwise operators.
+data Bits (a: Data) where
+ Bits   :  (a -> a -> a)        -- shl 
+        -> (a -> a -> a)        -- shr
+        -> (a -> a -> a)        -- band
+        -> (a -> a -> a)        -- bor
+        -> (a -> a -> a)        -- bxor
+        -> Bits a
+
+
+-- | Left shift.
+shl  {(Bits shl' _ _ _ _):  Bits a} (x y: a): a
+ = shl' x y
+
+
+-- | Right shift.
+shr  {(Bits _ shr' _ _ _):  Bits a} (x y: a): a
+ = shr' x y
+
+
+-- | Bitwise and.
+band {(Bits _ _ band' _ _): Bits a} (x y: a): a
+ = band' x y
+
+
+-- | Bitwise or.
+bor  {(Bits _ _ _ bor' _):  Bits a} (x y: a): a
+ = bor' x y
+
+
+-- | Bitwise xor.
+bxor {(Bits _ _ _ _ bxor'): Bits a} (x y: a): a
+ = bxor' x y

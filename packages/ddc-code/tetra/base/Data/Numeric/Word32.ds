@@ -2,7 +2,8 @@
 module Data.Numeric.Word32
 export
 {       eq_Word32;  ord_Word32;
-        add_Word32; sub_Word32; mul_Word32; div_Word32; rem_Word32
+        add_Word32; sub_Word32; mul_Word32; div_Word32; rem_Word32;
+        bits_Word32;
 }
 import Class.Numeric
 where
@@ -54,3 +55,11 @@ div_Word32: Div Word32
 rem_Word32: Rem Word32
  = Rem (\x y -> rem# [Word32#] x y)
 
+
+-- | Bits dictionary for Word32.
+bits_Word32: Bits Word32
+ = Bits (\x y -> shl#  [Word32#] x y)
+        (\x y -> shr#  [Word32#] x y)
+        (\x y -> band# [Word32#] x y)
+        (\x y -> bor#  [Word32#] x y)
+        (\x y -> bxor# [Word32#] x y)
