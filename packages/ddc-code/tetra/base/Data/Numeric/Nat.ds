@@ -5,6 +5,8 @@ export
         add_Nat; sub_Nat; mul_Nat; div_Nat; rem_Nat;
         bits_Nat;
 }
+import Class.Eq
+import Class.Ord
 import Class.Numeric
 import Class.Bits
 where
