@@ -2,7 +2,7 @@
 module Class.Eq
 export
 {       eq; neq;
-        eq_bool; eq_nat;
+        eq_Bool;
 }
 import Data.Numeric.Bool
 import Data.Numeric.Nat
@@ -36,7 +36,7 @@ neq {(Eq _ neq'): Eq a} (x1 x2: a): Bool
 -- Dictionaries for primitive types.
 
 -- | Eq dictionary for Bool.
-eq_bool: Eq Bool
+eq_Bool: Eq Bool
  = Eq eq' neq'
  where  eq'  True  x     = x
         eq'  False True  = False
@@ -46,10 +46,4 @@ eq_bool: Eq Bool
         neq' True  False = True
         neq' False x     = x
 
-
--- | Eq dictionary for Nat.
-eq_nat:  Eq Nat
- = Eq eq' neq'
- where  eq'  a b        = eq#  [Nat#] a b
-        neq' a b        = neq# [Nat#] a b
 

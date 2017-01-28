@@ -1,10 +1,11 @@
 
 module Data.Numeric.Nat
 export  
-{       shl; shr; band; bor; bxor;
-        divMod;
-
+{       eq_Nat;  ord_Nat;
         add_Nat; sub_Nat; mul_Nat; div_Nat; rem_Nat;
+
+        shl; shr; band; bor; bxor;
+        divMod;
 }
 import Data.Tuple
 import Class.Numeric
@@ -14,21 +15,45 @@ type Nat = Nat#
 
 
 -------------------------------------------------------------------------------
--- Instances for numeric classes.
+-- | Eq dictionary for Nat.
+eq_Nat:  Eq Nat
+ = Eq eq' neq'
+ where  eq'  a b        = eq#  [Nat#] a b
+        neq' a b        = neq# [Nat#] a b
+
+
+-- | Ord dictionary for Nat.
+ord_Nat:  Ord Nat        
+ = Ord  compare'
+ where  compare' n1 n2
+         | gt# [Nat#] n1 n2     = GT
+         | lt# [Nat#] n1 n2     = LT
+         | otherwise            = EQ
+
+
+-- | Add dictionary for Nat.
 add_Nat: Add Nat
  = Add (\x y -> add# [Nat#] x y)
 
+
+-- | Sub dictionary for Nat.
 sub_Nat: Sub Nat 
  = Sub (\x y -> if gt# [Nat#] y x
                  then 0
                  else sub# [Nat#] x y)
 
+
+-- | Mul dictionary for Nat.
 mul_Nat: Mul Nat 
  = Mul (\x y -> mul# [Nat#] x y)
 
+
+-- | Div dictionary for Nat.
 div_Nat: Div Nat 
  = Div (\x y -> div# [Nat#] x y)
 
+
+-- | Rem dictionary for Nat.
 rem_Nat: Rem Nat 
  = Rem (\x y -> rem# [Nat#] x y)
 
