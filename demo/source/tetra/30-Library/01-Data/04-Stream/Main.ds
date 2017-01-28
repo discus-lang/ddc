@@ -73,5 +73,5 @@ main ()
         ss1     = streamOfList xx1
         ss2     = stake 10 (smap (add 1) ss1)
         xx2     = listOfStream ss2
-        writel (show (foldl add 0 xx2))
-
+        writel (show (foldl (add [Nat] {add_Nat}) 0 xx2))
+        -- TODO: shouldnt' need explicit type and dictionary.

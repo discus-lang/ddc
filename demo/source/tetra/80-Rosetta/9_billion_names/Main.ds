@@ -41,7 +41,7 @@ make    (n: Nat) (acc: List (List Nat)) (prev: List Nat)
  = case n of
     0 -> Nil
     _ -> do
-        prev'   = scanl add 0 prev
+        prev'   = scanl (add [Nat] {add_Nat}) 0 prev
         acc'    = map (tail1 0) (Cons prev' acc)
         row     = map (head  0) acc'
         Cons row (make (n - 1) acc' row)
@@ -51,10 +51,11 @@ make    (n: Nat) (acc: List (List Nat)) (prev: List Nat)
 rows n  = Cons (singleton 1) (make n Nil (singleton 1))
 
 -- | Make cumulative sums.
-cumu n  = map  (scanl add 0) (rows n)
+cumu n  = map  (scanl (add [Nat] {add_Nat}) 0) (rows n)
+-- TODO: shouldn't need explicit type and dictionary.
 
 -- | Get sum of the nth row.
-sums n  = foldl add 0 (last Nil (rows n))
+sums n  = foldl (add [Nat] {add_Nat}) 0 (last Nil (rows n))
 
 -- | Write a list to the console.
 writeListl xs

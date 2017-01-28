@@ -283,13 +283,15 @@ foldrS (f: a -> b -> S e b) (z: b) (xx: List a): S e b
 
 
 -- | Take the sum of a list of Nats.
+--   TODO: should not need type and implicit arg.
 sum (xs: List Nat): Nat
- = foldl (+) 0 xs
+ = foldl (add [Nat] {add_Nat}) 0 xs
 
 
 -- | Take the product of a list of Nats.
+--   TODO: should not need type and implicit arg.
 prod (xs: List Nat): Nat
- = foldl (*) 1 xs
+ = foldl (mul [Nat] {mul_Nat}) 1 xs
 
 
 -- | Monadic sequence.

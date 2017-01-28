@@ -1,0 +1,47 @@
+
+-- Defines numeric type classes and the names used by the Source Tetra
+-- desugarer to implement infix operators.
+module Class.Numeric
+export {add; sub; mul; div; rem}
+where
+
+
+-- | Dictionary for addition.
+data Add (a: Data) where
+ Add : (a -> a -> a) -> Add a
+
+add {(Add add'): Add a} (x y: a): a
+ = add' x y
+
+
+-- | Dictionary for subtraction.
+data Sub (a: Data) where
+ Sub : (a -> a -> a) -> Sub a
+
+sub {(Sub sub'): Sub a} (x y: a): a
+ = sub' x y
+
+
+-- | Dictionary for multiplication.
+data Mul (a: Data) where
+ Mul : (a -> a -> a) -> Mul a
+
+mul {(Mul mul'): Mul a} (x y: a): a
+ = mul' x y
+
+
+-- | Dictionary for division.
+data Div (a: Data) where
+ Div : (a -> a -> a) -> Div a
+
+div {(Div div'): Div a} (x y: a): a
+ = div' x y
+
+
+-- | Dictionary for remainder.
+data Rem (a: Data) where
+ Rem : (a -> a -> a) -> Rem a
+
+rem {(Rem rem'): Rem a} (x y: a): a
+ = rem' x y
+

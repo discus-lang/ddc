@@ -1,27 +1,36 @@
 
 module Data.Numeric.Nat
 export  
-{       add; sub;  mul; div; rem;
-        shl; shr; band; bor; bxor;
+{       shl; shr; band; bor; bxor;
         divMod;
+
+        add_Nat; sub_Nat; mul_Nat; div_Nat; rem_Nat;
 }
 import Data.Tuple
+import Class.Numeric
 where
 
 type Nat = Nat#
 
+
 -------------------------------------------------------------------------------
--- Names used by the Source Tetra desugarer to implement infix operators.
-add x y         = add# [Nat#] x y
+-- Instances for numeric classes.
+add_Nat: Add Nat
+ = Add (\x y -> add# [Nat#] x y)
 
-sub x y         
- = if eq# [Nat#] x 0 
-        then 0
-        else sub# [Nat#] x y
+sub_Nat: Sub Nat 
+ = Sub (\x y -> if gt# [Nat#] y x
+                 then 0
+                 else sub# [Nat#] x y)
 
-mul x y         = mul#  [Nat#] x y
-div x y         = div#  [Nat#] x y
-rem x y         = rem#  [Nat#] x y
+mul_Nat: Mul Nat 
+ = Mul (\x y -> mul# [Nat#] x y)
+
+div_Nat: Div Nat 
+ = Div (\x y -> div# [Nat#] x y)
+
+rem_Nat: Rem Nat 
+ = Rem (\x y -> rem# [Nat#] x y)
 
 
 -------------------------------------------------------------------------------

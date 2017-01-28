@@ -11,6 +11,7 @@ library
  
  tetra-modules:
         Data.Tuple
+        Class.Numeric
         Data.Numeric.Word
         Data.Numeric.Bool
         Data.Numeric.Nat
