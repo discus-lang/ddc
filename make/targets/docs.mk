@@ -10,7 +10,7 @@ docs	:
 	@$(MAKE) docs-core
 
 docs-core :
-	@haddock -w -h -o doc/haddock-core \
+	@$(HADDOCK) -w -h -o doc/haddock-core \
 			--optghc=-ipackages/ddc-build \
 			--optghc=-ipackages/ddc-core \
 			--optghc=-ipackages/ddc-core-llvm \
@@ -32,7 +32,7 @@ docs-hoogle	:
 	@$(MAKE) docs-hoogle-core
 
 docs-hoogle-core :
-	@haddock --hoogle -w -o doc/hoogle-core \
+	@$(HADDOCK) --hoogle -w -o doc/hoogle-core \
 			--optghc=-ipackages/ddc-build \
 			--optghc=-ipackages/ddc-core \
 			--optghc=-ipackages/ddc-core-llvm \

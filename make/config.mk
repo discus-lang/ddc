@@ -26,6 +26,12 @@ GHC_VERSION	= $(shell $(GHC) --version | sed -e "s/.* //g" -e "s/\..*//")
 GHC_VERSION_FLAGS = -rtsopts
 
 
+# Haddock Config
+HADDOCK = haddock
+# with a cabal sandbox
+# HADDOCK = cabal exec haddock --
+
+
 # Linear solver time
 DDC_FLOW_USE_LINEAR_SOLVER = 1
 # If you modify this, you should make recompile affected files:
