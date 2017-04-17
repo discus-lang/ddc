@@ -55,8 +55,9 @@ mapFun_fromIndexed
          | otherwise    = Just (lookup ix)
 
 
--- TODO: If shift this into the body of map_fromIndexed the 
--- lambda lifted breaks.
+-- ISSUE #404: Need to freshen names of type vars when elaborating local
+-- sigs. Adding this as a local binding to the above function fails because
+-- then the local 'elem' type binder shadows the one in the enclosing binding.
 mapFun_fromIndexed_fold'
         [acc elem: Data] 
         (size:   Nat)

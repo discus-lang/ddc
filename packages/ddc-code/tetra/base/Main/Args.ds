@@ -11,6 +11,7 @@ import Data.Either
 import Data.Tuple
 import System.Posix.Stdlib
 import System.Env
+import System.IO.Console
 where
 
 
@@ -81,11 +82,9 @@ mainArgs_parse
         : Either ArgError mode
  = go_name z (map snd $ map_toList args)
  where 
-        -- TODO: can't separate these by '$', need to instantiate with new existentials.
         decls_map
          = mapFun_fromList 
-            (map (\arg -> T2 (mainArgs_nameOfArg arg) arg) defs)
-
+         $ map (\arg -> T2 (mainArgs_nameOfArg arg) arg) defs
 
         -- Try to match the argument name.
         go_name mode Nil

@@ -13,8 +13,11 @@ eqChar (c1 c2: Char): Bool
 
 -- | Lex text into SExp tokens.
 --
---   TODO: We need the extra 'toks' here to force a run that crushes the
---   effects out of the return value.
+--   ISSUE #406: Auto run and rebox suspension types in the body
+--   of private constructs. 
+--
+--   Eliminating the intermediate 'toks' binding here causes it to fail
+--   because there is no chance to eliminate the effects of the body.
 --
 lexText (tx: Text): List Token
  = private r with {Read r; Write r; Alloc r} in

@@ -40,7 +40,7 @@ show_Nat: Show Nat
 
 
 -- | Show dictionary for Text.
---   ISSUE: #381: Escape non-printable characters in base Show library.
+--   ISSUE #381: Escape non-printable characters in base Show library.
 show_Text: Show Text
  = Show sh
  where  sh tx           = "\"" % tx % "\""

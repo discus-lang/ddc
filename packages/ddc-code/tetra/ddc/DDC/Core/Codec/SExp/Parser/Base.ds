@@ -26,8 +26,9 @@ stateOfList
         (xx: List a): S (Alloc r) (State r a)
  = do   ref     = allocRef [r] xx
 
-        -- TODO: shouldn't need the boxes here as the expected types
-        -- of the fields are of suspended computations.
+        -- ISSUE #407: Auto box expressions if the expected type is a suspension.
+        -- Shouldn't need the boxes here as the expected types of the fields
+        -- are of suspended computations.
         State [r] [a] (box peekRef [r] ref) (box nextRef [r] ref)
 
 

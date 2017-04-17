@@ -216,8 +216,7 @@ forS (xx: List a) (f: a -> S e Unit): S e Unit
 
 
 -- | Monadic map.
---   TODO: allow dMonad name to be elided.
-mapM    {dMonad: Monad m}
+mapM    {Monad m}
         (f: a -> m b) (xx: List a): m (List b)
  = case xx of
         Nil    
