@@ -36,11 +36,13 @@ dApplicativeOfMonad (Monad dApplicative _ _)
         = dApplicative
 
 
--- | Return a value in a monad.
--- return  : [m: Data -> Data]. [a: Data]
---         . Monad m ~> a -> m a
+-- | Return a value.
 --
--- TODO: fix separate signature.
+--   ISSUE #402: Fix specification of separate signatures
+--               with higher kinded type vars.
+--
+--   return    : [m: Data -> Data]. [a: Data]
+--             . Monad m ~> a -> m a
 --
 return  [m: Data -> Data] [a: Data] {(Monad _ return' _): Monad m} (x: a): m a
  = return' x
@@ -48,10 +50,12 @@ return  [m: Data -> Data] [a: Data] {(Monad _ return' _): Monad m} (x: a): m a
 
 -- | Evaluate a monadic compuation and pass the result to 
 --   a function that produces a new monadic computation.
--- bind    : [m: Data -> Data]. [a b: Data]
---         . Monad m ~> m a -> (a -> m b) -> m b
 --
--- TODO: fix separate signature.
+--   ISSUE #402: Fix specification of separate signatures
+--               with higher kinded type vars.
+--
+--   bind      : [m: Data -> Data]. [a b: Data]
+--             . Monad m ~> m a -> (a -> m b) -> m b
 --
 bind    [m: Data -> Data] [a b: Data] {(Monad _ _ bind') : Monad m} 
         (ma: m a) (mf: a -> m b): m b

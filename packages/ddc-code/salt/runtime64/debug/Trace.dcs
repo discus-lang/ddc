@@ -377,9 +377,6 @@ traceSmall [r: Region] (print: Bool#) (obj: Ptr# r Obj): Ptr# r Obj
                 primPutString "}\n"#
                 ())
         obj
-
-
-        -- TODO: Check extent is within heap.
         
 
 ---------------------------------------------------------------------------------------------------
