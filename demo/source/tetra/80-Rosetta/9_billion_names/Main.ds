@@ -51,8 +51,7 @@ make    (n: Nat) (acc: List (List Nat)) (prev: List Nat)
 rows n  = Cons (singleton 1) (make n Nil (singleton 1))
 
 -- | Make cumulative sums.
-cumu n  = map  (scanl (add [Nat] {add_Nat}) 0) (rows n)
--- TODO: shouldn't need explicit type and dictionary.
+cumu n  = map  (scanl (+) 0) (rows n)
 
 -- | Get sum of the nth row.
 sums n  = foldl (add [Nat] {add_Nat}) 0 (last Nil (rows n))

@@ -38,14 +38,13 @@ render {(Render render'): Render a} (x: a): Text
 
 
 -- | Render a SVG Document.
---   TODO: shouldn't need to pass explicit dictionary.
 render_SVG: Render SVG
  =  Render $ \svg 
  -> case svg of
         SVG width height shapes
          -> "<?xml version=\"1.0\"?>\n"
           % "<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.2\" baseProfile=\"tiny\">\n"
-          % (foldl paste "" $ map (render {render_Shape}) shapes)
+          % (foldl paste "" $ map render shapes)
           % "</svg>"
 
 

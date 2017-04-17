@@ -239,7 +239,9 @@ makeSub config a ctx0 x0 xL tL tR err
  --   TODO: unfold all available synonyms on the right.
  -- 
  | Just (TcConFunImplicit, tL1, tL2)    <- takeTFunCon tL
- , Nothing                              <- takeTFunCon tR
+ , case takeTFunCon tR of
+        Just (TcConFunImplicit, _, _)   -> False
+        _                               -> True
  = do
         ctrace  $ vcat
                 [ text "*>  Sub_Implicit_Arg"
