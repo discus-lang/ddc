@@ -35,8 +35,7 @@ pretty_Tup2  {Pretty a} {Pretty b}: Pretty (Tup2 a b)
 -- | Pretty dictionary for List.
 pretty_List  {ppA: Pretty a}: Pretty (List a)
  =  Pretty $ \xx
- ->     sexp1 "list" (foldl pastes "" $ map (ppr [a] {ppA}) xx)
-        -- TODO: the args to ppr should have been resolved.
+ ->     sexp1 "list" (foldl pastes "" $ map ppr xx)
 
 
 -- | Pretty dictionary for Maybe.

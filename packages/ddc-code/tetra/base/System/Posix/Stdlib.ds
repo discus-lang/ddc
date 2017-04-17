@@ -22,7 +22,7 @@ where
 
 
 -- | Read a natural number from a text string.
---   TODO: check that the text string is well formed.
+--   We assume that it's well formed.
 readNat (text: Text): Maybe Nat
  = case text of
         TextVec vec     

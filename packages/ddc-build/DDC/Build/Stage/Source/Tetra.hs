@@ -58,6 +58,7 @@ data ConfigLoadSourceTetra
         , configSinkMatches      :: B.Sink      -- ^ Sink for match desugared code.
         , configSinkPrep         :: B.Sink      -- ^ Sink for code before conversion.
         , configSinkCore         :: B.Sink      -- ^ Sink for core code.
+        , configSinkResolve      :: B.Sink      -- ^ Sink for core code after resolving.
         , configSinkPreCheck     :: B.Sink      -- ^ Sink for core code before checking.
         , configSinkCheckerTrace :: B.Sink      -- ^ Sink for checker trace.
         , configSinkChecked      :: B.Sink      -- ^ Sink for checked core code.
@@ -103,6 +104,7 @@ sourceLoad srcName srcLine str store config
          <- sourceLower 
                 store
                 (configSinkCore     config)
+                (configSinkResolve  config)
                 (configSinkPreCheck config)
                 mm_desugared
 
@@ -241,11 +243,12 @@ sourceDesugar
 sourceLower 
         :: B.Store              -- ^ Interface store.
         -> B.Sink               -- ^ Sink after conversion to core.
+        -> B.Sink               -- ^ Sink after resolving.
         -> B.Sink               -- ^ Sink after spreading.
         -> S.Module S.Source
         -> ExceptT [B.Error] IO (C.Module SP.SourcePos CE.Name)
 
-sourceLower store sinkCore sinkSpread mm
+sourceLower store sinkCore sinkResolve sinkSpread mm
  = do   
         -- Lower source tetra to core tetra.
         let sp          = SP.SourcePos "<top level>" 1 1
@@ -254,7 +257,6 @@ sourceLower store sinkCore sinkSpread mm
                             Right mm'   -> return mm'
 
         liftIO $ B.pipeSink (renderIndent $ ppr mm_core) sinkCore
-
 
         -- Resolve which module imported names are from, 
         -- and attach arity information to the import statements.
@@ -266,11 +268,11 @@ sourceLower store sinkCore sinkSpread mm
                             Left err    -> throwE [B.ErrorLoad [err]]
                             Right mm'   -> return mm'
 
-        -- TODO: dump resolved
+        liftIO $ B.pipeSink (renderIndent $ ppr mm_resolve) sinkResolve
 
         -- Spread types of data constructors into uses.
         let mm_spread   = CSpread.spreadX CE.primKindEnv CE.primTypeEnv mm_resolve
-        liftIO $ B.pipeSink (renderIndent $ ppr mm_spread) sinkSpread
+        liftIO $ B.pipeSink (renderIndent $ ppr mm_spread)  sinkSpread
 
         return mm_spread
 

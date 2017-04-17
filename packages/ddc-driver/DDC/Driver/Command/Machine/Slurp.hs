@@ -1,5 +1,4 @@
 
--- TODO: rename module to Output / render or move fused into other module
 module DDC.Driver.Command.Machine.Slurp
         ( cmdMachineOutputSlurp
         , cmdMachineOutputFused)

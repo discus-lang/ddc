@@ -38,7 +38,7 @@ slotifyModule a mm@ModuleCore{}
         mmSlots = mmStrip { moduleBody = XLet aa (LRec bxs') x1 }
 
         anorm   = Simp.anormalize (Namify.makeNamifier A.freshT)
-                                          (Namify.makeNamifier A.freshX)
+                                  (Namify.makeNamifier A.freshX)
 
         mmANF   = Simp.result $ fst
                 $ flip State.runState 0
@@ -51,8 +51,7 @@ slotifyModule a mm@ModuleCore{}
 
            -- Couldn't reconstruct type annotations.
            (Left err, _checkTrace)
-             -> error ("slotifyModule:\n" ++ renderIndent (ppr err)) 
-                   -- TODO how to report error properly
+             -> error ("slotifyModule cannot reconstruct types:\n" ++ renderIndent (ppr err)) 
 
            (Right mmCheck, _checkTrace)
              -> Right mmCheck

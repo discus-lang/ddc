@@ -585,9 +585,7 @@ pipeMachine !mm !pp
 
                 betaS           = Trans $ Beta $ Beta.configZero { Beta.configBindRedexes = True}
 
-                -- TODO: should namify here - or before forwarding
-                mm_beta         = evalSimplifier (Fix 10 betaS)
-                                  mm_float
+                mm_beta         = evalSimplifier (Fix 10 betaS) mm_float
 
             in  pipeCores mm_beta pipes
 

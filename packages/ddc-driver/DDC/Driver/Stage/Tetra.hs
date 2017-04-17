@@ -52,11 +52,12 @@ sourceLoadText config store source str
         , BST.configSinkMatches         = D.dump config source "dump.0-source-07-matches.dst"
         , BST.configSinkPrep            = D.dump config source "dump.0-source-08-prep.dst"
         , BST.configSinkCore            = D.dump config source "dump.0-source-09-core.dct"
-        , BST.configSinkPreCheck        = D.dump config source "dump.0-source-10-precheck.dct"
-        , BST.configSinkCheckerTrace    = D.dump config source "dump.0-source-11-trace.txt"
-        , BST.configSinkChecked         = D.dump config source "dump.0-source-12-checked.dct"
-        , BST.configSinkNamified        = D.dump config source "dump.0-source-13-namified.dct"
-        , BST.configSinkElaborated      = D.dump config source "dump.0-source-14-elaborated.dct"
+        , BST.configSinkResolve         = D.dump config source "dump.0-source-10-resolve.dct"
+        , BST.configSinkPreCheck        = D.dump config source "dump.0-source-11-precheck.dct"
+        , BST.configSinkCheckerTrace    = D.dump config source "dump.0-source-12-trace.txt"
+        , BST.configSinkChecked         = D.dump config source "dump.0-source-13-checked.dct"
+        , BST.configSinkNamified        = D.dump config source "dump.0-source-14-namified.dct"
+        , BST.configSinkElaborated      = D.dump config source "dump.0-source-15-elaborated.dct"
         }
 
 

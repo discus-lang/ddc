@@ -236,8 +236,6 @@ makeSub config a ctx0 x0 xL tL tR err
  --   We'll inject a new implicit argument that tries to elaborate a value
  --   of type 'A', then hope that B can be made a subtype of (D t1'..tn').
  -- 
- --   TODO: unfold all available synonyms on the right.
- -- 
  | Just (TcConFunImplicit, tL1, tL2)    <- takeTFunCon tL
  , case takeTFunCon tR of
         Just (TcConFunImplicit, _, _)   -> False

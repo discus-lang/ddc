@@ -80,16 +80,8 @@ objectsOfBind
 
 objectsOfBind bb
  = case bb of
-        BNone _
-         -> Map.empty
-
-        BAnon t
-         | isHeapObject t
-         -> error "objectsOfBind: found anonymous heap object"
-         -- TODO report this properly
-
-         | otherwise
-         -> Map.empty
+        BNone _ -> Map.empty
+        BAnon _ -> Map.empty
 
         BName n t
          | isHeapObject t

@@ -5,7 +5,7 @@ export { stateOfList;
 import Data.Text
 import Data.Ref
 
--- TODO: need a proper exception mechanism.
+-- Using this in place of a proper exception mechanism.
 import foreign c value
  exit    : [a: Data]. Nat# -> a
 
