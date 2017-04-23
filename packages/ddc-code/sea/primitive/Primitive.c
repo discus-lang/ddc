@@ -13,8 +13,8 @@
 /// Storage of metadata values is elided if the %metadata parameter to
 /// @llvm.gcroot is null.
 struct FrameMap {
-  int32_t NumRoots;    //< Number of roots in stack frame.
-  int32_t NumMeta;     //< Number of metadata entries.  May be < NumRoots.
+  uint32_t NumRoots;    //< Number of roots in stack frame.
+  uint32_t NumMeta;     //< Number of metadata entries.  May be < NumRoots.
   const void *Meta[]; //< Metadata for each root.
 };
 
@@ -45,14 +45,14 @@ struct StackEntry *llvm_gc_root_chain;
 /// @param Visitor A function to invoke for every GC root on the stack.
 void visitGCRoots(void (*Visitor)(void **Root, const void *Meta)) {
   for (struct StackEntry *R = llvm_gc_root_chain; R; R = R->Next) {
-    unsigned i = 0;
+    uint32_t i = 0;
 
     // For roots [0, NumMeta), the metadata pointer is in the FrameMap.
-    for (unsigned e = R->Map->NumMeta; i != e; ++i)
+    for (uint32_t e = R->Map->NumMeta; i != e; ++i)
       Visitor(&R->Roots[i], R->Map->Meta[i]);
 
     // For roots [NumMeta, NumRoots), the metadata pointer is null.
-    for (unsigned e = R->Map->NumRoots; i != e; ++i)
+    for (uint32_t e = R->Map->NumRoots; i != e; ++i)
       Visitor(&R->Roots[i], NULL);
   }
 }
@@ -60,16 +60,16 @@ void visitGCRoots(void (*Visitor)(void **Root, const void *Meta)) {
 
 void traceGCRoots (int _x) {
   for (struct StackEntry *R = llvm_gc_root_chain; R; R = R->Next) {
-    unsigned i = 0;
+    uint32_t i = 0;
 
     printf ("map %p\n", R->Map);
 
     // For roots [0, NumMeta), the metadata pointer is in the FrameMap.
-    for (unsigned e = R->Map->NumMeta; i != e; ++i)
+    for (uint32_t e = R->Map->NumMeta; i != e; ++i)
       printf ("root with meta %p\n", R->Roots[i]);
 
     // For roots [NumMeta, NumRoots), the metadata pointer is null.
-    for (unsigned e = R->Map->NumRoots; i != e; ++i)
+    for (uint32_t e = R->Map->NumRoots; i != e; ++i)
       printf ("root no   meta %p\n", R->Roots[i]);
   }
 } 
