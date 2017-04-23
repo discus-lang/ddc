@@ -1,0 +1,41 @@
+language: generic
+
+sudo: true
+
+# using ghc and cabal-install from https://launchpad.net/~hvr/+archive/ubuntu/ghc
+# llvm from
+#   https://launchpad.net/~h-rayflood/+archive/ubuntu/llvm
+#   https://launchpad.net/~h-rayflood/+archive/ubuntu/gcc-upper
+#   https://launchpad.net/~h-rayflood/+archive/ubuntu/llvm-upper
+before_install:
+    - sudo add-apt-repository -y ppa:h-rayflood/llvm
+    - sudo add-apt-repository -y ppa:h-rayflood/gcc-upper
+    - sudo add-apt-repository -y ppa:h-rayflood/llvm-upper
+    - sudo add-apt-repository -y ppa:hvr/ghc
+    - sudo apt-get update
+    - sudo apt-get install --force-yes llvm-3.5-dev llvm-3.5-runtime llvm-3.5
+    - sudo apt-get install --force-yes ghc-8.0.1 cabal-install-1.24
+    # put llvm-3.5 at the front of the path, ahead of any llvm-3.4
+    - export PATH=/usr/lib/llvm-3.5/bin:$PATH
+    # put ghc and cabal on the path
+    - export PATH=/opt/ghc/8.0.1/bin:/opt/cabal/1.24/bin:$PATH
+    - cabal update
+
+# here we manually install all the needed deps
+# by default travis would run `cabal install --only-dependencies --enable-tests`
+# cabal install was unhappy when all deps were specified, so we install them
+# one-by-one in the right order
+install:
+    - cabal install happy
+    - cabal install pretty-show
+    - cabal install alex
+    - cabal install c2hs
+    - cabal install limp-cbc
+    - cabal install buildbox
+    - cabal install ddc-tools
+
+script:
+    - make clean
+    - make
+    - make war
+
