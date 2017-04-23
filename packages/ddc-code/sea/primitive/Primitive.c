@@ -15,7 +15,7 @@
 struct FrameMap {
   int32_t NumRoots;    //< Number of roots in stack frame.
   int32_t NumMeta;     //< Number of metadata entries.  May be < NumRoots.
-  const void *Meta[0]; //< Metadata for each root.
+  const void *Meta[]; //< Metadata for each root.
 };
 
 
@@ -24,7 +24,7 @@ struct FrameMap {
 struct StackEntry {
   struct StackEntry *Next;    //< Link to next stack entry (the caller's).
   const struct FrameMap *Map; //< Pointer to constant FrameMap.
-  void *Roots[0];             //< Stack roots (in-place array).
+  void *Roots[];             //< Stack roots (in-place array).
 };
 
 
