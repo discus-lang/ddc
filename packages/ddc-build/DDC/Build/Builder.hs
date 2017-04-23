@@ -360,7 +360,7 @@ builder_X8632_Linux config host
         , buildCC
                 = \cFile oFile
                 -> doCmd "C compiler"           [(2, BuilderCanceled)]
-                [ "gcc -Werror -std=c99 -O3 -m32 -fPIC"
+                [ "gcc -Werror -Wextra -pedantic -std=c99 -O3 -m32 -fPIC"
                 , "-c", cFile
                 , "-o", oFile
                 , "-I" ++ builderConfigBaseSrcDir config </> "sea/runtime"
