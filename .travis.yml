@@ -14,14 +14,15 @@ cache:
 
 # clean up anything we don't want to cache
 # log and index files aren't worth caching
-# do not cache anything ddc-ish
+# Note: this should be safe as cabal should still do an install
+#
+#       if a newer version of a dependency is available
+#       TODO: do we need to clean up older versions of deps from the cache?
 before_cache:
     - rm -f $HOME/.cabal/logs/*.log
     - rm -f $HOME/.cabal/packages/00-index*
     - rm -f $HOME/.cabal/packages/01-index*
     - rm -f $HOME/.cabal/packages/build-reports.log
-    - find $HOME/.ghc/ -name '*ddc*' -delete
-    - find $HOME/.cabal/ -name '*ddc*' -delete
 
 # using ghc and cabal-install from
 #   https://launchpad.net/~hvr/+archive/ubuntu/ghc
