@@ -5,6 +5,24 @@ language: c
 
 sudo: false
 
+# cache only works if sudo is false
+# this will attempt to cache the contents of the specified directories between
+cache:
+    directories:
+        - $HOME/.cabal
+        - $HOME/.ghc
+
+# clean up anything we don't want to cache
+# log and index files aren't worth caching
+# do not cache anything ddc-ish
+before_cache:
+    - rm -f $HOME/.cabal/logs/*.log
+    - rm -f $HOME/.cabal/packages/00-index*
+    - rm -f $HOME/.cabal/packages/01-index*
+    - rm -f $HOME/.cabal/packages/build-reports.log
+    - find $HOME/.ghc/ -name '*ddc*' -delete
+    - find $HOME/.cabal/ -name '*ddc*' -delete
+
 # using ghc and cabal-install from
 #   https://launchpad.net/~hvr/+archive/ubuntu/ghc
 # llvm from
