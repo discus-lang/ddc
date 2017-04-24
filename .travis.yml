@@ -1,8 +1,12 @@
-language: generic
+# language `ghc` drags in old ghc versions
+# language `generic` drags in too many others deps
+# language `c` is lighter weight, and is fine since we declare most of our own deps
+language: c
 
 sudo: false
 
-# using ghc and cabal-install from https://launchpad.net/~hvr/+archive/ubuntu/ghc
+# using ghc and cabal-install from
+#   https://launchpad.net/~hvr/+archive/ubuntu/ghc
 # llvm from
 #   https://launchpad.net/~h-rayflood/+archive/ubuntu/llvm
 #   https://launchpad.net/~h-rayflood/+archive/ubuntu/gcc-upper
