@@ -1,5 +1,5 @@
-# The Disciplined Disciple Compiler 0.4.3
- 
+# The Disciplined Disciple Compiler 0.4.3 [![Build Status](https://travis-ci.org/DDCSF/ddc.svg?branch=master)](https://travis-ci.org/DDCSF/ddc)
+
 RELEASE NOTES 06/09/2016
 
 DDC is a research compiler used to investigate program transformation in the 
