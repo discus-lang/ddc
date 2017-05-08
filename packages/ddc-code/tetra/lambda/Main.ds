@@ -1,0 +1,20 @@
+
+module Main
+import Lambda.Simple.Core.Exp
+import Lambda.Simple.Core.Eval
+import Lambda.Simple.Deep.Exp
+import Lambda.Simple.Source.Pretty
+import System.IO.Console
+where
+
+show_Unit: Show Unit
+ = Show $ λxx -> "()"
+
+xIdent: Exp Unit
+ = abs "x" (var "x")
+
+xTwice: Exp Unit
+ = abs "f" (abs "x" (app (var "f") (app (var "f") (var "x"))))
+
+main ()
+ = writel $ ppr (app xTwice xIdent)

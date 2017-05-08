@@ -1,0 +1,38 @@
+
+module Lambda.Simple.Core.Exp
+export
+{       show_Exp;
+}
+import Class.Show
+import Data.Text
+import Data.Tuple
+where
+
+
+-- | Represent names as text.
+type Name = Text
+
+
+-- | Untyped lambda calculus expressions.
+data Exp (p: Data) where
+        XPrim   : p     -> Exp p
+        XVar    : Name  -> Nat   -> Exp p
+        XAbs    : Name  -> Exp p -> Exp p
+        XApp    : Exp p -> Exp p -> Exp p
+
+
+show_Exp {Show p}: Show (Exp p)
+ =  Show $ λxx
+ -> case xx of
+        XPrim p
+         -> parens $ "XPrim" %% show p
+
+        XVar n b     
+         -> parens $ "XVar"  %% show n  %% show b
+        
+        XAbs n x
+         -> parens $ "XAbs"  %% show n  %% show x
+        
+        XApp x1 x2
+         -> parens $ "XApp"  %% show x1 %% show x2
+
