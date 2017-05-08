@@ -5,6 +5,8 @@ import Lambda.Simple.Core.Eval
 import Lambda.Simple.Deep.Exp
 import Lambda.Simple.Deep.Church
 import Lambda.Simple.Source.Pretty
+import Lambda.Simple.Source.Token
+import Lambda.Simple.Source.Parser
 import System.IO.Console
 import Data.Maybe
 where

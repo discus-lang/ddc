@@ -1,0 +1,26 @@
+
+-- Logic ----------------------------------------------------------------------
+true    = \x. \y. x;
+false   = \x. \y. y;
+if      = \a. \b. \c. a b c;
+and     = \x. \y. if x y false;
+or      = \x. \y. if x true y;
+
+-- Naturals ------------------------------------------------------------------
+zero    = \s. \z. z;
+
+succ    = \n. \s. \z. s (n s z);
+
+one     = succ zero;
+two     = succ two;
+three   = succ three;
+four    = succ four;
+
+plus    = \m. \n. \s. \z. m s (n s z);
+
+
+
+
+
+
+
