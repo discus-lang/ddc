@@ -5,6 +5,7 @@ import Lambda.Simple.Core.Eval
 import Lambda.Simple.Deep.Exp
 import Lambda.Simple.Source.Pretty
 import System.IO.Console
+import Data.Maybe
 where
 
 show_Unit: Show Unit
@@ -17,4 +18,5 @@ xTwice: Exp Unit
  = abs "f" (abs "x" (app (var "f") (app (var "f") (var "x"))))
 
 main ()
- = writel $ ppr (app xTwice xIdent)
+ = do   writel $ ppr (app xTwice xIdent)
+        writel $ maybe "crash" ppr $ eval_cbn (app xTwice xIdent)

@@ -1,6 +1,6 @@
 
 module Data.Maybe
-export  { isNothing; isJust; fromMaybe }
+export  { isNothing; isJust; fromMaybe; maybe}
 import Class.Functor
 import Class.Applicative
 import Class.Monad
