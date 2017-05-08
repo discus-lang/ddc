@@ -1,18 +1,38 @@
 
 module Lambda.Simple.Source.Parser
 export
-{       parseExp;
-        pExp;
-        pExpApp;
-        pExpAtom;
+{       parseDecls; pDecls; pDecl;
+        parseExp;   pExp;   pExpApp; pExpAtom;
 }
 import Lambda.Simple.Source.Lexer
+import Lambda.Simple.Core.Decl
 import Lambda.Simple.Core.Exp
 import Control.Parsec
 import Data.Maybe
 where
 
 
+-- Decls -----------------------------------------------------------------------
+parseDecls (ts: List Token): Maybe (List (Decl p))
+ = case parse pDecls ts of
+        Nil               -> Nothing
+        Cons (T2 xx _) _  -> Just xx
+
+
+-- Decl ------------------------------------------------------------------------
+pDecls : Parser Token (List (Decl p))
+ = many pDecl
+
+
+pDecl : Parser Token (Decl p)
+ =      (bind   (from takeMacroOfToken)         $ λ nDecl -> 
+         bind   (satisfies (isToken KEquals))   $ λ kEq   -> 
+         bind   pExp                            $ λ xBody ->
+         bind   (satisfies (isToken KSemi))     $ λ kSemi ->
+         return (DTerm nDecl xBody))
+
+
+-- Exp ------------------------------------------------------------------------
 -- | Parse an expression from the given list of tokens.
 parseExp (ts: List Token): Maybe (Exp p)
  = case parse pExp ts of
@@ -33,7 +53,7 @@ pExp : Parser Token (Exp p)
 
 -- | Parse an application.
 pExpApp  : Parser Token (Exp p)
- = do   (bind   pExpAtom                        $ λ xFun   ->
+ =      (bind   pExpAtom                        $ λ xFun   ->
          bind   (some pExpAtom)                 $ λ xsArgs ->
          return (makeXApps xFun xsArgs))
 
@@ -45,7 +65,8 @@ pExpAtom : Parser Token (Exp p)
          bind   (satisfies (isToken KKet))      $ λ xKet   ->
          return xx)
 
- $      (bind   (from takeNameOfToken)          $ λ n      ->
+ $ alt  (bind   (from takeNameOfToken)          $ λ n      ->
          return (XVar n 0))
 
-
+        (bind   (from takeMacroOfToken)         $ λ n      ->
+         return (XMacro n))

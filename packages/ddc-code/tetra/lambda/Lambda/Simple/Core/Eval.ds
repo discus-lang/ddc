@@ -15,8 +15,6 @@ lift    (n:  Name)      -- ^ Name of variable to lift references to.
         (xx: Exp p)     -- ^ Expression to lift references in.
         : Exp p
  = case xx of
-        XPrim _         -> xx
-
         XVar  n1 ix
          | n == n1
          , d <= ix      -> XVar n1 (ix + 1)
@@ -29,6 +27,10 @@ lift    (n:  Name)      -- ^ Name of variable to lift references to.
 
         XApp x1 x2      -> XApp (lift n d x1) (lift n d x2)
 
+        XMacro _        -> xx
+
+        XPrim _         -> xx
+
 
 -- | Substitute a name for an expression in an expression.
 subst   (n:  Name)      -- ^ Name of variable to lift references ot.
@@ -37,11 +39,12 @@ subst   (n:  Name)      -- ^ Name of variable to lift references ot.
         (xx: Exp p)     -- ^ Expression to substitute into.
         : Exp p
  = case xx of
-        XPrim _         -> xx
+        XVar n1 ix   
+         | n  == n1
+         , ix == d      -> x
 
-        XVar n1 d'   
          | n == n1
-         , d == d'      -> x
+         , ix >  d      -> XVar n1 (ix - 1)
 
          | otherwise    -> xx
 
@@ -51,49 +54,63 @@ subst   (n:  Name)      -- ^ Name of variable to lift references ot.
 
         XApp x1 x2      -> XApp    (subst n d x x1) (subst n d x  x2)
 
+        XMacro _        -> xx
+
+        XPrim _         -> xx
+
+
+-- | Unfold a macro declaration.
+unfold (decls: List (Decl p)) (xx: Exp p): Exp p
+ = case xx of
+        XMacro n        -> fromMaybe xx (lookupDecl n decls)
+        _               -> xx
+
 
 -- | Call-by-name reduction.
-reduce_cbn (xx: Exp p): Maybe (Exp p)
- = case xx of
-        XPrim _         -> Just xx
+reduce_cbn 
+        (decls: List (Decl p))  -- ^ External declarations.
+        (xx:    Exp p)          -- ^ Expression to reduce.
+        : Maybe (Exp p)
+ = case unfold decls xx of
         XVar  _ _       -> Just xx
         XAbs  _ _       -> Just xx
 
-        XApp x1 x2      
-         -> case reduce_cbn x1 of
-                Just (XAbs n11 x12)
-                  |  Just x'     <- reduce_cbn (subst n11 0 x2 x12)
-                  -> Just x'
+        XApp x1 x2
+         |  Just x1'    <- reduce_cbn decls x1
+         -> case unfold decls x1' of
+                XAbs n11 x12    -> reduce_cbn decls (subst n11 0 x2 x12)
+                _               -> Just (XApp x1' x2)
 
-                Just x1'
-                  -> Just (XApp x1' x2)
+         | otherwise    -> Just xx
 
-                _ -> Nothing
+        XMacro _        -> Just xx
+        XPrim _         -> Just xx
 
 
 -- | Normal-order reduction.
-reduce_no (xx: Exp p): Maybe (Exp p)
- = case xx of
-        XPrim _         -> Just xx
-        XVar  _ _       -> Just xx
+reduce_no 
+        (decls: List (Decl p))  -- ^ External declarations.
+        (xx: Exp p)             -- ^ Expression to reduce.
+        : Maybe (Exp p)
+ = case unfold decls xx of
+        XVar  _ _        -> Just xx
 
         XAbs  n1 x2
-         -> case reduce_no x2 of
-                Just x2'
-                  -> Just (XAbs n1 x2')
-
-                _ -> Nothing
+         -> case reduce_no decls x2 of
+                Just x2' -> Just (XAbs n1 x2')
+                Nothing  -> Just xx
 
         XApp  x1 x2
-         -> case reduce_cbn x1 of
-                Just (XAbs n11 x12)
-                  |  Just x'     <- reduce_no (subst n11 0 x2 x12)
-                  -> Just x'
+         |  Just x1'    <- reduce_cbn decls x1 
+         -> case unfold decls x1' of
+                XAbs n11 x12    -> reduce_no decls (subst n11 0 x2 x12)
 
-                Just x1'
-                  |  Just x1''   <- reduce_no x1'
-                  ,  Just x2'    <- reduce_no x2
+                _ |  Just x1''  <- reduce_no decls x1'
+                  ,  Just x2'   <- reduce_no decls x2
                   -> Just (XApp x1'' x2')
 
-                _ -> Nothing
+         | otherwise    -> Just xx
+
+        XMacro _        -> Just xx
+        XPrim _         -> Just xx
 

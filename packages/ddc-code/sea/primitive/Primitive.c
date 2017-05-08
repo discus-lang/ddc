@@ -2,6 +2,8 @@
 // Primitive operations that sea code uses.
 // In future we'll just import these with the FFI.
 #include <stdio.h>
+#include <fcntl.h>
+#include <unistd.h>
 #include <inttypes.h>
 #include "Runtime.h"
 
@@ -155,9 +157,6 @@ string_t* primShowWord8 (uint8_t w)
 }
 
 
-
-
-
 // Print a C string to stderr.
 // Use this when printing an error from the runtime system.
 void primFailString(string_t* str)
@@ -201,3 +200,26 @@ string_t* primStdinGetString (nat_t len)
         fgets(str, len, stdin);
         return str; 
 }
+
+
+// -- File --------------------------------------------------------------------
+// Read the contents of a file into a string.
+string_t* primFileRead (string_t* path)
+{
+        int fd          = open (path, O_RDONLY);
+        if (fd == -1) {
+                printf("primFileRead: failed\n");
+                abort();
+        }
+
+        off_t len       = lseek (fd, 0, SEEK_END);
+        lseek(fd, 0, SEEK_SET);
+
+        string_t* str   = malloc (len + 1);
+        read (fd, str, len);
+        str[len]        = 0;
+
+        close (fd);
+        return str;
+}
+

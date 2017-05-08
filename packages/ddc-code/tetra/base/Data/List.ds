@@ -17,7 +17,7 @@ export
         foldr;  foldrS;
         scanl;
         filter; filterS;
-        any;
+        all; any;
 }
 import  Data.Numeric.Nat
 import  Data.Numeric.Bool
@@ -335,6 +335,16 @@ filterS (p: a -> S e Bool) (xx: List a): S e (List a)
         Cons x xs  
          | p x          -> Cons x (filterS p xs)
          | otherwise    -> filterS p xs
+
+
+-- | check if all the members of the list match the given predicate.
+all (p: a -> Bool) (xx: List a): Bool
+ = case xx of
+        Nil             -> True
+
+        Cons x xs
+         | p x          -> all p xs
+         | otherwise    -> False
 
 
 -- | Check if any of the members of the list match the given predicate.

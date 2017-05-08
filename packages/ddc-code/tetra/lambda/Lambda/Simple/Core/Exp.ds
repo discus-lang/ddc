@@ -16,26 +16,36 @@ type Name = Text
 
 -- | Untyped lambda calculus expressions.
 data Exp (p: Data) where
-        XPrim   : p     -> Exp p
+        -- Functional Core.
         XVar    : Name  -> Nat   -> Exp p
         XAbs    : Name  -> Exp p -> Exp p
         XApp    : Exp p -> Exp p -> Exp p
+
+        -- Macro expansion.
+        XMacro  : Name  -> Exp p
+
+        -- Primitive values.
+        XPrim   : p     -> Exp p
 
 
 show_Exp {Show p}: Show (Exp p)
  =  Show $ λxx
  -> case xx of
-        XPrim p
-         -> parens $ "XPrim" %% show p
-
         XVar n b     
-         -> parens $ "XVar"  %% show n  %% show b
+         -> parens $ "XVar"   %% show n  %% show b
         
         XAbs n x
-         -> parens $ "XAbs"  %% show n  %% show x
+         -> parens $ "XAbs"   %% show n  %% show x
         
         XApp x1 x2
-         -> parens $ "XApp"  %% show x1 %% show x2
+         -> parens $ "XApp"   %% show x1 %% show x2
+
+        XMacro n
+         -> parens $ "XMacro" %% show n
+
+        XPrim p
+         -> parens $ "XPrim"  %% show p
+
 
 
 -- | Make an application of a function to the given list of arguments.

@@ -3,7 +3,8 @@ module Lambda.Simple.Source.Token
 export
 {       eq_Token; show_Token;
         isToken;
-        takeNameOfToken
+        takeNameOfToken;
+        takeMacroOfToken
 }
 import Lambda.Simple.Core.Exp
 import Data.Text
@@ -14,10 +15,13 @@ where
 -- | Tokens for lambda calculus language.
 data Token where
         KName   : Name  -> Token        -- ^ Variable name.
+        KMacro  : Name  -> Token        -- ^ Macro name.
         KBra    : Token                 -- ^ Open  Bracket '('
         KKet    : Token                 -- ^ Close Bracket ')'
         KLambda : Token                 -- ^ Lambda symbol '\'
-        KDot    : Token                 -- ^ Dot symbol '.'
+        KDot    : Token                 -- ^ Dot symbol    '.'
+        KSemi   : Token                 -- ^ Semicolon     ';'
+        KEquals : Token                 -- ^ Equals        '='
 
 
 -- | Check if two tokens are equal.
@@ -30,6 +34,8 @@ eq_Token: Eq Token
                 T2 KKet    KKet         -> True
                 T2 KLambda KLambda      -> True
                 T2 KDot    KDot         -> True
+                T2 KSemi   KSemi        -> True
+                T2 KEquals KEquals      -> True
                 _                       -> False
 
         neq' t1 t2
@@ -40,11 +46,14 @@ eq_Token: Eq Token
 show_Token: Show Token
  =  Show $ \kk
  -> case kk of
-        KName n         -> parens $ "KName" %% show n
+        KName n         -> parens $ "KName"  %% show n
+        KMacro n        -> parens $ "KMacro" %% show n
         KBra            -> "KBra"
         KKet            -> "KKet"
         KLambda         -> "KLambda"
         KDot            -> "KDot"
+        KSemi           -> "KSemi"
+        KEquals         -> "KEquals"
 
 
 -- | Check if a token is equal to the give none.
@@ -58,3 +67,9 @@ takeNameOfToken (kk: Token): Maybe Name
         KName n         -> Just n
         _               -> Nothing
 
+
+-- | Take the name from a token, if any.
+takeMacroOfToken (kk: Token): Maybe Name
+ = case kk of
+        KMacro n        -> Just n
+        _               -> Nothing

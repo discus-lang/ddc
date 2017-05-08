@@ -4,6 +4,8 @@ export
 {       readl;
         write; writel; writell;
         flush;
+
+        takeTextLit;
 }
 
 import Data.Text

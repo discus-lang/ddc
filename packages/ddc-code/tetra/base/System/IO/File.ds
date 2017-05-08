@@ -1,0 +1,23 @@
+
+module System.IO.File
+export
+{       file_read
+}
+import Data.Text
+import System.IO.Console
+
+import foreign abstract type
+ File   : Effect
+
+import foreign c value
+ primFileRead   : TextLit# -> TextLit#
+
+
+where
+
+
+file_read (path: TextLit#): S File Text
+ = box weakeff [File] in 
+   do   lit     = primFileRead path
+        TextLit (makeTextLit lit)
+

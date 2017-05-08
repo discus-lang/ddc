@@ -27,26 +27,37 @@ lexToken (xx: List Char)
     Cons c xs
         -- Skip leading whitespace.
         | c == ' '      -> lexToken xs
+        | c == '\n'     -> lexToken xs
+        | c == '\t'     -> lexToken xs
 
         -- Punctuation.
         | c == '('      -> Just (T2 KBra    xs)
         | c == ')'      -> Just (T2 KKet    xs)
         | c == '\\'     -> Just (T2 KLambda xs)
         | c == '.'      -> Just (T2 KDot    xs)
+        | c == ';'      -> Just (T2 KSemi   xs)
+        | c == '='      -> Just (T2 KEquals xs)
 
         -- Names.
-        | isLower c     -> lexKName xx
+        |  isLower c     
+        ,  Just (T2 name          cs')   <- lexName xx
+        -> Just (T2 (KName name)  cs')
+
+        |  c == '$'     
+        ,  Just (T2 name          cs')   <- lexName xs
+        -> Just (T2 (KMacro name) cs')
+
         | otherwise     -> Nothing
 
 
 -- | Lex a variable name.
-lexKName (xx: List Char)
-        : Maybe (Tup2 Token (List Char))
+lexName (xx: List Char)
+        : Maybe (Tup2 Name (List Char))
  = go Nil xx
  where  
         go acc Nil              
          = do   name    = textOfCharList (reverse acc)
-                Just $ T2 (KName name) Nil
+                Just $ T2 name Nil
 
         go acc (Cons x xs)   
          | isLower x
@@ -54,5 +65,5 @@ lexKName (xx: List Char)
 
          | otherwise            
          = do   name    = textOfCharList (reverse acc)
-                Just $ T2 (KName name) (Cons x xs)
+                Just $ T2 name (Cons x xs)
 
