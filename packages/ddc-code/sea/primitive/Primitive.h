@@ -117,4 +117,4 @@ extern string_t* primShowInt    (int   i);
 extern string_t* primShowNat    (nat_t i);
 extern void      primPutTextLit (string_t* str);
 extern void      primPutString  (string_t* str);
-
+extern string_t* primGetString  (nat_t i);

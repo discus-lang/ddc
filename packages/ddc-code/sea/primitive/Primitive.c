@@ -155,11 +155,7 @@ string_t* primShowWord8 (uint8_t w)
 }
 
 
-// Print a C string to stdout.
-void primPutString (string_t* str)
-{       fputs(str, stdout);
-        fflush(stdout);
-}
+
 
 
 // Print a C string to stderr.
@@ -169,16 +165,39 @@ void primFailString(string_t* str)
         fflush(stderr);
 }
 
+
+// -- Stdout ------------------------------------------------------------------
+// Print a C string to stdout.
+void primStdoutPutString (string_t* str)
+{       fputs(str, stdout);
+        fflush(stdout);
+}
+
 // Print a text literal to stdout.
-void primPutTextLit (string_t* str)
+void primStdoutPutTextLit (string_t* str)
 {       fputs(str, stdout);
         fflush(stdout);
 }
 
 // Print a text vector to stdout.
-void primPutVector (Obj* obj)
+void primStdoutPutVector (Obj* obj)
 {       string_t* str 
                 = (string_t*) (_payloadRaw(obj) + 4);
         fputs(str, stdout);
         fflush(stdout);
+}
+
+// Flush stdout.
+void primStdoutFlush (Obj* obj)
+{       fflush(stdout);
+}
+
+
+// -- Stdin -------------------------------------------------------------------
+// Get a C string from stdin, up to the given length.
+string_t* primStdinGetString (nat_t len)
+{       
+        string_t* str   = malloc(len + 1);
+        fgets(str, len, stdin);
+        return str; 
 }

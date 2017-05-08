@@ -1,14 +1,25 @@
 
 module System.IO.Console 
-export { write; writel; writell }
+export 
+{       readl;
+        write; writel; writell;
+        flush;
+}
+
 import Data.Text
 
 import foreign abstract type
  Console  : Effect
 
 import foreign c value
- primPutString : TextLit# -> S Console Void#
- primPutVector : [r: Region]. Vector# r Word8# -> S Console Void#
+ primStdoutPutString    : TextLit# -> S Console Void#
+ primStdoutPutVector    : [r: Region]. Vector# r Word8# -> S Console Void#
+ primStdoutFlush        : Unit -> S Console Void#
+
+ -- TODO: We're missing the S result type,
+ --       bug if we add it the compiled code crashes.
+ primStdinGetString     : Nat# -> TextLit#
+
 
 import foreign c value
  -- Get the unboxed text literal from a boxed text literal.
@@ -18,15 +29,22 @@ import foreign c value
 where
 
 
+-- | Read a text string from the console, up to the maximum line length.
+readl (maxLen: Nat): S Console Text
+ = box weakeff [Console] in 
+   do   lit     = primStdinGetString maxLen 
+        TextLit (makeTextLit lit)
+
+
 -- | Write text to the console.
 write (tt: Text): S Console Unit
  = box case tt of
         TextLit lit
-         -> do  primPutString (takeTextLit lit)
+         -> do  primStdoutPutString (takeTextLit lit)
                 ()
 
         TextVec vec
-         -> do  primPutVector vec
+         -> do  primStdoutPutVector vec
                 ()
 
         TextApp t1 t2 
@@ -44,3 +62,10 @@ writel  (tt: Text): S Console Unit
 writell (tt: Text): S Console Unit
  = do   write tt
         write "\n\n"
+
+
+-- | Flush the output.
+flush: S Console Unit
+ = box do   
+        primStdoutFlush ()
+        ()

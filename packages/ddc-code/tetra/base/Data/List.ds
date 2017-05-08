@@ -5,7 +5,7 @@ export
         enumFromTo; append; concat;
         unfold; generate; intersperse;
         length;
-        head;
+        head; init;
         tail; tail1;
         last; index;
         lookup; find;
@@ -114,6 +114,16 @@ head (def: a) (xx: List a): a
  = case xx of
         Nil             -> def
         Cons x xs       -> x
+
+
+-- | Take the initial part of a list, not including the final element.
+init (def: List a) (xx: List a): List a
+ = case xx of
+        Nil             -> def
+        Cons x xs
+         -> case xs of
+                Nil             -> Nil
+                Cons x2 xs2     -> Cons x (init def (Cons x2 xs2))
 
 
 -- | Take the tail of a list, if there is one.

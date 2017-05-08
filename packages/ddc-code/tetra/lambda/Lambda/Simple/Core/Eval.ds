@@ -15,17 +15,19 @@ lift    (n:  Name)      -- ^ Name of variable to lift references to.
         (xx: Exp p)     -- ^ Expression to lift references in.
         : Exp p
  = case xx of
-        XPrim _                 -> xx
+        XPrim _         -> xx
 
         XVar  n1 ix
-         | n == n1, d <= ix     -> XVar n1 (ix + 1)
-         | otherwise            -> xx
+         | n == n1
+         , d <= ix      -> XVar n1 (ix + 1)
+
+         | otherwise    -> xx
 
         XAbs n1 x2
-         | n == n1              -> XAbs n1 (lift n (d + 1) x2)
-         | otherwise            -> XAbs n1 x2
+         | n == n1      -> XAbs n1 (lift n (d + 1) x2)
+         | otherwise    -> XAbs n1 (lift n  d      x2)
 
-        XApp x1 x2              -> XApp (lift n d x1) (lift n d x2)
+        XApp x1 x2      -> XApp (lift n d x1) (lift n d x2)
 
 
 -- | Substitute a name for an expression in an expression.
@@ -35,21 +37,23 @@ subst   (n:  Name)      -- ^ Name of variable to lift references ot.
         (xx: Exp p)     -- ^ Expression to substitute into.
         : Exp p
  = case xx of
-        XPrim _                 -> xx
+        XPrim _         -> xx
 
         XVar n1 d'   
-         | n == n1, d == d'     -> x
-         | otherwise            -> xx
+         | n == n1
+         , d == d'      -> x
+
+         | otherwise    -> xx
 
         XAbs n1 x2
-         | n == n1              -> XAbs n1 (subst n (d + 1) x x2)
-         | otherwise            -> XAbs n1 (subst n d       x x2)
+         | n == n1      -> XAbs n1 (subst n (d + 1) (lift n1 0 x) x2)
+         | otherwise    -> XAbs n1 (subst n  d      (lift n1 0 x) x2)
 
-        XApp x1 x2              -> XApp    (subst n d x x1) (subst n d x x2)
+        XApp x1 x2      -> XApp    (subst n d x x1) (subst n d x  x2)
 
 
 -- | Call-by-name reduction.
-reduce_cbn (xx: Exp p):    Maybe (Exp p)
+reduce_cbn (xx: Exp p): Maybe (Exp p)
  = case xx of
         XPrim _         -> Just xx
         XVar  _ _       -> Just xx

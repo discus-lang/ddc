@@ -11,10 +11,12 @@ where
 
 
 -- | Lex a sequence of tokens.
-lexTokens (xx: List Char): List Token
- = case lexToken xx of
-        Nothing         -> Nil
-        Just (T2 k xs)  -> Cons k (lexTokens xs)
+lexTokens (cs: List Char): Tup2 (List Token) (List Char)
+ = case lexToken cs of
+        Nothing                 -> T2 Nil cs
+        Just (T2 k cs')  
+         -> case lexTokens cs' of
+                T2 ks cs''      -> T2 (Cons k ks) cs''
 
 
 -- | Lex a single token.
