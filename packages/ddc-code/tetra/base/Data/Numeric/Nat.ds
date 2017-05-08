@@ -4,6 +4,7 @@ export
 {       eq_Nat;  ord_Nat;
         add_Nat; sub_Nat; mul_Nat; div_Nat; rem_Nat;
         bits_Nat;
+        iterate
 }
 import Class.Eq
 import Class.Ord
@@ -66,3 +67,8 @@ bits_Nat: Bits Nat
         (\x y -> band# [Nat#] x y)
         (\x y -> bor#  [Nat#] x y)
         (\x y -> bxor# [Nat#] x y)
+
+
+iterate (f: a -> a) (x: a) (n: Nat): a
+ | n == 0       = x
+ | otherwise    = iterate f (f x) (n - 1) 

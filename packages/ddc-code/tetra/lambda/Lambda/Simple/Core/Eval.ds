@@ -2,10 +2,12 @@
 module Lambda.Simple.Core.Eval
 export 
 {       lift; subst;
-        eval_cbn
+        reduce_cbn;
+        reduce_no
 }
 import Lambda.Simple.Core.Exp
 where
+
 
 -- | Lift references to the given name.
 lift    (n:  Name)      -- ^ Name of variable to lift references to.
@@ -46,17 +48,48 @@ subst   (n:  Name)      -- ^ Name of variable to lift references ot.
         XApp x1 x2              -> XApp    (subst n d x x1) (subst n d x x2)
 
 
--- | Big step evaluation of an expression to a value.
-eval_cbn (xx: Exp p): Maybe (Exp p)
+-- | Call-by-name reduction.
+reduce_cbn (xx: Exp p):    Maybe (Exp p)
+ = case xx of
+        XPrim _         -> Just xx
+        XVar  _ _       -> Just xx
+        XAbs  _ _       -> Just xx
+
+        XApp x1 x2      
+         -> case reduce_cbn x1 of
+                Just (XAbs n11 x12)
+                  |  Just x'     <- reduce_cbn (subst n11 0 x2 x12)
+                  -> Just x'
+
+                Just x1'
+                  -> Just (XApp x1' x2)
+
+                _ -> Nothing
+
+
+-- | Normal-order reduction.
+reduce_no (xx: Exp p): Maybe (Exp p)
  = case xx of
         XPrim _         -> Just xx
         XVar  _ _       -> Just xx
 
-        XAbs  _ _       -> Just xx
+        XAbs  n1 x2
+         -> case reduce_no x2 of
+                Just x2'
+                  -> Just (XAbs n1 x2')
 
-        XApp x1 x2      
-         -> case eval_cbn x1 of
+                _ -> Nothing
+
+        XApp  x1 x2
+         -> case reduce_cbn x1 of
                 Just (XAbs n11 x12)
-                  -> eval_cbn (subst n11 0 x2 x12)
-                _ -> Just (XApp x1 x2)
+                  |  Just x'     <- reduce_no (subst n11 0 x2 x12)
+                  -> Just x'
+
+                Just x1'
+                  |  Just x1''   <- reduce_no x1'
+                  ,  Just x2'    <- reduce_no x2
+                  -> Just (XApp x1'' x2')
+
+                _ -> Nothing
 

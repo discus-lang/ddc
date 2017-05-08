@@ -3,6 +3,7 @@ module Main
 import Lambda.Simple.Core.Exp
 import Lambda.Simple.Core.Eval
 import Lambda.Simple.Deep.Exp
+import Lambda.Simple.Deep.Church
 import Lambda.Simple.Source.Pretty
 import System.IO.Console
 import Data.Maybe
@@ -11,12 +12,19 @@ where
 show_Unit: Show Unit
  = Show $ λxx -> "()"
 
-xIdent: Exp Unit
+xIdent: Exp p
  = abs "x" (var "x")
 
-xTwice: Exp Unit
+xTwice: Exp p
  = abs "f" (abs "x" (app (var "f") (app (var "f") (var "x"))))
 
+asUnit (xx: Exp Unit): Exp Unit
+ = xx
+
 main ()
- = do   writel $ ppr (app xTwice xIdent)
-        writel $ maybe "crash" ppr $ eval_cbn (app xTwice xIdent)
+ = do   writel $ ppr (asUnit (app xTwice xIdent))
+
+        writel  $ maybe "crash" ppr 
+                $ reduce_no 
+                $ asUnit
+                $ app (app xPlus (xNat 5)) (xNat 2)

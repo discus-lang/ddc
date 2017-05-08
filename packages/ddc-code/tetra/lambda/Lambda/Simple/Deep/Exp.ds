@@ -1,7 +1,7 @@
 
 -- | Deeply embedded abstract syntax.
 module Lambda.Simple.Deep.Exp
-export { prim; var; abs; app }
+export { prim; var; var'; abs; app }
 import Lambda.Simple.Core.Exp
 where
 
@@ -14,6 +14,11 @@ prim (prim: p): Exp p
 -- | Construct a variable expression.
 var  (n: Name): Exp p
  = XVar n 0
+
+
+-- | Construct a variable expression at the given binding depth.
+var' (n: Name) (d: Nat): Exp p
+ = XVar n d
 
 
 -- | Construct an abstraction expression.

@@ -19,4 +19,3 @@ apply   [a b: Data]   (f: a -> b) (x: a): b
 --   The operator '∘' is desugared to applications of this function.
 compose [a b c: Data] (f: b -> c) (g: a -> b): a -> c
  = λ(x : a) -> f (g x)
-

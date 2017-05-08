@@ -1,27 +1,12 @@
 
 module Lambda.Simple.Source.Pretty
 export 
-{       ppr;
-        pretty_Unit; pretty_Exp
+{       pretty_Exp
 }
 import Lambda.Simple.Core.Exp
+import Class.Pretty
 import Data.Text
 where
-
-
--- | Pretty printer dictionary.
-data Pretty (a: Data) where
-        Pretty : (a -> Text) -> Pretty a
-
-
--- | Pretty print a thing as a text string.
-ppr {(Pretty ppr'): Pretty a} (x: a): Text
- = ppr' x
-
-
--- | Pretty printer for a unit value.
-pretty_Unit: Pretty Unit
- = Pretty $ \xx -> "()"
 
 
 -- | Pretty printer for an expression.
@@ -41,21 +26,21 @@ pprExp' [p: Data] {Pretty p} (ctx: Context) (xx: Exp p): Text
  | ContextBody  <- ctx
  = case xx of
         XPrim p         -> ppr p
-        XVar name       -> name
+
+        XVar name 0     -> name 
+        XVar name d     -> name % "^" % show d
+
         XAbs name x     -> "λ" % name % "." % pprExp' ContextBody x
         XApp x1 x2      -> pprExp' ContextFun x1 %% pprExp' ContextArg x2
 
  | ContextFun   <- ctx
  = case xx of
-        XPrim p         -> ppr p
-        XVar name _     -> name
         XAbs _ _        -> parens $ pprExp' ContextBody xx
-        XApp _ _        -> pprExp' ContextBody xx
+        _               -> pprExp' ContextBody xx
 
  | ContextArg   <- ctx
  = case xx of
-        XPrim p         -> ppr p
-        XVar name _     -> name
         XAbs _ _        -> parens $ pprExp' ContextBody xx
         XApp _ _        -> parens $ pprExp' ContextBody xx
+        _               -> pprExp' ContextBody xx
 
