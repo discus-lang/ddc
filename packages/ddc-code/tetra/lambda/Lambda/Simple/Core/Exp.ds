@@ -1,8 +1,8 @@
 
 module Lambda.Simple.Core.Exp
 export
-{       show_Exp;
-        makeXApps;
+{       show_Decl;      lookupDecl;
+        show_Exp;       makeXApps;
 }
 import Class.Show
 import Data.Text
@@ -10,10 +10,37 @@ import Data.Tuple
 where
 
 
+-- Name -----------------------------------------------------------------------
 -- | Represent names as text.
 type Name = Text
 
 
+-- Decl -----------------------------------------------------------------------
+-- | Top-level declaration.
+data Decl (p: Data) where
+        DTerm   : Name -> Exp p -> Decl p
+
+
+lookupDecl
+        (n: Name)
+        (decls: List (Decl p))
+        : Maybe (Exp p)
+ = case decls of
+        Nil             -> Nothing
+
+        Cons (DTerm n' x) ds
+         | n == n'      -> Just x
+         | otherwise    -> lookupDecl n ds
+
+
+show_Decl {Show p}: Show (Decl p)
+ =  Show $ λdd
+ -> case dd of
+        DTerm n x
+         -> parens $ "DTerm"    %% show n %% show x
+
+
+-- Exp ------------------------------------------------------------------------
 -- | Untyped lambda calculus expressions.
 data Exp (p: Data) where
         -- Functional Core.
@@ -47,7 +74,6 @@ show_Exp {Show p}: Show (Exp p)
          -> parens $ "XPrim"  %% show p
 
 
-
 -- | Make an application of a function to the given list of arguments.
 makeXApps (xFun: Exp p) (xsArgs: List (Exp p)): Exp p
  = build (reverse xsArgs)
@@ -56,3 +82,4 @@ makeXApps (xFun: Exp p) (xsArgs: List (Exp p)): Exp p
          = case xs of
                 Nil             -> xFun
                 Cons x1 xsArgs' -> XApp (build xsArgs') x1
+

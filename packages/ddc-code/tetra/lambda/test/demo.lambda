@@ -1,35 +1,41 @@
 
-$fix            = \f. (\x. f (x x)) (\x. f (x x));
+@fix    f       = (\x. f (x x)) (\x. f (x x));
 
-$true           = \x. \y. x;
-$false          = \x. \y. y;
-$if             = \a. \b. \c. a b c;
-$and            = \x. \y. $if x y $false;
-$or             = \x. \y. $if x $true y;
+@true   x y     = x;
+@false  x y     = y;
+@if     a b c   = a b c;
+@and    x y     = @if x y @false;
+@or     x y     = @if x @true  y;
 
-$zero           = \s. \z. z;
-$succ           = \n. \s. \z. s (n s z);
-$one            = $succ $zero;
-$two            = $succ $one;
-$three          = $succ $two;
-$four           = $succ $three;
+@zero           = \s. \z. z;
+@succ   n       = \s. \z. s (n s z);
+@one            = @succ @zero;
+@two            = @succ @one;
+@three          = @succ @two;
+@four           = @succ @three;
 
-$pair           = \m. \n. \b. $if b m n;
-$fst            = \p. p $true;
-$snd            = \p. p $false;
-$pairzero       = $pair $zero $zero;
-$pairsucc       = \p. $pair ($snd p) ($succ ($snd p));
+@pair   m n     = \b. @if b m n;
+@fst    p       = p @true;
+@snd      p     = p @false;
+@pair-zero      = @pair @zero @zero;
+@pair-succ p    = @pair (@snd p) (@succ (@snd p));
 
-$pred           = \n. $fst (n $pairsucc $pairzero);
-$add            = \m. \n. \s. \z. m s (n s z);
-$sub            = \m. \n. n $pred m;
-$mul            = \m. \n. \z. n (m z);
-$exp            = \m. \n. n m;
-$iszero         = \n. n (\x. $false) $true;
+@pred   n       = @fst (n @pair-succ @pair-zero);
+@add    m n     = \s. \z. m s (n s z);
+@sub    m n     = n @pred m;
+@mul    m n     = \z. n (m z);
+@exp    m n     = n m;
+@iszero n       = n (\x. @false) @true;
 
-$fac            
- = $fix (\fac. \n. 
-        $if     ($iszero n) 
-                $one 
-                ($mul n (fac ($pred n))));
+@fac n
+ = @if  (@iszero n)
+        @one
+        (@mul n (@fac (@pred n)));
 
+(!abs b (@if b m n))
+
+(!abs b (!app (!app (@if (!var b) (!var m)) (!var n))))
+
+(!module  
+ (!def @zero (!app 
+ (!def @true (!abs x (!abs y (!var x)))))

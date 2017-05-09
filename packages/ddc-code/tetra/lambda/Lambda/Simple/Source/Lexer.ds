@@ -43,7 +43,7 @@ lexToken (xx: List Char)
         ,  Just (T2 name          cs')   <- lexName xx
         -> Just (T2 (KName name)  cs')
 
-        |  c == '$'     
+        |  c == '@'     
         ,  Just (T2 name          cs')   <- lexName xs
         -> Just (T2 (KMacro name) cs')
 
@@ -51,8 +51,7 @@ lexToken (xx: List Char)
 
 
 -- | Lex a variable name.
-lexName (xx: List Char)
-        : Maybe (Tup2 Name (List Char))
+lexName (xx: List Char): Maybe (Tup2 Name (List Char))
  = go Nil xx
  where  
         go acc Nil              
@@ -60,7 +59,7 @@ lexName (xx: List Char)
                 Just $ T2 name Nil
 
         go acc (Cons x xs)   
-         | isLower x
+         | isLower x ∨ x == '-' 
          = go (Cons x acc) xs
 
          | otherwise            

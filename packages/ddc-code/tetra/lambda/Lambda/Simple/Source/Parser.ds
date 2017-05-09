@@ -5,7 +5,6 @@ export
         parseExp;   pExp;   pExpApp; pExpAtom;
 }
 import Lambda.Simple.Source.Lexer
-import Lambda.Simple.Core.Decl
 import Lambda.Simple.Core.Exp
 import Control.Parsec
 import Data.Maybe
@@ -25,11 +24,13 @@ pDecls : Parser Token (List (Decl p))
 
 
 pDecl : Parser Token (Decl p)
- =      (bind   (from takeMacroOfToken)         $ λ nDecl -> 
-         bind   (satisfies (isToken KEquals))   $ λ kEq   -> 
-         bind   pExp                            $ λ xBody ->
-         bind   (satisfies (isToken KSemi))     $ λ kSemi ->
-         return (DTerm nDecl xBody))
+ =      (bind   (from takeMacroOfToken)         $ λ nDecl   -> 
+         bind   (some (from takeNameOfToken))   $ λ nsParam ->
+         bind   (satisfies (isToken KEquals))   $ λ kEq     -> 
+         bind   pExp                            $ λ xBody   ->
+         bind   (satisfies (isToken KSemi))     $ λ kSemi   ->
+         return (DTerm nDecl $ foldr XAbs xBody nsParam))
+
 
 
 -- Exp ------------------------------------------------------------------------
