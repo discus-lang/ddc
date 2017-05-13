@@ -1,8 +1,9 @@
 
-module Lambda.Simple.Source.Lexer
+module Shimmer.Source.Lexer
 export lexTokens
-import Lambda.Simple.Source.Token
-import Lambda.Simple.Core.Exp
+import Shimmer.Source.Token
+import Shimmer.Core.Exp
+import System.Posix.Stdlib
 import Control.Parsec
 import Class.Show
 import Data.Tuple
@@ -31,23 +32,41 @@ lexToken (xx: List Char)
         | c == '\t'     -> lexToken xs
 
         -- Punctuation.
-        | c == '('      -> Just (T2 KBra    xs)
-        | c == ')'      -> Just (T2 KKet    xs)
-        | c == '\\'     -> Just (T2 KLambda xs)
-        | c == '.'      -> Just (T2 KDot    xs)
-        | c == ';'      -> Just (T2 KSemi   xs)
-        | c == '='      -> Just (T2 KEquals xs)
+        |  Just tok     <- lexPunc1 c
+        -> Just (T2 tok xs)
 
         -- Names.
         |  isLower c     
         ,  Just (T2 name          cs')   <- lexName xx
         -> Just (T2 (KName name)  cs')
 
+        -- Macro names.
         |  c == '@'     
         ,  Just (T2 name          cs')   <- lexName xs
         -> Just (T2 (KMacro name) cs')
 
+        -- Primitive names.
+        |  c == '#'
+        ,  Just (T2 name          cs')   <- lexName xs
+        -> Just (T2 (KPrim  name) cs')
+
+        -- Primitive natural numbers.
+        |  isDigit c
+        ,  Just (T2 nat           cs')   <- lexNat  (Cons c xs)
+        -> Just (T2 (KLitNat nat) cs')
+
         | otherwise     -> Nothing
+
+
+-- | Lex a punctuation character.
+lexPunc1 (c: Char): Maybe Token
+ | c == '('     = Just KBra
+ | c == ')'     = Just KKet
+ | c == '\\'    = Just KLambda
+ | c == '.'     = Just KDot
+ | c == ';'     = Just KSemi
+ | c == '='     = Just KEquals
+ | otherwise    = Nothing
 
 
 -- | Lex a variable name.
@@ -65,4 +84,19 @@ lexName (xx: List Char): Maybe (Tup2 Name (List Char))
          | otherwise            
          = do   name    = textOfCharList (reverse acc)
                 Just $ T2 name (Cons x xs)
+
+
+-- | Lex a natural number.
+lexNat (xx: List Char): Maybe (Tup2 Nat (List Char))
+ = go Nil xx
+ where  
+        go acc xs
+         | Cons x xs'   <- xs
+         , isDigit x
+         = go (Cons x acc) xs'
+
+         | otherwise
+         = case readNat (textOfCharList (reverse acc)) of
+                Nothing         -> Nothing
+                Just nat        -> Just $ T2 nat xs
 

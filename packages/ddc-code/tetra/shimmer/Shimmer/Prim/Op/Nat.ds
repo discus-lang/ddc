@@ -1,0 +1,63 @@
+
+module Shimmer.Prim.Op.Nat
+export evalPrimNat
+import Shimmer.Prim.Base
+import Data.Maybe
+where
+
+
+-- | Evaluate a Nat primitive.
+--
+--   All the nat primtitives are strict, so we force the arguments to whnf first.
+--
+evalPrimNat 
+        (eval:  Exp Prim -> Maybe Prim) -- ^ Evaluate an expression to a primitive.
+        (p:     PrimNat)                -- ^ Primitive to evaluate.
+        (xs:    List (Exp Prim))        -- ^ Arguments to primitive.
+        : Maybe (Exp Prim)
+ = case sequence (map eval xs) of
+    Nothing
+     -> Nothing
+
+    Just ps 
+     -> case ps of
+         Nil
+           -> fmap XPrim (evalPrimNat0 p)
+        
+         Cons (PrimNat (PrimNatVal n1)) Nil
+           -> fmap XPrim (evalPrimNat1 p n1)
+
+         Cons (PrimNat (PrimNatVal n1)) (Cons (PrimNat (PrimNatVal n2)) Nil)
+           -> fmap XPrim (evalPrimNat2 p n1 n2)
+
+         _ -> Nothing
+
+
+-- | Evaluate a zero-arity Nat primitive.
+evalPrimNat0 (p: PrimNat): Maybe Prim
+ = case p of
+        PrimNatVal _    -> Just (PrimNat p)
+        _               -> Nothing
+
+
+-- | Evaluate a 1-ary Nat primitive.
+evalPrimNat1 (p: PrimNat) (n1: Nat): Maybe Prim
+ = case p of
+        _               -> Nothing
+
+
+-- | Evaluate a 2-ary Nat primitive.
+evalPrimNat2 (p: PrimNat) (n1 n2: Nat): Maybe Prim
+ = case p of
+        PrimNatAdd      -> Just (PrimNat  (PrimNatVal  (n1 + n2)))
+        PrimNatSub      -> Just (PrimNat  (PrimNatVal  (n1 - n2)))
+        PrimNatMul      -> Just (PrimNat  (PrimNatVal  (n1 * n2)))
+        PrimNatDiv      -> Just (PrimNat  (PrimNatVal  (div n1 n2)))
+        PrimNatEq       -> Just (PrimBool (PrimBoolVal (n1 == n2)))
+        PrimNatNeq      -> Just (PrimBool (PrimBoolVal (n1 == n2)))
+        PrimNatLt       -> Just (PrimBool (PrimBoolVal (n1 <  n2)))
+        PrimNatLe       -> Just (PrimBool (PrimBoolVal (n1 <= n2)))
+        PrimNatGt       -> Just (PrimBool (PrimBoolVal (n1 >  n2)))
+        PrimNatGe       -> Just (PrimBool (PrimBoolVal (n1 >= n2)))
+        _               -> Nothing
+

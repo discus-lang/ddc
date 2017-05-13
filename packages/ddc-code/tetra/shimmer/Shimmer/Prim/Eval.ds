@@ -1,0 +1,21 @@
+
+module Shimmer.Prim.Eval
+export evalPrim
+import Shimmer.Prim.Op.Bool
+import Shimmer.Prim.Op.Nat
+import Shimmer.Prim.Base
+import Data.Maybe
+where
+
+
+-- | Evaluate a primitive application.
+evalPrim 
+        (eval:  Exp Prim -> Maybe Prim) -- ^ Evaluation function for whole expressions.
+        (p:     Prim)                   -- ^ Primitive being applied.
+        (xs:    List (Exp Prim))        -- ^ List of arguments to the primitive.
+        : Maybe (Exp Prim)
+ = case p of
+        PrimBool pb     -> evalPrimBool eval pb xs
+        PrimNat  pn     -> evalPrimNat  eval pn xs
+
+

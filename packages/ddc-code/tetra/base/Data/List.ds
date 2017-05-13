@@ -13,7 +13,7 @@ export
         map; mapS; for;
         forS;
         zipWith; zipWithS;
-        foldl;  foldlS;       sum;    prod;
+        foldl;  foldlS;       sum;    prod;     sequence;
         foldr;  foldrS;
         scanl;
         filter; filterS;

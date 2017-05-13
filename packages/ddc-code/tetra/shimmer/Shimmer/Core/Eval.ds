@@ -1,11 +1,11 @@
 
-module Lambda.Simple.Core.Eval
+module Shimmer.Core.Eval
 export 
 {       lift; subst;
         reduce_cbn;
         reduce_no
 }
-import Lambda.Simple.Core.Exp
+import Shimmer.Core.Exp
 where
 
 
@@ -28,15 +28,14 @@ lift    (n:  Name)      -- ^ Name of variable to lift references to.
         XApp x1 x2      -> XApp (lift n d x1) (lift n d x2)
 
         XMacro _        -> xx
-
         XPrim _         -> xx
 
 
 -- | Substitute a name for an expression in an expression.
-subst   (n:  Name)      -- ^ Name of variable to lift references ot.
-        (d:  Nat)       -- ^ Depth of name to substitute for.
-        (x:  Exp p)     -- ^ Expression to substitute.
-        (xx: Exp p)     -- ^ Expression to substitute into.
+subst   (n:  Name)              -- ^ Name of variable to lift references ot.
+        (d:  Nat)               -- ^ Depth of name to substitute for.
+        (x:  Exp p)             -- ^ Expression to substitute.
+        (xx: Exp p)             -- ^ Expression to substitute into.
         : Exp p
  = case xx of
         XVar n1 ix   
@@ -55,7 +54,6 @@ subst   (n:  Name)      -- ^ Name of variable to lift references ot.
         XApp x1 x2      -> XApp    (subst n d x x1) (subst n d x  x2)
 
         XMacro _        -> xx
-
         XPrim _         -> xx
 
 
@@ -68,6 +66,8 @@ unfold (decls: List (Decl p)) (xx: Exp p): Exp p
 
 -- | Call-by-name reduction.
 reduce_cbn 
+        (prim:  p -> List (Exp p) -> Maybe (Exp p))     
+                                -- ^ Fn to evaluate a prim application.
         (decls: List (Decl p))  -- ^ External declarations.
         (xx:    Exp p)          -- ^ Expression to reduce.
         : Maybe (Exp p)
@@ -76,9 +76,15 @@ reduce_cbn
         XAbs  _ _       -> Just xx
 
         XApp x1 x2
-         |  Just x1'    <- reduce_cbn decls x1
+         |  Just (T2 (XPrim p) args) <- takeXApps xx
+         ,  Just xx'            <- prim p args
+         -> case reduce_cbn prim decls xx' of
+                Just xx''       -> Just xx''
+                Nothing         -> Just xx'
+
+         |  Just x1'            <- reduce_cbn prim decls x1
          -> case unfold decls x1' of
-                XAbs n11 x12    -> reduce_cbn decls (subst n11 0 x2 x12)
+                XAbs n11 x12    -> reduce_cbn prim decls (subst n11 0 x2 x12)
                 _               -> Just (XApp x1' x2)
 
          | otherwise    -> Just xx
@@ -89,6 +95,8 @@ reduce_cbn
 
 -- | Normal-order reduction.
 reduce_no 
+        (prim:  p -> List (Exp p) -> Maybe (Exp p))     
+                                -- ^ Fn to evaluate a primitive application.
         (decls: List (Decl p))  -- ^ External declarations.
         (xx: Exp p)             -- ^ Expression to reduce.
         : Maybe (Exp p)
@@ -96,17 +104,23 @@ reduce_no
         XVar  _ _        -> Just xx
 
         XAbs  n1 x2
-         -> case reduce_no decls x2 of
+         -> case reduce_no prim decls x2 of
                 Just x2' -> Just (XAbs n1 x2')
                 Nothing  -> Just xx
 
         XApp  x1 x2
-         |  Just x1'    <- reduce_cbn decls x1 
-         -> case unfold decls x1' of
-                XAbs n11 x12    -> reduce_no decls (subst n11 0 x2 x12)
+         |  Just (T2 (XPrim p) args) <- takeXApps xx
+         ,  Just xx'            <- prim p args
+         -> case reduce_no prim decls xx' of
+                Just xx''       -> Just xx''
+                Nothing         -> Just xx'
 
-                _ |  Just x1''  <- reduce_no decls x1'
-                  ,  Just x2'   <- reduce_no decls x2
+         |  Just x1'            <- reduce_cbn prim decls x1 
+         -> case unfold decls x1' of
+                XAbs n11 x12    -> reduce_no prim decls (subst n11 0 x2 x12)
+
+                _ |  Just x1''  <- reduce_no prim decls x1'
+                  ,  Just x2'   <- reduce_no prim decls x2
                   -> Just (XApp x1'' x2')
 
          | otherwise    -> Just xx

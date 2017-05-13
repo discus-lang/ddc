@@ -1,9 +1,9 @@
 
-module Lambda.Simple.Source.Pretty
+module Shimmer.Source.Pretty
 export 
 {       pretty_Exp
 }
-import Lambda.Simple.Core.Exp
+import Shimmer.Core.Exp
 import Class.Pretty
 import Data.Text
 where

@@ -53,11 +53,11 @@ liftA   (dapp: Applicative f) (f: a -> b) (xa: f a): f b
 liftA2  (dapp: Applicative f)
         (f: a -> b -> c) (xa: f a) (xb: f b): f c
  = let  dfun    = dFunctorOfApplicative dapp
-   in   ap dapp (fmap dfun f xa) xb
+   in   ap dapp (fmap {dfun} f xa) xb
 
 
 liftA3  (dapp: Applicative f) 
         (f: a -> b -> c -> d) (xa: f a) (xb: f b) (xc: f c): f d
  = let  dfun    = dFunctorOfApplicative dapp
-   in   ap dapp (ap dapp (fmap dfun f xa) xb) xc
+   in   ap dapp (ap dapp (fmap {dfun} f xa) xb) xc
 

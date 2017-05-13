@@ -1,4 +1,3 @@
-
 @fix    f       = (\x. f (x x)) (\x. f (x x));
 
 @true   x y     = x;
@@ -32,10 +31,8 @@
         @one
         (@mul n (@fac (@pred n)));
 
-(!abs b (@if b m n))
+@fac-nat n
+ = #if  (#nat-eq 0 n)
+        1
+        (#nat-mul n (@fac-nat (#nat-sub n 1)));
 
-(!abs b (!app (!app (@if (!var b) (!var m)) (!var n))))
-
-(!module  
- (!def @zero (!app 
- (!def @true (!abs x (!abs y (!var x)))))

@@ -1,0 +1,65 @@
+
+module Shimmer.Prim.Op.Bool
+export evalPrimBool
+import Shimmer.Prim.Base
+import Data.Maybe
+where
+
+
+-- | Evaluate a Bool primitive.
+--
+--   All the nat primtitives are strict, so we force the arguments to whnf first.
+--
+evalPrimBool
+        (eval:  Exp Prim -> Maybe Prim) -- ^ Evaluate an expression to a primitive.
+        (p:     PrimBool)               -- ^ Primitive to evaluate.
+        (xs:    List (Exp Prim))        -- ^ Arguments to primitive.
+        : Maybe (Exp Prim)
+
+ | PrimBoolIf   <- p
+ , Cons xScrut (Cons xThen (Cons xElse Nil))    <- xs
+ = case eval xScrut of
+        Just (PrimBool (PrimBoolVal True))      -> Just xThen
+        Just (PrimBool (PrimBoolVal False))     -> Just xElse
+        _                                       -> Nothing
+
+ | otherwise
+ = case sequence (map eval xs) of
+    Nothing
+     -> Nothing
+
+    Just ps 
+     -> case ps of
+         Nil
+           -> fmap XPrim (evalPrimBool0 p)
+        
+         Cons (PrimBool (PrimBoolVal b1)) Nil
+           -> fmap XPrim (evalPrimBool1 p b1)
+
+         Cons (PrimBool (PrimBoolVal b1)) (Cons (PrimBool (PrimBoolVal b2)) Nil)
+           -> fmap XPrim (evalPrimBool2 p b1 b2)
+
+         _ -> Nothing
+
+
+-- | Evaluate a zero-arity Bool primitive.
+evalPrimBool0 (p: PrimBool): Maybe Prim
+ = case p of
+        PrimBoolVal _   -> Just (PrimBool p)
+        _               -> Nothing
+
+
+-- | Evaluate a 1-ary Bool primitive.
+evalPrimBool1 (p: PrimBool) (b1: Bool): Maybe Prim
+ = case p of
+        PrimBoolNot     -> Just (PrimBool (PrimBoolVal (not b1)))
+        _               -> Nothing
+
+
+-- | Evaluate a 2-ary Nat primitive.
+evalPrimBool2 (p: PrimBool) (b1 b2: Bool): Maybe Prim
+ = case p of
+        PrimBoolAnd     -> Just (PrimBool (PrimBoolVal (and b1 b2)))
+        PrimBoolOr      -> Just (PrimBool (PrimBoolVal (or  b1 b2)))
+        _               -> Nothing
+

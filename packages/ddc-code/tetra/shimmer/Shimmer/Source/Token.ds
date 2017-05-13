@@ -1,12 +1,14 @@
 
-module Lambda.Simple.Source.Token
+module Shimmer.Source.Token
 export
 {       eq_Token; show_Token;
         isToken;
         takeNameOfToken;
-        takeMacroOfToken
+        takePrimNameOfToken;
+        takeMacroNameOfToken;
+        takeLitNatOfToken
 }
-import Lambda.Simple.Core.Exp
+import Shimmer.Core.Exp
 import Data.Text
 import Data.Maybe
 where
@@ -14,14 +16,18 @@ where
 
 -- | Tokens for lambda calculus language.
 data Token where
-        KName   : Name  -> Token        -- ^ Variable name.
-        KMacro  : Name  -> Token        -- ^ Macro name.
         KBra    : Token                 -- ^ Open  Bracket '('
         KKet    : Token                 -- ^ Close Bracket ')'
         KLambda : Token                 -- ^ Lambda symbol '\'
         KDot    : Token                 -- ^ Dot symbol    '.'
         KSemi   : Token                 -- ^ Semicolon     ';'
         KEquals : Token                 -- ^ Equals        '='
+
+        KName   : Name  -> Token        -- ^ Variable name.
+        KMacro  : Name  -> Token        -- ^ Macro name.
+        KPrim   : Name  -> Token        -- ^ Primitive name.
+
+        KLitNat : Nat   -> Token        -- ^ Literal natural number.
 
 
 -- | Check if two tokens are equal.
@@ -46,14 +52,18 @@ eq_Token: Eq Token
 show_Token: Show Token
  =  Show $ \kk
  -> case kk of
-        KName n         -> parens $ "KName"  %% show n
-        KMacro n        -> parens $ "KMacro" %% show n
         KBra            -> "KBra"
         KKet            -> "KKet"
         KLambda         -> "KLambda"
         KDot            -> "KDot"
         KSemi           -> "KSemi"
         KEquals         -> "KEquals"
+
+        KName  n        -> parens $ "KName"   %% show n
+        KMacro n        -> parens $ "KMacro"  %% show n
+        KPrim  n        -> parens $ "KPrim"   %% show n
+
+        KLitNat n       -> parens $ "KLitNat" %% show n
 
 
 -- | Check if a token is equal to the give none.
@@ -69,7 +79,23 @@ takeNameOfToken (kk: Token): Maybe Name
 
 
 -- | Take the name from a token, if any.
-takeMacroOfToken (kk: Token): Maybe Name
+takeMacroNameOfToken (kk: Token): Maybe Name
  = case kk of
         KMacro n        -> Just n
         _               -> Nothing
+
+
+-- | Take the name from a token, if any.
+takePrimNameOfToken (kk: Token): Maybe Name
+ = case kk of
+        KPrim n         -> Just n
+        _               -> Nothing
+
+
+-- | Take a literal natural number from a token, if any.
+takeLitNatOfToken (kk: Token): Maybe Nat
+ = case kk of
+        KLitNat n       -> Just n
+        _               -> Nothing
+
+

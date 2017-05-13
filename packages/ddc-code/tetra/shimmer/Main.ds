@@ -1,10 +1,14 @@
 
+-- Shimmer v1.0.
+--   The Turtle at the Bottom of the World.
+--
 module Main
-import Lambda.Simple.Core.Exp
-import Lambda.Simple.Core.Eval
-import Lambda.Simple.Source.Pretty
-import Lambda.Simple.Source.Token
-import Lambda.Simple.Source.Parser
+import Shimmer.Core.Exp
+import Shimmer.Core.Eval
+import Shimmer.Prim.Eval
+import Shimmer.Source.Pretty
+import Shimmer.Source.Token
+import Shimmer.Source.Parser
 import System.IO.Console
 import System.IO.File
 import Main.Args
@@ -14,7 +18,8 @@ where
 
 -- TODO: need explict run/box.
 main ()
- = do
+ = do   writel "Shimmer, version 1.0. The Turtle at the Bottom of the World."
+
         mSource
          = mainArgs_load Nothing
          $ Cons (ArgText "-i" "include file" (\s _ -> Just s))
@@ -30,8 +35,16 @@ main ()
           -> repl Nil
 
 
+parserConfig: Config Prim
+ = Config       
+        readPrim
+        (\n -> Just (PrimNat (PrimNatVal n)))
+
+
 -- | Load a list of top-level declarations from a source file.
-loadSource (path: TextLit): S File (Maybe (List (Decl p)))
+loadSource 
+        (path: TextLit)
+        : S File (Maybe (List (Decl Prim)))
  = do   
         str     = file_read (takeTextLit path)
 
@@ -39,7 +52,7 @@ loadSource (path: TextLit): S File (Maybe (List (Decl p)))
          T2 toks cs
           |  not $ all isSpace cs       -> Nothing
           |  otherwise
-          -> case parseDecls toks of
+          -> case parseDecls parserConfig toks of
                 Nothing                 -> Nothing
                 Just ds'                -> Just ds'
 
@@ -68,7 +81,8 @@ getLine: S Console Text
 -- 
 --   TODO: closing stdin with control-D causes prompt to print infinitely.
 --
-repl (decls: List (Decl Unit)): S Console Unit
+repl    (decls: List (Decl Prim))
+        : S Console Unit
  = box do   
         -- Write the prompt.
         write "> "
@@ -86,26 +100,44 @@ repl (decls: List (Decl Unit)): S Console Unit
 
          -- We couldn't lex all the characters into tokens.
          T2 _    cs   
-          -> do writel "error: lexical error."
+          -> do writell "! lexical error."
                 repl decls
 
 
 -- | Given some tokens, try to parse an expression and evaluate it.
 repl_toks 
-        (decls: List (Decl Unit))
+        (decls: List (Decl Prim))
         (toks:  List Token)
         : S Console Unit
- = case parseExp toks of
+ = case parseExp parserConfig toks of
          Nothing
-          -> do writel "error: parse error."
+          -> do writell "! parse error."
                 repl decls
 
          Just x
-          -> case reduce_no decls $ asUnit x of
+          -> case reduce decls x of
                 Nothing 
-                 -> do  writel "error: runtime error."
+                 -> do  writell "! runtime error."
                         repl decls
 
                 Just x' 
                  -> do  writell (ppr x')
                         repl decls
+
+
+-- | Reduce an expression that includes primitives.
+reduce  (decls:  List (Decl Prim))
+        (xxR:    Exp Prim)
+        : Maybe (Exp Prim)
+ = reduce_no (evalPrim (reducePrim decls)) decls xxR
+
+
+-- | Reduce an expression to a primitive, if it is one.
+reducePrim
+        (decls: List (Decl Prim))
+        (xx:    Exp Prim)
+        : Maybe Prim
+ = case reduce decls xx of
+        Just (XPrim p)  -> Just p
+        _               -> Nothing
+

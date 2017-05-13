@@ -1,0 +1,112 @@
+
+module Shimmer.Prim.Base
+export 
+{       pretty_Prim;
+        showPrim;       readPrim
+}
+import Data.Numeric.Nat
+import Class.Show
+where
+
+
+-------------------------------------------------------------------------------
+data Prim where        
+        PrimBool        : PrimBool      -> Prim
+        PrimNat         : PrimNat       -> Prim
+
+
+-- | Boolean Primitives.
+data PrimBool where
+        PrimBoolVal     : Bool  -> PrimBool
+        PrimBoolNot     : PrimBool
+        PrimBoolAnd     : PrimBool
+        PrimBoolOr      : PrimBool
+        PrimBoolIf      : PrimBool
+
+
+-- | Natural Number Primitives.
+data PrimNat where
+        PrimNatVal      : Nat     -> PrimNat
+        PrimNatAdd      : PrimNat
+        PrimNatSub      : PrimNat
+        PrimNatMul      : PrimNat
+        PrimNatDiv      : PrimNat
+        PrimNatEq       : PrimNat
+        PrimNatNeq      : PrimNat
+        PrimNatLt       : PrimNat
+        PrimNatLe       : PrimNat
+        PrimNatGt       : PrimNat
+        PrimNatGe       : PrimNat
+
+
+-- | Pretty dictionary for primitives.
+pretty_Prim: Pretty Prim
+ = Pretty showPrim
+
+
+-- Show -----------------------------------------------------------------------
+showPrim    (pp: Prim): Text
+ = case pp of
+        PrimBool pb             -> "#" % showPrimBool pb
+
+        PrimNat  (PrimNatVal n) -> show n
+        PrimNat pn              -> "#" % showPrimNat pn
+
+
+showPrimBool (pb: PrimBool): Text
+ = case pb of
+        PrimBoolVal True        -> "true"
+        PrimBoolVal False       -> "false"
+        PrimBoolNot             -> "not"
+        PrimBoolAnd             -> "and"
+        PrimBoolOr              -> "or"
+        PrimBoolIf              -> "if"
+
+
+showPrimNat  (pn: PrimNat): Text
+ = case pn of
+        PrimNatVal n    -> "nat-" % show n
+        PrimNatAdd      -> "nat-add"
+        PrimNatSub      -> "nat-sub"
+        PrimNatMul      -> "nat-mul"
+        PrimNatDiv      -> "nat-div"
+        PrimNatEq       -> "nat-eq"
+        PrimNatNeq      -> "nat-neq"
+        PrimNatLt       -> "nat-lt"
+        PrimNatLe       -> "nat-le"
+        PrimNatGt       -> "nat-gt"
+        PrimNatGe       -> "nat-ge"
+
+
+-- Read -----------------------------------------------------------------------
+readPrim    (tt: Text): Maybe Prim
+ | Just pb      <- readPrimBool tt      = Just (PrimBool pb)
+ | Just pn      <- readPrimNat  tt      = Just (PrimNat  pn)
+
+ | otherwise
+ = Nothing
+
+
+readPrimBool (tt: Text): Maybe PrimBool
+ | tt == "true"         = Just $ PrimBoolVal True
+ | tt == "false"        = Just $ PrimBoolVal False
+ | tt == "not"          = Just PrimBoolNot
+ | tt == "and"          = Just PrimBoolAnd
+ | tt == "or"           = Just PrimBoolOr
+ | tt == "if"           = Just PrimBoolIf
+ | otherwise            = Nothing
+
+
+readPrimNat  (tt: Text): Maybe PrimNat
+ | tt == "nat-add"      = Just PrimNatAdd
+ | tt == "nat-sub"      = Just PrimNatSub
+ | tt == "nat-mul"      = Just PrimNatMul
+ | tt == "nat-div"      = Just PrimNatDiv
+ | tt == "nat-eq"       = Just PrimNatEq
+ | tt == "nat-neq"      = Just PrimNatNeq
+ | tt == "nat-lt"       = Just PrimNatLt
+ | tt == "nat-le"       = Just PrimNatLe
+ | tt == "nat-gt"       = Just PrimNatGt
+ | tt == "nat-ge"       = Just PrimNatGe
+ | otherwise            = Nothing
+
