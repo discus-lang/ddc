@@ -57,27 +57,34 @@ data Exp (s p: Data) where
 -- | Reference to an external thing.
 data Ref (s p: Data) where
         -- Macro name.
-        RMac    : Name  -> Exp s p
+        RMac    : Name  -> Ref s p
 
         -- Set name.
-        RSet    : Name  -> Exp s p
+        RSet    : Name  -> Ref s p
 
         -- Uninterpreted symbol.
-        RSym    : s     -> Exp s p
+        RSym    : s     -> Ref s p
 
         -- Primitive value.
-        RPrim   : p     -> Exp s p
+        RPrm    : p     -> Ref s p
 
 
 show_Exp {Show s} {Show p}: Show (Exp s p)
  =  Show $ λxx
  -> case xx of
-        XVar  n b       -> parens $ "XVar"      %% show n  %% show b
-        XAbs  n x       -> parens $ "XAbs"      %% show n  %% show x
-        XApp  x1 x2     -> parens $ "XApp"      %% show x1 %% show x2
-        XMac  n         -> parens $ "XMac"      %% show n
-        XSym  s         -> parens $ "XSym"      %% show s
-        XPrim p         -> parens $ "XPrim"     %% show p
+        XVar    n b     -> parens $ "XVar"      %% show n  %% show b
+        XAbs    n x     -> parens $ "XAbs"      %% show n  %% show x
+        XApp    x1 x2   -> parens $ "XApp"      %% show x1 %% show x2
+        XRef    r       -> show r
+
+
+show_Ref {Show s} {Show p}: Show (Ref s p)
+ = Show $ λxx
+ -> case xx of
+        RMac    n       -> parens $ "RMac"      %% show n
+        RSet    n       -> parens $ "RSet"      %% show n
+        RSym    s       -> parens $ "RSym"      %% show s
+        RPrm    p       -> parens $ "RPrm"      %% show p
 
 
 -- | Make an application of a function to the given list of arguments.
@@ -102,5 +109,4 @@ takeXApps (xx: Exp s p): Maybe (Tup2 (Exp s p) (List (Exp s p)))
           -> Just (T2 x1 (Cons a2 Nil))
 
         _ -> Nothing
-
 

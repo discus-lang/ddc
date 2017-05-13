@@ -10,10 +10,10 @@ where
 
 -- | Evaluate a primitive application.
 evalPrim 
-        (eval:  Exp Prim -> Maybe Prim) -- ^ Evaluation function for whole expressions.
-        (p:     Prim)                   -- ^ Primitive being applied.
-        (xs:    List (Exp Prim))        -- ^ List of arguments to the primitive.
-        : Maybe (Exp Prim)
+        (eval:  Exp s Prim -> Maybe Prim)       -- ^ Evaluation function for whole expressions.
+        (p:     Prim)                           -- ^ Primitive being applied.
+        (xs:    List (Exp s Prim))              -- ^ List of arguments to the primitive.
+        : Maybe (Exp s Prim)
  = case p of
         PrimBool pb     -> evalPrimBool eval pb xs
         PrimNat  pn     -> evalPrimNat  eval pn xs

@@ -2,11 +2,9 @@
 module SMR.Source.Token
 export
 {       eq_Token; show_Token;
+        eq_Space; show_Space;
         isToken;
         takeNameOfToken;
-        takePrimNameOfToken;
-        takeMacroNameOfToken;
-        takeLitNatOfToken
 }
 import SMR.Core.Exp
 import Data.Text
@@ -16,18 +14,22 @@ where
 
 -- | Tokens for lambda calculus language.
 data Token where
-        KBra    : Token                 -- ^ Open  Bracket '('
-        KKet    : Token                 -- ^ Close Bracket ')'
-        KLambda : Token                 -- ^ Lambda symbol '\'
-        KDot    : Token                 -- ^ Dot symbol    '.'
-        KSemi   : Token                 -- ^ Semicolon     ';'
-        KEquals : Token                 -- ^ Equals        '='
+        KBra    : Token                         -- ^ Open  Bracket '('
+        KKet    : Token                         -- ^ Close Bracket ')'
+        KLambda : Token                         -- ^ Lambda symbol '\'
+        KDot    : Token                         -- ^ Dot symbol    '.'
+        KSemi   : Token                         -- ^ Semicolon     ';'
+        KEquals : Token                         -- ^ Equals        '='
+        KName   : Space -> Name -> Token        -- ^ A scoped name.
 
-        KName   : Name  -> Token        -- ^ Variable name.
-        KMacro  : Name  -> Token        -- ^ Macro name.
-        KPrim   : Name  -> Token        -- ^ Primitive name.
 
-        KLitNat : Nat   -> Token        -- ^ Literal natural number.
+-- | Name space of a name.
+data Space where
+        SVar    : Space                         -- ^ Local variable.
+        SMac    : Space                         -- ^ Macro name.
+        SSet    : Space                         -- ^ Set name.
+        SSym    : Space                         -- ^ Symbol name.
+        SPrm    : Space                         -- ^ Primitive name.
 
 
 -- | Check if two tokens are equal.
@@ -42,6 +44,25 @@ eq_Token: Eq Token
                 T2 KDot    KDot         -> True
                 T2 KSemi   KSemi        -> True
                 T2 KEquals KEquals      -> True
+                T2 (KName s1 n1) (KName s2 n2)
+                 -> s1 == s2 ∧ n1 == n2
+                _                       -> False
+
+        neq' t1 t2
+         = not (eq' t1 t2)
+
+
+-- | Check if two name space tags are equal.
+eq_Space: Eq Space
+ = Eq eq' neq'
+ where
+        eq' s1 s2
+         = case T2 s1 s2 of
+                T2 SVar SVar            -> True
+                T2 SMac SMac            -> True
+                T2 SSet SSet            -> True
+                T2 SSym SSym            -> True
+                T2 SPrm SPrm            -> True
                 _                       -> False
 
         neq' t1 t2
@@ -58,12 +79,18 @@ show_Token: Show Token
         KDot            -> "KDot"
         KSemi           -> "KSemi"
         KEquals         -> "KEquals"
+        KName s n       -> parens $ "KName"     %% show s %% show n
 
-        KName  n        -> parens $ "KName"   %% show n
-        KMacro n        -> parens $ "KMacro"  %% show n
-        KPrim  n        -> parens $ "KPrim"   %% show n
 
-        KLitNat n       -> parens $ "KLitNat" %% show n
+-- | Show dictionary for namespaces.
+show_Space: Show Space
+ =  Show $ \ss
+ -> case ss of
+        SVar            -> "SVar"
+        SMac            -> "SMac"
+        SSet            -> "SSet"
+        SSym            -> "SSym"
+        SPrm            -> "SPrm"
 
 
 -- | Check if a token is equal to the give none.
@@ -72,30 +99,11 @@ isToken (k1: Token): Token -> Bool
 
 
 -- | Take the name from a token, if any.
-takeNameOfToken (kk: Token): Maybe Name
+takeNameOfToken (ss1: Space) (kk: Token): Maybe Name
  = case kk of
-        KName n         -> Just n
+        KName ss2 n     
+         | ss1 == ss2   -> Just n
+         | otherwise    -> Nothing
+
         _               -> Nothing
-
-
--- | Take the name from a token, if any.
-takeMacroNameOfToken (kk: Token): Maybe Name
- = case kk of
-        KMacro n        -> Just n
-        _               -> Nothing
-
-
--- | Take the name from a token, if any.
-takePrimNameOfToken (kk: Token): Maybe Name
- = case kk of
-        KPrim n         -> Just n
-        _               -> Nothing
-
-
--- | Take a literal natural number from a token, if any.
-takeLitNatOfToken (kk: Token): Maybe Nat
- = case kk of
-        KLitNat n       -> Just n
-        _               -> Nothing
-
 

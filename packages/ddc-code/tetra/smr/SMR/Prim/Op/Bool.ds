@@ -11,10 +11,10 @@ where
 --   All the nat primtitives are strict, so we force the arguments to whnf first.
 --
 evalPrimBool
-        (eval:  Exp Prim -> Maybe Prim) -- ^ Evaluate an expression to a primitive.
-        (p:     PrimBool)               -- ^ Primitive to evaluate.
-        (xs:    List (Exp Prim))        -- ^ Arguments to primitive.
-        : Maybe (Exp Prim)
+        (eval:  Exp s Prim -> Maybe Prim) -- ^ Evaluate an expression to a primitive.
+        (p:     PrimBool)                 -- ^ Primitive to evaluate.
+        (xs:    List (Exp s Prim))        -- ^ Arguments to primitive.
+        : Maybe (Exp s Prim)
 
  | PrimBoolIf   <- p
  , Cons xScrut (Cons xThen (Cons xElse Nil))    <- xs
@@ -31,13 +31,13 @@ evalPrimBool
     Just ps 
      -> case ps of
          Nil
-           -> fmap XPrim (evalPrimBool0 p)
+           -> fmap (XRef ∘ RPrm) (evalPrimBool0 p)
         
          Cons (PrimBool (PrimBoolVal b1)) Nil
-           -> fmap XPrim (evalPrimBool1 p b1)
+           -> fmap (XRef ∘ RPrm) (evalPrimBool1 p b1)
 
          Cons (PrimBool (PrimBoolVal b1)) (Cons (PrimBool (PrimBoolVal b2)) Nil)
-           -> fmap XPrim (evalPrimBool2 p b1 b2)
+           -> fmap (XRef ∘ RPrm) (evalPrimBool2 p b1 b2)
 
          _ -> Nothing
 

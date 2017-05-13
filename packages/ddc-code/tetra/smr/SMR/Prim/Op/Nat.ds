@@ -11,10 +11,10 @@ where
 --   All the nat primtitives are strict, so we force the arguments to whnf first.
 --
 evalPrimNat 
-        (eval:  Exp Prim -> Maybe Prim) -- ^ Evaluate an expression to a primitive.
-        (p:     PrimNat)                -- ^ Primitive to evaluate.
-        (xs:    List (Exp Prim))        -- ^ Arguments to primitive.
-        : Maybe (Exp Prim)
+        (eval:  Exp n Prim -> Maybe Prim)       -- ^ Evaluate an expression to a primitive.
+        (p:     PrimNat)                        -- ^ Primitive to evaluate.
+        (xs:    List (Exp n Prim))              -- ^ Arguments to primitive.
+        : Maybe (Exp n Prim)
  = case sequence (map eval xs) of
     Nothing
      -> Nothing
@@ -22,13 +22,13 @@ evalPrimNat
     Just ps 
      -> case ps of
          Nil
-           -> fmap XPrim (evalPrimNat0 p)
+           -> fmap (XRef ∘ RPrm) (evalPrimNat0 p)
         
          Cons (PrimNat (PrimNatVal n1)) Nil
-           -> fmap XPrim (evalPrimNat1 p n1)
+           -> fmap (XRef ∘ RPrm) (evalPrimNat1 p n1)
 
          Cons (PrimNat (PrimNatVal n1)) (Cons (PrimNat (PrimNatVal n2)) Nil)
-           -> fmap XPrim (evalPrimNat2 p n1 n2)
+           -> fmap (XRef ∘ RPrm) (evalPrimNat2 p n1 n2)
 
          _ -> Nothing
 

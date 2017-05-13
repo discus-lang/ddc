@@ -3,12 +3,12 @@
 --   The Turtle at the Bottom of the World.
 --
 module Main
-import Shimmer.Core.Exp
-import Shimmer.Core.Eval
-import Shimmer.Prim.Eval
-import Shimmer.Source.Pretty
-import Shimmer.Source.Token
-import Shimmer.Source.Parser
+import SMR.Core.Exp
+import SMR.Core.Eval
+import SMR.Prim.Eval
+import SMR.Source.Pretty
+import SMR.Source.Token
+import SMR.Source.Parser
 import System.IO.Console
 import System.IO.File
 import Main.Args
@@ -35,16 +35,14 @@ main ()
           -> repl Nil
 
 
-parserConfig: Config Prim
- = Config       
-        readPrim
-        (\n -> Just (PrimNat (PrimNatVal n)))
+parserConfig: Config Name Prim
+ = Config (\z -> Just z) readPrim
 
 
 -- | Load a list of top-level declarations from a source file.
 loadSource 
         (path: TextLit)
-        : S File (Maybe (List (Decl Prim)))
+        : S File (Maybe (List (Decl Name Prim)))
  = do   
         str     = file_read (takeTextLit path)
 
@@ -60,11 +58,10 @@ loadSource
 
 
 show_Unit: Show Unit
- = Show $ λxx -> "()"
+ = Show   $ λxx -> "()"
 
-asUnit (xx: Exp Unit): Exp Unit
- = xx
-
+pretty_Text: Pretty Text
+ = Pretty $ λxx -> xx
 
 -- TODO: need explicit run/box 
 getLine: S Console Text
@@ -81,7 +78,7 @@ getLine: S Console Text
 -- 
 --   TODO: closing stdin with control-D causes prompt to print infinitely.
 --
-repl    (decls: List (Decl Prim))
+repl    (decls: List (Decl Name Prim))
         : S Console Unit
  = box do   
         -- Write the prompt.
@@ -96,7 +93,8 @@ repl    (decls: List (Decl Prim))
          T2 Nil  Nil    -> repl decls
 
          -- Parse the tokens.
-         T2 toks Nil    -> repl_toks decls toks
+         T2 toks Nil    
+          ->    repl_toks decls toks
 
          -- We couldn't lex all the characters into tokens.
          T2 _    cs   
@@ -106,7 +104,7 @@ repl    (decls: List (Decl Prim))
 
 -- | Given some tokens, try to parse an expression and evaluate it.
 repl_toks 
-        (decls: List (Decl Prim))
+        (decls: List (Decl Name Prim))
         (toks:  List Token)
         : S Console Unit
  = case parseExp parserConfig toks of
@@ -126,18 +124,18 @@ repl_toks
 
 
 -- | Reduce an expression that includes primitives.
-reduce  (decls:  List (Decl Prim))
-        (xxR:    Exp Prim)
-        : Maybe (Exp Prim)
+reduce  (decls:  List (Decl Name Prim))
+        (xxR:    Exp Name Prim)
+        : Maybe (Exp Name Prim)
  = reduce_no (evalPrim (reducePrim decls)) decls xxR
 
 
 -- | Reduce an expression to a primitive, if it is one.
 reducePrim
-        (decls: List (Decl Prim))
-        (xx:    Exp Prim)
+        (decls: List (Decl Name Prim))
+        (xx:    Exp Name Prim)
         : Maybe Prim
  = case reduce decls xx of
-        Just (XPrim p)  -> Just p
-        _               -> Nothing
+        Just (XRef (RPrm p))    -> Just p
+        _                       -> Nothing
 

@@ -35,27 +35,22 @@ lexToken (xx: List Char)
         |  Just tok     <- lexPunc1 c
         -> Just (T2 tok xs)
 
-        -- Names.
-        |  isLower c     
-        ,  Just (T2 name          cs')   <- lexName xx
-        -> Just (T2 (KName name)  cs')
+        -- Variable name.
+        -- TODO: Inlining takeSpace into the guard causes an LLVM dominator error.
+        |  Just (T2 space xx')   <- takeSpace c xs
+        ,  Just (T2 name csRest) <- lexName   xx'
+        -> Just (T2 (KName space name) csRest)
 
-        -- Macro names.
-        |  c == '@'     
-        ,  Just (T2 name          cs')   <- lexName xs
-        -> Just (T2 (KMacro name) cs')
+        |  otherwise     
+        -> Nothing
 
-        -- Primitive names.
-        |  c == '#'
-        ,  Just (T2 name          cs')   <- lexName xs
-        -> Just (T2 (KPrim  name) cs')
-
-        -- Primitive natural numbers.
-        |  isDigit c
-        ,  Just (T2 nat           cs')   <- lexNat  (Cons c xs)
-        -> Just (T2 (KLitNat nat) cs')
-
-        | otherwise     -> Nothing
+takeSpace (c: Char) (cs: List Char): Maybe (Tup2 Space (List Char))
+ | isLower c    = Just (T2 SVar (Cons c cs))
+ | c == '@'     = Just (T2 SMac cs)
+ | c == '+'     = Just (T2 SSet cs)
+ | c == '%'     = Just (T2 SSym cs)
+ | c == '#'     = Just (T2 SPrm cs)
+ | otherwise    = Nothing
 
 
 -- | Lex a punctuation character.
@@ -78,7 +73,8 @@ lexName (xx: List Char): Maybe (Tup2 Name (List Char))
                 Just $ T2 name Nil
 
         go acc (Cons x xs)   
-         | isLower x ∨ x == '-' 
+         -- TODO: need to use parens here as ∨ taken as non-assoc.
+         |  (isLower x ∨ isDigit x) ∨ (x == '-' ∨ x == '.')
          = go (Cons x acc) xs
 
          | otherwise            

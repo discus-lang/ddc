@@ -47,10 +47,8 @@ pretty_Prim: Pretty Prim
 -- Show -----------------------------------------------------------------------
 showPrim    (pp: Prim): Text
  = case pp of
-        PrimBool pb             -> "#" % showPrimBool pb
-
-        PrimNat  (PrimNatVal n) -> show n
-        PrimNat pn              -> "#" % showPrimNat pn
+        PrimBool pb             -> showPrimBool pb
+        PrimNat  pn             -> showPrimNat pn
 
 
 showPrimBool (pb: PrimBool): Text
@@ -65,17 +63,17 @@ showPrimBool (pb: PrimBool): Text
 
 showPrimNat  (pn: PrimNat): Text
  = case pn of
-        PrimNatVal n    -> "nat-" % show n
-        PrimNatAdd      -> "nat-add"
-        PrimNatSub      -> "nat-sub"
-        PrimNatMul      -> "nat-mul"
-        PrimNatDiv      -> "nat-div"
-        PrimNatEq       -> "nat-eq"
-        PrimNatNeq      -> "nat-neq"
-        PrimNatLt       -> "nat-lt"
-        PrimNatLe       -> "nat-le"
-        PrimNatGt       -> "nat-gt"
-        PrimNatGe       -> "nat-ge"
+        PrimNatVal n            -> "nat-" % show n
+        PrimNatAdd              -> "nat-add"
+        PrimNatSub              -> "nat-sub"
+        PrimNatMul              -> "nat-mul"
+        PrimNatDiv              -> "nat-div"
+        PrimNatEq               -> "nat-eq"
+        PrimNatNeq              -> "nat-neq"
+        PrimNatLt               -> "nat-lt"
+        PrimNatLe               -> "nat-le"
+        PrimNatGt               -> "nat-gt"
+        PrimNatGe               -> "nat-ge"
 
 
 -- Read -----------------------------------------------------------------------

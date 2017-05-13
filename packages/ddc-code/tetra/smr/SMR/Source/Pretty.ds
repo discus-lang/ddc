@@ -10,7 +10,7 @@ where
 
 
 -- | Pretty printer for an expression.
-pretty_Exp {Pretty p}: Pretty (Exp p)
+pretty_Exp {Pretty s} {Pretty p}: Pretty (Exp s p)
  = Pretty $ \xx -> pprExp' ContextBody xx
 
 
@@ -21,8 +21,9 @@ data Context where
         ContextBody   : Context
 
 
+
 -- | Pretty print an expression in the given context.
-pprExp' [p: Data] {Pretty p} (ctx: Context) (xx: Exp p): Text
+pprExp' [s p: Data] {Pretty s} {Pretty p} (ctx: Context) (xx: Exp s p): Text
  | ContextBody  <- ctx
  = case xx of
         XVar name 0     -> name 
@@ -32,9 +33,7 @@ pprExp' [p: Data] {Pretty p} (ctx: Context) (xx: Exp p): Text
         XAbs name x     -> (textOfChar '\\') % name % "." % pprExp' ContextBody x
         XApp x1 x2      -> pprExp' ContextFun x1 %% pprExp' ContextArg x2
 
-        XPrim  p        -> ppr p
-        XMacro name     -> "@" % name
-
+        XRef r          -> pprRef r
 
  | ContextFun   <- ctx
  = case xx of
@@ -47,3 +46,10 @@ pprExp' [p: Data] {Pretty p} (ctx: Context) (xx: Exp p): Text
         XApp _ _        -> parens $ pprExp' ContextBody xx
         _               -> pprExp' ContextBody xx
 
+
+pprRef [s p: Data] {Pretty s} {Pretty p} (rr: Ref s p): Text
+ = case rr of
+        RMac   n        -> "@" % n
+        RSet   n        -> "+" % n
+        RSym   s        -> "%" % ppr s
+        RPrm   p        -> "#" % ppr p
