@@ -1,5 +1,5 @@
 
-module Shimmer.Prim.Base
+module SMR.Prim.Base
 export 
 {       pretty_Prim;
         showPrim;       readPrim

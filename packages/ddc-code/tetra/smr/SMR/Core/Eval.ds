@@ -1,11 +1,11 @@
 
-module Shimmer.Core.Eval
+module SMR.Core.Eval
 export 
 {       lift; subst;
         reduce_cbn;
         reduce_no
 }
-import Shimmer.Core.Exp
+import SMR.Core.Exp
 where
 
 

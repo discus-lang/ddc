@@ -1,11 +1,11 @@
 
-module Shimmer.Source.Parser
+module SMR.Source.Parser
 export
 {       parseDecls; pDecls; pDecl;
         parseExp;   pExp;   pExpApp; pExpAtom;
 }
-import Shimmer.Source.Lexer
-import Shimmer.Core.Exp
+import SMR.Source.Lexer
+import SMR.Core.Exp
 import Control.Parsec
 import Data.Maybe
 where

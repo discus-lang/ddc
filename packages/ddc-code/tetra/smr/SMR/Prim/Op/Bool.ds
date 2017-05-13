@@ -1,7 +1,7 @@
 
-module Shimmer.Prim.Op.Bool
+module SMR.Prim.Op.Bool
 export evalPrimBool
-import Shimmer.Prim.Base
+import SMR.Prim.Base
 import Data.Maybe
 where
 

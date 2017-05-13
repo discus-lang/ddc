@@ -1,9 +1,9 @@
 
-module Shimmer.Source.Pretty
+module SMR.Source.Pretty
 export 
 {       pretty_Exp
 }
-import Shimmer.Core.Exp
+import SMR.Core.Exp
 import Class.Pretty
 import Data.Text
 where

@@ -1,8 +1,8 @@
 
-module Shimmer.Source.Lexer
+module SMR.Source.Lexer
 export lexTokens
-import Shimmer.Source.Token
-import Shimmer.Core.Exp
+import SMR.Source.Token
+import SMR.Core.Exp
 import System.Posix.Stdlib
 import Control.Parsec
 import Class.Show

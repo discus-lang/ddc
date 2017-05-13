@@ -1,5 +1,5 @@
 
-module Shimmer.Source.Token
+module SMR.Source.Token
 export
 {       eq_Token; show_Token;
         isToken;
@@ -8,7 +8,7 @@ export
         takeMacroNameOfToken;
         takeLitNatOfToken
 }
-import Shimmer.Core.Exp
+import SMR.Core.Exp
 import Data.Text
 import Data.Maybe
 where

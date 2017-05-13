@@ -1,5 +1,5 @@
 
-module Shimmer.Core.Exp
+module SMR.Core.Exp
 export
 {       show_Decl;      lookupDecl;
         show_Exp;       
