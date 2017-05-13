@@ -1,7 +1,7 @@
 
-module SMR.Prim.Op.Bool
+module SMR.Prim.Eval.Bool
 export evalPrimBool
-import SMR.Prim.Base
+import SMR.Prim.Name
 import Data.Maybe
 where
 

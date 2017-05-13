@@ -44,7 +44,10 @@ lexToken (xx: List Char)
         |  otherwise     
         -> Nothing
 
-takeSpace (c: Char) (cs: List Char): Maybe (Tup2 Space (List Char))
+
+-- | Take the namespace qualifier from the front of a name.
+takeSpace (c: Char) (cs: List Char)
+        : Maybe (Tup2 Space (List Char))
  | isLower c    = Just (T2 SVar (Cons c cs))
  | c == '@'     = Just (T2 SMac cs)
  | c == '+'     = Just (T2 SSet cs)
@@ -72,27 +75,16 @@ lexName (xx: List Char): Maybe (Tup2 Name (List Char))
          = do   name    = textOfCharList (reverse acc)
                 Just $ T2 name Nil
 
-        go acc (Cons x xs)   
-         -- TODO: need to use parens here as ∨ taken as non-assoc.
-         |  (isLower x ∨ isDigit x) ∨ (x == '-' ∨ x == '_')
-         = go (Cons x acc) xs
+
+        go acc (Cons c cs)
+         | isNameBodyChar c     = go (Cons c acc) cs
 
          | otherwise            
          = do   name    = textOfCharList (reverse acc)
-                Just $ T2 name (Cons x xs)
+                Just $ T2 name (Cons c cs)
 
 
--- | Lex a natural number.
-lexNat (xx: List Char): Maybe (Tup2 Nat (List Char))
- = go Nil xx
- where  
-        go acc xs
-         | Cons x xs'   <- xs
-         , isDigit x
-         = go (Cons x acc) xs'
+isNameBodyChar (c: Char): Bool
+ = isLower c ∨ (isDigit c ∨ (c == '-' ∨ c == '_'))
 
-         | otherwise
-         = case readNat (textOfCharList (reverse acc)) of
-                Nothing         -> Nothing
-                Just nat        -> Just $ T2 nat xs
 

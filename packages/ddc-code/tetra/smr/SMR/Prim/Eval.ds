@@ -1,9 +1,9 @@
 
 module SMR.Prim.Eval
 export evalPrim
-import SMR.Prim.Op.Bool
-import SMR.Prim.Op.Nat
-import SMR.Prim.Base
+import SMR.Prim.Eval.Bool
+import SMR.Prim.Eval.Nat
+import SMR.Prim.Name
 import Data.Maybe
 where
 

@@ -25,7 +25,6 @@ configPrim   ((Config ms mp): Config s p): Name -> Maybe p
  = mp
 
 
-
 -- Decls -----------------------------------------------------------------------
 parseDecls 
         (c:  Config s p)
