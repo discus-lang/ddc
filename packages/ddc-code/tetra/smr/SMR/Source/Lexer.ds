@@ -74,7 +74,7 @@ lexName (xx: List Char): Maybe (Tup2 Name (List Char))
 
         go acc (Cons x xs)   
          -- TODO: need to use parens here as ∨ taken as non-assoc.
-         |  (isLower x ∨ isDigit x) ∨ (x == '-' ∨ x == '.')
+         |  (isLower x ∨ isDigit x) ∨ (x == '-' ∨ x == '_')
          = go (Cons x acc) xs
 
          | otherwise            

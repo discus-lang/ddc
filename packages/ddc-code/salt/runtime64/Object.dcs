@@ -136,7 +136,7 @@ import value
  -- otherwise we cannot continue execution.
  ddcAllocCollect      : Nat# -> Unit
  primFailString       : TextLit# -> Void#
- primPutString        : TextLit# -> Void#
+ primStdoutPutString  : TextLit# -> Void#
  primShowAddr         : Addr# -> TextLit#
  primShowNat          : Nat#  -> TextLit#
  primShowWord32       : Word32#  -> TextLit#
@@ -186,11 +186,6 @@ ddcFormatOfObject [r : Region] (obj : Ptr# r Obj) : Nat#
           0b11w8#       -> 6# -- DataRawSmall
           _ -> do 
                   header = ddcHeaderOfObject obj
-                  primPutString "header = "#
-                  primPutString (primShowWord32 header)
-                  primPutString " "#
-                  primPutString (primShowWord32 (promote# formatField))
-                  primPutString "\n"#
                   ddcFailObj obj "ddcFormatOfObject"# "unrecognized object format"#
                   0#
 
