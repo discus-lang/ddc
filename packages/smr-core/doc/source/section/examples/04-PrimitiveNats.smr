@@ -1,0 +1,5 @@
+
+@nat-fac n
+ = #if  (#nat-eq #nat-0 n)
+        #nat-1
+        (#nat-mul n (@nat-fac (#nat-sub n #nat-1)));

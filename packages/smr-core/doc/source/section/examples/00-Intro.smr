@@ -1,0 +1,13 @@
+
+ @list-case xx alt-nil alt-cons
+  = #match xx  %list-nil         alt-nil
+   (#match xx (%list-cons #o #o) alt-cons
+    %fail);
+
+ @list-range a b
+  = #if (#nat-gt a b)
+        %list-nil
+        (%list-cons a (@list-range (#nat-add a #nat-1) b));
+
+ @list-foldl f z xx
+  = @list-case xx z (\x. \xs. @list-foldl f (f z x) xs);
