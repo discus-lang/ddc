@@ -113,7 +113,7 @@ repl_toks
                 repl decls
 
          Just x
-          -> case reduce decls x of
+          -> case reduce_no' decls x of
                 Nothing 
                  -> do  writell "! runtime error."
                         repl decls
@@ -124,18 +124,17 @@ repl_toks
 
 
 -- | Reduce an expression that includes primitives.
-reduce  (decls:  List (Decl Name Prim))
-        (xxR:    Exp Name Prim)
+reduce_cbn'
+        (decls:  List (Decl Name Prim))
+        (xx:     Exp Name Prim)
         : Maybe (Exp Name Prim)
- = reduce_no (evalPrim (reducePrim decls)) decls xxR
+ = reduce_cbn (evalPrim (reduce_cbn' decls)) decls xx
 
 
--- | Reduce an expression to a primitive, if it is one.
-reducePrim
-        (decls: List (Decl Name Prim))
-        (xx:    Exp Name Prim)
-        : Maybe Prim
- = case reduce decls xx of
-        Just (XRef (RPrm p))    -> Just p
-        _                       -> Nothing
+-- | Reduce an expression that includes primitives.
+reduce_no'  
+        (decls:  List (Decl Name Prim))
+        (xx :    Exp Name Prim)
+        : Maybe (Exp Name Prim)
+ = reduce_no (evalPrim  (reduce_cbn' decls))  decls xx
 

@@ -59,8 +59,11 @@ subst   (n:  Name)              -- ^ Name of variable to lift references ot.
 -- | Unfold a macro declaration.
 unfold (decls: List (Decl s p)) (xx: Exp s p): Exp s p
  = case xx of
-        XRef (RMac n)   -> fromMaybe xx (lookupDecl n decls)
-        _               -> xx
+        XRef (RMac n)   
+         -> case lookupDecl n decls of
+                Nothing         -> xx
+                Just xx'        -> unfold decls xx'
+        _                       -> xx
 
 
 -- | Call-by-name reduction.
@@ -74,6 +77,7 @@ reduce_cbn
         XVar  _ _       -> Just xx
         XAbs  _ _       -> Just xx
 
+        -- TODO: unfold decls in takeXApps
         XApp x1 x2
          |  Just (T2 (XRef (RPrm p)) args) <- takeXApps xx
          ,  Just xx'            <- prim p args
@@ -106,6 +110,7 @@ reduce_no
                 Just x2' -> Just (XAbs n1 x2')
                 Nothing  -> Just xx
 
+        -- TODO: unfold decls in takeXApps
         XApp  x1 x2
          |  Just (T2 (XRef (RPrm p)) args) <- takeXApps xx
          ,  Just xx'            <- prim p args

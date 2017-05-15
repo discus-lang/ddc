@@ -1,0 +1,69 @@
+
+module SMR.Prim.Eval.Match
+export evalPrimMatch
+import SMR.Prim.Name
+import Data.Maybe
+where
+
+
+-- | Evaluate a Match primitive.
+evalPrimMatch
+        {Eq s}
+        (eval:  Exp s Prim -> Maybe (Exp s Prim)) 
+                                        -- ^ Evaluate an expression to whnf.
+        (p:     PrimMatch)              -- ^ Primitive to evaluate.
+        (xs:    List (Exp s Prim))      -- ^ Arguments to primitive.
+        : Maybe (Exp s Prim)
+
+ | PrimMatchMatch <- p
+ , Cons xScrut (Cons xPattern (Cons xMatch (Cons xDefault Nil)))  <- xs
+ , Just xScrut'   <- eval xScrut,       isDone xScrut'
+ , Just xPattern' <- eval xPattern,     isDone xPattern'
+ = case matchPattern xScrut' xPattern' of
+        Just xsArgs     -> Just $ makeXApps xMatch xsArgs
+        _               -> Just $ xDefault
+
+ | otherwise
+ = Nothing
+
+-- TODO: check this. 
+-- The pattern needs to be in hnf.
+-- We could make nested pattern matching lazilly force evaluation of
+-- the expression being matched against.
+isDone (xx: Exp s Prim): Bool
+ = case xx of
+        XApp x1 x2      -> isDone x1
+        XAbs _          -> True
+        XVar _          -> False
+
+        XRef (RMac _)   -> False
+        XRef (RSet _)   -> False
+        XRef (RSym _)   -> True
+        XRef (RPrm _)   -> False
+
+        _               -> False
+
+matchPattern 
+        {Eq s}
+        (xScrut': Exp s Prim)
+        (xPat':   Exp s Prim)
+        : Maybe (List (Exp s Prim))
+
+ | XRef (RPrm (PrimMatch PrimMatchHole))    <- xPat'
+ =      Just (Cons xScrut' Nil)
+
+ | XRef (RSym s1)               <- xScrut'
+ , XRef (RSym s2)               <- xPat'
+ = if s1 == s2
+        then Just Nil
+        else Nothing
+
+ | XApp x11 x12                 <- xScrut'
+ , XApp x21 x22                 <- xPat'
+ , Just lst1                    <- matchPattern x11 x21
+ , Just lst2                    <- matchPattern x12 x22
+ = Just (append lst1 lst2)
+
+ | otherwise
+ = Nothing
+

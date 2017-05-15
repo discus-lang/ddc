@@ -2,6 +2,7 @@
 module SMR.Prim.Eval.Nat
 export evalPrimNat
 import SMR.Prim.Name
+import SMR.Core.Exp
 import Data.Maybe
 where
 

@@ -1,42 +1,50 @@
 
-@fix    f       = (\x. f (x x)) (\x. f (x x));
 
-@true   x y     = x;
-@false  x y     = y;
-@if     a b c   = a b c;
-@and    x y     = @if x y @false;
-@or     x y     = @if x @true  y;
+@set    xx cont = cont xx;
 
-@zero           = \s. \z. z;
-@succ   n       = \s. \z. s (n s z);
-@one            = @succ @zero;
-@two            = @succ @one;
-@three          = @succ @two;
-@four           = @succ @three;
-
-@pair   m n     = \b. @if b m n;
-@fst    p       = p @true;
-@snd      p     = p @false;
-@pair-zero      = @pair @zero @zero;
-@pair-succ p    = @pair (@snd p) (@succ (@snd p));
-
-@pred   n       = @fst (n @pair-succ @pair-zero);
-@add    m n     = \s. \z. m s (n s z);
-@sub    m n     = n @pred m;
-@mul    m n     = \z. n (m z);
-@exp    m n     = n m;
-@iszero n       = n (\x. @false) @true;
 
 @fac n
  = @if  (@iszero n)
         @one
         (@mul n (@fac (@pred n)));
 
-@fac-nat n
+@nat-fac n
  = #if  (#nat-eq #nat-0 n)
         #nat-1
-        (#nat-mul n (@fac-nat (#nat-sub n #nat-1)));
+        (#nat-mul n (@nat-fac (#nat-sub n #nat-1)));
 
 
+@list-case xx alt-nil alt-cons
+ = #match xx %nil          alt-nil
+  (#match xx (%cons #o #o) alt-cons
+   %fail);
 
 
+@replicate n x
+ = #if  (#nat-eq #nat-0 n)
+        %nil
+        (%cons x (@replicate (#nat-sub n #nat-1) x));
+
+
+@range a b
+ = #if  (#nat-gt a b)
+        %nil
+        (%cons a (@range (#nat-add a #nat-1) b));
+
+
+@length xx
+ = @list-case
+        xx
+        #nat-0
+        (\x. \xs. #nat-add #nat-1 (@length xs));
+
+
+@foldl f z xx
+ = @list-case
+        xx 
+        z 
+        (\x. \xs. @foldl f (f z x) xs);
+
+@sum xx
+ = @foldl #nat-add #nat-0 xx;
+        

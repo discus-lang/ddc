@@ -1,0 +1,45 @@
+
+module SMR.Prim.Name
+export 
+{       pretty_Prim;    show_Prim;
+        readPrim
+}
+import SMR.Prim.Name.Bool
+import SMR.Prim.Name.List
+import SMR.Prim.Name.Match
+import SMR.Prim.Name.Nat
+import Class.Show
+import Class.Pretty
+where
+
+
+data Prim where        
+        PrimBool        : PrimBool      -> Prim
+        PrimList        : PrimList      -> Prim
+        PrimMatch       : PrimMatch     -> Prim
+        PrimNat         : PrimNat       -> Prim
+
+
+-- | Pretty dictionary for primitives.
+pretty_Prim: Pretty Prim
+ = Pretty showPrim
+
+show_Prim: Show Prim
+ = Show   showPrim
+
+showPrim    (pp: Prim): Text
+ = case pp of
+        PrimBool pb                     -> showPrimBool   pb
+        PrimList pp                     -> showPrimList   pp
+        PrimMatch pp                    -> showPrimMatch  pp
+        PrimNat  pn                     -> showPrimNat    pn
+
+
+readPrim    (tt: Text): Maybe Prim
+ | Just pb      <- readPrimBool tt      = Just (PrimBool  pb)
+ | Just pp      <- readPrimList tt      = Just (PrimList  pp)
+ | Just pp      <- readPrimMatch tt     = Just (PrimMatch pp)
+ | Just pn      <- readPrimNat  tt      = Just (PrimNat   pn)
+ | otherwise                            = Nothing
+
+

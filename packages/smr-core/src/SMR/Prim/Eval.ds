@@ -1,0 +1,36 @@
+
+module SMR.Prim.Eval
+export evalPrim
+import SMR.Prim.Eval.Bool
+import SMR.Prim.Eval.List
+import SMR.Prim.Eval.Match
+import SMR.Prim.Eval.Nat
+import SMR.Prim.Name
+import Data.Maybe
+where
+
+
+-- | Evaluate a primitive application.
+evalPrim 
+        {Eq s}
+        (evalWhnf: Exp s Prim -> Maybe (Exp s Prim))
+                                        -- ^ Evaluate to weak head normal form.
+        (p:     Prim)                   -- ^ Primitive being applied.
+        (xs:    List (Exp s Prim))      -- ^ List of arguments to the primitive.
+        : Maybe (Exp s Prim)
+ = case p of
+        PrimBool pb     -> evalPrimBool  (eval_primOfWhnf evalWhnf) pb xs
+        PrimList pp     -> evalPrimList   evalWhnf pp xs
+        PrimMatch pp    -> evalPrimMatch  evalWhnf pp xs
+        PrimNat  pn     -> evalPrimNat   (eval_primOfWhnf evalWhnf) pn xs
+
+
+eval_primOfWhnf
+        (evalWhnf: Exp s Prim -> Maybe (Exp s Prim))
+        (xx:       Exp s Prim)
+        : Maybe Prim
+ = case evalWhnf xx of
+        Just (XRef (RPrm p))    -> Just p
+        _                       -> Nothing
+
+
