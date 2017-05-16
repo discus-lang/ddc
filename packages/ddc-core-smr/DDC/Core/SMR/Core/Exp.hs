@@ -21,10 +21,16 @@ data Module s p where
         Module  :: [Decl s p] -> Module s p
 
 
+deriving instance (Show s, Show p) => Show (Module s p)
+
+
 -- Decl -----------------------------------------------------------------------
 -- | Top-level declaration.
 data Decl s p where
         DTerm   :: Name -> Exp s p -> Decl s p
+
+
+deriving instance (Show s, Show p) => Show (Decl s p)
 
 
 -- | Lookup the body of a declaration with the given name from a list.

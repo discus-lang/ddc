@@ -147,6 +147,7 @@ packages/ddc-build/%.o : packages/ddc-build/%.hs
 		      -ipackages/ddc-core-flow \
 		      -ipackages/ddc-core-machine \
 		      -ipackages/ddc-core-tetra \
+		      -ipackages/ddc-core-smr \
 		      -ipackages/ddc-core-babel \
                       -ipackages/ddc-source-tetra \
 		      -ipackages/ddc-build
@@ -161,6 +162,7 @@ packages/ddc-driver/%.o : packages/ddc-driver/%.hs
 		      -ipackages/ddc-core-flow \
 		      -ipackages/ddc-core-machine \
 		      -ipackages/ddc-core-tetra \
+		      -ipackages/ddc-core-smr \
 		      -ipackages/ddc-core-babel \
                       -ipackages/ddc-source-tetra \
 		      -ipackages/ddc-build \

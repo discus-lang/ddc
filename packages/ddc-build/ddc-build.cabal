@@ -30,6 +30,7 @@ Library
         ddc-core-llvm    == 0.4.4.*,
         ddc-core-flow    == 0.4.4.*,
         ddc-core-tetra   == 0.4.4.*,
+        ddc-core-smr     == 0.4.4.*,
         ddc-core-babel   == 0.4.4.*,
         ddc-core-machine == 0.4.4.*,
         ddc-source-tetra == 0.4.4.*

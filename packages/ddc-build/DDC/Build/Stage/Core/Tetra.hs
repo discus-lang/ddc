@@ -1,7 +1,10 @@
 
 module DDC.Build.Stage.Core.Tetra
-        ( tetraToSalt
-        , ConfigTetraToSalt (..))
+        ( tetraToShimmer
+        , ConfigTetraToShimmer  (..)
+
+        , tetraToSalt
+        , ConfigTetraToSalt     (..))
 where
 import Control.Monad.Trans.Except
 import Control.Monad.IO.Class
@@ -28,7 +31,47 @@ import qualified DDC.Core.Tetra                         as E
 import qualified DDC.Core.Tetra.Transform.Boxing        as EBoxing
 import qualified DDC.Core.Tetra.Transform.Curry         as ECurry
 
+import qualified DDC.Core.SMR                           as H
 
+
+---------------------------------------------------------------------------------------------------
+data ConfigTetraToShimmer
+        = ConfigTetraToShimmer
+        { configSinkShimmer     :: B.Sink       -- ^ Sink after conversion to shimmer.
+        }
+
+
+-- | Convert Core Tetra to Shimmer Code.
+tetraToShimmer
+        :: (Show a, Pretty a)
+        => C.Module a E.Name                   -- ^ Core tetra module.
+        -> ConfigTetraToShimmer                 -- ^ Sinker Config
+        -> ExceptT [B.Error] IO (H.Module H.Name H.Name)
+
+tetraToShimmer mm config
+ = do
+        mm_checked
+         <-  B.coreCheck
+                "TetraToShimmer/check" BE.fragment C.Recon
+                B.SinkDiscard B.SinkDiscard
+                mm
+
+        let mm_shimmer
+                = case H.smrOfTetraModule
+                        (C.profilePrimDataDefs E.profile)
+                        (C.profilePrimKinds    E.profile)
+                        (C.profilePrimTypes    E.profile) 
+                        mm_checked of
+                    Left  err       -> error $ "tetraToShimmer fail" ++ err 
+                    Right mm'       -> mm'
+
+        liftIO $ B.pipeSink (show mm_shimmer)
+                            (configSinkShimmer config)
+
+        return mm_shimmer
+
+
+---------------------------------------------------------------------------------------------------
 data ConfigTetraToSalt
         = ConfigTetraToSalt
         { configSinkExplicit    :: B.Sink       -- ^ Sink after making explicit.
@@ -38,7 +81,7 @@ data ConfigTetraToSalt
         , configSinkBoxing      :: B.Sink       -- ^ Sink after boxing transform.
         , configSinkPrep        :: B.Sink       -- ^ Sink after prep before to-salt conversion.
         , configSinkChecked     :: B.Sink       -- ^ Sink after checking before to-salt converion.
-        , configSinkSalt        :: B.Sink       -- ^ Sinl after conversion to salt.
+        , configSinkSalt        :: B.Sink       -- ^ Sink after conversion to salt.
         }
 
 
