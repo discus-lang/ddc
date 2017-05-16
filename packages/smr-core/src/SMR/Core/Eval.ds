@@ -55,7 +55,6 @@ subst   (n:  Name)              -- ^ Name of variable to lift references ot.
         XRef _          -> xx
 
 
-
 -- | Unfold a macro declaration.
 unfold (decls: List (Decl s p)) (xx: Exp s p): Exp s p
  = case xx of

@@ -10,6 +10,7 @@ ddc-check_packages = \
 	packages/ddc-core-flow/DDC \
 	packages/ddc-core-machine/DDC \
 	packages/ddc-core-tetra/DDC \
+	packages/ddc-core-smr/DDC \
         packages/ddc-source-tetra/DDC \
 	packages/ddc-build/DDC
 
@@ -41,6 +42,7 @@ packages/ddc-tools/src/ddc-check/%.o : packages/ddc-tools/src/ddc-check/%.hs
 		      -ipackages/ddc-core-flow \
 		      -ipackages/ddc-core-machine \
 		      -ipackages/ddc-core-tetra \
+		      -ipackages/ddc-core-smr \
 		      -ipackages/ddc-core-babel \
                       -ipackages/ddc-source-tetra \
 		      -ipackages/ddc-build \

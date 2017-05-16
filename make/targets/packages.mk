@@ -7,6 +7,7 @@ PACKAGES = \
 	ddc-core-salt \
 	ddc-core-llvm \
 	ddc-core-tetra \
+	ddc-core-smr \
 	ddc-core-flow \
 	ddc-core-machine \
 	ddc-core-babel \
@@ -117,6 +118,15 @@ packages/ddc-core-tetra/%.o : packages/ddc-core-tetra/%.hs
 		      -ipackages/ddc-core-simpl \
 		      -ipackages/ddc-core-salt \
 		      -ipackages/ddc-core-tetra
+
+packages/ddc-core-smr/%.o : packages/ddc-core-smr/%.hs
+	@echo "* Compiling $<"
+	@$(GHC) $(GHC_FLAGS) $(GHC_WARNINGS2) $(DDC_PACKAGES) $(GHC_INCDIRS) \
+		-c $< -ipackages/ddc-core \
+		      -ipackages/ddc-core-simpl \
+		      -ipackages/ddc-core-salt \
+		      -ipackages/ddc-core-tetra \
+		      -ipackages/ddc-core-smr
 
 packages/ddc-source-tetra/%.o : packages/ddc-source-tetra/%.hs
 	@echo "* Compiling $<"

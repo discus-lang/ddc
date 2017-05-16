@@ -1,0 +1,9 @@
+
+@fix f  
+ = (\x. f (x x)) (\x. f (x x));
+
+@nat-fac-fixed
+ = @fix (\self. \n. 
+          #if  (#nat-eq #nat-0 n)
+                #nat-1
+               (#nat-mul n (self (#nat-sub n #nat-1))));
