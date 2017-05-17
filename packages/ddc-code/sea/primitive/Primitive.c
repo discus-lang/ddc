@@ -198,6 +198,11 @@ string_t* primStdinGetString (nat_t len)
 {       
         string_t* str   = malloc(len + 1);
         str             = fgets(str, len, stdin);
+        if (str == NULL) {
+                printf("primStdinGetString: failed\n");
+                abort();
+        }
+
         return str; 
 }
 
