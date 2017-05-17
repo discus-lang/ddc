@@ -57,6 +57,11 @@ step    (prim:  p -> List (Exp s p) -> Maybe (Exp s p))
                  -> case stepFirst prim decls xs2 of
                         Right xs2'      -> Right (XApp x1 xs2')
                         Left r          -> Left  r
+
+        -- TODO: split the lifting and subst cases into separate push rules
+        -- we'll want to use these when building the type checker
+        -- and other transforms.
+
         -- Lifting.
         XUps ups1 x2
          -> case x2 of
@@ -75,6 +80,10 @@ step    (prim:  p -> List (Exp s p) -> Maybe (Exp s p))
                 XApp x21 xs22
                   -> Right $ XApp (XUps ups1 x21) (map (XUps ups1) xs22)
 
+                -- Push ups under abstractions.
+                XAbs ns21 x22
+                  -> Right $ XAbs ns21 (XUps (bumpUps ns21 ups1) x22)
+
                 _ -> Left ResultDone
 
         -- Substitution.
@@ -84,7 +93,7 @@ step    (prim:  p -> List (Exp s p) -> Maybe (Exp s p))
                 XRef (RMac _)   -> Left ResultDone
                 XRef _          -> Right x2
 
-                -- Lookup element in substitution.
+                -- Lookup element in snv.
                 XVar n d
                   | SSnv ts1     <- snv1
                   -> case lookup (T2 n d) ts1 of
@@ -95,12 +104,19 @@ step    (prim:  p -> List (Exp s p) -> Maybe (Exp s p))
                 XApp x21 xs22
                   -> Right $ XApp (XSnv snv1 x21) (map (XSnv snv1) xs22)
 
-                -- Push substitution under abstractions.
+                -- Push snv under abstractions.
                 XAbs ns21 x22
                   -> Right $ XAbs ns21 (XSnv (bumpSnv ns21 snv1) x22)
 
                 XFix ns21 x22
                   -> Right $ XFix ns21 (XSnv (bumpSnv ns21 snv1) x22)
+
+                -- Push down liftings under substitutions.
+                XUps _ _
+                  -> case step prim decls x2 of
+                        Right x2'       -> Right $ XSnv snv1 x2'
+                        Left  r         -> Left r
+
 
                 _ -> Left ResultDone
 
@@ -128,13 +144,32 @@ stepFirst
                  -> Right $ Cons x' xs
 
 
+-- Ups ------------------------------------------------------------------------
+-- | Bump ups (substitution lifting) due to pushing it
+--   under an absraction with the given named binders.
+bumpUps (ns: List Name) (up: Ups): Ups
+ = case up of
+        UUps ts -> UUps $ map (bumpLift ns) ts
 
--- | Bump substitution environment due to pushing it
+bumpLift 
+        (ns: List Name)
+        (l:  Tup2 (Tup2 Name Nat) Nat)
+          :  Tup2 (Tup2 Name Nat) Nat
+ = case l of
+        T2 (T2 n d) inc
+         | elem n ns    -> T2 (T2 n (d + 1)) inc
+         | otherwise    -> l
+
+
+-- Snv ------------------------------------------------------------------------
+-- | Bump snv (substitution environment) due to pushing it
 --   under an abstraction with the given named binders.
 bumpSnv (ns: List Name) (sn: Snv s p): Snv s p
  = case sn of
         SSnv ts -> SSnv $ map (bumpBind ns) ts
- 
+
+
+-- TODO: also need to inc the depth when pushing under abs of same name.
 bumpBind 
         (ns: List Name)
         (b:  Tup2 (Tup2 Name Nat) (Exp s p))

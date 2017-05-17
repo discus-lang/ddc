@@ -10,6 +10,7 @@ export
         tail; tail1;
         last; index;
         take; drop;
+        elem;
         lookup; find;
         reverse;
         map; mapS;
@@ -189,6 +190,15 @@ drop  (n: Nat) (xx: List a): List a
 
 
 -- Searches -------------------------------------------------------------------
+-- | Check if the given element is an element of the list.
+elem   {Eq a} (k: a) (xx: List a): Bool
+ = case xx of
+        Nil             -> False
+        Cons x xs
+         | x == k       -> True
+         | otherwise    -> elem k xs
+
+
 -- | Given a list of key value pairs, lookup the first
 --   value whose key is selected by the given predicate.
 lookup {Eq a} (k: a) (xx: List (Tup2 a b)): Maybe b

@@ -5,6 +5,7 @@ export
         from; alt;
         monad_Parser;
         some; many;
+        sepBy; sepBy1
 }
 import Class.Monad
 import Data.List
@@ -163,4 +164,22 @@ many [a t: Data] (parserA: Parser t a): Parser t (List a)
          return (Cons x xs))
         (bind   parserA        $ λx  →
          return (Cons x Nil))
+
+
+-- | Parse some things separated by other things.
+sepBy1  (parserA: Parser t a) (parserS: Parser t s): Parser t (List a)
+ = alt  (bind   parserA                         $ λx →
+         bind   parserS                         $ λs →
+         bind   (sepBy1 parserA parserS)        $ λxs →
+         return (Cons x xs))
+
+        (bind   parserA                         $ λx →
+         return (Cons x Nil))        
+
+sepBy   (parserA: Parser t a) (parserS: Parser t s)
+        : Parser t (List a)
+ = alt  (sepBy1 parserA parserS)
+        (return Nil)
+
+
 

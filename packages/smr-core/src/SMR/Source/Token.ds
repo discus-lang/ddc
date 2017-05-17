@@ -5,6 +5,7 @@ export
         eq_Space; show_Space;
         isToken;
         takeNameOfToken;
+        takeNatOfToken;
 }
 import SMR.Core.Exp
 import Data.Text
@@ -16,11 +17,21 @@ where
 data Token where
         KBra    : Token                         -- ^ Open  Bracket '('
         KKet    : Token                         -- ^ Close Bracket ')'
+
+        KCBra   : Token                         -- ^ Curly Braket  '{'
+        KCKet   : Token                         -- ^ Curly Bracket '}'
+
+        KColon  : Token                         -- ^ Colon         ':'
+        KHat    : Token                         -- ^ Hat           '^'
+        KComma  : Token                         -- ^ Comma         ','
+
         KLambda : Token                         -- ^ Lambda symbol '\'
         KDot    : Token                         -- ^ Dot symbol    '.'
         KSemi   : Token                         -- ^ Semicolon     ';'
         KEquals : Token                         -- ^ Equals        '='
+
         KName   : Space -> Name -> Token        -- ^ A scoped name.
+        KNat    : Nat   -> Token                -- ^ A natural number.
 
 
 -- | Name space of a name.
@@ -40,12 +51,22 @@ eq_Token: Eq Token
          = case T2 t1 t2 of
                 T2 KBra    KBra         -> True
                 T2 KKet    KKet         -> True
+                T2 KCBra   KCBra        -> True
+                T2 KCKet   KCKet        -> True
+                T2 KColon  KColon       -> True
+                T2 KHat    KHat         -> True
+                T2 KComma  KComma       -> True
                 T2 KLambda KLambda      -> True
                 T2 KDot    KDot         -> True
                 T2 KSemi   KSemi        -> True
                 T2 KEquals KEquals      -> True
+
                 T2 (KName s1 n1) (KName s2 n2)
                  -> s1 == s2 ∧ n1 == n2
+
+                T2 (KNat n1) (KNat n2)
+                 -> n1 == n2
+
                 _                       -> False
 
         neq' t1 t2
@@ -75,11 +96,17 @@ show_Token: Show Token
  -> case kk of
         KBra            -> "KBra"
         KKet            -> "KKet"
+        KCBra           -> "KCBra"
+        KCKet           -> "KCKet"
+        KColon          -> "KColon"
+        KHat            -> "KHat"
+        KComma          -> "KComma"
         KLambda         -> "KLambda"
         KDot            -> "KDot"
         KSemi           -> "KSemi"
         KEquals         -> "KEquals"
-        KName s n       -> parens $ "KName"     %% show s %% show n
+        KName s n       -> parens $ "KName" %% show s %% show n
+        KNat  n         -> parens $ "KNat"  %% show n
 
 
 -- | Show dictionary for namespaces.
@@ -107,3 +134,9 @@ takeNameOfToken (ss1: Space) (kk: Token): Maybe Name
 
         _               -> Nothing
 
+
+-- | Take the natural number from a token, if any.
+takeNatOfToken (kk: Token): Maybe Nat
+ = case kk of
+        KNat n          -> Just n
+        _               -> Nothing

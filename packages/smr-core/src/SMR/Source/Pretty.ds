@@ -80,10 +80,9 @@ pprExp' [s p: Data]
 
  | ContextArg   <- ctx
  = case xx of
-        XAbs _ _        -> parens $ pprExp' ContextBody xx
-        XFix _ _        -> parens $ pprExp' ContextBody xx
-        XApp _ _        -> parens $ pprExp' ContextBody xx
-        _               -> pprExp' ContextBody xx
+        XRef _          -> pprExp' ContextBody xx
+        XVar _          -> pprExp' ContextBody xx
+        _               -> parens $ pprExp' ContextBody xx
 
 
 -- Ups ------------------------------------------------------------------------
@@ -97,7 +96,9 @@ pprBump (bm: Tup2 (Tup2 Name Nat) Nat): Text
  = case bm of
         T2 (T2 name depth) inc
          | depth == 0   -> name % ":" % show inc
-         | otherwise    -> name % "^" % show depth % ":" % show inc
+
+         | otherwise    -> name % "^" % show depth 
+                                % ":" % show inc
 
 
 -- Snv ------------------------------------------------------------------------
@@ -112,8 +113,10 @@ pprBind {Pretty s} {Pretty p}
         (bn: Tup2 (Tup2 Name Nat) (Exp s p)): Text
  = case bn of
         T2 (T2 name depth) x
-         |  depth == 0  -> name % ":" % pprExp' ContextBody x
-         |  otherwise   -> name % "^" % show depth %% "=" %% pprExp' ContextBody x
+         |  depth == 0  -> name %  ":" %  pprExp' ContextBody x
+
+         |  otherwise   -> name %  "^" %  show depth 
+                                %% "=" %% pprExp' ContextBody x
 
 
 -- Utils ----------------------------------------------------------------------

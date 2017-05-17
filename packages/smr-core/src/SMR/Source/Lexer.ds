@@ -41,6 +41,11 @@ lexToken (xx: List Char)
         ,  Just (T2 name csRest) <- lexName   xx'
         -> Just (T2 (KName space name) csRest)
 
+        --  Natural number.
+        |  isDigit c
+        ,  Just (T2 n csRest)    <- lexNat (Cons c xs)
+        -> Just (T2 (KNat n) csRest)
+
         |  otherwise     
         -> Nothing
 
@@ -61,9 +66,13 @@ takeSpace (c: Char) (cs: List Char)
 lexPunc1 (c: Char): Maybe Token
  | c == '('     = Just KBra
  | c == ')'     = Just KKet
+ | c == '{'     = Just KCBra
+ | c == '}'     = Just KCKet
  | c == '\\'    = Just KLambda
  | c == '.'     = Just KDot
  | c == ';'     = Just KSemi
+ | c == ','     = Just KComma
+ | c == ':'     = Just KColon
  | c == '='     = Just KEquals
  | otherwise    = Nothing
 
@@ -86,5 +95,24 @@ lexName (xx: List Char): Maybe (Tup2 Name (List Char))
 
 isNameBodyChar (c: Char): Bool
  = isLower c ∨ (isUpper c ∨ (isDigit c ∨ (c == '-' ∨ c == '_')))
+
+
+-- | Lex a natural number.
+lexNat (xx: List Char): Maybe (Tup2 Nat (List Char))
+ = go Nil xx
+ where
+        go acc Nil
+         | Just nat     <- readNat (textOfCharList (reverse acc))
+         = Just $ T2 nat Nil
+
+        go acc (Cons c cs)
+         | isDigit c    = go (Cons c acc) cs
+
+         | Just nat     <- readNat (textOfCharList (reverse acc))
+         = Just $ T2 nat (Cons c cs)
+
+        go _ _
+         = Nothing
+
 
 
