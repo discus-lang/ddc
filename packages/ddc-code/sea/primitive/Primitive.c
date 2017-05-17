@@ -197,7 +197,7 @@ void primStdoutFlush (Obj* obj)
 string_t* primStdinGetString (nat_t len)
 {       
         string_t* str   = malloc(len + 1);
-        (void)fgets(str, len, stdin);
+        str             = fgets(str, len, stdin);
         return str; 
 }
 
