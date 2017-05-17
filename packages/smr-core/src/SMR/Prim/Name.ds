@@ -13,6 +13,15 @@ import Class.Pretty
 where
 
 
+-- TODO: kill the intermediate prim wrappers.
+-- needing to do lexing and showing doesn't add any value.
+-- just represent prims as names.
+-- There should be a map of primitve name to some generic description
+-- of what the args are and how to evaluate it.
+-- For safe code just make whitelist for allowable prims,
+-- should just be a list of names. Could also then do profiling to see
+-- how many of each one were executed. Interpretation enables nice profiling.
+
 data Prim where        
         PrimBool        : PrimBool      -> Prim
         PrimList        : PrimList      -> Prim

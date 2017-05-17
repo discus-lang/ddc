@@ -89,11 +89,11 @@ cmdToShimmerSourceTetraFromString
 cmdToShimmerSourceTetraFromString config store source str
  = withExceptT (renderIndent . vcat . map ppr)
  $ do  
-        modSMR' 
+        modSMR
          <-  DE.tetraToShimmer config source 
          =<< DE.sourceLoadText config store  source str
 
-        liftIO $ print modSMR'
+        liftIO $ putStr $ renderIndent $ ppr modSMR
 
 
 -------------------------------------------------------------------------------
@@ -154,5 +154,5 @@ cmdToShimmerCoreFromString config language source str
 
         modSMR  <- makeSMR
 
-        liftIO $ print modSMR
+        liftIO $ putStr $ renderIndent $ ppr modSMR
 

@@ -65,7 +65,7 @@ tetraToShimmer mm config
                     Left  err       -> error $ "tetraToShimmer fail" ++ err 
                     Right mm'       -> mm'
 
-        liftIO $ B.pipeSink (show mm_shimmer)
+        liftIO $ B.pipeSink (renderIndent $ ppr mm_shimmer)
                             (configSinkShimmer config)
 
         return mm_shimmer

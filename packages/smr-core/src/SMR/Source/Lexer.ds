@@ -48,7 +48,8 @@ lexToken (xx: List Char)
 -- | Take the namespace qualifier from the front of a name.
 takeSpace (c: Char) (cs: List Char)
         : Maybe (Tup2 Space (List Char))
- | isLower c    = Just (T2 SVar (Cons c cs))
+ | isLower c ∨ isLower c   
+                = Just (T2 SVar (Cons c cs))
  | c == '@'     = Just (T2 SMac cs)
  | c == '+'     = Just (T2 SSet cs)
  | c == '%'     = Just (T2 SSym cs)
@@ -75,7 +76,6 @@ lexName (xx: List Char): Maybe (Tup2 Name (List Char))
          = do   name    = textOfCharList (reverse acc)
                 Just $ T2 name Nil
 
-
         go acc (Cons c cs)
          | isNameBodyChar c     = go (Cons c acc) cs
 
@@ -85,6 +85,6 @@ lexName (xx: List Char): Maybe (Tup2 Name (List Char))
 
 
 isNameBodyChar (c: Char): Bool
- = isLower c ∨ (isDigit c ∨ (c == '-' ∨ c == '_'))
+ = isLower c ∨ (isUpper c ∨ (isDigit c ∨ (c == '-' ∨ c == '_')))
 
 

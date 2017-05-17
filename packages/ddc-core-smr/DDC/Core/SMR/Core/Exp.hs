@@ -6,7 +6,12 @@ module DDC.Core.SMR.Core.Exp
         , lookupDecl
         , Exp           (..)
         , Ref           (..)
-        , takeXApps, makeXApps)
+        , takeXApps, makeXApps
+
+        , pattern XMac
+        , pattern XSet
+        , pattern XSym
+        , pattern XPrm)
 where
 import Data.Text        (Text)
 
@@ -73,6 +78,12 @@ data Ref s p where
 
 deriving instance (Show s, Show p) => Show (Exp s p)
 deriving instance (Show s, Show p) => Show (Ref s p)
+
+
+pattern XMac x  = XRef (RMac x)
+pattern XSet x  = XRef (RSet x)
+pattern XSym x  = XRef (RSym x)
+pattern XPrm x  = XRef (RPrm x)
 
 
 -- | Make an application of a function to the given list of arguments.
