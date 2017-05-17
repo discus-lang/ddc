@@ -115,6 +115,8 @@ bool_t  _CHECK (nat_t bytes)
 // These are defined in C land and linked into the runtime library.
 extern string_t* primShowInt    (int   i);
 extern string_t* primShowNat    (nat_t i);
-extern void      primPutTextLit (string_t* str);
-extern void      primPutString  (string_t* str);
-
+extern void      primStdoutPutTextLit   (string_t* str);
+extern void      primStdoutPutString    (string_t* str);
+extern string_t* primStdinGetString     (nat_t i);
+extern string_t* primFileRead           (string_t* path);
+        

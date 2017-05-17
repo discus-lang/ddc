@@ -1,0 +1,112 @@
+
+module SMR.Core.Exp
+export
+{       show_Decl;      lookupDecl;
+        show_Exp;       
+        makeXApps;      takeXApps;
+}
+import Class.Show
+import Data.Text
+import Data.Tuple
+where
+
+
+-- Name -----------------------------------------------------------------------
+-- | Represent names as text.
+type Name = Text
+
+
+-- Decl -----------------------------------------------------------------------
+-- | Top-level declaration.
+data Decl (s p: Data) where
+        DTerm   : Name -> Exp s p -> Decl s p
+
+
+-- | Lookup the body of a declaration with the given name from a list.
+lookupDecl
+        (n: Name)
+        (decls: List (Decl s p))
+        : Maybe (Exp s p)
+ = case decls of
+        Nil             -> Nothing
+
+        Cons (DTerm n' x) ds
+         | n == n'      -> Just x
+         | otherwise    -> lookupDecl n ds
+
+
+show_Decl {Show s} {Show p}: Show (Decl s p)
+ =  Show $ λdd
+ -> case dd of
+        DTerm n x
+         -> parens $ "DTerm"    %% show n %% show x
+
+
+-- Exp ------------------------------------------------------------------------
+-- | Generic expression language.
+data Exp (s p: Data) where
+        -- Functional core.
+        XVar    : Name    -> Nat     -> Exp s p
+        XAbs    : Name    -> Exp s p -> Exp s p
+        XApp    : Exp s p -> Exp s p -> Exp s p
+
+        -- Reference to an external thing.
+        XRef    : Ref s p -> Exp s p
+
+
+-- | Reference to an external thing.
+data Ref (s p: Data) where
+        -- Macro name.
+        RMac    : Name  -> Ref s p
+
+        -- Set name.
+        RSet    : Name  -> Ref s p
+
+        -- Uninterpreted symbol.
+        RSym    : s     -> Ref s p
+
+        -- Primitive value.
+        RPrm    : p     -> Ref s p
+
+
+show_Exp {Show s} {Show p}: Show (Exp s p)
+ =  Show $ λxx
+ -> case xx of
+        XVar    n b     -> parens $ "XVar"      %% show n  %% show b
+        XAbs    n x     -> parens $ "XAbs"      %% show n  %% show x
+        XApp    x1 x2   -> parens $ "XApp"      %% show x1 %% show x2
+        XRef    r       -> show r
+
+
+show_Ref {Show s} {Show p}: Show (Ref s p)
+ = Show $ λxx
+ -> case xx of
+        RMac    n       -> parens $ "RMac"      %% show n
+        RSet    n       -> parens $ "RSet"      %% show n
+        RSym    s       -> parens $ "RSym"      %% show s
+        RPrm    p       -> parens $ "RPrm"      %% show p
+
+
+-- | Make an application of a function to the given list of arguments.
+makeXApps (xFun: Exp s p) (xsArgs: List (Exp s p)): Exp s p
+ = build (reverse xsArgs)
+ where  
+        build xs
+         = case xs of
+                Nil             -> xFun
+                Cons x1 xsArgs' -> XApp (build xsArgs') x1
+
+
+-- | Take an application of a function to a list of arguments.
+takeXApps (xx: Exp s p): Maybe (Tup2 (Exp s p) (List (Exp s p)))
+ = case xx of
+        XApp x1@(XApp _ _) a2
+         -> case takeXApps x1 of
+                Just (T2 f1 as1) -> Just (T2 f1 (append as1 (Cons a2 Nil)))
+                Nothing          -> Nothing
+
+        XApp x1 a2
+          -> Just (T2 x1 (Cons a2 Nil))
+
+        _ -> Nothing
+

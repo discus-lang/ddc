@@ -1,6 +1,9 @@
 
 module Data.Maybe
-export  { isNothing; isJust; fromMaybe }
+export  
+{       functor_Maybe; applicative_Maybe; monad_Maybe; 
+        isNothing; isJust; fromMaybe; maybe;
+}
 import Class.Functor
 import Class.Applicative
 import Class.Monad
@@ -15,7 +18,7 @@ data Maybe (a: Data) where
 
 
 -- Functor --------------------------------------------------------------------
-functor_maybe
+functor_Maybe
  = Functor 
         maybe_fmap
  where 
@@ -27,9 +30,9 @@ functor_maybe
 
 
 -- Applicative ----------------------------------------------------------------
-applicative_maybe
+applicative_Maybe
  = Applicative 
-        functor_maybe 
+        functor_Maybe 
         maybe_pure
         maybe_ap
  where
@@ -48,9 +51,9 @@ applicative_maybe
 
 
 -- Monad ----------------------------------------------------------------------
-monad_maybe
+monad_Maybe
  = Monad
-        applicative_maybe
+        applicative_Maybe
         maybe_return
         maybe_bind
  where  

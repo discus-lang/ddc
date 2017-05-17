@@ -1,0 +1,29 @@
+
+@true   x y     = x;
+@false  x y     = y;
+@if     a b c   = a b c;
+
+@zero           = \s. \z. z;
+@succ   n       = \s. \z. s (n s z);
+@one            = @succ @zero;
+@two            = @succ @one;
+@three          = @succ @two;
+@four           = @succ @three;
+
+@is-zero n      = n (\x. @false) @true;
+
+@pair       m n = \b. @if b m n;
+@pair-fst   p   = p @true;
+@pair-snd   p   = p @false;
+@pair-zero      = @pair @zero @zero;
+@pair-succ  p   = @pair (@pair-snd p) (@succ (@pair-snd p));
+
+@pred   n       = @pair-fst (n @pair-succ @pair-zero);
+@add    m n     = \s. \z. m s (n s z);
+@sub    m n     = n @pred m;
+@mul    m n     = \z. n (m z);
+
+@fac n
+ = @if  (@is-zero n)
+         @one 
+        (@mul n (@fac (@sub n @one)));

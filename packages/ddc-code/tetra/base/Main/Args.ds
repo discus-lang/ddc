@@ -19,6 +19,12 @@ where
 -- | Describes arguments to an executable.
 data Arg (mode: Data) where
 
+        -- A text argument.
+        ArgText :  Text                         -- name
+                -> Text                         -- description
+                -> (Text -> mode -> mode)       -- fold with argument value
+                -> Arg mode
+
         -- A natural number argument.
         ArgNat  :  Text                         -- name
                 -> Text                         -- description
@@ -26,10 +32,12 @@ data Arg (mode: Data) where
                 -> Arg mode
 
 
+
 -- | Get the name of an argument.
 mainArgs_nameOfArg (arg: Arg mode): Text
  = case arg of
-        ArgNat name _ _  -> name
+        ArgText name _ _        -> name
+        ArgNat  name _ _        -> name
 
 
 -------------------------------------------------------------------------------
@@ -95,6 +103,13 @@ mainArgs_parse
                 Nothing   -> Left (ArgUnrecognised a)
                 Just decl -> go_decl mode decl as'
 
+
+        -- Try to parse a text argument value.
+        go_decl mode (ArgText name _ _)   Nil
+         = Left (ArgMissing name)
+
+        go_decl mode (ArgText name desc f) (Cons arg as')
+         = go_name (f arg mode) as'
 
         -- Try to parse the argument value.
         go_decl mode (ArgNat name _ _)    Nil 

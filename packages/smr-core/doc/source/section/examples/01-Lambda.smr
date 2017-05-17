@@ -1,0 +1,4 @@
+
+@example-1      = (\x. x x) %turtle;
+@example-2      = (\f. \x. f (f x)) (\x. x x) %turtle;
+

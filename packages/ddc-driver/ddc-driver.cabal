@@ -33,6 +33,7 @@ Library
         ddc-core-flow    == 0.4.4.*,
         ddc-core-machine == 0.4.4.*,
         ddc-core-tetra   == 0.4.4.*,
+        ddc-core-smr     == 0.4.4.*,
         ddc-source-tetra == 0.4.4.*,
         ddc-build        == 0.4.4.*
   

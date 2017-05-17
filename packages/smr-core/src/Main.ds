@@ -1,0 +1,140 @@
+
+-- Shimmer v1.0.
+--   The Turtle at the Bottom of the World.
+--
+module Main
+import SMR.Core.Exp
+import SMR.Core.Eval
+import SMR.Prim.Eval
+import SMR.Source.Pretty
+import SMR.Source.Token
+import SMR.Source.Parser
+import System.IO.Console
+import System.IO.File
+import Main.Args
+import Data.Maybe
+where
+
+
+-- TODO: need explict run/box.
+main ()
+ = do   writel "Shimmer, version 1.0. The Turtle at the Bottom of the World."
+
+        mSource
+         = mainArgs_load Nothing
+         $ Cons (ArgText "-i" "include file" (\s _ -> Just s))
+         $ Nil
+
+        case mSource of
+         Just (TextLit path)
+          -> case loadSource path of
+                 Nothing        -> writel "load failed"
+                 Just decls     -> repl decls
+
+         Nothing        
+          -> repl Nil
+
+
+parserConfig: Config Name Prim
+ = Config (\z -> Just z) readPrim
+
+
+-- | Load a list of top-level declarations from a source file.
+loadSource 
+        (path: TextLit)
+        : S File (Maybe (List (Decl Name Prim)))
+ = do   
+        str     = file_read (takeTextLit path)
+
+        case lexTokens $ charListOfText str of
+         T2 toks cs
+          |  not $ all isSpace cs       -> Nothing
+          |  otherwise
+          -> case parseDecls parserConfig toks of
+                Nothing                 -> Nothing
+                Just ds'                -> Just ds'
+
+         _ -> Nothing
+
+
+show_Unit: Show Unit
+ = Show   $ λxx -> "()"
+
+pretty_Text: Pretty Text
+ = Pretty $ λxx -> xx
+
+-- TODO: need explicit run/box 
+getLine: S Console Text
+ = box do   
+        txt     = run readl 2014
+        textOfCharList $ init Nil $ charListOfText txt        
+
+
+-- | Read-Eval-Print loop.
+--   TODO: need to put the explicit box.
+--
+--   TODO: If we remove the unit parameter and use direct recursion
+--         we get an LLVM code-gen error.
+-- 
+--   TODO: closing stdin with control-D causes prompt to print infinitely.
+--
+repl    (decls: List (Decl Name Prim))
+        : S Console Unit
+ = box do   
+        -- Write the prompt.
+        write "> "
+        flush
+
+        -- Get the line and convert it to tokens.
+        str     = getLine
+
+        case lexTokens $ charListOfText str of
+         -- If only whitespace was provided then show the prompt again.
+         T2 Nil  Nil    -> repl decls
+
+         -- Parse the tokens.
+         T2 toks Nil    
+          ->    repl_toks decls toks
+
+         -- We couldn't lex all the characters into tokens.
+         T2 _    cs   
+          -> do writell "! lexical error."
+                repl decls
+
+
+-- | Given some tokens, try to parse an expression and evaluate it.
+repl_toks 
+        (decls: List (Decl Name Prim))
+        (toks:  List Token)
+        : S Console Unit
+ = case parseExp parserConfig toks of
+         Nothing
+          -> do writell "! parse error."
+                repl decls
+
+         Just x
+          -> case reduce_no' decls x of
+                Nothing 
+                 -> do  writell "! runtime error."
+                        repl decls
+
+                Just x' 
+                 -> do  writell (ppr x')
+                        repl decls
+
+
+-- | Reduce an expression that includes primitives.
+reduce_cbn'
+        (decls:  List (Decl Name Prim))
+        (xx:     Exp Name Prim)
+        : Maybe (Exp Name Prim)
+ = reduce_cbn (evalPrim (reduce_cbn' decls)) decls xx
+
+
+-- | Reduce an expression that includes primitives.
+reduce_no'  
+        (decls:  List (Decl Name Prim))
+        (xx :    Exp Name Prim)
+        : Maybe (Exp Name Prim)
+ = reduce_no (evalPrim  (reduce_cbn' decls))  decls xx
+

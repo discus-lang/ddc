@@ -1,0 +1,103 @@
+
+module SMR.Source.Parser
+export
+{       parseDecls; pDecls; pDecl;
+        parseExp;   pExp;   pExpApp; pExpAtom;
+}
+import SMR.Source.Lexer
+import SMR.Core.Exp
+import Control.Parsec
+import Data.Maybe
+where
+
+
+-- Parser Config --------------------------------------------------------------
+data Config (s p: Data) where
+ Config
+        :  (Name -> Maybe s)
+        -> (Name -> Maybe p)
+        -> Config s p
+
+configSym    ((Config ms mp): Config s p): Name -> Maybe s
+ = ms
+
+configPrim   ((Config ms mp): Config s p): Name -> Maybe p
+ = mp
+
+
+-- Decls -----------------------------------------------------------------------
+parseDecls 
+        (c:  Config s p)
+        (ts: List Token)
+        : Maybe (List (Decl s p))
+ = case parse (pDecls c) ts of
+        Nil               -> Nothing
+        Cons (T2 xx _) _  -> Just xx
+
+
+-- Decl ------------------------------------------------------------------------
+pDecls  (c: Config s p): Parser Token (List (Decl s p))
+ = many (pDecl c)
+
+
+pDecl   (c: Config s p): Parser Token (Decl s p)
+ =      (bind   (from (takeNameOfToken SMac))           $ λ nDecl   -> 
+         bind   (some (from (takeNameOfToken SVar)))    $ λ nsParam ->
+         bind   (satisfies (isToken KEquals))           $ λ kEq     -> 
+         bind   (pExp c)                                $ λ xBody   ->
+         bind   (satisfies (isToken KSemi))             $ λ kSemi   ->
+         return (DTerm nDecl $ foldr XAbs xBody nsParam))
+
+
+-- Exp ------------------------------------------------------------------------
+-- | Parse an expression from the given list of tokens.
+parseExp (c: Config s p) (ts: List Token): Maybe (Exp s p)
+ = case parse (pExp c) ts of
+        Nil               -> Nothing
+        Cons (T2 xx _) _  -> Just xx
+
+
+-- | Parse an expression.
+pExp     (c: Config s p): Parser Token (Exp s p)
+ = alt  (bind   (satisfies (isToken KLambda))   $ λ kLam  -> 
+         bind   (from (takeNameOfToken SVar))   $ λ n     ->
+         bind   (satisfies (isToken KDot))      $ λ kDot  ->
+         bind   (pExp c)                        $ λ xBody ->
+         return (XAbs n xBody))
+
+ $       pExpApp c
+
+
+-- | Parse an application.
+pExpApp (c: Config s p): Parser Token (Exp s p)
+ =      (bind   (pExpAtom c)                    $ λ xFun   ->
+         bind   (some (pExpAtom c))             $ λ xsArgs ->
+         return (makeXApps xFun xsArgs))
+
+
+-- | Parse an atomic expression.
+pExpAtom (c: Config s p): Parser Token (Exp s p)
+ = alt  (bind   (satisfies (isToken KBra))      $ λ xBra   ->
+         bind   (pExp c)                        $ λ xx     ->
+         bind   (satisfies (isToken KKet))      $ λ xKet   ->
+         return xx)
+
+ $ alt  (bind   (from (takeNameOfToken SVar))   $ λ n      ->
+         return (XVar n 0))
+
+ $ alt  (bind   (from (takeNameOfToken SMac))   $ λ n      ->
+         return (XRef (RMac n)))
+
+ $ alt  (bind   (from (takeNameOfToken SSet))   $ λ n      -> 
+         return (XRef (RSet n)))
+
+ $ alt  (bind   (from (takeNameOfToken SSym))   $ λ n      -> 
+         case configSym  c n of
+          Just s        -> return (XRef (RSym  s))
+          Nothing       -> zero)
+
+ $      (bind   (from (takeNameOfToken SPrm))   $ λ n      -> 
+         case configPrim c n of
+          Just p        -> return (XRef (RPrm  p))
+          Nothing       -> zero)
+

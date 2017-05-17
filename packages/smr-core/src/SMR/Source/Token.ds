@@ -1,0 +1,109 @@
+
+module SMR.Source.Token
+export
+{       eq_Token; show_Token;
+        eq_Space; show_Space;
+        isToken;
+        takeNameOfToken;
+}
+import SMR.Core.Exp
+import Data.Text
+import Data.Maybe
+where
+
+
+-- | Tokens for lambda calculus language.
+data Token where
+        KBra    : Token                         -- ^ Open  Bracket '('
+        KKet    : Token                         -- ^ Close Bracket ')'
+        KLambda : Token                         -- ^ Lambda symbol '\'
+        KDot    : Token                         -- ^ Dot symbol    '.'
+        KSemi   : Token                         -- ^ Semicolon     ';'
+        KEquals : Token                         -- ^ Equals        '='
+        KName   : Space -> Name -> Token        -- ^ A scoped name.
+
+
+-- | Name space of a name.
+data Space where
+        SVar    : Space                         -- ^ Local variable.
+        SMac    : Space                         -- ^ Macro name.
+        SSet    : Space                         -- ^ Set name.
+        SSym    : Space                         -- ^ Symbol name.
+        SPrm    : Space                         -- ^ Primitive name.
+
+
+-- | Check if two tokens are equal.
+eq_Token: Eq Token
+ = Eq eq' neq'
+ where  
+        eq' t1 t2
+         = case T2 t1 t2 of
+                T2 KBra    KBra         -> True
+                T2 KKet    KKet         -> True
+                T2 KLambda KLambda      -> True
+                T2 KDot    KDot         -> True
+                T2 KSemi   KSemi        -> True
+                T2 KEquals KEquals      -> True
+                T2 (KName s1 n1) (KName s2 n2)
+                 -> s1 == s2 ∧ n1 == n2
+                _                       -> False
+
+        neq' t1 t2
+         = not (eq' t1 t2)
+
+
+-- | Check if two name space tags are equal.
+eq_Space: Eq Space
+ = Eq eq' neq'
+ where
+        eq' s1 s2
+         = case T2 s1 s2 of
+                T2 SVar SVar            -> True
+                T2 SMac SMac            -> True
+                T2 SSet SSet            -> True
+                T2 SSym SSym            -> True
+                T2 SPrm SPrm            -> True
+                _                       -> False
+
+        neq' t1 t2
+         = not (eq' t1 t2)
+
+
+-- | Show dictionary for tokens.
+show_Token: Show Token
+ =  Show $ \kk
+ -> case kk of
+        KBra            -> "KBra"
+        KKet            -> "KKet"
+        KLambda         -> "KLambda"
+        KDot            -> "KDot"
+        KSemi           -> "KSemi"
+        KEquals         -> "KEquals"
+        KName s n       -> parens $ "KName"     %% show s %% show n
+
+
+-- | Show dictionary for namespaces.
+show_Space: Show Space
+ =  Show $ \ss
+ -> case ss of
+        SVar            -> "SVar"
+        SMac            -> "SMac"
+        SSet            -> "SSet"
+        SSym            -> "SSym"
+        SPrm            -> "SPrm"
+
+
+-- | Check if a token is equal to the give none.
+isToken (k1: Token): Token -> Bool
+ = \k2 -> k1 == k2
+
+
+-- | Take the name from a token, if any.
+takeNameOfToken (ss1: Space) (kk: Token): Maybe Name
+ = case kk of
+        KName ss2 n     
+         | ss1 == ss2   -> Just n
+         | otherwise    -> Nothing
+
+        _               -> Nothing
+

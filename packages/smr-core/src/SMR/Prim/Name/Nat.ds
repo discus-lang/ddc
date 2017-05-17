@@ -1,0 +1,63 @@
+
+module SMR.Prim.Name.Nat
+export
+{       readPrimNat; showPrimNat }
+import Data.Text
+import Data.Numeric.Nat
+import System.Posix.Stdlib
+where
+
+
+-- | Natural Number Primitives.
+data PrimNat where
+        PrimNatVal      : Nat     -> PrimNat
+        PrimNatAdd      : PrimNat
+        PrimNatSub      : PrimNat
+        PrimNatMul      : PrimNat
+        PrimNatDiv      : PrimNat
+        PrimNatEq       : PrimNat
+        PrimNatNeq      : PrimNat
+        PrimNatLt       : PrimNat
+        PrimNatLe       : PrimNat
+        PrimNatGt       : PrimNat
+        PrimNatGe       : PrimNat
+
+
+showPrimNat  (pn: PrimNat): Text
+ = case pn of
+        PrimNatVal n    -> "nat-" % show n
+        PrimNatAdd      -> "nat-add"
+        PrimNatSub      -> "nat-sub"
+        PrimNatMul      -> "nat-mul"
+        PrimNatDiv      -> "nat-div"
+        PrimNatEq       -> "nat-eq"
+        PrimNatNeq      -> "nat-neq"
+        PrimNatLt       -> "nat-lt"
+        PrimNatLe       -> "nat-le"
+        PrimNatGt       -> "nat-gt"
+        PrimNatGe       -> "nat-ge"
+
+
+readPrimNat  (tt: Text): Maybe PrimNat
+ | tt == "nat-add"      = Just PrimNatAdd
+ | tt == "nat-sub"      = Just PrimNatSub
+ | tt == "nat-mul"      = Just PrimNatMul
+ | tt == "nat-div"      = Just PrimNatDiv
+ | tt == "nat-eq"       = Just PrimNatEq
+ | tt == "nat-neq"      = Just PrimNatNeq
+ | tt == "nat-lt"       = Just PrimNatLt
+ | tt == "nat-le"       = Just PrimNatLe
+ | tt == "nat-gt"       = Just PrimNatGt
+ | tt == "nat-ge"       = Just PrimNatGe
+
+ | cs   <- charListOfText tt
+ , textOfCharList (take 4 cs) == "nat-"
+ , ds   <- drop 4 cs
+ , all isDigit ds
+ = case readNat (textOfCharList ds) of
+        Nothing         -> Nothing
+        Just nat        -> Just $ PrimNatVal nat
+
+ | otherwise
+ = Nothing
+

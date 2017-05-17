@@ -2,6 +2,8 @@
 // Primitive operations that sea code uses.
 // In future we'll just import these with the FFI.
 #include <stdio.h>
+#include <fcntl.h>
+#include <unistd.h>
 #include <inttypes.h>
 #include "Runtime.h"
 
@@ -155,13 +157,6 @@ string_t* primShowWord8 (uint8_t w)
 }
 
 
-// Print a C string to stdout.
-void primPutString (string_t* str)
-{       fputs(str, stdout);
-        fflush(stdout);
-}
-
-
 // Print a C string to stderr.
 // Use this when printing an error from the runtime system.
 void primFailString(string_t* str)
@@ -169,16 +164,67 @@ void primFailString(string_t* str)
         fflush(stderr);
 }
 
+
+// -- Stdout ------------------------------------------------------------------
+// Print a C string to stdout.
+void primStdoutPutString (string_t* str)
+{       fputs(str, stdout);
+        fflush(stdout);
+}
+
 // Print a text literal to stdout.
-void primPutTextLit (string_t* str)
+void primStdoutPutTextLit (string_t* str)
 {       fputs(str, stdout);
         fflush(stdout);
 }
 
 // Print a text vector to stdout.
-void primPutVector (Obj* obj)
+void primStdoutPutVector (Obj* obj)
 {       string_t* str 
                 = (string_t*) (_payloadRaw(obj) + 4);
         fputs(str, stdout);
         fflush(stdout);
 }
+
+// Flush stdout.
+void primStdoutFlush (Obj* obj)
+{       fflush(stdout);
+}
+
+
+// -- Stdin -------------------------------------------------------------------
+// Get a C string from stdin, up to the given length.
+string_t* primStdinGetString (nat_t len)
+{       
+        string_t* str   = malloc(len + 1);
+        str             = fgets(str, len, stdin);
+        if (str == NULL) {
+                printf("primStdinGetString: failed\n");
+                abort();
+        }
+
+        return str; 
+}
+
+
+// -- File --------------------------------------------------------------------
+// Read the contents of a file into a string.
+string_t* primFileRead (string_t* path)
+{
+        int fd          = open (path, O_RDONLY);
+        if (fd == -1) {
+                printf("primFileRead: failed\n");
+                abort();
+        }
+
+        off_t lenBuf    = lseek (fd, 0, SEEK_END);
+        lseek(fd, 0, SEEK_SET);
+
+        string_t* str   = malloc (lenBuf + 1);
+        ssize_t lenRead = read (fd, str, lenBuf);
+        str[lenRead]    = 0;
+
+        close (fd);
+        return str;
+}
+

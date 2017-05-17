@@ -1,0 +1,22 @@
+
+module Class.Pretty
+export {ppr; pretty_Unit}
+import Data.Text
+where
+
+
+-- | Pretty printer dictionary.
+data Pretty (a: Data) where
+        Pretty : (a -> Text) -> Pretty a
+
+
+-- | Pretty print a thing as a text string.
+ppr {(Pretty ppr'): Pretty a} (x: a): Text
+ = ppr' x
+
+
+-- | Pretty printer for a unit value.
+pretty_Unit: Pretty Unit
+ = Pretty $ \xx -> "()"
+
+

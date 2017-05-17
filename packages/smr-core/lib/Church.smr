@@ -1,0 +1,74 @@
+
+@church-fix    f        = (\x. f (x x)) (\x. f (x x));
+
+@church-true   x y      = x;
+@church-false  x y      = y;
+@church-if     a b c    = a b c;
+@church-and    x y      = @church-if x y @church-false;
+@church-or     x y      = @church-if x @church-true  y;
+
+@church-zero            = \s. \z. z;
+@church-succ   n        = \s. \z. s (n s z);
+@church-one             = @church-succ @church-zero;
+@church-two             = @church-succ @church-one;
+@church-three           = @church-succ @church-two;
+@church-four            = @church-succ @church-three;
+@church-five            = @church-succ @church-four;
+
+@church-pair   m n 
+ = \b. @church-if b m n;
+
+@church-fst p
+ = p @church-true;
+
+@church-snd p
+ = p @church-false;
+
+@church-pair-zero
+ = @church-pair @church-zero @church-zero;
+
+@church-pair-succ p
+ = @church-pair (@church-snd p) (@church-succ (@church-snd p));
+
+@church-pred n 
+ = @church-fst (n @church-pair-succ @church-pair-zero);
+
+@church-add m n
+ = \s. \z. m s (n s z);
+
+@church-sub m n
+ = n @church-pred m;
+
+@church-mul m n
+ = \z. n (m z);
+
+@church-exp m n
+ = n m;
+
+@church-is-zero n
+ = n (\x. @church-false) @church-true;
+
+@church-fac   n
+ = @church-if 
+        (@church-is-zero n)
+        (@church-one)
+        (@church-mul n (@church-fac (@church-sub n @church-one)));
+
+@church-list-nil
+ = \an. \ac. an;
+
+@church-list-cons x xs
+ = \an. \ac. ac x xs;
+
+@church-list-case xs an ac 
+ = xs an ac;
+
+@church-list-head    xx   
+ = @church-list-case xx 
+        %none             
+        (\x. \xs. x);
+
+@church-list-tail    xx  
+ = @church-list-case xx 
+        @church-list-nil
+        (\x. \xs. xs);

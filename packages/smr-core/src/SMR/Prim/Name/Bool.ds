@@ -1,0 +1,36 @@
+
+module SMR.Prim.Name.Bool
+export
+{       readPrimBool; showPrimBool }
+import  Data.Text
+where
+
+
+-- | Boolean Primitives.
+data PrimBool where
+        PrimBoolVal     : Bool  -> PrimBool
+        PrimBoolNot     : PrimBool
+        PrimBoolAnd     : PrimBool
+        PrimBoolOr      : PrimBool
+        PrimBoolIf      : PrimBool
+
+
+readPrimBool (tt: Text): Maybe PrimBool
+ | tt == "true"         = Just $ PrimBoolVal True
+ | tt == "false"        = Just $ PrimBoolVal False
+ | tt == "not"          = Just PrimBoolNot
+ | tt == "and"          = Just PrimBoolAnd
+ | tt == "or"           = Just PrimBoolOr
+ | tt == "if"           = Just PrimBoolIf
+ | otherwise            = Nothing
+
+
+
+showPrimBool (pb: PrimBool): Text
+ = case pb of
+        PrimBoolVal True        -> "true"
+        PrimBoolVal False       -> "false"
+        PrimBoolNot             -> "not"
+        PrimBoolAnd             -> "and"
+        PrimBoolOr              -> "or"
+        PrimBoolIf              -> "if"

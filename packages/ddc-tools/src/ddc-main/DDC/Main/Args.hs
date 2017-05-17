@@ -200,6 +200,10 @@ parseArgs args config
         = parseArgs rest
         $ setMode config $ ModeToPHP file
 
+        | "-to-smr"  : file : rest  <- args
+        = parseArgs rest
+        $ setMode config $ ModeToSMR file
+
         -- Debugging ----------------------------
         | "-dump"   : rest        <- args
         = parseArgs rest
@@ -277,6 +281,7 @@ flagOfMode mode
         ModeToC{}                       -> Just "-to-c"
         ModeToLLVM{}                    -> Just "-to-llvm"
         ModeToPHP{}                     -> Just "-to-php"
+        ModeToSMR{}                     -> Just "-to-smr"
         ModeFlowPrep{}                  -> Just "-flow-prep"
         ModeFlowLower{}                 -> Just "-flow-lower"
         ModeFlowLowerKernel{}           -> Just "-flow-lower-kernel"

@@ -4,20 +4,22 @@ export
 {       singleton;  replicate;
         enumFromTo; append; concat;
         unfold; generate; intersperse;
+        null;
         length;
-        head;
+        head; init;
         tail; tail1;
         last; index;
+        take; drop;
         lookup; find;
         reverse;
         map; mapS; for;
         forS;
         zipWith; zipWithS;
-        foldl;  foldlS;       sum;    prod;
+        foldl;  foldlS;       sum;    prod;     sequence;
         foldr;  foldrS;
         scanl;
         filter; filterS;
-        any;
+        all; any;
 }
 import  Data.Numeric.Nat
 import  Data.Numeric.Bool
@@ -102,6 +104,13 @@ intersperse (c: a) (xx: List a): List a
 
 
 -- Projections ----------------------------------------------------------------
+-- | Check if a list is empty
+null   (xx: List a): Bool
+ = case xx of
+        Nil             -> True
+        _               -> False
+        
+
 -- | Take the length of a list.
 length (xx: List a): Nat
  = case xx of
@@ -114,6 +123,16 @@ head (def: a) (xx: List a): a
  = case xx of
         Nil             -> def
         Cons x xs       -> x
+
+
+-- | Take the initial part of a list, not including the final element.
+init (def: List a) (xx: List a): List a
+ = case xx of
+        Nil             -> def
+        Cons x xs
+         -> case xs of
+                Nil             -> Nil
+                Cons x2 xs2     -> Cons x (init def (Cons x2 xs2))
 
 
 -- | Take the tail of a list, if there is one.
@@ -139,6 +158,8 @@ last (def: a) (xx: List a): a
         Cons x (Cons y ys)      -> last def (Cons y ys)
 
 
+-- | Get a numbered element from a list,
+--   returning a default value if we try to index off the end of the list.
 index (def: a) (n: Nat) (xx: List a): a
  = case xx of   
         Nil     -> def
@@ -146,6 +167,24 @@ index (def: a) (n: Nat) (xx: List a): a
          -> case n of
                 0       -> x
                 _       -> index def (n - 1) xs
+
+
+-- | Take the given number of elements from the front of a list.
+take  (n: Nat) (xx: List a): List a
+ = case xx of
+        Nil             -> Nil
+        Cons x xs
+         | n == 0       -> Nil
+         | otherwise    -> Cons x (take (n - 1) xs)
+
+
+-- | Drop the given number of elements from the front of a list.
+drop  (n: Nat) (xx: List a): List a
+ = case xx of
+        Nil             -> Nil
+        Cons x xs
+         | n == 0       -> xx
+         | otherwise    -> drop (n - 1) xs
 
 
 -- Searches -------------------------------------------------------------------
@@ -325,6 +364,16 @@ filterS (p: a -> S e Bool) (xx: List a): S e (List a)
         Cons x xs  
          | p x          -> Cons x (filterS p xs)
          | otherwise    -> filterS p xs
+
+
+-- | check if all the members of the list match the given predicate.
+all (p: a -> Bool) (xx: List a): Bool
+ = case xx of
+        Nil             -> True
+
+        Cons x xs
+         | p x          -> all p xs
+         | otherwise    -> False
 
 
 -- | Check if any of the members of the list match the given predicate.

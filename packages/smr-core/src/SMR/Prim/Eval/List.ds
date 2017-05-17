@@ -1,0 +1,29 @@
+
+module SMR.Prim.Eval.List
+export evalPrimList
+import SMR.Prim.Name
+import Data.Maybe
+where
+
+
+-- | Evaluate a List primitive.
+evalPrimList
+        (eval:  Exp s Prim -> Maybe (Exp s Prim)) 
+                                        -- ^ Evaluate an expression to whnf.
+        (p:     PrimList)               -- ^ Primitive to evaluate.
+        (xs:    List (Exp s Prim))      -- ^ Arguments to primitive.
+        : Maybe (Exp s Prim)
+
+ | PrimListCase <- p
+ , Cons xScrut (Cons xAltNil (Cons xAltCons Nil))    <- xs
+ = case eval xScrut of
+        Just      (XRef (RPrm (PrimList PrimListNil)))
+          -> Just  xAltNil
+
+        Just      (XApp (XApp (XRef (RPrm (PrimList PrimListCons))) xHead) xTail)
+          -> Just (XApp (XApp xAltCons                              xHead) xTail)
+
+        _ -> Nothing
+
+ | otherwise
+ = Nothing
