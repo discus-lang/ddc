@@ -197,7 +197,7 @@ void primStdoutFlush (Obj* obj)
 string_t* primStdinGetString (nat_t len)
 {       
         string_t* str   = malloc(len + 1);
-        fgets(str, len, stdin);
+        (void)fgets(str, len, stdin);
         return str; 
 }
 
@@ -212,12 +212,12 @@ string_t* primFileRead (string_t* path)
                 abort();
         }
 
-        off_t len       = lseek (fd, 0, SEEK_END);
+        off_t lenBuf    = lseek (fd, 0, SEEK_END);
         lseek(fd, 0, SEEK_SET);
 
-        string_t* str   = malloc (len + 1);
-        read (fd, str, len);
-        str[len]        = 0;
+        string_t* str   = malloc (lenBuf + 1);
+        ssize_t lenRead = read (fd, str, lenBuf);
+        str[lenRead]    = 0;
 
         close (fd);
         return str;
