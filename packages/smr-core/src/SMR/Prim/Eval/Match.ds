@@ -58,11 +58,13 @@ matchPattern
         then Just Nil
         else Nothing
 
+{-
  | XApp x11 x12                 <- xScrut'
  , XApp x21 x22                 <- xPat'
  , Just lst1                    <- matchPattern x11 x21
  , Just lst2                    <- matchPattern x12 x22
  = Just (append lst1 lst2)
+-}
 
  | otherwise
  = Nothing

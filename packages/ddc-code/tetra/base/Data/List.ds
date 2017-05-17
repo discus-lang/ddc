@@ -12,8 +12,9 @@ export
         take; drop;
         lookup; find;
         reverse;
-        map; mapS; for;
-        forS;
+        map; mapS;
+        for; forS;
+        zip;
         zipWith; zipWithS;
         foldl;  foldlS;       sum;    prod;     sequence;
         foldr;  foldrS;
@@ -252,6 +253,13 @@ forS (xx: List a) (f: a -> S e Unit): S e Unit
         Cons x xs       
          -> do  f x
                 forS xs f
+
+
+-- | Zip two lists component-wise into a list of tuples.
+zip : [a b: Data]. List a -> List b -> List (Tup2 a b)
+zip _   Nil                     = Nil
+zip Nil _                       = Nil
+zip (Cons a as) (Cons b bs)     = Cons (T2 a b) (zip as bs)
 
 
 -- | Monadic map.

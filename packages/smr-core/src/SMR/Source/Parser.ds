@@ -46,7 +46,7 @@ pDecl   (c: Config s p): Parser Token (Decl s p)
          bind   (satisfies (isToken KEquals))           $ λ kEq     -> 
          bind   (pExp c)                                $ λ xBody   ->
          bind   (satisfies (isToken KSemi))             $ λ kSemi   ->
-         return (DTerm nDecl $ foldr XAbs xBody nsParam))
+         return (DTerm nDecl $ XAbs nsParam xBody))
 
 
 -- Exp ------------------------------------------------------------------------
@@ -63,7 +63,7 @@ pExp     (c: Config s p): Parser Token (Exp s p)
          bind   (from (takeNameOfToken SVar))   $ λ n     ->
          bind   (satisfies (isToken KDot))      $ λ kDot  ->
          bind   (pExp c)                        $ λ xBody ->
-         return (XAbs n xBody))
+         return (XAbs (Cons n Nil) xBody))
 
  $       pExpApp c
 

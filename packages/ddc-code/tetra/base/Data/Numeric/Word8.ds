@@ -6,6 +6,7 @@ export
         bits_Word8;
 }
 import Class.Numeric
+import Class.Eq
 where
 
 

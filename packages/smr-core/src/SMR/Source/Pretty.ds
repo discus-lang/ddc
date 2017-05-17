@@ -9,6 +9,16 @@ import Data.Text
 where
 
 
+-- Ref ------------------------------------------------------------------------
+pprRef [s p: Data] {Pretty s} {Pretty p} (rr: Ref s p): Text
+ = case rr of
+        RMac   n        -> "@" % n
+        RSet   n        -> "+" % n
+        RSym   s        -> "%" % ppr s
+        RPrm   p        -> "#" % ppr p
+
+
+-- Exp ------------------------------------------------------------------------
 -- | Pretty printer for an expression.
 pretty_Exp {Pretty s} {Pretty p}: Pretty (Exp s p)
  = Pretty $ \xx -> pprExp' ContextBody xx
@@ -21,35 +31,102 @@ data Context where
         ContextBody   : Context
 
 
-
 -- | Pretty print an expression in the given context.
-pprExp' [s p: Data] {Pretty s} {Pretty p} (ctx: Context) (xx: Exp s p): Text
+pprExp' [s p: Data] 
+        {Pretty s} {Pretty p}
+        (ctx: Context) (xx: Exp s p): Text
  | ContextBody  <- ctx
  = case xx of
         XVar name 0     -> name 
         XVar name d     -> name % "^" % show d
 
-        -- TODO: adding the "\\" string here causes a compile error.
-        XAbs name x     -> (textOfChar '\\') % name % "." % pprExp' ContextBody x
-        XApp x1 x2      -> pprExp' ContextFun x1 %% pprExp' ContextArg x2
+        -- application
+        XApp x1 (Cons x2 Nil)
+         -> pprExp' ContextFun x1
+                %% pprExp' ContextArg x2
 
-        XRef r          -> pprRef r
+        XApp x1 xs
+         -> pprExp' ContextFun x1 
+                %% "<" % pprPunc ", " (map (pprExp' ContextBody) xs) 
+                 % ">"
+
+        -- abstraction
+        -- TODO: adding the "\\" string here causes a compile error.
+        XAbs ns x       
+         -> (textOfChar '\\') 
+                % pprSep ns  % "." %% pprExp' ContextBody x
+
+        -- fixpoint
+        XFix ns x
+         -> (textOfChar '/') 
+                % pprSep ns % "." %% pprExp' ContextBody x
+
+        -- substitution
+        XUps us x
+         -> pprUps us %% pprExp' ContextArg x
+
+        XSnv ev x
+         -> pprSnv ev %% pprExp' ContextArg x
+
+        XRef r
+         -> pprRef r
+
 
  | ContextFun   <- ctx
  = case xx of
         XAbs _ _        -> parens $ pprExp' ContextBody xx
+        XFix _ _        -> parens $ pprExp' ContextBody xx
         _               -> pprExp' ContextBody xx
 
  | ContextArg   <- ctx
  = case xx of
         XAbs _ _        -> parens $ pprExp' ContextBody xx
+        XFix _ _        -> parens $ pprExp' ContextBody xx
         XApp _ _        -> parens $ pprExp' ContextBody xx
         _               -> pprExp' ContextBody xx
 
 
-pprRef [s p: Data] {Pretty s} {Pretty p} (rr: Ref s p): Text
- = case rr of
-        RMac   n        -> "@" % n
-        RSet   n        -> "+" % n
-        RSym   s        -> "%" % ppr s
-        RPrm   p        -> "#" % ppr p
+-- Ups ------------------------------------------------------------------------
+pprUps (us: Ups): Text
+ = case us of
+        UUps us         
+         -> "{" % pprPunc ", " (map pprBump us) % "}"
+
+
+pprBump (bm: Tup2 (Tup2 Name Nat) Nat): Text
+ = case bm of
+        T2 (T2 name depth) inc
+         | depth == 0   -> name % ":" % show inc
+         | otherwise    -> name % "^" % show depth % ":" % show inc
+
+
+-- Snv ------------------------------------------------------------------------
+pprSnv  {Pretty s} {Pretty p}
+        (ev: Snv s p): Text
+ = case ev of
+        SSnv en
+         -> "[" % pprPunc ", " (map pprBind en) % "]"
+
+
+pprBind {Pretty s} {Pretty p}
+        (bn: Tup2 (Tup2 Name Nat) (Exp s p)): Text
+ = case bn of
+        T2 (T2 name depth) x
+         |  depth == 0  -> name % ":" % pprExp' ContextBody x
+         |  otherwise   -> name % "^" % show depth %% "=" %% pprExp' ContextBody x
+
+
+-- Utils ----------------------------------------------------------------------
+pprPunc (p: Text) (xx: List Text): Text
+ = case xx of
+        Nil             -> ""
+        Cons x Nil      -> x
+        Cons x xs       -> x % p % pprPunc p xs
+
+
+pprSep  (xx: List Text): Text
+ = case xx of
+        Nil             -> ""
+        Cons x Nil      -> x
+        Cons x xs       -> x %% pprSep xs
+

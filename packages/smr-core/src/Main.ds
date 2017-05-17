@@ -5,6 +5,7 @@
 module Main
 import SMR.Core.Exp
 import SMR.Core.Eval
+import SMR.Core.Step
 import SMR.Prim.Eval
 import SMR.Source.Pretty
 import SMR.Source.Token
@@ -29,10 +30,10 @@ main ()
          Just (TextLit path)
           -> case loadSource path of
                  Nothing        -> writel "load failed"
-                 Just decls     -> repl decls
+                 Just decls     -> repl decls CmdNone
 
          Nothing        
-          -> repl Nil
+          -> repl Nil CmdNone
 
 
 parserConfig: Config Name Prim
@@ -69,6 +70,10 @@ getLine: S Console Text
         txt     = run readl 2014
         textOfCharList $ init Nil $ charListOfText txt        
 
+data Cmd where
+        CmdNone : Cmd
+        CmdStep : Exp Name Prim -> Cmd
+
 
 -- | Read-Eval-Print loop.
 --   TODO: need to put the explicit box.
@@ -79,6 +84,7 @@ getLine: S Console Text
 --   TODO: closing stdin with control-D causes prompt to print infinitely.
 --
 repl    (decls: List (Decl Name Prim))
+        (cmd:   Cmd)
         : S Console Unit
  = box do   
         -- Write the prompt.
@@ -90,37 +96,57 @@ repl    (decls: List (Decl Name Prim))
 
         case lexTokens $ charListOfText str of
          -- If only whitespace was provided then show the prompt again.
-         T2 Nil  Nil    -> repl decls
+         T2 Nil  Nil    
+          -> case cmd of
+                CmdNone 
+                 -> repl decls cmd
+
+                CmdStep x'
+                 -> case step' decls x' of
+                        Left ResultError 
+                         -> do  writell "! runtime error."
+                                repl decls CmdNone
+
+                        Left ResultDone
+                         -> do  repl decls CmdNone
+
+                        Right x'
+                         -> do  writell (ppr x')
+                                repl decls (CmdStep x')
 
          -- Parse the tokens.
          T2 toks Nil    
-          ->    repl_toks decls toks
+          ->    repl_toks decls CmdNone toks
 
          -- We couldn't lex all the characters into tokens.
          T2 _    cs   
           -> do writell "! lexical error."
-                repl decls
+                repl decls CmdNone
 
 
 -- | Given some tokens, try to parse an expression and evaluate it.
 repl_toks 
         (decls: List (Decl Name Prim))
+        (cmd:   Cmd)
         (toks:  List Token)
         : S Console Unit
  = case parseExp parserConfig toks of
          Nothing
           -> do writell "! parse error."
-                repl decls
+                repl decls CmdNone
 
          Just x
-          -> case reduce_no' decls x of
-                Nothing 
+          -> case step' decls x of
+                Left ResultError 
                  -> do  writell "! runtime error."
-                        repl decls
+                        repl decls CmdNone
 
-                Just x' 
+                Left ResultDone
+                 -> do  repl decls CmdNone
+
+                Right x' 
                  -> do  writell (ppr x')
-                        repl decls
+                        repl decls (CmdStep x')
 
 
 -- | Reduce an expression that includes primitives.
@@ -137,4 +163,18 @@ reduce_no'
         (xx :    Exp Name Prim)
         : Maybe (Exp Name Prim)
  = reduce_no (evalPrim  (reduce_cbn' decls))  decls xx
+
+
+-- | Single step an expression.
+step'
+        (decls:  List (Decl Name Prim))
+        (xx:     Exp Name Prim)
+        : Either Result (Exp Name Prim)
+ = step (evalPrim (\xp -> case step' decls xp of
+                                Left _  -> Nothing
+                                Right xp' -> Just xp'))
+         decls xx
+
+
+
 

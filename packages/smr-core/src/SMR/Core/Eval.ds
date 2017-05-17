@@ -1,68 +1,12 @@
 
 module SMR.Core.Eval
 export 
-{       lift; subst;
-        reduce_cbn;
-        reduce_no
+{       reduce_cbn;
+        reduce_no;
 }
 import SMR.Core.Exp
+import SMR.Core.Meta
 where
-
-
--- | Lift references to the given name.
-lift    (n:  Name)              -- ^ Name of variable to lift references to.
-        (d:  Nat)               -- ^ Current binding depth in the expression.
-        (xx: Exp s p)           -- ^ Expression to lift references in.
-        : Exp s p
- = case xx of
-        XVar  n1 ix
-         | n == n1
-         , d <= ix      -> XVar n1 (ix + 1)
-
-         | otherwise    -> xx
-
-        XAbs n1 x2
-         | n == n1      -> XAbs n1 (lift n (d + 1) x2)
-         | otherwise    -> XAbs n1 (lift n  d      x2)
-
-        XApp x1 x2      -> XApp (lift n d x1) (lift n d x2)
-
-        XRef _          -> xx
-
-
--- | Substitute a name for an expression in an expression.
-subst   (n:  Name)              -- ^ Name of variable to lift references ot.
-        (d:  Nat)               -- ^ Depth of name to substitute for.
-        (x:  Exp s p)           -- ^ Expression to substitute.
-        (xx: Exp s p)           -- ^ Expression to substitute into.
-        : Exp s p
- = case xx of
-        XVar n1 ix   
-         | n  == n1
-         , ix == d      -> x
-
-         | n == n1
-         , ix >  d      -> XVar n1 (ix - 1)
-
-         | otherwise    -> xx
-
-        XAbs n1 x2
-         | n == n1      -> XAbs n1 (subst n (d + 1) (lift n1 0 x) x2)
-         | otherwise    -> XAbs n1 (subst n  d      (lift n1 0 x) x2)
-
-        XApp x1 x2      -> XApp    (subst n d x x1) (subst n d x  x2)
-
-        XRef _          -> xx
-
-
--- | Unfold a macro declaration.
-unfold (decls: List (Decl s p)) (xx: Exp s p): Exp s p
- = case xx of
-        XRef (RMac n)   
-         -> case lookupDecl n decls of
-                Nothing         -> xx
-                Just xx'        -> unfold decls xx'
-        _                       -> xx
 
 
 -- | Call-by-name reduction.
@@ -72,10 +16,12 @@ reduce_cbn
         (decls: List (Decl s p))  -- ^ External declarations.
         (xx:     Exp s p)         -- ^ Expression to reduce.
         : Maybe (Exp s p)
- = case unfold decls xx of
+ = case unfoldRef decls xx of
         XVar  _ _       -> Just xx
         XAbs  _ _       -> Just xx
+        _               -> Just xx
 
+{-
         -- TODO: unfold decls in takeXApps
         XApp x1 x2
          |  Just (T2 (XRef (RPrm p)) args) <- takeXApps xx
@@ -92,6 +38,9 @@ reduce_cbn
          | otherwise    -> Just xx
 
         XRef _          -> Just xx
+-}
+
+
 
 
 -- | Normal-order reduction.
@@ -101,14 +50,17 @@ reduce_no
         (decls: List (Decl s p))  -- ^ External declarations.
         (xx: Exp s p)             -- ^ Expression to reduce.
         : Maybe (Exp s p)
- = case unfold decls xx of
-        XVar  _ _        -> Just xx
+ = case unfoldRef decls xx of
+        XVar  _ _       -> Just xx
 
-        XAbs  n1 x2
+        XAbs  ns1 x2
          -> case reduce_no prim decls x2 of
-                Just x2' -> Just (XAbs n1 x2')
+                Just x2' -> Just (XAbs ns1 x2')
                 Nothing  -> Just xx
 
+        _               -> Just xx
+
+{-
         -- TODO: unfold decls in takeXApps
         XApp  x1 x2
          |  Just (T2 (XRef (RPrm p)) args) <- takeXApps xx
@@ -128,4 +80,4 @@ reduce_no
          | otherwise    -> Just xx
 
         XRef _          -> Just xx
-
+-}

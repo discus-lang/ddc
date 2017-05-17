@@ -1,0 +1,147 @@
+
+module SMR.Core.Step
+export 
+{       step
+}
+import SMR.Core.Exp
+import SMR.Core.Meta
+where
+
+
+data Result where
+        ResultDone  : Result
+        ResultError : Result
+
+
+-- | Single step reduction.
+step    (prim:  p -> List (Exp s p) -> Maybe (Exp s p))
+        (decls: List (Decl s p))
+        (xx:    Exp s p)
+        : Either Result (Exp s p) 
+ = case unfoldRef decls xx of
+        -- Reference
+        XRef _          -> Left ResultDone
+
+        -- Variable
+        XVar _ _        -> Left ResultDone
+
+        -- Abstraction
+        XAbs ns1 x2     
+         |  Right x2'   <- step prim decls x2
+         -> Right $ XAbs ns1 x2'
+
+        -- Fixpoint
+        XFix ns1 x2
+         |  Right x2'   <- step prim decls x2
+         -> Right $ XFix ns1 x2'
+
+        -- Application
+        XApp x1 xs2
+         -- Saturated application.
+         |  XAbs ns11 x12 <- x1
+         ,  arity       <- length ns11
+         ,  length xs2  == arity
+         -> let snv     = SSnv (zip (zip ns11 (replicate arity 0)) xs2)
+            in  Right $ XSnv snv x12
+
+         -- Reduce components.
+         |  otherwise
+         -> case step prim decls x1 of
+                Right x1'       
+                 -> Right $ XApp x1' xs2
+
+                Left ResultError 
+                 -> Left ResultError
+
+                Left ResultDone
+                 -> case stepFirst prim decls xs2 of
+                        Right xs2'      -> Right (XApp x1 xs2')
+                        Left r          -> Left  r
+        -- Lifting.
+        XUps ups1 x2
+         -> case x2 of
+                -- Unfold macros otherwise we don't apply.
+                XRef (RMac _)   -> Left ResultDone
+                XRef _          -> Right x2
+
+                -- Lookup element in lift table.
+                XVar n d
+                  | UUps ts1     <- ups1
+                  -> case lookup (T2 n d) ts1 of
+                         Nothing -> Right x2
+                         Just b  -> Right (XVar n (d + b))
+
+                -- Push ups into both sides of an application.
+                XApp x21 xs22
+                  -> Right $ XApp (XUps ups1 x21) (map (XUps ups1) xs22)
+
+                _ -> Left ResultDone
+
+        -- Substitution.
+        XSnv snv1 x2
+         -> case x2 of
+                -- Unfold macros otherwise we don't apply.
+                XRef (RMac _)   -> Left ResultDone
+                XRef _          -> Right x2
+
+                -- Lookup element in substitution.
+                XVar n d
+                  | SSnv ts1     <- snv1
+                  -> case lookup (T2 n d) ts1 of
+                        Nothing -> Right x2
+                        Just e  -> Right e
+
+                -- Push snv into both sides of an application.
+                XApp x21 xs22
+                  -> Right $ XApp (XSnv snv1 x21) (map (XSnv snv1) xs22)
+
+                -- Push substitution under abstractions.
+                XAbs ns21 x22
+                  -> Right $ XAbs ns21 (XSnv (bumpSnv ns21 snv1) x22)
+
+                XFix ns21 x22
+                  -> Right $ XFix ns21 (XSnv (bumpSnv ns21 snv1) x22)
+
+                _ -> Left ResultDone
+
+
+        _ -> Left ResultDone
+
+
+stepFirst 
+        (prim:  p -> List (Exp s p) -> Maybe (Exp s p))
+        (decls: List (Decl s p))
+        (xx:    List (Exp s p))
+        : Either Result (List (Exp s p))
+ = case xx of
+        Nil
+         -> Left ResultDone
+
+        Cons x xs
+         -> case step prim decls x of
+                Left ResultDone 
+                 -> case stepFirst prim decls xs of
+                        Left  r         -> Left r
+                        Right xs'       -> Right $ Cons x xs'
+
+                Right x'
+                 -> Right $ Cons x' xs
+
+
+
+-- | Bump substitution environment due to pushing it
+--   under an abstraction with the given named binders.
+bumpSnv (ns: List Name) (sn: Snv s p): Snv s p
+ = case sn of
+        SSnv ts -> SSnv $ map (bumpBind ns) ts
+ 
+bumpBind 
+        (ns: List Name)
+        (b:  Tup2 (Tup2 Name Nat) (Exp s p))
+          :  Tup2 (Tup2 Name Nat) (Exp s p)
+ = case b of
+        T2 (T2 n d) x
+         -> T2 (T2 n d) (XUps (UUps (map (\n' -> T2 (T2 n' 0) 1) ns)) x)
+
+
+

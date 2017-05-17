@@ -16,6 +16,31 @@ where
 type Name = Text
 
 
+-- Ref ------------------------------------------------------------------------
+-- | Reference to an external thing.
+data Ref (s p: Data) where
+        -- Uninterpreted symbol.
+        RSym    : s     -> Ref s p
+
+        -- Primitive value.
+        RPrm    : p     -> Ref s p
+
+        -- Macro name.
+        RMac    : Name  -> Ref s p
+
+        -- Set name.
+        RSet    : Name  -> Ref s p
+
+
+show_Ref {Show s} {Show p}: Show (Ref s p)
+ = Show $ λxx
+ -> case xx of
+        RMac    n       -> parens $ "RMac"      %% show n
+        RSet    n       -> parens $ "RSet"      %% show n
+        RSym    s       -> parens $ "RSym"      %% show s
+        RPrm    p       -> parens $ "RPrm"      %% show p
+
+
 -- Decl -----------------------------------------------------------------------
 -- | Top-level declaration.
 data Decl (s p: Data) where
@@ -45,68 +70,75 @@ show_Decl {Show s} {Show p}: Show (Decl s p)
 -- Exp ------------------------------------------------------------------------
 -- | Generic expression language.
 data Exp (s p: Data) where
-        -- Functional core.
-        XVar    : Name    -> Nat     -> Exp s p
-        XAbs    : Name    -> Exp s p -> Exp s p
-        XApp    : Exp s p -> Exp s p -> Exp s p
-
         -- Reference to an external thing.
-        XRef    : Ref s p -> Exp s p
+        XRef    : Ref s p   -> Exp s p
 
+        -- Functional core.
+        XVar    : Name      -> Nat            -> Exp s p
+        XApp    : Exp s p   -> List (Exp s p) -> Exp s p
+        XAbs    : List Name -> Exp s p        -> Exp s p
+        XFix    : List Name -> Exp s p        -> Exp s p
 
--- | Reference to an external thing.
-data Ref (s p: Data) where
-        -- Macro name.
-        RMac    : Name  -> Ref s p
+        -- Explicit lifting and substitution.
+        XUps    : Ups       -> Exp s p        -> Exp s p
+        XSnv    : Snv s p   -> Exp s p        -> Exp s p
 
-        -- Set name.
-        RSet    : Name  -> Ref s p
-
-        -- Uninterpreted symbol.
-        RSym    : s     -> Ref s p
-
-        -- Primitive value.
-        RPrm    : p     -> Ref s p
 
 
 show_Exp {Show s} {Show p}: Show (Exp s p)
  =  Show $ λxx
  -> case xx of
-        XVar    n b     -> parens $ "XVar"      %% show n  %% show b
-        XAbs    n x     -> parens $ "XAbs"      %% show n  %% show x
-        XApp    x1 x2   -> parens $ "XApp"      %% show x1 %% show x2
-        XRef    r       -> show r
+        XRef r          -> parens $ "XRef" %% show r
+        XVar n  b       -> parens $ "XVar" %% show n  %% show b
+        XApp xf xs      -> parens $ "XApp" %% show xf %% show xs
+        XAbs ns x       -> parens $ "XAbs" %% show ns %% show x
+        XFix ns x       -> parens $ "XFix" %% show ns %% show x
+        XUps us x       -> parens $ "XUps" %% show us %% show x
+        XSnv sb x       -> parens $ "XSnv" %% show sb %% show x
 
 
-show_Ref {Show s} {Show p}: Show (Ref s p)
- = Show $ λxx
- -> case xx of
-        RMac    n       -> parens $ "RMac"      %% show n
-        RSet    n       -> parens $ "RSet"      %% show n
-        RSym    s       -> parens $ "RSym"      %% show s
-        RPrm    p       -> parens $ "RPrm"      %% show p
+-- Ups ------------------------------------------------------------------------
+-- | Lifting indicator maps name of variable and depth to level to lift.
+data Ups where
+        UUps    : List (Tup2 (Tup2 Name Nat) Nat)       -> Ups
 
 
+show_Ups: Show Ups
+ =  Show $ λus
+ -> case us of
+        UUps ts         -> parens $ "XUps" %% show ts
+
+
+
+-- | Explicit substitution maps name and depth to expression.
+data Snv (s p: Data) where
+        SSnv    : List (Tup2 (Tup2 Name Nat) (Exp s p)) -> Snv s p
+
+
+show_SSnv {Show s} {Show p}: Show (Snv s p)
+ =  Show $ λsb
+ -> case sb of
+        SSnv ts         -> parens $ "SSnv" %% show ts
+
+
+-- Compounds ------------------------------------------------------------------
 -- | Make an application of a function to the given list of arguments.
 makeXApps (xFun: Exp s p) (xsArgs: List (Exp s p)): Exp s p
- = build (reverse xsArgs)
- where  
-        build xs
-         = case xs of
-                Nil             -> xFun
-                Cons x1 xsArgs' -> XApp (build xsArgs') x1
+ = case xsArgs of
+        Nil     -> xFun
+        _       -> XApp xFun xsArgs
 
 
 -- | Take an application of a function to a list of arguments.
 takeXApps (xx: Exp s p): Maybe (Tup2 (Exp s p) (List (Exp s p)))
  = case xx of
-        XApp x1@(XApp _ _) a2
+        XApp x1@(XApp _ _) as2
          -> case takeXApps x1 of
-                Just (T2 f1 as1) -> Just (T2 f1 (append as1 (Cons a2 Nil)))
+                Just (T2 f1 as1) -> Just (T2 f1 (append as1 as2))
                 Nothing          -> Nothing
 
-        XApp x1 a2
-          -> Just (T2 x1 (Cons a2 Nil))
+        XApp x1 as2
+          -> Just (T2 x1 as2)
 
         _ -> Nothing
 
