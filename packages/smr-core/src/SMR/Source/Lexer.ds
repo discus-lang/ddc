@@ -73,6 +73,7 @@ lexPunc1 (c: Char): Maybe Token
  | c == ';'     = Just KSemi
  | c == ','     = Just KComma
  | c == ':'     = Just KColon
+ | c == '^'     = Just KHat
  | c == '='     = Just KEquals
  | otherwise    = Nothing
 
@@ -113,6 +114,4 @@ lexNat (xx: List Char): Maybe (Tup2 Nat (List Char))
 
         go _ _
          = Nothing
-
-
 

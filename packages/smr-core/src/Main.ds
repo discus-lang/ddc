@@ -95,26 +95,13 @@ repl    (decls: List (Decl Name Prim))
         str     = getLine
 
         case lexTokens $ charListOfText str of
-         -- If only whitespace was provided then show the prompt again.
+         -- If only whitespace was provided then run the default command.
          T2 Nil  Nil    
           -> case cmd of
-                CmdNone 
-                 -> repl decls cmd
+                CmdNone         -> repl decls cmd
+                CmdStep xx      -> repl_step  decls xx
 
-                CmdStep x'
-                 -> case step' decls x' of
-                        Left ResultError 
-                         -> do  writell "! runtime error."
-                                repl decls CmdNone
-
-                        Left ResultDone
-                         -> do  repl decls CmdNone
-
-                        Right x'
-                         -> do  writell (ppr x')
-                                repl decls (CmdStep x')
-
-         -- Parse the tokens.
+         -- We have some tokens, to parse them.
          T2 toks Nil    
           ->    repl_toks decls CmdNone toks
 
@@ -136,17 +123,28 @@ repl_toks
                 repl decls CmdNone
 
          Just x
-          -> case step' decls x of
-                Left ResultError 
-                 -> do  writell "! runtime error."
-                        repl decls CmdNone
+          ->    repl_step decls x
 
-                Left ResultDone
-                 -> do  repl decls CmdNone
 
-                Right x' 
-                 -> do  writell (ppr x')
-                        repl decls (CmdStep x')
+-- | Given an expression,
+--   try to perform a single evaluation step.
+repl_step
+        (decls: List (Decl Name Prim))
+        (xx:    Exp Name Prim)
+        : S Console Unit
+ = case step' decls xx of
+        Left ResultError 
+         -> do  writell "! runtime error."
+                repl decls CmdNone
+
+        Left ResultDone
+         -> do  -- writell "! done."
+                repl decls CmdNone
+
+        Right x'
+         -> do  -- writell "! step."
+                writell (ppr x')
+                repl decls (CmdStep x')
 
 
 -- | Reduce an expression that includes primitives.
@@ -171,10 +169,7 @@ step'
         (xx:     Exp Name Prim)
         : Either Result (Exp Name Prim)
  = step (evalPrim (\xp -> case step' decls xp of
-                                Left _  -> Nothing
+                                Left _    -> Nothing
                                 Right xp' -> Just xp'))
          decls xx
-
-
-
 

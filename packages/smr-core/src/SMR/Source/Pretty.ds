@@ -47,8 +47,7 @@ pprExp' [s p: Data]
 
         XApp x1 xs
          -> pprExp' ContextFun x1 
-                %% "<" % pprPunc ", " (map (pprExp' ContextBody) xs) 
-                 % ">"
+                %% "<" % pprPunc ", " (map (pprExp' ContextBody) xs) % ">"
 
         -- abstraction
         -- TODO: adding the "\\" string here causes a compile error.
@@ -63,10 +62,10 @@ pprExp' [s p: Data]
 
         -- substitution
         XUps us x
-         -> pprUps us %% pprExp' ContextArg x
+         -> pprUps us % pprExp' ContextArg x
 
         XSnv ev x
-         -> pprSnv ev %% pprExp' ContextArg x
+         -> pprSnv ev % pprExp' ContextArg x
 
         XRef r
          -> pprRef r
@@ -82,6 +81,8 @@ pprExp' [s p: Data]
  = case xx of
         XRef _          -> pprExp' ContextBody xx
         XVar _          -> pprExp' ContextBody xx
+        XSnv _ _        -> pprExp' ContextBody xx
+        XUps _ _        -> pprExp' ContextBody xx
         _               -> parens $ pprExp' ContextBody xx
 
 
@@ -89,16 +90,18 @@ pprExp' [s p: Data]
 pprUps (us: Ups): Text
  = case us of
         UUps us         
-         -> "{" % pprPunc ", " (map pprBump us) % "}"
+         -> "{" % pprPunc ", " (map pprBump $ reverse us) % "}"
 
 
 pprBump (bm: Tup2 (Tup2 Name Nat) Nat): Text
  = case bm of
         T2 (T2 name depth) inc
-         | depth == 0   -> name % ":" % show inc
+         |  depth == 0
+         -> name % ":" % show inc
 
-         | otherwise    -> name % "^" % show depth 
-                                % ":" % show inc
+         |  otherwise
+         -> name % "^"  % show depth 
+                        % ":" % show inc
 
 
 -- Snv ------------------------------------------------------------------------
@@ -106,17 +109,19 @@ pprSnv  {Pretty s} {Pretty p}
         (ev: Snv s p): Text
  = case ev of
         SSnv en
-         -> "[" % pprPunc ", " (map pprBind en) % "]"
+         -> "[" % pprPunc ", " (map pprBind $ reverse en) % "]"
 
 
 pprBind {Pretty s} {Pretty p}
         (bn: Tup2 (Tup2 Name Nat) (Exp s p)): Text
  = case bn of
         T2 (T2 name depth) x
-         |  depth == 0  -> name %  ":" %  pprExp' ContextBody x
+         |  depth == 0
+         -> name %% "=" %% pprExp' ContextBody x
 
-         |  otherwise   -> name %  "^" %  show depth 
-                                %% "=" %% pprExp' ContextBody x
+         |  otherwise
+         -> name %  "^" %  show depth 
+                        %% "=" %% pprExp' ContextBody x
 
 
 -- Utils ----------------------------------------------------------------------

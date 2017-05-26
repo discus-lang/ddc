@@ -46,7 +46,9 @@ pDecl   (c: Config s p): Parser Token (Decl s p)
          bind   (satisfies (isToken KEquals))           $ λ kEq     -> 
          bind   (pExp c)                                $ λ xBody   ->
          bind   (satisfies (isToken KSemi))             $ λ kSemi   ->
-         return (DTerm nDecl $ XAbs nsParam xBody))
+          (if length nsParam == 0
+            then return (DTerm nDecl xBody)
+            else return (DTerm nDecl $ XAbs nsParam xBody)))
 
 
 -- Exp ------------------------------------------------------------------------
@@ -87,6 +89,11 @@ pExpAtom (c: Config s p): Parser Token (Exp s p)
          return xx)
 
  $ alt  (bind   (from (takeNameOfToken SVar))   $ λ n      ->
+        (bind   (satisfies (isToken KHat))      $ λ xHat   ->
+        (bind   pNat                            $ λ i      ->
+         return (XVar n i))))
+
+ $ alt  (bind   (from (takeNameOfToken SVar))   $ λ n      ->
          return (XVar n 0))
 
  $ alt  (bind   (from (takeNameOfToken SMac))   $ λ n      ->
@@ -112,7 +119,8 @@ pUps: Parser Token Ups
  = bind (satisfies    (isToken KCBra))                  $ \x1   -> 
    bind (sepBy  pBump (satisfies (isToken KComma)))     $ \bs   ->
    bind (satisfies    (isToken KCKet))                  $ \x2   ->
-   return (UUps bs)
+   return (UUps (reverse bs))
+
 
 -- | Parse a bump.
 --   
@@ -131,6 +139,11 @@ pBump: Parser Token (Tup2 (Tup2 Name Nat) Nat)
           bind pNat                            $ \nBump  ->
           return (T2 (T2 name nDepth) nBump)))
 
+
+-- | Parse a snv.
+--   Snv   ::= '[' Bind*, ']'
+--
+--   Bind  ::= Name 
 
 -- | Parse a natural number.
 pNat: Parser Token Nat

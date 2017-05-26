@@ -69,6 +69,11 @@ show_Decl {Show s} {Show p}: Show (Decl s p)
 
 -- Exp ------------------------------------------------------------------------
 -- | Generic expression language.
+
+-- TODO: change to use recursive substitution instead of fixpoint.
+-- [[x = e1; y = e2]] x =>  [[x = e1; y = y2]] e1
+-- XRec.. can also be pushed down always.
+
 data Exp (s p: Data) where
         -- Reference to an external thing.
         XRef    : Ref s p   -> Exp s p
@@ -100,14 +105,14 @@ show_Exp {Show s} {Show p}: Show (Exp s p)
 -- Ups ------------------------------------------------------------------------
 -- | Lifting indicator maps name of variable and depth to level to lift.
 data Ups where
-        UUps    : List (Tup2 (Tup2 Name Nat) Nat)       -> Ups
+        -- In the list the first element has priority.
+        UUps    : List (Tup2 (Tup2 Name Nat) Nat) -> Ups
 
 
 show_Ups: Show Ups
  =  Show $ λus
  -> case us of
-        UUps ts         -> parens $ "XUps" %% show ts
-
+        UUps ts -> parens $ "XUps" %% show ts
 
 
 -- | Explicit substitution maps name and depth to expression.
@@ -118,7 +123,7 @@ data Snv (s p: Data) where
 show_SSnv {Show s} {Show p}: Show (Snv s p)
  =  Show $ λsb
  -> case sb of
-        SSnv ts         -> parens $ "SSnv" %% show ts
+        SSnv ts -> parens $ "SSnv" %% show ts
 
 
 -- Compounds ------------------------------------------------------------------
