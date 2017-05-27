@@ -14,12 +14,16 @@ where
 
 
 -- | Tokens for lambda calculus language.
+--   TODO: Give all punc the same carrier.
 data Token where
         KBra    : Token                         -- ^ Open  Bracket '('
         KKet    : Token                         -- ^ Close Bracket ')'
 
         KCBra   : Token                         -- ^ Curly Braket  '{'
         KCKet   : Token                         -- ^ Curly Bracket '}'
+
+        KSBra   : Token                         -- ^ Square Braket  '['
+        KSKet   : Token                         -- ^ Square Bracket ']'
 
         KColon  : Token                         -- ^ Colon         ':'
         KHat    : Token                         -- ^ Hat           '^'
@@ -53,6 +57,8 @@ eq_Token: Eq Token
                 T2 KKet    KKet         -> True
                 T2 KCBra   KCBra        -> True
                 T2 KCKet   KCKet        -> True
+                T2 KSBra   KSBra        -> True
+                T2 KSKet   KSKet        -> True
                 T2 KColon  KColon       -> True
                 T2 KHat    KHat         -> True
                 T2 KComma  KComma       -> True
@@ -98,6 +104,8 @@ show_Token: Show Token
         KKet            -> "KKet"
         KCBra           -> "KCBra"
         KCKet           -> "KCKet"
+        KSBra           -> "KSBra"
+        KSKet           -> "KSKet"
         KColon          -> "KColon"
         KHat            -> "KHat"
         KComma          -> "KComma"

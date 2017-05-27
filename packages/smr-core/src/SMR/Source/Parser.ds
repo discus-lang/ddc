@@ -76,9 +76,13 @@ pExpApp (c: Config s p): Parser Token (Exp s p)
          bind   (some (pExpAtom c))             $ λ xsArgs ->
          return (makeXApps xFun xsArgs))
 
-        (bind   pUps                            $ λ uUps   ->
+ $ alt  (bind   pUps                            $ λ uUps   ->
          bind   (pExpApp c)                     $ λ xArg   ->
          return (XUps uUps xArg))
+
+        (bind   (pSnv c)                        $ λ uSnv   ->
+         bind   (pExpApp c)                     $ λ xArg   ->
+         return (XSnv uSnv xArg))
 
 
 -- | Parse an atomic expression.
@@ -113,6 +117,35 @@ pExpAtom (c: Config s p): Parser Token (Exp s p)
           Nothing       -> zero)
 
 
+-- | Parse a snv.
+--   Snv   ::= '[' Bind*, ']'
+pSnv    (c: Config s p)
+        : Parser Token (Snv s p)
+ = bind (satisfies    (isToken KSBra))                  $ \x1   -> 
+   bind (sepBy  (pBind c) (satisfies (isToken KComma)))  $ \bs   ->
+   bind (satisfies    (isToken KSKet))                  $ \x2   ->
+   return (SSnv (reverse bs))
+
+
+-- | Parse a bind.
+--   
+--   Bind ::= Name '=' Exp
+--         |  Name '^' Nat '=' Exp
+--
+pBind   (c: Config s p)
+        : Parser Token (Tup2 (Tup2 Name Nat) (Exp s p))
+ = bind (from (takeNameOfToken SVar)) $ λ name ->
+   (alt  (bind (satisfies (isToken KEquals))   $ \xColon ->
+          bind (pExp c)                        $ \x      ->
+          return (T2 (T2 name 0) x))
+
+         (bind (satisfies (isToken KHat))      $ \xHat   ->
+          bind pNat                            $ \nDepth ->
+          bind (satisfies (isToken KEquals))   $ \xColon ->
+          bind (pExp c)                        $ \x      ->
+          return (T2 (T2 name nDepth) x)))
+
+
 -- | Parse an ups.
 --   Ups  ::= '{' Bump*, '}'
 pUps: Parser Token Ups
@@ -140,10 +173,7 @@ pBump: Parser Token (Tup2 (Tup2 Name Nat) Nat)
           return (T2 (T2 name nDepth) nBump)))
 
 
--- | Parse a snv.
---   Snv   ::= '[' Bind*, ']'
---
---   Bind  ::= Name 
+
 
 -- | Parse a natural number.
 pNat: Parser Token Nat

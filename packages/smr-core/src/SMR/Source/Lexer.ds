@@ -68,6 +68,8 @@ lexPunc1 (c: Char): Maybe Token
  | c == ')'     = Just KKet
  | c == '{'     = Just KCBra
  | c == '}'     = Just KCKet
+ | c == '['     = Just KSBra
+ | c == ']'     = Just KSKet
  | c == '\\'    = Just KLambda
  | c == '.'     = Just KDot
  | c == ';'     = Just KSemi

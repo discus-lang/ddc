@@ -19,7 +19,7 @@ where
 
 -- TODO: need explict run/box.
 main ()
- = do   writel "Shimmer, version 1.0. The Turtle at the Bottom of the World."
+ = do   writel "Shimmer, version 1.0. The Lambda Machine."
 
         mSource
          = mainArgs_load Nothing
@@ -132,7 +132,7 @@ repl_step
         (decls: List (Decl Name Prim))
         (xx:    Exp Name Prim)
         : S Console Unit
- = case step' decls xx of
+ = case step' decls True xx of
         Left ResultError 
          -> do  writell "! runtime error."
                 repl decls CmdNone
@@ -147,29 +147,16 @@ repl_step
                 repl decls (CmdStep x')
 
 
--- | Reduce an expression that includes primitives.
-reduce_cbn'
-        (decls:  List (Decl Name Prim))
-        (xx:     Exp Name Prim)
-        : Maybe (Exp Name Prim)
- = reduce_cbn (evalPrim (reduce_cbn' decls)) decls xx
-
-
--- | Reduce an expression that includes primitives.
-reduce_no'  
-        (decls:  List (Decl Name Prim))
-        (xx :    Exp Name Prim)
-        : Maybe (Exp Name Prim)
- = reduce_no (evalPrim  (reduce_cbn' decls))  decls xx
-
-
 -- | Single step an expression.
-step'
-        (decls:  List (Decl Name Prim))
-        (xx:     Exp Name Prim)
+step'   (decls: List (Decl Name Prim))
+        (red:   Bool)
+        (xx:    Exp Name Prim)
         : Either Result (Exp Name Prim)
- = step (evalPrim (\xp -> case step' decls xp of
-                                Left _    -> Nothing
-                                Right xp' -> Just xp'))
-         decls xx
+ = step (StepStrength red)
+        (StepContext
+                (evalPrim (\xp -> case step' decls red xp of
+                                        Left _    -> Nothing
+                                        Right xp' -> Just xp'))
+                decls)
+         xx
 

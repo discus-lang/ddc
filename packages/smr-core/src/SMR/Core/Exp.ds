@@ -4,6 +4,7 @@ export
 {       show_Decl;      lookupDecl;
         show_Exp;       
         makeXApps;      takeXApps;
+        makeXSnv
 }
 import Class.Show
 import Data.Text
@@ -106,7 +107,10 @@ show_Exp {Show s} {Show p}: Show (Exp s p)
 -- | Lifting indicator maps name of variable and depth to level to lift.
 data Ups where
         -- In the list the first element has priority.
-        UUps    : List (Tup2 (Tup2 Name Nat) Nat) -> Ups
+        UUps    : List UpsBump -> Ups
+
+type UpsBump       
+        = Tup2 (Tup2 Name Nat) Nat
 
 
 show_Ups: Show Ups
@@ -115,7 +119,10 @@ show_Ups: Show Ups
         UUps ts -> parens $ "XUps" %% show ts
 
 
+-- Snv ------------------------------------------------------------------------
 -- | Explicit substitution maps name and depth to expression.
+--   This is a simultaneous substitution, so later bindings
+--   do not apply to the bodies of earlier ones.
 data Snv (s p: Data) where
         SSnv    : List (Tup2 (Tup2 Name Nat) (Exp s p)) -> Snv s p
 
@@ -124,6 +131,13 @@ show_SSnv {Show s} {Show p}: Show (Snv s p)
  =  Show $ λsb
  -> case sb of
         SSnv ts -> parens $ "SSnv" %% show ts
+
+
+-- | Make an appliction of an explicit substitution applied to an expression,
+--   or just yield the expression if the substitution is empty.
+makeXSnv (snv@(SSnv bs): Snv s p) (xx: Exp s p): Exp s p
+ | null bs      = xx
+ | otherwise    = XSnv snv xx
 
 
 -- Compounds ------------------------------------------------------------------

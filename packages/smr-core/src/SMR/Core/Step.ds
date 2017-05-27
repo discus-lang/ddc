@@ -1,56 +1,70 @@
 
 module SMR.Core.Step
 export 
-{       step
+{       step; push;
 }
 import SMR.Core.Exp
 import SMR.Core.Meta
 where
 
-
+-------------------------------------------------------------------------------
 data Result where
         ResultDone  : Result
         ResultError : Result
 
+-------------------------------------------------------------------------------
+data StepStrength where
+        StepStrength
+         :  Bool                                -- ^ Reduce under lambdas.
+         -> StepStrength
 
+-------------------------------------------------------------------------------
+data StepContext (s p: Data) where
+        StepContext
+         :  (p -> List (Exp s p) -> Maybe (Exp s p))    -- ^ Prim function.
+         -> (List (Decl s p))                           -- ^ Top-level decls.
+         -> StepContext s p
+
+
+-------------------------------------------------------------------------------
 -- | Single step reduction.
-step    (prim:  p -> List (Exp s p) -> Maybe (Exp s p))
-        (decls: List (Decl s p))
+--   TODO: add config to control what is done,
+--   eg cbv or normal order, whether to unfold macros.
+step    (str:   StepStrength)
+        (ctx:   StepContext s p)
         (xx:    Exp s p)
         : Either Result (Exp s p) 
  = case xx of
         -- Reference
         XRef (RMac n)
+         | StepContext _ decls  <- ctx
          -> case lookupDecl n decls of
                 Nothing -> Left ResultDone
                 Just x  -> Right x
 
-        XRef _
-         -> Left ResultDone
+        XRef _          -> Left ResultDone
 
         -- Variable
-        XVar _ _        
-         -> Left ResultDone
+        XVar _ _        -> Left ResultDone
 
         -- Abstraction
         XAbs ns1 x2     
-         |  Right x2'   <- step prim decls x2
+         |  StepStrength True   <- str
+         ,  Right x2'           <- step str ctx x2
          -> Right $ XAbs ns1 x2'
 
-         |  otherwise
-         -> Left ResultDone
+         |  otherwise   -> Left ResultDone
 
         -- Fixpoint
         XFix ns1 x2
-         |  Right x2'   <- step prim decls x2
+         |  Right x2'   <- step str ctx x2
          -> Right $ XFix ns1 x2'
 
-         |  otherwise
-         -> Left ResultDone
+         |  otherwise   -> Left ResultDone
 
         -- Application
         XApp x1 xs2
-         -> case step prim decls x1 of
+         -> case step (StepStrength False) ctx x1 of
                 Right x1'
                  -> Right $ XApp x1' xs2
 
@@ -58,155 +72,69 @@ step    (prim:  p -> List (Exp s p) -> Maybe (Exp s p))
                  -> Left ResultError
 
                 Left ResultDone
-                 -- Saturated application.
-                 |  XAbs ns11 x12 <- x1
-                 ,  arity         <- length ns11
-                 ,  length xs2  == arity
-                 -> let snv     = SSnv (zip (zip ns11 (replicate arity 0)) xs2)
-                    in  Right $ XSnv snv x12
+                 |  XAbs ns11 x12       <- x1
+                 -> stepAppAbs str ctx
+                        ns11 x12 xs2
+                        (length ns11) (length xs2)
 
-                 -- Under application.
-                 |  XAbs ns11 x12 <- x1
-                 ,  arity         <- length ns11
-                 ,  args          <- length xs2
-                 ,  args < arity
-                 -> do  ns11_sat        = take arity ns11
-                        ns11_remain     = drop arity ns11
-                        Right $ XAbs ns11_remain (XApp (XAbs ns11_sat x12) xs2)
+                 |  otherwise
+                 -> case step str ctx x1 of
+                        Right x1'
+                         -> Right $ XApp x1' xs2
 
-                 -- Over application.
-                 |  XAbs ns11 x12 <- x1
-                 ,  arity         <- length ns11
-                 ,  args          <- length xs2
-                 ,  args > arity
-                 -> do  xs2_sat         = take arity xs2
-                        xs2_remain      = drop arity xs2
-                        Right $ XApp (XApp (XAbs ns11 x12) xs2_sat) xs2_remain
+                        Left ResultError 
+                         -> Left ResultError
 
-                 | otherwise
-                 -> case stepFirst prim decls xs2 of
-                        Right xs2'      -> Right (XApp x1 xs2')
-                        Left  r         -> Left r
+                        Left ResultDone
+                         -> case stepFirst str ctx xs2 of
+                                Right xs2' -> Right (XApp x1 xs2')
+                                Left  r    -> Left r
 
         XUps _ _
-         -> case push decls xx of
+         -> case push xx of
                 Nothing  -> Left ResultDone
                 Just xx' -> Right xx'
 
         XSnv _ _
-         -> case push decls xx of
+         -> case push xx of
                 Nothing  -> Left ResultDone
                 Just xx' -> Right xx'
 
 
--- | Push down substitutions to reveal the head constructor.
-push    (decls: List (Decl s p))
-        (xx: Exp s p)
-        : Maybe (Exp s p)
- = push1 decls xx
+-- | Step an application of a function abstraction to some arguments.
+stepAppAbs
+        (str:   StepStrength)
+        (ctx:   StepContext s p)
+        (ns11:  List Name)              -- ^ Names of parameters.
+        (x12:   Exp s p)                -- ^ Body of abstraction.
+        (xs2:   List (Exp s p))         -- ^ Arguments to abstraction.
+        (arity: Nat)                    -- ^ Length of parameters list.
+        (args:  Nat)                    -- ^ Length of arguments list.
+        : Either Result (Exp s p) 
+
+ -- Saturated application.
+ | args == arity
+ = do   snv     = SSnv (zip (zip ns11 (replicate arity 0)) xs2)
+        Right $ snvWrap snv x12
+
+ -- Under application.
+ | args < arity
+ = do   ns11_sat        = take arity ns11
+        ns11_remain     = drop arity ns11
+        Right $ XAbs ns11_remain (XApp (XAbs ns11_sat x12) xs2)
+
+ -- Over application.
+ | otherwise
+ = do   xs2_sat         = take arity xs2
+        xs2_remain      = drop arity xs2
+        Right $ XApp (XApp (XAbs ns11 x12) xs2_sat) xs2_remain
 
 
--- | Push down substitutions to reveal the head constructor.
-push1   (decls: List (Decl s p))
-        (xx: Exp s p)
-        : Maybe (Exp s p)
- = case xx of
-        XRef _          -> Nothing
-        XVar _ _        -> Nothing
-        XAbs _ _        -> Nothing
-        XFix _ _        -> Nothing
-        XApp _ _        -> Nothing
-
-        -- Substitution.
-        -- TODO: when subst into subst in debruijn we lower indices
-        -- check that this is also happening here.
-        XSnv snv1 x2
-         -> case x2 of
-                -- Unfold macro under a substitution.
-                -- Macro bodies  are closed, so we can drop the substitution.
-                XRef (RMac n)   -> lookupDecl n decls
-
-                -- Reference to some other thing.
-                XRef _          -> Just x2
-
-                -- Lookup element in snv.
-                XVar n d
-                  | SSnv ts1     <- snv1
-                  -> case lookup (T2 n d) ts1 of
-                        Nothing -> Just x2
-                        Just e  -> Just e
-
-                -- Push snv into both sides of an application.
-                XApp x21 xs22
-                  -> Just $ XApp (XSnv snv1 x21) (map (XSnv snv1) xs22)
-
-                -- Push snv under abstractions.
-                XAbs ns21 x22
-                  -> Just $ XAbs ns21 (XSnv (snvBump ns21 snv1) x22)
-
-                XFix ns21 x22
-                  -> Just $ XFix ns21 (XSnv (snvBump ns21 snv1) x22)
-
-                -- Push down substitutions under substitutions
-                -- TODO: combine these.
-                XSnv _ _
-                 -> case push1 decls x2 of
-                        Just x2' -> Just $ XSnv snv1 x2'
-                        Nothing  -> Nothing
-
-                -- Push down liftings under substitutions.
-                XUps _ _
-                  -> case push1 decls x2 of
-                        Just x2' -> Just $ XSnv snv1 x2'
-                        Nothing  -> Nothing
-
-                _ -> Nothing
-
-
-        -- Lifting.
-        XUps ups1 x2
-         -> case x2 of
-                -- Unfold macro under a lifting.
-                -- Macro bodies are closed, so we can drop the lifting.
-                XRef (RMac n)   -> lookupDecl n decls
-
-                -- Reference to some other thing.
-                XRef _          -> Just x2
-
-                -- Lookup element in lift table.
-                XVar n d
-                  | UUps ts1     <- ups1
-                  -> case lookup (T2 n d) ts1 of
-                         Nothing -> Just x2
-                         Just b  -> Just (XVar n (d + b))
-
-                -- Push ups into both sides of an application.
-                XApp x21 xs22
-                  -> Just $ XApp (XUps ups1 x21) (map (XUps ups1) xs22)
-
-                -- Push ups under abstractions.
-                XAbs ns21 x22
-                  -> Just $ XAbs ns21 (XUps (upsBump ns21 ups1) x22)
-
-                -- Push down substitutions under substitutions
-                -- TODO: combine these.
-                XSnv _ _
-                 -> case push1 decls x2 of
-                        Just x2' -> Just $ XUps ups1 x2'
-                        Nothing  -> Nothing
-
-                -- Combine liftings.
-                XUps ups2 x22
-                  -> Just $ XUps (upsAppend ups2 ups1) x22
-
-                _ -> Nothing
-
-        _ -> Nothing
-
-
+-------------------------------------------------------------------------------
+-- | Step the first available expression in a list.
 stepFirst 
-        (prim:  p -> List (Exp s p) -> Maybe (Exp s p))
-        (decls: List (Decl s p))
+        (str:   StepStrength)
+        (ctx:   StepContext s p)
         (xx:    List (Exp s p))
         : Either Result (List (Exp s p))
  = case xx of
@@ -214,9 +142,9 @@ stepFirst
          -> Left ResultDone
 
         Cons x xs
-         -> case step prim decls x of
+         -> case step str ctx x of
                 Left ResultDone 
-                 -> case stepFirst prim decls xs of
+                 -> case stepFirst str ctx xs of
                         Left  r         -> Left r
                         Right xs'       -> Right $ Cons x xs'
 
@@ -224,42 +152,234 @@ stepFirst
                  -> Right $ Cons x' xs
 
 
--- Ups ------------------------------------------------------------------------
--- | Bump ups (substitution lifting) due to pushing it
---   under an absraction with the given named binders.
-upsBump (ns: List Name) (up: Ups): Ups
- = case up of
-        UUps ts -> UUps $ map (upsBump1 ns) ts
-
-upsBump1 (ns: List Name)
-         (l:  Tup2 (Tup2 Name Nat) Nat)
-           :  Tup2 (Tup2 Name Nat) Nat
- = case l of
-        T2 (T2 n d) inc
-         | elem n ns    -> T2 (T2 n (d + 1)) inc
-         | otherwise    -> l
+-------------------------------------------------------------------------------
+-- | Push down substitutions to reveal the head constructor.
+push    (xx:    Exp s p): Maybe (Exp s p)
+ = push1 xx
 
 
--- | Append two ups.
-upsAppend : Ups -> Ups -> Ups
-upsAppend (UUps ts1) (UUps ts2)
- = UUps (append ts1 ts2)
+-- | Push down substitutions to reveal the head constructor.
+push1   (xx:    Exp s p): Maybe (Exp s p)
+ = case xx of
+        XRef _          -> Nothing
+        XVar _ _        -> Nothing
+        XAbs _ _        -> Nothing
+        XFix _ _        -> Nothing
+        XApp _ _        -> Nothing
+        XSnv snv1 x2    -> pushSnv1 snv1 x2
+        XUps ups1 x2    -> pushUps1 ups1 x2
+
+
+-- | Push down a substitution.
+--   TODO: when subst into subst in debruijn we lower indices
+--   check that this is also happening here.
+pushSnv1
+        (snv1:  Snv s p)
+        (x2:    Exp s p)
+        : Maybe (Exp s p)
+ = case x2 of
+        -- Unfold macro under a substitution.
+        -- Macro and symbol bodies are closed, so we can drop the substitution.
+        XRef (RMac n)   -> Just x2
+        XRef (RSym n)   -> Just x2
+
+        -- Reference to some other thing.
+        XRef _          -> Nothing
+
+        -- Apply the substitution to the variable.
+        XVar name depth
+          -> Just $ snvApply snv1 name depth
+
+        -- Push snv into both sides of an application.
+        XApp x21 xs22
+          -> Just $ XApp (snvWrap snv1 x21) (map (snvWrap snv1) xs22)
+
+        -- Push snv under abstractions.
+        XAbs ns21 x22
+          -> Just $ XAbs ns21 (snvWrap (snvBump ns21 snv1) x22)
+
+        XFix ns21 x22
+          -> Just $ XFix ns21 (snvWrap (snvBump ns21 snv1) x22)
+
+        -- Push down substitutions under substitutions
+        -- TODO: combine these.
+        XSnv _ x22
+         -> case push1 x2 of
+                Just x2' -> Just $ snvWrap snv1 x2'
+                Nothing  -> Nothing
+
+        -- Push down liftings under substitutions.
+        XUps _ _
+         -> case push1 x2 of
+                Just x2' -> Just $ snvWrap snv1 x2'
+                Nothing  -> Nothing
+
+
+-- | Push down a lifting.
+pushUps1
+        (ups1:  Ups)
+        (x2:    Exp  s p)
+        : Maybe (Exp s p)
+ = case x2 of
+        -- Macro and symbols are closed, so we can drop the lifting.
+        XRef (RMac n)   -> Just x2
+        XRef (RSym n)   -> Just x2
+
+        -- Reference to some other thing.
+        XRef _          -> Nothing
+
+        -- Lookup element in lift table.
+        XVar name depth
+          -> Just $ upsApply ups1 name depth
+
+        -- Push ups into both sides of an application.
+        XApp x21 xs22
+          -> Just $ XApp (upsGive ups1 x21) (map (upsGive ups1) xs22)
+
+        -- Push ups under abstractions.
+        XAbs ns21 x22
+          -> Just $ XAbs ns21 (upsGive (upsBump ns21 ups1) x22)
+
+        -- TODO: Apply lifting to substitution, then lift substitued thing.
+        -- On the way down the lifting collect under the substitutions.
+        XSnv _ _
+         -> case push1 x2 of
+                Just x2' -> Just $ upsGive ups1 x2'
+                Nothing  -> Nothing
+
+        -- Combine liftings.
+        XUps ups2 x22
+          -> Just $ upsGive (upsCombine ups1 ups2) x22
 
 
 -- Snv ------------------------------------------------------------------------
--- | Bump snv (substitution environment) due to pushing it
---   under an abstraction with the given named binders.
-snvBump (ns: List Name) (sn: Snv s p): Snv s p
- = case sn of
-        SSnv ts -> SSnv $ map (snvBump1 ns) ts
+-- | Wrap an exp in a snv, but if it is directly a
+--   a var or ref then also push it.
+snvWrap (snv: Snv s p) (xx: Exp s p): Exp s p
+ = do   
+        xx'     = XSnv snv xx
+        triv    = case xx of
+                        XVar _ _        -> True
+                        XRef _          -> True
+                        _               -> False
+
+        if triv
+         then fromMaybe xx' $ push xx'
+         else xx'
 
 
--- TODO: also need to inc the depth when pushing under abs of same name.
-snvBump1
-        (ns: List Name)
-        (b:  Tup2 (Tup2 Name Nat) (Exp s p))
-          :  Tup2 (Tup2 Name Nat) (Exp s p)
- = case b of
-        T2 (T2 n d) x
-         -> T2 (T2 n d) (XUps (UUps (map (\n' -> T2 (T2 n' 0) 1) ns)) x)
+-- | Apply a substitution to a variable with a given name and depth.
+snvApply ((SSnv bs): Snv s p)
+         (name: Name) (depth: Nat): Exp s p
+ = case bs of
+        Nil     
+         -> XVar name depth
+
+        Cons b'@(T2 (T2 name' depth') x') bs'
+         |  name  == name'
+         ,  depth == depth'
+         -> x'
+
+         |  name   == name'
+         ,  depth  >  depth'
+         -> XVar name (depth - 1)
+
+         |  otherwise
+         -> snvApply (SSnv bs') name depth
+
+
+-- | Bump Snv due to pushing it under an abstraction with
+--   the given named binders.
+snvBump (ns:        List Name)
+        ((SSnv ts): Snv s p): Snv s p
+ = SSnv $ map (snvBump1 ns) ts
+ where
+        snvBump1
+                (names: List Name)
+                (b:     Tup2 (Tup2 Name Nat) (Exp s p))
+                  :     Tup2 (Tup2 Name Nat) (Exp s p)
+         | T2 (T2 name depth) x <- b
+         = T2  (T2 name (depth + (if elem name names then 1 else 0)))
+               (upsGive (UUps (map (\name' -> T2 (T2 name' 0) 1) names)) x)
+
+
+-- Ups ------------------------------------------------------------------------
+-- | Wrap an exp in a ups, but if it is directly a
+--   a var or ref then also push it.
+upsGive (ups: Ups) (xx: Exp s p): Exp s p
+ = do   
+        xx'     = XUps ups xx
+        triv    = case xx of
+                        XVar _ _        -> True
+                        XRef _          -> True
+                        _               -> False
+
+        if triv
+         then fromMaybe xx' $ push xx'
+         else xx'
+
+
+-- | Apply an ups to a variable.
+upsApply ((UUps bs): Ups) (name: Name) (depth: Nat): Exp s n
+ = case bs of
+        Nil
+         -> XVar name depth
+
+        Cons u'@(T2 (T2 name' depth') inc') bs'
+         |  name  == name'
+         ,  depth == depth'
+         -> upsApply (UUps bs') name (depth + inc')
+
+         |  otherwise
+         -> upsApply (UUps bs') name depth
+
+
+-- | Bump ups (substitution lifting) due to pushing it
+--   under an absraction with the given named binders.
+upsBump (ns: List Name) ((UUps bs): Ups): Ups
+ = UUps $ map (upsBump1 ns) bs
+ where  
+        upsBump1 (ns: List Name)
+                 (l:  Tup2 (Tup2 Name Nat) Nat)
+                   :  Tup2 (Tup2 Name Nat) Nat
+         = case l of
+                T2 (T2 n d) inc
+                 | elem n ns    -> T2 (T2 n (d + 1)) inc
+                 | otherwise    -> l
+
+
+-- | Combine two lists of ups.
+upsCombine : Ups -> Ups -> Ups
+upsCombine (UUps ts1) (UUps ts2)
+ = UUps (foldr upsCombineBump ts2 ts1)
+
+
+-- | Combine a bump with an existing list of them.
+--   Applying the result to an expression will achieve the same result as
+--   applying the whole list and then the extra one.
+upsCombineBump (b: UpsBump) (bs: List UpsBump): List UpsBump
+ | T2 (T2 name depth) inc  <- b
+ = case bs of
+        -- We cannot combine the new bump with anything else,
+        -- so add it to the end of the list.
+        Nil     
+         -> Cons b Nil
+
+        Cons b'@(T2 (T2 name' depth') inc') bs'
+         -- The new bump is shadowed by one in the existing list,
+         -- so we drop the new one.
+         |  name  == name' 
+         ,  depth == depth'
+         ,  inc'  >= 1
+         -> Cons b' bs'
+
+         -- The new bump applies to the result of a bump in the list,
+         -- so we combine it with the one in the list.
+         |  name  == name' 
+         ,  depth == depth' + inc'
+         -> Cons (T2 (T2 name depth') (inc + inc')) bs'
+
+         -- Try to combine the new bump with the tail of the list.
+         |  otherwise
+         -> Cons b' (upsCombineBump b bs') 
 
