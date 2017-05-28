@@ -7,8 +7,8 @@
 @church-and    x y      = @church-if x y @church-false;
 @church-or     x y      = @church-if x @church-true  y;
 
-@church-zero            = \s. \z. z;
-@church-succ   n        = \s. \z. s (n s z);
+@church-zero            = \s z. z;
+@church-succ   n        = \s z. s (n s z);
 @church-one             = @church-succ @church-zero;
 @church-two             = @church-succ @church-one;
 @church-three           = @church-succ @church-two;
@@ -34,7 +34,7 @@
  = @church-fst (n @church-pair-succ @church-pair-zero);
 
 @church-add m n
- = \s. \z. m s (n s z);
+ = \s z. m s (n s z);
 
 @church-sub m n
  = n @church-pred m;
@@ -55,10 +55,10 @@
         (@church-mul n (@church-fac (@church-sub n @church-one)));
 
 @church-list-nil
- = \an. \ac. an;
+ = \an ac. an;
 
 @church-list-cons x xs
- = \an. \ac. ac x xs;
+ = \an ac. ac x xs;
 
 @church-list-case xs an ac 
  = xs an ac;

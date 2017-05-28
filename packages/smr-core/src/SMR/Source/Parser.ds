@@ -61,57 +61,57 @@ parseExp (c: Config s p) (ts: List Token): Maybe (Exp s p)
 
 -- | Parse an expression.
 pExp     (c: Config s p): Parser Token (Exp s p)
- = alt  (bind   (satisfies (isToken KLambda))   $ λ kLam  -> 
-         bind   (from (takeNameOfToken SVar))   $ λ n     ->
-         bind   (satisfies (isToken KDot))      $ λ kDot  ->
-         bind   (pExp c)                        $ λ xBody ->
-         return (XAbs (Cons n Nil) xBody))
+ = alt  (bind   (satisfies (isToken KLambda))           $ λ kLam        -> 
+         bind   (some (from (takeNameOfToken SVar)))    $ λ nsParam     ->
+         bind   (satisfies (isToken KDot))              $ λ kDot        ->
+         bind   (pExp c)                                $ λ xBody       ->
+         return (XAbs nsParam xBody))
 
  $       pExpApp c
 
 
 -- | Parse an application.
 pExpApp (c: Config s p): Parser Token (Exp s p)
- = alt  (bind   (pExpAtom c)                    $ λ xFun   ->
-         bind   (some (pExpAtom c))             $ λ xsArgs ->
+ = alt  (bind   (pExpAtom c)                            $ λ xFun   ->
+         bind   (some (pExpAtom c))                     $ λ xsArgs ->
          return (makeXApps xFun xsArgs))
 
- $ alt  (bind   pUps                            $ λ uUps   ->
-         bind   (pExpApp c)                     $ λ xArg   ->
-         return (XUps uUps xArg))
+ $ alt  (bind   pUps                                    $ λ uUps   ->
+         bind   (pExpApp c)                             $ λ xArg   ->
+         return (XSub (Cons (CUps uUps) Nil) xArg))
 
-        (bind   (pSnv c)                        $ λ uSnv   ->
-         bind   (pExpApp c)                     $ λ xArg   ->
-         return (XSnv uSnv xArg))
+        (bind   (pSnv c)                                $ λ uSnv   ->
+         bind   (pExpApp c)                             $ λ xArg   ->
+         return (XSub (Cons (CSim uSnv) Nil) xArg))
 
 
 -- | Parse an atomic expression.
 pExpAtom (c: Config s p): Parser Token (Exp s p)
- = alt  (bind   (satisfies (isToken KBra))      $ λ xBra   ->
-         bind   (pExp c)                        $ λ xx     ->
-         bind   (satisfies (isToken KKet))      $ λ xKet   ->
+ = alt  (bind   (satisfies (isToken KBra))              $ λ xBra   ->
+         bind   (pExp c)                                $ λ xx     ->
+         bind   (satisfies (isToken KKet))              $ λ xKet   ->
          return xx)
 
- $ alt  (bind   (from (takeNameOfToken SVar))   $ λ n      ->
-        (bind   (satisfies (isToken KHat))      $ λ xHat   ->
-        (bind   pNat                            $ λ i      ->
+ $ alt  (bind   (from (takeNameOfToken SVar))           $ λ n      ->
+        (bind   (satisfies (isToken KHat))              $ λ xHat   ->
+        (bind   pNat                                    $ λ i      ->
          return (XVar n i))))
 
- $ alt  (bind   (from (takeNameOfToken SVar))   $ λ n      ->
+ $ alt  (bind   (from (takeNameOfToken SVar))           $ λ n      ->
          return (XVar n 0))
 
- $ alt  (bind   (from (takeNameOfToken SMac))   $ λ n      ->
+ $ alt  (bind   (from (takeNameOfToken SMac))           $ λ n      ->
          return (XRef (RMac n)))
 
- $ alt  (bind   (from (takeNameOfToken SSet))   $ λ n      -> 
+ $ alt  (bind   (from (takeNameOfToken SSet))           $ λ n      -> 
          return (XRef (RSet n)))
 
- $ alt  (bind   (from (takeNameOfToken SSym))   $ λ n      -> 
+ $ alt  (bind   (from (takeNameOfToken SSym))           $ λ n      -> 
          case configSym  c n of
           Just s        -> return (XRef (RSym  s))
           Nothing       -> zero)
 
- $      (bind   (from (takeNameOfToken SPrm))   $ λ n      -> 
+ $      (bind   (from (takeNameOfToken SPrm))           $ λ n      -> 
          case configPrim c n of
           Just p        -> return (XRef (RPrm  p))
           Nothing       -> zero)
@@ -122,7 +122,7 @@ pExpAtom (c: Config s p): Parser Token (Exp s p)
 pSnv    (c: Config s p)
         : Parser Token (Snv s p)
  = bind (satisfies    (isToken KSBra))                  $ \x1   -> 
-   bind (sepBy  (pBind c) (satisfies (isToken KComma)))  $ \bs   ->
+   bind (sepBy  (pBind c) (satisfies (isToken KComma))) $ \bs   ->
    bind (satisfies    (isToken KSKet))                  $ \x2   ->
    return (SSnv (reverse bs))
 
@@ -135,14 +135,14 @@ pSnv    (c: Config s p)
 pBind   (c: Config s p)
         : Parser Token (Tup2 (Tup2 Name Nat) (Exp s p))
  = bind (from (takeNameOfToken SVar)) $ λ name ->
-   (alt  (bind (satisfies (isToken KEquals))   $ \xColon ->
-          bind (pExp c)                        $ \x      ->
+   (alt  (bind (satisfies (isToken KEquals))            $ \xColon ->
+          bind (pExp c)                                 $ \x      ->
           return (T2 (T2 name 0) x))
 
-         (bind (satisfies (isToken KHat))      $ \xHat   ->
-          bind pNat                            $ \nDepth ->
-          bind (satisfies (isToken KEquals))   $ \xColon ->
-          bind (pExp c)                        $ \x      ->
+         (bind (satisfies (isToken KHat))               $ \xHat   ->
+          bind pNat                                     $ \nDepth ->
+          bind (satisfies (isToken KEquals))            $ \xColon ->
+          bind (pExp c)                                 $ \x      ->
           return (T2 (T2 name nDepth) x)))
 
 
@@ -162,17 +162,15 @@ pUps: Parser Token Ups
 --
 pBump: Parser Token (Tup2 (Tup2 Name Nat) Nat)
  = bind (from (takeNameOfToken SVar)) $ λ name ->
-   (alt  (bind (satisfies (isToken KColon))    $ \xColon ->
-          bind pNat                            $ \nBump  ->
+   (alt  (bind (satisfies (isToken KColon))             $ \xColon ->
+          bind pNat                                     $ \nBump  ->
           return (T2 (T2 name 0) nBump))
 
-         (bind (satisfies (isToken KHat))      $ \xHat   ->
-          bind pNat                            $ \nDepth ->
-          bind (satisfies (isToken KColon))    $ \xColon ->
-          bind pNat                            $ \nBump  ->
+         (bind (satisfies (isToken KHat))               $ \xHat   ->
+          bind pNat                                     $ \nDepth ->
+          bind (satisfies (isToken KColon))             $ \xColon ->
+          bind pNat                                     $ \nBump  ->
           return (T2 (T2 name nDepth) nBump)))
-
-
 
 
 -- | Parse a natural number.

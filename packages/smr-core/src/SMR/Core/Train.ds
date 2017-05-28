@@ -1,0 +1,173 @@
+
+module SMR.Core.Train
+export
+{       trainWrap;
+        trainApply;     trainBump;
+
+        simWrap;
+        snvApply;       snvBump;
+        snvOfNamesArgs;
+
+        upsWrap;
+        upsApply;       upsBump;
+        upsCombine
+}
+import SMR.Core.Exp
+where
+
+
+-- Train ----------------------------------------------------------------------
+-- | Wrap an expression in a substitution train.
+trainWrap 
+        (cs1: List (Car s p))
+        (xx: Exp s p): Exp s p
+ | Nil  <- cs1
+ = xx
+
+ | otherwise
+ = case xx of
+        XRef (RMac n)   -> xx
+        XRef (RSym n)   -> xx
+        XVar name depth -> trainApply cs1 name depth
+        XSub cs2  x2    -> trainWrap (append cs2 cs1) x2
+        _               -> XSub cs1 xx
+
+
+-- | Bump a train due to pushing it under an abstraction with the
+--   given parameter names.
+trainBump
+        (ns:    List Name)
+        (cs:    List (Car s p)): List (Car s p)
+ = case cs of
+        Nil     -> Nil
+
+        Cons (CSim snv) cs'
+         -> Cons (CSim (snvBump ns snv)) $ trainBump ns cs'
+
+        Cons (CRec snv) cs'
+         -> Cons (CRec (snvBump ns snv)) $ trainBump ns cs'
+
+        Cons (CUps ups) cs'
+         -> Cons (CUps (upsBump ns ups)) $ trainBump ns cs'
+
+
+-- Apply a train to a variable of the given name and depth.
+-- TODO: handle rec subst.
+trainApply 
+        (cs: List (Car s p)) 
+        (name: Name) (depth: Nat): Exp s p
+ = case cs of
+        Nil                     -> XVar name depth
+        Cons (CSim snv) cs'     -> trainWrap cs' (snvApply snv name depth)
+        Cons (CRec snv) cs'     -> trainWrap cs' (snvApply snv name depth)
+        Cons (CUps ups) cs'     -> trainWrap cs' (upsApply ups name depth)
+
+
+-- Snv ------------------------------------------------------------------------
+-- | Wrap an expression in a train consisting of a single sim. subst.
+simWrap (snv: Snv s p) (xx: Exp s p): Exp s p
+ = trainWrap (Cons (CSim snv) Nil) xx
+
+
+-- | Apply a substitution to a variable of a given name and depth.
+snvApply ((SSnv bs): Snv s p)
+         (name: Name) (depth: Nat): Exp s p
+ = case bs of
+        Nil     
+         -> XVar name depth
+
+        Cons b'@(T2 (T2 name' depth') x') bs'
+         |  name  == name'
+         ,  depth == depth'
+         -> x'
+
+         |  name   == name'
+         ,  depth  >  depth'
+         -> XVar name (depth - 1)
+
+         |  otherwise
+         -> snvApply (SSnv bs') name depth
+
+
+-- | Bump a substitution due to pushing it under an abstraction with
+--   the given parameter names.
+snvBump (ns:    List Name)
+        ((SSnv ts): Snv s p): Snv s p
+ = SSnv $ map (snvBump1 ns) ts
+ where
+        snvBump1
+                (names: List Name)
+                (b:     Tup2 (Tup2 Name Nat) (Exp s p))
+                  :     Tup2 (Tup2 Name Nat) (Exp s p)
+         | T2 (T2 name depth) x <- b
+         = T2  (T2 name (depth + (if elem name names then 1 else 0)))
+               (upsWrap (UUps (map (\name' -> T2 (T2 name' 0) 1) names)) x)
+
+
+-- | Build a substitution from lists of names and arguments.
+snvOfNamesArgs (ns: List Name) (xs: List (Exp s p)): Snv s p
+ = SSnv (zip (zip ns (replicate (length ns) 0)) xs)
+
+
+-- Ups ------------------------------------------------------------------------
+-- | Wrap an expression in a train consisting of a single ups.
+upsWrap (ups: Ups)     (xx: Exp s p): Exp s p
+ = trainWrap (Cons (CUps ups) Nil) xx
+
+
+-- | Apply an ups to a variable.
+upsApply ((UUps bs): Ups) (name: Name) (ix: Nat): Exp s n
+ = case bs of
+        Nil
+         -> XVar name ix
+
+        Cons u'@(T2 (T2 name' depth') inc') bs'
+         |  name   == name'
+         ,  depth' <= ix
+         -> upsApply (UUps bs') name (ix + inc')
+
+         |  otherwise
+         -> upsApply (UUps bs') name ix
+
+
+-- | Bump ups (substitution lifting) due to pushing it
+--   under an absraction with the given named binders.
+upsBump (ns: List Name) ((UUps bs): Ups): Ups
+ = UUps $ map (upsBump1 ns) bs
+ where  
+        upsBump1 (ns:   List Name)
+                 (l:    Tup2 (Tup2 Name Nat) Nat)
+                 :      Tup2 (Tup2 Name Nat) Nat
+         = case l of
+                T2 (T2 n d) inc
+                 | elem n ns    -> T2 (T2 n (d + 1)) inc
+                 | otherwise    -> l
+
+
+-- | Combine two lists of ups.
+upsCombine : Ups -> Ups -> Ups
+upsCombine (UUps ts1) (UUps ts2)
+ = UUps (foldr upsCombineBump ts2 ts1)
+
+
+-- | Combine a bump with an existing list of them.
+--   Applying the result to an expression will achieve the same result as
+--   applying the whole list and then the extra one.
+upsCombineBump (b: UpsBump) (bs: List UpsBump): List UpsBump
+ | T2 (T2 name depth) inc  <- b
+ = case bs of
+        -- We cannot combine the new bump with anything else,
+        -- so add it to the end of the list.
+        Nil     
+         -> Cons b Nil
+
+        Cons b'@(T2 (T2 name' depth') inc') bs'
+         -- Combine the new bump with an existing one of the same name.
+         |  name  == name' 
+         ,  depth == depth'
+         -> Cons (T2 (T2 name depth') (inc + inc')) bs'
+
+         -- Try to combine the new bump with the tail of the list.
+         |  otherwise
+         -> Cons b' (upsCombineBump b bs') 
+

@@ -37,6 +37,8 @@ pprExp' [s p: Data]
         (ctx: Context) (xx: Exp s p): Text
  | ContextBody  <- ctx
  = case xx of
+        XRef r          -> pprRef r
+
         XVar name 0     -> name 
         XVar name d     -> name % "^" % show d
 
@@ -55,61 +57,53 @@ pprExp' [s p: Data]
          -> (textOfChar '\\') 
                 % pprSep ns  % "." %% pprExp' ContextBody x
 
-        -- fixpoint
-        XFix ns x
-         -> (textOfChar '/') 
-                % pprSep ns % "." %% pprExp' ContextBody x
-
         -- substitution
-        XUps us x
-         -> pprUps us % pprExp' ContextArg x
-
-        XSnv ev x
-         -> pprSnv ev % pprExp' ContextArg x
-
-        XRef r
-         -> pprRef r
+        XSub cs x
+         -> pprTrain cs % pprExp' ContextArg x
 
 
  | ContextFun   <- ctx
  = case xx of
         XAbs _ _        -> parens $ pprExp' ContextBody xx
-        XFix _ _        -> parens $ pprExp' ContextBody xx
         _               -> pprExp' ContextBody xx
 
  | ContextArg   <- ctx
  = case xx of
         XRef _          -> pprExp' ContextBody xx
         XVar _          -> pprExp' ContextBody xx
-        XSnv _ _        -> pprExp' ContextBody xx
-        XUps _ _        -> pprExp' ContextBody xx
+        XSub _ _        -> pprExp' ContextBody xx
         _               -> parens $ pprExp' ContextBody xx
 
 
--- Ups ------------------------------------------------------------------------
-pprUps (us: Ups): Text
- = case us of
-        UUps us         
-         -> "{" % pprPunc ", " (map pprBump $ reverse us) % "}"
+-- Train ----------------------------------------------------------------------
+pprTrain {Pretty s} {Pretty p}
+         (cs: List (Car s p)): Text
+ = case cs of
+        Nil             -> "''"
+        Cons c Nil      -> pprCar c
+        Cons c cs'      -> pprTrain' cs' % "'" % pprCar c
+
+pprTrain' 
+        {Pretty s} {Pretty p}
+        (cs: List (Car s p)): Text
+ = case cs of
+        Nil             -> ""
+        Cons c Nil      -> pprCar c
+        Cons c cs'      -> pprTrain' cs' % "'" % pprCar c
 
 
-pprBump (bm: Tup2 (Tup2 Name Nat) Nat): Text
- = case bm of
-        T2 (T2 name depth) inc
-         |  depth == 0
-         -> name % ":" % show inc
-
-         |  otherwise
-         -> name % "^"  % show depth 
-                        % ":" % show inc
+pprCar  {Pretty s} {Pretty p} 
+        (c: (Car s p)): Text
+ = case c of
+        CSim snv        -> pprSnv snv
+        CRec snv        -> "[" % pprSnv snv % "]"
+        CUps ups        -> pprUps ups 
 
 
 -- Snv ------------------------------------------------------------------------
 pprSnv  {Pretty s} {Pretty p}
-        (ev: Snv s p): Text
- = case ev of
-        SSnv en
-         -> "[" % pprPunc ", " (map pprBind $ reverse en) % "]"
+        ((SSnv en): Snv s p): Text
+ = "[" % pprPunc ", " (map pprBind $ reverse en) % "]"
 
 
 pprBind {Pretty s} {Pretty p}
@@ -122,6 +116,22 @@ pprBind {Pretty s} {Pretty p}
          |  otherwise
          -> name %  "^" %  show depth 
                         %% "=" %% pprExp' ContextBody x
+
+
+-- Ups ------------------------------------------------------------------------
+pprUps ((UUps us): Ups): Text
+ = "{" % pprPunc ", " (map pprBump $ reverse us) % "}"
+
+
+pprBump (bm: Tup2 (Tup2 Name Nat) Nat): Text
+ = case bm of
+        T2 (T2 name depth) inc
+         |  depth == 0
+         -> name % ":" % show inc
+
+         |  otherwise
+         -> name % "^"  % show depth 
+                        % ":" % show inc
 
 
 -- Utils ----------------------------------------------------------------------

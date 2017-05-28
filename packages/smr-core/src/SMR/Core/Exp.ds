@@ -4,8 +4,7 @@ export
 {       show_Decl;      lookupDecl;
         show_Exp;       
         makeXAbs;
-        makeXApps;      takeXApps;
-        makeXSnv
+        makeXApps;      takeXApps
 }
 import Class.Show
 import Data.Text
@@ -71,25 +70,29 @@ show_Decl {Show s} {Show p}: Show (Decl s p)
 
 -- Exp ------------------------------------------------------------------------
 -- | Generic expression language.
-
--- TODO: change to use recursive substitution instead of fixpoint.
--- [[x = e1; y = e2]] x =>  [[x = e1; y = y2]] e1
--- XRec.. can also be pushed down always.
-
 data Exp (s p: Data) where
         -- Reference to an external thing.
         XRef    : Ref s p   -> Exp s p
 
-        -- Functional core.
-        XVar    : Name      -> Nat            -> Exp s p
-        XApp    : Exp s p   -> List (Exp s p) -> Exp s p
-        XAbs    : List Name -> Exp s p        -> Exp s p
-        XFix    : List Name -> Exp s p        -> Exp s p
+        -- Variable with a depth.
+        XVar    : Name      -> Nat              -> Exp s p
 
-        -- Explicit lifting and substitution.
-        XUps    : Ups       -> Exp s p        -> Exp s p
-        XSnv    : Snv s p   -> Exp s p        -> Exp s p
+        -- Application of a functional expression to its arguments.
+        XApp    : Exp s p   -> List (Exp s p)   -> Exp s p
 
+        -- Abstraction with a list of parameter names.
+        XAbs    : List Name -> Exp s p          -> Exp s p
+
+        -- Substitution train applied to an expression.
+        -- The car at the head of the list is applied first.
+        XSub    : List (Car s p) -> Exp s p     -> Exp s p
+
+
+-- | A car on the substitution train.
+data Car (s p: Data) where
+        CSim    : Snv s p       -> Car s p
+        CRec    : Snv s p       -> Car s p
+        CUps    : Ups           -> Car s p
 
 
 show_Exp {Show s} {Show p}: Show (Exp s p)
@@ -99,9 +102,14 @@ show_Exp {Show s} {Show p}: Show (Exp s p)
         XVar n  b       -> parens $ "XVar" %% show n  %% show b
         XApp xf xs      -> parens $ "XApp" %% show xf %% show xs
         XAbs ns x       -> parens $ "XAbs" %% show ns %% show x
-        XFix ns x       -> parens $ "XFix" %% show ns %% show x
-        XUps us x       -> parens $ "XUps" %% show us %% show x
-        XSnv sb x       -> parens $ "XSnv" %% show sb %% show x
+        XSub cs x       -> parens $ "XSub" %% show cs %% show x
+
+show_Car {Show s} {Show p}: Show (Car s p)
+ =  Show $ λxx
+ -> case xx of
+        CSim snv        -> parens $ "CSim" %% show snv
+        CRec snv        -> parens $ "CRec" %% show snv
+        CUps ups        -> parens $ "CUps" %% show ups
 
 
 -- Ups ------------------------------------------------------------------------
@@ -117,7 +125,7 @@ type UpsBump
 show_Ups: Show Ups
  =  Show $ λus
  -> case us of
-        UUps ts -> parens $ "XUps" %% show ts
+        UUps ts -> parens $ "UUps" %% show ts
 
 
 -- Snv ------------------------------------------------------------------------
@@ -134,11 +142,11 @@ show_SSnv {Show s} {Show p}: Show (Snv s p)
         SSnv ts -> parens $ "SSnv" %% show ts
 
 
--- | Make an appliction of an explicit substitution applied to an expression,
---   or just yield the expression if the substitution is empty.
-makeXSnv (snv@(SSnv bs): Snv s p) (xx: Exp s p): Exp s p
- | null bs      = xx
- | otherwise    = XSnv snv xx
+-- -- | Make an appliction of an explicit substitution applied to an expression,
+-- --   or just yield the expression if the substitution is empty.
+-- makeXSnv (snv@(SSnv bs): Snv s p) (xx: Exp s p): Exp s p
+--  | null bs      = xx
+--  | otherwise    = XSnv snv xx
 
 
 -- Compounds ------------------------------------------------------------------
