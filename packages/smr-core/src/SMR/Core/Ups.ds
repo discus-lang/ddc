@@ -1,0 +1,87 @@
+
+module SMR.Core.Ups
+export
+{       upsGive; upsApply; upsBump; upsCombine
+}
+import SMR.Core.Exp
+where
+
+
+-- | Wrap an exp in a ups, but if it is directly a
+--   a var or ref then also push it.
+upsGive (ups1: Ups) (xx1: Exp s p): Exp s p
+ = case xx1 of
+        XRef (RMac n)   -> xx1
+        XRef (RSym n)   -> xx1
+        XVar name depth -> upsApply ups1 name depth
+
+-- TODO: combine is broken.
+--        XUps ups2 xx2   -> XUps (upsCombine ups1 ups2) xx2
+        _               -> XUps ups1 xx1
+
+
+-- | Apply an ups to a variable.
+upsApply ((UUps bs): Ups) (name: Name) (ix: Nat): Exp s n
+ = case bs of
+        Nil
+         -> XVar name ix
+
+        Cons u'@(T2 (T2 name' depth') inc') bs'
+         |  name   == name'
+         ,  depth' <= ix
+         -> upsApply (UUps bs') name (ix + inc')
+
+         |  otherwise
+         -> upsApply (UUps bs') name ix
+
+
+-- | Bump ups (substitution lifting) due to pushing it
+--   under an absraction with the given named binders.
+upsBump (ns: List Name) ((UUps bs): Ups): Ups
+ = UUps $ map (upsBump1 ns) bs
+ where  
+        upsBump1 (ns: List Name)
+                 (l:  Tup2 (Tup2 Name Nat) Nat)
+                   :  Tup2 (Tup2 Name Nat) Nat
+         = case l of
+                T2 (T2 n d) inc
+                 | elem n ns    -> T2 (T2 n (d + 1)) inc
+                 | otherwise    -> l
+
+
+-- | Combine two lists of ups.
+upsCombine : Ups -> Ups -> Ups
+upsCombine (UUps ts1) (UUps ts2)
+ = UUps (foldr upsCombineBump ts2 ts1)
+
+
+-- | Combine a bump with an existing list of them.
+--   Applying the result to an expression will achieve the same result as
+--   applying the whole list and then the extra one.
+upsCombineBump (b: UpsBump) (bs: List UpsBump): List UpsBump
+ | T2 (T2 name depth) inc  <- b
+ = case bs of
+        -- We cannot combine the new bump with anything else,
+        -- so add it to the end of the list.
+        Nil     
+         -> Cons b Nil
+
+        Cons b'@(T2 (T2 name' depth') inc') bs'
+         -- The new bump is shadowed by one in the existing list,
+         -- so we drop the new one.
+         -- TODO: broken.  need {z:1}{z:1}z => z^2.
+--         |  name  == name' 
+--         ,  depth == depth'             --check <= vs >. Check Exp.v
+--         ,  inc'  >= 1
+--         -> Cons b' bs'
+
+         -- The new bump applies to the result of a bump in the list,
+         -- so we combine it with the one in the list.
+         |  name  == name' 
+         ,  depth == depth' + inc'      -- TODO: check, prob broken. <= vs > Check Exp.v
+         -> Cons (T2 (T2 name depth') (inc + inc')) bs'
+
+         -- Try to combine the new bump with the tail of the list.
+         |  otherwise
+         -> Cons b' (upsCombineBump b bs') 
+

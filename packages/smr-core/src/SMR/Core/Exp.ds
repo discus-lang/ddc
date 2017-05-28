@@ -3,6 +3,7 @@ module SMR.Core.Exp
 export
 {       show_Decl;      lookupDecl;
         show_Exp;       
+        makeXAbs;
         makeXApps;      takeXApps;
         makeXSnv
 }
@@ -141,6 +142,11 @@ makeXSnv (snv@(SSnv bs): Snv s p) (xx: Exp s p): Exp s p
 
 
 -- Compounds ------------------------------------------------------------------
+makeXAbs (ns: List Name) (xBody: Exp s p): Exp s p
+ | null ns      = xBody
+ | otherwise    = XAbs ns xBody
+
+
 -- | Make an application of a function to the given list of arguments.
 makeXApps (xFun: Exp s p) (xsArgs: List (Exp s p)): Exp s p
  = case xsArgs of
