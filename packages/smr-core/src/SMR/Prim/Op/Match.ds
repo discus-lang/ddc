@@ -5,12 +5,14 @@ import SMR.Prim.Op.Base
 where
 
 
-makePrimOpsMatch (_: Unit): List (PrimEval s Prim)
+makePrimOpsMatch {eqs: Eq s} (_: Unit): List (PrimEval s Prim)
  = Cons primOpSeq
+ $ Cons (primOpMatch {eqs})
+ $ Cons primOpWildcard
  $ Nil
 
 
-
+-- | Primitive 'seq' operator, to force a value to whnf.
 primOpSeq: PrimEval s Prim
  = PrimEval
         (PrimOp "seq")
@@ -22,69 +24,63 @@ primOpSeq: PrimEval s Prim
          | Just (T2 x1 as1)     <- takeArgExp as0
          , Just (T2 x2 Nil)     <- takeArgExp as1
          = Just $ XApp x2 (Cons x1 Nil)
-        fn' _
+
+         | otherwise
          = Nothing
 
 
-{-
--- | Evaluate a Match primitive.
-evalPrimMatch
-        {Eq s}
-        (eval:  Exp s Prim -> Maybe (Exp s Prim)) 
-                                        -- ^ Evaluate an expression to whnf.
-        (p:     PrimMatch)              -- ^ Primitive to evaluate.
-        (xs:    List (Exp s Prim))      -- ^ Arguments to primitive.
-        : Maybe (Exp s Prim)
+-- | Primitive 'match' operator, to pattern match on terms.
+primOpMatch {Eq s}: PrimEval s Prim
+ = PrimEval
+        (PrimOp "match")
+        "match on an expression"
+        (Cons Val (Cons Val (Cons Exp (Cons Exp Nil))))
+        fn'
+ where
+        fn' as0
+         | Just (T2 xScrut   as1) <- takeArgExp as0
+         , Just (T2 xPat     as2) <- takeArgExp as1
+         , Just (T2 xMatch   as3) <- takeArgExp as2
+         , Just (T2 xDefault Nil) <- takeArgExp as3
+         = case matchPattern xScrut xPat of
+                Just xsArgs     -> Just $ makeXApps xMatch xsArgs
+                Nothing         -> Just $ xDefault
 
- | PrimMatchMatch <- p
- , Cons xScrut (Cons xPattern (Cons xMatch (Cons xDefault Nil)))  <- xs
- , Just xScrut'   <- eval xScrut,       isDone xScrut'
- , Just xPattern' <- eval xPattern,     isDone xPattern'
- = case matchPattern xScrut' xPattern' of
-        Just xsArgs     -> Just $ makeXApps xMatch xsArgs
-        _               -> Just $ xDefault
+         | otherwise           
+         = Nothing
 
- | otherwise
- = Nothing
 
--- TODO: check this. 
--- The pattern needs to be in hnf.
--- We could make nested pattern matching lazilly force evaluation of
--- the expression being matched against.
-isDone (xx: Exp s Prim): Bool
- = case xx of
-        XApp x1 x2      -> isDone x1
-        XAbs _          -> True
-        XVar _          -> False
+-- | Primitive wildcard 'o' constructor.
+primOpWildcard: PrimEval s Prim
+ = PrimEval
+        (PrimOp "o")
+        "match wildcard"
+        Nil
+        (\as -> Nothing)
 
-        XRef (RMac _)   -> False
-        XRef (RSet _)   -> False
-        XRef (RSym _)   -> True
-        XRef (RPrm _)   -> False
 
-        _               -> False
-
+-- | Try to match the scrutinee against the given pattern.
 matchPattern 
         {Eq s}
-        (xScrut': Exp s Prim)
-        (xPat':   Exp s Prim)
-        : Maybe (List (Exp s Prim))
+        (xScrut': Exp s Prim)   -- ^ Scrutinee.
+        (xPat':   Exp s Prim)   -- ^ Pattern to match against.
+        :         Maybe (List (Exp s Prim))
 
- | XRef (RPrm (PrimMatch PrimMatchHole))    <- xPat'
+ | XRef (RPrm (PrimOp name))    <- xPat'
+ , name == "o"
  =      Just (Cons xScrut' Nil)
 
- | XRef (RSym s1)               <- xScrut'
- , XRef (RSym s2)               <- xPat'
+ | XRef (RSym s1)       <- xScrut'
+ , XRef (RSym s2)       <- xPat'
  = if s1 == s2
         then Just Nil
         else Nothing
- | XApp x11 x12                 <- xScrut'
- , XApp x21 x22                 <- xPat'
- , Just lst1                    <- matchPattern x11 x21
- , Just lst2                    <- matchPattern x12 x22
+ | Just (T2 x11 xs12)   <- takeXApps xScrut'
+ , Just (T2 x21 xs22)   <- takeXApps xPat'
+ , Just lst1            <- matchPattern x11 x21
+ , Just lst2            <- fmap concat $ sequence $ zipWith matchPattern xs12 xs22
  = Just (append lst1 lst2)
 
  | otherwise
  = Nothing
--}
 

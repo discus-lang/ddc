@@ -8,9 +8,9 @@ where
 
 
 -- | Make a list of primitive operator evaluators.
-makePrimOps (_: Unit): List (PrimEval s Prim)
+makePrimOps {eqs: Eq s} (_: Unit): List (PrimEval s Prim)
  = append (makePrimOpsBool  ())
- $ append (makePrimOpsMatch ())
+ $ append (makePrimOpsMatch {eqs} ())
  $ append (makePrimOpsNat   ())
  $ Nil
 

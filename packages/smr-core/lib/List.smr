@@ -7,22 +7,23 @@
 
 
 @list-replicate n x
- = #if  (#nat-eq #nat-0 n)
+ = #bool-if
+        (#nat-eq #nat'0 n)
         %nil
-        (%list-cons x (@list-replicate (#nat-sub n #nat-1) x));
-
+        (%list-cons x (@list-replicate (#nat-sub n #nat'1) x));
 
 @list-range a b
- = #if  (#nat-gt a b)
+ = #bool-if
+        (#nat-gt a b)
         %list-nil
-        (%list-cons a (@list-range (#nat-add a #nat-1) b));
+        (%list-cons a (@list-range (#nat-add a #nat'1) b));
 
 
 @list-length xx
  = @list-case
         xx
-        #nat-0
-        (\x. \xs. #nat-add #nat-1 (@list-length xs));
+        #nat'0
+        (\x. \xs. #nat-add #nat'1 (@list-length xs));
 
 
 @list-foldl f z xx
@@ -33,10 +34,9 @@
 
 
 @list-sum xx
- = @list-foldl #nat-add #nat-0 xx;
+ = @list-foldl #nat-add #nat'0 xx;
 
 
 @list-reverse xx
  = @list-foldl (\x. \xs. %list-cons xs x) %list-nil xx;
-
 
