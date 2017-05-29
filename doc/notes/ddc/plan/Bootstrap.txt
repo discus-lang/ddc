@@ -1,0 +1,110 @@
+
+Bootstrap Plan
+==============
+
+ddc-s1: DDC Stage 1, compiles Disciple, written in Haskell.
+smr-s2: SMR Stage 2, compiles Shimmer,  written in Disciple.
+ddc-s2: DDC Stage 2, compiles Disciple, written in Disciple.
+
+1. Write Shimmer in Disciple, compiled with ddc-s1.
+Shimmer provides a generic untyped explicit substitution calculus.
+This provides enough parser, pretty printer to serve as an exchange format
+between the different stages. Shimmer can be released as a stand-alone product.
+
+2. Extend Shimmer with all primops supported by ddc-s1.
+-  Nats, Words, Text, Floats, IO ops etc.
+
+3. 'port the core of Shimmer to ddc-s1 impl.
+We only need the parser and pretty printers, not the evaluator.
+
+4. Extend ddc-s1 to dump interface files in Shimmer format.
+After the interface file format has changed, smr-s2 will be able to load the output
+of the ddc-s1 frontend.
+
+5. Write  ddc-s2 backend in Disciple.
+This can load the .di files produced by ddc-s1 and interpret them.
+
+6. Extend ddc-s2 with the backend to compile smr .di files to LLVM.
+This gives us a complete backend that can compile .di to an executable.
+At this stage should be able to compile smr with ddc-s2 to executable.
+By this stage the main bugs should have been worked out of the ddc-s1 implementation.
+
+7. Extend ddc-s2 with the frontend to compile Disciple source to smr.
+This will be a port of the existing frontend in ddc-s1.
+
+
+Architecture Changes for ddc-s2
+-------------------------------
+
+Front
+~~~~~
+
+1. Change Source AST to track a source position for every AST node.
+
+   We had originally thought to add separate XAnnot constructors to the AST to track
+   source positions, but this doesn't help in types and patterns.
+   We need to track source positions in types, patterns, imports, the whole lot.
+   The Source AST should be completely separate from the Core AST using Shimmer.
+
+
+2. Forget about parameterizing the Source AST with the type of prim ops. 
+
+   We only use the one type for primops, so aren't getting any benefit from 
+   the fact that this is parameterized, and we're also paying for all the
+   Eq and Show constraints, in both the source code and runtime.
+
+   Names of primops should just be Text strings. We can define them all
+   in some table that gives the allowable ones.
+
+
+3. Initial type checking should be done on the front-end language before any
+   desugaring. In ddc-s1 type errors often don't have source locations because
+   those have been lost during front-end desugaring. The front end type checker
+   should do inference, but add all necessary annotations so that core type
+   checking can be done using bidir checking but without meta-variables.
+
+
+Middle
+~~~~~~
+
+1. The abstract syntax for the core language should be a proper subset of the 
+   source language. We should be able to desugar source to source, then load
+   the result as a Core program.
+
+
+2. Base the Core language representation on Shimmer instead of an internal AST.
+
+   Most of the transforms we want to do perform substitutions and liftings, 
+   so it's better to have this implemented all in the one place. We should also 
+   be able to get a generic interpreter by reusing the Shimmer code.
+
+   The external concrete syntax of Core should match the Source language,
+   but the internal concrete syntax will be that of Shimmer.
+
+   Type information can be represented separate smr symbols.
+
+   @double = %ddc-abs %ddc-type-Nat (\x. %ddc-prim-nat-add x x)
+  
+
+3. For symbols and primops, use a flat representation type.
+
+   Defining a big hierarchy of ADTs for all the primops is a headache, 
+   better to have them all in a table that we can query.
+
+   The symbol type should be an ADT that describes the Core object language,
+   but the primop type should just be a wrapper for Text.
+
+
+4. Use the binding type for all things. Trying to distinguish between 
+   terms, types, data constructors etc is a headache. The core of the 
+   system then naturally supports dependent typing if needed without
+   needing to refactor the representation.
+
+
+5. Use soups to hold top-level bindings rather than trying to break-up 
+   all of them into separate fields in the module type.
+   The soup can just be a map of name to decl, where we have different
+   sorts of decls. Checking what is defined by a module then becomes 
+   much easier.
+
+
