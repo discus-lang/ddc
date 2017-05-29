@@ -1,7 +1,8 @@
 
 module SMR.Prim.Op.Base
 export
-{       prim_Eq;
+{       prim_Eq;    prim_Show;
+        takeArgExp;
         makeXBool; takeXBool;   takeArgBool;
         makeXNat;  takeXNat;    takeArgNat;
         nameOfPrimEval;
@@ -18,6 +19,13 @@ data Prim where
         PrimLitBool     : Bool          -> Prim
         PrimLitNat      : Nat           -> Prim
 
+prim_Show: Show Prim
+ = Show $ \pp
+ -> case pp of
+        PrimOp tx       -> parens $ "PrimOp" %% show tx
+        PrimLitBool b   -> parens $ "PrimLitBool" %% show b
+        PrimLitNat  n   -> parens $ "PrimLitNat"  %% show n
+
 prim_Eq: Eq Prim
  =  Eq eq' neq'
  where  
@@ -30,6 +38,15 @@ prim_Eq: Eq Prim
 
         neq' p1 p2
          = not $ eq' p1 p2
+
+
+-- Exp ----------------------------------------------------
+takeArgExp 
+        (xx:    List (Exp s Prim))
+        :       Maybe (Tup2 (Exp s Prim) (List (Exp s Prim)))
+ = case xx of
+        Cons x1 xs      -> Just (T2 x1 xs)
+        _               -> Nothing
 
 
 -- Bool ---------------------------------------------------
@@ -47,10 +64,10 @@ makeXBool (b: Bool): Exp s Prim
 -- | Split a literal Bool from an argument list.
 takeArgBool
         (xx:    List (Exp s Prim))
-        :       Maybe (Tup2 Nat (List (Exp s Prim)))
+        :       Maybe (Tup2 Bool (List (Exp s Prim)))
  = case xx of
-        Cons (XRef (RPrm (PrimLitNat n))) xs
-          -> Just (T2 n xs)
+        Cons (XRef (RPrm (PrimLitBool b))) xs
+          -> Just (T2 b xs)
         _ -> Nothing
 
 

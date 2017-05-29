@@ -1,72 +1,59 @@
 
-module SMR.Prim.Eval.Bool
-export evalPrimBool
-import SMR.Prim.Name
-import Data.Maybe
+module SMR.Prim.Op.Bool
+export makePrimOpsBool
+import SMR.Prim.Op.Base
 where
 
 
--- | Evaluate a Bool primitive.
-evalPrimBool
-        (eval:  Exp s Prim -> Maybe Prim) -- ^ Evaluate an expression to a primitive.
-        (p:     PrimBool)                 -- ^ Primitive to evaluate.
-        (xs:    List (Exp s Prim))        -- ^ Arguments to primitive.
-        : Maybe (Exp s Prim)
-
- | PrimBoolIf   <- p
- , Cons xScrut (Cons xThen (Cons xElse Nil))    <- xs
- = case eval xScrut of
-        Just (PrimBool (PrimBoolVal True))      -> Just xThen
-        Just (PrimBool (PrimBoolVal False))     -> Just xElse
-        _                                       -> Nothing
-
- | otherwise
- = case sequence (map eval xs) of
-    Nothing
-     -> Nothing
-
-    Just ps 
-     -> case ps of
-         Nil
-           -> fmap (XRef ∘ RPrm) (evalPrimBool0 p)
-        
-         Cons (PrimBool (PrimBoolVal b1)) Nil
-           -> fmap (XRef ∘ RPrm) (evalPrimBool1 p b1)
-
-         Cons (PrimBool (PrimBoolVal b1)) (Cons (PrimBool (PrimBoolVal b2)) Nil)
-           -> fmap (XRef ∘ RPrm) (evalPrimBool2 p b1 b2)
-
-         _ -> Nothing
+-- | Primitive evaluators for boolean operator.
+makePrimOpsBool (_ : Unit): List (PrimEval s Prim)
+ = Cons (primOpBool1     "bool-not" "boolean negation"  (\b -> not b))
+ $ Cons (primOpBool2Bool "bool-and" "boolean and"       and)
+ $ Cons primOpIf
+ $ Nil
 
 
--- | Evaluate a zero-arity Bool primitive.
-evalPrimBool0 (p: PrimBool): Maybe Prim
- = case p of
-        PrimBoolVal _   -> Just (PrimBool p)
-        _               -> Nothing
+-- | Construct an evaluator for a 1-arity nat operator
+primOpBool1
+        (name:  Text) (desc: Text)
+        (fn:    Bool -> Bool)
+        :       PrimEval s Prim
+ =  PrimEval (PrimOp name) desc (Cons Val Nil) fn'
+ where  fn' as0
+         | Just (T2 b1 as1)     <- takeArgBool as0
+         = Just $ makeXBool (fn b1)
+        fn' _
+         = Nothing
 
 
--- | Evaluate a 1-ary Bool primitive.
-evalPrimBool1 (p: PrimBool) (b1: Bool): Maybe Prim
- = case p of
-        PrimBoolNot     -> Just (PrimBool (PrimBoolVal (not b1)))
-        _               -> Nothing
+-- | Construct an evaluator for a 2-arity nat operator returning nat.
+primOpBool2Bool
+        (name:  Text) (desc: Text)
+        (fn:    Bool -> Bool -> Bool)
+        :       PrimEval s Prim
+ =  PrimEval (PrimOp name) desc (Cons Val (Cons Val Nil)) fn'
+ where  fn' as0
+         | Just (T2 b1 as1)     <- takeArgBool as0
+         , Just (T2 b2 Nil)     <- takeArgBool as1
+         = Just $ makeXBool (fn b1 b2)
+        fn' _
+         = Nothing
 
 
--- | Evaluate a 2-ary Nat primitive.
-evalPrimBool2 (p: PrimBool) (b1 b2: Bool): Maybe Prim
- = case p of
-        PrimBoolAnd     -> Just (PrimBool (PrimBoolVal (and b1 b2)))
-        PrimBoolOr      -> Just (PrimBool (PrimBoolVal (or  b1 b2)))
-        _               -> Nothing
-
-{-
--- | Check if this is the name of a Bool primitive.
-isPrimNameBool (tx: Text): Bool
- | tx == "not"          = True          -- ^ negation
- | tx == "and"          = True          -- ^ boolean and
- | tx == "or"           = True          -- ^ boolean or
- | tx == "if"           = True          -- ^ boolean if
- | otherwise            = False
--}
+-- | Primitive evaluator for the #if operator.
+--   Only the scrutinee is demanded, while the branches are not.
+primOpIf: PrimEval s Prim
+ = PrimEval 
+        (PrimOp "bool-if")
+        "if-then-else operator"
+        (Cons Val (Cons Exp (Cons Exp Nil)))
+        fn'
+ where
+        fn' as0
+         | Just (T2 b1 as1)     <- takeArgBool as0
+         , Just (T2 x1 as2)     <- takeArgExp  as1
+         , Just (T2 x2 Nil)     <- takeArgExp  as2
+         = Just $ if b1 then x1 else x2
+        fn' _
+         = Nothing
 

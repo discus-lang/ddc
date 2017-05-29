@@ -1,44 +1,17 @@
 
 module SMR.Prim.Op
-export 
-{       makePrimOps;
-        evalPrim
-}
+export  makePrimOps
+import SMR.Prim.Op.Bool
+import SMR.Prim.Op.Match
 import SMR.Prim.Op.Nat
-import Data.Maybe
 where
 
 
 -- | Make a list of primitive operator evaluators.
 makePrimOps (_: Unit): List (PrimEval s Prim)
- = append (makePrimOpsNat ())
+ = append (makePrimOpsBool  ())
+ $ append (makePrimOpsMatch ())
+ $ append (makePrimOpsNat   ())
  $ Nil
 
 
--- | Evaluate a primitive application.
-evalPrim 
-        {Eq s}
-        (evalWhnf: Exp s Prim -> Maybe (Exp s Prim))
-                                        -- ^ Evaluate to weak head normal form.
-        (p:     Prim)                   -- ^ Primitive being applied.
-        (xs:    List (Exp s Prim))      -- ^ List of arguments to the primitive.
-        : Maybe (Exp s Prim)
- = Nothing
-
-{-
- = case p of
-        PrimBool pb     -> evalPrimBool  (eval_primOfWhnf evalWhnf) pb xs
-        PrimList pp     -> evalPrimList   evalWhnf pp xs
-        PrimMatch pp    -> evalPrimMatch  evalWhnf pp xs
-        PrimNat  pn     -> evalPrimNat   (eval_primOfWhnf evalWhnf) pn xs
-
-
-eval_primOfWhnf
-        (evalWhnf: Exp s Prim -> Maybe (Exp s Prim))
-        (xx:       Exp s Prim)
-        : Maybe Prim
- = case evalWhnf xx of
-        Just (XRef (RPrm p))    -> Just p
-        _                       -> Nothing
-
--}

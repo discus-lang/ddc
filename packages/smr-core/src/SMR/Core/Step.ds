@@ -27,12 +27,12 @@ data StepContext (s p: Data) where
 -- | Describe the result of an evaluation.
 data Result where
         ResultDone  : Result
-        ResultError : Result
+        ResultError : Text -> Result
 
 
 ---------------------------------------------------------------------------------------------------
 -- | Single step reduction.
-step    {Eq p}
+step    {Eq p}  {Show p}
         (str:   StepStrength)           -- ^ Evaluation Strength. 
         (ctx:   StepContext s p)        -- ^ Evaluation Context.
         (xx:    Exp s p)                -- ^ Expression to evaluate.
@@ -66,8 +66,11 @@ step    {Eq p}
          | Just (T2 (XRef (RPrm prim)) xsArgs)  <- takeXApps xx
          , StepContext esPrim _                 <- ctx
          -> case lookup prim esPrim of
-                Nothing         -> Left ResultError
-                Just primEval   -> stepPrim ctx primEval xsArgs
+                Nothing         
+                 -> Left $ ResultError $ "unknown primitive" %% show prim
+
+                Just primEval
+                 -> stepPrim ctx primEval xsArgs
 
          -- Application of some function abstraction.
          | otherwise
@@ -76,7 +79,8 @@ step    {Eq p}
                 Right x1'               -> Right $ XApp x1' xs2
 
                 -- Functional expression failed.
-                Left ResultError        -> Left ResultError
+                Left err@(ResultError _)
+                 -> Left err
 
                 -- Functional expression is done.
                 Left ResultDone
@@ -89,7 +93,8 @@ step    {Eq p}
                  -> case step str ctx x1 of
                         Right x1'          -> Right $ XApp x1' xs2
 
-                        Left ResultError   -> Left ResultError
+                        Left err@(ResultError _)
+                         -> Left err
 
                         Left ResultDone
                          -> case stepFirst str ctx xs2 of
@@ -103,9 +108,10 @@ step    {Eq p}
                 Just xx' -> Right xx'
 
 
+---------------------------------------------------------------------------------------------------
 -- | Step the first available expression in a list.
 stepFirst 
-        {Eq p}
+        {Eq p}  {Show p}
         (str:   StepStrength)           -- ^ Evaluation Strength.
         (ctx:   StepContext s p)        -- ^ Evaluation Context.
         (xx:    List (Exp s p))         -- ^ List of expressions to step.
@@ -116,8 +122,8 @@ stepFirst
 
         Cons x xs
          -> case step str ctx x of
-                Left ResultError 
-                 -> Left ResultError
+                Left err@(ResultError _)
+                 -> Left err
 
                 Left ResultDone 
                  -> case stepFirst str ctx xs of
@@ -127,6 +133,7 @@ stepFirst
                 Right x'          -> Right $ Cons x' xs
 
 
+---------------------------------------------------------------------------------------------------
 -- | Step an application of a function abstraction to some arguments.
 stepAppAbs
         (str:   StepStrength)           -- ^ Evaluation strength.
@@ -158,9 +165,10 @@ stepAppAbs
         Right   $ XApp  (simWrap snv x12) xs2_remain
 
 
+---------------------------------------------------------------------------------------------------
 -- | Step an application of a primitive operator to some arguments.
 stepPrim
-        {Eq p}
+        {Eq p}  {Show p} 
         (ctx:   StepContext s p)        -- ^ Context of evaluation.
         (pe:    PrimEval s p)           -- ^ Evaluator for primitive operator.
         (xsArg: List (Exp s p))         -- ^ Arguments the operator is applied to.
@@ -170,9 +178,13 @@ stepPrim
  where  
         -- Evaluation of arguments is complete.
         evalArgs Nil Nil xsArgsDone
-         = case eval xsArgsDone of
-                Just xResult    -> Right xResult
-                Nothing         -> Left ResultError
+         = case eval (reverse xsArgsDone) of
+                Just xResult
+                 -> Right xResult
+
+                Nothing         
+                 -> Left $ ResultError 
+                         $ "evaluation of prim" %% show prim %% "failed"
 
         -- Evaluate the next argument if neeeded.
         evalArgs (Cons cArg' csArg') (Cons xArg' xsArg') xsArgDone
@@ -182,19 +194,19 @@ stepPrim
 
          -- Primitive demands a value for this arg.
          = case step (StepStrength False) ctx xArg' of
-                Left ResultError
-                 -> Left ResultError
+                Left err@(ResultError _)
+                 -> Left err
 
                 Left ResultDone     
                  -> evalArgs csArg' xsArg' (Cons xArg' xsArgDone)
 
                 Right xArg''
                  -> Right $ makeXApps (XRef (RPrm (nameOfPrimEval pe))) 
-                          $ append (Cons xArg'' xsArgDone) xsArg'
+                          $ append (reverse xsArgDone) (Cons xArg'' xsArg')
 
         -- Number of provided arguments does not match primop def.
-        evalArgs Nil _  = Left ResultError
-        evalArgs _ Nil  = Left ResultError
+        evalArgs Nil _  = Left $ ResultError "prim call pattern mismatch"
+        evalArgs _ Nil  = Left $ ResultError "prim call pattern mismatch"
 
 
 ---------------------------------------------------------------------------------------------------

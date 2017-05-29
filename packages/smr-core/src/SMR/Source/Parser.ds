@@ -30,9 +30,13 @@ parseDecls
         (c:  Config s p)
         (ts: List Token)
         : Maybe (List (Decl s p))
- = case parse (pDecls c) ts of
+ = case parse pDeclsEnd ts of
         Nil               -> Nothing
         Cons (T2 xx _) _  -> Just xx
+ where  pDeclsEnd 
+         = bind (pDecls c)                              $ λ ds      ->
+           bind (satisfies (isToken KEnd))              $ λ kEnd    ->
+           return ds
 
 
 -- Decl ------------------------------------------------------------------------

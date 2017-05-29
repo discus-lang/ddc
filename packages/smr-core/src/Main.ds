@@ -2,7 +2,6 @@
 -- Shimmer v1.0. The Lambda Machine.
 module Main
 import SMR.Core.Exp
-import SMR.Core.Eval
 import SMR.Core.Step
 import SMR.Prim.Op
 import SMR.Prim.Name
@@ -91,18 +90,14 @@ main ()
          = Config (\z -> Just z)
                   (\z -> parsePrim primNamesText z)
 
-        -- Build repl state.
-        state
-         = State config primTable Nil
-
         case mSource of
          Just (TextLit path)
           -> case loadSource config path of
                  Nothing        -> writel "load failed"
-                 Just decls     -> repl state CmdNone
+                 Just decls     -> repl (State config primTable decls) CmdNone
 
          Nothing        
-          -> repl state CmdNone
+          -> repl (State config primTable Nil) CmdNone
 
 
 -- | Load a list of top-level declarations from a source file.
@@ -117,7 +112,7 @@ loadSource
          T2 toks cs
           |  not $ all isSpace cs       -> Nothing
           |  otherwise
-          -> case parseDecls config toks of
+          -> case parseDecls config (append toks (Cons KEnd Nil)) of
                 Nothing                 -> Nothing
                 Just ds'                -> Just ds'
 
@@ -176,8 +171,10 @@ repl_step
         (xx:    Exp Name Prim)
         :       S Console Unit
  = case step' state True xx of
-        Left ResultError 
-         -> do  writell "! runtime error."
+        Left (ResultError err)
+         -> do  writel    "! runtime error."
+                writell $ "! " % err
+
                 repl state CmdNone
 
         Left ResultDone

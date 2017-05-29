@@ -1,0 +1,18 @@
+
+@nat-fac-leak n
+ = #bool-if 
+        (#nat-eq n #nat'0)
+        #nat'1
+        (#nat-mul n (@nat-fac-leak (#nat-sub n #nat'1)));
+
+
+@nat-fac n
+ = @nat-fac-loop #nat'1 n;
+
+@nat-fac-loop acc n
+ = #bool-if 
+        (#nat-eq n #nat'0)
+        acc
+        (#seq (#nat-mul acc n)    (\acc'.
+         #seq (#nat-sub n #nat'1) (\n'.
+         @nat-fac-loop acc' n')));

@@ -1,11 +1,32 @@
 
-module SMR.Prim.Eval.Match
-export evalPrimMatch
-import SMR.Prim.Name
-import Data.Maybe
+module SMR.Prim.Op.Match
+export makePrimOpsMatch
+import SMR.Prim.Op.Base
 where
 
 
+makePrimOpsMatch (_: Unit): List (PrimEval s Prim)
+ = Cons primOpSeq
+ $ Nil
+
+
+
+primOpSeq: PrimEval s Prim
+ = PrimEval
+        (PrimOp "seq")
+        "force evaluation of an expression to whnf"
+        (Cons Val (Cons Val Nil))
+        fn'
+ where
+        fn' as0
+         | Just (T2 x1 as1)     <- takeArgExp as0
+         , Just (T2 x2 Nil)     <- takeArgExp as1
+         = Just $ XApp x2 (Cons x1 Nil)
+        fn' _
+         = Nothing
+
+
+{-
 -- | Evaluate a Match primitive.
 evalPrimMatch
         {Eq s}
@@ -57,23 +78,13 @@ matchPattern
  = if s1 == s2
         then Just Nil
         else Nothing
-
-{-
  | XApp x11 x12                 <- xScrut'
  , XApp x21 x22                 <- xPat'
  , Just lst1                    <- matchPattern x11 x21
  , Just lst2                    <- matchPattern x12 x22
  = Just (append lst1 lst2)
--}
 
  | otherwise
  = Nothing
-
-
-{-
--- | Check if this is the name of a match primitive.
-isPrimNameMatch (tx: Text): Bool
- | tx == "match"        = True          -- ^ match against a pattern
- | tx == "o"            = True          -- ^ match wildcard
- | otherwise            = False
 -}
+
