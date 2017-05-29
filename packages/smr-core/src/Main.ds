@@ -37,7 +37,7 @@ main ()
 
 
 parserConfig: Config Name Prim
- = Config (\z -> Just z) readPrim
+ = Config (\z -> Just z) parsePrim
 
 
 -- | Load a list of top-level declarations from a source file.
@@ -78,9 +78,6 @@ data Cmd where
 -- | Read-Eval-Print loop.
 --   TODO: need to put the explicit box.
 --
---   TODO: If we remove the unit parameter and use direct recursion
---         we get an LLVM code-gen error.
--- 
 --   TODO: closing stdin with control-D causes prompt to print infinitely.
 --
 repl    (decls: List (Decl Name Prim))

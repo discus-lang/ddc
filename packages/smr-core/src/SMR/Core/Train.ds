@@ -28,6 +28,7 @@ trainWrap
  = case xx of
         XRef (RMac n)   -> xx
         XRef (RSym n)   -> xx
+        XRef (RPrm n)   -> xx
         XVar name depth -> trainApply cs1 name depth
         XSub cs2  x2    -> trainWrap (append cs2 cs1) x2
         _               -> XSub cs1 xx

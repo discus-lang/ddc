@@ -25,9 +25,9 @@ data Token where
         KSBra   : Token                         -- ^ Square Braket  '['
         KSKet   : Token                         -- ^ Square Bracket ']'
 
-        KColon  : Token                         -- ^ Colon         ':'
         KHat    : Token                         -- ^ Hat           '^'
         KComma  : Token                         -- ^ Comma         ','
+        KColon  : Token                         -- ^ Colon         ':'
 
         KLambda : Token                         -- ^ Lambda symbol '\'
         KDot    : Token                         -- ^ Dot symbol    '.'
@@ -59,9 +59,9 @@ eq_Token: Eq Token
                 T2 KCKet   KCKet        -> True
                 T2 KSBra   KSBra        -> True
                 T2 KSKet   KSKet        -> True
-                T2 KColon  KColon       -> True
                 T2 KHat    KHat         -> True
                 T2 KComma  KComma       -> True
+                T2 KColon  KColon       -> True
                 T2 KLambda KLambda      -> True
                 T2 KDot    KDot         -> True
                 T2 KSemi   KSemi        -> True
@@ -106,9 +106,9 @@ show_Token: Show Token
         KCKet           -> "KCKet"
         KSBra           -> "KSBra"
         KSKet           -> "KSKet"
-        KColon          -> "KColon"
         KHat            -> "KHat"
         KComma          -> "KComma"
+        KColon          -> "KColon"
         KLambda         -> "KLambda"
         KDot            -> "KDot"
         KSemi           -> "KSemi"

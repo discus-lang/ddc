@@ -1,54 +1,60 @@
 
 module SMR.Prim.Name
 export 
-{       pretty_Prim;    show_Prim;
-        readPrim
+{       pretty_Prim;
+        prettyPrim; parsePrim
 }
-import SMR.Prim.Name.Bool
-import SMR.Prim.Name.List
-import SMR.Prim.Name.Match
 import SMR.Prim.Name.Nat
+import System.Posix.Stdlib
 import Class.Show
 import Class.Pretty
 where
 
 
--- TODO: kill the intermediate prim wrappers.
--- needing to do lexing and showing doesn't add any value.
--- just represent prims as names.
--- There should be a map of primitve name to some generic description
--- of what the args are and how to evaluate it.
--- For safe code just make whitelist for allowable prims,
--- should just be a list of names. Could also then do profiling to see
--- how many of each one were executed. Interpretation enables nice profiling.
-
+-- | Primitive values and operators.
 data Prim where        
-        PrimBool        : PrimBool      -> Prim
-        PrimList        : PrimList      -> Prim
-        PrimMatch       : PrimMatch     -> Prim
-        PrimNat         : PrimNat       -> Prim
+        PrimOp          : Text          -> Prim
+        PrimLitBool     : Bool          -> Prim
+        PrimLitNat      : Nat           -> Prim
 
 
 -- | Pretty dictionary for primitives.
 pretty_Prim: Pretty Prim
- = Pretty showPrim
+ = Pretty prettyPrim
 
-show_Prim: Show Prim
- = Show   showPrim
 
-showPrim    (pp: Prim): Text
+-- | Pretty print a primitive name, without the leading '#'.
+prettyPrim (pp: Prim): Text
  = case pp of
-        PrimBool pb                     -> showPrimBool   pb
-        PrimList pp                     -> showPrimList   pp
-        PrimMatch pp                    -> showPrimMatch  pp
-        PrimNat  pn                     -> showPrimNat    pn
+        PrimOp op               -> op
+
+        PrimLitBool True        -> "true"
+        PrimLitBool False       -> "false"
+
+        PrimLitNat n            -> "nat'" % showNat n
 
 
-readPrim    (tt: Text): Maybe Prim
- | Just pb      <- readPrimBool tt      = Just (PrimBool  pb)
- | Just pp      <- readPrimList tt      = Just (PrimList  pp)
- | Just pp      <- readPrimMatch tt     = Just (PrimMatch pp)
- | Just pn      <- readPrimNat  tt      = Just (PrimNat   pn)
- | otherwise                            = Nothing
+-- | Parse a primitive name, without the leading '#'.
+parsePrim (tx: Text): Maybe Prim
+
+ -- Literal Bools.
+ | tx == "true"         = Just $ PrimLitBool True
+ | tx == "false"        = Just $ PrimLitBool False
+
+ -- Literal Nats.
+ | cs   <- charListOfText tx
+ , textOfCharList (take 4 cs) == "nat'"
+ , ds   <- drop 4 cs
+ , all isDigit ds
+ = case readNat (textOfCharList ds) of
+        Nothing         -> Nothing
+        Just nat        -> Just $ PrimLitNat nat
+
+ -- Other primitives.
+ | isPrimNameNat tx     = Just $ PrimOp tx
+
+ -- Unrecognized.
+ | otherwise            = Nothing
+
 
 

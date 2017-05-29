@@ -1,10 +1,6 @@
 
 module SMR.Prim.Eval
 export evalPrim
-import SMR.Prim.Eval.Bool
-import SMR.Prim.Eval.List
-import SMR.Prim.Eval.Match
-import SMR.Prim.Eval.Nat
 import SMR.Prim.Name
 import Data.Maybe
 where
@@ -18,6 +14,9 @@ evalPrim
         (p:     Prim)                   -- ^ Primitive being applied.
         (xs:    List (Exp s Prim))      -- ^ List of arguments to the primitive.
         : Maybe (Exp s Prim)
+ = Nothing
+
+{-
  = case p of
         PrimBool pb     -> evalPrimBool  (eval_primOfWhnf evalWhnf) pb xs
         PrimList pp     -> evalPrimList   evalWhnf pp xs
@@ -33,4 +32,4 @@ eval_primOfWhnf
         Just (XRef (RPrm p))    -> Just p
         _                       -> Nothing
 
-
+-}

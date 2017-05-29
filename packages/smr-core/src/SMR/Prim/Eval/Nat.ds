@@ -12,9 +12,9 @@ where
 --   All the nat primtitives are strict, so we force the arguments to whnf first.
 --
 evalPrimNat 
-        (eval:  Exp n Prim -> Maybe Prim)       -- ^ Evaluate an expression to a primitive.
-        (p:     PrimNat)                        -- ^ Primitive to evaluate.
-        (xs:    List (Exp n Prim))              -- ^ Arguments to primitive.
+        (eval:  Exp s Prim -> Maybe Prim)       -- ^ Evaluate an expression to a primitive.
+        (p:     Prim)                           -- ^ Name of primitive to evaluate.
+        (xs:    List (Exp s Prim))              -- ^ Arguments to primitive.
         : Maybe (Exp n Prim)
  = case sequence (map eval xs) of
     Nothing

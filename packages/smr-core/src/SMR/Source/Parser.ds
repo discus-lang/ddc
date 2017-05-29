@@ -157,8 +157,8 @@ pUps: Parser Token Ups
 
 -- | Parse a bump.
 --   
---   Bump ::= Name ':' Nat
---         |  Name '^' Nat ':' Nat
+--   Bump ::= Name '=' Nat
+--         |  Name '^' Nat '=' Nat
 --
 pBump: Parser Token (Tup2 (Tup2 Name Nat) Nat)
  = bind (from (takeNameOfToken SVar)) $ λ name ->

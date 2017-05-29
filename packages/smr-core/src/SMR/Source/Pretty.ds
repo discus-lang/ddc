@@ -59,7 +59,7 @@ pprExp' [s p: Data]
 
         -- substitution
         XSub cs x
-         -> pprTrain cs % pprExp' ContextArg x
+         -> pprTrain cs % "." % pprExp' ContextArg x
 
 
  | ContextFun   <- ctx
@@ -79,17 +79,8 @@ pprExp' [s p: Data]
 pprTrain {Pretty s} {Pretty p}
          (cs: List (Car s p)): Text
  = case cs of
-        Nil             -> "''"
-        Cons c Nil      -> pprCar c
-        Cons c cs'      -> pprTrain' cs' % "'" % pprCar c
-
-pprTrain' 
-        {Pretty s} {Pretty p}
-        (cs: List (Car s p)): Text
- = case cs of
         Nil             -> ""
-        Cons c Nil      -> pprCar c
-        Cons c cs'      -> pprTrain' cs' % "'" % pprCar c
+        Cons c cs'      -> pprTrain cs' % pprCar c
 
 
 pprCar  {Pretty s} {Pretty p} 
@@ -111,11 +102,10 @@ pprBind {Pretty s} {Pretty p}
  = case bn of
         T2 (T2 name depth) x
          |  depth == 0
-         -> name %% "=" %% pprExp' ContextBody x
+         -> name %  "=" % pprExp' ContextBody x
 
          |  otherwise
-         -> name %  "^" %  show depth 
-                        %% "=" %% pprExp' ContextBody x
+         -> name %  "^" % show depth    % "=" %% pprExp' ContextBody x
 
 
 -- Ups ------------------------------------------------------------------------
@@ -127,11 +117,10 @@ pprBump (bm: Tup2 (Tup2 Name Nat) Nat): Text
  = case bm of
         T2 (T2 name depth) inc
          |  depth == 0
-         -> name % ":" % show inc
+         -> name % ":"  % show inc
 
          |  otherwise
-         -> name % "^"  % show depth 
-                        % ":" % show inc
+         -> name % "^"  % show depth    % ":" % show inc
 
 
 -- Utils ----------------------------------------------------------------------

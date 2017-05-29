@@ -96,8 +96,9 @@ lexName (xx: List Char): Maybe (Tup2 Name (List Char))
                 Just $ T2 name (Cons c cs)
 
 
+-- TODO: check fixity of ∨, should be able to write these as one clause.
 isNameBodyChar (c: Char): Bool
- = isLower c ∨ (isUpper c ∨ (isDigit c ∨ (c == '-' ∨ c == '_')))
+ = isLower c ∨ (isUpper c ∨ (isDigit c ∨ (c == '-' ∨ (c == '\'' ∨ c == '_'))))
 
 
 -- | Lex a natural number.
