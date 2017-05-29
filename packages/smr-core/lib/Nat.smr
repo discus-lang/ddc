@@ -13,6 +13,6 @@
  = #bool-if 
         (#nat-eq n #nat'0)
         acc
-        (#seq (#nat-mul acc n)    (\acc'.
-         #seq (#nat-sub n #nat'1) (\n'.
-         @nat-fac-loop acc' n')));
+        (#seq (#nat-mul acc n)    $ \acc'.
+         #seq (#nat-sub n #nat'1) $ \n'.
+         @nat-fac-loop acc' n');

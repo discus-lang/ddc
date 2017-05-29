@@ -75,8 +75,12 @@ pExp     (c: Config s p): Parser Token (Exp s p)
          bind   (pExp c)                                $ λ xBody       ->
          return (XAbs nsParam xBody))
 
- $       pExpApp c
+ $      (bind   (pExpApp c)                             $ λ xHead       -> 
+         alt    (bind   (satisfies (isToken KDollar))   $ λ kDollar     ->
+                 bind   (pExp c)                        $ λ xRest       -> 
+                 return (XApp xHead (Cons xRest Nil)))
 
+                (return xHead))
 
 -- | Parse an application.
 pExpApp (c: Config s p): Parser Token (Exp s p)

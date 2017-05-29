@@ -35,6 +35,7 @@ data Token where
         KDot    : Token                         -- ^ Dot symbol    '.'
         KSemi   : Token                         -- ^ Semicolon     ';'
         KEquals : Token                         -- ^ Equals        '='
+        KDollar : Token                         -- ^ Dollar        '$'
 
         KName   : Space -> Name -> Token        -- ^ A scoped name.
         KNat    : Nat   -> Token                -- ^ A natural number.
@@ -69,6 +70,7 @@ eq_Token: Eq Token
                 T2 KDot    KDot         -> True
                 T2 KSemi   KSemi        -> True
                 T2 KEquals KEquals      -> True
+                T2 KDollar KDollar      -> True
 
                 T2 (KName s1 n1) (KName s2 n2)
                  -> s1 == s2 ∧ n1 == n2
@@ -117,6 +119,7 @@ show_Token: Show Token
         KDot            -> "KDot"
         KSemi           -> "KSemi"
         KEquals         -> "KEquals"
+        KDollar         -> "KDollar"
         KName s n       -> parens $ "KName" %% show s %% show n
         KNat  n         -> parens $ "KNat"  %% show n
 

@@ -13,6 +13,7 @@ where
 data StepStrength where
         StepStrength
          :  Bool                          -- ^ Reduce under lambdas.
+         -> Bool                          -- ^ Reduce arguments when head is not an abs.
          -> StepStrength
 
 
@@ -53,8 +54,8 @@ step    {Eq p}  {Show p}
         -- Abstraction
         XAbs ns1 x2     
          -- Reduce the body of the abstraction.
-         |  StepStrength True   <- str
-         ,  Right x2'           <- step str ctx x2
+         |  StepStrength True _     <- str
+         ,  Right x2'               <- step str ctx x2
          -> Right $ XAbs ns1 x2'
 
          -- Treat abstractions as values.
@@ -74,7 +75,7 @@ step    {Eq p}  {Show p}
 
          -- Application of some function abstraction.
          | otherwise
-         -> case step (StepStrength False) ctx x1 of
+         -> case step (StepStrength False False) ctx x1 of
                 -- Functional expression makes progress.
                 Right x1'               -> Right $ XApp x1' xs2
 
@@ -89,7 +90,7 @@ step    {Eq p}  {Show p}
                  -> stepAppAbs str ctx ns11 x12 xs2 (length ns11) (length xs2)
 
                  -- Reduce arguments of applications.
-                 |  otherwise
+                 |  StepStrength _ True <- str
                  -> case step str ctx x1 of
                         Right x1'          -> Right $ XApp x1' xs2
 
@@ -97,9 +98,12 @@ step    {Eq p}  {Show p}
                          -> Left err
 
                         Left ResultDone
-                         -> case stepFirst str ctx xs2 of
+                         -> case stepFirst (StepStrength True True) ctx xs2 of
                                 Right xs2' -> Right (XApp x1 xs2')
                                 Left  r    -> Left r
+
+                 |  otherwise
+                 -> Left ResultDone
 
         -- Substitution train.
         XSub _ _
@@ -193,7 +197,7 @@ stepPrim
          = evalArgs csArg' xsArg' (Cons xArg' xsArgDone)
 
          -- Primitive demands a value for this arg.
-         = case step (StepStrength False) ctx xArg' of
+         = case step (StepStrength False False) ctx xArg' of
                 Left err@(ResultError _)
                  -> Left err
 

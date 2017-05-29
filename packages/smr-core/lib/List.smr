@@ -2,21 +2,24 @@
 
 @list-case xx alt-nil alt-cons
  = #match xx  %list-nil         alt-nil
-  (#match xx (%list-cons #o #o) alt-cons
-   %fail);
+ $ #match xx (%list-cons #o #o) alt-cons
+ $ %fail;
 
 
 @list-replicate n x
  = #bool-if
         (#nat-eq #nat'0 n)
-        %nil
-        (%list-cons x (@list-replicate (#nat-sub n #nat'1) x));
+        %list-nil
+        (#seq (#nat-sub n #nat'1) $ \n'.
+         %list-cons x (@list-replicate n' x));
+
 
 @list-range a b
  = #bool-if
         (#nat-gt a b)
         %list-nil
-        (%list-cons a (@list-range (#nat-add a #nat'1) b));
+        (#seq (#nat-add a #nat'1) $ \n'.
+         %list-cons a (@list-range n' b));
 
 
 @list-length xx
@@ -30,7 +33,8 @@
  = @list-case
         xx 
         z 
-        (\x. \xs. @list-foldl f (f z x) xs);
+        (\x xs. #seq (f z x) $ \z' .
+                @list-foldl f z' xs);
 
 
 @list-sum xx

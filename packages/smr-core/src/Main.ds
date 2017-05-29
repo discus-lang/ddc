@@ -192,7 +192,7 @@ step'   (state: State)
         (red:   Bool)
         (xx:    Exp Name Prim)
         :       Either Result (Exp Name Prim)
- = step (StepStrength red)
+ = step (StepStrength red True)
         (StepContext 
                 (primTableOfState state)
                 (declsOfState state))
