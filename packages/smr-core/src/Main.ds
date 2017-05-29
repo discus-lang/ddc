@@ -1,7 +1,5 @@
 
--- Shimmer v1.0.
---   The Turtle at the Bottom of the World.
---
+-- Shimmer v1.0. The Lambda Machine.
 module Main
 import SMR.Core.Exp
 import SMR.Core.Eval
@@ -17,8 +15,47 @@ import Main.Args
 import Data.Maybe
 where
 
+---------------------------------------------------------------------------------------------------
+data Cmd where
+        CmdNone : Cmd
+        CmdStep : Exp Name Prim -> Cmd
 
--- TODO: need explict run/box.
+
+data State where
+        State
+         :  Config Name Prim                            -- ^ Parser config.
+         -> List (Tup2 Prim (PrimEval Name Prim))       -- ^ Primitive evaluators.
+         -> List (Decl Name Prim)                       -- ^ Top-level declarations
+         -> State
+
+configOfState    ((State config _ _): State): Config Name Prim
+ = config
+
+primTableOfState ((State _ evals _):  State): List (Tup2 Prim (PrimEval Name Prim))
+ = evals
+
+declsOfState     ((State _ _ decls):  State): List (Decl Name Prim)
+ = decls
+
+
+
+-- Utils ------------------------------------------------------------------------------------------
+-- Shift this stuff somewhere else.
+show_Unit: Show Unit
+ = Show   $ λxx -> "()"
+
+pretty_Text: Pretty Text
+ = Pretty $ λxx -> xx
+
+-- TODO: need explicit run/box 
+getLine: S Console Text
+ = box do   
+        txt     = run readl 2014
+        textOfCharList $ init Nil $ charListOfText txt        
+
+
+
+---------------------------------------------------------------------------------------------------
 main ()
  = do   writel "Shimmer, version 1.0. The Lambda Machine."
 
@@ -27,40 +64,52 @@ main ()
          $ Cons (ArgText "-i" "include file" (\s _ -> Just s))
          $ Nil
 
-        config  = makeParserConfig ()
+        -- Build the table of primitive evaluators.
+        primEvals
+         = makePrimOps ()
+
+        -- Extract a list of primitive names.
+        -- TODO: find out why we need explicit type app,
+        --       as well as explicit type abs to set the tyvar order.
+        primNames
+         = map (nameOfPrimEval [Text] [Prim]) primEvals
+
+        -- Extract textual names of primitives.
+        primNamesText
+         = mapMaybe 
+                (\e -> case e of
+                        PrimOp n        -> Just n
+                        _               -> Nothing)
+         $ primNames
+
+        -- Build table of prim name to evaluator.
+        primTable
+         = zip primNames primEvals
+
+        -- Build the parser config.
+        config
+         = Config (\z -> Just z)
+                  (\z -> parsePrim primNamesText z)
+
+        -- Build repl state.
+        state
+         = State config primTable Nil
 
         case mSource of
          Just (TextLit path)
           -> case loadSource config path of
                  Nothing        -> writel "load failed"
-                 Just decls     -> repl config decls CmdNone
+                 Just decls     -> repl state CmdNone
 
          Nothing        
-          -> repl config Nil CmdNone
-
-
-makeParserConfig (u: Unit): Config Name Prim
- = do
-        primNames       
-         = mapMaybe 
-                -- TODO: find out why we need explicit type app,
-                -- as well as explicit type abs to set the tyvar order.
-                (\e -> case nameOfPrimEval [Text] [Prim] e of
-                        PrimOp n        -> Just n
-                        _               -> Nothing)
-         $ makePrimOps ()
-
-        Config  (\z -> Just z)
-                (\z -> if elem z primNames
-                        then Just (PrimOp z)
-                        else Nothing)
+          -> repl state CmdNone
 
 
 -- | Load a list of top-level declarations from a source file.
 loadSource 
         (config: Config Name Prim)
         (path:   TextLit)
-        : S File (Maybe (List (Decl Name Prim)))
+        :        S File (Maybe (List (Decl Name Prim)))
  = do   
         str     = file_read (takeTextLit path)
 
@@ -75,32 +124,12 @@ loadSource
          _ -> Nothing
 
 
-show_Unit: Show Unit
- = Show   $ λxx -> "()"
-
-pretty_Text: Pretty Text
- = Pretty $ λxx -> xx
-
--- TODO: need explicit run/box 
-getLine: S Console Text
- = box do   
-        txt     = run readl 2014
-        textOfCharList $ init Nil $ charListOfText txt        
-
-data Cmd where
-        CmdNone : Cmd
-        CmdStep : Exp Name Prim -> Cmd
-
-
 -- | Read-Eval-Print loop.
 --   TODO: need to put the explicit box.
 --
 --   TODO: closing stdin with control-D causes prompt to print infinitely.
 --
-repl    (config: Config Name Prim)
-        (decls:  List (Decl Name Prim))
-        (cmd:    Cmd)
-        : S Console Unit
+repl    (state: State) (cmd: Cmd): S Console Unit
  = box do   
         -- Write the prompt.
         write "> "
@@ -113,67 +142,62 @@ repl    (config: Config Name Prim)
          -- If only whitespace was provided then run the default command.
          T2 Nil  Nil    
           -> case cmd of
-                CmdNone         -> repl      config decls cmd
-                CmdStep xx      -> repl_step config decls xx
+                CmdNone         -> repl      state CmdNone
+                CmdStep xx      -> repl_step state xx
 
          -- We have some tokens, to parse them.
          T2 toks Nil    
-          ->    repl_toks config decls CmdNone toks
+          ->    repl_toks state CmdNone (append toks (Cons KEnd Nil))
 
          -- We couldn't lex all the characters into tokens.
          T2 _    cs   
           -> do writell "! lexical error."
-                repl config decls CmdNone
+                repl state CmdNone
 
 
 -- | Given some tokens, try to parse an expression and evaluate it.
 repl_toks 
-        (config: Config Name Prim)
-        (decls:  List (Decl Name Prim))
-        (cmd:    Cmd)
-        (toks:   List Token)
-        : S Console Unit
- = case parseExp config toks of
+        (state: State) (cmd: Cmd)
+        (toks:  List Token)
+        :       S Console Unit
+ = case parseExp (configOfState state) toks of
          Nothing
           -> do writell "! parse error."
-                repl config decls CmdNone
+                repl state CmdNone
 
          Just x
-          ->    repl_step config decls x
+          ->    repl_step state x
 
 
 -- | Given an expression,
 --   try to perform a single evaluation step.
 repl_step
-        (config: Config Name Prim)
-        (decls:  List (Decl Name Prim))
-        (xx:     Exp Name Prim)
-        : S Console Unit
- = case step' decls True xx of
+        (state: State)
+        (xx:    Exp Name Prim)
+        :       S Console Unit
+ = case step' state True xx of
         Left ResultError 
          -> do  writell "! runtime error."
-                repl config decls CmdNone
+                repl state CmdNone
 
         Left ResultDone
-         -> do  -- writell "! done."
-                repl config decls CmdNone
+         -> do  writell "! done."
+                repl state CmdNone
 
         Right x'
          -> do  -- writell "! step."
                 writell (ppr x')
-                repl config decls (CmdStep x')
+                repl state (CmdStep x')
 
 
 -- | Single step an expression.
-step'   (decls: List (Decl Name Prim))
+step'   (state: State)
         (red:   Bool)
         (xx:    Exp Name Prim)
-        : Either Result (Exp Name Prim)
+        :       Either Result (Exp Name Prim)
  = step (StepStrength red)
-        (StepContext
-                (evalPrim (\xp -> case step' decls red xp of
-                                        Left _    -> Nothing
-                                        Right xp' -> Just xp'))
-                decls)
+        (StepContext 
+                (primTableOfState state)
+                (declsOfState state))
          xx
 

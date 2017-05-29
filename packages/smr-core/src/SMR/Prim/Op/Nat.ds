@@ -6,6 +6,7 @@ where
 
 
 -- | Primitive evaluators for natural numbers.
+--   TODO: writing makePrimOpsNat (): List .. =   doesn't work.
 makePrimOpsNat (_ : Unit): List (PrimEval s Prim)
  = Cons (primOpNat1     "nat-neg" "natural negation"            (\a -> 0 - a))
  $ Cons (primOpNat2Nat  "nat-add" "natural addition"            add)
@@ -27,8 +28,8 @@ primOpNat1
         (fn:    Nat -> Nat)
         :       PrimEval s Prim
  =  PrimEval (PrimOp name) desc (Cons Val Nil) fn'
- where  fn' (Cons x1 Nil)
-         | Just n1      <- takeXNat x1
+ where  fn' as0
+         | Just (T2 n1 as1)     <- takeArgNat as0
          = Just $ makeXNat (fn n1)
         fn' _
          = Nothing
@@ -40,9 +41,9 @@ primOpNat2Nat
         (fn:    Nat -> Nat -> Nat)
         :       PrimEval s Prim
  =  PrimEval (PrimOp name) desc (Cons Val (Cons Val Nil)) fn'
- where  fn' (Cons x1 (Cons x2 Nil))
-         | Just n1      <- takeXNat x1
-         , Just n2      <- takeXNat x2
+ where  fn' as0
+         | Just (T2 n1 as1)     <- takeArgNat as0
+         , Just (T2 n2 Nil)     <- takeArgNat as1
          = Just $ makeXNat (fn n1 n2)
         fn' _
          = Nothing
@@ -54,21 +55,9 @@ primOpNat2Bool
         (fn:    Nat -> Nat -> Bool)
         :       PrimEval s Prim
  =  PrimEval (PrimOp name) desc (Cons Val (Cons Val Nil)) fn'
- where  fn' (Cons x1 (Cons x2 Nil))
-         | Just n1      <- takeXNat x1
-         , Just n2      <- takeXNat x2
+ where  fn' as0
+         | Just (T2 n1 as1)     <- takeArgNat as0
+         , Just (T2 n2 Nil)     <- takeArgNat as1
          = Just $ makeXBool (fn n1 n2)
         fn' _
          = Nothing
-
-
-takeXNat (xx: Exp s Prim): Maybe Nat
- = case xx of
-        XRef (RPrm (PrimLitNat n))      -> Just n
-        _                               -> Nothing
-
-makeXNat  (n: Nat): Exp s Prim
- = XRef (RPrm (PrimLitNat n))
-
-makeXBool (b: Bool): Exp s Prim
- = XRef (RPrm (PrimLitBool b))

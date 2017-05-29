@@ -1,20 +1,82 @@
 
 module SMR.Prim.Op.Base
 export
-{       nameOfPrimEval;
+{       prim_Eq;
+        makeXBool; takeXBool;   takeArgBool;
+        makeXNat;  takeXNat;    takeArgNat;
+        nameOfPrimEval;
         primEvalOp1; primEvalOp2
 }
 import  SMR.Core.Exp
 where
 
 
+---------------------------------------------------------------------------------------------------
 -- | Primitive values and operators.
 data Prim where        
         PrimOp          : Text          -> Prim
         PrimLitBool     : Bool          -> Prim
         PrimLitNat      : Nat           -> Prim
 
+prim_Eq: Eq Prim
+ =  Eq eq' neq'
+ where  
+        eq' p1 p2
+         = case T2 p1 p2 of
+                T2 (PrimOp t1)      (PrimOp t2)         -> t1 == t2
+                T2 (PrimLitBool b1) (PrimLitBool b2)    -> b1 == b2
+                T2 (PrimLitNat  n1) (PrimLitNat  n2)    -> n1 == n2
+                _                                       -> False
 
+        neq' p1 p2
+         = not $ eq' p1 p2
+
+
+-- Bool ---------------------------------------------------
+-- | Take a literal Bool from an expression.
+takeXBool (xx: Exp s Prim): Maybe Bool
+ = case xx of
+        XRef (RPrm (PrimLitBool b))     -> Just b
+        _                               -> Nothing
+
+-- | Make a literal Bool expression.
+makeXBool (b: Bool): Exp s Prim
+ = XRef (RPrm (PrimLitBool b))
+
+
+-- | Split a literal Bool from an argument list.
+takeArgBool
+        (xx:    List (Exp s Prim))
+        :       Maybe (Tup2 Nat (List (Exp s Prim)))
+ = case xx of
+        Cons (XRef (RPrm (PrimLitNat n))) xs
+          -> Just (T2 n xs)
+        _ -> Nothing
+
+
+-- Nat ----------------------------------------------------
+-- | Take a literal Nat from an expression.
+takeXNat (xx: Exp s Prim): Maybe Nat
+ = case xx of
+        XRef (RPrm (PrimLitNat n))      -> Just n
+        _                               -> Nothing
+
+-- | Make a literal Nat expression.
+makeXNat  (n: Nat): Exp s Prim
+ = XRef (RPrm (PrimLitNat n))
+
+
+-- | Split a literal Nat from an argument list.
+takeArgNat
+        (xx:    List (Exp s Prim))
+        :       Maybe (Tup2 Nat (List (Exp s Prim)))
+ = case xx of
+        Cons (XRef (RPrm (PrimLitNat n))) xs
+          -> Just (T2 n xs)
+        _ -> Nothing
+
+
+---------------------------------------------------------------------------------------------------
 -- | Argument passing method.
 data PrimArg where
         Val     : PrimArg       -- ^ Call-by-value.

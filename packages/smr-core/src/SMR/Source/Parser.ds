@@ -52,11 +52,15 @@ pDecl   (c: Config s p): Parser Token (Decl s p)
 
 
 -- Exp ------------------------------------------------------------------------
--- | Parse an expression from the given list of tokens.
+-- | Parse a complete expression from the given list of tokens.
 parseExp (c: Config s p) (ts: List Token): Maybe (Exp s p)
- = case parse (pExp c) ts of
+ = case parse pExpEnd ts of
         Nil               -> Nothing
         Cons (T2 xx _) _  -> Just xx
+ where  pExpEnd
+         = bind (pExp c)                                $ λ x ->
+           bind (satisfies (isToken KEnd))              $ λ kEnd ->
+           return x
 
 
 -- | Parse an expression.

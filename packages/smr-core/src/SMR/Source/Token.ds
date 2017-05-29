@@ -16,6 +16,8 @@ where
 -- | Tokens for lambda calculus language.
 --   TODO: Give all punc the same carrier.
 data Token where
+        KEnd    : Token                         -- ^ End-of-input.
+
         KBra    : Token                         -- ^ Open  Bracket '('
         KKet    : Token                         -- ^ Close Bracket ')'
 
@@ -53,6 +55,7 @@ eq_Token: Eq Token
  where  
         eq' t1 t2
          = case T2 t1 t2 of
+                T2 KEnd    KEnd         -> True
                 T2 KBra    KBra         -> True
                 T2 KKet    KKet         -> True
                 T2 KCBra   KCBra        -> True
@@ -100,6 +103,7 @@ eq_Space: Eq Space
 show_Token: Show Token
  =  Show $ \kk
  -> case kk of
+        KEnd            -> "KEnd"
         KBra            -> "KBra"
         KKet            -> "KKet"
         KCBra           -> "KCBra"
