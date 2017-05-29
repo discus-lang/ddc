@@ -69,3 +69,11 @@ matchPattern
  | otherwise
  = Nothing
 
+
+{-
+-- | Check if this is the name of a match primitive.
+isPrimNameMatch (tx: Text): Bool
+ | tx == "match"        = True          -- ^ match against a pattern
+ | tx == "o"            = True          -- ^ match wildcard
+ | otherwise            = False
+-}

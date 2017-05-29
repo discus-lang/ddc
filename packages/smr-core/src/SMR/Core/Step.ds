@@ -8,7 +8,7 @@ import SMR.Core.Meta
 import SMR.Core.Exp
 where
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | Evaluation strength.
 data StepStrength where
         StepStrength
@@ -31,7 +31,7 @@ data Result where
         ResultError : Result
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | Single step reduction.
 step    (str:   StepStrength)
         (ctx:   StepContext s p)
@@ -64,36 +64,30 @@ step    (str:   StepStrength)
         XApp x1 xs2
          -> case step (StepStrength False) ctx x1 of
                 -- Functional expression makes progress.
-                Right x1'
-                 -> Right $ XApp x1' xs2
+                Right x1'               -> Right $ XApp x1' xs2
 
                 -- Functional expression failed.
-                Left ResultError
-                 -> Left ResultError
+                Left ResultError        -> Left ResultError
 
                 -- Functional expression is done.
                 Left ResultDone
                  -- The function is a abstraction, so apply it.
                  |  XAbs ns11  x12      <- x1  
-                 -> stepAppAbs str ctx
-                        ns11 x12 xs2
-                        (length ns11) (length xs2)
+                 -> stepAppAbs str ctx ns11 x12 xs2 (length ns11) (length xs2)
 
                  -- Reduce arguments of applications.
                  |  otherwise
                  -> case step str ctx x1 of
-                        Right x1'
-                         -> Right $ XApp x1' xs2
+                        Right x1'          -> Right $ XApp x1' xs2
 
-                        Left ResultError 
-                         -> Left ResultError
+                        Left ResultError   -> Left ResultError
 
                         Left ResultDone
                          -> case stepFirst str ctx xs2 of
                                 Right xs2' -> Right (XApp x1 xs2')
                                 Left  r    -> Left r
 
-        -- Substitution train.
+        -- Substitution train
         XSub _ _
          -> case push xx of
                 Nothing  -> Left ResultDone
@@ -131,7 +125,6 @@ stepAppAbs
         Right   $ XApp  (simWrap snv x12) xs2_remain
 
 
--------------------------------------------------------------------------------
 -- | Step the first available expression in a list.
 stepFirst 
         (str:   StepStrength)           -- ^ Evaluation Strength.
@@ -146,14 +139,13 @@ stepFirst
          -> case step str ctx x of
                 Left ResultDone 
                  -> case stepFirst str ctx xs of
-                        Left  r         -> Left r
-                        Right xs'       -> Right $ Cons x xs'
+                        Left  r   -> Left r
+                        Right xs' -> Right $ Cons x xs'
 
-                Right x'
-                 -> Right $ Cons x' xs
+                Right x'          -> Right $ Cons x' xs
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | Push down any outermost substitution train to reveal the head constructor.
 push    (xx: Exp s p): Maybe (Exp s p)
  = case xx of
@@ -164,7 +156,7 @@ push    (xx: Exp s p): Maybe (Exp s p)
         XSub cs2 x2     -> pushTrain cs2 x2
 
 
--- | Push substitution down into expression to reveal the head constructor.
+-- | Push a substitution train down into an expression to reveal the head constructor.
 pushTrain
         (cs1:   List (Car s p))
         (x2:    Exp s p)

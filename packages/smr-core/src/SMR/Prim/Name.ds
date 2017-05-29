@@ -2,20 +2,12 @@
 module SMR.Prim.Name
 export 
 {       pretty_Prim;
-        prettyPrim; parsePrim
+        prettyPrim; parsePrim;
 }
-import SMR.Prim.Name.Nat
 import System.Posix.Stdlib
 import Class.Show
 import Class.Pretty
 where
-
-
--- | Primitive values and operators.
-data Prim where        
-        PrimOp          : Text          -> Prim
-        PrimLitBool     : Bool          -> Prim
-        PrimLitNat      : Nat           -> Prim
 
 
 -- | Pretty dictionary for primitives.
@@ -35,7 +27,10 @@ prettyPrim (pp: Prim): Text
 
 
 -- | Parse a primitive name, without the leading '#'.
-parsePrim (tx: Text): Maybe Prim
+parsePrim 
+        (ps:    List Text)      -- ^ Valid primitive names.
+        (tx:    Text)           -- ^ Text string to parse.
+        :       Maybe Prim
 
  -- Literal Bools.
  | tx == "true"         = Just $ PrimLitBool True
@@ -51,10 +46,9 @@ parsePrim (tx: Text): Maybe Prim
         Just nat        -> Just $ PrimLitNat nat
 
  -- Other primitives.
- | isPrimNameNat tx     = Just $ PrimOp tx
+ | elem tx ps           = Just $ PrimOp tx
 
  -- Unrecognized.
  | otherwise            = Nothing
-
 
 

@@ -1,0 +1,57 @@
+
+module SMR.Prim.Op.Base
+export
+{       nameOfPrimEval;
+        primEvalOp1; primEvalOp2
+}
+import  SMR.Core.Exp
+where
+
+
+-- | Primitive values and operators.
+data Prim where        
+        PrimOp          : Text          -> Prim
+        PrimLitBool     : Bool          -> Prim
+        PrimLitNat      : Nat           -> Prim
+
+
+-- | Argument passing method.
+data PrimArg where
+        Val     : PrimArg       -- ^ Call-by-value.
+        Exp     : PrimArg       -- ^ Call-by-name / unevaluated expression.
+
+
+-- | Primitive evaluator.
+data PrimEval (s p: Data) where
+        PrimEval 
+         :  p                   -- ^ Op name.
+         -> Text                -- ^ Op description.
+         -> List PrimArg        -- ^ Argument passing method.
+         -> (List (Exp s p) -> Maybe (Exp s p))
+                                -- ^ Evaluation function.
+         -> PrimEval s p
+
+
+-- | Get the name of a `PrimEval`.
+nameOfPrimEval [s p: Data] ((PrimEval name _ _ _): PrimEval s p): p
+ = name
+
+
+-- | Construct a primitive evaluator for a call-by-value arity-1 operator.
+primEvalOp1
+        (name:  p) (desc:  Text) (args:  List PrimArg) 
+        (fn:    List (Exp s p) -> Maybe (Exp s p))
+        :       PrimEval s p
+ = PrimEval name desc 
+        (Cons Val Nil) fn
+
+
+-- | Construct a primitive evaluator for a call-by-value arity-2 operator.
+primEvalOp2 
+        (name:  p) (desc:  Text) (args:  List PrimArg) 
+        (fn:    List (Exp s p) -> Maybe (Exp s p))
+        :       PrimEval s p
+ = PrimEval name desc 
+        (Cons Val (Cons Val Nil)) fn
+
+

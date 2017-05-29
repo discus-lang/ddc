@@ -6,7 +6,8 @@ module Main
 import SMR.Core.Exp
 import SMR.Core.Eval
 import SMR.Core.Step
-import SMR.Prim.Eval
+import SMR.Prim.Op
+import SMR.Prim.Name
 import SMR.Source.Pretty
 import SMR.Source.Token
 import SMR.Source.Parser
@@ -26,23 +27,39 @@ main ()
          $ Cons (ArgText "-i" "include file" (\s _ -> Just s))
          $ Nil
 
+        config  = makeParserConfig ()
+
         case mSource of
          Just (TextLit path)
-          -> case loadSource path of
+          -> case loadSource config path of
                  Nothing        -> writel "load failed"
-                 Just decls     -> repl decls CmdNone
+                 Just decls     -> repl config decls CmdNone
 
          Nothing        
-          -> repl Nil CmdNone
+          -> repl config Nil CmdNone
 
 
-parserConfig: Config Name Prim
- = Config (\z -> Just z) parsePrim
+makeParserConfig (u: Unit): Config Name Prim
+ = do
+        primNames       
+         = mapMaybe 
+                -- TODO: find out why we need explicit type app,
+                -- as well as explicit type abs to set the tyvar order.
+                (\e -> case nameOfPrimEval [Text] [Prim] e of
+                        PrimOp n        -> Just n
+                        _               -> Nothing)
+         $ makePrimOps ()
+
+        Config  (\z -> Just z)
+                (\z -> if elem z primNames
+                        then Just (PrimOp z)
+                        else Nothing)
 
 
 -- | Load a list of top-level declarations from a source file.
 loadSource 
-        (path: TextLit)
+        (config: Config Name Prim)
+        (path:   TextLit)
         : S File (Maybe (List (Decl Name Prim)))
  = do   
         str     = file_read (takeTextLit path)
@@ -51,7 +68,7 @@ loadSource
          T2 toks cs
           |  not $ all isSpace cs       -> Nothing
           |  otherwise
-          -> case parseDecls parserConfig toks of
+          -> case parseDecls config toks of
                 Nothing                 -> Nothing
                 Just ds'                -> Just ds'
 
@@ -80,8 +97,9 @@ data Cmd where
 --
 --   TODO: closing stdin with control-D causes prompt to print infinitely.
 --
-repl    (decls: List (Decl Name Prim))
-        (cmd:   Cmd)
+repl    (config: Config Name Prim)
+        (decls:  List (Decl Name Prim))
+        (cmd:    Cmd)
         : S Console Unit
  = box do   
         -- Write the prompt.
@@ -95,53 +113,55 @@ repl    (decls: List (Decl Name Prim))
          -- If only whitespace was provided then run the default command.
          T2 Nil  Nil    
           -> case cmd of
-                CmdNone         -> repl decls cmd
-                CmdStep xx      -> repl_step  decls xx
+                CmdNone         -> repl      config decls cmd
+                CmdStep xx      -> repl_step config decls xx
 
          -- We have some tokens, to parse them.
          T2 toks Nil    
-          ->    repl_toks decls CmdNone toks
+          ->    repl_toks config decls CmdNone toks
 
          -- We couldn't lex all the characters into tokens.
          T2 _    cs   
           -> do writell "! lexical error."
-                repl decls CmdNone
+                repl config decls CmdNone
 
 
 -- | Given some tokens, try to parse an expression and evaluate it.
 repl_toks 
-        (decls: List (Decl Name Prim))
-        (cmd:   Cmd)
-        (toks:  List Token)
+        (config: Config Name Prim)
+        (decls:  List (Decl Name Prim))
+        (cmd:    Cmd)
+        (toks:   List Token)
         : S Console Unit
- = case parseExp parserConfig toks of
+ = case parseExp config toks of
          Nothing
           -> do writell "! parse error."
-                repl decls CmdNone
+                repl config decls CmdNone
 
          Just x
-          ->    repl_step decls x
+          ->    repl_step config decls x
 
 
 -- | Given an expression,
 --   try to perform a single evaluation step.
 repl_step
-        (decls: List (Decl Name Prim))
-        (xx:    Exp Name Prim)
+        (config: Config Name Prim)
+        (decls:  List (Decl Name Prim))
+        (xx:     Exp Name Prim)
         : S Console Unit
  = case step' decls True xx of
         Left ResultError 
          -> do  writell "! runtime error."
-                repl decls CmdNone
+                repl config decls CmdNone
 
         Left ResultDone
          -> do  -- writell "! done."
-                repl decls CmdNone
+                repl config decls CmdNone
 
         Right x'
          -> do  -- writell "! step."
                 writell (ppr x')
-                repl decls (CmdStep x')
+                repl config decls (CmdStep x')
 
 
 -- | Single step an expression.

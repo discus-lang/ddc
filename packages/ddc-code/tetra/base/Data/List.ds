@@ -13,7 +13,7 @@ export
         elem;
         lookup; find;
         reverse;
-        map; mapS;
+        map; mapS; mapMaybe;
         for; forS;
         zip;
         zipWith; zipWithS;
@@ -254,6 +254,16 @@ mapS    (f: a -> S e b) (xx: List a): S e (List b)
  = case xx of
         Nil             -> Nil
         Cons x xs       -> Cons (f x) (mapS f xs)
+
+
+-- | Like map, but the worker doesn't always produce an element.
+mapMaybe (f: a -> Maybe b) (xx: List a): List b
+ = case xx of
+        Nil             -> Nil
+        Cons x xs     
+         -> case f x of
+                Nothing -> mapMaybe f xs 
+                Just x' -> Cons x' (mapMaybe f xs)
 
 
 -- | Apply a function to all elements of a list, yielding nothing.

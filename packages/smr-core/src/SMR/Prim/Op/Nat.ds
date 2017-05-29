@@ -1,0 +1,74 @@
+
+module SMR.Prim.Op.Nat
+export makePrimOpsNat
+import SMR.Prim.Op.Base
+where
+
+
+-- | Primitive evaluators for natural numbers.
+makePrimOpsNat (_ : Unit): List (PrimEval s Prim)
+ = Cons (primOpNat1     "nat-neg" "natural negation"            (\a -> 0 - a))
+ $ Cons (primOpNat2Nat  "nat-add" "natural addition"            add)
+ $ Cons (primOpNat2Nat  "nat-sub" "natural subtration"          sub)
+ $ Cons (primOpNat2Nat  "nat-mul" "natural multiplication"      mul)
+ $ Cons (primOpNat2Nat  "nat-div" "natural division"            div)
+ $ Cons (primOpNat2Bool "nat-eq"  "natural equality"            eq)
+ $ Cons (primOpNat2Bool "nat-neq" "natural negated equality"    neq)
+ $ Cons (primOpNat2Bool "nat-lt"  "natural less than"           lt)
+ $ Cons (primOpNat2Bool "nat-le"  "natural less than equal"     le)
+ $ Cons (primOpNat2Bool "nat-gt"  "natural greater than"        gt)
+ $ Cons (primOpNat2Bool "nat-ge"  "natural greather than equal" ge)
+ $ Nil
+
+
+-- | Construct an evaluator for a 1-arity nat operator
+primOpNat1
+        (name:  Text) (desc: Text)
+        (fn:    Nat -> Nat)
+        :       PrimEval s Prim
+ =  PrimEval (PrimOp name) desc (Cons Val Nil) fn'
+ where  fn' (Cons x1 Nil)
+         | Just n1      <- takeXNat x1
+         = Just $ makeXNat (fn n1)
+        fn' _
+         = Nothing
+
+
+-- | Construct an evaluator for a 2-arity nat operator returning nat.
+primOpNat2Nat
+        (name:  Text) (desc: Text)
+        (fn:    Nat -> Nat -> Nat)
+        :       PrimEval s Prim
+ =  PrimEval (PrimOp name) desc (Cons Val (Cons Val Nil)) fn'
+ where  fn' (Cons x1 (Cons x2 Nil))
+         | Just n1      <- takeXNat x1
+         , Just n2      <- takeXNat x2
+         = Just $ makeXNat (fn n1 n2)
+        fn' _
+         = Nothing
+
+
+-- | Construct an evaluator for a 2-arity nat operator returning bool.
+primOpNat2Bool
+        (name:  Text) (desc: Text)
+        (fn:    Nat -> Nat -> Bool)
+        :       PrimEval s Prim
+ =  PrimEval (PrimOp name) desc (Cons Val (Cons Val Nil)) fn'
+ where  fn' (Cons x1 (Cons x2 Nil))
+         | Just n1      <- takeXNat x1
+         , Just n2      <- takeXNat x2
+         = Just $ makeXBool (fn n1 n2)
+        fn' _
+         = Nothing
+
+
+takeXNat (xx: Exp s Prim): Maybe Nat
+ = case xx of
+        XRef (RPrm (PrimLitNat n))      -> Just n
+        _                               -> Nothing
+
+makeXNat  (n: Nat): Exp s Prim
+ = XRef (RPrm (PrimLitNat n))
+
+makeXBool (b: Bool): Exp s Prim
+ = XRef (RPrm (PrimLitBool b))

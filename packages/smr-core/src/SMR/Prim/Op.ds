@@ -1,9 +1,18 @@
 
-module SMR.Prim.Eval
-export evalPrim
-import SMR.Prim.Name
+module SMR.Prim.Op
+export 
+{       makePrimOps;
+        evalPrim
+}
+import SMR.Prim.Op.Nat
 import Data.Maybe
 where
+
+
+-- | Make a list of primitive operator evaluators.
+makePrimOps (_: Unit): List (PrimEval s Prim)
+ = append (makePrimOpsNat ())
+ $ Nil
 
 
 -- | Evaluate a primitive application.

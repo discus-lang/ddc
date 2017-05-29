@@ -27,3 +27,14 @@ evalPrimList
 
  | otherwise
  = Nothing
+
+
+{-
+-- | Check if this is the name of a list primitive.
+isPrimNameList (tx: Text): Bool
+ | tx == "list-nil"     = True          -- ^ empty list
+ | tx == "list-cons"    = True          -- ^ construct a list
+ | tx == "list-case"    = True          -- ^ case match on a list
+ | otherwise            = False
+-}
+

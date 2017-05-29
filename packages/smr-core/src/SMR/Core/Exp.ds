@@ -12,13 +12,13 @@ import Data.Tuple
 where
 
 
--- Name -----------------------------------------------------------------------
--- | Represent names as text.
+
+
+-- Name, Ref --------------------------------------------------------------------------------------
+-- | Generic names for things.
 type Name = Text
 
-
--- Ref ------------------------------------------------------------------------
--- | Reference to an external thing.
+-- | Reference to some thing that is not a regular variable.
 data Ref (s p: Data) where
         -- Uninterpreted symbol.
         RSym    : s     -> Ref s p
@@ -42,7 +42,7 @@ show_Ref {Show s} {Show p}: Show (Ref s p)
         RPrm    p       -> parens $ "RPrm"      %% show p
 
 
--- Decl -----------------------------------------------------------------------
+-- Decl -------------------------------------------------------------------------------------------
 -- | Top-level declaration.
 data Decl (s p: Data) where
         DTerm   : Name -> Exp s p -> Decl s p
@@ -68,7 +68,7 @@ show_Decl {Show s} {Show p}: Show (Decl s p)
          -> parens $ "DTerm"    %% show n %% show x
 
 
--- Exp ------------------------------------------------------------------------
+-- Exp --------------------------------------------------------------------------------------------
 -- | Generic expression language.
 data Exp (s p: Data) where
         -- Reference to an external thing.
@@ -112,7 +112,7 @@ show_Car {Show s} {Show p}: Show (Car s p)
         CUps ups        -> parens $ "CUps" %% show ups
 
 
--- Ups ------------------------------------------------------------------------
+-- Ups --------------------------------------------------------------------------------------------
 -- | Lifting indicator maps name of variable and depth to level to lift.
 data Ups where
         -- In the list the first element has priority.
@@ -128,7 +128,7 @@ show_Ups: Show Ups
         UUps ts -> parens $ "UUps" %% show ts
 
 
--- Snv ------------------------------------------------------------------------
+-- Snv --------------------------------------------------------------------------------------------
 -- | Explicit substitution maps name and depth to expression.
 --   This is a simultaneous substitution, so later bindings
 --   do not apply to the bodies of earlier ones.
@@ -149,7 +149,7 @@ show_SSnv {Show s} {Show p}: Show (Snv s p)
 --  | otherwise    = XSnv snv xx
 
 
--- Compounds ------------------------------------------------------------------
+-- Compounds --------------------------------------------------------------------------------------
 makeXAbs (ns: List Name) (xBody: Exp s p): Exp s p
  | null ns      = xBody
  | otherwise    = XAbs ns xBody

@@ -60,3 +60,13 @@ evalPrimBool2 (p: PrimBool) (b1 b2: Bool): Maybe Prim
         PrimBoolOr      -> Just (PrimBool (PrimBoolVal (or  b1 b2)))
         _               -> Nothing
 
+{-
+-- | Check if this is the name of a Bool primitive.
+isPrimNameBool (tx: Text): Bool
+ | tx == "not"          = True          -- ^ negation
+ | tx == "and"          = True          -- ^ boolean and
+ | tx == "or"           = True          -- ^ boolean or
+ | tx == "if"           = True          -- ^ boolean if
+ | otherwise            = False
+-}
+
