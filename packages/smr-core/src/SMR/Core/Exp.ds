@@ -12,8 +12,6 @@ import Data.Tuple
 where
 
 
-
-
 -- Name, Ref --------------------------------------------------------------------------------------
 -- | Generic names for things.
 type Name = Text

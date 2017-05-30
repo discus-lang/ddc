@@ -1,8 +1,7 @@
 
 module SMR.Source.Parser
 export
-{       parseDecls; pDecls; pDecl;
-        parseExp;   pExp;   pExpApp; pExpAtom;
+{       parseDecls; parseExp;
 }
 import SMR.Source.Lexer
 import SMR.Core.Exp
@@ -67,14 +66,22 @@ parseExp (c: Config s p) (ts: List Token): Maybe (Exp s p)
            return x
 
 
--- | Parse an expression.
+-- | Parser for an expression.
 pExp     (c: Config s p): Parser Token (Exp s p)
- = alt  (bind   (pPunc '\\')                            $ λ kLam        -> 
+ =      -- Abstraction.
+   alt  (bind   (pPunc '\\')                            $ λ kLam        -> 
          bind   (some (pName SVar))                     $ λ nsParam     ->
          bind   (pPunc '.')                             $ λ kDot        ->
          bind   (pExp c)                                $ λ xBody       ->
          return (XAbs nsParam xBody))
 
+        -- Substitution train.
+ $ alt  (bind   (pTrain c)                              $ λ csTrain     ->
+         bind   (pPunc '.')                             $ λ kDot        ->
+         bind   (pExp  c)                               $ λ xBody       ->
+         return (XSub (reverse csTrain) xBody))
+
+        -- Application using '$'
  $      (bind   (pExpApp c)                             $ λ xHead       -> 
          alt    (bind   (pPunc '$')                     $ λ kDollar     ->
                  bind   (pExp c)                        $ λ xRest       -> 
@@ -82,22 +89,15 @@ pExp     (c: Config s p): Parser Token (Exp s p)
 
                 (return xHead))
 
--- | Parse an application.
+-- | Parser for an application.
 pExpApp (c: Config s p): Parser Token (Exp s p)
- = alt  (bind   (pExpAtom c)                            $ λ xFun   ->
+ =      -- Application.
+        (bind   (pExpAtom c)                            $ λ xFun   ->
          bind   (some (pExpAtom c))                     $ λ xsArgs ->
          return (makeXApps xFun xsArgs))
 
- $ alt  (bind   pUps                                    $ λ uUps   ->
-         bind   (pExpApp c)                             $ λ xArg   ->
-         return (XSub (Cons (CUps uUps) Nil) xArg))
 
-        (bind   (pSnv c)                                $ λ uSnv   ->
-         bind   (pExpApp c)                             $ λ xArg   ->
-         return (XSub (Cons (CSim uSnv) Nil) xArg))
-
-
--- | Parse an atomic expression.
+-- | Parser for an atomic expression.
 pExpAtom (c: Config s p): Parser Token (Exp s p)
  = alt  (bind   (pPunc '(')                             $ λ xBra   ->
          bind   (pExp c)                                $ λ xx     ->
@@ -129,7 +129,29 @@ pExpAtom (c: Config s p): Parser Token (Exp s p)
           Nothing       -> zero)
 
 
--- | Parse a snv.
+-- Train ----------------------------------------------------------------------
+-- | Parser for a substitution train.
+--   The cars are produced in reverse order.
+pTrain  (c: Config s p): Parser Token (List (Car s p))
+ = alt  (bind   (pTrainCar c)                           $ λ cCar   ->
+         bind   (pTrain    c)                           $ λ csCar  ->
+         return (Cons cCar csCar))
+
+        (return Nil)
+
+
+pTrainCar (c: Config s p): Parser Token (Car s p)
+ = alt  -- Substitution.
+        (bind   (pSnv c)                                $ λ uSnv   -> 
+         return (CSim uSnv))
+
+        -- Ups.
+        (bind    pUps                                   $ λ uUps   ->
+         return (CUps uUps))
+
+
+-- Snv ------------------------------------------------------------------------
+-- | Parser for a substitution environment.
 --   Snv   ::= '[' Bind*, ']'
 pSnv    (c: Config s p)
         : Parser Token (Snv s p)
@@ -139,7 +161,7 @@ pSnv    (c: Config s p)
    return (SSnv (reverse bs))
 
 
--- | Parse a bind.
+-- | Parser for a binding.
 --   
 --   Bind ::= Name '=' Exp
 --         |  Name '^' Nat '=' Exp
@@ -158,7 +180,9 @@ pBind   (c: Config s p)
           return (T2 (T2 name nDepth) x)))
 
 
--- | Parse an ups.
+-- Ups ------------------------------------------------------------------------
+-- | Parser for an ups.
+--
 --   Ups  ::= '{' Bump*, '}'
 pUps: Parser Token Ups
  = bind (pPunc '{')                                     $ \x1   -> 
@@ -167,7 +191,7 @@ pUps: Parser Token Ups
    return (UUps (reverse bs))
 
 
--- | Parse a bump.
+-- | Parser for a bump.
 --   
 --   Bump ::= Name '=' Nat
 --         |  Name '^' Nat '=' Nat
@@ -186,25 +210,25 @@ pBump: Parser Token (Tup2 (Tup2 Name Nat) Nat)
 
 
 -------------------------------------------------------------------------------
--- | Parse the end of input token.
+-- | Parser for the end of input token.
 pEnd: Parser Token Unit
  =  bind (satisfies (isToken KEnd))     $ λk
  -> return ()
 
 
--- | Parse a natural number.
+-- | Parser for a natural number.
 pNat: Parser Token Nat
  =  bind (from takeNatOfToken) $ λn
  -> return n
 
 
--- | Parse a punctuation character.
+-- | Parser for a punctuation character.
 pPunc (c: Char): Parser Token Unit
  =  bind (satisfies (isToken (KPunc c))) $ λk
  -> return ()
 
 
--- | Parse a name in the given space
+-- | Parser for a name in the given space
 pName (s: Space): Parser Token Name
  = from (takeNameOfToken s)
 

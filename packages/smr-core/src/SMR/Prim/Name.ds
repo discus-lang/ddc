@@ -9,7 +9,6 @@ import Class.Show
 import Class.Pretty
 where
 
--- TODO: Shift into Prim.Name.
 
 -- | Pretty dictionary for primitives.
 pretty_Prim: Pretty Prim

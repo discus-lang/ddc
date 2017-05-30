@@ -111,3 +111,4 @@ takeNatOfToken (kk: Token): Maybe Nat
  = case kk of
         KNat n          -> Just n
         _               -> Nothing
+
