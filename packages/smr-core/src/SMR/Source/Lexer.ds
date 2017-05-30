@@ -32,8 +32,8 @@ lexToken (xx: List Char)
         | c == '\t'     -> lexToken xs
 
         -- Punctuation.
-        |  Just tok     <- lexPunc1 c
-        -> Just (T2 tok xs)
+        |  isCharPunc c
+        -> Just (T2 (KPunc c) xs)
 
         -- Variable name.
         -- TODO: Inlining takeSpace into the guard causes an LLVM dominator error.
@@ -62,23 +62,23 @@ takeSpace (c: Char) (cs: List Char)
  | otherwise    = Nothing
 
 
--- | Lex a punctuation character.
-lexPunc1 (c: Char): Maybe Token
- | c == '('     = Just KBra
- | c == ')'     = Just KKet
- | c == '{'     = Just KCBra
- | c == '}'     = Just KCKet
- | c == '['     = Just KSBra
- | c == ']'     = Just KSKet
- | c == '\\'    = Just KLambda
- | c == '.'     = Just KDot
- | c == ';'     = Just KSemi
- | c == ','     = Just KComma
- | c == ':'     = Just KColon
- | c == '^'     = Just KHat
- | c == '='     = Just KEquals
- | c == '$'     = Just KDollar
- | otherwise    = Nothing
+-- | Check if this is a punctuation character.
+isCharPunc (c: Char): Bool
+ | c == '('     = True
+ | c == ')'     = True
+ | c == '{'     = True
+ | c == '}'     = True
+ | c == '['     = True
+ | c == ']'     = True
+ | c == '^'     = True
+ | c == ','     = True
+ | c == ':'     = True
+ | c == '\\'    = True
+ | c == '.'     = True
+ | c == ';'     = True
+ | c == '='     = True
+ | c == '$'     = True
+ | otherwise    = False
 
 
 -- | Lex a variable name.

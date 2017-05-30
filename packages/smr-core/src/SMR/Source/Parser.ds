@@ -35,7 +35,7 @@ parseDecls
         Cons (T2 xx _) _  -> Just xx
  where  pDeclsEnd 
          = bind (pDecls c)                              $ λ ds      ->
-           bind (satisfies (isToken KEnd))              $ λ kEnd    ->
+           bind (pEnd)                                  $ λ kEnd    ->
            return ds
 
 
@@ -45,11 +45,11 @@ pDecls  (c: Config s p): Parser Token (List (Decl s p))
 
 
 pDecl   (c: Config s p): Parser Token (Decl s p)
- =      (bind   (from (takeNameOfToken SMac))           $ λ nDecl   -> 
-         bind   (some (from (takeNameOfToken SVar)))    $ λ nsParam ->
-         bind   (satisfies (isToken KEquals))           $ λ kEq     -> 
+ =      (bind   (pName SMac)                            $ λ nDecl   -> 
+         bind   (some (pName SVar))                     $ λ nsParam ->
+         bind   (pPunc '=')                             $ λ kEq     -> 
          bind   (pExp c)                                $ λ xBody   ->
-         bind   (satisfies (isToken KSemi))             $ λ kSemi   ->
+         bind   (pPunc ';')                             $ λ kSemi   ->
           (if length nsParam == 0
             then return (DTerm nDecl xBody)
             else return (DTerm nDecl $ XAbs nsParam xBody)))
@@ -63,20 +63,20 @@ parseExp (c: Config s p) (ts: List Token): Maybe (Exp s p)
         Cons (T2 xx _) _  -> Just xx
  where  pExpEnd
          = bind (pExp c)                                $ λ x ->
-           bind (satisfies (isToken KEnd))              $ λ kEnd ->
+           bind (pEnd)                                  $ λ kEnd ->
            return x
 
 
 -- | Parse an expression.
 pExp     (c: Config s p): Parser Token (Exp s p)
- = alt  (bind   (satisfies (isToken KLambda))           $ λ kLam        -> 
-         bind   (some (from (takeNameOfToken SVar)))    $ λ nsParam     ->
-         bind   (satisfies (isToken KDot))              $ λ kDot        ->
+ = alt  (bind   (pPunc '\\')                            $ λ kLam        -> 
+         bind   (some (pName SVar))                     $ λ nsParam     ->
+         bind   (pPunc '.')                             $ λ kDot        ->
          bind   (pExp c)                                $ λ xBody       ->
          return (XAbs nsParam xBody))
 
  $      (bind   (pExpApp c)                             $ λ xHead       -> 
-         alt    (bind   (satisfies (isToken KDollar))   $ λ kDollar     ->
+         alt    (bind   (pPunc '$')                     $ λ kDollar     ->
                  bind   (pExp c)                        $ λ xRest       -> 
                  return (XApp xHead (Cons xRest Nil)))
 
@@ -99,31 +99,31 @@ pExpApp (c: Config s p): Parser Token (Exp s p)
 
 -- | Parse an atomic expression.
 pExpAtom (c: Config s p): Parser Token (Exp s p)
- = alt  (bind   (satisfies (isToken KBra))              $ λ xBra   ->
+ = alt  (bind   (pPunc '(')                             $ λ xBra   ->
          bind   (pExp c)                                $ λ xx     ->
-         bind   (satisfies (isToken KKet))              $ λ xKet   ->
+         bind   (pPunc ')')                             $ λ xKet   ->
          return xx)
 
- $ alt  (bind   (from (takeNameOfToken SVar))           $ λ n      ->
-        (bind   (satisfies (isToken KHat))              $ λ xHat   ->
+ $ alt  (bind   (pName SVar)                            $ λ n      ->
+        (bind   (pPunc '^')                             $ λ xHat   ->
         (bind   pNat                                    $ λ i      ->
          return (XVar n i))))
 
- $ alt  (bind   (from (takeNameOfToken SVar))           $ λ n      ->
+ $ alt  (bind   (pName SVar)                            $ λ n      ->
          return (XVar n 0))
 
- $ alt  (bind   (from (takeNameOfToken SMac))           $ λ n      ->
+ $ alt  (bind   (pName SMac)                            $ λ n      ->
          return (XRef (RMac n)))
 
- $ alt  (bind   (from (takeNameOfToken SSet))           $ λ n      -> 
+ $ alt  (bind   (pName SSet)                            $ λ n      -> 
          return (XRef (RSet n)))
 
- $ alt  (bind   (from (takeNameOfToken SSym))           $ λ n      -> 
+ $ alt  (bind   (pName SSym)                            $ λ n      -> 
          case configSym  c n of
           Just s        -> return (XRef (RSym  s))
           Nothing       -> zero)
 
- $      (bind   (from (takeNameOfToken SPrm))           $ λ n      -> 
+ $      (bind   (pName SPrm)                            $ λ n      -> 
          case configPrim c n of
           Just p        -> return (XRef (RPrm  p))
           Nothing       -> zero)
@@ -133,9 +133,9 @@ pExpAtom (c: Config s p): Parser Token (Exp s p)
 --   Snv   ::= '[' Bind*, ']'
 pSnv    (c: Config s p)
         : Parser Token (Snv s p)
- = bind (satisfies    (isToken KSBra))                  $ \x1   -> 
-   bind (sepBy  (pBind c) (satisfies (isToken KComma))) $ \bs   ->
-   bind (satisfies    (isToken KSKet))                  $ \x2   ->
+ = bind (pPunc '[')                                     $ \x1   -> 
+   bind (sepBy  (pBind c) (pPunc ','))                  $ \bs   ->
+   bind (pPunc ']')                                     $ \x2   ->
    return (SSnv (reverse bs))
 
 
@@ -147,13 +147,13 @@ pSnv    (c: Config s p)
 pBind   (c: Config s p)
         : Parser Token (Tup2 (Tup2 Name Nat) (Exp s p))
  = bind (from (takeNameOfToken SVar)) $ λ name ->
-   (alt  (bind (satisfies (isToken KEquals))            $ \xColon ->
+   (alt  (bind (pPunc '=')                              $ \xColon ->
           bind (pExp c)                                 $ \x      ->
           return (T2 (T2 name 0) x))
 
-         (bind (satisfies (isToken KHat))               $ \xHat   ->
+         (bind (pPunc '^')                              $ \xHat   ->
           bind pNat                                     $ \nDepth ->
-          bind (satisfies (isToken KEquals))            $ \xColon ->
+          bind (pPunc '=')                              $ \xColon ->
           bind (pExp c)                                 $ \x      ->
           return (T2 (T2 name nDepth) x)))
 
@@ -161,9 +161,9 @@ pBind   (c: Config s p)
 -- | Parse an ups.
 --   Ups  ::= '{' Bump*, '}'
 pUps: Parser Token Ups
- = bind (satisfies    (isToken KCBra))                  $ \x1   -> 
-   bind (sepBy  pBump (satisfies (isToken KComma)))     $ \bs   ->
-   bind (satisfies    (isToken KCKet))                  $ \x2   ->
+ = bind (pPunc '{')                                     $ \x1   -> 
+   bind (sepBy  pBump (pPunc ','))                      $ \bs   ->
+   bind (pPunc '}')                                     $ \x2   ->
    return (UUps (reverse bs))
 
 
@@ -173,20 +173,38 @@ pUps: Parser Token Ups
 --         |  Name '^' Nat '=' Nat
 --
 pBump: Parser Token (Tup2 (Tup2 Name Nat) Nat)
- = bind (from (takeNameOfToken SVar)) $ λ name ->
-   (alt  (bind (satisfies (isToken KColon))             $ \xColon ->
+ = bind (pName SVar)                                    $ λ name ->
+   (alt  (bind (pPunc ':')                              $ \xColon ->
           bind pNat                                     $ \nBump  ->
           return (T2 (T2 name 0) nBump))
 
-         (bind (satisfies (isToken KHat))               $ \xHat   ->
+         (bind (pPunc '^')                              $ \xHat   ->
           bind pNat                                     $ \nDepth ->
-          bind (satisfies (isToken KColon))             $ \xColon ->
+          bind (pPunc ':')                              $ \xColon ->
           bind pNat                                     $ \nBump  ->
           return (T2 (T2 name nDepth) nBump)))
+
+
+-------------------------------------------------------------------------------
+-- | Parse the end of input token.
+pEnd: Parser Token Unit
+ =  bind (satisfies (isToken KEnd))     $ λk
+ -> return ()
 
 
 -- | Parse a natural number.
 pNat: Parser Token Nat
  =  bind (from takeNatOfToken) $ λn
  -> return n
+
+
+-- | Parse a punctuation character.
+pPunc (c: Char): Parser Token Unit
+ =  bind (satisfies (isToken (KPunc c))) $ λk
+ -> return ()
+
+
+-- | Parse a name in the given space
+pName (s: Space): Parser Token Name
+ = from (takeNameOfToken s)
 

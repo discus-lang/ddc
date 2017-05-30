@@ -63,3 +63,4 @@ subst   (n:  Name)              -- ^ Name of variable to lift references ot.
 
         XRef _          -> xx
         _               -> xx
+

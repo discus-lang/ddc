@@ -3,7 +3,7 @@ module SMR.Source.Token
 export
 {       eq_Token; show_Token;
         eq_Space; show_Space;
-        isToken;
+        isToken;  isKPunc;
         takeNameOfToken;
         takeNatOfToken;
 }
@@ -13,30 +13,10 @@ import Data.Maybe
 where
 
 
--- | Tokens for lambda calculus language.
---   TODO: Give all punc the same carrier.
+-- | Tokens for for the source language.
 data Token where
         KEnd    : Token                         -- ^ End-of-input.
-
-        KBra    : Token                         -- ^ Open  Bracket '('
-        KKet    : Token                         -- ^ Close Bracket ')'
-
-        KCBra   : Token                         -- ^ Curly Braket  '{'
-        KCKet   : Token                         -- ^ Curly Bracket '}'
-
-        KSBra   : Token                         -- ^ Square Braket  '['
-        KSKet   : Token                         -- ^ Square Bracket ']'
-
-        KHat    : Token                         -- ^ Hat           '^'
-        KComma  : Token                         -- ^ Comma         ','
-        KColon  : Token                         -- ^ Colon         ':'
-
-        KLambda : Token                         -- ^ Lambda symbol '\'
-        KDot    : Token                         -- ^ Dot symbol    '.'
-        KSemi   : Token                         -- ^ Semicolon     ';'
-        KEquals : Token                         -- ^ Equals        '='
-        KDollar : Token                         -- ^ Dollar        '$'
-
+        KPunc   : Char  -> Token                -- ^ Punctuation character.
         KName   : Space -> Name -> Token        -- ^ A scoped name.
         KNat    : Nat   -> Token                -- ^ A natural number.
 
@@ -56,29 +36,11 @@ eq_Token: Eq Token
  where  
         eq' t1 t2
          = case T2 t1 t2 of
-                T2 KEnd    KEnd         -> True
-                T2 KBra    KBra         -> True
-                T2 KKet    KKet         -> True
-                T2 KCBra   KCBra        -> True
-                T2 KCKet   KCKet        -> True
-                T2 KSBra   KSBra        -> True
-                T2 KSKet   KSKet        -> True
-                T2 KHat    KHat         -> True
-                T2 KComma  KComma       -> True
-                T2 KColon  KColon       -> True
-                T2 KLambda KLambda      -> True
-                T2 KDot    KDot         -> True
-                T2 KSemi   KSemi        -> True
-                T2 KEquals KEquals      -> True
-                T2 KDollar KDollar      -> True
-
-                T2 (KName s1 n1) (KName s2 n2)
-                 -> s1 == s2 ∧ n1 == n2
-
-                T2 (KNat n1) (KNat n2)
-                 -> n1 == n2
-
-                _                       -> False
+                T2 KEnd    KEnd                 -> True
+                T2 (KPunc c1) (KPunc c2)        -> c1 == c2
+                T2 (KName s1 n1) (KName s2 n2)  -> s1 == s2 ∧ n1 == n2
+                T2 (KNat n1) (KNat n2)          -> n1 == n2
+                _                               -> False
 
         neq' t1 t2
          = not (eq' t1 t2)
@@ -106,20 +68,7 @@ show_Token: Show Token
  =  Show $ \kk
  -> case kk of
         KEnd            -> "KEnd"
-        KBra            -> "KBra"
-        KKet            -> "KKet"
-        KCBra           -> "KCBra"
-        KCKet           -> "KCKet"
-        KSBra           -> "KSBra"
-        KSKet           -> "KSKet"
-        KHat            -> "KHat"
-        KComma          -> "KComma"
-        KColon          -> "KColon"
-        KLambda         -> "KLambda"
-        KDot            -> "KDot"
-        KSemi           -> "KSemi"
-        KEquals         -> "KEquals"
-        KDollar         -> "KDollar"
+        KPunc c         -> parens $ "KPunc" %% show (textOfChar c)
         KName s n       -> parens $ "KName" %% show s %% show n
         KNat  n         -> parens $ "KNat"  %% show n
 
@@ -138,6 +87,13 @@ show_Space: Show Space
 -- | Check if a token is equal to the give none.
 isToken (k1: Token): Token -> Bool
  = \k2 -> k1 == k2
+
+
+-- | Check is token is punctuation using the given character.
+isKPunc (c: Char) (k: Token): Bool
+ = case k of
+        KPunc c' -> c == c'
+        _        -> False
 
 
 -- | Take the name from a token, if any.
