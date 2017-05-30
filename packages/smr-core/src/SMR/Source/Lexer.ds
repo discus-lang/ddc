@@ -31,6 +31,10 @@ lexToken (xx: List Char)
         | c == '\n'     -> lexToken xs
         | c == '\t'     -> lexToken xs
 
+        -- Skip comments
+        |  c == '!'
+        -> lexToken (dropWhile (\x -> x /= '\n') xs)
+
         -- Punctuation.
         |  isCharPunc c
         -> Just (T2 (KPunc c) xs)

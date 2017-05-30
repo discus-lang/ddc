@@ -124,6 +124,10 @@ loadSource
 --
 --   TODO: closing stdin with control-D causes prompt to print infinitely.
 --
+--   TODO: suspect that tail call opt isn't working so that every intermediate
+--   expression is retained in the state. We could store the expression
+--   in a ref to hack around this.
+--
 repl    (state: State) (cmd: Cmd): S Console Unit
  = box do   
         -- Write the prompt.

@@ -151,21 +151,21 @@ stepAppAbs
  -- Saturated application.
  | args == arity
  = do   snv             = snvOfNamesArgs ns11 xs2
-        Right   $ simWrap snv x12
+        Right   $ snvApply False snv x12
 
  -- Under application.
  | args < arity
  = do   ns11_sat        = take args ns11
         ns11_remain     = drop args ns11
         snv             = snvOfNamesArgs ns11_sat xs2
-        Right   $ simWrap snv $ XAbs ns11_remain $ x12
+        Right   $ snvApply False snv $ XAbs ns11_remain $ x12
 
  -- Over application.
  | otherwise
  = do   xs2_sat         = take arity xs2
         xs2_remain      = drop arity xs2
         snv             = snvOfNamesArgs ns11 xs2_sat
-        Right   $ XApp  (simWrap snv x12) xs2_remain
+        Right   $ XApp  (snvApply False snv x12) xs2_remain
 
 
 ---------------------------------------------------------------------------------------------------
@@ -240,17 +240,17 @@ pushTrain
 
         -- Apply the train to a variable.
         XVar name depth
-         -> Just $ trainApply cs1 name depth
+         -> Just $ trainApplyVar cs1 name depth
 
         -- Push train into both sides of an application.
         XApp x21 xs22
-         -> Just $ XApp (trainWrap cs1 x21) (map (trainWrap cs1) xs22)
+         -> Just $ XApp (trainApply cs1 x21) (map (trainApply cs1) xs22)
 
         -- Push train under abstraction.
         XAbs ns21 x22
-         -> Just $ XAbs ns21 (trainWrap (trainBump ns21 cs1) x22)
+         -> Just $ XAbs ns21 (trainApply (trainBump ns21 cs1) x22)
 
         -- Combine trains.
         XSub cs2 x22
-         -> Just $ trainWrap (append cs2 cs1) x22
+         -> Just $ trainApply (append cs2 cs1) x22
 

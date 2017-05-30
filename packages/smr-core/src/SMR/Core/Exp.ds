@@ -110,22 +110,6 @@ show_Car {Show s} {Show p}: Show (Car s p)
         CUps ups        -> parens $ "CUps" %% show ups
 
 
--- Ups --------------------------------------------------------------------------------------------
--- | Lifting indicator maps name of variable and depth to level to lift.
-data Ups where
-        -- In the list the first element has priority.
-        UUps    : List UpsBump -> Ups
-
-type UpsBump       
-        = Tup2 (Tup2 Name Nat) Nat
-
-
-show_Ups: Show Ups
- =  Show $ λus
- -> case us of
-        UUps ts -> parens $ "UUps" %% show ts
-
-
 -- Snv --------------------------------------------------------------------------------------------
 -- | Explicit substitution maps name and depth to expression.
 --   This is a simultaneous substitution, so later bindings
@@ -140,11 +124,27 @@ show_SSnv {Show s} {Show p}: Show (Snv s p)
         SSnv ts -> parens $ "SSnv" %% show ts
 
 
--- -- | Make an appliction of an explicit substitution applied to an expression,
--- --   or just yield the expression if the substitution is empty.
--- makeXSnv (snv@(SSnv bs): Snv s p) (xx: Exp s p): Exp s p
---  | null bs      = xx
---  | otherwise    = XSnv snv xx
+-- TODO: precompute list of free variables for each binding,
+-- so that we can trim trains when we hit them.
+-- needed for rec subst, but also nice to have for sim subst.
+-- allows us to compress trains easilly.
+
+
+
+-- Ups --------------------------------------------------------------------------------------------
+-- | Lifting indicator maps name of variable and depth to level to lift.
+data Ups where
+        -- In the list the first element has priority.
+        UUps    : List UpsBump -> Ups
+
+type UpsBump       
+        = Tup2 (Tup2 Name Nat) Nat
+
+
+show_Ups: Show Ups
+ =  Show $ λus
+ -> case us of
+        UUps ts -> parens $ "UUps" %% show ts
 
 
 -- Compounds --------------------------------------------------------------------------------------

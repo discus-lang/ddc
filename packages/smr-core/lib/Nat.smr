@@ -1,11 +1,7 @@
 
-@nat-fac-leak n
- = #bool-if 
-        (#nat-eq n #nat'0)
-        #nat'1
-        (#nat-mul n (@nat-fac-leak (#nat-sub n #nat'1)));
+! Demo functions on natural numbers.
 
-
+! Factorial where recursion is expressed at the meta-level using macros.
 @nat-fac n
  = @nat-fac-loop #nat'1 n;
 
@@ -17,16 +13,27 @@
          #seq (#nat-sub n #nat'1) $ \n'.
          @nat-fac-loop acc' n');
 
+
+! Leaky version of the above factorial program.
+!   This function has a space leak because we haven't forced evaluation of
+!   the loop counter. With call-by-name evaluation the unevaluated
+!   subtractions and substitutions into that expression are not demanded
+!   until the very end of the recursion.
+@nat-fac-leak n
+ = #bool-if 
+        (#nat-eq n #nat'0)
+        #nat'1
+        (#nat-mul n (@nat-fac-leak (#nat-sub n #nat'1)));
+
+
+! Factorial where recursion is expressed via a recursive substitution.
 @nat-fac-subst x
- = [[go = \ acc n.
+ = [[go = \acc n.
           #bool-if
                 (#nat-eq n #nat'0)
                 acc
                 (#seq (#nat-mul acc n)          $ \acc'.
                  #seq (#nat-sub n #nat'1)       $ \n'.
                  go acc' n')]]
-  . go #nat'0 x;
+  . go #nat'1 x;
 
-@count x
- = [[go = \n. #seq (#nat-add n #nat'1) (\n'. go n')]]
-   . go x;

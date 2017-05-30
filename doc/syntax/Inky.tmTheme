@@ -95,6 +95,15 @@
                         </dict>
                 </dict>
 
+                <dict>  <key>name</key>         <string>Variable (Macro)</string>
+                        <key>scope</key>        <string>variable.macro, variable.other</string>
+                        <key>settings</key>
+                        <dict>  
+                        <key>fontStyle</key>    <string></string>
+                        <key>foreground</key>   <string>#502020</string>
+                        </dict>
+                </dict>
+
 
                 <dict>  <key>name</key>      	<string>Kind</string>
                         <key>scope</key>     	<string>kind.constructor</string>

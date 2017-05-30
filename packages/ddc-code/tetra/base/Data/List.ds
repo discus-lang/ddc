@@ -9,7 +9,8 @@ export
         head; init;
         tail; tail1;
         last; index;
-        take; drop;
+        take; takeWhile;
+        drop; dropWhile;
         elem;
         lookup; find;
         reverse;
@@ -180,6 +181,16 @@ take  (n: Nat) (xx: List a): List a
          | otherwise    -> Cons x (take (n - 1) xs)
 
 
+-- | Take elements from the front of a list while they match
+--   the given predicate.
+takeWhile (f: a -> Bool) (xx: List a): List a
+ = case xx of
+        Nil             -> Nil
+        Cons x xs
+         | f x          -> Cons x (takeWhile f xs)
+         | otherwise    -> Nil
+
+
 -- | Drop the given number of elements from the front of a list.
 drop  (n: Nat) (xx: List a): List a
  = case xx of
@@ -187,6 +198,16 @@ drop  (n: Nat) (xx: List a): List a
         Cons x xs
          | n == 0       -> xx
          | otherwise    -> drop (n - 1) xs
+
+
+-- | Drop elements from the front of a list while they match
+--   the given predicate.
+dropWhile (f: a -> Bool) (xx: List a): List a
+ = case xx of
+        Nil             -> Nil
+        Cons x xs
+          | f x         -> dropWhile f xs
+          | otherwise   -> xx
 
 
 -- Searches -------------------------------------------------------------------
