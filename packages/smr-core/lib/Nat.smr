@@ -16,3 +16,17 @@
         (#seq (#nat-mul acc n)    $ \acc'.
          #seq (#nat-sub n #nat'1) $ \n'.
          @nat-fac-loop acc' n');
+
+@nat-fac-subst x
+ = [[go = \ acc n.
+          #bool-if
+                (#nat-eq n #nat'0)
+                acc
+                (#seq (#nat-mul acc n)          $ \acc'.
+                 #seq (#nat-sub n #nat'1)       $ \n'.
+                 go acc' n')]]
+  . go #nat'0 x;
+
+@count x
+ = [[go = \n. #seq (#nat-add n #nat'1) (\n'. go n')]]
+   . go x;

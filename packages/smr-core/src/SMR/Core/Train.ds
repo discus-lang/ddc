@@ -59,8 +59,8 @@ trainApply
         (name: Name) (depth: Nat): Exp s p
  = case cs of
         Nil                     -> XVar name depth
-        Cons (CSim snv) cs'     -> trainWrap cs' (snvApply snv name depth)
-        Cons (CRec snv) cs'     -> trainWrap cs' (snvApply snv name depth)
+        Cons (CSim snv) cs'     -> trainWrap cs' (snvApply False snv name depth)
+        Cons (CRec snv) cs'     -> trainWrap cs' (snvApply True  snv name depth)
         Cons (CUps ups) cs'     -> trainWrap cs' (upsApply ups name depth)
 
 
@@ -71,7 +71,8 @@ simWrap (snv: Snv s p) (xx: Exp s p): Exp s p
 
 
 -- | Apply a substitution to a variable of a given name and depth.
-snvApply ((SSnv bs): Snv s p)
+snvApply (rec: Bool)
+         (snv@(SSnv bs): Snv s p)
          (name: Name) (depth: Nat): Exp s p
  = case bs of
         Nil     
@@ -80,14 +81,15 @@ snvApply ((SSnv bs): Snv s p)
         Cons b'@(T2 (T2 name' depth') x') bs'
          |  name  == name'
          ,  depth == depth'
-         -> x'
+         -> if rec then XSub (Cons (CRec snv) Nil) x'
+                   else x'
 
          |  name   == name'
          ,  depth  >  depth'
          -> XVar name (depth - 1)
 
          |  otherwise
-         -> snvApply (SSnv bs') name depth
+         -> snvApply rec (SSnv bs') name depth
 
 
 -- | Bump a substitution due to pushing it under an abstraction with

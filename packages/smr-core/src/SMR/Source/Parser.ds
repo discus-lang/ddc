@@ -140,10 +140,12 @@ pTrain  (c: Config s p): Parser Token (List (Car s p))
         (return Nil)
 
 
+-- | Parse a single car in the train.
 pTrainCar (c: Config s p): Parser Token (Car s p)
- = alt  -- Substitution.
-        (bind   (pSnv c)                                $ λ uSnv   -> 
-         return (CSim uSnv))
+ = alt  -- Substitution,
+        -- both simultaneous and recursive
+        (bind   (pCarSimRec c)                          $ λ car   -> 
+         return car)
 
         -- Ups.
         (bind    pUps                                   $ λ uUps   ->
@@ -153,12 +155,17 @@ pTrainCar (c: Config s p): Parser Token (Car s p)
 -- Snv ------------------------------------------------------------------------
 -- | Parser for a substitution environment.
 --   Snv   ::= '[' Bind*, ']'
-pSnv    (c: Config s p)
-        : Parser Token (Snv s p)
- = bind (pPunc '[')                                     $ \x1   -> 
-   bind (sepBy  (pBind c) (pPunc ','))                  $ \bs   ->
-   bind (pPunc ']')                                     $ \x2   ->
-   return (SSnv (reverse bs))
+pCarSimRec (c: Config s p): Parser Token (Car s p)
+ = bind (pPunc '[')                                     $ \ko1  -> 
+   alt  (bind (pPunc '[')                               $ \ko2  -> 
+         bind (sepBy  (pBind c) (pPunc ','))            $ \bs   ->
+         bind (pPunc ']')                               $ \kc1  ->
+         bind (pPunc ']')                               $ \kc2  ->
+         return (CRec (SSnv (reverse bs))))
+
+        (bind (sepBy  (pBind c) (pPunc ','))            $ \bs   -> 
+         bind (pPunc ']')                               $ \kc1  ->
+         return (CSim (SSnv (reverse bs))))
 
 
 -- | Parser for a binding.
