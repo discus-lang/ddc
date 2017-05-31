@@ -1,0 +1,40 @@
+
+
+
+-- Convert shimmer code to and from AST form,
+-- using reflect and reify operator.
+#smr-meta-reflect
+#smr-meta-reify
+
+%smr-exp-rsym
+%smr-exp-rprm
+%smr-exp-rmac
+%smr-exp-rset
+
+%smr-exp-xref
+%smr-exp-xapp
+
+
+-- Allow matching directly on the expression ast.
+#smr-exp-abs (#list ..) exp
+
+#match  (#smr-meta-reify1 xx) 
+        (#smr-exp-abs #o #o) 
+ $ \names xBody. ...
+
+
+-- Reflect parts of the implementation as meta-functions
+#smr-meta-step 
+#smr-meta-size
+
+#smr-meta-parse
+#smr-meta-lex
+
+should be able to load and parse a file in itself,
+then match directly on the AST,
+call meta-fun to convert to LLVM, compile,
+then execute that code.
+End up with plugin architecture / generative.
+Keep adding stuff to this interface,
+so eventually can use shimmer meta-functions to parse then type-check
+the source code. Doing it this way will force all ASTs to be shimmer compatible.

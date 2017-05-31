@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>  
+        <key>scopeName</key>
+        <string>source.shimmer</string>
+
+        <key>fileTypes</key>
+        <array> <string>smr</string>
+        </array>
+
+        <key>keyEquivalent</key>
+        <string>^~H</string>
+
+        <key>name</key>
+        <string>Shimmer Source</string>
+
+        <key>patterns</key>
+        <array>
+                <dict>  <key>name</key> <string>comment.line.shimmer.core</string>
+                        <key>match</key>
+                        <string>(\!).*$\n?</string>
+                </dict>
+
+                <dict>  <key>name</key> <string>keyword.shimmer.source.operator</string>
+                        <key>match</key>
+                        <string>\b(\$)\b</string>
+                </dict>
+
+                <dict>  <key>name</key> <string>constant.language.shimmer</string>
+                        <key>match</key>
+                        <string>#[a-z][a-zA-Z0-9\-']*</string>
+                </dict>
+
+                <dict>  <key>name</key> <string>constant.numeric.language.shimmer</string>
+                        <key>match</key>
+                        <string>\b([0-9]+|0[b][0-1]+|0([x][0-9a-fA-F]+))\b</string>
+                </dict>
+
+                <dict>  <key>name</key> <string>variable.macro.language.shimmer</string>
+                        <key>match</key>
+                        <string>\@[a-z][a-zA-Z0-9\-']*</string>
+                </dict>
+
+                <dict>  <key>begin</key>
+                        <string>"</string>
+                        <key>beginCaptures</key>
+                        <dict>
+                                <key>0</key>
+                                <dict>
+                                        <key>name</key>
+                                        <string>punctuation.definition.string.begin.haskell</string>
+                                </dict>
+                        </dict>
+                        <key>end</key>
+                        <string>"</string>
+                        <key>endCaptures</key>
+                        <dict>
+                                <key>0</key>
+                                <dict>
+                                        <key>name</key>
+                                        <string>punctuation.definition.string.end.haskell</string>
+                                </dict>
+                        </dict>
+                        <key>name</key>
+                        <string>string.quoted.double.haskell</string>
+                        <key>patterns</key>
+                        <array>
+                                <dict>
+                                        <key>match</key>
+                                        <string>\\(NUL|SOH|STX|ETX|EOT|ENQ|ACK|BEL|BS|HT|LF|VT|FF|CR|SO|SI|DLE|DC1|DC2|DC3|DC4|NAK|SYN|ETB|CAN|EM|SUB|ESC|FS|GS|RS|US|SP|DEL|[abfnrtv\\\"'\&amp;])</string>
+                                        <key>name</key>
+                                        <string>constant.character.escape.haskell</string>
+                                </dict>
+                                <dict>
+                                        <key>match</key>
+                                        <string>\\o[0-7]+|\\x[0-9A-Fa-f]+|\\[0-9]+</string>
+                                        <key>name</key>
+                                        <string>constant.character.escape.octal.haskell</string>
+                                </dict>
+                                <dict>
+                                        <key>match</key>
+                                        <string>\^[A-Z@\[\]\\\^_]</string>
+                                        <key>name</key>
+                                        <string>constant.character.escape.control.haskell</string>
+                                </dict>
+                        </array>
+                </dict>
+        </array>
+</dict>
+</plist>

@@ -26,14 +26,15 @@
         (#nat-mul n (@nat-fac-leak (#nat-sub n #nat'1)));
 
 
-! Factorial where recursion is expressed via a recursive substitution.
+! Factorial where the recursion is expressed via a recursive substitution.
+!   TODO: allow function binding syntax in substitutions.
 @nat-fac-subst x
- = [[go = \acc n.
+ = [[   go = \acc n.
           #bool-if
                 (#nat-eq n #nat'0)
                 acc
                 (#seq (#nat-mul acc n)          $ \acc'.
                  #seq (#nat-sub n #nat'1)       $ \n'.
-                 go acc' n')]]
-  . go #nat'1 x;
+                 go acc' n')
+   ]].  go #nat'1 x;
 
