@@ -22,7 +22,7 @@ lexTokens (cs: List Char): Tup2 (List Token) (List Char)
 
 -- | Lex a single token.
 lexToken (xx: List Char)
-        : Maybe (Tup2 Token (List Char))
+         : Maybe (Tup2 Token (List Char))
  = case xx of
     Nil                 -> Nothing
     Cons c xs
@@ -56,7 +56,7 @@ lexToken (xx: List Char)
 
 -- | Take the namespace qualifier from the front of a name.
 takeSpace (c: Char) (cs: List Char)
-        : Maybe (Tup2 Space (List Char))
+          : Maybe (Tup2 Space (List Char))
  | isLower c ∨ isLower c   
                 = Just (T2 SVar (Cons c cs))
  | c == '@'     = Just (T2 SMac cs)
@@ -74,6 +74,8 @@ isCharPunc (c: Char): Bool
  | c == '}'     = True
  | c == '['     = True
  | c == ']'     = True
+ | c == '<'     = True
+ | c == '>'     = True
  | c == '^'     = True
  | c == ','     = True
  | c == ':'     = True

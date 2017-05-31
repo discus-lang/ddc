@@ -91,7 +91,8 @@ step    {Eq p}  {Show p}
                  -- Reduce arguments of applications.
                  |  StepStrength _ True <- str
                  -> case step str ctx x1 of
-                        Right x1'          -> Right $ XApp x1' xs2
+                        Right x1'
+                         -> Right $ XApp x1' xs2
 
                         Left err@(ResultError _)
                          -> Left err

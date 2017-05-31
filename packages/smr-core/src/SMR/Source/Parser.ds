@@ -92,9 +92,13 @@ pExp     (c: Config s p): Parser Token (Exp s p)
 -- | Parser for an application.
 pExpApp (c: Config s p): Parser Token (Exp s p)
  =      -- Application.
-        (bind   (pExpAtom c)                            $ λ xFun   ->
-         bind   (some (pExpAtom c))                     $ λ xsArgs ->
-         return (makeXApps xFun xsArgs))
+        (bind   (pExpAtom c)                            $ λ xFun        ->
+         alt    (bind   (pPunc '<')                     $ λ kOpen       ->
+                 bind   (sepBy (pExp c) (pPunc ','))    $ λ xsArgs      -> 
+                 bind   (pPunc '>')                     $ λ kClose      ->
+                 return (makeXApps xFun xsArgs))
+                (bind   (some (pExpAtom c))             $ λ xsArgs      -> 
+                 return (makeXApps xFun xsArgs)))
 
 
 -- | Parser for an atomic expression.
