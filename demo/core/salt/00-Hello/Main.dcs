@@ -1,5 +1,5 @@
 
--- Ye'olde Hello World programme, 
+-- Ye'olde Hello World programme,
 -- written in Disciple Core Salt, which is our lowest level
 -- intermediate language.
 module Main
@@ -8,9 +8,9 @@ module Main
 export main  : [r1: Region]. Nat# -> Ptr# r1 Word8# -> Int#
 
 -- Primitive show functions are defined in the runtime system.
-import foreign c value 
+import foreign c value
         ddcInit        : Nat# -> Unit
-        primPutTextLit : [r: Region]. TextLit#     -> Void#
+        primStdoutPutTextLit : [r: Region]. TextLit#     -> Void#
 
 with letrec
 
@@ -21,7 +21,7 @@ main [r1: Region] (argc: Nat#) (argv: Ptr# r1 Word8#): Int#
         ddcInit     4096#
 
         -- Print the greeting.
-        primPutTextLit "Hello World\n"#
+        primStdoutPutTextLit "Hello World\n"#
 
         -- Return successfully.
         return# 0i#

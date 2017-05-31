@@ -32,7 +32,7 @@ pExp = fmap snd pExpWhereSP
 
 -- An expression that may have a trailing where clause.
 pExpWhereSP :: Parser (SP, Exp)
-pExpWhereSP 
+pExpWhereSP
  = do   (sp1, xx) <- pExpAppSP
 
         P.choice
@@ -118,7 +118,7 @@ pExpArgsSpecSP pX
                 pSym    SBraceKet
                 return  (sp, [RImplicit (RTerm x)])
          ]
-               
+
         -- Exp0
  , do   (sp, x)  <- pX
         return  (sp, [RTerm x])
@@ -136,20 +136,20 @@ pExpFrontSP
         --  \(x1 x2 ... : Type) (y1 y2 ... : Type) ... . Exp
         --  \x1 x2 : Type. Exp
         --  \x1 x2. Exp
- [ do   sp      <- P.choice 
+ [ do   sp      <- P.choice
                         [ pSym SLambda
                         , pSym SBackSlash ]
         pts     <- fmap concat $ P.many1 pTermParam
         pSym    SArrowDashRight
         xBody   <- pExp
-        return  (sp, XAnnot sp 
-                        $ foldr (\(ps, p, mt) -> XAbsPat sp ps p mt) 
+        return  (sp, XAnnot sp
+                        $ foldr (\(ps, p, mt) -> XAbsPat sp ps p mt)
                                 xBody pts)
 
 
         -- Level-1 lambda abstractions.
         -- /\(x1 x2 ... : Type) (y1 y2 ... : Type) ... . Exp
- , do   sp      <- P.choice 
+ , do   sp      <- P.choice
                         [ pSym SBigLambda
                         , pSym SBigLambdaSlash ]
 
@@ -168,8 +168,8 @@ pExpFrontSP
 
         pSym    SArrowDashRight
         xBody   <- pExp
-        return  (sp, XAnnot sp 
-                        $ foldr (\(b, mt) x -> XAbs (MType b mt) x) 
+        return  (sp, XAnnot sp
+                        $ foldr (\(b, mt) x -> XAbs (MType b mt) x)
                                 xBody bmts)
 
 
@@ -205,17 +205,16 @@ pExpFrontSP
         pSym SBraceBra
 
         gxs     <- liftM (map (AAltMatch . snd))
-                $  P.sepEndBy1  (pGuardedExpSP (pSym SEquals)) 
+                $  P.sepEndBy1  (pGuardedExpSP (pSym SEquals))
                                 (pSym SSemiColon)
 
         let xError
-                = makeXErrorDefault 
-                        (Text.pack    $ sourcePosSource sp) 
+                = makeXErrorDefault
+                        (Text.pack    $ sourcePosSource sp)
                         (fromIntegral $ sourcePosLine   sp)
 
         pSym SBraceKet
         return  (sp, XAnnot sp $ XMatch sp gxs xError)
-
 
  , do   -- if-then-else
         --  Sugar for a case-expression.
@@ -224,8 +223,8 @@ pExpFrontSP
         pTok (KKeyword EThen)
         x2      <- pExp
         pTok (KKeyword EElse)
-        x3      <- pExp 
-        return  (sp, XAnnot sp $ XCase x1 
+        x3      <- pExp
+        return  (sp, XAnnot sp $ XCase x1
                         [ AAltCase PTrue    [GExp x2]
                         , AAltCase PDefault [GExp x3]])
 
@@ -268,7 +267,7 @@ pExpFrontSP
 pTermParam :: Parser [(ParamSort, Pat, Maybe Type)]
 pTermParam
  = P.choice
- [ P.try $ do 
+ [ P.try $ do
          pSym SRoundBra
          ps   <- P.many1 pPat
          pTok (KOp ":")
@@ -312,8 +311,8 @@ pExpAtomSP
         return  (sp, XFrag nPrim)
 
         -- Primitive names.
- , do   (u, sp)         <- pBoundNameSP 
-        case u of 
+ , do   (u, sp)         <- pBoundNameSP
+        case u of
          UName tx
           |  Text.pack "project" == tx
           -> do pSym SRoundBra
@@ -333,7 +332,7 @@ pExpAtomSP
         -- Detect names of primitives in the ambient calculus.
         if      u == (UName $ Text.pack "elaborate#")
                 then return (sp, XPrim PElaborate)
-        else if u == (UName $ Text.pack "project#") 
+        else if u == (UName $ Text.pack "project#")
                 then return (sp, XPrim (PProject (Text.pack "field")))
         else if u == (UName $ Text.pack "shuffle#")
                 then return (sp, XPrim PShuffle)
@@ -348,7 +347,7 @@ pExpAtomSP
 
 
        -- Primitive record data constructor.
-       --  like (x,y,z)# 
+       --  like (x,y,z)#
  , P.try $ do
         sp      <- pSym SRoundBra
         ns      <- fmap (map fst) $ P.sepBy pVarNameSP (pSym SComma)
@@ -362,9 +361,9 @@ pExpAtomSP
  , P.try $ do
         sp       <- pSym SRoundBra
 
-        (nsField, tsField, xsField) 
+        (nsField, tsField, xsField)
          <- fmap unzip3
-          $ P.sepBy 
+          $ P.sepBy
                 (do (n, _)  <- pVarNameSP
                     P.choice
                      [ do _      <- pTokSP (KOp ":")
@@ -408,8 +407,8 @@ pExpAtomSP
  , do   (UName tx, sp) <- pBoundNameOpSP
         return  (sp, XInfixOp  sp (Text.unpack tx))
 
-  
-        -- The unit data constructor.       
+
+        -- The unit data constructor.
  , do   sp              <- pTokSP (KBuiltin BDaConUnit)
         return  (sp, XCon  dcUnit)
  ]
@@ -425,8 +424,8 @@ pAltCase
          [ do   -- Desugar case guards while we're here.
                 spgxs     <- P.many1 (pGuardedExpSP (pSym SArrowDashRight))
                 let gxs  = map snd spgxs
-                return  $ AAltCase p gxs 
-                
+                return  $ AAltCase p gxs
+
          , do   pSym SArrowDashRight
                 x       <- pExp
                 return  $ AAltCase p [GExp x] ]
@@ -437,7 +436,7 @@ pPat :: Parser Pat
 pPat
  = P.choice
  [  -- Con Bind Bind ...
-    do  nCon    <- pDaConBoundName 
+    do  nCon    <- pDaConBoundName
         ps      <- P.many pPatAtom
         return  $ PData (DaConBound nCon) ps
 
@@ -451,7 +450,7 @@ pPat
 pPatAtom :: Parser Pat
 pPatAtom
  = P.choice
- [ 
+ [
         -- Primitive record pattern.
         -- like (x,y,z)# a b c
     P.try $ do
@@ -468,9 +467,9 @@ pPatAtom
  , P.try $ do
         _       <- pSym SRoundBra
 
-        (nsField, psField) 
+        (nsField, psField)
          <- fmap unzip
-          $ P.sepBy 
+          $ P.sepBy
                 (do (n, _)  <- pVarNameSP
                     _       <- pSym SEquals
                     p       <- pPatAtom
@@ -481,7 +480,7 @@ pPatAtom
         return  $ PData (DaConRecord nsField) psField
 
         -- ( PAT )
- , P.try $ do   
+ , P.try $ do
         pSym SRoundBra
         p       <- pPat
         pSym SRoundKet
@@ -521,7 +520,7 @@ pPatAtom
 
 -- Bindings ---------------------------------------------------------------------------------------
 pLetsSP :: Parser (Lets, SP)
-pLetsSP 
+pLetsSP
  = P.choice
     [ -- non-recursive let
       do sp       <- pKey ELet
@@ -539,13 +538,13 @@ pLetsSP
       -- Private region binding.
       --   private Binder+ (with { Binder : Type ... })? in Exp
     , do sp     <- pKey EPrivate
-         
+
         -- new private region names.
          bs     <- P.manyTill pBind
-                $  P.try 
-                        $ P.lookAhead 
+                $  P.try
+                        $ P.lookAhead
                         $ P.choice [pKey EIn, pKey EWith]
-         
+
          -- Witness types.
          r      <- pLetWits bs Nothing
          return (r, sp)
@@ -560,21 +559,21 @@ pLetsSP
 
          -- new private region names.
          bs     <- P.manyTill pBind
-                $  P.try $ P.lookAhead 
-                         $ P.choice 
+                $  P.try $ P.lookAhead
+                         $ P.choice
                                 [ pTok (KKeyword EUsing)
                                 , pTok (KKeyword EWith)
                                 , pTok (KKeyword EIn) ]
-         
+
          -- witness types
          r      <- pLetWits bs (Just t)
          return (r, sp)
     ]
-    
-    
+
+
 pLetWits :: [Bind] -> Maybe Type -> Parser Lets
 pLetWits bs mParent
- = P.choice 
+ = P.choice
     [ do   pKey EWith
            pSym SBraceBra
            wits    <- P.sepBy (P.choice
@@ -591,7 +590,7 @@ pLetWits bs mParent
                       (pSym SSemiColon)
            pSym SBraceKet
            return (LPrivate bs mParent wits)
-    
+
     , do   return (LPrivate bs mParent [])
     ]
 
@@ -603,7 +602,7 @@ pClauseSP
         (b, sp0) <- pBindNameSP
 
         P.choice
-         [ do   -- Either 
+         [ do   -- Either
                 -- 1) a definition with a signature and some clauses.
                 --    foo : Nat -> Nat = ...
                 -- 2) foo : Nat -> Nat
@@ -611,7 +610,7 @@ pClauseSP
                 _       <- pTokSP (KOp ":")
                 t       <- pType
                 P.choice
-                 [ do   
+                 [ do
                         gxs     <- pTermGuardedExps (pSym SEquals)
                         return  (sp0,  SLet sp0 (XBindVarMT b (Just t)) [] gxs)
 
@@ -624,7 +623,7 @@ pClauseSP
 
          , do   -- Binding using function syntax.
                 ps      <- fmap concat $ P.many pParamsSP
-        
+
                 P.choice
                  [ do   -- Function syntax with a return type.
                         -- We can make the full type sig for the let-bound variable.
@@ -684,7 +683,7 @@ pParamsSP
 
 
         -- Term pattern with type annotations.
-        -- (BIND1 BIND2 .. BINDN : TYPE) 
+        -- (BIND1 BIND2 .. BINDN : TYPE)
  , do   pSym    SRoundBra
         ps      <- P.choice
                 [  P.try $ do
@@ -704,12 +703,12 @@ pParamsSP
 
 
 --   and the type of the body.
-funTypeOfParams 
+funTypeOfParams
         :: [Param]      -- ^ Spec of parameters.
         -> Type         -- ^ Type of body.
         -> Type         -- ^ Type of whole function.
 
-funTypeOfParams [] tBody        
+funTypeOfParams [] tBody
  = tBody
 
 funTypeOfParams (p:ps) tBody
@@ -728,7 +727,7 @@ funTypeOfParams (p:ps) tBody
 
 
 -- Guards -----------------------------------------------------------------------------------------
--- | Parse either the terminating char and a single expression, 
+-- | Parse either the terminating char and a single expression,
 --   or some guarded expressions.
 pTermGuardedExps
         :: Parser SP    -- ^ Parser for char between guards and exp
@@ -747,7 +746,7 @@ pTermGuardedExps pTerm
 
 -- | An guarded expression,
 --   like | EXP1 = EXP2.
-pGuardedExpSP 
+pGuardedExpSP
         :: Parser  SP   -- ^ Parser for char between and of guards and exp.
                         --   usually -> or =
         -> Parser  (SP, GuardedExp)
@@ -767,7 +766,7 @@ pGuardedExpSP pTermSP
                 return  (sp, GExp x) ]
 
         pGuard
-         = P.choice 
+         = P.choice
          [ P.try $
            do   p       <- pPat
                 pSym    SArrowDashLeft
@@ -783,11 +782,11 @@ pGuardedExpSP pTermSP
 
 -- Statements -------------------------------------------------------------------------------------
 -- These are statements inside a do expression.
---   
+--
 --   A 'do' block behaves much the same way as a 'let' expression,
 --   except we can write effectful statements without binding the
 --   result to anything.
--- 
+--
 --   We currently desugar do expressions to let-expressions in the parser.
 --
 
@@ -802,6 +801,9 @@ data Stmt
         -- | Plain statement without binding the result.
         | StmtNone   SP Exp
 
+        -- | Monadic bind.
+        | StmtBind   SP Pat Exp
+
 
 -- | Parse a single statement.
 pStmt :: Parser Stmt
@@ -810,10 +812,11 @@ pStmt
  [ -- Clause;
    -- We need the 'try' because the function and argument names at the front
    -- of a clause can also be parsed as a function application in a statement.
-   P.try $ 
+   P.try $
     do  (sp, c)  <- pClauseSP
         return  $ StmtClause sp c
 
+{-
    -- Pat <- Exp else Exp ;
    -- Sugar for a case-expression.
    -- We need the 'try' because the PAT can also be parsed
@@ -825,6 +828,13 @@ pStmt
         pTok (KKeyword EElse)
         x2      <- pExp
         return  $ StmtMatch sp p x1 x2
+-}
+
+ , P.try $
+    do  p       <- pPat
+        sp      <- pSym SArrowDashLeft
+        x1      <- pExp
+        return  $ StmtBind sp p x1
 
         -- Exp
  , do   (sp, x) <- pExpWhereSP
@@ -834,10 +844,10 @@ pStmt
 
 -- | Parse some statements.
 pStmts :: Parser Exp
-pStmts 
+pStmts
  = do   -- Parse statements in the block.
         stmts   <- P.sepEndBy1 pStmt (pSym SSemiColon)
-        
+
         -- As in Haskell, we require do blocks to end with a statement
         -- that gives the overall value.
         case makeStmts [] stmts of
@@ -846,12 +856,12 @@ pStmts
 
 
 -- | Make an expression from some statements.
---   We collect consecutive clauses into the same clause group, 
+--   We collect consecutive clauses into the same clause group,
 --   so that we can define functions with multiple clauses at the top
 --   level of a 'do' expression.
 makeStmts :: [Clause] -> [Stmt] -> Maybe Exp
 makeStmts clsAcc ss
- = let  
+ = let
         -- Wrap the clauses we're carrying around the given
         -- body expression.
         dropClauses xBody
@@ -862,13 +872,13 @@ makeStmts clsAcc ss
                 _       -> XLet (LGroup clsAcc) xBody
    in
       case ss of
-        [StmtNone _ x]    
+        [StmtNone _ x]
          -> Just $ dropClauses
                  $ x
 
         StmtNone sp x1 : rest
          |  Just x2     <- makeStmts [] rest
-         -> Just $ XAnnot sp 
+         -> Just $ XAnnot sp
                  $ dropClauses
                  $ XLet (LLet (XBindVarMT BNone Nothing) x1) x2
 
@@ -888,7 +898,7 @@ makeStmts clsAcc ss
                 _  | Just x3 <- makeStmts [] rest
                    -> case cl of
                         (SLet sp bmt [] [GExp x])
-                         -> Just $ XAnnot sp 
+                         -> Just $ XAnnot sp
                          $  dropClauses
                          $  XLet (LLet bmt x) x3
 
@@ -897,12 +907,19 @@ makeStmts clsAcc ss
                    | otherwise
                    -> Nothing
 
+        StmtBind  sp p xRight : rest
+         |  Just xRest  <- makeStmts [] rest
+         -> Just $ XAnnot sp
+                 $ dropClauses
+                 $ XApp (XApp (XVar (UName (Text.pack "bind")))
+                              (RTerm xRight))
+                        (RTerm (XAbs (MTerm p Nothing) xRest))
 
         StmtMatch sp p x1 x2 : rest
          |  Just x3      <- makeStmts [] rest
-         -> Just $ XAnnot sp 
+         -> Just $ XAnnot sp
                  $ dropClauses
-                 $ XCase x1 
+                 $ XCase x1
                  [ AAltCase p        [GExp x3]
                  , AAltCase PDefault [GExp x2] ]
 

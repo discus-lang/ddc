@@ -12,8 +12,8 @@ import foreign abstract type
 
 -- Import primitive IO functions from the runtime system.
 import foreign c value
- primPutString  : TextLit# -> S Console Void#
- primShowNat    : Nat#     -> TextLit#
+ primStdoutPutString    : TextLit# -> S Console Void#
+ primShowNat            : Nat#     -> TextLit#
 
 -- Standard list data type.
 data List (a: Data) where
@@ -27,7 +27,7 @@ with letrec
 -- instead of a Void#.
 write (ss: TextLit#): S Console Unit
  = box do
-        run primPutString ss
+        run primStdoutPutString ss
         ()
 
 
@@ -71,15 +71,15 @@ reverse [a: Data]: List a -> List a
 
 
 -- Print a list, using the given function to show the elements.
-printList 
+printList
         [a : Data]
         (showElem: a -> TextLit#) (xx: List a)
         : S Console Unit
  = box case xx of
-        Nil             
+        Nil
          ->     ()
 
-        Cons x xs       
+        Cons x xs
          -> do  run write (showElem x)
                 run write "\n"#
                 run printList showElem xs
@@ -88,7 +88,7 @@ printList
 -- Main function.
 --  We take a unit value and give one back.
 main (_: Unit): S Console Unit
- = box do  
+ = box do
         xs      = range 1# 5#
         run write "Range\n"#
         run printList showNat xs

@@ -6,9 +6,9 @@ module Main
 export main  : [r1: Region]. Nat# -> Ptr# r1 Word8# -> Int#
 
 -- Primitive show functions are defined in the runtime system.
-import foreign c value 
+import foreign c value
         ddcInit         : Nat# -> Unit
-        primPutTextLit  : TextLit# -> Void#
+        primStdoutPutTextLit  : TextLit# -> Void#
         primShowNat     : Nat#     -> TextLit#
 
 -- Functions defined in C stdlib.
@@ -41,19 +41,18 @@ main [r1: Region] (argc: Nat#) (argv: Ptr# r1 Word8#): Int#
         ddcInit 4096#
 
         -- Compute factorial using simple recursion.
-        primPutTextLit "fac_rec 10 = "#
+        primStdoutPutTextLit "fac_rec 10 = "#
         str1    = primShowNat (fac_rec 10#)
-        primPutTextLit str1
+        primStdoutPutTextLit str1
         free str1
-        primPutTextLit "\n"#
+        primStdoutPutTextLit "\n"#
 
         -- Compute factorial using tail-recursion.
-        primPutTextLit "fac_acc 10 = "#
+        primStdoutPutTextLit "fac_acc 10 = "#
         str2    = primShowNat (fac_acc 10# 1#)
-        primPutTextLit str2
+        primStdoutPutTextLit str2
         free str2
-        primPutTextLit "\n"#
-
+        primStdoutPutTextLit "\n"#
 
         -- Return successfully.
         return# 0i#

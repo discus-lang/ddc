@@ -9,11 +9,11 @@ export main : Unit -> S Console Unit
 -- Define the console effect, which is the one we'll use to
 -- classify actions that write to the console.
 import foreign abstract type
- Console       : Effect
+ Console             : Effect
 
 -- Import primitive IO function from the runtime system.
 import foreign c value
- primPutString : TextLit# -> S Console Void#
+ primStdoutPutString : TextLit# -> S Console Void#
 
 with letrec
 
@@ -21,11 +21,11 @@ with letrec
 -- Main function.
 --  We take a unit value and give one back.
 main (u: Unit): S Console Unit
- = box do  
-        -- Run the action. 
+ = box do
+        -- Run the action.
         -- This returns a Void# result, so we can't return it from
         -- the main function directly.
-        run primPutString "Hello World\n"#
+        run primStdoutPutString "Hello World\n"#
 
         -- Might as well return the unit value we were given.
         u

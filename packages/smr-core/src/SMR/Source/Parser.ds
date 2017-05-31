@@ -25,33 +25,34 @@ configPrim   ((Config ms mp): Config s p): Name -> Maybe p
 
 
 -- Decls -----------------------------------------------------------------------
-parseDecls 
+parseDecls
         (c:  Config s p)
         (ts: List Token)
         : Maybe (List (Decl s p))
  = case parse pDeclsEnd ts of
         Nil               -> Nothing
         Cons (T2 xx _) _  -> Just xx
- where  pDeclsEnd 
-         = bind (pDecls c)                              $ λ ds      ->
-           bind (pEnd)                                  $ λ kEnd    ->
-           return ds
+ where
+        pDeclsEnd
+         = do   ds      <- pDecls c
+                _       <- pEnd
+                return ds
 
 
 -- Decl ------------------------------------------------------------------------
 pDecls  (c: Config s p): Parser Token (List (Decl s p))
- = many (pDecl c)
+ =      many (pDecl c)
 
 
 pDecl   (c: Config s p): Parser Token (Decl s p)
- =      (bind   (pName SMac)                            $ λ nDecl   -> 
-         bind   (some (pName SVar))                     $ λ nsParam ->
-         bind   (pPunc '=')                             $ λ kEq     -> 
-         bind   (pExp c)                                $ λ xBody   ->
-         bind   (pPunc ';')                             $ λ kSemi   ->
-          (if length nsParam == 0
-            then return (DTerm nDecl xBody)
-            else return (DTerm nDecl $ XAbs nsParam xBody)))
+ = do   name    <- pName SMac
+        nsParam <- some (pName SVar)
+        _       <- pPunc '='
+        xBody   <- pExp c
+        _       <- pPunc ';'
+        if length nsParam == 0
+         then return (DTerm name xBody)
+         else return (DTerm name $ XAbs nsParam xBody)
 
 
 -- Exp ------------------------------------------------------------------------
@@ -60,135 +61,145 @@ parseExp (c: Config s p) (ts: List Token): Maybe (Exp s p)
  = case parse pExpEnd ts of
         Nil               -> Nothing
         Cons (T2 xx _) _  -> Just xx
- where  pExpEnd
-         = bind (pExp c)                                $ λ x ->
-           bind (pEnd)                                  $ λ kEnd ->
-           return x
+ where
+        pExpEnd
+         = do   x       <- pExp c
+                _       <- pEnd
+                return x
 
 
 -- | Parser for an expression.
 pExp     (c: Config s p): Parser Token (Exp s p)
- =      -- Abstraction.
-   alt  (bind   (pPunc '\\')                            $ λ kLam        -> 
-         bind   (some (pName SVar))                     $ λ nsParam     ->
-         bind   (pPunc '.')                             $ λ kDot        ->
-         bind   (pExp c)                                $ λ xBody       ->
-         return (XAbs nsParam xBody))
+ = alt  -- Abstraction.
+   (do  _       <- pPunc '\\'
+        nsParam <- some (pName SVar)
+        _       <- pPunc '.'
+        xBody   <- pExp c
+        return  $ XAbs nsParam xBody)
 
-        -- Substitution train.
- $ alt  (bind   (pTrain c)                              $ λ csTrain     ->
-         bind   (pPunc '.')                             $ λ kDot        ->
-         bind   (pExp  c)                               $ λ xBody       ->
-         return (XSub (reverse csTrain) xBody))
+ $ alt  -- Substitution train.
+   (do  csTrain <- pTrain c
+        _       <- pPunc '.'
+        xBody   <- pExp c
+        return  $  XSub (reverse csTrain) xBody)
 
-        -- Application using '$'
- $      (bind   (pExpApp c)                             $ λ xHead       -> 
-         alt    (bind   (pPunc '$')                     $ λ kDollar     ->
-                 bind   (pExp c)                        $ λ xRest       -> 
-                 return (XApp xHead (Cons xRest Nil)))
+ $     -- Application possibly using '$'
+   (do  xHead   <- pExpApp c
+        alt (do _       <- pPunc '$'
+                xRest   <- pExp c
+                return  $  XApp xHead (Cons xRest Nil))
+            (return xHead))
 
-                (return xHead))
 
 -- | Parser for an application.
 pExpApp (c: Config s p): Parser Token (Exp s p)
- =      -- Application.
-        (bind   (pExpAtom c)                            $ λ xFun        ->
-         alt    (bind   (pPunc '<')                     $ λ kOpen       ->
-                 bind   (sepBy (pExp c) (pPunc ','))    $ λ xsArgs      -> 
-                 bind   (pPunc '>')                     $ λ kClose      ->
-                 return (makeXApps xFun xsArgs))
-                (bind   (some (pExpAtom c))             $ λ xsArgs      -> 
-                 return (makeXApps xFun xsArgs)))
+ = do   xFun    <- pExpAtom c
+        alt (do _       <- pPunc '<'
+                xsArgs  <- sepBy (pExp c) (pPunc ',')
+                _       <- pPunc '>'
+                return  $ makeXApps xFun xsArgs)
+
+            (do xsArgs  <- some (pExpAtom c)
+                return  $ makeXApps xFun xsArgs)
 
 
 -- | Parser for an atomic expression.
 pExpAtom (c: Config s p): Parser Token (Exp s p)
- = alt  (bind   (pPunc '(')                             $ λ xBra   ->
-         bind   (pExp c)                                $ λ xx     ->
-         bind   (pPunc ')')                             $ λ xKet   ->
-         return xx)
+ = alt  -- Parenthesised expression.
+   (do  _       <- pPunc '('
+        x       <- pExp c
+        _       <- pPunc ')'
+        return x)
 
- $ alt  (bind   (pName SVar)                            $ λ n      ->
-        (bind   (pPunc '^')                             $ λ xHat   ->
-        (bind   pNat                                    $ λ i      ->
-         return (XVar n i))))
+ $ alt  -- Named variable with or without index.
+   (do  name    <- pName SVar
+        alt (do _       <- pPunc '^'
+                ix      <- pNat
+                return  $ XVar name ix)
+            (return $ XVar name 0))
 
- $ alt  (bind   (pName SVar)                            $ λ n      ->
-         return (XVar n 0))
+ $ alt  -- Named macro.
+   (do  name    <- pName SMac
+        return  $ XRef (RMac name))
 
- $ alt  (bind   (pName SMac)                            $ λ n      ->
-         return (XRef (RMac n)))
+ $ alt  -- Named set.
+   (do  name    <- pName SSet
+        return  $ XRef (RSet name))
 
- $ alt  (bind   (pName SSet)                            $ λ n      -> 
-         return (XRef (RSet n)))
+ $ alt  -- Named symbol.
+   (do  name     <- pName SSym
+        case configSym c name of
+         Just s  -> return (XRef (RSym s))
+         Nothing -> zero)
 
- $ alt  (bind   (pName SSym)                            $ λ n      -> 
-         case configSym  c n of
-          Just s        -> return (XRef (RSym  s))
-          Nothing       -> zero)
-
- $      (bind   (pName SPrm)                            $ λ n      -> 
-         case configPrim c n of
-          Just p        -> return (XRef (RPrm  p))
-          Nothing       -> zero)
+ $      -- Named primitive.
+   (do  name     <- pName SPrm
+        case configPrim c name of
+         Just p  -> return (XRef (RPrm p))
+         Nothing -> zero)
 
 
 -- Train ----------------------------------------------------------------------
 -- | Parser for a substitution train.
 --   The cars are produced in reverse order.
 pTrain  (c: Config s p): Parser Token (List (Car s p))
- = alt  (bind   (pTrainCar c)                           $ λ cCar   ->
-         bind   (pTrain    c)                           $ λ csCar  ->
-         return (Cons cCar csCar))
+ = alt  -- A new car on a train.
+    (do cCar    <- pTrainCar c
+        csCar   <- pTrain c
+        return  $  Cons cCar csCar)
 
-        (return Nil)
+    (do -- An empty train.
+        return Nil)
 
 
 -- | Parse a single car in the train.
 pTrainCar (c: Config s p): Parser Token (Car s p)
- = alt  -- Substitution,
-        -- both simultaneous and recursive
-        (bind   (pCarSimRec c)                          $ λ car   -> 
-         return car)
+ = alt  -- Substitution, both simultaneous and recursive
+    (do car     <- pCarSimRec c
+        return car)
 
-        -- Ups.
-        (bind    pUps                                   $ λ uUps   ->
-         return (CUps uUps))
+    (do -- An ups car.
+        ups     <- pUps
+        return (CUps ups))
 
 
 -- Snv ------------------------------------------------------------------------
 -- | Parser for a substitution environment.
 --   Snv   ::= '[' Bind*, ']'
 pCarSimRec (c: Config s p): Parser Token (Car s p)
- = bind (pPunc '[')                                     $ \ko1  -> 
-   alt  (bind (pPunc '[')                               $ \ko2  -> 
-         bind (sepBy  (pBind c) (pPunc ','))            $ \bs   ->
-         bind (pPunc ']')                               $ \kc1  ->
-         bind (pPunc ']')                               $ \kc2  ->
-         return (CRec (SSnv (reverse bs))))
+ = do   _       <- pPunc '['
 
-        (bind (sepBy  (pBind c) (pPunc ','))            $ \bs   -> 
-         bind (pPunc ']')                               $ \kc1  ->
-         return (CSim (SSnv (reverse bs))))
+        alt     -- Recursive substitution.
+         (do    _       <- pPunc '['
+                bs      <- sepBy (pBind c) (pPunc ',')
+                _       <- pPunc ']'
+                _       <- pPunc ']'
+                return  $ CRec (SSnv (reverse bs)))
+
+                -- Simultaneous substitution.
+         (do    bs      <- sepBy (pBind c) (pPunc ',')
+                _       <- pPunc ']'
+                return  $ CSim (SSnv (reverse bs)))
 
 
 -- | Parser for a binding.
---   
+--
 --   Bind ::= Name '=' Exp
 --         |  Name '^' Nat '=' Exp
 --
 pBind   (c: Config s p)
-        : Parser Token (Tup2 (Tup2 Name Nat) (Exp s p))
- = bind (from (takeNameOfToken SVar)) $ λ name ->
-   (alt  (bind (pPunc '=')                              $ \xColon ->
-          bind (pExp c)                                 $ \x      ->
-          return (T2 (T2 name 0) x))
+        :   Parser Token (Tup2 (Tup2 Name Nat) (Exp s p))
+ = do   name    <- pName SVar
+        alt
+         (do    _       <- pPunc '='
+                x       <- pExp c
+                return  $ T2 (T2 name 0) x)
 
-         (bind (pPunc '^')                              $ \xHat   ->
-          bind pNat                                     $ \nDepth ->
-          bind (pPunc '=')                              $ \xColon ->
-          bind (pExp c)                                 $ \x      ->
-          return (T2 (T2 name nDepth) x)))
+         (do    _       <- pPunc '^'
+                bump    <- pNat
+                _       <- pPunc '='
+                x       <- pExp c
+                return  $ T2 (T2 name bump) x)
 
 
 -- Ups ------------------------------------------------------------------------
@@ -196,47 +207,47 @@ pBind   (c: Config s p)
 --
 --   Ups  ::= '{' Bump*, '}'
 pUps: Parser Token Ups
- = bind (pPunc '{')                                     $ \x1   -> 
-   bind (sepBy  pBump (pPunc ','))                      $ \bs   ->
-   bind (pPunc '}')                                     $ \x2   ->
-   return (UUps (reverse bs))
+ = do   _       <- pPunc '{'
+        bs      <- sepBy pBump (pPunc ',')
+        _       <- pPunc '}'
+        return  $ UUps (reverse bs)
 
 
 -- | Parser for a bump.
---   
---   Bump ::= Name '=' Nat
---         |  Name '^' Nat '=' Nat
+--
+--   Bump ::= Name ':' Nat
+--         |  Name '^' Nat ':' Nat
 --
 pBump: Parser Token (Tup2 (Tup2 Name Nat) Nat)
- = bind (pName SVar)                                    $ λ name ->
-   (alt  (bind (pPunc ':')                              $ \xColon ->
-          bind pNat                                     $ \nBump  ->
-          return (T2 (T2 name 0) nBump))
+ = do   name    <- pName SVar
+        alt
+         (do    _       <- pPunc ':'
+                inc     <- pNat
+                return  $  T2 (T2 name 0) inc)
 
-         (bind (pPunc '^')                              $ \xHat   ->
-          bind pNat                                     $ \nDepth ->
-          bind (pPunc ':')                              $ \xColon ->
-          bind pNat                                     $ \nBump  ->
-          return (T2 (T2 name nDepth) nBump)))
+         (do    _       <- pPunc '^'
+                depth   <- pNat
+                _       <- pPunc ':'
+                inc     <- pNat
+                return  $  T2 (T2 name depth) inc)
 
 
 -------------------------------------------------------------------------------
 -- | Parser for the end of input token.
 pEnd: Parser Token Unit
- =  bind (satisfies (isToken KEnd))     $ λk
- -> return ()
+ = do   _       <- satisfies (isToken KEnd)
+        return ()
 
 
 -- | Parser for a natural number.
 pNat: Parser Token Nat
- =  bind (from takeNatOfToken) $ λn
- -> return n
+ = from takeNatOfToken
 
 
 -- | Parser for a punctuation character.
 pPunc (c: Char): Parser Token Unit
- =  bind (satisfies (isToken (KPunc c))) $ λk
- -> return ()
+ = do   _       <- satisfies (isToken (KPunc c))
+        return ()
 
 
 -- | Parser for a name in the given space

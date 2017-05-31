@@ -12,8 +12,8 @@ import foreign abstract type
 
 -- Import primitive IO function from the runtime system.
 import foreign c value
- primPutString  : TextLit# -> S Console Void#
- primShowNat    : Nat#     -> TextLit#
+ primStdoutPutString    : TextLit# -> S Console Void#
+ primShowNat            : Nat#     -> TextLit#
 
 with letrec
 
@@ -28,12 +28,12 @@ fac (x: Nat#): Nat#
 -- Main function.
 --  We take a unit value and give one back.
 main (u: Unit): S Console Unit
- = box do  
-        -- Run the action. 
+ = box do
+        -- Run the action.
         -- This returns a Void# result, so we can't return it from
         -- the main function directly.
-        run primPutString (primShowNat (fac 10#))
-        run primPutString "\n"#
+        run primStdoutPutString (primShowNat (fac 10#))
+        run primStdoutPutString "\n"#
 
         -- Might as well return the unit value we were given.
         u
