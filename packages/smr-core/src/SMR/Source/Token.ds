@@ -3,6 +3,9 @@ module SMR.Source.Token
 export
 {       eq_Token; show_Token;
         eq_Space; show_Space;
+        show_Located;
+        fromLocated;
+        endOfLocated; startOfLocated;
         isToken;  isKPunc;
         takeNameOfToken;
         takeNatOfToken;
@@ -11,6 +14,43 @@ import SMR.Core.Exp
 import Data.Text
 import Data.Maybe
 where
+
+
+----------
+-- TODO: shift this into Data.Text.Location
+-- | A location in a source file.
+data Location where
+        Location
+         :  Nat                                 -- ^ Line number.
+         -> Nat                                 -- ^ Column number.
+         -> Location
+
+endOfLocated ((Located _ lEnd _): Located a): Location
+ = lEnd
+
+startOfLocated ((Located lStart _ _): Located a): Location
+ = lStart
+
+show_Located {show_a: Show a}: Show (Located a)
+ =  Show $ λ l
+ -> case l of
+        Located _ _ x -> show x
+
+
+-- | A thing with a source location.
+data Located (a: Data) where
+        Located
+         :  Location                            -- ^ Starting location.
+         -> Location                            -- ^ Ending location.
+         -> a                                   -- ^ Located thing.
+         -> Located a
+
+
+-- | Unwrap a located thing.
+fromLocated (x: Located a): a
+ = case x of
+        Located _ _ x   -> x
+-------------
 
 
 -- | Tokens for for the source language.
@@ -33,7 +73,7 @@ data Space where
 -- | Check if two tokens are equal.
 eq_Token: Eq Token
  = Eq eq' neq'
- where  
+ where
         eq' t1 t2
          = case T2 t1 t2 of
                 T2 KEnd    KEnd                 -> True
@@ -99,7 +139,7 @@ isKPunc (c: Char) (k: Token): Bool
 -- | Take the name from a token, if any.
 takeNameOfToken (ss1: Space) (kk: Token): Maybe Name
  = case kk of
-        KName ss2 n     
+        KName ss2 n
          | ss1 == ss2   -> Just n
          | otherwise    -> Nothing
 

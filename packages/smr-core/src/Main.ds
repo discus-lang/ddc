@@ -46,11 +46,11 @@ show_Unit: Show Unit
 pretty_Text: Pretty Text
  = Pretty $ λxx -> xx
 
--- TODO: need explicit run/box 
+-- TODO: need explicit run/box
 getLine: S Console Text
- = box do   
+ = box do
         txt     = run readl 2014
-        textOfCharList $ init Nil $ charListOfText txt        
+        textOfCharList $ init Nil $ charListOfText txt
 
 
 
@@ -75,7 +75,7 @@ main ()
 
         -- Extract textual names of primitives.
         primNamesText
-         = mapMaybe 
+         = mapMaybe
                 (\e -> case e of
                         PrimOp n        -> Just n
                         _               -> Nothing)
@@ -96,27 +96,34 @@ main ()
                  Nothing        -> writel "load failed"
                  Just decls     -> repl (State config primTable decls) CmdNone
 
-         Nothing        
+         Nothing
           -> repl (State config primTable Nil) CmdNone
 
 
 -- | Load a list of top-level declarations from a source file.
-loadSource 
+loadSource
         (config: Config Name Prim)
         (path:   TextLit)
-        :        S File (Maybe (List (Decl Name Prim)))
- = do   
+        :        S (File + Console) (Maybe (List (Decl Name Prim)))
+ = do
         str     = file_read (takeTextLit path)
 
-        case lexTokens $ charListOfText str of
-         T2 toks cs
-          |  not $ all isSpace cs       -> Nothing
+        case lexTokens (Location 1 1) $ charListOfText str of
+         T3 toks _ cs
+          |  not $ all isSpace cs
+          -> do writel "! error at end of input."
+                writel (show cs)
+                Nothing
+
           |  otherwise
-          -> case parseDecls config (append toks (Cons KEnd Nil)) of
-                Nothing                 -> Nothing
-                Just ds'                -> Just ds'
+          -> case parseDecls config toks of
+                 Nothing  -> Nothing
+                 Just ds' -> Just ds'
 
          _ -> Nothing
+
+show_Char: Show Char
+ = Show textOfChar
 
 
 -- | Read-Eval-Print loop.
@@ -129,7 +136,7 @@ loadSource
 --   in a ref to hack around this.
 --
 repl    (state: State) (cmd: Cmd): S Console Unit
- = box do   
+ = box do
         -- Write the prompt.
         write "> "
         flush
@@ -137,32 +144,55 @@ repl    (state: State) (cmd: Cmd): S Console Unit
         -- Get the line and convert it to tokens.
         str     = getLine
 
-        case lexTokens $ charListOfText str of
+        case lexTokens (Location 1 1) $ charListOfText str of
          -- If only whitespace was provided then run the default command.
-         T2 Nil  Nil    
+         T3 (Cons lt Nil) _ Nil
+          |  fromLocated lt == KEnd
           -> case cmd of
-                CmdNone         -> repl      state CmdNone
-                CmdStep xx      -> repl_step state xx
+                CmdNone    -> repl      state CmdNone
+                CmdStep xx -> repl_step state xx
 
          -- We have some tokens, to parse them.
-         T2 toks Nil    
-          ->    repl_toks state CmdNone (append toks (Cons KEnd Nil))
+         T3 toks _ Nil
+          ->    repl_toks state CmdNone toks
 
          -- We couldn't lex all the characters into tokens.
-         T2 _    cs   
-          -> do writell "! lexical error."
-                repl state CmdNone
+         T3 toks lStart' cs
+          -> case last toks of
+                Nothing
+                 -> do  writell $ "!"
+                                %% "1:1"
+                                %% "<interactive>: lexical error."
+
+                Just tok
+                 | Location nLine nChar <- lStart'
+                 , Cons c _             <- cs
+                 -> do  writell $ "!"
+                                %% show nLine % ":" % show nChar
+                                %% "<interactive>: lexical error on"
+                                %% "'" % textOfChar c % "'."
+
+                        repl state CmdNone
 
 
 -- | Given some tokens, try to parse an expression and evaluate it.
-repl_toks 
+repl_toks
         (state: State) (cmd: Cmd)
-        (toks:  List Token)
+        (toks:  List (Located Token))
         :       S Console Unit
  = case parseExp (configOfState state) toks of
          Nothing
-          -> do writell "! parse error."
-                repl state CmdNone
+          -> case last toks of
+                Nothing
+                 -> do  writell "! parser error at end of input."
+                        repl state CmdNone
+
+                Just tok'
+                 | Location nLine nChar <- startOfLocated tok'
+                 -> do  writell $  "!"
+                                %% show nLine % ":" % show nChar
+                                %% "parse error."
+                        repl state CmdNone
 
          Just x
           ->    repl_step state x
@@ -197,7 +227,7 @@ step'   (state: State)
         (xx:    Exp Name Prim)
         :       Either Result (Exp Name Prim)
  = step (StepStrength red True)
-        (StepContext 
+        (StepContext
                 (primTableOfState state)
                 (declsOfState state))
          xx

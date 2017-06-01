@@ -15,3 +15,7 @@ fst (t: Tup2 a b): a
 snd (t: Tup2 a b): b
  = case t of
         T2 x y  -> y
+
+
+data Tup3 (a b c: Data) where
+ T3     : a -> b -> c -> Tup3 a b c

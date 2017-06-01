@@ -27,7 +27,7 @@ configPrim   ((Config ms mp): Config s p): Name -> Maybe p
 -- Decls -----------------------------------------------------------------------
 parseDecls
         (c:  Config s p)
-        (ts: List Token)
+        (ts: List (Located Token))
         : Maybe (List (Decl s p))
  = case parse pDeclsEnd ts of
         Nil               -> Nothing
@@ -40,11 +40,11 @@ parseDecls
 
 
 -- Decl ------------------------------------------------------------------------
-pDecls  (c: Config s p): Parser Token (List (Decl s p))
+pDecls  (c: Config s p): Parser (Located Token) (List (Decl s p))
  =      many (pDecl c)
 
 
-pDecl   (c: Config s p): Parser Token (Decl s p)
+pDecl   (c: Config s p): Parser (Located Token) (Decl s p)
  = do   name    <- pName SMac
         nsParam <- some (pName SVar)
         _       <- pPunc '='
@@ -57,7 +57,8 @@ pDecl   (c: Config s p): Parser Token (Decl s p)
 
 -- Exp ------------------------------------------------------------------------
 -- | Parse a complete expression from the given list of tokens.
-parseExp (c: Config s p) (ts: List Token): Maybe (Exp s p)
+parseExp (c:  Config s p)
+         (ts: List (Located Token)): Maybe (Exp s p)
  = case parse pExpEnd ts of
         Nil               -> Nothing
         Cons (T2 xx _) _  -> Just xx
@@ -69,7 +70,8 @@ parseExp (c: Config s p) (ts: List Token): Maybe (Exp s p)
 
 
 -- | Parser for an expression.
-pExp     (c: Config s p): Parser Token (Exp s p)
+pExp    (c: Config s p)
+        :   Parser (Located Token) (Exp s p)
  = alt  -- Abstraction.
    (do  _       <- pPunc '\\'
         nsParam <- some (pName SVar)
@@ -92,7 +94,8 @@ pExp     (c: Config s p): Parser Token (Exp s p)
 
 
 -- | Parser for an application.
-pExpApp (c: Config s p): Parser Token (Exp s p)
+pExpApp (c: Config s p)
+        :   Parser (Located Token) (Exp s p)
  = do   xFun    <- pExpAtom c
         alt (do _       <- pPunc '<'
                 xsArgs  <- sepBy (pExp c) (pPunc ',')
@@ -104,7 +107,8 @@ pExpApp (c: Config s p): Parser Token (Exp s p)
 
 
 -- | Parser for an atomic expression.
-pExpAtom (c: Config s p): Parser Token (Exp s p)
+pExpAtom (c: Config s p)
+         :   Parser (Located Token) (Exp s p)
  = alt  -- Parenthesised expression.
    (do  _       <- pPunc '('
         x       <- pExp c
@@ -142,7 +146,8 @@ pExpAtom (c: Config s p): Parser Token (Exp s p)
 -- Train ----------------------------------------------------------------------
 -- | Parser for a substitution train.
 --   The cars are produced in reverse order.
-pTrain  (c: Config s p): Parser Token (List (Car s p))
+pTrain  (c: Config s p)
+        :   Parser (Located Token) (List (Car s p))
  = alt  -- A new car on a train.
     (do cCar    <- pTrainCar c
         csCar   <- pTrain c
@@ -153,7 +158,8 @@ pTrain  (c: Config s p): Parser Token (List (Car s p))
 
 
 -- | Parse a single car in the train.
-pTrainCar (c: Config s p): Parser Token (Car s p)
+pTrainCar  (c: Config s p)
+           : Parser (Located Token) (Car s p)
  = alt  -- Substitution, both simultaneous and recursive
     (do car     <- pCarSimRec c
         return car)
@@ -165,8 +171,11 @@ pTrainCar (c: Config s p): Parser Token (Car s p)
 
 -- Snv ------------------------------------------------------------------------
 -- | Parser for a substitution environment.
+--
 --   Snv   ::= '[' Bind*, ']'
-pCarSimRec (c: Config s p): Parser Token (Car s p)
+--
+pCarSimRec (c: Config s p)
+           :   Parser (Located Token) (Car s p)
  = do   _       <- pPunc '['
 
         alt     -- Recursive substitution.
@@ -188,7 +197,7 @@ pCarSimRec (c: Config s p): Parser Token (Car s p)
 --         |  Name '^' Nat '=' Exp
 --
 pBind   (c: Config s p)
-        :   Parser Token (Tup2 (Tup2 Name Nat) (Exp s p))
+        :   Parser (Located Token) (Tup2 (Tup2 Name Nat) (Exp s p))
  = do   name    <- pName SVar
         alt
          (do    _       <- pPunc '='
@@ -206,7 +215,7 @@ pBind   (c: Config s p)
 -- | Parser for an ups.
 --
 --   Ups  ::= '{' Bump*, '}'
-pUps: Parser Token Ups
+pUps: Parser (Located Token) Ups
  = do   _       <- pPunc '{'
         bs      <- sepBy pBump (pPunc ',')
         _       <- pPunc '}'
@@ -218,7 +227,7 @@ pUps: Parser Token Ups
 --   Bump ::= Name ':' Nat
 --         |  Name '^' Nat ':' Nat
 --
-pBump: Parser Token (Tup2 (Tup2 Name Nat) Nat)
+pBump: Parser (Located Token) (Tup2 (Tup2 Name Nat) Nat)
  = do   name    <- pName SVar
         alt
          (do    _       <- pPunc ':'
@@ -234,23 +243,23 @@ pBump: Parser Token (Tup2 (Tup2 Name Nat) Nat)
 
 -------------------------------------------------------------------------------
 -- | Parser for the end of input token.
-pEnd: Parser Token Unit
- = do   _       <- satisfies (isToken KEnd)
+pEnd: Parser (Located Token) Unit
+ = do   _       <- satisfies (isToken KEnd ∘ fromLocated)
         return ()
 
 
 -- | Parser for a natural number.
-pNat: Parser Token Nat
- = from takeNatOfToken
-
-
--- | Parser for a punctuation character.
-pPunc (c: Char): Parser Token Unit
- = do   _       <- satisfies (isToken (KPunc c))
-        return ()
+pNat: Parser (Located Token) Nat
+ = from (takeNatOfToken ∘ fromLocated)
 
 
 -- | Parser for a name in the given space
-pName (s: Space): Parser Token Name
- = from (takeNameOfToken s)
+pName (s: Space): Parser (Located Token) Name
+ = from (takeNameOfToken s ∘ fromLocated)
+
+
+-- | Parser for a punctuation character.
+pPunc (c: Char): Parser (Located Token) Unit
+ = do   _       <- satisfies (isToken (KPunc c) ∘ fromLocated)
+        return ()
 

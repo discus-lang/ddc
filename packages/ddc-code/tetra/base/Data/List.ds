@@ -1,5 +1,5 @@
 
-module Data.List 
+module Data.List
 export
 {       singleton;  replicate;
         enumFromTo; append; concat;
@@ -78,7 +78,7 @@ concat (xss0: List (List a)): List a
         go (Cons x xs) xss              = Cons x (go xs xss)
 
 
--- | Generate a list of the given length by repeatedly 
+-- | Generate a list of the given length by repeatedly
 --   applying a stateful function.
 unfold   (s0: s) (f: s -> Maybe (Tup2 a s)): List a
  = case f s0 of
@@ -88,7 +88,7 @@ unfold   (s0: s) (f: s -> Maybe (Tup2 a s)): List a
 
 generate (len: Nat) (f: Nat -> a): List a
  = unfold 0
- $ (\ix -> if ix >= len 
+ $ (\ix -> if ix >= len
                 then Nothing
                 else Just (T2 (f ix) (ix + 1)))
 
@@ -112,7 +112,7 @@ null   (xx: List a): Bool
  = case xx of
         Nil             -> True
         _               -> False
-        
+
 
 -- | Take the length of a list.
 length (xx: List a): Nat
@@ -154,19 +154,19 @@ tail1   (def: a) (xx: List a): List a
 
 
 -- | Take the last element of a list, if there is one.
-last (def: a) (xx: List a): a
+last (xx: List a): Maybe a
  = case xx of
-        Nil                     -> def
-        Cons x Nil              -> x
-        Cons x (Cons y ys)      -> last def (Cons y ys)
+        Nil                     -> Nothing
+        Cons x Nil              -> Just x
+        Cons x (Cons y ys)      -> last (Cons y ys)
 
 
 -- | Get a numbered element from a list,
 --   returning a default value if we try to index off the end of the list.
 index (def: a) (n: Nat) (xx: List a): a
- = case xx of   
+ = case xx of
         Nil     -> def
-        Cons x xs 
+        Cons x xs
          -> case n of
                 0       -> x
                 _       -> index def (n - 1) xs
@@ -264,12 +264,12 @@ for     (xx: List a) (f: a -> b): List b
 
 
 -- | Functor instance for List.
-functor_list 
+functor_list
  = Functor map
 
 
 -- | Apply a stateful worker function to every element of a list,
---   yielding a new list. 
+--   yielding a new list.
 --   The worker is applied to the source elements left-to-right.
 mapS    (f: a -> S e b) (xx: List a): S e (List b)
  = case xx of
@@ -281,9 +281,9 @@ mapS    (f: a -> S e b) (xx: List a): S e (List b)
 mapMaybe (f: a -> Maybe b) (xx: List a): List b
  = case xx of
         Nil             -> Nil
-        Cons x xs     
+        Cons x xs
          -> case f x of
-                Nothing -> mapMaybe f xs 
+                Nothing -> mapMaybe f xs
                 Just x' -> Cons x' (mapMaybe f xs)
 
 
@@ -291,7 +291,7 @@ mapMaybe (f: a -> Maybe b) (xx: List a): List b
 forS (xx: List a) (f: a -> S e Unit): S e Unit
  = case xx of
         Nil     -> ()
-        Cons x xs       
+        Cons x xs
          -> do  f x
                 forS xs f
 
@@ -307,7 +307,7 @@ zip (Cons a as) (Cons b bs)     = Cons (T2 a b) (zip as bs)
 mapM    {Monad m}
         (f: a -> m b) (xx: List a): m (List b)
  = case xx of
-        Nil    
+        Nil
          -> return Nil
 
         Cons x xs
@@ -317,7 +317,7 @@ mapM    {Monad m}
 
 
 -- Zips -----------------------------------------------------------------------
-zipWith (f: a -> b -> c) 
+zipWith (f: a -> b -> c)
         (xx: List a) (yy: List b): List c
  = case T2 xx yy of
         T2 Nil _                -> Nil
@@ -327,7 +327,7 @@ zipWith (f: a -> b -> c)
 
 
 -- | Stateful zipWith.
-zipWithS (f: a -> b -> S e c) 
+zipWithS (f: a -> b -> S e c)
          (xx: List a) (yy: List b): S e (List c)
  = case T2 xx yy of
         T2 Nil _                -> Nil
@@ -337,7 +337,7 @@ zipWithS (f: a -> b -> S e c)
 
 
 -- Folds ----------------------------------------------------------------------
--- | Reduce a list with a binary function and zero value, 
+-- | Reduce a list with a binary function and zero value,
 --   from left to right.
 foldl (f: b -> a -> b) (z: b) (xx: List a): b
  = case xx of
@@ -345,7 +345,7 @@ foldl (f: b -> a -> b) (z: b) (xx: List a): b
         Cons x xs       -> foldl f (f z x) xs
 
 
--- | Reduce a list with a stateful binary function and zero value, 
+-- | Reduce a list with a stateful binary function and zero value,
 --   from left to right.
 foldlS (f: b -> a -> S e b) (z: b) (xx: List a): S e b
  = case xx of
@@ -361,7 +361,7 @@ foldr (f: a -> b -> b) (z: b) (xx: List a): b
         Cons x xs       -> f x (foldr f z xs)
 
 
--- | Reduce a list with a stateful binary function and zero value, 
+-- | Reduce a list with a stateful binary function and zero value,
 --   from right to left.
 foldrS (f: a -> b -> S e b) (z: b) (xx: List a): S e b
  = case xx of
@@ -387,7 +387,7 @@ sequence {dMonad: Monad m} (xs: List (m a)): m (List a)
 -- Scans ----------------------------------------------------------------------
 scanl (f: b -> a -> b) (acc: b) (xx: List a): List b
  = case xx of
-        Nil     
+        Nil
          -> Cons acc Nil
 
         Cons x xs
@@ -400,7 +400,7 @@ scanl (f: b -> a -> b) (acc: b) (xx: List a): List b
 filter (p: a -> Bool) (xx: List a): List a
  = case xx of
         Nil             -> Nil
-        Cons x xs  
+        Cons x xs
          | p x          -> Cons x (filter p xs)
          | otherwise    -> filter p xs
 
@@ -410,7 +410,7 @@ filter (p: a -> Bool) (xx: List a): List a
 filterS (p: a -> S e Bool) (xx: List a): S e (List a)
  = case xx of
         Nil             -> Nil
-        Cons x xs  
+        Cons x xs
          | p x          -> Cons x (filterS p xs)
          | otherwise    -> filterS p xs
 
@@ -430,7 +430,7 @@ any (p: a -> Bool) (xx: List a): Bool
  = case xx of
         Nil             -> False
 
-        Cons x xs 
+        Cons x xs
          | p x          -> True
          | otherwise    -> any p xs
 

@@ -1,6 +1,6 @@
 
 ! Constructed lists.
-!   Lists are represented in constructor form 
+!   Lists are represented in constructor form
 !   using the symbols %list-nil and %list-cons.
 
 
@@ -22,7 +22,7 @@
          %list-cons x (@list-replicate n' x));
 
 
-! Produce a range of natural numbers, 
+! Produce a range of natural numbers,
 !   starting from the value 'a' and ending with the value 'b'.
 @list-range a b
  = #bool-if
@@ -39,10 +39,10 @@
         (\x. \xs. #nat-add #nat'1 (@list-length xs));
 
 
-! Left fold over a list of elements, 
+! Left fold over a list of elements,
 !   taking the worker function 'f', unit value 'z' and list 'xx'.
 @list-foldl f z xx
- = @list-case xx z 
+ = @list-case xx z
         (\x xs. #seq (f z x) $ \z'.
                 @list-foldl f z' xs);
 
