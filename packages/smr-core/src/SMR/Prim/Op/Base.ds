@@ -12,9 +12,9 @@ import  SMR.Core.Exp
 where
 
 
----------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 -- | Primitive values and operators.
-data Prim where        
+data Prim where
         PrimOp          : Text          -> Prim
         PrimLitBool     : Bool          -> Prim
         PrimLitNat      : Nat           -> Prim
@@ -22,30 +22,30 @@ data Prim where
 prim_Show: Show Prim
  = Show $ \pp
  -> case pp of
-        PrimOp tx       -> parens $ "PrimOp" %% show tx
+        PrimOp      tx  -> parens $ "PrimOp"      %% show tx
         PrimLitBool b   -> parens $ "PrimLitBool" %% show b
         PrimLitNat  n   -> parens $ "PrimLitNat"  %% show n
 
 prim_Eq: Eq Prim
  =  Eq eq' neq'
- where  
+ where
         eq' p1 p2
-         = case T2 p1 p2 of
-                T2 (PrimOp t1)      (PrimOp t2)         -> t1 == t2
-                T2 (PrimLitBool b1) (PrimLitBool b2)    -> b1 == b2
-                T2 (PrimLitNat  n1) (PrimLitNat  n2)    -> n1 == n2
-                _                                       -> False
+         = case (p1, p2) of
+                (PrimOp t1,      PrimOp t2)      -> t1 == t2
+                (PrimLitBool b1, PrimLitBool b2) -> b1 == b2
+                (PrimLitNat  n1, PrimLitNat  n2) -> n1 == n2
+                _                                -> False
 
         neq' p1 p2
          = not $ eq' p1 p2
 
 
 -- Exp ----------------------------------------------------
-takeArgExp 
-        (xx:    List (Exp s Prim))
-        :       Maybe (Tup2 (Exp s Prim) (List (Exp s Prim)))
+takeArgExp
+        (xx: List  (Exp s Prim))
+        :    Maybe (Exp s Prim, List (Exp s Prim))
  = case xx of
-        Cons x1 xs      -> Just (T2 x1 xs)
+        Cons x1 xs      -> Just (x1, xs)
         _               -> Nothing
 
 
@@ -63,11 +63,11 @@ makeXBool (b: Bool): Exp s Prim
 
 -- | Split a literal Bool from an argument list.
 takeArgBool
-        (xx:    List (Exp s Prim))
-        :       Maybe (Tup2 Bool (List (Exp s Prim)))
+        (xx: List  (Exp s Prim))
+        :    Maybe (Bool, List (Exp s Prim))
  = case xx of
         Cons (XRef (RPrm (PrimLitBool b))) xs
-          -> Just (T2 b xs)
+          -> Just (b, xs)
         _ -> Nothing
 
 
@@ -85,15 +85,15 @@ makeXNat  (n: Nat): Exp s Prim
 
 -- | Split a literal Nat from an argument list.
 takeArgNat
-        (xx:    List (Exp s Prim))
-        :       Maybe (Tup2 Nat (List (Exp s Prim)))
+        (xx: List (Exp s Prim))
+        :    Maybe (Nat, List (Exp s Prim))
  = case xx of
         Cons (XRef (RPrm (PrimLitNat n))) xs
-          -> Just (T2 n xs)
+          -> Just (n, xs)
         _ -> Nothing
 
 
----------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 -- | Argument passing method.
 data PrimArg where
         Val     : PrimArg       -- ^ Call-by-value.
@@ -102,7 +102,7 @@ data PrimArg where
 
 -- | Primitive evaluator.
 data PrimEval (s p: Data) where
-        PrimEval 
+        PrimEval
          :  p                   -- ^ Op name.
          -> Text                -- ^ Op description.
          -> List PrimArg        -- ^ Argument passing method.
@@ -118,19 +118,19 @@ nameOfPrimEval [s p: Data] ((PrimEval name _ _ _): PrimEval s p): p
 
 -- | Construct a primitive evaluator for a call-by-value arity-1 operator.
 primEvalOp1
-        (name:  p) (desc:  Text) (args:  List PrimArg) 
-        (fn:    List (Exp s p) -> Maybe (Exp s p))
-        :       PrimEval s p
- = PrimEval name desc 
+        (name: p) (desc: Text) (args: List PrimArg)
+        (fn:   List (Exp s p) -> Maybe (Exp s p))
+        :      PrimEval s p
+ = PrimEval name desc
         (Cons Val Nil) fn
 
 
 -- | Construct a primitive evaluator for a call-by-value arity-2 operator.
-primEvalOp2 
-        (name:  p) (desc:  Text) (args:  List PrimArg) 
-        (fn:    List (Exp s p) -> Maybe (Exp s p))
-        :       PrimEval s p
- = PrimEval name desc 
+primEvalOp2
+        (name: p) (desc: Text) (args: List PrimArg)
+        (fn:   List (Exp s p) -> Maybe (Exp s p))
+        :      PrimEval s p
+ = PrimEval name desc
         (Cons Val (Cons Val Nil)) fn
 
 

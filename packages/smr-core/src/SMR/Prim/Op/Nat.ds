@@ -24,12 +24,12 @@ makePrimOpsNat (_ : Unit): List (PrimEval s Prim)
 
 -- | Construct an evaluator for a 1-arity nat operator
 primOpNat1
-        (name:  Text) (desc: Text)
-        (fn:    Nat -> Nat)
-        :       PrimEval s Prim
+        (name: Text) (desc: Text)
+        (fn:   Nat -> Nat)
+        :      PrimEval s Prim
  =  PrimEval (PrimOp name) desc (Cons Val Nil) fn'
  where  fn' as0
-         | Just (T2 n1 as1)     <- takeArgNat as0
+         | Just (n1, as1) <- takeArgNat as0
          = Just $ makeXNat (fn n1)
         fn' _
          = Nothing
@@ -37,13 +37,13 @@ primOpNat1
 
 -- | Construct an evaluator for a 2-arity nat operator returning nat.
 primOpNat2Nat
-        (name:  Text) (desc: Text)
-        (fn:    Nat -> Nat -> Nat)
-        :       PrimEval s Prim
+        (name: Text) (desc: Text)
+        (fn:   Nat -> Nat -> Nat)
+        :      PrimEval s Prim
  =  PrimEval (PrimOp name) desc (Cons Val (Cons Val Nil)) fn'
  where  fn' as0
-         | Just (T2 n1 as1)     <- takeArgNat as0
-         , Just (T2 n2 Nil)     <- takeArgNat as1
+         | Just (n1, as1) <- takeArgNat as0
+         , Just (n2, Nil) <- takeArgNat as1
          = Just $ makeXNat (fn n1 n2)
         fn' _
          = Nothing
@@ -51,13 +51,13 @@ primOpNat2Nat
 
 -- | Construct an evaluator for a 2-arity nat operator returning bool.
 primOpNat2Bool
-        (name:  Text) (desc: Text)
-        (fn:    Nat -> Nat -> Bool)
-        :       PrimEval s Prim
+        (name: Text) (desc: Text)
+        (fn:   Nat -> Nat -> Bool)
+        :      PrimEval s Prim
  =  PrimEval (PrimOp name) desc (Cons Val (Cons Val Nil)) fn'
  where  fn' as0
-         | Just (T2 n1 as1)     <- takeArgNat as0
-         , Just (T2 n2 Nil)     <- takeArgNat as1
+         | Just (n1, as1) <- takeArgNat as0
+         , Just (n2, Nil) <- takeArgNat as1
          = Just $ makeXBool (fn n1 n2)
         fn' _
          = Nothing

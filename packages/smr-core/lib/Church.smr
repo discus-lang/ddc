@@ -1,3 +1,4 @@
+! Church encoding of basic data types and operators.
 
 ! Fixpoint --------------------------------------------------------------------
 @church-fix    f        = (\x. f (x x)) (\x. f (x x));
@@ -12,7 +13,7 @@
 
 
 ! Pairing ---------------------------------------------------------------------
-@church-pair   m n 
+@church-pair   m n
  = \b. @church-if b m n;
 
 @church-fst p
@@ -35,7 +36,7 @@
 @church-five            = @church-succ @church-four;
 
 ! Predecessor.
-@church-pred n 
+@church-pred n
  = @church-fst (n @church-pair-succ @church-pair-zero);
 
 @church-pair-zero
@@ -66,7 +67,7 @@
 
 ! Compute the factorial of a natural number 'n'.
 @church-fac   n
- = @church-if 
+ = @church-if
         (@church-is-zero n)
         (@church-one)
         (@church-mul n (@church-fac (@church-sub n @church-one)));
@@ -79,16 +80,16 @@
 @church-list-cons x xs
  = \an ac. ac x xs;
 
-@church-list-case xs an ac 
+@church-list-case xs an ac
  = xs an ac;
 
-@church-list-head    xx   
- = @church-list-case xx 
-        %none             
+@church-list-head    xx
+ = @church-list-case xx
+        %none
         (\x. \xs. x);
 
-@church-list-tail    xx  
- = @church-list-case xx 
+@church-list-tail    xx
+ = @church-list-case xx
         @church-list-nil
         (\x. \xs. xs);
 

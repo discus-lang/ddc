@@ -30,8 +30,8 @@ parseDecls
         (ts: List (Located Token))
         : Maybe (List (Decl s p))
  = case parse pDeclsEnd ts of
-        Nil               -> Nothing
-        Cons (T2 xx _) _  -> Just xx
+        Nil             -> Nothing
+        Cons (xx, _) _  -> Just xx
  where
         pDeclsEnd
          = do   ds      <- pDecls c
@@ -60,8 +60,8 @@ pDecl   (c: Config s p): Parser (Located Token) (Decl s p)
 parseExp (c:  Config s p)
          (ts: List (Located Token)): Maybe (Exp s p)
  = case parse pExpEnd ts of
-        Nil               -> Nothing
-        Cons (T2 xx _) _  -> Just xx
+        Nil             -> Nothing
+        Cons (xx, _) _  -> Just xx
  where
         pExpEnd
          = do   x       <- pExp c
@@ -197,18 +197,18 @@ pCarSimRec (c: Config s p)
 --         |  Name '^' Nat '=' Exp
 --
 pBind   (c: Config s p)
-        :   Parser (Located Token) (Tup2 (Tup2 Name Nat) (Exp s p))
+        :   Parser (Located Token) ((Name, Nat), Exp s p)
  = do   name    <- pName SVar
         alt
          (do    _       <- pPunc '='
                 x       <- pExp c
-                return  $ T2 (T2 name 0) x)
+                return  ((name, 0), x))
 
          (do    _       <- pPunc '^'
                 bump    <- pNat
                 _       <- pPunc '='
                 x       <- pExp c
-                return  $ T2 (T2 name bump) x)
+                return  ((name, bump), x))
 
 
 -- Ups ------------------------------------------------------------------------
@@ -227,27 +227,21 @@ pUps: Parser (Located Token) Ups
 --   Bump ::= Name ':' Nat
 --         |  Name '^' Nat ':' Nat
 --
-pBump: Parser (Located Token) (Tup2 (Tup2 Name Nat) Nat)
+pBump: Parser (Located Token) ((Name, Nat), Nat)
  = do   name    <- pName SVar
         alt
          (do    _       <- pPunc ':'
                 inc     <- pNat
-                return  $  T2 (T2 name 0) inc)
+                return  ((name, 0), inc))
 
          (do    _       <- pPunc '^'
                 depth   <- pNat
                 _       <- pPunc ':'
                 inc     <- pNat
-                return  $  T2 (T2 name depth) inc)
+                return  ((name, depth), inc))
 
 
 -------------------------------------------------------------------------------
--- | Parser for the end of input token.
-pEnd: Parser (Located Token) Unit
- = do   _       <- satisfies (isToken KEnd ∘ valueOfLocated)
-        return ()
-
-
 -- | Parser for a natural number.
 pNat: Parser (Located Token) Nat
  = from (takeNatOfToken    ∘ valueOfLocated)
@@ -256,6 +250,12 @@ pNat: Parser (Located Token) Nat
 -- | Parser for a name in the given space
 pName (s: Space): Parser (Located Token) Name
  = from (takeNameOfToken s ∘ valueOfLocated)
+
+
+-- | Parser for the end of input token.
+pEnd: Parser (Located Token) Unit
+ = do   _       <- satisfies (isToken KEnd ∘ valueOfLocated)
+        return ()
 
 
 -- | Parser for a punctuation character.

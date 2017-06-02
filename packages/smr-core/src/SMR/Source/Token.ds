@@ -15,19 +15,19 @@ where
 
 -- | Tokens for for the source language.
 data Token where
-        KEnd    : Token                         -- ^ End-of-input.
-        KPunc   : Char  -> Token                -- ^ Punctuation character.
-        KName   : Space -> Name -> Token        -- ^ A scoped name.
-        KNat    : Nat   -> Token                -- ^ A natural number.
+        KEnd    : Token                  -- ^ End-of-input.
+        KPunc   : Char  -> Token         -- ^ Punctuation character.
+        KName   : Space -> Name -> Token -- ^ A scoped name.
+        KNat    : Nat   -> Token         -- ^ A natural number.
 
 
 -- | Name space of a name.
 data Space where
-        SVar    : Space                         -- ^ Local variable.
-        SMac    : Space                         -- ^ Macro name.
-        SSet    : Space                         -- ^ Set name.
-        SSym    : Space                         -- ^ Symbol name.
-        SPrm    : Space                         -- ^ Primitive name.
+        SVar    : Space                  -- ^ Local variable.
+        SMac    : Space                  -- ^ Macro name.
+        SSet    : Space                  -- ^ Set name.
+        SSym    : Space                  -- ^ Symbol name.
+        SPrm    : Space                  -- ^ Primitive name.
 
 
 -- | Check if two tokens are equal.
@@ -35,12 +35,12 @@ eq_Token: Eq Token
  = Eq eq' neq'
  where
         eq' t1 t2
-         = case T2 t1 t2 of
-                T2 KEnd    KEnd                 -> True
-                T2 (KPunc c1) (KPunc c2)        -> c1 == c2
-                T2 (KName s1 n1) (KName s2 n2)  -> s1 == s2 ∧ n1 == n2
-                T2 (KNat n1) (KNat n2)          -> n1 == n2
-                _                               -> False
+         = case (t1, t2) of
+                (KEnd,        KEnd)        -> True
+                (KPunc c1,    KPunc c2)    -> c1 == c2
+                (KName s1 n1, KName s2 n2) -> s1 == s2 ∧ n1 == n2
+                (KNat n1,     KNat  n2)    -> n1 == n2
+                _                          -> False
 
         neq' t1 t2
          = not (eq' t1 t2)
@@ -51,13 +51,13 @@ eq_Space: Eq Space
  = Eq eq' neq'
  where
         eq' s1 s2
-         = case T2 s1 s2 of
-                T2 SVar SVar    -> True
-                T2 SMac SMac    -> True
-                T2 SSet SSet    -> True
-                T2 SSym SSym    -> True
-                T2 SPrm SPrm    -> True
-                _               -> False
+         = case (s1, s2) of
+                (SVar, SVar) -> True
+                (SMac, SMac) -> True
+                (SSet, SSet) -> True
+                (SSym, SSym) -> True
+                (SPrm, SPrm) -> True
+                _            -> False
 
         neq' t1 t2
          = not (eq' t1 t2)
@@ -109,6 +109,6 @@ takeNameOfToken (ss1: Space) (kk: Token): Maybe Name
 -- | Take the natural number from a token, if any.
 takeNatOfToken (kk: Token): Maybe Nat
  = case kk of
-        KNat n          -> Just n
-        _               -> Nothing
+        KNat n -> Just n
+        _      -> Nothing
 

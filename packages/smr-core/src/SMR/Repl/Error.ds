@@ -9,22 +9,22 @@ where
 data ErrorRepl where
         -- Lexer error.
         ErrorReplLexer
-         :  Text                -- ^ Name of source file or method.
-         -> Location            -- ^ Location of lexer error in input file.
-         -> Maybe Char          -- ^ Next character on input, if available.
+         :  Text        -- ^ Name of source file or method.
+         -> Location    -- ^ Location of lexer error in input file.
+         -> Maybe Char  -- ^ Next character on input, if available.
          -> ErrorRepl
 
         -- | Parser error.
         ErrorReplParser
-         :  Text                -- ^ Name of source file or method.
-         -> Location            -- ^ Location of parser error in input file.
-         -> Maybe Token         -- ^ Next token on input, if available.
+         :  Text        -- ^ Name of source file or method.
+         -> Location    -- ^ Location of parser error in input file.
+         -> Maybe Token -- ^ Next token on input, if available.
          -> ErrorRepl
 
         -- | Runtime error.
         ErrorReplRuntime
-         :  Text                -- ^ Name of source file or method.
-         -> Text                -- ^ Description of runtime error.
+         :  Text        -- ^ Name of source file or method.
+         -> Text        -- ^ Description of runtime error.
          -> ErrorRepl
 
 

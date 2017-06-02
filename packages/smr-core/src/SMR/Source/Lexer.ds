@@ -16,28 +16,26 @@ where
 lexTokens
         (lStart0: Location)
         (cs0:     List Char)
-        :        Tup3 (List (Located Token)) Location (List Char)
+        : (List (Located Token), Location, List Char)
  = case skipSpace lStart0 cs0 of
-    T2 lStart Nil
-     -> T3  (Cons (Located lStart lStart KEnd) Nil)
-                lStart
-                Nil
+    (lStart, Nil)
+     -> ( Cons (Located lStart lStart KEnd) Nil
+        , lStart, Nil)
 
-    T2 lStart cs
+    (lStart, cs)
      -> case lexToken lStart cs of
          Nothing
-          -> T3 Nil lStart cs
+          -> (Nil, lStart, cs)
 
-         Just (T2 k cs')
-          -> case lexTokens (endOfLocated k) cs' of
-                T3 ks lStart' cs''
-                 -> T3 (Cons k ks) lStart' cs''
+         Just (k, cs')
+          |  (ks, lStart', cs'') <- lexTokens (endOfLocated k) cs'
+          -> (Cons k ks, lStart', cs'')
 
 
 -- | Lex a single token.
 lexToken (lStart: Location)
-         (xx:   List Char)
-         :      Maybe (Tup2 (Located Token) (List Char))
+         (xx:     List Char)
+         :        Maybe (Located Token, List Char)
  = case xx of
     Nil
      -> Nothing
@@ -45,89 +43,80 @@ lexToken (lStart: Location)
     Cons c xs
         -- Punctuation.
         |  isCharPunc c
-        -> do   lEnd    = incChar 1 lStart
-                tok     = KPunc c
-                Just $ T2 (Located lStart lEnd tok) xs
+        -> do   lEnd = incCharOfLocation 1 lStart
+                tok  = KPunc c
+                Just (Located lStart lEnd tok, xs)
 
         -- Variable name.
-        -- TODO: Inlining takeSpace into the guard causes an LLVM dominator error.
-        |  Just (T2 space xx')          <- takeSpace c xs
-        ,  Just (T3 name  lEnd csRest)  <- lexName   lStart xx'
+        -- TODO: Inlining takeSpace into the guard causes
+        -- an LLVM dominator error.
+        |  Just (space, xx')         <- takeSpace c xs
+        ,  Just (name, lEnd, csRest) <- lexName   lStart xx'
         -> do   tok      = KName space name
-                Just $ T2 (Located lStart lEnd tok) csRest
+                Just (Located lStart lEnd tok, csRest)
 
         --  Natural number.
         |  isDigit c
-        ,  Just (T3 nat   lEnd csRest)  <- lexNat lStart (Cons c xs)
+        ,  Just (nat, lEnd, csRest)  <- lexNat lStart (Cons c xs)
         -> do   tok      = KNat nat
-                Just $ T2 (Located lStart lEnd tok) csRest
+                Just (Located lStart lEnd tok, csRest)
 
         |  otherwise
         -> Nothing
 
 
 skipSpace
-        (lStart: Location) (xx: List Char)
-        : Tup2 Location (List Char)
+        (lStart: Location)
+        (xx:     List Char)
+        :       (Location, List Char)
  = case xx of
-    Nil             -> T2 lStart xx
+    Nil             -> (lStart, xx)
     Cons c cs
         -- Skip whitespace.
-        | c == ' '     -> skipSpace (incChar 1 lStart) cs
-        | c == '\n'    -> skipSpace (incLine 1 lStart) cs
-        | c == '\t'    -> skipSpace (incChar 8 lStart) cs
+        | c == ' '  -> skipSpace (incCharOfLocation 1 lStart) cs
+        | c == '\n' -> skipSpace (incLineOfLocation 1 lStart) cs
+        | c == '\t' -> skipSpace (incCharOfLocation 8 lStart) cs
 
         -- Skip comments
-        |  c == '!'    -> skipSpace (incLine 1 lStart)
-                        $  dropWhile (\x -> x /= '\n') cs
+        |  c == '!' -> skipSpace (incLineOfLocation 1 lStart)
+                    $  dropWhile (\x -> x /= '\n') cs
 
-        | otherwise    -> T2 lStart xx
-
-
--- TODO: shift this into Data.Text.Location
--- | Increment the line count in a location.
-incLine (inc: Nat) ((Location nLine nChar): Location): Location
- = Location (nLine + inc) 1
-
-
--- | Increment the char count in a location.
-incChar (inc: Nat) ((Location nLine nChar): Location): Location
- = Location nLine (nChar + inc)
+        | otherwise -> (lStart, xx)
 
 
 -- | Lex a variable name.
 lexName (lStart: Location) (xx: List Char)
-        :    Maybe (Tup3 Name Location (List Char))
+        : Maybe (Name, Location, List Char)
  = go lStart Nil xx
  where
         go lStart' acc Nil
          = do   name    = textOfCharList (reverse acc)
-                Just $ T3 name lStart' Nil
+                Just (name, lStart', Nil)
 
         go lStart' acc (Cons c cs)
          | isNameBodyChar c
-         =      go (incChar 1 lStart') (Cons c acc) cs
+         =      go (incCharOfLocation 1 lStart') (Cons c acc) cs
 
          | otherwise
          = do   name    = textOfCharList (reverse acc)
-                Just $ T3 name lStart' (Cons c cs)
+                Just (name, lStart', Cons c cs)
 
 
 -- | Lex a natural number.
 lexNat  (lStart: Location) (xx: List Char)
-        :    Maybe (Tup3 Nat Location (List Char))
+        : Maybe (Nat, Location, List Char)
  = go lStart Nil xx
  where
         go lStart' acc Nil
-         | Just nat     <- readNat (textOfCharList (reverse acc))
-         = Just $ T3 nat lStart' Nil
+         | Just nat <- readNat (textOfCharList (reverse acc))
+         = Just (nat, lStart', Nil)
 
         go lStart' acc (Cons c cs)
          | isDigit c
-         =      go (incChar 1 lStart') (Cons c acc) cs
+         =      go (incCharOfLocation 1 lStart') (Cons c acc) cs
 
-         | Just nat     <- readNat (textOfCharList (reverse acc))
-         = Just $ T3 nat lStart' (Cons c cs)
+         | Just nat <- readNat (textOfCharList (reverse acc))
+         = Just (nat, lStart', Cons c cs)
 
         go _ _
          = Nothing
@@ -140,13 +129,13 @@ isNameBodyChar (c: Char): Bool
 
 -- | Take the namespace qualifier from the front of a name.
 takeSpace (c: Char) (cs: List Char)
-          : Maybe (Tup2 Space (List Char))
+          : Maybe (Space, List Char)
  | isLower c ∨ isLower c
-                = Just (T2 SVar (Cons c cs))
- | c == '@'     = Just (T2 SMac cs)
- | c == '+'     = Just (T2 SSet cs)
- | c == '%'     = Just (T2 SSym cs)
- | c == '#'     = Just (T2 SPrm cs)
+                = Just (SVar, Cons c cs)
+ | c == '@'     = Just (SMac, cs)
+ | c == '+'     = Just (SSet, cs)
+ | c == '%'     = Just (SSym, cs)
+ | c == '#'     = Just (SPrm, cs)
  | otherwise    = Nothing
 
 
@@ -169,3 +158,4 @@ isCharPunc (c: Char): Bool
  | c == '='     = True
  | c == '$'     = True
  | otherwise    = False
+

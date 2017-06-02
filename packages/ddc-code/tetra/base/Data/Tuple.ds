@@ -4,8 +4,53 @@ export  {fst; snd}
 where
 
 
+data Tup1 (a: Data) where
+ T1     :  a
+        -> Tup1 a
+
 data Tup2 (a b: Data) where
- T2     : a -> b -> Tup2 a b
+ T2     :  a -> b
+        -> Tup2 a b
+
+data Tup3 (a b c: Data) where
+ T3     :  a -> b -> c
+        -> Tup3 a b c
+
+data Tup4 (a b c d: Data) where
+ T4     :  a -> b -> c -> d
+        -> Tup4 a b c d
+
+data Tup5 (a b c d e: Data) where
+ T5     :  a -> b -> c -> d -> e
+        -> Tup5 a b c d e
+
+data Tup6 (a b c d e f: Data) where
+ T6     :  a -> b -> c -> d -> e -> f
+        -> Tup6 a b c d e f
+
+data Tup7 (a b c d e f g: Data) where
+ T7     :  a -> b -> c -> d -> e -> f -> g
+        -> Tup7 a b c d e f g
+
+data Tup8 (a b c d e f g h: Data) where
+ T8     :  a -> b -> c -> d -> e -> f -> g -> h
+        -> Tup8 a b c d e f g h
+
+data Tup9 (a b c d e f g h i: Data) where
+ T9     :  a -> b -> c -> d -> e -> f -> g -> h -> i
+        -> Tup9 a b c d e f g h i
+
+data Tup10 (a b c d e f g h i j: Data) where
+ T10    :  a -> b -> c -> d -> e -> f -> g -> h -> i -> j
+        -> Tup10 a b c d e f g h i j
+
+data Tup11 (a b c d e f g h i j k: Data) where
+ T11    :  a -> b -> c -> d -> e -> f -> g -> h -> i -> j -> k
+        -> Tup11 a b c d e f g h i j k
+
+data Tup12 (a b c d e f g h i j k l: Data) where
+ T12    :  a -> b -> c -> d -> e -> f -> g -> h -> i -> j -> k -> l
+        -> Tup12 a b c d e f g h i j k l
 
 
 fst (t: Tup2 a b): a
@@ -16,6 +61,3 @@ snd (t: Tup2 a b): b
  = case t of
         T2 x y  -> y
 
-
-data Tup3 (a b c: Data) where
- T3     : a -> b -> c -> Tup3 a b c

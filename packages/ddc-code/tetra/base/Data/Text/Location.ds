@@ -1,6 +1,7 @@
 
 module Data.Text.Location
-export { endOfLocated; startOfLocated; valueOfLocated }
+export  { incLineOfLocation; incCharOfLocation
+        ; endOfLocated; startOfLocated; valueOfLocated }
 import Data.Text.Base
 where
 
@@ -12,6 +13,18 @@ data Location where
          :  Nat         -- ^ Line number.
          -> Nat         -- ^ Column number.
          -> Location
+
+
+-- | Increment the line count in a location.
+incLineOfLocation (inc: Nat)
+        ((Location nLine nChar): Location): Location
+ = Location (nLine + inc) 1
+
+
+-- | Increment the char count in a location.
+incCharOfLocation (inc: Nat)
+        ((Location nLine nChar): Location): Location
+ = Location nLine (nChar + inc)
 
 
 -------------------------------------------------------------------------------

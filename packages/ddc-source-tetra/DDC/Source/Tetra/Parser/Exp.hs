@@ -345,22 +345,16 @@ pExpAtomSP
  , do   (u, sp)         <- pBoundIxSP
         return  (sp, XVar u)
 
-
-       -- Primitive record data constructor.
-       --  like (x,y,z)#
+        -- Full application of a record data constructor.
+        --   like (x = e1, y = e2, z = e3)
  , P.try $ do
+        P.lookAhead
+         $ do   _       <- pSym SRoundBra
+                _       <- pVarNameSP
+                _       <- pSym SEquals
+                return ()
+
         sp      <- pSym SRoundBra
-        ns      <- fmap (map fst) $ P.sepBy pVarNameSP (pSym SComma)
-        pSym SRoundKet
-        pSym SHash
-        return  (sp, XCon (DaConRecord ns))
-
-
- -- Full application of a record data constructor.
- --   like (x = e1, y = e2, z = e3)
- , P.try $ do
-        sp       <- pSym SRoundBra
-
         (nsField, tsField, xsField)
          <- fmap unzip3
           $ P.sepBy
@@ -390,12 +384,34 @@ pExpAtomSP
         pSym SHash
         return  (sp, XCon (DaConRecord []))
 
-
-        -- ( Exp2 )
- , do   pSym SRoundBra
-        (sp, t)  <- pExpWhereSP
+       -- Primitive record data constructor.
+       --  like (x,y,z)#
+ , P.try $ do
+        sp      <- pSym SRoundBra
+        ns      <- fmap (map fst) $ P.sepBy pVarNameSP (pSym SComma)
         pSym SRoundKet
-        return  (sp, t)
+        pSym SHash
+        return  (sp, XCon (DaConRecord ns))
+
+        -- Tuple expression, or parenthesised expression.
+ , do   _              <- pSym SRoundBra
+        (sp, xField1)  <- pExpWhereSP
+
+        msum
+         [ do   -- Tuple expression.
+                _         <- pSym SComma
+                xsField'  <- P.sepBy1 (fmap snd pExpWhereSP) (pSym SComma)
+                _         <- pSym SRoundKet
+                let xs    =  xField1 : xsField'
+                let arity =  length xs
+                let nCtor =  Text.pack ("T" ++ show arity)
+                let xCon  =  XCon (DaConBound (DaConBoundName nCtor))
+                return  (sp, makeXApps xCon $ map RTerm xs)
+
+                -- Parenthesised expression.
+         , do   pSym SRoundKet
+                return  (sp, xField1)
+         ]
 
 
         -- Infix operator used as a variable.
@@ -451,16 +467,17 @@ pPatAtom :: Parser Pat
 pPatAtom
  = P.choice
  [
-        -- Primitive record pattern.
-        -- like (x,y,z)# a b c
-    P.try $ do
-        _       <- pSym SRoundBra
-        nsField <- fmap (map fst) $ P.sepBy pVarNameSP (pSym SComma)
-        pSym SRoundKet
-        pSym SHash
-        psField <- P.many pPatAtom
-        return  $ PData (DaConRecord nsField) psField
-
+        -- Tuple pattern.
+   P.try $ do
+        _sp       <- pSym SRoundBra
+        pField1   <- pPat
+        _         <- pSym SComma
+        psField'  <- P.sepBy1 pPat (pSym SComma)
+        _         <- pSym SRoundKet
+        let ps    =  pField1 : psField'
+        let arity =  length ps
+        let nCtor =  Text.pack ("T" ++ show arity)
+        return    $  PData (DaConBound (DaConBoundName nCtor)) ps
 
         -- Sugared record pattern.
         -- like (x = a, y = b, z = c)
@@ -477,6 +494,16 @@ pPatAtom
                 (pSym SComma)
 
         pSym SRoundKet
+        return  $ PData (DaConRecord nsField) psField
+
+        -- Primitive record pattern.
+        -- like (x,y,z)# a b c
+  , P.try $ do
+        _       <- pSym SRoundBra
+        nsField <- fmap (map fst) $ P.sepBy pVarNameSP (pSym SComma)
+        pSym SRoundKet
+        pSym SHash
+        psField <- P.many pPatAtom
         return  $ PData (DaConRecord nsField) psField
 
         -- ( PAT )

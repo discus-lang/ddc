@@ -15,12 +15,12 @@ makePrimOpsBool (_ : Unit): List (PrimEval s Prim)
 
 -- | Construct an evaluator for a 1-arity nat operator
 primOpBool1
-        (name:  Text) (desc: Text)
-        (fn:    Bool -> Bool)
-        :       PrimEval s Prim
+        (name: Text) (desc: Text)
+        (fn:   Bool -> Bool)
+        :      PrimEval s Prim
  =  PrimEval (PrimOp name) desc (Cons Val Nil) fn'
  where  fn' as0
-         | Just (T2 b1 as1)     <- takeArgBool as0
+         | Just (b1, as1) <- takeArgBool as0
          = Just $ makeXBool (fn b1)
         fn' _
          = Nothing
@@ -28,13 +28,13 @@ primOpBool1
 
 -- | Construct an evaluator for a 2-arity nat operator returning nat.
 primOpBool2Bool
-        (name:  Text) (desc: Text)
-        (fn:    Bool -> Bool -> Bool)
-        :       PrimEval s Prim
+        (name: Text) (desc: Text)
+        (fn:   Bool -> Bool -> Bool)
+        :      PrimEval s Prim
  =  PrimEval (PrimOp name) desc (Cons Val (Cons Val Nil)) fn'
  where  fn' as0
-         | Just (T2 b1 as1)     <- takeArgBool as0
-         , Just (T2 b2 Nil)     <- takeArgBool as1
+         | Just (b1, as1) <- takeArgBool as0
+         , Just (b2, Nil) <- takeArgBool as1
          = Just $ makeXBool (fn b1 b2)
         fn' _
          = Nothing
@@ -43,16 +43,16 @@ primOpBool2Bool
 -- | Primitive evaluator for the #if operator.
 --   Only the scrutinee is demanded, while the branches are not.
 primOpIf: PrimEval s Prim
- = PrimEval 
+ = PrimEval
         (PrimOp "bool-if")
         "if-then-else operator"
         (Cons Val (Cons Exp (Cons Exp Nil)))
         fn'
  where
         fn' as0
-         | Just (T2 b1 as1)     <- takeArgBool as0
-         , Just (T2 x1 as2)     <- takeArgExp  as1
-         , Just (T2 x2 Nil)     <- takeArgExp  as2
+         | Just (b1, as1) <- takeArgBool as0
+         , Just (x1, as2) <- takeArgExp  as1
+         , Just (x2, Nil) <- takeArgExp  as2
          = Just $ if b1 then x1 else x2
         fn' _
          = Nothing

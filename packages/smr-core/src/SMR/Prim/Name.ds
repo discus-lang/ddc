@@ -1,6 +1,6 @@
 
 module SMR.Prim.Name
-export 
+export
 {       pretty_Prim;
         prettyPrim; parsePrim;
 }
@@ -27,14 +27,14 @@ prettyPrim (pp: Prim): Text
 
 
 -- | Parse a primitive name, without the leading '#'.
-parsePrim 
-        (ps:    List Text)      -- ^ Valid primitive names.
-        (tx:    Text)           -- ^ Text string to parse.
-        :       Maybe Prim
+parsePrim
+        (ps: List Text)         -- ^ Valid primitive names.
+        (tx: Text)              -- ^ Text string to parse.
+        :    Maybe Prim
 
  -- Literal Bools.
- | tx == "true"         = Just $ PrimLitBool True
- | tx == "false"        = Just $ PrimLitBool False
+ | tx == "true"  = Just $ PrimLitBool True
+ | tx == "false" = Just $ PrimLitBool False
 
  -- Literal Nats.
  | cs   <- charListOfText tx
@@ -42,13 +42,13 @@ parsePrim
  , ds   <- drop 4 cs
  , all isDigit ds
  = case readNat (textOfCharList ds) of
-        Nothing         -> Nothing
-        Just nat        -> Just $ PrimLitNat nat
+        Nothing  -> Nothing
+        Just nat -> Just $ PrimLitNat nat
 
  -- Other primitives.
- | elem tx ps           = Just $ PrimOp tx
+ | elem tx ps   = Just $ PrimOp tx
 
  -- Unrecognized.
- | otherwise            = Nothing
+ | otherwise    = Nothing
 
 

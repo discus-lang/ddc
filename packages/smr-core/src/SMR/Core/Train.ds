@@ -10,7 +10,7 @@ export
         snvOfNamesArgs;
         snvIsEmpty;
         snvBump;
-        snvApply;       snvApplyVar;    
+        snvApply;       snvApplyVar;
 
         upsIsEmpty;
         upsBump;        upsCombine;
@@ -30,9 +30,9 @@ where
 --
 trainCons (c1: Car s p) (cs2: List (Car s p)): List (Car s p)
  | carIsEmpty c1        = cs2
- | otherwise    
+ | otherwise
  = case cs2 of
-        Nil   
+        Nil
          -> Cons c1 Nil
 
         Cons c2 cs2'
@@ -53,7 +53,7 @@ trainAppend (ccA ccB: List (Car s p)): List (Car s p)
 
 -- TODO: Inlining this into trainAppend as a where-binding causes a type
 --       checker failure as the type variables don't match up.
-trainAppend' 
+trainAppend'
         (c1:      Car s p)
         (cs1 cc2: List (Car s p)): List (Car s p)
  = case cs1 of
@@ -74,8 +74,8 @@ trainAppend'
 -- | Bump a train due to pushing it under an abstraction with the
 --   given parameter names.
 trainBump
-        (ns:    List Name)
-        (cs:    List (Car s p)): List (Car s p)
+        (ns: List Name)
+        (cs: List (Car s p)): List (Car s p)
  = case cs of
         Nil     -> Nil
 
@@ -90,7 +90,7 @@ trainBump
 
 
 -- | Wrap an expression in a substitution train.
---   If the expression is a plain 
+--   If the expression is a plain
 trainApply (cs1: List (Car s p)) (xx: Exp s p): Exp s p
  | Nil  <- cs1
  = xx
@@ -107,7 +107,7 @@ trainApply (cs1: List (Car s p)) (xx: Exp s p): Exp s p
 
 -- Apply a train onto a variable of a given name and depth.
 trainApplyVar
-        (cs: List (Car s p)) 
+        (cs: List (Car s p))
         (name: Name) (depth: Nat): Exp s p
  = case cs of
         Nil
@@ -147,26 +147,26 @@ snvIsEmpty ((SSnv bs): Snv s p): Bool
 
 -- | Bump a substitution due to pushing it under an abstraction with
 --   the given parameter names.
-snvBump (ns:    List Name)
+snvBump (ns: List Name)
         ((SSnv ts): Snv s p): Snv s p
  = SSnv $ mapMaybe (snvBump1 ns) ts
  where
         snvBump1
                 (names: List Name)
-                (b:     Tup2 (Tup2 Name Nat) (Exp s p))
-                :       Maybe (Tup2 (Tup2 Name Nat) (Exp s p))
-         | T2 (T2 name depth) x <- b
+                (b:     ((Name, Nat), Exp s p))
+                :       Maybe ((Name, Nat), Exp s p)
+         | ((name, depth), x) <- b
          , elem name names
          = Nothing
 
-         | T2 (T2 name depth) x <- b
-         = Just (T2  (T2 name (depth + (if elem name names then 1 else 0)))
-                     (upsApply (UUps (map (\name' -> T2 (T2 name' 0) 1) names)) x))
+         | ((name, depth), x) <- b
+         = Just ( (name, depth + (if elem name names then 1 else 0))
+                , upsApply (UUps (map (\name' -> ((name', 0), 1)) names)) x)
 
 
 -- | Wrap a train consisting of a single simultaneous substitution
 --   around an expression.
-snvApply 
+snvApply
         (rec: Bool)
         (snv@(SSnv bs): Snv s p) (xx: Exp s p): Exp s p
  = case bs of
@@ -176,15 +176,15 @@ snvApply
 
 
 -- | Apply a substitution to a variable of a given name and depth.
-snvApplyVar 
+snvApplyVar
         (rec: Bool)
         (snv@(SSnv bs): Snv s p)
         (name: Name) (depth: Nat): Exp s p
  = case bs of
-        Nil     
+        Nil
          -> XVar name depth
 
-        Cons b'@(T2 (T2 name' depth') x') bs'
+        Cons b'@((name', depth'), x') bs'
          |  name  == name'
          ,  depth == depth'
          -> if rec then XSub (Cons (CRec snv) Nil) x'
@@ -219,7 +219,7 @@ upsApplyVar ((UUps bs): Ups) (name: Name) (ix: Nat): Exp s n
         Nil
          -> XVar name ix
 
-        Cons u'@(T2 (T2 name' depth') inc') bs'
+        Cons u'@((name', depth'), inc') bs'
          |  name   == name'
          ,  depth' <= ix
          -> upsApplyVar (UUps bs') name (ix + inc')
@@ -232,15 +232,15 @@ upsApplyVar ((UUps bs): Ups) (name: Name) (ix: Nat): Exp s n
 --   under an absraction with the given named binders.
 upsBump (ns: List Name) ((UUps bs): Ups): Ups
  = UUps $ mapMaybe (upsBump1 ns) bs
- where  
+ where
         upsBump1 (ns:   List Name)
-                 (l:    Tup2 (Tup2 Name Nat) Nat)
-                 :      Maybe (Tup2 (Tup2 Name Nat) Nat)
-         | T2 (T2 n d) inc      <- l
+                 (l:    ((Name, Nat), Nat))
+                 :      Maybe ((Name, Nat), Nat)
+         | ((n, d), inc) <- l
          , elem n ns
          = if d == 0
                 then Nothing
-                else Just (T2 (T2 n (d + 1)) inc)
+                else Just ((n, d + 1), inc)
 
          | otherwise
          = Just l
@@ -256,20 +256,20 @@ upsCombine (UUps ts1) (UUps ts2)
 --   Applying the result to an expression will achieve the same result as
 --   applying the whole list and then the extra one.
 upsCombineBump (b: UpsBump) (bs: List UpsBump): List UpsBump
- | T2 (T2 name depth) inc  <- b
+ | ((name, depth), inc)  <- b
  = case bs of
         -- We cannot combine the new bump with anything else,
         -- so add it to the end of the list.
-        Nil     
+        Nil
          -> Cons b Nil
 
-        Cons b'@(T2 (T2 name' depth') inc') bs'
+        Cons b'@((name', depth'), inc') bs'
          -- Combine the new bump with an existing one of the same name.
-         |  name  == name' 
+         |  name  == name'
          ,  depth == depth'
-         -> Cons (T2 (T2 name depth') (inc + inc')) bs'
+         -> Cons ((name, depth'), inc + inc') bs'
 
          -- Try to combine the new bump with the tail of the list.
          |  otherwise
-         -> Cons b' (upsCombineBump b bs') 
+         -> Cons b' (upsCombineBump b bs')
 

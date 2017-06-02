@@ -17,7 +17,7 @@ import Data.Text.Location
 where
 
 
----------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 data Cmd where
         CmdNone : Cmd
         CmdStep : Exp Name Prim -> Cmd
@@ -25,22 +25,29 @@ data Cmd where
 
 data State where
         State
-         :  Config Name Prim                            -- ^ Parser config.
-         -> List (Tup2 Prim (PrimEval Name Prim))       -- ^ Primitive evaluators.
-         -> List (Decl Name Prim)                       -- ^ Top-level declarations
+         :  Config Name Prim                    -- ^ Parser config.
+         -> List (Prim, PrimEval Name Prim)     -- ^ Primitive evaluators.
+         -> List (Decl Name Prim)               -- ^ Top-level declarations
          -> State
 
-configOfState    ((State config _ _): State): Config Name Prim
+configOfState
+        ((State config _ _): State)
+        : Config Name Prim
  = config
 
-primTableOfState ((State _ evals _):  State): List (Tup2 Prim (PrimEval Name Prim))
+primTableOfState
+        ((State _ evals _):  State)
+        : List (Prim, PrimEval Name Prim)
  = evals
 
-declsOfState     ((State _ _ decls):  State): List (Decl Name Prim)
+declsOfState
+        ((State _ _ decls):  State)
+        : List (Decl Name Prim)
  = decls
 
 
--- Utils ------------------------------------------------------------------------------------------
+-- Utils ----------------------------------------------------------------------
+-- TODO:
 -- Shift this stuff somewhere else.
 show_Unit: Show Unit
  = Show   $ λxx -> "()"
@@ -55,8 +62,7 @@ getLine: S Console Text
         textOfCharList $ init Nil $ charListOfText txt
 
 
-
----------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 main ()
  = do   writel "Shimmer, version 1.0. The Lambda Machine."
 
@@ -79,8 +85,8 @@ main ()
         primNamesText
          = mapMaybe
                 (\e -> case e of
-                        PrimOp n        -> Just n
-                        _               -> Nothing)
+                        PrimOp n -> Just n
+                        _        -> Nothing)
          $ primNames
 
         -- Build table of prim name to evaluator.
@@ -95,8 +101,8 @@ main ()
         case mSource of
          Just (TextLit path)
           -> case loadSource config path of
-                 Nothing        -> writel "load failed"
-                 Just decls     -> repl (State config primTable decls) CmdNone
+                 Nothing    -> writel "load failed"
+                 Just decls -> repl (State config primTable decls) CmdNone
 
          Nothing
           -> repl (State config primTable Nil) CmdNone
@@ -106,14 +112,15 @@ main ()
 loadSource
         (config: Config Name Prim)
         (path:   TextLit)
-        :        S (File + Console) (Maybe (List (Decl Name Prim)))
+        :        S (File + Console)
+                   (Maybe (List (Decl Name Prim)))
  = do
         str     = file_read (takeTextLit path)
         lStart  = Location 1 1
         result  = lexTokens lStart $ charListOfText str
 
         case result of
-         T3 toks _ cs
+         (toks, _, cs)
           |  not $ all isSpace cs
           -> do writel "! error at end of input."
                 writel (show cs)
@@ -121,8 +128,8 @@ loadSource
 
           |  otherwise
           -> case parseDecls config toks of
-                 Nothing  -> Nothing
-                 Just ds' -> Just ds'
+                Nothing  -> Nothing
+                Just ds' -> Just ds'
 
          _ -> Nothing
 
@@ -147,24 +154,23 @@ repl    (state: State) (cmd: Cmd): S Console Unit
 
         -- Get the line and convert it to tokens.
         str     = getLine
-
         result  = lexTokens (Location 1 1)
                 $ charListOfText str
 
         case result of
          -- If only whitespace was provided then run the default command.
-         T3 (Cons lt Nil) _ Nil
+         (Cons lt Nil, _, Nil)
           |  valueOfLocated lt == KEnd
           -> case cmd of
                 CmdNone    -> repl      state CmdNone
                 CmdStep xx -> repl_step state xx
 
          -- We have some tokens, to parse them.
-         T3 toks _ Nil
+         (toks, _, Nil)
           ->    repl_toks state CmdNone toks
 
          -- We couldn't lex all the characters into tokens.
-         T3 toks lStart' cs
+         (toks, lStart', cs)
           -> case last toks of
                 Just tok
                  |  Cons c _ <- cs

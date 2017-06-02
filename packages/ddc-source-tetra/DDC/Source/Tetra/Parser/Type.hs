@@ -27,14 +27,14 @@ pBind
  -- Named binders.
  [ do    (b, _)  <- pBindNameSP
          return b
-                
+
  -- Anonymous binders.
  , do    pSym SHat
-         return BAnon 
-        
+         return BAnon
+
  -- Vacant binders.
  , do    pSym SUnderscore
-         return BNone 
+         return BNone
  ]
  <?> "a binder"
 
@@ -48,7 +48,7 @@ pType = pTypeUnion
 pTypeUnion :: Parser Type
 pTypeUnion
  = do   t1      <- pTypeForall
-        P.choice 
+        P.choice
          [ -- Type sums.
            -- T2 + T3
            do   sp      <- pTokSP (KOp "+")
@@ -73,8 +73,8 @@ pTypeForall
         pSym SDot
 
         tBody   <- pTypeForall
-        return  $ foldr (\b t -> TAnnot sp 
-                              $  TApp (TCon (TyConForall kBind)) 
+        return  $ foldr (\b t -> TAnnot sp
+                              $  TApp (TCon (TyConForall kBind))
                                       (TAbs b kBind t))
                         tBody bs
 
@@ -88,8 +88,8 @@ pTypeForall
 pTypeFun :: Parser Type
 pTypeFun
  = do   t1      <- pTypeApp
-        P.choice 
-         [ 
+        P.choice
+         [
 
            -- T1 => T2
            do   sp      <- pSym SArrowEquals
@@ -107,7 +107,7 @@ pTypeFun
                 return  $  TAnnot sp $ TFunImplicit t1 t2
 
            -- Body type
-         , do   return t1 
+         , do   return t1
          ]
  <?> "an atomic type or type application"
 
@@ -138,9 +138,9 @@ pTypeAtomSP
         return  (TAnnot sp $ TCon TyConFunImplicit, sp)
 
  -- Named type constructors
- , do    (tc, sp) <- pTyConSP 
+ , do    (tc, sp) <- pTyConSP
          return  (TAnnot sp $ TCon tc, sp)
-            
+
  -- Bottoms.
  , do    sp       <- pTokSP (KBuiltin BPure)
          return  (TAnnot sp $ TBot KEffect, sp)
@@ -155,9 +155,24 @@ pTypeAtomSP
  , do    (u, sp) <- pBoundIxSP
          return  (TAnnot sp $ TVar u, sp)
 
+ -- Tuple type.
+ , P.try $ do
+        sp        <- pSym SRoundBra
+        tField1   <- pType
+        _         <- pSym SComma
+        tsField'  <- P.sepBy1 pType (pSym SComma)
+        _         <- pSym SRoundKet
+        let ts    =  tField1 : tsField'
+        let arity =  length ts
+        let nCtor =  T.pack ("Tup" ++ show arity)
+        let tc    =  TyConBound (TyConBoundName nCtor)
+        return    ( TAnnot sp $  makeTApps (TCon tc) ts
+                  , sp)
+
+
  -- Primitive record type constructor.
- --  like (x,y,z)# 
- , P.try $ do 
+ --  like (x,y,z)#
+ , P.try $ do
         sp     <- pSym SRoundBra
         ns     <- fmap (map fst) $ P.sepBy pVarNameSP (pSym SComma)
         pSym SRoundKet
@@ -169,9 +184,9 @@ pTypeAtomSP
  --   like (x : Nat, y : Nat, z : Nat)
  , P.try $ do
         sp       <- pSym SRoundBra
-        (nsField, tsField) 
+        (nsField, tsField)
                 <- fmap unzip
-                $  P.sepBy 
+                $  P.sepBy
                         (do (n, _)  <- pVarNameSP
                             _       <- pTokSP (KOp ":")
                             t       <- pType
@@ -232,9 +247,9 @@ pTyConSP  =   P.pTokMaybeSP f <?> "a type constructor"
 -- | Parse a bound type constructor.
 --   Known primitive type constructors do not match.
 pTyConBound :: Parser TyCon
-pTyConBound  
+pTyConBound
         =   P.pTokMaybe f <?> "a bound type constructor"
- where  
+ where
         f :: Token SL.Name -> Maybe TyCon
         f (KN (KCon (SL.NameCon tx)))
          |  Nothing <- C.readPrimTyCon      (T.unpack tx)

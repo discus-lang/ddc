@@ -1,6 +1,6 @@
 
 module SMR.Source.Pretty
-export 
+export
 {       pretty_Exp
 }
 import SMR.Core.Exp
@@ -12,10 +12,10 @@ where
 -- Ref ------------------------------------------------------------------------
 pprRef [s p: Data] {Pretty s} {Pretty p} (rr: Ref s p): Text
  = case rr of
-        RMac   n        -> "@" % n
-        RSet   n        -> "+" % n
-        RSym   s        -> "%" % ppr s
-        RPrm   p        -> "#" % ppr p
+        RMac n  -> "@" % n
+        RSet n  -> "+" % n
+        RSym s  -> "%" % ppr s
+        RPrm p  -> "#" % ppr p
 
 
 -- Exp ------------------------------------------------------------------------
@@ -32,30 +32,30 @@ data Context where
 
 
 -- | Pretty print an expression in the given context.
-pprExp' [s p: Data] 
+pprExp' [s p: Data]
         {Pretty s} {Pretty p}
         (ctx: Context) (xx: Exp s p): Text
  | ContextBody  <- ctx
  = case xx of
-        XRef r          -> pprRef r
+        XRef r      -> pprRef r
 
-        XVar name 0     -> name 
-        XVar name d     -> name % "^" % show d
+        XVar name 0 -> name
+        XVar name d -> name % "^" % show d
 
         -- application
         XApp x1 (Cons x2 Nil)
          -> pprExp' ContextFun x1
-                %% pprExp' ContextArg x2
+         %% pprExp' ContextArg x2
 
         XApp x1 xs
-         -> pprExp' ContextFun x1 
-                %% "<" % pprPunc ", " (map (pprExp' ContextBody) xs) % ">"
+         -> pprExp' ContextFun x1
+         %% "<" % pprPunc ", " (map (pprExp' ContextBody) xs) % ">"
 
         -- abstraction
         -- TODO: adding the "\\" string here causes a compile error.
-        XAbs ns x       
-         -> (textOfChar '\\') 
-                % pprSep ns  % "." %% pprExp' ContextBody x
+        XAbs ns x
+         -> textOfChar '\\'
+          % pprSep ns  % "." %% pprExp' ContextBody x
 
         -- substitution
         XSub cs x
@@ -64,31 +64,31 @@ pprExp' [s p: Data]
 
  | ContextFun   <- ctx
  = case xx of
-        XAbs _ _        -> parens $ pprExp' ContextBody xx
-        _               -> pprExp' ContextBody xx
+        XAbs _ _    -> parens $ pprExp' ContextBody xx
+        _           -> pprExp' ContextBody xx
 
  | ContextArg   <- ctx
  = case xx of
-        XRef _          -> pprExp' ContextBody xx
-        XVar _          -> pprExp' ContextBody xx
-        XSub _ _        -> pprExp' ContextBody xx
-        _               -> parens $ pprExp' ContextBody xx
+        XRef _      -> pprExp' ContextBody xx
+        XVar _      -> pprExp' ContextBody xx
+        XSub _ _    -> pprExp' ContextBody xx
+        _           -> parens $ pprExp' ContextBody xx
 
 
 -- Train ----------------------------------------------------------------------
 pprTrain {Pretty s} {Pretty p}
          (cs: List (Car s p)): Text
  = case cs of
-        Nil             -> ""
-        Cons c cs'      -> pprTrain cs' % pprCar c
+        Nil         -> ""
+        Cons c cs'  -> pprTrain cs' % pprCar c
 
 
-pprCar  {Pretty s} {Pretty p} 
+pprCar  {Pretty s} {Pretty p}
         (c: (Car s p)): Text
  = case c of
-        CSim snv        -> pprSnv snv
-        CRec snv        -> "[" % pprSnv snv % "]"
-        CUps ups        -> pprUps ups 
+        CSim snv    -> pprSnv snv
+        CRec snv    -> "[" % pprSnv snv % "]"
+        CUps ups    -> pprUps ups
 
 
 -- Snv ------------------------------------------------------------------------
@@ -98,14 +98,14 @@ pprSnv  {Pretty s} {Pretty p}
 
 
 pprBind {Pretty s} {Pretty p}
-        (bn: Tup2 (Tup2 Name Nat) (Exp s p)): Text
+        (bn: ((Name, Nat), Exp s p)): Text
  = case bn of
-        T2 (T2 name depth) x
+        ((name, depth), x)
          |  depth == 0
          -> name %  "=" % pprExp' ContextBody x
 
          |  otherwise
-         -> name %  "^" % show depth    % "=" %% pprExp' ContextBody x
+         -> name %  "^" % show depth % "=" %% pprExp' ContextBody x
 
 
 -- Ups ------------------------------------------------------------------------
@@ -113,27 +113,27 @@ pprUps ((UUps us): Ups): Text
  = "{" % pprPunc ", " (map pprBump $ reverse us) % "}"
 
 
-pprBump (bm: Tup2 (Tup2 Name Nat) Nat): Text
+pprBump (bm: ((Name, Nat), Nat)): Text
  = case bm of
-        T2 (T2 name depth) inc
+        ((name, depth), inc)
          |  depth == 0
-         -> name % ":"  % show inc
+         -> name % ":" % show inc
 
          |  otherwise
-         -> name % "^"  % show depth    % ":" % show inc
+         -> name % "^" % show depth % ":" % show inc
 
 
 -- Utils ----------------------------------------------------------------------
 pprPunc (p: Text) (xx: List Text): Text
  = case xx of
-        Nil             -> ""
-        Cons x Nil      -> x
-        Cons x xs       -> x % p % pprPunc p xs
+        Nil         -> ""
+        Cons x Nil  -> x
+        Cons x xs   -> x % p % pprPunc p xs
 
 
 pprSep  (xx: List Text): Text
  = case xx of
-        Nil             -> ""
-        Cons x Nil      -> x
-        Cons x xs       -> x %% pprSep xs
+        Nil         -> ""
+        Cons x Nil  -> x
+        Cons x xs   -> x %% pprSep xs
 

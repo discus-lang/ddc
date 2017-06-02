@@ -21,8 +21,8 @@ primOpSeq: PrimEval s Prim
         fn'
  where
         fn' as0
-         | Just (T2 x1 as1)     <- takeArgExp as0
-         , Just (T2 x2 Nil)     <- takeArgExp as1
+         | Just (x1, as1) <- takeArgExp as0
+         , Just (x2, Nil) <- takeArgExp as1
          = Just $ XApp x2 (Cons x1 Nil)
 
          | otherwise
@@ -38,15 +38,15 @@ primOpMatch {Eq s}: PrimEval s Prim
         fn'
  where
         fn' as0
-         | Just (T2 xScrut   as1) <- takeArgExp as0
-         , Just (T2 xPat     as2) <- takeArgExp as1
-         , Just (T2 xMatch   as3) <- takeArgExp as2
-         , Just (T2 xDefault Nil) <- takeArgExp as3
+         | Just (xScrut,   as1) <- takeArgExp as0
+         , Just (xPat,     as2) <- takeArgExp as1
+         , Just (xMatch,   as3) <- takeArgExp as2
+         , Just (xDefault, Nil) <- takeArgExp as3
          = case matchPattern xScrut xPat of
                 Just xsArgs     -> Just $ makeXApps xMatch xsArgs
                 Nothing         -> Just $ xDefault
 
-         | otherwise           
+         | otherwise
          = Nothing
 
 
@@ -60,7 +60,7 @@ primOpWildcard: PrimEval s Prim
 
 
 -- | Try to match the scrutinee against the given pattern.
-matchPattern 
+matchPattern
         {Eq s}
         (xScrut': Exp s Prim)   -- ^ Scrutinee.
         (xPat':   Exp s Prim)   -- ^ Pattern to match against.
@@ -70,15 +70,13 @@ matchPattern
  , name == "o"
  =      Just (Cons xScrut' Nil)
 
- | XRef (RSym s1)       <- xScrut'
- , XRef (RSym s2)       <- xPat'
- = if s1 == s2
-        then Just Nil
-        else Nothing
- | Just (T2 x11 xs12)   <- takeXApps xScrut'
- , Just (T2 x21 xs22)   <- takeXApps xPat'
- , Just lst1            <- matchPattern x11 x21
- , Just lst2            <- fmap concat $ sequence $ zipWith matchPattern xs12 xs22
+ | XRef (RSym s1)    <- xScrut'
+ , XRef (RSym s2)    <- xPat'
+ = if s1 == s2 then Just Nil else Nothing
+ | Just (x11, xs12)  <- takeXApps xScrut'
+ , Just (x21, xs22)  <- takeXApps xPat'
+ , Just lst1         <- matchPattern x11 x21
+ , Just lst2         <- fmap concat $ sequence $ zipWith matchPattern xs12 xs22
  = Just (append lst1 lst2)
 
  | otherwise
