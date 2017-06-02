@@ -33,10 +33,10 @@ data Result where
 -------------------------------------------------------------------------------
 -- | Single step reduction.
 step    {Eq p} {Show p}
-        (str:   StepStrength)       -- ^ Evaluation Strength.
-        (ctx:   StepContext s p)    -- ^ Evaluation Context.
-        (xx:    Exp s p)            -- ^ Expression to evaluate.
-        :       Either Result (Exp s p)
+        (str: StepStrength)       -- ^ Evaluation Strength.
+        (ctx: StepContext s p)    -- ^ Evaluation Context.
+        (xx:  Exp s p)            -- ^ Expression to evaluate.
+        :     Either Result (Exp s p)
  = case xx of
         -- Reference
         XRef (RMac n)
@@ -117,10 +117,10 @@ step    {Eq p} {Show p}
 -- | Step the first available expression in a list.
 stepFirst
         {Eq p} {Show p}
-        (str:   StepStrength)           -- ^ Evaluation Strength.
-        (ctx:   StepContext s p)        -- ^ Evaluation Context.
-        (xx:    List (Exp s p))         -- ^ List of expressions to step.
-        :       Either Result (List (Exp s p))
+        (str: StepStrength)             -- ^ Evaluation Strength.
+        (ctx: StepContext s p)          -- ^ Evaluation Context.
+        (xx:  List (Exp s p))           -- ^ List of expressions to step.
+        :     Either Result (List (Exp s p))
  = case xx of
         Nil
          -> Left ResultDone

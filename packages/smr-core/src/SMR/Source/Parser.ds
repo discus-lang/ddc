@@ -17,10 +17,10 @@ data Config (s p: Data) where
         -> (Name -> Maybe p)
         -> Config s p
 
-configSym    ((Config ms mp): Config s p): Name -> Maybe s
+configSym  ((Config ms mp): Config s p): Name -> Maybe s
  = ms
 
-configPrim   ((Config ms mp): Config s p): Name -> Maybe p
+configPrim ((Config ms mp): Config s p): Name -> Maybe p
  = mp
 
 
@@ -254,12 +254,12 @@ pName (s: Space): Parser (Located Token) Name
 
 -- | Parser for the end of input token.
 pEnd: Parser (Located Token) Unit
- = do   _       <- satisfies (isToken KEnd ∘ valueOfLocated)
+ = do   _ <- satisfies (isToken KEnd      ∘ valueOfLocated)
         return ()
 
 
 -- | Parser for a punctuation character.
 pPunc (c: Char): Parser (Located Token) Unit
- = do   _       <- satisfies (isToken (KPunc c) ∘ valueOfLocated)
+ = do   _ <- satisfies (isToken (KPunc c) ∘ valueOfLocated)
         return ()
 

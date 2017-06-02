@@ -63,8 +63,8 @@ trainAppend'
 
         -- Walk forward over the first train, combining ups's as we go.
         Cons c1' cs1'
-         |  CUps ups1    <- c1
-         ,  CUps ups1'   <- c1'
+         |  CUps ups1  <- c1
+         ,  CUps ups1' <- c1'
          -> trainAppend' (CUps (upsCombine ups1 ups1')) cs1' cc2
 
          |  otherwise
@@ -256,7 +256,7 @@ upsCombine (UUps ts1) (UUps ts2)
 --   Applying the result to an expression will achieve the same result as
 --   applying the whole list and then the extra one.
 upsCombineBump (b: UpsBump) (bs: List UpsBump): List UpsBump
- | ((name, depth), inc)  <- b
+ | ((name, depth), inc) <- b
  = case bs of
         -- We cannot combine the new bump with anything else,
         -- so add it to the end of the list.

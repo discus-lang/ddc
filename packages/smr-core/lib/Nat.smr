@@ -6,7 +6,7 @@
  = @nat-fac-loop #nat'1 n;
 
 @nat-fac-loop acc n
- = #bool-if 
+ = #bool-if
         (#nat-eq n #nat'0)
         acc
         (#seq (#nat-mul acc n)    $ \acc'.
@@ -20,7 +20,7 @@
 !   subtractions and substitutions into that expression are not demanded
 !   until the very end of the recursion.
 @nat-fac-leak n
- = #bool-if 
+ = #bool-if
         (#nat-eq n #nat'0)
         #nat'1
         (#nat-mul n (@nat-fac-leak (#nat-sub n #nat'1)));
@@ -33,8 +33,8 @@
           #bool-if
                 (#nat-eq n #nat'0)
                 acc
-                (#seq (#nat-mul acc n)          $ \acc'.
-                 #seq (#nat-sub n #nat'1)       $ \n'.
+                (#seq (#nat-mul acc n)    $ \acc'.
+                 #seq (#nat-sub n #nat'1) $ \n'.
                  go acc' n')
    ]].  go #nat'1 x;
 

@@ -61,6 +61,9 @@ getLine: S Console Text
         txt     = run readl 2014
         textOfCharList $ init Nil $ charListOfText txt
 
+show_Char: Show Char
+ = Show textOfChar
+
 
 -------------------------------------------------------------------------------
 main ()
@@ -132,10 +135,6 @@ loadSource
                 Just ds' -> Just ds'
 
          _ -> Nothing
-
-show_Char: Show Char
- = Show textOfChar
-
 
 -- | Read-Eval-Print loop.
 --   TODO: need to put the explicit box.
