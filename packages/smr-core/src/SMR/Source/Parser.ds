@@ -244,22 +244,22 @@ pBump: Parser (Located Token) (Tup2 (Tup2 Name Nat) Nat)
 -------------------------------------------------------------------------------
 -- | Parser for the end of input token.
 pEnd: Parser (Located Token) Unit
- = do   _       <- satisfies (isToken KEnd ∘ fromLocated)
+ = do   _       <- satisfies (isToken KEnd ∘ valueOfLocated)
         return ()
 
 
 -- | Parser for a natural number.
 pNat: Parser (Located Token) Nat
- = from (takeNatOfToken ∘ fromLocated)
+ = from (takeNatOfToken    ∘ valueOfLocated)
 
 
 -- | Parser for a name in the given space
 pName (s: Space): Parser (Located Token) Name
- = from (takeNameOfToken s ∘ fromLocated)
+ = from (takeNameOfToken s ∘ valueOfLocated)
 
 
 -- | Parser for a punctuation character.
 pPunc (c: Char): Parser (Located Token) Unit
- = do   _       <- satisfies (isToken (KPunc c) ∘ fromLocated)
+ = do   _       <- satisfies (isToken (KPunc c) ∘ valueOfLocated)
         return ()
 

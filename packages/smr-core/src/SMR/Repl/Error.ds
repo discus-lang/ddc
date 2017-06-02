@@ -1,0 +1,58 @@
+
+module SMR.Repl.Error
+export { pretty_Location; pretty_ErrorRepl }
+import Class.Pretty
+import Data.Text.Location
+where
+
+
+data ErrorRepl where
+        -- Lexer error.
+        ErrorReplLexer
+         :  Text                -- ^ Name of source file or method.
+         -> Location            -- ^ Location of lexer error in input file.
+         -> Maybe Char          -- ^ Next character on input, if available.
+         -> ErrorRepl
+
+        -- | Parser error.
+        ErrorReplParser
+         :  Text                -- ^ Name of source file or method.
+         -> Location            -- ^ Location of parser error in input file.
+         -> Maybe Token         -- ^ Next token on input, if available.
+         -> ErrorRepl
+
+        -- | Runtime error.
+        ErrorReplRuntime
+         :  Text                -- ^ Name of source file or method.
+         -> Text                -- ^ Description of runtime error.
+         -> ErrorRepl
+
+
+-- | Pretty printer dictionary for a location.
+pretty_Location: Pretty Location
+ = Pretty pp
+ where  pp (Location nLine nColumn)
+         = show nLine % ":" % show nColumn
+
+
+-- | Pretty printer dictionary for a REPL error.
+pretty_ErrorRepl: Pretty ErrorRepl
+ = Pretty pp
+ where
+    pp (ErrorReplLexer  src loc Nothing)
+        = "!"  %% ppr loc %% src %% ": lexical error at end of input."
+
+    pp (ErrorReplLexer  src loc (Just c))
+        =  "!"  %% ppr loc %% src %% ": lexical error on "
+        %% "'" % textOfChar c % "'"
+
+    pp (ErrorReplParser src loc Nothing)
+        = "!"  %% ppr loc %% src %% ": parse error at end of input."
+
+    pp (ErrorReplParser src loc (Just _))
+        = "!"  %% ppr loc %% src %% ": parse error."
+
+    pp (ErrorReplRuntime src msg)
+        = "!"  %% src %% ": runtime error."
+        % "\n" %% msg
+

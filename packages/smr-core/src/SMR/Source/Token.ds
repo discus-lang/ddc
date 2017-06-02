@@ -3,9 +3,6 @@ module SMR.Source.Token
 export
 {       eq_Token; show_Token;
         eq_Space; show_Space;
-        show_Located;
-        fromLocated;
-        endOfLocated; startOfLocated;
         isToken;  isKPunc;
         takeNameOfToken;
         takeNatOfToken;
@@ -14,43 +11,6 @@ import SMR.Core.Exp
 import Data.Text
 import Data.Maybe
 where
-
-
-----------
--- TODO: shift this into Data.Text.Location
--- | A location in a source file.
-data Location where
-        Location
-         :  Nat                                 -- ^ Line number.
-         -> Nat                                 -- ^ Column number.
-         -> Location
-
-endOfLocated ((Located _ lEnd _): Located a): Location
- = lEnd
-
-startOfLocated ((Located lStart _ _): Located a): Location
- = lStart
-
-show_Located {show_a: Show a}: Show (Located a)
- =  Show $ λ l
- -> case l of
-        Located _ _ x -> show x
-
-
--- | A thing with a source location.
-data Located (a: Data) where
-        Located
-         :  Location                            -- ^ Starting location.
-         -> Location                            -- ^ Ending location.
-         -> a                                   -- ^ Located thing.
-         -> Located a
-
-
--- | Unwrap a located thing.
-fromLocated (x: Located a): a
- = case x of
-        Located _ _ x   -> x
--------------
 
 
 -- | Tokens for for the source language.
@@ -92,12 +52,12 @@ eq_Space: Eq Space
  where
         eq' s1 s2
          = case T2 s1 s2 of
-                T2 SVar SVar            -> True
-                T2 SMac SMac            -> True
-                T2 SSet SSet            -> True
-                T2 SSym SSym            -> True
-                T2 SPrm SPrm            -> True
-                _                       -> False
+                T2 SVar SVar    -> True
+                T2 SMac SMac    -> True
+                T2 SSet SSet    -> True
+                T2 SSym SSym    -> True
+                T2 SPrm SPrm    -> True
+                _               -> False
 
         neq' t1 t2
          = not (eq' t1 t2)
@@ -107,21 +67,21 @@ eq_Space: Eq Space
 show_Token: Show Token
  =  Show $ \kk
  -> case kk of
-        KEnd            -> "KEnd"
-        KPunc c         -> parens $ "KPunc" %% show (textOfChar c)
-        KName s n       -> parens $ "KName" %% show s %% show n
-        KNat  n         -> parens $ "KNat"  %% show n
+        KEnd      -> "KEnd"
+        KPunc c   -> parens $ "KPunc" %% show (textOfChar c)
+        KName s n -> parens $ "KName" %% show s %% show n
+        KNat  n   -> parens $ "KNat"  %% show n
 
 
 -- | Show dictionary for namespaces.
 show_Space: Show Space
  =  Show $ \ss
  -> case ss of
-        SVar            -> "SVar"
-        SMac            -> "SMac"
-        SSet            -> "SSet"
-        SSym            -> "SSym"
-        SPrm            -> "SPrm"
+        SVar    -> "SVar"
+        SMac    -> "SMac"
+        SSet    -> "SSet"
+        SSym    -> "SSym"
+        SPrm    -> "SPrm"
 
 
 -- | Check if a token is equal to the give none.

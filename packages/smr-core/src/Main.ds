@@ -3,6 +3,7 @@
 module Main
 import SMR.Core.Exp
 import SMR.Core.Step
+import SMR.Repl.Error
 import SMR.Prim.Op
 import SMR.Prim.Name
 import SMR.Source.Pretty
@@ -12,7 +13,9 @@ import System.IO.Console
 import System.IO.File
 import Main.Args
 import Data.Maybe
+import Data.Text.Location
 where
+
 
 ---------------------------------------------------------------------------------------------------
 data Cmd where
@@ -35,7 +38,6 @@ primTableOfState ((State _ evals _):  State): List (Tup2 Prim (PrimEval Name Pri
 
 declsOfState     ((State _ _ decls):  State): List (Decl Name Prim)
  = decls
-
 
 
 -- Utils ------------------------------------------------------------------------------------------
@@ -107,8 +109,10 @@ loadSource
         :        S (File + Console) (Maybe (List (Decl Name Prim)))
  = do
         str     = file_read (takeTextLit path)
+        lStart  = Location 1 1
+        result  = lexTokens lStart $ charListOfText str
 
-        case lexTokens (Location 1 1) $ charListOfText str of
+        case result of
          T3 toks _ cs
           |  not $ all isSpace cs
           -> do writel "! error at end of input."
@@ -144,10 +148,13 @@ repl    (state: State) (cmd: Cmd): S Console Unit
         -- Get the line and convert it to tokens.
         str     = getLine
 
-        case lexTokens (Location 1 1) $ charListOfText str of
+        result  = lexTokens (Location 1 1)
+                $ charListOfText str
+
+        case result of
          -- If only whitespace was provided then run the default command.
          T3 (Cons lt Nil) _ Nil
-          |  fromLocated lt == KEnd
+          |  valueOfLocated lt == KEnd
           -> case cmd of
                 CmdNone    -> repl      state CmdNone
                 CmdStep xx -> repl_step state xx
@@ -159,20 +166,14 @@ repl    (state: State) (cmd: Cmd): S Console Unit
          -- We couldn't lex all the characters into tokens.
          T3 toks lStart' cs
           -> case last toks of
-                Nothing
-                 -> do  writell $ "!"
-                                %% "1:1"
-                                %% "<interactive>: lexical error."
-
                 Just tok
-                 | Location nLine nChar <- lStart'
-                 , Cons c _             <- cs
-                 -> do  writell $ "!"
-                                %% show nLine % ":" % show nChar
-                                %% "<interactive>: lexical error on"
-                                %% "'" % textOfChar c % "'."
-
+                 |  Cons c _ <- cs
+                 -> do  writell $ ppr
+                         $ ErrorReplLexer "<interactive>" lStart' (Just c)
                         repl state CmdNone
+
+                _ -> do writell $ ppr
+                         $ ErrorReplLexer "<interactive>" lStart' Nothing
 
 
 -- | Given some tokens, try to parse an expression and evaluate it.
@@ -181,21 +182,25 @@ repl_toks
         (toks:  List (Located Token))
         :       S Console Unit
  = case parseExp (configOfState state) toks of
-         Nothing
-          -> case last toks of
-                Nothing
-                 -> do  writell "! parser error at end of input."
-                        repl state CmdNone
+        -- Parse succeeded.
+        Just x
+         ->     repl_step state x
 
-                Just tok'
-                 | Location nLine nChar <- startOfLocated tok'
-                 -> do  writell $  "!"
-                                %% show nLine % ":" % show nChar
-                                %% "parse error."
-                        repl state CmdNone
+        Nothing
+         -- Parse failed on some token.
+         -- TODO: Get the token just before parsing failed.
+         | Just tok'    <- last toks
+         -> do  writell $ ppr
+                 $ ErrorReplParser
+                        "<interactive>"
+                        (startOfLocated tok')
+                        (Just $ valueOfLocated tok')
+                repl state CmdNone
 
-         Just x
-          ->    repl_step state x
+         -- Parse failed because there was no input,
+         -- just read the next line.
+         | otherwise
+         ->     repl state CmdNone
 
 
 -- | Given an expression,
@@ -206,9 +211,7 @@ repl_step
         :       S Console Unit
  = case step' state True xx of
         Left (ResultError err)
-         -> do  writel    "! runtime error."
-                writell $ "! " % err
-
+         -> do  writell $ ppr $ ErrorReplRuntime  "<interactive>" err
                 repl state CmdNone
 
         Left ResultDone
@@ -216,8 +219,7 @@ repl_step
                 repl state CmdNone
 
         Right x'
-         -> do  -- writell "! step."
-                writell (ppr x')
+         -> do  writell (ppr x')
                 repl state (CmdStep x')
 
 

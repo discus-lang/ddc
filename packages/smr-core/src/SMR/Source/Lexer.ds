@@ -8,6 +8,7 @@ import Control.Parsec
 import Class.Show
 import Data.Tuple
 import Data.Text
+import Data.Text.Location
 where
 
 
@@ -17,20 +18,20 @@ lexTokens
         (cs0:     List Char)
         :        Tup3 (List (Located Token)) Location (List Char)
  = case skipSpace lStart0 cs0 of
-        T2 lStart Nil
-         -> T3  (Cons (Located lStart lStart KEnd) Nil)
+    T2 lStart Nil
+     -> T3  (Cons (Located lStart lStart KEnd) Nil)
                 lStart
                 Nil
 
-        T2 lStart cs
-         -> case lexToken lStart cs of
-                Nothing
-                 -> T3 Nil lStart cs
+    T2 lStart cs
+     -> case lexToken lStart cs of
+         Nothing
+          -> T3 Nil lStart cs
 
-                Just (T2 k cs')
-                 -> case lexTokens (endOfLocated k) cs' of
-                        T3 ks lStart' cs''
-                         -> T3 (Cons k ks) lStart' cs''
+         Just (T2 k cs')
+          -> case lexTokens (endOfLocated k) cs' of
+                T3 ks lStart' cs''
+                 -> T3 (Cons k ks) lStart' cs''
 
 
 -- | Lex a single token.
@@ -69,20 +70,21 @@ skipSpace
         (lStart: Location) (xx: List Char)
         : Tup2 Location (List Char)
  = case xx of
-        Nil             -> T2 lStart xx
-        Cons c cs
-         -- Skip whitespace.
-         | c == ' '     -> skipSpace (incChar 1 lStart) cs
-         | c == '\n'    -> skipSpace (incLine 1 lStart) cs
-         | c == '\t'    -> skipSpace (incChar 8 lStart) cs
+    Nil             -> T2 lStart xx
+    Cons c cs
+        -- Skip whitespace.
+        | c == ' '     -> skipSpace (incChar 1 lStart) cs
+        | c == '\n'    -> skipSpace (incLine 1 lStart) cs
+        | c == '\t'    -> skipSpace (incChar 8 lStart) cs
 
-         -- Skip comments
-         |  c == '!'    -> skipSpace (incLine 1 lStart)
+        -- Skip comments
+        |  c == '!'    -> skipSpace (incLine 1 lStart)
                         $  dropWhile (\x -> x /= '\n') cs
 
-         | otherwise    -> T2 lStart xx
+        | otherwise    -> T2 lStart xx
 
 
+-- TODO: shift this into Data.Text.Location
 -- | Increment the line count in a location.
 incLine (inc: Nat) ((Location nLine nChar): Location): Location
  = Location (nLine + inc) 1

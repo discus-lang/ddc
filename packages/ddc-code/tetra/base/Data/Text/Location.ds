@@ -1,0 +1,35 @@
+
+module Data.Text.Location
+export { endOfLocated; startOfLocated; valueOfLocated }
+import Data.Text.Base
+where
+
+
+-------------------------------------------------------------------------------
+-- | A location in text string.
+data Location where
+        Location
+         :  Nat         -- ^ Line number.
+         -> Nat         -- ^ Column number.
+         -> Location
+
+
+-------------------------------------------------------------------------------
+-- | A thing with a source location.
+data Located (a: Data) where
+        Located
+         :  Location    -- ^ Starting location.
+         -> Location    -- ^ Ending location.
+         -> a           -- ^ Located thing.
+         -> Located a
+
+
+endOfLocated   ((Located _ lEnd _): Located a): Location
+ = lEnd
+
+startOfLocated ((Located lStart _ _): Located a): Location
+ = lStart
+
+valueOfLocated ((Located _ _ x): Located a): a
+ = x
+
