@@ -155,6 +155,17 @@ pTypeAtomSP
  , do    (u, sp) <- pBoundIxSP
          return  (TAnnot sp $ TVar u, sp)
 
+
+ -- Primitive record type constructor.
+ --  like (x,y,z)#
+ , P.try $ do
+        sp     <- pSym SRoundBra
+        ns     <- fmap (map fst) $ P.sepBy pVarNameSP (pSym SComma)
+        pSym SRoundKet
+        pSym SHash
+        return ( TCon (TyConPrim (PrimTypeTcCon (TcConRecord ns)))
+               , sp)
+
  -- Tuple type.
  , P.try $ do
         sp        <- pSym SRoundBra
@@ -168,17 +179,6 @@ pTypeAtomSP
         let tc    =  TyConBound (TyConBoundName nCtor)
         return    ( TAnnot sp $  makeTApps (TCon tc) ts
                   , sp)
-
-
- -- Primitive record type constructor.
- --  like (x,y,z)#
- , P.try $ do
-        sp     <- pSym SRoundBra
-        ns     <- fmap (map fst) $ P.sepBy pVarNameSP (pSym SComma)
-        pSym SRoundKet
-        pSym SHash
-        return ( TCon (TyConPrim (PrimTypeTcCon (TcConRecord ns)))
-               , sp)
 
  -- Full application of a primitive record type constructor.
  --   like (x : Nat, y : Nat, z : Nat)
