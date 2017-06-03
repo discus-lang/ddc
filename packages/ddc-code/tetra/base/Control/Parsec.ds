@@ -1,9 +1,9 @@
 
 module Control.Parsec
-export  
-{       parse; zero; item; satisfies;
+export
+{       functor_Parser; applicative_Parser; monad_Parser;
+        parse; zero; item; satisfies;
         from; alt;
-        monad_Parser;
         some; many;
         sepBy; sepBy1
 }
@@ -34,7 +34,7 @@ functor_Parser [t: Data]: Functor (Parser t)
 
 -- Applicative ----------------------------------------------------------------
 applicative_Parser [t: Data]: Applicative (Parser t)
- = Applicative 
+ = Applicative
         functor_Parser
         parser_pure
         parser_ap
@@ -64,7 +64,7 @@ monad_Parser [t: Data]: Monad (Parser t)
                 (parserA:   Parser t' a)
                 (mkParserB: a → Parser t' b)
                 : Parser t' b
-         = Parser $ λts → concat  
+         = Parser $ λts → concat
          $ for (parse parserA ts)              $ λ(T2 resultA ts2)
          → for (parse (mkParserB resultA) ts2) $ λ(T2 resultB ts3)
          → T2 resultB ts3
@@ -110,7 +110,7 @@ from (accept: t → Maybe a): Parser t a
 -- | Combine two argument parsers, producing a new one that accepts
 --   strings parsed by either of the argument parsers.
 plus (parserA parserB: Parser t a): Parser t a
- = Parser $ λts 
+ = Parser $ λts
  → append (parse parserA ts) (parse parserB ts)
 
 
@@ -132,7 +132,7 @@ alts (parsers: List (Parser t a)): Parser t a
         Cons p ps       → alt p (alts ps)
 
 
--- | Like `alts`, accept use the given default parser if no 
+-- | Like `alts`, accept use the given default parser if no
 --   parser from the first list succeeds.
 altss (parsers: List (Parser t a)) (def: Parser t a): Parser t a
  = case parsers of
@@ -151,7 +151,7 @@ follows (parserA: Parser t a) (parserB: Parser t b): Parser t (Tup2 a b)
 
 -- | Parse zero or more things, yielding a list of those things.
 some (parserA: Parser t a): Parser t (List a)
- = alt  (bind   parserA        $ λx  → 
+ = alt  (bind   parserA        $ λx  →
          bind   (some parserA) $ λxs →
          return (Cons x xs))
         (return Nil)
@@ -174,7 +174,7 @@ sepBy1  (parserA: Parser t a) (parserS: Parser t s): Parser t (List a)
          return (Cons x xs))
 
         (bind   parserA                         $ λx →
-         return (Cons x Nil))        
+         return (Cons x Nil))
 
 sepBy   (parserA: Parser t a) (parserS: Parser t s)
         : Parser t (List a)

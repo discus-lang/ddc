@@ -1,7 +1,7 @@
 
 module Data.Text.Location
 export  { incLineOfLocation; incCharOfLocation
-        ; endOfLocated; startOfLocated; valueOfLocated }
+        ; endOfLocated; startOfLocated; valueOfLocated; rangeOfLocated }
 import Data.Text.Base
 where
 
@@ -28,6 +28,14 @@ incCharOfLocation (inc: Nat)
 
 
 -------------------------------------------------------------------------------
+-- | A range of locations in a text string.
+data LocationRange where
+        LocationRange
+         :  Location -> Location
+         -> LocationRange
+
+
+-------------------------------------------------------------------------------
 -- | A thing with a source location.
 data Located (a: Data) where
         Located
@@ -46,3 +54,7 @@ startOfLocated ((Located lStart _ _): Located a): Location
 valueOfLocated ((Located _ _ x): Located a): a
  = x
 
+rangeOfLocated
+        ((Located lStart lEnd _): Located a)
+        : LocationRange
+ = LocationRange lStart lEnd
