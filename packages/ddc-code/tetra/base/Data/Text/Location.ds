@@ -1,8 +1,10 @@
 
 module Data.Text.Location
 export  { incLineOfLocation; incCharOfLocation
-        ; endOfLocated; startOfLocated; valueOfLocated; rangeOfLocated }
+        ; endOfLocated; startOfLocated; valueOfLocated; rangeOfLocated
+        ; show_Location; show_Located }
 import Data.Text.Base
+import Class.Show
 where
 
 
@@ -25,6 +27,11 @@ incLineOfLocation (inc: Nat)
 incCharOfLocation (inc: Nat)
         ((Location nLine nChar): Location): Location
  = Location nLine (nChar + inc)
+
+
+show_Location: Show Location
+ =  Show $ \(Location nLine nCol)
+ -> parens $ "Location" %% show nLine %% show nCol
 
 
 -------------------------------------------------------------------------------
@@ -58,3 +65,8 @@ rangeOfLocated
         ((Located lStart lEnd _): Located a)
         : LocationRange
  = LocationRange lStart lEnd
+
+
+show_Located {Show a}: Show (Located a)
+ =  Show $ \(Located lStart lEnd x)
+ -> parens $ "Located" %% show lStart %% show lEnd %% show x

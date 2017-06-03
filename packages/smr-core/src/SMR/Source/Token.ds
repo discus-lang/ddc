@@ -5,6 +5,7 @@ export
         eq_Space; show_Space;
         isToken;  isKPunc;
         takeNameOfToken;
+        takeAnyNameOfToken;
         takeNatOfToken;
 }
 import SMR.Core.Exp
@@ -103,6 +104,13 @@ takeNameOfToken (ss1: Space) (kk: Token): Maybe Name
          | ss1 == ss2   -> Just n
          | otherwise    -> Nothing
 
+        _               -> Nothing
+
+
+-- | Take the name from a token, if any.
+takeAnyNameOfToken (kk: Token): Maybe (Space, Name)
+ = case kk of
+        KName ss2 n     -> Just (ss2, n)
         _               -> Nothing
 
 

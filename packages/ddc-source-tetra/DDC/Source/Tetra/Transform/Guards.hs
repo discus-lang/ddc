@@ -61,15 +61,32 @@ desugarX sp xx
         XFrag{}         -> pure xx
         XVar{}          -> pure xx
         XCon{}          -> pure xx
-        XAbs  b x       -> XAbs b     <$> pure x
         XApp  x1 r2     -> XApp       <$> desugarX   sp x1  <*> desugarArg sp r2
         XLet  lts x     -> XLet       <$> desugarLts sp lts <*> desugarX sp x
         XCast c x       -> XCast c    <$> desugarX   sp x
         XDefix a xs     -> XDefix a   <$> mapM (desugarArg sp)  xs
         XInfixOp{}      -> pure xx
         XInfixVar{}     -> pure xx
-        XWhere a x cls  -> XWhere a   <$> desugarX sp x 
+        XWhere a x cls  -> XWhere a   <$> desugarX sp x
                                       <*> mapM (desugarCl sp) cls
+
+        -- Desguar patterns in a term abstraction.
+        XAbs bParam xBody
+         -> case bParam of
+                MTerm PDefault _
+                 -> XAbs bParam <$> desugarX sp xBody
+
+                MTerm PVar{} _
+                 -> XAbs bParam <$> desugarX sp xBody
+
+                MTerm pat mtBind
+                  -> do (b, u)  <- newVar "scrut"
+                        xBody'  <- desugarX sp xBody
+                        return  $ XAbs  (MTerm (PVar b) mtBind)
+                                $ XCase (XVar u) [AAltCase pat [GExp xBody']]
+
+                _ -> XAbs bParam <$> desugarX sp xBody
+
 
         -- Desugar a case expression.
         XCase xScrut alts
@@ -78,7 +95,7 @@ desugarX sp xx
          -- in a case-expression are simple then we can convert directly
          -- to core-level case expressions.
          | all isSimpleAltCase alts
-         -> do  xScrut' <- desugarX sp xScrut 
+         -> do  xScrut' <- desugarX sp xScrut
                 alts'   <- mapM (desugarAltCase sp) alts
                 return  $ XCase xScrut' alts'
 
@@ -89,7 +106,7 @@ desugarX sp xx
          -> do  -- Desugar the scrutinee.
                 xScrut' <- desugarX sp xScrut
 
-                -- We bind the scrutinee to a new variable so we can 
+                -- We bind the scrutinee to a new variable so we can
                 -- defer to it multiple times in the body of the match.
                 (b, u)  <- newVar "xScrut"
 
@@ -121,7 +138,7 @@ desugarX sp xx
 
         -- Desugar lambda with a pattern for the parameter.
         XAbsPat _a MSTerm     PDefault mt x
-         -> XAbs  (MTerm      PDefault mt) <$> desugarX sp x 
+         -> XAbs  (MTerm      PDefault mt) <$> desugarX sp x
 
         XAbsPat _a MSTerm     (PVar b) mt x
          -> XAbs  (MTerm      (PVar b) mt) <$> desugarX sp x
@@ -136,16 +153,16 @@ desugarX sp xx
          -> do  (b, u)  <- newVar "x"
                 x'      <- desugarX sp x
                 case ps of
-                 MSType 
+                 MSType
                   -> return xx
 
                  MSTerm
                   -> return $  XAbs  (MTerm (PVar b) mt)
-                            $  XCase (XVar u) [ AAltCase p [GExp x'] ] 
+                            $  XCase (XVar u) [ AAltCase p [GExp x'] ]
 
                  MSImplicit
                   -> return $  XAbs  (MImplicit (PVar b) mt)
-                            $  XCase (XVar u) [ AAltCase p [GExp x'] ] 
+                            $  XCase (XVar u) [ AAltCase p [GExp x'] ]
 
 
         -- Desugar lambda case by inserting the intermediate variable.
@@ -259,7 +276,7 @@ desugarAltMatch sp (AAltMatch gx)
 
 
 -------------------------------------------------------------------------------
--- | Strip out patterns in the given parameter list, 
+-- | Strip out patterns in the given parameter list,
 --   yielding a list of guards that implement the patterns.
 stripParamsToGuards :: [Param] -> S ([Param], [Guard])
 stripParamsToGuards []
@@ -267,7 +284,7 @@ stripParamsToGuards []
 
 stripParamsToGuards (p:ps)
  = case p of
-        MType{} 
+        MType{}
          -> do  (ps', gs) <- stripParamsToGuards ps
                 return (p : ps', gs)
 
@@ -292,7 +309,7 @@ stripParamsToGuards (p:ps)
                   ([p1'],    gsData) <- stripPatsToGuards  [p1]
                   let Just u         = takeBoundOfBind b
                   return  ( make (PVar b) mt : psParam'
-                          , GPat p1' (XVar u) 
+                          , GPat p1' (XVar u)
                                 : (gsData ++ gsRest))
 
            PData dc psData
@@ -300,7 +317,7 @@ stripParamsToGuards (p:ps)
                   (psData',  gsData) <- stripPatsToGuards   psData
                   (b, u)             <- newVar "p"
                   return  ( make (PVar b) mt : psParam'
-                          , GPat (PData dc psData') (XVar u) 
+                          , GPat (PData dc psData') (XVar u)
                                 : (gsData ++ gsRest))
 
 
@@ -346,12 +363,12 @@ stripPatsToGuards (p:ps)
                 -- Make a new name to bind the value we are matching against.
                 (b, u)            <- newVar "p"
                 return  ( PVar b : psRest'
-                        , GPat (PData dc psData') (XVar u) 
+                        , GPat (PData dc psData') (XVar u)
                                  : (gsData ++ gsRest) )
 
 
 -- | Like `stripPatsToGuards` but we take the whole enclosing guards.
---   This gives us access to the expression being scrutinised, 
+--   This gives us access to the expression being scrutinised,
 --   which we can match against directly without introducing a new variable.
 stripGuardToGuards :: Guard -> S (Guard, [Guard])
 stripGuardToGuards g
@@ -360,15 +377,15 @@ stripGuardToGuards g
         GPat PDefault _ -> return (g, [])
         GPat PVar{} _   -> return (g, [])
 
-        -- As we alerady have the expression being matched we don't 
+        -- As we alerady have the expression being matched we don't
         -- need to introduce a new variable to name it.
-        GPat (PAt b p) x  
+        GPat (PAt b p) x
          -> do  ([p'], gsData) <- stripPatsToGuards [p]
                 let Just u      = takeBoundOfBind b
                 return  ( GPat (PVar b) x
                         , GPat p' (XVar u) : gsData)
 
-        GPat (PData dc psData) x 
+        GPat (PData dc psData) x
          -> do  (psData', gsData)  <- stripPatsToGuards psData
                 return  ( GPat (PData dc psData') x
                         , gsData)
@@ -400,7 +417,7 @@ cleanGX gx
 type SP = SP.SourcePos
 
 
--- | State holding a variable name prefix and counter to 
+-- | State holding a variable name prefix and counter to
 --   create fresh variable names.
 type S  = S.State (Text, Int)
 
@@ -409,7 +426,7 @@ type S  = S.State (Text, Int)
 --   using the given prefix for freshly introduced variables.
 evalState :: Text -> S a -> a
 evalState n c
- = S.evalState c (n, 0) 
+ = S.evalState c (n, 0)
 
 
 -- | Allocate a new named variable, yielding its associated bind and bound.

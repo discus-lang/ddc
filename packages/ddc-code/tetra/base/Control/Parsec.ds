@@ -1,9 +1,10 @@
 
 module Control.Parsec
 export
-{       functor_Parser; applicative_Parser; monad_Parser;
+{       parser_Functor; parser_Applicative; parser_Monad;
         parse;
-        zero; peek; item; satisfies;
+        fail; expected;
+        peek; item; satisfies;
         from; alt;
         some; many;
         sepBy; sepBy1;
@@ -13,194 +14,244 @@ import Class.Monad
 import Data.List
 import Data.Tuple
 import Data.Maybe
+import Data.Either
 where
 
-data Parser (t a: Data) where
+
+-------------------------------------------------------------------------------
+-- | Parser is a function that takes a list of tokens,
+--   and eturns a list of remaining tokens along with
+--    (on error)   a list of descriptions of expected input,
+--    (on success) a parsed value.
+--
+data Parser  (t e a: Data) where
         Parser
-         : (List t → List (a, List t))
-         → Parser t a
+         : (List t → ParseResult t e a)
+         → Parser t e a
+
+
+data ParseResult (t e a: Data) where
+        ParseResult
+         :  List  (Blocker t e) -- ^ Describes where we got blocked trying
+                                --   different ways to parse these tokens.
+         -> Maybe (a, List t)   -- ^ The parse we found, if any.
+         -> ParseResult t e a
+
+
+-- | Describes why the parser could not make further progress.
+data Blocker (t e: Data) where
+        Blocker
+         :  e           -- ^ Representation of what we were expecting.
+         -> List t      -- ^ Remaining unparsed tokens where we gave up.
+         -> Blocker t e
 
 
 -- | Apply a parser to a list of input tokens.
-parse ((Parser p): Parser t a) (ts: List t): List (Tup2 a (List t))
+parse   ((Parser p): Parser t e a) (ts: List t)
+        : ParseResult t e a
  = p ts
 
 
 -- Functor --------------------------------------------------------------------
-functor_Parser [t: Data]: Functor (Parser t)
+parser_Functor [t e: Data]: Functor (Parser t e)
  = Functor parser_fmap
-
- where  parser_fmap [t a b: Data] (f: a → b) (parserA: Parser t a): Parser t b
-         = Parser $ λts
-         → for (parse parserA ts) $ λ(T2 resultA ts2)
-         → T2  (f resultA) ts2
+ where
+        parser_fmap
+                [t e a b: Data]
+                (f: a → b) (parserA: Parser t e a): Parser t e b
+         =  Parser $ λts0
+         -> case parse parserA ts0 of
+                ParseResult bs Nothing
+                 -> ParseResult bs Nothing
+                ParseResult bs (Just (x, ts1))
+                 -> ParseResult bs (Just (f x, ts1))
 
 
 -- Applicative ----------------------------------------------------------------
-applicative_Parser [t: Data]: Applicative (Parser t)
- = Applicative
-        functor_Parser
+parser_Applicative [t e: Data]: Applicative (Parser t e)
+ = Applicative parser_Functor parser_pure parser_ap
+ where
         parser_pure
+                [t' e' a': Data]
+                (x: a'): Parser t' e' a'
+         = Parser $ λts → ParseResult Nil (Just (x, ts))
+
+        -- TODO: these vars need to have diff names as otherwise
+        -- they're not fresh enough to go through the type checker.
         parser_ap
+                [t' e' a' b': Data]
+                (parserF: Parser t' e' (a' → b'))
+                (parserA: Parser t' e' a')
+                : Parser t' e' b'
+         = Parser $ λts0
+         -> case parse parserF ts0 of
+                ParseResult bs1 Nothing
+                 -> ParseResult bs1 Nothing
 
- where  parser_pure (x: a): Parser t' a
-         = Parser $ λts → Cons (T2 x ts) Nil
-
-        parser_ap   (parserF: Parser t' (a → b))
-                    (parserA: Parser t' a)
-                    : Parser t' b
-         = Parser $ λts → concat
-         $ for (parse parserF ts)  $ λ(T2 resultF ts2)
-         → for (parse parserA ts2) $ λ(T2 resultA ts3)
-         → T2 (resultF resultA) ts3
+                ParseResult bs1 (Just (f, ts1))
+                 -> case parse parserA ts1 of
+                        ParseResult bs2 Nothing
+                         -> ParseResult (append bs1 bs2) Nothing
+                        ParseResult bs2 (Just (x, ts2))
+                         -> ParseResult (append bs1 bs2) (Just (f x, ts1))
 
 
 -- Monad ----------------------------------------------------------------------
-monad_Parser [t: Data]: Monad (Parser t)
- = Monad applicative_Parser
-         parser_return
-         parser_bind
-
- where  parser_return (x: a): Parser t' a
-         = Parser $ λts → Cons (T2 x ts) Nil
+parser_Monad [t e: Data]: Monad (Parser t e)
+ = Monad parser_Applicative parser_return parser_bind
+ where
+        parser_return
+                [t' e' a': Data]
+                (x: a'): Parser t' e' a'
+         = Parser $ λts → ParseResult Nil (Just (x, ts))
 
         parser_bind
-                (parserA:   Parser t' a)
-                (mkParserB: a → Parser t' b)
-                : Parser t' b
-         = Parser $ λts → concat
-         $ for (parse parserA ts)              $ λ(T2 resultA ts2)
-         → for (parse (mkParserB resultA) ts2) $ λ(T2 resultB ts3)
-         → T2 resultB ts3
+                [t' e' a' b': Data]
+                (parserA:   Parser t' e' a')
+                (mkParserB: a' → Parser t' e' b')
+                : Parser t' e' b'
+         = Parser $ \ts0
+         -> case parse parserA ts0 of
+                ParseResult bs1 Nothing
+                 -> ParseResult bs1 Nothing
+
+                ParseResult bs1 (Just (xa, ts1))
+                 -> case parse (mkParserB xa) ts1 of
+                        ParseResult bs2 Nothing
+                         -> ParseResult (append bs1 bs2) Nothing
+                        ParseResult bs2 (Just (x, ts2))
+                         -> ParseResult (append bs1 bs2) (Just (x, ts2))
 
 
--------------------------------------------------------------------------------
--- | Always fail, producing no possible parses.
-zero: Parser t a
- = Parser $ λ_ → Nil
+-- Prim -----------------------------------------------------------------------
+-- Primitive parsers.
+
+-- | Always fail, producing no possible parses and no helpful error message.
+fail : Parser t e a
+ = Parser $ λts → ParseResult Nil Nothing
+
+
+-- | Always fail, yielding the given message describing what was expected.
+expected (xe: e): Parser t e a
+ = Parser $ λts → ParseResult (Cons (Blocker xe ts) Nil) Nothing
 
 
 -- | Peek at the first input token, without consuming at it.
---   If there are no tokens available then fail.
-peek: Parser t t
+--   If there is no input then no blocker is added.
+peek: Parser t e t
  = Parser $ λts
  → case ts of
-        Nil             → Nil
-        Cons t ts'      → Cons (t, ts) Nil
+        Nil             → ParseResult Nil Nothing
+        Cons t ts'      → ParseResult Nil (Just (t, ts))
 
 
 -- | Consume the first input token, failing if there aren't any.
-item: Parser t t
+item (xe: e): Parser t e t
  = Parser $ λts
  → case ts of
-        Nil             → Nil
-        Cons t ts'      → Cons (T2 t ts) Nil
+        Nil             → ParseResult (Cons (Blocker xe ts) Nil) Nothing
+        Cons t ts'      → ParseResult Nil (Just (t, ts'))
 
 
--- | A parser that accepts a single token that satisfies the given predicate,
---   producing the given value if it matches.
-satisfies (pred: t → Bool): Parser t t
+-- | Consume the first input token if it matches the given predicate,
+--   failing without consuming if the predicate does not match.
+satisfies (xe: e) (pred: t → Bool): Parser t e t
  = Parser $ λts
  → case ts of
-        Nil            → Nil
-        Cons t ts
-         | pred t      → Cons (T2 t ts) Nil
-         | otherwise   → Nil
+        Nil             → ParseResult (Cons (Blocker xe ts) Nil) Nothing
+        Cons t ts'
+         | pred t       → ParseResult Nil (Just (t, ts'))
+         | otherwise    → ParseResult (Cons (Blocker xe ts) Nil) Nothing
 
 
--- | Use the given function to check whether to accept the next token,
---   returning the result that it produces.
-from (accept: t → Maybe a): Parser t a
+-- | Consume the first input token if it is accepted by the given match
+--   function. Fail without consuming if there is no match.
+from (xe: e) (accept: t → Maybe a): Parser t e a
  = Parser $ λts
  → case ts of
-        Nil            → Nil
+        Nil             → ParseResult  (Cons (Blocker xe ts)  Nil) Nothing
         Cons t ts'
          → case accept t of
-               Nothing → Nil
-               Just x  → Cons (T2 x ts') Nil
+               Nothing  → ParseResult  (Cons (Blocker xe ts') Nil) Nothing
+               Just x   → ParseResult  Nil (Just (x, ts'))
 
 
--- | Combine two argument parsers, producing a new one that accepts
---   strings parsed by either of the argument parsers.
-plus (parserA parserB: Parser t a): Parser t a
- = Parser $ λts
- → append (parse parserA ts) (parse parserB ts)
+-- | Given two parsers, try the first and if it succeeds produce
+--   the output of that parser, if not try the second.
+--   TODO: using list append here will be a performance disaster.
+alt (parserA parserB: Parser t e a): Parser t e a
+ = Parser $ λts0
+ → case parse parserA ts0 of
+        ParseResult bs1 (Just (x, ts1))
+         -> ParseResult bs1 (Just (x, ts1))
+
+        ParseResult bs1 Nothing
+         -> case parse parserB ts0 of
+                ParseResult bs2 Nothing
+                 -> ParseResult (append bs1 bs2) Nothing
+
+                ParseResult bs2 (Just (x, ts2))
+                 -> ParseResult (append bs1 bs2) (Just (x, ts2))
 
 
--- | Combine two argument parsers, producing a new one that accepts
---   strings parser by either of the argument parser, but not both.
---   We prefer result produced by the first parser over the second.
-alt (parserA parserB: Parser t a): Parser t a
- = Parser $ λts
- → case parse parserA ts of
-        Nil    → parse parserB ts
-        res    → res
-
+-- Derived --------------------------------------------------------------------
+-- Parsers derived from the primitive ones.
 
 -- | Combine a list of argument parsers, producing a new one that
 --   gives the result produced by the first matching argument parser.
-alts (parsers: List (Parser t a)): Parser t a
+alts (parsers: List (Parser t e a)): Parser t e a
  = case parsers of
-        Nil             → zero
+        Nil             → fail
         Cons p ps       → alt p (alts ps)
 
 
 -- | Like `alts`, accept use the given default parser if no
 --   parser from the first list succeeds.
-altss (parsers: List (Parser t a)) (def: Parser t a): Parser t a
+altss (parsers: List (Parser t e a)) (def: Parser t e a): Parser t e a
  = case parsers of
         Nil             → def
         Cons p ps       → alt p (altss ps def)
 
 
--- | Apply a parser followed by another parser,
---   producing a tuple that contains both results.
-follows (parserA: Parser t a) (parserB: Parser t b): Parser t (Tup2 a b)
- = Parser $ λts → concat
- $ for (parse parserA ts)  $ λ(T2 resultA ts2)
- → for (parse parserB ts2) $ λ(T2 resultB ts3)
- → T2 (T2 resultA resultB) ts3
-
-
 -- | Parse zero or more things, yielding a list of those things.
-some (parserA: Parser t a): Parser t (List a)
- = alt  (bind   parserA        $ λx  →
-         bind   (some parserA) $ λxs →
-         return (Cons x xs))
-        (return Nil)
+some (parserA: Parser t e a): Parser t e (List a)
+ = alt (do
+        x       <- parserA
+        xs      <- some parserA
+        return  $ Cons x xs)
+       (return Nil)
 
 
 -- | Parse one or more things, yielding a list of those things.
-many [a t: Data] (parserA: Parser t a): Parser t (List a)
- = alt  (bind   parserA        $ λx  →
-         bind   (some parserA) $ λxs →
-         return (Cons x xs))
-        (bind   parserA        $ λx  →
-         return (Cons x Nil))
+many (parserA: Parser t e a): Parser t e (List a)
+ = do   x       <- parserA
+        alt (do xs      <- some parserA
+                return  $  Cons x xs)
+            (do return  $  Cons x Nil)
 
 
 -- | Parse some things separated by other things.
-sepBy1  (parserA: Parser t a) (parserS: Parser t s): Parser t (List a)
- = alt  (bind   parserA                         $ λx →
-         bind   parserS                         $ λs →
-         bind   (sepBy1 parserA parserS)        $ λxs →
-         return (Cons x xs))
+sepBy1  (parserA: Parser t e a) (parserS: Parser t e s): Parser t e (List a)
+ = alt (do
+        x       <- parserA
+        s       <- parserS
+        xs      <- sepBy1 parserA parserS
+        return  $ Cons x xs)
 
-        (bind   parserA                         $ λx →
-         return (Cons x Nil))
+       (do
+        x       <- parserA
+        return  $ Cons x Nil)
 
-sepBy   (parserA: Parser t a) (parserS: Parser t s)
-        : Parser t (List a)
+sepBy   (parserA: Parser t e a) (parserS: Parser t e s): Parser t e (List a)
  = alt  (sepBy1 parserA parserS)
         (return Nil)
 
 
 -- | Run a parser, peeking at the starting and ending tokens.
-withDelims (p: Parser t a): Parser t (t, a, t)
+withDelims (p: Parser t e a): Parser t e (t, a, t)
  = do   kStart  <- peek
         x       <- p
         kEnd    <- peek
         return  (kStart, x, kEnd)
-
 
 

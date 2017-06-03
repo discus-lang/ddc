@@ -100,7 +100,7 @@ main ()
         config
          = Config (\z -> Just z)
                   (\z -> parsePrim primNamesText z)
-                  ("smr-ann-sp")
+                  lens_exp_location
 
         case mSource of
          Just (TextLit path)
@@ -110,6 +110,10 @@ main ()
 
          Nothing
           -> repl (State config primTable Nil) CmdNone
+
+lens_exp_location
+        : Lens (Exp Name Prim) (Maybe (Location, Location))
+ = lens_make (\xx -> Nothing) (\l xx -> xx)
 
 
 -- | Load a list of top-level declarations from a source file.
@@ -132,8 +136,12 @@ loadSource
 
           |  otherwise
           -> case parseDecls config toks of
-                Nothing  -> Nothing
-                Just ds' -> Just ds'
+                Left err
+                 -> do  writel $ ppr err
+                        Nothing
+
+                Right ds'
+                 -> Just ds'
 
          _ -> Nothing
 
@@ -189,18 +197,13 @@ repl_toks
         :       S Console Unit
  = case parseExp (configOfState state) toks of
         -- Parse succeeded.
-        Just x
+        Right x
          ->     repl_step state x
 
-        Nothing
+        Left err
          -- Parse failed on some token.
          -- TODO: Get the token just before parsing failed.
-         | Just tok'    <- last toks
-         -> do  writell $ ppr
-                 $ ErrorReplParser
-                        "<interactive>"
-                        (startOfLocated tok')
-                        (Just $ valueOfLocated tok')
+         -> do  writell $ ppr err
                 repl state CmdNone
 
          -- Parse failed because there was no input,

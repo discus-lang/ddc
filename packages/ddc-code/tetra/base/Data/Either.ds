@@ -1,10 +1,15 @@
 
 module Data.Either
-export { either; isLeft; isRight }
+export
+{       either_Functor; either_Applicative; either_Monad;
+        either; isLeft; isRight;
+}
+import Class.Monad
+import Data.Numeric.Bool
 where
 
 
--- | The Either type represents two possibilities. 
+-- | The Either type represents two possibilities.
 data Either (a b: Data) where
         Left    : a -> Either a b
         Right   : b -> Either a b
@@ -13,19 +18,67 @@ data Either (a b: Data) where
 -- | Case analysis on the Either type.
 either (left: a -> c) (right: b -> c) (e: Either a b): c
  = case e of
-        Left  xa        -> left  xa
-        Right xb        -> right xb
+        Left  xa -> left  xa
+        Right xb -> right xb
 
 
 -- | Return True if the given value is Left, otherwise return False.
 isLeft (e: Either a b): Bool
  = case e of
-        Left _          -> True
-        _               -> False
+        Left _   -> True
+        _        -> False
 
 
 -- | Return True if the given value is Right, otherwise return False
 isRight (e: Either a b): Bool
  = case e of
-        Right _         -> True
-        _               -> False
+        Right _  -> True
+        _        -> False
+
+
+-- Functor --------------------------------------------------------------------
+-- TODO: We get a name collision if the tyvar here is named 'x'.
+-- TODO: If the sig is not given we end up with a free exists which
+--       is not caught by the post-check.
+either_Functor [x: Data]: Functor (Either x)
+ = Functor either_fmap
+ where
+        either_fmap : [a b c: Data]. (b -> c) -> Either a b -> Either a c
+        either_fmap f xx
+         = case xx of
+               Left  xa -> Left xa
+               Right xb -> Right (f xb)
+
+
+-- Applicative ----------------------------------------------------------------
+either_Applicative [x: Data]: Applicative (Either x)
+ = Applicative either_Functor either_pure either_ap
+ where
+        either_pure : [a b: Data]. b -> Either a b
+        either_pure x
+         = Right x
+
+        either_ap   : [a b c: Data]
+                    . Either a (b -> c) -> Either a b -> Either a c
+        either_ap mf ma
+         = case mf of
+                Left  xa -> Left xa
+                Right f  -> case ma of
+                                Left  xa'  -> Left xa'
+                                Right x    -> Right (f x)
+
+
+-- Monad ----------------------------------------------------------------------
+either_Monad [x: Data]: Monad (Either x)
+ = Monad either_Applicative either_return either_bind
+ where
+        either_return : [a b: Data]. b -> Either a b
+        either_return x
+         = Right x
+
+        either_bind   : [a b c: Data]
+                      . Either a b -> (b -> Either a c) -> Either a c
+        either_bind ma f
+         = case ma of
+                Left  xa -> Left xa
+                Right xb -> f xb

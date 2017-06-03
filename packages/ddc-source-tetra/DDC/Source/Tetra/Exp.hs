@@ -37,7 +37,7 @@ module DDC.Source.Tetra.Exp
         , TcCon         (..)
 
           -----------------------------
-          -- ** Type Primitives 
+          -- ** Type Primitives
         , PrimType       (..)
         , PrimTyCon      (..)
         , PrimTyConTetra (..)
@@ -84,7 +84,7 @@ module DDC.Source.Tetra.Exp
         , takeTFun,     takeTFuns,      takeTFuns'
 
           -- *** Forall Types
-        , makeTForall,  makeTForalls 
+        , makeTForall,  makeTForalls
         , takeTForall
 
           -- *** Exists Types
@@ -174,7 +174,7 @@ module DDC.Source.Tetra.Exp
         , isAtomX,      isAtomW
 
           -- *** Abstractions
-          , isXAbs
+        , isXAbs
 
           -- *** Applications
         , isXApp

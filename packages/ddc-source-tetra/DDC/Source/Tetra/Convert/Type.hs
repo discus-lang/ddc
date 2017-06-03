@@ -48,7 +48,7 @@ toCoreT uu tt
         S.TAnnot _ t
          -> toCoreT uu t
 
-        S.TCon (S.TyConBot k)     
+        S.TCon (S.TyConBot k)
          -> do  k'      <- toCoreT uu k
                 return  $ C.tBot k'
 
@@ -125,7 +125,7 @@ toCoreTC uu tc
                  -> do  k       <- toCoreT UniverseKind $ S.kindPrimTyCon tcy
                         return  $ Just $ C.TyConBound (C.UPrim (C.NamePrimTyCon tcy) k) k
 
-                S.PrimTypeTyConTetra tct 
+                S.PrimTypeTyConTetra tct
                  -> do  k       <- toCoreT UniverseKind $ S.kindPrimTyConTetra tct
                         let tct' =  toCoreTyConTetra tct
                         return  $ Just $ C.TyConBound (C.UPrim (C.NameTyConTetra tct') k) k
@@ -134,8 +134,8 @@ toCoreTC uu tc
         --   The embedded kind is set to Bot. We rely on the spreader
         --   to fill in the real kind before type checking.
         S.TyConBound (S.TyConBoundName tx)
-         -> return $ Just 
-         $  C.TyConBound (C.UName (C.NameCon (Text.unpack tx))) 
+         -> return $ Just
+         $  C.TyConBound (C.UName (C.NameCon (Text.unpack tx)))
                                   (C.TVar (C.UName C.NameHole))
 
 
@@ -158,7 +158,7 @@ toCoreXUVN uu
  = case uu of
         S.UName n -> return $ C.NameVar (Text.unpack n)
         S.UIx  _i -> error "ddc-source-tetra.toCoreXBVN: anon bound"
-        S.UHole   -> return $ C.NameHole        
+        S.UHole   -> return $ C.NameHole
 
 
 toCoreXBVN  :: S.GTBindVar S.Source -> ConvertM a C.Name
@@ -176,7 +176,7 @@ toCoreTBK (bb, k)
  = case bb of
         S.BNone   -> C.BNone <$> (toCoreT UniverseKind k)
         S.BAnon   -> C.BAnon <$> (toCoreT UniverseKind k)
-        S.BName n -> C.BName <$> (return $ C.NameVar (Text.unpack n)) 
+        S.BName n -> C.BName <$> (return $ C.NameVar (Text.unpack n))
                              <*> (toCoreT UniverseKind k)
 
 
@@ -204,6 +204,7 @@ toCoreParam pp
          -> C.MImplicit <$> toCorePT UniverseSpec p mt
 
 
+-- | Convert a typed pattern to core.
 toCorePT :: Universe -> S.Pat -> Maybe S.Type -> ConvertM a (C.Bind C.Name)
 toCorePT uu p mt
  = do   t' <- case mt of
@@ -241,19 +242,19 @@ toCoreBM uu bb
          -> C.BNone <$> (return $ C.TVar (C.UName C.NameHole))
 
 
-        S.XBindVarMT S.BAnon     (Just t)   
+        S.XBindVarMT S.BAnon     (Just t)
          -> C.BAnon <$> toCoreT uu t
 
-        S.XBindVarMT S.BAnon     Nothing    
+        S.XBindVarMT S.BAnon     Nothing
          -> C.BAnon <$> (return $ C.TVar (C.UName C.NameHole))
 
 
         S.XBindVarMT (S.BName n) (Just t)
-         -> C.BName <$> (return $ C.NameVar (Text.unpack n)) 
+         -> C.BName <$> (return $ C.NameVar (Text.unpack n))
                     <*> toCoreT uu t
 
-        S.XBindVarMT (S.BName n) Nothing    
-         -> C.BName <$> (return $ C.NameVar (Text.unpack n)) 
+        S.XBindVarMT (S.BName n) Nothing
+         -> C.BName <$> (return $ C.NameVar (Text.unpack n))
                     <*> (return $ C.TVar (C.UName C.NameHole))
 
 

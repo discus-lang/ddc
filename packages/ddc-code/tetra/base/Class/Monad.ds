@@ -1,6 +1,6 @@
 
 module Class.Monad
-export  
+export
 {       dFunctorOfMonad; dApplicativeOfMonad;
         return; bind
 }
@@ -19,7 +19,7 @@ data Monad (m: Data -> Data) where
 
 
 -- | Take the Functor dictionary from a Monad dictionary.
-dFunctorOfMonad 
+dFunctorOfMonad
         : [m: Data -> Data]
         . Monad m -> Functor m
 
@@ -48,7 +48,7 @@ return  [m: Data -> Data] [a: Data] {(Monad _ return' _): Monad m} (x: a): m a
  = return' x
 
 
--- | Evaluate a monadic compuation and pass the result to 
+-- | Evaluate a monadic compuation and pass the result to
 --   a function that produces a new monadic computation.
 --
 --   ISSUE #402: Fix specification of separate signatures
@@ -57,7 +57,7 @@ return  [m: Data -> Data] [a: Data] {(Monad _ return' _): Monad m} (x: a): m a
 --   bind      : [m: Data -> Data]. [a b: Data]
 --             . Monad m ~> m a -> (a -> m b) -> m b
 --
-bind    [m: Data -> Data] [a b: Data] {(Monad _ _ bind') : Monad m} 
+bind    [m: Data -> Data] [a b: Data] {(Monad _ _ bind') : Monad m}
         (ma: m a) (mf: a -> m b): m b
  = bind' ma mf
 

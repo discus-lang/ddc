@@ -51,7 +51,7 @@ lexToken (lStart: Location)
         -- TODO: Inlining takeSpace into the guard causes
         -- an LLVM dominator error.
         |  Just (space, xx')         <- takeSpace c xs
-        ,  Just (name, lEnd, csRest) <- lexName   lStart xx'
+        ,  Just (name, lEnd, csRest) <- lexName   (incCharOfLocation 1 lStart) xx'
         -> do   tok      = KName space name
                 Just (Located lStart lEnd tok, csRest)
 
@@ -78,8 +78,7 @@ skipSpace
         | c == '\t' -> skipSpace (incCharOfLocation 8 lStart) cs
 
         -- Skip comments
-        |  c == '!' -> skipSpace (incLineOfLocation 1 lStart)
-                    $  dropWhile (\x -> x /= '\n') cs
+        |  c == '!' -> skipSpace lStart $ dropWhile (\x -> x /= '\n') cs
 
         | otherwise -> (lStart, xx)
 
