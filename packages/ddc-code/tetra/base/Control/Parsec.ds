@@ -2,10 +2,12 @@
 module Control.Parsec
 export
 {       functor_Parser; applicative_Parser; monad_Parser;
-        parse; zero; item; satisfies;
+        parse;
+        zero; peek; item; satisfies;
         from; alt;
         some; many;
-        sepBy; sepBy1
+        sepBy; sepBy1;
+        withDelims;
 }
 import Class.Monad
 import Data.List
@@ -14,7 +16,9 @@ import Data.Maybe
 where
 
 data Parser (t a: Data) where
-        Parser: (List t → List (Tup2 a (List t))) → Parser t a
+        Parser
+         : (List t → List (a, List t))
+         → Parser t a
 
 
 -- | Apply a parser to a list of input tokens.
@@ -74,6 +78,15 @@ monad_Parser [t: Data]: Monad (Parser t)
 -- | Always fail, producing no possible parses.
 zero: Parser t a
  = Parser $ λ_ → Nil
+
+
+-- | Peek at the first input token, without consuming at it.
+--   If there are no tokens available then fail.
+peek: Parser t t
+ = Parser $ λts
+ → case ts of
+        Nil             → Nil
+        Cons t ts'      → Cons (t, ts) Nil
 
 
 -- | Consume the first input token, failing if there aren't any.
@@ -180,6 +193,14 @@ sepBy   (parserA: Parser t a) (parserS: Parser t s)
         : Parser t (List a)
  = alt  (sepBy1 parserA parserS)
         (return Nil)
+
+
+-- | Run a parser, peeking at the starting and ending tokens.
+withDelims (p: Parser t a): Parser t (t, a, t)
+ = do   kStart  <- peek
+        x       <- p
+        kEnd    <- peek
+        return  (kStart, x, kEnd)
 
 
 

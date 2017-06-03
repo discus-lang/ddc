@@ -11,36 +11,7 @@ import Data.Lens
 where
 
 
--- Parser Config --------------------------------------------------------------
--- | Configuration for a parser.
---
-data Config (s p: Data) where
- Config
-        :  (Name     -> Maybe s)        -- ^ Read a symbol name.
-        -> (Name     -> Maybe p)        -- ^ Read a primitive name.
-        -> Lens (Exp s p) (Maybe (Location, Location))
-        -> Config s p
-
-configSym  ((Config ms mp _): Config s p): Name -> Maybe s
- = ms
-
-configPrim ((Config ms mp _): Config s p): Name -> Maybe p
- = mp
-
-configAttach  ((Config _ _ a): Config s p)
-        : Lens (Exp s p) (Maybe (Location, Location))
- = a
-
-
--- | Attach source locations to an expression,
---   if there is an attach function specified in the config.
-attach  (config:      Config s p)
-        (lStart lEnd: Location) (xx: Exp s p): Exp s p
- = lens_set (configAttach config) (Just (lStart, lEnd)) xx
-
-
-
--- Decls -----------------------------------------------------------------------
+-- Interface ------------------------------------------------------------------
 parseDecls
         (c:  Config s p)
         (ts: List (Located Token))
@@ -50,28 +21,11 @@ parseDecls
         Cons (xx, _) _  -> Just xx
  where
         pDeclsEnd
-         = do   ds      <- pDecls c
+         = do   ds      <- pDecls {c}
                 _       <- pEnd
                 return ds
 
 
--- Decl ------------------------------------------------------------------------
-pDecls  (c: Config s p): Parser (Located Token) (List (Decl s p))
- =      many (pDecl c)
-
-
-pDecl   (c: Config s p): Parser (Located Token) (Decl s p)
- = do   name    <- pName SMac
-        nsParam <- some (pName SVar)
-        _       <- pPunc '='
-        xBody   <- pExp c
-        _       <- pPunc ';'
-        if length nsParam == 0
-         then return (DTerm name xBody)
-         else return (DTerm name $ XAbs nsParam xBody)
-
-
--- Exp ------------------------------------------------------------------------
 -- | Parse a complete expression from the given list of tokens.
 parseExp (c:  Config s p)
          (ts: List (Located Token)): Maybe (Exp s p)
@@ -80,80 +34,106 @@ parseExp (c:  Config s p)
         Cons (xx, _) _  -> Just xx
  where
         pExpEnd
-         = do   x       <- pExp c
+         = do   x       <- pExp {c}
                 _       <- pEnd
                 return x
 
 
+-- Decl ------------------------------------------------------------------------
+pDecls  {c: Config s p}: Parser (Located Token) (List (Decl s p))
+ =      many pDecl
+
+
+pDecl   {c: Config s p}: Parser (Located Token) (Decl s p)
+ = do   name    <- pName SMac
+        nsParam <- some (pName SVar)
+        _       <- pPunc '='
+        xBody   <- pExp
+        _       <- pPunc ';'
+        if length nsParam == 0
+         then return (DTerm name xBody)
+         else return (DTerm name $ XAbs nsParam xBody)
+
+
+-- Exp ------------------------------------------------------------------------
 -- | Parser for an expression.
-pExp    (c: Config s p)
+pExp    {c: Config s p}
         :   Parser (Located Token) (Exp s p)
- = alt  -- Abstraction.
-   (do  _       <- pPunc '\\'
+        -- Abstraction.
+ = alt (withRangeExp $ do
+        _       <- pPunc '\\'
         nsParam <- some (pName SVar)
         _       <- pPunc '.'
-        xBody   <- pExp c
+        xBody   <- pExp
         return  $ XAbs nsParam xBody)
 
- $ alt  -- Substitution train.
-   (do  csTrain <- pTrain c
+        -- Substitution train.
+ $ alt (withRangeExp $ do
+        csTrain <- pTrain
         _       <- pPunc '.'
-        xBody   <- pExp c
+        xBody   <- pExp
         return  $  XSub (reverse csTrain) xBody)
 
- $     -- Application possibly using '$'
-   (do  xHead   <- pExpApp c
+        -- Application possibly using '$'
+ $     (withRangeExp $ do
+        xHead   <- pExpApp
         alt (do _       <- pPunc '$'
-                xRest   <- pExp c
+                xRest   <- pExp
                 return  $  XApp xHead (Cons xRest Nil))
             (return xHead))
 
 
 -- | Parser for an application.
-pExpApp (c: Config s p)
+pExpApp {c: Config s p}
         :   Parser (Located Token) (Exp s p)
- = do   xFun    <- pExpAtom c
+ = do   xFun    <- pExpAtom
         alt (do _       <- pPunc '<'
-                xsArgs  <- sepBy (pExp c) (pPunc ',')
+                xsArgs  <- sepBy pExp (pPunc ',')
                 _       <- pPunc '>'
                 return  $ makeXApps xFun xsArgs)
 
-            (do xsArgs  <- some (pExpAtom c)
+            (do xsArgs  <- some pExpAtom
                 return  $ makeXApps xFun xsArgs)
 
 
 -- | Parser for an atomic expression.
-pExpAtom (c: Config s p)
+pExpAtom {c: Config s p}
          :   Parser (Located Token) (Exp s p)
- = alt  -- Parenthesised expression.
-   (do  _       <- pPunc '('
-        x       <- pExp c
+        -- Parenthesised expression.
+ = alt (withRangeExp $ do
+        _       <- pPunc '('
+        x       <- pExp
         _       <- pPunc ')'
         return x)
 
- $ alt  -- Named variable with or without index.
-   (do  name    <- pName SVar
+        -- Named variable with or without index.
+ $ alt (withRangeExp $ do
+        name    <- pName SVar
         alt (do _       <- pPunc '^'
                 ix      <- pNat
                 return  $ XVar name ix)
             (return $ XVar name 0))
 
- $ alt  -- Named macro.
-   (do  name    <- pName SMac
+        -- Named macro.
+ $ alt (withRangeExp $ do
+        name    <- pName SMac
         return  $ XRef (RMac name))
 
- $ alt  -- Named set.
-   (do  name    <- pName SSet
+        -- Named set.
+ $ alt (withRangeExp $ do
+        name    <- pName SSet
         return  $ XRef (RSet name))
 
- $ alt  -- Named symbol.
-   (do  name     <- pName SSym
+        -- Named symbol.
+ $ alt (withRangeExp $ do
+        name     <- pName SSym
         case configSym c name of
          Just s  -> return (XRef (RSym s))
          Nothing -> zero)
 
- $      -- Named primitive.
-   (do  name     <- pName SPrm
+        -- Named primitive.
+ $     (withRangeExp $ do
+        name     <- pName SPrm
         case configPrim c name of
          Just p  -> return (XRef (RPrm p))
          Nothing -> zero)
@@ -162,11 +142,11 @@ pExpAtom (c: Config s p)
 -- Train ----------------------------------------------------------------------
 -- | Parser for a substitution train.
 --   The cars are produced in reverse order.
-pTrain  (c: Config s p)
+pTrain  {c: Config s p}
         :   Parser (Located Token) (List (Car s p))
  = alt  -- A new car on a train.
-    (do cCar    <- pTrainCar c
-        csCar   <- pTrain c
+    (do cCar    <- pTrainCar
+        csCar   <- pTrain
         return  $  Cons cCar csCar)
 
     (do -- An empty train.
@@ -174,10 +154,10 @@ pTrain  (c: Config s p)
 
 
 -- | Parse a single car in the train.
-pTrainCar  (c: Config s p)
+pTrainCar  {c: Config s p}
            : Parser (Located Token) (Car s p)
  = alt  -- Substitution, both simultaneous and recursive
-    (do car     <- pCarSimRec c
+    (do car     <- pCarSimRec
         return car)
 
     (do -- An ups car.
@@ -190,19 +170,19 @@ pTrainCar  (c: Config s p)
 --
 --   Snv   ::= '[' Bind*, ']'
 --
-pCarSimRec (c: Config s p)
+pCarSimRec {c: Config s p}
            :   Parser (Located Token) (Car s p)
  = do   _       <- pPunc '['
 
         alt     -- Recursive substitution.
          (do    _       <- pPunc '['
-                bs      <- sepBy (pBind c) (pPunc ',')
+                bs      <- sepBy pBind (pPunc ',')
                 _       <- pPunc ']'
                 _       <- pPunc ']'
                 return  $ CRec (SSnv (reverse bs)))
 
                 -- Simultaneous substitution.
-         (do    bs      <- sepBy (pBind c) (pPunc ',')
+         (do    bs      <- sepBy pBind (pPunc ',')
                 _       <- pPunc ']'
                 return  $ CSim (SSnv (reverse bs)))
 
@@ -212,18 +192,18 @@ pCarSimRec (c: Config s p)
 --   Bind ::= Name '=' Exp
 --         |  Name '^' Nat '=' Exp
 --
-pBind   (c: Config s p)
+pBind   {c: Config s p}
         :   Parser (Located Token) ((Name, Nat), Exp s p)
  = do   name    <- pName SVar
         alt
          (do    _       <- pPunc '='
-                x       <- pExp c
+                x       <- pExp
                 return  ((name, 0), x))
 
          (do    _       <- pPunc '^'
                 bump    <- pNat
                 _       <- pPunc '='
-                x       <- pExp c
+                x       <- pExp
                 return  ((name, bump), x))
 
 
@@ -231,6 +211,7 @@ pBind   (c: Config s p)
 -- | Parser for an ups.
 --
 --   Ups  ::= '{' Bump*, '}'
+--
 pUps: Parser (Located Token) Ups
  = do   _       <- pPunc '{'
         bs      <- sepBy pBump (pPunc ',')
@@ -278,4 +259,49 @@ pEnd: Parser (Located Token) Unit
 pPunc (c: Char): Parser (Located Token) Unit
  = do   _ <- satisfies (isToken (KPunc c) ∘ valueOfLocated)
         return ()
+
+
+-- Parser Config --------------------------------------------------------------
+-- | Configuration for a parser.
+--
+data Config (s p: Data) where
+ Config
+        :  (Name     -> Maybe s)        -- ^ Read a symbol name.
+        -> (Name     -> Maybe p)        -- ^ Read a primitive name.
+        -> Lens (Exp s p) (Maybe (Location, Location))
+        -> Config s p
+
+configSym  ((Config ms mp _): Config s p): Name -> Maybe s
+ = ms
+
+configPrim ((Config ms mp _): Config s p): Name -> Maybe p
+ = mp
+
+configAttach  ((Config _ _ a): Config s p)
+        : Lens (Exp s p) (Maybe (Location, Location))
+ = a
+
+
+-- | Attach source locations to an expression,
+--   if there is an attach function specified in the config.
+attachRangeExp
+        {config:      Config s p}
+        (lStart lEnd: Location) (xx: Exp s p): Exp s p
+ = lens_set (configAttach config) (Just (lStart, lEnd)) xx
+
+
+-- | Run an expression parser,
+--   and wrap the result in the source location.
+withRangeExp
+        {c: Config s p}
+        (p: Parser (Located Token) (Exp s p))
+        :   Parser (Located Token) (Exp s p)
+ = do   -- TODO: binding against pattern yield 'bad pattern' error.
+        --(kStart, xx, kEnd) <- delim p
+        res     <- withDelims p
+        case res of
+         (kStart, xx, kEnd)
+          -> do lStart  = startOfLocated kStart
+                lEnd    = endOfLocated   kEnd
+                return  $ attachRangeExp lStart lEnd xx
 
