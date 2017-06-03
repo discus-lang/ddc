@@ -1,8 +1,8 @@
 -- 9 billion names of God the integer.
 -- http://rosettacode.org/wiki/9_billion_names_of_God_the_integer
 --
--- This task is a variation of the short story by Arthur C. Clarke. 
--- (Solvers should be aware of the consequences of completing this task.) 
+-- This task is a variation of the short story by Arthur C. Clarke.
+-- (Solvers should be aware of the consequences of completing this task.)
 -- In detail, to specify what is meant by a “name”:
 --  The integer 1 has 1 name “1”.
 --  The integer 2 has 2 names “1+1”, and “2”.
@@ -16,7 +16,7 @@
 --
 --                                    1
 --                                  1   1
---                                1   1   1 
+--                                1   1   1
 --                              1   2   1   1
 --                            1   2   2   1   1
 --                          1   3   3   2   1   1
@@ -27,7 +27,7 @@
 -- A function G(n) should return the sum of the n-th row. Demonstrate this
 -- function by displaying: G(23), G(123), G(1234), and G(12345).
 --
-module Main 
+module Main
 import System.IO.Console
 import Class.Show
 import Data.List
@@ -54,11 +54,11 @@ rows n  = Cons (singleton 1) (make n Nil (singleton 1))
 cumu n  = map  (scanl (+) 0) (rows n)
 
 -- | Get sum of the nth row.
-sums n  = foldl (add [Nat] {add_Nat}) 0 (last Nil (rows n))
+sums n  = foldl (+) 0 (fromMaybe Nil $ last (rows n))
 
 -- | Write a list to the console.
 writeListl xs
- = do   forS xs $ λn 
+ = do   forS xs $ λn
          -> write (show n % " ")
         write "\n"
 
