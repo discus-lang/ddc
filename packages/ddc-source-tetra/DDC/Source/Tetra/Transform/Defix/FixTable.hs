@@ -30,7 +30,7 @@ data FixDef l
         { -- String of the operator
           fixDefSymbol  :: String
 
-          -- Expression to rewrite the operator to, 
+          -- Expression to rewrite the operator to,
           -- given the annotation of the original symbol.
         , fixDefExp     :: GXAnnot l -> GExp l }
 
@@ -38,14 +38,14 @@ data FixDef l
         | FixDefInfix
         { -- String of the operator.
           fixDefSymbol  :: String
-        
-          -- Expression to rewrite the operator to, 
+
+          -- Expression to rewrite the operator to,
           -- given the annotation of the original symbol.
         , fixDefExp     :: GXAnnot l -> GExp l
 
           -- Associativity of infix operator.
         , fixDefAssoc   :: InfixAssoc
-        
+
           -- Precedence of infix operator.
         , fixDefPrec    :: Int }
 
@@ -88,10 +88,10 @@ lookupDefPrefixOfSymbol (FixTable defs) str
 
 
 -- | Get the precedence of an infix symbol, else Error.
-getInfixDefOfSymbol 
+getInfixDefOfSymbol
         :: GXAnnot l
         -> FixTable l
-        -> String 
+        -> String
         -> Either (Error l) (FixDef l)
 
 getInfixDefOfSymbol a table str
@@ -103,44 +103,52 @@ getInfixDefOfSymbol a table str
 -- | Default fixity table for infix operators.
 defaultFixTable :: GXBoundVar l ~ Bound => FixTable l
 defaultFixTable
- = FixTable 
+ = FixTable
         [ FixDefPrefix  "-"     (xvar "neg")
         , FixDefPrefix  "¬"     (xvar "not")
 
         -- Operators defined in the Haskell Prelude.
         , FixDefInfix   "∘"     (xvar "compose")        InfixRight 9
 
-        , FixDefInfix   "*"     (xvar "mul")            InfixLeft  7
+        , FixDefInfix   ">>"    (xvar "composeRight")   InfixRight 8
+        , FixDefInfix   "<<"    (xvar "composeLeft")    InfixRight 8
 
-        , FixDefInfix   "+"     (xvar "add")            InfixLeft  6
-        , FixDefInfix   "-"     (xvar "sub")            InfixLeft  6
+        , FixDefInfix   "&="    (xvar "lens_set")       InfixRight 7
 
-        , FixDefInfix   "∪"     (xvar "intersect")      InfixLeft  6
-        , FixDefInfix   "∩"     (xvar "union")          InfixLeft  6
+        , FixDefInfix   "&."    (xvar "lens_get")       InfixLeft  6
 
-        , FixDefInfix   "=="    (xvar "eq")             InfixNone  4
-        , FixDefInfix   "/="    (xvar "neq")            InfixNone  4
-        , FixDefInfix   "<"     (xvar "lt")             InfixNone  4
-        , FixDefInfix   "<="    (xvar "le")             InfixNone  4
-        , FixDefInfix   ">"     (xvar "gt")             InfixNone  4
-        , FixDefInfix   ">="    (xvar "ge")             InfixNone  4
+        , FixDefInfix   "*"     (xvar "mul")            InfixLeft  5
 
-        , FixDefInfix   "/\\"   (xvar "and")            InfixRight 3
-        , FixDefInfix   "∧"     (xvar "and")            InfixRight 3
+        , FixDefInfix   "+"     (xvar "add")            InfixLeft  4
+        , FixDefInfix   "-"     (xvar "sub")            InfixLeft  4
 
-        , FixDefInfix   "\\/"   (xvar "or")             InfixRight 3
-        , FixDefInfix   "∨"     (xvar "or")             InfixRight 3
+        , FixDefInfix   "∪"     (xvar "intersect")      InfixLeft  4
+        , FixDefInfix   "∩"     (xvar "union")          InfixLeft  4
 
-        , FixDefInfix   "$"     (xvar "apply")          InfixRight 1 
+        , FixDefInfix   "=="    (xvar "eq")             InfixNone  3
+        , FixDefInfix   "/="    (xvar "neq")            InfixNone  3
+        , FixDefInfix   "<"     (xvar "lt")             InfixNone  3
+        , FixDefInfix   "<="    (xvar "le")             InfixNone  3
+        , FixDefInfix   ">"     (xvar "gt")             InfixNone  3
+        , FixDefInfix   ">="    (xvar "ge")             InfixNone  3
+
+
+        , FixDefInfix   "/\\"   (xvar "and")            InfixRight 2
+        , FixDefInfix   "∧"     (xvar "and")            InfixRight 2
+
+        , FixDefInfix   "\\/"   (xvar "or")             InfixRight 2
+        , FixDefInfix   "∨"     (xvar "or")             InfixRight 2
+
+        , FixDefInfix   "$"     (xvar "apply")          InfixRight 1
 
         -- String pasting.
         --   These associate to the right so that when text objects are formed by
-        --   pasting several together, then spine of the data structure leans to 
+        --   pasting several together, then spine of the data structure leans to
         --   the right, as do cons lists.
         , FixDefInfix   "%"  (xvar "paste")             InfixRight 6
         , FixDefInfix   "%%" (xvar "pastes")            InfixRight 6
         ]
 
- where  xvar str sp 
+ where  xvar str sp
          = XAnnot sp $ XVar (UName $ Text.pack str)
 

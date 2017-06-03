@@ -1,0 +1,69 @@
+
+module Data.Lens
+export  { lens_Category
+        ; lens_make; lens_iso
+        ; lens_get;  lens_set; lens_mod
+        ; lens_fst;  lens_snd }
+import Data.Tuple
+where
+
+
+-- | A lens onto a small part of a larger one.
+data Lens (a b: Data) where
+        Lens
+         :  (a -> b)            -- ^ Get function.
+         -> (b -> a -> a)       -- ^ Set function.
+         -> Lens a b
+
+
+-- | Category dictionary for lenses.
+lens_Category: Category Lens
+ = Category id' compose'
+ where
+        id' [a: Data]: Lens a a
+            = Lens (\x -> x) (\x _ -> x)
+
+        compose' [a b c: Data]
+                 ((Lens getBC setCBB): Lens b c)
+                 ((Lens getAB setBAA): Lens a b)
+            = Lens (\xa    -> getBC  (getAB xa))
+                   (\xc xa -> setBAA (setCBB xc (getAB xa)) xa)
+
+
+-- | Make a lens out of a get and set function.
+lens_make (get: a -> b) (set: b -> a -> a): Lens a b
+ = Lens get set
+
+
+-- | Make a lens out of an isomorphism.
+lens_iso  (xab: a -> b) (xba: b -> a): Lens a b
+ = Lens xab (\xb _ -> xba xb)
+
+
+-- | Get a value through a lens.
+lens_get ((Lens get' _): Lens a b): a -> b
+ = get'
+
+
+-- | Set a value through a lens.
+lens_set ((Lens _ set'): Lens a b): b -> a -> a
+ = set'
+
+
+-- | Modify a value through a lens.
+lens_mod (lens: Lens a b) (f: b -> b) (x: a): a
+ = lens_set lens (f (lens_get lens x)) x
+
+
+-- | Lens onto the first component of a tuple.
+lens_fst [a b: Data]: Lens (a, b) a
+ = Lens (\(x, y)     -> x)
+        (\x' (x, y)  -> (x', y))
+
+
+-- | Lens onto the second component of a tuple.
+lens_snd [a b: Data]: Lens (a, b) b
+ = Lens (\(x, y)     -> y)
+        (\y' (x, y)  -> (x, y'))
+
+

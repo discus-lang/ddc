@@ -13,22 +13,27 @@ where
 -- Parser Config --------------------------------------------------------------
 data Config (s p: Data) where
  Config
-        :  (Name -> Maybe s)
-        -> (Name -> Maybe p)
+        :  (Name     -> Maybe s)        -- ^ Read a symbol name.
+        -> (Name     -> Maybe p)        -- ^ Read a primitive name.
+        -> s                            -- ^ Symbol to encode source locations.
         -> Config s p
 
-configSym  ((Config ms mp): Config s p): Name -> Maybe s
+configSym  ((Config ms mp _): Config s p): Name -> Maybe s
  = ms
 
-configPrim ((Config ms mp): Config s p): Name -> Maybe p
+configPrim ((Config ms mp _): Config s p): Name -> Maybe p
  = mp
+
+configLoc  ((Config _ _ l): Config s p): s
+ = l
+
 
 
 -- Decls -----------------------------------------------------------------------
 parseDecls
         (c:  Config s p)
         (ts: List (Located Token))
-        : Maybe (List (Decl s p))
+        :    Maybe (List (Decl s p))
  = case parse pDeclsEnd ts of
         Nil             -> Nothing
         Cons (xx, _) _  -> Just xx

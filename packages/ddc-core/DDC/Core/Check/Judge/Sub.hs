@@ -67,7 +67,7 @@ makeSub config a ctx0 x0 xL tL tR err
         ctrace  $ vcat
                 [ text "**  Sub_SynR"
                 , text "    tL:  " <> ppr tL
-                , text "    tR:  " <> ppr tR 
+                , text "    tR:  " <> ppr tR
                 , text "    tR': " <> ppr tR
                 , empty ]
 
@@ -134,9 +134,9 @@ makeSub config a ctx0 x0 xL tL tR err
 
  -- Sub_Con
  --   Both sides are type constructors which are equivalent.
- --   
+ --
  --   ISSUE #378: Complete merging (~>) and (->) type constructors.
- --   The equivTyCon function already treats these equivalent, 
+ --   The equivTyCon function already treats these equivalent,
  --   but we should just use (->) at all levels and ditch (~>).
  --
  | TCon tc1     <- tL
@@ -178,7 +178,7 @@ makeSub config a ctx0 x0 xL tL tR err
 
  -- Sub_Equiv
  --   Both sides are equivalent.
- --   The `equivT` function will also crush any effect types, 
+ --   The `equivT` function will also crush any effect types,
  --   and handle comparing type sums for equivalence.
  --
  | equivT (contextEnvT ctx0) tL tR
@@ -227,7 +227,10 @@ makeSub config a ctx0 x0 xL tL tR err
                 , ctx2)
 
 
- -- Sub_Implicit_Arg
+ -- TODO: we're missing the rule with the other way,
+ --  inferred is D t1'..tn', expected is A ~> B
+
+ -- Sub_Implicit_Right
  --
  --   The inferred type  is   (A ~> B)
  --   while expected type is  (D t1'..tn')
@@ -235,14 +238,14 @@ makeSub config a ctx0 x0 xL tL tR err
  --
  --   We'll inject a new implicit argument that tries to elaborate a value
  --   of type 'A', then hope that B can be made a subtype of (D t1'..tn').
- -- 
+ --
  | Just (TcConFunImplicit, tL1, tL2)    <- takeTFunCon tL
  , case takeTFunCon tR of
         Just (TcConFunImplicit, _, _)   -> False
         _                               -> True
  = do
         ctrace  $ vcat
-                [ text "*>  Sub_Implicit_Arg"
+                [ text "*>  Sub_Implicit_Right"
                 , text "    tL:      " <> ppr tL
                 , text "    tR:      " <> ppr tR
                 , text "    xL:      " <> ppr xL
@@ -258,8 +261,8 @@ makeSub config a ctx0 x0 xL tL tR err
         let aFn         = AnTEC tL    (tBot kEffect) (tBot kClosure) a
         let xL_elab     = XApp aFn xL (RImplicit (RTerm xArgElab))
 
-        (xL_elab', effs1, ctx1) 
-                <- makeSub config a ctx0 x0 xL_elab tL2 tR err 
+        (xL_elab', effs1, ctx1)
+                <- makeSub config a ctx0 x0 xL_elab tL2 tR err
 
         ctrace  $ vcat
                 [ text "*<  Sub_Implicit_Arg"
@@ -272,6 +275,7 @@ makeSub config a ctx0 x0 xL tL tR err
                 , effs1
                 , ctx1)
 
+
  -- Sub_Run
  --   The left (inferred) type is a suspension, but the right it not.
  --   We run the suspension to get the result value and check if the
@@ -280,7 +284,7 @@ makeSub config a ctx0 x0 xL tL tR err
  --
  | Just    (tEffect, tResult)   <- takeTSusp tL
  , Nothing                      <- takeTSusp tR
- = do   
+ = do
         ctrace  $ vcat
                 [ text "**  Sub_Run"
                 , text "    tL:      " <> ppr tL
@@ -309,7 +313,7 @@ makeSub config a ctx0 x0 xL tL tR err
  --   ISSUE #379: Track variance information in type synonyms.
  --   We're treating all non-function types as invariant, so use makeEqT
  --   rather than checking for subsumption.
- --   
+ --
  | TApp tL1 tL2 <- tL
  , TApp tR1 tR2 <- tR
  = do
@@ -339,7 +343,7 @@ makeSub config a ctx0 x0 xL tL tR err
 
  -- Sub_ForallL
  --   Left (inferred) type is a forall type.
- --   Apply the expression to a new existential to instantiate it, 
+ --   Apply the expression to a new existential to instantiate it,
  --   then check the new instantiated type against the expected one.
  --
  | TForall b t1 <- tL
@@ -373,7 +377,7 @@ makeSub config a ctx0 x0 xL tL tR err
         let aFn  = AnTEC t1' (substituteT b tA e0) (substituteT b tA c0) a
         let xL1  = XApp aFn xL (RType tA)
 
-        (xL2, effs3, ctx3) 
+        (xL2, effs3, ctx3)
          <- makeSub config a ctx2 x0 xL1 t1' tR err
 
         -- Pop the existential and constraints above it back off
@@ -397,7 +401,7 @@ makeSub config a ctx0 x0 xL tL tR err
 
  -- Sub_ForallR
  --   The right (expected) type is a forall type.
- --   
+ --
  | TForall bParamR tBodyR  <- tR
  = do
         ctrace  $ vcat
@@ -449,7 +453,7 @@ makeSub config a ctx0 x0 xL tL tR err
  -- Sub_Fail
  --   No other rule matched, so this expression is ill-typed.
  | otherwise
- = do   
+ = do
         ctrace  $ vcat
                 [ text "**  Sub_Fail"
                 , text "    tL: " <> ppr tL

@@ -1,0 +1,80 @@
+
+module Class.Profunctor
+export { dimap; lmap; rmap; strong_first; strong_second }
+where
+
+
+-------------------------------------------------------------------------------
+-- | A Profunctor is a type constructor of two type arguments,
+--   which is contravariant in its first argument,
+--   and covariant in its second argument.
+data Profunctor (p: Data -> Data -> Data) where
+        Profunctor
+         :  ([a b c d: Data].  (a -> b) -> (c -> d) -> p b c -> p a d)
+         -> Profunctor p
+
+-- | dimap maps a pair of functions over both arguments of a
+--   Profunctor simultaneously.
+dimap   [p: Data -> Data -> Data] [a b c d: Data]
+        {(Profunctor dimap'): Profunctor p}
+        : (a -> b) -> (c -> d) -> p b c -> p a d
+ = dimap'
+
+
+-- | Map a function over the left (contravariant) type argument only.
+lmap    [a b c: Data] [p: Data -> Data -> Data]
+        {Profunctor p} (xab: a -> b) (xbc: p b c): p a c
+ = dimap xab id xbc
+
+
+-- | Map a function over the right (covariant) type argument only.
+rmap    [a b c: Data] [p: Data -> Data -> Data]
+        {Profunctor p} (xbc: b -> c) (xab: p a b): p a c
+ = dimap id xbc xab
+
+
+-- | Profunctor dictionary for the function type constructor.
+function_Profunctor: Profunctor (->)
+ = Profunctor $ \xab xcd xbc xa -> xcd (xbc (xab xa))
+
+
+-------------------------------------------------------------------------------
+-- | The Strong class extends Profunctor with combinators for working
+--   with product types.
+data Strong (p: Data -> Data -> Data) where
+        Strong
+         :   Profunctor p
+         -> ([a b c: Data]. p a b -> p (a, c) (b, c))
+         -> ([a b c: Data]. p b c -> p (a, b) (a, c))
+         -> Strong p
+
+
+-- | Extract the 'Strong' dictonary from a 'Profunctor' dictionary.
+dProfunctorOfStrong
+        {(Strong dProfunctor _ _): Strong p}
+        : Profunctor p
+ = dProfunctor
+
+
+-- | Lift a profunctor to work on the first component of a tuple.
+strong_first
+        [a b c: Data] [p: Data -> Data -> Data]
+        {(Strong _ first' _): Strong p}
+        : p a b -> p (a, c) (b, c)
+ = first'
+
+
+-- | Lift a profunctor to work on the second component of a tuple.
+strong_second
+        [a b c: Data] [p: Data -> Data -> Data]
+        {(Strong _ _ second'): Strong p}
+        : p b c -> p (a, b) (a, c)
+ = second'
+
+
+-- | Strong dictionary for the function type constructor.
+function_Strong: Strong (->)
+ = Strong
+        function_Profunctor
+        (\xab (a, c) -> (xab a, c))
+        (\xbc (a, b) -> (a, xbc b))

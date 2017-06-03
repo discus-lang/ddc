@@ -16,7 +16,7 @@ import qualified Data.List      as List
 -------------------------------------------------------------------------------
 -- | Scanner for operators used prefix.
 scanPrefixOperator :: Scanner IO Location [Char] (Location, String)
-scanPrefixOperator 
+scanPrefixOperator
  = munchPred Nothing matchPrefixOperator acceptPrefixOperator
 
 
@@ -45,7 +45,7 @@ acceptPrefixOperator str
 -------------------------------------------------------------------------------
 -- | Scanner for operators used infix.
 scanInfixOperator  :: Scanner IO Location [Char] (Location, String)
-scanInfixOperator 
+scanInfixOperator
  = munchPred Nothing matchInfixOperator acceptInfixOperator
 
 
@@ -87,7 +87,7 @@ isOpName str
 isOpStart :: Char -> Bool
 isOpStart c
         =  c == '~'     || c == '!'
-        || c == '$'     || c == '%'                     || c == '&'     
+        || c == '$'     || c == '%'                     || c == '&'
         || c == '*'     || c == '-'     || c == '+'     || c == '='
         || c == ':'                     || c == '/'     || c == '|'
         || c == '<'     || c == '>'
@@ -97,8 +97,8 @@ isOpStart c
 -- | Character can be part of an operator body.
 isOpBody :: Char -> Bool
 isOpBody c
-        =  c == '~'     || c == '!'                     || c == '#'     
-        || c == '$'     || c == '%'                     || c == '&'     
+        =  c == '~'     || c == '!'                     || c == '#'
+        || c == '$'     || c == '%'                     || c == '&'
         || c == '*'     || c == '-'     || c == '+'     || c == '='
         || c == ':'     || c == '?'     || c == '/'     || c == '|'
         || c == '<'     || c == '>'
