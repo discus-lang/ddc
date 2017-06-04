@@ -3,7 +3,7 @@ module Control.Parsec
 export
 {       parser_Functor; parser_Applicative; parser_Monad;
         parse;
-        fail; expected;
+        fail; expected; enter;
         peek; item; satisfies;
         from; alt;
         some; many;
@@ -63,6 +63,9 @@ data ParseResult (t e a: Data) where
          -> List t              -- ^ Tokens leftover.
          -> ParseResult t e a
 
+-- TODO Lists of expectations shoud be bags, so we can append them easily.
+-- TOOD: Always store blockers instead of raw expectations so that
+--       we can put them in bags and wrap them uniformly when entering contexts.
 
 -- | Describes why the parser could not make further progress.
 data Blocker (t e: Data) where
@@ -166,14 +169,10 @@ parser_bind
 
         ParseReturn  es1 xa
          -> case parse (mkParserB xa) ts0 of
-                ParseSkip     es2
-                 -> ParseSkip    (append es1 es2)
-                ParseReturn es2 xb
-                 -> ParseReturn  (append es1 es2) xb
-                ParseFailure bs2
-                 -> ParseFailure bs2
-                ParseSuccess bs2 x ts2
-                 -> ParseSuccess bs2 x ts2
+                ParseSkip    es2        -> ParseSkip    (append es1 es2)
+                ParseReturn  es2 xb     -> ParseReturn  (append es1 es2) xb
+                ParseFailure bs2        -> ParseFailure bs2
+                ParseSuccess bs2 x ts2  -> ParseSuccess bs2 x ts2
 
 
         ParseSuccess bs1 xa ts1
@@ -196,10 +195,24 @@ fail : Parser t e a
  = Parser $ λts → ParseFailure Nil
 
 
-
 -- | Always fail, yielding the given message describing what was expected.
 expected (xe: e): Parser t e a
  = Parser $ λts → ParseFailure (Cons (Blocker ts xe) Nil)
+
+
+-- | Parse in an expectation context.
+enter    (mk: List e -> e) (parserA: Parser t e a): Parser t e a
+ = Parser $ λts0
+ → case parse parserA ts0 of
+        ParseSkip    e          → ParseSkip   (Cons (mk e)   Nil)
+        ParseReturn  es1 x      → ParseReturn (Cons (mk es1) Nil) x
+
+        ParseFailure bs1
+         → ParseFailure (map (\(Blocker ts e) → Blocker ts (mk (Cons e Nil))) bs1)
+
+        ParseSuccess bs1 xb ts2
+         → ParseSuccess (map (\(Blocker ts e) → Blocker ts (mk (Cons e Nil))) bs1)
+                        xb ts2
 
 
 -- | Peek at the first input token, without consuming at it.
@@ -243,7 +256,6 @@ from      (xe: e) (accept: t → Maybe a): Parser t e a
 
 -- | Given two parsers, try the first and if it succeeds produce
 --   the output of that parser, if not try the second.
---   TODO: using list append here will be a performance disaster.
 alt (parserA parserB: Parser t e a): Parser t e a
  = Parser $ λts0
  → case parse parserA ts0 of

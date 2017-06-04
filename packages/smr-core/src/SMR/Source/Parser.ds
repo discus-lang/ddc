@@ -57,13 +57,14 @@ pDecls  {c: Config s p}
 pDecl   {c: Config s p}
         : Parser (Located Token) (Expected s p) (Decl s p)
  = do   name    <- pNameOfSpace SMac
-        nsParam <- some (pNameOfSpace SVar)
-        _       <- pPunc '='
-        xBody   <- pExp
-        _       <- pPunc ';'
-        if length nsParam == 0
-         then return (DTerm name xBody)
-         else return (DTerm name $ XAbs nsParam xBody)
+        enter (ExContextDecl name)
+         $ do   nsParam <- some (pNameOfSpace SVar)
+                _       <- pPunc '='
+                xBody   <- pExp
+                _       <- pPunc ';'
+                if length nsParam == 0
+                 then return (DTerm name xBody)
+                 else return (DTerm name $ XAbs nsParam xBody)
 
 
 -- Exp ------------------------------------------------------------------------
@@ -202,12 +203,13 @@ pCarSimRec {c: Config s p}
 pBind   {c: Config s p}
         :   Parser (Located Token) (Expected s p) ((Name, Nat), Exp s p)
  = do   name    <- pNameOfSpace SVar
-        alt
-         (do    _       <- pPunc '='
+        enter (ExContextBind name)
+         $ alt
+            (do _       <- pPunc '='
                 x       <- pExp
                 return  ((name, 0), x))
 
-         (do    _       <- pPunc '^'
+            (do _       <- pPunc '^'
                 bump    <- pNat
                 _       <- pPunc '='
                 x       <- pExp

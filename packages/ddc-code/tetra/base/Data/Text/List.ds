@@ -4,7 +4,7 @@ module Data.Text.List
 export
 {       textOfCharList;
         charListOfText;
-        unlines;
+        unlines; unlines';
 }
 import Data.Numeric.Word8
 import Data.Text.Base
@@ -69,6 +69,12 @@ vectorOfCharList
 -- | Concatenate text strings, punctuating with newline characters.
 unlines (txs: List Text): Text
  = case txs of
-        Nil     -> ""
-        Cons t txs' -> t % "\n" % unlines txs'
+        Nil             -> ""
+        Cons t txs'     -> t % "\n" % unlines txs'
 
+-- | Like unlines, but don't add the final newline.
+unlines' (txs: List Text): Text
+ = case txs of
+        Nil             -> ""
+        Cons t Nil      -> t
+        Cons t txs'     -> t % "\n" % unlines txs'

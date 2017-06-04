@@ -20,6 +20,12 @@ data Expected (s p: Data) where
         ExBaseMsg       : Text          -> Expected s p
         ExBaseNameAny   :                  Expected s p
 
+        -- Contextual expectations, which indicate what we were trying
+        -- to parse while we had some other expectation.
+        ExContextDecl   : Name -> List (Expected s p) -> Expected s p
+
+        ExContextBind   : Name -> List (Expected s p) -> Expected s p
+
 
 pretty_Expected
         {Pretty s} {Pretty p}
@@ -32,6 +38,12 @@ pretty_Expected
         ExBasePunc c    -> "expecting punctuation" %% textOfChar c
         ExBaseMsg t     -> "expecting" %% t
         ExBaseNameAny   -> "expecting name"
+
+        ExContextDecl n es
+         -> "in declaration" %% n %% (unlines' $ map ppr es)
+
+        ExContextBind n es
+         -> "in binding"     %% n %% (unlines' $ map ppr es)
 
 
 -------------------------------------------------------------------------------
