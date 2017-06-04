@@ -17,13 +17,13 @@ where
 parseDecls
         (c:  Config s p)
         (ts: List (Located Token))
-        :    Either (ParseError (Located Token) (Expected s p))
+        :    Either (ParseError (Located Token) (Expected (Located Token) s p))
                     (List (Decl s p))
  = case parse pDeclsEnd ts of
-        ParseSkip    es         -> Left $ ParseError (map (Blocker ts) es)
+        ParseSkip    es         -> Left $ ParseError (bag_toList es)
         ParseReturn  _ xx       -> Right xx
-        ParseFailure bs         -> Left $ ParseError bs
-        ParseSuccess bs xx ts   -> Right xx
+        ParseFailure bs         -> Left $ ParseError (bag_toList bs)
+        ParseSuccess xx ts      -> Right xx
  where
         pDeclsEnd
          = do   ds      <- pDecls {c}
@@ -34,13 +34,13 @@ parseDecls
 -- | Parse a complete expression from the given list of tokens.
 parseExp (c:  Config s p)
          (ts: List (Located Token))
-        : Either (ParseError (Located Token) (Expected s p))
+         : Either (ParseError (Located Token) (Expected (Located Token) s p))
                  (Exp s p)
  = case parse pExpEnd ts of
-        ParseSkip    es         -> Left $ ParseError (map (Blocker ts) es)
+        ParseSkip    es         -> Left $ ParseError (bag_toList es)
         ParseReturn  _ xx       -> Right xx
-        ParseFailure bs         -> Left $ ParseError bs
-        ParseSuccess bs xx ts   -> Right xx
+        ParseFailure bs         -> Left $ ParseError (bag_toList bs)
+        ParseSuccess xx ts      -> Right xx
  where
         pExpEnd
          = do   x       <- pExp {c}
@@ -50,29 +50,29 @@ parseExp (c:  Config s p)
 
 -- Decl ------------------------------------------------------------------------
 pDecls  {c: Config s p}
-        : Parser (Located Token) (Expected s p) (List (Decl s p))
- =      many pDecl
+        : Parser (Located Token) (Expected (Located Token) s p) (List (Decl s p))
+ =      some pDecl
 
 
 pDecl   {c: Config s p}
-        : Parser (Located Token) (Expected s p) (Decl s p)
- = do   name    <- pNameOfSpace SMac
-        enter (ExContextDecl name)
-         $ do   nsParam <- some (pNameOfSpace SVar)
-                _       <- pPunc '='
-                xBody   <- pExp
-                _       <- pPunc ';'
-                if length nsParam == 0
-                 then return (DTerm name xBody)
-                 else return (DTerm name $ XAbs nsParam xBody)
+        : Parser (Located Token) (Expected (Located Token) s p) (Decl s p)
+ = enterOn (pNameOfSpace SMac) ExContextDecl $ \name
+ → do   nsParam <- some (pNameOfSpace SVar)
+        _       <- pPunc '='
+        xBody   <- pExp
+        _       <- pPunc ';'
+        if length nsParam == 0
+         then return (DTerm name xBody)
+         else return (DTerm name $ XAbs nsParam xBody)
 
 
 -- Exp ------------------------------------------------------------------------
 -- | Parser for an expression.
 pExp    {c: Config s p}
-        :   Parser (Located Token) (Expected s p) (Exp s p)
+        :   Parser (Located Token) (Expected (Located Token) s p) (Exp s p)
         -- Abstraction.
- = alt (withRangeExp $ do
+ = alts
+ $ Cons (do
         _       <- pPunc '\\'
         nsParam <- some (pNameOfSpace SVar)
         _       <- pPunc '.'
@@ -80,24 +80,25 @@ pExp    {c: Config s p}
         return  $ XAbs nsParam xBody)
 
         -- Substitution train.
- $ alt (withRangeExp $ do
+ $ Cons (do
         csTrain <- pTrain
         _       <- pPunc '.'
         xBody   <- pExp
         return  $  XSub (reverse csTrain) xBody)
 
         -- Application possibly using '$'
- $     (withRangeExp $ do
+ $ Cons (do
         xHead   <- pExpApp
         alt (do _       <- pPunc '$'
                 xRest   <- pExp
                 return  $  XApp xHead (Cons xRest Nil))
             (return xHead))
+ $ Nil
 
 
 -- | Parser for an application.
 pExpApp {c: Config s p}
-        :   Parser (Located Token) (Expected s p) (Exp s p)
+        :   Parser (Located Token) (Expected (Located Token) s p) (Exp s p)
  = do   xFun    <- pExpAtom
         alt (do _       <- pPunc '<'
                 xsArgs  <- sepBy pExp (pPunc ',')
@@ -110,16 +111,17 @@ pExpApp {c: Config s p}
 
 -- | Parser for an atomic expression.
 pExpAtom {c: Config s p}
-         :   Parser (Located Token) (Expected s p) (Exp s p)
+         :   Parser (Located Token) (Expected (Located Token) s p) (Exp s p)
         -- Parenthesised expression.
- = alt (withRangeExp $ do
+ = alts
+ $ Cons (do
         _       <- pPunc '('
         x       <- pExp
         _       <- pPunc ')'
         return x)
 
         -- Named variable with or without index.
- $     (withRangeExp $ do
+ $ Cons (do
         (space, name) <- pName
 
         case space of
@@ -147,13 +149,14 @@ pExpAtom {c: Config s p}
           -> case configPrim c name of
                 Just p  -> return (XRef (RPrm p))
                 Nothing -> fail)
+ $ Nil
 
 
 -- Train ----------------------------------------------------------------------
 -- | Parser for a substitution train.
 --   The cars are produced in reverse order.
 pTrain  {c: Config s p}
-        :   Parser (Located Token) (Expected s p) (List (Car s p))
+        :   Parser (Located Token) (Expected (Located Token) s p) (List (Car s p))
  = do   cCar    <- pTrainCar
         alt
          (do csCar <- pTrain
@@ -163,7 +166,7 @@ pTrain  {c: Config s p}
 
 -- | Parse a single car in the train.
 pTrainCar  {c: Config s p}
-           : Parser (Located Token) (Expected s p) (Car s p)
+           : Parser (Located Token) (Expected (Located Token) s p) (Car s p)
  = alt  -- Substitution, both simultaneous and recursive
     (do car     <- pCarSimRec
         return car)
@@ -179,7 +182,7 @@ pTrainCar  {c: Config s p}
 --   Snv   ::= '[' Bind*, ']'
 --
 pCarSimRec {c: Config s p}
-           :   Parser (Located Token) (Expected s p) (Car s p)
+           :   Parser (Located Token) (Expected (Located Token) s p) (Car s p)
  = do   _       <- pPunc '['
 
         alt     -- Recursive substitution.
@@ -201,19 +204,17 @@ pCarSimRec {c: Config s p}
 --         |  Name '^' Nat '=' Exp
 --
 pBind   {c: Config s p}
-        :   Parser (Located Token) (Expected s p) ((Name, Nat), Exp s p)
- = do   name    <- pNameOfSpace SVar
-        enter (ExContextBind name)
-         $ alt
-            (do _       <- pPunc '='
-                x       <- pExp
-                return  ((name, 0), x))
+        :   Parser (Located Token) (Expected (Located Token) s p) ((Name, Nat), Exp s p)
+ = enterOn (pNameOfSpace SVar) ExContextBind $ \name
+ → alt  (do _       <- pPunc '='
+            x       <- pExp
+            return  ((name, 0), x))
 
-            (do _       <- pPunc '^'
-                bump    <- pNat
-                _       <- pPunc '='
-                x       <- pExp
-                return  ((name, bump), x))
+        (do _       <- pPunc '^'
+            bump    <- pNat
+            _       <- pPunc '='
+            x       <- pExp
+            return  ((name, bump), x))
 
 
 -- Ups ------------------------------------------------------------------------
@@ -221,7 +222,7 @@ pBind   {c: Config s p}
 --
 --   Ups  ::= '{' Bump*, '}'
 --
-pUps: Parser (Located Token) (Expected s p) Ups
+pUps: Parser (Located Token) (Expected (Located Token) s p) Ups
  = do   _       <- pPunc '{'
         bs      <- sepBy pBump (pPunc ',')
         _       <- pPunc '}'
@@ -233,7 +234,7 @@ pUps: Parser (Located Token) (Expected s p) Ups
 --   Bump ::= Name ':' Nat
 --         |  Name '^' Nat ':' Nat
 --
-pBump: Parser (Located Token) (Expected s p) ((Name, Nat), Nat)
+pBump: Parser (Located Token) (Expected (Located Token) s p) ((Name, Nat), Nat)
  = do   name    <- pNameOfSpace SVar
         alt
          (do    _       <- pPunc ':'
@@ -249,31 +250,30 @@ pBump: Parser (Located Token) (Expected s p) ((Name, Nat), Nat)
 
 -------------------------------------------------------------------------------
 -- | Parser for a natural number.
-pNat:   Parser (Located Token) (Expected s p) Nat
+pNat:   Parser (Located Token) (Expected (Located Token) s p) Nat
  =      from ExBaseNat (takeNatOfToken    ∘ valueOfLocated)
 
 
 -- | Parser for a name in the given space.
 pNameOfSpace
-        (s: Space): Parser (Located Token) (Expected s p) Name
+        (s: Space): Parser (Located Token) (Expected (Located Token) s p) Name
  =      from (ExBaseNameOf s) (takeNameOfToken s ∘ valueOfLocated)
 
 
 -- | Parser for a name of any space.
-pName:  Parser (Located Token) (Expected s p) (Space, Name)
+pName:  Parser (Located Token) (Expected (Located Token) s p) (Space, Name)
  =      from  ExBaseNameAny   (takeAnyNameOfToken ∘ valueOfLocated)
 
 
 -- | Parser for the end of input token.
-pEnd:   Parser (Located Token) (Expected s p) Unit
+pEnd:   Parser (Located Token) (Expected (Located Token) s p) Unit
  = do   _ <- satisfies ExBaseEnd (isToken KEnd ∘ valueOfLocated)
         return ()
 
 
 -- | Parser for a punctuation character.
 pPunc   (c: Char)
-        : Parser (Located Token) (Expected s p) Unit
+        : Parser (Located Token) (Expected (Located Token) s p) Unit
  = do   _ <- satisfies (ExBasePunc c) (isToken (KPunc c) ∘ valueOfLocated)
         return ()
-
 

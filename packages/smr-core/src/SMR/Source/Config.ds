@@ -41,8 +41,8 @@ attachRangeExp
 --   and wrap the result in the source location.
 withRangeExp
         {c: Config s p}
-        (p: Parser (Located Token) (Expected s p) (Exp s p))
-        :   Parser (Located Token) (Expected s p) (Exp s p)
+        (p: Parser (Located Token) (Expected (Located Token) s p) (Exp s p))
+        :   Parser (Located Token) (Expected (Located Token) s p) (Exp s p)
  = do   -- TODO: binding against pattern yield 'bad pattern' error.
         --(kStart, xx, kEnd) <- delim p
         res     <- withDelims p

@@ -1,0 +1,64 @@
+
+module Data.Bag
+export
+{       bag_nil; bag_singleton; bag_list; bag_union;
+        bag_toList;
+        bag_map
+}
+import Data.List
+where
+
+-- | An unordered collection of things.
+--    O(1) to add a single element, a list of elements, or union two bags.
+data Bag (a: Data) where
+        BagNil          :                   Bag a
+        BagElem         : a              -> Bag a
+        BagList         : List a         -> Bag a
+        BagUnion        : Bag a -> Bag a -> Bag a
+
+
+-- | O(1). Construct an empty bag.
+bag_nil: Bag a
+ = BagNil
+
+-- | O(1). Construct a bag containing a single element.
+bag_singleton (x: a): Bag a
+ = BagElem x
+
+
+-- | O(1). Construct a bag containing a list of elements.
+bag_list (xs: List a): Bag a
+ = BagList xs
+
+
+-- | O(1). Union two bags.
+bag_union (xs1 xs2: Bag a): Bag a
+ = BagUnion xs1 xs2
+
+
+-- | O(n). Convert a bag to a list.
+--   The elements come out in some deterministic but arbitrary order, no promises.
+bag_toList (bag: Bag a): List a
+ = go Nil bag
+ where
+        -- TODO: We get a List ?41 does not match List ?91 error if we
+        --       elide this signature.
+        go : List a -> Bag a -> List a
+        go xs1  BagNil           = xs1
+        go xs1 (BagElem x)       = Cons x xs1
+        go xs1 (BagList xs2)     = go_list xs1 xs2
+        go xs1 (BagUnion b1 b2)  = go (go xs1 b1) b2
+
+        go_list xs1 Nil          = Nil
+        go_list xs1 (Cons x xs2) = go_list (Cons x xs1) xs2
+
+
+-- | Apply a function to all the elements in a bag.
+bag_map (f: a -> b) (bag: Bag a): Bag b
+ = case bag of
+        BagNil          -> BagNil
+        BagElem  x      -> BagElem  (f x)
+        BagList  xs     -> BagList  (map f xs)
+        BagUnion b1 b2  -> BagUnion (bag_map f b1) (bag_map f b2)
+
+

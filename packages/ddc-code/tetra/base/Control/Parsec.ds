@@ -3,9 +3,11 @@ module Control.Parsec
 export
 {       parser_Functor; parser_Applicative; parser_Monad;
         parse;
-        fail; expected; enter;
+        fail; commit;
         peek; item; satisfies;
-        from; alt;
+        from;
+        alt; alts;
+        expected; enter; enterOn;
         some; many;
         sepBy; sepBy1;
         withDelims;
@@ -15,6 +17,7 @@ import Data.List
 import Data.Tuple
 import Data.Maybe
 import Data.Either
+import Data.Bag
 where
 
 
@@ -36,43 +39,39 @@ data ParseResult (t e a: Data) where
         --  input but based on these the input does not look like whatever
         --  syntax the parser was supposed to parse.
         ParseSkip
-         :  List e              -- ^ Explanations of what has been skipped.
-         -> ParseResult t e a
+         : Bag (Blocker t e)    -- ^ Where we got blocked trying other parses.
+         → ParseResult t e a
 
         -- Parser yielding a value after consuming no input.
         --  The parser returned a value without looking at any tokens,
         --  this is a pure value returning action.
         ParseReturn
-         :  List e              -- ^ Explanations of what has been skipped.
-         -> a                   -- ^ Produced value.
-         -> ParseResult t e a
+         : Bag (Blocker t e)    -- ^ Where we got blocked trying other parses.
+         → a                    -- ^ Produced value.
+         → ParseResult t e a
 
         -- Parse failed after partially consuming input.
         --   The parser thought that the input sequence looked like what it
         --   was supposed to parse, but complete parsing failed once it
         --   had committed.
         ParseFailure
-         :  List (Blocker t e)  -- ^ Other parses that we tried, but failed.
-         -> ParseResult t e a
+         : Bag (Blocker t e)    -- ^ Where we got blocked trying other parses.
+         → ParseResult t e a
 
         -- Parse succeeded yielding a value after consuming input.
         --   We have a complete value, and have consumed some input tokens.
         ParseSuccess
-         :  List (Blocker t e)  -- ^ Other parses that we tried, but failed.
-         -> a                   -- ^ Produced value.
-         -> List t              -- ^ Tokens leftover.
-         -> ParseResult t e a
+         : a                    -- ^ Produced value.
+         → List t               -- ^ Remaining input tokens.
+         → ParseResult t e a
 
--- TODO Lists of expectations shoud be bags, so we can append them easily.
--- TOOD: Always store blockers instead of raw expectations so that
---       we can put them in bags and wrap them uniformly when entering contexts.
 
 -- | Describes why the parser could not make further progress.
 data Blocker (t e: Data) where
         Blocker
-         :  List t      -- ^ Remaining unparsed tokens where we gave up.
-         ->  e          -- ^ Representation of what we were expecting.
-         -> Blocker t e
+         : List t               -- ^ Remaining input tokens where we failed.
+         → e                    -- ^ Description of what we were expecting.
+         → Blocker t e
 
 
 -- | Apply a parser to a list of input tokens.
@@ -84,63 +83,57 @@ parse   ((Parser p): Parser t e a) (ts: List t)
 -- Functor --------------------------------------------------------------------
 parser_Functor [t e: Data]: Functor (Parser t e)
  = Functor parser_fmap
- where
-        parser_fmap
-                [t e a b: Data]
-                (f: a → b) (parserA: Parser t e a): Parser t e b
-         =  Parser $ λts0
-         -> case parse parserA ts0 of
-                ParseSkip    es1        -> ParseSkip    es1
-                ParseReturn  es1 x      -> ParseReturn  es1 (f x)
-                ParseFailure bs1        -> ParseFailure bs1
-                ParseSuccess bs1 a ts1  -> ParseSuccess bs1 (f a) ts1
+
+parser_fmap
+        [t e a b: Data]
+        (f: a → b) (parserA: Parser t e a): Parser t e b
+ = Parser $ λts0
+ → case parse parserA ts0 of
+        ParseSkip    bs1        → ParseSkip    bs1
+        ParseReturn  bs1 x      → ParseReturn  bs1 (f x)
+        ParseFailure bs1        → ParseFailure bs1
+        ParseSuccess a ts1      → ParseSuccess (f a) ts1
 
 
 -- Applicative ----------------------------------------------------------------
 parser_Applicative [t e: Data]: Applicative (Parser t e)
  = Applicative parser_Functor parser_pure parser_ap
 
+-- TODO: If these tyvars are given plain names like t e a,
+-- then the binding is in a where clause under parser_Applicative then
+-- they are not fresh enough to go through the type checker.
 parser_pure
         [t' e' a': Data]
         (x: a'): Parser t' e' a'
- = Parser $ λts → ParseReturn Nil x
+ = Parser $ λts → ParseReturn bag_nil x
 
--- TODO: these vars need to have diff names as otherwise
--- they're not fresh enough to go through the type checker.
+
 parser_ap
         [t' e' a' b': Data]
         (parserF: Parser t' e' (a' → b'))
         (parserA: Parser t' e' a')
         : Parser t' e' b'
- =  Parser $ λts0
- -> case parse parserF ts0 of
+ = Parser $ λts0
+ → case parse parserF ts0 of
         ParseSkip es1
-         -> ParseSkip es1
+         → ParseSkip es1
 
         ParseFailure bs1
-         -> ParseFailure bs1
+         → ParseFailure bs1
 
-        ParseReturn  es1 f
-         -> case parse parserA ts0 of
-                ParseSkip es2
-                 -> ParseSkip   (append es1 es2)
-                ParseReturn es2 x
-                 -> ParseReturn (append es1 es2) (f x)
-                ParseFailure bs2
-                 -> ParseFailure bs2
-                ParseSuccess bs2 x ts2
-                 -> ParseSuccess bs2 (f x) ts2
+        ParseReturn es1 f
+         → case parse parserA ts0 of
+            ParseSkip    es2       → ParseSkip    (bag_union es1 es2)
+            ParseReturn  es2 x     → ParseReturn  (bag_union es1 es2) (f x)
+            ParseFailure bs2       → ParseFailure (bag_union es1 bs2)
+            ParseSuccess x ts2     → ParseSuccess (f x) ts2
 
-        ParseSuccess bs1 f ts1
-         -> case parse parserA ts1 of
-                ParseSkip    es2
-                 -> ParseFailure (append bs1 (map (Blocker ts1) es2))
-                ParseReturn  es2 x
-                 -> ParseSuccess (append bs1 (map (Blocker ts1) es2)) (f x) ts1
-                ParseFailure bs2
-                 -> ParseFailure bs2
-                ParseSuccess bs2 x ts2
-                 -> ParseSuccess bs2 (f x) ts2
+        ParseSuccess f ts1
+         → case parse parserA ts1 of
+            ParseSkip    bs2       → ParseFailure bs2
+            ParseReturn  bs2 x     → ParseSuccess (f x) ts1
+            ParseFailure bs2       → ParseFailure bs2
+            ParseSuccess x ts2     → ParseSuccess (f x) ts2
 
 
 -- Monad ----------------------------------------------------------------------
@@ -151,7 +144,7 @@ parser_Monad [t e: Data]: Monad (Parser t e)
 parser_return
         [t' e' a': Data]
         (x: a'): Parser t' e' a'
- = Parser $ λts → ParseReturn Nil x
+ = Parser $ λts → ParseReturn bag_nil x
 
 
 parser_bind
@@ -159,32 +152,35 @@ parser_bind
         (parserA:   Parser t' e' a')
         (mkParserB: a' → Parser t' e' b')
         : Parser t' e' b'
- =  Parser $ \ts0
- -> case parse parserA ts0 of
+ = Parser $ λts0
+ → case parse parserA ts0 of
         ParseSkip bs1
-         -> ParseSkip bs1
+         → ParseSkip bs1
 
         ParseFailure bs1
-         -> ParseFailure bs1
+         → ParseFailure bs1
 
-        ParseReturn  es1 xa
-         -> case parse (mkParserB xa) ts0 of
-                ParseSkip    es2        -> ParseSkip    (append es1 es2)
-                ParseReturn  es2 xb     -> ParseReturn  (append es1 es2) xb
-                ParseFailure bs2        -> ParseFailure bs2
-                ParseSuccess bs2 x ts2  -> ParseSuccess bs2 x ts2
+        -- First parser produced a value but did not consume input.
+        ParseReturn  bs1 xa
+         → parse (mkParserB xa) ts0
 
+        -- First parser produced a value and consumed input.
+        ParseSuccess xa ts1
+         → case parse (mkParserB xa) ts1 of
+            -- The second parser skipped, but as we've already consumed
+            -- input tokens we treat this as a failure.
+            ParseSkip    bs2    → ParseFailure bs2
 
-        ParseSuccess bs1 xa ts1
-         -> case parse (mkParserB xa) ts1 of
-                ParseSkip    es2
-                 -> ParseFailure (append bs1 (map (Blocker ts1) es2))
-                ParseReturn  es2 xb
-                 -> ParseSuccess (append bs1 (map (Blocker ts1) es2)) xb ts1
-                ParseFailure bs2
-                 -> ParseFailure bs2
-                ParseSuccess bs2 xb ts2
-                 -> ParseSuccess bs2 xb ts2
+            -- The second parser returned a value, and though it didn't
+            -- consume input itself, the whole computation has,
+            -- so still treat this as a success.
+            ParseReturn  _ xb   → ParseSuccess xb ts1
+
+            -- The second parser failed.
+            ParseFailure bs2    → ParseFailure bs2
+
+            -- The second parser suceeded, to take the new value.
+            ParseSuccess xb ts2 → ParseSuccess xb ts2
 
 
 -- Prim -----------------------------------------------------------------------
@@ -192,43 +188,102 @@ parser_bind
 
 -- | Always fail, producing no possible parses and no helpful error message.
 fail : Parser t e a
- = Parser $ λts → ParseFailure Nil
+ = Parser $ λts → ParseFailure bag_nil
 
 
 -- | Always fail, yielding the given message describing what was expected.
 expected (xe: e): Parser t e a
- = Parser $ λts → ParseFailure (Cons (Blocker ts xe) Nil)
+ = Parser $ λts → ParseFailure (bag_singleton (Blocker ts xe))
+
+
+-- | Commit to the given parser, so if it skips or returns without
+--   consuming any input then treat that as failure.
+commit   (parserA: Parser t e a): Parser t e a
+ = Parser $ \ts0
+ → case parse parserA ts0 of
+        ParseSkip    bs1        → ParseFailure bs1
+        ParseReturn  bs1 x      → ParseFailure bs1
+        ParseFailure bs1        → ParseFailure bs1
+        ParseSuccess xb xs2     → ParseSuccess xb xs2
 
 
 -- | Parse in an expectation context.
-enter    (mk: List e -> e) (parserA: Parser t e a): Parser t e a
+enter    (mk: Bag (Blocker t e) -> e) (parserA: Parser t e a): Parser t e a
  = Parser $ λts0
  → case parse parserA ts0 of
-        ParseSkip    e          → ParseSkip   (Cons (mk e)   Nil)
-        ParseReturn  es1 x      → ParseReturn (Cons (mk es1) Nil) x
+        ParseSkip    bs1
+         → ParseSkip    (bag_singleton (Blocker ts0 (mk bs1)))
+
+        ParseReturn  bs1 x
+         → ParseReturn  (bag_singleton (Blocker ts0 (mk bs1))) x
 
         ParseFailure bs1
-         → ParseFailure (map (\(Blocker ts e) → Blocker ts (mk (Cons e Nil))) bs1)
+         → ParseFailure (bag_singleton (Blocker ts0 (mk bs1)))
 
-        ParseSuccess bs1 xb ts2
-         → ParseSuccess (map (\(Blocker ts e) → Blocker ts (mk (Cons e Nil))) bs1)
-                        xb ts2
+        ParseSuccess xb ts2
+         → ParseSuccess xb ts2
+
+
+-- | If the given parser suceeds then enter an expectation context
+--   for the next one.
+--   TODO: pack down duplication here,
+--         need a fn to take result from ret or success.
+enterOn  (parserA: Parser t e a)
+         (mk: a → Bag (Blocker t e) → e)
+         (mkParserB: a → Parser t e b)
+         : Parser t e b
+ = Parser $ λts0
+ → case parse parserA ts0 of
+        ParseSkip bs0
+         → ParseSkip bs0
+
+        ParseFailure bs1
+         → ParseFailure bs1
+
+        ParseReturn bs1 xa
+         → case parse (mkParserB xa) ts0 of
+                ParseSkip bs2
+                 → ParseSkip    (bag_singleton (Blocker ts0 (mk xa bs2)))
+
+                ParseReturn bs2 xb
+                 → ParseReturn  (bag_singleton (Blocker ts0 (mk xa bs2))) xb
+
+                ParseFailure bs2
+                 → ParseFailure (bag_singleton (Blocker ts0 (mk xa bs2)))
+
+                ParseSuccess xb ts2
+                 → ParseSuccess xb ts2
+
+
+        ParseSuccess xa ts1
+         → case parse (mkParserB xa) ts1 of
+                ParseSkip bs2
+                 → ParseSkip    (bag_singleton (Blocker ts0 (mk xa bs2)))
+
+                ParseReturn bs2 xb
+                 → ParseReturn  (bag_singleton (Blocker ts0 (mk xa bs2))) xb
+
+                ParseFailure bs2
+                 → ParseFailure (bag_singleton (Blocker ts0 (mk xa bs2)))
+
+                ParseSuccess xb ts2
+                 → ParseSuccess xb ts2
 
 
 -- | Peek at the first input token, without consuming at it.
 peek: Parser t e t
  = Parser $ λts
  → case ts of
-        Nil             → ParseFailure Nil
-        Cons t ts'      → ParseReturn  Nil t
+        Nil             → ParseFailure bag_nil
+        Cons t ts'      → ParseReturn  bag_nil t
 
 
 -- | Consume the first input token, failing if there aren't any.
 item (xe: e): Parser t e t
  = Parser $ λts
  → case ts of
-        Nil             → ParseSkip    (Cons xe Nil)
-        Cons t ts'      → ParseSuccess Nil t ts'
+        Nil             → ParseSkip   (bag_singleton (Blocker ts xe))
+        Cons t ts'      → ParseSuccess t ts'
 
 
 -- | Consume the first input token if it matches the given predicate,
@@ -236,10 +291,10 @@ item (xe: e): Parser t e t
 satisfies (xe: e) (pred: t → Bool): Parser t e t
  = Parser $ λts
  → case ts of
-        Nil             → ParseSkip    (Cons xe Nil)
+        Nil             → ParseSkip    (bag_singleton (Blocker ts xe))
         Cons t ts'
-         | pred t       → ParseSuccess Nil t ts'
-         | otherwise    → ParseSkip    (Cons xe Nil)
+         | pred t       → ParseSuccess t ts'
+         | otherwise    → ParseSkip    (bag_singleton (Blocker ts xe))
 
 
 -- | Consume the first input token if it is accepted by the given match
@@ -247,99 +302,96 @@ satisfies (xe: e) (pred: t → Bool): Parser t e t
 from      (xe: e) (accept: t → Maybe a): Parser t e a
  = Parser $ λts
  → case ts of
-        Nil             → ParseSkip    (Cons xe Nil)
+        Nil             → ParseSkip    (bag_singleton (Blocker ts xe))
         Cons t ts'
          → case accept t of
-               Just x   → ParseSuccess Nil x ts'
-               Nothing  → ParseSkip    (Cons xe Nil)
+               Just x   → ParseSuccess x ts'
+               Nothing  → ParseSkip    (bag_singleton (Blocker ts xe))
 
 
 -- | Given two parsers, try the first and if it succeeds produce
 --   the output of that parser, if not try the second.
 alt (parserA parserB: Parser t e a): Parser t e a
- = Parser $ λts0
- → case parse parserA ts0 of
-        ParseSkip es1
-         -> case parse parserB ts0 of
-                ParseSkip    es2        → ParseSkip   (append es1 es2)
-                ParseReturn  es2 x      → ParseReturn (append es1 es2) x
-                ParseFailure bs2        → ParseFailure bs2
-                ParseSuccess bs2 x ts2  → ParseSuccess bs2 x ts2
+ = alts (Cons parserA (Cons parserB Nil))
 
-        ParseReturn es1
-         -> case parse parserB ts0 of
-                ParseSkip es2           → ParseSkip    (append es1 es2)
-                ParseReturn es2 x       → ParseReturn  (append es1 es2) x
-                ParseFailure bs2        → ParseFailure bs2
-                ParseSuccess bs2 x ts1  → ParseSuccess bs2 x ts1
 
-        ParseFailure bs1
-         -> case parse parserB ts0 of
-                ParseSkip _             → ParseFailure bs1
-                ParseReturn _           → ParseFailure bs1
-                ParseFailure bs2        → ParseFailure bs2
-                ParseSuccess bs2 x ts2  → ParseSuccess bs2 x ts2
+alts (parsers: List (Parser t e a)): Parser t e a
+ = Parser $ λts0 -> go ts0 (False, Nothing) (bag_nil, bag_nil) parsers
+ where
+        -- TODO: type signature is required, otherwise ?n1 /= ?n2 error.
+        -- TODO: clauses are not checked that they all have same number of args.
+        --       it looks like if one clause misses the arg the corresponding
+        --       one is ignored in all others.
+        go  : List t
+            → (Bool, Maybe a)
+            → (Bag (Blocker t e), Bag (Blocker t e))
+            → List (Parser t e a)
+            → ParseResult t e a
 
-        ParseSuccess bs1 x ts1          → ParseSuccess bs1 x ts1
+        go ts0 (False, Nothing)  (bsSkip, bsFail) Nil
+         = ParseSkip    bsSkip
+
+        go ts0 (False, (Just x)) (bsSkip, bsFail) Nil
+         = ParseReturn  bsSkip x
+
+        go ts0 (True,  _)        (bsSkip, bsFail) Nil
+         = ParseFailure bsFail
+
+        go ts0 (failed, mx)      (bsSkip, bsFail) (Cons p ps)
+         = case parse p ts0 of
+            ParseSkip    bs1
+             → go ts0 (failed, mx)     (bag_union bsSkip bs1, bsFail) ps
+
+            ParseFailure bs1
+             → go ts0 (True,   mx)     (bsSkip, bag_union bsFail bs1) ps
+
+            ParseReturn  bs1 x
+             → go ts0 (failed, Just x) (bag_union bsSkip bs1, bsFail) ps
+
+            ParseSuccess x ts1
+             → ParseSuccess  x ts1
 
 
 -- Derived --------------------------------------------------------------------
 -- Parsers derived from the primitive ones.
 
--- | Combine a list of argument parsers, producing a new one that
---   gives the result produced by the first matching argument parser.
-alts (parsers: List (Parser t e a)): Parser t e a
- = case parsers of
-        Nil             → fail
-        Cons p ps       → alt p (alts ps)
-
-
--- | Like `alts`, accept use the given default parser if no
---   parser from the first list succeeds.
-altss (parsers: List (Parser t e a)) (def: Parser t e a): Parser t e a
- = case parsers of
-        Nil             → def
-        Cons p ps       → alt p (altss ps def)
-
-
 -- | Parse zero or more things, yielding a list of those things.
 some (parserA: Parser t e a): Parser t e (List a)
  = alt (do
-        x       <- parserA
-        xs      <- some parserA
+        x       ← parserA
+        xs      ← some parserA
         return  $ Cons x xs)
        (return Nil)
 
 
 -- | Parse one or more things, yielding a list of those things.
 many (parserA: Parser t e a): Parser t e (List a)
- = do   x       <- parserA
-        alt (do xs      <- some parserA
-                return  $  Cons x xs)
-            (do return  $  Cons x Nil)
+ = do   x       ← parserA
+        xs      ← some parserA
+        return  $ Cons x xs
 
 
 -- | Parse some things separated by other things.
-sepBy1  (parserA: Parser t e a) (parserS: Parser t e s): Parser t e (List a)
- = alt (do
-        x       <- parserA
-        s       <- parserS
-        xs      <- sepBy1 parserA parserS
-        return  $ Cons x xs)
-
-       (do
-        x       <- parserA
-        return  $ Cons x Nil)
-
 sepBy   (parserA: Parser t e a) (parserS: Parser t e s): Parser t e (List a)
  = alt  (sepBy1 parserA parserS)
         (return Nil)
 
 
+-- | Parse at least one thing separated by other things.
+sepBy1  (parserA: Parser t e a) (parserS: Parser t e s): Parser t e (List a)
+ = do   x       ← parserA
+        alt
+         (do    s       ← parserS
+                xs      ← sepBy1 parserA parserS
+                return  $ Cons x xs)
+
+         (do    return  $ Cons x Nil)
+
+
 -- | Run a parser, peeking at the starting and ending tokens.
 withDelims (p: Parser t e a): Parser t e (t, a, t)
- = do   kStart  <- peek
-        x       <- p
-        kEnd    <- peek
+ = do   kStart  ← peek
+        x       ← p
+        kEnd    ← peek
         return  (kStart, x, kEnd)
 

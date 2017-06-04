@@ -7,30 +7,38 @@ export
         pretty_LocatedToken;
 }
 import SMR.Source.Token
+import Control.Parsec
+import Data.Bag
 where
 
 
 -------------------------------------------------------------------------------
-data Expected (s p: Data) where
+-- TODO: Data type decls are not checked that all tyvars appear as params.
+data Expected (t s p: Data) where
         -- Base expectactions are of particular tokens appearing on the input.
-        ExBaseEnd       : Expected s p
-        ExBaseNameOf    : Space         -> Expected s p
-        ExBaseNat       : Expected s p
-        ExBasePunc      : Char          -> Expected s p
-        ExBaseMsg       : Text          -> Expected s p
-        ExBaseNameAny   :                  Expected s p
+        ExBaseEnd       : Expected t s p
+        ExBaseNameOf    : Space         -> Expected t s p
+        ExBaseNat       : Expected t s p
+        ExBasePunc      : Char          -> Expected t s p
+        ExBaseMsg       : Text          -> Expected t s p
+        ExBaseNameAny   :                  Expected t s p
 
         -- Contextual expectations, which indicate what we were trying
         -- to parse while we had some other expectation.
-        ExContextDecl   : Name -> List (Expected s p) -> Expected s p
+        ExContextDecl   :  Name -> Bag (Blocker t (Expected t s p) )
+                        -> Expected t s p
 
-        ExContextBind   : Name -> List (Expected s p) -> Expected s p
+        ExContextBind   :  Name -> Bag (Blocker t (Expected t s p))
+                        -> Expected t s p
 
 
+-- TODO: adding this param causes Main.ds to loop when trying to
+-- build the dict so it can call this function.
+--   {Pretty (Expected t s p)}
 pretty_Expected
-        {Pretty s} {Pretty p}
-        : Pretty (Expected s p)
- = Pretty $ \bb
+        {Pretty s} {Pretty p} {Pretty t}
+        : Pretty (Expected t s p)
+ =  Pretty $ \bb
  -> case bb of
         ExBaseEnd       -> "expecting end of input"
         ExBaseNameOf s  -> "expecting name" %% show s
@@ -40,10 +48,10 @@ pretty_Expected
         ExBaseNameAny   -> "expecting name"
 
         ExContextDecl n es
-         -> "in declaration" %% n %% (unlines' $ map ppr es)
+         -> "\n" % "in declaration" %% n % "\n" % (unlines' $ map ppr $ bag_toList es)
 
         ExContextBind n es
-         -> "in binding"     %% n %% (unlines' $ map ppr es)
+         -> "\n" % "in binding"     %% n % "\n" % (unlines' $ map ppr $ bag_toList es)
 
 
 -------------------------------------------------------------------------------
