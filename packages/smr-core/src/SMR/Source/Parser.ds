@@ -2,11 +2,10 @@
 module SMR.Source.Parser
 export
 {       parseDecls; parseExp;
-        pretty_ParseError; pretty_Blocker;
-        pretty_LocatedToken;
-        pretty_Expected
 }
 import SMR.Source.Lexer
+import SMR.Source.Config
+import SMR.Source.Expected
 import SMR.Core.Exp
 import Control.Parsec
 import Data.Maybe
@@ -48,58 +47,6 @@ parseExp (c:  Config s p)
                 _       <- pEnd
                 return x
 
-
-pretty_LocatedToken: Pretty (Located Token)
- = Pretty show
-
-data ParseError (t e: Data) where
-        ParseError
-         :  List (Blocker t e)
-         -> ParseError t e
-
-pretty_ParseError
-        {Pretty t} {Pretty e}
-        : Pretty (ParseError t e)
- =  Pretty $ \(ParseError bs)
- -> unlines $ map ppr bs
-
----
-pretty_Blocker
-        {Pretty t} {Pretty e}
-        : Pretty (Blocker t e)
- =  Pretty $ \(Blocker ts e)
- -> case ts of
-        Nil             -> ppr e
-        Cons t _        -> "at token" %% ppr t %% ppr e
-
-
-----
-data Expected (s p: Data) where
-        ExEnd   : Expected s p
-        ExName  : Space         -> Expected s p
-        ExNat   : Expected s p
-        ExPunc  : Char          -> Expected s p
-        ExMsg   : Text          -> Expected s p
-        ExNameAny:              Expected s p
-
-
-pretty_Expected
-        {Pretty s} {Pretty p}
-        : Pretty (Expected s p)
- = Pretty $ \bb
- -> case bb of
-        ExEnd     -> "expecting end of input"
-        ExName s  -> "expecting name" %% show s
-        ExNat     -> "expecting natural number"
-        ExPunc c  -> "expecting punctuation" %% textOfChar c
-        ExMsg t   -> "expecting" %% t
-        ExNameAny -> "expecting name"
-
-
-unlines (txs: List Text): Text
- = case txs of
-        Nil     -> ""
-        Cons t txs' -> t % "\n" % unlines txs'
 
 -- Decl ------------------------------------------------------------------------
 pDecls  {c: Config s p}
@@ -301,74 +248,30 @@ pBump: Parser (Located Token) (Expected s p) ((Name, Nat), Nat)
 -------------------------------------------------------------------------------
 -- | Parser for a natural number.
 pNat:   Parser (Located Token) (Expected s p) Nat
- = from ExNat (takeNatOfToken    ∘ valueOfLocated)
+ =      from ExBaseNat (takeNatOfToken    ∘ valueOfLocated)
 
 
--- | Parser for a name in the given space
+-- | Parser for a name in the given space.
 pNameOfSpace
         (s: Space): Parser (Located Token) (Expected s p) Name
- = from (ExName s) (takeNameOfToken s ∘ valueOfLocated)
+ =      from (ExBaseNameOf s) (takeNameOfToken s ∘ valueOfLocated)
 
 
--- | Parser for a name of any spacec.
+-- | Parser for a name of any space.
 pName:  Parser (Located Token) (Expected s p) (Space, Name)
- =      from ExNameAny (takeAnyNameOfToken ∘ valueOfLocated)
+ =      from  ExBaseNameAny   (takeAnyNameOfToken ∘ valueOfLocated)
 
 
 -- | Parser for the end of input token.
 pEnd:   Parser (Located Token) (Expected s p) Unit
- = do   _ <- satisfies ExEnd     (isToken KEnd      ∘ valueOfLocated)
+ = do   _ <- satisfies ExBaseEnd (isToken KEnd ∘ valueOfLocated)
         return ()
 
 
 -- | Parser for a punctuation character.
 pPunc   (c: Char)
         : Parser (Located Token) (Expected s p) Unit
- = do   _ <- satisfies (ExPunc c) (isToken (KPunc c) ∘ valueOfLocated)
+ = do   _ <- satisfies (ExBasePunc c) (isToken (KPunc c) ∘ valueOfLocated)
         return ()
 
-
--- Parser Config --------------------------------------------------------------
--- | Configuration for a parser.
---
-data Config (s p: Data) where
- Config
-        :  (Name     -> Maybe s)        -- ^ Read a symbol name.
-        -> (Name     -> Maybe p)        -- ^ Read a primitive name.
-        -> Lens (Exp s p) (Maybe (Location, Location))
-        -> Config s p
-
-configSym  ((Config ms mp _): Config s p): Name -> Maybe s
- = ms
-
-configPrim ((Config ms mp _): Config s p): Name -> Maybe p
- = mp
-
-configAttach  ((Config _ _ a): Config s p)
-        : Lens (Exp s p) (Maybe (Location, Location))
- = a
-
-
--- | Attach source locations to an expression,
---   if there is an attach function specified in the config.
-attachRangeExp
-        {config:      Config s p}
-        (lStart lEnd: Location) (xx: Exp s p): Exp s p
- = lens_set (configAttach config) (Just (lStart, lEnd)) xx
-
-
--- | Run an expression parser,
---   and wrap the result in the source location.
-withRangeExp
-        {c: Config s p}
-        (p: Parser (Located Token) (Expected s p) (Exp s p))
-        :   Parser (Located Token) (Expected s p) (Exp s p)
- = do   -- TODO: binding against pattern yield 'bad pattern' error.
-        --(kStart, xx, kEnd) <- delim p
-        res     <- withDelims p
-        case res of
-         (kStart, xx, kEnd)
-          -> do lStart  = startOfLocated kStart
-                lEnd    = endOfLocated   kEnd
-                return  $ attachRangeExp lStart lEnd xx
 

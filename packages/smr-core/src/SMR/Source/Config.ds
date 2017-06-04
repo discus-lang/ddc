@@ -1,0 +1,54 @@
+
+module SMR.Source.Config
+export
+{       configSym; configPrim; configAttach;
+        attachRangeExp; withRangeExp }
+import SMR.Source.Expected
+import Data.Text.Location
+import Data.Maybe
+import Data.Lens
+where
+
+
+-- | Configuration for a parser.
+data Config (s p: Data) where
+ Config
+        :  (Name     -> Maybe s)        -- ^ Read a symbol name.
+        -> (Name     -> Maybe p)        -- ^ Read a primitive name.
+        -> Lens (Exp s p) (Maybe (Location, Location))
+        -> Config s p
+
+configSym  ((Config ms mp _): Config s p): Name -> Maybe s
+ = ms
+
+configPrim ((Config ms mp _): Config s p): Name -> Maybe p
+ = mp
+
+configAttach  ((Config _ _ a): Config s p)
+        : Lens (Exp s p) (Maybe (Location, Location))
+ = a
+
+
+-- | Attach source locations to an expression,
+--   if there is an attach function specified in the config.
+attachRangeExp
+        {config:      Config s p}
+        (lStart lEnd: Location) (xx: Exp s p): Exp s p
+ = lens_set (configAttach config) (Just (lStart, lEnd)) xx
+
+
+-- | Run an expression parser,
+--   and wrap the result in the source location.
+withRangeExp
+        {c: Config s p}
+        (p: Parser (Located Token) (Expected s p) (Exp s p))
+        :   Parser (Located Token) (Expected s p) (Exp s p)
+ = do   -- TODO: binding against pattern yield 'bad pattern' error.
+        --(kStart, xx, kEnd) <- delim p
+        res     <- withDelims p
+        case res of
+         (kStart, xx, kEnd)
+          -> do lStart  = startOfLocated kStart
+                lEnd    = endOfLocated   kEnd
+                return  $ attachRangeExp lStart lEnd xx
+

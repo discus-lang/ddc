@@ -1,9 +1,10 @@
 
 -- | Conversions between Text and Lists.
 module Data.Text.List
-export 
+export
 {       textOfCharList;
         charListOfText;
+        unlines;
 }
 import Data.Numeric.Word8
 import Data.Text.Base
@@ -31,12 +32,12 @@ charListOfTextVec
         (vec: Vector# r Word8)
         : S (Read r) (List Char)
  = go 0
- where  
+ where
         go (ix: Nat): S (Read r) (List Char)
          | ix >= (vectorLength# vec - 1)
          = Nil
 
-         | otherwise               
+         | otherwise
          = do   txChar = promote# (vectorRead# vec ix)
                 Cons txChar (go (ix + 1))
 
@@ -63,4 +64,11 @@ vectorOfCharList
 
         vectorWrite# vec len 0w8
         vec
+
+
+-- | Concatenate text strings, punctuating with newline characters.
+unlines (txs: List Text): Text
+ = case txs of
+        Nil     -> ""
+        Cons t txs' -> t % "\n" % unlines txs'
 

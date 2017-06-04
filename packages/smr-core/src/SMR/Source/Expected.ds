@@ -1,0 +1,66 @@
+
+module SMR.Source.Expected
+export
+{       pretty_Expected;
+        pretty_ParseError;
+        pretty_Blocker;
+        pretty_LocatedToken;
+}
+import SMR.Source.Token
+where
+
+
+-------------------------------------------------------------------------------
+data Expected (s p: Data) where
+        -- Base expectactions are of particular tokens appearing on the input.
+        ExBaseEnd       : Expected s p
+        ExBaseNameOf    : Space         -> Expected s p
+        ExBaseNat       : Expected s p
+        ExBasePunc      : Char          -> Expected s p
+        ExBaseMsg       : Text          -> Expected s p
+        ExBaseNameAny   :                  Expected s p
+
+
+pretty_Expected
+        {Pretty s} {Pretty p}
+        : Pretty (Expected s p)
+ = Pretty $ \bb
+ -> case bb of
+        ExBaseEnd       -> "expecting end of input"
+        ExBaseNameOf s  -> "expecting name" %% show s
+        ExBaseNat       -> "expecting natural number"
+        ExBasePunc c    -> "expecting punctuation" %% textOfChar c
+        ExBaseMsg t     -> "expecting" %% t
+        ExBaseNameAny   -> "expecting name"
+
+
+-------------------------------------------------------------------------------
+-- | Parser error.
+data ParseError (t e: Data) where
+        ParseError
+         :  List (Blocker t e)
+         -> ParseError t e
+
+
+-- | Pretty dictionary for a parser error.
+pretty_ParseError
+        {Pretty t} {Pretty e}
+        : Pretty (ParseError t e)
+ =  Pretty $ \(ParseError bs)
+ -> unlines $ map ppr bs
+
+
+-- | Pretty dictionary for a blocker.
+pretty_Blocker
+        {Pretty t} {Pretty e}
+        : Pretty (Blocker t e)
+ =  Pretty $ \(Blocker ts e)
+ -> case ts of
+        Nil             -> ppr e
+        Cons t _        -> "at token" %% ppr t %% ppr e
+
+
+-- | Pretty dictionary for a located token.
+pretty_LocatedToken: Pretty (Located Token)
+ = Pretty show
+
