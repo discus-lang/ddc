@@ -6,9 +6,9 @@
 --   of every block of guards execpt the first one, which we need to flatten
 --   out when converting to plain case expressions.
 --
---   We also merge multiple clauses for the same function into a single one 
+--   We also merge multiple clauses for the same function into a single one
 --   while we're here.
--- 
+--
 module DDC.Source.Tetra.Transform.Matches
         ( type S, evalState, newVar
         , desugarModule)
@@ -45,7 +45,7 @@ desugarTops ts
         spCls'  <- desugarClGroup spCls
 
         return  $  tsType
-                ++ tsData 
+                ++ tsData
                 ++ [TopClause sp cl | (sp, cl) <- spCls']
 
 
@@ -61,7 +61,7 @@ desugarClGroup spcls0
    = return []
 
   -- Signatures do not need desugaring.
-  loop ((sp, cl@SSig{}) : cls) 
+  loop ((sp, cl@SSig{}) : cls)
    = do cls'    <- loop cls
         return  $  (sp, cl) : cls'
 
@@ -73,7 +73,7 @@ desugarClGroup spcls0
         -- Consecutive clauses are for the same function.
         (_, SLet _sp2 (XBindVarMT b2 _mt2) ps2 [GExp xNext]) : clsRest
           | b1 == b2
-          -> do  
+          -> do
                 -- Flatten out guards, wrapping the next expression
                 -- with case expressions to implement them.
                 xBody_inner <- flattenGXs gxs1 xNext
@@ -84,7 +84,7 @@ desugarClGroup spcls0
                 -- Intoduce new let-bindings to handle the case
                 -- where different clauses name their parameters
                 -- differently.
-                (ps1', _ps2', xBody_join) 
+                (ps1', _ps2', xBody_join)
                             <- joinParams ps1 ps2 xBody_rec
 
                 return  $ (sp, SLet sp1 (XBindVarMT b1 mt1) ps1'
@@ -108,20 +108,20 @@ desugarClGroup spcls0
                         : cls'
 
 
--- | Given corresponding parameters for earlier and later clauses, 
+-- | Given corresponding parameters for earlier and later clauses,
 --   introduce let bindings to handle differences in parameter naming.
-joinParams ::    [Param] -> [Param] -> Exp 
+joinParams ::    [Param] -> [Param] -> Exp
            -> S ([Param],   [Param],   Exp)
 
-joinParams []   ps2  xx 
+joinParams []   ps2  xx
  = return ([],  ps2, xx)
 
-joinParams ps1  []   xx 
+joinParams ps1  []   xx
  = return (ps1, [],  xx)
 
 joinParams (p1:ps1) (p2:ps2) xx
  = do
-        (p1',  p2',  mLets) <- joinParam  p1 p2 
+        (p1',  p2',  mLets) <- joinParam  p1 p2
         (ps1', ps2', xx')   <- joinParams ps1 ps2 xx
 
         case mLets of
@@ -132,15 +132,15 @@ joinParams (p1:ps1) (p2:ps2) xx
           -> return (p1' : ps1', p2' : ps2', XLet lts xx')
 
 
--- | Given corresponding parameters for earlier and later clauses, 
+-- | Given corresponding parameters for earlier and later clauses,
 --   introduce let bindings to handle differences in parameter naming.
-joinParam :: Param -> Param 
+joinParam :: Param -> Param
           -> S (Param, Param, Maybe Lets)
 
 joinParam p1 p2
  = case (p1, p2) of
         -- When an earlier pattern does not bind the argument to a variable
-        -- then we need to introduce a new variable so we can pass the 
+        -- then we need to introduce a new variable so we can pass the
         -- same argument to successive clauses.
         (  MTerm pat1               mt1
          , MTerm (PVar (BName n2))  mt2)
@@ -189,9 +189,9 @@ desugarX sp xx
         XInfixVar{}  -> pure xx
 
         -- Desugar case expressions.
-        XCase x alts    
-         -> XCase  <$> desugarX sp x  
-                   <*> mapM (desugarAC sp) alts
+        XCase x alts
+         -> XAnnot sp   <$> (XCase  <$> desugarX sp x
+                                    <*> mapM (desugarAC sp) alts)
 
         -- Desugar match expressions into case expressions.
         XMatch _ alts xFail
@@ -200,7 +200,7 @@ desugarX sp xx
                 xFlat'  <- desugarX sp xFlat
                 return  xFlat'
 
-        XWhere sp' x cls 
+        XWhere sp' x cls
          -> do  x'        <- desugarX sp' x
                 let spcls =  [(sp', cl) | cl <- cls]
                 spcls'    <- desugarClGroup spcls
@@ -247,7 +247,7 @@ desugarLts sp lts
 -------------------------------------------------------------------------------
 -- | Desugar a guarded expression.
 desugarGX :: SP -> GuardedExp -> S GuardedExp
-desugarGX sp gx 
+desugarGX sp gx
  = case gx of
         GGuard g gx'    -> GGuard <$> desugarG sp g <*> desugarGX sp gx'
         GExp   x        -> GExp   <$> desugarX sp x
@@ -275,7 +275,7 @@ desugarAC sp (AAltCase p gxs)
 -- | Desugar some guards to a case-expression.
 --   At runtime, if none of the guards match then run the provided
 --   fall-though computation.
-flattenGXs :: [GuardedExp] -> Exp -> S Exp 
+flattenGXs :: [GuardedExp] -> Exp -> S Exp
 flattenGXs gs0 fail0
  = go gs0 fail0
  where
@@ -299,7 +299,7 @@ flattenGXs gs0 fail0
 
         -- Simple cases where we can avoid introducing the continuation.
         go1 (GGuard (GPred g1)   (GExp x1)) cont
-         = return 
+         = return
          $ XCase g1 [ AAltCase PTrue    [GExp x1]
                     , AAltCase PDefault [GExp cont] ]
 
@@ -333,7 +333,7 @@ flattenGXs gs0 fail0
 type SP = SP.SourcePos
 
 
--- | State holding a variable name prefix and counter to 
+-- | State holding a variable name prefix and counter to
 --   create fresh variable names.
 type S  = S.State (Text, Int)
 
@@ -342,7 +342,7 @@ type S  = S.State (Text, Int)
 --   using the given prefix for freshly introduced variables.
 evalState :: Text -> S a -> a
 evalState n c
- = S.evalState c (n, 0) 
+ = S.evalState c (n, 0)
 
 
 -- | Allocate a new named variable, yielding its associated bind and bound.

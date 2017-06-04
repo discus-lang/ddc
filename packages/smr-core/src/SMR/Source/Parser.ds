@@ -21,8 +21,10 @@ parseDecls
         :    Either (ParseError (Located Token) (Expected s p))
                     (List (Decl s p))
  = case parse pDeclsEnd ts of
-        ParseResult bs Nothing          -> Left $ ParseError bs
-        ParseResult bs (Just (xx, _))   -> Right xx
+        ParseSkip    es         -> Left $ ParseError (map (Blocker ts) es)
+        ParseReturn  _ xx       -> Right xx
+        ParseFailure bs         -> Left $ ParseError bs
+        ParseSuccess bs xx ts   -> Right xx
  where
         pDeclsEnd
          = do   ds      <- pDecls {c}
@@ -36,8 +38,10 @@ parseExp (c:  Config s p)
         : Either (ParseError (Located Token) (Expected s p))
                  (Exp s p)
  = case parse pExpEnd ts of
-        ParseResult bs Nothing          -> Left $ ParseError bs
-        ParseResult bs (Just (xx, _))   -> Right xx
+        ParseSkip    es         -> Left $ ParseError (map (Blocker ts) es)
+        ParseReturn  _ xx       -> Right xx
+        ParseFailure bs         -> Left $ ParseError bs
+        ParseSuccess bs xx ts   -> Right xx
  where
         pExpEnd
          = do   x       <- pExp {c}
@@ -63,7 +67,7 @@ pretty_ParseError
 pretty_Blocker
         {Pretty t} {Pretty e}
         : Pretty (Blocker t e)
- =  Pretty $ \(Blocker e ts)
+ =  Pretty $ \(Blocker ts e)
  -> case ts of
         Nil             -> ppr e
         Cons t _        -> "at token" %% ppr t %% ppr e
@@ -90,7 +94,6 @@ pretty_Expected
         ExPunc c  -> "expecting punctuation" %% textOfChar c
         ExMsg t   -> "expecting" %% t
         ExNameAny -> "expecting name"
-
 
 
 unlines (txs: List Text): Text
@@ -136,13 +139,12 @@ pExp    {c: Config s p}
         return  $  XSub (reverse csTrain) xBody)
 
         -- Application possibly using '$'
- $ alt (withRangeExp $ do
+ $     (withRangeExp $ do
         xHead   <- pExpApp
         alt (do _       <- pPunc '$'
                 xRest   <- pExp
                 return  $  XApp xHead (Cons xRest Nil))
             (return xHead))
- $ expected (ExMsg "derp")
 
 
 -- | Parser for an application.

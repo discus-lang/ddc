@@ -97,7 +97,8 @@ desugarX sp xx
          | all isSimpleAltCase alts
          -> do  xScrut' <- desugarX sp xScrut
                 alts'   <- mapM (desugarAltCase sp) alts
-                return  $ XCase xScrut' alts'
+                return  $ XAnnot sp
+                        $ XCase xScrut' alts'
 
          -- Complex alternatives are ones that have include a guard or some
          -- other pattern that may fail, and require us to skip to the next
@@ -123,7 +124,8 @@ desugarX sp xx
                 -- Result contains a let-binding to bind the scrutinee,
                 -- then a match expression that implements the complex
                 -- case alternatives.
-                pure    $ XLet (LLet (XBindVarMT b Nothing) xScrut')
+                pure    $ XAnnot sp
+                        $ XLet (LLet (XBindVarMT b Nothing) xScrut')
                         $ XMatch sp alts'
                         $ makeXErrorDefault
                                 (Text.pack    $ SP.sourcePosSource sp)
@@ -138,16 +140,16 @@ desugarX sp xx
 
         -- Desugar lambda with a pattern for the parameter.
         XAbsPat _a MSTerm     PDefault mt x
-         -> XAbs  (MTerm      PDefault mt) <$> desugarX sp x
+         -> XAnnot sp <$> XAbs  (MTerm      PDefault mt) <$> desugarX sp x
 
         XAbsPat _a MSTerm     (PVar b) mt x
-         -> XAbs  (MTerm      (PVar b) mt) <$> desugarX sp x
+         -> XAnnot sp <$> XAbs  (MTerm      (PVar b) mt) <$> desugarX sp x
 
         XAbsPat _a MSImplicit PDefault mt x
-         -> XAbs  (MImplicit  PDefault mt) <$> desugarX sp x
+         -> XAnnot sp <$> XAbs  (MImplicit  PDefault mt) <$> desugarX sp x
 
         XAbsPat _a MSImplicit (PVar b) mt x
-         -> XAbs  (MImplicit  (PVar b) mt) <$> desugarX sp x
+         -> XAnnot sp <$> XAbs  (MImplicit  (PVar b) mt) <$> desugarX sp x
 
         XAbsPat _a ps p mt x
          -> do  (b, u)  <- newVar "x"
@@ -157,19 +159,22 @@ desugarX sp xx
                   -> return xx
 
                  MSTerm
-                  -> return $  XAbs  (MTerm (PVar b) mt)
-                            $  XCase (XVar u) [ AAltCase p [GExp x'] ]
+                  -> return $ XAnnot sp
+                            $ XAbs  (MTerm (PVar b) mt)
+                            $ XCase (XVar u) [ AAltCase p [GExp x'] ]
 
                  MSImplicit
-                  -> return $  XAbs  (MImplicit (PVar b) mt)
-                            $  XCase (XVar u) [ AAltCase p [GExp x'] ]
+                  -> return $ XAnnot sp
+                            $ XAbs  (MImplicit (PVar b) mt)
+                            $ XCase (XVar u) [ AAltCase p [GExp x'] ]
 
 
         -- Desugar lambda case by inserting the intermediate variable.
         XLamCase _a alts
          -> do  (b, u)  <- newVar "x"
                 alts'   <- mapM  (desugarAltCase sp) alts
-                return  $  XAbs  (MTerm (PVar b) Nothing)
+                return  $  XAnnot sp
+                        $  XAbs  (MTerm (PVar b) Nothing)
                         $  XCase (XVar u) alts'
 
 
