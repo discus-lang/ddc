@@ -1,0 +1,59 @@
+
+module SMR.Core.Push
+export push
+import SMR.Core.Train
+import SMR.Core.Exp
+where
+
+
+-- | Push down any outermost substitution train to reveal the head constructor.
+push    (xx: Exp s p): Maybe (Exp s p)
+ = case xx of
+        XRef _          -> Nothing
+        XVar _ _        -> Nothing
+        XAbs _ _        -> Nothing
+        XApp _ _        -> Nothing
+        XSub cs2 x2     -> pushTrain cs2 x2
+        XBox _          -> Nothing
+        XRun _          -> Nothing
+
+
+-- | Push a substitution train down into an expression to reveal
+--   the head constructor.
+pushTrain
+        (cs1:   List (Car s p))
+        (x2:    Exp s p)
+        :       Maybe (Exp s p)
+ = case x2 of
+        -- Unfold macro under a substitution.
+        -- Macro and symbol bodies are closed, so we can drop
+        -- the substitution.
+        XRef (RMac n)   -> Just x2
+        XRef (RSym n)   -> Just x2
+        XRef (RPrm n)   -> Just x2
+
+        -- Reference to some other thing.
+        XRef _          -> Nothing
+
+        -- Apply the train to a variable.
+        XVar name depth
+         -> Just $ trainApplyVar cs1 name depth
+
+        -- Push train into both sides of an application.
+        XApp x21 xs22
+         -> Just $ XApp (trainApply cs1 x21) (map (trainApply cs1) xs22)
+
+        -- Push train under abstraction.
+        XAbs ns21 x22
+         -> Just $ XAbs ns21 (trainApply (trainBump ns21 cs1) x22)
+
+        -- Combine trains.
+        XSub cs2 x22
+         -> Just $ trainApply (append cs2 cs1) x22
+
+        XBox x22
+         -> Just $ XBox (trainApply cs1 x22)
+
+        XRun x22
+         -> Just $ XRun (trainApply cs1 x22)
+
