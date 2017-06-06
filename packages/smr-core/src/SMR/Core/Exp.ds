@@ -82,6 +82,12 @@ data Exp (s p: Data) where
         -- The car at the head of the list is applied first.
         XSub    : List (Car s p) -> Exp s p     -> Exp s p
 
+        -- Box an expression (delay evaluation).
+        XBox    : Exp s p                       -> Exp s p
+
+        -- Run an expression (commence evaluation).
+        XRun    : Exp s p                       -> Exp s p
+
 
 -- | A car on the substitution train.
 data Car (s p: Data) where
@@ -98,6 +104,9 @@ show_Exp {Show s} {Show p}: Show (Exp s p)
         XApp xf xs  -> parens $ "XApp" %% show xf %% show xs
         XAbs ns x   -> parens $ "XAbs" %% show ns %% show x
         XSub cs x   -> parens $ "XSub" %% show cs %% show x
+        XBox x      -> parens $ "XBox" %% show x
+        XRun x      -> parens $ "XRun" %% show x
+
 
 show_Car {Show s} {Show p}: Show (Car s p)
  =  Show $ λxx

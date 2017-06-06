@@ -134,6 +134,12 @@ takeSpace (c: Char) (cs: List Char)
  | c == '@'     = Just (SMac, cs)
  | c == '+'     = Just (SSet, cs)
  | c == '%'     = Just (SSym, cs)
+
+ | c  == '#'
+ , Cons c' cs' <- cs
+ , c' == '#'
+ = Just (SKey, cs')
+
  | c == '#'     = Just (SPrm, cs)
  | otherwise    = Nothing
 

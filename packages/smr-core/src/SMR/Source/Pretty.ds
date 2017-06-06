@@ -61,6 +61,14 @@ pprExp' [s p: Data]
         XSub cs x
          -> pprTrain cs % "." % pprExp' ContextArg x
 
+        -- box expression
+        XBox x
+         -> "##box" %% pprExp' ContextArg x
+
+        -- run expression
+        XRun x
+         -> "##run" %% pprExp' ContextArg x
+
 
  | ContextFun   <- ctx
  = case xx of

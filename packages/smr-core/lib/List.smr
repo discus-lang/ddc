@@ -15,7 +15,7 @@
 
 ! Produce 'n' copies of the value 'x'.
 @list-replicate n x
- = #bool-if
+ = #if
         (#nat-eq #nat'0 n)
         %list-nil
         (#seq (#nat-sub n #nat'1) $ \n'.
@@ -25,7 +25,7 @@
 ! Produce a range of natural numbers,
 !   starting from the value 'a' and ending with the value 'b'.
 @list-range a b
- = #bool-if
+ = #if
         (#nat-gt a b)
         %list-nil
         (#seq (#nat-add a #nat'1) $ \n'.
@@ -55,4 +55,5 @@
 ! Reverse a list.
 @list-reverse xx
  = @list-foldl (\x. \xs. %list-cons xs x) %list-nil xx;
+
 

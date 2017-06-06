@@ -1,0 +1,53 @@
+
+module SMR.Prim.Op.Smr
+export makePrimOpsSmr
+import SMR.Prim.Op.Base
+import SMR.Transform.Combinate
+where
+
+
+-- | Primitive evaluators for Shimmer expression transforms.
+makePrimOpsSmr (_ : Unit): List (PrimEval s Prim)
+ = Cons primOpCombinate
+ $ Nil
+
+
+primOpCombinate: PrimEval s Prim
+ = PrimEval
+        (PrimOp "smr-combinate-ski")
+        "Convert expression to SKI combinator form."
+        (Cons Val (Cons Val (Cons Val                   -- s k i
+        (Cons Val (Cons Val                             -- b c
+        (Cons Val (Cons Val (Cons Val                   -- sp bs cp
+        (Cons Val Nil)))))))))                          -- exp
+        fn'
+ where
+        fn' as0
+         | Just (xS,   as1) <- takeArgExp as0
+         , Just (xK,   as2) <- takeArgExp as1
+         , Just (xI,   as3) <- takeArgExp as2
+         , Just (xB,   as4) <- takeArgExp as3
+         , Just (xC,   as5) <- takeArgExp as4
+         , Just (xSp,  as6) <- takeArgExp as5
+         , Just (xBs,  as7) <- takeArgExp as6
+         , Just (xCp,  as8) <- takeArgExp as7
+         , Just (xExp, Nil) <- takeArgExp as8
+         = Just $ XBox
+                $ combinate
+                        { Combinate
+                                (fromBox xS)  (fromBox xK)  (fromBox xI)
+                                (fromBox xB)  (fromBox xC)
+                                (fromBox xSp) (fromBox xBs) (fromBox xCp)
+                        }
+                        (fromBox xExp)
+
+         | otherwise
+         = Nothing
+
+
+-- | If this is a boxed expression then unwrap one level of boxing,
+--   otherwise return the original expression.
+fromBox (xx: Exp s Prim): Exp s Prim
+ = case xx of
+        XBox x' -> x'
+        _       -> xx

@@ -2,16 +2,20 @@
 module SMR.Prim.Op
 export  makePrimOps
 import SMR.Prim.Op.Bool
+import SMR.Prim.Op.Comb
 import SMR.Prim.Op.Match
 import SMR.Prim.Op.Nat
+import SMR.Prim.Op.Smr
 where
 
 
 -- | Make a list of primitive operator evaluators.
 makePrimOps {eqs: Eq s} (_: Unit): List (PrimEval s Prim)
  = append (makePrimOpsBool  ())
+ $ append (makePrimOpsComb  ())
  $ append (makePrimOpsMatch {eqs} ())
  $ append (makePrimOpsNat   ())
+ $ append (makePrimOpsSmr   ())
  $ Nil
 
 

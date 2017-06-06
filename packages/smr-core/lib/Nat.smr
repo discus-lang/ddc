@@ -38,3 +38,8 @@
                  go acc' n')
    ]].  go #nat'1 x;
 
+
+@s f g x = f x (g x);
+@k c x   = c;
+@i x     = x;
+

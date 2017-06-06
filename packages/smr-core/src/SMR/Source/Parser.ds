@@ -86,6 +86,17 @@ pExp    {c: Config s p}
         xBody   <- pExp
         return  $  XSub (reverse csTrain) xBody)
 
+        -- Boxed or unboxed expression.
+ $ Cons (do
+        nKey    <- pNameOfSpace SKey
+        if      nKey == "box" then
+          (do xBody    <- pExpAtom
+              return $ XBox xBody)
+         else if nKey == "run" then
+          (do xBody    <- pExpAtom
+              return $ XRun xBody)
+         else fail)
+
         -- Application possibly using '$'
  $ Cons (do
         xHead   <- pExpApp
@@ -148,7 +159,11 @@ pExpAtom {c: Config s p}
          SPrm
           -> case configPrim c name of
                 Just p  -> return (XRef (RPrm p))
-                Nothing -> fail)
+                Nothing -> fail
+
+         -- Named keyword.
+         SKey
+          -> fail)
  $ Nil
 
 

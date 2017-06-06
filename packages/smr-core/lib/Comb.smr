@@ -1,0 +1,78 @@
+
+
+
+@s f g x = f x (g x);
+@k c x   = c;
+@i x     = x;
+
+@combinate
+ = #smr-combinate-ski #S #K #I #B #C #Sp #Bs #Cp;
+
+@double
+ = (##run (@combinate (\x. #nat-add x x))) #nat'5;
+
+@test
+ = (##run (@combinate @list-range-call)) #nat'0 #nat'5;
+
+@list-case xx alt-nil alt-cons
+ = #match xx  %list-nil         alt-nil
+ $ #match xx (%list-cons #o #o) alt-cons
+ $ %fail;
+
+@list-range a b
+ = #if
+        (#nat-gt a b)
+        %list-nil
+        (#seq (#nat-add a #nat'1) $ \n'.
+         #seq (@list-range n' b)  $ \xs'.
+         %list-cons a xs');
+
+
+@list-foldl f z xx
+ = @list-case xx z
+        (\x xs. #seq (f z x) $ \z'.
+                @list-foldl f z' xs);
+
+
+! Compute the sum of a list of natural numbers.
+@list-sum xx
+ = @list-foldl #nat-add #nat'0 xx;
+
+
+
+@list-case-comb
+ = (#Sp (#Cp #B)
+        (#C #match %list-nil)
+        (#Cp #C (#C #match (%list-cons #o #o)) %fail));
+
+@list-range-comb
+ = #Sp  #S
+        (#Cp    (#Cp #if)
+                #nat-gt
+                %list-nil)
+        (#C     (#S     (#Bs    #Bs
+                                #seq
+                                (#C     #nat-add
+                                        #nat'1))
+                        (#B #B %list-cons))
+                (#C     @list-range-comb));
+
+@list-foldl-comb
+ = (#B (#Sp #C (#C @list-case-comb))
+        (#Sp #C (#Bs #C (#Bs #B #seq)) (#B #C @list-foldl-comb)));
+
+@list-sum-comb
+ = @list-foldl-comb #nat-add #nat'0;
+
+
+@nat-cps
+ = (##box (#seq (#nat-add #nat'1 #nat'2) $ \n. #nat-add n #nat'3));
+
+@nat-cps-seq
+ = (#seq (#nat-add #nat'1 #nat'2) (#C #nat-add #nat'3));
+
+@list-range-seq
+ = (#Sp #S (#Cp (#Cp #if) #nat-gt %list-nil)
+           (#S  (#Bs #B #seq (#C #nat-add #nat'1))
+                (#B (#Cp (#Cp #seq) (#C @list-range-seq))
+                    %list-cons)));

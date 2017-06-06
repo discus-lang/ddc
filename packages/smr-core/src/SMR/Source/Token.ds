@@ -29,6 +29,7 @@ data Space where
         SSet    : Space                  -- ^ Set name.
         SSym    : Space                  -- ^ Symbol name.
         SPrm    : Space                  -- ^ Primitive name.
+        SKey    : Space                  -- ^ Keyword (Super-Primitive).
 
 
 -- | Check if two tokens are equal.
@@ -58,6 +59,7 @@ eq_Space: Eq Space
                 (SSet, SSet) -> True
                 (SSym, SSym) -> True
                 (SPrm, SPrm) -> True
+                (SKey, SKey) -> True
                 _            -> False
 
         neq' t1 t2
@@ -83,6 +85,7 @@ show_Space: Show Space
         SSet    -> "SSet"
         SSym    -> "SSym"
         SPrm    -> "SPrm"
+        SKey    -> "SKey"
 
 
 -- | Check if a token is equal to the give none.

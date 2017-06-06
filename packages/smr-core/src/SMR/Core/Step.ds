@@ -1,8 +1,7 @@
 
 module SMR.Core.Step
-export
-{       step; push;
-}
+export step
+import SMR.Core.Push
 import SMR.Core.Train
 import SMR.Core.Exp
 where
@@ -112,6 +111,27 @@ step    {Eq p} {Show p}
                 Nothing  -> Left ResultDone
                 Just xx' -> Right xx'
 
+        -- Boxed expressions are already normal forms.
+        XBox _          -> Left ResultDone
+
+        -- Run a boxed expression.
+        XRun x1
+         -> case step (StepStrength False False) ctx x1 of
+                -- Body makes progress.
+                Right x1'
+                 -> Right (XRun x1')
+
+                -- Body expression failed.
+                Left  err@(ResultError _)
+                 -> Left err
+
+                -- If the body expression is a box then unwrap it,
+                -- otherwise just return the value as-is.
+                Left  ResultDone
+                 -> case x1 of
+                        XBox x11        -> Right x11
+                        _               -> Right x1
+
 
 -------------------------------------------------------------------------------
 -- | Step the first available expression in a list.
@@ -181,6 +201,10 @@ stepPrim
  | PrimEval prim desc csArg eval <- pe
  = evalArgs csArg xsArg Nil
  where
+        -- TODO: disaster renaming xsArgDone to xsArgsDone (or vis versa)
+        --       for some clauses but not others causes the pattern desugarer
+        --       to forget the name of the variables.
+
         -- Evaluation of arguments is complete.
         evalArgs Nil Nil xsArgsDone
          = case eval (reverse xsArgsDone) of
@@ -191,11 +215,21 @@ stepPrim
                  -> Left $ ResultError
                          $ "Evaluation of primitive " %% show prim %% "failed."
 
+        -- We have more args than the primitive will accept.
+        evalArgs Nil xsArgsRemain xsArgsDone
+         = case eval (reverse xsArgsDone) of
+                Just xResult
+                 -> Right $ XApp xResult xsArgsRemain
+
+                Nothing
+                 -> Left $ ResultError
+                         $ "Evaluation of primitive " %% show prim %% "failed."
+
         -- Evaluate the next argument if neeeded.
-        evalArgs (Cons cArg' csArg') (Cons xArg' xsArg') xsArgDone
+        evalArgs (Cons cArg' csArg') (Cons xArg' xsArg') xsArgsDone
          -- Primitive does not demand a value for this arg.
          | Exp  <- cArg'
-         = evalArgs csArg' xsArg' (Cons xArg' xsArgDone)
+         = evalArgs csArg' xsArg' (Cons xArg' xsArgsDone)
 
          -- Primitive demands a value for this arg.
          = case step (StepStrength False False) ctx xArg' of
@@ -203,58 +237,14 @@ stepPrim
                  -> Left err
 
                 Left ResultDone
-                 -> evalArgs csArg' xsArg' (Cons xArg' xsArgDone)
+                 -> evalArgs csArg' xsArg' (Cons xArg' xsArgsDone)
 
                 Right xArg''
                  -> Right $ makeXApps (XRef (RPrm (nameOfPrimEval pe)))
-                          $ append (reverse xsArgDone) (Cons xArg'' xsArg')
+                          $ append (reverse xsArgsDone) (Cons xArg'' xsArg')
 
-        -- Number of provided arguments does not match primop def.
-        evalArgs Nil _  = Left $ ResultError "Primitive call pattern mismatch."
-        evalArgs _ Nil  = Left $ ResultError "Primitive call pattern mismatch."
-
-
--------------------------------------------------------------------------------
--- | Push down any outermost substitution train to reveal the head constructor.
-push    (xx: Exp s p): Maybe (Exp s p)
- = case xx of
-        XRef _          -> Nothing
-        XVar _ _        -> Nothing
-        XAbs _ _        -> Nothing
-        XApp _ _        -> Nothing
-        XSub cs2 x2     -> pushTrain cs2 x2
-
-
--- | Push a substitution train down into an expression to reveal
---   the head constructor.
-pushTrain
-        (cs1:   List (Car s p))
-        (x2:    Exp s p)
-        :       Maybe (Exp s p)
- = case x2 of
-        -- Unfold macro under a substitution.
-        -- Macro and symbol bodies are closed, so we can drop
-        -- the substitution.
-        XRef (RMac n)   -> Just x2
-        XRef (RSym n)   -> Just x2
-        XRef (RPrm n)   -> Just x2
-
-        -- Reference to some other thing.
-        XRef _          -> Nothing
-
-        -- Apply the train to a variable.
-        XVar name depth
-         -> Just $ trainApplyVar cs1 name depth
-
-        -- Push train into both sides of an application.
-        XApp x21 xs22
-         -> Just $ XApp (trainApply cs1 x21) (map (trainApply cs1) xs22)
-
-        -- Push train under abstraction.
-        XAbs ns21 x22
-         -> Just $ XAbs ns21 (trainApply (trainBump ns21 cs1) x22)
-
-        -- Combine trains.
-        XSub cs2 x22
-         -> Just $ trainApply (append cs2 cs1) x22
+        -- We have less args than the prim will accept,
+        -- so leave the application as it is.
+        evalArgs _ Nil xsArgsDone
+         = Left ResultDone
 

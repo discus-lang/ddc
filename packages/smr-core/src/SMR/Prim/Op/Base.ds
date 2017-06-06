@@ -19,6 +19,7 @@ data Prim where
         PrimLitBool     : Bool          -> Prim
         PrimLitNat      : Nat           -> Prim
 
+
 prim_Show: Show Prim
  = Show $ \pp
  -> case pp of

@@ -1,0 +1,129 @@
+
+module SMR.Transform.Combinate
+export {combinate; abstract}
+import SMR.Core.Push
+import SMR.Core.Exp
+where
+
+
+data Combinate (s p: Data) where
+        Combinate
+         :  Exp s p     -- S
+         -> Exp s p     -- K
+         -> Exp s p     -- I
+         -> Exp s p     -- B
+         -> Exp s p     -- C
+         -> Exp s p     -- Sp
+         -> Exp s p     -- Bs
+         -> Exp s p     -- Cp
+         -> Combinate s p
+
+
+data ExpC (s p: Data) where
+        XExpC   : Exp  s p              -> ExpC s p
+        XVarC   : Name -> Nat           -> ExpC s p
+        XAppC   : ExpC s p -> ExpC s p  -> ExpC s p
+        XS      : ExpC s p
+        XK      : ExpC s p
+        XI      : ExpC s p
+        XB      : ExpC s p
+        XC      : ExpC s p
+        XSp     : ExpC s p
+        XBs     : ExpC s p
+        XCp     : ExpC s p
+
+
+combinate
+        {cc: Combinate s p}
+        (xx: Exp s p): Exp s p
+ = expand $ translate xx
+
+
+expand  {cc: Combinate s p}
+        (xx: ExpC s p): Exp s p
+ | Combinate xS xK xI xB xC xSp xBs xCp <- cc
+ = case xx of
+        XExpC xx'       -> xx'
+        XVarC n i       -> XVar n i
+        XAppC x1 x2     -> XApp (expand x1) (Cons (expand x2) Nil)
+        XS              -> xS
+        XK              -> xK
+        XI              -> xI
+        XB              -> xB
+        XC              -> xC
+        XSp             -> xSp
+        XBs             -> xBs
+        XCp             -> xCp
+
+
+-- TODO: push down trains.
+translate (xx: Exp s p): ExpC s p
+ = case xx of
+        XRef r
+         -> XExpC xx
+
+        XVar n i
+         -> XVarC n i
+
+        XApp x1 (Cons x2 Nil)
+         -> XAppC (translate x1) (translate x2)
+
+        XApp x1 (Cons x2 xs)
+         -> translate (XApp (XApp x1 (Cons x2 Nil)) xs)
+
+        XAbs (Cons nParam Nil) xBody
+         -> abstract nParam 0 (translate xBody)
+
+        XAbs (Cons nParam nsParam) xBody
+         -> translate (XAbs (Cons nParam Nil) (XAbs nsParam xBody))
+
+        XSub _ _
+         -> case push xx of
+                Just xx' -> translate xx'
+                Nothing  -> XExpC xx
+
+        _ -> XExpC xx
+
+
+abstract (n: Name) (d: Nat) (xx: ExpC s p): ExpC s p
+ = case xx of
+        XAppC x1 x2
+         -> optimize
+         $  XAppC (XAppC XS (abstract n d x1))
+                  (abstract n d x2)
+
+        XVarC n' i'
+         | n == n', d == i' -> XI
+         | n == n'          -> XAppC XK (XVarC n' (i' - 1))
+
+        _ -> XAppC XK xx
+
+
+optimize (xx: ExpC s p): ExpC s p
+ = case xx of
+    XAppC (XAppC XS (XAppC XK xp)) (XAppC XK xq)
+      -> XAppC XK (XAppC xp xq)
+
+    XAppC (XAppC XS (XAppC XK xp)) XI
+      -> xp
+
+    XAppC (XAppC XS (XAppC XK xp)) (XAppC (XAppC XB xq) xr)
+      -> XAppC (XAppC (XAppC XBs xp) xq) xr
+
+    XAppC (XAppC XS (XAppC XK xp)) xq
+      -> XAppC (XAppC XB xp) xq
+
+    XAppC (XAppC XS (XAppC (XAppC XB xp) xq)) (XAppC XK xr)
+      -> XAppC (XAppC (XAppC XCp xp) xq) xr
+
+    XAppC (XAppC XS xp) (XAppC XK xq)
+      -> XAppC (XAppC XC xp) xq
+
+    XAppC (XAppC XS (XAppC (XAppC XB xp) xq)) xr
+      -> XAppC (XAppC (XAppC XSp xp) xq) xr
+
+    _ -> xx
+
+
+
+

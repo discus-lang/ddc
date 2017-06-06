@@ -1,0 +1,95 @@
+
+
+module SMR.Prim.Op.Comb
+export makePrimOpsComb
+import SMR.Prim.Op.Base
+where
+
+
+makePrimOpsComb (_: Unit): List (PrimEval s Prim)
+ = Cons primOpCombS  $ Cons primOpCombK  $ Cons primOpCombI
+ $ Cons primOpCombB  $ Cons primOpCombC
+ $ Cons primOpCombSp $ Cons primOpCombBs $ Cons primOpCombCp
+ $ Cons primOpCombY
+ $ Nil
+
+
+primOpCombS: PrimEval s Prim
+ = PrimEval (PrimOp "S") "S-combinator,  S f g x = f x (g x)"
+            (Cons Exp (Cons Exp (Cons Exp Nil))) fn'
+ where  fn' (Cons xF  (Cons xG  (Cons xX  Nil)))
+                = Just $ makeXApp2 xF xX (makeXApp1 xG xX)
+        fn' _   = Nothing
+
+
+primOpCombK: PrimEval s Prim
+ = PrimEval (PrimOp "K") "K-combinator,  K c x = c"
+            (Cons Exp (Cons Exp Nil)) fn'
+ where  fn' (Cons xC  (Cons xX  Nil))
+                = Just $ xC
+        fn' _   = Nothing
+
+
+primOpCombI: PrimEval s Prim
+ = PrimEval (PrimOp "I") "I-combinator,  I x = x"
+            (Cons Exp Nil) fn'
+ where  fn' (Cons xX  Nil)
+                = Just xX
+        fn' _   = Nothing
+
+
+primOpCombB: PrimEval s Prim
+ = PrimEval (PrimOp "B") "B-combinator,  B f g x = f (g x)"
+            (Cons Exp (Cons Exp (Cons Exp Nil))) fn'
+ where  fn' (Cons xF  (Cons xG  (Cons xX  Nil)))
+                = Just $ makeXApp1 xF (makeXApp1 xG xX)
+        fn' _   = Nothing
+
+
+primOpCombC: PrimEval s Prim
+ = PrimEval (PrimOp "C") "C-combinator,  C f g x = f (g x)"
+            (Cons Exp (Cons Exp (Cons Exp Nil))) fn'
+ where  fn' (Cons xF  (Cons xG  (Cons xX  Nil)))
+                = Just $ makeXApp2 xF xX xG
+        fn' _   = Nothing
+
+
+primOpCombSp: PrimEval s Prim
+ = PrimEval (PrimOp "Sp") "S'-combinator, S' c f g x = c (f x) (g x)"
+            (Cons Exp (Cons Exp (Cons Exp (Cons Exp Nil)))) fn'
+ where  fn' (Cons xC  (Cons xF  (Cons xG  (Cons xX  Nil))))
+                = Just $ makeXApp2 xC (makeXApp1 xF xX) (makeXApp1 xG xX)
+        fn' _   = Nothing
+
+
+primOpCombBs: PrimEval s Prim
+ = PrimEval (PrimOp "Bs") "B*-combinator, B* c f g x = c (f (g x))"
+            (Cons Exp (Cons Exp (Cons Exp (Cons Exp Nil)))) fn'
+ where  fn' (Cons xC  (Cons xF  (Cons xG  (Cons xX  Nil))))
+                = Just $ makeXApp1 xC (makeXApp1 xF (makeXApp1 xG xX))
+        fn' _   = Nothing
+
+
+primOpCombCp: PrimEval s Prim
+ = PrimEval (PrimOp "Cp") "C'-combinator, C' c f g x = c (f x) g"
+            (Cons Exp (Cons Exp (Cons Exp (Cons Exp Nil)))) fn'
+ where  fn' (Cons xC  (Cons xF  (Cons xG  (Cons xX  Nil))))
+                = Just $ makeXApp2 xC (makeXApp1 xF xX) xG
+        fn' _   = Nothing
+
+
+primOpCombY: PrimEval s Prim
+ = PrimEval (PrimOp "Y") "Y-combinator,  Y f = f (Y f)"
+            (Cons Exp Nil) fn'
+ where  fn' (Cons xF  Nil)
+                = Just $ makeXApp1 xF (makeXApp1 (XRef (RPrm (PrimOp "Y"))) xF)
+        fn' _   = Nothing
+
+
+makeXApp1 (xF: Exp s p) (xA: Exp s p): Exp s p
+ = XApp xF (Cons xA Nil)
+
+makeXApp2 (xF: Exp s p) (xA xB: Exp s p): Exp s p
+ = XApp xF (Cons xA (Cons xB Nil))
+
+

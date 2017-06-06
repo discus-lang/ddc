@@ -44,7 +44,7 @@ primOpBool2Bool
 --   Only the scrutinee is demanded, while the branches are not.
 primOpIf: PrimEval s Prim
  = PrimEval
-        (PrimOp "bool-if")
+        (PrimOp "if")
         "if-then-else operator"
         (Cons Val (Cons Exp (Cons Exp Nil)))
         fn'

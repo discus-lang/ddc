@@ -203,7 +203,8 @@ repl_toks
         Left err
          -- Parse failed on some token.
          -- TODO: Get the token just before parsing failed.
-         -> do  writell $ ppr err
+         -> do  writel "! parse error."
+                writel $ ppr err
                 repl state CmdNone
 
          -- Parse failed because there was no input,
