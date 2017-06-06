@@ -14,8 +14,7 @@ push    (xx: Exp s p): Maybe (Exp s p)
         XAbs _ _        -> Nothing
         XApp _ _        -> Nothing
         XSub cs2 x2     -> pushTrain cs2 x2
-        XBox _          -> Nothing
-        XRun _          -> Nothing
+        XKey _ _        -> Nothing
 
 
 -- | Push a substitution train down into an expression to reveal
@@ -51,9 +50,8 @@ pushTrain
         XSub cs2 x22
          -> Just $ trainApply (append cs2 cs1) x22
 
-        XBox x22
-         -> Just $ XBox (trainApply cs1 x22)
+        -- Push train under key.
+        XKey k21 x22
+         -> Just $ XKey k21 (trainApply cs1 x22)
 
-        XRun x22
-         -> Just $ XRun (trainApply cs1 x22)
 

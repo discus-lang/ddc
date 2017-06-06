@@ -61,13 +61,9 @@ pprExp' [s p: Data]
         XSub cs x
          -> pprTrain cs % "." % pprExp' ContextArg x
 
-        -- box expression
-        XBox x
-         -> "##box" %% pprExp' ContextArg x
-
-        -- run expression
-        XRun x
-         -> "##run" %% pprExp' ContextArg x
+        -- keyed expressions
+        XKey k x
+         -> pprKey k %% pprExp' ContextArg x
 
 
  | ContextFun   <- ctx
@@ -81,6 +77,12 @@ pprExp' [s p: Data]
         XVar _      -> pprExp' ContextBody xx
         XSub _ _    -> pprExp' ContextBody xx
         _           -> parens $ pprExp' ContextBody xx
+
+
+pprKey  (kk: Key): Text
+ = case kk of
+        KBox    -> "##box"
+        KRun    -> "##run"
 
 
 -- Train ----------------------------------------------------------------------

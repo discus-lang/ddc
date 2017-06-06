@@ -32,7 +32,7 @@ primOpCombinate: PrimEval s Prim
          , Just (xBs,  as7) <- takeArgExp as6
          , Just (xCp,  as8) <- takeArgExp as7
          , Just (xExp, Nil) <- takeArgExp as8
-         = Just $ XBox
+         = Just $ XKey KBox
                 $ combinate
                         { Combinate
                                 (fromBox xS)  (fromBox xK)  (fromBox xI)
@@ -49,5 +49,5 @@ primOpCombinate: PrimEval s Prim
 --   otherwise return the original expression.
 fromBox (xx: Exp s Prim): Exp s Prim
  = case xx of
-        XBox x' -> x'
-        _       -> xx
+        XKey KBox x'    -> x'
+        _               -> xx

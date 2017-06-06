@@ -91,10 +91,10 @@ pExp    {c: Config s p}
         nKey    <- pNameOfSpace SKey
         if      nKey == "box" then
           (do xBody    <- pExpAtom
-              return $ XBox xBody)
+              return $ XKey KBox xBody)
          else if nKey == "run" then
           (do xBody    <- pExpAtom
-              return $ XRun xBody)
+              return $ XKey KRun xBody)
          else fail)
 
         -- Application possibly using '$'

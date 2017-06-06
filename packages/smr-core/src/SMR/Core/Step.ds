@@ -112,14 +112,14 @@ step    {Eq p} {Show p}
                 Just xx' -> Right xx'
 
         -- Boxed expressions are already normal forms.
-        XBox _          -> Left ResultDone
+        XKey KBox _       -> Left ResultDone
 
         -- Run a boxed expression.
-        XRun x1
+        XKey KRun x1
          -> case step (StepStrength False False) ctx x1 of
                 -- Body makes progress.
                 Right x1'
-                 -> Right (XRun x1')
+                 -> Right (XKey KRun x1')
 
                 -- Body expression failed.
                 Left  err@(ResultError _)
@@ -129,7 +129,7 @@ step    {Eq p} {Show p}
                 -- otherwise just return the value as-is.
                 Left  ResultDone
                  -> case x1 of
-                        XBox x11        -> Right x11
+                        XKey KBox x11   -> Right x11
                         _               -> Right x1
 
 
