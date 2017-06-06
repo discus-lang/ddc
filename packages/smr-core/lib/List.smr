@@ -21,6 +21,17 @@
         (#seq (#nat-sub n #nat'1) $ \n'.
          %list-cons x (@list-replicate n' x));
 
+! Produce 'n' copies of the value 'x'.
+!  TODO: check change impl of app rule to push before building a new subst.
+!        we don't want to subst another subst wrapped around n' x'.
+@list-replicate-raised n x
+ = #if
+        (#nat-eq <#nat'0, n>)
+        %list-nil
+        (##seq (#nat-sub <n, #nat'1>)    $ \n'.
+         ##seq (@list-replicate-raised <n', x>) $ \xs'.
+         %list-cons <x, xs'>);
+
 
 ! Produce a range of natural numbers,
 !   starting from the value 'a' and ending with the value 'b'.

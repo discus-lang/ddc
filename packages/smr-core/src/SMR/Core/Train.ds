@@ -97,6 +97,7 @@ trainApply (cs1: List (Car s p)) (xx: Exp s p): Exp s p
 
  | otherwise
  = case xx of
+        XRet xs         -> XRet (map (trainApply cs1) xs)
         XRef (RMac n)   -> xx
         XRef (RSym n)   -> xx
         XRef (RPrm n)   -> xx

@@ -3,8 +3,10 @@ module SMR.Core.Exp
 export
 {       show_Decl;      lookupDecl;
         show_Exp;
+        makeXRet;
         makeXAbs;
-        makeXApps;      takeXApps
+        makeXApps;      takeXApps;
+        flattenExp;     flattenExps;
 }
 import Class.Show
 import Data.Text
@@ -66,6 +68,9 @@ show_Decl {Show s} {Show p}: Show (Decl s p)
 -- Exp ------------------------------------------------------------------------
 -- | Generic expression language.
 data Exp (s p: Data) where
+        -- Return multiple values.
+        XRet    : List (Exp s p)                -> Exp s p
+
         -- Reference to an external thing.
         XRef    : Ref s p   -> Exp s p
 
@@ -73,7 +78,7 @@ data Exp (s p: Data) where
         XVar    : Name      -> Nat              -> Exp s p
 
         -- Application of a functional expression to its arguments.
-        XApp    : Exp s p   -> List (Exp s p)   -> Exp s p
+        XApp    : Exp s p   -> Exp s p          -> Exp s p
 
         -- Abstraction with a list of parameter names.
         XAbs    : List Name -> Exp s p          -> Exp s p
@@ -86,10 +91,12 @@ data Exp (s p: Data) where
         XKey    : Key -> Exp s p                -> Exp s p
 
 
+
 -- | Expression keys (super primitives).
 data Key where
         KBox    : Key
         KRun    : Key
+        KSeq    : Key
 
 
 -- | A car on the substitution train.
@@ -102,27 +109,29 @@ data Car (s p: Data) where
 show_Exp {Show s} {Show p}: Show (Exp s p)
  =  Show $ λxx
  -> case xx of
-        XRef r      -> parens $ "XRef" %% show r
-        XVar n  b   -> parens $ "XVar" %% show n  %% show b
-        XApp xf xs  -> parens $ "XApp" %% show xf %% show xs
-        XAbs ns x   -> parens $ "XAbs" %% show ns %% show x
-        XSub cs x   -> parens $ "XSub" %% show cs %% show x
-        XKey k  x   -> parens $ "XKey" %% show k  %% show x
+        XRet xs         -> parens $ "XRet" %% show xs
+        XRef r          -> parens $ "XRef" %% show r
+        XVar n  b       -> parens $ "XVar" %% show n  %% show b
+        XApp xf xs      -> parens $ "XApp" %% show xf %% show xs
+        XAbs ns x       -> parens $ "XAbs" %% show ns %% show x
+        XSub cs x       -> parens $ "XSub" %% show cs %% show x
+        XKey k  x       -> parens $ "XKey" %% show k  %% show x
 
 
 show_Key: Show Key
  =  Show $ λkk
  -> case kk of
-        KBox        -> parens $ "KBox" %% show kk
-        KRun        -> parens $ "KRun" %% show kk
+        KBox            -> parens $ "KBox" %% show kk
+        KRun            -> parens $ "KRun" %% show kk
+        KSeq            -> parens $ "KSeq" %% show kk
 
 
 show_Car {Show s} {Show p}: Show (Car s p)
  =  Show $ λxx
  -> case xx of
-        CSim snv    -> parens $ "CSim" %% show snv
-        CRec snv    -> parens $ "CRec" %% show snv
-        CUps ups    -> parens $ "CUps" %% show ups
+        CSim snv        -> parens $ "CSim" %% show snv
+        CRec snv        -> parens $ "CRec" %% show snv
+        CUps ups        -> parens $ "CUps" %% show ups
 
 
 -- Snv ------------------------------------------------------------------------
@@ -152,6 +161,12 @@ show_Ups: Show Ups
 
 
 -- Compounds ------------------------------------------------------------------
+makeXRet (xs: List (Exp s p)): Exp s p
+ = case flattenExps xs of
+        Cons x Nil -> x
+        xs'        -> XRet xs'
+
+
 makeXAbs (ns: List Name) (xBody: Exp s p): Exp s p
  | null ns      = xBody
  | otherwise    = XAbs ns xBody
@@ -159,21 +174,33 @@ makeXAbs (ns: List Name) (xBody: Exp s p): Exp s p
 
 -- | Make an application of a function to the given list of arguments.
 makeXApps (xFun: Exp s p) (xsArgs: List (Exp s p)): Exp s p
- = case xsArgs of
-        Nil     -> xFun
-        _       -> XApp xFun xsArgs
+ = case flattenExps xsArgs of
+        Nil             -> xFun
+        Cons xArg xsArg -> makeXApps (XApp xFun xArg) xsArg
 
 
 -- | Take an application of a function to a list of arguments.
 takeXApps (xx: Exp s p): Maybe (Exp s p, List (Exp s p))
  = case xx of
-        XApp x1@(XApp _ _) as2
+        XApp x1@(XApp _ _) x2
          -> case takeXApps x1 of
-                Just (f1, as1) -> Just (f1, append as1 as2)
+                Just (f1, xs1) -> Just (f1, append xs1 (flattenExp x2))
                 Nothing        -> Nothing
 
-        XApp x1 as2
-          -> Just (x1, as2)
+        XApp x1 x2
+          -> Just (x1, flattenExp x2)
 
         _ -> Nothing
+
+
+-- TODO: list append bad complexity.
+flattenExp  (xArg: Exp s p): List (Exp s p)
+ = case xArg of
+        XRet xsArgs       -> flattenExps xsArgs
+        _                 -> Cons xArg Nil
+
+flattenExps (xsArgs: List (Exp s p)): List (Exp s p)
+ = case xsArgs of
+        Nil               -> Nil
+        Cons xArg xsArgs' -> append (flattenExp xArg) (flattenExps xsArgs')
 

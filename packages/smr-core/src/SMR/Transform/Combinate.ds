@@ -45,7 +45,7 @@ expand  {cc: Combinate s p}
  = case xx of
         XExpC xx'       -> xx'
         XVarC n i       -> XVar n i
-        XAppC x1 x2     -> XApp (expand x1) (Cons (expand x2) Nil)
+        XAppC x1 x2     -> XApp (expand x1) (expand x2)
         XS              -> xS
         XK              -> xK
         XI              -> xI
@@ -56,7 +56,6 @@ expand  {cc: Combinate s p}
         XCp             -> xCp
 
 
--- TODO: push down trains.
 translate (xx: Exp s p): ExpC s p
  = case xx of
         XRef r
@@ -65,11 +64,8 @@ translate (xx: Exp s p): ExpC s p
         XVar n i
          -> XVarC n i
 
-        XApp x1 (Cons x2 Nil)
+        XApp x1 x2
          -> XAppC (translate x1) (translate x2)
-
-        XApp x1 (Cons x2 xs)
-         -> translate (XApp (XApp x1 (Cons x2 Nil)) xs)
 
         XAbs (Cons nParam Nil) xBody
          -> abstract nParam 0 (translate xBody)

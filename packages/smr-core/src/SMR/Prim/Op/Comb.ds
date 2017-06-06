@@ -87,9 +87,9 @@ primOpCombY: PrimEval s Prim
 
 
 makeXApp1 (xF: Exp s p) (xA: Exp s p): Exp s p
- = XApp xF (Cons xA Nil)
+ = XApp xF xA
 
 makeXApp2 (xF: Exp s p) (xA xB: Exp s p): Exp s p
- = XApp xF (Cons xA (Cons xB Nil))
+ = XApp xF (XRet (Cons xA (Cons xB Nil)))
 
 

@@ -86,23 +86,12 @@ pExp    {c: Config s p}
         xBody   <- pExp
         return  $  XSub (reverse csTrain) xBody)
 
-        -- Boxed or unboxed expression.
- $ Cons (do
-        nKey    <- pNameOfSpace SKey
-        if      nKey == "box" then
-          (do xBody    <- pExpAtom
-              return $ XKey KBox xBody)
-         else if nKey == "run" then
-          (do xBody    <- pExpAtom
-              return $ XKey KRun xBody)
-         else fail)
-
         -- Application possibly using '$'
  $ Cons (do
         xHead   <- pExpApp
         alt (do _       <- pPunc '$'
                 xRest   <- pExp
-                return  $  XApp xHead (Cons xRest Nil))
+                return  $  XApp xHead xRest)
             (return xHead))
  $ Nil
 
@@ -110,14 +99,29 @@ pExp    {c: Config s p}
 -- | Parser for an application.
 pExpApp {c: Config s p}
         :   Parser (Located Token) (Expected (Located Token) s p) (Exp s p)
- = do   xFun    <- pExpAtom
-        alt (do _       <- pPunc '<'
-                xsArgs  <- sepBy pExp (pPunc ',')
-                _       <- pPunc '>'
-                return  $ makeXApps xFun xsArgs)
 
-            (do xsArgs  <- some pExpAtom
-                return  $ makeXApps xFun xsArgs)
+        -- Application of a superprim.
+ = alts
+ $ Cons (do
+        nKey    <- do   nKey'   <- pNameOfSpace SKey
+                        if       nKey' == "box" then return KBox
+                         else if nKey' == "run" then return KRun
+                         else if nKey' == "seq" then return KSeq
+                         else fail
+        xsArgs  <- some pExpAtom
+        case xsArgs of
+         Cons xFirst xsRest
+             -> return $ makeXApps (XKey nKey xFirst) xsRest
+         Nil -> fail)
+
+        -- Application of some other expression.
+ $ Cons (do
+        xFun    <- pExpAtom
+        xsArgs  <- some pExpAtom
+        case xsArgs of
+         Nil    -> return $ xFun
+         _      -> return $ foldl XApp xFun xsArgs)
+ $ Nil
 
 
 -- | Parser for an atomic expression.
@@ -130,6 +134,14 @@ pExpAtom {c: Config s p}
         x       <- pExp
         _       <- pPunc ')'
         return x)
+
+        -- Multiple return values.
+ $ Cons (do
+        _       <- pPunc '<'
+        xsArgs  <- sepBy pExp (pPunc ',')
+        _       <- pPunc '>'
+        return  $ XRet xsArgs)
+
 
         -- Named variable with or without index.
  $ Cons (do

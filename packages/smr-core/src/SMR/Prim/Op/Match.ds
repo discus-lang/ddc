@@ -23,7 +23,7 @@ primOpSeq: PrimEval s Prim
         fn' as0
          | Just (x1, as1) <- takeArgExp as0
          , Just (x2, Nil) <- takeArgExp as1
-         = Just $ XApp x2 (Cons x1 Nil)
+         = Just $ XApp x2 x1
 
          | otherwise
          = Nothing
