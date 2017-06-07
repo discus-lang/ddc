@@ -16,6 +16,9 @@ import Data.Maybe
 import Data.Text.Location
 where
 
+-- TODO: church mul two two result names are wrong
+-- TODO: church list-reverse is now diverging.
+-- TODO: need to start regression testing this stuff.
 
 -------------------------------------------------------------------------------
 data Cmd where
@@ -145,14 +148,11 @@ loadSource
 
          _ -> Nothing
 
+
 -- | Read-Eval-Print loop.
 --   TODO: need to put the explicit box.
 --
 --   TODO: closing stdin with control-D causes prompt to print infinitely.
---
---   TODO: suspect that tail call opt isn't working so that every intermediate
---   expression is retained in the state. We could store the expression
---   in a ref to hack around this.
 --
 repl    (state: State) (cmd: Cmd): S Console Unit
  = box do
@@ -202,7 +202,6 @@ repl_toks
 
         Left err
          -- Parse failed on some token.
-         -- TODO: Get the token just before parsing failed.
          -> do  writel "! parse error."
                 writel $ ppr err
                 repl state CmdNone
@@ -233,6 +232,22 @@ repl_step
                 repl state (CmdStep x')
 
 
+-- | Given an expression,
+--   try to perform a multi-step evaluation step.
+repl_steps
+        (state: State)
+        (xx:    Exp Name Prim)
+        :       S Console Unit
+ = case steps' state True xx of
+        Left err
+         -> do  writell $ ppr $ ErrorReplRuntime  "<interactive>" err
+                repl state CmdNone
+
+        Right x'
+         -> do  writell $ ppr x'
+                repl state CmdNone
+
+
 -- | Single step an expression.
 step'   (state: State)
         (red:   Bool)
@@ -244,3 +259,15 @@ step'   (state: State)
                 (declsOfState state))
          xx
 
+
+-- | Multi-step an expression.
+steps'  (state: State)
+        (red:   Bool)
+        (xx:    Exp Name Prim)
+        :       Either Text (Exp Name Prim)
+ = steps
+        (StepStrength red True)
+        (StepContext
+                (primTableOfState state)
+                (declsOfState state))
+         xx

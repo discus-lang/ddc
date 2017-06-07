@@ -1,6 +1,6 @@
 
 module SMR.Core.Step
-export step
+export { step; steps }
 import SMR.Core.Push
 import SMR.Core.Train
 import SMR.Core.Exp
@@ -30,13 +30,15 @@ data Result where
 
 
 -------------------------------------------------------------------------------
--- -- | Multi-step reduction to normal form.
--- steps   {Eq p} {Show p}
---         (str: StepStrength) (ctx: StepContext s p)
---         (xx:  Exp s p)
---         :     Either Result (Exp s p)
---  = case step str ctx xx of
-
+-- | Multi-step reduction to normal form.
+steps   {Eq p} {Show p}
+        (str: StepStrength) (ctx: StepContext s p)
+        (xx:  Exp s p)
+        :     Either Text (Exp s p)
+ = case step str ctx xx of
+        Left ResultDone         -> Right xx
+        Left (ResultError err)  -> Left err
+        Right xx'               -> steps str ctx xx'
 
 
 -------------------------------------------------------------------------------
