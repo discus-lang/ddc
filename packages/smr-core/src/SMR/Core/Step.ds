@@ -44,93 +44,60 @@ step    {Eq p} {Show p}
                 Right xs'       -> Right $ makeXRet xs'
 
         -- Reference
-        XRef (RMac n)
-         | StepContext _ decls  <- ctx
-         -> case lookupDecl n decls of
-                Nothing -> Left ResultDone
-                Just x  -> Right x
+        XRef ref
+         -> case ref of
+                -- Expand macros.
+                RMac n
+                 | StepContext _ decls  <- ctx
+                 -> case lookupDecl n decls of
+                        Nothing -> Left ResultDone
+                        Just x  -> Right x
 
-        XRef _          -> Left ResultDone
+                -- Leave other references as-is.
+                _               -> Left ResultDone
 
         -- Variable
         XVar _ _        -> Left ResultDone
 
         -- Abstraction
         XAbs ns1 x2
-         -- Reduce the body of the abstraction.
+         -- Reduce the body of the abstraction if requested.
          |  StepStrength True _     <- str
          ,  Right x2'               <- step str ctx x2
          -> Right $ XAbs ns1 x2'
 
-         -- Treat abstractions as values.
-         |  otherwise   -> Left ResultDone
+         -- Otherwise treat all abstractions as values.
+         |  otherwise
+         -> Left ResultDone
 
         -- Application
-        XApp x1 x2
-         -- Application of a primitive operator.
-         | Just (XRef (RPrm prim), xsArgs) <- takeXApps xx
-         , StepContext esPrim _            <- ctx
-         -> case lookup prim esPrim of
-                Nothing
-                 -> Left $ ResultError $ "Unknown primitive" %% show prim
-
-                Just primEval
-                 -> stepPrim ctx primEval xsArgs
-
-         -- Application of some function abstraction.
-         |  Just (x1, xs2) <- takeXApps xx
-         -> case step (StepStrength False False) ctx x1 of
+        XApp _ _
+         -- Unzip the spine and try to step the functional expression first.
+         | Just (xF, xsArgs) <- takeXApps xx
+         -> case step (StepStrength False False) ctx xF of
                 -- Functional expression makes progress.
-                Right x1'
-                 -> Right $ makeXApps x1' xs2
+                Right xF'                  -> Right $ makeXApps xF' xsArgs
 
-                -- Functional expression failed.
-                Left err@(ResultError _)
-                 -> Left err
+                -- Eval of functional expression failed.
+                Left err@(ResultError _)   -> Left err
 
                 -- Functional expression is done.
                 Left ResultDone
+                 -> case xF of
+                        XRef (RPrm primF)  -> stepAppPrim ctx primF xsArgs
+                        XAbs nsParam xBody -> stepAppAbs  str ctx nsParam xBody xsArgs
+                        XKey KSeq    xBody -> stepAppSeq  str ctx xBody   xsArgs
 
-                 -- Application of seq superprim.
-                 --  If the right is an abs directly then just build the subst.
-                 --  without going via the intermediate application step.
-                 |  XKey KSeq x11  <- x1
-                 ,  Cons x2' xs2'  <- xs2
-                 ,  XAbs ns11 x12  <- fromMaybe x2' (push x2')
-                 ,  Cons n1  ns11' <- ns11
-                 -> do  snv     = snvOfNamesArgs (Cons n1 Nil) (Cons x11 Nil)
-                        car     = CSim snv
-                        cars    = Cons car Nil
-                        Right $ makeXApps (trainApply cars $ makeXAbs ns11' x12) xs2'
+                        -- Functional expression is inactive, but optionally
+                        -- continue reducing arguments to eliminate all the redexes
+                        -- in the expression.
+                        _ |  StepStrength _ True <- str
+                          -> case stepFirst str ctx xsArgs of
+                                Right xsArgs'   -> Right $ makeXApps xF xsArgs'
+                                Left  res       -> Left res
 
-                 -- Application of a seq superprim to something
-                 --   that isn't yet an abstraction.
-                 |  XKey KSeq x11 <- x1
-                 -> Right $ XApp x2 (XRet (flattenExp x11))
-
-                 -- The function is a abstraction, so apply it.
-                 |  XAbs ns11  x12      <- x1
-                 -> stepAppAbs str ctx ns11 x12 xs2 (length ns11) (length xs2)
-
-                 -- Reduce arguments of applications.
-                 --  TODO: don't introduce XRet at top level if there wasn't
-                 --  one there already. If source prog does not have multi
-                 --  arg/return then eval should not introduce it.
-                 |  StepStrength _ True <- str
-                 -> case step str ctx x1 of
-                        Right x1'
-                         -> Right $ XApp x1' (makeXRet xs2)
-
-                        Left err@(ResultError _)
-                         -> Left err
-
-                        Left ResultDone
-                         -> case stepFirst (StepStrength True True) ctx xs2 of
-                                Right xs2' -> Right (XApp x1 (makeXRet xs2'))
-                                Left  r    -> Left r
-
-                 |  otherwise
-                 -> Left ResultDone
+                          |  otherwise
+                          -> Left ResultDone
 
         -- Substitution train.
         XSub _ _
@@ -139,7 +106,8 @@ step    {Eq p} {Show p}
                 Just xx' -> Right xx'
 
         -- Boxed expressions are already normal forms.
-        XKey KBox _       -> Left ResultDone
+        XKey KBox _
+         -> Left ResultDone
 
         -- Run a boxed expression.
         XKey KRun x1
@@ -159,7 +127,6 @@ step    {Eq p} {Show p}
                         XKey KBox x11   -> Right x11
                         _               -> Right x1
 
-
         -- Step the body of a seq expression.
         XKey KSeq x
          -> case stepFirst str ctx (Cons x Nil) of
@@ -168,68 +135,116 @@ step    {Eq p} {Show p}
 
 
 -------------------------------------------------------------------------------
+-- | Step an application of a primitive operator to its arguments.
+stepAppPrim
+        {Eq p} {Show p}
+        (ctx:   StepContext s p)
+        (prim:  p) (xsArgs: List (Exp s p))
+        : Either Result (Exp s p)
+ | StepContext esPrim _     <- ctx
+ = case lookup prim esPrim of
+        Nothing
+         -> Left $ ResultError $ "Unknown primitive" %% show prim
+
+        Just primEval
+         -> stepPrim ctx primEval xsArgs
+
+
+-------------------------------------------------------------------------------
+-- | Step an application of an abstraction to its arguments.
+stepAppAbs
+        {Eq p} {Show p}
+        (str:     StepStrength) (ctx:   StepContext s p)
+        (nsParam: List Name)    (xBody: Exp s p) (xsArgs: List (Exp s p))
+        : Either Result (Exp s p)
+   -- Default evaluation method is call-by-value, so first reduce the args.
+ = case stepFirst str ctx xsArgs of
+        -- One of the arguments makes progress.
+        Right xsArgs'
+         -> Right $ makeXApps (XAbs nsParam xBody) xsArgs'
+
+        -- Stepping one of the argument failed.
+        Left err@(ResultError _)
+         -> Left err
+
+        -- The arguments are all done.
+        Left ResultDone
+         -> do  arity   = length nsParam
+                args    = length xsArgs
+
+                -- Saturated application.
+                if args == arity
+                 then do
+                    snv         = snvOfNamesArgs nsParam xsArgs
+                    Right $ snvApply False snv xBody
+
+                 -- Under application
+                 else if args < arity
+                 then do
+                    nsParam_sat    = take args nsParam
+                    nsParam_remain = drop args nsParam
+                    snv            = snvOfNamesArgs nsParam_sat xsArgs
+                    Right $ snvApply False snv $ XAbs nsParam_remain xBody
+
+                 else do
+                    xsArgs_sat     = take arity xsArgs
+                    xsArgs_remain  = drop arity xsArgs
+                    snv            = snvOfNamesArgs nsParam xsArgs_sat
+                    Right $ XApp  (snvApply False snv xBody)
+                                  (makeXRet xsArgs_remain)
+
+
+-------------------------------------------------------------------------------
+-- | Step an application of the Seq superprim.
+stepAppSeq
+        (str:    StepStrength) (ctx: StepContext s p)
+        (xBody:  Exp s p)      (xsArgs: List (Exp s p))
+        : Either Result (Exp s p)
+
+ -- Application of a seq to an abstraction.
+ -- As we can see the abstraction, build the substitution directly without
+ -- going through an intermediate application.
+ | Cons xArg1 xsArgs'   <- xsArgs
+ , XAbs ns11  x12       <- fromMaybe xArg1 (push xArg1)
+ , Cons n1    ns11'     <- ns11
+ = do   snv     = snvOfNamesArgs (Cons n1 Nil) (Cons xBody Nil)
+        car     = CSim snv
+        cars    = Cons car Nil
+        Right $ makeXApps (trainApply cars $ makeXAbs ns11' x12) xsArgs'
+
+ -- Application of a seq to something that isn't yet an abstraction.
+ | otherwise
+ =      Right $ makeXApps (XKey KSeq xBody) xsArgs
+
+
+-------------------------------------------------------------------------------
 -- | Step the first available expression in a list.
 --   This also flattens them out, so at the top level of the result
 --   we won't have nested XRets.
 stepFirst
         {Eq p} {Show p}
-        (str: StepStrength)             -- ^ Evaluation Strength.
-        (ctx: StepContext s p)          -- ^ Evaluation Context.
-        (xx:  List (Exp s p))           -- ^ List of expressions to step.
+        (str: StepStrength)  (ctx: StepContext s p)
+        (xx:  List (Exp s p))
         :     Either Result (List (Exp s p))
  = case xx of
         Nil
          -> Left ResultDone
 
-        Cons x xs
-         -> case step str ctx x of
+        Cons x1 xs2
+         -> case step str ctx x1 of
                 Left err@(ResultError _)
                  -> Left err
 
                 Left ResultDone
-                 |  XRet xs'  <- x
-                 -> case stepFirst str ctx xs of
-                        Left r     -> Left r
-                        Right xs'' -> Right $ append xs xs''
+                 |  XRet xs1  <- x1
+                 -> Right $ append xs1 xs2
 
                  |  otherwise
-                 -> case stepFirst str ctx xs of
-                        Left  r   -> Left r
-                        Right xs' -> Right $ Cons x xs'
+                 -> case stepFirst str ctx xs2 of
+                        Left  r    -> Left r
+                        Right xs2' -> Right $ Cons x1  xs2'
 
-                Right x'          -> Right $ Cons x' xs
-
-
--------------------------------------------------------------------------------
--- | Step an application of a function abstraction to some arguments.
-stepAppAbs
-        (str:   StepStrength)           -- ^ Evaluation strength.
-        (ctx:   StepContext s p)        -- ^ Evaluation context.
-        (ns11:  List Name)              -- ^ Names of parameters.
-        (x12:   Exp s p)                -- ^ Body  of abstraction.
-        (xs2:   List (Exp s p))         -- ^ Arguments to abstraction.
-        (arity: Nat)                    -- ^ Length of parameters list.
-        (args:  Nat)                    -- ^ Length of arguments list.
-        :       Either Result (Exp s p)
-
- -- Saturated application.
- | args == arity
- = do   snv         = snvOfNamesArgs ns11 xs2
-        Right $ snvApply False snv x12
-
- -- Under application.
- | args < arity
- = do   ns11_sat    = take args ns11
-        ns11_remain = drop args ns11
-        snv         = snvOfNamesArgs ns11_sat xs2
-        Right $ snvApply False snv $ XAbs ns11_remain $ x12
-
- -- Over application.
- | otherwise
- = do   xs2_sat     = take arity xs2
-        xs2_remain  = drop arity xs2
-        snv         = snvOfNamesArgs ns11 xs2_sat
-        Right $ XApp  (snvApply False snv x12) (makeXRet xs2_remain)
+                Right x1'          -> Right $ Cons x1' xs2
 
 
 -------------------------------------------------------------------------------
@@ -289,3 +304,4 @@ stepPrim
         -- so leave the application as it is.
         evalArgs _ Nil xsArgsDone
          = Left ResultDone
+
