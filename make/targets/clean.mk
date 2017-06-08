@@ -22,6 +22,7 @@ clean  : clean-war clean-runtime
 		| xargs -n 1 rm -f
 
 	@rm -rf packages/*/dist
+	@rm -rf src/*/dist
 
 	@rm -f  doc/haddock/*
 	@rm -f  doc/haddock-core/*

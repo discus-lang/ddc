@@ -2,23 +2,23 @@
 
 # Find source files for ddc-main.
 ddc-main_packages = \
-        packages/ddc-core/DDC \
-	packages/ddc-core-babel/DDC \
-	packages/ddc-core-simpl/DDC \
-	packages/ddc-core-salt/DDC \
-	packages/ddc-core-llvm/DDC \
-	packages/ddc-core-flow/DDC \
-	packages/ddc-core-machine/DDC \
-	packages/ddc-core-tetra/DDC \
-	packages/ddc-core-smr/DDC \
-        packages/ddc-source-tetra/DDC \
-	packages/ddc-build/DDC \
+        src/s1/ddc-core/DDC \
+	src/s1/ddc-core-babel/DDC \
+	src/s1/ddc-core-simpl/DDC \
+	src/s1/ddc-core-salt/DDC \
+	src/s1/ddc-core-llvm/DDC \
+	src/s1/ddc-core-flow/DDC \
+	src/s1/ddc-core-machine/DDC \
+	src/s1/ddc-core-tetra/DDC \
+	src/s1/ddc-core-smr/DDC \
+        src/s1/ddc-source-tetra/DDC \
+	src/s1/ddc-build/DDC \
+	src/s1/ddc-driver/DDC \
 	packages/ddc-code/DDC \
-	packages/ddc-driver/DDC
 
 ddc-main_src_hs_all = \
-	$(shell find $(ddc-main_packages)            -name "*.hs" -follow) \
-	$(shell find packages/ddc-tools/src/ddc-main -name "*.hs" -follow)
+	$(shell find $(ddc-main_packages)          -name "*.hs" -follow) \
+	$(shell find src/s1/ddc-tools/src/ddc-main -name "*.hs" -follow)
 
 
 # Make dependencies.
@@ -33,24 +33,24 @@ make/deps/Makefile-ddc-main.deps : $(ddc-main_src_hs_all)
 
 
 # Build object files.
-packages/ddc-tools/src/ddc-main/%.o : packages/ddc-tools/src/ddc-main/%.hs
+src/s1/ddc-tools/src/ddc-main/%.o : src/s1/ddc-tools/src/ddc-main/%.hs
 	@echo "* Compiling $<"
 	@$(GHC) $(GHC_FLAGS) $(GHC_WARNINGS2) $(DDC_PACKAGES) $(GHC_INCDIRS) \
-		-c $< -ipackages/ddc-base \
-		      -ipackages/ddc-core \
-		      -ipackages/ddc-core-simpl \
-		      -ipackages/ddc-core-salt \
-		      -ipackages/ddc-core-llvm \
-		      -ipackages/ddc-core-flow \
-		      -ipackages/ddc-core-machine \
-		      -ipackages/ddc-core-tetra \
-		      -ipackages/ddc-core-smr \
-		      -ipackages/ddc-core-babel \
-                      -ipackages/ddc-source-tetra \
-		      -ipackages/ddc-build \
-		      -ipackages/ddc-driver \
+		-c $< -isrc/s1/ddc-base \
+		      -isrc/s1/ddc-core \
+		      -isrc/s1/ddc-core-simpl \
+		      -isrc/s1/ddc-core-salt \
+		      -isrc/s1/ddc-core-llvm \
+		      -isrc/s1/ddc-core-flow \
+		      -isrc/s1/ddc-core-machine \
+		      -isrc/s1/ddc-core-tetra \
+		      -isrc/s1/ddc-core-smr \
+		      -isrc/s1/ddc-core-babel \
+                      -isrc/s1/ddc-source-tetra \
+		      -isrc/s1/ddc-build \
+		      -isrc/s1/ddc-driver \
 		      -ipackages/ddc-code \
-		      -ipackages/ddc-tools/src/ddc-main
+		      -isrc/s1/ddc-tools/src/ddc-main
 
 # Link ddc execurable.
 ddc-main_obj = $(patsubst %.hs,%.o,$(ddc-main_src_hs_all))

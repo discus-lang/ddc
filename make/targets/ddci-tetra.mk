@@ -2,27 +2,27 @@
 
 # Find source files for ddci-tetra.
 ddci-tetra_packages = \
-	packages/ddc-core/DDC \
-	packages/ddc-core-babel/DDC \
-	packages/ddc-core-simpl/DDC \
-	packages/ddc-core-salt/DDC \
-	packages/ddc-core-llvm/DDC \
-	packages/ddc-core-tetra/DDC \
-	packages/ddc-core-smr/DDC \
-        packages/ddc-core-flow/DDC \
-        packages/ddc-core-machine/DDC \
-	packages/ddc-source-tetra/DDC \
-	packages/ddc-build/DDC \
+	src/s1/ddc-core/DDC \
+	src/s1/ddc-core-babel/DDC \
+	src/s1/ddc-core-simpl/DDC \
+	src/s1/ddc-core-salt/DDC \
+	src/s1/ddc-core-llvm/DDC \
+	src/s1/ddc-core-tetra/DDC \
+	src/s1/ddc-core-smr/DDC \
+        src/s1/ddc-core-flow/DDC \
+        src/s1/ddc-core-machine/DDC \
+	src/s1/ddc-source-tetra/DDC \
+	src/s1/ddc-build/DDC \
 	packages/ddc-code/DDC \
-	packages/ddc-driver/DDC \
-	packages/ddc-tools/src/ddci-tetra/DDCI 
+	src/s1/ddc-driver/DDC \
+	src/s1/ddc-tools/src/ddci-tetra/DDCI
 
 ddci-tetra_packages_root = \
 	$(patsubst %/DDC,%,$(patsubst %/DDCI,%,$(ddci-tetra_packages)))
 
 ddci-tetra_src_hs_all = \
 	$(shell find $(ddci-tetra_packages) -name "*.hs" -follow) \
-	packages/ddc-tools/src/ddci-tetra/Main.hs
+	src/s1/ddc-tools/src/ddci-tetra/Main.hs
 
 
 # Make dependencies.
@@ -37,24 +37,24 @@ make/deps/Makefile-ddci-tetra.deps : $(ddci-tetra_src_hs_all)
 
 
 # Build object files.
-packages/ddc-tools/src/ddci-tetra/%.o : packages/ddc-tools/src/ddci-tetra/%.hs
+src/s1/ddc-tools/src/ddci-tetra/%.o : src/s1/ddc-tools/src/ddci-tetra/%.hs
 	@echo "* Compiling $<"
 	@$(GHC) $(GHC_FLAGS) $(GHC_WARNINGS2) $(DDC_PACKAGES) $(GHC_INCDIRS) \
-		-c $< -ipackages/ddc-base \
-		      -ipackages/ddc-core \
-		      -ipackages/ddc-core-simpl \
-		      -ipackages/ddc-core-salt \
-		      -ipackages/ddc-core-llvm \
-		      -ipackages/ddc-core-flow \
-		      -ipackages/ddc-core-machine \
-		      -ipackages/ddc-core-tetra \
-		      -ipackages/ddc-core-smr \
-		      -ipackages/ddc-core-babel \
-		      -ipackages/ddc-source-tetra \
-		      -ipackages/ddc-build \
-		      -ipackages/ddc-driver \
+		-c $< -isrc/s1/ddc-base \
+		      -isrc/s1/ddc-core \
+		      -isrc/s1/ddc-core-simpl \
+		      -isrc/s1/ddc-core-salt \
+		      -isrc/s1/ddc-core-llvm \
+		      -isrc/s1/ddc-core-flow \
+		      -isrc/s1/ddc-core-machine \
+		      -isrc/s1/ddc-core-tetra \
+		      -isrc/s1/ddc-core-smr \
+		      -isrc/s1/ddc-core-babel \
+		      -isrc/s1/ddc-source-tetra \
+		      -isrc/s1/ddc-build \
+		      -isrc/s1/ddc-driver \
 		      -ipackages/ddc-code \
-		      -ipackages/ddc-tools/src/ddci-tetra
+		      -isrc/s1/ddc-tools/src/ddci-tetra
 
 
 # Link ddci-tetra executable.
@@ -69,7 +69,7 @@ bin/ddci-tetra : $(ddci-tetra_obj)
 ddci-tetra-ghci :
 	$(GHCI) $(patsubst -O2,,$(GHC_FLAGS)) $(GHC_VERSION_FLAGS) $(DDC_PACKAGES) \
 		$(patsubst %,-i%,$(ddci-tetra_packages_root)) \
-		packages/ddc-tools/src/ddci-tetra/Main.hs
+		src/s1/ddc-tools/src/ddci-tetra/Main.hs
 
 
 # Generate tags (identifier/location map for editors)
@@ -77,7 +77,7 @@ ddci-tetra-tags :
 	@echo "* Generating tags"
 	@$(GHC) $(patsubst -O2,,$(GHC_FLAGS)) $(GHC_VERSION_FLAGS) $(DDC_PACKAGES) \
 		$(patsubst %,-i%,$(ddci-tetra_packages_root)) \
-		packages/ddc-tools/src/ddci-tetra/Main.hs -e ':ctags'
-	@echo "* Copying into packages/"
-	@sed "s/packages\///" tags > packages/tags
+		src/s1/ddc-tools/src/ddci-tetra/Main.hs -e ':ctags'
+	@echo "* Copying into src/s1/"
+	@sed "s/src\/s1\///" tags > src/s1/tags
 
