@@ -3,13 +3,13 @@
 # -----------------------------------------------------------------------------
 # Runtime Core Salt sources.
 salt-runtime_dcs = \
-	$(shell find src/s1/ddc-code/salt/runtime        -name "*.dcs") \
-	$(shell find src/s1/ddc-code/salt/runtime${BITS} -name "*.dcs")
+	$(shell find src/s2/ddc-runtime/salt/runtime        -name "*.dcs") \
+	$(shell find src/s2/ddc-runtime/salt/runtime${BITS} -name "*.dcs")
 
 
 # Runtime C sources.
 salt-runtime_c   = \
-        $(shell find src/s1/ddc-code/sea/primitive       -name "*.c")
+        $(shell find src/s2/ddc-runtime/sea/primitive       -name "*.c")
 
 
 # Runtime object file outputs.
@@ -24,7 +24,7 @@ salt-runtime_o   = \
 #  We place a dependency on all the source files so it gets rebuilt
 #  if we touch any of them. The list of source files needs to match the
 #  ones backed into ddc.
-src/s1/ddc-code/build/libddc-runtime.a : \
+src/s2/ddc-runtime/build/libddc-runtime.a : \
  bin/ddc ${salt-runtime_c} ${salt-runtime_dcs}
 	@echo "* Building $@"
 	@bin/ddc -basebuild
@@ -33,8 +33,8 @@ src/s1/ddc-code/build/libddc-runtime.a : \
 # Dummy rule for the shared runtime.
 #  The ddc -basebuild command also creates this when generating the static
 #  runtime above, but we print the file path to console anyway.
-src/s1/ddc-code/build/libddc-runtime.$(SHARED_SUFFIX) : \
- src/s1/ddc-code/build/libddc-runtime.a
+src/s2/ddc-runtime/build/libddc-runtime.$(SHARED_SUFFIX) : \
+ src/s2/ddc-runtime/build/libddc-runtime.a
 	@echo "* Building $@"
 
 
@@ -43,13 +43,13 @@ src/s1/ddc-code/build/libddc-runtime.$(SHARED_SUFFIX) : \
 #   The shared runtime is only built if SHARED_SUFFIX is defined.
 .PHONY  : runtime
 runtime : $(runtime_dep) \
-                src/s1/ddc-code/build/libddc-runtime.a \
-                $(if $(SHARED_SUFFIX),src/s1/ddc-code/build/libddc-runtime.$(SHARED_SUFFIX),)
+                src/s2/ddc-runtime/build/libddc-runtime.a \
+                $(if $(SHARED_SUFFIX),src/s2/ddc-runtime/build/libddc-runtime.$(SHARED_SUFFIX),)
 
 
 # Clean objects in the runtime system
 .PHONY : clean-runtime
 clean-runtime :
 	@echo "* Cleaning runtime"
-	@rm -f src/s1/ddc-code/build/*
+	@rm -f src/s2/ddc-runtime/build/*
 

@@ -58,7 +58,7 @@ allWithConfig :
 	@$(MAKE) deps
 	@$(MAKE) bin/ddc bin/ddc-check bin/ddci-core bin/ddci-tetra \
 		 bin/war -j $(THREADS)
-	@$(MAKE) src/s1/ddc-code/build/libddc-runtime.a
+	@$(MAKE) src/s2/ddc-runtime/build/libddc-runtime.a
 
 
 # -- Build the compiler, libs, docs, and run all the tests in all ways (slow)
