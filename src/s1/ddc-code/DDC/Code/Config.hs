@@ -8,12 +8,12 @@ where
 
 -------------------------------------------------------------------------------
 -- When the compiler has been installed via 'cabal' install then we don't
--- have the full development source tree. 
+-- have the full development source tree.
 --
 -- In this case the ddc-code.cabal file defines the preprocessesor flag
 -- DDC_CABAL_INSTALLED, which tells us we can import the Cabal generated
 -- Paths_ddc_code module and ask it where its put our files.
--- 
+--
 #if defined(DDC_CABAL_INSTALLED)
 import System.FilePath
 import Paths_ddc_code           as Cabal
@@ -28,11 +28,11 @@ locateBaseLibrary
 
 -------------------------------------------------------------------------------
 -- When the compiler is built from the development source tree via make
--- this code is in "packages/ddc-code", and we need to run 'ddc' from the 
+-- this code is in "src/s1/ddc-code", and we need to run 'ddc' from the
 -- root of the source tree so it can find this path.
 #else
 locateBaseLibrary :: IO FilePath
-locateBaseLibrary 
-        = return "packages/ddc-code"
+locateBaseLibrary
+        = return "src/s1/ddc-code"
 #endif
 

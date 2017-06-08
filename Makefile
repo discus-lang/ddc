@@ -18,8 +18,8 @@
 #
 # (Running just the regression tests)
 #   (interactive versions)
-#   llvmwar		-- llvm backend only version of the 'war' target. 
-#   totalwar       	-- run tests in all possible ways. 
+#   llvmwar		-- llvm backend only version of the 'war' target.
+#   totalwar       	-- run tests in all possible ways.
 #
 #   (non-interactive versions)
 #   logwar         	-- same as above, logging failures to war.failed.
@@ -58,7 +58,7 @@ allWithConfig :
 	@$(MAKE) deps
 	@$(MAKE) bin/ddc bin/ddc-check bin/ddci-core bin/ddci-tetra \
 		 bin/war -j $(THREADS)
-	@$(MAKE) packages/ddc-code/build/libddc-runtime.a
+	@$(MAKE) src/s1/ddc-code/build/libddc-runtime.a
 
 
 # -- Build the compiler, libs, docs, and run all the tests in all ways (slow)

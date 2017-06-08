@@ -27,7 +27,7 @@ bin/war : $(war_obj)
 .PHONY 	: war
 war : allWithConfig
 	@echo "* Running tests -------------------------------------------------------------"
-	@bin/ddc -build packages/ddc-code/tetra/base/base.build
+	@bin/ddc -build src/s1/ddc-code/tetra/base/base.build
 	@bin/war demo test/ddc-main \
                 -j $(THREADS) \
                 -results        war.results \
@@ -46,7 +46,7 @@ test    : war
 .PHONY 	: llvmwar
 llvmwar : allWithConfig
 	@echo "* Running tests -------------------------------------------------------------"
-	@bin/ddc -build packages/ddc-code/tetra/base/base.build
+	@bin/ddc -build src/s1/ddc-code/tetra/base/base.build
 	@bin/war demo test/ddc-main \
                 -j $(THREADS) \
                 -results        war.results \
@@ -59,7 +59,7 @@ llvmwar : allWithConfig
 .PHONY  : totalwar
 totalwar : allWithConfig
 	@echo "* Running tests -------------------------------------------------------------"
-	@bin/ddc -build packages/ddc-code/tetra/base/base.build
+	@bin/ddc -build src/s1/ddc-code/tetra/base/base.build
 	@bin/war demo test/ddc-main \
                 -j $(THREADS) \
                 -results        war.results  \
@@ -74,7 +74,7 @@ totalwar : allWithConfig
 .PHONY  : batchwar
 batchwar : allWithConfig
 	@echo "* Running tests -------------------------------------------------------------"
-	@bin/ddc -build packages/ddc-code/tetra/base/base.build
+	@bin/ddc -build src/s1/ddc-code/tetra/base/base.build
 	@bin/war demo test/ddc-main \
                 -batch \
                 -j $(THREADS) \

@@ -14,7 +14,7 @@ ddc-main_packages = \
         src/s1/ddc-source-tetra/DDC \
 	src/s1/ddc-build/DDC \
 	src/s1/ddc-driver/DDC \
-	packages/ddc-code/DDC \
+	src/s1/ddc-code/DDC \
 
 ddc-main_src_hs_all = \
 	$(shell find $(ddc-main_packages)          -name "*.hs" -follow) \
@@ -49,7 +49,7 @@ src/s1/ddc-tools/src/ddc-main/%.o : src/s1/ddc-tools/src/ddc-main/%.hs
                       -isrc/s1/ddc-source-tetra \
 		      -isrc/s1/ddc-build \
 		      -isrc/s1/ddc-driver \
-		      -ipackages/ddc-code \
+		      -isrc/s1/ddc-code \
 		      -isrc/s1/ddc-tools/src/ddc-main
 
 # Link ddc execurable.

@@ -168,7 +168,7 @@ src/s1/ddc-driver/%.o : src/s1/ddc-driver/%.hs
 		      -isrc/s1/ddc-build \
 		      -isrc/s1/ddc-driver
 
-packages/ddc-code/%.o : packages/ddc-code/%.hs
+src/s1/ddc-code/%.o : src/s1/ddc-code/%.hs
 	@echo "* Compiling $<"
 	@$(GHC) $(GHC_FLAGS) $(GHC_WARNINGS2) $(DDC_PACKAGES) $(GHC_INCDIRS) \
 		-c $<

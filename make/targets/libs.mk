@@ -3,7 +3,7 @@
 .PHONY : clean-libs
 clean-libs :
 	@echo "* Cleaning libs"
-	@find packages/ddc-code \
+	@find src/s1/ddc-code \
 		   -name "*.di" \
 		-o -name "*.o" \
 		-follow \
@@ -11,4 +11,4 @@ clean-libs :
 
 .PHONY : libs
 libs: bin/ddc
-	@bin/ddc -build packages/ddc-code/tetra/base/base.build
+	@bin/ddc -build src/s1/ddc-code/tetra/base/base.build
