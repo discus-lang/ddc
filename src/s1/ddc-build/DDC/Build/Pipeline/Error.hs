@@ -1,6 +1,6 @@
 
 module DDC.Build.Pipeline.Error
-        (Error (..)) 
+        (Error (..))
 where
 import DDC.Data.Pretty
 import DDC.Data.SourcePos

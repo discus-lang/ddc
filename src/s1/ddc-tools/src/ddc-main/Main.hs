@@ -96,9 +96,9 @@ run config
          -> do  dconfig <- getDriverConfig config (Just filePath)
                 store   <- Store.new
                 result  <- runExceptT $  cmdCheckFromFile dconfig store filePath
-                
+
                 case result of
-                 Left err        
+                 Left err
                   -> do putStrLn err
                         exitWith $ ExitFailure 1
 
@@ -110,7 +110,7 @@ run config
          -> do  dconfig <- getDriverConfig config (Just filePath)
                 store   <- Store.new
                 runError $ cmdLoadFromFile dconfig store
-                                (configTrans config) (configWith config) 
+                                (configTrans config) (configWith config)
                                 filePath
 
         -- Compile a module to object code.
@@ -118,7 +118,7 @@ run config
          -> do  forceBaseBuild config
                 dconfig <- getDriverConfig config (Just filePath)
                 store   <- Store.new
-                runError $ cmdCompileRecursive dconfig False store filePath 
+                runError $ cmdCompileRecursive dconfig False store filePath
 
         -- Compile a module into an executable.
         ModeMake filePath
@@ -176,7 +176,7 @@ run config
         ModeFlowLower filePath
          -> do  dconfig <- getDriverConfig config (Just filePath)
                 str     <- readFile filePath
-                runError 
+                runError
                  $ cmdFlowLower dconfig Flow.defaultConfigScalar
                         (SourceFile filePath) str
 
@@ -184,7 +184,7 @@ run config
         ModeFlowLowerKernel filePath
          -> do  dconfig <- getDriverConfig config (Just filePath)
                 str     <- readFile filePath
-                runError 
+                runError
                  $ cmdFlowLower dconfig Flow.defaultConfigKernel
                         (SourceFile filePath) str
 
@@ -192,8 +192,8 @@ run config
         ModeFlowLowerVector filePath
          -> do  dconfig <- getDriverConfig config (Just filePath)
                 str     <- readFile filePath
-                runError 
-                 $ cmdFlowLower dconfig Flow.defaultConfigVector 
+                runError
+                 $ cmdFlowLower dconfig Flow.defaultConfigVector
                         (SourceFile filePath) str
 
         -- Concretize rate type variables in a Disciple Core Flow program.
@@ -241,10 +241,10 @@ run config
 -- | Get the compile driver from the config.
 getDriverConfig :: Config -> Maybe FilePath -> IO Driver.Config
 getDriverConfig config mFilePath
- = do   
+ = do
         -- Determine the default builder config.
-        Just builder    
-                <- determineDefaultBuilder 
+        Just builder
+                <- determineDefaultBuilder
                 $  defaultBuilderConfig config
 
         -- Treat the directory holding a module to compile as a base
@@ -272,20 +272,20 @@ getDriverConfig config mFilePath
              , Driver.configSuppressHashImports   = False
              , Driver.configModuleBaseDirectories = moduleBaseDirs
              , Driver.configOutputFile            = configOutputFile config
-             , Driver.configOutputDir             = configOutputDir  config 
+             , Driver.configOutputDir             = configOutputDir  config
              , Driver.configKeepLlvmFiles         = configKeepLlvmFiles config
              , Driver.configKeepSeaFiles          = configKeepSeaFiles  config
-             , Driver.configKeepAsmFiles          = configKeepAsmFiles  config 
+             , Driver.configKeepAsmFiles          = configKeepAsmFiles  config
              , Driver.configTaintAvoidTypeChecks  = configTaintAvoidTypeChecks config
              , Driver.configRuntimeLinkStrategy   = configRuntimeLinkStrategy config }
-        
+
         -- We need to force -infer on because the inliner templates may not
         -- have full type annotations.
-        simplSalt <- getSimplSaltOfConfig config 
+        simplSalt <- getSimplSaltOfConfig config
                         dconfig { Driver.configInferTypes = True }
                         builder runtimeConfig mFilePath
 
-        return  $ dconfig        
+        return  $ dconfig
                 { Driver.configSimplSalt        = simplSalt }
 
 
@@ -294,7 +294,7 @@ runError :: ExceptT String IO a -> IO ()
 runError m
  = do   result  <- runExceptT m
         case result of
-         Left err       
+         Left err
           -> do hPutStrLn stderr err
                 exitWith $ ExitFailure 1
 
@@ -303,7 +303,7 @@ runError m
 
 
 -- | Force build of base library if it doesn't already exist.
--- 
+--
 --   Due to bugs in cabal-install 1.22 it can't be trusted to run the
 --   post-install hook that builds our base library. To work around this
 --   we check that it is built before running any command that might
@@ -311,12 +311,12 @@ runError m
 --
 forceBaseBuild :: Config -> IO ()
 forceBaseBuild config
- = do   
+ = do
         -- Check if the runtime library has already been built.
         -- If it hasn't then force a basebuild.
-        exist   <- System.doesFileExist 
-                $  configBaseDir config 
-                        System.</> "build" 
+        exist   <- System.doesFileExist
+                $  configBaseDir config
+                        System.</> "ddc-runtime" System.</> "build"
                         System.</> "libddc-runtime.a"
 
         when (not exist)

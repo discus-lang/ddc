@@ -24,14 +24,14 @@ cmdBuild config store filePath
  = do
         -- Search for modules in the base library as well as the same directory
         -- the build file is in.
-        let config'     
+        let config'
                 = config
                 { configModuleBaseDirectories
-                        =  List.nub 
+                        =  List.nub
                         $  configModuleBaseDirectories config
                         ++ [ FilePath.takeDirectory filePath
-                           , Builder.buildBaseSrcDir (configBuilder config) 
-                                FilePath.</> "tetra" FilePath.</> "base" ]
+                           , Builder.buildBaseSrcDir (configBuilder config)
+                                FilePath.</> "base" ]
                 }
 
         -- Parse the spec file.

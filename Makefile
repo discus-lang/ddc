@@ -104,15 +104,15 @@ nightly :
 # -- Real Targets -------------------------------------------------------------
 #    These don't recursively invoke make.
 #
+include make/targets/bin-ddc-check.mk
+include make/targets/bin-ddc-main.mk
+include make/targets/bin-ddci-core.mk
+include make/targets/bin-ddci-tetra.mk
 include make/targets/runtime.mk
 include make/targets/docs.mk
 include make/targets/war.mk
 include make/targets/tarball.mk
 include make/targets/clean.mk
-include make/targets/ddc-check.mk
-include make/targets/ddc-main.mk
-include make/targets/ddci-core.mk
-include make/targets/ddci-tetra.mk
 include make/targets/libs.mk
 include make/targets/helper.mk
 include make/targets/packages.mk

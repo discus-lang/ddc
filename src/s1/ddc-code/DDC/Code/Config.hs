@@ -28,11 +28,11 @@ locateBaseLibrary
 
 -------------------------------------------------------------------------------
 -- When the compiler is built from the development source tree via make
--- this code is in "src/s1/ddc-code", and we need to run 'ddc' from the
+-- this code is in "src/s2", and we need to run 'ddc' from the
 -- root of the source tree so it can find this path.
 #else
 locateBaseLibrary :: IO FilePath
 locateBaseLibrary
-        = return "src/s1/ddc-code"
+        = return "src/s2"
 #endif
 

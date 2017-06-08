@@ -1,5 +1,0 @@
-Error loading module
-  While parsing.
-    Parse error in "test/ddc-main/30-CoreTetra/11-Parser/T271-UnterminatedComment/Main.dct" (line 7, column 48)
-    Unexpected character "lexical error".
-    Expected an atomic type.

@@ -11,4 +11,4 @@ clean-libs :
 
 .PHONY : libs
 libs: bin/ddc
-	@bin/ddc -build src/s1/ddc-code/tetra/base/base.build
+	@bin/ddc -build src/s2/base/base.build

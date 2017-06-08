@@ -12,7 +12,7 @@ where
 import DDC.Build.Platform
 import DDC.Data.Pretty                          hiding ((</>))
 import Data.List
-import System.FilePath                         
+import System.FilePath
 import System.Exit                              hiding (die)
 import System.Process
 import qualified DDC.Core.Salt.Platform         as Llvm
@@ -23,7 +23,7 @@ data BuilderConfig
         = BuilderConfig
         { -- | Directory that holds the source for the runtime system
           --   and base library.
-          builderConfigBaseSrcDir       :: FilePath 
+          builderConfigBaseSrcDir       :: FilePath
 
           -- | Directory that holds the shared objects for the runtime
           --   system and base library.
@@ -34,8 +34,8 @@ data BuilderConfig
 
 
 -- | Builder information that we determine by interrogating the host platform.
---   This tells us what we need to know about the environment that we're 
---   building in, versions of software tools etc. This is separate 
+--   This tells us what we need to know about the environment that we're
+--   building in, versions of software tools etc. This is separate
 data BuilderHost
         = BuilderHost
         { builderHostLlvmVersion        :: String }
@@ -63,7 +63,7 @@ data Builder
 
           -- | Directory that holds the shared objects for the runtime
           --   system and base library.
-        , buildBaseLibDir       :: FilePath 
+        , buildBaseLibDir       :: FilePath
 
           -- | Invoke the C compiler
           --   to compile a .c file into a .o file.
@@ -74,14 +74,14 @@ data Builder
         , buildLlc              :: FilePath -> FilePath -> IO ()
 
           -- | Version string of the LLVM compiler suite we are using.
-        , buildLlvmVersion      :: String 
+        , buildLlvmVersion      :: String
 
           -- | Invoke the system assembler
           --   to assemble a .s file into a .o file.
         , buildAs               :: FilePath -> FilePath -> IO ()
 
           -- | Link an executable.
-        , buildLdExe            :: [FilePath] -> FilePath -> IO () 
+        , buildLdExe            :: [FilePath] -> FilePath -> IO ()
 
           -- | Link a static library.
         , buildLdLibStatic      :: [FilePath] -> FilePath -> IO ()
@@ -93,16 +93,16 @@ data Builder
 -- | The result of a build command.
 --
 --   We use these so that the called doesn't need to worry about
---   interpreting numeric exit codes. 
+--   interpreting numeric exit codes.
 data BuilderResult
         -- | Build command completed successfully.
         = BuilderSuccess
 
         -- | Build command was cancelled or killed by the user.
         --   eg by Control-C on the console.
-        | BuilderCanceled     
+        | BuilderCanceled
 
-        -- | Build command failed. 
+        -- | Build command failed.
         --   There is probably something wrong with the generated file.
         --   Unrecognised exit codes also result in this BuilderResult.
         | BuilderFailed
@@ -117,10 +117,10 @@ instance Show Builder where
 instance Pretty Builder where
  ppr builder
         = vcat
-        [ text "Builder Name : " <> text (builderName builder) 
+        [ text "Builder Name : " <> text (builderName builder)
         , empty
         , text "Host Platform"
-        , indent 1 $ ppr $ buildHost builder 
+        , indent 1 $ ppr $ buildHost builder
         , empty
         , text "Target Platform"
         , indent 1 $ ppr $ buildTarget builder
@@ -132,8 +132,8 @@ instance Pretty Builder where
 -- builders -------------------------------------------------------------------
 -- | All supported builders.
 --   The host and target platforms are the same.
--- 
---   Supported builders are: 
+--
+--   Supported builders are:
 --      @x86_32-darwin@, @x86_64-darwin@,
 --      @x86_32-linux@,  @x86_64-linux@,
 --      @x86_32-cygwin@,
@@ -152,7 +152,7 @@ builders config host
 -- | Determine the default builder based on the 'arch' and 'uname' commands.
 --   This assumes that the 'host' and 'target' platforms are the same.
 --
---   If we don't recognise the result of 'arch' or 'uname', or don't have 
+--   If we don't recognise the result of 'arch' or 'uname', or don't have
 --   a default builder config for this platform then `Nothing`.
 determineDefaultBuilder :: BuilderConfig -> IO (Maybe Builder)
 determineDefaultBuilder config
@@ -184,15 +184,15 @@ determineDefaultBuilder config
          _      -> return Nothing
 
 
--- | Determine the default builder host configuration, 
+-- | Determine the default builder host configuration,
 --   this the default set of build tools that we can see in the current path.
 determineDefaultBuilderHost :: IO (Maybe BuilderHost)
 determineDefaultBuilderHost
- = do   
+ = do
         -- Get the version of the LLVM suite in the current path.
         mStrLlvmVersion  <- determineHostLlvmVersion Nothing
         case mStrLlvmVersion of
-         Nothing 
+         Nothing
           -> return Nothing
 
          Just strLlvmVersion
@@ -202,8 +202,8 @@ determineDefaultBuilderHost
 
 -- x86_32-darwin ----------------------------------------------------------------
 builder_X8632_Darwin config host mVersion
- =      Builder 
-        { builderName           = "x86_32-darwin" 
+ =      Builder
+        { builderName           = "x86_32-darwin"
         , buildHost             = Platform ArchX86_32 (OsDarwin mVersion)
         , buildTarget           = Platform ArchX86_32 (OsDarwin mVersion)
         , buildSpec             = Llvm.platform32
@@ -211,7 +211,7 @@ builder_X8632_Darwin config host mVersion
         , buildBaseLibDir       = builderConfigBaseLibDir config
 
         , buildLlvmVersion      = builderHostLlvmVersion  host
-        , buildLlc    
+        , buildLlc
                 = \llFile sFile
                 -> doCmd "LLVM compiler"        [(2, BuilderCanceled)]
                 [ "opt -O3"
@@ -225,8 +225,8 @@ builder_X8632_Darwin config host mVersion
                 [ "cc -Werror -std=c99 -O3 -m32"
                 , "-c", cFile
                 , "-o", oFile
-                , "-I" ++ builderConfigBaseSrcDir config </> "sea/runtime"
-                , "-I" ++ builderConfigBaseSrcDir config </> "sea/primitive" ]
+                , "-I" ++ builderConfigBaseSrcDir config </> "ddc-runtime/sea/runtime"
+                , "-I" ++ builderConfigBaseSrcDir config </> "ddc-runtime/sea/primitive" ]
 
         , buildAs
                 = \sFile oFile
@@ -249,10 +249,11 @@ builder_X8632_Darwin config host mVersion
         , buildLdExe
                 = \oFiles binFile
                 -> doCmd "linker"               [(2, BuilderCanceled)]
-                [ "cc -m32 -Wl,-dead_strip" 
+                [ "cc -m32 -Wl,-dead_strip"
                 , "-o", binFile
                 , intercalate " " oFiles
                 , builderConfigBaseLibDir config
+                        </> "ddc-runtime" </> "build"
                         </> builderConfigLibFile config
                                 "libddc-runtime.a"
                                 "libddc-runtime.dylib" ]
@@ -260,7 +261,7 @@ builder_X8632_Darwin config host mVersion
         , buildLdLibStatic
                 = \oFiles libFile
                 -> doCmd "linker"               [(2, BuilderCanceled)]
-                $ ["ar r", libFile] ++ oFiles 
+                $ ["ar r", libFile] ++ oFiles
 
         , buildLdLibShared
                 = \oFiles libFile
@@ -280,7 +281,7 @@ builder_X8664_Darwin config host mVersion
         , buildBaseLibDir       = builderConfigBaseLibDir config
 
         , buildLlvmVersion      = builderHostLlvmVersion  host
-        , buildLlc    
+        , buildLlc
                 = \llFile sFile
                 -> doCmd "LLVM compiler"        [(2, BuilderCanceled)]
                 [ "opt -O3"
@@ -294,8 +295,8 @@ builder_X8664_Darwin config host mVersion
                 [ "cc -Werror -std=c99 -O3 -m64"
                 , "-c", cFile
                 , "-o", oFile
-                , "-I" ++ builderConfigBaseSrcDir config </> "sea/runtime"
-                , "-I" ++ builderConfigBaseSrcDir config </> "sea/primitive" ]
+                , "-I" ++ builderConfigBaseSrcDir config </> "ddc-runtime/sea/runtime"
+                , "-I" ++ builderConfigBaseSrcDir config </> "ddc-runtime/sea/primitive" ]
 
         , buildAs
                 = \sFile oFile
@@ -315,21 +316,22 @@ builder_X8664_Darwin config host mVersion
                 , "-o", oFile
                 ,       sFile ]
 
-        , buildLdExe  
+        , buildLdExe
                 = \oFiles binFile
                 -> doCmd "linker"               [(2, BuilderCanceled)]
-                [ "cc -m64 -Wl,-dead_strip" 
+                [ "cc -m64 -Wl,-dead_strip"
                 , "-o", binFile
                 , intercalate " " oFiles
-                , builderConfigBaseLibDir config 
-                        </> builderConfigLibFile config 
+                , builderConfigBaseLibDir config
+                        </> "ddc-runtime" </> "build"
+                        </> builderConfigLibFile config
                                 "libddc-runtime.a"
                                 "libddc-runtime.dylib" ]
 
         , buildLdLibStatic
                 = \oFiles libFile
                 -> doCmd "linker"               [(2, BuilderCanceled)]
-                $ ["ar r", libFile] ++ oFiles 
+                $ ["ar r", libFile] ++ oFiles
 
         , buildLdLibShared
                 = \oFiles libFile
@@ -350,11 +352,11 @@ builder_X8632_Linux config host
         , buildBaseLibDir       = builderConfigBaseLibDir config
 
         , buildLlvmVersion      = builderHostLlvmVersion  host
-        , buildLlc    
+        , buildLlc
                 = \llFile sFile
                 -> doCmd "LLVM compiler"        [(2, BuilderCanceled)]
-                [ "llc -O3 -march=x86 -relocation-model=pic" 
-                ,       llFile 
+                [ "llc -O3 -march=x86 -relocation-model=pic"
+                ,       llFile
                 , "-o", sFile ]
 
         , buildCC
@@ -363,24 +365,25 @@ builder_X8632_Linux config host
                 [ "gcc -Werror -Wextra -pedantic -std=c99 -O3 -m32 -fPIC"
                 , "-c", cFile
                 , "-o", oFile
-                , "-I" ++ builderConfigBaseSrcDir config </> "sea/runtime"
-                , "-I" ++ builderConfigBaseSrcDir config </> "sea/primitive" ]
+                , "-I" ++ builderConfigBaseSrcDir config </> "ddc-runtime/sea/runtime"
+                , "-I" ++ builderConfigBaseSrcDir config </> "ddc-runtime/sea/primitive" ]
 
 
         , buildAs
                 = \sFile oFile
                 -> doCmd "assembler"            [(2, BuilderCanceled)]
-                [ "as --32"  
+                [ "as --32"
                 , "-o", oFile
                 ,       sFile ]
 
-        , buildLdExe  
+        , buildLdExe
                 = \oFiles binFile
                 -> doCmd "linker"               [(2, BuilderCanceled)]
-                [ "gcc -m32" 
+                [ "gcc -m32"
                 , "-o", binFile
                 , intercalate " " oFiles
-                , builderConfigBaseLibDir config 
+                , builderConfigBaseLibDir config
+                        </> "ddc-runtime" </> "build"
                         </> builderConfigLibFile config
                                 "libddc-runtime.a"
                                 "libddc-runtime.so" ]
@@ -388,7 +391,7 @@ builder_X8632_Linux config host
         , buildLdLibStatic
                 = \oFiles libFile
                 -> doCmd "linker"               [(2, BuilderCanceled)]
-                $ ["ar r", libFile] ++ oFiles 
+                $ ["ar r", libFile] ++ oFiles
 
         , buildLdLibShared
                 = \oFiles libFile
@@ -408,11 +411,11 @@ builder_X8664_Linux config host
         , buildBaseLibDir       = builderConfigBaseLibDir config
 
         , buildLlvmVersion      = builderHostLlvmVersion  host
-        , buildLlc    
+        , buildLlc
                 = \llFile sFile
                 -> doCmd "LLVM compiler"        [(2, BuilderCanceled)]
-                [ "llc -O3 -march=x86-64 -relocation-model=pic" 
-                , llFile 
+                [ "llc -O3 -march=x86-64 -relocation-model=pic"
+                , llFile
                 , "-o", sFile ]
 
         , buildCC
@@ -421,24 +424,25 @@ builder_X8664_Linux config host
                 [ "gcc -Werror -std=c99 -O3 -m64 -fPIC"
                 , "-c", cFile
                 , "-o", oFile
-                , "-I" ++ builderConfigBaseSrcDir config </> "sea/runtime"
-                , "-I" ++ builderConfigBaseSrcDir config </> "sea/primitive" ]
+                , "-I" ++ builderConfigBaseSrcDir config </> "ddc-runtime/sea/runtime"
+                , "-I" ++ builderConfigBaseSrcDir config </> "ddc-runtime/sea/primitive" ]
 
 
         , buildAs
                 = \sFile oFile
                 -> doCmd "assembler"            [(2, BuilderCanceled)]
-                [ "as --64"  
+                [ "as --64"
                 , "-o", oFile
-                , sFile ] 
+                , sFile ]
 
-        , buildLdExe  
+        , buildLdExe
                 = \oFiles binFile
                 -> doCmd "linker"               [(2, BuilderCanceled)]
                 [ "gcc -m64"
                 , "-o", binFile
                 , intercalate " " oFiles
                 , builderConfigBaseLibDir config
+                        </> "ddc-runtime" </> "build"
                         </> builderConfigLibFile config
                                 "libddc-runtime.a"
                                 "libddc-runtime.so" ]
@@ -446,7 +450,7 @@ builder_X8664_Linux config host
         , buildLdLibStatic
                 = \oFiles libFile
                 -> doCmd "linker"               [(2, BuilderCanceled)]
-                $ ["ar r", libFile] ++ oFiles 
+                $ ["ar r", libFile] ++ oFiles
 
         , buildLdLibShared
                 = \oFiles libFile
@@ -466,11 +470,11 @@ builder_PPC32_Linux config host
         , buildBaseLibDir       = builderConfigBaseLibDir config
 
         , buildLlvmVersion      = builderHostLlvmVersion  host
-        , buildLlc    
+        , buildLlc
                 = \llFile sFile
                 -> doCmd "LLVM compiler"        [(2, BuilderCanceled)]
-                [ "llc -O3 -march=ppc32 -relocation-model=pic" 
-                , llFile 
+                [ "llc -O3 -march=ppc32 -relocation-model=pic"
+                , llFile
                 , "-o", sFile ]
 
         , buildCC
@@ -479,8 +483,8 @@ builder_PPC32_Linux config host
                 [ "gcc -Werror -std=c99 -O3 -m32"
                 , "-c", cFile
                 , "-o", oFile
-                , "-I" ++ builderConfigBaseSrcDir config </> "sea/runtime"
-                , "-I" ++ builderConfigBaseSrcDir config </> "sea/primitive" ]
+                , "-I" ++ builderConfigBaseSrcDir config </> "ddc-runtime/sea/runtime"
+                , "-I" ++ builderConfigBaseSrcDir config </> "ddc-runtime/sea/primitive" ]
 
         , buildAs
                 = \sFile oFile
@@ -489,13 +493,14 @@ builder_PPC32_Linux config host
                 , "-o", oFile
                 , sFile ]
 
-        , buildLdExe  
+        , buildLdExe
                 = \oFiles binFile
                 -> doCmd "linker"               [(2, BuilderCanceled)]
-                [ "gcc -m32" 
+                [ "gcc -m32"
                 , "-o", binFile
                 , intercalate " " $ map normalise oFiles
                 , builderConfigBaseLibDir config
+                        </> "ddc-runtime" </> "build"
                         </> builderConfigLibFile config
                                 "libddc-runtime.a"
                                 "libddc-runtime.so" ]
@@ -503,7 +508,7 @@ builder_PPC32_Linux config host
         , buildLdLibStatic
                 = \oFiles libFile
                 -> doCmd "linker"               [(2, BuilderCanceled)]
-                $ ["ar r", libFile] ++ oFiles 
+                $ ["ar r", libFile] ++ oFiles
 
         , buildLdLibShared
                 = \oFiles libFile
@@ -523,10 +528,10 @@ builder_X8632_Cygwin config host
         , buildBaseLibDir       = builderConfigBaseLibDir config
 
         , buildLlvmVersion      = builderHostLlvmVersion  host
-        , buildLlc    
+        , buildLlc
                 = \llFile sFile
                 -> doCmd "LLVM compiler"        [(2, BuilderCanceled)]
-                [ "llc -O3 -march=x86 " 
+                [ "llc -O3 -march=x86 "
                 , normalise llFile
                 , "-o", normalise sFile ]
 
@@ -536,8 +541,8 @@ builder_X8632_Cygwin config host
                 [ "gcc-4 -Werror -std=c99 -O3 -m32"
                 , "-c", cFile
                 , "-o", oFile
-                , "-I" ++ builderConfigBaseSrcDir config </> "sea/runtime"
-                , "-I" ++ builderConfigBaseSrcDir config </> "sea/primitive" ]
+                , "-I" ++ builderConfigBaseSrcDir config </> "ddc-runtime/sea/runtime"
+                , "-I" ++ builderConfigBaseSrcDir config </> "ddc-runtime/sea/primitive" ]
 
         , buildAs
                 = \sFile oFile
@@ -548,20 +553,21 @@ builder_X8632_Cygwin config host
 
     -- Note on Cygwin we need to use 'gcc-4' explicitly because plain 'gcc'
     -- is a symlink, which Windows doesn't really support.
-        , buildLdExe  
+        , buildLdExe
                 = \oFiles binFile
                 -> doCmd "linker"               [(2, BuilderCanceled)]
-                [ "gcc-4 -m32" 
+                [ "gcc-4 -m32"
                 , "-o", normalise binFile
                 , intercalate " " $ map normalise oFiles
                 , normalise $ builderConfigBaseLibDir config
-                        </> "libddc-runtime.a" ] 
+                        </> "ddc-runtime" </> "build"
+                        </> "libddc-runtime.a" ]
                         -- configRuntimeLinkStrategy is ignored
 
         , buildLdLibStatic
                 = \oFiles libFile
                 -> doCmd "linker"               [(2, BuilderCanceled)]
-                $ ["ar r", libFile] ++ oFiles 
+                $ ["ar r", libFile] ++ oFiles
 
         , buildLdLibShared
                 = \oFiles libFile
@@ -581,10 +587,10 @@ builder_X8632_Mingw config host
         , buildBaseLibDir       = builderConfigBaseLibDir config
 
         , buildLlvmVersion      = builderHostLlvmVersion  host
-        , buildLlc    
+        , buildLlc
                 = \llFile sFile
                 -> doCmd "LLVM compiler"        [(2, BuilderCanceled)]
-                [ "llc -O3 -march=x86 " 
+                [ "llc -O3 -march=x86 "
                 , normalise llFile
                 , "-o", normalise sFile ]
 
@@ -594,8 +600,8 @@ builder_X8632_Mingw config host
                 [ "gcc -Werror -std=c99 -O3 -m32"
                 , "-c", cFile
                 , "-o", oFile
-                , "-I" ++ builderConfigBaseSrcDir config </> "sea/runtime"
-                , "-I" ++ builderConfigBaseSrcDir config </> "sea/primitive" ]
+                , "-I" ++ builderConfigBaseSrcDir config </> "ddc-runtime/sea/runtime"
+                , "-I" ++ builderConfigBaseSrcDir config </> "ddc-runtime/sea/primitive" ]
 
         , buildAs
                 = \sFile oFile
@@ -604,20 +610,21 @@ builder_X8632_Mingw config host
                 , "-o", normalise oFile
                 , normalise sFile ]
 
-        , buildLdExe  
+        , buildLdExe
                 = \oFiles binFile
                 -> doCmd "linker"               [(2, BuilderCanceled)]
-                [ "gcc -m32" 
+                [ "gcc -m32"
                 , "-o", normalise binFile
                 , intercalate " " $ map normalise oFiles
-                , normalise $ builderConfigBaseLibDir config 
-                        </> "libddc-runtime.a" ] 
+                , normalise $ builderConfigBaseLibDir config
+                        </> "ddc-runtime" </> "build"
+                        </> "libddc-runtime.a" ]
                         -- configRuntimeLinkStrategy is ignored
 
         , buildLdLibStatic
                 = \oFiles libFile
                 -> doCmd "linker"               [(2, BuilderCanceled)]
-                $ ["ar r", libFile] ++ oFiles 
+                $ ["ar r", libFile] ++ oFiles
 
         , buildLdLibShared
                 = \oFiles libFile
@@ -634,10 +641,10 @@ doCmd   :: String                       -- ^ Description of tool being invoked.
         -> IO ()
 
 doCmd thing exitCodeMeanings cmdParts
- = do   
+ = do
         code <- system cmd
         case code of
-         ExitSuccess    
+         ExitSuccess
           -> return ()
 
          ExitFailure c

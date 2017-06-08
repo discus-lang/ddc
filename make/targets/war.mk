@@ -27,8 +27,8 @@ bin/war : $(war_obj)
 .PHONY 	: war
 war : allWithConfig
 	@echo "* Running tests -------------------------------------------------------------"
-	@bin/ddc -build src/s1/ddc-code/tetra/base/base.build
-	@bin/war demo test/ddc-main \
+	@bin/ddc -build src/s2/base/base.build
+	@bin/war test/ddc-demo test/ddc-regress \
                 -j $(THREADS) \
                 -results        war.results \
                 -results-failed war.failed \
@@ -46,8 +46,8 @@ test    : war
 .PHONY 	: llvmwar
 llvmwar : allWithConfig
 	@echo "* Running tests -------------------------------------------------------------"
-	@bin/ddc -build src/s1/ddc-code/tetra/base/base.build
-	@bin/war demo test/ddc-main \
+	@bin/ddc -build src/s2/base/base.build
+	@bin/war test/ddc-demo test/ddc-regress \
                 -j $(THREADS) \
                 -results        war.results \
                 -results-failed war.failed \
@@ -59,8 +59,8 @@ llvmwar : allWithConfig
 .PHONY  : totalwar
 totalwar : allWithConfig
 	@echo "* Running tests -------------------------------------------------------------"
-	@bin/ddc -build src/s1/ddc-code/tetra/base/base.build
-	@bin/war demo test/ddc-main \
+	@bin/ddc -build src/s2/base/base.build
+	@bin/war test/ddc-demo test/ddc-regress \
                 -j $(THREADS) \
                 -results        war.results  \
                 -results-failed war.failed   \
@@ -74,8 +74,8 @@ totalwar : allWithConfig
 .PHONY  : batchwar
 batchwar : allWithConfig
 	@echo "* Running tests -------------------------------------------------------------"
-	@bin/ddc -build src/s1/ddc-code/tetra/base/base.build
-	@bin/war demo test/ddc-main \
+	@bin/ddc -build src/s2/base/base.build
+	@bin/war test/ddc-demo test/ddc-regress \
                 -batch \
                 -j $(THREADS) \
                 -results        war.results  \

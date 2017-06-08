@@ -13,7 +13,6 @@ module DDC.Main.Config
 where
 import DDC.Code.Config
 import DDC.Build.Builder
-import System.FilePath
 import qualified DDC.Driver.Stage               as D
 
 
@@ -30,7 +29,7 @@ data Mode
 
         -- | Scan a module, producing tokens.
         --   The flag says whether to produce source locations.
-        | ModeScan      FilePath Bool 
+        | ModeScan      FilePath Bool
 
         -- | Parse a module.
         | ModeParse     FilePath
@@ -116,7 +115,7 @@ data OptLevel
 data Config
         = Config
         { -- | The main compilation mode.
-          configMode            :: Mode 
+          configMode            :: Mode
 
           -- Language -----------------
           -- | Infer type annotations for Disciple Core files.
@@ -130,7 +129,7 @@ data Config
         , configOutputFile      :: Maybe FilePath
 
           -- | Redirect output to this directory.
-        , configOutputDir       :: Maybe FilePath 
+        , configOutputDir       :: Maybe FilePath
 
           -- | What backend to use for compilation
         , configViaBackend      :: D.ViaBackend
@@ -165,7 +164,7 @@ data Config
 
           -- Debugging -----------------
           -- | Dump intermediate representations.
-        , configDump            :: Bool 
+        , configDump            :: Bool
 
           -- Taints --------------------
           -- | Disable type checking where possible.
@@ -179,8 +178,8 @@ getDefaultConfig
  = do   baseDir <- locateBaseLibrary
 
         return $ Config
-          { configMode                  = ModeNone 
- 
+          { configMode                  = ModeNone
+
             -- Language -----------------
           , configInferTypes            = True
 
@@ -189,26 +188,26 @@ getDefaultConfig
           , configOutputFile            = Nothing
           , configOutputDir             = Nothing
           , configViaBackend            = D.ViaLLVM
- 
+
             -- Optimisation -------------
           , configOptLevelSalt          = OptLevel0
           , configWithSalt              = []
- 
+
             -- Runtime ------------------
           , configRuntimeHeapSize       = 64 * 1024
           , configRuntimeLinkStrategy   = D.LinkDefault
- 
+
             -- Intermediates ------------
           , configKeepLlvmFiles         = False
           , configKeepSeaFiles          = False
           , configKeepAsmFiles          = False
- 
+
             -- Transformation -----------
           , configTrans                 = Nothing
           , configWith                  = []
- 
+
             -- Debugging ----------------
-          , configDump                  = False 
+          , configDump                  = False
 
             -- Taints -------------------
           , configTaintAvoidTypeChecks  = False }
@@ -218,12 +217,12 @@ getDefaultConfig
 defaultBuilderConfig :: Config -> BuilderConfig
 defaultBuilderConfig config
         = BuilderConfig
-        { builderConfigBaseSrcDir = configBaseDir config 
-        , builderConfigBaseLibDir = configBaseDir config </> "build"
-        , builderConfigLibFile    
-           =  \static dynamic 
-           -> if configRuntimeLinkStrategy config == D.LinkStatic 
-                        then static 
+        { builderConfigBaseSrcDir = configBaseDir config
+        , builderConfigBaseLibDir = configBaseDir config
+        , builderConfigLibFile
+           =  \static dynamic
+           -> if configRuntimeLinkStrategy config == D.LinkStatic
+                        then static
                         else dynamic }
 
 

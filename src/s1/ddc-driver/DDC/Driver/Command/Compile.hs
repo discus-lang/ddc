@@ -81,7 +81,7 @@ cmdCompileRecursiveDS _config _bBuildExe _store []           _fsBlocked
  = return ()
 
 cmdCompileRecursiveDS  config  bBuildExe  store (filePath:fs) fsBlocked
- = do   
+ = do
 --        liftIO $ putStrLn "\n\n* ENTER"
 --        liftIO  $ putStr $ unlines
 --                [ "File            = " ++ show filePath
@@ -104,7 +104,7 @@ cmdCompileRecursiveDS  config  bBuildExe  store (filePath:fs) fsBlocked
         modsNamesHave   <- liftIO $ Store.getModuleNames store
 
         -- Names of modules that we are missing interfaces for.
-        let missing     = filter (\m -> not $ elem m modsNamesHave) 
+        let missing     = filter (\m -> not $ elem m modsNamesHave)
                         $ modNamesNeeded
 
 --        liftIO  $ putStr $ unlines
@@ -127,7 +127,7 @@ cmdCompileRecursiveDS  config  bBuildExe  store (filePath:fs) fsBlocked
                 -- Determine filepaths for all dependent modules.
                 fsMore  <- mapM (locateModuleFromConfig config) ms
 
-                -- Check that we're not on a recursive loop, 
+                -- Check that we're not on a recursive loop,
                 -- trying to compile a module that's importing itself.
                 let fsRec = List.intersect fsMore fsBlocked
                 when (not $ null fsRec)
@@ -135,10 +135,10 @@ cmdCompileRecursiveDS  config  bBuildExe  store (filePath:fs) fsBlocked
                  $  [ "Cannot build recursive module" ]
                  ++ [ "    " ++ show fsRec ]
 
-                -- Shift the current module to the end of the queue, 
+                -- Shift the current module to the end of the queue,
                 -- compiling the dependent modules first.
-                cmdCompileRecursiveDS config bBuildExe store 
-                        (List.nub $ fsMore ++ fs ++ [filePath]) 
+                cmdCompileRecursiveDS config bBuildExe store
+                        (List.nub $ fsMore ++ fs ++ [filePath])
                         (filePath : fsBlocked)
 
 
@@ -175,22 +175,22 @@ cmdLoadOrCompile config buildExe store filePath
         -- interface and object file. If we find it then we can reload it,
         -- otherwise we'll need to build the module from source again.
         let search (filePathO : filePathsMoreO)
-             = do  
+             = do
                    -- The .di file for the same module should be next to
                    -- any .o file for it.
                    let filePathDI = replaceExtension filePathO ".di"
 
                    -- Check if we have a fresh interface and object
                    -- at this path.
-                   fresh <- liftIO 
+                   fresh <- liftIO
                          $ interfaceIsFresh
                                 store timeDS modNamesNeeded filePathO
 
-                   -- If we indeed have a fresh interface and object 
-                   -- then we can load it directly. Otherwise search the rest 
+                   -- If we indeed have a fresh interface and object
+                   -- then we can load it directly. Otherwise search the rest
                    -- of the paths.
                    if fresh && not (takeFileName filePath == "Main.ds")
-                    then do 
+                    then do
 --                         liftIO  $ putStrLn "* Loading"
                          result  <- liftIO $ Store.load filePathDI
                          case result of
@@ -202,14 +202,14 @@ cmdLoadOrCompile config buildExe store filePath
             -- We're out of places to search for pre-existing interface
             -- files, so build it gain.
             search []
-             = do 
+             = do
 --                  liftIO  $ putStrLn "* Compiling"
                   cmdCompile config buildExe store filePath
 
         -- Check the config for where the interface might be.
         -- It'll either be next to the source file or in the auxilliary
         -- output directory if that was specified.
-        let (filePathO_output, filePathO_libs)   
+        let (filePathO_output, filePathO_libs)
                 =  objectPathsOfConfig config filePath
 
         -- Search all the likely places.
@@ -223,7 +223,7 @@ cmdLoadOrCompile config buildExe store filePath
 --  It's safe to reload the module from an inteface file if:
 --   1. There is an existing interface which is fresher than the source.
 --   2. There is an existing object    which is fresher than the source.
---   3. There is an existing interface which is fresher than the 
+--   3. There is an existing interface which is fresher than the
 --      interfaces of all dependencies.
 --
 --  Additionally, we force rebuild for the top level module, because
@@ -238,14 +238,14 @@ interfaceIsFresh
         -> IO Bool
 
 interfaceIsFresh store timeDS modNamesNeeded filePathO
- = do   
+ = do
         let filePathDI  =  replaceExtension filePathO ".di"
         mTimeO          <- liftIO $ getModificationTimeIfExists filePathO
         mTimeDI         <- liftIO $ getModificationTimeIfExists filePathDI
         meta'           <- liftIO $ Store.getMeta store
 
         -- object is fresher than source
-        let bFreshO     
+        let bFreshO
                 | Just timeO  <- mTimeO,  timeDS < timeO  = True
                 | otherwise                               = False
 
@@ -256,7 +256,7 @@ interfaceIsFresh store timeDS modNamesNeeded filePathO
 
         let bFreshDep
                 | Just timeDI <- mTimeDI
-                = and   [ Store.metaTimeStamp m <= timeDI 
+                = and   [ Store.metaTimeStamp m <= timeDI
                                 | m <- meta'
                                 , elem (Store.metaModuleName m) modNamesNeeded ]
 
@@ -275,7 +275,7 @@ interfaceIsFresh store timeDS modNamesNeeded filePathO
 --   * This produces an @.o@ file next to the source file, and may also
 --     produce a @.di@ interface, depending on what sort of source file
 --     we're compiling.
--- 
+--
 --   * If compilation produces an interface then it is added to the
 --     existing store.
 --
@@ -288,11 +288,11 @@ cmdCompile
 
 cmdCompile config bBuildExe' store filePath
  = withExceptT (P.renderIndent . P.vcat . map P.ppr)
- $ do   
+ $ do
         let bBuildExe
                 =  takeBaseName filePath == "Main" && bBuildExe'
 
-        if bBuildExe 
+        if bBuildExe
          then liftIO $ putStrLn $ "* Compiling " ++ filePath ++ " as executable"
          else liftIO $ putStrLn $ "* Compiling " ++ filePath
 
@@ -351,7 +351,7 @@ cmdCompile config bBuildExe' store filePath
                 =<< DA.saltLoadText config store source src
 
                 | Just modTetra <- mModTetra
-                = DE.tetraToSalt  config source  
+                = DE.tetraToSalt  config source
                 $ CReannotate.reannotate (const ()) modTetra
 
                 | otherwise
@@ -361,11 +361,11 @@ cmdCompile config bBuildExe' store filePath
 
 
         -- Convert Core Salt into object code.
-        let bSlotify 
+        let bSlotify
                 = case ext of
                         ".dcs"  -> False
                         _       -> True
-        
+
         (case configViaBackend config of
              ViaLLVM -> DA.saltCompileViaLlvm config source otherObjs
                                 bSlotify bBuildExe modSalt
@@ -382,7 +382,7 @@ cmdCompile config bBuildExe' store filePath
                 , interfaceFilePath     = pathDI
                 , interfaceTimeStamp    = timeDI
                 , interfaceModuleName   = C.moduleName modSalt
-                , interfaceTetraModule  = fmap (CReannotate.reannotate (const ())) mModTetra 
+                , interfaceTetraModule  = fmap (CReannotate.reannotate (const ())) mModTetra
                 , interfaceSaltModule   = Just modSalt  }
 
         liftIO  $ writeFile pathDI
@@ -397,19 +397,19 @@ cmdCompile config bBuildExe' store filePath
 ---------------------------------------------------------------------------------------------------
 -- Taste the header of the module to see what other modules it depends on.
 --  Only Source modules can import other modules.
---  For core modules, all the required information is listed explicitly 
+--  For core modules, all the required information is listed explicitly
 --  in the module itself.
 tasteNeeded
         :: FilePath             -- ^ Path of module.
         -> String               -- ^ Module source.
         -> ExceptT String IO [C.ModuleName]
 
-tasteNeeded filePath src 
+tasteNeeded filePath src
  | takeExtension filePath == ".ds"
- = do    
+ = do
         -- Lex the module, dropping all tokens after and including
         -- the first 'where', because we only need the module header.
-        let tokens 
+        let tokens
                 = dropBody
                 $ SE.lexModuleString filePath 1 src
 
@@ -417,8 +417,8 @@ tasteNeeded filePath src
                 C.describeToken
                 filePath SE.pModule tokens of
          Left  err  -> throwE $ P.renderIndent $ P.ppr err
-         Right mm   
-          -> do 
+         Right mm
+          -> do
                 -- Check that the module name matches the file path where
                 -- we found the module. If they don't match then the compilation
                 -- driver will go into a loop as it can never load a module
@@ -437,17 +437,16 @@ tasteNeeded filePath src
 
 ---------------------------------------------------------------------------------------------------
 -- | Given a driver config, locate the module with the given name.
-locateModuleFromConfig 
-        :: Config 
-        -> C.ModuleName 
+locateModuleFromConfig
+        :: Config
+        -> C.ModuleName
         -> ExceptT String IO FilePath
 
 locateModuleFromConfig config mname
  = do   -- Automatically look for modules in the base library.
-        let baseDirs 
+        let baseDirs
                 =  configModuleBaseDirectories config
-                ++ [Builder.buildBaseSrcDir (configBuilder config)
-                        </> "tetra" </> "base"]
+                ++ [Builder.buildBaseSrcDir (configBuilder config) </> "base"]
 
         Locate.locateModuleFromPaths baseDirs mname ".ds"
 
@@ -457,7 +456,7 @@ locateModuleFromConfig config mname
 getModificationTimeIfExists :: FilePath -> IO (Maybe UTCTime)
 getModificationTimeIfExists path
  = do   exists  <- doesFileExist path
-        if exists 
+        if exists
          then do
                 timeStamp <- getModificationTime path
                 return $ Just timeStamp
@@ -485,8 +484,8 @@ dropBody toks = go toks
 -- support file time stamps with sub-second accuracy, then the timestamps
 -- of the interface files we compile in this run will have more accuracy
 -- than the ones we load from the file system.
--- 
--- The problem with inaccurate timestamps is that if we compiled two 
+--
+-- The problem with inaccurate timestamps is that if we compiled two
 -- dependent modules within the same second, then both will have the
 -- same time-stamp and none is fresher than the other.
 --

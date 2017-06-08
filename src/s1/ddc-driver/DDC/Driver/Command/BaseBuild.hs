@@ -17,7 +17,7 @@ import DDC.Build.Interface.Store        (Store)
 baseSaltFiles :: Builder -> [FilePath]
 baseSaltFiles builder
  = let  bits    = show $ archPointerWidth $ platformArch $ buildTarget builder
-        runtime = "salt"  </> "runtime"
+        runtime = "ddc-runtime" </> "salt" </> "runtime"
    in   [ runtime         </> "Alloc.dcs"
         , runtime         </> "Collect.dcs"
         , runtime         </> "Init.dcs"
@@ -34,7 +34,7 @@ baseSaltFiles builder
 
 baseSeaFiles  :: Builder -> [FilePath]
 baseSeaFiles _builder
- =      ["sea"  </> "primitive" </> "Primitive.c"]
+ =      ["ddc-runtime" </> "sea"  </> "primitive" </> "Primitive.c"]
 
 
 -- Buid the base libraries and runtime system.
@@ -42,11 +42,12 @@ cmdBaseBuild :: Config  -> Store -> ExceptT String IO ()
 cmdBaseBuild config store
  = do   let builder     = configBuilder config
         let target      = buildTarget builder
-        
+
         -- Ensure the lib dir exists.
-        exists   <- liftIO $ doesDirectoryExist $ buildBaseLibDir builder
+        let dirBuild    = buildBaseLibDir builder </> "ddc-runtime" </> "build"
+        exists   <- liftIO $ doesDirectoryExist dirBuild
         when (not exists)
-         $ liftIO $ createDirectory $ buildBaseLibDir builder
+         $ liftIO $ createDirectory $ dirBuild
 
         -- Build all the .dcs files.
         let config'      = config { configInferTypes = True }
@@ -63,16 +64,16 @@ cmdBaseBuild config store
         let objFiles     = objSaltFiles ++ objSeaFiles
 
         -- Link the .o files into a static library.
-        let staticRuntime 
-                = buildBaseLibDir builder
+        let staticRuntime
+                =    dirBuild
                 </> "libddc-runtime." ++ staticFileExtensionOfPlatform target
 
         liftIO $ buildLdLibStatic builder objFiles staticRuntime
 
 
         -- Link the .o files into a shared library.
-        let sharedRuntime 
-                = buildBaseLibDir builder
+        let sharedRuntime
+                =    dirBuild
                 </> "libddc-runtime." ++ sharedFileExtensionOfPlatform target
 
         liftIO $ buildLdLibShared builder objFiles sharedRuntime
