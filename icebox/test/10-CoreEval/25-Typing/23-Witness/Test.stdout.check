@@ -1,8 +1,0 @@
--- Witness lambda with no computation lambda after it
-When checking expression.
-  <batch>:2:3
-  Impure Witness abstraction
-             has effect: Alloc r0#
-  
-  with: \(w : Mutable r0#). 0 [r0#] ()
-

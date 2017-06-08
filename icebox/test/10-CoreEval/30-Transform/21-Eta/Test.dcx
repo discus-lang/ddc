@@ -1,6 +1,0 @@
-
-:set lang Flow
-:set trans Eta
-
--- Identity function
-:trans add# [Int#]
