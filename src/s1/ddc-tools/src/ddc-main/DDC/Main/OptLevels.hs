@@ -1,6 +1,6 @@
 
 -- | Define the default optimisation levels.
-module DDC.Main.OptLevels 
+module DDC.Main.OptLevels
         ( getSimplSaltOfConfig)
 where
 import DDC.Main.Config
@@ -29,7 +29,7 @@ import qualified Data.Set                       as Set
 
 -- | Get the simplifier for Salt code from the config.
 --
-getSimplSaltOfConfig 
+getSimplSaltOfConfig
         :: Config  -> D.Config
         -> Builder
         -> Salt.Config
@@ -38,7 +38,7 @@ getSimplSaltOfConfig
 
 getSimplSaltOfConfig config dconfig builder runtimeConfig filePath
  = case configOptLevelSalt config of
-        OptLevel0       -> opt0_salt config 
+        OptLevel0       -> opt0_salt config
         OptLevel1       -> opt1_salt config dconfig builder runtimeConfig filePath
 
 
@@ -55,7 +55,7 @@ opt0_salt _
 -- Do full optimsiations.
 
 -- | Level 1 optimiser for Core Salt code.
-opt1_salt 
+opt1_salt
         :: Config -> D.Config
         -> Builder
         -> Salt.Config
@@ -63,21 +63,21 @@ opt1_salt
         -> IO (Simplifier Int () Salt.Name)
 
 opt1_salt config dconfig builder runtimeConfig filePath
- = do   
+ = do
         -- Auto-inline the low-level code from the runtime system
         --   that constructs and destructs objects.
         let targetWidth
                 = archPointerWidth $ platformArch $ buildTarget builder
 
-        -- The runtime system code comes in different versions, 
+        -- The runtime system code comes in different versions,
         --  depending on the pointer width of the target architecture.
         let inlineModulePaths
-                =  [ configBaseDir config 
-                        </> "salt/runtime" ++ show targetWidth </> "Object.dcs"]
+                =  [ configBaseDir config
+                        </> "ddc-runtime/salt/runtime" ++ show targetWidth </> "Object.dcs"]
                 ++ configWithSalt config
 
         -- Load all the modues that we're using for inliner templates.
-        --  If any of these don't load then the 'cmdReadModule' function 
+        --  If any of these don't load then the 'cmdReadModule' function
         --  will display the errors.
         minlineModules
                 <- liftM sequence
@@ -96,7 +96,7 @@ opt1_salt config dconfig builder runtimeConfig filePath
                 [ ( ModuleName ["Runtime", "Object"]
                   , InlineSpecNone (ModuleName ["Runtime", "Object"])
                         $ Set.fromList
-                        $ map Salt.NameVar 
+                        $ map Salt.NameVar
                         [ "funThunk", "paramsThunk", "boxesThunk", "argsThunk", "runThunk"
                         , "setThunk", "getThunk"
                         , "getBoxed", "setBoxed"
@@ -118,15 +118,15 @@ opt1_salt config dconfig builder runtimeConfig filePath
         -- Simplifier to convert to a-normal form.
         let normalizeSalt
                 = S.anormalize
-                        (makeNamifier Salt.freshT)      
+                        (makeNamifier Salt.freshT)
                         (makeNamifier Salt.freshX)
-        
+
         -- Perform rewrites before inlining
         return  $  (S.Trans $ S.Rewrite rules')
-                <> (S.Trans $ S.Inline 
+                <> (S.Trans $ S.Inline
                             $ lookupTemplateFromModules inlineSpec inlineModules)
-                <> S.Fix 5 (S.beta 
-                                <> S.bubble      <> S.flatten 
+                <> S.Fix 5 (S.beta
+                                <> S.bubble      <> S.flatten
                                 <> normalizeSalt <> S.forward
                                 <> (S.Trans $ S.Rewrite rules'))
 
