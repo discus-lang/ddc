@@ -11,7 +11,8 @@ makePrimOpsSmr (_ : Unit): List (PrimEval s Prim)
  = Cons primOpCombinate
  $ Nil
 
-
+-- TODO: don't require all the combs to be specified in the public interface,
+-- though can still have that config internally.
 primOpCombinate: PrimEval s Prim
  = PrimEval
         (PrimOp "smr-combinate-ski")

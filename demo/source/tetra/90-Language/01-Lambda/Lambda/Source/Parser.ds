@@ -16,36 +16,40 @@ where
 -- | Parse an expression from the given list of tokens.
 parseExp (ts: List Token): Maybe Exp
  = case parse pExp ts of
-        Nil               -> Nothing
-        Cons (T2 xx _) _  -> Just xx
+        ParseSkip _             -> Nothing
+        ParseReturn _ x         -> Just x
+        ParseFailure _          -> Nothing
+        ParseSuccess x _        -> Just x
 
 
 -- | Parse an expression.
-pExp : Parser Token Exp
- = alt  (bind   (satisfies (eqToken KLambda)) $ λ kLam  -> 
-         bind   (from takeKName)              $ λ n     ->
-         bind   (satisfies (eqToken KDot))    $ λ kDot  ->
-         bind   pExp                          $ λ xBody ->
-         return (XAbs emptySubst n xBody))
+pExp : Parser Token Unit Exp
+ = alt (do
+        kLam    <- satisfies () (eqToken KLambda)
+        n       <- from () takeKName
+        kDot    <- satisfies () (eqToken KDot)
+        xBody   <- pExp
+        return  $  XAbs emptySubst n xBody)
 
- $       pExpApp
+ $      pExpApp
 
 
 -- | Parse an application.
-pExpApp  : Parser Token Exp
- = do   (bind   pExpAtom                      $ λ xFun   ->
-         bind   (some pExpAtom)               $ λ xsArgs ->
-         return (makeXApps xFun xsArgs))
+pExpApp  : Parser Token Unit Exp
+ = do   xFun    <- pExpAtom
+        xsArgs  <- some pExpAtom
+        return  $ makeXApps xFun xsArgs
 
 
 -- | Parse an atomic expression.
-pExpAtom : Parser Token Exp
- = alt  (bind   (satisfies (eqToken KBra))    $ λ xBra   ->
-         bind   pExp                          $ λ xx     ->
-         bind   (satisfies (eqToken KKet))    $ λ xKet   ->
-         return xx)
+pExpAtom : Parser Token Unit Exp
+ = alt (do
+        xBra    <- satisfies () (eqToken KBra)
+        xx      <- pExp
+        xKet    <- satisfies () (eqToken KKet)
+        return  xx)
 
- $      (bind   (from takeKName)              $ λ n      ->
-         return (XVar n))
-
+ $     (do
+        n       <- from () takeKName
+        return  $ XVar n)
 

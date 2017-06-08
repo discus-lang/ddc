@@ -175,7 +175,7 @@ instance PrettyLanguage l => Pretty (GExp l) where
  pprPrec d xx
   = {-# SCC "ppr[Exp]" #-}
     case xx of
-        XAnnot _ x      -> text "{-}" <> pprPrec d x
+        XAnnot _ x      -> pprPrec d x
 
         XPrim p         -> ppr p
         XFrag u         -> ppr u
