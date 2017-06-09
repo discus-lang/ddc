@@ -50,22 +50,12 @@ declsOfState
 
 
 -- Utils ----------------------------------------------------------------------
--- TODO:
--- Shift this stuff somewhere else.
-show_Unit: Show Unit
- = Show   $ λxx -> "()"
-
-pretty_Text: Pretty Text
- = Pretty $ λxx -> xx
 
 -- TODO: need explicit run/box
 getLine: S Console Text
  = box do
         txt     = run readl 2014
         textOfCharList $ init Nil $ charListOfText txt
-
-show_Char: Show Char
- = Show textOfChar
 
 
 -------------------------------------------------------------------------------

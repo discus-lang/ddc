@@ -2,9 +2,8 @@
 module Class.Show
 export
 {       show;
-        show_Bool;
-        show_Nat;
-        show_Text;
+        show_Bool;      show_Nat;
+        show_Char;      show_Text;
         show_Tup2;
         show_Maybe;
         show_Either;
@@ -26,8 +25,13 @@ show {(Show sh): Show a} (x: a): Text
  = sh x
 
 
+
 -------------------------------------------------------------------------------
 -- Dictionaries for primitive types.
+
+-- | Show dictionary for Unit.
+show_Unit: Show Unit
+ = Show   $ λxx -> "()"
 
 -- | Show dictionary for Bool.
 show_Bool: Show Bool
@@ -37,6 +41,11 @@ show_Bool: Show Bool
 -- | Show dictionary for Nat.
 show_Nat: Show Nat
  = Show showNat
+
+
+-- | Show dictionary for Char.
+show_Char: Show Char
+ = Show textOfChar
 
 
 -- | Show dictionary for Text.
@@ -49,7 +58,7 @@ show_Text: Show Text
 -- | Show dictionary for Tup2.
 show_Tup2 {Show a} {Show b}: Show (Tup2 a b)
  = Show sh
- where  
+ where
         sh (T2 x y)     = parens $ "T2" %% show x %% show y
 
 
@@ -72,7 +81,7 @@ show_Either {Show a} {Show b}: Show (Either a b)
 -- | Show dictionary for List.
 show_List {Show a}: Show (List a)
  = Show sh
- where  
+ where
         sh Nil          = "Nil"
         sh (Cons x xs)  = parens $ "Cons" %% show x %% show xs
 

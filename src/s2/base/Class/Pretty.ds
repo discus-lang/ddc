@@ -15,8 +15,13 @@ ppr {(Pretty ppr'): Pretty a} (x: a): Text
  = ppr' x
 
 
--- | Pretty printer for a unit value.
+-- | Pretty printer for Unit values.
 pretty_Unit: Pretty Unit
  = Pretty $ \xx -> "()"
+
+
+-- | Pretty printer for Text values.
+pretty_Text: Pretty Text
+ = Pretty $ λxx -> xx
 
 
