@@ -3,6 +3,7 @@ module SMR.Prim.Op
 export  makePrimOps
 import SMR.Prim.Op.Bool
 import SMR.Prim.Op.Comb
+import SMR.Prim.Op.Eval
 import SMR.Prim.Op.List
 import SMR.Prim.Op.Match
 import SMR.Prim.Op.Nat
@@ -14,6 +15,7 @@ where
 makePrimOps {eqs: Eq s} (_: Unit): List (PrimEval s Prim)
  = append (makePrimOpsBool  ())
  $ append (makePrimOpsComb  ())
+ $ append (makePrimOpsEval  ())
  $ append (makePrimOpsList  ())
  $ append (makePrimOpsMatch {eqs} ())
  $ append (makePrimOpsNat   ())

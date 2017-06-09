@@ -1,5 +1,5 @@
 
 @main
- = #list-cons   (%smr-repl-eval $ ##box ((\x. x) #nat'5))
+ = #list-cons   (%smr-eval $ ##box ((\x. x) #nat'5))
  $ #list-nil;
 

@@ -154,11 +154,8 @@ stepAppPrim
         : Either Result (Exp s p)
  | StepContext esPrim _     <- ctx
  = case lookup prim esPrim of
-        Nothing
-         -> Left $ ResultError $ "Unknown primitive" %% show prim
-
-        Just primEval
-         -> stepPrim primEval xsArgs
+        Nothing         -> Left ResultDone
+        Just primEval   -> stepPrim primEval xsArgs
 
 
 -------------------------------------------------------------------------------
@@ -251,12 +248,8 @@ stepPrim
         -- We have more args than the primitive will accept.
         evalArgs Nil xsArgsRemain xsArgsDone
          = case eval (reverse xsArgsDone) of
-                Just xResult
-                 -> Right $ XApp xResult (makeXRet xsArgsRemain)
-
-                Nothing
-                 -> Left $ ResultError
-                         $ "Evaluation of primitive " %% show prim %% "failed."
+                Just xResult    -> Right $ XApp xResult (makeXRet xsArgsRemain)
+                Nothing         -> Left ResultDone
 
         -- Evaluate the next argument if neeeded.
         evalArgs (Cons cArg' csArg') (Cons xArg' xsArg') xsArgsDone
