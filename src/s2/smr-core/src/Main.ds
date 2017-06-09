@@ -12,8 +12,10 @@ import SMR.Source.Token
 import SMR.Source.Parser
 import System.IO.Console
 import System.IO.File
+import System.Posix.Stdlib
 import Main.Args
 import Data.Maybe
+import Data.Function
 import Data.Text.Location
 where
 
@@ -63,10 +65,8 @@ getLine: S Console Text
 main ()
  = do   writel "Shimmer, version 1.0. The Lambda Machine."
 
-        mSource
-         = mainArgs_load Nothing
-         $ Cons (ArgText "-i" "include file" (\s _ -> Just s))
-         $ Nil
+        modes           = smrReplArgs_load
+        tsInclude       = smrReplArgs_collectIncludes modes
 
         -- Build the table of primitive evaluators.
         primEvals
@@ -87,8 +87,7 @@ main ()
          $ primNames
 
         -- Build table of prim name to evaluator.
-        primTable
-         = zip primNames primEvals
+        primTable = zip primNames primEvals
 
         -- Build the parser config.
         config
@@ -96,18 +95,34 @@ main ()
                   (\z -> parsePrim primNamesText z)
                   lens_exp_location
 
-        case mSource of
-         Just (TextLit path)
-          -> case loadSource config path of
-                 Nothing    -> writel "load failed"
-                 Just decls -> repl (State config primTable decls) CmdNone
+        decls   = loadSources config tsInclude
+        state   = State config primTable decls
+        repl state CmdNone
 
-         Nothing
-          -> repl (State config primTable Nil) CmdNone
 
 lens_exp_location
         : Lens (Exp Name Prim) (Maybe (Location, Location))
  = lens_make (\xx -> Nothing) (\l xx -> xx)
+
+
+-- | Load source files.
+loadSources
+        (config: Config Name Prim)
+        (paths:  List Text)
+        :        S (File + Console + Process)
+                   (List (Decl Name Prim))
+ = case paths of
+        Nil     -> Nil
+        Cons (TextLit path) paths'
+         -> case loadSource config path of
+                Nothing
+                 -> do  writel "load failed"
+                        exit 0
+                        Nil
+
+                Just decls
+                 -> do  decls'  = loadSources config paths'
+                        append decls decls'
 
 
 -- | Load a list of top-level declarations from a source file.

@@ -1,0 +1,46 @@
+
+module SMR.Repl.Args
+export
+{       smrReplArgs_load;
+        smrReplArgs_collectIncludes
+}
+import Main.Args
+where
+
+
+-- | Command line arguments.
+data Mode where
+        -- | Include a file into the top level scope.
+        ModeInclude      : Text -> Mode
+
+        -- | Evaluate the given expression.
+        ModeEval         : Text -> Mode
+
+
+-- | Argument definitions.
+smrReplArgs_defs: List (Arg (List Mode))
+ = Cons ( ArgText "-i"    "include file"
+        $ \s as -> Cons (ModeInclude s) as)
+
+ $ Cons ( ArgText "-eval" "evaluate expression"
+        $ \s as -> Cons (ModeEval s)    as)
+ $ Nil
+
+
+-- | Load Shimmer command line args.
+smrReplArgs_load: S (Env + Process + Console) (List Mode)
+ = mainArgs_load Nil smrReplArgs_defs
+
+
+-- | Collect
+smrReplArgs_collectIncludes (ms: List Mode): List Text
+ = case ms of
+        Nil
+         -> Nil
+
+        Cons (ModeInclude t) ms'
+         -> Cons t (smrReplArgs_collectIncludes ms')
+
+        Cons _ ms'
+         -> smrReplArgs_collectIncludes ms'
+
