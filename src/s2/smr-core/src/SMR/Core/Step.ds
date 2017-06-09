@@ -245,12 +245,8 @@ stepPrim
         -- Evaluation of arguments is complete.
         evalArgs Nil Nil xsArgsDone
          = case eval (reverse xsArgsDone) of
-                Just xResult
-                 -> Right xResult
-
-                Nothing
-                 -> Left $ ResultError
-                         $ "Evaluation of primitive " %% show prim %% "failed."
+                Just xResult    -> Right xResult
+                Nothing         -> Left ResultDone
 
         -- We have more args than the primitive will accept.
         evalArgs Nil xsArgsRemain xsArgsDone

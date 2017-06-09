@@ -1,0 +1,24 @@
+
+module SMR.Prim.Op.List
+export makePrimOpsList
+import SMR.Prim.Op.Base
+where
+
+
+makePrimOpsList (_: Unit): List (PrimEval s Prim)
+ = Cons primOpListCons
+ $ Cons primOpListNil
+ $ Nil
+
+
+primOpListCons: PrimEval s Prim
+ = PrimEval (PrimOp "list-cons") "primitive list constructor"
+            (Cons Val (Cons Val Nil)) fn'
+ where  fn' _ = Nothing
+
+
+primOpListNil: PrimEval s Prim
+ = PrimEval (PrimOp "list-nil")  "primitive empty list"
+            Nil fn'
+ where  fn' _ = Nothing
+

@@ -1,5 +1,4 @@
 
-
 module SMR.Prim.Op.Comb
 export makePrimOpsComb
 import SMR.Prim.Op.Base

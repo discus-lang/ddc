@@ -27,8 +27,8 @@
  = #if
         (#nat-eq <#nat'0, n>)
         %list-nil
-        (##seq (#nat-sub <n, #nat'1>)    $ \n'.
-         ##seq (@list-replicate-raised <n', x>) $ \xs'.
+        (#seq (#nat-sub <n, #nat'1>)    $ \n'.
+         #seq (@list-replicate-raised <n', x>) $ \xs'.
          %list-cons <x, xs'>);
 
 
