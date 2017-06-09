@@ -59,6 +59,7 @@ allWithConfig :
 	@$(MAKE) bin/ddc bin/ddc-check bin/ddci-core bin/ddci-tetra \
 		 bin/war -j $(THREADS)
 	@$(MAKE) src/s2/ddc-runtime/build/libddc-runtime.a
+	@$(MAKE) bin/smr
 
 
 # -- Build the compiler, libs, docs, and run all the tests in all ways (slow)
@@ -108,6 +109,7 @@ include make/targets/bin-ddc-check.mk
 include make/targets/bin-ddc-main.mk
 include make/targets/bin-ddci-core.mk
 include make/targets/bin-ddci-tetra.mk
+include make/targets/bin-smr.mk
 include make/targets/runtime.mk
 include make/targets/docs.mk
 include make/targets/war.mk

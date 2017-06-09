@@ -1,6 +1,5 @@
-# Runtime system
+# Runtime system.
 
-# -----------------------------------------------------------------------------
 # Runtime Core Salt sources.
 salt-runtime_dcs = \
 	$(shell find src/s2/ddc-runtime/salt/runtime        -name "*.dcs") \
@@ -38,7 +37,6 @@ src/s2/ddc-runtime/build/libddc-runtime.$(SHARED_SUFFIX) : \
 	@echo "* Building $@"
 
 
-# -----------------------------------------------------------------------------
 # Build runtime system.
 #   The shared runtime is only built if SHARED_SUFFIX is defined.
 .PHONY  : runtime

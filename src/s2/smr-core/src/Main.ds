@@ -4,6 +4,7 @@ module Main
 import SMR.Core.Exp
 import SMR.Core.Step
 import SMR.Repl.Error
+import SMR.Repl.Args
 import SMR.Prim.Op
 import SMR.Prim.Name
 import SMR.Source.Pretty

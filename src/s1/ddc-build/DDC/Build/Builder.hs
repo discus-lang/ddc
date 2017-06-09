@@ -319,14 +319,14 @@ builder_X8664_Darwin config host mVersion
         , buildLdExe
                 = \oFiles binFile
                 -> doCmd "linker"               [(2, BuilderCanceled)]
-                [ "cc -m64 -Wl,-dead_strip"
-                , "-o", binFile
-                , intercalate " " oFiles
-                , builderConfigBaseLibDir config
-                        </> "ddc-runtime" </> "build"
-                        </> builderConfigLibFile config
-                                "libddc-runtime.a"
-                                "libddc-runtime.dylib" ]
+                        [ "cc -m64 -Wl,-dead_strip"
+                        , "-o", binFile
+                        , intercalate " " oFiles
+                        , builderConfigBaseLibDir config
+                              </> "ddc-runtime" </> "build"
+                              </> builderConfigLibFile config
+                                      "libddc-runtime.a"
+                                      "libddc-runtime.dylib" ]
 
         , buildLdLibStatic
                 = \oFiles libFile
@@ -641,8 +641,7 @@ doCmd   :: String                       -- ^ Description of tool being invoked.
         -> IO ()
 
 doCmd thing exitCodeMeanings cmdParts
- = do
-        code <- system cmd
+ = do   code <- system cmd
         case code of
          ExitSuccess
           -> return ()
