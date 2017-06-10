@@ -93,6 +93,8 @@ pprKey  (kk: Key): Text
         KBox    -> "##box"
         KRun    -> "##run"
         KSeq    -> "##seq"
+        KTag    -> "##tag"
+
 
 pprExpNeedsParensAsArg (xx: Exp s p): Bool
  = case xx of

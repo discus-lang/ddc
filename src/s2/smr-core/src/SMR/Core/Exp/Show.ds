@@ -1,0 +1,62 @@
+
+module SMR.Core.Exp.Show
+export
+{       show_Decl;
+        show_Exp; show_Key;
+        show_Car; show_Snv; show_Ups; show_Ref
+}
+import SMR.Core.Exp.Base
+import Class.Show
+where
+
+
+show_Decl {Show s} {Show p}: Show (Decl s p)
+ =  Show $ λ(DTerm n x) -> parens $ "DTerm" %% show n %% show x
+
+
+show_Exp {Show s} {Show p}: Show (Exp s p)
+ =  Show $ λxx
+ -> case xx of
+        XRet xs         -> parens $ "XRet" %% show xs
+        XRef r          -> parens $ "XRef" %% show r
+        XVar n  b       -> parens $ "XVar" %% show n  %% show b
+        XApp xf xs      -> parens $ "XApp" %% show xf %% show xs
+        XAbs ns x       -> parens $ "XAbs" %% show ns %% show x
+        XSub cs x       -> parens $ "XSub" %% show cs %% show x
+        XKey k  x       -> parens $ "XKey" %% show k  %% show x
+
+
+show_Key: Show Key
+ =  Show $ λkk
+ -> case kk of
+        KBox            -> parens $ "KBox" %% show kk
+        KRun            -> parens $ "KRun" %% show kk
+        KSeq            -> parens $ "KSeq" %% show kk
+        KTag            -> parens $ "KTag" %% show kk
+
+
+show_Car {Show s} {Show p}: Show (Car s p)
+ =  Show $ λxx
+ -> case xx of
+        CSim snv        -> parens $ "CSim" %% show snv
+        CRec snv        -> parens $ "CRec" %% show snv
+        CUps ups        -> parens $ "CUps" %% show ups
+
+
+show_Snv {Show s} {Show p}: Show (Snv s p)
+ =  Show $ λ(SSnv ts) -> parens $ "SSnv" %% show ts
+
+
+show_Ups: Show Ups
+ =  Show $ λ(UUps ts) -> parens $ "UUps" %% show ts
+
+
+show_Ref {Show s} {Show p}: Show (Ref s p)
+ = Show $ λxx
+ -> case xx of
+        RMac n  -> parens $ "RMac" %% show n
+        RSet n  -> parens $ "RSet" %% show n
+        RSym s  -> parens $ "RSym" %% show s
+        RPrm p  -> parens $ "RPrm" %% show p
+
+

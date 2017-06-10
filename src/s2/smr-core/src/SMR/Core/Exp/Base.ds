@@ -1,0 +1,87 @@
+
+-- | Definition of the Shimmer Abstract Syntax Tree (AST) types.
+module SMR.Core.Exp.Base
+import Data.List
+where
+
+
+-- | Top-level declarations.
+data Decl (s p: Data) where
+        DTerm   : Name -> Exp s p -> Decl s p
+
+
+-- | Expressions.
+data Exp (s p: Data) where
+        -- Return multiple values.
+        XRet    : List (Exp s p)                -> Exp s p
+
+        -- Reference to an external thing.
+        XRef    : Ref s p                       -> Exp s p
+
+        -- Variable with a binding depth.
+        XVar    : Name      -> Nat              -> Exp s p
+
+        -- Application of a functional expression to an argument.
+        XApp    : Exp s p   -> Exp s p          -> Exp s p
+
+        -- Abstraction with a list of parameter names and body expression.
+        XAbs    : List Name -> Exp s p          -> Exp s p
+
+        -- Substitution train applied to an expression.
+        -- The train car at the head of the list is applied first.
+        XSub    : List (Car s p) -> Exp s p     -> Exp s p
+
+        -- Keyed expressions.
+        XKey    : Key -> Exp s p                -> Exp s p
+
+
+-- | Expression keys (super primitives).
+data Key where
+        KBox    : Key
+        KRun    : Key
+        KSeq    : Key
+        KTag    : Key
+
+
+-- | A car on the substitution train.
+data Car (s p: Data) where
+        CSim    : Snv s p       -> Car s p
+        CRec    : Snv s p       -> Car s p
+        CUps    : Ups           -> Car s p
+
+
+-- | Explicit simultaneous substitution,
+--   which maps name and binding depth to an expression.
+data Snv (s p: Data) where
+        SSnv    : List ((Name, Nat), Exp s p) -> Snv s p
+
+
+-- | Lifting indicator,
+--   which maps name and binding depth to number of levels to lift.
+data Ups where
+        -- In the list the first element has priority.
+        UUps    : List UpsBump -> Ups
+
+type UpsBump
+        = ((Name, Nat), Nat)
+
+
+-- | Reference to some external thing,
+--   where the reference is not the usual notion of variable binding.
+data Ref (s p: Data) where
+        -- Uninterpreted symbol.
+        RSym    : s     -> Ref s p
+
+        -- Primitive value.
+        RPrm    : p     -> Ref s p
+
+        -- Macro name.
+        RMac    : Name  -> Ref s p
+
+        -- Set name.
+        RSet    : Name  -> Ref s p
+
+
+-- | Generic names for things.
+type Name = Text
+

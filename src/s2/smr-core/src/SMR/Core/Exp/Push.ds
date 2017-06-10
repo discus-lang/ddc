@@ -1,8 +1,8 @@
 
-module SMR.Core.Push
+module SMR.Core.Exp.Push
 export push
-import SMR.Core.Train
-import SMR.Core.Exp
+import SMR.Core.Exp.Train
+import SMR.Core.Exp.Base
 where
 
 

@@ -1,8 +1,6 @@
 
 module SMR.Core.Step
 export { step; steps }
-import SMR.Core.Push
-import SMR.Core.Train
 import SMR.Core.Exp
 where
 
@@ -98,6 +96,7 @@ step    {Eq p} {Show p}
                   XRef (RPrm primF)  -> stepAppPrim primF xsArgs
                   XAbs nsParam xBody -> stepAppAbs  nsParam xBody xsArgs
                   XKey KSeq    xBody -> stepAppSeq  xBody   xsArgs
+                  XKey KTag    xBody -> stepAppTag  xBody   xsArgs
 
                   -- Functional expression is inactive, but optionally
                   -- continue reducing arguments to eliminate all the redexes
@@ -143,6 +142,9 @@ step    {Eq p} {Show p}
          -> case stepFirst (Cons x Nil) of
                 Right xs' -> Right $ XKey KSeq (makeXRet xs')
                 Left err  -> Left err
+
+        -- Tag expressions are always done.
+        XKey KTag x       -> Left ResultDone
 
 
 -------------------------------------------------------------------------------
@@ -203,7 +205,7 @@ stepAppAbs
 
 
 -------------------------------------------------------------------------------
--- | Step an application of the Seq superprim.
+-- | Step an application of the ##seq super prim.
 stepAppSeq
         {str:    StepStrength} {ctx: StepContext s p}
         (xBody:  Exp s p)      (xsArgs: List (Exp s p))
@@ -223,6 +225,18 @@ stepAppSeq
  -- Application of a seq to something that isn't yet an abstraction.
  | otherwise
  =      Right $ makeXApps (XKey KSeq xBody) xsArgs
+
+
+-------------------------------------------------------------------------------
+-- | Step an application of the ##tag superprim.
+stepAppTag
+        {Eq p} {Show p}
+        {str:   StepStrength} {ctx: StepContext s p}
+        (xBody: Exp s p)      (xsArgs: List (Exp s p))
+        : Either Result (Exp s p)
+ = case stepFirst xsArgs of
+        Left res        -> Left res
+        Right xsArgs'   -> Right $ makeXApps (XKey KTag xBody) xsArgs'
 
 
 -------------------------------------------------------------------------------
@@ -303,6 +317,4 @@ stepFirst
                         Right xs2' -> Right $ Cons x1  xs2'
 
                 Right x1'          -> Right $ Cons x1' xs2
-
-
 

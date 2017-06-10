@@ -107,6 +107,7 @@ pExpApp {c: Config s p}
                         if       nKey' == "box" then return KBox
                          else if nKey' == "run" then return KRun
                          else if nKey' == "seq" then return KSeq
+                         else if nKey' == "tag" then return KTag
                          else fail
         xsArgs  <- some pExpAtom
         case xsArgs of

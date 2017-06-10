@@ -1,7 +1,6 @@
 
 module SMR.Transform.Combinate
 export {combinate; abstract}
-import SMR.Core.Push
 import SMR.Core.Exp
 where
 
