@@ -17,6 +17,7 @@ export
         upsApply;       upsApplyVar;
 }
 import SMR.Core.Exp.Base
+import Data.Text
 where
 
 
