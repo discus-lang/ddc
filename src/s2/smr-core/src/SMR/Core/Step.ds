@@ -4,6 +4,7 @@ export { step; steps }
 import SMR.Core.Exp
 where
 
+
 -------------------------------------------------------------------------------
 -- | Evaluation strength.
 data StepStrength where
@@ -111,7 +112,7 @@ step    {Eq p} {Show p}
 
         -- Substitution train.
         XSub _ _
-         -> case push xx of
+         -> case pushHead xx of
                 Nothing  -> Left ResultDone
                 Just xx' -> Right xx'
 
@@ -168,20 +169,24 @@ stepAppAbs
         (nsParam: List Name)    (xBody: Exp s p) (xsArgs: List (Exp s p))
         : Either Result (Exp s p)
    -- Default evaluation method is call-by-value, so first reduce the args.
- = case stepFirst xsArgs of
-        -- One of the arguments makes progress.
-        Right xsArgs'
-         -> Right $ makeXApps (XAbs nsParam xBody) xsArgs'
+ = do   arity           = length nsParam
+        args            = length xsArgs
+        xsArgs_sat      = take arity xsArgs
+        xsArgs_remain   = drop arity xsArgs
 
-        -- Stepping one of the argument failed.
-        Left err@(ResultError _)
-         -> Left err
+        case stepFirst xsArgs_sat of
+         -- One of the arguments makes progress.
+         Right xsArgs_sat'
+          -> Right $ makeXApps (makeXApps (XAbs nsParam xBody) xsArgs_sat')
+                        xsArgs_remain
 
-        -- The arguments are all done.
-        Left ResultDone
-         -> do  arity   = length nsParam
-                args    = length xsArgs
+         -- Stepping one of the argument failed.
+         Left err@(ResultError _)
+          -> Left err
 
+         -- The arguments are all done.
+         Left ResultDone
+          -> do
                 -- Saturated application.
                 if args == arity
                  then do
@@ -193,12 +198,11 @@ stepAppAbs
                  then do
                     nsParam_sat    = take args nsParam
                     nsParam_remain = drop args nsParam
-                    snv            = snvOfNamesArgs nsParam_sat xsArgs
-                    Right $ snvApply False snv $ XAbs nsParam_remain xBody
+                    snv            = snvOfNamesArgs nsParam_sat xsArgs_sat
+                    Right $ XApp  (snvApply False snv $ XAbs nsParam_remain xBody)
+                                  (makeXRet xsArgs_remain)
 
                  else do
-                    xsArgs_sat     = take arity xsArgs
-                    xsArgs_remain  = drop arity xsArgs
                     snv            = snvOfNamesArgs nsParam xsArgs_sat
                     Right $ XApp  (snvApply False snv xBody)
                                   (makeXRet xsArgs_remain)
@@ -215,7 +219,7 @@ stepAppSeq
  -- As we can see the abstraction, build the substitution directly without
  -- going through an intermediate application.
  | Cons xArg1 xsArgs'   <- xsArgs
- , XAbs ns11  x12       <- fromMaybe xArg1 (push xArg1)
+ , XAbs ns11  x12       <- fromMaybe xArg1 (pushHead xArg1)
  , Cons n1    ns11'     <- ns11
  = do   snv     = snvOfNamesArgs (Cons n1 Nil) (Cons xBody Nil)
         car     = CSim snv

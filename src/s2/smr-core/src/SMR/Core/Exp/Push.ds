@@ -1,13 +1,14 @@
 
 module SMR.Core.Exp.Push
-export push
+export {pushHead; pushDeep; pushTrain}
 import SMR.Core.Exp.Train
 import SMR.Core.Exp.Base
+import Data.Ref
 where
 
 
 -- | Push down any outermost substitution train to reveal the head constructor.
-push    (xx: Exp s p): Maybe (Exp s p)
+pushHead (xx: Exp s p): Maybe (Exp s p)
  = case xx of
         XRet _          -> Nothing
         XRef _          -> Nothing
@@ -18,6 +19,40 @@ push    (xx: Exp s p): Maybe (Exp s p)
         XKey _ _        -> Nothing
 
 
+-- | Push down all simultaneous substitutions and ups in the tree.
+--   This does not push recursive substitutions as continually
+--   pushing those may not terminate.
+pushDeep (xx: Exp s p): Maybe (Exp s p)
+ = private r with { Read r; Write r; Alloc r } in
+   do   refPushed = allocRef [r] False
+        xx'       = pushDeepRef refPushed xx
+        case readRef refPushed of
+         False  -> Nothing
+         True   -> Just xx'
+
+
+-- | Like 'pushDeep', but if we actually push a substitution then set
+--   the value in the provided reference to 'True'.
+pushDeepRef
+        [r: Region] [s p: Data]
+        (ref: Ref r Bool)
+        (xx: Exp s p): S (Write r) (Exp s p)
+ = case xx of
+        XRet xs         -> XRet $ mapS (pushDeepRef ref) xs
+        XRef _          -> xx
+        XVar _ _        -> xx
+        XApp x1 x2      -> XApp (pushDeepRef ref x1) (pushDeepRef ref x2)
+        XAbs ns x1      -> XAbs ns (pushDeepRef ref x1)
+
+        XSub cs1 x2
+         -> do  writeRef ref True
+                case pushTrain cs1 x2 of
+                 Nothing  -> xx
+                 Just xx' -> pushDeepRef ref xx'
+
+        XKey k x        -> XKey k (pushDeepRef ref x)
+
+
 -- | Push a substitution train down into an expression to reveal
 --   the head constructor.
 pushTrain
@@ -26,8 +61,8 @@ pushTrain
         :       Maybe (Exp s p)
  = case x2 of
         -- Unfold macro under a substitution.
-        -- Macro and symbol bodies are closed, so we can drop
-        -- the substitution.
+        -- Macro and symbol bodies are closed,
+        -- so we can drop the substitution.
         XRef (RMac n)   -> Just x2
         XRef (RSym n)   -> Just x2
         XRef (RPrm n)   -> Just x2
@@ -57,5 +92,4 @@ pushTrain
         -- Push train under key.
         XKey k21 x22
          -> Just $ XKey k21 (trainApply cs1 x22)
-
 

@@ -16,7 +16,7 @@ data Exp (s p: Data) where
         XRet    : List (Exp s p)                -> Exp s p
 
         -- Reference to an external thing.
-        XRef    : Ref s p                       -> Exp s p
+        XRef    : ExpRef s p                    -> Exp s p
 
         -- Variable with a binding depth.
         XVar    : Name      -> Nat              -> Exp s p
@@ -68,18 +68,18 @@ type UpsBump
 
 -- | Reference to some external thing,
 --   where the reference is not the usual notion of variable binding.
-data Ref (s p: Data) where
+data ExpRef (s p: Data) where
         -- Uninterpreted symbol.
-        RSym    : s     -> Ref s p
+        RSym    : s     -> ExpRef s p
 
         -- Primitive value.
-        RPrm    : p     -> Ref s p
+        RPrm    : p     -> ExpRef s p
 
         -- Macro name.
-        RMac    : Name  -> Ref s p
+        RMac    : Name  -> ExpRef s p
 
         -- Set name.
-        RSet    : Name  -> Ref s p
+        RSet    : Name  -> ExpRef s p
 
 
 -- | Generic names for things.

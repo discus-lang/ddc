@@ -73,7 +73,7 @@ translate (xx: Exp s p): ExpC s p
          -> translate (XAbs (Cons nParam Nil) (XAbs nsParam xBody))
 
         XSub _ _
-         -> case push xx of
+         -> case pushHead xx of
                 Just xx' -> translate xx'
                 Nothing  -> XExpC xx
 

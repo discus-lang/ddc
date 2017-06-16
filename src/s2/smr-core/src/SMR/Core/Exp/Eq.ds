@@ -2,6 +2,7 @@
 -- | Equality on Shimmer expressions.
 module SMR.Core.Exp.Eq
 export {eq_Exp; eq_Key; eq_Car; eq_Snv; eq_Ups; eq_Ref}
+import SMR.Core.Exp.Push
 import SMR.Core.Exp.Base
 import Class.Eq
 where
@@ -36,6 +37,12 @@ smr_eqExp [s p: Data] {Eq s} {Eq p} (x1 x2: Exp s p): Bool
          | otherwise            -> False
 
         (XSub cs11 x12, XSub cs21 x22)
+         |  Just x1'    <- pushHead x1
+         -> smr_eqExp x1' x2
+
+         |  Just x2'    <- pushHead x2
+         -> smr_eqExp x1  x2'
+
          | cs11 == cs21         -> smr_eqExp x12 x22
          | otherwise            -> False
 
@@ -124,11 +131,11 @@ smr_eqBumps (bs1 bs2: List UpsBump): Bool
 
 
 -- | Equality dictionary for references.
-eq_Ref [s p: Data] {Eq s} {Eq p}: Eq (Ref s p)
+eq_Ref [s p: Data] {Eq s} {Eq p}: Eq (ExpRef s p)
  = Eq   (\x1 x2 -> smr_eqRef [s] [p] x1 x2)
         (\x1 x2 -> not $ smr_eqRef   x1 x2)
 
-smr_eqRef [s p: Data] {Eq s} {Eq p} (r1 r2: Ref s p): Bool
+smr_eqRef [s p: Data] {Eq s} {Eq p} (r1 r2: ExpRef s p): Bool
  = case (r1, r2) of
         (RSym s1,       RSym s2)        -> s1 == s2
         (RPrm p1,       RPrm p2)        -> p1 == p2

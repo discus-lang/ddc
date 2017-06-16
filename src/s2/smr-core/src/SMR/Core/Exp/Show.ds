@@ -51,7 +51,7 @@ show_Ups: Show Ups
  =  Show $ λ(UUps ts) -> parens $ "UUps" %% show ts
 
 
-show_Ref {Show s} {Show p}: Show (Ref s p)
+show_Ref {Show s} {Show p}: Show (ExpRef s p)
  = Show $ λxx
  -> case xx of
         RMac n  -> parens $ "RMac" %% show n

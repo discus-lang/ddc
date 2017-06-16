@@ -10,7 +10,7 @@ where
 
 
 -- Ref ------------------------------------------------------------------------
-pprRef [s p: Data] {Pretty s} {Pretty p} (rr: Ref s p): Text
+pprRef [s p: Data] {Pretty s} {Pretty p} (rr: ExpRef s p): Text
  = case rr of
         RMac n  -> "@" % n
         RSet n  -> "+" % n

@@ -15,7 +15,7 @@ export
         elem;
         lookup; find;
         reverse;
-        map; mapS; mapMaybe;
+        map; mapS; mapM; mapMaybe;
         for; forS;
         zip;
         zipWith; zipWithS;

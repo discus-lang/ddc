@@ -2,6 +2,7 @@
 module SMR.Prim.Op.Smr
 export makePrimOpsSmr
 import SMR.Prim.Op.Base
+import SMR.Core.Exp.Push
 import SMR.Transform.Combinate
 where
 
@@ -10,7 +11,9 @@ where
 -- | Shimmer expression functions reflected back as primops.
 --   TODO: shouldn't need to supply dictionary here.
 makePrimOpsSmr {eqs: Eq s} (_ : Unit): List (PrimEval s Prim)
- = Cons (primOpSmrExpEqual {eqs})
+ = Cons (primOpSmrEqual {eqs})
+ $ Cons primOpSmrPushHead
+ $ Cons primOpSmrPushDeep
  $ Cons primOpSmrEvalCbv
  $ Cons primOpSmrEvalFail
  $ Cons primOpSmrCombinateSKI
@@ -19,17 +22,36 @@ makePrimOpsSmr {eqs: Eq s} (_ : Unit): List (PrimEval s Prim)
 
 -------------------------------------------------------------------------------
 -- | Equality on expressions.
-primOpSmrExpEqual {Eq s}: PrimEval s Prim
- = PrimEval (PrimOp "smr-exp-equal") "syntactic equality of expressions"
-            (Cons Exp (Cons Exp Nil)) fn'
+primOpSmrEqual {Eq s}: PrimEval s Prim
+ = PrimEval (PrimOp "smr-equal")        "Syntactic equality of expressions."
+            (Cons Val (Cons Val Nil)) fn'
  where fn'  (Cons xA (Cons xB Nil))
         = Just $ makeXBool (xA == xB)
 
 
 -------------------------------------------------------------------------------
+-- | Push to reveal head constructor.
+primOpSmrPushHead: PrimEval s Prim
+ = PrimEval (PrimOp "smr-push-head")
+            "Push down substitutions to reveal head constructor."
+            (Cons Exp Nil) fn'
+ where  fn' (Cons xx  Nil)
+         = pushHead xx
+
+
+-- | Push deeply in expression.
+primOpSmrPushDeep: PrimEval s Prim
+ = PrimEval (PrimOp "smr-push-deep")
+            "Push down substitutions deeply in expression."
+            (Cons Exp Nil) fn'
+ where  fn' (Cons xx  Nil)
+         = pushDeep xx
+
+
+-------------------------------------------------------------------------------
 -- | Evaluate call-by-value.
 primOpSmrEvalCbv: PrimEval s Prim
- = PrimEval (PrimOp "smr-eval-cbv") "call-by-value evaluation"
+ = PrimEval (PrimOp "smr-eval-cbv")     "Call-by-value evaluation"
             (Cons Val Nil) fn'
  where fn'  (Cons xF  Nil)
         = do    str     = StepStrength False False
@@ -47,7 +69,7 @@ primOpSmrEvalCbv: PrimEval s Prim
 
 -- | Indicate evaluation failure.
 primOpSmrEvalFail: PrimEval s Prim
- = PrimEval (PrimOp "smr-eval-fail") "indicate evaluation failure"
+ = PrimEval (PrimOp "smr-eval-fail")    "Indicate evaluation failure."
             Nil fn'
  where  fn' _ = Nothing
 

@@ -14,6 +14,6 @@ where
 
 
 -- | Wrap up the primitive writeRef to return a unit result.
-writeRef (ref: Ref r a) (x: a): S (Write r) Unit
- = do   writeRef_ ref x
-        ()
+writeRef [r: Region] [a: Data] (ref: Ref r a) (x: a): S (Write r) Unit
+  = do   writeRef_ ref x
+         ()

@@ -64,9 +64,7 @@ getLine: S Console Text
 
 -------------------------------------------------------------------------------
 main ()
- = do   writel "Shimmer, version 1.0. The Lambda Machine."
-
-        modes           = smrReplArgs_load
+ = do   modes           = smrReplArgs_load
         tsInclude       = smrReplArgs_collectIncludes modes
 
         -- Build the table of primitive evaluators.
@@ -120,7 +118,10 @@ repl_start (state: State) (args: List Mode): S Console Unit
                 Right x'
                  -> writel $ ppr x'
 
-        Nil -> repl_loop state CmdNone
+        Nil
+         -> do  -- Print out splash line when we start the interactive repl.
+                writel "Shimmer, version 1.0. The Lambda Machine."
+                repl_loop state CmdNone
 
 
 -------------------------------------------------------------------------------

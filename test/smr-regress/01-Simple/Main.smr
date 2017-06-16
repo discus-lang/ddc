@@ -5,75 +5,20 @@
 ! -- Basics -------------------------------------------------------------------
 !       Basic identity function.
 = @test %identity
-        ((\x. x) #nat'5)
-        #nat'5
+        (##box ((\x. x) #nat'5))
+        (##box #nat'5)
 
-!       Duplicate a value.
-$ @test %duplication
-        ((\x. x x) #nat'5)
-        (#nat'5 #nat'5)
+        ((\x. x) %derp);
+\~tag. \~run
 
-!       Apply a higher order function twice.
-$ @test %twice
-        ((\f x. f (f x)) (#nat-add #nat'1) #nat'5)
-        #nat'10
-
-!       Literal Church encoded natural number three.
-$ @test %church-three
-   ([[  church-succ     = \n. \s z. s (n s z),
-        church-zero     = \s z. z,
-        church-one      = church-succ church-zero,
-        church-two      = church-succ church-one,
-        church-three    = church-succ church-two
-    ]]. church-three)
-        (\s. \z. s $ s $ s $ z)
-
-!       Add two Church encoded numbers.
-$ @test %church-add
-   ([[  church-succ     = \n. \s z. s (n s z),
-        church-zero     = \s z. z,
-        church-one      = church-succ church-zero,
-        church-two      = church-succ church-one,
-        church-three    = church-succ church-two,
-        church-add      = \m n. \s z. m s (n s z)
-    ]]. church-add church-three church-three)
-        (\s. \z. s $ s $ s $ s $ s $ s $ z)
+@test = \tag. \xRun. \xExpected. \testNext
+ . ##seq (#smr-eval-cbv xRun)  $ \xResult
+ . #if   (#smr-equal xResult xExpected)
+         (##box testNext)
+         (%fail tag xResult xExpected);
 
 
-! -- Capture ------------------------------------------------------------------
-!       Basic name capture situation.
-$ @test %capture-simple
-        (\y. (\x. \y. x) y)
-        %derp
 
-!       Substitution is discarded as it hits a lambda.
-$ @test %capture-sub-discard
-        ([x = %foo]. (\x. \y. x))
-        %derp
-
-!       Substitution is bumped as it hits a lambda.
-$ @test %capture-sub-discard
-        ([z = x]. (\x. \y. z))
-        %derp
-
-
-! -- Combinate ----------------------------------------------------------------
-$ @test %combinate-twice
-        (@combinate $ ##box (\f x. f (f x)))
-        %derp
-
-$ @test %combinate-thrice
-        (@combinate $ ##box (\f x. f (f (f x))))
-        %derp
-
-$ @test %combinate-y
-        (@combinate $ ##box (\f. (\x. f (x x)) (\x. f (x x))))
-        (##box (#S (#C #B $ #S #I #I) $ #C #B $ #S #I #I))
-;
-
-
-@test tag xxRun xxExpected
- = #list-cons (##tag tag) (#smr-eval-cbv xxRun);
-
-@combinate
- = #smr-combinate-ski #S #K #I #B #C #Sp #Bs #Cp;
+! $ @test %duplication
+!         (##box ((\x. x x) #nat'5))
+!         (##box (#nat'5 #nat'5))
