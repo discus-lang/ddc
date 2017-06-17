@@ -165,5 +165,7 @@ isCharPunc (c: Char): Bool
  | c == ';'     = True
  | c == '='     = True
  | c == '$'     = True
+ | c == '!'     = True
+ | c == '~'     = True
  | otherwise    = False
 

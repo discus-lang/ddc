@@ -67,7 +67,7 @@ pprExp' [s p: Data]
 
         -- substitution
         XSub cs x
-         -> pprTrain cs % "." % pprExp' ContextArg x
+         -> pprTrain cs % "." % pprExp' ContextBody x
 
         -- keyed expressions
         XKey k x
@@ -84,22 +84,21 @@ pprExp' [s p: Data]
         XRet _      -> pprExp' ContextBody xx
         XRef _      -> pprExp' ContextBody xx
         XVar _      -> pprExp' ContextBody xx
-        XSub _ _    -> pprExp' ContextBody xx
         _           -> parens $ pprExp' ContextBody xx
 
 
 pprParam (pp: Param): Text
  = case pp of
-        PVal n  -> "!" % n
-        PExp n  -> "~" % n
+        PParam n FVal   -> n
+        PParam n FExp   -> "~" % n
 
 
 pprKey  (kk: Key): Text
  = case kk of
-        KBox    -> "##box"
-        KRun    -> "##run"
-        KSeq    -> "##seq"
-        KTag    -> "##tag"
+        KBox            -> "##box"
+        KRun            -> "##run"
+        KSeq            -> "##seq"
+        KTag            -> "##tag"
 
 
 pprExpNeedsParensAsArg (xx: Exp s p): Bool

@@ -49,7 +49,7 @@ step    {Eq p} {Show p}
  = case xx of
         -- Evaluate multiple values left to right.
         XRet xs
-         -> case stepFirst xs of
+         -> case stepFirstVal xs of
                 Left  res       -> Left res
                 Right xs'       -> Right $ makeXRet xs'
 
@@ -103,7 +103,7 @@ step    {Eq p} {Show p}
                   -- continue reducing arguments to eliminate all the redexes
                   -- in the expression.
                   _ |  StepStrength _ True <- str
-                    -> case stepFirst xsArgs of
+                    -> case stepFirstVal xsArgs of
                           Right xsArgs'   -> Right $ makeXApps xF xsArgs'
                           Left  res       -> Left res
 
@@ -140,7 +140,7 @@ step    {Eq p} {Show p}
 
         -- Step the body of a seq expression.
         XKey KSeq x
-         -> case stepFirst (Cons x Nil) of
+         -> case stepFirstVal (Cons x Nil) of
                 Right xs' -> Right $ XKey KSeq (makeXRet xs')
                 Left err  -> Left err
 
@@ -173,12 +173,13 @@ stepAppAbs
         args            = length xsArgs
         xsArgs_sat      = take arity xsArgs
         xsArgs_remain   = drop arity xsArgs
+        fsParam_sat     = map formOfParam psParam
 
-        case stepFirst xsArgs_sat of
+        case stepFirst xsArgs_sat fsParam_sat of
          -- One of the arguments makes progress.
          Right xsArgs_sat'
-          -> Right $ makeXApps (makeXApps (XAbs psParam xBody) xsArgs_sat')
-                        xsArgs_remain
+          -> do xFun    = XAbs psParam xBody
+                Right $ makeXApps (makeXApps xFun xsArgs_sat') xsArgs_remain
 
          -- Stepping one of the argument failed.
          Left err@(ResultError _)
@@ -243,7 +244,7 @@ stepAppTag
         {str:   StepStrength} {ctx: StepContext s p}
         (xBody: Exp s p)      (xsArgs: List (Exp s p))
         : Either Result (Exp s p)
- = case stepFirst xsArgs of
+ = case stepFirstVal xsArgs of
         Left res        -> Left res
         Right xsArgs'   -> Right $ makeXApps (XKey KTag xBody) xsArgs'
 
@@ -302,16 +303,30 @@ stepPrim
 -- | Step the first available expression in a list.
 --   This also flattens them out, so at the top level of the result
 --   we won't have nested XRets.
-stepFirst
+stepFirstVal
         {Eq p} {Show p}
         {str: StepStrength}  {ctx: StepContext s p}
         (xx:  List (Exp s p))
         :     Either Result (List (Exp s p))
- = case xx of
-        Nil
-         -> Left ResultDone
+ = stepFirst xx (replicate (length xx) FVal)
 
-        Cons x1 xs2
+stepFirst
+        {Eq p} {Show p}
+        {str: StepStrength}  {ctx: StepContext s p}
+        (xx:  List (Exp s p))
+        (ff:  List Form)
+        :     Either Result (List (Exp s p))
+ = case (xx, ff) of
+        (Nil, _)   -> Left ResultDone
+        (_,   Nil) -> Left ResultDone
+
+        (Cons x1 xs2, Cons f1 fs2)
+         |  FExp <- f1
+         -> case stepFirst xs2 fs2 of
+                Left r          -> Left r
+                Right xs2'      -> Right $ Cons x1 xs2'
+
+         | otherwise
          -> case step str ctx x1 of
                 Left err@(ResultError _)
                  -> Left err
@@ -321,7 +336,7 @@ stepFirst
                  -> Right $ append xs1 xs2
 
                  |  otherwise
-                 -> case stepFirst xs2 of
+                 -> case stepFirst xs2 fs2 of
                         Left  r    -> Left r
                         Right xs2' -> Right $ Cons x1  xs2'
 

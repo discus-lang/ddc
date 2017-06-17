@@ -29,8 +29,7 @@ show_Exp {Show s} {Show p}: Show (Exp s p)
 show_Param: Show Param
  = Show $ λpp
  → case pp of
-        PVal n          → parens $ "XVal" %% show n
-        PExp n          → parens $ "XExp" %% show n
+        PParam n _      → parens $ "PParam" %% show n
 
 
 show_Key: Show Key

@@ -57,14 +57,13 @@ pDecls  {c: Config s p}
 pDecl   {c: Config s p}
         : Parser (Located Token) (Expected (Located Token) s p) (Decl s p)
  = enterOn (pNameOfSpace SMac) ExContextDecl $ \name
- → do   nsParam <- some (pNameOfSpace SVar)
+ → do   psParam <- some pParam
         _       <- pPunc '='
         xBody   <- pExp
         _       <- pPunc ';'
-        if length nsParam == 0
+        if length psParam == 0
          then return (DTerm name xBody)
-         -- TODO: parse different binding modes.
-         else return (DTerm name $ XAbs (map PVal nsParam) xBody)
+         else return (DTerm name $ XAbs psParam xBody)
 
 
 -- Exp ------------------------------------------------------------------------
@@ -75,10 +74,10 @@ pExp    {c: Config s p}
  = alts
  $ Cons (do
         _       <- pPunc '\\'
-        nsParam <- some (pNameOfSpace SVar)
+        psParam <- some pParam
         _       <- pPunc '.'
         xBody   <- pExp
-        return  $ XAbs (map PVal nsParam) xBody)
+        return  $ XAbs psParam xBody)
 
         -- Substitution train.
  $ Cons (do
@@ -178,6 +177,27 @@ pExpAtom {c: Config s p}
          -- Named keyword.
          SKey
           -> fail)
+ $ Nil
+
+
+-- Param ----------------------------------------------------------------------
+-- | Parser for a functio parameter.
+pParam  {c: Config s p}
+        :   Parser (Located Token) (Expected (Located Token) s p) Param
+ = alts
+ $ Cons (do
+        _       <- pPunc '!'
+        n       <- pNameOfSpace SVar
+        return  $  PParam n FVal)
+
+ $ Cons (do
+        _       <- pPunc '~'
+        n       <- pNameOfSpace SVar
+        return  $  PParam n FExp)
+
+ $ Cons (do
+        n       <- pNameOfSpace SVar
+        return  $  PParam n FVal)
  $ Nil
 
 

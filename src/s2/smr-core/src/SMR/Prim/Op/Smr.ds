@@ -15,6 +15,7 @@ makePrimOpsSmr {eqs: Eq s} (_ : Unit): List (PrimEval s Prim)
  $ Cons primOpSmrPushHead
  $ Cons primOpSmrPushDeep
  $ Cons primOpSmrEvalCbv
+ $ Cons primOpSmrEvalNo
  $ Cons primOpSmrEvalFail
  $ Cons primOpSmrCombinateSKI
  $ Nil
@@ -55,6 +56,24 @@ primOpSmrEvalCbv: PrimEval s Prim
             (Cons Val Nil) fn'
  where fn'  (Cons xF  Nil)
         = do    str     = StepStrength False False
+                ctx     = StepContext  Nil Nil
+                case xF of
+                 XKey KBox xF'
+                     -> case steps str ctx xF' of
+                         Left err   -> Just $ XRef (RPrm (PrimOp "smr-eval-fail"))
+                         Right xF'  -> Just $ XKey KBox xF'
+
+                 xF' -> case steps str ctx xF' of
+                         Left  err  -> Just $ XRef (RPrm (PrimOp "smr-eval-fail"))
+                         Right xF'  -> Just $ XKey KBox xF'
+
+
+-- | Evaluate normal-order.
+primOpSmrEvalNo: PrimEval s Prim
+ = PrimEval (PrimOp "smr-eval-no")      "Normal order evaluation"
+            (Cons Val Nil) fn'
+ where fn'  (Cons xF  Nil)
+        = do    str     = StepStrength True True
                 ctx     = StepContext  Nil Nil
                 case xF of
                  XKey KBox xF'

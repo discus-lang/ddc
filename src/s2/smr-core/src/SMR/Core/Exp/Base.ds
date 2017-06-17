@@ -38,18 +38,32 @@ data Exp (s p: Data) where
 -- | Function parameter.
 data Param where
         -- | Bind a value (call by value).
-        PVal    : Name  -> Param
+        PParam  : Name  -> Form -> Param
 
-        -- | Bind a whole expression (call by name).
-        PExp    : Name  -> Param
+
+-- | Form of argument required in application.
+data Form  where
+        -- | Value (call by value)
+        FVal    : Form
+
+        -- | Expression (call by name)
+        FExp    : Form
 
 
 -- | Expression keys (super primitives).
 data Key where
-        KBox    : Key
-        KRun    : Key
-        KSeq    : Key
+        -- | A tag expression is never evaluated.
         KTag    : Key
+
+        -- | Delay evaluation of an expression when used as the argument
+        --   of a call-by-value function application.
+        KBox    : Key
+
+        -- | Run a boxed expression.
+        KRun    : Key
+
+        -- | Sequence evaluation.
+        KSeq    : Key
 
 
 -- | A car on the substitution train.

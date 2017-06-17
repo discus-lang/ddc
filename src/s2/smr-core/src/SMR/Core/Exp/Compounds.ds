@@ -3,7 +3,7 @@ module SMR.Core.Exp.Compounds
 export
 {       lookupDecl;
         makeXRet;
-        makeXAbs;       nameOfParam;
+        makeXAbs;       nameOfParam;    formOfParam;
         makeXApps;      takeXApps;
         flattenExp;     flattenExps
 }
@@ -43,8 +43,13 @@ makeXAbs (ps: List Param) (xBody: Exp s p): Exp s p
 -- | Get the name of a function parameter.
 nameOfParam (p: Param): Name
  = case p of
-        PVal n  → n
-        PExp n  → n
+        PParam n  _     → n
+
+
+-- | Get the argument form required by a parameter.
+formOfParam (p: Param): Form
+ = case p of
+        PParam _ f      → f
 
 
 -- | Make an application of a function to the given list of arguments,

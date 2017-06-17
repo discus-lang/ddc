@@ -18,50 +18,62 @@ eq_Exp [s p: Data] {Eq s} {Eq p}: Eq (Exp s p)
 smr_eqExp [s p: Data] {Eq s} {Eq p} (x1 x2: Exp s p): Bool
  = case (x1, x2) of
         (XRet xs1,      XRet xs2)
-         |  length xs1 == length xs2
-         -> all (eq True) $ zipWith smr_eqExp xs1 xs2
+         | length xs1 == length xs2
+         → all (eq True) $ zipWith smr_eqExp xs1 xs2
 
         (XRef r1,       XRef r2)
-         -> r1 == r2
+         → r1 == r2
 
-        (XVar n1   d1,  XVar n2   d2)
-         | n1 == n2             -> d1 == d2
-         | otherwise            -> False
+        (XVar n1 d1,    XVar n2 d2)
+         | n1 == n2             → d1 == d2
+         | otherwise            → False
 
-        (XApp x11  x12, XApp x21  x22)
-         | smr_eqExp x11 x21    -> smr_eqExp x12 x22
-         | otherwise            -> False
+        (XApp x11 x12,  XApp x21 x22)
+         | smr_eqExp x11 x21    → smr_eqExp x12 x22
+         | otherwise            → False
 
         (XAbs ns11 x12, XAbs ns21 x22)
-         | ns11 == ns21         -> smr_eqExp x12 x22
-         | otherwise            -> False
+         | ns11 == ns21         → smr_eqExp x12 x22
+         | otherwise            → False
+
+        (XSub cs11 x12, _)
+         | Just x1'     ← pushHead x1
+         → smr_eqExp x1' x2
+
+        (_, XSub cs21 x22)
+         | Just x2'     ← pushHead x2
+         → smr_eqExp x1 x2'
 
         (XSub cs11 x12, XSub cs21 x22)
-         |  Just x1'    <- pushHead x1
-         -> smr_eqExp x1' x2
-
-         |  Just x2'    <- pushHead x2
-         -> smr_eqExp x1  x2'
-
-         | cs11 == cs21         -> smr_eqExp x12 x22
-         | otherwise            -> False
+         | cs11 == cs21         → smr_eqExp x12 x22
+         | otherwise            → False
 
         (XKey k11  x12, XKey k21  x22)
-         | k11  == k21          -> smr_eqExp x12 x22
-         | otherwise            -> False
+         | k11  == k21          → smr_eqExp x12 x22
+         | otherwise            → False
 
-        _                       -> False
+        _                       → False
 
 
 -- | Equality dictionary for parameters.
 eq_Param: Eq Param
  = Eq   eq' neq'
  where
-        eq' (PVal n1) (PVal n2) = n1 == n2
-        eq' (PExp n1) (PExp n2) = n1 == n2
-        eq' _ _                 = False
+        eq' (PParam n1 f1) (PParam n2 f2)
+                        = n1 == n2 ∧ f1 == f2
 
-        neq' p1 p2              = not $ eq p1 p2
+        neq' p1 p2      = not $ eq p1 p2
+
+
+-- | Equality dictionary for expression forms.
+eq_Form: Eq Form
+ = Eq   eq' neq'
+ where
+        eq' FVal        FVal    = True
+        eq' FExp        FExp    = True
+        eq' _           _       = False
+
+        neq' f1 f2              = not $ eq' f1 f2
 
 
 -- | Equality dictionary for expression keys.

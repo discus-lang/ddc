@@ -1,29 +1,83 @@
 
 
-@main
-
--- Basics -------------------------------------------------------------------
---       Basic identity function.
-= @test %identity
-        (##box ((\x. x) #nat'5))
-        (##box #nat'5)
-
-        ((\x. x) %derp);
-
-
--- Want to have both cbv and cbn.
--- delay evaluation of next test until the first one is done.
-@test tag xRun xExpected testNext
- = ##seq (#smr-eval-cbv xRun)  $ \xResult
+-- Harness --------------------------------------------------------------------
+@test !tag ~xRun ~xExpected ~testNext
+ = ##seq (##run (#smr-eval-no xRun)) $ \!xResult
  . #if   (#smr-equal xResult xExpected)
-         (##box testNext)
+         testNext
          (%fail tag xResult xExpected);
 
+@combinate
+ = #smr-combinate-ski #S #K #I #B #C #Sp #Bs #Cp;
 
 
--- $ @test %duplication
---        (##box ((\x. x x) #nat'5))
---        (##box (#nat'5 #nat'5))
+-- Tests ----------------------------------------------------------------------
+@main
+-- Basics -----------------------------
+-- Identity function.
+= @test %identity
+        ((\x. x) #nat'5)
+        #nat'5
 
+-- Duplicate a value.
+$ @test %duplication
+        ((\x. x x) #nat'5)
+        (#nat'5 #nat'5)
 
+-- Apply a higher order function twice.
+$ @test %twice
+        ((\f x. f (f x)) (#nat-add #nat'1) #nat'5)
+        #nat'7
+
+-- Literal Church encoded natural number three.
+$ @test %church-three
+   ([[  church-succ     = \n. \s z. s (n s z),
+        church-zero     = \s z. z,
+        church-one      = church-succ church-zero,
+        church-two      = church-succ church-one,
+        church-three    = church-succ church-two
+    ]]. church-three)
+        (\s z. s $ s $ s $ z)
+
+-- Add two Church encoded numbers.
+$ @test %church-add
+   ([[  church-succ     = \n. \s z. s (n s z),
+        church-zero     = \s z. z,
+        church-one      = church-succ church-zero,
+        church-two      = church-succ church-one,
+        church-three    = church-succ church-two,
+        church-add      = \m n. \s z. m s (n s z)
+    ]]. church-add church-three church-three)
+        (\s z. s $ s $ s $ s $ s $ s $ z)
+
+-- Capture ----------------------------
+-- Basic name capture situation.
+$ @test %capture-simple
+        (\y. (\x. \y. x) y)
+        (\y. \y. y^1)
+
+-- Substitution is discarded as it hits a lambda.
+$ @test %capture-sub-discard
+        ([x = %foo]. (\x. \y. x))
+        (\x. \y. x)
+
+-- Substitution is bumped as it hits a lambda.
+$ @test %capture-sub-bump
+        ([z = x]. (\x. \y. z))
+        (\x. \y. x^1)
+
+-- Combinate --------------------------
+$ @test %combinate-twice
+        (@combinate $ ##box (\f x. f (f x)))
+        (#S #B #I)
+
+$ @test %combinate-thrice
+        (@combinate $ ##box (\f x. f (f (f x))))
+        (#S (#S #Bs #I) #I)
+
+$ @test %combinate-y
+        (@combinate $ ##box (\f. (\x. f (x x)) (\x. f (x x))))
+        (#S (#C #B $ #S #I #I) $ #C #B $ #S #I #I)
+
+$ %success;
 
