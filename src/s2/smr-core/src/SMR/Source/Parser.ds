@@ -63,7 +63,8 @@ pDecl   {c: Config s p}
         _       <- pPunc ';'
         if length nsParam == 0
          then return (DTerm name xBody)
-         else return (DTerm name $ XAbs nsParam xBody)
+         -- TODO: parse different binding modes.
+         else return (DTerm name $ XAbs (map PVal nsParam) xBody)
 
 
 -- Exp ------------------------------------------------------------------------
@@ -77,7 +78,7 @@ pExp    {c: Config s p}
         nsParam <- some (pNameOfSpace SVar)
         _       <- pPunc '.'
         xBody   <- pExp
-        return  $ XAbs nsParam xBody)
+        return  $ XAbs (map PVal nsParam) xBody)
 
         -- Substitution train.
  $ Cons (do

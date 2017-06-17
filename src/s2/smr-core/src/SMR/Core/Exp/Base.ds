@@ -19,13 +19,13 @@ data Exp (s p: Data) where
         XRef    : ExpRef s p                    -> Exp s p
 
         -- Variable with a binding depth.
-        XVar    : Name      -> Nat              -> Exp s p
+        XVar    : Name    -> Nat                -> Exp s p
 
         -- Application of a functional expression to an argument.
-        XApp    : Exp s p   -> Exp s p          -> Exp s p
+        XApp    : Exp s p -> Exp s p            -> Exp s p
 
         -- Abstraction with a list of parameter names and body expression.
-        XAbs    : List Name -> Exp s p          -> Exp s p
+        XAbs    : List Param -> Exp s p         -> Exp s p
 
         -- Substitution train applied to an expression.
         -- The train car at the head of the list is applied first.
@@ -33,6 +33,15 @@ data Exp (s p: Data) where
 
         -- Keyed expressions.
         XKey    : Key -> Exp s p                -> Exp s p
+
+
+-- | Function parameter.
+data Param where
+        -- | Bind a value (call by value).
+        PVal    : Name  -> Param
+
+        -- | Bind a whole expression (call by name).
+        PExp    : Name  -> Param
 
 
 -- | Expression keys (super primitives).

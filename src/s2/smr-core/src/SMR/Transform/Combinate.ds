@@ -66,11 +66,12 @@ translate (xx: Exp s p): ExpC s p
         XApp x1 x2
          -> XAppC (translate x1) (translate x2)
 
-        XAbs (Cons nParam Nil) xBody
-         -> abstract nParam 0 (translate xBody)
+        XAbs (Cons pParam Nil) xBody
+         -> do  nParam  = nameOfParam pParam
+                abstract nParam 0 (translate xBody)
 
-        XAbs (Cons nParam nsParam) xBody
-         -> translate (XAbs (Cons nParam Nil) (XAbs nsParam xBody))
+        XAbs (Cons pParam psParam) xBody
+         -> translate (XAbs (Cons pParam Nil) (XAbs psParam xBody))
 
         XSub _ _
          -> case pushHead xx of

@@ -53,6 +53,17 @@ smr_eqExp [s p: Data] {Eq s} {Eq p} (x1 x2: Exp s p): Bool
         _                       -> False
 
 
+-- | Equality dictionary for parameters.
+eq_Param: Eq Param
+ = Eq   eq' neq'
+ where
+        eq' (PVal n1) (PVal n2) = n1 == n2
+        eq' (PExp n1) (PExp n2) = n1 == n2
+        eq' _ _                 = False
+
+        neq' p1 p2              = not $ eq p1 p2
+
+
 -- | Equality dictionary for expression keys.
 eq_Key: Eq Key
  = Eq   smr_eqKey

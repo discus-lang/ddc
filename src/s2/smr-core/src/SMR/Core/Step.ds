@@ -166,10 +166,10 @@ stepAppPrim
 stepAppAbs
         {Eq p} {Show p}
         {str:     StepStrength} {ctx:   StepContext s p}
-        (nsParam: List Name)    (xBody: Exp s p) (xsArgs: List (Exp s p))
+        (psParam: List Param)   (xBody: Exp s p) (xsArgs: List (Exp s p))
         : Either Result (Exp s p)
    -- Default evaluation method is call-by-value, so first reduce the args.
- = do   arity           = length nsParam
+ = do   arity           = length psParam
         args            = length xsArgs
         xsArgs_sat      = take arity xsArgs
         xsArgs_remain   = drop arity xsArgs
@@ -177,7 +177,7 @@ stepAppAbs
         case stepFirst xsArgs_sat of
          -- One of the arguments makes progress.
          Right xsArgs_sat'
-          -> Right $ makeXApps (makeXApps (XAbs nsParam xBody) xsArgs_sat')
+          -> Right $ makeXApps (makeXApps (XAbs psParam xBody) xsArgs_sat')
                         xsArgs_remain
 
          -- Stepping one of the argument failed.
@@ -190,19 +190,23 @@ stepAppAbs
                 -- Saturated application.
                 if args == arity
                  then do
+                    nsParam     = map nameOfParam psParam
                     snv         = snvOfNamesArgs nsParam xsArgs
                     Right $ snvApply False snv xBody
 
                  -- Under application
                  else if args < arity
                  then do
-                    nsParam_sat    = take args nsParam
-                    nsParam_remain = drop args nsParam
+
+                    psParam_sat    = take args psParam
+                    nsParam_sat    = map nameOfParam psParam_sat
+                    psParam_remain = drop args psParam
                     snv            = snvOfNamesArgs nsParam_sat xsArgs_sat
-                    Right $ XApp  (snvApply False snv $ XAbs nsParam_remain xBody)
+                    Right $ XApp  (snvApply False snv $ XAbs psParam_remain xBody)
                                   (makeXRet xsArgs_remain)
 
                  else do
+                    nsParam        = map nameOfParam psParam
                     snv            = snvOfNamesArgs nsParam xsArgs_sat
                     Right $ XApp  (snvApply False snv xBody)
                                   (makeXRet xsArgs_remain)
@@ -219,12 +223,13 @@ stepAppSeq
  -- As we can see the abstraction, build the substitution directly without
  -- going through an intermediate application.
  | Cons xArg1 xsArgs'   <- xsArgs
- , XAbs ns11  x12       <- fromMaybe xArg1 (pushHead xArg1)
- , Cons n1    ns11'     <- ns11
- = do   snv     = snvOfNamesArgs (Cons n1 Nil) (Cons xBody Nil)
+ , XAbs ps11  x12       <- fromMaybe xArg1 (pushHead xArg1)
+ , Cons p1    ps11'     <- ps11
+ = do   n1      = nameOfParam p1
+        snv     = snvOfNamesArgs (Cons n1 Nil) (Cons xBody Nil)
         car     = CSim snv
         cars    = Cons car Nil
-        Right $ makeXApps (trainApply cars $ makeXAbs ns11' x12) xsArgs'
+        Right $ makeXApps (trainApply cars $ makeXAbs ps11' x12) xsArgs'
 
  -- Application of a seq to something that isn't yet an abstraction.
  | otherwise

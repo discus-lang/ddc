@@ -2,23 +2,28 @@
 
 @main
 
-! -- Basics -------------------------------------------------------------------
-!       Basic identity function.
+-- Basics -------------------------------------------------------------------
+--       Basic identity function.
 = @test %identity
         (##box ((\x. x) #nat'5))
         (##box #nat'5)
 
         ((\x. x) %derp);
-\~tag. \~run
 
-@test = \tag. \xRun. \xExpected. \testNext
- . ##seq (#smr-eval-cbv xRun)  $ \xResult
+
+-- Want to have both cbv and cbn.
+-- delay evaluation of next test until the first one is done.
+@test tag xRun xExpected testNext
+ = ##seq (#smr-eval-cbv xRun)  $ \xResult
  . #if   (#smr-equal xResult xExpected)
          (##box testNext)
          (%fail tag xResult xExpected);
 
 
 
-! $ @test %duplication
-!         (##box ((\x. x x) #nat'5))
-!         (##box (#nat'5 #nat'5))
+-- $ @test %duplication
+--        (##box ((\x. x x) #nat'5))
+--        (##box (#nat'5 #nat'5))
+
+
+
