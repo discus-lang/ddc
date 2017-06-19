@@ -66,18 +66,5 @@ $ @test %capture-sub-bump
         ([z = x]. (\x. \y. z))
         (\x. \y. x^1)
 
--- Combinate --------------------------
-$ @test %combinate-twice
-        (@combinate $ ##box (\f x. f (f x)))
-        (#S #B #I)
-
-$ @test %combinate-thrice
-        (@combinate $ ##box (\f x. f (f (f x))))
-        (#S (#S #Bs #I) #I)
-
-$ @test %combinate-y
-        (@combinate $ ##box (\f. (\x. f (x x)) (\x. f (x x))))
-        (#S (#C #B $ #S #I #I) $ #C #B $ #S #I #I)
-
 $ %success;
 
