@@ -78,7 +78,10 @@ skipSpace
         | c == '\t' -> skipSpace (incCharOfLocation 8 lStart) cs
 
         -- Skip comments
-        |  c == '!' -> skipSpace lStart $ dropWhile (\x -> x /= '\n') cs
+        |  c == '-'
+        ,  Cons c2 cs2 <- cs
+        ,  c2 == '-'
+        -> skipSpace lStart $ dropWhile (\x -> x /= '\n') cs2
 
         | otherwise -> (lStart, xx)
 
@@ -162,5 +165,7 @@ isCharPunc (c: Char): Bool
  | c == ';'     = True
  | c == '='     = True
  | c == '$'     = True
+ | c == '!'     = True
+ | c == '~'     = True
  | otherwise    = False
 

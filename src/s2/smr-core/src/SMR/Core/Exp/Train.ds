@@ -1,5 +1,5 @@
 
-module SMR.Core.Train
+module SMR.Core.Exp.Train
 export
 {       trainCons;      trainAppend;
         trainBump;
@@ -16,7 +16,8 @@ export
         upsBump;        upsCombine;
         upsApply;       upsApplyVar;
 }
-import SMR.Core.Exp
+import SMR.Core.Exp.Base
+import Data.Text
 where
 
 

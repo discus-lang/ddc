@@ -1,0 +1,60 @@
+
+module SMR.Repl.Command.Load
+export { loadSources; loadSource }
+import SMR.Source.Parser
+import SMR.Source.Lexer
+import System.IO.Console
+import System.Posix.Stdlib
+where
+
+
+-- | Load source files.
+loadSources
+        (config: Config Name Prim)
+        (paths:  List Text)
+        :        S (File + Console + Process)
+                   (List (Decl Name Prim))
+ = case paths of
+        Nil     -> Nil
+        Cons (TextLit path) paths'
+         -> case loadSource config path of
+                Nothing
+                 -> do  writel "load failed"
+                        exit 0
+                        Nil
+
+                Just decls
+                 -> do  decls'  = loadSources config paths'
+                        append decls decls'
+
+
+-- | Load a list of top-level declarations from a source file.
+loadSource
+        (config: Config Name Prim)
+        (path:   TextLit)
+        :        S (File + Console)
+                   (Maybe (List (Decl Name Prim)))
+ = do
+        str     = file_read (takeTextLit path)
+        lStart  = Location 1 1
+        result  = lexTokens lStart $ charListOfText str
+
+        case result of
+         (toks, _, cs)
+          |  not $ all isSpace cs
+          -> do writel "! error at end of input."
+                writel (show cs)
+                Nothing
+
+          |  otherwise
+          -> case parseDecls config toks of
+                Left err
+                 -> do  writel $ ppr err
+                        Nothing
+
+                Right ds'
+                 -> Just ds'
+
+         _ -> Nothing
+
+

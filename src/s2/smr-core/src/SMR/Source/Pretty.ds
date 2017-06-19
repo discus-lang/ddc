@@ -10,7 +10,7 @@ where
 
 
 -- Ref ------------------------------------------------------------------------
-pprRef [s p: Data] {Pretty s} {Pretty p} (rr: Ref s p): Text
+pprRef [s p: Data] {Pretty s} {Pretty p} (rr: ExpRef s p): Text
  = case rr of
         RMac n  -> "@" % n
         RSet n  -> "+" % n
@@ -60,14 +60,14 @@ pprExp' [s p: Data]
         -- abstraction
         -- TODO: adding the "\\" string here causes a compile error.
         XAbs ns x
-         -> textOfChar '\\' % pprSep ns  % "." %% pprExp' ContextBody x
+         -> textOfChar '\\' % pprSep (map pprParam ns)  % "." %% pprExp' ContextBody x
 
         XApp x1 x2
          -> pprExp' ContextFun x1  %% pprExp' ContextArg x2
 
         -- substitution
         XSub cs x
-         -> pprTrain cs % "." % pprExp' ContextArg x
+         -> pprTrain cs % "." % pprExp' ContextBody x
 
         -- keyed expressions
         XKey k x
@@ -84,15 +84,22 @@ pprExp' [s p: Data]
         XRet _      -> pprExp' ContextBody xx
         XRef _      -> pprExp' ContextBody xx
         XVar _      -> pprExp' ContextBody xx
-        XSub _ _    -> pprExp' ContextBody xx
         _           -> parens $ pprExp' ContextBody xx
+
+
+pprParam (pp: Param): Text
+ = case pp of
+        PParam n FVal   -> n
+        PParam n FExp   -> "~" % n
 
 
 pprKey  (kk: Key): Text
  = case kk of
-        KBox    -> "##box"
-        KRun    -> "##run"
-        KSeq    -> "##seq"
+        KBox            -> "##box"
+        KRun            -> "##run"
+        KSeq            -> "##seq"
+        KTag            -> "##tag"
+
 
 pprExpNeedsParensAsArg (xx: Exp s p): Bool
  = case xx of

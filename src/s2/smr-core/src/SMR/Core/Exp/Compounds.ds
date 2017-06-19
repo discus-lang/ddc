@@ -1,0 +1,86 @@
+
+module SMR.Core.Exp.Compounds
+export
+{       lookupDecl;
+        makeXRet;
+        makeXAbs;       nameOfParam;    formOfParam;
+        makeXApps;      takeXApps;
+        flattenExp;     flattenExps
+}
+import SMR.Core.Exp.Base
+import Data.Text
+where
+
+
+-- | Lookup the body of a declaration with the given name from a list.
+lookupDecl
+        (n:     Name)
+        (decls: List (Decl s p))
+        : Maybe (Exp s p)
+ = case decls of
+        Nil             → Nothing
+
+        Cons (DTerm n' x) ds
+         | n == n'      → Just x
+         | otherwise    → lookupDecl n ds
+
+
+-- | Make and XRet from a list of expressions,
+--   suppressing it if there is only one expression.
+makeXRet (xs: List (Exp s p)): Exp s p
+ = case flattenExps xs of
+        Cons x Nil → x
+        xs'        → XRet xs'
+
+
+-- | Make a function application,
+--   suppressing it if there are no parameters.
+makeXAbs (ps: List Param) (xBody: Exp s p): Exp s p
+ | null ps      = xBody
+ | otherwise    = XAbs ps xBody
+
+
+-- | Get the name of a function parameter.
+nameOfParam (p: Param): Name
+ = case p of
+        PParam n  _     → n
+
+
+-- | Get the argument form required by a parameter.
+formOfParam (p: Param): Form
+ = case p of
+        PParam _ f      → f
+
+
+-- | Make an application of a function to the given list of arguments,
+--   suppressing the application of there are no arguments.
+makeXApps (xFun: Exp s p) (xsArgs: List (Exp s p)): Exp s p
+ = case flattenExps xsArgs of
+        Nil             → xFun
+        Cons xArg xsArg → makeXApps (XApp xFun xArg) xsArg
+
+
+-- | Take an application of a function to a list of arguments.
+takeXApps (xx: Exp s p): Maybe (Exp s p, List (Exp s p))
+ = case xx of
+        XApp x1@(XApp _ _) x2
+         → case takeXApps x1 of
+                Just (f1, xs1) → Just (f1, append xs1 (flattenExp x2))
+                Nothing        → Nothing
+
+        XApp x1 x2
+          → Just (x1, flattenExp x2)
+
+        _ → Nothing
+
+
+-- TODO: list append bad complexity.
+flattenExp  (xArg: Exp s p): List (Exp s p)
+ = case xArg of
+        XRet xsArgs       → flattenExps xsArgs
+        _                 → Cons xArg Nil
+
+flattenExps (xsArgs: List (Exp s p)): List (Exp s p)
+ = case xsArgs of
+        Nil               → Nil
+        Cons xArg xsArgs' → append (flattenExp xArg) (flattenExps xsArgs')

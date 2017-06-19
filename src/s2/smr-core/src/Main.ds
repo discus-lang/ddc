@@ -1,15 +1,16 @@
 
 -- Shimmer v1.0. The Lambda Machine.
 module Main
-import SMR.Core.Exp
-import SMR.Core.Step
+import SMR.Repl.Command.Load
 import SMR.Repl.Error
 import SMR.Repl.Args
-import SMR.Prim.Op
-import SMR.Prim.Name
 import SMR.Source.Pretty
 import SMR.Source.Token
 import SMR.Source.Parser
+import SMR.Core.Exp
+import SMR.Core.Step
+import SMR.Prim.Op
+import SMR.Prim.Name
 import System.IO.Console
 import System.IO.File
 import System.Posix.Stdlib
@@ -63,9 +64,7 @@ getLine: S Console Text
 
 -------------------------------------------------------------------------------
 main ()
- = do   writel "Shimmer, version 1.0. The Lambda Machine."
-
-        modes           = smrReplArgs_load
+ = do   modes           = smrReplArgs_load
         tsInclude       = smrReplArgs_collectIncludes modes
 
         -- Build the table of primitive evaluators.
@@ -97,7 +96,7 @@ main ()
 
         decls   = loadSources config tsInclude
         state   = State config primTable decls
-        repl state CmdNone
+        repl_start state modes
 
 
 lens_exp_location
@@ -105,62 +104,33 @@ lens_exp_location
  = lens_make (\xx -> Nothing) (\l xx -> xx)
 
 
--- | Load source files.
-loadSources
-        (config: Config Name Prim)
-        (paths:  List Text)
-        :        S (File + Console + Process)
-                   (List (Decl Name Prim))
- = case paths of
-        Nil     -> Nil
-        Cons (TextLit path) paths'
-         -> case loadSource config path of
-                Nothing
-                 -> do  writel "load failed"
-                        exit 0
-                        Nil
+-------------------------------------------------------------------------------
+repl_start (state: State) (args: List Mode): S Console Unit
+ = case args of
+        Cons (ModeInclude _) args'
+         -> repl_start state args'
 
-                Just decls
-                 -> do  decls'  = loadSources config paths'
-                        append decls decls'
-
-
--- | Load a list of top-level declarations from a source file.
-loadSource
-        (config: Config Name Prim)
-        (path:   TextLit)
-        :        S (File + Console)
-                   (Maybe (List (Decl Name Prim)))
- = do
-        str     = file_read (takeTextLit path)
-        lStart  = Location 1 1
-        result  = lexTokens lStart $ charListOfText str
-
-        case result of
-         (toks, _, cs)
-          |  not $ all isSpace cs
-          -> do writel "! error at end of input."
-                writel (show cs)
-                Nothing
-
-          |  otherwise
-          -> case parseDecls config toks of
+        Cons (ModeEval name) args'
+         -> case steps' state True (XRef (RMac name)) of
                 Left err
-                 -> do  writel $ ppr err
-                        Nothing
+                 -> writel $ ppr $ ErrorReplRuntime "<command>" err
 
-                Right ds'
-                 -> Just ds'
+                Right x'
+                 -> writel $ ppr x'
 
-         _ -> Nothing
+        Nil
+         -> do  -- Print out splash line when we start the interactive repl.
+                writel "Shimmer, version 1.0. The Lambda Machine."
+                repl_loop state CmdNone
 
 
+-------------------------------------------------------------------------------
 -- | Read-Eval-Print loop.
 --   TODO: need to put the explicit box.
 --
 --   TODO: closing stdin with control-D causes prompt to print infinitely.
 --
-repl    (state: State) (cmd: Cmd): S Console Unit
+repl_loop (state: State) (cmd: Cmd): S Console Unit
  = box do
         -- Write the prompt.
         write "> "
@@ -176,7 +146,7 @@ repl    (state: State) (cmd: Cmd): S Console Unit
          (Cons lt Nil, _, Nil)
           |  valueOfLocated lt == KEnd
           -> case cmd of
-                CmdNone    -> repl      state CmdNone
+                CmdNone    -> repl_loop state CmdNone
                 CmdStep xx -> repl_step state xx
 
          -- We have some tokens, to parse them.
@@ -190,7 +160,7 @@ repl    (state: State) (cmd: Cmd): S Console Unit
                  |  Cons c _ <- cs
                  -> do  writell $ ppr
                          $ ErrorReplLexer "<interactive>" lStart' (Just c)
-                        repl state CmdNone
+                        repl_loop state CmdNone
 
                 _ -> do writell $ ppr
                          $ ErrorReplLexer "<interactive>" lStart' Nothing
@@ -210,12 +180,12 @@ repl_toks
          -- Parse failed on some token.
          -> do  writel "! parse error."
                 writel $ ppr err
-                repl state CmdNone
+                repl_loop state CmdNone
 
          -- Parse failed because there was no input,
          -- just read the next line.
          | otherwise
-         ->     repl state CmdNone
+         ->     repl_loop state CmdNone
 
 
 -- | Given an expression,
@@ -227,15 +197,15 @@ repl_step
  = case step' state True xx of
         Left (ResultError err)
          -> do  writell $ ppr $ ErrorReplRuntime  "<interactive>" err
-                repl state CmdNone
+                repl_loop state CmdNone
 
         Left ResultDone
          -> do  writell "! done."
-                repl state CmdNone
+                repl_loop state CmdNone
 
         Right x'
          -> do  writell (ppr x')
-                repl state (CmdStep x')
+                repl_loop state (CmdStep x')
 
 
 -- | Given an expression,
@@ -247,11 +217,11 @@ repl_steps
  = case steps' state True xx of
         Left err
          -> do  writell $ ppr $ ErrorReplRuntime  "<interactive>" err
-                repl state CmdNone
+                repl_loop state CmdNone
 
         Right x'
          -> do  writell $ ppr x'
-                repl state CmdNone
+                repl_loop state CmdNone
 
 
 -- | Single step an expression.

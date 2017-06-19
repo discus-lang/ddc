@@ -2,18 +2,101 @@
 module SMR.Prim.Op.Smr
 export makePrimOpsSmr
 import SMR.Prim.Op.Base
+import SMR.Core.Exp.Push
 import SMR.Transform.Combinate
 where
 
 
--- | Primitive evaluators for Shimmer expression transforms.
-makePrimOpsSmr (_ : Unit): List (PrimEval s Prim)
- = Cons primOpCombinate
+-------------------------------------------------------------------------------
+-- | Shimmer expression functions reflected back as primops.
+--   TODO: shouldn't need to supply dictionary here.
+makePrimOpsSmr {eqs: Eq s} (_ : Unit): List (PrimEval s Prim)
+ = Cons (primOpSmrEqual {eqs})
+ $ Cons primOpSmrPushHead
+ $ Cons primOpSmrPushDeep
+ $ Cons primOpSmrEvalCbv
+ $ Cons primOpSmrEvalNo
+ $ Cons primOpSmrEvalFail
+ $ Cons primOpSmrCombinateSKI
  $ Nil
 
+
+-------------------------------------------------------------------------------
+-- | Equality on expressions.
+primOpSmrEqual {Eq s}: PrimEval s Prim
+ = PrimEval (PrimOp "smr-equal")        "Syntactic equality of expressions."
+            (Cons Val (Cons Val Nil)) fn'
+ where fn'  (Cons xA (Cons xB Nil))
+        = Just $ makeXBool (xA == xB)
+
+
+-------------------------------------------------------------------------------
+-- | Push to reveal head constructor.
+primOpSmrPushHead: PrimEval s Prim
+ = PrimEval (PrimOp "smr-push-head")
+            "Push down substitutions to reveal head constructor."
+            (Cons Exp Nil) fn'
+ where  fn' (Cons xx  Nil)
+         = pushHead xx
+
+
+-- | Push deeply in expression.
+primOpSmrPushDeep: PrimEval s Prim
+ = PrimEval (PrimOp "smr-push-deep")
+            "Push down substitutions deeply in expression."
+            (Cons Exp Nil) fn'
+ where  fn' (Cons xx  Nil)
+         = pushDeep xx
+
+
+-------------------------------------------------------------------------------
+-- | Evaluate call-by-value.
+primOpSmrEvalCbv: PrimEval s Prim
+ = PrimEval (PrimOp "smr-eval-cbv")     "Call-by-value evaluation"
+            (Cons Val Nil) fn'
+ where fn'  (Cons xF  Nil)
+        = do    str     = StepStrength False False
+                ctx     = StepContext  Nil Nil
+                case xF of
+                 XKey KBox xF'
+                     -> case steps str ctx xF' of
+                         Left err   -> Just $ XRef (RPrm (PrimOp "smr-eval-fail"))
+                         Right xF'  -> Just $ XKey KBox xF'
+
+                 xF' -> case steps str ctx xF' of
+                         Left  err  -> Just $ XRef (RPrm (PrimOp "smr-eval-fail"))
+                         Right xF'  -> Just $ XKey KBox xF'
+
+
+-- | Evaluate normal-order.
+primOpSmrEvalNo: PrimEval s Prim
+ = PrimEval (PrimOp "smr-eval-no")      "Normal order evaluation"
+            (Cons Val Nil) fn'
+ where fn'  (Cons xF  Nil)
+        = do    str     = StepStrength True True
+                ctx     = StepContext  Nil Nil
+                case xF of
+                 XKey KBox xF'
+                     -> case steps str ctx xF' of
+                         Left err   -> Just $ XRef (RPrm (PrimOp "smr-eval-fail"))
+                         Right xF'  -> Just $ XKey KBox xF'
+
+                 xF' -> case steps str ctx xF' of
+                         Left  err  -> Just $ XRef (RPrm (PrimOp "smr-eval-fail"))
+                         Right xF'  -> Just $ XKey KBox xF'
+
+
+-- | Indicate evaluation failure.
+primOpSmrEvalFail: PrimEval s Prim
+ = PrimEval (PrimOp "smr-eval-fail")    "Indicate evaluation failure."
+            Nil fn'
+ where  fn' _ = Nothing
+
+
+-------------------------------------------------------------------------------
 -- TODO: don't require all the combs to be specified in the public interface,
 -- though can still have that config internally.
-primOpCombinate: PrimEval s Prim
+primOpSmrCombinateSKI: PrimEval s Prim
  = PrimEval
         (PrimOp "smr-combinate-ski")
         "Convert expression to SKI combinator form."

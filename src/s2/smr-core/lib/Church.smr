@@ -1,10 +1,10 @@
-! Church encoding of basic data types and operators.
+-- Church encoding of basic data types and operators.
 
-! Fixpoint --------------------------------------------------------------------
+-- Fixpoint --------------------------------------------------------------------
 @church-fix f           = (\x. f (x x)) (\x. f (x x));
 
 
-! Booleans --------------------------------------------------------------------
+-- Booleans --------------------------------------------------------------------
 @church-true   x y      = x;
 @church-false  x y      = y;
 @church-if     a b c    = a b c;
@@ -12,7 +12,7 @@
 @church-or     x y      = @church-if x @church-true  y;
 
 
-! Pairing ---------------------------------------------------------------------
+-- Pairing ---------------------------------------------------------------------
 @church-pair   m n
  = \b. @church-if b m n;
 
@@ -23,19 +23,19 @@
  = p @church-false;
 
 
-! Natural numbers -------------------------------------------------------------
-! Peano encoding of natural numbers.
+-- Natural numbers -------------------------------------------------------------
+-- Peano encoding of natural numbers.
 @church-zero    = \s z. z;
 @church-succ n  = \s z. s (n s z);
 
-! Some numbers.
+-- Some numbers.
 @church-one     = @church-succ @church-zero;
 @church-two     = @church-succ @church-one;
 @church-three   = @church-succ @church-two;
 @church-four    = @church-succ @church-three;
 @church-five    = @church-succ @church-four;
 
-! Predecessor.
+-- Predecessor.
 @church-pred n
  = @church-fst (n @church-pair-succ @church-pair-zero);
 
@@ -45,27 +45,27 @@
 @church-pair-succ p
  = @church-pair (@church-snd p) (@church-succ (@church-snd p));
 
-! Addition.
+-- Addition.
 @church-add m n
  = \s z. m s (n s z);
 
-! Subtraction.
+-- Subtraction.
 @church-sub m n
  = n @church-pred m;
 
-! Multiplication.
+-- Multiplication.
 @church-mul m n
  = \z. n (m z);
 
-! Exponential.
+-- Exponential.
 @church-exp m n
  = n m;
 
-! Test if a natural number is zero.
+-- Test if a natural number is zero.
 @church-is-zero n
  = n (\x. @church-false) @church-true;
 
-! Compute the factorial of a natural number 'n'.
+-- Compute the factorial of a natural number 'n'.
 @church-fac   n
  = @church-if
         (@church-is-zero n)
@@ -73,7 +73,7 @@
         (@church-mul n (@church-fac (@church-sub n @church-one)));
 
 
-! Lists -----------------------------------------------------------------------
+-- Lists -----------------------------------------------------------------------
 @church-list-nil
  = \an ac. an;
 

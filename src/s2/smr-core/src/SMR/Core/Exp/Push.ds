@@ -1,0 +1,97 @@
+
+module SMR.Core.Exp.Push
+export {pushHead; pushDeep; pushTrain}
+import SMR.Core.Exp.Train
+import SMR.Core.Exp.Base
+import Data.Ref
+where
+
+
+-- | Push down any outermost substitution train to reveal the head constructor.
+pushHead (xx: Exp s p): Maybe (Exp s p)
+ = case xx of
+        XRet _          → Nothing
+        XRef _          → Nothing
+        XVar _ _        → Nothing
+        XAbs _ _        → Nothing
+        XApp _ _        → Nothing
+        XSub cs2 x2     → pushTrain cs2 x2
+        XKey _ _        → Nothing
+
+
+-- | Push down all simultaneous substitutions and ups in the tree.
+--   This does not push recursive substitutions as continually
+--   pushing those may not terminate.
+pushDeep (xx: Exp s p): Maybe (Exp s p)
+ = private r with { Read r; Write r; Alloc r } in
+   do   refPushed = allocRef [r] False
+        xx'       = pushDeepRef refPushed xx
+        case readRef refPushed of
+         False  → Nothing
+         True   → Just xx'
+
+
+-- | Like 'pushDeep', but if we actually push a substitution then set
+--   the value in the provided reference to 'True'.
+pushDeepRef
+        [r: Region] [s p: Data]
+        (ref: Ref r Bool)
+        (xx: Exp s p): S (Write r) (Exp s p)
+ = case xx of
+        XRet xs         → XRet $ mapS (pushDeepRef ref) xs
+        XRef _          → xx
+        XVar _ _        → xx
+        XApp x1 x2      → XApp (pushDeepRef ref x1) (pushDeepRef ref x2)
+        XAbs ns x1      → XAbs ns (pushDeepRef ref x1)
+
+        XSub cs1 x2
+         → do   writeRef ref True
+                case pushTrain cs1 x2 of
+                 Nothing  → xx
+                 Just xx' → pushDeepRef ref xx'
+
+        XKey k x        → XKey k (pushDeepRef ref x)
+
+
+-- | Push a substitution train down into an expression to reveal
+--   the head constructor.
+pushTrain
+        (cs1:   List (Car s p))
+        (x2:    Exp s p)
+        :       Maybe (Exp s p)
+ = case x2 of
+        -- Unfold macro under a substitution.
+        -- Macro and symbol bodies are closed,
+        -- so we can drop the substitution.
+        XRef (RMac n)   → Just x2
+        XRef (RSym n)   → Just x2
+        XRef (RPrm n)   → Just x2
+
+        -- Reference to some other thing.
+        XRef _          → Nothing
+
+        XRet xs
+         → Just $ XRet $ map (trainApply cs1) xs
+
+        -- Apply the train to a variable.
+        XVar name depth
+         → Just $ trainApplyVar cs1 name depth
+
+        -- Push train into both sides of an application.
+        XApp x21 x22
+         → Just $ XApp (trainApply cs1 x21) (trainApply cs1 x22)
+
+        -- Push train under abstraction.
+        XAbs ps21 x22
+         → do   ns21    = map nameOfParam ps21
+                cs1'    = trainBump ns21 cs1
+                Just $ XAbs ps21 (trainApply cs1' x22)
+
+        -- Combine trains.
+        XSub cs2 x22
+         → Just $ trainApply (append cs2 cs1) x22
+
+        -- Push train under key.
+        XKey k21 x22
+         → Just $ XKey k21 (trainApply cs1 x22)
+
