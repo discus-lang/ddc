@@ -6,6 +6,8 @@ Development
 
 * The trac site http://disciple.ouroborus.net hosts the development wiki and bug tracker.
 
+* The development blog http://disciple-devel.blogspot.com.au has some stories to tell.
+
 * Ask questions on the ​mailing list http://groups.google.com/group/disciple-cafe.
 
 * or on the #disciplined channel on the freenode IRC network http://freenode.net.

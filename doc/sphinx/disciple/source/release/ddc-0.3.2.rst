@@ -1,7 +1,6 @@
 
-                 The Disciplined Disciple Compiler 0.3.2
-                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                       RELEASE NOTES    26/07/2013
+The Disciplined Disciple Compiler 0.3.2 (2013/07/26)
+====================================================
 
 DDC is a research compiler used to investigate program transformation in the
 presence of computational effects. This is a development release. There is
@@ -18,13 +17,13 @@ DDC compiles several related languages:
    constant, and to ensure that computations that perform visible side effects
    are not reordered inappropriately. The Lite language supports higher order
    functions, algebraic data types and unboxed primitive types.
-    (* not all features are supported by the code generators yet, see below *)
+   (not all features are supported by the code generators yet, see below)
 
  * Disciple Core Tetra (Module.dct)
 
    Like Disciple Core Lite but using the 'S' computation type to encode
    effects rather than having a latent effect on the function type constructor.
-    (* does not yet compile to C or LLVM *)
+   (does not yet compile to C or LLVM)
 
  * Disciple Core Flow (Module.dcf)
 
@@ -50,8 +49,8 @@ set of allowable language features, and which primitive types and operators
 are included.
 
 
-What Works in this Release:
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+What Works in this Release
+--------------------------
 
  * Parsing and type checking for the Lite, Tetra, Flow, Salt and Eval languages.
 
@@ -69,54 +68,64 @@ What Works in this Release:
 
  * Several standard program transformations:
     Anonymize (remove names), Beta (substitute), Bubble (move type-casts),
-    Elaborate (add witnesses), Flatten (eliminate nested bindings), 
+    Elaborate (add witnesses), Flatten (eliminate nested bindings),
     Forward (let-floating), Namify (add names), Prune (dead-code elimination),
     Snip (eliminate nested applications).
 
 
 What Doesn't
-~~~~~~~~~~~~
+------------
 
  * No source locations in error messages.
-   - The messages themselves are ok, but you don't get a line-number.
+
+   The messages themselves are ok, but you don't get a line-number.
 
  * No storage management.
-   - There is a fixed 64k heap and when you've allocated that much space the
-     runtime just calls abort().
+
+   There is a fixed 64k heap and when you've allocated that much space the
+   runtime just calls abort().
 
  * No type inference.
-   - You have to write all your own type applications, including effect and
-     closure annotations, which isn't much fun.
+
+   You have to write all your own type applications, including effect and
+   closure annotations, which isn't much fun.
 
  * No multi-module compilation driver.
-   - DDC isn't restricted to whole-program compilation, but the --make driver
-     doesn't handle multiple modules. You'd need to do the linking yourself.
+
+   DDC isn't restricted to whole-program compilation, but the --make driver
+   doesn't handle multiple modules. You'd need to do the linking yourself.
 
  * No user defined data types.
-   - Pairs and Lists are baked in, but we don't handle data type declarations.
+
+   Pairs and Lists are baked in, but we don't handle data type declarations.
 
  * No code generation for lazy evaluation.
-   - The language semantics and interpreter support it, but the C and LLVM
-     code generators do not.
+
+   The language semantics and interpreter support it, but the C and LLVM
+   code generators do not.
 
  * No code generation for partial application.
-   - likewise.
+
+   likewise.
 
 
 Previous Releases
-~~~~~~~~~~~~~~~~~
+-----------------
 
- 2012/12 DDC 0.3.1: Added Lite fragment, compilation to C and LLVM.
- 2012/02 DDC 0.2.0: Project reboot. New core language, working interpreter.
- 2008/07 DDC 0.1.1: Alpha compiler, constructor classes, more examples.
- 2008/03 DDC 0.1.0: Alpha compiler, used dependently kinded core language.
+ * 2012/12 DDC 0.3.1: Added Lite fragment, compilation to C and LLVM.
+
+ * 2012/02 DDC 0.2.0: Project reboot. New core language, working interpreter.
+
+ * 2008/07 DDC 0.1.1: Alpha compiler, constructor classes, more examples.
+
+ * 2008/03 DDC 0.1.0: Alpha compiler, used dependently kinded core language.
 
 
 Immediate Plans
-~~~~~~~~~~~~~~~
+---------------
 
  1) Implement a local type inferencer. The type inferencer will fill in type
-    applications as well as effect and closure annotations, but will not 
+    applications as well as effect and closure annotations, but will not
     perform let-generalisation. This is similar the local type inference used
     to support implicits in Coq/Gallina.
 
@@ -124,7 +133,7 @@ Immediate Plans
     representing effects with computation types.
 
 How you can help
-~~~~~~~~~~~~~~~~
+----------------
 
  1) Work through the tutorial on the web-site and send any comments to the
     mailing list. http://disciple.ouroborus.net/wiki/Tutorial/Core
@@ -139,19 +148,22 @@ How you can help
  5) Tell your friends.
 
 
-People:
-~~~~~~~
+People
+------
 
  The following people contributed to DDC since the last release:
 
- Amos Robinson          - Rewrite rule system and program transforms.
- Ben Lippmeier          - Code generators, framework, program transforms.
+ * Amos Robinson          - Rewrite rule system and program transforms.
+
+ * Ben Lippmeier          - Code generators, framework, program transforms.
 
 
 More Information:
-~~~~~~~~~~~~~~~~~
+-----------------
 
- See the web-site:        http://disciple.ouroborus.net
- Getting Started Guide:   http://disciple.ouroborus.net/wiki/Tutorial/Core
- Read the mailing list:   http://groups.google.com/group/disciple-cafe
+ * See the web-site:        http://disciple.ouroborus.net
+
+ * Getting Started Guide:   http://disciple.ouroborus.net/wiki/Tutorial/Core
+
+ * Read the mailing list:   http://groups.google.com/group/disciple-cafe
 

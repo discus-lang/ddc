@@ -1,14 +1,14 @@
 
-                 The Disciplined Disciple Compiler 0.4.1
-                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-                       RELEASE NOTES    09/03/2014
 
-DDC is a research compiler used to investigate program transformation in the 
+The Disciplined Disciple Compiler 0.4.1 (2014/03/09)
+====================================================
+
+DDC is a research compiler used to investigate program transformation in the
 presence of computational effects. This is a development release. There is
 enough implemented to experiment with the language, but not enough to solve
 actual problems...        (unless you're looking for a compiler to hack on).
 
-DDC compiles several related languages. 
+DDC compiles several related languages.
 
  * Disciple Tetra (.dst)
 
@@ -24,7 +24,7 @@ DDC compiles several related languages.
 
    The desugared version of Disciple Tetra. All function application is in
    prefix form. This language also supports type inference, though the
-   inferencer does not insert additional type quantifiers. 
+   inferencer does not insert additional type quantifiers.
 
  * Disciple Core Lite (.dcl)
 
@@ -60,15 +60,15 @@ operators are included.
 
 
 Main changes since 0.3.2
-~~~~~~~~~~~~~~~~~~~~~~~~
+------------------------
 
  * Added a bi-directional type inferencer based on Joshua Dunﬁeld and
    Neelakantan Krishnaswami's recent ICFP paper.
 
  * Added a region extension language construct, and coeffect system.
-   
+
  * Civilized error messages for unsupported or incomplete features.
-   
+
  * Added the Disciple Tetra language which includes infix operators and
    desugars into Disciple Core Tetra.
 
@@ -81,7 +81,7 @@ Main changes since 0.3.2
  * Support for user-defined algebraic data types.
 
  * Most type error messages now give source locations.
-   
+
  * Building on Windows platforms.
 
  * Better support for foreign imported types and values.
@@ -90,7 +90,7 @@ Main changes since 0.3.2
 
 
 What works in this release
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+--------------------------
 
  * Parsing and type inference for the Tetra, Lite, Flow, Salt and Eval
    languages.
@@ -101,7 +101,7 @@ What works in this release
 
  * Data Flow Fusion for the Flow language.
 
- * Program transformations: Anonymize (remove names), Beta (substitute), 
+ * Program transformations: Anonymize (remove names), Beta (substitute),
    Bubble (move type-casts), Elaborate (add witnesses), Flatten (eliminate
    nested bindings), Forward (let-floating), Namify (add names), Prune
    (dead-code elimination), Snip (eliminate nested applications), Rewrite
@@ -109,7 +109,7 @@ What works in this release
 
 
 What doesn't
-~~~~~~~~~~~~
+------------
 
  * No code generation for higher order functions.
    The type inferencer and program transformations support it, but we don't
@@ -125,7 +125,7 @@ What doesn't
 
 
 Previous Releases
-~~~~~~~~~~~~~~~~~
+-----------------
 
  * 2013/07 DDC 0.3.2: Added Tetra and Flow language fragments.
  * 2012/12 DDC 0.3.1: Added Lite fragment, compilation to C and LLVM.
@@ -135,7 +135,7 @@ Previous Releases
 
 
 Immediate Plans
-~~~~~~~~~~~~~~~
+---------------
 
  1. Finish code generation for higher order functions and partial application.
 
@@ -143,7 +143,7 @@ Immediate Plans
 
 
 How you can help
-~~~~~~~~~~~~~~~~
+----------------
 
  1. Work through the tutorial on the web-site and send any comments to the
     mailing list.] http://disciple.ouroborus.net/wiki/Tutorial
@@ -155,20 +155,22 @@ How you can help
 
 
 People
-~~~~~~
+------
 
 The following people contributed to DDC since the last major release:
 
-* Kyle van Berendonck    -- Building on windows, bug fixes.
-* Erik de Castro Lopo    -- Build system tweaks.
-* Ben Lippmeier          -- Type inferencer, code generation.
-* Amos Robinson          -- Rate inference for flow fusion.
+ * Kyle van Berendonck    -- Building on windows, bug fixes.
+ * Erik de Castro Lopo    -- Build system tweaks.
+ * Ben Lippmeier          -- Type inferencer, code generation.
+ * Amos Robinson          -- Rate inference for flow fusion.
 
 
-More Information:
-~~~~~~~~~~~~~~~~~
+More Information
+-----------------
 
- See the web-site:        http://disciple.ouroborus.net
- Getting Started Guide:   http://disciple.ouroborus.net/wiki/Tutorial/Core
- Read the mailing list:   http://groups.google.com/group/disciple-cafe
+ * See the web-site:        http://disciple.ouroborus.net
+
+ * Getting Started Guide:   http://disciple.ouroborus.net/wiki/Tutorial/Core
+
+ * Read the mailing list:   http://groups.google.com/group/disciple-cafe
 

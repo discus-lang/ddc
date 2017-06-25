@@ -1,5 +1,5 @@
 
-Disciple 0.5.1
+Disciple 0.4.3
 ==============
 
 Disciple is an experimental dialect of Haskell used to investigate static typing and program transformation in the presence of computational effects. Version 0.5.1 is "working alpha" quality, meaning there is a complete system that can be hacked around with, but it's not yet industrial strength.
@@ -28,11 +28,12 @@ The main language features are:
 
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :caption: Contents:
 
    section/01-GettingStarted.rst
    section/02-Development.rst
+   section/04-Release.rst
 
 
 Indices and tables
