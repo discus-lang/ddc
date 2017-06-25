@@ -34,7 +34,7 @@ import Text.Show.Pretty
 
 ---------------------------------------------------------------------------------------------------
 -- | Convert the body of a supercombinator to Salt.
-convertExp 
+convertExp
         :: Show a
         => ExpContext                   -- ^ The surrounding expression context.
         -> Context a                    -- ^ Types and values in the environment.
@@ -108,13 +108,13 @@ convertExp ectx ctx xx
 
          -- Conversions for fragment specific primitive operators.
          |  Just n      <- takeNameFragAppX xx
-         ,  Just r 
+         ,  Just r
              <- case n of
                   E.NamePrimArith{}       -> convertPrimArith  ectx ctx xx
                   E.NamePrimCast _ True   -> convertPrimArith  ectx ctx xx
                   E.NamePrimCast _ False  -> convertPrimBoxing ectx ctx xx
                   E.NameOpError{}         -> convertPrimError  ectx ctx xx
-                  E.NameOpVector{}        -> convertPrimVector ectx ctx xx 
+                  E.NameOpVector{}        -> convertPrimVector ectx ctx xx
                   E.NameOpFun{}           -> convertPrimCall   ectx ctx xx
                   _                       -> Nothing
          -> r
@@ -122,7 +122,7 @@ convertExp ectx ctx xx
         ---------------------------------------------------
         -- Polymorphic instantiation.
         --  A polymorphic function is being applied without any associated value
-        --  arguments. In the Salt code this is a no-op, so just return the 
+        --  arguments. In the Salt code this is a no-op, so just return the
         --  functional value itself. The other cases are handled when converting
         --  let expressions. See [Note: Binding top-level supers]
         --
@@ -138,7 +138,7 @@ convertExp ectx ctx xx
         ---------------------------------------------------
         -- Fully applied primitive data constructor.
         --  The type of the constructor is attached directly to this node of the AST.
-        --  The data constructor must be fully applied. Partial applications of data 
+        --  The data constructor must be fully applied. Partial applications of data
         --  constructors that appear in the source language need to be eta-expanded
         --  before Tetra -> Salt conversion.
         XApp a xa xb
@@ -154,14 +154,14 @@ convertExp ectx ctx xx
         ---------------------------------------------------
         -- Fully applied user-defined data constructor application.
         --  The type of the constructor is retrieved in the data defs list.
-        --  The data constructor must be fully applied. Partial applications of data 
+        --  The data constructor must be fully applied. Partial applications of data
         --  constructors that appear in the source language need to be eta-expanded
         --  before Tetra -> Salt conversion.
         XApp a xa xb
          | (x1, xsArgs   )          <- takeXApps1 xa xb
          , XCon _ dc@(DaConBound n) <- x1
          , Just dataCtor            <- Map.lookup n (dataDefsCtors defs)
-         -> if length xsArgs 
+         -> if length xsArgs
                        == length (dataCtorTypeParams dataCtor)
                        +  length (dataCtorFieldTypes dataCtor)
                then downCtorApp a dc xsArgs
@@ -171,24 +171,24 @@ convertExp ectx ctx xx
 
         ---------------------------------------------------
         -- Saturated application of a top-level supercombinator or imported function.
-        --  This does not cover application of primops, those are handled by one 
+        --  This does not cover application of primops, those are handled by one
         --  of the above cases.
         --
         XApp (AnTEC _t _ _ a') xa xb
          | (x1, asArgs)      <- takeXApps1 xa xb
-         
+
          -- The thing being applied is a named function that is defined
          -- at top-level, or imported directly.
          , XVar _ (UName nF) <- x1
          , Map.member nF (contextCallable ctx)
          , (tsArgs, _)       <- takeTFunAllArgResult (annotType $ annotOfExp x1)
-         -> convertExpSuperCall xx ectx ctx False a' nF 
+         -> convertExpSuperCall xx ectx ctx False a' nF
                 $ zip asArgs tsArgs
 
          | otherwise
-         -> throw $ ErrorUnsupported xx 
+         -> throw $ ErrorUnsupported xx
          $  vcat [ text "Cannot convert application."
-                 , text "fun:       " <> text (ppShow xa)
+                 , text "fun:       " <> pp (ppShow xa)
                  , text "args:      " <> ppr xb ]
 
 
@@ -207,7 +207,7 @@ convertExp ectx ctx xx
                  Just lts'      -> return $ XLet (annotTail a) lts' x2'
 
         XLet{}
-         -> throw $ ErrorUnsupported xx 
+         -> throw $ ErrorUnsupported xx
          $  vcat [ text "Cannot convert a let-expression in this context."
                  , text "The program must be a-normalized before conversion." ]
 
@@ -217,13 +217,13 @@ convertExp ectx ctx xx
         --  The branch is against the literal value itself.
         XCase (AnTEC _ _ _ a') xScrut@(XVar (AnTEC tScrut _ _ _) uScrut) alts
          | isUnboxedRepType tScrut
-         -> do  
+         -> do
                 -- Convert the scrutinee.
                 xScrut' <- convertX ExpArg ctx xScrut
 
                 -- Convert the alternatives.
-                alts'   <- mapM (convertA a' uScrut tScrut 
-                                          (min ectx ExpBody) ctx) 
+                alts'   <- mapM (convertA a' uScrut tScrut
+                                          (min ectx ExpBody) ctx)
                                 alts
 
                 return  $  XCase a' xScrut' alts'
@@ -235,7 +235,7 @@ convertExp ectx ctx xx
         XCase (AnTEC tX _ _ a') xScrut@(XVar (AnTEC tScrut _ _ _) uScrut) alts
          | TCon _ : _   <- takeTApps tScrut
          , isSomeRepType tScrut
-         -> do  
+         -> do
                 -- Convert scrutinee, and determine its prime region.
                 x'      <- convertX      ExpArg ctx xScrut
                 tX'     <- convertDataT (typeContext ctx) tX
@@ -245,13 +245,13 @@ convertExp ectx ctx xx
                            $ takePrimeRegion tScrut'
 
                 -- Convert alternatives.
-                alts'   <- mapM (convertA a' uScrut tScrut 
+                alts'   <- mapM (convertA a' uScrut tScrut
                                           (min ectx ExpBody) ctx)
                                 alts
 
                 -- If the Tetra program does not have a default alternative
                 -- then add our own to the Salt program. We need this to handle
-                -- the case where the Tetra program does not cover all the 
+                -- the case where the Tetra program does not cover all the
                 -- possible cases.
                 let hasDefaultAlt
                         = any isPDefault [p | AAlt p _ <- alts]
@@ -267,14 +267,14 @@ convertExp ectx ctx xx
         ---------------------------------------------------
         -- Trying to matching against something that isn't a primitive numeric
         -- type or alebraic data.
-        -- 
+        --
         -- We don't handle matching purely polymorphic data against the default
         -- alterative,  (\x. case x of { _ -> x}), because the type of the
         -- scrutinee isn't constrained to be an algebraic data type. These dummy
         -- expressions need to be eliminated before conversion.
-        XCase{} 
-         -> throw $ ErrorUnsupported xx  
-         $  text "Unsupported case expression form." 
+        XCase{}
+         -> throw $ ErrorUnsupported xx
+         $  text "Unsupported case expression form."
 
 
         ---------------------------------------------------
@@ -282,13 +282,13 @@ convertExp ectx ctx xx
         -- Run an application of a top-level super.
         XCast _ CastRun (XApp (AnTEC _t _ _ a') xa xb)
          | (xFun, asArgs) <- takeXApps1 xa xb
-         
+
          -- The thing being applied is a named function that is defined
          -- at top-level, or imported directly.
          , XVar _ (UName nSuper) <- xFun
          , Map.member nSuper (contextCallable ctx)
          , (tsArgs, _)          <- takeTFunAllArgResult (annotType $ annotOfExp xFun)
-         -> convertExpSuperCall xx ectx ctx True a' nSuper 
+         -> convertExpSuperCall xx ectx ctx True a' nSuper
                 $ zip asArgs tsArgs
 
         -- Run a suspended computation.
@@ -320,18 +320,18 @@ convertExpSuperCall
 
 convertExpSuperCall xx _ectx ctx isRun a nFun atsArgs
 
- -- EITHER Saturated super call where call site is running the result, 
+ -- EITHER Saturated super call where call site is running the result,
  --        and the super itself directly produces a boxed computation.
  --   OR   Saturated super call where the call site is NOT running the result,
  --        and the super itself does NOT directly produce a boxed computation.
  --
  -- In both these cases we can just call the Salt-level super directly.
- -- 
+ --
  | Just (arityVal, boxings)
     <- case Map.lookup nFun (contextCallable ctx) of
         Just (Callable _src _ty cs)
-           |  Just (_, csVal, csBox)      
-                <- Call.splitStdCallCons 
+           |  Just (_, csVal, csBox)
+                <- Call.splitStdCallCons
                 $  filter (not . Call.isConsType) cs
 
            -> Just (length csVal, length csBox)
@@ -345,17 +345,17 @@ convertExpSuperCall xx _ectx ctx isRun a nFun atsArgs
  -- no run/box to get in the way.
  ,   ( isRun      && boxings == 1)
   || ((not isRun) && boxings == 0)
- = do   
+ = do
         -- Convert the functional part.
         uF      <-  convertDataU (UName nFun)
                 >>= maybe (throw $ ErrorInvalidBound (UName nFun)) return
 
         -- Convert the arguments.
         -- Effect type and witness arguments are discarded here.
-        xsArgs' <- liftM catMaybes 
-                $  mapM (convertOrDiscardSuperArgX ctx) 
+        xsArgs' <- liftM catMaybes
+                $  mapM (convertOrDiscardSuperArgX ctx)
                         atsArgs
-                        
+
         return  $ xApps a (XVar a uF) xsArgs'
 
 
@@ -371,7 +371,7 @@ convertExpSuperCall xx _ectx ctx isRun a nFun atsArgs
 
 
 ---------------------------------------------------------------------------------------------------
--- | If this is an application of a fragment specific primitive or 
+-- | If this is an application of a fragment specific primitive or
 --   the result of running one then take its name.
 takeNameFragAppX :: Exp a E.Name -> Maybe E.Name
 takeNameFragAppX xx
@@ -387,7 +387,7 @@ takeNameFragAppX xx
         _ -> Nothing
 
 
--- | If this is an application of an ambient primitive, 
+-- | If this is an application of an ambient primitive,
 --   then return its name.
 takeNamePrimAppX :: Exp a E.Name -> Maybe Prim
 takeNamePrimAppX xx
