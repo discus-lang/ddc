@@ -68,15 +68,15 @@ letrec {
 -- Some other ops thrown in. Two processes, 'fs' and 'zs' are manifest
 module Test with
 letrec {
-  us'$runproc$process: [zs$'$k: Rate].RateVec# zs$'$k Float32# -> RateVec# zs$'$k Int# -> Ref# Float32# -> Vector# Float32# -> Float32# -> [us'$PROC: Proc].Unit -> Process# us'$PROC zs$'$k
+  us'$runproc$process: [zs$'$k: Rate].RateVec# zs$'$k Int# -> RateVec# zs$'$k Float32# -> Ref# Float32# -> Vector# Float32# -> Float32# -> [us'$PROC: Proc].Unit -> Process# us'$PROC zs$'$k
     = Λ(zs$'$k: Rate).
-      λ(vs$rv: RateVec# zs$'$k Float32#).λ(us$rv: RateVec# zs$'$k Int#).λ(f$ref: Ref# Float32#).λ(fs: Vector# Float32#).λ(z: Float32#).
+      λ(us$rv: RateVec# zs$'$k Int#).λ(vs$rv: RateVec# zs$'$k Float32#).λ(f$ref: Ref# Float32#).λ(fs: Vector# Float32#).λ(z: Float32#).
       Λ(us'$PROC: Proc).
       λ(_: Unit).
-      let vs$s: Series# us'$PROC zs$'$k Float32#
-            = series# [us'$PROC] [zs$'$k] [Float32#] vs$rv in
       let us$s: Series# us'$PROC zs$'$k Int#
             = series# [us'$PROC] [zs$'$k] [Int#] us$rv in
+      let vs$s: Series# us'$PROC zs$'$k Float32#
+            = series# [us'$PROC] [zs$'$k] [Float32#] vs$rv in
       let us'$s: Series# us'$PROC zs$'$k Int#
             = smap# [us'$PROC] [zs$'$k] [Int#] [Int#]
                   (λ(u: Int#). u) us$s in
@@ -111,14 +111,14 @@ letrec {
   test: Vector# Int# -> Vector# Float32# -> Float32# -> Vector# Float32#
     = λ(us: Vector# Int#).λ(vs: Vector# Float32#).λ(z: Float32#).
       let fs: Vector# Float32#
-            = vnew# [Float32#] (vlength# [Float32#] vs) in
+            = vnew# [Float32#] (vlength# [Int#] us) in
       let f$ref: Ref# Float32#
             = new# [Float32#] z in
       let us'$runproc: Unit
-            = ratify2# [Float32#] [Int#] [Unit] vs us
+            = ratify2# [Int#] [Float32#] [Unit] us vs
                   (Λ(zs$'$k: Rate).
-                   λ(vs$rv: RateVec# zs$'$k Float32#).λ(us$rv: RateVec# zs$'$k Int#).
-                   runProcess# [zs$'$k] (us'$runproc$process [zs$'$k] vs$rv us$rv f$ref fs z)) in
+                   λ(us$rv: RateVec# zs$'$k Int#).λ(vs$rv: RateVec# zs$'$k Float32#).
+                   runProcess# [zs$'$k] (us'$runproc$process [zs$'$k] us$rv vs$rv f$ref fs z)) in
       let f: Float32#
             = read# [Float32#] f$ref in
       let zs: Vector# Float32#
