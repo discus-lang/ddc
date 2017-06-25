@@ -12,7 +12,7 @@
 BUILDFLAVOUR	= distro
 
 # Number of jobs to use during make.
-THREADS		= 1
+THREADS		= 3
 
 
 # GHC Config ------------------------------------------------------------------
@@ -22,6 +22,7 @@ GHCI		= ghci
 # with a cabal sandbox
 # GHC    = cabal exec ghc --
 # GHCI    = cabal exec ghci --
+
 GHC_VERSION	= $(shell $(GHC) --version | sed -e "s/.* //g" -e "s/\..*//")
 GHC_VERSION_FLAGS = -rtsopts
 
@@ -32,11 +33,13 @@ HADDOCK = haddock
 # HADDOCK = cabal exec haddock --
 
 
-# Linear solver time
-DDC_FLOW_USE_LINEAR_SOLVER = 1
+# Use the linear solver with ddc-core-flow.
+#  This requires the limp and limp-cbc packages to be installed.
+DDC_FLOW_USE_LINEAR_SOLVER = 0
 # If you modify this, you should make recompile affected files:
-# touch packages/ddc-core-flow/DDC/Core/Flow/Transform/Rates/Clusters.hs 
-# touch packages/ddc-core-flow/DDC/Core/Flow/Transform/Rates/Clusters/Linear.hs 
+# touch packages/ddc-core-flow/DDC/Core/Flow/Transform/Rates/Clusters.hs
+# touch packages/ddc-core-flow/DDC/Core/Flow/Transform/Rates/Clusters/Linear.hs
+
 
 # Override default config with local config.
 -include make/config-override.mk

@@ -56,7 +56,7 @@ include make/build.mk
 .PHONY	: allWithConfig
 allWithConfig :
 	@$(MAKE) deps
-	@$(MAKE) bin/ddc bin/ddc-check bin/ddci-core bin/ddci-tetra \
+	@$(MAKE) bin/ddc bin/ddci-core bin/ddci-tetra \
 		 bin/war -j $(THREADS)
 	@$(MAKE) src/s2/ddc-runtime/build/libddc-runtime.a
 	@$(MAKE) bin/smr
@@ -72,8 +72,7 @@ total	:
 
 # -- Build all dependencies
 .PHONY	: deps
-deps	: make/deps/Makefile-ddc-check.deps \
-          make/deps/Makefile-ddc-main.deps \
+deps	: make/deps/Makefile-ddc-main.deps \
           make/deps/Makefile-ddci-core.deps \
           make/deps/Makefile-ddci-tetra.deps \
           make/deps/Makefile-war.deps
@@ -105,7 +104,6 @@ nightly :
 # -- Real Targets -------------------------------------------------------------
 #    These don't recursively invoke make.
 #
-include make/targets/bin-ddc-check.mk
 include make/targets/bin-ddc-main.mk
 include make/targets/bin-ddci-core.mk
 include make/targets/bin-ddci-tetra.mk
@@ -116,7 +114,7 @@ include make/targets/war.mk
 include make/targets/tarball.mk
 include make/targets/clean.mk
 include make/targets/libs.mk
-include make/targets/helper.mk
+include make/targets/setup.mk
 include make/targets/packages.mk
 
 
@@ -132,7 +130,6 @@ include make/rules.mk
 #   This behavior is different to the documentation which says
 #   that missing -included files should be ignored.
 #
--include make/deps/Makefile-ddc-check.deps.inc
 -include make/deps/Makefile-ddc-main.deps.inc
 -include make/deps/Makefile-ddci-core.deps.inc
 -include make/deps/Makefile-ddci-tetra.deps.inc

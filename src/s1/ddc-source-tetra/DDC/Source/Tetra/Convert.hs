@@ -24,10 +24,9 @@ import qualified DDC.Core.Tetra.Prim                    as C
 import qualified DDC.Core.Module                        as C
 import qualified DDC.Type.DataDef                       as C
 import qualified Data.Text                              as Text
-import qualified Text.Show.Pretty                       as Text
 import Data.Maybe
 
-import DDC.Core.Module 
+import DDC.Core.Module
         ( ExportSource  (..)
         , ImportType    (..)
         , ImportCap     (..)
@@ -39,13 +38,13 @@ runConvertM :: ConvertM a x -> Either (ErrorConvert a) x
 runConvertM cc = cc
 
 -- | Convert a Source Tetra module to Core Tetra.
-coreOfSourceModule 
+coreOfSourceModule
         :: SP
         -> S.Module S.Source
         -> Either (ErrorConvert S.Source) (C.Module SP C.Name)
 
 coreOfSourceModule a mm
-        = runConvertM 
+        = runConvertM
         $ coreOfSourceModuleM a mm
 
 
@@ -57,22 +56,22 @@ coreOfSourceModule a mm
 --
 --   We use the map of core headers to add imports for all the names that this
 --   module uses from its environment.
--- 
+--
 coreOfSourceModuleM
         :: SP
         -> S.Module S.Source
         -> ConvertM S.Source (C.Module SP C.Name)
 
 coreOfSourceModuleM a mm
- = do   
+ = do
         -- Exported types and values.
-        exportTypes'    
+        exportTypes'
          <- sequence
-         $  fmap (\n -> (,) <$> toCoreTUCN n 
+         $  fmap (\n -> (,) <$> toCoreTUCN n
                             <*> (fmap ExportSourceLocalNoType $ toCoreTUCN n))
          $  S.moduleExportTypes mm
 
-        exportValues'   
+        exportValues'
          <- sequence
          $  fmap (\n -> (,) <$> toCoreXUVN n
                             <*> (fmap ExportSourceLocalNoType (toCoreXUVN n)))
@@ -80,29 +79,29 @@ coreOfSourceModuleM a mm
 
 
         -- Imported types, capabilities and values.
-        importTypes'    
+        importTypes'
          <- sequence
          $  fmap (\(n, it) -> (,) <$> toCoreTBCN n <*> (toCoreImportType it))
          $  S.moduleImportTypes  mm
 
-        importCaps'     
-         <- sequence 
+        importCaps'
+         <- sequence
          $  fmap (\(n, iv) -> (,) <$> toCoreXBVN n <*> toCoreImportCap   iv)
          $  S.moduleImportCaps   mm
 
         importValues'
-         <- sequence 
+         <- sequence
          $  fmap (\(n, iv) -> (,) <$> toCoreXBVN n <*> toCoreImportValue iv)
          $  S.moduleImportValues mm
 
         -- Data type definitions.
-        dataDefsLocal 
-         <- sequence $ fmap toCoreDataDef 
+        dataDefsLocal
+         <- sequence $ fmap toCoreDataDef
          $  [ def    | S.TopData _ def <- S.moduleTops mm ]
 
         -- Type equations.
         typeDefsLocal
-         <- sequence $ fmap toCoreTypeDef 
+         <- sequence $ fmap toCoreTypeDef
          $  [ (b, t) | S.TopType _ b t <- S.moduleTops mm ]
 
         -- Top level bindings.
@@ -119,7 +118,7 @@ coreOfSourceModuleM a mm
                 , C.moduleExportValues
                    =  exportValues'
                    ++ (if C.isMainModuleName (S.moduleName mm)
-                        && (not $ elem (S.UName (Text.pack "main")) 
+                        && (not $ elem (S.UName (Text.pack "main"))
                                 $ S.moduleExportValues mm)
 
                         then [ ( C.NameVar "main"
@@ -138,16 +137,16 @@ coreOfSourceModuleM a mm
 
 
 -- | Extract the top-level bindings from some source definitions.
-letsOfTops :: [S.Top S.Source] 
+letsOfTops :: [S.Top S.Source]
            -> ConvertM S.Source (C.Lets SP C.Name)
 letsOfTops tops
- = do   
+ = do
         -- Collect up the type signatures defined at top level.
         let cls         = [cl   | S.TopClause _ cl      <- tops]
         let sigs        = collectSigsFromClauses      cls
         let vals        = collectBoundVarsFromClauses cls
 
-        bxps            <- fmap catMaybes 
+        bxps            <- fmap catMaybes
                         $  mapM (makeBindingFromClause sigs vals) cls
 
         let (bms, xps)  =  unzip bxps
@@ -157,13 +156,13 @@ letsOfTops tops
 
 
 -- ImportType -------------------------------------------------------------------------------------
-toCoreImportType 
+toCoreImportType
         :: ImportType n S.Type
         -> ConvertM a (ImportType C.Name (C.Type C.Name))
 
 toCoreImportType src
  = case src of
-        ImportTypeAbstract t    
+        ImportTypeAbstract t
          -> ImportTypeAbstract <$> toCoreT UniverseKind t
 
         ImportTypeBoxed t
@@ -171,7 +170,7 @@ toCoreImportType src
 
 
 -- ImportCap --------------------------------------------------------------------------------------
-toCoreImportCap 
+toCoreImportCap
         :: ImportCap S.Bind S.Type
         -> ConvertM a (ImportCap C.Name (C.Type C.Name))
 
@@ -182,20 +181,20 @@ toCoreImportCap src
 
 
 -- ImportValue ------------------------------------------------------------------------------------
-toCoreImportValue 
+toCoreImportValue
         :: ImportValue S.Bind S.Type
         -> ConvertM a (ImportValue C.Name (C.Type C.Name))
 
 toCoreImportValue src
  = case src of
         ImportValueModule mn n t mA
-         ->  ImportValueModule 
-         <$> pure mn    <*> toCoreXBVN n 
-                        <*> toCoreT UniverseSpec t 
+         ->  ImportValueModule
+         <$> pure mn    <*> toCoreXBVN n
+                        <*> toCoreT UniverseSpec t
                         <*> pure mA
 
         ImportValueSea v t
-         -> ImportValueSea 
+         -> ImportValueSea
          <$> pure v     <*> toCoreT UniverseSpec t
 
 
@@ -219,7 +218,7 @@ toCoreDataDef def
 
 
 -- DataCtor ---------------------------------------------------------------------------------------
-toCoreDataCtor 
+toCoreDataCtor
         :: S.DataDef  S.Source
         -> Integer
         -> S.DataCtor S.Source
@@ -251,17 +250,17 @@ toCoreX a xx
          ->     return  $ C.XPrim a p
 
         S.XFrag p
-         -> do  let p'  =  toCorePrimVal p 
+         -> do  let p'  =  toCorePrimVal p
                 t'      <- toCoreT UniverseSpec  $ Env.typeOfPrimVal p
                 return  $ C.XVar a (C.UPrim p' t')
 
-        S.XVar u      
+        S.XVar u
          -> C.XVar      <$> pure a <*> toCoreU u
 
         -- Wrap text literals into Text during conversion to Core.
         -- The 'textLit' variable refers to whatever is in scope.
         S.XCon dc@(C.DaConPrim (S.DaConBoundLit (S.PrimLitTextLit{})) _)
-         -> C.XApp      <$> pure a 
+         -> C.XApp      <$> pure a
                         <*> (C.XVar  <$> pure a <*> (pure $ C.UName (C.NameVar "textLit")))
                         <*> (C.RTerm <$> (C.XCon <$> pure a <*> (toCoreDC dc)))
 
@@ -280,7 +279,7 @@ toCoreX a xx
          -> do  xPrim'  <- toCoreX  a (S.XFrag p)
                 dc1'    <- toCoreDC dc1
                 dc2'    <- toCoreDC dc2
-                return  $  C.xApps a xPrim' 
+                return  $  C.xApps a xPrim'
                                 [ C.RTerm (C.XCon a dc1')
                                 , C.RTerm (C.XCon a dc2')]
         S.XApp x1 x2
@@ -290,7 +289,7 @@ toCoreX a xx
          -> C.XLet      <$> pure a  <*> toCoreLts a lts <*> toCoreX a x
 
         S.XCase x alts
-         -> C.XCase     <$> pure a  <*> toCoreX a x 
+         -> C.XCase     <$> pure a  <*> toCoreX a x
                                     <*> (sequence $ map (toCoreA a) alts)
 
         S.XCast c x
@@ -303,7 +302,7 @@ toCoreX a xx
         S.XMatch{}      -> Left $ ErrorConvertSugaredExp xx
         S.XWhere{}      -> Left $ ErrorConvertSugaredExp xx
         S.XAbsPat{}     -> Left $ ErrorConvertSugaredExp xx
-        S.XLamCase{}    -> Left $ ErrorConvertSugaredExp xx        
+        S.XLamCase{}    -> Left $ ErrorConvertSugaredExp xx
 
 
 -- Arg --------------------------------------------------------------------------------------------
@@ -328,20 +327,20 @@ toCoreLts a lts
  = case lts of
         S.LLet b x
          -> C.LLet <$> toCoreBM UniverseSpec b <*> toCoreX a x
-        
+
         S.LRec bxs
-         -> C.LRec <$> (sequence 
+         -> C.LRec <$> (sequence
                 $ map (\(b, x) -> (,) <$> toCoreBM UniverseSpec b <*> toCoreX a x) bxs)
 
         S.LPrivate bs Nothing bts
-         -> C.LPrivate 
+         -> C.LPrivate
                 <$> (sequence  $ fmap (toCoreBM UniverseKind)
                                $ [S.XBindVarMT b (Just S.KRegion) | b <- bs])
-                <*>  pure Nothing 
+                <*>  pure Nothing
                 <*> (sequence  $ fmap toCoreTBK bts)
 
         S.LPrivate bs (Just tParent) bts
-         -> C.LPrivate 
+         -> C.LPrivate
                 <$> (sequence  $ fmap (toCoreBM UniverseKind)
                                $ [S.XBindVarMT b (Just S.KRegion) | b <- bs])
                 <*> (fmap Just $ toCoreT UniverseKind tParent)
@@ -383,26 +382,23 @@ toCoreA sp alt
          -> C.AAlt <$> toCoreP alt w <*> toCoreX sp x
 
         _ -> error $ unlines
-                [ "ddc-source-tetra: cannot convert sugared alt"       
-                , Text.ppShow alt]
+                [ "ddc-source-tetra: cannot convert sugared alt" ]
 
 
 -- Pat --------------------------------------------------------------------------------------------
 toCoreP  :: S.AltCase -> S.Pat -> ConvertM a (C.Pat C.Name)
-toCoreP aa pp
+toCoreP _aa pp
  = case pp of
-        S.PDefault 
+        S.PDefault
          -> pure C.PDefault
-        
+
         S.PAt{}
          -> error $ unlines
-                  [ "ddc-source-tetra: cannot convert PAt pattern"
-                  , Text.ppShow pp]
+                  [ "ddc-source-tetra: cannot convert PAt pattern" ]
 
         S.PVar{}
          -> error $ unlines
-                  [ "ddc-source-tetra: cannot convert PVar pattern"
-                  , Text.ppShow aa]
+                  [ "ddc-source-tetra: cannot convert PVar pattern" ]
 
         S.PData dc bs
          -> C.PData <$> toCoreDC dc <*> (sequence $ fmap toCorePasB bs)
@@ -419,13 +415,13 @@ toCorePasB pp
           -> pure $ C.BAnon hole
 
          S.PAt{}
-          -> error $ "ddc-source-tetra: cannot convert at pattern "     ++ Text.ppShow pp
+          -> error $ "ddc-source-tetra: cannot convert pattern"
 
          S.PVar b
           -> toCoreB b
 
          S.PData{}
-          -> error $ "ddc-source-tetra: cannot convert nested pattern " ++ Text.ppShow pp
+          -> error $ "ddc-source-tetra: cannot convert nested pattern"
 
 
 -- DaCon ------------------------------------------------------------------------------------------
@@ -440,11 +436,8 @@ toCoreDC dc
         S.DaConRecord ns
          -> pure $ C.DaConRecord ns
 
-        S.DaConPrim  n t 
+        S.DaConPrim  n t
          -> C.DaConPrim  <$> (pure $ toCoreDaConBound n) <*> toCoreT UniverseSpec t
 
         S.DaConBound n
          -> C.DaConBound <$> (pure $ toCoreDaConBound n)
-
-
-

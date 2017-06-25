@@ -57,8 +57,8 @@ GHC_WARNINGS	:= \
 #	-fwarn-missing-signatures
 #       -fwarn-missing-local-sigs
 #       -fwarn-incomplete-uni-patterns
-#       -fwarn-unused-do-bind 
-#       -fwarn-incomplete-record-updates 
+#       -fwarn-unused-do-bind
+#       -fwarn-incomplete-record-updates
 
 # Warning flags that are deprecated in GHC 7.6.
 #       -fwarn-lazy-unlifted-bindings
@@ -66,36 +66,34 @@ GHC_WARNINGS	:= \
 
 # -- Packages -----------------------------------------------------------------
 #
-#    Don't add unix or posix packages, as there can be problems building 
+#    Don't add unix or posix packages, as there can be problems building
 #    them under windows.
 #
 DDC_PACKAGES	:= \
 	-hide-all-packages \
         -package base \
-        -package stm \
-        -package mtl \
         -package array \
-        -package random \
-        -package deepseq \
-        -package process \
-        -package filepath \
-        -package haskeline \
-        -package directory \
-        -package containers \
-        -package transformers \
-        -package text \
-        -package parsec \
-        -package buildbox \
-        -package wl-pprint \
-        -package time \
         -package bytestring \
-        -package vector \
-        -package pretty-show \
-        -package inchworm 
+        -package containers \
+        -package deepseq \
+        -package directory \
+        -package filepath \
+        -package process \
+        -package time \
+        -package transformers \
+        -package mtl \
+        -package parsec \
+        -package random \
+        -package stm \
+        -package text \
+        -package wl-pprint \
+        -package buildbox \
+        -package haskeline \
+        -package inchworm
 
 ifeq "$(DDC_FLOW_USE_LINEAR_SOLVER)" "1"
 DDC_PACKAGES	:= $(DDC_PACKAGES) \
         -package limp \
-        -package limp-cbc 
+        -package limp-cbc
 endif
-        
+

@@ -1,7 +1,9 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE CPP       #-}
 module DDC.Core.Flow.Transform.Rates.Clusters.Linear
     (solve_linear)
  where
+#if DDC_FLOW_HAVE_LINEAR_SOLVER
 
 import DDC.Data.Pretty
 import DDC.Core.Flow.Transform.Rates.Graph
@@ -79,7 +81,7 @@ getBounds ns ws
 
 
 -- | Create constraints for edges and weights
-getConstraints 
+getConstraints
         :: (Ord n, Eq t)
         => Int -> Graph n t
         -> [((n,n),Bool)]
@@ -142,7 +144,7 @@ getConstraints bigN g arcs ws trans
   -- then     pi(v) - pi(u) = 0, or pi(v) = pi(u)
   --
   -- Otherwise, pi(v) - pi(u) has a large enough range to be practically unbounded.
-  -- 
+  --
   -- This constraint is not necessary if there is a fusible edge between the two,
   -- as a more restrictive constraint will be added by edgeConstraint.
   --
@@ -150,7 +152,7 @@ getConstraints bigN g arcs ws trans
    -- If there's an edge between the two, don't bother adding this constraint
    | not $ any (\((i,j),_) -> (u,v) == (i,j) || (v,u) == (i,j)) arcs
    = let x = sc u v
-     in  Between (Z (-bigN) *. x) (piDiff u v) (Z bigN *. x) 
+     in  Between (Z (-bigN) *. x) (piDiff u v) (Z bigN *. x)
      :&& checkTypes u v
 
    | otherwise
@@ -218,7 +220,7 @@ clusterings arcs ns bigN g trans
    -- Simple trick:
    -- if there is an edge between the two,
    --   there will be some cache locality benefit from merging
-   -- otherwise, 
+   -- otherwise,
    --   the only benefit is reducing loop overhead
    --
    -- Another heuristic would be to count nodes with shared parents as having a locality benefit
@@ -292,7 +294,7 @@ solve_linear g trans
       -> (n, Map.insert i jC m)
      (Nothing, Nothing)
       -> ( n + 1
-         , Map.insert i n 
+         , Map.insert i n
          $ Map.insert j n m)
 
    | otherwise
@@ -320,3 +322,8 @@ solve_linear g trans
   reorder' _ (_, [])
    = error "ddc-core-flow:DDC.Core.Flow.Transform.Rates.Linear: impossible, empty list in inverted map"
 
+
+#else
+solve_linear = error "ddc-core-flow.solve_linear: linear solver was not enabled in build."
+
+#endif
