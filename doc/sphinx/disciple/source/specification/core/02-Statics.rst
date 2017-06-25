@@ -160,7 +160,7 @@ A boxed term has the type of a suspension, where the effect `σ` and return type
 .. code-block:: none
 
            Δ | Γ ⊢ x1 :: S σ1 t1 ! σ2    Γ supports σ1
- (TyRun) ----------------------------------------------
+ (TyRun) ──────────────────────────────────────────────
                Δ | Γ ⊢ run e1 :: t1  ! σ1 + σ2
 
 
