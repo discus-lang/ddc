@@ -33,6 +33,7 @@ The main language features are:
 
    section/01-GettingStarted.rst
    section/02-Development.rst
+   section/03-Specification.rst
    section/04-Release.rst
 
 
