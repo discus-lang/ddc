@@ -29,7 +29,6 @@ import Control.Monad
 import Data.Maybe
 import DDC.Control.Check                        (throw)
 import qualified Data.Map                       as Map
-import Text.Show.Pretty
 
 
 ---------------------------------------------------------------------------------------------------
@@ -188,7 +187,7 @@ convertExp ectx ctx xx
          | otherwise
          -> throw $ ErrorUnsupported xx
          $  vcat [ text "Cannot convert application."
-                 , text "fun:       " <> pp (ppShow xa)
+                 , text "fun:       " <> ppr xa
                  , text "args:      " <> ppr xb ]
 
 
