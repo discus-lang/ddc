@@ -32,6 +32,7 @@ The main language features are:
    :caption: Contents:
 
    section/01-GettingStarted.rst
+   section/02-Development.rst
 
 
 Indices and tables

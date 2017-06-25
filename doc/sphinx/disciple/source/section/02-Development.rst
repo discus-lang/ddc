@@ -1,0 +1,12 @@
+
+Development
+===========
+
+* The github site http://github.com/DDCSF/ddc hosts the source code.
+
+* The trac site http://disciple.ouroborus.net hosts the development wiki and bug tracker.
+
+* Ask questions on the ​mailing list http://groups.google.com/group/disciple-cafe.
+
+* or on the #disciplined channel on the freenode IRC network http://freenode.net.
+
