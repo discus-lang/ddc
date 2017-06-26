@@ -26,16 +26,15 @@ For example programs, see the demo_ directory on github, which includes:
 
 
 
-
-
 .. toctree::
    :maxdepth: 1
    :caption: Contents:
 
    section/01-GettingStarted.rst
    section/02-Specification.rst
-   section/03-Development.rst
-   section/04-Release.rst
+   section/03-Architecture.rst
+   section/04-Development.rst
+   section/05-Release.rst
 
 
 Indices and tables
