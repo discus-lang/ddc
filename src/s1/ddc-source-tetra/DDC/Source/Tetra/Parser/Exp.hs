@@ -489,14 +489,14 @@ pDeclTermSP
                 t       <- pType
                 P.choice
                  [ do
-                        gxs     <- pTermGuardedExps (pSym SEquals)
+                        gxs     <- pTermGuardedExps
                         return  (sp0,  SLet sp0 (XBindVarMT b (Just t)) [] gxs)
 
                  , do   return  (sp0,  SSig sp0 b t)
                  ]
 
          , do   -- Non-function binding with no type signature.
-                gxs     <- pTermGuardedExps (pSym SEquals)
+                gxs     <- pTermGuardedExps
                 return  (sp0, SLet sp0 (XBindVarMT b Nothing)  [] gxs)
 
          , do   -- Binding using function syntax.
@@ -508,14 +508,14 @@ pDeclTermSP
                         --   Binder Param1 Param2 .. ParamN : Type = Exp
                         sp      <- pTokSP (KOp ":")
                         tBody   <- pType
-                        gxs     <- pTermGuardedExps (pSym SEquals)
+                        gxs     <- pTermGuardedExps
 
                         let t   = funTypeOfParams     ps tBody
                         return  (sp, SLet sp (XBindVarMT b (Just t))  ps gxs)
 
                         -- Function syntax with no return type.
                         -- We can't make the type sig for the let-bound variable.
-                 , do   gxs     <- pTermGuardedExps (pSym SEquals)
+                 , do   gxs     <- pTermGuardedExps
                         return  (sp0, SLet sp0 (XBindVarMT b Nothing) ps gxs)
                  ]
          ]
@@ -524,18 +524,15 @@ pDeclTermSP
 -- Guards -----------------------------------------------------------------------------------------
 -- | Parse either the terminating char and a single expression,
 --   or some guarded expressions.
+pTermGuardedExps :: Parser [GuardedExp]
 pTermGuardedExps
-        :: Parser SP    -- ^ Parser for char between guards and exp
-        -> Parser [GuardedExp]
-
-pTermGuardedExps pTerm
  = P.choice
- [ do   _       <- pTerm
+ [ do   _       <- pSym SEquals
         xBody   <- pExp
         return  [GExp xBody]
 
  , do   fmap (map snd)
-         $ P.many1 $ pGuardedExpSP pTerm
+         $ P.many1 $ pGuardedExpSP (pSym SEquals)
  ]
 
 

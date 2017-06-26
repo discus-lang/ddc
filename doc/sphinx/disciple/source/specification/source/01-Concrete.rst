@@ -29,14 +29,14 @@ Modules
   ConSig  ::= 'Con' ':' Type
 
 Source modules begin with the keyword ``module`` followed by a module name, then some
-optional export and import specifications. The export specifications must come before
+optional export and import specifications, then some declarations. The export specifications must come before
 the import specifications.
 
-Export specifications list names of value bindings to export.
+Export specifications list names of term bindings to export.
 
 Import specifications list modules or foreign things to import.
 
-Foreign types, capabilities and values can be imported. Foreign boxed types classify values that are stored in the Disciple runtime heap and have the standard format expected by the runtime system. Foreign abstract types are used to classify values that are not stored in the Disciple runtime heap. Foreign abstract capabilities such as 'Console' and 'File' whose associated effects alter the foreign world. Foreign c values are functions accessible via the standard C calling convention.
+Foreign types, capabilities and values can be imported. Foreign boxed types classify values that are stored in the Disciple runtime heap and have the standard format expected by the runtime system. Foreign abstract types are used to classify values that are not stored in the Disciple runtime heap. Foreign abstract capabilities such as 'Console' and 'File' are used for effects that alter the foreign world. Foreign c values are functions accessible via the standard C calling convention.
 
 Braces in the ``Module``, ``ExportSpecs``, ``ImportSpecs`` and ``ImportSpecsForeign`` productions will be inserted using the off-side rule.
 
@@ -47,24 +47,22 @@ Declarations
 .. code-block:: none
 
   Decl                                                     (declaration)
-   ::= DeclType                                            (type declaration)
-    |  DeclData                                            (data declaration)
-    |  DeclValue                                           (value declaration)
+   ::= DeclType | DeclData | DeclValue                     (type declaration)
 
   DeclType                                                 (type declaration)
    ::= 'type' Con '=' Type                                 (type synonym declaration)
 
   DeclData                                                 (data type declaration)
    ::= 'data' Con TypeParams*
-             ('where' '{' (Con ':' Type)+; '}')?           (data type declaration)
-
-  DeclTerm                                                 (term declaration)
-   ::= Var ':' Type                                        (type signature)
-    |  Var DeclTermParams* (':' Type)? GuardedExps         (value declaration)
+          ('where' '{' (Con ':' Type)+; '}')?              (data type declaration)
 
   TypeParams                                               (type parameter)
    ::= '(' Var+ ':' Type ')'                               (type parameters with shared kind)
     |  Var                                                 (single type parameter)
+
+  DeclTerm                                                 (term declaration)
+   ::= Var ':' Type                                        (type signature)
+    |  Var DeclTermParams* (':' Type)? GuardedExpsMaybe    (term declaration using guards)
 
   DeclTermParams                                           (term declaration parameters)
    ::= '[' Var+       ':' Type ']'                         (type parameter)
@@ -73,6 +71,18 @@ Declarations
     |  '(' PatSimple+ ':' Type '}'                         (patterns with shared type annotation)
     |  '(' Pat ')'                                         (pattern in parenthesis)
     |  PatBase                                             (base pattern)
+
+  GuardedExpsMaybe                                         (maybe guarded expressions)
+   ::= '=' Exp                                             (simple unguarded expression)
+    |  GuardedExp*                                         (multiple guarded expressions)
+
+  GuardedExp
+   ::= '|' Guard,+ '=' Exp                                 (guarded expression)
+
+  Guard
+   ::= 'otherwise'                                         (otherwise guard always matches)
+    |  Pat '<-' Exp                                        (match against pattern)
+    |  Exp                                                 (boolean predicate)
 
 
 Type declarations define unparameterised type synonyms. (Issue385_) covers addition of type parameters.
@@ -88,7 +98,6 @@ Term declaration parameters can be either type parameters with a shared kind, an
 Braces in the ``DeclData`` production will be inserted using the off-side rule.
 
 .. _Issue385: http://trac.ouroborus.net/ddc/ticket/385
-
 
 
 Term Expressions
@@ -109,8 +118,8 @@ Term Expressions
   ExpFront
    ::= 'λ' TermParams '->' Exp                             (term abstraction, using '\'  for 'λ' is ok)
     |  'Λ' TypeParams '->' Exp                             (type abstraction, using '/\' for 'Λ' is ok)
-    |  'let'    Clause   'in' Exp                          (non-recursive let binding)
-    |  'letrec' Clause+; 'in' Exp                          (recursive let bindings)
+    |  'let'    DeclTerm   'in' Exp                        (non-recursive let binding)
+    |  'letrec' DeclTerm+; 'in' Exp                        (recursive let bindings)
     |  'do'    '{' Stmt+; '}'                              (do expression)
     |  'case'  '{' AltCase+; '}'                           (case expression)
     |  'match' '{' GuardedExp+; '}'                        (match expression)
