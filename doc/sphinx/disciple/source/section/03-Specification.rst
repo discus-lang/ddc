@@ -9,4 +9,5 @@ The full language specifiction is under construction. At this point we have a pa
    :maxdepth: 2
    :caption:  Specification:
 
-   ../specification/01-Core.rst
+   ../specification/01-Source.rst
+   ../specification/02-Core.rst

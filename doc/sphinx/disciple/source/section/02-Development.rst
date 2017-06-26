@@ -4,7 +4,7 @@ Development
 
 * The github site http://github.com/DDCSF/ddc hosts the source code.
 
-* The trac site http://disciple.ouroborus.net hosts the development wiki and bug tracker.
+* The trac site http://trac.ouroborus.net/ddc hosts the development wiki and bug tracker.
 
 * The development blog http://disciple-devel.blogspot.com.au has some stories to tell.
 
