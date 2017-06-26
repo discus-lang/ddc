@@ -72,18 +72,6 @@ Declarations
     |  '(' Pat ')'                                         (pattern in parenthesis)
     |  PatBase                                             (base pattern)
 
-  GuardedExpsMaybe                                         (maybe guarded expressions)
-   ::= '=' Exp                                             (simple unguarded expression)
-    |  GuardedExp*                                         (multiple guarded expressions)
-
-  GuardedExp
-   ::= '|' Guard,+ '=' Exp                                 (guarded expression)
-
-  Guard
-   ::= 'otherwise'                                         (otherwise guard always matches)
-    |  Pat '<-' Exp                                        (match against pattern)
-    |  Exp                                                 (boolean predicate)
-
 
 Type declarations define unparameterised type synonyms. (Issue385_) covers addition of type parameters.
 
@@ -100,6 +88,24 @@ Braces in the ``DeclData`` production will be inserted using the off-side rule.
 .. _Issue385: http://trac.ouroborus.net/ddc/ticket/385
 
 
+Guarded Expressions
+-------------------
+
+.. code-block:: none
+
+  GuardedExpsMaybe                                         (maybe guarded expressions)
+   ::= '=' Exp                                             (simple unguarded expression)
+    |  GuardedExp*                                         (multiple guarded expressions)
+
+  GuardedExp
+   ::= '|' Guard,+ '=' Exp                                 (guarded expression)
+
+  Guard
+   ::= 'otherwise'                                         (otherwise guard always matches)
+    |  Pat '<-' Exp                                        (match against pattern)
+    |  Exp                                                 (boolean predicate)
+
+
 Term Expressions
 ----------------
 
@@ -111,25 +117,17 @@ Term Expressions
   ExpApp
    ::= ExpAppPrefix                                        (prefix application)
     |  ExpAppInfix                                         (infix application)
+    |  ExpFrontAbs
+    |  ExpFrontBind
+    |  ExpFrontMatch
+    |  ExpFrontEffect
 
   ExpAppPrefix
-   ::= ExpFront ExpArg*;                                   (front expression applied to arguments)
+   ::= ExpBase ExpArg*                                     (base expression applied to arguments)
 
-  ExpFront
-   ::= 'λ' TermParams '->' Exp                             (term abstraction, using '\'  for 'λ' is ok)
-    |  'Λ' TypeParams '->' Exp                             (type abstraction, using '/\' for 'Λ' is ok)
-    |  'let'    DeclTerm   'in' Exp                        (non-recursive let binding)
-    |  'letrec' DeclTerm+; 'in' Exp                        (recursive let bindings)
-    |  'do'    '{' Stmt+; '}'                              (do expression)
-    |  'case'  '{' AltCase+; '}'                           (case expression)
-    |  'match' '{' GuardedExp+; '}'                        (match expression)
-    |  'if' Exp 'then' Exp 'else' Exp                      (if-expression)
-    |  'weakeff' '[' Type ']' 'in' Exp                     (weaken effect of an expression)
-    |  'private' Bind+ WithCaps? 'in' Exp                  (private region introduction)
-    |  'extend'  Bind 'using' Bind+ WithCaps? 'in' Exp     (region extension)
-    |  'box' Exp                                           (box a computation)
-    |  'run' Exp                                           (run a boxed computation)
-    |  ExpBase                                             (base expression)
+  ExpAppInfix
+   ::= ExpApp InfixOp ExpApp
+    |  ExpBase
 
   ExpArg
    ::= '{' Exp  '}'                                        (implicit term argument)
@@ -146,29 +144,74 @@ Term Expressions
     |  '(' Exp ',' Exp+, ')'                               (tuple expression)
     |  '(' Exp ')'                                         (parenthesised expression)
 
+
+
+Abstraction Expressions
+-----------------------
+
+.. code-block:: none
+
+  ExpFrontAbs
+   ::= 'λ' TermParams '->' Exp                             (term abstraction, using '\'  for 'λ' is ok)
+    |  'Λ' TypeParams '->' Exp                             (type abstraction, using '/\' for 'Λ' is ok)
+
   TermParams
    ::= '(' Pat+ ':' Type ')'                               (explicit parameter)
     |  '{' Pat+ ':' Type '}'                               (implicit parameter)
     |  PatBase+                                            (base pattern)
 
 
-  WithCaps
-   ::= 'with' '{' BindT+ '}'
-
-Patterns and Alternatives
--------------------------
+Binding Expressions
+-------------------
 
 .. code-block:: none
 
-  Pat          ::= DaCon PatBase*                       (data constructor patterm)
-                |  PatBase                              (base pattern)
+  ExpFrontBind
+   ::= 'let'    DeclTerm   'in' Exp                        (non-recursive let binding)
+    |  'letrec' DeclTerm+; 'in' Exp                        (recursive let bindings)
+    |  'do'    '{' Stmt+; '}'                              (do expression)
 
-  PatBase      ::= '()'                                 (unit data constructor pattern)
-                |  DaCon                                (named data constructor pattern)
-                |  Literal                              (literal pattern)
-                |  Var                                  (variable pattern)
-                |  '_'                                  (wildcard pattern)
-                |  '(' Pat ',' Pat+ ')'                 (tuple pattern)
-                |  '(' Pat ')'                          (parenthesised pattern)
+Matching Expressions
+--------------------
 
-  AltCase      ::= Pat GuardedExp* '->' Exp             (case alternative)
+.. code-block:: none
+
+  ExpFrontMatch
+   ::= 'case'  '{' AltCase+; '}'                           (case expression)
+    |  'match' '{' GuardedExp+; '}'                        (match expression)
+    |  'if' Exp 'then' Exp 'else' Exp                      (if-expression)
+
+  AltCase
+   ::= Pat GuardedExp* '->' Exp                            (case alternative)
+
+  Pat
+   ::= DaCon PatBase*                                      (data constructor patterm)
+    |  PatBase                                             (base pattern)
+
+  PatBase
+   ::= '()'                                                (unit data constructor pattern)
+    |  DaCon                                               (named data constructor pattern)
+    |  Literal                                             (literal pattern)
+    |  Var                                                 (variable pattern)
+    |  '_'                                                 (wildcard pattern)
+    |  '(' Pat ',' Pat+ ')'                                (tuple pattern)
+    |  '(' Pat ')'                                         (parenthesised pattern)
+
+
+Effectual Expressions
+---------------------
+
+.. code-block:: none
+
+  ExpFrontEffect
+   ::= 'weakeff' '[' Type ']' 'in' Exp                     (weaken effect of an expression)
+    |  'private' Bind+ WithCaps? 'in' Exp                  (private region introduction)
+    |  'extend'  Bind 'using' Bind+ WithCaps? 'in' Exp     (region extension)
+    |  'box' Exp                                           (box a computation)
+    |  'run' Exp                                           (run a boxed computation)
+
+  WithCaps
+   ::= 'with' '{' BindT+ '}'
+
+
+
