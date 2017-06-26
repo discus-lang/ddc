@@ -5,24 +5,21 @@ module DDC.Source.Tetra.Parser.Exp
         ( pExp
         , pExpAppSP
         , pExpAtomSP
-        , pLetsSP,      pClauseSP
+        , pLetsSP,      pDeclTermSP
         , pType
         , pTypeApp
         , pTypeAtomSP)
 where
 import DDC.Source.Tetra.Parser.Type
 import DDC.Source.Tetra.Parser.Witness
+import DDC.Source.Tetra.Parser.Param
 import DDC.Source.Tetra.Parser.Base
 import DDC.Source.Tetra.Exp
 import DDC.Source.Tetra.Prim            as S
 import DDC.Core.Lexer.Tokens
 import Control.Monad.Except
-import Data.Maybe
 import qualified DDC.Control.Parser     as P
 import qualified Data.Text              as Text
-
-
-type SP = SourcePos
 
 
 -- Exp --------------------------------------------------------------------------------------------
@@ -40,7 +37,7 @@ pExpWhereSP
                 sp      <- pKey EWhere
                 pSym SBraceBra
                 cls     <- liftM (map snd)
-                        $  P.sepEndBy1 pClauseSP (pSym SSemiColon)
+                        $  P.sepEndBy1 pDeclTermSP (pSym SSemiColon)
                 pSym SBraceKet
                 return  (sp1, XWhere sp xx cls)
 
@@ -381,50 +378,6 @@ pExpAtomSP
  <?> "a variable, constructor, or parenthesised type"
 
 
--- Params -----------------------------------------------------------------------------------------
--- | Parse some type parameters.
-pTypeParams :: Parser [(Bind, Maybe Type)]
-pTypeParams
- = P.choice
- [ fmap concat
-    $ P.many $ do
-        pSym SRoundBra
-        bs'     <- P.many1 pBind
-        pTok (KOp ":")
-        t       <- pType
-        pSym SRoundKet
-        return  [(b, Just t)  | b <- bs']
-
- , do   bs'     <- P.many1 pBind
-        return  [(b, Nothing) | b <- bs']
- ]
-
-
--- | Parse some term parameters.
-pTermParams :: Parser [(ParamSort, Pat, Maybe Type)]
-pTermParams
- = P.choice
- [ P.try $ do
-         pSym SRoundBra
-         ps   <- P.many1 pPatBase
-         pTok (KOp ":")
-         t    <- pType
-         pSym SRoundKet
-         return  [(MSTerm, p, Just t) | p <- ps]
-
- , P.try $ do
-         pSym SBraceBra
-         ps   <- P.many1 pPatBase
-         pTok (KOp ":")
-         t    <- pType
-         pSym SBraceKet
-         return  [(MSImplicit, p, Just t) | p <- ps]
-
- , do    ps      <- P.many1 pPatBase
-         return  [(MSTerm, p, Nothing) | p <- ps]
- ]
-
-
 -- Alternatives -----------------------------------------------------------------------------------
 -- | Case alternative.
 pAltCase :: Parser AltCase
@@ -443,119 +396,20 @@ pAltCase
                 return  $ AAltCase p [GExp x] ]
 
 
--- | Pattern.
-pPat :: Parser Pat
-pPat
- = P.choice
- [  -- Con Bind Bind ...
-    do  nCon    <- pDaConBoundName
-        ps      <- P.many pPatBase
-        return  $ PData (DaConBound nCon) ps
-
-    -- Base pattern.
- ,  do  p       <- pPatBase
-        return  p
- ]
- <?> "a pattern"
-
-
--- | Base pattern.
-pPatBase :: Parser Pat
-pPatBase
- = P.choice
- [
-        -- Tuple pattern.
-   P.try $ do
-        _sp       <- pSym SRoundBra
-        pField1   <- pPat
-        _         <- pSym SComma
-        psField'  <- P.sepBy1 pPat (pSym SComma)
-        _         <- pSym SRoundKet
-        let ps    =  pField1 : psField'
-        let arity =  length ps
-        let nCtor =  Text.pack ("T" ++ show arity)
-        return    $  PData (DaConBound (DaConBoundName nCtor)) ps
-
-        -- Sugared record pattern.
-        -- like (x = a, y = b, z = c)
- , P.try $ do
-        _       <- pSym SRoundBra
-
-        (nsField, psField)
-         <- fmap unzip
-          $ P.sepBy
-                (do (n, _)  <- pVarNameSP
-                    _       <- pSym SEquals
-                    p       <- pPatBase
-                    return (n, p))
-                (pSym SComma)
-
-        pSym SRoundKet
-        return  $ PData (DaConRecord nsField) psField
-
-        -- Primitive record pattern.
-        -- like (x,y,z)# a b c
-  , P.try $ do
-        _       <- pSym SRoundBra
-        nsField <- fmap (map fst) $ P.sepBy pVarNameSP (pSym SComma)
-        pSym SRoundKet
-        pSym SHash
-        psField <- P.many pPatBase
-        return  $ PData (DaConRecord nsField) psField
-
-        -- ( PAT )
- , P.try $ do
-        pSym SRoundBra
-        p       <- pPat
-        pSym SRoundKet
-        return  $ p
-
-        -- Wildcard
-        --   Try this case before the following one for binders
-        --   so that '_' is parsed as the default pattern,
-        --   rather than a wildcard binder.
- , do   pSym SUnderscore
-        return  $ PDefault
-
-        -- Var
- , do   b       <- pBind
-        P.choice
-         [ do   _       <- pSym SAt
-                p       <- pPatBase
-                return  $  PAt b p
-
-         , do   return  $  PVar b
-         ]
-
-        -- Lit
- , do   nLit    <- pDaConBoundLit
-        return  $ PData (DaConPrim nLit (TBot S.KData)) []
-
-        -- Named algebraic constructors.
- , do   nCon    <- pDaConBoundName
-        return  $ PData (DaConBound nCon) []
-
-        -- 'Unit'
- , do   pTok    (KBuiltin BDaConUnit)
-        return  $ PData  dcUnit []
- ]
- <?> "a pattern"
-
-
 -- Bindings ---------------------------------------------------------------------------------------
 pLetsSP :: Parser (Lets, SP)
 pLetsSP
  = P.choice
     [ -- non-recursive let
       do sp       <- pKey ELet
-         l        <- liftM snd $ pClauseSP
+         l        <- liftM snd $ pDeclTermSP
          return (LGroup [l], sp)
 
       -- recursive let
     , do sp       <- pKey ELetRec
          pSym SBraceBra
          ls       <- liftM (map snd)
-                  $  P.sepEndBy1 pClauseSP (pSym SSemiColon)
+                  $  P.sepEndBy1 pDeclTermSP (pSym SSemiColon)
          pSym SBraceKet
          return (LGroup ls, sp)
 
@@ -620,8 +474,8 @@ pLetWits bs mParent
 
 
 -- | A binding for let expression.
-pClauseSP :: Parser (SP, Clause)
-pClauseSP
+pDeclTermSP :: Parser (SP, Clause)
+pDeclTermSP
  = do   -- Name of the binding.
         (b, sp0) <- pBindNameSP
 
@@ -646,7 +500,7 @@ pClauseSP
                 return  (sp0, SLet sp0 (XBindVarMT b Nothing)  [] gxs)
 
          , do   -- Binding using function syntax.
-                ps      <- fmap concat $ P.many pParamsSP
+                ps      <- fmap concat $ P.many pDeclTermParamsSP
 
                 P.choice
                  [ do   -- Function syntax with a return type.
@@ -665,89 +519,6 @@ pClauseSP
                         return  (sp0, SLet sp0 (XBindVarMT b Nothing) ps gxs)
                  ]
          ]
-
-
--- Function parameters.
-pParamsSP :: Parser [Param]
-pParamsSP
- = P.choice
-        -- Type parameter
-        --   [BIND1 BIND2 .. BINDN : TYPE]
- [ do   pSym SSquareBra
-        bs      <- P.many1 pBind
-        pTok (KOp ":")
-        t       <- pType
-        pSym SSquareKet
-        return  [ MType b (Just t) | b <- bs]
-
-
-        -- Implicit term parameter
-        --   {BIND : TYPE}
- , do   pSym  SBraceBra
-        ps      <- P.choice
-                [  P.try $ do
-                        ps      <- P.many1 pPatBase
-                        pTok (KOp ":")
-                        t       <- pType
-                        return  [ MImplicit p (Just t) | p <- ps ]
-
-                , do    t       <- pType
-                        return  [ MImplicit PDefault (Just t) ]
-                ]
-        pSym  SBraceKet
-        return  ps
-
-
-        -- Value parameter without a type annotation.
-        --   This needs to come before the case for value patterns with type
-        --   annotations because both records and the unit data constructor
-        --   pattern start with a '('.
- , do   p       <- pPatBase
-        return  [MTerm p Nothing]
-
-
-        -- Term pattern with type annotations.
-        -- (BIND1 BIND2 .. BINDN : TYPE)
- , do   pSym    SRoundBra
-        ps      <- P.choice
-                [  P.try $ do
-                        ps      <- P.many1 pPatBase
-                        pTok (KOp ":")
-                        t       <- pType
-                        return  [ MTerm p (Just t) | p <- ps ]
-
-                , do    p       <- pPat
-                        return  [ MTerm p Nothing ]
-                ]
-
-        pSym    SRoundKet
-        return ps
- ]
- <?> "a function parameter"
-
-
---   and the type of the body.
-funTypeOfParams
-        :: [Param]      -- ^ Spec of parameters.
-        -> Type         -- ^ Type of body.
-        -> Type         -- ^ Type of whole function.
-
-funTypeOfParams [] tBody
- = tBody
-
-funTypeOfParams (p:ps) tBody
- = case p of
-        MType     b mt
-         -> let k       = fromMaybe (TBot S.KData) mt
-            in  TApp (TCon (TyConForall k)) (TAbs b k $ funTypeOfParams ps tBody)
-
-        MTerm     _ mt
-         -> let k       = fromMaybe (TBot S.KData) mt
-            in  TFunExplicit k  $ funTypeOfParams ps tBody
-
-        MImplicit  _ mt
-         -> let k       = fromMaybe (TBot S.KData) mt
-            in  TFunImplicit k  $ funTypeOfParams ps tBody
 
 
 -- Guards -----------------------------------------------------------------------------------------
@@ -837,22 +608,8 @@ pStmt
    -- We need the 'try' because the function and argument names at the front
    -- of a clause can also be parsed as a function application in a statement.
    P.try $
-    do  (sp, c)  <- pClauseSP
+    do  (sp, c)  <- pDeclTermSP
         return  $ StmtClause sp c
-
-{-
-   -- Pat <- Exp else Exp ;
-   -- Sugar for a case-expression.
-   -- We need the 'try' because the PAT can also be parsed
-   --  as a function name in a non-binding statement.
- , P.try $
-    do  p       <- pPat
-        sp      <- pSym SArrowDashLeft
-        x1      <- pExp
-        pTok (KKeyword EElse)
-        x2      <- pExp
-        return  $ StmtMatch sp p x1 x2
--}
 
  , P.try $
     do  p       <- pPat

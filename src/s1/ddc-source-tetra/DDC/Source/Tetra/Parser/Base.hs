@@ -1,6 +1,7 @@
 {-# LANGUAGE ExplicitNamespaces #-}
 module DDC.Source.Tetra.Parser.Base
         ( type Parser
+        , type SP
         , (<?>), SourcePos(..)
 
           -- * Generic Token parsers
@@ -45,6 +46,7 @@ import DDC.Core.Parser
 type Parser a
         = P.Parser (Token Name) a
 
+type SP = SourcePos
 
 -- Type and Term Variables ----------------------------------------------------
 -- | Parse a binding occurrence of a named variable.
@@ -70,7 +72,7 @@ pBoundNameSP = P.pTokMaybeSP f <?> "a variable"
 
 -- | Parse an indexed term variable.
 pBoundIxSP   :: Parser (Bound, SourcePos)
-pBoundIxSP 
+pBoundIxSP
  = do   (i, sp) <- pIndexSP
         return  $ (UIx i, sp)
 
@@ -135,7 +137,7 @@ pDaConBoundNameSP = P.pTokMaybeSP f
 
 
 -- | Parse a literal.
---    These are numeric literals, string literals, 
+--    These are numeric literals, string literals,
 --    and special constructors like 'True' and 'False'.
 pDaConBoundLit :: Parser DaConBound
 pDaConBoundLit = P.pTokMaybe f
@@ -145,7 +147,7 @@ pDaConBoundLit = P.pTokMaybe f
 
 
 -- | Parse a literal, with source position.
---    These are numeric literals, string literals, 
+--    These are numeric literals, string literals,
 --    and special constructors like 'True' and 'False'.
 pDaConBoundLitSP :: Parser (DaConBound, SourcePos)
 pDaConBoundLitSP = P.pTokMaybeSP f

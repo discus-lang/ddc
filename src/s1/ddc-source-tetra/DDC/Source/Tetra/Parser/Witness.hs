@@ -2,7 +2,7 @@
 module DDC.Source.Tetra.Parser.Witness
         ( pWitness
         , pWitnessApp
-        , pWitnessAtom) 
+        , pWitnessAtom)
 where
 import DDC.Source.Tetra.Parser.Type
 import DDC.Source.Tetra.Parser.Base
@@ -10,8 +10,6 @@ import DDC.Source.Tetra.Exp.Source
 import Control.Monad.Except
 import DDC.Core.Lexer.Tokens            as K
 import qualified DDC.Control.Parser     as P
-
-type SP = SourcePos
 
 
 -- | Parse a witness expression.
@@ -21,16 +19,16 @@ pWitness = pWitnessJoin
 
 -- | Parse a witness join.
 pWitnessJoin :: Parser Witness
-pWitnessJoin 
+pWitnessJoin
    -- WITNESS  or  WITNESS & WITNESS
  = do   w1      <- pWitnessApp
-        P.choice 
+        P.choice
          [ do   return w1 ]
 
 
 -- | Parse a witness application.
 pWitnessApp :: Parser Witness
-pWitnessApp 
+pWitnessApp
   = do  (x:xs)  <- P.many1 pWitnessArgSP
         let x'  = fst x
         let sp  = snd x
@@ -42,7 +40,7 @@ pWitnessApp
 
 -- | Parse a witness argument.
 pWitnessArgSP :: Parser (Witness, SP)
-pWitnessArgSP 
+pWitnessArgSP
  = P.choice
  [ -- [TYPE]
    do   sp      <- pSym SSquareBra
@@ -63,7 +61,7 @@ pWitnessAtom =  liftM fst pWitnessAtomSP
 -- | Parse a variable, constructor or parenthesised witness,
 --   also returning source position.
 pWitnessAtomSP :: Parser (Witness, SP)
-pWitnessAtomSP 
+pWitnessAtomSP
  = P.choice
    -- (WITNESS)
  [ do   sp      <- pSym SRoundBra
@@ -75,7 +73,7 @@ pWitnessAtomSP
  , do   (DaConBoundName n, sp) <- pDaConBoundNameSP
         return  ( WAnnot sp $ WCon (WiConBound (UName n) (TBot KData))
                 , sp)
-                
+
    -- Debruijn indices
  , do   (u, sp) <- pBoundIxSP
         return  ( WAnnot sp $ WVar u, sp)

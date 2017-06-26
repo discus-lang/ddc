@@ -3,8 +3,7 @@
 module DDC.Source.Tetra.Parser.Module
         ( -- * Modules
           pModule
-        , pTypeSig
-        
+
           -- * Top-level things
         , pTop)
 where
@@ -27,40 +26,22 @@ import DDC.Core.Parser
 -- Module -----------------------------------------------------------------------------------------
 -- | Parse a source tetra module.
 pModule :: Parser (Module Source)
-pModule 
- = do   
-        _sp     <- pTokSP (KKeyword EModule)
-        name    <- pModuleName <?> "a module name"
+pModule
+ = do
+        _sp      <- pTokSP (KKeyword EModule)
+        name     <- pModuleName <?> "a module name"
+        tExports <- liftM concat $ P.many pExportSpecs
+        tImports <- liftM concat $ P.many pImportSpecs
 
-        -- export { VAR;+ }
-        tExports 
-         <- P.choice
-            [ do pKey EExport
-                 pSym SBraceBra
-                 vars <- P.sepEndBy1 pBoundName (pSym SSemiColon)
-                 pSym SBraceKet
-                 return vars
-
-            ,    return []]
-
-        -- import { SIG;+ }
-        tImports
-         <- liftM concat $ P.many pImportSpecs
-
-        -- top-level declarations.
-        tops    
+        tops
          <- P.choice
             [ do pKey EWhere
                  pSym SBraceBra
-
-                 -- TOP;+
                  tops <- P.sepEndBy pTop (pSym SSemiColon)
-
                  pSym SBraceKet
                  return tops
 
             , do return [] ]
-
 
         -- ISSUE #295: Check for duplicate exported names in module parser.
         --  The names are added to a unique map, so later ones with the same
@@ -76,24 +57,25 @@ pModule
                 , moduleTops            = tops }
 
 
--- | Parse a type signature.
-pTypeSig :: Parser (Bind, Type)
-pTypeSig 
- = do   (b, _)  <- pBindNameSP
-        pTokSP (KOp ":")
-        t       <- pType
-        return  (b, t)
+---------------------------------------------------------------------------------------------------
+pExportSpecs :: Parser [Bound]
+pExportSpecs
+ = do   pTok (KKeyword EExport)
+        pSym SBraceBra
+        vars <- P.sepEndBy1 pBoundName (pSym SSemiColon)
+        pSym SBraceKet
+        return vars
 
 
 ---------------------------------------------------------------------------------------------------
 -- | An imported foreign type or foreign value.
-data ImportSpec 
+data ImportSpec
         = ImportModule  ModuleName
         | ImportType    TyConBind (ImportType  TyConBind Type)
         | ImportCap     Bind      (ImportCap   Bind      Type)
         | ImportValue   Bind      (ImportValue Bind      Type)
         deriving Show
-        
+
 
 -- | Parse some import specs.
 pImportSpecs :: Parser [ImportSpec]
@@ -103,10 +85,11 @@ pImportSpecs
         P.choice
                 -- import foreign ...
          [ do   pTok (KKeyword EForeign)
-                src    <- liftM (renderIndent . ppr) pName
+                src    <- liftM (renderIndent . ppr)
+                        $ P.choice [pName]
 
                 P.choice
-                 [      -- import foreign X type (NAME :: TYPE)+ 
+                 [      -- import foreign X type (NAME :: TYPE)+
                   do    pKey EType
                         pSym SBraceBra
                         sigs <- P.sepEndBy1 (pImportType src)       (pSym SSemiColon)
@@ -129,7 +112,7 @@ pImportSpecs
                  ]
 
          , do   pSym SBraceBra
-                names   <-  P.sepEndBy1 pModuleName (pSym SSemiColon) 
+                names   <-  P.sepEndBy1 pModuleName (pSym SSemiColon)
                         <?> "module names"
                 pSym SBraceKet
                 return  [ImportModule n | n <- names]
@@ -171,12 +154,12 @@ pImportCapability src
 -- | Parse a value import spec.
 pImportValue :: String -> Parser ImportSpec
 pImportValue src
-        | "c"           <- src
+        | elem src ["c", "C"]
         = do    (b@(BName n), _)  <- pBindNameSP
                 pTokSP (KOp ":")
                 k       <- pType
 
-                -- ISSUE #327: Allow external symbol to be specified 
+                -- ISSUE #327: Allow external symbol to be specified
                 --             with foreign C imports and exports.
                 let symbol = renderIndent (text $ Text.unpack n)
 
@@ -191,40 +174,64 @@ pTop    :: Parser (Top Source)
 pTop
  = P.choice
  [ do   -- A top-level, possibly recursive binding.
-        (sp, l)         <- pClauseSP
+        (sp, l) <- pDeclTermSP
         return  $ TopClause sp l
- 
+
         -- A data type declaration
- , do   pDataDef
+ , do   pDeclData
 
         -- A type binding
- , do   pTypeDef
+ , do   pDeclType
  ]
+
+
+-- Type -------------------------------------------------------------------------------------------
+pDeclType :: Parser (Top Source)
+pDeclType
+ = do   sp      <- pKey EType
+        bType   <- pTyConBindName
+        bsParam <- liftM concat $ P.many pTypeParam
+        _       <- pSym SEquals
+        tBody   <- pType
+
+        return  $  TopType sp bType
+                $  foldr (\(b, k) t -> TAbs b k t) tBody bsParam
+
+
+-- | Parse a type parameter to a data type or type function.
+pTypeParam :: Parser [(Bind, Type)]
+pTypeParam
+ = do   pSym SRoundBra
+        bs      <- fmap (fst . unzip) $ P.many1 pBindNameSP
+        pTokSP (KOp ":")
+        k       <- pType
+        pSym SRoundKet
+        return  [(b, k) | b <- bs]
 
 
 -- Data -------------------------------------------------------------------------------------------
 -- | Parse a data type declaration.
-pDataDef :: Parser (Top Source)
-pDataDef
+pDeclData :: Parser (Top Source)
+pDeclData
  = do   sp      <- pTokSP (KKeyword EData)
         b       <- pTyConBindName
         ps      <- liftM concat $ P.many pTypeParam
-             
+
         P.choice
          [ -- Data declaration with constructors that have explicit types.
            do   pKey EWhere
                 pSym SBraceBra
-                ctors   <- P.sepEndBy1 pDataCtor (pSym SSemiColon)
+                ctors   <- P.sepEndBy1 pDeclDataCtor (pSym SSemiColon)
                 pSym SBraceKet
                 return  $ TopData sp (DataDef b ps ctors)
-         
+
            -- Data declaration with no data constructors.
          , do   return  $ TopData sp (DataDef b ps [])
          ]
 
 -- | Parse a data constructor declaration.
-pDataCtor :: Parser (DataCtor Source)
-pDataCtor
+pDeclDataCtor :: Parser (DataCtor Source)
+pDeclDataCtor
  = do   n       <- pDaConBindName
         pTokSP (KOp ":")
         t       <- pType
@@ -234,29 +241,4 @@ pDataCtor
                 { dataCtorName          = n
                 , dataCtorFieldTypes    = tsArg
                 , dataCtorResultType    = tResult }
-
-
--- Type -------------------------------------------------------------------------------------------
-pTypeDef :: Parser (Top Source)
-pTypeDef
- = do   sp      <- pKey EType
-        bType   <- pTyConBindName
-        bsParam <- liftM concat $ P.many pTypeParam
-        _       <- pSym SEquals
-        tBody   <- pType
-
-        return  $  TopType sp bType 
-                $  foldr (\(b, k) t -> TAbs b k t) tBody bsParam
-
-
--- | Parse a type parameter to a data type or type function.
-pTypeParam :: Parser [(Bind, Type)]
-pTypeParam 
- = do   pSym SRoundBra
-        bs      <- fmap (fst . unzip) $ P.many1 pBindNameSP
-        pTokSP (KOp ":")
-        k       <- pType
-        pSym SRoundKet
-        return  [(b, k) | b <- bs]
-
 
