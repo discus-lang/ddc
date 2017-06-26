@@ -431,11 +431,13 @@ pAltCase :: Parser AltCase
 pAltCase
  = do   p       <- pPat
         P.choice
-         [ do   -- Desugar case guards while we're here.
+         [ do   -- Guarded expression.
                 spgxs     <- P.many1 (pGuardedExpSP (pSym SArrowDashRight))
                 let gxs  = map snd spgxs
                 return  $ AAltCase p gxs
 
+                -- Accept unguarded expression directly to avoid
+                -- the desugarer needing to worry about it.
          , do   pSym SArrowDashRight
                 x       <- pExp
                 return  $ AAltCase p [GExp x] ]
