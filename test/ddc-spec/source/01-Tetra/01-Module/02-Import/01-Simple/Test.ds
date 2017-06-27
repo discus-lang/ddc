@@ -1,0 +1,8 @@
+
+-- Demonstrate importing a module and re-exporting one of the values.
+module Test
+export bar
+import ImportMe
+where
+
+bar = foo

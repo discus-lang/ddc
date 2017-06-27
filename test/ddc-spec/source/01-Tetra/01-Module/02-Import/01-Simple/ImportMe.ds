@@ -1,0 +1,6 @@
+
+module ImportMe
+export foo
+where
+
+foo     = 5

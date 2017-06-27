@@ -1,5 +1,6 @@
 
--- Multiple export clauses with multiple binding names in module header.
+-- Demonstrate multiple export clauses with multiple binding names
+-- in module header.
 module Test
 export { foo; bar }
 export baz

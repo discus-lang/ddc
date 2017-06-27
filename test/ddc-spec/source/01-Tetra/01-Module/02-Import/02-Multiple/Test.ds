@@ -1,0 +1,19 @@
+
+-- Demonstrate importing multiple modules from the base library and using them
+-- to define new values. We also demonstrate that the braced list syntax can be
+-- used in both the export and import lists.
+module Test
+export
+{       foo;
+        bar;
+}
+export  baz;
+import
+{       Data.Numeric.Nat;
+        Data.Numeric.Bool;
+}
+where
+
+foo     = 1 + 2
+bar     = True ∨ False
+baz     = True ∧ False

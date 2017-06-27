@@ -1,5 +1,5 @@
 
--- Module export clauses in module header.
+-- Demonstrate multiple module export clauses in module header.
 module Test
 export foo
 export bar

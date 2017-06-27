@@ -1,0 +1,100 @@
+
+-- Demonstrate all the foreign import mechanisms.
+--
+-- We can import:
+--   foreign boxed types.
+--   foreign abstract types.
+--   foreign abstract capabilities.
+--   foreign c values.
+--
+module Main
+
+-- Import the boxed type of references.
+--   This gives defines the type constructor and its kind.
+--   In compiled code the runtime representation of values of the result
+--   type must have the standard format expected by the runtime system.
+--   The constructors and operators for the references themselves are defined
+--   in the runtime system and will be linked in automatically.
+import foreign boxed type
+ Ref : Region -> Data -> Data
+
+
+-- Import the abstract type of console effects.
+--   Abstract foreign type imports are used to define types that do not have
+--   associated values. Here 'Console' is a type constructor but it has
+--   kind 'Effect', which does not classify values. We will use the 'Console'
+--   type as the effect of operators that write to the console.
+--
+--   This is more a 'definition' than an 'import' because the foreign world
+--   does not have a concrete thing that we can import -- there is no actual
+--   corresponding symbol in the object file.
+--
+import foreign abstract type
+ Console : Effect
+
+
+-- Import the abstract type of a new region.
+--
+--   Here we define a region with a given name. The region exists at top level
+--   rather than being bound locally by a 'private' or 'extend' construct.
+--   'Stash' is a type constructor, while 'Region' is its kind.
+--
+import foreign abstract type
+ Stash      : Region
+
+
+-- Import abstract capabilities for our Stash region.
+--
+--   Introducing top-level capabilities allows us to use top-level regions.
+--
+import foreign abstract capability
+ stashAlloc : Alloc Stash
+ stashWrite : Write Stash
+ stashRead  : Read  Stash
+
+
+-- Import a value using the C calling convention.
+--   In compiled code, operators on the 'Ref' type are defined in the
+--   runtime system, and will be linked in automatically when the current
+--   module is built.
+import foreign c value
+ allocRef  : [r: Region]. [a: Data]. a -> S (Alloc r) (Ref r a)
+ readRef   : [r: Region]. [a: Data]. Ref r a -> S (Read r) a
+ writeRef_ : [r: Region]. [a: Data]. Ref r a -> a -> S (Write r) Void#
+
+
+-- We'll also import some primitive types and operators that lets us write
+--   to the console. The putString operator itself is defined in the runtime
+--   system, and we assign it the 'Console' effect that we introduced above.
+import foreign boxed type
+ TextLit : Data
+
+import foreign c value
+ makeTextLit         : TextLit# -> TextLit
+ takeTextLit         : TextLit  -> TextLit#
+ primStdoutPutString : TextLit# -> S Console Void#
+
+where
+
+
+-- The desugarer uses the function called 'textLit' to build the representation
+-- of text strings, so we need to define an implementation for it.
+textLit (tx: TextLit#): TextLit
+ = makeTextLit tx
+
+main ()
+ = do   -- Write to the console using the putString function we imported.
+        primStdoutPutString (takeTextLit "hello\n")
+
+        -- Allocate a new reference in our stash region.
+        --  Doing this requires the 'stashAlloc' and 'stashRead' capabilities
+        --  in the context.
+        ref     = allocRef [Stash] [TextLit] "before\n"
+        primStdoutPutString (takeTextLit (readRef ref))
+
+        -- Update the reference and print out the result.
+        --   Doing this requires the 'stashWrite' capability in the context.
+        writeRef_ ref "after\n"
+        primStdoutPutString (takeTextLit (readRef ref))
+        ()
+

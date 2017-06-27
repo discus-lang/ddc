@@ -1,5 +1,5 @@
 
--- Single export clause in module header.
+-- Demonstrate single export clause in module header.
 module Test
 export foo
 where
