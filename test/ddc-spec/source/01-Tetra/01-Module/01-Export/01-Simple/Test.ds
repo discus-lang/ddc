@@ -1,0 +1,8 @@
+
+-- Single export clause in module header.
+module Test
+export foo
+where
+
+foo = 5
+

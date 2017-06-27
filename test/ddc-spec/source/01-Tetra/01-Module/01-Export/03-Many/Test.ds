@@ -1,0 +1,10 @@
+
+-- Multiple export clauses with multiple binding names in module header.
+module Test
+export { foo; bar }
+export baz
+where
+
+foo = 2
+bar = 3
+baz = 4
