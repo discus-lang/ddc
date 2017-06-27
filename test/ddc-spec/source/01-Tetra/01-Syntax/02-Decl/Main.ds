@@ -5,8 +5,11 @@ import System.IO.Console
 where
 
 
--- Type Declarations
+-------------------------------------------------------------------------------
+-- Type synonym declarations
 --   We can define simple type synonyms.
+--   Support for parameterised synonyms is not yet complete.
+--
 type Scalar     = Nat
 type Vector     = (Scalar, Scalar)
 type Dot        = Vector -> Vector -> Scalar
@@ -15,5 +18,122 @@ applyDot (f: Dot) (v1: Vector) (v2: Vector): Scalar
  = f v1 v2
 
 
+-------------------------------------------------------------------------------
+-- Data type declarations.
+--   For a simple enumeration we define the constructors to all have
+--   the same type.
+data Color where
+        Red     : Color
+        Green   : Color
+        Blue    : Color
+
+
+-- Data type declaration where the constructors have arguments.
+--   We define two simple shapes.
+--   Rectangles have a height and width, while circles have a radius.
+data Shape where
+        Rectangle  : Nat -> Nat -> Shape
+        Circle     : Nat -> Shape
+
+
+-- Parameterised data type declaration.
+--   We define a binary tree with values at the leaves.
+--   The result type of each constructor must match the data type being
+--   defined -- in this case it is 'Tree k v'.
+data Tree (k: Data) (v: Data) where
+        Leaf    : v -> Tree k v
+        Node    : k -> Tree k v -> Tree k v -> Tree k v
+
+
+-- We can also use a syntax where the two type parameters share a common kind.
+data Tree2 (k v: Data) where
+        Leaf2   : v -> Tree2 k v
+        Node2   : k -> Tree2 k v -> Tree2 k v -> Tree2 k v
+
+
+-- Data types with no constructors.
+--   These are typically used as phantom types.
+data Unlikely
+
+
+-------------------------------------------------------------------------------
+-- Term declarations
+
+-- Forms of type signatures ---------------------
+-- Signatures can be specified separately from the term bindings,
+--   which is common syntax in Haskell-like languages.
+twiceNat : (Nat -> Nat) -> Nat -> Nat
+twiceNat f x = f (f x)
+
+
+-- The above syntax is equivalent to the form where the parameter and result
+-- types annotate the term declaration.
+twiceNat2 (f: Nat -> Nat) (x: Nat): Nat
+ = f (f x)
+
+
+-- If the result type is omitted it will be inferred.
+--   This style is common in the Scala language.
+twiceNat3 (f: Nat -> Nat) (x: Nat)
+ = f (f x)
+
+
+-- With currying we can also shift some parameter types to the result.
+twiceNat4 (f: Nat -> Nat): Nat -> Nat
+ = λ(x: Nat) -> f (f x)
+
+
+-- .. or attach the complete signature to the binder.
+twiceNat5: (Nat -> Nat) -> Nat -> Nat
+ = λ(f: Nat -> Nat) (x: Nat) -> f (f x)
+
+
+-- Type binders ---------------------------------
+-- Type parameters are specified using [] brackets.
+twice [a: Data] (f: a -> a) (x: a): a
+ = f (f x)
+
+-- .. which is equivalent to
+twice2 [a: Data]: (a -> a) -> a -> a
+ = λ(f: a -> a) -> λ(x: a) -> f (f x)
+
+-- .. which is equivalent to
+twice3 : [a: Data]. (a -> a) -> a -> a
+twice3 f x = f (f x)
+
+
+-- Implicit binders -----------------------------
+-- Using {} parens we bind an implicit parameter.
+--  When this function is applied at the call-site,
+--  the inner-most bound 'Shape' will be passed as the first argument.
+appShape {s: Shape} (f: Shape -> Shape): Shape
+ = f s
+
+-- For an example of 'appShape' we first define a utility function.
+scaleShape (n: Nat) (s: Shape): Shape
+ = case s of
+        Circle r        -> Circle    (r * n)
+        Rectangle h w   -> Rectangle (h * n) (w * n)
+
+-- Here is a shape defined at top level that we want to pass implicitly.
+topShape: Shape
+ = Circle 1
+
+-- Now when we apply 'appShape' the 'topShape'
+-- value is implicitly passed as the first argument.
+testShape (scale: Nat): Shape
+ = appShape (scaleShape scale)
+
+-- If we don't need to name the implicit argument in the body of the function
+-- then we can omit the binder name. Here the same shape that is implicitly
+-- passed to 'twoShapes' is also implicitly passed to 'appShape'.
+
+-- TODO: This is supposed to work, why does it think 's' is not bound?
+-- twoShapes {Shape} (n: Nat): (Shape, Shape)
+--  = let s = appShape (scaleShape n)
+--    in  (s, s)
+
+
 main ()
  = do   writel "hello"
+
