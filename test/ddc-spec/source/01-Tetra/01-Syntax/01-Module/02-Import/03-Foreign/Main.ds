@@ -28,25 +28,20 @@ import foreign boxed type
 --   This is more a 'definition' than an 'import' because the foreign world
 --   does not have a concrete thing that we can import -- there is no actual
 --   corresponding symbol in the object file.
---
 import foreign abstract type
  Console : Effect
 
 
 -- Import the abstract type of a new region.
---
 --   Here we define a region with a given name. The region exists at top level
 --   rather than being bound locally by a 'private' or 'extend' construct.
 --   'Stash' is a type constructor, while 'Region' is its kind.
---
 import foreign abstract type
  Stash      : Region
 
 
 -- Import abstract capabilities for our Stash region.
---
 --   Introducing top-level capabilities allows us to use top-level regions.
---
 import foreign abstract capability
  stashAlloc : Alloc Stash
  stashWrite : Write Stash

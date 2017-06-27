@@ -40,6 +40,10 @@ Foreign types, capabilities and values can be imported. Foreign boxed types clas
 
 Braces in the ``Module``, ``ExportSpecs``, ``ImportSpecs`` and ``ImportSpecsForeign`` productions will be inserted using the off-side rule.
 
+See the `module specification tests`_ for examples.
+
+.. _`module specification tests`:
+        https://github.com/DDCSF/ddc/tree/ddc-0.5.1/test/ddc-spec/source/01-Tetra/01-Syntax/01-Module
 
 Declarations
 ------------

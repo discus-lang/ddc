@@ -5,7 +5,9 @@ where
 import DDC.Core.Check.Judge.Type.Sub
 import DDC.Core.Check.Judge.Type.Prim
 import DDC.Core.Check.Judge.Type.Base
-import qualified DDC.Type.Sum   as Sum
+import qualified DDC.Core.Env.EnvT      as EnvT
+import qualified DDC.Type.Sum           as Sum
+import qualified Data.Map.Strict        as Map
 
 
 -- | Check a value expression application.
@@ -37,7 +39,7 @@ checkAppX !table !ctx
               -> throw  $ ErrorAppNotFun a xx tFn
 
         -- Effect of the overall application.
-        let effsResult  
+        let effsResult
                 = Sum.unions kEffect
                 $ [effsFn, effsArg, Sum.singleton kEffect effsLatent]
 
@@ -47,9 +49,9 @@ checkAppX !table !ctx
                 ctx2
 
 
-checkAppX !table !ctx0 
+checkAppX !table !ctx0
         mode@(Synth isScope)
-        demand 
+        demand
         xx@(XApp a xFn arg)
  = do
         ctrace  $ vcat
@@ -88,9 +90,9 @@ checkAppX !table !ctx0
 
 
 checkAppX !table !ctx
-        (Check tExpected) demand 
-        xx@(XApp a _ _) 
- = do   
+        (Check tExpected) demand
+        xx@(XApp a _ _)
+ = do
         ctrace  $ vcat
                 [ text "*>  App Check"
                 , text "    tExpected = " <> ppr tExpected
@@ -102,7 +104,7 @@ checkAppX !table !ctx
                 [ text "*<  App Check"
                 , empty ]
 
-        return  result   
+        return  result
 
 checkAppX _ _ _ _ _
  = error "ddc-core.checkApp: no match"
@@ -144,14 +146,19 @@ synthAppArg
                 , TypeSum n          -- Effect of result.
                 , Context n)         -- Result context.
 
-synthAppArg table 
+synthAppArg table
         a xx ctx0
         demand isScope
         xFn tFn effsFn arg
 
+ -- Look through synonyms in the functional type
+ | TCon (TyConBound (UName n) _) <- tFn
+ , Just tFn'    <- Map.lookup n $ EnvT.envtEquations $ contextEnvT ctx0
+ = do   synthAppArg table a xx ctx0 demand isScope xFn tFn' effsFn arg
+
  -- Rule (App Synth exists)
  --  Functional type is an existential.
- | Just iFn      <- takeExists tFn
+ | Just iFn     <- takeExists tFn
  = do
         ctrace  $ vcat
                 [ text "*>  App Synth Exists"
@@ -251,7 +258,7 @@ synthAppArg table
                 | configImplicitRun (tableConfig table)
                 , DemandRun     <- demand
                 , Just (eExpRun', tExpRun') <- takeTSusp tResult'
-                = let   
+                = let
                         eTotal  = tSum kEffect [TSum esExp, eExpRun']
 
                   in    ( XCast (AnTEC tResult' eTotal (tBot kClosure) a)
@@ -291,7 +298,7 @@ synthAppArg table
         RTerm{}         -> True
         RWitness{}      -> True
         RImplicit{}     -> False
- = do   
+ = do
         ctrace  $ vcat
                 [ text "*>  App Synth Implicit Term"
                 , text "    demand  = " <> ppr demand

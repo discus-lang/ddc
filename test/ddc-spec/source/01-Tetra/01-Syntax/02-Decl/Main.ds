@@ -1,0 +1,19 @@
+
+-- Demonstrate the different to-level declaration forms.
+module Main
+import System.IO.Console
+where
+
+
+-- Type Declarations
+--   We can define simple type synonyms.
+type Scalar     = Nat
+type Vector     = (Scalar, Scalar)
+type Dot        = Vector -> Vector -> Scalar
+
+applyDot (f: Dot) (v1: Vector) (v2: Vector): Scalar
+ = f v1 v2
+
+
+main ()
+ = do   writel "hello"
