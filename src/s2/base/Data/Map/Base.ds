@@ -15,14 +15,14 @@ where
 
 -- | Generic finite-map interface.
 --
---   A finite map represents a finite set of key-element associations, 
+--   A finite map represents a finite set of key-element associations,
 --   and (hopefully) has a mechanism to lookup the element associated
 --   with a key in less-than-linear time.
 --
 data Map (rep: Data) (key: Data) (elem: Data) where
  MkMap
         :  rep                          -- ^ Representation.
-        -> ([a: Data]. (key -> elem -> a -> a) -> a -> a)
+        -> ({@a: Data} -> (key -> elem -> a -> a) -> a -> a)
                                         -- ^ Fold the key-elem associations.
         -> (key -> Maybe elem)          -- ^ Lookup the element associated with a key.
         -> Map rep key elem
@@ -42,21 +42,20 @@ map_lookup (mp: Map rep key elem) (k: key): Maybe elem
 
 -- | Fold all the key-element associations of a finite-map.
 map_foldKeys
-        (mp: Map rep key elem) 
+        (mp: Map rep key elem)
         (f: key -> elem -> a -> a)
         (z: a)
         : a
  = case mp of
-        MkMap _ fold _          -> fold f z 
+        MkMap _ fold _          -> fold f z
 
 
 -- | Count the number of associations in a map.
-map_size 
+map_size
         (mp: Map rep key elem): Nat
  = map_foldKeys mp (\k e n -> n + 1) 0
 
 
 -- | Yield a list of key-element associations from a map.
 map_toList (mp: Map rep key elem): List (Tup2 key elem)
- = reverse
- $ map_foldKeys mp (\k e xs -> Cons (T2 k e) xs) Nil
+ = reverse $ map_foldKeys mp (\k e xs -> Cons (T2 k e) xs) Nil

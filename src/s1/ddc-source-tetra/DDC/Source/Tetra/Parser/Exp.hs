@@ -96,6 +96,15 @@ pExpArgsSpecSP pX
         pSym    SSquareKet
         return  (sp, [RType t])
 
+        -- New syntax for type applications.
+        -- @TypeAtom
+ , P.try $ do
+        pSym SBraceBra
+        sp      <- pSym SAt
+        t       <- pType
+        pSym SBraceKet
+        return  (sp, [RType t])
+
         -- [: Type0 Type0 ... :]
  , do   sp      <- pSym SSquareColonBra
         ts      <- fmap (fst . unzip) $ P.many1 pTypeAtomSP

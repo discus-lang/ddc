@@ -13,15 +13,15 @@ where
 data Monad (m: Data -> Data) where
         Monad
          :  Applicative m
-         -> ([a: Data].   a   -> m a)                   -- return
-         -> ([a b: Data]. m a -> (a -> m b) -> m b)     -- bind
+         -> ({@a: Data}   -> a   -> m a)                   -- return
+         -> ({@a b: Data} -> m a -> (a -> m b) -> m b)     -- bind
          -> Monad m
 
 
 -- | Take the Functor dictionary from a Monad dictionary.
 dFunctorOfMonad
-        : [m: Data -> Data]
-        . Monad m -> Functor m
+        : {@m: Data -> Data}
+        -> Monad m -> Functor m
 
 dFunctorOfMonad dMonad
         = dFunctorOfApplicative (dApplicativeOfMonad dMonad)
@@ -29,8 +29,8 @@ dFunctorOfMonad dMonad
 
 -- | Take the Applicative dictionary from a Monad dictionary.
 dApplicativeOfMonad
-        : [m: Data -> Data]
-        . Monad m -> Applicative m
+        : {@m: Data -> Data}
+        -> Monad m -> Applicative m
 
 dApplicativeOfMonad (Monad dApplicative _ _)
         = dApplicative
@@ -41,10 +41,12 @@ dApplicativeOfMonad (Monad dApplicative _ _)
 --   ISSUE #402: Fix specification of separate signatures
 --               with higher kinded type vars.
 --
---   return    : [m: Data -> Data]. [a: Data]
---             . Monad m ~> a -> m a
+--   return    : {@m: Data -> Data} -> {@a: Data}
+--             -> Monad m ~> a -> m a
 --
-return  [m: Data -> Data] [a: Data] {(Monad _ return' _): Monad m} (x: a): m a
+return  {@m: Data -> Data} {@a: Data}
+        {(Monad _ return' _): Monad m}
+        (x: a): m a
  = return' x
 
 
@@ -54,10 +56,11 @@ return  [m: Data -> Data] [a: Data] {(Monad _ return' _): Monad m} (x: a): m a
 --   ISSUE #402: Fix specification of separate signatures
 --               with higher kinded type vars.
 --
---   bind      : [m: Data -> Data]. [a b: Data]
+--   bind      : (@m: Data -> Data) (@a b: Data)
 --             . Monad m ~> m a -> (a -> m b) -> m b
 --
-bind    [m: Data -> Data] [a b: Data] {(Monad _ _ bind') : Monad m}
+bind    {@m: Data -> Data} {@a b: Data}
+        {(Monad _ _ bind') : Monad m}
         (ma: m a) (mf: a -> m b): m b
  = bind' ma mf
 

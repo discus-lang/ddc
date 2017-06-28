@@ -1,6 +1,6 @@
 
 module Class.Applicative
-export  
+export
 {       dFunctorOfApplicative;
         pure; ap;
         liftA; liftA2; liftA3
@@ -13,32 +13,32 @@ where
 -- A functor with application.
 data Applicative (f: Data -> Data) where
         Applicative
-         :  Functor f 
-         -> ([a: Data].   a -> f a)                     -- pure
-         -> ([a b: Data]. f (a -> b) -> f a -> f b)     -- ap
+         :  Functor f
+         -> ({@a: Data} -> a -> f a)                    -- pure
+         -> ({@a b: Data} -> f (a -> b) -> f a -> f b)  -- ap
          -> Applicative f
 
 
 -- | Take the Functor dictionary from an Applicative dictionary.
-dFunctorOfApplicative 
-        : [f: Data -> Data]
-        . Applicative f -> Functor f
+dFunctorOfApplicative
+        : {@f: Data -> Data}
+        -> Applicative f -> Functor f
 
 dFunctorOfApplicative (Applicative dFunctor _ _)
  = dFunctor
 
 
 -- | Return a value in the carrier.
-pure    : [f: Data -> Data]. [a: Data]
-        . Applicative f -> a -> f a
+pure    : {@f: Data -> Data} -> {@a: Data}
+        -> Applicative f -> a -> f a
 
 pure    (Applicative _ pure' _) x
  = pure' x
 
 
 -- | Apply a function in the carrier its argument in another carrier.
-ap      : [f: Data -> Data]. [a b: Data]
-        . Applicative f -> f (a -> b) -> f a -> f b
+ap      : {@f: Data -> Data} -> {@a b: Data}
+        -> Applicative f -> f (a -> b) -> f a -> f b
 
 ap      (Applicative _ _ ap') xfab xfa
  = ap' xfab xfa
@@ -56,7 +56,7 @@ liftA2  (dapp: Applicative f)
    in   ap dapp (fmap {dfun} f xa) xb
 
 
-liftA3  (dapp: Applicative f) 
+liftA3  (dapp: Applicative f)
         (f: a -> b -> c -> d) (xa: f a) (xb: f b) (xc: f c): f d
  = let  dfun    = dFunctorOfApplicative dapp
    in   ap dapp (ap dapp (fmap {dfun} f xa) xb) xc

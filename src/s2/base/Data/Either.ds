@@ -40,7 +40,7 @@ isRight (e: Either a b): Bool
 -- TODO: We get a name collision if the tyvar here is named 'x'.
 -- TODO: If the sig is not given we end up with a free exists which
 --       is not caught by the post-check.
-either_Functor [x: Data]: Functor (Either x)
+either_Functor {@x: Data}: Functor (Either x)
  = Functor either_fmap
  where
         either_fmap : [a b c: Data]. (b -> c) -> Either a b -> Either a c
@@ -51,7 +51,7 @@ either_Functor [x: Data]: Functor (Either x)
 
 
 -- Applicative ----------------------------------------------------------------
-either_Applicative [x: Data]: Applicative (Either x)
+either_Applicative {@x: Data}: Applicative (Either x)
  = Applicative either_Functor either_pure either_ap
  where
         either_pure : [a b: Data]. b -> Either a b
@@ -69,7 +69,7 @@ either_Applicative [x: Data]: Applicative (Either x)
 
 
 -- Monad ----------------------------------------------------------------------
-either_Monad [x: Data]: Monad (Either x)
+either_Monad {@x: Data}: Monad (Either x)
  = Monad either_Applicative either_return either_bind
  where
         either_return : [a b: Data]. b -> Either a b
@@ -82,3 +82,4 @@ either_Monad [x: Data]: Monad (Either x)
          = case ma of
                 Left  xa -> Left xa
                 Right xb -> f xb
+

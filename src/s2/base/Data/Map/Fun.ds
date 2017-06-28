@@ -23,7 +23,7 @@ mapFun_singleton {Eq key} (k: key) (e: elem): Map Fun key elem
 
 
 mapFun_singleton_fold'
-        [acc key elem: Data]
+        {@acc key elem: Data}
         (k: key) (e: elem)
         (f: key -> elem -> acc -> acc) (z: acc): acc
  = f k e z
@@ -32,8 +32,8 @@ mapFun_singleton_fold'
 -------------------------------------------------------------------------------
 -- | Contruct a map from functions that fold the key-element associations
 --   and a function that looks up the element associated with a key.
-mapFun_from 
-        (foldKeys: [a: Data]. (key -> elem -> a -> a) -> a -> a)
+mapFun_from
+        (foldKeys: {@a: Data} -> (key -> elem -> a -> a) -> a -> a)
         (lookup:   key -> Maybe elem)
         : Map Fun key elem
  = MkMap
@@ -42,7 +42,7 @@ mapFun_from
 
 
 -------------------------------------------------------------------------------
--- | Construct a map from a natural number giving its size, 
+-- | Construct a map from a natural number giving its size,
 --   and a function to produce element associated with each index.
 mapFun_fromIndexed
         (size:    Nat)
@@ -59,9 +59,9 @@ mapFun_fromIndexed
 -- sigs. Adding this as a local binding to the above function fails because
 -- then the local 'elem' type binder shadows the one in the enclosing binding.
 mapFun_fromIndexed_fold'
-        [acc elem: Data] 
+        {@acc elem: Data}
         (size:   Nat)
-        (lookup: Nat -> elem) 
+        (lookup: Nat -> elem)
         (f: Nat -> elem -> acc -> acc) (z: acc): acc
  = go 0 z
  where  go ix acc
@@ -71,7 +71,7 @@ mapFun_fromIndexed_fold'
 
 -------------------------------------------------------------------------------
 -- | Construct a Map from a list of associations.
-mapFun_fromList 
+mapFun_fromList
         {Eq key}
         (list0:  List (Tup2 key elem))
         : Map Fun key elem
@@ -83,15 +83,14 @@ mapFun_fromList
          | otherwise    = lookup' xs ix
 
 
-mapFun_fromList_fold' 
-        [acc key elem: Data]
+mapFun_fromList_fold'
+        {@acc key elem: Data}
         (list0: List (Tup2 key elem))
         (f: key -> elem -> acc -> acc) (z: acc): acc
  = go z list0
- where  
+ where
         go acc Nil                = acc
         go acc (Cons (T2 k e) xs) = go (f k e acc) xs
-
 
 -------------------------------------------------------------------------------
 -- | Form the left-biased union of two maps.
@@ -99,7 +98,7 @@ mapFun_fromList_fold'
 --   When indexing into the result map we try the first original map,
 --   then the second.
 --
-mapFun_union 
+mapFun_union
         (mp1: Map rep1 key elem)
         (mp2: Map rep2 key elem)
         : Map Fun key elem
@@ -110,8 +109,8 @@ mapFun_union
                 Just x' -> Just x'
                 Nothing -> map_lookup mp2 k
 
-mapFun_union_fold' 
-        [rep1 rep2 acc key elem: Data]
+mapFun_union_fold'
+        {@rep1 rep2 acc key elem: Data}
         (mp1: Map rep1 key elem)
         (mp2: Map rep2 key elem)
         (f: key -> elem -> acc -> acc) (z: acc): acc
@@ -123,7 +122,7 @@ mapFun_union_fold'
         -- The map is left-biased, if there is an association for a
         -- particular key in the first map we don't want to include
         -- one that might exist in the second.
-        acc2    = map_foldKeys mp2 
+        acc2    = map_foldKeys mp2
                    (\k e acc
                     -> case map_lookup mp1 k of
                          Nothing        -> f k e acc
@@ -131,6 +130,3 @@ mapFun_union_fold'
                    z
 
         acc2
-
-
-

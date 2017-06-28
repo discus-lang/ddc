@@ -76,6 +76,15 @@ pDeclTermParamsSP
         pSym SSquareKet
         return  [ MType b (Just t) | b <- bs]
 
+        -- Type parameter in new syntax.
+ , P.try $ do
+        pSym  SBraceBra
+        pSym SAt
+        bs      <- P.many1 pBind
+        pTok (KOp ":")
+        t       <- pType
+        pSym  SBraceKet
+        return  [ MType b (Just t) | b <- bs ]
 
         -- Implicit term parameter
         --   {BIND : TYPE}

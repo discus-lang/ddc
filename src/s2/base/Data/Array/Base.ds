@@ -45,7 +45,8 @@ array_size  (arr: Array rep elem): Nat
 --
 --   If the index is out-of bounds this function yield the default value.
 --
-array_index [rep: Data] [elem: Data] 
+array_index
+        {@rep: Data} {@elem: Data}
         (arr: Array rep elem) (ix: Nat): elem
  = case arr of
         MkArray _ _ _ index     -> index ix

@@ -6,14 +6,15 @@ import foreign boxed type
  Ref       : Region -> Data -> Data
 
 import foreign c value
- allocRef  : [r: Region]. [a: Data]. a  -> S (Alloc r) (Ref r a)
- readRef   : [r: Region]. [a: Data]. Ref r a -> S (Read r) a
- writeRef_ : [r: Region]. [a: Data]. Ref r a -> a -> S (Write r) Void#
+ allocRef  : {@r: Region} -> {@a: Data} -> a  -> S (Alloc r) (Ref r a)
+ readRef   : {@r: Region} -> {@a: Data} -> Ref r a -> S (Read r) a
+ writeRef_ : {@r: Region} -> {@a: Data} -> Ref r a -> a -> S (Write r) Void#
 
 where
 
 
 -- | Wrap up the primitive writeRef to return a unit result.
-writeRef [r: Region] [a: Data] (ref: Ref r a) (x: a): S (Write r) Unit
+writeRef {@r: Region} {@a: Data}
+         (ref: Ref r a) (x: a): S (Write r) Unit
   = do   writeRef_ ref x
          ()

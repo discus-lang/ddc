@@ -16,7 +16,7 @@ import foreign c value
  atoi    : Nat#      -> Nat#
 
 import foreign c value
- ddcVectorGuts : [r: Region]. Vector# r Word8 -> Nat#
+ ddcVectorGuts : {@r: Region} -> Vector# r Word8 -> Nat#
 
 where
 
@@ -25,8 +25,8 @@ where
 --   We assume that it's well formed.
 readNat (text: Text): Maybe Nat
  = case text of
-        TextVec vec     
+        TextVec vec
            ->    Just (atoi (ddcVectorGuts vec))
 
-        _  -> private r with {Alloc r} 
+        _  -> private r with {Alloc r}
               in Just (atoi (ddcVectorGuts (vectorOfText [r] text)))

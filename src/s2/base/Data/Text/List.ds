@@ -44,7 +44,7 @@ charListOfTextVec
 
 -- | Pack a list of characters into a mutable vector.
 vectorOfCharList
-        [r: Region]
+        {@r: Region}
         (xx: List Char)
         : S (Alloc r + Write r) (Vector# r Word8)
  = do

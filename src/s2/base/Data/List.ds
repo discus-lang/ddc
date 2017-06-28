@@ -50,7 +50,7 @@ eq_List {eqa: Eq a}: Eq (List a)
  = Eq (eq' {eqa}) (neq' {eqa})
  where
 
-        eq' [b: Data] {Eq b} (xx: List b) (yy: List b): Bool
+        eq' {@b: Data} {Eq b} (xx: List b) (yy: List b): Bool
          = case (xx, yy) of
                 (Nil,           Nil)            -> True
                 (Cons x1 xs,    Cons y1 ys)
@@ -58,7 +58,7 @@ eq_List {eqa: Eq a}: Eq (List a)
                  | otherwise                    -> False
                 (_, _)                          -> False
 
-        neq' [b: Data] {Eq b} (xx: List b) (yy: List b): Bool
+        neq' {@b: Data} {Eq b} (xx: List b) (yy: List b): Bool
          = case (xx, yy) of
                 (Nil,           Nil)            -> False
                 (Cons x1 xs,    Cons y1 ys)
@@ -459,6 +459,4 @@ any (p: a -> Bool) (xx: List a): Bool
         Cons x xs
          | p x          -> True
          | otherwise    -> any p xs
-
-
 

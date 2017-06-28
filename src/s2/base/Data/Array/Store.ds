@@ -1,6 +1,6 @@
 
 module Data.Array.Store
-export { 
+export {
         allocStoreArray;  readStoreArray; writeStoreArray;
         arrayStore_alloc;
         arrayStore_compute;
@@ -14,11 +14,10 @@ import Data.Numeric.Nat
 import foreign boxed type
  StoreArray : Region -> Data -> Data
 
-
 import foreign c value
- allocStoreArray : [r: Region]. [a: Data]. Nat -> a -> S (Alloc r) (StoreArray r a)
- readStoreArray  : [r: Region]. [a: Data]. StoreArray r a -> Nat -> S (Read r) a
- writeStoreArray : [r: Region]. [a: Data]. StoreArray r a -> Nat -> a -> S (Write r) Void#
+ allocStoreArray : {@r: Region} -> {@a: Data} -> Nat -> a -> S (Alloc r) (StoreArray r a)
+ readStoreArray  : {@r: Region} -> {@a: Data} -> StoreArray r a -> Nat -> S (Read r) a
+ writeStoreArray : {@r: Region} -> {@a: Data} -> StoreArray r a -> Nat -> a -> S (Write r) Void#
 
 where
 
@@ -33,33 +32,33 @@ data Store (r: Region) (a: Data) where
 
 
 -- | Allocate a stored array.
--- 
+--
 --   We treat the array as a collection of read computations that will each
 --   produce the current value stored at that position. This means that we
---   can reuse the common array combinators like 'map' and 'fold', as well 
+--   can reuse the common array combinators like 'map' and 'fold', as well
 --   as all index-space transformations without needing to change their types.
 --
 arrayStore_alloc
-        [r: Region] [a: Data]
-        (size: Nat) (def: a)
+        {@r: Region} {@a: Data}
+        (size: Nat)  (def: a)
         : S (Alloc r) (Array (Store r a) (S (Read r) a))
  = do
-        sarr    = allocStoreArray [r] size def
+        sarr    = allocStoreArray {@r} size def
         MkArray (Store sarr)
                 (box weakeff [Read r] in def) size
-                (\ix -> if ix < size 
+                (\ix -> if ix < size
                         then readStoreArray sarr ix
                         else def)
 
 
 -- | Compute the contents of a functional array, writing it into the store.
 arrayStore_compute
-        [r: Region] [a: Data]
+        {@r: Region} {@a: Data}
         (arr: Array Fun a)
         : S (Alloc r + Write r)
             (Array (Store r a) (S (Read r) a))
  = do
-        arr'    = arrayStore_alloc [r] (array_size arr) (array_def arr)
+        arr'    = arrayStore_alloc {@r} (array_size arr) (array_def arr)
         fill arr' arr 0
         arr'
 

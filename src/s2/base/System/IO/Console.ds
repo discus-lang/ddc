@@ -1,6 +1,6 @@
 
-module System.IO.Console 
-export 
+module System.IO.Console
+export
 {       readl;
         write; writel; writell;
         flush;
@@ -15,7 +15,7 @@ import foreign abstract type
 
 import foreign c value
  primStdoutPutString    : TextLit# -> S Console Void#
- primStdoutPutVector    : [r: Region]. Vector# r Word8# -> S Console Void#
+ primStdoutPutVector    : {@r: Region} -> Vector# r Word8# -> S Console Void#
  primStdoutFlush        : Unit -> S Console Void#
 
  -- TODO: We're missing the S result type,
@@ -33,8 +33,8 @@ where
 
 -- | Read a text string from the console, up to the maximum line length.
 readl (maxLen: Nat): S Console Text
- = box weakeff [Console] in 
-   do   lit     = primStdinGetString maxLen 
+ = box weakeff [Console] in
+   do   lit     = primStdinGetString maxLen
         TextLit (makeTextLit lit)
 
 
@@ -49,7 +49,7 @@ write (tt: Text): S Console Unit
          -> do  primStdoutPutVector vec
                 ()
 
-        TextApp t1 t2 
+        TextApp t1 t2
          -> do  write t1
                 write t2
 
@@ -68,6 +68,6 @@ writell (tt: Text): S Console Unit
 
 -- | Flush the output.
 flush: S Console Unit
- = box do   
+ = box do
         primStdoutFlush ()
         ()

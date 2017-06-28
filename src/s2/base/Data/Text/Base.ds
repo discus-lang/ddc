@@ -37,7 +37,7 @@ import Class.Eq
 -- Foreign imports.
 
 -- | A TextLit is a boxed object that contains a pointer to literal
---   UTF-8 data in static memory.  
+--   UTF-8 data in static memory.
 import foreign boxed type
         TextLit         : Data
 
@@ -46,7 +46,7 @@ import foreign boxed type
 import foreign c value
 
         -- | Make a text literal.
-        --   The TextLit# type is a pointer to literal UTF-8 data in 
+        --   The TextLit# type is a pointer to literal UTF-8 data in
         --   static memory, which we pack into a boxed object.
         makeTextLit     : TextLit# -> TextLit
 
@@ -120,11 +120,11 @@ textOfVector (vec: Vector# RegionText Word8): Text
 -- Conversion -----------------------------------------------------------------
 -- | Copy a Text object into a flat vector of UTF-8 data.
 vectorOfText
-        [r1: Region] (tt: Text)
+        {@r1: Region} (tt: Text)
         : S (Alloc r1) (Vector# r1 Word8)
  = extend r1 using r2 with { Alloc r2; Write r2 } in
-   do   
-        -- Allocate a vector to hold all the data, 
+   do
+        -- Allocate a vector to hold all the data,
         -- including an extra null terminator byte.
         vec     = vectorAlloc# [r2] (add (sizeOfText tt) 1)
 
@@ -138,8 +138,8 @@ vectorOfText
 
 
 -- | Copy a text object to a mutable vector of UTF-8 data.
-copyTextToVector 
-        [r: Region] (tt: Text) (vec: Vector# r Word8) (i0: Nat)
+copyTextToVector
+        {@r: Region} (tt: Text) (vec: Vector# r Word8) (i0: Nat)
         : S (Write r) Nat
  = case tt of
         TextLit lit
@@ -155,27 +155,27 @@ copyTextToVector
 
 
 -- | Copy a text literal to a mutable vector of UTF-8 data.
-copyTextLitToVector 
-        [r: Region] (tt: TextLit) (vec: Vector# r Word8) 
+copyTextLitToVector
+        {@r: Region} (tt: TextLit) (vec: Vector# r Word8)
         (iDst iSrc nSrc: Nat)
         : S (Write r) Nat
  | iSrc >= nSrc = iDst
  | otherwise
  = do   vectorWrite# vec iDst (indexTextLit tt iSrc)
-        copyTextLitToVector 
+        copyTextLitToVector
                 tt vec (iDst + 1) (iSrc + 1) nSrc
 
 
 -- | Copy a text source vector to a mutable vector of UTF-8 data.
-copyTextVecToVector 
-        [r1 r2: Region] 
+copyTextVecToVector
+        {@r1 r2: Region}
         (vecSrc: Vector# r1 Word8) (vecDst: Vector# r2 Word8)
         (iDst iSrc nSrc: Nat)
         : S (Read r1 + Write r2) Nat
  | iSrc >= nSrc = iDst
  | otherwise
  = do   vectorWrite# vecDst iDst (vectorRead# vecSrc iSrc)
-        copyTextVecToVector 
+        copyTextVecToVector
                 vecSrc vecDst (iDst + 1) (iSrc + 1) nSrc
 
 
@@ -192,7 +192,7 @@ sizeOfText (tt: Text): Nat
 
         -- The size of a text vector is the vector size minus
         -- the null terminator byte.
-        TextVec vec     
+        TextVec vec
          -> vectorLength# vec - 1
 
         TextApp t1 t2
@@ -226,13 +226,13 @@ eqChar (c1 c2: Char): Bool
 --   Check if two text objects represent the same characters.
 eqText (tx1 tx2: Text): Bool
  = private r with {Read r; Alloc r} in
-   do   
+   do
         -- We copy both strings into new vectors before doing the comparison.
         -- It would be better to do it in-place.
-        vec1    = vectorOfText  [r] tx1 
+        vec1    = vectorOfText  {@r} tx1
         len1    = vectorLength# vec1
 
-        vec2    = vectorOfText  [r] tx2
+        vec2    = vectorOfText  {@r} tx2
         len2    = vectorLength# vec2
 
         match

@@ -78,6 +78,23 @@ pTypeForall
                                       (TAbs b kBind t))
                         tBody bs
 
+   -- Universal quantification new syntax.
+   -- {@v1 v2 .. vn : T1} -> T2
+ , P.try $ do
+        pSym SBraceBra
+        pSym SAt
+        bs      <- P.many1 pBind
+        sp      <- pTokSP (KOp ":")
+        kBind   <- pTypeUnion
+        pSym SBraceKet
+        pSym SArrowDashRight
+
+        tBody   <- pTypeForall
+        return  $ foldr (\b t -> TAnnot sp
+                              $  TApp (TCon (TyConForall kBind))
+                                      (TAbs b kBind t))
+                        tBody bs
+
    -- Body type
  , do   pTypeFun
  ]

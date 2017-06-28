@@ -1,5 +1,5 @@
 
-module  Class.Functor 
+module  Class.Functor
 export  fmap
 where
 
@@ -7,16 +7,16 @@ where
 -- | Class of collection types that can be mapped over.
 data Functor (f: Data -> Data) where
         Functor
-         :  ([a b: Data]. (a -> b) -> f a -> f b)       -- fmap
+         :  ({@a b: Data} -> (a -> b) -> f a -> f b)       -- fmap
          -> Functor f
 
 
 -- | Apply a function to values of type 'a' in the input collection.
--- fmap    : [f: Data -> Data]. [a b: Data]
---         . Functor f ~> (a -> b) -> f a -> f b
+-- fmap    : {@f: Data -> Data} -> {@a b: Data}
+--         -> Functor f ~> (a -> b) -> f a -> f b
 
-fmap    [f: Data -> Data] [a b: Data]
-        {(Functor fmap') : Functor f} 
+fmap    {@f: Data -> Data} {@a b: Data}
+        {(Functor fmap') : Functor f}
         (f: a -> b)
         (x: f a)
         = fmap' f x

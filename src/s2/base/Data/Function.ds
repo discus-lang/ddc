@@ -7,7 +7,7 @@ where
 
 -- | Apply a function to its argument.
 --   The operator '$' is desugared to applications of this function.
-apply   [a b: Data]   (f: a -> b) (x: a): b
+apply   {@a b: Data} (f: a -> b) (x: a): b
  = f x
 
 

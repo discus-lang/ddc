@@ -1,5 +1,5 @@
 
-module Data.Array.Bulk 
+module Data.Array.Bulk
 export {
         arrayBulk_alloc;
         arrayBulk_freeze;
@@ -48,9 +48,9 @@ arrayBulk_freeze
 
 -- | Compute the contents of a delayed array,
 --   writing it to the bulk store.
-arrayBulk_compute 
+arrayBulk_compute
         (arr: Array Fun a): Array Bulk a
  = arrayBulk_freeze
  $ extend RegionBulk using r with {Alloc r; Write r}
-   in   arrayStore_compute [r] arr
+   in   arrayStore_compute {@r} arr
 

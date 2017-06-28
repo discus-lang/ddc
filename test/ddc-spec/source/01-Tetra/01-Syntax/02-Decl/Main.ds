@@ -88,16 +88,16 @@ twiceNat5: (Nat -> Nat) -> Nat -> Nat
 
 
 -- Type binders ---------------------------------
--- Type parameters are specified using [] brackets.
-twice [a: Data] (f: a -> a) (x: a): a
+-- Type parameters are specified using by prefixing the parameter list with '@'.
+twice (@a: Data) (f: a -> a) (x: a): a
  = f (f x)
 
 -- .. which is equivalent to
-twice2 [a: Data]: (a -> a) -> a -> a
+twice2 (@a: Data): (a -> a) -> a -> a
  = λ(f: a -> a) -> λ(x: a) -> f (f x)
 
 -- .. which is equivalent to
-twice3 : [a: Data]. (a -> a) -> a -> a
+twice3 : (@a: Data) -> (a -> a) -> a -> a
 twice3 f x = f (f x)
 
 

@@ -1,11 +1,11 @@
 
 module Data.Stream
-export  
+export
 {       streamOfList; listOfStream;
         sgenerate; senumFrom; srepeat; scons;
         smap; smapacc;
         sfold; sany;
-        stake; stakeWhile; 
+        stake; stakeWhile;
         sfilter;
 }
 import Data.Numeric.Nat
@@ -19,14 +19,14 @@ where
 
 
 -------------------------------------------------------------------------------
--- | Unbounded streams, 
+-- | Unbounded streams,
 --   wraps a function that produces elements on demand.
 data Stream (s a: Data) where
         MkStream : (s -> Step s a) -> s -> Stream s a
 
 data Step (s a: Data) where
         Yield   : a -> s -> Step s a
-        Skip    : s -> Step s a 
+        Skip    : s -> Step s a
         Done    : Step s a
 
 
@@ -34,7 +34,7 @@ data Step (s a: Data) where
 -- | Convert a list to a stream.
 streamOfList (xx: List a): Stream (List a) a
  = MkStream step xx
- where  
+ where
         step (s1: List a)
          = case s1 of
                 Nil       -> Done
@@ -52,7 +52,7 @@ listOfStream (ss: Stream s a): List a
 
 -- | Load the given number of elements from a stream and write them
 --   into a freshly allocated array.
-arrayOfStream 
+arrayOfStream
         (n: Nat)         -- ^ Length of result array.
         (d: a)           -- ^ Default element value.
         (ss: Stream s a) -- ^ Stream to evaluate.
@@ -75,7 +75,7 @@ unstreamToArray
         : S (Write r) Unit
  | MkStream f s0  <- ss
  = go s0 0
- where  
+ where
         go (s: s) (ix: Nat): S (Write r) Unit
          = case f s of
                 Yield x s1
@@ -83,7 +83,7 @@ unstreamToArray
                         go s1 (ix + 1)
 
                 Skip s1
-                 ->     go s1 ix 
+                 ->     go s1 ix
 
                 Done
                  ->     ()
@@ -93,7 +93,7 @@ unstreamToArray
 -- | Generate a stream, given a starting value and a stepper function.
 sgenerate (x: s) (step: s -> Tup2 s a): Stream s a
  = MkStream step' x
- where  
+ where
         step' sA
          = case step sA of
                 T2 s' x -> Yield x s'
@@ -112,7 +112,7 @@ scons   (x: a) (ss: Stream s a)
         : Stream (Tup2 s Bool) a
  | MkStream stepA  sA0 <- ss
  = MkStream stepA2 (T2 sA0 True)
- where  
+ where
         stepA2 (T2 sA1 True)
          = Yield x (T2 sA1 False)
 
@@ -125,13 +125,13 @@ scons   (x: a) (ss: Stream s a)
 
 -- Maps -----------------------------------------------------------------------
 -- | Apply a function to every element of a stream.
-smap    (f: a -> b) 
+smap    (f: a -> b)
         (ss: Stream s a)
         : Stream s b
  | MkStream stepA sA0 <- ss
  = MkStream stepB sA0
  where
-        stepB q 
+        stepB q
          = case stepA q of
                 Yield x sA1     -> Yield (f x) sA1
                 Skip sA2        -> Skip sA2
@@ -140,8 +140,8 @@ smap    (f: a -> b)
 
 -- Scans ----------------------------------------------------------------------
 -- | Like `smap`, but keep a running accumulator as we walk along the stream.
-smapacc :  [a b c s: Data]
-        .  (a -> b -> Tup2 a c)
+smapacc :  {@a b c s: Data}
+        -> (a -> b -> Tup2 a c)
         -> a
         -> Stream s b
         -> Stream (Tup2 s a) c
@@ -151,7 +151,7 @@ smapacc f z (MkStream fB sB0)
  where
         stepC (T2 sB1 xA1)
          = case fB sB1 of
-                Yield xB1 sB2 
+                Yield xB1 sB2
                  -> case f xA1 xB1 of
                         T2 xA2 xC2
                          -> Yield xC2 (T2 sB2 xA2)
@@ -161,14 +161,14 @@ smapacc f z (MkStream fB sB0)
 
 -- Folds ----------------------------------------------------------------------
 -- | Fold all the elements from a stream.
-sfold   (f: a -> b -> a) 
-        (acc: a) 
+sfold   (f: a -> b -> a)
+        (acc: a)
         ((MkStream step s0): Stream s b)
         : a
  = sconsume f acc step s0
 
 
-sconsume (f:    a -> b -> a)   (acc:   a) 
+sconsume (f:    a -> b -> a)   (acc:   a)
          (step: s -> Step s b) (state: s) : a
  = case step state of
         Yield x s'      -> sconsume f (f acc x) step s'
@@ -189,10 +189,10 @@ stake   (n: Nat)
         : Stream (Tup2 s Nat) a
 
  = MkStream stepB (T2 sA0 0)
- where  
+ where
         stepB (T2 sA ix)
          | ix >= n   = Done
-         | otherwise 
+         | otherwise
          = case fA sA of
                 Yield x sA2 -> Yield x (T2 sA2 (ix + 1))
                 Skip sA3    -> Skip  (T2 sA3 ix)
@@ -200,16 +200,16 @@ stake   (n: Nat)
 
 
 -- | Take elements from a stream while they match the given predicate.
-stakeWhile 
-        (p: a -> Bool) 
+stakeWhile
+        (p: a -> Bool)
         ((MkStream stepA sA0): Stream s a)
         : Stream s a
 
  = MkStream stepB sA0
- where  
+ where
         stepB (q: s)
          = case stepA q of
-                Yield x sA1     
+                Yield x sA1
                  | p x          -> Yield x sA1
                  | otherwise    -> Done
 
@@ -225,10 +225,10 @@ sfilter (p: a -> Bool)
  where
         stepB (q: s)
          = case stepA q of
-                Yield x sA1     
+                Yield x sA1
                  | p x          -> Yield x sA1
                  | otherwise    -> Skip sA1
 
                 Skip sA1        -> Skip sA1
-                Done            -> Done 
+                Done            -> Done
 

@@ -1,7 +1,7 @@
 
 module Data.Maybe
-export  
-{       functor_Maybe; applicative_Maybe; monad_Maybe; 
+export
+{       functor_Maybe; applicative_Maybe; monad_Maybe;
         isNothing; isJust; fromMaybe; maybe;
 }
 import Class.Functor
@@ -19,11 +19,11 @@ data Maybe (a: Data) where
 
 -- Functor --------------------------------------------------------------------
 functor_Maybe
- = Functor 
+ = Functor
         maybe_fmap
- where 
-        maybe_fmap : [a b: Data]. (a -> b) -> Maybe a -> Maybe b
-        maybe_fmap f xx 
+ where
+        maybe_fmap : {@a b: Data} -> (a -> b) -> Maybe a -> Maybe b
+        maybe_fmap f xx
          = case xx of
                Nothing -> Nothing
                Just x  -> Just (f x)
@@ -31,16 +31,16 @@ functor_Maybe
 
 -- Applicative ----------------------------------------------------------------
 applicative_Maybe
- = Applicative 
-        functor_Maybe 
+ = Applicative
+        functor_Maybe
         maybe_pure
         maybe_ap
  where
-        maybe_pure : [a: Data]. a -> Maybe a
+        maybe_pure : {@a: Data} -> a -> Maybe a
         maybe_pure x
          = Just x
 
-        maybe_ap   : [a b: Data]. Maybe (a -> b) -> Maybe a -> Maybe b
+        maybe_ap   : {@a b: Data} -> Maybe (a -> b) -> Maybe a -> Maybe b
         maybe_ap mf ma
          | Just xf      <- mf
          , Just xa      <- ma
@@ -56,13 +56,13 @@ monad_Maybe
         applicative_Maybe
         maybe_return
         maybe_bind
- where  
-        maybe_return : [a: Data]. a -> Maybe a
+ where
+        maybe_return : {@a: Data} -> a -> Maybe a
         maybe_return x
          = Just x
 
-        maybe_bind   : [a b: Data]. Maybe a -> (a -> Maybe b) -> Maybe b
-        maybe_bind ma f         
+        maybe_bind   : {@a b: Data} -> Maybe a -> (a -> Maybe b) -> Maybe b
+        maybe_bind ma f
          = case ma of
                 Nothing -> Nothing
                 Just xa -> f xa

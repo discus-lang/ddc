@@ -20,10 +20,10 @@ data Lens (a b: Data) where
 lens_Category: Category Lens
  = Category id' compose'
  where
-        id' [a: Data]: Lens a a
+        id' {@a: Data}: Lens a a
             = Lens (\x -> x) (\x _ -> x)
 
-        compose' [a b c: Data]
+        compose' {@a b c: Data}
                  ((Lens getBC setCBB): Lens b c)
                  ((Lens getAB setBAA): Lens a b)
             = Lens (\xa    -> getBC  (getAB xa))
@@ -56,13 +56,13 @@ lens_mod (lens: Lens a b) (f: b -> b) (x: a): a
 
 
 -- | Lens onto the first component of a tuple.
-lens_fst [a b: Data]: Lens (a, b) a
+lens_fst {@a b: Data}: Lens (a, b) a
  = Lens (\(x, y)     -> x)
         (\x' (x, y)  -> (x', y))
 
 
 -- | Lens onto the second component of a tuple.
-lens_snd [a b: Data]: Lens (a, b) b
+lens_snd {@a b: Data}: Lens (a, b) b
  = Lens (\(x, y)     -> y)
         (\y' (x, y)  -> (x, y'))
 

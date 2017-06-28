@@ -81,11 +81,11 @@ parse   ((Parser p): Parser t e a) (ts: List t)
 
 
 -- Functor --------------------------------------------------------------------
-parser_Functor [t e: Data]: Functor (Parser t e)
+parser_Functor {@t e: Data}: Functor (Parser t e)
  = Functor parser_fmap
 
 parser_fmap
-        [t e a b: Data]
+        {@t e a b: Data}
         (f: a → b) (parserA: Parser t e a): Parser t e b
  = Parser $ λts0
  → case parse parserA ts0 of
@@ -96,20 +96,20 @@ parser_fmap
 
 
 -- Applicative ----------------------------------------------------------------
-parser_Applicative [t e: Data]: Applicative (Parser t e)
+parser_Applicative {@t e: Data}: Applicative (Parser t e)
  = Applicative parser_Functor parser_pure parser_ap
 
 -- TODO: If these tyvars are given plain names like t e a,
 -- then the binding is in a where clause under parser_Applicative then
 -- they are not fresh enough to go through the type checker.
 parser_pure
-        [t' e' a': Data]
+        {@t' e' a': Data}
         (x: a'): Parser t' e' a'
  = Parser $ λts → ParseReturn bag_nil x
 
 
 parser_ap
-        [t' e' a' b': Data]
+        {@t' e' a' b': Data}
         (parserF: Parser t' e' (a' → b'))
         (parserA: Parser t' e' a')
         : Parser t' e' b'
@@ -137,18 +137,18 @@ parser_ap
 
 
 -- Monad ----------------------------------------------------------------------
-parser_Monad [t e: Data]: Monad (Parser t e)
+parser_Monad {@t e: Data}: Monad (Parser t e)
  = Monad parser_Applicative parser_return parser_bind
 
 
 parser_return
-        [t' e' a': Data]
+        {@t' e' a': Data}
         (x: a'): Parser t' e' a'
  = Parser $ λts → ParseReturn bag_nil x
 
 
 parser_bind
-        [t' e' a' b': Data]
+        {@t' e' a' b': Data}
         (parserA:   Parser t' e' a')
         (mkParserB: a' → Parser t' e' b')
         : Parser t' e' b'

@@ -8,13 +8,13 @@ where
 -- | The class of categories.
 data Category (cat: Data -> Data -> Data) where
         Category
-         :  ([a: Data].     cat a a)
-         -> ([a b c: Data]. cat b c -> cat a b -> cat a c)
+         :  ({@a: Data} -> cat a a)
+         -> ({@a b c: Data} -> cat b c -> cat a b -> cat a c)
          -> Category cat
 
 
 -- | Identity morphism.
-id      [cat: Data -> Data -> Data] [a: Data]
+id      {@cat: Data -> Data -> Data} {@a: Data}
         {(Category id' _): Category cat}
         : cat a a
         = id'
@@ -22,7 +22,7 @@ id      [cat: Data -> Data -> Data] [a: Data]
 
 -- | Compose two morphisms.
 --   The operator '∘' is desugared onto this function.
-compose [cat: Data -> Data -> Data] [a b c: Data]
+compose {@cat: Data -> Data -> Data} {@a b c: Data}
         {(Category _ compose'): Category cat}
         : cat b c -> cat a b -> cat a c
  = compose'
@@ -30,12 +30,12 @@ compose [cat: Data -> Data -> Data] [a b c: Data]
 
 -- TODO: Should not need to supply implicit arg.
 composeLeft
-        [cat: Data -> Data -> Data] [a b c: Data] {xc: Category cat}
+        {@cat: Data -> Data -> Data} {@a b c: Data} {xc: Category cat}
         : cat b c -> cat a b -> cat a c
         = compose {xc}
 
 composeRight
-        [cat: Data -> Data -> Data] [a b c: Data] {xc: Category cat}
+        {@cat: Data -> Data -> Data} {@a b c: Data} {xc: Category cat}
         : cat a b -> cat b c -> cat a c
         = λxab -> λxbc -> compose xbc xab
 
