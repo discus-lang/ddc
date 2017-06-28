@@ -4,6 +4,13 @@ module Main
 import System.IO.Console
 where
 
+-- Data type declaration where the constructors have arguments.
+--   We define two simple shapes.
+--   Rectangles have a height and width, while circles have a radius.
+data Shape where
+        Rectangle  : Nat -> Nat -> Shape
+        Circle     : Nat -> Shape
+
 
 -------------------------------------------------------------------------------
 -- Type synonym declarations
@@ -26,14 +33,6 @@ data Color where
         Red     : Color
         Green   : Color
         Blue    : Color
-
-
--- Data type declaration where the constructors have arguments.
---   We define two simple shapes.
---   Rectangles have a height and width, while circles have a radius.
-data Shape where
-        Rectangle  : Nat -> Nat -> Shape
-        Circle     : Nat -> Shape
 
 
 -- Parameterised data type declaration.
@@ -106,14 +105,14 @@ twice3 f x = f (f x)
 -- Using {} parens we bind an implicit parameter.
 --  When this function is applied at the call-site,
 --  the inner-most bound 'Shape' will be passed as the first argument.
-appShape {s: Shape} (f: Shape -> Shape): Shape
- = f s
+appShape {sx: Shape} (f: Shape -> Shape): Shape
+ = f sx
 
 -- For an example of 'appShape' we first define a utility function.
-scaleShape (n: Nat) (s: Shape): Shape
- = case s of
-        Circle r        -> Circle    (r * n)
-        Rectangle h w   -> Rectangle (h * n) (w * n)
+scaleShape (n: Nat) (ss: Shape): Shape
+ = case ss of
+        Circle r        -> Circle    r -- (r * n)
+        Rectangle h w   -> Rectangle h w -- (h * n) (w * n)
 
 -- Here is a shape defined at top level that we want to pass implicitly.
 topShape: Shape
@@ -127,11 +126,9 @@ testShape (scale: Nat): Shape
 -- If we don't need to name the implicit argument in the body of the function
 -- then we can omit the binder name. Here the same shape that is implicitly
 -- passed to 'twoShapes' is also implicitly passed to 'appShape'.
-
--- TODO: This is supposed to work, why does it think 's' is not bound?
--- twoShapes {Shape} (n: Nat): (Shape, Shape)
---  = let s = appShape (scaleShape n)
---    in  (s, s)
+twoShapes {Shape} (n: Nat): (Shape, Shape)
+ = let  s = appShape (scaleShape n)
+   in   (s, s)
 
 
 main ()

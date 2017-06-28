@@ -77,19 +77,19 @@ sourceLoad
         -> ConfigLoadSourceTetra        -- ^ Sinker config.
         -> ExceptT [B.Error] IO
                    (C.Module (C.AnTEC () CE.Name) CE.Name)
-        
+
 sourceLoad srcName srcLine str store config
- = do   
+ = do
         -- Parse text to source.
-        mm_source       
-         <- sourceParse 
+        mm_source
+         <- sourceParse
                 srcName srcLine str
                 (configSinkTokens  config)
 
 
         -- Desugar source.
         mm_desugared
-         <- sourceDesugar 
+         <- sourceDesugar
                 (configSinkFresh   config)
                 (configSinkDefix   config)
                 (configSinkExpand  config)
@@ -101,7 +101,7 @@ sourceLoad srcName srcLine str store config
 
         -- Lower source to core.
         mm_core
-         <- sourceLower 
+         <- sourceLower
                 store
                 (configSinkCore     config)
                 (configSinkResolve  config)
@@ -112,7 +112,7 @@ sourceLoad srcName srcLine str store config
         -- Check core.
         let fragment
                 = flip C.mapProfileOfFragment BE.fragment
-                $ C.mapFeaturesOfProfile 
+                $ C.mapFeaturesOfProfile
                 $ ( C.setFeature C.ImplicitRun True
                   . C.setFeature C.ImplicitBox True)
 
@@ -127,7 +127,7 @@ sourceLoad srcName srcLine str store config
                 mm_core
 
         mm_checked
-         <- BC.coreCheck 
+         <- BC.coreCheck
                 "SourceLoadText"
                 fragment
                 (C.Synth [])
@@ -135,20 +135,23 @@ sourceLoad srcName srcLine str store config
                 (configSinkChecked      config)
                 mm_namified
 
-        liftIO $ B.pipeSink (renderIndent $ ppr mm_namified) 
+        liftIO $ B.pipeSink (renderIndent $ ppr mm_namified)
                             (configSinkNamified config)
 
         -- Resolve elaborations in module.
-        mm_resolved
+        mm_elaborated
          <- do  ntsTop  <- liftIO $ B.importValuesOfStore store
                 res     <- liftIO $ CResolve.resolveModule
                                 (C.fragmentProfile BE.fragment)
                                 ntsTop mm_checked
                 case res of
-                 Left err  -> throwE [B.ErrorLint "SourceLoadText" "CoreResolve" err]
+                 Left err  -> throwE [B.ErrorLint "SourceLoadText" "CoreElaborate" err]
                  Right mm' -> return mm'
 
-        return $ mm_resolved
+        liftIO $ B.pipeSink (renderIndent $ ppr mm_elaborated)
+                            (configSinkElaborated config)
+
+        return $ mm_elaborated
 
 
 ---------------------------------------------------------------------------------------------------
@@ -163,17 +166,17 @@ sourceParse
 sourceParse
         srcName srcLine str
         sinkTokens
- = do   
+ = do
         -- Lex the input text into source tokens.
         let tokens  = SLexer.lexModuleString srcName srcLine str
 
         -- Dump tokens to file.
-        liftIO $ B.pipeSink 
-                        (unlines $ map (show . SP.valueOfLocated) $ tokens) 
+        liftIO $ B.pipeSink
+                        (unlines $ map (show . SP.valueOfLocated) $ tokens)
                         sinkTokens
 
         -- Parse the tokens into a Source Tetra module.
-        case Parser.runTokenParser C.describeToken srcName 
+        case Parser.runTokenParser C.describeToken srcName
                         (SParser.pModule) tokens of
          Left err -> throwE [B.ErrorLoad err]
          Right mm -> return mm
@@ -195,7 +198,7 @@ sourceDesugar
         sinkFresh  sinkDefix   sinkExpand
         sinkGuards sinkMatches sinkPrep
         mm
- = do   
+ = do
         -- Freshen shadowed names and eliminate anonymous binders.
         let mm_fresh    = SFreshen.evalState (Text.pack "f")
                         $ SFreshen.freshenModule mm
@@ -204,7 +207,7 @@ sourceDesugar
 
 
         -- Resolve fixity of infix operators.
-        let result_defixed = SDefix.defix SDefix.defaultFixTable mm_fresh 
+        let result_defixed = SDefix.defix SDefix.defaultFixTable mm_fresh
         mm_defixed      <- case result_defixed of
                             Left err        -> throwE [B.ErrorLoad [err]]
                             Right mm'       -> return mm'
@@ -229,7 +232,7 @@ sourceDesugar
                         $ SMatches.desugarModule mm_guards
         liftIO $ B.pipeSink (renderIndent $ ppr mm_match)   sinkMatches
 
-                
+
         -- Prepare for conversion to core.
         let mm_prep     = SPrep.evalState     (Text.pack "p")
                         $ SPrep.desugarModule mm_match
@@ -240,7 +243,7 @@ sourceDesugar
 
 ---------------------------------------------------------------------------------------------------
 -- | Lower desugared source tetra code to core tetra.
-sourceLower 
+sourceLower
         :: B.Store              -- ^ Interface store.
         -> B.Sink               -- ^ Sink after conversion to core.
         -> B.Sink               -- ^ Sink after resolving.
@@ -249,7 +252,7 @@ sourceLower
         -> ExceptT [B.Error] IO (C.Module SP.SourcePos CE.Name)
 
 sourceLower store sinkCore sinkResolve sinkSpread mm
- = do   
+ = do
         -- Lower source tetra to core tetra.
         let sp          = SP.SourcePos "<top level>" 1 1
         mm_core         <- case SConvert.coreOfSourceModule sp mm of
@@ -258,9 +261,9 @@ sourceLower store sinkCore sinkResolve sinkSpread mm
 
         liftIO $ B.pipeSink (renderIndent $ ppr mm_core) sinkCore
 
-        -- Resolve which module imported names are from, 
+        -- Resolve which module imported names are from,
         -- and attach arity information to the import statements.
-        result_resolve  <- liftIO $ BResolve.resolveNamesInModule 
+        result_resolve  <- liftIO $ BResolve.resolveNamesInModule
                                         CE.primKindEnv CE.primTypeEnv
                                         store mm_core
 

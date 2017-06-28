@@ -234,7 +234,7 @@ desugarLts sp lts
 
         LPrivate{}      -> pure lts
 
-        LGroup cs       -> LGroup <$> mapM (desugarCl sp) cs
+        LGroup bRec cs  -> LGroup bRec <$> mapM (desugarCl sp) cs
 
 
 -------------------------------------------------------------------------------

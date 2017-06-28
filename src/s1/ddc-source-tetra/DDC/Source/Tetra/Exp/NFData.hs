@@ -57,7 +57,7 @@ instance NFDataLanguage l => NFData (GParam l) where
 instance NFDataLanguage l => NFData (GArg l) where
  rnf aa
   = case aa of
-        RType t                 -> rnf t 
+        RType t                 -> rnf t
         RTerm x                 -> rnf x
         RImplicit x             -> rnf x
         RWitness  w             -> rnf w
@@ -69,7 +69,7 @@ instance NFDataLanguage l => NFData (GLets l) where
         LLet b x                -> rnf b `seq` rnf x
         LRec bxs                -> rnf bxs
         LPrivate bs1 mR bs2     -> rnf bs1  `seq` rnf mR `seq` rnf bs2
-        LGroup cs               -> rnf cs
+        LGroup _bRec cs         -> rnf cs
 
 
 instance NFDataLanguage l => NFData (GAltCase l) where

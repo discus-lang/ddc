@@ -403,7 +403,7 @@ pLetsSP
     [ -- non-recursive let
       do sp       <- pKey ELet
          l        <- liftM snd $ pDeclTermSP
-         return (LGroup [l], sp)
+         return (LGroup False [l], sp)
 
       -- recursive let
     , do sp       <- pKey ELetRec
@@ -411,7 +411,7 @@ pLetsSP
          ls       <- liftM (map snd)
                   $  P.sepEndBy1 pDeclTermSP (pSym SSemiColon)
          pSym SBraceKet
-         return (LGroup ls, sp)
+         return (LGroup True ls, sp)
 
       -- Private region binding.
       --   private Binder+ (with { Binder : Type ... })? in Exp
@@ -647,7 +647,7 @@ makeStmts clsAcc ss
                 []      -> xBody
                 [SLet sp bmt [] [GExp x]]
                         -> XAnnot sp $ XLet (LLet bmt x) xBody
-                _       -> XLet (LGroup clsAcc) xBody
+                _       -> XLet (LGroup False clsAcc) xBody
    in
       case ss of
         [StmtNone _ x]

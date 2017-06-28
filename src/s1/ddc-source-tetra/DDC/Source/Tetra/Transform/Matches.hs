@@ -238,10 +238,10 @@ desugarLts sp lts
 
         LPrivate{}      -> return lts
 
-        LGroup cls
+        LGroup bRec cls
          -> do  let spcls  =  zip (repeat sp) cls
                 spcls'     <- desugarClGroup spcls
-                return     $ LGroup $ map snd spcls'
+                return     $ LGroup bRec $ map snd spcls'
 
 
 -------------------------------------------------------------------------------

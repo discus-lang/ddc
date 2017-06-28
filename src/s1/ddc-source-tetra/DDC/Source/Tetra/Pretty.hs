@@ -318,7 +318,7 @@ instance PrettyLanguage l => Pretty (GLets l) where
                  <>  nest 2 (  breakWhen (not $ isSimpleX x)
                             <> text "=" <+> align (ppr x))
 
-           in   (nest 2 $ text "letrec"
+           in   (nest 2 $ text "rec"
                   <+> lbrace
                   <>  (  line
                       <> (vcat $ punctuate (semi <> line)
@@ -349,8 +349,8 @@ instance PrettyLanguage l => Pretty (GLets l) where
                 <+> text "with"
                 <+> braces (cat $ punctuate (text "; ") $ map ppr bsWit)
 
-        LGroup cs
-         ->   text "letgroup"
+        LGroup bRec cs
+         ->   (if bRec then text "recs" else text "lets")
                 <+> nest 2 (lbrace
                                 <> line
                                 <> (vcat $ map ppr cs)

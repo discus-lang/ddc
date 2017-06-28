@@ -1,5 +1,5 @@
 
-module World 
+module World
 export
 {       newWorld;
         getCell; setCell;
@@ -15,7 +15,7 @@ where
 
 -- | A 2D world of cells.
 data World (r: Region) where
- World  :  Nat                  -- ^ Width of world.    
+ World  :  Nat                  -- ^ Width of world.
         -> Nat                  -- ^ Height of world.
         -> Array (Store r Cell) (S (Read r) Cell)
                                 -- ^ Linear array of cells.
@@ -38,7 +38,7 @@ newWorld (width height: Nat): S (Alloc r) (World r)
 getCell (world: World r) (x y: Nat)
         : S (Read r) Cell
  | World width height arr       <- world
- = match 
+ = match
         | x >= width    = CellEmpty
         | y >= height   = CellEmpty
         | otherwise     = array_index arr (linear world x y)
@@ -51,7 +51,7 @@ setCell (world: World r) (x y: Nat) (c: Cell)
  = match
         | x >= width    = ()
         | y >= height   = ()
-        | otherwise     
+        | otherwise
          = do   arrayStore_write arr (linear world x y) c
                 ()
 
@@ -68,34 +68,33 @@ getNeighbours
 
 
 -- | Step a world forward in time, returning a new world.
-stepWorld    
+stepWorld
         (world: World r)
         : S (Read r + Alloc r) (World r)
  =  forWorld world $ \x y
- -> stepCell 
+ -> stepCell
         (getCell       world x y)
         (getNeighbours world x y)
 
 
 -- | Compute a new world by applying the given worker function
 --   to every available location.
---
---   ISSUE #389: Fix parsing of local recursive functions in 'do' syntax.
-forWorld 
+--   TODO: Add nicer sytax for local letrecs inside a do.
+forWorld
         (world: World r)
-        (f:     Nat -> Nat -> S (Read r) Cell) 
+        (f:     Nat -> Nat -> S (Read r) Cell)
         : S (Read r + Alloc r) (World r)
  | World width height arr       <- world
  = extend r using r' with { Alloc r'; Read r'; Write r'} in
    let  world'  = run newWorld [r'] width height in
-
-   let  go (x y: Nat): S (Read r + Read r' + Write r' + Alloc r') Unit
+   letrec
+        go (x y: Nat): S (Read r + Read r' + Write r' + Alloc r') Unit
          | x >= width   = go 0 (y + 1)
          | y >= height  = ()
-         | otherwise    
+         | otherwise
           = do  setCell world' x y (f x y)
                 go (x + 1) y
-   in do 
+   in do
         go 0 0
         world'
 
@@ -104,13 +103,13 @@ forWorld
 showWorld (world: World r): S (Read r) Text
  | World width height arr       <- world
  = go 0 0 ""
- where  
+ where
         go (x y: Nat) (acc: Text): S (Read r) Text
          | x >= width   = go 0 (y + 1) (acc % "\n")
          | y >= height  = acc
-         | otherwise    
+         | otherwise
          = go (x + 1) y
-         $ acc % case getCell world x y of 
+         $ acc % case getCell world x y of
                   CellEmpty -> ". "
                   CellAlive -> "O "
 

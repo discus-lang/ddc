@@ -60,9 +60,9 @@ tetraToShimmer mm config
                 = case H.smrOfTetraModule
                         (C.profilePrimDataDefs E.profile)
                         (C.profilePrimKinds    E.profile)
-                        (C.profilePrimTypes    E.profile) 
+                        (C.profilePrimTypes    E.profile)
                         mm_checked of
-                    Left  err       -> error $ "tetraToShimmer fail" ++ err 
+                    Left  err       -> error $ "tetraToShimmer fail" ++ err
                     Right mm'       -> mm'
 
         liftIO $ B.pipeSink (renderIndent $ ppr mm_shimmer)
@@ -98,8 +98,8 @@ tetraToSalt platform runtimeConfig mm config
         -- Expliciate the core module.
         --   This converts implicit function parameters and arguments to explicit ones
         --   as well as substituting in all type equations.
-        mm_explicit     
-         <- B.coreSimplify 
+        mm_explicit
+         <- B.coreSimplify
                 BE.fragment (0 :: Int) C.expliciate
                 mm
 
@@ -110,14 +110,14 @@ tetraToSalt platform runtimeConfig mm config
         -- Re-check the module before lambda lifting.
         --   The lambda lifter needs every node annotated with its type.
         mm_checked_lambdas
-         <-  B.coreCheck    
-                "TetraToSalt/lambdas" BE.fragment C.Recon 
+         <-  B.coreCheck
+                "TetraToSalt/lambdas" BE.fragment C.Recon
                 B.SinkDiscard B.SinkDiscard
                 mm_explicit
 
 
         -- Perform lambda lifting.
-        --   This hoists out nested lambda abstractions to top-level, 
+        --   This hoists out nested lambda abstractions to top-level,
         --   producing supercombinators which are top-level functions.
         mm_lambdas
          <-  B.coreSimplify
@@ -137,7 +137,7 @@ tetraToSalt platform runtimeConfig mm config
 
 
         -- Perform the unsharing transform.
-        --   This adds extra unit parameters to all top-level bindings 
+        --   This adds extra unit parameters to all top-level bindings
         --   which are not functions, to make them functions.
         let mm_unshare  = CUnshare.unshareModule mm_checked_unshare
 
@@ -148,7 +148,7 @@ tetraToSalt platform runtimeConfig mm config
         -- Perform the curry transform.
         --   This introduces special primops to handle partial application
         --   of our top-level supercombinators.
-        mm_curry    
+        mm_curry
          <- case ECurry.curryModule mm_unshare of
                 Left err        -> throwE [B.ErrorTetraConvert err]
                 Right mm'       -> return mm'
@@ -160,7 +160,7 @@ tetraToSalt platform runtimeConfig mm config
         -- Prep before boxing transform.
         --   The boxing transform needs the program to be a-normalized.
         mm_prep_boxing
-         <- B.coreSimplify BE.fragment (0 :: Int) 
+         <- B.coreSimplify BE.fragment (0 :: Int)
                 (C.anormalize
                         (CNamify.makeNamifier E.freshT)
                         (CNamify.makeNamifier E.freshX))
@@ -168,12 +168,12 @@ tetraToSalt platform runtimeConfig mm config
 
 
         -- Perform the boxing transform.
-        --   This introduces explicitly unboxed values, using types (U# Nat#), 
+        --   This introduces explicitly unboxed values, using types (U# Nat#),
         --   and makes the original types like Nat# mean explicitly boxed objects.
         let mm_boxing
                 = EBoxing.boxingModule mm_prep_boxing
-        
-        liftIO $ B.pipeSink (renderIndent $ ppr mm_boxing)      
+
+        liftIO $ B.pipeSink (renderIndent $ ppr mm_boxing)
                             (configSinkBoxing config)
 
 

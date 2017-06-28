@@ -23,7 +23,7 @@ class HasAnonBind l => MapBoundX (c :: * -> *) l where
 
 -- Lift -------------------------------------------------------------------------------------------
 -- | Lift debruijn indices less than or equal to the given depth.
-liftAtDepthX   
+liftAtDepthX
         :: (MapBoundX c l, GXBoundVar l ~ Bound)
         => l
         -> Int          -- ^ Number of levels to lift.
@@ -33,7 +33,7 @@ liftAtDepthX
 
 liftAtDepthX l n d
  = mapBoundAtDepthX l liftU d
- where  
+ where
         liftU d' u
          = case u of
                 UName{}         -> u
@@ -43,11 +43,11 @@ liftAtDepthX l n d
                 UHole{}         -> u
 
 
--- | Wrapper for `liftAtDepthX` that starts at depth 0.       
+-- | Wrapper for `liftAtDepthX` that starts at depth 0.
 liftX   :: (MapBoundX c l, GXBoundVar l ~ Bound)
         => Int -> c l -> c l
 
-liftX n xx  
+liftX n xx
  = let lProxy :: l
        lProxy = error "ddc-source-tetra.lProxy"
    in  liftAtDepthX lProxy n 0 xx
@@ -55,7 +55,7 @@ liftX n xx
 
 ---------------------------------------------------------------------------------------------------
 instance HasAnonBind l => MapBoundX GExp l where
- mapBoundAtDepthX = downX 
+ mapBoundAtDepthX = downX
 
 downX l f d xx
   = case xx of
@@ -66,19 +66,19 @@ downX l f d xx
         XCon   c        -> XCon    c
         XApp   x1 r2    -> XApp x1 (downArg l f d r2)
 
-        XAbs     (MType  b mt) x       
+        XAbs     (MType  b mt) x
          -> XAbs (MType  b mt) (downX l f d x)
 
-        XAbs     m@(MTerm p _mt) x     
+        XAbs     m@(MTerm p _mt) x
          -> let d'      = d + countBAnonsP l p
             in  XAbs m (mapBoundAtDepthX l f d' x)
 
-        XAbs     m@(MImplicit p _mt) x     
+        XAbs     m@(MImplicit p _mt) x
          -> let d'      = d + countBAnonsP l p
             in  XAbs m (mapBoundAtDepthX l f d' x)
 
-        XLet   lets x   
-         -> let (lets', levels) = mapBoundAtDepthXLets l f d lets 
+        XLet   lets x
+         -> let (lets', levels) = mapBoundAtDepthXLets l f d lets
             in  XLet lets' (mapBoundAtDepthX l f (d + levels) x)
 
         XCase x alts      -> XCase (downX l f d x)  (map (downA l f d) alts)
@@ -90,7 +90,7 @@ downX l f d xx
         XMatch    a gs x  -> XMatch    a (map (downMA l f d) gs) (downX l f d x)
         XWhere    a x cls -> XWhere    a (downX l f d x) (map (downCL l f d) cls)
 
-        XAbsPat   a ps p mt x  
+        XAbsPat   a ps p mt x
          -> let d'      = d + countBAnonsP l p
             in  XAbsPat a ps p mt (downX l f d' x)
 
@@ -125,7 +125,7 @@ instance HasAnonBind l => MapBoundX GAltCase l where
 
 downA l f d (AAltCase p gxs)
   = case p of
-        PDefault 
+        PDefault
          -> AAltCase PDefault (map (downGX l f d)  gxs)
 
         PAt b p'
@@ -156,11 +156,11 @@ instance HasAnonBind l => MapBoundX GGuardedExp l where
 
 downGX l f d gx
   = case gx of
-        GGuard g gxs    
+        GGuard g gxs
          -> let d' = d + countBAnonsG l g
             in  GGuard (downG l f d g) (downGX l f d' gxs)
 
-        GExp x  
+        GExp x
          -> GExp   (downX l f d x)
 
 ---------------------------------------------------------------------------------------------------
@@ -203,7 +203,7 @@ mapBoundAtDepthXLets
         :: forall l
         .  HasAnonBind l
         => l
-        -> (Int -> GXBoundVar l -> GXBoundVar l)  
+        -> (Int -> GXBoundVar l -> GXBoundVar l)
                            -- ^ Function given number of levels to lift.
         -> Int             -- ^ Current binding depth.
         -> GLets l         -- ^ Lift exp indices in this thing.
@@ -224,10 +224,11 @@ mapBoundAtDepthXLets l f d lts
         LPrivate _b _ bts
          -> (lts, countBAnonsB l $ map fst bts)
 
-        LGroup cs
+        -- TODO: depth here is wrong.
+        LGroup bRec cs
          -> let inc = sum (map (countBAnonsC l) cs)
                 cs' = map (mapBoundAtDepthX l f (d + inc)) cs
-            in  (LGroup cs', inc)
+            in  (LGroup bRec cs', inc)
 
 
 ---------------------------------------------------------------------------------------------------
@@ -236,7 +237,7 @@ countBAnonsB l = length . filter (isAnon l)
 
 countBAnonsBM  :: HasAnonBind l => l -> [GXBindVarMT l] -> Int
 countBAnonsBM l bmts
-        = length 
+        = length
         $ filter (isAnon l)
         $ [b | XBindVarMT b _ <- bmts]
 
@@ -251,7 +252,7 @@ countBAnonsC l c
 countBAnonsG :: HasAnonBind l => l -> GGuard l -> Int
 countBAnonsG l g
  = case g of
-        GPat p _    -> countBAnonsP l p 
+        GPat p _    -> countBAnonsP l p
         GPred _     -> 0
         GDefault    -> 0
 

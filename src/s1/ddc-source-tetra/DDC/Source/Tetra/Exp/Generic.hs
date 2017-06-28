@@ -90,7 +90,7 @@ class HasAnonBind l where
 
 
 -- | A possibly typed binding.
-data GXBindVarMT l 
+data GXBindVarMT l
         = XBindVarMT (GXBindVar l) (Maybe (GType l))
 
 
@@ -221,9 +221,9 @@ data GLets l
         ---------------------------------------------------
         -- Sugar Constructs
         -- | A possibly recursive group of binding clauses.
-        -- 
+        --   The flag says if the group is recursive (true) or non-recursive (false).
         --   Multiple clauses in the group may be part of the same function.
-        | LGroup   ![GClause l]
+        | LGroup   !Bool ![GClause l]
 
 
 -- | Binding clause
@@ -245,7 +245,7 @@ data GPat l
 
         -- | The variable pattern always succeeds and binds the value
         --   to the new variable.
-        | PVar   !(GXBindVar l) 
+        | PVar   !(GXBindVar l)
 
         -- | Match a data constructor and bind its arguments.
         | PData  !(DaCon (GXBoundCon l) (GType l)) ![GPat l]
@@ -284,11 +284,11 @@ data GCast l
         --   The given effect is added to the effect
         --   of the body.
         = CastWeakenEffect  !(GType l)
-        
+
         -- | Purify the effect (action) of an expression.
         | CastPurify !(GWitness l)
 
-        -- | Box a computation, 
+        -- | Box a computation,
         --   capturing its effects in the S computation type.
         | CastBox
 

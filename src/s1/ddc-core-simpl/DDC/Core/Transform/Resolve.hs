@@ -14,7 +14,7 @@ import qualified Data.Map                       as Map
 
 
 -- | Resolve elaborations in a module.
-resolveModule 
+resolveModule
         :: (Ord n, Pretty n, Show n)
         => Profile n                      -- ^ Language profile.
         -> [(n, ImportValue n (Type n))]  -- ^ Top-level context from imported modules.
@@ -22,7 +22,7 @@ resolveModule
         -> IO (Either (Error a n) (Module a n))
 
 resolveModule profile ntsTop mm
- = runExceptT 
+ = runExceptT
  $ resolveModuleM profile ntsTop mm
 
 
@@ -35,7 +35,7 @@ resolveModuleM
         -> S a n (Module a n)
 
 resolveModuleM profile ntsTop mm
- = do   
+ = do
         -- Build the initial context,
         --   which also gathers up the set of top-level declarations
         --   available in other modules.
@@ -55,12 +55,12 @@ resolveModuleM profile ntsTop mm
 
         -- Return the resolved module.
         return  $ mm
-                { moduleBody            = xBody' 
+                { moduleBody            = xBody'
                 , moduleImportValues    = importValues' }
 
 
 -- | Resolve elaborations in an expression.
-resolveExp 
+resolveExp
         :: (Ord n, Pretty n, Show n)
         => Context n
         -> Exp a n -> S a n (Exp a n)
@@ -83,7 +83,7 @@ resolveExp !ctx xx
 
 
 -- | Resolve elaborations in an argument.
-resolveArg 
+resolveArg
         :: (Ord n, Pretty n, Show n)
         => Context n
         -> Arg a n -> S a n (Arg a n)
@@ -104,9 +104,10 @@ resolveLts
 
 resolveLts !ctx lts
  = case lts of
-        LLet b x        -> LLet b <$> resolveExp ctx x
+        LLet b x
+         -> LLet b <$> resolveExp ctx x
 
-        LRec bxs    
+        LRec bxs
          -> do  let (bs, xs)    = unzip bxs
                 let ctx'        = contextPushBinds bs ctx
                 xs'             <- mapM (resolveExp ctx') xs
@@ -117,7 +118,7 @@ resolveLts !ctx lts
 
 
 -- | Resolve elaborations in an alternative.
-resolveAlt 
+resolveAlt
         :: (Ord n, Pretty n, Show n)
         => Context n
         -> Alt a n -> S a n (Alt a n)

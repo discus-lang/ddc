@@ -51,19 +51,16 @@ vectorOfCharList
         len     = length xx
         vec     = vectorAlloc# [r] (len + 1)
 
-        fill (ix: Nat) (xx: List Char): S (Write r) Unit
-         = case xx of
-                Nil     -> ()
-                Cons x xs
-                 -> do  vectorWrite# vec ix (truncate# x)
-                        fill (ix + 1) xs
-
-                 | otherwise
-                 -> do  fill (ix + 1) xs
-        fill 0 xx
-
-        vectorWrite# vec len 0w8
-        vec
+        -- TODO: Add Haskell like syntax to next recursive let exps.
+        letrec fill (ix: Nat) (xx: List Char): S (Write r) Unit
+                 = case xx of
+                        Nil     -> ()
+                        Cons x xs
+                         -> do  vectorWrite# vec ix (truncate# x)
+                                fill (ix + 1) xs
+         in do  fill 0 xx
+                vectorWrite# vec len 0w8
+                vec
 
 
 -- | Concatenate text strings, punctuating with newline characters.

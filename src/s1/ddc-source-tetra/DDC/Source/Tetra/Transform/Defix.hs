@@ -1,11 +1,11 @@
 
 -- | Convert infix expressions to prefix form.
 --
---   The parser packs up sequences of expressions and operators into an 
+--   The parser packs up sequences of expressions and operators into an
 --   XDefix node, but does not convert them to standard prefix applications.
 --   That is the job of this module.
 --
---   The parsed code will contain XDefix, XInfixOp and XInfixVar nodes, 
+--   The parsed code will contain XDefix, XInfixOp and XInfixVar nodes,
 --   which are pretty-printed like this:
 --
 -- @ [DEFIX| Cons start [DEFIX| enumFromTo [DEFIX| start (INFIXOP "+") 1 ] end ]
@@ -43,7 +43,7 @@ class Defix (c :: * -> *) l where
 
 
 instance Defix Module l where
- defix table mm 
+ defix table mm
   = do  tops'   <- mapM (defix table) (moduleTops mm)
         return  $ mm { moduleTops = tops' }
 
@@ -70,13 +70,13 @@ instance Defix GExp l where
         XCase x alts    -> liftM2  XCase    (down x)   (mapM down alts)
         XCast c x       -> liftM  (XCast c) (down x)
 
-        XDefix a xs     
+        XDefix a xs
          -> do  xs'     <- mapM down xs
                 xs_apps <- defixApps a table xs'
                 defixExps a table xs_apps
 
         XInfixOp{}              -> return xx
-        
+
         XInfixVar a str
          -> case lookupDefInfixOfSymbol table str of
                 Just def        -> return (fixDefExp def a)
@@ -103,14 +103,14 @@ instance Defix GLets l where
     in case lts of
         LLet b x        -> liftM (LLet b) (down x)
 
-        LRec bxs    
+        LRec bxs
          -> do  let (bs, xs)    = unzip bxs
                 xs'     <- mapM (defix table) xs
                 return $ LRec (zip bs xs')
 
         LPrivate{}      -> return lts
 
-        LGroup cs       -> liftM LGroup (mapM down cs)
+        LGroup bRec cs  -> liftM (LGroup bRec) (mapM down cs)
 
 
 instance Defix GClause l where
@@ -154,11 +154,11 @@ instance Defix GGuard l where
 
 -------------------------------------------------------------------------------
 -- | Preprocess the body of an XDefix node to insert applications.
---    
+--
 --   Takes         f a  +  g b  with five  nodes in the XDefix list.
 --   and produces (f a) + (g b) with three nodes in the XDefix list.
 --
-defixApps 
+defixApps
         :: GXAnnot  l
         -> FixTable l
         -> [GArg l]
@@ -168,7 +168,7 @@ defixApps a table xx
  = start xx
  where
         -- No expressions, we're done.
-        start [] 
+        start []
          = return []
 
         -- Single element, we're done.
@@ -188,7 +188,7 @@ defixApps a table xx
          = Left $ ErrorMalformed a (XDefix a xx)
 
         -- Start accumulating an application node.
-        start (RTerm x1 : xs) 
+        start (RTerm x1 : xs)
          = munch x1 xs
 
         start _
@@ -213,7 +213,7 @@ defixApps a table xx
 --
 --   The input needs to have already been preprocessed by defixApps above.
 --
-defixExps 
+defixExps
         :: GXAnnot  l           -- ^ Annotation from original XDefix node.
         -> FixTable l           -- ^ Table of infix defs.
         -> [GArg l]             -- ^ Body of the XDefix node.
@@ -234,10 +234,10 @@ defixExps a table args
          -> case defixInfix a table args of
                 -- Defixer found errors.
                 Left  errs      -> Left errs
-                
+
                 -- Defixer didn't find any infix ops, so whatever is leftover
                 -- is a standard prefix application.
-                Right Nothing   
+                Right Nothing
                  -> case r1 of
                         RTerm x1 -> Right $ XAnnot a $ makeXApps x1 rs
                         _        -> error "ddc-source-tetra.defixExps: no term"
@@ -264,21 +264,21 @@ defixInfix a table xs
             _      -> defixInfix_ops a table xs spOpStrs
 
 defixInfix_ops sp table xs spOpStrs
- = do   
+ = do
         let (_opSps, opStrs) = unzip spOpStrs
 
         -- Lookup infix info for symbols.
         defs    <- mapM (getInfixDefOfSymbol sp table) opStrs
         let precs       = map fixDefPrec  defs
-        
+
         -- Get the highest precedence of all symbols.
         let Just precHigh = takeMaximum precs
-   
+
         -- Get the list of all ops having this highest precedence.
         let opsHigh     = nub
                         $ [ op   | (op, prec) <- zip opStrs precs
                                  , prec == precHigh ]
-                                 
+
         -- Get the list of associativities for just the ops with
         -- highest precedence.
         defsHigh <- mapM (getInfixDefOfSymbol sp table) opsHigh
@@ -288,14 +288,14 @@ defixInfix_ops sp table xs spOpStrs
         -- same associativity, otherwise the implied order-of-operations is
         -- ambiguous.
         case nub assocsHigh of
-         [InfixLeft]    
+         [InfixLeft]
           -> do xs'     <- defixInfixLeft  sp table precHigh xs
                 return $ Just xs'
 
-         [InfixRight]   
+         [InfixRight]
           -> do xs'     <- defixInfixRight sp table precHigh (reverse xs)
                 return $ Just (reverse xs')
-         
+
          [InfixNone]
           -> do xs'     <- defixInfixNone  sp table precHigh xs
                 return $ Just (reverse xs')
@@ -304,15 +304,15 @@ defixInfix_ops sp table xs spOpStrs
 
 
 -- | Defix some left associative ops.
-defixInfixLeft 
-        :: GXAnnot l -> FixTable l -> Int 
+defixInfixLeft
+        :: GXAnnot l -> FixTable l -> Int
         -> [GArg l] -> Either (Error l) [GArg l]
 
-defixInfixLeft sp table precHigh 
+defixInfixLeft sp table precHigh
         (RTerm x1 : RTerm (XInfixOp spo op) : RTerm x2 : xs)
         | Just def      <- lookupDefInfixOfSymbol table op
         , fixDefPrec def == precHigh
-        = Right $ (RTerm (XApp (XApp (fixDefExp def spo) 
+        = Right $ (RTerm (XApp (XApp (fixDefExp def spo)
                                      (RTerm x1))
                                (RTerm x2))) : xs
 
@@ -329,14 +329,14 @@ defixInfixLeft sp _ _ xs
 --   The input expression list is reversed, so we can eat the operators left
 --   to right. However, be careful to build the App node the right way around.
 defixInfixRight
-        :: GXAnnot l  -> FixTable l -> Int 
+        :: GXAnnot l  -> FixTable l -> Int
         -> [GArg l] -> Either (Error l) [GArg l]
 
-defixInfixRight sp table precHigh 
+defixInfixRight sp table precHigh
         (RTerm x2 : RTerm (XInfixOp spo op) : RTerm x1 : xs)
         | Just def      <- lookupDefInfixOfSymbol table op
         , fixDefPrec def == precHigh
-        = Right $ (RTerm (XApp (XApp (fixDefExp def spo) 
+        = Right $ (RTerm (XApp (XApp (fixDefExp def spo)
                                      (RTerm x1))
                                (RTerm x2))) : xs
 
@@ -350,14 +350,14 @@ defixInfixRight sp _ _ xs
 
 
 -- | Defix non-associative ops.
-defixInfixNone 
+defixInfixNone
         :: GXAnnot l -> FixTable l -> Int
         -> [GArg l] -> Either (Error l) [GArg l]
 
 defixInfixNone sp table precHigh args
         -- If there are two ops in a row that are non-associative and have
         -- the same precedence then we don't know which one should come first.
-        |  _ : RTerm (XInfixOp sp2 op2) 
+        |  _ : RTerm (XInfixOp sp2 op2)
          : _ : RTerm (XInfixOp sp4 op4) : _ <- args
         , Just def2     <- lookupDefInfixOfSymbol table op2
         , Just def4     <- lookupDefInfixOfSymbol table op4

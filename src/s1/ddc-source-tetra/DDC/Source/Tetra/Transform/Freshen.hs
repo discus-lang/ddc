@@ -59,14 +59,14 @@ freshenClauseGroup cls
 --   All the new names for the clauses are in scope in the continuation,
 --   which can then be used to freshen the bodies.
 --
-freshenClauseGroupBinds 
+freshenClauseGroupBinds
         :: [Clause] -> ([Clause] -> S a) -> S a
 
 freshenClauseGroupBinds cls0 cont
  = do   envTopX <- S.gets stateEnvX
         go envTopX [] cls0
- where  
-        go _envTopX clsAcc [] 
+ where
+        go _envTopX clsAcc []
          = cont (reverse clsAcc)
 
         -- Signatures.
@@ -89,7 +89,7 @@ freshenClauseGroupBinds cls0 cont
                  -- Bind the variable into the current environment,
                  -- renaming it if it was already visible in the context
                  -- of the current clause group.
-                 _ 
+                 _
                   -> bindCtxBX envTopX b $ \b'
                   -> do let cls' = SSig a b' t'
                         go envTopX (cls' : clsAcc) clsRest
@@ -99,7 +99,7 @@ freshenClauseGroupBinds cls0 cont
         go envTopX clsAcc ((SLet a (XBindVarMT b mt) ps gxs) : clsRest)
          = do   -- Freshen the type on the binder.
                 mt'     <- traverse freshenType mt
-                
+
                 -- Check if we've already renamed this variable in the
                 -- current clause group.
                 envX    <- S.gets stateEnvX
@@ -156,7 +156,7 @@ bindParam pp cont
 
 -------------------------------------------------------------------------------
 -- | Freshen a guarded expression.
-freshenGuardedExp :: GuardedExp -> S GuardedExp 
+freshenGuardedExp :: GuardedExp -> S GuardedExp
 freshenGuardedExp gx
  = case gx of
         GGuard g gx'
@@ -196,11 +196,11 @@ freshenExp xx
 
         XApp x1 a2      -> XApp  <$> freshenExp x1 <*> freshenArg a2
 
-        XLet lts x      
+        XLet lts x
          -> bindLets lts $ \lts'
          -> XLet lts' <$> freshenExp x
 
-        XCase x alts    -> XCase    <$> freshenExp x 
+        XCase x alts    -> XCase    <$> freshenExp x
                                     <*> mapM freshenAltCase alts
 
         XCast c x       -> XCast    <$> freshenCast c <*> freshenExp x
@@ -211,17 +211,17 @@ freshenExp xx
 
         XInfixVar{}     -> return xx
 
-        XMatch a as x   -> XMatch a <$> mapM freshenAltMatch as 
+        XMatch a as x   -> XMatch a <$> mapM freshenAltMatch as
                                     <*> freshenExp x
 
         XWhere a x cl   -> XWhere a <$> freshenExp x <*> freshenClauseGroup cl
 
         XAbsPat a ps p mt x
          -> do  mt'     <- traverse freshenType mt
-                bindPat p $ \p' 
+                bindPat p $ \p'
                  -> XAbsPat a ps p' mt' <$> freshenExp x
 
-        XLamCase a as   
+        XLamCase a as
          -> XLamCase a   <$> mapM freshenAltCase as
 
 
@@ -241,14 +241,14 @@ freshenArg arg
 bindGuard   :: Guard -> (Guard -> S a) -> S a
 bindGuard gg cont
  = case gg of
-        GPat p x       
+        GPat p x
          -> bindPat p $ \p'
          -> cont =<< (GPat p' <$> freshenExp x)
 
-        GPred x  
+        GPred x
          -> cont =<< (GPred   <$> freshenExp x)
 
-        GDefault 
+        GDefault
          -> cont GDefault
 
 
@@ -258,8 +258,8 @@ bindLets :: Lets -> (Lets -> S a) -> S a
 bindLets lts cont
  = case lts of
         LLet (XBindVarMT b mt) x
-         -> do  mt'     <- traverse freshenType mt        
-                bindBX b $ \b' 
+         -> do  mt'     <- traverse freshenType mt
+                bindBX b $ \b'
                  -> cont =<< (LLet (XBindVarMT b' mt') <$> freshenExp x)
 
         LRec bxs
@@ -276,8 +276,8 @@ bindLets lts cont
                         mapFreshBinds bindBX bws $ \bws'
                          -> cont (LPrivate brs' mt' $ zip bws' ts')
 
-        LGroup cls
-         -> cont =<< (LGroup <$> freshenClauseGroup cls)
+        LGroup bRec cls
+         -> cont =<< (LGroup bRec <$> freshenClauseGroup cls)
 
 
 -------------------------------------------------------------------------------
@@ -353,8 +353,8 @@ bindPat pp cont
          -> bindBX b  $ \b'
          -> cont (PVar b')
 
-        PData dc ps     
-         -> mapFreshBinds bindPat ps $ \ps' 
+        PData dc ps
+         -> mapFreshBinds bindPat ps $ \ps'
          -> cont (PData dc ps')
 
 
@@ -374,22 +374,22 @@ bindBT BAnon cont
          $ cont (BName name)
 
 bindBT (BName n) cont
- =  S.get >>= \state0 
+ =  S.get >>= \state0
  -> case Set.member n (envNames $ stateEnvT state0) of
      -- If the binder does not shadow an existing one
      -- then don't bother rewriting it.
-     False 
+     False
       ->     withModifiedEnvT
               (\envT -> envT { envNames = Set.insert n (envNames envT) })
               $ cont (BName n)
 
      -- The binder shadows an existing one, so rewrite it.
-     True 
+     True
       -> do name    <- newName "t"
 
             -- Run the continuation in the extended environment.
             withModifiedEnvT
-             (\envT -> envT { envNames  = Set.insert   name (envNames  envT) 
+             (\envT -> envT { envNames  = Set.insert   name (envNames  envT)
                             , envRename = Map.insert n name (envRename envT)})
              $ cont (BName name)
 
@@ -422,7 +422,7 @@ bindCtxBX _envCtx BAnon cont
  = do   -- Create a new name for anonymous binders.
         name    <- newName "x"
 
-        withModifiedEnvX 
+        withModifiedEnvX
          (\envX -> envX { envStack    = name : envStack envX
                         , envStackLen = 1 + envStackLen envX })
          $ cont (BName name)
@@ -431,21 +431,21 @@ bindCtxBX envCtx (BName name) cont
  = case Set.member name (envNames envCtx) of
         -- If the binder does not shadow an existing one
         -- then don't bother rewriting it.
-        False 
+        False
          -> do  withModifiedEnvX
                  (\envX -> envX
                         {  envNames = Set.insert name (envNames envX)})
                  $ cont (BName name)
 
         -- The binder shadows an existing one, so rewrite it.
-        True 
+        True
          -> do  name'   <- newName name
 
                 -- Run the continuation in the environment extended with the
                 -- new name.
                 withModifiedEnvX
-                 (\envX -> envX 
-                        {  envNames  = Set.insert      name' (envNames  envX) 
+                 (\envX -> envX
+                        {  envNames  = Set.insert      name' (envNames  envX)
                         ,  envRename = Map.insert name name' (envRename envX)})
                  $ cont (BName name')
 

@@ -16,7 +16,7 @@ import qualified Data.Set                       as Set
 
 
 ---------------------------------------------------------------------------------------------------
--- | State holding a variable name prefix and counter to 
+-- | State holding a variable name prefix and counter to
 --   create fresh variable names.
 type S  = S.State (Bool, Text, Int)
 
@@ -25,7 +25,7 @@ type S  = S.State (Bool, Text, Int)
 --   using the given prefix for freshly introduced variables.
 evalState :: Text -> S a -> a
 evalState n c
- = S.evalState c (False, n, 0) 
+ = S.evalState c (False, n, 0)
 
 
 -- | Allocate a new named variable, yielding its associated bind and bound.
@@ -81,13 +81,13 @@ desugarTop tt
 
 ---------------------------------------------------------------------------------------------------
 -- | Desugar a clause.
-desugarCl 
+desugarCl
         :: Map Name Name
         -> Clause -> S Clause
 
 desugarCl rns cl
  = case cl of
-        SSig{}  
+        SSig{}
          -> return cl
 
         SLet a b ps gxs
@@ -100,13 +100,13 @@ desugarP :: Param -> S Param
 desugarP pp
  = case pp of
         MType{}         -> return pp
-        MTerm w mt      -> MTerm     <$> desugarW w <*> return mt 
-        MImplicit w mt  -> MImplicit <$> desugarW w <*> return mt 
+        MTerm w mt      -> MTerm     <$> desugarW w <*> return mt
+        MImplicit w mt  -> MImplicit <$> desugarW w <*> return mt
 
 
 ---------------------------------------------------------------------------------------------------
 -- | Desugar a guarded expression.
-desugarGX 
+desugarGX
         :: Map Name Name
         -> GuardedExp -> S GuardedExp
 
@@ -136,10 +136,10 @@ desugarX :: Map Name Name       -- ^ Renamed bound variables.
 desugarX rns xx
  = case xx of
         -- Lift out nested box casts.
-        --  This speculatively allocates the inner box, 
+        --  This speculatively allocates the inner box,
         --  but means it's easier to find (run (box x)) pairs
         --
-        --    let b1 = box (let b2 = box x3 
+        --    let b1 = box (let b2 = box x3
         --                  in  x2)
         --    in x1
         --
@@ -150,20 +150,20 @@ desugarX rns xx
         --    This transform makes b2 scope over x1 where it didn't before,
         --    so we rename it along the way to avoid variable clashes.
         --
-        XLet (LLet b1 
-                  (XCast CastBox 
+        XLet (LLet b1
+                  (XCast CastBox
                         (XLet  (LLet (XBindVarMT (BName n2) mt2)
                                      (XCast CastBox x3))
                                 x2)))
                    x1
-         -> do  
+         -> do
                 progress
 
                 -- Make a new name for b2 and desugar x2 to force the rename.
                 (b2', (UName n2')) <- newVar "x"
                 x2'     <- desugarX (Map.insert n2 n2' rns) x2
 
-                desugarX rns 
+                desugarX rns
                  $  XLet (LLet (XBindVarMT b2' mt2) (XCast CastBox x3))
                  $  XLet (LLet b1                   (XCast CastBox x2'))
                  $  x1
@@ -186,14 +186,14 @@ desugarX rns xx
 
         -- If the first pattern is a default and none of the other alternatives
         -- constrain the type of the scrutinee then the core type inferencer
-        -- won't be able to determine the match type. 
+        -- won't be able to determine the match type.
         XCase _x0 alts@(AAltCase PDefault [GExp x1] : _)
          | null [ p | AAltCase p@(PData _ _) _ <- alts]
          -> do  progress
                 desugarX rns x1
 
         -- Translate out varible patterns.
-        -- The core language does not include them, so we bind the 
+        -- The core language does not include them, so we bind the
         -- scrutinee with a new name and substitute that for the
         -- name bound by the variable patterns.
         XCase x0 alts
@@ -201,7 +201,7 @@ desugarX rns xx
          -- such a variable pattern.
          |  ns    <- [n | AAltCase (PVar n) _ <- alts]
          ,  not $ null ns
-         -> do  
+         -> do
                 progress
 
                 -- Desugar the scrutinee.
@@ -224,7 +224,7 @@ desugarX rns xx
                 alts'   <- mapM desugarAlt alts
 
                 -- The final expression.
-                return 
+                return
                  $ XLet  (LLet (XBindVarMT b Nothing) x0')
                  $ XCase (XVar u) alts'
 
@@ -239,7 +239,7 @@ desugarX rns xx
         XVar (UName n0)
          -> let sink entered n
                  = case Map.lookup n rns of
-                        Just n' 
+                        Just n'
                          |  Set.member n' entered
                          -> n'
 
@@ -251,7 +251,7 @@ desugarX rns xx
             in do
                 let n0' = sink Set.empty n0
                 if  n0 /= n0'
-                 then do     
+                 then do
                         progress
                         return $ XVar (UName n0')
 
@@ -259,11 +259,11 @@ desugarX rns xx
 
 
         -- Convert XWhere to let expressions.
-        XWhere _sp x cls 
+        XWhere _sp x cls
          -> do  x'      <- desugarX rns x
                 cls'    <- mapM (desugarCl rns) cls
-                return  $  XLet (LGroup cls') x'
-        
+                return  $  XLet (LGroup True cls') x'
+
 
         -- Boilerplate.
         XAnnot a x              -> XAnnot a    <$> desugarX rns x
@@ -286,7 +286,7 @@ desugarX rns xx
 
 ---------------------------------------------------------------------------------------------------
 -- | Desugar an argument.
-desugarArg 
+desugarArg
         :: Map Name Name
         -> Arg -> S Arg
 
@@ -300,7 +300,7 @@ desugarArg rns arg
 
 ---------------------------------------------------------------------------------------------------
 -- | Desugar a case alternative.
-desugarAC 
+desugarAC
         :: Map Name Name
         -> AltCase -> S AltCase
 
@@ -311,7 +311,7 @@ desugarAC rns aa
 
 
 -- | Desugar a match alternative.
-desugarAM 
+desugarAM
         :: Map Name Name
         -> AltMatch -> S AltMatch
 
@@ -326,7 +326,7 @@ desugarW pp
         -- Convert var binders where the variable is a wild card to
         -- the default pattern. We can't convert plain variable patterns
         -- to core.
-        PVar BNone      
+        PVar BNone
          -> do  progress
                 return PDefault
 
@@ -340,13 +340,16 @@ desugarW pp
 -- | Desugar some let-bindings.
 desugarLts
         :: Map Name Name
-        -> Lets -> S Lets       
+        -> Lets -> S Lets
 
 desugarLts rns lts
  = case lts of
         LLet mb x       -> LLet mb <$> desugarX rns x
         LPrivate{}      -> return lts
-        LGroup cls      -> LGroup  <$> mapM (desugarCl rns) cls
+
+        LGroup bRec cls
+         -> LGroup bRec <$> mapM (desugarCl rns) cls
+
         LRec bxs
          -> do  let (bs, xs)    =  unzip bxs
                 xs'             <- mapM (desugarX rns) xs

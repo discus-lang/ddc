@@ -1,8 +1,8 @@
 {-# LANGUAGE TypeFamilies, UndecidableInstances #-}
 
 -- | Look at type signatures and add quantifiers to bind any free type
---   variables. 
---   
+--   variables.
+--
 --   Given
 --
 -- @
@@ -48,7 +48,7 @@ expandModule sp mm
 class Expand c where
  -- | Add quantifiers to the types of binders. Also add holes for missing
  --   type arguments.
- expand :: SourcePos -> Env -> c -> c 
+ expand :: SourcePos -> Env -> c -> c
 
 
 ---------------------------------------------------------------------------------------------------
@@ -56,7 +56,7 @@ instance Expand (Module Source) where
  expand = expandM
 
 expandM a env mm
-  = let 
+  = let
         -- Add quantifiers to the types of bindings, and also slurp
         -- out the contribution to the top-level environment from each binding.
         --   We need to do this in an initial binding because each top-level
@@ -116,13 +116,13 @@ downX a env xx
         -- Invoke the expander --------
         XPrim{}         -> xx
         XFrag{}         -> xx
-        XVar{}          -> xx 
+        XVar{}          -> xx
         XCon{}          -> xx
 
         XApp{}
          | (x1, xas)     <- takeXAppsWithAnnots xx
          -> let x1'      = expand a env x1
-                xas'     = [ (expand (fromMaybe a a') env x, a') 
+                xas'     = [ (expand (fromMaybe a a') env x, a')
                                    | (x, a') <- xas ]
             in  makeXAppsWithAnnots x1' xas'
 
@@ -143,13 +143,13 @@ downX a env xx
                 x2'     = expand a env' x2
             in  XLet (LRec bxs') x2'
 
-
-        XLet (LGroup cs) x2
+        -- TODO: env management is wrong for non-recursive clauses.
+        XLet (LGroup bRec cs) x2
          -> let cs'     = map (downCX a env) cs
                 bs      = [b | SLet _ b _ _ <- cs']
                 env'    = Env.extendsDaVarMT bs env
                 x2'     = downX a env' x2
-            in  XLet (LGroup cs') x2'
+            in  XLet (LGroup bRec cs') x2'
 
 
         -- Boilerplate ----------------
@@ -174,7 +174,7 @@ downX a env xx
                 x2'     = expand a env' x2
             in  XLet (LPrivate bts mR bxs) x2'
 
-        XCase  x alts   -> XCase  (downX a env x)   
+        XCase  x alts   -> XCase  (downX a env x)
                                   (map (downA a env) alts)
 
         XCast  c x      -> XCast  c (downX a env x)
@@ -207,12 +207,12 @@ downArg a env arg
 
 ---------------------------------------------------------------------------------------------------
 instance Expand Clause where
- expand a env cl 
+ expand a env cl
   = downCX a env cl
 
 downCX _a env cl
  = case expandQuantClause env cl of
-        (_, SSig{})     
+        (_, SSig{})
          -> cl
 
         (env', SLet a mt ps gxs)
@@ -250,7 +250,7 @@ downG a env gg
             in  GPred x'
 
         GDefault
-         -> GDefault 
+         -> GDefault
 
 
 ---------------------------------------------------------------------------------------------------
@@ -281,7 +281,7 @@ extendPat ww env
  = case ww of
         PDefault        -> env
         PAt   b p       -> extendPat p $ Env.union env (Env.singletonDaVar' b)
-        PVar  b         -> Env.union env (Env.singletonDaVar' b) 
+        PVar  b         -> Env.union env (Env.singletonDaVar' b)
         PData{}         -> env
 
 
@@ -305,7 +305,7 @@ extendGuard gg tenv
 expandQuantClause :: Env -> Clause -> (Env, Clause)
 expandQuantClause env cc
  = case cc of
-        SSig{}  
+        SSig{}
          -> (env, cc)
 
         SLet a mt ps gxs
@@ -314,11 +314,11 @@ expandQuantClause env cc
 
 
 -- | Expand missing quantifiers in types of bindings.
---  
+--
 --   If a binding mentions type variables that are not in scope then add new
 --   quantifiers to its type, as well as matching type lambdas.
 --
-expandQuantParams 
+expandQuantParams
         :: Env                  -- ^ Current environment.
         -> BindVarMT            -- ^ Type of binding.
         -> [Param]              -- ^ Parameters of binding.
@@ -328,12 +328,12 @@ expandQuantParams env bmBind ps
  | XBindVarMT bBind (Just tBind) <- bmBind
  , fvs                           <- freeVarsT  env tBind
  , not $ Set.null fvs
- = let  
+ = let
         -- Make new binders for each of the free type variables.
-        --   We shouldn't have any holes or indices in the incoming type, 
+        --   We shouldn't have any holes or indices in the incoming type,
         --   but don't have a way to specify this in the type of the AST.
         makeBind u
-         = case u of 
+         = case u of
                 UName n -> Just $ BName n
                 UHole   -> error "ddc-source-tetra.expandQuant: not expanding hole in type"
                 UIx{}   -> error "ddc-source-tetra.expandQuant: not expanding deBruijn type var"
@@ -349,7 +349,7 @@ expandQuantParams env bmBind ps
         -- Attach type lambdas to the front of the term
         --   using a matching hole bound on the type abstraction.
         --   We could instead just not include a kind, but use
-        --   a hole so the form of the term matches the form 
+        --   a hole so the form of the term matches the form
         --   of its type.
         ps'     = [MType b Nothing | b <- bsNew] ++ ps
 

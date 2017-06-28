@@ -286,7 +286,7 @@ toCoreX a xx
          -> C.XApp      <$> pure a  <*> toCoreX a x1 <*> toCoreArg a x2
 
         S.XLet lts x
-         -> C.XLet      <$> pure a  <*> toCoreLts a lts <*> toCoreX a x
+         -> toCoreLtsX a lts x
 
         S.XCase x alts
          -> C.XCase     <$> pure a  <*> toCoreX a x
@@ -322,40 +322,55 @@ toCoreArg sp xx
           -> C.RImplicit <$> toCoreArg sp arg'
 
 -- Lets -------------------------------------------------------------------------------------------
-toCoreLts :: SP -> S.Lets -> ConvertM S.Source (C.Lets SP C.Name)
-toCoreLts a lts
+toCoreLtsX
+        :: SP
+        -> S.Lets -> S.Exp
+        -> ConvertM S.Source (C.Exp SP C.Name)
+toCoreLtsX a lts xBody
  = case lts of
-        S.LLet b x
-         -> C.LLet <$> toCoreBM UniverseSpec b <*> toCoreX a x
+        S.LLet b xBind
+         -> C.XLet a
+                <$> (C.LLet <$> toCoreBM UniverseSpec b <*> toCoreX a xBind)
+                <*> toCoreX a xBody
 
         S.LRec bxs
-         -> C.LRec <$> (sequence
-                $ map (\(b, x) -> (,) <$> toCoreBM UniverseSpec b <*> toCoreX a x) bxs)
+         -> C.XLet a
+                <$> (C.LRec
+                        <$> (sequence
+                                $ map (\(b, x) -> (,) <$> toCoreBM UniverseSpec b <*> toCoreX a x)
+                                      bxs))
+                <*> toCoreX a xBody
 
         S.LPrivate bs Nothing bts
-         -> C.LPrivate
-                <$> (sequence  $ fmap (toCoreBM UniverseKind)
-                               $ [S.XBindVarMT b (Just S.KRegion) | b <- bs])
-                <*>  pure Nothing
-                <*> (sequence  $ fmap toCoreTBK bts)
+         -> C.XLet a
+                <$> (C.LPrivate
+                        <$> (sequence  $ fmap (toCoreBM UniverseKind)
+                                       $ [S.XBindVarMT b (Just S.KRegion) | b <- bs])
+                        <*>  pure Nothing
+                        <*> (sequence  $ fmap toCoreTBK bts))
+                <*> toCoreX a xBody
 
         S.LPrivate bs (Just tParent) bts
-         -> C.LPrivate
-                <$> (sequence  $ fmap (toCoreBM UniverseKind)
-                               $ [S.XBindVarMT b (Just S.KRegion) | b <- bs])
-                <*> (fmap Just $ toCoreT UniverseKind tParent)
-                <*> (sequence  $ fmap toCoreTBK bts)
+         -> C.XLet a
+                <$> (C.LPrivate
+                        <$> (sequence  $ fmap (toCoreBM UniverseKind)
+                                       $ [S.XBindVarMT b (Just S.KRegion) | b <- bs])
+                        <*> (fmap Just $ toCoreT UniverseKind tParent)
+                        <*> (sequence  $ fmap toCoreTBK bts))
+                <*> toCoreX a xBody
 
-        S.LGroup cls
+        S.LGroup bRec cls
          -> do  let sigs  = collectSigsFromClauses cls
                 let vals  = collectBoundVarsFromClauses cls
 
-                bxs       <- fmap catMaybes
-                          $  mapM (makeBindingFromClause sigs vals) cls
+                bxxs    <- fmap catMaybes
+                        $  mapM (makeBindingFromClause sigs vals) cls
 
-                let bxs' = [(b, x) | (b, (_, x)) <- bxs]
-                toCoreLts a (S.LRec bxs')
+                let bxs = [(b, x) | (b, (_, x)) <- bxxs]
 
+                if bRec
+                 then toCoreLtsX a (S.LRec bxs) xBody
+                 else toCoreX a (foldr (\(b, xBind) -> S.XLet (S.LLet b xBind)) xBody bxs)
 
 -- Cast -------------------------------------------------------------------------------------------
 toCoreC :: SP -> S.Cast -> ConvertM S.Source (C.Cast SP C.Name)
