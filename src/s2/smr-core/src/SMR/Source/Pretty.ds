@@ -10,7 +10,7 @@ where
 
 
 -- Ref ------------------------------------------------------------------------
-pprRef [s p: Data] {Pretty s} {Pretty p} (rr: ExpRef s p): Text
+pprRef {@s p: Data} {Pretty s} {Pretty p} (rr: ExpRef s p): Text
  = case rr of
         RMac n  -> "@" % n
         RSet n  -> "+" % n
@@ -33,8 +33,7 @@ data Context where
 
 
 -- | Pretty print an expression in the given context.
-pprExp' [s p: Data]
-        {Pretty s} {Pretty p}
+pprExp' {@s p: Data} {Pretty s} {Pretty p}
         (ctx: Context) (xx: Exp s p): Text
  | ContextBody  <- ctx
  = case xx of

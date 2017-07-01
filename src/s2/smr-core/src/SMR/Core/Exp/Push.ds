@@ -34,7 +34,7 @@ pushDeep (xx: Exp s p): Maybe (Exp s p)
 -- | Like 'pushDeep', but if we actually push a substitution then set
 --   the value in the provided reference to 'True'.
 pushDeepRef
-        [r: Region] [s p: Data]
+        {@r: Region} {@s p: Data}
         (ref: Ref r Bool)
         (xx: Exp s p): S (Write r) (Exp s p)
  = case xx of

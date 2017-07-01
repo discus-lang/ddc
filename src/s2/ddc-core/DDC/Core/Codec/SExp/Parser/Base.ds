@@ -1,7 +1,7 @@
 
 module DDC.Core.Codec.SExp.Parser.Base
 export { stateOfList;
-         peek; shift; next; take; takeWhile }
+         peek; shift; next; take; takeToksWhile }
 import Data.Text
 import Data.Ref
 
@@ -15,14 +15,14 @@ where
 -------------------------------------------------------------------------------
 -- | Parser state holds a reference to a list of avaliable tokens.
 data State (r: Region) (a: Data) where
-        State   
+        State
          :      (S (Read r)             (Maybe a))      -- ^ peek
          ->     (S (Read r + Write r)   (Maybe a))      -- ^ next
          ->     State r a
 
 
-stateOfList 
-        [r: Region] [a: Data]
+stateOfList
+        {@r: Region} {@a: Data}
         (xx: List a): S (Alloc r) (State r a)
  = do   ref     = allocRef [r] xx
 
@@ -32,7 +32,7 @@ stateOfList
         State [r] [a] (box peekRef [r] ref) (box nextRef [r] ref)
 
 
-peekRef [r: Region] [a: Data] 
+peekRef {@r: Region} {@a: Data}
         (ref: Ref r (List a)): S (Read r) (Maybe a)
  = case readRef ref of
         Nil             -> Nothing
@@ -76,13 +76,13 @@ take    (s:     State r a)
 
 
 -- | Take tokens that match the given predicate.
-takeWhile 
+takeToksWhile
         (s:     State r a)
         (want:  a -> Bool)
         : S (Read r + Write r) (List a)
  = case peek s of
         Nothing         -> Nil
         Just t
-         | want t       -> Cons (shift s) (takeWhile s want)
+         | want t       -> Cons (shift s) (takeToksWhile s want)
          | otherwise    -> Nil
 

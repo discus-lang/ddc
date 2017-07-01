@@ -20,10 +20,6 @@ import Data.Function
 import Data.Text.Location
 where
 
--- TODO: church mul two two result names are wrong
--- TODO: church list-reverse is now diverging.
--- TODO: need to start regression testing this stuff.
-
 -------------------------------------------------------------------------------
 data Cmd where
         CmdNone : Cmd

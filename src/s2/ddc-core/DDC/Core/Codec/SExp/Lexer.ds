@@ -14,7 +14,7 @@ eqChar (c1 c2: Char): Bool
 -- | Lex text into SExp tokens.
 --
 --   ISSUE #406: Auto run and rebox suspension types in the body
---   of private constructs. 
+--   of private constructs.
 --
 --   Eliminating the intermediate 'toks' binding here causes it to fail
 --   because there is no chance to eliminate the effects of the body.
@@ -35,40 +35,40 @@ lexList   (s: State r Char)
 lexSingle (s: State r Char)
           : S (Read r + Write r) (Maybe Token)
  = case peek s of
-    Nothing 
+    Nothing
         ->      Nothing
 
-    Just c 
+    Just c
         -- Skip over whitespace.
         | isSpace c
         -> do   shift s
                 lexSingle s
 
         -- Open parens.
-        | c == '(' 
+        | c == '('
         -> do   shift s
                 Just KBra
 
         -- Close parens.
-        | c == ')' 
+        | c == ')'
         -> do   shift s
                 Just KKet
 
         -- s-exp constructor.
         | isConStart c
-        -> do   cs      = takeWhile s isConBody
+        -> do   cs      = takeToksWhile s isConBody
                 tx      = textOfCharList cs
                 Just (KWord tx)
 
         -- String.
         | c == '"'
         -> do   shift s
-                cs      = takeWhile s (\c' -> c' /= '"')
+                cs      = takeToksWhile s (\c' -> c' /= '"')
                 tx      = textOfCharList cs
                 shift s
                 Just (KString tx)
 
-        | otherwise    
+        | otherwise
         ->      Nothing
 
 

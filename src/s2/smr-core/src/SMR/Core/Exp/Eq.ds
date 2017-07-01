@@ -10,12 +10,12 @@ where
 
 -- | Equality dictionary for expressions.
 --   TODO: should not need explicit type arguments here.
-eq_Exp [s p: Data] {Eq s} {Eq p}: Eq (Exp s p)
+eq_Exp {@s p: Data} {Eq s} {Eq p}: Eq (Exp s p)
  = Eq   (\x1 x2 -> smr_eqExp [s] [p] x1 x2)
         (\x1 x2 -> not $ smr_eqExp   x1 x2)
 
 
-smr_eqExp [s p: Data] {Eq s} {Eq p} (x1 x2: Exp s p): Bool
+smr_eqExp {@s p: Data} {Eq s} {Eq p} (x1 x2: Exp s p): Bool
  = case (x1, x2) of
         (XRet xs1,      XRet xs2)
          | length xs1 == length xs2
@@ -92,12 +92,12 @@ smr_eqKey (k1 k2: Key): Bool
 
 
 -- | Equality dictionary for train cars.
-eq_Car [s p: Data] {Eq s} {Eq p}: Eq (Car s p)
+eq_Car {@s p: Data} {Eq s} {Eq p}: Eq (Car s p)
  = Eq   (\c1 c2 -> smr_eqCar [s] [p] c1 c2)
         (\c1 c2 -> not $ smr_eqCar   c1 c2)
 
 
-smr_eqCar [s p: Data] {Eq s} {Eq p} (c1 c2: Car s p): Bool
+smr_eqCar {@s p: Data} {Eq s} {Eq p} (c1 c2: Car s p): Bool
  = case (c1, c2) of
         (CSim snv1,     CSim snv2)      -> smr_eqSnv snv1 snv2
         (CRec snv1,     CRec snv2)      -> smr_eqSnv snv1 snv2
@@ -106,18 +106,18 @@ smr_eqCar [s p: Data] {Eq s} {Eq p} (c1 c2: Car s p): Bool
 
 
 -- | Equality dictionary for substitutions.
-eq_Snv [s p: Data] {Eq s} {Eq p}: Eq (Snv s p)
+eq_Snv {@s p: Data} {Eq s} {Eq p}: Eq (Snv s p)
  = Eq   smr_eqSnv
         (\snv1 snv2 -> not $ smr_eqSnv snv1 snv2)
 
 
-smr_eqSnv [s p: Data] {Eq s} {Eq p} (snv1 snv2: Snv s p): Bool
+smr_eqSnv {@s p: Data} {Eq s} {Eq p} (snv1 snv2: Snv s p): Bool
  = case (snv1, snv2) of
         (SSnv bs1,      SSnv bs2)       -> smr_eqBinds bs1 bs2
         _                               -> False
 
 smr_eqBinds
-        [s p: Data] {Eq s} {Eq p}
+        {@s p: Data} {Eq s} {Eq p}
         (bs1 bs2: List ((Name, Nat), Exp s p)): Bool
  = case (bs1, bs2) of
         (Nil, Nil)      -> True
@@ -154,11 +154,11 @@ smr_eqBumps (bs1 bs2: List UpsBump): Bool
 
 
 -- | Equality dictionary for references.
-eq_Ref [s p: Data] {Eq s} {Eq p}: Eq (ExpRef s p)
+eq_Ref    {@s p: Data} {Eq s} {Eq p}: Eq (ExpRef s p)
  = Eq   (\x1 x2 -> smr_eqRef [s] [p] x1 x2)
         (\x1 x2 -> not $ smr_eqRef   x1 x2)
 
-smr_eqRef [s p: Data] {Eq s} {Eq p} (r1 r2: ExpRef s p): Bool
+smr_eqRef {@s p: Data} {Eq s} {Eq p} (r1 r2: ExpRef s p): Bool
  = case (r1, r2) of
         (RSym s1,       RSym s2)        -> s1 == s2
         (RPrm p1,       RPrm p2)        -> p1 == p2
