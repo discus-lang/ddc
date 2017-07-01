@@ -57,12 +57,11 @@ Declarations
    ::= 'type' Con '=' Type                                 (type synonym declaration)
 
   DeclData                                                 (data type declaration)
-   ::= 'data' Con TypeParams*
+   ::= 'data' Con DeclDataParams*
           ('where' '{' (Con ':' Type)+; '}')?              (data type declaration)
 
-  TypeParams                                               (type parameter)
+  DeclDataParams                                           (type parameter)
    ::= '(' Var+ ':' Type ')'                               (type parameters with shared kind)
-    |  Var                                                 (single type parameter)
 
   DeclTerm                                                 (term declaration)
    ::= Var ':' Type                                        (type signature)
@@ -73,7 +72,7 @@ Declarations
     |  '(' PatSimple+ ':' Type '}'                         (patterns with shared type annotation)
     |  '{' PatSimple+ ':' Type '}'                         (implicit parameters)
     |  '{' Type '}'                                        (anonymous implicit parameter)
-    |  '{' '@' Var+   ':' Type ']'                         (implicit type parameter)
+    |  '{' '@' Var+   ':' Type '}'                         (implicit type parameter)
 
 
 Type declarations define unparameterised type synonyms. (Issue385_) covers addition of type parameters.
@@ -168,13 +167,16 @@ Abstraction Expressions
 .. code-block:: none
 
   ExpFrontAbs
-   ::= 'λ' TermParams '->' Exp                             (term abstraction, using '\'  for 'λ' is ok)
-    |  'Λ' TypeParams '->' Exp                             (type abstraction, using '/\' for 'Λ' is ok)
+   ::= 'Λ' ExpParamType '->' Exp                           (type abstraction, using '/\' for 'Λ' is ok)
+    |  'λ' ExpParamTerm '->' Exp                           (term abstraction, using '\'  for 'λ' is ok)
 
-  TermParams
-   ::= '(' Pat+ ':' Type ')'                               (explicit parameter)
-    |  '{' Pat+ ':' Type '}'                               (implicit parameter)
-    |  PatBase+                                            (base pattern)
+  ExpParamTerm
+   ::= '(' Pat+ ':' Type ')'                               (explicit annotated term parameter)
+    |  '{' Pat+ ':' Type '}'                               (implicit annotated term parameter)
+    |  PatBase+                                            (explicit unannotated term parameter}
+
+  ExpParamType
+   ::= '(' Var  ':' Type ')'                               (type parameter)
 
 
 Binding Expressions
