@@ -1,6 +1,5 @@
 
 -- Demonstrate the various top-level declaration forms.
---
 module Main
 import System.IO.Console
 import Class.Show

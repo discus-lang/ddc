@@ -69,12 +69,11 @@ Declarations
     |  Var DeclTermParams* (':' Type)? GuardedExpsMaybe    (term declaration using guards)
 
   DeclTermParams                                           (term declaration parameters)
-   ::= '(' PatSimple+ ':' Type '}'                         (patterns with shared type annotation)
-    |  '(' Pat ')'                                         (pattern in parenthesis)
-    |  PatBase                                             (base pattern)
-    |  '{' PatSimple+ ':' Type '}'                         (implicit term parameters)
+   ::= PatSimple                                           (simple pattern)
+    |  '(' PatSimple+ ':' Type '}'                         (patterns with shared type annotation)
+    |  '{' PatSimple+ ':' Type '}'                         (implicit parameters)
     |  '{' Type '}'                                        (anonymous implicit parameter)
-    |  '{' '@' Var+   ':' Type ']'                         (type parameter)
+    |  '{' '@' Var+   ':' Type ']'                         (implicit type parameter)
 
 
 Type declarations define unparameterised type synonyms. (Issue385_) covers addition of type parameters.
@@ -113,6 +112,10 @@ Guarded Expressions
    ::= 'otherwise'                                         (otherwise guard always matches)
     |  Pat '<-' Exp                                        (match against pattern)
     |  Exp                                                 (boolean predicate)
+
+The bodies of term declarations can be defined either with a single expression or using multiple guarded expressions.
+
+The ``otherwise`` guard always succeeds. The ``Pat '<-' Exp`` guard succeeds when the value produced by ``Exp`` can be matched against ``Pat``. The boolean predicate guard suceeds when the resulting value is ``True``.
 
 
 Term Expressions

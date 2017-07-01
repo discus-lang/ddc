@@ -1,0 +1,67 @@
+
+
+-- Demonstrate the various guarded expression forms.
+module Main
+import System.IO.Console
+import Class.Show
+where
+
+
+-------------------------------------------------------------------------------
+data Tree (k v: Data) where
+        Leaf    : v -> Tree k v
+        Node    : k -> Tree k v -> Tree k v -> Tree k v
+
+
+-- Definition using simple unguarded expressions.
+treeSum: {@k: Data} -> Tree k Nat -> Nat
+treeSum (Leaf n)        = n
+treeSum (Node _ l r)    = treeSum l + treeSum r
+
+
+-- Definition using pattern alternatives.
+treeSum2: {@k: Data} -> Tree k Nat -> Nat
+treeSum2 tree
+ | Leaf n <- tree       = n
+ | Node _ l r <- tree   = treeSum l + treeSum r
+
+
+-- Definiton using pattern alternatives, a boolean predicate,
+-- and the 'otherwise' guards.
+treeFilter: {@k v: Data} -> (k -> Bool) -> v -> Tree k v -> Tree k v
+treeFilter keep default tree
+ | Leaf n <- tree       = tree
+
+ | Node k l r <- tree
+ , keep k
+ = Node k (treeFilter keep default l) (treeFilter keep default r)
+
+ | otherwise            = Leaf default
+
+
+-- Tree rotation using nested patterns.
+treeRotateLeft: {@k v: Data} -> Tree k v -> Tree k v
+treeRotateLeft (Node k1 t11 (Node k2 t21 t22))
+ = Node k2 (Node k1 t11 t21) t22
+treeRotateLeft t1
+ = t1
+
+
+-- Alternative version of tree rotation using pattern alternatives.
+treeRotateLeft2: {@k v: Data} -> Tree k v -> Tree k v
+treeRotateLeft2 t1
+ | Node k1 t11 t12 <- t1
+ , Node k2 t21 t22 <- t12
+ = Node k2 (Node k1 t11 t21) t22
+ | otherwise
+ = t1
+
+
+-------------------------------------------------------------------------------
+-- Exercise the above sample functions.
+main ()
+ = do   tree    = Node 1 (Leaf 2) (Leaf 3)
+        writel $ show $ treeSum tree
+        writel $ show $ treeSum $ treeFilter (\z -> z > 0) 0 tree
+        writel $ show $ treeSum $ treeRotateLeft  tree
+        writel $ show $ treeSum $ treeRotateLeft2 tree
