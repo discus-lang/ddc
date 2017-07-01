@@ -69,12 +69,12 @@ Declarations
     |  Var DeclTermParams* (':' Type)? GuardedExpsMaybe    (term declaration using guards)
 
   DeclTermParams                                           (term declaration parameters)
-   ::= '[' Var+       ':' Type ']'                         (type parameter)
-    |  '{' Type '}'                                        (anonymous implicit parameter)
-    |  '{' PatSimple+ ':' Type '}'                         (implicit term parameters)
-    |  '(' PatSimple+ ':' Type '}'                         (patterns with shared type annotation)
+   ::= '(' PatSimple+ ':' Type '}'                         (patterns with shared type annotation)
     |  '(' Pat ')'                                         (pattern in parenthesis)
     |  PatBase                                             (base pattern)
+    |  '{' PatSimple+ ':' Type '}'                         (implicit term parameters)
+    |  '{' Type '}'                                        (anonymous implicit parameter)
+    |  '{' '@' Var+   ':' Type ']'                         (type parameter)
 
 
 Type declarations define unparameterised type synonyms. (Issue385_) covers addition of type parameters.
@@ -89,7 +89,12 @@ Term declaration parameters can be either type parameters with a shared kind, an
 
 Braces in the ``DeclData`` production will be inserted using the off-side rule.
 
+See the `declaration specification tests`_ for examples.
+
 .. _Issue385: http://trac.ouroborus.net/ddc/ticket/385
+
+.. _`declaration specification tests`:
+        https://github.com/DDCSF/ddc/tree/ddc-0.5.1/test/ddc-spec/source/01-Tetra/01-Syntax/02-Decl/Main.ds
 
 
 Guarded Expressions

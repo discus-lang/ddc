@@ -1,7 +1,9 @@
 
--- Demonstrate the different to-level declaration forms.
+-- Demonstrate the various top-level declaration forms.
+--
 module Main
 import System.IO.Console
+import Class.Show
 where
 
 -- Data type declaration where the constructors have arguments.
@@ -87,18 +89,27 @@ twiceNat5: (Nat -> Nat) -> Nat -> Nat
  = λ(f: Nat -> Nat) (x: Nat) -> f (f x)
 
 
--- Type binders ---------------------------------
--- Type parameters are specified using by prefixing the parameter list with '@'.
-twice (@a: Data) (f: a -> a) (x: a): a
- = f (f x)
+-- Multiple parameters can be specified which share the same type.
+add3 (x y z: Nat): Nat
+ = x + y + z
 
--- .. which is equivalent to
-twice2 (@a: Data): (a -> a) -> a -> a
- = λ(f: a -> a) -> λ(x: a) -> f (f x)
 
--- .. which is equivalent to
-twice3 : (@a: Data) -> (a -> a) -> a -> a
-twice3 f x = f (f x)
+-- Parameters can also be bound within patterns.
+dot: (Nat, Nat) -> (Nat, Nat) -> Nat
+dot (x1, y1) (x2, y2)
+ = x1 * x2 + y1 * y2
+
+
+-- .. and nested patterns.
+dot2: ((Nat, Nat), (Nat, Nat)) -> Nat
+dot2 ((x1, y1), (x2, y2))
+ = x1 * x2 + y1 * y2
+
+
+-- Declarations using pattern matching with multiple clauses.
+doubleTrue: Bool -> Nat -> Nat
+doubleTrue True  x = 2 * x
+doubleTrue False x = x
 
 
 -- Implicit binders -----------------------------
@@ -111,8 +122,8 @@ appShape {sx: Shape} (f: Shape -> Shape): Shape
 -- For an example of 'appShape' we first define a utility function.
 scaleShape (n: Nat) (ss: Shape): Shape
  = case ss of
-        Circle r        -> Circle    r -- (r * n)
-        Rectangle h w   -> Rectangle h w -- (h * n) (w * n)
+        Circle r        -> Circle    (r * n)
+        Rectangle h w   -> Rectangle (h * n) (w * n)
 
 -- Here is a shape defined at top level that we want to pass implicitly.
 topShape: Shape
@@ -131,6 +142,53 @@ twoShapes {Shape} (n: Nat): (Shape, Shape)
    in   (s, s)
 
 
+-- Type binders ---------------------------------
+-- Type parameters are specified using by wrapping the binders in {@ .. },
+-- where the braces {} imply that the argument will be inserted at the call
+-- site implicitly, and the '@' refers to the type namespace.
+twice {@a: Data} (f: a -> a) (x: a): a
+ = f (f x)
+
+
+-- .. which is equivalent to:
+twice2 {@a: Data}: (a -> a) -> a -> a
+ = λ(f: a -> a) -> λ(x: a) -> f (f x)
+
+
+-- .. which is equivalent to:
+twice3 : {@a: Data} -> (a -> a) -> a -> a
+twice3 f x = f (f x)
+
+
+-- Multiple parameters can be specified which share the same kind.
+compose {@a b c: Data} (f: a -> b) (g: b -> c) (x: a): c
+ = g (f x)
+
+
+-- Type parameters can be provided explicitly using a matching {@ .. }
+-- at the use site.
+twiceNat6 (f: Nat -> Nat) (x: Nat): Nat
+ = twice {@Nat} f x
+
+
+-- .. with multiple type arguments.
+composeNat (f: Nat -> Nat) (g: Nat -> Nat) (x: Nat): Nat
+ = compose {@Nat} {@Nat} {@Nat} f g x
+
+
+-- Putting it together.
+treeSize: {@k v: Data} -> Tree k v -> Nat
+treeSize (Leaf _)       = 1
+treeSize (Node _ l r)   = 1 + treeSize l + treeSize r
+
+
+-------------------------------------------------------------------------------
+-- Exercise the above example functions.
 main ()
- = do   writel "hello"
+ = do   writel $ show $ applyDot dot (1, 2) (3, 4)
+        writel $ show $ twiceNat (\z -> z * 2) 5
+        writel $ show $ add3 1 2 3
+        writel $ show $ doubleTrue True 5
+        writel $ show $ twice (\z -> z * 2) 5
+        writel $ show $ treeSize (Node 1 (Leaf "foo") (Leaf "bar"))
 
