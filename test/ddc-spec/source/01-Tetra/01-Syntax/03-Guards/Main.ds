@@ -65,3 +65,4 @@ main ()
         writel $ show $ treeSum $ treeFilter (\z -> z > 0) 0 tree
         writel $ show $ treeSum $ treeRotateLeft  tree
         writel $ show $ treeSum $ treeRotateLeft2 tree
+

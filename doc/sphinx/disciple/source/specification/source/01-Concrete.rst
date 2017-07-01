@@ -117,6 +117,10 @@ The bodies of term declarations can be defined either with a single expression o
 
 The ``otherwise`` guard always succeeds. The ``Pat '<-' Exp`` guard succeeds when the value produced by ``Exp`` can be matched against ``Pat``. The boolean predicate guard suceeds when the resulting value is ``True``.
 
+See the `guards specification tests`_ for examples.
+
+.. _`guards specification tests`:
+        https://github.com/DDCSF/ddc/tree/ddc-0.5.1/test/ddc-spec/source/01-Tetra/01-Syntax/03-Guards/Main.ds
 
 Term Expressions
 ----------------
@@ -142,8 +146,8 @@ Term Expressions
     |  ExpBase
 
   ExpArg
-   ::= '{' Exp  '}'                                        (implicit term argument)
-    |  '[' Type ']'                                        (type argument)
+   ::= '{'  Exp  '}'                                       (implicit term argument)
+    |  '{' '@' Type '}'                                    (implicit type argument)
     |  ExpBase                                             (base expression)
 
   ExpBase
