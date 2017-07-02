@@ -81,9 +81,10 @@ desugarX sp xx
 
                 MTerm pat mtBind
                   -> do (b, u)  <- newVar "scrut"
-                        xBody'  <- desugarX sp xBody
-                        return  $ XAbs  (MTerm (PVar b) mtBind)
-                                $ XCase (XVar u) [AAltCase pat [GExp xBody']]
+                        xBody'  <- desugarX sp
+                                $  XCase (XVar u) [AAltCase pat [GExp xBody]]
+
+                        return  $ XAbs (MTerm (PVar b) mtBind) xBody'
 
                 _ -> XAbs bParam <$> desugarX sp xBody
 
@@ -152,28 +153,31 @@ desugarX sp xx
          -> XAnnot sp <$> XAbs  (MImplicit  (PVar b) mt) <$> desugarX sp x
 
         XAbsPat _a ps p mt x
-         -> do  (b, u)  <- newVar "x"
+         -> do  (b, u)  <- newVar "xScrut"
                 x'      <- desugarX sp x
                 case ps of
                  MSType
                   -> return xx
 
                  MSTerm
-                  -> return $ XAnnot sp
-                            $ XAbs  (MTerm (PVar b) mt)
-                            $ XCase (XVar u) [ AAltCase p [GExp x'] ]
+                  -> desugarX sp
+                        $ XAnnot sp
+                        $ XAbs  (MTerm (PVar b) mt)
+                        $ XCase (XVar u) [ AAltCase p [GExp x'] ]
 
                  MSImplicit
-                  -> return $ XAnnot sp
-                            $ XAbs  (MImplicit (PVar b) mt)
-                            $ XCase (XVar u) [ AAltCase p [GExp x'] ]
+                  -> desugarX sp
+                        $ XAnnot sp
+                        $ XAbs  (MImplicit (PVar b) mt)
+                        $ XCase (XVar u) [ AAltCase p [GExp x'] ]
 
 
         -- Desugar lambda case by inserting the intermediate variable.
         XLamCase _a alts
          -> do  (b, u)  <- newVar "x"
                 alts'   <- mapM  (desugarAltCase sp) alts
-                return  $  XAnnot sp
+                desugarX sp
+                        $  XAnnot sp
                         $  XAbs  (MTerm (PVar b) Nothing)
                         $  XCase (XVar u) alts'
 

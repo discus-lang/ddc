@@ -7,26 +7,26 @@ Modules
 
 .. code-block:: none
 
-  Module
+  Module                                                   (source modules)
    ::= 'module' ModuleName
         ExportSpecs* ImportSpecs*;
        'where'  '{' Decl*; '}'
 
-  ExportSpecs
+  ExportSpecs                                              (export specifications)
    ::= 'export' '{' Var+; '}'
 
-  ImportSpecs
-   ::= 'import' '{' ModuleName;+ '}'
-    |  'import' 'foreign' ImportSpecsForeign
+  ImportSpecs                                              (import specifications)
+   ::= 'import' '{' ModuleName;+ '}'                       (module imports)
+    |  'import' 'foreign' ImportSpecsForeign               (foreign imports)
 
-  ImportSpecsForeign
-   ::= 'boxed'    'type'       '{' ConSig;+ '}'
-    |  'abstract' 'type'       '{' ConSig;+ '}'
-    |  'abstract' 'capability' '{' VarSig;+ '}'
-    |  'c'        'value'      '{' VarSig;+ '}'
+  ImportSpecsForeign                                       (foreign import specification)
+   ::= 'boxed'    'type'       '{' ConSig;+ '}'            (foreign boxed type import)
+    |  'abstract' 'type'       '{' ConSig;+ '}'            (foreign abstract type import)
+    |  'abstract' 'capability' '{' VarSig;+ '}'            (foreign abstract capability import)
+    |  'c'        'value'      '{' VarSig;+ '}'            (foreign c value import)
 
-  VarSig  ::= 'Var' ':' Type
-  ConSig  ::= 'Con' ':' Type
+  VarSig  ::= 'Var' ':' Type                               (variable type signature)
+  ConSig  ::= 'Con' ':' Type                               (constructor type signature)
 
 Source modules begin with the keyword ``module`` followed by a module name, then some
 optional export and import specifications, then some declarations. The export specifications must come before
@@ -45,23 +45,37 @@ See the `module specification tests`_ for examples.
 .. _`module specification tests`:
         https://github.com/DDCSF/ddc/tree/ddc-0.5.1/test/ddc-spec/source/01-Tetra/01-Syntax/01-Module
 
+Types
+-----
+
+.. code-block:: none
+
+  Type
+   ::= Var                                                 (type variable)
+    |  Con                                                 (type constructor)
+    |  Type Type                                           (type application)
+    |  Type → Type                                         (function type, using '->' for '→' is ok)
+    |  '{' '@' Var ':' Type '}' → Type                     (implicit universal quantification)
+    |  '(' Type ',' Type+, ')'                             (tuple type)
+
+
 Declarations
 ------------
 
 .. code-block:: none
 
   Decl                                                     (declaration)
-   ::= DeclType | DeclData | DeclValue                     (type declaration)
+   ::= DeclType | DeclData | DeclValue
 
   DeclType                                                 (type declaration)
    ::= 'type' Con '=' Type                                 (type synonym declaration)
 
   DeclData                                                 (data type declaration)
    ::= 'data' Con DeclDataParams*
-          ('where' '{' (Con ':' Type)+; '}')?              (data type declaration)
+          ('where' '{' (Con ':' Type)+; '}')?
 
-  DeclDataParams                                           (type parameter)
-   ::= '(' Var+ ':' Type ')'                               (type parameters with shared kind)
+  DeclDataParams                                           (data type parameters)
+   ::= '(' Var+ ':' Type ')'                               (data type parameters with shared kind)
 
   DeclTerm                                                 (term declaration)
    ::= Var ':' Type                                        (type signature)
@@ -100,17 +114,17 @@ Guarded Expressions
 
 .. code-block:: none
 
-  GuardedExpsMaybe                                         (maybe guarded expressions)
-   ::= '=' Exp                                             (simple unguarded expression)
-    |  GuardedExp*                                         (multiple guarded expressions)
+  GuardedExpsMaybe                               (maybe guarded expressions)
+   ::= '=' Exp                                   (simple unguarded expression)
+    |  GuardedExp*                               (multiple guarded expressions)
 
   GuardedExp
-   ::= '|' Guard,+ '=' Exp                                 (guarded expression)
+   ::= '|' Guard,+ '=' Exp                       (guarded expression)
 
   Guard
-   ::= 'otherwise'                                         (otherwise guard always matches)
-    |  Pat '<-' Exp                                        (match against pattern)
-    |  Exp                                                 (boolean predicate)
+   ::= 'otherwise'                               (otherwise guard always matches)
+    |  Pat '<-' Exp                              (match against pattern)
+    |  Exp                                       (boolean predicate)
 
 The bodies of term declarations can be defined either with a single expression or using multiple guarded expressions.
 
@@ -127,37 +141,34 @@ Term Expressions
 .. code-block:: none
 
   Exp
-   ::= ExpApp ('where' '{' Clause;+ '}')?                  (expression with optional where clause)
+   ::= ExpApp ('where' '{' Clause;+ '}')?        (expression with optional where clause)
 
-  ExpApp
-   ::= ExpAppPrefix                                        (prefix application)
-    |  ExpAppInfix                                         (infix application)
-    |  ExpFrontAbs
-    |  ExpFrontBind
-    |  ExpFrontMatch
-    |  ExpFrontEffect
+  ExpApp                                         (applicative expressions)
+   ::= ExpAppPrefix |  ExpAppInfix
+    |  ExpAppAbs    |  ExpAppBind
+    |  ExpAppMatch  |  ExpAppEffect
 
-  ExpAppPrefix
-   ::= ExpBase ExpArg*                                     (base expression applied to arguments)
+  ExpAppPrefix                                   (prefix application)
+   ::= ExpSimple ExpArg*                         (base expression applied to arguments)
 
-  ExpAppInfix
-   ::= ExpApp InfixOp ExpApp
-    |  ExpBase
+  ExpAppInfix                                    (infix application)
+   ::= ExpApp InfixOp ExpApp                     (application of infix operator)
+    |  ExpSimple
 
-  ExpArg
-   ::= '{'  Exp  '}'                                       (implicit term argument)
-    |  '{' '@' Type '}'                                    (implicit type argument)
-    |  ExpBase                                             (base expression)
+  ExpArg                                         (function argument)
+   ::= '{'  Exp  '}'                             (implicit term argument)
+    |  '{' '@' Type '}'                          (implicit type argument)
+    |  ExpBase                                   (base expression)
 
-  ExpBase
-   ::= '()'                                                (unit  data constructor)
-    |  DaCon                                               (named data constructor)
-    |  Literal                                             (literal value)
-    |  Builtin                                             (fragment specific builtin value)
-    |  Var                                                 (named variable)
-    |  '(' InfixOp ')'                                     (reference to infix operator)
-    |  '(' Exp ',' Exp+, ')'                               (tuple expression)
-    |  '(' Exp ')'                                         (parenthesised expression)
+  ExpSimple
+   ::= '()'                                      (unit  data constructor)
+    |  DaCon                                     (named data constructor)
+    |  Literal                                   (literal value)
+    |  Builtin                                   (fragment specific builtin value)
+    |  Var                                       (named variable)
+    |  '(' InfixOp ')'                           (reference to infix operator)
+    |  '(' Exp ',' Exp+, ')'                     (tuple expression)
+    |  '(' Exp ')'                               (parenthesised expression)
 
 
 
@@ -166,17 +177,14 @@ Abstraction Expressions
 
 .. code-block:: none
 
-  ExpFrontAbs
-   ::= 'Λ' ExpParamType '->' Exp                           (type abstraction, using '/\' for 'Λ' is ok)
-    |  'λ' ExpParamTerm '->' Exp                           (term abstraction, using '\'  for 'λ' is ok)
+  ExpAppAbs
+   ::= 'λ' ExpParam '->' Exp                     (abstraction, using '\'  for 'λ' is ok)
 
-  ExpParamTerm
-   ::= '(' Pat+ ':' Type ')'                               (explicit annotated term parameter)
-    |  '{' Pat+ ':' Type '}'                               (implicit annotated term parameter)
-    |  PatBase+                                            (explicit unannotated term parameter}
-
-  ExpParamType
-   ::= '(' Var  ':' Type ')'                               (type parameter)
+  ExpAbsParam
+   ::=  PatSimple+                               (explicit unannotated term parameter}
+    |  '(' Pat+     ':' Type ')'                 (explicit annotated term parameter)
+    |  '{' Pat+     ':' Type '}'                 (implicit annotated term parameter)
+    |  '{' '@' Var+ ':' Type '}'                 (implicit annotated type parmaeter)
 
 
 Binding Expressions
@@ -184,36 +192,36 @@ Binding Expressions
 
 .. code-block:: none
 
-  ExpFrontBind
-   ::= 'let'    DeclTerm   'in' Exp                        (non-recursive let binding)
-    |  'letrec' DeclTerm+; 'in' Exp                        (recursive let bindings)
-    |  'do'    '{' Stmt+; '}'                              (do expression)
+  ExpAppBind
+   ::= 'let'    DeclTerm   'in' Exp              (non-recursive let binding)
+    |  'letrec' DeclTerm+; 'in' Exp              (recursive let bindings)
+    |  'do'    '{' Stmt+; '}'                    (do expression)
 
 Matching Expressions
 --------------------
 
 .. code-block:: none
 
-  ExpFrontMatch
-   ::= 'case'  '{' AltCase+; '}'                           (case expression)
-    |  'match' '{' GuardedExp+; '}'                        (match expression)
-    |  'if' Exp 'then' Exp 'else' Exp                      (if-expression)
+  ExpAppMatch
+   ::= 'case'  '{' AltCase+; '}'                 (case expression)
+    |  'match' '{' GuardedExp+; '}'              (match expression)
+    |  'if' Exp 'then' Exp 'else' Exp            (if-expression)
 
   AltCase
-   ::= Pat GuardedExp* '->' Exp                            (case alternative)
+   ::= Pat GuardedExp* '->' Exp                  (case alternative)
 
   Pat
-   ::= DaCon PatBase*                                      (data constructor patterm)
-    |  PatBase                                             (base pattern)
+   ::= DaCon PatBase*                            (data constructor patterm)
+    |  PatBase                                   (base pattern)
 
   PatBase
-   ::= '()'                                                (unit data constructor pattern)
-    |  DaCon                                               (named data constructor pattern)
-    |  Literal                                             (literal pattern)
-    |  Var                                                 (variable pattern)
-    |  '_'                                                 (wildcard pattern)
-    |  '(' Pat ',' Pat+ ')'                                (tuple pattern)
-    |  '(' Pat ')'                                         (parenthesised pattern)
+   ::= '()'                                      (unit data constructor pattern)
+    |  DaCon                                     (named data constructor pattern)
+    |  Literal                                   (literal pattern)
+    |  Var                                       (variable pattern)
+    |  '_'                                       (wildcard pattern)
+    |  '(' Pat ',' Pat+ ')'                      (tuple pattern)
+    |  '(' Pat ')'                               (parenthesised pattern)
 
 
 Effectual Expressions
@@ -221,12 +229,16 @@ Effectual Expressions
 
 .. code-block:: none
 
-  ExpFrontEffect
-   ::= 'weakeff' '[' Type ']' 'in' Exp                     (weaken effect of an expression)
-    |  'private' Bind+ WithCaps? 'in' Exp                  (private region introduction)
-    |  'extend'  Bind 'using' Bind+ WithCaps? 'in' Exp     (region extension)
-    |  'box' Exp                                           (box a computation)
-    |  'run' Exp                                           (run a boxed computation)
+  ExpAppEffect
+   ::= 'weakeff' '[' Type ']' 'in' Exp           (weaken effect of an expression)
+
+    |  'private' Bind+ WithCaps? 'in' Exp        (private region introduction)
+
+    |  'extend'  Bind 'using' Bind+
+                 WithCaps? 'in' Exp              (region extension)
+
+    |  'box' Exp                                 (box a computation)
+    |  'run' Exp                                 (run a boxed computation)
 
   WithCaps
    ::= 'with' '{' BindT+ '}'

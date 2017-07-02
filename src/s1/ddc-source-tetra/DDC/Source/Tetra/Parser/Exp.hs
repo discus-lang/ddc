@@ -147,10 +147,14 @@ pExpFrontSP
         pts     <- fmap concat $ P.many1 pTermParams
         pSym    SArrowDashRight
         xBody   <- pExp
-        return  (sp, XAnnot sp
-                        $ foldr (\(ps, p, mt) -> XAbsPat sp ps p mt)
-                                xBody pts)
 
+        let makeAbs (ps, Right p, mt) x = XAbsPat sp ps p mt x
+            makeAbs (_,  Left  b, mt) x = XAbs (MType b mt)  x
+
+        return  (sp, XAnnot sp $ foldr makeAbs xBody pts)
+
+
+{-
         -- Level-1 lambda abstractions.
         -- /\(x1 x2 ... : Type) (y1 y2 ... : Type) ... . Exp
  , do   sp      <- P.choice
@@ -162,7 +166,7 @@ pExpFrontSP
         return  (sp, XAnnot sp
                         $ foldr (\(b, mt) x -> XAbs (MType b mt) x)
                                 xBody bmts)
-
+-}
         -- let expression
  , do   (lts, sp) <- pLetsSP
         pTok    (KKeyword EIn)

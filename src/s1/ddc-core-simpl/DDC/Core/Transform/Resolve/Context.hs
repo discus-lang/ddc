@@ -3,6 +3,7 @@ module DDC.Core.Transform.Resolve.Context
         ( Context (..)
         , makeContextOfModule
         , contextPushBinds
+        , contextPushLets
         , contextPushParam
         , contextPushPat
         , contextResolve)
@@ -25,10 +26,10 @@ data Context n
           contextEnvT           :: EnvT n
 
           -- | Available top-level context.
-          --   These are supers that are available in other modules, 
+          --   These are supers that are available in other modules,
           --   that might not already be referenced in the one that we're resolving.
           --
-          --   TODO: searcing through all of these during resolution will be 
+          --   TODO: searcing through all of these during resolution will be
           --         a performance disaster. We should store them as a map by
           --         the outermost tycon.
         , contextTop            :: [ (n, ImportValue n (Type n)) ]
@@ -42,22 +43,22 @@ data Context n
 
 
 -- | Create the initial context from the given module.
-makeContextOfModule 
-        :: Ord n 
+makeContextOfModule
+        :: Ord n
         => Profile n                      -- ^ Language profile.
         -> [(n, ImportValue n (Type n))]  -- ^ Top-level context from imported modules.
         -> Module a n                      -- ^ Module that we're doing resolution in.
         -> S a n (Context n)
 
 makeContextOfModule !profile !ntsTop !mm
- = do   let ntsImport   = [ (n, t)  | (n, ImportValueModule _ _ t _) 
+ = do   let ntsImport   = [ (n, t)  | (n, ImportValueModule _ _ t _)
                                     <- moduleImportValues mm ]
 
         refTopUsed      <- liftIO $ newIORef []
 
         return $ Context
          { contextEnvT           = moduleEnvT (profilePrimKinds profile) mm
-         , contextTop            = ntsTop 
+         , contextTop            = ntsTop
          , contextTopUsed        = refTopUsed
          , contextBinds          = [ntsImport] }
 
@@ -70,12 +71,22 @@ contextPushBinds !bs !ctx
    in   ctx { contextBinds = es : contextBinds ctx }
 
 
+-- | Push some let-bindings onto the contet.
+--   These can then be used to resolve elaborations.
+contextPushLets :: Lets a n -> Context n -> Context n
+contextPushLets !lts !ctx
+ = case lts of
+        LLet b _        -> contextPushBinds [b]  ctx
+        LRec bs         -> contextPushBinds (map fst bs) ctx
+        _               -> ctx
+
+
 -- | Push a parameter onto the context.
 --   This can then be used to resolve elaborations.
 contextPushParam :: Param n ->  Context n -> Context n
 contextPushParam !pp !ctx
  = case pp of
-        MTerm (BName n t)      
+        MTerm (BName n t)
           -> ctx { contextBinds = [(n, t)] : contextBinds ctx }
 
         MImplicit (BName n t)
@@ -93,13 +104,13 @@ contextPushPat !ww !ctx
         PData _ bs      -> contextPushBinds bs ctx
 
 
--- | Try to build a term of the given type, 
+-- | Try to build a term of the given type,
 --   out of the terms available in the context.
-contextResolve 
+contextResolve
         :: (Ord n, Pretty n, Show n)
-        => a 
-        -> Context n 
-        -> Type n 
+        => a
+        -> Context n
+        -> Type n
         -> S a n (Exp a n)
 
 contextResolve !a !ctx !tWant
@@ -124,14 +135,14 @@ contextResolve !a !ctx !tWant
         searchGroup ((nBind, tBind) : nts)
          = do   let match = matchBind a (contextEnvT ctx) tWant nBind tBind
                 case match of
-                 Nothing        
+                 Nothing
                   -> searchGroup nts
 
                  Just (xx', tsArg)
-                  -> do 
+                  -> do
                         xsArg   <- mapM (contextResolve a ctx) tsArg
-                        return  $ Just 
-                                $ xApps a xx' 
+                        return  $ Just
+                                $ xApps a xx'
                                 $ map (RImplicit . RTerm) xsArg
 
 
@@ -140,32 +151,32 @@ contextResolve !a !ctx !tWant
          = throwE $ ErrorCannotResolve tWant
 
         searchImports ((nBind, i) : nisMore)
-         = do   
+         = do
                 let tBind
                         = case i of
                            ImportValueModule{} -> importValueModuleType i
                            ImportValueSea{}    -> importValueSeaType    i
 
-                let match = matchBind a (contextEnvT ctx) tWant nBind tBind 
-                case match of 
+                let match = matchBind a (contextEnvT ctx) tWant nBind tBind
+                case match of
                  Nothing
                   -> searchImports nisMore
 
                  Just (xx', tsArg)
-                  -> do 
+                  -> do
 
                         xsArg   <- mapM (contextResolve a ctx) tsArg
 
                         liftIO $ modifyIORef' (contextTopUsed ctx)
                          $ \used -> (nBind, i) : used
 
-                        return  $ xApps a xx' 
+                        return  $ xApps a xx'
                                 $ map (RImplicit . RTerm) xsArg
 
 
-matchBind 
+matchBind
         :: Ord n
-        => a 
+        => a
         -> EnvT n               -- ^ Type environment.
         -> Type n               -- ^ Wanted type.
         -> n                    -- ^ Name of binding in environment.
@@ -173,7 +184,7 @@ matchBind
         -> Maybe (Exp a n, [Type n])
 
 matchBind a envt tWant' nBind  tBind'
- = do   
+ = do
         let match = matchScheme envt tWant' tBind'
         case match of
          Nothing
@@ -185,36 +196,36 @@ matchBind a envt tWant' nBind  tBind'
 
 
 -- | Match a wanted type against an available scheme.
-matchScheme 
+matchScheme
         :: Ord n
         => EnvT n               -- ^ Type environment.
         -> Type n               -- ^ Wanted type.
         -> Type n               -- ^ Available scheme.
         -> Maybe ( [Type n]     --   Type  arguments to instantiate scheme.
-                 , [Type n])    --   Types of more implicit term arguments.   
+                 , [Type n])    --   Types of more implicit term arguments.
 
 matchScheme envt tWanted tBind
  -- The type of this binding is exactly what we want.
  | equivT envt tWanted tBind
  = Just ([], [])
 
- -- Check if the binding 
+ -- Check if the binding
  | otherwise
- = let 
+ = let
         -- Split off any type parameters.
-        (bsParamType, _tBody) 
+        (bsParamType, _tBody)
          = case takeTForalls tBind of
                 Just (bs, t)    -> (bs, t)
                 Nothing         -> ([], tBind)
 
         -- Instantiate the type with new existentials.
         nArgs   = length bsParamType
-        tsArgExists 
+        tsArgExists
                 = [ TCon (TyConExists i k)
                   | i <- [0..]
                   | k <- map typeOfBind bsParamType]
 
-        Just tBind_inst 
+        Just tBind_inst
                 = instantiateTs tBind tsArgExists
 
         -- Split of any implicit value parameters.
@@ -223,31 +234,32 @@ matchScheme envt tWanted tBind
 
         result  = unifyExistsRight envt tWanted tResult
 
-        -- Try to unify the wanted type with the result we 
+        -- Try to unify the wanted type with the result we
         -- would get if we applied the function.
    in   case result of
          -- TODO: glob constraints.
          Just cs
-          |  Just tsArgInst 
-                <- sequence 
-                $  map (\i -> Prelude.lookup i cs) 
+          |  Just tsArgInst
+                <- sequence
+                $  map (\i -> Prelude.lookup i cs)
                 $ [0.. nArgs - 1]
 
-          -> let tsParamTerm' = map (substExists cs) tsParamTerm 
+          -> let tsParamTerm' = map (substExists cs) tsParamTerm
              in  Just (tsArgInst, tsParamTerm')
 
          _ -> Nothing
+
 
 -- | Half-assed unification of left and right types,
 --   where we're permitted to create constraints for the right type only.
 unifyExistsRight
         :: Ord n
-        => EnvT n 
-        -> Type n -> Type n 
+        => EnvT n
+        -> Type n -> Type n
         -> Maybe [(Int, Type n)]
 
 unifyExistsRight envt tL_ tR_
- = let  
+ = let
         tL      = case tL_ of
                    TCon (TyConBound (UName n1) _)
                      -> case Map.lookup n1 (envtEquations envt) of
@@ -272,7 +284,7 @@ unifyExistsRight envt tL_ tR_
          | otherwise    -> Nothing
 
 
-        (TCon tc1, TCon tc2)      
+        (TCon tc1, TCon tc2)
          | tc1 == tc2   -> Just []
          | otherwise    -> Nothing
 
@@ -281,7 +293,7 @@ unifyExistsRight envt tL_ tR_
          | u1 == u2     -> Just []
          | otherwise    -> Nothing
 
-        (TAbs{}, TAbs{}) 
+        (TAbs{}, TAbs{})
          -> Nothing
 
         (TApp t11 t12, TApp t21 t22)
@@ -289,7 +301,7 @@ unifyExistsRight envt tL_ tR_
          ,  Just cs2 <- unifyExistsRight envt t12 t22
          -> Just (cs1 ++ cs2)
 
-        (TForall{}, TForall{}) 
+        (TForall{}, TForall{})
          -> Nothing
 
         (TSum {}, TSum{})
@@ -299,7 +311,7 @@ unifyExistsRight envt tL_ tR_
         _ -> Nothing
 
 
-substExists 
+substExists
         :: Ord n
         => [(Int, Type n)]
         -> Type n
@@ -318,13 +330,13 @@ substExists cs tt
         TAbs b t
          -> TAbs b $ substExists cs t
 
-        TApp t1 t2 
+        TApp t1 t2
          -> TApp (substExists cs t1) (substExists cs t2)
 
-        TForall b t 
+        TForall b t
          -> TForall b (substExists cs t)
 
-        TSum ts 
+        TSum ts
          -> TSum
          $  Sum.fromList (Sum.kindOfSum ts)
          $  map (substExists cs)

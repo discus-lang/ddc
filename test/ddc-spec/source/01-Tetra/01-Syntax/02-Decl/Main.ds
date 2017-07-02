@@ -62,7 +62,7 @@ data Unlikely
 -- Forms of type signatures ---------------------
 -- Signatures can be specified separately from the term bindings,
 --   which is common syntax in Haskell-like languages.
-twiceNat : (Nat -> Nat) -> Nat -> Nat
+twiceNat: (Nat -> Nat) -> Nat -> Nat
 twiceNat f x = f (f x)
 
 
@@ -140,6 +140,17 @@ twoShapes {Shape} (n: Nat): (Shape, Shape)
  = let  s = appShape (scaleShape n)
    in   (s, s)
 
+-- The above 'twoShapes' function can be desugared to the following.
+-- Here the signature reveals the 'Shape' argument is passed implicitly,
+-- bug we've given the implicitly passed argument an explicit name and then
+-- passed it through to 'appShape'.
+twoShapes2: {Shape} -> Nat -> (Shape, Shape)
+twoShapes2
+ =  λ{is: Shape}
+ -> λ(n: Nat)
+ -> let s = appShape {is} (scaleShape n)
+    in  (s, s)
+
 
 -- Type binders ---------------------------------
 -- Type parameters are specified using by wrapping the binders in {@ .. },
@@ -179,6 +190,16 @@ composeNat (f: Nat -> Nat) (g: Nat -> Nat) (x: Nat): Nat
 treeSize: {@k v: Data} -> Tree k v -> Nat
 treeSize (Leaf _)       = 1
 treeSize (Node _ l r)   = 1 + treeSize l + treeSize r
+
+
+-- The above function can be desugared to the following.
+treeSize2: {@k v: Data} -> Tree k v -> Nat
+treeSize2
+ =  λ{@k v: Data}
+ -> λ(tree: Tree k v)
+ -> case tree of
+        Leaf _          -> 1
+        Node _ l r      -> 1 + treeSize l + treeSize r
 
 
 -------------------------------------------------------------------------------

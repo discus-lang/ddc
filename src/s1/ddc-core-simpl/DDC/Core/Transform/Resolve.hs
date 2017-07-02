@@ -75,11 +75,29 @@ resolveExp !ctx xx
         XPrim{}         -> return xx
         XCon{}          -> return xx
         XVar{}          -> return xx
-        XAbs  a p x     -> XAbs  a p <$> resolveExp (contextPushParam p ctx) x
-        XApp  a x1 a2   -> XApp  a   <$> resolveExp ctx x1  <*> resolveArg ctx a2
-        XLet  a lts x   -> XLet  a   <$> resolveLts ctx lts <*> resolveExp ctx x
-        XCase a x alts  -> XCase a   <$> resolveExp ctx x   <*> mapM (resolveAlt ctx) alts
-        XCast a c x     -> XCast a c <$> resolveExp ctx x
+
+        XAbs  a p x
+         -> XAbs  a p
+                <$> resolveExp (contextPushParam p ctx) x
+
+        XApp  a x1 a2
+         -> XApp  a
+                <$> resolveExp ctx x1
+                <*> resolveArg ctx a2
+
+        XLet  a lts x
+         -> XLet  a
+                <$> resolveLts ctx lts
+                <*> resolveExp (contextPushLets lts ctx) x
+
+        XCase a x alts
+         -> XCase a
+                <$> resolveExp ctx x
+                <*> mapM (resolveAlt ctx) alts
+
+        XCast a c x
+         -> XCast a c
+                <$> resolveExp ctx x
 
 
 -- | Resolve elaborations in an argument.

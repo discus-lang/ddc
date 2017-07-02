@@ -39,27 +39,42 @@ pTypeParams
 
 
 -- | Parse some term parameters.
-pTermParams :: Parser [(ParamSort, Pat, Maybe Type)]
+pTermParams :: Parser [(ParamSort, Either Bind Pat, Maybe Type)]
 pTermParams
  = P.choice
- [ P.try $ do
+ [      -- Explicit annotated term parameters.
+   P.try $ do
          pSym SRoundBra
          ps   <- P.many1 pPatSimple
          pTok (KOp ":")
          t    <- pType
          pSym SRoundKet
-         return  [(MSTerm, p, Just t) | p <- ps]
+         return  [(MSTerm, Right p, Just t) | p <- ps]
+
 
  , P.try $ do
          pSym SBraceBra
-         ps   <- P.many1 pPatSimple
-         pTok (KOp ":")
-         t    <- pType
-         pSym SBraceKet
-         return  [(MSImplicit, p, Just t) | p <- ps]
+         P.choice
+          [ do  -- Implicit annotated type parameters.
+                pSym SAt
+                bs  <- P.many pBind
+                pTok (KOp ":")
+                t    <- pType
+                pSym SBraceKet
+                return [(MSType, Left b, Just t) | b <- bs ]
 
- , do    ps      <- P.many1 pPatSimple
-         return  [(MSTerm, p, Nothing) | p <- ps]
+
+          , do  -- Implicit annoated term parameters.
+                ps   <- P.many1 pPatSimple
+                pTok (KOp ":")
+                t    <- pType
+                pSym SBraceKet
+                return  [(MSImplicit, Right p, Just t) | p <- ps]
+          ]
+
+         -- Explicit term parameters.
+ , do   ps      <- P.many1 pPatSimple
+        return  [(MSTerm, Right p, Nothing) | p <- ps]
  ]
 
 

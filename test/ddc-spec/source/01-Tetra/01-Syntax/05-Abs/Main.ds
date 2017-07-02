@@ -1,0 +1,97 @@
+
+-- Demonstrate the various abstraction forms.
+module Main
+import System.IO.Console
+import Class.Show
+where
+
+
+-------------------------------------------------------------------------------
+-- Term abstraction using unannotated binders.
+twiceNat: (Nat -> Nat) -> Nat -> Nat
+twiceNat = λf -> λx -> f (f x)
+
+
+-- Term abstraction using annotated binders.
+twiceNat2: (Nat -> Nat) -> Nat -> Nat
+twiceNat2 = λ(f: Nat -> Nat) -> λ(x: Nat) -> f (f x)
+
+
+-- Term abstraction using annotated binders.
+twiceNat3: (Nat -> Nat) -> Nat -> Nat
+twiceNat3 = λ(f: Nat -> Nat) -> λ(x: Nat) -> f (f x)
+
+
+-- Term abstraction where binders share the same type.
+add2: Nat -> Nat -> Nat
+add2 = λ(x y: Nat) -> x + y
+
+
+-- Term abstraction using unannoated pattern.
+dot: ((Nat, Nat), (Nat, Nat)) -> Nat
+dot
+ =  λ((x1, y1), (x2, y2))
+ -> x1 * x2 + y1 * y2
+
+
+-- Term abstraction using annoated pattern
+dot2: ((Nat, Nat), (Nat, Nat)) -> Nat
+dot2
+ =  λ(((x1, y1), (x2, y2)) : ((Nat, Nat), (Nat, Nat)))
+ -> x1 * x2 + y1 * y2
+
+
+-- Implicit term abstraction.
+data DotNat where
+        MkDotNat : (Nat -> Nat -> Nat) -> DotNat
+
+dot3: {DotNat} -> Nat -> Nat -> Nat
+dot3
+ =  λ{d: DotNat}
+ -> λ(x y: Nat)
+ -> case d of
+        MkDotNat f -> f x y
+
+
+-- Implicit term abstraction using a pattern.
+dot4: {DotNat} -> Nat -> Nat -> Nat
+dot4
+ =  λ{(MkDotNat f): DotNat}
+ -> λ(x y: Nat)
+ -> f x y
+
+
+-- Implicit type and term abstraction.
+data Dot (a: Data) where
+        MkDot : (a -> a -> a) -> Dot a
+
+dot5: {@a: Data} -> {Dot a} -> a -> a -> a
+dot5
+ =  λ{@a: Data}
+ -> λ{(MkDot f): Dot a}
+ -> λ(x y: a)
+ -> f x y
+
+
+-- Apply the above function, explicitly discharging the
+-- implicit type and term abstractions.
+foo = dot5 {@Nat} {MkDot add2} 3 4
+
+
+-------------------------------------------------------------------------------
+-- Exercise the above functions.
+main ()
+ = do   writel $ show $ twiceNat  (λz -> z * 2) 5
+        writel $ show $ twiceNat2 (λz -> z * 2) 5
+        writel $ show $ twiceNat3 (λz -> z * 2) 5
+        writel $ show $ add2 2 3
+        writel $ show $ dot  ((1, 2), (3, 4))
+        writel $ show $ dot2 ((1, 2), (3, 4))
+
+        dDotNat = MkDotNat add
+        writel $ show $ dot3 1 2
+        writel $ show $ dot4 1 2
+
+        dDot    = MkDot {@Nat} add
+        writel $ show $ dot5 1 2
+
