@@ -28,7 +28,7 @@ bin/war : $(war_obj)
 war : allWithConfig
 	@echo "* Running tests -------------------------------------------------------------"
 	@bin/ddc -build src/s2/base/base.build
-	bin/war test/ddc-demo test/ddc-spec test/ddc-regress \
+	@bin/war test/ddc-demo test/ddc-spec test/ddc-regress \
                 -j $(THREADS) \
                 -results        war.results \
                 -results-failed war.failed \
