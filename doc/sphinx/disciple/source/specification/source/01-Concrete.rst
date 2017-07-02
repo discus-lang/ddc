@@ -51,12 +51,26 @@ Types
 .. code-block:: none
 
   Type
+   ::= TypeSimple → Type                                   (explicit function type, using '->' for '→' is ok)
+    |  '{' Type '}' → Type                                 (implicit function type)
+    |  '{' '@' Var ':' Type '}' → Type                     (implicit universal quantification)
+    |  TypeApp + Type                                      (type sum)
+    |  TypeApp                                             (type application)
+
+  TypeApp                                                  (type application)
+   ::= TypeApp TypeSimple                                  (type function applied to an argument)
+    |  TypeSimple                                          (simple type)
+
+  TypeSimple
    ::= Var                                                 (type variable)
     |  Con                                                 (type constructor)
-    |  Type Type                                           (type application)
-    |  Type → Type                                         (function type, using '->' for '→' is ok)
-    |  '{' '@' Var ':' Type '}' → Type                     (implicit universal quantification)
+    |  TypeBuiltin                                         (builtin type)
     |  '(' Type ',' Type+, ')'                             (tuple type)
+    |  '(' Type ')'                                        (parenthesised type)
+
+  TypeBuiltin
+   ::= 'Pure'                                              (builtin pure effect)
+    |  'Read'  | 'Write' | 'Alloc'                         (builtin effects)
 
 
 Declarations
@@ -135,6 +149,7 @@ See the `guards specification tests`_ for examples.
 .. _`guards specification tests`:
         https://github.com/DDCSF/ddc/tree/ddc-0.5.1/test/ddc-spec/source/01-Tetra/01-Syntax/03-Guards/Main.ds
 
+
 Term Expressions
 ----------------
 
@@ -185,6 +200,12 @@ Abstraction Expressions
     |  '(' Pat+     ':' Type ')'                 (explicit annotated term parameter)
     |  '{' Pat+     ':' Type '}'                 (implicit annotated term parameter)
     |  '{' '@' Var+ ':' Type '}'                 (implicit annotated type parmaeter)
+
+
+See the `abstraction specification tests`_ for examples.
+
+.. _`abstraction specification tests`:
+        https://github.com/DDCSF/ddc/tree/ddc-0.5.1/test/ddc-spec/source/01-Tetra/01-Syntax/05-Abs/Main.ds
 
 
 Binding Expressions
