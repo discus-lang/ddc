@@ -69,8 +69,11 @@ Types
     |  '(' Type ')'                              (parenthesised type)
 
   TypeBuiltin
-   ::= 'Pure'                                    (builtin pure effect)
-    |  'Read'  | 'Write' | 'Alloc'               (builtin effects)
+   ::= 'Data' | 'Region' | 'Effect'              (builtin kind constructors)
+    |  'Pure' | 'Read'   | 'Write' | 'Alloc'     (builtin effect type constructors)
+    |  'Unit' | 'Void'                           (builtin data type constructors)
+    |  '(→)'                                     (explicit function type constructor, using '->' is ok)
+    |  '(⇝)'                                     (implicit function type constructor, using '~>' is ok)
 
 
 Declarations
