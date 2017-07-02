@@ -56,8 +56,8 @@ Types
 
   TypeFun
    ::= TypeApp                                   (type application)
-    |  TypeApp → TypeFun                         (explicit function type, using '->' for '→' is ok)
-    |  TypeApp ⇝ TypeFun                         (implicit function type, using '~>' for '⇝' is ok)
+    |  TypeApp → TypeFun                         (explicit function type, using '->' is ok)
+    |  TypeApp ⇝ TypeFun                         (implicit function type, using '~>' is ok)
     |  '{' Type '}' → TypeFun                    (implicit function type, alternate syntax)
     |  '(' '@' Var+ ':' Type ')' ⇝ TypeFun       (implicit universal quantification)
     |  '{' '@' Var+ ':' Type '}' → TypeFun       (implicit universal quantification, alternate syntax)
@@ -78,6 +78,21 @@ Types
     |  'Unit' | 'Void'                           (builtin data type constructors)
     |  '(→)'                                     (explicit function type constructor, using '->' is ok)
     |  '(⇝)'                                     (implicit function type constructor, using '~>' is ok)
+
+
+Type sums are used to collect together multiple effect types.
+
+Function types include both a parameter and return type, using ``→`` as the constructor for explicit function types and ``⇝`` as the constructor for implicit function types. Alternately, implicit function types can be written ``{ t1 } → t2`` where ``t1`` is the parameter type and ``t2`` is the result type.
+
+Similarly, implicit universal quantification over some type variable ``v`` of kind ``k`` is written ``(@v:t1) ⇝ t2``, where ``k1`` is the kind of the parameter variable and ``t2`` is the body type. Alternatively, implicit universal quantification can be written ``{@v:t1} → t2`` using braces to indicate that the type argument will be passed implicitly. The ``@`` in this syntax indicates that variable ``v`` is a type binder rather than a term binder.
+
+Type applications are between a type function and its argument.
+
+Type arguments include variables, constructors, tuple types and parenthesised types. A tuple type like ``(t1, t2, .. tN)`` is sugar for the type application ``TupN t1 t2 .. tN``, where the type constructor ``TupN`` is taken as whatever type constructor is currently in scope with that name.
+
+Builtin type constructors consist of kind constructors, effect type constructors, data type constructors and function type constructors. The same grammar is used for both types and kinds. ``Data`` is the kind of data types, ``Region`` the kind of effect types and ``Effect`` the kind of effect types. ``Pure`` is the effect of pure expressions and the zero element of type sums. ``Read``, ``Write`` and ``Alloc`` are effect type constructors for their associated effects. ``Unit`` is the type of the primitive unit value ``()``. ``Void`` is a data type that has no associated values. ``(→)`` is the explicit function type constructor and ``(⇝)`` the implicit function type constructor.
+
+
 
 
 Declarations
