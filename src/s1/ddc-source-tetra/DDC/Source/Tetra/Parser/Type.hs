@@ -4,7 +4,7 @@ module DDC.Source.Tetra.Parser.Type
         , pType
         , pTypeUnion
         , pTypeApp
-        , pTypeAtomSP
+        , pTypeArgSP
         , pTyConSP
         , pTyConBound)
 where
@@ -47,7 +47,7 @@ pType = pTypeUnion
 -- | Parse a type union.
 pTypeUnion :: Parser Type
 pTypeUnion
- = do   t1      <- pTypeForall
+ = do   t1      <- pTypeFun
         P.choice
          [ -- Type sums.
            -- T2 + T3
@@ -60,8 +60,8 @@ pTypeUnion
 
 
 -- | Parse a quantified type.
-pTypeForall :: Parser Type
-pTypeForall
+pTypeFun :: Parser Type
+pTypeFun
  = P.choice
  [ -- Implicit universal quantification (old syntax)
    -- [v1 v1 ... vn : T1]. T2
@@ -72,14 +72,14 @@ pTypeForall
         pSym SSquareKet
         pSym SDot
 
-        tBody   <- pTypeForall
+        tBody   <- pTypeFun
         return  $ foldr (\b t -> TAnnot sp
                               $  TApp (TCon (TyConForall kBind))
                                       (TAbs b kBind t))
                         tBody bs
 
- , do
-        pSym SBraceBra
+        -- Implicit function constructor or universal quantification.
+ , do   pSym SBraceBra
         P.choice
          [ do   -- Implicit universal quantification.
                 -- {@v1 v2 .. vn : T1} -> T2
@@ -91,7 +91,7 @@ pTypeForall
                 pSym SBraceKet
                 pSym SArrowDashRight
 
-                tBody   <- pTypeForall
+                tBody   <- pTypeFun
                 return  $ foldr (\b t -> TAnnot sp
                                       $  TApp (TCon (TyConForall kBind))
                                               (TAbs b kBind t))
@@ -99,93 +99,83 @@ pTypeForall
 
          , do   -- Implicit term parameter
                 -- {T1} -> T2
-                tParam  <- pTypeForall
+                tParam  <- pTypeFun
                 pSym SBraceKet
                 sp      <- pSym SArrowDashRight
-                tResult <- pTypeForall
+                tResult <- pTypeFun
                 return  $  TAnnot sp $ TFunImplicit tParam tResult
          ]
 
-   -- Body type
- , do   pTypeFun
- ]
- <?> "a type"
+ , P.try $ do
+        pSym SRoundBra
+        pSym SAt
+        bs      <- P.many1 pBind
+        sp      <- pTokSP (KOp ":")
+        kBind   <- pTypeUnion
+        pSym SRoundKet
+        pSym SArrowTilde
+        tBody   <- pTypeFun
+        return  $ foldr (\b t -> TAnnot sp
+                              $  TApp (TCon (TyConForall kBind))
+                                            (TAbs b kBind t))
+                        tBody bs
 
-
--- | Parse a function type.
-pTypeFun :: Parser Type
-pTypeFun
- = do   t1      <- pTypeApp
+   -- Function type
+ , do   t1      <- pTypeApp
         P.choice
-         [
-
-           -- T1 => T2
+         [ -- T1 => T2
            do   sp      <- pSym SArrowEquals
-                t2      <- pTypeForall
+                t2      <- pTypeFun
                 return  $  TAnnot sp $ TImpl t1 t2
 
            -- T1 -> T2
          , do   sp      <- pSym SArrowDashRight
-                t2      <- pTypeForall
+                t2      <- pTypeFun
                 return  $  TAnnot sp $ TFunExplicit  t1 t2
 
            -- T1 ~> T2
          , do   sp      <- pSym SArrowTilde
-                t2      <- pTypeForall
+                t2      <- pTypeFun
                 return  $  TAnnot sp $ TFunImplicit t1 t2
 
            -- Body type
          , do   return t1
          ]
- <?> "an atomic type or type application"
+ ]
+ <?> "a type"
 
 
 -- | Parse a type application.
 pTypeApp :: Parser Type
 pTypeApp
- = do   ((t, _):ts)  <- P.many1 pTypeAtomSP
+ = do   ((t, _):ts)  <- P.many1 pTypeArgSP
         return  $  foldl (\t1 (t2, sp) -> TAnnot sp (TApp t1 t2)) t ts
- <?> "an atomic type or type application"
+ <?> "an simple type or type application"
 
 
 -- | Parse a variable, constructor or parenthesised type.
-pTypeAtomSP :: Parser (Type, SourcePos)
-pTypeAtomSP
+pTypeArgSP :: Parser (Type, SourcePos)
+pTypeArgSP
  = P.choice
- [
-   -- (=>)
-   do   sp      <- pTokSP $ KOpVar "=>"
-        return  (TAnnot sp $ TCon (TyConPrim (PrimTypeTwCon TwConImpl)), sp)
+ [      -- Bound occurrence of a variable.
+        --  We don't know the kind of this variable yet, so fill in the
+        --  field with the bottom element of computation kinds. This isn't
+        --  really part of the language, but makes sense implentation-wise.
+   do   (u, sp) <- pBoundNameSP
+        return  (TAnnot sp $ TVar u, sp)
 
-   -- (->)
- , do   sp      <- pTokSP $ KOpVar "->"
-        return  (TAnnot sp $ TCon TyConFunExplicit, sp)
+ , do   (u, sp) <- pBoundIxSP
+        return  (TAnnot sp $ TVar u, sp)
 
-   -- (~>)
- , do   sp      <- pTokSP $ KOpVar "~>"
-        return  (TAnnot sp $ TCon TyConFunImplicit, sp)
+        -- Named type constructors
+ , do   (tc, sp) <- pTyConSP
+        return  (TAnnot sp $ TCon tc, sp)
 
- -- Named type constructors
- , do    (tc, sp) <- pTyConSP
-         return  (TAnnot sp $ TCon tc, sp)
+        -- Builtin type constructors.
+ , do   pTypeBuiltinSP
 
- -- Bottoms.
- , do    sp       <- pTokSP (KBuiltin BPure)
-         return  (TAnnot sp $ TBot KEffect, sp)
-
- -- Bound occurrence of a variable.
- --  We don't know the kind of this variable yet, so fill in the
- --  field with the bottom element of computation kinds. This isn't
- --  really part of the language, but makes sense implentation-wise.
- , do    (u, sp) <- pBoundNameSP
-         return  (TAnnot sp $ TVar u, sp)
-
- , do    (u, sp) <- pBoundIxSP
-         return  (TAnnot sp $ TVar u, sp)
-
-
- -- Primitive record type constructor.
- --  like (x,y,z)#
+        -- Primitive record type constructor.
+        --  like (x,y,z)#
  , P.try $ do
         sp     <- pSym SRoundBra
         ns     <- fmap (map fst) $ P.sepBy pVarNameSP (pSym SComma)
@@ -194,7 +184,7 @@ pTypeAtomSP
         return ( TCon (TyConPrim (PrimTypeTcCon (TcConRecord ns)))
                , sp)
 
- -- Tuple type.
+        -- Tuple type.
  , P.try $ do
         sp        <- pSym SRoundBra
         tField1   <- pType
@@ -208,8 +198,8 @@ pTypeAtomSP
         return    ( TAnnot sp $  makeTApps (TCon tc) ts
                   , sp)
 
- -- Full application of a primitive record type constructor.
- --   like (x : Nat, y : Nat, z : Nat)
+        -- Full application of a primitive record type constructor.
+        --   like (x : Nat, y : Nat, z : Nat)
  , P.try $ do
         sp       <- pSym SRoundBra
         (nsField, tsField)
@@ -225,8 +215,8 @@ pTypeAtomSP
         return  ( makeTApps tRecord tsField
                 , sp)
 
- -- The syntax for the nullary record type constructor '()#' overlaps
- -- with that of the unit data construtor '()', so try the former first.
+        -- The syntax for the nullary record type constructor '()#' overlaps
+        -- with that of the unit data construtor '()', so try the former first.
  , P.try
     $ do sp     <- pTokSP $ KBuiltin BDaConUnit
          pSym SHash
@@ -238,9 +228,30 @@ pTypeAtomSP
          t       <- pTypeUnion
          pSym SRoundKet
          return  (t, sp)
-
  ]
  <?> "an atomic type"
+
+
+-- | Parse a builtin type.
+pTypeBuiltinSP :: Parser (Type, SourcePos)
+pTypeBuiltinSP
+ = P.choice
+ [      -- (=>)
+   do   sp      <- pTokSP $ KOpVar "=>"
+        return  (TAnnot sp $ TCon (TyConPrim (PrimTypeTwCon TwConImpl)), sp)
+
+        -- (->)
+ , do   sp      <- pTokSP $ KOpVar "->"
+        return  (TAnnot sp $ TCon TyConFunExplicit, sp)
+
+        -- (~>)
+ , do   sp      <- pTokSP $ KOpVar "~>"
+        return  (TAnnot sp $ TCon TyConFunImplicit, sp)
+
+        -- Bottoms.
+ , do    sp       <- pTokSP (KBuiltin BPure)
+         return  (TAnnot sp $ TBot KEffect, sp)
+ ]
 
 
 -- | Parse a type constructor.

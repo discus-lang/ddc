@@ -8,7 +8,7 @@ module DDC.Source.Tetra.Parser.Exp
         , pLetsSP,      pDeclTermSP
         , pType
         , pTypeApp
-        , pTypeAtomSP)
+        , pTypeArgSP)
 where
 import DDC.Source.Tetra.Parser.Type
 import DDC.Source.Tetra.Parser.Witness
@@ -107,7 +107,7 @@ pExpArgsSpecSP pX
 
         -- [: Type0 Type0 ... :]
  , do   sp      <- pSym SSquareColonBra
-        ts      <- fmap (fst . unzip) $ P.many1 pTypeAtomSP
+        ts      <- fmap (fst . unzip) $ P.many1 pTypeArgSP
         pSym    SSquareColonKet
         return  (sp, [RType t | t <- ts])
 

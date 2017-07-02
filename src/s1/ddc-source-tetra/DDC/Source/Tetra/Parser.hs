@@ -13,7 +13,7 @@ module DDC.Source.Tetra.Parser
         -- * Types
         , pType
         , pTypeApp
-        , pTypeAtomSP
+        , pTypeArgSP
 
         -- * Witnesses
         , pWitness

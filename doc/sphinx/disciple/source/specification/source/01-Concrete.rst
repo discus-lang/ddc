@@ -51,20 +51,24 @@ Types
 .. code-block:: none
 
   Type
-   ::= TypeSimple → Type                         (explicit function type, using '->' for '→' is ok)
-    |  '{' Type '}' → Type                       (implicit function type)
-    |  '{' '@' Var ':' Type '}' → Type           (implicit universal quantification)
-    |  TypeApp + Type                            (type sum)
-    |  TypeApp                                   (type application)
+   ::= TypeFun + Type                            (type sum)
+    |  TypeFun                                   (functional type)
+
+  TypeFun
+   ::= TypeApp                                   (type application)
+    |  TypeApp → TypeFun                         (explicit function type, using '->' for '→' is ok)
+    |  TypeApp ⇝ TypeFun                         (implicit function type, using '~>' for '⇝' is ok)
+    |  '{' Type '}' → TypeFun                    (implicit function type, alternate syntax)
+    |  '(' '@' Var+ ':' Type ')' ⇝ TypeFun       (implicit universal quantification)
+    |  '{' '@' Var+ ':' Type '}' → TypeFun       (implicit universal quantification, alternate syntax)
 
   TypeApp                                        (type application)
-   ::= TypeApp TypeSimple                        (type function applied to an argument)
-    |  TypeSimple                                (simple type)
+   ::= TypeApp TypeArg                           (type function applied to an argument)
+    |  TypeArg                                   (type argument)
 
-  TypeSimple
+  TypeArg
    ::= Var                                       (type variable)
     |  Con                                       (type constructor)
-    |  TypeBuiltin                               (builtin type)
     |  '(' Type ',' Type+, ')'                   (tuple type)
     |  '(' Type ')'                              (parenthesised type)
 
