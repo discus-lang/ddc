@@ -7,26 +7,26 @@ Modules
 
 .. code-block:: none
 
-  Module                                                   (source modules)
+  Module                                           (source modules)
    ::= 'module' ModuleName
         ExportSpecs* ImportSpecs*;
        'where'  '{' Decl*; '}'
 
-  ExportSpecs                                              (export specifications)
+  ExportSpecs                                      (export specifications)
    ::= 'export' '{' Var+; '}'
 
-  ImportSpecs                                              (import specifications)
-   ::= 'import' '{' ModuleName;+ '}'                       (module imports)
-    |  'import' 'foreign' ImportSpecsForeign               (foreign imports)
+  ImportSpecs                                      (import specifications)
+   ::= 'import' '{' ModuleName;+ '}'               (module imports)
+    |  'import' 'foreign' ImportSpecsForeign       (foreign imports)
 
-  ImportSpecsForeign                                       (foreign import specification)
-   ::= 'boxed'    'type'       '{' ConSig;+ '}'            (foreign boxed type import)
-    |  'abstract' 'type'       '{' ConSig;+ '}'            (foreign abstract type import)
-    |  'abstract' 'capability' '{' VarSig;+ '}'            (foreign abstract capability import)
-    |  'c'        'value'      '{' VarSig;+ '}'            (foreign c value import)
+  ImportSpecsForeign                               (foreign import specification)
+   ::= 'boxed'    'type'       '{' ConSig;+ '}'    (foreign boxed type import)
+    |  'abstract' 'type'       '{' ConSig;+ '}'    (foreign abstract type import)
+    |  'abstract' 'capability' '{' VarSig;+ '}'    (foreign abstract capability import)
+    |  'c'        'value'      '{' VarSig;+ '}'    (foreign c value import)
 
-  VarSig  ::= 'Var' ':' Type                               (variable type signature)
-  ConSig  ::= 'Con' ':' Type                               (constructor type signature)
+  VarSig  ::= 'Var' ':' Type                       (variable type signature)
+  ConSig  ::= 'Con' ':' Type                       (constructor type signature)
 
 Source modules begin with the keyword ``module`` followed by a module name, then some
 optional export and import specifications, then some declarations. The export specifications must come before
@@ -51,26 +51,26 @@ Types
 .. code-block:: none
 
   Type
-   ::= TypeSimple → Type                                   (explicit function type, using '->' for '→' is ok)
-    |  '{' Type '}' → Type                                 (implicit function type)
-    |  '{' '@' Var ':' Type '}' → Type                     (implicit universal quantification)
-    |  TypeApp + Type                                      (type sum)
-    |  TypeApp                                             (type application)
+   ::= TypeSimple → Type                         (explicit function type, using '->' for '→' is ok)
+    |  '{' Type '}' → Type                       (implicit function type)
+    |  '{' '@' Var ':' Type '}' → Type           (implicit universal quantification)
+    |  TypeApp + Type                            (type sum)
+    |  TypeApp                                   (type application)
 
-  TypeApp                                                  (type application)
-   ::= TypeApp TypeSimple                                  (type function applied to an argument)
-    |  TypeSimple                                          (simple type)
+  TypeApp                                        (type application)
+   ::= TypeApp TypeSimple                        (type function applied to an argument)
+    |  TypeSimple                                (simple type)
 
   TypeSimple
-   ::= Var                                                 (type variable)
-    |  Con                                                 (type constructor)
-    |  TypeBuiltin                                         (builtin type)
-    |  '(' Type ',' Type+, ')'                             (tuple type)
-    |  '(' Type ')'                                        (parenthesised type)
+   ::= Var                                       (type variable)
+    |  Con                                       (type constructor)
+    |  TypeBuiltin                               (builtin type)
+    |  '(' Type ',' Type+, ')'                   (tuple type)
+    |  '(' Type ')'                              (parenthesised type)
 
   TypeBuiltin
-   ::= 'Pure'                                              (builtin pure effect)
-    |  'Read'  | 'Write' | 'Alloc'                         (builtin effects)
+   ::= 'Pure'                                    (builtin pure effect)
+    |  'Read'  | 'Write' | 'Alloc'               (builtin effects)
 
 
 Declarations
@@ -78,29 +78,31 @@ Declarations
 
 .. code-block:: none
 
-  Decl                                                     (declaration)
+  Decl                                           (declaration)
    ::= DeclType | DeclData | DeclValue
 
-  DeclType                                                 (type declaration)
-   ::= 'type' Con '=' Type                                 (type synonym declaration)
+  DeclType                                       (type declaration)
+   ::= 'type' Con '=' Type                       (type synonym declaration)
 
-  DeclData                                                 (data type declaration)
+  DeclData                                       (data type declaration)
    ::= 'data' Con DeclDataParams*
           ('where' '{' (Con ':' Type)+; '}')?
 
-  DeclDataParams                                           (data type parameters)
-   ::= '(' Var+ ':' Type ')'                               (data type parameters with shared kind)
+  DeclDataParams                                 (data type parameters)
+   ::= '(' Var+ ':' Type ')'                     (data type parameters with shared kind)
 
-  DeclTerm                                                 (term declaration)
-   ::= Var ':' Type                                        (type signature)
-    |  Var DeclTermParams* (':' Type)? GuardedExpsMaybe    (term declaration using guards)
+  DeclTerm                                       (term declaration)
+   ::= Var ':' Type                              (type signature)
 
-  DeclTermParams                                           (term declaration parameters)
-   ::= PatSimple                                           (simple pattern)
-    |  '(' PatSimple+ ':' Type '}'                         (patterns with shared type annotation)
-    |  '{' PatSimple+ ':' Type '}'                         (implicit parameters)
-    |  '{' Type '}'                                        (anonymous implicit parameter)
-    |  '{' '@' Var+   ':' Type '}'                         (implicit type parameter)
+    |  Var DeclTermParams* (':' Type)?
+           GuardedExpsMaybe                      (term declaration using guards)
+
+  DeclTermParams                                 (term declaration parameters)
+   ::= PatSimple                                 (simple pattern)
+    |  '(' PatSimple+ ':' Type '}'               (patterns with shared type annotation)
+    |  '{' PatSimple+ ':' Type '}'               (implicit parameters)
+    |  '{' Type '}'                              (anonymous implicit parameter)
+    |  '{' '@' Var+   ':' Type '}'               (implicit type parameter)
 
 
 Type declarations define unparameterised type synonyms. (Issue385_) covers addition of type parameters.
