@@ -2,31 +2,32 @@
 Concrete Syntax
 ===============
 
+
 Modules
 -------
 
 .. code-block:: none
 
-  Module                                           (source modules)
+  Module                                              (source modules)
    ::= 'module' ModuleName
         ExportSpecs* ImportSpecs*;
        'where'  '{' Decl*; '}'
 
-  ExportSpecs                                      (export specifications)
+  ExportSpecs                                         (export specifications)
    ::= 'export' '{' Var+; '}'
 
-  ImportSpecs                                      (import specifications)
-   ::= 'import' '{' ModuleName;+ '}'               (module imports)
-    |  'import' 'foreign' ImportSpecsForeign       (foreign imports)
+  ImportSpecs                                         (import specifications)
+   ::= 'import' '{' ModuleName;+ '}'                  (module imports)
+    |  'import' 'foreign' ImportSpecsForeign          (foreign imports)
 
-  ImportSpecsForeign                               (foreign import specification)
-   ::= 'boxed'    'type'       '{' ConSig;+ '}'    (foreign boxed type import)
-    |  'abstract' 'type'       '{' ConSig;+ '}'    (foreign abstract type import)
-    |  'abstract' 'capability' '{' VarSig;+ '}'    (foreign abstract capability import)
-    |  'c'        'value'      '{' VarSig;+ '}'    (foreign c value import)
+  ImportSpecsForeign                                  (foreign import specification)
+   ::= 'boxed'    'type'       '{' ConSig;+ '}'       (foreign boxed type import)
+    |  'abstract' 'type'       '{' ConSig;+ '}'       (foreign abstract type import)
+    |  'abstract' 'capability' '{' VarSig;+ '}'       (foreign abstract capability import)
+    |  'c'        'value'      '{' VarSig;+ '}'       (foreign c value import)
 
-  VarSig  ::= 'Var' ':' Type                       (variable type signature)
-  ConSig  ::= 'Con' ':' Type                       (constructor type signature)
+  VarSig  ::= 'Var' ':' Type                          (variable type signature)
+  ConSig  ::= 'Con' ':' Type                          (constructor type signature)
 
 Source modules begin with the keyword ``module`` followed by a module name, then some
 optional export and import specifications, then some declarations. The export specifications must come before
@@ -45,86 +46,36 @@ See the `module specification tests`_ for examples.
 .. _`module specification tests`:
         https://github.com/DDCSF/ddc/tree/ddc-0.5.1/test/ddc-spec/source/01-Tetra/01-Syntax/01-Module
 
-Types
------
-
-.. code-block:: none
-
-  Type
-   ::= TypeFun + Type                            (type sum)
-    |  TypeFun                                   (functional type)
-
-  TypeFun
-   ::= TypeApp                                   (type application)
-    |  TypeApp → TypeFun                         (explicit function type, using '->' is ok)
-    |  TypeApp ⇝ TypeFun                         (implicit function type, using '~>' is ok)
-    |  '{' Type '}' → TypeFun                    (implicit function type, alternate syntax)
-    |  '(' '@' Var+ ':' Type ')' ⇝ TypeFun       (implicit universal quantification)
-    |  '{' '@' Var+ ':' Type '}' → TypeFun       (implicit universal quantification, alternate syntax)
-
-  TypeApp                                        (type application)
-   ::= TypeApp TypeArg                           (type function applied to an argument)
-    |  TypeArg                                   (type argument)
-
-  TypeArg
-   ::= Var                                       (type variable)
-    |  Con                                       (type constructor)
-    |  '(' Type ',' Type+, ')'                   (tuple type)
-    |  '(' Type ')'                              (parenthesised type)
-
-  TypeBuiltin
-   ::= 'Data' | 'Region' | 'Effect'              (builtin kind constructors)
-    |  'Pure' | 'Read'   | 'Write' | 'Alloc'     (builtin effect type constructors)
-    |  'Unit' | 'Void'                           (builtin data type constructors)
-    |  '(→)'                                     (explicit function type constructor, using '->' is ok)
-    |  '(⇝)'                                     (implicit function type constructor, using '~>' is ok)
-
-
-Type sums are used to collect together multiple effect types.
-
-Function types include both a parameter and return type, using ``→`` as the constructor for explicit function types and ``⇝`` as the constructor for implicit function types. Alternately, implicit function types can be written ``{ t1 } → t2`` where ``t1`` is the parameter type and ``t2`` is the result type.
-
-Similarly, implicit universal quantification over some type variable ``v`` of kind ``k`` is written ``(@v:t1) ⇝ t2``, where ``k1`` is the kind of the parameter variable and ``t2`` is the body type. Alternatively, implicit universal quantification can be written ``{@v:t1} → t2`` using braces to indicate that the type argument will be passed implicitly. The ``@`` in this syntax indicates that variable ``v`` is a type binder rather than a term binder.
-
-Type applications are between a type function and its argument.
-
-Type arguments include variables, constructors, tuple types and parenthesised types. A tuple type like ``(t1, t2, .. tN)`` is sugar for the type application ``TupN t1 t2 .. tN``, where the type constructor ``TupN`` is taken as whatever type constructor is currently in scope with that name.
-
-Builtin type constructors consist of kind constructors, effect type constructors, data type constructors and function type constructors. The same grammar is used for both types and kinds. ``Data`` is the kind of data types, ``Region`` the kind of effect types and ``Effect`` the kind of effect types. ``Pure`` is the effect of pure expressions and the zero element of type sums. ``Read``, ``Write`` and ``Alloc`` are effect type constructors for their associated effects. ``Unit`` is the type of the primitive unit value ``()``. ``Void`` is a data type that has no associated values. ``(→)`` is the explicit function type constructor and ``(⇝)`` the implicit function type constructor.
-
-
-
-
 Declarations
 ------------
 
 .. code-block:: none
 
-  Decl                                           (declaration)
+  Decl                                                (declaration)
    ::= DeclType | DeclData | DeclValue
 
-  DeclType                                       (type declaration)
-   ::= 'type' Con '=' Type                       (type synonym declaration)
+  DeclType                                            (type declaration)
+   ::= 'type' Con '=' Type                            (type synonym declaration)
 
-  DeclData                                       (data type declaration)
+  DeclData                                            (data type declaration)
    ::= 'data' Con DeclDataParams*
           ('where' '{' (Con ':' Type)+; '}')?
 
-  DeclDataParams                                 (data type parameters)
-   ::= '(' Var+ ':' Type ')'                     (data type parameters with shared kind)
+  DeclDataParams                                      (data type parameters)
+   ::= '(' Var+ ':' Type ')'                          (data type parameters with shared kind)
 
-  DeclTerm                                       (term declaration)
-   ::= Var ':' Type                              (type signature)
+  DeclTerm                                            (term declaration)
+   ::= Var ':' Type                                   (type signature)
 
     |  Var DeclTermParams* (':' Type)?
-           GuardedExpsMaybe                      (term declaration using guards)
+           GuardedExpsMaybe                           (term declaration using guards)
 
-  DeclTermParams                                 (term declaration parameters)
-   ::= PatSimple                                 (simple pattern)
-    |  '(' PatSimple+ ':' Type '}'               (patterns with shared type annotation)
-    |  '{' PatSimple+ ':' Type '}'               (implicit parameters)
-    |  '{' Type '}'                              (anonymous implicit parameter)
-    |  '{' '@' Var+   ':' Type '}'               (implicit type parameter)
+  DeclTermParams                                      (term declaration parameters)
+   ::= PatSimple                                      (simple pattern)
+    |  '(' PatSimple+ ':' Type '}'                    (patterns with shared type annotation)
+    |  '{' PatSimple+ ':' Type '}'                    (implicit term parameters)
+    |  '{' Type '}'                                   (anonymous implicit term parameter)
+    |  '{' '@' Var+   ':' Type '}'                    (implicit type parameters)
 
 
 Type declarations define unparameterised type synonyms. (Issue385_) covers addition of type parameters.
@@ -147,22 +98,70 @@ See the `declaration specification tests`_ for examples.
         https://github.com/DDCSF/ddc/tree/ddc-0.5.1/test/ddc-spec/source/01-Tetra/01-Syntax/02-Decl/Main.ds
 
 
+Types
+-----
+
+.. code-block:: none
+
+  Type
+   ::= TypeFun + Type                                 (type sum)
+    |  TypeFun                                        (functional type)
+
+  TypeFun
+   ::= TypeApp                                        (type application)
+    |  TypeApp -> TypeFun                             (explicit function type)
+    |  TypeApp ~> TypeFun                             (implicit function type)
+    |  '{' Type '}' -> TypeFun                        (implicit function type, alternate syntax)
+    |  '(' '@' Var+ ':' Type ')' ~> TypeFun           (implicit universal quantification)
+    |  '{' '@' Var+ ':' Type '}' -> TypeFun           (implicit universal quantification, alternate syntax)
+
+  TypeApp                                             (type application)
+   ::= TypeApp TypeArg                                (type function applied to an argument)
+    |  TypeArg                                        (type argument)
+
+  TypeArg
+   ::= Var                                            (type variable)
+    |  Con                                            (type constructor)
+    |  '(' Type ',' Type+, ')'                        (tuple type)
+    |  '(' Type ')'                                   (parenthesised type)
+
+  TypeBuiltin
+   ::= 'Data' | 'Region' | 'Effect'                   (builtin kind constructors)
+    |  'Pure' | 'Read'   | 'Write' | 'Alloc'          (builtin effect type constructors)
+    |  'Unit' | 'Void'                                (builtin data type constructors)
+    |  '(->)'                                         (explicit function type constructor)
+    |  '(~>)'                                         (implicit function type constructor)
+
+
+Type sums are used to collect together multiple effect types.
+
+Function types include both a parameter and return type, using ``->`` as the constructor for explicit function types and ``~>`` as the constructor for implicit function types. Alternately, implicit function types can be written ``{t1} -> t2`` where ``t1`` is the parameter type and ``t2`` is the result type.
+
+Similarly, implicit universal quantification over some type variable ``v`` of kind ``k`` is written ``(@v:t1) ~> t2``, where ``k1`` is the kind of the parameter variable and ``t2`` is the body type. Alternatively, implicit universal quantification can be written ``{@v:t1} -> t2`` using braces to indicate that the type argument will be passed implicitly. The ``@`` in this syntax indicates that variable ``v`` is a type binder rather than a term binder.
+
+Type applications are between a type function and its argument.
+
+Type arguments include variables, constructors, tuple types and parenthesised types. A tuple type like ``(t1, t2, .. tN)`` is sugar for the type application ``TupN t1 t2 .. tN``, where the type constructor ``TupN`` is taken as whatever type constructor is currently in scope with that name.
+
+Builtin type constructors consist of kind constructors, effect type constructors, data type constructors and function type constructors. The same grammar is used for both types and kinds. ``Data`` is the kind of data types, ``Region`` the kind of effect types and ``Effect`` the kind of effect types. ``Pure`` is the effect of pure expressions and the zero element of type sums. ``Read``, ``Write`` and ``Alloc`` are effect type constructors for their associated effects. ``Unit`` is the type of the primitive unit value ``()``. ``Void`` is a data type that has no associated values. ``(->)`` is the explicit function type constructor and ``(~>)`` the implicit function type constructor.
+
+
 Guarded Expressions
 -------------------
 
 .. code-block:: none
 
-  GuardedExpsMaybe                               (maybe guarded expressions)
-   ::= '=' Exp                                   (simple unguarded expression)
-    |  GuardedExp*                               (multiple guarded expressions)
+  GuardedExpsMaybe                                    (maybe guarded expressions)
+   ::= '=' Exp                                        (simple unguarded expression)
+    |  GuardedExp*                                    (multiple guarded expressions)
 
   GuardedExp
-   ::= '|' Guard,+ '=' Exp                       (guarded expression)
+   ::= '|' Guard,+ '=' Exp                            (guarded expression)
 
   Guard
-   ::= 'otherwise'                               (otherwise guard always matches)
-    |  Pat '<-' Exp                              (match against pattern)
-    |  Exp                                       (boolean predicate)
+   ::= 'otherwise'                                    (otherwise guard always matches)
+    |  Pat '<-' Exp                                   (match against pattern)
+    |  Exp                                            (boolean predicate)
 
 The bodies of term declarations can be defined either with a single expression or using multiple guarded expressions.
 
@@ -180,34 +179,34 @@ Term Expressions
 .. code-block:: none
 
   Exp
-   ::= ExpApp ('where' '{' Clause;+ '}')?        (expression with optional where clause)
+   ::= ExpApp ('where' '{' Clause;+ '}')?             (expression with optional where clause)
 
-  ExpApp                                         (applicative expressions)
+  ExpApp                                              (applicative expressions)
    ::= ExpAppPrefix |  ExpAppInfix
     |  ExpAppAbs    |  ExpAppBind
     |  ExpAppMatch  |  ExpAppEffect
 
-  ExpAppPrefix                                   (prefix application)
-   ::= ExpSimple ExpArg*                         (base expression applied to arguments)
+  ExpAppPrefix                                        (prefix application)
+   ::= ExpSimple ExpArg*                              (base expression applied to arguments)
 
-  ExpAppInfix                                    (infix application)
-   ::= ExpApp InfixOp ExpApp                     (application of infix operator)
+  ExpAppInfix                                         (infix application)
+   ::= ExpApp InfixOp ExpApp                          (application of infix operator)
     |  ExpSimple
 
-  ExpArg                                         (function argument)
-   ::= '{'  Exp  '}'                             (implicit term argument)
-    |  '{' '@' Type '}'                          (implicit type argument)
-    |  ExpBase                                   (base expression)
+  ExpArg                                              (function argument)
+   ::= '{'  Exp  '}'                                  (implicit term argument)
+    |  '{' '@' Type '}'                               (implicit type argument)
+    |  ExpBase                                        (base expression)
 
   ExpSimple
-   ::= '()'                                      (unit  data constructor)
-    |  DaCon                                     (named data constructor)
-    |  Literal                                   (literal value)
-    |  Builtin                                   (fragment specific builtin value)
-    |  Var                                       (named variable)
-    |  '(' InfixOp ')'                           (reference to infix operator)
-    |  '(' Exp ',' Exp+, ')'                     (tuple expression)
-    |  '(' Exp ')'                               (parenthesised expression)
+   ::= '()'                                           (unit  data constructor)
+    |  DaCon                                          (named data constructor)
+    |  Literal                                        (literal value)
+    |  Builtin                                        (fragment specific builtin value)
+    |  Var                                            (named variable)
+    |  '(' InfixOp ')'                                (reference to infix operator)
+    |  '(' Exp ',' Exp+, ')'                          (tuple expression)
+    |  '(' Exp ')'                                    (parenthesised expression)
 
 
 
@@ -217,13 +216,13 @@ Abstraction Expressions
 .. code-block:: none
 
   ExpAppAbs
-   ::= 'λ' ExpParam '->' Exp                     (abstraction, using '\'  for 'λ' is ok)
+   ::= '\' ExpParam '->' Exp                          (abstraction)
 
   ExpAbsParam
-   ::=  PatSimple+                               (explicit unannotated term parameter}
-    |  '(' Pat+     ':' Type ')'                 (explicit annotated term parameter)
-    |  '{' Pat+     ':' Type '}'                 (implicit annotated term parameter)
-    |  '{' '@' Var+ ':' Type '}'                 (implicit annotated type parmaeter)
+   ::=  PatSimple+                                    (explicit unannotated term parameter}
+    |  '(' Pat+     ':' Type ')'                      (explicit annotated term parameter)
+    |  '{' Pat+     ':' Type '}'                      (implicit annotated term parameter)
+    |  '{' '@' Var+ ':' Type '}'                      (implicit annotated type parmaeter)
 
 
 See the `abstraction specification tests`_ for examples.
@@ -238,9 +237,9 @@ Binding Expressions
 .. code-block:: none
 
   ExpAppBind
-   ::= 'let'    DeclTerm   'in' Exp              (non-recursive let binding)
-    |  'letrec' DeclTerm+; 'in' Exp              (recursive let bindings)
-    |  'do'    '{' Stmt+; '}'                    (do expression)
+   ::= 'let'    DeclTerm   'in' Exp                   (non-recursive let binding)
+    |  'letrec' DeclTerm+; 'in' Exp                   (recursive let bindings)
+    |  'do'    '{' Stmt+; '}'                         (do expression)
 
 Matching Expressions
 --------------------
@@ -248,25 +247,25 @@ Matching Expressions
 .. code-block:: none
 
   ExpAppMatch
-   ::= 'case'  '{' AltCase+; '}'                 (case expression)
-    |  'match' '{' GuardedExp+; '}'              (match expression)
-    |  'if' Exp 'then' Exp 'else' Exp            (if-expression)
+   ::= 'case'  '{' AltCase+; '}'                      (case expression)
+    |  'match' '{' GuardedExp+; '}'                   (match expression)
+    |  'if' Exp 'then' Exp 'else' Exp                 (if-expression)
 
   AltCase
-   ::= Pat GuardedExp* '->' Exp                  (case alternative)
+   ::= Pat GuardedExp* '->' Exp                       (case alternative)
 
   Pat
-   ::= DaCon PatBase*                            (data constructor patterm)
-    |  PatBase                                   (base pattern)
+   ::= DaCon PatBase*                                 (data constructor patterm)
+    |  PatBase                                        (base pattern)
 
   PatBase
-   ::= '()'                                      (unit data constructor pattern)
-    |  DaCon                                     (named data constructor pattern)
-    |  Literal                                   (literal pattern)
-    |  Var                                       (variable pattern)
-    |  '_'                                       (wildcard pattern)
-    |  '(' Pat ',' Pat+ ')'                      (tuple pattern)
-    |  '(' Pat ')'                               (parenthesised pattern)
+   ::= '()'                                           (unit data constructor pattern)
+    |  DaCon                                          (named data constructor pattern)
+    |  Literal                                        (literal pattern)
+    |  Var                                            (variable pattern)
+    |  '_'                                            (wildcard pattern)
+    |  '(' Pat ',' Pat+ ')'                           (tuple pattern)
+    |  '(' Pat ')'                                    (parenthesised pattern)
 
 
 Effectual Expressions
@@ -275,15 +274,15 @@ Effectual Expressions
 .. code-block:: none
 
   ExpAppEffect
-   ::= 'weakeff' '[' Type ']' 'in' Exp           (weaken effect of an expression)
+   ::= 'weakeff' '[' Type ']' 'in' Exp                (weaken effect of an expression)
 
-    |  'private' Bind+ WithCaps? 'in' Exp        (private region introduction)
+    |  'private' Bind+ WithCaps? 'in' Exp             (private region introduction)
 
     |  'extend'  Bind 'using' Bind+
-                 WithCaps? 'in' Exp              (region extension)
+                 WithCaps? 'in' Exp                   (region extension)
 
-    |  'box' Exp                                 (box a computation)
-    |  'run' Exp                                 (run a boxed computation)
+    |  'box' Exp                                      (box a computation)
+    |  'run' Exp                                      (run a boxed computation)
 
   WithCaps
    ::= 'with' '{' BindT+ '}'

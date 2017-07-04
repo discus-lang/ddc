@@ -1,0 +1,54 @@
+
+-- Demonstrate the syntax of types.
+module Main
+import Data.List
+import System.IO.Console
+where
+
+
+-- Single type constructor.
+test1: Nat
+ = 5
+
+
+-- Type application
+test2: List Nat
+ = Cons 1 (Cons 2 Nil)
+
+
+-- Functional type.
+test3: Nat → Nat
+ = λx → x
+
+
+-- As above, but using a compound symbol for the function arrow.
+test4: Nat -> Nat
+ = λx -> x
+
+
+-- Implicit parameter.
+data Dict where
+  Dict : (Nat -> Nat) -> Dict
+
+-- test5: Dict ~> Nat -> Nat
+--  = λ((Dict f): Dict) ~> λy -> f y
+
+
+-- Implicit term parameter using brace syntax.
+test6: {Dict} -> Nat -> Nat
+ = λ{(Dict f): Dict} -> λy -> f y
+
+
+-- Implicit type parameter.
+test7: (@a: Data) ~> a -> a
+ = λ{@a: Data} -> λ(x: a) -> x
+
+
+-- Implicit type parameter using brace syntax.
+test8: {@a: Data} -> a -> a
+ = λ{@a: Data} -> λ(x: a) -> x
+
+
+main ()
+ = do   writel "derp"
+

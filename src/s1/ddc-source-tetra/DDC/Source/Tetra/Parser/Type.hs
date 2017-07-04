@@ -105,6 +105,7 @@ pTypeFun
                 tResult <- pTypeFun
                 return  $  TAnnot sp $ TFunImplicit tParam tResult
          ]
+⇝
 
  , P.try $ do
         pSym SRoundBra
