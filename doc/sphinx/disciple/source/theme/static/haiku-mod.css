@@ -1,0 +1,30 @@
+
+@import url("haiku.css");
+
+
+body {
+    font-family: "DejaVu Sans", Arial, Helvetica, sans-serif;
+}
+
+code {
+    background-color: initial;
+    font-family: "Lucida Console", monospace;
+    font-size: 1.0em;
+}
+
+
+pre {
+    border-color: initial;
+    border-style: initial;
+    border-width: initial;
+    background-color: white;
+
+    margin: 0 0 12px 0;
+    padding: 0.8em;
+    font-family: "Monaco", monospace;
+    font-size: 0.8em;
+}
+
+h2 {
+    font-weight: bold;
+}
