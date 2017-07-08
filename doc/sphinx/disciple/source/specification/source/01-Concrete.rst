@@ -145,6 +145,11 @@ Type arguments include variables, constructors, tuple types and parenthesised ty
 
 Builtin type constructors consist of kind constructors, effect type constructors, data type constructors and function type constructors. The same grammar is used for both types and kinds. ``Data`` is the kind of data types, ``Region`` the kind of effect types and ``Effect`` the kind of effect types. ``Pure`` is the effect of pure expressions and the zero element of type sums. ``Read``, ``Write`` and ``Alloc`` are effect type constructors for their associated effects. ``Unit`` is the type of the primitive unit value ``()``. ``(->)`` is the explicit function type constructor and ``(~>)`` the implicit function type constructor.
 
+See the `type specification tests`_ for examples.
+
+.. _`type specification tests`:
+        https://github.com/DDCSF/ddc/tree/ddc-0.5.1/test/ddc-spec/source/01-Tetra/01-Syntax/03-Types/Main.ds
+
 
 Guarded Expressions
 -------------------
