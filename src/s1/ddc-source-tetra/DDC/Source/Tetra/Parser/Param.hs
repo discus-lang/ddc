@@ -51,7 +51,6 @@ pTermParams
          pSym SRoundKet
          return  [(MSTerm, Right p, Just t) | p <- ps]
 
-
  , P.try $ do
          pSym SBraceBra
          P.choice

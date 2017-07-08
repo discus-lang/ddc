@@ -10,8 +10,8 @@ Modules
 
   Module                                              (source modules)
    ::= 'module' ModuleName
-        ExportSpecs* ImportSpecs*;
-       'where'  '{' Decl*; '}'
+          ExportSpecs* ImportSpecs*;
+         'where'  '{' Decl*; '}'
 
   ExportSpecs                                         (export specifications)
    ::= 'export' '{' Var+; '}'
@@ -109,11 +109,11 @@ Types
 
   TypeFun
    ::= TypeApp                                        (type application)
-    |  TypeApp -> TypeFun                             (explicit function type)
-    |  TypeApp ~> TypeFun                             (implicit function type)
-    |  '{' Type '}' -> TypeFun                        (implicit function type, alternate syntax)
-    |  '(' '@' Var+ ':' Type ')' ~> TypeFun           (implicit universal quantification)
-    |  '{' '@' Var+ ':' Type '}' -> TypeFun           (implicit universal quantification, alternate syntax)
+    |  TypeApp '->' TypeFun                           (explicit function type)
+    |  TypeApp '~>' TypeFun                           (implicit function type)
+    |  '{' Type '}' '->' TypeFun                      (implicit function type, alternate syntax)
+    |  '(' '@' Var+ ':' Type ')' '~>' TypeFun         (implicit universal quantification)
+    |  '{' '@' Var+ ':' Type '}' '->' TypeFun         (implicit universal quantification, alternate syntax)
 
   TypeApp                                             (type application)
    ::= TypeApp TypeArg                                (type function applied to an argument)
@@ -128,7 +128,7 @@ Types
   TypeBuiltin
    ::= 'Data' | 'Region' | 'Effect'                   (builtin kind constructors)
     |  'Pure' | 'Read'   | 'Write' | 'Alloc'          (builtin effect type constructors)
-    |  'Unit' | 'Void'                                (builtin data type constructors)
+    |  'Unit'                                         (builtin data type constructors)
     |  '(->)'                                         (explicit function type constructor)
     |  '(~>)'                                         (implicit function type constructor)
 
@@ -143,7 +143,7 @@ Type applications are between a type function and its argument.
 
 Type arguments include variables, constructors, tuple types and parenthesised types. A tuple type like ``(t1, t2, .. tN)`` is sugar for the type application ``TupN t1 t2 .. tN``, where the type constructor ``TupN`` is taken as whatever type constructor is currently in scope with that name.
 
-Builtin type constructors consist of kind constructors, effect type constructors, data type constructors and function type constructors. The same grammar is used for both types and kinds. ``Data`` is the kind of data types, ``Region`` the kind of effect types and ``Effect`` the kind of effect types. ``Pure`` is the effect of pure expressions and the zero element of type sums. ``Read``, ``Write`` and ``Alloc`` are effect type constructors for their associated effects. ``Unit`` is the type of the primitive unit value ``()``. ``Void`` is a data type that has no associated values. ``(->)`` is the explicit function type constructor and ``(~>)`` the implicit function type constructor.
+Builtin type constructors consist of kind constructors, effect type constructors, data type constructors and function type constructors. The same grammar is used for both types and kinds. ``Data`` is the kind of data types, ``Region`` the kind of effect types and ``Effect`` the kind of effect types. ``Pure`` is the effect of pure expressions and the zero element of type sums. ``Read``, ``Write`` and ``Alloc`` are effect type constructors for their associated effects. ``Unit`` is the type of the primitive unit value ``()``. ``(->)`` is the explicit function type constructor and ``(~>)`` the implicit function type constructor.
 
 
 Guarded Expressions

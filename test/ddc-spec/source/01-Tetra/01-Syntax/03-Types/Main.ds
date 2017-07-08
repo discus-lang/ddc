@@ -2,10 +2,15 @@
 -- Demonstrate the syntax of types.
 module Main
 import Data.List
+import Data.Numeric.Nat
+import Data.Ref
+import Class.Numeric
+import Class.Show
 import System.IO.Console
 where
 
 
+-------------------------------------------------------------------------------
 -- Single type constructor.
 test1: Nat
  = 5
@@ -26,12 +31,12 @@ test4: Nat -> Nat
  = λx -> x
 
 
--- Implicit parameter.
+-- Implicit term parameter.
 data Dict where
   Dict : (Nat -> Nat) -> Dict
 
--- test5: Dict ~> Nat -> Nat
---  = λ((Dict f): Dict) ~> λy -> f y
+test5: Dict ~> Nat -> Nat
+ = λ{(Dict f): Dict} -> λy -> f y
 
 
 -- Implicit term parameter using brace syntax.
@@ -49,6 +54,112 @@ test8: {@a: Data} -> a -> a
  = λ{@a: Data} -> λ(x: a) -> x
 
 
+-- Tuple type sugar.
+test9: (Nat, Nat) -> Nat
+test9 (x, y) = x + y
+
+
+-- Parenthesised type.
+test10: (Nat -> Nat) -> Nat
+test10 f = f (f 10)
+
+
+-- Type application.
+test11: List Nat -> Nat
+test11 xs
+ = case xs of
+        Cons x _        -> x
+        _               -> 0
+
+
+-- Region kind constructor.
+test12: {@r: Region} -> Ref r Nat -> S (Read r) Nat
+test12 ref
+ = readRef ref
+
+
+-- Effect kind constructor.
+test13: {@e: Effect} -> (Nat -> S e Nat) -> S e Nat
+test13 f
+ = f 10
+
+
+-- Pure effect type.
+test14: S Pure Nat
+ = box 5
+
+
+-- Read effect type.
+test15: {@r: Region} -> Ref r Nat -> S (Read r) Nat
+test15 ref
+ = readRef ref
+
+
+-- Write effect type.
+test16: {@r: Region} -> Ref r Nat -> S (Write r) Unit
+test16 ref
+ = writeRef ref 16
+
+
+-- Alloc effect type.
+test17 {@r: Region} (_: Unit) : S (Alloc r) (Ref r Nat)
+ =      allocRef {@r} 10
+
+
+-- Unit data type.
+test18: Unit -> Unit
+test18 x = x
+
+
+-- Explicit function type constructor.
+test19: (Nat -> Nat) -> Nat
+test19 f = f 10
+
+
+-- Implicit function type constructor.
+test20: (Nat ~> Nat) -> Nat
+test20 f = f {10}
+
+
+-------------------------------------------------------------------------------
+-- Exercise the above example functinos.
 main ()
- = do   writel "derp"
+ = do   writel $ show $ test1
+        writel $ show $ test2
+        writel $ show $ test3 3
+        writel $ show $ test4 4
+        writel $ show $ test5 {Dict (λx -> x)} 5
+        writel $ show $ test6 {Dict (λx -> x)} 6
+        writel $ show $ test7 7
+        writel $ show $ test8 8
+        writel $ show $ test9 (9, 9)
+        writel $ show $ test10 (λx -> x * 2)
+        writel $ show $ test11 (Cons 1 (Cons 2 (Cons 3 Nil)))
+
+        private r with { Read r; Write r; Alloc r} in
+         do     ref     = allocRef {@r} 12
+                writel $ show $ test12 ref
+
+        writel $ show $ test13 (λx -> box x)
+
+        writel $ show $ run test14
+
+        private r with { Read r; Write r; Alloc r} in
+         do     ref     = allocRef {@r} 15
+                writel $ show $ test15 ref
+
+        private r with { Read r; Write r; Alloc r} in
+         do     ref     = allocRef {@r} 999
+                test16 ref
+                writel $ show $ readRef ref
+
+        private r with { Read r; Write r; Alloc r} in
+         do     ref     = test17 {@r} ()
+                writel $ show $ readRef ref
+
+        writel $ show $ test18 ()
+
+        writel $ show $ test19 (λx -> x * 2)
+
+        writel $ show $ test20 (λ{x : Nat} -> x * 2)
 

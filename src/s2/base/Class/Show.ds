@@ -2,6 +2,7 @@
 module Class.Show
 export
 {       show;
+        show_Unit;
         show_Bool;      show_Nat;
         show_Char;      show_Text;
         show_Tup2;
@@ -23,7 +24,6 @@ data Show (a: Data) where
 
 show {(Show sh): Show a} (x: a): Text
  = sh x
-
 
 
 -------------------------------------------------------------------------------
