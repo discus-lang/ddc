@@ -1,0 +1,38 @@
+
+-- Demonstrate the term-level binding expressions.
+module Main
+import System.IO.Console
+import Class.Show
+where
+
+
+-- Let bindings.
+test1: Nat
+ = let x = 2 in x + 3
+
+
+-- Chained let-bindings.
+test2: Nat
+ = let x = 2 in
+   let y = 3 in
+   x + y
+
+
+-- Chained let bindings in a single group.
+{-
+test3: Nat
+ = let  x = 2
+        y = 3
+   in   x + y
+-}
+
+-- Nested let-bindings.
+test4: Nat
+ = let x = let y = 1 in y + 2 in x + 3
+
+
+main ()
+ = do   writel $ show $ test1
+        writel $ show $ test2
+--      writel $ show $ test3
+        writel $ show $ test4

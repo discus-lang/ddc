@@ -17,7 +17,7 @@ hello   = unlines
 --
 --     -taint-avoid-type-checks    Avoid type checking if possible.
 --                                 Exactly how much checking is avoided depends
---                                 on the compilation mode. 
+--                                 on the compilation mode.
 help :: String
 help    = unlines
         [ Version.splash
@@ -42,6 +42,7 @@ help    = unlines
         , "     -fvia-c                Compile via the C backend."
         , ""
         , "Checking and Loading"
+        , "     -scan       FILE       Scan lexical tokens from a module."
         , "     -parse      FILE       Parse a module."
         , "     -check      FILE       Parse and type check a module."
         , "     -load       FILE       Parse, type check and desugar a module to the Core IR."
@@ -97,7 +98,7 @@ help    = unlines
         , "     -flow-concretize FILE  Rewrite primops to use concrete series lengths."
         , "     -flow-melt       FILE  Melt compound data structures."
         , "     -flow-wind       FILE  Wind loop primops into tail recursive loops."
-        , "     -flow-thread     FILE  Thread state token through program."        
+        , "     -flow-thread     FILE  Thread state token through program."
         , ""
         , "Debugging"
         , "     -dump                  Dump intermediate representations."

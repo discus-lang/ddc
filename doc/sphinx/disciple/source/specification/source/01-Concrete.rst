@@ -258,9 +258,9 @@ Binding
 .. code-block:: none
 
   ExpAppBind
-   ::= 'let'    DeclTerm   'in' Exp                   (non-recursive let binding)
-    |  'letrec' DeclTerm+; 'in' Exp                   (recursive let bindings)
-    |  'do'    '{' Stmt+; '}'                         (do expression)
+   ::= 'let' '{' DeclTerm+; '}' 'in' Exp              (non-recursive let binding)
+    |  'rec' '{' DeclTerm+; '}' 'in' Exp              (recursive let bindings)
+    |  'do'  '{' Stmt+;     '}'                       (do expression)
 
 
 Matching
