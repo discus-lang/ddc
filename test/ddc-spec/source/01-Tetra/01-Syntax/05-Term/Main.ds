@@ -1,0 +1,103 @@
+
+module Main
+import System.IO.Console
+import Class.Show
+where
+
+
+-------------------------------------------------------------------------------
+-- Term with a 'where' expression, including type signature.
+test1: Nat
+ = x + y where {x = 2; y: Nat; y = 3}
+
+
+-- As above using the offside rule.
+test2: Nat
+ = x + y
+ where  x = 2
+        y = 3
+
+
+-- Term with nested where expressions.
+test3: Nat
+ = (x + y where { x = 2; y = 3 }) + 27
+
+
+-- Prefix application.
+test4: Nat
+ = add 2 3
+
+
+-- Infix application.
+test5: Nat
+ = 2 + 3 * 4
+
+
+-- Provide an explicit argument for an implicit term parameter.
+test6' {x: Nat} (y: Nat): Nat
+ = x + y
+
+test6 = test6' {2} 3
+
+
+-- Provide an explicit type argument for an implicit type parameter.
+test7' {@a: Data} (x: a): a
+ = x
+
+test7  = test7' {@ Nat} 5
+
+
+-- Unit value.
+test8: Unit
+ = ()
+
+
+-- Data constructor.
+data Foo where { Foo: Foo }
+test9: Foo
+ = Foo
+
+
+-- Literal value
+test10: Nat
+ = 5
+
+
+-- Named variable.
+test11 (x: Nat): Nat
+ = x
+
+
+-- Reference to infix operator,
+--  or infix operator used prefix.
+test12: Nat
+ = (+) 2 3
+
+
+-- Tuple expression.
+test13: (Nat, Nat)
+test13
+ = (2, 3)
+
+
+-- Parenthesised expressions.
+test14: Nat
+ = add (mul 2 3) 4
+
+
+-------------------------------------------------------------------------------
+-- Exercise the above sample functions.
+main ()
+ = do   writel $ show $ test1
+        writel $ show $ test2
+        writel $ show $ test3
+        writel $ show $ test4
+        writel $ show $ test5
+        writel $ show $ test6
+        writel $ show $ test8
+        writel $ show $ test10
+        writel $ show $ test11 5
+        writel $ show $ test12
+        writel $ show $ test13
+        writel $ show $ test14
+

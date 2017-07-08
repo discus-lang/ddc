@@ -71,9 +71,9 @@ Declarations
            GuardedExpsMaybe                           (term declaration using guards)
 
   DeclTermParams                                      (term declaration parameters)
-   ::= PatSimple                                      (simple pattern)
-    |  '(' PatSimple+ ':' Type '}'                    (patterns with shared type annotation)
-    |  '{' PatSimple+ ':' Type '}'                    (implicit term parameters)
+   ::= PatBase                                        (simple pattern)
+    |  '(' PatBase+ ':' Type '}'                      (patterns with shared type annotation)
+    |  '{' PatBase+ ':' Type '}'                      (implicit term parameters)
     |  '{' Type '}'                                   (anonymous implicit term parameter)
     |  '{' '@' Var+   ':' Type '}'                    (implicit type parameters)
 
@@ -178,13 +178,13 @@ See the `guards specification tests`_ for examples.
         https://github.com/DDCSF/ddc/tree/ddc-0.5.1/test/ddc-spec/source/01-Tetra/01-Syntax/04-Guards/Main.ds
 
 
-Term Expressions
-----------------
+Terms
+-----
 
 .. code-block:: none
 
   Exp
-   ::= ExpApp ('where' '{' Clause;+ '}')?             (expression with optional where clause)
+   ::= ExpApp ('where' '{' DeclTerm;+ '}')?           (expression with optional where clause)
 
   ExpApp                                              (applicative expressions)
    ::= ExpAppPrefix |  ExpAppInfix
@@ -192,31 +192,43 @@ Term Expressions
     |  ExpAppMatch  |  ExpAppEffect
 
   ExpAppPrefix                                        (prefix application)
-   ::= ExpSimple ExpArg*                              (base expression applied to arguments)
+   ::= ExpBase ExpArg*                                (base expression applied to arguments)
 
   ExpAppInfix                                         (infix application)
    ::= ExpApp InfixOp ExpApp                          (application of infix operator)
-    |  ExpSimple
+    |  ExpBase
 
   ExpArg                                              (function argument)
    ::= '{'  Exp  '}'                                  (implicit term argument)
     |  '{' '@' Type '}'                               (implicit type argument)
     |  ExpBase                                        (base expression)
 
-  ExpSimple
+  ExpBase
    ::= '()'                                           (unit  data constructor)
     |  DaCon                                          (named data constructor)
     |  Literal                                        (literal value)
-    |  Builtin                                        (fragment specific builtin value)
     |  Var                                            (named variable)
     |  '(' InfixOp ')'                                (reference to infix operator)
     |  '(' Exp ',' Exp+, ')'                          (tuple expression)
     |  '(' Exp ')'                                    (parenthesised expression)
 
+Terms include prefix application, infix application, abstractions, binding forms, matching and effectful terms. The later forms are described in the following sections.
+
+Expressions can include nested 'where' bindings, where the local declarations can include type signatures.
+
+Prefix and infix application is standard.
+
+Explicit arguments for implicit term parameters are supplied using ``{}`` parenthesis, and explicit arguments for implicit type parameters with ``{@ }`` parenthesis.
+
+See the `term specification tests`_ for examples.
+
+.. _`term specification tests`:
+        https://github.com/DDCSF/ddc/tree/ddc-0.5.1/test/ddc-spec/source/01-Tetra/01-Syntax/05-Term/Main.ds
 
 
-Abstraction Expressions
------------------------
+
+Abstraction
+-----------
 
 .. code-block:: none
 
@@ -224,20 +236,24 @@ Abstraction Expressions
    ::= '\' ExpParam '->' Exp                          (abstraction)
 
   ExpAbsParam
-   ::=  PatSimple+                                    (explicit unannotated term parameter}
-    |  '(' Pat+     ':' Type ')'                      (explicit annotated term parameter)
-    |  '{' Pat+     ':' Type '}'                      (implicit annotated term parameter)
-    |  '{' '@' Var+ ':' Type '}'                      (implicit annotated type parmaeter)
+   ::=  PatBase+                                      (explicit unannotated term parameter}
+    |  '(' PatBase+ ':' Type ')'                      (explicit annotated term parameter)
+    |  '{' PatBase+ ':' Type '}'                      (implicit annotated term parameter)
+    |  '{' '@' Var+   ':' Type '}'                    (implicit annotated type parmaeter)
+
+
+Abstractions begin with a ``\``, followed by some parameter bindings, then a ``->``. In the concrete syntax the unicode characters ``λ`` and ``→`` can be used in place of ``\`` and ``->``. Term parameter can be bound by patterns with or without type annotations. Explicit term parameters are specified with ``()`` parenthesis and implicit term parameters with ``{}`` parenthesis. Implicit type parameters are specified with ``{@ }`` parenthesis, where the ``{}`` refers to the fact the type arguments will be passed implicitly at the call site, and the ``@`` refers to the name space of type variables.
+
 
 
 See the `abstraction specification tests`_ for examples.
 
 .. _`abstraction specification tests`:
-        https://github.com/DDCSF/ddc/tree/ddc-0.5.1/test/ddc-spec/source/01-Tetra/01-Syntax/05-Abs/Main.ds
+        https://github.com/DDCSF/ddc/tree/ddc-0.5.1/test/ddc-spec/source/01-Tetra/01-Syntax/06-Abs/Main.ds
 
 
-Binding Expressions
--------------------
+Binding
+-------
 
 .. code-block:: none
 
@@ -246,8 +262,9 @@ Binding Expressions
     |  'letrec' DeclTerm+; 'in' Exp                   (recursive let bindings)
     |  'do'    '{' Stmt+; '}'                         (do expression)
 
-Matching Expressions
---------------------
+
+Matching
+--------
 
 .. code-block:: none
 
@@ -273,8 +290,8 @@ Matching Expressions
     |  '(' Pat ')'                                    (parenthesised pattern)
 
 
-Effectual Expressions
----------------------
+Regions and Effects
+-------------------
 
 .. code-block:: none
 
