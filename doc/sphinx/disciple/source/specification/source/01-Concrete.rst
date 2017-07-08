@@ -175,7 +175,7 @@ The ``otherwise`` guard always succeeds. The ``Pat '<-' Exp`` guard succeeds whe
 See the `guards specification tests`_ for examples.
 
 .. _`guards specification tests`:
-        https://github.com/DDCSF/ddc/tree/ddc-0.5.1/test/ddc-spec/source/01-Tetra/01-Syntax/03-Guards/Main.ds
+        https://github.com/DDCSF/ddc/tree/ddc-0.5.1/test/ddc-spec/source/01-Tetra/01-Syntax/04-Guards/Main.ds
 
 
 Term Expressions
