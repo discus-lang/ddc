@@ -1,10 +1,9 @@
 
 module DDC.Core.Lexer.Offside.Base
         ( Lexeme        (..)
-        , Paren         (..)
         , Context       (..)
 
-        , isToken,      isKNToken
+        , isToken,      isKNToken,      isKeyword
         , newCBra,      newCKet
         , newSemiColon
         , newOffsideClosingBrace
@@ -25,15 +24,17 @@ data Lexeme n
         deriving (Eq, Show)
 
 
--- | Parenthesis that we're currently inside.
-data Paren
-        = ParenRound
-        | ParenBrace
-        deriving Show
+-- | What lexer context we're currently inside.
+data Context
+        -- | Explicit { context.
+        = ContextBraceExplicit
 
--- | What column number the current layout context started in.
-type Context
-        = Int
+        -- | Explicit ( context.
+        | ContextParenExplicit
+
+        -- | Implicitly inserted '{' context at the given level.
+        | ContextBraceImplicit Int
+        deriving Show
 
 
 -- | Test whether this wrapper token matches.
@@ -46,6 +47,12 @@ isToken (Located _ tok) tok2
 isKNToken :: Eq n => Located (Token n) -> Bool
 isKNToken (Located _ (KN _))    = True
 isKNToken _                     = False
+
+
+isKeyword (Located _ tok) k
+ = case tok of
+        KA (KKeyword k')        -> k == k'
+        _                       -> False
 
 
 -- | When generating new source tokens, take the position from the first

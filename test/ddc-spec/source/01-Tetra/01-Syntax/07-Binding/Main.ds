@@ -19,6 +19,8 @@ test2: Nat
 
 
 -- Chained let bindings in a single group.
+-- This is supposed to work, but we need to know that we're
+-- inside a 'let' context.
 {-
 test3: Nat
  = let  x = 2

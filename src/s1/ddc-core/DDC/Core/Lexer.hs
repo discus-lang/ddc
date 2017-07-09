@@ -36,17 +36,17 @@ import qualified Data.Text                      as Text
 --
 --   Automatically drop comments from the token stream along the way.
 --
-lexModuleWithOffside 
+lexModuleWithOffside
         :: FilePath     -- ^ Path to source file, for error messages.
         -> Int          -- ^ Starting line number.
         -> String       -- ^ String containing program text.
         -> [Located (Token String)]
 
 lexModuleWithOffside sourceName lineStart str
- = applyOffside [] []
+ = applyOffside []
         $ addStarts
         $ dropUnused
-        $ lexText sourceName lineStart 
+        $ lexText sourceName lineStart
         $ Text.pack str
 
  where  dropUnused ts
@@ -68,14 +68,14 @@ lexExp  :: FilePath     -- ^ Path to source file, for error messages.
 
 lexExp sourceName lineStart str
  = dropUnused
-        $ lexText sourceName lineStart 
+        $ lexText sourceName lineStart
         $ Text.pack str
 
  where  dropUnused ts
          = case ts of
                 []                              -> []
                 Located _ (KM KComment{}) : ts' -> dropUnused ts'
-                Located _ (KM KNewLine{}) : ts' -> dropUnused ts' 
+                Located _ (KM KNewLine{}) : ts' -> dropUnused ts'
                 t : ts'                         -> t : dropUnused ts'
 
 
@@ -117,10 +117,10 @@ type Scanner a
 -------------------------------------------------------------------------------
 -- | Scanner for source and core files.
 --
---   The lexical structure for source and core is a bit different, 
+--   The lexical structure for source and core is a bit different,
 --   but close enough that there's no point writing a separate lexer yet.
 --
-scanner :: FilePath 
+scanner :: FilePath
         -> Scanner (Located (Token String))
 
 scanner fileName
@@ -132,7 +132,7 @@ scanner fileName
 
         stamp'  :: (a -> b)
                 -> (I.Location, a) -> Located b
-        stamp' k (I.Location line col, token) 
+        stamp' k (I.Location line col, token)
           = Located (SourcePos fileName line col) (k token)
         {-# INLINE stamp' #-}
 
@@ -140,7 +140,7 @@ scanner fileName
         $ I.alts
         [ -- Newlines are scanned to their own tokens because
           -- the transform that manages the offside rule uses them.
-          fmap stamp                    
+          fmap stamp
            $ I.from     (\c -> case c of
                                 '\n'        -> return $ KM KNewLine
                                 _           -> Nothing)
@@ -159,10 +159,10 @@ scanner fileName
            $ scanLiteral
 
           -- Infix operators.
-          --   Needs to come before scanSymbol because operators 
+          --   Needs to come before scanSymbol because operators
           --   like "==" are parsed atomically rather than as
           --   two separate '=' symbols.
-        , fmap (stamp' (KA . KOp))      $ scanInfixOperator 
+        , fmap (stamp' (KA . KOp))      $ scanInfixOperator
 
           -- Prefix operators.
         , fmap (stamp' (KA . KOpVar))   $ scanPrefixOperator
@@ -172,7 +172,7 @@ scanner fileName
           --   lexeme is parsed atomically rather than as
           --   separate '(' and ')' symbols.
         , fmap stamp
-           $ I.froms    (Just 2) 
+           $ I.froms    (Just 2)
                         (\ss -> if ss == "()"
                                 then Just (KA $ KBuiltin $ BDaConUnit)
                                 else Nothing)
@@ -184,7 +184,7 @@ scanner fileName
           --   Keywords have the same lexical structure as variables as
           --   they all start with a lower-case letter. We need to check
           --   for keywords before accepting a variable.
-        , fmap (stamp' (KA . KBuiltin)) $ scanBuiltin 
+        , fmap (stamp' (KA . KBuiltin)) $ scanBuiltin
         , fmap (stamp' (KA . KKeyword)) $ scanKeyword
         , fmap (stamp' (KN . KCon))     $ scanConName
         , fmap (stamp' (KN . KVar))     $ scanVarName
