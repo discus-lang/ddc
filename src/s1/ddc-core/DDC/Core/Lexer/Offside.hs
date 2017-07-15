@@ -122,12 +122,6 @@ applyOffside cc@(ContextBraceImplicit m : cs) (lt@(LexemeStartLine sp) : lts)
 applyOffside cc (LexemeStartLine _sp : lts)
  = applyOffside cc lts
 
--- let-in   block start
---   This is like a standard block except that the 'in' keyword explicitly closes it.
-applyOffside cc (LexemeLet sp1 : LexemeStartBlock sp2 : lts)
- = LexemeLet sp1 : LexemeBraceBra sp2
-        : applyOffside (ContextLetImplicit   (sourcePosColumn sp2) : cc) lts
-
 -- standard block start
 applyOffside cc (LexemeStartBlock sp : lts)
  = LexemeBraceBra sp
