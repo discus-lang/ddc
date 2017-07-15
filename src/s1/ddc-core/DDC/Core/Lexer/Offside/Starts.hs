@@ -76,78 +76,48 @@ addStarts' ts
 
 -- | Check if a token is one that starts a block of statements.
 splitBlockStart :: [Lexeme n] -> Maybe ([Lexeme n], [Lexeme n])
-splitBlockStart toks
+splitBlockStart ls
+ = go1 ls
+ where
+    go1 (l1@(LexemeToken _ t1) : ls1)
+        | isKeyword t1 EExport || isKeyword t1 EImport
+        = case ls1 of
+                l2@(LexemeToken _ t2) : ls2
+                 |  isKeyword t1 EExport
+                 ,  isKeyword t2 EType || isKeyword t2 EValue
+                 -> Just ([l1, l2], ls2)
 
- -- export type
- |  t1@(LexemeToken _ (KA (KKeyword EExport)))
-  : t2@(LexemeToken _ (KA (KKeyword EType)))
-  : ts
- <- toks = Just ([t1, t2], ts)
+                 |  isKeyword t1 EImport
+                 ,  isKeyword t2 EType || isKeyword t2 EValue || isKeyword t2 EData
+                 -> Just ([l1, l2], ls2)
 
- -- export value
- |  t1@(LexemeToken _ (KA (KKeyword EExport)))
-  : t2@(LexemeToken _ (KA (KKeyword EValue)))
-  : ts
- <- toks = Just ([t1, t2], ts)
+                 |  otherwise
+                 -> case ls2 of
+                        l3@(LexemeToken _ _t3) : l4@(LexemeToken _ t4) : ls4
+                         |  isKeyword t1 EExport
+                         ,  isKeyword t2 EForeign
+                         ,  isKeyword t4 EValue
+                         -> Just ([l1, l2, l3, l4], ls4)
 
- -- export foreign X value
- |  t1@(LexemeToken _ (KA (KKeyword EExport)))
-  : t2@(LexemeToken _ (KA (KKeyword EForeign)))
-  : t3
-  : t4@(LexemeToken _ (KA (KKeyword EValue)))
-  : ts
- <- toks = Just ([t1, t2, t3, t4], ts)
+                         |  isKeyword t1 EImport
+                         ,  isKeyword t2 EForeign
+                         ,  isKeyword t4 EType || isKeyword t4 EValue || isKeyword t4 ECapability
+                         -> Just ([l1, l2, l3, l4], ls4)
 
- -- import type
- |  t1@(LexemeToken _ (KA (KKeyword EImport)))
-  : t2@(LexemeToken _ (KA (KKeyword EType)))
-  : ts
- <- toks = Just ([t1, t2], ts)
+                        _ -> go2 ls
 
- -- import value
- |  t1@(LexemeToken _ (KA (KKeyword EImport)))
-  : t2@(LexemeToken _ (KA (KKeyword EValue)))
-  : ts
- <- toks = Just ([t1, t2], ts)
+                _ -> go2 ls
 
- -- import data
- |  t1@(LexemeToken _ (KA (KKeyword EImport)))
-  : t2@(LexemeToken _ (KA (KKeyword EData)))
-  : ts
- <- toks = Just ([t1, t2], ts)
+    go1 _ = go2 ls
 
- -- import foreign X type
- |  t1@(LexemeToken _ (KA (KKeyword EImport)))
-  : t2@(LexemeToken _ (KA (KKeyword EForeign)))
-  : t3
-  : t4@(LexemeToken _ (KA (KKeyword EType)))
-  : ts
- <- toks = Just ([t1, t2, t3, t4], ts)
 
- -- import foreign X capability
- |  t1@(LexemeToken _ (KA (KKeyword EImport)))
-  : t2@(LexemeToken _ (KA (KKeyword EForeign)))
-  : t3
-  : t4@(LexemeToken _ (KA (KKeyword ECapability)))
-  : ts
- <- toks = Just ([t1, t2, t3, t4], ts)
+    go2 (l1@(LexemeToken _ (KA (KKeyword EDo)))     : ls1) = Just ([l1], ls1)
+    go2 (l1@(LexemeToken _ (KA (KKeyword EOf)))     : ls1) = Just ([l1], ls1)
+    go2 (l1@(LexemeToken _ (KA (KKeyword ELetRec))) : ls1) = Just ([l1], ls1)
+    go2 (l1@(LexemeToken _ (KA (KKeyword EWhere)))  : ls1) = Just ([l1], ls1)
+    go2 (l1@(LexemeToken _ (KA (KKeyword EExport))) : ls1) = Just ([l1], ls1)
+    go2 (l1@(LexemeToken _ (KA (KKeyword EImport))) : ls1) = Just ([l1], ls1)
+    go2 (l1@(LexemeToken _ (KA (KKeyword EMatch)))  : ls1) = Just ([l1], ls1)
 
- -- import foreign X value
- |  t1@(LexemeToken _ (KA (KKeyword EImport)))
-  : t2@(LexemeToken _ (KA (KKeyword EForeign)))
-  : t3
-  : t4@(LexemeToken _ (KA (KKeyword EValue)))
-  : ts
- <- toks = Just ([t1, t2, t3, t4], ts)
-
- |  t1@(LexemeToken _ (KA (KKeyword EDo)))     : ts    <- toks = Just ([t1], ts)
- |  t1@(LexemeToken _ (KA (KKeyword EOf)))     : ts    <- toks = Just ([t1], ts)
- |  t1@(LexemeToken _ (KA (KKeyword ELetRec))) : ts    <- toks = Just ([t1], ts)
- |  t1@(LexemeToken _ (KA (KKeyword EWhere)))  : ts    <- toks = Just ([t1], ts)
- |  t1@(LexemeToken _ (KA (KKeyword EExport))) : ts    <- toks = Just ([t1], ts)
- |  t1@(LexemeToken _ (KA (KKeyword EImport))) : ts    <- toks = Just ([t1], ts)
- |  t1@(LexemeToken _ (KA (KKeyword EMatch)))  : ts    <- toks = Just ([t1], ts)
-
- | otherwise
- = Nothing
+    go2 _ = Nothing
 
