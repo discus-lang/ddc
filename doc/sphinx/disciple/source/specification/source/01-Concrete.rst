@@ -324,7 +324,7 @@ Regions and Effects
 .. code-block:: none
 
   ExpAppEffect
-   ::= 'weakeff' '[' Type ']' 'in' Exp                (weaken effect of an expression)
+   ::= 'weakeff' Type 'in' Exp                        (weaken effect of an expression)
 
     |  'private' Bind+ WithCaps? 'in' Exp             (private region introduction)
 
@@ -335,7 +335,7 @@ Regions and Effects
     |  'run' Exp                                      (run a boxed computation)
 
   WithCaps
-   ::= 'with' '{' BindT+ '}'
+   ::= 'with' '{' TypeApp+ '}'
 
 
 

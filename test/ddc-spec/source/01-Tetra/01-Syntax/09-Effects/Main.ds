@@ -1,0 +1,77 @@
+
+-- Demonstrate the effect constructs.
+module Main
+import System.IO.Console
+import Data.Ref
+import Class.Show
+where
+
+
+-- | Weaken the effect of a pure expression so that the result computation
+--   has the desired type.
+test0 {@r: Region} (u: Unit): S (Read r) Unit
+ = box weakeff Read r in ()
+
+
+-- | Introduce a new private region.
+test1: Nat
+ = private r with {Read r; Alloc r} in
+   do   ref     = allocRef {@r} 5
+        run readRef ref
+
+
+-- | Introduce a new private region with read, write and alloc capabilities.
+test2: Nat
+ = private r with {Read r; Write r; Alloc r} in
+   do   ref     = allocRef {@r} 5
+        writeRef ref 10
+        run readRef ref
+
+
+-- | Extend an existing region so that we can destructively initialize it.
+test3 {@r: Region}: S (Alloc r) (Ref r Nat)
+ = box extend r using r2 with {Read r2; Write r2; Alloc r2} in
+   do   ref     = allocRef {@r2} 0
+        writeRef ref 10
+        ref
+
+
+-- | Like 'test3', but using explicit 'run' and 'box' for the inner bindings.
+test4 {@r: Region}: S (Alloc r) (Ref r Nat)
+ = box extend r using r2 with {Read r2; Write r2; Alloc r2} in
+   do   ref     = run allocRef {@r2} 0
+        run writeRef ref 10
+        ref
+
+
+-- | Like 'test4', but introducing multiple regions at once.
+test5 {@r: Region}: S (Alloc r) Nat
+ = box  extend r using r2 r3
+        with {Read r2; Write r2; Alloc r2;
+              Read r3; Write r3; Alloc r3} in
+   do   ref2    = run allocRef {@r2} 0
+        ref3    = run allocRef {@r3} 0
+        run writeRef ref2 10
+        run writeRef ref3 20
+        (run readRef ref2) + (run readRef ref3)
+
+
+-- | Like 'test1' but introducing multiple regions at once.
+test6: Nat
+ = private r1 r2 with {Read r1; Alloc r1; Read r2; Alloc r2} in
+   do   ref1    = allocRef {@r1} 5
+        ref2    = allocRef {@r2} 6
+        readRef ref1 + readRef ref2
+
+
+main ()
+ = private r with {Read r; Alloc r} in
+   do   writel "hello"
+        test0 {@r} ()
+
+        writel $ show test1
+        writel $ show test2
+        writel $ show $ run readRef (test3 {@r})
+        writel $ show $ run readRef (test4 {@r})
+        writel $ show $ run test5 {@r}
+        writel $ show test6
