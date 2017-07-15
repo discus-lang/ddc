@@ -99,7 +99,7 @@ applyOffside cc@(ContextBraceImplicit m : cs) (lt@(LexemeStartLine sp) : lts)
  = applyOffside cc lts
 
 -- We're not inside a context which would be closed by a newline.
-applyOffside cc ((LexemeStartLine _sp) : lts)
+applyOffside cc (LexemeStartLine _sp : lts)
  = applyOffside cc lts
 
 -- block start
@@ -108,11 +108,11 @@ applyOffside cc (LexemeStartBlock sp : lts)
         : applyOffside (ContextBraceImplicit (sourcePosColumn sp) : cc) lts
 
 -- push context for explicit open brace
-applyOffside cc (lt@(LexemeToken _sp (KA (KSymbol SBraceBra))) : lts)
+applyOffside cc (lt@(LexemeBraceBra _sp) : lts)
  = lt   : applyOffside (ContextBraceExplicit : cc) lts
 
 -- pop context for explicit close brace
-applyOffside cc (lt@(LexemeToken sp (KA (KSymbol SBraceKet))) : lts)
+applyOffside cc (lt@(LexemeBraceKet  sp) : lts)
  -- close brace matches an explicit open brace.
  | ContextBraceExplicit : cs    <- cc
  = lt   : applyOffside cs lts
@@ -122,10 +122,10 @@ applyOffside cc (lt@(LexemeToken sp (KA (KSymbol SBraceKet))) : lts)
  = LexemeOffsideClosingBrace sp : lts
 
 -- push context for explict open paren.
-applyOffside cc  (lt@(LexemeToken _sp (KA (KSymbol SRoundBra))) : lts)
+applyOffside cc (lt@(LexemeRoundBra _sp) : lts)
  = lt   : applyOffside (ContextParenExplicit : cc) lts
 
-applyOffside cc (lt@(LexemeToken sp  (KA (KSymbol SRoundKet))) : lts)
+applyOffside cc (lt@(LexemeRoundKet  sp) : lts)
  -- force close of block on close paren.
  -- This partially handles the crazy (Note 5) rule from the Haskell98 standard.
  | ContextBraceImplicit _ : cs <- cc
@@ -144,6 +144,5 @@ applyOffside [] []
 
 -- close off remaining contexts once we've reached the end of the stream.
 applyOffside (_ : cs) []
- = LexemeBraceKet (SourcePos "" 0 0)
-        : applyOffside cs []
+ = LexemeBraceKet (SourcePos "" 0 0) : applyOffside cs []
 
