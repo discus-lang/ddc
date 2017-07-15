@@ -244,8 +244,6 @@ Abstraction
 
 Abstractions begin with a ``\``, followed by some parameter bindings, then a ``->``. In the concrete syntax the unicode characters ``λ`` and ``→`` can be used in place of ``\`` and ``->``. Term parameter can be bound by patterns with or without type annotations. Explicit term parameters are specified with ``()`` parenthesis and implicit term parameters with ``{}`` parenthesis. Implicit type parameters are specified with ``{@ }`` parenthesis, where the ``{}`` refers to the fact the type arguments will be passed implicitly at the call site, and the ``@`` refers to the name space of type variables.
 
-
-
 See the `abstraction specification tests`_ for examples.
 
 .. _`abstraction specification tests`:
@@ -261,6 +259,29 @@ Binding
    ::= 'let' '{' DeclTerm+; '}' 'in' Exp              (non-recursive let binding)
     |  'rec' '{' DeclTerm+; '}' 'in' Exp              (recursive let bindings)
     |  'do'  '{' Stmt+;     '}'                       (do expression)
+
+  Stmt
+   ::= 'let' '{' DeclTerm+; '}'                       (explicitly non-recursive bindings)
+    |  'rec' '{' DeclTerm+; '}'                       (explicitly recursive bindings)
+
+    |  Var DeclTermParams* (':' Type)?                (term declaration using guards)
+           GuardedExpsMaybe
+
+    |  Var '<-' Exp                                   (monadic bind)
+    |  Exp                                            (expression)
+
+Groups of recursive or non-recursive let-bindings are introduced with the 'let' and 'rec' keywords respectively. The syntax of the local bindings is the same as at top-level.
+
+The ``do`` construct carries a sequence of statements. Groups of local non-recursive or recursive bindings can be introduced with the 'let' and 'rec' keywords as before. Single non-recursive bindings can also be written at the top-level of the do construct, omitting the implied ``let`` keyword.
+
+Monadic binding is desugared using whatever ``bind`` function is currently in scope.
+
+See the `binding specification tests`_ for examples.
+
+.. _`binding specification tests`:
+        https://github.com/DDCSF/ddc/tree/ddc-0.5.1/test/ddc-spec/source/01-Tetra/01-Syntax/07-Binding/Main.ds
+
+
 
 
 Matching

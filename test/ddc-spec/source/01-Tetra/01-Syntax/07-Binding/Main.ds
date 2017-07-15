@@ -45,8 +45,12 @@ test6: Nat
 
 -- Statements with binding.
 test7: S Console Unit
- = do   x       = "derp"
+ = box do
+        x       = "derp"
+        f a b   = a + b
+
         writel x
+        writel $ show $ f 5 6
 
 
 -- Monadic binding.
@@ -64,8 +68,8 @@ test9: Maybe Nat
 
 
 -- Explicit Haskell-style let-bindings as a statement.
-test10 (_ : Unit): S Console Unit
- = do
+test10: S Console Unit
+ = box do
         let x : Text
             x   = "red"
             y   = "green"
@@ -80,7 +84,8 @@ test10 (_ : Unit): S Console Unit
 
 -- Explicit Haskell-style recursive let-bindings as a statement.
 test11: Maybe Nat
- = do   rec down1 (n: Nat): Nat
+ = do
+        rec down1 (n: Nat): Nat
              | n == 0    = 0
              | otherwise = down1 (n - 1)
 
@@ -92,6 +97,20 @@ test11: Maybe Nat
         return $ down1 10
 
 
+-- Statements with local where binding.
+test12: S Console Unit
+ = box do
+        writel "hello"
+        f x y = x + y
+
+        writel $ show (f a b)
+         where  a = 5
+                b = 6
+
+        writel $ show (f a b)
+         where  a = 7
+                b = 8
+
 main ()
  = do
         writel $ show $ test1
@@ -100,6 +119,10 @@ main ()
         writel $ show $ test4
         writel $ show $ test5
         writel $ show $ test6
-        test10 ()
+        test7
+        writel $ show $ test8
+        writel $ show $ test9
+        test10
         writel $ show $ test11
+        test12
 
