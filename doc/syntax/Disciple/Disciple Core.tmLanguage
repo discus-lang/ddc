@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
-<dict>  
+<dict>
         <key>scopeName</key>
         <string>source.disciplecore</string>
 
@@ -25,7 +25,7 @@
 
                 <dict>  <key>name</key> <string>keyword.disciple.core</string>
                         <key>match</key>
-                        <string>\b(module|import|export|foreign|type|value|data|with|let|letrec|in|do|private|extend|using|case|of|weakeff|weakclo|purify|forget|run|box)\b</string>
+                        <string>\b(module|import|export|foreign|type|value|data|with|let|letrec|in|do|if|then|else|match|otherwise|private|extend|using|case|of|weakeff|weakclo|purify|forget|run|box)\b</string>
                 </dict>
 
 

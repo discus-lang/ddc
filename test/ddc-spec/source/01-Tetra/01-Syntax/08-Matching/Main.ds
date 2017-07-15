@@ -73,15 +73,21 @@ test8 (xx: List Nat): List Nat
 -- Match expressions.
 test9 (n: Nat) (xx: List Nat): List Nat
  = match
-        |  Nil  <- xx
-         -> Nil
+        | Nil  <- xx
+        = Nil
 
-        |  Cons x (Cons y xs) <- xx
-         ,  n > 0
-         -> Cons (x * n) (Cons (y * n) xs)
+        | Cons x (Cons y xs) <- xx
+        , n > 0
+        = Cons (x * n) (Cons (y * n) xs)
 
-        |  otherwise
-         -> Nil
+        | otherwise
+        = Nil
+
+
+-- If-then-else expressions.
+test10 (b: Bool): Nat
+ = if b then 1 else 2
+
 
 main ()
  = do   writel $ show $ test0 ()
@@ -93,5 +99,6 @@ main ()
         writel $ show $ test6 (1, 2)
         writel $ show $ test7 (Cons 1 (Cons 2 Nil))
         writel $ show $ test8 (Cons 1 (Cons 2 Nil))
-
+        writel $ show $ test9 2 (Cons 1 (Cons 2 Nil))
+        writel $ show $ test10 True
 

@@ -176,6 +176,8 @@ applyOffside cc (lt@(LexemeBraceKet  sp) : lts)
  | _tNext : _     <- dropNewLinesLexeme lts
  = LexemeOffsideClosingBrace sp : lts
 
+
+-- Paren --------------------------------------------------
 -- push context for explict open paren.
 applyOffside cc (lt@(LexemeRoundBra _sp) : lts)
  = lt   : applyOffside (ContextExplicitParen : cc) lts
@@ -190,6 +192,8 @@ applyOffside cc (lt@(LexemeRoundKet  sp) : lts)
  | ContextExplicitParen : cs <- cc
  = lt : applyOffside cs lts
 
+
+-- Generic ------------------------------------------------
 -- pass over tokens.
 applyOffside cc (lt : lts)
  = lt : applyOffside cc lts

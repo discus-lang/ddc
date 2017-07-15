@@ -284,16 +284,14 @@ See the `binding specification tests`_ for examples.
         https://github.com/DDCSF/ddc/tree/ddc-0.5.1/test/ddc-spec/source/01-Tetra/01-Syntax/07-Binding/Main.ds
 
 
-
-
 Matching
 --------
 
 .. code-block:: none
 
   ExpAppMatch
-   ::= 'case'  '{' AltCase+; '}'                      (case expression)
-    |  'match' '{' GuardedExp+; '}'                   (match expression)
+   ::= 'case' Exp 'of' '{' AltCase+; '}'              (case expression)
+    |  'match' GuardedExp+                            (match expression)
     |  'if' Exp 'then' Exp 'else' Exp                 (if-expression)
 
   AltCase
@@ -311,6 +309,13 @@ Matching
     |  '_'                                            (wildcard pattern)
     |  '(' Pat ',' Pat+ ')'                           (tuple pattern)
     |  '(' Pat ')'                                    (parenthesised pattern)
+
+Case expressions evaluate the scrutinee then match the result against the given alternatives. Match expressions allow values to defined anonymously using guards. The if-then-else expression is standard and is sugar for a case expression that matches against the 'True' and 'False' patterns.
+
+See the `matching specification tests`_ for examples.
+
+.. _`matching specification tests`:
+        https://github.com/DDCSF/ddc/tree/ddc-0.5.1/test/ddc-spec/source/01-Tetra/01-Syntax/08-Matching/Main.ds
 
 
 Regions and Effects

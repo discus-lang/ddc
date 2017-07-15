@@ -176,18 +176,16 @@ pExpFrontSP
         pSym    SBraceKet
         return  (sp, XAnnot sp $ XCase x alts)
 
-        -- match { | EXP = EXP | EXP = EXP ... }
+        -- match | EXP = EXP | EXP = EXP ...
         --  Sugar for cascaded case expressions case-expression.
  , do   sp      <- pKey EMatch
-        pSym SBraceBra
         gxs     <- liftM (map (AAltMatch . snd))
-                $  P.sepEndBy1  (pGuardedExpSP (pSym SArrowDashRight))
-                                (pSym SSemiColon)
+                $  P.many1 (pGuardedExpSP (pSym SEquals))
         let xError
                 = makeXErrorDefault
                         (Text.pack    $ sourcePosSource sp)
                         (fromIntegral $ sourcePosLine   sp)
-        pSym SBraceKet
+
         return  (sp, XAnnot sp $ XMatch sp gxs xError)
 
  , do   -- if-then-else

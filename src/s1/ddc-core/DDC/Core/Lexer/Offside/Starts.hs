@@ -116,7 +116,6 @@ splitBlockStart ls
     go2 (l1@(LexemeToken _ (KA (KKeyword EWhere)))  : ls1) = Just ([l1], ls1)
     go2 (l1@(LexemeToken _ (KA (KKeyword EExport))) : ls1) = Just ([l1], ls1)
     go2 (l1@(LexemeToken _ (KA (KKeyword EImport))) : ls1) = Just ([l1], ls1)
-    go2 (l1@(LexemeToken _ (KA (KKeyword EMatch)))  : ls1) = Just ([l1], ls1)
 
     go2 _ = Nothing
 
