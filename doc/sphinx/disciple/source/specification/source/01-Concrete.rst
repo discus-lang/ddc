@@ -352,7 +352,3 @@ See the `effect specification tests`_ for examples.
 .. _`effect specification tests`:
         https://github.com/DDCSF/ddc/tree/ddc-0.5.1/test/ddc-spec/source/01-Tetra/01-Syntax/09-Effects/Main.ds
 
-
-
-
-
