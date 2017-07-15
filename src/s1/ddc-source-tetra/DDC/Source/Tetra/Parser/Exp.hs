@@ -181,7 +181,7 @@ pExpFrontSP
  , do   sp      <- pKey EMatch
         pSym SBraceBra
         gxs     <- liftM (map (AAltMatch . snd))
-                $  P.sepEndBy1  (pGuardedExpSP (pSym SEquals))
+                $  P.sepEndBy1  (pGuardedExpSP (pSym SArrowDashRight))
                                 (pSym SSemiColon)
         let xError
                 = makeXErrorDefault

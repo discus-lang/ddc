@@ -1,0 +1,97 @@
+
+-- Demonstrate the matching expressions.
+module Main
+import System.IO.Console
+import Data.List
+import Class.Show
+where
+
+-- Case with the unit pattern.
+test0 (u: Unit): Nat
+ = case u of
+        ()      -> 1
+
+
+-- Case with simple data constructor patterns.
+test1 (b: Bool): Nat
+ = case b of
+        True    -> 1
+        False   -> 2
+
+
+-- Case expressions on literals.
+test2 (n: Nat): Text
+ = case n of
+        1       -> "one"
+        2       -> "two"
+        3       -> "three"
+        _       -> "lots"
+
+
+-- Case expressions with variable patterns.
+test3 (n: Nat): Nat
+ = case n of
+        1       -> 2
+        2       -> 3
+        x       -> x * 2
+
+
+-- Case expression with the wildcard pattern.
+test4 (n: Nat): Nat
+ = case n of
+        1       -> 2
+        _       -> 4
+
+
+-- Case expression with tuple patterns.
+test5 (p: (Nat, Nat)): (Nat, Nat)
+ = case p of
+        (x, y)  -> (x * 2, y * 2)
+
+
+-- Case expressions with parenthesised patterns.
+test6 (p: (Nat, Nat)): (Nat, Nat)
+ = case p of
+        ((x, (y)))
+         -> (x * 2, y * 2)
+
+
+-- Case expressions with nested patterns.
+test7 (xx: List Nat): List Nat
+ = case xx of
+        Nil                     -> Nil
+        Cons x (Cons y xs)      -> Cons y (Cons x xs)
+
+
+-- Case expressions with at-binding.
+test8 (xx: List Nat): List Nat
+ = case xx of
+        Nil                     -> Nil
+        Cons x yy@(Cons y xs)   -> Cons y (Cons x yy)
+
+
+-- Match expressions.
+test9 (n: Nat) (xx: List Nat): List Nat
+ = match
+        |  Nil  <- xx
+         -> Nil
+
+        |  Cons x (Cons y xs) <- xx
+         ,  n > 0
+         -> Cons (x * n) (Cons (y * n) xs)
+
+        |  otherwise
+         -> Nil
+
+main ()
+ = do   writel $ show $ test0 ()
+        writel $ show $ test1 True
+        writel $ show $ test2 3
+        writel $ show $ test3 4
+        writel $ show $ test4 5
+        writel $ show $ test5 (1, 2)
+        writel $ show $ test6 (1, 2)
+        writel $ show $ test7 (Cons 1 (Cons 2 Nil))
+        writel $ show $ test8 (Cons 1 (Cons 2 Nil))
+
+

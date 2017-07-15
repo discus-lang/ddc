@@ -276,6 +276,8 @@ The ``do`` construct carries a sequence of statements. Groups of local non-recur
 
 Monadic binding is desugared using whatever ``bind`` function is currently in scope.
 
+Braces in the binding forms will be inserted using the offside rule.
+
 See the `binding specification tests`_ for examples.
 
 .. _`binding specification tests`:

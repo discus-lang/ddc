@@ -70,19 +70,19 @@ locatedOfLexemes ls
 -- | What lexer context we're currently inside.
 data Context
         -- | Explicit { context.
-        = ContextBraceExplicit
+        = ContextExplicitBrace
 
         -- | Explicit ( context.
-        | ContextParenExplicit
-
-        -- | Implicitly inserted '{' context at the given level.
-        | ContextBraceImplicit Int
-
-        -- | Implicitly inserted '{' context after a let-keyword.
-        | ContextLetImplicit   Int
+        | ContextExplicitParen
 
         -- | Implicitly inserted let-like context.
-        | ContextLetExplicit
+        | ContextExplicitLet
+
+        -- | Implicitly inserted '{' context at the given level.
+        | ContextImplicitBrace Int
+
+        -- | Implicitly inserted '{' context after a let-keyword.
+        | ContextImplicitLet   Int
         deriving Show
 
 
