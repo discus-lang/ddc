@@ -2,7 +2,7 @@
 module DDC.Core.Lexer.Offside.Base
         ( Lexeme        (..)
         , sourcePosOfLexeme
-        , pattern LocatedSymbol
+        , lexemesOfLocated
 
         , Context       (..)
 
@@ -20,10 +20,10 @@ import DDC.Data.SourcePos
 -- | Holds a real token or start symbol which is used to apply the offside rule.
 data Lexeme n
         = LexemeToken           SourcePos (Token n)
-        | LexemeStartLine       SourcePos Int
+        | LexemeStartLine       SourcePos
 
         -- | Signal that we're starting a block in this column.
-        | LexemeStartBlock      SourcePos Int
+        | LexemeStartBlock      SourcePos
         deriving (Eq, Show)
 
 
@@ -32,11 +32,16 @@ sourcePosOfLexeme :: Lexeme n -> SourcePos
 sourcePosOfLexeme ll
  = case ll of
         LexemeToken sp _        -> sp
-        LexemeStartLine sp _    -> sp
-        LexemeStartBlock sp _   -> sp
+        LexemeStartLine  sp     -> sp
+        LexemeStartBlock sp     -> sp
 
 
-pattern LocatedSymbol loc sym   = Located loc (KA (KSymbol sym))
+-- | Convert located tokens into our lexeme type.
+lexemesOfLocated :: [Located (Token n)] -> [Lexeme n]
+lexemesOfLocated lts
+ = map (\(Located sp t) -> LexemeToken sp t) lts
+
+
 
 
 -- | What lexer context we're currently inside.
@@ -53,9 +58,10 @@ data Context
 
 
 -- | Test whether this wrapper token matches.
-isToken :: Eq n => Located (Token n) -> Token n -> Bool
-isToken (Located _ tok) tok2
-        = tok == tok2
+isToken :: Eq n => Lexeme n -> Token n -> Bool
+isToken (LexemeToken _ tok) tok2
+                = tok == tok2
+isToken _ _     = False
 
 
 -- | Test whether this wrapper token matches.
@@ -106,19 +112,18 @@ takeTok (l : ls)
  = case l of
         LexemeToken _ (KM KNewLine)     -> takeTok ls
         LexemeToken loc t               -> Located loc t
-        LexemeStartLine  _ _            -> takeTok ls
-        LexemeStartBlock _ _            -> takeTok ls
+        LexemeStartLine  _              -> takeTok ls
+        LexemeStartBlock _              -> takeTok ls
 
 
 -- | Drop newline tokens at the front of this stream.
 dropNewLinesLexeme :: Eq n => [Lexeme n] -> [Lexeme n]
 dropNewLinesLexeme ll
  = case ll of
-        []                      -> []
+        []      -> []
+
         LexemeToken _ (KM KNewLine) : ts
          -> dropNewLinesLexeme ts
 
-        l : ls
-         -> l : dropNewLinesLexeme ls
-
+        _       -> ll
 

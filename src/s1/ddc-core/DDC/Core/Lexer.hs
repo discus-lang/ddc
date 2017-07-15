@@ -45,6 +45,7 @@ lexModuleWithOffside
 lexModuleWithOffside sourceName lineStart str
  = applyOffside []
         $ addStarts
+        $ lexemesOfLocated
         $ dropUnused
         $ lexText sourceName lineStart
         $ Text.pack str
