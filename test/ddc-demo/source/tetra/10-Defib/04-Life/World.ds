@@ -79,21 +79,21 @@ stepWorld
 
 -- | Compute a new world by applying the given worker function
 --   to every available location.
---   TODO: Add nicer sytax for local letrecs inside a do.
 forWorld
         (world: World r)
         (f:     Nat -> Nat -> S (Read r) Cell)
         : S (Read r + Alloc r) (World r)
  | World width height arr       <- world
  = extend r using r' with { Alloc r'; Read r'; Write r'} in
-   let  world'  = run newWorld [r'] width height in
-   rec  go (x y: Nat): S (Read r + Read r' + Write r' + Alloc r') Unit
-         | x >= width   = go 0 (y + 1)
-         | y >= height  = ()
-         | otherwise
-          = do  setCell world' x y (f x y)
-                go (x + 1) y
-   in do
+   do   world'  = run newWorld [r'] width height
+
+        rec go (x y: Nat): S (Read r + Read r' + Write r' + Alloc r') Unit
+                | x >= width   = go 0 (y + 1)
+                | y >= height  = ()
+                | otherwise
+                = do    setCell world' x y (f x y)
+                        go (x + 1) y
+
         go 0 0
         world'
 

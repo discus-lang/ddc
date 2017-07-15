@@ -114,9 +114,19 @@ applyOffside cc (lt1@(LexemeToken sp1 _t1) : lts1)
                     : applyOffside (ContextLetImplicit col : cc) lts2
 
 -- let-context newline.
-applyOffside cc@(ContextLetImplicit m : _cs) (LexemeStartLine sp : lts)
+applyOffside cc@(ContextLetImplicit m : cs) (lt1@(LexemeStartLine sp) : lts1)
  | m == sourcePosColumn sp
- = LexemeSemiColon sp : applyOffside cc lts
+ = LexemeSemiColon sp : applyOffside cc lts1
+
+ --  We need to keep the LexemeStartLine because this newline might
+ --  be ending multiple blocks at once.
+ | m >= sourcePosColumn sp
+ , lt2 : _lts2   <- dropNewLinesLexeme lts1
+ , not $ isToken lt2 (KA (KKeyword EIn))
+ = LexemeBraceKet sp : applyOffside cs (lt1 : lts1)
+
+ | otherwise
+ = applyOffside cc lts1
 
 -- let-context close.
 applyOffside    (ContextLetImplicit _m : cs) (lt1@(LexemeIn sp) : lts)

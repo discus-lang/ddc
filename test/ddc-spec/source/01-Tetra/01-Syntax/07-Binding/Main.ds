@@ -62,6 +62,36 @@ test9: Maybe Nat
         y       <- Just 7
         return  $ x + y
 
+
+-- Explicit Haskell-style let-bindings as a statement.
+test10 (_ : Unit): S Console Unit
+ = do
+        let x : Text
+            x   = "red"
+            y   = "green"
+
+
+        writel x
+        writel y
+
+        let z   = "blue"
+        writel z
+
+
+-- Explicit Haskell-style recursive let-bindings as a statement.
+test11: Maybe Nat
+ = do   rec down1 (n: Nat): Nat
+             | n == 0    = 0
+             | otherwise = down1 (n - 1)
+
+            down2: Nat -> Nat
+            down2 n
+             | n == 0    = 0
+             | otherwise = down1 (n - 1)
+
+        return $ down1 10
+
+
 main ()
  = do
         writel $ show $ test1
@@ -70,3 +100,6 @@ main ()
         writel $ show $ test4
         writel $ show $ test5
         writel $ show $ test6
+        test10 ()
+        writel $ show $ test11
+

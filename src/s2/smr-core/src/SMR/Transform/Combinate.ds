@@ -120,6 +120,3 @@ optimize (xx: ExpC s p): ExpC s p
 
     _ -> xx
 
-
-
-

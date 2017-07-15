@@ -1,10 +1,10 @@
 
 module SMR.Core.Exp
-import  SMR.Core.Exp.Base
-import  SMR.Core.Exp.Compounds
-import  SMR.Core.Exp.Eq
-import  SMR.Core.Exp.Push
-import  SMR.Core.Exp.Show
-import  SMR.Core.Exp.Train
+import SMR.Core.Exp.Base
+import SMR.Core.Exp.Compounds
+import SMR.Core.Exp.Eq
+import SMR.Core.Exp.Push
+import SMR.Core.Exp.Show
+import SMR.Core.Exp.Train
 where
 
