@@ -374,13 +374,10 @@ toCoreLtsX a lts xBody
 
 -- Cast -------------------------------------------------------------------------------------------
 toCoreC :: SP -> S.Cast -> ConvertM S.Source (C.Cast SP C.Name)
-toCoreC a cc
+toCoreC _a cc
  = case cc of
         S.CastWeakenEffect eff
          -> C.CastWeakenEffect <$> toCoreT UniverseSpec eff
-
-        S.CastPurify w
-         -> C.CastPurify       <$> toCoreW a w
 
         S.CastBox
          -> pure C.CastBox

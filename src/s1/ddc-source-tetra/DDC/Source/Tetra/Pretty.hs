@@ -460,7 +460,6 @@ instance PrettyLanguage l => Pretty (GCast l) where
  ppr cc
   = case cc of
         CastWeakenEffect  eff -> text "weakeff" <+> brackets (ppr eff)
-        CastPurify w    -> text "purify"  <+> angles   (ppr w)
         CastBox         -> text "box"
         CastRun         -> text "run"
 

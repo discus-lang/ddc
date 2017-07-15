@@ -200,21 +200,12 @@ pExpFrontSP
                         [ AAltCase PTrue    [GExp x2]
                         , AAltCase PDefault [GExp x3]])
 
-        -- weakeff [Type] in Exp
+        -- weakeff Type in Exp
  , do   sp      <- pTokSP (KKeyword EWeakEff)
-        pSym    SSquareBra
         t       <- pType
-        pSym    SSquareKet
         pKey    EIn
         x       <- pExp
         return  (sp, XAnnot sp $ XCast (CastWeakenEffect t) x)
-
-        -- purify Witness in Exp
- , do   sp      <- pKey EPurify
-        w       <- pWitness
-        pTok (KKeyword EIn)
-        x       <- pExp
-        return  (sp, XAnnot sp $ XCast (CastPurify w) x)
 
         -- box Exp
  , do   sp      <- pKey EBox

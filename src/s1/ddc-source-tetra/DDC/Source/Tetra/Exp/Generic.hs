@@ -285,9 +285,6 @@ data GCast l
         --   of the body.
         = CastWeakenEffect  !(GType l)
 
-        -- | Purify the effect (action) of an expression.
-        | CastPurify !(GWitness l)
-
         -- | Box a computation,
         --   capturing its effects in the S computation type.
         | CastBox

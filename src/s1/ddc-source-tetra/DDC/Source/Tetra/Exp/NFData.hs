@@ -112,7 +112,6 @@ instance NFDataLanguage l => NFData (GCast l) where
  rnf cc
   = case cc of
         CastWeakenEffect e      -> rnf e
-        CastPurify w            -> rnf w
         CastBox                 -> ()
         CastRun                 -> ()
 

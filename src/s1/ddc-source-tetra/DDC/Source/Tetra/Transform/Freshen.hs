@@ -300,7 +300,6 @@ freshenCast :: Cast -> S Cast
 freshenCast cc
  = case cc of
         CastWeakenEffect t -> CastWeakenEffect <$> freshenType t
-        CastPurify w       -> CastPurify       <$> freshenWitness w
         CastBox            -> return CastBox
         CastRun            -> return CastRun
 

@@ -181,7 +181,6 @@ instance HasAnonBind l => MapBoundX GCast l where
 downC _l _f _d cc
   = case cc of
         CastWeakenEffect{} -> cc
-        CastPurify w    -> CastPurify w
         CastBox         -> CastBox
         CastRun         -> CastRun
 
