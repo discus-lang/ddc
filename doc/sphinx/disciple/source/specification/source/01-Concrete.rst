@@ -337,5 +337,22 @@ Regions and Effects
   WithCaps
    ::= 'with' '{' TypeApp+ '}'
 
+The ``weakeff`` construct is used to weaken the effect of the body expression. The provided type must be an effect type, which is added to the effect of the body expression.
+
+The ``private`` construct introduces new local regions with the given names and capabilities. The regions and capabilities are in scope in the body expression.
+
+The ``extend`` construct extends an existing region with a new subregion, where the subregion has the given added capabilities.
+
+The ``box`` form suspends an effectful expression, yielding a closure.
+
+The ``run`` form executes a closure, yielding the result value.
+
+See the `effect specification tests`_ for examples.
+
+.. _`effect specification tests`:
+        https://github.com/DDCSF/ddc/tree/ddc-0.5.1/test/ddc-spec/source/01-Tetra/01-Syntax/09-Effect/Main.ds
+
+
+
 
 
