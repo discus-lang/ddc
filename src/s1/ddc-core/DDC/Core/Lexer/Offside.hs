@@ -74,6 +74,7 @@ applyOffside [] lts
         : LexemeBraceBra spn
         : applyOffside (ContextBraceImplicit (sourcePosColumn spn) : []) lts'
 
+
 -- At top level without a context.
 -- Skip over everything until we get the 'with' in 'module Name with ...''
 applyOffside [] (LexemeStartLine _  : lts)
@@ -81,6 +82,25 @@ applyOffside [] (LexemeStartLine _  : lts)
 
 applyOffside [] (LexemeStartBlock _ : lts)
  = applyOffside [] lts
+
+
+-- let-context start.
+applyOffside cc (lt1@(LexemeLet sp) : lts1)
+ | lt2 : lts2   <- dropNewLinesLexeme lts1
+ , not $ isToken lt2 (KA (KSymbol SBraceBra))
+ = let  col = sourcePosColumn $ sourcePosOfLexeme lt2
+   in   lt1 : LexemeBraceBra sp : lt2
+            : applyOffside (ContextLetImplicit col : cc) lts2
+
+-- let-context newline.
+applyOffside cc@(ContextLetImplicit m : _cs) (LexemeStartLine sp : lts)
+ | m == sourcePosColumn sp
+ = LexemeSemiColon sp : applyOffside cc lts
+
+-- let-context close.
+applyOffside    (ContextLetImplicit _m : cs) (lt1@(LexemeIn sp) : lts)
+ = LexemeBraceKet sp : lt1 : applyOffside cs lts
+
 
 -- line start
 applyOffside cc@(ContextBraceImplicit m : cs) (lt@(LexemeStartLine sp) : lts)
@@ -102,10 +122,16 @@ applyOffside cc@(ContextBraceImplicit m : cs) (lt@(LexemeStartLine sp) : lts)
 applyOffside cc (LexemeStartLine _sp : lts)
  = applyOffside cc lts
 
--- block start
+-- let-in   block start
+--   This is like a standard block except that the 'in' keyword explicitly closes it.
+applyOffside cc (LexemeLet sp1 : LexemeStartBlock sp2 : lts)
+ = LexemeLet sp1 : LexemeBraceBra sp2
+        : applyOffside (ContextLetImplicit   (sourcePosColumn sp2) : cc) lts
+
+-- standard block start
 applyOffside cc (LexemeStartBlock sp : lts)
  = LexemeBraceBra sp
-        : applyOffside (ContextBraceImplicit (sourcePosColumn sp) : cc) lts
+        : applyOffside (ContextBraceImplicit (sourcePosColumn sp)  : cc) lts
 
 -- push context for explicit open brace
 applyOffside cc (lt@(LexemeBraceBra _sp) : lts)

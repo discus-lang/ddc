@@ -7,6 +7,8 @@ module DDC.Core.Lexer.Offside.Base
         , pattern LexemeRoundKet
         , pattern LexemeSemiColon
         , pattern LexemeOffsideClosingBrace
+        , pattern LexemeLet
+        , pattern LexemeIn
 
         , sourcePosOfLexeme
         , lexemesOfLocated
@@ -33,12 +35,14 @@ data Lexeme n
         deriving (Eq, Show)
 
 
-pattern LexemeBraceBra  sp             = LexemeToken sp (KA (KSymbol SBraceBra))
-pattern LexemeBraceKet  sp             = LexemeToken sp (KA (KSymbol SBraceKet))
-pattern LexemeRoundBra  sp             = LexemeToken sp (KA (KSymbol SRoundBra))
-pattern LexemeRoundKet  sp             = LexemeToken sp (KA (KSymbol SRoundKet))
-pattern LexemeSemiColon sp             = LexemeToken sp (KA (KSymbol SSemiColon))
-pattern LexemeOffsideClosingBrace sp   = LexemeToken sp (KM (KOffsideClosingBrace))
+pattern LexemeBraceBra  sp              = LexemeToken sp (KA (KSymbol  SBraceBra))
+pattern LexemeBraceKet  sp              = LexemeToken sp (KA (KSymbol  SBraceKet))
+pattern LexemeRoundBra  sp              = LexemeToken sp (KA (KSymbol  SRoundBra))
+pattern LexemeRoundKet  sp              = LexemeToken sp (KA (KSymbol  SRoundKet))
+pattern LexemeSemiColon sp              = LexemeToken sp (KA (KSymbol  SSemiColon))
+pattern LexemeOffsideClosingBrace sp    = LexemeToken sp (KM (KOffsideClosingBrace))
+pattern LexemeLet       sp              = LexemeToken sp (KA (KKeyword ELet))
+pattern LexemeIn        sp              = LexemeToken sp (KA (KKeyword EIn))
 
 
 -- | Take the source position of a Lexeme.
@@ -73,6 +77,9 @@ data Context
 
         -- | Implicitly inserted '{' context at the given level.
         | ContextBraceImplicit Int
+
+        -- | Implicitly inserted '{' context after a let-keyword.
+        | ContextLetImplicit   Int
         deriving Show
 
 

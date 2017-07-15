@@ -39,7 +39,7 @@ pExp c
 
         -- Level-1 lambda abstractions.
         -- (ΛBINDS.. . EXP) or (/\BIND.. . EXP)
- , do   sp      <- P.choice [ pSym SBigLambda, pSym SBigLambdaSlash] 
+ , do   sp      <- P.choice [ pSym SBigLambda, pSym SBigLambdaSlash]
         bs      <- liftM concat $ P.many1 (pTypeBinds c)
         pSym    SDot
         xBody   <- pExp c
@@ -49,7 +49,7 @@ pExp c
  , do   (lts, sp) <- pLetsSP c
         pKey    EIn
         x2      <- pExp c
-        return  $ XLet sp lts x2
+        return  $ foldr (XLet sp) x2 lts
 
         -- do { STMTS }
         --   Sugar for a let-expression.
@@ -116,7 +116,7 @@ pExpApp :: (Ord n, Pretty n)
         => Context n -> Parser n (Exp SourcePos n)
 pExpApp c
   = do  (x1, _)        <- pExpAtomSP c
-        
+
         P.choice
          [ do   xs  <- liftM concat $ P.many1 (pArgSPs c)
                 return  $ foldl (\x (x', sp) -> XApp sp x x') x1 xs
@@ -142,7 +142,7 @@ pArgSPs c
         ts      <- P.many1 (pTypeAtom c)
         pSym SSquareColonKet
         return  [(RType t, sp) | t <- ts]
-        
+
         -- <WITNESS>
  , do   sp      <- pTokSP (KOp "<")
         w       <- pWitness c
@@ -154,7 +154,7 @@ pArgSPs c
         x       <- pExp c
         pSym SBraceKet
         return  [(RImplicit (RTerm x), sp)]
-                                
+
         -- EXP0
  , do   (x, sp)  <- pExpAtomSP c
         return  [(RTerm x, sp)]
@@ -172,14 +172,14 @@ pExpAtom c
 
 -- | Parse a variable, constructor or parenthesised expression,
 --   also returning source position.
-pExpAtomSP 
+pExpAtomSP
         :: (Ord n, Pretty n)
-        => Context n 
+        => Context n
         -> Parser n (Exp SourcePos n, SourcePos)
 
 pExpAtomSP c
  = P.choice
-        
+
  [      -- Record data constructor.
    P.try $ do
         sp      <- pSym SRoundBra
@@ -200,8 +200,8 @@ pExpAtomSP c
         t       <- pExp c
         pSym    SRoundKet
         return  (t, sp)
- 
-        -- The unit data constructor.       
+
+        -- The unit data constructor.
  , do   sp        <- pTokSP (KBuiltin BDaConUnit)
         return  (XCon sp dcUnit, sp)
 
@@ -255,7 +255,7 @@ pPat c
  , do   --  The attached type is set to Bottom for now, which needs
         --  to be filled in later by the Spread transform.
         ((lit, bPrim), sp) <- pLitSP
-        let Just mkLit  = contextMakeLiteralName c 
+        let Just mkLit  = contextMakeLiteralName c
         case mkLit sp lit bPrim of
          Just nLit      -> return  $ PData (DaConPrim nLit (T.tBot T.kData)) []
          _              -> P.unexpected "literal"
@@ -265,7 +265,7 @@ pPat c
         return  $ PData  dcUnit []
 
         -- CON BIND BIND ...
- , do   nCon    <- pCon 
+ , do   nCon    <- pCon
         bs      <- liftM concat $ P.many (pTermBinds c)
         return  $ PData (DaConBound nCon) bs]
 
@@ -341,13 +341,23 @@ pParams c
 -- | Parse some `Lets`, also returning the source position where they
 --   started.
 pLetsSP :: (Ord n, Pretty n)
-        => Context n -> Parser n (Lets SourcePos n, SourcePos)
+        => Context n
+        -> Parser n ([Lets SourcePos n], SourcePos)
 pLetsSP c
  = P.choice
     [ -- non-recursive let.
       do sp       <- pTokSP (KKeyword ELet)
-         (b1, x1) <- pLetBinding c
-         return (LLet b1 x1, sp)
+         P.choice
+          -- Multiple bindings in braces
+          [ do   pSym SBraceBra
+                 lets    <- P.sepEndBy1 (pLetBinding c) (pSym SSemiColon)
+                 pSym SBraceKet
+                 return ([LLet b x | (b, x) <- lets], sp)
+
+          -- A single binding without braces.
+          , do   (b1, x1)  <- pLetBinding c
+                 return ([LLet b1 x1], sp)
+          ]
 
       -- recursive let.
     , do sp       <- pTokSP (KKeyword ELetRec)
@@ -356,20 +366,20 @@ pLetsSP c
           [ do   pSym SBraceBra
                  lets    <- P.sepEndBy1 (pLetBinding c) (pSym SSemiColon)
                  pSym SBraceKet
-                 return (LRec lets, sp)
+                 return ([LRec lets], sp)
 
           -- A single binding without braces.
           , do   ll      <- pLetBinding c
-                 return (LRec [ll], sp)
-          ]      
+                 return ([LRec [ll]], sp)
+          ]
 
       -- Private region binding.
       --   private BINDER+ (with { BINDER : TYPE ... })? in EXP
     , do sp     <- pTokSP (KKeyword EPrivate)
-         
+
          -- new private region names.
-         brs    <- P.manyTill pBinder 
-                $  P.try $ P.lookAhead $ P.choice 
+         brs    <- P.manyTill pBinder
+                $  P.try $ P.lookAhead $ P.choice
                         [ pTok (KKeyword EIn)
                         , pTok (KKeyword EWith) ]
 
@@ -377,8 +387,8 @@ pLetsSP c
 
          -- witness types.
          r      <- pLetWits c bs Nothing
-         return (r, sp)
-    
+         return ([r], sp)
+
       -- Extend an existing region.
       --   extend BINDER+ using TYPE (with { BINDER : TYPE ...})? in EXP
     , do sp     <- pTokSP (KKeyword EExtend)
@@ -388,29 +398,29 @@ pLetsSP c
          pTok (KKeyword EUsing)
 
          -- new private region names.
-         brs    <- P.manyTill pBinder 
-                $  P.try $ P.lookAhead 
-                         $ P.choice 
+         brs    <- P.manyTill pBinder
+                $  P.try $ P.lookAhead
+                         $ P.choice
                                 [ pTok (KKeyword EUsing)
                                 , pTok (KKeyword EWith)
                                 , pTok (KKeyword EIn) ]
 
          let bs =  map (flip T.makeBindFromBinder T.kRegion) brs
-         
+
          -- witness types
          r      <- pLetWits c bs (Just t)
-         return (r, sp)
+         return ([r], sp)
     ]
-    
-    
-pLetWits 
+
+
+pLetWits
         :: (Ord n, Pretty n)
         => Context n
-        -> [Bind n] -> Maybe (Type n) 
+        -> [Bind n] -> Maybe (Type n)
         -> Parser n (Lets SourcePos n)
 
 pLetWits c bs mParent
- = P.choice 
+ = P.choice
     [ do   pKey EWith
            pSym SBraceBra
            wits    <- P.sepBy (P.choice
@@ -419,20 +429,20 @@ pLetWits c bs mParent
                               pTok (KOp ":")
                               t    <- pTypeApp c
                               return  $ T.makeBindFromBinder b t
-                        
+
                           -- Ambient witness binding, use for capabilities.
                         , do  t    <- pTypeApp c
                               return  $ BNone t ])
                       (pSym SSemiColon)
            pSym SBraceKet
            return (LPrivate bs mParent wits)
-    
+
     , do   return (LPrivate bs mParent [])
     ]
 
 
 -- | A binding for let expression.
-pLetBinding 
+pLetBinding
         :: (Ord n, Pretty n)
         => Context n
         -> Parser n ( Bind n
@@ -448,7 +458,7 @@ pLetBinding c
                 pSym    SEquals
                 xBody   <- pExp c
 
-                return  $ (T.makeBindFromBinder b t, xBody) 
+                return  $ (T.makeBindFromBinder b t, xBody)
 
 
          , do   -- Non-function binding with no type signature.
@@ -462,9 +472,9 @@ pLetBinding c
 
 
          , do   -- Binding using function syntax.
-                ps      <- liftM concat 
+                ps      <- liftM concat
                         $  P.many (pBindParamSpec c)
-        
+
                 P.choice
                  [ do   -- Function syntax with a return type.
                         -- We can make the full type sig for the let-bound
@@ -481,7 +491,7 @@ pLetBinding c
 
                         -- Function syntax with no return type.
                         -- We can't make the type sig for the let-bound variable,
-                        -- but we can create lambda abstractions with the given 
+                        -- but we can create lambda abstractions with the given
                         -- parameter types.
                         --  BINDER PARAM1 PARAM2 .. PARAMN = EXP
                  , do   sp      <- pSym SEquals
@@ -508,8 +518,8 @@ pStmt c
  [ -- BINDER = EXP ;
    -- We need the 'try' because a VARIABLE binders can also be parsed
    --   as a function name in a non-binding statement.
-   --  
-   P.try $ 
+   --
+   P.try $
     do  br      <- pBinder
         sp      <- pSym SEquals
         x1      <- pExp c
@@ -549,7 +559,7 @@ pStmts c
 makeStmts :: [Stmt n] -> Maybe (Exp SourcePos n)
 makeStmts ss
  = case ss of
-        [StmtNone _ x]    
+        [StmtNone _ x]
          -> Just x
 
         StmtNone sp x1 : rest
@@ -562,7 +572,7 @@ makeStmts ss
 
         StmtMatch sp p x1 x2 : rest
          | Just x3      <- makeStmts rest
-         -> Just $ XCase sp x1 
+         -> Just $ XCase sp x1
                  [ AAlt p x3
                  , AAlt PDefault x2]
 

@@ -20,7 +20,7 @@ import qualified DDC.Control.Parser     as P
 
 
 -- | Parse a core module.
-pModule :: (Ord n, Pretty n) 
+pModule :: (Ord n, Pretty n)
         => Context n
         -> Parser n (Module P.SourcePos n)
 pModule c
@@ -54,13 +54,15 @@ pModule c
         -- Parse function definitions.
         --  If there is a 'with' keyword then this is a standard module with bindings.
         --  If not, then it is a module header, which doesn't need bindings.
-        (lts, isHeader) 
+        (lts, isHeader)
          <- P.choice
                 [ do    pTok (KKeyword EWith)
 
                         -- LET;+
                         lts  <- P.sepBy1 (pLetsSP c) (pTok (KKeyword EIn))
-                        return (lts, False)
+                        let lts' = concat [map (\l -> (l, sp')) ls  | (ls, sp') <- lts]
+
+                        return (lts', False)
 
                 , do    return ([],  True) ]
 
@@ -108,12 +110,12 @@ pHeadDecl :: (Ord n, Pretty n)
           => Context n -> Parser n (HeadDecl n)
 
 pHeadDecl ctx
- = P.choice 
+ = P.choice
         [ do    imports <- pImportSpecs ctx
                 return  $ HeadImportSpecs imports
 
         , do    exports <- pExportSpecs ctx
-                return  $ HeadExportSpecs exports 
+                return  $ HeadExportSpecs exports
 
         , do    def     <- pDataDef ctx
                 return  $ HeadDataDef def
@@ -121,7 +123,7 @@ pHeadDecl ctx
         , do    (n, k, t) <- pTypeDef ctx
                 return  $ HeadTypeDef n k t
 
-        , do    pHeadPragma ctx 
+        , do    pHeadPragma ctx
         ]
 
 

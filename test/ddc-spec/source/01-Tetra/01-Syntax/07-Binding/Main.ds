@@ -19,14 +19,11 @@ test2: Nat
 
 
 -- Chained let bindings in a single group.
--- This is supposed to work, but we need to know that we're
--- inside a 'let' context.
-{-
 test3: Nat
  = let  x = 2
         y = 3
    in   x + y
--}
+
 
 -- Nested let-bindings.
 test4: Nat
@@ -34,7 +31,8 @@ test4: Nat
 
 
 main ()
- = do   writel $ show $ test1
+ = do
+        writel $ show $ test1
         writel $ show $ test2
---      writel $ show $ test3
+        writel $ show $ test3
         writel $ show $ test4

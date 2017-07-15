@@ -399,18 +399,25 @@ pAltCase
 pLetsSP :: Parser (Lets, SP)
 pLetsSP
  = P.choice
-    [ -- non-recursive let
-      do sp       <- pKey ELet
-         l        <- liftM snd $ pDeclTermSP
-         return (LGroup False [l], sp)
+    [ -- non-recursive or recursive let
+      do (sp, isRec)
+           <- P.choice
+           [ do sp      <- pKey ELet
+                return (sp, False)
 
-      -- recursive let
-    , do sp       <- pKey ELetRec
-         pSym SBraceBra
-         ls       <- liftM (map snd)
-                  $  P.sepEndBy1 pDeclTermSP (pSym SSemiColon)
-         pSym SBraceKet
-         return (LGroup True ls, sp)
+           , do sp      <- pKey ELetRec
+                return (sp, True) ]
+
+         P.choice
+          [ do  pSym SBraceBra
+                ls      <- liftM (map snd)
+                        $  P.sepEndBy1 pDeclTermSP (pSym SSemiColon)
+                pSym SBraceKet
+                return (LGroup isRec ls, sp)
+
+          , do  l       <- liftM snd $ pDeclTermSP
+                return (LGroup isRec [l], sp) ]
+
 
       -- Private region binding.
       --   private Binder+ (with { Binder : Type ... })? in Exp
