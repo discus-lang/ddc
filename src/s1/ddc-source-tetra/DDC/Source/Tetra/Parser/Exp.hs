@@ -405,7 +405,7 @@ pLetsSP
            [ do sp      <- pKey ELet
                 return (sp, False)
 
-           , do sp      <- pKey ELetRec
+           , do sp      <- pKey ERec
                 return (sp, True) ]
 
          P.choice

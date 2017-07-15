@@ -32,14 +32,13 @@ test4: Nat
 
 -- Recursive binding.
 test5: Nat
- = letrec down n = if n == 0 then 0 else down (n - 1)
-   in  down 10
+ = rec  down n = if n == 0 then 0 else down (n - 1)
+   in   down 10
 
 
 -- Mutually recursive binding.
 test6: Nat
- = letrec
-        down1 n = if n == 0 then 0 else down2 (n - 1)
+ = rec  down1 n = if n == 0 then 0 else down2 (n - 1)
         down2 n = if n == 0 then 0 else down1 (n - 1)
    in   down1 10
 
@@ -62,9 +61,6 @@ test9: Maybe Nat
  = do   x       <- Nothing
         y       <- Just 7
         return  $ x + y
-
-
-
 
 main ()
  = do

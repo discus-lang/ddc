@@ -52,7 +52,7 @@ vectorOfCharList
         vec     = vectorAlloc# [r] (len + 1)
 
         -- TODO: Add Haskell like syntax to next recursive let exps.
-        letrec fill (ix: Nat) (xx: List Char): S (Write r) Unit
+        rec fill (ix: Nat) (xx: List Char): S (Write r) Unit
                  = case xx of
                         Nil     -> ()
                         Cons x xs
