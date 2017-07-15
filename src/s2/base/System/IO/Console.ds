@@ -33,7 +33,7 @@ where
 
 -- | Read a text string from the console, up to the maximum line length.
 readl (maxLen: Nat): S Console Text
- = box weakeff [Console] in
+ = box weakeff Console in
    do   lit     = primStdinGetString maxLen
         TextLit (makeTextLit lit)
 

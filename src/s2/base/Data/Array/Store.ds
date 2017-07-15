@@ -45,7 +45,7 @@ arrayStore_alloc
  = do
         sarr    = allocStoreArray {@r} size def
         MkArray (Store sarr)
-                (box weakeff [Read r] in def) size
+                (box weakeff Read r in def) size
                 (\ix -> if ix < size
                         then readStoreArray sarr ix
                         else def)

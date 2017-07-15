@@ -13,15 +13,15 @@ where
 
 main ()
  = private r with {Read r; Write r; Alloc r}
-   in do   
+   in do
         -- Load command-line arguments.
-        mSteps 
+        mSteps
          = mainArgs_load Nothing
          $ Cons (ArgNat "-steps" "number of steps" (\n _ -> (Just n)))
                 Nil
 
         -- Create the initial world.
-        world   = newWorld [r] 60 40
+        world   = newWorld {@r} 60 40
         setCell world 30 20 CellAlive
         setCell world 29 20 CellAlive
         setCell world 30 21 CellAlive
@@ -29,7 +29,7 @@ main ()
         setCell world 31 19 CellAlive
 
         -- Enter main animation loop.
-        animate world 0 
+        animate world 0
                 (fromMaybe 10 mSteps)
                 (isJust mSteps)
 
@@ -46,12 +46,12 @@ animate (world:     World r)
 
  -- Display the next frame.
  | otherwise
- = do   
+ = do
         -- Print the current world.
         writel  $ showWorld world
 
         -- Insert a frame-delay if we were asked for one.
-        (if delay 
+        (if delay
           then do usleep 50000
                   ()
           else    ())

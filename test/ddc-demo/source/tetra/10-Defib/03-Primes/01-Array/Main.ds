@@ -1,5 +1,5 @@
 
-module Main 
+module Main
 import Data.Array
 import Class.Show
 import System.IO.Console
@@ -15,7 +15,7 @@ main ()
         max     = 999
 
         -- Allocate an array to hold the primes we've found so far.
-        primes  = arrayStore_alloc [r] (max + 1) 0
+        primes  = arrayStore_alloc {@r} (max + 1) 0
 
         -- Write the first prime into the first slot.
         arrayStore_write primes 0 2
@@ -29,29 +29,29 @@ main ()
 
 -- | Check if the given number is a multiple of any
 --   of the others in an array.
-check   (primes: Array (Store r Nat) (S (Read r) Nat))   
+check   (primes: Array (Store r Nat) (S (Read r) Nat))
                                 -- ^ Array of primes.
         (len: Nat)              -- ^ Length of array.
         (val: Nat)              -- ^ Value to check.
         : S (Read r) Bool
  = loop 0
- where  
+ where
         -- ISSUE #386: Work out why we need a local type signature for this loop.
         -- Also for the one in the 'fill' function.
         loop (ix: Nat): S (Read r) Bool
          | ix >= len    = False
-         | rem# val (array_index primes ix) == 0  
+         | rem# val (array_index primes ix) == 0
                         = True
          | otherwise    = loop (ix + 1)
 
 
--- | Fill the given array with prime numbers up to a maximum 
-fill    (primes: Array (Store r Nat) (S (Read r) Nat))   
+-- | Fill the given array with prime numbers up to a maximum
+fill    (primes: Array (Store r Nat) (S (Read r) Nat))
                                 -- ^ Array of primes.
         (len: Nat)              -- ^ Length of array.
         : S (Read r + Write r) Unit
  = loop 1 2
- where  
+ where
         loop (high: Nat)        -- ^ Highest value filled so far.
              (i:    Nat)        -- ^ Current position in the array.
          : S (Read r + Write r) Unit

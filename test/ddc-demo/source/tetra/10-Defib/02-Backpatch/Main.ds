@@ -11,13 +11,13 @@ where
 --   Transformations: Higher Order Store.
 --   Benton, Kennedy, Beringer, Hofmann. PPDP 2009.
 --
-fac   [r: Region] () 
- = do   
+fac {@r: Region} ()
+ = do
         -- Create reference that can hold a function that performs
         -- a read from region 'r'.
-        ref     
-         = allocRef [r] 
-         $ λx -> weakeff [Read r] in 0
+        ref
+         = allocRef {@r}
+         $ λx -> weakeff Read r in 0
 
         -- Write a new function into the reference that captures the
         -- reference itself in the closure. We use the reference
@@ -33,5 +33,5 @@ fac   [r: Region] ()
 
 main ()
  = private r with {Read r; Write r; Alloc r} in
-   do   writel $ show (fac [r] () 5)
+   do   writel $ show (fac {@r} () 5)
 

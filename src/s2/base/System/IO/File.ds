@@ -17,7 +17,7 @@ where
 
 
 file_read (path: TextLit#): S File Text
- = box weakeff [File] in 
+ = box weakeff File in
    do   lit     = primFileRead path
         TextLit (makeTextLit lit)
 
