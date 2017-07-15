@@ -53,4 +53,3 @@ let exec: Source# a0 -> Sink# c0 -> Process#
                       } in
                       p1) ys in
              T1# [Stream# c0] zs)
-

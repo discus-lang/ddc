@@ -47,7 +47,7 @@ applyOffside [] lts
  | lt1@(LexemeToken _sp1 t1)
          : LexemeStartBlock spn : lts' <- lts
  ,   isKeyword t1 EExport || isKeyword t1 EImport
-  || isKeyword t1 ELetRec || isKeyword t1 EWhere
+  || isKeyword t1 ELetRec || isKeyword t1 ELet || isKeyword t1 EWhere
  = lt1  : LexemeBraceBra spn
         : applyOffside (ContextImplicitBrace (sourcePosColumn spn) : []) lts'
 

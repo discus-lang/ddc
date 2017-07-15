@@ -16,19 +16,19 @@ import value
 export exec : Source# a0 -> Sink# c0 -> Process#
 
 with
-let map [a b : Data] (f : a -> b) (as : Stream# a) : Tuple1# (Stream# b)
- = stream_1_1# (\inp out. letrec
-    p1   = pull# inp p2
-    p2 v = push# out (f v) p3
-    p3   = drop# inp p1
- in p1) as
+let     map [a b : Data] (f : a -> b) (as : Stream# a) : Tuple1# (Stream# b)
+         = stream_1_1# (\inp out. letrec
+            p1   = pull# inp p2
+            p2 v = push# out (f v) p3
+            p3   = drop# inp p1
+         in p1) as
 
-in let mapmap xs
- =  letcase T1# ys = map f0 xs
- in letcase T1# zs = map g0 ys
- in T1# zs
+        mapmap xs
+         =  letcase T1# ys = map f0 xs
+         in letcase T1# zs = map g0 ys
+         in T1# zs
 
-in let exec = process_1_1# mapmap
+        exec = process_1_1# mapmap
 ;;
 
 
@@ -43,18 +43,18 @@ import value
 export exec : Source# int -> Sink# int -> Process#
 
 with
-let scannish (as : Stream# int) : Tuple1# (Stream# int)
- = stream_1_1# (\inp out. letrec
-    p_pre        = pull# inp    p_start
-    p_start v    = push# out v (p_again v)
-    p_again v    = pull# inp   (p_join v)
-    p_join  v v' =              p_drop (plus v v')
-    p_drop  v    = drop# inp   (p_start v)
- in p_pre) as
+let     scannish (as : Stream# int) : Tuple1# (Stream# int)
+         = stream_1_1# (\inp out. letrec
+            p_pre        = pull# inp    p_start
+            p_start v    = push# out v (p_again v)
+            p_again v    = pull# inp   (p_join v)
+            p_join  v v' =              p_drop (plus v v')
+            p_drop  v    = drop# inp   (p_start v)
+         in p_pre) as
 
-in let run_scan xs
- =  letcase T1# ys = scannish xs
- in T1# ys
+        run_scan xs
+         = letcase T1# ys = scannish xs
+           in T1# ys
 
-in let exec = process_1_1# run_scan
+        exec = process_1_1# run_scan
 ;;

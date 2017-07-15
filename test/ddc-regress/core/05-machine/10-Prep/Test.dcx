@@ -23,22 +23,21 @@ with
 -- These need to be lets, not letrec because Forward (rightly) doesn't
 -- forward recursive definitions.
 -- Another pass that converts non-recursive letrecs into lets would be ideal.
-let map [a b : Data] (f : a -> b) (as : Stream# a) : Tuple1# (Stream# b)
- = stream_1_1# (\inp out. letrec
-    -- It would be nice to write this with a single binding,
-    -- and have a pass that pulled it out to letrec bindings.
-    -- This isn't quite Snip/Flatten because we want a letrec.
-    --p1 = pull# inp (\v. push# out (f v) (drop# inp p1))
-    p1   = pull# inp p2
-    p2 v = push# out (f v) p3
-    p3   = drop# inp p1
- in p1) as
+let     map [a b : Data] (f : a -> b) (as : Stream# a) : Tuple1# (Stream# b)
+         = stream_1_1# (\inp out. letrec
+            -- It would be nice to write this with a single binding,
+            -- and have a pass that pulled it out to letrec bindings.
+            -- This isn't quite Snip/Flatten because we want a letrec.
+            --p1 = pull# inp (\v. push# out (f v) (drop# inp p1))
+            p1   = pull# inp p2
+            p2 v = push# out (f v) p3
+            p3   = drop# inp p1
+         in p1) as
 
-in let mapmap xs
- =  letcase T1# ys = map f0 xs
- in letcase T1# zs = map g0 ys
- in T1# zs
+        mapmap xs
+         =  letcase T1# ys = map f0 xs
+         in letcase T1# zs = map g0 ys
+         in T1# zs
 
-in let exec = process_1_1# mapmap
+        exec = process_1_1# mapmap
 ;;
-

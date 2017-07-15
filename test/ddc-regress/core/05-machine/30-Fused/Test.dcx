@@ -16,18 +16,18 @@ import value
 export exec : Source# a0 -> Sink# c0 -> Process#
 
 with
-let map [a b : Data] (f : a -> b) (as : Stream# a) : Tuple1# (Stream# b)
- = stream_1_1# (\inp out. letrec
-    p1   = pull# inp p2
-    p2 v = push# out (f v) p3
-    p3   = drop# inp p1
- in p1) as
+let     map [a b : Data] (f : a -> b) (as : Stream# a) : Tuple1# (Stream# b)
+         = stream_1_1# (\inp out. letrec
+            p1   = pull# inp p2
+            p2 v = push# out (f v) p3
+            p3   = drop# inp p1
+         in p1) as
 
-in let mapmap xs
- =  letcase T1# ys = map f0 xs
- in letcase T1# zs = map g0 ys
- in T1# zs
+        mapmap xs
+         =  letcase T1# ys = map f0 xs
+         in letcase T1# zs = map g0 ys
+         in T1# zs
 
-in let exec = process_1_1# mapmap
+        exec = process_1_1# mapmap
 ;;
 

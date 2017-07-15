@@ -700,8 +700,12 @@ makeStmtGroups
         -> Exp
 
 makeStmtGroups sp isRec clsAcc [] xBody
- = XAnnot sp
-        $ XLet (LGroup isRec clsAcc) xBody
+ = case clsAcc of
+        [SLet _ b [] [GExp x]]
+          -> XAnnot sp $ XLet (LLet b x) xBody
+        _ -> XAnnot sp $ XLet (LGroup isRec clsAcc) xBody
+
+
 
 makeStmtGroups sp isRec [] (cl : cls) xBody
  = makeStmtGroups sp isRec [cl] cls xBody
@@ -711,7 +715,9 @@ makeStmtGroups sp isRec clsAcc@(clAcc1 : _) (cl : cls) xBody
  = makeStmtGroups sp isRec (clsAcc ++ [cl]) cls xBody
 
  | otherwise
- = XAnnot sp
-        $ XLet (LGroup isRec clsAcc)
-        $ makeStmtGroups sp isRec [] (cl : cls) xBody
+ = case clsAcc of
+        [SLet _ b [] [GExp x]]
+          -> XAnnot sp $ XLet (LLet b x) xBody
+        _ -> XAnnot sp $ XLet (LGroup isRec clsAcc)
+                       $ makeStmtGroups sp isRec [] (cl : cls) xBody
 
