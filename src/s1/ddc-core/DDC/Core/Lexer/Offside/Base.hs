@@ -7,11 +7,14 @@ module DDC.Core.Lexer.Offside.Base
         , Context       (..)
 
         , isToken,      isKNToken,      isKeyword
-        , newCBra,      newCKet
-        , newSemiColon
         , newOffsideClosingBrace
         , takeTok
-        , dropNewLinesLexeme)
+        , dropNewLinesLexeme
+
+        , pattern LocatedBraceBra
+        , pattern LocatedBraceKet
+        , pattern LocatedSemiColon
+        , pattern LocatedOffsideClosingBrace)
 where
 import DDC.Core.Lexer.Tokens
 import DDC.Data.SourcePos
@@ -42,8 +45,6 @@ lexemesOfLocated lts
  = map (\(Located sp t) -> LexemeToken sp t) lts
 
 
-
-
 -- | What lexer context we're currently inside.
 data Context
         -- | Explicit { context.
@@ -70,30 +71,11 @@ isKNToken (KN _)                = True
 isKNToken _                     = False
 
 
+-- | Test whether this token is the given keyword.
 isKeyword tok k
  = case tok of
         KA (KKeyword k')        -> k == k'
         _                       -> False
-
-
--- | When generating new source tokens, take the position from the first
---   non-newline token in this list
-newCBra      :: [Lexeme n] -> Located (Token n)
-newCBra ts
- = case takeTok ts of
-        Located sp _    -> Located sp (KA (KSymbol SBraceBra))
-
-
-newCKet      :: [Lexeme n] -> Located (Token n)
-newCKet ts
- = case takeTok ts of
-        Located sp _    -> Located sp (KA (KSymbol SBraceKet))
-
-
-newSemiColon :: [Lexeme n] -> Located (Token n)
-newSemiColon ts
- = case takeTok ts of
-        Located sp _    -> Located sp (KA (KSymbol SSemiColon))
 
 
 -- | This is injected by `applyOffside` when it finds an explit close
@@ -126,4 +108,10 @@ dropNewLinesLexeme ll
          -> dropNewLinesLexeme ts
 
         _       -> ll
+
+
+pattern LocatedBraceBra  sp             = Located sp (KA (KSymbol SBraceBra))
+pattern LocatedBraceKet  sp             = Located sp (KA (KSymbol SBraceKet))
+pattern LocatedSemiColon sp             = Located sp (KA (KSymbol SSemiColon))
+pattern LocatedOffsideClosingBrace sp   = Located sp (KM (KOffsideClosingBrace))
 
