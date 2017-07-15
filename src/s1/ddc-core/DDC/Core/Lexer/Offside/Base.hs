@@ -80,6 +80,9 @@ data Context
 
         -- | Implicitly inserted '{' context after a let-keyword.
         | ContextLetImplicit   Int
+
+        -- | Implicitly inserted let-like context.
+        | ContextLetExplicit
         deriving Show
 
 

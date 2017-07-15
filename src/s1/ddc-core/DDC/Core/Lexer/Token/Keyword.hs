@@ -26,6 +26,7 @@ data Keyword
         | ELet
         | ELetCase
         | ELetRec
+        | ERec
         | EPrivate
         | EExtend
         | EUsing
@@ -67,6 +68,7 @@ sayKeyword kw
         ELet            -> "let"
         ELetCase        -> "letcase"
         ELetRec         -> "letrec"
+        ERec            -> "rec"
         EModule         -> "module"
         EOf             -> "of"
         EPrivate        -> "private"
@@ -114,6 +116,7 @@ acceptKeyword str
         "let"           -> Just ELet
         "letcase"       -> Just ELetCase
         "letrec"        -> Just ELetRec
+        "rec"           -> Just ERec
         "module"        -> Just EModule
         "of"            -> Just EOf
         "private"       -> Just EPrivate

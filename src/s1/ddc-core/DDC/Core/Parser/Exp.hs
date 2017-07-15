@@ -71,12 +71,16 @@ pExp c
         -- letcase PAT = EXP in EXP
  , do   --  Sugar for a single-alternative case expression.
         sp      <- pKey ELetCase
-        p       <- pPat c
-        pSym    SEquals
-        x1      <- pExp c
-        pKey    EIn
-        x2      <- pExp c
-        return  $ XCase sp x1 [AAlt p x2]
+        P.choice
+         [ do   pSym SBraceBra
+                p       <- pPat c
+                pSym    SEquals
+                x1      <- pExp c
+                pSym SBraceKet
+                pKey    EIn
+                x2      <- pExp c
+                return  $ XCase sp x1 [AAlt p x2]
+         ]
 
         -- weakeff [TYPE] in EXP
  , do   sp      <- pKey EWeakEff

@@ -13,7 +13,7 @@ import value {
 with
 private rt with { w1 : Const rt } in
 let     one = 1# in
-letrec { 
+letrec {
         main (_ : Unit) : S Pure Unit
          = box private r0 in
            ();
@@ -32,12 +32,12 @@ module  Main
 export value
         main    : Unit -> S Pure Unit
         double  : Nat# -> Nat#
-import value 
+import value
         two : Unit -> Nat#
 with
 private rt with { w1 : Const rt } in
 let     one = 1# in
-letrec 
+letrec
         main (_ : Unit) : S Pure Unit
          = box private r0 in
            ()

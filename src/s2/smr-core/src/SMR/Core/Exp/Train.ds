@@ -169,17 +169,17 @@ snvBump (ns: List Name)
 -- | Wrap a train consisting of a single simultaneous substitution
 --   around an expression.
 snvApply
-        (rec: Bool)
+        (isRec: Bool)
         (snv@(SSnv bs): Snv s p) (xx: Exp s p): Exp s p
  = case bs of
-        Nil     -> xx
-        _ | rec -> trainApply (Cons (CRec snv) Nil) xx
-        _       -> trainApply (Cons (CSim snv) Nil) xx
+        Nil       -> xx
+        _ | isRec -> trainApply (Cons (CRec snv) Nil) xx
+        _         -> trainApply (Cons (CSim snv) Nil) xx
 
 
 -- | Apply a substitution to a variable of a given name and depth.
 snvApplyVar
-        (rec: Bool)
+        (isRec: Bool)
         (snv@(SSnv bs): Snv s p)
         (name: Name) (depth: Nat): Exp s p
  = case bs of
@@ -189,15 +189,15 @@ snvApplyVar
         Cons b'@((name', depth'), x') bs'
          |  name  == name'
          ,  depth == depth'
-         -> if rec then XSub (Cons (CRec snv) Nil) x'
-                   else x'
+         -> if isRec then XSub (Cons (CRec snv) Nil) x'
+                     else x'
 
          |  name   == name'
          ,  depth  >  depth'
          -> XVar name (depth - 1)
 
          |  otherwise
-         -> snvApplyVar rec (SSnv bs') name depth
+         -> snvApplyVar isRec (SSnv bs') name depth
 
 
 -- Ups ------------------------------------------------------------------------

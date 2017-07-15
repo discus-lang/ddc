@@ -84,13 +84,34 @@ applyOffside [] (LexemeStartBlock _ : lts)
  = applyOffside [] lts
 
 
+-- explicit let-context open
+applyOffside cc (lt1@(LexemeToken _sp1 _t1) : lts1)
+ |   isToken lt1 (KA (KKeyword EPrivate))
+  || isToken lt1 (KA (KKeyword EExtend))
+ = lt1 : applyOffside (ContextLetExplicit : cc) lts1
+
+-- explicit let-context close
+applyOffside cc (lt1@(LexemeToken _sp1 _t1) : lts1)
+ | ContextLetExplicit : cs <- cc
+ , isToken lt1 (KA (KKeyword EIn))
+ = lt1 : applyOffside cs lts1
+
+
 -- let-context start.
-applyOffside cc (lt1@(LexemeLet sp) : lts1)
- | lt2 : lts2   <- dropNewLinesLexeme lts1
- , not $ isToken lt2 (KA (KSymbol SBraceBra))
- = let  col = sourcePosColumn $ sourcePosOfLexeme lt2
-   in   lt1 : LexemeBraceBra sp : lt2
-            : applyOffside (ContextLetImplicit col : cc) lts2
+applyOffside cc (lt1@(LexemeToken sp1 _t1) : lts1)
+ |   isToken lt1 (KA (KKeyword ELet))
+  || isToken lt1 (KA (KKeyword ERec))
+  || isToken lt1 (KA (KKeyword ELetRec))
+  || isToken lt1 (KA (KKeyword ELetCase))
+ , lt2 : lts2   <- dropNewLinesLexeme lts1
+ = if isToken lt2 (KA (KSymbol SBraceBra))
+    -- Explicit let-context.
+    then lt1 : applyOffside (ContextLetExplicit : cc) lts1
+
+    -- Implicit let-context.
+    else let  col   = sourcePosColumn $ sourcePosOfLexeme lt2
+         in   lt1   : LexemeBraceBra sp1 : lt2
+                    : applyOffside (ContextLetImplicit col : cc) lts2
 
 -- let-context newline.
 applyOffside cc@(ContextLetImplicit m : _cs) (LexemeStartLine sp : lts)
@@ -163,6 +184,13 @@ applyOffside [] []
  = []
 
 -- close off remaining contexts once we've reached the end of the stream.
-applyOffside (_ : cs) []
+applyOffside (ContextBraceImplicit _ : cs) []
  = LexemeBraceKet (SourcePos "" 0 0) : applyOffside cs []
+
+applyOffside (ContextLetImplicit _   : cs) []
+ = LexemeBraceKet (SourcePos "" 0 0) : applyOffside cs []
+
+-- close off remaining contexts once we've reached the end of the stream.
+applyOffside (_ : cs) []
+ = applyOffside cs []
 

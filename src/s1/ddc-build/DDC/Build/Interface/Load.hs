@@ -37,7 +37,7 @@ data Error
         -- | Bad magic numbers / header information in alleged interface file.
         --   This probably isn't an interface file.
         | ErrorBadMagic
-        { errorFilePath :: FilePath 
+        { errorFilePath :: FilePath
         , errorLine     :: Int }
 
         -- | Parse error in Interface file.
@@ -49,10 +49,10 @@ data Error
         | ErrorParseEnd
 
         -- | Error when loading a tetra core module from the interface file.
-        | ErrorLoadTetra (Load.Error Tetra.Name Tetra.Error)
+        | ErrorLoadTetra FilePath (Load.Error Tetra.Name Tetra.Error)
 
         -- | Error when loading a salt  core module from the interface file.
-        | ErrorLoadSalt  (Load.Error  Salt.Name  Salt.Error)
+        | ErrorLoadSalt  FilePath (Load.Error  Salt.Name  Salt.Error)
 
 
 instance Pretty Error where
@@ -76,12 +76,14 @@ instance Pretty Error where
  ppr ErrorParseEnd
   = vcat [ text "Parse error at end of interface file." ]
 
- ppr (ErrorLoadTetra err)
-  = vcat [ text "Error when loading Tetra module from interface file."
+ ppr (ErrorLoadTetra path err)
+  = vcat [ text path
+         , text "Error when loading Tetra module from interface file."
          , indent 2 $ ppr err ]
 
- ppr (ErrorLoadSalt err)
-  = vcat [ text "Error when loading Salt module from interface file."
+ ppr (ErrorLoadSalt path err)
+  = vcat [ text path
+         , text "Error when loading Salt module from interface file."
          , indent 2 $ ppr err ]
 
 
@@ -90,20 +92,20 @@ instance Pretty Error where
 type LineNumber  = Int
 
 -- | Parser for some thing.
-type Parser a    
+type Parser a
         =  [(LineNumber, String)]
         -> Either Error a
 
 -- | Type of annotated interface.
 --   As don't store full Salt code in interface files,
 --   we just set the annotation for it to ()
-type InterfaceAA 
+type InterfaceAA
         = Interface () ()
 
 
 ---------------------------------------------------------------------------------------------------
 -- | Load an interface file.
-loadInterface 
+loadInterface
         :: FilePath     -- ^ File path of interface file, for error messages.
         -> UTCTime      -- ^ TimeStamp of interface file.
         -> String       -- ^ Interface file source.
@@ -117,7 +119,7 @@ loadInterface pathInterface timeStamp str
 
 
 -- | Parse an interface file.
-pInterface 
+pInterface
         :: FilePath             -- ^ Path of interface file.
         -> UTCTime              -- ^ TimeStamp of interface file.
         -> Parser InterfaceAA
@@ -164,7 +166,7 @@ pInterface pathInt timeStamp ((n, str) : rest)
 
 
 ---------------------------------------------------------------------------------------------------
--- | A component of the interface file. 
+-- | A component of the interface file.
 --   We use this as an intermediate form during parsing.
 data Component
         = ComponentMeta
@@ -203,7 +205,7 @@ pComponents pathInterface (l : ls)
 ---------------------------------------------------------------------------------------------------
 -- | Parse a single component of an interface file.
 pComponent :: FilePath -> Parser Component
-pComponent _ []   
+pComponent _ []
  = Left $ ErrorParseEnd
 
 pComponent pathInt ((n, l) : rest)
@@ -219,14 +221,14 @@ pComponent pathInt ((n, l) : rest)
         | Just "Tetra" <- takeInterfaceTearLine l
         = case Load.loadModuleFromString Tetra.fragment pathInt (n + 1)
                        Load.Recon (unlines $ map snd rest) of
-                (Left err, _)   -> Left $ ErrorLoadTetra  err
+                (Left err, _)   -> Left $ ErrorLoadTetra pathInt err
                 (Right m,  _)   -> return $ ComponentTetraModule m
 
         -- load a Salt core module section.
         | Just "Salt"  <- takeInterfaceTearLine l
         = case Load.loadModuleFromString Salt.fragment pathInt (n + 1)
                        Load.Recon (unlines $ map snd rest) of
-               (Left err, _)   -> Left $ ErrorLoadSalt err 
+               (Left err, _)   -> Left $ ErrorLoadSalt pathInt err
                (Right m,  _)   -> return $ ComponentSaltModule  m
 
         -- this thing didn't parse.
@@ -237,14 +239,14 @@ pComponent pathInt ((n, l) : rest)
 ---------------------------------------------------------------------------------------------------
 -- | Parse module meta data from an interface file.
 pComponentMeta :: FilePath -> Parser Component
-pComponentMeta _pathInt [] 
+pComponentMeta _pathInt []
         = Left ErrorParseEnd
 
 pComponentMeta pathInt nls@((n, _) : _)
         | "module-meta" : "{" : "name:" : strModName : "}" : []
                 <- tokenize $ concatMap snd nls
         , Just modName     <- moduleNameOfString strModName
-        = return $ ComponentMeta 
+        = return $ ComponentMeta
                  { componentModuleName   = modName }
 
         | otherwise

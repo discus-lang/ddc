@@ -30,9 +30,47 @@ test4: Nat
  = let x = let y = 1 in y + 2 in x + 3
 
 
+-- Recursive binding.
+test5: Nat
+ = letrec down n = if n == 0 then 0 else down (n - 1)
+   in  down 10
+
+
+-- Mutually recursive binding.
+test6: Nat
+ = letrec
+        down1 n = if n == 0 then 0 else down2 (n - 1)
+        down2 n = if n == 0 then 0 else down1 (n - 1)
+   in   down1 10
+
+
+-- Statements with binding.
+test7: S Console Unit
+ = do   x       = "derp"
+        writel x
+
+
+-- Monadic binding.
+test8: Maybe Nat
+ = do   x       <- Just 6
+        y       <- Just 7
+        return  $ x + y
+
+
+-- Monadic binding.
+test9: Maybe Nat
+ = do   x       <- Nothing
+        y       <- Just 7
+        return  $ x + y
+
+
+
+
 main ()
  = do
         writel $ show $ test1
         writel $ show $ test2
         writel $ show $ test3
         writel $ show $ test4
+        writel $ show $ test5
+        writel $ show $ test6
