@@ -43,7 +43,8 @@ lexModuleWithOffside
         -> [Located (Token String)]
 
 lexModuleWithOffside sourceName lineStart str
- = applyOffside []
+ = locatedOfLexemes
+        $ applyOffside []
         $ addStarts
         $ lexemesOfLocated
         $ dropUnused

@@ -1,5 +1,5 @@
 Error loading module
-  Parse error in "test/ddc-regress/core/03-tetra/11-Parser/T289-UnmatchedBraces/Main.dct" (line 13, column 11)
+  Parse error in "test/ddc-regress/core/03-tetra/11-Parser/T289-UnmatchedBraces/Main.dct" (line 13, column 9)
   Unexpected closing brace.
   Expected a binder.
   Expected an expression.

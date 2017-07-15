@@ -4,6 +4,7 @@ module DDC.Core.Lexer.Offside
         ( Lexeme        (..)
         , applyOffside
         , addStarts
+        , locatedOfLexemes
         , lexemesOfLocated)
 where
 import DDC.Core.Lexer.Offside.Starts
@@ -26,14 +27,14 @@ applyOffside
         :: (Eq n, Show n)
         => [Context]            -- ^ Current layout context.
         -> [Lexeme n]           -- ^ Input lexemes.
-        -> [Located (Token n)]
+        -> [Lexeme n]
 
 -- Wait for the module header before we start applying the real offside rule.
 -- This allows us to write 'module Name with letrec' all on the same line.
-applyOffside [] (LexemeToken sp t : ts)
+applyOffside [] (lt@(LexemeToken _sp t) : lts)
  |  isKeyword t EModule
  || isKNToken t
- = Located sp t : applyOffside [] ts
+ = lt : applyOffside [] lts
 
 -- Enter into a top-level block in the module, and start applying the
 -- offside rule within it.
@@ -42,103 +43,107 @@ applyOffside [] (LexemeToken sp t : ts)
 --      'import foreign MODE type'
 --      'import foreign MODE capability'
 --      'import foreign MODE value'
-applyOffside [] ls
- | LexemeToken sp1 t1
-         : LexemeStartBlock spn : ls' <- ls
+applyOffside [] lts
+ | lt1@(LexemeToken _sp1 t1)
+         : LexemeStartBlock spn : lts' <- lts
  ,   isKeyword t1 EExport || isKeyword t1 EImport
   || isKeyword t1 ELetRec || isKeyword t1 EWhere
- = Located sp1 t1
-        : LocatedBraceBra spn
-        : applyOffside (ContextBraceImplicit (sourcePosColumn spn) : []) ls'
+ = lt1  : LexemeBraceBra spn
+        : applyOffside (ContextBraceImplicit (sourcePosColumn spn) : []) lts'
 
  -- (import | export) (type | value) { ... }
- | LexemeToken sp1 t1 : LexemeToken sp2 t2
-        : LexemeStartBlock spn : ls' <- ls
+ | lt1@(LexemeToken _sp1 t1)
+        : lt2@(LexemeToken _sp2 t2)
+        : LexemeStartBlock spn : lts' <- lts
  , isKeyword t1 EImport   || isKeyword t1 EExport
  , isKeyword t2 EType     || isKeyword t2 EValue
- = Located sp1 t1 : Located sp2 t2
-        : LocatedBraceBra spn
-        : applyOffside (ContextBraceImplicit (sourcePosColumn spn) : []) ls'
+ = lt1  : lt2
+        : LexemeBraceBra spn
+        : applyOffside (ContextBraceImplicit (sourcePosColumn spn) : []) lts'
 
  -- (import | export) foreign X (type | capability | value) { ... }
- | LexemeToken sp1 t1 : LexemeToken sp2 t2 : LexemeToken sp3 t3 : LexemeToken sp4 t4
-         : LexemeStartBlock spn : ls' <- ls
+ | lt1@(LexemeToken _sp1 t1)
+        : lt2@(LexemeToken _sp2  t2)
+        : lt3@(LexemeToken _sp3 _t3)
+        : lt4@(LexemeToken _sp4  t4)
+        : LexemeStartBlock spn : lts' <- lts
  , isKeyword t1 EImport   || isKeyword t1 EExport
  , isKeyword t2 EForeign
  , isKeyword t4 EType     || isKeyword t4 ECapability  || isKeyword t4 EValue
- = Located sp1 t1     : Located sp2 t2     : Located sp3 t3     : Located sp4 t4
-        : LocatedBraceBra spn
-        : applyOffside (ContextBraceImplicit (sourcePosColumn spn) : []) ls'
+ = lt1  : lt2 : lt3 : lt4
+        : LexemeBraceBra spn
+        : applyOffside (ContextBraceImplicit (sourcePosColumn spn) : []) lts'
 
 -- At top level without a context.
 -- Skip over everything until we get the 'with' in 'module Name with ...''
-applyOffside [] (LexemeStartLine _  : ts)
- = applyOffside [] ts
+applyOffside [] (LexemeStartLine _  : lts)
+ = applyOffside [] lts
 
-applyOffside [] (LexemeStartBlock _ : ts)
- = applyOffside [] ts
+applyOffside [] (LexemeStartBlock _ : lts)
+ = applyOffside [] lts
 
 -- line start
-applyOffside cc@(ContextBraceImplicit m : cs) (t@(LexemeStartLine sp) : ts)
+applyOffside cc@(ContextBraceImplicit m : cs) (lt@(LexemeStartLine sp) : lts)
  -- Add semicolon to get to the next statement in this block.
  | m == sourcePosColumn sp
- = LocatedSemiColon sp  : applyOffside cc ts
+ = LexemeSemiColon sp   : applyOffside cc lts
 
  -- End an implicit block.
  --  We need to keep the LexemeStartLine because this newline might
  --  be ending multiple blocks at once.
  | m >= sourcePosColumn sp
- = LocatedBraceKet sp   : applyOffside cs (t : ts)
+ = LexemeBraceKet sp    : applyOffside cs (lt : lts)
 
  -- Indented continuation of this block.
  | otherwise
- = applyOffside cc ts
+ = applyOffside cc lts
 
 -- We're not inside a context which would be closed by a newline.
-applyOffside cc ((LexemeStartLine _sp) : ts)
- = applyOffside cc ts
+applyOffside cc ((LexemeStartLine _sp) : lts)
+ = applyOffside cc lts
 
 -- block start
-applyOffside cc (LexemeStartBlock sp : ts)
- = LocatedBraceBra sp   : applyOffside (ContextBraceImplicit (sourcePosColumn sp) : cc) ts
+applyOffside cc (LexemeStartBlock sp : lts)
+ = LexemeBraceBra sp
+        : applyOffside (ContextBraceImplicit (sourcePosColumn sp) : cc) lts
 
 -- push context for explicit open brace
-applyOffside cc (LexemeToken sp t@(KA (KSymbol SBraceBra)) : ts)
- = Located sp t         : applyOffside (ContextBraceExplicit : cc) ts
+applyOffside cc (lt@(LexemeToken _sp (KA (KSymbol SBraceBra))) : lts)
+ = lt   : applyOffside (ContextBraceExplicit : cc) lts
 
 -- pop context for explicit close brace
-applyOffside cc (LexemeToken sp t@(KA (KSymbol SBraceKet)) : ts)
+applyOffside cc (lt@(LexemeToken sp (KA (KSymbol SBraceKet))) : lts)
  -- close brace matches an explicit open brace.
  | ContextBraceExplicit : cs    <- cc
- = Located sp t         : applyOffside cs ts
+ = lt   : applyOffside cs lts
 
  -- close brace where we had an implicit open brace.
- | _tNext : _     <- dropNewLinesLexeme ts
- = [LocatedOffsideClosingBrace sp]
+ | _tNext : _     <- dropNewLinesLexeme lts
+ = LexemeOffsideClosingBrace sp : lts
 
 -- push context for explict open paren.
-applyOffside cc     (LexemeToken sp t@(KA (KSymbol SRoundBra)) : ts)
- = Located sp t         : applyOffside (ContextParenExplicit : cc) ts
+applyOffside cc  (lt@(LexemeToken _sp (KA (KSymbol SRoundBra))) : lts)
+ = lt   : applyOffside (ContextParenExplicit : cc) lts
 
-applyOffside cc (lt@(LexemeToken sp  t@(KA (KSymbol SRoundKet))) : ts)
+applyOffside cc (lt@(LexemeToken sp  (KA (KSymbol SRoundKet))) : lts)
  -- force close of block on close paren.
  -- This partially handles the crazy (Note 5) rule from the Haskell98 standard.
  | ContextBraceImplicit _ : cs <- cc
- = LocatedBraceKet sp   : applyOffside cs (lt : ts)
+ = LexemeBraceKet sp    : applyOffside cs (lt : lts)
 
  -- pop context for explicit close paren.
  | ContextParenExplicit : cs <- cc
- = Located sp t         : applyOffside cs ts
+ = lt : applyOffside cs lts
 
 -- pass over tokens.
-applyOffside cc (LexemeToken sp' t : ts)
- = Located sp' t        : applyOffside cc ts
+applyOffside cc (lt : lts)
+ = lt : applyOffside cc lts
 
 applyOffside [] []
  = []
 
 -- close off remaining contexts once we've reached the end of the stream.
 applyOffside (_ : cs) []
- = LocatedBraceKet (SourcePos "" 0 0)
+ = LexemeBraceKet (SourcePos "" 0 0)
         : applyOffside cs []
 

@@ -1,21 +1,20 @@
 {-# LANGUAGE PatternSynonyms #-}
 module DDC.Core.Lexer.Offside.Base
         ( Lexeme        (..)
+        , pattern LexemeBraceBra
+        , pattern LexemeBraceKet
+        , pattern LexemeRoundBra
+        , pattern LexemeRoundKet
+        , pattern LexemeSemiColon
+        , pattern LexemeOffsideClosingBrace
+
         , sourcePosOfLexeme
         , lexemesOfLocated
         , locatedOfLexemes
-
         , Context       (..)
 
         , isToken,      isKNToken,      isKeyword
-        , dropNewLinesLexeme
-
-        , pattern LocatedBraceBra
-        , pattern LocatedBraceKet
-        , pattern LocatedRoundBra
-        , pattern LocatedRoundKet
-        , pattern LocatedSemiColon
-        , pattern LocatedOffsideClosingBrace)
+        , dropNewLinesLexeme)
 where
 import DDC.Core.Lexer.Tokens
 import DDC.Data.SourcePos
@@ -32,6 +31,14 @@ data Lexeme n
         -- | Signal that we're starting a block in this column.
         | LexemeStartBlock      SourcePos
         deriving (Eq, Show)
+
+
+pattern LexemeBraceBra  sp             = LexemeToken sp (KA (KSymbol SBraceBra))
+pattern LexemeBraceKet  sp             = LexemeToken sp (KA (KSymbol SBraceKet))
+pattern LexemeRoundBra  sp             = LexemeToken sp (KA (KSymbol SRoundBra))
+pattern LexemeRoundKet  sp             = LexemeToken sp (KA (KSymbol SRoundKet))
+pattern LexemeSemiColon sp             = LexemeToken sp (KA (KSymbol SSemiColon))
+pattern LexemeOffsideClosingBrace sp   = LexemeToken sp (KM (KOffsideClosingBrace))
 
 
 -- | Take the source position of a Lexeme.
@@ -99,12 +106,3 @@ dropNewLinesLexeme ll
          -> dropNewLinesLexeme ts
 
         _       -> ll
-
-
-pattern LocatedBraceBra  sp             = Located sp (KA (KSymbol SBraceBra))
-pattern LocatedBraceKet  sp             = Located sp (KA (KSymbol SBraceKet))
-pattern LocatedRoundBra  sp             = Located sp (KA (KSymbol SRoundBra))
-pattern LocatedRoundKet  sp             = Located sp (KA (KSymbol SRoundKet))
-pattern LocatedSemiColon sp             = Located sp (KA (KSymbol SSemiColon))
-pattern LocatedOffsideClosingBrace sp   = Located sp (KM (KOffsideClosingBrace))
-
