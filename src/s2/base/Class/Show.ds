@@ -3,7 +3,9 @@ module Class.Show
 export
 {       show;
         show_Unit;
-        show_Bool;      show_Nat;
+        show_Bool;
+        show_Nat;
+        show_Float32;   show_Float64;
         show_Char;      show_Text;
         show_Tup2;
         show_Maybe;
@@ -41,6 +43,16 @@ show_Bool: Show Bool
 -- | Show dictionary for Nat.
 show_Nat: Show Nat
  = Show showNat
+
+
+-- | Show dictionary for Float32.
+show_Float32: Show Float32
+ = Show showFloat32
+
+
+-- | Show dictinoary for Float64.
+show_Float64: Show Float64
+ = Show showFloat64
 
 
 -- | Show dictionary for Char.

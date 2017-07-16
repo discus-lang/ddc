@@ -7,6 +7,8 @@
 #include <inttypes.h>
 #include "Runtime.h"
 
+typedef float   float32_t;
+typedef double  float64_t;
 
 // ----------------------------------------------------------------------------
 /// @brief The map for a single function's stack frame.  One of these is
@@ -74,7 +76,7 @@ void traceGCRoots (int _x) {
     for (uint32_t e = R->Map->NumRoots; i != e; ++i)
       printf ("root no   meta %p\n", R->Roots[i]);
   }
-} 
+}
 
 void*   ddcLlvmRootGetStart (int _x)
 {
@@ -82,14 +84,14 @@ void*   ddcLlvmRootGetStart (int _x)
 }
 
 nat_t   ddcLlvmRootIsEnd (void* p)
-{       
+{
         return (p == 0);
 }
 
 
 // ----------------------------------------------------------------------------
 // Abort the program due to an inexhaustive case match.
-// 
+//
 // When desugaring guards, if the compiler cannot determine that
 // the guards are exhaustive then a call to this function is
 // inserted as a default case.
@@ -128,19 +130,14 @@ string_t* primShowNat (nat_t i)
         return str;
 }
 
-// Show a Word64.
-string_t* primShowWord64 (uint64_t w)
-{       string_t* str = malloc(11);
-        snprintf(str, 10, "%#08" PRIx64, w);
+
+// Show a Word8.
+string_t* primShowWord8 (uint8_t w)
+{       string_t* str = malloc(4);
+        snprintf(str, 3, "%#01" PRIx8, w);
         return str;
 }
 
-// Show a Word32.
-string_t* primShowWord32 (uint32_t w)
-{       string_t* str = malloc(7);
-        snprintf(str, 6, "%#04" PRIx32, w);
-        return str;
-}
 
 // Show a Word16.
 string_t* primShowWord16 (uint16_t w)
@@ -149,10 +146,35 @@ string_t* primShowWord16 (uint16_t w)
         return str;
 }
 
-// Show a Word8.
-string_t* primShowWord8 (uint8_t w)
-{       string_t* str = malloc(4);
-        snprintf(str, 3, "%#01" PRIx8, w);
+
+// Show a Word32.
+string_t* primShowWord32 (uint32_t w)
+{       string_t* str = malloc(7);
+        snprintf(str, 6, "%#04" PRIx32, w);
+        return str;
+}
+
+
+// Show a Word64.
+string_t* primShowWord64 (uint64_t w)
+{       string_t* str = malloc(11);
+        snprintf(str, 10, "%#08" PRIx64, w);
+        return str;
+}
+
+
+// Show a Float32
+string_t* primShowFloat32 (float32_t f)
+{       string_t* str = malloc(12);
+        snprintf(str, 12, "%f", f);
+        return str;
+}
+
+
+// Show a Float64
+string_t* primShowFloat64 (float64_t f)
+{       string_t* str = malloc(24);
+        snprintf(str, 24, "%g", f);
         return str;
 }
 
@@ -180,7 +202,7 @@ void primStdoutPutTextLit (string_t* str)
 
 // Print a text vector to stdout.
 void primStdoutPutVector (Obj* obj)
-{       string_t* str 
+{       string_t* str
                 = (string_t*) (_payloadRaw(obj) + 4);
         fputs(str, stdout);
         fflush(stdout);
@@ -195,7 +217,7 @@ void primStdoutFlush (Obj* obj)
 // -- Stdin -------------------------------------------------------------------
 // Get a C string from stdin, up to the given length.
 string_t* primStdinGetString (nat_t len)
-{       
+{
         string_t* str   = malloc(len + 1);
         str             = fgets(str, len, stdin);
         if (str == NULL) {
@@ -203,7 +225,7 @@ string_t* primStdinGetString (nat_t len)
                 abort();
         }
 
-        return str; 
+        return str;
 }
 
 
