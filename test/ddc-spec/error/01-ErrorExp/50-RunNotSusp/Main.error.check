@@ -1,0 +1,6 @@
+Error in transformed module.
+  in stage SourceLoadText
+  in pipe  PipeCoreCheck/Check
+  test/ddc-spec/error/01-ErrorExp/50-RunNotSusp/Main.ds:4:1
+  Expression to run is not a suspension.
+            Type: Nat#

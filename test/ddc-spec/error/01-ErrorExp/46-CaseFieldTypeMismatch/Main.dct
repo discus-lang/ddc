@@ -1,0 +1,12 @@
+
+-- ISSUE #411: Allow types of pattern binders to be specified in Source Tetar.
+module Main
+
+data Foo where
+        Foo : Nat# -> Foo
+
+with letrec
+
+foo (x: Foo): Bool#
+ = case x of
+        Foo (x: Bool#) -> True

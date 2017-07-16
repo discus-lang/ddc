@@ -217,6 +217,10 @@ data Error a n
 
         -- | A case-expression where the scrutinee type is not in our set
         --   of data type declarations.
+        --
+        --   This is an internal error. There shouldn't be any way to
+        --   introduce a value of an undeclared type.
+        --
         | ErrorCaseScrutineeTypeUndeclared
         { errorAnnot            :: a
         , errorChecking         :: Exp a n
@@ -256,19 +260,16 @@ data Error a n
 
         -- | A case-expression where the pattern types could not be instantiated
         --   with the arguments of the scrutinee type.
+        --
+        --   This is an internal error. The structure of data type declarations
+        --   should be checked so that the result type of each data constructor
+        --   matches the data type being declared.
+        --
         | ErrorCaseCannotInstantiate
         { errorAnnot            :: a
         , errorChecking         :: Exp a n
         , errorTypeScrutinee    :: Type n
         , errorTypeCtor         :: Type n }
-
-        -- | A case-expression where the type of the scrutinee does not match
-        --   the type of the pattern.
-        | ErrorCaseScrutineeTypeMismatch
-        { errorAnnot            :: a
-        , errorChecking         :: Exp a n
-        , errorTypeScrutinee    :: Type n
-        , errorTypePattern      :: Type n }
 
         -- | A case-expression where the annotation on a pattern variable binder
         --   does not match the field type of the constructor.
@@ -278,23 +279,8 @@ data Error a n
         , errorTypeAnnot        :: Type n
         , errorTypeField        :: Type n }
 
-        -- | A case-expression where the result types of the alternatives are not
-        --   identical.
-        | ErrorCaseAltResultMismatch
-        { errorAnnot            :: a
-        , errorChecking         :: Exp a n
-        , errorAltType1         :: Type n
-        , errorAltType2         :: Type n }
-
 
         -- Casts ------------------------------------------
-        -- | A weakeff-cast where the type provided does not have effect kind.
-        | ErrorWeakEffNotEff
-        { errorAnnot            :: a
-        , errorChecking         :: Exp a n
-        , errorEffect           :: Effect n
-        , errorKind             :: Kind n }
-
         -- | A run cast applied to a non-suspension.
         | ErrorRunNotSuspension
         { errorAnnot            :: a
@@ -313,12 +299,6 @@ data Error a n
         { errorAnnot            :: a
         , errorExp              :: Exp a n }
 
-        -- Types ------------------------------------------
-        -- | Found a naked `XType` that wasn't the argument of an application.
-        | ErrorNakedType
-        { errorAnnot            :: a
-        , errorChecking         :: Exp a n }
-
 
         -- Witnesses --------------------------------------
         -- | Found a naked `XWitness` that wasn't the argument of an application.
@@ -326,7 +306,4 @@ data Error a n
         { errorAnnot            :: a
         , errorChecking         :: Exp a n }
         deriving (Show)
-
-
-
 

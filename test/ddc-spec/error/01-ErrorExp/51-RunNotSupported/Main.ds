@@ -1,0 +1,7 @@
+
+module Main where
+
+foo
+ = private r with {Read r} in
+   do   let f () = box (weakeff Write r in ())
+        run f ()

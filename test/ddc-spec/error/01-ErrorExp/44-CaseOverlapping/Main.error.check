@@ -1,0 +1,5 @@
+Error in transformed module.
+  in stage SourceLoadText
+  in pipe  PipeCoreCheck/Check
+  test/ddc-spec/error/01-ErrorExp/44-CaseOverlapping/Main.ds:4:1
+  Case alternatives are overlapping.

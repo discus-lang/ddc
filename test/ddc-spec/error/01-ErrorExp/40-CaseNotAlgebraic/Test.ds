@@ -1,0 +1,12 @@
+
+module Test
+
+import foreign abstract type
+ Foo : Data
+
+where
+
+-- ISSUE #410: Check for case on foreign abstract data.
+f (x: Foo)
+ = case x of
+        y       -> 5

@@ -1,0 +1,4 @@
+
+module Main where
+
+foo = case 4 of {}

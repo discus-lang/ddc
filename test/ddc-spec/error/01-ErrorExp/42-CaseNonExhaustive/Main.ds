@@ -1,0 +1,11 @@
+
+module Main where
+
+data Foo where
+        Bar : Foo
+        Baz : Foo
+
+foo (x: Foo)
+ = case x of
+        Bar     -> 5
+

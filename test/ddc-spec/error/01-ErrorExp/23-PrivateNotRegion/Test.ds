@@ -1,7 +1,11 @@
 
+
 module Test where
 
--- TODO: We also have a ErrorLetRegionsNotRegion message,
+-- NOTE: We also have a ErrorLetRegionsNotRegion message,
 -- but the concrete grammar doesn't provide any way to exercise it.
+
+-- ISSUE #409: No source locations for kind mismatch errors.
+--
 foo {@a: Data} ()
  = extend a using r in ()

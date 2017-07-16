@@ -14,9 +14,9 @@ import Data.List                        as L
 
 ---------------------------------------------------------------------------------------------------
 checkCase :: Checker a n
-checkCase !table !ctx0 mode demand 
+checkCase !table !ctx0 mode demand
         xx@(XCase a xDiscrim alts)
- = do   
+ = do
         ctrace  $ vcat
                 [ text "*>  Case"
                 , text "    xDiscrim: " <> ppr xDiscrim
@@ -39,7 +39,7 @@ checkCase !table !ctx0 mode demand
         --   suspension then we won't be able to destruct it, so we
         --   might as well run it to get the result.
         (xDiscrim', tDiscrim, effsDiscrim, ctx2)
-         <- tableCheckExp table table ctx1 modeDiscrim DemandRun xDiscrim 
+         <- tableCheckExp table table ctx1 modeDiscrim DemandRun xDiscrim
 
         -- Reduce to head-normal form so we can see the outer
         -- data type constructor (if there is one).
@@ -110,7 +110,7 @@ checkCase !table !ctx0 mode demand
         let tAlt : _    =  tsAlts'
         forM_ tsAlts' $ \tAlt'
          -> when (not $ equivT (contextEnvT ctx4) tAlt tAlt')
-          $ throw $ ErrorCaseAltResultMismatch a xx tAlt tAlt'
+          $ throw $ ErrorMismatch a tAlt tAlt' xx
 
         -- Check for overlapping alternatives.
         checkAltsOverlapping a xx alts
@@ -299,8 +299,7 @@ checkAltsM !table !a !xx !tDiscrim !tsArgs !mode !demand !alts0 !ctx
         -- If it doesn't then the constructor in the pattern probably isn't for
         -- the discriminant type.
         when (not $ equivT (contextEnvT ctx0) tDiscrim tResult)
-         $ throw $ ErrorCaseScrutineeTypeMismatch a xx
-                        tDiscrim tResult
+         $ throw $ ErrorMismatch a tDiscrim tResult xx
 
         -- There must be at least as many fields as variables in the pattern.
         -- It's ok to bind less fields than provided by the constructor.
@@ -381,7 +380,7 @@ checkFieldAnnots table bidir a xx tts ctx0
         | bidir
         = do    -- Check the type of the annotation.
                 let config      = tableConfig table
-                (tAnnot', _, ctx2) 
+                (tAnnot', _, ctx2)
                         <- checkTypeM config ctx UniverseSpec tAnnot (Synth [])
 
                 ctx3    <- makeEqT (tableConfig table)   ctx2 tAnnot' tActual
@@ -417,14 +416,14 @@ ctorTypeOfPat
 
 ctorTypeOfPat _table ctx a (PData dc _)
  = case dc of
-        DaConUnit       
+        DaConUnit
          -> return $ Just $ tUnit
 
-        DaConRecord{} 
+        DaConRecord{}
          -> do  let Just t = takeTypeOfDaCon dc
                 return (Just t)
 
-        DaConPrim{}     
+        DaConPrim{}
          -> return $ Just $ daConType dc
 
         DaConBound n

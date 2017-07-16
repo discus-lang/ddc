@@ -208,128 +208,72 @@ ppr' (ErrorWitnessNotPurity a xx w t)
 
 
 -- Case Expressions -----------------------------------------------------------
-ppr' (ErrorCaseScrutineeNotAlgebraic a xx tScrutinee)
+ppr' (ErrorCaseScrutineeNotAlgebraic a _xx tScrutinee)
  = vcat [ ppr a
         , text "Scrutinee of case expression is not algebraic data."
-        , text "     Scrutinee type: "         <> ppr tScrutinee
-        , empty
-        , text "with: "                        <> align (ppr xx) ]
+        , text "     Scrutinee type: "         <> ppr tScrutinee ]
 
-ppr' (ErrorCaseScrutineeTypeUndeclared a xx tScrutinee)
+ppr' (ErrorCaseScrutineeTypeUndeclared a _xx tScrutinee)
  = vcat [ ppr a
         , text "Type of scrutinee does not have a data declaration."
-        , text "     Scrutinee type: "         <> ppr tScrutinee
-        , empty
-        , text "with: "                        <> align (ppr xx) ]
+        , text "     Scrutinee type: "         <> ppr tScrutinee ]
 
-ppr' (ErrorCaseNoAlternatives a xx)
+ppr' (ErrorCaseNoAlternatives a _xx)
  = vcat [ ppr a
-        , text "Case expression does not have any alternatives."
-        , empty
-        , text "with: "                        <> align (ppr xx) ]
+        , text "Case expression does not have any alternatives." ]
 
-ppr' (ErrorCaseNonExhaustive a xx ns)
+ppr' (ErrorCaseNonExhaustive a _xx ns)
  = vcat [ ppr a
         , text "Case alternatives are non-exhaustive."
         , text " Constructors not matched: "
-               <> (sep $ punctuate comma $ map ppr ns)
-        , empty
-        , text "with: "                        <> align (ppr xx) ]
+               <> (sep $ punctuate comma $ map ppr ns) ]
 
-ppr' (ErrorCaseNonExhaustiveLarge a xx)
+ppr' (ErrorCaseNonExhaustiveLarge a _xx)
  = vcat [ ppr a
-        , text "Case alternatives are non-exhaustive."
-        , empty
-        , text "with: "                        <> align (ppr xx) ]
+        , text "Case alternatives are non-exhaustive." ]
 
-ppr' (ErrorCaseOverlapping a xx)
+ppr' (ErrorCaseOverlapping a _xx)
  = vcat [ ppr a
-        , text "Case alternatives are overlapping."
-        , empty
-        , text "with: "                        <> align (ppr xx) ]
+        , text "Case alternatives are overlapping." ]
 
-ppr' (ErrorCaseTooManyBinders a xx uCtor iCtorFields iPatternFields)
+ppr' (ErrorCaseTooManyBinders a _xx uCtor iCtorFields iPatternFields)
  = vcat [ ppr a
         , text "Pattern has more binders than there are fields in the constructor."
         , text "     Contructor: " <> ppr uCtor
         , text "            has: " <> ppr iCtorFields
                                    <+> text "fields"
         , text "  but there are: " <> ppr iPatternFields
-                                  <+> text "binders in the pattern"
-        , empty
-        , text "with: "                        <> align (ppr xx) ]
+                                  <+> text "binders in the pattern" ]
 
-ppr' (ErrorCaseCannotInstantiate a xx tScrutinee tCtor)
+ppr' (ErrorCaseCannotInstantiate a _xx tScrutinee tCtor)
  = vcat [ ppr a
         , text "Cannot instantiate constructor type with scrutinee type args."
         , text " Either the constructor has an invalid type,"
         , text " or the type of the scrutinee does not match the type of the pattern."
         , text "        Scrutinee type: "      <> ppr tScrutinee
-        , text "      Constructor type: "      <> ppr tCtor
-        , empty
-        , text "with: "                        <> align (ppr xx) ]
+        , text "      Constructor type: "      <> ppr tCtor ]
 
-ppr' (ErrorCaseScrutineeTypeMismatch a xx tScrutinee tPattern)
- = vcat [ ppr a
-        , text "Scrutinee type does not match result of pattern type."
-        , text "        Scrutinee type: "      <> ppr tScrutinee
-        , text "          Pattern type: "      <> ppr tPattern
-        , empty
-        , text "with: "                        <> align (ppr xx) ]
-
-ppr' (ErrorCaseFieldTypeMismatch a xx tAnnot tField)
+ppr' (ErrorCaseFieldTypeMismatch a _xx tAnnot tField)
  = vcat [ ppr a
         , text "Annotation on pattern variable does not match type of field."
         , text "       Annotation type: "      <> ppr tAnnot
-        , text "            Field type: "      <> ppr tField
-        , empty
-        , text "with: "                        <> align (ppr xx) ]
-
-ppr' (ErrorCaseAltResultMismatch a xx t1 t2)
- = vcat [ ppr a
-        , text "Mismatch in alternative result types."
-        , text "   Type of alternative: "      <> ppr t1
-        , text "        does not match: "      <> ppr t2
-        , empty
-        , text "with: "                        <> align (ppr xx) ]
+        , text "            Field type: "      <> ppr tField ]
 
 
 -- Casts ----------------------------------------------------------------------
-ppr' (ErrorWeakEffNotEff a xx eff k)
- = vcat [ ppr a
-        , text "Type provided for a 'weakeff' does not have effect kind."
-        , text "           Type: "             <> ppr eff
-        , text "       has kind: "             <> ppr k
-        , empty
-        , text "with: "                        <> align (ppr xx) ]
-
-ppr' (ErrorRunNotSuspension a xx t)
+ppr' (ErrorRunNotSuspension a _xx t)
  = vcat [ ppr a
         , text "Expression to run is not a suspension."
-        , text "          Type: "              <> ppr t
-        , empty
-        , text "with: "                        <> align (ppr xx) ]
+        , text "          Type: "              <> ppr t ]
 
-ppr' (ErrorRunNotSupported a xx eff)
+ppr' (ErrorRunNotSupported a _xx eff)
  = vcat [ ppr a
         , text "Effect of computation not supported by context."
-        , text "    Effect:  "                 <> ppr eff
-        , empty
-        , text "with: "                        <> align (ppr xx) ]
+        , text "    Effect:  "                 <> ppr eff ]
 
-ppr' (ErrorRunCannotInfer a xx)
+ppr' (ErrorRunCannotInfer a _xx)
  = vcat [ ppr a
-        , text "Cannot infer type of suspended computation."
-        , empty
-        , text "with: "                        <> align (ppr xx) ]
-
-
--- Type -----------------------------------------------------------------------
-ppr' (ErrorNakedType a xx)
- = vcat [ ppr a
-        , text "Found naked type in core program."
-        , empty
-        , text "with: "                        <> align (ppr xx) ]
+        , text "Cannot infer type of suspended computation." ]
 
 
 -- Witness --------------------------------------------------------------------

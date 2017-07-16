@@ -1,0 +1,6 @@
+
+module Main where
+
+foo (x: Nat#)
+ = run x
+

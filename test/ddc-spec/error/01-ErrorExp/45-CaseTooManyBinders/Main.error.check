@@ -1,0 +1,8 @@
+Error in transformed module.
+  in stage SourceLoadText
+  in pipe  PipeCoreCheck/Check
+  test/ddc-spec/error/01-ErrorExp/45-CaseTooManyBinders/Main.ds:8:1
+  Pattern has more binders than there are fields in the constructor.
+       Contructor: Foo
+              has: 1 fields
+    but there are: 2 binders in the pattern

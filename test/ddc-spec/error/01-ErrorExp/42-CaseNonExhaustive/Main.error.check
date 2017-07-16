@@ -1,0 +1,6 @@
+Error in transformed module.
+  in stage SourceLoadText
+  in pipe  PipeCoreCheck/Check
+  test/ddc-spec/error/01-ErrorExp/42-CaseNonExhaustive/Main.ds:8:1
+  Case alternatives are non-exhaustive.
+   Constructors not matched: Baz

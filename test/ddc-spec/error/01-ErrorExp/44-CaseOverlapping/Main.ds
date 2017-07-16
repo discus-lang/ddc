@@ -1,0 +1,8 @@
+
+module Main where
+
+foo (x: Nat#)
+ = case x of
+        0       -> True
+        0       -> False
+        _       -> False

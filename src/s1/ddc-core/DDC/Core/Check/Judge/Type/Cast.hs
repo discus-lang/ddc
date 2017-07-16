@@ -13,7 +13,7 @@ checkCast :: Checker a n
 
 -- WeakenEffect ---------------------------------------------------------------
 -- Weaken the effect of an expression.
-checkCast !table !ctx0 
+checkCast !table !ctx0
         mode _demand
         xx@(XCast a (CastWeakenEffect eff) x1)
  = do   let config      = tableConfig  table
@@ -32,7 +32,7 @@ checkCast !table !ctx0
 
         -- The effect term must have Effect kind.
         when (not $ isEffectKind kEff)
-         $ throw $ ErrorWeakEffNotEff a xx eff' kEff
+         $ throw $ ErrorMismatch a kEff kEffect xx
 
         let c'     = CastWeakenEffect eff'
         let effs'  = Sum.insert eff' effs
@@ -48,7 +48,7 @@ checkCast !table !ctx0
 --               so proper type inference isn't implemented.
 --
 checkCast !table !ctx
-        mode _demand 
+        mode _demand
         xx@(XCast a (CastPurify w) x1)
  = do   let config      = tableConfig table
 
@@ -74,8 +74,8 @@ checkCast !table !ctx
 -- Box ------------------------------------------------------------------------
 -- Box a computation,
 -- capturing its effects in a computation type.
-checkCast !table ctx0 
-        mode _demand 
+checkCast !table ctx0
+        mode _demand
         xx@(XCast a CastBox x1)
  = case mode of
     Check tExpected
@@ -87,13 +87,13 @@ checkCast !table ctx0
          <- tableCheckExp table table ctx0
                 (Synth $ slurpExists tExpected) DemandRun x1
 
-        let effs_crush 
+        let effs_crush
                 = Sum.fromList kEffect
                 [ crushEffect (contextEnvT ctx0) (TSum effs)]
 
         -- The actual type is (S eff tBody).
         tBody'      <- applyContext ctx1 tBody
-        let tActual =  tApps (TCon (TyConSpec TcConSusp)) 
+        let tActual =  tApps (TCon (TyConSpec TcConSusp))
                              [TSum effs_crush, tBody']
 
         -- The actual type needs to match the expected type.
@@ -113,7 +113,7 @@ checkCast !table ctx0
         (x1', t1, effs,  ctx1)
          <- tableCheckExp table table ctx0 mode DemandRun x1
 
-        let effs_crush 
+        let effs_crush
                 = Sum.fromList kEffect
                 [ crushEffect (contextEnvT ctx1) (TSum effs)]
 

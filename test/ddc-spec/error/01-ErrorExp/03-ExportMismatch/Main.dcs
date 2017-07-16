@@ -1,4 +1,6 @@
 
+-- ISSUE #408: No source locations for import and export errors.
+
 -- Ye'olde Hello World programme,
 module Main
 

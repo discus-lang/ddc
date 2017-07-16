@@ -1,0 +1,3 @@
+Fragment violation when converting Tetra module to Salt module.
+  Module is malformed.
+  Invalid type constructor application Foo

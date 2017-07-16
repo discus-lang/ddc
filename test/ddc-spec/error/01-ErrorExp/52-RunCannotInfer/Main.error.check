@@ -1,0 +1,5 @@
+Error in transformed module.
+  in stage SourceLoadText
+  in pipe  PipeCoreCheck/Check
+  test/ddc-spec/error/01-ErrorExp/52-RunCannotInfer/Main.ds:4:1
+  Cannot infer type of suspended computation.

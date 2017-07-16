@@ -1,0 +1,7 @@
+Error in transformed module.
+  in stage CoreLoad
+  in pipe  PipeCoreCheck/Check
+  test/ddc-spec/error/01-ErrorExp/46-CaseFieldTypeMismatch/Main.dct:11:4
+  Annotation on pattern variable does not match type of field.
+         Annotation type: Bool#
+              Field type: Nat#

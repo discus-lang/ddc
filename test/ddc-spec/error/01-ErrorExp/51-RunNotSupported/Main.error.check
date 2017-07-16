@@ -1,0 +1,6 @@
+Error in transformed module.
+  in stage SourceLoadText
+  in pipe  PipeCoreCheck/Check
+  test/ddc-spec/error/01-ErrorExp/51-RunNotSupported/Main.ds:4:1
+  Effect of computation not supported by context.
+      Effect:  Write r

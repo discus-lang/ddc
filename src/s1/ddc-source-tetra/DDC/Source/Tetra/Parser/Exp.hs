@@ -172,7 +172,7 @@ pExpFrontSP
         x       <- pExp
         pKey    EOf
         pSym    SBraceBra
-        alts    <- P.sepEndBy1 pAltCase (pSym SSemiColon)
+        alts    <- P.sepEndBy pAltCase (pSym SSemiColon)
         pSym    SBraceKet
         return  (sp, XAnnot sp $ XCase x alts)
 

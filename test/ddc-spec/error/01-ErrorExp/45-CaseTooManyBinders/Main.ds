@@ -1,0 +1,11 @@
+
+module Main where
+
+data Foo where
+        Foo : Nat# -> Foo
+
+
+foo (x: Foo)
+ = case foo of
+        Foo x y         -> x + y
+
