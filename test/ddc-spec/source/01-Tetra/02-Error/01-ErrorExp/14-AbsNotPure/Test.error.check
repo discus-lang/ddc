@@ -1,6 +1,6 @@
 Error in transformed module.
   in stage SourceLoadText
   in pipe  PipeCoreCheck/Check
-  test/ddc-demo/source/tetra/20-Types/02-Update/Main.ds:17:1
+  test/ddc-spec/source/01-Tetra/02-Error/01-ErrorExp/14-AbsNotPure/Test.ds:6:1
   Impure Spec abstraction
-    has effect: Alloc r
+    has effect: Console

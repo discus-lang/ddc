@@ -1,0 +1,10 @@
+
+module Test
+where
+
+f: Nat#
+ = 5
+
+g = f 5
+
+

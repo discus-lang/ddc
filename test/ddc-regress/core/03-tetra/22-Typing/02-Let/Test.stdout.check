@@ -3,14 +3,9 @@ ok
 -- Ok: let expression with explicit type annotation.
 When checking expression.
   <batch>:4:2
-  Type mismatch in let-binding.
-                  The binder: x
-                    has type: Int#
-       but the body has type: Nat#
-  
-  with: let x: Int#
-              = 5# in
-        x
+  Type mismatch.
+    inferred type: Int#
+    expected type: Nat#
 
 
 -- Ok: let expression with no type annotation.
@@ -24,14 +19,9 @@ x
 -- Error: let binder has incorrect type annotation.
 When checking expression.
   <batch>:12:2
-  Type mismatch in let-binding.
-                  The binder: x
-                    has type: Int#
-       but the body has type: Unit
-  
-  with: let x: Int#
-              = () in
-        x
+  Type mismatch.
+    inferred type: Int#
+    expected type: Unit
 
 
 -- Error: binding must have data kind.

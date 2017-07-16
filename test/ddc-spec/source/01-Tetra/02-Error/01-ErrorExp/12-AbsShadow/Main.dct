@@ -1,0 +1,8 @@
+
+-- Check detection of shadowed type variables.
+-- We need to do this in Core as when compiling Source the binders
+-- are automatically freshened.
+module Test with letrec
+
+f = Λ(a: Data). Λ(a: Data). 5#
+

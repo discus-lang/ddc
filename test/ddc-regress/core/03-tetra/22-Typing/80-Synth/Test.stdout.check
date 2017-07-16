@@ -206,7 +206,6 @@ When checking expression.
   Cannot infer the type of a polymorphic expression.
     Please supply type annotations to constrain the functional
     part to have a quantified type.
-  with: f [Unit]
 
 
 -- As above, but we've given a type for functional parameter.

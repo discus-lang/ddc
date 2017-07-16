@@ -1,0 +1,7 @@
+Error in transformed module.
+  in stage CoreLoad
+  in pipe  PipeCoreCheck/Check
+  test/ddc-spec/source/01-Tetra/02-Error/01-ErrorExp/12-AbsShadow/Main.dct:7:17
+  Cannot shadow variable.
+    binder: a: Data
+    is already in the environment.

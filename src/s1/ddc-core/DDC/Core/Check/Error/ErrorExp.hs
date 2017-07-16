@@ -73,13 +73,6 @@ data Error a n
 
 
         -- Application ------------------------------------
-        -- | A function application where the parameter and argument don't match.
-        | ErrorAppMismatch
-        { errrorAnnot           :: a
-        , errorChecking         :: Exp a n
-        , errorParamType        :: Type n
-        , errorArgType          :: Type n }
-
         -- | Tried to apply something that is not a function.
         | ErrorAppNotFun
         { errorAnnot            :: a
@@ -91,82 +84,31 @@ data Error a n
         { errorAnnot            :: a
         , errorChecking         :: Exp a n }
 
-        -- | Cannot find implicit of required type.
-        | ErrorAppCannotFindImplicit
-        { errorAnnot            :: a
-        , errorType             :: Type n 
-        , errorChecking         :: Exp a n }
 
-
-        -- Lambda -----------------------------------------
+        -- Abs -------------------------------------------
         -- | A type abstraction that tries to shadow a type variable that is
         --   already in the environment.
-        | ErrorLamShadow
+        | ErrorAbsShadow
         { errorAnnot            :: a
         , errorChecking         :: Exp a n
         , errorBind             :: Bind n }
 
+        -- | A function abstraction without a type annotation on the parameter.
+        --   This is only an error when checking in Recon mode.
+        | ErrorAbsParamUnannotated
+        { errorAnnot            :: a
+        , errorBind             :: Bind n }
+
         -- | An abstraction where the body has a visible side effect that
         --   is not supported by the current language fragment.
-        | ErrorLamNotPure
+        | ErrorAbsNotPure
         { errorAnnot            :: a
         , errorChecking         :: Exp a n
         , errorUniverse         :: Universe
         , errorEffect           :: Effect n }
 
-        -- | A value function where the parameter does not have data
-        --   or witness kind.
-        | ErrorLamBindBadKind
-        { errorAnnot            :: a
-        , errorChecking         :: Exp a n
-        , errorType             :: Type n
-        , errorKind             :: Kind n }
-
-        -- | An abstraction where the body does not have data kind.
-        | ErrorLamBodyNotData
-        { errorAnnot            :: a
-        , errorChecking         :: Exp a n
-        , errorBind             :: Bind n
-        , errorType             :: Type n
-        , errorKind             :: Kind n }
-
-        -- | A function abstraction without a type annotation on the parameter.
-        | ErrorLamParamUnannotated
-        { errorAnnot            :: a
-        , errorChecking         :: Exp a n
-        , errorBind             :: Bind n }
-
-        -- | A type abstraction without a kind annotation on the parameter.
-        | ErrorLAMParamUnannotated
-        { errorAnnot            :: a
-        , errorChecking         :: Exp a n }
-
-        -- | A type abstraction parameter with a bad sort.
-        | ErrorLAMParamBadSort
-        { errorAnnot            :: a
-        , errorChecking         :: Exp a n
-        , errorBind             :: Bind n
-        , errorSort             :: Sort n }
-
-
-        -- Let --------------------------------------------
-        -- | A let-expression where the type of the binder does not match the right
-        --   of the binding.
-        | ErrorLetMismatch
-        { errorAnnot            :: a
-        , errorChecking         :: Exp a n
-        , errorBind             :: Bind n
-        , errorType             :: Type n }
-
-        -- | A let-expression where the right of the binding does not have data kind.
-        | ErrorLetBindingNotData
-        { errorAnnot            :: a
-        , errorChecking         :: Exp a n
-        , errorBind             :: Bind n
-        , errorKind             :: Kind n }
-
-        -- | A let-expression where the body does not have data kind.
-        | ErrorLetBodyNotData
+        -- | An abstraction where the parameter type does not have a valid kind.
+        | ErrorAbsBindBadKind
         { errorAnnot            :: a
         , errorChecking         :: Exp a n
         , errorType             :: Type n

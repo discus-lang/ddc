@@ -427,7 +427,7 @@ makeSub config a ctx0 x0 xL tL tR err
 
         -- The body of our new type abstraction must be pure.
         when (not $ eff2 == Sum.empty kEffect)
-         $ throw $ ErrorLamNotPure a x0 UniverseSpec (TSum eff2)
+         $ throw $ ErrorAbsNotPure a x0 UniverseSpec (TSum eff2)
 
         tBodyR_ctx3       <- applyContext ctx3 tBodyR'
         let tR'           =  TForall bParamR tBodyR_ctx3

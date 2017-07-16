@@ -1,0 +1,5 @@
+
+module Test where
+
+f {@r: Region} (x: Read r) = 4
+

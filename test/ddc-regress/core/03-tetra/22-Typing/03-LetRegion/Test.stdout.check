@@ -49,9 +49,6 @@ Error in transformed module.
   Region variables shadow existing ones.
              Region variables: r1: Region
        are already in environment
-  
-  with: private r1 with {w1: Write r1} in
-        writeRef [r1] [Nat#] x 6#
 
 
 -- Error: private region variable cannot shadow variable that is already 
@@ -63,9 +60,6 @@ Error in transformed module.
   Region variables shadow existing ones.
              Region variables: r: Region
        are already in environment
-  
-  with: private r with {w1: Mutable r} in
-        writeRef [r] [Nat#] x 6#
 
 
 
@@ -77,9 +71,6 @@ Error in transformed module.
   Region variables escape scope of private.
          The region variables: r: Region
      is free in the body type: Ref r Nat#
-  
-  with: private r in
-        MkRef [r] [Nat#] 5#
 
 
 -- Error: witness types with a private must use explicit type constructors.
@@ -88,8 +79,5 @@ When checking expression.
   Invalid witness type with private.
             The witness: w: c r1
     cannot be created with a private
-  
-  with: private r1 with {w: c r1} in
-        ()
 
 

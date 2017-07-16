@@ -70,10 +70,8 @@ letrec {
 -- Error: missing type annotation for parameter of lambda.
 When checking expression.
   <batch>:57:2
-  Missing type annotation on function parameter.
-               With paramter: x
-  
-  with: λ(x: Bot). x
+  Missing annotation on function parameter.
+    With paramter: x
 
 
 -- Error: cannot shadow spec binders.
@@ -81,15 +79,7 @@ Error in transformed module.
   in stage CoreLoad
   in pipe  PipeCoreCheck/Check
   <batch>:66:4
-  Cannot shadow named spec variable.
+  Cannot shadow variable.
     binder: r: Region
     is already in the environment.
-  with: Λ(r: Region).
-        λ(r: Ref r Int#).
-        case x of {
-          0#  
-           -> x;
-          _ 
-           -> y
-        }
 

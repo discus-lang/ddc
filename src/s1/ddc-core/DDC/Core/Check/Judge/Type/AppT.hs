@@ -11,7 +11,7 @@ checkAppT :: Checker a n
 
 checkAppT !table !ctx0 Recon demand
         xx@(XApp aApp xFn (RType tArg))
- = do   
+ = do
         let config      = tableConfig table
 
         -- Check the functional expression.
@@ -32,7 +32,7 @@ checkAppT !table !ctx0 Recon demand
                  -> return $ substituteT b11 tArg' t12
 
                  | otherwise
-                 ->  throw $ ErrorAppMismatch aApp xx (typeOfBind b11) tArg'
+                 ->  throw $ ErrorMismatch aApp (typeOfBind b11) tArg' xx
 
                 _ -> throw $ ErrorAppNotFun   aApp xx tFn
 
@@ -61,7 +61,7 @@ checkAppT !table !ctx0 Recon demand
                 (\z -> XApp z xFn' (RType tArg'))
                 tResult effsFn ctx2
 
-checkAppT !table !ctx0 (Synth {}) demand 
+checkAppT !table !ctx0 (Synth {}) demand
         xx@(XApp aApp xFn (RType tArg))
  = do
         -- Check the functional expression.
@@ -92,8 +92,8 @@ checkAppT !table !ctx0 (Synth {}) demand
                 tResult effsFn ctx2
 
 
-checkAppT !table !ctx0 (Check tExpected) demand 
-        xx@(XApp aApp _ (RType _)) 
+checkAppT !table !ctx0 (Check tExpected) demand
+        xx@(XApp aApp _ (RType _))
  =      checkSub table aApp ctx0 demand xx tExpected
 
 checkAppT _ _ _ _ _

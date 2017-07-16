@@ -1,0 +1,8 @@
+
+-- Function abstraction without a type annotation.
+--  In recon mode they all need to be annoated.
+module Test with letrec
+
+f: Nat# -> Nat# = λx. x
+
+

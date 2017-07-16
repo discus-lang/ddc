@@ -3,14 +3,3 @@ Error in transformed module.
   in pipe  PipeCoreCheck/Check
   test/ddc-regress/core/03-tetra/22-Typing/T253-RedefinedTopBind/Main.dct:4:6
   Redefined binder 'main: [e: Effect].Unit -> Unit' in letrec.
-  
-  with: letrec {
-          main: [e: Effect].Unit -> Unit
-            = Λ(e: Effect).
-              λ(u: Unit). u;
-          
-          main: [e: Effect].Unit -> Unit
-            = Λ(e: Effect).
-              λ(u: Unit). u
-        } in
-        ()

@@ -9,7 +9,7 @@ import qualified DDC.Type.Sum   as Sum
 
 -- Check a spec abstraction.
 checkLamT :: Checker a n
-checkLamT !table !ctx mode _demand xx 
+checkLamT !table !ctx mode _demand xx
  = case xx of
         XLAM a b1 x2
            -> checkLAM table ctx a b1 x2 mode
@@ -26,12 +26,12 @@ checkLAM !table !ctx0 a b1 x2 Recon
         -- If the bound variable is named then it cannot shadow
         -- shadow others in the environment.
         when (memberKindBind b1 ctx0)
-         $ throw $ ErrorLamShadow a xx b1
+         $ throw $ ErrorAbsShadow a xx b1
 
         -- The parameter must have an explict kind annotation.
         let kA  = typeOfBind b1
         when (isHoleT config kA)
-         $ throw $ ErrorLAMParamUnannotated a xx
+         $ throw $ ErrorAbsParamUnannotated a b1
 
         -- Check the kind annotation is well-sorted.
         (kA', sA, ctxA)
@@ -41,7 +41,7 @@ checkLAM !table !ctx0 a b1 x2 Recon
 
         -- The kind annotation must have sort Comp or Prop.
         when (not (sA == sComp) && not (sA == sProp))
-         $ throw $ ErrorLAMParamBadSort a xx b1 sA
+         $ throw $ ErrorAbsBindBadKind a xx (typeOfBind b1) sA
 
 
         -- Check the body -----------------------
@@ -53,7 +53,7 @@ checkLAM !table !ctx0 a b1 x2 Recon
         -- suspensions. If the body of a type abstraction has any effects
         -- then this is a type error.
         (x2', t2, e2, ctx5)
-         <- tableCheckExp table table ctx4 Recon DemandNone x2 
+         <- tableCheckExp table table ctx4 Recon DemandNone x2
 
         -- Reconstruct the kind of the body.
         (t2', k2, ctx6)
@@ -61,11 +61,11 @@ checkLAM !table !ctx0 a b1 x2 Recon
 
         -- The type of the body must have data kind.
         when (not $ isDataKind k2)
-         $ throw $ ErrorLamBodyNotData a xx b1 t2' k2
+         $ throw $ ErrorMismatch a k2 kData xx
 
         -- The body of a spec abstraction must be pure.
         when (e2 /= Sum.empty kEffect)
-         $ throw $ ErrorLamNotPure a xx UniverseSpec (TSum e2)
+         $ throw $ ErrorAbsNotPure a xx UniverseSpec (TSum e2)
 
         -- Cut the bound kind and elems under it from the context.
         let ctx_cut     = lowerTypes 1
@@ -95,7 +95,7 @@ checkLAM !table !ctx0 a b1 x2 (Synth {})
         -- If the bound variable is named then it cannot shadow
         -- shadow others in the environment.
         when (memberKindBind b1 ctx0)
-         $ throw $ ErrorLamShadow a xx b1
+         $ throw $ ErrorAbsShadow a xx b1
 
         -- If the annotation is missing then make a new existential for it.
         let kA  = typeOfBind b1
@@ -114,7 +114,7 @@ checkLAM !table !ctx0 a b1 x2 (Synth {})
 
         -- The kind annotation must have sort Comp or Prop.
         when (not (sA == sComp) && not (sA == sProp))
-         $ throw $ ErrorLAMParamBadSort a xx b1 sA
+         $ throw $ ErrorAbsBindBadKind a xx (typeOfBind b1) sA
 
         -- Check the body -----------------------
         let (ctx2, pos1) = markContext ctxA
@@ -125,7 +125,7 @@ checkLAM !table !ctx0 a b1 x2 (Synth {})
         -- suspensions. If the body of a type abstraction has any effects
         -- then this is a type error.
         (x2', t2, e2,ctx5)
-         <- tableCheckExp table table ctx4 (Synth []) DemandNone x2 
+         <- tableCheckExp table table ctx4 (Synth []) DemandNone x2
 
         -- Force the kind of the body to be data.
         --  This is needed when the type of the body is an existential
@@ -136,7 +136,7 @@ checkLAM !table !ctx0 a b1 x2 (Synth {})
 
         -- The body of a spec abstraction must be pure.
         when (e2 /= Sum.empty kEffect)
-         $ throw $ ErrorLamNotPure a xx UniverseSpec (TSum e2)
+         $ throw $ ErrorAbsNotPure a xx UniverseSpec (TSum e2)
 
         -- Cut the bound kind and elems under it from the context.
         let ctx_cut     = lowerTypes 1
@@ -166,7 +166,7 @@ checkLAM !table !ctx0 a b1 x2 (Check (TForall b tBody))
         -- If the bound variable is named then it cannot shadow
         -- shadow others in the environment.
         when (memberKindBind b1 ctx0)
-         $ throw $ ErrorLamShadow a xx b1
+         $ throw $ ErrorAbsShadow a xx b1
 
         -- If we have an expected kind for the parameter then it needs
         -- to be the same as any existing annotation.
@@ -194,7 +194,7 @@ checkLAM !table !ctx0 a b1 x2 (Check (TForall b tBody))
 
         -- The kind annotation must have sort Comp or Prop.
         when (not (sA == sComp) && not (sA == sProp))
-         $ throw $ ErrorLAMParamBadSort a xx b1 sA
+         $ throw $ ErrorAbsBindBadKind a xx (typeOfBind b1) sA
 
 
         -- Check the body -----------------------
@@ -214,7 +214,7 @@ checkLAM !table !ctx0 a b1 x2 (Check (TForall b tBody))
         -- suspensions. If the body of a type abstraction has any effects
         -- then this is a type error.
         (x2', t2, e2, ctx5)
-         <- tableCheckExp table table ctx4 (Check tBody_skol) DemandNone x2 
+         <- tableCheckExp table table ctx4 (Check tBody_skol) DemandNone x2
 
         -- Force the body of the spec abstraction must have data kind.
         --  This is needed when the type of the body is an existential
@@ -224,7 +224,7 @@ checkLAM !table !ctx0 a b1 x2 (Check (TForall b tBody))
 
         -- The body of a spec abstraction must be pure.
         when (e2 /= Sum.empty kEffect)
-         $ throw $ ErrorLamNotPure a xx UniverseSpec (TSum e2)
+         $ throw $ ErrorAbsNotPure a xx UniverseSpec (TSum e2)
 
         -- Apply context to synthesised type.
         -- We're about to pop the context back to how it was before the

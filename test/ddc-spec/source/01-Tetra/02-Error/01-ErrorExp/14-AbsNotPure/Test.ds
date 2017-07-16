@@ -1,0 +1,7 @@
+
+module Test
+import System.IO.Console
+where
+
+f {@a: Data} = run writel "derp"
+

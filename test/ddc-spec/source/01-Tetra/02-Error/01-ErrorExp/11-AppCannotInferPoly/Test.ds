@@ -1,0 +1,5 @@
+
+module Test where
+
+-- Cannot infer polymorphic type of 'g'.
+f g x = g {@Nat} x

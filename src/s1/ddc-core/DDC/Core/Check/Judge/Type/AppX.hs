@@ -33,7 +33,7 @@ checkAppX !table !ctx
               -> return (tResult, effs)
 
               | otherwise
-              -> throw  $ ErrorAppMismatch a xx tParam tArg
+              -> throw  $ ErrorMismatch a tParam tArg xx
 
              Nothing
               -> throw  $ ErrorAppNotFun a xx tFn

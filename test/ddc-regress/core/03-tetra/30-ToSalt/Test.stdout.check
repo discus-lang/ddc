@@ -186,9 +186,6 @@ Error in transformed module.
   <batch>:53:12
   Cannot apply non-function
                 of type: [a: Data].a -> a
-  
-  with: id
-            (λ(x: Nat#). x)
 
 
 -- Compile application of anonymous function.
@@ -267,11 +264,9 @@ Error in transformed module.
   in stage TetraToSalt/toSalt
   in pipe  PipeCoreCheck/Check
   ()
-  Type mismatch in application.
-       Function expects: U# Nat#
-        but argument is: U# Nat# -> U# Nat#
-  
-  with: convert# [U# Nat#] [Nat#] xx3
+  Type mismatch.
+    inferred type: U# Nat#
+    expected type: U# Nat# -> U# Nat#
 
 
 -- OK: partial application if user defined data constructors is now supported.
@@ -315,11 +310,9 @@ Error in transformed module.
   in stage TetraToSalt/toSalt
   in pipe  PipeCoreCheck/Check
   ()
-  Type mismatch in application.
-       Function expects: U# Nat#
-        but argument is: U# Nat# -> U# Nat#
-  
-  with: convert# [U# Nat#] [Nat#] xx3
+  Type mismatch.
+    inferred type: U# Nat#
+    expected type: U# Nat# -> U# Nat#
 
 
 -- OK: let expressions in nested contexts are normalized on the way in to

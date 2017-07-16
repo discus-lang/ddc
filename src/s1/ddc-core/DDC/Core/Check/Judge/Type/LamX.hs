@@ -32,7 +32,7 @@ checkLam !table !a !ctx !m1 !x2 !Recon
 
         -- The formal parameter must have a type annotation.
         when (isBot t1)
-         $ throw $ ErrorLamParamUnannotated a xx (bindOfParam m1)
+         $ throw $ ErrorAbsParamUnannotated a (bindOfParam m1)
 
         -- Determine the kind of the parameter.
         (t1', k1, _)    <- checkTypeM config ctx UniverseSpec t1 Recon
@@ -44,19 +44,19 @@ checkLam !table !a !ctx !m1 !x2 !Recon
         let ctx1         = pushType (bindOfParam m1) ctx'
 
         -- It doesn't matter what we set the demand to at this point
-        -- because the 'Recon' mode doesn't use it. We'll just set it 
+        -- because the 'Recon' mode doesn't use it. We'll just set it
         -- like the other modes to avoid confusion.
         (x2', t2, e2, ctx2)
-         <- tableCheckExp table table ctx1 Recon DemandRun x2 
+         <- tableCheckExp table table ctx1 Recon DemandRun x2
 
-        let e2_crush 
+        let e2_crush
                 = Sum.fromList kEffect
                 [ crushEffect (contextEnvT ctx2) (TSum e2)]
 
         -- The body of the function must produce data.
         (_, k2, _)      <- checkTypeM config ctx2 UniverseSpec t2 Recon
         when (not $ isDataKind k2)
-         $ throw $ ErrorLamBodyNotData a xx (bindOfParam m1) t2 k2
+         $ throw $ ErrorMismatch a k2 kData xx
 
         -- Cut the bound type and elems under it from the context.
         let ctx_cut     = popToPos pos1 ctx2
@@ -65,7 +65,7 @@ checkLam !table !a !ctx !m1 !x2 !Recon
         -- Build the resulting function type.
         --   The way the effect and closure term is captured depends on
         --   the configuration flags.
-        (xAbs', tAbs) 
+        (xAbs', tAbs)
          <- makeFunction config a xx m1' k1 x2' t2 e2_crush
 
         return  ( xAbs'
@@ -119,7 +119,7 @@ checkLam !table !a !ctx !m1 !x2 !(Synth {})
 
         -- Push the existential for the result,
         -- and parameter type onto the context.
-        let (ctx2, pos1) = markContext 
+        let (ctx2, pos1) = markContext
                          $ pushExists i2 ctx1
         let ctx3         = pushType   (bindOfParam m1') ctx2
 
@@ -128,9 +128,9 @@ checkLam !table !a !ctx !m1 !x2 !(Synth {})
         --   We'll box them up again just underneath the lambda
         --   so that the effects from multiple computations get combined.
         (x2', t2', e2, ctx4)
-         <- tableCheckExp table table ctx3 (Check t2) DemandRun x2 
+         <- tableCheckExp table table ctx3 (Check t2) DemandRun x2
 
-        let e2_crush 
+        let e2_crush
                 = Sum.fromList kEffect
                 [ crushEffect (contextEnvT ctx4) (TSum e2)]
 
@@ -166,7 +166,7 @@ checkLam !table !a !ctx !m1 !x2 !(Synth {})
         --  This switches on the kind of the argument, so we need to apply
         --  the context to 'k1' to ensure it has all available information.
         (xAbs', tAbs)
-         <- makeFunction 
+         <- makeFunction
                 config a (XAbs a m1' x2)
                 m1' k1''
                 x2' t2' e2_crush
@@ -190,11 +190,11 @@ checkLam !table !a !ctx !m1 !x2 !(Synth {})
 --   type annotation, and in this case we replace it with the expected type.
 checkLam !table !a !ctx !m1 !x2 !(Check tExpected)
  | Just (tX1, tX2)      <- takeTFun tExpected
- = do   
+ = do
         ctrace  $ vcat
                 [ text "*>  Lam CHECK"
                 , text "    in bind =" <+> ppr m1
-                , text "    in type =" <+> ppr tExpected 
+                , text "    in type =" <+> ppr tExpected
                 , empty ]
 
         let config      = tableConfig table
@@ -231,11 +231,11 @@ checkLam !table !a !ctx !m1 !x2 !(Check tExpected)
              Just (e2Expected, t2Expected)
               |  configImplicitBox config
               ,  not $ isXCastBox x2
-              -> do 
+              -> do
                     -- Check the body against the expected result type of the
                     -- suspension.
                     (x2', t2', es2Actual, ctx2)
-                      <- tableCheckExp table table ctx1 (Check t2Expected) DemandRun x2 
+                      <- tableCheckExp table table ctx1 (Check t2Expected) DemandRun x2
 
                     let es2Actual_crushed
                           = Sum.fromList kEffect
@@ -300,12 +300,12 @@ checkLam !table !a !ctx !m1 !x2 !(Check tExpected)
 
         -- Ensure that the final type matches the one we expected.
         --   The expected type may have had an existential for the parameter,
-        --   which we want to unify with any type annotation that was on 
+        --   which we want to unify with any type annotation that was on
         --   the abstraction.
-        --   
-        --   The `makeFunction` can also insert implicit box casts, so we 
+        --
+        --   The `makeFunction` can also insert implicit box casts, so we
         --   need to check that the result of doing this is as expected.
-        -- 
+        --
         ctx5    <- makeEqT config ctx4 tAbs tExpected
                 $  ErrorMismatch  a    tAbs tExpected xx
 
@@ -362,10 +362,10 @@ makeFunction
 
 makeFunction config a xx mParam kParam xBody tBody eBody
  | isTExists kParam
- = throw $ ErrorLamBindBadKind a xx (typeOfParam mParam) kParam
+ = throw $ ErrorAbsBindBadKind a xx (typeOfParam mParam) kParam
 
  | not (kParam == kData) && not (kParam == kWitness)
- = throw $ ErrorLamBindBadKind a xx (typeOfParam mParam) kParam
+ = throw $ ErrorAbsBindBadKind a xx (typeOfParam mParam) kParam
 
  | otherwise
  = do
@@ -373,7 +373,7 @@ makeFunction config a xx mParam kParam xBody tBody eBody
         let Just uniParam
                 = universeFromType2 kParam
 
-        -- The effects due to evaluating the body that are 
+        -- The effects due to evaluating the body that are
         -- captured by this abstraction.
         let eCaptured
                 -- If we're not tracking effect information then just drop it
@@ -407,12 +407,12 @@ makeFunction config a xx mParam kParam xBody tBody eBody
         --   would be ill-typed, as the next case it to throw an error.
         else if (   configImplicitBox config
                 && (eCaptured /= tBot kEffect))
-         then 
+         then
               case takeTSusp tBody of
 
-                -- The body itself does not produce another suspension, 
+                -- The body itself does not produce another suspension,
                 -- so we can just box it up.
-                Nothing 
+                Nothing
                  -> let tBodySusp = tSusp eCaptured tBody
                         aBox      = AnTEC tBodySusp (tBot kEffect) (tBot kClosure) a
 
@@ -429,7 +429,7 @@ makeFunction config a xx mParam kParam xBody tBody eBody
                 -- we instead run the inner suspension and re-box it,
                 -- so that we have a single suspension that includes both effects:
                 --    S (eCaptured + eResult) tResult
-                -- 
+                --
                 Just (eSusp, tResult)
                  -> let aRun      = AnTEC tResult eSusp (tBot kClosure) a
 
@@ -440,15 +440,15 @@ makeFunction config a xx mParam kParam xBody tBody eBody
                         tAbs      = makeTFunParams [mParam] tBodySusp
                         aAbs      = AnTEC tAbs      (tBot kEffect) (tBot kClosure) a
 
-                    in  return  ( XAbs aAbs mParam 
-                                        $ XCast aBox CastBox 
-                                        $ XCast aRun CastRun 
+                    in  return  ( XAbs aAbs mParam
+                                        $ XCast aBox CastBox
+                                        $ XCast aRun CastRun
                                         $ xBody
                                 , tAbs)
 
         -- We don't have a way of forming a function with an impure effect.
         else if (eCaptured /= tBot kEffect)
-         then   throw $ ErrorLamNotPure  a xx uniParam eCaptured
+         then   throw $ ErrorAbsNotPure  a xx uniParam eCaptured
 
         -- One of the above error reporting cases should have fired already.
         else    error $ "ddc-core.makeFunctionType: is broken."

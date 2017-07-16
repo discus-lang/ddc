@@ -11,7 +11,7 @@ import DDC.Type.Exp.Simple
 import DDC.Type.Universe
 
 
-instance (Pretty a, Show n, Eq n, Pretty n) 
+instance (Pretty a, Show n, Eq n, Pretty n)
        => Pretty (Error a n) where
  ppr = ppr'
 
@@ -41,23 +41,21 @@ ppr' (ErrorImportDuplicate n)
 
 ppr' (ErrorImportCapNotEffect n)
  = vcat [ text "Imported capability '"
-                <> ppr n 
+                <> ppr n
                 <> text "' does not have kind Effect." ]
 
 ppr' (ErrorImportValueNotData n)
  = vcat [ text "Imported value '"
-                <> ppr n 
+                <> ppr n
                 <> text "' does not have kind Data." ]
 
 
 -- Exp -------------------------------------------------------------------------
-ppr' (ErrorMismatch a tInferred tExpected xx)
+ppr' (ErrorMismatch a tInferred tExpected _xx)
  = vcat [ ppr a
         , text "Type mismatch."
-        , text "  inferred type: "                     <> ppr tInferred
-        , text "  expected type: "                     <> ppr tExpected
-        , empty
-        , text "with: "                                <> align (ppr xx) ]
+        , text "  inferred type: " <> ppr tInferred
+        , text "  expected type: " <> ppr tExpected ]
 
 
 -- Variable -------------------------------------------------------------------
@@ -88,193 +86,97 @@ ppr' (ErrorUndefinedCtor a xx)
 
 
 -- Application ----------------------------------------------------------------
-ppr' (ErrorAppMismatch a xx t1 t2)
- = vcat [ ppr a
-        , text "Type mismatch in application."
-        , text "     Function expects: "       <> ppr t1
-        , text "      but argument is: "       <> ppr t2
-        , empty
-        , text "with: "                        <> align (ppr xx) ]
-
-ppr' (ErrorAppNotFun a xx t1)
+ppr' (ErrorAppNotFun a _xx t1)
  = vcat [ ppr a
         , text "Cannot apply non-function"
-        , text "              of type: "       <> ppr t1
-        , empty
-        , text "with: "                        <> align (ppr xx) ]
+        , text "              of type: "       <> ppr t1 ]
 
-ppr' (ErrorAppCannotInferPolymorphic a xx)
+ppr' (ErrorAppCannotInferPolymorphic a _xx)
  = vcat [ ppr a
         , text "Cannot infer the type of a polymorphic expression."
         , text "  Please supply type annotations to constrain the functional"
-        , text "  part to have a quantified type."
-        , text "with: "                        <> align (ppr xx) ]
-
-ppr' (ErrorAppCannotFindImplicit a t xx)
- = vcat [ ppr a
-        , text "Cannot find implicit term"
-        , text "   of type: "                   <> ppr t
-        , text "with: "                         <> align (ppr xx) ]
+        , text "  part to have a quantified type." ]
 
 
 -- Lambda ---------------------------------------------------------------------
-ppr' (ErrorLamShadow a xx b)
+ppr' (ErrorAbsShadow a _xx b)
  = vcat [ ppr a
-        , text "Cannot shadow named spec variable."
+        , text "Cannot shadow variable."
         , text "  binder: "                    <> ppr b
-        , text "  is already in the environment."
-        , text "with: "                        <> align (ppr xx) ]
+        , text "  is already in the environment." ]
 
-ppr' (ErrorLamNotPure a xx universe eff)
+ppr' (ErrorAbsParamUnannotated a b1)
+ = vcat [ ppr a
+        , text "Missing annotation on function parameter."
+        , text "  With paramter: " <> ppr b1 ]
+
+ppr' (ErrorAbsNotPure a _xx universe eff)
  = vcat [ ppr a
         , text "Impure" <+> ppr universe <+> text "abstraction"
-        , text "           has effect: "       <> ppr eff
-        , empty
-        , text "with: "                        <> align (ppr xx) ]
+        , text "  has effect: "       <> ppr eff ]
 
-ppr' (ErrorLamBindBadKind a xx t1 k1)
+ppr' (ErrorAbsBindBadKind a _xx t1 k1)
  = vcat [ ppr a
         , text "Function parameter has invalid kind."
         , text "    The function parameter: "   <> ppr t1
         , text "                  has kind: "  <> ppr k1
-        , text "            but it must be: Data or Witness"
-        , empty
-        , text "with: "                        <> align (ppr xx) ]
-
-ppr' (ErrorLamBodyNotData a xx b1 t2 k2)
- = vcat [ ppr a
-        , text "Result of function does not have data kind."
-        , text "   In function with binder: "  <> ppr b1
-        , text "       the result has type: "  <> ppr t2
-        , text "                 with kind: "  <> ppr k2
-        , text "            but it must be: Data"
-        , empty
-        , text "with: "                        <> align (ppr xx) ]
-
-ppr' (ErrorLamParamUnannotated a xx b1)
- = vcat [ ppr a
-        , text "Missing type annotation on function parameter."
-        , text "             With paramter: " <> ppr b1
-        , empty
-        , text "with: "                        <> align (ppr xx) ]
-
-ppr' (ErrorLAMParamUnannotated a xx)
- = vcat [ ppr a
-        , text "Type abstraction is missing a kind annotation."
-        , empty
-        , text "with: "                        <> align (ppr xx) ]
-
-ppr' (ErrorLAMParamBadSort a xx b s)
- = vcat [ ppr a
-        , text "Kind annotation of type parameter has a bad sort."
-        , text "                  Parameter: " <> ppr b
-        , text "                   has sort: " <> ppr s
-        , empty
-        , text "with: "                        <> align (ppr xx) ]
-
-
--- Let ------------------------------------------------------------------------
-ppr' (ErrorLetMismatch a xx b t)
- = vcat [ ppr a
-        , text "Type mismatch in let-binding."
-        , text "                The binder: "  <> ppr (binderOfBind b)
-        , text "                  has type: "  <> ppr (typeOfBind b)
-        , text "     but the body has type: "  <> ppr t
-        , empty
-        , text "with: "                        <> align (ppr xx) ]
-
-ppr' (ErrorLetBindingNotData a xx b k)
- = vcat [ ppr a
-        , text "Let binding does not have data kind."
-        , text "      The binding for: "       <> ppr (binderOfBind b)
-        , text "             has type: "       <> ppr (typeOfBind b)
-        , text "            with kind: "       <> ppr k
-        , text "       but it must be: Data "
-        , empty
-        , text "with: "                        <> align (ppr xx) ]
-
-ppr' (ErrorLetBodyNotData a xx t k)
- = vcat [ ppr a
-        , text "Let body does not have data kind."
-        , text " Body of let has type: "       <> ppr t
-        , text "            with kind: "       <> ppr k
-        , text "       but it must be: Data "
-        , empty
-        , text "with: "                        <> align (ppr xx) ]
+        , text "            but it must be: Data or Witness" ]
 
 
 -- Letrec ---------------------------------------------------------------------
-ppr' (ErrorLetrecRebound a xx b)
+ppr' (ErrorLetrecRebound a _xx b)
  = vcat [ ppr a
-        , text "Redefined binder '" <> ppr b <> text "' in letrec."
-        , empty
-        , text "with: "                        <> align (ppr xx) ]
+        , text "Redefined binder '" <> ppr b <> text "' in letrec." ]
 
-ppr' (ErrorLetrecMissingAnnot a b xx)
+ppr' (ErrorLetrecMissingAnnot a b _xx)
  = vcat [ ppr a
         , text "Missing or incomplete type annotation on recursive let-binding '"
                <> ppr (binderOfBind b) <> text "'."
-        , text "Recursive functions must have full type annotations."
-        , empty
-        , text "with: "                        <> align (ppr xx) ]
+        , text "Recursive functions must have full type annotations." ]
 
-ppr' (ErrorLetrecBindingNotLambda a xx x)
+ppr' (ErrorLetrecBindingNotLambda a _xx x)
  = vcat [ ppr a
         , text "Letrec can only bind lambda abstractions."
-        , text "      This is not one: "       <> ppr x
-        , empty
-        , text "with: "                        <> align (ppr xx) ]
+        , text "      This is not one: "       <> ppr x ]
 
 
 -- Letregion ------------------------------------------------------------------
-ppr' (ErrorLetRegionsNotRegion a xx bs ks)
+ppr' (ErrorLetRegionsNotRegion a _xx bs ks)
  = vcat [ ppr a
         , text "Letregion binders do not have region kind."
         , text "        Region binders: "       <> (hcat $ map ppr bs)
         , text "             has kinds: "       <> (hcat $ map ppr ks)
-        , text "       but they must all be: Region"
-        , empty
-        , text "with: "                         <> align (ppr xx) ]
+        , text "       but they must all be: Region" ]
 
-ppr' (ErrorLetRegionsRebound a xx bs)
+ppr' (ErrorLetRegionsRebound a _xx bs)
  = vcat [ ppr a
         , text "Region variables shadow existing ones."
         , text "           Region variables: "  <> (hcat $ map ppr bs)
-        , text "     are already in environment"
-        , empty
-        , text "with: "                         <> align (ppr xx) ]
+        , text "     are already in environment" ]
 
-ppr' (ErrorLetRegionFree a xx bs t)
+ppr' (ErrorLetRegionFree a _xx bs t)
  = vcat [ ppr a
         , text "Region variables escape scope of private."
         , text "       The region variables: "  <> (hcat $ map ppr bs)
-        , text "   is free in the body type: "   <> ppr t
-        , empty
-        , text "with: "                         <> align (ppr xx) ]
+        , text "   is free in the body type: "   <> ppr t ]
 
-ppr' (ErrorLetRegionWitnessInvalid a xx b)
+ppr' (ErrorLetRegionWitnessInvalid a _xx b)
  = vcat [ ppr a
         , text "Invalid witness type with private."
         , text "          The witness: "       <> ppr b
-        , text "  cannot be created with a private"
-        , empty
-        , text "with: "                        <> align (ppr xx) ]
+        , text "  cannot be created with a private" ]
 
-ppr' (ErrorLetRegionWitnessConflict a xx b1 b2)
+ppr' (ErrorLetRegionWitnessConflict a _xx b1 b2)
  = vcat [ ppr a
         , text "Conflicting witness types with private."
         , text "      Witness binding: "       <> ppr b1
-        , text "       conflicts with: "       <> ppr b2
-        , empty
-        , text "with: "                        <> align (ppr xx) ]
+        , text "       conflicts with: "       <> ppr b2 ]
 
-ppr' (ErrorLetRegionsWitnessOther a xx bs1 b2)
+ppr' (ErrorLetRegionsWitnessOther a _xx bs1 b2)
  = vcat [ ppr a
         , text "Witness type is not for bound regions."
         , text "        private binds: "       <> (hsep $ map ppr bs1)
-        , text "  but witness type is: "       <> ppr b2
-        , empty
-        , text "with: "                        <> align (ppr xx) ]
+        , text "  but witness type is: "       <> ppr b2 ]
 
 
 -- Witnesses ------------------------------------------------------------------

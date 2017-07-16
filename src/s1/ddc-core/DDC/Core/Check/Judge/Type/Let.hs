@@ -18,8 +18,8 @@ checkLet !table !ctx0 mode demand xx@(XLet a lts xBody)
         _       -> False
 
  = do   ctrace  $ vcat
-                [ text "*>  Let" 
-                , text "    mode   =" <+> ppr mode 
+                [ text "*>  Let"
+                , text "    mode   =" <+> ppr mode
                 , text "    demand =" <+> (text $ show demand)
                 , empty]
 
@@ -58,7 +58,7 @@ checkLet !table !ctx0 mode demand xx@(XLet a lts xBody)
 
         kBody' <- applyContext ctx3 kBody
         when (not $ isDataKind kBody')
-         $ throw $ ErrorLetBodyNotData a xx tBody kBody'
+         $ throw $ ErrorMismatch a kBody' kData xx
 
         tBody' <- applyContext ctx3 tBodyChecked
 
@@ -84,17 +84,17 @@ checkLet !table !ctx0 mode demand xx@(XLet a lts xBody)
                 , text "    -- EXP IN  ----"
                 , indent 4 $ ppr xx
                 , text "    -- EXP OUT ----"
-                , indent 4 $ ppr (XLet (AnTEC tBodyRun (tBot kEffect) (tBot kClosure) a) 
+                , indent 4 $ ppr (XLet (AnTEC tBodyRun (tBot kEffect) (tBot kClosure) a)
                                         lts' xBodyRun)
                 , text "    --"
                 , text "    tBodyRun:  " <> ppr tBodyRun
                 , indent 4 $ ppr ctx3
-                , indent 4 $ ppr ctx_cut 
+                , indent 4 $ ppr ctx_cut
                 , empty ]
 
-        returnX a 
+        returnX a
                 (\z -> XLet z lts' xBodyRun)
-                tBodyRun 
+                tBodyRun
                 (Sum.fromList kEffect [eResult])
                 ctx_cut
 
@@ -140,14 +140,14 @@ checkLetsM !bidir xx !table !ctx0 !demand (LLet b xBind)
          <- checkTypeM config ctx1 UniverseSpec tBind Recon
 
         when (not $ isDataKind kBind')
-         $ throw $ ErrorLetBindingNotData a xx b kBind'
+         $ throw $ ErrorMismatch a kBind' kData xx
 
         -- If there is a type annotation on the binding then this
         -- must match the reconstructed type.
         when (not $ isBot (typeOfBind b))
          $ if equivT (contextEnvT ctx0) (typeOfBind b) tBind
                 then return ()
-                else (throw $ ErrorLetMismatch a xx b tBind)
+                else (throw $ ErrorMismatch a (typeOfBind b) tBind xx)
 
         -- Update the annotation on the binder with the actual type of
         -- the binding.
@@ -203,11 +203,11 @@ checkLetsM !bidir xx !table !ctx0 !demand (LLet b xBind)
         --   effect only. If ImplicitRunBindings is enabled then we automatically
         --   run the suspension to release its effect.
         let (xBind_run, tBind_run, effs_run)
-                | configImplicitRun $ tableConfig table 
+                | configImplicitRun $ tableConfig table
                 , not $ isXCastBox xBind_raw
                 , not $ isXCastRun xBind_raw
                 , Just  (effs_susp, tBind_susp) <- takeTSusp tBind_ctx
-                = let   
+                = let
                         -- Effect of overall expression is effect of computing
                         -- the suspension plus the effect we get by running
                         -- that suspension.
@@ -264,7 +264,7 @@ checkLetsM !bidir !xx !table !ctx0 !demand (LRec bxs)
         let ctx3         =  pushTypes bs' ctx2
 
         -- Check the right hand sides.
-        (results, ctx4)  
+        (results, ctx4)
          <- checkRecBindExps table bidir a ctx3 demand (zip bs' xs)
 
         let (bs'', xsRight')
@@ -325,7 +325,7 @@ checkRecBinds table bidir a xx ctx0 bs0
 
                 -- The type on the binder must have kind Data.
                 when (not $ isDataKind k)
-                 $ throw $ ErrorLetBindingNotData a xx b' k
+                 $ throw $ ErrorMismatch a k kData xx
 
                 return (b', ctx')
 
@@ -377,7 +377,7 @@ checkRecBindExps table False a ctx0 demand bxs0
          = return ([], ctx)
 
         go ((b, xBind) : bxs) ctx
-         = do   
+         = do
                 ctrace  $ vcat
                         [ text "*>  Let Rec Bind RECON"
                         , text "    demand     = " <> (text $ show demand)
@@ -394,7 +394,7 @@ checkRecBindExps table False a ctx0 demand bxs0
                 -- Check the annotation on the binder matches the reconstructed
                 -- type of the binding.
                 when (not $ equivT (contextEnvT ctx') (typeOfBind b) t)
-                 $ throw $ ErrorLetMismatch a xBind b t
+                 $ throw $ ErrorMismatch a (typeOfBind b) t xBind
 
                 -- Reconstructing the types of binders adds missing kind info to
                 -- constructors etc, so update the binders with this new info.
@@ -405,7 +405,7 @@ checkRecBindExps table False a ctx0 demand bxs0
                         , text "    demand     =" <+> (text $ show demand)
                         , text "    in  binder =" <+> ppr (binderOfBind b)
                         , text "    in  type   =" <+> ppr (typeOfBind   b)
-                        , text "    out type   =" <+> ppr t 
+                        , text "    out type   =" <+> ppr t
                         , empty ]
 
                 -- Check the rest of the bindings.
@@ -432,7 +432,7 @@ checkRecBindExps table True _a ctx0 demand bxs0
                 --  We checked that the expression is a syntactic lambda
                 --  abstraction in checkLetsM, so we know the effect is pure.
                 (xBind', t, _effs, ctx')
-                 <- tableCheckExp table table ctx 
+                 <- tableCheckExp table table ctx
                         (Check (typeOfBind b)) demand xBind
 
                 -- Reconstructing the types of binders adds missing kind info to
@@ -444,7 +444,7 @@ checkRecBindExps table True _a ctx0 demand bxs0
                         , text "    demand     =" <+> (text $ show demand)
                         , text "    in  binder =" <+> ppr (binderOfBind b)
                         , text "    in  type   =" <+> ppr (typeOfBind   b)
-                        , text "    out type   =" <+> ppr t 
+                        , text "    out type   =" <+> ppr t
                         , empty ]
 
                 -- Check the rest of the bindings.
