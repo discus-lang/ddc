@@ -1,0 +1,7 @@
+
+module Main
+import Data.Ref
+where
+
+
+foo = private r in allocRef {@r} 5

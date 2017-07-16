@@ -38,19 +38,18 @@ checkLetPrivate !table !ctx mode demand
         -- These must already set to kind Region.
         (bsRgn', _, _)
          <- liftM unzip3
-         $  mapM (\b -> checkBindM config ctx UniverseKind b Recon)
-                 bsRgn
+         $  mapM (\b -> checkBindM config ctx UniverseKind b Recon) bsRgn
         let ksRgn       = map typeOfBind bsRgn'
 
         -- The binders must have region kind.
         when (any (not . isRegionKind) ksRgn)
-         $ throw $ ErrorLetRegionsNotRegion a xx bsRgn ksRgn
+         $ throw $ ErrorPrivateNotRegion a xx bsRgn ksRgn
 
         -- We can't shadow region binders because we might have witnesses
         -- in the environment that conflict with the ones created here.
         let rebounds    = filter (flip memberKindBind ctx) bsRgn'
         when (not $ null rebounds)
-         $ throw $ ErrorLetRegionsRebound a xx rebounds
+         $ throw $ ErrorPrivateRebound a xx rebounds
 
         -- Check the witness binders.
         -- These must have full type annotations, as we don't infer
@@ -105,7 +104,7 @@ checkLetPrivate !table !ctx mode demand
                 _
                  -> do  let fvsT         = freeT Env.empty tBody5
                         when (any (flip Set.member fvsT) us)
-                         $ throw $ ErrorLetRegionFree a xx bsRgn tBody5
+                         $ throw $ ErrorPrivateEscape a xx bsRgn tBody5
                         return $ lowerT depth tBody5
 
         -- Check that the result matches any expected type.
@@ -190,17 +189,17 @@ checkWitnessBindsM !config !a !ctx !xx !uRegions !bsWit
          = case t2 of
             TVar u'
              |  all (/= u') uRegions
-             -> throw $ ErrorLetRegionsWitnessOther a xx uRegions bWit
+             -> throw $ ErrorPrivateWitnessOther a xx uRegions bWit
              | otherwise -> return ()
 
             TCon (TyConBound u' _)
              | all (/= u') uRegions
-             -> throw $ ErrorLetRegionsWitnessOther a xx uRegions bWit
+             -> throw $ ErrorPrivateWitnessOther a xx uRegions bWit
              | otherwise -> return ()
 
             -- The parser should ensure the right of a witness is a
             -- constructor or variable.
-            _            -> throw $ ErrorLetRegionWitnessInvalid a xx bWit
+            _            -> throw $ ErrorPrivateWitnessInvalid a xx bWit
 
         -- Associate each witness binder with its type.
         btsWit  = [(typeOfBind b, b) | b <- bsWit]
@@ -211,19 +210,19 @@ checkWitnessBindsM !config !a !ctx !xx !uRegions !bsWit
 
             TApp (TCon (TyConWitness TwConConst))    t2
              | Just bConflict <- L.lookup (tMutable t2) btsWit
-             -> throw $ ErrorLetRegionWitnessConflict a xx bWit bConflict
+             -> throw $ ErrorPrivateWitnessConflict a xx bWit bConflict
              | otherwise    -> checkWitnessArg bWit t2
 
             TApp (TCon (TyConWitness TwConMutable))  t2
              | Just bConflict <- L.lookup (tConst t2)    btsWit
-             -> throw $ ErrorLetRegionWitnessConflict a xx bWit bConflict
+             -> throw $ ErrorPrivateWitnessConflict a xx bWit bConflict
              | otherwise    -> checkWitnessArg bWit t2
 
             (takeTyConApps -> Just (TyConWitness (TwConDistinct 2), [t1, t2]))
              | inEnv t1  -> checkWitnessArg bWit t2
              | inEnv t2  -> checkWitnessArg bWit t1
              | t1 /= t2  -> mapM_ (checkWitnessArg bWit) [t1, t2]
-             | otherwise -> throw $ ErrorLetRegionWitnessInvalid a xx bWit
+             | otherwise -> throw $ ErrorPrivateWitnessInvalid a xx bWit
 
             (takeTyConApps -> Just (TyConWitness (TwConDistinct _), ts))
              -> mapM_ (checkWitnessArg bWit) ts
@@ -240,7 +239,7 @@ checkWitnessBindsM !config !a !ctx !xx !uRegions !bsWit
              | configEffectCapabilities config
              -> checkWitnessArg bWit t2
 
-            _ -> throw $ ErrorLetRegionWitnessInvalid a xx bWit
+            _ -> throw $ ErrorPrivateWitnessInvalid a xx bWit
 
 
 

@@ -141,38 +141,40 @@ ppr' (ErrorLetrecBindingNotLambda a _xx x)
 
 
 -- Letregion ------------------------------------------------------------------
-ppr' (ErrorLetRegionsNotRegion a _xx bs ks)
+-- TODO: The concrete syntax is such that we cannot cause this error
+-- unless there is a bug in the compiler.
+ppr' (ErrorPrivateNotRegion a _xx bs ks)
  = vcat [ ppr a
         , text "Letregion binders do not have region kind."
         , text "        Region binders: "       <> (hcat $ map ppr bs)
         , text "             has kinds: "       <> (hcat $ map ppr ks)
         , text "       but they must all be: Region" ]
 
-ppr' (ErrorLetRegionsRebound a _xx bs)
+ppr' (ErrorPrivateRebound a _xx bs)
  = vcat [ ppr a
         , text "Region variables shadow existing ones."
         , text "           Region variables: "  <> (hcat $ map ppr bs)
         , text "     are already in environment" ]
 
-ppr' (ErrorLetRegionFree a _xx bs t)
+ppr' (ErrorPrivateEscape a _xx bs t)
  = vcat [ ppr a
         , text "Region variables escape scope of private."
         , text "       The region variables: "  <> (hcat $ map ppr bs)
         , text "   is free in the body type: "   <> ppr t ]
 
-ppr' (ErrorLetRegionWitnessInvalid a _xx b)
+ppr' (ErrorPrivateWitnessInvalid a _xx b)
  = vcat [ ppr a
         , text "Invalid witness type with private."
         , text "          The witness: "       <> ppr b
         , text "  cannot be created with a private" ]
 
-ppr' (ErrorLetRegionWitnessConflict a _xx b1 b2)
+ppr' (ErrorPrivateWitnessConflict a _xx b1 b2)
  = vcat [ ppr a
         , text "Conflicting witness types with private."
         , text "      Witness binding: "       <> ppr b1
         , text "       conflicts with: "       <> ppr b2 ]
 
-ppr' (ErrorLetRegionsWitnessOther a _xx bs1 b2)
+ppr' (ErrorPrivateWitnessOther a _xx bs1 b2)
  = vcat [ ppr a
         , text "Witness type is not for bound regions."
         , text "        private binds: "       <> (hsep $ map ppr bs1)

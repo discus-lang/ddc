@@ -1,0 +1,4 @@
+Error in transformed module.
+  in stage CoreLoad
+  in pipe  PipeCoreCheck/Complies
+  Unsupported feature: MetaVariables

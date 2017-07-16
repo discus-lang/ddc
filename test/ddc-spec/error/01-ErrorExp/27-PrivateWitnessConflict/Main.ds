@@ -1,0 +1,8 @@
+
+module Main where
+
+-- In an older version of the language we use 'Mutable' and 'Const'
+-- witnesses instead of 'Read' and 'Write' capabilities.
+-- The type checker support is still present.
+foo = private r with {Mutable r; Const r} in ()
+

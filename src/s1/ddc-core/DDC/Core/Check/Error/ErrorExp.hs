@@ -137,10 +137,10 @@ data Error a n
         , errorBind             :: Bind n }
 
 
-        -- Letregion --------------------------------------
+        -- Private --------------------------------------
         -- | A letregion-expression where the some of the bound variables do not
         --   have region kind.
-        | ErrorLetRegionsNotRegion
+        | ErrorPrivateNotRegion
         { errorAnnot            :: a
         , errorChecking         :: Exp a n
         , errorBinds            :: [Bind n]
@@ -148,14 +148,14 @@ data Error a n
 
         -- | A letregion-expression that tried to shadow some pre-existing named
         --   region variables.
-        | ErrorLetRegionsRebound
+        | ErrorPrivateRebound
         { errorAnnot            :: a
         , errorChecking         :: Exp a n
         , errorBinds            :: [Bind n] }
 
         -- | A letregion-expression where some of the the bound region variables
         --   are free in the type of the body.
-        | ErrorLetRegionFree
+        | ErrorPrivateEscape
         { errorAnnot            :: a
         , errorChecking         :: Exp a n
         , errorBinds            :: [Bind n]
@@ -163,13 +163,13 @@ data Error a n
 
         -- | A letregion-expression that tried to create a witness with an
         --   invalid type.
-        | ErrorLetRegionWitnessInvalid
+        | ErrorPrivateWitnessInvalid
         { errorAnnot            :: a
         , errorChecking         :: Exp a n
         , errorBind             :: Bind n }
 
         -- | A letregion-expression that tried to create conflicting witnesses.
-        | ErrorLetRegionWitnessConflict
+        | ErrorPrivateWitnessConflict
         { errorAnnot            :: a
         , errorChecking         :: Exp a n
         , errorBindWitness1     :: Bind n
@@ -177,7 +177,7 @@ data Error a n
 
         -- | A letregion-expression where a bound witnesses was not for the
         --   the region variable being introduced.
-        | ErrorLetRegionsWitnessOther
+        | ErrorPrivateWitnessOther
         { errorAnnot            :: a
         , errorChecking         :: Exp a n
         , errorBoundRegions     :: [Bound n]

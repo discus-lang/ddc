@@ -1,0 +1,7 @@
+Error in transformed module.
+  in stage CoreLoad
+  in pipe  PipeCoreCheck/Check
+  test/ddc-spec/error/01-ErrorExp/24-PrivateRebound/Main.dcs:5:4
+  Region variables shadow existing ones.
+             Region variables: r: Region
+       are already in environment

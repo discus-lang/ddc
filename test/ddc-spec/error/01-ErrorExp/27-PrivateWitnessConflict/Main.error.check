@@ -1,0 +1,7 @@
+Error in transformed module.
+  in stage SourceLoadText
+  in pipe  PipeCoreCheck/Check
+  test/ddc-spec/error/01-ErrorExp/27-PrivateWitnessConflict/Main.ds:7:1
+  Conflicting witness types with private.
+        Witness binding: x$Sx100: Mutable r
+         conflicts with: x$Sx101: Const r

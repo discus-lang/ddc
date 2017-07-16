@@ -1,7 +1,7 @@
 Error in transformed module.
   in stage SourceLoadText
   in pipe  PipeCoreCheck/Check
-  test/ddc-spec/source/01-Tetra/02-Error/01-ErrorExp/15-AbsBindBadKind/Test.ds:4:1
+  test/ddc-spec/error/01-ErrorExp/15-AbsBindBadKind/Test.ds:4:1
   Function parameter has invalid kind.
       The function parameter: Read r
                     has kind: Effect

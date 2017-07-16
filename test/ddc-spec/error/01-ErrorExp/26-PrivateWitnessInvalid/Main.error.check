@@ -1,0 +1,7 @@
+Error in transformed module.
+  in stage SourceLoadText
+  in pipe  PipeCoreCheck/Check
+  test/ddc-spec/error/01-ErrorExp/26-PrivateWitnessInvalid/Main.ds:4:1
+  Invalid witness type with private.
+            The witness: x$Sx100: Nat#
+    cannot be created with a private

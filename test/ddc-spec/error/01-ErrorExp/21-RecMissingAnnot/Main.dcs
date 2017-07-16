@@ -1,0 +1,8 @@
+
+-- Letrecs must have annotations when checking in Recon mode.
+module Test with letrec
+
+f x = x
+
+
+

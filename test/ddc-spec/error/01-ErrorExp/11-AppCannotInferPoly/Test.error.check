@@ -1,7 +1,7 @@
 Error in transformed module.
   in stage SourceLoadText
   in pipe  PipeCoreCheck/Check
-  test/ddc-spec/source/01-Tetra/02-Error/01-ErrorExp/11-AppCannotInferPoly/Test.ds:5:1
+  test/ddc-spec/error/01-ErrorExp/11-AppCannotInferPoly/Test.ds:5:1
   Cannot infer the type of a polymorphic expression.
     Please supply type annotations to constrain the functional
     part to have a quantified type.

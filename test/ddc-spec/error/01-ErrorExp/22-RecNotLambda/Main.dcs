@@ -1,0 +1,4 @@
+
+module Main with letrec
+
+f = 5#

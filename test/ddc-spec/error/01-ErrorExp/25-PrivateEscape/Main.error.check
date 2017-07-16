@@ -1,0 +1,7 @@
+Error in transformed module.
+  in stage SourceLoadText
+  in pipe  PipeCoreCheck/Check
+  test/ddc-spec/error/01-ErrorExp/25-PrivateEscape/Main.ds:7:1
+  Region variables escape scope of private.
+         The region variables: r: Region
+     is free in the body type: S (Alloc r) (Ref r Nat#)

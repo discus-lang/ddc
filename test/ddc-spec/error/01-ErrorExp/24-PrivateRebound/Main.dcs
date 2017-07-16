@@ -1,0 +1,6 @@
+
+module Test with letrec
+
+foo [r: Region] (x: Unit)
+ = private r in ()
+

@@ -1,0 +1,7 @@
+Error in transformed module.
+  in stage SourceLoadText
+  in pipe  PipeCoreCheck/Check
+  test/ddc-spec/error/01-ErrorExp/28-PrivateWitnessOther/Main.ds:4:1
+  Witness type is not for bound regions.
+          private binds: r2
+    but witness type is: x$Sx100: Write r1
