@@ -13,6 +13,8 @@ export
         showFloat64;
 }
 import Data.Numeric.Word8
+import Data.Numeric.Float32
+import Data.Numeric.Float64
 import Data.Tuple
 import Data.Text.Base
 import Data.Text.Char
