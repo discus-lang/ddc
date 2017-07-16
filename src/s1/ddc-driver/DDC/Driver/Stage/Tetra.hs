@@ -59,8 +59,8 @@ sourceLoadText config store source str
         , BST.configSinkResolve         = D.dump config source "dump.0-source-10-resolve.dct"
         , BST.configSinkPreCheck        = D.dump config source "dump.0-source-11-precheck.dct"
         , BST.configSinkCheckerTrace    = D.dump config source "dump.0-source-12-trace.txt"
-        , BST.configSinkChecked         = D.dump config source "dump.0-source-13-checked.dct"
-        , BST.configSinkNamified        = D.dump config source "dump.0-source-14-namified.dct"
+        , BST.configSinkNamified        = D.dump config source "dump.0-source-13-namified.dct"
+        , BST.configSinkChecked         = D.dump config source "dump.0-source-14-checked.dct"
         , BST.configSinkElaborated      = D.dump config source "dump.0-source-15-elaborated.dct"
         }
 

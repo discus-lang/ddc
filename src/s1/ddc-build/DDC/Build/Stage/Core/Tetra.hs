@@ -162,8 +162,8 @@ tetraToSalt platform runtimeConfig mm config
         mm_prep_boxing
          <- B.coreSimplify BE.fragment (0 :: Int)
                 (C.anormalize
-                        (CNamify.makeNamifier E.freshT)
-                        (CNamify.makeNamifier E.freshX))
+                        (CNamify.makeNamifier (E.freshT "t"))
+                        (CNamify.makeNamifier (E.freshX "x")))
                 mm_curry
 
 
@@ -182,8 +182,8 @@ tetraToSalt platform runtimeConfig mm config
         mm_prep_salt
          <- B.coreSimplify BE.fragment (0 :: Int)
                 (  C.anormalize
-                        (CNamify.makeNamifier E.freshT)
-                        (CNamify.makeNamifier E.freshX)
+                        (CNamify.makeNamifier (E.freshT "t"))
+                        (CNamify.makeNamifier (E.freshX "x"))
                 `mappend` C.flatten)
                 mm_boxing
 

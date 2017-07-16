@@ -1,5 +1,5 @@
 
--- | The `Tetra` fragment has four base kinds: 
+-- | The `Tetra` fragment has four base kinds:
 --   `Data`, `Region`, `Effect`, `Witness`,
 --   and uses the `S` computation type to represent effects.
 module DDC.Build.Language.Tetra
@@ -28,8 +28,8 @@ bundle
         , bundleModules         = Map.empty
         , bundleStateInit       = 0 :: Int
         , bundleSimplifier      = Trans Id
-        , bundleMakeNamifierT   = makeNamifier E.freshT 
-        , bundleMakeNamifierX   = makeNamifier E.freshX 
+        , bundleMakeNamifierT   = makeNamifier (E.freshT "t")
+        , bundleMakeNamifierX   = makeNamifier (E.freshX "x")
         , bundleRewriteRules    = Map.empty }
 
 
@@ -37,7 +37,7 @@ bundle
 fragment :: Fragment E.Name E.Error
 fragment
         = Fragment
-        { fragmentProfile       = E.profile 
+        { fragmentProfile       = E.profile
         , fragmentExtension     = "dct"
         , fragmentReadName      = E.readName
         , fragmentLexModule     = E.lexModuleString

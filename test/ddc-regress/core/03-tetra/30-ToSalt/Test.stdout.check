@@ -11,7 +11,7 @@ module Test with
 letrec {
   foo: Ptr# rT Obj -> Ptr# rT Obj
     = λ(x: Ptr# rT Obj).
-      let x0: Word16#
+      let xx0: Word16#
             = let ^: Ptr# rT Obj
                     = x in
               let ^: Ptr# rT Word8#
@@ -20,7 +20,7 @@ letrec {
                     = peek# [rT] [Word16#]
                           (plusPtr# [rT] [Word16#] (castPtr# [rT] [Word16#] [Word8#] ^0) 0#) in
               ^0 in
-      case x0 of {
+      case xx0 of {
         5w16#  
          -> let ^: Ptr# rT Obj
                   = ddcAllocSmall [rT] TAG0# 8# in
@@ -56,7 +56,7 @@ module Test with
 letrec {
   foo: Ptr# rT Obj -> Ptr# rT Obj
     = λ(x: Ptr# rT Obj).
-      let x0: Word32#
+      let xx0: Word32#
             = let ^: Ptr# rT Obj
                     = x in
               let ^: Ptr# rT Word8#
@@ -65,7 +65,7 @@ letrec {
                     = peek# [rT] [Word32#]
                           (plusPtr# [rT] [Word32#] (castPtr# [rT] [Word32#] [Word8#] ^0) 0#) in
               ^0 in
-      case x0 of {
+      case xx0 of {
         5w32#  
          -> let ^: Ptr# rT Obj
                   = ddcAllocSmall [rT] TAG0# 8# in
@@ -101,7 +101,7 @@ module Test with
 letrec {
   foo: Ptr# rT Obj -> Ptr# rT Obj
     = λ(x: Ptr# rT Obj).
-      let x0: Word64#
+      let xx0: Word64#
             = let ^: Ptr# rT Obj
                     = x in
               let ^: Ptr# rT Word8#
@@ -110,7 +110,7 @@ letrec {
                     = peek# [rT] [Word64#]
                           (plusPtr# [rT] [Word64#] (castPtr# [rT] [Word64#] [Word8#] ^0) 0#) in
               ^0 in
-      case x0 of {
+      case xx0 of {
         5w64#  
          -> let ^: Ptr# rT Obj
                   = ddcAllocSmall [rT] TAG0# 8# in
@@ -147,7 +147,7 @@ module Test with
 letrec {
   foo: Ptr# rT Obj -> Ptr# rT Obj
     = λ(x: Ptr# rT Obj).
-      let x0: Bool#
+      let xx0: Bool#
             = let ^: Ptr# rT Obj
                     = x in
               let ^: Ptr# rT Word8#
@@ -156,7 +156,7 @@ letrec {
                     = peek# [rT] [Bool#]
                           (plusPtr# [rT] [Bool#] (castPtr# [rT] [Bool#] [Word8#] ^0) 0#) in
               ^0 in
-      case x0 of {
+      case xx0 of {
         True#  
          -> let ^: Ptr# rT Obj
                   = ddcAllocSmall [rT] TAG0# 8# in
@@ -206,7 +206,7 @@ module Test with
 letrec {
   singleton: Ptr# rT Obj -> Ptr# rT Obj
     = λ(x: Ptr# rT Obj).
-      let x0: Ptr# rT Obj
+      let xx0: Ptr# rT Obj
             = let ^: Ptr# rT Obj
                     = ddcAllocBoxed [rT] TAG0# 0# in
               ^0 in
@@ -215,7 +215,7 @@ letrec {
       let _: Void#
             = ddcSetBoxed [rT] [rT] ^0 0# x in
       let _: Void#
-            = ddcSetBoxed [rT] [rT] ^0 1# x0 in
+            = ddcSetBoxed [rT] [rT] ^0 1# xx0 in
       ^0
 }
 
@@ -230,7 +230,7 @@ letrec {
         TAG1#  
          -> let x: Ptr# rT Obj
                   = ddcGetBoxed [rT] [rT] xx 0# in
-            let x0: Ptr# rT Obj
+            let xx0: Ptr# rT Obj
                   = ddcGetBoxed [rT] [rT] xx 1# in
             x;
         TAG0#  
@@ -258,7 +258,7 @@ ok
 module Test with
 letrec {
   id: Ptr# rT Obj -> Ptr# rT Obj
-    = λ(x0: Ptr# rT Obj). x0
+    = λ(xx0: Ptr# rT Obj). xx0
 }
 
 
@@ -271,7 +271,7 @@ Error in transformed module.
        Function expects: U# Nat#
         but argument is: U# Nat# -> U# Nat#
   
-  with: convert# [U# Nat#] [Nat#] x3
+  with: convert# [U# Nat#] [Nat#] xx3
 
 
 -- OK: partial application if user defined data constructors is now supported.
@@ -288,10 +288,10 @@ letrec {
       ^0;
   
   thing: Ptr# rT Obj -> Ptr# rT Obj
-    = λ(x0: Ptr# rT Obj).
-      let x1: Ptr# rT Obj
+    = λ(xx0: Ptr# rT Obj).
+      let xx1: Ptr# rT Obj
             = ddcAllocThunk [rT] (convert# [Addr#] [Ptr# rT Obj -> Ptr# rT Obj -> Ptr# rT Obj] thing$l$L$2) 2# 0# 0# 0# in
-      let x2: Ptr# rT Obj
+      let xx2: Ptr# rT Obj
             = let ^: Ptr# rT Obj
                     = ddcAllocSmall [rT] TAG0# 8# in
               let ^: Ptr# rT Word8#
@@ -301,11 +301,11 @@ letrec {
                           (plusPtr# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0#) 5# in
               ^1 in
       let ^: Ptr# rT Obj
-            = ddcExtendThunk [rT] [rT] x1 1# in
+            = ddcExtendThunk [rT] [rT] xx1 1# in
       let ^: Nat#
-            = ddcArgsThunk [rT] x1 in
+            = ddcArgsThunk [rT] xx1 in
       let _: Void#
-            = ddcSetThunk [rT] [rT] ^1 ^0 0# x2 in
+            = ddcSetThunk [rT] [rT] ^1 ^0 0# xx2 in
       ^1
 }
 
@@ -319,7 +319,7 @@ Error in transformed module.
        Function expects: U# Nat#
         but argument is: U# Nat# -> U# Nat#
   
-  with: convert# [U# Nat#] [Nat#] x3
+  with: convert# [U# Nat#] [Nat#] xx3
 
 
 -- OK: let expressions in nested contexts are normalized on the way in to
@@ -331,8 +331,8 @@ letrec {
       λ(x: Ptr# rT Obj). x;
   
   foo: Ptr# rT Obj -> Ptr# rT Obj
-    = λ(x0: Ptr# rT Obj).
-      let x1: Ptr# rT Obj
+    = λ(xx0: Ptr# rT Obj).
+      let xx1: Ptr# rT Obj
             = let ^: Ptr# rT Obj
                     = ddcAllocSmall [rT] TAG0# 8# in
               let ^: Ptr# rT Word8#
@@ -341,7 +341,7 @@ letrec {
                     = poke# [rT] [Nat#]
                           (plusPtr# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0#) 5# in
               ^1 in
-      id [rT] x1
+      id [rT] xx1
 }
 
 
@@ -353,8 +353,8 @@ letrec {
       λ(x: Ptr# rT Obj). x;
   
   foo: Ptr# rT Obj -> Ptr# rT Obj
-    = λ(x0: Ptr# rT Obj).
-      let x1: Ptr# rT Obj
+    = λ(xx0: Ptr# rT Obj).
+      let xx1: Ptr# rT Obj
             = let ^: Ptr# rT Obj
                     = ddcAllocSmall [rT] TAG0# 8# in
               let ^: Ptr# rT Word8#
@@ -363,7 +363,7 @@ letrec {
                     = poke# [rT] [Nat#]
                           (plusPtr# [rT] [Nat#] (castPtr# [rT] [Nat#] [Word8#] ^0) 0#) 5# in
               ^1 in
-      nothin [rT] x1
+      nothin [rT] xx1
 }
 
 
@@ -373,7 +373,7 @@ letrec {
 module Test with
 letrec {
   blerk: Ptr# rT Obj -> Ptr# rT Obj
-    = λ(x0: Ptr# rT Obj).
+    = λ(xx0: Ptr# rT Obj).
       let ^: Ptr# rT Obj
             = ddcAllocSmall [rT] TAG0# 8# in
       let ^: Ptr# rT Word8#

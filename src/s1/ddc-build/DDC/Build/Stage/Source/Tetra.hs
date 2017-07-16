@@ -124,10 +124,10 @@ sourceLoad srcName srcLine str store config
         let kenv    = C.profilePrimKinds profile
         let tenv    = C.profilePrimTypes profile
         let mm_namified
-             = evalState (CNamify.namify (CNamify.makeNamifier CE.freshT kenv)
-                                         (CNamify.makeNamifier CE.freshX tenv)
+             = evalState (CNamify.namify (CNamify.makeNamifier (CE.freshT "t$S") kenv)
+                                         (CNamify.makeNamifier (CE.freshX "x$S") tenv)
                                         mm_core)
-                        (0 :: Int)
+                        (100 :: Int)
 
 
         liftIO $ B.pipeSink (renderIndent $ ppr mm_namified)

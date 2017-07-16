@@ -110,7 +110,7 @@ letrec {
     = Λ(a: Data).
       λ(def: a).λ(xx: List a).
       case xx of {
-        Cons (x: a) (x0: List a) 
+        Cons (x: a) (x$Sx100: List a) 
          -> x;
         _ 
          -> def
@@ -118,7 +118,7 @@ letrec {
   
   foo: [r: Region].Unit -> Blerk r
     = Λ(r: Region).
-      λ(x1: Unit).
+      λ(x$Sx101: Unit).
       head [Blerk r] (Hot [r])
           (Cons [Blerk r] (Cold [r]) (Nil [Blerk r]))
 }

@@ -10,7 +10,7 @@ module DDC.Build.Pipeline.Core
 
         , PipeFlow (..)
         , pipeFlow
-        
+
         , PipeMachine (..)
         , pipeMachine)
 where
@@ -68,13 +68,13 @@ import Control.DeepSeq
 -- | Process a core module.
 data PipeCore a n where
   -- Output a module to console or file.
-  PipeCoreOutput    
+  PipeCoreOutput
         :: !(C.PrettyMode (C.Module a n))
-        -> !Sink 
+        -> !Sink
         -> PipeCore a n
 
   -- Type check a module.
-  PipeCoreCheck      
+  PipeCoreCheck
         :: (Pretty a, Pretty (err (C.AnTEC a n)))
         => !String                      -- Name of compiler stage.
         -> !(Fragment n err)            -- Language fragment to check against.
@@ -91,12 +91,12 @@ data PipeCore a n where
         ->  PipeCore  a n
 
   -- Apply a simplifier to a module.
-  PipeCoreSimplify  
+  PipeCoreSimplify
         :: (Pretty a, CompoundName n)
         => !(Fragment n err)
         -> !s
         -> !(Simplifier s a n)
-        -> ![PipeCore () n] 
+        -> ![PipeCore () n]
         -> PipeCore a n
 
   -- Treat a module as belonging to the Core Tetra fragment from now on.
@@ -105,13 +105,13 @@ data PipeCore a n where
         -> PipeCore a Tetra.Name
 
   -- Treat a module as belonging to the Core Flow fragment from now on.
-  PipeCoreAsFlow 
+  PipeCoreAsFlow
         :: Pretty a
         => ![PipeFlow a]
         -> PipeCore a Flow.Name
 
   -- Treat a module as belonging to the Core Machine fragment from now on.
-  PipeCoreAsMachine 
+  PipeCoreAsMachine
         :: Pretty a
         => ![PipeMachine a]
         -> PipeCore a Machine.Name
@@ -142,7 +142,7 @@ pipeCore !mm !pp
             pipeSink (renderIndent $ pprModePrec mode 0 mm) sink
 
         PipeCoreCheck !stage !fragment !mode !sinkTrace !pipes
-         -> do  result'  <- runExceptT 
+         -> do  result'  <- runExceptT
                         $   coreCheck stage fragment mode sinkTrace  SinkDiscard mm
                 case result' of
                  Left  errs     -> return errs
@@ -164,7 +164,7 @@ pipeCore !mm !pp
 
                 !mm2            = C.reannotate (const ()) mm'
 
-                -- NOTE: It is helpful to deepseq here so that we release 
+                -- NOTE: It is helpful to deepseq here so that we release
                 --       references to the unsimplified version of the code.
                 --       Because we've just applied reannotate, we also
                 --       release type annotations on the expression tree.
@@ -183,7 +183,7 @@ pipeCore !mm !pp
             liftM concat $ mapM (pipeMachine mm) pipes
 
         PipeCoreHacks !(Canned f) !pipes
-         -> {-# SCC "PipeCoreHacks" #-} 
+         -> {-# SCC "PipeCoreHacks" #-}
             do  mm'     <- f mm
                 pipeCores mm' pipes
 
@@ -191,9 +191,9 @@ pipeCore !mm !pp
 pipeCores :: (NFData a, Show a, NFData n, Ord n, Show n, Pretty n)
           => C.Module a n -> [PipeCore a n] -> IO [Error]
 
-pipeCores !mm !pipes 
+pipeCores !mm !pipes
  = go [] pipes
- where  go !errs []   
+ where  go !errs []
          = return errs
 
         go !errs (pipe : rest)
@@ -212,7 +212,7 @@ data PipeTetra a where
 
 
 -- | Process a Core Tetra module.
-pipeTetra 
+pipeTetra
         :: C.Module a Tetra.Name
         -> PipeTetra a
         -> IO [Error]
@@ -222,12 +222,12 @@ pipeTetra !mm !pp
         PipeTetraToPHP !sink
          -> {-# SCC "PipeTetraToPHP" #-}
             let -- Snip program to expose intermediate bindings.
-                mm_snip         = Flatten.flatten 
+                mm_snip         = Flatten.flatten
                                 $ Snip.snip (Snip.configZero) mm
 
                 -- The floater needs bindings to be fully named.
-                namifierT       = C.makeNamifier Tetra.freshT Env.empty
-                namifierX       = C.makeNamifier Tetra.freshX Env.empty
+                namifierT       = C.makeNamifier (Tetra.freshT "t") Env.empty
+                namifierX       = C.makeNamifier (Tetra.freshX "x") Env.empty
                 mm_namified     = S.evalState (C.namify namifierT namifierX mm_snip) 0
 
                 doc  = PHP.phpOfModule mm_namified
@@ -238,7 +238,7 @@ pipeTetra !mm !pp
 -- | Process a Core Flow module.
 data PipeFlow a where
   -- Output the module in core language syntax.
-  PipeFlowOutput 
+  PipeFlowOutput
         :: Sink
         -> PipeFlow a
 
@@ -253,12 +253,12 @@ data PipeFlow a where
 
   -- Run the prep transform to expose flow operators.
   PipeFlowPrep
-        :: [PipeCore () Flow.Name] 
+        :: [PipeCore () Flow.Name]
         -> PipeFlow ()
 
   -- Run rate inference to transform vector operations into loops of series expressions.
   PipeFlowRate
-        :: [PipeCore () Flow.Name] 
+        :: [PipeCore () Flow.Name]
         -> PipeFlow ()
 
   -- Run the lowering transform on a module.
@@ -297,21 +297,21 @@ pipeFlow !mm !pp
             pipeSink (renderIndent $ ppr mm) sink
 
         PipeFlowHacks !(Canned f) !pipes
-         -> {-# SCC "PipeFlowHacks" #-} 
+         -> {-# SCC "PipeFlowHacks" #-}
             do  mm'     <- f mm
                 pipeFlows mm' pipes
 
         PipeFlowPrep  !pipes
          -> {-# SCC "PipeFlowPrep"   #-}
-            let 
+            let
                 -- Eta-expand so all workers have explicit parameter names.
                 mm_eta          = C.result $ Eta.etaModule Flow.profile
                                         (Eta.configZero { Eta.configExpand = True})
                                         mm
 
                 -- Snip program to expose intermediate bindings.
-                mm_snip         = Flatten.flatten 
-                                $ Snip.snip 
+                mm_snip         = Flatten.flatten
+                                $ Snip.snip
                                         (Snip.configZero { Snip.configSnipLetBody = True })
                                         mm_eta
 
@@ -320,7 +320,7 @@ pipeFlow !mm !pp
                 namifierX       = C.makeNamifier Flow.freshX Env.empty
                 mm_namified     = S.evalState (C.namify namifierT namifierX mm_snip) 0
 
-                -- Float worker functions and initializers into their use sites, 
+                -- Float worker functions and initializers into their use sites,
                 -- leaving only flow operators at the top-level.
                 mm_float        = Flow.forwardProcesses mm_namified
 
@@ -328,15 +328,15 @@ pipeFlow !mm !pp
 
         PipeFlowRate  !pipes
          -> {-# SCC "PipeFlowRate"   #-}
-            let 
+            let
                 -- Eta-expand so all workers have explicit parameter names.
                 mm_eta          = C.result $ Eta.etaModule Flow.profile
                                         (Eta.configZero { Eta.configExpand = True})
                                         mm
 
                 -- Snip program to expose intermediate bindings.
-                mm_snip         = Flatten.flatten 
-                                $ Snip.snip 
+                mm_snip         = Flatten.flatten
+                                $ Snip.snip
                                         (Snip.configZero { Snip.configSnipLetBody = True })
                                         mm_eta
 
@@ -366,26 +366,26 @@ pipeFlow !mm !pp
                 goRate
                  -- Rate inference uses the types
                  = case C.checkModule (C.configOfProfile Flow.profile) mm_float C.Recon of
-                     (Left err, _)    
+                     (Left err, _)
                       -> return [ErrorCoreTransform err]
 
-                     (Right mm', _) 
+                     (Right mm', _)
                       -> let mm_stripped = C.reannotate (const ()) mm'
                              mm_flow     = fst $ Flow.seriesOfVectorModule mm_stripped
-                           
+
                              config      = C.configOfProfile Flow.profile
                             -- Synthesise the types of any newly created bindings.
                          in case C.checkModule config mm_flow (C.Synth [])  of
-                             (Left err, _ct)         
+                             (Left err, _ct)
                               -> return [ErrorCoreTransform err]
-                            
-                             (Right mm_flow', _ct) 
+
+                             (Right mm_flow', _ct)
                               -> let mm_reannot' = C.reannotate (const ()) mm_flow'
                                  in pipeCores mm_reannot' pipes
             in  goRate
 
 
-        PipeFlowLower !config !pipes 
+        PipeFlowLower !config !pipes
          -> {-# SCC "PipeFlowLower" #-}
             let mm_stripped     = C.reannotate (const ()) mm
 
@@ -407,7 +407,7 @@ pipeFlow !mm !pp
 
         PipeFlowToTetra !pipes
          -> {-# SCC "PipeFlowToTetra" #-}
-            let 
+            let
                 -- Apply any lambdas we can
                 mm_beta         = C.result $ Beta.betaReduce Flow.profile
                                         (Beta.configZero { Beta.configBindRedexes = True})
@@ -424,8 +424,8 @@ pipeFlow !mm !pp
                                 $ Lambdas.lambdasModule Flow.profile mm_eta
 
                 -- Snip program so arguments and case scrutinees are just variables
-                mm_snip         = Flatten.flatten 
-                                $ Snip.snip 
+                mm_snip         = Flatten.flatten
+                                $ Snip.snip
                                         Snip.configZero
                                         mm_lift
 
@@ -438,9 +438,9 @@ pipeFlow !mm !pp
                  Left  err  -> return [ErrorFlowConvert err]
                  Right mm'  ->
                   case C.checkModule (C.configOfProfile Salt.profile) mm' C.Recon of
-                   (Left err, _ct)         
+                   (Left err, _ct)
                     -> return [ErrorCoreTransform err]
-                   (Right mm_check', _ct) 
+                   (Right mm_check', _ct)
                     -> let mm_reannot' = C.reannotate (const ()) mm_check'
 
                            floatControl l
@@ -462,9 +462,9 @@ pipeFlow !mm !pp
 
 -- | Process a Flow module with several different pipes.
 pipeFlows :: C.Module a Flow.Name -> [PipeFlow a] -> IO [Error]
-pipeFlows !mm !pipes 
+pipeFlows !mm !pipes
  = go [] pipes
- where  go !errs []   
+ where  go !errs []
          = return errs
 
         go !errs (pipe : rest)
@@ -476,13 +476,13 @@ pipeFlows !mm !pipes
 -- | Process a Core Machine module.
 data PipeMachine a where
   -- Output the module in core language syntax.
-  PipeMachineOutput 
+  PipeMachineOutput
         :: Sink
         -> PipeMachine a
 
   -- Run the prep transform to expose flow operators.
   PipeMachinePrep
-        :: [PipeCore () Machine.Name] 
+        :: [PipeCore () Machine.Name]
         -> PipeMachine ()
 
   -- Show the slurp stuff
@@ -509,7 +509,7 @@ pipeMachine !mm !pp
 
         PipeMachinePrep  !pipes
          -> {-# SCC "PipeMachinePrep"   #-}
-            let 
+            let
                 -- Start by forwarding all process and stream definitions computations
                 -- into the top-level process_i_o# "exec" functions.
                 -- Forward doesn't handle letrecs so we have to write these in terms of lets.
