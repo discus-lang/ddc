@@ -386,7 +386,8 @@ builder_X8632_Linux config host
                         </> "ddc-runtime" </> "build"
                         </> builderConfigLibFile config
                                 "libddc-runtime.a"
-                                "libddc-runtime.so" ]
+                                "libddc-runtime.so"
+                , "-lm" ]
 
         , buildLdLibStatic
                 = \oFiles libFile
@@ -445,7 +446,8 @@ builder_X8664_Linux config host
                         </> "ddc-runtime" </> "build"
                         </> builderConfigLibFile config
                                 "libddc-runtime.a"
-                                "libddc-runtime.so" ]
+                                "libddc-runtime.so"
+                , "-lm" ]
 
         , buildLdLibStatic
                 = \oFiles libFile
