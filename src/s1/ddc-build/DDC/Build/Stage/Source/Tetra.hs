@@ -263,13 +263,15 @@ sourceLower store sinkCore sinkResolve sinkSpread mm
 
         -- Resolve which module imported names are from,
         -- and attach arity information to the import statements.
-        result_resolve  <- liftIO $ BResolve.resolveNamesInModule
-                                        CE.primKindEnv CE.primTypeEnv
-                                        store mm_core
-
-        mm_resolve      <- case result_resolve of
-                            Left err    -> throwE [B.ErrorLoad [err]]
-                            Right mm'   -> return mm'
+        --
+        --  TODO: We're currently ignoring the resolver errors as they don't come
+        --  with source locations. The type checker will give its own Undefined
+        --  variable erros, but not multiple import errors.
+        --
+        (mm_resolve, _errs_resolve)
+         <- liftIO $ BResolve.resolveNamesInModule
+                CE.primKindEnv CE.primTypeEnv
+                store mm_core
 
         liftIO $ B.pipeSink (renderIndent $ ppr mm_resolve) sinkResolve
 

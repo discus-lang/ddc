@@ -21,23 +21,24 @@ import qualified DDC.Build.Interface.Store      as Store
 import qualified DDC.Core.Tetra                 as E
 import Data.List
 import Data.Function
+import qualified Data.Either                    as Either
 
 
 -- | For all the names that are free in this module, if there is a
 --   corresponding export in one of the modules in the given map,
 --   then add the appropriate import definition.
-resolveNamesInModule 
+resolveNamesInModule
         :: KindEnv E.Name       -- ^ Kinds of primitive types.
         -> TypeEnv E.Name       -- ^ Types of primitive values.
         -> Store                -- ^ Interface store.
         -> Module a E.Name      -- ^ Module to resolve names in.
-        -> IO (Either [Error] (Module a E.Name))
+        -> IO (Module a E.Name, [Error])
 
 resolveNamesInModule kenv tenv store mm
  = do
         let sp      = support kenv tenv mm
         ints    <- Store.getInterfaces store
-        let deps    = Map.fromList 
+        let deps    = Map.fromList
                         [ ( interfaceModuleName i
                           , let Just m = interfaceTetraModule i in m)
                           | i <- ints ]
@@ -53,34 +54,36 @@ resolveNamesInModule kenv tenv store mm
                                 $   text  "Cannot resolve anonymous binder:"
                                 <+> ppr u
 
-        eimportsDaVar   <- mapM getDaVarImport $ Set.toList $ supportDaVar sp
+        (errsDaVar, importsDaVar)
+                <- fmap Either.partitionEithers
+                $  mapM getDaVarImport
+                $  Set.toList $ supportDaVar sp
 
-        case sequence eimportsDaVar of
-         Left err       -> return $ Left [err]
+        let mm_resolved
+                = mm
+                { moduleImportTypes
+                        =  moduleImportTypes  mm
+                        ++ importsForTyCons   deps (Set.toList $ supportTyCon sp)
 
-         Right importsDaVar
-          -> return $ Right $ mm 
-           { moduleImportTypes   
-                =  moduleImportTypes  mm 
-                ++ importsForTyCons   deps (Set.toList $ supportTyCon sp)
+                , moduleImportDataDefs
+                     =  nubBy ((==) `on` dataDefTypeName)
+                     $  moduleImportDataDefs mm
+                     ++ importsForDaTyCons deps (Set.toList $ supportTyCon sp)
 
-           , moduleImportDataDefs
-                =  nubBy ((==) `on` dataDefTypeName)          
-                $  moduleImportDataDefs mm 
-                ++ importsForDaTyCons deps (Set.toList $ supportTyCon sp)
+                , moduleImportTypeDefs
+                     =  nubBy ((==) `on` fst)
+                     $  moduleImportTypeDefs mm
+                     ++ importsTypeDef deps
 
-           , moduleImportTypeDefs
-                =  nubBy ((==) `on` fst)
-                $  moduleImportTypeDefs mm
-                ++ importsTypeDef deps
+                , moduleImportCaps
+                     =  moduleImportCaps mm
+                     ++ importsCap deps
 
-           , moduleImportCaps
-                =  moduleImportCaps mm
-                ++ importsCap deps
+                , moduleImportValues
+                     =  moduleImportValues mm
+                     ++ importsDaVar }
 
-           , moduleImportValues  
-                =  moduleImportValues mm
-                ++ importsDaVar }
+        return (mm_resolved, errsDaVar)
 
 
 ---------------------------------------------------------------------------------------------------
@@ -94,15 +97,15 @@ importsForTyCons
 importsForTyCons deps _tyCons
  = concat
         [ [(n, ImportTypeAbstract k)
-                | (n, k)        <- Map.toList $ Map.unions 
+                | (n, k)        <- Map.toList $ Map.unions
                                 $  map importedTyConsAbs   $ Map.elems deps]
 
         , [(n, ImportTypeAbstract k)
-                | (n, (_, k))   <- Map.toList $ Map.unions 
+                | (n, (_, k))   <- Map.toList $ Map.unions
                                 $  map exportedTyConsLocal $ Map.elems deps]
 
-        , [(n, ImportTypeBoxed k) 
-                | (n, k)        <- Map.toList $ Map.unions 
+        , [(n, ImportTypeBoxed k)
+                | (n, k)        <- Map.toList $ Map.unions
                                 $  map importedTyConsBoxed $ Map.elems deps] ]
 
 
@@ -131,7 +134,7 @@ importsForDaTyCons deps _tycons
 
 ---------------------------------------------------------------------------------------------------
 -- | Import type defs defined in other modules.
-importsTypeDef 
+importsTypeDef
         :: Map ModuleName (Module b n)
         -> [(n, (Kind n, Type n))]
 
@@ -144,7 +147,7 @@ importsTypeDef deps
 ---------------------------------------------------------------------------------------------------
 -- | Build import statements for the given list of unbound value variables.
 --
---   We look in dependency modules for a matching export, 
+--   We look in dependency modules for a matching export,
 --   and produce the corresponding import statement to use it.
 --
 findImportSourceForDaVar
@@ -166,7 +169,7 @@ findImportSourceForDaVar store modNames nSuper
 exportedTyConsLocal :: Ord n => Module b n -> Map n (ModuleName, Kind n)
 exportedTyConsLocal mm
         = Map.fromList
-        $ [ (n, (moduleName mm, t)) 
+        $ [ (n, (moduleName mm, t))
                         | (n, ExportSourceLocal _ t) <- moduleExportTypes mm ]
 
 -- | Get the type constructors that are imported abstractly by a module.
@@ -198,4 +201,4 @@ instance Pretty Error where
         ErrorMultiple n ms
          -> vcat $  [ text "Variable" <+> squotes (ppr n) <+> text "defined in multiple modules:" ]
                  ++ (map ppr ms)
-         
+

@@ -1,2 +1,5 @@
-Error loading module
-  [[Not in scope: 'y']]
+Error in transformed module.
+  in stage SourceLoadText
+  in pipe  PipeCoreCheck/Check
+  ()
+  Undefined value variable: y
