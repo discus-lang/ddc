@@ -26,6 +26,8 @@ library
         Data.Numeric.Word16
         Data.Numeric.Word32
         Data.Numeric.Word64
+        Data.Numeric.Float32
+        Data.Numeric.Float64
         Data.Function
         Data.Maybe
         Data.Either
