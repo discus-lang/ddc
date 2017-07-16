@@ -43,7 +43,7 @@ data Spec
         , specThreads           :: Int
 
           -- | Ask user what to do about unexpected test outputs interactively.
-        , specInteractive       :: Bool 
+        , specInteractive       :: Bool
 
           -- | Pad test names out to this column width in log files.
         , specFormatPathWidth   :: Int
@@ -79,10 +79,10 @@ build spec
         -- Trace all the files reachable from these directories.
         testFilesRaw   <- io $ liftM (join . Seq.fromList)
                         $  mapM traceFilesFrom testDirs
-                
+
         -- Canonicalize all the paths and put them in a set (which sorts them)
         testFilesSet   <- io $ liftM (Set.fromList . Seq.toList)
-                        $  Seq.mapM (canonicalizePath)
+                        $  Seq.mapM (makeRelativeToCurrentDirectory <=< canonicalizePath)
                         $  testFilesRaw
 
         -- Skip over files with 'skip' in the path,
@@ -103,7 +103,7 @@ build spec
                    ways -> ways
 
         let chains :: [Chain]
-            chains = concat 
+            chains = concat
                 [ concat $ map (\way -> create way testFilesSortedSet file) ways'
                 | file <- testFilesSorted]
 
@@ -112,15 +112,15 @@ build spec
 
         -- Run all the chains.
         results <- io $ runChainsWithControllerIO prefix spec chains
-        
+
         -- Write all results to file if we were asked for it
         let chainsTotal = length chains
         let pathWidth   = specFormatPathWidth spec
         let pprResult   = render . Driver.prettyResult chainsTotal prefix pathWidth
         (case specResultsFileAll spec of
           Nothing       -> return ()
-          Just file     -> io   $ writeFile file 
-                                $ unlines 
+          Just file     -> io   $ writeFile file
+                                $ unlines
                                 $ map pprResult
                                 $ results)
 
@@ -129,7 +129,7 @@ build spec
                 = case p of
                         Driver.ProductStatus _ True     -> True
                         _                               -> False
-        (case specResultsFileFailed spec of 
+        (case specResultsFileFailed spec of
           Nothing       -> return ()
           Just file     -> io   $ writeFile file
                                 $ unlines
@@ -157,21 +157,21 @@ runChainsWithControllerIO
         -> IO [Driver.Result]
 
 runChainsWithControllerIO prefix spec chains
- = do   
+ = do
         -- Count the total number of chains for the status display.
         let chainsTotal = length chains
 
         -- Create a new channel to communicate between the test driver  and the
         -- controller. As each test finishes, the driver writes the result to the
-        -- channel, and the controller reads the results and displays them 
+        -- channel, and the controller reads the results and displays them
         -- on the console.
         (chanResult :: TChan Driver.Result)
                 <- atomically $ newTChan
 
         tmp     <- getTemporaryDirectory
-        
+
         -- Fork a gang to run all the job chains.
-        gang    <- Driver.forkChainsIO 
+        gang    <- Driver.forkChainsIO
                         (specThreads spec) tmp
                         (Just chanResult) chains
 
@@ -181,12 +181,12 @@ runChainsWithControllerIO prefix spec chains
         let configController
                 = Controller.Config
                 { Controller.configFormatPathWidth = specFormatPathWidth spec
-                , Controller.configInteractive     = specInteractive spec 
+                , Controller.configInteractive     = specInteractive spec
                 , Controller.configColoredOutput   = specInteractive spec
                 , Controller.configSuppressPrefix  = prefix }
 
         varResults      <- newEmptyMVar
-        forkIO 
+        forkIO
          $ do   results <- Controller.controller configController gang chainsTotal chanResult
                 putMVar varResults results
          `finally` (putMVar varResults [])
