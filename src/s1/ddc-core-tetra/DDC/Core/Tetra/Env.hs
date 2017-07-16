@@ -15,7 +15,7 @@ import qualified DDC.Type.Env   as Env
 
 
 -- DataDefs -------------------------------------------------------------------
--- | Data type definitions 
+-- | Data type definitions
 --
 -- >  Type                         Constructors
 -- >  ----                ------------------------------
@@ -23,7 +23,7 @@ import qualified DDC.Type.Env   as Env
 -- >  Nat                 0 1 2 ...
 -- >  Int                 ... -2i -1i 0i 1i 2i ...
 -- >  Word{8,16,32,64}#   42w8 123w64 ...
--- 
+--
 primDataDefs :: DataDefs Name
 primDataDefs
  = fromListDataDefs
@@ -31,30 +31,30 @@ primDataDefs
   $     [ dataDefBool
 
         -- Nat#
-        , makeDataDefAlg (NamePrimTyCon PrimTyConNat)       [] Nothing
+        , makeDataDefAlg (NamePrimTyCon PrimTyConNat)        [] Nothing
 
         -- Int#
-        , makeDataDefAlg (NamePrimTyCon PrimTyConInt)       [] Nothing
+        , makeDataDefAlg (NamePrimTyCon PrimTyConInt)        [] Nothing
 
         -- WordN#
-        , makeDataDefAlg (NamePrimTyCon (PrimTyConWord 64)) [] Nothing
-        , makeDataDefAlg (NamePrimTyCon (PrimTyConWord 32)) [] Nothing
-        , makeDataDefAlg (NamePrimTyCon (PrimTyConWord 16)) [] Nothing
-        , makeDataDefAlg (NamePrimTyCon (PrimTyConWord 8))  [] Nothing
+        , makeDataDefAlg (NamePrimTyCon (PrimTyConWord 64))  [] Nothing
+        , makeDataDefAlg (NamePrimTyCon (PrimTyConWord 32))  [] Nothing
+        , makeDataDefAlg (NamePrimTyCon (PrimTyConWord 16))  [] Nothing
+        , makeDataDefAlg (NamePrimTyCon (PrimTyConWord 8))   [] Nothing
 
         -- FloatN#
-        , makeDataDefAlg (NamePrimTyCon (PrimTyConWord 64)) [] Nothing
-        , makeDataDefAlg (NamePrimTyCon (PrimTyConWord 32)) [] Nothing
+        , makeDataDefAlg (NamePrimTyCon (PrimTyConFloat 64)) [] Nothing
+        , makeDataDefAlg (NamePrimTyCon (PrimTyConFloat 32)) [] Nothing
 
         -- TextLit#
-        , makeDataDefAlg (NamePrimTyCon PrimTyConTextLit)   [] Nothing
+        , makeDataDefAlg (NamePrimTyCon PrimTyConTextLit)    [] Nothing
 
         -- Vector#
-        , makeDataDefAlg (NameTyConTetra TyConTetraVector)  [] Nothing
+        , makeDataDefAlg (NameTyConTetra TyConTetraVector)   [] Nothing
 
         -- U#
         -- We need this data def when matching against literals with case expressions.
-        , makeDataDefAlg (NameTyConTetra TyConTetraU)       [] Nothing
+        , makeDataDefAlg (NameTyConTetra TyConTetraU)        [] Nothing
         ]
 
         -- Tuple
@@ -67,9 +67,9 @@ primDataDefs
 -- | Data type definition for `Bool`.
 dataDefBool :: DataDef Name
 dataDefBool
- = makeDataDefAlg (NamePrimTyCon PrimTyConBool) 
-        [] 
-        (Just   [ (NameLitBool True,  []) 
+ = makeDataDefAlg (NamePrimTyCon PrimTyConBool)
+        []
+        (Just   [ (NameLitBool True,  [])
                 , (NameLitBool False, []) ])
 
 
@@ -102,7 +102,7 @@ primKindEnv = Env.setPrimFun kindOfPrimName Env.empty
 
 -- | Take the kind of a primitive name.
 --
---   Returns `Nothing` if the name isn't primitive. 
+--   Returns `Nothing` if the name isn't primitive.
 --
 kindOfPrimName :: Name -> Maybe (Kind Name)
 kindOfPrimName nn

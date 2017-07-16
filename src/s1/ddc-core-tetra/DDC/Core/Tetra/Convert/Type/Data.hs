@@ -25,41 +25,41 @@ import DDC.Data.Pretty
 
 -- | Convert a value binder with a representable type.
 --   This is used for the binders of function arguments, which must have
---   representatable types to adhere to some calling convention. 
+--   representatable types to adhere to some calling convention.
 convertDataB :: Context -> Bind E.Name -> ConvertM a (Bind A.Name)
 convertDataB ctx bb
   = case bb of
-        BNone t         -> liftM  BNone (convertDataT ctx t)        
+        BNone t         -> liftM  BNone (convertDataT ctx t)
         BAnon t         -> liftM  BAnon (convertDataT ctx t)
         BName n t       -> liftM2 BName (convertBindNameM n) (convertDataT ctx t)
 
 
 -- | Convert a value bound.
---   These refer to function arguments or let-bound values, 
+--   These refer to function arguments or let-bound values,
 --   and hence must have representable types.
 convertDataU :: Bound E.Name -> ConvertM a (Maybe (Bound A.Name))
 convertDataU uu
   = case uu of
-        UIx i                   
+        UIx i
          -> return $ Just $ UIx i
 
         UName n
          -> do  n'      <- convertBindNameM n
                 return $ Just $ UName n'
 
-        -- When converting primops, use the type directly specified by the 
+        -- When converting primops, use the type directly specified by the
         -- Salt language instead of converting it from Tetra. The types from
         -- each language definition may not be inter-convertible.
         UPrim n _
          -> case n of
                 E.NamePrimArith op True
-                  -> return 
-                  $  Just $ UPrim (A.NamePrimOp (A.PrimArith op)) 
+                  -> return
+                  $  Just $ UPrim (A.NamePrimOp (A.PrimArith op))
                                   (A.typeOfPrimArith op)
 
                 E.NamePrimCast op True
-                  -> return 
-                  $  Just $ UPrim (A.NamePrimOp (A.PrimCast  op)) 
+                  -> return
+                  $  Just $ UPrim (A.NamePrimOp (A.PrimCast  op))
                                   (A.typeOfPrimCast  op)
 
                 _ -> return Nothing
@@ -78,17 +78,17 @@ convertDataT ctx tt
         TVar u
          -> case Env.lookup u (contextKindEnv ctx) of
              Just k
-              -- Parametric data types are represented as generic objects,   
+              -- Parametric data types are represented as generic objects,
               -- where the region those objects are in is named after the
               -- original type name.
               |  isDataKind k
               -> return $ A.tPtr A.rTop A.tObj
 
-              | otherwise    
-              -> throw $ ErrorMalformed 
+              | otherwise
+              -> throw $ ErrorMalformed
                        $ "Invalid value type " ++ (renderIndent $ ppr tt)
 
-             Nothing 
+             Nothing
               -> throw $ ErrorUnbound u
 
         -- Convert unapplied type constructors.
@@ -122,7 +122,7 @@ convertDataAppT ctx tt
         -- The suspended computation type.
         | Just (TyConSpec TcConSusp, [_tEff, tResult])  <- takeTyConApps tt
         = do   convertDataT ctx tResult
-        
+
         -- Record types.
         | Just (TyConSpec (TcConRecord ns), tsArgs)     <- takeTyConApps tt
         , length ns == length tsArgs
@@ -151,6 +151,7 @@ convertDataAppT ctx tt
                         E.PrimTyConNat          -> True
                         E.PrimTyConInt          -> True
                         E.PrimTyConWord _       -> True
+                        E.PrimTyConFloat _      -> True
                         _                       -> False
         =       return $ A.tPtr A.rTop A.tObj
 
@@ -158,7 +159,7 @@ convertDataAppT ctx tt
         -- Tetra TyCons -----------------------------------
 
         -- Explicitly unboxed numeric types.
-        -- In Salt, unboxed numeric values are represented directly as 
+        -- In Salt, unboxed numeric values are represented directly as
         -- values of the corresponding machine type.
         | Just  ( E.NameTyConTetra E.TyConTetraU
                 , [tNum])       <- takePrimTyConApps tt
@@ -202,7 +203,7 @@ convertDataAppT ctx tt
 
 
         -- Foreign boxed data types -----------------------
-        --   If these have a primary region then we use that, 
+        --   If these have a primary region then we use that,
         --   otherwise they are represnted in generic boxed form.
         | Just (TyConBound (UName n) _, args) <- takeTyConApps tt
         , Set.member n (contextForeignBoxedTypeCtors ctx)
@@ -245,7 +246,7 @@ convertDataAppT ctx tt
         = do    return  $ A.tPtr A.rTop A.tObj
 
         | otherwise
-        = throw   $ ErrorMalformed 
+        = throw   $ ErrorMalformed
                   $  "Invalid type constructor application "
                   ++ (renderIndent $ ppr tt)
 
@@ -253,23 +254,19 @@ convertDataAppT ctx tt
 -- | Convert a primitive type directly to its Salt form.
 convertDataPrimitiveT :: Type E.Name -> ConvertM a (Type A.Name)
 convertDataPrimitiveT tt
-        | Just (E.NamePrimTyCon n, [])  <- takePrimTyConApps tt
-        = case n of
-                E.PrimTyConBool         -> return $ A.tBool
-                E.PrimTyConNat          -> return $ A.tNat
-                E.PrimTyConInt          -> return $ A.tInt
-                E.PrimTyConSize         -> return $ A.tSize
-                E.PrimTyConWord  bits   -> return $ A.tWord bits
-                E.PrimTyConFloat bits   -> return $ A.tFloat bits
+ | Just (E.NamePrimTyCon n, [])  <- takePrimTyConApps tt
+ = case n of
+        E.PrimTyConBool         -> return $ A.tBool
+        E.PrimTyConNat          -> return $ A.tNat
+        E.PrimTyConInt          -> return $ A.tInt
+        E.PrimTyConSize         -> return $ A.tSize
+        E.PrimTyConWord  bits   -> return $ A.tWord bits
+        E.PrimTyConFloat bits   -> return $ A.tFloat bits
 
-                E.PrimTyConTextLit      -> return $ A.tTextLit
+        E.PrimTyConTextLit      -> return $ A.tTextLit
 
-                _ -> throw $  ErrorMalformed 
-                           $  "Invalid primitive type "
-                           ++ (renderIndent $ ppr tt)
+        _ -> throw $ ErrorMalformed $ "Invalid primitive type " ++ (renderIndent $ ppr tt)
 
-        | otherwise
-        = throw $  ErrorMalformed 
-                $  "Invalid primitive type "
-                ++ (renderIndent $ ppr tt)
+ | otherwise
+ = throw $  ErrorMalformed $  "Invalid primitive type " ++ (renderIndent $ ppr tt)
 

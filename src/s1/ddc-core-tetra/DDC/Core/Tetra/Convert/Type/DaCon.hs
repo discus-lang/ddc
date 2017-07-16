@@ -80,8 +80,8 @@ convertCtorT ctx0 tt0
 
 -- DaCon ------------------------------------------------------------------------------------------
 -- | Convert a data constructor definition.
-convertDaCon 
-        :: Context 
+convertDaCon
+        :: Context
         -> DaCon E.Name (Type E.Name)
         -> ConvertM a (DaCon A.Name (Type A.Name))
 
@@ -104,14 +104,14 @@ convertDaCon ctx dc
 
 
 -- | Convert the name of a data constructor.
-convertDaConNameM 
+convertDaConNameM
         :: DaCon E.Name (Type E.Name)
-        -> E.Name 
+        -> E.Name
         -> ConvertM a A.Name
 
 convertDaConNameM dc nn
  = case nn of
-        E.NameLitUnboxed (E.NameLitBool val)       
+        E.NameLitUnboxed (E.NameLitBool val)
           -> return $ A.NamePrimLit $ A.PrimLitBool val
 
         E.NameLitUnboxed (E.NameLitNat  val)
@@ -122,6 +122,9 @@ convertDaConNameM dc nn
 
         E.NameLitUnboxed (E.NameLitWord val bits)
           -> return $ A.NamePrimLit $ A.PrimLitWord val bits
+
+        E.NameLitUnboxed (E.NameLitFloat val bits)
+          -> return $ A.NamePrimLit $ A.PrimLitFloat val bits
 
         _ -> throw $ ErrorInvalidDaCon dc
 
