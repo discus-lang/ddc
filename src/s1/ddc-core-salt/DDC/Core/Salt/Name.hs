@@ -17,7 +17,7 @@ module DDC.Core.Salt.Name
           -- * Primitive Values
         , PrimVal       (..)
         , readPrimVal
-        
+
         , pattern NamePrimOp
         , pattern NamePrimLit
 
@@ -77,7 +77,7 @@ module DDC.Core.Salt.Name
 
           -- * Name Parsing
         , readName
-        
+
         , takeNameVar )
 where
 import DDC.Core.Salt.Name.PrimArith
@@ -143,9 +143,9 @@ instance Pretty Name where
 
 
 instance CompoundName Name where
- extendName n str       
+ extendName n str
   = NameExt n str
- 
+
  newVarName str
   = NameVar str
 
@@ -158,7 +158,7 @@ instance CompoundName Name where
 -- | Read the name of a variable, constructor or literal.
 readName :: String -> Maybe Name
 readName str
-        -- Obj 
+        -- Obj
         | str == "Obj"
         = Just $ NameObjTyCon
 
@@ -172,7 +172,7 @@ readName str
 
         -- Constructors.
         | c : _         <- str
-        , isUpper c      
+        , isUpper c
         = Just $ NameVar str
 
         -- Variables.
@@ -305,7 +305,7 @@ readPrimOp str
 
 -- PrimLit --------------------------------------------------------------------
 -- | Primitive literals.
-data PrimLit 
+data PrimLit
         -- | The void literal.
         = PrimLitVoid
 
@@ -367,7 +367,7 @@ instance NFData PrimLit where
 
 
 instance Pretty PrimLit where
- ppr p 
+ ppr p
   = case p of
         PrimLitVoid             -> text "V#"
         PrimLitBool True        -> text "True#"
@@ -386,7 +386,7 @@ instance Pretty PrimLit where
 readPrimLit :: String -> Maybe PrimLit
 readPrimLit str
         -- Literal void
-        | str == "V#" 
+        | str == "V#"
         = Just $ PrimLitVoid
 
         -- Literal Bools
@@ -415,10 +415,12 @@ readPrimLit str
         = Just $ PrimLitWord val bits
 
         -- Literal Floats
-        | Just str'        <- stripSuffix "#" str
-        , Just (val, bits) <- K.readLitFloatOfBits str'
-        , elem bits [32, 64]
-        = Just $ PrimLitFloat val bits
+        | Just str'         <- stripSuffix "#" str
+        , Just (val, mbits) <- K.readLitFloatOfBits str'
+        = case mbits of
+                Just 32 -> Just $ PrimLitFloat val 32
+                Just 64 -> Just $ PrimLitFloat val 64
+                _       -> Nothing
 
         -- Literal Tags
         | Just rest     <- stripPrefix "TAG" str

@@ -19,7 +19,7 @@ import qualified DDC.Type.Env   as Env
 
 
 -- | Language profile for Disciple Core Flow.
-profile :: Profile Name 
+profile :: Profile Name
 profile
         = Profile
         { profileName                   = "Flow"
@@ -27,8 +27,8 @@ profile
         , profilePrimDataDefs           = primDataDefs
         , profilePrimKinds              = primKindEnv
         , profilePrimTypes              = primTypeEnv
-        , profileTypeIsUnboxed          = const False 
-        , profileNameIsHole             = Nothing 
+        , profileTypeIsUnboxed          = const False
+        , profileNameIsHole             = Nothing
         , profileMakeLiteralName        = Just makeLiteralName }
 
 
@@ -36,18 +36,19 @@ profile
 makeLiteralName :: SourcePos -> Literal -> Bool -> Maybe Name
 makeLiteralName _ lit True
  = case lit of
-        LNat    n       -> Just $ NameLitNat     n
-        LInt    i       -> Just $ NameLitInt     i
-        LWord   i b     -> Just $ NameLitWord    i b
-        LFloat  f b     -> Just $ NameLitFloat   (toRational f) b
-        _               -> Nothing
+        LNat    n               -> Just $ NameLitNat     n
+        LInt    i               -> Just $ NameLitInt     i
+        LWord   i b             -> Just $ NameLitWord    i b
+        LFloat  f (Just 32)     -> Just $ NameLitFloat   (toRational f) 32
+        LFloat  f (Just 64)     -> Just $ NameLitFloat   (toRational f) 64
+        _                       -> Nothing
 
 makeLiteralName _ _ _
  = Nothing
 
 
 features :: Features
-features 
+features
         = Features
         { featuresTrackedEffects        = False
         , featuresTrackedClosures       = False
@@ -75,8 +76,8 @@ features
 lexModuleString :: String -> Int -> String -> [Located (Token Name)]
 lexModuleString sourceName lineStart str
  = map rn $ lexModuleWithOffside sourceName lineStart str
- where 
-        rn (Located sp strTok) 
+ where
+        rn (Located sp strTok)
          = case renameToken readName strTok of
                 Just t' -> Located sp t'
                 Nothing -> Located sp (KErrorJunk "lexical error")
@@ -89,7 +90,7 @@ lexExpString :: String -> Int -> String -> [Located (Token Name)]
 lexExpString sourceName lineStart str
  = map rn $ lexExp sourceName lineStart str
  where
-        rn (Located sp strTok) 
+        rn (Located sp strTok)
          = case renameToken readName strTok of
                 Just t' -> Located sp t'
                 Nothing -> Located sp (KErrorJunk "lexical error")

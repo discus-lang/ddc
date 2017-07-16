@@ -25,7 +25,7 @@ import qualified Data.Text              as Text
 
 -- Literal --------------------------------------------------------------------
 scanLiteral   :: Scanner IO Location [Char] (Location, (Literal, Bool))
-scanLiteral 
+scanLiteral
  = alts [ munchPred Nothing matchLiteral acceptLiteral
 
           -- Character literals with Haskell style escape codes.
@@ -36,7 +36,7 @@ scanLiteral
                      , do return (loc, (LChar  c, False)) ]
 
           -- String literals with Haskell style escape codes.
-        , do    (loc, str)  <- scanHaskellString 
+        , do    (loc, str)  <- scanHaskellString
                 alts [ do _ <- satisfies (\c -> c == '#')
                           return (loc, (LString (Text.pack str), True))
 
@@ -117,10 +117,10 @@ readLitInteger str@(c:cs)
 
         | all Char.isDigit cs
         = Just $ read str
-        
+
         | otherwise
         = Nothing
-        
+
 
 -- | Read an integer with an explicit format specifier like @1234i@.
 readLitNat :: String -> Maybe Integer
@@ -205,7 +205,7 @@ readLitWordOfBits str1
 
 
 -- | Read a float literal with an explicit format specifier like @123.00f32#@.
-readLitFloatOfBits :: String -> Maybe (Double, Int)
+readLitFloatOfBits :: String -> Maybe (Double, Maybe Int)
 readLitFloatOfBits str1
         | '-' : str2    <- str1
         , Just (d, bs)  <- readLitFloatOfBits str2
@@ -216,13 +216,21 @@ readLitFloatOfBits str1
         , Just str3     <- List.stripPrefix "." str2
         , (ds2, str4)   <- List.span Char.isDigit str3
         , not $ null ds2
-        , Just str5     <- List.stripPrefix "f" str4
-        , (bs, "")      <- List.span Char.isDigit str5
-        , not $ null bs
-        = Just (read (ds1 ++ "." ++ ds2), read bs)
+        = case List.stripPrefix "f" str4 of
+                Just str5
+                 | (bs, "")     <- List.span Char.isDigit str5
+                 , not $ null bs
+                 -> Just (read (ds1 ++ "." ++ ds2), Just $ read bs)
+
+                 | otherwise
+                 -> Nothing
+
+                Nothing
+                 -> Just (read (ds1 ++ "." ++ ds2), Nothing)
 
         | otherwise
         = Nothing
+
 
 
 -- | Read a binary string as a number.

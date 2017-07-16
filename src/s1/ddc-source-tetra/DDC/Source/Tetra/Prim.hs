@@ -77,7 +77,7 @@ import DDC.Data.Pretty
 import Control.DeepSeq
 import qualified Data.Text              as T
 
-import DDC.Core.Tetra   
+import DDC.Core.Tetra
         ( readPrimTyCon
         , readPrimArithFlag
         , readPrimCastFlag
@@ -119,10 +119,10 @@ instance NFData PrimType where
 -- | Read the name of a primitive type.
 readPrimType :: String -> Maybe PrimType
 readPrimType str
-        | Just p <- readPrimTyConTetra str  
+        | Just p <- readPrimTyConTetra str
         = Just $ PrimTypeTyConTetra p
 
-        | Just p <- readPrimTyCon str  
+        | Just p <- readPrimTyCon str
         = Just $ PrimTypeTyCon p
 
         | otherwise
@@ -161,7 +161,7 @@ readPrimVal str
         | Just lit        <- readPrimLit str
         = Just $ PrimValLit    lit
 
-        | Just (p, False) <- readPrimArithFlag str  
+        | Just (p, False) <- readPrimArithFlag str
         = Just $ PrimValArith  p
 
         | Just (p, False) <- readPrimCastFlag  str
@@ -193,7 +193,7 @@ instance Pretty PrimLit where
 
 
 instance NFData PrimLit where
- rnf lit 
+ rnf lit
   = case lit of
         PrimLitBool     b       -> rnf b
         PrimLitNat      n       -> rnf n
@@ -202,7 +202,7 @@ instance NFData PrimLit where
         PrimLitWord     i bits  -> rnf i `seq` rnf bits
         PrimLitFloat    d bits  -> rnf d `seq` rnf bits
         PrimLitChar     c       -> rnf c
-        PrimLitTextLit  bs      -> rnf bs       
+        PrimLitTextLit  bs      -> rnf bs
 
 
 -- | Read the name of a primitive literal.
@@ -230,9 +230,12 @@ readPrimLit str
         = Just $ PrimLitWord val bits
 
         -- Literal Floats
-        | Just (val, bits) <- readLitFloatOfBits str
-        , elem bits [32, 64]
-        = Just $ PrimLitFloat val bits
+        | Just (val, mbits) <- readLitFloatOfBits str
+        = case mbits of
+                Just 32         -> Just $ PrimLitFloat val 32
+                Just 64         -> Just $ PrimLitFloat val 64
+                Nothing         -> Just $ PrimLitFloat val 64
+                _               -> Nothing
 
         | otherwise
         = Nothing

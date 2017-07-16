@@ -79,25 +79,25 @@ import DDC.Core.Lexer.Tokens            (isVarStart)
 
 import DDC.Core.Salt.Name
         ( readPrimTyCon
-        
+
         , readPrimArith
-        
+
         , readPrimVec
         , multiOfPrimVec
         , liftPrimArithToVec
         , lowerPrimVecToArith
-        
+
         , readPrimCast
         , readLitNat
         , readLitInt
         , readLitWordOfBits
         , readLitFloatOfBits)
-        
+
 import DDC.Data.Name
 import DDC.Data.Pretty
 import DDC.Data.ListUtils
 import Control.DeepSeq
-import Data.Char        
+import Data.Char
 
 
 instance NFData Name where
@@ -158,9 +158,9 @@ instance Pretty Name where
 
 
 instance CompoundName Name where
- extendName n str       
+ extendName n str
   = NameVarMod n str
- 
+
  splitName nn
   = case nn of
         NameVarMod n str   -> Just (n, str)
@@ -176,9 +176,9 @@ readName str
         | Just p        <- readDaConFlow  str   = Just $ NameDaConFlow  p
         | Just p        <- readOpConcrete str   = Just $ NameOpConcrete p
         | Just p        <- readOpControl  str   = Just $ NameOpControl  p
-        | Just p        <- readOpSeries   str   = Just $ NameOpSeries   p 
+        | Just p        <- readOpSeries   str   = Just $ NameOpSeries   p
         | Just p        <- readOpStore    str   = Just $ NameOpStore    p
-        | Just p        <- readOpVector   str   = Just $ NameOpVector   p 
+        | Just p        <- readOpVector   str   = Just $ NameOpVector   p
 
         -- Primitive names.
         | Just p        <- readPrimTyCon  str   = Just $ NamePrimTyCon  p
@@ -208,9 +208,11 @@ readName str
 
         -- Literal Floats
         | Just str'             <- stripSuffix "#" str
-        , Just (val, bits)      <- readLitFloatOfBits str'
-        , elem bits [32, 64]
-        = Just $ NameLitFloat (toRational val) bits
+        , Just (val, mBits)     <- readLitFloatOfBits str'
+        = case mBits of
+                Just 32         -> Just $ NameLitFloat (toRational val) 32
+                Just 64         -> Just $ NameLitFloat (toRational val) 64
+                _               -> Nothing
 
         -- Variables.
         | c : _                 <- str
@@ -220,7 +222,7 @@ readName str
         = Just $ NameVarMod n strMod
 
         | c : _         <- str
-        , isVarStart c      
+        , isVarStart c
         = Just $ NameVar str
 
         -- Constructors.

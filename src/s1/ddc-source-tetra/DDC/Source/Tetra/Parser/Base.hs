@@ -141,7 +141,7 @@ pDaConBoundNameSP = P.pTokMaybeSP f
 --    and special constructors like 'True' and 'False'.
 pDaConBoundLit :: Parser DaConBound
 pDaConBoundLit = P.pTokMaybe f
- where  f (KA (KLiteral lit False))      = Just (DaConBoundLit (primLitOfLiteral lit))
+ where  f (KA (KLiteral lit False))      = fmap DaConBoundLit (primLitOfLiteral lit)
         f (KN (KCon (NamePrimValLit n))) = Just (DaConBoundLit n)
         f _                              = Nothing
 
@@ -151,7 +151,7 @@ pDaConBoundLit = P.pTokMaybe f
 --    and special constructors like 'True' and 'False'.
 pDaConBoundLitSP :: Parser (DaConBound, SourcePos)
 pDaConBoundLitSP = P.pTokMaybeSP f
- where  f (KA (KLiteral lit False))      = Just (DaConBoundLit (primLitOfLiteral lit))
+ where  f (KA (KLiteral lit False))      = fmap DaConBoundLit (primLitOfLiteral lit)
         f (KN (KCon (NamePrimValLit n))) = Just (DaConBoundLit n)
         f _                              = Nothing
 

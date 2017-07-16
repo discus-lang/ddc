@@ -19,16 +19,16 @@ import Control.Monad.State.Strict
 
 
 -- | Language profile for Disciple Core Salt.
-profile :: Profile Name 
+profile :: Profile Name
 profile
         = Profile
         { profileName                   = "Salt"
         , profileFeatures               = features
         , profilePrimDataDefs           = primDataDefs
         , profilePrimKinds              = primKindEnv
-        , profilePrimTypes              = primTypeEnv 
-        , profileTypeIsUnboxed          = typeIsUnboxed 
-        , profileNameIsHole             = Nothing 
+        , profilePrimTypes              = primTypeEnv
+        , profileTypeIsUnboxed          = typeIsUnboxed
+        , profileNameIsHole             = Nothing
         , profileMakeLiteralName        = Just makeLiteralName }
 
 
@@ -36,13 +36,17 @@ profile
 makeLiteralName :: SourcePos -> Literal -> Bool -> Maybe Name
 makeLiteralName _ lit True
  = case lit of
-        LNat    n       -> Just $ NameLitNat     n
-        LInt    i       -> Just $ NameLitInt     i
-        LSize   s       -> Just $ NameLitSize    s
-        LWord   i b     -> Just $ NameLitWord    i b
-        LFloat  f b     -> Just $ NameLitFloat   f b
-        LChar   c       -> Just $ NameLitChar    c
-        LString tx      -> Just $ NameLitTextLit tx
+        LNat    n               -> Just $ NameLitNat     n
+        LInt    i               -> Just $ NameLitInt     i
+        LSize   s               -> Just $ NameLitSize    s
+        LWord   i b             -> Just $ NameLitWord    i b
+
+        LFloat  f (Just 32)     -> Just $ NameLitFloat   f 32
+        LFloat  f (Just 64)     -> Just $ NameLitFloat   f 64
+
+        LChar   c               -> Just $ NameLitChar    c
+        LString tx              -> Just $ NameLitTextLit tx
+        _                       -> Nothing
 
 makeLiteralName _ _ _
  = Nothing
@@ -55,7 +59,7 @@ features = zeroFeatures
         { featuresFunctionalEffects     = True
         , featuresFunctionalClosures    = True
         , featuresDebruijnBinders       = True
-        , featuresUnusedBindings        = True 
+        , featuresUnusedBindings        = True
         , featuresEffectCapabilities    = True
 
           -- ISSUE #340: Check for partial application of supers in Salt
@@ -77,7 +81,7 @@ lexModuleString
 lexModuleString sourceName lineStart str
  = map rn $ lexModuleWithOffside sourceName lineStart str
  where
-        rn (Located sp strTok) 
+        rn (Located sp strTok)
          = case renameToken readName strTok of
                 Just t' -> Located sp t'
                 Nothing -> Located sp (KErrorJunk "lexical error")
@@ -92,8 +96,8 @@ lexExpString
 
 lexExpString sourceName lineStart str
  = map rn $ lexExp sourceName lineStart str
- where 
-        rn (Located sp strTok) 
+ where
+        rn (Located sp strTok)
          = case renameToken readName strTok of
                 Just t' -> Located sp t'
                 Nothing -> Located sp (KErrorJunk "lexical error")

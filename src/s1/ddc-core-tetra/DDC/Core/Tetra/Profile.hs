@@ -36,13 +36,15 @@ profile
 makeLiteralName :: SourcePos -> Literal -> Bool -> Maybe Name
 makeLiteralName _ lit True
  = case lit of
-        LNat    n       -> Just $ NameLitNat     n
-        LInt    i       -> Just $ NameLitInt     i
-        LSize   s       -> Just $ NameLitSize    s
-        LWord   i b     -> Just $ NameLitWord    i b
-        LFloat  f b     -> Just $ NameLitFloat   f b
-        LChar   c       -> Just $ NameLitChar    c
-        LString tx      -> Just $ NameLitTextLit tx
+        LNat    n               -> Just $ NameLitNat     n
+        LInt    i               -> Just $ NameLitInt     i
+        LSize   s               -> Just $ NameLitSize    s
+        LWord   i b             -> Just $ NameLitWord    i b
+        LFloat  f (Just 32)     -> Just $ NameLitFloat   f 32
+        LFloat  f (Just 64)     -> Just $ NameLitFloat   f 64
+        LChar   c               -> Just $ NameLitChar    c
+        LString tx              -> Just $ NameLitTextLit tx
+        _                       -> Nothing
 
 makeLiteralName _ _ _
  = Nothing

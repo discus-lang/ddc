@@ -34,7 +34,7 @@ module DDC.Source.Tetra.Prim.Base
 where
 import DDC.Type.Exp.TyCon
 import DDC.Core.Exp.Literal
-import DDC.Core.Tetra    
+import DDC.Core.Tetra
         ( OpFun         (..)
         , OpVector      (..)
         , OpError       (..)
@@ -73,7 +73,7 @@ data PrimType
 data PrimTyConTetra
         -- | @TupleN#@. Tuples.
         = PrimTyConTetraTuple !Int
-        
+
         -- | @Vector#@. Vectors.
         | PrimTyConTetraVector
 
@@ -102,7 +102,7 @@ data PrimVal
 
         -- | Primitive error handling.
         | PrimValError          !OpError
-        
+
         -- | Primitive vector operators.
         | PrimValVector         !OpVector
 
@@ -145,14 +145,20 @@ data PrimLit
 
 
 -- | Convert a literal to a Tetra name.
-primLitOfLiteral :: Literal -> PrimLit
+primLitOfLiteral :: Literal -> Maybe PrimLit
 primLitOfLiteral lit
  = case lit of
-        LNat    n       -> PrimLitNat     n
-        LInt    i       -> PrimLitInt     i
-        LSize   s       -> PrimLitSize    s
-        LWord   i b     -> PrimLitWord    i b
-        LFloat  f b     -> PrimLitFloat   f b
-        LChar   c       -> PrimLitChar    c
-        LString tx      -> PrimLitTextLit tx
+        LNat    n               -> Just $ PrimLitNat     n
+        LInt    i               -> Just $ PrimLitInt     i
+        LSize   s               -> Just $ PrimLitSize    s
+        LWord   i b             -> Just $ PrimLitWord    i b
+
+        LFloat  f (Just 32)     -> Just $ PrimLitFloat   f 32
+        LFloat  f (Just 64)     -> Just $ PrimLitFloat   f 64
+        LFloat  f Nothing       -> Just $ PrimLitFloat   f 64
+
+        LChar   c               -> Just $ PrimLitChar    c
+        LString tx              -> Just $ PrimLitTextLit tx
+
+        _                       -> Nothing
 
