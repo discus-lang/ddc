@@ -1,0 +1,56 @@
+
+module Data.Numeric.Float32
+export
+{       eq_Float32;  ord_Float32;
+        add_Float32; sub_Float32; mul_Float32; div_Float32; rem_Float32;
+}
+import Class.Numeric
+where
+
+
+-- | Default Float32 type is an alias for the primitive type.
+type Float32      = Float32#
+
+
+-- | Eq dictionary for Float32.
+eq_Float32:  Eq Float32
+ = Eq eq' neq'
+ where  eq'  a b        = eq#  [Float32#] a b
+        neq' a b        = neq# [Float32#] a b
+
+
+-- | Ord dictionary for Float32.
+ord_Float32:  Ord Float32
+ = Ord  compare'
+ where  compare' n1 n2
+         | gt# [Float32#] n1 n2     = GT
+         | lt# [Float32#] n1 n2     = LT
+         | otherwise            = EQ
+
+
+-- | Add dictionary for Float32.
+add_Float32: Add Float32
+ = Add (\x y -> add# [Float32#] x y)
+
+
+-- | Sub dictionary for Nat.
+sub_Float32: Sub Float32
+ = Sub (\x y -> if gt# [Float32#] y x
+                 then 0.0f32
+                 else sub# [Float32#] x y)
+
+
+-- | Mul dictionary for Float32.
+mul_Float32: Mul Float32
+ = Mul (\x y -> mul# [Float32#] x y)
+
+
+-- | Div dictionary for Float32.
+div_Float32: Div Float32
+ = Div (\x y -> div# [Float32#] x y)
+
+
+-- | Rem dictionary for Float32.
+rem_Float32: Rem Float32
+ = Rem (\x y -> rem# [Float32#] x y)
+

@@ -1,0 +1,58 @@
+
+module Data.Numeric.Float64
+export
+{       eq_Float64;  ord_Float64;
+        add_Float64; sub_Float64; mul_Float64; div_Float64; rem_Float64;
+}
+import Class.Numeric
+where
+
+-- | Default Float type is an alise for the Float64 primitive type.
+type Float      = Float64#
+
+-- | Default Float64 type is an alias for the primitive type.
+type Float64    = Float64#
+
+
+-- | Eq dictionary for Float64.
+eq_Float64:  Eq Float64
+ = Eq eq' neq'
+ where  eq'  a b        = eq#  [Float64#] a b
+        neq' a b        = neq# [Float64#] a b
+
+
+-- | Ord dictionary for Float64.
+ord_Float64:  Ord Float64
+ = Ord  compare'
+ where  compare' n1 n2
+         | gt# [Float64#] n1 n2     = GT
+         | lt# [Float64#] n1 n2     = LT
+         | otherwise            = EQ
+
+
+-- | Add dictionary for Float64.
+add_Float64: Add Float64
+ = Add (\x y -> add# [Float64#] x y)
+
+
+-- | Sub dictionary for Nat.
+sub_Float64: Sub Float64
+ = Sub (\x y -> if gt# [Float64#] y x
+                 then 0.0f64
+                 else sub# [Float64#] x y)
+
+
+-- | Mul dictionary for Float64.
+mul_Float64: Mul Float64
+ = Mul (\x y -> mul# [Float64#] x y)
+
+
+-- | Div dictionary for Float64.
+div_Float64: Div Float64
+ = Div (\x y -> div# [Float64#] x y)
+
+
+-- | Rem dictionary for Float64.
+rem_Float64: Rem Float64
+ = Rem (\x y -> rem# [Float64#] x y)
+
