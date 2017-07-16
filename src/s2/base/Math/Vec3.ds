@@ -1,0 +1,74 @@
+
+module Math.Vec3
+export
+{       vec3_magnitude;
+        vec3_muls;
+        vec3_negate;
+        vec3_add;       add_Vec3;
+        vec3_sub;       sub_Vec3;
+        vec3_dot;
+        vec3_cross;
+        vec3_normalize;
+}
+import Data.Numeric.Float64
+import Class.Numeric
+where
+
+
+-------------------------------------------------------------------------------
+data Vec3 where
+        Vec3    : Float -> Float -> Float -> Vec3
+
+
+-------------------------------------------------------------------------------
+-- | Add dictionary for vectors.
+add_Vec3: Add Vec3
+ = Add vec3_add
+
+-- | Sub dictionary for vectors.
+sub_Vec3: Sub Vec3
+ = Sub vec3_sub
+
+
+-------------------------------------------------------------------------------
+-- | Take the magnitude of a vector.
+vec3_magnitude  ((Vec3 x y z): Vec3): Float
+ = float64_sqrt (x * x + y * y + z * z)
+
+
+-- | Multiply a vector by a scalar.
+vec3_muls       ((Vec3 x y z): Vec3) (s: Float): Vec3
+ = Vec3 (x * s) (y * s) (z * s)
+
+
+-- | Negate a vector.
+vec3_negate     ((Vec3 x y z): Vec3): Vec3
+ = Vec3 (0.0 - x) (0.0 - y) (0.0 - z)
+
+
+-- | Add two vectors component-wise.
+vec3_add        ((Vec3 x1 y1 z1): Vec3) ((Vec3 x2 y2 z2): Vec3): Vec3
+ = Vec3 (x1 + x2) (y1 + y2) (z1 + z2)
+
+
+-- | Subtract two vectors component-wise.
+vec3_sub        ((Vec3 x1 y1 z1): Vec3) ((Vec3 x2 y2 z2): Vec3): Vec3
+ = Vec3 (x1 - x2) (y1 - y2) (z1 - z2)
+
+
+-- | Take the dot-product of two vectors.
+vec3_dot        ((Vec3 x1 y1 z1): Vec3) ((Vec3 x2 y2 z2): Vec3): Float
+ = (x1 * x2) + (y1 * y2) + (z1 * z2)
+
+
+-- | Take the cross-product of two vectors.
+vec3_cross      ((Vec3 x1 y1 z1): Vec3) ((Vec3 x2 y2 z2): Vec3): Vec3
+ = Vec3 (y1 * z2 - z1 * y2)
+        (z1 * x2 - x1 * z2)
+        (x1 * y2 - y1 * x2)
+
+
+-- | Normalize a vector.
+vec3_normalize  (v: Vec3): Vec3
+ = vec3_muls v (div 1.0 (vec3_magnitude v))
+

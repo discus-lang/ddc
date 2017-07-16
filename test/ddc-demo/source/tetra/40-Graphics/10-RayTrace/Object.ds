@@ -1,0 +1,109 @@
+
+module Object
+export
+{       object_cast; object_check;
+        object_distance;  object_normal;
+        object_color; object_shine
+}
+import Math.Vec3
+import Data.Maybe; Data.Numeric
+where
+
+
+data Object where
+        Sphere  :  Vec3         -- Position.
+                -> Float        -- Radius.
+                -> Vec3         -- Color
+                -> Float        -- Shine
+                -> Object
+
+        Plane   :  Vec3         -- Position
+                -> Vec3         -- Normal
+                -> Vec3         -- Color
+                -> Float        -- Shine
+                -> Object
+
+
+-- | Cast a ray into a list of objects and find the nearest intersection point.
+object_cast (origin dir: Vec3) (os0: List Object): Maybe (Object, Vec3)
+ = go0 os0
+ where
+        -- We haven't hit any objects yet.
+        go0 Nil = Nothing
+
+        go0 (Cons o os)
+         = case object_distance origin dir o of
+                Nothing         -> go0 os
+                Just dist       -> go1 o dist os
+
+        -- We already hit an object and we're testing others to see
+        -- if they're closer.
+        go1 oClose oDist Nil
+         = Just (oClose, origin + vec3_muls dir oDist)
+
+        go1 oClose oDist (Cons o os)
+         = case object_distance origin dir o of
+                Nothing         -> go1 oClose oDist os
+                Just dist'
+                 | dist' < oDist -> go1 o      dist'  os
+                 | otherwise     -> go1 oClose oDist  os
+
+
+-- Simpler version of object_cast that only checks whether there is some
+-- object closer than a given minimum distance.
+object_check (origin dir: Vec3) (os0: List Object) (dist: Float): Bool
+ = go0 os0
+ where
+        go0 Nil = False
+
+        go0 (Cons o os)
+         = case object_distance origin dir o of
+                Nothing         -> go0 os
+                Just dist'
+                 | dist' < dist -> True
+                 | otherwise    -> go0 os
+
+
+-- | Cast a ray from an origin point along a direction,
+--   and if it hits the given shape then return the distance.
+object_distance (origin dir: Vec3) (object: Object): Maybe Float
+ | Sphere center radius color shine <- object
+ = do   p       = origin + vec3_muls dir (vec3_dot (center - origin) dir)
+        d_cp    = vec3_magnitude (p - center)
+
+        d       = vec3_magnitude (p - origin)
+                        - float64_sqrt (radius * radius - d_cp * d_cp)
+        match
+         | d_cp >= radius                       = Nothing
+         | vec3_dot (p - origin) dir <= 0.0     = Nothing
+         | otherwise                            = Just d
+
+ | Plane point normal color shine  <- object
+ = if vec3_dot dir normal >= 0.0
+        then Nothing
+        else Just (div (vec3_dot (point - origin) normal) (vec3_dot dir normal))
+
+
+-- | Compute the surface normal of the shape at the given point.
+object_normal (point: Vec3) (object: Object): Vec3
+ | Sphere center radius <- object
+ = vec3_normalize (point - center)
+
+ | Plane point normal   <- object
+ = normal
+
+
+-- | Get the diffuse color of an object at the given point.
+object_color (object: Object) (point: Vec3): Vec3
+ = case object of
+        Sphere _ _ color _      -> color
+        Plane  _ _ color _      -> color
+
+
+-- | Get the shien of an object at the given point.
+object_shine (object: Object) (point: Vec3): Float
+ = case object of
+        Sphere _ _ _ shine      -> shine
+        Plane  _ _ _ shine      -> shine
+
+

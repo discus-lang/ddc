@@ -3,8 +3,37 @@ module Data.Numeric.Float64
 export
 {       eq_Float64;  ord_Float64;
         add_Float64; sub_Float64; mul_Float64; div_Float64; rem_Float64;
+
+        float64_fabs;
+        float64_sin;    float64_asin;
+        float64_cos;    float64_acos;
+        float64_tan;    float64_atan;
+
+        float64_trunc;  float64_round;  float64_floor;
+        float64_fmod;
+        float64_pow;
+        float64_sqrt;
+        float64_log;
 }
 import Class.Numeric
+
+import foreign c value
+ fabs   : Float64# -> Float64#
+ sin    : Float64# -> Float64#
+ asin   : Float64# -> Float64#
+ cos    : Float64# -> Float64#
+ acos   : Float64# -> Float64#
+ tan    : Float64# -> Float64#
+ atan   : Float64# -> Float64#
+ trunc  : Float64# -> Float64#
+ round  : Float64# -> Float64#
+ floor  : Float64# -> Float64#
+ fmod   : Float64# -> Float64# -> Float64#
+ pow    : Float64# -> Float64# -> Float64#
+ sqrt   : Float64# -> Float64#
+ log    : Float64# -> Float64#
+
+
 where
 
 -- | Default Float type is an alise for the Float64 primitive type.
@@ -17,17 +46,17 @@ type Float64    = Float64#
 -- | Eq dictionary for Float64.
 eq_Float64:  Eq Float64
  = Eq eq' neq'
- where  eq'  a b        = eq#  [Float64#] a b
-        neq' a b        = neq# [Float64#] a b
+ where  eq'  a b = eq#  [Float64#] a b
+        neq' a b = neq# [Float64#] a b
 
 
 -- | Ord dictionary for Float64.
 ord_Float64:  Ord Float64
  = Ord  compare'
  where  compare' n1 n2
-         | gt# [Float64#] n1 n2     = GT
-         | lt# [Float64#] n1 n2     = LT
-         | otherwise            = EQ
+         | gt# [Float64#] n1 n2  = GT
+         | lt# [Float64#] n1 n2  = LT
+         | otherwise             = EQ
 
 
 -- | Add dictionary for Float64.
@@ -55,4 +84,20 @@ div_Float64: Div Float64
 -- | Rem dictionary for Float64.
 rem_Float64: Rem Float64
  = Rem (\x y -> rem# [Float64#] x y)
+
+
+float64_fabs    (f: Float64): Float64      = fabs  f
+float64_sin     (f: Float64): Float64      = sin   f
+float64_asin    (f: Float64): Float64      = asin  f
+float64_cos     (f: Float64): Float64      = cos   f
+float64_acos    (f: Float64): Float64      = acos  f
+float64_tan     (f: Float64): Float64      = tan   f
+float64_atan    (f: Float64): Float64      = atan  f
+float64_trunc   (f: Float64): Float64      = trunc f
+float64_round   (f: Float64): Float64      = round f
+float64_floor   (f: Float64): Float64      = floor f
+float64_fmod  (f x: Float64): Float64      = fmod  f x
+float64_pow   (f x: Float64): Float64      = pow   f x
+float64_sqrt    (f: Float64): Float64      = sqrt  f
+float64_log     (f: Float64): Float64      = log   f
 

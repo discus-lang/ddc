@@ -1,0 +1,51 @@
+
+module Light
+export light_translate; light_applys; light_apply
+import Object
+import Math.Vec3
+import Data.Maybe; Data.Numeric
+where
+
+
+data Light where
+        Light   :  Vec3         -- Point source for light.
+                -> Vec3         -- Color of light.
+                -> Light
+
+
+-- | Translate a light by the given offset.
+light_translate (v: Vec3) (l: Light): Light
+ = case l of
+        Light pos color -> Light (pos + v) color
+
+
+-- | Compute the direct lighting at a particular point for a list of lights.
+light_applys (point normal: Vec3) (ls: List Light) (os: List Object): Vec3
+ = go ls (Vec3 0.0 0.0 0.0)
+ where
+        go Nil total
+         = total
+
+        go (Cons l ls') total
+         = do   contrib = light_apply point normal l os
+                go ls' (total + contrib)
+
+
+-- | Compute the direct lighting at a particular point for a single light.
+light_apply  (point normal: Vec3) (l: Light) (os: List Object): Vec3
+ | Light lpoint color   <- l
+ = do   -- Vector from the light to the surface point.
+        dir     = vec3_normalize (lpoint - point)
+
+        -- Distance from the light source to the surface point.
+        dist    = vec3_magnitude (lpoint - point)
+
+
+        if object_check point normal os dist
+         then Vec3 0.0 0.0 0.0
+         else do
+                -- Magnitude of reflection.
+                mag     = div (vec3_dot normal dir) (dist * dist)
+
+                -- The light that is reflected.
+                vec3_muls color mag

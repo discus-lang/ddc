@@ -1,0 +1,13 @@
+
+module Main
+import Object
+import Light
+import System.IO.Console
+import Class.Show
+where
+
+main ()
+ = do   shape   = Sphere (Vec3 1.0 0.0 0.0) 0.8 (Vec3 1.0 0.0 0.0) 0.5
+        point   = Vec3 0.0 0.0 0.0
+        dir     = Vec3 1.0 0.0 0.0
+        writel $ show $ object_distance point dir shape
