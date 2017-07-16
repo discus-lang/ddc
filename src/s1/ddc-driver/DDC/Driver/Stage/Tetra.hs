@@ -27,6 +27,7 @@ import qualified DDC.Core.Salt                  as CA
 import qualified DDC.Core.Transform.Reannotate  as CReannotate
 
 import qualified DDC.Core.SMR                   as H
+import qualified DDC.Data.SourcePos             as SP
 import DDC.Data.Pretty
 
 ---------------------------------------------------------------------------------------------------
@@ -36,8 +37,8 @@ sourceLoadText
         -> B.Store              -- ^ Interface store.
         -> D.Source             -- ^ Source file meta-data.
         -> String               -- ^ Source file text.
-        -> ExceptT [B.Error] IO 
-                   (C.Module (C.AnTEC () CE.Name) CE.Name)
+        -> ExceptT [B.Error] IO
+                   (C.Module (C.AnTEC SP.SourcePos CE.Name) CE.Name)
 
 sourceLoadText config store source str
  = BST.sourceLoad
@@ -45,7 +46,7 @@ sourceLoadText config store source str
         (D.lineStartOfSource source)
         str
         store
- $ BST.ConfigLoadSourceTetra 
+ $ BST.ConfigLoadSourceTetra
         { BST.configSinkTokens          = D.dump config source "dump.0-source-01-tokens.txt"
         , BST.configSinkParsed          = D.dump config source "dump.0-source-02-parsed.dst"
         , BST.configSinkFresh           = D.dump config source "dump.0-source-03-fresh.dst"
@@ -66,17 +67,16 @@ sourceLoadText config store source str
 
 ---------------------------------------------------------------------------------------------------
 -- | Load and type-check a core tetra module.
-tetraLoadText 
+tetraLoadText
         :: D.Config             -- ^ Driver config.
         -> B.Store              -- ^ Interface store.
         -> D.Source             -- ^ Source file meta-data.
         -> String               -- ^ Source file text.
-        -> ExceptT [B.Error] IO 
-                   (C.Module (C.AnTEC () CE.Name) CE.Name)
+        -> ExceptT [B.Error] IO
+                   (C.Module (C.AnTEC SP.SourcePos CE.Name) CE.Name)
 
 tetraLoadText config _store source str
- = fmap (CReannotate.reannotate (\a -> a { C.annotTail = ()}))
- $ B.coreLoad
+ = B.coreLoad
         "TetraLoad"
         BE.fragment
         (if D.configInferTypes config then C.Synth [] else C.Recon)

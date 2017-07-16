@@ -9,6 +9,7 @@ where
 import DDC.Data.Pretty
 import Control.Monad.Trans.Except
 import Control.Monad.IO.Class
+import Control.Monad.State.Strict
 
 import qualified Data.Text                              as Text
 
@@ -38,7 +39,6 @@ import qualified DDC.Core.Fragment                      as C
 import qualified DDC.Core.Check                         as C
 import qualified DDC.Core.Module                        as C
 import qualified DDC.Core.Lexer                         as C
-import qualified DDC.Core.Simplifier                    as C
 import qualified DDC.Core.Tetra                         as CE
 import qualified DDC.Core.Tetra.Env                     as CE
 import qualified DDC.Core.Transform.Resolve             as CResolve
@@ -76,7 +76,7 @@ sourceLoad
         -> B.Store                      -- ^ Interface store.
         -> ConfigLoadSourceTetra        -- ^ Sinker config.
         -> ExceptT [B.Error] IO
-                   (C.Module (C.AnTEC () CE.Name) CE.Name)
+                   (C.Module (C.AnTEC Parser.SourcePos CE.Name) CE.Name)
 
 sourceLoad srcName srcLine str store config
  = do
@@ -120,11 +120,18 @@ sourceLoad srcName srcLine str store config
         --   The resolve transform needs to be able to refer to implicitly
         --   bound parameters by their names, even if there were no names
         --   for them in the source program.
-        mm_namified
-         <- BC.coreSimplify fragment (0 :: Int)
-                (C.Trans (C.Namify (CNamify.makeNamifier CE.freshT)
-                                   (CNamify.makeNamifier CE.freshX)))
-                mm_core
+        let profile = C.fragmentProfile  fragment
+        let kenv    = C.profilePrimKinds profile
+        let tenv    = C.profilePrimTypes profile
+        let mm_namified
+             = evalState (CNamify.namify (CNamify.makeNamifier CE.freshT kenv)
+                                         (CNamify.makeNamifier CE.freshX tenv)
+                                        mm_core)
+                        (0 :: Int)
+
+
+        liftIO $ B.pipeSink (renderIndent $ ppr mm_namified)
+                            (configSinkNamified config)
 
         mm_checked
          <- BC.coreCheck
@@ -135,8 +142,6 @@ sourceLoad srcName srcLine str store config
                 (configSinkChecked      config)
                 mm_namified
 
-        liftIO $ B.pipeSink (renderIndent $ ppr mm_namified)
-                            (configSinkNamified config)
 
         -- Resolve elaborations in module.
         mm_elaborated
