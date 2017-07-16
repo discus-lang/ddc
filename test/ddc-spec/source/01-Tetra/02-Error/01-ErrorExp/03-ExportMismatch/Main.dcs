@@ -1,0 +1,26 @@
+
+-- Ye'olde Hello World programme,
+module Main
+
+-- Export the main entry point.
+--   Exported type does not match defined type.
+export main  : [r1: Region]. Int#
+
+-- Primitive show functions are defined in the runtime system.
+import foreign c value
+        ddcInit        : Nat# -> Unit
+        primStdoutPutTextLit : [r: Region]. TextLit#     -> Void#
+
+with letrec
+
+-- Ye'olde Hello World programme.
+main [r1: Region] (argc: Nat#) (argv: Ptr# r1 Word8#): Int#
+ = do
+        -- Initialize the runtime system.
+        ddcInit     4096#
+
+        -- Print the greeting.
+        primStdoutPutTextLit "Hello World\n"#
+
+        -- Return successfully.
+        return# 0i#

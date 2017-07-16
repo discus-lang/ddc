@@ -1,0 +1,7 @@
+
+module Test
+
+import foreign abstract capability
+ derp : Nat#
+
+where

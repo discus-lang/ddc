@@ -1,0 +1,5 @@
+Error in transformed module.
+  in stage SourceLoadText
+  in pipe  PipeCoreCheck/Check
+  ()
+  Undefined data constructor: Bar

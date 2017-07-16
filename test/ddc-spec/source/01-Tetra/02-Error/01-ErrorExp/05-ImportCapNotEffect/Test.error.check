@@ -1,0 +1,8 @@
+Error in transformed module.
+  in stage SourceLoadText
+  in pipe  PipeCoreCheck/Check
+  Kind mismatch.
+                  Expected kind: Data
+   does not match inferred kind: Region -> Effect
+  
+  with: Read

@@ -1,0 +1,7 @@
+
+module Test
+
+import foreign c value
+ derp : Read
+
+where

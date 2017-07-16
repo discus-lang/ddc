@@ -1,0 +1,10 @@
+
+module Test
+
+import foreign c value
+ foo : Nat# -> Nat#
+
+import foreign c value
+ foo : Word32# -> Nat#
+
+where

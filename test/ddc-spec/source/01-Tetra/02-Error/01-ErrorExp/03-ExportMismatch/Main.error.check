@@ -1,0 +1,7 @@
+Error in transformed module.
+  in stage CoreLoad
+  in pipe  PipeCoreCheck/Check
+  Type of exported name does not match type of definition.
+               with binding: main
+             type of export: [r1: Region].Int#
+         type of definition: [r1: Region].Nat# -> Ptr# r1 Word8# -> Int#
