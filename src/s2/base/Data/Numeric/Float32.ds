@@ -35,9 +35,7 @@ add_Float32: Add Float32
 
 -- | Sub dictionary for Nat.
 sub_Float32: Sub Float32
- = Sub (\x y -> if gt# [Float32#] y x
-                 then 0.0f32
-                 else sub# [Float32#] x y)
+ = Sub (\x y -> sub# [Float32#] x y)
 
 
 -- | Mul dictionary for Float32.

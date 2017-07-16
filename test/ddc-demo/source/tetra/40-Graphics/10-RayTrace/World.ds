@@ -1,0 +1,39 @@
+
+module World
+export world_lights; world_objects
+import Object
+where
+
+
+-- | Lights in the world.
+world_lights (time: Float): List Light
+ = Cons (Light  (Vec3 300.0     (0.0 - 300.0)   (0.0 - 100.0))
+                (Vec3 150000.0  150000.0        150000.0))
+ $ Nil
+
+-- | Objects in the world at the given time.
+world_objects (time: Float): List Object
+ = Cons (Sphere (Vec3 0.0 0.0 0.0)
+                20.0
+                (Vec3 1.0 0.3 1.0)
+                0.4)
+
+ $ Cons (Sphere (Vec3 10.0 10.0 -10.0)
+                20.0
+                (Vec3 1.0 0.3 0.3)
+                0.4)
+
+ $ Cons (Sphere (Vec3   (200.0 * float64_sin time)
+                        ((0.0 - 40.0) * float64_sin (time + 1.2))       -- not pi
+                        (200.0 * float64_cos time))
+                30.0
+                (Vec3 0.4 0.4 1.0)
+                0.8)
+
+ $ Cons (Checks (Vec3   0.0 100.0 0.0)
+                (vec3_normalize (Vec3 0.0 (-1.0) (-0.2)))
+                0.2)
+ $ Nil
+
+
+

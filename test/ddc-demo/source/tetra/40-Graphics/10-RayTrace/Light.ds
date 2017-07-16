@@ -34,12 +34,12 @@ light_applys (point normal: Vec3) (ls: List Light) (os: List Object): Vec3
 -- | Compute the direct lighting at a particular point for a single light.
 light_apply  (point normal: Vec3) (l: Light) (os: List Object): Vec3
  | Light lpoint color   <- l
- = do   -- Vector from the light to the surface point.
+ = do
+        -- Vector from the light to the surface point.
         dir     = vec3_normalize (lpoint - point)
 
         -- Distance from the light source to the surface point.
         dist    = vec3_magnitude (lpoint - point)
-
 
         if object_check point normal os dist
          then Vec3 0.0 0.0 0.0
@@ -48,4 +48,6 @@ light_apply  (point normal: Vec3) (l: Light) (os: List Object): Vec3
                 mag     = div (vec3_dot normal dir) (dist * dist)
 
                 -- The light that is reflected.
-                vec3_muls color mag
+                if mag > 0.0
+                 then   vec3_muls color mag
+                 else   Vec3 0.0 0.0 0.0

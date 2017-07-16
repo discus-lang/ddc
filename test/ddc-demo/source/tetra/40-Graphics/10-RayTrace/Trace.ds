@@ -1,0 +1,93 @@
+
+module Trace
+export trace_pixel; trace_ray
+import Object
+import Light
+where
+
+
+-- | Cast a ray through the screen view for the given pixel.
+trace_pixel
+        (os:            List Object)    -- ^ Object in scene.
+        (ls:            List Light)     -- ^ Lights in scene.
+        (lAmbient:      Vec3)           -- ^ Ambient light in scene.
+        (posEye:        Vec3)           -- ^ Position of eye in world.
+        (fov:           Float)          -- ^ Field of view.
+        (sizeX sizeY:   Float)          -- ^ Size of screen in pixels.
+        (posX  posY:    Float)          -- ^ Pixel to trace.
+        (limit:         Nat)            -- ^ Maximum reflection count.
+        :               Vec3            -- ^ Visible color of pixel.
+ = do
+        -- Aspect ratio of image.
+        aspect          = div sizeX sizeY
+
+        -- Field of view in X and Y directions.
+        fovX            = fov * aspect
+        fovY            = fov
+
+        posLook         = Vec3 (posX * fovX) ((0.0 - posY) * fovY) 0.0
+        dirEye          = vec3_normalize (posLook - posEye)
+
+        trace_ray os ls lAmbient posEye dirEye limit
+
+
+-- | Cast a single ray into the scene.
+trace_ray
+        (os:            List Object)    -- ^ Objects in scene.
+        (ls:            List Light)     -- ^ Lights in scene.
+        (lAmbient:      Vec3)           -- ^ Ambient light in scene.
+        (origin0 dir0:  Vec3)           -- ^ Origin and direction of ray.
+        (limit0:        Nat)            -- ^ Maximum reflection count.
+        :               Vec3            -- ^ Visible color for this ray.
+ = go_cast origin0 dir0 limit0
+ where
+        -- Too many reflections, so give up.
+        go_cast _ _ 0
+         = Vec3 0.0 0.0 0.0
+
+        -- Cast the ray into the scene.
+        go_cast origin dir limit
+         = case object_cast origin dir os of
+                -- Ray did not intersect any objects.
+                Nothing
+                 -> Vec3 0.0 0.0 0.0
+
+                -- Ray hit an object.
+                Just (object, point)
+                 -> go_hit object point dir limit
+
+
+        -- Ray hit an object.
+        go_hit object point dir limit
+         = do   -- Surface normal at the intersection point.
+                normal  = object_normal point object
+
+                -- Result angle of ray after reflection.
+                dirNew  = dir - vec3_muls normal (2.0 * (vec3_dot normal dir))
+
+                -- See if the ray hits anything else.
+                lRefl   = go_cast point dirNew (limit - 1)
+
+                -- Direct lighting at this point.
+                lDirect = light_applys point normal ls os
+
+                -- Total lighting is the direct lighting plus ambient.
+                lTotal  = lDirect + lAmbient
+
+                -- Compute light reflected from the object.
+                color   = object_color object point
+                shine   = object_shine object point
+
+                -- Light into the surface of the object is the part that
+                -- has not been reflected away.
+                lIn     = vec3_muls lRefl  shine
+                        + vec3_muls lTotal (1.0 - shine)
+
+                -- Outgoing light is reflected light modified by surface color.
+                lOut    = vec3_mul  lIn color
+
+                -- Clip the outgoing light so we don't get into trouble
+                -- with saturating pixels.
+                lClip   = vec3_clip lOut 1.0
+                lClip
+

@@ -23,6 +23,11 @@ data Object where
                 -> Float        -- Shine
                 -> Object
 
+        Checks  :  Vec3         -- Position
+                -> Vec3         -- Normal
+                -> Float        -- Shine
+                -> Object
+
 
 -- | Cast a ray into a list of objects and find the nearest intersection point.
 object_cast (origin dir: Vec3) (os0: List Object): Maybe (Object, Vec3)
@@ -83,13 +88,21 @@ object_distance (origin dir: Vec3) (object: Object): Maybe Float
         then Nothing
         else Just (div (vec3_dot (point - origin) normal) (vec3_dot dir normal))
 
+ | Checks point normal shine  <- object
+ = if vec3_dot dir normal >= 0.0
+        then Nothing
+        else Just (div (vec3_dot (point - origin) normal) (vec3_dot dir normal))
+
 
 -- | Compute the surface normal of the shape at the given point.
 object_normal (point: Vec3) (object: Object): Vec3
- | Sphere center radius <- object
+ | Sphere center radius color shine <- object
  = vec3_normalize (point - center)
 
- | Plane point normal   <- object
+ | Plane point normal _    <- object
+ = normal
+
+ | Checks point normal _   <- object
  = normal
 
 
@@ -98,6 +111,7 @@ object_color (object: Object) (point: Vec3): Vec3
  = case object of
         Sphere _ _ color _      -> color
         Plane  _ _ color _      -> color
+        Checks _ _ _            -> checkers point
 
 
 -- | Get the shien of an object at the given point.
@@ -105,5 +119,15 @@ object_shine (object: Object) (point: Vec3): Float
  = case object of
         Sphere _ _ _ shine      -> shine
         Plane  _ _ _ shine      -> shine
+        Checks _ _ shine        -> shine
 
 
+checkers ((Vec3 x y z ): Vec3): Vec3
+ |   xor  (rem (float64_trunc (div z 100.0)) 2.0 >= 1.0)
+   $ xor  (rem (float64_trunc (div x 100.0)) 2.0 >= 1.0)
+   $ xor  (x < 0.0)
+          (z < 0.0)
+ = Vec3 1.0 1.0 1.0
+
+ | otherwise
+ = Vec3 0.4 0.4 0.4

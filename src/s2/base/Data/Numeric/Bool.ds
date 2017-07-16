@@ -1,6 +1,6 @@
 
 module Data.Numeric.Bool
-export { not; and; or; }
+export { not; and; or; xor; }
 where
 
 type Bool = Bool#
@@ -8,19 +8,26 @@ type Bool = Bool#
 
 -- | Boolean NOT.
 not (x: Bool): Bool
- = if x then False  
+ = if x then False
         else True
 
 
 -- | Boolean AND.
 and (x y: Bool): Bool
- = if x then y 
+ = if x then y
         else False
 
 
 -- | Boolean OR.
 or (x y: Bool): Bool
- = if x then True 
+ = if x then True
         else y
+
+
+-- | Boolean XOR
+xor (x y: Bool): Bool
+ = if x then (if y then False else True)
+        else (if y then True  else False)
+
 
 

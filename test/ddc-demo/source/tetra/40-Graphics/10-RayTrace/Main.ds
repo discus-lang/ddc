@@ -1,13 +1,82 @@
 
 module Main
-import Object
-import Light
+import Trace
+import World
+import Object; Light
 import System.IO.Console
 import Class.Show
 where
 
 main ()
- = do   shape   = Sphere (Vec3 1.0 0.0 0.0) 0.8 (Vec3 1.0 0.0 0.0) 0.5
+ = do   shape   = Sphere (Vec3 0.0 0.0 0.0) 20.0 (Vec3 1.0 1.0 1.0) 0.5
         point   = Vec3 0.0 0.0 0.0
         dir     = Vec3 1.0 0.0 0.0
-        writel $ show $ object_distance point dir shape
+
+        os              = world_objects 0.0
+        ls              = world_lights  0.0
+        lAmbient        = Vec3 0.3   0.3     0.3
+        posEye          = Vec3 0.0   0.0  -500.0
+        dirEye          = Vec3 0.0   0.0     1.0
+        fov             = 100.0
+        sizeX           = 10.0
+        sizeY           = 10.0
+        posX            = -0.5
+        posY            =  0.5
+        limit           = 5
+
+        writel "P3"
+        writel "# derp.ppm"
+        writel "400 400"
+        writel "255"
+
+        run draw
+                os ls lAmbient
+                posEye fov
+                limit
+                sizeX sizeY
+                posX posY
+
+
+
+draw    (os:            List Object)
+        (ls:            List Light)
+        (lAmbient:      Vec3)
+        (posEye:        Vec3)
+        (fov:           Float)
+        (limit:         Nat)
+        (sizeX sizeY:   Float)
+        (posX0 posY0:   Float)
+        : S Console Unit
+ = go posX0 posY0
+ where
+        go (posX posY: Float): S Console Unit
+         | posX >= 0.5
+         = do   writel ""
+                go -0.5 (posY - 0.0025)
+
+         | posY <= -0.5
+         = do   writel ""
+
+         | otherwise
+         = do   color   = trace_pixel os ls lAmbient
+                                posEye fov
+                                sizeX sizeY posX posY
+                                limit
+
+                match
+                 | Vec3 r g b   <- color
+                 = do   r'      = float64_floor (r * 255.0)
+                        g'      = float64_floor (g * 255.0)
+                        b'      = float64_floor (b * 255.0)
+                        write $ show r' %% show g' %% show b' %% " "
+
+
+                go (posX + 0.0025) posY
+
+
+
+show_Vec3: Show Vec3
+ = Show $ \v
+ -> case v of
+        Vec3 x y z -> parens $ "Vec3" %% show x %% show y %% show z
+

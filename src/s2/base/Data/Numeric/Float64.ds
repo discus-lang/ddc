@@ -66,9 +66,7 @@ add_Float64: Add Float64
 
 -- | Sub dictionary for Nat.
 sub_Float64: Sub Float64
- = Sub (\x y -> if gt# [Float64#] y x
-                 then 0.0f64
-                 else sub# [Float64#] x y)
+ = Sub (\x y -> sub# [Float64#] x y)
 
 
 -- | Mul dictionary for Float64.
