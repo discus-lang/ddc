@@ -5,6 +5,7 @@ export
         object_distance;  object_normal;
         object_color; object_shine
 }
+import Ray
 import Math.Vec3
 import Data.Maybe; Data.Numeric
 where
@@ -30,14 +31,15 @@ data Object where
 
 
 -- | Cast a ray into a list of objects and find the nearest intersection point.
-object_cast (origin dir: Vec3) (os0: List Object): Maybe (Object, Vec3)
+object_cast (ray: Ray) (os0: List Object): Maybe (Object, Vec3)
+ | Ray origin dir <- ray
  = go0 os0
  where
         -- We haven't hit any objects yet.
         go0 Nil = Nothing
 
         go0 (Cons o os)
-         = case object_distance origin dir o of
+         = case object_distance ray o of
                 Nothing         -> go0 os
                 Just dist       -> go1 o dist os
 
@@ -47,7 +49,7 @@ object_cast (origin dir: Vec3) (os0: List Object): Maybe (Object, Vec3)
          = Just (oClose, origin + vec3_muls dir oDist)
 
         go1 oClose oDist (Cons o os)
-         = case object_distance origin dir o of
+         = case object_distance ray o of
                 Nothing         -> go1 oClose oDist os
                 Just dist'
                  | dist' < oDist -> go1 o      dist'  os
@@ -56,13 +58,13 @@ object_cast (origin dir: Vec3) (os0: List Object): Maybe (Object, Vec3)
 
 -- Simpler version of object_cast that only checks whether there is some
 -- object closer than a given minimum distance.
-object_check (origin dir: Vec3) (os0: List Object) (dist: Float): Bool
+object_check (ray: Ray) (os0: List Object) (dist: Float): Bool
  = go0 os0
  where
         go0 Nil = False
 
         go0 (Cons o os)
-         = case object_distance origin dir o of
+         = case object_distance ray o of
                 Nothing         -> go0 os
                 Just dist'
                  | dist' < dist -> True
@@ -71,7 +73,7 @@ object_check (origin dir: Vec3) (os0: List Object) (dist: Float): Bool
 
 -- | Cast a ray from an origin point along a direction,
 --   and if it hits the given shape then return the distance.
-object_distance (origin dir: Vec3) (object: Object): Maybe Float
+object_distance ((Ray origin dir): Ray) (object: Object): Maybe Float
  | Sphere center radius color shine <- object
  = do   p       = origin + vec3_muls dir (vec3_dot (center - origin) dir)
         d_cp    = vec3_magnitude (p - center)

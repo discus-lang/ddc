@@ -1,64 +1,57 @@
 
 module Main
-import Trace
-import World
-import Object; Light
+import Trace; World; Object; Light
+import Main.Args
 import System.IO.Console
 import Class.Show
 where
 
-main ()
- = do   shape   = Sphere (Vec3 0.0 0.0 0.0) 20.0 (Vec3 1.0 1.0 1.0) 0.5
-        point   = Vec3 0.0 0.0 0.0
-        dir     = Vec3 1.0 0.0 0.0
 
-        os              = world_objects 0.0
-        ls              = world_lights  0.0
-        lAmbient        = Vec3 0.3   0.3     0.3
-        posEye          = Vec3 0.0   0.0  -500.0
-        dirEye          = Vec3 0.0   0.0     1.0
-        fov             = 100.0
-        sizeX           = 10.0
-        sizeY           = 10.0
-        posX            = -0.5
-        posY            =  0.5
-        limit           = 5
+-- | Draw a ray-traced image as a PPM file.
+main ()
+ = do
+        mWidth
+         = mainArgs_load Nothing
+         $ Cons (ArgNat "-width" "width of image" (\n _ -> Just n))
+         $ Nil
+
+        width   = fromMaybe 50 mWidth
+        world   = world_make 0.0
+        posEye  = Vec3 0.0   0.0  -500.0
+        fov     = 100.0
+        size    = (50.0, 50.0)
+        limit   = 5
 
         writel "P3"
         writel "# derp.ppm"
-        writel "400 400"
+        writel $ show width %% show width
         writel "255"
 
-        run draw
-                os ls lAmbient
-                posEye fov
-                limit
-                sizeX sizeY
-                posX posY
+        draw world posEye fov size limit
 
 
-
-draw    (os:            List Object)
-        (ls:            List Light)
-        (lAmbient:      Vec3)
-        (posEye:        Vec3)
-        (fov:           Float)
-        (limit:         Nat)
-        (sizeX sizeY:   Float)
-        (posX0 posY0:   Float)
+draw    (world:  World)         -- ^ World to draw.
+        (posEye: Vec3)          -- ^ Position of eye.
+        (fov:    Float)         -- ^ Field of view.
+        (size:  (Float, Float)) -- ^ Size of image, in pixels.
+        (limit:  Nat)           -- ^ Limit number of ray bounces.
         : S Console Unit
- = go posX0 posY0
+ | (sizeX, sizeY) <- size
+ = go -0.5 0.5
  where
+        stepX   = div 1.0 sizeX
+        stepY   = div 1.0 sizeY
+
         go (posX posY: Float): S Console Unit
          | posX >= 0.5
          = do   writel ""
-                go -0.5 (posY - 0.0025)
+                go -0.5 (posY - stepY)
 
          | posY <= -0.5
          = do   writel ""
 
          | otherwise
-         = do   color   = trace_pixel os ls lAmbient
+         = do   color   = trace_pixel world
                                 posEye fov
                                 sizeX sizeY posX posY
                                 limit
@@ -70,13 +63,6 @@ draw    (os:            List Object)
                         b'      = float64_floor (b * 255.0)
                         write $ show r' %% show g' %% show b' %% " "
 
+                go (posX + stepX) posY
 
-                go (posX + 0.0025) posY
-
-
-
-show_Vec3: Show Vec3
- = Show $ \v
- -> case v of
-        Vec3 x y z -> parens $ "Vec3" %% show x %% show y %% show z
 

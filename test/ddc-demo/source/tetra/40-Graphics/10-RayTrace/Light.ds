@@ -41,7 +41,7 @@ light_apply  (point normal: Vec3) (l: Light) (os: List Object): Vec3
         -- Distance from the light source to the surface point.
         dist    = vec3_magnitude (lpoint - point)
 
-        if object_check point normal os dist
+        if object_check (Ray point normal) os dist
          then Vec3 0.0 0.0 0.0
          else do
                 -- Magnitude of reflection.

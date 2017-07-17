@@ -1,15 +1,30 @@
 
 module World
-export world_lights; world_objects
-import Object
+export world_make
+import Object; Light
 where
 
+
+data World where
+        World   :  List Object          -- ^ Objects in the world.
+                -> List Light           -- ^ Lights in the world.
+                -> Vec3                 -- ^ Ambient light in the world
+                -> World
+
+
+-- | Make the world.
+world_make (time: Float): World
+ = World
+        (world_objects  time)
+        (world_lights   time)
+        (Vec3 0.3 0.3 0.3)
 
 -- | Lights in the world.
 world_lights (time: Float): List Light
  = Cons (Light  (Vec3 300.0     (0.0 - 300.0)   (0.0 - 100.0))
                 (Vec3 150000.0  150000.0        150000.0))
  $ Nil
+
 
 -- | Objects in the world at the given time.
 world_objects (time: Float): List Object

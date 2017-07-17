@@ -14,6 +14,7 @@ export
 }
 import Data.Numeric.Float64
 import Class.Numeric
+import Class.Show
 where
 
 
@@ -36,6 +37,14 @@ sub_Vec3: Sub Vec3
 -- | Mul dictionary for vectors.
 mul_Vec3: Mul Vec3
  = Mul vec3_mul
+
+
+-- | Show dictionary for vectors.
+show_Vec3: Show Vec3
+ = Show $ \v
+ -> case v of
+        Vec3 x y z -> parens $ "Vec3" %% show x %% show y %% show z
+
 
 
 -------------------------------------------------------------------------------
