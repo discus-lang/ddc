@@ -5,11 +5,15 @@ export
         object_distance;  object_normal;
         object_color; object_shine
 }
-import Ray
 import Math.Vec3
 import Data.Maybe; Data.Numeric
 where
 
+
+data Ray where
+        Ray     :  Vec3         -- ^ Origin
+                -> Vec3         -- ^ Direction
+                -> Ray
 
 data Object where
         Sphere  :  Vec3         -- Position.
@@ -125,11 +129,12 @@ object_shine (object: Object) (point: Vec3): Float
 
 
 checkers ((Vec3 x y z ): Vec3): Vec3
- |   xor  (rem (float64_trunc (div z 100.0)) 2.0 >= 1.0)
-   $ xor  (rem (float64_trunc (div x 100.0)) 2.0 >= 1.0)
-   $ xor  (x < 0.0)
-          (z < 0.0)
+ |   xor (rem (float64_trunc (div (float64_fabs x) 20.0)) 2.0 >= 1.0)
+   $ xor (rem (float64_trunc (div (float64_fabs y) 20.0)) 2.0 >= 1.0)
+   $ xor (x < 0.0) (y < 0.0)
+
  = Vec3 1.0 1.0 1.0
 
  | otherwise
  = Vec3 0.4 0.4 0.4
+

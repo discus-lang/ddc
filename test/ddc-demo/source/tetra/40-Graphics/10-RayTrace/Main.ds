@@ -15,11 +15,11 @@ main ()
          $ Cons (ArgNat "-width" "width of image" (\n _ -> Just n))
          $ Nil
 
-        width   = fromMaybe 50 mWidth
+        width   = fromMaybe 40 mWidth
         world   = world_make 0.0
         posEye  = Vec3 0.0   0.0  -500.0
         fov     = 100.0
-        size    = (50.0, 50.0)
+        size    = (truncate# width, truncate# width)
         limit   = 5
 
         writel "P3"
@@ -64,5 +64,4 @@ draw    (world:  World)         -- ^ World to draw.
                         write $ show r' %% show g' %% show b' %% " "
 
                 go (posX + stepX) posY
-
 

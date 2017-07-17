@@ -41,7 +41,7 @@ convPrimCast ctx mdst p as
          -> Just $ do
                 xSrc'   <- mSrc
                 instr   <- convPrimPromote ctx tDst vDst tSrc xSrc'
-                return  $  Seq.singleton (annotNil instr) 
+                return  $  Seq.singleton (annotNil instr)
 
         A.PrimCast A.PrimCastTruncate
          | [A.RType tDst, A.RType tSrc, xSrc] <- as
@@ -134,6 +134,18 @@ convPrimPromote ctx tDst vDst tSrc xSrc
           , bitsDst > bitsSrc
           -> return $ IConv vDst ConvZext xSrc
 
+         (TFloat,  TInt bitsSrc)
+          | bitsSrc > 23        -> throw  $ ErrorInvalidPromotion  tSrc tDst
+          | isUnsignedT tSrc    -> return $ IConv vDst ConvUintofp xSrc
+          | isSignedT   tSrc    -> return $ IConv vDst ConvSintofp xSrc
+          | otherwise           -> throw  $ ErrorInvalidPromotion  tSrc tDst
+
+         (TDouble, TInt bitsSrc)
+          | bitsSrc > 52        -> throw  $ ErrorInvalidPromotion  tSrc tDst
+          | isUnsignedT tSrc    -> return $ IConv vDst ConvUintofp xSrc
+          | isSignedT   tSrc    -> return $ IConv vDst ConvSintofp xSrc
+          | otherwise           -> throw  $ ErrorInvalidPromotion  tSrc tDst
+
          -- Promotion is not valid on this platform.
          _ -> throw $ ErrorInvalidPromotion tSrc tDst
 
@@ -171,6 +183,18 @@ convPrimTruncate ctx tDst vDst tSrc xSrc
           , isUnsignedT tSrc,   isSignedT tDst
           -> return $ IConv vDst ConvZext xSrc
 
+         (TFloat, TInt bitsSrc)
+          | bitsSrc <= 23       -> throw  $ ErrorInvalidTruncation tSrc tDst
+          | isUnsignedT tSrc    -> return $ IConv vDst ConvUintofp xSrc
+          | isSignedT   tSrc    -> return $ IConv vDst ConvSintofp xSrc
+          | otherwise           -> throw  $ ErrorInvalidTruncation tSrc tDst
+
+         (TDouble, TInt bitsSrc)
+          | bitsSrc <= 52       -> throw  $ ErrorInvalidTruncation tSrc tDst
+          | isUnsignedT tSrc    -> return $ IConv vDst ConvUintofp xSrc
+          | isSignedT   tSrc    -> return $ IConv vDst ConvSintofp xSrc
+          | otherwise           -> throw  $ ErrorInvalidTruncation tSrc tDst
+
          -- Truncation is not valid on this platform.
-         _ -> throw $ ErrorInvalidTruncation tSrc tDst
+         _ -> error $ show (tDst', tSrc') -- throw $ ErrorInvalidTruncation tSrc tDst
 

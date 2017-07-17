@@ -1,7 +1,7 @@
 
 module Trace
 export trace_pixel; trace_ray
-import World; Object; Light; Ray
+import World; Light; Object
 where
 
 
