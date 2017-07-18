@@ -167,6 +167,4 @@ makeTable config
         , tableCheckLet         = checkLet
         , tableCheckLetPrivate  = checkLetPrivate
         , tableCheckCase        = checkCase
-        , tableCheckCast        = checkCast
-        , tableCheckWitness     = error "makeTable: not checking witness" }
-        -- TODO: remove this old case.
+        , tableCheckCast        = checkCast }

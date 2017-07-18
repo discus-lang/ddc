@@ -95,8 +95,7 @@ data Table a n
         , tableCheckLet         :: Checker a n
         , tableCheckLetPrivate  :: Checker a n
         , tableCheckCase        :: Checker a n
-        , tableCheckCast        :: Checker a n
-        , tableCheckWitness     :: Checker a n }
+        , tableCheckCast        :: Checker a n }
 
 
 -- | Helper function for building the return value of checkExpM'
@@ -125,7 +124,7 @@ returnX !a !f !t !es !ctx
 
 -- Run ------------------------------------------------------------------------
 -- | If an expression has suspension type then run it.
-runForDemand 
+runForDemand
         :: Ord n
         => Config n                     -- ^ Type checker config.
         -> a                            -- ^ Annotation for new
@@ -138,7 +137,7 @@ runForDemand
                 , Type   n              -- New type of expression.
                 , Effect n)             -- New effect of expression.
 
-runForDemand _config _a DemandNone xExp tExp eExp 
+runForDemand _config _a DemandNone xExp tExp eExp
  = return (xExp, tExp, eExp)
 
 runForDemand config a  DemandRun  xExp tExp eExp
@@ -154,7 +153,7 @@ runForDemand config a  DemandRun  xExp tExp eExp
  , Just (eResult, tResult)  <- takeTSusp tExp
  = let
         -- Effect of overall expression is effect of computing
-        -- the suspension plus the effect we get by running 
+        -- the suspension plus the effect we get by running
         -- that suspension.
         eTotal  = tSum kEffect [eExp, eResult]
 
@@ -175,9 +174,9 @@ isHoleT config tt
  = case tt of
         TVar u
          -> case u of
-                UName n 
+                UName n
                  -> case configNameIsHole config of
-                        Nothing -> False 
+                        Nothing -> False
                         Just f  -> f n
                 _       -> False
 
