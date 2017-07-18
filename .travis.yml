@@ -16,8 +16,7 @@ cache:
 # log and index files aren't worth caching
 # Note: this should be safe as cabal should still do an install
 #
-#       if a newer version of a dependency is available
-#       TODO: do we need to clean up older versions of deps from the cache?
+#   if a newer version of a dependency is available
 before_cache:
     - rm -f $HOME/.cabal/logs/*.log
     - rm -f $HOME/.cabal/packages/00-index*

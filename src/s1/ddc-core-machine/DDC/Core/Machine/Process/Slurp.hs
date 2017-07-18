@@ -55,11 +55,11 @@ just :: l -> Maybe r -> Either l r
 just l Nothing = Left l
 just _ (Just r) = Right r
 
-slurpNetworkX :: (Bind Name, Exp () Name) -> Either SlurpError (Bind Name, Network) 
+slurpNetworkX :: (Bind Name, Exp () Name) -> Either SlurpError (Bind Name, Network)
 slurpNetworkX (networkBind,xx)
  = do   let err str = just $ SlurpErrorOther (text str) xx
         (NameOpMachine proc, nestArgs) <- err "takeXFragApps" $ takeXFragApps xx
-        -- TODO: currently assuming process# prim is unapplied
+        -- NOTE: currently assuming process# prim is unapplied
         nest <- case takeExpsFromArgs nestArgs of
             [nest] -> return nest
             args   -> Left (SlurpErrorOther (text "takeExpsFromArgs: " <> ppr args) xx)
@@ -75,12 +75,12 @@ slurpNetworkX (networkBind,xx)
         let networkIns = map Channel inNames
         return (networkBind, Network networkIns networkOuts networkProcesses)
 
-slurpNetworkBody :: Exp () Name -> Either SlurpError ([Channel], [Process]) 
+slurpNetworkBody :: Exp () Name -> Either SlurpError ([Channel], [Process])
 slurpNetworkBody xx
  = case xx of
     XCase _ processX [AAlt (PData dacon streamOutBinds) xrest]
      | Just (NameDaConMachine (DaConTuple _)) <- takeNameOfDaCon dacon
-     , Just (NameOpMachine (OpStream{}), streamArgs) <- takeXFragApps processX 
+     , Just (NameOpMachine (OpStream{}), streamArgs) <- takeXFragApps processX
      , processBody : streamInExps <- takeExpsFromArgs streamArgs
      , Just streamInNames  <- mapM takeNameOfExp  streamInExps
      , Just streamOutNames <- mapM takeNameOfBind streamOutBinds
@@ -133,7 +133,7 @@ takeBlockNext largs xx
  , Just l'       <- takeNameOfExp l
  , args'         <- takeExpsFromArgs args
  , Just vars     <- Map.lookup (Label l') largs
- -- TODO: check args and vars are same length.
+ -- NOTE: we still need to check args and vars are same length.
  -- Except for pull the args must actually be one shorter than vars because of the extra on the end
  = return $ BlockNext (Label l') (Map.fromList $ zip vars args')
  | Just l'       <- takeNameOfExp xx
@@ -169,13 +169,13 @@ takeBlock largs block
           | otherwise
           -> Left $ SlurpErrorOther (text "takeBlock drop bad arguments: " <> ppr args) block
 
-            
+
 
          NameVar{}      -> BlockJump <$> takeBlockNext largs block
          NameVarMod{}   -> BlockJump <$> takeBlockNext largs block
 
          _ -> Left $ SlurpErrorOther (text "takeBlock non-block primitive: " <> ppr prim) block
-            
+
 
 
 takeLetsAll :: Exp () Name -> ([(Bind Name, Exp () Name)], Exp () Name)

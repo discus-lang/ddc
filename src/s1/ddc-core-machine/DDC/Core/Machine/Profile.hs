@@ -4,7 +4,7 @@ module DDC.Core.Machine.Profile
         ( profile
         , lexModuleString
         , lexExpString
-        
+
         , freshT
         , freshX)
 where
@@ -19,7 +19,7 @@ import qualified DDC.Type.Env   as Env
 
 
 -- | Language profile for Disciple Core Machine.
-profile :: Profile Name 
+profile :: Profile Name
 profile
         = Profile
         { profileName                   = "Machine"
@@ -27,13 +27,13 @@ profile
         , profilePrimDataDefs           = primDataDefs
         , profilePrimKinds              = primKindEnv
         , profilePrimTypes              = primTypeEnv
-        , profileTypeIsUnboxed          = const False 
-        , profileNameIsHole             = Nothing 
+        , profileTypeIsUnboxed          = const False
+        , profileNameIsHole             = Nothing
         , profileMakeLiteralName        = Nothing }
 
 
 features :: Features
-features 
+features
         = Features
         { featuresTrackedEffects        = False
         , featuresTrackedClosures       = False
@@ -44,11 +44,11 @@ features
         , featuresImplicitBox           = False
         , featuresMetaVariables         = False
         , featuresPartialPrims          = True
-        -- TODO: not sure yet which of these we want.
+        -- NOTE: not sure yet which of these we want.
         -- Looks like partial application allows
         -- (if f is 3 argument function)
         -- > foo (f x)
-        -- but not 
+        -- but not
         -- > let zz = f x
         -- > in foo
         , featuresPartialApplication    = True
@@ -68,8 +68,8 @@ features
 lexModuleString :: String -> Int -> String -> [Located (Token Name)]
 lexModuleString sourceName lineStart str
  = map rn $ lexModuleWithOffside sourceName lineStart str
- where 
-        rn (Located sp strTok) 
+ where
+        rn (Located sp strTok)
          = case renameToken readName strTok of
                 Just t' -> Located sp t'
                 Nothing -> Located sp (KErrorJunk "lexical error")
@@ -82,7 +82,7 @@ lexExpString :: String -> Int -> String -> [Located (Token Name)]
 lexExpString sourceName lineStart str
  = map rn $ lexExp sourceName lineStart str
  where
-        rn (Located sp strTok) 
+        rn (Located sp strTok)
          = case renameToken readName strTok of
                 Just t' -> Located sp t'
                 Nothing -> Located sp (KErrorJunk "lexical error")

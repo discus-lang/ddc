@@ -47,14 +47,12 @@ data Block
     | BlockPush Channel (Exp () Name) BlockNext
     | BlockDrop Channel BlockNext
     | BlockJump BlockNext
-    -- TODO: if/case
 
 
 data Process
     = Process
     { pInit         :: BlockNext
     , pBlocks       :: Map.Map Label Block
-    -- TODO: this should be computed based on pBlocks
     , pChannelTypes :: Map.Map Channel ChannelType
     }
 

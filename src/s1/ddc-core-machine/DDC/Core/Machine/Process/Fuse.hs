@@ -67,7 +67,7 @@ instance Pretty FuseLabel where
 
 labelOfFuseLabel :: FuseLabel -> Label
 labelOfFuseLabel l
- -- TODO: the worst thing ever!!! We could probably just add FuseLabel as a constructor to Name.
+ -- NOTE: the worst thing ever!!! We could probably just add FuseLabel as a constructor to Name.
  = Label $ NameVar $ renderIndent (ppr l)
 
 data ChannelType2
@@ -87,13 +87,13 @@ fuseChannels2 ls rs
   joinChan In1  In1  = In2
   joinChan In1  Out1 = In1Out1
   joinChan Out1 In1  = In1Out1
-  -- TODO: these should really be caught in an Either
+  -- NOTE: these should really be caught in an Either
   joinChan Out1 Out1 = error "'impossible': two processes cannot output to the same stream"
   joinChan _    _    = error "'impossible': channel types cannot be merged"
 
 getChannels1 :: Map.Map Channel ChannelType2 -> Map.Map Channel ChannelType
 getChannels1
- = Map.map chan1 
+ = Map.map chan1
  where
   chan1 In1     = ChannelInput
   chan1 In2     = ChannelInput
@@ -105,7 +105,7 @@ fuseNetwork :: Network -> Either FuseError Network
 fuseNetwork (Network ins outs [])
  = return $ Network ins outs []
 fuseNetwork (Network ins outs (p:procs))
- -- TODO order properly
+ -- NOTE need to order these properly
  = do   p' <- foldM fusePair p procs
         return $ Network ins outs [p']
 
@@ -119,7 +119,7 @@ fusePair p q
  where
   l0     = FuseLabel (bnLabel $ pInit p) Map.empty (bnLabel $ pInit q) Map.empty
   l0_args = Map.union (bnArguments $ pInit p) (bnArguments $ pInit q)
-  chan2s = fuseChannels2 (pChannelTypes p) (pChannelTypes q) 
+  chan2s = fuseChannels2 (pChannelTypes p) (pChannelTypes q)
   chan1s = getChannels1 chan2s
 
 
@@ -228,7 +228,6 @@ tryStep flipper cs lp sp lq sq bp = case bp of
 
   vchanVar c = Variable $ chanVar c
   xchanVar c = XVar () $ UName $ chanVar c
-  -- TODO: also bad
   chanVar (Channel c) = NameVarMod c "_buf"
 
   goto l sp' sq'
