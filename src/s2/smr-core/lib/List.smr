@@ -21,8 +21,6 @@
         (%list-cons x (@list-replicate (#nat-sub n #nat'1) x));
 
 ! Produce 'n' copies of the value 'x'.
-!  TODO: check change impl of app rule to push before building a new subst.
-!        we don't want to subst another subst wrapped around n' x'.
 @list-replicate-raised n x
  = #if
         (#nat-eq <#nat'0, n>)

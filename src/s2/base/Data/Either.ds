@@ -37,9 +37,8 @@ isRight (e: Either a b): Bool
 
 
 -- Functor --------------------------------------------------------------------
--- TODO: We get a name collision if the tyvar here is named 'x'.
--- TODO: If the sig is not given we end up with a free exists which
---       is not caught by the post-check.
+-- ISSUE #427: Clash in type var names with nested signatures.
+-- ISSUE #426: Free existential not caught by post type check.
 either_Functor {@x: Data}: Functor (Either x)
  = Functor either_fmap
  where

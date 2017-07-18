@@ -223,7 +223,7 @@ mapBoundAtDepthXLets l f d lts
         LPrivate _b _ bts
          -> (lts, countBAnonsB l $ map fst bts)
 
-        -- TODO: depth here is wrong.
+        -- ISSUE #430: In BoundX transform, management of debruijn depth is wrong.
         LGroup bRec cs
          -> let inc = sum (map (countBAnonsC l) cs)
                 cs' = map (mapBoundAtDepthX l f (d + inc)) cs

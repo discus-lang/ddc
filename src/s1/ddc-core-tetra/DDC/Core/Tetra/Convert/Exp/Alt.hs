@@ -17,7 +17,7 @@ import qualified Data.Map                as Map
 
 
 -- | Convert a Tetra alternative to Salt.
-convertAlt 
+convertAlt
         :: a                            -- ^ Annotation from case expression.
         -> Bound E.Name                 -- ^ Bound of scrutinee.
         -> Type  E.Name                 -- ^ Type  of scrutinee
@@ -56,7 +56,7 @@ convertAlt a uScrut tScrut ectx ctx alt
         AAlt (PData dc bsFields) x
          | DaConRecord _nsFields   <- dc
          , (_tRecord : tsArgs)     <- takeTApps tScrut
-         -> do   
+         -> do
                 -- Convert the scrutinee.
                 uScrut'         <-  convertDataU uScrut
                                 >>= maybe (throw $ ErrorInvalidBound uScrut) return
@@ -64,14 +64,14 @@ convertAlt a uScrut tScrut ectx ctx alt
                 let dcTag       = DaConPrim (A.NamePrimLit $ A.PrimLitTag 0) A.tTag
 
                 -- Get the address of the payload.
-                bsFields'       <- mapM (convertDataB tctx) bsFields       
+                bsFields'       <- mapM (convertDataB tctx) bsFields
 
-                -- Convert the right of the alternative, 
+                -- Convert the right of the alternative,
                 -- with all all the pattern variables in scope.
                 let ctx'        =  extendsTypeEnv bsFields ctx
                 xBody1          <- convertX ectx ctx' x
 
-                -- TODO: Refactor 'destructData' below to only take the fields it needs.
+                -- ISSUE #433: Refactor constructData to take only the fields it uses.
                 -- We can't make a real CtorDef for records.
                 let ctorDef     = DataCtor
                                 { dataCtorName          = E.NameCon "Record"    -- bogus name.
@@ -84,7 +84,7 @@ convertAlt a uScrut tScrut ectx ctx alt
                 -- Wrap the body expression with let-bindings that bind
                 -- each of the fields of the data constructor.
                 xBody2          <- destructData pp a
-                                        ctorDef uScrut' 
+                                        ctorDef uScrut'
                                         A.rTop
                                         bsFields' xBody1
 
@@ -95,7 +95,7 @@ convertAlt a uScrut tScrut ectx ctx alt
         AAlt (PData dc bsFields) x
          | Just nCtor           <- takeNameOfDaCon dc
          , Just ctorDef         <- Map.lookup nCtor $ dataDefsCtors defs
-         -> do  
+         -> do
                 -- Convert the scrutinee.
                 uScrut'         <-  convertDataU uScrut
                                 >>= maybe (throw $ ErrorInvalidBound uScrut) return
@@ -103,11 +103,11 @@ convertAlt a uScrut tScrut ectx ctx alt
                 -- Get the tag of this alternative.
                 let iTag        = fromIntegral $ dataCtorTag ctorDef
                 let dcTag       = DaConPrim (A.NamePrimLit $ A.PrimLitTag iTag) A.tTag
-                
-                -- Get the address of the payload.
-                bsFields'       <- mapM (convertDataB tctx) bsFields       
 
-                -- Convert the right of the alternative, 
+                -- Get the address of the payload.
+                bsFields'       <- mapM (convertDataB tctx) bsFields
+
+                -- Convert the right of the alternative,
                 -- with all all the pattern variables in scope.
                 let ctx'        =  extendsTypeEnv bsFields ctx
                 xBody1          <- convertX ectx ctx' x
@@ -125,11 +125,11 @@ convertAlt a uScrut tScrut ectx ctx alt
 
         -- Default alternative.
         AAlt PDefault x
-         -> do  x'      <- convertX ectx ctx x 
+         -> do  x'      <- convertX ectx ctx x
                 return  $ AAlt PDefault x'
 
-        -- Invalid alternative. 
+        -- Invalid alternative.
         -- Maybe we don't have the definition for the data constructor
         -- being matched against.
-        AAlt{}          
+        AAlt{}
          -> throw $ ErrorInvalidAlt alt

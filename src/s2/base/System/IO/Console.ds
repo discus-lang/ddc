@@ -18,8 +18,8 @@ import foreign c value
  primStdoutPutVector    : {@r: Region} -> Vector# r Word8# -> S Console Void#
  primStdoutFlush        : Unit -> S Console Void#
 
- -- TODO: We're missing the S result type,
- --       bug if we add it the compiled code crashes.
+ -- ISSUE #425: In foreign impot adding (S Console) to result type causes
+ -- codegen problem and runtime crash.
  primStdinGetString     : Nat# -> TextLit#
 
 

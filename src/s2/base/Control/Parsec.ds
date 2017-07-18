@@ -99,9 +99,9 @@ parser_fmap
 parser_Applicative {@t e: Data}: Applicative (Parser t e)
  = Applicative parser_Functor parser_pure parser_ap
 
--- TODO: If these tyvars are given plain names like t e a,
--- then the binding is in a where clause under parser_Applicative then
--- they are not fresh enough to go through the type checker.
+-- ISSUE #427: Clash in type var names with nested signatures.
+-- If parser_pure and parser_ap added under parser_Applicative in
+-- 'where' bindings.
 parser_pure
         {@t' e' a': Data}
         (x: a'): Parser t' e' a'
@@ -226,8 +226,6 @@ enter    (mk: Bag (Blocker t e) -> e) (parserA: Parser t e a): Parser t e a
 
 -- | If the given parser suceeds then enter an expectation context
 --   for the next one.
---   TODO: pack down duplication here,
---         need a fn to take result from ret or success.
 enterOn  (parserA: Parser t e a)
          (mk: a → Bag (Blocker t e) → e)
          (mkParserB: a → Parser t e b)
@@ -318,10 +316,8 @@ alt (parserA parserB: Parser t e a): Parser t e a
 alts (parsers: List (Parser t e a)): Parser t e a
  = Parser $ λts0 -> go ts0 (False, Nothing) (bag_nil, bag_nil) parsers
  where
-        -- TODO: type signature is required, otherwise ?n1 /= ?n2 error.
-        -- TODO: clauses are not checked that they all have same number of args.
-        --       it looks like if one clause misses the arg the corresponding
-        --       one is ignored in all others.
+        -- ISSUE #428: Eliding signature causes error saying existentials cannot be unified.
+        -- ISSUE #420: Pattern desugarer gets confused if variables are renamed.
         go  : List t
             → (Bool, Maybe a)
             → (Bag (Blocker t e), Bag (Blocker t e))

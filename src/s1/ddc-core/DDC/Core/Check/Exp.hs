@@ -84,9 +84,9 @@ checkExp !config !env !mode !demand !xx
          <- checkExpM
                 (makeTable config)
                 (emptyContext { contextEnvX = env })
-                mode 
-                demand 
-                xx 
+                mode
+                demand
+                xx
 
         -- Apply the final context to the annotations in expressions.
         -- This ensures that existentials are expanded to solved types.
@@ -136,7 +136,7 @@ checkExpM
                 , Context n)            -- Output context.
 
 -- Dispatch to the checker table based on what sort of AST node we're at.
-checkExpM !table !ctx !mode !demand !xx 
+checkExpM !table !ctx !mode !demand !xx
  = case xx of
     XVar{}                 -> tableCheckVarCon     table table ctx mode demand xx
     XPrim{}                -> tableCheckPrim       table table ctx mode demand xx
@@ -169,5 +169,4 @@ makeTable config
         , tableCheckCase        = checkCase
         , tableCheckCast        = checkCast
         , tableCheckWitness     = error "makeTable: not checking witness" }
-                                        -- TODO: kill this
-
+        -- TODO: remove this old case.

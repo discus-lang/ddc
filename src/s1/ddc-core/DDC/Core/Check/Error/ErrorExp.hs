@@ -140,6 +140,9 @@ data Error a n
         -- Private --------------------------------------
         -- | A letregion-expression where the some of the bound variables do not
         --   have region kind.
+        --   This is an internal error. The concrete syntax of the language should
+        --   not allow us to write region binders on private constructs that
+        --   do not have region kind.
         | ErrorPrivateNotRegion
         { errorAnnot            :: a
         , errorChecking         :: Exp a n

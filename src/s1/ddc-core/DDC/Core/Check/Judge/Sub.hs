@@ -226,9 +226,9 @@ makeSub config a ctx0 x0 xL tL tR err
                 , Sum.union effs1 effs2
                 , ctx2)
 
-
- -- TODO: we're missing the rule with the other way,
- --  inferred is D t1'..tn', expected is A ~> B
+ -- ISSUE #419: Explicit dictionaries needed in more places than they should be.
+ -- We're missing the rule with the other way,inferred is D t1'..tn', expected is A ~> B
+ -- ie, Sub_Implicit_Left.
 
  -- Sub_Implicit_Right
  --
@@ -257,7 +257,7 @@ makeSub config a ctx0 x0 xL tL tR err
         let aFnElab     = AnTEC tElaborate (tBot kEffect) (tBot kClosure) a
         let xArgElab    = XApp aArg (XPrim aFnElab PElaborate) (RType tArg)
 
-        -- TODO: this assumes the functional expression has no effects.
+        -- ISSUE #431: Sub_Implcit_Right rule assumes functional expression has no effects.
         let aFn         = AnTEC tL    (tBot kEffect) (tBot kClosure) a
         let xL_elab     = XApp aFn xL (RImplicit (RTerm xArgElab))
 

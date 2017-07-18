@@ -28,7 +28,7 @@ compose {@cat: Data -> Data -> Data} {@a b c: Data}
  = compose'
 
 
--- TODO: Should not need to supply implicit arg.
+-- ISSUE #419: Explicit dictionaries needed in more places than they should be.
 composeLeft
         {@cat: Data -> Data -> Data} {@a b c: Data} {xc: Category cat}
         : cat b c -> cat a b -> cat a c

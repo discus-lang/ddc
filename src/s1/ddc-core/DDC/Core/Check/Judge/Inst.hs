@@ -126,7 +126,7 @@ makeInst !config !a !ctx0 !tL !tR !err
 
  -- InstRArr
  --  Left is an function arrow, and right is an existential.
- --  *** TODO: is this ever used? rule above might shadow it.
+ --  ISSUE #432: Check shadowing of rules in Inst judgement.
  | Just (tL1, tL2)      <- takeTFun tL
  , Just iR              <- takeExists tR
  = do

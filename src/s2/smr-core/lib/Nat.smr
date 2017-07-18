@@ -27,7 +27,6 @@
 
 
 ! Factorial where the recursion is expressed via a recursive substitution.
-!   TODO: allow function binding syntax in substitutions.
 @nat-fac-subst x
  = [[   go = \acc n.
           #bool-if

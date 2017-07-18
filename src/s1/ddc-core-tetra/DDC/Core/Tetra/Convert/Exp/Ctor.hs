@@ -57,7 +57,7 @@ convertCtorApp ctx (AnTEC tResult _ _ a) dc asArgsAll
         let tctx         = typeContext       ctx
 
         -- Convert all the constructor arguments to Salt.
-        xsArgsValues'   <- mapM (convertX ExpArg ctx) 
+        xsArgsValues'   <- mapM (convertX ExpArg ctx)
                         $  xsArgsValues
 
         -- Determine the Salt type for each of the arguments.
@@ -65,8 +65,8 @@ convertCtorApp ctx (AnTEC tResult _ _ a) dc asArgsAll
         tsArgsValues'   <- mapM (convertDataT tctx)
                         $  map  (annotType . annotOfExp) xsArgsValues
 
-        -- TODO: Refactor 'constructData' below to only take the fields it uses.
-        -- We can't make a real CtorDef for records because they don't have real 
+        -- ISSUE #433: Refactor constructData to take only the fields it uses.
+        -- We can't make a real CtorDef for records because they don't have real
         -- fragment specific names. However, the constructData fn is not using
         -- the name field, so we shouldn't have to supply this bogus info.
         let ctorDef     = DataCtor
@@ -89,17 +89,17 @@ convertCtorApp ctx (AnTEC tResult _ _ a) dc asArgsAll
  , xsArgsValues  <- [x | RTerm x <- drop (length tsArgsTypes) asArgsAll]
  , arity         <- length (dataCtorFieldTypes ctorDef)
  , length xsArgsValues == arity
- = do   
+ = do
         let pp          = contextPlatform ctx
         let convertX    = contextConvertExp ctx
         let tctx        = typeContext ctx
 
         -- Convert all the constructor arguments to Salt.
-        xsArgsValues'    <- mapM (convertX ExpArg ctx) 
+        xsArgsValues'    <- mapM (convertX ExpArg ctx)
                          $  xsArgsValues
 
         -- Determine the Salt type for each of the arguments.
-        tsArgsValues'    <- mapM (convertDataT tctx) 
+        tsArgsValues'    <- mapM (convertDataT tctx)
                          $  map  (annotType . annotOfExp) xsArgsValues
 
         constructData pp a
@@ -110,7 +110,7 @@ convertCtorApp ctx (AnTEC tResult _ _ a) dc asArgsAll
 -- If this fails then the provided constructor args list is probably malformed.
 -- This shouldn't happen in type-checked code.
 convertCtorApp _ _ dc xsArgsAll
- = throw $  ErrorMalformed 
+ = throw $  ErrorMalformed
          $  "Invalid constructor application "
          ++ (renderIndent $ ppr (dc, xsArgsAll))
 

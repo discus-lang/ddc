@@ -143,7 +143,8 @@ downX a env xx
                 x2'     = expand a env' x2
             in  XLet (LRec bxs') x2'
 
-        -- TODO: env management is wrong for non-recursive clauses.
+        -- ISSUE #429: In Expand transform, env management
+        -- is wrong for non-recursive clauses.
         XLet (LGroup bRec cs) x2
          -> let cs'     = map (downCX a env) cs
                 bs      = [b | SLet _ b _ _ <- cs']

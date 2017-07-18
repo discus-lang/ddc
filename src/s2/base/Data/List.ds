@@ -45,7 +45,7 @@ data List (a: Data) where
 
 
 -- Dictionaries ---------------------------------------------------------------
--- | TODO: should not need local sigs and explicit dictionary.
+-- ISSUE #419: Explicit dictionaries needed in more places then they should be.
 eq_List {eqa: Eq a}: Eq (List a)
  = Eq (eq' {eqa}) (neq' {eqa})
  where

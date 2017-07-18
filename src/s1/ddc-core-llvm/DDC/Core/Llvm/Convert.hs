@@ -37,37 +37,37 @@ import qualified Data.Text                              as Text
 
 
 -- | Convert a Salt module to LLVM.
--- 
+--
 --   If anything goes wrong in the convertion then this function will
 --   just call `error`.
 --
-convertModule 
-        :: Platform 
-        -> C.Module () A.Name 
+convertModule
+        :: Platform
+        -> C.Module () A.Name
         -> Either Error Module
 
 convertModule platform mm@(C.ModuleCore{})
- = let  
-        state   = llvmStateInit 
+ = let
+        state   = llvmStateInit
 
         -- Add extra Const and Distinct witnesses where possible.
         --  This helps us produce better LLVM metadata.
         mmElab  = Simp.result $ fst
                 $ flip State.runState state
-                $ Simp.applySimplifier 
-                        A.profile Env.empty Env.empty 
+                $ Simp.applySimplifier
+                        A.profile Env.empty Env.empty
                         (Simp.Trans Simp.Elaborate)
                         mm
-                        
+
         -- Convert to LLVM.
    in   case runCheck state (convertModuleM platform mmElab) of
          (_state', Left  err)
           -> Left err
 
          (state', Right mmRaw)
-          -> let 
+          -> let
                 -- Attach any top-level constants the code generator might have made.
-                gsLit    = [ GlobalStatic var (StaticLit lit) 
+                gsLit    = [ GlobalStatic var (StaticLit lit)
                            | (var, lit) <- Map.toList $ llvmConstants state' ]
 
                 mmConst  = mmRaw
@@ -80,7 +80,7 @@ convertModule platform mm@(C.ModuleCore{})
                 mmSimpl  = Simpl.simpl Simpl.configZero
                                 { Simpl.configDropNops    = True
                                 , Simpl.configSimplAlias  = True
-                                , Simpl.configSimplConst  = True 
+                                , Simpl.configSimplConst  = True
                                 , Simpl.configSquashUndef = True }
                                 mmFlat
 
@@ -95,14 +95,14 @@ convertModule platform mm@(C.ModuleCore{})
 --   directly. It also annotates IPhi nodes with undef, and these need to be given
 --   real block labels before the LLVM compiler will accept them.
 --
-convertModuleM 
+convertModuleM
         :: Platform
-        -> C.Module () A.Name 
+        -> C.Module () A.Name
         -> ConvertM Module
 
 convertModuleM pp mm@(C.ModuleCore{})
  | ([C.LRec bxs], _)    <- splitXLets $ C.moduleBody mm
- = do   
+ = do
         -- Collect uses of global variables and create LLVM definitions
         -- for each of them.
         globals <- collectGlobalsOfModule pp mm
@@ -111,9 +111,9 @@ convertModuleM pp mm@(C.ModuleCore{})
         let kenv = C.moduleKindEnv mm
         let tenv = C.moduleTypeEnv mm `Env.union` (Env.fromList $ map fst bxs)
 
-        let Just msImportDecls 
+        let Just msImportDecls
                 = sequence
-                $ [ importedFunctionDeclOfType pp kenv 
+                $ [ importedFunctionDeclOfType pp kenv
                         isrc
                         (List.lookup n (C.moduleExportValues mm))
                         n
@@ -135,7 +135,7 @@ convertModuleM pp mm@(C.ModuleCore{})
                 , contextKindEnv        = kenv
                 , contextTypeEnv        = tenv
                 , contextNames          = Map.empty
-                , contextMDSuper        = MDSuper Map.empty [] 
+                , contextMDSuper        = MDSuper Map.empty []
                 , contextSuperName      = Nothing
                 , contextSuperBodyLabel = Nothing
                 , contextSuperParamSlots = []
@@ -150,20 +150,20 @@ convertModuleM pp mm@(C.ModuleCore{})
                   in  convertSuper ctx' b x'
 
         (functions, mdecls)
-                <- liftM unzip 
+                <- liftM unzip
                 $  mapM (uncurry (convertSuper' ctx)) bxs
 
 
         -- Stitch everything together -----------
-        return  $ Module 
+        return  $ Module
                 { modComments           = []
                 , modAliases            = [aObj pp]
                 , modGlobals            = globals
-                , modFwdDecls           = primDecls pp ++ importDecls 
-                , modFuncs              = functions 
+                , modFwdDecls           = primDecls pp ++ importDecls
+                , modFuncs              = functions
                 , modMDecls             = concat mdecls }
 
- | otherwise    
+ | otherwise
  = throw $ ErrorInvalidModule mm
 
 
@@ -177,7 +177,7 @@ convertModuleM pp mm@(C.ModuleCore{})
 --   We need to always include 'ddcHeapMax' and 'ddcHeapTop'
 --   as these are used in the LLVM code for th alloc# primitive.
 --
-collectGlobalsOfModule 
+collectGlobalsOfModule
         :: Platform -> C.Module () A.Name
         -> ConvertM [Global]
 
@@ -187,15 +187,15 @@ collectGlobalsOfModule pp mm
         -- types that they are used at.
         let globals_salt
                 = Map.unionWith (++)
-                        ( APrimitive.supportGlobal 
+                        ( APrimitive.supportGlobal
                         $ APrimitive.collectModule mm)
-                $ Map.fromList 
+                $ Map.fromList
                         [ (Text.pack "ddcHeapMax",  [A.tAddr])
                         , (Text.pack "ddcHeapTop",  [A.tAddr]) ]
 
         -- Convert the Salt types of each global to their equivalent
-        -- LLVM types. TODO: also check for type mismatch in uses.
-        globals_llvm 
+        -- LLVM types.
+        globals_llvm
          <- forM (Map.toList globals_salt)
          $  \(name, ts)
          -> do  _ts'@(t' : _)  <- mapM (convertType pp Env.empty) ts
@@ -203,7 +203,7 @@ collectGlobalsOfModule pp mm
 
         if C.moduleName mm == C.ModuleName ["Init"]
          -- When compiling the Init module, allocate space for each global.
-         then return 
+         then return
                 [ GlobalStatic   (Var (NameGlobal (Text.unpack name))
                                       (TPointer tGlobal))
                                  (StaticLit (LitInt (tAddr pp) 0))
@@ -220,12 +220,12 @@ collectGlobalsOfModule pp mm
 -- | C library functions that are used directly by the generated code without
 --   having an import declaration in the header of the converted module.
 primDeclsMap :: Platform -> Map String FunctionDecl
-primDeclsMap pp 
+primDeclsMap pp
         = Map.fromList
         $ [ (declName decl, decl) | decl <- primDecls pp ]
 
 primDecls :: Platform -> [FunctionDecl]
-primDecls pp 
+primDecls pp
  = [    FunctionDecl
         { declName              = "abort"
         , declLinkage           = External

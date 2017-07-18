@@ -269,9 +269,9 @@ sourceLower store sinkCore sinkResolve sinkSpread mm
         -- Resolve which module imported names are from,
         -- and attach arity information to the import statements.
         --
-        --  TODO: We're currently ignoring the resolver errors as they don't come
-        --  with source locations. The type checker will give its own Undefined
-        --  variable erros, but not multiple import errors.
+        -- We're currently ignoring the resolver errors as they don't come
+        -- with source locations. The type checker will give its own Undefined
+        -- variable errors, but not multiple import errors.
         --
         (mm_resolve, _errs_resolve)
          <- liftIO $ BResolve.resolveNamesInModule

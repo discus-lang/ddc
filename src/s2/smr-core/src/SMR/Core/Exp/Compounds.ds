@@ -74,7 +74,6 @@ takeXApps (xx: Exp s p): Maybe (Exp s p, List (Exp s p))
         _ → Nothing
 
 
--- TODO: list append bad complexity.
 flattenExp  (xArg: Exp s p): List (Exp s p)
  = case xArg of
         XRet xsArgs       → flattenExps xsArgs
@@ -84,3 +83,4 @@ flattenExps (xsArgs: List (Exp s p)): List (Exp s p)
  = case xsArgs of
         Nil               → Nil
         Cons xArg xsArgs' → append (flattenExp xArg) (flattenExps xsArgs')
+

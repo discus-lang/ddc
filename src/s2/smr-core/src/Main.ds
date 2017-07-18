@@ -50,8 +50,7 @@ declsOfState
 
 
 -- Utils ----------------------------------------------------------------------
-
--- TODO: need explicit run/box
+--   ISSUE #424: Explicit box keyword required in more places than it should be.
 getLine: S Console Text
  = box do
         txt     = run readl 2014
@@ -68,8 +67,8 @@ main ()
          = makePrimOps ()
 
         -- Extract a list of primitive names.
-        -- TODO: find out why we need explicit type app,
-        --       as well as explicit type abs to set the tyvar order.
+        -- ISSUE #422: Explicit type arguments required in some places
+        -- that they should not be.
         primNames
          = map (nameOfPrimEval [Text] [Prim]) primEvals
 
@@ -122,10 +121,8 @@ repl_start (state: State) (args: List Mode): S Console Unit
 
 -------------------------------------------------------------------------------
 -- | Read-Eval-Print loop.
---   TODO: need to put the explicit box.
---
---   TODO: closing stdin with control-D causes prompt to print infinitely.
---
+--   ISSUE #423: Closing Shimmer REPL with Control-D causes prompt to print indefinately.
+--   ISSUE #424: Explicit box keyword required in more places than it should be.
 repl_loop (state: State) (cmd: Cmd): S Console Unit
  = box do
         -- Write the prompt.

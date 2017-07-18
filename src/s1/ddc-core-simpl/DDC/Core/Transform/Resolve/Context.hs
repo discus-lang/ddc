@@ -29,9 +29,7 @@ data Context n
           --   These are supers that are available in other modules,
           --   that might not already be referenced in the one that we're resolving.
           --
-          --   TODO: searcing through all of these during resolution will be
-          --         a performance disaster. We should store them as a map by
-          --         the outermost tycon.
+          -- ISSUE #434: Store resolve dictionary by outermost tycon.
         , contextTop            :: [ (n, ImportValue n (Type n)) ]
 
           -- | Extra top-level context that we've used during resolution.
@@ -237,7 +235,6 @@ matchScheme envt tWanted tBind
         -- Try to unify the wanted type with the result we
         -- would get if we applied the function.
    in   case result of
-         -- TODO: glob constraints.
          Just cs
           |  Just tsArgInst
                 <- sequence
@@ -250,8 +247,8 @@ matchScheme envt tWanted tBind
          _ -> Nothing
 
 
--- | Half-assed unification of left and right types,
---   where we're permitted to create constraints for the right type only.
+-- | Half-assed unification of left and right types, also known as "matching".
+--   Where we're permitted to create constraints for the right type only.
 unifyExistsRight
         :: Ord n
         => EnvT n

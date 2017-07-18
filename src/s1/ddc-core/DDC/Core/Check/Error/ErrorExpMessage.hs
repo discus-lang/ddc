@@ -141,8 +141,6 @@ ppr' (ErrorLetrecBindingNotLambda a _xx x)
 
 
 -- Letregion ------------------------------------------------------------------
--- TODO: The concrete syntax is such that we cannot cause this error
--- unless there is a bug in the compiler.
 ppr' (ErrorPrivateNotRegion a _xx bs ks)
  = vcat [ ppr a
         , text "Letregion binders do not have region kind."
