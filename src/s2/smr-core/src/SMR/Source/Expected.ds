@@ -13,7 +13,8 @@ where
 
 
 -------------------------------------------------------------------------------
--- TODO: Data type decls are not checked that all tyvars appear as params.
+-- ISSUE #416: Data type decls are not checked that all tyvars in result
+-- type of ctors appear as params.
 data Expected (t s p: Data) where
         -- Base expectactions are of particular tokens appearing on the input.
         ExBaseEnd       : Expected t s p
@@ -32,9 +33,8 @@ data Expected (t s p: Data) where
                         -> Expected t s p
 
 
--- TODO: adding this param causes Main.ds to loop when trying to
--- build the dict so it can call this function.
---   {Pretty (Expected t s p)}
+-- ISSUE #415: Implicit resolver gets caught in a loop if result type of fn
+-- matches a parameter.
 pretty_Expected
         {Pretty s} {Pretty p} {Pretty t}
         : Pretty (Expected t s p)

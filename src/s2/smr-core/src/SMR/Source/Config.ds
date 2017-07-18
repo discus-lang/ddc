@@ -43,8 +43,10 @@ withRangeExp
         {c: Config s p}
         (p: Parser (Located Token) (Expected (Located Token) s p) (Exp s p))
         :   Parser (Located Token) (Expected (Located Token) s p) (Exp s p)
- = do   -- TODO: binding against pattern yield 'bad pattern' error.
+ = do
+        -- ISSUE #417: Binding against a pattern yields a bad pattern error.
         --(kStart, xx, kEnd) <- delim p
+
         res     <- withDelims p
         case res of
          (kStart, xx, kEnd)

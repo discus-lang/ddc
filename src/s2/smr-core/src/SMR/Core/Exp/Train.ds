@@ -52,8 +52,9 @@ trainAppend (ccA ccB: List (Car s p)): List (Car s p)
         Cons cA csA     -> trainAppend' cA csA ccB
 
 
--- TODO: Inlining this into trainAppend as a where-binding causes a type
---       checker failure as the type variables don't match up.
+-- ISSUE #421: Problem with shadowed type variable in Shimmer trainAppend.
+-- Inlining this into trainAppend as a where-binding causes a type
+-- checker failure as the type variables don't match up.
 trainAppend'
         (c1:      Car s p)
         (cs1 cc2: List (Car s p)): List (Car s p)

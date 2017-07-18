@@ -6,7 +6,6 @@ where
 
 
 -- | Primitive evaluators for natural numbers.
---   TODO: writing makePrimOpsNat (): List .. =   doesn't work.
 makePrimOpsNat (_ : Unit): List (PrimEval s Prim)
  = Cons (primOpNat1     "nat-neg" "natural negation"            (\a -> 0 - a))
  $ Cons (primOpNat2Nat  "nat-add" "natural addition"            add)

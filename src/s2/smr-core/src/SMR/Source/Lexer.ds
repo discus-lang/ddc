@@ -48,8 +48,7 @@ lexToken (lStart: Location)
                 Just (Located lStart lEnd tok, xs)
 
         -- Variable name.
-        -- TODO: Inlining takeSpace into the guard causes
-        -- an LLVM dominator error.
+        -- ISSUE #413: Inlining takeSpace into the guard causes an LLVM dominator error.
         |  Just (space, xx')         <- takeSpace c xs
         ,  Just (name, lEnd, csRest) <- lexName   (incCharOfLocation 1 lStart) xx'
         -> do   tok      = KName space name
@@ -124,7 +123,7 @@ lexNat  (lStart: Location) (xx: List Char)
          = Nothing
 
 
--- TODO: check fixity of ∨, should be able to write these as one clause.
+-- ISSUE #413: Infix parser does not allow multiple \lor in expression
 isNameBodyChar (c: Char): Bool
  = isLower c ∨ (isUpper c ∨ (isDigit c ∨ (c == '-' ∨ (c == '\'' ∨ c == '_'))))
 

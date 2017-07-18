@@ -9,7 +9,7 @@ where
 
 -------------------------------------------------------------------------------
 -- | Shimmer expression functions reflected back as primops.
---   TODO: shouldn't need to supply dictionary here.
+--   ISSUE #419: In Shimmer mkPrimOpsSmr need to supply explicit dictionary arg.
 makePrimOpsSmr {eqs: Eq s} (_ : Unit): List (PrimEval s Prim)
  = Cons (primOpSmrEqual {eqs})
  $ Cons primOpSmrPushHead
@@ -94,8 +94,8 @@ primOpSmrEvalFail: PrimEval s Prim
 
 
 -------------------------------------------------------------------------------
--- TODO: don't require all the combs to be specified in the public interface,
--- though can still have that config internally.
+-- ISSUE #418: In Shimmer combinateSKI should not require all combinators
+-- to be supplied in the public interface.
 primOpSmrCombinateSKI: PrimEval s Prim
  = PrimEval
         (PrimOp "smr-combinate-ski")

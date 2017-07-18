@@ -57,7 +57,7 @@ pprExp' {@s p: Data} {Pretty s} {Pretty p}
         XVar name d -> name % "^" % show d
 
         -- abstraction
-        -- TODO: adding the "\\" string here causes a compile error.
+        -- ISSUE #412: Compilation of literal string "\\" fails in LLVM codegen.
         XAbs ns x
          -> textOfChar '\\' % pprSep (map pprParam ns)  % "." %% pprExp' ContextBody x
 
