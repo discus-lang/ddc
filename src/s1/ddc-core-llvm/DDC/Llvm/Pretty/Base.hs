@@ -69,9 +69,8 @@ versionWantsMetadataAsValue v
         | otherwise             = Nothing
 
 
--- | LLVM versions before 3.7.0 did not use a result type
---   on load and getelembyptr operations, while after they
---   did.
+-- | LLVM versions before 3.7.0 did not use a result type on load
+--   and getelembyptr operations, while after they did.
 versionWantsLoadReturnTypes :: Version -> Maybe Bool
 versionWantsLoadReturnTypes v
         | isPrefixOf "3.1." v   = Just False

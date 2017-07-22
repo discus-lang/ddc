@@ -35,10 +35,10 @@ l10.body:
 
 
 
-!8 = !{!"x_plus_y_square_rz",  !5, i32 0}
-!7 = !{!"x_plus_y_square_rx",  !6, i32 0}
-!6 = !{!"x_plus_y_square_ry",  !5, i32 0}
-!5 = !{!"x_plus_y_square_ROOT_4", null, i32 1}
+!8 = !{!"x_plus_y_square_rz",  !5, i64 0}
+!7 = !{!"x_plus_y_square_rx",  !6, i64 0}
+!6 = !{!"x_plus_y_square_ry",  !5, i64 0}
+!5 = !{!"x_plus_y_square_ROOT_4"}
 
 
 -- Observable optimisations: GVN - constprop behaviour
@@ -75,10 +75,10 @@ l13.body:
 
 
 
-!4 = !{!"nothing_rx",  !3, i32 0}
-!3 = !{!"nothing_ROOT_2", null, i32 1}
-!11 = !{!"three_x_plus_one_rx",  !10, i32 1}
-!10 = !{!"three_x_plus_one_ROOT_9", null, i32 1}
+!4 = !{!"nothing_rx",  !3, i64 0}
+!3 = !{!"nothing_ROOT_2"}
+!11 = !{!"three_x_plus_one_rx",  !10, i64 1}
+!10 = !{!"three_x_plus_one_ROOT_9"}
 
 
 

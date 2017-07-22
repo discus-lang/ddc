@@ -20,15 +20,15 @@ instance Pretty Metadata where
   = pprMetaData mode prec md
 
 pprMetaData (PrettyModeMetadata config) _ mt
-  = let downMDNodeOp = pprMDNodeOp 
-                        (PrettyModeMDNodeOp config) 
+  = let downMDNodeOp = pprMDNodeOp
+                        (PrettyModeMDNodeOp config)
                         (0 :: Int)
     in case mt of
-         Tbaa (MDNode ops) 
-          -> text "!" <> encloseSep lbrace rbrace 
-                                (comma <> space) 
+         Tbaa (MDNode ops)
+          -> text "!" <> encloseSep lbrace rbrace
+                                (comma <> space)
                                 (map downMDNodeOp ops)
-         Debug  
+         Debug
           -> text "DEBUGMD"
 
 
@@ -45,20 +45,20 @@ instance Pretty MDecl where
  pprModePrec mode prec md
   = pprMDecl mode prec md
 
-pprMDecl (PrettyModeMDecl config) _ (MDecl ref m) 
+pprMDecl (PrettyModeMDecl config) _ (MDecl ref m)
  | configWantsMetadataAsValue config
- = ppr ref <> space <> equals <> space 
+ = ppr ref <> space <> equals <> space
            <> text "metadata" <> space
            <> pprMetaData (PrettyModeMetadata config) (0 :: Int) m
 
  | otherwise
- = ppr ref <> space <> equals <> space 
+ = ppr ref <> space <> equals <> space
            <> pprMetaData (PrettyModeMetadata config) (0 :: Int) m
 
 
 -------------------------------------------------------------------------------
 instance Pretty (MRef) where
- ppr (MRef i) 
+ ppr (MRef i)
   = text ("!" ++ show i)
 
 
@@ -66,11 +66,11 @@ instance Pretty (MRef) where
 instance Pretty MDString where
  ppr (MDString s)
   = text "!" <> (dquotes $ text s)
-  
+
 
 -------------------------------------------------------------------------------
 instance Pretty MDNode where
- ppr (MDNode ns) 
+ ppr (MDNode ns)
   = text "!" <> braces (ppr ns)
 
 
@@ -93,16 +93,16 @@ pprMDNodeOp (PrettyModeMDNodeOp config) _prec elt
         OpNull        -> text "null"
         OpMDString ms -> text "metadata" <> space <> ppr ms
         OpMDNode   ns -> text "metadata" <> space <> ppr ns
-        OpMDRef    r  -> text "metadata" <> space <> ppr r 
-        OpBool     b  -> text "i32" <> space <> text (if b then "1" else "0")
-        OpType     t  -> ppr t 
+        OpMDRef    r  -> text "metadata" <> space <> ppr r
+        OpBool     b  -> text "i64" <> space <> text (if b then "1" else "0")
+        OpType     t  -> ppr t
 
  | otherwise
  = case elt of
         OpNull        -> text "null"
         OpMDString ms -> ppr ms
         OpMDNode   ns -> ppr ns
-        OpMDRef    r  -> space <> ppr r 
-        OpBool     b  -> text "i32" <> space <> text (if b then "1" else "0")
-        OpType     t  -> ppr t 
+        OpMDRef    r  -> space <> ppr r
+        OpBool     b  -> text "i64" <> space <> text (if b then "1" else "0")
+        OpType     t  -> ppr t
 
