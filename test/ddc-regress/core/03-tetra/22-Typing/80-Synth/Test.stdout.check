@@ -13,8 +13,8 @@ ok
 
 
 -- Check order of existential vars.
-λ(x: ?0).λ(y: ?2).λ(z: ?4). y
-:*: ?0 -> ?2 -> ?4 -> ?2
+λ(x: ?0).λ(y: ?8).λ(z: ?10). y
+:*: ?0 -> ?8 -> ?10 -> ?8
 :!: Pure
 
 
@@ -31,9 +31,9 @@ ok
 
 
 -- Second order.
-λ(f: ?6 -> ?7).λ(g: ?8 -> ?6).λ(x: ?8).
+λ(f: ?6 -> ?7).λ(g: ?14 -> ?6).λ(x: ?14).
 f (g x)
-:*: (?6 -> ?7) -> (?8 -> ?6) -> ?8 -> ?7
+:*: (?6 -> ?7) -> (?14 -> ?6) -> ?14 -> ?7
 :!: Pure
 
 
@@ -61,8 +61,8 @@ f g (g x)
 
 -- Abstract type being used as annotation.
 Λ(a: Data).
-λ(x: a).λ(y: ?1). x
-:*: [a: Data].a -> ?1 -> a
+λ(x: a).λ(y: ?3). x
+:*: [a: Data].a -> ?3 -> a
 :!: Pure
 
 
@@ -395,20 +395,20 @@ f x
 
 -- Combo 2.
 Λ(f: ?3 -> Data).Λ(a: ?3).
-λ(x: [w: Data].f a).λ(g: f a -> Nat# -> ?11).
-let y: Nat# -> ?11
+λ(x: [w: Data].f a).λ(g: f a -> Nat# -> ?17).
+let y: Nat# -> ?17
       = g (x [Nat#]) in
 y 5#
-:*: [f: ?3 -> Data].[a: ?3].([w: Data].f a) -> (f a -> Nat# -> ?11) -> ?11
+:*: [f: ?3 -> Data].[a: ?3].([w: Data].f a) -> (f a -> Nat# -> ?17) -> ?17
 :!: Pure
 
 
 -- Combo 3.
 Λ(f: Data -> Region).Λ(a: Data).
-λ(x: [w: Region].a).λ(g: a -> Nat# -> ?10).
-let y: Nat# -> ?10
+λ(x: [w: Region].a).λ(g: a -> Nat# -> ?16).
+let y: Nat# -> ?16
       = g (x [f a]) in
 y 5#
-:*: [f: Data -> Region].[a: Data].([w: Region].a) -> (a -> Nat# -> ?10) -> ?10
+:*: [f: Data -> Region].[a: Data].([w: Region].a) -> (a -> Nat# -> ?16) -> ?16
 :!: Pure
 

@@ -18,22 +18,6 @@ makeInst :: (Eq n, Ord n, Pretty n)
 
 makeInst !config !a !ctx0 !tL !tR !err
 
- -- InstLSolve
- | Just iL <- takeExists tL
- , not $ isTExists tR
- = do   let Just ctx1   = updateExists [] iL tR ctx0
-
-        ctrace  $ vcat
-                [ text "**  InstLSolve"
-                , text "    LEFT:  " <> ppr tL
-                , text "    RIGHT: " <> ppr tR
-                , indent 4 $ ppr ctx0
-                , indent 4 $ ppr ctx1
-                , empty ]
-
-        return ctx1
-
-
  -- InstLReach
  --  Both types are existentials, and the left is bound earlier in the stack.
  --  CAREFUL: The returned location is relative to the top of the stack,
@@ -52,6 +36,7 @@ makeInst !config !a !ctx0 !tL !tR !err
                 , empty ]
 
         return ctx1
+
 
  -- InstRReach
  --  Both types are existentials, and the right is bound earlier in the stack.
@@ -108,13 +93,13 @@ makeInst !config !a !ctx0 !tL !tR !err
         return ctx3
 
 
- -- InstRSolve
- | Just iR <- takeExists tR
- , not $ isTExists tL
- = do   let Just ctx1   = updateExists [] iR tL ctx0
+ -- InstLSolve
+ | Just iL      <- takeExists tL
+ , not $ isTExists tR
+ = do   let Just ctx1   = updateExists [] iL tR ctx0
 
         ctrace  $ vcat
-                [ text "**  InstRSolve"
+                [ text "**  InstLSolve"
                 , text "    LEFT:  " <> ppr tL
                 , text "    RIGHT: " <> ppr tR
                 , indent 4 $ ppr ctx0
@@ -126,9 +111,8 @@ makeInst !config !a !ctx0 !tL !tR !err
 
  -- InstRArr
  --  Left is an function arrow, and right is an existential.
- --  ISSUE #432: Check shadowing of rules in Inst judgement.
- | Just (tL1, tL2)      <- takeTFun tL
- , Just iR              <- takeExists tR
+ | Just iR              <- takeExists tR
+ , Just (tL1, tL2)      <- takeTFun tL
  = do
         -- Make new existentials to match the function type and parameter.
         iR1     <- newExists kData
@@ -158,6 +142,23 @@ makeInst !config !a !ctx0 !tL !tR !err
                 , empty ]
 
         return ctx3
+
+
+ -- InstRSolve
+ | Just iR      <- takeExists tR
+ , not $ isTExists tL
+ = do   let Just ctx1   = updateExists [] iR tL ctx0
+
+        ctrace  $ vcat
+                [ text "**  InstRSolve"
+                , text "    LEFT:  " <> ppr tL
+                , text "    RIGHT: " <> ppr tR
+                , indent 4 $ ppr ctx0
+                , indent 4 $ ppr ctx1
+                , empty ]
+
+        return ctx1
+
 
  -- Error
  | otherwise
