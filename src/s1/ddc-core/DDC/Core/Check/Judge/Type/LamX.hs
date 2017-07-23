@@ -332,8 +332,13 @@ checkLam !table !a !ctx !m1 !x2 !(Check tExpected)
 -- abstraction. Fall through to the subsumtion checker which will
 -- throw the error message.
 checkLam !table !a !ctx !m1 !x2 !(Check tExpected)
- = do   ctrace  $ vcat
-                [ text "*>  Lam Check (not function)" ]
+ = do
+        ctrace  $ vcat
+                [ text "*>  Lam CHECK (not function)"
+                , text "    m1        = " <> ppr m1
+                , text "    x2        = " <> (indent 4 $ ppr x2)
+                , text "    tExpected = " <> ppr tExpected
+                , empty ]
 
         checkSub table a ctx DemandNone (XAbs a m1 x2) tExpected
 
