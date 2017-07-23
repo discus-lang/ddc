@@ -50,7 +50,8 @@ GHC_WARNINGS	:= \
         -fno-warn-missing-methods \
         -fno-warn-missing-signatures \
         -fno-warn-missing-local-signatures \
-        -fno-warn-orphans
+        -fno-warn-orphans \
+        -fno-warn-simplifiable-class-constraints
 
 # Warnings that enforce programming styles that we don't use.
 # 	-fwarn-missing-methods

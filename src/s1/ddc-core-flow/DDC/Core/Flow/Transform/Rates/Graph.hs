@@ -2,7 +2,7 @@ module DDC.Core.Flow.Transform.Rates.Graph
         ( Graph(..)
         , Edge
         , graphOfBinds
-        , graphTopoOrder 
+        , graphTopoOrder
         , mergeWeights
         , invertMap
         , numNodes, numEdges
@@ -149,7 +149,7 @@ mergeWeights g@(Graph graph) weights
 
 invertMap :: Ord v => Map.Map k v -> Map.Map v [k]
 invertMap m
- = Map.foldWithKey go Map.empty m
+ = Map.foldrWithKey' go Map.empty m
  where
   go k v m' = Map.insertWith (++) v [k] m'
 
@@ -162,8 +162,8 @@ numNodes (Graph g)
 -- | Total number of edges in graph
 numEdges :: Graph n t -> Int
 numEdges (Graph g)
- = Map.fold (+)            0
- $ Map.map  (length . snd) g
+ = Map.foldr' (+)            0
+ $ Map.map    (length . snd) g
 
 
 hasNode :: Ord n => Graph n t -> n -> Bool
