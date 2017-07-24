@@ -38,7 +38,7 @@ checkSub table !a ctx0 demand xx0 tExpect
         (xx_dequant, tDequant, ctx2)
          <- case takeExists tExpect of
                 Just iExpect
-                 -> dequantify table a ctx1 iExpect xx1 tSynth_ctx1 tExpect_ctx1
+                 -> expliciate table a ctx1 iExpect xx1 tSynth_ctx1 tExpect_ctx1
 
                 Nothing
                  -> return (xx1, tSynth_ctx1, ctx1)
@@ -79,9 +79,9 @@ checkSub table !a ctx0 demand xx0 tExpect
 
 -- | Insert default argument placeholders to match the implicit
 --   parameters listed at the front of the expected type.
-dequantify !_table !aApp ctx0 iBefore xx0 tSynth tExpect
+expliciate !_table !aApp ctx0 iBefore xx0 tSynth tExpect
  | TCon (TyConExists _n _k)  <- tExpect
- , shouldDequantifyX xx0
+ , shouldExpliciateX xx0
  = do
         -- Split off descriptions of implicit parameters from the front of the type.
         (bsParam, tBody)
@@ -96,8 +96,8 @@ dequantify !_table !aApp ctx0 iBefore xx0 tSynth tExpect
  = return (xx0, tSynth, ctx0)
 
 
-shouldDequantifyX :: Exp a n -> Bool
-shouldDequantifyX xx
+shouldExpliciateX :: Exp a n -> Bool
+shouldExpliciateX xx
  = case xx of
         XVar{}  -> True
         XCon{}  -> True
