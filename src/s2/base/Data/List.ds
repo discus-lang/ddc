@@ -45,9 +45,8 @@ data List (a: Data) where
 
 
 -- Dictionaries ---------------------------------------------------------------
--- ISSUE #419: Explicit dictionaries needed in more places then they should be.
 eq_List {eqa: Eq a}: Eq (List a)
- = Eq (eq' {eqa}) (neq' {eqa})
+ = Eq eq' neq'
  where
 
         eq' {@b: Data} {Eq b} (xx: List b) (yy: List b): Bool

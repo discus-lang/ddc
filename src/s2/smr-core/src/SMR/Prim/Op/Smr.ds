@@ -9,7 +9,6 @@ where
 
 -------------------------------------------------------------------------------
 -- | Shimmer expression functions reflected back as primops.
---   ISSUE #419: In Shimmer mkPrimOpsSmr need to supply explicit dictionary arg.
 makePrimOpsSmr {eqs: Eq s} (_ : Unit): List (PrimEval s Prim)
  = Cons (primOpSmrEqual {eqs})
  $ Cons primOpSmrPushHead

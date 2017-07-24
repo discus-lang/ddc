@@ -1,0 +1,21 @@
+
+module Test
+import Data.Numeric
+where
+
+data Dict where
+        Dict : Dict
+
+fooNat (x: Nat): Nat
+ = x
+
+fooDictNat {Dict} (x: Nat): Nat
+ = x
+
+-- Expliciator needs to run to insert an automatic implicit argument
+-- for 'fooDictNat', so that the list is assigned the type
+--  List (Nat -> Nat)  instead of  List (Dict ~> Nat -> Nat),
+-- as that does not match the type of the second element.
+thing {Dict} (x: Nat): List (Nat -> Nat)
+ = Cons fooDictNat (Cons fooNat Nil)
+
