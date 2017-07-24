@@ -216,6 +216,7 @@ synthAppArg table
                 , text "    demand    = " <> ppr demand
                 , text "    scope     = " <> ppr isScope
                 , text "    tFn       = " <> ppr tFn
+                , text "    arg       = " <> ppr arg
                 , text "    paramSort = " <> text (show paramSort)
                 , text "    paramMode = " <> text (show paramMode)
                 , text "    bParam    = " <> ppr bParam
