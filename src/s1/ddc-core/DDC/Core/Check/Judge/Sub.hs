@@ -226,11 +226,7 @@ makeSub config a ctx0 x0 xL tL tR err
                 , Sum.union effs1 effs2
                 , ctx2)
 
- -- ISSUE #419: Explicit dictionaries needed in more places than they should be.
- -- We're missing the rule with the other way,inferred is D t1'..tn', expected is A ~> B
- -- ie, Sub_Implicit_Left.
-
- -- Sub_Implicit_Right
+ -- Sub_Implicit
  --
  --   The inferred type  is   (A ~> B)
  --   while expected type is  (D t1'..tn')
