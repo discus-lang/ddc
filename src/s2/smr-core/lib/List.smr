@@ -1,26 +1,26 @@
 
-! Constructed lists.
-!   Lists are represented in constructor form
-!   using the symbols %list-nil and %list-cons.
+-- Constructed lists.
+--   Lists are represented in constructor form
+--   using the symbols %list-nil and %list-cons.
 
 
-! Case matching on a list.
-!   If the list 'xx' is nil then yield 'alt-nil',
-!   otherwise apply the head and tail of the list to 'alt-cons'.
+-- Case matching on a list.
+--   If the list 'xx' is nil then yield 'alt-nil',
+--   otherwise apply the head and tail of the list to 'alt-cons'.
 @list-case xx alt-nil alt-cons
  = #match xx  %list-nil         alt-nil
  $ #match xx (%list-cons #o #o) alt-cons
  $ %fail;
 
 
-! Produce 'n' copies of the value 'x'.
+-- Produce 'n' copies of the value 'x'.
 @list-replicate n x
  = #if
         (#nat-eq #nat'0 n)
         %list-nil
         (%list-cons x (@list-replicate (#nat-sub n #nat'1) x));
 
-! Produce 'n' copies of the value 'x'.
+-- Produce 'n' copies of the value 'x'.
 @list-replicate-raised n x
  = #if
         (#nat-eq <#nat'0, n>)
@@ -30,8 +30,8 @@
          %list-cons <x, xs'>);
 
 
-! Produce a range of natural numbers,
-!   starting from the value 'a' and ending with the value 'b'.
+-- Produce a range of natural numbers,
+--   starting from the value 'a' and ending with the value 'b'.
 @list-range a b
  = #if
         (#nat-gt a b)
@@ -39,27 +39,27 @@
         (%list-cons a (@list-range (#nat-add a #nat'1) b));
 
 
-! Determine the length of the list 'xx'.
+-- Determine the length of the list 'xx'.
 @list-length xx
  = @list-case xx
         #nat'0
         (\x. \xs. #nat-add #nat'1 (@list-length xs));
 
 
-! Left fold over a list of elements,
-!   taking the worker function 'f', unit value 'z' and list 'xx'.
+-- Left fold over a list of elements,
+--   taking the worker function 'f', unit value 'z' and list 'xx'.
 @list-foldl f z xx
  = @list-case xx z
         (\x xs. #seq (f z x) $ \z'.
                 @list-foldl f z' xs);
 
 
-! Compute the sum of a list of natural numbers.
+-- Compute the sum of a list of natural numbers.
 @list-sum xx
  = @list-foldl #nat-add #nat'0 xx;
 
 
-! Reverse a list.
+-- Reverse a list.
 @list-reverse xx
  = @list-foldl (\x. \xs. %list-cons xs x) %list-nil xx;
 

@@ -1,7 +1,0 @@
-
-
-
-#seq #nat'5 $ \x. #seq ((\x. <x, x>) #nat'5) $ \y z. (\x y z. #nat-add x (#nat-add y z)) x y z
-
-
-
