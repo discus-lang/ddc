@@ -1,0 +1,9 @@
+
+module Main
+import System.IO.Console
+where
+
+main ()
+ = do   writel "slash\\slash"
+        writel "space\ space"
+        writel "2slash\\\\2slash"
