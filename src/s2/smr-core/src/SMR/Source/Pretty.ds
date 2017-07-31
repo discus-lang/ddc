@@ -45,7 +45,6 @@ pprExp' {@s p: Data} {Pretty s} {Pretty p}
 
         _ -> pprExp' ContextLeft xx
 
-
  | ContextLeft  <- ctx
  = case xx of
         XRef r      -> pprRef r
@@ -57,9 +56,8 @@ pprExp' {@s p: Data} {Pretty s} {Pretty p}
         XVar name d -> name % "^" % show d
 
         -- abstraction
-        -- ISSUE #412: Compilation of literal string "\\" fails in LLVM codegen.
         XAbs ns x
-         -> textOfChar '\\' % pprSep (map pprParam ns)  % "." %% pprExp' ContextBody x
+         -> "\\" % pprSep (map pprParam ns)  % "." %% pprExp' ContextBody x
 
         XApp x1 x2
          -> pprExp' ContextFun x1  %% pprExp' ContextArg x2

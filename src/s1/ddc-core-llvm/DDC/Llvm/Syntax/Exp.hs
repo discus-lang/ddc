@@ -39,7 +39,7 @@ import qualified Data.ByteString        as BS
 --   them as expressions, but they are flattened out to instructions by the
 --   Clean transform.
 --
-data Exp 
+data Exp
         -- | Use of a variable.
         = XVar   Var
 
@@ -54,11 +54,11 @@ data Exp
 
         -- | (synthetic) Get a pointer to an element of the expression.
         | XGet   Type Exp [Exp]
-        deriving (Eq, Show)  
+        deriving (Eq, Show)
 
 
 -- | Take the type of an expression.
-typeOfExp :: Exp -> Type 
+typeOfExp :: Exp -> Type
 typeOfExp xx
  = case xx of
         XVar   var      -> typeOfVar var
@@ -152,11 +152,11 @@ data Lit
 
         -- | A string literal.
         --   In LLVM these have the same type as array literals, but have a
-        --   special syntax. The first component is the literal source text, 
-        --   while the second its the pretty printed hex encoding that 
+        --   special syntax. The first component is the literal source text,
+        --   while the second its the pretty printed hex encoding that
         --   the LLVM frontend accepts.
-        | LitString     
-        { litSource             :: Text   
+        | LitString
+        { litSource             :: Text
         , litHexEncoded         :: Text
         , litEncodingLength     :: Int }
 
@@ -178,7 +178,7 @@ typeOfLit ll
         LitNull   t     -> t
         LitUndef  t     -> t
 
-        LitString _ _ encLen 
+        LitString _ _ encLen
          -> TArray (fromIntegral encLen) (TInt 8)
 
 
@@ -196,26 +196,26 @@ makeLitString tx
 encodeText :: Text -> (Text, Int)
 encodeText tx
  = go [] 0 tx
- where  
+ where
         go accStr accLen xx
          = case T.uncons xx of
-             Nothing      
+             Nothing
               -> (T.concat $ reverse accStr, accLen)
 
-             Just (x, xs) 
+             Just (x, xs)
               -> let (str, len) = encodeChar x
                  in  go (str : accStr) (accLen + len) xs
 
         encodeChar c
          | c == ' '
           || (isAscii c && isAlphaNum c)
-          || (isAscii c && isPunctuation c && c /= '"')
+          || (isAscii c && isPunctuation c && c /= '"' && c /= '\\')
          = (T.pack [c], 1)
 
          | otherwise
          = let  bs      = TE.encodeUtf8 $ T.pack [c]
                 len     = BS.length bs
-           in   ( T.pack $ concatMap (\b -> "\\" ++ (padL $ showHex b "")) 
+           in   ( T.pack $ concatMap (\b -> "\\" ++ (padL $ showHex b ""))
                          $ BS.unpack bs
                 , len)
 
