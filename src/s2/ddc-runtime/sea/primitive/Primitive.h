@@ -110,10 +110,3 @@ bool_t  _CHECK (nat_t bytes)
 #define _CASTPTR(dstType,srcType,ptr) \
         ((dstType*)ptr)
 
-
-// Other primitives -----------------------------------------------------------
-// These are defined in C land and linked into the runtime library.
-extern void      primStdoutPutTextLit   (string_t* str);
-extern string_t* primStdinGetString     (nat_t i);
-extern string_t* primFileRead           (string_t* path);
-

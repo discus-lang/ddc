@@ -20,7 +20,7 @@ import foreign c value
 
  -- ISSUE #425: In foreign impot adding (S Console) to result type causes
  -- codegen problem and runtime crash.
- primStdinGetString     : Nat# -> TextLit#
+ primStdinGetVector     : {@r: Region} -> Nat# -> Vector# r Word8#
 
 
 import foreign c value
@@ -34,9 +34,8 @@ where
 -- | Read a text string from the console, up to the maximum line length.
 readl (maxLen: Nat): S Console Text
  = box weakeff Console in
-   do   lit     = primStdinGetString maxLen
-        TextLit (makeTextLit lit)
-
+   do   vec     = primStdinGetVector maxLen
+        TextVec vec
 
 -- | Write text to the console.
 write (tt: Text): S Console Unit

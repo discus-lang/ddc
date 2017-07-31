@@ -11,6 +11,7 @@
 typedef float   float32_t;
 typedef double  float64_t;
 
+
 // ----------------------------------------------------------------------------
 // Code for debugging the LLVM GC shadow stack.
 // This is the reference code from the LLVM docs.
@@ -157,15 +158,24 @@ _DDC_MAKE_PRIM_SHOW_TYPE(Float64,float64_t, "%g",          24);
 
 // -- Stdin -------------------------------------------------------------------
 // Get a C string from stdin, up to the given length.
-string_t* primStdinGetString (nat_t len)
+Obj*    primStdinGetVector (nat_t len)
 {
-        string_t* str   = malloc(len + 1);
-        str             = fgets(str, len, stdin);
-        if (str == NULL) {
-                printf("ddc-runtime.primStdinGetString: failed\n");
+        string_t* pBuf  = alloca (len);
+        pBuf            = fgets (pBuf, len, stdin);
+        if (pBuf == NULL) {
+                printf("ddc-runtime.primStdinGetVector: failed\n");
                 abort();
         }
-        return str;
+
+        nat_t n         = strlen(pBuf);
+        Obj* pObj       = ddcAllocRaw (0, 4 + n + 1);
+        uint8_t* p8     = _ddcPayloadRaw(pObj);
+        uint32_t* pLen  = (uint32_t*)p8;
+        string_t* pStr  = (string_t*)(p8 + 4);
+
+        memcpy(pStr, pBuf, n + 1);
+        *pLen           = n;
+        return pObj;
 }
 
 
@@ -206,21 +216,34 @@ void primFailString(string_t* str)
 
 // -- File --------------------------------------------------------------------
 // Read the contents of a file into a string.
-string_t* primFileRead (string_t* path)
+Obj*    primFileRead (string_t* path)
 {
         int fd          = open (path, O_RDONLY);
         if (fd == -1) {
-                printf("primFileRead: failed\n");
+                printf("primFileRead: cannot open %s\n", path);
                 abort();
         }
 
         off_t lenBuf    = lseek (fd, 0, SEEK_END);
         lseek(fd, 0, SEEK_SET);
 
-        string_t* str   = malloc (lenBuf + 1);
-        ssize_t lenRead = read (fd, str, lenBuf);
-        str[lenRead]    = 0;
+        Obj* pObj       = ddcAllocRaw (0, 4 + lenBuf + 1);
+        uint8_t* p8     = _ddcPayloadRaw(pObj);
+        uint32_t* pLen  = (uint32_t*)p8;
+        string_t* pStr  = (string_t*)(p8 + 4);
+
+        uint32_t  nRead = 0;
+        for(;;) {
+                ssize_t lenRead = read (fd, pStr, lenBuf);
+                if (lenRead == 0) break;
+                nRead += lenRead;
+                pStr  += lenRead;
+        }
+
+        *pStr           = 0;
+        *pLen           = nRead;
 
         close (fd);
-        return str;
+        return pObj;
 }
+

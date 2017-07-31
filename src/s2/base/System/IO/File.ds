@@ -10,7 +10,7 @@ import foreign abstract type
  File   : Effect
 
 import foreign c value
- primFileRead   : TextLit# -> TextLit#
+ primFileRead   : TextLit# -> Vector# RegionText Word8#
 
 
 where
@@ -18,6 +18,6 @@ where
 
 file_read (path: TextLit#): S File Text
  = box weakeff File in
-   do   lit     = primFileRead path
-        TextLit (makeTextLit lit)
+   do   vec     = primFileRead path
+        TextVec vec
 
