@@ -76,7 +76,7 @@ where
 -- Text -----------------------------------------------------------------------
 data Text where
         -- | Wrap a text literal into a text object.
-        --   The characterdata is stored in static memory.
+        --   The character data is stored in static memory.
         TextLit : TextLit                   -> Text
 
         -- | Wrap some character data into a text object.

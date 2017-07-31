@@ -5,15 +5,15 @@ module Main
 -- Export the main entry point.
 export main  : [r1: Region]. Nat# -> Ptr# r1 Word8# -> Int#
 
+import foreign abstract type
+        RegionText      : Region
+
 -- Primitive show functions are defined in the runtime system.
 import foreign c value
-        ddcInit         : Nat# -> Unit
-        primStdoutPutTextLit  : TextLit# -> Void#
-        primShowNat     : Nat#     -> TextLit#
-
--- Functions defined in C stdlib.
-import foreign c value
-        free            : TextLit# -> Void#
+        ddcInit                 : Nat# -> Unit
+        primStdoutPutTextLit    : TextLit# -> Void#
+        primStdoutPutVector     : Ptr# RegionText Obj -> Void#
+        primShowNat             : Nat#     -> Ptr# RegionText Obj
 
 with letrec
 
@@ -41,17 +41,15 @@ main [r1: Region] (argc: Nat#) (argv: Ptr# r1 Word8#): Int#
         ddcInit 4096#
 
         -- Compute factorial using simple recursion.
-        primStdoutPutTextLit "fac_rec 10 = "#
+        primStdoutPutTextLit  "fac_rec 10 = "#
         str1    = primShowNat (fac_rec 10#)
-        primStdoutPutTextLit str1
-        free str1
+        primStdoutPutVector str1
         primStdoutPutTextLit "\n"#
 
         -- Compute factorial using tail-recursion.
-        primStdoutPutTextLit "fac_acc 10 = "#
+        primStdoutPutTextLit  "fac_acc 10 = "#
         str2    = primShowNat (fac_acc 10# 1#)
-        primStdoutPutTextLit str2
-        free str2
+        primStdoutPutVector str2
         primStdoutPutTextLit "\n"#
 
         -- Return successfully.

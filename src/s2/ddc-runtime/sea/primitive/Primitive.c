@@ -5,48 +5,52 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <inttypes.h>
+#include <string.h>
 #include "Runtime.h"
 
 typedef float   float32_t;
 typedef double  float64_t;
 
 // ----------------------------------------------------------------------------
-/// @brief The map for a single function's stack frame.  One of these is
-///        compiled as constant data into the executable for each function.
-///
-/// Storage of metadata values is elided if the %metadata parameter to
-/// @llvm.gcroot is null.
+// Code for debugging the LLVM GC shadow stack.
+// This is the reference code from the LLVM docs.
+
+// @brief The map for a single function's stack frame.  One of these is
+//        compiled as constant data into the executable for each function.
+//
+// Storage of metadata values is elided if the %metadata parameter to
+// @llvm.gcroot is null.
 struct FrameMap {
   uint32_t NumRoots;    //< Number of roots in stack frame.
   uint32_t NumMeta;     //< Number of metadata entries.  May be < NumRoots.
-  const void *Meta[]; //< Metadata for each root.
+  const void *Meta[];   //< Metadata for each root.
 };
 
 
-/// @brief A link in the dynamic shadow stack.  One of these is embedded in
-///        the stack frame of each function on the call stack.
+// @brief A link in the dynamic shadow stack.  One of these is embedded in
+//        the stack frame of each function on the call stack.
 struct StackEntry {
-  struct StackEntry *Next;    //< Link to next stack entry (the caller's).
-  const struct FrameMap *Map; //< Pointer to constant FrameMap.
-  void *Roots[];             //< Stack roots (in-place array).
+  struct StackEntry *Next;      //< Link to next stack entry (the caller's).
+  const struct FrameMap *Map;   //< Pointer to constant FrameMap.
+  void *Roots[];                //< Stack roots (in-place array).
 };
 
 
-/// @brief The head of the singly-linked list of StackEntries.  Functions push
-///        and pop onto this in their prologue and epilogue.
-///
-/// Since there is only a global list, this technique is not threadsafe.
+// @brief The head of the singly-linked list of StackEntries.  Functions push
+//        and pop onto this in their prologue and epilogue.
+//
+// Since there is only a global list, this technique is not threadsafe.
 struct StackEntry *llvm_gc_root_chain;
 
 
-/// @brief Calls Visitor(root, meta) for each GC root on the stack.
-///        root and meta are exactly the values passed to
-///        @llvm.gcroot.
-///
-/// Visitor could be a function to recursively mark live objects.  Or it
-/// might copy them to another heap or generation.
-///
-/// @param Visitor A function to invoke for every GC root on the stack.
+// @brief Calls Visitor(root, meta) for each GC root on the stack.
+//        root and meta are exactly the values passed to
+//        @llvm.gcroot.
+//
+// Visitor could be a function to recursively mark live objects.  Or it
+// might copy them to another heap or generation.
+//
+// @param Visitor A function to invoke for every GC root on the stack.
 void visitGCRoots(void (*Visitor)(void **Root, const void *Meta)) {
   for (struct StackEntry *R = llvm_gc_root_chain; R; R = R->Next) {
     uint32_t i = 0;
@@ -62,6 +66,7 @@ void visitGCRoots(void (*Visitor)(void **Root, const void *Meta)) {
 }
 
 
+// Print out the structure of the LLVM shadow stack.
 void traceGCRoots (int _x) {
   for (struct StackEntry *R = llvm_gc_root_chain; R; R = R->Next) {
     uint32_t i = 0;
@@ -78,11 +83,15 @@ void traceGCRoots (int _x) {
   }
 }
 
+
+// Get the first root in the LLVM GC shadow stack.
 void*   ddcLlvmRootGetStart (int _x)
 {
         return llvm_gc_root_chain;
 }
 
+
+// Check if this is the last entry in the LLVM GC shadow stack.
 nat_t   ddcLlvmRootIsEnd (void* p)
 {
         return (p == 0);
@@ -106,84 +115,57 @@ Obj*    primErrorDefault(string_t* source, uint32_t line)
         return 0;
 }
 
-// Show a pointer.
-string_t* primShowAddr (void* ptr)
-{       string_t*  str = malloc(32);
-        snprintf(str, 32, "%p", ptr);
+
+// ----------------------------------------------------------------------------
+// Show functions.
+//   We provide a binding to the stdlib versions of these instead of defining
+//   our own in the base library. DDC isn't yet good enough to eliminate the
+//   intermediate boxings/unboxings, and we don't want to pay the performance
+//   penalty for demos that write a lot of numeric output.
+//
+//   The task of pretty printing floating point numbers well also isn't
+//   straightforward, so if we need to rely on stdlib for floats we might
+//   as well do it for all numeric types.
+
+#define _DDC_MAKE_PRIM_SHOW_TYPE(typeName,typeSpec,format,nBuf) \
+ Obj* primShow##typeName (typeSpec x) \
+ { \
+        string_t* pBuf  = alloca(nBuf); \
+        snprintf(pBuf, nBuf - 1, format, x); \
+        nat_t n         = strlen(pBuf); \
+   \
+        Obj* pObj       = ddcAllocRaw (0, 4 + n + 1); \
+        uint8_t*  p8    = _ddcPayloadRaw(pObj); \
+        uint32_t* pLen  = (uint32_t*)p8; \
+        string_t* pStr  = (string_t*)(p8 + 4); \
+   \
+        memcpy(pStr, pBuf, n + 1); \
+        *pLen           = n; \
+        return pObj; \
+ }
+
+_DDC_MAKE_PRIM_SHOW_TYPE(Addr,   void*,     "%p",          24);
+_DDC_MAKE_PRIM_SHOW_TYPE(Int,    int,       "%d",          24);
+_DDC_MAKE_PRIM_SHOW_TYPE(Nat,    nat_t,     "%zu",         24);
+_DDC_MAKE_PRIM_SHOW_TYPE(Word8,  uint8_t,   "%#01" PRIx8,  24);
+_DDC_MAKE_PRIM_SHOW_TYPE(Word16, uint16_t,  "%#02" PRIx16, 24);
+_DDC_MAKE_PRIM_SHOW_TYPE(Word32, uint32_t,  "%#04" PRIx32, 24);
+_DDC_MAKE_PRIM_SHOW_TYPE(Word64, uint64_t,  "%#08" PRIx64, 24);
+_DDC_MAKE_PRIM_SHOW_TYPE(Float32,float32_t, "%f",          24);
+_DDC_MAKE_PRIM_SHOW_TYPE(Float64,float64_t, "%g",          24);
+
+
+// -- Stdin -------------------------------------------------------------------
+// Get a C string from stdin, up to the given length.
+string_t* primStdinGetString (nat_t len)
+{
+        string_t* str   = malloc(len + 1);
+        str             = fgets(str, len, stdin);
+        if (str == NULL) {
+                printf("ddc-runtime.primStdinGetString: failed\n");
+                abort();
+        }
         return str;
-}
-
-
-// Show an integer.
-// This leaks the space for the string, but nevermind until we get a GC.
-string_t* primShowInt (int i)
-{       string_t* str = malloc(32);
-        snprintf(str, 32, "%d", i);
-        return str;
-}
-
-// Show a natural number.
-// This leaks the space for the string, but nevermind until we get a GC.
-string_t* primShowNat (nat_t i)
-{       string_t* str = malloc(32);
-        snprintf(str, 32, "%u", (unsigned int)i);
-        return str;
-}
-
-
-// Show a Word8.
-string_t* primShowWord8 (uint8_t w)
-{       string_t* str = malloc(4);
-        snprintf(str, 3, "%#01" PRIx8, w);
-        return str;
-}
-
-
-// Show a Word16.
-string_t* primShowWord16 (uint16_t w)
-{       string_t* str = malloc(5);
-        snprintf(str, 4, "%#02" PRIx16, w);
-        return str;
-}
-
-
-// Show a Word32.
-string_t* primShowWord32 (uint32_t w)
-{       string_t* str = malloc(7);
-        snprintf(str, 6, "%#04" PRIx32, w);
-        return str;
-}
-
-
-// Show a Word64.
-string_t* primShowWord64 (uint64_t w)
-{       string_t* str = malloc(11);
-        snprintf(str, 10, "%#08" PRIx64, w);
-        return str;
-}
-
-
-// Show a Float32
-string_t* primShowFloat32 (float32_t f)
-{       string_t* str = malloc(12);
-        snprintf(str, 12, "%f", f);
-        return str;
-}
-
-
-// Show a Float64
-string_t* primShowFloat64 (float64_t f)
-{       string_t* str = malloc(24);
-        snprintf(str, 24, "%g", f);
-        return str;
-}
-
-
-// Print a C string to stderr.
-// Use this when printing an error from the runtime system.
-void primFailString(string_t* str)
-{       fputs(str, stderr);
-        fflush(stderr);
 }
 
 
@@ -202,8 +184,7 @@ void primStdoutPutTextLit (string_t* str)
 
 // Print a text vector to stdout.
 void primStdoutPutVector (Obj* obj)
-{       string_t* str
-                = (string_t*) (_payloadRaw(obj) + 4);
+{       string_t* str = (string_t*) (_ddcPayloadRaw(obj) + 4);
         fputs(str, stdout);
         fflush(stdout);
 }
@@ -214,18 +195,12 @@ void primStdoutFlush (Obj* obj)
 }
 
 
-// -- Stdin -------------------------------------------------------------------
-// Get a C string from stdin, up to the given length.
-string_t* primStdinGetString (nat_t len)
-{
-        string_t* str   = malloc(len + 1);
-        str             = fgets(str, len, stdin);
-        if (str == NULL) {
-                printf("primStdinGetString: failed\n");
-                abort();
-        }
-
-        return str;
+// -- Stderr ------------------------------------------------------------------
+// Print a C string to stderr.
+// Use this when printing an error from the runtime system.
+void primFailString(string_t* str)
+{       fputs(str, stderr);
+        fflush(stderr);
 }
 
 
@@ -249,4 +224,3 @@ string_t* primFileRead (string_t* path)
         close (fd);
         return str;
 }
-

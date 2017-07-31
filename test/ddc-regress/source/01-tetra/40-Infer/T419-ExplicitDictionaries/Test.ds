@@ -1,6 +1,7 @@
 
 module Test
 import Data.Numeric
+import Data.List
 where
 
 data Dict where

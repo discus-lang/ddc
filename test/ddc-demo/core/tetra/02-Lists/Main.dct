@@ -9,11 +9,13 @@ export main : Unit -> S Console Unit
 -- classify actions that write to the console.
 import foreign abstract type
  Console        : Effect
+ RegionText     : Region
 
 -- Import primitive IO functions from the runtime system.
 import foreign c value
- primStdoutPutString    : TextLit# -> S Console Void#
- primShowNat            : Nat#     -> TextLit#
+ primStdoutPutTextLit   : TextLit# -> S Console Void#
+ primStdoutPutVector    : Vector# RegionText Word8# -> S Console Void#
+ primShowNat            : Nat#     -> Vector# RegionText Word8#
 
 -- Standard list data type.
 data List (a: Data) where
@@ -27,7 +29,7 @@ with letrec
 -- instead of a Void#.
 write (ss: TextLit#): S Console Unit
  = box do
-        run primStdoutPutString ss
+        run primStdoutPutTextLit ss
         ()
 
 
@@ -35,7 +37,7 @@ write (ss: TextLit#): S Console Unit
 -- super so we can pass it to a higher order function.
 -- The code generator requires all functions passed as arguments
 -- to be compiled by itself.
-showNat (n: Nat#): TextLit#
+showNat (n: Nat#): Vector# RegionText Word8#
  = primShowNat n
 
 
@@ -73,15 +75,15 @@ reverse [a: Data]: List a -> List a
 -- Print a list, using the given function to show the elements.
 printList
         [a : Data]
-        (showElem: a -> TextLit#) (xx: List a)
+        (showElem: a -> Vector# RegionText Word8#) (xx: List a)
         : S Console Unit
  = box case xx of
         Nil
          ->     ()
 
         Cons x xs
-         -> do  run write (showElem x)
-                run write "\n"#
+         -> do  run primStdoutPutVector (showElem x)
+                run primStdoutPutTextLit "\n"#
                 run printList showElem xs
 
 

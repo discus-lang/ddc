@@ -3,11 +3,6 @@
 // Interface to the DDC runtime.
 //   This is imported by generated modules and defines the types and macros
 //   that those modules uses.
-//
-//   Everything should also be static-inlined, so we can run programs without
-//   needing to link against external code. Primops that are implemented with
-//   manifest object code should be imported separately.
-//   
 #include <stdint.h>
 #include <stdlib.h>
 
@@ -39,7 +34,7 @@ typedef char     string_t;
 
 // -- Object Format -----------------------------------------------------------
 //
-//  Object: TAG2 TAG1 TAG0 FORMAT ... 
+//  Object: TAG2 TAG1 TAG0 FORMAT ...
 //   byte    3    2    1     0          (in MSB order)
 //
 //  All heap objects start with a 32-bit word containg the tag of the object,
@@ -80,7 +75,7 @@ typedef char     string_t;
 //     DataBoxed:    A boxed object containing pointers to more heap objects.
 //     DataMixed:    Some heap pointers, and some raw data.
 //     DataRaw:      Contains raw data and no pointers.
-//     DataRawSmall: Contains raw data where the size is small enough to 
+//     DataRawSmall: Contains raw data where the size is small enough to
 //                   encode directly in the format field.
 //
 //    The -obj- (object mode) portion of the format field can be used to
@@ -97,7 +92,7 @@ typedef char     string_t;
 
 
 // The object types.
-enum _ObjType 
+enum _ObjType
 {       _ObjTypeUnknown,
         _ObjTypeForward,
         _ObjTypeThunk,
@@ -151,24 +146,81 @@ enum _ObjFlag
 // A General Object.
 //   All objects contain the tag and format field as the first 32-bit word.
 //   The following is a supertype of the others.
-typedef struct 
+typedef struct
 {        uint32_t  tagFormat;
 } Obj;
 
 
+// Get the constructor tag of an object.
+static inline
+uint32_t _ddcTagOfObject (Obj* obj)
+{       return obj ->tagFormat >> 8;
+}
+
+// Get the format field of an object.
+static inline
+uint8_t  _ddcFormatOfObject (Obj* obj)
+{       return (uint8_t)(obj ->tagFormat & 0x0f);
+}
+
+
+// ----------------------------------------------------------------------------
 // A Boxed Data Object.
 //   The payload contains pointers to other heap objects.
-typedef struct 
+typedef struct
 {       uint32_t  tagFormat;    // Constructor tag and format field.
         uint32_t  arity;        // Arity of the data constructor.
                                 //  (The number of pointers in the payload)
-        Obj*      payload[];    
+        Obj*      payload[];
 } DataBoxed;
 
+// Prototypes for functions define in the Salt runtime system.
+Obj*    ddcAllocBoxed   (uint32_t tag, nat_t arity);
+nat_t   ddcArityOfBoxed (Obj* obj);
+Obj*    ddcGetBoxed     (Obj* obj, nat_t ix);
+void    ddcSetBoxed     (Obj* obj, nat_t ix, Obj* x);
 
+
+// ----------------------------------------------------------------------------
+// A Raw Data Object.
+//   A raw data object does not contain heap pointers that need to be traced
+//   by the garbage collector.
+typedef struct
+{       uint32_t  tagFormat;    // Constructor tag and format field.
+        uint32_t  size;         // Size of the whole object, in bytes.
+        uint8_t   payload[];    // Raw data that does not contain heap pointers.
+} DataRaw;
+
+// Prototypes for functions define in the Salt runtime system.
+Obj*     ddcAllocRaw        (uint32_t tag, nat_t payloadLength);
+uint8_t* ddcPayloadRaw      (Obj* obj);
+nat_t    ddcPayloadSizeRaw  (Obj* obj);
+
+// Inlined versions used when defining primitives in C.
+static inline uint8_t* _ddcPayloadRaw(Obj* obj)
+{
+        return ((uint8_t*)obj) + 8;
+}
+
+// ----------------------------------------------------------------------------
+// A Small Raw object.
+//   The object size is encoded as part of format field.
+//    This saves us from needing to include a separate arity field.
+typedef struct
+{       uint32_t  tagFormat;    // Constructor tag and format field.
+        uint8_t   payload[];    // Raw data that does not contain heap pointers.
+} DataRawSmall;
+
+// Prototypes for functions define in the Salt runtime system.
+Obj*     ddcAllocSmall          (uint32_t tag, nat_t payloadLength);
+uint8_t* ddcPayloadSmall        (Obj* obj);
+nat_t    ddcPaylodSizeSmall     (Obj* obj);
+
+
+// ----------------------------------------------------------------------------
 // A Mixed Data Object.
 //   The payload contains some pointers followed by raw data.
-typedef struct 
+typedef struct
 {       uint32_t  tagFormat;
         uint32_t  padding;      // Padding to ensure payload is 8 byte aligned.
         uint32_t  size;         // Size of the whole object, in bytes.
@@ -176,42 +228,4 @@ typedef struct
         Obj*      payload[];    // Contains ptrCount pointers, then raw data.
 } DataMixed;
 
-
-// ----------------------------------------------------------------------------
-// A Raw Data Object.
-//   A raw data object does not contain heap pointers that need to be traced
-//   by the garbage collector.
-typedef struct 
-{       uint32_t  tagFormat;    // Constructor tag and format field.
-        uint32_t  size;         // Size of the whole object, in bytes.
-        uint8_t   payload[];    // Raw data that does not contain heap pointers.
-} DataRaw;
-
-static inline uint8_t* _payloadRaw(Obj* obj)
-{
-        return ((uint8_t*)obj) + 8;
-}
-
-
-// A Small Raw object.
-//   The object size is encoded as part of format field.
-//    This saves us from needing to include a separate arity field.
-typedef struct 
-{       uint32_t  tagFormat;    // Constructor tag and format field.
-        uint8_t   payload[];    // Raw data that does not contain heap pointers.
-} DataRawSmall;
-
-
-// -- Object Utils ------------------------------------------------------------
-// Get the constructor tag of an object.
-static inline 
-uint32_t _tag (Obj* obj)
-{       return obj ->tagFormat >> 8;
-}       
-
-// Get the format field of an object.
-static inline 
-uint8_t  _format (Obj* obj)
-{       return (uint8_t)(obj ->tagFormat & 0x0f);
-}
 

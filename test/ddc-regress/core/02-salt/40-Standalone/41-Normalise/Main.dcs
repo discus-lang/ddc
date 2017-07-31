@@ -4,9 +4,9 @@ export {
          main     : [r1 : Region]. Nat# -> Ptr# r1 (Ptr# r1 Word8#) -> Int#;
 }
 import foreign c value {
-        ddcInit        : Nat# -> Nat# -> Unit;
-        primShowInt   : [r : Region]. Int# -> Ptr# r (Ptr# r Word8#);
-        primStdoutPutString : [r : Region]. Ptr# r (Ptr# r Word8#) -> Void#;
+        ddcInit                 : Nat# -> Nat# -> Unit;
+        primShowInt             : [r : Region]. Int# -> Ptr# r Obj;
+        primStdoutPutVector     : [r : Region]. Ptr# r Obj -> Void#;
 }
 with letrec {
 
@@ -67,7 +67,7 @@ main [r : Region] (argc : Nat#) (argv : Ptr# r (Ptr# r Word8#)) : Int#
  = do { ddcInit 4096# 1024#;
         x       = boxWord32 [r] 10w32#;
         str     = primShowInt [r] (truncate# [Int#] [Word32#] (unboxWord32 [r] (fac [r] x)));
-        primStdoutPutString [r] str;
+        primStdoutPutVector [r] str;
 
         return# [Int#] 0i#;
       };

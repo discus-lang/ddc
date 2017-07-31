@@ -1,7 +1,7 @@
 
 module Check
 
-export value 
+export value
  ddcCheckObjHeader : [r: Region]. Ptr# r Obj -> Word32#
  ddcCheckObjExtent : [r: Region]. Ptr# r Obj -> Nat# -> Unit
  ddcFailMessage    : TextLit# -> TextLit# -> Void#
@@ -18,7 +18,7 @@ with letrec
 ---------------------------------------------------------------------------------------------------
 -- | Given a pointer to an object, return the object header.
 --
---   We check that the pointer is within the current allocated heap, 
+--   We check that the pointer is within the current allocated heap,
 --   and fail# if it is out of range.
 --
 ddcCheckObjHeader [r: Region] (obj: Ptr# r Obj): Word32#
@@ -30,14 +30,11 @@ ddcCheckObjHeader [r: Region] (obj: Ptr# r Obj): Word32#
         valid           = mul# (ge# objA pHeapBaseA)
                                (lt# objA (minusAddr# pHeapTopA 4#))
         case valid of
-         True#          
+         True#
           -> peek# (castPtr# obj)
 
-         False#         
+         False#
           -> do ddcFailMessage "checkObjHeader"#  "pointer out of range."#
-                ddcFailField   "object start   "#  (primShowAddr objA)
-                ddcFailField   "heap base      "#  (primShowAddr pHeapBaseA)
-                ddcFailField   "heap top       "#  (primShowAddr pHeapTopA)
                 fail#
 
 
@@ -49,7 +46,6 @@ ddcCheckObjExtent [r: Region] (obj: Ptr# r Obj) (len: Nat#): Unit
     -- The subsequent check depends on the object having a non-zero size.
     True# -> do
         ddcFailMessage "checkObjExtent"#  "object has length zero"#
-        ddcFailField   "object start   "#  (primShowAddr (takePtr# obj))
         ()
 
     -- Check objects of some non-zero size.
@@ -70,21 +66,16 @@ ddcCheckObjExtent [r: Region] (obj: Ptr# r Obj) (len: Nat#): Unit
                                (lt# objLastA  pHeapTopA)
 
         case valid of
-         True#          
+         True#
           -> peek# (castPtr# obj)
 
-         False# 
+         False#
           -> do ddcFailMessage "checkObjExtent"#  "object is not within active heap"#
-                ddcFailField   "heap base      "#  (primShowAddr pHeapBaseA)
-                ddcFailField   "heap top       "#  (primShowAddr pHeapTopA)
-                ddcFailField   "object first   "#  (primShowAddr objFirstA)
-                ddcFailField   "object length  "#  (primShowNat  len)
-                ddcFailField   "object last    "#  (primShowAddr objLastA)
                 fail#
 
 
 -- | Print a runtime failure message to stderr.
-ddcFailMessage 
+ddcFailMessage
         (src: TextLit#)         -- ^ Place in the runtime that we encountered the error.
         (msg: TextLit#)         -- ^ Message to print.
         : Void#
@@ -96,7 +87,7 @@ ddcFailMessage
 
 
 -- | Print a field name and value to stderr.
-ddcFailField 
+ddcFailField
         (name: TextLit#)        -- ^ Name of the field.
         (val:  TextLit#)        -- ^ Value of the field.
         : Void#
