@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <inttypes.h>
 #include <string.h>
+#include <alloca.h>
 #include "Runtime.h"
 
 typedef float   float32_t;
