@@ -259,11 +259,6 @@ stepPrim
  | PrimEval prim desc csArg eval <- pe
  = evalArgs csArg xsArg Nil
  where
-        -- ISSUE #420: Pattern desugarer gets confused if variables are renamed.
-        --   Disaster. Renaming xsArgDone to xsArgsDone (or vice versa)
-        --   for some clauses but not others causes the pattern desugarer
-        --   to forget the name of the variables.
-
         -- Evaluation of arguments is complete.
         evalArgs Nil Nil xsArgsDone
          = case eval (reverse xsArgsDone) of

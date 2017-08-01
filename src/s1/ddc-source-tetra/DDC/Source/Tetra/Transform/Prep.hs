@@ -8,17 +8,15 @@ import DDC.Source.Tetra.Module
 import DDC.Source.Tetra.Exp
 import Data.Monoid
 import Data.Text                                (Text)
-import Data.Map                                 (Map)
 import qualified Control.Monad.State.Strict     as S
 import qualified Data.Text                      as Text
-import qualified Data.Map.Strict                as Map
-import qualified Data.Set                       as Set
 
 
 ---------------------------------------------------------------------------------------------------
 -- | State holding a variable name prefix and counter to
 --   create fresh variable names.
-type S  = S.State (Bool, Text, Int)
+type S          = S.State (Bool, Text, Int)
+type Renames    = [(Name, Name)]
 
 
 -- | Evaluate a desguaring computation,
@@ -76,15 +74,12 @@ desugarTop tt
  = case tt of
         TopType{}       -> return tt
         TopData{}       -> return tt
-        TopClause sp cl -> TopClause sp <$> desugarCl Map.empty cl
+        TopClause sp cl -> TopClause sp <$> desugarCl [] cl
 
 
 ---------------------------------------------------------------------------------------------------
 -- | Desugar a clause.
-desugarCl
-        :: Map Name Name
-        -> Clause -> S Clause
-
+desugarCl :: Renames -> Clause -> S Clause
 desugarCl rns cl
  = case cl of
         SSig{}
@@ -106,10 +101,7 @@ desugarP pp
 
 ---------------------------------------------------------------------------------------------------
 -- | Desugar a guarded expression.
-desugarGX
-        :: Map Name Name
-        -> GuardedExp -> S GuardedExp
-
+desugarGX :: Renames -> GuardedExp -> S GuardedExp
 desugarGX rns gx
  = case gx of
         GGuard g gx'    -> GGuard <$> desugarG rns g <*> desugarGX rns gx'
@@ -118,9 +110,7 @@ desugarGX rns gx
 
 ---------------------------------------------------------------------------------------------------
 -- | Desugar a guard.
-desugarG :: Map Name Name
-         -> Guard -> S Guard
-
+desugarG :: Renames -> Guard -> S Guard
 desugarG rns gg
  = case gg of
         GPat p x        -> GPat   <$> desugarW p <*> desugarX rns x
@@ -130,9 +120,7 @@ desugarG rns gg
 
 ---------------------------------------------------------------------------------------------------
 -- | Desugar an expression.
-desugarX :: Map Name Name       -- ^ Renamed bound variables.
-         -> Exp -> S Exp
-
+desugarX :: Renames -> Exp -> S Exp
 desugarX rns xx
  = case xx of
         -- Lift out nested box casts.
@@ -161,7 +149,7 @@ desugarX rns xx
 
                 -- Make a new name for b2 and desugar x2 to force the rename.
                 (b2', (UName n2')) <- newVar "x"
-                x2'     <- desugarX (Map.insert n2 n2' rns) x2
+                x2'     <- desugarX ((n2, n2') : rns) x2
 
                 desugarX rns
                  $  XLet (LLet (XBindVarMT b2' mt2) (XCast CastBox x3))
@@ -171,7 +159,7 @@ desugarX rns xx
 
         -- Eliminate trivial v1 = v2 bindings.
         XLet (LLet (XBindVarMT (BName n1) _) (XVar (UName n2))) x1
-         -> do  let rns'    = Map.insert n1 n2 rns
+         -> do  let rns'    = (n1, n2) : rns
                 progress
                 desugarX rns' x1
 
@@ -213,7 +201,7 @@ desugarX rns xx
                 -- For each alternative, if it has a variable pattern
                 -- then substitute the new name for it in the alternative.
                 let desugarAlt (AAltCase (PVar (BName n1)) gxs)
-                     = do let rns' =  Map.insert n1 nScrut rns
+                     = do let rns' =  (n1, nScrut) : rns
                           gxs'     <- mapM (desugarGX rns') gxs
                           return   $  AAltCase PDefault gxs'
 
@@ -237,19 +225,13 @@ desugarX rns xx
 
         -- Lookup renames from the variable rename map.
         XVar (UName n0)
-         -> let sink entered n
-                 = case Map.lookup n rns of
-                        Just n'
-                         |  Set.member n' entered
-                         -> n'
-
-                         |  otherwise
-                         -> sink (Set.insert n' entered) n'
-
-                        Nothing -> n
+         -> let sink [] n               = n
+                sink ((n1, n2) : rns') n
+                 | n == n1              = sink rns' n2
+                 | otherwise            = sink rns' n
 
             in do
-                let n0' = sink Set.empty n0
+                let n0' = sink rns n0
                 if  n0 /= n0'
                  then do
                         progress
@@ -286,10 +268,7 @@ desugarX rns xx
 
 ---------------------------------------------------------------------------------------------------
 -- | Desugar an argument.
-desugarArg
-        :: Map Name Name
-        -> Arg -> S Arg
-
+desugarArg :: Renames -> Arg -> S Arg
 desugarArg rns arg
  = case arg of
         RType{}         -> return arg
@@ -300,10 +279,7 @@ desugarArg rns arg
 
 ---------------------------------------------------------------------------------------------------
 -- | Desugar a case alternative.
-desugarAC
-        :: Map Name Name
-        -> AltCase -> S AltCase
-
+desugarAC :: Renames -> AltCase -> S AltCase
 desugarAC rns aa
  = case aa of
         AAltCase p gxs
@@ -311,10 +287,7 @@ desugarAC rns aa
 
 
 -- | Desugar a match alternative.
-desugarAM
-        :: Map Name Name
-        -> AltMatch -> S AltMatch
-
+desugarAM :: Renames -> AltMatch -> S AltMatch
 desugarAM rns (AAltMatch gx)
         = AAltMatch <$> desugarGX rns gx
 
@@ -338,10 +311,7 @@ desugarW pp
 
 ---------------------------------------------------------------------------------------------------
 -- | Desugar some let-bindings.
-desugarLts
-        :: Map Name Name
-        -> Lets -> S Lets
-
+desugarLts :: Renames -> Lets -> S Lets
 desugarLts rns lts
  = case lts of
         LLet mb x       -> LLet mb <$> desugarX rns x

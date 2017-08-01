@@ -317,7 +317,6 @@ alts (parsers: List (Parser t e a)): Parser t e a
  = Parser $ λts0 -> go ts0 (False, Nothing) (bag_nil, bag_nil) parsers
  where
         -- ISSUE #428: Eliding signature causes error saying existentials cannot be unified.
-        -- ISSUE #420: Pattern desugarer gets confused if variables are renamed.
         go  : List t
             → (Bool, Maybe a)
             → (Bag (Blocker t e), Bag (Blocker t e))
