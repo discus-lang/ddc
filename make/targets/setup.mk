@@ -11,6 +11,6 @@ show-pkgs :
 setup :
 	@echo "* Installing prerequisite cabal packages..."
 	@cabal update
-	@cabal install mtl parsec random stm text wl-pprint
+	@cabal install mtl parsec random stm text wl-pprint compact
 	@cabal install buildbox inchworm
 

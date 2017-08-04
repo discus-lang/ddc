@@ -13,7 +13,7 @@ module DDC.Build.Interface.Store
         , findSuper)
 where
 import DDC.Data.Pretty
-import DDC.Build.Interface.Base         
+import DDC.Build.Interface.Base
 import DDC.Build.Interface.Load
 import DDC.Core.Call
 import DDC.Core.Module
@@ -25,7 +25,8 @@ import Data.Maybe
 import Data.Map                         (Map)
 import qualified DDC.Core.Tetra         as E
 import qualified DDC.Core.Salt          as A
-import qualified Data.Map               as Map
+import qualified Data.Map.Strict        as Map
+import qualified Data.Compact           as Compact
 
 
 ---------------------------------------------------------------------------------------------------
@@ -39,19 +40,19 @@ data Store
         { -- | Metadata for interface files currently in the store.
           storeMeta       :: IORef [Meta]
 
-          -- | Lookup the definition of the given top-level super, 
+          -- | Lookup the definition of the given top-level super,
           --   from one or more of the provided modules.
-        , storeSupers     :: IORef (Map ModuleName (Map E.Name Super)) 
+        , storeSupers     :: IORef (Map ModuleName (Map E.Name Super))
 
           -- | Fully loaded interface files.
-          --   In future we want to load parts of interface files on demand, 
+          --   In future we want to load parts of interface files on demand,
           --   and not the whole lot.
         , storeInterfaces :: IORef [InterfaceAA] }
 
 
 -- | Get a list of types of all top-level supers in all modules in the store.
-importValuesOfStore 
-        :: Store 
+importValuesOfStore
+        :: Store
         -> IO [(E.Name, ImportValue E.Name (Type E.Name))]
 
 importValuesOfStore store
@@ -95,7 +96,7 @@ data Super
         , superTetraType        :: Type E.Name
 
           -- | Salt type for the super.
-        , superSaltType         :: Type A.Name 
+        , superSaltType         :: Type A.Name
 
           -- | Import source for the super.
           --
@@ -110,9 +111,9 @@ new
  = do   refMeta         <- newIORef []
         refSupers       <- newIORef Map.empty
         refInterfaces   <- newIORef []
-        return  $ Store 
+        return  $ Store
                 { storeMeta             = refMeta
-                , storeSupers           = refSupers 
+                , storeSupers           = refSupers
                 , storeInterfaces       = refInterfaces }
 
 
@@ -120,7 +121,7 @@ new
 wrap    :: Store -> InterfaceAA -> IO ()
 wrap store ii
  = do   modifyIORef (storeMeta store)
-         $ \meta   -> meta ++ [metaOfInterface ii] 
+         $ \meta   -> meta ++ [metaOfInterface ii]
 
         modifyIORef (storeSupers store)
          $ \supers -> Map.insert (interfaceModuleName ii)
@@ -136,7 +137,9 @@ load    :: FilePath -> IO (Either Error InterfaceAA)
 load filePath
  = do   timeStamp  <- getModificationTime filePath
         str        <- readFile filePath
-        return $ loadInterface filePath timeStamp str
+        let iint   =  loadInterface filePath timeStamp str
+        cInt       <- Compact.compactWithSharing iint
+        return $ Compact.getCompact cInt
 
 
 -- | Get metadata of interfaces currently in the store.
@@ -173,7 +176,7 @@ findSuper
         -> [ModuleName]         -- ^ Names of modules to search.
         -> IO [Super]
 
-findSuper store n modNames 
+findSuper store n modNames
  = do   supers  <- readIORef (storeSupers store)
         return $ mapMaybe
                 (\modName -> do
@@ -201,18 +204,18 @@ supersOfInterface :: InterfaceAA -> Map E.Name Super
 supersOfInterface ii
  | Just mmTetra <- interfaceTetraModule ii
  , Just mmSalt  <- interfaceSaltModule  ii
- = let  
+ = let
         -- The current module name.
         modName = interfaceModuleName ii
 
         -- Collect Tetra types for all supers exported by the module.
-        ntsTetra    
+        ntsTetra
          = Map.fromList
            [ (n, t)     | (n, esrc)     <- moduleExportValues mmTetra
                         , let Just t    =  takeTypeOfExportSource esrc ]
 
         -- Collect Salt  types of all supers exported by the module.
-        ntsSalt 
+        ntsSalt
          = Map.fromList
            [ (n, t)     | (n, esrc)     <- moduleExportValues mmSalt
                         , let Just t    =  takeTypeOfExportSource esrc ]
@@ -256,13 +259,13 @@ supersOfInterface ii
                 { superName         = n
                 , superModuleName   = moduleName mmTetra
                 , superTetraType    = tTetra
-                , superSaltType     = let Just t = Map.lookup (A.NameVar s) ntsSalt  in t 
+                , superSaltType     = let Just t = Map.lookup (A.NameVar s) ntsSalt  in t
                 , superImportValue  = makeImportValue n }
          | otherwise    = Nothing
 
 
-   in   Map.fromList   
-          [ (n, super)  | (n, tTetra)    <- Map.toList ntsTetra 
+   in   Map.fromList
+          [ (n, super)  | (n, tTetra)    <- Map.toList ntsTetra
                         , let Just super = makeSuper n tTetra ]
 
  | otherwise

@@ -6,7 +6,6 @@ module DDC.Build.Interface.Load
         , InterfaceAA)
 where
 import DDC.Build.Interface.Base
-import DDC.Core.Check                           (AnTEC)
 import DDC.Core.Module
 import DDC.Data.Pretty
 import DDC.Core.Transform.Reannotate
@@ -17,7 +16,6 @@ import qualified DDC.Core.Tetra                 as Tetra
 import qualified DDC.Build.Language.Tetra       as Tetra
 import qualified DDC.Core.Salt                  as Salt
 import qualified DDC.Build.Language.Salt        as Salt
-import qualified DDC.Data.SourcePos             as BP
 import qualified Data.Char                      as Char
 import qualified Data.List                      as List
 
@@ -173,10 +171,10 @@ data Component
         { componentModuleName   :: ModuleName}
 
         | ComponentTetraModule
-        { componentTetraModule  :: Module (AnTEC BP.SourcePos Tetra.Name) Tetra.Name }
+        { componentTetraModule  :: Module () Tetra.Name }
 
         | ComponentSaltModule
-        { componentSaltModule   :: Module (AnTEC BP.SourcePos Salt.Name)  Salt.Name  }
+        { componentSaltModule   :: Module () Salt.Name  }
         deriving Show
 
 
@@ -219,17 +217,17 @@ pComponent pathInt ((n, l) : rest)
 
         -- load a Tetra core module section.
         | Just "Tetra" <- takeInterfaceTearLine l
-        = case Load.loadModuleFromString Tetra.fragment pathInt (n + 1)
-                       Load.Recon (unlines $ map snd rest) of
-                (Left err, _)   -> Left $ ErrorLoadTetra pathInt err
-                (Right m,  _)   -> return $ ComponentTetraModule m
+        = case Load.parseModuleFromString Tetra.fragment pathInt (n + 1)
+                       (unlines $ map snd rest) of
+                Left err   -> Left $ ErrorLoadTetra pathInt err
+                Right m    -> return $ ComponentTetraModule $ reannotate (const ()) m
 
         -- load a Salt core module section.
         | Just "Salt"  <- takeInterfaceTearLine l
-        = case Load.loadModuleFromString Salt.fragment pathInt (n + 1)
-                       Load.Recon (unlines $ map snd rest) of
-               (Left err, _)   -> Left $ ErrorLoadSalt pathInt err
-               (Right m,  _)   -> return $ ComponentSaltModule  m
+        = case Load.parseModuleFromString Salt.fragment pathInt (n + 1)
+                       (unlines $ map snd rest) of
+               Left err   -> Left $ ErrorLoadSalt pathInt err
+               Right m    -> return $ ComponentSaltModule  $ reannotate (const ()) m
 
         -- this thing didn't parse.
         | otherwise

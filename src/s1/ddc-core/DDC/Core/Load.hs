@@ -1,7 +1,7 @@
 {-# LANGUAGE UndecidableInstances #-}
 
 -- | \"Loading\" refers to the combination of parsing and type checking.
---   This is the easiest way to turn source tokens into a type-checked 
+--   This is the easiest way to turn source tokens into a type-checked
 --   abstract syntax tree.
 module DDC.Core.Load
         ( C.AnTEC       (..)
@@ -13,11 +13,14 @@ module DDC.Core.Load
         , loadModuleFromFile
         , loadModuleFromString
         , loadModuleFromTokens
-        
+
+        , parseModuleFromString
+        , parseModuleFromTokens
+
         -- * Loading expressions
         , loadExpFromString
         , loadExpFromTokens
-        
+
         -- * Loading types
         , loadTypeFromString
         , loadTypeFromTokens
@@ -33,6 +36,7 @@ import DDC.Core.Check                           (Mode(..), CheckTrace)
 import DDC.Core.Exp
 import DDC.Core.Exp.Annot.AnT                   (AnT)
 import DDC.Type.Transform.SpreadT
+import qualified DDC.Core.Transform.Reannotate  as Reannotate
 import DDC.Type.Universe
 import DDC.Core.Module
 import DDC.Data.Pretty
@@ -52,7 +56,7 @@ import System.Directory
 data Error n err
         = ErrorRead       !String
         | ErrorParser     !BP.ParseError
-        | ErrorCheckType  !(C.Error BP.SourcePos n)      
+        | ErrorCheckType  !(C.Error BP.SourcePos n)
         | ErrorCheckExp   !(C.Error BP.SourcePos n)
         | ErrorCompliance !(F.Error (C.AnTEC BP.SourcePos n) n)
         | ErrorFragment   !(err (C.AnTEC BP.SourcePos n))
@@ -67,7 +71,7 @@ instance ( Eq n, Show n, Pretty n
          -> vcat [ text "While reading."
                  , indent 2 $ text str ]
 
-        ErrorParser     err'    
+        ErrorParser     err'
          -> vcat [ text "While parsing."
                  , indent 2 $ ppr err' ]
 
@@ -75,11 +79,11 @@ instance ( Eq n, Show n, Pretty n
          -> vcat [ text "When checking type."
                  , indent 2 $ ppr err' ]
 
-        ErrorCheckExp   err'    
+        ErrorCheckExp   err'
          -> vcat [ text "When checking expression."
                  , indent 2 $ ppr err' ]
 
-        ErrorCompliance err'    
+        ErrorCompliance err'
          -> vcat [ text "During fragment compliance check."
                  , indent 2 $ ppr err' ]
 
@@ -90,7 +94,7 @@ instance ( Eq n, Show n, Pretty n
 
 -- Module -----------------------------------------------------------------------------------------
 -- | Parse and type check a core module from a file.
-loadModuleFromFile 
+loadModuleFromFile
         :: (Eq n, Ord n, Show n, Pretty n)
         => Fragment n err               -- ^ Language fragment definition.
         -> FilePath                     -- ^ File containing source code.
@@ -100,10 +104,10 @@ loadModuleFromFile
               , Maybe CheckTrace)
 
 loadModuleFromFile fragment filePath mode
- = do   
+ = do
         -- Check whether the file exists.
         exists  <- doesFileExist filePath
-        if not exists 
+        if not exists
          then return ( Left $ ErrorRead $ "No such file '" ++ filePath ++ "'"
                      , Nothing)
          else do
@@ -124,7 +128,7 @@ loadModuleFromString
         -> Int                          -- ^ Starting line number for error messages.
         -> Mode n                       -- ^ Type checker mode.
         -> String                       -- ^ Program text.
-        -> ( Either (Error n err) 
+        -> ( Either (Error n err)
                     (Module (C.AnTEC BP.SourcePos n) n)
            , Maybe CheckTrace)
 
@@ -140,13 +144,13 @@ loadModuleFromTokens
         -> FilePath                     -- ^ Path to source file for error messages.
         -> Mode n                       -- ^ Type checker mode.
         -> [Located (Token n)]          -- ^ Source tokens.
-        -> ( Either (Error n err) 
+        -> ( Either (Error n err)
                     (Module (C.AnTEC BP.SourcePos n) n)
            , Maybe CheckTrace)
 
 loadModuleFromTokens fragment sourceName mode toks'
  = goParse toks'
- where  
+ where
         -- Type checker config kind and type environments.
         profile = F.fragmentProfile fragment
         config  = C.configOfProfile profile
@@ -154,8 +158,8 @@ loadModuleFromTokens fragment sourceName mode toks'
         tenv    = profilePrimTypes  profile
 
         -- Parse the tokens.
-        goParse toks                
-         = case BP.runTokenParser describeToken sourceName 
+        goParse toks
+         = case BP.runTokenParser describeToken sourceName
                         (C.pModule (C.contextOfProfile profile))
                         toks of
                 Left err        -> (Left (ErrorParser err),     Nothing)
@@ -180,6 +184,44 @@ loadModuleFromTokens fragment sourceName mode toks'
                 Nothing         -> (Right mm,                   Just ct)
 
 
+-- | Parse and type check a core module from a string.
+parseModuleFromString
+        :: (Eq n, Ord n, Show n, Pretty n)
+        => Fragment n err               -- ^ Language fragment definition.
+        -> FilePath                     -- ^ Path to source file for error messages.
+        -> Int                          -- ^ Starting line number for error messages.
+        -> String                       -- ^ Program text.
+        -> Either (Error n err) (Module () n)
+
+parseModuleFromString fragment filePath lineStart src
+ = do   let toks = F.fragmentLexModule fragment filePath lineStart src
+        parseModuleFromTokens fragment filePath toks
+
+
+parseModuleFromTokens
+        :: (Eq n, Ord n, Show n, Pretty n)
+        => Fragment n err
+        -> FilePath                     -- ^ Path to source file for error messages.
+        -> [Located (Token n)]          -- ^ Source tokens.
+        -> Either (Error n err) (Module () n)
+
+parseModuleFromTokens fragment sourceName toks'
+ = goParse toks'
+ where
+        profile = F.fragmentProfile fragment
+        kenv    = profilePrimKinds  profile
+        tenv    = profilePrimTypes  profile
+
+        -- Parse the tokens.
+        goParse toks
+         = case BP.runTokenParser describeToken sourceName
+                        (C.pModule (C.contextOfProfile profile))
+                        toks of
+                Left err        -> Left  $ ErrorParser err
+                Right mm        -> Right $ Reannotate.reannotate (const ()) $ spreadX kenv tenv mm
+
+
+
 -- Exp --------------------------------------------------------------------------------------------
 -- | Parse and type-check and expression from a string.
 loadExpFromString
@@ -191,7 +233,7 @@ loadExpFromString
         -> FilePath             -- ^ Path to source file for error messages.
         -> Mode n               -- ^ Type checker mode.
         -> String               -- ^ Source string.
-        -> ( Either (Error n err) 
+        -> ( Either (Error n err)
                     (Exp (C.AnTEC BP.SourcePos n) n)
            , Maybe CheckTrace)
 
@@ -211,18 +253,18 @@ loadExpFromTokens
         -> FilePath             -- ^ Path to source file for error messages.
         -> Mode n               -- ^ Type checker mode.
         -> [Located (Token n)]  -- ^ Source tokens.
-        -> ( Either (Error n err) 
+        -> ( Either (Error n err)
                     (Exp (C.AnTEC BP.SourcePos n) n)
            , Maybe CheckTrace)
 
 loadExpFromTokens fragment modules sourceName mode toks'
  = goParse toks'
- where  
+ where
         -- Type checker profile, kind and type environments.
         profile = F.fragmentProfile fragment
         config  = C.configOfProfile  profile
-        
-        envx    = modulesEnvX 
+
+        envx    = modulesEnvX
                         (profilePrimKinds    profile)
                         (profilePrimTypes    profile)
                         (profilePrimDataDefs profile)
@@ -232,8 +274,8 @@ loadExpFromTokens fragment modules sourceName mode toks'
         tenv    = EnvX.typeEnvOfEnvX envx
 
         -- Parse the tokens.
-        goParse toks                
-         = case BP.runTokenParser describeToken sourceName 
+        goParse toks
+         = case BP.runTokenParser describeToken sourceName
                         (C.pExp (C.contextOfProfile profile))
                         toks of
                 Left err              -> (Left (ErrorParser err),     Nothing)
@@ -246,7 +288,7 @@ loadExpFromTokens fragment modules sourceName mode toks'
             (Right (x', _, _), ct)    -> goCheckCompliance ct x'
 
         -- Check that the module compiles with the language fragment.
-        goCheckCompliance ct x 
+        goCheckCompliance ct x
          = case F.compliesWithEnvs profile kenv tenv x of
             Just err                  -> (Left (ErrorCompliance err), Just ct)
             Nothing                   -> goCheckFragment ct x
@@ -266,7 +308,7 @@ loadTypeFromString
         -> Universe             -- ^ Universe this type is supposed to be in.
         -> FilePath             -- ^ Path to source file for error messages.
         -> String               -- ^ Source string.
-        -> Either (Error n err) 
+        -> Either (Error n err)
                   (Type n, Kind n)
 
 loadTypeFromString fragment uni sourceName str
@@ -281,17 +323,17 @@ loadTypeFromTokens
         -> Universe             -- ^ Universe this type is supposed to be in.
         -> FilePath             -- ^ Path to source file for error messages.
         -> [Located (Token n)]  -- ^ Source tokens.
-        -> Either (Error n err) 
+        -> Either (Error n err)
                   (Type n, Kind n)
 
 loadTypeFromTokens fragment uni sourceName toks'
  = goParse toks'
- where  
+ where
         profile = F.fragmentProfile fragment
 
         -- Parse the tokens.
-        goParse toks                
-         = case BP.runTokenParser describeToken sourceName 
+        goParse toks
+         = case BP.runTokenParser describeToken sourceName
                         (C.pType (C.contextOfProfile profile))
                         toks of
                 Left err  -> Left (ErrorParser err)
@@ -302,7 +344,7 @@ loadTypeFromTokens fragment uni sourceName toks'
          = case C.checkType (C.configOfProfile profile) uni t of
                 Left err      -> Left (ErrorCheckType err)
                 Right (t', k) -> Right (t', k)
-        
+
 
 -- Witness ----------------------------------------------------------------------------------------
 -- | Parse and check a witness from a string, returning it along with its kind.
@@ -311,7 +353,7 @@ loadWitnessFromString
         => Fragment n err       -- ^ Language fragment profile.
         -> FilePath             -- ^ Path to source file for error messages.
         -> String               -- ^ Source string.
-        -> Either (Error n err) 
+        -> Either (Error n err)
                   (Witness (AnT BP.SourcePos n) n, Type n)
 
 loadWitnessFromString fragment sourceName str
@@ -325,7 +367,7 @@ loadWitnessFromTokens
         => Fragment n err       -- ^ Language fragment profile.
         -> FilePath             -- ^ Path to source file for error messages.
         -> [Located (Token n)]  -- ^ Source tokens.
-        -> Either (Error n err) 
+        -> Either (Error n err)
                   (Witness (AnT BP.SourcePos n) n, Type n)
 
 loadWitnessFromTokens fragment sourceName toks'
@@ -334,7 +376,7 @@ loadWitnessFromTokens fragment sourceName toks'
         profile = F.fragmentProfile fragment
         config  = C.configOfProfile profile
 
-        env     = EnvX.fromPrimEnvs 
+        env     = EnvX.fromPrimEnvs
                         (profilePrimKinds    profile)
                         (profilePrimTypes    profile)
                         (profilePrimDataDefs profile)
@@ -343,9 +385,9 @@ loadWitnessFromTokens fragment sourceName toks'
         tenv    = profilePrimTypes profile
 
         -- Parse the tokens.
-        goParse toks                
-         = case BP.runTokenParser describeToken sourceName 
-                (C.pWitness (C.contextOfProfile profile)) 
+        goParse toks
+         = case BP.runTokenParser describeToken sourceName
+                (C.pWitness (C.contextOfProfile profile))
                 toks of
                 Left err  -> Left (ErrorParser err)
                 Right t   -> goCheckType (spreadX kenv tenv t)
