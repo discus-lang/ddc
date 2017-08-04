@@ -13,15 +13,15 @@ import DDC.Data.Pretty
 import Control.DeepSeq
 import qualified Text.Parsec.Pos        as Parsec
 
--- | A position in a source file.        
+-- | A position in a source file.
 --
 --   If there is no file path then we assume that the input has been read
 --   from an interactive session and display ''<interactive>'' when pretty printing.
-data SourcePos 
+data SourcePos
         = SourcePos
-        { sourcePosSource       :: String
-        , sourcePosLine         :: Int
-        , sourcePosColumn       :: Int }
+        { sourcePosSource       :: !String
+        , sourcePosLine         :: !Int
+        , sourcePosColumn       :: !Int }
         deriving (Eq, Show)
 
 
@@ -37,7 +37,7 @@ instance Pretty SourcePos where
  ppr (SourcePos source 0 0)
         = text $ source
 
- ppr (SourcePos source l c)     
+ ppr (SourcePos source l c)
         = text $ source ++ ":" ++ show l ++ ":" ++ show c
 
 
