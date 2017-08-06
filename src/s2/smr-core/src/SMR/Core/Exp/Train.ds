@@ -51,26 +51,21 @@ trainAppend (ccA ccB: List (Car s p)): List (Car s p)
         Nil             -> ccB
         Cons cA csA     -> trainAppend' cA csA ccB
 
+ where
+        trainAppend' c1 cs1 cc2
+         = case cs1 of
+                -- Combine the current state with the first car on the second train.
+                Nil
+                 -> trainCons c1 cc2
 
--- ISSUE #421: Problem with shadowed type variable in Shimmer trainAppend.
--- Inlining this into trainAppend as a where-binding causes a type
--- checker failure as the type variables don't match up.
-trainAppend'
-        (c1:      Car s p)
-        (cs1 cc2: List (Car s p)): List (Car s p)
- = case cs1 of
-        -- Combine the current state with the first car on the second train.
-        Nil
-         -> trainCons c1 cc2
+                -- Walk forward over the first train, combining ups's as we go.
+                Cons c1' cs1'
+                 |  CUps ups1  <- c1
+                 ,  CUps ups1' <- c1'
+                 -> trainAppend' (CUps (upsCombine ups1 ups1')) cs1' cc2
 
-        -- Walk forward over the first train, combining ups's as we go.
-        Cons c1' cs1'
-         |  CUps ups1  <- c1
-         ,  CUps ups1' <- c1'
-         -> trainAppend' (CUps (upsCombine ups1 ups1')) cs1' cc2
-
-         |  otherwise
-         -> Cons c1 (trainAppend' c1' cs1' cc2)
+                 |  otherwise
+                 -> Cons c1 (trainAppend' c1' cs1' cc2)
 
 
 -- | Bump a train due to pushing it under an abstraction with the
