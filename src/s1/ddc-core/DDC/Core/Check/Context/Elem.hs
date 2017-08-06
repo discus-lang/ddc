@@ -38,10 +38,10 @@ instance Pretty Pos where
 -- | The role of some type variable.
 data Role
         -- | Concrete type variables are region variables that have been introduced
-        --   in an enclosing lexical scope. All the capabilities for these will 
+        --   in an enclosing lexical scope. All the capabilities for these will
         --   also be in the context.
         = RoleConcrete
-        
+
         -- | Abstract type variables are the ones that are bound by type abstraction
         --   Inside the body of a type abstraction we can assume a region supports
         --   any given capability. We only need to worry about if it really does
@@ -128,24 +128,29 @@ instance (Pretty n, Eq n) => Pretty (Elem n) where
  ppr ll
   = case ll of
         ElemPos p
-         -> ppr p
+         -> text "P "
+         <> ppr p
 
-        ElemKind b role  
-         -> (padL 4 $ ppr (binderOfBind b))
-                <+> text ":" 
+        ElemKind b role
+         -> text "K "
+         <> (padL 4 $ ppr (binderOfBind b))
+                <+> text ":"
                 <+> (ppr $ typeOfBind b)
                 <+> text "@" <> ppr role
 
         ElemType b
-         -> (padL 4 $ ppr (binderOfBind b))
+         -> text "T "
+         <> (padL 4 $ ppr (binderOfBind b))
                 <+> text ":"
                 <+> (ppr $ typeOfBind b)
 
         ElemExistsDecl (Exists i k)
-         -> padL 4 (text "?" <> ppr i) <+> text ":" <+> ppr k
+         -> text "D "
+         <> padL 4 (text "?" <> ppr i) <+> text ":" <+> ppr k
 
-        ElemExistsEq (Exists i k) t 
-         -> padL 4 (text "?" <> ppr i) <+> text ":" <+> ppr k <+> text "=" <+> ppr t
+        ElemExistsEq (Exists i k) t
+         -> text "E "
+         <> padL 4 (text "?" <> ppr i) <+> text ":" <+> ppr k <+> text "=" <+> ppr t
 
 
 -- | Take the existential from this context element, if there is one.

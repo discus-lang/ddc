@@ -63,31 +63,25 @@ main ()
         tsInclude       = smrReplArgs_collectIncludes modes
 
         -- Build the table of primitive evaluators.
-        primEvals
-         = makePrimOps ()
+        primEvals       = makePrimOps ()
 
         -- Extract a list of primitive names.
-        -- ISSUE #422: Explicit type arguments required in some places
-        -- that they should not be.
-        primNames
-         = map (nameOfPrimEval [Text] [Prim]) primEvals
+        primNames       = map nameOfPrimEval primEvals
 
         -- Extract textual names of primitives.
-        primNamesText
-         = mapMaybe
-                (\e -> case e of
-                        PrimOp n -> Just n
-                        _        -> Nothing)
-         $ primNames
+        primNamesText   = mapMaybe
+                                (\e -> case e of
+                                        PrimOp n -> Just n
+                                        _        -> Nothing)
+                        $ primNames
 
         -- Build table of prim name to evaluator.
-        primTable = zip primNames primEvals
+        primTable       = zip primNames primEvals
 
         -- Build the parser config.
-        config
-         = Config (\z -> Just z)
-                  (\z -> parsePrim primNamesText z)
-                  lens_exp_location
+        config  = Config (\z -> Just z)
+                         (\z -> parsePrim primNamesText z)
+                         lens_exp_location
 
         decls   = loadSources config tsInclude
         state   = State config primTable decls

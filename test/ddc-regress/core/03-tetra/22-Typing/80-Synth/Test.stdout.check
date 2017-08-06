@@ -149,12 +149,12 @@ case () of {
 
 
 -- Match against a single constructor.
-λ(x: Tuple2# ?2 ?3).
+λ(x: Tuple2# ?4 ?5).
 case x of {
-  T2# (a: ?2) (b: ?3) 
+  T2# (a: ?4) (b: ?5) 
    -> ()
 }
-:*: Tuple2# ?2 ?3 -> Unit
+:*: Tuple2# ?4 ?5 -> Unit
 :!: Pure
 
 

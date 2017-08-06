@@ -4,12 +4,13 @@ module DDC.Core.Check.Judge.Inst
         , makeInstR)
 where
 import DDC.Core.Check.Base
+import DDC.Core.Check.Judge.Kind
 
 
 ---------------------------------------------------------------------------------------------------
 -- | Instantiate an existential so it becomes a subtype of the given type.
 makeInstL
-        :: (Eq n, Ord n, Pretty n)
+        :: (Eq n, Ord n, Pretty n, Show n)
         => Config n     -- ^ Checker configuration.
         -> a            -- ^ Annotation on the AST node being checker, for error reporting.
         -> Context n    -- ^ Checker context.
@@ -35,20 +36,6 @@ makeInstL !config !a !ctx0 !iL !tR !err
 
         ctrace  $ vcat
                 [ text "**  InstLReach"
-                , text "    LEFT:  " <> ppr iL
-                , text "    RIGHT: " <> ppr tR
-                , indent 4 $ ppr ctx0
-                , indent 4 $ ppr ctx1
-                , empty ]
-
-        return ctx1
-
- -- InstLSolve
- | not $ isTExists tR
- = do   let Just ctx1   = updateExists [] iL tR ctx0
-
-        ctrace  $ vcat
-                [ text "**  InstLSolve"
                 , text "    LEFT:  " <> ppr iL
                 , text "    RIGHT: " <> ppr tR
                 , indent 4 $ ppr ctx0
@@ -90,6 +77,68 @@ makeInstL !config !a !ctx0 !iL !tR !err
 
         return ctx3
 
+ -- InstLTApp
+ | (tCon : tArgs)       <- takeTApps tR
+ = do
+        ctrace  $ vcat
+                [ text "*>  InstLTyConApp"
+                , text "    LEFT:    " <> ppr iL
+                , text "    RIGHT:   " <> ppr tR
+                , indent 4 $ ppr ctx0
+                , empty ]
+
+        (_, kCon, _)    <- checkTypeM config ctx0 UniverseSpec tCon Recon
+        let (ksParam, kResult) = takeKFuns kCon
+
+        -- Make new existentials to match the function and argument parts.
+        isParam         <- mapM newExists ksParam
+        let tsParam     =  map typeOfExists isParam
+
+        -- Update the context with the new constraint.
+        let tInst       = tApps tCon tsParam
+        let Just ctx1   = updateExists isParam iL tInst ctx0
+
+        -- Instantiate the parameter types.
+        -- ISSUE #438: Type checker instantiation judgment assume all tycon params
+        -- are covariant. We don't have real variance info about the tycon,
+        -- so just use makeInstL, which assumes all the params are covariant.
+        let go ctxAcc [] _  = return ctxAcc
+            go ctxAcc _  [] = return ctxAcc
+            go ctxAcc (iParam : isParam') (tRArg : tRArgs')
+                = do    tRArg'  <- applyContext ctxAcc tRArg
+                        ctxAcc' <- makeInstL config a ctxAcc iParam tRArg' err
+                        go ctxAcc' isParam' tRArgs'
+
+        ctx2    <- go ctx1 isParam tArgs
+
+        ctrace  $ vcat
+                [ text "*<  InstLTyConApp"
+                , text "    LEFT:    " <> ppr iL
+                , text "    RIGHT:   " <> ppr tR
+                , text "    kCon:    " <> ppr kCon
+                , text "    ksParam: " <> ppr ksParam
+                , text "    kResult: " <> ppr kResult
+                , text "    tInst:   " <> ppr tInst
+                , indent 4 $ ppr ctx0
+                , indent 4 $ ppr ctx2
+                , empty ]
+
+        return ctx2
+
+
+ -- InstLSolve
+ | not $ isTExists tR
+ = do   let Just ctx1   = updateExists [] iL tR ctx0
+
+        ctrace  $ vcat
+                [ text "**  InstLSolve"
+                , text "    LEFT:  " <> ppr iL
+                , text "    RIGHT: " <> ppr tR
+                , indent 4 $ ppr ctx0
+                , indent 4 $ ppr ctx1
+                , empty ]
+
+        return ctx1
 
  -- Error
  | otherwise
@@ -107,7 +156,7 @@ makeInstL !config !a !ctx0 !iL !tR !err
 ---------------------------------------------------------------------------------------------------
 -- | Instantiate an existential so it becomes a supertype of the given type.
 makeInstR
-        :: (Eq n, Ord n, Pretty n)
+        :: (Eq n, Ord n, Pretty n, Show n)
         => Config n     -- ^ Checker configuration.
         -> a            -- ^ Annotation on the AST node being checker, for error reporting.
         -> Context n    -- ^ Checker context.
@@ -187,6 +236,54 @@ makeInstR !config !a !ctx0 !tL !iR !err
                 , empty ]
 
         return ctx3
+
+ -- InstRTApp
+ | (tCon : tArgs)       <- takeTApps tL
+ = do
+        ctrace  $ vcat
+                [ text "*>  InstRTyConApp"
+                , text "    LEFT:    " <> ppr iR
+                , text "    RIGHT:   " <> ppr tL
+                , indent 4 $ ppr ctx0
+                , empty ]
+
+        (_, kCon, _)    <- checkTypeM config ctx0 UniverseSpec tCon Recon
+        let (ksParam, kResult) = takeKFuns kCon
+
+        -- Make new existentials to match the function and argument parts.
+        isParam         <- mapM newExists ksParam
+        let tsParam     =  map typeOfExists isParam
+
+        -- Update the context with the new constraint.
+        let tInst       = tApps tCon tsParam
+        let Just ctx1   = updateExists isParam iR tInst ctx0
+
+        -- Instantiate the parameter types.
+        -- ISSUE #438: Type checker instantiation judgment assume all tycon params
+        -- are covariant. We don't have real variance info about the tycon,
+        -- so just use makeInstR, which assumes all the params are covariant.
+        let go ctxAcc [] _  = return ctxAcc
+            go ctxAcc _  [] = return ctxAcc
+            go ctxAcc (iParam : isParam') (tRArg : tRArgs')
+                = do    tRArg'  <- applyContext ctxAcc tRArg
+                        ctxAcc' <- makeInstR config a ctxAcc tRArg' iParam err
+                        go ctxAcc' isParam' tRArgs'
+
+        ctx2    <- go ctx1 isParam tArgs
+
+        ctrace  $ vcat
+                [ text "*<  InstRTyConApp"
+                , text "    LEFT:    " <> ppr tL
+                , text "    RIGHT:   " <> ppr iR
+                , text "    kCon:    " <> ppr kCon
+                , text "    ksParam: " <> ppr ksParam
+                , text "    kResult: " <> ppr kResult
+                , text "    tInst:   " <> ppr tInst
+                , indent 4 $ ppr ctx0
+                , indent 4 $ ppr ctx2
+                , empty ]
+
+        return ctx2
 
  -- Error
  | otherwise

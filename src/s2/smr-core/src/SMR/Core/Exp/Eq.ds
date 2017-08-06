@@ -9,11 +9,9 @@ where
 
 
 -- | Equality dictionary for expressions.
---   ISSUE #422: Explicit type arguments required in places they should not be.
---   We should not need the [s] [p] args here.
 eq_Exp {@s p: Data} {Eq s} {Eq p}: Eq (Exp s p)
- = Eq   (\x1 x2 -> smr_eqExp [s] [p] x1 x2)
-        (\x1 x2 -> not $ smr_eqExp [s] [p] x1 x2)
+ = Eq   (\x1 x2 -> smr_eqExp  x1 x2)
+        (\x1 x2 -> not $ smr_eqExp x1 x2)
 
 
 smr_eqExp {@s p: Data} {Eq s} {Eq p} (x1 x2: Exp s p): Bool

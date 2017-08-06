@@ -29,13 +29,13 @@ import DDC.Core.Check.Base
 
 -- | Check a type returning its kind, or a kind returning its sort.
 --
---   The unverse of the thing to check is directly specified, and if the 
+--   The unverse of the thing to check is directly specified, and if the
 --   thing is not actually in this universe they you'll get an error.
 --
 --   We track what universe the provided kind is in for defence against
 --   transform bugs. Types like ([a : [b : Data]. b]. a -> a), should not be
 --   accepted by the source parser, but may be created by bogus program
---   transformations. Quantifiers cannot be used at the kind level, so it's 
+--   transformations. Quantifiers cannot be used at the kind level, so it's
 --   better to fail early.
 ---
 --   Note that when comparing kinds, we can just use plain equality
@@ -43,14 +43,14 @@ import DDC.Core.Check.Base
 --   that need to be compared up to alpha-equivalence, nor do they contain
 --   crushable components terms.
 --
-checkTypeM 
-        :: (Ord n, Show n, Pretty n) 
+checkTypeM
+        :: (Ord n, Show n, Pretty n)
         => Config n     -- ^ Type checker configuration.
         -> Context n    -- ^ Context of type to check.
         -> Universe     -- ^ What universe the type to check is in.
         -> Type n       -- ^ The type to check (can be a Spec or Kind)
         -> Mode n       -- ^ Type checker mode.
-        -> CheckM a n 
+        -> CheckM a n
                 ( Type n
                 , Kind n
                 , Context n)
@@ -99,7 +99,7 @@ checkTypeM config ctx0 uni tt@(TVar u) mode
         Recon
          -> do  throw $ C.ErrorType $ ErrorTypeUndefined u
 
-        -- Synthesised types could have an arbitrary kind, 
+        -- Synthesised types could have an arbitrary kind,
         -- so we need to make two existentials.
         Synth _
          -> do  iK       <- newExists sComp
@@ -121,10 +121,10 @@ checkTypeM config ctx0 uni tt@(TVar u) mode
                 return  (t, kExpected, ctx1)
 
 
- -- Some variable defined in an environment, 
+ -- Some variable defined in an environment,
  -- or a primitive variable with its kind directly attached.
  | UniverseSpec          <- uni
- = let  
+ = let
         -- Get the actual kind of the variable,
         -- according to the kind environment.
         getActual
@@ -156,13 +156,13 @@ checkTypeM config ctx0 uni tt@(TVar u) mode
         -- kind from the environment.
         case mode of
          Check kExpected
-          -> do 
+          -> do
                 kExpected' <- applyContext ctx0 kExpected
                 ctx1       <- makeEqT config ctx0 kActual' kExpected'
                            $  C.ErrorType $ ErrorTypeMismatch uni  kActual' kExpected' tt
 
                 return (tt, kActual', ctx1)
- 
+
          _ ->   return (tt, kActual', ctx0)
 
  -- Type variables are not a part of this universe.
@@ -172,8 +172,8 @@ checkTypeM config ctx0 uni tt@(TVar u) mode
 
 -- Constructors ---------------------------------
 checkTypeM config ctx0 uni tt@(TCon tc) mode
- = let  
-        -- Get the actual kind of the constructor, 
+ = let
+        -- Get the actual kind of the constructor,
         -- according to the constructor definition.
         getActual
          -- Sort constructors don't have a higher classification.
@@ -207,8 +207,8 @@ checkTypeM config ctx0 uni tt@(TCon tc) mode
             UName n
              -- User defined data type constructors must be in the set of
              -- data defs. Attach the real kind why we're here.
-             | Just def         <- Map.lookup n $ dataDefsTypes 
-                                                $ EnvX.envxDataDefs 
+             | Just def         <- Map.lookup n $ dataDefsTypes
+                                                $ EnvX.envxDataDefs
                                                 $ contextEnvX ctx0
              , UniverseSpec     <- uni
              -> let k'   = kindOfDataType def
@@ -247,7 +247,7 @@ checkTypeM config ctx0 uni tt@(TCon tc) mode
          | otherwise
          = throw $ C.ErrorType $ ErrorTypeUniverseMalfunction tt uni
  in do
-        -- Get the actual kind/sort of the constructor according to the 
+        -- Get the actual kind/sort of the constructor according to the
         -- constructor definition.
         (tt', kActual)  <- getActual
         kActual'        <- applyContext ctx0 kActual
@@ -255,7 +255,7 @@ checkTypeM config ctx0 uni tt@(TCon tc) mode
         case mode of
          -- If we have an expected kind then make the actual kind the same.
          Check kExpected
-           -> do 
+           -> do
                  kExpected' <- applyContext ctx0 kExpected
                  ctx1   <- makeEqT config ctx0 kActual' kExpected'
                         $  C.ErrorType $ ErrorTypeMismatch uni  kActual' kExpected' tt
@@ -266,7 +266,7 @@ checkTypeM config ctx0 uni tt@(TCon tc) mode
 
 
 -- Quantifiers ----------------------------------
-checkTypeM config ctx0 uni@UniverseSpec 
+checkTypeM config ctx0 uni@UniverseSpec
         tt@(TForall b1 t2) mode
  = case mode of
     Recon
@@ -296,7 +296,7 @@ checkTypeM config ctx0 uni@UniverseSpec
         -- Synthesise a sort for the binder.
         let k1  = typeOfBind b1
         (k1', _s1, ctx1) <- checkTypeM config ctx0 UniverseKind k1 (Synth [])
-                
+
         let b1' = replaceTypeOfBind k1' b1
 
         -- Check the body with the binder in scope.
@@ -329,7 +329,7 @@ checkTypeM config ctx0 uni@UniverseSpec
 
         return (TForall b1' t2', k2'', ctx_cut)
 
-    Check kExpected 
+    Check kExpected
      -> do
         -- Synthesise a sort for the binder.
         let k1  = typeOfBind b1
@@ -353,7 +353,7 @@ checkTypeM config ctx0 uni@UniverseSpec
                 ctx'    <- makeEqT config ctx4 k2' kExpected
                         $  C.ErrorType $ ErrorTypeMismatch uni  k2' kExpected tt
 
-                ctx5    <- makeEqT config ctx' k2' kData 
+                ctx5    <- makeEqT config ctx' k2' kData
                         $  C.ErrorType $ ErrorTypeMismatch uni  k2' kData  tt
 
                 k2''    <- applyContext ctx5 k2'
@@ -381,7 +381,7 @@ checkTypeM config ctx0 uni@UniverseSpec
 -- Applications of the kind function constructor are handled directly
 -- because the constructor doesn't have a sort by itself.
 -- The sort of a kind function is the sort of the result.
-checkTypeM config ctx0 uni@UniverseKind 
+checkTypeM config ctx0 uni@UniverseKind
         tt@(TApp (TApp ttFun k1) k2) mode
  | isFunishTCon ttFun
  = case mode of
@@ -408,7 +408,7 @@ checkTypeM config ctx0 uni@UniverseKind
 -- following kinds:
 --   (=>) :: @ ~> @ ~> @,  for witness constructors.
 --   (=>) :: @ ~> * ~> *,  for functions that take witnesses.
-checkTypeM config ctx0 uni@UniverseSpec 
+checkTypeM config ctx0 uni@UniverseSpec
         tt@(TApp (TApp tC@(TCon (TyConWitness TwConImpl)) t1) t2) mode
  = case mode of
     Recon
@@ -441,23 +441,23 @@ checkTypeM config ctx0 uni@UniverseSpec
 
 
 -- General type application.
-checkTypeM config ctx0 UniverseSpec 
+checkTypeM config ctx0 UniverseSpec
         tt@(TApp tFn tArg) mode
  = case mode of
     Recon
      -> do
         -- Check the kind of the functional part.
-        (tFn',  kFn,  ctx1) 
+        (tFn',  kFn,  ctx1)
          <- checkTypeM config ctx0 UniverseSpec tFn Recon
-        
+
         -- Check the kind of the argument.
-        (tArg', kArg, ctx2) 
+        (tArg', kArg, ctx2)
          <- checkTypeM config ctx1 UniverseSpec tArg Recon
 
         -- The kind of the parameter must match that of the argument
         case kFn of
          TApp (TApp ttFun kParam) kBody
-           |  isFunishTCon ttFun 
+           |  isFunishTCon ttFun
            ,  C.equivT (contextEnvT ctx2) kParam kArg
            -> return (tApp tFn' tArg', kBody, ctx2)
 
@@ -469,7 +469,7 @@ checkTypeM config ctx0 UniverseSpec
     Synth{}
      -> do
         -- Synthesise a kind for the functional part.
-        (tFn', kFn, ctx1) 
+        (tFn', kFn, ctx1)
          <- checkTypeM config ctx0 UniverseSpec tFn (Synth [])
 
         -- Apply the argument to the function.
@@ -482,7 +482,7 @@ checkTypeM config ctx0 UniverseSpec
     Check kExpected
      -> do
         -- Synthesise a kind for the overall type.
-        (t1', k1, ctx1) 
+        (t1', k1, ctx1)
          <- checkTypeM config ctx0 UniverseSpec tt (Synth [])
 
         -- Force the synthesised kind to be the same as the expected one.
@@ -498,16 +498,16 @@ checkTypeM config ctx0 UniverseSpec
 checkTypeM config ctx0 UniverseSpec tt@(TSum ss) mode
  = case mode of
     Recon
-     -> do   
+     -> do
         -- Check all the elements,
         --  threading the context from left to right.
-        (ts', ks, ctx1) 
+        (ts', ks, ctx1)
                 <- checkTypesM config ctx0 UniverseSpec Recon
                 $  TS.toList ss
 
         -- Check that all the types in the sum have the same kind.
         let kExpect = TS.kindOfSum ss
-        k'      <- case nub ks of     
+        k'      <- case nub ks of
                      []     -> return $ TS.kindOfSum ss
                      [k]    -> return k
                      _      -> throw $ C.ErrorType $ ErrorTypeSumKindMismatch kExpect ss ks
@@ -531,7 +531,7 @@ checkTypeM config ctx0 UniverseSpec tt@(TSum ss) mode
          -- Note that (TS.kindOfSum ts) will be Bot in an unannotated program,
          -- so we can't use that directly.
          k : _ksMore
-          -> do 
+          -> do
                 (ts'', _, ctx2)
                     <- checkTypesM  config ctx1 UniverseSpec (Check k) ts
                 k'  <- applyContext ctx2 k
@@ -569,14 +569,14 @@ checkTypeM _ _ uni tt _mode
 
 -------------------------------------------------------------------------------
 -- | Like `checkTypeM` but do several, chaining the contexts appropriately.
-checkTypesM 
-        :: (Ord n, Show n, Pretty n) 
+checkTypesM
+        :: (Ord n, Show n, Pretty n)
         => Config n             -- ^ Type checker configuration.
         -> Context n            -- ^ Local context.
         -> Universe             -- ^ What universe the types to check are in.
         -> Mode n               -- ^ Type checker mode.
         -> [Type n]             -- ^ The types to check.
-        -> CheckM a n 
+        -> CheckM a n
                 ( [Type n]
                 , [Kind n]
                 , Context n)
@@ -602,12 +602,12 @@ synthTAppArg
         -> CheckM a n
                 ( Kind n        -- Kind of result.
                 , Type n        -- Checked type argument.
-                , Context n)    -- Result context. 
+                , Context n)    -- Result context.
 
 synthTAppArg config ctx0 tFn kFn tArg
 
  | Just iFn     <- takeExists kFn
- = do  
+ = do
         -- New existential for the kind of the function parameter.
         iParam          <- newExists sComp
         let kParam      = typeOfExists iParam
@@ -617,7 +617,7 @@ synthTAppArg config ctx0 tFn kFn tArg
         let kBody       = typeOfExists iBody
 
         -- Update the context with the new constraint.
-        let Just ctx1   = updateExists [iBody, iParam] iFn 
+        let Just ctx1   = updateExists [iBody, iParam] iFn
                                 (kFun kParam kBody) ctx0
 
         -- Check the argument under the new context.
@@ -629,28 +629,28 @@ synthTAppArg config ctx0 tFn kFn tArg
 
  | TApp (TApp ttFun kParam) kBody <- kFn
  , isFunishTCon ttFun
- = do   
+ = do
         -- The kind of the argument must match the parameter kind
-        (tArg', _kArg, ctx1) 
+        (tArg', _kArg, ctx1)
          <- checkTypeM config ctx0 UniverseSpec tArg (Check kParam)
 
         return (kBody, tArg', ctx1)
 
  | otherwise
- = throw $ C.ErrorType $ ErrorTypeAppNotFun (TApp tFn tArg) tFn kFn tArg 
+ = throw $ C.ErrorType $ ErrorTypeAppNotFun (TApp tFn tArg) tFn kFn tArg
 
 
 -- [Note: Defaulting the kind of quantified types]
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 -- For expressions like:
 --   /\a. \(x : [b : Data]. a). ()
---  
--- The kind of 'a' must be Data because 'x' is used as a parameter of a function 
--- abstraction. If the kind of the body of a quantified type is unconstrained 
+--
+-- The kind of 'a' must be Data because 'x' is used as a parameter of a function
+-- abstraction. If the kind of the body of a quantified type is unconstrained
 -- then we default it to data.
 --
--- Although the types of witness constructors have quantified types, 
+-- Although the types of witness constructors have quantified types,
 -- those types are primitive, so we never need to do type inference for them.
--- There aren't any cases where defaulting the kind of a quantified type to 
+-- There aren't any cases where defaulting the kind of a quantified type to
 -- Data would be the wrong thing to do.
 --

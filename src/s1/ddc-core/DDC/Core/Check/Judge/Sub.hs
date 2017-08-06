@@ -417,7 +417,7 @@ makeSub config a ctx0 x0 xL tL tR err
         -- so that the existential is instantiated
         -- to match the left.
         let (ctx1, pos1)  =  markContext ctx0
-        let ctx2          =  pushType bParamR ctx1
+        let ctx2          =  pushKind bParamR RoleConcrete ctx1
 
         (xL2, eff2, ctx3) <- makeSub config a ctx2 x0 xL tL tBodyR' err
 
