@@ -49,6 +49,7 @@ library
         Data.Map.Fun
         Data.Map.Tree
         Data.Map
+        Data.Bag
         Data.Stream
         Math.Combinations
         System.Runtime

@@ -41,9 +41,6 @@ bag_union (xs1 xs2: Bag a): Bag a
 bag_toList (bag: Bag a): List a
  = go Nil bag
  where
-        -- ISSUE #428: Eliding signature causes type error saying existentials
-        -- cannot be unified.
-        go : List a -> Bag a -> List a
         go xs1  BagNil           = xs1
         go xs1 (BagElem x)       = Cons x xs1
         go xs1 (BagList xs2)     = go_list xs1 xs2
