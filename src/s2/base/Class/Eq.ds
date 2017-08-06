@@ -51,13 +51,9 @@ eq_Bool: Eq Bool
 eq_Tup2 {@a b: Data} {Eq a} {Eq b}: Eq (Tup2 a b)
  = Eq eq' neq'
  where
-        -- ISSUE #428: Eliding signature causes strange type error.
-        -- If these sigs are elided get a type checker error about Bool vs Bool#
-        eq'  ((T2 a1 b1) : Tup2 a b)
-             ((T2 a2 b2) : Tup2 a b): Bool
+        eq' (T2 a1 b1) (T2 a2 b2)
          = and (eq a1 a2)  (eq  b1 b2)
 
-        neq' ((T2 a1 b1) : Tup2 a b)
-             ((T2 a2 b2) : Tup2 a b): Bool
+        neq' (T2 a1 b1) (T2 a2 b2)
          = or  (neq a1 a2) (neq b1 b2)
 
