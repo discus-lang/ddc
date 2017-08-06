@@ -4,7 +4,6 @@ export  { id; compose; composeLeft; composeRight }
 where
 
 
--------------------------------------------------------------------------------
 -- | The class of categories.
 data Category (cat: Data -> Data -> Data) where
         Category
@@ -28,12 +27,14 @@ compose {@cat: Data -> Data -> Data} {@a b c: Data}
  = compose'
 
 
--- ISSUE #436: Post type checker does not fined unresolved metavariabls.
+-- | Compose morphisms left to right.
 composeLeft
         {@cat: Data -> Data -> Data} {@a b c: Data} {xc: Category cat}
         : cat b c -> cat a b -> cat a c
         = compose {xc}
 
+
+-- | Compose morphisms right to left.
 composeRight
         {@cat: Data -> Data -> Data} {@a b c: Data} {xc: Category cat}
         : cat a b -> cat b c -> cat a c

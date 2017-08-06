@@ -308,5 +308,13 @@ data Error a n
         | ErrorNakedWitness
         { errorAnnot            :: a
         , errorChecking         :: Exp a n }
+
+        -- Post check errors ------------------------------
+        | ErrorAmbiguousType
+        { errorAnnot            :: a }
+
+        | ErrorAmbiguousTypeExp
+        { errorAnnot            :: a
+        , errorChecking         :: Exp a n }
         deriving (Show)
 

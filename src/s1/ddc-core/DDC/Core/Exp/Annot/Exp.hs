@@ -82,7 +82,7 @@ pattern XLAM  a b x     = XAbs a (MType b) x
 
 
 -- | Parameter sort.
-data ParamSort 
+data ParamSort
         = ParamSortType
         | ParamSortTerm
         | ParamSortWitness
@@ -107,10 +107,10 @@ data Param n
 
 -- | Argument of an application.
 data Arg a n
-        = RType         (Type      n)   -- ^ Type argument.
-        | RTerm         (Exp     a n)   -- ^ Term argument.
-        | RWitness      (Witness a n)   -- ^ Witness argument.
-        | RImplicit     (Arg a n)       -- ^ Indicate an implicit argument.             
+        = RType         !(Type      n)  -- ^ Type argument.
+        | RTerm         !(Exp     a n)  -- ^ Term argument.
+        | RWitness      !(Witness a n)  -- ^ Witness argument.
+        | RImplicit     !(Arg a n)      -- ^ Indicate an implicit argument.
         deriving (Show, Eq)
 
 
@@ -119,7 +119,7 @@ data Arg a n
 --   but might have some special handing in the type checker.
 data Prim
         -- | Produce a value by elaboration.
-        = PElaborate 
+        = PElaborate
 
         -- | Project a field from a record.
         | PProject Text

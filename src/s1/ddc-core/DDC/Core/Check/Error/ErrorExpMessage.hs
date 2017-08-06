@@ -281,3 +281,15 @@ ppr' (ErrorNakedWitness a xx)
         , empty
         , text "with: "                        <> align (ppr xx) ]
 
+
+-- Post -----------------------------------------------------------------------
+ppr' (ErrorAmbiguousType a)
+ = vcat [ ppr a
+        , text "Ambigous type"
+        , empty ]
+
+ppr' (ErrorAmbiguousTypeExp a x)
+ = vcat [ ppr a
+        , text "Ambigous type in expression:"
+        , ppr x
+        , empty ]

@@ -17,6 +17,7 @@ import qualified DDC.Type.Env           as Env
 import qualified DDC.Core.Env.EnvT      as EnvT
 import qualified DDC.Core.Env.EnvX      as EnvX
 import qualified Data.Map.Strict        as Map
+import qualified DDC.Core.Check.Post    as Post
 
 
 -- Wrappers ---------------------------------------------------------------------------------------
@@ -54,7 +55,7 @@ checkModuleM !config mm@ModuleCore{} !mode
  = do
         let envT_prim
                 = EnvT.empty
-                { EnvT.envtPrimFun      
+                { EnvT.envtPrimFun
                         = \n -> Env.lookupName n (configPrimKinds config) }
 
         -- Check sorts of imported types --------------------------------------
@@ -67,7 +68,7 @@ checkModuleM !config mm@ModuleCore{} !mode
                 <- checkImportTypes  config envT_prim mode
                 $  moduleImportTypes mm
 
-        let nksImportType' 
+        let nksImportType'
                 = [(n, kindOfImportType i) | (n, i) <- nitsImportType']
 
         -- Check sorts of imported data types ---------------------------------
@@ -76,7 +77,7 @@ checkModuleM !config mm@ModuleCore{} !mode
 
         --   These have explicit kind annotations on the type parameters,
         --   which we can sort check directly.
-        nksImportDataDef'   
+        nksImportDataDef'
                 <- checkSortsOfDataTypes config mode
                 $  moduleImportDataDefs  mm
 
@@ -104,10 +105,10 @@ checkModuleM !config mm@ModuleCore{} !mode
 
         -- Imported type equations may mention each other.
         nktsImportTypeDef'
-                <- checkKindsOfTypeDefs 
-                        config 
+                <- checkKindsOfTypeDefs
+                        config
                         envT_dataDefs
-                          { EnvT.envtEquations 
+                          { EnvT.envtEquations
                           = Map.map snd $ Map.fromList $ moduleImportTypeDefs mm }
                 $  moduleImportTypeDefs mm
 
@@ -115,8 +116,8 @@ checkModuleM !config mm@ModuleCore{} !mode
                 = EnvT.unions
                 [ envT_dataDefs
                 , EnvT.fromListNT [ (n, k) | (n, (k, _)) <- nktsImportTypeDef']
-                , EnvT.empty 
-                        { EnvT.envtEquations 
+                , EnvT.empty
+                        { EnvT.envtEquations
                         = Map.fromList    [ (n, t) | (n, (_, t)) <- nktsImportTypeDef']}]
 
 
@@ -130,7 +131,7 @@ checkModuleM !config mm@ModuleCore{} !mode
         -- locally defined type equations.
         nktsLocalTypeDef'
                 <- checkKindsOfTypeDefs
-                        config 
+                        config
                         envT_importedTypeDefs
                          { EnvT.envtEquations
                          = Map.map snd $ Map.fromList $ moduleTypeDefsLocal mm }
@@ -154,7 +155,7 @@ checkModuleM !config mm@ModuleCore{} !mode
                 [ text "* Checking Kinds of Imported Data Types."]
 
         let dataDefsImported = moduleImportDataDefs mm
-        dataDefsImported'  
+        dataDefsImported'
          <- case checkDataDefs config envT_localTypeDefs dataDefsImported of
                 (err : _, _)            -> throw $ ErrorData err
                 ([], dataDefsImported') -> return dataDefsImported'
@@ -165,12 +166,12 @@ checkModuleM !config mm@ModuleCore{} !mode
                 [ text "* Checking Kinds of Local Data Types."]
 
         let dataDefsLocal    = moduleDataDefsLocal mm
-        dataDefsLocal'  
+        dataDefsLocal'
          <- case checkDataDefs config envT_localTypeDefs dataDefsLocal of
                 (err : _, _)            -> throw $ ErrorData err
                 ([], dataDefsLocal')    -> return dataDefsLocal'
 
-        let dataDefs_top    
+        let dataDefs_top
                 = unionDataDefs (configPrimDataDefs config)
                 $ unionDataDefs (fromListDataDefs dataDefsImported')
                                 (fromListDataDefs dataDefsLocal')
@@ -180,7 +181,7 @@ checkModuleM !config mm@ModuleCore{} !mode
         ctrace  $ vcat
                 [ text "* Checking Kinds of Imported Capabilities."]
 
-        ntsImportCap'   
+        ntsImportCap'
                 <- checkImportCaps   config  envT_localTypeDefs mode
                 $  moduleImportCaps  mm
 
@@ -188,8 +189,8 @@ checkModuleM !config mm@ModuleCore{} !mode
                 = EnvT.unions
                 [ envT_localTypeDefs
                 , EnvT.empty
-                        { EnvT.envtCapabilities 
-                           = Map.fromList 
+                        { EnvT.envtCapabilities
+                           = Map.fromList
                            $ [ (n, t) | (n, ImportCapAbstract t) <- ntsImportCap'] }]
 
 
@@ -203,7 +204,7 @@ checkModuleM !config mm@ModuleCore{} !mode
 
         let envX_importValues
                 = (EnvX.fromListNT [(n, typeOfImportValue i) | (n, i) <- ntsImportValue' ])
-                {  EnvX.envxEnvT     = envT_importCaps 
+                {  EnvX.envxEnvT     = envT_importCaps
                 ,  EnvX.envxDataDefs = dataDefs_top
                 ,  EnvX.envxPrimFun  = \n -> Env.envPrimFun (configPrimTypes config) n }
 
@@ -229,7 +230,7 @@ checkModuleM !config mm@ModuleCore{} !mode
         -- Check the body of the module -------------------
         (x', _, _effs, ctx)
          <- checkExpM   (makeTable config)
-                        ctx_top mode DemandNone (moduleBody mm) 
+                        ctx_top mode DemandNone (moduleBody mm)
 
         -- Apply the final context to the annotations in expressions.
         let applyToAnnot (AnTEC t0 e0 _ x0)
@@ -239,6 +240,14 @@ checkModuleM !config mm@ModuleCore{} !mode
 
         xx_solved <- mapT (applySolved ctx) x'
         xx_annot  <- reannotateM applyToAnnot xx_solved
+
+        -- Post check the annotate expression to ensure there are no unsolved metavariables.
+        (case Post.checkExp xx_annot of
+                Left (ErrorAmbiguousType a)
+                  -> throw $ ErrorAmbiguousType $ annotTail a
+                Left (ErrorAmbiguousTypeExp a x)
+                  -> throw $ ErrorAmbiguousTypeExp (annotTail a) (reannotate annotTail x)
+                _ -> return ())
 
         -- Build new module with infered annotations ------
         let mm_inferred
@@ -258,7 +267,7 @@ checkModuleM !config mm@ModuleCore{} !mode
         envX_binds
          <- checkModuleBinds envX_top
                 (moduleExportTypes  mm_inferred)
-                (moduleExportValues mm_inferred) 
+                (moduleExportValues mm_inferred)
                 xx_annot
 
         -- Check that all exported bindings are defined by the module,
@@ -298,7 +307,7 @@ checkExportTypes
         -> CheckM a n [(n, ExportSource n (Type n))]
 
 checkExportTypes config env nesrcs
- = let  
+ = let
         ctx     = contextOfEnvT env
 
         check (n, esrc)
@@ -324,13 +333,13 @@ checkExportTypes config env nesrcs
 -- | Check exported types.
 checkExportValues
         :: (Show n, Pretty n, Ord n)
-        => Config n 
+        => Config n
         -> EnvT   n
         -> [(n, ExportSource n (Type n))]
         -> CheckM a n [(n, ExportSource n (Type n))]
 
 checkExportValues config env nesrcs
- = let  
+ = let
         ctx     = contextOfEnvT env
 
         check (n, esrc)
@@ -357,7 +366,7 @@ checkExportValues config env nesrcs
 checkImportTypes
         :: (Ord n, Show n, Pretty n)
         => Config n
-        -> EnvT   n 
+        -> EnvT   n
         -> Mode   n
         -> [(n, ImportType n (Type n))]
         -> CheckM a n [(n, ImportType n (Type n))]
@@ -395,7 +404,7 @@ checkImportTypes config env mode nisrcs
         -- Check if two import definitions with the same name are compatible.
         -- The same import definition can appear multiple times provided
         -- each instance has the same name and kind.
-        compat (ImportTypeAbstract k1) (ImportTypeAbstract k2) 
+        compat (ImportTypeAbstract k1) (ImportTypeAbstract k2)
                 = equivT env k1 k2
 
         compat (ImportTypeBoxed    k1) (ImportTypeBoxed    k2)
@@ -417,7 +426,7 @@ checkImportTypes config env mode nisrcs
 --   returning a map of data type constructor constructor name to its kind.
 checkSortsOfDataTypes
         :: (Ord n, Show n, Pretty n)
-        => Config n 
+        => Config n
         -> Mode n
         -> [DataDef n]
         -> CheckM a n [(n, Kind n)]
@@ -457,7 +466,7 @@ checkKindsOfTypeDefs config env nkts
 
         -- Check a single type equation.
         check (n, (_k, t))
-         = do   (t', k', _) 
+         = do   (t', k', _)
                  <- checkTypeM config ctx UniverseSpec t Recon
 
                 -- ISSUE #374: Check specified kinds of type equations against inferred kinds.
@@ -473,7 +482,7 @@ checkKindsOfTypeDefs config env nkts
 -- | Check types of imported capabilities.
 checkImportCaps
         :: (Ord n, Show n, Pretty n)
-        => Config n 
+        => Config n
         -> EnvT n
         -> Mode n
         -> [(n, ImportCap n (Type n))]
@@ -500,7 +509,7 @@ checkImportCaps config env mode nisrcs
                 --
                 -- In Check mode we pass down the expected kind,
                 -- so this is checked locally.
-                -- 
+                --
                 when (not $ isEffectKind k)
                  $ throw $ ErrorImportCapNotEffect n
 
@@ -521,9 +530,9 @@ checkImportCaps config env mode nisrcs
                 Nothing                 -> pack (Map.insert n isrc mm) nis
 
         -- Check if two imported capabilities of the same name are compatiable.
-        -- The same import definition can appear multiple times provided each 
+        -- The same import definition can appear multiple times provided each
         -- instance has the same name and type.
-        compat (ImportCapAbstract t1) (ImportCapAbstract t2) 
+        compat (ImportCapAbstract t1) (ImportCapAbstract t2)
                 = equivT (contextEnvT ctx) t1 t2
 
     in do
@@ -539,8 +548,8 @@ checkImportCaps config env mode nisrcs
 -- | Check types of imported values.
 checkImportValues
         :: (Ord n, Show n, Pretty n)
-        => Config n 
-        -> EnvT n 
+        => Config n
+        -> EnvT n
         -> Mode n
         -> [(n, ImportValue n (Type n))]
         -> CheckM a n [(n, ImportValue n (Type n))]
@@ -587,13 +596,13 @@ checkImportValues config env mode nisrcs
                 Nothing                 -> pack (Map.insert n isrc mm) nis
 
         -- Check if two imported values of the same name are compatable.
-        compat (ImportValueModule _ _ t1 a1) 
+        compat (ImportValueModule _ _ t1 a1)
                (ImportValueModule _ _ t2 a2)
          = equivT (contextEnvT ctx) t1 t2 && a1 == a2
 
         compat (ImportValueSea _ t1)
                (ImportValueSea _ t2)
-         = equivT (contextEnvT ctx) t1 t2 
+         = equivT (contextEnvT ctx) t1 t2
 
         compat _ _ = False
 

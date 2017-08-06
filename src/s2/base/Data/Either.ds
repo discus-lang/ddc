@@ -38,7 +38,6 @@ isRight (e: Either a b): Bool
 
 -- Functor --------------------------------------------------------------------
 -- ISSUE #427: Clash in type var names with nested signatures.
--- ISSUE #426: Free existential not caught by post type check.
 either_Functor {@x: Data}: Functor (Either x)
  = Functor either_fmap
  where
