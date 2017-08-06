@@ -1,4 +1,4 @@
-
+{-# OPTIONS_HADDOCK hide #-}
 module DDC.Source.Tetra.Convert.Clause
         ( collectSigsFromClauses
         , collectBoundVarsFromClauses
@@ -23,7 +23,7 @@ collectSigsFromClauses cls
 collectBoundVarsFromClauses :: [S.Clause] -> [S.BindVar]
 collectBoundVarsFromClauses cls
  = go cls
- where  go (S.SLet _ (S.XBindVarMT b _) _ _ : cls') 
+ where  go (S.SLet _ (S.XBindVarMT b _) _ _ : cls')
                         = b : go cls'
         go (_ : cls')   = go cls'
         go []           = []
@@ -31,10 +31,10 @@ collectBoundVarsFromClauses cls
 
 -- | Strip a let-binding from a clause.
 makeBindingFromClause
-        :: [(S.BindVar, S.Type)]        -- ^ Type signatures in the same group. 
+        :: [(S.BindVar, S.Type)]        -- ^ Type signatures in the same group.
         -> [ S.BindVar ]                -- ^ Bound values defined in the same group.
         -> S.Clause                     -- ^ Clause to consider.
-        -> ConvertM S.Source 
+        -> ConvertM S.Source
                     (Maybe (S.BindVarMT, (SP, S.Exp)))
                                         -- ^ Let-bindings with attached signatures.
 makeBindingFromClause sigs vals cc
@@ -48,15 +48,15 @@ makeBindingFromClause sigs vals cc
                 -- signature provided in the same group.
                 Just _          -> Left   $ ErrorMultipleSignatures sp b
 
-                -- The binder was not directly annotated, 
+                -- The binder was not directly annotated,
                 -- so attach the provided signature.
-                Nothing 
+                Nothing
                  -> case wrapParams ps x of
                         Nothing -> Left   $ ErrorConvertSugaredClause cc
                         Just x' -> return $ Just $ ( S.XBindVarMT b (Just tSig), (sp, x'))
 
          -- We don't have a separate signature for this binding.
-         |  otherwise   
+         |  otherwise
          -> case wrapParams ps x of
                 Nothing         -> Left   $ ErrorConvertSugaredClause cc
                 Just x'         -> return $ Just $ (bm, (sp, x'))
@@ -66,21 +66,21 @@ makeBindingFromClause sigs vals cc
         S.SLet{}                -> Left   $ ErrorConvertSugaredClause cc
 
         -- Check that signatures in the clause group have associated bindings.
-        --   If we find a signature without a binding then one or 
+        --   If we find a signature without a binding then one or
         --   the other is probably mis-spelled.
-        S.SSig sp b _ 
+        S.SSig sp b _
          | elem b vals          -> return Nothing
          | otherwise            -> Left   $ ErrorTypeSignatureLacksBinding sp b
 
 
 -- | Wrap an expression with lambda abstractions for each of the given parameters.
 wrapParams :: [S.Param] -> S.Exp -> Maybe S.Exp
-wrapParams [] x 
+wrapParams [] x
  = pure x
 
 wrapParams (p:ps) x
  = case p of
-        S.MType  b mt    
+        S.MType  b mt
          -> S.XAbs (S.MType b mt)       <$> wrapParams ps x
 
         S.MTerm  p' mt

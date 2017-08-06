@@ -1,4 +1,4 @@
-
+{-# OPTIONS_HADDOCK hide #-}
 module DDC.Core.Check.Judge.Type.Let
         (checkLet)
 where

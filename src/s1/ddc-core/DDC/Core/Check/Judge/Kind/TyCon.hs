@@ -1,4 +1,4 @@
-
+{-# OPTIONS_HADDOCK hide #-}
 module DDC.Core.Check.Judge.Kind.TyCon
         ( takeKindOfTyCon
         , takeSortOfKiCon
@@ -26,10 +26,10 @@ takeSortOfKiCon kc
 -- | Take the kind of a `TyCon`, if there is one.
 takeKindOfTyCon :: TyCon n -> Maybe (Kind n)
 takeKindOfTyCon tt
- = case tt of        
+ = case tt of
         -- Sorts don't have a higher classification.
         TyConSort    _   -> Nothing
- 
+
         TyConKind    kc  -> takeSortOfKiCon kc
         TyConWitness tc  -> Just $ kindOfTwCon tc
         TyConSpec    tc  -> Just $ kindOfTcCon tc
@@ -48,7 +48,7 @@ kindOfTwCon tc
         TwConMutable    -> kRegion   `kFun`  kWitness
         TwConDeepMutable-> kData     `kFun`  kWitness
         TwConDisjoint   -> kEffect   `kFun`  kEffect  `kFun`  kWitness
-        TwConDistinct n -> (replicate n kRegion)      `kFuns` kWitness        
+        TwConDistinct n -> (replicate n kRegion)      `kFuns` kWitness
 
 
 -- | Take the kind of a computation type constructor.

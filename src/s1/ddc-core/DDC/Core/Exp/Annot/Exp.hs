@@ -1,4 +1,4 @@
-
+{-# OPTIONS_HADDOCK hide #-}
 -- | Core language AST that includes an annotation on every node of
 --   an expression.
 --

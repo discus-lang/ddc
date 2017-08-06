@@ -1,4 +1,4 @@
-
+{-# OPTIONS_HADDOCK hide #-}
 module DDC.Build.Spec.Check
         (Error(..))
 where

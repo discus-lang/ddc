@@ -1,4 +1,4 @@
-
+{-# OPTIONS_HADDOCK hide #-}
 module DDC.Core.Check.Error.ErrorType where
 import DDC.Core.Exp
 import DDC.Type.Universe
@@ -7,7 +7,7 @@ import DDC.Type.Universe
 -- | Things that can go wrong when checking the kind of at type.
 data ErrorType n
         -- Generic Problems ---------------------
-        -- | Tried to check a type using the wrong universe, 
+        -- | Tried to check a type using the wrong universe,
         --   for example: asking for the kind of a kind.
         = ErrorTypeUniverseMalfunction
         { errorTypeType         :: Type n
@@ -27,13 +27,13 @@ data ErrorType n
 
         -- Variables ----------------------------
         -- | An undefined type variable.
-        | ErrorTypeUndefined        
+        | ErrorTypeUndefined
         { errorTypeBound        :: Bound n }
 
 
         -- Constructors -------------------------
         -- | Found an unapplied kind function constructor.
-        | ErrorTypeUnappliedKindFun 
+        | ErrorTypeUnappliedKindFun
 
         -- | Found a naked sort constructor.
         | ErrorTypeNakedSort
@@ -53,7 +53,7 @@ data ErrorType n
         , errorTypeArgType      :: Type n }
 
         -- | A type application where the parameter and argument kinds don't match.
-        | ErrorTypeAppArgMismatch   
+        | ErrorTypeAppArgMismatch
         { errorTypeChecking     :: Type n
         , errorTypeFunType      :: Type n
         , errorTypeFunKind      :: Kind n
@@ -84,7 +84,7 @@ data ErrorType n
         { errorTypeKindExpected :: Kind n
         , errorTypeTypeSum      :: TypeSum n
         , errorTypeKinds        :: [Kind n] }
-        
+
         -- | A type sum that does not have effect or closure kind.
         | ErrorTypeSumKindInvalid
         { errorTypeCheckingSum  :: TypeSum n

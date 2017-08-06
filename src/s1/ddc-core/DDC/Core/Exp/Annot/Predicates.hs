@@ -1,4 +1,4 @@
-
+{-# OPTIONS_HADDOCK hide #-}
 -- | Simple predicates on core expressions.
 module DDC.Core.Exp.Annot.Predicates
         ( module DDC.Type.Exp.Simple.Predicates
@@ -52,7 +52,7 @@ isXCon xx
         _       -> False
 
 
--- | Check whether an expression is a `XVar` or an `XCon`, 
+-- | Check whether an expression is a `XVar` or an `XCon`,
 --   or some type or witness atom.
 isAtomX :: Exp a n -> Bool
 isAtomX xx

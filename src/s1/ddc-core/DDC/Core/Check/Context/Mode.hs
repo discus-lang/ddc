@@ -1,4 +1,4 @@
-
+{-# OPTIONS_HADDOCK hide #-}
 module DDC.Core.Check.Context.Mode
         (Mode (..))
 where
@@ -12,7 +12,7 @@ data Mode n
         -- | Reconstruct the type of the expression, requiring type annotations
         --   on parameters  as well as type applications to already be present.
         = Recon
-        
+
         -- | The ascending smoke of incense.
         --
         --   Synthesise the type of the expression, producing unification
@@ -21,7 +21,7 @@ data Mode n
         --   Any new unification variables introduced may be used to define the
         --   given existentials, so the need to be declared outside their scopes.
         --   If the list is empty we can add new variables to the inner most scope.
-        -- 
+        --
         | Synth [Exists n]
 
         -- | The descending tongue of flame.

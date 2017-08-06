@@ -1,4 +1,4 @@
-
+{-# OPTIONS_HADDOCK hide #-}
 -- | Parser for DDC build spec files.
 module DDC.Build.Spec.Parser
         ( parseBuildSpec
@@ -15,14 +15,14 @@ import qualified DDC.Core.Module        as C
 
 ---------------------------------------------------------------------------------------------------
 -- | Problems that can arise when parsing a build spec file.
-data Error 
+data Error
         -- | Empty Spec file.
         = ErrorEmpty
         { errorFilePath :: FilePath }
 
         -- | Parse error in Spec file.
         | ErrorParse
-        { errorFilePath :: FilePath 
+        { errorFilePath :: FilePath
         , errorLine     :: Int }
 
         -- | Required field is missing.
@@ -52,7 +52,7 @@ instance Pretty Error where
 type LineNumber = Int
 type StartCol   = Int
 
-type Parser a   = [(LineNumber, StartCol, String)]  
+type Parser a   = [(LineNumber, StartCol, String)]
                 -> Either Error a
 
 
@@ -99,7 +99,7 @@ pComponents path ((n, start, str) : rest)
 
         -- parse a library specification
         | str == "library"
-        , (lsLibrary, lsMore) 
+        , (lsLibrary, lsMore)
                 <- span (\(_, start', _) -> start' == 0 || start' > start) rest
         = do    fs      <- pLibraryFields path lsLibrary
                 more    <- pComponents    path lsMore
@@ -131,7 +131,7 @@ pLibraryFields path str
                 $ map C.readModuleName
                 $ words $ sTetraModules
 
-        return  $ SpecLibrary 
+        return  $ SpecLibrary
                 { specLibraryName          = sName
                 , specLibraryVersion       = sVersion
                 , specLibraryTetraModules  = msTetra
@@ -152,7 +152,7 @@ pExecutableFields path str
 
         let Just msTetra
                 = sequence $ map C.readModuleName
-                $ concat   $ maybeToList $ liftM words sTetraOther 
+                $ concat   $ maybeToList $ liftM words sTetraOther
 
         return  $ SpecExecutable
                 { specExecutableName       = sName
@@ -171,13 +171,13 @@ pFields path ((n, start, str) : rest)
         -- skip over blank lines
         | all (\c -> isSpace c || c == '\n') str
         = pFields path rest
-        
+
         -- parse a single field.
-        | (lsField, lsMore)      
+        | (lsField, lsMore)
                 <- span (\(_, start', _) -> start' == 0 || start' > start) rest
 
-        , (fieldName, ':' : fieldValue) 
-                <- span (\c -> c /= ':') 
+        , (fieldName, ':' : fieldValue)
+                <- span (\c -> c /= ':')
                 $  str ++ concat [ s | (_, _, s) <- lsField]
 
         = do    let f   =  (chomp fieldName, chomp fieldValue)
@@ -190,7 +190,7 @@ pFields path ((n, start, str) : rest)
 
 -- | Take a named field from this list of fields.
 takeField :: FilePath
-          -> String -> [(String, String)] 
+          -> String -> [(String, String)]
           -> Either Error (String, [(String, String)])
 
 takeField path name fs
@@ -200,9 +200,9 @@ takeField path name fs
 
 
 -- | Take a named field from this list of fields.
-takeFieldMaybe 
+takeFieldMaybe
         :: FilePath
-        -> String -> [(String, String)] 
+        -> String -> [(String, String)]
         -> (Maybe String, [(String, String)])
 
 takeFieldMaybe _path name fs
@@ -213,13 +213,13 @@ takeFieldMaybe _path name fs
 
 ---------------------------------------------------------------------------------------------------
 -- | Attach starting column number to these lines.
-attachCols 
-        :: [(LineNumber, String)] 
+attachCols
+        :: [(LineNumber, String)]
         -> [(LineNumber, StartCol, String)]
 
 attachCols lstrs
  = [ (ln, startCol 1 str, str) | (ln, str) <- lstrs ]
- where  startCol n ss  
+ where  startCol n ss
          = case ss of
                 []              -> 0
                 ' '  : ss'      -> startCol (n + 1) ss'

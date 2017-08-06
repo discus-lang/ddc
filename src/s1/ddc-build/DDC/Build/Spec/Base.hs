@@ -1,4 +1,4 @@
-
+{-# OPTIONS_HADDOCK hide #-}
 module DDC.Build.Spec.Base
         ( Spec          (..)
         , Component     (..)
@@ -29,10 +29,10 @@ data Component
         , specLibraryVersion            :: String
 
           -- | Tetra modules to build, in dependency order.
-        , specLibraryTetraModules       :: [ModuleName] 
+        , specLibraryTetraModules       :: [ModuleName]
 
           -- | Optional library meta-data.
-          --   These fields are for informational purposes and are not 
+          --   These fields are for informational purposes and are not
           --   nessesary to build the library itself.
         , specLibraryMeta               :: [(String, String)] }
 
@@ -45,10 +45,10 @@ data Component
         , specExecutableTetraMain       :: ModuleName
 
           -- | Tetra modules to build, in dependency order.
-        , specExecutableTetraOther      :: [ModuleName] 
+        , specExecutableTetraOther      :: [ModuleName]
 
           -- | Optional library meta-data.
-          --   These fields are for informational purposes and are not 
+          --   These fields are for informational purposes and are not
           --   nessesary to build the executable itself.
         , specExecutableMeta            :: [(String, String)] }
         deriving Show
@@ -60,7 +60,7 @@ data Component
 --   field is nessesary or optional.
 specFieldsLibrary :: [(String, Bool)]
 specFieldsLibrary
- =  [ (str, True)  | str <- 
+ =  [ (str, True)  | str <-
         [ "name"
         , "version"
         , "tetra-modules" ]]

@@ -1,4 +1,4 @@
-
+{-# OPTIONS_HADDOCK hide #-}
 -- | Simple predicates on core expressions.
 module DDC.Core.Exp.Generic.Predicates
         ( module DDC.Type.Exp.Simple.Predicates
@@ -110,7 +110,7 @@ isXLet xx
  = case xx of
         XLet{}  -> True
         _       -> False
-        
+
 
 -- Patterns -------------------------------------------------------------------
 -- | Check whether an alternative is a `PDefault`.

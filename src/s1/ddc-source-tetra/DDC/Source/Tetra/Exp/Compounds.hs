@@ -1,3 +1,4 @@
+{-# OPTIONS_HADDOCK hide #-}
 {-# LANGUAGE TypeFamilies #-}
 
 -- | Utilities for constructing and destructing Source Tetra expressions.
@@ -86,7 +87,7 @@ import DDC.Core.Exp.Annot
 --        , takeXWitness
         , takeWAppsAsList
         , takePrimWiConApps)
-        
+
 
 -- Binds ----------------------------------------------------------------------
 -- | Take the `GBind` of a `GBindMT`
@@ -140,7 +141,7 @@ takeAnnotOfArg arg
  = case arg of
         RType _             -> Nothing
         RTerm x             -> takeAnnotOfExp x
-        RWitness  _         -> Nothing 
+        RWitness  _         -> Nothing
         RImplicit arg'      -> takeAnnotOfArg arg'
 
 
@@ -151,7 +152,7 @@ makeXApps t1 ts     = foldl XApp t1 ts
 
 
 -- | Build sequence of applications.
---   Similar to `xApps` but also takes list of annotations for 
+--   Similar to `xApps` but also takes list of annotations for
 --   the `XApp` constructors.
 makeXAppsWithAnnots :: GExp l -> [(GArg l, Maybe (GXAnnot l))] -> GExp l
 makeXAppsWithAnnots f xas
@@ -185,10 +186,10 @@ takeXApps1 x1 a2
 takeXAppsAsList  :: GExp l -> (GExp l, [GArg l])
 takeXAppsAsList xx
  = case xx of
-        XAnnot _ x      
+        XAnnot _ x
           -> takeXAppsAsList x
 
-        XApp x1 a2      
+        XApp x1 a2
           -> let (f', args') = takeXAppsAsList x1
              in  (f', args' ++ [a2])
 
@@ -213,7 +214,7 @@ takeXAppsWithAnnots xx
 
 -- | Flatten an application of a primop into the variable
 --   and its arguments.
---   
+--
 --   Returns `Nothing` if the expression isn't a primop application.
 takeXFragApps :: GExp l -> Maybe (GXFrag l, [GArg l])
 takeXFragApps xx
@@ -222,7 +223,7 @@ takeXFragApps xx
         _               -> Nothing
 
 -- | Flatten an application of a data constructor into the constructor
---   and its arguments. 
+--   and its arguments.
 --
 --   Returns `Nothing` if the expression isn't a constructor application.
 takeXConApps :: GExp l -> Maybe (DaCon (GXBoundCon l) (GType l), [GArg l])

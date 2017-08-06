@@ -1,3 +1,4 @@
+{-# OPTIONS_HADDOCK hide #-}
 
 module DDC.Source.Tetra.Exp.Bind
         ( Name
@@ -24,7 +25,7 @@ data Bind
 
 
 -- | Bound occurrence of a variable.
-data Bound 
+data Bound
         -- A named variable.
         = UName !Text
 

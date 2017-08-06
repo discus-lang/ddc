@@ -1,4 +1,4 @@
-
+{-# OPTIONS_HADDOCK hide #-}
 -- | `NFData` instances for Core AST types.
 module DDC.Core.Exp.Annot.NFData where
 import DDC.Core.Exp.Annot.Exp
@@ -9,7 +9,7 @@ instance (NFData a, NFData n) => NFData (Exp a n) where
  rnf xx
   = case xx of
         XVar  a u               -> rnf a `seq` rnf u
-        XPrim a _               -> rnf a 
+        XPrim a _               -> rnf a
         XCon  a dc              -> rnf a `seq` rnf dc
         XAbs  a b x             -> rnf a `seq` rnf b   `seq` rnf x
         XApp  a x1 x2           -> rnf a `seq` rnf x1  `seq` rnf x2

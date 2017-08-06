@@ -1,3 +1,4 @@
+{-# OPTIONS_HADDOCK hide #-}
 {-# LANGUAGE UndecidableInstances #-}
 module DDC.Source.Tetra.Exp.NFData where
 import DDC.Source.Tetra.Exp.Generic

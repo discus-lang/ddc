@@ -1,3 +1,4 @@
+{-# OPTIONS_HADDOCK hide #-}
 {-# LANGUAGE GADTs #-}
 module DDC.Build.Pipeline.Text
         ( PipeText (..)
@@ -23,7 +24,7 @@ import Control.DeepSeq
 
 -- | Process program text.
 data PipeText n (err :: * -> *) where
-  PipeTextLoadCore 
+  PipeTextLoadCore
         :: (Ord n, Show n, Pretty n, Pretty (err (C.AnTEC SP.SourcePos n)))
         => !(Fragment n err)
         -> !(C.Mode n)
@@ -43,9 +44,9 @@ pipeText
         -> PipeText n err
         -> IO [Error]
 
-pipeText !srcName !srcLine !str 
+pipeText !srcName !srcLine !str
          !(PipeTextLoadCore !fragment !mode !sink !pipes)
- = do  
+ = do
         result  <- runExceptT
                 $  BC.coreLoad "TextLoadCore" fragment mode srcName srcLine str
                 $  BC.ConfigCoreLoad

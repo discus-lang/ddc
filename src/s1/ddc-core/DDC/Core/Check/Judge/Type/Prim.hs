@@ -1,7 +1,7 @@
-
+{-# OPTIONS_HADDOCK hide #-}
 module DDC.Core.Check.Judge.Type.Prim
         ( checkPrim
-        , shapeOfPrim) 
+        , shapeOfPrim)
 where
 import DDC.Core.Check.Judge.Type.Base
 import qualified DDC.Type.Sum           as Sum
@@ -29,7 +29,7 @@ shapeOfPrim p
          -> tForall kData
          $  \tVal -> tVal
 
-        PProject _     
+        PProject _
          -> tForalls [kData, kData]
          $  \[tObj, tResult] -> tObj `tFun` tResult
 

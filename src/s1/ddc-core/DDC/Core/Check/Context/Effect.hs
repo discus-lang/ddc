@@ -1,4 +1,4 @@
-
+{-# OPTIONS_HADDOCK hide #-}
 module DDC.Core.Check.Context.Effect
         (effectSupported)
 where
@@ -14,17 +14,17 @@ import qualified Data.Map.Strict        as Map
 -- | Check whether this effect is supported by the given context.
 --   This is used when effects are treated as capabilities.
 --
---   The overall function can be passed a compound effect, 
---    it returns `Nothing` if the effect is supported, 
+--   The overall function can be passed a compound effect,
+--    it returns `Nothing` if the effect is supported,
 --    or `Just e`, where `e` is some unsuported atomic effect.
 --
-effectSupported 
+effectSupported
         :: (Ord n, Show n)
-        => Context n 
-        -> Effect n 
+        => Context n
+        -> Effect n
         -> Maybe (Effect n)
 
-effectSupported ctx eff 
+effectSupported ctx eff
         -- Check that all the components of a sum are supported.
         | TSum ts       <- eff
         = listToMaybe $ concat [ maybeToList $ effectSupported ctx e
@@ -45,10 +45,10 @@ effectSupported ctx eff
         | TApp (TCon (TyConSpec tc)) _t2 <- eff
         , elem tc [TcConRead, TcConWrite, TcConAlloc]
 
-        ,   -- Capability in local environment. 
-            (any  (\b -> equivT (contextEnvT ctx) (typeOfBind b) eff) 
+        ,   -- Capability in local environment.
+            (any  (\b -> equivT (contextEnvT ctx) (typeOfBind b) eff)
                   [ b | ElemType b <- contextElems ctx ] )
-   
+
             -- Capability imported at top level.
          || (any  (\t -> equivT (contextEnvT ctx) t eff)
                   (Map.elems $ EnvT.envtCapabilities $ contextEnvT ctx))

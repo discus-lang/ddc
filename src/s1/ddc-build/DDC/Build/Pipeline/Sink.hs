@@ -1,4 +1,4 @@
-
+{-# OPTIONS_HADDOCK hide #-}
 module DDC.Build.Pipeline.Sink
         ( Sink(..)
         , pipeSink)

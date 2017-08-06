@@ -1,3 +1,4 @@
+{-# OPTIONS_HADDOCK hide #-}
 {-# LANGUAGE TypeFamilies #-}
 module DDC.Source.Tetra.Exp.Source
         ( -- * Language
@@ -35,7 +36,7 @@ module DDC.Source.Tetra.Exp.Source
         , pattern TFunExplicit
         , pattern TFunImplicit
 
-          -- ** Primitives 
+          -- ** Primitives
         , PrimType       (..)
         , PrimTyCon      (..)
         , PrimTyConTetra (..)
@@ -103,7 +104,7 @@ import DDC.Data.Pretty
 
 -- Language -------------------------------------------------------------------
 -- | Type index for Source Tetra Language.
-data Source     
+data Source
         = Source
         deriving Show
 

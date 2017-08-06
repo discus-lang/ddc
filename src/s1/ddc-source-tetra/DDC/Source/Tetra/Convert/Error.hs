@@ -1,3 +1,4 @@
+{-# OPTIONS_HADDOCK hide #-}
 {-# LANGUAGE UndecidableInstances #-}
 module DDC.Source.Tetra.Convert.Error
         (ErrorConvert (..))

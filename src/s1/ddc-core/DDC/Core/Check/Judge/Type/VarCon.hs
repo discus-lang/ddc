@@ -1,4 +1,4 @@
-
+{-# OPTIONS_HADDOCK hide #-}
 module DDC.Core.Check.Judge.Type.VarCon
         (checkVarCon)
 where
@@ -65,7 +65,7 @@ checkVarCon !table !ctx mode demand xx@(XVar a u)
 
 -- constructors ---------------------------------
 -- Recon or Synth the type of a constructor.
-checkVarCon !table !ctx mode@Recon _demand xx@(XCon a dc) 
+checkVarCon !table !ctx mode@Recon _demand xx@(XCon a dc)
  = do   let config      = tableConfig table
 
         -- Lookup the type of the constructor from the environment.
@@ -93,7 +93,7 @@ checkVarCon !table !ctx (Check tExpect) demand xx@(XCon a _)
 
 
 -- Synthesise the type of a data constructor.
-checkVarCon !table !ctx mode@(Synth {}) _demand xx@(XCon a dc) 
+checkVarCon !table !ctx mode@(Synth {}) _demand xx@(XCon a dc)
  = do
         let config      = tableConfig table
 
@@ -136,7 +136,7 @@ checkDaConType config ctx a dc
           -> do let Just t   = takeTypeOfDaCon dc
                 return t
 
-         DaConPrim{} 
+         DaConPrim{}
           -> return $ daConType dc
 
          DaConBound n
@@ -146,4 +146,4 @@ checkDaConType config ctx a dc
 
           | otherwise
           -> throw  $ ErrorUndefinedCtor a $ XCon a dc
- 
+

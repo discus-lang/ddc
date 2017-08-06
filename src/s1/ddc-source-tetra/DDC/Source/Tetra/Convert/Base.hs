@@ -1,4 +1,4 @@
-
+{-# OPTIONS_HADDOCK hide #-}
 module DDC.Source.Tetra.Convert.Base
         ( ConvertM
         , SP

@@ -1,4 +1,4 @@
-
+{-# OPTIONS_HADDOCK hide #-}
 module DDC.Source.Tetra.Convert.Witness
         ( toCoreW
         , toCoreWC)
@@ -16,7 +16,7 @@ import qualified DDC.Core.Exp.Annot                     as C
 toCoreW :: SP -> S.Witness -> ConvertM a (C.Witness SP C.Name)
 toCoreW a ww
  = case ww of
-        S.WAnnot a' w   
+        S.WAnnot a' w
          -> toCoreW a' w
 
         S.WVar  u
@@ -36,6 +36,6 @@ toCoreWC :: S.WiCon -> ConvertM a (C.WiCon C.Name)
 toCoreWC wc
  = case wc of
         S.WiConBound u t
-         -> C.WiConBound <$> toCoreU u 
+         -> C.WiConBound <$> toCoreU u
                          <*> toCoreT UniverseSpec t
 

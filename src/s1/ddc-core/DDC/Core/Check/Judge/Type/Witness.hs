@@ -1,4 +1,4 @@
-
+{-# OPTIONS_HADDOCK hide #-}
 module DDC.Core.Check.Judge.Type.Witness
 --        (checkWit)
 where
@@ -8,7 +8,7 @@ where
 
 {-
 checkWit :: Checker a n
-checkWit !table !ctx _mode _demand 
+checkWit !table !ctx _mode _demand
         (XWitness a w1)
  = do   let config      = tableConfig table
 

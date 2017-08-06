@@ -1,3 +1,4 @@
+{-# OPTIONS_HADDOCK hide #-}
 {-# LANGUAGE GADTs #-}
 module DDC.Build.Pipeline.Core
         ( PipeCore (..)

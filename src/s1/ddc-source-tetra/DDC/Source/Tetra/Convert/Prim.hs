@@ -1,4 +1,4 @@
-
+{-# OPTIONS_HADDOCK hide #-}
 module DDC.Source.Tetra.Convert.Prim
         ( toCoreTyConTetra
         , toCorePrimVal
@@ -34,7 +34,7 @@ toCorePrimVal pv
 -- | Convert a primitive literal to a core name.
 toCorePrimLit :: S.PrimLit -> C.Name
 toCorePrimLit pl
- = case pl of       
+ = case pl of
         S.PrimLitBool    x      -> C.NameLitBool    x
         S.PrimLitNat     x      -> C.NameLitNat     x
         S.PrimLitInt     x      -> C.NameLitInt     x

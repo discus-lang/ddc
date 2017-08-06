@@ -1,3 +1,4 @@
+{-# OPTIONS_HADDOCK hide #-}
 
 -- | Simple predicates on Source Tetra things.
 module DDC.Source.Tetra.Exp.Predicates
@@ -41,7 +42,7 @@ isXCon xx
         _       -> False
 
 
--- | Check whether an expression is a `XVar` or an `XCon`, 
+-- | Check whether an expression is a `XVar` or an `XCon`,
 --   or some type or witness atom.
 isAtomX :: GExp l -> Bool
 isAtomX xx
@@ -85,7 +86,7 @@ isXLet xx
  = case xx of
         XLet{}  -> True
         _       -> False
-        
+
 
 -- Patterns -------------------------------------------------------------------
 -- | Check whether a pattern is a `PDefault`.

@@ -1,3 +1,4 @@
+{-# OPTIONS_HADDOCK hide #-}
 {-# LANGUAGE TypeFamilies, UndecidableInstances #-}
 module DDC.Core.Exp.Generic.Pretty where
 import DDC.Core.Exp.Generic.Predicates
@@ -32,7 +33,7 @@ instance PrettyLanguage l => Pretty (GExp l) where
 
           -- | Mode to use when pretty printing alternatives.
         , modeExpAlt            :: PrettyMode (GAlt  l)
-                
+
           -- | Use 'letcase' for single alternative case expressions.
         , modeExpUseLetCase     :: Bool }
 
@@ -55,10 +56,10 @@ instance PrettyLanguage l => Pretty (GExp l) where
         XVar   u        -> ppr u
         XCon   dc       -> ppr dc
         XPrim  p        -> ppr p
-        
+
         XAbs (MType b) xBody
          -> pprParen' (d > 1)
-                $  text "/\\" 
+                $  text "/\\"
                 <> ppr b
                 <> (if       isXLAM    xBody then empty
                      else if isXLam    xBody then line <> space
@@ -75,8 +76,8 @@ instance PrettyLanguage l => Pretty (GExp l) where
 
         XApp x1 a2
          -> pprParen' (d > 10)
-         $  pprModePrec mode 10 x1 
-                <> nest 4 (breakWhen (not $ isSimpleR a2) 
+         $  pprModePrec mode 10 x1
+                <> nest 4 (breakWhen (not $ isSimpleR a2)
                           <> pprModePrec (modeExpArg mode) 11 a2)
 
         XLet lts x
@@ -90,17 +91,17 @@ instance PrettyLanguage l => Pretty (GExp l) where
         XCase x1 [AAlt p x2]
          | modeExpUseLetCase mode
          ->  pprParen' (d > 2)
-         $   text "letcase" <+> ppr p 
+         $   text "letcase" <+> ppr p
                 <+> nest 2 (breakWhen (not $ isSimpleX x1)
                             <> text "=" <+> align (pprX x1))
                 <+> text "in"
          <$> pprX x2
 
         XCase x alts
-         -> pprParen' (d > 2) 
+         -> pprParen' (d > 2)
          $  (nest 2 $ text "case" <+> ppr x <+> text "of" <+> lbrace <> line
                 <> (vcat $ punctuate semi $ map pprAlt alts))
-         <> line 
+         <> line
          <> rbrace
 
         XCast CastBox x
@@ -124,7 +125,7 @@ instance PrettyLanguage l => Pretty (GArg l) where
         = PrettyModeArg
         { modeArgExp            :: PrettyMode (GExp l) }
 
- pprModePrec mode n aa 
+ pprModePrec mode n aa
   = case aa of
         RType    t      -> text "[" <> ppr t <> text "]"
         RExp     x      -> pprModePrec (modeArgExp mode) n  x
@@ -163,7 +164,7 @@ instance PrettyLanguage l => Pretty (GCast l) where
         CastBox                 -> text "box"
         CastRun                 -> text "run"
 
-        CastPrim pp             
+        CastPrim pp
          -> case pp of
                 CastPrimProject -> text "project#"
                 CastPrimShuffle -> text "shuffle#"
@@ -193,10 +194,10 @@ instance PrettyLanguage l => Pretty (GLets l) where
                  =  ppr b
                  <> nest 2 (  breakWhen (not $ isSimpleX x)
                            <> text "=" <+> align (pprX x))
-        
+
            in   (nest 2 $ text "letrec"
-                  <+> lbrace 
-                  <>  (  line 
+                  <+> lbrace
+                  <>  (  line
                       <> (vcat $ punctuate (semi <> line)
                                $ map pprLetRecBind bxs)))
                 <$> rbrace
@@ -224,7 +225,7 @@ instance PrettyLanguage l => Pretty (GLets l) where
                 <+> (hcat $ punctuate space $ map ppr bs)
                 <+> text "with"
                 <+> braces (cat $ punctuate (text "; ") $ map ppr bws)
-        
+
 
 -- Witness --------------------------------------------------------------------
 instance PrettyLanguage l => Pretty (GWitness l) where
@@ -250,8 +251,8 @@ instance PrettyLanguage l => Pretty (DaCon l (Type l)) where
         DaConUnit       -> text "()"
 
         DaConRecord ns
-         -> text "(" 
-         <> (hcat $ punctuate (text ",") $ map (text . Text.unpack) ns) 
+         -> text "("
+         <> (hcat $ punctuate (text ",") $ map (text . Text.unpack) ns)
          <> text ")"
 
         DaConPrim  n _  -> ppr n

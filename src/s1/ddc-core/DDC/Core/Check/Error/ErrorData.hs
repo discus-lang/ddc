@@ -1,4 +1,4 @@
-
+{-# OPTIONS_HADDOCK hide #-}
 module DDC.Core.Check.Error.ErrorData
         (ErrorData(..))
 where
@@ -8,7 +8,7 @@ import DDC.Core.Exp
 -- | Things that can go wrong when checking data type definitions.
 data ErrorData n
         -- | A duplicate data type constructor name.
-        = ErrorDataDupTypeName 
+        = ErrorDataDupTypeName
         { errorDataDupTypeName          :: n }
 
         -- | A duplicate data constructor name.

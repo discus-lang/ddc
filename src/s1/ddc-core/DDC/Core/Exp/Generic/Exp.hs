@@ -1,3 +1,4 @@
+{-# OPTIONS_HADDOCK hide #-}
 {-# LANGUAGE TypeFamilies, UndecidableInstances #-}
 
 -- | Generic term expression representation.
@@ -13,7 +14,7 @@ import qualified DDC.Type.Exp   as T
 --   and primitives for that language.
 --
 type family GAnnot l
-type family GBind  l    
+type family GBind  l
 type family GBound l
 type family GPrim  l
 
@@ -101,7 +102,7 @@ data GCast l
         -- | Purify the effect of an expression.
         | CastPurify         !(GWitness l)
 
-        -- | Box up a computation, suspending its evaluation and capturing 
+        -- | Box up a computation, suspending its evaluation and capturing
         --   its effects in the S computaiton type.
         | CastBox
 
@@ -113,21 +114,21 @@ data GCast l
 
 
 -- | Primitive cast operators.
---   Each instance can be assigned a regular function type, 
+--   Each instance can be assigned a regular function type,
 --   but the result type depends polytypically on the parameter types.
-data GCastPrim 
+data GCastPrim
         -- | Project out a single field from a record.
-        --     project# (x1,x2,x3,x4)# (x3)# 
+        --     project# (x1,x2,x3,x4)# (x3)#
         --      : [a b c d: Data]. (x1,x2,x3,x4)# a b c d -> c
         = CastPrimProject
 
         -- | Shuffle fields in a record.
-        --     shuffle# (x1,x2,x3,x4)# (x1,x2,x4)#  
+        --     shuffle# (x1,x2,x3,x4)# (x1,x2,x4)#
         --      : [a b c d: Data]. (x1,x2,x3,x4)# a b c d -> (x1,x2,x4)# a b d
         | CastPrimShuffle
 
         -- | Combine two records into a compound one.
-        --     combine# (x1,x3)# (x2,x4)# (x1,x2,x3,x4)# 
+        --     combine# (x1,x3)# (x2,x4)# (x1,x2,x3,x4)#
         --      : [a b c d: Data]. (x1,x3)# a b -> (x2,x4)# c d -> (x1,x2,x3,x4)# a c b d
         | CastPrimCombine
 

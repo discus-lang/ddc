@@ -1,3 +1,4 @@
+{-# OPTIONS_HADDOCK hide #-}
 {-# LANGUAGE TypeFamilies, UndecidableInstances #-}
 
 -- | Abstract syntax for Tetra Source expressions.

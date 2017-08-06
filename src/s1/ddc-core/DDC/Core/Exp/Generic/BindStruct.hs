@@ -1,3 +1,4 @@
+{-# OPTIONS_HADDOCK hide #-}
 {-# LANGUAGE TypeFamilies #-}
 
 module DDC.Core.Exp.Generic.BindStruct where
@@ -27,17 +28,17 @@ instance (GBind l ~ T.Bind l, GBound l ~ T.Bound l)
         XApp x1 a2              -> slurpBindTree x1 ++ slurpBindTree a2
 
         XAbs (MType b) x        -> [bindDefT BindLAM [b] [x]]
-        XAbs (MTerm b) x        -> [bindDefX BindLam [b] [x]]      
+        XAbs (MTerm b) x        -> [bindDefX BindLam [b] [x]]
 
         XLet (LLet b x1) x2
          -> slurpBindTree x1
          ++ [bindDefX BindLet [b] [x2]]
 
         XLet (LRec bxs) x2
-         -> [bindDefX BindLetRec 
-                     (map fst bxs) 
+         -> [bindDefX BindLetRec
+                     (map fst bxs)
                      (map snd bxs ++ [x2])]
-        
+
         XLet (LPrivate b mT bs) x2
          -> (concat $ fmap slurpBindTree $ maybeToList mT)
          ++ [ BindDef  BindLetRegions b

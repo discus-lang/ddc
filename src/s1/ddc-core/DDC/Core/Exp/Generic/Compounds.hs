@@ -1,3 +1,4 @@
+{-# OPTIONS_HADDOCK hide #-}
 {-# LANGUAGE TypeFamilies #-}
 
 -- | Utilities for constructing and destructing compound expressions.
@@ -130,7 +131,7 @@ takeXPrimApps xx
 
 
 -- | Flatten an application of a data constructor into the constructor itself
---   and its arguments, or `Nothing` if this is not an application of a 
+--   and its arguments, or `Nothing` if this is not an application of a
 --   data constructor.
 takeXConApps :: GExp l -> Maybe (DaCon l (Type l), [GArg l])
 takeXConApps xx

@@ -1,5 +1,5 @@
-
-module DDC.Core.Check.Context.Base 
+{-# OPTIONS_HADDOCK hide #-}
+module DDC.Core.Check.Context.Base
         ( Context (..)
 
           -- * Construction
@@ -67,12 +67,12 @@ import Prelude                          hiding ((<$>))
 
 -- Context --------------------------------------------------------------------
 -- | The type checker context.
--- 
---   Holds a position counter and a stack of elements. 
+--
+--   Holds a position counter and a stack of elements.
 --   The top of the stack is at the front of the list.
 --
 data Context n
-        = Context 
+        = Context
         { -- | Top level environment for terms.
           contextEnvX           :: !(EnvX n)
 
@@ -80,14 +80,14 @@ data Context n
         , contextGenPos         :: !Int
 
           -- | Fresh name generator for existential variables.
-        , contextGenExists      :: !Int 
+        , contextGenExists      :: !Int
 
           -- | The current context stack.
-        , contextElems          :: ![Elem n] 
-        
+        , contextElems          :: ![Elem n]
+
           -- | Types of solved existentials.
           --   When solved constraints are popped from the main context stack
-          --   they are added to this map. The map is used to fill in type 
+          --   they are added to this map. The map is used to fill in type
           --   annotations after type inference proper. It's not used as part
           --   of the main algorithm.
         , contextSolved         :: IntMap (Type n) }
@@ -98,7 +98,7 @@ instance (Pretty n, Eq n) => Pretty (Context n) where
   =   text "Context "
   <$> text "  genPos    = " <> int genPos
   <$> text "  genExists = " <> int genExists
-  <$> indent 2 
+  <$> indent 2
         (vcat $ [padL 4 (int i)  <+> ppr l
                         | l <- reverse ls
                         | i <- [0..]])
@@ -108,11 +108,11 @@ instance (Pretty n, Eq n) => Pretty (Context n) where
 -- Construction ---------------------------------------------------------------
 -- | An empty context.
 emptyContext :: Context n
-emptyContext 
+emptyContext
         = Context
         { contextEnvX           = EnvX.empty
         , contextGenPos         = 0
-        , contextGenExists      = 0 
+        , contextGenExists      = 0
         , contextElems          = []
         , contextSolved         = IntMap.empty }
 
@@ -140,7 +140,7 @@ contextOfPrimEnvs
         -> Context n
 
 contextOfPrimEnvs kenv tenv defs
-        = emptyContext 
+        = emptyContext
         { contextEnvX = EnvX.fromPrimEnvs kenv tenv defs }
 
 
@@ -219,15 +219,15 @@ pushExistsBefore i (Exists n _) ctx
 
 pushExistsScope :: Exists n -> [Exists n] -> Context n -> Context n
 pushExistsScope i scope ctx
- = ctx { contextElems 
-                = go    (ElemExistsDecl i : contextElems ctx) 
+ = ctx { contextElems
+                = go    (ElemExistsDecl i : contextElems ctx)
                         []
-                        (contextElems ctx) 
+                        (contextElems ctx)
        }
- where  
+ where
         go cs' acc (e : es)
          | Just i' <- takeExistsOfElem e
-         , elem i' scope        
+         , elem i' scope
          = go (reverse acc ++ (e : ElemExistsDecl i : es)) (e : acc) es
 
          | otherwise
@@ -263,7 +263,7 @@ popToPos pos ctx
 
 
 -- Lookup ---------------------------------------------------------------------
--- | Given a bound level-0 (value) variable, lookup its type (level-1) 
+-- | Given a bound level-0 (value) variable, lookup its type (level-1)
 --   from the context.
 lookupType :: Eq n => Bound n -> Context n -> Maybe (Type n)
 lookupType u ctx
@@ -347,7 +347,7 @@ memberKindBind b ctx
 -- | Get the numeric location of an existential in the context stack,
 --   or Nothing if it's not there. Returned value is relative to the TOP
 --   of the stack, so the top element has location 0.
-locationOfExists 
+locationOfExists
         :: Exists n
         -> Context n
         -> Maybe Int
@@ -355,7 +355,7 @@ locationOfExists
 locationOfExists x ctx
  = go 0 (contextElems ctx)
  where  go !_ix []      = Nothing
-        
+
         go !ix (ElemExistsDecl x'   : moar)
          | x == x'      = Just ix
          | otherwise    = go (ix + 1) moar
@@ -371,17 +371,17 @@ locationOfExists x ctx
 -- | Update (solve) an existential in the context stack.
 --
 --   If the existential is not part of the context then `Nothing`.
-updateExists 
+updateExists
         :: [Exists n]   -- ^ Other existential declarations to  add before the
                         --   updated one.
         -> Exists n     -- ^ Existential to update.
         -> Type n       -- ^ New monotype.
-        -> Context n 
+        -> Context n
         -> Maybe (Context n)
 
 updateExists isMore iEx@(Exists iEx' _) tEx ctx
  = case go $ contextElems ctx of
-    Just elems'     
+    Just elems'
      -> Just $ ctx { contextElems  = elems'
                    , contextSolved = IntMap.insert iEx' tEx (contextSolved ctx) }
     Nothing -> Nothing
@@ -391,15 +391,15 @@ updateExists isMore iEx@(Exists iEx' _) tEx ctx
                 l@ElemPos{}     : ls
                  | Just ls'     <- go ls  -> Just (l : ls')
 
-                l@ElemKind{}    : ls   
+                l@ElemKind{}    : ls
                  | Just ls'     <- go ls  -> Just (l : ls')
 
                 l@ElemType{}    : ls
                  | Just ls'     <- go ls  -> Just (l : ls')
 
                 l@(ElemExistsDecl i) : ls
-                 | i == iEx             
-                 -> let es  =  ElemExistsEq i tEx 
+                 | i == iEx
+                 -> let es  =  ElemExistsEq i tEx
                             : [ElemExistsDecl n' | n' <- isMore]
                     in  Just $ es ++ ls
 

@@ -1,4 +1,4 @@
-
+{-# OPTIONS_HADDOCK hide #-}
 module DDC.Core.Check.Context.Elem
         ( -- * Positions in the context.
           Pos    (..)

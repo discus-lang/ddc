@@ -1,10 +1,10 @@
-
+{-# OPTIONS_HADDOCK hide #-}
 module DDC.Core.Check.Error.ErrorDataMessage where
 import DDC.Core.Check.Error.ErrorData
 import DDC.Data.Pretty
 
 
-instance (Eq n, Show n, Pretty n) 
+instance (Eq n, Show n, Pretty n)
        => Pretty (ErrorData n) where
  ppr = ppr'
 

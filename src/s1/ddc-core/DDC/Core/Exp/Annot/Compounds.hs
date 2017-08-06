@@ -1,4 +1,4 @@
-
+{-# OPTIONS_HADDOCK hide #-}
 -- | Utilities for constructing and destructing compound expressions.
 --
 --   For the annotated version of the AST.
@@ -218,10 +218,10 @@ takeXLamParamTVB xx
          (bs, body)     -> Just (bs, body)
 
 
--- | Given the type of an abstraction, 
+-- | Given the type of an abstraction,
 --   determine how the abstraction parameterises its body.
-splitParamOfType 
-        :: Type n 
+splitParamOfType
+        :: Type n
         -> Maybe (ParamSort, ParamMode, Bind n, Type n)
 
 splitParamOfType tt
@@ -249,18 +249,18 @@ splitParamOfType tt
 --   return type.
 makeTFunParams :: [Param n] -> Type n -> Type n
 makeTFunParams msParam tResult
- = tFuns' msParam 
+ = tFuns' msParam
  where
-        tFuns' []       
+        tFuns' []
          = tResult
 
-        tFuns' (m : ms) 
+        tFuns' (m : ms)
          = case m of
-                MType b 
+                MType b
                  ->  TForall b (tFuns' ms)
 
-                MTerm b 
-                 -> (TCon $ TyConSpec TcConFunExplicit) 
+                MTerm b
+                 -> (TCon $ TyConSpec TcConFunExplicit)
                         `tApps` [typeOfBind b, tFuns' ms]
 
                 MImplicit b
@@ -298,7 +298,7 @@ takeXApps xx
 takeXAppsAsList :: Exp a n -> (Exp a n, [Arg a n])
 takeXAppsAsList xx
  = case xx of
-        XApp _ x1 x2  
+        XApp _ x1 x2
          -> let (f', args') = takeXAppsAsList x1
             in  (f', args' ++ [x2])
 
@@ -400,7 +400,7 @@ takeExpFromArg aa
         RImplicit a     -> takeExpFromArg a
         _               -> Nothing
 
- 
+
 -- | Take any expression arguments
 takeExpsFromArgs :: [Arg a n] -> [Exp a n]
 takeExpsFromArgs
