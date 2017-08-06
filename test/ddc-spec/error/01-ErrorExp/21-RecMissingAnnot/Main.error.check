@@ -1,4 +1,6 @@
 Error in transformed module.
   in stage CoreLoad
-  in pipe  PipeCoreCheck/Complies
-  Unsupported feature: MetaVariables
+  in pipe  PipeCoreCheck/Check
+  test/ddc-spec/error/01-ErrorExp/21-RecMissingAnnot/Main.dcs:4:18
+  Ambigous type
+  

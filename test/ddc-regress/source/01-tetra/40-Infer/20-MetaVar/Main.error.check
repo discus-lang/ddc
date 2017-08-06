@@ -1,4 +1,6 @@
 Error in transformed module.
   in stage SourceLoadText
-  in pipe  PipeCoreCheck/Complies
-  Unsupported feature: MetaVariables
+  in pipe  PipeCoreCheck/Check
+  <top level>:1:1
+  Ambigous type
+  

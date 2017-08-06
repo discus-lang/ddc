@@ -12,7 +12,7 @@ import foreign c value
         ddcInit                 : Nat# -> Unit
         primShowInt             : [r: Region]. Int# -> Ptr# r Obj
         primStdoutPutVector     : [r: Region]. Ptr# r Obj -> Void#
-        primStdoutPutTextLit    : [r: Region]. TextLit#   -> Void#
+        primStdoutPutTextLit    : TextLit#   -> Void#
 
 with letrec
 
@@ -82,7 +82,7 @@ mulWord32 [r1 r2 r3: Region] (x: Ptr# r1 Obj) (y: Ptr# r2 Obj): Ptr# r3 Obj
 
 
 -- | Boxed factorial function.
-fac [r1 r2: Region] (x: Ptr# r1 Obj): Ptr# r2 Obj
+fac [r1: Region] (x: Ptr# r1 Obj): Ptr# r1 Obj
  = do   x2      = unboxWord32 x
         cc      = eq# x2 0w32#
         case cc of
@@ -91,8 +91,8 @@ fac [r1 r2: Region] (x: Ptr# r1 Obj): Ptr# r2 Obj
                 return# r
 
          False#
-          -> do n2      = boxWord32 1w32#
-                n3      = subWord32 x n2
+          -> do n2      = boxWord32 [r1] 1w32#
+                n3      = subWord32 [r1] [r1] [r1] x n2
                 n4      = fac n3
                 n5      = mulWord32 x n4
                 return# n5
@@ -104,11 +104,11 @@ main [r1: Region] (argc: Nat#) (argv: Ptr# r1 Word8#): Int#
         ddcInit 4096#
 
         -- Apply the factorial function.
-        x2      = fac (boxWord32 10w32#)
+        x2      = fac (boxWord32 [r1] 10w32#)
 
         -- Print out the result.
         x2u     = unboxWord32 x2
-        str     = primShowInt (truncate# [Int#] [Word32#] x2u)
+        str     = primShowInt [r1] (truncate# [Int#] [Word32#] x2u)
         primStdoutPutVector str
         primStdoutPutTextLit "\n"#
 

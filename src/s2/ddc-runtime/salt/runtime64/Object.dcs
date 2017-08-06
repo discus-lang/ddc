@@ -190,7 +190,7 @@ ddcFormatOfObject [r : Region] (obj : Ptr# r Obj) : Nat#
                   0#
 
 
-ddcFormatOfObject_arg [r : Region] (formatField : Word8#) : Nat#
+ddcFormatOfObject_arg (formatField : Word8#) : Nat#
  = do
         case band# formatField 0b11110000w8# of
           0b00010000w8# -> 2# -- Thunk
@@ -440,7 +440,7 @@ ddcCopyThunk
  = case ge# index len of
         True#   -> dst
         False#
-         -> do  ptr     = ddcGetThunk src index
+         -> do  ptr     = ddcGetThunk [rSrc] [rSrc] src index
                 ddcSetThunk dst 0#  index ptr
                 ddcCopyThunk src dst (add# index 1#) len
 

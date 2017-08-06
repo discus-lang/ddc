@@ -11,7 +11,7 @@ export main  : [r1: Region]. Int#
 -- Primitive show functions are defined in the runtime system.
 import foreign c value
         ddcInit        : Nat# -> Unit
-        primStdoutPutTextLit : [r: Region]. TextLit#     -> Void#
+        primStdoutPutTextLit : TextLit#     -> Void#
 
 with letrec
 
