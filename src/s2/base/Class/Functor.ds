@@ -12,12 +12,8 @@ data Functor (f: Data -> Data) where
 
 
 -- | Apply a function to values of type 'a' in the input collection.
--- fmap    : {@f: Data -> Data} -> {@a b: Data}
---         -> Functor f ~> (a -> b) -> f a -> f b
-
 fmap    {@f: Data -> Data} {@a b: Data}
         {(Functor fmap') : Functor f}
         (f: a -> b)
         (x: f a)
         = fmap' f x
-
