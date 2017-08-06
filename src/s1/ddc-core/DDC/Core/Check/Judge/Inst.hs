@@ -1,35 +1,41 @@
 
 module DDC.Core.Check.Judge.Inst
-        (makeInst)
+        ( makeInstL
+        , makeInstR)
 where
 import DDC.Core.Check.Base
 
 
--- | Make the left type an instantiation of the right type,
---   or throw the provided error if this is not possible.
-makeInst :: (Eq n, Ord n, Pretty n)
-        => Config n
-        -> a
-        -> Context n
-        -> Type n
-        -> Type n
-        -> Error a n
+---------------------------------------------------------------------------------------------------
+-- | Instantiate an existential so it becomes a subtype of the given type.
+makeInstL
+        :: (Eq n, Ord n, Pretty n)
+        => Config n     -- ^ Checker configuration.
+        -> a            -- ^ Annotation on the AST node being checker, for error reporting.
+        -> Context n    -- ^ Checker context.
+        -> Exists n     -- ^ Instantiate this existential...
+        -> Type n       -- ^   ... to be a subtype of this one.
+        -> Error a n    -- ^ Error to throw if the instantiation does not work.
         -> CheckM a n (Context n)
 
-makeInst !config !a !ctx0 !tL !tR !err
+makeInstL !config !a !ctx0 !iL !tR !err
 
  -- InstLReach
  --  Both types are existentials, and the left is bound earlier in the stack.
  --  CAREFUL: The returned location is relative to the top of the stack,
  --           hence we need lL > lR here.
- | Just iL <- takeExists tL,    Just lL <- locationOfExists iL ctx0
- , Just iR <- takeExists tR,    Just lR <- locationOfExists iR ctx0
- , lL > lR
- = do   let Just ctx1   = updateExists [] iR tL ctx0
+ | Just lL <- locationOfExists iL ctx0
+ , Just iR <- takeExists tR
+ , Just lR <- locationOfExists iR ctx0
+ = do
+        let Just ctx1
+                = if lL > lR
+                        then updateExists [] iR (typeOfExists iL) ctx0
+                        else updateExists [] iL (typeOfExists iR) ctx0
 
         ctrace  $ vcat
                 [ text "**  InstLReach"
-                , text "    LEFT:  " <> ppr tL
+                , text "    LEFT:  " <> ppr iL
                 , text "    RIGHT: " <> ppr tR
                 , indent 4 $ ppr ctx0
                 , indent 4 $ ppr ctx1
@@ -37,19 +43,13 @@ makeInst !config !a !ctx0 !tL !tR !err
 
         return ctx1
 
-
- -- InstRReach
- --  Both types are existentials, and the right is bound earlier in the stack.
- --  CAREFUL: The returned location is relative to the top of the stack,
- --           hence we need lR > lL here.
- | Just iL <- takeExists tL,    Just lL <- locationOfExists iL ctx0
- , Just iR <- takeExists tR,    Just lR <- locationOfExists iR ctx0
- , lR > lL
+ -- InstLSolve
+ | not $ isTExists tR
  = do   let Just ctx1   = updateExists [] iL tR ctx0
 
         ctrace  $ vcat
-                [ text "**  InstRReach"
-                , text "    LEFT:  " <> ppr tL
+                [ text "**  InstLSolve"
+                , text "    LEFT:  " <> ppr iL
                 , text "    RIGHT: " <> ppr tR
                 , indent 4 $ ppr ctx0
                 , indent 4 $ ppr ctx1
@@ -57,11 +57,9 @@ makeInst !config !a !ctx0 !tL !tR !err
 
         return ctx1
 
-
  -- InstLArr
  --  Left is an existential, right is a function arrow.
- | Just iL              <- takeExists tL
- , Just (tR1, tR2)      <- takeTFun tR
+ | Just (tR1, tR2)      <- takeTFun tR
  = do
         -- Make new existentials to match the function type and parameter.
         iL1     <- newExists kData
@@ -74,17 +72,17 @@ makeInst !config !a !ctx0 !tL !tR !err
         let Just ctx1   =  updateExists [iL2, iL1] iL (tFun tL1 tL2) ctx0
 
         -- Instantiate the parameter type.
-        ctx2    <- makeInst config a ctx1 tR1 tL1 err
+        ctx2    <- makeInstR config a ctx1 tR1 iL1 err
 
         -- Substitute into tR2
         tR2'    <- applyContext ctx2 tR2
 
         -- Instantiate the return type.
-        ctx3    <- makeInst config a ctx2 tL2 tR2' err
+        ctx3    <- makeInstL config a ctx2 iL2 tR2' err
 
         ctrace  $ vcat
                 [ text "**  InstLArr"
-                , text "    LEFT:  " <> ppr tL
+                , text "    LEFT:  " <> ppr iL
                 , text "    RIGHT: " <> ppr tR
                 , indent 4 $ ppr ctx0
                 , indent 4 $ ppr ctx3
@@ -93,26 +91,73 @@ makeInst !config !a !ctx0 !tL !tR !err
         return ctx3
 
 
- -- InstLSolve
- | Just iL      <- takeExists tL
- , not $ isTExists tR
- = do   let Just ctx1   = updateExists [] iL tR ctx0
+ -- Error
+ | otherwise
+ = do
+        ctrace  $ vcat
+                [ text "DDC.Core.Check.Exp.Inst.makeInstL: no match"
+                , text "  LEFT:  " <> ppr iL
+                , text "  RIGHT: " <> ppr tR
+                , indent 2 $ ppr ctx0
+                , empty ]
+
+        throw err
+
+
+---------------------------------------------------------------------------------------------------
+-- | Instantiate an existential so it becomes a supertype of the given type.
+makeInstR
+        :: (Eq n, Ord n, Pretty n)
+        => Config n     -- ^ Checker configuration.
+        -> a            -- ^ Annotation on the AST node being checker, for error reporting.
+        -> Context n    -- ^ Checker context.
+        -> Type n       -- ^ Use this type as a subtype
+        -> Exists n     --   .. to instantiate this existential.
+        -> Error a n    -- ^ Error to throw if the instantiation does not work.
+        -> CheckM a n (Context n)
+
+makeInstR !config !a !ctx0 !tL !iR !err
+
+ -- InstRReach
+ --  Both types are existentials, and the right is bound earlier in the stack.
+ --  CAREFUL: The returned location is relative to the top of the stack,
+ --           hence we need lR > lL here.
+ | Just iL <- takeExists tL
+ , Just lL <- locationOfExists iL ctx0
+ , Just lR <- locationOfExists iR ctx0
+ = do
+        let Just ctx1
+                = if lR > lL
+                        then updateExists [] iL (typeOfExists iR) ctx0
+                        else updateExists [] iR (typeOfExists iL) ctx0
 
         ctrace  $ vcat
-                [ text "**  InstLSolve"
+                [ text "**  InstRReach"
                 , text "    LEFT:  " <> ppr tL
-                , text "    RIGHT: " <> ppr tR
+                , text "    RIGHT: " <> ppr iR
                 , indent 4 $ ppr ctx0
                 , indent 4 $ ppr ctx1
                 , empty ]
 
         return ctx1
 
+ -- InstRSolve
+ | not $ isTExists tL
+ = do   let Just ctx1   = updateExists [] iR tL ctx0
+
+        ctrace  $ vcat
+                [ text "**  InstRSolve"
+                , text "    LEFT:  " <> ppr tL
+                , text "    RIGHT: " <> ppr iR
+                , indent 4 $ ppr ctx0
+                , indent 4 $ ppr ctx1
+                , empty ]
+
+        return ctx1
 
  -- InstRArr
  --  Left is an function arrow, and right is an existential.
- | Just iR              <- takeExists tR
- , Just (tL1, tL2)      <- takeTFun tL
+ | Just (tL1, tL2)      <- takeTFun tL
  = do
         -- Make new existentials to match the function type and parameter.
         iR1     <- newExists kData
@@ -125,48 +170,31 @@ makeInst !config !a !ctx0 !tL !tR !err
         let Just ctx1   =  updateExists [iR2, iR1] iR (tFun tR1 tR2) ctx0
 
         -- Instantiate the parameter type.
-        ctx2    <- makeInst config a ctx1 tR1 tL1 err
+        ctx2    <- makeInstL config a ctx1 iR1 tL1 err
 
         -- Substitute into tL2
         tL2'    <- applyContext ctx2 tL2
 
         -- Instantiate the return type.
-        ctx3    <- makeInst config a ctx2 tL2' tR2 err
+        ctx3    <- makeInstR config a ctx2 tL2' iR2 err
 
         ctrace  $ vcat
                 [ text "**  InstRArr"
                 , text "    LEFT:  " <> ppr tL
-                , text "    RIGHT: " <> ppr tR
+                , text "    RIGHT: " <> ppr iR
                 , indent 4 $ ppr ctx0
                 , indent 4 $ ppr ctx3
                 , empty ]
 
         return ctx3
 
-
- -- InstRSolve
- | Just iR      <- takeExists tR
- , not $ isTExists tL
- = do   let Just ctx1   = updateExists [] iR tL ctx0
-
-        ctrace  $ vcat
-                [ text "**  InstRSolve"
-                , text "    LEFT:  " <> ppr tL
-                , text "    RIGHT: " <> ppr tR
-                , indent 4 $ ppr ctx0
-                , indent 4 $ ppr ctx1
-                , empty ]
-
-        return ctx1
-
-
  -- Error
  | otherwise
  = do
         ctrace  $ vcat
-                [ text "DDC.Core.Check.Exp.Inst.inst: no match"
+                [ text "DDC.Core.Check.Exp.Inst.makeInstR: no match"
                 , text "  LEFT:  " <> ppr tL
-                , text "  RIGHT: " <> ppr tR
+                , text "  RIGHT: " <> ppr iR
                 , indent 2 $ ppr ctx0
                 , empty ]
 
