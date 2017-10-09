@@ -51,7 +51,11 @@ where
 -- | Convert the initial portion of the string to int representation.
 stdlib_atoi (text: Text): Nat
  = private r with { Read r; Write r; Alloc r} in
-   do   nul     = 0w32
+   do
+        nul     = 0w32
+
+        -- TODO: avoid copy via list.
+        -- TODO: audit text lib to ensure null bytes are then, then skip this.
         vec     = vectorOfCharList [r]
                 $ append (charListOfText text) (Cons nul Nil)
 
@@ -63,8 +67,16 @@ stdlib_atoi (text: Text): Nat
 --   The calling process waits for the shell to finish executing the command,
 --   ignoring SIGINT and SIGQUIT, and blocking SIGCHLD.
 stdlib_system (cmd: Text): S Process Int
- = private r with {Alloc r}
-   in run system (ddcVectorGuts (vectorOfText [r] cmd))
+ = private r with { Read r; Write r; Alloc r } in
+   do
+        nul     = 0w32
+
+        -- TODO: avoid copy via list.
+        -- TODO: audit text lib to ensure null bytes are then, then skip this.
+        vec     = vectorOfCharList [r]
+                $ append (charListOfText cmd) (Cons nul Nil)
+
+        run system (ddcVectorGuts vec)
 
 
 -- mktemp ---------------------------------------------------------------------
@@ -81,6 +93,9 @@ stdlib_mkstemp
    private r with { Read r; Write r; Alloc r} in
    do
         nul     = 0w32
+
+        -- TODO: avoid copy via list.
+        -- TODO: audit text lib to ensure null bytes are then, then skip this.
         vec     = vectorOfCharList [r]
                 $ append (charListOfText template) (Cons nul Nil)
 
