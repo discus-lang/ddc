@@ -109,14 +109,14 @@ lexNat  (lStart: Location) (xx: List Char)
  = go lStart Nil xx
  where
         go lStart' acc Nil
-         | Just nat <- readNat (textOfCharList (reverse acc))
+         | nat <- stdlib_atoi (textOfCharList (reverse acc))
          = Just (nat, lStart', Nil)
 
         go lStart' acc (Cons c cs)
          | isDigit c
          =      go (incCharOfLocation 1 lStart') (Cons c acc) cs
 
-         | Just nat <- readNat (textOfCharList (reverse acc))
+         | nat <- stdlib_atoi (textOfCharList (reverse acc))
          = Just (nat, lStart', Cons c cs)
 
         go _ _

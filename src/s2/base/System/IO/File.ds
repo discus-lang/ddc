@@ -5,9 +5,8 @@ export
 }
 import Data.Text
 import System.IO.Console
+import System.Posix.Stdlib
 
-import foreign abstract type
- File   : Effect
 
 import foreign c value
  primFileRead   : TextLit# -> Vector# RegionText Word8#

@@ -41,9 +41,7 @@ parsePrim
  , textOfCharList (take 4 cs) == "nat'"
  , ds   <- drop 4 cs
  , all isDigit ds
- = case readNat (textOfCharList ds) of
-        Nothing  -> Nothing
-        Just nat -> Just $ PrimLitNat nat
+ = Just $ PrimLitNat (stdlib_atoi (textOfCharList ds))
 
  -- Other primitives.
  | elem tx ps   = Just $ PrimOp tx

@@ -1,32 +1,101 @@
 
+-- | Wrappers for C stdlib
 module System.Posix.Stdlib
 export {
         exit;
-        readNat;
+        stdlib_atoi;
+        stdlib_system;
+        stdlib_mkstemp;
 }
 import Data.Numeric.Nat
+import Data.Numeric.Int
+import Data.Numeric.Bool
 import Data.Text
+import Data.List
 
 
 import foreign abstract type
+ -- | Effect of reading or writing the global C errno variable.
+ Errno   : Effect
+
+ -- | Effect of accessing the file system.
+ File   : Effect
+
+ -- | Effect of creating, destroying or otherwise altering unix processes.
  Process : Effect
 
-import foreign c value
- exit    : Nat#      -> S Process Void#
- atoi    : Nat#      -> Nat#
 
 import foreign c value
+ exit    : Nat# -> S Process Void#
+ atoi    : Nat# -> Nat#
+
+ -- TODO: Nat# here should be Addr#
+ system  : Nat# -> S Process Int#
+
+ -- TODO: Nat# here should be Addr#
+ -- TODO: Adding the S File result type here causes
+ --       stdlib_mkstemp_raw to segfault.
+ mkstemp : Nat# -> Int#
+
+
+import foreign c value
+ -- Dangerous function to get a pointer to the payload of a vector.
+ -- The vector will probably move on the next GC,
+ -- invalidating the pointer.
  ddcVectorGuts : {@r: Region} -> Vector# r Word8 -> Nat#
 
 where
 
 
--- | Read a natural number from a text string.
---   We assume that it's well formed.
-readNat (text: Text): Maybe Nat
- = case text of
-        TextVec vec
-           ->    Just (atoi (ddcVectorGuts vec))
+-- atoi -----------------------------------------------------------------------
+-- | Convert the initial portion of the string to int representation.
+stdlib_atoi (text: Text): Nat
+ = private r with { Read r; Write r; Alloc r} in
+   do   nul     = 0w32
+        vec     = vectorOfCharList [r]
+                $ append (charListOfText text) (Cons nul Nil)
 
-        _  -> private r with {Alloc r}
-              in Just (atoi (ddcVectorGuts (vectorOfText [r] text)))
+        atoi (ddcVectorGuts vec)
+
+
+-- system ---------------------------------------------------------------------
+-- | Hand the argument command to the command interpreter.
+--   The calling process waits for the shell to finish executing the command,
+--   ignoring SIGINT and SIGQUIT, and blocking SIGCHLD.
+stdlib_system (cmd: Text): S Process Int
+ = private r with {Alloc r}
+   in run system (ddcVectorGuts (vectorOfText [r] cmd))
+
+
+-- mktemp ---------------------------------------------------------------------
+-- | Take the given file name template and create a file name.
+--   This file name is guaranteed not to exist at the time of function
+--   invocation and is suitable for use by the application.
+--   The template may be any file name with some number of `Xs' appended to it,
+--   for example /tmp/temp.XXXXXX.  The trailing `Xs' are replaced with a
+--   unique alphanumeric combination.
+stdlib_mkstemp
+        (template: Text)
+        : S (File + Errno) (Maybe Text)
+ = weakeff File in
+   private r with { Read r; Write r; Alloc r} in
+   do
+        nul     = 0w32
+        vec     = vectorOfCharList [r]
+                $ append (charListOfText template) (Cons nul Nil)
+
+        result  = stdlib_mkstemp_raw vec
+        case result of
+         True   -> Just (textOfCharList (charListOfTextVec vec))
+         False  -> Nothing
+
+
+-- | Wrapper for stdlib version of above that overwrites the template name.
+stdlib_mkstemp_raw
+        (template: Vector# r Word8)
+        : S (File + Errno + Write r) Bool
+ = weakeff File + Errno + Write r in
+   do   result  = mkstemp (ddcVectorGuts template)
+        not (result == -1i)
+
+

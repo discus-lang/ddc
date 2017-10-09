@@ -1,0 +1,16 @@
+
+module Main
+import System.Posix.Stdlib
+import System.IO.Console
+where
+
+
+main ()
+ = do   writel "derp"
+        case stdlib_mkstemp "/tmp/tempXXXXX" of
+         Nothing -> writel "cannot create temp file"
+         Just file -> do
+                writel file
+                code    = stdlib_system "ls"
+                ()
+

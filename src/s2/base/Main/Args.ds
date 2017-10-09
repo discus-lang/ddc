@@ -56,7 +56,7 @@ data ArgError where
 -- | Show dictionary for ArgError.
 show_ArgError: Show ArgError
  = Show sh
- where 
+ where
         sh (ArgUnrecognised name)
          = parens $ "ArgUnrecognised" %% show name
 
@@ -84,14 +84,14 @@ mainArgs_load
 
 -- | Parse the given command-line arguments.
 mainArgs_parse
-        (args: Map  rep Nat Text) 
-        (z:    mode) 
+        (args: Map  rep Nat Text)
+        (z:    mode)
         (defs: List (Arg mode))
         : Either ArgError mode
  = go_name z (map snd $ map_toList args)
- where 
+ where
         decls_map
-         = mapFun_fromList 
+         = mapFun_fromList
          $ map (\arg -> T2 (mainArgs_nameOfArg arg) arg) defs
 
         -- Try to match the argument name.
@@ -112,11 +112,11 @@ mainArgs_parse
          = go_name (f arg mode) as'
 
         -- Try to parse the argument value.
-        go_decl mode (ArgNat name _ _)    Nil 
+        go_decl mode (ArgNat name _ _)    Nil
          = Left (ArgMissing name)
 
-        go_decl mode (ArgNat name desc f) (Cons arg as') 
-         | Just nat     <- readNat arg
+        go_decl mode (ArgNat name desc f) (Cons arg as')
+         | nat <- stdlib_atoi arg
          = go_name (f nat mode) as'
 
          | otherwise

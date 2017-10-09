@@ -4,6 +4,8 @@ module Data.Text.List
 export
 {       textOfCharList;
         charListOfText;
+        vectorOfCharList;
+        charListOfTextVec;
         unlines; unlines';
 }
 import Data.Numeric.Word8
