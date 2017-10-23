@@ -8,14 +8,14 @@ You need recent versions of GHC, Cabal and LLVM already installed:
 .. code-block:: none
 
   $ ghc --version
-  The Glorious Glasgow Haskell Compilation System, version 8.0.1
+  The Glorious Glasgow Haskell Compilation System, version 8.2.1
 
   $ cabal --version
-  cabal-install version 1.24.0.0
-  compiled using version 1.24.0.0 of the Cabal library
+  cabal-install version 1.24.0.2
+  compiled using version 1.24.2.0 of the Cabal library
 
   $ llc --version
-  LLVM version 3.6.2
+  LLVM version 5.0.0
   ...
 
 
