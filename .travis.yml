@@ -40,7 +40,7 @@ addons:
             - llvm-3.5-dev
             - llvm-3.5-runtime
             - llvm-3.5
-            - ghc-8.0.1
+            - ghc-8.2.1
             - cabal-install-1.24
 
 before_install:
