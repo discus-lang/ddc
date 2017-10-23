@@ -1,0 +1,39 @@
+% Disciple-BD.tex
+\begin{hcarentry}{Disciple}
+\report{Ben Lippmeier}%11/16
+\status{experimental, active development}
+\participants{Ben Lippmeier, Jacob Stanley, Chris Hall, Amos Robinson, Ben Sinclair}
+\makeheader
+
+The Disciplined Disciple Compiler (DDC) is a research compiler used to
+investigate program transformation in the presence of computational effects.
+It compiles a family of strict functional core languages and supports region
+and effect typing. This extra information provides a handle on the operational
+behaviour of code that isn't available in other languages. Programs can be
+written in either a pure/functional or effectful/imperative style, and one of
+our goals is to provide both styles coherently in the same language.
+
+\WhatsNew
+
+DDC v0.5.1 was released in late October, and is in "working alpha" state.
+The main new features are:
+
+\begin{compactitem}
+\item Copying garbage collection using the LLVM shadow stack.
+\item Implicit parameters, which support Haskell-like ad-hoc overloading using
+ dictionaries.
+\item Floating point primitives.
+\item Travis continuous integration for the GitHub site.
+\item A new Sphinx based user guide and homepage.
+\end{compactitem}
+
+We are currently working on a new indexed binary format for interface files,
+as re-parsing interface files is currently a bottleneck. The file format is to
+be provided by the Shimmer project, which has been split out into a separate repo.
+
+\FurtherReading
+  \url{http://disciple.ouroborus.net}
+  \url{http://disciple.ouroborus.net/release/ddc-0.5.1.html}
+  \url{https://github.com/DDCSF/shimmer}
+
+\end{hcarentry}
