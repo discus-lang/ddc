@@ -1,145 +1,54 @@
-# The Disciplined Disciple Compiler 0.4.3 [![Build Status](https://travis-ci.org/DDCSF/ddc.svg?branch=master)](https://travis-ci.org/DDCSF/ddc)
+# The Disciplined Disciple Compiler [![Build Status](https://travis-ci.org/DDCSF/ddc.svg?branch=master)](https://travis-ci.org/DDCSF/ddc)
 
-RELEASE NOTES 06/09/2016
-
-DDC is a research compiler used to investigate program transformation in the 
+DDC is a research compiler used to investigate program transformation in the
 presence of computational effects. This is a development release. There is
 enough implemented to experiment with the language, but not enough to solve
 actual problems...        (unless you're looking for a compiler to hack on).
 
-DDC compiles several related languages:
 
-* Disciple Tetra (.ds)
+## Main Language Features
 
-   An implicitly typed strict functional language with region and effect
-   typing. Uses effect reification (`box`) and reflection (`run`) casts to
-   compose computations with differing effects. Effectful computations are
-   classified by the `S e a` type, for some effect `e` and return type `a`.
-   Although type inference is supported, one can also write explicit type
-   abstractions and applications when needed. Higher ranked types are
-   supported with annotations.
+* Haskell-like source language, so Haskell-like programs should work with minor modifications.
 
-   Example 
-     [AlmostPrimes](https://github.com/DDCSF/ddc/blob/master/test/ddc-demo/source/tetra/80-Rosetta/AlmostPrime/Main.ds)
-     program and its 
-     [output](https://github.com/DDCSF/ddc/blob/master/test/ddc-demo/source/tetra/80-Rosetta/AlmostPrime/Main.stdout.check).
-     
-     Example 
-     [GrayCode](https://github.com/DDCSF/ddc/blob/master/test/ddc-demo/source/tetra/80-Rosetta/GrayCode/Main.ds)
-     program and its 
-     [output](https://github.com/DDCSF/ddc/blob/master/test/ddc-demo/source/tetra/80-Rosetta/GrayCode/Main.stdout.check).
-     
-     The [List.ds](https://github.com/DDCSF/ddc/blob/master/src/s2/base/Data/List.ds),
-      and [Stream.ds](https://github.com/DDCSF/ddc/blob/master/src/s2/base/Data/Stream.ds)
-     library modules.
+* Modal region and effect system using ‘box’ and ‘run’ to suspend and force computations.
 
-* Disciple Core Tetra (.dct)
+* Higher rank polymorphism with bidirectional type inference.
 
-   The desugared version of Disciple Tetra. All function application is in
-   prefix form. This language also supports type inference, though the
-   inferencer does not insert additional type quantifiers. 
+* Simple two space copying garbage collection.
 
-* Disciple Core Flow (.dcf)
+* Default call-by-value evaluation.
 
-   Application specific language with built-in support for Series expressions
-   and Data Flow Fusion. This language and its associated transforms is used by
-   the repa-plugin available on Hackage.
-
-* Disciple Core Salt (.dcs)
-
-   A fragment of Disciple Core that can be easily mapped onto C or LLVM code.
-   The Salt language is first-order and does not support partial application.
-   DDC transforms the higher level languages onto this one during code
-   generation, though we can also write programs in it directly.
-
-All core languages share the same abstract syntax tree (AST), type inferencer,
-and are amenable to many of the same program transformations. They differ only
-in the set of allowable language features, and which primitive types and
-operators are included.
-
-## Installation
-
-You need a recent version of GHC, and an LLVM suite 3.5 - 3.8 in your path. Easiest way to build is from Hackage.
-
-```
- cabal update
- cabal install ddc-tools
-```
-
-If you want to build from the git repo then see [the wiki](http://disciple.ouroborus.net).
+* Typed external core language.
 
 
-## Main changes since 0.4.3
+## See Some Code
 
-* Added desugaring of nested patterns and guards.
+Check out the
+        [Demos](https://github.com/DDCSF/ddc/tree/master/test/ddc-demo/source/tetra),
+        [List Library](https://github.com/DDCSF/ddc/blob/master/src/s2/base/Data/List.ds),
+        and [Text Implementation](https://github.com/DDCSF/ddc/blob/master/src/s2/base/Data/Text/Base.ds)
+        in the source tree.
 
-* Better type inference and desugaring for higher ranked types,  which allows dictionaries for Functor, Applicative, Monad and friends to be written easily.
-
-* Automatic insertion of run and box casts is now more well baked.
-
-* Added code generation for partial applications of data constructors.
-
-* Added support for simple type synonyms.
-
-* Changed to Haskell-style syntax for lambda expressions.
-
-* Automatic interrogation of LLVM compiler version, and generation
-  of matching LLVM assembly syntax.
+The Demos are simple programs. The List Library demonstrates effect polymorphism, and the Text
+implementation demonstrates use of private regions and capabilities.
 
 
-## What works in this release
+## Getting Started
 
-* Compilation for the Tetra, and Salt languages.
-
-* Type checking and data flow fusion for the Flow language.
-
-* Program transformations: Anonymize (remove names), Beta (substitute), 
-  Bubble (move type-casts), Elaborate (add witnesses), Flatten (eliminate
-  nested bindings), Forward (let-floating), Namify (add names), Prune
-  (dead-code elimination), Snip (eliminate nested applications), Rewrite
-  rules, cross-module inlining.
-
-
-## What doesn't
-
-* No storage management.
-  There is a fixed 64MB heap and when you've allocated that much space the
-  runtime just calls abort().
-
-
-## Previous Releases
-
-* 2016/04 DDC 0.4.2: Added code generation for higher order functions.
-* 2014/03 DDC 0.4.1: Added bi-directional type inference and region extension.
-* 2013/07 DDC 0.3.2: Added Tetra and Flow language fragments.
-* 2012/12 DDC 0.3.1: Added Lite fragment, compilation to C and LLVM.
-* 2012/02 DDC 0.2.0: Project reboot. New core language, working interpreter.
-* 2008/07 DDC 0.1.1: Alpha compiler, constructor classes, more examples.
-* 2008/03 DDC 0.1.0: Alpha compiler, used dependently kinded core language.
-
-
-## Immediate Plans
-
-1. Implement garbage collection.
-
-2. Implement basic name spacing.
-
-
-## How you can help
-
-1. Work through the [tutorial](http://disciple.ouroborus.net/wiki/Tutorial) on the web-site and send any comments to the   mailing list. 
-2. Say hello on the mailing list and we can help you get started on any of
-   the main missing features. These are all interesting projects.
-
-3. Tell your friends.
+See the [Getting Started](http://disciple.ouroborus.net/section/01-GettingStarted.html)
 
 
 ## More Information
 
-See the web-site:        http://disciple.ouroborus.net
- 
-Read the mailing list:   http://groups.google.com/group/disciple-cafe
+The GitHub site:        http://github.com/DDCSF/ddc
 
-Check the blog:          http://disciple-devel.blogspot.com.au/
- 
- 
+Home Page:              http://disciple.ouroborus.net
+
+Development Wiki:       http://trac.ouroborus.net/ddc
+
+Development Blog:       http://disciple-devel.blogspot.com.au/
+
+Mailing List:           http://groups.google.com/group/disciple-cafe
+
+
+
