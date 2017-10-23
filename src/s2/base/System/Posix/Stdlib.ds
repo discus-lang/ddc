@@ -79,7 +79,7 @@ stdlib_system (cmd: Text): S Process Int
         run system (ddcVectorGuts vec)
 
 
--- mktemp ---------------------------------------------------------------------
+-- mkstemp --------------------------------------------------------------------
 -- | Take the given file name template and create a file name.
 --   This file name is guaranteed not to exist at the time of function
 --   invocation and is suitable for use by the application.
