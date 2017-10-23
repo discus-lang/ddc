@@ -24,13 +24,14 @@ complete system that can be hacked around with, but it’s not yet industrial st
 ## Show Me Code
 
 Check out the
-        [Demos](https://github.com/DDCSF/ddc/tree/master/test/ddc-demo/source/tetra),
-        [List Library](https://github.com/DDCSF/ddc/blob/master/src/s2/base/Data/List.ds),
-        and [Text Implementation](https://github.com/DDCSF/ddc/blob/master/src/s2/base/Data/Text/Base.ds)
-        in the source tree.
-
-The Demos are simple programs. The List Library demonstrates effect polymorphism, and the Text
+[Demos](https://github.com/DDCSF/ddc/tree/master/test/ddc-demo/source/tetra),
+[List Library](https://github.com/DDCSF/ddc/blob/master/src/s2/base/Data/List.ds), and
+[Text Implementation](https://github.com/DDCSF/ddc/blob/master/src/s2/base/Data/Text/Base.ds)
+in the source tree. The Demos are simple programs. The List Library demonstrates effect polymorphism, and the Text
 implementation demonstrates use of private regions and capabilities.
+
+Larger programs like a [Ray Tracer](http://disciple-devel.blogspot.com.au/2017/07/ray-tracer-demo.html)
+are described on the [blog](http://disciple-devel.blogspot.com.au/).
 
 
 ## Let Me Hack
