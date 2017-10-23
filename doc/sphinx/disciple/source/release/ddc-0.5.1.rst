@@ -30,13 +30,13 @@ New In This Release
 * Copying garbage collection.
 
   We now do simple two space Cheney-scan garbage collection, and grow the heap
-  as needed. We use the LLVM shadow stack support to retrieve the GC roots.
+  as needed. We use LLVM shadow stack support to retrieve the GC roots.
 
 * Implicit parameters.
 
   We now support Agda-style implicit parameters, where arguments are construct
-  at use sites using whatever bindings are currently in scope. For example,
-  we do Haskell-style ad-hoc overloading using implicit dictionaries:
+  at use-sites using whatever bindings are currently in scope. For example,
+  we can perform Haskell-style ad-hoc overloading using implicit dictionaries:
 
 .. code-block:: none
 
@@ -58,11 +58,11 @@ New In This Release
   Every push to the GitHub repo now gets tested by the Travis buildbot.
   Branches can also be tested individually before being merged.
 
-* Support for LLVM versions 3.7 - 5.0
+* Support for LLVM versions 3.1 - 5.0
 
-  DDC queries the version of the installed LLVM compiler and generates LLVM
-  code which matches. This now works for versions 3.7 through to 5.0,
-  which is the latest at the time of this release.
+  DDC queries the version of the installed LLVM compiler and generates
+  LLVM code with the required syntax. This process now works for versions
+  3.1 through to 5.0, which is the latest at the time of this release.
 
 * New home page with the start of a language specification.
 
@@ -91,19 +91,20 @@ People
 The following people contributed to DDC since the last major release:
 
  * Chris Hall
-   Travis continuous integration.
+   - Travis continuous integration.
 
  * Amos Robinson
-   Build system fixes, start on machine fusion transform.
+   - Build system fixes, start on machine fusion transform.
 
  * Ben Sinclair
-   Build system fixes.
+   - Build system fixes.
 
  * Jacob Stanley
-   Copying garbage collection.
+   - Copying garbage collection.
 
  * Ben Lippmeier
-   Copying garbage collection, implicit parameters, new home page.
+   - Copying garbage collection, implicit parameters, floating point,
+     new home page.
 
 
 Previous Releases
