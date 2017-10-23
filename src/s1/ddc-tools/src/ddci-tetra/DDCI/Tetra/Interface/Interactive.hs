@@ -15,7 +15,7 @@ import qualified System.Console.Haskeline.IO    as HL
 -- | Run an interactive session, reading commands from the console.
 runInteractive :: IO ()
 runInteractive
- = do   putStrLn "DDCi-tetra, version 0.4.3: http://disciple.ouroborus.net."
+ = do   putStrLn "DDCi-tetra, version 0.5.1: http://disciple.ouroborus.net."
         putStrLn "Type :help for help."
 
         -- Setup terminal mode.
@@ -24,21 +24,21 @@ runInteractive
 
 -- | The main REPL loop.
 loopInteractive :: IO ()
-loopInteractive 
+loopInteractive
  = do   hlState         <- HL.initializeInput HL.defaultSettings
         let state       = initState InputInterfaceConsole
-        
-        let inputState  
-                = InputState 
+
+        let inputState
+                = InputState
                 { inputParseCommand     = readCommand
                 , inputMode             = InputLine
                 , inputCommand          = Nothing
                 , inputLineNumber       = 1
                 , inputAcc              = [] }
-                
+
         loop state inputState hlState
- where  
-        loop state inputState hlState 
+ where
+        loop state inputState hlState
          = do   -- Read a line from the user and echo it back.
                 line    <- getInput hlState "> "
 
