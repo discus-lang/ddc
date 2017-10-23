@@ -1,7 +1,7 @@
 
 
-The Disciplined Disciple Compiler 0.4.3 (2016/09/06) (Current Version)
-======================================================================
+The Disciplined Disciple Compiler 0.4.3 (2016/09/06)
+====================================================
 
 DDC is a research compiler used to investigate program transformation in the
 presence of computational effects. This is a development release. There is
