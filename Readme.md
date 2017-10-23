@@ -1,12 +1,12 @@
 # The Disciplined Disciple Compiler [![Build Status](https://travis-ci.org/DDCSF/ddc.svg?branch=master)](https://travis-ci.org/DDCSF/ddc)
 
-DDC is a research compiler used to investigate program transformation in the
-presence of computational effects. This is a development release. There is
-enough implemented to experiment with the language, but not enough to solve
-actual problems...        (unless you're looking for a compiler to hack on).
+The Disciple language is an experimental dialect of Haskell which investigates
+static typing and program transformation in the presence of computational effects.
+The compiler (DDC) is currently "working alpha" quality, meaning there is a
+complete system that can be hacked around with, but it’s not yet industrial strength.
 
 
-## Main Language Features
+## Features
 
 * Haskell-like source language, so Haskell-like programs should work with minor modifications.
 
@@ -21,7 +21,7 @@ actual problems...        (unless you're looking for a compiler to hack on).
 * Typed external core language.
 
 
-## See Some Code
+## Show Me Code
 
 Check out the
         [Demos](https://github.com/DDCSF/ddc/tree/master/test/ddc-demo/source/tetra),
@@ -33,9 +33,10 @@ The Demos are simple programs. The List Library demonstrates effect polymorphism
 implementation demonstrates use of private regions and capabilities.
 
 
-## Getting Started
+## Let Me Hack
 
-See the [Getting Started](http://disciple.ouroborus.net/section/01-GettingStarted.html)
+See the [Getting Started](http://disciple.ouroborus.net/section/01-GettingStarted.html) guide
+on the home page.
 
 
 ## More Information
