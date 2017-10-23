@@ -3,8 +3,7 @@
 module DDC.Driver.Stage.Tetra
         ( sourceLoadText
         , tetraLoadText
-        , tetraToSalt
-        , tetraToShimmer)
+        , tetraToSalt)
 where
 import Control.Monad.Trans.Except
 
@@ -26,9 +25,8 @@ import qualified DDC.Core.Tetra                 as CE
 import qualified DDC.Core.Salt                  as CA
 import qualified DDC.Core.Transform.Reannotate  as CReannotate
 
-import qualified DDC.Core.SMR                   as H
 import qualified DDC.Data.SourcePos             as SP
-import DDC.Data.Pretty
+
 
 ---------------------------------------------------------------------------------------------------
 -- | Load and type-check a source tetra module.
@@ -114,20 +112,4 @@ tetraToSalt config source mm
         , BCT.configSinkChecked         = D.dump config source "dump.1-tetra-08-checked.dct"
         , BCT.configSinkSalt            = D.dump config source "dump.2-salt-00-convert.dcs"
         }
-
-
----------------------------------------------------------------------------------------------------
--- | Convert a Core Tetra module to Shimmer code.
-tetraToShimmer
-        :: (Show a, Pretty a)
-        => D.Config
-        -> D.Source
-        -> C.Module a CE.Name
-        -> ExceptT [B.Error] IO (H.Module H.Name H.Name)
-
-tetraToShimmer config source mm
- = BCT.tetraToShimmer
-        mm
- $ BCT.ConfigTetraToShimmer
-        { BCT.configSinkShimmer         = D.dump config source "dump.1-smr-01-convert.smr" }
 

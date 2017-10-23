@@ -61,9 +61,6 @@ data Mode
         -- | Convert a module to PHP.
         | ModeToPHP     FilePath
 
-        -- | Convert a module to Shimmer.
-        | ModeToSMR     FilePath
-
         -- Disciple Core Flow specific ----------
         -- | Prepare a Flow program for lowering.
         | ModeFlowPrep          FilePath

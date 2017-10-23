@@ -5,7 +5,7 @@
 {-# OPTIONS_GHC -fno-warn-incomplete-patterns -fno-warn-overlapping-patterns #-}
 
 -- | Parsing of command line configuation arguments.
-module DDC.Main.Args 
+module DDC.Main.Args
         ( parseArgs
         , help)
 where
@@ -28,7 +28,7 @@ parseArgs args config
 
         | flag : _              <- args
         , elem flag ["-h", "-help", "--help"]
-        = return 
+        = return
         $ config { configMode   = ModeHelp }
 
         -- Language -----------------------------
@@ -200,10 +200,6 @@ parseArgs args config
         = parseArgs rest
         $ setMode config $ ModeToPHP file
 
-        | "-to-smr"  : file : rest  <- args
-        = parseArgs rest
-        $ setMode config $ ModeToSMR file
-
         -- Debugging ----------------------------
         | "-dump"   : rest        <- args
         = parseArgs rest
@@ -221,7 +217,7 @@ parseArgs args config
         | "-taint-avoid-type-checks" : rest     <- args
         = parseArgs rest
         $ config { configTaintAvoidTypeChecks = True }
-        
+
         -- If we get some other argument starting with '-' then assume it's
         -- a flag we don't support.
         | arg : _               <- args
@@ -238,7 +234,7 @@ parseArgs args config
 
 
 -- | Set the major mode of DDC.
--- 
+--
 --   We can't have two major modes like '-make' and '-compile' set at the same time.
 --   If this happens then `error`.
 setMode :: Config -> Mode -> Config
@@ -253,7 +249,7 @@ setMode config newMode
 
  | otherwise
  = case flagOfMode newMode of
-    Nothing     
+    Nothing
      -> error "ddc-main.setMode: not setting mode to ModeNone"
 
     Just newFlag
@@ -281,7 +277,6 @@ flagOfMode mode
         ModeToC{}                       -> Just "-to-c"
         ModeToLLVM{}                    -> Just "-to-llvm"
         ModeToPHP{}                     -> Just "-to-php"
-        ModeToSMR{}                     -> Just "-to-smr"
         ModeFlowPrep{}                  -> Just "-flow-prep"
         ModeFlowLower{}                 -> Just "-flow-lower"
         ModeFlowLowerKernel{}           -> Just "-flow-lower-kernel"

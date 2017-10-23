@@ -27,7 +27,6 @@ import DDC.Driver.Command.ToSalt
 import DDC.Driver.Command.ToC
 import DDC.Driver.Command.ToLlvm
 import DDC.Driver.Command.ToPHP
-import DDC.Driver.Command.ToShimmer
 
 import DDC.Driver.Interface.Source
 import DDC.Build.Builder
@@ -157,13 +156,6 @@ run config
          -> do  dconfig <- getDriverConfig config (Just filePath)
                 store   <- Store.new
                 runError $ cmdToPHPFromFile  dconfig store filePath
-
-        -- Convert a module to SMR
-        ModeToSMR filePath
-         -> do  dconfig <- getDriverConfig config (Just filePath)
-                store   <- Store.new
-                runError $ cmdToShimmerFromFile  dconfig store filePath
-
 
         -- Flow specific ------------------------------------------------------
         -- Prepare a Disciple Core Flow program for lowering.

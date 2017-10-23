@@ -19,7 +19,6 @@ docs-core :
 			--optghc=-isrc/s1/ddc-core-flow \
 			--optghc=-isrc/s1/ddc-core-machine \
 			--optghc=-isrc/s1/ddc-core-tetra \
-			--optghc=-isrc/s1/ddc-core-smr \
                         --optghc=-isrc/s1/ddc-source-tetra \
 			--optghc=-isrc/s1/ddc-driver \
 			--optghc=-isrc/s1/ddci-core \
@@ -42,7 +41,6 @@ docs-hoogle-core :
 			--optghc=-isrc/s1/ddc-core-flow \
 			--optghc=-isrc/s1/ddc-core-machine \
 			--optghc=-isrc/s1/ddc-core-tetra \
-			--optghc=-isrc/s1/ddc-core-smr \
                         --optghc=-isrc/s1/ddc-source-tetra \
 			--optghc=-isrc/s1/ddc-driver \
 		$(patsubst %,--optghc=%,$(GHC_LANGUAGE)) \
