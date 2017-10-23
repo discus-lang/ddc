@@ -47,7 +47,7 @@ before_install:
     # put llvm-3.5 at the front of the path, ahead of any llvm-3.4
     - export PATH=/usr/lib/llvm-3.5/bin:$PATH
     # put ghc and cabal on the path
-    - export PATH=/opt/ghc/8.0.1/bin:/opt/cabal/1.24/bin:$PATH
+    - export PATH=/opt/ghc/8.2.1/bin:/opt/cabal/1.24/bin:$PATH
     - cabal update
 
 # here we manually install all the needed deps
@@ -55,13 +55,8 @@ before_install:
 # cabal install was unhappy when all deps were specified, so we install them
 # one-by-one in the right order
 install:
-    - cabal install happy
-    - cabal install pretty-show
-    - cabal install alex
-    - cabal install c2hs
-    - cabal install limp-cbc
-    - cabal install buildbox
-    - cabal install ddc-tools
+    - cabal install mtl parsec random stm text wl-pprint compact
+    - cabal install buildbox inchworm
 
 script:
     - make clean
