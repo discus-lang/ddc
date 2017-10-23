@@ -29,12 +29,12 @@ import foreign c value
  exit    : Nat# -> S Process Void#
  atoi    : Nat# -> Nat#
 
- -- TODO: Nat# here should be Addr#
+ -- ISSUE #440: Use Addr# instead of Nat# in Stdlib.ds
  system  : Nat# -> S Process Int#
 
- -- TODO: Nat# here should be Addr#
- -- TODO: Adding the S File result type here causes
- --       stdlib_mkstemp_raw to segfault.
+ -- ISSUE #440: Use Addr# instead of Nat# in Stdlib.ds
+ -- ISSUE #405: Segfault when importing foreign function with suspension type.
+ -- Adding the S File result type here causes stdlib_mkstemp_raw below to segfault.
  mkstemp : Nat# -> Int#
 
 
@@ -54,8 +54,7 @@ stdlib_atoi (text: Text): Nat
    do
         nul     = 0w32
 
-        -- TODO: avoid copy via list.
-        -- TODO: audit text lib to ensure null bytes are then, then skip this.
+        -- ISSUE #439: Avoid copying strings via lists in Stdlib.ds.
         vec     = vectorOfCharList [r]
                 $ append (charListOfText text) (Cons nul Nil)
 
@@ -71,8 +70,7 @@ stdlib_system (cmd: Text): S Process Int
    do
         nul     = 0w32
 
-        -- TODO: avoid copy via list.
-        -- TODO: audit text lib to ensure null bytes are then, then skip this.
+        -- ISSUE #439: Avoid copying strings via lists in Stdlib.ds.
         vec     = vectorOfCharList [r]
                 $ append (charListOfText cmd) (Cons nul Nil)
 
@@ -94,8 +92,7 @@ stdlib_mkstemp
    do
         nul     = 0w32
 
-        -- TODO: avoid copy via list.
-        -- TODO: audit text lib to ensure null bytes are then, then skip this.
+        -- ISSUE #439: Avoid copying strings via lists in Stdlib.ds.
         vec     = vectorOfCharList [r]
                 $ append (charListOfText template) (Cons nul Nil)
 
@@ -112,5 +109,4 @@ stdlib_mkstemp_raw
  = weakeff File + Errno + Write r in
    do   result  = mkstemp (ddcVectorGuts template)
         not (result == -1i)
-
 
