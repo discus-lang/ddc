@@ -1,4 +1,6 @@
 
+.. _release-notes-0.5.1:
+
 The Disciplined Disciple Compiler 0.5.1 (2017/10/23) (Current Version)
 ======================================================================
 
