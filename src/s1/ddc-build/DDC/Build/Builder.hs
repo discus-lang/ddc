@@ -12,6 +12,7 @@ where
 import DDC.Build.Platform
 import DDC.Data.Pretty                          hiding ((</>))
 import Data.List
+import Control.Monad
 import System.FilePath
 import System.Exit                              hiding (die)
 import System.Process
@@ -38,7 +39,11 @@ data BuilderConfig
 --   building in, versions of software tools etc. This is separate
 data BuilderHost
         = BuilderHost
-        { builderHostLlvmVersion        :: String }
+        { -- | Version of the LLVM compiler suite we are using
+          builderHostLlvmVersion        :: String
+
+          -- | Path to the LLVM executables
+        , builderHostLlvmBinPath        :: FilePath }
 
 
 -- | Actions to use to invoke external compilation tools.
@@ -190,14 +195,18 @@ determineDefaultBuilderHost :: IO (Maybe BuilderHost)
 determineDefaultBuilderHost
  = do
         -- Get the version of the LLVM suite in the current path.
-        mStrLlvmVersion  <- determineHostLlvmVersion Nothing
-        case mStrLlvmVersion of
+        mLlvmVersion  <- determineHostLlvmVersion Nothing
+        mLlvmBinPath  <- determineHostLlvmBinPath Nothing
+
+        case liftM2 (,) mLlvmVersion mLlvmBinPath of
          Nothing
           -> return Nothing
 
-         Just strLlvmVersion
+         Just (llvmVersion, llvmBinPath)
           -> return  $ Just $ BuilderHost
-                     { builderHostLlvmVersion = strLlvmVersion }
+                     { builderHostLlvmVersion = llvmVersion
+                     , builderHostLlvmBinPath = llvmBinPath
+                     }
 
 
 -- x86_32-darwin ----------------------------------------------------------------
@@ -214,9 +223,12 @@ builder_X8632_Darwin config host mVersion
         , buildLlc
                 = \llFile sFile
                 -> doCmd "LLVM compiler"        [(2, BuilderCanceled)]
-                [ "opt -O3"
+                [ builderHostLlvmBinPath host </> "opt"
+                , "-O3"
                 , llFile
-                , "| llc -O3 -march=x86 -relocation-model=pic"
+                , "|"
+                , builderHostLlvmBinPath host </> "llc"
+                , "-O3 -march=x86 -relocation-model=pic"
                 , "-o", sFile ]
 
         , buildCC
@@ -231,7 +243,8 @@ builder_X8632_Darwin config host mVersion
         , buildAs
                 = \sFile oFile
                 -> doCmd "assembler"            [(2, BuilderCanceled)]
-                [ "llvm-mc -arch x86 -filetype=obj"
+                [ builderHostLlvmBinPath host </> "llvm-mc"
+                , "-arch x86 -filetype=obj"
 
                   -- From LLVM 3.8 we need to set the -triple explicitly which includes
                   -- the macosx OS specifier. llc inserts a pragma into the output
@@ -284,9 +297,12 @@ builder_X8664_Darwin config host mVersion
         , buildLlc
                 = \llFile sFile
                 -> doCmd "LLVM compiler"        [(2, BuilderCanceled)]
-                [ "opt -O3"
+                [ builderHostLlvmBinPath host </> "opt"
+                , "-O3"
                 , llFile
-                , "| llc -O3 -march=x86-64 -relocation-model=pic"
+                , "|"
+                , builderHostLlvmBinPath host </> "llc"
+                , "-O3 -march=x86-64 -relocation-model=pic"
                 , "-o", sFile ]
 
         , buildCC
@@ -301,7 +317,8 @@ builder_X8664_Darwin config host mVersion
         , buildAs
                 = \sFile oFile
                 -> doCmd "assembler"            [(2, BuilderCanceled)]
-                [ "llvm-mc -filetype=obj"
+                [  builderHostLlvmBinPath host </> "llvm-mc"
+                , "-filetype=obj"
 
                   -- From LLVM 3.8 we need to set the -triple explicitly which includes
                   -- the macosx OS specifier. llc inserts a pragma into the output
@@ -355,7 +372,8 @@ builder_X8632_Linux config host
         , buildLlc
                 = \llFile sFile
                 -> doCmd "LLVM compiler"        [(2, BuilderCanceled)]
-                [ "llc -O3 -march=x86 -relocation-model=pic"
+                [ builderHostLlvmBinPath host </> "llc"
+                , "-O3 -march=x86 -relocation-model=pic"
                 ,       llFile
                 , "-o", sFile ]
 
@@ -415,7 +433,8 @@ builder_X8664_Linux config host
         , buildLlc
                 = \llFile sFile
                 -> doCmd "LLVM compiler"        [(2, BuilderCanceled)]
-                [ "llc -O3 -march=x86-64 -relocation-model=pic"
+                [ builderHostLlvmBinPath host </> "llc"
+                , "-O3 -march=x86-64 -relocation-model=pic"
                 , llFile
                 , "-o", sFile ]
 
@@ -475,7 +494,8 @@ builder_PPC32_Linux config host
         , buildLlc
                 = \llFile sFile
                 -> doCmd "LLVM compiler"        [(2, BuilderCanceled)]
-                [ "llc -O3 -march=ppc32 -relocation-model=pic"
+                [ builderHostLlvmBinPath host </> "llc"
+                , "-O3 -march=ppc32 -relocation-model=pic"
                 , llFile
                 , "-o", sFile ]
 
@@ -533,7 +553,8 @@ builder_X8632_Cygwin config host
         , buildLlc
                 = \llFile sFile
                 -> doCmd "LLVM compiler"        [(2, BuilderCanceled)]
-                [ "llc -O3 -march=x86 "
+                [ builderHostLlvmBinPath host </> "llc"
+                , "-O3 -march=x86 "
                 , normalise llFile
                 , "-o", normalise sFile ]
 
@@ -592,7 +613,8 @@ builder_X8632_Mingw config host
         , buildLlc
                 = \llFile sFile
                 -> doCmd "LLVM compiler"        [(2, BuilderCanceled)]
-                [ "llc -O3 -march=x86 "
+                [ builderHostLlvmBinPath host </> "llc"
+                , "-O3 -march=x86 "
                 , normalise llFile
                 , "-o", normalise sFile ]
 

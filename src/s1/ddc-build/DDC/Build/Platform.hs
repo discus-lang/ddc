@@ -13,14 +13,16 @@ module DDC.Build.Platform
         , determineHostPlatform
         , determineHostArch
         , determineHostOs
-        , determineHostLlvmVersion)
+        , determineHostLlvmVersion
+        , determineHostLlvmBinPath )
 where
 import DDC.Data.Pretty
-import Data.List                as List
-import Data.Maybe               as Maybe
-import Data.Char                as Char
-import qualified System.Process as System
-import qualified System.Exit    as System
+import Control.Exception         as Exception
+import Data.Char                 as Char
+import Data.List                 as List
+import qualified System.Exit     as System
+import qualified System.FilePath as FilePath
+import qualified System.Process  as System
 
 
 -------------------------------------------------------------------------------
@@ -197,30 +199,75 @@ determineHostOsDarwin
           -> return $ Nothing
 
 
--- | Determine the host LLVM version string, eg "3.5.2"
---   Takes the path to the LLVM compiler to use, 
---   or `Nothing` to use whatever is in the current path.
+-- | Determine the host LLVM version string, e.g. "3.5.2".
+--
+--   Takes the path to the 'llvm-config' executable which should be used, or
+--   `Nothing` to use whatever is in the current path.
+--
 determineHostLlvmVersion :: Maybe FilePath -> IO (Maybe String)
 determineHostLlvmVersion mpath
  = do
-        let path    = fromMaybe "llc" mpath
-        (exitCode, strAll, _)
-         <- System.readProcessWithExitCode path ["-version"] ""
+        mbin
+         <- determineHostLlvmBinPath mpath
 
-        case exitCode of 
-         System.ExitFailure{}
-          -> return Nothing
+        case mbin of
+          Nothing  -> return Nothing
+          Just bin -> do
 
-         System.ExitSuccess
-          -> do -- Supplying -version gives us the LLVM title as well as
-                -- a list of all registered targets.
-                let ls      = map      (takeWhile $ not . Char.isSpace)
-                            $ map      (dropWhile Char.isSpace)
-                            $ mapMaybe (stripPrefix "LLVM version")
-                            $ map      (dropWhile Char.isSpace)
-                            $ lines strAll
+            (exitCode, stdout, _)
+             <- System.readProcessWithExitCode (bin FilePath.</> "llvm-config") ["--version"] []
 
-                case ls of
-                 [str]  -> return $ Just str
-                 _      -> return Nothing
+            case exitCode of
+              System.ExitFailure{}
+                -> return Nothing
+
+              System.ExitSuccess
+                -> case lines stdout of
+                     [str] -> return (Just str)   -- strip trailing newline
+                     _     -> return Nothing
+
+
+-- | Determine the path to the LLVM executables.
+--
+--   Takes the path to the 'llvm-config' executable which should be used,
+--   otherwise searches in the current PATH. If a suitable version is located,
+--   the result of 'llvm-config --bindir' is returned.
+--
+--   This directory contains the "raw" executables; i.e. without a version
+--   suffix.
+--
+determineHostLlvmBinPath :: Maybe FilePath -> IO (Maybe FilePath)
+determineHostLlvmBinPath mpath
+  = do
+        let
+            -- The default list of candidates, tested in order (after any
+            -- user-specified path). Add other supported versions here.
+            --
+            candidates =
+              [ "llvm-config-5.0"
+              , "llvm-config"
+              ]
+
+            -- Test each candidate and return the result of "llvm-config --bindir"
+            --
+            search []          = return Nothing
+            search (path:rest) = do
+              (exitCode, stdout, _)
+               <- System.readProcessWithExitCode path ["--bindir"] []
+                    -- The user input might be malformed; e.g. '/usr/bin' rather
+                    -- than '/usr/bin/llvm-config'
+                    `catch`
+                    \e -> return (System.ExitFailure (-1), [], show (e :: SomeException))
+
+              case exitCode of
+                System.ExitFailure{}
+                 -> search rest
+
+                System.ExitSuccess
+                 -> case lines stdout of
+                      [bindir]  -> return (Just bindir)  -- strip trailing newline
+                      _         -> search rest
+
+        -- return the first successful candidate
+        search ( maybe candidates (:candidates) mpath )
 
