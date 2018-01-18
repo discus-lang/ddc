@@ -157,6 +157,32 @@ _DDC_MAKE_PRIM_SHOW_TYPE(Float32,float32_t, "%f",          24);
 _DDC_MAKE_PRIM_SHOW_TYPE(Float64,float64_t, "%g",          24);
 
 
+//-----------------------------------------------------------------------------
+// Read functions.
+//
+#define _DDC_MAKE_PRIM_READ_TYPE(typeName,typeSpec,format) \
+ typeSpec primRead##typeName (Obj* pObj) \
+ { \
+        uint8_t*  p8    = (uint8_t*)_ddcPayloadRaw(pObj); \
+        uint32_t* pLen  = (uint32_t*)p8; \
+        string_t* pStr  = (string_t*)(p8 + 4); \
+        typeSpec  x; \
+   \
+        sscanf(pStr, format, &x); \
+        return x; \
+ }
+
+_DDC_MAKE_PRIM_READ_TYPE(Addr,   void*,     "%p");
+_DDC_MAKE_PRIM_READ_TYPE(Int,    int,       "%d");
+_DDC_MAKE_PRIM_READ_TYPE(Nat,    nat_t,     "%zu");
+_DDC_MAKE_PRIM_READ_TYPE(Word8,  uint8_t,   "%" SCNx8);
+_DDC_MAKE_PRIM_READ_TYPE(Word16, uint16_t,  "%" PRIx16);
+_DDC_MAKE_PRIM_READ_TYPE(Word32, uint32_t,  "%" PRIx32);
+_DDC_MAKE_PRIM_READ_TYPE(Word64, uint64_t,  "%" PRIx64);
+_DDC_MAKE_PRIM_READ_TYPE(Float32,float32_t, "%f");
+_DDC_MAKE_PRIM_READ_TYPE(Float64,float64_t, "%lg");
+
+
 // -- Stdin -------------------------------------------------------------------
 // Get a C string from stdin, up to the given length.
 Obj*    primStdinGetVector (nat_t len)

@@ -12,13 +12,13 @@ import Data.Functor.Identity
 
 -- | Flatten binding structure in a thing.
 --
---   Flattens nested let-expressions, 
---   and single alternative let-case expressions. 
+--   Flattens nested let-expressions,
+--   and single alternative let-case expressions.
 --
-flatten :: Ord n 
+flatten :: Ord n
         => (TransformUpMX Identity c)
         => c a n -> c a n
-flatten 
+flatten
  = {-# SCC flatten #-}
    transformUpX' flatten1
 
@@ -40,10 +40,10 @@ flatten1 (XCast a1 CastRun (XLet a2 lts x2))
 --      let b1 = (let ^ = def2 in ^0) in
 --      x1
 --
---  ==> let b1 = def2 in 
+--  ==> let b1 = def2 in
 --      x1
 -- @
--- 
+--
 flatten1 (XLet a1 (LLet b1
             (XLet _ (LLet (BAnon _) def2) (XVar _ (UIx 0))))
                x1)
@@ -54,46 +54,42 @@ flatten1 (XLet a1 (LLet b1
 -- Let ----------------------------------------------------
 -- Flatten Nested Lets.
 -- @
---      let b1 = (let b2 = def2 in x2) in
---      x1
+--      let b1 = (let b2 = eBind2 in eBody2) in eBody1
 --
---  ==> let b2 = def2 in 
---      let b1 = x2   in
---      x1
+--   => let bF = eBind2 in
+--      let b1 = eBody2 in   !(for fresh xF)
+--      eBody1[bF/b2]
 -- @
--- 
+--
 flatten1 (XLet a1 (LLet b1
-            inner@(XLet a2 (LLet b2 def2) x2))
-               x1)
+            inner@(XLet a2 (LLet b2 def2) x2))  x1)
 
  | isBName b2
  = flatten1
-        $ XLet a1 (LLet b1 
-               (anonymizeX inner))
-               x1
+        $ XLet a1 (LLet b1 (anonymizeX inner)) x1
 
  | otherwise
- = let  x1'       = liftAcrossX [b1] [b2] x1                                 
-   in   XLet a2 (LLet b2 def2) 
+ = let  x1'       = liftAcrossX [b1] [b2] x1
+   in   XLet a2 (LLet b2 def2)
       $ flatten1
-      $ XLet a1 (LLet b1 x2) 
+      $ XLet a1 (LLet b1 x2)
              x1'
 
 
 -- Flatten single-alt case expressions.
 -- @
---     let b1 = case x1 of 
---                P -> x2 
+--     let b1 = case x1 of
+--                P -> x2
 --     in x3
 --
---  => case x1 of 
---       P -> let b1 = x2 
+--  => case x1 of
+--       P -> let b1 = x2
 --            in x3
 -- @
 --
 -- * binding must be strict because we force evaluation of x1.
 --
-flatten1 (XLet  a1 (LLet b1 
+flatten1 (XLet  a1 (LLet b1
              inner@(XCase a2 x1 [AAlt p x2]))
                    x3)
  | any isBName $ bindsOfPat p
@@ -104,8 +100,8 @@ flatten1 (XLet  a1 (LLet b1
 
  | otherwise
  = let  x3'     = liftAcrossX [b1] (bindsOfPat p) x3
-   in   XCase a2 x1 
-           [AAlt p ( flatten1 
+   in   XCase a2 x1
+           [AAlt p ( flatten1
                    $ XLet a1 (LLet b1 x2)
                              (anonymizeX x3'))]
 
@@ -119,7 +115,7 @@ flatten1 (XLet a1 llet1 x1)
 -- Case ---------------------------------------------------
 -- Flatten all the alternatives in a case-expression.
 flatten1 (XCase a x1 alts)
- = XCase a (flatten1 x1) 
+ = XCase a (flatten1 x1)
            [AAlt p (flatten1 x) | AAlt p x <- alts ]
 
 flatten1 x = x

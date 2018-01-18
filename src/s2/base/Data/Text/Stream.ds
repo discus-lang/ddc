@@ -1,0 +1,176 @@
+
+module Data.Text.Stream
+import Data.Numeric.Word8
+import Data.Text.Base
+import Data.Text.Char
+import Data.List
+import Data.Ref
+where
+
+
+-------------------------------------------------------------------------------
+-- | Take a list of characters from a text string.
+text_toList (tx: Text): List Char
+ = private r with {Read r; Write r; Alloc r} in
+   do   source  = textSource_fromText {@r} tx
+        list    = textSource_pullList source
+        list
+
+-- | Take a list of words from a text string.
+text_words (tx: Text): List Text
+ = private r with {Read r; Write r; Alloc r} in
+   do   source  = textSource_fromText {@r} tx
+        words   = textSource_pullWords source
+        words
+
+
+-------------------------------------------------------------------------------
+data TextChunk where
+        TextChunkLit : TextLit -> TextChunk
+        TextChunkVec : Vector# RegionText Word8 -> TextChunk
+
+
+-- | Take the first chunk from a text rope by decending down the spine.
+text_firstChunk (tx: Text): Maybe (TextChunk, Maybe Text)
+ = case tx of
+        TextLit lit     -> Just (TextChunkLit lit, Nothing)
+        TextVec vec     -> Just (TextChunkVec vec, Nothing)
+        TextApp t1 t2
+         -> case text_firstChunk t1 of
+                Nothing                 -> text_firstChunk t2
+                Just (chunk, Nothing)   -> Just (chunk, Just t2)
+                Just (chunk, Just t1')  -> Just (chunk, Just (TextApp t1' t2))
+
+
+-------------------------------------------------------------------------------
+-- | A pull stream for text characters,
+--   with a mutable internal state stored in region 'r'.
+data TextSource (r: Region) where
+        TextSource
+         :  Ref r Nat           -- ^ Current position in stream.
+         -> Ref r TextChunk     -- ^ Current chunk in the stream.
+         -> Ref r Nat           -- ^ Current position in the chunk.
+         -> Ref r (Maybe Text)  -- ^ Remaining text chunks.
+         -> TextSource r
+
+
+-- | Construct a new text source from the given text string.
+textSource_fromText
+        {@r: Region} (tx: Text)
+        : S (Alloc r + Read r + Write r) (TextSource r)
+ = case tx of
+        TextLit lit
+         -> textSource_fromChunk {@r} (TextChunkLit lit) Nothing
+
+        TextVec vec
+         -> textSource_fromChunk {@r} (TextChunkVec vec) Nothing
+
+        TextApp t1 t2
+         -> case text_firstChunk t1 of
+                Nothing
+                 -> textSource_fromText {@r} t2
+
+                Just (chunk, mtxRest)
+                 -> textSource_fromChunk {@r} chunk mtxRest
+
+
+-- | Construct a new text source from the first chunk and the rest
+--   of the stream.
+textSource_fromChunk
+        {@r: Region} (chunk: TextChunk) (txRest: Maybe Text)
+        : S (Alloc r) (TextSource r)
+ = do   refPos   = allocRef {@r} 0
+        refChunk = allocRef {@r} chunk
+        refIx    = allocRef {@r} 0
+        refRest  = allocRef {@r} txRest
+        TextSource refPos refChunk refIx refRest
+
+
+-- | Get the current character position from the text source.
+textSource_getPos
+        (source: TextSource r)
+        : S (Read r) Nat
+ | TextSource refPos _ _ _ <- source
+ = readRef refPos
+
+
+-- | Pull a single character from a text source.
+textSource_pullChar
+        (source: TextSource r)
+        : S (Read r + Write r) (Maybe Char)
+ | TextSource _ refChunk refIx refRest <- source
+ = case readRef refChunk of
+         TextChunkLit lit
+          |  ix <- readRef refIx
+          ,  ix < sizeOfTextLit lit
+          -> Just (promote# (indexTextLit lit ix))
+
+          |  Just tx <- readRef refRest
+          ,  Just (chunk', mtxRest') <- text_firstChunk tx
+          -> do writeRef refChunk chunk'
+                writeRef refIx 0
+                writeRef refRest mtxRest'
+                textSource_pullChar source
+
+          | otherwise
+          -> Nothing
+
+         TextChunkVec vec
+          |  ix <- readRef refIx
+          ,  ix < vectorLength# vec - 1
+          -> Just (promote# (vectorRead# vec ix))
+
+          | Just tx <- readRef refRest
+          , Just (chunk', mtxRest') <- text_firstChunk tx
+          -> do writeRef refChunk chunk'
+                writeRef refIx 0
+                writeRef refRest mtxRest'
+                textSource_pullChar source
+
+          | otherwise
+          -> Nothing
+
+
+-- | Pull the entire list of characters from a text source.
+textSource_pullList
+        {@r: Region}
+        (source: TextSource r)
+        : S (Read r + Write r) (List Char)
+ = go ()
+ where  go (_: Unit): S (Read r + Write r) (List Char)
+         = case textSource_pullChar source of
+                Nothing -> Nil
+                Just c  -> Cons c (go ())
+
+
+-- | Pull a single word from a text source.
+textSource_pullWord
+        {@r: Region}
+        (source: TextSource r)
+        : S (Read r + Write r) (Maybe Text)
+ = go Nil
+ where  go (acc: List Char): S (Read r + Write r) (Maybe Text)
+         = case textSource_pullChar source of
+                Just c
+                 | isSpace c    -> make (reverse acc)
+                 | otherwise    -> go (Cons c acc)
+
+                Nothing         -> make (reverse acc)
+
+        make (acc: List Char): Maybe Text
+         = case acc of
+                Nil      -> Nothing
+                Cons _ _ -> Just (textOfCharList acc)
+
+
+-- | Pull the entire list of words from a text source.
+textSource_pullWords
+        {@r: Region}
+        (source: TextSource r)
+        : S (Read r + Write r) (List Text)
+ = go Nil
+ where  go (acc: List Text): S (Read r + Write r) (List Text)
+         = case textSource_pullWord source of
+                Nothing -> reverse acc
+                Just c  -> go (Cons c acc)
+

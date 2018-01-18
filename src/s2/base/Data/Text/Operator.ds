@@ -41,7 +41,7 @@ flattenText (tt: Text): Text
         -- Single text vectors are already flat.
         TextVec vec     -> tt
 
-        -- Text has an outer append-node, 
+        -- Text has an outer append-node,
         -- so flatten the whole thing.
         TextApp _ _     -> textOfVector (run vectorOfText [RegionText] tt)
 
@@ -50,5 +50,3 @@ flattenText (tt: Text): Text
 -- | Wrap a some text in parenthesis.
 parens (tx: Text): Text
  = "(" % tx % ")"
-
-

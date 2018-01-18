@@ -1,10 +1,11 @@
 
-module Data.Text 
+module Data.Text
 export {eq_char; eq_text}
 import Data.Text.Base
 import Data.Text.List
 import Data.Text.Operator
 import Data.Text.Show
+import Data.Text.Stream
 import Class.Eq
 where
 
