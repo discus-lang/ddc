@@ -1,0 +1,257 @@
+
+module Codec.Json
+export {
+        parseJson;
+        show_Json;
+        show_JsonParseError;
+        show_JsonParseContext;
+}
+import Class.Show
+import Data.Text
+where
+
+
+---------------------------------------------------------------------------------------------------
+data Json where
+        JsonNull        : Json
+        JsonBool        : Bool                  -> Json
+        JsonString      : Text                  -> Json
+        JsonNumber      : Float64               -> Json
+        JsonList        : List Json             -> Json
+        JsonObject      : List (Text, Json)     -> Json
+
+
+---------------------------------------------------------------------------------------------------
+show_Json: Show Json
+ = Show sh
+ where
+        sh (jj: Json): Text
+         = case jj of
+                JsonNull        -> "null"
+                JsonBool True   -> "true"
+                JsonBool False  -> "false"
+
+                -- TODO: excape this as required by JSON spec.
+                JsonString str  -> show str
+
+                JsonNumber num  -> show num
+                JsonList   xs   -> "[" % showElems  xs % "]"
+                JsonObject fs   -> "{" % showFields fs % "}"
+
+        showElems   Nil                 = ""
+        showElems  (Cons e Nil)         = sh e
+        showElems  (Cons e es)          = sh e % "," % showElems es
+
+        -- TODO: excape chars in label.
+        showFields  Nil                 = ""
+        showFields (Cons (l, e) Nil)    = show l % ":" % sh e
+        showFields (Cons (l, e) es)     = show l % ":" % sh e % "," % showFields es
+
+
+---------------------------------------------------------------------------------------------------
+-- | Things that can go wrong when parsing JSON.
+data JsonParseError where
+        JsonParseEnd
+         : JsonParseContext -> JsonParseError
+
+        JsonParsePos
+         : Nat -> JsonParseContext -> JsonParseError
+
+
+-- | Context in which a parse error can occur.
+data JsonParseContext where
+        JsonParseValue   : JsonParseContext
+        JsonParseObject  : JsonParseContext
+        JsonParseList    : JsonParseContext
+        JsonParseField   : JsonParseContext
+        JsonParseString  : JsonParseContext
+        JsonParseKeyword : JsonParseContext
+
+
+show_JsonParseError: Show JsonParseError
+ = Show sh
+ where sh (err: JsonParseError): Text
+        = case err of
+                JsonParseEnd ctx
+                 -> parens $ "JsonParseEnd" %% show ctx
+
+                JsonParsePos pos ctx
+                 -> parens $ "JsonParsePos" %% show pos %% show ctx
+
+
+show_JsonParseContext: Show JsonParseContext
+ = Show sh
+ where sh (ctx: JsonParseContext): Text
+        = case ctx of
+                JsonParseValue   -> "JsonParseValue"
+                JsonParseObject  -> "JsonParseObject"
+                JsonParseList    -> "JsonParseList"
+                JsonParseField   -> "JsonParseField"
+                JsonParseString  -> "JsonParseString"
+                JsonParseKeyword -> "JsonParseKeyword"
+
+
+---------------------------------------------------------------------------------------------------
+parseJson (tx: Text): Either JsonParseError Json
+ = private r with { Read r; Write r; Alloc r} in
+   do   source  = textSource_fromText {@r} tx
+        val     = nextJsonValue source
+        val
+
+
+---------------------------------------------------------------------------------------------------
+nextJsonValue (source: TextSource r)
+        : S (Read r + Write r) (Either JsonParseError Json)
+ = case textSource_peekChar source of
+        Just c
+         | c == '{' -> nextJsonObject  source
+         | c == '[' -> nextJsonList    source
+         | c == '"' -> nextJsonString  source
+         | c == 'n' -> nextJsonKeyword source (charListOfText "null")   JsonNull
+         | c == 't' -> nextJsonKeyword source (charListOfText "true")  (JsonBool True)
+         | c == 'f' -> nextJsonKeyword source (charListOfText "false") (JsonBool False)
+        _           -> Left (JsonParsePos 0 JsonParseValue)
+
+
+---------------------------------------------------------------------------------------------------
+nextJsonObject (source: TextSource r)
+        : S (Read r + Write r) (Either JsonParseError Json)
+ = case textSource_pullChar source of
+        Nothing                                 -> Left  (JsonParseEnd JsonParseObject)
+        Just c
+         |  c /= '{'                            -> Left  (JsonParsePos 0 JsonParseObject)
+         |  otherwise
+         -> case nextFields source of
+                Left err                        -> Left err
+                Right fs
+                 -> case textSource_pullChar source of
+                        Nothing                 -> Left  (JsonParsePos 0 JsonParseObject)
+                        Just c
+                         | c /= '}'             -> Left  (JsonParsePos 0 JsonParseObject)
+                         | otherwise            -> Right (JsonObject fs)
+
+
+---------------------------------------------------------------------------------------------------
+nextJsonList (source: TextSource r)
+        : S (Read r + Write r) (Either JsonParseError Json)
+ = case textSource_pullChar source of
+        Nothing                                 -> Left  (JsonParseEnd JsonParseList)
+        Just c
+         |  c /= '['                            -> Left  (JsonParsePos 0 JsonParseList)
+         |  otherwise
+         -> case nextElems source of
+                Left err                        -> Left err
+                Right es
+                 -> case textSource_pullChar source of
+                        Nothing                 -> Left  (JsonParsePos 0 JsonParseList)
+                        Just c
+                         | c /= ']'             -> Left  (JsonParsePos 0 JsonParseList)
+                         | otherwise            -> Right (JsonList es)
+
+
+---------------------------------------------------------------------------------------------------
+nextJsonString (source: TextSource r)
+        : S (Read r + Write r) (Either JsonParseError Json)
+ = case nextText source of
+        Left err                                -> Left err
+        Right tx                                -> Right (JsonString tx)
+
+
+---------------------------------------------------------------------------------------------------
+nextJsonKeyword (source: TextSource r) (cc: List Char) (v: Json)
+        : S (Read r + Write r) (Either JsonParseError Json)
+ = case cc of
+        Nil     -> Right v
+        Cons c cs
+         -> case textSource_pullChar source of
+                Nothing                         -> Left (JsonParseEnd JsonParseKeyword)
+                Just c'
+                 | c /= c'                      -> Left (JsonParsePos 0 JsonParseKeyword)
+                 | otherwise
+                 -> case nextJsonKeyword source cs v of
+                        Left err                -> Left err
+                        Right v'                -> Right v'
+
+
+---------------------------------------------------------------------------------------------------
+nextElems (source: TextSource r)
+        : S (Read r + Write r) (Either JsonParseError (List Json))
+ = case nextJsonValue source of
+        Left err                                -> Left err
+        Right v
+         -> case textSource_matchChar source ',' of
+                False                           -> Right (Cons v Nil)
+                True
+                 -> case nextElems source of
+                        Left err2               -> Left err2
+                        Right vs                -> Right (Cons v vs)
+
+
+---------------------------------------------------------------------------------------------------
+nextFields (source: TextSource r)
+        : S (Read r + Write r) (Either JsonParseError (List (Text, Json)))
+ = case textSource_peekChar source of
+        Nothing                                 -> Right Nil
+        Just c1
+         | c1 /= '"'                            -> Right Nil
+         | otherwise
+         -> case nextField source of
+                Left err1                       -> Left err1
+                Right field
+                 -> case textSource_matchChar source ',' of
+                        False                   -> Right (Cons field Nil)
+                        True
+                         -> case nextFields source of
+                                Left err2       -> Left err2
+                                Right fields    -> Right (Cons field fields)
+
+
+---------------------------------------------------------------------------------------------------
+nextField  (source: TextSource r)
+        : S (Read r + Write r) (Either JsonParseError (Text, Json))
+ = case nextText source of
+        Left err1                               -> Left err1
+        Right tx
+         -> case textSource_pullChar source of
+                Just c
+                 | c /= ':'                     -> Left (JsonParsePos 0 JsonParseField)
+                 | otherwise
+                 -> case nextJsonValue source of
+                        Left err                -> Left err
+                        Right val               -> Right (tx, val)
+
+
+---------------------------------------------------------------------------------------------------
+nextText (source: TextSource r)
+        : S (Read r + Write r) (Either JsonParseError Text)
+ = case textSource_pullChar source of
+        Nothing                                 -> Left (JsonParseEnd JsonParseString)
+        Just c
+         | c /= '"'                             -> Left (JsonParsePos 0 JsonParseString)
+         | otherwise
+         -> case nextStringChars source of
+                Left err                        -> Left err
+                Right cs
+                 -> case textSource_pullChar source of
+                        Nothing                 -> Left (JsonParseEnd JsonParseString)
+                        Just c
+                         | c /= '"'             -> Left (JsonParsePos 0 JsonParseString)
+                         | otherwise            -> Right (textOfCharList cs)
+
+
+---------------------------------------------------------------------------------------------------
+-- TODO: handle escape characters.
+nextStringChars (source: TextSource r)
+        : S (Read r + Write r) (Either JsonParseError (List Char))
+ = case textSource_peekChar source of
+        Nothing                                 -> Left (JsonParseEnd JsonParseString)
+        Just c1
+         | c1 == '"'                            -> Right Nil
+         | otherwise
+         -> case textSource_pullChar source of
+                Nothing                         -> Left (JsonParseEnd JsonParseString)
+                Just c2
+                 -> case nextStringChars source of
+                        Left err                -> Left err
+                        Right cs                -> Right (Cons c2 cs)
+

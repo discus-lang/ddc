@@ -1,0 +1,8 @@
+
+module Main
+import Codec.Json
+import System.IO.Console
+where
+
+main ()
+ = do   writel $ show $ parseJson "{\"one\":[true,false,false,true],\"two\":{\"three\":null}}"

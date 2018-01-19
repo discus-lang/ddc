@@ -48,10 +48,12 @@ pretty_Expected
         ExBaseNameAny   -> "expecting name"
 
         ExContextDecl n es
-         -> "\n" % "in declaration" %% n % "\n" % (unlines' $ map ppr $ bag_toList es)
+         -> "\n" % "in declaration" %% n
+         %  "\n" % (text_unlines' $ map ppr $ bag_toList es)
 
         ExContextBind n es
-         -> "\n" % "in binding"     %% n % "\n" % (unlines' $ map ppr $ bag_toList es)
+         -> "\n" % "in binding"     %% n
+         %  "\n" % (text_unlines' $ map ppr $ bag_toList es)
 
 
 -------------------------------------------------------------------------------
@@ -67,7 +69,7 @@ pretty_ParseError
         {Pretty t} {Pretty e}
         : Pretty (ParseError t e)
  =  Pretty $ \(ParseError bs)
- -> unlines $ map ppr bs
+ -> text_unlines $ map ppr bs
 
 
 -- | Pretty dictionary for a blocker.

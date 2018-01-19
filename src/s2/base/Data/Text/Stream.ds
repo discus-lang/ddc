@@ -4,12 +4,15 @@ export {
         text_toList; text_words;
         textSource_fromText;
         textSource_pullWord; textSource_pullWords;
-        textSource_pullChar
+        textSource_pullChar;
+        textSource_peekChar;
+        textSource_matchChar
 }
 
 import Data.Numeric.Word8
 import Data.Text.Base
 import Data.Text.Char
+import Data.Text.List
 import Data.List
 import Data.Ref
 where
@@ -94,11 +97,25 @@ textSource_fromChunk
 
 
 -- | Get the current character position from the text source.
-textSource_getPos
-        (source: TextSource r)
-        : S (Read r) Nat
+textSource_getPos (source: TextSource r): S (Read r) Nat
  | TextSource refPos _ _ _ <- source
  = readRef refPos
+
+
+-- | Advance to the first character of the next chunk.
+textSource_advanceChunk
+        (source: TextSource r)
+        : S (Read r + Write r) Bool
+ | TextSource _ refChunk refIx refRest <- source
+ , Just tx                      <- readRef refRest
+ , Just (chunk', mtxRest')      <- text_firstChunk tx
+ = do   writeRef refChunk chunk'
+        writeRef refIx    0
+        writeRef refRest  mtxRest'
+        True
+
+ | otherwise
+ =      False
 
 
 -- | Pull a single character from a text source.
@@ -109,20 +126,9 @@ textSource_pullChar
  = case readRef refChunk of
          TextChunkLit lit
           |  ix <- readRef refIx
-          ,  ix < sizeOfTextLit lit
+          ,  ix <  sizeOfTextLit lit
           -> do writeRef refIx (ix + 1)
                 Just (promote# (indexTextLit lit ix))
-
-
-          |  Just tx <- readRef refRest
-          ,  Just (chunk', mtxRest') <- text_firstChunk tx
-          -> do writeRef refChunk chunk'
-                writeRef refIx 0
-                writeRef refRest mtxRest'
-                textSource_pullChar source
-
-          | otherwise
-          -> Nothing
 
          TextChunkVec vec
           |  ix <- readRef refIx
@@ -130,15 +136,72 @@ textSource_pullChar
           -> do writeRef refIx (ix + 1)
                 Just (promote# (vectorRead# vec ix))
 
-          | Just tx <- readRef refRest
-          , Just (chunk', mtxRest') <- text_firstChunk tx
-          -> do writeRef refChunk chunk'
-                writeRef refIx 0
-                writeRef refRest mtxRest'
-                textSource_pullChar source
+         _
+          |  textSource_advanceChunk source
+          -> textSource_pullChar source
 
-          | otherwise
+          |  otherwise
           -> Nothing
+
+
+
+-- | Peek at the next charater from the text source.
+textSource_peekChar
+        (source: TextSource r)
+        : S (Read r + Write r) (Maybe Char)
+ | TextSource _ refChunk refIx refRest <- source
+ = case readRef refChunk of
+        TextChunkLit lit
+         |  ix <- readRef refIx
+         ,  ix <  sizeOfTextLit lit
+         -> Just (promote# (indexTextLit lit ix))
+
+        TextChunkVec vec
+         |  ix <- readRef refIx
+         ,  ix <  vectorLength# vec - 1
+         -> Just (promote# (vectorRead# vec ix))
+
+        _
+         |  textSource_advanceChunk source
+         -> textSource_pullChar source
+
+         |  otherwise
+         -> Nothing
+
+
+-- | If the next character is the given one then consume it,
+--   otherwise don't.
+textSource_matchChar
+        (source: TextSource r) (c: Char)
+        : S (Read r + Write r) Bool
+ | TextSource _ refChunk refIx refRest <- source
+ = case readRef refChunk of
+        TextChunkLit lit
+         | ix   <- readRef refIx
+         , ix   <  sizeOfTextLit lit
+         , c'   <- promote# (indexTextLit lit ix)
+         -> if c == c'
+             then do
+                writeRef refIx (ix + 1)
+                True
+             else False
+
+        TextChunkVec vec
+         | ix   <- readRef refIx
+         , ix   <  vectorLength# vec - 1
+         , c'   <- promote# (vectorRead# vec ix)
+         -> if c == c'
+             then do
+                writeRef refIx (ix + 1)
+                True
+             else False
+
+        _
+         |  textSource_advanceChunk source
+         -> textSource_matchChar source c
+
+         |  otherwise
+         -> False
 
 
 -- | Pull the entire list of characters from a text source.
