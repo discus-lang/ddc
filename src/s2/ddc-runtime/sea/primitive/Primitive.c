@@ -176,9 +176,9 @@ _DDC_MAKE_PRIM_READ_TYPE(Addr,   void*,     "%p");
 _DDC_MAKE_PRIM_READ_TYPE(Int,    int,       "%d");
 _DDC_MAKE_PRIM_READ_TYPE(Nat,    nat_t,     "%zu");
 _DDC_MAKE_PRIM_READ_TYPE(Word8,  uint8_t,   "%" SCNx8);
-_DDC_MAKE_PRIM_READ_TYPE(Word16, uint16_t,  "%" PRIx16);
-_DDC_MAKE_PRIM_READ_TYPE(Word32, uint32_t,  "%" PRIx32);
-_DDC_MAKE_PRIM_READ_TYPE(Word64, uint64_t,  "%" PRIx64);
+_DDC_MAKE_PRIM_READ_TYPE(Word16, uint16_t,  "%" SCNx16);
+_DDC_MAKE_PRIM_READ_TYPE(Word32, uint32_t,  "%" SCNx32);
+_DDC_MAKE_PRIM_READ_TYPE(Word64, uint64_t,  "%" SCNx64);
 _DDC_MAKE_PRIM_READ_TYPE(Float32,float32_t, "%f");
 _DDC_MAKE_PRIM_READ_TYPE(Float64,float64_t, "%lg");
 
