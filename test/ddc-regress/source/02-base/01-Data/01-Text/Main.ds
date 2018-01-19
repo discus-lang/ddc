@@ -1,0 +1,57 @@
+
+module Main
+import Class.Show
+import Data.Text
+import Data.Text.Stream
+import Data.List
+import System.IO.Console
+where
+
+main ()
+ = do   writel "text tests"
+
+        writel $ "Data.Text.Base"
+        writel $ "textOfChar:"          %% (show $ textOfChar 'd')
+        writel $ "textOfWord8:"         %% (show $ textOfWord8 33w8)
+        writel $ "sizeOfText:"          %% (show $ sizeOfText "seven")
+        writel $ "indexText:"           %% (show $ maybe " " textOfWord8 $ indexText "seven" 2)
+        writel $ "eqChar:"              %% (show $ (eqChar 'a' 'a', eqChar 'a' 'b'))
+        writel $ "eqText:"              %% (show $ (eqText "derp" "derp", eqText "derp" "snerp"))
+        writel ""
+
+        writel $ "Data.Text.Char"
+        writel $ "isDigit:"             %% (show $ (isDigit '4', isDigit 'z'))
+        writel $ "isUpper:"             %% (show $ (isUpper 'A', isUpper 'a'))
+        writel $ "isLower:"             %% (show $ (isLower 'a', isLower 'A'))
+        writel $ "isSpace:"             %% (show $ (isSpace ' ', isSpace '!'))
+        writel ""
+
+        writel $ "Data.Text.List"
+        writel $ "textOfCharList:"      %% textOfCharList (Cons 'a' (Cons 'b' (Cons 'c' Nil)))
+        writel $ "charListOfText:"      %% show (charListOfText "abcdef")
+        writel $ "text_unlines:"        %% text_unlines  (Cons "derp" (Cons "snerp" Nil))
+        writel $ "text_unlines':"       %% text_unlines' (Cons "derp" (Cons "snerp" Nil))
+        writel ""
+
+        writel $ "Data.Text.Operator"
+        writel $ "paste"                %% paste  "one" "two"
+        writel $ "pastes"               %% pastes "one" "two"
+        writel $ "flattenText"          %% flattenText (paste "one" "two")
+        writel $ "parens"               %% parens "derp"
+        writel ""
+
+        writel $ "Data.Text.Show"
+        writel $ "showBool"             %% showBool True %% showBool False
+        writel $ "showBinaryNat"        %% showBinaryNat  100 %% showBinaryNat  5555
+        writel $ "showDecimalNat"       %% showDecimalNat 100 %% showDecimalNat 5555
+        writel $ "showHexNat"           %% showHexNat     100 %% showHexNat     5555
+
+        -- TODO: showing 32bit floats is broken.
+        -- writel $ "showFloat32"          %% showFloat32 123.456f32
+
+        writel $ "showFloat64"          %% showFloat64 123.456f64
+
+        writel $ "Data.Text.Stream"
+        writel $ "text_toList:"         %% (show $ text_toList "testing")
+        writel $ "text_words:"          %% (show $ text_words  "one two three")
+        writel ""

@@ -57,7 +57,8 @@ show_Float64: Show Float64
 
 -- | Show dictionary for Char.
 show_Char: Show Char
- = Show textOfChar
+ = Show sh
+ where  sh c            = "'" % textOfChar c % "'"
 
 
 -- | Show dictionary for Text.

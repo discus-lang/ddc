@@ -1,0 +1,41 @@
+text tests
+Data.Text.Base
+textOfChar: "d"
+textOfWord8: "!"
+sizeOfText: 5
+indexText: "v"
+eqChar: (T2 True False)
+eqText: (T2 True False)
+
+Data.Text.Char
+isDigit: (T2 True False)
+isUpper: (T2 True False)
+isLower: (T2 True False)
+isSpace: (T2 True False)
+
+Data.Text.List
+textOfCharList: abc
+charListOfText: (Cons 'a' (Cons 'b' (Cons 'c' (Cons 'd' (Cons 'e' (Cons 'f' Nil))))))
+text_unlines: derp
+snerp
+
+text_unlines': derp
+snerp
+
+
+Data.Text.Operator
+paste onetwo
+pastes one two
+flattenText onetwo
+parens (derp)
+
+Data.Text.Show
+showBool True False
+showBinaryNat 1100100 1010110110011
+showDecimalNat 100 5555
+showHexNat 64 15b3
+showFloat64 123.456
+Data.Text.Stream
+text_toList: (Cons 't' (Cons 'e' (Cons 's' (Cons 't' (Cons 'i' (Cons 'n' (Cons 'g' Nil)))))))
+text_words: (Cons "one" (Cons "two" (Cons "three" Nil)))
+

@@ -6,7 +6,7 @@ export
         charListOfText;
         vectorOfCharList;
         charListOfTextVec;
-        unlines; unlines';
+        text_unlines; text_unlines';
 }
 import Data.Numeric.Word8
 import Data.Text.Base
@@ -65,16 +65,17 @@ vectorOfCharList
 
 
 -- | Concatenate text strings, punctuating with newline characters.
-unlines (txs: List Text): Text
+text_unlines (txs: List Text): Text
  = case txs of
         Nil             -> ""
-        Cons t txs'     -> t % "\n" % unlines txs'
+        Cons t txs'     -> t % "\n" % text_unlines txs'
+
 
 -- | Like unlines, but don't add the final newline.
-unlines' (txs: List Text): Text
+text_unlines' (txs: List Text): Text
  = case txs of
         Nil             -> ""
         Cons t Nil      -> t
-        Cons t txs'     -> t % "\n" % unlines txs'
+        Cons t txs'     -> t % "\n" % text_unlines txs'
 
 

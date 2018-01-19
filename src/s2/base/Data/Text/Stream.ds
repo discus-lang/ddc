@@ -1,5 +1,12 @@
 
 module Data.Text.Stream
+export {
+        text_toList; text_words;
+        textSource_fromText;
+        textSource_pullWord; textSource_pullWords;
+        textSource_pullChar
+}
+
 import Data.Numeric.Word8
 import Data.Text.Base
 import Data.Text.Char
@@ -103,7 +110,9 @@ textSource_pullChar
          TextChunkLit lit
           |  ix <- readRef refIx
           ,  ix < sizeOfTextLit lit
-          -> Just (promote# (indexTextLit lit ix))
+          -> do writeRef refIx (ix + 1)
+                Just (promote# (indexTextLit lit ix))
+
 
           |  Just tx <- readRef refRest
           ,  Just (chunk', mtxRest') <- text_firstChunk tx
@@ -118,7 +127,8 @@ textSource_pullChar
          TextChunkVec vec
           |  ix <- readRef refIx
           ,  ix < vectorLength# vec - 1
-          -> Just (promote# (vectorRead# vec ix))
+          -> do writeRef refIx (ix + 1)
+                Just (promote# (vectorRead# vec ix))
 
           | Just tx <- readRef refRest
           , Just (chunk', mtxRest') <- text_firstChunk tx
