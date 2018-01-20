@@ -1,0 +1,14 @@
+
+module Codec.Json.Base
+import Data.List
+where
+
+
+data Json where
+        JsonNull        : Json
+        JsonBool        : Bool                  -> Json
+        JsonString      : Text                  -> Json
+        JsonNumber      : Float64               -> Json
+        JsonList        : List Json             -> Json
+        JsonObject      : List (Text, Json)     -> Json
+

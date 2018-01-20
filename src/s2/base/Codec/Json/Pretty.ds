@@ -1,0 +1,34 @@
+
+module Codec.Json.Pretty
+export pretty_Json
+import Codec.Json.Base
+import Class.Pretty
+where
+
+
+pretty_Json: Pretty Json
+ = Pretty sh
+ where
+        sh (jj: Json): Text
+         = case jj of
+                JsonNull        -> "null"
+                JsonBool True   -> "true"
+                JsonBool False  -> "false"
+
+                -- TODO: excape this as required by JSON spec.
+                JsonString str  -> show str
+
+                JsonNumber num  -> show num
+                JsonList   xs   -> "[" % ppElems  xs % "]"
+                JsonObject fs   -> "{" % ppFields fs % "}"
+
+        ppElems   Nil                 = ""
+        ppElems  (Cons e Nil)         = sh e
+        ppElems  (Cons e es)          = sh e % "," % ppElems es
+
+        -- TODO: excape chars in label.
+        ppFields  Nil                 = ""
+        ppFields (Cons (l, e) Nil)    = show l % ":" % sh e
+        ppFields (Cons (l, e) es)     = show l % ":" % sh e % "," % ppFields es
+
+

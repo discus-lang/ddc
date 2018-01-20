@@ -1,0 +1,113 @@
+
+module Codec.Json.State
+export
+{       show_JsonParseError; show_JsonParseContext;
+        pullChar; peekChar; matchChar; skipSpace;
+        pushError; parseFail;
+}
+import Codec.Json.Base
+import Class.Show
+import Data.Numeric
+import Data.Text
+where
+
+
+--------------------------------------------------------------------------------------------------
+-- | Things that can go wrong when parsing JSON.
+data JsonParseError where
+
+        JsonParseEnd
+         : JsonParseContext -> JsonParseError
+
+        JsonParsePos
+         : Nat -> JsonParseContext -> JsonParseError
+
+
+-- | Context in which a parse error can occur.
+data JsonParseContext where
+        JsonParseValue   : JsonParseContext
+        JsonParseObject  : JsonParseContext
+        JsonParseList    : JsonParseContext
+        JsonParseField   : JsonParseContext
+        JsonParseString  : JsonParseContext
+        JsonParseKeyword : JsonParseContext
+        JsonParseNumber  : JsonParseContext
+
+
+show_JsonParseError: Show JsonParseError
+ = Show sh
+ where sh (err: JsonParseError): Text
+        = case err of
+                JsonParseEnd ctx
+                 -> parens $ "JsonParseEnd" %% show ctx
+
+                JsonParsePos pos ctx
+                 -> parens $ "JsonParsePos" %% show pos %% show ctx
+
+
+show_JsonParseContext: Show JsonParseContext
+ = Show sh
+ where sh (ctx: JsonParseContext): Text
+        = case ctx of
+                JsonParseValue   -> "JsonParseValue"
+                JsonParseObject  -> "JsonParseObject"
+                JsonParseList    -> "JsonParseList"
+                JsonParseField   -> "JsonParseField"
+                JsonParseString  -> "JsonParseString"
+                JsonParseKeyword -> "JsonParseKeyword"
+                JsonParseNumber  -> "JsonParseNumber"
+
+
+---------------------------------------------------------------------------------------------------
+data JsonState (r: Region) where
+        JsonState
+         :  TextSource r
+         -> Ref r (List JsonParseError)
+         -> JsonState r
+
+
+pullChar  (state: JsonState r)
+        : S (Read r + Write r) (Maybe Char)
+ | JsonState source _ <- state
+ = textSource_pullChar source
+
+
+peekChar  (state: JsonState r)
+        : S (Read r + Write r) (Maybe Char)
+ | JsonState source _ <- state
+ = textSource_peekChar source
+
+
+matchChar (c: Char) (state: JsonState r)
+        : S (Read r + Write r) Bool
+ | JsonState source _ <- state
+ = textSource_matchChar source c
+
+
+skipSpace (state: JsonState r)
+        : S (Read r + Write r) Bool
+ | JsonState source _ <- state
+ = case peekChar state of
+        Just c
+         |  isSpace c
+         ,  Just _       <- pullChar state
+         -> skipSpace state
+
+         | otherwise    -> True
+
+        Nothing         -> True
+
+
+pushError (state: JsonState r) (err: JsonParseError)
+        : S (Read r + Write r) Unit
+ | JsonState _ refErrs   <- state
+ = do   errs    = readRef refErrs
+        writeRef refErrs errs
+
+
+parseFail (state: JsonState r) (err: JsonParseError)
+        : S (Read r + Write r) (Maybe a)
+ = do   pushError state err
+        Nothing
+
+
