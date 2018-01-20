@@ -30,11 +30,17 @@ flattenText onetwo
 parens (derp)
 
 Data.Text.Show
-showBool True False
-showBinaryNat 1100100 1010110110011
-showDecimalNat 100 5555
-showHexNat 64 15b3
-showFloat64 123.456
+showBool: True False
+showBinaryNat: 1100100 1010110110011
+showDecimalNat: 100 5555
+showHexNat: 64 15b3
+showFloat64 123.456789
+
+Data.Text.Parse
+parseBool: True True True
+parseNat: True True
+parseFloat64: True True
+
 Data.Text.Stream
 text_toList: (Cons 't' (Cons 'e' (Cons 's' (Cons 't' (Cons 'i' (Cons 'n' (Cons 'g' Nil)))))))
 text_words: (Cons "one" (Cons "two" (Cons "three" Nil)))
