@@ -1,6 +1,6 @@
 
 module Data.Numeric.Int
-export  
+export
 {       eq_Int;  ord_Int;
         add_Int; sub_Int; mul_Int; div_Int; rem_Int;
 }
@@ -33,20 +33,18 @@ add_Int: Add Int
  = Add (\x y -> add# [Int#] x y)
 
 
--- | Sub dictionary for Nat.
-sub_Int: Sub Int 
- = Sub (\x y -> if gt# [Int#] y x
-                 then 0i
-                 else sub# [Int#] x y)
+-- | Sub dictionary for Int.
+sub_Int: Sub Int
+ = Sub (\x y -> sub# [Int#] x y)
 
 
 -- | Mul dictionary for Int.
-mul_Int: Mul Int 
+mul_Int: Mul Int
  = Mul (\x y -> mul# [Int#] x y)
 
 
 -- | Div dictionary for Int.
-div_Int: Div Int 
+div_Int: Div Int
  = Div (\x y -> div# [Int#] x y)
 
 
