@@ -84,6 +84,12 @@ textSource_fromText
                  -> textSource_fromChunk {@r} chunk mtxRest
 
 
+-- | Freeze a TextSource into a text object.
+-- textSource_toText (tx: TextSouce r): Text
+--  *** need to copy off remaining part of chunk.
+
+
+
 -- | Construct a new text source from the first chunk and the rest
 --   of the stream.
 textSource_fromChunk
@@ -142,7 +148,6 @@ textSource_pullChar
 
           |  otherwise
           -> Nothing
-
 
 
 -- | Peek at the next charater from the text source.

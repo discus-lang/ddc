@@ -12,7 +12,7 @@ import Data.Text
 where
 
 
---------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 -- | Things that can go wrong when parsing JSON.
 data JsonParseError where
 
@@ -58,7 +58,7 @@ show_JsonParseContext: Show JsonParseContext
                 JsonParseNumber  -> "JsonParseNumber"
 
 
----------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 data JsonState (r: Region) where
         JsonState
          :  TextSource r
@@ -66,6 +66,7 @@ data JsonState (r: Region) where
          -> JsonState r
 
 
+-- | TODO: need parameterized type synonyms to clean these sigs up.
 pullChar  (state: JsonState r)
         : S (Read r + Write r) (Maybe Char)
  | JsonState source _ <- state

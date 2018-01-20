@@ -7,8 +7,9 @@ import Data.Text
 import Data.Numeric
 where
 
----------------------------------------------------------------------------------------------------
--- TODO: check that we've parsed the complete string.
+-------------------------------------------------------------------------------
+-- TODO: check we've parsed the whole string
+-- also add parseJsonPrefix -> (Json, Text)
 parseJson (tx: Text): Either JsonParseError Json
  = private r with { Read r; Write r; Alloc r} in
    do   source  = textSource_fromText {@r} tx
@@ -19,7 +20,7 @@ parseJson (tx: Text): Either JsonParseError Json
          Nothing -> Left $ JsonParsePos 0 JsonParseValue
 
 
----------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 pullJsonValue (state: JsonState r)
         : S (Read r + Write r) (Maybe Json)
  = case do { skipSpace state; peekChar state } of
@@ -27,17 +28,23 @@ pullJsonValue (state: JsonState r)
          | isDigit c ∨ c == '-'
          -> pullJsonNumber state
 
-         | c == 'n'     -> matchKeyword (charListOfText "null")  state JsonNull
-         | c == 'f'     -> matchKeyword (charListOfText "false") state (JsonBool False)
-         | c == 't'     -> matchKeyword (charListOfText "true")  state (JsonBool True)
-         | c == '"'     -> pullJsonString state
-         | c == '['     -> pullJsonList state
-         | c == '{'     -> pullJsonObject state
+         | c == 'n'
+         -> matchKeyword (charListOfText "null")  state JsonNull
+
+         | c == 'f'
+         -> matchKeyword (charListOfText "false") state (JsonBool False)
+
+         | c == 't'
+         -> matchKeyword (charListOfText "true")  state (JsonBool True)
+
+         | c == '"' -> pullJsonString state
+         | c == '[' -> pullJsonList state
+         | c == '{' -> pullJsonObject state
 
         _ -> Nothing
 
 
----------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 -- | Match a keyword from the source stream.
 matchKeyword (cc: List Char) (state: JsonState r) (v: Json)
         : S (Read r + Write r) (Maybe Json)
@@ -52,7 +59,7 @@ matchKeyword (cc: List Char) (state: JsonState r) (v: Json)
         _ -> parseFail state $ JsonParsePos 0 JsonParseKeyword
 
 
----------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 pullJsonNumber (state: JsonState r)
         : S (Read r + Write r) (Maybe Json)
  | Just c1       <- peekChar state
@@ -83,18 +90,23 @@ pullNumberPos (state: JsonState r)
  -- TODO Parser disaster with nested matches, the following guard
  --      gets stuck to these ones, same as in above function.
  = (match
-        | Just cd       <- peekChar state
+        | Just cd    <- peekChar state
         , cd  == '.'
-        , Just _        <- pullChar state
-        , Just ds2      <- takeDigits state
-        , Cons _ _      <- ds2
-        , Just f        <- parseFloat64 $  textOfCharList (append ds1 (Cons '.' ds2))
+        , Just _     <- pullChar state
+        , Just ds2   <- takeDigits state
+        , Cons _ _   <- ds2
+        , Just f     <- parseFloat64
+                     $  textOfCharList (append ds1 (Cons '.' ds2))
         = case takeNumberExponent state of
-                Just Nothing    -> Just f
-                Just (Just ex)  -> Just (f * float64_pow 10.0f64 (truncate# ex))
-                Nothing         -> parseFail state $ JsonParsePos 0 JsonParseNumber
+                Just Nothing  -> Just f
 
-        | Just f        <- parseFloat64 $  textOfCharList ds1
+                Just (Just ex)
+                 -> Just (f * float64_pow 10.0f64 (truncate# ex))
+
+                Nothing
+                 -> parseFail state $ JsonParsePos 0 JsonParseNumber
+
+        | Just f     <- parseFloat64 $ textOfCharList ds1
         = Just f
 
         | otherwise
@@ -163,7 +175,7 @@ takeDigits (state: JsonState r)
  = Nothing
 
 
----------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 -- TODO: handle escape characters.
 
 -- | Pull a JSON string from the source.
@@ -204,7 +216,7 @@ takeStringChars (state: JsonState r)
         = parseFail state $ JsonParsePos 0 JsonParseString
 
 
----------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 -- | Pull a JSON list from the source.
 pullJsonList (state: JsonState r)
         : S (Read r + Write r) (Maybe Json)
@@ -256,7 +268,7 @@ takeCommaListElems (state: JsonState r)
  = parseFail state $ JsonParsePos 0 JsonParseList
 
 
----------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 -- | Pull a JSON object from the source.
 pullJsonObject (state: JsonState r)
         : S (Read r + Write r) (Maybe Json)
