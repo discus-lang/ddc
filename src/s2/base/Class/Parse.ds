@@ -1,0 +1,51 @@
+
+module Class.Parse
+export
+{       parse;
+        parse_Unit;
+        parse_Bool;
+        parse_Nat;
+        parse_Float64
+}
+import Data.Text
+import Data.Maybe
+where
+
+
+-------------------------------------------------------------------------------
+-- | Class dictionary for Show.
+data Parse (a: Data) where
+        Parse    : (Text -> Maybe a) -> Parse a
+
+parse {@a: Data} {(Parse parse'): Parse a} (x: Text): Maybe a
+ = parse' x
+
+
+-------------------------------------------------------------------------------
+-- Dictionaries for primitive types.
+
+-- | Parse a dictionary for Unit.
+parse_Unit: Parse Unit
+ = Parse parse'
+ where  parse' tx
+         | tx == "()"           = Just ()
+         | otherwise            = Nothing
+
+
+-- | Read dictionary for Bool.
+parse_Bool: Parse Bool
+ = Parse parse'
+ where  parse' tx
+         | tx == "True"         = Just True
+         | tx == "False"        = Just False
+         | otherwise            = Nothing
+
+
+-- | Read dictionary for Nat.
+parse_Nat: Parse Nat
+ = Parse readNat
+
+
+-- | Read dictionary for Float64.
+parse_Float64: Parse Float64
+ = Parse readFloat64

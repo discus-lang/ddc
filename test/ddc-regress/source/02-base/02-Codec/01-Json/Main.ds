@@ -5,4 +5,23 @@ import System.IO.Console
 where
 
 main ()
- = do   writel $ show $ parseJson "{\"one\":[true,false,false,true],\"two\":{\"three\":null}}"
+ = do   printl $ parseJson "null"
+
+        printl $ parseJson "true"
+        printl $ parseJson "false"
+
+        printl $ parseJson "\"hello world\""
+
+        printl $ parseJson "1234"
+        printl $ parseJson "-1234"
+        printl $ parseJson "1234567"
+        printl $ parseJson "1234567891"  -- TODO: value truncated.
+
+        printl $ parseJson "[]"          -- TODO: cannot parse empty.
+        printl $ parseJson "[true]"
+        printl $ parseJson "[true,false,true]"
+        printl $ parseJson "[true,123456,true]"
+
+        printl $ parseJson "{}"
+
+        printl $ parseJson "{\"one\":[true,false,27,true],\"two\":{\"three\":null}}"

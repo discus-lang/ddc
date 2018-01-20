@@ -1,0 +1,37 @@
+
+module Data.Text.Parse
+export
+{       parseBool;
+        parseNat;
+        parseFloat64;
+}
+import Data.Text.Base
+import Data.Text.Operator
+import Data.Maybe
+
+import foreign c value
+        primParseNat     : {@r: Region} -> Vector# r Word8# -> Nat#
+        primParseFloat64 : {@r: Region} -> Vector# r Word8# -> Float64#
+
+where
+
+
+-- | Parse a Bool
+parseBool (tx: Text): Maybe Bool
+ | eqText tx "True"     = Just True
+ | eqText tx "False"    = Just False
+ | otherwise            = Nothing
+
+
+-- | Parse a Nat.
+--   TODO: This doesn't detect ill-formed strings.
+parseNat (tx: Text): Maybe Nat
+ = private r with {Alloc r} in
+   Just (primParseNat (vectorOfText {@r} tx))
+
+
+-- | Parse a Float64.
+--   TODO: This doesn't detect ill-formed strings.
+parseFloat64 (tx: Text): Maybe Float64
+ = private r with {Alloc r} in
+   Just (primParseFloat64 (vectorOfText {@r} tx))

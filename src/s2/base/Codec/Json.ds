@@ -51,6 +51,7 @@ show_Json: Show Json
 ---------------------------------------------------------------------------------------------------
 -- | Things that can go wrong when parsing JSON.
 data JsonParseError where
+
         JsonParseEnd
          : JsonParseContext -> JsonParseError
 
@@ -66,6 +67,7 @@ data JsonParseContext where
         JsonParseField   : JsonParseContext
         JsonParseString  : JsonParseContext
         JsonParseKeyword : JsonParseContext
+        JsonParseNumber  : JsonParseContext
 
 
 show_JsonParseError: Show JsonParseError
@@ -89,169 +91,253 @@ show_JsonParseContext: Show JsonParseContext
                 JsonParseField   -> "JsonParseField"
                 JsonParseString  -> "JsonParseString"
                 JsonParseKeyword -> "JsonParseKeyword"
+                JsonParseNumber  -> "JsonParseNumber"
 
 
 ---------------------------------------------------------------------------------------------------
 parseJson (tx: Text): Either JsonParseError Json
  = private r with { Read r; Write r; Alloc r} in
    do   source  = textSource_fromText {@r} tx
-        val     = nextJsonValue source
-        val
+        refErr  = allocRef {@r} Nil
+        state   = JsonState source refErr
+        case pullJsonValue state of
+         Just v  -> Right v
+         Nothing -> Left $ JsonParsePos 0 JsonParseValue
 
 
 ---------------------------------------------------------------------------------------------------
-nextJsonValue (source: TextSource r)
-        : S (Read r + Write r) (Either JsonParseError Json)
- = case textSource_peekChar source of
+data JsonState (r: Region) where
+        JsonState
+         :  TextSource r
+         -> Ref r (List JsonParseError)
+         -> JsonState r
+
+pullChar  (state: JsonState r)
+        : S (Read r + Write r) (Maybe Char)
+ | JsonState source _ <- state
+ = textSource_pullChar source
+
+peekChar  (state: JsonState r)
+        : S (Read r + Write r) (Maybe Char)
+ | JsonState source _ <- state
+ = textSource_peekChar source
+
+matchChar (c: Char) (state: JsonState r)
+        : S (Read r + Write r) Bool
+ | JsonState source _ <- state
+ = textSource_matchChar source c
+
+pushError (state: JsonState r) (err: JsonParseError)
+        : S (Read r + Write r) Unit
+ | JsonState _ refErrs   <- state
+ = do   errs    = readRef refErrs
+        writeRef refErrs errs
+
+
+---------------------------------------------------------------------------------------------------
+pullJsonValue (state: JsonState r)
+        : S (Read r + Write r) (Maybe Json)
+ = case peekChar state of
         Just c
-         | c == '{' -> nextJsonObject  source
-         | c == '[' -> nextJsonList    source
-         | c == '"' -> nextJsonString  source
-         | c == 'n' -> nextJsonKeyword source (charListOfText "null")   JsonNull
-         | c == 't' -> nextJsonKeyword source (charListOfText "true")  (JsonBool True)
-         | c == 'f' -> nextJsonKeyword source (charListOfText "false") (JsonBool False)
-        _           -> Left (JsonParsePos 0 JsonParseValue)
+         | (isDigit c ∧ c /= '0') ∨ c == '-'
+         -> pullJsonNumber state
+
+         | c == 'n'     -> matchKeyword (charListOfText "null")  state JsonNull
+         | c == 'f'     -> matchKeyword (charListOfText "false") state (JsonBool False)
+         | c == 't'     -> matchKeyword (charListOfText "true")  state (JsonBool True)
+         | c == '"'     -> pullJsonString state
+         | c == '['     -> pullJsonList state
+         | c == '{'     -> pullJsonObject state
+
+
+        _ -> Nothing
 
 
 ---------------------------------------------------------------------------------------------------
-nextJsonObject (source: TextSource r)
-        : S (Read r + Write r) (Either JsonParseError Json)
- = case textSource_pullChar source of
-        Nothing                                 -> Left  (JsonParseEnd JsonParseObject)
-        Just c
-         |  c /= '{'                            -> Left  (JsonParsePos 0 JsonParseObject)
-         |  otherwise
-         -> case nextFields source of
-                Left err                        -> Left err
-                Right fs
-                 -> case textSource_pullChar source of
-                        Nothing                 -> Left  (JsonParsePos 0 JsonParseObject)
-                        Just c
-                         | c /= '}'             -> Left  (JsonParsePos 0 JsonParseObject)
-                         | otherwise            -> Right (JsonObject fs)
-
-
----------------------------------------------------------------------------------------------------
-nextJsonList (source: TextSource r)
-        : S (Read r + Write r) (Either JsonParseError Json)
- = case textSource_pullChar source of
-        Nothing                                 -> Left  (JsonParseEnd JsonParseList)
-        Just c
-         |  c /= '['                            -> Left  (JsonParsePos 0 JsonParseList)
-         |  otherwise
-         -> case nextElems source of
-                Left err                        -> Left err
-                Right es
-                 -> case textSource_pullChar source of
-                        Nothing                 -> Left  (JsonParsePos 0 JsonParseList)
-                        Just c
-                         | c /= ']'             -> Left  (JsonParsePos 0 JsonParseList)
-                         | otherwise            -> Right (JsonList es)
-
-
----------------------------------------------------------------------------------------------------
-nextJsonString (source: TextSource r)
-        : S (Read r + Write r) (Either JsonParseError Json)
- = case nextText source of
-        Left err                                -> Left err
-        Right tx                                -> Right (JsonString tx)
-
-
----------------------------------------------------------------------------------------------------
-nextJsonKeyword (source: TextSource r) (cc: List Char) (v: Json)
-        : S (Read r + Write r) (Either JsonParseError Json)
+-- | Match a keyword from the source stream.
+matchKeyword (cc: List Char) (state: JsonState r) (v: Json)
+        : S (Read r + Write r) (Maybe Json)
  = case cc of
-        Nil     -> Right v
+        Nil
+          -> Just v
+
         Cons c cs
-         -> case textSource_pullChar source of
-                Nothing                         -> Left (JsonParseEnd JsonParseKeyword)
-                Just c'
-                 | c /= c'                      -> Left (JsonParsePos 0 JsonParseKeyword)
-                 | otherwise
-                 -> case nextJsonKeyword source cs v of
-                        Left err                -> Left err
-                        Right v'                -> Right v'
+          |  matchChar    c  state
+          -> matchKeyword cs state v
+
+        _ -> do pushError state $ JsonParsePos 0 JsonParseKeyword
+                Nothing
 
 
 ---------------------------------------------------------------------------------------------------
-nextElems (source: TextSource r)
-        : S (Read r + Write r) (Either JsonParseError (List Json))
- = case nextJsonValue source of
-        Left err                                -> Left err
-        Right v
-         -> case textSource_matchChar source ',' of
-                False                           -> Right (Cons v Nil)
-                True
-                 -> case nextElems source of
-                        Left err2               -> Left err2
-                        Right vs                -> Right (Cons v vs)
+pullJsonNumber (state: JsonState r)
+        : S (Read r + Write r) (Maybe Json)
+ | Just c       <- pullChar state
+ = match
+        | isDigit c ∧ c /= '0'
+        , Just cs <- takeDigits state
+        , Just f  <- parseFloat64 (textOfCharList (Cons c cs))
+        = Just (JsonNumber f)
+
+        | c == '-'
+        , Just cs <- takeDigits state
+        , Just f  <- parseFloat64 (textOfCharList (Cons c cs))
+        = Just (JsonNumber f)
+
+        | otherwise
+        = do    pushError state $ JsonParsePos 0 JsonParseNumber
+                Nothing
+
+
+-- | Take a list of digit characters from the source stream.
+takeDigits (state: JsonState r)
+        : S (Read r + Write r) (Maybe (List Char))
+ | Just c  <- peekChar state
+ = case isDigit c of
+        False                   -> Just Nil
+        True
+         | Just _ <- pullChar state
+         -> case takeDigits state of
+                Nothing         -> Just (Cons c Nil)
+                Just cs         -> Just (Cons c cs)
+
+ | otherwise
+ = Nothing
 
 
 ---------------------------------------------------------------------------------------------------
-nextFields (source: TextSource r)
-        : S (Read r + Write r) (Either JsonParseError (List (Text, Json)))
- = case textSource_peekChar source of
-        Nothing                                 -> Right Nil
-        Just c1
-         | c1 /= '"'                            -> Right Nil
-         | otherwise
-         -> case nextField source of
-                Left err1                       -> Left err1
-                Right field
-                 -> case textSource_matchChar source ',' of
-                        False                   -> Right (Cons field Nil)
-                        True
-                         -> case nextFields source of
-                                Left err2       -> Left err2
-                                Right fields    -> Right (Cons field fields)
+-- | Pull a JSON string from the source.
+pullJsonString (state: JsonState r)
+        : S (Read r + Write r) (Maybe Json)
+ | Just tx      <- pullString state
+ = Just (JsonString tx)
+
+ | otherwise
+ = do   pushError state $ JsonParsePos 0 JsonParseString
+        Nothing
 
 
----------------------------------------------------------------------------------------------------
-nextField  (source: TextSource r)
-        : S (Read r + Write r) (Either JsonParseError (Text, Json))
- = case nextText source of
-        Left err1                               -> Left err1
-        Right tx
-         -> case textSource_pullChar source of
-                Just c
-                 | c /= ':'                     -> Left (JsonParsePos 0 JsonParseField)
-                 | otherwise
-                 -> case nextJsonValue source of
-                        Left err                -> Left err
-                        Right val               -> Right (tx, val)
+-- | Pull a quoted string from the source.
+pullString (state: JsonState r)
+        : S (Read r + Write r) (Maybe Text)
+ | matchChar '"' state
+ , Just cs      <- takeStringChars state
+ , matchChar '"' state
+ = Just (textOfCharList cs)
+
+ | otherwise
+ = do   pushError state $ JsonParsePos 0 JsonParseString
+        Nothing
 
 
----------------------------------------------------------------------------------------------------
-nextText (source: TextSource r)
-        : S (Read r + Write r) (Either JsonParseError Text)
- = case textSource_pullChar source of
-        Nothing                                 -> Left (JsonParseEnd JsonParseString)
-        Just c
-         | c /= '"'                             -> Left (JsonParsePos 0 JsonParseString)
-         | otherwise
-         -> case nextStringChars source of
-                Left err                        -> Left err
-                Right cs
-                 -> case textSource_pullChar source of
-                        Nothing                 -> Left (JsonParseEnd JsonParseString)
-                        Just c
-                         | c /= '"'             -> Left (JsonParsePos 0 JsonParseString)
-                         | otherwise            -> Right (textOfCharList cs)
-
-
----------------------------------------------------------------------------------------------------
+-- | Take string characters from the source, not including the final '"' char.
 -- TODO: handle escape characters.
-nextStringChars (source: TextSource r)
-        : S (Read r + Write r) (Either JsonParseError (List Char))
- = case textSource_peekChar source of
-        Nothing                                 -> Left (JsonParseEnd JsonParseString)
-        Just c1
-         | c1 == '"'                            -> Right Nil
-         | otherwise
-         -> case textSource_pullChar source of
-                Nothing                         -> Left (JsonParseEnd JsonParseString)
-                Just c2
-                 -> case nextStringChars source of
-                        Left err                -> Left err
-                        Right cs                -> Right (Cons c2 cs)
+takeStringChars (state: JsonState r)
+        : S (Read r + Write r) (Maybe (List Char))
+ | Just c <- peekChar state
+ = match
+        | c == '"'      = Just Nil
+
+        | Just _        <- pullChar state
+        , Just cs       <- takeStringChars state
+        = Just (Cons c cs)
+
+        | otherwise
+        = do    pushError state $ JsonParsePos 0 JsonParseString
+                Just Nil
+
+
+---------------------------------------------------------------------------------------------------
+-- | Pull a JSON list from the source.
+pullJsonList (state: JsonState r)
+        : S (Read r + Write r) (Maybe Json)
+ | matchChar '[' state
+ , Just es <- takeListElems state
+ , matchChar ']' state
+ = Just (JsonList es)
+
+ | otherwise
+ = do   pushError state $ JsonParsePos 0 JsonParseList
+        Nothing
+
+
+-- | Take JSON list elements from the source, not including the final ']' char.
+takeListElems (state: JsonState r)
+        : S (Read r + Write r) (Maybe (List Json))
+ | Just c  <- peekChar state
+ = match
+        | c == ']'      =  Just Nil
+
+        | Just e        <- pullJsonValue state
+        , Just c'       <- peekChar state
+        = match
+                | c' == ','
+                , Just _        <- pullChar state
+                , Just es       <- takeListElems state
+                = Just (Cons e es)
+
+                | c' == ']'
+                = Just (Cons e Nil)
+
+                | otherwise
+                = do    pushError state $ JsonParsePos 0 JsonParseList
+                        Nothing
+
+        | otherwise
+        = do    pushError state $ JsonParsePos 0 JsonParseList
+                Nothing
+
+
+---------------------------------------------------------------------------------------------------
+-- | Pull a JSON object from the source.
+pullJsonObject (state: JsonState r)
+        : S (Read r + Write r) (Maybe Json)
+ | matchChar '{' state
+ , Just fs      <- takeFields state
+ , matchChar '}' state
+ = Just (JsonObject fs)
+
+ | otherwise
+ = do   pushError state $ JsonParsePos 0 JsonParseObject
+        Nothing
+
+
+-- | Take JSON object fields from the source, not including the final '}' char.
+takeFields (state: JsonState r)
+        : S (Read r + Write r) (Maybe (List (Text, Json)))
+ | Just c       <- peekChar state
+ = match
+        | c == '}'      = Just Nil
+
+        | Just f        <- pullField state
+        , Just c'       <- peekChar state
+        = match
+                | c' == ','
+                , Just _        <- pullChar state
+                , Just fs       <- takeFields state
+                = Just (Cons f fs)
+
+                | c' == '}'
+                = Just (Cons f Nil)
+
+                | otherwise
+                = do    pushError state $ JsonParsePos 0 JsonParseObject
+                        Nothing
+
+        | otherwise
+        = do    pushError state $ JsonParsePos 0 JsonParseObject
+                Nothing
+
+
+-- | Pull a single object field from the source.
+pullField (state: JsonState r)
+        : S (Read r + Write r) (Maybe (Text, Json))
+ | Just f       <- pullString state
+ , matchChar ':' state
+ , Just v       <- pullJsonValue state
+ = Just (f, v)
+
+ | otherwise
+ = do   pushError state $ JsonParsePos 0 JsonParseField
+        Nothing
 

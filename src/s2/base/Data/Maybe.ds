@@ -2,6 +2,7 @@
 module Data.Maybe
 export
 {       functor_Maybe; applicative_Maybe; monad_Maybe;
+        eq_Maybe;
         isNothing; isJust; fromMaybe; maybe;
 }
 import Class.Functor
@@ -66,6 +67,20 @@ monad_Maybe
          = case ma of
                 Nothing -> Nothing
                 Just xa -> f xa
+
+-- Classes --------------------------------------------------------------------
+eq_Maybe {@a: Data} {Eq a}: Eq (Maybe a)
+ = Eq eq' neq'
+ where
+        eq'  Nothing  Nothing   = True
+        eq'  (Just _) Nothing   = False
+        eq'  Nothing  (Just _)  = False
+        eq'  (Just x) (Just y)  = eq x y
+
+        neq' Nothing  Nothing   = False
+        neq' (Just _) Nothing   = True
+        neq' Nothing  (Just _)  = True
+        neq' (Just x) (Just y)  = neq x y
 
 
 -- Predicates -----------------------------------------------------------------
