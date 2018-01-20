@@ -106,9 +106,9 @@ pushError (state: JsonState r) (err: JsonParseError)
         writeRef refErrs errs
 
 
-parseFail (state: JsonState r) (err: JsonParseError)
+parseFail (state: JsonState r) (ctx: JsonParseContext)
         : S (Read r + Write r) (Maybe a)
- = do   pushError state err
+ = do   pushError state $ JsonParsePos 0 ctx
         Nothing
 
 

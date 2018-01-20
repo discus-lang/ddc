@@ -1,6 +1,7 @@
 
 module Codec.Json.Parser
-export parseJson;
+export
+{       parseJson; parseJsonPrefix }
 import Codec.Json.Base
 import Codec.Json.State
 import Data.Text
@@ -8,40 +9,45 @@ import Data.Numeric
 where
 
 -------------------------------------------------------------------------------
--- TODO: check we've parsed the whole string
--- also add parseJsonPrefix -> (Json, Text)
+-- | Parse a JSON value from a text string.
 parseJson (tx: Text): Either JsonParseError Json
- = private r with { Read r; Write r; Alloc r} in
+ | Right (json, txRest) <- parseJsonPrefix tx
+ , sizeOfText txRest == 0
+ = Right json
+
+ | otherwise
+ = Left $ JsonParsePos 0 JsonParseValue
+
+
+-- | Parse a JSON value from the prefix of a text string,
+--   also returning the unparseable suffix.
+parseJsonPrefix (tx: Text): Either JsonParseError (Json, Text)
+ = private r with {Read r; Write r; Alloc r} in
    do   source  = textSource_fromText {@r} tx
         refErr  = allocRef {@r} Nil
         state   = JsonState source refErr
         case pullJsonValue state of
-         Just v  -> Right v
+         Just v  -> Right (v, do { skipSpace state; textSource_toText source })
          Nothing -> Left $ JsonParsePos 0 JsonParseValue
 
 
 -------------------------------------------------------------------------------
+-- | Parse a single JSON value.
 pullJsonValue (state: JsonState r)
         : S (Read r + Write r) (Maybe Json)
  = case do { skipSpace state; peekChar state } of
-        Just c
-         | isDigit c ∨ c == '-'
-         -> pullJsonNumber state
+    Just c
+     | isDigit c ∨ c == '-'
+     -> pullJsonNumber state
 
-         | c == 'n'
-         -> matchKeyword (charListOfText "null")  state JsonNull
+     | c == 'n' -> matchKeyword (charListOfText "null")  state JsonNull
+     | c == 'f' -> matchKeyword (charListOfText "false") state (JsonBool False)
+     | c == 't' -> matchKeyword (charListOfText "true")  state (JsonBool True)
+     | c == '"' -> pullJsonString state
+     | c == '[' -> pullJsonList state
+     | c == '{' -> pullJsonObject state
 
-         | c == 'f'
-         -> matchKeyword (charListOfText "false") state (JsonBool False)
-
-         | c == 't'
-         -> matchKeyword (charListOfText "true")  state (JsonBool True)
-
-         | c == '"' -> pullJsonString state
-         | c == '[' -> pullJsonList state
-         | c == '{' -> pullJsonObject state
-
-        _ -> Nothing
+    _ -> Nothing
 
 
 -------------------------------------------------------------------------------
@@ -56,7 +62,7 @@ matchKeyword (cc: List Char) (state: JsonState r) (v: Json)
           |  matchChar    c  state
           -> matchKeyword cs state v
 
-        _ -> parseFail state $ JsonParsePos 0 JsonParseKeyword
+        _ -> parseFail state JsonParseKeyword
 
 
 -------------------------------------------------------------------------------
@@ -76,10 +82,10 @@ pullJsonNumber (state: JsonState r)
         = Just (JsonNumber (0.0f64 - f))
 
         | otherwise
-        = parseFail state $ JsonParsePos 0 JsonParseNumber)
+        = parseFail state JsonParseNumber)
 
  | otherwise
- = parseFail state $ JsonParsePos 0 JsonParseNumber
+ = parseFail state JsonParseNumber
 
 
 pullNumberPos (state: JsonState r)
@@ -90,13 +96,13 @@ pullNumberPos (state: JsonState r)
  -- TODO Parser disaster with nested matches, the following guard
  --      gets stuck to these ones, same as in above function.
  = (match
-        | Just cd    <- peekChar state
+        | Just cd  <- peekChar state
         , cd  == '.'
-        , Just _     <- pullChar state
-        , Just ds2   <- takeDigits state
-        , Cons _ _   <- ds2
-        , Just f     <- parseFloat64
-                     $  textOfCharList (append ds1 (Cons '.' ds2))
+        , Just _   <- pullChar state
+        , Just ds2 <- takeDigits state
+        , Cons _ _ <- ds2
+        , Just f   <- parseFloat64
+                   $  textOfCharList (append ds1 (Cons '.' ds2))
         = case takeNumberExponent state of
                 Just Nothing  -> Just f
 
@@ -104,52 +110,55 @@ pullNumberPos (state: JsonState r)
                  -> Just (f * float64_pow 10.0f64 (truncate# ex))
 
                 Nothing
-                 -> parseFail state $ JsonParsePos 0 JsonParseNumber
+                 -> parseFail state JsonParseNumber
 
         | Just f     <- parseFloat64 $ textOfCharList ds1
         = Just f
 
         | otherwise
-        = parseFail state $ JsonParsePos 0 JsonParseNumber)
+        = parseFail state JsonParseNumber)
 
  | otherwise
- = parseFail state $ JsonParsePos 0 JsonParseNumber
+ = parseFail state JsonParseNumber
 
 
+-- | Take a float exponent from the source stream,
+--   which starts with 'e' or 'E'.
 takeNumberExponent (state: JsonState r)
         : S (Read r + Write r) (Maybe (Maybe Int))
  | Just ce      <- peekChar state
  , ce == 'e' ∨ ce == 'E'
  , Just _       <- pullChar state
  = (match
-        | Just cn      <- peekChar state
+        | Just cn <- peekChar state
         , isDigit cn
-        , Just ex       <- pullNumberExponentPos state
+        , Just ex <- pullNumberExponentPos state
         = Just (Just (promote# ex))
 
-        | Just cn      <- peekChar state
+        | Just cn <- peekChar state
         , cn == '+'
-        , Just _        <- pullChar state
-        , Just ex       <- pullNumberExponentPos state
+        , Just _  <- pullChar state
+        , Just ex <- pullNumberExponentPos state
         = Just (Just (promote# ex))
 
-        | Just cn      <- peekChar state
+        | Just cn <- peekChar state
         , cn == '-'
-        , Just _        <- pullChar state
-        , Just ex       <- pullNumberExponentPos state
+        , Just _  <- pullChar state
+        , Just ex <- pullNumberExponentPos state
         = Just (Just (0i - promote# ex))
 
         | otherwise
-        = parseFail state $ JsonParsePos 0 JsonParseNumber)
+        = parseFail state JsonParseNumber)
 
  | otherwise
  = Just Nothing
 
 
+-- | Pull a positive exponent from the source stream.
 pullNumberExponentPos (state: JsonState r)
         : S (Read r + Write r) (Maybe Nat)
- | Just ds      <- takeDigits state
- , Cons _ _     <- ds
+ | Just ds  <- takeDigits state
+ , Cons _ _ <- ds
  = parseNat $ textOfCharList ds
 
  | otherwise
@@ -161,12 +170,12 @@ takeDigits (state: JsonState r)
         : S (Read r + Write r) (Maybe (List Char))
  | Just c  <- peekChar state
  = case isDigit c of
-        False                   -> Just Nil
+        False -> Just Nil
         True
          | Just _ <- pullChar state
          -> case takeDigits state of
-                Nothing         -> Just (Cons c Nil)
-                Just cs         -> Just (Cons c cs)
+                Nothing -> Just (Cons c Nil)
+                Just cs -> Just (Cons c cs)
 
          | otherwise
          -> Nothing
@@ -181,23 +190,23 @@ takeDigits (state: JsonState r)
 -- | Pull a JSON string from the source.
 pullJsonString (state: JsonState r)
         : S (Read r + Write r) (Maybe Json)
- | Just tx      <- pullString state
+ | Just tx <- pullString state
  = Just (JsonString tx)
 
  | otherwise
- = parseFail state $ JsonParsePos 0 JsonParseString
+ = parseFail state JsonParseString
 
 
 -- | Pull a quoted string from the source.
 pullString (state: JsonState r)
         : S (Read r + Write r) (Maybe Text)
  | matchChar '"' state
- , Just cs      <- takeStringChars state
+ , Just cs <- takeStringChars state
  , matchChar '"' state
  = Just (textOfCharList cs)
 
  | otherwise
- = parseFail state $ JsonParsePos 0 JsonParseString
+ = parseFail state JsonParseString
 
 
 -- | Take string characters from the source,
@@ -206,14 +215,14 @@ takeStringChars (state: JsonState r)
         : S (Read r + Write r) (Maybe (List Char))
  | Just c <- peekChar state
  = match
-        | c == '"'      = Just Nil
+        | c == '"' = Just Nil
 
-        | Just _        <- pullChar state
-        , Just cs       <- takeStringChars state
+        | Just _   <- pullChar state
+        , Just cs  <- takeStringChars state
         = Just (Cons c cs)
 
         | otherwise
-        = parseFail state $ JsonParsePos 0 JsonParseString
+        = parseFail state JsonParseString
 
 
 -------------------------------------------------------------------------------
@@ -226,7 +235,7 @@ pullJsonList (state: JsonState r)
  = Just (JsonList es)
 
  | otherwise
- = parseFail state $ JsonParsePos 0 JsonParseList
+ = parseFail state JsonParseList
 
 
 -- | Take JSON list elements from the source,
@@ -238,12 +247,12 @@ takeListElems (state: JsonState r)
         | c == ']'
         = Just Nil
 
-        | Just e        <- pullJsonValue state
-        , Just es       <- takeCommaListElems state
+        | Just e  <- pullJsonValue state
+        , Just es <- takeCommaListElems state
         = Just (Cons e es)
 
         | otherwise
-        = parseFail state $ JsonParsePos 0 JsonParseList
+        = parseFail state JsonParseList
 
 
 -- | Take comma prefixed JSON list fields from the source,
@@ -256,16 +265,16 @@ takeCommaListElems (state: JsonState r)
         = Just Nil
 
         | c == ','
-        , Just _        <- pullChar state
-        , Just e        <- pullJsonValue state
-        , Just es       <- takeCommaListElems state
+        , Just _  <- pullChar state
+        , Just e  <- pullJsonValue state
+        , Just es <- takeCommaListElems state
         = Just (Cons e es)
 
         | otherwise
-        = parseFail state $ JsonParsePos 0 JsonParseList)
+        = parseFail state JsonParseList)
 
  | otherwise
- = parseFail state $ JsonParsePos 0 JsonParseList
+ = parseFail state JsonParseList
 
 
 -------------------------------------------------------------------------------
@@ -278,7 +287,7 @@ pullJsonObject (state: JsonState r)
  = Just (JsonObject fs)
 
  | otherwise
- = parseFail state $ JsonParsePos 0 JsonParseObject
+ = parseFail state JsonParseObject
 
 
 -- | Take JSON object fields from the source,
@@ -290,12 +299,12 @@ takeObjectFields (state: JsonState r)
         | c == '}'
         = Just Nil
 
-        | Just f        <- pullField state
-        , Just fs       <- takeCommaObjectFields state
+        | Just f  <- pullField state
+        , Just fs <- takeCommaObjectFields state
         = Just (Cons f fs)
 
         | otherwise
-        = parseFail state $ JsonParsePos 0 JsonParseObject
+        = parseFail state JsonParseObject
 
 
 -- | Take comma prefixed JSON object fields from the source,
@@ -314,10 +323,10 @@ takeCommaObjectFields (state: JsonState r)
         = Just (Cons f fs)
 
         | otherwise
-        = parseFail state $ JsonParsePos 0 JsonParseObject)
+        = parseFail state JsonParseObject)
 
  | otherwise
- = parseFail state $ JsonParsePos 0 JsonParseObject
+ = parseFail state JsonParseObject
 
 
 -- | Pull a single object field from the source.
@@ -329,5 +338,5 @@ pullField (state: JsonState r)
  = Just (f, v)
 
  | otherwise
- = parseFail state $ JsonParsePos 0 JsonParseField
+ = parseFail state JsonParseField
 

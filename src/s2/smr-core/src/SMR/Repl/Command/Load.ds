@@ -16,7 +16,7 @@ loadSources
                    (List (Decl Name Prim))
  = case paths of
         Nil     -> Nil
-        Cons (TextLit path) paths'
+        Cons path paths'
          -> case loadSource config path of
                 Nothing
                  -> do  writel "load failed"
@@ -31,11 +31,11 @@ loadSources
 -- | Load a list of top-level declarations from a source file.
 loadSource
         (config: Config Name Prim)
-        (path:   TextLit)
+        (path:   Text)
         :        S (File + Console)
                    (Maybe (List (Decl Name Prim)))
  = do
-        str     = file_read (takeTextLit path)
+        str     = file_read path
         lStart  = Location 1 1
         result  = lexTokens lStart $ charListOfText str
 

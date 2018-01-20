@@ -9,14 +9,21 @@ import System.Posix.Stdlib
 
 
 import foreign c value
- primFileRead   : TextLit# -> Vector# RegionText Word8#
-
+ primFileRead   : Nat# -> Vector# RegionText Word8#
+ ddcVectorGuts : {@r: Region} -> Vector# r Word8 -> Nat#
 
 where
 
 
-file_read (path: TextLit#): S File Text
+-- | TODO: wrap code to get the flat vector for FFI in a nicer way.
+file_read (tx: Text): S File Text
  = box weakeff File in
-   do   vec     = primFileRead path
-        TextVec vec
+   case tx of
+        TextVec vecPath
+         -> do  vecFile = primFileRead (ddcVectorGuts {@RegionText} vecPath)
+                TextVec vecFile
 
+        _ -> file_read
+                $ TextVec
+                $ extend RegionText using r1 with { Alloc r1; Write r1 }
+                  in vectorOfText {@r1} tx

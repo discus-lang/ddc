@@ -1,0 +1,23 @@
+null
+true
+false
+"hello world"
+1234
+-1234
+1234567
+1234567891
+1234.567
+-1234.567
+10006.99430671
+12345670
+12345670
+1.234567e-05
+[]
+[true]
+[true,false,true]
+[true,123456,true,"derp"]
+{}
+{"one":[true,false,27.123,true],"two":{"three":null}}
+{"one":{"three":[true,false,27,true],"two":{"three":null}}}
+[["funding","BTC",0.1,null],["funding","USD",10000.001,0,null]]
+([1234],"trailingjunk")

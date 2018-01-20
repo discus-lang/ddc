@@ -6,7 +6,8 @@ export {
         textSource_pullWord; textSource_pullWords;
         textSource_pullChar;
         textSource_peekChar;
-        textSource_matchChar
+        textSource_matchChar;
+        textSource_toText
 }
 
 import Data.Numeric.Word8
@@ -52,6 +53,13 @@ text_firstChunk (tx: Text): Maybe (TextChunk, Maybe Text)
                 Just (chunk, Just t1')  -> Just (chunk, Just (TextApp t1' t2))
 
 
+-- | Get the size of the chunk in bytes.
+text_sizeOfChunk (txc: TextChunk): Nat
+ = case txc of
+        TextChunkLit lit     -> sizeOfTextLit lit
+        TextChunkVec vec     -> vectorLength# vec - 1
+
+
 -------------------------------------------------------------------------------
 -- | A pull stream for text characters,
 --   with a mutable internal state stored in region 'r'.
@@ -67,7 +75,7 @@ data TextSource (r: Region) where
 -- | Construct a new text source from the given text string.
 textSource_fromText
         {@r: Region} (tx: Text)
-        : S (Alloc r + Read r + Write r) (TextSource r)
+        : S (Alloc r) (TextSource r)
  = case tx of
         TextLit lit
          -> textSource_fromChunk {@r} (TextChunkLit lit) Nothing
@@ -85,9 +93,52 @@ textSource_fromText
 
 
 -- | Freeze a TextSource into a text object.
--- textSource_toText (tx: TextSouce r): Text
---  *** need to copy off remaining part of chunk.
+textSource_toText
+        (source: TextSource r): S (Read r) Text
+ | TextSource _ refChunk refIx refRest <- source
+ = do   chunk   = readRef refChunk
+        ix      = readRef refIx
+        mRest   = readRef refRest
+        size    = text_sizeOfChunk chunk
+        nRemain = size - ix
 
+        match
+         | nRemain == 0
+         = case mRest of
+                Nothing         -> ""
+                Just txRest     -> txRest
+
+         | TextChunkLit lit <- chunk
+         = do   vecNew
+                 = extend RegionText using r1 with {Alloc r1; Write r1} in
+                   do   -- Copy the remaining part of a chunk to a new vector.
+                        vec'    = vectorAlloc# {@r1} (nRemain + 1)
+                        copyTextLitToVector lit vec' 0 ix (ix + nRemain)
+
+                        -- Write the trailing null byte.
+                        vectorWrite# vec' nRemain 0w8
+                        vec'
+
+                -- Append whatever remaining chunks we had.
+                case mRest of
+                 Nothing        -> TextVec vecNew
+                 Just txRest    -> TextApp (TextVec vecNew) txRest
+
+         | TextChunkVec vec <- chunk
+         = do   vecNew
+                 = extend RegionText using r1 with {Alloc r1; Write r1} in
+                   do   -- Copy the remaining part of the chunk to a new vector.
+                        vec'   = vectorAlloc# {@r1} (nRemain + 1)
+                        copyTextVecToVector vec vec' 0 ix (ix + nRemain)
+
+                        -- Write the trailing null byte.
+                        vectorWrite# vec' nRemain 0w8
+                        vec'
+
+                -- Append whatever remaining chunks we had.
+                case mRest of
+                 Nothing        -> TextVec vecNew
+                 Just txRest    -> TextApp (TextVec vecNew) txRest
 
 
 -- | Construct a new text source from the first chunk and the rest

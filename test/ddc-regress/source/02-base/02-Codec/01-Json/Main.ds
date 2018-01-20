@@ -11,6 +11,11 @@ main ()
                 Left err        -> printl err
                 Right json      -> writel (ppr json)
 
+        pr tx
+         = case parseJsonPrefix tx of
+                Left err        -> printl err
+                Right json      -> writel (ppr json)
+
         pp "null"
         pp "true"
         pp "false"
@@ -30,7 +35,7 @@ main ()
 
         pp "[]"
         pp "[true]"
-        pp " [ true , false , true ] "
+        pp " [ true , false , true ]"
         pp "[true,123456,true,\"derp\"]"
 
         pp "{}"
@@ -39,3 +44,5 @@ main ()
         pp "{\"one\":{\"three\":[true,false,27,true],\"two\":{\"three\":null}}}"
 
         pp "[[\"funding\",\"BTC\",0.1,null],[\"funding\",\"USD\",10000.001,0,null]]"
+
+        pr "[1234]trailingjunk"
