@@ -65,7 +65,7 @@ show_Char: Show Char
 --   ISSUE #381: Escape non-printable characters in base Show library.
 show_Text: Show Text
  = Show sh
- where  sh tx           = "\"" % tx % "\""
+ where  sh tx           = "\"" % escapeTextDisciple tx % "\""
 
 
 -- | Show dictionary for Tup2.

@@ -18,12 +18,5 @@ where
 -- | TODO: wrap code to get the flat vector for FFI in a nicer way.
 file_read (tx: Text): S File Text
  = box weakeff File in
-   case tx of
-        TextVec vecPath
-         -> do  vecFile = primFileRead (ddcVectorGuts {@RegionText} vecPath)
-                TextVec vecFile
+   TextVec $ primFileRead (ddcVectorGuts (textVectorOfText tx))
 
-        _ -> file_read
-                $ TextVec
-                $ extend RegionText using r1 with { Alloc r1; Write r1 }
-                  in vectorOfText {@r1} tx

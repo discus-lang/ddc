@@ -51,13 +51,8 @@ where
 -- | Convert the initial portion of the string to int representation.
 stdlib_atoi (text: Text): Nat
  = private r with { Read r; Write r; Alloc r} in
-   do
-        nul     = 0w32
-
-        -- ISSUE #439: Avoid copying strings via lists in Stdlib.ds.
-        vec     = vectorOfCharList [r]
-                $ append (charListOfText text) (Cons nul Nil)
-
+   do   -- ISSUE #439: Avoid copying strings via lists in Stdlib.ds.
+        vec     = vectorOfCharList [r] $ charListOfText text
         atoi (ddcVectorGuts vec)
 
 
@@ -67,13 +62,7 @@ stdlib_atoi (text: Text): Nat
 --   ignoring SIGINT and SIGQUIT, and blocking SIGCHLD.
 stdlib_system (cmd: Text): S Process Int
  = private r with { Read r; Write r; Alloc r } in
-   do
-        nul     = 0w32
-
-        -- ISSUE #439: Avoid copying strings via lists in Stdlib.ds.
-        vec     = vectorOfCharList [r]
-                $ append (charListOfText cmd) (Cons nul Nil)
-
+   do   vec     = vectorOfCharList [r] $ charListOfText cmd
         run system (ddcVectorGuts vec)
 
 
@@ -90,11 +79,8 @@ stdlib_mkstemp
  = weakeff File in
    private r with { Read r; Write r; Alloc r} in
    do
-        nul     = 0w32
-
         -- ISSUE #439: Avoid copying strings via lists in Stdlib.ds.
-        vec     = vectorOfCharList [r]
-                $ append (charListOfText template) (Cons nul Nil)
+        vec     = vectorOfCharList [r] $ charListOfText template
 
         result  = stdlib_mkstemp_raw vec
         case result of

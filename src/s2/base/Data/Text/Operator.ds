@@ -10,9 +10,20 @@ export
 
         -- * Pretty Printing
         parens;
+
+        -- * Reductions;
+        text_foldl
 }
 import Data.Text.Base
+
+-- | Capabilities to allocate and read top-level text vectors.
+--   TODO: we shouldn't need to re-import these.
+import foreign abstract capability
+        capTopTextAlloc : Alloc RegionText
+        capTopTextRead  : Read  RegionText
+
 where
+
 
 
 -- Desuguaring -----------------------------------------------------------------
@@ -50,3 +61,30 @@ flattenText (tt: Text): Text
 -- | Wrap a some text in parenthesis.
 parens (tx: Text): Text
  = "(" % tx % ")"
+
+
+-- Reductions -----------------------------------------------------------------
+text_foldl (f: a -> Char -> a) (z: a) (tx: Text): a
+ = case tx of
+        TextLit lit     -> text_foldlTextLit f z lit
+        TextVec vec     -> text_foldlTextVec f z vec
+        TextApp tx1 tx2 -> text_foldl f (text_foldl f z tx1) tx2
+
+text_foldlTextLit
+        (f: a -> Char -> a) (z: a)
+        (lit: TextLit): a
+ = go 0 z
+ where  go ix acc
+         | ix >= sizeOfTextLit lit = acc
+         | otherwise    = go (ix + 1) (f acc (promote# (indexTextLit lit ix)))
+
+text_foldlTextVec
+        (f: a -> Char -> a) (z: a)
+        (vec: Vector# RegionText Word8): a
+ = go 0 z
+ where  go ix acc
+         | ix >= vectorLength# vec - 1  = acc
+         | otherwise    = go (ix + 1) (f acc (promote# (vectorRead# vec ix)))
+
+
+

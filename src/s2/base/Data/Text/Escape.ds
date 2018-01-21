@@ -1,0 +1,184 @@
+
+module Data.Text.Escape
+export
+{       escapeCharDisciple;
+        escapeSizeDisciple;
+        escapeTextDisciple;
+}
+import Data.Text.Numeric
+
+
+-- | Capabilities to allocate and read top-level text vectors.
+--   TODO: we shouldn't need to re-import these.
+import foreign abstract capability
+        capTopTextAlloc : Alloc RegionText
+        capTopTextRead  : Read  RegionText
+
+-- | Runtime operators for working with unboxed text literals.
+import foreign c value
+        -- | Get a single byte from a boxed text literal.
+        --   This is a byte rather than a character,
+        --   as UTF-8 encoded characters can consist of multiple bytes.
+        indexTextLit    : TextLit  -> Nat -> Word8
+
+where
+
+
+
+-- | Produce the escaped version of the given character using the Disciple
+--   source code encoding, which follows the JSON specification.
+escapeCharDisciple (c: Char): Text
+        -- TODO: cannot parse 0x07ew32, prob becaues of 'e' char next to 'w'
+        | c >= 0x020w32 ∧ c <= 126w32
+        = textOfChar c
+
+        -- TODO: we can't match directly against character literals in
+        -- case expressions, so need to turn this into a match statement.
+        | otherwise
+        = match
+                | c == '"'      = "\""
+                | c == '\\'     = "\\\\"
+                | c == '\b'     = "\\b"
+                | c == '\f'     = "\\f"
+                | c == '\n'     = "\\n"
+                | c == '\r'     = "\\r"
+                | c == '\t'     = "\\t"
+                | otherwise     = "\\u" % showBaseNat 16 digitHex 4 '0' (promote# c)
+
+
+-- | Get the size of the escape encoded output string.
+escapeSizeDisciple (tx: Text): Nat
+ = text_foldl acc 0 tx
+ where
+        acc n c
+         | c >= 0x20w32 ∧ c < 126w32
+         = n + 1
+
+         = match
+                | c == '"'      = n + 2
+                | c == '\\'     = n + 2
+                | c == '\b'     = n + 2
+                | c == '\f'     = n + 2
+                | c == '\n'     = n + 2
+                | c == '\r'     = n + 2
+                | c == '\t'     = n + 2
+                | otherwise     = n + 6
+
+
+-- | Escape encode the given string.
+escapeTextDisciple (tx: Text): Text
+ = TextVec
+ $ extend RegionText using r1 with {Read r1; Write r1; Alloc r1} in
+   do   -- Determine the length of the encoded string.
+        lenEnc  = escapeSizeDisciple tx
+
+        -- Allocate a new vector for the encoded string,
+        -- including space for the null terminator byte.
+        vec     = vectorAlloc# {@r1} (lenEnc + 1)
+
+        -- Copy text data to the output vector,
+        -- escaping characters as we go.
+        iEnd    = escapeTextToVectorDisciple tx vec 0
+
+        -- Write the null terminator byte.
+        vectorWrite# vec iEnd 0w8
+
+        vec
+
+
+-- | Copy text data to a new vector while performing escape encoding.
+escapeTextToVectorDisciple
+        (tt: Text) (vec: Vector# r Word8) (i0: Nat)
+        : S (Write r) Nat
+ = weakeff Write r in case tt of
+        TextLit lit'
+         -> escapeTextLitToVectorDisciple lit' vec i0 0 (sizeOfTextLit lit')
+
+        TextVec vec'
+         -> escapeTextVecToVectorDisciple vec' vec i0 0 (vectorLength# vec' - 1)
+
+        TextApp tx1 tx2
+         -> do  i1 = escapeTextToVectorDisciple tx1 vec i0
+                i2 = escapeTextToVectorDisciple tx2 vec i1
+                i2
+
+
+-- | Escape a source literal of characters and write the encoded version
+--   to the destination vector.
+escapeTextLitToVectorDisciple
+        (litSrc: TextLit) (vecDst: Vector# r2 Word8)
+        (iDst0 iSrc0 nSrc0: Nat)
+        : S (Write r2) Nat
+ = go iDst0 iSrc0 nSrc0
+ where
+        go (iDst: Nat) (iSrc: Nat) (nSrc: Nat): S (Write r2) Nat
+         | iSrc >= nSrc = iDst
+         | otherwise
+         = do   nBump   = writeEscape vecDst iDst (promote# (indexTextLit litSrc iSrc))
+                go (iDst + nBump) (iSrc + 1) nSrc
+
+
+-- | Escape a source vector of characters and write the encoded version
+--   to the destionation vector.
+escapeTextVecToVectorDisciple
+        (vecSrc: Vector# r1 Word8) (vecDst: Vector# r2 Word8)
+        (iDst0 iSrc0 nSrc0: Nat)
+        : S (Read r1 + Write r2) Nat
+ = go iDst0 iSrc0 nSrc0
+ where
+        go (iDst: Nat) (iSrc: Nat) (nSrc: Nat): S (Read r1 + Write r2) Nat
+         | iSrc >= nSrc = iDst
+         | otherwise
+         = do   nBump   = writeEscape vecDst iDst (promote# (vectorRead# vecSrc iSrc))
+                go (iDst + nBump) (iSrc + 1) nSrc
+
+
+-- | Escape a character and write the encoding to the given vector.
+writeEscape (vecDst: Vector# r2 Word8) (iDst: Nat) (c: Char) : S (Write r2) Nat
+ =
+   -- TODO: parse problem 'where' expression wraps otherwise branch instead of match.
+   (match
+        | (promote# c >= 30) ∧ (promote# c <= 126)
+                        = do { write1 iDst c; 1 }
+        | c == '"'      = do { write1 iDst '\\'; write1 (iDst + 1) '"';  2 }
+        | c == '\\'     = do { write1 iDst '\\'; write1 (iDst + 1) '\\'; 2 }
+        | c == '\b'     = do { write1 iDst '\\'; write1 (iDst + 1) 'b';  2 }
+        | c == '\f'     = do { write1 iDst '\\'; write1 (iDst + 1) 'f';  2 }
+        | c == '\n'     = do { write1 iDst '\\'; write1 (iDst + 1) 'n';  2 }
+        | c == '\r'     = do { write1 iDst '\\'; write1 (iDst + 1) 'r';  2 }
+        | c == '\t'     = do { write1 iDst '\\'; write1 (iDst + 1) 't';  2 }
+
+        -- TODO: do unicode escape encoding.
+        | otherwise
+        = do    write1 iDst       '\\'
+                write1 (iDst + 1) 'u'
+                write1 (iDst + 2) 'X'
+                write1 (iDst + 3) 'X'
+                write1 (iDst + 4) 'X'
+                write1 (iDst + 5) 'X'
+                6)
+
+ where  write1 (iDst: Nat) (c: Char): S (Write r2) Unit
+         = do   vectorWrite# vecDst iDst (truncate# c)
+                ()
+
+
+
+{- TODO: doing comparisons directly against hex w32 constants doesn't work
+  case True of
+    _   | (promote# c >= 30) ∧ (promote# c <= 126)
+        -> do   write1 iDst c
+                1
+-}
+
+{- TODO: using a literal 'True' guard here doesn't work,
+   it just flows on to the next case
+   case True of
+    _   | True
+        -> do   write1 iDst c
+                1
+
+        | otherwise
+        -> do   write1 iDst '?'
+                1
+-}

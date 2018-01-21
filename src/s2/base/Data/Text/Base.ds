@@ -16,6 +16,7 @@ export
 
         -- Conversion.
         vectorOfText;
+        textVectorOfText;
 
         -- Projections.
         sizeOfText;
@@ -120,6 +121,10 @@ textOfVector (vec: Vector# RegionText Word8): Text
 
 
 -- Conversion -----------------------------------------------------------------
+textVectorOfText (tt: Text): Vector# RegionText Word8
+ = vectorOfText {@RegionText} tt
+
+
 -- | Copy a Text object into a flat vector of UTF-8 data.
 vectorOfText
         {@r1: Region} (tt: Text)

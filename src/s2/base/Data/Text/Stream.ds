@@ -1,7 +1,8 @@
 
 module Data.Text.Stream
 export {
-        text_toList; text_words;
+        text_toList;
+        text_words; text_lines;
         textSource_fromText;
         textSource_pullWord; textSource_pullWords;
         textSource_pullChar;
@@ -27,12 +28,21 @@ text_toList (tx: Text): List Char
         list    = textSource_pullList source
         list
 
+
 -- | Take a list of words from a text string.
 text_words (tx: Text): List Text
  = private r with {Read r; Write r; Alloc r} in
    do   source  = textSource_fromText {@r} tx
         words   = textSource_pullWords source
         words
+
+
+-- | Take a list of lines from a text string.
+text_lines (tx: Text): List Text
+ = private r with {Read r; Write r; Alloc r} in
+   do   source  = textSource_fromText {@r} tx
+        lines   = textSource_pullLines source
+        lines
 
 
 -------------------------------------------------------------------------------
@@ -262,7 +272,6 @@ textSource_matchChar
 
 -- | Pull the entire list of characters from a text source.
 textSource_pullList
-        {@r: Region}
         (source: TextSource r)
         : S (Read r + Write r) (List Char)
  = go ()
@@ -272,34 +281,52 @@ textSource_pullList
                 Just c  -> Cons c (go ())
 
 
--- | Pull a single word from a text source.
-textSource_pullWord
-        {@r: Region}
-        (source: TextSource r)
-        : S (Read r + Write r) (Maybe Text)
+-------------------------------------------------------------------------------
+-- | Pull a list of lines from a text source.
+textSource_pullLines (source: TextSource r): S (Read r + Write r) (List Text)
+ = go Nil
+ where  go (acc: List Text): S (Read r + Write r) (List Text)
+         = case textSource_pullLine source of
+                Nothing -> reverse acc
+                Just c  -> go (Cons c acc)
+
+
+-- | Pull a single line from a text source.
+textSource_pullLine  (source: TextSource r): S (Read r + Write r) (Maybe Text)
  = go Nil
  where  go (acc: List Char): S (Read r + Write r) (Maybe Text)
          = case textSource_pullChar source of
+                Nothing
+                 -> case acc of
+                        Nil     -> Nothing
+                        _       -> Just (textOfCharList (reverse acc))
+
                 Just c
-                 | isSpace c    -> make (reverse acc)
+                 | c == '\n'    -> Just (textOfCharList (reverse acc))
                  | otherwise    -> go (Cons c acc)
 
-                Nothing         -> make (reverse acc)
 
-        make (acc: List Char): Maybe Text
-         = case acc of
-                Nil      -> Nothing
-                Cons _ _ -> Just (textOfCharList acc)
-
-
--- | Pull the entire list of words from a text source.
-textSource_pullWords
-        {@r: Region}
-        (source: TextSource r)
-        : S (Read r + Write r) (List Text)
+-------------------------------------------------------------------------------
+-- | Pull a list of words from a text source.
+textSource_pullWords (source: TextSource r): S (Read r + Write r) (List Text)
  = go Nil
  where  go (acc: List Text): S (Read r + Write r) (List Text)
          = case textSource_pullWord source of
                 Nothing -> reverse acc
                 Just c  -> go (Cons c acc)
+
+
+-- | Pull a single word from a text source.
+textSource_pullWord  (source: TextSource r): S (Read r + Write r) (Maybe Text)
+ = go Nil
+ where  go (acc: List Char): S (Read r + Write r) (Maybe Text)
+         = case textSource_pullChar source of
+                Nothing
+                 -> case acc of
+                        Nil     -> Nothing
+                        _       -> Just (textOfCharList (reverse acc))
+
+                Just c
+                 | isSpace c    -> Just (textOfCharList (reverse acc))
+                 | otherwise    -> go (Cons c acc)
 

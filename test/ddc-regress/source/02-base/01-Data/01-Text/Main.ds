@@ -3,6 +3,7 @@ module Main
 import Class.Show
 import Data.Text
 import Data.Text.Stream
+import Data.Text.Base
 import Data.List
 import System.IO.Console
 where
@@ -30,6 +31,11 @@ main ()
 
         writel  $ "eqText:"
                 %% (show $ (eqText "derp" "derp", eqText "derp" "snerp"))
+
+        writel  $ "textOfVector:"
+                %% (show $ textOfVector $ textVectorOfText "derp")
+                %% (show $ textOfVector $ textVectorOfText ("(" % "two" % "three" % ")"))
+
         writel  ""
 
         ---------------------------------------------------
@@ -45,6 +51,13 @@ main ()
 
         writel  $ "isSpace:"
                 %% (show $ (isSpace ' ', isSpace '!'))
+        writel  ""
+
+
+        ---------------------------------------------------
+        writel  $ "Date.Text.Escape"
+        writel  $ "escapedTextDisciple:"
+                %% escapeTextDisciple "one\ntwo\b\tthree\rfour\f"
         writel  ""
 
         ---------------------------------------------------
@@ -75,6 +88,12 @@ main ()
 
         writel  $ "parens"
                 %% parens "derp"
+
+        writel  $ "foldl upper:"
+                %% (show $ text_foldl
+                                (\acc c -> if isUpper c then acc + 1 else acc + 0)
+                                0 "dERPittt")
+
         writel  ""
 
         ---------------------------------------------------
@@ -128,6 +147,13 @@ main ()
         writel  $ "text_words:"
                 %% (show $ text_words  "one two three")
 
+        writel  $ "text_words:"
+                %% (show $ text_words  "one\ntwo\n\nthree")
+
+        writel  $ "text_lines:"
+                %% (show $ text_lines  "one\ntwo\n\nthree")
+
         writel ""
+
 
 

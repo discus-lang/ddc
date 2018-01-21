@@ -1,0 +1,131 @@
+
+-- | Showing numeric data types.
+module Data.Text.Numeric
+export
+{       showNat;
+        showBinaryNat;  digitBinary;
+        showDecimalNat; digitDecimal;
+        showHexNat;     digitHex;
+        showBaseNat;
+        showFloat32;
+        showFloat64;
+}
+import Data.Numeric.Word8
+import Data.Numeric.Float32
+import Data.Numeric.Float64
+import Data.Tuple
+import Data.Text.Base
+import Data.Text.Char
+import Data.Text.Operator
+
+import foreign c value
+ primShowFloat32: Float32# -> Vector# RegionText Word8#
+ primShowFloat64: Float64# -> Vector# RegionText Word8#
+
+where
+
+
+-------------------------------------------------------------------------------
+-- | Show a natural number.
+showNat (x: Nat): Text
+ = showBaseNat 10 digitDecimal 0 'X' x
+
+
+-------------------------------------------------------------------------------
+-- | Show a natural number, in binary.
+showBinaryNat (x: Nat): Text
+ = showBaseNat 2 digitBinary 0 'X' x
+
+digitBinary (n: Nat): Char
+ = case n of
+        0       -> '0'
+        1       -> '1'
+        _       -> 'X'
+
+
+-------------------------------------------------------------------------------
+-- | Show a natural number in decimal.
+showDecimalNat (x: Nat): Text
+ = showBaseNat 10 digitDecimal 0 'X' x
+
+digitDecimal (n: Nat): Word32
+ = case n of
+        0       -> '0'
+        1       -> '1'
+        2       -> '2'
+        3       -> '3'
+        4       -> '4'
+        5       -> '5'
+        6       -> '6'
+        7       -> '7'
+        8       -> '8'
+        9       -> '9'
+        _       -> 'X'
+
+
+-------------------------------------------------------------------------------
+-- | Show a natural number in hex.
+showHexNat (x: Nat): Text
+ = showBaseNat 16 digitHex 0 'X' x
+
+digitHex (n: Nat): Char
+ = case n of
+        0       -> '0'
+        1       -> '1'
+        2       -> '2'
+        3       -> '3'
+        4       -> '4'
+        5       -> '5'
+        6       -> '6'
+        7       -> '7'
+        8       -> '8'
+        9       -> '9'
+        10      -> 'a'
+        11      -> 'b'
+        12      -> 'c'
+        13      -> 'd'
+        14      -> 'e'
+        15      -> 'f'
+        _       -> 'X'
+
+
+-------------------------------------------------------------------------------
+-- | Show a natural number using an arbitrary base encoding.
+showBaseNat
+        (base:  Nat)            -- ^ Base of encoding.
+        (digit: Nat -> Char)    -- ^ Show a digit in this base.
+        (width: Nat)            -- ^ Width of output, or 0 to not pad.
+        (pad:   Char)           -- ^ Character to pad output with.
+        (x:     Nat)            -- ^ Number to print.
+        : Text
+ = do   s       = showBaseNat' base digit width pad True x
+        if x < 0
+         then "-" % s
+         else s
+
+showBaseNat' base digit width pad first x
+ | and (x == 0) first
+ = showBaseNat' base digit (width - 1) pad False x
+        % "0"
+
+ | and (x == 0) (width > 0)
+ = showBaseNat' base digit (width - 1) pad False x
+        % textOfChar pad
+
+ | x == 0
+ = ""
+
+ | otherwise
+ = showBaseNat' base digit (width - 1) pad False (div x base)
+        % textOfChar (digit (rem x base))
+
+
+-------------------------------------------------------------------------------
+-- | Show a Float32.
+showFloat32 (f: Float32): Text
+ = TextVec (primShowFloat32 f)
+
+
+-- | Show a Float64.
+showFloat64 (f: Float64): Text
+ = TextVec (primShowFloat64 f)
