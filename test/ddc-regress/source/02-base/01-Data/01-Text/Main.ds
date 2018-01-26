@@ -53,7 +53,6 @@ main ()
                 %% (show $ (isSpace ' ', isSpace '!'))
         writel  ""
 
-
         ---------------------------------------------------
         writel  $ "Date.Text.Escape"
         writel  $ "escapedTextDisciple:"
@@ -77,16 +76,16 @@ main ()
 
         ---------------------------------------------------
         writel  $ "Data.Text.Operator"
-        writel  $ "paste"
+        writel  $ "paste:"
                 %% paste  "one" "two"
 
-        writel  $ "pastes"
+        writel  $ "pastes:"
                 %% pastes "one" "two"
 
-        writel  $ "flattenText"
+        writel  $ "flattenText:"
                 %% flattenText (paste "one" "two")
 
-        writel  $ "parens"
+        writel  $ "parens:"
                 %% parens "derp"
 
         writel  $ "foldl upper:"
@@ -154,6 +153,4 @@ main ()
                 %% (show $ text_lines  "one\ntwo\n\nthree")
 
         writel ""
-
-
 

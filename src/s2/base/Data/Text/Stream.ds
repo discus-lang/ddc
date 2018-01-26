@@ -327,6 +327,9 @@ textSource_pullWord  (source: TextSource r): S (Read r + Write r) (Maybe Text)
                         _       -> Just (textOfCharList (reverse acc))
 
                 Just c
-                 | isSpace c    -> Just (textOfCharList (reverse acc))
+                 | isSpace c
+                 -> case acc of
+                        Nil     -> go Nil
+                        _       -> Just (textOfCharList (reverse acc))
                  | otherwise    -> go (Cons c acc)
 

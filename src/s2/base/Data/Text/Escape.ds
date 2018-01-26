@@ -29,7 +29,9 @@ where
 --   source code encoding, which follows the JSON specification.
 escapeCharDisciple (c: Char): Text
         -- TODO: cannot parse 0x07ew32, prob becaues of 'e' char next to 'w'
-        | c >= 0x020w32 ∧ c <= 126w32
+--        | c >= 0x020w32 ∧ c <= 126w32
+--        = textOfChar c
+        | (promote# c >= 30) ∧ (promote# c <= 126)
         = textOfChar c
 
         -- TODO: we can't match directly against character literals in
@@ -50,10 +52,13 @@ escapeCharDisciple (c: Char): Text
 escapeSizeDisciple (tx: Text): Nat
  = text_foldl acc 0 tx
  where
+        -- TODO(BL): This comparison doesn't work properly.
+        -- | c >= 0x20w32 ∧ c < 126w32
         acc n c
-         | c >= 0x20w32 ∧ c < 126w32
+         | (promote# c >= 30) ∧ (promote# c <= 126)
          = n + 1
 
+         | otherwise
          = match
                 | c == '"'      = n + 2
                 | c == '\\'     = n + 2

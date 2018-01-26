@@ -31,12 +31,14 @@ library
         Data.Function
         Data.Maybe
         Data.Either
+        Data.List
         Data.Text.Char
         Data.Text.Base
         Data.Text.Operator
-        Data.Text.Show
-        Data.List
+        Data.Text.Numeric
+        Data.Text.Escape
         Data.Text.List
+        Data.Text.Show
         Data.Text
         Class.Show
         Data.Ref

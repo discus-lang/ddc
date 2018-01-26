@@ -129,3 +129,4 @@ showFloat32 (f: Float32): Text
 -- | Show a Float64.
 showFloat64 (f: Float64): Text
  = TextVec (primShowFloat64 f)
+
