@@ -6,7 +6,7 @@ export value
  sizeOfTextLit     : [r1: Region]. Ptr# r1 Obj -> Nat#
  indexTextLit      : [r1: Region]. Ptr# r1 Obj -> Nat# -> Word8#
 
-import value 
+import value
  -- Objects with raw, non-pointer data.
  ddcAllocRaw       : [r1: Region]. Tag# -> Nat# -> Ptr# r1 Obj
  ddcPayloadRaw     : [r1: Region]. Ptr# r1 Obj  -> Ptr# r1 Word8#
@@ -42,7 +42,7 @@ makeTextLit [r1: Region] (addrString: Addr#): Ptr# r1 Obj
 
 -- | Take the pointer from a text literal.
 takeTextLit [r1: Region] (obj: Ptr# r1 Obj): Addr#
- = do   
+ = do
         payload = takePtr# (ddcPayloadRaw obj)
         read# [Addr#] payload 4#
 
@@ -56,7 +56,7 @@ sizeOfTextLit [r1: Region] (obj: Ptr# r1 Obj): Nat#
 
 -- | Get a single byte of a text literal.
 indexTextLit [r1: Region] (obj: Ptr# r1 Obj) (ix: Nat#): Word8#
- = do   
+ = do
         charPtr = takeTextLit obj
         size    = sizeOfTextLit obj
 
@@ -64,7 +64,7 @@ indexTextLit [r1: Region] (obj: Ptr# r1 Obj) (ix: Nat#): Word8#
         char
 
 
--- | Get the size of a null-terminated array of characters, in bytes.
+-- | Get the number of non-bytes in a null-terminated array of bytes.
 sizeOfString (i: Nat#) (str: Addr#): Nat#
  = do
         x       = promote# (read# [Word8#] str i)

@@ -268,7 +268,7 @@ Obj*    primFileRead (string_t* path)
         }
 
         *pStr           = 0;
-        *pLen           = nRead;
+        *pLen           = nRead + 1;
 
         close (fd);
         return pObj;

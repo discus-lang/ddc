@@ -6,3 +6,16 @@ the test program
 to read
 
 -----
+-----
+here is
+a file for
+
+the test program
+but with no newline on the end
+
+of the file-----
+-----
+HTTP/1.1 200 OK
+Server: cloudflare
+
+[["funding","USD",100.1234,0,null],["funding","XMR",100.4321,0,null]]-----

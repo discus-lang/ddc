@@ -29,7 +29,8 @@ showTextRaw (tx: Text): Text
          -> parens $ "TextLit" %% "\"" % escapeTextDisciple tx % "\""
 
         TextVec vec
-         -> parens $ "TextVec" %% "\"" % escapeTextDisciple tx % "\""
+         -> parens $ "TextVec"  %% showNat (vectorLength# vec - 1)
+                                %% "\"" % escapeTextDisciple tx % "\""
 
         TextApp t1 t2
          -> parens $ "TextApp" %% showTextRaw t1 %% showTextRaw t2

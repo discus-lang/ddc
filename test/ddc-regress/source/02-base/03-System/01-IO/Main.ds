@@ -5,9 +5,21 @@ import System.IO.Console
 where
 
 
+-- dirBase = "test/ddc-regress/source/02-base/03-System/01-IO"
+
 main (_: Unit)
  = do
-        tx  = file_read "test/ddc-regress/source/02-base/03-System/01-IO/test.txt"
+        txSimple    = file_read "test/ddc-regress/source/02-base/03-System/01-IO/test-simple.txt"
         writel "-----"
-        write tx
+        write txSimple
+        writel "-----"
+
+        txNoNewline = file_read "test/ddc-regress/source/02-base/03-System/01-IO/test-nonewline.txt"
+        writel "-----"
+        write txNoNewline
+        writel "-----"
+
+        txCR        = file_read "test/ddc-regress/source/02-base/03-System/01-IO/test-cr.txt"
+        writel "-----"
+        write txCR
         writel "-----"

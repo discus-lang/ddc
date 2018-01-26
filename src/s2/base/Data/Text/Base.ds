@@ -139,6 +139,7 @@ vectorOfText
         iEnd    = copyTextToVector tt vec 0
 
         -- Write the null terminator.
+        -- TODO(BL): check that the null byte is being written to the correct place.
         vectorWrite# vec iEnd 0w8
 
         vec

@@ -1,0 +1,7 @@
+here is
+a file for
+
+the test program
+but with no newline on the end
+
+of the file
