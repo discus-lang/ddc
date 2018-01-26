@@ -24,28 +24,28 @@ import foreign c value
 where
 
 
-
 -- | Produce the escaped version of the given character using the Disciple
 --   source code encoding, which follows the JSON specification.
 escapeCharDisciple (c: Char): Text
-        -- TODO: cannot parse 0x07ew32, prob becaues of 'e' char next to 'w'
---        | c >= 0x020w32 ∧ c <= 126w32
---        = textOfChar c
-        | (promote# c >= 30) ∧ (promote# c <= 126)
-        = textOfChar c
-
+ = match
         -- TODO: we can't match directly against character literals in
         -- case expressions, so need to turn this into a match statement.
+        | c == '"'      = "\\\""
+        | c == '\\'     = "\\\\"
+        | c == '\b'     = "\\b"
+        | c == '\f'     = "\\f"
+        | c == '\n'     = "\\n"
+        | c == '\r'     = "\\r"
+        | c == '\t'     = "\\t"
+
+        -- TODO: cannot parse 0x07ew32, prob becaues of 'e' char next to 'w'
+        --        | c >= 0x020w32 ∧ c <= 126w32
+        --        = textOfChar c
+        | (promote# c >= 32) ∧ (promote# c <= 126)
+        = textOfChar c
+
         | otherwise
-        = match
-                | c == '"'      = "\""
-                | c == '\\'     = "\\\\"
-                | c == '\b'     = "\\b"
-                | c == '\f'     = "\\f"
-                | c == '\n'     = "\\n"
-                | c == '\r'     = "\\r"
-                | c == '\t'     = "\\t"
-                | otherwise     = "\\u" % showBaseNat 16 digitHex 4 '0' (promote# c)
+        = "\\u" % showBaseNat 16 digitHex 4 '0' (promote# c)
 
 
 -- | Get the size of the escape encoded output string.
@@ -55,10 +55,6 @@ escapeSizeDisciple (tx: Text): Nat
         -- TODO(BL): This comparison doesn't work properly.
         -- | c >= 0x20w32 ∧ c < 126w32
         acc n c
-         | (promote# c >= 30) ∧ (promote# c <= 126)
-         = n + 1
-
-         | otherwise
          = match
                 | c == '"'      = n + 2
                 | c == '\\'     = n + 2
@@ -67,7 +63,12 @@ escapeSizeDisciple (tx: Text): Nat
                 | c == '\n'     = n + 2
                 | c == '\r'     = n + 2
                 | c == '\t'     = n + 2
-                | otherwise     = n + 6
+
+                | (promote# c >= 32) ∧ (promote# c <= 126)
+                = n + 1
+
+                | otherwise
+                = n + 6
 
 
 -- | Escape encode the given string.
@@ -143,8 +144,6 @@ writeEscape (vecDst: Vector# r2 Word8) (iDst: Nat) (c: Char) : S (Write r2) Nat
  =
    -- TODO: parse problem 'where' expression wraps otherwise branch instead of match.
    (match
-        | (promote# c >= 30) ∧ (promote# c <= 126)
-                        = do { write1 iDst c; 1 }
         | c == '"'      = do { write1 iDst '\\'; write1 (iDst + 1) '"';  2 }
         | c == '\\'     = do { write1 iDst '\\'; write1 (iDst + 1) '\\'; 2 }
         | c == '\b'     = do { write1 iDst '\\'; write1 (iDst + 1) 'b';  2 }
@@ -152,6 +151,9 @@ writeEscape (vecDst: Vector# r2 Word8) (iDst: Nat) (c: Char) : S (Write r2) Nat
         | c == '\n'     = do { write1 iDst '\\'; write1 (iDst + 1) 'n';  2 }
         | c == '\r'     = do { write1 iDst '\\'; write1 (iDst + 1) 'r';  2 }
         | c == '\t'     = do { write1 iDst '\\'; write1 (iDst + 1) 't';  2 }
+
+        | (promote# c >= 32) ∧ (promote# c <= 126)
+                        = do { write1 iDst c; 1 }
 
         -- TODO: do unicode escape encoding.
         | otherwise
