@@ -6,6 +6,7 @@ export
         charListOfText;
         vectorOfCharList;
         charListOfTextVec;
+        text_padLeft; text_padRight;
         text_unlines; text_unlines';
 }
 import Data.Numeric.Word8
@@ -64,6 +65,18 @@ vectorOfCharList
         vec
 
 
+-- | Insert spaces on the left of text to bring it up to the given
+--   number of characters.
+text_padLeft (n: Nat) (tx: Text): Text
+ = textOfCharList (replicate (n - sizeOfText tx) ' ') % tx
+
+
+-- | Insert spaces on the right of text to bring it up to the given
+--   number of characters.
+text_padRight (n: Nat) (tx: Text): Text
+ = tx % textOfCharList (replicate (n - sizeOfText tx) ' ')
+
+
 -- | Concatenate text strings, punctuating with newline characters.
 text_unlines (txs: List Text): Text
  = case txs of
@@ -77,5 +90,4 @@ text_unlines' (txs: List Text): Text
         Nil             -> ""
         Cons t Nil      -> t
         Cons t txs'     -> t % "\n" % text_unlines txs'
-
 

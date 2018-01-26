@@ -30,8 +30,10 @@ isLower (c: Char): Bool
 
 
 -- | Check if a character is white-space.
+--
+--   We also count '\r' as whitespace to be consistent to the Haskell
+--   definition, and this means that clients will often behave the
+--   same way using DOS style "\r\n" newlines as well as Unix style "\n"
+--   ones.
 isSpace (c: Char): Bool
- = eq# c ' '
- ∨ eq# c '\t'
- ∨ eq# c '\n' 
-
+ = eq# c ' ' ∨ eq# c '\t' ∨ eq# c '\n' ∨ eq# c '\r'

@@ -43,9 +43,9 @@ parse_Bool: Parse Bool
 
 -- | Read dictionary for Nat.
 parse_Nat: Parse Nat
- = Parse readNat
+ = Parse parseNat
 
 
 -- | Read dictionary for Float64.
 parse_Float64: Parse Float64
- = Parse readFloat64
+ = Parse parseFloat64

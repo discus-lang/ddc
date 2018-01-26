@@ -86,5 +86,3 @@ text_foldlTextVec
          | ix >= vectorLength# vec - 1  = acc
          | otherwise    = go (ix + 1) (f acc (promote# (vectorRead# vec ix)))
 
-
-

@@ -8,6 +8,8 @@ import Data.Text
 import Data.Numeric
 where
 
+-- TODO: report source locations for errors.
+
 -------------------------------------------------------------------------------
 -- | Parse a JSON value from a text string.
 parseJson (tx: Text): Either JsonParseError Json
