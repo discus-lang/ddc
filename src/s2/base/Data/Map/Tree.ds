@@ -1,6 +1,6 @@
 
 module Data.Map.Tree
-export  
+export
 {       mapTree_empty;  mapTree_singleton;
         mapTree_null;   mapTree_size;
         mapTree_lookup; mapTree_member;
@@ -32,7 +32,7 @@ type Size = Nat
 
 show_mapTree {Show k} {Show a}: Show (TreeMap k a)
  = Show sh
- where  
+ where
         sh (Bin s k a l r)
          = parens $ "Bin" %% show s %% show k %% show a %% show l %% show r
 
@@ -71,7 +71,7 @@ mapTree_size (mp: TreeMap k a): Size
  = case mp of
         Tip             -> 0
         Bin sz _ _ _ _  -> sz
-  
+
 
 -- | /O(log n)/. Lookup the value at a key in the map.
 --
@@ -79,8 +79,8 @@ mapTree_size (mp: TreeMap k a): Size
 -- or 'Nothing' if the key isn't in the map.
 mapTree_lookup {Ord k} (kx: k) (mp: TreeMap k a): Maybe a
  = go kx mp
- where  
-        go _ Tip 
+ where
+        go _ Tip
          = Nothing [a]
 
         go k (Bin _ kx x l r)
@@ -97,8 +97,8 @@ mapTree_lookup {Ord k} (kx: k) (mp: TreeMap k a): Maybe a
 --
 mapTree_member {Ord k} (kx: k) (mp: TreeMap k a): Bool
  = go kx mp
- where  
-        go _ Tip 
+ where
+        go _ Tip
          = False
 
         go k (Bin _ kx _ l r)
@@ -123,7 +123,7 @@ mapTree_insert
         (kx0: k) (x0: a) (mp: TreeMap k a): TreeMap k a
  = go kx0 x0 mp
  where
-        go kx x Tip 
+        go kx x Tip
          = mapTree_singleton kx x
 
         go kx x (Bin sz ky y l r)
@@ -201,7 +201,7 @@ mapTree_foldlWithKey (f: a -> k -> b -> a) (z: a) (mp: TreeMap k b): a
 
 
 -- Conversion -------------------------------------------------------------------------------------
-mapTree_fromList 
+mapTree_fromList
         {Ord k}
         (xx: List (Tup2 k a)): TreeMap k a
  = foldl (λ  mp tp
@@ -210,13 +210,13 @@ mapTree_fromList
          mapTree_empty xx
 
 
--- | /O(n)/. Convert the map to a list of key\/value pairs. 
+-- | /O(n)/. Convert the map to a list of key\/value pairs.
 mapTree_toList (mp: TreeMap k a): List (Tup2 k a)
         = mapTree_toAscList mp
 
 
 -- | /O(n)/. Convert the map to a list of key\/value pairs where the
---   keys are in ascending order. 
+--   keys are in ascending order.
 mapTree_toAscList (mp: TreeMap k a): List (Tup2 k a)
         = mapTree_foldrWithKey (λk x xs -> Cons (T2 k x) xs) Nil mp
 
@@ -261,10 +261,10 @@ mapTree_toDescList (mp: TreeMap k a): List (Tup2 k a)
 --  is larger, we currently use delta=3.
 --
 --  NOTE: The Haskell implementation from the containers package
---  contains an unfolded version of balance to optimise pattern 
+--  contains an unfolded version of balance to optimise pattern
 --  matching, but there is no point using that until we have the
 --  same sort of pattern matching compiler optimisations as GHC.
--- 
+--
 delta   = 2
 ratio   = 5
 
@@ -272,7 +272,7 @@ ratio   = 5
 mapTree_balance (k: k) (x: a) (l: TreeMap k a) (r: TreeMap k a): TreeMap k a
  = let  sizeL = mapTree_size l in
    let  sizeR = mapTree_size r in
-   let  sizeX = sizeL + sizeR + 1 
+   let  sizeX = sizeL + sizeR + 1
    in   match
          | sizeL + sizeR <= 1    = Bin sizeX k x l r
          | sizeR > delta*sizeL   = rotateL k x l r

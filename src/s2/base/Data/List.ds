@@ -9,11 +9,13 @@ export
         length;
         head; init;
         tail; tail1;
-        last; index;
+        last;
+        index; takeIndex;
         take; takeWhile;
         drop; dropWhile;
         elem;
         lookup; find;
+        minimum; maximum;
         reverse;
         map; mapS; mapM; mapMaybe;
         for; forS;
@@ -199,6 +201,17 @@ index (def: a) (n: Nat) (xx: List a): a
                 _       -> index def (n - 1) xs
 
 
+-- | Get a numbered element from a list,
+--   or Nothing
+takeIndex (n: Nat) (xx: List a): Maybe a
+ = case xx of
+        Nil     -> Nothing
+        Cons x xs
+         -> case n of
+                0       -> Just x
+                _       -> takeIndex (n - 1) xs
+
+
 -- | Take the given number of elements from the front of a list.
 take  (n: Nat) (xx: List a): List a
  = case xx of
@@ -264,6 +277,30 @@ find (f: a -> Bool) (xx: List a): Maybe a
         Cons x xs
          | f x          -> Just x
          | otherwise    -> find f xs
+
+
+-- | Take the maximum element of a list.
+minimum {Ord a} (xx: List a): Maybe a
+ = case xx of
+        Nil        -> Nothing
+        Cons x1 xs -> go x1 xs
+ where
+        go x1 Nil       = Just x1
+        go x1 (Cons x2 xs)
+         | x2 < x1      = go x2 xs
+         | otherwise    = go x1 xs
+
+
+-- | Take the maximum element of a list.
+maximum {Ord a} (xx: List a): Maybe a
+ = case xx of
+        Nil        -> Nothing
+        Cons x1 xs -> go x1 xs
+ where
+        go x1 Nil       = Just x1
+        go x1 (Cons x2 xs)
+         | x2 > x1      = go x2 xs
+         | otherwise    = go x1 xs
 
 
 -- Transforms -----------------------------------------------------------------
