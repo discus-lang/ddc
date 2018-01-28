@@ -31,6 +31,10 @@ typedef uint32_t tag_t;
 // A UTF8 string.
 typedef char     string_t;
 
+// Floating point types.
+typedef float   float32_t;
+typedef double  float64_t;
+
 
 // -- Object Format -----------------------------------------------------------
 //
