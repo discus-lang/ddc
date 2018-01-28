@@ -10,7 +10,7 @@ Obj* ddcPrimStdinGetVector (nat_t len)
         string_t* pBuf  = alloca (len);
         pBuf            = fgets (pBuf, len, stdin);
         if (pBuf == NULL) {
-                printf("ddc-runtime.primStdinGetVector: failed\n");
+                printf("ddc-runtime.ddcPrimStdinGetVector: failed\n");
                 abort();
         }
 
