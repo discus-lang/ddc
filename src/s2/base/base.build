@@ -20,6 +20,7 @@ library
         Class.Functor
         Class.Applicative
         Class.Monad
+        Class.Category
         Data.Numeric.Int
         Data.Numeric.Nat
         Data.Numeric.Word8
@@ -28,6 +29,7 @@ library
         Data.Numeric.Word64
         Data.Numeric.Float32
         Data.Numeric.Float64
+        Data.Ref
         Data.Function
         Data.Maybe
         Data.Either
@@ -39,9 +41,12 @@ library
         Data.Text.Escape
         Data.Text.List
         Data.Text.Show
+        Data.Text.Parse
+        Data.Text.Stream
         Data.Text
         Class.Show
-        Data.Ref
+        Class.Parse
+        Class.Pretty
         Data.Array.Base
         Data.Array.Fun
         Data.Array.Store

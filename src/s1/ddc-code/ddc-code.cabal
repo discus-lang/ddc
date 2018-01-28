@@ -29,9 +29,9 @@ data-files:
         salt/runtime64/Apply.dcs
         salt/runtime64/Object.dcs
 
-        sea/primitive/Primitive.c
-        sea/primitive/Primitive.h
-        sea/runtime/Runtime.h
+        sea/Primitive.c
+        sea/Primitive.h
+        sea/Runtime.h
 
         tetra/base/Class/Applicative.ds
         tetra/base/Class/Eq.ds

@@ -237,8 +237,7 @@ builder_X8632_Darwin config host mVersion
                 [ "cc -Werror -std=c99 -O3 -m32"
                 , "-c", cFile
                 , "-o", oFile
-                , "-I" ++ builderConfigBaseSrcDir config </> "ddc-runtime/sea/runtime"
-                , "-I" ++ builderConfigBaseSrcDir config </> "ddc-runtime/sea/primitive" ]
+                , "-I" ++ builderConfigBaseSrcDir config </> "ddc-runtime/sea" ]
 
         , buildAs
                 = \sFile oFile
@@ -311,8 +310,7 @@ builder_X8664_Darwin config host mVersion
                 [ "cc -Werror -std=c99 -O3 -m64"
                 , "-c", cFile
                 , "-o", oFile
-                , "-I" ++ builderConfigBaseSrcDir config </> "ddc-runtime/sea/runtime"
-                , "-I" ++ builderConfigBaseSrcDir config </> "ddc-runtime/sea/primitive" ]
+                , "-I" ++ builderConfigBaseSrcDir config </> "ddc-runtime/sea" ]
 
         , buildAs
                 = \sFile oFile
@@ -383,8 +381,7 @@ builder_X8632_Linux config host
                 [ "gcc -Werror -Wextra -pedantic -std=c99 -O3 -m32 -fPIC"
                 , "-c", cFile
                 , "-o", oFile
-                , "-I" ++ builderConfigBaseSrcDir config </> "ddc-runtime/sea/runtime"
-                , "-I" ++ builderConfigBaseSrcDir config </> "ddc-runtime/sea/primitive" ]
+                , "-I" ++ builderConfigBaseSrcDir config </> "ddc-runtime/sea" ]
 
 
         , buildAs
@@ -444,8 +441,7 @@ builder_X8664_Linux config host
                 [ "gcc -Werror -std=c99 -O3 -m64 -fPIC"
                 , "-c", cFile
                 , "-o", oFile
-                , "-I" ++ builderConfigBaseSrcDir config </> "ddc-runtime/sea/runtime"
-                , "-I" ++ builderConfigBaseSrcDir config </> "ddc-runtime/sea/primitive" ]
+                , "-I" ++ builderConfigBaseSrcDir config </> "ddc-runtime/sea" ]
 
 
         , buildAs
@@ -505,8 +501,7 @@ builder_PPC32_Linux config host
                 [ "gcc -Werror -std=c99 -O3 -m32"
                 , "-c", cFile
                 , "-o", oFile
-                , "-I" ++ builderConfigBaseSrcDir config </> "ddc-runtime/sea/runtime"
-                , "-I" ++ builderConfigBaseSrcDir config </> "ddc-runtime/sea/primitive" ]
+                , "-I" ++ builderConfigBaseSrcDir config </> "ddc-runtime/sea" ]
 
         , buildAs
                 = \sFile oFile
@@ -564,8 +559,7 @@ builder_X8632_Cygwin config host
                 [ "gcc-4 -Werror -std=c99 -O3 -m32"
                 , "-c", cFile
                 , "-o", oFile
-                , "-I" ++ builderConfigBaseSrcDir config </> "ddc-runtime/sea/runtime"
-                , "-I" ++ builderConfigBaseSrcDir config </> "ddc-runtime/sea/primitive" ]
+                , "-I" ++ builderConfigBaseSrcDir config </> "ddc-runtime/sea" ]
 
         , buildAs
                 = \sFile oFile
@@ -624,8 +618,7 @@ builder_X8632_Mingw config host
                 [ "gcc -Werror -std=c99 -O3 -m32"
                 , "-c", cFile
                 , "-o", oFile
-                , "-I" ++ builderConfigBaseSrcDir config </> "ddc-runtime/sea/runtime"
-                , "-I" ++ builderConfigBaseSrcDir config </> "ddc-runtime/sea/primitive" ]
+                , "-I" ++ builderConfigBaseSrcDir config </> "ddc-runtime/sea" ]
 
         , buildAs
                 = \sFile oFile

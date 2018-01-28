@@ -34,7 +34,7 @@ baseSaltFiles builder
 
 baseSeaFiles  :: Builder -> [FilePath]
 baseSeaFiles _builder
- =      ["ddc-runtime" </> "sea"  </> "primitive" </> "Primitive.c"]
+ =      ["ddc-runtime" </> "sea"  </> "Primitive.c"]
 
 
 -- Buid the base libraries and runtime system.
