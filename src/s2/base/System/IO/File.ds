@@ -9,7 +9,7 @@ import System.Posix.Stdlib
 
 
 import foreign c value
- primFileRead   : Nat# -> Vector# RegionText Word8#
+ ddcPrimFileRead   : Nat# -> Vector# RegionText Word8#
  ddcVectorGuts : {@r: Region} -> Vector# r Word8 -> Nat#
 
 where
@@ -18,5 +18,5 @@ where
 -- | TODO: wrap code to get the flat vector for FFI in a nicer way.
 file_read (tx: Text): S File Text
  = box weakeff File in
-   TextVec $ primFileRead (ddcVectorGuts (textVectorOfText tx))
+   TextVec $ ddcPrimFileRead (ddcVectorGuts (textVectorOfText tx))
 

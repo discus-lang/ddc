@@ -65,9 +65,9 @@ import foreign boxed type
  TextLit : Data
 
 import foreign c value
- makeTextLit         : TextLit# -> TextLit
- takeTextLit         : TextLit  -> TextLit#
- primStdoutPutString : TextLit# -> S Console Void#
+ ddcPrimMakeTextLit     : TextLit# -> TextLit
+ ddcPrimTakeTextLit     : TextLit  -> TextLit#
+ ddcPrimStdoutPutString : TextLit# -> S Console Void#
 
 where
 
@@ -75,21 +75,21 @@ where
 -- The desugarer uses the function called 'textLit' to build the representation
 -- of text strings, so we need to define an implementation for it.
 textLit (tx: TextLit#): TextLit
- = makeTextLit tx
+ = ddcPrimMakeTextLit tx
 
 main ()
  = do   -- Write to the console using the putString function we imported.
-        primStdoutPutString (takeTextLit "hello\n")
+        ddcPrimStdoutPutString (ddcPrimTakeTextLit "hello\n")
 
         -- Allocate a new reference in our stash region.
         --  Doing this requires the 'stashAlloc' and 'stashRead' capabilities
         --  in the context.
         ref     = allocRef [Stash] [TextLit] "before\n"
-        primStdoutPutString (takeTextLit (readRef ref))
+        ddcPrimStdoutPutString (ddcPrimTakeTextLit (readRef ref))
 
         -- Update the reference and print out the result.
         --   Doing this requires the 'stashWrite' capability in the context.
         writeRef_ ref "after\n"
-        primStdoutPutString (takeTextLit (readRef ref))
+        ddcPrimStdoutPutString (ddcPrimTakeTextLit (readRef ref))
         ()
 

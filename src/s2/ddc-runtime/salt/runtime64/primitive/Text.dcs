@@ -1,18 +1,18 @@
 
 module Runtime.Prim.Text
 export value
- makeTextLit       : [r1: Region]. Addr# -> Ptr# r1 Obj
- takeTextLit       : [r1: Region]. Ptr# r1 Obj -> Addr#
- sizeOfTextLit     : [r1: Region]. Ptr# r1 Obj -> Nat#
- indexTextLit      : [r1: Region]. Ptr# r1 Obj -> Nat# -> Word8#
+ ddcPrimMakeTextLit     : [r1: Region]. Addr# -> Ptr# r1 Obj
+ ddcPrimTakeTextLit     : [r1: Region]. Ptr# r1 Obj -> Addr#
+ ddcPrimSizeOfTextLit   : [r1: Region]. Ptr# r1 Obj -> Nat#
+ ddcPrimIndexTextLit    : [r1: Region]. Ptr# r1 Obj -> Nat# -> Word8#
 
 import value
  -- Objects with raw, non-pointer data.
- ddcAllocRaw       : [r1: Region]. Tag# -> Nat# -> Ptr# r1 Obj
- ddcPayloadRaw     : [r1: Region]. Ptr# r1 Obj  -> Ptr# r1 Word8#
- ddcPayloadSizeRaw : [r1: Region]. Ptr# r1 Obj  -> Nat#
+ ddcAllocRaw            : [r1: Region]. Tag# -> Nat# -> Ptr# r1 Obj
+ ddcPayloadRaw          : [r1: Region]. Ptr# r1 Obj  -> Ptr# r1 Word8#
+ ddcPayloadSizeRaw      : [r1: Region]. Ptr# r1 Obj  -> Nat#
 
- primPutString     : TextLit# -> Void#
+ ddcPrimPutString       : TextLit# -> Void#
 
 with letrec
 
@@ -30,9 +30,9 @@ with letrec
 --       uint8_t*  ptr;         // Pointer to null terminated string data.
 --   } TextLit;
 --
-makeTextLit [r1: Region] (addrString: Addr#): Ptr# r1 Obj
+ddcPrimMakeTextLit [r1: Region] (addrString: Addr#): Ptr# r1 Obj
  = do
-        len     = sizeOfString 0# addrString
+        len     = ddcPrimSizeOfString 0# addrString
         obj     = ddcAllocRaw (truncate# 0#) (add# 4# (size# [Addr#]))
         payload = takePtr# (ddcPayloadRaw obj)
         write# [Word32#] payload 0# (truncate# len)
@@ -41,34 +41,34 @@ makeTextLit [r1: Region] (addrString: Addr#): Ptr# r1 Obj
 
 
 -- | Take the pointer from a text literal.
-takeTextLit [r1: Region] (obj: Ptr# r1 Obj): Addr#
+ddcPrimTakeTextLit [r1: Region] (obj: Ptr# r1 Obj): Addr#
  = do
         payload = takePtr# (ddcPayloadRaw obj)
         read# [Addr#] payload 4#
 
 
 -- | Get the size of a text literal, in bytes.
-sizeOfTextLit [r1: Region] (obj: Ptr# r1 Obj): Nat#
+ddcPrimSizeOfTextLit [r1: Region] (obj: Ptr# r1 Obj): Nat#
  = do
         payload = takePtr# (ddcPayloadRaw obj)
         promote# (read# [Word32#] payload 0#)
 
 
 -- | Get a single byte of a text literal.
-indexTextLit [r1: Region] (obj: Ptr# r1 Obj) (ix: Nat#): Word8#
+ddcPrimIndexTextLit [r1: Region] (obj: Ptr# r1 Obj) (ix: Nat#): Word8#
  = do
-        charPtr = takeTextLit obj
-        size    = sizeOfTextLit obj
+        charPtr = ddcPrimTakeTextLit obj
+        size    = ddcPrimSizeOfTextLit obj
 
         char    = peekBounded# (makePtr# [r1] charPtr) ix size
         char
 
 
 -- | Get the number of non-bytes in a null-terminated array of bytes.
-sizeOfString (i: Nat#) (str: Addr#): Nat#
+ddcPrimSizeOfString (i: Nat#) (str: Addr#): Nat#
  = do
         x       = promote# (read# [Word8#] str i)
         case x of
          0#     -> i
-         _      -> sizeOfString (add# i 1#) str
+         _      -> ddcPrimSizeOfString (add# i 1#) str
 

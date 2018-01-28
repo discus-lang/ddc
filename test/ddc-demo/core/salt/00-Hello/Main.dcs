@@ -9,8 +9,8 @@ export main  : [r1: Region]. Nat# -> Ptr# r1 Word8# -> Int#
 
 -- Primitive show functions are defined in the runtime system.
 import foreign c value
-        ddcInit        : Nat# -> Unit
-        primStdoutPutTextLit : TextLit#     -> Void#
+        ddcInit                 : Nat# -> Unit
+        ddcPrimStdoutPutTextLit : TextLit#     -> Void#
 
 with letrec
 
@@ -21,7 +21,7 @@ main [r1: Region] (argc: Nat#) (argv: Ptr# r1 Word8#): Int#
         ddcInit     4096#
 
         -- Print the greeting.
-        primStdoutPutTextLit "Hello World\n"#
+        ddcPrimStdoutPutTextLit "Hello World\n"#
 
         -- Return successfully.
         return# 0i#

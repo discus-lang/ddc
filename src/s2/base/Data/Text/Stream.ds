@@ -66,7 +66,7 @@ text_firstChunk (tx: Text): Maybe (TextChunk, Maybe Text)
 -- | Get the size of the chunk in bytes.
 text_sizeOfChunk (txc: TextChunk): Nat
  = case txc of
-        TextChunkLit lit     -> sizeOfTextLit lit
+        TextChunkLit lit     -> ddcPrimSizeOfTextLit lit
         TextChunkVec vec     -> vectorLength# vec - 1
 
 
@@ -193,9 +193,9 @@ textSource_pullChar
  = case readRef refChunk of
          TextChunkLit lit
           |  ix <- readRef refIx
-          ,  ix <  sizeOfTextLit lit
+          ,  ix <  ddcPrimSizeOfTextLit lit
           -> do writeRef refIx (ix + 1)
-                Just (promote# (indexTextLit lit ix))
+                Just (promote# (ddcPrimIndexTextLit lit ix))
 
          TextChunkVec vec
           |  ix <- readRef refIx
@@ -219,8 +219,8 @@ textSource_peekChar
  = case readRef refChunk of
         TextChunkLit lit
          |  ix <- readRef refIx
-         ,  ix <  sizeOfTextLit lit
-         -> Just (promote# (indexTextLit lit ix))
+         ,  ix <  ddcPrimSizeOfTextLit lit
+         -> Just (promote# (ddcPrimIndexTextLit lit ix))
 
         TextChunkVec vec
          |  ix <- readRef refIx
@@ -244,8 +244,8 @@ textSource_matchChar
  = case readRef refChunk of
         TextChunkLit lit
          | ix   <- readRef refIx
-         , ix   <  sizeOfTextLit lit
-         , c'   <- promote# (indexTextLit lit ix)
+         , ix   <  ddcPrimSizeOfTextLit lit
+         , c'   <- promote# (ddcPrimIndexTextLit lit ix)
          -> if c == c'
              then do
                 writeRef refIx (ix + 1)

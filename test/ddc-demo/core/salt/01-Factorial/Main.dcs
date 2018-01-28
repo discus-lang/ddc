@@ -11,9 +11,9 @@ import foreign abstract type
 -- Primitive show functions are defined in the runtime system.
 import foreign c value
         ddcInit                 : Nat# -> Unit
-        primStdoutPutTextLit    : TextLit# -> Void#
-        primStdoutPutVector     : Ptr# RegionText Obj -> Void#
-        primShowNat             : Nat#     -> Ptr# RegionText Obj
+        ddcPrimStdoutPutTextLit : TextLit# -> Void#
+        ddcPrimStdoutPutVector  : Ptr# RegionText Obj -> Void#
+        ddcPrimShowNat          : Nat#     -> Ptr# RegionText Obj
 
 with letrec
 
@@ -41,16 +41,16 @@ main [r1: Region] (argc: Nat#) (argv: Ptr# r1 Word8#): Int#
         ddcInit 4096#
 
         -- Compute factorial using simple recursion.
-        primStdoutPutTextLit  "fac_rec 10 = "#
-        str1    = primShowNat (fac_rec 10#)
-        primStdoutPutVector str1
-        primStdoutPutTextLit "\n"#
+        ddcPrimStdoutPutTextLit  "fac_rec 10 = "#
+        str1    = ddcPrimShowNat (fac_rec 10#)
+        ddcPrimStdoutPutVector str1
+        ddcPrimStdoutPutTextLit "\n"#
 
         -- Compute factorial using tail-recursion.
-        primStdoutPutTextLit  "fac_acc 10 = "#
-        str2    = primShowNat (fac_acc 10# 1#)
-        primStdoutPutVector str2
-        primStdoutPutTextLit "\n"#
+        ddcPrimStdoutPutTextLit  "fac_acc 10 = "#
+        str2    = ddcPrimShowNat (fac_acc 10# 1#)
+        ddcPrimStdoutPutVector str2
+        ddcPrimStdoutPutTextLit "\n"#
 
         -- Return successfully.
         return# 0i#

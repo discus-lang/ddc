@@ -5,7 +5,7 @@
 
 // Parse functions.
 #define _DDC_MAKE_PRIM_PARSE_TYPE(typeName,typeSpec,format) \
- typeSpec primParse##typeName (Obj* pObj) \
+ typeSpec ddcPrimParse##typeName (Obj* pObj) \
  { \
         uint8_t*  p8    = (uint8_t*)_ddcPayloadRaw(pObj); \
         uint32_t* pLen  = (uint32_t*)p8; \

@@ -29,7 +29,7 @@ where
 -- Desuguaring -----------------------------------------------------------------
 -- Names used by the Source Tetra desugarer to implement string literals.
 textLit (x : TextLit#) : Text
- = TextLit (makeTextLit x)
+ = TextLit (ddcPrimMakeTextLit x)
 
 paste  (x y : Text) : Text
  = TextApp x y
@@ -75,8 +75,9 @@ text_foldlTextLit
         (lit: TextLit): a
  = go 0 z
  where  go ix acc
-         | ix >= sizeOfTextLit lit = acc
-         | otherwise    = go (ix + 1) (f acc (promote# (indexTextLit lit ix)))
+         | ix >= ddcPrimSizeOfTextLit lit = acc
+         | otherwise
+         = go (ix + 1) (f acc (promote# (ddcPrimIndexTextLit lit ix)))
 
 text_foldlTextVec
         (f: a -> Char -> a) (z: a)
@@ -84,5 +85,6 @@ text_foldlTextVec
  = go 0 z
  where  go ix acc
          | ix >= vectorLength# vec - 1  = acc
-         | otherwise    = go (ix + 1) (f acc (promote# (vectorRead# vec ix)))
+         | otherwise
+         = go (ix + 1) (f acc (promote# (vectorRead# vec ix)))
 

@@ -10,9 +10,9 @@ export main  : [r1: Region]. Nat# -> Ptr# r1 Word8# -> Int#
 -- Primitive show functions are defined in the runtime system.
 import foreign c value
         ddcInit                 : Nat# -> Unit
-        primShowInt             : [r: Region]. Int# -> Ptr# r Obj
-        primStdoutPutVector     : [r: Region]. Ptr# r Obj -> Void#
-        primStdoutPutTextLit    : TextLit#   -> Void#
+        ddcPrimShowInt          : [r: Region]. Int# -> Ptr# r Obj
+        ddcPrimStdoutPutVector  : [r: Region]. Ptr# r Obj -> Void#
+        ddcPrimStdoutPutTextLit : TextLit#   -> Void#
 
 with letrec
 
@@ -108,9 +108,9 @@ main [r1: Region] (argc: Nat#) (argv: Ptr# r1 Word8#): Int#
 
         -- Print out the result.
         x2u     = unboxWord32 x2
-        str     = primShowInt [r1] (truncate# [Int#] [Word32#] x2u)
-        primStdoutPutVector str
-        primStdoutPutTextLit "\n"#
+        str     = ddcPrimShowInt [r1] (truncate# [Int#] [Word32#] x2u)
+        ddcPrimStdoutPutVector str
+        ddcPrimStdoutPutTextLit "\n"#
 
         -- Return success.
         return# 0i#

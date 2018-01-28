@@ -42,7 +42,7 @@ struct StackEntry *llvm_gc_root_chain;
 // might copy them to another heap or generation.
 //
 // @param Visitor A function to invoke for every GC root on the stack.
-void visitGCRoots(void (*Visitor)(void **Root, const void *Meta)) {
+void ddcVisitGCRoots(void (*Visitor)(void **Root, const void *Meta)) {
   for (struct StackEntry *R = llvm_gc_root_chain; R; R = R->Next) {
     uint32_t i = 0;
 
@@ -58,7 +58,7 @@ void visitGCRoots(void (*Visitor)(void **Root, const void *Meta)) {
 
 
 // Print out the structure of the LLVM shadow stack.
-void traceGCRoots (int _x) {
+void ddcTraceGCRoots (int _x) {
   for (struct StackEntry *R = llvm_gc_root_chain; R; R = R->Next) {
     uint32_t i = 0;
 

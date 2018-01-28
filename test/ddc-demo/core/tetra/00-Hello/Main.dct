@@ -13,7 +13,7 @@ import foreign abstract type
 
 -- Import primitive IO function from the runtime system.
 import foreign c value
- primStdoutPutString : TextLit# -> S Console Void#
+ ddcPrimStdoutPutString : TextLit# -> S Console Void#
 
 with letrec
 
@@ -25,7 +25,7 @@ main (u: Unit): S Console Unit
         -- Run the action.
         -- This returns a Void# result, so we can't return it from
         -- the main function directly.
-        run primStdoutPutString "Hello World\n"#
+        run ddcPrimStdoutPutString "Hello World\n"#
 
         -- Might as well return the unit value we were given.
         u

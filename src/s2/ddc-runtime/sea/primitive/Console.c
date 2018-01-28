@@ -5,7 +5,7 @@
 
 // -- Stdin -------------------------------------------------------------------
 // Read a string from stdin and pack it into a vector of characters.
-Obj*    primStdinGetVector (nat_t len)
+Obj* ddcPrimStdinGetVector (nat_t len)
 {
         string_t* pBuf  = alloca (len);
         pBuf            = fgets (pBuf, len, stdin);
@@ -28,26 +28,26 @@ Obj*    primStdinGetVector (nat_t len)
 
 // -- Stdout ------------------------------------------------------------------
 // Print a C string to stdout.
-void primStdoutPutString (string_t* str)
+void ddcPrimStdoutPutString (string_t* str)
 {       fputs(str, stdout);
         fflush(stdout);
 }
 
 // Print a text literal to stdout.
-void primStdoutPutTextLit (string_t* str)
+void ddcPrimStdoutPutTextLit (string_t* str)
 {       fputs(str, stdout);
         fflush(stdout);
 }
 
 // Print a text vector to stdout.
-void primStdoutPutVector (Obj* obj)
+void ddcPrimStdoutPutVector (Obj* obj)
 {       string_t* str = (string_t*) (_ddcPayloadRaw(obj) + 4);
         fputs(str, stdout);
         fflush(stdout);
 }
 
 // Flush stdout.
-void primStdoutFlush (Obj* obj)
+void ddcPrimStdoutFlush (Obj* obj)
 {       fflush(stdout);
 }
 
@@ -55,7 +55,7 @@ void primStdoutFlush (Obj* obj)
 // -- Stderr ------------------------------------------------------------------
 // Print a C string to stderr.
 // Use this when printing an error from the runtime system.
-void primFailString(string_t* str)
+void ddcPrimFailString(string_t* str)
 {       fputs(str, stderr);
         fflush(stderr);
 }

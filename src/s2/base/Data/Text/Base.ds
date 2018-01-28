@@ -3,9 +3,6 @@
 module Data.Text.Base
 export
 {       -- Runtime operators.
-        makeTextLit;
-        sizeOfTextLit;
-        indexTextLit;
         copyTextLitToVector;
         copyTextVecToVector;
 
@@ -25,6 +22,11 @@ export
         -- Operators.
         eqChar;
         eqText;
+
+        -- Foreign Primitives
+        ddcPrimMakeTextLit;
+        ddcPrimSizeOfTextLit;
+        ddcPrimIndexTextLit;
 }
 import Data.Text.Char
 import Data.Numeric.Nat
@@ -51,15 +53,15 @@ import foreign c value
         -- | Make a text literal.
         --   The TextLit# type is a pointer to literal UTF-8 data in
         --   static memory, which we pack into a boxed object.
-        makeTextLit     : TextLit# -> TextLit
+        ddcPrimMakeTextLit     : TextLit# -> TextLit
 
         -- | Get the size of a boxed text literal.
-        sizeOfTextLit   : TextLit  -> Nat
+        ddcPrimSizeOfTextLit   : TextLit  -> Nat
 
         -- | Get a single byte from a boxed text literal.
         --   This is a byte rather than a character,
         --   as UTF-8 encoded characters can consist of multiple bytes.
-        indexTextLit    : TextLit  -> Nat -> Word8
+        ddcPrimIndexTextLit    : TextLit  -> Nat -> Word8
 
 
 -- | Top level region containing text vectors.
@@ -151,7 +153,7 @@ copyTextToVector
         : S (Write r) Nat
  = case tt of
         TextLit lit
-         -> copyTextLitToVector lit  vec i0 0 (sizeOfTextLit lit)
+         -> copyTextLitToVector lit  vec i0 0 (ddcPrimSizeOfTextLit lit)
 
         TextVec vec2
          -> copyTextVecToVector vec2 vec i0 0 (vectorLength# vec2 - 1)
@@ -169,7 +171,7 @@ copyTextLitToVector
         : S (Write r) Nat
  | iSrc >= nSrc = iDst
  | otherwise
- = do   vectorWrite# vec iDst (indexTextLit tt iSrc)
+ = do   vectorWrite# vec iDst (ddcPrimIndexTextLit tt iSrc)
         copyTextLitToVector
                 tt vec (iDst + 1) (iSrc + 1) nSrc
 
@@ -196,7 +198,7 @@ copyTextVecToVector
 sizeOfText (tt: Text): Nat
  = case tt of
         TextLit lit
-         -> sizeOfTextLit lit
+         -> ddcPrimSizeOfTextLit lit
 
         -- The size of a text vector is the vector size minus
         -- the null terminator byte.
@@ -211,17 +213,17 @@ sizeOfText (tt: Text): Nat
 indexText (tt: Text) (ix: Nat): Maybe Word8
  = case tt of
         TextLit lit
-         | ix >= sizeOfTextLit lit      -> Nothing
-         | otherwise                    -> Just (indexTextLit lit ix)
+         | ix >= ddcPrimSizeOfTextLit lit -> Nothing
+         | otherwise                      -> Just (ddcPrimIndexTextLit lit ix)
 
         TextVec vec
-         | ix >= vectorLength# vec - 1  -> Nothing
-         | otherwise                    -> Just (vectorRead# vec ix)
+         | ix >= vectorLength# vec - 1    -> Nothing
+         | otherwise                      -> Just (vectorRead# vec ix)
 
         TextApp t1 t2
          -> case indexText t1 ix of
-                Just x                  -> Just x
-                Nothing                 -> indexText t2 (ix - sizeOfText t1)
+                Just x                    -> Just x
+                Nothing                   -> indexText t2 (ix - sizeOfText t1)
 
 
 -- Comparison -----------------------------------------------------------------

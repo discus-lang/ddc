@@ -13,9 +13,9 @@ import foreign abstract type
 
 -- Import primitive IO functions from the runtime system.
 import foreign c value
- primStdoutPutTextLit   : TextLit# -> S Console Void#
- primStdoutPutVector    : Vector# RegionText Word8# -> S Console Void#
- primShowNat            : Nat#     -> Vector# RegionText Word8#
+ ddcPrimStdoutPutTextLit : TextLit# -> S Console Void#
+ ddcPrimStdoutPutVector  : Vector# RegionText Word8# -> S Console Void#
+ ddcPrimShowNat          : Nat#     -> Vector# RegionText Word8#
 
 -- Standard list data type.
 data List (a: Data) where
@@ -29,7 +29,7 @@ with letrec
 -- instead of a Void#.
 write (ss: TextLit#): S Console Unit
  = box do
-        run primStdoutPutTextLit ss
+        run ddcPrimStdoutPutTextLit ss
         ()
 
 
@@ -38,7 +38,7 @@ write (ss: TextLit#): S Console Unit
 -- The code generator requires all functions passed as arguments
 -- to be compiled by itself.
 showNat (n: Nat#): Vector# RegionText Word8#
- = primShowNat n
+ = ddcPrimShowNat n
 
 
 -- Flip the order of arguments of a binary function.
@@ -82,8 +82,8 @@ printList
          ->     ()
 
         Cons x xs
-         -> do  run primStdoutPutVector (showElem x)
-                run primStdoutPutTextLit "\n"#
+         -> do  run ddcPrimStdoutPutVector (showElem x)
+                run ddcPrimStdoutPutTextLit "\n"#
                 run printList showElem xs
 
 

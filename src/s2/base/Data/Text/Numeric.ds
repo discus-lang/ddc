@@ -19,8 +19,8 @@ import Data.Text.Char
 import Data.Text.Operator
 
 import foreign c value
- primShowFloat32: Float32# -> Vector# RegionText Word8#
- primShowFloat64: Float64# -> Vector# RegionText Word8#
+ ddcPrimShowFloat32: Float32# -> Vector# RegionText Word8#
+ ddcPrimShowFloat64: Float64# -> Vector# RegionText Word8#
 
 where
 
@@ -123,10 +123,10 @@ showBaseNat' base digit width pad first x
 -------------------------------------------------------------------------------
 -- | Show a Float32.
 showFloat32 (f: Float32): Text
- = TextVec (primShowFloat32 f)
+ = TextVec (ddcPrimShowFloat32 f)
 
 
 -- | Show a Float64.
 showFloat64 (f: Float64): Text
- = TextVec (primShowFloat64 f)
+ = TextVec (ddcPrimShowFloat64 f)
 

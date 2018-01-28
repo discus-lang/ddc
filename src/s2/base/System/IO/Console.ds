@@ -5,8 +5,6 @@ export
         write; writel; writell;
         print; printl; printll;
         flush;
-
-        takeTextLit;
 }
 import Class.Show
 import Data.Text
@@ -15,19 +13,19 @@ import foreign abstract type
  Console  : Effect
 
 import foreign c value
- primStdoutPutString    : TextLit# -> S Console Void#
- primStdoutPutVector    : {@r: Region} -> Vector# r Word8# -> S Console Void#
- primStdoutFlush        : Unit -> S Console Void#
+ ddcPrimStdoutPutString    : TextLit# -> S Console Void#
+ ddcPrimStdoutPutVector    : {@r: Region} -> Vector# r Word8# -> S Console Void#
+ ddcPrimStdoutFlush        : Unit -> S Console Void#
 
  -- ISSUE #425: In foreign impot adding (S Console) to result type causes
  -- codegen problem and runtime crash.
- primStdinGetVector     : {@r: Region} -> Nat# -> Vector# r Word8#
+ ddcPrimStdinGetVector     : {@r: Region} -> Nat# -> Vector# r Word8#
 
 
 import foreign c value
  -- Get the unboxed text literal from a boxed text literal.
  -- The unboxed version is a pointer to the text data in static memory.
- takeTextLit   : TextLit -> TextLit#
+ ddcPrimTakeTextLit   : TextLit -> TextLit#
 
 where
 
@@ -36,7 +34,7 @@ where
 -- | Read a text string from the console, up to the maximum line length.
 readl (maxLen: Nat): S Console Text
  = box weakeff Console in
-   do   vec     = primStdinGetVector maxLen
+   do   vec     = ddcPrimStdinGetVector maxLen
         TextVec vec
 
 
@@ -45,11 +43,11 @@ readl (maxLen: Nat): S Console Text
 write (tt: Text): S Console Unit
  = box case tt of
         TextLit lit
-         -> do  primStdoutPutString (takeTextLit lit)
+         -> do  ddcPrimStdoutPutString (ddcPrimTakeTextLit lit)
                 ()
 
         TextVec vec
-         -> do  primStdoutPutVector vec
+         -> do  ddcPrimStdoutPutVector vec
                 ()
 
         TextApp t1 t2
@@ -89,5 +87,5 @@ printll {@a: Data} {Show a} (x: a): S Console Unit
 -- | Flush the output.
 flush: S Console Unit
  = box do
-        primStdoutFlush ()
+        ddcPrimStdoutFlush ()
         ()

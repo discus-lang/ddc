@@ -14,7 +14,7 @@
 //   as well do it for all numeric types.
 
 #define _DDC_MAKE_PRIM_SHOW_TYPE(typeName,typeSpec,format,nBuf) \
- Obj* primShow##typeName (typeSpec x) \
+ Obj* ddcPrimShow##typeName (typeSpec x) \
  { \
         string_t* pBuf  = alloca(nBuf); \
         snprintf(pBuf, nBuf - 1, format, x); \

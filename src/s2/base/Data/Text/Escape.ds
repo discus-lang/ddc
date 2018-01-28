@@ -19,7 +19,7 @@ import foreign c value
         -- | Get a single byte from a boxed text literal.
         --   This is a byte rather than a character,
         --   as UTF-8 encoded characters can consist of multiple bytes.
-        indexTextLit    : TextLit  -> Nat -> Word8
+        ddcPrimIndexTextLit    : TextLit  -> Nat -> Word8
 
 where
 
@@ -98,7 +98,7 @@ escapeTextToVectorDisciple
         : S (Write r) Nat
  = weakeff Write r in case tt of
         TextLit lit'
-         -> escapeTextLitToVectorDisciple lit' vec i0 0 (sizeOfTextLit lit')
+         -> escapeTextLitToVectorDisciple lit' vec i0 0 (ddcPrimSizeOfTextLit lit')
 
         TextVec vec'
          -> escapeTextVecToVectorDisciple vec' vec i0 0 (vectorLength# vec' - 1)
@@ -120,7 +120,7 @@ escapeTextLitToVectorDisciple
         go (iDst: Nat) (iSrc: Nat) (nSrc: Nat): S (Write r2) Nat
          | iSrc >= nSrc = iDst
          | otherwise
-         = do   nBump   = writeEscape vecDst iDst (promote# (indexTextLit litSrc iSrc))
+         = do   nBump   = writeEscape vecDst iDst (promote# (ddcPrimIndexTextLit litSrc iSrc))
                 go (iDst + nBump) (iSrc + 1) nSrc
 
 

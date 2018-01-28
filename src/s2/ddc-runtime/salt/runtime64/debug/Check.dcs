@@ -8,9 +8,9 @@ export value
  ddcFailField      : TextLit# -> TextLit# -> Void#
 
 import value
- primShowAddr      : Addr#    -> TextLit#
- primShowNat       : Nat#     -> TextLit#
- primFailString    : TextLit# -> Void#
+ ddcPrimShowAddr   : Addr#    -> TextLit#
+ ddcPrimShowNat    : Nat#     -> TextLit#
+ ddcPrimFailString : TextLit# -> Void#
 
 with letrec
 
@@ -79,11 +79,11 @@ ddcFailMessage
         (src: TextLit#)         -- ^ Place in the runtime that we encountered the error.
         (msg: TextLit#)         -- ^ Message to print.
         : Void#
- = do   primFailString "* ddc-runtime."#
-        primFailString src
-        primFailString ": "#
-        primFailString msg
-        primFailString "\n"#
+ = do   ddcPrimFailString "* ddc-runtime."#
+        ddcPrimFailString src
+        ddcPrimFailString ": "#
+        ddcPrimFailString msg
+        ddcPrimFailString "\n"#
 
 
 -- | Print a field name and value to stderr.
@@ -91,9 +91,9 @@ ddcFailField
         (name: TextLit#)        -- ^ Name of the field.
         (val:  TextLit#)        -- ^ Value of the field.
         : Void#
- = do   primFailString "  "#
-        primFailString name
-        primFailString ": "#
-        primFailString val
-        primFailString "\n"#
+ = do   ddcPrimFailString "  "#
+        ddcPrimFailString name
+        ddcPrimFailString ": "#
+        ddcPrimFailString val
+        ddcPrimFailString "\n"#
 

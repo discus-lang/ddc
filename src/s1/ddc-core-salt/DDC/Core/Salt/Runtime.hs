@@ -86,7 +86,7 @@ runtimeImportKinds
 -- | Type signatures for runtime funtions that we use when converting to Salt.
 runtimeImportTypes :: Map Name (ImportValue Name (Type Name))
 runtimeImportTypes
- = Map.fromList 
+ = Map.fromList
    [ rn utTagOfObject
 
    , rn utAllocBoxed
@@ -94,23 +94,23 @@ runtimeImportTypes
    , rn utSetFieldOfBoxed
 
    , rn utAllocSmall
-   , rn utPayloadOfSmall 
+   , rn utPayloadOfSmall
 
    , rn utAllocRaw
    , rn utPayloadOfRaw
 
-   , rn utAllocThunk 
+   , rn utAllocThunk
    , rn utArgsOfThunk
    , rn utSetFieldOfThunk
    , rn utExtendThunk
-   , rn utCopyArgsOfThunk 
+   , rn utCopyArgsOfThunk
    , rn utRunThunk
 
    , rn (utApplyThunk 0)
    , rn (utApplyThunk 1)
    , rn (utApplyThunk 2)
    , rn (utApplyThunk 3)
-   , rn (utApplyThunk 4) 
+   , rn (utApplyThunk 4)
 
    , rn utddcInit
    , rn utddcExit
@@ -137,9 +137,9 @@ utTagOfObject
 
 -- Thunk ------------------------------------------------------------------------------------------
 -- | Allocate a Thunk object.
-xAllocThunk  
-        :: a 
-        -> Type Name 
+xAllocThunk
+        :: a
+        -> Type Name
         -> Exp a Name   -- ^ Function
         -> Exp a Name   -- ^ Value paramters.
         -> Exp a Name   -- ^ Times boxed.
@@ -155,8 +155,8 @@ xAllocThunk a tR xFun xParam xBoxes xArgs xRun
 utAllocThunk :: (Bound Name, Type Name)
 utAllocThunk
  =      ( UName (NameVar "ddcAllocThunk")
-        , tForall kRegion 
-           $ \tR -> (tAddr `tFun` tNat `tFun` tNat `tFun` tNat 
+        , tForall kRegion
+           $ \tR -> (tAddr `tFun` tNat `tFun` tNat `tFun` tNat
                            `tFun` tNat `tFun` tPtr tR tObj))
 
 
@@ -175,9 +175,9 @@ utCopyArgsOfThunk :: (Bound Name, Type Name)
 utCopyArgsOfThunk
  =      ( UName (NameVar "ddcCopyThunk")
         , tForalls [kRegion, kRegion]
-           $ \[tR1, tR2] -> (tPtr tR1 tObj 
+           $ \[tR1, tR2] -> (tPtr tR1 tObj
                                 `tFun` tPtr tR2 tObj
-                                `tFun` tNat `tFun` tNat 
+                                `tFun` tNat `tFun` tNat
                                 `tFun` tPtr tR2 tObj))
 
 
@@ -214,9 +214,9 @@ utArgsOfThunk
 
 
 -- | Set one of the argument pointers in a thunk.
-xSetFieldOfThunk 
-        :: a 
-        -> Type Name    -- ^ Region containing thunk. 
+xSetFieldOfThunk
+        :: a
+        -> Type Name    -- ^ Region containing thunk.
         -> Type Name    -- ^ Region containigng new child.
         -> Exp a Name   -- ^ Thunk to set field of.
         -> Exp a Name   -- ^ Base offset.
@@ -233,9 +233,9 @@ utSetFieldOfThunk :: (Bound Name, Type Name)
 utSetFieldOfThunk
  =      ( UName (NameVar "ddcSetThunk")
         , tForalls [kRegion, kRegion]
-           $ \[tR1, tR2] 
-           -> (tPtr tR1 tObj 
-                        `tFun` tNat          `tFun` tNat 
+           $ \[tR1, tR2]
+           -> (tPtr tR1 tObj
+                        `tFun` tNat          `tFun` tNat
                         `tFun` tPtr tR2 tObj `tFun` tVoid))
 
 
@@ -250,7 +250,7 @@ xApplyThunk
         ->  Exp a Name  -- ^ Result think
 
 xApplyThunk a arity rThunk rsArgs rResult xThunk xsArgs
- = xApps a (XVar a $ fst (utApplyThunk arity)) 
+ = xApps a (XVar a $ fst (utApplyThunk arity))
  $ concat [ [RType rThunk]
           , map RType rsArgs
           , [RType rResult]
@@ -269,7 +269,7 @@ utApplyThunk arity
                 -> let  (rThunk : rsMore) = rs
                         rsArg             = take arity rsMore
                         [rResult]         = drop arity rsMore
-                        Just t' = tFunOfList 
+                        Just t' = tFunOfList
                                 $  [tPtr rThunk  tObj]
                                 ++ [tPtr r       tObj | r <- rsArg]
                                 ++ [tPtr rResult tObj]
@@ -280,7 +280,7 @@ utApplyThunk arity
 
 
 -- | Run a thunk.
-xRunThunk 
+xRunThunk
         :: a            -- ^ Annotation.
         -> Type Name    -- ^ Region containing thunk to run.
         -> Type Name    -- ^ Region containing result object.
@@ -288,15 +288,15 @@ xRunThunk
         -> Exp a Name
 
 xRunThunk a trThunk trResult xArg
- = xApps a (XVar a $ fst utRunThunk) 
+ = xApps a (XVar a $ fst utRunThunk)
         [ RType trThunk
         , RType trResult
         , RTerm xArg]
 
 utRunThunk :: (Bound Name, Type Name)
-utRunThunk 
+utRunThunk
  =      ( UName (NameVar $ "ddcRunThunk")
-        , tForalls [kRegion, kRegion] 
+        , tForalls [kRegion, kRegion]
                 $ \[tR1, tR2] -> tPtr tR1 tObj `tFun` tPtr tR2 tObj)
 
 
@@ -316,8 +316,8 @@ utAllocBoxed
 
 
 -- | Get a field of a Boxed object.
-xGetFieldOfBoxed 
-        :: a 
+xGetFieldOfBoxed
+        :: a
         -> Type Name    -- ^ Prime region var of object.
         -> Type Name    -- ^ Regino of result object.
         -> Exp a Name   -- ^ Object to update.
@@ -325,25 +325,25 @@ xGetFieldOfBoxed
         -> Exp a Name
 
 xGetFieldOfBoxed a trPrime trField x2 offset
- = xApps a (XVar a $ fst utGetFieldOfBoxed) 
+ = xApps a (XVar a $ fst utGetFieldOfBoxed)
         [ RType trPrime
         , RType trField
         , RTerm x2
         , RTerm $ xNat a offset ]
 
 utGetFieldOfBoxed :: (Bound Name, Type Name)
-utGetFieldOfBoxed 
+utGetFieldOfBoxed
  =      ( UName (NameVar "ddcGetBoxed")
         , tForalls [kRegion, kRegion]
-                $ \[r1, r2] 
+                $ \[r1, r2]
                 -> tPtr r1 tObj
-                        `tFun` tNat 
+                        `tFun` tNat
                         `tFun` tPtr r2 tObj)
 
 
 -- | Set a field in a Boxed Object.
-xSetFieldOfBoxed 
-        :: a 
+xSetFieldOfBoxed
+        :: a
         -> Type Name    -- ^ Prime region var of object.
         -> Type Name    -- ^ Region of field object.
         -> Exp a Name   -- ^ Object to update.
@@ -352,7 +352,7 @@ xSetFieldOfBoxed
         -> Exp a Name
 
 xSetFieldOfBoxed a trPrime trField x2 offset val
- = xApps a (XVar a $ fst utSetFieldOfBoxed) 
+ = xApps a (XVar a $ fst utSetFieldOfBoxed)
         [ RType trPrime
         , RType trField
         , RTerm x2
@@ -360,7 +360,7 @@ xSetFieldOfBoxed a trPrime trField x2 offset val
         , RTerm val]
 
 utSetFieldOfBoxed :: (Bound Name, Type Name)
-utSetFieldOfBoxed 
+utSetFieldOfBoxed
  =      ( UName (NameVar "ddcSetBoxed")
         , tForalls [kRegion, kRegion]
             $ \[r1, t2] -> tPtr r1 tObj `tFun` tNat `tFun` tPtr t2 tObj `tFun` tVoid)
@@ -381,10 +381,10 @@ utAllocRaw
 
 -- | Get the payload of a Raw object.
 xPayloadOfRaw :: a -> Type Name -> Exp a Name -> Exp a Name
-xPayloadOfRaw a tR x2 
- = xApps a (XVar a $ fst utPayloadOfRaw) 
+xPayloadOfRaw a tR x2
+ = xApps a (XVar a $ fst utPayloadOfRaw)
         [RType tR, RTerm x2]
- 
+
 utPayloadOfRaw :: (Bound Name, Type Name)
 utPayloadOfRaw
  =      ( UName (NameVar "ddcPayloadRaw")
@@ -430,10 +430,10 @@ utAllocSmall
 
 -- | Get the payload of a Small object.
 xPayloadOfSmall :: a -> Type Name -> Exp a Name -> Exp a Name
-xPayloadOfSmall a tR x2 
- = xApps a (XVar a $ fst utPayloadOfSmall) 
+xPayloadOfSmall a tR x2
+ = xApps a (XVar a $ fst utPayloadOfSmall)
         [RType tR, RTerm x2]
- 
+
 utPayloadOfSmall :: (Bound Name, Type Name)
 utPayloadOfSmall
  =      ( UName (NameVar "ddcPayloadSmall")
@@ -482,12 +482,12 @@ utAllocCollect
 -- | Get the payload of a Small object.
 xErrorDefault :: a -> Exp a Name -> Exp a Name -> Exp a Name
 xErrorDefault a xStr xLine
- = xApps a (XVar a $ fst utErrorDefault) 
+ = xApps a (XVar a $ fst utErrorDefault)
            [RTerm xStr, RTerm xLine]
- 
+
 utErrorDefault :: (Bound Name, Type Name)
 utErrorDefault
- =      ( UName (NameVar "primErrorDefault")
+ =      ( UName (NameVar "ddcPrimErrorDefault")
         , tTextLit `tFun` tNat `tFun` tPtr rTop tObj)
 
 
@@ -496,11 +496,11 @@ utErrorDefault
 xCast :: a -> Type Name -> Type Name -> Type Name -> Exp a Name -> Exp a Name
 xCast a r toType fromType xPtr
  =     XApp a (XApp a (XApp a (XApp a (XVar a uCast)
-                                      (RType r)) 
+                                      (RType r))
                               (RType toType))
                       (RType fromType))
               (RTerm xPtr)
-                      
+
 uCast :: Bound Name
 uCast = UPrim (NamePrimOp $ PrimStore $ PrimStoreCastPtr)
               (typeOfPrimStore PrimStoreCastPtr)

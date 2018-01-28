@@ -1,11 +1,14 @@
 #pragma once
 #include <stdio.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <unistd.h>
 #include "Runtime.h"
 
 
 // -- File --------------------------------------------------------------------
 // Read the contents of a file into a string.
-Obj*    primFileRead (string_t* path)
+Obj* ddcPrimFileRead (string_t* path)
 {
         int fd          = open (path, O_RDONLY);
         if (fd == -1) {

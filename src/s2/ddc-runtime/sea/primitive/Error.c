@@ -11,7 +11,7 @@
 // the guards are exhaustive then a call to this function is
 // inserted as a default case.
 //
-Obj*    primErrorDefault(string_t* source, uint32_t line)
+Obj*    ddcPrimErrorDefault(string_t* source, uint32_t line)
 {
         fprintf ( stderr
                 , "\nDDC runtime error: inexhaustive case match.\n at: %s:%" PRId32 "\n"
