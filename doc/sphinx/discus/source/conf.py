@@ -49,9 +49,9 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project   = u'Disciple'
-copyright = u'2017, Disciple Development Team'
-author    = u'Disciple Development Team'
+project   = u'Discus'
+copyright = u'2018, Discus Development Team'
+author    = u'Discus Development Team'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -103,7 +103,7 @@ html_static_path = ['_static']
 # -- Options for HTMLHelp output ------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'Discipledoc'
+htmlhelp_basename = 'Discusdoc'
 
 
 # -- Options for LaTeX output ---------------------------------------------
@@ -130,8 +130,8 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'Disciple.tex', u'Disciple Documentation',
-     u'Disciple Development Team', 'manual'),
+    (master_doc, 'Discus.tex', u'Discus Documentation',
+     u'Discus Development Team', 'manual'),
 ]
 
 
@@ -140,7 +140,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'disciple', u'Disciple Documentation',
+    (master_doc, 'discus', u'Discus Documentation',
      [author], 1)
 ]
 
@@ -151,8 +151,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'Disciple', u'Disciple Documentation',
-     author, 'Disciple', 'One line description of project.',
+    (master_doc, 'Discus', u'Discus Documentation',
+     author, 'Discus', 'One line description of project.',
      'Miscellaneous'),
 ]
 
