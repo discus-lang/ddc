@@ -1,6 +1,7 @@
 #pragma once
 #include <string.h>
 #include <inttypes.h>
+#include <alloca.h>
 #include "Runtime.h"
 
 // Show functions.
