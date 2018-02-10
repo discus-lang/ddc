@@ -1,6 +1,6 @@
-# The Disciplined Disciple Compiler [![Build Status](https://travis-ci.org/DDCSF/ddc.svg?branch=master)](https://travis-ci.org/DDCSF/ddc)
+# The Disciplined Discus Compiler [![Build Status](https://travis-ci.org/DDCSF/ddc.svg?branch=master)](https://travis-ci.org/DDCSF/ddc)
 
-The Disciple language is an experimental dialect of Haskell which investigates
+The Discus language is an experimental dialect of Haskell which investigates
 static typing and program transformation in the presence of computational effects.
 The compiler (DDC) is currently "working alpha" quality, meaning there is a
 complete system that can be hacked around with, but it’s not yet industrial strength.
@@ -24,9 +24,9 @@ complete system that can be hacked around with, but it’s not yet industrial st
 ## Show Me Code
 
 Check out the
-[Demos](https://github.com/DDCSF/ddc/tree/master/test/ddc-demo/source/tetra),
-[List Library](https://github.com/DDCSF/ddc/blob/master/src/s2/base/Data/List.ds), and
-[Text Implementation](https://github.com/DDCSF/ddc/blob/master/src/s2/base/Data/Text/Base.ds)
+[Demos](https://github.com/discus-lang/ddc/tree/master/test/ddc-demo/source/tetra),
+[List Library](https://github.com/discus-lang/ddc/blob/master/src/s2/base/Data/List.ds), and
+[Text Implementation](https://github.com/discus-lang/ddc/blob/master/src/s2/base/Data/Text/Base.ds)
 in the source tree. The Demos are simple programs. The List Library demonstrates effect polymorphism, and the Text
 implementation demonstrates use of private regions and capabilities.
 
@@ -36,21 +36,18 @@ are described on the [blog](http://disciple-devel.blogspot.com.au/).
 
 ## Let Me Hack
 
-See the [Getting Started](http://disciple.ouroborus.net/section/01-GettingStarted.html) guide
+See the [Getting Started](http://discus-lang.net/section/01-GettingStarted.html) guide
 on the home page.
 
 
 ## More Information
 
-The GitHub site:        http://github.com/DDCSF/ddc
+Home Page:              http://discus-lang.net
 
-Home Page:              http://disciple.ouroborus.net
+The GitHub site:        http://github.com/discus-lang/ddc
 
 Development Wiki:       http://trac.ouroborus.net/ddc
 
 Development Blog:       http://disciple-devel.blogspot.com.au/
 
 Mailing List:           http://groups.google.com/group/disciple-cafe
-
-
-
