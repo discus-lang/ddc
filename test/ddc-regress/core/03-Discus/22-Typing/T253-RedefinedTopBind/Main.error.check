@@ -1,5 +1,5 @@
 Error in transformed module.
   in stage CoreLoad
   in pipe  PipeCoreCheck/Check
-  test/ddc-regress/core/03-tetra/22-Typing/T253-RedefinedTopBind/Main.dct:4:6
+  test/ddc-regress/core/03-Discus/22-Typing/T253-RedefinedTopBind/Main.dct:4:6
   Redefined binder 'main: [e: Effect].Unit -> Unit' in letrec.
