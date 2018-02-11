@@ -98,31 +98,3 @@ Previous Releases
  * 2008/07 DDC 0.1.1: Alpha compiler, constructor classes, more examples.
  * 2008/03 DDC 0.1.0: Alpha compiler, used dependently kinded core language.
 
-
-Immediate Plans
----------------
-
- 1. Implement garbage collection.
-
- 2. Implement basic name spacing.
-
-
-How you can help
-----------------
-
- 1. Work through the tutorial on the web-site and send any comments to the
-    mailing list.] http://disciple.ouroborus.net/wiki/Tutorial
-
- 2. Say hello on the mailing list and we can help you get started on any of
-    the main missing features. These are all interesting projects.
-
- 3. Tell your friends.
-
-
-More Information
-----------------
-
- * See the web-site:        http://disciple.ouroborus.net
-
- * Read the mailing list:   http://groups.google.com/group/disciple-cafe
-

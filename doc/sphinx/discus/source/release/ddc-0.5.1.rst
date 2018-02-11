@@ -79,19 +79,19 @@ New In This Release
   Now with more bake.
 
 .. _`ray tracer demo`:
-   https://github.com/DDCSF/ddc/tree/master/test/ddc-demo/source/tetra/40-Graphics/10-RayTrace
+   http://github.com/discus-lang/ddc/tree/master/test/ddc-demo/source/Discus/40-Graphics/10-RayTrace
 
 .. _`blog`:
-   http://disciple-devel.blogspot.com.au/2017/07/ray-tracer-demo.html
+   http://blog.discus-lang.org/2017/07/ray-tracer-demo.html
 
 .. _`Travis buildbot`:
-   https://travis-ci.org/DDCSF/ddc
+   https://travis-ci.org/discus-lang
 
 .. _`home page`:
-   http://disciple.ouroborus.net
+   http://discus-lang.org
 
 .. _`development wiki`:
-   http://trac.ouroborus.net/ddc
+   http://trac.discus-lang.org
 
 Work In Progress
 ----------------
@@ -137,13 +137,10 @@ Previous Releases
 More Information
 ----------------
 
-Home Page:              http://disciple.ouroborus.net
-
-The GitHub site:        http://github.com/DDCSF/ddc
-
-Development Wiki:       http://trac.ouroborus.net/ddc
-
-Development Blog:       http://disciple-devel.blogspot.com.au/
-
-Mailing List:           http://groups.google.com/group/disciple-cafe
-
+:Home Page:     http://discus-lang.org
+:Dev Blog:      http://blog.discus-lang.org
+:Bug Tracker:   http://trac.discus-lang.org
+:GitHub Page:   https://github.com/discus-lang
+:Dev Buildbot:  https://travis-ci.org/discus-lang
+:Mailing List:  http://groups.google.com/group/disciple-cafe
+:IRC Channel:   Channel #disciplined on http://freenode.net

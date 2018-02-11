@@ -136,7 +136,7 @@ How you can help
 ----------------
 
  1) Work through the tutorial on the web-site and send any comments to the
-    mailing list. http://disciple.ouroborus.net/wiki/Tutorial/Core
+    mailing list.
 
  2) Send bug-reports to the mailing list, or get an account on the trac.
 
@@ -156,14 +156,4 @@ People
  * Amos Robinson          - Rewrite rule system and program transforms.
 
  * Ben Lippmeier          - Code generators, framework, program transforms.
-
-
-More Information:
------------------
-
- * See the web-site:        http://disciple.ouroborus.net
-
- * Getting Started Guide:   http://disciple.ouroborus.net/wiki/Tutorial/Core
-
- * Read the mailing list:   http://groups.google.com/group/disciple-cafe
 

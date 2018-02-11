@@ -36,18 +36,18 @@ are described on the [blog](http://disciple-devel.blogspot.com.au/).
 
 ## Let Me Hack
 
-See the [Getting Started](http://discus-lang.net/section/01-GettingStarted.html) guide
+See the [Getting Started](http://discus-lang.org/section/01-GettingStarted.html) guide
 on the home page.
 
 
 ## More Information
 
-Home Page:              http://discus-lang.net
+Home Page:              http://discus-lang.org
 
 The GitHub site:        http://github.com/discus-lang/ddc
 
-Development Wiki:       http://trac.ouroborus.net/ddc
+Development Wiki:       http://trac.discus-lang.org
 
-Development Blog:       http://disciple-devel.blogspot.com.au/
+Development Blog:       http://blog.discus-lang.org
 
 Mailing List:           http://groups.google.com/group/disciple-cafe

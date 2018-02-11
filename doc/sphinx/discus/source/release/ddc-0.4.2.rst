@@ -119,7 +119,7 @@ How you can help
 ----------------
 
  1. Work through the tutorial on the web-site and send any comments to the
-    mailing list.] http://disciple.ouroborus.net/wiki/Tutorial
+    mailing list.
 
  2. Say hello on the mailing list and we can help you get started on any of
     the main missing features. These are all interesting projects.
@@ -157,14 +157,4 @@ The following people contributed to DDC since the last major release:
    Automatic insertion of run and box casts;
    Multi module compilation;
    Desugaring of guards.
-
-
-More Information
-----------------
-
- * See the web-site:        http://disciple.ouroborus.net
-
- * Getting Started Guide:   http://disciple.ouroborus.net/wiki/Tutorial/Core
-
- * Read the mailing list:   http://groups.google.com/group/disciple-cafe
 

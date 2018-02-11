@@ -13,6 +13,9 @@ The main language features are:
 * Default call-by-value evaluation.
 * Typed external core language.
 
+Examples
+========
+
 For example programs, see the demo_ directory on github, which includes:
 
 * `Conway's Life`_ demo which uses mutable arrays.
@@ -20,26 +23,33 @@ For example programs, see the demo_ directory on github, which includes:
 * `Lambda`_        demo which defines a simple lambda calculus interpreter.
 * `Ray Tracer`_    demo which makes nice pictures, described in this `blog post`_.
 
-.. _demo:               https://github.com/DDCSF/ddc/tree/master/test/ddc-demo/source/tetra
-.. _`Conway's Life`:    https://github.com/DDCSF/ddc/tree/master/test/ddc-demo/source/tetra/10-Defib/04-Life
-.. _`Almost Primes`:    https://github.com/DDCSF/ddc/blob/master/test/ddc-demo/source/tetra/80-Rosetta/AlmostPrime/Main.ds
-.. _`Lambda`:           https://github.com/DDCSF/ddc/tree/master/test/ddc-demo/source/tetra/90-Language/01-Lambda
-.. _`Ray Tracer`:       https://github.com/DDCSF/ddc/tree/master/test/ddc-demo/source/tetra/40-Graphics/10-RayTrace
-.. _`blog post`:        http://disciple-devel.blogspot.com.au/2017/07/ray-tracer-demo.html
+.. _demo:               https://github.com/DDCSF/ddc/tree/master/test/ddc-demo/source/Discus
+.. _`Conway's Life`:    https://github.com/DDCSF/ddc/tree/master/test/ddc-demo/source/Discus/10-Defib/04-Life
+.. _`Almost Primes`:    https://github.com/DDCSF/ddc/blob/master/test/ddc-demo/source/Discus/80-Rosetta/AlmostPrime/Main.ds
+.. _`Lambda`:           https://github.com/DDCSF/ddc/tree/master/test/ddc-demo/source/Discus/90-Language/01-Lambda
+.. _`Ray Tracer`:       https://github.com/DDCSF/ddc/tree/master/test/ddc-demo/source/Discus/40-Graphics/10-RayTrace
+.. _`blog post`:        http://blog.discus-lang.org/2017/07/ray-tracer-demo.html
+
+
+Documentation
+=============
 
 .. toctree::
    :maxdepth: 1
-   :caption: Contents:
 
    section/01-GettingStarted.rst
    section/02-Specification.rst
-   section/03-Architecture.rst
-   section/04-Development.rst
-   section/05-Release.rst
+   section/03-Release.rst
 
 
-Indices and tables
-==================
+More Information
+================
 
-* :ref:`genindex`
-* :ref:`search`
+:Home Page:     http://discus-lang.org
+:Dev Blog:      http://blog.discus-lang.org
+:Bug Tracker:   http://trac.discus-lang.org
+:GitHub Page:   https://github.com/discus-lang
+:Dev Buildbot:  https://travis-ci.org/discus-lang
+:Mailing List:  http://groups.google.com/group/disciple-cafe
+:IRC Channel:   Channel #disciplined on http://freenode.net
+
