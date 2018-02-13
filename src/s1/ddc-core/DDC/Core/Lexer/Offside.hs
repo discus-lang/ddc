@@ -25,7 +25,7 @@ import DDC.Data.SourcePos
 --
 applyOffside
         :: (Eq n, Show n)
-        => [Context]            -- ^ Current layout context.
+        => [Context n]          -- ^ Current layout context.
         -> [Lexeme n]           -- ^ Input lexemes.
         -> [Lexeme n]
 
@@ -45,34 +45,34 @@ applyOffside [] (lt@(LexemeToken _sp t) : lts)
 --      'import foreign MODE value'
 applyOffside [] lts
  | lt1@(LexemeToken _sp1 t1)
-         : LexemeStartBlock spn : lts' <- lts
+         : LexemeStartBlock spn pStart : lts' <- lts
  ,   isKeyword t1 EExport || isKeyword t1 EImport
   || isKeyword t1 ELetRec || isKeyword t1 ELet || isKeyword t1 EWhere
  = lt1  : LexemeBraceBra spn
-        : applyOffside (ContextImplicitBrace (sourcePosColumn spn) : []) lts'
+        : applyOffside (ContextImplicitBrace (sourcePosColumn spn) pStart : []) lts'
 
  -- (import | export) (type | value) { ... }
  | lt1@(LexemeToken _sp1 t1)
         : lt2@(LexemeToken _sp2 t2)
-        : LexemeStartBlock spn : lts' <- lts
+        : LexemeStartBlock spn pStart : lts' <- lts
  , isKeyword t1 EImport   || isKeyword t1 EExport
  , isKeyword t2 EType     || isKeyword t2 EValue
  = lt1  : lt2
         : LexemeBraceBra spn
-        : applyOffside (ContextImplicitBrace (sourcePosColumn spn) : []) lts'
+        : applyOffside (ContextImplicitBrace (sourcePosColumn spn) pStart : []) lts'
 
  -- (import | export) foreign X (type | capability | value) { ... }
  | lt1@(LexemeToken _sp1 t1)
         : lt2@(LexemeToken _sp2  t2)
         : lt3@(LexemeToken _sp3 _t3)
         : lt4@(LexemeToken _sp4  t4)
-        : LexemeStartBlock spn : lts' <- lts
+        : LexemeStartBlock spn pStart : lts' <- lts
  , isKeyword t1 EImport   || isKeyword t1 EExport
  , isKeyword t2 EForeign
  , isKeyword t4 EType     || isKeyword t4 ECapability  || isKeyword t4 EValue
  = lt1  : lt2 : lt3 : lt4
         : LexemeBraceBra spn
-        : applyOffside (ContextImplicitBrace (sourcePosColumn spn) : []) lts'
+        : applyOffside (ContextImplicitBrace (sourcePosColumn spn) pStart : []) lts'
 
 
 -- Top-level ----------------------------------------------
@@ -81,7 +81,7 @@ applyOffside [] lts
 applyOffside [] (LexemeStartLine _  : lts)
  = applyOffside [] lts
 
-applyOffside [] (LexemeStartBlock _ : lts)
+applyOffside [] (LexemeStartBlock _ _pStart : lts)
  = applyOffside [] lts
 
 
@@ -132,16 +132,21 @@ applyOffside cc@(ContextImplicitLet m : cs) (lt1@(LexemeStartLine sp) : lts1)
  = applyOffside cc lts1
 
 -- let-context close.
-applyOffside    (ContextImplicitLet _m : cs) (lt1@(LexemeIn sp) : lts)
+applyOffside
+        (ContextImplicitLet _m : cs) (lt1@(LexemeIn sp) : lts)
  = LexemeBraceKet sp : lt1 : applyOffside cs lts
 
 
 -- Brace --------------------------------------------------
 -- line start
-applyOffside cc@(ContextImplicitBrace m : cs) (lt@(LexemeStartLine sp) : lts)
+applyOffside
+         cc@(ContextImplicitBrace m pStart : cs)
+        (lt@(LexemeStartLine sp) : lts)
  -- Add semicolon to get to the next statement in this block.
  | m == sourcePosColumn sp
- = LexemeSemiColon sp   : applyOffside cc lts
+ = if pStart lts
+        then LexemeSemiColon sp   : applyOffside cc lts
+        else applyOffside cc lts
 
  -- End an implicit block.
  --  We need to keep the LexemeStartLine because this newline might
@@ -158,9 +163,9 @@ applyOffside cc (LexemeStartLine _sp : lts)
  = applyOffside cc lts
 
 -- standard block start
-applyOffside cc (LexemeStartBlock sp : lts)
+applyOffside cc (LexemeStartBlock sp pStart : lts)
  = LexemeBraceBra sp
-        : applyOffside (ContextImplicitBrace (sourcePosColumn sp)  : cc) lts
+        : applyOffside (ContextImplicitBrace (sourcePosColumn sp) pStart : cc) lts
 
 -- push context for explicit open brace
 applyOffside cc (lt@(LexemeBraceBra _sp) : lts)
@@ -185,7 +190,7 @@ applyOffside cc (lt@(LexemeRoundBra _sp) : lts)
 applyOffside cc (lt@(LexemeRoundKet  sp) : lts)
  -- force close of block on close paren.
  -- This partially handles the crazy (Note 5) rule from the Haskell98 standard.
- | ContextImplicitBrace _ : cs <- cc
+ | ContextImplicitBrace _ _ : cs <- cc
  = LexemeBraceKet sp    : applyOffside cs (lt : lts)
 
  -- pop context for explicit close paren.
@@ -202,7 +207,7 @@ applyOffside [] []
  = []
 
 -- close off remaining contexts once we've reached the end of the stream.
-applyOffside (ContextImplicitBrace _ : cs) []
+applyOffside (ContextImplicitBrace _ _ : cs) []
  = LexemeBraceKet (SourcePos "" 0 0) : applyOffside cs []
 
 applyOffside (ContextImplicitLet _   : cs) []

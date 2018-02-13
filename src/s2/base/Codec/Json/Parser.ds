@@ -71,7 +71,7 @@ matchKeyword (cc: List Char) (state: JsonState r) (v: Json)
 pullJsonNumber (state: JsonState r)
         : S (Read r + Write r) (Maybe Json)
  | Just c1       <- peekChar state
- = (match
+ = match
         | isDigit c1
         , Just f  <- pullNumberPos state
         = Just (JsonNumber f)
@@ -84,7 +84,7 @@ pullJsonNumber (state: JsonState r)
         = Just (JsonNumber (0.0f64 - f))
 
         | otherwise
-        = parseFail state JsonParseNumber)
+        = parseFail state JsonParseNumber
 
  | otherwise
  = parseFail state JsonParseNumber
@@ -97,7 +97,7 @@ pullNumberPos (state: JsonState r)
 
  -- TODO Parser disaster with nested matches, the following guard
  --      gets stuck to these ones, same as in above function.
- = (match
+ = match
         | Just cd  <- peekChar state
         , cd  == '.'
         , Just _   <- pullChar state
@@ -118,7 +118,7 @@ pullNumberPos (state: JsonState r)
         = Just f
 
         | otherwise
-        = parseFail state JsonParseNumber)
+        = parseFail state JsonParseNumber
 
  | otherwise
  = parseFail state JsonParseNumber
@@ -131,7 +131,7 @@ takeNumberExponent (state: JsonState r)
  | Just ce      <- peekChar state
  , ce == 'e' ∨ ce == 'E'
  , Just _       <- pullChar state
- = (match
+ = match
         | Just cn <- peekChar state
         , isDigit cn
         , Just ex <- pullNumberExponentPos state
@@ -150,7 +150,7 @@ takeNumberExponent (state: JsonState r)
         = Just (Just (0i - promote# ex))
 
         | otherwise
-        = parseFail state JsonParseNumber)
+        = parseFail state JsonParseNumber
 
  | otherwise
  = Just Nothing
@@ -262,7 +262,7 @@ takeListElems (state: JsonState r)
 takeCommaListElems (state: JsonState r)
         : S (Read r + Write r) (Maybe (List Json))
  | Just c <- do { skipSpace state; peekChar state }
- = (match
+ = match
         | c == ']'
         = Just Nil
 
@@ -273,7 +273,7 @@ takeCommaListElems (state: JsonState r)
         = Just (Cons e es)
 
         | otherwise
-        = parseFail state JsonParseList)
+        = parseFail state JsonParseList
 
  | otherwise
  = parseFail state JsonParseList
@@ -314,7 +314,7 @@ takeObjectFields (state: JsonState r)
 takeCommaObjectFields (state: JsonState r)
         : S (Read r + Write r) (Maybe (List (Text, Json)))
  | Just c  <- do { skipSpace state; peekChar state }
- = (match
+ = match
         | c == '}'
         = Just Nil
 
@@ -325,7 +325,7 @@ takeCommaObjectFields (state: JsonState r)
         = Just (Cons f fs)
 
         | otherwise
-        = parseFail state JsonParseObject)
+        = parseFail state JsonParseObject
 
  | otherwise
  = parseFail state JsonParseObject

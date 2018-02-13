@@ -18,7 +18,7 @@ addStarts ts
  -- If the first lexeme of a module is not '{' then start a new block.
  | t1 : tsRest  <- dropNewLinesLexeme ts
  = if not $ or $ map (isToken t1) [KA (KSymbol SBraceBra)]
-        then LexemeStartBlock (sourcePosOfLexeme t1)
+        then LexemeStartBlock (sourcePosOfLexeme t1) (const True)
                 : addStarts' (t1 : tsRest)
         else addStarts' (t1 : tsRest)
 
@@ -32,17 +32,17 @@ addStarts'
         => [Lexeme n] -> [Lexeme n]
 addStarts' ts
  -- Block started at end of input.
- | Just (ts1, ts2)      <- splitBlockStart ts
- , []                   <- dropNewLinesLexeme ts2
- , t1 : _               <- ts1
- = ts1  ++ [LexemeStartBlock (sourcePosOfLexeme t1)]
+ | Just (ts1, ts2, pStart) <- splitBlockStart ts
+ , []                       <- dropNewLinesLexeme ts2
+ , t1 : _                   <- ts1
+ = ts1  ++ [LexemeStartBlock (sourcePosOfLexeme t1) pStart]
 
  -- Block start point where there is not an explicit open brace.
  --  Inject a StartBlock marker including the current column depth.
- | Just (ts1, ts2)       <- splitBlockStart ts
- , t2 : tsRest           <- dropNewLinesLexeme ts2
+ | Just (ts1, ts2, pStart) <- splitBlockStart ts
+ , t2 : tsRest              <- dropNewLinesLexeme ts2
  , not $ isToken t2 (KA (KSymbol SBraceBra))
- = ts1  ++ [LexemeStartBlock (sourcePosOfLexeme t2)]
+ = ts1  ++ [LexemeStartBlock (sourcePosOfLexeme t2) pStart]
         ++ addStarts' (t2 : tsRest)
 
  -- check for start of list
@@ -74,8 +74,16 @@ addStarts' ts
  = []
 
 
--- | Check if a token is one that starts a block of statements.
-splitBlockStart :: [Lexeme n] -> Maybe ([Lexeme n], [Lexeme n])
+-- | Check if a token sequence is one that starts a block of statements.
+--   If so then split that token sequence from the list, returning the
+--   rest of the tokens, along with a predicate that indicates whether
+--   a new line starting this token should cause insertion of a semicolon.
+splitBlockStart
+        :: [Lexeme n]
+        -> Maybe ( [Lexeme n]
+                 , [Lexeme n]
+                 , [Lexeme n] -> Bool )
+
 splitBlockStart ls
  = go1 ls
  where
@@ -85,11 +93,11 @@ splitBlockStart ls
                 l2@(LexemeToken _ t2) : ls2
                  |  isKeyword t1 EExport
                  ,  isKeyword t2 EType || isKeyword t2 EValue
-                 -> Just ([l1, l2], ls2)
+                 -> Just ([l1, l2], ls2, const True)
 
                  |  isKeyword t1 EImport
                  ,  isKeyword t2 EType || isKeyword t2 EValue || isKeyword t2 EData
-                 -> Just ([l1, l2], ls2)
+                 -> Just ([l1, l2], ls2, const True)
 
                  |  otherwise
                  -> case ls2 of
@@ -97,12 +105,12 @@ splitBlockStart ls
                          |  isKeyword t1 EExport
                          ,  isKeyword t2 EForeign
                          ,  isKeyword t4 EValue
-                         -> Just ([l1, l2, l3, l4], ls4)
+                         -> Just ([l1, l2, l3, l4], ls4, const True)
 
                          |  isKeyword t1 EImport
                          ,  isKeyword t2 EForeign
                          ,  isKeyword t4 EType || isKeyword t4 EValue || isKeyword t4 ECapability
-                         -> Just ([l1, l2, l3, l4], ls4)
+                         -> Just ([l1, l2, l3, l4], ls4, const True)
 
                         _ -> go2 ls
 
@@ -111,11 +119,21 @@ splitBlockStart ls
     go1 _ = go2 ls
 
 
-    go2 (l1@(LexemeToken _ (KA (KKeyword EDo)))     : ls1) = Just ([l1], ls1)
-    go2 (l1@(LexemeToken _ (KA (KKeyword EOf)))     : ls1) = Just ([l1], ls1)
-    go2 (l1@(LexemeToken _ (KA (KKeyword EWhere)))  : ls1) = Just ([l1], ls1)
-    go2 (l1@(LexemeToken _ (KA (KKeyword EExport))) : ls1) = Just ([l1], ls1)
-    go2 (l1@(LexemeToken _ (KA (KKeyword EImport))) : ls1) = Just ([l1], ls1)
+    go2 (l1@(LexemeToken _ (KA (KKeyword EDo)))     : ls1) = Just ([l1], ls1, const True)
+    go2 (l1@(LexemeToken _ (KA (KKeyword EOf)))     : ls1) = Just ([l1], ls1, const True)
+    go2 (l1@(LexemeToken _ (KA (KKeyword EMatch)))  : ls1) = Just ([l1], ls1, isStartGuard)
+    go2 (l1@(LexemeToken _ (KA (KKeyword EWhere)))  : ls1) = Just ([l1], ls1, const True)
+    go2 (l1@(LexemeToken _ (KA (KKeyword EExport))) : ls1) = Just ([l1], ls1, const True)
+    go2 (l1@(LexemeToken _ (KA (KKeyword EImport))) : ls1) = Just ([l1], ls1, const True)
 
     go2 _ = Nothing
+
+    isStartGuard [] = False
+    isStartGuard (LexemeToken _ (KA (KSymbol sym)) : _)
+     = case sym of
+        SEquals -> False
+        SComma  -> False
+        _       -> True
+    isStartGuard (_ : _)
+     = True
 

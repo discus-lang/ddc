@@ -179,8 +179,10 @@ pExpFrontSP
         -- match | EXP = EXP | EXP = EXP ...
         --  Sugar for cascaded case expressions case-expression.
  , do   sp      <- pKey EMatch
+        pSym    SBraceBra
         gxs     <- liftM (map (AAltMatch . snd))
-                $  P.many1 (pGuardedExpSP (pSym SEquals))
+                $  P.sepEndBy (pGuardedExpSP (pSym SEquals)) (pSym SSemiColon)
+        pSym    SBraceKet
         let xError
                 = makeXErrorDefault
                         (Text.pack    $ sourcePosSource sp)

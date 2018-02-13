@@ -30,9 +30,9 @@ data Lexeme n
         -- | Signal that the line has started at this position.
         | LexemeStartLine       SourcePos
 
-        -- | Signal that we're starting a block in this column.
-        | LexemeStartBlock      SourcePos
-        deriving (Eq, Show)
+        -- | Signal that we're starting a block in this column,
+        --   also have a predicate to detect when we should insert a semi.
+        | LexemeStartBlock      SourcePos ([Lexeme n] -> Bool)
 
 
 pattern LexemeBraceBra  sp              = LexemeToken sp (KA (KSymbol  SBraceBra))
@@ -51,7 +51,7 @@ sourcePosOfLexeme ll
  = case ll of
         LexemeToken sp _        -> sp
         LexemeStartLine  sp     -> sp
-        LexemeStartBlock sp     -> sp
+        LexemeStartBlock sp _   -> sp
 
 
 -- | Convert located tokens into our lexeme type.
@@ -68,7 +68,7 @@ locatedOfLexemes ls
 
 
 -- | What lexer context we're currently inside.
-data Context
+data Context n
         -- | Explicit { context.
         = ContextExplicitBrace
 
@@ -79,11 +79,10 @@ data Context
         | ContextExplicitLet
 
         -- | Implicitly inserted '{' context at the given level.
-        | ContextImplicitBrace Int
+        | ContextImplicitBrace Int ([Lexeme n] -> Bool)
 
         -- | Implicitly inserted '{' context after a let-keyword.
         | ContextImplicitLet   Int
-        deriving Show
 
 
 -- | Test whether this wrapper token matches.

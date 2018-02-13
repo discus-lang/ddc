@@ -141,9 +141,7 @@ escapeTextVecToVectorDisciple
 
 -- | Escape a character and write the encoding to the given vector.
 writeEscape (vecDst: Vector# r2 Word8) (iDst: Nat) (c: Char) : S (Write r2) Nat
- =
-   -- TODO: parse problem 'where' expression wraps otherwise branch instead of match.
-   (match
+ = match
         | c == '"'      = do { write1 iDst '\\'; write1 (iDst + 1) '"';  2 }
         | c == '\\'     = do { write1 iDst '\\'; write1 (iDst + 1) '\\'; 2 }
         | c == '\b'     = do { write1 iDst '\\'; write1 (iDst + 1) 'b';  2 }
@@ -163,7 +161,7 @@ writeEscape (vecDst: Vector# r2 Word8) (iDst: Nat) (c: Char) : S (Write r2) Nat
                 write1 (iDst + 3) 'X'
                 write1 (iDst + 4) 'X'
                 write1 (iDst + 5) 'X'
-                6)
+                6
 
  where  write1 (iDst: Nat) (c: Char): S (Write r2) Unit
          = do   vectorWrite# vecDst iDst (truncate# c)
