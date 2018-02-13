@@ -101,3 +101,90 @@ foo (_: Unit)
   = [DEFIX| (x,y,z)# [Nat] [Nat] [Nat] 1 2 3 ];
 
 
+
+-- Check parsing of match expressions.
+module Test where
+derp (b: Unit)
+  = match {
+      | True <- b
+      = False;
+      
+      | False <- b
+      = True
+    } else default# "<batch>" 4;
+
+
+
+-- Check offside rule handles alts on a single line.
+module Test where
+derp (b: Unit)
+  = match {
+      | True <- b
+      = False;
+      
+      | False <- b
+      = True
+    } else default# "<batch>" 4;
+
+
+
+-- Check offside rule handles alts where result start in same column
+-- as the bar that arts the alt.
+module Test where
+derp (b: Unit)
+  = match {
+      | True <- b
+      = False;
+      
+      | False <- b
+      = True
+    } else default# "<batch>" 4;
+
+
+
+-- Check offside rule binds match alts more tightly than guard alts.
+module Test where
+derp (b: Bool)
+  | b
+  = match {
+    | True <- b
+    = False;
+    
+    | False <- b
+    = True
+  } else default# "<batch>" 5
+  | otherwise
+  = match {
+    | True <- b
+    = True;
+    
+    | False <- b
+    = False
+  } else default# "<batch>" 11;
+
+
+
+-- Check offside rule handles nested match expressions.
+module Test where
+derp (b1: Bool) (b2: Bool)
+  = match {
+      | True <- b1
+      = match {
+        | True <- b2
+        = True;
+        
+        | False <- b2
+        = False
+      } else default# "<batch>" 6;
+      
+      | False <- b1
+      = match {
+        | True <- b2
+        = False;
+        
+        | False <- b2
+        = True
+      } else default# "<batch>" 12
+    } else default# "<batch>" 4;
+
+
