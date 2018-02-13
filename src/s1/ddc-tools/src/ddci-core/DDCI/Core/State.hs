@@ -35,7 +35,7 @@ import System.FilePath
 import Data.Map                                 (Map)
 import Data.Set                                 (Set)
 import DDC.Core.Check                           (AnTEC(..))
-import qualified DDC.Build.Language.Tetra       as Tetra
+import qualified DDC.Build.Language.Discus      as Tetra
 import qualified DDC.Core.Salt                  as Salt
 import qualified DDC.Core.Simplifier            as S
 import qualified DDC.Core.Salt.Runtime          as Runtime
@@ -53,7 +53,7 @@ data State
           stateInterface        :: InputInterface
 
           -- | ddci mode flags.
-        , stateModes            :: Set Mode 
+        , stateModes            :: Set Mode
 
           -- | Source language to accept.
         , stateLanguage         :: Language
@@ -69,7 +69,7 @@ data State
         , stateBuilder          :: Maybe Builder
 
           -- | Output file for @compile@ and @make@ commands.
-        , stateOutputFile       :: Maybe FilePath 
+        , stateOutputFile       :: Maybe FilePath
 
           -- | Output dir for @compile@ and @make@ commands
         , stateOutputDir        :: Maybe FilePath
@@ -84,7 +84,7 @@ data TransHistory
         .  (Typeable n, Ord n, Show n, Pretty n, CompoundName n)
         => TransHistory
         { -- | Original expression and its types
-          historyExp            :: (Exp (AnTEC () n) n, Type n, Effect n, Closure n) 
+          historyExp            :: (Exp (AnTEC () n) n, Type n, Effect n, Closure n)
 
           -- | Keep history of steps so we can go back and construct final sequence
         , historySteps          :: [(Exp (AnTEC () n) n, Simplifier s (AnTEC () n) n)]
@@ -94,8 +94,8 @@ data TransHistory
 
 
 -- | Adjust a mode setting in the state.
-adjustMode 
-        :: Bool         -- ^ Whether to enable or disable the mode.        
+adjustMode
+        :: Bool         -- ^ Whether to enable or disable the mode.
         -> Mode         -- ^ Mode to adjust.
         -> State
         -> State
@@ -112,11 +112,11 @@ initState :: InputInterface -> State
 initState interface
         = State
         { stateInterface        = interface
-        , stateModes            = Set.empty 
+        , stateModes            = Set.empty
         , stateLanguage         = Tetra.language
         , stateWithSalt         = Map.empty
         , stateSimplSalt        = S.Trans S.Id
-        , stateBuilder          = Nothing  
+        , stateBuilder          = Nothing
         , stateOutputFile       = Nothing
         , stateOutputDir        = Nothing
         , stateTransInteract    = Nothing }
@@ -126,7 +126,7 @@ initState interface
 getDriverConfigOfState :: State -> IO D.Config
 getDriverConfigOfState state
  = do   builder <- getActiveBuilder state
-        return 
+        return
          $ D.Config
          { D.configLogBuild               = True
          , D.configDump                   = Set.member Dump  (stateModes state)
@@ -146,21 +146,21 @@ getDriverConfigOfState state
          , D.configSimplSalt              = stateSimplSalt  state
          , D.configBuilder                = builder
          , D.configPretty                 = configPretty
-         , D.configSuppressHashImports    = not $ Set.member SaltPrelude (stateModes state) 
+         , D.configSuppressHashImports    = not $ Set.member SaltPrelude (stateModes state)
          , D.configKeepLlvmFiles          = False
          , D.configKeepSeaFiles           = False
-         , D.configKeepAsmFiles           = False 
+         , D.configKeepAsmFiles           = False
 
-         , D.configTaintAvoidTypeChecks 
+         , D.configTaintAvoidTypeChecks
                 = Set.member TaintAvoidTypeChecks (stateModes state) }
 
  where  modes   = stateModes state
-        
-        configPretty   
+
+        configPretty
          = D.ConfigPretty
          { D.configPrettyVarTypes         = Set.member PrettyVarTypes   modes
          , D.configPrettyConTypes         = Set.member PrettyConTypes   modes
-         , D.configPrettyUseLetCase       = Set.member PrettyUseLetCase modes 
+         , D.configPrettyUseLetCase       = Set.member PrettyUseLetCase modes
          , D.configPrettySuppressImports  = Set.member SuppressImports  modes
          , D.configPrettySuppressExports  = Set.member SuppressExports  modes
          , D.configPrettySuppressLetTypes = Set.member SuppressLetTypes modes }
@@ -177,15 +177,15 @@ getDefaultBuilderConfig
 
 
 -- | Get the active builder.
---   If one is set explicitly in the state then use that, 
+--   If one is set explicitly in the state then use that,
 --   otherwise query the host system to determine the builder.
 --   If that fails as well then 'error'.
-getActiveBuilder :: State -> IO Builder 
-getActiveBuilder state 
+getActiveBuilder :: State -> IO Builder
+getActiveBuilder state
  = case stateBuilder state of
         Just builder          -> return builder
-        Nothing         
-         -> do  config   <- getDefaultBuilderConfig 
+        Nothing
+         -> do  config   <- getDefaultBuilderConfig
                 mBuilder <- determineDefaultBuilder config
                 case mBuilder of
                  Nothing      -> error "ddci-core.getActiveBuilder: unrecognised host platform"

@@ -35,7 +35,7 @@ import qualified DDC.Core.Flow.Convert                  as Flow
 
 import qualified DDC.Core.Machine                       as Machine
 
-import qualified DDC.Core.Tetra                         as Tetra
+import qualified DDC.Core.Discus                        as Discus
 
 import qualified DDC.Core.Babel.PHP                     as PHP
 import qualified DDC.Core.Salt                          as Salt
@@ -103,7 +103,7 @@ data PipeCore a n where
   -- Treat a module as belonging to the Core Tetra fragment from now on.
   PipeCoreAsTetra
         :: ![PipeTetra a]
-        -> PipeCore a Tetra.Name
+        -> PipeCore a Discus.Name
 
   -- Treat a module as belonging to the Core Flow fragment from now on.
   PipeCoreAsFlow
@@ -214,7 +214,7 @@ data PipeTetra a where
 
 -- | Process a Core Tetra module.
 pipeTetra
-        :: C.Module a Tetra.Name
+        :: C.Module a Discus.Name
         -> PipeTetra a
         -> IO [Error]
 
@@ -227,8 +227,8 @@ pipeTetra !mm !pp
                                 $ Snip.snip (Snip.configZero) mm
 
                 -- The floater needs bindings to be fully named.
-                namifierT       = C.makeNamifier (Tetra.freshT "t") Env.empty
-                namifierX       = C.makeNamifier (Tetra.freshX "x") Env.empty
+                namifierT       = C.makeNamifier (Discus.freshT "t") Env.empty
+                namifierX       = C.makeNamifier (Discus.freshX "x") Env.empty
                 mm_namified     = S.evalState (C.namify namifierT namifierX mm_snip) 0
 
                 doc  = PHP.phpOfModule mm_namified

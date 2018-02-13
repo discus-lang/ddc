@@ -6,9 +6,9 @@ module DDC.Driver.Command.Parse
 where
 import DDC.Driver.Stage
 import DDC.Build.Language
-import DDC.Source.Tetra.Pretty
-import DDC.Source.Tetra.Lexer           as ST
-import DDC.Source.Tetra.Parser          as ST
+import DDC.Source.Discus.Pretty
+import DDC.Source.Discus.Lexer          as ST
+import DDC.Source.Discus.Parser         as ST
 import DDC.Core.Fragment                as C
 import DDC.Core.Parser                  as C
 import DDC.Core.Lexer                   as C
@@ -30,13 +30,13 @@ import qualified DDC.Data.SourcePos     as SP
 --   modules. The language to use is determined by inspecting the file name
 --   extension.
 --
-cmdParseFromFile 
+cmdParseFromFile
         :: Config               -- ^ Driver config.
         -> FilePath             -- ^ Module file name.
         -> ExceptT String IO ()
 
 cmdParseFromFile config filePath
- 
+
  -- Parse a Disciple Source Tetra module.
  | ".ds"         <- takeExtension filePath
  =  cmdParseSourceTetraFromFile config filePath
@@ -61,7 +61,7 @@ cmdParseSourceTetraFromFile
         -> ExceptT String IO ()
 
 cmdParseSourceTetraFromFile config filePath
- = do   
+ = do
         -- Check that the file exists.
         exists  <- liftIO $ doesFileExist filePath
         when (not exists)
@@ -74,18 +74,18 @@ cmdParseSourceTetraFromFile config filePath
         let toks    = ST.lexModuleString filePath 1 src
 
         when (configDump config)
-         $ liftIO $ writeFile "dump.tetra-parse.tokens-sp" 
+         $ liftIO $ writeFile "dump.tetra-parse.tokens-sp"
                   $ unlines $ map show toks
 
         when (configDump config)
-         $ liftIO $ writeFile "dump.tetra-parse.tokens" 
+         $ liftIO $ writeFile "dump.tetra-parse.tokens"
                   $ unlines $ map show $ map SP.valueOfLocated toks
-                    
+
         case BP.runTokenParser
                 C.describeToken filePath ST.pModule toks of
-         Left err 
+         Left err
           ->    throwE (renderIndent $ ppr err)
-         
+
          Right mm
           ->    liftIO $ putStrLn (renderIndent $ ppr mm)
 
@@ -104,7 +104,7 @@ cmdParseCoreFromFile _config language filePath
  | Language bundle      <- language
  , fragment             <- bundleFragment  bundle
  , profile              <- fragmentProfile fragment
- = do   
+ = do
         -- Check that the file exists.
         exists  <- liftIO $ doesFileExist filePath
         when (not exists)
@@ -117,7 +117,7 @@ cmdParseCoreFromFile _config language filePath
         let toks = (C.fragmentLexModule fragment) filePath 1 src
 
         case BP.runTokenParser
-                C.describeToken filePath 
+                C.describeToken filePath
                 (C.pModule (C.contextOfProfile profile)) toks of
          Left err
           ->    throwE (renderIndent $ ppr err)

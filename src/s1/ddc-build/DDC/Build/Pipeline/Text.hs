@@ -13,7 +13,7 @@ import DDC.Build.Language
 import DDC.Data.Pretty
 import Control.Monad.Trans.Except
 
-import qualified DDC.Source.Tetra.Pretty                ()
+import qualified DDC.Source.Discus.Pretty                ()
 
 import qualified DDC.Core.Check                         as C
 import qualified DDC.Control.Parser                     as BP

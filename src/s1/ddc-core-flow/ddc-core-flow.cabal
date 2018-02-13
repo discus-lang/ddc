@@ -10,10 +10,10 @@ Stability:      experimental
 Category:       Compilers/Interpreters
 Homepage:       http://disciple.ouroborus.net
 Synopsis:       Disciplined Disciple Compiler data flow compiler.
-Description:    
+Description:
         Disciple Core Flow is a Domain Specific Language (DSL) for writing first
         order data flow programs.
-   
+
         This package provides the language definition as a fragment of Disciple
         Core. It also provides an implementation of the lowering transform which
         converts data flow programs into imperative nested loop code.
@@ -24,12 +24,12 @@ Description:
 
         Alternatively, Disciple Core Flow programs can be transformed directly
         via the @ddc@ or @ddci-core@ command line interfaces, but DDC itself
-        doesn't provide full compilation to machine code. Use GHC and the 
+        doesn't provide full compilation to machine code. Use GHC and the
         @repa-plugin@ for that.
- 
+
 
 Library
-  Build-Depends: 
+  Build-Depends:
         base            >= 4.6 && < 4.10,
         array           >= 0.4 && < 0.6,
         deepseq         >= 1.3 && < 1.5,
@@ -41,7 +41,7 @@ Library
         ddc-core        == 0.4.4.*,
         ddc-core-salt   == 0.4.4.*,
         ddc-core-simpl  == 0.4.4.*,
-        ddc-core-tetra  == 0.4.4.*
+        ddc-core-discus == 0.4.4.*
 
   Exposed-modules:
 
@@ -92,7 +92,7 @@ Library
         DDC.Core.Flow.Context.FillPath
 
         DDC.Core.Flow.Process.Pretty
-        
+
         DDC.Core.Flow.Prim.Base
         DDC.Core.Flow.Prim.DaConFlow
         DDC.Core.Flow.Prim.DaConPrim
@@ -121,7 +121,7 @@ Library
         DDC.Core.Flow.Exp.Simple.Collect
         DDC.Core.Flow.Exp.Simple.Compounds
         DDC.Core.Flow.Exp.Simple.Exp
-        
+
 
   GHC-options:
         -Wall

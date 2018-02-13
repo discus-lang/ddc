@@ -23,7 +23,7 @@ import Data.Time.Clock
 import Data.IORef
 import Data.Maybe
 import Data.Map                         (Map)
-import qualified DDC.Core.Tetra         as E
+import qualified DDC.Core.Discus        as E
 import qualified DDC.Core.Salt          as A
 import qualified Data.Map.Strict        as Map
 import qualified Data.Compact           as Compact
@@ -202,7 +202,7 @@ metaOfInterface ii
 --
 supersOfInterface :: InterfaceAA -> Map E.Name Super
 supersOfInterface ii
- | Just mmTetra <- interfaceTetraModule ii
+ | Just mmTetra <- interfaceDiscusModule ii
  , Just mmSalt  <- interfaceSaltModule  ii
  = let
         -- The current module name.

@@ -15,13 +15,13 @@ import qualified DDC.Build.Interface.Store      as B
 import qualified DDC.Build.Pipeline.Error       as B
 import qualified DDC.Build.Builder              as B
 import qualified DDC.Build.Stage.Core           as B
-import qualified DDC.Build.Language.Tetra       as BE
-import qualified DDC.Build.Stage.Source.Tetra   as BST
-import qualified DDC.Build.Stage.Core.Tetra     as BCT
+import qualified DDC.Build.Language.Discus      as BE
+import qualified DDC.Build.Stage.Source.Discus  as BST
+import qualified DDC.Build.Stage.Core.Discus    as BCT
 
 import qualified DDC.Core.Check                 as C
 import qualified DDC.Core.Module                as C
-import qualified DDC.Core.Tetra                 as CE
+import qualified DDC.Core.Discus                as CE
 import qualified DDC.Core.Salt                  as CA
 import qualified DDC.Core.Transform.Reannotate  as CReannotate
 

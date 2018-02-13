@@ -17,7 +17,7 @@ Library
         base            >= 4.6 && < 4.10,
         containers      == 0.5.*,
         ddc-core        == 0.4.4.*,
-        ddc-core-tetra  == 0.4.4.*
+        ddc-core-discus  == 0.4.4.*
 
   Exposed-modules:
         DDC.Core.Babel.PHP

@@ -14,27 +14,27 @@ Description:    Disciplined Disciple Compiler build framework.
 
 Library
   Build-depends:
-        base             >= 4.6 && < 4.10,
-        process          >= 1.4 && < 1.5,
-        deepseq          >= 1.3 && < 1.5,
-        containers       == 0.5.*,
-        filepath         >= 1.3 && < 1.5,
-        directory        == 1.2.*,
-        mtl              == 2.2.1.*,
-        time             >= 1.6 && < 1.7,
-        text             >= 1.2.2 && < 1.3,
-        transformers     == 0.5.*,
-        ddc-core         == 0.4.4.*,
-        ddc-core-simpl   == 0.4.4.*,
-        ddc-core-salt    == 0.4.4.*,
-        ddc-core-llvm    == 0.4.4.*,
-        ddc-core-flow    == 0.4.4.*,
-        ddc-core-tetra   == 0.4.4.*,
-        ddc-core-smr     == 0.4.4.*,
-        ddc-core-babel   == 0.4.4.*,
-        ddc-core-machine == 0.4.4.*,
-        ddc-source-tetra == 0.4.4.*
-  
+        base              >= 4.6 && < 4.10,
+        process           >= 1.4 && < 1.5,
+        deepseq           >= 1.3 && < 1.5,
+        containers        == 0.5.*,
+        filepath          >= 1.3 && < 1.5,
+        directory         == 1.2.*,
+        mtl               == 2.2.1.*,
+        time              >= 1.6 && < 1.7,
+        text              >= 1.2.2 && < 1.3,
+        transformers      == 0.5.*,
+        ddc-core          == 0.4.4.*,
+        ddc-core-simpl    == 0.4.4.*,
+        ddc-core-salt     == 0.4.4.*,
+        ddc-core-llvm     == 0.4.4.*,
+        ddc-core-flow     == 0.4.4.*,
+        ddc-core-discus    == 0.4.4.*,
+        ddc-core-smr      == 0.4.4.*,
+        ddc-core-babel    == 0.4.4.*,
+        ddc-core-machine  == 0.4.4.*,
+        ddc-source-discus == 0.4.4.*
+
   Exposed-modules:
         DDC.Build.Interface.Base
         DDC.Build.Interface.Load
@@ -45,12 +45,12 @@ Library
         DDC.Build.Language.Salt
         DDC.Build.Language.Tetra
         DDC.Build.Language.Zero
-        
+
         DDC.Build.Pipeline.Core
         DDC.Build.Pipeline.Error
         DDC.Build.Pipeline.Sink
         DDC.Build.Pipeline.Text
-        
+
         DDC.Build.Spec.Check
         DDC.Build.Spec.Parser
 
@@ -64,7 +64,7 @@ Library
         DDC.Build.Pipeline
         DDC.Build.Platform
         DDC.Build.Spec
-        
+
   Other-modules:
         DDC.Build.Language.Base
         DDC.Build.Spec.Base

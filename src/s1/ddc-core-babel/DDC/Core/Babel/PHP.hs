@@ -4,8 +4,8 @@ import DDC.Core.Collect
 import DDC.Core.Module
 import DDC.Core.Exp.Annot
 import DDC.Core.Pretty
-import DDC.Type.DataDef                 
-import qualified DDC.Core.Tetra.Prim as T
+import DDC.Type.DataDef
+import qualified DDC.Core.Discus.Prim as T
 import qualified DDC.Type.Env as Env
 
 import qualified Data.Set as Set
@@ -60,16 +60,16 @@ phpOfDataDefs ds
       [ text "class" <+> bare_name name <+> text "{"
       , indent 4 $ vcat $
         [ text "function __construct" <> parenss (map var_name_t args) <+> text "{"
-        , indent 4 $ vcat 
-                  $ map (\i -> obj_field_tt "this" i 
+        , indent 4 $ vcat
+                  $ map (\i -> obj_field_tt "this" i
                             <> text " = " <> var_name_t i <> text ";") args
         , indent 4 $ obj_field_tt "this" "tag" <+> text " = " <+> string_of name <> text ";"
         , text "}"
         ]
       , text "}"
-      -- , text "$" <> bare_name name <> text "_new" <+> text " 
-      --         = DDC::curry(function" <> parenss (map var_name_t args) 
-      --                <+> text "{ return new " <+> bare_name name 
+      -- , text "$" <> bare_name name <> text "_new" <+> text "
+      --         = DDC::curry(function" <> parenss (map var_name_t args)
+      --                <+> text "{ return new " <+> bare_name name
       --                <> parenss (map var_name_t args) <> text "; }, "
       --                <> text (show (length args)) <> text ");"
       ]
@@ -91,7 +91,7 @@ phpOfExp xx ctx m
     XVar _ v
      | UName n <- v
      , Just  arity <- Map.lookup n m
-     -> wrap $ text "DDC::curry(" <> bare_name n <> text ", " 
+     -> wrap $ text "DDC::curry(" <> bare_name n <> text ", "
                                   <> text (show arity) <> text ")"
      | UPrim p _ <- v
      -> wrap $ phpOfPrimOp p []
@@ -111,11 +111,11 @@ phpOfExp xx ctx m
     XLam a _ _
      | Just (bs, f) <- takeXLamFlags xx
      , bs' <- filter (not.fst) bs
-     -> wrap $ text "DDC::curry(/* Lam " <+> text (show a) 
-                <+> text "*/" <+> makeFunction Nothing bs f m <> text ", " 
+     -> wrap $ text "DDC::curry(/* Lam " <+> text (show a)
+                <+> text "*/" <+> makeFunction Nothing bs f m <> text ", "
                 <> text (show (length bs')) <> text ")"
-     
-     -- (" <> var_name_b b <> text ")/* Lam " <+> text (show a) 
+
+     -- (" <> var_name_b b <> text ")/* Lam " <+> text (show a)
      --   <+> text "*/ {" <+> phpOfExp x CRet <+> text " }, 1)"
 
 {-
@@ -128,8 +128,8 @@ phpOfExp xx ctx m
      -> if arity == length xs'
         then wrap $ bare_name n <> parenss (map (\arg -> phpOfExp arg CExp m) xs')
         -- todo also curry in phpOfLet (xvar)
-        else wrap $ text "DDC::apply" 
-                <> parenss ((text "DDC::curry(" <> bare_name n <> text ", " <> text (show arity) 
+        else wrap $ text "DDC::apply"
+                <> parenss ((text "DDC::curry(" <> bare_name n <> text ", " <> text (show arity)
                 <> text ")") : map (\arg -> phpOfExp arg CExp m) xs')
 
      | (f',xs) <- takeXApps1 f x
@@ -185,7 +185,7 @@ phpOfLets lets ctx m
      | Just (bs, f) <- takeXLamFlags x
      , CTop <- ctx
      -> (makeFunction (Just b) bs f m, insertArity (b,x) m)
-         -- , var_name_b b <> text " = DDC::curry(" <> bare_name_b b 
+         -- , var_name_b b <> text " = DDC::curry(" <> bare_name_b b
          --  <> text ", " <> text (show (length bs')) <> text ");" ]
      | otherwise
      -> (phpOfExp x (CLet b) m <> line, m)
@@ -194,7 +194,7 @@ phpOfLets lets ctx m
      | m' <- foldr insertArity m bxs
      -> ( foldl (<>) empty $ map (\(b,x) -> fst $ phpOfLets (LLet b x) ctx m') bxs
         , m')
-    
+
     _
      -> error "ddc-core-babel.phpOfLets: no private or withregion"
  where
@@ -260,7 +260,7 @@ makeFunction
         -> Map.Map T.Name Int
         -> Doc
 makeFunction nm bs x m
- = text "function " 
+ = text "function "
  <> maybe (text "") bare_name_b nm
  <> parenss (map (var_name_b.snd) $ filter (not.fst) bs)
  <> use_
@@ -280,7 +280,7 @@ makeFunction nm bs x m
       Nothing
        | not $ null fx
        -> text " use " <> parenss fx
-      _ 
+      _
        -> text ""
 
 noTypes :: [Exp a T.Name] -> [Exp a T.Name]
@@ -370,7 +370,7 @@ phpOfPrimOp op args
  where
   fallback
    = text "DDC::apply"
-       <> parenss ((text "DDC::curry(" <> sanitise_prim op <> text ", " 
+       <> parenss ((text "DDC::curry(" <> sanitise_prim op <> text ", "
                         <> sanitise_prim op <> text "_arity)") : args)
   getOp
    = go operators

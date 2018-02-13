@@ -9,8 +9,8 @@ ddc-main_packages = \
 	src/s1/ddc-core-llvm/DDC \
 	src/s1/ddc-core-flow/DDC \
 	src/s1/ddc-core-machine/DDC \
-	src/s1/ddc-core-tetra/DDC \
-        src/s1/ddc-source-tetra/DDC \
+	src/s1/ddc-core-discus/DDC \
+        src/s1/ddc-source-discus/DDC \
 	src/s1/ddc-build/DDC \
 	src/s1/ddc-driver/DDC \
 	src/s1/ddc-code/DDC \
@@ -42,9 +42,9 @@ src/s1/ddc-tools/src/ddc-main/%.o : src/s1/ddc-tools/src/ddc-main/%.hs
 		      -isrc/s1/ddc-core-llvm \
 		      -isrc/s1/ddc-core-flow \
 		      -isrc/s1/ddc-core-machine \
-		      -isrc/s1/ddc-core-tetra \
+		      -isrc/s1/ddc-core-discus \
 		      -isrc/s1/ddc-core-babel \
-                      -isrc/s1/ddc-source-tetra \
+                      -isrc/s1/ddc-source-discus \
 		      -isrc/s1/ddc-build \
 		      -isrc/s1/ddc-driver \
 		      -isrc/s1/ddc-code \

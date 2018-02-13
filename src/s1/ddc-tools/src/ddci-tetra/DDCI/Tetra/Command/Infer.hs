@@ -5,10 +5,10 @@ where
 import DDCI.Tetra.State
 import DDC.Driver.Interface.Source
 import DDC.Data.Pretty
-import DDC.Source.Tetra.Lexer
-import DDC.Source.Tetra.Parser
-import DDC.Source.Tetra.Pretty                  ()
-import DDC.Source.Tetra.Transform.Defix
+import DDC.Source.Discus.Lexer
+import DDC.Source.Discus.Parser
+import DDC.Source.Discus.Pretty                  ()
+import DDC.Source.Discus.Transform.Defix
 import qualified DDC.Core.Lexer                 as C
 import qualified DDC.Control.Parser             as BP
 
@@ -16,7 +16,7 @@ import qualified DDC.Control.Parser             as BP
 cmdInfer :: State -> Source -> String -> IO ()
 cmdInfer _state source str
  = goLex
- where  goLex 
+ where  goLex
          = let  tokens  = lexModuleString (nameOfSource source) 1 str
            in   goParse tokens
 

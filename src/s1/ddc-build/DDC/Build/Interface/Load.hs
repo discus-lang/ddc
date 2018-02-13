@@ -12,8 +12,8 @@ import DDC.Core.Transform.Reannotate
 import Data.Time.Clock
 import Control.Monad
 import qualified DDC.Core.Load                  as Load
-import qualified DDC.Core.Tetra                 as Tetra
-import qualified DDC.Build.Language.Tetra       as Tetra
+import qualified DDC.Core.Discus                as Discus
+import qualified DDC.Build.Language.Discus      as Discus
 import qualified DDC.Core.Salt                  as Salt
 import qualified DDC.Build.Language.Salt        as Salt
 import qualified Data.Char                      as Char
@@ -47,7 +47,7 @@ data Error
         | ErrorParseEnd
 
         -- | Error when loading a tetra core module from the interface file.
-        | ErrorLoadTetra FilePath (Load.Error Tetra.Name Tetra.Error)
+        | ErrorLoadTetra FilePath (Load.Error Discus.Name Discus.Error)
 
         -- | Error when loading a salt  core module from the interface file.
         | ErrorLoadSalt  FilePath (Load.Error  Salt.Name  Salt.Error)
@@ -156,7 +156,7 @@ pInterface pathInt timeStamp ((n, str) : rest)
                         , interfaceTimeStamp    = timeStamp
                         , interfaceVersion      = version
                         , interfaceModuleName   = modName
-                        , interfaceTetraModule  = liftM (reannotate (const ())) mTetra
+                        , interfaceDiscusModule = liftM (reannotate (const ())) mTetra
                         , interfaceSaltModule   = liftM (reannotate (const ())) mSalt }
 
         | otherwise
@@ -171,7 +171,7 @@ data Component
         { componentModuleName   :: ModuleName}
 
         | ComponentTetraModule
-        { componentTetraModule  :: Module () Tetra.Name }
+        { componentTetraModule  :: Module () Discus.Name }
 
         | ComponentSaltModule
         { componentSaltModule   :: Module () Salt.Name  }
@@ -217,7 +217,7 @@ pComponent pathInt ((n, l) : rest)
 
         -- load a Tetra core module section.
         | Just "Tetra" <- takeInterfaceTearLine l
-        = case Load.parseModuleFromString Tetra.fragment pathInt (n + 1)
+        = case Load.parseModuleFromString Discus.fragment pathInt (n + 1)
                        (unlines $ map snd rest) of
                 Left err   -> Left $ ErrorLoadTetra pathInt err
                 Right m    -> return $ ComponentTetraModule $ reannotate (const ()) m

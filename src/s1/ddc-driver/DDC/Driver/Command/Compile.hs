@@ -22,9 +22,9 @@ import Control.Monad.IO.Class
 import Data.Time.Clock
 import qualified DDC.Driver.Build.Locate        as Locate
 import qualified DDC.Build.Builder              as Builder
-import qualified DDC.Source.Tetra.Module        as SE
-import qualified DDC.Source.Tetra.Lexer         as SE
-import qualified DDC.Source.Tetra.Parser        as SE
+import qualified DDC.Source.Discus.Module       as SE
+import qualified DDC.Source.Discus.Lexer        as SE
+import qualified DDC.Source.Discus.Parser       as SE
 import qualified DDC.Core.Pretty                as P
 import qualified DDC.Core.Module                as C
 import qualified DDC.Core.Lexer                 as C
@@ -382,7 +382,7 @@ cmdCompile config bBuildExe' store filePath
                 , interfaceFilePath     = pathDI
                 , interfaceTimeStamp    = timeDI
                 , interfaceModuleName   = C.moduleName modSalt
-                , interfaceTetraModule  = fmap (CReannotate.reannotate (const ())) mModTetra
+                , interfaceDiscusModule = fmap (CReannotate.reannotate (const ())) mModTetra
                 , interfaceSaltModule   = Just modSalt  }
 
         liftIO  $ writeFile pathDI

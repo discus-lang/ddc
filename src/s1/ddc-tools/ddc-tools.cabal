@@ -24,7 +24,7 @@ Executable ddc-check
     Main-is:
         Main.hs
 
-    Other-modules: 
+    Other-modules:
         Config
 
     Extensions:
@@ -47,7 +47,7 @@ Executable ddc
         ddc-core-simpl  == 0.4.4.*,
         ddc-core-salt   == 0.4.4.*,
         ddc-core-llvm   == 0.4.4.*,
-        ddc-core-tetra  == 0.4.4.*,
+        ddc-core-discus  == 0.4.4.*,
         ddc-code        == 0.4.4.*,
         ddc-build       == 0.4.4.*,
         ddc-driver      == 0.4.4.*
@@ -81,14 +81,14 @@ Executable ddci-core
         ddc-core-salt   == 0.4.4.*,
         ddc-core-llvm   == 0.4.4.*,
         ddc-core-flow   == 0.4.4.*,
-        ddc-core-tetra  == 0.4.4.*,
+        ddc-core-discus  == 0.4.4.*,
         ddc-code        == 0.4.4.*,
         ddc-build       == 0.4.4.*,
         ddc-driver      == 0.4.4.*
 
     Main-is:
         Main.hs
-  
+
     Other-modules:
         DDCI.Core.Command.Help
         DDCI.Core.Command.Set
@@ -145,7 +145,7 @@ Executable ddci-tetra
         ddc-core-salt    == 0.4.4.*,
         ddc-core-llvm    == 0.4.4.*,
         ddc-core-flow    == 0.4.4.*,
-        ddc-core-tetra   == 0.4.4.*,
+        ddc-core-discus   == 0.4.4.*,
         ddc-source-tetra == 0.4.4.*,
         ddc-code         == 0.4.4.*,
         ddc-build        == 0.4.4.*,
@@ -153,7 +153,7 @@ Executable ddci-tetra
 
     Main-is:
         Main.hs
-  
+
     Other-modules:
         DDCI.Tetra.Command.Desugar
         DDCI.Tetra.Command.Help

@@ -1,5 +1,5 @@
 
-module DDC.Build.Interface.Base 
+module DDC.Build.Interface.Base
         ( Interface (..)
         , makeInterfaceTearLine
         , takeInterfaceTearLine
@@ -11,7 +11,7 @@ import DDC.Core.Exp.Annot
 import Data.Maybe
 import Data.Time.Clock
 import qualified Data.Char              as Char
-import qualified DDC.Core.Tetra         as Tetra
+import qualified DDC.Core.Discus        as Discus
 import qualified DDC.Core.Salt          as Salt
 
 
@@ -28,7 +28,7 @@ data Interface ta sa
 
         , interfaceVersion      :: String
         , interfaceModuleName   :: ModuleName
-        , interfaceTetraModule  :: Maybe (Module ta Tetra.Name)
+        , interfaceDiscusModule  :: Maybe (Module ta Discus.Name)
         , interfaceSaltModule   :: Maybe (Module sa Salt.Name) }
 
 
@@ -48,8 +48,8 @@ instance Pretty (Interface ta sa) where
         --   functions from this one are not sensitive to the optimisation flags
         --   use here. If we included the optimised code it would make it harder
         --   to reason about the overall compilation process.
-        <> (case interfaceTetraModule i of
-                Just m  -> vcat [ line 
+        <> (case interfaceDiscusModule i of
+                Just m  -> vcat [ line
                                 , text $ makeInterfaceTearLine "Tetra"
                                 , ppr m ]
                 Nothing -> empty)
@@ -58,7 +58,7 @@ instance Pretty (Interface ta sa) where
         --   We don't need the function definitions because inlining is performed
         --   using the higher level Tetra code.
         <> (case interfaceSaltModule i of
-                Just m  -> 
+                Just m  ->
                  -- zap the module body so we don't get the function definitions.
                  let m' = m { moduleBody = xUnit (annotOfExp $ moduleBody m) }
                  in  vcat [ line
@@ -68,7 +68,7 @@ instance Pretty (Interface ta sa) where
 
 
 ---------------------------------------------------------------------------------------------------
--- | Tear line to separate sections of the interface file. 
+-- | Tear line to separate sections of the interface file.
 --   We use '~' because it's not used in the core language syntax.
 makeInterfaceTearLine :: String -> String
 makeInterfaceTearLine name

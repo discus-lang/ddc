@@ -29,10 +29,10 @@ import System.Directory
 import DDC.Build.Interface.Store                (Store)
 import qualified Data.Map                       as Map
 import qualified DDC.Core.Check                 as C
-import qualified DDC.Build.Language.Tetra       as Tetra
+import qualified DDC.Build.Language.Discus      as Tetra
 import qualified DDC.Build.Spec.Parser          as Spec
 import qualified DDC.Build.Interface.Load       as Interface
-import qualified DDC.Core.Tetra                 as Tetra
+import qualified DDC.Core.Discus                as Tetra
 import qualified DDC.Driver.Stage.Tetra         as DE
 
 
@@ -45,7 +45,7 @@ import qualified DDC.Driver.Stage.Tetra         as DE
 --   This function handle fragments of Disciple Core, as well as Source Tetra
 --   modules. The language to use is determined by inspecting the file name
 --   extension.
---      
+--
 --   We also take the specification of a simplifier to apply to the module.
 --
 --   For Source Tetra modules, dependent modules will be compiled,
@@ -63,7 +63,7 @@ cmdLoadFromFile config store mStrSimpl fsTemplates filePath
 
  -- Load build file.
  | ".build"     <- takeExtension filePath
- = do   
+ = do
         str     <- liftIO $ readFile filePath
         case Spec.parseBuildSpec filePath str of
          Left err       -> throwE $ show err
@@ -86,7 +86,7 @@ cmdLoadFromFile config store mStrSimpl fsTemplates filePath
 
         Just strSimpl
          -> do  -- Parse the specified simplifier.
-                bundle' <- cmdLoadSimplifierIntoBundle config 
+                bundle' <- cmdLoadSimplifierIntoBundle config
                                 Tetra.bundle strSimpl fsTemplates
 
                 -- Load a simplify the target module.
@@ -95,9 +95,9 @@ cmdLoadFromFile config store mStrSimpl fsTemplates filePath
  -- Load a module in some fragment of Disciple Core.
  | Just language <- languageOfExtension (takeExtension filePath)
  = case mStrSimpl of
-        Nothing 
+        Nothing
          ->     cmdLoadCoreFromFile config language filePath
-        
+
         Just strSimpl
          -> do  language' <- cmdLoadSimplifier config language strSimpl fsTemplates
                 cmdLoadCoreFromFile config language' filePath
@@ -120,7 +120,7 @@ cmdLoadSourceTetraFromFile
         -> ExceptT String IO ()
 
 cmdLoadSourceTetraFromFile config store bundle filePath
- = do   
+ = do
         -- Check that the file exists.
         exists  <- liftIO $ doesFileExist filePath
         when (not exists)
@@ -131,8 +131,8 @@ cmdLoadSourceTetraFromFile config store bundle filePath
 
         -- Read in the source file.
         src     <- liftIO $ readFile filePath
-                
-        cmdLoadSourceTetraFromString config store bundle 
+
+        cmdLoadSourceTetraFromString config store bundle
                 (SourceFile filePath) src
 
 
@@ -150,14 +150,14 @@ cmdLoadSourceTetraFromString
 
 cmdLoadSourceTetraFromString config store bundle source str
  = withExceptT (renderIndent . vcat . map ppr)
- $ do   
+ $ do
         let pmode   = prettyModeOfConfig $ configPretty config
 
         modTetra  <- DE.sourceLoadText config store source str
 
         errs     <- liftIO $ pipeCore modTetra
                  $ PipeCoreReannotate (\a -> a { annotTail = () })
-                 [ PipeCoreSimplify   Tetra.fragment    (bundleStateInit  bundle) 
+                 [ PipeCoreSimplify   Tetra.fragment    (bundleStateInit  bundle)
                                                         (bundleSimplifier bundle)
                  [ PipeCoreOutput pmode SinkStdout ]]
 
@@ -165,7 +165,7 @@ cmdLoadSourceTetraFromString config store bundle source str
          []     -> return ()
          _      -> throwE errs
 
- 
+
 
 ---------------------------------------------------------------------------------------------------
 -- | Load a Disciple Core module from a file.
@@ -202,13 +202,13 @@ cmdLoadCoreFromString
 cmdLoadCoreFromString config language source str
  | Language bundle      <- language
  , fragment             <- bundleFragment   bundle
- = let  
+ = let
         pmode           = prettyModeOfConfig $ configPretty config
 
         pipeLoad
          = pipeText     (nameOfSource source) (lineStartOfSource source) str
-         $ PipeTextLoadCore  fragment 
-                        (if configInferTypes config then C.Synth [] else C.Recon) 
+         $ PipeTextLoadCore  fragment
+                        (if configInferTypes config then C.Synth [] else C.Recon)
                         SinkDiscard
          [ PipeCoreReannotate (\a -> a { annotTail = () })
          [ PipeCoreSimplify  fragment (bundleStateInit bundle)
@@ -223,9 +223,9 @@ cmdLoadCoreFromString config language source str
 
 
 ---------------------------------------------------------------------------------------------------
--- | Parse the simplifier defined in this string, 
+-- | Parse the simplifier defined in this string,
 --   and load it and all the inliner templates into the language bundle.
-cmdLoadSimplifier 
+cmdLoadSimplifier
         :: Config               -- ^ Driver config.
         -> Language             -- ^ Language definition.
         -> String               -- ^ Simplifier specification.
@@ -257,7 +257,7 @@ cmdLoadSimplifierIntoBundle config bundle strSimpl fsTemplates
  , readName             <- fragmentReadName    fragment
  = do
         -- Load all the modues that we're using for inliner templates.
-        --  If any of these don't load then the 'cmdReadModule' function 
+        --  If any of these don't load then the 'cmdReadModule' function
         --  will display the errors.
         mModules
          <- liftM sequence
@@ -270,7 +270,7 @@ cmdLoadSimplifierIntoBundle config bundle strSimpl fsTemplates
                  Just ms -> return     $ ms
 
         -- Zap annotations on the loaded modules.
-        -- Any type errors will already have been displayed, so we don't need 
+        -- Any type errors will already have been displayed, so we don't need
         -- the source position info any more.
         let zapAnnot annot = annot { annotTail = () }
         let modules_new    = map (reannotate zapAnnot) modules_annot
@@ -281,7 +281,7 @@ cmdLoadSimplifierIntoBundle config bundle strSimpl fsTemplates
         -- Wrap up the inliner templates and current rules into
         -- a SimplifierDetails, which we give to the Simplifier parser.
         let details
-                = SimplifierDetails mkNamT mkNamX 
+                = SimplifierDetails mkNamT mkNamX
                     [(n, reannotate zapAnnot rule) | (n, rule) <- Map.assocs rules]
                     modules_all
 

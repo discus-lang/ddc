@@ -1,0 +1,113 @@
+Name:           ddc-source-discus
+Version:        0.4.4.0
+License:        MIT
+License-file:   LICENSE
+Author:         The Disciplined Disciple Compiler Strike Force
+Maintainer:     Ben Lippmeier <benl@ouroborus.net>
+Build-Type:     Simple
+Cabal-Version:  >=1.6
+Stability:      experimental
+Category:       Compilers/Interpreters
+Homepage:       http://disciple.ouroborus.net
+Synopsis:       Disciplined Disciple Compiler source language.
+Description:    Disciplined Disciple Compiler Tetra source language.
+                Disciple Tetra is the main source language of DDC.
+                The word Tetra refers to the four base kinds:
+                'Data', 'Region', 'Effect' and 'Witness'.
+
+Library
+  Build-Depends:
+        base             >= 4.6   && < 4.10,
+        array            >= 0.4   && < 0.6,
+        deepseq          >= 1.3   && < 1.5,
+        text             >= 1.0   && < 1.3,
+        pretty-show      >= 1.6.10 && < 1.7,
+        containers       == 0.5.*,
+        transformers     == 0.5.*,
+        mtl              == 2.2.1.*,
+        ddc-core         == 0.4.4.*,
+        ddc-core-salt    == 0.4.4.*,
+        ddc-core-discus  == 0.4.4.*
+
+  Exposed-modules:
+        DDC.Source.Discus.Exp.Bind
+        DDC.Source.Discus.Exp.Compounds
+        DDC.Source.Discus.Exp.Generic
+        DDC.Source.Discus.Exp.NFData
+        DDC.Source.Discus.Exp.Predicates
+        DDC.Source.Discus.Exp.Source
+
+        DDC.Source.Discus.Transform.BoundX
+        DDC.Source.Discus.Transform.Defix
+        DDC.Source.Discus.Transform.Expand
+        DDC.Source.Discus.Transform.Freshen
+        DDC.Source.Discus.Transform.Guards
+        DDC.Source.Discus.Transform.Matches
+        DDC.Source.Discus.Transform.Prep
+
+        DDC.Source.Discus.Convert
+        DDC.Source.Discus.DataDef
+        DDC.Source.Discus.Env
+        DDC.Source.Discus.Exp
+        DDC.Source.Discus.Lexer
+        DDC.Source.Discus.Module
+        DDC.Source.Discus.Parser
+        DDC.Source.Discus.Pretty
+        DDC.Source.Discus.Prim
+
+  Other-modules:
+        DDC.Source.Discus.Collect.FreeVars
+
+        DDC.Source.Discus.Convert.Base
+        DDC.Source.Discus.Convert.Clause
+        DDC.Source.Discus.Convert.Error
+        DDC.Source.Discus.Convert.Prim
+        DDC.Source.Discus.Convert.Type
+        DDC.Source.Discus.Convert.Witness
+
+        DDC.Source.Discus.Parser.Base
+        DDC.Source.Discus.Parser.Exp
+        DDC.Source.Discus.Parser.Module
+        DDC.Source.Discus.Parser.Type
+        DDC.Source.Discus.Parser.Witness
+
+        DDC.Source.Discus.Prim.Base
+        DDC.Source.Discus.Prim.OpArith
+        DDC.Source.Discus.Prim.OpCast
+        DDC.Source.Discus.Prim.OpError
+        DDC.Source.Discus.Prim.OpFun
+        DDC.Source.Discus.Prim.OpVector
+        DDC.Source.Discus.Prim.TyCon
+        DDC.Source.Discus.Prim.TyConPrim
+        DDC.Source.Discus.Prim.TyConTetra
+
+        DDC.Source.Discus.Transform.Defix.Error
+        DDC.Source.Discus.Transform.Defix.FixTable
+
+        DDC.Source.Discus.Transform.Freshen.State
+
+  GHC-options:
+        -Wall
+        -fno-warn-orphans
+        -fno-warn-missing-signatures
+        -fno-warn-missing-methods
+        -fno-warn-missing-pattern-synonym-signatures
+        -fno-warn-unused-do-bind
+
+  Extensions:
+        NoMonomorphismRestriction
+        MultiParamTypeClasses
+        ScopedTypeVariables
+        StandaloneDeriving
+        FlexibleInstances
+        FlexibleContexts
+        ParallelListComp
+        DoAndIfThenElse
+        ConstraintKinds
+        PatternSynonyms
+        EmptyDataDecls
+        KindSignatures
+        PatternGuards
+        BangPatterns
+        RankNTypes
+

@@ -18,7 +18,7 @@ import DDC.Build.Interface.Base                 (Interface (..))
 import qualified Data.Map                       as Map
 import qualified Data.Set                       as Set
 import qualified DDC.Build.Interface.Store      as Store
-import qualified DDC.Core.Tetra                 as E
+import qualified DDC.Core.Discus                as E
 import Data.List
 import Data.Function
 import qualified Data.Either                    as Either
@@ -40,7 +40,7 @@ resolveNamesInModule kenv tenv store mm
         ints    <- Store.getInterfaces store
         let deps    = Map.fromList
                         [ ( interfaceModuleName i
-                          , let Just m = interfaceTetraModule i in m)
+                          , let Just m = interfaceDiscusModule i in m)
                           | i <- ints ]
         modNames       <- Store.getModuleNames store
 

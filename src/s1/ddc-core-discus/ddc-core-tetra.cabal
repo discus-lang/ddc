@@ -1,0 +1,105 @@
+Name:           ddc-core-discus
+Version:        0.4.4.0
+License:        MIT
+License-file:   LICENSE
+Author:         The Disciplined Disciple Compiler Strike Force
+Maintainer:     Ben Lippmeier <benl@ouroborus.net>
+Build-Type:     Simple
+Cabal-Version:  >=1.6
+Stability:      experimental
+Category:       Compilers/Interpreters
+Homepage:       http://disciple.ouroborus.net
+Synopsis:       Disciplined Disciple Compiler intermediate language.
+Description:    Disciplined Disciple Compiler intermediate language
+                with internalized effect judgement.
+
+Library
+  Build-Depends:
+        base            >= 4.6    && < 4.10,
+        array           >= 0.4    && < 0.6,
+        deepseq         >= 1.3    && < 1.5,
+        text            >= 1.0    && < 1.3,
+        pretty-show     >= 1.6.8  && < 1.7,
+        containers      == 0.5.*,
+        transformers    == 0.5.*,
+        mtl             == 2.2.1.*,
+        ddc-core        == 0.4.4.*,
+        ddc-core-salt   == 0.4.4.*,
+        ddc-core-simpl  == 0.4.4.*
+
+  Exposed-modules:
+        DDC.Core.Discus.Transform.Boxing
+        DDC.Core.Discus.Transform.Curry
+        DDC.Core.Discus.Check
+        DDC.Core.Discus.Compounds
+        DDC.Core.Discus.Convert
+        DDC.Core.Discus.Env
+        DDC.Core.Discus.Prim
+        DDC.Core.Discus
+
+  Other-modules:
+        DDC.Core.Discus.Convert.Exp.Alt
+        DDC.Core.Discus.Convert.Exp.Arg
+        DDC.Core.Discus.Convert.Exp.Base
+        DDC.Core.Discus.Convert.Exp.Ctor
+        DDC.Core.Discus.Convert.Exp.Lets
+        DDC.Core.Discus.Convert.Exp.Lit
+        DDC.Core.Discus.Convert.Exp.PrimArith
+        DDC.Core.Discus.Convert.Exp.PrimBoxing
+        DDC.Core.Discus.Convert.Exp.PrimCall
+        DDC.Core.Discus.Convert.Exp.PrimError
+        DDC.Core.Discus.Convert.Exp.PrimRecord
+        DDC.Core.Discus.Convert.Exp.PrimVector
+        DDC.Core.Discus.Convert.Exp.PrimError
+
+        DDC.Core.Discus.Convert.Type.Base
+        DDC.Core.Discus.Convert.Type.DaCon
+        DDC.Core.Discus.Convert.Type.Data
+        DDC.Core.Discus.Convert.Type.Kind
+        DDC.Core.Discus.Convert.Type.Region
+        DDC.Core.Discus.Convert.Type.Super
+        DDC.Core.Discus.Convert.Type.Witness
+
+        DDC.Core.Discus.Convert.Boxing
+        DDC.Core.Discus.Convert.Data
+        DDC.Core.Discus.Convert.Error
+        DDC.Core.Discus.Convert.Exp
+        DDC.Core.Discus.Convert.Layout
+        DDC.Core.Discus.Convert.Type
+
+        DDC.Core.Discus.Prim.Base
+        DDC.Core.Discus.Prim.DaConDiscus
+        DDC.Core.Discus.Prim.OpArith
+        DDC.Core.Discus.Prim.OpCast
+        DDC.Core.Discus.Prim.OpError
+        DDC.Core.Discus.Prim.OpFun
+        DDC.Core.Discus.Prim.OpVector
+        DDC.Core.Discus.Prim.TyConPrim
+        DDC.Core.Discus.Prim.TyConDiscus
+
+        DDC.Core.Discus.Transform.Curry.Call
+        DDC.Core.Discus.Transform.Curry.Callable
+        DDC.Core.Discus.Transform.Curry.CallSuper
+        DDC.Core.Discus.Transform.Curry.CallThunk
+        DDC.Core.Discus.Transform.Curry.Error
+
+        DDC.Core.Discus.Error
+        DDC.Core.Discus.Profile
+
+  GHC-options:
+        -Wall
+        -fno-warn-orphans
+        -fno-warn-missing-signatures
+        -fno-warn-missing-methods
+        -fno-warn-unused-do-bind
+
+  Extensions:
+        KindSignatures
+        NoMonomorphismRestriction
+        ScopedTypeVariables
+        StandaloneDeriving
+        PatternGuards
+        ParallelListComp
+        DeriveDataTypeable
+        ViewPatterns
+        BangPatterns

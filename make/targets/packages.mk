@@ -6,11 +6,11 @@ PACKAGES = \
 	ddc-core-simpl \
 	ddc-core-salt \
 	ddc-core-llvm \
-	ddc-core-tetra \
+	ddc-core-discus \
 	ddc-core-flow \
 	ddc-core-machine \
 	ddc-core-babel \
-        ddc-source-tetra \
+        ddc-source-discus \
 	ddc-build \
 	ddc-driver \
 	ddc-code
@@ -93,7 +93,7 @@ src/s1/ddc-core-flow/%.o : src/s1/ddc-core-flow/%.hs
 		      -isrc/s1/ddc-core-simpl \
 		      -isrc/s1/ddc-core-salt \
 		      -isrc/s1/ddc-core-flow \
-		      -isrc/s1/ddc-core-tetra
+		      -isrc/s1/ddc-core-discus
 
 src/s1/ddc-core-machine/%.o : src/s1/ddc-core-machine/%.hs
 	@echo "* Compiling $<"
@@ -108,23 +108,23 @@ src/s1/ddc-core-babel/%.o : src/s1/ddc-core-babel/%.hs
 		-c $< -isrc/s1/ddc-core \
 		      -isrc/s1/ddc-core-simpl \
 		      -isrc/s1/ddc-core-salt  \
-		      -isrc/s1/ddc-core-tetra
+		      -isrc/s1/ddc-core-discus
 
-src/s1/ddc-core-tetra/%.o : src/s1/ddc-core-tetra/%.hs
+src/s1/ddc-core-discus/%.o : src/s1/ddc-core-discus/%.hs
 	@echo "* Compiling $<"
 	@$(GHC) $(GHC_FLAGS) $(GHC_WARNINGS2) $(DDC_PACKAGES) $(GHC_INCDIRS) \
 		-c $< -isrc/s1/ddc-core \
 		      -isrc/s1/ddc-core-simpl \
 		      -isrc/s1/ddc-core-salt \
-		      -isrc/s1/ddc-core-tetra
+		      -isrc/s1/ddc-core-discus
 
-src/s1/ddc-source-tetra/%.o : src/s1/ddc-source-tetra/%.hs
+src/s1/ddc-source-discus/%.o : src/s1/ddc-source-discus/%.hs
 	@echo "* Compiling $<"
 	@$(GHC) $(GHC_FLAGS) $(GHC_WARNINGS2) $(DDC_PACKAGES) $(GHC_INCDIRS) \
 		-c $< -isrc/s1/ddc-core \
                       -isrc/s1/ddc-core-salt \
-		      -isrc/s1/ddc-core-tetra \
-		      -isrc/s1/ddc-source-tetra
+		      -isrc/s1/ddc-core-discus \
+		      -isrc/s1/ddc-source-discus
 
 src/s1/ddc-build/%.o : src/s1/ddc-build/%.hs
 	@echo "* Compiling $<"
@@ -136,9 +136,9 @@ src/s1/ddc-build/%.o : src/s1/ddc-build/%.hs
 		      -isrc/s1/ddc-core-llvm \
 		      -isrc/s1/ddc-core-flow \
 		      -isrc/s1/ddc-core-machine \
-		      -isrc/s1/ddc-core-tetra \
+		      -isrc/s1/ddc-core-discus \
 		      -isrc/s1/ddc-core-babel \
-                      -isrc/s1/ddc-source-tetra \
+		      -isrc/s1/ddc-source-discus \
 		      -isrc/s1/ddc-build
 
 src/s1/ddc-driver/%.o : src/s1/ddc-driver/%.hs
@@ -150,9 +150,9 @@ src/s1/ddc-driver/%.o : src/s1/ddc-driver/%.hs
 		      -isrc/s1/ddc-core-llvm \
 		      -isrc/s1/ddc-core-flow \
 		      -isrc/s1/ddc-core-machine \
-		      -isrc/s1/ddc-core-tetra \
+		      -isrc/s1/ddc-core-discus \
 		      -isrc/s1/ddc-core-babel \
-                      -isrc/s1/ddc-source-tetra \
+		      -isrc/s1/ddc-source-discus \
 		      -isrc/s1/ddc-build \
 		      -isrc/s1/ddc-driver
 
@@ -160,7 +160,6 @@ src/s1/ddc-code/%.o : src/s1/ddc-code/%.hs
 	@echo "* Compiling $<"
 	@$(GHC) $(GHC_FLAGS) $(GHC_WARNINGS2) $(DDC_PACKAGES) $(GHC_INCDIRS) \
 		-c $<
-
 
 src/s1/ddc-war/%.o : src/s1/ddc-war/%.hs
 	@echo "* Compiling $<"
