@@ -42,7 +42,7 @@ cmdToSaltFromFile config store filePath
  -- Convert a Disciple Source Tetra module.
  | ".ds"         <- takeExtension filePath
  =      cmdToSaltSourceTetraFromFile config store filePath
- 
+
  -- Convert a module in some fragment of Disciple Core.
  | Just language <- languageOfExtension (takeExtension filePath)
  =      cmdToSaltCoreFromFile config language filePath
@@ -92,17 +92,17 @@ cmdToSaltSourceTetraFromString
 
 cmdToSaltSourceTetraFromString config store source str
  = withExceptT (renderIndent . vcat . map ppr)
- $ do  
+ $ do
         let pmode   = prettyModeOfConfig $ configPretty config
 
-        modSalt' 
+        modSalt'
          <-  DA.saltSimplify   config source
-         =<< DE.tetraToSalt    config source 
+         =<< DE.tetraToSalt    config source
          =<< DE.sourceLoadText config store  source str
 
         errs
          <- liftIO $ pipeCore modSalt'
-         $   PipeCoreCheck      "ToSaltSourceTetraFromString" 
+         $   PipeCoreCheck      "ToSaltSourceTetraFromString"
                                 Salt.fragment C.Recon SinkDiscard
            [ PipeCoreOutput pmode SinkStdout ]
 
@@ -120,10 +120,10 @@ cmdToSaltCoreFromFile
         :: Config               -- ^ Driver config.
         -> Language             -- ^ Core language definition.
         -> FilePath             -- ^ Module file path.
-        -> ExceptT String IO ()  
+        -> ExceptT String IO ()
 
 cmdToSaltCoreFromFile config language filePath
- = do   
+ = do
         -- Check that the file exists.
         exists  <- liftIO $ doesFileExist filePath
         when (not exists)
@@ -145,24 +145,24 @@ cmdToSaltCoreFromString
         -> Language             -- ^ Language definition.
         -> Source               -- ^ Source of the code.
         -> String               -- ^ Program module text.
-        -> ExceptT String IO ()               
+        -> ExceptT String IO ()
 
 cmdToSaltCoreFromString config language source str
  | Language bundle      <- language
  , fragment             <- bundleFragment bundle
  , profile              <- fragmentProfile fragment
  = withExceptT (renderIndent . vcat . map ppr)
- $ do   
+ $ do
         -- Language fragment name.
         let fragName    = profileName profile
-        store           <- liftIO Store.new 
+        store           <- liftIO Store.new
 
         -- Pretty printer mode.
         let pmode       = prettyModeOfConfig $ configPretty config
 
         -- Make salt from the input file.
         let makeSalt
-                |   fragName == "Tetra"
+                |   fragName == "Discus"
                 =   DA.saltSimplify  config source
                 =<< DE.tetraToSalt   config source
                 =<< DE.tetraLoadText config store source str
@@ -173,12 +173,12 @@ cmdToSaltCoreFromString config language source str
 
                 -- Unrecognised.
                 | otherwise
-                = throwE [ErrorLoad $ "Cannot convert '" ++ fragName ++ "'modules to C."]
+                = throwE [ErrorLoad $ "Cannot convert '" ++ fragName ++ "'modules to Salt."]
 
         modSalt <- makeSalt
 
         errs    <- liftIO $ pipeCore modSalt
-                $  PipeCoreOutput pmode SinkStdout 
+                $  PipeCoreOutput pmode SinkStdout
 
         -- Throw any errors that arose during compilation
         case errs of

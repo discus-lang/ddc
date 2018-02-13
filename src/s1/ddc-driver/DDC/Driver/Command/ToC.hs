@@ -36,7 +36,7 @@ cmdToSeaFromFile
         -> ExceptT String IO ()
 
 cmdToSeaFromFile config store filePath
- 
+
  -- Convert a Disciple Source Tetra module.
  | ".ds"          <- takeExtension filePath
  =      cmdToSeaSourceTetraFromFile config store filePath
@@ -90,12 +90,12 @@ cmdToSeaSourceTetraFromString
 
 cmdToSeaSourceTetraFromString config store source str
  = withExceptT (renderIndent . vcat . map ppr)
- $ do   
+ $ do
         -- Load Source Tetra code and convert to Sea.
         strSea
          <-  DA.saltToSea      config source
-         =<< DA.saltSimplify   config source 
-         =<< DE.tetraToSalt    config source 
+         =<< DA.saltSimplify   config source
+         =<< DE.tetraToSalt    config source
          =<< DE.sourceLoadText config store  source str
 
         -- Print Sea code to stdout.
@@ -130,10 +130,10 @@ cmdToSeaCoreFromFile config language filePath
 
 -------------------------------------------------------------------------------
 -- | Parse, check, and convert a module to C.
---   The output is printed to @stdout@. 
+--   The output is printed to @stdout@.
 --   Any errors are thrown in the `ExceptT` monad.
 --
-cmdToSeaCoreFromString  
+cmdToSeaCoreFromString
         :: Config       -- ^ Compiler configuration.
         -> Language     -- ^ Language definition.
         -> Source       -- ^ Source of the code.
@@ -145,13 +145,13 @@ cmdToSeaCoreFromString config language source str
  , fragment             <- bundleFragment  bundle
  , profile              <- fragmentProfile fragment
  = withExceptT (renderIndent . vcat . map ppr)
- $ do   
+ $ do
         let fragName    =  profileName profile
         store           <- liftIO $ Store.new
 
         -- Decide what to do based on file extension and current fragment.
         let makeSalt
-                |   fragName == "Tetra"
+                |   fragName == "Discus"
                 =   DA.saltSimplify  config source
                 =<< DE.tetraToSalt   config source
                 =<< DE.tetraLoadText config store source str
