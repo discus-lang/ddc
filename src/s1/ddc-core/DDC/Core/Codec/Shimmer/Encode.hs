@@ -24,6 +24,8 @@ import Data.Text                        (Text)
 type SRef = S.Ref Text S.Prim
 type SExp = S.Exp Text S.Prim
 
+-- TODO: pack vars into text as may use special chars.
+-- the permitted Core chars are not the same as permitted Shimmer chars.
 
 -- Module -----------------------------------------------------------------------------------------
 takeModule :: (n -> SRef) -> C.Module a n -> SExp

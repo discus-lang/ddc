@@ -34,6 +34,7 @@ import qualified Data.List                      as List
 
 import qualified DDC.Core.Transform.Reannotate  as CReannotate
 
+import DDC.Build.Interface.Codec.Text.Encode    ()
 import DDC.Build.Interface.Store                (Store)
 import qualified DDC.Build.Interface.Store      as Store
 
