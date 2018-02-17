@@ -56,7 +56,7 @@ before_install:
 # one-by-one in the right order
 install:
     - cabal install mtl parsec random stm text wl-pprint compact
-    - cabal install buildbox inchworm
+    - cabal install buildbox inchworm shimmer
 
 script:
     - make clean
