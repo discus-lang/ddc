@@ -49,13 +49,13 @@ data TwCon
         | TwConConst            -- :: Region  -> Witness
 
         -- | Constancy of material regions in some type
-        | TwConDeepConst        -- :: Data    -> Witness
+        | TwConDeepConst        -- :: Data    -> Witness                -- TODO: unused
 
         -- | Mutability of some region.
         | TwConMutable          -- :: Region  -> Witness
 
         -- | Mutability of material regions in some type.
-        | TwConDeepMutable      -- :: Data    -> Witness
+        | TwConDeepMutable      -- :: Data    -> Witness                -- TODO: unused
 
         -- | Distinctness of some n regions
         | TwConDistinct Int     -- :: Data    -> [Region] -> Witness
@@ -89,21 +89,21 @@ data TcCon
         | TcConRead             -- Read      :: 'Region -> Effect'
 
         -- | Read the head region in a data type.
-        | TcConHeadRead         -- HeadRead  :: 'Data   -> Effect'
+        | TcConHeadRead         -- HeadRead  :: 'Data   -> Effect'      -- TODO: unused
 
         -- | Read of all material regions in a data type.
-        | TcConDeepRead         -- DeepRead  :: 'Data   -> Effect'
+        | TcConDeepRead         -- DeepRead  :: 'Data   -> Effect'      -- TODO: unused
 
         -- | Write of some region.
         | TcConWrite            -- Write     :: 'Region -> Effect'
 
         -- | Write to all material regions in some data type.
-        | TcConDeepWrite        -- DeepWrite :: 'Data   -> Effect'
+        | TcConDeepWrite        -- DeepWrite :: 'Data   -> Effect'      -- TODO: unused
 
         -- | Allocation into some region.
         | TcConAlloc            -- Alloc     :: 'Region -> Effect'
 
         -- | Allocation into all material regions in some data type.
-        | TcConDeepAlloc        -- DeepAlloc :: 'Data   -> Effect'
+        | TcConDeepAlloc        -- DeepAlloc :: 'Data   -> Effect'      -- TODO: unused
         deriving (Eq, Ord, Show)
 
