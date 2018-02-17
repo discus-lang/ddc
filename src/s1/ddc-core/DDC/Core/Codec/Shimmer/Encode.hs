@@ -1,6 +1,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 module DDC.Core.Codec.Shimmer.Encode
-        ( takeExp,   takeParam,   takeArg,  takePrim
+        ( takeModule
+        , takeModuleName
+        , takeExportSource
+        , takeExp,   takeParam,   takeArg,  takePrim
         , takeLets
         , takeAlt,   takePat,     takeDaCon
         , takeCast,  takeWitness, takeWiCon
@@ -8,10 +11,12 @@ module DDC.Core.Codec.Shimmer.Encode
         , takeBind,  takeBound
         , takeTyCon, takeSoCon,   takeKiCon, takeTwCon, takeTcCon)
 where
+import qualified DDC.Core.Module        as C
 import qualified DDC.Core.Exp           as C
 import qualified SMR.Core.Exp           as S
 import qualified SMR.Prim.Op.Base       as S
 import qualified DDC.Type.Sum           as Sum
+import qualified Data.Text              as T
 import Data.Text                        (Text)
 
 
@@ -19,7 +24,41 @@ import Data.Text                        (Text)
 type SRef = S.Ref Text S.Prim
 type SExp = S.Exp Text S.Prim
 
+
 -- Module -----------------------------------------------------------------------------------------
+takeModule :: (n -> SRef) -> C.Module a n -> SExp
+takeModule takeRef mm@C.ModuleCore{}
+ = xAps "module"
+        [ xAps  "m-name"
+                [takeModuleName (C.moduleName mm)]
+
+        , xAps  "m-exp-typs"
+                (map (takeExportSource takeRef) $ map snd $ C.moduleExportTypes mm)
+
+        , xAps  "m-exp-vals"
+                (map (takeExportSource takeRef) $ map snd $ C.moduleExportValues mm)
+
+        -- TODO: other stuff to fill in
+
+        , xAps  "m-body"
+                [takeExp takeRef $ C.moduleBody mm] ]
+
+
+-- ModuleName -------------------------------------------------------------------------------------
+takeModuleName :: C.ModuleName -> SExp
+takeModuleName (C.ModuleName parts)
+ = xAps "module-name" (map (xSym . T.pack) parts)
+
+
+-- ExportSource------------------------------------------------------------------------------------
+takeExportSource :: (n -> SRef) -> C.ExportSource n (C.Type n) -> SExp
+takeExportSource takeRef es
+ = case es of
+        C.ExportSourceLocal n t
+         -> xAps "exsrc-local" [xRef $ takeRef n, takeType takeRef t]
+
+        C.ExportSourceLocalNoType n
+         -> xAps "exsrc-notyp" [xRef $ takeRef n]
 
 
 -- Exp --------------------------------------------------------------------------------------------
