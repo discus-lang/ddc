@@ -1,6 +1,6 @@
 
 -- | The ambient Disciple Core language is specialised to concrete languages
---   by adding primitive operations and optionally restricting the set of 
+--   by adding primitive operations and optionally restricting the set of
 --   available language features. This specialisation results in user-facing
 --   language fragments such as @Disciple Core Tetra@ and @Disciple Core Salt@.
 module DDC.Core.Fragment
@@ -28,12 +28,12 @@ import DDC.Core.Fragment.Feature
 import DDC.Core.Fragment.Compliance
 import DDC.Core.Fragment.Error
 import DDC.Core.Fragment.Profile
+import DDC.Core.Codec.Text.Lexer
 import DDC.Core.Module
 import DDC.Core.Exp
-import DDC.Core.Lexer
 
 
--- | Carries all the information we need to work on a particular 
+-- | Carries all the information we need to work on a particular
 --   fragment of the Disciple Core language.
 data Fragment n (err :: * -> *)
         = Fragment
@@ -45,9 +45,9 @@ data Fragment n (err :: * -> *)
 
           -- | Read a name.
         , fragmentReadName      :: String -> Maybe n
-        
+
           -- | Lex module source into tokens,
-          --   given the source name and starting line number. 
+          --   given the source name and starting line number.
         , fragmentLexModule     :: String -> Int -> String -> [Located (Token n)]
 
           -- | Lex expression source into tokens,
@@ -67,8 +67,8 @@ instance Show (Fragment n err) where
 
 
 -- | Apply a function to the profile in a fragment.
-mapProfileOfFragment 
-        :: (Profile n -> Profile n) 
+mapProfileOfFragment
+        :: (Profile n -> Profile n)
         -> Fragment n err -> Fragment n err
 
 mapProfileOfFragment f fragment

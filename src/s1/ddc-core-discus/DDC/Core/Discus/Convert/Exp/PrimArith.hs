@@ -6,7 +6,7 @@ import DDC.Core.Discus.Convert.Exp.Base
 import DDC.Core.Discus.Convert.Type
 import DDC.Core.Discus.Convert.Boxing
 import DDC.Core.Discus.Convert.Error
-import DDC.Core.Pretty
+import DDC.Core.Codec.Text.Pretty
 import DDC.Core.Exp.Annot
 import Data.Maybe
 import DDC.Core.Check                   (AnTEC(..))

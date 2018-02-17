@@ -10,7 +10,7 @@ where
 import DDC.Core.Salt.Env
 import DDC.Core.Salt.Name
 import DDC.Core.Fragment
-import DDC.Core.Lexer
+import DDC.Core.Codec.Text.Lexer
 import DDC.Data.SourcePos
 import DDC.Type.Exp
 import DDC.Type.Env                     (Env)

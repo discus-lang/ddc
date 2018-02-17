@@ -12,7 +12,7 @@ import DDC.Core.Transform.Resolve.Base
 import DDC.Type.Transform.Instantiate
 import DDC.Core.Fragment                (Profile (..))
 import DDC.Core.Exp.Annot
-import DDC.Core.Pretty
+import DDC.Core.Codec.Text.Pretty
 import Control.Monad.IO.Class
 import Data.IORef
 import qualified DDC.Type.Sum   as Sum

@@ -5,7 +5,7 @@ where
 import DDCI.Core.State
 import DDC.Driver.Interface.Source
 import DDC.Build.Pipeline
-import DDC.Core.Pretty
+import DDC.Core.Codec.Text.Pretty
 import DDC.Core.Module
 import DDC.Core.Check
 import DDC.Data.Canned
@@ -27,9 +27,9 @@ cmdWith state _source str
  = do   res <- cmdWith_load fragment str
         case res of
           Nothing  -> return state
-          Just mdl 
+          Just mdl
            -> do
-                let modules' = Map.insert (moduleName mdl) mdl modules 
+                let modules' = Map.insert (moduleName mdl) mdl modules
                 let bundle'  = bundle { bundleModules = modules' }
                 return $ state { stateLanguage = Language bundle' }
 
@@ -39,9 +39,9 @@ cmdWithSalt state _source str
  = do   res <- cmdWith_load Salt.fragment str
         case res of
           Nothing  -> return state
-          Just mdl 
+          Just mdl
            -> return $ state
-                     { stateWithSalt = Map.insert (moduleName mdl) mdl 
+                     { stateWithSalt = Map.insert (moduleName mdl) mdl
                                                   (stateWithSalt state) }
 
 
@@ -65,7 +65,7 @@ cmdWith_parse frag source src
         errs    <- pipeText (nameOfSource source) (lineStartOfSource source) src
                 $  PipeTextLoadCore frag C.Recon SinkDiscard
                 [  PipeCoreReannotate (\a -> a { annotTail = ()})
-                [ PipeCoreHacks (Canned (\m -> writeIORef ref (Just m) >> return m)) 
+                [ PipeCoreHacks (Canned (\m -> writeIORef ref (Just m) >> return m))
                 [ PipeCoreOutput pprDefaultMode SinkDiscard] ]]
 
         case errs of

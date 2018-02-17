@@ -3,7 +3,7 @@ module DDC.Core.Discus.Error
         (Error (..))
 where
 import DDC.Core.Discus.Prim
-import DDC.Core.Pretty
+import DDC.Core.Codec.Text.Pretty
 import DDC.Type.Exp
 
 

@@ -2,9 +2,9 @@
 module DDC.Core.Fragment.Error
         (Error(..))
 where
+import DDC.Core.Codec.Text.Pretty
 import DDC.Core.Fragment.Feature
 import DDC.Core.Exp
-import DDC.Core.Pretty
 
 
 -- | Language fragment compliance violations.
@@ -13,7 +13,7 @@ data Error a n
         = ErrorUnsupported      !Feature
 
         -- | Found an undefined primitive operator.
-        | ErrorUndefinedPrim    !n 
+        | ErrorUndefinedPrim    !n
 
         -- | Found an unbound variable.
         | ErrorUndefinedVar     !n

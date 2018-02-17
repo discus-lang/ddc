@@ -10,7 +10,7 @@ where
 import DDC.Core.Flow.Prim
 import DDC.Core.Flow.Env
 import DDC.Core.Fragment
-import DDC.Core.Lexer
+import DDC.Core.Codec.Text.Lexer
 import DDC.Type.Exp
 import DDC.Data.SourcePos
 import Control.Monad.State.Strict

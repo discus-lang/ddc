@@ -8,7 +8,7 @@ module DDC.Core.Salt.Convert.Base
         , Error(..))
 where
 import DDC.Core.Salt.Name
-import DDC.Core.Pretty
+import DDC.Core.Codec.Text.Pretty
 import DDC.Core.Module
 import DDC.Core.Exp
 import qualified DDC.Control.Check        as G
@@ -33,7 +33,7 @@ data Error a
         { errorImportName ::  Name }
 
         -- | A local variable has an invalid type.
-        | ErrorTypeInvalid 
+        | ErrorTypeInvalid
         { errorType     :: Type Name }
 
         -- | Modules must contain a top-level letrec.
@@ -98,7 +98,7 @@ instance Pretty (Error a) where
 
         ErrorImportInvalid n
          -> vcat [ text "Invalid import spec for '" <> ppr n <> text "'" ]
-                 
+
         ErrorFunctionInvalid xx
          -> vcat [ text "Invalid function definition."
                  , empty

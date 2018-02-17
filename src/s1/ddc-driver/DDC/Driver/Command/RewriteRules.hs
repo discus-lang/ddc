@@ -7,25 +7,25 @@ import DDC.Build.Language
 import DDC.Core.Fragment
 import DDC.Core.Simplifier
 import DDC.Core.Module
-import DDC.Core.Lexer
-import DDC.Core.Pretty
+import DDC.Core.Codec.Text.Lexer
+import DDC.Core.Codec.Text.Pretty
 import DDC.Core.Exp
 import DDC.Core.Transform.Reannotate
 import DDC.Core.Transform.Rewrite.Rule  hiding (Error)
 import DDC.Core.Transform.Rewrite.Parser
 import System.Directory
 import System.IO
-import qualified DDC.Control.Parser     as BP
-import qualified DDC.Core.Check         as C
-import qualified DDC.Core.Parser        as C
-import qualified DDC.Type.Env           as Env
-import qualified DDC.Core.Env.EnvX      as EnvX
+import qualified DDC.Control.Parser             as BP
+import qualified DDC.Core.Check                 as C
+import qualified DDC.Core.Codec.Text.Parser     as C
+import qualified DDC.Type.Env                   as Env
+import qualified DDC.Core.Env.EnvX              as EnvX
 
 
 -- Read rewrite rules ---------------------------------------------------------
 -- | Load and typecheck a module's rewrite rules, using exported and imported
 --   definitions from module
-cmdTryReadRules 
+cmdTryReadRules
         :: (Ord n, Show n, Pretty n)
         => Fragment n err       -- ^ Language fragment.
         -> FilePath             -- ^ Path to the module.
@@ -56,7 +56,7 @@ cmdReadRules_parse filePath frag modu source src
 
 
 parse fragment modu source str
- = case BP.runTokenParser describeToken source' 
+ = case BP.runTokenParser describeToken source'
         (pRuleMany (C.contextOfProfile (fragmentProfile fragment)))
           (fragmentLexExp fragment source' 0 str) of
                 Left err -> Left $ renderIndent $ ppr err
@@ -79,10 +79,10 @@ parse fragment modu source str
     kindsImp    = moduleKindEnv modu
     typesImp    = moduleTypeEnv modu
 
-    kindsExp    = Env.fromList 
+    kindsExp    = Env.fromList
                 $ [BName n t | (n, Just t) <- map (liftSnd takeTypeOfExportSource)
                                            $  moduleExportTypes  modu ]
-    
+
     typesExp    = Env.fromList
                 $ [BName n t | (n, Just t) <- map (liftSnd takeTypeOfExportSource)
                                            $  moduleExportValues modu ]

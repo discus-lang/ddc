@@ -7,17 +7,17 @@ module DDCI.Core.Rewrite
 where
 import DDC.Data.Pretty
 import DDC.Build.Language
-import DDC.Core.Lexer
+import DDC.Core.Codec.Text.Lexer
 import DDC.Core.Fragment                hiding (Error)
 import DDC.Core.Transform.Rewrite.Rule  hiding (Error)
 import DDC.Core.Transform.Rewrite.Parser
 import DDCI.Core.State
 import DDCI.Core.Output
 import Data.Char
-import qualified DDC.Core.Check         as C
-import qualified DDC.Core.Parser        as C
-import qualified DDC.Control.Parser     as BP
-import qualified Data.Map.Strict        as Map
+import qualified DDC.Core.Check                 as C
+import qualified DDC.Core.Codec.Text.Parser     as C
+import qualified DDC.Control.Parser             as BP
+import qualified Data.Map.Strict                as Map
 
 import DDC.Core.Module
 import Data.Map                         (Map)
@@ -25,11 +25,11 @@ import Data.Map                         (Map)
 
 -- | :set rule command
 data SetRuleCommand a n
-        = SetAdd    
-                { setRuleName   :: String 
+        = SetAdd
+                { setRuleName   :: String
                 , setRuleRule   :: RewriteRule a n }
 
-        | SetRemove 
+        | SetRemove
                 { setRuleName   :: String }
 
         | SetList
@@ -46,11 +46,11 @@ parseFirstWord s = break isSpace $ dropWhile isSpace s
 -- | Parse a :set rule command
 --   +name rule, name rule:  add rewrite rule
 --   -name                   remove rule
-parseRewrite 
+parseRewrite
         :: (Ord n, Show n, Pretty n)
-        => Fragment n err 
+        => Fragment n err
         -> Map ModuleName (Module (C.AnTEC () n) n)
-        -> String 
+        -> String
         -> Either Error (SetRuleCommand (C.AnTEC BP.SourcePos n) n)
 
 parseRewrite fragment modules str
@@ -58,8 +58,8 @@ parseRewrite fragment modules str
         []              -> Right SetList
         ('+':rest)      -> parseAdd fragment modules rest
 
-        ('-':rest)      
-         -> let (name,_) = parseFirstWord rest 
+        ('-':rest)
+         -> let (name,_) = parseFirstWord rest
             in Right $ SetRemove name
 
         rest            -> parseAdd fragment modules rest
@@ -70,12 +70,12 @@ parseAdd
         :: (Ord n, Show n, Pretty n)
         => Fragment n err
         -> Map ModuleName (Module (C.AnTEC () n) n)
-        -> String 
+        -> String
         -> Either Error (SetRuleCommand (C.AnTEC BP.SourcePos n) n)
 
 parseAdd fragment modules str
  | (name, rest) <- parseFirstWord str
- = case BP.runTokenParser describeToken "<interactive>" 
+ = case BP.runTokenParser describeToken "<interactive>"
         (pRule (C.contextOfProfile (fragmentProfile fragment)))
           (fragmentLexExp fragment "interactive" 0 rest) of
                 Left err -> Left $ renderIndent $ ppr err
@@ -86,7 +86,7 @@ parseAdd fragment modules str
  where
         config   = C.configOfProfile (fragmentProfile fragment)
         profile  = fragmentProfile fragment
-        env      = modulesEnvX 
+        env      = modulesEnvX
                         (profilePrimKinds    profile)
                         (profilePrimTypes    profile)
                         (profilePrimDataDefs profile)

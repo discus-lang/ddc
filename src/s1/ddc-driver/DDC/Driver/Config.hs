@@ -1,19 +1,19 @@
 
 module DDC.Driver.Config
         ( Config        (..)
-        
+
         , ConfigPretty  (..)
         , defaultConfigPretty
         , prettyModeOfConfig
         , objectPathsOfConfig
         , exePathOfConfig
-        
+
         , ViaBackend    (..)
         , RuntimeLinkStrategy (..))
 where
-import DDC.Build.Builder                        
+import DDC.Build.Builder
 import DDC.Core.Simplifier              (Simplifier)
-import DDC.Core.Pretty                  hiding ((</>))
+import DDC.Core.Codec.Text.Pretty       hiding ((</>))
 import DDC.Core.Module
 import System.FilePath
 import Data.Maybe
@@ -53,7 +53,7 @@ data Config
         , configPretty                  :: ConfigPretty
 
           -- | Suppress the #import prelude in C modules
-        , configSuppressHashImports     :: Bool 
+        , configSuppressHashImports     :: Bool
 
           -- | Base directories to look for modules sources during build.
         , configModuleBaseDirectories   :: [FilePath]
@@ -84,11 +84,11 @@ data Config
 -- | Core language pretty printer configuration.
 data ConfigPretty
         = ConfigPretty
-        { configPrettyUseLetCase        :: Bool 
+        { configPrettyUseLetCase        :: Bool
         , configPrettyVarTypes          :: Bool
         , configPrettyConTypes          :: Bool
         , configPrettySuppressImports   :: Bool
-        , configPrettySuppressExports   :: Bool 
+        , configPrettySuppressExports   :: Bool
         , configPrettySuppressLetTypes  :: Bool }
 
 
@@ -98,14 +98,14 @@ defaultConfigPretty
         = ConfigPretty
         { configPrettyUseLetCase        = False
         , configPrettyVarTypes          = False
-        , configPrettyConTypes          = False 
+        , configPrettyConTypes          = False
         , configPrettySuppressImports   = False
         , configPrettySuppressExports   = False
         , configPrettySuppressLetTypes  = False }
 
 
 -- | Convert a the pretty configuration into the mode to use to print a module.
---   We keep the 'ConfigPretty' type separate from PrettyMode because the 
+--   We keep the 'ConfigPretty' type separate from PrettyMode because the
 --   former can be non-recursive with other types, and does not need to be
 --   parameterised by the annotation or name types.
 prettyModeOfConfig
@@ -114,13 +114,13 @@ prettyModeOfConfig
 prettyModeOfConfig config
  = modeModule
  where
-        modeModule      
+        modeModule
          = PrettyModeModule
          { modeModuleLets               = modeLets
          , modeModuleSuppressImports    = configPrettySuppressImports config
          , modeModuleSuppressExports    = configPrettySuppressExports config }
 
-        modeExp         
+        modeExp
          = PrettyModeExp
          { modeExpLets                  = modeLets
          , modeExpAlt                   = modeAlt
@@ -128,9 +128,9 @@ prettyModeOfConfig config
          , modeExpVarTypes              = configPrettyVarTypes config
          , modeExpUseLetCase            = configPrettyUseLetCase config }
 
-        modeLets        
+        modeLets
          = PrettyModeLets
-         { modeLetsExp                  = modeExp 
+         { modeLetsExp                  = modeExp
          , modeLetsSuppressTypes        = configPrettySuppressLetTypes config }
 
         modeAlt
@@ -138,14 +138,14 @@ prettyModeOfConfig config
          { modeAltExp                   = modeExp }
 
 
--- | Given the name of a source file, 
+-- | Given the name of a source file,
 --   determine the where the object files should go.
 --
 --   The first component of the result is where we should put produced object files,
---   The second are paths of where we might find pre-existing objects, 
+--   The second are paths of where we might find pre-existing objects,
 --   in preference order.
 
-objectPathsOfConfig 
+objectPathsOfConfig
         :: Config       -- ^ Compiler config.
         -> FilePath     -- ^ Path to module source.
         -> (FilePath, [FilePath])
@@ -167,7 +167,7 @@ objectPathsOfConfig config pathSource
 
 -- | Given the name of a source file,
 --   determine where we should put an executable built from it.
-exePathOfConfig 
+exePathOfConfig
         :: Config       -- ^ Compiler config.
         -> FilePath     -- ^ Path to module source.
         -> FilePath

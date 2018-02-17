@@ -5,8 +5,8 @@ module DDC.Core.Exp.Annot.Pretty
         ( module DDC.Data.Pretty
         , PrettyMode (..))
 where
+import DDC.Core.Codec.Text.Pretty.Type  ()
 import DDC.Core.Exp.Annot
-import DDC.Type.Exp.Simple.Pretty       ()
 import DDC.Data.Pretty
 import Data.List
 import qualified Data.Text              as Text

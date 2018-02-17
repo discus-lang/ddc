@@ -18,7 +18,7 @@ import DDC.Build.Language
 import DDC.Core.Simplifier.Parser
 import DDC.Core.Transform.Reannotate
 import DDC.Core.Exp.Annot.AnTEC
-import DDC.Core.Pretty
+import DDC.Core.Codec.Text.Pretty
 import DDC.Data.SourcePos
 import Control.Monad
 import Control.Monad.Trans.Except

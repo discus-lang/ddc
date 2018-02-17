@@ -15,7 +15,7 @@ import DDC.Core.Exp
 
 import qualified Data.Map as Map
 
-import DDC.Core.Pretty          ()
+import DDC.Core.Codec.Text.Pretty          ()
 import DDC.Data.Pretty
 
 newtype Label

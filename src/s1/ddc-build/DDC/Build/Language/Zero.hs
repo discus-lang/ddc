@@ -17,7 +17,7 @@ import DDC.Data.Name
 import DDC.Type.Exp
 import Data.Typeable
 import DDC.Type.Env                     (Env)
-import DDC.Core.Lexer                   as Core
+import DDC.Core.Codec.Text.Lexer        as Core
 import qualified DDC.Type.Env           as Env
 import qualified Data.Map               as Map
 import Control.Monad.State.Strict
@@ -62,9 +62,9 @@ instance Pretty (Error a) where
  ppr Error  = text (show Error)
 
 
--- Wrap the names we use for the zero fragment, 
+-- Wrap the names we use for the zero fragment,
 -- so they get pretty printed properly.
-data Name 
+data Name
         = Name    String
         | NameExt Name String
         deriving (Eq, Ord, Show, Typeable)
@@ -81,9 +81,9 @@ instance Pretty Name where
 
 
 instance CompoundName Name where
- extendName n str       
+ extendName n str
   = NameExt n str
- 
+
  splitName nn
   = case nn of
         NameExt n str   -> Just (n, str)
@@ -97,7 +97,7 @@ lexModuleZero :: String -> Int -> String -> [Located (Token Name)]
 lexModuleZero srcName srcLine str
  = map rn $ Core.lexModuleWithOffside srcName srcLine str
  where
-        rn (Located sp t) 
+        rn (Located sp t)
          = case renameToken (Just . Name) t of
                 Just t' -> Located sp t'
                 Nothing -> Located sp (KErrorJunk "lexical error")
@@ -110,7 +110,7 @@ lexExpZero :: String -> Int -> String -> [Located (Token Name)]
 lexExpZero srcName srcLine str
  = map rn $ Core.lexExp srcName srcLine str
  where
-        rn (Located sp t) 
+        rn (Located sp t)
          = case renameToken (Just . Name) t of
                 Just t' -> Located sp t'
                 Nothing -> Located sp (KErrorJunk "lexical error")

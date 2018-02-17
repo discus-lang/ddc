@@ -1,5 +1,5 @@
 
--- | Command-line interface to the DDC type checker, which is also 
+-- | Command-line interface to the DDC type checker, which is also
 --   possible via the plain 'ddc' command.
 --
 --   This code is provided as an example of how to drive the DDC
@@ -9,13 +9,13 @@ module Main where
 import Config
 import DDC.Build.Language
 import DDC.Build.Pipeline
-import DDC.Core.Pretty
+import DDC.Core.Codec.Text.Pretty
 import System.IO
 import System.Environment
 import qualified DDC.Core.Check as C
 
 main :: IO ()
-main 
+main
  = do   args    <- getArgs
         config  <- parseArgs args defaultConfig
 
@@ -23,11 +23,11 @@ main
         --  either from a file or stdin
         (source, sourceName)
           <- case configSourceFile config of
-                Just fileName   
+                Just fileName
                  -> do  src     <- readFile fileName
                         return  (src, fileName)
 
-                Nothing 
+                Nothing
                  -> do  src     <- hGetContents stdin
                         return  (src, "<stdin>")
 
@@ -38,7 +38,7 @@ main
 runLanguage config source sourceName language
  | Language bundle      <- language
  , fragment             <- bundleFragment bundle
- = do   
+ = do
         -- In quiet mode just drop the checked module on the floor.
         let sink
                 | configQuiet config    = SinkDiscard
@@ -50,7 +50,7 @@ runLanguage config source sourceName language
                 $  PipeTextLoadCore  fragment C.Recon SinkDiscard
                 [  PipeCoreOutput    pprDefaultMode sink ]
 
-        -- If the pipeline died with errors, 
+        -- If the pipeline died with errors,
         --  then print them.
         mapM_ (putStrLn . renderIndent . ppr) errs
 

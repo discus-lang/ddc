@@ -75,7 +75,7 @@ import DDC.Core.Flow.Prim.OpStore
 import DDC.Core.Flow.Prim.OpVector
 import DDC.Core.Flow.Prim.OpPrim
 
-import DDC.Core.Lexer.Tokens            (isVarStart)
+import DDC.Core.Codec.Text.Lexer.Tokens            (isVarStart)
 
 import DDC.Core.Salt.Name
         ( readPrimTyCon

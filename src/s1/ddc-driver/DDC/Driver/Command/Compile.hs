@@ -25,9 +25,9 @@ import qualified DDC.Build.Builder              as Builder
 import qualified DDC.Source.Discus.Module       as SE
 import qualified DDC.Source.Discus.Lexer        as SE
 import qualified DDC.Source.Discus.Parser       as SE
-import qualified DDC.Core.Pretty                as P
+import qualified DDC.Core.Codec.Text.Pretty     as P
+import qualified DDC.Core.Codec.Text.Lexer      as C
 import qualified DDC.Core.Module                as C
-import qualified DDC.Core.Lexer                 as C
 import qualified DDC.Control.Parser             as BP
 import qualified DDC.Version                    as Version
 import qualified Data.List                      as List

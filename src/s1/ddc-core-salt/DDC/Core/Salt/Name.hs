@@ -94,9 +94,9 @@ import Data.Typeable
 import Data.Char
 import Data.List
 import Control.DeepSeq
-import Data.Text                        (Text)
-import qualified DDC.Core.Lexer.Tokens  as K
-import qualified Data.Text              as T
+import Data.Text                                        (Text)
+import qualified DDC.Core.Codec.Text.Lexer.Tokens       as K
+import qualified Data.Text                              as T
 
 
 -- | Names of things used in Disciple Core Salt.

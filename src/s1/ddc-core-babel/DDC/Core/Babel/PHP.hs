@@ -3,7 +3,7 @@ module DDC.Core.Babel.PHP where
 import DDC.Core.Collect
 import DDC.Core.Module
 import DDC.Core.Exp.Annot
-import DDC.Core.Pretty
+import DDC.Core.Codec.Text.Pretty
 import DDC.Type.DataDef
 import qualified DDC.Core.Discus.Prim as T
 import qualified DDC.Type.Env as Env

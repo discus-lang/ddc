@@ -82,12 +82,12 @@ module DDC.Type.Exp.Simple
         , takeNameOfBind
         , typeOfBind
         , replaceTypeOfBind
-        
+
           -- ** Binders
         , binderOfBind
         , makeBindFromBinder
         , partitionBindsByType
-        
+
           -- ** Bounds
         , takeNameOfBound
         , takeTypeOfBound
@@ -168,11 +168,11 @@ module DDC.Type.Exp.Simple
 where
 import DDC.Type.Exp.Simple.Exp
 import DDC.Type.Exp.Simple.NFData       ()
-import DDC.Type.Exp.Simple.Pretty       ()
 import DDC.Type.Exp.Simple.Predicates
 import DDC.Type.Exp.Simple.Compounds
 import DDC.Type.Exp.Simple.Equiv
 import DDC.Type.Exp.Simple.Subsumes
+import DDC.Core.Codec.Text.Pretty.Type  ()
 
 
 

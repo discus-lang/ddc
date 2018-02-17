@@ -5,7 +5,7 @@ module DDC.Source.Discus.Lexer
         , lexModuleString)
 where
 import DDC.Source.Discus.Prim
-import DDC.Core.Lexer
+import DDC.Core.Codec.Text.Lexer
 import DDC.Data.Pretty
 import Control.DeepSeq
 import Data.Char

@@ -10,8 +10,8 @@ import DDC.Source.Discus.Pretty
 import DDC.Source.Discus.Lexer          as ST
 import DDC.Source.Discus.Parser         as ST
 import DDC.Core.Fragment                as C
-import DDC.Core.Parser                  as C
-import DDC.Core.Lexer                   as C
+import DDC.Core.Codec.Text.Parser       as C
+import DDC.Core.Codec.Text.Lexer        as C
 import DDC.Control.Parser               as BP
 import Control.Monad.Trans.Except
 import Control.Monad.IO.Class

@@ -16,7 +16,7 @@ import DDC.Source.Discus.Parser.Param
 import DDC.Source.Discus.Parser.Base
 import DDC.Source.Discus.Exp
 import DDC.Source.Discus.Prim            as S
-import DDC.Core.Lexer.Tokens
+import DDC.Core.Codec.Text.Lexer.Tokens
 import Control.Monad.Except
 import qualified DDC.Control.Parser     as P
 import qualified Data.Text              as Text

@@ -3,7 +3,7 @@ module DDC.Core.Flow.Process.Pretty where
 import DDC.Core.Flow.Process.Process
 import DDC.Core.Flow.Process.Operator
 import DDC.Core.Flow.Context
-import DDC.Core.Pretty          ()
+import DDC.Core.Codec.Text.Pretty          ()
 import DDC.Data.Pretty
 
 
@@ -11,7 +11,7 @@ instance Pretty Process where
  ppr p
   = vcat
   $     [ ppr (processName p)
-        , text "  parameters:    " <> ppr (processParamFlags p) 
+        , text "  parameters:    " <> ppr (processParamFlags p)
         , indent 2 $ ppr $ processContext p ]
 
 
@@ -26,14 +26,14 @@ instance Pretty Context where
     ContextSelect{}
        -> vcat
         $ [ text "Select " <> ppr (contextInnerRate cc) <> text " <= " <> ppr (contextOuterRate cc)
-          , text " flags: " <> ppr (contextFlags cc) 
+          , text " flags: " <> ppr (contextFlags cc)
           , text " sel:   " <> ppr (contextSelector cc) ]
           ++ ops
           ++ inner
     ContextSegment{}
        -> vcat
         $ [ text "Segment " <> ppr (contextInnerRate cc) <> text " <= " <> ppr (contextOuterRate cc)
-          , text " lens:  " <> ppr (contextLens cc) 
+          , text " lens:  " <> ppr (contextLens cc)
           , text " segd:  " <> ppr (contextSegd cc) ]
           ++ ops
           ++ inner
@@ -72,7 +72,7 @@ instance Pretty Operator where
         , text " type:        " <> ppr (opElemType      op)
         , text " segd:        " <> ppr (opSegdBound     op)
         , text " input:       " <> ppr (opInputSeries   op) ]
- 
+
  ppr op@OpIndices{}
         = vcat
         [ text "Indices"
@@ -124,7 +124,7 @@ instance Pretty Operator where
  ppr op@OpPack{}
         = vcat
         [ text "Pack"
-        , text " input  rate: " <> ppr (opInputRate     op) 
+        , text " input  rate: " <> ppr (opInputRate     op)
         , text " output rate: " <> ppr (opOutputRate    op) ]
 
  ppr op@OpSeriesOfRateVec{}

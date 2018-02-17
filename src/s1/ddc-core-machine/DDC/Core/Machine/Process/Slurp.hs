@@ -14,7 +14,7 @@ import qualified DDC.Core.Transform.SubstituteXX as Subst
 import Control.Monad (when)
 import qualified Data.Map as Map
 
-import DDC.Core.Pretty          ()
+import DDC.Core.Codec.Text.Pretty       ()
 import DDC.Data.Pretty (Doc, Pretty(..), ppr, text, line, (<>))
 
 

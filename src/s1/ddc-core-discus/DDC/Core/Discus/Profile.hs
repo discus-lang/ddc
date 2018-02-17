@@ -10,7 +10,7 @@ where
 import DDC.Core.Discus.Prim
 import DDC.Core.Discus.Env
 import DDC.Core.Fragment
-import DDC.Core.Lexer
+import DDC.Core.Codec.Text.Lexer
 import DDC.Type.Exp
 import Control.Monad.State.Strict
 import DDC.Type.Env             (Env)

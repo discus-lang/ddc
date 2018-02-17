@@ -8,20 +8,20 @@ import DDC.Core.Flow.Process.Operator
 import DDC.Core.Flow.Exp
 import DDC.Core.Flow.Prim
 import DDC.Core.Flow.Exp.Simple.Compounds
-import DDC.Core.Pretty                  ()
+import DDC.Core.Codec.Text.Pretty                  ()
 import Control.Monad
 
 
 -- | Slurp a stream operator from a let-binding binding.
 --   We use this when recovering operators from the source program.
-slurpOperator 
-        :: Bind Name 
-        -> Exp () Name 
+slurpOperator
+        :: Bind Name
+        -> Exp () Name
         -> Maybe ([Name], Type Name, Operator)
         -- name of contexts to insert into, rate, operator
 
 slurpOperator bResult xx
- 
+
  -- Rep -----------------------------------------
  | Just ( NameOpSeries OpSeriesRep
         , [ XType _P, XType tK1, XType tA, xVal])
@@ -57,7 +57,7 @@ slurpOperator bResult xx
         , OpIndices
         { opResultSeries        = bResult
         , opInputRate           = tK1
-        , opOutputRate          = tK2 
+        , opOutputRate          = tK2
         , opSegdBound           = uSegd } )
 
  -- Fill ----------------------------------------
@@ -69,7 +69,7 @@ slurpOperator bResult xx
         , OpFill
         { opResultBind          = bResult
         , opTargetVector        = uV
-        , opInputRate           = tK 
+        , opInputRate           = tK
         , opInputSeries         = uS
         , opElemType            = tA } )
 
@@ -105,7 +105,7 @@ slurpOperator bResult xx
 
 
  -- Map -----------------------------------------
- | Just (NameOpSeries (OpSeriesMap n), xs) 
+ | Just (NameOpSeries (OpSeriesMap n), xs)
                                 <- takeXPrimApps xx
  , n >= 1
  , XType _P : XType tR : xsArgs2   <- xs
@@ -141,7 +141,7 @@ slurpOperator bResult xx
         { opResultSeries        = bResult
         , opInputRate           = tRateInput
         , opInputSeries         = uSeries
-        , opOutputRate          = tRateOutput 
+        , opOutputRate          = tRateOutput
         , opElemType            = tElem } )
 
 

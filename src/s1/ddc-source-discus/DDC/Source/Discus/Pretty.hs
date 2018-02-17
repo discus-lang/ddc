@@ -2,7 +2,7 @@
 
 -- | Pretty printing for Discus modules and expressions.
 module DDC.Source.Discus.Pretty
-        ( module DDC.Core.Pretty
+        ( module DDC.Core.Codec.Text.Pretty
         , module DDC.Data.Pretty
         , PrettyLanguage)
 where
@@ -11,7 +11,7 @@ import DDC.Source.Discus.DataDef
 import DDC.Source.Discus.Module
 import DDC.Source.Discus.Exp.Source
 import DDC.Type.Exp.Generic.Pretty
-import DDC.Core.Pretty
+import DDC.Core.Codec.Text.Pretty
 import DDC.Data.Pretty
 import Prelude                                  hiding ((<$>))
 import qualified Data.Text                      as Text

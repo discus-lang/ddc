@@ -4,8 +4,8 @@ module DDC.Core.Transform.Rewrite.Parser
         (pRule, pRuleMany)
 where
 import DDC.Core.Exp
-import DDC.Core.Parser
-import DDC.Core.Lexer.Tokens
+import DDC.Core.Codec.Text.Parser
+import DDC.Core.Codec.Text.Lexer.Tokens
 import DDC.Data.Pretty
 import qualified DDC.Control.Parser              as P
 import qualified DDC.Type.Exp.Simple             as T
@@ -43,7 +43,7 @@ add_zero_l
         ;
 -}
 -- | Parse many rewrite rules.
-pRuleMany       
+pRuleMany
         :: (Ord n, Pretty n)
         => Context n -> Parser n [(n,R.RewriteRule P.SourcePos n)]
 pRuleMany c
@@ -54,7 +54,7 @@ pRuleMany c
         return (n,r))
 
 
-pRuleBinders 
+pRuleBinders
         :: (Ord n, Pretty n)
         => Context n -> Parser n [(R.BindMode,Bind n)]
 
@@ -67,7 +67,7 @@ pRuleBinders c
  ]
 
 
-pRuleCsLhs 
+pRuleCsLhs
         :: (Ord n, Pretty n)
         => Context n -> Parser n ([Type n], Exp P.SourcePos n)
 pRuleCsLhs c
@@ -83,7 +83,7 @@ pRuleCsLhs c
  ]
 
 
-pRuleHole 
+pRuleHole
         :: (Ord n, Pretty n)
         => Context n -> Parser n (Maybe (Exp P.SourcePos n))
 pRuleHole c
@@ -102,7 +102,7 @@ pRuleHole c
 --       [BIND1 BIND2 .. BINDN : TYPE]
 --   or  (BIND : TYPE)
 --
-pBinders 
+pBinders
         :: (Ord n, Pretty n)
         => Context n -> Parser n [(R.BindMode, Bind n)]
 pBinders c
@@ -112,11 +112,11 @@ pBinders c
  ]
 
 
-pBindersBetween 
+pBindersBetween
         :: (Ord n, Pretty n)
         => Context n
-        -> R.BindMode 
-        -> Parser n a 
+        -> R.BindMode
+        -> Parser n a
         -> Parser n a
         -> Parser n [(R.BindMode,Bind n)]
 

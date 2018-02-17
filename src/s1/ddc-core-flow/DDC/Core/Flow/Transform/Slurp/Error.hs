@@ -7,7 +7,7 @@ import DDC.Core.Flow.Prim
 import DDC.Core.Flow.Transform.Annotate
 import DDC.Core.Flow.Context
 import DDC.Core.Flow.Process.Pretty ()
-import DDC.Core.Pretty
+import DDC.Core.Codec.Text.Pretty
 
 
 -- | Things that can go wrong when slurping a process spec from

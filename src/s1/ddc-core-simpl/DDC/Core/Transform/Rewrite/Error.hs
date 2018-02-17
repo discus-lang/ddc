@@ -4,7 +4,7 @@ module DDC.Core.Transform.Rewrite.Error
 where
 import DDC.Core.Exp
 import DDC.Core.Check                   ()
-import DDC.Core.Pretty
+import DDC.Core.Codec.Text.Pretty
 import qualified DDC.Core.Check         as C
 
 
@@ -44,7 +44,7 @@ data Error a n
 
 
 -- | What side of a rewrite rule we're talking about.
-data Side 
+data Side
         = Lhs | Rhs
 
 
@@ -53,7 +53,7 @@ instance Pretty Side where
  ppr Rhs = text "rhs"
 
 
-instance (Pretty a, Pretty n, Show n, Eq n) 
+instance (Pretty a, Pretty n, Show n, Eq n)
         => Pretty (Error a n) where
  ppr err
   = case err of
@@ -66,7 +66,7 @@ instance (Pretty a, Pretty n, Show n, Eq n)
 
         ErrorTypeConflict (tl,el,cl) (tr,er,cr)
          -> vcat [ text "LHS and RHS have different types:"
-                 , text "Type L: "      <> ppr tl 
+                 , text "Type L: "      <> ppr tl
                  , text "Type R: "      <> ppr tr
                  , text "Eff L:  "      <> ppr el
                  , text "Eff R:  "      <> ppr er
@@ -81,7 +81,7 @@ instance (Pretty a, Pretty n, Show n, Eq n)
          -> vcat [ text "No type binders allowed in left-hand side."
                  , text "While checking " <> ppr t ]
 
-        ErrorVarUnmentioned 
+        ErrorVarUnmentioned
          ->        text "All variables in rule should be mentioned in left-hand side."
 
         ErrorAnonymousBinder b

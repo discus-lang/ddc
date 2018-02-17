@@ -3,10 +3,10 @@
 module DDC.Core.Check.Error.ErrorExpMessage
         (Error(..))
 where
-import DDC.Core.Pretty
 import DDC.Core.Check.Error.ErrorExp
 import DDC.Core.Check.Error.ErrorTypeMessage      ()
 import DDC.Core.Check.Error.ErrorDataMessage      ()
+import DDC.Core.Codec.Text.Pretty
 import DDC.Type.Exp.Simple
 import DDC.Type.Universe
 

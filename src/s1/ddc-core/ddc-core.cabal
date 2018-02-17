@@ -10,7 +10,7 @@ Stability:      experimental
 Category:       Compilers/Interpreters
 Homepage:       http://disciple.ouroborus.net
 Synopsis:       Disciplined Disciple Compiler core language and type checker.
-Description:    
+Description:
         Disciple Core is an explicitly typed language based on System-F2,
         intended as an intermediate representation for a compiler. In addition
         to the polymorphism of System-F2 it supports region, effect and closure
@@ -22,7 +22,7 @@ Description:
         See the @ddc-tools@ package for a user-facing interpreter and compiler.
 
 Library
-  Build-Depends: 
+  Build-Depends:
         base            >= 4.6   && < 4.10,
         array           >= 0.4   && < 0.6,
         deepseq         >= 1.3   && < 1.5,
@@ -53,17 +53,18 @@ Library
         DDC.Core.Exp.Annot.AnTEC
         DDC.Core.Exp.Annot.Context
         DDC.Core.Exp.Annot.Ctx
-               
+
         DDC.Core.Exp.Generic.BindStruct
 
         DDC.Core.Exp.Annot
         DDC.Core.Exp.Generic
-        DDC.Core.Exp.Literal        
+        DDC.Core.Exp.Literal
 
-        DDC.Core.Lexer.Offside
-        DDC.Core.Lexer.Tokens
-        DDC.Core.Lexer.Unicode
-        
+        DDC.Core.Codec.Text.Lexer.Offside
+        DDC.Core.Codec.Text.Lexer.Tokens
+        DDC.Core.Codec.Text.Lexer.Unicode
+        DDC.Core.Codec.Text.Lexer
+
         DDC.Core.Transform.BoundT
         DDC.Core.Transform.BoundX
         DDC.Core.Transform.MapT
@@ -79,11 +80,10 @@ Library
         DDC.Core.Collect
         DDC.Core.Exp
         DDC.Core.Fragment
-        DDC.Core.Lexer
         DDC.Core.Load
         DDC.Core.Module
         DDC.Core.Parser
-        DDC.Core.Pretty
+        DDC.Core.Codec.Text.Pretty
 
         DDC.Data.Canned
         DDC.Data.Env
@@ -119,7 +119,7 @@ Library
         DDC.Type.Transform.Rename
         DDC.Type.Transform.SpreadT
         DDC.Type.Transform.SubstituteT
-        
+
         DDC.Type.Bind
         DDC.Type.DataDef
         DDC.Type.Env
@@ -186,7 +186,7 @@ Library
         DDC.Core.Exp.Generic.Predicates
         DDC.Core.Exp.Generic.Pretty
 
-        DDC.Core.Exp.DaCon        
+        DDC.Core.Exp.DaCon
         DDC.Core.Exp.WiCon
 
         DDC.Core.Fragment.Compliance
@@ -194,28 +194,29 @@ Library
         DDC.Core.Fragment.Feature
         DDC.Core.Fragment.Profile
 
-        DDC.Core.Lexer.Token.Builtin
-        DDC.Core.Lexer.Token.Index
-        DDC.Core.Lexer.Token.Keyword
-        DDC.Core.Lexer.Token.Literal
-        DDC.Core.Lexer.Token.Names
-        DDC.Core.Lexer.Token.Operator
-        DDC.Core.Lexer.Token.Symbol
-        
+        DDC.Core.Codec.Text.Lexer.Token.Builtin
+        DDC.Core.Codec.Text.Lexer.Token.Index
+        DDC.Core.Codec.Text.Lexer.Token.Keyword
+        DDC.Core.Codec.Text.Lexer.Token.Literal
+        DDC.Core.Codec.Text.Lexer.Token.Names
+        DDC.Core.Codec.Text.Lexer.Token.Operator
+        DDC.Core.Codec.Text.Lexer.Token.Symbol
+
+        DDC.Core.Codec.Text.Parser.Base
+        DDC.Core.Codec.Text.Parser.Context
+        DDC.Core.Codec.Text.Parser.DataDef
+        DDC.Core.Codec.Text.Parser.Exp
+        DDC.Core.Codec.Text.Parser.ExportSpec
+        DDC.Core.Codec.Text.Parser.ImportSpec
+        DDC.Core.Codec.Text.Parser.Module
+        DDC.Core.Codec.Text.Parser.Param
+        DDC.Core.Codec.Text.Parser.Type
+        DDC.Core.Codec.Text.Parser.Witness
+
         DDC.Core.Module.Export
         DDC.Core.Module.Import
         DDC.Core.Module.Name
 
-        DDC.Core.Parser.Base
-        DDC.Core.Parser.Context
-        DDC.Core.Parser.DataDef
-        DDC.Core.Parser.Exp
-        DDC.Core.Parser.ExportSpec
-        DDC.Core.Parser.ImportSpec
-        DDC.Core.Parser.Module
-        DDC.Core.Parser.Param
-        DDC.Core.Parser.Type
-        DDC.Core.Parser.Witness
 
         DDC.Type.Exp.Simple.NFData
         DDC.Type.Exp.Simple.Pretty

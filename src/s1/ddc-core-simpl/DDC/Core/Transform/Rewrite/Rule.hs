@@ -1,5 +1,5 @@
 -- | Constructing and checking whether rewrite rules are valid
-module DDC.Core.Transform.Rewrite.Rule 
+module DDC.Core.Transform.Rewrite.Rule
         ( -- * Binding modes
           BindMode      (..)
         , isBMSpec
@@ -16,11 +16,8 @@ module DDC.Core.Transform.Rewrite.Rule
 where
 import DDC.Core.Transform.Rewrite.Error
 import DDC.Core.Transform.Reannotate
--- import DDC.Core.Transform.TransformUpX
 import DDC.Core.Exp.Annot
-import DDC.Core.Pretty                          ()
--- import DDC.Core.Collect
-import DDC.Core.Pretty                          ()
+import DDC.Core.Codec.Text.Pretty               ()
 import DDC.Core.Env.EnvX                        (EnvX)
 import DDC.Data.Pretty
 import qualified DDC.Core.Analysis.Usage        as U
@@ -33,7 +30,6 @@ import qualified DDC.Type.Transform.SpreadT     as S
 import qualified Data.Map                       as Map
 import qualified Data.Maybe                     as Maybe
 import qualified Data.Set                       as Set
--- import qualified DDC.Type.Env                   as Env
 import qualified DDC.Core.Env.EnvT              as EnvT
 import qualified DDC.Core.Env.EnvX              as EnvX
 
@@ -51,33 +47,33 @@ data RewriteRule a n
 
           -- | Extra constraints on the rule.
           --   These must all be satisfied for the rule to fire.
-        , ruleConstraints :: [Type n]           
+        , ruleConstraints :: [Type n]
 
           -- | Left-hand side of the rule.
           --   We match on this part.
-        , ruleLeft        :: Exp a n            
+        , ruleLeft        :: Exp a n
 
           -- | Extra part of left-hand side,
           --   but allow this bit to be out-of-context.
-        , ruleLeftHole    :: Maybe (Exp a n)    
+        , ruleLeftHole    :: Maybe (Exp a n)
 
           -- | Right-hand side of the rule.
           --   We replace the matched expression with this part.
-        , ruleRight       :: Exp a n            
+        , ruleRight       :: Exp a n
 
           -- | Effects that are caused by the left but not the right.
           --   When applying the rule we add an effect weakning to ensure
           --   the rewritten expression has the same effects.
-        , ruleWeakEff     :: Maybe (Effect n)   
+        , ruleWeakEff     :: Maybe (Effect n)
 
           -- | Closure that the left has that is not present in the right.
           --   When applying the rule we add a closure weakening to ensure
           --   the rewritten expression has the same closure.
-        , ruleWeakClo     :: [Exp a n]          
+        , ruleWeakClo     :: [Exp a n]
 
-          -- | References to environment. 
+          -- | References to environment.
           --   Used to check whether the rule is shadowed.
-        , ruleFreeVars    :: [Bound n]          
+        , ruleFreeVars    :: [Bound n]
         } deriving (Eq, Show)
 
 
@@ -93,7 +89,7 @@ instance (Pretty n, Eq n) => Pretty (RewriteRule a n) where
 
         pprBinder (BMSpec, b)    = text "[" <> ppr b <> text "] "
         pprBinder (BMValue _, b) = text "(" <> ppr b <> text ") "
-      
+
         pprConstrs []            = text ""
         pprConstrs (c:cs')       = ppr c <> text " => " <> pprConstrs cs'
 
@@ -107,9 +103,9 @@ instance (Pretty n, Eq n) => Pretty (RewriteRule a n) where
 
 -- BindMode -------------------------------------------------------------------
 -- | Binding level for the binders in a rewrite rule.
-data BindMode 
+data BindMode
         -- | Level-1 binder (specs)
-        = BMSpec 
+        = BMSpec
 
         -- | Level-0 binder (data values and witnesses)
         | BMValue Int -- ^ number of usages
@@ -160,7 +156,7 @@ mkRewriteRule  bs cs lhs hole rhs
 --   We don't handle anonymous binders on either the left or right.
 --
 checkRewriteRule
-    :: (Show a, Ord n, Show n, Pretty n)        
+    :: (Show a, Ord n, Show n, Pretty n)
     => C.Config n               -- ^ Type checker config.
     -> EnvX n                   -- ^ Type checker environment.
     -> RewriteRule a n          -- ^ Rule to check
@@ -169,7 +165,7 @@ checkRewriteRule
 
 checkRewriteRule config env
         (RewriteRule bs cs lhs hole rhs _ _ _)
- = do   
+ = do
         -- Extend the environments with variables bound by the rule.
         let (env', bs') = extendBinds bs env
         let kenv'       = EnvX.kindEnvOfEnvX env'
@@ -180,12 +176,12 @@ checkRewriteRule config env
 
         -- Typecheck, spread and annotate with type information
         (lhs', _, _)
-                <- checkExp config env' Lhs lhs 
+                <- checkExp config env' Lhs lhs
 
         -- If the extra left part is there, typecheck and annotate it.
         hole' <- case hole of
-                  Just h  
-                   -> do  (h',_,_)  <- checkExp config env' Lhs h 
+                  Just h
+                   -> do  (h',_,_)  <- checkExp config env' Lhs h
                           return $ Just h'
 
                   Nothing -> return Nothing
@@ -201,16 +197,16 @@ checkRewriteRule config env
 
         -- Check the full right hand side.
         (rhs', tRight, effRight)
-                <- checkExp config env' Rhs rhs 
+                <- checkExp config env' Rhs rhs
 
         -- Check that types of both sides are equivalent.
-        let err = ErrorTypeConflict 
-                        (tLeft,  effLeft,  tBot kClosure) 
+        let err = ErrorTypeConflict
+                        (tLeft,  effLeft,  tBot kClosure)
                         (tRight, effRight, tBot kClosure)
 
         checkEquiv tLeft tRight err
 
-        -- Check the effect of the right is smaller than that 
+        -- Check the effect of the right is smaller than that
         -- of the left, and add a weakeff cast if nessesary
         effWeak        <- makeEffectWeakening  T.kEffect effLeft effRight err
 
@@ -239,11 +235,11 @@ checkRewriteRule config env
                       $ map (T.takeSubstBoundOfBind . snd) bs
 
         let freeVars  = Set.toList
-                      $ (C.freeX T.empty lhs_full' 
+                      $ (C.freeX T.empty lhs_full'
                          `Set.union` C.freeX T.empty rhs)
                       `Set.difference` binds
 
-        return  $ RewriteRule 
+        return  $ RewriteRule
                         bs'' csSpread
                         lhs' hole' rhs'
                         effWeak []
@@ -253,9 +249,9 @@ checkRewriteRule config env
 -- | Extend kind and type environments with a rule's binders.
 --   Which environment a binder goes into depends on its BindMode.
 --   Also return list of binders which have been spread.
-extendBinds 
-        :: Ord n 
-        => [(BindMode, Bind n)] 
+extendBinds
+        :: Ord n
+        => [(BindMode, Bind n)]
         ->  EnvX n
         -> (EnvX n, [(BindMode, Bind n)])
 
@@ -277,19 +273,19 @@ extendBinds binds env0
 
 
 -- | Type check the expression on one side of the rule.
-checkExp 
+checkExp
         :: (Show a, Ord n, Show n, Pretty n)
         => C.Config n   -- ^ Type checker config.
         -> EnvX n       -- ^ Type checker environment.
         -> Side         -- ^ Side that the expression appears on for errors.
         -> Exp a n      -- ^ Expression to check.
-        -> Either (Error a n) 
+        -> Either (Error a n)
                   (Exp (C.AnTEC a n) n, Type n, Effect n)
 
 checkExp defs env side xx
  = let  kenv    = EnvX.kindEnvOfEnvX env
         tenv    = EnvX.typeEnvOfEnvX env
-        xx'     = S.spreadX kenv tenv xx 
+        xx'     = S.spreadX kenv tenv xx
 
    in  case fst $ C.checkExp defs env C.Recon C.DemandNone xx'  of
         Left err  -> Left $ ErrorTypeCheck side xx' err
@@ -320,7 +316,7 @@ checkEquiv
         -> Either (Error a n) ()
 
 checkEquiv tLeft tRight err
-        | T.equivT EnvT.empty tLeft tRight  
+        | T.equivT EnvT.empty tLeft tRight
                         = return ()
         | otherwise     = Left err
 
@@ -328,7 +324,7 @@ checkEquiv tLeft tRight err
 -- Weaken ---------------------------------------------------------------------
 -- | Make the effect weakening for a rule.
 --   This contains the effects that are caused by the left of the rule
---   but not the right. 
+--   but not the right.
 --   If the right has more effects than the left then return an error.
 --
 makeEffectWeakening
@@ -362,13 +358,13 @@ makeEffectWeakening k effLeft effRight onError
 --   This contains a closure term for all variables that are present
 --   in the left of a rule but not in the right.
 --
-makeClosureWeakening 
+makeClosureWeakening
         :: (Ord n, Pretty n, Show n)
         => C.Config n           -- ^ Type-checker config
         -> EnvX n               -- ^ Type checker environment.
         -> Exp (C.AnTEC a n) n  -- ^ Expression on the left of the rule.
         -> Exp (C.AnTEC a n) n  -- ^ Expression on the right of the rule.
-        -> Either (Error a n) 
+        -> Either (Error a n)
                   [Exp (C.AnTEC a n) n]
 
 makeClosureWeakening config env lhs rhs
@@ -386,8 +382,8 @@ makeClosureWeakening config env lhs rhs
 
         a       = annotOfExp lhs
 
-   in   Right 
-         $  [XVar a u 
+   in   Right
+         $  [XVar a u
                 | u <- Set.toList $ daLeft `Set.difference` daRight ]
 
          ++ [XWitness a (WVar a u)
@@ -406,7 +402,7 @@ removeEffects
         -> Exp a n      -- ^ Target expression - has all effects replaced with bottom.
         -> Exp a n
 
-removeEffects config 
+removeEffects config
  = transformUpX remove
  where
   remove _env x
@@ -442,8 +438,8 @@ checkUnmentionedBinders bs expr
 
 
 -- | Check for anonymous binders in the rule. We don't handle these.
-checkAnonymousBinders 
-        :: [(BindMode, Bind n)] 
+checkAnonymousBinders
+        :: [(BindMode, Bind n)]
         -> Either (Error a n) ()
 
 checkAnonymousBinders bs
@@ -484,10 +480,10 @@ checkValidPattern expr
 
 
 -- | Count how many times each binder is used in right-hand side.
-countBinderUsage 
-        :: Ord n 
-        => [(BindMode, Bind n)] 
-        -> Exp a n 
+countBinderUsage
+        :: Ord n
+        => [(BindMode, Bind n)]
+        -> Exp a n
         -> Either (Error a n) [(BindMode, Bind n)]
 
 countBinderUsage bs x

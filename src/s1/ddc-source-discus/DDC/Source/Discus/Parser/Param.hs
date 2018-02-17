@@ -13,10 +13,10 @@ where
 import DDC.Source.Discus.Parser.Type
 import DDC.Source.Discus.Parser.Base
 import DDC.Source.Discus.Exp
-import DDC.Source.Discus.Prim            as S
-import DDC.Core.Lexer.Tokens
-import qualified DDC.Control.Parser     as P
-import qualified Data.Text              as Text
+import DDC.Source.Discus.Prim                   as S
+import DDC.Core.Codec.Text.Lexer.Tokens
+import qualified DDC.Control.Parser             as P
+import qualified Data.Text                      as Text
 import Data.Maybe
 
 

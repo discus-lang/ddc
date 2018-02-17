@@ -19,7 +19,7 @@ module DDC.Core.Check.Base
         , Set
         , module DDC.Core.Check.Error
         , module DDC.Core.Collect
-        , module DDC.Core.Pretty
+        , module DDC.Core.Codec.Text.Pretty
         , module DDC.Core.Exp.Annot
         , module DDC.Core.Check.Context
 
@@ -33,7 +33,7 @@ module DDC.Core.Check.Base
 where
 import DDC.Core.Check.Error
 import DDC.Core.Collect
-import DDC.Core.Pretty
+import DDC.Core.Codec.Text.Pretty
 import DDC.Core.Exp.Annot
 import DDC.Core.Check.Context
 import DDC.Core.Check.Config
@@ -82,7 +82,7 @@ newPos
 applyContext :: Ord n => Context n -> Type n -> CheckM a n (Type n)
 applyContext ctx tt
  = case applyContextEither ctx Set.empty tt of
-        Left  (tExt, tBind)       
+        Left  (tExt, tBind)
                 -> throw $ ErrorType $ ErrorTypeInfinite tExt tBind
         Right t -> return t
 

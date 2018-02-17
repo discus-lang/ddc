@@ -6,7 +6,7 @@ module DDC.Build.Interface.Base
         , isInterfaceTearLine)
 where
 import DDC.Core.Module
-import DDC.Core.Pretty
+import DDC.Core.Codec.Text.Pretty
 import DDC.Core.Exp.Annot
 import Data.Maybe
 import Data.Time.Clock
@@ -28,7 +28,7 @@ data Interface ta sa
 
         , interfaceVersion      :: String
         , interfaceModuleName   :: ModuleName
-        , interfaceDiscusModule  :: Maybe (Module ta Discus.Name)
+        , interfaceDiscusModule :: Maybe (Module ta Discus.Name)
         , interfaceSaltModule   :: Maybe (Module sa Salt.Name) }
 
 

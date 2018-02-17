@@ -38,7 +38,7 @@ import qualified DDC.Source.Discus.Lexer                as SLexer
 import qualified DDC.Core.Fragment                      as C
 import qualified DDC.Core.Check                         as C
 import qualified DDC.Core.Module                        as C
-import qualified DDC.Core.Lexer                         as C
+import qualified DDC.Core.Codec.Text.Lexer              as C
 import qualified DDC.Core.Discus                        as CE
 import qualified DDC.Core.Discus.Env                    as CE
 import qualified DDC.Core.Transform.Resolve             as CResolve

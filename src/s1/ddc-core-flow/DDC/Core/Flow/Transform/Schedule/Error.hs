@@ -6,7 +6,7 @@ import DDC.Core.Flow.Exp
 import DDC.Core.Flow.Prim
 import DDC.Core.Flow.Process.Operator
 import DDC.Core.Flow.Transform.Annotate
-import DDC.Core.Pretty
+import DDC.Core.Codec.Text.Pretty
 import qualified DDC.Core.Flow.Transform.Slurp.Error    as Slurp
 
 

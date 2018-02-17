@@ -52,7 +52,7 @@ import qualified DDC.Core.Simplifier                    as C
 
 import qualified DDC.Core.Fragment                      as C
 import qualified DDC.Core.Check                         as C
-import qualified DDC.Core.Pretty                        as C
+import qualified DDC.Core.Codec.Text.Pretty             as C
 import qualified DDC.Core.Module                        as C
 
 import qualified DDC.Core.Exp.Annot                     as C

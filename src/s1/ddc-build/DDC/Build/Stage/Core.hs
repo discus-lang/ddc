@@ -14,24 +14,24 @@ import Control.DeepSeq
 
 import DDC.Data.Pretty
 import DDC.Data.Name
-import qualified DDC.Control.Parser                     as Parser
+import qualified DDC.Control.Parser             as Parser
 
-import qualified DDC.Data.SourcePos                     as SP
+import qualified DDC.Data.SourcePos             as SP
 
-import qualified DDC.Build.Pipeline.Sink                as B
-import qualified DDC.Build.Pipeline.Error               as B
+import qualified DDC.Build.Pipeline.Sink        as B
+import qualified DDC.Build.Pipeline.Error       as B
 
-import qualified DDC.Core.Fragment                      as C
-import qualified DDC.Core.Check                         as C
-import qualified DDC.Core.Module                        as C
-import qualified DDC.Core.Exp                           as C
-import qualified DDC.Core.Parser                        as C
-import qualified DDC.Core.Lexer                         as C
-import qualified DDC.Core.Simplifier                    as C
+import qualified DDC.Core.Fragment              as C
+import qualified DDC.Core.Check                 as C
+import qualified DDC.Core.Module                as C
+import qualified DDC.Core.Exp                   as C
+import qualified DDC.Core.Codec.Text.Parser     as C
+import qualified DDC.Core.Codec.Text.Lexer      as C
+import qualified DDC.Core.Simplifier            as C
 
-import qualified DDC.Core.Transform.Reannotate          as CReannotate
-import qualified DDC.Core.Transform.Resolve             as CResolve
-import qualified DDC.Core.Transform.SpreadX             as CSpread
+import qualified DDC.Core.Transform.Reannotate  as CReannotate
+import qualified DDC.Core.Transform.Resolve     as CResolve
+import qualified DDC.Core.Transform.SpreadX     as CSpread
 
 
 ---------------------------------------------------------------------------------------------------
@@ -55,20 +55,20 @@ coreLoad
         -> ConfigCoreLoad               -- ^ Sinked config.
         -> ExceptT [B.Error] IO (C.Module (C.AnTEC SP.SourcePos n) n)
 
-coreLoad !_stage !fragment !mode !srcName !srcLine !str !config 
- = do   
+coreLoad !_stage !fragment !mode !srcName !srcLine !str !config
+ = do
         -- Parse the module.
-        mm_core    <- coreParse fragment srcName srcLine 
+        mm_core    <- coreParse fragment srcName srcLine
                         (configSinkTokens config)
                         str
 
-        liftIO $ B.pipeSink (renderIndent $ ppr mm_core) 
+        liftIO $ B.pipeSink (renderIndent $ ppr mm_core)
                             (configSinkParsed config)
 
         -- Type check the module.
         mm_checked <- coreCheck "CoreLoad" fragment mode
                         (configSinkTrace   config)
-                        (configSinkChecked config)  
+                        (configSinkChecked config)
                         mm_core
 
         return mm_checked
@@ -76,7 +76,7 @@ coreLoad !_stage !fragment !mode !srcName !srcLine !str !config
 
 ---------------------------------------------------------------------------------------------------
 -- | Parse a text file as core code.
-coreParse 
+coreParse
         :: (Ord n, Pretty n, Show n)
         => C.Fragment n err             -- ^ Language fragment.
         -> String                       -- ^ Name of source file.
@@ -86,12 +86,12 @@ coreParse
         -> ExceptT [B.Error] IO (C.Module SP.SourcePos n)
 
 coreParse fragment srcName srcLine sinkTokens str
- = do   
+ = do
         -- Lex the input text into tokens.
         let tokens = C.fragmentLexModule fragment srcName srcLine str
 
         -- Dump tokens to file.
-        liftIO $ B.pipeSink 
+        liftIO $ B.pipeSink
                         (unlines $ map (show . SP.valueOfLocated) $ tokens)
                         sinkTokens
 
@@ -100,7 +100,7 @@ coreParse fragment srcName srcLine sinkTokens str
         let context = C.contextOfProfile profile
 
         -- Parse core module.
-        mm_parsed <- case Parser.runTokenParser 
+        mm_parsed <- case Parser.runTokenParser
                                 C.describeToken srcName (C.pModule context) tokens of
                         Left err -> throwE [B.ErrorLoad err]
                         Right mm -> return mm
@@ -133,13 +133,13 @@ coreCheck !stage !fragment !mode !sinkTrace !sinkChecked !mm
         let profile  = C.fragmentProfile fragment
 
         -- Type check the module with the generic core type checker.
-        mm_checked      
+        mm_checked
          <- case C.checkModule (C.configOfProfile profile) mm mode of
-                (Left err,  C.CheckTrace doc) 
+                (Left err,  C.CheckTrace doc)
                  -> do  liftIO $  B.pipeSink (renderIndent doc) sinkTrace
                         throwE $ [B.ErrorLint stage "PipeCoreCheck/Check" err]
-                        
-                (Right mm', C.CheckTrace doc) 
+
+                (Right mm', C.CheckTrace doc)
                  -> do  liftIO $ B.pipeSink (renderIndent doc)  sinkTrace
                         return mm'
 
@@ -189,20 +189,20 @@ coreResolve
         :: (Ord n, Show n, Pretty n)
         => String                       -- ^ Name of compiler stage.
         -> C.Fragment n arr             -- ^ Language fragment to use.
-        -> IO [(n, C.ImportValue n (C.Type n))]        
+        -> IO [(n, C.ImportValue n (C.Type n))]
                                         -- ^ Top level env from other modules.
         -> C.Module a n
         -> ExceptT [B.Error] IO (C.Module a n)
 
 coreResolve !stage !fragment !makeNtsTop !mm
  = {-# SCC "coreResolve" #-}
-   do   
+   do
         ntsTop  <- liftIO $ makeNtsTop
 
-        res     <- liftIO $ CResolve.resolveModule 
-                        (C.fragmentProfile fragment) 
+        res     <- liftIO $ CResolve.resolveModule
+                        (C.fragmentProfile fragment)
                         ntsTop mm
-                
+
         case res of
          Left  err  -> throwE [B.ErrorLint stage "PipeCoreResolve" err]
          Right mm'  -> return mm'
@@ -221,7 +221,7 @@ coreSimplify
 
 coreSimplify fragment nameZero simpl mm
  = {-# SCC "coreSimplify" #-}
-   do   
+   do
         let profile     = C.fragmentProfile fragment
         let primKindEnv = C.profilePrimKinds      profile
         let primTypeEnv = C.profilePrimTypes      profile
@@ -231,7 +231,7 @@ coreSimplify fragment nameZero simpl mm
 
         let !mm2        = CReannotate.reannotate (const ()) mm'
 
-        -- NOTE: It is helpful to deepseq here so that we release 
+        -- NOTE: It is helpful to deepseq here so that we release
         --       references to the unsimplified version of the code.
         --       Because we've just applied reannotate, we also
         --       release type annotations on the expression tree.

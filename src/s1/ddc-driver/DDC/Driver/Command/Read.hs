@@ -9,7 +9,7 @@ import DDC.Build.Pipeline
 import DDC.Build.Language
 import DDC.Core.Module
 import DDC.Core.Load
-import DDC.Core.Pretty
+import DDC.Core.Codec.Text.Pretty
 import DDC.Data.Canned
 import Control.DeepSeq
 import Control.Monad
@@ -22,7 +22,7 @@ import qualified DDC.Core.Check                 as C
 
 -- Read -----------------------------------------------------------------------
 -- | Load and typecheck a module.
-cmdReadModule 
+cmdReadModule
         :: (Ord n, Show n, Pretty n, Pretty (err (AnTEC BP.SourcePos n)), NFData n)
         => Config               -- ^ Driver config.
         -> Fragment n err       -- ^ Language fragment.
@@ -58,7 +58,7 @@ cmdReadModule_parse printErrors config filePath fragment source src
                 $  PipeTextLoadCore fragment
                         (if configInferTypes config then C.Synth [] else C.Recon)
                         SinkDiscard
-                   [ PipeCoreHacks (Canned (\m -> writeIORef ref (Just m) >> return m)) 
+                   [ PipeCoreHacks (Canned (\m -> writeIORef ref (Just m) >> return m))
                      [PipeCoreOutput pprDefaultMode SinkDiscard] ]
 
         case errs of

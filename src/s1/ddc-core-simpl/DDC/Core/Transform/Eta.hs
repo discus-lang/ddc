@@ -19,7 +19,7 @@ import DDC.Core.Fragment
 import DDC.Core.Transform.BoundX
 import DDC.Core.Transform.BoundT
 import DDC.Core.Simplifier.Result
-import DDC.Core.Pretty
+import DDC.Core.Codec.Text.Pretty
 import DDC.Type.Transform.AnonymizeT
 import Control.Monad.Writer     (Writer, tell, runWriter)
 import Data.Typeable
@@ -46,9 +46,9 @@ configZero
 data Info
         = Info
         { -- | Number of level-1 lambdas added.
-          infoExpandedXLAMs     :: Int 
+          infoExpandedXLAMs     :: Int
 
-          -- | Number of level-0 lambdas added. 
+          -- | Number of level-0 lambdas added.
         , infoExpandedXLams     :: Int }
         deriving Typeable
 
@@ -57,7 +57,7 @@ instance Pretty Info where
  ppr (Info ex1 ex0)
   = text "Eta Transform"
   <$> indent 4 (vcat
-      [ text "level-1 lambdas added:     " <> int ex1 
+      [ text "level-1 lambdas added:     " <> int ex1
       , text "level-0 lambdas added:     " <> int ex0 ])
 
 
@@ -78,7 +78,7 @@ etaModule
         -> TransformResult (Module a n)
 
 etaModule profile config  mm
- = let 
+ = let
         -- Slurp type checker config.
         cconfig = Check.configOfProfile profile
 
@@ -88,10 +88,10 @@ etaModule profile config  mm
                         (profilePrimTypes    profile)
                         (profilePrimDataDefs profile)
                         mm
-        
+
         -- Run the eta transform.
         (mm', info) = runWriter $ etaM config cconfig env mm
-                    
+
         -- Check if any actual work was performed
         progress
          = case info of
@@ -117,7 +117,7 @@ etaX profile config env xx
  = let  cconfig = Check.configOfProfile profile
 
         -- Run the eta transform.
-        (xx', info)     
+        (xx', info)
                 = runWriter
                 $ etaM config cconfig env xx
 
@@ -165,7 +165,7 @@ instance Eta Exp where
         XApp a _ _
          |  configExpand config
          ,  Right tX    <- Check.typeOfExp cconfig env xx
-         -> do  
+         -> do
                 -- Decend into the arguments first.
                 --   We don't need to decend into the function part because
                 --   we're eta-expanding that here.
@@ -189,7 +189,7 @@ instance Eta Exp where
          -> do  lts'            <- down lts
                 let (bs1, bs0)  = bindsOfLets lts
 
-                let env'        = EnvX.extendsT bs1 
+                let env'        = EnvX.extendsT bs1
                                 $ EnvX.extendsX bs0 env
 
                 x2'             <- etaM config cconfig env' x2
@@ -227,7 +227,7 @@ instance Eta Lets where
         LRec bxs
          -> do  let bs    = map fst bxs
                 let env'  = EnvX.extendsX bs env
-                xs'       <- mapM (etaM config cconfig env') 
+                xs'       <- mapM (etaM config cconfig env')
                           $  map snd bxs
                 return    $ LRec (zip bs xs')
 
@@ -238,7 +238,7 @@ instance Eta Lets where
 instance Eta Alt where
  etaM config cconfig env alt
   = case alt of
-        AAlt p x        
+        AAlt p x
          -> do  let bs    = bindsOfPat p
                 let env'  = EnvX.extendsX bs env
                 x'        <- etaM config cconfig env' x
@@ -247,7 +247,7 @@ instance Eta Alt where
 
 -- Expand ---------------------------------------------------------------------
 -- | Eta expand an expression.
-etaExpand 
+etaExpand
         :: Ord n
         => a                    -- ^ Annotation to use for new AST nodes.
         -> Type n               -- ^ Type of the expression.
@@ -277,7 +277,7 @@ expandableArgs tt
 
 -- | Eta-expand an expression.
 etaExpand'
-        :: Ord n 
+        :: Ord n
         => a                -- ^ Annotation to use for the new AST nodes.
         -> Int              -- ^ Number of level-1 lambdas we've added so far.
         -> Int              -- ^ Number of level-0 lambdas we've added so far.
@@ -294,8 +294,8 @@ etaExpand' a levels1 levels0 args [] xx
 
 etaExpand' a levels1 levels0 args ((True, t) : ts) xx
  = do   let depth1 = length $ filter ((== True) . fst) ts
-        xx'     <- etaExpand' a (levels1 + 1) levels0 
-                        (args ++ [RType (TVar (UIx depth1))]) 
+        xx'     <- etaExpand' a (levels1 + 1) levels0
+                        (args ++ [RType (TVar (UIx depth1))])
                         ts
                         xx
 
@@ -304,8 +304,8 @@ etaExpand' a levels1 levels0 args ((True, t) : ts) xx
 
 etaExpand' a levels1 levels0 args ((False, t) : ts) xx
  = do   let depth0 = length $ filter ((== False) . fst) ts
-        xx'     <- etaExpand' a 
-                        levels1 (levels0 + 1) 
+        xx'     <- etaExpand' a
+                        levels1 (levels0 + 1)
                         (args ++ [RTerm (XVar a (UIx depth0))])
                         ts
                         xx

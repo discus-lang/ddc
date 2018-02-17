@@ -7,18 +7,18 @@ module DDC.Source.Discus.Parser.Module
           -- * Top-level things
         , pTop)
 where
-import DDC.Source.Discus.Parser.Exp      as S
-import DDC.Source.Discus.Parser.Base     as S
-import DDC.Source.Discus.Module          as S
-import DDC.Source.Discus.DataDef         as S
-import DDC.Source.Discus.Exp             as S
-import DDC.Core.Lexer.Tokens            as K
+import DDC.Source.Discus.Parser.Exp     as S
+import DDC.Source.Discus.Parser.Base    as S
+import DDC.Source.Discus.Module         as S
+import DDC.Source.Discus.DataDef        as S
+import DDC.Source.Discus.Exp            as S
+import DDC.Core.Codec.Text.Lexer.Tokens as K
 import DDC.Data.Pretty
 import Control.Monad
 import qualified DDC.Control.Parser     as P
 import qualified Data.Text              as Text
 
-import DDC.Core.Parser
+import DDC.Core.Codec.Text.Parser
         ( pModuleName
         , pName)
 

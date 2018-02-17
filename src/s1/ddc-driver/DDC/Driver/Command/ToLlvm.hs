@@ -36,7 +36,7 @@ cmdToLlvmFromFile
         -> ExceptT String IO ()
 
 cmdToLlvmFromFile config store filePath
- 
+
  -- Convert a Disciple Source Tetra module.
  | ".ds"          <- takeExtension filePath
  =      cmdToLlvmSourceTetraFromFile config store filePath
@@ -90,15 +90,14 @@ cmdToLlvmSourceTetraFromString
 
 cmdToLlvmSourceTetraFromString config store source str
  = withExceptT (renderIndent . vcat . map ppr)
- $ do  
-        modLlvm' 
-         <-  DA.saltToLlvm     config source True 
+ $ do
+        modLlvm'
+         <-  DA.saltToLlvm     config source True
          =<< DA.saltSimplify   config source
-         =<< DE.tetraToSalt    config source 
+         =<< DE.tetraToSalt    config source
          =<< DE.sourceLoadText config store  source str
 
         liftIO $ putStrLn (renderIndent $ ppr modLlvm')
- 
 
 
 -------------------------------------------------------------------------------
@@ -144,7 +143,7 @@ cmdToLlvmCoreFromString config language source str
  , fragment             <- bundleFragment  bundle
  , profile              <- fragmentProfile fragment
  = withExceptT (renderIndent . vcat . map ppr)
- $ do   
+ $ do
         let fragName    =  profileName profile
         store           <- liftIO $ Store.new
 

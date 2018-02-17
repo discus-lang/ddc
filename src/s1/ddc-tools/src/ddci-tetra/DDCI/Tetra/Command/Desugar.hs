@@ -9,7 +9,7 @@ import DDC.Source.Discus.Lexer
 import DDC.Source.Discus.Parser
 import DDC.Source.Discus.Pretty          ()
 import DDC.Source.Discus.Transform.Defix
-import qualified DDC.Core.Lexer         as C
+import qualified DDC.Core.Codec.Text.Lexer         as C
 import qualified DDC.Control.Parser     as BP
 
 

@@ -8,8 +8,8 @@ import DDC.Source.Discus.Parser.Type
 import DDC.Source.Discus.Parser.Base
 import DDC.Source.Discus.Exp.Source
 import Control.Monad.Except
-import DDC.Core.Lexer.Tokens            as K
-import qualified DDC.Control.Parser     as P
+import DDC.Core.Codec.Text.Lexer.Tokens         as K
+import qualified DDC.Control.Parser             as P
 
 
 -- | Parse a witness expression.

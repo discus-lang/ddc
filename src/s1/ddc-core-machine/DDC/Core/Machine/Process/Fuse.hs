@@ -12,7 +12,7 @@ import DDC.Core.Exp
 
 import Control.Monad (foldM)
 
-import DDC.Core.Pretty          ()
+import DDC.Core.Codec.Text.Pretty          ()
 import DDC.Data.Pretty (Pretty(..), ppr, text, (<>), vcat, punctuate, hcat, renderIndent)
 
 data FuseError

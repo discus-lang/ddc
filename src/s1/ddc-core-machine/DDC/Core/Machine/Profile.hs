@@ -11,7 +11,7 @@ where
 import DDC.Core.Machine.Prim
 import DDC.Core.Machine.Env
 import DDC.Core.Fragment
-import DDC.Core.Lexer
+import DDC.Core.Codec.Text.Lexer
 import DDC.Type.Exp
 import Control.Monad.State.Strict
 import DDC.Type.Env             (Env)

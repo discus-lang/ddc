@@ -8,16 +8,16 @@ module DDC.Source.Discus.Parser.Type
         , pTyConSP
         , pTyConBound)
 where
-import DDC.Source.Discus.Parser.Base     as S
-import DDC.Source.Discus.Exp.Compounds   as S
-import DDC.Source.Discus.Exp.Source      as S
-import DDC.Source.Discus.Prim.TyConDiscus as S
-import DDC.Core.Lexer.Tokens            as K
-import qualified DDC.Source.Discus.Lexer as SL
+import DDC.Source.Discus.Parser.Base            as S
+import DDC.Source.Discus.Exp.Compounds          as S
+import DDC.Source.Discus.Exp.Source             as S
+import DDC.Source.Discus.Prim.TyConDiscus       as S
+import DDC.Core.Codec.Text.Lexer.Tokens         as K
+import qualified DDC.Source.Discus.Lexer        as SL
 
-import qualified DDC.Core.Discus         as C
-import qualified DDC.Control.Parser     as P
-import qualified Data.Text              as T
+import qualified DDC.Core.Discus                as C
+import qualified DDC.Control.Parser             as P
+import qualified Data.Text                      as T
 
 
 -- | Parse a binder.

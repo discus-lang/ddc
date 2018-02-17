@@ -31,19 +31,19 @@ module DDC.Core.Load
 where
 import DDC.Core.Transform.SpreadX
 import DDC.Core.Fragment.Profile
-import DDC.Core.Lexer.Tokens
+import DDC.Core.Codec.Text.Lexer.Tokens
 import DDC.Core.Check                           (Mode(..), CheckTrace)
 import DDC.Core.Exp
 import DDC.Core.Exp.Annot.AnT                   (AnT)
-import DDC.Type.Transform.SpreadT
-import qualified DDC.Core.Transform.Reannotate  as Reannotate
-import DDC.Type.Universe
 import DDC.Core.Module
-import DDC.Data.Pretty
 import DDC.Core.Fragment                        (Fragment)
+import DDC.Type.Transform.SpreadT
+import DDC.Type.Universe
+import DDC.Data.Pretty
+import qualified DDC.Core.Transform.Reannotate  as Reannotate
 import qualified DDC.Core.Env.EnvX              as EnvX
 import qualified DDC.Core.Fragment              as F
-import qualified DDC.Core.Parser                as C
+import qualified DDC.Core.Codec.Text.Parser     as C
 import qualified DDC.Core.Check                 as C
 import qualified DDC.Control.Parser             as BP
 import qualified Data.Map.Strict                as Map

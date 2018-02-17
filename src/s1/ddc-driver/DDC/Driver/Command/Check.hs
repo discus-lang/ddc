@@ -1,5 +1,5 @@
 module DDC.Driver.Command.Check
-        ( -- * Checking modules. 
+        ( -- * Checking modules.
           cmdCheckFromFile
         , cmdCheckSourceTetraFromFile
         , cmdCheckSourceTetraFromString
@@ -30,11 +30,11 @@ import DDC.Build.Language
 import DDC.Build.Pipeline
 import DDC.Core.Fragment
 import DDC.Core.Load
-import DDC.Core.Parser
-import DDC.Core.Lexer
+import DDC.Core.Codec.Text.Parser
+import DDC.Core.Codec.Text.Lexer
 import DDC.Core.Module
 import DDC.Core.Exp.Annot
-import DDC.Core.Pretty
+import DDC.Core.Codec.Text.Pretty
 import DDC.Type.Transform.SpreadT
 import DDC.Type.Universe
 import DDC.Type.Exp.Simple
@@ -51,7 +51,7 @@ import qualified DDC.Driver.Stage.Tetra         as DE
 
 
 -- Module -----------------------------------------------------------------------------------------
--- | Parse and type-check a core module from a file, 
+-- | Parse and type-check a core module from a file,
 --   printing any errors to @stdout@.
 --
 --   This function handle fragments of Disciple Core, as well as Source Tetra
@@ -65,7 +65,7 @@ cmdCheckFromFile
         -> ExceptT String IO ()
 
 cmdCheckFromFile config store filePath
- 
+
  -- Check a Disciple Source Tetra module.
  | ".ds"       <- takeExtension filePath
  =      cmdCheckSourceTetraFromFile config store filePath
@@ -116,18 +116,18 @@ cmdCheckSourceTetraFromString
 
 cmdCheckSourceTetraFromString config store source str
  = withExceptT (renderIndent . vcat . map ppr)
- $ do   
+ $ do
         let pmode   = prettyModeOfConfig $ configPretty config
 
         modTetra  <- DE.sourceLoadText config store source str
 
         errs      <- liftIO $ pipeCore modTetra
-                  $  PipeCoreOutput pmode SinkDiscard 
+                  $  PipeCoreOutput pmode SinkDiscard
 
         case errs of
          []     -> return ()
          _      -> throwE errs
- 
+
 
 ---------------------------------------------------------------------------------------------------
 -- | Check some fragment of Disciple core from a file.
@@ -141,10 +141,10 @@ cmdCheckCoreFromFile config language filePath
  | Language bundle      <- language
  , fragment             <- bundleFragment bundle
  = do
-        mModule <- liftIO 
-                $ loadModuleFromFile fragment filePath 
+        mModule <- liftIO
+                $ loadModuleFromFile fragment filePath
                 $ (if configInferTypes config then C.Synth [] else C.Recon)
-        
+
         case mModule of
                 (Left  err, _ct) -> throwE (renderIndent $ ppr err)
                 (Right _,   _ct) -> return ()
@@ -160,7 +160,7 @@ cmdCheckCoreFromString
         -> ExceptT String IO (Module (AnTEC BP.SourcePos n) n)
 
 cmdCheckCoreFromString fragment source str mode
- = do   
+ = do
         let mModule = loadModuleFromString fragment
                         (nameOfSource source) (lineStartOfSource source)
                         mode str
@@ -172,7 +172,7 @@ cmdCheckCoreFromString fragment source str mode
 
 -- Type -------------------------------------------------------------------------------------------
 -- | Parse a core spec, and return its kind.
-cmdParseCheckType 
+cmdParseCheckType
         :: (Ord n, Show n, Pretty n, Pretty (err (AnTEC BP.SourcePos n)))
         => Fragment n err       -- ^ Language fragment.
         -> Universe             -- ^ Universe this type is supposed to be in.
@@ -186,7 +186,7 @@ cmdParseCheckType fragment uni source str
         toks    = fragmentLexExp fragment srcName srcLine str
         eTK     = loadTypeFromTokens fragment uni srcName toks
    in   case eTK of
-         Left err       
+         Left err
           -> do outDocLn $ ppr err
                 return Nothing
 
@@ -217,7 +217,7 @@ cmdTypeEquiv language source ss
  , profile              <- fragmentProfile fragment
  = let  srcName = nameOfSource source
         srcLine = lineStartOfSource source
-        
+
         goParse toks
          = case BP.runTokenParser describeToken (nameOfSource source)
                         (do t1 <- pTypeAtom (contextOfProfile profile)
@@ -226,12 +226,12 @@ cmdTypeEquiv language source ss
                         toks
             of Left err -> outDocLn $ text "parse error " <> ppr err
                Right tt -> goEquiv tt
-         
+
         goEquiv (t1, t2)
          = do   b1 <- checkT t1
                 b2 <- checkT t2
-                if b1 && b2 
-                 then outStrLn $ show $ equivT EnvT.empty t1 t2    
+                if b1 && b2
+                 then outStrLn $ show $ equivT EnvT.empty t1 t2
                  else return ()
 
 
@@ -244,14 +244,14 @@ cmdTypeEquiv language source ss
                  -> do  outDocLn $ ppr err
                         return False
 
-                Right{} 
+                Right{}
                  ->     return True
 
    in goParse (fragmentLexExp fragment srcName srcLine ss)
 
 
 -- Exp --------------------------------------------------------------------------------------------
--- | Parse the given core expression, 
+-- | Parse the given core expression,
 --   and return it, along with its type, effect and closure.
 --
 --   If the expression had a parse error, undefined vars, or type error
@@ -262,7 +262,7 @@ cmdTypeEquiv language source ss
 --   support partially applied primitives, we want to accept them if we are
 --   only loading an expression to check its type.
 --
-cmdParseCheckExp 
+cmdParseCheckExp
         :: (Ord n, Show n, Pretty n, Pretty (err (AnTEC BP.SourcePos n)))
         => Fragment n err       -- ^ The current language fragment.
         -> ModuleMap (AnTEC () n) n -- ^ Current modules
@@ -274,9 +274,9 @@ cmdParseCheckExp
         -> IO ( Maybe (Exp (AnTEC BP.SourcePos n) n)
               , Maybe CheckTrace)
 
-cmdParseCheckExp 
-        fragment modules 
-        mode printTrace permitPartialPrims 
+cmdParseCheckExp
+        fragment modules
+        mode printTrace permitPartialPrims
         source str
  = goLex
  where
@@ -286,31 +286,31 @@ cmdParseCheckExp
         features  = profileFeatures profile
 
         -- Allow meta-variables when we're just showing the types of expressions.
-        features' = features { featuresPartialPrims 
+        features' = features { featuresPartialPrims
                              = featuresPartialPrims features || permitPartialPrims
                              , featuresMetaVariables = True }
 
         profile'  = profile  { profileFeatures  = features' }
         fragment' = fragment { fragmentProfile  = profile'  }
 
-        goLex 
+        goLex
          = goLoad (fragmentLexExp fragment'
-                        (nameOfSource source) 
-                        (lineStartOfSource source) 
+                        (nameOfSource source)
+                        (lineStartOfSource source)
                         str)
 
         -- Parse and type check the expression.
         goLoad toks
-         = case loadExpFromTokens fragment' modules 
+         = case loadExpFromTokens fragment' modules
                         (nameOfSource source) mode toks of
               (Left err, mct)
                -> do    outDocLn $ ppr err
-                        
+
                         case mct of
-                         Just ct 
+                         Just ct
                           | printTrace  -> outDocLn $ ppr ct
                          _              -> return ()
-                        
+
                         return (Nothing, mct)
 
               (Right result, mct)
@@ -341,7 +341,7 @@ cmdShowSpec language showMode checkMode shouldPrintTrace source ss
  | Language bundle      <- language
  , fragment             <- bundleFragment  bundle
  , modules              <- bundleModules   bundle
- =   cmdParseCheckExp fragment modules mode shouldPrintTrace True source ss 
+ =   cmdParseCheckExp fragment modules mode shouldPrintTrace True source ss
  >>= goResult fragment
  where
         -- Determine the checker mode based on the flag we're given.
@@ -362,20 +362,20 @@ cmdShowSpec language showMode checkMode shouldPrintTrace source ss
                 ShowSpecAll
                  -> do  outDocLn $ ppr x
                         outDocLn $ text ":*:" <+> ppr t
-                        
+
                         when (featuresTrackedEffects  features)
                          $ outDocLn $ text ":!:" <+> ppr eff
 
                         when (featuresTrackedClosures features)
                          $ outDocLn $ text ":$:" <+> ppr clo
 
-                        when shouldPrintTrace 
+                        when shouldPrintTrace
                          $ do   outDocLn $ checkTraceDoc ct
                                 outDoc (text "\n")
 
                 ShowSpecData
                  ->     outDocLn $ ppr x <+> text "::" <+> ppr t
-        
+
                 ShowSpecEffect
                  ->     outDocLn $ ppr x <+> text ":!:" <+> ppr eff
 
@@ -393,7 +393,7 @@ cmdExpRecon language source ss
  | Language bundle      <- language
  , fragment             <- bundleFragment  bundle
  , modules              <- bundleModules   bundle
- =   cmdParseCheckExp fragment modules Recon False True source ss 
+ =   cmdParseCheckExp fragment modules Recon False True source ss
  >>= goResult
  where
         goResult (Nothing, _ct)

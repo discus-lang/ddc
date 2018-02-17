@@ -33,13 +33,13 @@ module DDC.Core.Machine.Prim
         )
 
 where
-import DDC.Core.Lexer.Tokens            (isVarStart)
+import DDC.Core.Codec.Text.Lexer.Tokens            (isVarStart)
 import DDC.Type.Exp.Simple.Exp
 import DDC.Type.Exp.Simple.Compounds
 import DDC.Data.Name
 import DDC.Data.Pretty
 import Control.DeepSeq
-import Data.Char        
+import Data.Char
 import Data.List
 import Data.Typeable
 
@@ -113,7 +113,7 @@ data TyConMachine
 -- | Primitive data constructors.
 data DaConMachine
         -- | @TN@ data constructor.
-        = DaConTuple Int            
+        = DaConTuple Int
         deriving (Eq, Ord, Show)
 
 
@@ -208,9 +208,9 @@ instance Pretty OpMachine where
 
 
 instance CompoundName Name where
- extendName n str       
+ extendName n str
   = NameVarMod n str
- 
+
  splitName nn
   = case nn of
         NameVarMod n str   -> Just (n, str)
@@ -233,7 +233,7 @@ readName str
         = Just $ NameVarMod n strMod
 
         | c : _         <- str
-        , isVarStart c      
+        , isVarStart c
         = Just $ NameVar str
 
         -- Constructors.
@@ -348,7 +348,7 @@ typeOpMachine op
         --     -> Stream in_0 .. -> Stream in_i
         --     -> Stream out_0 .. * Stream out_o
         OpStream inputs outputs
-         -> tForalls (replicate (outputs + inputs) kData) 
+         -> tForalls (replicate (outputs + inputs) kData)
          $ \_
          -> let sources = [TVar (UIx i) | i <- reverse [outputs..outputs + inputs-1]]
                 sinks   = [TVar (UIx i) | i <- reverse [0..outputs-1]]
@@ -365,7 +365,7 @@ typeOpMachine op
         --     -> Sink out_0 .. -> Sink out_o
         --     -> Process
         OpProcess inputs outputs
-         -> tForalls (replicate (outputs + inputs) kData) 
+         -> tForalls (replicate (outputs + inputs) kData)
          $ \_
          -> let sources = [TVar (UIx i) | i <- reverse [outputs..outputs + inputs-1]]
                 sinks   = [TVar (UIx i) | i <- reverse [0..outputs-1]]
@@ -376,18 +376,18 @@ typeOpMachine op
 
 
         -- pull# : [a : Data]. Source a -> (a -> Process) -> Process
-        OpPull 
-         -> tForall kData $ \tA 
+        OpPull
+         -> tForall kData $ \tA
          -> tSource tA `tFun` (tA `tFun` tProcess) `tFun` tProcess
 
         -- push# : [a : Data]. Sink a -> a -> Process -> Process
-        OpPush 
-         -> tForall kData $ \tA 
+        OpPush
+         -> tForall kData $ \tA
          -> tSink tA `tFun` tA `tFun` tProcess `tFun` tProcess
 
         -- drop# : [a : Data]. Source a -> Process -> Process
-        OpDrop 
-         -> tForall kData $ \tA 
+        OpDrop
+         -> tForall kData $ \tA
          -> tSource tA `tFun` tProcess `tFun` tProcess
 
 
