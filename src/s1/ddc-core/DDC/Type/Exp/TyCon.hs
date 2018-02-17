@@ -59,7 +59,7 @@ data TwCon
 
         -- | Distinctness of some n regions
         | TwConDistinct Int     -- :: Data    -> [Region] -> Witness
-        
+
         -- | Non-interfering effects are disjoint. Used for rewrite rules.
         | TwConDisjoint         -- :: Effect  -> Effect   -> Witness
         deriving (Eq, Ord, Show)
@@ -93,13 +93,13 @@ data TcCon
 
         -- | Read of all material regions in a data type.
         | TcConDeepRead         -- DeepRead  :: 'Data   -> Effect'
-        
+
         -- | Write of some region.
         | TcConWrite            -- Write     :: 'Region -> Effect'
 
         -- | Write to all material regions in some data type.
         | TcConDeepWrite        -- DeepWrite :: 'Data   -> Effect'
-        
+
         -- | Allocation into some region.
         | TcConAlloc            -- Alloc     :: 'Region -> Effect'
 

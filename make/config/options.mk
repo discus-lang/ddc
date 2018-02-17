@@ -91,7 +91,8 @@ DDC_PACKAGES	:= \
         -package wl-pprint \
         -package buildbox \
         -package haskeline \
-        -package inchworm
+        -package inchworm \
+        -package shimmer
 
 ifeq "$(DDC_FLOW_USE_LINEAR_SOLVER)" "1"
 DDC_PACKAGES	:= $(DDC_PACKAGES) \
