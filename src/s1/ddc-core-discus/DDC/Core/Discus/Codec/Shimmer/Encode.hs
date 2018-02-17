@@ -17,9 +17,9 @@ type SExp = S.Exp Text S.Prim
 takeName :: D.Name -> SExp
 takeName nn
  = case nn of
-        D.NameVar s     -> xAps  "ds-var" [xText $ T.pack s]
-        D.NameCon s     -> xAps  "ds-con" [xText $ T.pack s]
-        D.NameExt n s   -> xAps  "ds-ext" [takeName n, xText $ T.pack s]
+        D.NameVar s     -> xAps  "Dv" [xText $ T.pack s]
+        D.NameCon s     -> xAps  "Dc" [xText $ T.pack s]
+        D.NameExt n s   -> xAps  "De" [takeName n, xText $ T.pack s]
         _               -> xText "todo"
 
 

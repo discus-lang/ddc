@@ -26,15 +26,16 @@ import Control.Monad.IO.Class
 import Control.DeepSeq
 import System.FilePath
 import System.Directory
-import DDC.Build.Interface.Store                (Store)
-import qualified Data.Map                       as Map
-import qualified DDC.Core.Check                 as C
-import qualified DDC.Build.Language.Discus      as Tetra
-import qualified DDC.Build.Spec.Parser          as Spec
-import qualified DDC.Build.Interface.Load       as Interface
-import qualified DDC.Core.Discus                as Tetra
-import qualified DDC.Driver.Stage.Tetra         as DE
-
+import DDC.Build.Interface.Store                        (Store)
+import qualified Data.Map                               as Map
+import qualified DDC.Core.Check                         as C
+import qualified DDC.Build.Language.Discus              as Tetra
+import qualified DDC.Build.Spec.Parser                  as Spec
+import qualified DDC.Build.Interface.Load               as Interface
+import qualified DDC.Core.Discus                        as Tetra
+import qualified DDC.Driver.Stage.Tetra                 as DE
+import qualified Data.Text                              as T
+import qualified DDC.Build.Interface.Codec.Text.Encode  as Interface
 
 ---------------------------------------------------------------------------------------------------
 -- | Load and transform source code, interface, or build file.
@@ -76,7 +77,7 @@ cmdLoadFromFile config store mStrSimpl fsTemplates filePath
         timeDI  <- liftIO $ getModificationTime filePath
         case Interface.loadInterface filePath timeDI str of
          Left err        -> throwE $ renderIndent $ ppr err
-         Right interface -> liftIO $ putStrLn $ renderIndent $ ppr interface
+         Right interface -> liftIO $ putStrLn $ T.unpack $ Interface.encodeInterface interface
 
  -- Load a Disciple Source Tetra module.
  | ".ds"        <- takeExtension filePath

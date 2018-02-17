@@ -31,12 +31,14 @@ import qualified DDC.Core.Module                as C
 import qualified DDC.Control.Parser             as BP
 import qualified DDC.Version                    as Version
 import qualified Data.List                      as List
+import qualified Data.Text                      as T
 
-import qualified DDC.Core.Transform.Reannotate  as CReannotate
+import qualified DDC.Core.Transform.Reannotate                  as CReannotate
 
-import DDC.Build.Interface.Codec.Text.Encode    ()
-import DDC.Build.Interface.Store                (Store)
-import qualified DDC.Build.Interface.Store      as Store
+import DDC.Build.Interface.Store                                (Store)
+import qualified DDC.Build.Interface.Codec.Text.Encode          as IntText
+import qualified DDC.Build.Interface.Codec.Shimmer.Store        as IntShimmer
+import qualified DDC.Build.Interface.Store                      as Store
 
 
 ---------------------------------------------------------------------------------------------------
@@ -321,6 +323,7 @@ cmdCompile config bBuildExe' store filePath
         -- Determine directory for build products.
         let (pathO, _)  = objectPathsOfConfig config filePath
         let pathDI      = replaceExtension pathO ".di"
+        let pathSMS     = replaceExtension pathO ".sms"
         liftIO $ createDirectoryIfMissing True (takeDirectory pathO)
 
 
@@ -387,7 +390,9 @@ cmdCompile config bBuildExe' store filePath
                 , interfaceSaltModule   = Just modSalt  }
 
         liftIO  $ writeFile pathDI
-                $ P.renderIndent $ P.ppr int
+                $ T.unpack $ IntText.encodeInterface int
+
+        liftIO  $ IntShimmer.storeInterface pathSMS int
 
         -- Add the new interface to the store.
         liftIO $ Store.wrap store int

@@ -13,6 +13,7 @@
 *.ddc.h
 *.dep
 *.bin
+*.sms
 Main
 .DS_Store
 _darcs

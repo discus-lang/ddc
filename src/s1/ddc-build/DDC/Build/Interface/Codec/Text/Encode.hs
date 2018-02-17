@@ -1,14 +1,19 @@
 
-module DDC.Build.Interface.Codec.Text.Encode where
+module DDC.Build.Interface.Codec.Text.Encode
+        (encodeInterface)
+where
 import DDC.Build.Interface.Base
 import DDC.Core.Codec.Text.Pretty
 import DDC.Core.Exp.Annot
 import DDC.Core.Module
+import qualified Data.Text      as T
 
 
-instance Pretty (Interface ta sa) where
- ppr i
-  =     (text "ddc interface" <+> text (interfaceVersion i))
+-- | Encode a module interface as a human readable text string.
+encodeInterface :: Interface ta sa -> T.Text
+encodeInterface i
+  = T.pack $ renderIndent
+  $ (text "ddc interface" <+> text (interfaceVersion i))
          <> line <> line
          <> vcat [ text $ makeInterfaceTearLine "Meta"
                  , text "module-meta"   <+> lbrace <> line
