@@ -5,7 +5,7 @@ where
 import DDC.Build.Interface.Base
 import Data.Text                                        (Text)
 
-import qualified DDC.Core.Discus.Codec.Shimmer.Encode   as Discus
+import qualified DDC.Core.Discus.Codec.Shimmer.Encode   as Discus.Encode
 import qualified DDC.Core.Codec.Shimmer.Encode          as Core
 
 import qualified SMR.Codec.Size                         as Shimmer
@@ -34,10 +34,16 @@ storeInterface pathDst int
 
 takeInterfaceDecls :: Interface ta sa -> [SDecl]
 takeInterfaceDecls int
- = case interfaceDiscusModule int of
-        Nothing -> []
-        Just m  -> Core.takeModuleDecls Discus.takeName m
+ | Just m       <- interfaceDiscusModule int
+ = Core.takeModuleDecls
+        (Core.Config
+        { Core.configTakeRef     = Discus.Encode.takeName
+        , Core.configTakeVarName = Discus.Encode.takeVarName
+        , Core.configTakeConName = Discus.Encode.takeConName })
+        m
 
+ | otherwise
+ = []
 
  -- Base -------------------------------------------------------------------------------------------
 type SDecl = Shimmer.Decl Text Shimmer.Prim

@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module DDC.Core.Codec.Shimmer.Encode
-        ( takeModuleDecls
+        ( Config (..)
+        , takeModuleDecls
         , takeModuleName
         , takeExportSource
         , takeExp,   takeParam,   takeArg,  takePrim
@@ -19,31 +20,37 @@ import qualified SMR.Prim.Op.Base               as S
 import qualified DDC.Type.Sum                   as Sum
 import qualified Data.Text                      as T
 import Data.Text                                (Text)
-
+import Data.Monoid
 
 ---------------------------------------------------------------------------------------------------
 type SExp  = S.Exp  Text S.Prim
 type SDecl = S.Decl Text S.Prim
 
--- TODO: pack vars into text as may use special chars.
--- the permitted Core chars are not the same as permitted Shimmer chars.
+
+data Config n
+        = Config
+        { configTakeRef         :: n -> SExp
+        , configTakeVarName     :: n -> Maybe Text
+        , configTakeConName     :: n -> Maybe Text }
+
 
 -- Module -----------------------------------------------------------------------------------------
-takeModuleDecls :: (n -> SExp) -> C.Module a n -> [SDecl]
-takeModuleDecls takeRef mm@C.ModuleCore{}
+takeModuleDecls :: Config n -> C.Module a n -> [SDecl]
+takeModuleDecls c mm@C.ModuleCore{}
  = declsTop
  where
         declsTop
          | C.XLet _ (C.LRec bxs) _ <-  C.moduleBody mm
-         = map takeDeclTop bxs
+         = concatMap takeDeclTop bxs
 
          | otherwise
          = error "takeModuleDecls: ill-formed module"
 
-        takeDeclTop (C.BName n _, x)    -- TODO: pass through type.
-         = case takeRef n of
-                S.XApp _ [S.XRef (S.RSym tx)]
-                  -> S.DeclMac tx (takeExp takeRef x)
+        takeDeclTop (C.BName n t, x)
+         = case configTakeRef c n of
+                S.XApp _ [S.XRef (S.RTxt tx)]
+                  -> [ S.DeclMac (T.pack "t-" <> tx) (takeType c t)
+                     , S.DeclMac (T.pack "x-" <> tx) (takeExp c x)  ]
 
                 s -> error $ "takeDeclTop: unexpected takeRef " ++ show s
 
@@ -74,62 +81,64 @@ takeModuleName (C.ModuleName parts)
 
 
 -- ExportSource------------------------------------------------------------------------------------
-takeExportSource :: (n -> SExp) -> C.ExportSource n (C.Type n) -> SExp
-takeExportSource takeRef es
+takeExportSource :: Config n -> C.ExportSource n (C.Type n) -> SExp
+takeExportSource c es
  = case es of
         C.ExportSourceLocal n t
-         -> xAps "exsrc-local" [takeRef n, takeType takeRef t]
+         -> let Just tx = configTakeVarName c n
+            in  xAps "exsrc-local" [S.XRef (S.RTxt tx), takeType c t]
 
         C.ExportSourceLocalNoType n
-         -> xAps "exsrc-notyp" [takeRef n]
+         -> let Just tx = configTakeVarName c n
+            in  xAps "exsrc-notyp" [S.XRef (S.RTxt tx)]
 
 
 -- Exp --------------------------------------------------------------------------------------------
-takeExp :: (n -> SExp) -> C.Exp a n -> SExp
-takeExp takeRef xx
+takeExp :: Config n -> C.Exp a n -> SExp
+takeExp c xx
  = case xx of
         C.XPrim _ p     -> takePrim p
-        C.XCon  _ dc    -> takeDaCon takeRef dc
-        C.XVar  _ u     -> takeBound takeRef u
+        C.XCon  _ dc    -> takeDaCon c dc
+        C.XVar  _ u     -> takeBound c u
 
         C.XAbs{}
          -> let go acc (C.XAbs _ m     x)
                  = go (m : acc) x
                 go acc x
-                 = xAps "xb" [ xList (map (takeParam takeRef) (reverse acc))
-                             , takeExp takeRef x ]
+                 = xAps "xb" [ xList (map (takeParam c) (reverse acc))
+                             , takeExp c x ]
             in  go [] xx
 
         C.XApp{}
          -> let Just (x1, as) = C.takeXApps xx
-            in  xAps "xa" (takeExp   takeRef x1 : map (takeArg takeRef) as)
+            in  xAps "xa" (takeExp   c x1 : map (takeArg c) as)
 
         -- TODO: pack lets into here
-        C.XLet  _ lts x -> xAps "xl" [takeLets  takeRef lts, takeExp takeRef x]
+        C.XLet  _ lts x -> xAps "xl" [takeLets c lts, takeExp c x]
 
-        C.XCase _ x as  -> xAps "xc" (takeExp   takeRef x : map (takeAlt takeRef) as)
+        C.XCase _ x as  -> xAps "xc" (takeExp  c x : map (takeAlt c) as)
 
         -- TODO: unpack cast into this.
-        C.XCast _ c x   -> xAps "xt" [takeCast  takeRef c,  takeExp takeRef x]
+        C.XCast _ ca x  -> xAps "xt" [takeCast c ca,  takeExp c x]
 
 
 -- Param ------------------------------------------------------------------------------------------
-takeParam :: (n -> SExp) -> C.Param n -> SExp
-takeParam takeRef mm
+takeParam :: Config n -> C.Param n -> SExp
+takeParam c mm
  = case mm of
-        C.MType b       -> xAps "xmt" [takeBind takeRef b]
-        C.MTerm b       -> xAps "xmm" [takeBind takeRef b]
-        C.MImplicit b   -> xAps "xmi" [takeBind takeRef b]
+        C.MType b       -> xAps "xmt" [takeBind c b]
+        C.MTerm b       -> xAps "xmm" [takeBind c b]
+        C.MImplicit b   -> xAps "xmi" [takeBind c b]
 
 
 -- Arg --------------------------------------------------------------------------------------------
-takeArg :: (n -> SExp) -> C.Arg a n -> SExp
-takeArg takeRef rr
+takeArg :: Config n -> C.Arg a n -> SExp
+takeArg c rr
  = case rr of
-        C.RType t       -> takeType    takeRef t
-        C.RTerm x       -> takeExp     takeRef x
-        C.RWitness w    -> takeWitness takeRef w
-        C.RImplicit r'  -> xAps "xri" [takeArg     takeRef r']
+        C.RType t       -> takeType    c t
+        C.RTerm x       -> takeExp     c x
+        C.RWitness w    -> takeWitness c w
+        C.RImplicit r'  -> xAps "xri" [takeArg c r']
 
 
 -- Prim -------------------------------------------------------------------------------------------
@@ -143,180 +152,191 @@ takePrim pp
 
 
 -- Lets -------------------------------------------------------------------------------------------
-takeLets :: (n -> SExp) -> C.Lets a n -> SExp
-takeLets takeRef lts
+takeLets :: Config n -> C.Lets a n -> SExp
+takeLets c lts
  = case lts of
         C.LLet b x
-         -> xAps "xll" [takeBind takeRef b, takeExp takeRef x]
+         -> xAps "xll" [takeBind c b, takeExp c x]
 
         C.LRec bxs
-         -> xAps "xlr" [ xPair (takeBind takeRef n) (takeExp takeRef x) | (n, x) <- bxs]
+         -> xAps "xlr" [ xPair (takeBind c n) (takeExp c x) | (n, x) <- bxs]
 
         C.LPrivate bsRgn mt bsWit
          -> xAps "xlp"
-                 [ xList (map (takeBind takeRef) bsRgn)
+                 [ xList (map (takeBind c) bsRgn)
                  , case mt of
-                        Nothing -> xSym "none"
-                        Just t  -> xAps "some" [takeType takeRef t]
-                 , xList (map (takeBind takeRef) bsWit) ]
+                        Nothing -> xSym "n"
+                        Just t  -> xAps "s" [takeType c t]
+                 , xList (map (takeBind c) bsWit) ]
 
 
 -- Alt --------------------------------------------------------------------------------------------
-takeAlt :: (n -> SExp) -> C.Alt a n -> SExp
-takeAlt takeRef aa
+takeAlt :: Config n -> C.Alt a n -> SExp
+takeAlt c aa
  = case aa of
-        C.AAlt p x      -> xAps "xaa" [takePat takeRef p, takeExp takeRef x]
+        C.AAlt p x      -> xAps "xaa" [takePat c p, takeExp c x]
 
 
 -- Pat --------------------------------------------------------------------------------------------
-takePat :: (n -> SExp) -> C.Pat n -> SExp
-takePat takeRef pp
+takePat :: Config n -> C.Pat n -> SExp
+takePat c pp
  = case pp of
-        C.PDefault       -> xSym "xae"
+        C.PDefault      -> xSym "xae"
 
         -- TODO: replicate takeDaCon into this.
-        C.PData dc bs    -> xAps "xad" (takeDaCon takeRef dc : map (takeBind takeRef) bs)
+        C.PData dc bs   -> xAps "xad" (takeDaCon c dc : map (takeBind c) bs)
 
 
 -- DaCon ------------------------------------------------------------------------------------------
-takeDaCon :: (n -> SExp) -> C.DaCon n (C.Type n) -> SExp
-takeDaCon takeRef dc
+takeDaCon :: Config n -> C.DaCon n (C.Type n) -> SExp
+takeDaCon c dc
  = case dc of
         C.DaConUnit      -> xSym "xcu"
         C.DaConRecord fs -> xAps "xcr" (map xSym fs)
-        C.DaConPrim n t  -> xAps "xcp" [takeRef n, takeType takeRef t]
-        C.DaConBound n   -> xAps "xcb" [takeRef n]
+        C.DaConPrim n t  -> xAps "xcp" [configTakeRef c n, takeType c t]
+        C.DaConBound n   -> xAps "xcb" [configTakeRef c n]
 
 
 -- Cast -------------------------------------------------------------------------------------------
-takeCast :: (n -> SExp) -> C.Cast a n -> SExp
-takeCast takeRef cc
+takeCast :: Config n -> C.Cast a n -> SExp
+takeCast c cc
  = case cc of
         C.CastWeakenEffect eff
-                        -> xAps "xtw" [takeType takeRef eff]
-        C.CastPurify w  -> xAps "xtp" [takeWitness takeRef w]
+                        -> xAps "xtw" [takeType c eff]
+        C.CastPurify w  -> xAps "xtp" [takeWitness c w]
         C.CastBox       -> xSym "xtb"
         C.CastRun       -> xSym "xtr"
 
 
 -- Witness ----------------------------------------------------------------------------------------
-takeWitness :: (n -> SExp) -> C.Witness a n -> SExp
-takeWitness takeRef ww
+takeWitness :: Config n -> C.Witness a n -> SExp
+takeWitness c ww
  = case ww of
-        C.WVar _ u      -> xAps "wv" [takeBound takeRef u]
-        C.WCon _ wc     -> xAps "wc" [takeWiCon takeRef wc]
-        C.WApp _ w1 w2  -> xAps "wa" [takeWitness takeRef w1, takeWitness takeRef w2]
-        C.WType _ t     -> xAps "wt" [takeType  takeRef t]
+        C.WVar _ u      -> xAps "wv" [takeBound c u]
+        C.WCon _ wc     -> xAps "wc" [takeWiCon c wc]
+        C.WApp _ w1 w2  -> xAps "wa" [takeWitness c w1, takeWitness c w2]
+        C.WType _ t     -> xAps "wt" [takeType  c t]
 
 
 -- WiCon ------------------------------------------------------------------------------------------
-takeWiCon :: (n -> SExp) -> C.WiCon n -> SExp
-takeWiCon takeRef wc
+takeWiCon :: Config n -> C.WiCon n -> SExp
+takeWiCon c wc
  = case wc of
-        C.WiConBound b _ -> xApp (xSym "wb") [takeBound takeRef b]
+        C.WiConBound b _ -> xApp (xSym "wb") [takeBound c b]
 
 
 -- Type -------------------------------------------------------------------------------------------
-takeType :: (n -> SExp) -> C.Type n -> SExp
-takeType takeRef tt
+takeType :: Config n -> C.Type n -> SExp
+takeType c tt
  = case tt of
-        C.TCon tc       -> takeTyCon takeRef tc
-        C.TVar u        -> takeBound takeRef u
-        C.TAbs b t      -> xAps "tb" [takeBind  takeRef b, takeType takeRef t]
+        C.TCon tc       -> takeTyCon c tc
+        C.TVar u        -> takeBound c u
+        C.TAbs b t      -> xAps "tb" [takeBind  c b, takeType c t]
 
         C.TApp {}
          | ts <- C.takeTApps tt
-         -> xAps "ta" (map (takeType takeRef) ts)
+         -> xAps "ta" (map (takeType c) ts)
 
-        C.TForall b t   -> xAps "tl" [takeBind  takeRef b, takeType takeRef t]
+        C.TForall b t   -> xAps "tl" [takeBind c b, takeType c t]
 
         C.TSum ts
          -> case Sum.toList ts of
                 []      -> xSym "ts"
-                ts'     -> xAps "ts" (map (takeType takeRef) ts')
+                ts'     -> xAps "ts" (map (takeType c) ts')
 
 
 -- Bind -------------------------------------------------------------------------------------------
-takeBind  :: (n -> SExp) -> C.Bind n -> SExp
-takeBind takeRef bb
+takeBind  :: Config n -> C.Bind n -> SExp
+takeBind c bb
  = case bb of
-        C.BNone t       -> xAps "bo" [takeType takeRef t]
-        C.BAnon t       -> xAps "ba" [takeType takeRef t]
-        C.BName n t     -> xAps "bn" [takeRef n, takeType takeRef t]
+        C.BNone t       -> xAps "bo" [takeType c t]
+        C.BAnon t       -> xAps "ba" [takeType c t]
+
+        C.BName n t
+         -> let Just tx = configTakeVarName c n
+            in  xAps "bn" [xTxt tx, takeType c t]
 
 
 -- Bound ------------------------------------------------------------------------------------------
-takeBound :: (n -> SExp) -> C.Bound n -> SExp
-takeBound takeRef uu
+takeBound :: Config n -> C.Bound n -> SExp
+takeBound c uu
  = case uu of
         C.UIx i         -> xNat i
-        C.UName n       -> takeRef n
-        C.UPrim n _t    -> xAps "up" [takeRef n]
+
+        C.UName n
+         | Just tx   <- configTakeVarName c n -> xTxt tx
+         | Just tx   <- configTakeConName c n -> xTxt tx
+         | otherwise -> configTakeRef c n
+
+        C.UPrim n _t    -> xAps "up" [configTakeRef c n]
 
 
 -- TyCon ------------------------------------------------------------------------------------------
-takeTyCon :: (n -> SExp) -> C.TyCon n -> SExp
-takeTyCon takeRef tc
+takeTyCon :: Config n -> C.TyCon n -> SExp
+takeTyCon c tc
  = case tc of
-        C.TyConSort    c        -> takeSoCon c
-        C.TyConKind    c        -> takeKiCon c
-        C.TyConWitness c        -> takeTwCon c
-        C.TyConSpec    c        -> takeTcCon c
-        C.TyConBound   u _k     -> xApp (xSym "tc") [takeBound takeRef u]
-        C.TyConExists  i k      -> xApp (xSym "ty") [xNat i, takeType takeRef k]
+        C.TyConSort    cn       -> takeSoCon cn
+        C.TyConKind    cn       -> takeKiCon cn
+        C.TyConWitness cn       -> takeTwCon cn
+        C.TyConSpec    cn       -> takeTcCon cn
+        C.TyConBound   u _k     -> xApp (xSym "tc") [takeBound c u]
+        C.TyConExists  i k      -> xApp (xSym "ty") [xNat i, takeType c k]
 
 
 takeSoCon :: C.SoCon -> SExp
 takeSoCon c
  = case c of
-        C.SoConProp             -> xSym "TP"
-        C.SoConComp             -> xSym "TO"
+        C.SoConProp             -> xSym "tsp"
+        C.SoConComp             -> xSym "tsc"
 
 
 takeKiCon :: C.KiCon -> SExp
 takeKiCon c
  = case c of
-        C.KiConFun              -> xSym "TF"
-        C.KiConWitness          -> xSym "TW"
-        C.KiConData             -> xSym "TD"
-        C.KiConRegion           -> xSym "TR"
-        C.KiConEffect           -> xSym "TE"
-        C.KiConClosure          -> xSym "TC"
+        C.KiConFun              -> xSym "tkf"
+        C.KiConWitness          -> xSym "tkw"
+        C.KiConData             -> xSym "tkd"
+        C.KiConRegion           -> xSym "tkr"
+        C.KiConEffect           -> xSym "tke"
+        C.KiConClosure          -> xSym "tkc"
 
 
 takeTwCon :: C.TwCon -> SExp
 takeTwCon c
  = case c of
-        C.TwConImpl             -> xSym "Tl"
-        C.TwConPure             -> xSym "Tp"
-        C.TwConConst            -> xSym "Tc"
-        C.TwConDeepConst        -> xSym "Td"
-        C.TwConMutable          -> xSym "Tm"
-        C.TwConDeepMutable      -> xSym "Tv"
-        C.TwConDistinct n       -> xAps "Tt" [xNat n]
-        C.TwConDisjoint         -> xSym "Tj"
+        C.TwConImpl             -> xSym "twl"
+        C.TwConPure             -> xSym "twp"
+        C.TwConConst            -> xSym "twc"
+        C.TwConDeepConst        -> xSym "twd"
+        C.TwConMutable          -> xSym "twm"
+        C.TwConDeepMutable      -> xSym "twv"
+        C.TwConDistinct n       -> xAps "twt" [xNat n]
+        C.TwConDisjoint         -> xSym "twj"
 
 
 takeTcCon :: C.TcCon -> SExp
 takeTcCon c
  = case c of
-        C.TcConUnit             -> xSym "Tu"
-        C.TcConFunExplicit      -> xSym "Tx"
-        C.TcConFunImplicit      -> xSym "Ti"
-        C.TcConSusp             -> xSym "Ts"
-        C.TcConRecord ts        -> xAps "To" (map xSym ts)
-        C.TcConRead             -> xSym "Tr"
-        C.TcConHeadRead         -> xSym "Th"
-        C.TcConDeepRead         -> xSym "Te"
-        C.TcConWrite            -> xSym "Tw"
-        C.TcConDeepWrite        -> xSym "Tq"
-        C.TcConAlloc            -> xSym "Ta"
-        C.TcConDeepAlloc        -> xSym "Tb"
+        C.TcConUnit             -> xSym "tcu"
+        C.TcConFunExplicit      -> xSym "tcf"
+        C.TcConFunImplicit      -> xSym "tci"
+        C.TcConSusp             -> xSym "tcs"
+        C.TcConRecord ts        -> xAps "tco" (map xSym ts)
+        C.TcConRead             -> xSym "tcr"
+        C.TcConHeadRead         -> xSym "tch"
+        C.TcConDeepRead         -> xSym "tce"
+        C.TcConWrite            -> xSym "tcw"
+        C.TcConDeepWrite        -> xSym "tcq"
+        C.TcConAlloc            -> xSym "tca"
+        C.TcConDeepAlloc        -> xSym "tcb"
 
 
 -- Base -------------------------------------------------------------------------------------------
 xSym :: Text -> SExp
 xSym tx = S.XRef (S.RSym tx)
+
+xTxt :: Text -> SExp
+xTxt tx = S.XRef (S.RTxt tx)
 
 xApp :: SExp -> [SExp] -> SExp
 xApp x1 xs = S.XApp x1 xs
