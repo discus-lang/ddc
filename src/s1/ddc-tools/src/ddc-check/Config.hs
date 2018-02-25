@@ -13,7 +13,7 @@ data Config
           configSourceFile      :: Maybe String
 
           -- | Language fragment to check.
-        , configLanguage        :: Language 
+        , configLanguage        :: Language
 
           -- | If true then don't print checked source file to stdout.
         , configQuiet           :: Bool }
@@ -30,7 +30,7 @@ defaultConfig
 
 -- | Parse command line arguments.
 parseArgs :: [String] -> Config -> IO Config
-parseArgs [] config     
+parseArgs [] config
         = return config
 
 parseArgs args@(arg : more) config
@@ -60,7 +60,7 @@ parseArgs args@(arg : more) config
             $  config { configSourceFile   = Just fileName
                       , configLanguage     = language }
 
-           Nothing 
+           Nothing
             ->  error $ "unrecognised extension " ++ show extension
 
         | otherwise
@@ -70,9 +70,9 @@ parseArgs args@(arg : more) config
 
 -- | Command line usage information.
 usage :: String
-usage 
+usage
         = unlines
-        [ "Disciplined Disciple Compiler type checker."
+        [ "Disco Discus Compiler type checker."
         , ""
         , " Usage:"
         , "  ddc-check [flags]           Read input from stdin."
