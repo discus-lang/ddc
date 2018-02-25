@@ -1,4 +1,4 @@
-# The Disciplined Discus Compiler [![Build Status](https://travis-ci.org/discus-lang/ddc.svg?branch=master)](https://travis-ci.org/discus-lang/ddc)
+# The Disco Discus Compiler [![Build Status](https://travis-ci.org/discus-lang/ddc.svg?branch=master)](https://travis-ci.org/discus-lang/ddc)
 
 The Discus language is an experimental dialect of Haskell which investigates
 static typing and program transformation in the presence of computational effects.
