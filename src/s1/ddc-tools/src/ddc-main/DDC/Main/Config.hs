@@ -11,7 +11,6 @@ module DDC.Main.Config
         , getDefaultConfig
         , defaultBuilderConfig)
 where
-import DDC.Code.Config
 import DDC.Build.Builder
 import qualified DDC.Driver.Stage               as D
 
@@ -172,7 +171,7 @@ data Config
 -- | Default configuation.
 getDefaultConfig :: IO Config
 getDefaultConfig
- = do   baseDir <- locateBaseLibrary
+ = do   let baseDir = "src/s2"
 
         return $ Config
           { configMode                  = ModeNone

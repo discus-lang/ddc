@@ -1,7 +1,7 @@
 
 module DDCI.Tetra.State
         ( State (..)
-        , initState 
+        , initState
         , adjustMode
 
         -- * Driver Config
@@ -9,7 +9,6 @@ module DDCI.Tetra.State
         , getDefaultBuilderConfig)
 where
 import DDCI.Tetra.Mode
-import DDC.Code.Config
 import DDC.Driver.Interface.Input
 import DDC.Build.Builder
 import System.FilePath
@@ -25,10 +24,10 @@ import qualified Data.Set               as Set
 data State
         = State
         { -- ddci interface state
-          stateInterface        :: InputInterface 
+          stateInterface        :: InputInterface
 
           -- ddci mode flags.
-        , stateModes            :: Set Mode 
+        , stateModes            :: Set Mode
 
           -- Force the builder to this one, which sets the address width etc.
           -- If `Nothing` then query the host system for the default builder.
@@ -39,14 +38,14 @@ data State
 initState :: InputInterface -> State
 initState interface
         = State
-        { stateInterface        = interface 
-        , stateModes            = Set.empty 
+        { stateInterface        = interface
+        , stateModes            = Set.empty
         , stateBuilder          = Nothing }
 
 
 -- | Adjust a mode setting in the state.
-adjustMode 
-        :: Bool         -- ^ Whether to enable or disable the mode.        
+adjustMode
+        :: Bool         -- ^ Whether to enable or disable the mode.
         -> Mode         -- ^ Mode to adjust.
         -> State -> State
 
@@ -64,7 +63,7 @@ adjustMode False mode state
 getDriverConfigOfState :: State -> IO D.Config
 getDriverConfigOfState state
  = do   builder <- getActiveBuilder state
-        return 
+        return
          $ D.Config
          { D.configLogBuild                     = True
          , D.configDump                         = Set.member Dump  (stateModes state)
@@ -76,7 +75,7 @@ getDriverConfigOfState state
          , D.configRuntime
                 = Runtime.Config
                 { Runtime.configHeapSize        = 1000000 }
- 
+
          , D.configRuntimeLinkStrategy          = D.LinkDefault
          , D.configModuleBaseDirectories        = []
          , D.configOutputFile                   = Nothing
@@ -87,17 +86,17 @@ getDriverConfigOfState state
          , D.configSuppressHashImports          = False
          , D.configKeepLlvmFiles                = False
          , D.configKeepSeaFiles                 = False
-         , D.configKeepAsmFiles                 = False 
+         , D.configKeepAsmFiles                 = False
 
          , D.configTaintAvoidTypeChecks         = False
         }
 
  where  modes   = stateModes state
-        configPretty   
+        configPretty
          = D.ConfigPretty
          { D.configPrettyVarTypes               = Set.member PrettyVarTypes   modes
          , D.configPrettyConTypes               = Set.member PrettyConTypes   modes
-         , D.configPrettyUseLetCase             = Set.member PrettyUseLetCase modes 
+         , D.configPrettyUseLetCase             = Set.member PrettyUseLetCase modes
          , D.configPrettySuppressImports        = Set.member SuppressImports  modes
          , D.configPrettySuppressExports        = Set.member SuppressExports  modes
          , D.configPrettySuppressLetTypes       = Set.member SuppressLetTypes modes }
@@ -106,7 +105,7 @@ getDriverConfigOfState state
 -- | Holds platform independent builder info.
 getDefaultBuilderConfig :: IO BuilderConfig
 getDefaultBuilderConfig
- = do   baseLibraryPath <- locateBaseLibrary
+ = do   let baseLibraryPath = "src/s2"
         return $ BuilderConfig
           { builderConfigBaseSrcDir             = baseLibraryPath
           , builderConfigBaseLibDir             = baseLibraryPath </> "build"
@@ -114,15 +113,15 @@ getDefaultBuilderConfig
 
 
 -- | Get the active builder.
---   If one is set explicitly in the state then use that, 
+--   If one is set explicitly in the state then use that,
 --   otherwise query the host system to determine the builder.
 --   If that fails as well then 'error'.
-getActiveBuilder :: State -> IO Builder 
-getActiveBuilder state 
+getActiveBuilder :: State -> IO Builder
+getActiveBuilder state
  = case stateBuilder state of
         Just builder          -> return builder
-        Nothing         
-         -> do  config   <- getDefaultBuilderConfig 
+        Nothing
+         -> do  config   <- getDefaultBuilderConfig
                 mBuilder <- determineDefaultBuilder config
                 case mBuilder of
                  Nothing      -> error "ddci-tetra.getActiveBuilder: unrecognised host platform"

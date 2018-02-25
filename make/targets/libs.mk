@@ -3,7 +3,7 @@
 .PHONY : clean-libs
 clean-libs :
 	@echo "* Cleaning libs"
-	@find src/s1/ddc-code \
+	@find src/s2 \
 		   -name "*.di" \
 		-o -name "*.o" \
 		-follow \

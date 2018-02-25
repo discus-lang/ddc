@@ -1,6 +1,5 @@
 
-module DDC.Build.Interface.Codec.Text.Decode
-where
+module DDC.Build.Interface.Codec.Text.Decode where
 import DDC.Build.Interface.Base
 import DDC.Core.Module
 import DDC.Data.Pretty
@@ -98,7 +97,21 @@ type InterfaceAA
         = Interface () ()
 
 
--- | Parse an interface file.
+-- | Load a textual interface from a file.
+loadInterface
+        :: FilePath     -- ^ File path of interface file, for error messages.
+        -> UTCTime      -- ^ TimeStamp of interface file.
+        -> String       -- ^ Interface file source.
+        -> Either Error InterfaceAA
+
+loadInterface pathInterface timeStamp str
+ = let  -- Attach line numbers to ach line
+        ls      = lines str
+        lsNum   = zip [1..] ls
+   in   pInterface pathInterface timeStamp lsNum
+
+
+-- | Parse a atextual interface file.
 pInterface
         :: FilePath             -- ^ Path of interface file.
         -> UTCTime              -- ^ TimeStamp of interface file.

@@ -19,7 +19,6 @@ module DDCI.Core.State
         , getActiveBuilder)
 where
 import DDCI.Core.Mode
-import DDC.Code.Config
 import DDC.Driver.Interface.Input
 import DDC.Driver.Interface.Source
 import DDC.Build.Builder
@@ -169,7 +168,7 @@ getDriverConfigOfState state
 -- | Holds platform independent builder info.
 getDefaultBuilderConfig :: IO BuilderConfig
 getDefaultBuilderConfig
- = do   baseLibraryPath <- locateBaseLibrary
+ = do   let baseLibraryPath = "src/s2"
         return $ BuilderConfig
           { builderConfigBaseSrcDir     = baseLibraryPath
           , builderConfigBaseLibDir     = baseLibraryPath </> "build"

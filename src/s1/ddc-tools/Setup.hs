@@ -6,15 +6,15 @@ import System.FilePath
 import System.Process
 import System.Exit
 
-main    
+main
  =      defaultMainWithHooks hooks
 
 hooks   = simpleUserHooks
         { postInst      = hookPostInstall }
 
 
--- Build the base library from the ddc-code package after we've installed ddc.
-hookPostInstall 
+-- Build the base library after we've installed ddc.
+hookPostInstall
         :: Args
         -> InstallFlags
         -> PackageDescription
@@ -28,7 +28,7 @@ hookPostInstall _args _flags desc buildInfo
         let installDirs = absoluteInstallDirs desc buildInfo NoCopyDest
         let ddcExe      =   (bindir $ installDirs)
                         </> (fromPathTemplate $ progPrefix buildInfo)
-                        ++  "ddc" 
+                        ++  "ddc"
                         <.> (fromPathTemplate $ progSuffix buildInfo)
 
         -- Run the basebuild command, which builds the library.

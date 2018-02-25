@@ -11,7 +11,6 @@ ddci-tetra_packages = \
         src/s1/ddc-core-machine/DDC \
 	src/s1/ddc-source-discus/DDC \
 	src/s1/ddc-build/DDC \
-	src/s1/ddc-code/DDC \
 	src/s1/ddc-driver/DDC \
 	src/s1/ddc-tools/src/ddci-tetra/DDCI
 
@@ -49,7 +48,6 @@ src/s1/ddc-tools/src/ddci-tetra/%.o : src/s1/ddc-tools/src/ddci-tetra/%.hs
 		      -isrc/s1/ddc-source-discus \
 		      -isrc/s1/ddc-build \
 		      -isrc/s1/ddc-driver \
-		      -isrc/s1/ddc-code \
 		      -isrc/s1/ddc-tools/src/ddci-tetra
 
 

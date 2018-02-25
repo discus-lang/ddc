@@ -11,8 +11,7 @@ PACKAGES = \
 	ddc-core-babel \
         ddc-source-discus \
 	ddc-build \
-	ddc-driver \
-	ddc-code
+	ddc-driver
 
 
 # Build and install all the Cabal packages.
@@ -140,11 +139,6 @@ src/s1/ddc-driver/%.o : src/s1/ddc-driver/%.hs
 		      -isrc/s1/ddc-source-discus \
 		      -isrc/s1/ddc-build \
 		      -isrc/s1/ddc-driver
-
-src/s1/ddc-code/%.o : src/s1/ddc-code/%.hs
-	@echo "* Compiling $<"
-	@$(GHC) $(GHC_FLAGS) $(GHC_WARNINGS2) $(DDC_PACKAGES) $(GHC_INCDIRS) \
-		-c $<
 
 src/s1/ddc-tools/src/ddc-war/%.o : src/s1/ddc-tools/src/ddc-war/%.hs
 	@echo "* Compiling $<"

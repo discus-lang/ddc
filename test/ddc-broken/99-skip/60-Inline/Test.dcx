@@ -1,7 +1,7 @@
 
 -- Check that the inliner does it's thing.
 :set  lang Tetra
-:with packages/ddc-code/tetra/base/Data/Numeric/Nat.dct
+:with src/s2/base/Data/Numeric/Nat.dct
 :set.. trans
  Inline Nat; Beta; Bubble; Beta; Bubble; Beta; Bubble;;
 :trans<  test/ddc-main/50-CoreEval/30-Transform/60-Inline/List.dct

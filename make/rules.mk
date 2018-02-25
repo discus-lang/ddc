@@ -2,21 +2,12 @@
 include make/build.mk
 include make/config/target.mk
 
-# -----------------------------------------------------------------------------
-# Runtime system 
-packages/ddc-code/sea/%.o : packages/ddc-code/sea/%.c
-	@echo "* Compiling $<"
-	@gcc $(GCC_FLAGS) -Ipackages/ddc-code/sea/runtime -c $< -o $@ 
-
-
-# -- Generic Rules ------------------------------------------------------------
 %.hs : %.x
 	@echo "* Preprocessing $<"
 	@alex -g $<
 
 
-# This ':' is equivalent to 'true', but much faster.
-# Strange.
+# This ':' is equivalent to 'true', but much faster. Strange.
 %.hi : %.o
 	@:
 
@@ -28,7 +19,7 @@ packages/ddc-code/sea/%.o : packages/ddc-code/sea/%.c
 
 %.o : %.c
 	@echo "* Compiling $<"
-	@gcc $(GCC_FLAGS) -c $< -o $@ 
+	@gcc $(GCC_FLAGS) -c $< -o $@
 
 
 %.o : %.dcl bin/ddc

@@ -14,7 +14,7 @@ module DDC.Build.Interface.Store
 where
 import DDC.Data.Pretty
 import DDC.Build.Interface.Base
-import DDC.Build.Interface.Load
+import DDC.Build.Interface.Codec.Text.Decode
 import DDC.Core.Call
 import DDC.Core.Module
 import DDC.Type.Exp

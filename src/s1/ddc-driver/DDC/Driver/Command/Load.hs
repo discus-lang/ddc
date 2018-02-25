@@ -31,11 +31,12 @@ import qualified Data.Map                               as Map
 import qualified DDC.Core.Check                         as C
 import qualified DDC.Build.Language.Discus              as Tetra
 import qualified DDC.Build.Spec.Parser                  as Spec
-import qualified DDC.Build.Interface.Load               as Interface
 import qualified DDC.Core.Discus                        as Tetra
 import qualified DDC.Driver.Stage.Tetra                 as DE
 import qualified Data.Text                              as T
-import qualified DDC.Build.Interface.Codec.Text.Encode  as Interface
+import qualified DDC.Build.Interface.Codec.Text.Encode  as IntText
+import qualified DDC.Build.Interface.Codec.Text.Decode  as IntText
+
 
 ---------------------------------------------------------------------------------------------------
 -- | Load and transform source code, interface, or build file.
@@ -70,14 +71,14 @@ cmdLoadFromFile config store mStrSimpl fsTemplates filePath
          Left err       -> throwE $ show err
          Right spec     -> liftIO $ putStrLn $ show spec
 
- -- Load an interface file.
+ -- Load a text interface file and print it as text.
  | ".di"        <- takeExtension filePath
  = do
         str     <- liftIO $ readFile filePath
         timeDI  <- liftIO $ getModificationTime filePath
-        case Interface.loadInterface filePath timeDI str of
+        case IntText.loadInterface filePath timeDI str of
          Left err        -> throwE $ renderIndent $ ppr err
-         Right interface -> liftIO $ putStrLn $ T.unpack $ Interface.encodeInterface interface
+         Right interface -> liftIO $ putStrLn $ T.unpack $ IntText.encodeInterface interface
 
  -- Load a Disciple Source Tetra module.
  | ".ds"        <- takeExtension filePath
