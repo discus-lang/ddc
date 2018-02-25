@@ -15,7 +15,6 @@ docs-core :
 			--optghc=-isrc/s1/ddc-core \
 			--optghc=-isrc/s1/ddc-core-llvm \
 			--optghc=-isrc/s1/ddc-core-salt \
-			--optghc=-isrc/s1/ddc-core-simpl \
 			--optghc=-isrc/s1/ddc-core-flow \
 			--optghc=-isrc/s1/ddc-core-machine \
 			--optghc=-isrc/s1/ddc-core-discus \
@@ -37,7 +36,6 @@ docs-hoogle-core :
 			--optghc=-isrc/s1/ddc-core \
 			--optghc=-isrc/s1/ddc-core-llvm \
 			--optghc=-isrc/s1/ddc-core-salt \
-			--optghc=-isrc/s1/ddc-core-simpl \
 			--optghc=-isrc/s1/ddc-core-flow \
 			--optghc=-isrc/s1/ddc-core-machine \
 			--optghc=-isrc/s1/ddc-core-discus \

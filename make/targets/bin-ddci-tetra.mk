@@ -4,7 +4,6 @@
 ddci-tetra_packages = \
 	src/s1/ddc-core/DDC \
 	src/s1/ddc-core-babel/DDC \
-	src/s1/ddc-core-simpl/DDC \
 	src/s1/ddc-core-salt/DDC \
 	src/s1/ddc-core-llvm/DDC \
 	src/s1/ddc-core-discus/DDC \
@@ -41,7 +40,6 @@ src/s1/ddc-tools/src/ddci-tetra/%.o : src/s1/ddc-tools/src/ddci-tetra/%.hs
 	@$(GHC) $(GHC_FLAGS) $(GHC_WARNINGS2) $(DDC_PACKAGES) $(GHC_INCDIRS) \
 		-c $< -isrc/s1/ddc-base \
 		      -isrc/s1/ddc-core \
-		      -isrc/s1/ddc-core-simpl \
 		      -isrc/s1/ddc-core-salt \
 		      -isrc/s1/ddc-core-llvm \
 		      -isrc/s1/ddc-core-flow \
