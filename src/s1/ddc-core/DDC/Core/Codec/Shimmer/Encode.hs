@@ -44,13 +44,19 @@ data Config n
 --
 takeModuleDecls :: Config n -> C.Module a n -> [SDecl]
 takeModuleDecls c mm@C.ModuleCore{}
- =  [ dExTyp,  dExTrm
+ =  [ dName,   dExTyp,  dExTrm
     , dImTyp,  dImDat, dImSyn, dImCap, dImTrm
     , dLcDat,  dLcSyn ]
  ++ concat
     [ dsImDat, dsImSyn, dsImTrm
     , dsLcDat, dsLcSyn, dsLcTrm ]
  where
+
+        dName
+         = S.DeclSet "m-name"
+         $ case C.moduleName mm of
+                C.ModuleName sParts
+                 -> xList $ map (xTxt . T.pack) sParts
 
         -- Exported Types.
         dExTyp
@@ -434,8 +440,6 @@ takeType c tt
  -- Some other type.
  | otherwise
  = case tt of
-        C.TCon tc       -> takeTyCon c tc
-        C.TVar u        -> takeBound c u
         C.TAbs b t      -> xAps "tb" [takeBind  c b, takeType c t]
 
         C.TApp {}
@@ -444,11 +448,11 @@ takeType c tt
 
         C.TForall b t   -> xAps "tl" [takeBind c b, takeType c t]
 
-        C.TSum ts
-         -> case Sum.toList ts of
-                []      -> xSym "ts"
-                ts'     -> xAps "ts" (map (takeType c) ts')
+        C.TSum ts       -> xAps "ts" ( takeType c (Sum.kindOfSum ts)
+                                     : (map (takeType c) $ Sum.toList ts))
 
+        C.TCon tc       -> takeTyCon c tc
+        C.TVar u        -> takeBound c u
 
 -- Bind -------------------------------------------------------------------------------------------
 takeBind  :: Config n -> C.Bind n -> SExp
@@ -536,7 +540,7 @@ takeTcCon c
         C.TcConDeepAlloc        -> xSym "tcb"
 
 
--- Base -------------------------------------------------------------------------------------------
+-- Utils ------------------------------------------------------------------------------------------
 xSym :: Text -> SExp
 xSym tx = S.XRef (S.RSym tx)
 
@@ -567,3 +571,4 @@ xPair x1 x2 = xAps "p" [x1, x2]
 xList :: [SExp] -> SExp
 xList [] = xSym "o"
 xList xs = xAps "l" xs
+

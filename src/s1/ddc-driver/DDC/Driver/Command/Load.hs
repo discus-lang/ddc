@@ -1,8 +1,8 @@
 
 module DDC.Driver.Command.Load
         ( cmdLoadFromFile
-        , cmdLoadSourceTetraFromFile
-        , cmdLoadSourceTetraFromString
+        , cmdLoadDiscusSourceFromFile
+        , cmdLoadDiscusSourceFromString
         , cmdLoadCoreFromFile
         , cmdLoadCoreFromString
         , cmdLoadSimplifier
@@ -20,38 +20,37 @@ import DDC.Core.Transform.Reannotate
 import DDC.Core.Exp.Annot.AnTEC
 import DDC.Core.Codec.Text.Pretty
 import DDC.Data.SourcePos
+import DDC.Build.Interface.Store                                (Store)
+import qualified DDC.Core.Check                                 as C
+import qualified DDC.Build.Language.Discus                      as Tetra
+import qualified DDC.Build.Spec.Parser                          as Spec
+import qualified DDC.Core.Discus                                as Tetra
+import qualified DDC.Driver.Stage.Tetra                         as DE
+
+import qualified DDC.Build.Interface.Codec.Text.Encode          as IntText
+import qualified DDC.Build.Interface.Codec.Text.Decode          as IntText
+
+import qualified DDC.Build.Interface.Codec.Shimmer.Decode       as IntSmr
+
+import qualified SMR.Core.Codec                                 as SMR
+
 import Control.Monad
 import Control.Monad.Trans.Except
 import Control.Monad.IO.Class
 import Control.DeepSeq
 import System.FilePath
 import System.Directory
-import DDC.Build.Interface.Store                        (Store)
-import qualified Data.Map                               as Map
-import qualified DDC.Core.Check                         as C
-import qualified DDC.Build.Language.Discus              as Tetra
-import qualified DDC.Build.Spec.Parser                  as Spec
-import qualified DDC.Core.Discus                        as Tetra
-import qualified DDC.Driver.Stage.Tetra                 as DE
 import qualified Data.Text                              as T
-import qualified DDC.Build.Interface.Codec.Text.Encode  as IntText
-import qualified DDC.Build.Interface.Codec.Text.Decode  as IntText
-
+import qualified Data.Map                               as Map
+import qualified Data.ByteString                        as BS
 
 ---------------------------------------------------------------------------------------------------
 -- | Load and transform source code, interface, or build file.
 --
+--   The source language is determined by inspecting the file extension.
+--
 --   The result is printed to @stdout@.
 --   Any errors are thrown in the `ExceptT` monad.
---
---   This function handle fragments of Disciple Core, as well as Source Tetra
---   modules. The language to use is determined by inspecting the file name
---   extension.
---
---   We also take the specification of a simplifier to apply to the module.
---
---   For Source Tetra modules, dependent modules will be compiled,
---   or their interfaces loaded as needed.
 --
 cmdLoadFromFile
         :: Config               -- ^ Driver config.
@@ -74,17 +73,29 @@ cmdLoadFromFile config store mStrSimpl fsTemplates filePath
  -- Load a text interface file and print it as text.
  | ".di"        <- takeExtension filePath
  = do
-        str     <- liftIO $ readFile filePath
         timeDI  <- liftIO $ getModificationTime filePath
+        str     <- liftIO $ readFile filePath
         case IntText.loadInterface filePath timeDI str of
-         Left err        -> throwE $ renderIndent $ ppr err
-         Right interface -> liftIO $ putStrLn $ T.unpack $ IntText.encodeInterface interface
+         Left err    -> throwE $ renderIndent $ ppr err
+         Right iface -> liftIO $ putStrLn $ T.unpack $ IntText.encodeInterface iface
 
- -- Load a Disciple Source Tetra module.
+ -- Load a Shimmer encoded Discus interface file and print it as text.
+ | ".sms"       <- takeExtension filePath
+ = do
+        timeSMR   <- liftIO $ getModificationTime filePath
+        bs        <- liftIO $ BS.readFile filePath
+        let decls =  SMR.unpackFileDecls bs
+
+        case IntSmr.decodeInterfaceDecls filePath timeSMR decls of
+         Nothing    -> throwE $ "load of .sms interface failed"
+         Just iface -> liftIO $ putStrLn $ T.unpack $ IntText.encodeInterface iface
+
+
+ -- | Load a Discus Source module.
  | ".ds"        <- takeExtension filePath
  = case mStrSimpl of
         Nothing
-         -> do  cmdLoadSourceTetraFromFile config store Tetra.bundle filePath
+         -> do  cmdLoadDiscusSourceFromFile config store Tetra.bundle filePath
 
         Just strSimpl
          -> do  -- Parse the specified simplifier.
@@ -92,7 +103,7 @@ cmdLoadFromFile config store mStrSimpl fsTemplates filePath
                                 Tetra.bundle strSimpl fsTemplates
 
                 -- Load a simplify the target module.
-                cmdLoadSourceTetraFromFile config store bundle' filePath
+                cmdLoadDiscusSourceFromFile config store bundle' filePath
 
  -- Load a module in some fragment of Disciple Core.
  | Just language <- languageOfExtension (takeExtension filePath)
@@ -111,17 +122,17 @@ cmdLoadFromFile config store mStrSimpl fsTemplates filePath
 
 
 ---------------------------------------------------------------------------------------------------
--- | Load a Disciple Source Tetra module from a file.
+-- | Load a Discus source module from a file.
 --   The result is printed to @stdout@.
 --   Any errors are thrown in the `ExceptT` monad.
-cmdLoadSourceTetraFromFile
+cmdLoadDiscusSourceFromFile
         :: Config                               -- ^ Driver config.
         -> Store                                -- ^ Interface store.
         -> Bundle Int Tetra.Name Tetra.Error    -- ^ Tetra language bundle.
         -> FilePath                             -- ^ Module file path.
         -> ExceptT String IO ()
 
-cmdLoadSourceTetraFromFile config store bundle filePath
+cmdLoadDiscusSourceFromFile config store bundle filePath
  = do
         -- Check that the file exists.
         exists  <- liftIO $ doesFileExist filePath
@@ -134,15 +145,15 @@ cmdLoadSourceTetraFromFile config store bundle filePath
         -- Read in the source file.
         src     <- liftIO $ readFile filePath
 
-        cmdLoadSourceTetraFromString config store bundle
+        cmdLoadDiscusSourceFromString config store bundle
                 (SourceFile filePath) src
 
 
 ---------------------------------------------------------------------------------------------------
--- | Load a Disciple Source Tetra module from a string.
+-- | Load a Discus source module from a string.
 --   The result is printed to @stdout@.
 --   Any errors are thrown in the `ExceptT` monad.
-cmdLoadSourceTetraFromString
+cmdLoadDiscusSourceFromString
         :: Config                               -- ^ Driver config.
         -> Store                                -- ^ Interface store.
         -> Bundle Int Tetra.Name Tetra.Error    -- ^ Tetra language bundle.
@@ -150,7 +161,7 @@ cmdLoadSourceTetraFromString
         -> String                               -- ^ Program module text.
         -> ExceptT String IO ()
 
-cmdLoadSourceTetraFromString config store bundle source str
+cmdLoadDiscusSourceFromString config store bundle source str
  = withExceptT (renderIndent . vcat . map ppr)
  $ do
         let pmode   = prettyModeOfConfig $ configPretty config
@@ -166,7 +177,6 @@ cmdLoadSourceTetraFromString config store bundle source str
         case errs of
          []     -> return ()
          _      -> throwE errs
-
 
 
 ---------------------------------------------------------------------------------------------------

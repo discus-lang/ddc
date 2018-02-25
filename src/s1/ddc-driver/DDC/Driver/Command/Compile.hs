@@ -37,7 +37,7 @@ import qualified DDC.Core.Transform.Reannotate                  as CReannotate
 
 import DDC.Build.Interface.Store                                (Store)
 import qualified DDC.Build.Interface.Codec.Text.Encode          as IntText
-import qualified DDC.Build.Interface.Codec.Shimmer.Store        as IntShimmer
+import qualified DDC.Build.Interface.Codec.Shimmer.Encode       as IntShimmer
 import qualified DDC.Build.Interface.Store                      as Store
 
 
