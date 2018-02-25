@@ -19,6 +19,7 @@ import qualified Data.Text                      as T
 import qualified System.IO.Unsafe               as System
 import Data.IORef
 import Data.Text                                (Text)
+import Data.Maybe
 -- import Data.Monoid
 import Prelude hiding (read)
 
@@ -129,53 +130,47 @@ data Collect
 
 
 -- Type -------------------------------------------------------------------------------------------
-takeType :: Ord n => Config n -> SExp -> Maybe (C.Type n)
-takeType c ss
+fromType :: Ord n => Config n -> SExp -> C.Type n
+fromType c ss
  = case ss of
         -- Applications of function type constructors.
         XAps "tf" ssParamResult
-         |  Just (ssParam, ssResult)  <- splitLast ssParamResult
-         ,  Just tResult              <- takeType c ssResult
-         -> takeTypeFun c ssParam tResult
+         -> let (ssParam, ssResult)   = splitLast ssParamResult
+                Just tf = takeTypeFun c ssParam (fromType c ssResult)
+            in  tf
 
         -- Applications of a data type constructor.
         XAps "tu" (ssBound : ssArgs)
-         |  Just u      <- takeBound c ssBound
-         ,  Just tsArgs <- sequence $ map (takeType c) ssArgs
-         -> Just $ C.tApps (C.TCon $ C.TyConBound u (C.tBot C.sComp)) tsArgs
+         -> C.tApps (C.TCon $ C.TyConBound (fromBound c ssBound) (C.tBot C.sComp))
+                    (map (fromType c) ssArgs)
 
         -- Abstraction.
         XAps "tb" [ssBind, ssBody]
-         | Just b       <- takeBind c ssBind
-         , Just t       <- takeType c ssBody
-         -> Just $ C.TAbs b t
+         -> C.TAbs (fromBind c ssBind) (fromType c ssBody)
 
         -- Application
         XAps "ta" ssArgs
-         | Just (t1 : ts) <- sequence $ map (takeType c) ssArgs
-         -> Just $ C.tApps t1 ts
+         -> let (t1 : ts) = map (fromType c) ssArgs
+            in  C.tApps t1 ts
 
         -- Forall
         XAps "tl" [ssBind, ssBody]
-         | Just b       <- takeBind c ssBind
-         , Just t       <- takeType c ssBody
-         -> Just $ C.TForall b t
+         -> C.TForall (fromBind c ssBind) (fromType c ssBody)
 
         -- Sum
         XAps "ts" (ssKind : ssArgs)
-         |  Just tKind  <- takeType c ssKind
-         ,  Just tsArgs <- sequence $ map (takeType c) ssArgs
-         -> Just $ C.TSum $ Sum.fromList tKind tsArgs
+         -> C.TSum $ Sum.fromList (fromType c ssKind)
+                   $ map (fromType c) ssArgs
 
           -- Con
         _ |  Just tc    <- takeTyCon c ss
-          -> Just $ C.TCon tc
+          -> C.TCon tc
 
           -- Bound
           |  Just u     <- takeBound c ss
-          -> Just $ C.TVar u
+          -> C.TVar u
 
-          | otherwise   -> Nothing
+          | otherwise   -> failDecode "fromType failed"
 
 
 takeTypeFun :: Ord n => Config n -> [SExp] -> C.Type n -> Maybe (C.Type n)
@@ -185,46 +180,53 @@ takeTypeFun c ssParam tResult
 
         -- Explicit function parameter.
         ssType : ssParamRest
-         |  Just tParam <- takeType c ssType
-         ,  Just tRest  <- takeTypeFun c ssParamRest tResult
-         -> Just $ C.tApps (C.TCon $ C.TyConSpec C.TcConFunExplicit) [tParam, tRest]
+         |  Just tRest  <- takeTypeFun c ssParamRest tResult
+         -> Just $ C.tApps (C.TCon $ C.TyConSpec C.TcConFunExplicit)
+                        [fromType c ssType, tRest]
 
         -- Implicit function parameter.
         XAps "ni" [ssType] : ssParamRest
-         |  Just tParam <- takeType c ssType
-         ,  Just tRest  <- takeTypeFun c ssParamRest tResult
-         -> Just $ C.tApps (C.TCon $ C.TyConSpec C.TcConFunImplicit) [tParam, tRest]
+         |  Just tRest  <- takeTypeFun c ssParamRest tResult
+         -> Just $ C.tApps (C.TCon $ C.TyConSpec C.TcConFunImplicit)
+                        [fromType c ssType, tRest]
 
         -- Some other function constructor.
         XAps "nn" [ssTyCon, ssType] : ssParamRest
          |  Just tcFun  <- takeTyCon   c ssTyCon
-         ,  Just tParam <- takeType    c ssType
          ,  Just tRest  <- takeTypeFun c ssParamRest tResult
-         -> Just $ C.tApps (C.TCon tcFun) [tParam, tRest]
+         -> Just $ C.tApps (C.TCon tcFun) [fromType c ssType, tRest]
 
         _ -> Nothing
 
 
 -- Bind -------------------------------------------------------------------------------------------
+fromBind :: Ord n => Config n -> SExp -> C.Bind n
+fromBind c ss
+ = fromMaybe (failDecode "fromBind failed")
+ $ takeBind c ss
+
 takeBind :: Ord n => Config n -> SExp -> Maybe (C.Bind n)
 takeBind c ss
  = case ss of
         XAps "bo" [ssType]
-         |  Just t      <- takeType c ssType
-         -> Just $ C.BNone t
+         -> Just $ C.BNone $ fromType c ssType
 
         XAps "ba" [ssType]
-         |  Just t      <- takeType c ssType
-         -> Just $ C.BAnon t
+         -> Just $ C.BAnon $ fromType c ssType
 
         XAps "bn" [ssRef, ssType]
          |  Just n      <- configTakeRef c ssRef
-         ,  Just t      <- takeType c ssType
-         -> Just $ C.BName n t
+         -> Just $ C.BName n $ fromType c ssType
 
         _ -> Nothing
 
+
 -- Bound ------------------------------------------------------------------------------------------
+fromBound :: Ord n => Config n -> SExp -> C.Bound n
+fromBound c ss
+ = fromMaybe (failDecode "fromBound failed")
+ $ takeBound c ss
+
 takeBound :: Ord n => Config n -> SExp -> Maybe (C.Bound n)
 takeBound c ss
  = case ss of
@@ -250,8 +252,7 @@ takeTyCon c ss
 
         -- TyConExists
         XApp (XSym "tcy") [XNat n, ssType]
-         | Just k       <- takeType c ssType
-         -> Just $ C.TyConExists (fromIntegral n) k
+         -> Just $ C.TyConExists (fromIntegral n) $ fromType c ssType
 
         -- TyConSort
         XSym "tsp"      -> Just $ C.TyConSort    C.SoConProp
@@ -276,7 +277,7 @@ takeTyCon c ss
                         -> Just $ C.TyConWitness $ C.TwConDistinct $ fromIntegral n
         XSym "twj"      -> Just $ C.TyConWitness $ C.TwConDisjoint
 
-        -- TyConCpec
+        -- TyConSpec
         XSym "tcu"      -> Just $ C.TyConSpec    C.TcConUnit
         XSym "tcf"      -> Just $ C.TyConSpec    C.TcConFunExplicit
         XSym "tci"      -> Just $ C.TyConSpec    C.TcConFunImplicit
@@ -313,10 +314,12 @@ pattern XSym tx         = S.XRef (S.RSym tx)
 pattern XTxt tx         = S.XRef (S.RTxt tx)
 pattern XNat n          = S.XRef (S.RPrm (S.PrimLitNat n))
 
-splitLast :: [a] -> Maybe ([a], a)
+splitLast :: [a] -> ([a], a)
 splitLast xx
  = go [] xx
- where  go _   []       = Nothing
-        go acc [x]      = Just (reverse acc, x)
+ where  go _   []       = failDecode "splitLast failed"
+        go acc [x]      = (reverse acc, x)
         go acc (x : xs) = go (x : acc) xs
 
+failDecode str
+ = error $ "ddc-core.Shimmer.Decode." ++ str
