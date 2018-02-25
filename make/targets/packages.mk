@@ -146,8 +146,8 @@ src/s1/ddc-code/%.o : src/s1/ddc-code/%.hs
 	@$(GHC) $(GHC_FLAGS) $(GHC_WARNINGS2) $(DDC_PACKAGES) $(GHC_INCDIRS) \
 		-c $<
 
-src/s1/ddc-war/%.o : src/s1/ddc-war/%.hs
+src/s1/ddc-tools/src/ddc-war/%.o : src/s1/ddc-tools/src/ddc-war/%.hs
 	@echo "* Compiling $<"
 	@$(GHC) $(GHC_FLAGS) -O2 -threaded $(GHC_WARNINGS2) $(DDC_PACKAGES) $(GHC_INCDIRS) \
-		-c $< -isrc/s1/ddc-war
+		-isrc/s1/ddc-tools/src/ddc-war -c $<
 

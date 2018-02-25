@@ -1,6 +1,6 @@
 
 # -- Find Source Files ----------------------------------------------------------------------------
-war_src_hs_all  = $(shell find src/s1/ddc-war -name "*.hs" -follow)
+war_src_hs_all  = $(shell find src/s1/ddc-tools/src/ddc-war -name "*.hs" -follow)
 
 
 # -- Dependencies ---------------------------------------------------------------------------------
