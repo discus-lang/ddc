@@ -21,7 +21,7 @@ module DDC.Core.Module
         , readModuleName
         , isMainModuleName
         , moduleNameMatchesPath
-        
+
          -- * Qualified names.
         , QualName      (..)
 
@@ -50,7 +50,7 @@ import DDC.Core.Module.Export
 import DDC.Core.Module.Import
 import DDC.Core.Module.Name
 import DDC.Core.Exp.Annot
-import DDC.Type.DataDef                 
+import DDC.Type.DataDef
 import Data.Typeable
 import Data.Map.Strict                  (Map)
 import Data.Set                         (Set)
@@ -74,7 +74,7 @@ data Module a n
           moduleName            :: !ModuleName
 
           -- | Whether this is a module header only.
-          --   Module headers contain type definitions, as well as imports and exports, 
+          --   Module headers contain type definitions, as well as imports and exports,
           --   but no function definitions. Module headers are used in interface files.
         , moduleIsHeader        :: !Bool
 
@@ -89,17 +89,17 @@ data Module a n
           -- | Define imported types.
         , moduleImportTypes     :: ![(n, ImportType   n (Type n))]
 
-          -- | Define imported capabilities.
-        , moduleImportCaps      :: ![(n, ImportCap    n (Type n))]
-
-          -- | Define imported values.
-        , moduleImportValues    :: ![(n, ImportValue  n (Type n))]
-
           -- | Data defs imported from other modules.
         , moduleImportDataDefs  :: ![DataDef n]
 
           -- | Type defs imported from other modules.
         , moduleImportTypeDefs  :: ![(n, (Kind n, Type n))]
+
+          -- | Define imported capabilities.
+        , moduleImportCaps      :: ![(n, ImportCap    n (Type n))]
+
+          -- | Define imported values.
+        , moduleImportValues    :: ![(n, ImportValue  n (Type n))]
 
           -- Local defs ---------------
           -- | Data types defined in this module.
@@ -135,14 +135,14 @@ instance (NFData a, NFData n) => NFData (Module a n) where
 -- | Check if this is the `Main` module.
 isMainModule :: Module a n -> Bool
 isMainModule mm
-        = isMainModuleName 
+        = isMainModuleName
         $ moduleName mm
 
 
 -- | Get the data type definitions visible in a module.
 moduleDataDefs :: Ord n => Module a n -> DataDefs n
 moduleDataDefs mm
-        = fromListDataDefs 
+        = fromListDataDefs
         $ (moduleImportDataDefs mm ++ moduleDataDefsLocal mm)
 
 
@@ -156,7 +156,7 @@ moduleTypeDefs mm
 --   from its imported types.
 moduleKindEnv :: Ord n => Module a n -> KindEnv n
 moduleKindEnv mm
-        = Env.fromList 
+        = Env.fromList
         $ [BName n (kindOfImportType isrc) | (n, isrc) <- moduleImportTypes mm]
 
 
@@ -164,24 +164,24 @@ moduleKindEnv mm
 --   from its imported values.
 moduleTypeEnv :: Ord n => Module a n -> TypeEnv n
 moduleTypeEnv mm
-        = Env.fromList 
+        = Env.fromList
         $ [BName n (typeOfImportValue isrc) | (n, isrc) <- moduleImportValues mm]
 
 
 -- | Extract the top-level `EnvT` environment from a module.
 --
---   This includes kinds for abstract types, data types, and type equations, 
+--   This includes kinds for abstract types, data types, and type equations,
 --   but not primitive types which are fragment specific.
 --
-moduleEnvT 
-        :: Ord n 
+moduleEnvT
+        :: Ord n
         => KindEnv n    -- ^ Primitive kind environment.
         -> Module a n   -- ^ Module to extract environemnt from.
         -> EnvT n
 
 moduleEnvT kenvPrim mm
  = EnvT
- { EnvT.envtEquations   
+ { EnvT.envtEquations
         = Map.unions
         [ Map.fromList [(n, t)  | (n, (_, t)) <- moduleImportTypeDefs mm]
         , Map.fromList [(n, t)  | (n, (_, t)) <- moduleTypeDefsLocal  mm]]
@@ -192,15 +192,15 @@ moduleEnvT kenvPrim mm
  , EnvT.envtPrimFun
         = Env.envPrimFun kenvPrim
 
- , EnvT.envtMap         
+ , EnvT.envtMap
         = let -- Kinds of imported foreign types.
               nksImportForeignType
-                = Map.fromList [(n, kindOfImportType isrc) 
+                = Map.fromList [(n, kindOfImportType isrc)
                                | (n, isrc) <- moduleImportTypes mm]
 
               -- Kinds of imported data types.
               nksImportDataType
-               = Map.fromList  [(dataDefTypeName def, kindOfDataDef def) 
+               = Map.fromList  [(dataDefTypeName def, kindOfDataDef def)
                                | def <- moduleImportDataDefs mm]
 
               -- Kinds of imported type defs.
@@ -209,14 +209,14 @@ moduleEnvT kenvPrim mm
 
               -- Kinds of locally defined data types.
               nksLocalDataType
-               = Map.fromList  [(dataDefTypeName def, kindOfDataDef def) 
+               = Map.fromList  [(dataDefTypeName def, kindOfDataDef def)
                                | def <- moduleImportDataDefs mm]
 
               -- Kinds of imported type defs.
               nksLocalTypeDef
                = Map.fromList  [(n, k) | (n, (k, _)) <- moduleTypeDefsLocal mm]
 
-          in  -- Build a map of all the kinds, 
+          in  -- Build a map of all the kinds,
               -- Where kinds of locally defined type shadow the imported ones.
               Map.unions
                 [ nksImportForeignType
@@ -233,9 +233,9 @@ moduleEnvT kenvPrim mm
 
 -- | Extract the top-level `EnvT` environment from several modules.
 ---
---   After unioning all the individual environments we reset the prim 
+--   After unioning all the individual environments we reset the prim
 --   function so we only have a single version of it.
-modulesEnvT 
+modulesEnvT
         :: Ord n
         => KindEnv n    -- ^ Primitive kind environment.
         -> [Module a n] -- ^ Modules to build environment from.
@@ -247,8 +247,8 @@ modulesEnvT kenv ms
 
 
 -- | Extract the top-level `EnvX` environment from a module.
-moduleEnvX 
-        :: Ord n 
+moduleEnvX
+        :: Ord n
         => KindEnv n    -- ^ Primitive kind environment.
         -> TypeEnv n    -- ^ Primitive type environment.
         -> DataDefs n   -- ^ Primitive data type definitions.
@@ -258,16 +258,16 @@ moduleEnvX
 moduleEnvX kenvPrim tenvPrim dataDefs mm
  = EnvX.empty
  { EnvX.envxEnvT        = moduleEnvT kenvPrim mm
- , EnvX.envxPrimFun     = Env.envPrimFun tenvPrim 
+ , EnvX.envxPrimFun     = Env.envPrimFun tenvPrim
 
- , EnvX.envxDataDefs    
+ , EnvX.envxDataDefs
         = DataDef.unionDataDefs dataDefs
-        $ DataDef.unionDataDefs 
+        $ DataDef.unionDataDefs
                 (DataDef.fromListDataDefs $ moduleImportDataDefs mm)
                 (DataDef.fromListDataDefs $ moduleDataDefsLocal  mm)
 
  , EnvX.envxMap
-        = Map.fromList 
+        = Map.fromList
                 [ (n, typeOfImportValue isrc)
                 | (n, isrc) <- moduleImportValues mm ]
  }
@@ -295,7 +295,7 @@ modulesEnvX kenv tenv defs ms
         env     = EnvX.unions (env0 : envs)
 
         -- The EnvX.unions function combines the prim funs so that
-        -- if a lookup fails the primfun from the next module will 
+        -- if a lookup fails the primfun from the next module will
         -- be called, but as the primfuns in each module are identical
         -- we only need a single version.
         env'    = env
@@ -309,13 +309,13 @@ moduleTopBinds mm
  = go (moduleBody mm)
  where  go xx
          = case xx of
-                XLet _ (LLet (BName n _) _) x2    
+                XLet _ (LLet (BName n _) _) x2
                  -> Set.insert n (go x2)
 
-                XLet _ (LLet _ _) x2    
+                XLet _ (LLet _ _) x2
                  -> go x2
 
-                XLet _ (LRec bxs) x2    
+                XLet _ (LRec bxs) x2
                  ->     Set.fromList (mapMaybe takeNameOfBind $ map fst bxs)
                  `Set.union` go x2
 
@@ -337,7 +337,7 @@ moduleTopBindTypes mm
                 XLet _ (LRec bxs) x2
                   -> let nts    = Map.fromList [(n, t) | BName n t <- map fst bxs]
                      in  go (Map.union acc nts) x2
-                 
+
                 _ -> acc
 
 
@@ -346,7 +346,7 @@ moduleTopBindTypes mm
 mapTopBinds :: (Bind n -> Exp a n -> b) -> Module a n -> [b]
 mapTopBinds f mm
  = go [] (moduleBody mm)
- where 
+ where
         go acc xx
          = case xx of
                 XLet _ (LLet b1 x1) x2
@@ -361,7 +361,7 @@ mapTopBinds f mm
 
 -- ModuleMap --------------------------------------------------------------------------------------
 -- | Map of module names to modules.
-type ModuleMap a n 
+type ModuleMap a n
         = Map ModuleName (Module a n)
 
 
@@ -370,13 +370,13 @@ modulesExportTypes :: Ord n => ModuleMap a n -> KindEnv n -> KindEnv n
 modulesExportTypes mods base
  = let  envOfModule m
          = Env.fromList
-         $ [BName n t   |  (n, Just t) 
+         $ [BName n t   |  (n, Just t)
                         <- map (liftSnd takeTypeOfExportSource) $ moduleExportTypes m]
 
         liftSnd f (x, y) = (x, f y)
 
    in   Env.unions $ base : (map envOfModule $ Map.elems mods)
-         
+
 
 -- | Add the type environment exported by all these modules to the given one.
 modulesExportValues :: Ord n => ModuleMap a n -> TypeEnv n -> TypeEnv n
@@ -384,7 +384,7 @@ modulesExportValues mods base
  = let  envOfModule m
          = Env.fromList
          $ [BName n t   | (n, Just t)
-                        <- map (liftSnd takeTypeOfExportSource) $ moduleExportValues m] 
+                        <- map (liftSnd takeTypeOfExportSource) $ moduleExportValues m]
 
         liftSnd f (x, y) = (x, f y)
 

@@ -8,13 +8,15 @@ import Data.Text                                        (Text)
 import qualified DDC.Core.Discus.Codec.Shimmer.Encode   as Discus.Encode
 import qualified DDC.Core.Codec.Shimmer.Encode          as Core
 
-import qualified SMR.Codec.Size                         as Shimmer
-import qualified SMR.Codec.Poke                         as Shimmer
+import qualified SMR.Core.Codec                         as Shimmer
 import qualified SMR.Core.Exp                           as Shimmer
-import qualified SMR.Prim.Op.Base                       as Shimmer
+import qualified SMR.Prim.Name                          as Shimmer
 
 import qualified Foreign.Marshal.Alloc                  as Foreign
 import qualified System.IO                              as System
+
+
+type SDecl = Shimmer.Decl Text Shimmer.Prim
 
 
 -- | Store an interface at the given file path.
@@ -23,7 +25,7 @@ storeInterface pathDst int
  = do
         let decls       = takeInterfaceDecls int
 
-        let len         = Shimmer.sizeOfFile decls
+        let len         = Shimmer.sizeOfFileDecls decls
         Foreign.allocaBytes len $ \pBuf
          -> do  _ <- Shimmer.pokeFileDecls decls pBuf
                 h <- System.openBinaryFile pathDst System.WriteMode
@@ -32,6 +34,7 @@ storeInterface pathDst int
                 return ()
 
 
+-- | Convert an interface to a list of Shimmer declarations.
 takeInterfaceDecls :: Interface ta sa -> [SDecl]
 takeInterfaceDecls int
  | Just m       <- interfaceDiscusModule int
@@ -45,7 +48,5 @@ takeInterfaceDecls int
  | otherwise
  = []
 
- -- Base -------------------------------------------------------------------------------------------
-type SDecl = Shimmer.Decl Text Shimmer.Prim
 
 

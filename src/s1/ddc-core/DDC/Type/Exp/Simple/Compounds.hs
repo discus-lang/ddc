@@ -4,12 +4,12 @@ module DDC.Type.Exp.Simple.Compounds
           takeNameOfBind
         , typeOfBind
         , replaceTypeOfBind
-        
+
           -- * Binders
         , binderOfBind
         , makeBindFromBinder
         , partitionBindsByType
-        
+
           -- * Bounds
         , takeNameOfBound
         , takeTypeOfBound
@@ -48,6 +48,7 @@ module DDC.Type.Exp.Simple.Compounds
         , tFunOfParamResult
         , takeTFun
         , takeTFunCon
+        , takeTFunCons
         , takeTFunArgResult
         , takeTFunWitArgResult
         , takeTFunAllArgResult
@@ -184,7 +185,7 @@ boundMatchesBind u b
         _                       -> False
 
 
--- | Check whether a named bound matches a named bind. 
+-- | Check whether a named bound matches a named bind.
 --   Yields `False` if they are not named or have different names.
 namedBoundMatchesBind :: Eq n => Bound n -> Bind n -> Bool
 namedBoundMatchesBind u b
@@ -194,14 +195,14 @@ namedBoundMatchesBind u b
 
 
 -- | Convert a `Bind` to a `Bound`, ready for substitution.
---   
---   Returns `UName` for `BName`, @UIx 0@ for `BAnon` 
+--
+--   Returns `UName` for `BName`, @UIx 0@ for `BAnon`
 --   and `Nothing` for `BNone`, because there's nothing to substitute.
 takeSubstBoundOfBind :: Bind n -> Maybe (Bound n)
 takeSubstBoundOfBind bb
  = case bb of
-        BName n _       -> Just $ UName n 
-        BAnon _         -> Just $ UIx 0 
+        BName n _       -> Just $ UName n
+        BAnon _         -> Just $ UIx 0
         BNone _         -> Nothing
 
 
@@ -282,8 +283,8 @@ takeTyConApps tt
 takePrimTyConApps :: Type n -> Maybe (n, [Type n])
 takePrimTyConApps tt
  = case takeTApps tt of
-        TCon tc : args  
-         | TyConBound (UPrim n _) _ <- tc 
+        TCon tc : args
+         | TyConBound (UPrim n _) _ <- tc
           -> Just (n, args)
         _ -> Nothing
 
@@ -293,7 +294,7 @@ takePrimTyConApps tt
 takeDataTyConApps :: Type n -> Maybe (TyCon n, [Type n])
 takeDataTyConApps tt
  = case takeTApps tt of
-        TCon tc : args  
+        TCon tc : args
          | TyConBound (UName{}) k       <- tc
          , TCon (TyConKind KiConData)   <- takeResultKind k
           -> Just (tc, args)
@@ -341,7 +342,7 @@ tForalls' ix ks f
    in   foldr TForall (f $ reverse us) bs
 
 
--- | Split nested foralls from the front of a type, 
+-- | Split nested foralls from the front of a type,
 --   or `Nothing` if there was no outer forall.
 takeTForalls :: Type n -> Maybe ([Bind n], Type n)
 takeTForalls tt
@@ -361,7 +362,7 @@ eraseTForalls tt
         TAbs{}          -> tt
         TApp t1 t2      -> TApp (eraseTForalls t1) (eraseTForalls t2)
         TForall _ t     -> eraseTForalls t
-        TSum ts         -> TSum $ Sum.fromList (Sum.kindOfSum ts) 
+        TSum ts         -> TSum $ Sum.fromList (Sum.kindOfSum ts)
                                 $ map eraseTForalls $ Sum.toList ts
 
 
@@ -393,7 +394,7 @@ kFuns (k:ks) k1    = k `kFun` kFuns ks k1
 takeKFun :: Kind n -> Maybe (Kind n, Kind n)
 takeKFun kk
  = case kk of
-        TApp (TApp (TCon (TyConKind KiConFun)) k1) k2   
+        TApp (TApp (TCon (TyConKind KiConFun)) k1) k2
                 -> Just (k1, k2)
         _       -> Nothing
 
@@ -411,7 +412,7 @@ takeKFuns kk
 
 -- | Like `takeKFuns`, but return argument and return kinds in the same list.
 takeKFuns' :: Kind n -> [Kind n]
-takeKFuns' kk 
+takeKFuns' kk
         | (ks, k1) <- takeKFuns kk
         = ks ++ [k1]
 
@@ -449,7 +450,7 @@ tFunOfList :: [Type n] -> Maybe (Type n)
 tFunOfList ts
   = case reverse ts of
         []      -> Nothing
-        (t : tsArgs)       
+        (t : tsArgs)
          -> let tFuns' []             = t
                 tFuns' (t' : ts')     = t' `tFun` tFuns' ts'
             in  Just $ tFuns' (reverse tsArgs)
@@ -464,7 +465,7 @@ takeTFun tt
         _ -> Nothing
 
 
--- | Split a function type into the function type constructor, 
+-- | Split a function type into the function type constructor,
 --   parameter and result types.
 --   This works for both the Explicit and Implicit function constructors.
 takeTFunCon :: Type n -> Maybe (TcCon, Type n, Type n)
@@ -476,6 +477,18 @@ takeTFunCon tt
                 TcConFunImplicit  -> Just (tc, t1, t2)
                 _                 -> Nothing
         _                         -> Nothing
+
+
+-- | Like `takeTFunCon` but produce a list of arguments.
+takeTFunCons :: Type n -> ([(TcCon, Type n)], Type n)
+takeTFunCons tt
+ = case takeTFunCon tt of
+        Just (tc, t1, t2)
+         -> case takeTFunCons t2 of
+                (ts, t2')  -> ((tc, t1) : ts, t2')
+
+        Nothing -> ([], tt)
+
 
 
 -- | Destruct the type of a function, returning just the argument and result types.
@@ -490,7 +503,7 @@ takeTFunArgResult tt
 
 -- | Destruct the type of a function,
 --   returning the witness argument, value argument and result types.
---   The function type must have the witness implications before 
+--   The function type must have the witness implications before
 --   the value arguments, eg  @T1 => T2 -> T3 -> T4 -> T5@.
 takeTFunWitArgResult :: Type n -> ([Type n], [Type n], Type n)
 takeTFunWitArgResult tt
@@ -504,8 +517,8 @@ takeTFunWitArgResult tt
 
 
 -- | Destruct the type of a possibly polymorphic function
---   returning all kinds of quantifiers, witness arguments, 
---   and value arguments in the order they appear, along with 
+--   returning all kinds of quantifiers, witness arguments,
+--   and value arguments in the order they appear, along with
 --   the type of the result.
 takeTFunAllArgResult :: Type n -> ([Type n], Type n)
 takeTFunAllArgResult tt
@@ -513,7 +526,7 @@ takeTFunAllArgResult tt
         TVar{}          -> ([], tt)
         TCon{}          -> ([], tt)
 
-        TForall b t     
+        TForall b t
          -> let (tsMore, tResult)       = takeTFunAllArgResult t
             in  (typeOfBind b : tsMore, tResult)
 
@@ -540,7 +553,7 @@ arityOfType tt
         t               -> length $ fst $ takeTFunArgResult t
 
 
--- | The data arity of a type is the number of data values it takes. 
+-- | The data arity of a type is the number of data values it takes.
 --   Unlike `arityOfType` we ignore type and witness parameters.
 dataArityOfType :: Type n -> Int
 dataArityOfType tt
@@ -562,7 +575,7 @@ dataArityOfType tt
 -- Implications ---------------------------------------------------------------
 -- | Construct a witness implication type.
 tImpl :: Type n -> Type n -> Type n
-tImpl t1 t2      
+tImpl t1 t2
         = ((TCon $ TyConWitness TwConImpl) `tApp` t1) `tApp` t2
 infixr `tImpl`
 
@@ -644,7 +657,7 @@ tWrite          = tcCon1 TcConWrite
 -- | Deep Write effect type constructor.
 tDeepWrite      = tcCon1 TcConDeepWrite
 
--- | Alloc effect type constructor. 
+-- | Alloc effect type constructor.
 tAlloc          = tcCon1 TcConAlloc
 
 -- | Deep Alloc effect type constructor.

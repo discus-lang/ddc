@@ -6,7 +6,7 @@ module DDC.Core.Discus.Codec.Shimmer.Encode
 where
 import qualified DDC.Core.Discus.Prim   as D
 import qualified SMR.Core.Exp           as S
-import qualified SMR.Prim.Op.Base       as S
+import qualified SMR.Prim.Name          as S
 import qualified Data.Text              as T
 import Data.Text                        (Text)
 import Data.Monoid
@@ -37,13 +37,26 @@ takeName nn
         D.NamePrimCast  pc b    -> takePrimCast  pc b
 
         -- Lit
-        D.NameLitBool b         -> xAps "l-b" [xBool b]
-        D.NameLitNat  n         -> xAps "l-n" [xNat n]
-        D.NameLitInt  _         -> xSym "TODO"
-        D.NameLitSize n         -> xAps "l-s" [xNat n]
-        D.NameLitWord n b       -> xAps "l-w" [xNat n, xNat' b]
-        D.NameLitFloat _ _      -> xSym "TODO"
-        D.NameLitChar c         -> xAps "l-c" [xText $ T.pack [c]]
+        D.NameLitBool  b        -> xBool b
+        D.NameLitNat   n        -> xNat n
+        D.NameLitInt   i        -> xInt i
+        D.NameLitSize  n        -> xAps "l-s" [xNat n]
+
+        D.NameLitWord  n b
+         -> case b of
+                8               -> S.XRef $ S.RPrm $ S.PrimLitWord8  (fromIntegral n)
+                16              -> S.XRef $ S.RPrm $ S.PrimLitWord16 (fromIntegral n)
+                32              -> S.XRef $ S.RPrm $ S.PrimLitWord32 (fromIntegral n)
+                64              -> S.XRef $ S.RPrm $ S.PrimLitWord64 (fromIntegral n)
+                _               -> error "ddc-core-discus.takeName: shimmer invalid word size"
+
+        D.NameLitFloat d b
+         -> case b of
+                32              -> S.XRef $ S.RPrm $ S.PrimLitFloat32 (realToFrac d)
+                64              -> S.XRef $ S.RPrm $ S.PrimLitFloat64 d
+                _               -> error "ddc-core-discus.takeName: shimmer invalid float size"
+
+        D.NameLitChar  c        -> xAps "l-c" [xText $ T.pack [c]]
         D.NameLitTextLit tx     -> xAps "l-t" [xText tx]
 
         D.NameLitUnboxed n      -> xAps "l-u" [takeName n]
@@ -208,6 +221,9 @@ xSym tx = S.XRef (S.RSym tx)
 
 xNat :: Integer -> SExp
 xNat i  = S.XRef $ S.RPrm $ S.PrimLitNat i
+
+xInt :: Integer -> SExp
+xInt i  = S.XRef $ S.RPrm $ S.PrimLitInt i
 
 xNat' :: Int -> SExp
 xNat' i = S.XRef $ S.RPrm $ S.PrimLitNat $ fromIntegral i
