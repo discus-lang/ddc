@@ -52,18 +52,18 @@ takeModuleDecls c decls
                 $ [(txName, fromType c ssType) | S.DeclMac txName ssType <- colDsT col ]
 
    in   Just $ C.ModuleCore
-         { C.moduleName                 = modName
-         , C.moduleIsHeader             = False
-         , C.moduleExportTypes          = []
-         , C.moduleExportValues         = []
-         , C.moduleImportTypes          = []
-         , C.moduleImportDataDefs       = []
-         , C.moduleImportTypeDefs       = []
-         , C.moduleImportCaps           = []
-         , C.moduleImportValues         = concatMap (takeImportValue c modName mpT) $ colImTrm col
-         , C.moduleDataDefsLocal        = []
-         , C.moduleTypeDefsLocal        = []
-         , C.moduleBody                 = C.xUnit () }
+         { C.moduleName            = modName
+         , C.moduleIsHeader        = False
+         , C.moduleExportTypes     = []
+         , C.moduleExportValues    = []
+         , C.moduleImportTypes     = []
+         , C.moduleImportDataDefs  = []
+         , C.moduleImportTypeDefs  = []
+         , C.moduleImportCaps      = []
+         , C.moduleImportValues    = concatMap (takeLocalTermDecl c modName mpT) $ colImTrm col
+         , C.moduleDataDefsLocal   = []
+         , C.moduleTypeDefsLocal   = []
+         , C.moduleBody            = C.xUnit () }
 
 
 -- Collect ----------------------------------------------------------------------------------------
@@ -138,35 +138,63 @@ data Collect
         , colDsD   :: [SDecl], colDsS   :: [SDecl], colDsT   :: [SDecl], colDsX :: [SDecl] }
 
 
+-- DataDefs ---------------------------------------------------------------------------------------
+{-
+takeDeclDat :: Config n -> Map Text SExp -> SDecl -> [C.DataDef n]
+takeDeclDat c mpD dd
+ = case dd of
+        S.DeclSet "m-lc-dat" (XList ssTypDat)
+          -> map takeTypDat ssTypDat
+
+        S.DeclSet "m-im-dat" (XList ssTypDat)
+          -> map takeTypDat ssTypDat
+        _ -> failDecode "takeDataDefDecl failed"
+
+ where  takeTypDat  (XAps "typ-dat" [XTxt _nCon, XMac txMacDat])
+         | Just sDataDef <- Map.lookup txMacDat mpD
+        takeTypDat _ = failDecode "takeTypDat failed"
+
+        takeDataDef (XAps "d-alg"   [ssCon, XList ssBind, XNone]
+         |  Just nCon   <- configTakeRef c ssCon
+         ,  Just bs     <- sequence $ map (takeBind c) ssBind
+         -> C.DataDef nCon bs Nothing True
+-}
+
 -- ImportValue ------------------------------------------------------------------------------------
-takeImportValue
+takeLocalTermDecl
         :: Config n
         -> C.ModuleName -> Map Text (C.Type n)
         -> SDecl -> [(n, C.ImportValue n (C.Type n))]
 
-takeImportValue c modName mpT dd
+takeLocalTermDecl c mn mpT dd
  = case dd of
         S.DeclSet "m-im-trm" (XList ssImTrm)
-          -> map loadImTrm ssImTrm
-        _ -> failDecode $ "takeImportValue failed"
+          -> map (takeImportValue c mn mpT) ssImTrm
+        _ -> failDecode "takeImportValue failed"
 
- where  loadImTrm (XAps "im-trm-mod" [ssVar, XMac txMacType, XNat nT, XNat nX, XNat nB])
-         | Just t <- Map.lookup txMacType mpT
-         , Just n <- configTakeRef c (ssVar :: SExp)
-         = (n, C.ImportValueModule
-         { C.importValueModuleName  = modName
-         , C.importValueModuleVar   = n
-         , C.importValueModuleType  = t
-         , C.importValueModuleArity = Just (fromI nT, fromI nX, fromI nB) })
 
-        loadImTrm (XAps "im-trm-sea" [ssVar@(XTxt txVar), XMac txMacType])
-         | Just t <- Map.lookup txMacType mpT
-         , Just n <- configTakeRef c (ssVar :: SExp)
-         = (n, C.ImportValueSea
-         { C.importValueSeaVar      = T.unpack txVar
-         , C.importValueSeaType     = t })
+takeImportValue
+        :: Config n -> C.ModuleName -> Map Text (C.Type n)
+        -> SExp -> (n, C.ImportValue n (C.Type n))
 
-        loadImTrm _ = failDecode "loadImTrm failed"
+takeImportValue c mn mpT (XAps "im-trm-mod" [ssVar, XMac txMacType, XNat nT, XNat nX, XNat nB])
+ | Just t <- Map.lookup txMacType mpT
+ , Just n <- configTakeRef c (ssVar :: SExp)
+ = (n, C.ImportValueModule
+        { C.importValueModuleName  = mn
+        , C.importValueModuleVar   = n
+        , C.importValueModuleType  = t
+        , C.importValueModuleArity = Just (fromI nT, fromI nX, fromI nB) })
+
+takeImportValue c _  mpT (XAps "im-trm-sea" [ssVar@(XTxt txVar), XMac txMacType])
+ | Just t <- Map.lookup txMacType mpT
+ , Just n <- configTakeRef c (ssVar :: SExp)
+ = (n, C.ImportValueSea
+        { C.importValueSeaVar      = T.unpack txVar
+        , C.importValueSeaType     = t })
+
+takeImportValue _ _ _ _
+ = failDecode "loadImTrm failed"
 
 
 -- Type -------------------------------------------------------------------------------------------
