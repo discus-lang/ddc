@@ -21,6 +21,8 @@ import Data.IORef
 import Data.Text                                (Text)
 import Data.Maybe
 -- import Data.Monoid
+import qualified Data.Map.Strict                as Map
+import Data.Map                                 (Map)
 import Prelude hiding (read)
 
 ---------------------------------------------------------------------------------------------------
@@ -35,8 +37,8 @@ data Config n
 
 
 -- Module -----------------------------------------------------------------------------------------
-takeModuleDecls :: Config n -> [SDecl] -> Maybe (C.Module () n)
-takeModuleDecls _config decls
+takeModuleDecls :: (Ord n, Show n) => Config n -> [SDecl] -> Maybe (C.Module () n)
+takeModuleDecls c decls
  = let  col = collectModuleDecls decls
 
         Just modName
@@ -46,6 +48,8 @@ takeModuleDecls _config decls
                   -> Just $ C.ModuleName $ map T.unpack sParts
                 _ -> Nothing
 
+        mpT     = Map.fromList
+                $ [(txName, fromType c ssType) | S.DeclMac txName ssType <- colDsT col ]
 
    in   Just $ C.ModuleCore
          { C.moduleName                 = modName
@@ -56,7 +60,7 @@ takeModuleDecls _config decls
          , C.moduleImportDataDefs       = []
          , C.moduleImportTypeDefs       = []
          , C.moduleImportCaps           = []
-         , C.moduleImportValues         = []
+         , C.moduleImportValues         = concatMap (takeImportValue c modName mpT) $ colImTrm col
          , C.moduleDataDefsLocal        = []
          , C.moduleTypeDefsLocal        = []
          , C.moduleBody                 = C.xUnit () }
@@ -109,16 +113,20 @@ collectModuleDecls decls
 
         dsName  <- read refName
         dsExTyp <- read refExTyp; dsExTrm <- read refExTrm
-        dsImTyp <- read refImTyp; dsImDat <- read refImDat;
+        dsImTyp <- read refImTyp; dsImDat <- read refImDat
         dsImSyn <- read refImSyn; dsImCap <- read refImCap; dsImTrm <- read refImTrm
         dsLcDat <- read refLcDat; dsLcSym <- read refLcSyn
+        dsD     <- read refD;     dsS     <- read refT;     dsT     <- read refT
+        dsX     <- read refX
 
         return  $ Collect
                 { colName  = rev dsName
                 , colExTyp = rev dsExTyp, colExTrm = rev dsExTrm
                 , colImTyp = rev dsImTyp, colImDat = rev dsImDat
                 , colImSyn = rev dsImSyn, colImCap = rev dsImCap, colImTrm = rev dsImTrm
-                , colLcDat = rev dsLcDat, colLcSyn = rev dsLcSym }
+                , colLcDat = rev dsLcDat, colLcSyn = rev dsLcSym
+                , colDsD   = rev dsD,     colDsS   = rev dsS,     colDsT   = rev dsT
+                , colDsX   = rev dsX }
 
 data Collect
         = Collect
@@ -126,7 +134,39 @@ data Collect
         , colExTyp :: [SDecl], colExTrm :: [SDecl]
         , colImTyp :: [SDecl], colImDat :: [SDecl]
         , colImSyn :: [SDecl], colImCap :: [SDecl], colImTrm :: [SDecl]
-        , colLcDat :: [SDecl], colLcSyn :: [SDecl] }
+        , colLcDat :: [SDecl], colLcSyn :: [SDecl]
+        , colDsD   :: [SDecl], colDsS   :: [SDecl], colDsT   :: [SDecl], colDsX :: [SDecl] }
+
+
+-- ImportValue ------------------------------------------------------------------------------------
+takeImportValue
+        :: Config n
+        -> C.ModuleName -> Map Text (C.Type n)
+        -> SDecl -> [(n, C.ImportValue n (C.Type n))]
+
+takeImportValue c modName mpT dd
+ = case dd of
+        S.DeclSet "m-im-trm" (XList ssImTrm)
+          -> map loadImTrm ssImTrm
+        _ -> failDecode $ "takeImportValue failed"
+
+ where  loadImTrm (XAps "im-trm-mod" [ssVar, XMac txMacType, XNat nT, XNat nX, XNat nB])
+         | Just t <- Map.lookup txMacType mpT
+         , Just n <- configTakeRef c (ssVar :: SExp)
+         = (n, C.ImportValueModule
+         { C.importValueModuleName  = modName
+         , C.importValueModuleVar   = n
+         , C.importValueModuleType  = t
+         , C.importValueModuleArity = Just (fromI nT, fromI nX, fromI nB) })
+
+        loadImTrm (XAps "im-trm-sea" [ssVar@(XTxt txVar), XMac txMacType])
+         | Just t <- Map.lookup txMacType mpT
+         , Just n <- configTakeRef c (ssVar :: SExp)
+         = (n, C.ImportValueSea
+         { C.importValueSeaVar      = T.unpack txVar
+         , C.importValueSeaType     = t })
+
+        loadImTrm _ = failDecode "loadImTrm failed"
 
 
 -- Type -------------------------------------------------------------------------------------------
@@ -178,12 +218,6 @@ takeTypeFun c ssParam tResult
  = case ssParam of
         []      -> Just tResult
 
-        -- Explicit function parameter.
-        ssType : ssParamRest
-         |  Just tRest  <- takeTypeFun c ssParamRest tResult
-         -> Just $ C.tApps (C.TCon $ C.TyConSpec C.TcConFunExplicit)
-                        [fromType c ssType, tRest]
-
         -- Implicit function parameter.
         XAps "ni" [ssType] : ssParamRest
          |  Just tRest  <- takeTypeFun c ssParamRest tResult
@@ -195,6 +229,12 @@ takeTypeFun c ssParam tResult
          |  Just tcFun  <- takeTyCon   c ssTyCon
          ,  Just tRest  <- takeTypeFun c ssParamRest tResult
          -> Just $ C.tApps (C.TCon tcFun) [fromType c ssType, tRest]
+
+        -- Explicit function parameter.
+        ssType : ssParamRest
+         |  Just tRest  <- takeTypeFun c ssParamRest tResult
+         -> Just $ C.tApps (C.TCon $ C.TyConSpec C.TcConFunExplicit)
+                        [fromType c ssType, tRest]
 
         _ -> Nothing
 
@@ -311,8 +351,10 @@ takeXTxt _         = Nothing
 pattern XApp x1 xs      = S.XApp x1 xs
 pattern XAps tx xs      = S.XApp (S.XRef (S.RSym tx)) xs
 pattern XSym tx         = S.XRef (S.RSym tx)
+pattern XMac tx         = S.XRef (S.RMac tx)
 pattern XTxt tx         = S.XRef (S.RTxt tx)
 pattern XNat n          = S.XRef (S.RPrm (S.PrimLitNat n))
+pattern XList xs        = S.XApp (S.XRef (S.RSym "l")) xs
 
 splitLast :: [a] -> ([a], a)
 splitLast xx
@@ -320,6 +362,8 @@ splitLast xx
  where  go _   []       = failDecode "splitLast failed"
         go acc [x]      = (reverse acc, x)
         go acc (x : xs) = go (x : acc) xs
+
+fromI = fromIntegral
 
 failDecode str
  = error $ "ddc-core.Shimmer.Decode." ++ str

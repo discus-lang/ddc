@@ -40,7 +40,6 @@ takeName nn
         D.NameLitBool  b        -> xBool b
         D.NameLitNat   n        -> xNat n
         D.NameLitInt   i        -> xInt i
-        D.NameLitSize  n        -> xAps "l-s" [xNat n]
 
         D.NameLitWord  n b
          -> case b of
@@ -56,9 +55,9 @@ takeName nn
                 64              -> S.XRef $ S.RPrm $ S.PrimLitFloat64 d
                 _               -> error "ddc-core-discus.takeName: shimmer invalid float size"
 
+        D.NameLitSize  n        -> xAps "l-s" [xNat n]
         D.NameLitChar  c        -> xAps "l-c" [xText $ T.pack [c]]
         D.NameLitTextLit tx     -> xAps "l-t" [xText tx]
-
         D.NameLitUnboxed n      -> xAps "l-u" [takeName n]
 
         -- Hole
@@ -108,8 +107,8 @@ takeOpError op b
  = case op of
         D.OpErrorDefault
          -> case b of
-                False           -> xSym "oe-error-b"
-                True            -> xSym "oe-error-u"
+                False           -> xSym "oe-error-u"
+                True            -> xSym "oe-error-b"
 
 
 -- | Take the Shimmer encoding of a function operator.
@@ -138,8 +137,8 @@ takeOpVector op b
 
   nbx
    = case b of
-        True                    -> "-b"
-        False                   -> "-u"
+        True                    -> "-u"
+        False                   -> "-b"
 
 
 -- Prims ------------------------------------------------------------------------------------------
@@ -175,17 +174,14 @@ takePrimArith pm bx
         D.PrimArithDiv          -> "pa-div"
         D.PrimArithMod          -> "pa-mod"
         D.PrimArithRem          -> "pa-rem"
-
         D.PrimArithEq           -> "pa-eq"
         D.PrimArithNeq          -> "pa-neq"
         D.PrimArithGt           -> "pa-gt"
         D.PrimArithGe           -> "pa-ge"
         D.PrimArithLt           -> "pa-lt"
         D.PrimArithLe           -> "pa-le"
-
         D.PrimArithAnd          -> "pa-and"
         D.PrimArithOr           -> "pa-or"
-
         D.PrimArithShl          -> "pa-shl"
         D.PrimArithShr          -> "pa-shr"
         D.PrimArithBAnd         -> "pa-band"
@@ -194,8 +190,8 @@ takePrimArith pm bx
 
    nbx
     = case bx of
-        True                    -> "-b"
-        False                   -> "-u"
+        True                    -> "-u"
+        False                   -> "-b"
 
 
 -- | Take the Shimmer encoding of a primitive cast operator.
@@ -211,8 +207,8 @@ takePrimCast pc bx
 
   nbx
    = case bx of
-       True                     -> "-b"
-       False                    -> "-u"
+       True                     -> "-u"
+       False                    -> "-b"
 
 
 -- Utils ------------------------------------------------------------------------------------------
