@@ -54,6 +54,7 @@ takeModuleDecls c decls
 
         mpT     = Map.fromList [(tx, fromType c ss) | S.DeclMac tx ss <- colDsT col]
         mpD     = Map.fromList [(tx, ss)            | S.DeclMac tx ss <- colDsD col]
+        mpS     = Map.fromList [(tx, ss)            | S.DeclMac tx ss <- colDsS col]
 
    in   Just $ C.ModuleCore
          { C.moduleName            = modName
@@ -61,12 +62,12 @@ takeModuleDecls c decls
          , C.moduleExportTypes     = []
          , C.moduleExportValues    = []
          , C.moduleImportTypes     = []
-         , C.moduleImportDataDefs  = concatMap (takeDeclDat       c mpD)         $ colImDat col
-         , C.moduleImportTypeDefs  = []
+         , C.moduleImportDataDefs  = concatMap (takeDeclDat         c mpD) $ colImDat col
+         , C.moduleImportTypeDefs  = concatMap (takeDeclSyn         c mpS) $ colImSyn col
          , C.moduleImportCaps      = []
-         , C.moduleImportValues    = concatMap (takeLocalTermDecl c modName mpT) $ colImTrm col
-         , C.moduleDataDefsLocal   = concatMap (takeDeclDat       c mpD)         $ colLcDat col
-         , C.moduleTypeDefsLocal   = []
+         , C.moduleImportValues    = concatMap (takeDeclTrm c modName mpT) $ colImTrm col
+         , C.moduleDataDefsLocal   = concatMap (takeDeclDat         c mpD) $ colLcDat col
+         , C.moduleTypeDefsLocal   = concatMap (takeDeclSyn         c mpS) $ colLcSyn col
          , C.moduleBody            = C.xUnit () }
 
 
@@ -120,7 +121,7 @@ collectModuleDecls decls
         dsImTyp <- read refImTyp; dsImDat <- read refImDat
         dsImSyn <- read refImSyn; dsImCap <- read refImCap; dsImTrm <- read refImTrm
         dsLcDat <- read refLcDat; dsLcSym <- read refLcSyn
-        dsD     <- read refD;     dsS     <- read refT;     dsT     <- read refT
+        dsD     <- read refD;     dsS     <- read refS;     dsT     <- read refT
         dsX     <- read refX
 
         return  $ Collect
@@ -142,15 +143,41 @@ data Collect
         , colDsD   :: [SDecl], colDsS   :: [SDecl], colDsT   :: [SDecl], colDsX :: [SDecl] }
 
 
--- DataDefs ---------------------------------------------------------------------------------------
+-- DeclSyn ----------------------------------------------------------------------------------------
+takeDeclSyn :: Ord n => Config n -> Map Text SExp -> SDecl -> [(n, (C.Kind n, C.Type n))]
+takeDeclSyn c mpS dd
+ = case dd of
+        S.DeclSet "m-im-syn" ssListTypSyn
+          -> map takeTypSyn $ fromList ssListTypSyn
+
+        S.DeclSet "m-lc-syn" ssListTypSyn
+          -> map takeTypSyn $ fromList ssListTypSyn
+
+        _ -> failDecode "takeDeclSyn failed"
+
+ where  takeTypSyn (XAps "typ-syn" [ssType, XMac txMacSyn])
+         = let nType = fromRef c ssType
+           in  case Map.lookup txMacSyn mpS of
+                Nothing        -> failDecode $ "takeDeclSyn missing declaration " ++ show txMacSyn
+                Just ssTypeSyn -> takeSynonym nType ssTypeSyn
+
+        takeTypSyn _    = failDecode "takeTypSyn failed"
+
+        takeSynonym nType (XAps "s-syn"  [ssKind, ssType])
+         = (nType, (fromType c ssKind, fromType c ssType))
+
+        takeSynonym _ _ = failDecode "takeSynonym failed"
+
+
+-- DeclDat ----------------------------------------------------------------------------------------
 takeDeclDat :: Ord n => Config n -> Map Text SExp -> SDecl -> [C.DataDef n]
 takeDeclDat c mpD dd
  = case dd of
-        S.DeclSet "m-lc-dat" (XList ssTypDat)
-          -> map takeTypDat ssTypDat
+        S.DeclSet "m-im-dat" ssListTypDat
+          -> map takeTypDat $ fromList ssListTypDat
 
-        S.DeclSet "m-im-dat" (XList ssTypDat)
-          -> map takeTypDat ssTypDat
+        S.DeclSet "m-lc-dat" ssListTypDat
+          -> map takeTypDat $ fromList ssListTypDat
 
         _ -> failDecode "takeDeclDat failed"
 
@@ -176,7 +203,7 @@ takeDeclDat c mpD dd
             , C.dataDefCtors        = Just $ map (takeDataCtor nType bsParam) $ fromList ssCtors
             , C.dataDefIsAlgebraic  = True }
 
-        takeDataDef ss = failDecode $ "takeDataDef failed " ++ show ss
+        takeDataDef _ = failDecode $ "takeDataDef failed"
 
         takeDataCtor nType bsParam (XAps "ctor"  (XNat nTag : ssCtorName : ssRest))
          | (ssField, ssResult)  <- splitLast ssRest
@@ -192,16 +219,16 @@ takeDeclDat c mpD dd
 
 
 -- ImportValue ------------------------------------------------------------------------------------
-takeLocalTermDecl
-        :: Config n
+takeDeclTrm
+        :: Show n => Config n
         -> C.ModuleName -> Map Text (C.Type n)
         -> SDecl -> [(n, C.ImportValue n (C.Type n))]
 
-takeLocalTermDecl c mn mpT dd
+takeDeclTrm c mn mpT dd
  = case dd of
-        S.DeclSet "m-im-trm" (XList ssImTrm)
-          -> map takeImTrm ssImTrm
-        _ -> failDecode "takeImportValue failed"
+        S.DeclSet "m-im-trm" ssListImTrm
+          -> map takeImTrm $ fromList ssListImTrm
+        _ -> failDecode $ "takeDeclTrm failed"
 
  where  takeImTrm (XAps "im-trm-mod" [ssVar, XMac txMacType, XNat nT, XNat nX, XNat nB])
          | Just t <- Map.lookup txMacType mpT
@@ -220,7 +247,7 @@ takeLocalTermDecl c mn mpT dd
                 , C.importValueSeaType     = t })
 
         takeImTrm _
-         = failDecode "loadImTrm failed"
+         = failDecode "takeImTrm failed"
 
 
 -- Type -------------------------------------------------------------------------------------------
@@ -406,7 +433,9 @@ pattern XNone           = S.XRef (S.RSym "n")
 pattern XSome x         = S.XApp (S.XRef (S.RSym "s")) [x]
 
 pattern XNat n          = S.XRef (S.RPrm (S.PrimLitNat n))
-pattern XList xs        = S.XApp (S.XRef (S.RSym "l")) xs
+-- pattern XList xs        = S.XApp (S.XRef (S.RSym "l")) xs
+-- pattern XNil            = S.XRef (S.RSym "o")
+
 
 pattern XApp x1 xs      = S.XApp x1 xs
 pattern XAps tx xs      = S.XApp (S.XRef (S.RSym tx)) xs
