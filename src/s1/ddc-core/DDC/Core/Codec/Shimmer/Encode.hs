@@ -61,9 +61,9 @@ takeModuleDecls c mm@C.ModuleCore{}
         -- Exported Types.
         dExTyp
          = S.DeclSet "m-ex-typ"
-                $ xList ( map (S.XRef . S.RTxt)
-                        $ map (takeNameOfExportSource c)
-                        $ map snd $ C.moduleExportTypes mm)
+         $ xList ([ xAps "ex-typ" [ xTxt $ takeNameOfExportSource c ex
+                                  , takeType c t]
+                  | (_, ex@(C.ExportSourceLocal _ t)) <- C.moduleExportTypes mm])
 
         -- Exported Terms.
         dExTrm
@@ -78,53 +78,45 @@ takeModuleDecls c mm@C.ModuleCore{}
         -- Imported Types.
         dImTyp
          = S.DeclSet "m-im-typ" $ xList xsImport
-         where xsImport  = map (takeImportType c)
-                         $ C.moduleImportTypes mm
+         where xsImport  = map (takeImportType c) $ C.moduleImportTypes mm
 
         -- Imported Data Defs.
         (dImDat, dsImDat)
          = (S.DeclSet "m-im-dat" $ xList xsImport, dsImport)
-         where  xdsImport = map (takeDataDef c)
-                          $ C.moduleImportDataDefs mm
+         where  xdsImport = map (takeDataDef c) $ C.moduleImportDataDefs mm
                 xsImport  = map fst xdsImport
                 dsImport  = concatMap snd xdsImport
 
         -- Imported Type Synonyms.
         (dImSyn, dsImSyn)
          = (S.DeclSet "m-im-syn"  $ xList xsImport, dsImport)
-         where  xdsImport = map (takeTypeSyn c)
-                          $ C.moduleImportTypeDefs mm
+         where  xdsImport = map (takeTypeSyn c) $ C.moduleImportTypeDefs mm
                 xsImport  = map fst xdsImport
                 dsImport  = concatMap snd xdsImport
 
         -- Imported Capabilities.
         dImCap
          = (S.DeclSet "m-im-cap" $ xList xsImport)
-         where  xsImport  = map (takeImportCap c)
-                          $ C.moduleImportCaps mm
+         where  xsImport  = map (takeImportCap c) $ C.moduleImportCaps mm
 
         -- Imported Terms.
         (dImTrm, dsImTrm)
          = (S.DeclSet "m-im-trm" $ xList xsImport, dsImport)
-         where  xdsImport = map (takeImportValue c)
-                          $ map snd $ C.moduleImportValues mm
-
+         where  xdsImport = map (takeImportValue c) $ map snd $ C.moduleImportValues mm
                 xsImport  = map fst xdsImport
                 dsImport  = concatMap snd xdsImport
 
         -- Local Data Defs
         (dLcDat, dsLcDat)
          = (S.DeclSet "m-lc-dat" $ xList xsImport, dsImport)
-         where  xdsImport = map (takeDataDef c)
-                          $ C.moduleDataDefsLocal mm
+         where  xdsImport = map (takeDataDef c) $ C.moduleDataDefsLocal mm
                 xsImport  = map fst xdsImport
                 dsImport  = concatMap snd xdsImport
 
         -- Local Type Synonyms
         (dLcSyn, dsLcSyn)
          = (S.DeclSet "m-lc-syn" $ xList xsImport, dsImport)
-         where  xdsImport = map (takeTypeSyn c)
-                          $ C.moduleTypeDefsLocal mm
+         where  xdsImport = map (takeTypeSyn c) $ C.moduleTypeDefsLocal mm
                 xsImport  = map fst xdsImport
                 dsImport  = concatMap snd xdsImport
 
