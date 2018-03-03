@@ -13,26 +13,25 @@ import DDC.Driver.Command.Read
 import DDC.Driver.Stage
 import DDC.Driver.Config
 import DDC.Driver.Interface.Source
+import qualified DDC.Driver.Stage.Tetra                         as DE
+
 import DDC.Build.Pipeline
 import DDC.Build.Language
+import DDC.Build.Interface.Store                                (Store)
+import qualified DDC.Build.Interface.Store                      as Store
+import qualified DDC.Build.Spec.Parser                          as Spec
+import qualified DDC.Build.Language.Discus                      as Tetra
+import qualified DDC.Build.Interface.Codec.Text.Encode          as IntText
+
+
 import DDC.Core.Simplifier.Parser
 import DDC.Core.Transform.Reannotate
 import DDC.Core.Exp.Annot.AnTEC
 import DDC.Core.Codec.Text.Pretty
+import qualified DDC.Core.Check         as C
+import qualified DDC.Core.Discus        as Tetra
+
 import DDC.Data.SourcePos
-import DDC.Build.Interface.Store                                (Store)
-import qualified DDC.Core.Check                                 as C
-import qualified DDC.Build.Language.Discus                      as Tetra
-import qualified DDC.Build.Spec.Parser                          as Spec
-import qualified DDC.Core.Discus                                as Tetra
-import qualified DDC.Driver.Stage.Tetra                         as DE
-
-import qualified DDC.Build.Interface.Codec.Text.Encode          as IntText
-import qualified DDC.Build.Interface.Codec.Text.Decode          as IntText
-
-import qualified DDC.Build.Interface.Codec.Shimmer.Decode       as IntSmr
-
-import qualified SMR.Core.Codec                                 as SMR
 
 import Control.Monad
 import Control.Monad.Trans.Except
@@ -40,9 +39,8 @@ import Control.Monad.IO.Class
 import Control.DeepSeq
 import System.FilePath
 import System.Directory
-import qualified Data.Text                              as T
-import qualified Data.Map                               as Map
-import qualified Data.ByteString                        as BS
+import qualified Data.Text              as T
+import qualified Data.Map               as Map
 
 ---------------------------------------------------------------------------------------------------
 -- | Load and transform source code, interface, or build file.
@@ -64,32 +62,17 @@ cmdLoadFromFile config store mStrSimpl fsTemplates filePath
 
  -- Load build file.
  | ".build"     <- takeExtension filePath
- = do
-        str     <- liftIO $ readFile filePath
+ = do   str     <- liftIO $ readFile filePath
         case Spec.parseBuildSpec filePath str of
          Left err       -> throwE $ show err
          Right spec     -> liftIO $ putStrLn $ show spec
 
  -- Load a text interface file and print it as text.
- | ".di"        <- takeExtension filePath
- = do
-        timeDI  <- liftIO $ getModificationTime filePath
-        str     <- liftIO $ readFile filePath
-        case IntText.loadInterface filePath timeDI str of
+ | elem (takeExtension filePath) [".di", ".sms"]
+ = do   iint    <- liftIO $ Store.load filePath
+        case iint of
          Left err    -> throwE $ renderIndent $ ppr err
          Right iface -> liftIO $ putStrLn $ T.unpack $ IntText.encodeInterface iface
-
- -- Load a Shimmer encoded Discus interface file and print it as text.
- | ".sms"       <- takeExtension filePath
- = do
-        timeSMR   <- liftIO $ getModificationTime filePath
-        bs        <- liftIO $ BS.readFile filePath
-        let decls =  SMR.unpackFileDecls bs
-
-        case IntSmr.decodeInterfaceDecls filePath timeSMR decls of
-         Nothing    -> throwE $ "load of .sms interface failed"
-         Just iface -> liftIO $ putStrLn $ T.unpack $ IntText.encodeInterface iface
-
 
  -- | Load a Discus Source module.
  | ".ds"        <- takeExtension filePath

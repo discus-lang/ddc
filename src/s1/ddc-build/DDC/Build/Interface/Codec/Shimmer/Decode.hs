@@ -1,39 +1,36 @@
 
 module DDC.Build.Interface.Codec.Shimmer.Decode
-        (decodeInterfaceDecls)
+        (decodeInterface)
 where
+import DDC.Build.Interface.Error
 import DDC.Build.Interface.Base
+import Data.Time.Clock
 import DDC.Core.Module                                  as C
-
-import qualified SMR.Core.Exp                           as Shimmer
-import qualified SMR.Prim.Name                          as Shimmer
-
+import qualified SMR.Core.Codec                         as SMR
 import qualified DDC.Core.Discus.Codec.Shimmer.Decode   as Discus.Decode
 import qualified DDC.Core.Codec.Shimmer.Decode          as Core.Decode
-
-import Data.Text                                        (Text)
-import Data.Time.Clock
+import qualified Data.ByteString                        as BS
 
 
-decodeInterfaceDecls
-        :: FilePath
-        -> UTCTime
-        -> [Shimmer.Decl Text Shimmer.Prim]
-        -> Maybe (Interface () sa)
+decodeInterface
+        :: FilePath             -- ^ Path of interace file, for error messages.
+        -> UTCTime              -- ^ Timestamp of interface file.
+        -> BS.ByteString        -- ^ Interface file contents.
+        -> Either Error InterfaceAA
 
-decodeInterfaceDecls filePath timeStamp ds
- | Just modDiscus <- Core.Decode.takeModuleDecls configDiscus ds
- = Just $ Interface
+decodeInterface filePath timeStamp bs
+ | Just modDiscus
+        <- Core.Decode.takeModuleDecls configDiscus
+        $  SMR.unpackFileDecls bs
+ = Right $ Interface
         { interfaceFilePath     = filePath
         , interfaceTimeStamp    = timeStamp
         , interfaceVersion      = "version"
         , interfaceModuleName   = C.moduleName modDiscus
         , interfaceDiscusModule = Just $ modDiscus }
---         , interfaceSaltModule   = Nothing }
-
 
  | otherwise
- = Nothing
+ = Left ErrorParseEnd
 
  where  configDiscus
          = Core.Decode.Config

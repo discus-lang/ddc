@@ -1,6 +1,6 @@
 
 module DDC.Build.Interface.Codec.Text.Decode where
-import DDC.Build.Interface.Codec.Text.Error
+import DDC.Build.Interface.Error
 import DDC.Build.Interface.Base
 import DDC.Core.Module
 import DDC.Core.Transform.Reannotate
@@ -15,14 +15,14 @@ import qualified Data.List                      as List
 
 
 ---------------------------------------------------------------------------------------------------
--- | Load a textual interface from a file.
-loadInterface
+-- | Decode a textual interface from a string.
+decodeInterface
         :: FilePath     -- ^ File path of interface file, for error messages.
         -> UTCTime      -- ^ TimeStamp of interface file.
         -> String       -- ^ Interface file source.
         -> Either Error InterfaceAA
 
-loadInterface pathInterface timeStamp str
+decodeInterface pathInterface timeStamp str
  = let  -- Attach line numbers to ach line
         ls      = lines str
         lsNum   = zip [1..] ls

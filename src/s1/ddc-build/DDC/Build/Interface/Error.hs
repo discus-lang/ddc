@@ -1,9 +1,8 @@
 
-module DDC.Build.Interface.Codec.Text.Error where
+module DDC.Build.Interface.Error where
 import DDC.Data.Pretty
 import qualified DDC.Core.Load                  as Load
 import qualified DDC.Core.Discus                as Discus
-import qualified DDC.Core.Salt                  as Salt
 
 
 -- | Problems that can arise when loading an interface file.
@@ -34,9 +33,6 @@ data Error
         -- | Error when loading a tetra core module from the interface file.
         | ErrorLoadTetra FilePath (Load.Error Discus.Name Discus.Error)
 
-        -- | Error when loading a salt  core module from the interface file.
-        | ErrorLoadSalt  FilePath (Load.Error  Salt.Name  Salt.Error)
-
 
 instance Pretty Error where
  ppr ErrorEmpty
@@ -64,9 +60,5 @@ instance Pretty Error where
          , text "Error when loading Tetra module from interface file."
          , indent 2 $ ppr err ]
 
- ppr (ErrorLoadSalt path err)
-  = vcat [ text path
-         , text "Error when loading Salt module from interface file."
-         , indent 2 $ ppr err ]
 
 

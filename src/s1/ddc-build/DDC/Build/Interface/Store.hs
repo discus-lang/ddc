@@ -12,6 +12,7 @@ module DDC.Build.Interface.Store
         , Super (..)
         , findSuper)
 where
+import DDC.Build.Interface.Error
 import DDC.Build.Interface.Base
 import DDC.Core.Module
 import DDC.Core.Call
@@ -21,13 +22,15 @@ import System.Directory
 import Data.Time.Clock
 import Data.IORef
 import Data.Maybe
-import Data.Map                                         (Map)
-import qualified DDC.Build.Interface.Codec.Text.Error   as IT
-import qualified DDC.Build.Interface.Codec.Text.Decode  as IT
-import qualified DDC.Core.Discus                        as E
-import qualified Data.Map.Strict                        as Map
-import qualified Data.Compact                           as Compact
-
+import Data.Map                                                 (Map)
+import qualified DDC.Build.Interface.Codec.Text.Decode          as IT
+import qualified DDC.Build.Interface.Codec.Shimmer.Decode       as IS
+import qualified DDC.Core.Discus                                as E
+import qualified Data.Map.Strict                                as Map
+import qualified Data.Compact                                   as Compact
+import qualified Data.ByteString                                as BS
+import qualified Data.Text.Encoding                             as Text
+import qualified Data.Text                                      as Text
 
 ---------------------------------------------------------------------------------------------------
 -- | Abstract API to a collection of module interfaces.
@@ -130,13 +133,29 @@ wrap store ii
 
 
 -- | Load a new interface from a file.
-load    :: FilePath -> IO (Either IT.Error InterfaceAA)
+load    :: FilePath -> IO (Either Error InterfaceAA)
 load filePath
  = do   timeStamp  <- getModificationTime filePath
-        str        <- readFile filePath
-        let iint   =  IT.loadInterface filePath timeStamp str
-        cInt       <- Compact.compactWithSharing iint
-        return $ Compact.getCompact cInt
+
+        -- Read the file source.
+        bs      <- BS.readFile filePath
+
+        let magicSMR    = BS.pack [0x53, 0x4d, 0x52, 0x31]
+
+        if BS.isPrefixOf magicSMR (BS.take 4 bs)
+         -- Binary interface file in Shimmer format.
+         then do
+                let iint = IS.decodeInterface filePath timeStamp bs
+                cInt    <- Compact.compactWithSharing iint
+                return  $  Compact.getCompact cInt
+
+         -- Textual interface file in Discus Source format.
+         else do
+                let tx   = Text.decodeUtf8 bs
+                let str  = Text.unpack tx
+                let iint = IT.decodeInterface filePath timeStamp str
+                cInt    <- Compact.compactWithSharing iint
+                return  $  Compact.getCompact cInt
 
 
 -- | Get metadata of interfaces currently in the store.
