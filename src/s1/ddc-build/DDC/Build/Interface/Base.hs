@@ -1,11 +1,11 @@
 
 module DDC.Build.Interface.Base
-        (Interface (..))
+        ( Interface (..)
+        , InterfaceAA)
 where
 import DDC.Core.Module
 import Data.Time.Clock
 import qualified DDC.Core.Discus        as Discus
-import qualified DDC.Core.Salt          as Salt
 
 
 -- | Module interface.
@@ -20,7 +20,9 @@ data Interface ta sa
 
         , interfaceVersion      :: String
         , interfaceModuleName   :: ModuleName
-        , interfaceDiscusModule :: Maybe (Module ta Discus.Name)
-        , interfaceSaltModule   :: Maybe (Module sa Salt.Name) }
+        , interfaceDiscusModule :: Maybe (Module ta Discus.Name) }
 
 
+-- | Type of unit annotated interface.
+type InterfaceAA
+        = Interface () ()

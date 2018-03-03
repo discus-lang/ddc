@@ -28,8 +28,8 @@ decodeInterfaceDecls filePath timeStamp ds
         , interfaceTimeStamp    = timeStamp
         , interfaceVersion      = "version"
         , interfaceModuleName   = C.moduleName modDiscus
-        , interfaceDiscusModule = Just $ modDiscus
-        , interfaceSaltModule   = Nothing }
+        , interfaceDiscusModule = Just $ modDiscus }
+--         , interfaceSaltModule   = Nothing }
 
 
  | otherwise

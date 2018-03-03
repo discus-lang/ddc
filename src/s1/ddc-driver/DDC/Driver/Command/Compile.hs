@@ -386,8 +386,8 @@ cmdCompile config bBuildExe' store filePath
                 , interfaceFilePath     = pathDI
                 , interfaceTimeStamp    = timeDI
                 , interfaceModuleName   = C.moduleName modSalt
-                , interfaceDiscusModule = fmap (CReannotate.reannotate (const ())) mModTetra
-                , interfaceSaltModule   = Just modSalt  }
+                , interfaceDiscusModule = fmap (CReannotate.reannotate (const ())) mModTetra }
+--                , interfaceSaltModule   = Just modSalt  }
 
         liftIO  $ writeFile pathDI
                 $ T.unpack $ IntText.encodeInterface int

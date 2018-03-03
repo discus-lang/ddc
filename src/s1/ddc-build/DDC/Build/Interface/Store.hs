@@ -12,21 +12,21 @@ module DDC.Build.Interface.Store
         , Super (..)
         , findSuper)
 where
-import DDC.Data.Pretty
 import DDC.Build.Interface.Base
-import DDC.Build.Interface.Codec.Text.Decode
-import DDC.Core.Call
 import DDC.Core.Module
+import DDC.Core.Call
 import DDC.Type.Exp
+import DDC.Data.Pretty
 import System.Directory
 import Data.Time.Clock
 import Data.IORef
 import Data.Maybe
-import Data.Map                         (Map)
-import qualified DDC.Core.Discus        as E
-import qualified DDC.Core.Salt          as A
-import qualified Data.Map.Strict        as Map
-import qualified Data.Compact           as Compact
+import Data.Map                                         (Map)
+import qualified DDC.Build.Interface.Codec.Text.Error   as IT
+import qualified DDC.Build.Interface.Codec.Text.Decode  as IT
+import qualified DDC.Core.Discus                        as E
+import qualified Data.Map.Strict                        as Map
+import qualified Data.Compact                           as Compact
 
 
 ---------------------------------------------------------------------------------------------------
@@ -95,9 +95,6 @@ data Super
           -- | Tetra type for the super.
         , superTetraType        :: Type E.Name
 
-          -- | Salt type for the super.
-        , superSaltType         :: Type A.Name
-
           -- | Import source for the super.
           --
           --   This can be used to refer to the super from a client module.
@@ -133,11 +130,11 @@ wrap store ii
 
 
 -- | Load a new interface from a file.
-load    :: FilePath -> IO (Either Error InterfaceAA)
+load    :: FilePath -> IO (Either IT.Error InterfaceAA)
 load filePath
  = do   timeStamp  <- getModificationTime filePath
         str        <- readFile filePath
-        let iint   =  loadInterface filePath timeStamp str
+        let iint   =  IT.loadInterface filePath timeStamp str
         cInt       <- Compact.compactWithSharing iint
         return $ Compact.getCompact cInt
 
@@ -203,7 +200,6 @@ metaOfInterface ii
 supersOfInterface :: InterfaceAA -> Map E.Name Super
 supersOfInterface ii
  | Just mmTetra <- interfaceDiscusModule ii
- , Just mmSalt  <- interfaceSaltModule  ii
  = let
         -- The current module name.
         modName = interfaceModuleName ii
@@ -212,12 +208,6 @@ supersOfInterface ii
         ntsTetra
          = Map.fromList
            [ (n, t)     | (n, esrc)     <- moduleExportValues mmTetra
-                        , let Just t    =  takeTypeOfExportSource esrc ]
-
-        -- Collect Salt  types of all supers exported by the module.
-        ntsSalt
-         = Map.fromList
-           [ (n, t)     | (n, esrc)     <- moduleExportValues mmSalt
                         , let Just t    =  takeTypeOfExportSource esrc ]
 
         -- Build call patterns for all locally defined supers.
@@ -254,14 +244,11 @@ supersOfInterface ii
          | otherwise = error $ "ddc-build.supersOfInterface: no source" ++ show n
 
         makeSuper n tTetra
-         | E.NameVar s  <- n
          = Just $ Super
                 { superName         = n
                 , superModuleName   = moduleName mmTetra
                 , superTetraType    = tTetra
-                , superSaltType     = let Just t = Map.lookup (A.NameVar s) ntsSalt  in t
                 , superImportValue  = makeImportValue n }
-         | otherwise    = Nothing
 
 
    in   Map.fromList

@@ -4,8 +4,6 @@ module DDC.Build.Interface.Codec.Text.Encode
 where
 import DDC.Build.Interface.Base
 import DDC.Core.Codec.Text.Pretty
-import DDC.Core.Exp.Annot
-import DDC.Core.Module
 import qualified Data.Text      as T
 
 
@@ -30,18 +28,6 @@ encodeInterface i
                 Just m  -> vcat [ line
                                 , text $ makeInterfaceTearLine "Tetra"
                                 , ppr m ]
-                Nothing -> empty)
-
-        -- Include the header of the Salt module.
-        --   We don't need the function definitions because inlining is performed
-        --   using the higher level Tetra code.
-        <> (case interfaceSaltModule i of
-                Just m  ->
-                 -- zap the module body so we don't get the function definitions.
-                 let m' = m { moduleBody = xUnit (annotOfExp $ moduleBody m) }
-                 in  vcat [ line
-                          , text $ makeInterfaceTearLine "Salt"
-                          , ppr m' ]
                 Nothing -> empty)
 
 
