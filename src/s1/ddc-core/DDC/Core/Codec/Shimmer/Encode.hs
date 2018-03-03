@@ -61,19 +61,14 @@ takeModuleDecls c mm@C.ModuleCore{}
         -- Exported Types.
         dExTyp
          = S.DeclSet "m-ex-typ"
-         $ xList ([ xAps "ex-typ" [ xTxt $ takeNameOfExportSource c ex
+         $ xList ([ xAps "ex-typ" [ configTakeRef c n
                                   , takeType c t]
-                  | (_, ex@(C.ExportSourceLocal _ t)) <- C.moduleExportTypes mm])
+                  | (n, C.ExportSourceLocal _ t _) <- C.moduleExportTypes mm])
 
         -- Exported Terms.
         dExTrm
          = S.DeclSet "m-ex-trm"
-                $ xList ( map (\tx -> xAps "ex-trm"
-                                [ S.XRef $ S.RTxt $ tx
-                                , S.XRef $ S.RMac $ "t-" <> tx
-                                , S.XRef $ S.RMac $ "x-" <> tx])
-                        $ map (takeNameOfExportSource c)
-                        $ map snd $ C.moduleExportValues mm)
+         $ xList $ map (takeExportTerm c) $ map snd $ C.moduleExportValues mm
 
         -- Imported Types.
         dImTyp
@@ -147,14 +142,21 @@ takeModuleName (C.ModuleName parts)
 
 
 -- ExportSource------------------------------------------------------------------------------------
-takeNameOfExportSource :: Config n -> C.ExportSource n (C.Type n) -> Text
-takeNameOfExportSource c es
+takeExportTerm :: Config n -> C.ExportSource n (C.Type n) -> SExp
+takeExportTerm c es
  = case es of
-        C.ExportSourceLocal n _
-         -> let Just tx = configTakeVarName c n in tx
+        C.ExportSourceLocal n _ Nothing
+         -> let Just tx = configTakeVarName c n
+            in  xAps "ex-trm"  [ xTxt tx, xMac ("t-" <> tx), xMac ("x-" <> tx)]
+
+        C.ExportSourceLocal n _ (Just (aT, aX, aB))
+         -> let Just tx = configTakeVarName c n
+            in  xAps "ex-trm"  [ xTxt tx, xMac ("t-" <> tx), xMac ("x-" <> tx)
+                               , xNat aT, xNat aX, xNat aB]
 
         C.ExportSourceLocalNoType n
-         -> let Just tx = configTakeVarName c n in tx
+         -> let Just tx = configTakeVarName c n
+            in  xAps "ex-trm"  [ xTxt tx, xMac ("t-" <> tx), xMac ("x-" <> tx)]
 
 
 -- ImportType -------------------------------------------------------------------------------------

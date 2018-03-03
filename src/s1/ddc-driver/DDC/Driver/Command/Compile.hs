@@ -31,12 +31,10 @@ import qualified DDC.Core.Module                as C
 import qualified DDC.Control.Parser             as BP
 import qualified DDC.Version                    as Version
 import qualified Data.List                      as List
-import qualified Data.Text                      as T
 
 import qualified DDC.Core.Transform.Reannotate                  as CReannotate
 
 import DDC.Build.Interface.Store                                (Store)
-import qualified DDC.Build.Interface.Codec.Text.Encode          as IntText
 import qualified DDC.Build.Interface.Codec.Shimmer.Encode       as IntShimmer
 import qualified DDC.Build.Interface.Store                      as Store
 
@@ -319,13 +317,10 @@ cmdCompile config bBuildExe' store filePath
                 | bBuildExe = Just $ map (\path -> replaceExtension path "o") pathsDI
                 | otherwise = Nothing
 
-
         -- Determine directory for build products.
         let (pathO, _)  = objectPathsOfConfig config filePath
         let pathDI      = replaceExtension pathO ".di"
-        let pathSMS     = replaceExtension pathO ".sms"
         liftIO $ createDirectoryIfMissing True (takeDirectory pathO)
-
 
         -- Load text source and compile to a Core Tetra file, if appropriate.
         let makeTetra
@@ -387,12 +382,8 @@ cmdCompile config bBuildExe' store filePath
                 , interfaceTimeStamp    = timeDI
                 , interfaceModuleName   = C.moduleName modSalt
                 , interfaceDiscusModule = fmap (CReannotate.reannotate (const ())) mModTetra }
---                , interfaceSaltModule   = Just modSalt  }
 
-        liftIO  $ writeFile pathDI
-                $ T.unpack $ IntText.encodeInterface int
-
-        liftIO  $ IntShimmer.storeInterface pathSMS int
+        liftIO  $ IntShimmer.storeInterface pathDI int
 
         -- Add the new interface to the store.
         liftIO $ Store.wrap store int

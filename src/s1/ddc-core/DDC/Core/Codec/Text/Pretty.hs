@@ -135,7 +135,7 @@ instance (Pretty n, Eq n) => Pretty (Module a n) where
 pprExportType :: (Pretty n, Pretty t) => (n, ExportSource n t) -> Doc
 pprExportType (n, esrc)
  = case esrc of
-        ExportSourceLocal _n k
+        ExportSourceLocal _n k _
          -> text "export type" <+> padL 10 (ppr n) <+> text ":" <+> ppr k <> semi
 
         ExportSourceLocalNoType _n
@@ -146,8 +146,17 @@ pprExportType (n, esrc)
 pprExportValue :: (Pretty n, Pretty t) => (n, ExportSource n t) -> Doc
 pprExportValue (n, esrc)
  = case esrc of
-        ExportSourceLocal _n t
+        ExportSourceLocal _n t Nothing
          -> text "export value" <+> padL 10 (ppr n) <+> text ":" <+> ppr t <> semi
+
+        ExportSourceLocal _n t (Just (arityType, arityValue, arityBoxes))
+         -> vcat [ text "export value" <+> padL 10 (ppr n) <+> text ":" <+> ppr t <> semi
+                 , text "{-# ARITY   " <+> padL 10 (ppr n)
+                                       <+> ppr arityType
+                                       <+> ppr arityValue
+                                       <+> ppr arityBoxes
+                                       <+> text "#-}"
+                 , empty ]
 
         ExportSourceLocalNoType _n
          -> text "export value" <+> padL 10 (ppr n) <> semi

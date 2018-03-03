@@ -12,14 +12,14 @@ import qualified Data.Map.Strict        as Map
 
 -------------------------------------------------------------------------------
 -- | Apply the unsharing transform to a module.
-unshareModule 
+unshareModule
         :: (Show a, Ord n, Show n)
         => Module (AnTEC a n) n -> Module (AnTEC a n) n
 
 unshareModule !mm
  = let
         -- Add extra parameters to the types of imported CAFs.
-        importValuesNts 
+        importValuesNts
                 = [ let (iv', m) = addParamsImportValue iv
                     in  ((n, iv'), m)
                   | (n, iv) <- moduleImportValues mm]
@@ -35,14 +35,14 @@ unshareModule !mm
         -- Add the corresponding arguments to each use.
         nts'    = Map.union (Map.unions ntssImport') ntsBody
         xx'     = addArgsX nts' xx
- 
+
         -- Update the types of exports with the transformed ones.
-        exportValues' 
+        exportValues'
                 = [ (n, updateExportSource nts' ex)
                   | (n, ex) <- moduleExportValues mm ]
 
-   in   mm { moduleBody         = xx' 
-           , moduleExportValues = exportValues'  
+   in   mm { moduleBody         = xx'
+           , moduleExportValues = exportValues'
            , moduleImportValues = importValues' }
 
 
@@ -51,20 +51,20 @@ unshareModule !mm
 --   type, assuming that the unsharing transform has also been applied to the
 --   imported module.
 --
-addParamsImportValue 
+addParamsImportValue
         ::  ImportValue n (Type n)
         -> (ImportValue n (Type n), Map n (Type n))
 
-addParamsImportValue iv 
+addParamsImportValue iv
  = case iv of
         ImportValueModule m n t (Just (nType, nValue, nBoxes))
          -> case addParamsT t of
-                Just t' 
-                 -> ( ImportValueModule m n t' 
+                Just t'
+                 -> ( ImportValueModule m n t'
                         (Just (nType, nValue + 1, nBoxes))
                     , Map.singleton n t')
 
-                Nothing 
+                Nothing
                  -> ( iv, Map.empty)
 
         ImportValueModule{} -> (iv, Map.empty)
@@ -97,9 +97,9 @@ addParamsT tt
 
 -------------------------------------------------------------------------------
 -- | Add unit parameters to the top-level CAFs in the given module body,
---   returning a map of names of transformed CAFs to their transformed 
+--   returning a map of names of transformed CAFs to their transformed
 --   types.
-addParamsX 
+addParamsX
         :: Ord n
         => Exp (AnTEC a n) n    --  Module body to transform.
         -> ( Map n (Type n)     --  Map of transformed bindings to their
@@ -132,7 +132,7 @@ addParamsBXS a ((b, x) : bxs)
 -- | Add unit parameter to a single top-level binding, if it needs one.
 addParamsBX _ b@(BName n _) x
  = case addParamsBodyX x of
-        Nothing 
+        Nothing
          -> (Map.empty, b, x)
 
         Just (x', t')
@@ -153,12 +153,12 @@ addParamsBodyX xx
         XAbs _ MImplicit{} _ -> Nothing
 
         -- Decend under type abstractions. To keep the supers
-        -- in standard form with all the type abstractions first, 
+        -- in standard form with all the type abstractions first,
         -- if we need to add a value abstraction we want to add it
         -- under exising type abstractions.
         XLAM a bParam xBody
          -> case addParamsBodyX xBody of
-                Nothing 
+                Nothing
                  -> Nothing
 
                 Just (xBody', tBody')
@@ -166,9 +166,9 @@ addParamsBodyX xx
                         a' = a { annotType = t' }
                     in  Just ( XLAM a' bParam xBody', t')
 
-        -- We've hit a plain value, so need to wrap it in a 
+        -- We've hit a plain value, so need to wrap it in a
         -- value abstraction.
-        _   
+        _
          -> let a  = annotOfExp xx
                 t' = tFun tUnit (annotType a)
                 a' = a { annotType = t' }
@@ -176,12 +176,12 @@ addParamsBodyX xx
 
 
 -------------------------------------------------------------------------------
--- | Decend into an expression looking for applications of CAFs that 
+-- | Decend into an expression looking for applications of CAFs that
 --   we've already added an extra unit parameter to. When we find them,
 --   add the matching unit argument.
 --
 addArgsX :: (Show n, Ord n, Show a)
-         =>  Map n (Type n)     -- ^ Map of names of CAFs that we've added 
+         =>  Map n (Type n)     -- ^ Map of names of CAFs that we've added
                                 --   parameters to, to their transformed types.
          ->  Exp (AnTEC a n) n  -- ^ Transform this expression.
          ->  Exp (AnTEC a n) n  -- ^ Transformed expression.
@@ -196,7 +196,7 @@ addArgsX nts xx
         -- Add an extra argument for a monomorphic CAF.
         XVar a (UName n)
          -> case Map.lookup n nts of
-                Just tF   
+                Just tF
                  -> let xx'     = XVar (a { annotType = tF }) (UName n)
                     in  wrapAppX a tF xx'
 
@@ -222,26 +222,26 @@ addArgsAppX !nts !xx !ats
    in  case xx of
         XVar a (UName n)
          -> case Map.lookup n nts of
-                Just tF 
+                Just tF
                  -> let xx'      = XVar (a { annotType = tF }) (UName n)
                         (x1, t1) = wrapAtsX xx' tF ats
                         x2       = wrapAppX a   t1 x1
                     in  x2
 
-                Nothing 
+                Nothing
                  -> fst $ wrapAtsX xx tA ats
 
-        XVar{} 
+        XVar{}
           -> fst $ wrapAtsX xx tA ats
 
-        XCon{} 
+        XCon{}
           -> fst $ wrapAtsX xx tA ats
 
         XApp a1 x1 (RType t)
           -> addArgsAppX nts x1 ((a1, t) : ats)
 
         XApp  a x1 (RTerm x2)
-          -> XApp a (addArgsAppX nts x1 ats) 
+          -> XApp a (addArgsAppX nts x1 ats)
                     (RTerm (downX x2))
 
         _ -> fst $ wrapAtsX xx tA ats
@@ -255,7 +255,7 @@ addArgsLts nts lts
         LPrivate{}      -> lts
 
 
-addArgsAlt nts aa 
+addArgsAlt nts aa
  = let downX = addArgsX nts
    in case aa of
         AAlt p x        -> AAlt p (downX x)
@@ -265,7 +265,7 @@ addArgsAlt nts aa
 wrapAppX :: (Show a, Show n)
          => AnTEC a n
          -> Type n
-         -> Exp (AnTEC a n) n 
+         -> Exp (AnTEC a n) n
          -> Exp (AnTEC a n) n
 
 wrapAppX a tF xF
@@ -280,10 +280,10 @@ wrapAppX a tF xF
 
  -- ISSUE #384: Unshare transform produces AST node with wrong type annotation.
  | Just (bs, tBody)     <- takeTForalls tF
- = let  Just us = sequence 
+ = let  Just us = sequence
                 $ map takeSubstBoundOfBind bs
 
-        xF'     = makeXLamFlags a [(True, b) | b <- bs] 
+        xF'     = makeXLamFlags a [(True, b) | b <- bs]
                 $ wrapAppX a tBody
                 $ xApps a xF (map RType $ map TVar us)
 
@@ -299,7 +299,7 @@ wrapAtsX !xF !tF []
  = (xF, tF)
 
 wrapAtsX !xF !tF ((_aArg, tArg): ats)
- = case tF of 
+ = case tF of
     TForall bParam tBody
      -> let a   = annotOfExp xF
             tR  = substituteT bParam tArg tBody
@@ -314,19 +314,19 @@ wrapAtsX !xF !tF ((_aArg, tArg): ats)
 
 
 -------------------------------------------------------------------------------
--- | Update the types of exported things with the ones in 
+-- | Update the types of exported things with the ones in
 --   the give map.
-updateExportSource 
+updateExportSource
         :: Ord n
-        => Map n (Type n) 
+        => Map n (Type n)
         -> ExportSource n (Type n) -> ExportSource n (Type n)
 
 updateExportSource mm ex
  = case ex of
-        ExportSourceLocal n _t
+        ExportSourceLocal n _t mArity
          -> case Map.lookup n mm of
                 Nothing         -> ex
-                Just t'         -> ExportSourceLocal n t'
+                Just t'         -> ExportSourceLocal n t' mArity
 
         ExportSourceLocalNoType _
          -> ex

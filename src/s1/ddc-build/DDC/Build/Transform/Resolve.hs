@@ -170,7 +170,7 @@ exportedTyConsLocal :: Ord n => Module b n -> Map n (ModuleName, Kind n)
 exportedTyConsLocal mm
         = Map.fromList
         $ [ (n, (moduleName mm, t))
-                        | (n, ExportSourceLocal _ t) <- moduleExportTypes mm ]
+                        | (n, ExportSourceLocal _ t _) <- moduleExportTypes mm ]
 
 -- | Get the type constructors that are imported abstractly by a module.
 importedTyConsAbs  :: Ord n => Module b n -> Map n (Kind n)

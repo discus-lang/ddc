@@ -21,7 +21,7 @@ checkModule mm
          -> Just ErrorMainMissing
 
         -- Main function exports a main function with the correct mode.
-        Just (ExportSourceLocal _ tMain)
+        Just (ExportSourceLocal _ tMain _)
          -> let -- .. and the type is ok.
                 check
                  | Just (t1, t2)                             <- takeTFun tMain

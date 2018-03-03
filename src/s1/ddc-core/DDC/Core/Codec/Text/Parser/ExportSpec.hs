@@ -62,7 +62,7 @@ pExportValue c
         n       <- pName
         pTokSP (KOp ":")
         t       <- pType c
-        return  (ExportValue n (ExportSourceLocal n t))
+        return  (ExportValue n (ExportSourceLocal n t Nothing))
 
 
 -- | Parse a foreign value export spec.
@@ -78,7 +78,7 @@ pExportForeignValue c dst
 
                 -- ISSUE #327: Allow external symbol to be specified
                 --             with foreign C imports and exports.
-                return  (ExportValue n (ExportSourceLocal n k))
+                return  (ExportValue n (ExportSourceLocal n k Nothing))
 
         | otherwise
         = P.unexpected "export mode for foreign value."

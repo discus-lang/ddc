@@ -155,7 +155,7 @@ takeDeclExTyp c dd
         takeExTyp (XAps "ex-typ" [ssName, ssKind])
          = let  nType = fromRef  c ssName
                 tKind = fromType c ssKind
-           in   (nType, C.ExportSourceLocal nType tKind)
+           in   (nType, C.ExportSourceLocal nType tKind Nothing)
 
         takeExTyp _ = failDecode "takeExTyp"
 
@@ -178,7 +178,21 @@ takeDeclExTrm c mpT dd
            in case Map.lookup txMacTyp mpT of
                 Nothing     -> failDecode $ "takeDeclExTrm missing declaration " ++ show txMacTyp
                 Just ssType
-                 -> (nName, C.ExportSourceLocal nName (fromType c ssType))
+                 -> (nName, C.ExportSourceLocal
+                        { C.exportSourceLocalName  = nName
+                        , C.exportSourceLocalType  = fromType c ssType
+                        , C.exportSourceLocalArity = Nothing })
+
+        takeExTrm (XAps "ex-trm" [ ssName, XMac txMacTyp, XMac _txMacTrm
+                                 , XNat nT, XNat nX, XNat nB ])
+         = let nName = fromRef c ssName
+           in case Map.lookup txMacTyp mpT of
+                Nothing     -> failDecode $ "takeDeclExTrm missing declaration " ++ show txMacTyp
+                Just ssType
+                 -> (nName, C.ExportSourceLocal
+                        { C.exportSourceLocalName  = nName
+                        , C.exportSourceLocalType  = fromType c ssType
+                        , C.exportSourceLocalArity = Just (fromI nT, fromI nX, fromI nB) })
 
         takeExTrm _ = failDecode "takeExTrm"
 

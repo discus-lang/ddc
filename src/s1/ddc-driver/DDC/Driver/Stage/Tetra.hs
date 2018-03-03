@@ -29,7 +29,7 @@ import qualified DDC.Data.SourcePos             as SP
 
 
 ---------------------------------------------------------------------------------------------------
--- | Load and type-check a source tetra module.
+-- | Load and type-check a source Discus module.
 sourceLoadText
         :: D.Config             -- ^ Driver config.
         -> B.Store              -- ^ Interface store.

@@ -29,25 +29,25 @@ tetraOfFlowModule mm
 
 convertM :: Module a F.Name -> ConvertM (Module a T.Name)
 convertM mm
-  = do  
+  = do
         -- Convert signatures of imported functions.
         tsImportT' <- mapM convertImportNameTypeM  $ moduleImportTypes  mm
         tsImportV' <- mapM convertImportNameValueM $ moduleImportValues mm
 
         let tsImportV'rest =
               [ ( T.NameVar       "getFieldOfBoxed"
-                , ImportValueSea  "getFieldOfBoxed" 
-                   $ tForalls [kRegion, kData] 
+                , ImportValueSea  "getFieldOfBoxed"
+                   $ tForalls [kRegion, kData]
                    $ \[r,d] -> T.tPtr r T.tObj `tFun` T.tNat `tFun` d)
 
               , ( T.NameVar       "setFieldOfBoxed"
-                , ImportValueSea  "setFieldOfBoxed" 
-                   $ tForalls [kRegion, kData] 
+                , ImportValueSea  "setFieldOfBoxed"
+                   $ tForalls [kRegion, kData]
                    $ \[r,d] -> T.tPtr r T.tObj `tFun` T.tNat `tFun` d `tFun` T.tVoid)
 
               , ( T.NameVar       "allocBoxed"
-                , ImportValueSea  "allocBoxed"     
-                   $ tForalls [kRegion       ] 
+                , ImportValueSea  "allocBoxed"
+                   $ tForalls [kRegion       ]
                    $ \[r  ] -> T.tTag          `tFun` T.tNat `tFun` T.tPtr r T.tObj)
               ]
 
@@ -62,7 +62,7 @@ convertM mm
         body'      <- convertX $ moduleBody mm
 
         -- Build the output module.
-        let mm_tetra 
+        let mm_tetra
                 = ModuleCore
                 { moduleName            = moduleName mm
                 , moduleIsHeader        = moduleIsHeader mm
@@ -106,16 +106,16 @@ convertExportM (n, esrc)
 
 
 -- Convert an export source.
-convertExportSourceM 
+convertExportSourceM
         :: ExportSource F.Name (Type F.Name)
         -> ConvertM (ExportSource T.Name (Type T.Name))
 
 convertExportSourceM esrc
  = case esrc of
-        ExportSourceLocal n t
+        ExportSourceLocal n t _
          -> do  n'      <- convertName n
                 t'      <- convertType t
-                return  $ ExportSourceLocal n' t'
+                return  $ ExportSourceLocal n' t' Nothing
 
         ExportSourceLocalNoType n
          -> do  n'      <- convertName n
@@ -146,7 +146,7 @@ convertImportNameValueM (n, isrc)
 
 
 -- | Convert an imported name.
---   These can be variable names for values, 
+--   These can be variable names for values,
 --   or variable or constructor names for type imports.
 convertImportNameM :: F.Name -> ConvertM T.Name
 convertImportNameM n
@@ -157,7 +157,7 @@ convertImportNameM n
 
 
 -- | Convert an import source.
-convertImportTypeM 
+convertImportTypeM
         :: ImportType F.Name (Type F.Name)
         -> ConvertM (ImportType T.Name (Type T.Name))
 
@@ -173,7 +173,7 @@ convertImportTypeM isrc
 
 
 -- | Convert an import value spec.
-convertImportValueM 
+convertImportValueM
         :: ImportValue F.Name (Type F.Name)
         -> ConvertM (ImportValue T.Name (Type T.Name))
 
@@ -185,6 +185,6 @@ convertImportValueM isrc
                 return  $ ImportValueModule mn n' t' Nothing
 
         ImportValueSea str t
-         -> do  t'      <- convertType t 
+         -> do  t'      <- convertType t
                 return  $ ImportValueSea str t'
 

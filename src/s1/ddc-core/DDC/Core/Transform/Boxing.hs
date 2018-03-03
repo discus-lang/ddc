@@ -9,7 +9,7 @@
 --  application involving unboxed values. Fast-path function specialisations
 --  that take unboxed parameters should be created separately, and not replace
 --  the existing slow-path, fully boxed version. Taking this approach is possible
---  in a strict language because the boxed and unboxed values have the same 
+--  in a strict language because the boxed and unboxed values have the same
 --  semantic meaning. Boxing of values does not imply "lifting" of the associated
 --  semantic domain.
 --
@@ -48,14 +48,14 @@ data Config a n
         , configConvertRepType          :: Rep -> Type n -> Maybe (Type n)
 
           -- | Convert a value between representations.
-        , configConvertRepExp           :: Rep -> a -> Type n -> Exp a n -> Maybe (Exp a n) 
+        , configConvertRepExp           :: Rep -> a -> Type n -> Exp a n -> Maybe (Exp a n)
 
           -- | Take the type of a literal name, if there is one.
         , configValueTypeOfLitName      :: n -> Maybe (Type n)
 
           -- | Take the type of a primitive operator name, if it is one.
           --   The primops can be polytypic, but must have prenex rank-1 types.
-        , configValueTypeOfPrimOpName   :: n -> Maybe (Type n) 
+        , configValueTypeOfPrimOpName   :: n -> Maybe (Type n)
 
           -- | Take the type of a foreign function name, if it is one.
           --   The function can be polymorphic, but must have a prenex rank-1 type.
@@ -71,12 +71,12 @@ data Config a n
 
 -- Module -----------------------------------------------------------------------------------------
 -- | Manage boxing in a module.
-boxingModule 
+boxingModule
         :: Ord n
         => Config a n -> Module a n -> Module a n
 
 boxingModule config mm
- = let  
+ = let
         -- Use explicitly unboxed types when importing foreign sea functions.
         boxingImport imp
          = case imp of
@@ -88,18 +88,18 @@ boxingModule config mm
         nsImportSea   = [ n | (n, ImportValueSea _ _) <- moduleImportValues mm]
         boxingExport expt
          = case expt of
-                ExportSourceLocal n t
+                ExportSourceLocal n t mArity
                   |  elem n nsImportSea
-                  -> ExportSourceLocal n $ boxingForeignSeaType config t
+                  -> ExportSourceLocal n (boxingForeignSeaType config t) mArity
                 _ -> expt
 
-   in   mm { moduleBody         
+   in   mm { moduleBody
               = boxingX config (moduleBody mm)
 
-           , moduleExportValues 
+           , moduleExportValues
               = [(n, boxingExport expt) | (n, expt) <- moduleExportValues mm ]
 
-           , moduleImportValues 
+           , moduleImportValues
               = [(n, boxingImport impt) | (n, impt) <- moduleImportValues mm ] }
 
 
@@ -112,11 +112,11 @@ boxingX config xx
          , Just tLitU           <- configConvertRepType config RepUnboxed tLit
          , Just nU              <- configUnboxLitName   config n
 
-         , Just xLit            <- configConvertRepExp  config RepBoxed a tLitU 
+         , Just xLit            <- configConvertRepExp  config RepBoxed a tLitU
                                 $  XCon a (DaConPrim nU tLitU)
          -> xLit
 
-        -- Use unboxed versions of primops by unboxing their arguments then 
+        -- Use unboxed versions of primops by unboxing their arguments then
         -- reboxing their results.
         XCast _ CastRun xx'@(XApp a _ _)
          |  Just (n, asArgsAll) <- takeXFragApps xx'
@@ -124,7 +124,7 @@ boxingX config xx
          -> let Just tPrimBoxed    = configValueTypeOfPrimOpName config n
                 Just tPrimUnboxed  = configValueTypeOfPrimOpName config n'
                 asArgsAll'         = map (boxingA config) asArgsAll
-            in  boxingPrimitive config a True xx' (XVar a (UPrim n' tPrimUnboxed)) 
+            in  boxingPrimitive config a True xx' (XVar a (UPrim n' tPrimUnboxed))
                         tPrimBoxed tPrimUnboxed
                         asArgsAll'
 
@@ -210,14 +210,14 @@ boxingPrimitive
 boxingPrimitive config a bRun xx xFn tPrimBoxed tPrimUnboxed xsArgsAll
  = fromMaybe xx go
  where
-  go = do  
+  go = do
         -- Split off the type args.
         let tsArgs      = [t | RType t <- xsArgsAll]
         let xsArgs      = [x | RTerm x <- drop (length tsArgs) xsArgsAll]
 
         -- Get the boxed version of the types of parameters and return value.
         tPrimBoxedInst   <- instantiateTs tPrimBoxed tsArgs
-        let (tsParamBoxed, _tResultBoxed) 
+        let (tsParamBoxed, _tResultBoxed)
                         = takeTFunArgResult tPrimBoxedInst
 
         -- Get the unboxed version of the types of parameters and return value.
@@ -225,7 +225,7 @@ boxingPrimitive config a bRun xx xFn tPrimBoxed tPrimUnboxed xsArgsAll
         let (_tsParamUnboxed, tResultUnboxed)
                         = takeTFunArgResult tPrimUnboxedInst
 
-        -- If the primitive is being run at the call site then we need to 
+        -- If the primitive is being run at the call site then we need to
         -- re-box the result AFTER it has been run, not before.
         let tResultUnboxed'
                 | not bRun      = tResultUnboxed
@@ -245,7 +245,7 @@ boxingPrimitive config a bRun xx xFn tPrimBoxed tPrimUnboxed xsArgsAll
         -- We got a type for each argument, so the primop is fully applied
         -- and we can do the boxing/unboxing transform.
         let xsArgs' = [ (let t = fromMaybe xArg
-                               $ configConvertRepExp config RepUnboxed a tArgInst xArg 
+                               $ configConvertRepExp config RepUnboxed a tArgInst xArg
                                  in RTerm t)
                       | xArg      <- xsArgs
                       | tArgInst  <- tsParamBoxed ]
@@ -266,12 +266,12 @@ boxingPrimitive config a bRun xx xFn tPrimBoxed tPrimUnboxed xsArgsAll
 
 ---------------------------------------------------------------------------------------------------
 -- Marshall arguments and return values of foreign imported functions.
--- 
+--
 -- * Assumes that the type of the imported thing is in prenex form.
 --
 boxingForeignSea
         :: Ord n
-        => Config a n -> a 
+        => Config a n -> a
         -> Exp a n      -- ^ Whole function application, for debugging.
         -> Exp a n      -- ^ Functional expression.
         -> Type n       -- ^ Type of the foreign function.
@@ -288,7 +288,7 @@ boxingForeignSea config a xx xFn tF xsArg
         -- Get the argument and return types of the function.
         -- Unlike primitives, foreign functions are not polytypic, so we can
         -- just erase any outer foralls to reveal the types of the args.
-        let (tsArgVal, tResult) 
+        let (tsArgVal, tResult)
                         = takeTFunArgResult
                         $ eraseTForalls tF
 
@@ -298,7 +298,7 @@ boxingForeignSea config a xx xFn tF xsArg
            else Just ())
 
         -- For each argument, if it has an unboxed representation then unbox it.
-        let unboxArg xArg tArg 
+        let unboxArg xArg tArg
              = fromMaybe xArg
              $ configConvertRepExp config RepUnboxed a tArg xArg
 
@@ -319,13 +319,13 @@ boxingForeignSeaType
         :: Config a n -> Type n -> Type n
 
 boxingForeignSeaType config tForeign
- = let  
+ = let
         -- Split the type into quantifiers, parameter and result types.
-        (bsForall, tBody) 
+        (bsForall, tBody)
                  = fromMaybe ([], tForeign)
                  $ takeTForalls tForeign
 
-        (tsParam, tResult) 
+        (tsParam, tResult)
                  = takeTFunArgResult tBody
 
         -- If there is an unboxed representation of each parameter and result
@@ -347,16 +347,16 @@ boxingForeignSeaType config tForeign
 ---------------------------------------------------------------------------------------------------
 -- For case expressions that match against literals, like
 --
---   case e1 of 
+--   case e1 of
 --   { 5# -> e2; _ -> e3 }
 --
 -- Unbox the scrutinee and convert the alternatives to match against
 -- unboxed literals.
--- 
+--
 --   case convert# [Nat] [Nat#] e1 of
 --   { 5## -> e2; _ -> e3 }
 --
-boxingCase 
+boxingCase
         :: Config a n
         -> a -> Type n
         -> Exp a n
@@ -383,10 +383,10 @@ boxingCase config a tLit1 xScrut alts
   in    XCase a xScrut' $ alts_default
 
 
--- | Ensure that there is a default alternative in this list, 
+-- | Ensure that there is a default alternative in this list,
 --   if not then make the last one the default.
 --   We need do this to handle the case when the unboxed type does not have
---   all its constructors listed in the data defs. If it doesn't then the 
+--   all its constructors listed in the data defs. If it doesn't then the
 --   case exhaustiveness checker will compilain when checking the result code.
 ensureDefault :: [Alt a n] -> [Alt a n]
 ensureDefault alts

@@ -282,7 +282,7 @@ checkModuleM !config mm@ModuleCore{} !mode
         let updateExportSource e
                 | ExportSourceLocalNoType n <- e
                 , Just t  <- EnvX.lookupX (UName n) envX_binds
-                = ExportSourceLocal n t
+                = ExportSourceLocal n t Nothing
 
                 | otherwise = e
 
@@ -292,7 +292,7 @@ checkModuleM !config mm@ModuleCore{} !mode
         -- Return the checked bindings as they have explicit type annotations.
         let mm_final
                 = mm_inferred
-                { moduleExportValues    = esrcsValue_updated }
+                { moduleExportValues    = esrcsValue_updated  }
 
         return mm_final
 

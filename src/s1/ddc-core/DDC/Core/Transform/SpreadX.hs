@@ -26,33 +26,33 @@ instance SpreadX (Module a) where
  spreadX kenv tenv mm@ModuleCore{}
   = let liftSnd f (x, y) = (x, f y)
     in  ModuleCore
-        { moduleName            
+        { moduleName
                 = moduleName mm
 
-        , moduleIsHeader        
+        , moduleIsHeader
                 = moduleIsHeader mm
 
-        , moduleExportTypes     
+        , moduleExportTypes
                 = map (liftSnd $ spreadExportSourceT kenv)
                 $ moduleExportTypes mm
 
-        , moduleExportValues    
+        , moduleExportValues
                 = map (liftSnd $ spreadExportSourceT kenv)
                 $ moduleExportValues mm
-          
-        , moduleImportTypes     
-                = map (liftSnd $ spreadImportTypeT kenv tenv) 
+
+        , moduleImportTypes
+                = map (liftSnd $ spreadImportTypeT kenv tenv)
                 $ moduleImportTypes mm
 
         , moduleImportCaps
                 = map (liftSnd $ spreadImportCapX kenv tenv)
                 $ moduleImportCaps mm
 
-        , moduleImportValues    
-                = map (liftSnd $ spreadImportValueX kenv tenv) 
+        , moduleImportValues
+                = map (liftSnd $ spreadImportValueX kenv tenv)
                 $ moduleImportValues mm
 
-        , moduleImportDataDefs  
+        , moduleImportDataDefs
                 = map (spreadT kenv)
                 $ moduleImportDataDefs mm
 
@@ -60,25 +60,25 @@ instance SpreadX (Module a) where
                 = map (\(n, (k, t)) -> (n, (spreadT kenv k, spreadT kenv t)))
                 $ moduleImportTypeDefs mm
 
-        , moduleDataDefsLocal   
+        , moduleDataDefsLocal
                 = map (spreadT kenv)
                 $ moduleDataDefsLocal mm
-  
+
         , moduleTypeDefsLocal
                 = map (\(n, (k, t)) -> (n, (spreadT kenv k, spreadT kenv t)))
                 $ moduleTypeDefsLocal mm
 
-        , moduleBody           
+        , moduleBody
                  = spreadX kenv tenv
-                 $ moduleBody mm 
+                 $ moduleBody mm
         }
 
 
 ---------------------------------------------------------------------------------------------------
 spreadExportSourceT kenv esrc
   = case esrc of
-        ExportSourceLocal n t   
-         -> ExportSourceLocal n (spreadT kenv t)
+        ExportSourceLocal n t mArity
+         -> ExportSourceLocal n (spreadT kenv t) mArity
 
         ExportSourceLocalNoType n
          -> ExportSourceLocalNoType n
@@ -113,7 +113,7 @@ spreadImportValueX kenv _tenv isrc
 
 ---------------------------------------------------------------------------------------------------
 instance SpreadX (Exp a) where
- spreadX kenv tenv xx 
+ spreadX kenv tenv xx
   = let down x = spreadX kenv tenv x
     in case xx of
         XVar  a u       -> XVar  a (down u)
@@ -125,20 +125,20 @@ instance SpreadX (Exp a) where
          -> let b'      = spreadT kenv b
             in  XAbs a (MType b')     (spreadX (Env.extend b' kenv) tenv x)
 
-        XAbs a (MTerm b) x      
+        XAbs a (MTerm b) x
          -> let b'      = down b
             in  XAbs a (MTerm b')     (spreadX kenv (Env.extend b' tenv) x)
 
-        XAbs a (MImplicit b) x      
+        XAbs a (MImplicit b) x
          -> let b'      = down b
             in  XAbs a (MImplicit b') (spreadX kenv (Env.extend b' tenv) x)
-            
+
         XLet a lts x
          -> let lts'    = down lts
                 kenv'   = Env.extends (specBindsOfLets   lts') kenv
                 tenv'   = Env.extends (valwitBindsOfLets lts') tenv
             in  XLet a lts' (spreadX kenv' tenv' x)
-         
+
         XCase a x alts  -> XCase    a (down x) (map down alts)
         XCast a c x     -> XCast    a (down c) (down x)
 
@@ -210,9 +210,9 @@ instance SpreadX (Lets a) where
  spreadX kenv tenv lts
   = let down x = spreadX kenv tenv x
     in case lts of
-        LLet b x         
+        LLet b x
          -> LLet (down b) (down x)
-        
+
         LRec bxs
          -> let (bs, xs) = unzip bxs
                 bs'      = map (spreadX kenv tenv) bs
@@ -231,7 +231,7 @@ instance SpreadX (Lets a) where
 ---------------------------------------------------------------------------------------------------
 instance SpreadX (Witness a) where
  spreadX kenv tenv ww
-  = let down = spreadX kenv tenv 
+  = let down = spreadX kenv tenv
     in case ww of
         WCon  a wc       -> WCon  a (down wc)
         WVar  a u        -> WVar  a (down u)
@@ -246,7 +246,7 @@ instance SpreadX WiCon where
         WiConBound (UName n) _
          -> case Env.envPrimFun tenv n of
                 Nothing -> wc
-                Just t  
+                Just t
                  -> let t'      = spreadT kenv t
                     in  WiConBound (UPrim n t') t'
 
@@ -270,11 +270,11 @@ instance SpreadX Bound where
         UIx ix          -> UIx   ix
 
         UName n
-         -> if Env.isPrim tenv n 
+         -> if Env.isPrim tenv n
                  then UPrim n (spreadT kenv t')
                  else UName n
 
         UPrim n _       -> UPrim n t'
 
-  | otherwise   = uu        
+  | otherwise   = uu
 

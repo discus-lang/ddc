@@ -260,7 +260,7 @@ supersOfInterface ii
          | Just impt            <- lookup n (moduleImportValues mmTetra)
          = impt
 
-         | otherwise = error $ "ddc-build.supersOfInterface: no source" ++ show n
+         | otherwise = error $ "ddc-build.supersOfInterface: no source for " ++ show n
 
         makeSuper n tTetra
          = Just $ Super
