@@ -1,4 +1,4 @@
-
+{-# LANGUAGE OverloadedStrings #-}
 module DDC.Core.Discus.Prim
         ( -- * Names and lexing.
           Name          (..)
@@ -61,12 +61,12 @@ import DDC.Core.Discus.Prim.OpCast
 import DDC.Core.Discus.Prim.OpFun
 import DDC.Core.Discus.Prim.OpVector
 import DDC.Type.Exp
-import DDC.Data.ListUtils
 import DDC.Data.Pretty
 import DDC.Data.Name
 import Control.DeepSeq
 import Data.Char
 import qualified Data.Text              as T
+import Data.Text                        (Text)
 
 import DDC.Core.Codec.Text.Lexer.Tokens            (isVarStart)
 
@@ -110,12 +110,12 @@ instance NFData Name where
 instance Pretty Name where
  ppr nn
   = case nn of
-        NameVar  v              -> text v
-        NameCon  c              -> text c
-        NameExt  n s            -> ppr n <> text "$" <> text s
+        NameVar  v              -> text $ T.unpack v
+        NameCon  c              -> text $ T.unpack c
+        NameExt  n s            -> ppr n <> text "$" <> text (T.unpack s)
 
-        NameTyConDiscus tc       -> ppr tc
-        NameDaConDiscus dc       -> ppr dc
+        NameTyConDiscus tc      -> ppr tc
+        NameDaConDiscus dc      -> ppr dc
 
         NameOpError    op False -> ppr op
         NameOpError    op True  -> ppr op <> text "#"
@@ -150,44 +150,44 @@ instance Pretty Name where
 
 instance CompoundName Name where
  extendName n str
-  = NameExt n str
+  = NameExt n $ T.pack str
 
  newVarName str
-  = NameVar str
+  = NameVar $ T.pack str
 
  splitName nn
   = case nn of
-        NameExt n str   -> Just (n, str)
+        NameExt n str    -> Just (n, T.unpack str)
         _                -> Nothing
 
 
 -- | Read the name of a variable, constructor or literal.
-readName :: String -> Maybe Name
+readName :: Text -> Maybe Name
 readName str
         -- Baked-in names.
-        | Just p <- readTyConDiscus str
+        | Just p        <- readTyConDiscus   $ T.unpack str
         = Just $ NameTyConDiscus p
 
-        | Just p <- readDaConDiscus str
+        | Just p        <- readDaConDiscus   $ T.unpack str
         = Just $ NameDaConDiscus p
 
-        | Just (p,f) <- readOpErrorFlag   str
+        | Just (p,f)    <- readOpErrorFlag   $ T.unpack str
         = Just $ NameOpError p f
 
-        | Just p <- readOpFun     str
+        | Just p        <- readOpFun         $ T.unpack str
         = Just $ NameOpFun p
 
-        | Just (p, f) <- readOpVectorFlag  str
+        | Just (p, f)   <- readOpVectorFlag  $ T.unpack str
         = Just $ NameOpVector p f
 
         -- Primitive names.
-        | Just p      <- readPrimTyCon     str
+        | Just p        <- readPrimTyCon     $ T.unpack str
         = Just $ NamePrimTyCon p
 
-        | Just (p, f) <- readPrimArithFlag str
+        | Just (p, f)   <- readPrimArithFlag $ T.unpack str
         = Just $ NamePrimArith p f
 
-        | Just (p, f) <- readPrimCastFlag  str
+        | Just (p, f)   <- readPrimCastFlag  $ T.unpack str
         = Just $ NamePrimCast  p f
 
         -- Literal Bools
@@ -195,21 +195,21 @@ readName str
         | str == "False" = Just $ NameLitBool False
 
         -- Literal Nat
-        | Just val      <- readLitNat str
+        | Just val      <- readLitNat $ T.unpack str
         = Just $ NameLitNat  val
 
         -- Literal Ints
-        | Just val      <- readLitInt str
+        | Just val      <- readLitInt $ T.unpack str
         = Just $ NameLitInt  val
 
         -- Literal Words
-        | Just (val, bits) <- readLitWordOfBits str
+        | Just (val, bits) <- readLitWordOfBits $ T.unpack str
         , elem bits [8, 16, 32, 64]
         = Just $ NameLitWord val bits
 
         -- Unboxed literals.
-        | Just base        <- stripSuffix "#" str
-        , Just n           <- readName base
+        | Just base     <- T.stripSuffix "#" str
+        , Just n        <- readName base
         = case n of
                 NameLitBool{}   -> Just n
                 NameLitNat{}    -> Just n
@@ -222,12 +222,12 @@ readName str
         = Just $ NameHole
 
         -- Constructors.
-        | c : _         <- str
+        | Just (c, _)   <- T.uncons str
         , isUpper c
         = Just $ NameCon str
 
         -- Variables.
-        | c : _         <- str
+        | Just (c, _)   <- T.uncons str
         , isVarStart c
         = Just $ NameVar str
 

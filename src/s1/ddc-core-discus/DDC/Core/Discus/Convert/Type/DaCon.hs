@@ -1,4 +1,4 @@
-
+{-# LANGUAGE OverloadedStrings #-}
 module DDC.Core.Discus.Convert.Type.DaCon
         ( convertCtorT
         , convertDaCon)
@@ -9,9 +9,9 @@ import DDC.Core.Discus.Convert.Type.Base
 import DDC.Core.Discus.Convert.Error
 import DDC.Core.Exp.Annot
 import DDC.Control.Check                        (throw)
-import qualified DDC.Core.Discus.Prim            as E
+import qualified DDC.Core.Discus.Prim           as E
 import qualified DDC.Core.Salt.Name             as A
-
+import qualified Data.Text                      as T
 
 -- Ctor Types -------------------------------------------------------------------------------------
 -- | Convert the type of a data constructor.
@@ -52,7 +52,7 @@ convertCtorT ctx0 tt0
          -- Convert data type abstractions to region abstractions.
          | isDataKind   $ typeOfBind bParam
          , BName (E.NameVar str) _   <- bParam
-         , str'         <- str ++ "$r"
+         , str'         <- T.unpack str ++ "$r"
          , bParam'      <- BName (A.NameVar str') kRegion
          = do   let ctx' = extendKindEnv bParam ctx
                 tBody'  <- convertAbsType ctx' tBody

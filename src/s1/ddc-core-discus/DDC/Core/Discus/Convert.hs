@@ -31,7 +31,7 @@ import DDC.Control.Check                                (throw, evalCheck)
 import Data.Map                                         (Map)
 import qualified Data.Map.Strict                        as Map
 import qualified Data.Set                               as Set
-
+import qualified Data.Text                              as T
 
 ---------------------------------------------------------------------------------------------------
 -- | Convert a Core Discus module to Core Salt.
@@ -258,8 +258,8 @@ convertNameImportValueM tctx (n, isrc)
 convertImportNameM :: E.Name -> ConvertM a A.Name
 convertImportNameM n
  = case n of
-        E.NameVar str   -> return $ A.NameVar str
-        E.NameCon str   -> return $ A.NameCon str
+        E.NameVar str   -> return $ A.NameVar $ T.unpack str
+        E.NameCon str   -> return $ A.NameCon $ T.unpack str
         _               -> throw  $ ErrorInvalidBinder n
 
 

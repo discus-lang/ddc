@@ -20,9 +20,9 @@ type SExp = S.Exp Text S.Prim
 takeName :: D.Name -> SExp
 takeName nn
  = case nn of
-        D.NameVar s             -> xAps "dv" [xText $ T.pack s]
-        D.NameCon s             -> xAps "dc" [xText $ T.pack s]
-        D.NameExt n s           -> xAps "de" [takeName n, xText $ T.pack s]
+        D.NameVar tx            -> xAps "dv" [xText tx]
+        D.NameCon tx            -> xAps "dc" [xText tx]
+        D.NameExt n tx          -> xAps "de" [takeName n, xText tx]
         D.NameTyConDiscus tc    -> takeTyConDiscus tc
         D.NameDaConDiscus dc    -> takeDaConDiscus dc
 
@@ -68,7 +68,7 @@ takeName nn
 takeVarName :: D.Name -> Maybe Text
 takeVarName nn
  = case nn of
-        D.NameVar s             -> Just $ T.pack s
+        D.NameVar tx            -> Just tx
         _                       -> Nothing
 
 
@@ -76,7 +76,7 @@ takeVarName nn
 takeConName :: D.Name -> Maybe Text
 takeConName nn
  = case nn of
-        D.NameCon s             -> Just $ T.pack s
+        D.NameCon tx            -> Just tx
         _                       -> Nothing
 
 

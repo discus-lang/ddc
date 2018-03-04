@@ -1,4 +1,4 @@
-
+{-# LANGUAGE OverloadedStrings #-}
 module DDC.Core.Discus.Env
         ( primDataDefs
         , primSortEnv
@@ -107,7 +107,7 @@ primKindEnv = Env.setPrimFun kindOfPrimName Env.empty
 kindOfPrimName :: Name -> Maybe (Kind Name)
 kindOfPrimName nn
  = case nn of
-        NameTyConDiscus tc       -> Just $ kindTyConDiscus tc
+        NameTyConDiscus tc      -> Just $ kindTyConDiscus tc
         NamePrimTyCon tc        -> Just $ kindPrimTyCon tc
         NameVar "rT"            -> Just $ kRegion
         _                       -> Nothing

@@ -19,7 +19,7 @@ import DDC.Type.DataDef
 
 import DDC.Control.Check                (throw)
 import qualified Data.Map                as Map
-
+import qualified Data.Text              as T
 
 -- | Convert a data constructor application to Salt.
 convertCtorApp
@@ -70,11 +70,11 @@ convertCtorApp ctx (AnTEC tResult _ _ a) dc asArgsAll
         -- fragment specific names. However, the constructData fn is not using
         -- the name field, so we shouldn't have to supply this bogus info.
         let ctorDef     = DataCtor
-                        { dataCtorName          = E.NameCon "Record"    -- bogus name.
+                        { dataCtorName          = E.NameCon $ T.pack "Record"    -- bogus name.
                         , dataCtorTag           = 0
                         , dataCtorFieldTypes    = tsArgsValues
                         , dataCtorResultType    = tResult
-                        , dataCtorTypeName      = E.NameCon "Record"    -- bogus name.
+                        , dataCtorTypeName      = E.NameCon $ T.pack "Record"    -- bogus name.
                         , dataCtorTypeParams    = [BAnon t | t <- tsArgsValues] }
 
         constructData pp a

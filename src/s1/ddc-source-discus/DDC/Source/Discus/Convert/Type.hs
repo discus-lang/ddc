@@ -18,15 +18,14 @@ module DDC.Source.Discus.Convert.Type
 where
 import DDC.Source.Discus.Convert.Prim
 import DDC.Source.Discus.Convert.Base
-import DDC.Type.Universe                                (Universe (..), universeUp)
+import DDC.Type.Universe                        (Universe (..), universeUp)
 
-import qualified DDC.Source.Discus.Exp                   as S
-import qualified DDC.Source.Discus.Prim                  as S
+import qualified DDC.Source.Discus.Exp          as S
+import qualified DDC.Source.Discus.Prim         as S
 
-import qualified DDC.Core.Discus.Compounds               as C
-import qualified DDC.Core.Discus.Prim                    as C
-import qualified DDC.Type.Sum                           as CSum
-import qualified Data.Text                              as Text
+import qualified DDC.Core.Discus.Compounds      as C
+import qualified DDC.Core.Discus.Prim           as C
+import qualified DDC.Type.Sum                   as CSum
 
 
 -- TypeDef ----------------------------------------------------------------------------------------
@@ -135,28 +134,27 @@ toCoreTC uu tc
         --   to fill in the real kind before type checking.
         S.TyConBound (S.TyConBoundName tx)
          -> return $ Just
-         $  C.TyConBound (C.UName (C.NameCon (Text.unpack tx)))
-                                  (C.TVar (C.UName C.NameHole))
+         $  C.TyConBound (C.UName (C.NameCon tx)) (C.TVar (C.UName C.NameHole))
 
 
 -- Bind -------------------------------------------------------------------------------------------
 -- | Convert a type constructor binding occurrence to a core name.
 toCoreTBCN :: S.GTBindCon S.Source  -> ConvertM a C.Name
 toCoreTBCN (S.TyConBindName n)
- = return $ C.NameCon (Text.unpack n)
+ = return $ C.NameCon n
 
 
 -- | Convert a type constructor bound occurrence to a core name.
 toCoreTUCN :: S.GTBoundCon S.Source -> ConvertM a C.Name
 toCoreTUCN (S.TyConBoundName n)
- = return $ C.NameCon (Text.unpack n)
+ = return $ C.NameCon n
 
 
 -- | Convert a term variable bound occurrence to a core name.
 toCoreXUVN :: S.Bound -> ConvertM a C.Name
 toCoreXUVN uu
  = case uu of
-        S.UName n -> return $ C.NameVar (Text.unpack n)
+        S.UName n -> return $ C.NameVar n
         S.UIx  _i -> error "ddc-source-discus.toCoreXBVN: anon bound"
         S.UHole   -> return $ C.NameHole
 
@@ -166,7 +164,7 @@ toCoreXBVN bb
  = case bb of
         S.BNone   -> error "ddc-source-discus.toCoreXBVN: none bound"
         S.BAnon   -> error "ddc-source-discus.toCoreXBVN: anon bound"
-        S.BName n -> return $ C.NameVar (Text.unpack n)
+        S.BName n -> return $ C.NameVar n
 
 
 -- | Convert a type binder and kind to core.
@@ -176,7 +174,7 @@ toCoreTBK (bb, k)
  = case bb of
         S.BNone   -> C.BNone <$> (toCoreT UniverseKind k)
         S.BAnon   -> C.BAnon <$> (toCoreT UniverseKind k)
-        S.BName n -> C.BName <$> (return $ C.NameVar (Text.unpack n))
+        S.BName n -> C.BName <$> (return $ C.NameVar n)
                              <*> (toCoreT UniverseKind k)
 
 
@@ -187,7 +185,7 @@ toCoreB bb
    in case bb of
         S.BNone   -> return $ C.BNone hole
         S.BAnon   -> return $ C.BAnon hole
-        S.BName n -> return $ C.BName (C.NameVar (Text.unpack n)) hole
+        S.BName n -> return $ C.BName (C.NameVar n) hole
 
 
 -- | Convert a parameter to core.
@@ -215,7 +213,7 @@ toCorePT uu p mt
          S.PDefault         -> return $ C.BNone t'
          S.PVar (S.BNone)   -> return $ C.BNone t'
          S.PVar (S.BAnon)   -> return $ C.BAnon t'
-         S.PVar (S.BName n) -> return $ C.BName (C.NameVar (Text.unpack n)) t'
+         S.PVar (S.BName n) -> return $ C.BName (C.NameVar n) t'
          _                  -> error "ddc-source-discus.toCorePT: bad pattern"
 
 
@@ -228,7 +226,7 @@ toCoreBT uu b mt
         case b of
          S.BNone        -> return $ C.BNone t'
          S.BAnon        -> return $ C.BAnon t'
-         S.BName n      -> return $ C.BName (C.NameVar (Text.unpack n)) t'
+         S.BName n      -> return $ C.BName (C.NameVar n) t'
 
 
 -- | Convert a possibly annoted binding occurrence of a variable to core.
@@ -250,11 +248,11 @@ toCoreBM uu bb
 
 
         S.XBindVarMT (S.BName n) (Just t)
-         -> C.BName <$> (return $ C.NameVar (Text.unpack n))
+         -> C.BName <$> (return $ C.NameVar n)
                     <*> toCoreT uu t
 
         S.XBindVarMT (S.BName n) Nothing
-         -> C.BName <$> (return $ C.NameVar (Text.unpack n))
+         -> C.BName <$> (return $ C.NameVar n)
                     <*> (return $ C.TVar (C.UName C.NameHole))
 
 
@@ -262,7 +260,7 @@ toCoreBM uu bb
 toCoreU :: S.Bound -> ConvertM a (C.Bound C.Name)
 toCoreU uu
  = case uu of
-        S.UName n       -> C.UName <$> pure (C.NameVar (Text.unpack n))
+        S.UName n       -> C.UName <$> pure (C.NameVar n)
         S.UIx   i       -> C.UIx   <$> (pure i)
         S.UHole         -> C.UName <$> pure (C.NameHole)
 
@@ -271,18 +269,15 @@ toCoreU uu
 -- | Convert a binding occurrences of a data constructor to a core name.
 toCoreDaConBind :: S.DaConBind -> C.Name
 toCoreDaConBind (S.DaConBindName tx)
- = C.NameCon (Text.unpack tx)
+ = C.NameCon tx
 
 
 -- | Convert a bound occurrence of a data constructor to a core name.
 toCoreDaConBound :: S.DaConBound -> C.Name
 toCoreDaConBound dcb
  = case dcb of
-        S.DaConBoundName tx
-         -> C.NameCon (Text.unpack tx)
-
-        S.DaConBoundLit pl
-         -> toCorePrimLit pl
+        S.DaConBoundName tx     -> C.NameCon tx
+        S.DaConBoundLit pl      -> toCorePrimLit pl
 
 
 

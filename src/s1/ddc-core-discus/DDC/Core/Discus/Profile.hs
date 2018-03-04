@@ -16,6 +16,7 @@ import Control.Monad.State.Strict
 import DDC.Type.Env             (Env)
 import DDC.Data.SourcePos
 import qualified DDC.Type.Env   as Env
+import qualified Data.Text      as T
 
 
 -- | Language profile for Disciple Core Discus.
@@ -87,7 +88,7 @@ lexModuleString sourceName lineStart str
  = map rn $ lexModuleWithOffside sourceName lineStart str
  where
         rn (Located sp strTok)
-         = case renameToken readName strTok of
+         = case renameToken (readName . T.pack) strTok of
                 Just t' -> Located sp t'
                 Nothing -> Located sp (KErrorJunk "lexical error")
 
@@ -100,7 +101,7 @@ lexExpString sourceName lineStart str
  = map rn $ lexExp sourceName lineStart str
  where
         rn (Located sp strTok)
-         = case renameToken readName strTok of
+         = case renameToken (readName . T.pack) strTok of
                 Just t' -> Located sp t'
                 Nothing -> Located sp (KErrorJunk "lexical error")
 
@@ -110,7 +111,7 @@ freshT :: String -> Env Name -> Bind Name -> State Int Name
 freshT prefix env bb
  = do   i       <- get
         put (i + 1)
-        let n =  NameVar (prefix ++ "t" ++ show i)
+        let n =  NameVar (T.pack $ prefix ++ "t" ++ show i)
         case Env.lookupName n env of
          Nothing -> return n
          _       -> freshT prefix env bb
@@ -121,7 +122,7 @@ freshX :: String -> Env Name -> Bind Name -> State Int Name
 freshX prefix env bb
  = do   i       <- get
         put (i + 1)
-        let n = NameVar (prefix ++ "x" ++ show i)
+        let n = NameVar (T.pack $ prefix ++ "x" ++ show i)
         case Env.lookupName n env of
          Nothing -> return n
          _       -> freshX prefix env bb

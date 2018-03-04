@@ -7,11 +7,12 @@ import DDC.Core.Discus.Convert.Type
 import DDC.Core.Discus.Convert.Error
 import DDC.Core.Exp.Annot
 import DDC.Core.Check                                   (AnTEC(..))
-import qualified DDC.Core.Discus.Convert.Type.Base       as T
-import qualified DDC.Core.Discus.Prim                    as E
+import qualified DDC.Core.Discus.Convert.Type.Base      as T
+import qualified DDC.Core.Discus.Prim                   as E
 import qualified DDC.Core.Salt.Name                     as A
 import qualified Data.Map                               as Map
-
+import qualified Data.Text                              as T
+import Data.Monoid
 
 -- | Convert some let-bindings to Salt.
 convertLets
@@ -140,13 +141,13 @@ convertSuperXT    ctx0 xx0 tt0
 
          , BName nX _   <- bParamX
          , Just strX    <- takeNameStr nX
-         , strX'        <-  strX ++ "$r"
-         , bParamX'     <-  BName (A.NameVar strX') kRegion
+         , strX'        <- strX <> T.pack "$r"
+         , bParamX'     <- BName (A.NameVar $ T.unpack strX') kRegion
 
          , BName nT _   <- bParamT
          , Just strT    <- takeNameStr nT
-         , strT'        <-  strT ++ "$r"
-         , bParamT'     <-  BName (A.NameVar strT') kRegion
+         , strT'        <- strT <> T.pack "$r"
+         , bParamT'     <- BName (A.NameVar $ T.unpack strT') kRegion
 
          = do   let a'    =  annotTail a
 
@@ -203,7 +204,8 @@ takeNameStr (E.NameVar str)
                 = Just $ str
 
 takeNameStr (E.NameExt (E.NameVar str1) str2)
-                = Just $ str1 ++ "$" ++ str2
+                = Just $ str1 <> T.pack "$" <> str2
+
 takeNameStr _   = Nothing
 
 -- Note: Binding top-level supers.

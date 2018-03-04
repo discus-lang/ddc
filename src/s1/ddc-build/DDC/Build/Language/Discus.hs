@@ -11,9 +11,9 @@ import DDC.Build.Language.Base
 import DDC.Core.Simplifier
 import DDC.Core.Transform.Namify
 import DDC.Core.Fragment                hiding (Error(..))
-import qualified DDC.Core.Discus         as E
+import qualified DDC.Core.Discus        as E
 import qualified Data.Map               as Map
-
+import qualified Data.Text              as T
 
 -- | Language definition for Disciple Core Tetra.
 language    :: Language
@@ -39,7 +39,7 @@ fragment
         = Fragment
         { fragmentProfile       = E.profile
         , fragmentExtension     = "dct"
-        , fragmentReadName      = E.readName
+        , fragmentReadName      = E.readName . T.pack
         , fragmentLexModule     = E.lexModuleString
         , fragmentLexExp        = E.lexExpString
         , fragmentCheckModule   = E.checkModule

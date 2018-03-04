@@ -1,5 +1,5 @@
 {-# LANGUAGE TypeFamilies #-}
-
+{-# LANGUAGE OverloadedStrings #-}
 -- | Source Discus conversion to Disciple Core Discus language.
 module DDC.Source.Discus.Convert
         ( ConvertM
@@ -210,7 +210,7 @@ toCoreDataDef def
         let (S.TyConBindName txTyConName) = S.dataDefTypeName def
 
         return $ C.DataDef
-         { C.dataDefTypeName    = C.NameCon (Text.unpack txTyConName)
+         { C.dataDefTypeName    = C.NameCon txTyConName
          , C.dataDefParams      = defParams
          , C.dataDefCtors       = Just $ defCtors
          , C.dataDefIsAlgebraic = True }
@@ -234,7 +234,7 @@ toCoreDataCtor dataDef tag ctor
          , C.dataCtorTag         = tag
          , C.dataCtorFieldTypes  = fieldTypes
          , C.dataCtorResultType  = resultType
-         , C.dataCtorTypeName    = C.NameCon (Text.unpack txTyConName)
+         , C.dataCtorTypeName    = C.NameCon txTyConName
          , C.dataCtorTypeParams  = typeParams }
 
 

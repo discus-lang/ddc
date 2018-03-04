@@ -13,8 +13,9 @@ import DDC.Type.Env                             (KindEnv)
 import Data.Set                                 (Set)
 import Data.Map.Strict                          (Map)
 import qualified DDC.Type.Env                   as Env
-import qualified DDC.Core.Discus.Prim            as E
+import qualified DDC.Core.Discus.Prim           as E
 import qualified DDC.Core.Salt.Name             as A
+import qualified Data.Text                      as T
 
 
 -- | Context of a type conversion.
@@ -54,10 +55,10 @@ convertBindNameM :: E.Name -> ConvertM a A.Name
 convertBindNameM nn
  = case nn of
         E.NameVar str
-          -> return $ A.NameVar str
+          -> return $ A.NameVar $ T.unpack str
 
         E.NameExt n str
           -> do  n'      <- convertBindNameM n
-                 return  $ A.NameExt n' str
+                 return  $ A.NameExt n' $ T.unpack str
 
         _ -> throw $ ErrorInvalidBinder nn

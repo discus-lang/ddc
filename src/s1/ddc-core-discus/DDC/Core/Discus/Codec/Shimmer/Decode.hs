@@ -31,12 +31,12 @@ takeName ss
         XTxt  tx
          |  not $ T.null tx
          -> if Char.isUpper $ T.head tx
-                then Just $ D.NameCon $ T.unpack tx
-                else Just $ D.NameVar $ T.unpack tx
+                then Just $ D.NameCon tx
+                else Just $ D.NameVar tx
 
-        XAps "dv" [XTxt tx]             -> Just $ D.NameVar $ T.unpack tx
-        XAps "dc" [XTxt tx]             -> Just $ D.NameCon $ T.unpack tx
-        XAps "de" [ssName, XTxt tx]     -> Just $ D.NameExt (fromName ssName) (T.unpack tx)
+        XAps "dv" [XTxt tx]             -> Just $ D.NameVar tx
+        XAps "dc" [XTxt tx]             -> Just $ D.NameCon tx
+        XAps "de" [ssName, XTxt tx]     -> Just $ D.NameExt (fromName ssName) tx
 
         -- TyConDiscus
         XAps "dt-Tuple" [XNat n]        -> Just $ D.NameTyConDiscus $ D.TyConDiscusTuple (fromI n)

@@ -25,19 +25,19 @@ import DDC.Core.Salt.Name
 -- | Names of things used in Disciple Core Discus.
 data Name
         -- | User defined variables.
-        = NameVar               !String
+        = NameVar               !Text
 
         -- | A user defined constructor.
-        | NameCon               !String
+        | NameCon               !Text
 
         -- | An extended name.
-        | NameExt               !Name !String
+        | NameExt               !Name !Text
 
         -- | Baked-in type constructors.
-        | NameTyConDiscus        !TyConDiscus
+        | NameTyConDiscus       !TyConDiscus
 
         -- | Baked-in data constructors.
-        | NameDaConDiscus        !DaConDiscus
+        | NameDaConDiscus       !DaConDiscus
 
         -- | Baked-in runtime error reporting.
         --   The flag indicates whether this is the
