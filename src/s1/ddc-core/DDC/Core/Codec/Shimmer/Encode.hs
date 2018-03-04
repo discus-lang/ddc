@@ -147,16 +147,21 @@ takeExportValue c es
  = case es of
         C.ExportValueLocal n _ Nothing
          -> let Just tx = configTakeVarName c n
-            in  xAps "ex-val"  [ xTxt tx, xMac ("t-" <> tx), xMac ("x-" <> tx)]
+            in  xAps "ex-val-loc" [ xTxt tx, xMac ("t-" <> tx), xMac ("x-" <> tx)]
 
         C.ExportValueLocal n _ (Just (aT, aX, aB))
          -> let Just tx = configTakeVarName c n
-            in  xAps "ex-val"  [ xTxt tx, xMac ("t-" <> tx), xMac ("x-" <> tx)
-                               , xNat aT, xNat aX, xNat aB]
+            in  xAps "ex-val-loc" [ xTxt tx, xMac ("t-" <> tx), xMac ("x-" <> tx)
+                                  , xNat aT, xNat aX, xNat aB]
 
         C.ExportValueLocalNoType n
          -> let Just tx = configTakeVarName c n
-            in  xAps "ex-val"  [ xTxt tx, xMac ("t-" <> tx), xMac ("x-" <> tx)]
+            in  xAps "ex-val-loc" [ xTxt tx, xMac ("t-" <> tx), xMac ("x-" <> tx)]
+
+        -- TODO: split type into own decl so we can import/export via the same data.
+        C.ExportValueSea n x t
+         -> let Just tx = configTakeVarName c n
+            in  xAps "ex-val-sea" [ xTxt tx, xTxt x, takeType c t ]
 
 
 -- TypeSyn -----------------------------------------------------------------------------------------

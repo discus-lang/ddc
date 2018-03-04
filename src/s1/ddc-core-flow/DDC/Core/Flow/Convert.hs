@@ -128,6 +128,11 @@ convertExportValueM (_, esrc)
          -> do  n'      <- convertName n
                 return  $ (n', ExportValueLocalNoType n')
 
+        ExportValueSea n x t
+         -> do  n'      <- convertName n
+                t'      <- convertType t
+                return  $ (n', ExportValueSea n' x t')
+
 
 ---------------------------------------------------------------------------------------------------
 -- | Convert an import spec.

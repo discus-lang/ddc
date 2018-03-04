@@ -9,6 +9,7 @@ module DDC.Core.Module.Export
         , mapTypeOfExportValue)
 where
 import Control.DeepSeq
+import Data.Text                (Text)
 
 
 -------------------------------------------------------------------------------
@@ -53,43 +54,57 @@ mapKindOfExportType f esrc
 -------------------------------------------------------------------------------
 -- | Describe a value exported from a module.
 data ExportValue n t
+        -- | A named defined in this module, without a type attached.
+        --   We use this version for source language where we infer the type of
+        --   the exported thing.
+        = ExportValueLocalNoType
+        { exportValueLocalName          :: !n }
+
         -- | A name defined in this module, with an explicit type.
-        = ExportValueLocal
-        { exportValueLocalName  :: n
-        , exportValueLocalType  :: t
+        | ExportValueLocal
+        { exportValueLocalName          :: !n
+        , exportValueLocalType          :: !t
 
           -- | Attach arity information to the export record so that importers
           --   can avoid looking at the definition of the value if they
           --   just want to call it.
-        , exportValueLocalArity :: !(Maybe (Int, Int, Int)) }
+        , exportValueLocalArity         :: !(Maybe (Int, Int, Int)) }
 
-        -- | A named defined in this module, without a type attached.
-        --   We use this version for source language where we infer the type of
-        --   the exported thing.
-        | ExportValueLocalNoType
-        { exportValueLocalName  :: n }
+        -- | A value exported via the C calling convention.
+        | ExportValueSea
+        { -- | The name we use to refer to the value internally to the module.
+          exportValueSeaNameInternal    :: !n
+
+          -- | The name of the value in the external C name space.
+        , exportValueSeaNameExternal    :: !Text
+
+          -- | Type of the exported value.
+        , exportValueSeaType            :: !t }
         deriving Show
 
 
 instance (NFData n, NFData t) => NFData (ExportValue n t) where
  rnf es
   = case es of
-        ExportValueLocal n t _          -> rnf n `seq` rnf t
         ExportValueLocalNoType n        -> rnf n
+        ExportValueLocal n t _          -> rnf n `seq` rnf t
+        ExportValueSea   n _ t          -> rnf n `seq` rnf t
 
 
 -- | Take the type of an imported thing, if there is one.
 takeTypeOfExportValue :: ExportValue n t -> Maybe t
 takeTypeOfExportValue es
  = case es of
-        ExportValueLocal _ t  _         -> Just t
         ExportValueLocalNoType{}        -> Nothing
+        ExportValueLocal _ t  _         -> Just t
+        ExportValueSea   _ _ t          -> Just t
 
 
 -- | Apply a function to any type in an ExportSource.
 mapTypeOfExportValue :: (t -> t) -> ExportValue n t -> ExportValue n t
 mapTypeOfExportValue f esrc
  = case esrc of
-        ExportValueLocal n t a          -> ExportValueLocal n (f t) a
         ExportValueLocalNoType n        -> ExportValueLocalNoType n
+        ExportValueLocal n t a          -> ExportValueLocal n (f t) a
+        ExportValueSea   n x t          -> ExportValueSea   n x (f t)
 

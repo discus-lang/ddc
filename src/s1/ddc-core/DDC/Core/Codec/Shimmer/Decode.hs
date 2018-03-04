@@ -173,7 +173,7 @@ takeDeclExVal c mpT dd
         _ -> failDecode "takeDeclExVal"
 
  where
-        takeExTrm (XAps "ex-val" [ssName, XMac txMacTyp, XMac _txMacTrm])
+        takeExTrm (XAps "ex-val-loc" [ssName, XMac txMacTyp, XMac _txMacTrm])
          = let nName = fromRef c ssName
            in case Map.lookup txMacTyp mpT of
                 Nothing     -> failDecode $ "takeDeclExTrm missing declaration " ++ show txMacTyp
@@ -183,8 +183,8 @@ takeDeclExVal c mpT dd
                         , C.exportValueLocalType  = fromType c ssType
                         , C.exportValueLocalArity = Nothing })
 
-        takeExTrm (XAps "ex-val" [ ssName, XMac txMacTyp, XMac _txMacTrm
-                                 , XNat nT, XNat nX, XNat nB ])
+        takeExTrm (XAps "ex-val-loc" [ ssName, XMac txMacTyp, XMac _txMacTrm
+                                     , XNat nT, XNat nX, XNat nB ])
          = let nName = fromRef c ssName
            in case Map.lookup txMacTyp mpT of
                 Nothing     -> failDecode $ "takeDeclExTrm missing declaration " ++ show txMacTyp

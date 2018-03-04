@@ -239,6 +239,11 @@ convertExportValueM tctx tsSalt esrc
          -> do  n'      <- convertBindNameM n
                 return  $ ExportValueLocalNoType n'
 
+        ExportValueSea n x t
+         -> do  n'      <- convertBindNameM n
+                t'      <- convertCtorT tctx t
+                return  $ ExportValueSea n' x t'
+
 
 ---------------------------------------------------------------------------------------------------
 -- | Convert an import spec.

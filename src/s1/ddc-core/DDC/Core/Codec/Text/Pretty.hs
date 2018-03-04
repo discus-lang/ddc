@@ -146,6 +146,9 @@ pprExportType (n, esrc)
 pprExportValue :: (Pretty n, Pretty t) => (n, ExportValue n t) -> Doc
 pprExportValue (n, esrc)
  = case esrc of
+        ExportValueLocalNoType _n
+         -> text "export value" <+> padL 10 (ppr n) <> semi
+
         ExportValueLocal _n t Nothing
          -> text "export value" <+> padL 10 (ppr n) <+> text ":" <+> ppr t <> semi
 
@@ -158,9 +161,10 @@ pprExportValue (n, esrc)
                                        <+> text "#-}"
                  , empty ]
 
-        ExportValueLocalNoType _n
-         -> text "export value" <+> padL 10 (ppr n) <> semi
-
+        ExportValueSea iName xName t
+         -> vcat [ text "export foreign c value"
+                 , indent 8 (padL 15 (ppr iName) <+> text ":" <+> ppr t <> semi)
+                 , indent 8 (text " from " <> text (show xName)) ]
 
 -- Imports ----------------------------------------------------------------------------------------
 -- | Pretty print a type import.

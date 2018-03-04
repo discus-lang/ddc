@@ -328,6 +328,6 @@ updateExportValue mm ex
                 Nothing -> ex
                 Just t' -> ExportValueLocal n t' mArity
 
-        ExportValueLocalNoType _
-         -> ex
+        ExportValueLocalNoType{} -> ex
+        ExportValueSea{}         -> ex
 

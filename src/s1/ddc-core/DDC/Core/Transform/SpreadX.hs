@@ -93,6 +93,9 @@ spreadExportValueT kenv esrc
         ExportValueLocalNoType n
          -> ExportValueLocalNoType n
 
+        ExportValueSea n x t
+         -> ExportValueSea n x (spreadT kenv t)
+
 
 ---------------------------------------------------------------------------------------------------
 spreadImportTypeT kenv _tenv isrc
