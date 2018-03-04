@@ -15,6 +15,11 @@ import foreign abstract capability
         capRegionBulkAlloc      : Alloc RegionBulk
         capRegionBulkRead       : Read  RegionBulk
 
+import foreign c value
+ allocStoreArray : {@r: Region} -> {@a: Data} -> Nat -> a -> S (Alloc r) (StoreArray r a)
+ readStoreArray  : {@r: Region} -> {@a: Data} -> StoreArray r a -> Nat -> S (Read r) a
+ writeStoreArray : {@r: Region} -> {@a: Data} -> StoreArray r a -> Nat -> a -> S (Write r) Void#
+
 where
 
 

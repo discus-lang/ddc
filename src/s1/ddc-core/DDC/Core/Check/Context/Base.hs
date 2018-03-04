@@ -290,10 +290,14 @@ lookupType u ctx
 
 -- | Given a bound level-1 (type) variable, lookup its kind (level-2) from
 --   the context.
-lookupKind :: Eq n => Bound n -> Context n -> Maybe (Kind n, Role)
+lookupKind :: Ord n => Bound n -> Context n -> Maybe (Kind n, Role)
 lookupKind u ctx
  = case u of
-        UPrim{}         -> Nothing
+        UPrim{}
+         -> case EnvT.lookup u (contextEnvT ctx) of
+                Nothing -> Nothing
+                Just k  -> Just (k, RoleAbstract)
+
         UName n         -> goName n    (contextElems ctx)
         UIx   ix        -> goIx   ix 0 (contextElems ctx)
  where
@@ -330,13 +334,13 @@ memberType u ctx = isJust $ lookupType u ctx
 
 
 -- | See if this kind variable is in the context.
-memberKind :: Eq n => Bound n -> Context n -> Bool
+memberKind :: Ord n => Bound n -> Context n -> Bool
 memberKind u ctx = isJust $ lookupKind u ctx
 
 
 -- | See if the name on a named binder is in the contexts.
 --   Returns False for non-named binders.
-memberKindBind :: Eq n => Bind n -> Context n -> Bool
+memberKindBind :: Ord n => Bind n -> Context n -> Bool
 memberKindBind b ctx
  = case b of
         BName n _       -> memberKind (UName n) ctx

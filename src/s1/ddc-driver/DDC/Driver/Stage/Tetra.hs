@@ -54,7 +54,7 @@ sourceLoadText config store source str
         , BST.configSinkMatches         = D.dump config source "dump.0-source-07-matches.dst"
         , BST.configSinkPrep            = D.dump config source "dump.0-source-08-prep.dst"
         , BST.configSinkCore            = D.dump config source "dump.0-source-09-core.dct"
-        , BST.configSinkResolve         = D.dump config source "dump.0-source-10-resolve.dct"
+        , BST.configSinkImport          = D.dump config source "dump.0-source-10-import.dct"
         , BST.configSinkPreCheck        = D.dump config source "dump.0-source-11-precheck.dct"
         , BST.configSinkCheckerTrace    = D.dump config source "dump.0-source-12-trace.txt"
         , BST.configSinkNamified        = D.dump config source "dump.0-source-13-namified.dct"

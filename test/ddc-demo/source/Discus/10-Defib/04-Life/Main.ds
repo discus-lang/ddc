@@ -8,6 +8,10 @@ import System.IO.Console
 import System.Posix.Unistd
 import System.Runtime
 import Main.Args
+
+import foreign c value
+ usleep : Nat# -> S Sleep Int#
+
 where
 
 

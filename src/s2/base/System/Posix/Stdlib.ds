@@ -2,7 +2,6 @@
 -- | Wrappers for C stdlib
 module System.Posix.Stdlib
 export {
-        exit;
         stdlib_atoi;
         stdlib_system;
         stdlib_mkstemp;

@@ -239,7 +239,7 @@ supersOfInterface ii
          = Nothing
 
         -- Build a super decalaration from an import.
-        takeSuperOfImport im@ImportValueModule{}
+{-      takeSuperOfImport im@ImportValueModule{}
          = Super
                 { superName             = importValueModuleVar im
                 , superModuleName       = modName
@@ -252,16 +252,16 @@ supersOfInterface ii
                 , superModuleName       = modName
                 , superTetraType        = importValueSeaType im
                 , superImportValue      = im }
+-}
 
-   in   Map.union
-         (Map.fromList
+   in   Map.fromList
                 [ (n, let Just s = takeSuperOfExport ex in s)
-                | (n, ex) <- moduleExportValues mmDiscus])
-
+                | (n, ex) <- moduleExportValues mmDiscus]
+{-
          (Map.fromList
                 [ (n, takeSuperOfImport im)
                 | (n, im) <- moduleImportValues mmDiscus])
-
+-}
 
  | otherwise
  = Map.empty

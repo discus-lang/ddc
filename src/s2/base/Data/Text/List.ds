@@ -12,6 +12,7 @@ export
 import Data.Numeric.Word8
 import Data.Text.Base
 import Data.Text.Char
+import Data.Text.Operator
 import Data.List
 where
 

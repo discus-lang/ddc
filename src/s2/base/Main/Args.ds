@@ -12,6 +12,10 @@ import Data.Tuple
 import System.Posix.Stdlib
 import System.Env
 import System.IO.Console
+
+import foreign c value
+ exit    : Nat# -> S Process Void#
+
 where
 
 

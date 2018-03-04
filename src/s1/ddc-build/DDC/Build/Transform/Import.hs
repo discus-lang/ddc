@@ -2,8 +2,8 @@
 -- | Gather up the set of free names and try to find matching export statements
 --   in the imported modules. Add explicit imports that refer to the module where
 --   each name is bound.
-module DDC.Build.Transform.Resolve
-        (resolveNamesInModule )
+module DDC.Build.Transform.Import
+        (importNamesForModule)
 where
 import DDC.Core.Module
 import DDC.Core.Exp
@@ -27,14 +27,14 @@ import qualified Data.Either                    as Either
 -- | For all the names that are free in this module, if there is a
 --   corresponding export in one of the modules in the given map,
 --   then add the appropriate import definition.
-resolveNamesInModule
+importNamesForModule
         :: KindEnv E.Name       -- ^ Kinds of primitive types.
         -> TypeEnv E.Name       -- ^ Types of primitive values.
         -> Store                -- ^ Interface store.
         -> Module a E.Name      -- ^ Module to resolve names in.
         -> IO (Module a E.Name, [Error])
 
-resolveNamesInModule kenv tenv store mm
+importNamesForModule kenv tenv store mm
  = do
         let sp      = support kenv tenv mm
         ints    <- Store.getInterfaces store
@@ -191,6 +191,7 @@ importedTyConsBoxed mm
 data Error
         = ErrorNotFound E.Name
         | ErrorMultiple E.Name [ModuleName]
+        deriving Show
 
 instance Pretty Error where
  ppr err

@@ -2,7 +2,7 @@
 module DDC.Build.Stage.Core.Salt
         ( saltCompileViaSea
         , saltCompileViaLlvm
-        , saltToSea 
+        , saltToSea
         , saltToLlvm)
 where
 import Control.Monad.Trans.Except
@@ -49,13 +49,13 @@ saltCompileViaSea
         -> C.Module a A.Name    -- ^ Core Salt module.
         -> ExceptT [B.Error] IO ()
 
-saltCompileViaSea 
-        srcName builder 
+saltCompileViaSea
+        srcName builder
         pathO mPathExe mPathsOther
         bKeepSeaFiles mm
  = do
         -- Decide where to place the build products.
-        let pathC       = FilePath.replaceExtension pathO  ".ddc.c"        
+        let pathC       = FilePath.replaceExtension pathO  ".ddc.c"
 
         -- Convert Salt code to Sea text.
         let platform    = B.buildSpec builder
@@ -99,10 +99,10 @@ saltCompileViaLlvm
         -> ExceptT [B.Error] IO ()
 
 saltCompileViaLlvm
-        srcName builder pathO mPathExe mPathsOther 
+        srcName builder pathO mPathExe mPathsOther
         bSlotify bKeepLlvmFiles bKeepAsmFiles
         sinkPrep sinkSlots sinkTransfer
-        mm 
+        mm
 
  = do
         -- Decide where to place the build products.
@@ -111,7 +111,7 @@ saltCompileViaLlvm
 
         -- Convert Salt code to Llvm code.
         let platform    = B.buildSpec builder
-        mm_llvm         
+        mm_llvm
          <- saltToLlvm
                 srcName platform bSlotify
                 sinkPrep sinkSlots sinkTransfer
@@ -157,12 +157,12 @@ saltToSea
         -> C.Module a A.Name    -- ^ Core Salt module.
         -> ExceptT [B.Error] IO String
 
-saltToSea srcName platform mm
+saltToSea _srcName platform mm
  = do
         -- Normalize code in preparation for conversion.
         mm_simpl
          <- BC.coreSimplify
-                BA.fragment (0 :: Int) 
+                BA.fragment (0 :: Int)
                 (C.anormalize (CNamify.makeNamifier A.freshT)
                               (CNamify.makeNamifier A.freshX))
                 mm
@@ -170,7 +170,7 @@ saltToSea srcName platform mm
         -- Check normalized to produce type annotations on every node.
         mm_checked
          <- BC.coreCheck
-                srcName BA.fragment C.Recon
+                "saltToSea" BA.fragment C.Recon
                 B.SinkDiscard B.SinkDiscard mm_simpl
 
         -- Insert control transfer primops.
@@ -198,11 +198,11 @@ saltToLlvm
         -> C.Module a A.Name    -- ^ Core Salt module.
         -> ExceptT [B.Error] IO L.Module
 
-saltToLlvm 
-        srcName platform bAddSlots
-        sinkPrep sinkSlots sinkTransfer 
+saltToLlvm
+        _srcName platform bAddSlots
+        sinkPrep sinkSlots sinkTransfer
         mm
- = do   
+ = do
         -- Normalize code in preparation for conversion.
         mm_simpl
          <- BC.coreSimplify
@@ -212,10 +212,12 @@ saltToLlvm
                 mm
 
 
+        liftIO $ B.pipeSink (renderIndent $ ppr mm_simpl) sinkPrep
+
         -- Check normalized code to produce type annotations on every node.
         mm_checked
          <- BC.coreCheck
-                srcName BA.fragment C.Recon
+                "saltToLlvm" BA.fragment C.Recon
                 B.SinkDiscard B.SinkDiscard mm_simpl
 
         liftIO $ B.pipeSink (renderIndent $ ppr mm_simpl) sinkPrep
@@ -246,7 +248,7 @@ saltToLlvm
 
         -- Convert to LLVM source code.
         srcLlvm
-         <- case ALlvm.convertModule platform 
+         <- case ALlvm.convertModule platform
                   (CReannotate.reannotate (const ()) mm_transfer) of
                 Left  err       -> throwE [B.ErrorSaltConvert err]
                 Right mm'       -> return mm'

@@ -21,7 +21,7 @@ import qualified DDC.Build.Pipeline.Error               as B
 import qualified DDC.Build.Interface.Store              as B
 import qualified DDC.Build.Language.Discus              as BE
 import qualified DDC.Build.Stage.Core                   as BC
-import qualified DDC.Build.Transform.Resolve            as BResolve
+import qualified DDC.Build.Transform.Import             as BImport
 
 import qualified DDC.Source.Discus.Exp                  as S
 import qualified DDC.Source.Discus.Module               as S
@@ -59,7 +59,7 @@ data ConfigLoadSourceTetra
         , configSinkMatches      :: B.Sink      -- ^ Sink for match desugared code.
         , configSinkPrep         :: B.Sink      -- ^ Sink for code before conversion.
         , configSinkCore         :: B.Sink      -- ^ Sink for core code.
-        , configSinkResolve      :: B.Sink      -- ^ Sink for core code after resolving.
+        , configSinkImport       :: B.Sink      -- ^ Sink for core code after importing.
         , configSinkPreCheck     :: B.Sink      -- ^ Sink for core code before checking.
         , configSinkCheckerTrace :: B.Sink      -- ^ Sink for checker trace.
         , configSinkChecked      :: B.Sink      -- ^ Sink for checked core code.
@@ -104,7 +104,7 @@ sourceLoad srcName srcLine str store config
          <- sourceLower
                 store
                 (configSinkCore     config)
-                (configSinkResolve  config)
+                (configSinkImport   config)
                 (configSinkPreCheck config)
                 mm_desugared
 
@@ -259,7 +259,7 @@ sourceLower
         -> S.Module S.Source
         -> ExceptT [B.Error] IO (C.Module SP.SourcePos CE.Name)
 
-sourceLower store sinkCore sinkResolve sinkSpread mm
+sourceLower store sinkCore sinkImport sinkSpread mm
  = do
         -- Lower source tetra to core tetra.
         let sp          = SP.SourcePos "<top level>" 1 1
@@ -276,15 +276,15 @@ sourceLower store sinkCore sinkResolve sinkSpread mm
         -- with source locations. The type checker will give its own Undefined
         -- variable errors, but not multiple import errors.
         --
-        (mm_resolve, _errs_resolve)
-         <- liftIO $ BResolve.resolveNamesInModule
+        (mm_import, _errs_import)
+         <- liftIO $ BImport.importNamesForModule
                 CE.primKindEnv CE.primTypeEnv
                 store mm_core
 
-        liftIO $ B.pipeSink (renderIndent $ ppr mm_resolve) sinkResolve
+        liftIO $ B.pipeSink (renderIndent $ ppr mm_import) sinkImport
 
         -- Spread types of data constructors into uses.
-        let mm_spread   = CSpread.spreadX CE.primKindEnv CE.primTypeEnv mm_resolve
+        let mm_spread   = CSpread.spreadX CE.primKindEnv CE.primTypeEnv mm_import
         liftIO $ B.pipeSink (renderIndent $ ppr mm_spread)  sinkSpread
 
         return mm_spread
