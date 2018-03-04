@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 
 -- | Construct applications of primitive store operators.
 module DDC.Core.Salt.Compounds.PrimStore

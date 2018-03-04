@@ -14,8 +14,9 @@ import DDC.Core.Codec.Text.Lexer
 import DDC.Data.SourcePos
 import DDC.Type.Exp
 import DDC.Type.Env                     (Env)
-import qualified DDC.Type.Env           as Env
 import Control.Monad.State.Strict
+import qualified DDC.Type.Env           as Env
+import qualified Data.Text              as T
 
 
 -- | Language profile for Disciple Core Salt.
@@ -82,7 +83,7 @@ lexModuleString sourceName lineStart str
  = map rn $ lexModuleWithOffside sourceName lineStart str
  where
         rn (Located sp strTok)
-         = case renameToken readName strTok of
+         = case renameToken (readName . T.pack) strTok of
                 Just t' -> Located sp t'
                 Nothing -> Located sp (KErrorJunk "lexical error")
 
@@ -98,7 +99,7 @@ lexExpString sourceName lineStart str
  = map rn $ lexExp sourceName lineStart str
  where
         rn (Located sp strTok)
-         = case renameToken readName strTok of
+         = case renameToken (readName . T.pack) strTok of
                 Just t' -> Located sp t'
                 Nothing -> Located sp (KErrorJunk "lexical error")
 
@@ -108,7 +109,7 @@ freshT :: Env Name -> Bind Name -> State Int Name
 freshT env bb
  = do   i       <- get
         put (i + 1)
-        let n =  NameVar ("t" ++ show i)
+        let n =  NameVar (T.pack $ "t" ++ show i)
         case Env.lookupName n env of
          Nothing -> return n
          _       -> freshT env bb
@@ -119,7 +120,7 @@ freshX :: Env Name -> Bind Name -> State Int Name
 freshX env bb
  = do   i       <- get
         put (i + 1)
-        let n = NameVar ("x" ++ show i)
+        let n = NameVar (T.pack $ "x" ++ show i)
         case Env.lookupName n env of
          Nothing -> return n
          _       -> freshX env bb

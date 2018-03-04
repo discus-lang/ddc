@@ -1,4 +1,4 @@
-
+{-# LANGUAGE OverloadedStrings #-}
 -- | Conversion of Flow to Tetra
 --
 module DDC.Core.Flow.Convert
@@ -19,7 +19,8 @@ import qualified DDC.Core.Salt.Compounds       as T
 import DDC.Core.Salt.Convert (initRuntime)
 import DDC.Core.Salt.Runtime (Config(..))
 
-import qualified Data.Set                as S
+import qualified Data.Set               as S
+import qualified Data.Text              as T
 
 
 tetraOfFlowModule :: Module a F.Name -> Either Error (Module a T.Name)
@@ -151,8 +152,8 @@ convertImportNameValueM (n, isrc)
 convertImportNameM :: F.Name -> ConvertM T.Name
 convertImportNameM n
  = case n of
-        F.NameVar str   -> return $ T.NameVar str
-        F.NameCon str   -> return $ T.NameCon str
+        F.NameVar str   -> return $ T.NameVar $ T.pack str
+        F.NameCon str   -> return $ T.NameCon $ T.pack str
         _               -> throw  $ ErrorInvalidBinder n
 
 

@@ -1,4 +1,4 @@
-
+{-# LANGUAGE OverloadedStrings #-}
 module DDC.Core.Llvm.Convert.Exp.Atom
         ( mconvArg
         , mconvAtom
@@ -25,6 +25,8 @@ import qualified DDC.Core.Exp                   as C
 import qualified Data.Map                       as Map
 import qualified Data.List                      as List
 import qualified Data.Char                      as Char
+import qualified Data.Text                      as T
+
 
 -- Arguments ------------------------------------------------------------------
 -- | Convert a function argument expression
@@ -38,7 +40,7 @@ mconvArg ctx aa
 
 
 -- Atoms ----------------------------------------------------------------------
--- | Convert an atomic expression to LLVM, 
+-- | Convert an atomic expression to LLVM,
 --   or `Nothing` if this is not one of those.
 --
 --   If the expression is an atom but is mistyped or malformed then running
@@ -55,7 +57,7 @@ mconvAtom ctx xx
         -- Global names
         A.XVar (C.UName _)
          |  Just mv     <- takeGlobalV ctx xx
-         -> Just $ do  
+         -> Just $ do
                 var     <- mv
                 return  $ XVar var
 
@@ -83,7 +85,7 @@ mconvAtom ctx xx
                         return $ XLit (LitInt t' i)
 
                 -- Literal natural numbers of some width.
-                A.PrimLitNat nat   
+                A.PrimLitNat nat
                  -> Just $ do
                         t' <- convertType pp kenv t
                         return $ XLit (LitInt t' nat)
@@ -127,14 +129,14 @@ mconvAtom ctx xx
                         -- returned name.
                         var     <- addConstant ctx $ makeLitString tx
                         let w   = 8 * platformAddrBytes pp
-                        
+
                         return  $ XGet (TPointer (TInt 8))
-                                       (XVar var) 
+                                       (XVar var)
                                        [ XLit (LitInt (TInt w) 0)
                                        , XLit (LitInt (TInt w) 0) ]
 
                 -- Literal constructor tag.
-                A.PrimLitTag  tag   
+                A.PrimLitTag  tag
                  -> Just $ do
                         t' <- convertType pp kenv t
                         return $ XLit (LitInt t' tag)
@@ -149,7 +151,7 @@ mconvAtom ctx xx
 --   producing the corresponding LLVM variable name.
 ---
 --   We need to sanitize the incoming name because it may include symbols
---   that are not valid for LLVM names. We also need to uniquify them, 
+--   that are not valid for LLVM names. We also need to uniquify them,
 --   to avoid name clashes as the the variables in a single LLVM function
 --   are all bound at the same level.
 --
@@ -157,7 +159,7 @@ bindLocalV :: Context -> A.Name -> A.Type -> ConvertM (Context, Var)
 
 bindLocalV ctx name@(A.NameVar str) t
  = do   t'       <- convertType (contextPlatform ctx) (contextKindEnv ctx) t
-        let str'  = A.sanitizeName str
+        let str'  = A.sanitizeName $ T.unpack str
         v        <- newUniqueNamedVar str' t'
         let ctx'  = extendTypeEnv (C.BName name t) ctx
         let ctx'' = ctx' { contextNames = Map.insert name v (contextNames ctx') }
@@ -165,23 +167,23 @@ bindLocalV ctx name@(A.NameVar str) t
 
 bindLocalV ctx name@(A.NameExt (A.NameVar str1) _str2) t
  = do   t'       <- convertType (contextPlatform ctx) (contextKindEnv ctx) t
-        let str'  = A.sanitizeName str1
+        let str'  = A.sanitizeName $ T.unpack str1
         v        <- newUniqueNamedVar str' t'
         let ctx'  = extendTypeEnv (C.BName name t) ctx
         let ctx'' = ctx' { contextNames = Map.insert name v (contextNames ctx') }
         return (ctx'', v)
 
-bindLocalV _ _ _ 
+bindLocalV _ _ _
  = error "ddc-core-llvm.bindLocalV: not a regular name."
 
 
 -- | Like `bindLocalV`, but take the binder directly.
 bindLocalB  :: Context -> A.Bind -> ConvertM (Context, Var)
-bindLocalB ctx b 
+bindLocalB ctx b
  = case b of
         C.BName nm t    -> bindLocalV ctx nm t
         C.BNone t       -> bindLocalV ctx (A.NameVar "_arg") t
-        C.BAnon _       
+        C.BAnon _
          -> error "ddc-core-llvm.bindLocalB: can't convert anonymous binders."
 
 
@@ -208,7 +210,7 @@ bindLocalAs ctx (a : as)
 
 
 -- | Take a variable from an expression as a local var, if any.
-takeLocalV  
+takeLocalV
         :: Context -> A.Exp
         -> Maybe (ConvertM Var)
 
@@ -226,7 +228,7 @@ takeLocalV ctx xx
 --   The seaNameOfSuper function sanitizes these, so we can use
 --   them as valid LLVM names.
 --
-takeGlobalV  
+takeGlobalV
         :: Context -> A.Exp
         -> Maybe (ConvertM Var)
 
@@ -244,7 +246,7 @@ takeGlobalV ctx xx
                 let mExport  = lookup nSuper (C.moduleExportValues mm)
 
                 -- Convert local name to sanitized LLVM name.
-                let result   = liftM renderPlain 
+                let result   = liftM renderPlain
                              $ A.seaNameOfSuper mImport mExport nSuper
 
                 let str      = case result of
@@ -259,19 +261,19 @@ takeGlobalV ctx xx
 
 
 -------------------------------------------------------------------------------
--- | Add a static constant to the map, 
+-- | Add a static constant to the map,
 --   assigning a new variable to refer to it.
 addConstant :: Context -> Lit -> ConvertM Var
 addConstant ctx lit
- = do   
+ = do
         -- This name is going into the global scope,
         -- so prepend the module name to uniquify it.
-        let C.ModuleName parts 
+        let C.ModuleName parts
                         = C.moduleName $ contextModule ctx
         let mname       = List.intercalate "." parts
 
         -- Make a new variable to name the literal constant.
-        (Var (NameLocal sLit) tLit) 
+        (Var (NameLocal sLit) tLit)
                 <- newUniqueNamedVar mname (typeOfLit lit)
 
         let nLit =  NameGlobal sLit
@@ -281,7 +283,7 @@ addConstant ctx lit
         put     $ s { llvmConstants = Map.insert vLit lit (llvmConstants s)}
 
         -- Although the constant itself has type tLit, when we refer
-        -- to a global name in the body of the code the reference is 
+        -- to a global name in the body of the code the reference is
         -- has pointer type.
         let vRef = Var nLit (TPointer tLit)
         return vRef

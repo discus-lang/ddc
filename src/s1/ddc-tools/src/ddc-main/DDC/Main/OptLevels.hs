@@ -1,4 +1,4 @@
-
+{-# LANGUAGE OverloadedStrings #-}
 -- | Define the default optimisation levels.
 module DDC.Main.OptLevels
         ( getSimplSaltOfConfig)

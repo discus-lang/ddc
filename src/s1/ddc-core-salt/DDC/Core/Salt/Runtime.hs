@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 -- | Bindings to functions exported by the runtime system,
 --   and wrappers for related primops.
 module DDC.Core.Salt.Runtime
@@ -60,8 +61,9 @@ import DDC.Core.Salt.Name
 import DDC.Core.Exp.Annot
 import DDC.Core.Module
 import DDC.Data.Pretty
-import qualified Data.Map       as Map
 import Data.Map                 (Map)
+import qualified Data.Map       as Map
+import qualified Data.Text      as T
 
 
 -- Runtime -----------------------------------------------------------------------------------------
@@ -275,7 +277,7 @@ utApplyThunk arity
                                 ++ [tPtr rResult tObj]
                    in   t'
 
-   in   ( UName (NameVar $ "ddcApply" ++ show arity)
+   in   ( UName (NameVar $ T.pack $ "ddcApply" ++ show arity)
         , t )
 
 

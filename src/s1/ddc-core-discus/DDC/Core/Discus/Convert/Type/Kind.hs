@@ -12,7 +12,7 @@ import DDC.Control.Check                        (throw)
 import Control.Monad
 import qualified DDC.Core.Discus.Prim           as E
 import qualified DDC.Core.Salt.Name             as A
-import qualified Data.Text                      as T
+
 
 -- | Convert a type binder.
 --   These are formal type parameters.
@@ -33,10 +33,10 @@ convertTypeU uu
          -> return $ UIx i
 
         UName (E.NameVar tx)
-         -> return $ UName (A.NameVar $ T.unpack tx)
+         -> return $ UName (A.NameVar tx)
 
         UPrim (E.NameVar tx)
-         -> return $ UPrim (A.NameVar $ T.unpack tx)
+         -> return $ UPrim (A.NameVar tx)
 
         _ -> throw $ ErrorMalformed
                    $ "Invalid type bound " ++ (renderIndent $ ppr uu)

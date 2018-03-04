@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 
 -- | Conversion of Flow types to Tetra types
 -- This only handles the subset of flow that occurs after lowering.
@@ -18,9 +19,9 @@ import DDC.Type.Transform.BoundT
 import qualified DDC.Core.Flow.Prim             as F
 import qualified DDC.Core.Flow.Compounds        as F
 
-import qualified DDC.Core.Salt.Name            as T
-import qualified DDC.Core.Salt.Compounds       as T
-
+import qualified DDC.Core.Salt.Name             as T
+import qualified DDC.Core.Salt.Compounds        as T
+import qualified Data.Text                      as T
 
 
 tRef   :: Type T.Name -> Type T.Name -> Type T.Name
@@ -128,11 +129,13 @@ convertName :: F.Name -> ConvertM T.Name
 convertName nn
  = case nn of
    F.NameVar n
-    -> return $ T.NameVar n
+    -> return $ T.NameVar (T.pack n)
+
    F.NameVarMod n x
-    -> flip T.NameExt x <$> convertName n
+    -> flip T.NameExt (T.pack x) <$> convertName n
+
    F.NameCon n
-    -> return $ T.NameCon n
+    -> return $ T.NameCon (T.pack n)
 
    F.NameKiConFlow _
     -> throw $ ErrorPartialPrimitive nn

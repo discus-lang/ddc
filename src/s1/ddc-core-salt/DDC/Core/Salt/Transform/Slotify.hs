@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 module DDC.Core.Salt.Transform.Slotify
         (slotifyModule)
 where
@@ -9,7 +10,7 @@ import DDC.Core.Exp.Annot
 import DDC.Core.Module
 import DDC.Data.Pretty
 import qualified DDC.Core.Salt                          as A
-import qualified DDC.Core.Salt.Compounds                as A    
+import qualified DDC.Core.Salt.Compounds                as A
 import qualified DDC.Core.Salt.Runtime                  as A
 import qualified DDC.Core.Check                         as Check
 import qualified DDC.Core.Simplifier                    as Simp
@@ -45,13 +46,13 @@ slotifyModule a mm@ModuleCore{}
                 $ Simp.applySimplifier
                         A.profile Env.empty Env.empty anorm mmSlots
 
-   in    case Check.checkModule 
-                (Check.configOfProfile A.profile) 
+   in    case Check.checkModule
+                (Check.configOfProfile A.profile)
                 mmANF Check.Recon of
 
            -- Couldn't reconstruct type annotations.
            (Left err, _checkTrace)
-             -> error ("slotifyModule cannot reconstruct types:\n" ++ renderIndent (ppr err)) 
+             -> error ("slotifyModule cannot reconstruct types:\n" ++ renderIndent (ppr err))
 
            (Right mmCheck, _checkTrace)
              -> Right mmCheck
@@ -80,9 +81,9 @@ slotifySuper
         -> Exp a A.Name
 
 slotifySuper a xx
- = let  
+ = let
         -- Split super parameters frm the body expression.
-        (bsParam, xBody)  
+        (bsParam, xBody)
                 = case takeXLamFlags xx of
                         Nothing         -> ([], xx)
                         Just (bs, x)    -> (bs, x)
@@ -95,7 +96,7 @@ slotifySuper a xx
         tSlot t         = A.tPtr A.rTop t
         bSlot n t       = BName (nSlot n) (tSlot t)
 
-        xPeekSlot  n t  = A.xPeek a A.rTop t (xSlot n) 
+        xPeekSlot  n t  = A.xPeek a A.rTop t (xSlot n)
         xPokeSlot  n t  = A.xPoke a A.rTop t (xSlot n) (XVar a (UName n))
 
         wrapPokeSlot n t x
@@ -106,11 +107,11 @@ slotifySuper a xx
         --   We only need slots for pointers to objects, not pointers to other things.
         --
         --   We need the slots to be created in the same order in which the parameters
-        --   are defined, as the tail-call handling in the Salt->LLVM code generator 
+        --   are defined, as the tail-call handling in the Salt->LLVM code generator
         --   depends on this.
         allocSlotsArg x
                 = foldr ($) x
-                $ [ XLet a (LLet (bSlot nParam tParam) 
+                $ [ XLet a (LLet (bSlot nParam tParam)
                                  (A.xAllocSlotVal a tR (XVar a (UName nParam))))
                   | (False, BName nParam tParam) <- bsParam
                   , Just (tR, tVal)              <- [A.takeTPtr tParam]
@@ -120,7 +121,7 @@ slotifySuper a xx
         -- Function to wrap an expression in let-bindings that create stack
         -- slots for each of the boxed values bound in the body of the super.
         args    = [ (n, ()) | (False, BName n _) <- bsParam ]
-        allocSlotsBody x    
+        allocSlotsBody x
                 = foldr ($) x
                 $ [ XLet a (LLet (bSlot n t) (A.xAllocSlot a tR))
                   | (n, t)       <- Map.toList $ ntsObj `Map.difference` (Map.fromList args)
@@ -129,17 +130,17 @@ slotifySuper a xx
         -- Function to find bound occurrences of a variable that is being
         -- represented by a stack slot and peek the current from the slot at
         -- every occurrence.
-        substPeeks x    
-                = flip replaceX x 
+        substPeeks x
+                = flip replaceX x
                 $ Map.fromList
                 $ [ (n, xPeekSlot n t)
                   | (n, t)      <- ntsObj' ]
 
-        -- Function to find the binding occurrences of variables that are being 
+        -- Function to find the binding occurrences of variables that are being
         -- represented by stack slots and poke the value into the slot as soon
         -- as it is defined.
-        injectPokesL x  
-                = flip injectX x 
+        injectPokesL x
+                = flip injectX x
                 $ Map.fromList
                   [ (n, wrapPokeSlot n t)
                   | (n, t)      <- ntsObj' ]

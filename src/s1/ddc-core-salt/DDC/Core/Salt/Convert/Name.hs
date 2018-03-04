@@ -10,7 +10,7 @@ import DDC.Core.Module
 import DDC.Type.Exp.Simple.Exp
 import DDC.Data.Pretty
 import Data.Maybe
-
+import qualified Data.Text      as T
 
 -- | Like 'sanitizeGlobal' but indicate that the name is going to be visible
 --   globally.
@@ -20,7 +20,7 @@ sanitizeGlobal = sanitizeName
 
 -- | Convert the Salt name of a supercombinator to a name we can use when
 --   defining the C function.
-seaNameOfSuper 
+seaNameOfSuper
         :: Maybe (ImportValue  Name (Type Name)) -- ^ How the super is imported
         -> Maybe (ExportSource Name (Type Name)) -- ^ How the super is exported
         -> Name                                  -- ^ Name of the super.
@@ -32,20 +32,20 @@ seaNameOfSuper mImport mExport nm
         | Nothing                       <- mImport
         , Nothing                       <- mExport
         , Just str                      <- takeNameVar nm
-        = Just $ text $ sanitizeName str
+        = Just $ text $ sanitizeName $ T.unpack str
 
         -- Super is defined in this module and exported to C land.
         | Nothing                       <- mImport
         , Just _                        <- mExport
         , Just str                      <- takeNameVar nm
-        = Just $ text $ sanitizeName str
+        = Just $ text $ sanitizeName $ T.unpack str
 
         -- Super is imported from another module and not exported.
         | Just ImportValueModule{}      <- mImport
         , Nothing                       <- mExport
         , Just str                      <- takeNameVar nm
-        = Just $ text $ sanitizeName str
-        
+        = Just $ text $ sanitizeName $ T.unpack str
+
         -- Super is imported from C-land and not exported.
         | Just (ImportValueSea strSea _) <- mImport
         , Nothing                       <- mExport
@@ -56,7 +56,7 @@ seaNameOfSuper mImport mExport nm
         -- We don't handle the other cases because we would need to
         -- produce a wrapper to conver the names.
         | Just str                      <- takeNameVar nm
-        = Just $ text str
+        = Just $ text $ T.unpack str
 
         | otherwise
         = Nothing
@@ -67,7 +67,7 @@ seaNameOfSuper mImport mExport nm
 seaNameOfLocal :: Name -> Maybe Doc
 seaNameOfLocal nn
  = case takeNameVar nn of
-        Just str        -> Just $ text $ "_" ++ sanitizeGlobal str
+        Just str        -> Just $ text $ "_" ++ sanitizeGlobal (T.unpack str)
         _               -> Nothing
 
 

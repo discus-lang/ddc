@@ -1,4 +1,4 @@
-
+{-# LANGUAGE OverloadedStrings #-}
 module DDC.Core.Discus.Convert.Type.Super
         (convertSuperConsT)
 where
@@ -10,7 +10,8 @@ import DDC.Core.Call
 import DDC.Core.Exp.Annot
 import qualified DDC.Core.Discus.Prim   as E
 import qualified DDC.Core.Salt.Name     as A
-import qualified Data.Text              as T
+import Data.Monoid
+
 
 -- | Convert the Discus type of a super with the given call pattern to Salt.
 --
@@ -56,7 +57,7 @@ convertSuperConsT ctx0 cs0 tt0
          -- Convert data type abstractions to region abstractions.
          | isDataKind $ typeOfBind bParam
          , BName (E.NameVar str) _ <- bParam
-         , str'          <- T.unpack str ++ "$r"
+         , str'          <- str <> "$r"
          , bParam'       <- BName (A.NameVar str') kRegion
          = do   let ctx' =  extendKindEnv bParam ctx
                 tBody'   <- convertAbsType ctx' cs tBody

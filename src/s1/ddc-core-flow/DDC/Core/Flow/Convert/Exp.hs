@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 
 -- | Conversion of Flow expressions to Tetra expressions
 -- This only handles the subset of flow that occurs after lowering.

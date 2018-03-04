@@ -153,7 +153,6 @@ convertModuleM pp mm@(C.ModuleCore{})
                 <- liftM unzip
                 $  mapM (uncurry (convertSuper' ctx)) bxs
 
-
         -- Stitch everything together -----------
         return  $ Module
                 { modComments           = []

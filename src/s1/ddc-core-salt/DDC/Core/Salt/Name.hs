@@ -1,4 +1,5 @@
 {-# LANGUAGE PatternSynonyms #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 -- | Names used in the Disciple Core Salt language profile.
 module DDC.Core.Salt.Name
@@ -97,18 +98,19 @@ import Control.DeepSeq
 import Data.Text                                        (Text)
 import qualified DDC.Core.Codec.Text.Lexer.Tokens       as K
 import qualified Data.Text                              as T
+import qualified Data.Monoid                            as T
 
 
 -- | Names of things used in Disciple Core Salt.
 data Name
         -- | A type or value variable.
-        = NameVar       !String
+        = NameVar       !Text
 
         -- | Constructor names.
-        | NameCon       !String
+        | NameCon       !Text
 
         -- | An extended name.
-        | NameExt       !Name !String
+        | NameExt       !Name !Text
 
         -- | The abstract heap object type constructor.
         | NameObjTyCon
@@ -134,9 +136,9 @@ instance NFData Name where
 instance Pretty Name where
  ppr nn
   = case nn of
-        NameVar  n              -> text n
-        NameCon  n              -> text n
-        NameExt  n ext          -> ppr n <> text "$" <> text ext
+        NameVar  n              -> text $ T.unpack n
+        NameCon  n              -> text $ T.unpack n
+        NameExt  n ext          -> ppr n <> text "$" <> text (T.unpack ext)
         NameObjTyCon            -> text "Obj"
         NamePrimTyCon tc        -> ppr tc
         NamePrimVal   val       -> ppr val
@@ -144,39 +146,39 @@ instance Pretty Name where
 
 instance CompoundName Name where
  extendName n str
-  = NameExt n str
+  = NameExt n $ T.pack str
 
  newVarName str
-  = NameVar str
+  = NameVar $ T.pack str
 
  splitName nn
   = case nn of
-        NameExt n str   -> Just (n, str)
+        NameExt n str   -> Just (n, T.unpack str)
         _               -> Nothing
 
 
 -- | Read the name of a variable, constructor or literal.
-readName :: String -> Maybe Name
+readName :: Text -> Maybe Name
 readName str
         -- Obj
         | str == "Obj"
         = Just $ NameObjTyCon
 
         -- PrimTyCon
-        | Just p        <- readPrimTyCon str
+        | Just p        <- readPrimTyCon $ T.unpack str
         = Just $ NamePrimTyCon p
 
         -- PrimVal
-        | Just p        <- readPrimVal str
+        | Just p        <- readPrimVal $ T.unpack str
         = Just $ NamePrimVal p
 
         -- Constructors.
-        | c : _         <- str
+        | Just (c, _)   <- T.uncons str
         , isUpper c
         = Just $ NameVar str
 
         -- Variables.
-        | c : _         <- str
+        | Just (c, _)   <- T.uncons str
         , K.isVarStart c  || c == '_'
         = Just $ NameVar str
 
@@ -185,14 +187,14 @@ readName str
 
 
 -- | Take the string of a non-primitive name. Supports extended names.
-takeNameVar :: Name -> Maybe String
+takeNameVar :: Name -> Maybe Text
 
 takeNameVar (NameVar n)
     = Just n
 
 takeNameVar (NameExt n str)
     | Just n' <- takeNameVar n
-    = Just (n' ++ "$" ++ str)
+    = Just (n' T.<> "$" T.<> str)
 
 takeNameVar _
     = Nothing

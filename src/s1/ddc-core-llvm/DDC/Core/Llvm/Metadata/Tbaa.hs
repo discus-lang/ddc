@@ -1,7 +1,7 @@
 module DDC.Core.Llvm.Metadata.Tbaa
        ( MDSuper(..)
-       , deriveMD 
-       , annot 
+       , deriveMD
+       , annot
        , lookup, lookups )
 where
 import DDC.Llvm.Syntax.Metadata
@@ -24,16 +24,17 @@ import Data.Map                         (Map)
 import Data.List                        hiding (lookup)
 import qualified Data.Map               as Map
 import qualified Data.Set               as Set
+import qualified Data.Text              as T
 
 
 -- Metadata management --------------------------------------------------------
 -- | Metadata for a supercombinator.
 data MDSuper
         = MDSuper
-          { -- Map bound regions to metadata nodes for attaching metadata 
+          { -- Map bound regions to metadata nodes for attaching metadata
             --    to relevant instructions.
             nameMap     :: MDEnv
-            
+
             -- Metadata nodes, to be pretty-printed with the module as
             --    declarations. e.g. "1 = !{ metadata "id", !parent, !i11}
           , decls       :: [MDecl]
@@ -47,7 +48,7 @@ instance Pretty (MDSuper) where
 -- | Map region variables to relevant metadata
 --      need the whole declaration for tags, e.g "!tbaa", "!debug"
 type MDEnv = Map (Bound A.Name) [MDecl]
- 
+
 emptyDict :: MDEnv
 emptyDict = Map.empty
 
@@ -72,10 +73,10 @@ deriveMD
       :: (BindStruct A.Exp A.Name)
       => String                 -- ^ Sanitized name of super
       -> A.Exp                  -- ^ Super to derive from
-      -> ConvertM MDSuper       -- ^ Metadata encoding witness information            
+      -> ConvertM MDSuper       -- ^ Metadata encoding witness information
 
 deriveMD nTop xx
-  = let 
+  = let
         regs                 = collectRegsB xx
         (constwits, diswits) = partitionWits $ collectWitsB xx
         arel                 = constructARel   diswits
@@ -99,12 +100,12 @@ bfBuild nTop tree parent sup node
 
         Just parentRef -> do name <- freshNodeName nTop (regionU node)
                              bf (Just $ regionU node) $ tbaaNode name parentRef (isConst node)
-   where bf u md 
+   where bf u md
           = do ref          <- liftM MRef $ newUnique
                let sup'     =  declare u ref md sup
                let children =  sources node tree
                foldM (bfBuild nTop tree (Just ref)) sup' children
-         declare u r m s 
+         declare u r m s
           = let decl = MDecl r m
             in  case u of Nothing -> s { decls   = decl:(decls s) }
                           Just u' -> s { nameMap = extendDict (u',decl) $ nameMap s
@@ -114,7 +115,8 @@ bfBuild nTop tree parent sup node
 freshNodeName :: String -> Bound A.Name -> ConvertM String
 freshNodeName q (UName nm)
     | Just n <- A.takeNameVar nm
-    = return $ q ++ "_" ++ n
+    = return $ q ++ "_" ++ (T.unpack n)
+
 freshNodeName q _
     = liftA (\i -> q ++ "_" ++ (show i)) newUnique
 
@@ -124,16 +126,16 @@ freshRootName qualify = liftA (\i -> qualify ++ "_ROOT_" ++ (show i)) newUnique
 
 -- | Attach relevant metadata to instructions
 annot :: (BindStruct (c A.Name) A.Name)
-      => KindEnv A.Name 
-      -> MDSuper        -- ^ Metadata      
+      => KindEnv A.Name
+      -> MDSuper        -- ^ Metadata
       -> [c A.Name]     -- ^ Things to lookup for Meta data.
       -> V.Instr        -- ^ Instruction to annotate
       -> V.AnnotInstr
-      
+
 annot kenv mdsup xs ins
  = let regions  = concatMap (collectRegsU kenv) xs
        mdecls   = concat $ catMaybes $ lookups regions mdsup
-       annotate' ms is 
+       annotate' ms is
          = case is of
                 V.ILoad{}  -> V.AnnotInstr is ms
                 V.IStore{} -> V.AnnotInstr is ms
@@ -158,7 +160,7 @@ constructANodes regs constwits
 
 
 -- | Encode the `alias` relation defined on the set regions
---      * reflexitivity is taken as implicit 
+--      * reflexitivity is taken as implicit
 --        (important for generating DAG, and safe since LLVM already assumes
 --         reflexitivity)
 --      * symmetry is made explicit
@@ -168,7 +170,7 @@ constructARel :: [WitType] -> Rel ANode
 constructARel diswits = alias
   where alias n1 n2
           | n1 == n2  = False
-          | otherwise = not $ or 
+          | otherwise = not $ or
                       $ map (flip isDistinctWFor (regionU n1, regionU n2)) diswits
 
 
@@ -189,7 +191,7 @@ isConstWFor t r
 
 
 isDistinctW :: WitType-> Bool
-isDistinctW tw 
+isDistinctW tw
   | tc : _ <- takeTApps tw = isDistinctWitType tc
   | otherwise              = False
 
@@ -220,20 +222,20 @@ collectRegsU kenv cc
 -- | Collect region bindings
 collectRegsB :: (BindStruct (c A.Name) A.Name) => c A.Name -> [RegBound]
 collectRegsB cc
- = let isBindReg b 
+ = let isBindReg b
          = case b of
                 BName n t | isRegionKind t -> Just (UName n)
                 _                          -> Nothing
-       bindRegs = map (isBindReg) $ fst (collectBinds cc)                            
-   in  catMaybes bindRegs   
+       bindRegs = map (isBindReg) $ fst (collectBinds cc)
+   in  catMaybes bindRegs
 
-   
+
 -- | Collect witness bindings together with their types (for convinience)
 collectWitsB :: (BindStruct (c A.Name) A.Name) => c A.Name -> [WitType]
 collectWitsB cc
  = let isBindWit b
         = let t = typeOfBind b
-          in  if isWitnessType t then Just t else Nothing                     
+          in  if isWitnessType t then Just t else Nothing
        bindWits  = map (isBindWit) $ snd (collectBinds cc)
    in  catMaybes bindWits
 

@@ -13,6 +13,7 @@ import DDC.Core.Fragment
 import DDC.Core.Salt                    as Salt
 import qualified DDC.Core.Salt          as A
 import qualified Data.Map               as Map
+import qualified Data.Text              as T
 
 
 -- | Language definition for Disciple Core Salt.
@@ -27,18 +28,18 @@ bundle  = Bundle
         , bundleModules         = Map.empty
         , bundleStateInit       = 0 :: Int
         , bundleSimplifier      = Trans Id
-        , bundleMakeNamifierT   = makeNamifier freshT 
+        , bundleMakeNamifierT   = makeNamifier freshT
         , bundleMakeNamifierX   = makeNamifier freshX
         , bundleRewriteRules    = Map.empty }
 
 
 -- | Fragment definition for Disciple Core Salt.
 fragment :: Fragment A.Name A.Error
-fragment 
+fragment
         = Fragment
-        { fragmentProfile       = A.profile 
+        { fragmentProfile       = A.profile
         , fragmentExtension     = "dcs"
-        , fragmentReadName      = A.readName
+        , fragmentReadName      = A.readName . T.pack
         , fragmentLexModule     = A.lexModuleString
         , fragmentLexExp        = A.lexExpString
         , fragmentCheckModule   = const Nothing

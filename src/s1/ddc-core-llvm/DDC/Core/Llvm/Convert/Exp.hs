@@ -29,6 +29,7 @@ import qualified DDC.Type.Env                   as Env
 import qualified Data.Sequence                  as Seq
 import qualified Data.Set                       as Set
 import qualified Data.Map                       as Map
+import qualified Data.Text                      as T
 
 import Debug.Trace
 
@@ -72,7 +73,7 @@ convertSuperAllocs
 
 convertSuperAllocs ctx instrs xx
  = case xx of
-        -- A binding that allocates a slot on the shadow stack and 
+        -- A binding that allocates a slot on the shadow stack and
         -- associates a Salt level variable name with it.
         -- These slots are used to hold pointers to the super arguments.
         A.XLet (A.LLet  (C.BName nm t) x1) x2
@@ -91,11 +92,11 @@ convertSuperAllocs ctx instrs xx
 
 
                 -- Remember the name of the parameter being written to this new slot.
-                let [A.RType _rObj, A.RExp (A.XVar (C.UName nParam))] 
+                let [A.RType _rObj, A.RExp (A.XVar (C.UName nParam))]
                           = xsArg
 
                 let ctx'' = ctx'
-                          { contextSuperParamSlots 
+                          { contextSuperParamSlots
                           = contextSuperParamSlots ctx' ++ [(nParam, vSlot)] }
 
                 -- Convert the body of the let-expression.
@@ -106,7 +107,7 @@ convertSuperAllocs ctx instrs xx
                 convertSuperAllocs ctx'' (instrs >< instrs') x2
 
 
-        -- A binding that allocates a slot on the shadow stack and 
+        -- A binding that allocates a slot on the shadow stack and
         -- just initializes it to null.
         -- These slots are used to objects created in the body of the super.
         A.XLet (A.LLet  (C.BName nm t) x1) x2
@@ -121,7 +122,7 @@ convertSuperAllocs ctx instrs xx
                 --   is converted in the original context, without the let-bound
                 --   variable (ctx).
                 instrs'      <- convertSimple ctx (ExpAssign ExpTop vDst) x1
-                
+
                 -- Convert the body of the let-expression.
                 --   This is done in the new context, with the let-bound variable.
                 convertSuperAllocs ctx' (instrs >< instrs') x2
@@ -132,7 +133,7 @@ convertSuperAllocs ctx instrs xx
         --
         --   We create a new block for all the slot allocations,
         --   then branch to the body of the super proper.
-        _ -> do 
+        _ -> do
                 -- Label for the block that allocates all the shadow stack slots.
                 lInit   <- newUniqueLabel "init"
 
@@ -140,8 +141,8 @@ convertSuperAllocs ctx instrs xx
                 lBody   <- newUniqueLabel "body"
 
                 -- Create the block that allcoates all the slots.
-                let blkInit     
-                         = Block lInit 
+                let blkInit
+                         = Block lInit
                                 (instrs |> (annotNil $ IBranch lBody))
 
                 -- Add the super body label to the context.
@@ -151,9 +152,9 @@ convertSuperAllocs ctx instrs xx
                          { contextSuperBodyLabel = Just lBody }
 
                 -- Convert the main body of the super.
-                convertSuperBody 
-                        ctx' 
-                        ExpTop 
+                convertSuperBody
+                        ctx'
+                        ExpTop
                         (Seq.singleton blkInit)
                         lBody Seq.empty xx
 
@@ -171,11 +172,11 @@ convertSuperBody
         -> ConvertM (Seq Block) -- ^ Final blocks of function body.
 
 convertSuperBody ctx ectx blocks label instrs xx
- = let  pp           = contextPlatform    ctx 
+ = let  pp           = contextPlatform    ctx
         kenv         = contextKindEnv     ctx
         convertCase  = contextConvertCase ctx
         atomsR as' = sequence $ map (mconvArg ctx) as'
-   in do   
+   in do
         case xx of
 
          -- Control transfer instructions -----------------
@@ -187,8 +188,8 @@ convertSuperBody ctx ectx blocks label instrs xx
           ,  A.PrimControl A.PrimControlReturn  <- p
           ,  [A.RType{}, A.RExp (A.XCon dc)]    <- as
           ,  Just (A.NamePrimLit A.PrimLitVoid) <- A.takeNameOfDaCon dc
-          -> return  $   blocks 
-                     |>  Block label 
+          -> return  $   blocks
+                     |>  Block label
                                (instrs |> (annotNil $ IReturn Nothing))
 
          -- Void return applied to some other expression.
@@ -202,7 +203,7 @@ convertSuperBody ctx ectx blocks label instrs xx
           ,  isVoidT t
           -> do instrs2 <- convertSimple ctx ectx x2
                 return  $  blocks
-                        |> Block label 
+                        |> Block label
                                  (instrs >< (instrs2 |> (annotNil $ IReturn Nothing)))
 
          -- Return a value.
@@ -215,8 +216,8 @@ convertSuperBody ctx ectx blocks label instrs xx
           -> do t'      <- convertType pp kenv t
                 vDst    <- newUniqueVar t'
                 is      <- convertSimple ctx (ExpAssign ectx vDst) x
-                return  $   blocks 
-                        |>  Block label 
+                return  $   blocks
+                        |>  Block label
                                   (instrs >< (is |> (annotNil $ IReturn (Just (XVar vDst)))))
 
          -- Fail and abort the program.
@@ -225,18 +226,18 @@ convertSuperBody ctx ectx blocks label instrs xx
           |  Just (p, as)                       <- A.takeXPrimApps xx
           ,  A.PrimControl A.PrimControlFail    <- p
           ,  [A.RType _tResult]                 <- as
-          -> let 
+          -> let
                  iSet   = case ectx of
                            ExpTop{}           -> INop
                            ExpNest _ vDst _   -> ISet vDst (XUndef (typeOfVar vDst))
                            ExpAssign _ vDst   -> ISet vDst (XUndef (typeOfVar vDst))
 
-                 iFail  = ICall Nothing CallTypeStd Nothing 
+                 iFail  = ICall Nothing CallTypeStd Nothing
                                 TVoid (NameGlobal "abort") [] []
 
                  block  = Block label
                         $ instrs |> annotNil iSet
-                                 |> annotNil iFail 
+                                 |> annotNil iFail
                                  |> annotNil IUnreachable
 
 
@@ -247,7 +248,7 @@ convertSuperBody ctx ectx blocks label instrs xx
          -- Perform a self tailcall.
          --  This is when the current super being converted tail calls itself.
          --  To perform the call we can just assign the new arguments to their
-         --  corresponding shadow stack slots and jump back to the start 
+         --  corresponding shadow stack slots and jump back to the start
          --  of the super body. This avoids pushing new arguments or slots onto
          --  the stack, so the call runs in constant stack space.
          --
@@ -256,7 +257,7 @@ convertSuperBody ctx ectx blocks label instrs xx
           ,  A.PrimCall (A.PrimCallTail arity)          <- prim
           ,  arity > 0
 
-          -- Split the arguments to the tailcall# primitive. 
+          -- Split the arguments to the tailcall# primitive.
           ,  tsArgs                                     <- take arity args
           ,  A.RType _tResult : A.RExp xFunTys : xsArgs <- drop arity args
 
@@ -270,7 +271,7 @@ convertSuperBody ctx ectx blocks label instrs xx
           -- We only do this self tailcall optimisation when all the parameters
           -- are boxed object and the Slotify transform has introduced a stack
           -- slot for each of them.
-          ,  all (\t -> t == A.tPtr A.rTop A.tObj) 
+          ,  all (\t -> t == A.tPtr A.rTop A.tObj)
                  [t | A.RType t <- tsArgs]
           ,  arity == length (contextSuperParamSlots ctx)
           ,  arity == length tsArgs
@@ -280,13 +281,13 @@ convertSuperBody ctx ectx blocks label instrs xx
 
           -- Actions to convert each of the arguments.
           ,  Just msArgs        <- sequence $ map (mconvArg ctx) xsArgs
-          -> do 
+          -> do
                 -- Convert each of the arguments.
                 xsArgs'         <- sequence msArgs
 
                 -- Build a tail call that writes the new arguments to the corresponding
                 -- shadow stack slots and jumps back to the start of the function.
-                let isCall      
+                let isCall
                         = Seq.fromList
                                 [ annotNil $ IStore (XVar nDst) xSrc
                                         | nDst  <- map snd $ contextSuperParamSlots ctx
@@ -318,7 +319,7 @@ convertSuperBody ctx ectx blocks label instrs xx
 
           -- Actions to convert each of the arguments.
           , Just msArgs         <- sequence $ map (mconvArg ctx) xsArgs
-          -> do 
+          -> do
                 Var nFun _      <- mFun
                 xsArgs'         <- sequence msArgs
                 tResult'        <- convertType pp kenv tResult
@@ -333,7 +334,7 @@ convertSuperBody ctx ectx blocks label instrs xx
                             |> (annotNil $ IReturn Nothing))
 
                   -- Tail called function returns an actual value.
-                  else do 
+                  else do
                         vDst      <- newUniqueVar tResult'
                         return  $ blocks
                          |> (Block label $ instrs
@@ -351,7 +352,7 @@ convertSuperBody ctx ectx blocks label instrs xx
           , Just [mPtr, mOffset, mLength]        <- atomsR args
           -> do
                 tDst'           <- convertType pp kenv tDst
-                (ctx', vDst@(Var nDst' _))    
+                (ctx', vDst@(Var nDst' _))
                                 <- bindLocalV ctx nDst tDst
 
                 xPtr'           <- mPtr
@@ -366,7 +367,7 @@ convertSuperBody ctx ectx blocks label instrs xx
                 labelOk         <- newUniqueLabel "peek-ok"
 
                 let blockEntry  = Block label
-                                $ instrs 
+                                $ instrs
                                 >< (Seq.fromList $ map annotNil
                                 [ ICmp      vTest (ICond ICondUlt) xOffset' xLength'
                                 , IBranchIf (XVar vTest) labelOk labelFail ])
@@ -378,7 +379,7 @@ convertSuperBody ctx ectx blocks label instrs xx
                                    ExpNest _   vDst' _ -> ISet vDst' (XUndef (typeOfVar vDst'))
                                    ExpAssign _ vDst'   -> ISet vDst' (XUndef (typeOfVar vDst'))
 
-                                , ICall Nothing CallTypeStd Nothing 
+                                , ICall Nothing CallTypeStd Nothing
                                         TVoid (NameGlobal "abort") [] []
 
                                 , IUnreachable]
@@ -389,8 +390,8 @@ convertSuperBody ctx ectx blocks label instrs xx
                                 , IConv     vPtr   ConvInttoptr (XVar vAddr2)
                                 , ILoad     vDst   (XVar vPtr)]
 
-                convertSuperBody ctx' ectx 
-                        (blocks |> blockEntry |> blockFail) 
+                convertSuperBody ctx' ectx
+                        (blocks |> blockEntry |> blockFail)
                         labelOk instrsCont x2
 
 
@@ -416,7 +417,7 @@ convertSuperBody ctx ectx blocks label instrs xx
                 labelOk         <- newUniqueLabel "poke-ok"
 
                 let blockEntry  = Block label
-                                $ instrs 
+                                $ instrs
                                 >< (Seq.fromList $ map annotNil
                                 [ ICmp      vTest (ICond ICondUlt) xOffset' xLength'
                                 , IBranchIf (XVar vTest) labelOk labelFail ])
@@ -428,7 +429,7 @@ convertSuperBody ctx ectx blocks label instrs xx
                                    ExpNest _   vDst' _ -> ISet vDst' (XUndef (typeOfVar vDst'))
                                    ExpAssign _ vDst'   -> ISet vDst' (XUndef (typeOfVar vDst'))
 
-                                , ICall Nothing CallTypeStd Nothing 
+                                , ICall Nothing CallTypeStd Nothing
                                         TVoid (NameGlobal "abort") [] []
 
                                 , IUnreachable]
@@ -440,7 +441,7 @@ convertSuperBody ctx ectx blocks label instrs xx
                                 , IStore    (XVar vPtr)  xVal' ]
 
                 convertSuperBody ctx ectx
-                        (blocks |> blockEntry |> blockFail) 
+                        (blocks |> blockEntry |> blockFail)
                         labelOk instrsCont x2
 
 
@@ -453,26 +454,26 @@ convertSuperBody ctx ectx blocks label instrs xx
 
 
          -- A let-bound expression without a name, of some non-void type.
-         --   In C we can just drop a computed value on the floor, 
+         --   In C we can just drop a computed value on the floor,
          --   but the LLVM compiler needs an explicit name for it.
          --   Add the required name then call ourselves again.
          A.XLet (A.LLet (C.BNone t) x1) x2
           | not $ isVoidT t
           -> do n       <- newUnique
-                let b   = C.BName (A.NameVar ("_d" ++ show n)) t
+                let b   = C.BName (A.NameVar (T.pack $ "_d" ++ show n)) t
 
-                convertSuperBody ctx ectx blocks label instrs 
+                convertSuperBody ctx ectx blocks label instrs
                         (A.XLet (A.LLet b x1) x2)
 
 
          -- Variable assigment from a case-expression.
-         A.XLet (A.LLet (C.BName nm t) 
-                        (A.XCase xScrut alts)) 
+         A.XLet (A.LLet (C.BName nm t)
+                        (A.XCase xScrut alts))
                   x2
-          -> do 
+          -> do
                 -- Bind the Salt name, allocating a new LLVM variable for it.
                 --   The alternatives assign their final result to this variable.
-                (ctx', vCont) <- bindLocalV ctx nm t 
+                (ctx', vCont) <- bindLocalV ctx nm t
 
                 -- Label to jump to continue evaluating 'x1'
                 lCont         <- newUniqueLabel "cont"
@@ -487,7 +488,7 @@ convertSuperBody ctx ectx blocks label instrs xx
                 -- Convert the body of the let-expression.
                 --   This is done in the new context, with the let-bound variable.
                 convertSuperBody ctx' ectx
-                        (blocks >< blocksCase) 
+                        (blocks >< blocksCase)
                         lCont Seq.empty x2
 
 
@@ -503,15 +504,15 @@ convertSuperBody ctx ectx blocks label instrs xx
           , length asArgs == length tsArgs
           ,   Set.member nSuper (contextSupers  ctx)
            || Set.member nSuper (contextImports ctx)
-          -> do let ctx'   = ctx { contextSuperBinds 
+          -> do let ctx'   = ctx { contextSuperBinds
                                     = Map.insert nBind (nSuper, tsArgs)
                                         (contextSuperBinds ctx) }
-                convertSuperBody ctx' ectx blocks label instrs x2 
+                convertSuperBody ctx' ectx blocks label instrs x2
 
 
          -- Variable assignment from some other expression.
          A.XLet (A.LLet (C.BName nm t) x1) x2
-          -> do 
+          -> do
                 -- Bind the Salt name, allocating a new LLVM variable name for it.
                 (ctx', vDst) <- bindLocalV ctx nm t
 
@@ -520,7 +521,7 @@ convertSuperBody ctx ectx blocks label instrs xx
                 --   is converted in the original context, without the let-bound
                 --   variable (ctx).
                 instrs'  <- convertSimple ctx (ExpAssign ectx vDst) x1
-                
+
                 -- Convert the body of the let-expression.
                 --   This is done in the new context, with the let-bound variable.
                 convertSuperBody ctx' ectx blocks label (instrs >< instrs') x2
@@ -542,10 +543,10 @@ convertSuperBody ctx ectx blocks label instrs xx
          A.XCast _ x
           -> convertSuperBody ctx ectx blocks label instrs x
 
-         _ 
+         _
           | ExpNest _ vDst label' <- ectx
           -> do instrs'  <- convertSimple ctx (ExpAssign ectx vDst) xx
-                return  $ blocks >< Seq.singleton (Block label 
+                return  $ blocks >< Seq.singleton (Block label
                                 (instrs >< (instrs' |> (annotNil $ IBranch label'))))
 
           |  otherwise
@@ -557,7 +558,7 @@ convertSuperBody ctx ectx blocks label instrs xx
 -- | Convert a simple Core expression to LLVM instructions.
 --
 --   This only works for variables, literals, and full applications of
---   primitive operators. The client should ensure the program is in this form 
+--   primitive operators. The client should ensure the program is in this form
 --   before converting it. The result is just a sequence of instructions,
 --   so there are no new labels to jump to.
 --
@@ -570,17 +571,17 @@ convertSimple ctx ectx xx
  = let  pp      = contextPlatform ctx
         tenv    = contextTypeEnv  ctx
         kenv    = contextKindEnv  ctx
-   in do   
+   in do
         case xx of
          -- Atoms
          _ | ExpAssign _ vDst   <- ectx
            , Just mx            <- mconvAtom ctx xx
            -> do x' <- mx
-                 return $ Seq.singleton $ annotNil 
+                 return $ Seq.singleton $ annotNil
                         $ ISet vDst x'
 
          -- Primitive values.
-         A.XPrim p  
+         A.XPrim p
           | mDst        <- takeNonVoidVarOfContext ectx
           , Just go     <- foldl (<|>) empty
                                 [ convPrimCall  ctx mDst p []
@@ -605,7 +606,7 @@ convertSimple ctx ectx xx
           , Just tSuper         <- Env.lookup u tenv
           , Just msArgs_value   <- sequence $ map (mconvArg ctx) $ eraseTypeWitArgs xsArgs
           , Just mFun           <- takeGlobalV ctx xFun
-          -> do 
+          -> do
                 Var nFun _      <- mFun
                 xsArgs_value'   <- sequence $ msArgs_value
                 (_, tResult)    <- convertSuperType pp kenv tSuper

@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 
 -- | Types of Disciple Core Salt primops.
 module DDC.Core.Salt.Env
@@ -9,7 +10,7 @@ module DDC.Core.Salt.Env
         , typeOfPrimCast
         , typeOfPrimCall
         , typeOfPrimControl
-        , typeOfPrimStore 
+        , typeOfPrimStore
         , typeOfPrimLit
         , typeIsUnboxed)
 where
@@ -83,7 +84,7 @@ primKindEnv :: Env Name
 primKindEnv = Env.setPrimFun kindOfName Env.empty
 
 
--- | Take the kind of a name, 
+-- | Take the kind of a name,
 --   or `Nothing` if this is not a type name.
 kindOfName :: Name -> Maybe (Kind Name)
 kindOfName nn
@@ -96,7 +97,7 @@ kindOfName nn
 
 -- | Take the kind of a primitive name.
 --
---   Returns `Nothing` if the name isn't primitive. 
+--   Returns `Nothing` if the name isn't primitive.
 --
 kindOfPrimTyCon :: PrimTyCon -> Kind Name
 kindOfPrimTyCon tc
@@ -166,7 +167,7 @@ typeOfPrimCall cc
         PrimCallStd  arity
          -> makePrimCallStdType  arity
 
-        PrimCallTail arity       
+        PrimCallTail arity
          -> makePrimCallTailType arity
 
 
@@ -175,16 +176,16 @@ makePrimCallStdType :: Int -> Type Name
 makePrimCallStdType arity
  = let Just t   = tFunOfList ([tAddr] ++ replicate arity tAddr ++ [tAddr])
    in  t
-        
+
 
 -- | Make the type of the @callN#@ and @tailcallN@ primitives.
 makePrimCallTailType :: Int -> Type Name
 makePrimCallTailType arity
- = let  tSuper   = foldr tFun 
+ = let  tSuper   = foldr tFun
                          (TVar (UIx 0))
                          (reverse [TVar (UIx i) | i <- [1..arity]])
 
-        tCall    = foldr TForall (tSuper `tFun` tSuper) 
+        tCall    = foldr TForall (tSuper `tFun` tSuper)
                          [BAnon k | k <- replicate (arity + 1) kData]
 
    in   tCall
@@ -213,7 +214,7 @@ typeIsUnboxed tt
          , tTarget == tObj
          -> False
 
-        TApp t1 t2      
+        TApp t1 t2
          -> typeIsUnboxed t1 || typeIsUnboxed t2
 
         TForall _ t     -> typeIsUnboxed t

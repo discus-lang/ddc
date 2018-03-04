@@ -142,12 +142,12 @@ convertSuperXT    ctx0 xx0 tt0
          , BName nX _   <- bParamX
          , Just strX    <- takeNameStr nX
          , strX'        <- strX <> T.pack "$r"
-         , bParamX'     <- BName (A.NameVar $ T.unpack strX') kRegion
+         , bParamX'     <- BName (A.NameVar strX') kRegion
 
          , BName nT _   <- bParamT
          , Just strT    <- takeNameStr nT
          , strT'        <- strT <> T.pack "$r"
-         , bParamT'     <- BName (A.NameVar $ T.unpack strT') kRegion
+         , bParamT'     <- BName (A.NameVar strT') kRegion
 
          = do   let a'    =  annotTail a
 
