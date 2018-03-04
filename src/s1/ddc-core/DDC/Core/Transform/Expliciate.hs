@@ -3,7 +3,7 @@
 --   to explicit ones, and also substituting in type equations. We do this
 --   as a prep stage before converting a module to a lower level fragment
 --   like Core Salt.
---   
+--
 --   When converting implicit arguments to explicit ones we do not actually
 --   search the context for an appropriate binder, we just convert the form
 --   of the parameters and arguments to explicit ones.
@@ -29,13 +29,13 @@ expliciateModule
         => Module a n -> Module a n
 
 expliciateModule mm
- = let eqns    = Map.fromList 
+ = let eqns    = Map.fromList
                 $ [(n, t) | (n, (_k, t)) <- moduleTypeDefs mm]
 
        downT   = expliciateType eqns
 
-   in  mm 
-        { moduleExportValues    = [ (n, mapTypeOfExportSource downT ex) 
+   in  mm
+        { moduleExportValues    = [ (n, mapTypeOfExportValue downT ex)
                                   | (n, ex) <- moduleExportValues mm ]
 
         , moduleImportCaps      = [ (n, mapTypeOfImportCap    downT im)
@@ -44,34 +44,36 @@ expliciateModule mm
         , moduleImportValues    = [ (n, mapTypeOfImportValue  downT im)
                                   | (n, im) <- moduleImportValues mm ]
 
-        , moduleImportDataDefs  = map (mapTypeOfDataDef downT) (moduleImportDataDefs mm)
+        , moduleImportDataDefs  = [ (n, mapTypeOfDataDef downT def)
+                                  | (n, def) <- moduleImportDataDefs mm ]
 
           -- Type defs are zapped because we're inlining them all anyway,
           -- and they can't be recursive.
         , moduleImportTypeDefs  = []
 
-        , moduleDataDefsLocal   = map (mapTypeOfDataDef downT) (moduleDataDefsLocal mm)
+        , moduleDataDefsLocal   = [ (n, mapTypeOfDataDef downT def)
+                                  | (n, def) <- moduleDataDefsLocal mm ]
 
           -- Type defs are zapped because we're inlining them all anyway,
           -- and they can't be recursive.
         , moduleTypeDefsLocal   = []
 
-        , moduleBody            = expliciateExp eqns (moduleBody mm) 
+        , moduleBody            = expliciateExp eqns (moduleBody mm)
         }
 
 
 ---------------------------------------------------------------------------------------------------
 -- | Make type explicit by substituting in the definitions for all type synonyms.
-expliciateType 
+expliciateType
         :: Ord n
         => Map n (Type n)
         -> Type n -> Type n
 
 expliciateType eqns tt
- = let down = expliciateType eqns 
+ = let down = expliciateType eqns
    in case tt of
         TCon tc
-         -> case tc of 
+         -> case tc of
                 TyConBound (UName n) _
                  -> case Map.lookup n eqns of
                         Nothing -> tt
@@ -89,7 +91,7 @@ expliciateType eqns tt
         TSum    ts      -> TSum $ Sum.fromList (Sum.kindOfSum ts) $ map down $ Sum.toList ts
 
 
-expliciateBind 
+expliciateBind
         :: Ord n
         => Map n (Type n)
         -> Bind n -> Bind n
@@ -115,10 +117,10 @@ expliciateExp eqns xx
         XAbs a m xBody  -> XAbs  a (expliciateParam eqns m)
                                    (expliciateExp   eqns xBody)
 
-        XApp a x1 a2    -> XApp  a (expliciateExp   eqns x1) 
+        XApp a x1 a2    -> XApp  a (expliciateExp   eqns x1)
                                    (expliciateArg   eqns a2)
 
-        XLet a lts x2   -> XLet  a (expliciateLets  eqns lts) 
+        XLet a lts x2   -> XLet  a (expliciateLets  eqns lts)
                                    (expliciateExp   eqns x2)
 
         XCase a x alts  -> XCase a (expliciateExp   eqns x)
@@ -142,7 +144,7 @@ expliciateParam eqns pp
 
 
 -- | Expliciate an argument.
-expliciateArg 
+expliciateArg
         :: Ord n
         => Map n (Type n)
         -> Arg a n -> Arg a n
@@ -156,7 +158,7 @@ expliciateArg eqns arg
 
 
 -- | Expliciate some let bindings.
-expliciateLets 
+expliciateLets
         :: Ord n
         => Map n (Type n)
         -> Lets a n -> Lets a n
@@ -178,7 +180,7 @@ expliciateLets eqns lts
 
 
 -- | Expliciate a case alternative.
-expliciateAlt 
+expliciateAlt
         :: Ord n
         => Map n (Type n)
         -> Alt a n -> Alt a n
@@ -189,7 +191,7 @@ expliciateAlt eqns aa
 
 
 -- | Expliciate a pattern.
-expliciatePat 
+expliciatePat
         :: Ord n
         => Map n (Type n)
         -> Pat n -> Pat n

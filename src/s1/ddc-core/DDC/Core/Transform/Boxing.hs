@@ -88,9 +88,9 @@ boxingModule config mm
         nsImportSea   = [ n | (n, ImportValueSea _ _) <- moduleImportValues mm]
         boxingExport expt
          = case expt of
-                ExportSourceLocal n t mArity
+                ExportValueLocal n t mArity
                   |  elem n nsImportSea
-                  -> ExportSourceLocal n (boxingForeignSeaType config t) mArity
+                  -> ExportValueLocal n (boxingForeignSeaType config t) mArity
                 _ -> expt
 
    in   mm { moduleBody

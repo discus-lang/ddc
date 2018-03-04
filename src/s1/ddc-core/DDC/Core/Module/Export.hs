@@ -1,52 +1,95 @@
 
 module DDC.Core.Module.Export
-        ( ExportSource  (..)
-        , takeTypeOfExportSource
-        , mapTypeOfExportSource)
+        ( ExportType  (..)
+        , takeKindOfExportType
+        , mapKindOfExportType
+
+        , ExportValue  (..)
+        , takeTypeOfExportValue
+        , mapTypeOfExportValue)
 where
 import Control.DeepSeq
 
 
--- | Define thing exported from a module.
---   TODO: Define separate ExportTerm/ExportType as Types don't need arity info.
-data ExportSource n t
+-------------------------------------------------------------------------------
+-- | Describe a type exported from a module.
+data ExportType n t
         -- | A name defined in this module, with an explicit type.
-        = ExportSourceLocal
-        { exportSourceLocalName         :: n
-        , exportSourceLocalType         :: t
-
-          -- | Attach arity information to the export record so that importers
-          --   can avoid looking at the definition of the value if they
-          --   just want to call it.
-        , exportSourceLocalArity        :: !(Maybe (Int, Int, Int)) }
+        = ExportTypeLocal
+        { exportTypeLocalName   :: n
+        , exportTypeLocalKind   :: t }
 
         -- | A named defined in this module, without a type attached.
         --   We use this version for source language where we infer the type of
         --   the exported thing.
-        | ExportSourceLocalNoType
-        { exportSourceLocalName         :: n }
+        | ExportTypeLocalNoKind
+        { exportTypeLocalName   :: n }
         deriving Show
 
 
-instance (NFData n, NFData t) => NFData (ExportSource n t) where
+instance (NFData n, NFData t) => NFData (ExportType n t) where
  rnf es
   = case es of
-        ExportSourceLocal n t _         -> rnf n `seq` rnf t
-        ExportSourceLocalNoType n       -> rnf n
+        ExportTypeLocal n t     -> rnf n `seq` rnf t
+        ExportTypeLocalNoKind n -> rnf n
 
 
 -- | Take the type of an imported thing, if there is one.
-takeTypeOfExportSource :: ExportSource n t -> Maybe t
-takeTypeOfExportSource es
+takeKindOfExportType :: ExportType n t -> Maybe t
+takeKindOfExportType es
  = case es of
-        ExportSourceLocal _ t  _        -> Just t
-        ExportSourceLocalNoType{}       -> Nothing
+        ExportTypeLocal _ t     -> Just t
+        ExportTypeLocalNoKind{} -> Nothing
 
 
 -- | Apply a function to any type in an ExportSource.
-mapTypeOfExportSource :: (t -> t) -> ExportSource n t -> ExportSource n t
-mapTypeOfExportSource f esrc
+mapKindOfExportType :: (t -> t) -> ExportType n t -> ExportType n t
+mapKindOfExportType f esrc
  = case esrc of
-        ExportSourceLocal n t a         -> ExportSourceLocal n (f t) a
-        ExportSourceLocalNoType n       -> ExportSourceLocalNoType n
+        ExportTypeLocal n t     -> ExportTypeLocal n (f t)
+        ExportTypeLocalNoKind n -> ExportTypeLocalNoKind n
+
+
+-------------------------------------------------------------------------------
+-- | Describe a value exported from a module.
+data ExportValue n t
+        -- | A name defined in this module, with an explicit type.
+        = ExportValueLocal
+        { exportValueLocalName  :: n
+        , exportValueLocalType  :: t
+
+          -- | Attach arity information to the export record so that importers
+          --   can avoid looking at the definition of the value if they
+          --   just want to call it.
+        , exportValueLocalArity :: !(Maybe (Int, Int, Int)) }
+
+        -- | A named defined in this module, without a type attached.
+        --   We use this version for source language where we infer the type of
+        --   the exported thing.
+        | ExportValueLocalNoType
+        { exportValueLocalName  :: n }
+        deriving Show
+
+
+instance (NFData n, NFData t) => NFData (ExportValue n t) where
+ rnf es
+  = case es of
+        ExportValueLocal n t _          -> rnf n `seq` rnf t
+        ExportValueLocalNoType n        -> rnf n
+
+
+-- | Take the type of an imported thing, if there is one.
+takeTypeOfExportValue :: ExportValue n t -> Maybe t
+takeTypeOfExportValue es
+ = case es of
+        ExportValueLocal _ t  _         -> Just t
+        ExportValueLocalNoType{}        -> Nothing
+
+
+-- | Apply a function to any type in an ExportSource.
+mapTypeOfExportValue :: (t -> t) -> ExportValue n t -> ExportValue n t
+mapTypeOfExportValue f esrc
+ = case esrc of
+        ExportValueLocal n t a          -> ExportValueLocal n (f t) a
+        ExportValueLocalNoType n        -> ExportValueLocalNoType n
 

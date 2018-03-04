@@ -66,7 +66,7 @@ importNamesForModule kenv tenv store mm
                         ++ importsForTyCons   deps (Set.toList $ supportTyCon sp)
 
                 , moduleImportDataDefs
-                     =  nubBy ((==) `on` dataDefTypeName)
+                     =  nubBy ((==) `on` fst)
                      $  moduleImportDataDefs mm
                      ++ importsForDaTyCons deps (Set.toList $ supportTyCon sp)
 
@@ -124,7 +124,7 @@ importsCap deps
 importsForDaTyCons
         :: Map ModuleName (Module b n)
         -> [Bound n]
-        -> [DataDef n]
+        -> [(n, DataDef n)]
 
 importsForDaTyCons deps _tycons
         = concat
@@ -170,7 +170,7 @@ exportedTyConsLocal :: Ord n => Module b n -> Map n (ModuleName, Kind n)
 exportedTyConsLocal mm
         = Map.fromList
         $ [ (n, (moduleName mm, t))
-                        | (n, ExportSourceLocal _ t _) <- moduleExportTypes mm ]
+                        | (n, ExportTypeLocal _ t)   <- moduleExportTypes mm ]
 
 -- | Get the type constructors that are imported abstractly by a module.
 importedTyConsAbs  :: Ord n => Module b n -> Map n (Kind n)
@@ -183,7 +183,7 @@ importedTyConsAbs mm
 importedTyConsBoxed :: Ord n => Module b n -> Map n (Kind n)
 importedTyConsBoxed mm
         = Map.fromList
-        $ [ (n, k)      | (n, ImportTypeBoxed k)      <- moduleImportTypes mm ]
+        $ [ (n, k)      | (n, ImportTypeBoxed k)     <- moduleImportTypes mm ]
 
 
 ---------------------------------------------------------------------------------------------------

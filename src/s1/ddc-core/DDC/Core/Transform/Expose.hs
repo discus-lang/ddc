@@ -38,9 +38,9 @@ exposeModule mm
         -- Attach arity information to an export record.
         attachExportArity (n', ex)
          = case ex of
-                ExportSourceLocal n t Nothing
+                ExportValueLocal n t Nothing
                  -> case Map.lookup n nsLocalArities of
-                     Just as -> (n', ExportSourceLocal n t (Just as))
+                     Just as -> (n', ExportValueLocal n t (Just as))
                      Nothing -> (n', ex)
 
                 _ -> (n', ex)

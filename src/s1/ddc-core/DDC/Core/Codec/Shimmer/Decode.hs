@@ -60,12 +60,12 @@ takeModuleDecls c decls
          { C.moduleName            = mn
          , C.moduleIsHeader        = False
          , C.moduleExportTypes     = concatMap (takeDeclExTyp c)        $ colExTyp col
-         , C.moduleExportValues    = concatMap (takeDeclExTrm c    mpT) $ colExTrm col
+         , C.moduleExportValues    = concatMap (takeDeclExVal c    mpT) $ colExVal col
          , C.moduleImportTypes     = concatMap (takeDeclImTyp c)        $ colImTyp col
          , C.moduleImportDataDefs  = concatMap (takeDeclDat   c    mpD) $ colImDat col
          , C.moduleImportTypeDefs  = concatMap (takeDeclSyn   c    mpS) $ colImSyn col
          , C.moduleImportCaps      = concatMap (takeDeclImCap c)        $ colImCap col
-         , C.moduleImportValues    = concatMap (takeDeclImTrm c mn mpT) $ colImTrm col
+         , C.moduleImportValues    = concatMap (takeDeclImVal c mn mpT) $ colImVal col
          , C.moduleDataDefsLocal   = concatMap (takeDeclDat   c    mpD) $ colLcDat col
          , C.moduleTypeDefsLocal   = concatMap (takeDeclSyn   c    mpS) $ colLcSyn col
          , C.moduleBody            = C.xUnit () }
@@ -87,20 +87,20 @@ collectModuleDecls decls
         let rev  = reverse
 
         refName  <- new;
-        refExTyp <- new; refExTrm <- new;
-        refImTyp <- new; refImDat <- new; refImSyn <- new; refImCap <- new; refImTrm <- new
+        refExTyp <- new; refExVal <- new;
+        refImTyp <- new; refImDat <- new; refImSyn <- new; refImCap <- new; refImVal <- new
         refLcDat <- new; refLcSyn <- new
         refD     <- new; refS     <- new; refT     <- new; refX     <- new
 
         let eat (d@(S.DeclSet tx _ss) : ds)
              | T.isPrefixOf "m-name"   tx = do { modifyIORef' refName  (d :); eat ds }
              | T.isPrefixOf "m-ex-typ" tx = do { modifyIORef' refExTyp (d :); eat ds }
-             | T.isPrefixOf "m-ex-trm" tx = do { modifyIORef' refExTrm (d :); eat ds }
+             | T.isPrefixOf "m-ex-val" tx = do { modifyIORef' refExVal (d :); eat ds }
              | T.isPrefixOf "m-im-typ" tx = do { modifyIORef' refImTyp (d :); eat ds }
              | T.isPrefixOf "m-im-dat" tx = do { modifyIORef' refImDat (d :); eat ds }
              | T.isPrefixOf "m-im-syn" tx = do { modifyIORef' refImSyn (d :); eat ds }
              | T.isPrefixOf "m-im-cap" tx = do { modifyIORef' refImCap (d :); eat ds }
-             | T.isPrefixOf "m-im-trm" tx = do { modifyIORef' refImTrm (d :); eat ds }
+             | T.isPrefixOf "m-im-val" tx = do { modifyIORef' refImVal (d :); eat ds }
              | T.isPrefixOf "m-lc-dat" tx = do { modifyIORef' refLcDat (d :); eat ds }
              | T.isPrefixOf "m-lc-syn" tx = do { modifyIORef' refLcSyn (d :); eat ds }
              | otherwise                  = error "ddc-core.collectModuleDecls: unexpected decl"
@@ -117,18 +117,18 @@ collectModuleDecls decls
         eat decls
 
         dsName  <- read refName
-        dsExTyp <- read refExTyp; dsExTrm <- read refExTrm
+        dsExTyp <- read refExTyp; dsExVal <- read refExVal
         dsImTyp <- read refImTyp; dsImDat <- read refImDat
-        dsImSyn <- read refImSyn; dsImCap <- read refImCap; dsImTrm <- read refImTrm
+        dsImSyn <- read refImSyn; dsImCap <- read refImCap; dsImVal <- read refImVal
         dsLcDat <- read refLcDat; dsLcSym <- read refLcSyn
         dsD     <- read refD;     dsS     <- read refS;     dsT     <- read refT
         dsX     <- read refX
 
         return  $ Collect
                 { colName  = rev dsName
-                , colExTyp = rev dsExTyp, colExTrm = rev dsExTrm
+                , colExTyp = rev dsExTyp, colExVal = rev dsExVal
                 , colImTyp = rev dsImTyp, colImDat = rev dsImDat
-                , colImSyn = rev dsImSyn, colImCap = rev dsImCap, colImTrm = rev dsImTrm
+                , colImSyn = rev dsImSyn, colImCap = rev dsImCap, colImVal = rev dsImVal
                 , colLcDat = rev dsLcDat, colLcSyn = rev dsLcSym
                 , colDsD   = rev dsD,     colDsS   = rev dsS,     colDsT   = rev dsT
                 , colDsX   = rev dsX }
@@ -136,15 +136,15 @@ collectModuleDecls decls
 data Collect
         = Collect
         { colName  :: [SDecl]
-        , colExTyp :: [SDecl], colExTrm :: [SDecl]
+        , colExTyp :: [SDecl], colExVal :: [SDecl]
         , colImTyp :: [SDecl], colImDat :: [SDecl]
-        , colImSyn :: [SDecl], colImCap :: [SDecl], colImTrm :: [SDecl]
+        , colImSyn :: [SDecl], colImCap :: [SDecl], colImVal :: [SDecl]
         , colLcDat :: [SDecl], colLcSyn :: [SDecl]
         , colDsD   :: [SDecl], colDsS   :: [SDecl], colDsT   :: [SDecl], colDsX :: [SDecl] }
 
 
 -- DeclExTyp --------------------------------------------------------------------------------------
-takeDeclExTyp :: Ord n => Config n -> SDecl -> [(n, C.ExportSource n (C.Type n))]
+takeDeclExTyp :: Ord n => Config n -> SDecl -> [(n, C.ExportType n (C.Type n))]
 takeDeclExTyp c dd
  = case dd of
         S.DeclSet "m-ex-typ" ssListExTyp
@@ -155,46 +155,46 @@ takeDeclExTyp c dd
         takeExTyp (XAps "ex-typ" [ssName, ssKind])
          = let  nType = fromRef  c ssName
                 tKind = fromType c ssKind
-           in   (nType, C.ExportSourceLocal nType tKind Nothing)
+           in   (nType, C.ExportTypeLocal nType tKind)
 
         takeExTyp _ = failDecode "takeExTyp"
 
 
--- DeclExTrm --------------------------------------------------------------------------------------
-takeDeclExTrm
+-- DeclExVal --------------------------------------------------------------------------------------
+takeDeclExVal
         :: Ord n
         => Config n -> Map Text SExp
-        -> SDecl -> [(n, C.ExportSource n (C.Type n))]
+        -> SDecl -> [(n, C.ExportValue n (C.Type n))]
 
-takeDeclExTrm c mpT dd
+takeDeclExVal c mpT dd
  = case dd of
-        S.DeclSet "m-ex-trm" ssListExTrm
+        S.DeclSet "m-ex-val" ssListExTrm
           -> map takeExTrm $ fromList ssListExTrm
-        _ -> failDecode "takeDeclExTrm"
+        _ -> failDecode "takeDeclExVal"
 
  where
-        takeExTrm (XAps "ex-trm" [ssName, XMac txMacTyp, XMac _txMacTrm])
+        takeExTrm (XAps "ex-val" [ssName, XMac txMacTyp, XMac _txMacTrm])
          = let nName = fromRef c ssName
            in case Map.lookup txMacTyp mpT of
                 Nothing     -> failDecode $ "takeDeclExTrm missing declaration " ++ show txMacTyp
                 Just ssType
-                 -> (nName, C.ExportSourceLocal
-                        { C.exportSourceLocalName  = nName
-                        , C.exportSourceLocalType  = fromType c ssType
-                        , C.exportSourceLocalArity = Nothing })
+                 -> (nName, C.ExportValueLocal
+                        { C.exportValueLocalName  = nName
+                        , C.exportValueLocalType  = fromType c ssType
+                        , C.exportValueLocalArity = Nothing })
 
-        takeExTrm (XAps "ex-trm" [ ssName, XMac txMacTyp, XMac _txMacTrm
+        takeExTrm (XAps "ex-val" [ ssName, XMac txMacTyp, XMac _txMacTrm
                                  , XNat nT, XNat nX, XNat nB ])
          = let nName = fromRef c ssName
            in case Map.lookup txMacTyp mpT of
                 Nothing     -> failDecode $ "takeDeclExTrm missing declaration " ++ show txMacTyp
                 Just ssType
-                 -> (nName, C.ExportSourceLocal
-                        { C.exportSourceLocalName  = nName
-                        , C.exportSourceLocalType  = fromType c ssType
-                        , C.exportSourceLocalArity = Just (fromI nT, fromI nX, fromI nB) })
+                 -> (nName, C.ExportValueLocal
+                        { C.exportValueLocalName  = nName
+                        , C.exportValueLocalType  = fromType c ssType
+                        , C.exportValueLocalArity = Just (fromI nT, fromI nX, fromI nB) })
 
-        takeExTrm _ = failDecode "takeExTrm"
+        takeExTrm _ = failDecode "takeExVal"
 
 
 -- DeclImTyp --------------------------------------------------------------------------------------
@@ -252,7 +252,7 @@ takeDeclSyn c mpS dd
 takeDeclDat
         :: Ord n
         => Config n -> Map Text SExp
-        -> SDecl -> [C.DataDef n]
+        -> SDecl -> [(n, C.DataDef n)]
 
 takeDeclDat c mpD dd
  = case dd of
@@ -271,20 +271,21 @@ takeDeclDat c mpD dd
         takeTypDat _ = failDecode "takeTypDat failed"
 
         takeDataDef (XAps "d-alg"   [ssCon, ssListParam, XNone])
-         = C.DataDef
-            { C.dataDefTypeName     = fromRef c ssCon
-            , C.dataDefParams       = map (fromBind c)  $ fromList ssListParam
-            , C.dataDefCtors        = Nothing
-            , C.dataDefIsAlgebraic  = True }
+         | nType <- fromRef c ssCon
+         = (nType, C.DataDef
+                { C.dataDefTypeName     = nType
+                , C.dataDefParams       = map (fromBind c)  $ fromList ssListParam
+                , C.dataDefCtors        = Nothing
+                , C.dataDefIsAlgebraic  = True })
 
         takeDataDef (XAps "d-alg"   [ssType, ssListParam, XSome ssCtors])
          | nType    <- fromRef c ssType
          , bsParam  <- map (fromBind c)  $ fromList ssListParam
-         = C.DataDef
-            { C.dataDefTypeName     = nType
-            , C.dataDefParams       = bsParam
-            , C.dataDefCtors        = Just $ map (takeDataCtor nType bsParam) $ fromList ssCtors
-            , C.dataDefIsAlgebraic  = True }
+         = (nType, C.DataDef
+                { C.dataDefTypeName     = nType
+                , C.dataDefParams       = bsParam
+                , C.dataDefCtors        = Just $ map (takeDataCtor nType bsParam) $ fromList ssCtors
+                , C.dataDefIsAlgebraic  = True })
 
         takeDataDef _ = failDecode $ "takeDataDef failed"
 
@@ -318,20 +319,20 @@ takeDeclImCap c dd
         takeImCap _ = failDecode "takeImCap failed"
 
 
--- DeclImTrm --------------------------------------------------------------------------------------
-takeDeclImTrm
+-- DeclImVal --------------------------------------------------------------------------------------
+takeDeclImVal
         :: Ord n
         => Config n
         -> C.ModuleName -> Map Text SExp
         -> SDecl -> [(n, C.ImportValue n (C.Type n))]
 
-takeDeclImTrm c mn mpT dd
+takeDeclImVal c mn mpT dd
  = case dd of
-        S.DeclSet "m-im-trm" ssListImTrm
-          -> map takeImTrm $ fromList ssListImTrm
-        _ -> failDecode "takeDeclTrm failed"
+        S.DeclSet "m-im-val" ssListImVal
+          -> map takeImVal $ fromList ssListImVal
+        _ -> failDecode "takeDeclVal failed"
 
- where  takeImTrm (XAps "im-trm-mod" [ssVar, XMac txMacType, XNat nT, XNat nX, XNat nB])
+ where  takeImVal (XAps "im-val-mod" [ssVar, XMac txMacType, XNat nT, XNat nX, XNat nB])
          | Just ssType <- Map.lookup txMacType mpT
          , Just n      <- configTakeRef c (ssVar :: SExp)
          = (n, C.ImportValueModule
@@ -340,15 +341,15 @@ takeDeclImTrm c mn mpT dd
                 , C.importValueModuleType  = fromType c ssType
                 , C.importValueModuleArity = Just (fromI nT, fromI nX, fromI nB) })
 
-        takeImTrm (XAps "im-trm-sea" [ssVar@(XTxt txVar), XMac txMacType])
+        takeImVal (XAps "im-val-sea" [ssVar@(XTxt txVar), XMac txMacType])
          | Just ssType <- Map.lookup txMacType mpT
          , Just n      <- configTakeRef c (ssVar :: SExp)
          = (n, C.ImportValueSea
                 { C.importValueSeaVar      = T.unpack txVar
                 , C.importValueSeaType     = fromType c ssType })
 
-        takeImTrm _
-         = failDecode "takeImTrm failed"
+        takeImVal _
+         = failDecode "takeImVal failed"
 
 
 -- Type -------------------------------------------------------------------------------------------

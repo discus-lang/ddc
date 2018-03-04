@@ -128,7 +128,7 @@ importedFunctionDeclOfType
         :: Platform
         -> KindEnv A.Name
         -> C.ImportValue A.Name (C.Type A.Name)
-        -> Maybe (C.ExportSource A.Name (C.Type A.Name))
+        -> Maybe (C.ExportValue A.Name (C.Type A.Name))
         -> A.Name
         -> C.Type A.Name
         -> Maybe (ConvertM FunctionDecl)

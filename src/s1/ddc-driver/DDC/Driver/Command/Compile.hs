@@ -300,14 +300,12 @@ cmdCompile config bBuildExe' store filePath
         let ext         = takeExtension filePath
         let source      = SourceFile filePath
 
-
         -- Read in the source file.
         exists  <- liftIO $ doesFileExist filePath
         when (not exists)
          $ throwE [ErrorLoad $ "No such file " ++ show filePath]
 
         src     <- liftIO $ readFile filePath
-
 
         -- If we're building an executable, then get paths to the other object
         -- files that we need to link with.
@@ -341,7 +339,6 @@ cmdCompile config bBuildExe' store filePath
 
         mModTetra <- makeTetra
 
-
         -- Convert Core Tetra to Core Salt.
         let makeSalt
                 | ext == ".dcs"
@@ -357,7 +354,6 @@ cmdCompile config bBuildExe' store filePath
                 = throwE [ErrorLoad $ "no tetra file"]
 
         modSalt <- makeSalt
-
 
         -- Convert Core Salt into object code.
         let bSlotify
@@ -477,10 +473,10 @@ dropBody toks = go toks
 -- [Note: Timestamp acccuracy during rebuild]
 -- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 --
--- There's an ugly system where if the underlying file system does not
--- support file time stamps with sub-second accuracy, then the timestamps
--- of the interface files we compile in this run will have more accuracy
--- than the ones we load from the file system.
+-- There's an ugly system issue where if the underlying file system does
+-- not support file time stamps with sub-second accuracy, then the
+-- timestamps of the interface files we compile in this run will have more
+-- accuracy than the ones we load from the file system.
 --
 -- The problem with inaccurate timestamps is that if we compiled two
 -- dependent modules within the same second, then both will have the

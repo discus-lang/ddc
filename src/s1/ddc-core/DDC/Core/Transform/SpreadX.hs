@@ -33,11 +33,11 @@ instance SpreadX (Module a) where
                 = moduleIsHeader mm
 
         , moduleExportTypes
-                = map (liftSnd $ spreadExportSourceT kenv)
+                = map (liftSnd $ spreadExportTypeT kenv)
                 $ moduleExportTypes mm
 
         , moduleExportValues
-                = map (liftSnd $ spreadExportSourceT kenv)
+                = map (liftSnd $ spreadExportValueT kenv)
                 $ moduleExportValues mm
 
         , moduleImportTypes
@@ -53,7 +53,7 @@ instance SpreadX (Module a) where
                 $ moduleImportValues mm
 
         , moduleImportDataDefs
-                = map (spreadT kenv)
+                = map (liftSnd $ spreadT kenv)
                 $ moduleImportDataDefs mm
 
         , moduleImportTypeDefs
@@ -61,7 +61,7 @@ instance SpreadX (Module a) where
                 $ moduleImportTypeDefs mm
 
         , moduleDataDefsLocal
-                = map (spreadT kenv)
+                = map (liftSnd $ spreadT kenv)
                 $ moduleDataDefsLocal mm
 
         , moduleTypeDefsLocal
@@ -75,13 +75,23 @@ instance SpreadX (Module a) where
 
 
 ---------------------------------------------------------------------------------------------------
-spreadExportSourceT kenv esrc
+spreadExportTypeT kenv esrc
   = case esrc of
-        ExportSourceLocal n t mArity
-         -> ExportSourceLocal n (spreadT kenv t) mArity
+        ExportTypeLocal n t
+         -> ExportTypeLocal n (spreadT kenv t)
 
-        ExportSourceLocalNoType n
-         -> ExportSourceLocalNoType n
+        ExportTypeLocalNoKind n
+         -> ExportTypeLocalNoKind n
+
+
+---------------------------------------------------------------------------------------------------
+spreadExportValueT kenv esrc
+  = case esrc of
+        ExportValueLocal n t mArity
+         -> ExportValueLocal n (spreadT kenv t) mArity
+
+        ExportValueLocalNoType n
+         -> ExportValueLocalNoType n
 
 
 ---------------------------------------------------------------------------------------------------

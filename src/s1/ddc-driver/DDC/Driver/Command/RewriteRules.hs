@@ -80,11 +80,11 @@ parse fragment modu source str
     typesImp    = moduleTypeEnv modu
 
     kindsExp    = Env.fromList
-                $ [BName n t | (n, Just t) <- map (liftSnd takeTypeOfExportSource)
+                $ [BName n t | (n, Just t) <- map (liftSnd takeKindOfExportType)
                                            $  moduleExportTypes  modu ]
 
     typesExp    = Env.fromList
-                $ [BName n t | (n, Just t) <- map (liftSnd takeTypeOfExportSource)
+                $ [BName n t | (n, Just t) <- map (liftSnd takeTypeOfExportValue)
                                            $  moduleExportValues modu ]
 
     liftSnd f (x, y) = (x, f y)

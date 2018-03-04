@@ -83,7 +83,7 @@ convertM pp runConfig defs kenv tenv mm
         -- Data Type definitions --------------------------
         -- All the data type definitions visible in the module.
         let defs'  = unionDataDefs defs
-                   $ fromListDataDefs
+                   $ fromListDataDefs $ map snd
                    $ moduleImportDataDefs mm ++ moduleDataDefsLocal mm
 
         let eqns'  = Map.unions
@@ -152,7 +152,7 @@ convertM pp runConfig defs kenv tenv mm
         let ntsSuper'   =  [(n, t) | BName n t <- concat $ map snd $ map bindsOfLets lts']
         let ntsAvail    =  Map.fromList $ ntsSuper' ++ ntsImport'
 
-        ntsExports'     <- mapM (convertExportM tctx' ntsAvail)
+        ntsExports'     <- mapM (convertNameExportValueM tctx' ntsAvail)
                         $  moduleExportValues mm
 
 
@@ -193,16 +193,16 @@ convertM pp runConfig defs kenv tenv mm
 
 ---------------------------------------------------------------------------------------------------
 -- | Convert an export spec.
-convertExportM
+convertNameExportValueM
         :: T.Context                     -- ^ Context of the conversion.
         -> Map A.Name (Type A.Name)      -- ^ Salt types of top-level values.
-        -> (E.Name, ExportSource E.Name (Type E.Name))
+        -> (E.Name, ExportValue E.Name (Type E.Name))
                                         -- ^ Name and export def to convert.
-        -> ConvertM a (A.Name, ExportSource A.Name (Type A.Name))
+        -> ConvertM a (A.Name, ExportValue A.Name (Type A.Name))
 
-convertExportM tctx tsSalt (n, esrc)
+convertNameExportValueM tctx tsSalt (n, esrc)
  = do   n'      <- convertBindNameM n
-        esrc'   <- convertExportSourceM tctx tsSalt esrc
+        esrc'   <- convertExportValueM tctx tsSalt esrc
         return  (n', esrc')
 
 
@@ -213,31 +213,31 @@ convertExportM tctx tsSalt (n, esrc)
 --  the arity of the underlying value. Instead, we lookup the Salt type
 --  of each export from the list of previously known Salt types.
 --
-convertExportSourceM
+convertExportValueM
         :: T.Context                            -- ^ Context of the conversion.
         -> Map A.Name (Type A.Name)             -- ^ Salt types of top-level values.
-        -> ExportSource E.Name (Type E.Name)    -- ^ Export source to convert.
-        -> ConvertM a (ExportSource A.Name (Type A.Name))
+        -> ExportValue E.Name (Type E.Name)     -- ^ Export source to convert.
+        -> ConvertM a (ExportValue A.Name (Type A.Name))
 
-convertExportSourceM tctx tsSalt esrc
+convertExportValueM tctx tsSalt esrc
  = case esrc of
-        ExportSourceLocal n t _
+        ExportValueLocal n t _
          -> do  n'      <- convertBindNameM n
 
                 case Map.lookup n' tsSalt of
                  -- We have a Salt type for this exported value.
-                 Just t' -> return $ ExportSourceLocal n' t' Nothing
+                 Just t' -> return $ ExportValueLocal n' t' Nothing
 
                  -- If a type has been foreign imported from Salt land
                  -- then it won't be in the map, and we can just convert
                  -- its Discus type to get the Salt version.
                  Nothing
                   -> do t'      <- convertCtorT tctx t
-                        return $ ExportSourceLocal n' t' Nothing
+                        return $ ExportValueLocal n' t' Nothing
 
-        ExportSourceLocalNoType n
+        ExportValueLocalNoType n
          -> do  n'      <- convertBindNameM n
-                return  $ ExportSourceLocalNoType n'
+                return  $ ExportValueLocalNoType n'
 
 
 ---------------------------------------------------------------------------------------------------

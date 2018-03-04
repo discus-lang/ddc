@@ -33,8 +33,8 @@ pModule c
         let importSpecs_noArity = concat $ [specs  | HeadImportSpecs   specs <- heads ]
         let exportSpecs         = concat $ [specs  | HeadExportSpecs   specs <- heads ]
 
-        let dataDefsLocal       = [def         | HeadDataDef     def       <- heads ]
-        let typeDefsLocal       = [(n, (k, t)) | HeadTypeDef     n k t     <- heads ]
+        let dataDefsLocal       = [(n, def)     | HeadDataDef     n def     <- heads ]
+        let typeDefsLocal       = [(n, (k, t))  | HeadTypeDef     n k t     <- heads ]
 
         -- Attach arity information to import specs.
         --   The aritity information itself comes in the ARITY pragmas,
@@ -80,9 +80,13 @@ pModule c
                 , moduleImportCaps      = [(n, s)      | ImportForeignCap   n s <- importSpecs]
                 , moduleImportValues    = [(n, s)      | ImportForeignValue n s <- importSpecs]
                 , moduleImportTypeDefs  = [(n, (k, t)) | ImportType  n k t      <- importSpecs]
-                , moduleImportDataDefs  = [def         | ImportData  def        <- importSpecs]
+
+                , moduleImportDataDefs  = [(dataDefTypeName def, def)
+                                                        | ImportData  def        <- importSpecs]
+
                 , moduleDataDefsLocal   = dataDefsLocal
                 , moduleTypeDefsLocal   = typeDefsLocal
+
                 , moduleBody            = body }
 
 
@@ -96,10 +100,10 @@ data HeadDecl n
         | HeadExportSpecs  [ExportSpec  n]
 
         -- | Data type definitions.
-        | HeadDataDef      (DataDef     n)
+        | HeadDataDef      n  (DataDef     n)
 
         -- | Type equations.
-        | HeadTypeDef       n (Kind n) (Type n)
+        | HeadTypeDef      n (Kind n) (Type n)
 
         -- | Arity pragmas.
         --   Number of type parameters, value parameters, and boxes for some super.
@@ -119,7 +123,7 @@ pHeadDecl ctx
                 return  $ HeadExportSpecs exports
 
         , do    def     <- pDataDef ctx
-                return  $ HeadDataDef def
+                return  $ HeadDataDef (dataDefTypeName def) def
 
         , do    (n, k, t) <- pTypeDef ctx
                 return  $ HeadTypeDef n k t

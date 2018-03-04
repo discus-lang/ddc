@@ -63,12 +63,12 @@ takeModuleDecls c mm@C.ModuleCore{}
          = S.DeclSet "m-ex-typ"
          $ xList ([ xAps "ex-typ" [ configTakeRef c n
                                   , takeType c t]
-                  | (n, C.ExportSourceLocal _ t _) <- C.moduleExportTypes mm])
+                  | (n, C.ExportTypeLocal _ t) <- C.moduleExportTypes mm])
 
-        -- Exported Terms.
+        -- Exported Values.
         dExTrm
-         = S.DeclSet "m-ex-trm"
-         $ xList $ map (takeExportTerm c) $ map snd $ C.moduleExportValues mm
+         = S.DeclSet "m-ex-val"
+         $ xList $ map (takeExportValue c) $ map snd $ C.moduleExportValues mm
 
         -- Imported Types.
         dImTyp
@@ -78,7 +78,7 @@ takeModuleDecls c mm@C.ModuleCore{}
         -- Imported Data Defs.
         (dImDat, dsImDat)
          = (S.DeclSet "m-im-dat" $ xList xsImport, dsImport)
-         where  xdsImport = map (takeDataDef c) $ C.moduleImportDataDefs mm
+         where  xdsImport = map (takeDataDef c) $ map snd $ C.moduleImportDataDefs mm
                 xsImport  = map fst xdsImport
                 dsImport  = concatMap snd xdsImport
 
@@ -94,9 +94,9 @@ takeModuleDecls c mm@C.ModuleCore{}
          = (S.DeclSet "m-im-cap" $ xList xsImport)
          where  xsImport  = map (takeImportCap c) $ C.moduleImportCaps mm
 
-        -- Imported Terms.
+        -- Imported Values.
         (dImTrm, dsImTrm)
-         = (S.DeclSet "m-im-trm" $ xList xsImport, dsImport)
+         = (S.DeclSet "m-im-val" $ xList xsImport, dsImport)
          where  xdsImport = map (takeImportValue c) $ map snd $ C.moduleImportValues mm
                 xsImport  = map fst xdsImport
                 dsImport  = concatMap snd xdsImport
@@ -104,7 +104,7 @@ takeModuleDecls c mm@C.ModuleCore{}
         -- Local Data Defs
         (dLcDat, dsLcDat)
          = (S.DeclSet "m-lc-dat" $ xList xsImport, dsImport)
-         where  xdsImport = map (takeDataDef c) $ C.moduleDataDefsLocal mm
+         where  xdsImport = map (takeDataDef c) $ map snd $ C.moduleDataDefsLocal mm
                 xsImport  = map fst xdsImport
                 dsImport  = concatMap snd xdsImport
 
@@ -141,35 +141,22 @@ takeModuleName (C.ModuleName parts)
  = xAps "module-name" (map (xSym . T.pack) parts)
 
 
--- ExportSource------------------------------------------------------------------------------------
-takeExportTerm :: Config n -> C.ExportSource n (C.Type n) -> SExp
-takeExportTerm c es
+-- ExportValue------------------------------------------------------------------------------------
+takeExportValue :: Config n -> C.ExportValue n (C.Type n) -> SExp
+takeExportValue c es
  = case es of
-        C.ExportSourceLocal n _ Nothing
+        C.ExportValueLocal n _ Nothing
          -> let Just tx = configTakeVarName c n
-            in  xAps "ex-trm"  [ xTxt tx, xMac ("t-" <> tx), xMac ("x-" <> tx)]
+            in  xAps "ex-val"  [ xTxt tx, xMac ("t-" <> tx), xMac ("x-" <> tx)]
 
-        C.ExportSourceLocal n _ (Just (aT, aX, aB))
+        C.ExportValueLocal n _ (Just (aT, aX, aB))
          -> let Just tx = configTakeVarName c n
-            in  xAps "ex-trm"  [ xTxt tx, xMac ("t-" <> tx), xMac ("x-" <> tx)
+            in  xAps "ex-val"  [ xTxt tx, xMac ("t-" <> tx), xMac ("x-" <> tx)
                                , xNat aT, xNat aX, xNat aB]
 
-        C.ExportSourceLocalNoType n
+        C.ExportValueLocalNoType n
          -> let Just tx = configTakeVarName c n
-            in  xAps "ex-trm"  [ xTxt tx, xMac ("t-" <> tx), xMac ("x-" <> tx)]
-
-
--- ImportType -------------------------------------------------------------------------------------
-takeImportType :: Config n -> (n, C.ImportType n (C.Type n)) -> SExp
-takeImportType c (n, it)
- = case it of
-        C.ImportTypeAbstract k
-         -> let Just tx = configTakeConName c n
-            in  xAps "im-typ-abs" [xTxt tx, takeType c k]
-
-        C.ImportTypeBoxed k
-         -> let Just tx = configTakeConName c n
-            in  xAps "im-typ-box" [xTxt tx, takeType c k]
+            in  xAps "ex-val"  [ xTxt tx, xMac ("t-" <> tx), xMac ("x-" <> tx)]
 
 
 -- TypeSyn -----------------------------------------------------------------------------------------
@@ -217,6 +204,19 @@ takeDataCtor c ctor
                  ++ [takeType c tResult]
 
 
+-- ImportType -------------------------------------------------------------------------------------
+takeImportType :: Config n -> (n, C.ImportType n (C.Type n)) -> SExp
+takeImportType c (n, it)
+ = case it of
+        C.ImportTypeAbstract k
+         -> let Just tx = configTakeConName c n
+            in  xAps "im-typ-abs" [xTxt tx, takeType c k]
+
+        C.ImportTypeBoxed k
+         -> let Just tx = configTakeConName c n
+            in  xAps "im-typ-box" [xTxt tx, takeType c k]
+
+
 -- ImportCap --------------------------------------------------------------------------------------
 takeImportCap   :: Config n -> (n, C.ImportCap n (C.Type n)) -> SExp
 takeImportCap c (n, ic)
@@ -232,7 +232,7 @@ takeImportValue c iv
  = case iv of
         C.ImportValueModule{}
          -> let Just tx = configTakeVarName c (C.importValueModuleVar iv)
-            in  ( xAps "im-trm-mod"
+            in  ( xAps "im-val-mod"
                         $ [xTxt tx, xMac ("t-" <> tx)]
                        ++ case C.importValueModuleArity iv of
                               Nothing           -> []
@@ -241,7 +241,7 @@ takeImportValue c iv
 
         C.ImportValueSea{}
          -> let tx     = T.pack $ C.importValueSeaVar iv
-            in  ( xAps "im-trm-sea"
+            in  ( xAps "im-val-sea"
                         [xTxt tx, xMac ("t-" <> tx)]
                 , [S.DeclMac ("t-" <> tx) (takeType c $ C.importValueSeaType iv)])
 

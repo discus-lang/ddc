@@ -38,7 +38,7 @@ unshareModule !mm
 
         -- Update the types of exports with the transformed ones.
         exportValues'
-                = [ (n, updateExportSource nts' ex)
+                = [ (n, updateExportValue nts' ex)
                   | (n, ex) <- moduleExportValues mm ]
 
    in   mm { moduleBody         = xx'
@@ -316,18 +316,18 @@ wrapAtsX !xF !tF ((_aArg, tArg): ats)
 -------------------------------------------------------------------------------
 -- | Update the types of exported things with the ones in
 --   the give map.
-updateExportSource
+updateExportValue
         :: Ord n
         => Map n (Type n)
-        -> ExportSource n (Type n) -> ExportSource n (Type n)
+        -> ExportValue n (Type n) -> ExportValue n (Type n)
 
-updateExportSource mm ex
+updateExportValue mm ex
  = case ex of
-        ExportSourceLocal n _t mArity
+        ExportValueLocal n _t mArity
          -> case Map.lookup n mm of
-                Nothing         -> ex
-                Just t'         -> ExportSourceLocal n t' mArity
+                Nothing -> ex
+                Just t' -> ExportValueLocal n t' mArity
 
-        ExportSourceLocalNoType _
+        ExportValueLocalNoType _
          -> ex
 

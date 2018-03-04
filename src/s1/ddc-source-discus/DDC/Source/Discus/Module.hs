@@ -5,7 +5,8 @@ module DDC.Source.Discus.Module
         ( -- * Modules
           Module        (..)
         , isMainModule
-        , ExportSource  (..)
+        , ExportType    (..)
+        , ExportValue   (..)
         , ImportType    (..)
         , ImportCap     (..)
         , ImportValue   (..)
@@ -30,7 +31,8 @@ import DDC.Core.Module
         ( QualName      (..)
         , ModuleName    (..)
         , isMainModuleName
-        , ExportSource  (..)
+        , ExportType    (..)
+        , ExportValue   (..)
         , ImportType    (..)
         , ImportCap     (..)
         , ImportValue   (..))

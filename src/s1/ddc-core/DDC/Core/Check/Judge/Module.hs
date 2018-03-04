@@ -79,7 +79,7 @@ checkModuleM !config mm@ModuleCore{} !mode
         --   which we can sort check directly.
         nksImportDataDef'
                 <- checkSortsOfDataTypes config mode
-                $  moduleImportDataDefs  mm
+                $  map snd $ moduleImportDataDefs  mm
 
 
         ctrace  $ vcat
@@ -87,7 +87,7 @@ checkModuleM !config mm@ModuleCore{} !mode
 
         nksLocalDataDef'
                 <- checkSortsOfDataTypes config mode
-                $  moduleDataDefsLocal   mm
+                $  map snd $ moduleDataDefsLocal   mm
 
         let envT_dataDefs
                 = EnvT.unions
@@ -154,7 +154,7 @@ checkModuleM !config mm@ModuleCore{} !mode
         ctrace  $ vcat
                 [ text "* Checking Kinds of Imported Data Types."]
 
-        let dataDefsImported = moduleImportDataDefs mm
+        let dataDefsImported = map snd $ moduleImportDataDefs mm
         dataDefsImported'
          <- case checkDataDefs config envT_localTypeDefs dataDefsImported of
                 (err : _, _)            -> throw $ ErrorData err
@@ -165,7 +165,7 @@ checkModuleM !config mm@ModuleCore{} !mode
         ctrace  $ vcat
                 [ text "* Checking Kinds of Local Data Types."]
 
-        let dataDefsLocal    = moduleDataDefsLocal mm
+        let dataDefsLocal    = map snd $ moduleDataDefsLocal mm
         dataDefsLocal'
          <- case checkDataDefs config envT_localTypeDefs dataDefsLocal of
                 (err : _, _)            -> throw $ ErrorData err
@@ -279,15 +279,15 @@ checkModuleM !config mm@ModuleCore{} !mode
                 $ map fst $ moduleExportValues mm_inferred
 
         -- If exported names are missing types then fill them in.
-        let updateExportSource e
-                | ExportSourceLocalNoType n <- e
+        let updateExportValue e
+                | ExportValueLocalNoType n <- e
                 , Just t  <- EnvX.lookupX (UName n) envX_binds
-                = ExportSourceLocal n t Nothing
+                = ExportValueLocal n t Nothing
 
                 | otherwise = e
 
         let esrcsValue_updated
-                = [ (n, updateExportSource e) | (n, e) <- esrcsValue' ]
+                = [ (n, updateExportValue e) | (n, e) <- esrcsValue' ]
 
         -- Return the checked bindings as they have explicit type annotations.
         let mm_final
@@ -303,17 +303,17 @@ checkExportTypes
         :: (Show n, Pretty n, Ord n)
         => Config  n
         -> EnvT  n
-        -> [(n, ExportSource n (Type n))]
-        -> CheckM a n [(n, ExportSource n (Type n))]
+        -> [(n, ExportType n (Type n))]
+        -> CheckM a n [(n, ExportType n (Type n))]
 
 checkExportTypes config env nesrcs
  = let
         ctx     = contextOfEnvT env
 
         check (n, esrc)
-         | Just k          <- takeTypeOfExportSource esrc
+         | Just k          <- takeKindOfExportType esrc
          = do   (k', _, _) <- checkTypeM config ctx UniverseKind k Recon
-                return  $ (n, mapTypeOfExportSource (const k') esrc)
+                return  $ (n, mapKindOfExportType (const k') esrc)
 
          | otherwise
          = return (n, esrc)
@@ -335,17 +335,17 @@ checkExportValues
         :: (Show n, Pretty n, Ord n)
         => Config n
         -> EnvT   n
-        -> [(n, ExportSource n (Type n))]
-        -> CheckM a n [(n, ExportSource n (Type n))]
+        -> [(n, ExportValue n (Type n))]
+        -> CheckM a n [(n, ExportValue n (Type n))]
 
 checkExportValues config env nesrcs
  = let
         ctx     = contextOfEnvT env
 
         check (n, esrc)
-         | Just t          <- takeTypeOfExportSource esrc
+         | Just t          <- takeTypeOfExportValue esrc
          = do   (t', _, _) <- checkTypeM config ctx UniverseSpec t Recon
-                return  $ (n, mapTypeOfExportSource (const t') esrc)
+                return  $ (n, mapTypeOfExportValue (const t') esrc)
 
          | otherwise
          = return (n, esrc)
@@ -620,8 +620,8 @@ checkImportValues config env mode nisrcs
 checkModuleBinds
         :: Ord n
         => EnvX n                               -- ^ Starting environment.
-        -> [(n, ExportSource n (Type n))]       -- ^ Exported types.
-        -> [(n, ExportSource n (Type n))]       -- ^ Exported values
+        -> [(n, ExportType n (Type n))]         -- ^ Exported types.
+        -> [(n, ExportValue n (Type n))]        -- ^ Exported values
         -> Exp (AnTEC a n) n
         -> CheckM a n (EnvX n)                  -- ^ Environment of top-level bindings
                                                 --   defined by the module
@@ -648,14 +648,14 @@ checkModuleBinds !env !ksExports !tsExports !xx
 checkModuleBind
         :: Ord n
         => EnvT n                               -- ^ Environment of types.
-        -> [(n, ExportSource n (Type n))]       -- ^ Exported types.
-        -> [(n, ExportSource n (Type n))]       -- ^ Exported values.
+        -> [(n, ExportType  n (Type n))]        -- ^ Exported types.
+        -> [(n, ExportValue n (Type n))]        -- ^ Exported values.
         -> Bind n
         -> CheckM a n ()
 
 checkModuleBind env !_ksExports !tsExports !b
  | BName n tDef <- b
- = case join $ liftM takeTypeOfExportSource $ lookup n tsExports of
+ = case join $ liftM takeTypeOfExportValue $ lookup n tsExports of
         Nothing                 -> return ()
         Just tExport
          | equivT env tDef tExport  -> return ()

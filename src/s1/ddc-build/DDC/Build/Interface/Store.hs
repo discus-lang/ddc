@@ -223,16 +223,16 @@ supersOfInterface ii
         modName = interfaceModuleName ii
 
         -- Build a super declaration from an export.
-        takeSuperOfExport ex@ExportSourceLocal{}
+        takeSuperOfExport ex@ExportValueLocal{}
          = Just $ Super
-                { superName             = exportSourceLocalName ex
+                { superName             = exportValueLocalName ex
                 , superModuleName       = modName
-                , superTetraType        = exportSourceLocalType ex
+                , superTetraType        = exportValueLocalType ex
                 , superImportValue      = ImportValueModule
                                         { importValueModuleName  = modName
-                                        , importValueModuleVar   = exportSourceLocalName ex
-                                        , importValueModuleType  = exportSourceLocalType ex
-                                        , importValueModuleArity = exportSourceLocalArity ex }
+                                        , importValueModuleVar   = exportValueLocalName ex
+                                        , importValueModuleType  = exportValueLocalType ex
+                                        , importValueModuleArity = exportValueLocalArity ex }
                 }
 
         takeSuperOfExport _

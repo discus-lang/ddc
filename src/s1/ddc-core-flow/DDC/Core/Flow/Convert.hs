@@ -53,10 +53,10 @@ convertM mm
               ]
 
         -- Convert signatures of exported functions.
-        tsExportT' <- mapM convertExportM
+        tsExportT' <- mapM convertExportTypeM
                    $  moduleExportTypes  mm
 
-        tsExportV' <- mapM convertExportM
+        tsExportV' <- mapM convertExportValueM
                    $  moduleExportValues mm
 
         -- Convert the body of the module
@@ -95,32 +95,38 @@ convertM mm
 
 
 ---------------------------------------------------------------------------------------------------
--- | Convert an export spec.
-convertExportM
-        :: (F.Name, ExportSource F.Name (Type F.Name))
-        -> ConvertM (T.Name, ExportSource T.Name (Type T.Name))
+-- Convert an export type
+convertExportTypeM
+        :: (F.Name, ExportType F.Name (Type F.Name))
+        -> ConvertM (T.Name, ExportType T.Name (Type T.Name))
 
-convertExportM (n, esrc)
- = do   n'      <- convertName n
-        esrc'   <- convertExportSourceM esrc
-        return  (n', esrc')
+convertExportTypeM (_, esrc)
+ = case esrc of
+        ExportTypeLocal n t
+         -> do  n'      <- convertName n
+                t'      <- convertType t
+                return  $ (n', ExportTypeLocal n' t')
+
+        ExportTypeLocalNoKind n
+         -> do  n'      <- convertName n
+                return  $ (n', ExportTypeLocalNoKind n')
 
 
 -- Convert an export source.
-convertExportSourceM
-        :: ExportSource F.Name (Type F.Name)
-        -> ConvertM (ExportSource T.Name (Type T.Name))
+convertExportValueM
+        :: (F.Name, ExportValue F.Name (Type F.Name))
+        -> ConvertM (T.Name, ExportValue T.Name (Type T.Name))
 
-convertExportSourceM esrc
+convertExportValueM (_, esrc)
  = case esrc of
-        ExportSourceLocal n t _
+        ExportValueLocal n t _
          -> do  n'      <- convertName n
                 t'      <- convertType t
-                return  $ ExportSourceLocal n' t' Nothing
+                return  $ (n', ExportValueLocal n' t' Nothing)
 
-        ExportSourceLocalNoType n
+        ExportValueLocalNoType n
          -> do  n'      <- convertName n
-                return  $ ExportSourceLocalNoType n'
+                return  $ (n', ExportValueLocalNoType n')
 
 
 ---------------------------------------------------------------------------------------------------

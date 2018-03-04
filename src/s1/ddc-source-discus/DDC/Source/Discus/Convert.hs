@@ -26,7 +26,8 @@ import qualified Data.Text                      as Text
 import Data.Maybe
 
 import DDC.Core.Module
-        ( ExportSource  (..)
+        ( ExportType    (..)
+        , ExportValue   (..)
         , ImportType    (..)
         , ImportCap     (..)
         , ImportValue   (..))
@@ -67,13 +68,13 @@ coreOfSourceModuleM a mm
         exportTypes'
          <- sequence
          $  fmap (\n -> (,) <$> toCoreTUCN n
-                            <*> (fmap ExportSourceLocalNoType $ toCoreTUCN n))
+                            <*> (fmap ExportTypeLocalNoKind $ toCoreTUCN n))
          $  S.moduleExportTypes mm
 
         exportValues'
          <- sequence
          $  fmap (\n -> (,) <$> toCoreXUVN n
-                            <*> (fmap ExportSourceLocalNoType (toCoreXUVN n)))
+                            <*> (fmap ExportValueLocalNoType $ toCoreXUVN n))
          $  S.moduleExportValues mm
 
 
@@ -121,7 +122,7 @@ coreOfSourceModuleM a mm
                                 $ S.moduleExportValues mm)
 
                         then [ ( C.NameVar "main"
-                             , ExportSourceLocalNoType (C.NameVar "main"))]
+                             , ExportValueLocalNoType (C.NameVar "main"))]
 
                         else [])
 
@@ -198,7 +199,7 @@ toCoreImportValue src
 
 
 -- DataDef ----------------------------------------------------------------------------------------
-toCoreDataDef :: S.DataDef S.Source -> ConvertM a (C.DataDef C.Name)
+toCoreDataDef :: S.DataDef S.Source -> ConvertM a (C.Name, C.DataDef C.Name)
 toCoreDataDef def
  = do
         defParams       <- sequence $ fmap toCoreTBK $ S.dataDefParams def
@@ -208,12 +209,14 @@ toCoreDataDef def
                                                    | tag  <- [0..]]
 
         let (S.TyConBindName txTyConName) = S.dataDefTypeName def
+        let nType       = C.NameCon txTyConName
 
-        return $ C.DataDef
-         { C.dataDefTypeName    = C.NameCon txTyConName
-         , C.dataDefParams      = defParams
-         , C.dataDefCtors       = Just $ defCtors
-         , C.dataDefIsAlgebraic = True }
+        return  ( nType
+                , C.DataDef
+                  { C.dataDefTypeName    = C.NameCon txTyConName
+                  , C.dataDefParams      = defParams
+                  , C.dataDefCtors       = Just $ defCtors
+                  , C.dataDefIsAlgebraic = True })
 
 
 -- DataCtor ---------------------------------------------------------------------------------------

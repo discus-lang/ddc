@@ -26,9 +26,13 @@ module DDC.Core.Module
         , QualName      (..)
 
          -- * Export Definitions
-        , ExportSource  (..)
-        , takeTypeOfExportSource
-        , mapTypeOfExportSource
+        , ExportType  (..)
+        , takeKindOfExportType
+        , mapKindOfExportType
+
+        , ExportValue  (..)
+        , takeTypeOfExportValue
+        , mapTypeOfExportValue
 
          -- * Import Definitions
          -- ** Import Types
@@ -80,17 +84,17 @@ data Module a n
 
           -- Exports ------------------
           -- | Kinds of exported types.
-        , moduleExportTypes     :: ![(n, ExportSource n (Type n))]
+        , moduleExportTypes     :: ![(n, ExportType   n (Type n))]
 
           -- | Types of exported values.
-        , moduleExportValues    :: ![(n, ExportSource n (Type n))]
+        , moduleExportValues    :: ![(n, ExportValue  n (Type n))]
 
           -- Imports ------------------
           -- | Define imported types.
         , moduleImportTypes     :: ![(n, ImportType   n (Type n))]
 
           -- | Data defs imported from other modules.
-        , moduleImportDataDefs  :: ![DataDef n]
+        , moduleImportDataDefs  :: ![(n, DataDef n)]
 
           -- | Type defs imported from other modules.
         , moduleImportTypeDefs  :: ![(n, (Kind n, Type n))]
@@ -103,7 +107,7 @@ data Module a n
 
           -- Local defs ---------------
           -- | Data types defined in this module.
-        , moduleDataDefsLocal   :: ![DataDef n]
+        , moduleDataDefsLocal   :: ![(n, DataDef n)]
 
           -- | Type definitions in this module.
         , moduleTypeDefsLocal   :: ![(n, (Kind n, Type n))]
@@ -143,7 +147,7 @@ isMainModule mm
 moduleDataDefs :: Ord n => Module a n -> DataDefs n
 moduleDataDefs mm
         = fromListDataDefs
-        $ (moduleImportDataDefs mm ++ moduleDataDefsLocal mm)
+        $ map snd $ (moduleImportDataDefs mm ++ moduleDataDefsLocal mm)
 
 
 -- | Get the data type definitions visible in a module.
@@ -200,8 +204,8 @@ moduleEnvT kenvPrim mm
 
               -- Kinds of imported data types.
               nksImportDataType
-               = Map.fromList  [(dataDefTypeName def, kindOfDataDef def)
-                               | def <- moduleImportDataDefs mm]
+               = Map.fromList  [ (n, kindOfDataDef def)
+                               | (n, def) <- moduleImportDataDefs mm]
 
               -- Kinds of imported type defs.
               nksImportTypeDef
@@ -209,8 +213,8 @@ moduleEnvT kenvPrim mm
 
               -- Kinds of locally defined data types.
               nksLocalDataType
-               = Map.fromList  [(dataDefTypeName def, kindOfDataDef def)
-                               | def <- moduleImportDataDefs mm]
+               = Map.fromList  [ (dataDefTypeName def, kindOfDataDef def)
+                               | (_n, def) <- moduleImportDataDefs mm]      -- TODO: says import not local
 
               -- Kinds of imported type defs.
               nksLocalTypeDef
@@ -263,8 +267,8 @@ moduleEnvX kenvPrim tenvPrim dataDefs mm
  , EnvX.envxDataDefs
         = DataDef.unionDataDefs dataDefs
         $ DataDef.unionDataDefs
-                (DataDef.fromListDataDefs $ moduleImportDataDefs mm)
-                (DataDef.fromListDataDefs $ moduleDataDefsLocal  mm)
+                (DataDef.fromListDataDefs $ map snd $ moduleImportDataDefs mm)
+                (DataDef.fromListDataDefs $ map snd $ moduleDataDefsLocal  mm)
 
  , EnvX.envxMap
         = Map.fromList
@@ -371,7 +375,8 @@ modulesExportTypes mods base
  = let  envOfModule m
          = Env.fromList
          $ [BName n t   |  (n, Just t)
-                        <- map (liftSnd takeTypeOfExportSource) $ moduleExportTypes m]
+                        <- map (liftSnd takeKindOfExportType)
+                        $  moduleExportTypes m]
 
         liftSnd f (x, y) = (x, f y)
 
@@ -384,7 +389,8 @@ modulesExportValues mods base
  = let  envOfModule m
          = Env.fromList
          $ [BName n t   | (n, Just t)
-                        <- map (liftSnd takeTypeOfExportSource) $ moduleExportValues m]
+                        <- map (liftSnd takeTypeOfExportValue)
+                        $  moduleExportValues m]
 
         liftSnd f (x, y) = (x, f y)
 

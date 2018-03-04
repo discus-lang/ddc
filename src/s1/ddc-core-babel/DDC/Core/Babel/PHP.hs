@@ -19,7 +19,7 @@ phpOfModule
         => Module a T.Name
         -> Doc
 phpOfModule mm
- = let ds = phpOfDataDefs $ moduleDataDefsLocal mm
+ = let ds = phpOfDataDefs $ map snd $ moduleDataDefsLocal mm
        m  = Map.fromList
           $ map arityOfImport $ moduleImportValues mm
        xs = phpOfExp       (moduleBody          mm) CTop m
