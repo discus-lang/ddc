@@ -44,6 +44,7 @@ import qualified DDC.Core.Discus.Env                    as CE
 import qualified DDC.Core.Transform.Resolve             as CResolve
 import qualified DDC.Core.Transform.SpreadX             as CSpread
 import qualified DDC.Core.Transform.Namify              as CNamify
+import qualified DDC.Core.Transform.Expose              as CExpose
 
 
 ---------------------------------------------------------------------------------------------------
@@ -64,6 +65,7 @@ data ConfigLoadSourceTetra
         , configSinkChecked      :: B.Sink      -- ^ Sink for checked core code.
         , configSinkNamified     :: B.Sink      -- ^ Sink for namified code.
         , configSinkElaborated   :: B.Sink      -- ^ Sink for elaborated core code.
+        , configSinkExposed      :: B.Sink      -- ^ Sink for exposed core code.
         }
 
 
@@ -86,7 +88,6 @@ sourceLoad srcName srcLine str store config
                 srcName srcLine str
                 (configSinkTokens  config)
 
-
         -- Desugar source.
         mm_desugared
          <- sourceDesugar
@@ -98,7 +99,6 @@ sourceLoad srcName srcLine str store config
                 (configSinkPrep    config)
                 mm_source
 
-
         -- Lower source to core.
         mm_core
          <- sourceLower
@@ -107,7 +107,6 @@ sourceLoad srcName srcLine str store config
                 (configSinkResolve  config)
                 (configSinkPreCheck config)
                 mm_desugared
-
 
         -- Check core.
         let fragment
@@ -129,7 +128,6 @@ sourceLoad srcName srcLine str store config
                                         mm_core)
                         (100 :: Int)
 
-
         liftIO $ B.pipeSink (renderIndent $ ppr mm_namified)
                             (configSinkNamified config)
 
@@ -141,7 +139,6 @@ sourceLoad srcName srcLine str store config
                 (configSinkCheckerTrace config)
                 (configSinkChecked      config)
                 mm_namified
-
 
         -- Resolve elaborations in module.
         mm_elaborated
@@ -156,7 +153,13 @@ sourceLoad srcName srcLine str store config
         liftIO $ B.pipeSink (renderIndent $ ppr mm_elaborated)
                             (configSinkElaborated config)
 
-        return $ mm_elaborated
+        -- Expose arity information in module header.
+        let mm_exposed  = CExpose.exposeModule mm_elaborated
+
+        liftIO $ B.pipeSink (renderIndent $ ppr mm_exposed)
+                            (configSinkExposed config)
+
+        return $ mm_exposed
 
 
 ---------------------------------------------------------------------------------------------------

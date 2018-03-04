@@ -60,6 +60,7 @@ sourceLoadText config store source str
         , BST.configSinkNamified        = D.dump config source "dump.0-source-13-namified.dct"
         , BST.configSinkChecked         = D.dump config source "dump.0-source-14-checked.dct"
         , BST.configSinkElaborated      = D.dump config source "dump.0-source-15-elaborated.dct"
+        , BST.configSinkExposed         = D.dump config source "dump.0-source-16-exposed.dct"
         }
 
 

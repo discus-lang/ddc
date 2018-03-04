@@ -98,23 +98,23 @@ instance (Pretty n, Eq n) => Pretty (Module a n) where
         docsDataImport
          | null importData = empty
          | otherwise
-         = line <> vsep  (map (\i -> text "import" <+> ppr i) $ importData)
+         = vsep  (map (\i -> text "import" <+> ppr i) $ importData)
 
         docsDataLocal
          | null localData = empty
          | otherwise
-         = line <> vsep  (map ppr localData)
+         = vsep  (map ppr localData)
 
         -- Type Definitions -----
         docsTypeImport
          | null importType = empty
          | otherwise
-         = line <> vsep  (map (\i -> text "import" <+> pprTypeDef i) $ importType)
+         = vsep  (map (\i -> text "import" <+> pprTypeDef i) $ importType)
 
         docsTypeLocal
          | null localType  = empty
          | otherwise
-         = line <> vsep  (map pprTypeDef localType)
+         = vsep  (map pprTypeDef localType)
 
         pprLts = pprModePrec (modeModuleLets mode) 0
 

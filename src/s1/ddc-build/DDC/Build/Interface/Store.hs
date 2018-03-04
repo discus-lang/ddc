@@ -15,7 +15,6 @@ where
 import DDC.Build.Interface.Error
 import DDC.Build.Interface.Base
 import DDC.Core.Module
-import DDC.Core.Call
 import DDC.Type.Exp
 import DDC.Data.Pretty
 import System.Directory
@@ -25,7 +24,7 @@ import Data.Maybe
 import Data.Map                                                 (Map)
 import qualified DDC.Build.Interface.Codec.Text.Decode          as IT
 import qualified DDC.Build.Interface.Codec.Shimmer.Decode       as IS
-import qualified DDC.Core.Discus                                as E
+import qualified DDC.Core.Discus                                as D
 import qualified Data.Map.Strict                                as Map
 import qualified Data.Compact                                   as Compact
 import qualified Data.ByteString                                as BS
@@ -45,7 +44,7 @@ data Store
 
           -- | Lookup the definition of the given top-level super,
           --   from one or more of the provided modules.
-        , storeSupers     :: IORef (Map ModuleName (Map E.Name Super))
+        , storeSupers     :: IORef (Map ModuleName (Map D.Name Super))
 
           -- | Fully loaded interface files.
           --   In future we want to load parts of interface files on demand,
@@ -56,7 +55,7 @@ data Store
 -- | Get a list of types of all top-level supers in all modules in the store.
 importValuesOfStore
         :: Store
-        -> IO [(E.Name, ImportValue E.Name (Type E.Name))]
+        -> IO [(D.Name, ImportValue D.Name (Type D.Name))]
 
 importValuesOfStore store
  = do   mnns            <- readIORef $ storeSupers store
@@ -86,7 +85,7 @@ instance Pretty Meta where
 data Super
         = Super
         { -- | Name of the super.
-          superName             :: E.Name
+          superName             :: D.Name
 
           -- | Where the super was imported from.
           --
@@ -96,12 +95,12 @@ data Super
         , superModuleName       :: ModuleName
 
           -- | Tetra type for the super.
-        , superTetraType        :: Type E.Name
+        , superTetraType        :: Type D.Name
 
           -- | Import source for the super.
           --
           --   This can be used to refer to the super from a client module.
-        , superImportValue      :: ImportValue E.Name (Type E.Name) }
+        , superImportValue      :: ImportValue D.Name (Type D.Name) }
 
 
 ---------------------------------------------------------------------------------------------------
@@ -188,7 +187,7 @@ getInterfaces store
 --
 findSuper
         :: Store
-        -> E.Name               -- ^ Name of desired super.
+        -> D.Name               -- ^ Name of desired super.
         -> [ModuleName]         -- ^ Names of modules to search.
         -> IO [Super]
 
@@ -216,63 +215,53 @@ metaOfInterface ii
 --   This contains all the information needed to import a super into
 --   a client module.
 --
-supersOfInterface :: InterfaceAA -> Map E.Name Super
+supersOfInterface :: InterfaceAA -> Map D.Name Super
 supersOfInterface ii
- | Just mmTetra <- interfaceDiscusModule ii
+ | Just mmDiscus <- interfaceDiscusModule ii
  = let
         -- The current module name.
         modName = interfaceModuleName ii
 
-        -- Collect Tetra types for all supers exported by the module.
-        ntsTetra
-         = Map.fromList
-           [ (n, t)     | (n, esrc)     <- moduleExportValues mmTetra
-                        , let Just t    =  takeTypeOfExportSource esrc ]
-
-        -- Build call patterns for all locally defined supers.
-        --  The call pattern is the number of type parameters then value parameters
-        --  for the super. We assume all supers are in prenex form, so they take
-        --  all their type arguments before their value arguments.
-        makeLocalArity b x
-         | BName nSuper _       <- b
-         , cs                   <- takeCallConsFromExp x
-         , Just (csType, csValue, csBox) <- splitStdCallCons cs
-         = (nSuper, (length csType, length csValue, length csBox))
-
-         | otherwise = error "ddc-build.supersOfInterface: type is not in prenex form."
-
-        nsLocalArities :: Map E.Name (Int, Int, Int)
-                =  Map.fromList
-                $  mapTopBinds makeLocalArity
-                $  mmTetra
-
-        -- Build an ImportSource for the given super name. A client module
-        -- can use this to import the super into itself.
-        makeImportValue n
-
-         -- Super was defined as a top-level binding in the current module.
-         | Just (aType, aValue, nBoxes) <- Map.lookup n nsLocalArities
-         , Just tTetra                  <- Map.lookup n ntsTetra
-         = ImportValueModule modName n tTetra (Just (aType, aValue, nBoxes))
-
-         -- Super was imported into the current module from somewhere else.
-         -- Pass along the same import declaration to the client.
-         | Just impt            <- lookup n (moduleImportValues mmTetra)
-         = impt
-
-         | otherwise = error $ "ddc-build.supersOfInterface: no source for " ++ show n
-
-        makeSuper n tTetra
+        -- Build a super declaration from an export.
+        takeSuperOfExport ex@ExportSourceLocal{}
          = Just $ Super
-                { superName         = n
-                , superModuleName   = moduleName mmTetra
-                , superTetraType    = tTetra
-                , superImportValue  = makeImportValue n }
+                { superName             = exportSourceLocalName ex
+                , superModuleName       = modName
+                , superTetraType        = exportSourceLocalType ex
+                , superImportValue      = ImportValueModule
+                                        { importValueModuleName  = modName
+                                        , importValueModuleVar   = exportSourceLocalName ex
+                                        , importValueModuleType  = exportSourceLocalType ex
+                                        , importValueModuleArity = exportSourceLocalArity ex }
+                }
 
+        takeSuperOfExport _
+         = Nothing
 
-   in   Map.fromList
-          [ (n, super)  | (n, tTetra)    <- Map.toList ntsTetra
-                        , let Just super = makeSuper n tTetra ]
+        -- Build a super decalaration from an import.
+        takeSuperOfImport im@ImportValueModule{}
+         = Super
+                { superName             = importValueModuleVar im
+                , superModuleName       = modName
+                , superTetraType        = importValueModuleType im
+                , superImportValue      = im }
+
+        takeSuperOfImport im@ImportValueSea{}
+         = Super
+                { superName             = D.NameVar $ importValueSeaVar im
+                , superModuleName       = modName
+                , superTetraType        = importValueSeaType im
+                , superImportValue      = im }
+
+   in   Map.union
+         (Map.fromList
+                [ (n, let Just s = takeSuperOfExport ex in s)
+                | (n, ex) <- moduleExportValues mmDiscus])
+
+         (Map.fromList
+                [ (n, takeSuperOfImport im)
+                | (n, im) <- moduleImportValues mmDiscus])
+
 
  | otherwise
  = Map.empty
