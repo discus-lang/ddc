@@ -199,26 +199,28 @@ moduleEnvT kenvPrim mm
  , EnvT.envtMap
         = let -- Kinds of imported foreign types.
               nksImportForeignType
-                = Map.fromList [(n, kindOfImportType isrc)
-                               | (n, isrc) <- moduleImportTypes mm]
+                = Map.fromList  [ (n, kindOfImportType isrc)
+                                | (n, isrc) <- moduleImportTypes mm]
 
               -- Kinds of imported data types.
               nksImportDataType
-               = Map.fromList  [ (n, kindOfDataDef def)
-                               | (n, def) <- moduleImportDataDefs mm]
+               = Map.fromList   [ (n, kindOfDataDef def)
+                                | (n, def) <- moduleImportDataDefs mm]
 
               -- Kinds of imported type defs.
               nksImportTypeDef
-               = Map.fromList  [(n, k) | (n, (k, _)) <- moduleImportTypeDefs mm]
+               = Map.fromList   [ (n, k)
+                                | (n, (k, _)) <- moduleImportTypeDefs mm]
 
               -- Kinds of locally defined data types.
               nksLocalDataType
-               = Map.fromList  [ (dataDefTypeName def, kindOfDataDef def)
-                               | (_n, def) <- moduleImportDataDefs mm]      -- TODO: says import not local
+               = Map.fromList   [ (dataDefTypeName def, kindOfDataDef def)
+                                | (_n, def) <- moduleLocalDataDefs mm]
 
               -- Kinds of imported type defs.
               nksLocalTypeDef
-               = Map.fromList  [(n, k) | (n, (k, _)) <- moduleLocalTypeDefs mm]
+               = Map.fromList   [ (n, k)
+                                | (n, (k, _)) <- moduleLocalTypeDefs mm]
 
           in  -- Build a map of all the kinds,
               -- Where kinds of locally defined type shadow the imported ones.
