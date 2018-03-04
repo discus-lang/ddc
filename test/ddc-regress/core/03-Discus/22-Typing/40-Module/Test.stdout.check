@@ -2,7 +2,7 @@ ok
 
 
 -- Main module exports main function of the correct type.
-module Main 
+module Main
 export value main       : Unit -> S Pure Unit;
 with
 letrec {

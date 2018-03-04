@@ -1,7 +1,7 @@
 ok
 
 -- Load a module definition.
-module Main 
+module Main
 export value main       : Unit -> S Pure Unit;
 export value double     : Nat# -> Nat#;
 import value two        : Unit -> Nat#;
@@ -27,7 +27,7 @@ letrec {
 
 
 -- Load the same module using the offside rule.
-module Main 
+module Main
 export value main       : Unit -> S Pure Unit;
 export value double     : Nat# -> Nat#;
 import value two        : Unit -> Nat#;

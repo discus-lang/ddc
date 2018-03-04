@@ -140,10 +140,10 @@ nat_t foo (nat_t _x)
 
 
 -- Error: assignment from primop.
-Error in transformed module.
-  in stage CoreLoad
-  in pipe  PipeCoreCheck/Complies
-  Unsupported feature: PartialPrims
+Fragment violation when converting Salt module to target code.
+  Invalid type for local variable.
+  
+  with: ^0 -> ^0 -> ^0
 
 
 -- Error: name shadowing in function definition
@@ -168,10 +168,10 @@ Error in transformed module.
 
 
 -- Error: partially applied primop
-Error in transformed module.
-  in stage CoreLoad
-  in pipe  PipeCoreCheck/Complies
-  Unsupported feature: PartialPrims
+Fragment violation when converting Salt module to target code.
+  Invalid type for local variable.
+  
+  with: Int# -> Int#
 
 
 -- Error: partial application not supported in Salt.

@@ -48,6 +48,7 @@ import DDC.Core.Check.Judge.Module
 import DDC.Core.Check.Judge.Witness
 import DDC.Core.Check.Error
 import DDC.Core.Check.Exp
+import DDC.Core.Check.Context.Base
 import DDC.Core.Check.Base
 
 
@@ -60,7 +61,12 @@ checkType  :: (Ord n, Show n, Pretty n)
 
 checkType config uni tt
  = evalCheck (mempty, 0, 0)
- $ do   (t, k, _) <- checkTypeM config emptyContext uni tt Recon
+ $ do   let ctx   = contextOfPrimEnvs
+                        (configPrimKinds config)
+                        (configPrimTypes config)
+                        (configPrimDataDefs config)
+
+        (t, k, _) <- checkTypeM config ctx uni tt Recon
         return (t, k)
 
 
@@ -71,7 +77,12 @@ checkSpec  :: (Ord n, Show n, Pretty n)
 
 checkSpec config tt
  = evalCheck (mempty, 0, 0)
- $ do   (t, k, _) <- checkTypeM config emptyContext UniverseSpec tt Recon
+ $ do   let ctx   = contextOfPrimEnvs
+                        (configPrimKinds config)
+                        (configPrimTypes config)
+                        (configPrimDataDefs config)
+
+        (t, k, _) <- checkTypeM config ctx UniverseSpec tt Recon
         return (t, k)
 
 

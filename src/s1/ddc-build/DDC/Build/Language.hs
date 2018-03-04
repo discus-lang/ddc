@@ -24,6 +24,7 @@ languages
         , ( "Machine", Machine.language)
         , ( "Salt",    Salt.language)
         , ( "Tetra",   Discus.language)
+        , ( "Discus",  Discus.language)
         , ( "Zero",    Zero.language) ]
 
 

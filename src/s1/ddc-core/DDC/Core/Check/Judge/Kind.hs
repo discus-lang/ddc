@@ -219,7 +219,7 @@ checkTypeM config ctx0 uni tt@(TCon tc) mode
                     return (tt', k')
 
              -- We don't have a type for this constructor.
-             | otherwise
+             |  otherwise
              -> throw $ C.ErrorType $ ErrorTypeUndefinedTypeCtor u
 
             -- Lookup the kinds of primitives from the prim environment.
