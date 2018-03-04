@@ -59,23 +59,23 @@ typeOpControl op
  = case op of
         -- loop#   :: [k : Rate]. (Nat# -> Unit) -> Unit
         OpControlLoop
-         -> tForall kRate 
+         -> tForall kRate
          $  \_ -> (tNat `tFun` tUnit) `tFun` tUnit
 
         -- loopn#   :: [k : Rate]. RateNat# k -> (Nat# -> Unit) -> Unit
         OpControlLoopN
-         -> tForall kRate 
+         -> tForall kRate
          $  \kR -> tRateNat kR `tFun` (tNat `tFun` tUnit) `tFun` tUnit
 
         -- guard#   :: Ref# Nat# -> Bool# -> (Nat# -> Unit) -> Unit
-        OpControlGuard 
+        OpControlGuard
          ->            tBool
                 `tFun` (tUnit `tFun` tUnit)
                 `tFun` tUnit
 
         -- segment# :: Ref Nat# -> Nat#  -> (Nat# -> Nat# -> Unit) -> Unit
         --   In the worker the first parameter is the index of the current
-        --   element in the segment, and the second is the index into the 
+        --   element in the segment, and the second is the index into the
         --   overall series.
         OpControlSegment
          ->            tNat
@@ -100,14 +100,14 @@ type ExpF       = Exp () Name
 
 
 xLoopN   :: TypeF -> ExpF -> ExpF -> ExpF
-xLoopN tR xRN xF 
-        = xApps (xVarOpControl OpControlLoopN) 
+xLoopN tR xRN xF
+        = xApps (xVarOpControl OpControlLoopN)
                 [XType tR, xRN, xF]
 
 
 xGuard   :: ExpF -> ExpF -> ExpF
 xGuard xFlag xFun
-        = xApps (xVarOpControl OpControlGuard) 
+        = xApps (xVarOpControl OpControlGuard)
                 [xFlag, xFun]
 
 
@@ -119,7 +119,7 @@ xSegment xIters xFun
 
 xSplit  :: Int  -> TypeF -> ExpF
         -> ExpF -> ExpF  -> ExpF
-xSplit n tK xRN xDownFn xTailFn 
+xSplit n tK xRN xDownFn xTailFn
         = xApps (xVarOpControl $ OpControlSplit n)
                 [ XType tK, xRN, xDownFn, xTailFn ]
 
@@ -127,5 +127,5 @@ xSplit n tK xRN xDownFn xTailFn
 -- Utils -----------------------------------------------------------------------
 xVarOpControl :: OpControl -> ExpF
 xVarOpControl op
-        = XVar (UPrim (NameOpControl op) (typeOpControl op))
+        = XVar (UPrim (NameOpControl op))
 

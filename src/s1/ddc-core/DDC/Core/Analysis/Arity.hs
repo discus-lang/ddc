@@ -3,10 +3,10 @@
 --   and infer arities for primitives based on their types.
 --
 --   For function bindings the arity is the number of outer-most lambdas
---   in the definition. 
+--   in the definition.
 --
 --   For primitives, the arity is the number of function
---   constructors in its type. 
+--   constructors in its type.
 --
 module DDC.Core.Analysis.Arity
         ( -- * Arities map
@@ -53,16 +53,13 @@ getArity :: Ord n => Arities n -> Bound n -> Maybe Int
 getArity (named, anon) u
  = case u of
         -- Get arities of anonymous things from the stack.
-        UIx ix 
+        UIx ix
          -> let Just x  = index anon ix
             in  Just x
 
         -- Lookup arities of named things from the stack.
-        UName n         -> Map.lookup n named
-
-        -- Get a primitive's arity from its type.
-        -- The arities of primitives always match their types, so this is ok.
-        UPrim _ t       -> arityFromType t
+        UName n -> Map.lookup n named
+        UPrim n -> Map.lookup n named
 
 
 -- Slurp ----------------------------------------------------------------------
@@ -71,10 +68,10 @@ aritiesOfModule :: Ord n => Module a n -> Arities n
 aritiesOfModule mm
   = let (lts, _)        = splitXLets $ moduleBody mm
 
-        aritiesLets     
+        aritiesLets
          = concat $ catMaybes $ map aritiesOfLets  lts
 
-        aritiesImports  
+        aritiesImports
          = catMaybes
          $ [ case arityFromType (typeOfImportValue isrc) of
                 Just a  -> Just (BName n (typeOfImportValue isrc), a)
@@ -108,7 +105,7 @@ aritiesOfPat p
         (PData _b bs)   -> zip bs (repeat 0)
 
 
--- | Get the arity of an expression. 
+-- | Get the arity of an expression.
 arityOfExp :: Ord n => Exp a n -> Maybe Int
 arityOfExp xx
  = case xx of

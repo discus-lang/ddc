@@ -59,15 +59,15 @@ instance SpreadT Bound where
   = case uu of
         UIx{}           -> uu
 
-        UPrim n _
+        UPrim n
          -> case Env.envPrimFun kenv n of
                 Nothing -> uu
-                Just t' -> UPrim n t'
+                Just _  -> UPrim n
 
         UName n
          -> case Env.envPrimFun kenv n of
                 Nothing -> uu
-                Just t  -> UPrim n t
+                Just _  -> UPrim n
 
 
 instance SpreadT TyCon where
@@ -76,7 +76,7 @@ instance SpreadT TyCon where
         TyConBound (UName n) _
          -> case Env.envPrimFun kenv n of
                 Nothing -> tc
-                Just t  -> TyConBound (UPrim n t) t
+                Just t  -> TyConBound (UPrim n) t
 
         _               -> tc
 

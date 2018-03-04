@@ -5,7 +5,6 @@ where
 import DDC.Core.Salt.Convert.Base
 import DDC.Core.Salt.Compounds
 import DDC.Core.Salt.Name
-import DDC.Core.Salt.Env
 import DDC.Core.Module
 import DDC.Core.Exp.Annot
 import DDC.Core.Check           (AnTEC(..))
@@ -31,8 +30,8 @@ import qualified Data.Map       as Map
 --  The control primops return# and tailcall1# tell us how to transfer control
 --  after we've finished with the current function.
 --
-transferModule 
-        :: Module (AnTEC a Name) Name 
+transferModule
+        :: Module (AnTEC a Name) Name
         -> Either (Error  (AnTEC a Name))
                   (Module (AnTEC a Name) Name)
 
@@ -59,9 +58,9 @@ transLet tup
 
 
 -- Super ----------------------------------------------------------------------
-transSuper 
+transSuper
         :: Map Name (Type Name)         -- ^ Tail-callable supers, with types.
-        -> Exp (AnTEC a Name) Name 
+        -> Exp (AnTEC a Name) Name
         -> Exp (AnTEC a Name) Name
 
 transSuper tails xx
@@ -81,7 +80,7 @@ transSuper tails xx
         -- Tail-call a supercombinator.
         --   The super must have its arguments in standard order,
         --   being type arguments, then witness arguments, then value arguments.
-        --   We need this so we can split off just the value arguments and 
+        --   We need this so we can split off just the value arguments and
         --   pass them to the appropriate tailcallN# primitive.
         XApp _ x1 x2
          | (xv@(XVar a (UName n)), args) <- takeXApps1 x1 x2
@@ -98,14 +97,14 @@ transSuper tails xx
 
          -> let arity   = length asArgsVal
                 p       = PrimCallTail arity
-                u       = UPrim (NamePrimOp (PrimCall p)) (typeOfPrimCall p)
-            in  xApps a (XVar a u) 
-                        $  (map RType  (tsValArgs  ++ [tResult])) 
-                        ++ [RTerm $ xApps a xv (asArgsType ++ asArgsWit)] 
+                u       = UPrim (NamePrimOp (PrimCall p))
+            in  xApps a (XVar a u)
+                        $  (map RType  (tsValArgs  ++ [tResult]))
+                        ++ [RTerm $ xApps a xv (asArgsType ++ asArgsWit)]
                         ++ asArgsVal
 
         -- Return the result of this application.
-        XApp  a x1 x2   
+        XApp  a x1 x2
          -> let x1'     = transX   tails x1
                 a2'     = transArg tails x2
             in  addReturnX a (annotType a) (XApp a x1' a2')
@@ -115,7 +114,7 @@ transSuper tails xx
         XCast a c x     -> XCast a c (transSuper tails x)
 
 
--- | Add a statment to return this value, 
+-- | Add a statment to return this value,
 --   but don't wrap existing control transfer operations.
 addReturnX :: a          -> Type Name
            -> Exp a Name -> Exp a Name
@@ -156,8 +155,8 @@ transA tails aa
 
 -- Exp ------------------------------------------------------------------------
 transX  :: Map Name (Type Name)         -- ^ Tail-callable supers, with types.
-        -> Exp (AnTEC a Name) Name 
-        -> Exp (AnTEC a Name) Name 
+        -> Exp (AnTEC a Name) Name
+        -> Exp (AnTEC a Name) Name
 
 transX tails xx
  = let down     = transX tails
@@ -167,7 +166,7 @@ transX tails xx
         XCon{}          -> xx
         XAbs{}          -> xx
         XApp  a x1 x2   -> XApp  a (down x1) (transArg tails x2)
-        XLet{}          -> xx 
+        XLet{}          -> xx
         XCase{}         -> xx
         XCast{}         -> xx
 

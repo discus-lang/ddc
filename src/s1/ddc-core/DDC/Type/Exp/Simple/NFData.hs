@@ -25,7 +25,7 @@ instance NFData n => NFData (Bound n) where
   = case uu of
         UIx   i         -> rnf i
         UName n         -> rnf n
-        UPrim u t       -> rnf u `seq` rnf t
+        UPrim u         -> rnf u
 
 
 instance NFData n => NFData (Type n) where
@@ -45,7 +45,7 @@ instance NFData n => NFData (TypeSum n) where
         TypeSumBot{}
          -> rnf (typeSumKind ts)
 
-        TypeSumSet{}    
+        TypeSumSet{}
          ->    rnf (typeSumKind       ts)
          `seq` rnf (typeSumElems      ts)
          `seq` rnf (typeSumBoundNamed ts)
@@ -63,7 +63,7 @@ instance NFData n => NFData (TypeSumVarCon n) where
   = case ts of
         TypeSumVar u            -> rnf u
         TypeSumCon u k          -> rnf u `seq` rnf k
-        
+
 
 instance NFData n => NFData (TyCon n) where
  rnf tc

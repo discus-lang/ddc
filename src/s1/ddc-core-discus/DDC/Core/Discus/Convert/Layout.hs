@@ -102,9 +102,9 @@ fieldSizeOfType platform tt
         -- Type constructor might be a primitive or boxed value type.
         TCon tc
          -> case tc of
-                TyConBound (UPrim n _) _ -> fieldSizeOfPrim platform n
-                TyConBound _ _           -> Just $ platformAddrBytes platform
-                _                        -> Nothing
+                TyConBound (UPrim n) _ -> fieldSizeOfPrim platform n
+                TyConBound _ _         -> Just $ platformAddrBytes platform
+                _                      -> Nothing
 
         --- Higher kinded types are not value types.
         TAbs{}          -> Nothing

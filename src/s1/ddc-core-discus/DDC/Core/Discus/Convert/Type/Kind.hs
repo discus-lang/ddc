@@ -35,9 +35,8 @@ convertTypeU uu
         UName (E.NameVar str)
          -> return $ UName (A.NameVar str)
 
-        UPrim (E.NameVar str) k
-         -> do  k'      <- convertK k
-                return $ UPrim (A.NameVar str) k'
+        UPrim (E.NameVar str)
+         -> return $ UPrim (A.NameVar str)
 
         _ -> throw $ ErrorMalformed
                    $ "Invalid type bound " ++ (renderIndent $ ppr uu)

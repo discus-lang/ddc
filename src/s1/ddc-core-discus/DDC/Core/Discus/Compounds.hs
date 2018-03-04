@@ -18,7 +18,6 @@ module DDC.Core.Discus.Compounds
 where
 import DDC.Core.Discus.Prim.TyConDiscus
 import DDC.Core.Discus.Prim.TyConPrim
-import DDC.Core.Discus.Prim.OpCast
 import DDC.Core.Discus.Prim.OpFun
 import DDC.Core.Discus.Prim.Base
 import DDC.Core.Exp.Annot
@@ -34,8 +33,7 @@ xFunCReify
 
 xFunCReify a tParam tResult xF
  = xApps a
-        (XVar a (UPrim  (NameOpFun OpFunCReify)
-                        (typeOpFun OpFunCReify)))
+        (XVar a (UPrim  (NameOpFun OpFunCReify)))
         [RType tParam, RType tResult, RTerm xF]
 
 
@@ -49,8 +47,7 @@ xFunCCurry
 
 xFunCCurry a tsParam tResult xF
  = xApps a
-         (XVar a (UPrim  (NameOpFun (OpFunCCurry (length tsParam)))
-                         (typeOpFun (OpFunCCurry (length tsParam)))))
+         (XVar a (UPrim  (NameOpFun (OpFunCCurry (length tsParam)))))
          ((map RType tsParam) ++ [RType tResult] ++ [RTerm xF])
 
 
@@ -64,8 +61,7 @@ xFunCurry
 
 xFunCurry a tsParam tResult xF
  = xApps a
-         (XVar a (UPrim  (NameOpFun (OpFunCurry (length tsParam)))
-                         (typeOpFun (OpFunCurry (length tsParam)))))
+         (XVar a (UPrim  (NameOpFun (OpFunCurry (length tsParam)))))
          ((map RType tsParam) ++ [RType tResult] ++ [RTerm xF])
 
 
@@ -81,16 +77,14 @@ xFunApply
 
 xFunApply a tsArg tResult xF xsArg
  = xApps a
-         (XVar a (UPrim  (NameOpFun (OpFunApply (length xsArg)))
-                         (typeOpFun (OpFunApply (length xsArg)))))
+         (XVar a (UPrim  (NameOpFun (OpFunApply (length xsArg)))))
          ((map RType tsArg) ++ [RType tResult] ++ [RTerm xF] ++ (map RTerm xsArg))
 
 
 xCastConvert :: a -> Type Name -> Type Name -> Exp a Name -> Exp a Name
 xCastConvert a tTo tFrom x
  = xApps a
-        (XVar a (UPrim (NamePrimCast PrimCastConvert False)
-                       (typePrimCastFlag PrimCastConvert False)))
+        (XVar a (UPrim (NamePrimCast PrimCastConvert False)))
         [ RType tTo, RType tFrom
         , RTerm x ]
 

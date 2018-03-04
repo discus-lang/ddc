@@ -72,7 +72,7 @@ checkCase !table !ctx0 mode demand
                         , ts )
 
               -- Primitive data types.
-              | TyConBound (UPrim nTyCon _) k <- tc
+              | TyConBound (UPrim nTyCon) k <- tc
               , takeResultKind k == kData
               -> return ( lookupModeOfDataType nTyCon dataDefs
                         , ts )

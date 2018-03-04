@@ -25,12 +25,12 @@ convTypeM kenv tt
  = case tt of
         TVar u
          -> case Env.lookup u kenv of
-             Nothing            
+             Nothing
               -> throw $ ErrorUndefined u
 
              Just k
               | isDataKind k -> return $ text "Obj*"
-              | otherwise    
+              | otherwise
               -> throw $ ErrorTypeInvalid tt
 
         TCon{}
@@ -38,11 +38,11 @@ convTypeM kenv tt
          -> return  $ text "Obj*"
 
 
-         | TCon (TyConBound (UPrim (NamePrimTyCon tc) _) _) <- tt
+         | TCon (TyConBound (UPrim (NamePrimTyCon tc)) _) <- tt
          , Just doc     <- convPrimTyCon tc
          -> return doc
 
-         | TCon (TyConBound (UPrim NameObjTyCon _) _)       <- tt
+         | TCon (TyConBound (UPrim NameObjTyCon) _)       <- tt
          -> return  $ text "Obj"
 
         TApp{}
@@ -82,7 +82,7 @@ convSuperTypeM kenv misrc mesrc nSuper tSuper
  | otherwise
  = throw $ ErrorImportInvalid nSuper
 
-    
+
 keepParamOfType :: Type Name -> Bool
 keepParamOfType tt
  | tc : _       <- takeTApps tt
@@ -91,7 +91,7 @@ keepParamOfType tt
 
  | otherwise    = True
 
- 
+
 parenss :: [Doc] -> Doc
 parenss xs = encloseSep lparen rparen (comma <> space) xs
 

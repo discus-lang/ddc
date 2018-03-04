@@ -29,7 +29,7 @@ extractTop procs
 -- | Extract code for a whole procedure.
 extractProcedure  :: Procedure -> (Bind Name, ExpF)
 extractProcedure (Procedure n params nest)
- = let  
+ = let
         tyOfFlags (True,  b) rest
             = TForall b rest
         tyOfFlags (False, b) rest
@@ -55,7 +55,7 @@ vecBuffers _
 
 -------------------------------------------------------------------------------
 -- | Extract code for a loop nest.
-extractNest 
+extractNest
         :: Nest                 -- ^ Loops to run in sequence.
         -> ExpF                 -- ^ Final result of procedure.
         -> ExpF
@@ -70,14 +70,13 @@ extractLoop      :: Nest -> [LetsF]
 
 -- Code in the top-level loop context.
 extractLoop (NestLoop tRate starts bodys inner ends)
- = let  
+ = let
         -- Starting statements.
         lsStart = concatMap extractStmtStart starts
 
         -- The loop itself.
         lLoop   = LLet  (BNone tUnit)
-                        (xApps (XVar (UPrim (NameOpControl OpControlLoop) 
-                                            (typeOpControl OpControlLoop)))
+                        (xApps (XVar (UPrim (NameOpControl OpControlLoop)))
                                 [ XType tRate           -- loop rate
                                 , xBody ])              -- loop body
 
@@ -92,7 +91,7 @@ extractLoop (NestLoop tRate starts bodys inner ends)
         -- Handle inner contexts.
         lsInner = extractLoop inner
 
-        -- Ending statements 
+        -- Ending statements
         lsEnd   = concatMap extractStmtEnd ends
 
    in   lsStart ++ [lLoop] ++ lsEnd
@@ -105,7 +104,7 @@ extractLoop (NestGuard _tRateOuter _tRateInner uFlags stmtsBody nested)
         nFlag           = NameVarMod nFlags "elem"
         xFlag           = XVar (UName nFlag)
 
-        xBody           = xGuard xFlag 
+        xBody           = xGuard xFlag
                           (  XLam (BNone tUnit)
                           $ xLets (lsBody ++ lsNested) xUnit)
 
@@ -125,12 +124,12 @@ extractLoop (NestSegment _tRateOuter _tRateInner uLengths stmtsBody nested)
         nLength         = NameVarMod nLengths "elem"
         xLength         = XVar (UName nLength)
 
-        xBody           = xSegment xLength 
+        xBody           = xSegment xLength
                         (  XLam (BAnon tNat)    -- Index into current segment.
                         $ xLets (lsBody ++ lsNested) xUnit)
 
         -- Statements in the segment context.
-        lsBody          = concatMap extractStmtBody stmtsBody           
+        lsBody          = concatMap extractStmtBody stmtsBody
 
         -- Nested contexts.
         lsNested        = extractLoop nested
@@ -162,9 +161,9 @@ extractStmtStart ss
 
 
         -- Initialise the accumulator for a reduction operation.
-        StartAcc n t x    
-         -> [LLet (BName n (tRef t)) 
-                  (xNew t x)]        
+        StartAcc n t x
+         -> [LLet (BName n (tRef t))
+                  (xNew t x)]
 
 
 -------------------------------------------------------------------------------
@@ -186,7 +185,7 @@ extractStmtBody sb
                    (xRead t (XVar (UName n))) ]
 
         -- Accumulate an element from a stream.
-        BodyAccWrite nAcc tElem xWorker    
+        BodyAccWrite nAcc tElem xWorker
          -> [ LLet (BNone tUnit)
                    (xWrite tElem (XVar (UName nAcc)) xWorker)]
 
@@ -201,13 +200,13 @@ extractStmtEnd se
          -> [LLet b x]
 
         -- Read the accumulator of a reduction operation.
-        EndAcc n t nAcc 
-         -> [LLet (BName n t) 
+        EndAcc n t nAcc
+         -> [LLet (BName n t)
                   (xRead t (XVar (UName nAcc))) ]
 
         -- Truncate a vector down to its final size.
-        EndVecTrunc nVec tElem uCounter 
-         -> let 
+        EndVecTrunc nVec tElem uCounter
+         -> let
                 -- Get the name of the counter.
                 xCounter        = xRead tNat (XVar uCounter)
                 xVec            = XVar (UName nVec)
@@ -216,6 +215,6 @@ extractStmtEnd se
            in   [ LLet  (BAnon tNat)
                         xCounter
 
-                , LLet  (BNone tUnit) 
+                , LLet  (BNone tUnit)
                         (xTruncVector tElem (XVar (UIx 0)) xVec) ]
 

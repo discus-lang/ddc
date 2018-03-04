@@ -2,7 +2,7 @@
 module DDC.Core.Transform.Rewrite.Match
         ( -- * Substitutions
           SubstInfo
-        , emptySubstInfo 
+        , emptySubstInfo
 
           -- * Matching
         , match
@@ -23,18 +23,18 @@ import qualified DDC.Core.Env.EnvT              as EnvT
 
 -------------------------------------------------------------------------------
 -- | Value and type substition.
-type SubstInfo a n 
+type SubstInfo a n
         = (Map n (Exp a n), Map n (Type n))
 
 -- | An empty substition info.
 emptySubstInfo :: SubstInfo a n
-emptySubstInfo 
+emptySubstInfo
         = (Map.empty, Map.empty)
 
-lookupx n (xs,_) 
+lookupx n (xs,_)
         = Map.lookup n xs
 
-insertx n x (xs,tys) 
+insertx n x (xs,tys)
         = (Map.insert n x xs, tys)
 
 
@@ -61,7 +61,7 @@ match m bs (XVar _ (UName n)) r
  -- Check if it's already been matched
  = case lookupx n m of
    Nothing -> return $ insertx n r m
-   Just x  
+   Just x
     ->  -- Check if they're equal. Anonymize so names don't matter.
         -- Reannotate so annotations are ignored.
         let  x' = T.anonymizeX $ T.reannotate (const ()) x
@@ -81,10 +81,10 @@ match m bs (XApp _ x11 x12) (XApp _ x21 x22)
         matchArg m' bs x12 x22
 
 match m bs (XCast _ c1 x1) (XCast _ c2 x2)
- | eqCast c1 c2 
+ | eqCast c1 c2
  = match m bs x1 x2
 
-match _ _ _ _ 
+match _ _ _ _
  = Nothing
 
 
@@ -104,9 +104,9 @@ matchArg _ _ _ _
 
 
 eqCast :: Ord n => Cast a n -> Cast a n -> Bool
-eqCast lc rc 
+eqCast lc rc
  = clean lc == clean rc
- where  clean c 
+ where  clean c
          = T.reannotate (const ())
          $ case c of
                 CastWeakenEffect  eff   -> CastWeakenEffect  $ T.anonymizeT eff
@@ -116,8 +116,8 @@ eqCast lc rc
 
 
 eqWit  :: Ord n => Witness a n -> Witness a n -> Bool
-eqWit lw rw 
-        =  T.reannotate (const ()) lw 
+eqWit lw rw
+        =  T.reannotate (const ()) lw
         == T.reannotate (const ()) rw
 
 
@@ -206,8 +206,8 @@ matchT t1 t2 vs subst
          | UIx i == v2
          -> Just subst
 
-        (TVar (UPrim n t), TVar v2)
-         | UPrim n t == v2
+        (TVar (UPrim n), TVar v2)
+         | UPrim n == v2
          -> Just subst
 
         -- Otherwise the two are different

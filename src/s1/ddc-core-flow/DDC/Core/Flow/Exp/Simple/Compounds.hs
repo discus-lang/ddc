@@ -23,7 +23,7 @@ module DDC.Core.Flow.Exp.Simple.Compounds
 
           -- * Lets
         , xLets
-        , splitXLets 
+        , splitXLets
         , bindsOfLets
         , specBindsOfLets
         , valwitBindsOfLets
@@ -100,8 +100,8 @@ makeXLamFlags fbs x
                 x fbs
 
 
--- | Split nested lambdas from the front of an expression, 
---   with a flag indicating whether the lambda was a level-1 (True), 
+-- | Split nested lambdas from the front of an expression,
+--   with a flag indicating whether the lambda was a level-1 (True),
 --   or level-0 (False) binder.
 takeXLamFlags :: Exp a n -> Maybe ([(Bool, Bind n)], Exp a n)
 takeXLamFlags xx
@@ -149,16 +149,16 @@ takeXAppsAsList xx
 
 -- | Flatten an application of a primop into the variable
 --   and its arguments.
---   
+--
 --   Returns `Nothing` if the expression isn't a primop application.
 takeXPrimApps :: Exp a n -> Maybe (n, [Exp a n])
 takeXPrimApps xx
  = case takeXAppsAsList xx of
-        XVar (UPrim p _) : xs -> Just (p, xs)
-        _                     -> Nothing
+        XVar (UPrim p) : xs -> Just (p, xs)
+        _                   -> Nothing
 
 -- | Flatten an application of a data constructor into the constructor
---   and its arguments. 
+--   and its arguments.
 --
 --   Returns `Nothing` if the expression isn't a constructor application.
 takeXConApps :: Exp a n -> Maybe (DaCon n (Type n), [Exp a n])
@@ -179,7 +179,7 @@ xLets lts x
 splitXLets :: Exp a n -> ([Lets a n], Exp a n)
 splitXLets xx
  = case xx of
-        XLet lts x 
+        XLet lts x
          -> let (lts', x')      = splitXLets x
             in  (lts : lts', x')
 
@@ -267,7 +267,7 @@ takeWAppsAsList ww
 takePrimWiConApps :: Witness a n -> Maybe (n, [Witness a n])
 takePrimWiConApps ww
  = case takeWAppsAsList ww of
-        WCon wc : args | WiConBound (UPrim n _) _ <- wc
+        WCon wc : args | WiConBound (UPrim n) _ <- wc
           -> Just (n, args)
         _ -> Nothing
 

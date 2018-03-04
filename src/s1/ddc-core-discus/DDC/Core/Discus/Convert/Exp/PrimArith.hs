@@ -8,10 +8,11 @@ import DDC.Core.Discus.Convert.Boxing
 import DDC.Core.Discus.Convert.Error
 import DDC.Core.Codec.Text.Pretty
 import DDC.Core.Exp.Annot
+import qualified DDC.Type.Env           as Env
 import Data.Maybe
 import DDC.Core.Check                   (AnTEC(..))
 import DDC.Control.Check                (throw)
-import qualified DDC.Core.Discus.Prim    as E
+import qualified DDC.Core.Discus.Prim   as E
 import qualified DDC.Core.Salt.Name     as A
 
 
@@ -31,8 +32,9 @@ convertPrimArith _ectx ctx xx
         ---------------------------------------------------
         -- Saturated application of a primitive operator.
         XApp a xa xb
-         | (x1, asArgs)               <- takeXApps1 xa xb
-         , XVar _ (UPrim nPrim tPrim) <- x1
+         | (x1, asArgs)           <- takeXApps1 xa xb
+         , XVar _ uPrim@(UPrim nPrim) <- x1
+         , Just tPrim             <- Env.lookup uPrim $ contextTypeEnv ctx
 
          -- All the value arguments have representatable types.
          , all isSomeRepType

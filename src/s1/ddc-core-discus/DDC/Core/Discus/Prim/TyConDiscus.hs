@@ -89,6 +89,6 @@ tCloValue t     = tApp (tConTyConDiscus TyConDiscusC) t
 tConTyConDiscus :: TyConDiscus -> Type Name
 tConTyConDiscus tcf
  = let  k       = kindTyConDiscus tcf
-        u       = UPrim (NameTyConDiscus tcf) k
+        u       = UPrim (NameTyConDiscus tcf)
         tc      = TyConBound u k
    in   TCon tc

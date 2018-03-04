@@ -12,12 +12,10 @@ module DDC.Type.Exp.Simple.Compounds
 
           -- * Bounds
         , takeNameOfBound
-        , takeTypeOfBound
         , boundMatchesBind
         , namedBoundMatchesBind
         , takeSubstBoundOfBind
         , takeSubstBoundsOfBinds
-        , replaceTypeOfBound
 
           -- * Kinds
         , kFun,         kFuns
@@ -160,17 +158,9 @@ takeNameOfBound :: Bound n -> Maybe n
 takeNameOfBound uu
  = case uu of
         UName n         -> Just n
-        UPrim n _       -> Just n
+        UPrim n         -> Just n
         UIx{}           -> Nothing
 
-
--- | Get the attached type of a `Bound`, if any.
-takeTypeOfBound :: Bound n -> Maybe (Type n)
-takeTypeOfBound uu
- = case uu of
-        UName{}         -> Nothing
-        UPrim _ t       -> Just t
-        UIx{}           -> Nothing
 
 
 -- | Check whether a bound maches a bind.
@@ -216,16 +206,6 @@ takeSubstBoundsOfBinds bs
         go level (BNone _   : bs') =                     go level bs'
 
         len = length [ () | BAnon _ <- bs]
-
-
--- | If this `Bound` is a `UPrim` then replace it's embedded type with a new
---   one, otherwise return it unharmed.
-replaceTypeOfBound :: Type n -> Bound n -> Bound n
-replaceTypeOfBound t uu
- = case uu of
-        UName{}         -> uu
-        UPrim n _       -> UPrim n t
-        UIx{}           -> uu
 
 
 -- Variables ------------------------------------------------------------------
@@ -284,7 +264,7 @@ takePrimTyConApps :: Type n -> Maybe (n, [Type n])
 takePrimTyConApps tt
  = case takeTApps tt of
         TCon tc : args
-         | TyConBound (UPrim n _) _ <- tc
+         | TyConBound (UPrim n) _ <- tc
           -> Just (n, args)
         _ -> Nothing
 

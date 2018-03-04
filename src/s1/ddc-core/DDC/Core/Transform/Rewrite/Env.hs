@@ -21,14 +21,14 @@ import Data.Maybe (fromMaybe, listToMaybe, isJust)
 
 -- | A summary of the environment that we perform a rewrite in.
 --
---   As we decend into the program looking for expressions to rewrite, 
+--   As we decend into the program looking for expressions to rewrite,
 --   we keep track of what information as been defined in the environment
 --   in a `RewriteEnv`.
 --
 --   When we go under an anonymous binder then we push a new outermost
 --   list instead of lifting every element on the environment eagerly.
---   
-data RewriteEnv a n 
+--
+data RewriteEnv a n
         = RewriteEnv
         { -- | Types of all witnesses in scope.
           --   We use these to satisfy constraints on rewrite rules like Const r.
@@ -45,7 +45,7 @@ data RewriteEnv a n
         deriving (Show,Eq)
 
 
-type RewriteDef a n 
+type RewriteDef a n
         = (Bind n, Maybe (Exp a n))
 
 
@@ -75,13 +75,13 @@ extend b env
 extendLets :: Ord n => Lets a n -> RewriteEnv a n -> RewriteEnv a n
 extendLets (LPrivate bs _mt cs) renv
  = foldl (flip extend) (foldl extendB renv bs) cs
- where  
+ where
         extendB (env@RewriteEnv{witnesses = ws, letregions = rs}) b
          = case b of
                 BAnon{}
                  -> env { witnesses  = []  : ws
                         , letregions = [b] : rs }
-      
+
                 BName{}
                  -> env { letregions = extend' b rs }
 
@@ -105,9 +105,9 @@ extendLets (LRec bs) env
 
 -- Witnesses ------------------------------------------------------------------
 -- | Check if the witness map in the given environment.
----  
+---
 --  This tries each set in turn, lowering the indices in c by 1 after each
---  unsuccessful match. If nothing matches then 'c' may end up with negative 
+--  unsuccessful match. If nothing matches then 'c' may end up with negative
 --  indices, which will definiately not match anything else.
 --
 containsWitness :: Ord n => Type n -> RewriteEnv a n -> Bool
@@ -117,7 +117,7 @@ containsWitness c env
         go c' (w:ws)    = c' `elem` w || go (L.liftT (-1) c') ws
 
 
--- | Get a list of all the witness types in an environment, 
+-- | Get a list of all the witness types in an environment,
 --   normalising their indices.
 getWitnesses :: Ord n => RewriteEnv a n -> [Type n]
 getWitnesses env
@@ -127,25 +127,25 @@ getWitnesses env
 
 
 -- Regions --------------------------------------------------------------------
--- | Check whether an environment contains the given region, 
+-- | Check whether an environment contains the given region,
 --   bound by a letregion.
 containsRegion :: Ord n => Bound n -> RewriteEnv a n -> Bool
 containsRegion r env
  = go r (letregions env)
- where  
+ where
         go _  []
          = False
 
-        go (UIx 0) (w:_) 
+        go (UIx 0) (w:_)
          = any (T.boundMatchesBind (UIx 0)) w
 
-        go (UIx n) (_:ws) 
+        go (UIx n) (_:ws)
          = go (UIx (n-1)) ws
 
-        go (UName n) (w:ws) 
+        go (UName n) (w:ws)
          = any (T.boundMatchesBind (UName n)) w || go r ws
 
-        go (UPrim _ _) _
+        go (UPrim _) _
          = False
 
 
@@ -154,7 +154,7 @@ containsRegion r env
 insertDef :: Bind n -> Maybe (Exp a n) -> RewriteEnv a n -> RewriteEnv a n
 insertDef b def env
  = env { defs = extend' $ defs env }
- where  
+ where
         extend' (r:rs') = ((b,def):r) : rs'
         extend' []      = [[(b,def)]]
 
@@ -182,7 +182,7 @@ getDef' :: (Ord n, L.MapBoundX (Exp a) n)
 
 getDef' b env
  = go b 0 (defs env)
- where  
+ where
         go _ _  []      = Nothing
         go b' i (w:ws)  = match b' i w `orM` go (L.liftX (-1) b') (i+1) ws
 

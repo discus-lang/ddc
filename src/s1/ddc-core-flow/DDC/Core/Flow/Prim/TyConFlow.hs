@@ -246,18 +246,18 @@ tRateAppend tKa tKb = tConTyConFlow TyConFlowRateAppend `tApps` [tKa, tKb]
 
 
 
-tDown :: Int -> Type Name -> Type Name 
+tDown :: Int -> Type Name -> Type Name
 tDown n tK      = tApp (tConTyConFlow $ TyConFlowDown n) tK
 
 
-tTail :: Int -> Type Name -> Type Name 
+tTail :: Int -> Type Name -> Type Name
 tTail n tK      = tApp (tConTyConFlow $ TyConFlowTail n) tK
 
 
-tProcess :: Type Name -> Type Name -> Type Name 
+tProcess :: Type Name -> Type Name -> Type Name
 tProcess tP tK = (tConTyConFlow TyConFlowProcess) `tApps` [tP, tK]
 
-tResize  :: Type Name -> Type Name -> Type Name -> Type Name 
+tResize  :: Type Name -> Type Name -> Type Name -> Type Name
 tResize  tP tJ tK = (tConTyConFlow TyConFlowResize) `tApps` [tP, tJ, tK]
 
 
@@ -267,7 +267,7 @@ tResize  tP tJ tK = (tConTyConFlow TyConFlowResize) `tApps` [tP, tJ, tK]
 tConTyConFlow :: TyConFlow -> Type Name
 tConTyConFlow tcf
  = let  k       = kindTyConFlow tcf
-        u       = UPrim (NameTyConFlow tcf) k
+        u       = UPrim (NameTyConFlow tcf)
         tc      = TyConBound u k
    in   TCon tc
 

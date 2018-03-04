@@ -130,10 +130,10 @@ equivWithBindsT env stack1 stack2 t1 t2
 checkBounds :: Eq n => Bound n -> Bound n -> a -> a
 checkBounds u1 u2 x
  = case (u1, u2) of
-        (UName n2, UPrim n1 _)
+        (UName n2, UPrim n1)
          | n1 == n2     -> die
 
-        (UPrim n1 _, UName n2)
+        (UPrim n1, UName n2)
          | n1 == n2     -> die
 
         _               -> x

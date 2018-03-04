@@ -124,7 +124,7 @@ boxingX config xx
          -> let Just tPrimBoxed    = configValueTypeOfPrimOpName config n
                 Just tPrimUnboxed  = configValueTypeOfPrimOpName config n'
                 asArgsAll'         = map (boxingA config) asArgsAll
-            in  boxingPrimitive config a True xx' (XVar a (UPrim n' tPrimUnboxed))
+            in  boxingPrimitive config a True xx' (XVar a (UPrim n'))
                         tPrimBoxed tPrimUnboxed
                         asArgsAll'
 
@@ -135,7 +135,7 @@ boxingX config xx
          -> let Just tPrimBoxed    = configValueTypeOfPrimOpName config n
                 Just tPrimUnboxed  = configValueTypeOfPrimOpName config n'
                 asArgsAll'         = map (boxingA config) asArgsAll
-            in  boxingPrimitive config a False xx (XVar a (UPrim n' tPrimUnboxed))
+            in  boxingPrimitive config a False xx (XVar a (UPrim n'))
                         tPrimBoxed tPrimUnboxed
                         asArgsAll'
 

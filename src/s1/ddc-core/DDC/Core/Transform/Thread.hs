@@ -25,7 +25,7 @@ data Config a n
         = Config
         { -- | Config for the type checker.
           --   We need to reconstruct the type of the result of stateful
-          --   functions when bundling them into the tuple that holds the 
+          --   functions when bundling them into the tuple that holds the
           --   state token.
           configCheckConfig     :: Check.Config n
 
@@ -33,7 +33,7 @@ data Config a n
           --   need the state token threaded through them. If the binding with
           --   the given name is stateful then the function should return the
           --   new type for the binding that accepts and returns the state token.
-        , configThreadMe        :: n -> Type n -> Maybe (Type n) 
+        , configThreadMe        :: n -> Type n -> Maybe (Type n)
 
           -- | Type of the state token to use.
         , configTokenType       :: Type n
@@ -51,7 +51,7 @@ data Config a n
           -- | Wrap a result expression with the state token.
           --   The function is given the types of the world token and result,
           --   then the expressions for the same.
-        , configWrapResultExp   :: Exp (AnTEC a n) n  -> Exp (AnTEC a n) n 
+        , configWrapResultExp   :: Exp (AnTEC a n) n  -> Exp (AnTEC a n) n
                                 -> Exp a n
 
           -- | Make a pattern which binds the world argument
@@ -63,15 +63,15 @@ data Config a n
 -- | Class of things that can have a state token threaded through them.
 class Thread (c :: * -> * -> *) where
  thread :: (Ord n, Show n, Pretty n)
-        => Config a n 
-        -> KindEnv n -> TypeEnv n 
-        -> c (AnTEC a n) n     
+        => Config a n
+        -> KindEnv n -> TypeEnv n
+        -> c (AnTEC a n) n
         -> c a n
 
 
 instance Thread Module where
  thread config kenv tenv mm
-  = let body'   = threadModuleBody config kenv tenv (moduleBody mm) 
+  = let body'   = threadModuleBody config kenv tenv (moduleBody mm)
     in  mm { moduleBody = body' }
 
 
@@ -90,11 +90,11 @@ data Context n
 -- | Thread state token though a module body.
 --   We assume every top-level binding is a stateful function
 --   that needs to accept and return the state token.
-threadModuleBody 
+threadModuleBody
         :: (Ord n, Show n, Pretty n)
-        => Config a n 
+        => Config a n
         -> KindEnv n -> TypeEnv n
-        -> Exp (AnTEC a n) n   
+        -> Exp (AnTEC a n) n
         -> Exp a n
 
 threadModuleBody config kenv tenv xx
@@ -111,11 +111,11 @@ threadModuleBody config kenv tenv xx
 
 
 -- | Thread state token through some top-level bindings in a module.
-threadTopLets    
+threadTopLets
         :: (Ord n, Show n, Pretty n)
-        => Config a n 
+        => Config a n
         -> KindEnv n -> TypeEnv n
-        -> Lets (AnTEC a n) n  
+        -> Lets (AnTEC a n) n
         -> Lets a n
 
 threadTopLets config kenv tenv lts
@@ -126,7 +126,7 @@ threadTopLets config kenv tenv lts
 
         LRec bxs
          -> let tenv'     =   Env.extends (map fst bxs) tenv
-                bxs'      = [ threadTopBind config [ContextRec n] kenv tenv' b x 
+                bxs'      = [ threadTopBind config [ContextRec n] kenv tenv' b x
                                 | (b, x) <- bxs
                                 , let BName n _ = b ]
             in  LRec bxs'
@@ -164,7 +164,7 @@ threadTopBind config context kenv tenv b xBody
 -- | Thread state token into an argument expression.
 --   If it is a syntactic function then we assume the function is stateful
 --   and needs the state token added, otherwise return it unharmed.
-threadArg 
+threadArg
         :: (Ord n, Show n, Pretty n)
         => Config a n
         -> [Context n]
@@ -194,7 +194,7 @@ threadProc
         -> [Type n]             -- Types of function parameters.
         -> Exp a n
 
--- We're out of parameters. 
+-- We're out of parameters.
 --  Now thread into the statements in the function body.
 threadProc config context kenv tenv xx []
  = threadProcBody config context kenv tenv xx
@@ -208,14 +208,14 @@ threadProc config context kenv tenv xx (t : tsArgs)
                  x'     = threadProc config context kenv' tenv x tsArgs
              in  XLAM (annotTail a) b x'
 
-        XLam a b x      
+        XLam a b x
           -> let tenv'  = Env.extend b tenv
                  x'     = threadProc config context kenv tenv' x tsArgs
              in  XLam (annotTail a) b x'
 
         -- Inject a new lambda to bind the state parameter.
         _ |  a          <- annotOfExp xx
-          ,  t == configTokenType config 
+          ,  t == configTokenType config
           -> let b'     = BAnon (configTokenType config)
                  tenv'  = Env.extend b' tenv
                  x'     = threadProc config context kenv tenv' xx tsArgs
@@ -228,31 +228,31 @@ threadProc config context kenv tenv xx (t : tsArgs)
 
 -- | Thread world token into the body of a procedure,
 --   after we've decended past all the lambdas.
-threadProcBody 
+threadProcBody
         :: (Ord n, Show n, Pretty n)
-        => Config a n 
+        => Config a n
         -> [Context n]
         -> KindEnv n -> TypeEnv n
-        -> Exp (AnTEC a n) n   
+        -> Exp (AnTEC a n) n
         -> Exp a n
 
 threadProcBody config context kenv tenv xx
  = case xx of
- 
+
         -- Recursive let bindings in a procedure body.
         -- These will be local loops.
         XLet a (LRec bxs) x2
-         -> let bxs'    = [threadTopBind config 
-                                (context ++ [ContextRec n]) 
+         -> let bxs'    = [threadTopBind config
+                                (context ++ [ContextRec n])
                                 kenv tenv b x
-                                | (b, x)        <- bxs 
+                                | (b, x)        <- bxs
                                 , let BName n _ = b ]
 
                 tenv'   = Env.extends (map fst bxs) tenv
 
 
-                x2'     = threadProcBody config 
-                                (context ++ [ContextFun n 
+                x2'     = threadProcBody config
+                                (context ++ [ContextFun n
                                                 | (b, _x)  <- bxs
                                                 , let BName n _ = b ])
                                 kenv tenv' x2
@@ -265,23 +265,22 @@ threadProcBody config context kenv tenv xx
          ,  Just tOld    <- Env.lookup u tenv
          ,  Just tNew    <- configThreadMe  config n tOld
          ,  Just mkPat   <- configThreadPat config n
-         -> let 
+         -> let
                 tWorld  = configTokenType config
 
-                -- Add world token as final argument 
+                -- Add world token as final argument
                 asArgs' = asArgs ++ [RTerm $ XVar a (UIx 0)]
 
                 -- Thread into possibly higher order arguments.
                 tsArgs   = fst $ takeTFunAllArgResult tNew
 
-                asArgs'' = zipWith 
-                                (threadArg config context kenv tenv) 
+                asArgs'' = zipWith
+                                (threadArg config context kenv tenv)
                                 tsArgs asArgs'
 
                 -- Build the final expression.
-                u'      = replaceTypeOfBound tNew u
-                x'      = xApps (annotTail a) 
-                                (XVar (annotTail a) u') 
+                x'      = xApps (annotTail a)
+                                (XVar (annotTail a) u)
                                 asArgs''
 
                 -- Thread into let-expression body.
@@ -297,11 +296,11 @@ threadProcBody config context kenv tenv xx
          | Just (XVar _ (UName n), _xsArgs) <- takeXApps x1
          , elem (ContextFun n) context
          , Just mkPat   <- configThreadPat config n
-         -> let 
+         -> let
                 tWorld  = configTokenType config
                 a'      = annotTail a
 
-                x1'     = XApp a' (reannotate annotTail x1) 
+                x1'     = XApp a' (reannotate annotTail x1)
                                   (RTerm (XVar a' (UIx 0)))
 
                 x2'     = threadProcBody config context kenv tenv x2
@@ -325,21 +324,21 @@ threadProcBody config context kenv tenv xx
          | Just ((XVar _ (UName n), _xsArgs)) <- takeXApps xScrut
          , elem (ContextFun n) context
          , Just mkPat   <- configThreadPat config n
-         -> let 
+         -> let
                 a'      = annotTail a
                 tWorld  = configTokenType config
 
-                xScrut' = XApp a' (reannotate annotTail xScrut) 
+                xScrut' = XApp a' (reannotate annotTail xScrut)
                                   (RTerm (XVar a' (UIx 0)))
 
                 pat'    = mkPat (BAnon tWorld) bs
-                alt'    = threadAlt config context kenv tenv 
+                alt'    = threadAlt config context kenv tenv
                                 (AAlt pat' xBody)
 
             in  XCase (annotTail a) xScrut' [alt']
 
 
-        -- Pure case. 
+        -- Pure case.
         XCase a x alts
          -> let alts' = map (threadAlt config context kenv tenv) alts
                 x'    = reannotate annotTail x
@@ -360,10 +359,10 @@ threadProcBody config context kenv tenv xx
                         (RTerm (XVar a' (UIx 0)))
 
 {-
-        XType a t       
+        XType a t
          -> XType    (annotTail a) t
-        
-        XWitness a w      
+
+        XWitness a w
          -> XWitness (annotTail a) (reannotate annotTail w)
 -}
 
@@ -373,8 +372,8 @@ threadProcBody config context kenv tenv xx
          -- the world.
          | otherwise
          -> let a       = annotOfExp xx
-                a'      = AnTEC (configTokenType config) 
-                                (tBot kEffect) 
+                a'      = AnTEC (configTokenType config)
+                                (tBot kEffect)
                                 (tBot kClosure)
                                 (annotTail a)
 
@@ -385,12 +384,12 @@ threadProcBody config context kenv tenv xx
 
 
 -- | Thread world token into a case alternative
-threadAlt 
+threadAlt
         :: (Ord n, Show n, Pretty n)
-        => Config a n 
+        => Config a n
         -> [Context n]
         -> KindEnv n -> TypeEnv n
-        -> Alt (AnTEC a n) n   
+        -> Alt (AnTEC a n) n
         -> Alt a n
 
 threadAlt config context kenv tenv (AAlt pat xx)
@@ -401,17 +400,17 @@ threadAlt config context kenv tenv (AAlt pat xx)
         PData _ bs
          -> let tenv' = Env.extends bs tenv
             in  AAlt pat (threadProcBody config context kenv tenv' xx)
- 
+
 
 -------------------------------------------------------------------------------
 -- | Inject the state token into the type of an effectful function.
---   Eg, change  ([a b : Data]. a -> b -> Int) 
+--   Eg, change  ([a b : Data]. a -> b -> Int)
 --          to   ([a b : Data]. a -> b -> World -> (World, Int)
 injectStateType :: Eq n => Config a n -> Type n -> Type n
 injectStateType config tt
  = let down = injectStateType config
    in case tt of
-        TForall b x     
+        TForall b x
          -> TForall b (down x)
 
         TApp{}

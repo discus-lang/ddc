@@ -15,7 +15,6 @@ import DDC.Control.Check                        (throw)
 import qualified DDC.Core.Discus.Prim            as E
 import qualified DDC.Core.Salt.Compounds        as A
 import qualified DDC.Core.Salt.Name             as A
-import qualified DDC.Core.Salt.Env              as A
 import qualified DDC.Type.Env                   as Env
 import qualified Data.Map                       as Map
 import qualified Data.Set                       as Set
@@ -50,17 +49,15 @@ convertDataU uu
         -- When converting primops, use the type directly specified by the
         -- Salt language instead of converting it from Discus. The types from
         -- each language definition may not be inter-convertible.
-        UPrim n _
+        UPrim n
          -> case n of
                 E.NamePrimArith op True
                   -> return
                   $  Just $ UPrim (A.NamePrimOp (A.PrimArith op))
-                                  (A.typeOfPrimArith op)
 
                 E.NamePrimCast op True
                   -> return
                   $  Just $ UPrim (A.NamePrimOp (A.PrimCast  op))
-                                  (A.typeOfPrimCast  op)
 
                 _ -> return Nothing
 

@@ -471,7 +471,7 @@ takeBound c uu
          | Just tx   <- configTakeConName c n -> xTxt tx
          | otherwise -> configTakeRef c n
 
-        C.UPrim n _t    -> xAps "up" [configTakeRef c n]
+        C.UPrim n       -> xAps "up" [configTakeRef c n]
 
 
 -- TyCon ------------------------------------------------------------------------------------------

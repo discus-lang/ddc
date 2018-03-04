@@ -16,7 +16,7 @@ import DDC.Core.Flow.Context
 
 -- | Schedule a process into a procedure, producing scalar code.
 scheduleScalar :: Process -> Either Error Procedure
-scheduleScalar 
+scheduleScalar
        (Process { processName           = name
                 , processParamFlags     = bsParams
                 , processContext        = context })
@@ -32,7 +32,7 @@ scheduleScalar
 
 -------------------------------------------------------------------------------
 -- | Schedule a single series operator into a loop nest.
-scheduleOperator 
+scheduleOperator
         :: Context      -- ^ Context of all operators
         -> FillMap      -- ^ Map of which operators use which write-to accs
         -> Operator     -- ^ Operator to schedule.
@@ -46,7 +46,7 @@ scheduleOperator _ctx fills op
         let Just bResult = elemBindOfSeriesBind   (opResultSeries op)
         let Just uInput  = elemBoundOfSeriesBound (opInputSeries  op)
 
-        return ( [] 
+        return ( []
                , [ BodyStmt bResult (XVar uInput) ]
                , [] )
 
@@ -104,7 +104,7 @@ scheduleOperator _ctx fills op
         -- Get the binder for the use of it in the replicated context.
         let Just bResult = elemBindOfSeriesBind (opResultSeries op)
 
-        -- Evaluate the expression to be replicated once, 
+        -- Evaluate the expression to be replicated once,
         -- before the main loop.
         let starts
                 = [ StartStmt bVal (opInputExp op) ]
@@ -131,7 +131,7 @@ scheduleOperator _ctx fills op
 
  -- Indices --------------------------------------
  | OpIndices{}  <- op
- = do   
+ = do
         -- In a segment context the variable ^0 is the index into
         -- the current segment.
         let Just bResult = elemBindOfSeriesBind   (opResultSeries op)
@@ -151,21 +151,21 @@ scheduleOperator _ctx fills op
         let UName nVec  = opTargetVector op
 
         let index
-                | Just n <- getAcc fills nVec 
-                = xRead tNat 
+                | Just n <- getAcc fills nVec
+                = xRead tNat
                 $ XVar $ UName $ NameVarMod n "count"
                 | otherwise
                 = XVar $ UIx 0
 
         let bodies
-                = [ BodyVecWrite 
+                = [ BodyVecWrite
                         nVec                    -- destination vector
                         (opElemType op)         -- series elem type
                         index                   -- index
                         (XVar uInput) ]         -- value
 
         let inc
-                | Just n <- getAcc fills nVec 
+                | Just n <- getAcc fills nVec
                 , n == nVec
                 = [ BodyAccWrite
                         (NameVarMod n "count")
@@ -188,13 +188,13 @@ scheduleOperator _ctx fills op
 
         -- Read from the vector.
         let bodies      = [ BodyStmt bResult
-                                (xReadVector 
+                                (xReadVector
                                         (opElemType op)
                                         buf
                                         (XVar $ uIndex)) ]
 
         return ([], bodies, [])
- 
+
  -- Scatter --------------------------------------
  | OpScatter{} <- op
  = do   -- Bound of source index.
@@ -227,7 +227,7 @@ scheduleOperator _ctx fills op
                          $ opInputSeriess op
 
         -- Apply input element vars into the worker body.
-        let xBody       
+        let xBody
                 = foldl (\x (b, p) -> XApp (XLam b x) p)
                         (opWorkerBody op)
                         [(b, XVar u)
@@ -285,7 +285,7 @@ scheduleOperator _ctx fills op
 
         -- Lookup binders for the input elements.
         let Just uInput = elemBoundOfSeriesBound (opInputSeries op)
-        
+
         -- Bind for intermediate accumulator value.
         let nAccVal     = NameVarMod nResult "val"
         let uAccVal     = UName nAccVal
@@ -298,19 +298,19 @@ scheduleOperator _ctx fills op
                                              (opWorkerBody op))
                                 x1)
                         x2
-                       
+
         -- Update the accumulator in the loop body.
         let bodies
                 = [ BodyAccRead  nAcc tAcc bAccVal
-                  , BodyAccWrite nAcc tAcc 
-                        (xBody  (XVar uAccVal) 
+                  , BodyAccWrite nAcc tAcc
+                        (xBody  (XVar uAccVal)
                                 (XVar uInput)) ]
-                                
+
         -- Read back the final value after the loop has finished and
         -- write it to the destination.
         let nAccRes     = NameVarMod nResult "res"
         let ends
-                = [ EndAcc   nAccRes tAcc nAcc 
+                = [ EndAcc   nAccRes tAcc nAcc
                   , EndStmt  (BNone tUnit)
                              (xWrite tAcc (XVar $ opTargetRef op)
                                           (XVar $ UName nAccRes)) ]
@@ -324,7 +324,6 @@ scheduleOperator _ctx fills op
 -- | Build an expression that increments a natural.
 xIncrement :: Exp a Name -> Exp a Name
 xIncrement xx
-        = xApps (XVar (UPrim (NamePrimArith PrimArithAdd) 
-                             (typePrimArith PrimArithAdd)))
+        = xApps (XVar (UPrim (NamePrimArith PrimArithAdd)))
                   [ XType tNat, xx, XCon (dcNat 1) ]
 

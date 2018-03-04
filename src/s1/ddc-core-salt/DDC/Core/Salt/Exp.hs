@@ -1,6 +1,6 @@
 {-# LANGUAGE TypeFamilies #-}
 
-module DDC.Core.Salt.Exp 
+module DDC.Core.Salt.Exp
         ( module DDC.Core.Exp.Generic
         , FromAnnot (..)
         , ErrorFromAnnot (..)
@@ -58,7 +58,7 @@ data ErrorFromAnnot
 instance FromAnnot (N.Exp a A.Name) Exp where
  fromAnnot xx
   = case xx of
-        N.XVar  _ (C.UPrim (A.NamePrimVal (A.PrimValOp op)) _)
+        N.XVar  _ (C.UPrim (A.NamePrimVal (A.PrimValOp op)))
          -> G.XPrim <$> pure op
 
         N.XVar  _ u
@@ -79,11 +79,11 @@ instance FromAnnot (N.Exp a A.Name) Exp where
         N.XAbs  _ (N.MImplicit _) _
          -> error "ddc-core-salt.fromAnnot: not converting implict binder to salt"
 
-        N.XApp  _ x1 (N.RType t) 
+        N.XApp  _ x1 (N.RType t)
          -> G.XApp  <$> fromAnnot x1  <*> (G.RType    <$> fromAnnot t)
 
         N.XApp  _ x1 (N.RWitness w)
-         -> G.XApp  <$> fromAnnot x1  <*> (G.RWitness <$> fromAnnot w)    
+         -> G.XApp  <$> fromAnnot x1  <*> (G.RWitness <$> fromAnnot w)
 
         N.XApp  _ x1 (N.RTerm x2)
          -> G.XApp  <$> fromAnnot x1  <*> (G.RExp     <$> fromAnnot x2)
@@ -99,7 +99,7 @@ instance FromAnnot (N.Exp a A.Name) Exp where
 
         N.XCast _ c x
          -> G.XCast <$> fromAnnot c   <*> fromAnnot x
- 
+
 
 instance FromAnnot (N.Lets a A.Name) Lets where
  fromAnnot lts
@@ -110,7 +110,7 @@ instance FromAnnot (N.Lets a A.Name) Lets where
         N.LRec bxs
          -> G.LRec     <$> (sequence $ fmap fromAnnot2 bxs)
 
-        N.LPrivate rs mt wt     
+        N.LPrivate rs mt wt
          -> G.LPrivate <$> fromAnnots rs <*> fromAnnotM mt <*> fromAnnots wt
 
 

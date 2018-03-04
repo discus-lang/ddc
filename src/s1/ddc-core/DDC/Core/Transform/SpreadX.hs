@@ -158,8 +158,8 @@ spreadDaCon _kenv tenv dc
         DaConUnit       -> dc
         DaConRecord{}   -> dc
 
-        DaConPrim n t
-         -> let u | Env.isPrim tenv n   = UPrim n t
+        DaConPrim n _
+         -> let u | Env.isPrim tenv n   = UPrim n
                   | otherwise           = UName n
 
             in  case Env.lookup u tenv of
@@ -168,7 +168,7 @@ spreadDaCon _kenv tenv dc
 
         DaConBound n
          | Env.isPrim tenv n
-         , Just t'      <- Env.lookup (UPrim n (tBot kData)) tenv
+         , Just t'      <- Env.lookup (UPrim n) tenv
          -> DaConPrim n t'
 
          | otherwise
@@ -248,7 +248,7 @@ instance SpreadX WiCon where
                 Nothing -> wc
                 Just t
                  -> let t'      = spreadT kenv t
-                    in  WiConBound (UPrim n t') t'
+                    in  WiConBound (UPrim n) t'
 
         _                -> wc
 
@@ -264,17 +264,13 @@ instance SpreadX Bind where
 
 ---------------------------------------------------------------------------------------------------
 instance SpreadX Bound where
- spreadX kenv tenv uu
-  | Just t'     <- Env.lookup uu tenv
+ spreadX _kenv tenv uu
   = case uu of
         UIx ix          -> UIx   ix
-
         UName n
          -> if Env.isPrim tenv n
-                 then UPrim n (spreadT kenv t')
+                 then UPrim n
                  else UName n
+        UPrim n         -> UPrim n
 
-        UPrim n _       -> UPrim n t'
-
-  | otherwise   = uu
 

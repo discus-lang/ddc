@@ -45,16 +45,8 @@ instance (Pretty n, Eq n) => Pretty (Exp a n) where
         pprAlt  = pprModePrec (modeExpAlt  mode) 0
     in case xx of
 
-        XVar  _ u
-         | modeExpVarTypes mode
-         , Just t       <- takeTypeOfBound u
-         -> parens $ ppr u <> text ":" <+> ppr t
-
-         | otherwise
-         -> ppr u
-
-        XPrim _ p
-         -> ppr p
+        XVar  _ u -> ppr u
+        XPrim _ p -> ppr p
 
         XCon  _ dc
          | modeExpConTypes mode

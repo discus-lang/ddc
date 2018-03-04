@@ -11,7 +11,7 @@ import DDC.Core.Exp.Annot
 
 -- | All the Prim Control vars have this form.
 xPrimControl a p
- = XVar a (UPrim (NamePrimOp $ PrimControl p) (typeOfPrimControl p))
+ = XVar a (UPrim (NamePrimOp $ PrimControl p))
 
 
 -- | Fail with an internal error.

@@ -86,6 +86,6 @@ tTextLit = tConPrim PrimTyConTextLit
 tConPrim :: PrimTyCon -> Type Name
 tConPrim tc
  = let k = kindPrimTyCon tc
-   in      TCon (TyConBound (UPrim (NamePrimTyCon tc) k) k)
+   in      TCon (TyConBound (UPrim (NamePrimTyCon tc)) k)
 
 

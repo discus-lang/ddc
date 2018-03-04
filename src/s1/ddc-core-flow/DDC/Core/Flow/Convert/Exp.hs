@@ -15,7 +15,6 @@ import qualified DDC.Core.Flow.Compounds        as F
 
 import qualified DDC.Core.Salt.Name            as T
 import qualified DDC.Core.Salt.Compounds       as T
-import qualified DDC.Core.Salt.Env             as T
 
 import Control.Monad
 
@@ -149,7 +148,7 @@ convertX xx
              $ XLet anno
                 (LLet (BNone T.tVoid)
                     $  mk (T.PrimStore T.PrimStorePoke)
-                       [ RType rTop 
+                       [ RType rTop
                        , RType T.tNat
                        , RTerm $ projTuple anno v' 0 (T.tPtr rTop T.tNat)
                        , RTerm $ T.xNat anno 0
@@ -207,7 +206,7 @@ convertX xx
  | XCase _ x
     [AAlt (PData (DaConPrim (F.NameDaConFlow (F.DaConFlowTuple n)) _) bs) x1]
                                                         <- xx
- , length bs == n 
+ , length bs == n
  = do   x'  <- convertX x
         bs' <- mapM convertBind bs
         x1' <- convertX x1
@@ -258,8 +257,7 @@ convertX xx
 
 
 prim anno n args
- = let t = T.typeOfPrimOp n
-   in      xApps anno (XVar anno (UPrim (T.NamePrimOp n) t)) args
+ = xApps anno (XVar anno (UPrim (T.NamePrimOp n))) args
 
 
 ---------------------------------------------------------------------------------------------------
@@ -301,7 +299,7 @@ convertApp f args
 
 
 ---------------------------------------------------------------------------------------------------
-convertDaCon 
+convertDaCon
         :: DaCon F.Name (Type F.Name)
         -> ConvertM (DaCon T.Name (Type T.Name))
 convertDaCon dd
@@ -385,7 +383,7 @@ convertWit = error "ddc-core-flow.convertWit: cannot convert witness from core f
 
 
 ---------------------------------------------------------------------------------------------------
--- | When replacing @/\(b : Rate). x@ with @x@, if @b@ is a de bruijn index 
+-- | When replacing @/\(b : Rate). x@ with @x@, if @b@ is a de bruijn index
 --   then any type vars in @x@ must be lowered.
 -- @b@ must not be mentioned in @x@.
 removeXLAM :: Bind F.Name -> Exp a T.Name -> Exp a T.Name
@@ -417,16 +415,16 @@ xVecPtr t x
 
 allocRef :: a -> Type T.Name -> Exp a T.Name -> Exp a T.Name
 allocRef anno tY val
- = let 
-       sz   = prim anno (T.PrimStore T.PrimStoreSize)  
+ = let
+       sz   = prim anno (T.PrimStore T.PrimStoreSize)
                 [RType tY]
 
-       addr = prim anno (T.PrimStore T.PrimStoreAlloc) 
+       addr = prim anno (T.PrimStore T.PrimStoreAlloc)
                 [RTerm sz]
 
        ptr  = prim anno (T.PrimStore T.PrimStoreMakePtr)
                 [RType rTop, RType tY, RTerm addr]
-                
+
        ll   = LLet (BAnon $ T.tPtr rTop tY)
                    ptr
 
@@ -437,13 +435,13 @@ allocRef anno tY val
                , RTerm ptr', RTerm $ T.xNat anno 0, RTerm val ]
 
    in  XLet anno ll
-     $ XLet anno (LLet (BNone T.tVoid) poke) 
+     $ XLet anno (LLet (BNone T.tVoid) poke)
        ptr'
 
 
 allocPtr :: a -> Type T.Name -> Exp a T.Name -> Exp a T.Name
 allocPtr anno tY elts
- = let 
+ = let
        sz   = prim anno (T.PrimStore T.PrimStoreSize)
                 [ RType tY ]
 
@@ -453,7 +451,7 @@ allocPtr anno tY elts
 
        ptr  = prim anno (T.PrimStore T.PrimStoreMakePtr)
                 [ RType rTop, RType tY, RTerm addr ]
-                
+
    in  ptr
 
 
@@ -495,12 +493,12 @@ projTuple anno x i t
 allocTupleN :: a -> [(Type T.Name, Exp a T.Name)] -> Exp a T.Name
 allocTupleN anno txs
  = let tup  = xApps anno (XVar anno $ UName $ T.NameVar "allocBoxed")
-                [ RType rTop 
+                [ RType rTop
                 , RTerm $ T.xTag anno 0
                 , RTerm $ T.xNat anno (fromIntegral $ length txs) ]
 
        tup' = XVar anno $ UIx 0
-    
+
        set i t x
         = let t' = unptr t
               x' = trybox anno t x
@@ -508,7 +506,7 @@ allocTupleN anno txs
               [ RType rTop, RType (T.tPtr rTop T.tObj)
               , RTerm tup', RTerm (T.xNat anno i)
               , RTerm (castPtr anno T.tObj t' x') ]
-                
+
    in  XLet anno (LLet (BAnon $ T.tPtr rTop T.tObj) tup)
      $ xLets anno
         [LLet (BNone T.tVoid) (set i t x) | ((t,x), i) <- txs `zip` [0..]]

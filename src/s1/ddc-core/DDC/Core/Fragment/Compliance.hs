@@ -20,7 +20,7 @@ import qualified Data.Set               as Set
 
 -------------------------------------------------------------------------------
 -- | Check whether a core thing complies with a language fragment profile.
-complies 
+complies
         :: (Ord n, Show n, Complies c)
         => Profile n            -- ^ Fragment profile giving the supported
                                 --   language features and primitive operators.
@@ -45,8 +45,8 @@ compliesWithEnvs
         -> Maybe (Error a n)
 
 compliesWithEnvs profile kenv tenv thing
- = let  merr    = result 
-                $ compliesX profile 
+ = let  merr    = result
+                $ compliesX profile
                         kenv tenv
                         contextTop thing
    in   case merr of
@@ -66,14 +66,14 @@ class Complies (c :: * -> * -> *) where
         -> Env n                -- ^ Starting Kind environment.
         -> Env n                -- ^ Starting Type environment.
         -> Context
-        -> c a n 
+        -> c a n
         -> CheckM a n
                 (Set n, Set n)  -- Used type and value names.
 
 
 instance Complies Module where
  compliesX profile kenv tenv context mm
-  = do  let bs          = [ BName n (typeOfImportValue isrc) 
+  = do  let bs          = [ BName n (typeOfImportValue isrc)
                                 | (n, isrc) <- moduleImportValues mm ]
         let tenv'       = Env.extends bs tenv
         compliesX profile kenv tenv' context (moduleBody mm)
@@ -89,7 +89,7 @@ instance Complies Exp where
         -- variables ----------------------------
         XVar _ u@(UName n)
          |  not $ Env.member u tenv
-         ,  not $ has featuresUnboundLevel0Vars 
+         ,  not $ has featuresUnboundLevel0Vars
          -> throw $ ErrorUndefinedVar n
 
          |  args        <- fromMaybe 0 $ contextFunArgs context
@@ -102,16 +102,17 @@ instance Complies Exp where
          | otherwise
          ->     return (Set.empty, Set.singleton n)
 
-        XVar _ u@(UPrim n t)
+        XVar _ u@(UPrim n)
          |  not $ Env.member u (profilePrimTypes profile)
          -> throw $ ErrorUndefinedPrim n
 
+{- TODO: Partial prim app no longer being checked.
          |  args        <- fromMaybe 0 $ contextFunArgs context
          ,  arity       <- arityOfType t
          ,  args < arity
          ,  not $ has featuresPartialPrims
          -> throw $ ErrorUnsupported PartialPrims
-
+-}
          | otherwise
          -> return (Set.empty, Set.empty)
 
@@ -130,15 +131,15 @@ instance Complies Exp where
          -> throw $ ErrorUnsupported NestedFunctions
 
          | otherwise
-         -> do  
+         -> do
                 -- If the body isn't another lambda then remember
                 -- that we've entered into a function.
                 let context'
                      | isXLAM x || isXLam x = context
                      | otherwise            = setBody context
 
-                (tUsed, vUsed)  <- compliesX profile 
-                                        (Env.extend b kenv) tenv 
+                (tUsed, vUsed)  <- compliesX profile
+                                        (Env.extend b kenv) tenv
                                         context' x
 
                 tUsed'          <- checkBind profile kenv b tUsed
@@ -151,14 +152,14 @@ instance Complies Exp where
          -> throw $ ErrorUnsupported NestedFunctions
 
          | otherwise
-         -> do  
+         -> do
                 -- If the body isn't another lambda then remember
                 -- that we've entered into a function.
                 let context'
                      | isXLAM x || isXLam x = context
                      | otherwise            = setBody context
 
-                (tUsed, vUsed)  <- compliesX profile 
+                (tUsed, vUsed)  <- compliesX profile
                                         kenv (Env.extend b tenv)
                                         context' x
 
@@ -173,21 +174,21 @@ instance Complies Exp where
          -> throw $ ErrorUnsupported NestedFunctions
 
          | otherwise
-         -> do  
+         -> do
                 -- If the body isn't another lambda then remember
                 -- that we've entered into a function.
                 let context'
                      | isXLAM x || isXLam x = context
                      | otherwise            = setBody context
 
-                (tUsed, vUsed)  <- compliesX profile 
+                (tUsed, vUsed)  <- compliesX profile
                                         kenv (Env.extend b tenv)
                                         context' x
 
                 vUsed'          <- checkBind profile tenv b vUsed
                 _               <- compliesT profile (typeOfBind b)
                 return (tUsed, vUsed')
-       
+
         -- application --------------------------
         XApp _ x1 (RType _t2)
          -> do  checkFunction profile x1
@@ -228,9 +229,9 @@ instance Complies Exp where
          -> do  let (bs, xs)    = unzip bxs
                 let tenv'       = Env.extends bs tenv
 
-                (tUseds1, vUseds1) 
+                (tUseds1, vUseds1)
                  <- liftM unzip
-                 $  mapM (compliesX profile kenv tenv' (reset context)) 
+                 $  mapM (compliesX profile kenv tenv' (reset context))
                          xs
 
                 (tUsed2,  vUsed2) <- compliesX profile kenv tenv' (reset context) x2
@@ -241,19 +242,19 @@ instance Complies Exp where
                 return (tUseds, vUseds')
 
         XLet _ (LPrivate rs _ bs) x2
-         -> do  (tUsed2, vUsed2) 
-                 <- compliesX profile   (Env.extends rs  kenv) 
-                                        (Env.extends bs tenv) 
+         -> do  (tUsed2, vUsed2)
+                 <- compliesX profile   (Env.extends rs  kenv)
+                                        (Env.extends bs tenv)
                                         (reset context) x2
                 return (tUsed2, vUsed2)
 
         -- case ---------------------------------
         XCase _ x1 alts
-         -> do  (tUsed1,  vUsed1)  
+         -> do  (tUsed1,  vUsed1)
                  <- compliesX profile kenv tenv (reset context) x1
 
                 (tUseds2, vUseds2)
-                 <- liftM unzip 
+                 <- liftM unzip
                  $  mapM (compliesX profile kenv tenv (reset context)) alts
 
                 return  ( Set.unions $ tUsed1 : tUseds2
@@ -269,14 +270,14 @@ instance Complies Alt where
  compliesX profile kenv tenv context aa
   = case aa of
         AAlt PDefault x
-         -> do  (tUsed1, vUsed1)  <- compliesX profile kenv tenv 
+         -> do  (tUsed1, vUsed1)  <- compliesX profile kenv tenv
                                         (reset context) x
                 return  (tUsed1, vUsed1)
 
         AAlt (PData _ bs) x
-         -> do  (tUsed1, vUsed1) <- compliesX profile kenv (Env.extends bs tenv) 
+         -> do  (tUsed1, vUsed1) <- compliesX profile kenv (Env.extends bs tenv)
                                         (reset context) x
-                vUsed1'          <- checkBinds profile tenv bs vUsed1 
+                vUsed1'          <- checkBinds profile tenv bs vUsed1
                 return (tUsed1, vUsed1')
 
 
@@ -284,20 +285,20 @@ instance Complies Alt where
 compliesT
         :: Ord n
         => Profile n
-        -> Type n 
+        -> Type n
         -> CheckM a n (Set n)
 
 compliesT profile tt
  = let has f   = f $ profileFeatures profile
    in case tt of
         TCon (TyConExists{})
-         |  not $ has featuresMetaVariables 
+         |  not $ has featuresMetaVariables
          -> throw $ ErrorUnsupported MetaVariables
 
-        TCon{}          
+        TCon{}
          -> return Set.empty
 
-        TVar (UName u)  
+        TVar (UName u)
          -> return $ Set.singleton u
 
         TVar{}
@@ -315,7 +316,7 @@ compliesT profile tt
          -> compliesT profile t
 
         TSum ts
-         -> do  ss      <- mapM (compliesT profile) 
+         -> do  ss      <- mapM (compliesT profile)
                         $  Sum.toList ts
 
                 return  $ Set.unions ss
@@ -323,8 +324,8 @@ compliesT profile tt
 
 -- Bind -----------------------------------------------------------------------
 -- | Check for compliance violations at a binding site.
-checkBind 
-        :: Ord n 
+checkBind
+        :: Ord n
         => Profile n            -- ^ The current language profile.
         -> Env n                -- ^ The current environment
         -> Bind n               -- ^ The binder at this site.
@@ -336,11 +337,11 @@ checkBind profile env bb used
    in case bb of
         BName n _
          | not $ Set.member n used
-         , not $ has featuresUnusedBindings 
+         , not $ has featuresUnusedBindings
          -> throw $ ErrorUnusedBind n
 
          | Env.memberBind bb env
-         , not $ has featuresNameShadowing 
+         , not $ has featuresNameShadowing
          -> throw $ ErrorShadowedBind n
 
          | otherwise
@@ -358,16 +359,16 @@ checkBind profile env bb used
 
 -- | Check for compliance violations at a binding site.
 --   The binders must all be at the same level.
-checkBinds 
-        :: Ord n  
-        => Profile n 
-        -> Env n  -> [Bind n] -> Set n 
+checkBinds
+        :: Ord n
+        => Profile n
+        -> Env n  -> [Bind n] -> Set n
         -> CheckM a n (Set n)
 
 checkBinds profile env bs used
  = case bs of
         []              -> return used
-        (b : bs')        
+        (b : bs')
          -> do  used'   <- checkBinds profile env bs' used
                 checkBind profile env b used'
 
@@ -375,7 +376,7 @@ checkBinds profile env bs used
 -- Function -------------------------------------------------------------------
 -- | Check the function part of an application.
 checkFunction :: Profile n -> Exp a n -> CheckM a n ()
-checkFunction profile xx 
+checkFunction profile xx
  = let  has f   = f $ profileFeatures profile
         ok       = return ()
    in case xx of
@@ -391,7 +392,7 @@ checkFunction profile xx
 -- Context --------------------------------------------------------------------
 data Context
         = Context
-        { contextAbsBody        :: Bool 
+        { contextAbsBody        :: Bool
         , contextFunArgs        :: Maybe Int }
         deriving (Eq, Show)
 
@@ -419,7 +420,7 @@ addArg context
 
 -- | Reset the argument counter of a context.
 reset   :: Context -> Context
-reset context   = context { contextFunArgs = Nothing } 
+reset context   = context { contextFunArgs = Nothing }
 
 
 -- Monad ----------------------------------------------------------------------
@@ -439,7 +440,7 @@ instance Applicative (CheckM s err) where
 
 instance Monad (CheckM a n) where
  return x   = CheckM (Right x)
- (>>=) m f  
+ (>>=) m f
   = case m of
           CheckM (Left err)     -> CheckM (Left err)
           CheckM (Right x)      -> f x

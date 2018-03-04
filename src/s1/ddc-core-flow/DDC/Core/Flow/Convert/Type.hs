@@ -24,7 +24,7 @@ import qualified DDC.Core.Salt.Compounds       as T
 
 
 tRef   :: Type T.Name -> Type T.Name -> Type T.Name
-tRef = T.tPtr 
+tRef = T.tPtr
 
 tVec :: Type T.Name
 tVec = T.tPtr rTop T.tObj
@@ -83,7 +83,7 @@ convertType tt
         res'    <-      convertType res
 
         return   $ foldr tFun res' args'
-        
+
 
  -- For other primitives, convertName will handle convert them
  | otherwise
@@ -117,9 +117,9 @@ convertBind b
 convertBound :: Bound F.Name -> ConvertM (Bound T.Name)
 convertBound b
  = case b of
-   UIx     i -> return $  UIx i
-   UName n   -> UName <$> convertName n
-   UPrim n t -> UPrim <$> convertName n <*> convertType t
+   UIx   i -> return $  UIx i
+   UName n -> UName <$> convertName n
+   UPrim n -> UPrim <$> convertName n
 
 
 

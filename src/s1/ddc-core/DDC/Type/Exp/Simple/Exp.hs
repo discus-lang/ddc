@@ -48,19 +48,18 @@ data Bind n
 
 -- | A bound occurrence of a variable, with its type.
 --
---   If variable hasn't been annotated with its real type then this 
+--   If variable hasn't been annotated with its real type then this
 --   can be `tBot` (an empty sum).
 
 data Bound n
         -- | Nameless variable that should be on the deBruijn stack.
-        = UIx   !Int   
+        = UIx   !Int
 
         -- | Named variable that should be in the environment.
         | UName !n
 
-        -- | Named primitive that has its type attached to it.
-        --   The types of primitives must be closed.
-        | UPrim !n !(Type n)
+        -- | Named primitive
+        | UPrim !n
         deriving Show
 
 
@@ -79,7 +78,7 @@ data Type n
 
         -- | Abstraction.
         | TAbs    !(Bind  n) !(Type  n)
-        
+
         -- | Application.
         | TApp    !(Type  n) !(Type  n)
 
@@ -109,7 +108,7 @@ type Closure n = Type n
 
 -- Type Sums ------------------------------------------------------------------
 -- | A least upper bound of several types.
--- 
+--
 --   We keep type sums in this normalised format instead of joining them
 --   together with a binary operator (like @(+)@). This makes sums easier to work
 --   with, as a given sum type often only has a single physical representation.
@@ -133,14 +132,14 @@ data TypeSum n
         , typeSumBoundAnon      :: !(Map Int (Kind n))
 
           -- | Types that can't be placed in the other fields go here.
-          -- 
+          --
           --   INVARIANT: this list doesn't contain more `TSum`s.
         , typeSumSpill          :: ![Type n] }
         deriving Show
-        
+
 
 -- | Hash value used to insert types into the `typeSumElems` array of a `TypeSum`.
-data TyConHash 
+data TyConHash
         = TyConHash !Int
         deriving (Eq, Show, Ord, Ix)
 
@@ -157,7 +156,7 @@ data TypeSumVarCon n
 --
 --   These are grouped to make it easy to determine the universe that they
 --   belong to.
--- 
+--
 data TyCon n
         -- | (level 3) Builtin Sort constructors.
         = TyConSort     !SoCon

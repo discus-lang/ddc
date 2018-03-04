@@ -40,7 +40,7 @@ seriesOfVectorModule mm
 
 
    in  (mm { moduleBody = body' }, errs)
-       
+
 
 
 seriesOfVectorLets :: LetsF -> ([LetsF], [(Name,Fail)])
@@ -54,7 +54,7 @@ seriesOfVectorLets ll
  , (bs,xs)              <- unzip bxs
  , (xs',ls', _errs)          <- unzip3 $ map seriesOfVectorFunction xs
  = ( [LRec (concat ls' ++ (bs `zip` xs'))]
-   , []) 
+   , [])
         -- We still need to produce errors if this doesn't work.
 
  | otherwise
@@ -133,7 +133,7 @@ extractProcs lets env
 
   go1 b nm x e
    | Just (op, args)                                      <- takeXApps x
-   , XVar (UPrim (NameOpSeries (OpSeriesRateVecsOfVectors n)) _)    <- op
+   , XVar (UPrim (NameOpSeries (OpSeriesRateVecsOfVectors n)))    <- op
    , (xs, [lam])                                        <- splitAt (length args - 1) args
    , (lams,body)                                        <- takeXLamFlags_safe lam
    , ([LLet n' x'], binds)                              <- go1 b nm body (lams ++ e)
@@ -143,7 +143,7 @@ extractProcs lets env
      , binds)
 
    | Just (op, args)                                      <- takeXApps x
-   , XVar (UPrim (NameOpSeries OpSeriesRunProcess) _)    <- op
+   , XVar (UPrim (NameOpSeries OpSeriesRunProcess))    <- op
    , (xs, [lam])                                         <- splitAt (length args - 1) args
 
    = let fsX = freeX Env.empty lam
@@ -223,7 +223,7 @@ process types env arrIns bs
  = let pres  = concatMap  getPre  bs
        mid   = getRateVecs arrIns
              $ getGenerates bs
-             $ runProcs   
+             $ runProcs
              $ xLets (map getInSeries arrIns)
              $ mkProcs bs
        posts = concatMap  getPost bs
@@ -332,7 +332,7 @@ process types env arrIns bs
          MapN (Fun xf _) ains
           -> llet n's (tSeries procT (klokT n) $ sctyOf n)
            ( xApps (xVarOpSeries (OpSeriesMap (length ains)))
-                   ([procX, klokX n] ++ (map xsctyOf  ains) ++ [xsctyOf n, xf] 
+                   ([procX, klokX n] ++ (map xsctyOf  ains) ++ [xsctyOf n, xf]
                         ++ map (var . flip NameVarMod "s") ains) )
              go
 
@@ -427,7 +427,7 @@ process types env arrIns bs
    | otherwise
    = goResize n v rest
 
-     
+
   allocSize
    -- If there are any inputs, use the size of one of those
    | (i:_) <- arrIns
@@ -488,8 +488,8 @@ process types env arrIns bs
   var n   = XVar $ UName n
 
 
-xVarOpSeries n = XVar (UPrim (NameOpSeries n) (typeOpSeries n))
-xVarOpVector n = XVar (UPrim (NameOpVector n) (typeOpVector n))
+xVarOpSeries n = XVar (UPrim (NameOpSeries n))
+xVarOpVector n = XVar (UPrim (NameOpVector n))
 
 
 -- | Get underlying scalar of a vector type - or just return original type if it's not a vector.

@@ -22,11 +22,10 @@ import DDC.Type.DataDef
 import DDC.Type.Env                                     (KindEnv, TypeEnv)
 import Data.Set                                         (Set)
 import Data.Map                                         (Map)
-import qualified DDC.Core.Discus.Convert.Type.Base       as T
-import qualified DDC.Core.Discus.Prim                    as E
+import qualified DDC.Core.Discus.Convert.Type.Base      as T
+import qualified DDC.Core.Discus.Prim                   as E
 import qualified DDC.Type.Env                           as Env
 import qualified DDC.Core.Salt.Name                     as A
-import qualified DDC.Core.Salt.Env                      as A
 
 
 ---------------------------------------------------------------------------------------------------
@@ -149,22 +148,19 @@ data ExpContext
 ---------------------------------------------------------------------------------------------------
 xConvert :: a -> Type A.Name -> Type A.Name -> Exp a A.Name -> Exp a A.Name
 xConvert a t1 t2 x1
-        = xApps a (XVar a  (UPrim (A.NamePrimOp $ A.PrimCast $ A.PrimCastConvert)
-                                  (A.typeOfPrimCast A.PrimCastConvert)))
+        = xApps a (XVar a  (UPrim (A.NamePrimOp $ A.PrimCast $ A.PrimCastConvert)))
                   [ RType t1, RType t2, RTerm x1 ]
 
 
 xTakePtr :: a -> Type A.Name -> Type A.Name -> Exp a A.Name -> Exp a A.Name
 xTakePtr a tR tA x1
-        = xApps a (XVar a  (UPrim (A.NamePrimOp $ A.PrimStore A.PrimStoreTakePtr)
-                                  (A.typeOfPrimStore A.PrimStoreTakePtr)))
+        = xApps a (XVar a  (UPrim (A.NamePrimOp $ A.PrimStore A.PrimStoreTakePtr)))
                   [ RType tR, RType tA, RTerm x1 ]
 
 
 xMakePtr :: a -> Type A.Name -> Type A.Name -> Exp a A.Name -> Exp a A.Name
 xMakePtr a tR tA x1
-        = xApps a (XVar a  (UPrim (A.NamePrimOp $ A.PrimStore A.PrimStoreMakePtr)
-                                  (A.typeOfPrimStore A.PrimStoreMakePtr)))
+        = xApps a (XVar a  (UPrim (A.NamePrimOp $ A.PrimStore A.PrimStoreMakePtr)))
                   [ RType tR, RType tA, RTerm x1 ]
 
 

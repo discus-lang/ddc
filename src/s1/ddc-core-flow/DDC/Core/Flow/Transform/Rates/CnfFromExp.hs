@@ -30,7 +30,7 @@ import qualified Data.Set               as Set
 -- If it succeeds, it should be true that
 -- >>> expOfCnf . right . cnfOfExp = id
 -- at least semantically, if not syntactically
--- 
+--
 cnfOfExp :: ExpF -> Either ConversionError (Program Name Name)
 cnfOfExp fun
  = do   -- Peel off the lambdas
@@ -67,7 +67,7 @@ cnfOfExp fun
         -- worker function is not inlined into the combinator binding.
         -- Tuples are another potential problem here: looking at the tuple's type, it would not be
         -- an array binding.
-        let (binds', env') = getBinds binds inputs 
+        let (binds', env') = getBinds binds inputs
         let outs           = localEnv env'  xx
 
         return (Program inputs binds' outs)
@@ -101,7 +101,7 @@ getBind :: (Name,(TypeF,ExpF)) -> ([Name], [Name]) -> CNF.Bind Name Name
 getBind (nm,(t,x)) env
  -- Try to match against a known vector combinator.
  | Just (f, args) <- takeXApps x
- , XVar (UPrim (NameOpVector ov) _) <- f
+ , XVar (UPrim (NameOpVector ov)) <- f
  -- throw away that pesky type information
  , args' <- filter ((==Nothing) . takeXType) args
  = case (ov, args') of

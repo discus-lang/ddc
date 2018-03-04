@@ -90,12 +90,10 @@ module DDC.Type.Exp.Simple
 
           -- ** Bounds
         , takeNameOfBound
-        , takeTypeOfBound
         , boundMatchesBind
         , namedBoundMatchesBind
         , takeSubstBoundOfBind
         , takeSubstBoundsOfBinds
-        , replaceTypeOfBound
 
           -- ** Sorts
         , sComp, sProp

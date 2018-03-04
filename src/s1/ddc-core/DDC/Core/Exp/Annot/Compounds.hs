@@ -345,8 +345,8 @@ takeXPrimApps xx
 takeXFragApps :: Exp a n -> Maybe (n, [Arg a n])
 takeXFragApps xx
  = case takeXApps xx of
-        Just (XVar _ (UPrim p _), as)   -> Just (p, as)
-        _                               -> Nothing
+        Just (XVar _ (UPrim p), as)   -> Just (p, as)
+        _                             -> Nothing
 
 -- | Flatten an application of a data constructor into the constructor
 --   and its arguments.
@@ -534,7 +534,7 @@ takeWAppsAsList ww
 takePrimWiConApps :: Witness a n -> Maybe (n, [Witness a n])
 takePrimWiConApps ww
  = case takeWAppsAsList ww of
-        WCon _ wc : args | WiConBound (UPrim n _) _ <- wc
+        WCon _ wc : args | WiConBound (UPrim n) _ <- wc
           -> Just (n, args)
         _ -> Nothing
 

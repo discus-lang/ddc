@@ -3,7 +3,7 @@
 module DDC.Core.Salt.Compounds.PrimStore
         ( rTop
         , ukTop
-        
+
         , xStoreSize, xStoreSize2
         , xCreate
         , xRead, xWrite
@@ -21,7 +21,7 @@ import DDC.Core.Exp.Annot
 
 -- Regions --------------------------------------------------------------------
 -- | The top-level region.
---   This region lives for the whole program, and is used to store objects whose 
+--   This region lives for the whole program, and is used to store objects whose
 --   types don't have region annotations (like function closures and Unit values).
 rTop    :: Type Name
 rTop   = TVar (fst ukTop)
@@ -34,20 +34,20 @@ ukTop
 
 -- | All the Prim Store vars have this form.
 xPrimStore a p
- = XVar a (UPrim (NamePrimOp $ PrimStore p) (typeOfPrimStore p))
+ = XVar a (UPrim (NamePrimOp $ PrimStore p))
 
 
 -- | Take the number of bytes needed to store a value of a primitive type.
 xStoreSize :: a -> Type Name  -> Exp a Name
 xStoreSize a tElem
- = xApps a      (xPrimStore a PrimStoreSize) 
+ = xApps a      (xPrimStore a PrimStoreSize)
                 [RType tElem]
 
 
 -- | Log2 of the number of bytes needed to store a value of primitive type.
 xStoreSize2 :: a -> Type Name  -> Exp a Name
 xStoreSize2 a tElem
- = xApps a      (xPrimStore a PrimStoreSize2) 
+ = xApps a      (xPrimStore a PrimStoreSize2)
                 [RType tElem]
 
 -- | Create the heap.
@@ -69,7 +69,7 @@ xWrite   :: a -> Type Name -> Exp a Name -> Exp a Name -> Exp a Name -> Exp a Na
 xWrite a tField xAddr xOffset xVal
  = xApps a      (xPrimStore a PrimStoreWrite)
                 [ RType tField, RTerm xAddr, RTerm xOffset, RTerm xVal ]
-                
+
 
 -- | Peek a value from a buffer pointer plus offset.
 xPeek :: a -> Type Name -> Type Name -> Exp a Name -> Exp a Name
@@ -87,8 +87,8 @@ xPoke a r t xPtr xVal
 
 
 -- | Peek a value from a buffer pointer plus offset.
-xPeekBounded 
-        :: a -> Type Name -> Type Name 
+xPeekBounded
+        :: a -> Type Name -> Type Name
         -> Exp a Name -> Exp a Name -> Exp a Name -> Exp a Name
 xPeekBounded a r t xPtr xOffset xLimit
  = xApps a      (xPrimStore a PrimStorePeekBounded)
@@ -123,7 +123,7 @@ xCastPtr a r toType fromType xPtr
 typeOfPrimStore :: PrimStore -> Type Name
 typeOfPrimStore jj
  = case jj of
-        PrimStoreSize 
+        PrimStoreSize
          -> tForall kData $ \_ -> tNat
 
         PrimStoreSize2
@@ -142,19 +142,19 @@ typeOfPrimStore jj
          -> tNat `tFun` tAddr
 
         PrimStoreAllocSlot
-         -> tForall kRegion 
+         -> tForall kRegion
          $  \r -> tPtr rTop (tPtr r tObj)
 
         PrimStoreAllocSlotVal
-         -> tForall kRegion 
+         -> tForall kRegion
          $  \r -> tPtr r tObj `tFun` tPtr rTop (tPtr r tObj)
 
-        PrimStoreRead           
-         -> tForall kData 
+        PrimStoreRead
+         -> tForall kData
          $ \t -> tAddr `tFun` tNat `tFun` t
 
         PrimStoreWrite
-         -> tForall kData 
+         -> tForall kData
          $ \t -> tAddr `tFun` tNat `tFun` t `tFun` tVoid
 
         PrimStoreCopy
@@ -174,7 +174,7 @@ typeOfPrimStore jj
          $ \[r,t] -> tPtr r t `tFun` t
 
         PrimStorePoke
-         -> tForalls [kRegion, kData] 
+         -> tForalls [kRegion, kData]
          $ \[r,t] -> tPtr r t `tFun` t `tFun` tVoid
 
         PrimStorePeekBounded
@@ -182,32 +182,32 @@ typeOfPrimStore jj
          $ \[r,t] -> tPtr r t `tFun` tNat `tFun` tNat `tFun` t
 
         PrimStorePokeBounded
-         -> tForalls [kRegion, kData] 
+         -> tForalls [kRegion, kData]
          $ \[r,t] -> tPtr r t `tFun` tNat `tFun` tNat `tFun` t `tFun` tVoid
 
         PrimStorePlusPtr
-         -> tForalls [kRegion, kData] 
+         -> tForalls [kRegion, kData]
          $ \[r,t] -> tPtr r t `tFun` tNat `tFun` tPtr r t
 
         PrimStoreMinusPtr
-         -> tForalls [kRegion, kData] 
+         -> tForalls [kRegion, kData]
          $ \[r,t] -> tPtr r t `tFun` tNat `tFun` tPtr r t
 
         PrimStoreMakePtr
-         -> tForalls [kRegion, kData] 
+         -> tForalls [kRegion, kData]
          $ \[r,t] -> tAddr `tFun` tPtr r t
 
         PrimStoreTakePtr
-         -> tForalls [kRegion, kData] 
+         -> tForalls [kRegion, kData]
          $ \[r,t] -> tPtr r t `tFun` tAddr
 
         PrimStoreCastPtr
-         -> tForalls [kRegion, kData, kData] 
+         -> tForalls [kRegion, kData, kData]
          $ \[r,t1,t2] -> tPtr r t2 `tFun` tPtr r t1
 
         PrimStoreRootChain      -> tAddr
 
-        PrimStoreGlobal         
+        PrimStoreGlobal
          -> tForall kData
          $ \_t -> tTextLit `tFun` tAddr
 

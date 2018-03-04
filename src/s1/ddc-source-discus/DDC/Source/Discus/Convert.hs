@@ -14,16 +14,15 @@ import DDC.Source.Discus.Convert.Type
 import DDC.Source.Discus.Convert.Prim
 import DDC.Source.Discus.Convert.Base
 
-import qualified DDC.Source.Discus.Module                as S
-import qualified DDC.Source.Discus.DataDef               as S
-import qualified DDC.Source.Discus.Exp                   as S
-import qualified DDC.Source.Discus.Env                   as Env
+import qualified DDC.Source.Discus.Module       as S
+import qualified DDC.Source.Discus.DataDef      as S
+import qualified DDC.Source.Discus.Exp          as S
 
-import qualified DDC.Core.Discus.Compounds               as C
-import qualified DDC.Core.Discus.Prim                    as C
-import qualified DDC.Core.Module                        as C
-import qualified DDC.Type.DataDef                       as C
-import qualified Data.Text                              as Text
+import qualified DDC.Core.Discus.Compounds      as C
+import qualified DDC.Core.Discus.Prim           as C
+import qualified DDC.Core.Module                as C
+import qualified DDC.Type.DataDef               as C
+import qualified Data.Text                      as Text
 import Data.Maybe
 
 import DDC.Core.Module
@@ -251,8 +250,7 @@ toCoreX a xx
 
         S.XFrag p
          -> do  let p'  =  toCorePrimVal p
-                t'      <- toCoreT UniverseSpec  $ Env.typeOfPrimVal p
-                return  $ C.XVar a (C.UPrim p' t')
+                return  $ C.XVar a (C.UPrim p')
 
         S.XVar u
          -> C.XVar      <$> pure a <*> toCoreU u

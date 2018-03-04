@@ -136,14 +136,6 @@ checkTypeM config ctx0 uni tt@(TVar u) mode
          | Just k          <- EnvT.lookup u (contextEnvT ctx0)
          = return k
 
-         -- A primitive type variable with its kind directly attached, but where
-         -- the variable is not also in the kind environment. This is a hack used
-         -- for static used for static region variables in the evaluator.
-         -- We make them constructors rather than variables so that we don't need
-         -- to have a data constructor definition for each one.
-         | UPrim _ k       <- u
-         = return k
-
          -- Type variable is no where to be found.
          | otherwise
          = throw $ C.ErrorType $ ErrorTypeUndefined u

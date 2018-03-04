@@ -400,7 +400,6 @@ xAllocSlot a tR
 uAllocSlot :: Bound Name
 uAllocSlot
  = UPrim (NamePrimOp $ PrimStore $ PrimStoreAllocSlot)
-         (typeOfPrimStore PrimStoreAllocSlot)
 
 
 -- | Allocate a pointer on the stack for a GC root.
@@ -411,7 +410,6 @@ xAllocSlotVal a tR xVal
 uAllocSlotVal :: Bound Name
 uAllocSlotVal
  = UPrim (NamePrimOp $ PrimStore $ PrimStoreAllocSlotVal)
-         (typeOfPrimStore PrimStoreAllocSlotVal)
 
 
 -- Small ------------------------------------------------------------------------------------------
@@ -503,5 +501,4 @@ xCast a r toType fromType xPtr
 
 uCast :: Bound Name
 uCast = UPrim (NamePrimOp $ PrimStore $ PrimStoreCastPtr)
-              (typeOfPrimStore PrimStoreCastPtr)
 

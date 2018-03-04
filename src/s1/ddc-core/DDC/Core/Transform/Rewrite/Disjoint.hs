@@ -33,7 +33,7 @@ import qualified DDC.Core.Env.EnvT              as EnvT
 -- >         Distinct r1 r2
 -- > -----------------------------
 -- > Disjoint (Read r1) (Write r2)
--- 
+--
 --   @DeepWrite@ effects are only disjoint with allocation effects, because
 --   we don't know what regions it will write to.
 --
@@ -48,9 +48,9 @@ import qualified DDC.Core.Env.EnvT              as EnvT
 -- > Disjoint f g
 -- > ------------
 -- > Disjoint g f
---  
+--
 --   Example:
---   
+--
 -- >  checkDisjoint
 -- >    (Disjoint (Read r1 + Read r2) (Write r3))
 -- >    [Distinct r1 r3, Distinct r2 r3]
@@ -66,7 +66,7 @@ checkDisjoint
 checkDisjoint c env
         -- The type must have the form "Disjoint e1 e2"
         | [TCon (TyConWitness TwConDisjoint), fs, gs] <- takeTApps c
-        = and [ areDisjoint env g f 
+        = and [ areDisjoint env g f
                 | f <- sumList $ T.crushEffect EnvT.empty fs
                 , g <- sumList $ T.crushEffect EnvT.empty gs ]
 
@@ -77,7 +77,7 @@ checkDisjoint c env
 
 
 -- | Check whether two atomic effects are disjoint.
-areDisjoint 
+areDisjoint
         :: Ord n
         => RE.RewriteEnv a n
         -> Effect n
@@ -88,7 +88,7 @@ areDisjoint env t1 t2
         -- Allocations are disjoint with everything.
         |   isSomeAllocEffect t1
          || isSomeAllocEffect t2
-        = True 
+        = True
 
         -- All the read effects are disjoint with each other.
         | isSomeReadEffect t1
@@ -109,7 +109,7 @@ areDisjoint env t1 t2
 
 
 -- Distinct -------------------------------------------------------------------
--- | Check whether a distintness property is true in the given 
+-- | Check whether a distintness property is true in the given
 --   rewrite environment.
 --
 --   Distinctness means that two regions do not alias.
@@ -155,7 +155,7 @@ areDistinct env t1 t2
 -- | Check whether two regions are distinct.
 --   This version takes `Bounds` so we don't need to worry about
 --   region constructors like R0# directly.
-areDistinctBound 
+areDistinctBound
         :: Ord n
         => RE.RewriteEnv a n
         -> Bound n -> Bound n -> Bool
@@ -180,12 +180,12 @@ areDistinctBound env p q
         | otherwise
         = False
 
-        where   -- Check if region is 'concrete' either a region handle (R0#) 
+        where   -- Check if region is 'concrete' either a region handle (R0#)
                 -- or bound by a letregion in a higher scope.
                 concrete r
                  = case r of
-                        UPrim _ _ -> True
-                        _         -> RE.containsRegion r env
+                        UPrim _ -> True
+                        _       -> RE.containsRegion r env
 
                 check w
                  | (TCon (TyConWitness (TwConDistinct _)) : args)
@@ -197,6 +197,8 @@ areDistinctBound env p q
 
                 rgn b
                  = case b of
-                    UPrim _ t   -> TCon (TyConBound b t)
+--                    UPrim _ t   -> TCon (TyConBound b t)
+                        -- TODO: types are not attached to UPrims anymore.
+
                     _           -> TVar b
 

@@ -46,15 +46,15 @@ convertType pp kenv tt
         -- represented as a generic boxed object.
         C.TVar u
          -> case Env.lookup u kenv of
-             Nothing            
+             Nothing
               -> throw $ ErrorInvalidBound u
                        $ Just "Type variable not in kind environment."
 
              Just k
-              | isDataKind k    
+              | isDataKind k
               -> return $ TPointer (tObj pp)
 
-              | otherwise       
+              | otherwise
               -> throw $ ErrorInvalidBound u
                        $ Just "Bound type variable does not have kind Data."
 
@@ -64,7 +64,7 @@ convertType pp kenv tt
 
         -- A pointer to a primitive type.
         C.TApp{}
-         | Just (A.NamePrimTyCon A.PrimTyConPtr, [_r, t2]) 
+         | Just (A.NamePrimTyCon A.PrimTyConPtr, [_r, t2])
                 <- takePrimTyConApps tt
          -> do  t2'     <- convertType pp kenv t2
                 return  $ TPointer t2'
@@ -72,8 +72,8 @@ convertType pp kenv tt
         -- Function types become pointers to functions.
         C.TApp{}
          -> do  (tsArgs, tResult)    <- convertSuperType pp kenv tt
-                return  
-                  $ TPointer $ TFunction 
+                return
+                  $ TPointer $ TFunction
                   $ FunctionDecl
                   { declName                    = "dummy.function.name"
                   , declLinkage                 = Internal
@@ -83,22 +83,22 @@ convertType pp kenv tt
                   , declParams                  = [Param t [] | t <- tsArgs]
                   , declAlign                   = AlignBytes (platformAlignBytes pp)
                   , declGarbageCollector        = Just "shadow-stack" }
-        
+
         C.TForall b t
          -> let kenv'   = Env.extend b kenv
             in  convertType pp kenv' t
-          
+
         _ -> throw $ ErrorInvalidType tt
                    $ Just "Cannot convert type."
 
 
 -- Super Type -----------------------------------------------------------------
 -- | Split the parameter and result types from a supercombinator type and
---   and convert them to LLVM form. 
+--   and convert them to LLVM form.
 --
 --   We can't split the type first and just call 'convertType' above as we need
 --   to decend into any quantifiers that wrap the body type.
-convertSuperType 
+convertSuperType
         :: Platform
         -> KindEnv A.Name
         -> C.Type  A.Name
@@ -124,23 +124,23 @@ convertSuperType pp kenv tt
 
 -- Imports --------------------------------------------------------------------
 -- | Convert an imported function type to a LLVM declaration.
-importedFunctionDeclOfType 
+importedFunctionDeclOfType
         :: Platform
         -> KindEnv A.Name
         -> C.ImportValue A.Name (C.Type A.Name)
         -> Maybe (C.ExportSource A.Name (C.Type A.Name))
         -> A.Name
-        -> C.Type A.Name 
+        -> C.Type A.Name
         -> Maybe (ConvertM FunctionDecl)
 
 importedFunctionDeclOfType pp kenv isrc mesrc nSuper tt
- 
+
  | C.ImportValueModule{} <- isrc
  = Just $ do
-        let Just strName 
-                = liftM renderPlain 
+        let Just strName
+                = liftM renderPlain
                 $ A.seaNameOfSuper (Just isrc) mesrc nSuper
-        
+
         (tsArgs, tResult)       <- convertSuperType pp kenv tt
         let mkParam t           = Param t []
         return  $ FunctionDecl
@@ -176,10 +176,10 @@ convTyCon platform tycon
         C.TyConSpec  C.TcConUnit
          -> return $ TPointer (tObj platform)
 
-        C.TyConBound (C.UPrim A.NameObjTyCon _) _
+        C.TyConBound (C.UPrim A.NameObjTyCon) _
          -> return $ tObj platform
 
-        C.TyConBound (C.UPrim (A.NamePrimTyCon tc) _) _
+        C.TyConBound (C.UPrim (A.NamePrimTyCon tc)) _
          -> case tc of
              A.PrimTyConVoid      -> return $ TVoid
              A.PrimTyConBool      -> return $ TInt 1
@@ -246,7 +246,7 @@ tTag pp = TInt (8 * platformTagBytes  pp)
 -- Predicates -----------------------------------------------------------------
 -- | Check whether this is the Void# type.
 isVoidT :: C.Type A.Name -> Bool
-isVoidT (C.TCon (C.TyConBound (C.UPrim (A.NamePrimTyCon A.PrimTyConVoid) _) _)) 
+isVoidT (C.TCon (C.TyConBound (C.UPrim (A.NamePrimTyCon A.PrimTyConVoid)) _))
          = True
 isVoidT _ = False
 
@@ -255,7 +255,7 @@ isVoidT _ = False
 isSignedT :: C.Type A.Name -> Bool
 isSignedT tt
  = case tt of
-        C.TCon (C.TyConBound (C.UPrim (A.NamePrimTyCon tc) _) _)
+        C.TCon (C.TyConBound (C.UPrim (A.NamePrimTyCon tc)) _)
           -> A.primTyConIsSigned tc
         _ -> False
 
@@ -264,7 +264,7 @@ isSignedT tt
 isUnsignedT :: C.Type A.Name -> Bool
 isUnsignedT tt
  = case tt of
-        C.TCon (C.TyConBound (C.UPrim (A.NamePrimTyCon tc) _) _)
+        C.TCon (C.TyConBound (C.UPrim (A.NamePrimTyCon tc)) _)
           -> A.primTyConIsUnsigned tc
         _ -> False
 
@@ -273,7 +273,7 @@ isUnsignedT tt
 isIntegralT :: C.Type A.Name -> Bool
 isIntegralT tt
  = case tt of
-        C.TCon (C.TyConBound (C.UPrim (A.NamePrimTyCon tc) _) _)
+        C.TCon (C.TyConBound (C.UPrim (A.NamePrimTyCon tc)) _)
           -> A.primTyConIsIntegral tc
         _ -> False
 
@@ -282,7 +282,7 @@ isIntegralT tt
 isFloatingT :: C.Type A.Name -> Bool
 isFloatingT tt
  = case tt of
-        C.TCon (C.TyConBound (C.UPrim (A.NamePrimTyCon tc) _) _)
+        C.TCon (C.TyConBound (C.UPrim (A.NamePrimTyCon tc)) _)
           -> A.primTyConIsFloating tc
         _ -> False
 

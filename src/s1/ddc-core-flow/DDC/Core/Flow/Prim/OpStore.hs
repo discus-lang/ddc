@@ -82,7 +82,7 @@ readOpStore str
                 "new#"          -> Just OpStoreNew
                 "read#"         -> Just OpStoreRead
                 "write#"        -> Just OpStoreWrite
-        
+
                 "vnew#"         -> Just OpStoreNewVector
                 "vnewR#"        -> Just OpStoreNewVectorR
                 "vnewN#"        -> Just OpStoreNewVectorN
@@ -118,35 +118,35 @@ typeOpStore op
         -- vnew#   :: [a : Data]. Nat -> Vector# a
         OpStoreNewVector
          -> tForall kData $ \tA -> tNat `tFun` tVector tA
-                
+
         -- vnew#  :: [a : Data]. [k : Rate]. Vector# a
         OpStoreNewVectorR
-         -> tForalls [kData, kRate] 
+         -> tForalls [kData, kRate]
          $ \[tA, _] -> tVector tA
-         
+
         -- vnew#  :: [a : Data]. [k : Rate]. RateNat k -> Vector a
         OpStoreNewVectorN
          -> tForalls [kData, kRate]
          $ \[tA, tK] -> tRateNat tK `tFun` tVector tA
-        
+
         -- vread#  :: [a : Data]. Vector# a -> Nat# -> a
         OpStoreReadVector 1
-         -> tForall kData 
+         -> tForall kData
          $  \tA -> tBuffer tA `tFun` tNat `tFun` tA
 
         -- vreadN#  :: [a : Data]. Vector# a -> Nat# -> VecN# a
         OpStoreReadVector n
-         -> tForall kData 
+         -> tForall kData
          $  \tA -> tBuffer tA `tFun` tNat `tFun` tVec n tA
 
         -- vwrite# :: [a : Data]. Vector# a -> Nat# -> a -> Unit
         OpStoreWriteVector 1
-         -> tForall kData 
+         -> tForall kData
          $  \tA -> tBuffer tA `tFun` tNat `tFun` tA `tFun` tUnit
 
         -- vwriteN# :: [a : Data]. Vector# a -> Nat# -> VecN# a -> Unit
         OpStoreWriteVector n
-         -> tForall kData 
+         -> tForall kData
          $  \tA -> tBuffer tA `tFun` tNat `tFun` tVec n tA `tFun` tUnit
 
         -- vtail$N# :: [k : Rate]. [a : Data]. RateNat (TailN k) -> Vector# a -> Vector# a
@@ -156,12 +156,12 @@ typeOpStore op
 
         -- vtrunc#  :: [a : Data]. Nat# -> Vector# a -> Unit
         OpStoreTruncVector
-         -> tForall kData 
+         -> tForall kData
          $  \tA -> tNat `tFun` tVector tA `tFun` tUnit
 
         -- vbuf#   :: [a : Data]. Vector# a -> Buffer# a
         OpStoreBufOfVector
-         -> tForall kData 
+         -> tForall kData
          $  \tA -> tVector tA `tFun` tBuffer tA
 
         -- vbufofratevec#   :: [k : Rate]. [a : Data]. RateVec# k a -> Buffer# a
@@ -259,5 +259,5 @@ xBufOfRateVec tRate tElem xArr
 -- Utils ----------------------------------------------------------------------
 xVarOpStore :: OpStore -> Exp () Name
 xVarOpStore op
-        = XVar (UPrim (NameOpStore op) (typeOpStore op))
+        = XVar (UPrim (NameOpStore op))
 

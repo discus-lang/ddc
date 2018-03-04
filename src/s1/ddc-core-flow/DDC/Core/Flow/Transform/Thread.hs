@@ -35,7 +35,7 @@ threadConfig
 wrapResultType :: Type Name -> Type Name
 wrapResultType tt
  | Just (TyConBound u _, tsArgs)        <- takeTyConApps tt
- , UPrim n _                            <- u
+ , UPrim n                              <- u
  , NameTyConFlow (TyConFlowTuple _)     <- n
  = tTupleN (tWorld : tsArgs)
 
@@ -170,7 +170,7 @@ threadType n _
          | c >= 2
          -> Just $ tForalls [kProc, kRate, kData]
                  $ \[tP, tK, tA]
-                        ->     tSeries tP (tDown c tK) tA `tFun` tInt 
+                        ->     tSeries tP (tDown c tK) tA `tFun` tInt
                         `tFun` tWorld `tFun` (tTuple2 tWorld (tVec c tA))
 
         -- Control -----------------------------

@@ -457,7 +457,7 @@ takeBound c ss
 
         XAps "up" [ssRef]
           | Just n       <- configTakeRef c ssRef
-          -> Just $ C.UPrim n (C.tBot C.sComp)
+          -> Just $ C.UPrim n
 
         _ -> fmap C.UName $ configTakeRef c ss
 

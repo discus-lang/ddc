@@ -1,9 +1,9 @@
 
 -- | Environment of a type expression.
 --
---   An environment contains the types 
+--   An environment contains the types
 --     named bound variables,
---     named primitives, 
+--     named primitives,
 --     and a deBruijn stack for anonymous variables.
 --
 module DDC.Core.Env.EnvT
@@ -20,9 +20,9 @@ module DDC.Core.Env.EnvT
         , fromListNT
         , fromTypeMap
 
-        , kindEnvOfEnvT 
+        , kindEnvOfEnvT
 
-        -- * Projections 
+        -- * Projections
         , depth
         , member,       memberBind
         , lookup,       lookupName
@@ -61,8 +61,8 @@ data EnvT n
         , envtMap          :: !(Map n (Type n))
 
           -- | Types of anonymous deBruijn variables.
-        , envtStack        :: ![Type n] 
-        
+        , envtStack        :: ![Type n]
+
           -- | The length of the above stack.
         , envtStackLength  :: !Int }
 
@@ -70,11 +70,11 @@ data EnvT n
 -- | An empty environment.
 empty :: EnvT n
 empty   = EnvT
-        { envtPrimFun      = \_ -> Nothing 
+        { envtPrimFun      = \_ -> Nothing
         , envtEquations    = Map.empty
         , envtCapabilities = Map.empty
         , envtMap          = Map.empty
-        , envtStack        = [] 
+        , envtStack        = []
         , envtStackLength  = 0 }
 
 
@@ -90,7 +90,7 @@ extend :: Ord n => Bind n -> EnvT n -> EnvT n
 extend bb env
  = case bb of
          BName n k -> env { envtMap         = Map.insert n k (envtMap env) }
-         BAnon   k -> env { envtStack       = k : envtStack env 
+         BAnon   k -> env { envtStack       = k : envtStack env
                           , envtStackLength = envtStackLength env + 1 }
          BNone{}   -> env
 
@@ -145,7 +145,7 @@ kindEnvOfEnvT env
 --   then the one in the second environment takes preference.
 union :: Ord n => EnvT n -> EnvT n -> EnvT n
 union env1 env2
-        = EnvT       
+        = EnvT
         { envtMap          = envtMap          env1 `Map.union` envtMap          env2
         , envtStack        = envtStack        env2  ++ envtStack                env1
         , envtStackLength  = envtStackLength  env2  +  envtStackLength          env1
@@ -180,12 +180,12 @@ memberBind uu env
 lookup :: Ord n => Bound n -> EnvT n -> Maybe (Type n)
 lookup uu env
  = case uu of
-        UName n 
-         ->      Map.lookup n (envtMap env) 
+        UName n
+         ->      Map.lookup n (envtMap env)
          `mplus` envtPrimFun env n
 
-        UIx i     -> P.lookup i (zip [0..] (envtStack env))
-        UPrim n _ -> envtPrimFun env n
+        UIx i    -> P.lookup i (zip [0..] (envtStack env))
+        UPrim n  -> envtPrimFun env n
 
 
 -- | Lookup a bound name from an environment.

@@ -32,7 +32,7 @@ instance NFData OpConcrete where
 instance Pretty OpConcrete where
  ppr pf
   = case pf of
-        OpConcreteProj arity ix   -> text "proj" 
+        OpConcreteProj arity ix   -> text "proj"
                                         <> int arity <> text "_" <> int ix
                                         <> text "#"
 
@@ -97,20 +97,20 @@ typeOpConcrete op
  = case op of
         -- Tuple projections --------------------
         OpConcreteProj a ix
-         -> tForalls (replicate a kData) 
+         -> tForalls (replicate a kData)
          $ \_ -> tFun   (tTupleN [TVar (UIx i) | i <- reverse [0..a-1]])
                         (TVar (UIx (a - ix)))
 
 
         -- rateOfSeries#   :: [p : Proc]. [k : Rate]. [a : Data]
         --                 .  Series p k a -> RateNat k
-        OpConcreteRateOfSeries 
+        OpConcreteRateOfSeries
          -> tForalls [kProc, kRate, kData] $ \[tP, tKR, tA]
                 -> tSeries tP tKR tA `tFun` tRateNat tKR
 
         -- natOfRateNat#   :: [k : Rate]. RateNat k -> Nat#
-        OpConcreteNatOfRateNat 
-         -> tForall kRate $ \tK 
+        OpConcreteNatOfRateNat
+         -> tForall kRate $ \tK
                 -> tRateNat tK `tFun` tNat
 
         -- next#   :: [a : Data]. [k : Rate]. Series# k a -> Nat# -> a
@@ -128,7 +128,7 @@ typeOpConcrete op
         --         .  RateNat (DownN# k) -> Series# k a -> Series# (DownN# k) a
         OpConcreteDown n
          -> tForalls [kProc, kRate, kData]
-         $  \[tP, tK, tA] -> tRateNat (tDown n tK) 
+         $  \[tP, tK, tA] -> tRateNat (tDown n tK)
                         `tFun` tSeries tP tK tA `tFun` tSeries tP (tDown n tK) tA
 
         -- tail$N# :: [k : Rate]. [a : Data].
@@ -151,8 +151,8 @@ xProj ts ix  x
 
 
 xRateOfSeries :: TypeF -> TypeF -> TypeF -> ExpF -> ExpF
-xRateOfSeries tP tK tA xS 
-         = xApps  (xVarOpConcrete OpConcreteRateOfSeries) 
+xRateOfSeries tP tK tA xS
+         = xApps  (xVarOpConcrete OpConcreteRateOfSeries)
                   [XType tP, XType tK, XType tA, xS]
 
 
@@ -190,5 +190,5 @@ xTail n tP tK tE xRN xS
 -- Utils -----------------------------------------------------------------------
 xVarOpConcrete :: OpConcrete -> Exp () Name
 xVarOpConcrete op
-        = XVar  (UPrim (NameOpConcrete op) (typeOpConcrete op))
+        = XVar  (UPrim (NameOpConcrete op))
 

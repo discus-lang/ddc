@@ -1,9 +1,9 @@
 
 -- | Environment of a type expression.
 --
---   An environment contains the types 
+--   An environment contains the types
 --     named bound variables,
---     named primitives, 
+--     named primitives,
 --     and a deBruijn stack for anonymous variables.
 --
 module DDC.Core.Env.EnvX
@@ -24,7 +24,7 @@ module DDC.Core.Env.EnvX
         , kindEnvOfEnvX
         , typeEnvOfEnvX
 
-        -- * Projections 
+        -- * Projections
         , depth
         , lookupT
         , lookupX,      lookupNameX
@@ -68,8 +68,8 @@ data EnvX n
         , envxMap          :: !(Map n (Type n))
 
           -- | Types of anonymous deBruijn variables.
-        , envxStack        :: ![Type n] 
-        
+        , envxStack        :: ![Type n]
+
           -- | The length of the above stack.
         , envxStackLength  :: !Int }
 
@@ -78,28 +78,28 @@ data EnvX n
 empty :: EnvX n
 empty   = EnvX
         { envxEnvT         = EnvT.empty
-        , envxPrimFun      = \_ -> Nothing 
+        , envxPrimFun      = \_ -> Nothing
         , envxDataDefs     = DataDef.emptyDataDefs
         , envxMap          = Map.empty
-        , envxStack        = [] 
+        , envxStack        = []
         , envxStackLength  = 0 }
 
 
 -- | Build an `EnvX` from prim environments.
-fromPrimEnvs 
-        :: Ord n 
+fromPrimEnvs
+        :: Ord n
         => Env.KindEnv n        -- ^ Primitive kind environment.
         -> Env.TypeEnv n        -- ^ Primitive type environment.
         -> DataDefs n           -- ^ Primitive data type definitions.
         -> EnvX n
 
 fromPrimEnvs kenv tenv defs
- = let  envt    = EnvT.empty 
+ = let  envt    = EnvT.empty
                 { EnvT.envtPrimFun = Env.envPrimFun kenv }
 
         envx    = empty
                 { envxEnvT         = envt
-                , envxPrimFun      = Env.envPrimFun tenv 
+                , envxPrimFun      = Env.envPrimFun tenv
                 , envxDataDefs     = defs }
    in   envx
 
@@ -117,7 +117,7 @@ extendX :: Ord n => Bind n -> EnvX n -> EnvX n
 extendX bb env
  = case bb of
          BName n k -> env { envxMap         = Map.insert n k (envxMap env) }
-         BAnon   k -> env { envxStack       = k : envxStack env 
+         BAnon   k -> env { envxStack       = k : envxStack env
                           , envxStackLength = envxStackLength env + 1 }
          BNone{}   -> env
 
@@ -174,7 +174,7 @@ fromTypeMap m
 
 -- | Extract a `KindEnv` from an EnvX.
 kindEnvOfEnvX :: Ord n => EnvX n -> Env.KindEnv n
-kindEnvOfEnvX env 
+kindEnvOfEnvX env
         = EnvT.kindEnvOfEnvT $ envxEnvT env
 
 
@@ -191,9 +191,9 @@ typeEnvOfEnvX env
 --   then the one in the second environment takes preference.
 union :: Ord n => EnvX n -> EnvX n -> EnvX n
 union env1 env2
-        = EnvX       
+        = EnvX
         { envxEnvT         = envxEnvT          env1 `EnvT.union` envxEnvT        env2
-        , envxPrimFun      = \n -> envxPrimFun env2 n `mplus`   envxPrimFun env1 n 
+        , envxPrimFun      = \n -> envxPrimFun env2 n `mplus`   envxPrimFun env1 n
         , envxDataDefs     = envxDataDefs      env1 `mappend`   envxDataDefs     env2
         , envxMap          = envxMap           env1 `Map.union` envxMap          env2
         , envxStack        = envxStack         env2  ++ envxStack                env1
@@ -225,19 +225,19 @@ memberBindX uu env
 -- | Lookup a bound variable from an environment.
 lookupT :: Ord n => Bound n -> EnvX n -> Maybe (Kind n)
 lookupT uu env
- = EnvT.lookup uu (envxEnvT env) 
+ = EnvT.lookup uu (envxEnvT env)
 
 
 -- | Lookup a bound variable from an environment.
 lookupX :: Ord n => Bound n -> EnvX n -> Maybe (Type n)
 lookupX uu env
  = case uu of
-        UName n 
-         ->      Map.lookup n (envxMap env) 
+        UName n
+         ->      Map.lookup n (envxMap env)
          `mplus` envxPrimFun env n
 
-        UIx i     -> P.lookup i (zip [0..] (envxStack env))
-        UPrim n _ -> envxPrimFun env n
+        UIx i   -> P.lookup i (zip [0..] (envxStack env))
+        UPrim n -> envxPrimFun env n
 
 
 -- | Lookup a bound name from an environment.
@@ -263,7 +263,7 @@ lift :: Ord n => Int -> EnvX n -> EnvX n
 lift n env
         = EnvX
         { envxEnvT         = envxEnvT env
-        , envxPrimFun      = envxPrimFun      env 
+        , envxPrimFun      = envxPrimFun      env
         , envxDataDefs     = envxDataDefs     env
         , envxMap          = Map.map (liftT n) (envxMap env)
         , envxStack        = map (liftT n) (envxStack env)

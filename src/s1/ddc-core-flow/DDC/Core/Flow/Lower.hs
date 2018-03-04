@@ -67,7 +67,7 @@ defaultConfigScalar
         { configMethod  = MethodScalar }
 
 
--- | Config for producing code with vector operations, 
+-- | Config for producing code with vector operations,
 --   where the loops just handle a size of data which is an even multiple
 --   of the vector width.
 defaultConfigKernel :: Config
@@ -76,7 +76,7 @@ defaultConfigKernel
         { configMethod  = MethodKernel (Lifting 8)}
 
 
--- | Config for producing code with vector operations, 
+-- | Config for producing code with vector operations,
 --   where the loops handle arbitrary data sizes, of any number of elements.
 defaultConfigVector :: Config
 defaultConfigVector
@@ -86,18 +86,18 @@ defaultConfigVector
 
 -- Lower ----------------------------------------------------------------------
 -- | Take a module that contains some well formed series processes defined
---   at top-level, and lower them into procedures. 
+--   at top-level, and lower them into procedures.
 lowerModule :: Config -> ModuleF -> Either Error ModuleF
 lowerModule config mm
  = case slurpProcesses mm of
     -- Can't slurp a process definition from one of the top level series
-    -- processes. 
-    Left  err   
+    -- processes.
+    Left  err
      -> Left (ErrorSlurpError err)
 
     -- We've got a process definition for all of then.
     Right procs
-     -> do      
+     -> do
         -- Find names of all process bindings
         let procname (Left  p) = [processName p]
             procname (Right _) = []
@@ -130,11 +130,10 @@ lowerEither _config _procnames (Right (b,xx))
  where
 
   -- Replace all calls to runProcess# with runProcessUnit#
-  replaceRunProc (XVar (UPrim (NameOpSeries OpSeriesRunProcess) _))
+  replaceRunProc (XVar (UPrim (NameOpSeries OpSeriesRunProcess)))
    = Just
    $ XVar
    $ UPrim (NameOpSeries OpSeriesRunProcessUnit)
-           (typeOpSeries OpSeriesRunProcessUnit)
   -- Also replace any Process# types with Units
   replaceRunProc (XType t)
    = Just
@@ -175,15 +174,15 @@ lowerEither _config _procnames (Right (b,xx))
 
       TSum ts
        -> TSum ts
- 
+
 
 -- | Lower a single series process into fused code.
 lowerProcess :: Config -> Process -> Either Error (BindF, ExpF)
 lowerProcess config process
- 
+
  -- Scalar lowering ------------------------------
  | MethodScalar         <- configMethod config
- = do  
+ = do
         -- Schedule process into scalar code.
         proc                 <- scheduleScalar process
 
@@ -194,7 +193,7 @@ lowerProcess config process
 
 
  -- Vector lowering -----------------------------
- -- To use the vector method, 
+ -- To use the vector method,
  --  the type of the source function needs to have a quantifier for
  --  the rate variable (k), as well as a (RateNat k) witness.
  --
@@ -216,9 +215,9 @@ lowerProcess config process
         --  Vector code processes several elements per loop iteration.
         procVec         <- scheduleKernel lifting process
         let (_, xProcVec) = extractProcedure procVec
-        
-        
-        let bxsDownSeries       
+
+
+        let bxsDownSeries
                 = [ ( bS
                     , ( BName (NameVarMod n "down")
                               (tSeries tProc (tDown c tK) tE)
@@ -238,9 +237,9 @@ lowerProcess config process
                 | otherwise
                 = liftM XVar $ takeSubstBoundOfBind b
 
-        let Just xsVecValArgs    
-                = sequence 
-                $ map getDownValArg 
+        let Just xsVecValArgs
+                = sequence
+                $ map getDownValArg
                 $ map snd
                 $ filter (not.fst)
                 $ processParamFlags process
@@ -248,7 +247,7 @@ lowerProcess config process
         let bRateDown
                 = BAnon (tRateNat (tDown c tK))
 
-        let xProcVec'       
+        let xProcVec'
                 = XLam bRateDown
                 $ xLets [LLet b x | (_, (b, x)) <- bxsDownSeries]
                 $ xApps xProcVec
@@ -295,7 +294,7 @@ lowerProcess config process
                 = liftM XVar $ takeSubstBoundOfBind b
 
         let Just xsTailValArgs
-                = sequence 
+                = sequence
                 $ map getTailValArg (map snd $ filter (not.fst) $ procedureParamFlags procTail)
 
         let bRateTail
@@ -315,10 +314,10 @@ lowerProcess config process
                                 xBody
 
             xBody
-                = XLet (LLet   (BNone tUnit) 
+                = XLet (LLet   (BNone tUnit)
                                (xSplit c tK xRN xProcVec' xProcTail'))
                        xUnit
-                
+
         -- Reconstruct a binder for the whole procedure / process.
         let bProc
                 = BName (processName process)
@@ -329,7 +328,7 @@ lowerProcess config process
  -- Kernel lowering -----------------------------
  | MethodKernel lifting <- configMethod config
  = do
-        -- Schedule process into 
+        -- Schedule process into
         proc            <- scheduleKernel lifting process
 
         -- Extract code for the kernel
@@ -339,18 +338,18 @@ lowerProcess config process
 
  | otherwise
  = error $  "ddc-core-flow.lowerProcess: invalid lowering method"
-         
+
 
 
 -- Clean ----------------------------------------------------------------------
 -- | Do some beta-reductions to ensure that arguments to worker functions
---   are inlined, then normalize nested applications. 
+--   are inlined, then normalize nested applications.
 --   When snipping, leave lambda abstractions in place so the worker functions
 --   applied to our loop combinators aren't moved.
 cleanModule :: ModuleF -> ModuleF
 cleanModule mm
  = let
-        clean           
+        clean
          =    C.Trans (C.Namify (C.makeNamifier freshT)
                                 (C.makeNamifier freshX))
          M.<> C.Trans C.Forward
@@ -358,7 +357,7 @@ cleanModule mm
          M.<> C.Trans (C.Snip (Snip.configZero { Snip.configPreserveLambdas = True }))
          M.<> C.Trans C.Flatten
 
-        mm_cleaned      
+        mm_cleaned
          = C.result $ S.evalState
                 (C.applySimplifier profile Env.empty Env.empty
                         (C.Fix 4 clean) mm)

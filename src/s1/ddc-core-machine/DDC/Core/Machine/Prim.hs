@@ -416,7 +416,7 @@ tProcess = tConTyConMachine TyConProcess
 tConTyConMachine :: TyConMachine -> Type Name
 tConTyConMachine tcm
  = let  k       = kindTyConMachine tcm
-        u       = UPrim (NameTyConMachine tcm) k
+        u       = UPrim (NameTyConMachine tcm)
         tc      = TyConBound u k
    in   TCon tc
 

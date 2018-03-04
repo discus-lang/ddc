@@ -20,7 +20,7 @@ import Control.Monad
 import Data.List
 
 
--- | Lifting config controls how many elements should be processed 
+-- | Lifting config controls how many elements should be processed
 --   per loop iteration.
 data Lifting
         = Lifting
@@ -39,12 +39,12 @@ type LiftEnv
 
 
 -- | Try to lift the given type.
-liftType :: Lifting -> TypeF -> Maybe TypeF 
+liftType :: Lifting -> TypeF -> Maybe TypeF
 liftType l tt
-        | liftingFactor l == 1 
+        | liftingFactor l == 1
         = Just tt
 
-        | elem tt 
+        | elem tt
                 [ tFloat 32, tFloat 64
                 , tWord  8,  tWord  16, tWord  32, tWord  64
                 , tInt
@@ -52,7 +52,7 @@ liftType l tt
 
         = Just (tVec (liftingFactor l) tt)
 
-        | otherwise            
+        | otherwise
         = Nothing
 
 
@@ -81,8 +81,7 @@ liftWorker lifting envScalar envLift xx
          -- ISSUE #328: Element type for rep opretora is hard coded to Float32
          | any (boundMatchesBind u) envScalar
          , nPrim        <- PrimVecRep (liftingFactor lifting)
-         , tPrim        <- typePrimVec nPrim
-         -> Right $ XApp (XApp  (XVar (UPrim (NamePrimVec nPrim) tPrim))
+         -> Right $ XApp (XApp  (XVar (UPrim (NamePrimVec nPrim)))
                                 (XType $ tFloat 32))
                          xx
 
@@ -92,20 +91,19 @@ liftWorker lifting envScalar envLift xx
          | DaConPrim (NameLitFloat _ 32) _
                     <- dc
          , nPrim    <- PrimVecRep (liftingFactor lifting)
-         , tPrim    <- typePrimVec nPrim
-         -> Right $ XApp (XApp (XVar (UPrim (NamePrimVec nPrim) tPrim)) 
+         -> Right $ XApp (XApp (XVar (UPrim (NamePrimVec nPrim)))
                                (XType $ tFloat 32))
                          xx
 
         -- Replace scalar primops by vector versions.
-        XApp (XVar (UPrim (NamePrimArith prim) _)) (XType tElem)
+        XApp (XVar (UPrim (NamePrimArith prim))) (XType tElem)
          |  Just prim'  <- liftPrimArithToVec (liftingFactor lifting) prim
-         -> Right $ XApp (XVar (UPrim (NamePrimVec prim') (typePrimVec prim')))
+         -> Right $ XApp (XVar (UPrim (NamePrimVec prim')))
                          (XType tElem)
 
 
         -- Boiler plate application.
-        XApp x1 x2      
+        XApp x1 x2
          -> do  x1'     <- down x1
                 x2'     <- down x2
                 return  $  XApp x1' x2'
@@ -117,7 +115,7 @@ liftWorker lifting envScalar envLift xx
 -- Down -----------------------------------------------------------------------
 -- | Lower the rate of a series,
 --   to account for lifting of the code that consumes it.
-lowerSeriesRate :: Lifting -> TypeF -> Maybe TypeF 
+lowerSeriesRate :: Lifting -> TypeF -> Maybe TypeF
 lowerSeriesRate lifting tt
  | Just (NameTyConFlow TyConFlowSeries, [tP, tK, tA])
         <- takePrimTyConApps tt

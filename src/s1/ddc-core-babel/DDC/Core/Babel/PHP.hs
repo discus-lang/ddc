@@ -93,7 +93,7 @@ phpOfExp xx ctx m
      , Just  arity <- Map.lookup n m
      -> wrap $ text "DDC::curry(" <> bare_name n <> text ", "
                                   <> text (show arity) <> text ")"
-     | UPrim p _ <- v
+     | UPrim p <- v
      -> wrap $ phpOfPrimOp p []
      | otherwise
      -> wrap $ var_name_u v
@@ -305,7 +305,7 @@ var_name_b b = text "$" <> bare_name_b b
 var_name_u :: Bound T.Name -> Doc
 var_name_u (UName n) = text "$" <> bare_name n
 var_name_u (UIx _) = error "ddc-core-babel.var_name: Only named vars allowed"
-var_name_u (UPrim n _) = sanitise_prim n
+var_name_u (UPrim n) = sanitise_prim n
 
 var_name_t :: String -> Doc
 var_name_t n = text "$" <> text n

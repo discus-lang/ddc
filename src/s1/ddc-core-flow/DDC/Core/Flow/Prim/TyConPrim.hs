@@ -1,5 +1,5 @@
 
-module DDC.Core.Flow.Prim.TyConPrim 
+module DDC.Core.Flow.Prim.TyConPrim
         ( kindPrimTyCon
         , tVoid
         , tBool
@@ -34,34 +34,34 @@ kindPrimTyCon tc
 
 -- Compounds ------------------------------------------------------------------
 -- | Primitive `Void#` type.
-tVoid   = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConVoid) kData) kData)
+tVoid   = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConVoid)) kData)
 
 
 -- | Primitive `Bool#` type.
 tBool :: Type Name
-tBool   = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConBool) kData) kData)
+tBool   = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConBool)) kData)
 
 
 -- | Primitive Nat# type.
 tNat ::  Type Name
-tNat    = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConNat)  kData) kData)
+tNat    = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConNat)) kData)
 
 
 -- | Primitive `Int#` type.
 tInt ::  Type Name
-tInt    = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConInt)  kData) kData)
+tInt    = TCon (TyConBound (UPrim (NamePrimTyCon PrimTyConInt)) kData)
 
 
 -- | Primitive `FloatN#` type of the given width.
 tFloat :: Int -> Type Name
 tFloat bits
-        = TCon (TyConBound (UPrim (NamePrimTyCon (PrimTyConFloat bits)) kData) kData)
+        = TCon (TyConBound (UPrim (NamePrimTyCon (PrimTyConFloat bits))) kData)
 
 
 -- | Primitive `WordN#` type of the given width.
 tWord :: Int -> Type Name
-tWord bits 
-        = TCon (TyConBound (UPrim (NamePrimTyCon (PrimTyConWord bits)) kData) kData)
+tWord bits
+        = TCon (TyConBound (UPrim (NamePrimTyCon (PrimTyConWord bits))) kData)
 
 
 -- | Primitive @VecN# a@.
@@ -73,6 +73,6 @@ tVec n tA = TApp (tConPrimTyCon (PrimTyConVec n)) tA
 tConPrimTyCon :: PrimTyCon -> Type Name
 tConPrimTyCon tcp
  = let  k       = kindPrimTyCon tcp
-        u       = UPrim (NamePrimTyCon tcp) k
+        u       = UPrim (NamePrimTyCon tcp)
         tc      = TyConBound u k
    in   TCon tc

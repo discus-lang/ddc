@@ -39,7 +39,7 @@ data Context
         -- | In a nested context, like in the right of a let-binding.
         --   The expression should produce a value that we assign to this
         --   variable.
-        | ContextNest (Bind Name)        
+        | ContextNest (Bind Name)
         deriving Show
 
 
@@ -56,10 +56,10 @@ isContextNest cc
 --
 --   If this is the body of a top-level function then all code paths
 --   must end with a control transfer primop like return# or tailcall#.
---    
+--
 --   The `Context` tells us what do do when we get to the end of the block.
 --
-convBlockM 
+convBlockM
         :: Show a
         => Config a
         -> Context -> KindEnv Name -> TypeEnv Name
@@ -83,7 +83,7 @@ convBlockM config context kenv tenv xx
 
 
          -- When we're in a nested context, and the primop we're calling
-         -- passes control then it doesn't produce a value to assign to 
+         -- passes control then it doesn't produce a value to assign to
          -- any result var.
          | ContextNest{}            <- context
          , Just (NamePrimOp p, xs)  <- takeXFragApps xx
@@ -91,14 +91,14 @@ convBlockM config context kenv tenv xx
          -> do  x1      <- convPrimCallM config kenv tenv p xs
                 return  $ x1 <> semi
 
-        _ 
+        _
          -- In a nested context with a BName binder,
          --   assign the result value to the provided variable.
          | isRValue xx
          , ContextNest (BName n _)  <- context
          , Just n'                  <- seaNameOfLocal n
          -> do  xx'     <- convRValueM config kenv tenv xx
-                return  $ vcat 
+                return  $ vcat
                        [ fill 12 n' <+> equals <+> xx' <> semi ]
 
          -- In a nested context with a BNone binder,
@@ -106,18 +106,18 @@ convBlockM config context kenv tenv xx
          | isRValue xx
          , ContextNest  (BNone _)   <- context
          -> do  xx'     <- convRValueM config kenv tenv xx
-                return  $ vcat 
+                return  $ vcat
                        [ xx' <> semi ]
 
         -- Binding from a case-expression.
         XLet _ (LLet b x1@XCase{}) x2
-         -> do  
+         -> do
                 -- Convert the right hand side in a nested context.
                 --  The ContextNext holds the var to assign the result to.
                 x1'     <- convBlockM config (ContextNest b) kenv tenv x1
 
                 -- Convert the rest of the function.
-                let tenv' = Env.extend b tenv 
+                let tenv' = Env.extend b tenv
                 x2'     <- convBlockM config context         kenv tenv' x2
 
                 return  $ vcat
@@ -163,7 +163,7 @@ convBlockM config context kenv tenv xx
          | isFailX xFail
          , Just n       <- takeNameOfDaCon dc
          , Just n'      <- convDaConName n
-         -> do  
+         -> do
                 x'      <- convRValueM config kenv tenv x
                 x1'     <- convBlockM  config context kenv tenv x1
                 xFail'  <- convBlockM  config context kenv tenv xFail
@@ -226,30 +226,30 @@ isCallPrim pp
 
 -- | Check whether this an application of the fail# primop.
 isFailX  :: Exp a Name -> Bool
-isFailX (XApp _ (XVar _ (UPrim (NamePrimOp (PrimControl PrimControlFail)) _)) _)
+isFailX (XApp _ (XVar _ (UPrim (NamePrimOp (PrimControl PrimControlFail)))) _)
           = True
 isFailX _ = False
 
 
 -- Alt --------------------------------------------------------------------------------------------
 -- | Convert a case alternative to C source text.
-convAltM 
-        :: Show a 
+convAltM
+        :: Show a
         => Config a
         -> Context      -> KindEnv Name -> TypeEnv Name
-        -> Alt a Name 
+        -> Alt a Name
         -> ConvertM a Doc
 
 convAltM config context kenv tenv aa
- = let end 
+ = let end
         | isContextNest context = line <> text "break;"
         | otherwise             = empty
-   
+
    in case aa of
-        AAlt PDefault x1 
+        AAlt PDefault x1
          -> do  x1'     <- convBlockM config context kenv tenv x1
                 return  $ vcat
-                        [ text "default:" 
+                        [ text "default:"
                         , lbrace <> indent 5 (x1' <> end)
                                  <> line
                                  <> rbrace]
@@ -269,7 +269,7 @@ convAltM config context kenv tenv aa
 
 -- | Convert a data constructor name to a pattern to use in a switch.
 --
---   Only integral-ish types can be used as patterns, for others 
+--   Only integral-ish types can be used as patterns, for others
 --   such as Floats we rely on the Lite transform to have expanded
 --   cases on float literals into a sequence of boolean checks.
 convDaConName :: Name -> Maybe Doc
@@ -292,17 +292,17 @@ convDaConName nn
 
         _                  -> Nothing
 
- | otherwise 
+ | otherwise
  = Nothing
 
 
 -- RValue -----------------------------------------------------------------------------------------
 -- | Convert an Right-value to C source text.
-convRValueM 
-        :: Show a 
+convRValueM
+        :: Show a
         => Config a
-        -> KindEnv Name -> TypeEnv Name 
-        -> Exp a Name 
+        -> KindEnv Name -> TypeEnv Name
+        -> Exp a Name
         -> ConvertM a Doc
 
 convRValueM config kenv tenv xx
@@ -320,7 +320,7 @@ convRValueM config kenv tenv xx
         XCon _ dc
          | DaConPrim (NamePrimLit p) _        <- dc
          -> case p of
-                PrimLitBool b   
+                PrimLitBool b
                  | b            -> return $ integer 1
                  | otherwise    -> return $ integer 0
 
@@ -339,19 +339,19 @@ convRValueM config kenv tenv xx
 
         -- Super application.
         XApp{}
-         |  Just (XVar _ (UName nSuper), args)  
+         |  Just (XVar _ (UName nSuper), args)
                                         <- takeXApps xx
-         -> do  
-                -- Get the C name to use when calling the super, 
+         -> do
+                -- Get the C name to use when calling the super,
                 -- which depends on how it's imported and exported.
-                let Just nSuper' 
-                        = seaNameOfSuper 
+                let Just nSuper'
+                        = seaNameOfSuper
                            (lookup nSuper $ moduleImportValues $ configModule config)
                            (lookup nSuper $ moduleExportValues $ configModule config)
                            nSuper
 
                 -- Ditch type and witness arguments
-                args'   <- mapM (convRValueArgM config kenv tenv) 
+                args'   <- mapM (convRValueArgM config kenv tenv)
                         $  filter keepFunArgX args
 
                 return  $ nSuper' <> parenss args'
@@ -363,7 +363,7 @@ convRValueM config kenv tenv xx
         _ -> throw $ ErrorRValueInvalid xx
 
 
-convRValueArgM 
+convRValueArgM
         :: Show a
         => Config a
         -> KindEnv Name -> TypeEnv Name
@@ -378,7 +378,7 @@ convRValueArgM config kenv tenv aa
         RImplicit{}     -> error "convRValueArgM: R value invalid"
 
 
--- | Check if some expression is an r-value, 
+-- | Check if some expression is an r-value,
 --   meaning a variable, constructor, application or cast of one.
 isRValue :: Exp a Name -> Bool
 isRValue xx
@@ -401,11 +401,11 @@ keepFunArgX xx
 
 -- PrimCalls --------------------------------------------------------------------------------------
 -- | Convert a call to a primitive operator to C source text.
-convPrimCallM 
-        :: Show a 
+convPrimCallM
+        :: Show a
         => Config a
         -> KindEnv Name -> TypeEnv Name
-        -> PrimOp       -> [Arg a Name] 
+        -> PrimOp       -> [Arg a Name]
         -> ConvertM a Doc
 
 convPrimCallM config kenv tenv p args
@@ -425,7 +425,7 @@ convPrimCallM config kenv tenv p args
         PrimCast PrimCastPromote
          | [RType tDst, RType tSrc, RTerm x1] <- args
          , Just (NamePrimTyCon tcSrc, _) <- takePrimTyConApps tSrc
-         , Just (NamePrimTyCon tcDst, _) <- takePrimTyConApps tDst 
+         , Just (NamePrimTyCon tcDst, _) <- takePrimTyConApps tDst
          , primCastPromoteIsValid pp tcSrc tcDst
          -> do  tDst'   <- convTypeM   kenv tDst
                 x1'     <- convRValueM config kenv tenv x1
@@ -434,7 +434,7 @@ convPrimCallM config kenv tenv p args
         PrimCast PrimCastTruncate
          | [RType tDst, RType tSrc, RTerm x1] <- args
          , Just (NamePrimTyCon tcSrc, _) <- takePrimTyConApps tSrc
-         , Just (NamePrimTyCon tcDst, _) <- takePrimTyConApps tDst 
+         , Just (NamePrimTyCon tcDst, _) <- takePrimTyConApps tDst
          , primCastTruncateIsValid pp tcSrc tcDst
          -> do  tDst'   <- convTypeM   kenv tDst
                 x1'     <- convRValueM config kenv tenv x1
@@ -461,11 +461,11 @@ convPrimCallM config kenv tenv p args
          | RTerm xFunTys : xsArgs      <- drop (arity + 1) args
          , Just (xFun, _)        <- takeXApps xFunTys
          , XVar _ (UName nSuper) <- xFun
-         -> do  
-                -- Get the C name to use when calling the super, 
+         -> do
+                -- Get the C name to use when calling the super,
                 -- which depends on how it's imported and exported.
-                let Just nSuper' 
-                        = seaNameOfSuper 
+                let Just nSuper'
+                        = seaNameOfSuper
                            (lookup nSuper $ moduleImportValues $ configModule config)
                            (lookup nSuper $ moduleExportValues $ configModule config)
                            nSuper
@@ -477,7 +477,7 @@ convPrimCallM config kenv tenv p args
         -- Store primops.
         PrimStore op
          -> do  let op'  = convPrimStore op
-                xs'     <- mapM   (convRValueArgM config kenv tenv) 
+                xs'     <- mapM   (convRValueArgM config kenv tenv)
                         $  filter (keepPrimArgX kenv) args
                 return  $ op' <> parenss xs'
 
@@ -490,7 +490,7 @@ keepPrimArgX kenv aa
  = case aa of
         RType (TVar u)
          |  Just k       <- Env.lookup u kenv
-         -> isDataKind k 
+         -> isDataKind k
 
         RWitness{}       -> False
         _                -> True

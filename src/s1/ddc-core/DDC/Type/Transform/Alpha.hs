@@ -9,7 +9,7 @@ import DDC.Type.Sum
 class Alpha (c :: * -> *) where
  -- | Apply a function to all the names in a thing.
  alpha :: forall n1 n2. Ord n2 => (n1 -> n2) -> c n1 -> c n2
- 
+
 
 instance Alpha Type where
  alpha f tt
@@ -33,14 +33,14 @@ instance Alpha Bind where
         BName n t       -> BName (f n) (alpha f t)
         BAnon   t       -> BAnon (alpha f t)
         BNone   t       -> BNone (alpha f t)
-        
+
 
 instance Alpha Bound where
  alpha f uu
   = case uu of
         UIx i           -> UIx i
         UName n         -> UName (f n)
-        UPrim n t       -> UPrim (f n) (alpha f t)
+        UPrim n         -> UPrim (f n)
 
 
 instance Alpha TyCon where

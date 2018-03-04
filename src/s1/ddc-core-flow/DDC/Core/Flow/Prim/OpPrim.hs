@@ -75,12 +75,12 @@ typePrimVec op
         PrimVecMul n    -> tForall kData $ \t -> tVec n t `tFun` tVec n t `tFun` tVec n t
         PrimVecDiv n    -> tForall kData $ \t -> tVec n t `tFun` tVec n t `tFun` tVec n t
 
-        PrimVecRep n 
+        PrimVecRep n
          -> tForall kData $ \t -> t `tFun` tVec n t
 
         PrimVecPack n
-         -> tForall kData 
-         $  \t -> let Just t' = tFunOfList (replicate n t ++ [tVec n t]) 
+         -> tForall kData
+         $  \t -> let Just t' = tFunOfList (replicate n t ++ [tVec n t])
                   in  t'
 
         PrimVecProj n _
@@ -99,7 +99,7 @@ typePrimVec op
 -- Compounds ------------------------------------------------------------------
 xvRep   :: Int -> Type Name -> Exp () Name -> Exp () Name
 xvRep c tA xZ
- = xApps (xVarPrimVec (PrimVecRep c))   
+ = xApps (xVarPrimVec (PrimVecRep c))
          [XType tA, xZ]
 
 xvProj   :: Int -> Int -> Type Name -> Exp () Name -> Exp () Name
@@ -122,5 +122,5 @@ xvScatter c tA xVec xIxs xElems
 -- Utils -----------------------------------------------------------------------
 xVarPrimVec :: PrimVec -> Exp () Name
 xVarPrimVec op
-        = XVar  (UPrim (NamePrimVec op) (typePrimVec op))
+        = XVar  (UPrim (NamePrimVec op))
 

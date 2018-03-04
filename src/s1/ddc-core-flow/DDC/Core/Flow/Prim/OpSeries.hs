@@ -2,7 +2,7 @@
 module DDC.Core.Flow.Prim.OpSeries
         ( readOpSeries
         , typeOpSeries
-        
+
         -- Compounds
         , xSeriesOfRateVec)
 where
@@ -16,7 +16,7 @@ import DDC.Core.Transform.BoundT
 import DDC.Data.Pretty
 import Control.DeepSeq
 import Data.List
-import Data.Char        
+import Data.Char
 
 
 instance NFData OpSeries where
@@ -130,7 +130,7 @@ readOpSeries str
 
 
 -- Types -----------------------------------------------------------------------
--- | Yield the type of a data flow operator, 
+-- | Yield the type of a data flow operator,
 --   or `error` if there isn't one.
 typeOpSeries :: OpSeries -> Type Name
 typeOpSeries op
@@ -144,21 +144,21 @@ takeTypeOpSeries :: OpSeries -> Maybe (Type Name)
 takeTypeOpSeries op
  = case op of
         -- Replicates -------------------------
-        -- rep  :: [p : Proc] [k : Rate] [a : Data] 
+        -- rep  :: [p : Proc] [k : Rate] [a : Data]
         --      .  a -> Series p k a
-        OpSeriesRep 
+        OpSeriesRep
          -> Just $ tForalls [kProc, kRate, kData] $ \[tP, tR, tA]
                 -> tA `tFun` tSeries tP tR tA
 
         -- reps  :: [p : Proc]. [k1 k2 : Rate]. [a : Data]
         --       .  Segd k1 k2 -> Series p k1 a -> Series p k2 a
-        OpSeriesReps 
+        OpSeriesReps
          -> Just $ tForalls [kProc, kRate, kRate, kData] $ \[tP, tK1, tK2, tA]
                 -> tSegd tK1 tK2 `tFun` tSeries tP tK1 tA `tFun` tSeries tP tK2 tA
 
 
         -- Indices ------------------------------
-        -- indices :: [p : Proc]. [k1 k2 : Rate]. 
+        -- indices :: [p : Proc]. [k1 k2 : Rate].
         --         .  Segd k1 k2 -> Series p k2 k1 Nat
         OpSeriesIndices
          -> Just $ tForalls [kProc, kRate, kRate] $ \[tP, tK1, tK2]
@@ -178,13 +178,13 @@ takeTypeOpSeries op
         --       .  (a0 -> .. aN) -> Series p kR kL a0 -> .. Series p kR kL aN
         OpSeriesMap n
          | n >= 2
-         , Just tWork <- tFunOfList   
-                         [ TVar (UIx i) 
+         , Just tWork <- tFunOfList
+                         [ TVar (UIx i)
                                 | i <- reverse [0..n] ]
 
          , Just tBody <- tFunOfList
                          (tWork : [tSeries (TVar $ UIx $ n + 2) (TVar $ UIx $ n + 1)
-                                           (TVar $ UIx   i) 
+                                           (TVar $ UIx   i)
                                 | i <- reverse [0..n] ])
 
          -> Just $ foldr TForall tBody
@@ -197,7 +197,7 @@ takeTypeOpSeries op
         --       -> Series p k1 kL a -> Series p k2 kL a
         OpSeriesPack
          -> Just $ tForalls [kProc, kRate, kRate, kData] $ \[tP, tK1, tK2, tA]
-                ->     tSel1   tP tK1 tK2 
+                ->     tSel1   tP tK1 tK2
                 `tFun` tSeries tP tK1 tA
                 `tFun` tSeries tP tK2 tA
 
@@ -222,7 +222,7 @@ takeTypeOpSeries op
         OpSeriesMkSel 1
          -> Just $ tForalls [kProc, kRate, kRate] $ \[tP, tK1, tKL]
                 ->       tSeries tP tK1 tBool
-                `tFun` (tForall kRate $ \tK2 
+                `tFun` (tForall kRate $ \tK2
                                 -> tSel1 (liftT 1 tP) (liftT 1 tK1) tK2 `tFun` tProcess (liftT 1 tP) (liftT 1 tKL))
                 `tFun` tProcess tP tKL
 
@@ -240,7 +240,7 @@ takeTypeOpSeries op
 
 
         -- runProcess# :: [k : Rate]
-        --          .  
+        --          .
         --             ([p : Proc]. Unit -> Process p k)
         --          ->  Unit
         OpSeriesRunProcess
@@ -250,7 +250,7 @@ takeTypeOpSeries op
                    `tFun` tUnit
 
         -- runProcessUnit# :: [k : Rate]
-        --          .  
+        --          .
         --             ([p : Proc]. Unit -> Unit)
         --          ->  Unit
         OpSeriesRunProcessUnit
@@ -271,13 +271,13 @@ takeTypeOpSeries op
             `tFun` tA
 
         -- ratifyN# :: [a0..aN z : Data]
-        --          .  Vector    a0 .. Vector   aN 
+        --          .  Vector    a0 .. Vector   aN
         --          -> ([k : Rate]. RateVec k a0 .. RateVec k aN -> z)
         --          -> z
         OpSeriesRateVecsOfVectors n
          | tK         <- TVar (UIx 0)
 
-         , Just tWork <- tFunOfList   
+         , Just tWork <- tFunOfList
                        $ [ tRateVec tK (TVar (UIx i))
                                 | i <- reverse [2..n+1] ]
                        ++[ TVar (UIx 1) ]
@@ -362,14 +362,14 @@ takeTypeOpSeries op
         --          . RateVec k1 a -> Series p k2 Nat# -> Series p k2 a
         OpSeriesGather
          -> Just $ tForalls [kProc, kRate, kRate, kData] $ \[tP, tK1, tK2, tA]
-                 ->     tRateVec   tK1     tA 
+                 ->     tRateVec   tK1     tA
                  `tFun` tSeries tP tK2 tNat
                  `tFun` tSeries tP tK2 tA
 
 
         -- fill#    :: [p : Proc]. [k : Rate]. [a : Data]. Vector a -> Series p k a -> Process p k
         OpSeriesFill
-         -> Just $ tForalls [kProc, kRate, kData] $ \[tP, tK, tA] 
+         -> Just $ tForalls [kProc, kRate, kData] $ \[tP, tK, tA]
                 ->    tVector        tA
                `tFun` tSeries  tP tK tA
                `tFun` tProcess tP tK
@@ -452,20 +452,18 @@ takeTypeOpSeries op
                 -> tResize tP tJ (tRateCross tK tL)
             `tFun` tResize tP tJ             tK
 
-
-
         _ -> Nothing
 
 
 -- Compounds ------------------------------------------------------------------
 xSeriesOfRateVec :: Type Name -> Type Name -> Type Name -> Exp () Name -> Exp () Name
-xSeriesOfRateVec tP tK tA xV 
-         = xApps  (xVarOpSeries   OpSeriesSeriesOfRateVec) 
+xSeriesOfRateVec tP tK tA xV
+         = xApps  (xVarOpSeries   OpSeriesSeriesOfRateVec)
                   [XType tP, XType tK, XType tA, xV]
 
 
 -- Utils -----------------------------------------------------------------------
 xVarOpSeries   :: OpSeries -> Exp () Name
 xVarOpSeries   op
-        = XVar  (UPrim (NameOpSeries   op) (typeOpSeries   op))
+        = XVar  (UPrim (NameOpSeries   op))
 

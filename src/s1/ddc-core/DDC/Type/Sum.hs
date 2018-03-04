@@ -1,7 +1,7 @@
 
 -- | Utilities for working with `TypeSum`s.
 --
-module DDC.Type.Sum 
+module DDC.Type.Sum
         ( -- * Constructors
           empty
         , singleton
@@ -42,7 +42,7 @@ empty k = TypeSumBot k
 -- | Construct an empty type sum of the given kind, but in `TypeSumSet` form.
 --   This isn't exported.
 emptySet :: Kind n -> TypeSum n
-emptySet k 
+emptySet k
         = TypeSumSet
         { typeSumKind           = k
         , typeSumElems          = listArray hashTyConRange (repeat Set.empty)
@@ -71,7 +71,7 @@ elem t ts@TypeSumSet{}
  = case t of
         TVar (UName n)   -> Map.member n (typeSumBoundNamed ts)
         TVar (UIx   i)   -> Map.member i (typeSumBoundAnon  ts)
-        TVar (UPrim n _) -> Map.member n (typeSumBoundNamed ts)
+        TVar (UPrim n)   -> Map.member n (typeSumBoundNamed ts)
         TCon{}           -> L.elem t (typeSumSpill ts)
 
         TAbs{}           -> L.elem t (typeSumSpill ts)
@@ -81,7 +81,7 @@ elem t ts@TypeSumSet{}
          ,  tsThere      <- typeSumElems ts ! h
          -> Set.member vc tsThere
 
-        TApp{}           -> L.elem t (typeSumSpill ts) 
+        TApp{}           -> L.elem t (typeSumSpill ts)
 
         -- Foralls can't be a part of well-kinded sums.
         --  Just check whether the types are strucutrally equal
@@ -92,7 +92,7 @@ elem t ts@TypeSumSet{}
         -- being part of the sum.
         TSum ts1
          -> case toList ts1 of
-             [] | TCon (TyConKind KiConEffect)  <- typeSumKind ts1 
+             [] | TCon (TyConKind KiConEffect)  <- typeSumKind ts1
                 , TCon (TyConKind KiConEffect)  <- typeSumKind ts
                 -> True
 
@@ -111,7 +111,7 @@ insert t ts@TypeSumSet{}
    in case t of
         TVar (UName n)  -> ts { typeSumBoundNamed = Map.insert n k (typeSumBoundNamed ts) }
         TVar (UIx   i)  -> ts { typeSumBoundAnon  = Map.insert i k (typeSumBoundAnon  ts) }
-        TVar (UPrim n _)-> ts { typeSumBoundNamed = Map.insert n k (typeSumBoundNamed ts) }
+        TVar (UPrim n)  -> ts { typeSumBoundNamed = Map.insert n k (typeSumBoundNamed ts) }
 
         TCon{}          -> ts { typeSumSpill      = L.nub $ t : typeSumSpill ts }
 
@@ -123,14 +123,14 @@ insert t ts@TypeSumSet{}
          -> if Set.member vc tsThere
                 then ts
                 else ts { typeSumElems = (typeSumElems ts) // [(h, Set.insert vc tsThere)] }
-        
+
         TApp{}           -> ts { typeSumSpill      = L.nub $ t : typeSumSpill ts }
 
         -- Foralls can't be part of well-kinded sums.
         --  Just add them to the splill lists so that we can still
         --  pretty print such mis-kinded types.
         TForall{}        -> ts { typeSumSpill      = L.nub $ t : typeSumSpill ts }
-        
+
         TSum ts'         -> foldr insert ts (toList ts')
 
 
@@ -141,26 +141,26 @@ delete t ts@TypeSumSet{}
  = case t of
         TVar (UName n)  -> ts { typeSumBoundNamed = Map.delete n (typeSumBoundNamed ts) }
         TVar (UIx   i)  -> ts { typeSumBoundAnon  = Map.delete i (typeSumBoundAnon  ts) }
-        TVar (UPrim n _)-> ts { typeSumBoundNamed = Map.delete n (typeSumBoundNamed ts) }
+        TVar (UPrim n)  -> ts { typeSumBoundNamed = Map.delete n (typeSumBoundNamed ts) }
         TCon{}          -> ts { typeSumSpill      = L.delete t (typeSumSpill ts) }
 
         TAbs{}          -> ts { typeSumSpill      = L.delete t (typeSumSpill ts) }
-        
+
         TApp (TCon _) _
          | Just (h, vc) <- takeSumArrayElem t
          , tsThere      <- typeSumElems ts ! h
          -> ts { typeSumElems = (typeSumElems ts) // [(h, Set.delete vc tsThere)] }
-         
+
         TApp{}          -> ts { typeSumSpill      = L.delete t (typeSumSpill ts) }
 
         TForall{}       -> ts { typeSumSpill      = L.delete t (typeSumSpill ts) }
-        
+
         TSum ts'        -> foldr delete ts (toList ts')
 
 
 -- | Add two type sums.
 union     :: Ord n => TypeSum n -> TypeSum n -> TypeSum n
-union ts1 ts2 
+union ts1 ts2
         = foldr insert ts2 (toList ts1)
 
 
@@ -185,7 +185,7 @@ kindOfSum ts
 
 -- | Flatten out a sum, yielding a list of individual terms.
 toList :: TypeSum n -> [Type n]
-toList TypeSumBot{}       
+toList TypeSumBot{}
  = []
 
 toList TypeSumSet
@@ -196,11 +196,11 @@ toList TypeSumSet
         , typeSumSpill          = spill}
 
  =      [ makeSumArrayElem h vc
-                | (h, ts) <- assocs sumElems, vc <- Set.toList ts] 
+                | (h, ts) <- assocs sumElems, vc <- Set.toList ts]
         ++ [TVar $ UName n | (n, _) <- Map.toList named]
         ++ [TVar $ UIx   i | (i, _) <- Map.toList anon]
         ++ spill
-                
+
 
 -- | Convert a list of types to a `TypeSum`
 fromList :: Ord n => Kind n -> [Type n] -> TypeSum n
@@ -214,7 +214,7 @@ hashTyCon tc
  = case tc of
         TyConSpec tc'   -> hashTcCon tc'
         _               -> Nothing
-        
+
 
 -- | Yield the `TyConHash` of a `TyConBuiltin`, or `Nothing` if there isn't one.
 hashTcCon :: TcCon -> Maybe TyConHash
@@ -233,7 +233,7 @@ hashTyConRange :: (TyConHash, TyConHash)
 hashTyConRange
  =      ( TyConHash 0
         , TyConHash 6)
-                
+
 
 -- | Yield the `TyCon` corresponding to a `TyConHash`, or `error` if there isn't one.
 unhashTyCon :: TyConHash -> TyCon n
@@ -260,7 +260,7 @@ takeSumArrayElem (TApp (TCon tc) t2)
                 TVar u                  -> Just (h, TypeSumVar u)
                 TCon (TyConBound u k)   -> Just (h, TypeSumCon u k)
                 _                       -> Nothing
-        
+
 takeSumArrayElem _ = Nothing
 
 
@@ -304,7 +304,7 @@ instance Eq n => Eq (TypeSum n) where
  (==) ts1 ts2
 
         -- If the sum is empty, then just compare the kinds.
-        | []    <- toList ts1 
+        | []    <- toList ts1
         , []    <- toList ts2
         = typeSumKind ts1 == typeSumKind ts2
 
@@ -314,7 +314,7 @@ instance Eq n => Eq (TypeSum n) where
 
         -- If both sums have elements, then compare them directly and ignore the
         -- kind. This allows us to use (tBot sComp) as the typeSumKind field
-        -- when we want to compute the real kind based on the elements. 
+        -- when we want to compute the real kind based on the elements.
         | TypeSumSet{} <- ts1
         , TypeSumSet{} <- ts2
         =  typeSumElems ts1      == typeSumElems ts2
@@ -334,7 +334,7 @@ instance Eq n => Eq (TypeSum n) where
 instance Ord n => Ord (Bound n) where
  compare (UName n1)     (UName n2)              = compare n1 n2
  compare (UIx   i1)     (UIx   i2)              = compare i1 i2
- compare (UPrim n1 _)   (UPrim n2 _)            = compare n1 n2
+ compare (UPrim n1)     (UPrim n2)              = compare n1 n2
  compare UIx{}          _                       = LT
  compare UName{}        UIx{}                   = GT
  compare UName{}        UPrim{}                 = LT

@@ -32,6 +32,6 @@ readKiConFlow str
 
 
 -- Compounds ------------------------------------------------------------------
-kRate   = TCon (TyConBound (UPrim (NameKiConFlow KiConFlowRate) sProp) sProp)
+kRate   = TCon (TyConBound (UPrim (NameKiConFlow KiConFlowRate)) sProp)
 
-kProc   = TCon (TyConBound (UPrim (NameKiConFlow KiConFlowProc) sProp) sProp)
+kProc   = TCon (TyConBound (UPrim (NameKiConFlow KiConFlowProc)) sProp)

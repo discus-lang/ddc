@@ -14,17 +14,17 @@ import qualified DDC.Type.Exp.Simple            as T
 
 -------------------------------------------------------------------------------
 -- | Snipper configuration.
-data Config 
+data Config
         = Config
         { -- | Introduce new bindings for over-applied functions.
           configSnipOverApplied :: Bool
-        
+
           -- | Ensure the body of a let-expression is a variable.
         , configSnipLetBody     :: Bool
 
-          -- | Treat lambda abstractions as atomic, 
+          -- | Treat lambda abstractions as atomic,
           --   and don't snip them.
-        , configPreserveLambdas :: Bool 
+        , configPreserveLambdas :: Bool
         }
 
 
@@ -33,7 +33,7 @@ configZero :: Config
 configZero
         = Config
         { configSnipOverApplied = False
-        , configSnipLetBody     = False 
+        , configSnipLetBody     = False
         , configPreserveLambdas = False }
 
 
@@ -42,7 +42,7 @@ configZero
 class Snip (c :: * -> *) where
 
  -- | Snip out nested applications as anonymous bindings.
- -- 
+ --
  -- @
  --      f (g x) (h y)
  --  ==> let ^ = g x in ^ = h y in f ^1 ^0
@@ -58,7 +58,7 @@ instance Snip (Module a) where
 
 
 instance Snip (Exp a) where
- snip config x 
+ snip config x
   = snipX config emptyArities x []
 
 
@@ -71,11 +71,11 @@ snipX   :: Ord n
         -> Exp a n
 
 snipX config arities x args
-        -- For applications, remember the argument that the function is being 
+        -- For applications, remember the argument that the function is being
         --   applied to, and decend into the function part.
         --   This unzips application nodes as we decend into the tree.
         | XApp a fun arg        <- x
-        =  snipX config arities fun 
+        =  snipX config arities fun
         $ (snipA config arities arg, a) : args
 
         -- Some non-application node with no arguments.
@@ -105,12 +105,12 @@ snipA config arities aa
 
 -- Enter into a non-application.
 enterX config arities xx
- = let  down ars e 
+ = let  down ars e
          = snipX config (extendsArities arities ars) e []
 
    in case xx of
         -- The snipX function shouldn't have called us with an XApp.
-        XApp{}           
+        XApp{}
          -> error "ddc-core-simpl.Snip: snipX shouldn't give us an XApp"
 
         -- leafy constructors
@@ -132,12 +132,12 @@ enterX config arities xx
 
         -- recursive let
         XLet a (LRec lets) x2
-         -> let bs      = map fst lets 
-                xs      = map snd lets 
-                ars     = zip bs (map arityOfExp' xs) 
+         -> let bs      = map fst lets
+                xs      = map snd lets
+                ars     = zip bs (map arityOfExp' xs)
                 xs'     = map (down ars) xs
                 x2'     = snipLetBody config a $ down ars x2
-            in  XLet a (LRec $ zip bs xs') x2' 
+            in  XLet a (LRec $ zip bs xs') x2'
 
         -- private, just make sure we record bindings with dummy val.
         XLet a (LPrivate b mt bs) x2
@@ -149,14 +149,14 @@ enterX config arities xx
         -- Split out non-atomic discriminants into their own bindings.
         XCase a e alts
          | isAtom e
-         -> let  e'      = down [] e 
-                 alts'   = map (\(AAlt pat ae) 
-                               -> AAlt pat (down (aritiesOfPat pat) ae)) alts 
+         -> let  e'      = down [] e
+                 alts'   = map (\(AAlt pat ae)
+                               -> AAlt pat (down (aritiesOfPat pat) ae)) alts
             in   XCase a e' alts'
 
          | otherwise
          -> let e'      = down [] e
-                alts'   = [AAlt pat (down (aritiesOfPat pat) ae) 
+                alts'   = [AAlt pat (down (aritiesOfPat pat) ae)
                                 | AAlt pat ae <- alts]
                 xBody'  = snipLetBody config a
                         $ XCase a (XVar a $ UIx 0)
@@ -170,11 +170,11 @@ enterX config arities xx
          -> XCast a c (down [] e)
 
 
--- | Build an A-normalised application of some functional expression to 
---   its arguments. Atomic arguments are applied directly, while 
+-- | Build an A-normalised application of some functional expression to
+--   its arguments. Atomic arguments are applied directly, while
 --   non-atomic arguments are bound via let-expressions, then the
 --   associated let-bound variable is passed to the function.
-buildNormalisedApp 
+buildNormalisedApp
         :: Ord n
         => Config          -- ^ Snipper config.
         -> Arities n       -- ^ environment, arities of bound variables
@@ -189,7 +189,7 @@ buildNormalisedApp config arities f0 args@( (_, annot) : _)
         tBot' = T.tBot T.kData
 
         -- Lookup the arity of the function.
-        f0Arity    
+        f0Arity
          = case f0 of
                 XVar _ b
                  | Just arity <- getArity arities b
@@ -204,18 +204,18 @@ buildNormalisedApp config arities f0 args@( (_, annot) : _)
          | isAtom xFun
          = buildNormalisedFunApp config a f0Arity xFun xsArgs
 
-         -- The function part is not atomic, 
+         -- The function part is not atomic,
          --  so we need to add an outer-most let-binding for it.
          | otherwise
          = XLet a (LLet (BAnon tBot') xFun)
                   (snipLetBody config a
-                    $ buildNormalisedFunApp config a f0Arity 
-                               (XVar a (UIx 0)) 
+                    $ buildNormalisedFunApp config a f0Arity
+                               (XVar a (UIx 0))
                                [ (L.liftX 1 x, a') | (x, a') <- xsArgs])
 
 
--- | Build an A-normalised application of some functional expression to 
---   its arguments. Atomic arguments are applied directly, while 
+-- | Build an A-normalised application of some functional expression to
+--   its arguments. Atomic arguments are applied directly, while
 --   on-atomic arguments are bound via let-expressions, then the
 --   associated let-bound variable is passed to the function.
 --
@@ -238,7 +238,7 @@ buildNormalisedFunApp config an funArity xFun xsArgs
         argss    = splitArgs config xsArgs
 
         -- Collect up the new let-bindings.
-        xsLets   = [ (x, a)  
+        xsLets   = [ (x, a)
                         | (_,    a, _, Just x) <- argss]
 
         -- The total number of new let-bindings.
@@ -256,13 +256,13 @@ buildNormalisedFunApp config an funArity xFun xsArgs
         --  If the argument was already atomic then we have to lift
         --  its indices past the new let bindings we're about to add.
         --  Otherwise it's a reference to one of the bindings directly.
-        xsArgs'  = [if liftMe 
+        xsArgs'  = [if liftMe
                         then (L.liftX nLets xArg, a)
                         else (xArg, a)
                         | (xArg, a, liftMe, _)      <- argss]
 
         -- Construct the new function application.
-        xFunApps 
+        xFunApps
 
          -- If the function is over-applied then create an intermediate
          -- binding that saturates it, then apply the extra arguments
@@ -270,19 +270,19 @@ buildNormalisedFunApp config an funArity xFun xsArgs
          | configSnipOverApplied config
          , length xsArgs' > funArity
          , (xsSat, xsOver)      <- splitAt funArity xsArgs'
-         = XLet an (LLet (BAnon tBot') 
+         = XLet an (LLet (BAnon tBot')
                          (makeXAppsWithAnnots xFun' xsSat))
                    (snipLetBody config an
-                    $ makeXAppsWithAnnots 
-                        (XVar an (UIx 0)) 
+                    $ makeXAppsWithAnnots
+                        (XVar an (UIx 0))
                         [ (L.liftX 1 x, a) | (x, a) <- xsOver ])
 
          -- Function has the correct number of arguments,
          -- or is partially applied.
          | otherwise
-         = makeXAppsWithAnnots 
+         = makeXAppsWithAnnots
                 xFun'
-                xsArgs'              
+                xsArgs'
 
         -- Wrap the function application in the let-bindings
         -- for its arguments.
@@ -290,15 +290,15 @@ buildNormalisedFunApp config an funArity xFun xsArgs
          []     -> xFunApps
          _      -> foldr (\(x, a) x' -> XLet a x x')
                         (snipLetBody config an xFunApps)
-                        [ (LLet (BAnon tBot') x, a) 
+                        [ (LLet (BAnon tBot') x, a)
                                 | (x, a) <- xsLets' ]
 
 
--- | Sort function arguments into either the atomic ones, 
+-- | Sort function arguments into either the atomic ones,
 --   or compound ones.
-splitArgs 
-        :: Ord n => Config               
-        -> [( Arg a n, a)] 
+splitArgs
+        :: Ord n => Config
+        -> [( Arg a n, a)]
         -> [( Arg a n            -- Expression to use as the new argument.
             , a                  -- Annoation for the argument application.
             , Bool               -- Whether this argument was already atomic.
@@ -306,7 +306,7 @@ splitArgs
 
 splitArgs config args
  = reverse $ go 0 $ reverse args
- where  
+ where
         go _n [] = []
 
         go n ((aArg, a) : asArgs)
@@ -339,7 +339,7 @@ snipLetBody config a xx
         = let  tBot'   = T.tBot T.kData
           in   XLet a  (LLet (BAnon tBot') xx)
                        (XVar a (UIx 0))
-        
+
         | otherwise
         = xx
 
@@ -349,17 +349,9 @@ snipLetBody config a xx
 isAtom :: Ord n => Exp a n -> Bool
 isAtom xx
  = case xx of
-        XCon{}          -> True
-        XPrim{}         -> True
-
-        XVar _ x
-         | UPrim _ t    <- x
-         , Just 0       <- arityFromType t
-         -> False
-
-         | otherwise
-         -> True
-
+        XCon{}   -> True
+        XPrim{}  -> True
+        XVar{}   -> True
 
         -- Casts are ignored by code generator, so we can leave them in if
         -- their subexpression is normal
@@ -367,7 +359,7 @@ isAtom xx
         _               -> False
 
 
--- | Take the arity of an expression, 
+-- | Take the arity of an expression,
 --   returning 0 for XType and XWitness.
 arityOfExp' :: Ord n => Exp a n -> Int
 arityOfExp' xx
