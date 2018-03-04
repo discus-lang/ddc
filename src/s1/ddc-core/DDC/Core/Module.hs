@@ -90,27 +90,27 @@ data Module a n
         , moduleExportValues    :: ![(n, ExportValue  n (Type n))]
 
           -- Imports ------------------
-          -- | Define imported types.
+          -- | Imported foreign types.
         , moduleImportTypes     :: ![(n, ImportType   n (Type n))]
 
-          -- | Data defs imported from other modules.
+          -- | Imported data types.
         , moduleImportDataDefs  :: ![(n, DataDef n)]
 
-          -- | Type defs imported from other modules.
+          -- | Imported type synonyms.
         , moduleImportTypeDefs  :: ![(n, (Kind n, Type n))]
 
-          -- | Define imported capabilities.
+          -- | Imported capabilities.
         , moduleImportCaps      :: ![(n, ImportCap    n (Type n))]
 
-          -- | Define imported values.
+          -- | Imported values.
         , moduleImportValues    :: ![(n, ImportValue  n (Type n))]
 
           -- Local defs ---------------
           -- | Data types defined in this module.
-        , moduleDataDefsLocal   :: ![(n, DataDef n)]
+        , moduleLocalDataDefs   :: ![(n, DataDef n)]
 
           -- | Type definitions in this module.
-        , moduleTypeDefsLocal   :: ![(n, (Kind n, Type n))]
+        , moduleLocalTypeDefs   :: ![(n, (Kind n, Type n))]
 
           -- | The module body consists of some let-bindings wrapping a unit
           --   data constructor. We're only interested in the bindings, with
@@ -131,8 +131,8 @@ instance (NFData a, NFData n) => NFData (Module a n) where
         `seq` rnf (moduleImportValues   mm)
         `seq` rnf (moduleImportDataDefs mm)
         `seq` rnf (moduleImportTypeDefs mm)
-        `seq` rnf (moduleDataDefsLocal  mm)
-        `seq` rnf (moduleTypeDefsLocal  mm)
+        `seq` rnf (moduleLocalDataDefs  mm)
+        `seq` rnf (moduleLocalTypeDefs  mm)
         `seq` rnf (moduleBody           mm)
 
 
@@ -147,13 +147,13 @@ isMainModule mm
 moduleDataDefs :: Ord n => Module a n -> DataDefs n
 moduleDataDefs mm
         = fromListDataDefs
-        $ map snd $ (moduleImportDataDefs mm ++ moduleDataDefsLocal mm)
+        $ map snd $ (moduleImportDataDefs mm ++ moduleLocalDataDefs mm)
 
 
 -- | Get the data type definitions visible in a module.
 moduleTypeDefs :: Ord n => Module a n -> [(n, (Kind n, Type n))]
 moduleTypeDefs mm
-        = moduleImportTypeDefs mm ++ moduleTypeDefsLocal mm
+        = moduleImportTypeDefs mm ++ moduleLocalTypeDefs mm
 
 
 -- | Get the top-level kind environment of a module,
@@ -188,7 +188,7 @@ moduleEnvT kenvPrim mm
  { EnvT.envtEquations
         = Map.unions
         [ Map.fromList [(n, t)  | (n, (_, t)) <- moduleImportTypeDefs mm]
-        , Map.fromList [(n, t)  | (n, (_, t)) <- moduleTypeDefsLocal  mm]]
+        , Map.fromList [(n, t)  | (n, (_, t)) <- moduleLocalTypeDefs  mm]]
 
  , EnvT.envtCapabilities
         = Map.fromList [(n, typeOfImportCap ic) | (n, ic) <- moduleImportCaps mm]
@@ -218,7 +218,7 @@ moduleEnvT kenvPrim mm
 
               -- Kinds of imported type defs.
               nksLocalTypeDef
-               = Map.fromList  [(n, k) | (n, (k, _)) <- moduleTypeDefsLocal mm]
+               = Map.fromList  [(n, k) | (n, (k, _)) <- moduleLocalTypeDefs mm]
 
           in  -- Build a map of all the kinds,
               -- Where kinds of locally defined type shadow the imported ones.
@@ -268,7 +268,7 @@ moduleEnvX kenvPrim tenvPrim dataDefs mm
         = DataDef.unionDataDefs dataDefs
         $ DataDef.unionDataDefs
                 (DataDef.fromListDataDefs $ map snd $ moduleImportDataDefs mm)
-                (DataDef.fromListDataDefs $ map snd $ moduleDataDefsLocal  mm)
+                (DataDef.fromListDataDefs $ map snd $ moduleLocalDataDefs  mm)
 
  , EnvX.envxMap
         = Map.fromList

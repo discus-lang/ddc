@@ -51,12 +51,12 @@ expliciateModule mm
           -- and they can't be recursive.
         , moduleImportTypeDefs  = []
 
-        , moduleDataDefsLocal   = [ (n, mapTypeOfDataDef downT def)
-                                  | (n, def) <- moduleDataDefsLocal mm ]
+        , moduleLocalDataDefs   = [ (n, mapTypeOfDataDef downT def)
+                                  | (n, def) <- moduleLocalDataDefs mm ]
 
           -- Type defs are zapped because we're inlining them all anyway,
           -- and they can't be recursive.
-        , moduleTypeDefsLocal   = []
+        , moduleLocalTypeDefs   = []
 
         , moduleBody            = expliciateExp eqns (moduleBody mm)
         }

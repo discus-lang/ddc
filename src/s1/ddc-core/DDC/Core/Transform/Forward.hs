@@ -70,17 +70,17 @@ data Config a n
 -------------------------------------------------------------------------------
 -- | Float let-bindings in a module with a single use forward into
 --   their use sites.
-forwardModule 
+forwardModule
         :: Ord n
         => Profile n    -- ^ Language profile
         -> Config a n
-        -> Module a n 
+        -> Module a n
         -> TransformResult (Module a n)
 
 forwardModule profile config mm
  = let  (mm', info)
          = runWriter
-                $ forwardWith profile config Map.empty 
+                $ forwardWith profile config Map.empty
                 $ usageModule mm
 
         progress (ForwardInfo _ s f)
@@ -97,8 +97,8 @@ forwardModule profile config mm
 --   their use-sites.
 forwardX :: Ord n
          => Profile n   -- ^ Language profile.
-         -> Config a n 
-         -> Exp a n                      
+         -> Config a n
+         -> Exp a n
          -> TransformResult (Exp a n)
 
 forwardX profile config xx
@@ -106,7 +106,7 @@ forwardX profile config xx
                   $ forwardWith profile config Map.empty
                   $ usageX xx
 
-        progress (ForwardInfo _ s f) 
+        progress (ForwardInfo _ s f)
                 = s + f > 0
 
    in  TransformResult
@@ -119,7 +119,7 @@ forwardX profile config xx
 -------------------------------------------------------------------------------
 class Forward (c :: * -> * -> *) where
  -- | Carry bindings forward and downward into their use-sites.
- forwardWith 
+ forwardWith
         :: Ord n
         => Profile n            -- ^ Language profile.
         -> Config a n
@@ -128,7 +128,7 @@ class Forward (c :: * -> * -> *) where
         -> Writer ForwardInfo (c a n)
 
 instance Forward Module where
- forwardWith profile config bindings 
+ forwardWith profile config bindings
         (ModuleCore
                 { moduleName            = name
                 , moduleIsHeader        = isHeader
@@ -139,8 +139,8 @@ instance Forward Module where
                 , moduleImportValues    = importValues
                 , moduleImportDataDefs  = importDataDefs
                 , moduleImportTypeDefs  = importTypeDefs
-                , moduleDataDefsLocal   = dataDefsLocal
-                , moduleTypeDefsLocal   = typeDefsLocal
+                , moduleLocalDataDefs   = dataDefsLocal
+                , moduleLocalTypeDefs   = typeDefsLocal
                 , moduleBody            = body })
 
   = do  body' <- forwardWith profile config bindings body
@@ -154,15 +154,15 @@ instance Forward Module where
                 , moduleImportValues    = importValues
                 , moduleImportDataDefs  = importDataDefs
                 , moduleImportTypeDefs  = importTypeDefs
-                , moduleDataDefsLocal   = dataDefsLocal
-                , moduleTypeDefsLocal   = typeDefsLocal
+                , moduleLocalDataDefs   = dataDefsLocal
+                , moduleLocalTypeDefs   = typeDefsLocal
                 , moduleBody            = body' }
 
 
 instance Forward Exp where
  forwardWith profile config bindings xx
   = {-# SCC forwardWith #-}
-    let down    = forwardWith profile config bindings 
+    let down    = forwardWith profile config bindings
     in case xx of
         XVar a u@(UName n)
          -> case Map.lookup n bindings of
@@ -208,8 +208,8 @@ instance Forward Exp where
                     liftM (XLet a $ LLet b x1') (down x2)
 
         XLet (UsedMap um, a') lts@(LLet (BName n t) x1) x2
-         -> do  
-                let control    = configFloatControl config 
+         -> do
+                let control    = configFloatControl config
                                $ reannotate snd lts
 
                 let isFun      = isXLam x1 || isXLAM x1
@@ -245,7 +245,7 @@ instance Forward Exp where
                         let bindings'   = Map.insert n x1' bindings
                         forwardWith profile config bindings' x2
 
-                 else do        
+                 else do
                         tell mempty { infoInspected = 1}
 
                         -- Note that @n@ has been shadowed
@@ -254,7 +254,7 @@ instance Forward Exp where
 
                         return $ XLet a' (LLet (BName n t) x1') x2'
 
-        XLet (_, a') lts x     
+        XLet (_, a') lts x
          ->     liftM2 (XLet a') (down lts) (down x)
 
         XCase a x alts  -> liftM2 (XCase    (snd a)) (down x) (mapM down alts)
@@ -289,14 +289,14 @@ instance Forward Lets where
  forwardWith profile config bindings lts
   = let down    = forwardWith profile config bindings
     in case lts of
-        LLet b x   
+        LLet b x
          -> liftM (LLet b) (down x)
 
-        LRec bxs        
+        LRec bxs
          -> liftM LRec
-         $  mapM (\(b,x) 
+         $  mapM (\(b,x)
                     -> do x' <- down x
-                          return (b, x')) 
+                          return (b, x'))
             bxs
 
         LPrivate b mt bs

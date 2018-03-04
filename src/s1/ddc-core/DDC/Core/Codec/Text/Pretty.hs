@@ -51,8 +51,8 @@ instance (Pretty n, Eq n) => Pretty (Module a n) where
         , moduleImportValues    = importValues
         , moduleImportDataDefs  = importData
         , moduleImportTypeDefs  = importType
-        , moduleDataDefsLocal   = localData
-        , moduleTypeDefsLocal   = localType
+        , moduleLocalDataDefs   = localData
+        , moduleLocalTypeDefs   = localType
         , moduleBody            = body }
   = {-# SCC "ppr[Module]" #-}
     let

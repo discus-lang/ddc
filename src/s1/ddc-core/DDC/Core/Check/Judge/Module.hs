@@ -87,7 +87,7 @@ checkModuleM !config mm@ModuleCore{} !mode
 
         nksLocalDataDef'
                 <- checkSortsOfDataTypes config mode
-                $  map snd $ moduleDataDefsLocal   mm
+                $  map snd $ moduleLocalDataDefs   mm
 
         let envT_dataDefs
                 = EnvT.unions
@@ -134,8 +134,8 @@ checkModuleM !config mm@ModuleCore{} !mode
                         config
                         envT_importedTypeDefs
                          { EnvT.envtEquations
-                         = Map.map snd $ Map.fromList $ moduleTypeDefsLocal mm }
-                $  moduleTypeDefsLocal  mm
+                         = Map.map snd $ Map.fromList $ moduleLocalTypeDefs mm }
+                $  moduleLocalTypeDefs  mm
 
         let envT_localTypeDefs
                 = EnvT.unions
@@ -165,7 +165,7 @@ checkModuleM !config mm@ModuleCore{} !mode
         ctrace  $ vcat
                 [ text "* Checking Kinds of Local Data Types."]
 
-        let dataDefsLocal    = map snd $ moduleDataDefsLocal mm
+        let dataDefsLocal    = map snd $ moduleLocalDataDefs mm
         dataDefsLocal'
          <- case checkDataDefs config envT_localTypeDefs dataDefsLocal of
                 (err : _, _)            -> throw $ ErrorData err
@@ -257,7 +257,7 @@ checkModuleM !config mm@ModuleCore{} !mode
                 , moduleImportTypeDefs  = nktsImportTypeDef'
                 , moduleImportCaps      = ntsImportCap'
                 , moduleImportValues    = ntsImportValue'
-                , moduleTypeDefsLocal   = nktsLocalTypeDef'
+                , moduleLocalTypeDefs   = nktsLocalTypeDef'
                 , moduleBody            = xx_annot }
 
 

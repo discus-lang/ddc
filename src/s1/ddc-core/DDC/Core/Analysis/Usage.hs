@@ -56,7 +56,7 @@ empty   = UsedMap (Map.empty)
 accUsed :: Ord n => Bound n -> Used -> UsedMap n -> UsedMap n
 accUsed u used um@(UsedMap m)
  = case u of
-        UName n         -> UsedMap $ Map.insertWith (++) n [used] m 
+        UName n         -> UsedMap $ Map.insertWith (++) n [used] m
         _               -> um
 
 -- | Combine two usage maps.
@@ -83,7 +83,7 @@ removeUsedMap (UsedMap m) bs
 -- Module ---------------------------------------------------------------------
 -- | Annotate all binding occurrences of variables in an expression
 --   with how they are used.
-usageModule 
+usageModule
         :: Ord n
         => Module a n
         -> Module (UsedMap n, a) n
@@ -98,8 +98,8 @@ usageModule
                 , moduleImportValues    = importValues
                 , moduleImportDataDefs  = importDataDefs
                 , moduleImportTypeDefs  = importTypeDefs
-                , moduleDataDefsLocal   = dataDefsLocal
-                , moduleTypeDefsLocal   = typeDefsLocal
+                , moduleLocalDataDefs   = dataDefsLocal
+                , moduleLocalTypeDefs   = typeDefsLocal
                 , moduleBody            = body })
 
  =       ModuleCore
@@ -112,22 +112,22 @@ usageModule
                 , moduleImportValues    = importValues
                 , moduleImportDataDefs  = importDataDefs
                 , moduleImportTypeDefs  = importTypeDefs
-                , moduleDataDefsLocal   = dataDefsLocal
-                , moduleTypeDefsLocal   = typeDefsLocal
+                , moduleLocalDataDefs   = dataDefsLocal
+                , moduleLocalTypeDefs   = typeDefsLocal
                 , moduleBody            = usageX body }
 
 
 -- Exp ------------------------------------------------------------------------
 -- | Annotate all binding occurrences of variables in an expression
 --   with how they are used.
-usageX  :: Ord n 
-        => Exp a n 
+usageX  :: Ord n
+        => Exp a n
         -> Exp (UsedMap n, a) n
 usageX xx = snd $ usageX' xx
 
 
-usageX' :: Ord n 
-        => Exp a n 
+usageX' :: Ord n
+        => Exp a n
         -> (UsedMap n, Exp (UsedMap n, a) n)
 
 usageX' xx
@@ -217,8 +217,8 @@ usageX' xx
             , XCast (used', a) c' x1')
 
 
-usageArg' :: Ord n 
-        => Arg a n 
+usageArg' :: Ord n
+        => Arg a n
         -> (UsedMap n, Arg (UsedMap n, a) n)
 
 usageArg' aa
@@ -229,7 +229,7 @@ usageArg' aa
          -> let (used', x')     = usageX' x
             in  (used', RTerm x')
 
-        RWitness w    
+        RWitness w
          -> let (used', w')     = usageWitness w
             in  (used', RWitness w')
 
@@ -239,9 +239,9 @@ usageArg' aa
 
 
 -- | Annotate binding occurences of named variables with usage information.
-usageLets 
+usageLets
         :: Ord n
-        => Lets a n 
+        => Lets a n
         -> (UsedMap n, Lets (UsedMap n, a) n)
 
 usageLets lts
@@ -256,19 +256,19 @@ usageLets lts
          ,  used'         <- sumUsedMap useds'
          -> (used', LRec $ zip bs xs')
 
-        LPrivate b mt bs 
+        LPrivate b mt bs
          -> (empty, LPrivate b mt bs)
 
 
--- | Annotate binding occurrences of named value variables with 
+-- | Annotate binding occurrences of named value variables with
 --   usage information.
-usageCast  
+usageCast
         :: Ord n
         => Cast a n
         -> (UsedMap n, Cast (UsedMap n, a) n)
 usageCast cc
  = case cc of
-        CastWeakenEffect eff    
+        CastWeakenEffect eff
          -> (empty, CastWeakenEffect eff)
 
         CastPurify w
@@ -281,9 +281,9 @@ usageCast cc
 
 -- | Annotate binding occurrences of named level-0 variables with
 --   usage information.
-usageAlt  
-        :: Ord n 
-        => Alt a n  
+usageAlt
+        :: Ord n
+        => Alt a n
         -> (UsedMap n, Alt (UsedMap n, a) n)
 
 usageAlt (AAlt p x)

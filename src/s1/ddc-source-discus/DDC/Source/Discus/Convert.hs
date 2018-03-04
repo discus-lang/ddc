@@ -131,8 +131,8 @@ coreOfSourceModuleM a mm
                 , C.moduleImportValues   = importValues'
                 , C.moduleImportDataDefs = []
                 , C.moduleImportTypeDefs = []
-                , C.moduleDataDefsLocal  = dataDefsLocal
-                , C.moduleTypeDefsLocal  = typeDefsLocal
+                , C.moduleLocalDataDefs  = dataDefsLocal
+                , C.moduleLocalTypeDefs  = typeDefsLocal
                 , C.moduleBody           = C.XLet  a ltsTops (C.xUnit a) }
 
 

@@ -60,13 +60,13 @@ instance SpreadX (Module a) where
                 = map (\(n, (k, t)) -> (n, (spreadT kenv k, spreadT kenv t)))
                 $ moduleImportTypeDefs mm
 
-        , moduleDataDefsLocal
+        , moduleLocalDataDefs
                 = map (liftSnd $ spreadT kenv)
-                $ moduleDataDefsLocal mm
+                $ moduleLocalDataDefs mm
 
-        , moduleTypeDefsLocal
+        , moduleLocalTypeDefs
                 = map (\(n, (k, t)) -> (n, (spreadT kenv k, spreadT kenv t)))
-                $ moduleTypeDefsLocal mm
+                $ moduleLocalTypeDefs mm
 
         , moduleBody
                  = spreadX kenv tenv

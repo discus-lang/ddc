@@ -84,8 +84,8 @@ pModule c
                 , moduleImportDataDefs  = [(dataDefTypeName def, def)
                                                         | ImportData  def        <- importSpecs]
 
-                , moduleDataDefsLocal   = dataDefsLocal
-                , moduleTypeDefsLocal   = typeDefsLocal
+                , moduleLocalDataDefs   = dataDefsLocal
+                , moduleLocalTypeDefs   = typeDefsLocal
 
                 , moduleBody            = body }
 

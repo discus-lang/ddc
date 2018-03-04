@@ -84,11 +84,11 @@ convertM pp runConfig defs kenv tenv mm
         -- All the data type definitions visible in the module.
         let defs'  = unionDataDefs defs
                    $ fromListDataDefs $ map snd
-                   $ moduleImportDataDefs mm ++ moduleDataDefsLocal mm
+                   $ moduleImportDataDefs mm ++ moduleLocalDataDefs mm
 
         let eqns'  = Map.unions
                    [ Map.fromList $ [(n, t) | (n, (_, t)) <- moduleImportTypeDefs mm]
-                   , Map.fromList $ [(n, t) | (n, (_, t)) <- moduleTypeDefsLocal  mm] ]
+                   , Map.fromList $ [(n, t) | (n, (_, t)) <- moduleLocalTypeDefs  mm] ]
 
         let nsForeignBoxedTypes
                    = [n | (n, ImportTypeBoxed _) <- moduleImportTypes mm ]
@@ -176,8 +176,8 @@ convertM pp runConfig defs kenv tenv mm
                   -- Data constructors and pattern matches should have been
                   -- flattened into primops, so we don't need the data type
                   -- definitions.
-                , moduleDataDefsLocal   = []
-                , moduleTypeDefsLocal   = []
+                , moduleLocalDataDefs   = []
+                , moduleLocalTypeDefs   = []
 
                 , moduleBody            = x2 }
 

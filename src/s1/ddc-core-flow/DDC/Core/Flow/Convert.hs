@@ -80,8 +80,8 @@ convertM mm
                 , moduleImportDataDefs  = []
                 , moduleImportTypeDefs  = []
 
-                , moduleDataDefsLocal   = []
-                , moduleTypeDefsLocal   = []
+                , moduleLocalDataDefs   = []
+                , moduleLocalTypeDefs   = []
 
                 , moduleBody            = body' }
 

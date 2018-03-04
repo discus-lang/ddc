@@ -128,7 +128,7 @@ importsForDaTyCons
 
 importsForDaTyCons deps _tycons
         = concat
-        $ [ moduleImportDataDefs m ++ moduleDataDefsLocal m
+        $ [ moduleImportDataDefs m ++ moduleLocalDataDefs m
                 | m <- Map.elems deps ]
 
 
@@ -140,7 +140,7 @@ importsTypeDef
 
 importsTypeDef deps
         = concat
-        $ [ moduleImportTypeDefs m ++ moduleTypeDefsLocal m
+        $ [ moduleImportTypeDefs m ++ moduleLocalTypeDefs m
                 | m <- Map.elems deps ]
 
 

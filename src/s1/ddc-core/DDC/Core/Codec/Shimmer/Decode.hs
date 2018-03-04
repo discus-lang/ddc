@@ -66,8 +66,8 @@ takeModuleDecls c decls
          , C.moduleImportTypeDefs  = concatMap (takeDeclSyn   c    mpS) $ colImSyn col
          , C.moduleImportCaps      = concatMap (takeDeclImCap c)        $ colImCap col
          , C.moduleImportValues    = concatMap (takeDeclImVal c mn mpT) $ colImVal col
-         , C.moduleDataDefsLocal   = concatMap (takeDeclDat   c    mpD) $ colLcDat col
-         , C.moduleTypeDefsLocal   = concatMap (takeDeclSyn   c    mpS) $ colLcSyn col
+         , C.moduleLocalDataDefs   = concatMap (takeDeclDat   c    mpD) $ colLcDat col
+         , C.moduleLocalTypeDefs   = concatMap (takeDeclSyn   c    mpS) $ colLcSyn col
          , C.moduleBody            = C.xUnit () }
 
 

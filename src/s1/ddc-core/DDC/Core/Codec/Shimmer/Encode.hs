@@ -104,14 +104,14 @@ takeModuleDecls c mm@C.ModuleCore{}
         -- Local Data Defs
         (dLcDat, dsLcDat)
          = (S.DeclSet "m-lc-dat" $ xList xsImport, dsImport)
-         where  xdsImport = map (takeDataDef c) $ map snd $ C.moduleDataDefsLocal mm
+         where  xdsImport = map (takeDataDef c) $ map snd $ C.moduleLocalDataDefs mm
                 xsImport  = map fst xdsImport
                 dsImport  = concatMap snd xdsImport
 
         -- Local Type Synonyms
         (dLcSyn, dsLcSyn)
          = (S.DeclSet "m-lc-syn" $ xList xsImport, dsImport)
-         where  xdsImport = map (takeTypeSyn c) $ C.moduleTypeDefsLocal mm
+         where  xdsImport = map (takeTypeSyn c) $ C.moduleLocalTypeDefs mm
                 xsImport  = map fst xdsImport
                 dsImport  = concatMap snd xdsImport
 
