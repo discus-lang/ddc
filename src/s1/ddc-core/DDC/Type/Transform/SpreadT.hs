@@ -1,4 +1,4 @@
-        
+
 module DDC.Type.Transform.SpreadT
         (SpreadT(..))
 where
@@ -16,9 +16,9 @@ class SpreadT (c :: * -> *) where
  --   Primitives have their types attached because they are so common in the
  --   language, their types are closed, and we don't want to keep having to
  --   look them up from the environment.
- spreadT :: forall n. Ord n 
+ spreadT :: forall n. Ord n
          => TypeEnv n -> c n -> c n
-        
+
 
 instance SpreadT Type where
  spreadT kenv tt
@@ -37,7 +37,7 @@ instance SpreadT Type where
             in  TForall b' $ spreadT (Env.extend b' kenv) t
 
         TSum ss         -> TSum (spreadT kenv ss)
-        
+
 
 instance SpreadT TypeSum where
  spreadT kenv ss
@@ -58,13 +58,17 @@ instance SpreadT Bound where
  spreadT kenv uu
   = case uu of
         UIx{}           -> uu
-        UPrim{}         -> uu
+
+        UPrim n _
+         -> case Env.envPrimFun kenv n of
+                Nothing -> uu
+                Just t' -> UPrim n t'
 
         UName n
          -> case Env.envPrimFun kenv n of
-                Nothing -> UName n
+                Nothing -> uu
                 Just t  -> UPrim n t
-                 
+
 
 instance SpreadT TyCon where
  spreadT kenv tc
@@ -80,7 +84,7 @@ instance SpreadT TyCon where
 instance SpreadT DataDef where
  spreadT kenv def@DataDef{}
   = def
-  { dataDefCtors   
+  { dataDefCtors
      = case dataDefCtors def of
         Nothing         -> Nothing
         Just ctors      -> Just (map (spreadT kenv) ctors) }

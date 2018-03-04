@@ -2,7 +2,7 @@
 module DDC.Core.Check.Judge.EqT
         (makeEqT)
 where
-import DDC.Core.Check.Base 
+import DDC.Core.Check.Base
 import qualified DDC.Core.Env.EnvT      as EnvT
 import qualified Data.Map.Strict        as Map
 
@@ -51,7 +51,7 @@ makeEqT config ctx0 tL tR err
  -- EqT_SolveL
  | Just iL <- takeExists tL
  , not $ isTExists tR
- = do   
+ = do
         ctrace  $ vcat
                 [ text "**  EqT_SolveL"
                 , text "    tL:  " <> ppr tL
@@ -59,22 +59,22 @@ makeEqT config ctx0 tL tR err
                 , empty ]
 
         let Just ctx1   = updateExists [] iL tR ctx0
-        
+
         return ctx1
 
 
  -- EqT_SolveR
  | Just iR <- takeExists tR
  , not $ isTExists tL
- = do   
+ = do
         ctrace  $ vcat
                 [ text "**  EqT_SolveR"
                 , text "    tL:  " <> ppr tL
                 , text "    tR:  " <> ppr tR
                 , empty ]
-  
+
         let Just ctx1   = updateExists [] iR tL ctx0
-        
+
         return ctx1
 
 
@@ -86,7 +86,7 @@ makeEqT config ctx0 tL tR err
  , Just iR <- takeExists tR,    Just lR <- locationOfExists iR ctx0
  , lL > lR
  = do   let Just ctx1   = updateExists [] iR tL ctx0
-        
+
         ctrace  $ vcat
                 [ text "**  EqT_EachL"
                 , text "    tL: " <> ppr tL
@@ -122,7 +122,7 @@ makeEqT config ctx0 tL tR err
  | TVar u1      <- tL
  , TVar u2      <- tR
  , u1 == u2
- = do   
+ = do
         -- Suppress tracing of boring rule.
         -- ctrace  $ vcat
         --         [ text "**  EqT_Var"
@@ -155,7 +155,7 @@ makeEqT config ctx0 tL tR err
  , TApp tR1 tR2 <- tR
  = do
         ctrace  $ vcat
-                [ text "*>  EqT_App" 
+                [ text "*>  EqT_App"
                 , text "    tL: " <> ppr tL
                 , text "    tR: " <> ppr tR
                 , empty ]
@@ -177,9 +177,9 @@ makeEqT config ctx0 tL tR err
 
 
  -- EqT_Equiv
- | equivT (contextEnvT ctx0) tL tR 
+ | equivT (contextEnvT ctx0) tL tR
  = do   ctrace  $ vcat
-                [ text "**  EqT_Equiv" 
+                [ text "**  EqT_Equiv"
                 , text "    tL: " <> ppr tL
                 , text "    tR: " <> ppr tR
                 , empty ]

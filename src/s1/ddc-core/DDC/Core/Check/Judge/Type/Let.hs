@@ -255,6 +255,12 @@ checkLetsM !bidir !xx !table !ctx0 !demand (LRec bxs)
         -- All right hand sides must be syntactic abstractions.
         checkSyntacticLambdas table a xx xs
 
+        ctrace  $ vcat
+                [ text "**  Let Rec Binds"
+                , text "    demand = " <> (text $ show demand)
+                , text "    binds  = " <> (ppr  $ map fst bxs)
+                , empty ]
+
         -- Check the type annotations on all the binders.
         (bs', ctx1)
          <- checkRecBinds table bidir a xx ctx0 bs
@@ -262,6 +268,12 @@ checkLetsM !bidir !xx !table !ctx0 !demand (LRec bxs)
         -- All variables are in scope in all right hand sides.
         let (ctx2, pos1) =  markContext ctx1
         let ctx3         =  pushTypes bs' ctx2
+
+        ctrace  $ vcat
+                [ text "**  Let Rec Exps"
+                , text "    demand = " <> (text $ show demand)
+                , text "    binds  = " <> (ppr  $ map fst bxs)
+                , empty ]
 
         -- Check the right hand sides.
         (results, ctx4)
@@ -343,6 +355,11 @@ checkRecBinds table bidir a xx ctx0 bs0
              -- so check it, expecting it to have kind Data.
              | otherwise
              -> do
+                ctrace  $ vcat
+                        [ text "**  Let Rec Bind Sig"
+                        , text "    b      = " <> ppr b
+                        , empty ]
+
                 (b0, _k, ctx1)
                  <- checkBindM config ctx UniverseSpec b (Check kData)
 

@@ -5,12 +5,12 @@ export
         eq_Maybe;
         isNothing; isJust; fromMaybe; maybe;
 }
+import Class.Eq
+import Class.Monad
 import Class.Functor
 import Class.Applicative
-import Class.Monad
 import Data.Numeric.Bool
 where
-
 
 -- | A `Maybe` may contain a value, or not.
 data Maybe (a: Data) where

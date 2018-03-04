@@ -24,14 +24,14 @@ import qualified DDC.Core.Env.EnvT      as EnvT
 --
 --   Checks equivalence up to alpha-renaming, as well as crushing of effects
 --   and trimming of closures.
---  
+--
 --   * Return `False` if we find any free variables.
 --
 --   * We assume the types are well-kinded, so that the type annotations on
 --     bound variables match the binders. If this is not the case then you get
 --     an indeterminate result.
 --
-equivT  :: Ord n 
+equivT  :: Ord n
         => EnvT n -> Type n -> Type n -> Bool
 
 equivT env t1 t2
@@ -64,7 +64,7 @@ equivWithBindsT env stack1 stack2 t1 t2
          | Just (ix1, t1a) <- getBindType stack1 u1
          , Just (ix2, t2a) <- getBindType stack2 u2
          , ix1 == ix2
-         -> checkBounds u1 u2 
+         -> checkBounds u1 u2
          $  equivWithBindsT env stack1 stack2 t1a t2a
 
          | otherwise
@@ -96,7 +96,7 @@ equivWithBindsT env stack1 stack2 t1 t2
         (TApp t11 t12,    TApp t21 t22)
          -> equivWithBindsT env stack1 stack2 t11 t21
          && equivWithBindsT env stack1 stack2 t12 t22
-        
+
         -- Sums are equivalent if all of their components are.
         (TSum ts1,        TSum ts2)
          -> let ts1'      = Sum.toList ts1
@@ -111,10 +111,10 @@ equivWithBindsT env stack1 stack2 t1 t2
                 -- like (c : % ~> !) then they won't nessesarally be sorted,
                 -- so we need to do this slower O(n^2) check.
                 -- Make sure to get the bind stacks the right way around here.
-                checkSlow = and [ or (map (equivWithBindsT env stack1 stack2 t1c) ts2') 
+                checkSlow = and [ or (map (equivWithBindsT env stack1 stack2 t1c) ts2')
                                 | t1c <- ts1' ]
 
-                         && and [ or (map (equivWithBindsT env stack2 stack1 t2c) ts1') 
+                         && and [ or (map (equivWithBindsT env stack2 stack1 t2c) ts1')
                                 | t2c <- ts2' ]
 
             in  (length ts1' == length ts2')
@@ -124,7 +124,7 @@ equivWithBindsT env stack1 stack2 t1 t2
 
 
 -- | If we have a UName and UPrim with the same name then these won't match
---   even though they pretty print the same. This will only happen due to 
+--   even though they pretty print the same. This will only happen due to
 --   a compiler bugs, but is very confusing when it does, so we check for
 --   this case explicitly.
 checkBounds :: Eq n => Bound n -> Bound n -> a -> a
@@ -150,15 +150,14 @@ unpackSumT (TSum ts)
 unpackSumT tt                    = tt
 
 
--- TyCon 
+-- TyCon
 -- | Check if two `TyCons` are equivalent.
 --   We need to handle `TyConBound` specially incase it's kind isn't attached,
 equivTyCon :: Eq n => TyCon n -> TyCon n -> Bool
 equivTyCon tc1 tc2
- = case (tc1, tc2) of  
+ = case (tc1, tc2) of
         (TyConBound u1 _, TyConBound u2 _) -> u1  == u2
         _                                  -> tc1 == tc2
-
 
 
 ---------------------------------------------------------------------------------------------------
@@ -189,7 +188,7 @@ crushHeadT env tt
 
 -- | Crush compound effects and closure terms.
 --   We check for a crushable term before calling crushT because that function
---   will recursively crush the components. 
+--   will recursively crush the components.
 --   As equivT is already recursive, we don't want a doubly-recursive function
 --   that tries to re-crush the same non-crushable type over and over.
 --
@@ -231,7 +230,7 @@ crushEffect env tt
          -> case takeTyConApps t of
 
              -- Type has a head region.
-             Just (TyConBound _ k, (tR : _)) 
+             Just (TyConBound _ k, (tR : _))
               |  (k1 : _, _) <- takeKFuns k
               ,  isRegionKind k1
               -> tRead tR
@@ -241,7 +240,7 @@ crushEffect env tt
              Just (TyConSpec  TcConUnit, [])
               -> tBot kEffect
 
-             Just (TyConBound _ _,       _)     
+             Just (TyConBound _ _,       _)
               -> tBot kEffect
 
              _ -> tt
@@ -268,7 +267,7 @@ crushEffect env tt
               , Just effs       <- sequence $ zipWith makeDeepWrite ks ts
               -> crushEffect env $ TSum $ Sum.fromList kEffect effs
 
-             _ -> tt 
+             _ -> tt
 
          -- Deep Alloc
          -- See Note: Crushing with higher kinded type vars.
@@ -288,14 +287,14 @@ crushEffect env tt
         TForall b t
          -> TForall b $ crushEffect env t
 
-        TSum ts         
+        TSum ts
          -> TSum
-          $ Sum.fromList (Sum.kindOfSum ts)   
+          $ Sum.fromList (Sum.kindOfSum ts)
           $ map (crushEffect env)
           $ Sum.toList ts
 
 
--- | If this type has first order kind then wrap with the 
+-- | If this type has first order kind then wrap with the
 --   appropriate read effect.
 makeDeepRead :: Kind n -> Type n -> Maybe (Effect n)
 makeDeepRead k t
@@ -306,7 +305,7 @@ makeDeepRead k t
         | otherwise             = Nothing
 
 
--- | If this type has first order kind then wrap with the 
+-- | If this type has first order kind then wrap with the
 --   appropriate read effect.
 makeDeepWrite :: Kind n -> Type n -> Maybe (Effect n)
 makeDeepWrite k t
@@ -317,7 +316,7 @@ makeDeepWrite k t
         | otherwise             = Nothing
 
 
--- | If this type has first order kind then wrap with the 
+-- | If this type has first order kind then wrap with the
 --   appropriate read effect.
 makeDeepAlloc :: Kind n -> Type n -> Maybe (Effect n)
 makeDeepAlloc k t

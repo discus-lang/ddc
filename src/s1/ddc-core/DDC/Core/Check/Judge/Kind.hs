@@ -202,7 +202,7 @@ checkTypeM config ctx0 uni tt@(TCon tc) mode
          = return (tt, kindOfTcCon tcc)
 
          -- Fragment specific, or user defined constructors.
-         | TyConBound u k       <- tc
+         | TyConBound u _k      <- tc
          = case u of
             UName n
              -- User defined data type constructors must be in the set of
@@ -230,8 +230,11 @@ checkTypeM config ctx0 uni tt@(TCon tc) mode
              | otherwise
              -> throw $ C.ErrorType $ ErrorTypeUndefinedTypeCtor u
 
-            -- The kinds of primitive type constructors are directly attached.
-            UPrim{} -> return (tt, k)
+            -- Lookup the kinds of primitives from the prim environment.
+            UPrim{}
+             -> case EnvT.lookup u $ contextEnvT ctx0 of
+                 Just k' -> return (tt, k')
+                 _       -> throw $ C.ErrorType $ ErrorTypeUndefinedTypeCtor u
 
             -- Type constructors are always defined at top-level and not
             -- by anonymous debruijn binding.

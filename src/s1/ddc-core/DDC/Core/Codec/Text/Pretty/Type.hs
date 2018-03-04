@@ -144,7 +144,7 @@ instance (Eq n, Pretty n) => Pretty (TyCon n) where
         TyConKind kc    -> ppr kc
         TyConWitness tc -> ppr tc
         TyConSpec tc    -> ppr tc
-        TyConBound u _  -> ppr u
+        TyConBound u _k -> ppr u
         TyConExists n _ -> text "?" <> int n
 
 
