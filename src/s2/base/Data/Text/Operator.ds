@@ -41,7 +41,6 @@ import foreign c value
 where
 
 
-
 -- Desuguaring -----------------------------------------------------------------
 -- Names used by the Source Tetra desugarer to implement string literals.
 textLit (x : TextLit#) : Text

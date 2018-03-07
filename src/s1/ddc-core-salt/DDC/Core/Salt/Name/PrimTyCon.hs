@@ -49,13 +49,13 @@ data PrimTyCon
         | PrimTyConFloat  Int
 
         -- | @VecN#@ a packed vector of N values.
-        --   This is intended to have kind (Data -> Data), 
+        --   This is intended to have kind (Data -> Data),
         --   so we use concrete vector types like @Vec4# Word32#@.
         | PrimTyConVec    Int
 
         -- | @Addr#@ a relative or absolute machine address.
         --   Enough precision to count every byte of memory.
-        --   Unlike pointers below, an absolute @Addr#@ need not refer to 
+        --   Unlike pointers below, an absolute @Addr#@ need not refer to
         --   memory owned by the current process.
         | PrimTyConAddr
 
@@ -69,7 +69,7 @@ data PrimTyCon
         | PrimTyConTextLit
 
         -- | @Tag#@ data constructor tags.
-        --   Enough precision to count every possible alternative of an 
+        --   Enough precision to count every possible alternative of an
         --   enumerated type.
         | PrimTyConTag
         deriving (Eq, Ord, Show)
@@ -87,7 +87,7 @@ instance Pretty PrimTyCon where
  ppr tc = pprPrimTyConStem tc <> text "#"
 
 
--- | Pretty print a primitive type constructor, 
+-- | Pretty print a primitive type constructor,
 --   without the '#' suffix.
 pprPrimTyConStem :: PrimTyCon -> Doc
 pprPrimTyConStem tc
@@ -107,9 +107,9 @@ pprPrimTyConStem tc
 
 
 -- | Read a primitive type constructor.
---  
+--
 --   Words are limited to 8, 16, 32, or 64 bits.
---  
+--
 --   Floats are limited to 32 or 64 bits.
 readPrimTyCon :: String -> Maybe PrimTyCon
 readPrimTyCon str
@@ -154,7 +154,7 @@ readPrimTyConStem str
         , (ds, "")      <- span isDigit rest
         , not $ null ds
         , n             <- read ds
-        , elem n [2, 4, 8, 16]        
+        , elem n [2, 4, 8, 16]
         = Just $ PrimTyConVec n
 
         | otherwise
@@ -162,8 +162,8 @@ readPrimTyConStem str
 
 
 -- | Integral constructors are the ones that we can reasonably
---   convert from integers of the same size. 
---  
+--   convert from integers of the same size.
+--
 --   These are @Bool#@, @Nat#@, @Int#@, @Size@, @WordN#@ and @Tag#@.
 --
 primTyConIsIntegral :: PrimTyCon -> Bool
@@ -181,7 +181,7 @@ primTyConIsIntegral tc
 
 
 -- | Floating point types.
--- 
+--
 --   These are @FloatN#@.
 primTyConIsFloating :: PrimTyCon -> Bool
 primTyConIsFloating tc
@@ -206,7 +206,7 @@ primTyConIsUnsigned tc
         _                       -> False
 
 -- | Signed integral constructors.
--- 
+--
 --   This is just @Int@.
 primTyConIsSigned :: PrimTyCon -> Bool
 primTyConIsSigned tc
@@ -216,7 +216,7 @@ primTyConIsSigned tc
         _                       -> False
 
 
--- | Get the representation width of a primitive type constructor, 
+-- | Get the representation width of a primitive type constructor,
 --   in bits. This is how much space it takes up in an object payload.
 --
 --   Bools are representable with a single bit, but we unpack
@@ -228,7 +228,7 @@ primTyConWidth :: Platform -> PrimTyCon -> Maybe Integer
 primTyConWidth pp tc
  = case tc of
         PrimTyConVoid           -> Nothing
-        PrimTyConBool           -> Just $ 8 * platformNatBytes  pp 
+        PrimTyConBool           -> Just $ 8 * platformNatBytes  pp
         PrimTyConNat            -> Just $ 8 * platformNatBytes  pp
         PrimTyConInt            -> Just $ 8 * platformNatBytes  pp
         PrimTyConSize           -> Just $ 8 * platformNatBytes  pp

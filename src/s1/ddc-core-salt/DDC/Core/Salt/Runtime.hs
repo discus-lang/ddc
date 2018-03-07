@@ -45,7 +45,6 @@ module DDC.Core.Salt.Runtime
         , xErrorDefault
 
           -- * Calls to primops.
-        , xCreate
         , xAllocSlot
         , xAllocSlotVal
         , xRead

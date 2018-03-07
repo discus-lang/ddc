@@ -33,7 +33,6 @@ module DDC.Core.Salt.Compounds
         , rTop, ukTop
         , typeOfPrimStore
         , xStoreSize, xStoreSize2
-        , xCreate
         , xRead, xWrite
         , xPeek, xPeekBounded, xPoke, xPokeBounded
         , xPlusPtr

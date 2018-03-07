@@ -6,7 +6,6 @@ module DDC.Core.Salt.Compounds.PrimStore
         , ukTop
 
         , xStoreSize, xStoreSize2
-        , xCreate
         , xRead, xWrite
         , xPeek, xPoke
         , xPeekBounded, xPokeBounded
@@ -50,12 +49,6 @@ xStoreSize2 :: a -> Type Name  -> Exp a Name
 xStoreSize2 a tElem
  = xApps a      (xPrimStore a PrimStoreSize2)
                 [RType tElem]
-
--- | Create the heap.
-xCreate :: a -> Exp a Name -> Exp a Name
-xCreate a xLength
- = xApps a      (xPrimStore a PrimStoreCreate)
-                [RTerm xLength]
 
 
 -- | Read a value from an address plus offset.
@@ -129,9 +122,6 @@ typeOfPrimStore jj
 
         PrimStoreSize2
          -> tForall kData $ \_ -> tNat
-
-        PrimStoreCreate
-         -> tNat `tFun` tVoid
 
         PrimStoreCheck
          -> tNat `tFun` tBool

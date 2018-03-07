@@ -28,7 +28,7 @@ convPrimTyCon tc
 convPrimArith2 :: PrimArith -> Maybe Doc
 convPrimArith2 pp
  = case pp of
-        -- arithmetic   
+        -- arithmetic
         PrimArithNeg            -> Just $ text "-"
         PrimArithAdd            -> Just $ text "+"
         PrimArithSub            -> Just $ text "-"
@@ -63,7 +63,6 @@ convPrimStore pp
  = case pp of
         PrimStoreSize           -> text "_SIZE"
         PrimStoreSize2          -> text "_SIZE2"
-        PrimStoreCreate         -> text "_CREATE"
         PrimStoreCheck          -> text "_CHECK"
         PrimStoreRecover        -> text "_RECOVER"
         PrimStoreAlloc          -> text "_ALLOC"
@@ -86,4 +85,4 @@ convPrimStore pp
         PrimStoreCastPtr        -> text "_CASTPTR"
         PrimStoreRootChain      -> text "_ROOTCHAIN"
         PrimStoreGlobal         -> text "_GLOBAL"
-  
+

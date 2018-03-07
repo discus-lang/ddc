@@ -67,11 +67,6 @@ data PrimStore
 
 
         -- Allocation -----------------
-        -- | Create a heap of the given size.
-        --     This must be called before @alloc#@ below, and has global side effect. 
-        --     Calling it twice in the same program is undefined.
-        | PrimStoreCreate
-
         -- | Check whether there are at least this many bytes still available
         --   on the heap.
         | PrimStoreCheck
@@ -106,10 +101,9 @@ instance NFData PrimStore where
 
 instance Pretty PrimStore where
  ppr p
-  = case p of        
+  = case p of
         PrimStoreSize           -> text "size#"
-        PrimStoreSize2          -> text "size2#"        
-        PrimStoreCreate         -> text "create#"
+        PrimStoreSize2          -> text "size2#"
         PrimStoreCheck          -> text "check#"
         PrimStoreRecover        -> text "recover#"
         PrimStoreAlloc          -> text "alloc#"
@@ -145,33 +139,33 @@ readPrimStore str
         "size#"                 -> Just PrimStoreSize
         "size2#"                -> Just PrimStoreSize2
 
-        "create#"               -> Just PrimStoreCreate
-        "check#"                -> Just PrimStoreCheck
-        "recover#"              -> Just PrimStoreRecover
-        "alloc#"                -> Just PrimStoreAlloc
-        "allocSlot#"            -> Just PrimStoreAllocSlot
-        "allocSlotVal#"         -> Just PrimStoreAllocSlotVal
-
+        "plusAddr#"             -> Just PrimStorePlusAddr
+        "minusAddr#"            -> Just PrimStoreMinusAddr
         "read#"                 -> Just PrimStoreRead
         "write#"                -> Just PrimStoreWrite
         "copy#"                 -> Just PrimStoreCopy
         "set#"                  -> Just PrimStoreSet
-        "plusAddr#"             -> Just PrimStorePlusAddr
-        "minusAddr#"            -> Just PrimStoreMinusAddr
 
-        "peek#"                 -> Just PrimStorePeek
-        "poke#"                 -> Just PrimStorePoke
-        "peekBounded#"          -> Just PrimStorePeekBounded
-        "pokeBounded#"          -> Just PrimStorePokeBounded
         "plusPtr#"              -> Just PrimStorePlusPtr
         "minusPtr#"             -> Just PrimStoreMinusPtr
         "makePtr#"              -> Just PrimStoreMakePtr
         "takePtr#"              -> Just PrimStoreTakePtr
         "castPtr#"              -> Just PrimStoreCastPtr
-
-        "rootChain#"            -> Just PrimStoreRootChain
+        "peek#"                 -> Just PrimStorePeek
+        "poke#"                 -> Just PrimStorePoke
+        "peekBounded#"          -> Just PrimStorePeekBounded
+        "pokeBounded#"          -> Just PrimStorePokeBounded
 
         "global#"               -> Just PrimStoreGlobal
+
+        "check#"                -> Just PrimStoreCheck
+        "alloc#"                -> Just PrimStoreAlloc
+        "allocSlot#"            -> Just PrimStoreAllocSlot
+        "allocSlotVal#"         -> Just PrimStoreAllocSlotVal
+
+
+        "recover#"              -> Just PrimStoreRecover
+        "rootChain#"            -> Just PrimStoreRootChain
 
         _                       -> Nothing
 

@@ -135,11 +135,11 @@ instance (Pretty n, Eq n) => Pretty (Module a n) where
 pprExportType :: (Pretty n, Pretty t) => (n, ExportType n t) -> Doc
 pprExportType (n, esrc)
  = case esrc of
+        ExportTypeLocalNoKind _n
+         -> text "export type" <+> ppr n <> semi
+
         ExportTypeLocal _n k
          -> text "export type" <+> padL 10 (ppr n) <+> text ":" <+> ppr k <> semi
-
-        ExportTypeLocalNoKind _n
-         -> text "export type" <+> padL 10 (ppr n) <> semi
 
 
 -- | Pretty print an exported value definition.
@@ -147,7 +147,7 @@ pprExportValue :: (Pretty n, Pretty t) => (n, ExportValue n t) -> Doc
 pprExportValue (n, esrc)
  = case esrc of
         ExportValueLocalNoType _n
-         -> text "export value" <+> padL 10 (ppr n) <> semi
+         -> text "export value" <+> ppr n <> semi
 
         ExportValueLocal _n t Nothing
          -> text "export value" <+> padL 10 (ppr n) <+> text ":" <+> ppr t <> semi

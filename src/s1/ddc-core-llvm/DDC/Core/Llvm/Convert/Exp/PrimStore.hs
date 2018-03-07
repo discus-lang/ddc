@@ -18,7 +18,7 @@ import qualified Data.Sequence          as Seq
 import qualified Data.Text              as Text
 
 
--- | Convert a primitive store operation to LLVM, 
+-- | Convert a primitive store operation to LLVM,
 --   or Nothing if this does not look like such an operation.
 convPrimStore
         :: Context              -- ^ Context of the conversion.
@@ -45,7 +45,7 @@ convPrimStore ctx mdst p as
 
                 -- Bool# is only 1 bit long.
                 -- Don't return a result for types that don't divide into 8 bits evenly.
-                size    
+                size
                  <- case t' of
                         TPointer _           -> return $ platformAddrBytes pp
                         TInt bits
@@ -66,7 +66,7 @@ convPrimStore ctx mdst p as
 
                 -- Bool# is only 1 bit long.
                 -- Don't return a result for types that don't divide into 8 bits evenly.
-                size    
+                size
                  <- case t' of
                         TPointer _              -> return $ platformAddrBytes pp
                         TInt bits
@@ -74,36 +74,12 @@ convPrimStore ctx mdst p as
 
                         _ -> throw $ ErrorInvalidSize2Type t
 
-                let size2   
+                let size2
                         = truncate $ (log (fromIntegral size) / log 2 :: Double)
 
                 return  $ Seq.singleton
                         $ annotNil
                         $ ISet vDst (XLit (LitInt (tNat pp) size2))
-
-
-        -- Create the initial heap.
-        -- This is called once when the program starts.
-        A.PrimStore A.PrimStoreCreate
-         | Just [mBytes]    <- atomsR as
-         -> Just $ do
-                xBytes'     <- mBytes
-                vAddr       <- newUniqueNamedVar "addr" (tAddr pp)
-                vMax        <- newUniqueNamedVar "max"  (tAddr pp)
-                let vTopPtr =  varGlobal pp "ddcHeapTop"
-                let vMaxPtr =  varGlobal pp "ddcHeapMax" 
-                return  $ Seq.fromList
-                        $ map annotNil
-                        [ ICall (Just vAddr) CallTypeStd Nothing
-                                (tAddr pp) nameGlobalMalloc
-                                [xBytes'] []
-
-                        -- Store the top-of-heap pointer
-                        , IStore (XVar vTopPtr) (XVar vAddr)
-
-                        -- Store the maximum heap pointer
-                        , IOp    vMax OpAdd     (XVar vAddr) xBytes'
-                        , IStore (XVar vMaxPtr) (XVar vMax) ]
 
 
         -- Check that there is enough space to allocate a new heap object
@@ -362,7 +338,7 @@ convPrimStore ctx mdst p as
          | [A.RType{}, A.RType{}, A.RType{}, A.RExp xPtr] <- as
          , Just vDst    <- mdst
          , Just mPtr    <- atom xPtr
-         -> Just $ do  
+         -> Just $ do
                 xPtr'   <- mPtr
                 return  $ Seq.singleton $ annotNil
                         $ IConv vDst ConvBitcast xPtr'

@@ -9,4 +9,5 @@ Core Language
 
    ../specification/core/01-Abstract.rst
    ../specification/core/02-Statics.rst
+   ../specification/core/03-CoreSalt.rst
 
