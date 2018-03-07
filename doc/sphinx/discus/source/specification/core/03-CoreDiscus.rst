@@ -154,6 +154,3 @@ Closure Operators
 
 The closure operators are inserted by the Curry transformation when converting Core Discus code to Core Salt. They are not normally inserted into client programs.
 
-
-
-
