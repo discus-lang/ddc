@@ -38,8 +38,8 @@ The ``⋁`` type constructor is used to express type sums, where ``⊥`` is an e
 The quantifier constructor ``∀`` is annotated with the kind of its result type.
 
 
-Syntactic Sugar for Types
--------------------------
+Syntactic Sugar
+~~~~~~~~~~~~~~~
 
 .. code-block:: none
 

@@ -4,7 +4,7 @@ Specification
 
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
    :caption:  Specification:
 
    ../specification/01-Source.rst

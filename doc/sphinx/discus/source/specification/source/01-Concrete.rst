@@ -151,8 +151,8 @@ See the `type specification tests`_ for examples.
         https://github.com/DDCSF/ddc/tree/ddc-0.5.1/test/ddc-spec/source/01-Tetra/01-Syntax/03-Types/Main.ds
 
 
-Guarded Expressions
--------------------
+Guards
+------
 
 .. code-block:: none
 
@@ -189,7 +189,8 @@ Terms
   ExpApp                                              (applicative expressions)
    ::= ExpAppPrefix |  ExpAppInfix
     |  ExpAppAbs    |  ExpAppBind
-    |  ExpAppMatch  |  ExpAppEffect
+    |  ExpAppMatch
+    |  ExpAppRegion |  ExpAppEffect
 
   ExpAppPrefix                                        (prefix application)
    ::= ExpBase ExpArg*                                (base expression applied to arguments)
@@ -318,30 +319,38 @@ See the `matching specification tests`_ for examples.
         https://github.com/DDCSF/ddc/tree/ddc-0.5.1/test/ddc-spec/source/01-Tetra/01-Syntax/08-Matching/Main.ds
 
 
-Regions and Effects
--------------------
+Regions
+-------
+
+.. code-block:: none
+
+  ExpAppRegion
+   ::= 'private' Bind+ WithCaps? 'in' Exp             (private region introduction)
+
+    |  'extend'  Bind 'using' Bind+
+                 WithCaps? 'in' Exp                   (region extension)
+
+  WithCaps
+   ::= 'with' '{' TypeApp+ '}'
+
+The ``private`` construct introduces new local regions with the given names and capabilities. The regions and capabilities are in scope in the body expression.
+
+The ``extend`` construct extends an existing region with a new subregion, where the subregion has the given added capabilities.
+
+
+Effects
+-------
 
 .. code-block:: none
 
   ExpAppEffect
    ::= 'weakeff' Type 'in' Exp                        (weaken effect of an expression)
-
-    |  'private' Bind+ WithCaps? 'in' Exp             (private region introduction)
-
-    |  'extend'  Bind 'using' Bind+
-                 WithCaps? 'in' Exp                   (region extension)
-
     |  'box' Exp                                      (box a computation)
     |  'run' Exp                                      (run a boxed computation)
 
-  WithCaps
-   ::= 'with' '{' TypeApp+ '}'
 
 The ``weakeff`` construct is used to weaken the effect of the body expression. The provided type must be an effect type, which is added to the effect of the body expression.
 
-The ``private`` construct introduces new local regions with the given names and capabilities. The regions and capabilities are in scope in the body expression.
-
-The ``extend`` construct extends an existing region with a new subregion, where the subregion has the given added capabilities.
 
 The ``box`` form suspends an effectful expression, yielding a closure.
 
