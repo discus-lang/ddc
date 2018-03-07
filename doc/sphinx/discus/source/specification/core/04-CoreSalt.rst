@@ -29,7 +29,7 @@ Primitive Types
  WordN#     Data            0w8#, 1056w32#            N ∈ { 8, 16, 32, 64 }
  FloatN#    Data            3.141f32#                 N ∈ { 32, 64 }
  Addr#      Data            (no literals)             [4]
- Ptr#       Region -> Data  (no values)
+ Ptr#       Region -> Data  (no literals)
  TextLit#   Data            "hello"#
 
 

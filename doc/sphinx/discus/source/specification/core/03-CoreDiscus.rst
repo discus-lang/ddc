@@ -19,15 +19,14 @@ Primitive Types
  WordN#     Data                      0w8#, 1056w32#            N ∈ { 8, 16, 32, 64 }
  FloatN#    Data                      3.141f32#                 N ∈ { 32, 64 }
  Addr#      Data                      (no literals)             [4]
- Ptr#       Region -> Data            (no values)
+ Ptr#       Region -> Data            (no literals)
  TextLit#   Data                      "hello"#
 
  TupleN#    .. -> Data                (x, y)  (x, y, z)
  Vector#    Region -> Data -> Data    (no literals)
 
  U#         Data -> Data              Represents an unboxed type during compilation [5].
- F#         Data -> Data              Represents a function pointer during compilation [6].
- C#         Data -> Data              Represents a closure during compilation [6].
+ F#         Data -> Data              Represents a function closure during compilation [6].
 
 [1] The ``Nat`` type has enough precision to count the maximum number of objects allocatable in the Discus heap, but not necessarally enough precision to count every addressable byte.
 
@@ -39,7 +38,7 @@ Primitive Types
 
 [5] The ``U#`` constructor is used to represent the type of an unboxed value during the Unbox transformation.
 
-[6] The ``F#`` and ``C#`` constructors are used to represent the types of function pointers and closures during the Curry transformation.
+[6] The ``F#`` constructor is used to represent the type of a closure during the Curry transformation.
 
 
 Arithmetic Operators
@@ -99,18 +98,6 @@ The cast operators can be used to convert unsigned to signed values, integral to
 Note that the order of forall quantifiers in the types of these primitive is opposite relative to the order in which the type variables appear in the body of the type. We do this so that it's easier to specify the desired result type. For example, one can write ``convert# [Word32#] thing`` to indicate that a result of type ``Word32#`` is desired, and the second type argument will be inferred based on the type of ``thing``.
 
 
-Error Operators
----------------
-
-.. code-block:: none
-
- Name            Type / Description
- ----            ------------------
- default#        TextLit# -> Nat# -> a
-                 Abort the program, signalling that there was an inexhaustive case match
-                 at the given source file and line number.
-
-
 Vector Operators
 ----------------
 
@@ -131,4 +118,42 @@ Vector Operators
  vectorWrite#    Vector# r a -> Nat# -> a -> S (Write r) Unit
                  Write to the value at the given index of a vector.
                  Attempting to access an out-of-bounds index will cause a runtime exception.
+
+At runtime, vectors are represented as flat arrays of unboxed values. Vector values cannot be polymorphic in the element type. Every use of a vector operator must instantiate the element type variable ``a`` to a primitive numeric type.
+
+
+Error Operators
+---------------
+
+.. code-block:: none
+
+ Name            Type / Description
+ ----            ------------------
+ default#        TextLit# -> Nat# -> a
+                 Abort the program, signalling that there was an inexhaustive case match
+                 at the given source file and line number.
+
+The ``default#`` operator is inserted when desugaring Source Discus down to Core Discus.
+
+
+Closure Operators
+-----------------
+
+.. code-block:: none
+
+ Name            Type/Description
+ ----            ----------------
+ reify#          {@a b: Data} -> (a -> b) -> F# (a -> b)
+                 Reify a function value into an explicit closure value.
+
+ curryN#         {@aN .. a1 a0: Data} -> F# (aN .. -> a1 -> a0) -> aN .. -> a1 -> a0
+                 Apply N more arguments to the given function closure.
+
+ apply#          {@aN .. a1 a0: Data} -> (aN .. -> a1 -> a0) -> aN .. -> a1 -> a0
+                 Apply N more arguments to the given function.
+
+The closure operators are inserted by the Curry transformation when converting Core Discus code to Core Salt. They are not normally inserted into client programs.
+
+
+
 
