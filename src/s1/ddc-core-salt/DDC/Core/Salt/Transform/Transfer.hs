@@ -123,7 +123,12 @@ addReturnX a t xx
         -- If there is already a control transfer primitive here then
         -- don't add another one.
         | Just (NamePrimOp p, _)  <- takeXFragApps xx
-        , PrimControl{}           <- p
+        , case p of
+                PrimControl (PrimControlFail)       -> True
+                PrimControl (PrimControlReturn)     -> True
+                PrimControl (PrimControlCall{})     -> False
+                PrimControl (PrimControlTailCall{}) -> True
+                _ -> False
         = xx
 
         -- Wrap the final expression in a return primitive.

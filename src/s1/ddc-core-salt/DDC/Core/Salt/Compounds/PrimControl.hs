@@ -37,8 +37,14 @@ typeOfPrimControl pc
         PrimControlReturn       -> tForall kData $ \t -> t `tFun` t
 
         PrimControlCall arity
-         -> let Just t   = tFunOfList ([tAddr] ++ replicate arity tAddr ++ [tAddr])
-            in  t
+         -> let tSuper   = foldr tFun
+                                 (tPtr (TVar (UIx 0)) tObj)
+                                 (reverse [tPtr (TVar (UIx i)) tObj | i <- [1..arity]])
+
+                tCall    = foldr TForall (tAddr `tFun` tSuper)
+                                 [BAnon k | k <- replicate (arity + 1) kRegion]
+
+           in   tCall
 
         PrimControlTailCall arity
          -> let tSuper   = foldr tFun

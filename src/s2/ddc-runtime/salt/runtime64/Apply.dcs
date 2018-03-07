@@ -119,22 +119,23 @@ ddcEval0  [r0 r1 : Region]
         p       = ddcParamsThunk t
         a       = ddcArgsThunk   t
         case p of
-         0# -> ddcCallP0 f
+         0# -> call0# f
 
-         1# -> ddcCallP1 f      (ddcGetThunk t 0#)
+         1# -> call1# f (ddcGetThunk t 0#)
 
-         2# -> ddcCallP2 f      (ddcGetThunk t 0#) (ddcGetThunk t 1#)
+         2# -> call2# f (ddcGetThunk t 0#) (ddcGetThunk t 1#)
 
-         3# -> ddcCallP3 f      (ddcGetThunk t 0#) (ddcGetThunk t 1#)
-                                (ddcGetThunk t 2#)
+         3# -> call3# f (ddcGetThunk t 0#) (ddcGetThunk t 1#)
+                        (ddcGetThunk t 2#)
 
-         4# -> ddcCallP4 f      (ddcGetThunk t 0#) (ddcGetThunk t 1#)
-                                (ddcGetThunk t 2#) (ddcGetThunk t 3#)
+         4# -> call4# f (ddcGetThunk t 0#) (ddcGetThunk t 1#)
+                        (ddcGetThunk t 2#) (ddcGetThunk t 3#)
 
-         _  -> ddcEvalZ t f p   (ddcGetThunk t (sub# a 4#))
-                                (ddcGetThunk t (sub# a 3#))
-                                (ddcGetThunk t (sub# a 2#))
-                                (ddcGetThunk t (sub# a 1#))
+         _  -> ddcEvalZ
+                 t f p  (ddcGetThunk t (sub# a 4#))
+                        (ddcGetThunk t (sub# a 3#))
+                        (ddcGetThunk t (sub# a 2#))
+                        (ddcGetThunk t (sub# a 1#))
 
 
 ----------------------------------------------------------- 1
@@ -173,23 +174,24 @@ ddcEval1  [r1 : Region]
         case p of
          0# -> do
                 poke# sArg1 pArg1
-                t'      = ddcCallP0 f
+                t'      = call0# f
                 ddcApply1 t' (peek# sArg1)
 
-         1# -> ddcCallP1 f      pArg1
+         1# -> call1# f pArg1
 
-         2# -> ddcCallP2 f      (ddcGetThunk t 0#)  pArg1
+         2# -> call2# f (ddcGetThunk t 0#)  pArg1
 
-         3# -> ddcCallP3 f      (ddcGetThunk t 0#) (ddcGetThunk t 1#)
-                                pArg1
+         3# -> call3# f (ddcGetThunk t 0#) (ddcGetThunk t 1#)
+                        pArg1
 
-         4# -> ddcCallP4 f      (ddcGetThunk t 0#) (ddcGetThunk t 1#)
-                                (ddcGetThunk t 2#)  pArg1
+         4# -> call4# f (ddcGetThunk t 0#) (ddcGetThunk t 1#)
+                        (ddcGetThunk t 2#)  pArg1
 
-         _  -> ddcEvalZ t f p   (ddcGetThunk t (sub# a 3#))
-                                (ddcGetThunk t (sub# a 2#))
-                                (ddcGetThunk t (sub# a 1#))
-                                pArg1
+         _  -> ddcEvalZ
+                t f p   (ddcGetThunk t (sub# a 3#))
+                        (ddcGetThunk t (sub# a 2#))
+                        (ddcGetThunk t (sub# a 1#))
+                        pArg1
 
 
 ----------------------------------------------------------- 2
@@ -240,27 +242,28 @@ ddcEval2 [r1 : Region]
          0# -> do {
                 poke# sArg1 pArg1;
                 poke# sArg2 pArg2;
-                t'      = ddcCallP0 f;
+                t'      = call0# f;
                 ddcApply2 t' (peek# sArg1) (peek# sArg2)
          }
 
          1# -> do {
                 poke# sArg2 pArg2;
-                t'      = ddcCallP1 f pArg1;
+                t'      = call1# f pArg1;
                 ddcApply1 t' (peek# sArg2);
          }
 
-         2# -> ddcCallP2 f       pArg1  pArg2
+         2# -> call2# f pArg1  pArg2
 
-         3# -> ddcCallP3 f      (ddcGetThunk t 0#)
-                                 pArg1  pArg2
+         3# -> call3# f (ddcGetThunk t 0#)
+                        pArg1  pArg2
 
-         4# -> ddcCallP4 f      (ddcGetThunk t 0#) (ddcGetThunk t 1#)
-                                 pArg1  pArg2
+         4# -> call4# f (ddcGetThunk t 0#) (ddcGetThunk t 1#)
+                        pArg1  pArg2
 
-         _  -> ddcEvalZ  t f p  (ddcGetThunk t (sub# a 2#))
-                                (ddcGetThunk t (sub# a 1#))
-                                 pArg1  pArg2
+         _  -> ddcEvalZ
+                t f p   (ddcGetThunk t (sub# a 2#))
+                        (ddcGetThunk t (sub# a 1#))
+                        pArg1  pArg2
 
 
 ----------------------------------------------------------- 3
@@ -331,7 +334,7 @@ ddcEval3 [r1 : Region]
                 poke# sArg1 pArg1;
                 poke# sArg2 pArg2;
                 poke# sArg3 pArg3;
-                t'      = ddcCallP0 f;
+                t'      = call0# f;
                 ddcApply3 t' (peek# sArg1) (peek# sArg2) (peek# sArg3);
 
          }
@@ -339,23 +342,24 @@ ddcEval3 [r1 : Region]
          1# -> do {
                 poke# sArg2 pArg2;
                 poke# sArg3 pArg3;
-                t'      = ddcCallP1 f pArg1;
+                t'      = call1# f pArg1;
                 ddcApply2 t' (peek# sArg2) (peek# sArg3);
          }
 
          2# -> do {
                 poke# sArg3 pArg3;
-                t'      = ddcCallP2 f pArg1 pArg2;
+                t'      = call2# f pArg1 pArg2;
                 ddcApply1 t' (peek# sArg3);
          }
 
-         3# -> ddcCallP3 f       pArg1  pArg2  pArg3
+         3# -> call3# f pArg1  pArg2  pArg3
 
-         4# -> ddcCallP4 f      (ddcGetThunk t 0#)
-                                 pArg1  pArg2  pArg3
+         4# -> call4# f (ddcGetThunk t 0#)
+                        pArg1  pArg2  pArg3
 
-         _  -> ddcEvalZ  t f p  (ddcGetThunk t (sub# a 1#))
-                                 pArg1  pArg2  pArg3
+         _  -> ddcEvalZ
+                 t f p  (ddcGetThunk t (sub# a 1#))
+                        pArg1  pArg2  pArg3
 
 
 ----------------------------------------------------------- 4
@@ -437,7 +441,7 @@ ddcEval4  [r1 : Region]
                 poke# sArg2 pArg2;
                 poke# sArg3 pArg3;
                 poke# sArg4 pArg4;
-                t'      = ddcCallP0 f;
+                t'      = call0# f;
                 ddcApply4 t' (peek# sArg1) (peek# sArg2)
                              (peek# sArg3) (peek# sArg4);
          }
@@ -446,7 +450,7 @@ ddcEval4  [r1 : Region]
                 poke# sArg2 pArg2;
                 poke# sArg3 pArg3;
                 poke# sArg4 pArg4;
-                t'      = ddcCallP1 f pArg1;
+                t'      = call1# f pArg1;
                 ddcApply3 t' (peek# sArg2) (peek# sArg3)
                              (peek# sArg4);
          }
@@ -454,19 +458,19 @@ ddcEval4  [r1 : Region]
          2# -> do {
                 poke# sArg3 pArg3;
                 poke# sArg4 pArg4;
-                t'      = ddcCallP2 f pArg1 pArg2;
+                t'      = call2# f pArg1 pArg2;
                 ddcApply2 t' (peek# sArg3) (peek# sArg4);
          }
 
          3# -> do {
                 poke# sArg4 pArg4;
-                t'      = ddcCallP3 f pArg1 pArg3 pArg3;
+                t'      = call3# f pArg1 pArg3 pArg3;
                 ddcApply1 t' (peek# sArg4);
          }
 
-         4# -> ddcCallP4 f             pArg1  pArg2  pArg3  pArg4
+         4# -> call4# f         pArg1  pArg2  pArg3  pArg4
 
-         _  -> ddcEvalZ  t f p         pArg1  pArg2  pArg3  pArg4
+         _  -> ddcEvalZ  t f p  pArg1  pArg2  pArg3  pArg4
 
 
 ----------------------------------------------------------- Z
@@ -501,89 +505,42 @@ ddcEvalZ [r0 r1 r2 r3 r4 r5 : Region]
         argA0   = takePtr# argL0
 
         case arity of
-         4#  -> makePtr# (call4#  fun
-                                argA3 argA2 argA1 argA0)
+         4#  -> call4#  fun     argL3 argL2 argL1 argL0
 
-         5#  -> makePtr# (call5#  fun
-                                (ddcGetThunkA t 0#)
-                                argA3 argA2 argA1 argA0)
+         5#  -> call5#  fun     (ddcGetThunk t 0#)
+                                argL3 argL2 argL1 argL0
 
-         6#  -> makePtr# (call6#  fun
-                                (ddcGetThunkA t 0#) (ddcGetThunkA t 1#)
-                                argA3 argA2 argA1 argA0)
+         6#  -> call6#  fun     (ddcGetThunk t 0#) (ddcGetThunk t 1#)
+                                argL3 argL2 argL1 argL0
 
-         7#  -> makePtr# (call7#  fun
-                                (ddcGetThunkA t 0#) (ddcGetThunkA t 1#)
-                                (ddcGetThunkA t 2#)
-                                argA3 argA2 argA1 argA0)
+         7#  -> call7#  fun     (ddcGetThunk t 0#) (ddcGetThunk t 1#)
+                                (ddcGetThunk t 2#)
+                                argL3 argL2 argL1 argL0
 
-         8#  -> makePtr# (call8#  fun
-                                (ddcGetThunkA t 0#) (ddcGetThunkA t 1#)
-                                (ddcGetThunkA t 2#) (ddcGetThunkA t 3#)
-                                argA3 argA2 argA1 argA0)
+         8#  -> call8#  fun     (ddcGetThunk t 0#) (ddcGetThunk t 1#)
+                                (ddcGetThunk t 2#) (ddcGetThunk t 3#)
+                                argL3 argL2 argL1 argL0
 
-         9#  -> makePtr# (call9#  fun
-                                (ddcGetThunkA t 0#) (ddcGetThunkA t 1#)
-                                (ddcGetThunkA t 2#) (ddcGetThunkA t 3#)
-                                (ddcGetThunkA t 4#)
-                                argA3 argA2 argA1 argA0)
+         9#  -> call9#  fun     (ddcGetThunk t 0#) (ddcGetThunk t 1#)
+                                (ddcGetThunk t 2#) (ddcGetThunk t 3#)
+                                (ddcGetThunk t 4#)
+                                argL3 argL2 argL1 argL0
 
-         10# -> makePtr# (call10# fun
-                                (ddcGetThunkA t 0#) (ddcGetThunkA t 1#)
-                                (ddcGetThunkA t 2#) (ddcGetThunkA t 3#)
-                                (ddcGetThunkA t 4#) (ddcGetThunkA t 5#)
-                                argA3 argA2 argA1 argA0)
+         10# -> call10# fun     (ddcGetThunk t 0#) (ddcGetThunk t 1#)
+                                (ddcGetThunk t 2#) (ddcGetThunk t 3#)
+                                (ddcGetThunk t 4#) (ddcGetThunk t 5#)
+                                argL3 argL2 argL1 argL0
 
-         11# -> makePtr# (call11# fun
-                                (ddcGetThunkA t 0#) (ddcGetThunkA t 1#)
-                                (ddcGetThunkA t 2#) (ddcGetThunkA t 3#)
-                                (ddcGetThunkA t 4#) (ddcGetThunkA t 5#)
-                                (ddcGetThunkA t 6#)
-                                argA3 argA2 argA1 argA0)
+         11# -> call11# fun     (ddcGetThunk t 0#) (ddcGetThunk t 1#)
+                                (ddcGetThunk t 2#) (ddcGetThunk t 3#)
+                                (ddcGetThunk t 4#) (ddcGetThunk t 5#)
+                                (ddcGetThunk t 6#)
+                                argL3 argL2 argL1 argL0
 
-         12# -> makePtr# (call12# fun
-                                (ddcGetThunkA t 0#) (ddcGetThunkA t 1#)
-                                (ddcGetThunkA t 2#) (ddcGetThunkA t 3#)
-                                (ddcGetThunkA t 4#) (ddcGetThunkA t 5#)
-                                (ddcGetThunkA t 6#) (ddcGetThunkA t 7#)
-                                argA3 argA2 argA1 argA0)
+         12# -> call12# fun     (ddcGetThunk t 0#) (ddcGetThunk t 1#)
+                                (ddcGetThunk t 2#) (ddcGetThunk t 3#)
+                                (ddcGetThunk t 4#) (ddcGetThunk t 5#)
+                                (ddcGetThunk t 6#) (ddcGetThunk t 7#)
+                                argL3 argL2 argL1 argL0
 
          _   -> fail#
-
-
-ddcCallP0  [r1 : Region]
-        (f  : Addr#) : Ptr# r1 Obj
- = makePtr# (call0# f)
-
-ddcCallP1  [r1 r2 : Region]
-        (f  : Addr#)
-        (a1 : Ptr# r1 Obj)
-        : Ptr# r2 Obj
- = makePtr# (call1# f (takePtr# a1))
-
-ddcCallP2  [r1 r2 r3 : Region]
-        (f  : Addr#)
-        (a1 : Ptr# r1 Obj) (a2 : Ptr# r2 Obj)
-        : Ptr# r3 Obj
- = makePtr# (call2# f (takePtr# a1) (takePtr# a2))
-
-ddcCallP3  [r1 r2 r3 r4 : Region]
-        (f  : Addr#)
-        (a1 : Ptr# r1 Obj) (a2 : Ptr# r2 Obj) (a3 : Ptr# r3 Obj)
-        : Ptr# r4 Obj
- = makePtr# (call3# f (takePtr# a1) (takePtr# a2) (takePtr# a3))
-
-ddcCallP4  [r1 r2 r3 r4 r5 : Region]
-        (f  : Addr#)
-        (a1 : Ptr# r1 Obj) (a2 : Ptr# r2 Obj) (a3 : Ptr# r3 Obj) (a4 : Ptr# r4 Obj)
-        : Ptr# r5 Obj
- = makePtr# (call4# f (takePtr# a1) (takePtr# a2) (takePtr# a3) (takePtr# a4))
-
-
--- | Like `getThunk`, but convert the result to a raw address.
-ddcGetThunkA
-        [r1 : Region]
-        (obj   : Ptr# r1 Obj) (index : Nat#) : Addr#
- =      read#  (takePtr# obj)
-               (add# 16# (shl# index (size2# [Addr#])))
-
