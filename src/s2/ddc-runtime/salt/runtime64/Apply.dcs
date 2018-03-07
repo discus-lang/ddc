@@ -499,12 +499,7 @@ ddcEvalZ [r0 r1 r2 r3 r4 r5 : Region]
          (argL1 : Ptr# r3 Obj) (argL0 : Ptr# r4 Obj)
          : Ptr# r5 Obj
 
- = do   argA3   = takePtr# argL3
-        argA2   = takePtr# argL2
-        argA1   = takePtr# argL1
-        argA0   = takePtr# argL0
-
-        case arity of
+ = case arity of
          4#  -> call4#  fun     argL3 argL2 argL1 argL0
 
          5#  -> call5#  fun     (ddcGetThunk t 0#)
@@ -542,5 +537,4 @@ ddcEvalZ [r0 r1 r2 r3 r4 r5 : Region]
                                 (ddcGetThunk t 4#) (ddcGetThunk t 5#)
                                 (ddcGetThunk t 6#) (ddcGetThunk t 7#)
                                 argL3 argL2 argL1 argL0
-
          _   -> fail#
