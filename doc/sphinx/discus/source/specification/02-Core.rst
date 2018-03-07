@@ -1,6 +1,6 @@
 
-Core Language
-=============
+Core Languages
+==============
 
 
 .. toctree::

@@ -32,6 +32,7 @@ Primitive Types
  Ptr#       Region -> Data  (no values)
  TextLit#   Data            "hello"#
 
+
 [1] The ``Nat`` type has enough precision to count the maximum number of objects allocatable in the Discus heap, but not necessarally enough precision to count every addressable byte.
 
 [2] The ``Int`` type has enough precision to represent numbers in the range [-N .. +N], where N is the maximum number of objects allocatable in the Discus heap.
@@ -96,6 +97,19 @@ Cast Operators
 The cast operators convert numeric values between types. As with the arithmetic operators, although the conversion operators are given polymorphic types the object code generator only supports a subset of possible instantiations.
 
 The cast operators can be used to convert unsigned to signed values, integral to floating point values, address to word values and so on. The available instantiations are platform dependent, for example Addr# can be converted to a Word32# on a 32-bit system, but not on a 64-bit system.
+
+
+Store Types
+-----------
+
+.. code-block:: none
+
+ Obj        Data                                      Abstract heap object
+ rT         Region                                    Top level region
+
+The ``Obj`` type is used as the index for pointers that point to object on the heap. Values cannot have type ``Obj`` directly, though may have type ``Ptr r Obj`` for some region type ``r``.
+
+The ``rT`` region is the top level region that holds static data such as text literals, as well as slots on the GC shadow stack. It is defined implicitly at the top level of a Salt program.
 
 
 Store Operators
@@ -206,9 +220,18 @@ Garbage Collector Support Primitives
 
 .. code-block:: none
 
- recover#       UNUSED
- allocSlotVal#  UNUSED
+ check#         Nat# -> Bool#
+                Check whether there are at least the given number of free bytes
+                left in the heap.
 
- check#
- alloc#
- allocSlot#
+ alloc#         Nat# -> Addr#
+                Allocate the given number of bytes on the heap and return
+                an address to the start of the buffer.
+
+ allocSlot#     [r: Region]. Ptr# rT (Ptr# r Obj)
+                Allocate a slot on the GC shadow stack to hold a pointer to a heap object.
+
+ allocSlotVal#  [r: Region]. Ptr# r Obj -> Ptr# rT (Ptr# r Obj)
+                Like allocSlot#, but initialize the slot with the given pointer.
+
+Garbage collector support primitives provide hooks on the garbage collector implementation, are implementation specific, and are subject to change in later versions of the Salt language.
