@@ -47,32 +47,31 @@ Arithmetic Operators
 
 .. code-block:: none
 
-  Name      Type                                    Valid  Description
-  ----      -----                                   -----  -----------
+  Name      Type                                Valid  Description
+  ----      -----                               -----  -----------
+  and#      Bool# -> Bool# -> Bool#             boolean and
+  or#       Bool# -> Bool# -> Bool#             boolean or
 
-  and#      [a: Data]. Bool# -> Bool# -> Bool#             boolean and
-  or#       [a: Data]. Bool# -> Bool# -> Bool#             boolean or
+  shl#      a -> a -> a                    [I]  bitwise shift left
+  shr#      a -> a -> a                    [I]  bitwise shift right
+  band#     a -> a -> a                    [I]  bitwise boolean and
+  bor#      a -> a -> a                    [I]  bitwise boolean or
+  bxor#     a -> a -> a                    [I]  bitwise boolean exclusive or
 
-  shl#      [a: Data]. a -> a -> a                    [I]  bitwise shift left
-  shr#      [a: Data]. a -> a -> a                    [I]  bitwise shift right
-  band#     [a: Data]. a -> a -> a                    [I]  bitwise boolean and
-  bor#      [a: Data]. a -> a -> a                    [I]  bitwise boolean or
-  bxor#     [a: Data]. a -> a -> a                    [I]  bitwise boolean exclusive or
+  neg#      a -> a                      [I, F]  negation
+  add#      a -> a -> a                 [I, F]  addition
+  sub#      a -> a -> a                 [I, F]  subtraction
+  mul#      a -> a -> a                 [I, F]  multiplication
+  div#      a -> a -> a                 [I, F]  division
+  mod#      a -> a -> a                 [I, F]  modulus
+  rem#      a -> a -> a                 [I, F]  remainder
 
-  neg#      [a: Data]. a -> a                      [I, F]  negation
-  add#      [a: Data]. a -> a -> a                 [I, F]  addition
-  sub#      [a: Data]. a -> a -> a                 [I, F]  subtraction
-  mul#      [a: Data]. a -> a -> a                 [I, F]  multiplication
-  div#      [a: Data]. a -> a -> a                 [I, F]  division
-  mod#      [a: Data]. a -> a -> a                 [I, F]  modulus
-  rem#      [a: Data]. a -> a -> a                 [I, F]  remainder
-
-  eq#       [a: Data]. a -> a -> Bool#             [I, F]  equality
-  neq#      [a: Data]. a -> a -> Bool#             [I, F]  negated equality
-  gt#       [a: Data]. a -> a -> Bool#             [I, F]  greater than
-  ge#       [a: Data]. a -> a -> Bool#             [I, F]  greater than or equal
-  lt#       [a: Data]. a -> a -> Bool#             [I, F]  less than
-  le#       [a: Data]. a -> a -> Bool#             [I, F]  less than or equal
+  eq#       a -> a -> Bool#             [I, F]  equality
+  neq#      a -> a -> Bool#             [I, F]  negated equality
+  gt#       a -> a -> Bool#             [I, F]  greater than
+  ge#       a -> a -> Bool#             [I, F]  greater than or equal
+  lt#       a -> a -> Bool#             [I, F]  less than
+  le#       a -> a -> Bool#             [I, F]  less than or equal
 
 
 Although the arithmetic operators are given indicative polymorphic types for convenience, the object code generator only supports subset of possible instantiations. The 'Valid' column in the above table lists whether the operator works on both [I]ntegral and [F]loating point types, or just [I]ntegral. The sets of integral and floating point types are:
@@ -98,14 +97,18 @@ The cast operators convert numeric values between types. As with the arithmetic 
 
 The cast operators can be used to convert unsigned to signed values, integral to floating point values, address to word values and so on. The available instantiations are platform dependent, for example Addr# can be converted to a Word32# on a 32-bit system, but not on a 64-bit system.
 
+Note that the order of forall quantifiers in the types of these primitive is opposite relative to the order in which the type variables appear in the body of the type. We do this so that it's easier to specify the desired result type. For example, one can write ``convert# [Word32#] thing`` to indicate that a result of type ``Word32#`` is desired, and the second type argument will be inferred based on the type of ``thing``.
+
 
 Store Types
 -----------
 
 .. code-block:: none
 
- Obj        Data                                      Abstract heap object
- rT         Region                                    Top level region
+ Name       Kind     Description
+ ----       ----     -----------
+ Obj        Data     Abstract heap object
+ rT         Region   Top level region
 
 The ``Obj`` type is used as the index for pointers that point to object on the heap. Values cannot have type ``Obj`` directly, though may have type ``Ptr r Obj`` for some region type ``r``.
 
@@ -120,6 +123,8 @@ Store Size Operators
 
 .. code-block:: none
 
+ Name           Type/Description
+ ----           ----------------
  size#          [a: Data]. Nat#
                 Yield the size of a value of primitive type 'a', in bytes.
 
@@ -141,10 +146,10 @@ Store Address Operators
  minusAddr#     Addr# -> Nat# -> Addr#
                 Subtract an offset in bytes from an address.
 
- read#          [a: Data]. Addr# -> Nat# -> a
+ read#          Addr# -> Nat# -> a
                 Read a value from the given address plus offset.
 
- write#         [a: Data]. Addr# -> Nat# -> a -> Void#
+ write#         Addr# -> Nat# -> a -> Void#
                 Write a value to the given address plus offset.
 
  copy#          Addr# -> Addr# -> Nat# -> Void#
@@ -164,35 +169,35 @@ Store Pointer Operators
 
 .. code-block:: none
 
- plusPtr#       [r: Region]. [a: Data].   Ptr# r a -> Nat# -> Ptr# r a
+ plusPtr#       Ptr# r a -> Nat# -> Ptr# r a
                 Add the given number of bytes to a pointer.
 
- minusPtr#      [r: Region]. [a: Data].   Ptr# r a -> Nat# -> Ptr# r a
+ minusPtr#      Ptr# r a -> Nat# -> Ptr# r a
                 Subtract the given number of bytes from a pointer.
 
- makePtr#       [r: Region]. [a: Data].   Addr# -> Ptr# r a
+ makePtr#       Addr# -> Ptr# r a
                 Make a pointer from a raw address.
 
- takePtr#       [r: Region]. [a: Data].   Ptr# r a -> Addr#
+ takePtr#       Ptr# r a -> Addr#
                 Take a raw address from a pointer.
 
- castPtr#       [r: Region]. [a b: Data]. Ptr# r a -> Ptr# r b
+ castPtr#       Ptr# r a -> Ptr# r b
                 Cast a pointer from one type to another.
 
- peek#          [r: Region]. [a: Data].   Ptr# r a -> a
+ peek#          Ptr# r a -> a
                 Read the value pointed to by a pointer.
 
- poke#          [r: Region]. [a: Data].   Ptr# r a -> a -> Void#
+ poke#          Ptr# r a -> a -> Void#
                 Write to the value pointer to by a pointer.
 
- peekBounded#   [r: Region]. [a: Data].   Ptr# r a -> Nat# ->   Nat# -> a
-                                          (pointer)   (offset) (length)
+ peekBounded#   Ptr# r a -> Nat# ->   Nat# -> a
+                (pointer)   (offset) (length)
                 Read a value from an offset,
                 checking the offset is less than the given buffer length.
                 Terminate the program if the check fails.
 
- pokeBounded#   [r: Region]. [a: Data].   Ptr# r a -> Nat# ->   Nat# -> a -> Void#
-                                          (pointer)   (offset) (max)
+ pokeBounded#   Ptr# r a -> Nat# ->   Nat# -> a -> Void#
+                (pointer)   (offset) (max)
                 Write a value to a pointer plus offset,
                 checking that the offset is less than the given buffer length.
                 Terminate the program if the check fails.
@@ -242,6 +247,8 @@ Control Operators
 
 .. code-block:: none
 
+ Name           Type/Description
+ ----           ----------------
  fail#          [a: Data]. a
                 Terminate the program, ungracefully.
 
