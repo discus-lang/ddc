@@ -61,24 +61,9 @@ bor# :: [^: Data].^0 -> ^0 -> ^0
 bxor# :: [^: Data].^0 -> ^0 -> ^0
 
 
--- Application operators that work on the primitive closure type.
-creify# :: [^ ^: Data].(^1 -> ^0) -> F# (^1 -> ^0)
+-- Closure operators.
+reify# :: [^ ^: Data].(^1 -> ^0) -> F# (^1 -> ^0)
 
-ccurry0# :: [^: Data].F# ^0 -> C# ^0
-ccurry1# :: [^ ^: Data].F# (^1 -> ^0) -> ^1 -> C# ^0
-ccurry2# :: [^ ^ ^: Data].F# (^2 -> ^1 -> ^0) -> ^2 -> ^1 -> C# ^0
-ccurry5# :: [^ ^ ^ ^ ^ ^: Data].F# (^5 -> ^4 -> ^3 -> ^2 -> ^1 -> ^0) -> ^5 -> ^4 -> ^3 -> ^2 -> ^1 -> C# ^0
-
-capply1# :: [^ ^: Data].C# (^1 -> ^0) -> ^1 -> ^0
-capply2# :: [^ ^ ^: Data].C# (^2 -> ^1 -> ^0) -> ^2 -> ^1 -> ^0
-capply5# :: [^ ^ ^ ^ ^ ^: Data].C# (^5 -> ^4 -> ^3 -> ^2 -> ^1 -> ^0) -> ^5 -> ^4 -> ^3 -> ^2 -> ^1 -> ^0
-
-cextend1# :: [^ ^: Data].C# (^1 -> ^0) -> ^1 -> C# ^0
-cextend2# :: [^ ^ ^: Data].C# (^2 -> ^1 -> ^0) -> ^2 -> ^1 -> C# ^0
-cextend5# :: [^ ^ ^ ^ ^ ^: Data].C# (^5 -> ^4 -> ^3 -> ^2 -> ^1 -> ^0) -> ^5 -> ^4 -> ^3 -> ^2 -> ^1 -> C# ^0
-
-
--- Application operators that work on implicit closures.
 curry0# :: [^: Data].F# ^0 -> ^0
 curry1# :: [^ ^: Data].F# (^1 -> ^0) -> ^1 -> ^0
 curry2# :: [^ ^ ^: Data].F# (^2 -> ^1 -> ^0) -> ^2 -> ^1 -> ^0

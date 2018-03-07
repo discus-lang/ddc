@@ -61,24 +61,9 @@
 :type bxor#
 
 
--- Application operators that work on the primitive closure type.
-:type creify#
+-- Closure operators.
+:type reify#
 
-:type ccurry0#
-:type ccurry1#
-:type ccurry2#
-:type ccurry5#
-
-:type capply1#
-:type capply2#
-:type capply5#
-
-:type cextend1#
-:type cextend2#
-:type cextend5#
-
-
--- Application operators that work on implicit closures.
 :type curry0#
 :type curry1#
 :type curry2#
