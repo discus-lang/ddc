@@ -140,7 +140,6 @@ convertPrimCall _ectx ctx xx
          , Just nArgs
             <- case nPrim of
                 E.NameOpFun (E.OpFunCurry   nArgs) -> Just nArgs
-                E.NameOpFun (E.OpFunCExtend nArgs) -> Just nArgs
                 _                                  -> Nothing
 
          , Just tsArg            <- sequence $ map takeRType $ take nArgs args
@@ -185,7 +184,6 @@ convertPrimCall _ectx ctx xx
          , Just nArgs
             <- case nPrim of
                 E.NameOpFun (E.OpFunApply  nArgs) -> Just nArgs
-                E.NameOpFun (E.OpFunCApply nArgs) -> Just nArgs
                 _                                 -> Nothing
 
          , Just tsArg           <- sequence $ map takeRType $ take nArgs args

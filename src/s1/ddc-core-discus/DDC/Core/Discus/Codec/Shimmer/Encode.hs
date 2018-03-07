@@ -118,8 +118,6 @@ takeOpFun op
         D.OpFunCurry n          -> xAps "of-curry"   [xNat' n]
         D.OpFunApply n          -> xAps "of-apply"   [xNat' n]
         D.OpFunCReify           -> xSym "of-creify"
-        D.OpFunCExtend n        -> xAps "of-cextend" [xNat' n]
-        D.OpFunCApply n         -> xAps "of-capply"  [xNat' n]
 
 
 -- | Take the Shimmer encoding of a vector operator.

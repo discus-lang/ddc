@@ -32,17 +32,3 @@ typeOpFun l op
          -> makeTForalls l [KData, KData] $ \[tA, tB]
          -> (tA ~> tB) ~> TFunValue (tA ~> tB)
 
-        OpFunCExtend n
-         -> makeTForalls l (replicate (n + 1) KData) $ \ts
-         -> let tLast : tsFront' = reverse ts
-                tsFront = reverse tsFront'
-                Just tF = makeTFuns' ts
-            in  makeTFuns (TCloValue tF : tsFront) (TCloValue tLast)
-
-        OpFunCApply n
-         -> makeTForalls l (replicate (n + 1) KData) $ \ts
-         -> let tLast : tsFront' = reverse ts
-                tsFront = reverse tsFront'
-                Just tF = makeTFuns' ts
-            in  makeTFuns (TCloValue tF : tsFront) tLast
-

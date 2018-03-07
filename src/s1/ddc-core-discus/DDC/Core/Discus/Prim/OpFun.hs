@@ -19,8 +19,6 @@ instance NFData OpFun where
         OpFunCurry   n  -> rnf n
         OpFunApply   n  -> rnf n
         OpFunCReify     -> ()
-        OpFunCExtend n  -> rnf n
-        OpFunCApply  n  -> rnf n
 
 
 instance Pretty OpFun where
@@ -34,12 +32,6 @@ instance Pretty OpFun where
 
         OpFunCReify
          -> text "creify#"
-
-        OpFunCExtend n
-         -> text "cextend" <> int n <> text "#"
-
-        OpFunCApply  n
-         -> text "capply"  <> int n <> text "#"
 
 
 -- | Read a primitive function operator.
@@ -64,22 +56,6 @@ readOpFun str
         -- creify#
         | "creify#"      <- str
         = Just $ OpFunCReify
-
-        -- cextendN#
-        | Just rest     <- stripPrefix "cextend" str
-        , (ds, "#")     <- span isDigit rest
-        , not $ null ds
-        , n             <- read ds
-        , n >= 1
-        = Just $ OpFunCExtend n
-
-        -- capplyN#
-        | Just rest     <- stripPrefix "capply" str
-        , (ds, "#")     <- span isDigit rest
-        , not $ null ds
-        , n             <- read ds
-        , n >= 0
-        = Just $ OpFunCApply n
 
         | otherwise
         = Nothing
@@ -111,28 +87,3 @@ typeOpFun op
         OpFunCReify
          -> tForalls [kData, kData]
          $  \[tA, tB]  -> (tA `tFun` tB) `tFun` tFunValue (tA `tFun` tB)
-
-        OpFunCExtend n
-         -> tForalls (replicate (n + 1) kData)
-         $  \ts ->
-                let tLast : tsFront' = reverse ts
-                    tsFront          = reverse tsFront'
-                    Just tF          = tFunOfList ts
-                    Just result
-                        = tFunOfList
-                                ( tCloValue tF
-                                : tsFront ++ [tCloValue tLast])
-                in result
-
-        OpFunCApply n
-         -> tForalls (replicate (n + 1) kData)
-         $  \ts ->
-                let tLast : tsFront' = reverse ts
-                    tsFront          = reverse tsFront'
-                    Just tF          = tFunOfList ts
-                    Just result
-                        = tFunOfList
-                                ( tCloValue tF
-                                : tsFront ++ [tLast])
-                in result
-

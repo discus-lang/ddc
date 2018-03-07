@@ -194,18 +194,6 @@ data OpFun
 
         -- | Reify a function into an explicit functional value.
         | OpFunCReify
-
-        -- | Apply an explicit functional value to some arguments,
-        --   producing an explicitly typed closure.
---        | OpFunCCurry  Int
-
-        -- | Extend an explicitly typed closure with more arguments,
-        --   producing a new closure.
-        | OpFunCExtend Int
-
-        -- | Apply an explicitly typed closure to some arguments,
-        --   possibly evaluating the contained function.
-        | OpFunCApply  Int
         deriving (Eq, Ord, Show)
 
 

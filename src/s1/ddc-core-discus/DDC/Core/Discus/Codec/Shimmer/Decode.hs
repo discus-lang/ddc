@@ -56,8 +56,6 @@ takeName ss
         XAps "of-curry"   [XNat n]      -> Just $ D.NameOpFun     $ D.OpFunCurry     $ fromI n
         XAps "of-apply"   [XNat n]      -> Just $ D.NameOpFun     $ D.OpFunApply     $ fromI n
         XSym "of-creify"                -> Just $ D.NameOpFun       D.OpFunCReify
-        XAps "of-cextend" [XNat n]      -> Just $ D.NameOpFun     $ D.OpFunCExtend   $ fromI n
-        XAps "of-capply"  [XNat n]      -> Just $ D.NameOpFun     $ D.OpFunCApply    $ fromI n
 
         -- OpVector
         XSym "ov-alloc-u"               -> Just $ D.NameOpVector    D.OpVectorAlloc    True
