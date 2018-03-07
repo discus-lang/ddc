@@ -64,7 +64,6 @@ convPrimStore pp
         PrimStoreSize           -> text "_SIZE"
         PrimStoreSize2          -> text "_SIZE2"
         PrimStoreCheck          -> text "_CHECK"
-        PrimStoreRecover        -> text "_RECOVER"
         PrimStoreAlloc          -> text "_ALLOC"
         PrimStoreAllocSlot      -> text "_ALLOCSLOT"
         PrimStoreAllocSlotVal   -> text "_ALLOCSLOTVAL"
@@ -83,6 +82,5 @@ convPrimStore pp
         PrimStoreMakePtr        -> text "_MAKEPTR"
         PrimStoreTakePtr        -> text "_TAKEPTR"
         PrimStoreCastPtr        -> text "_CASTPTR"
-        PrimStoreRootChain      -> text "_ROOTCHAIN"
         PrimStoreGlobal         -> text "_GLOBAL"
 

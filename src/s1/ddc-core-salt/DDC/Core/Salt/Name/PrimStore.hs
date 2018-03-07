@@ -71,9 +71,6 @@ data PrimStore
         --   on the heap.
         | PrimStoreCheck
 
-        -- | Force a garbage collection to recover at least this many bytes.
-        | PrimStoreRecover
-
         -- | Allocate some space on the heap.
         --   There must be enough space available, else undefined.
         | PrimStoreAlloc
@@ -84,10 +81,6 @@ data PrimStore
         -- | Allocate space on the stack for a GC root and set it to the given value.
         | PrimStoreAllocSlotVal
 
-
-        -- GC Root Chain --------------
-        -- | Starting address of the GC root chain.
-        | PrimStoreRootChain
 
         -- Global Variables -----------
         -- | Reference to a global
@@ -105,7 +98,6 @@ instance Pretty PrimStore where
         PrimStoreSize           -> text "size#"
         PrimStoreSize2          -> text "size2#"
         PrimStoreCheck          -> text "check#"
-        PrimStoreRecover        -> text "recover#"
         PrimStoreAlloc          -> text "alloc#"
         PrimStoreAllocSlot      -> text "allocSlot#"
         PrimStoreAllocSlotVal   -> text "allocSlotVal#"
@@ -126,8 +118,6 @@ instance Pretty PrimStore where
         PrimStoreMakePtr        -> text "makePtr#"
         PrimStoreTakePtr        -> text "takePtr#"
         PrimStoreCastPtr        -> text "castPtr#"
-
-        PrimStoreRootChain      -> text "rootChain#"
 
         PrimStoreGlobal         -> text "global#"
 
@@ -162,10 +152,6 @@ readPrimStore str
         "alloc#"                -> Just PrimStoreAlloc
         "allocSlot#"            -> Just PrimStoreAllocSlot
         "allocSlotVal#"         -> Just PrimStoreAllocSlotVal
-
-
-        "recover#"              -> Just PrimStoreRecover
-        "rootChain#"            -> Just PrimStoreRootChain
 
         _                       -> Nothing
 

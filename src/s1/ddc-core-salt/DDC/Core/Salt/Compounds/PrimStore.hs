@@ -126,9 +126,6 @@ typeOfPrimStore jj
         PrimStoreCheck
          -> tNat `tFun` tBool
 
-        PrimStoreRecover
-         -> tNat `tFun` tVoid
-
         PrimStoreAlloc
          -> tNat `tFun` tAddr
 
@@ -195,8 +192,6 @@ typeOfPrimStore jj
         PrimStoreCastPtr
          -> tForalls [kRegion, kData, kData]
          $ \[r,t1,t2] -> tPtr r t2 `tFun` tPtr r t1
-
-        PrimStoreRootChain      -> tAddr
 
         PrimStoreGlobal
          -> tForall kData

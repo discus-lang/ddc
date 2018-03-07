@@ -344,15 +344,6 @@ convPrimStore ctx mdst p as
                         $ IConv vDst ConvBitcast xPtr'
 
 
-        -- The GC root chain.
-        A.PrimStore A.PrimStoreRootChain
-         | []           <- as
-         , Just vDst    <- mdst
-         -> Just $ do
-                let vRootPtr = varGlobalLlvmRootChain pp
-                return  $ Seq.singleton $ annotNil
-                        $ IConv vDst ConvPtrtoint (XVar vRootPtr)
-
         -- Refer to a global variable.
         A.PrimStore A.PrimStoreGlobal
          | [A.RType t, A.RExp x]        <- as
