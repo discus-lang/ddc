@@ -53,5 +53,5 @@ main [r1: Region] (argc: Nat#) (argv: Ptr# r1 Word8#): Int#
         ddcPrimStdoutPutTextLit "\n"#
 
         -- Return successfully.
-        return# 0i#
+        0i#
 

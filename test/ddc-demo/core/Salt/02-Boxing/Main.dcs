@@ -50,7 +50,7 @@ allocRawLocal_ok [r: Region] (tag: Tag#) (bytesObj: Nat#): Ptr# r Obj
 
         -- Return a pointer to the new object.
         ptr             = makePtr# addr
-        return# ptr
+        ptr
 
 
 -- | Box a Word32.
@@ -58,27 +58,27 @@ boxWord32 [r: Region] (x: Word32#): Ptr# r Obj
  = do   obj     = allocRawLocal TAG0# 4#
         addr    = takePtr# obj
         write#  addr 8# x
-        return# obj
+        obj
 
 
 -- | Unbox a Word32.
 unboxWord32 [r: Region] (obj: Ptr# r Obj): Word32#
- =      return# (read# (takePtr# obj) 8#)
+ =      read# (takePtr# obj) 8#
 
 
 -- | Boxed Word32 addition.
 addWord32 [r1 r2 r3: Region] (x: Ptr# r1 Obj) (y: Ptr# r2 Obj): Ptr# r3 Obj
- =      return# (boxWord32 (add# (unboxWord32 x) (unboxWord32 y)))
+ =      boxWord32 (add# (unboxWord32 x) (unboxWord32 y))
 
 
 -- | Boxed Word32 subtraction.
 subWord32 [r1 r2 r3: Region] (x: Ptr# r1 Obj) (y: Ptr# r2 Obj): Ptr# r3 Obj
- =      return# (boxWord32 (sub# (unboxWord32 x) (unboxWord32 y)))
+ =      boxWord32 (sub# (unboxWord32 x) (unboxWord32 y))
 
 
 -- | Boxed Word32 multiplication.
 mulWord32 [r1 r2 r3: Region] (x: Ptr# r1 Obj) (y: Ptr# r2 Obj): Ptr# r3 Obj
- =      return# (boxWord32 (mul# (unboxWord32 x) (unboxWord32 y)))
+ =      boxWord32 (mul# (unboxWord32 x) (unboxWord32 y))
 
 
 -- | Boxed factorial function.
@@ -87,15 +87,13 @@ fac [r1: Region] (x: Ptr# r1 Obj): Ptr# r1 Obj
         cc      = eq# x2 0w32#
         case cc of
          True#
-          -> do r       = boxWord32 1w32#
-                return# r
+          -> do boxWord32 1w32#
 
          False#
           -> do n2      = boxWord32 [r1] 1w32#
                 n3      = subWord32 [r1] [r1] [r1] x n2
                 n4      = fac n3
-                n5      = mulWord32 x n4
-                return# n5
+                mulWord32 x n4
 
 
 main [r1: Region] (argc: Nat#) (argv: Ptr# r1 Word8#): Int#
@@ -113,4 +111,4 @@ main [r1: Region] (argc: Nat#) (argv: Ptr# r1 Word8#): Int#
         ddcPrimStdoutPutTextLit "\n"#
 
         -- Return success.
-        return# 0i#
+        0i#

@@ -23,7 +23,7 @@ allocRaw [r : Region] (tag : Tag#) (bytesPayload : Nat#) : Ptr# r Obj
         bytesObj32      = truncate# [Word32#] [Nat#] bytesObj;
         write# [Word32#] addr 4# bytesObj32;
 
-        return# [Ptr# r Obj] (makePtr# [r] [Obj] addr);
+        makePtr# [r] [Obj] addr;
      };
 
 
@@ -31,34 +31,33 @@ boxWord32 [r : Region] (x : Word32#) : Ptr# r Obj
  = do { obj     = allocRaw [r] TAG0# 4#;
         addr    = takePtr# [r] [Obj] obj;
         write#  [Word32#] addr 8# x;
-        return# [Ptr# r Obj] obj;
+        obj;
       };
 
 
 unboxWord32 [r : Region] (obj : Ptr# r Obj) : Word32#
  = do { addr    = takePtr# [r] [Obj] obj;
-        x       = read#   [Word32#] addr 8#;
-        return# [Word32#] x;
+        read#   [Word32#] addr 8#;
       };
 
 
 addWord32 [r : Region] (x : Ptr# r Obj) (y : Ptr# r Obj) : Ptr# r Obj
- = return# [Ptr# r Obj] (boxWord32 [r] (add# [Word32#] (unboxWord32 [r] x) (unboxWord32 [r] y)));
+ = boxWord32 [r] (add# [Word32#] (unboxWord32 [r] x) (unboxWord32 [r] y));
 
 
 subWord32 [r : Region] (x : Ptr# r Obj) (y : Ptr# r Obj) : Ptr# r Obj
- = return# [Ptr# r Obj] (boxWord32 [r] (sub# [Word32#] (unboxWord32 [r] x) (unboxWord32 [r] y)));
+ = boxWord32 [r] (sub# [Word32#] (unboxWord32 [r] x) (unboxWord32 [r] y));
 
 
 mulWord32 [r : Region] (x : Ptr# r Obj) (y : Ptr# r Obj) : Ptr# r Obj
- = return# [Ptr# r Obj] (boxWord32 [r] (mul# [Word32#] (unboxWord32 [r] x) (unboxWord32 [r] y)));
+ = boxWord32 [r] (mul# [Word32#] (unboxWord32 [r] x) (unboxWord32 [r] y));
 
 
 fac [r : Region] (x: Ptr# r Obj) : Ptr# r Obj
  = do { cc      = eq# [Word32#] (unboxWord32 [r] x) 0w32#;
         case cc of {
-         True#  -> return# [Ptr# r Obj] (boxWord32 [r] 1w32#);
-         False# -> return# [Ptr# r Obj] (mulWord32 [r] x (fac [r] (subWord32 [r] x (boxWord32 [r] 1w32#))));
+         True#  -> boxWord32 [r] 1w32#;
+         False# -> mulWord32 [r] x (fac [r] (subWord32 [r] x (boxWord32 [r] 1w32#)));
         };
       };
 
@@ -68,7 +67,6 @@ main [r : Region] (argc : Nat#) (argv : Ptr# r (Ptr# r Word8#)) : Int#
         x       = boxWord32 [r] 10w32#;
         str     = ddcPrimShowInt [r] (truncate# [Int#] [Word32#] (unboxWord32 [r] (fac [r] x)));
         ddcPrimStdoutPutVector [r] str;
-
-        return# [Int#] 0i#;
+        0i#;
       };
 }

@@ -1,10 +1,9 @@
 
-module Runtime with letrec 
+module Runtime with letrec
 
 -- | Get the constructor tag of an object.
-getTag (obj : Ptr# Obj) : Tag#
- = do   ptr             = castPtr# [Word32#] [Obj] obj
-        header          = peek# [Word32#] ptr 0
-        tag32           = shr#  [Word32#] header 8w32#
-        tag             = promote# [Tag#] [Word32#] tag32
-        return# [Tag#] tag
+getTag (obj : Ptr# rT Obj) : Tag#
+ = do   ptr             = castPtr# [rT] [Word32#] [Obj] obj
+        header          = peek# ptr
+        tag32           = shr#  header 8w32#
+        promote# [Tag#] [Word32#] tag32
