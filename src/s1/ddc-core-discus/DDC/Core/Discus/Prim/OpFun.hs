@@ -19,7 +19,6 @@ instance NFData OpFun where
         OpFunCurry   n  -> rnf n
         OpFunApply   n  -> rnf n
         OpFunCReify     -> ()
-        OpFunCCurry  n  -> rnf n
         OpFunCExtend n  -> rnf n
         OpFunCApply  n  -> rnf n
 
@@ -35,9 +34,6 @@ instance Pretty OpFun where
 
         OpFunCReify
          -> text "creify#"
-
-        OpFunCCurry n
-         -> text "ccurry"  <> int n <> text "#"
 
         OpFunCExtend n
          -> text "cextend" <> int n <> text "#"
@@ -68,14 +64,6 @@ readOpFun str
         -- creify#
         | "creify#"      <- str
         = Just $ OpFunCReify
-
-        -- ccurryN#
-        | Just rest     <- stripPrefix "ccurry" str
-        , (ds, "#")     <- span isDigit rest
-        , not $ null ds
-        , n             <- read ds
-        , n >= 0
-        = Just $ OpFunCCurry n
 
         -- cextendN#
         | Just rest     <- stripPrefix "cextend" str
@@ -123,18 +111,6 @@ typeOpFun op
         OpFunCReify
          -> tForalls [kData, kData]
          $  \[tA, tB]  -> (tA `tFun` tB) `tFun` tFunValue (tA `tFun` tB)
-
-        OpFunCCurry n
-         -> tForalls (replicate (n + 1) kData)
-         $  \ts ->
-                let tLast : tsFront' = reverse ts
-                    tsFront          = reverse tsFront'
-                    Just tF          = tFunOfList ts
-                    Just result
-                        = tFunOfList
-                                ( tFunValue tF
-                                : tsFront ++ [tCloValue tLast])
-                in result
 
         OpFunCExtend n
          -> tForalls (replicate (n + 1) kData)

@@ -140,7 +140,6 @@ convertPrimCall _ectx ctx xx
          , Just nArgs
             <- case nPrim of
                 E.NameOpFun (E.OpFunCurry   nArgs) -> Just nArgs
-                E.NameOpFun (E.OpFunCCurry  nArgs) -> Just nArgs
                 E.NameOpFun (E.OpFunCExtend nArgs) -> Just nArgs
                 _                                  -> Nothing
 

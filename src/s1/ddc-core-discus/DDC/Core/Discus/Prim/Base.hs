@@ -197,7 +197,7 @@ data OpFun
 
         -- | Apply an explicit functional value to some arguments,
         --   producing an explicitly typed closure.
-        | OpFunCCurry  Int
+--        | OpFunCCurry  Int
 
         -- | Extend an explicitly typed closure with more arguments,
         --   producing a new closure.

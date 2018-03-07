@@ -13,7 +13,7 @@ module DDC.Core.Discus.Compounds
         , tTextLit
 
           -- * Expressions
-        , xFunCReify,   xFunCCurry,    xFunApply, xFunCurry
+        , xFunCReify,   xFunApply, xFunCurry
         , xCastConvert)
 where
 import DDC.Core.Discus.Prim.TyConDiscus
@@ -35,20 +35,6 @@ xFunCReify a tParam tResult xF
  = xApps a
         (XVar a (UPrim  (NameOpFun OpFunCReify)))
         [RType tParam, RType tResult, RTerm xF]
-
-
--- | Construct a closure consisting of a top-level super and some arguments.
-xFunCCurry
-        :: a
-        -> [Type Name]  -- ^ Parameter types.
-        -> Type Name    -- ^ Result type.
-        -> Exp a Name   -- ^ Input closure.
-        -> Exp a Name   -- ^ Resulting closure.
-
-xFunCCurry a tsParam tResult xF
- = xApps a
-         (XVar a (UPrim  (NameOpFun (OpFunCCurry (length tsParam)))))
-         ((map RType tsParam) ++ [RType tResult] ++ [RTerm xF])
 
 
 -- | Construct a closure consisting of a top-level super and some arguments.
