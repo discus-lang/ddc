@@ -242,9 +242,25 @@ Control Operators
 
 .. code-block:: none
 
-  fail#        Terminate the program, ungracefully.
+ fail#          [a: Data]. a
+                Terminate the program, ungracefully.
 
-The ``#fail`` operator is used to signal an unrecoverable runtime error, such as detection of heap corruption.
+ callN#         [rN .. r1 r0: Region]. Addr# -> Ptr rN Obj -> .. Ptr r1 Obj -> Ptr r0 Obj
+                Call the function at the given code address, passing pointers to heap objects.
 
+ tailcallN#     [aN .. a1 a0: Data]. (aN -> .. a1 -> a0) -> aN -> .. a1 -> a0
+                Tail-call the given function, passing the given values.
+
+ return#        [a: Data]. a -> a
+                Indicate the value should be returned from the function.
+                This is an internal primop and is not needed in client code.
+
+The ``fail#`` operator is used to signal unrecoverable errors, such as the runtime system detecting that the heap is corrupted.
+
+The ``callN`` operator is used to call functions at aribrary instruction code address. The address of a top-level function can be obtained with the convert# operator, eg ``convert# [Addr] someFunction``.
+
+The ``tailcallN`` operator is used to perform a tail call, and must appear in tail call position of the enclosing function.
+
+The ``return#`` operator is inserted automatically by the compiler during compilation. The operator may appear dumps of intermediate code, but does not need to be added by the client programmer.
 
 
