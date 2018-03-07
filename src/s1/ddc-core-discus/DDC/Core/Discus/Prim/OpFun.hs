@@ -18,7 +18,7 @@ instance NFData OpFun where
   = case op of
         OpFunCurry   n  -> rnf n
         OpFunApply   n  -> rnf n
-        OpFunCReify     -> ()
+        OpFunReify      -> ()
 
 
 instance Pretty OpFun where
@@ -30,8 +30,8 @@ instance Pretty OpFun where
         OpFunApply  n
          -> text "apply"   <> int n <> text "#"
 
-        OpFunCReify
-         -> text "creify#"
+        OpFunReify
+         -> text "reify#"
 
 
 -- | Read a primitive function operator.
@@ -53,9 +53,9 @@ readOpFun str
         , n >= 1
         = Just $ OpFunApply n
 
-        -- creify#
-        | "creify#"      <- str
-        = Just $ OpFunCReify
+        -- reify#
+        | "reify#"      <- str
+        = Just $ OpFunReify
 
         | otherwise
         = Nothing
@@ -84,6 +84,6 @@ typeOpFun op
                     Just result      = tFunOfList (tF : ts)
                 in  result
 
-        OpFunCReify
+        OpFunReify
          -> tForalls [kData, kData]
          $  \[tA, tB]  -> (tA `tFun` tB) `tFun` tFunValue (tA `tFun` tB)

@@ -43,7 +43,6 @@ takeName ss
         XSym "dt-Vector"                -> Just $ D.NameTyConDiscus $ D.TyConDiscusVector
         XSym "dt-U"                     -> Just $ D.NameTyConDiscus $ D.TyConDiscusU
         XSym "dt-F"                     -> Just $ D.NameTyConDiscus $ D.TyConDiscusF
-        XSym "dt-C"                     -> Just $ D.NameTyConDiscus $ D.TyConDiscusC
 
         -- DaConDiscus
         XAps "dd-Tuple" [XNat n]        -> Just $ D.NameDaConDiscus $ D.DaConDiscusTuple $ fromI n
@@ -55,7 +54,7 @@ takeName ss
         -- OpFun
         XAps "of-curry"   [XNat n]      -> Just $ D.NameOpFun     $ D.OpFunCurry     $ fromI n
         XAps "of-apply"   [XNat n]      -> Just $ D.NameOpFun     $ D.OpFunApply     $ fromI n
-        XSym "of-creify"                -> Just $ D.NameOpFun       D.OpFunCReify
+        XSym "of-reify"                 -> Just $ D.NameOpFun       D.OpFunReify
 
         -- OpVector
         XSym "ov-alloc-u"               -> Just $ D.NameOpVector    D.OpVectorAlloc    True

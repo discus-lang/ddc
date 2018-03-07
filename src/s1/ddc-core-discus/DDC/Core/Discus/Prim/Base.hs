@@ -158,9 +158,6 @@ data TyConDiscus
 
         -- | @F#@       Reified function value.
         | TyConDiscusF
-
-        -- | @C#@       Reified function closure.
-        | TyConDiscusC
         deriving (Eq, Ord, Show)
 
 
@@ -193,7 +190,7 @@ data OpFun
         | OpFunApply   Int
 
         -- | Reify a function into an explicit functional value.
-        | OpFunCReify
+        | OpFunReify
         deriving (Eq, Ord, Show)
 
 

@@ -121,8 +121,8 @@ makeCallSuperUnder nF tF cs es
              in return
                  $ Just
                  $ makeRuns () (length esRuns)
-                 $ C.xApps  () (C.xFunCurry  () tsParamSat  tResultClo
-                               (C.xFunCReify () tParamFirst tSuperResult xFunAPP))
+                 $ C.xApps  () (C.xFunCurry () tsParamSat  tResultClo
+                               (C.xFunReify () tParamFirst tSuperResult xFunAPP))
                                asArgValue
 
 
@@ -168,9 +168,9 @@ makeCallSuperUnder nF tF cs es
           -> let tSuperResult = C.tFunOfParamResult tsParamRest tResult
              in  return
                    $ Just
-                   $ C.xLAMs      () bsParam
-                   $ C.xFunCurry  () [] tF_inst
-                   $ C.xFunCReify () tParamFirst tSuperResult
+                   $ C.xLAMs     () bsParam
+                   $ C.xFunCurry () [] tF_inst
+                   $ C.xFunReify () tParamFirst tSuperResult
                         (xApps () (XVar () (UName nF))
                                 $ map RType tsArgs)
 

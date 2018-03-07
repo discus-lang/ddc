@@ -80,9 +80,6 @@ data PrimTyConDiscus
         -- | @F#@.       Reified function values.
         | PrimTyConDiscusF
 
-        -- | @C#@.       Reified function closures.
-        | PrimTyConDiscusC
-
         -- | @U#@.       Explicitly unboxed values.
         | PrimTyConDiscusU
         deriving (Eq, Ord, Show)

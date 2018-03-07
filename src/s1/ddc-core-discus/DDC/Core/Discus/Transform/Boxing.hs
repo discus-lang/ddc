@@ -68,7 +68,6 @@ repOfType tt
                 TyConDiscusVector{}      -> Just RepNone
                 TyConDiscusU{}           -> Just RepNone
                 TyConDiscusF{}           -> Just RepNone
-                TyConDiscusC{}           -> Just RepNone
 
 
         | otherwise

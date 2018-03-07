@@ -4,8 +4,7 @@ module DDC.Source.Discus.Prim.TyConDiscus
         ( kindPrimTyConDiscus
         , readPrimTyConDiscus
         , pattern TVector
-        , pattern TFunValue
-        , pattern TCloValue)
+        , pattern TFunValue)
 where
 import DDC.Source.Discus.Prim.TyCon
 import DDC.Source.Discus.Prim.Base
@@ -29,7 +28,6 @@ instance Pretty PrimTyConDiscus where
         PrimTyConDiscusTuple n   -> text "Tuple" <> int n
         PrimTyConDiscusVector    -> text "Vector"
         PrimTyConDiscusF         -> text "F#"
-        PrimTyConDiscusC         -> text "C#"
         PrimTyConDiscusU         -> text "U#"
 
 
@@ -47,7 +45,6 @@ readPrimTyConDiscus str
         = case str of
                 "Vector#"       -> Just PrimTyConDiscusVector
                 "F#"            -> Just PrimTyConDiscusF
-                "C#"            -> Just PrimTyConDiscusC
                 "U#"            -> Just PrimTyConDiscusU
                 _               -> Nothing
 
@@ -58,12 +55,10 @@ kindPrimTyConDiscus tc
         PrimTyConDiscusTuple n   -> foldr (~>) KData (replicate n KData)
         PrimTyConDiscusVector    -> KRegion ~> KData ~> KData
         PrimTyConDiscusF         -> KData   ~> KData
-        PrimTyConDiscusC         -> KData   ~> KData
         PrimTyConDiscusU         -> KData   ~> KData
 
 
 ---------------------------------------------------------------------------------------------------
 pattern TVector   tR tA = TApp2 (TCon (TyConPrim (PrimTypeTyConDiscus PrimTyConDiscusVector))) tR tA
 pattern TFunValue tA    = TApp  (TCon (TyConPrim (PrimTypeTyConDiscus PrimTyConDiscusF)))      tA
-pattern TCloValue tA    = TApp  (TCon (TyConPrim (PrimTypeTyConDiscus PrimTyConDiscusC)))      tA
 

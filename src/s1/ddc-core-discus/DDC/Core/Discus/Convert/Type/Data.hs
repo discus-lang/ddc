@@ -176,11 +176,6 @@ convertDataAppT ctx tt
                 , [_])          <- takePrimTyConApps tt
         =       return  $ A.tPtr A.rTop A.tObj
 
-        -- The C# type (reified function)
-        | Just  ( E.NameTyConDiscus E.TyConDiscusC
-                , [_])          <- takePrimTyConApps tt
-        =       return  $ A.tPtr A.rTop A.tObj
-
         -- Boxed text literals.
         -- The box holds a pointer to the string data.
         | Just (E.NamePrimTyCon E.PrimTyConTextLit, [])

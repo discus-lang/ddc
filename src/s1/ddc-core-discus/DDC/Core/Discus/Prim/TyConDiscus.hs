@@ -5,8 +5,7 @@ module DDC.Core.Discus.Prim.TyConDiscus
         , tTupleN
         , tVector
         , tUnboxed
-        , tFunValue
-        , tCloValue)
+        , tFunValue)
 where
 import DDC.Core.Discus.Prim.Base
 import DDC.Type.Exp.Simple
@@ -27,7 +26,6 @@ instance Pretty TyConDiscus where
         TyConDiscusVector        -> text "Vector#"
         TyConDiscusU             -> text "U#"
         TyConDiscusF             -> text "F#"
-        TyConDiscusC             -> text "C#"
 
 
 -- | Read the name of a baked-in type constructor.
@@ -44,7 +42,6 @@ readTyConDiscus str
                 "Vector#"       -> Just TyConDiscusVector
                 "U#"            -> Just TyConDiscusU
                 "F#"            -> Just TyConDiscusF
-                "C#"            -> Just TyConDiscusC
                 _               -> Nothing
 
 
@@ -56,7 +53,6 @@ kindTyConDiscus tc
         TyConDiscusVector  -> kRegion `kFun` kData `kFun` kData
         TyConDiscusU       -> kData   `kFun` kData
         TyConDiscusF       -> kData   `kFun` kData
-        TyConDiscusC       -> kData   `kFun` kData
 
 
 -- Compounds ------------------------------------------------------------------
@@ -78,11 +74,6 @@ tUnboxed t      = tApp (tConTyConDiscus TyConDiscusU) t
 -- | Construct a reified function type.
 tFunValue :: Type Name -> Type Name
 tFunValue t     = tApp (tConTyConDiscus TyConDiscusF) t
-
-
--- | Construct a reified closure type.
-tCloValue :: Type Name -> Type Name
-tCloValue t     = tApp (tConTyConDiscus TyConDiscusC) t
 
 
 -- Utils ----------------------------------------------------------------------

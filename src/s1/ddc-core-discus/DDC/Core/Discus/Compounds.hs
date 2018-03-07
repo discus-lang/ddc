@@ -7,13 +7,10 @@ module DDC.Core.Discus.Compounds
         , tPtr
 
           -- * Discus types.
-        , tTupleN
-        , tUnboxed
-        , tFunValue,    tCloValue
-        , tTextLit
+        , tTupleN, tUnboxed, tFunValue, tTextLit
 
           -- * Expressions
-        , xFunCReify,   xFunApply, xFunCurry
+        , xFunReify,    xFunApply, xFunCurry
         , xCastConvert)
 where
 import DDC.Core.Discus.Prim.TyConDiscus
@@ -24,16 +21,16 @@ import DDC.Core.Exp.Annot
 
 
 -- | Reify a super or foreign function into a closure.
-xFunCReify
+xFunReify
         :: a
         -> Type Name    -- ^ Parameter type.
         -> Type Name    -- ^ Result type.
         -> Exp a Name   -- ^ Input closure.
         -> Exp a Name   -- ^ Resulting closure.
 
-xFunCReify a tParam tResult xF
+xFunReify a tParam tResult xF
  = xApps a
-        (XVar a (UPrim  (NameOpFun OpFunCReify)))
+        (XVar a (UPrim  (NameOpFun OpFunReify)))
         [RType tParam, RType tResult, RTerm xF]
 
 

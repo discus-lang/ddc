@@ -15,7 +15,6 @@ toCoreTyConDiscus tc
         S.PrimTyConDiscusTuple n -> C.TyConDiscusTuple n
         S.PrimTyConDiscusVector  -> C.TyConDiscusVector
         S.PrimTyConDiscusF       -> C.TyConDiscusF
-        S.PrimTyConDiscusC       -> C.TyConDiscusC
         S.PrimTyConDiscusU       -> C.TyConDiscusU
 
 

@@ -36,8 +36,8 @@ convertPrimCall _ectx ctx xx
         -- Reify a top-level super.
         XApp (AnTEC _t _ _ a)  xa xb
          | (xR,   [RType _, RType _, RTerm xF]) <- takeXApps1 xa xb
-         , XVar _ (UPrim nR)            <- xR
-         , E.NameOpFun E.OpFunCReify    <- nR
+         , XVar _ (UPrim nR)        <- xR
+         , E.NameOpFun E.OpFunReify <- nR
 
            -- Given the expression defining the super, retrieve its
            -- value arity and any extra type arguments we need to apply.

@@ -13,7 +13,7 @@ module DDC.Core.Discus.Prim
         , TyConDiscus     (..)
         , readTyConDiscus
         , kindTyConDiscus
-        , tTupleN, tUnboxed, tFunValue, tCloValue, tTextLit
+        , tTupleN, tUnboxed, tFunValue, tTextLit
 
           -- * Baked-in data constructors.
         , DaConDiscus     (..)

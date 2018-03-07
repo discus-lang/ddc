@@ -28,7 +28,7 @@ typeOpFun l op
                 Just result     = makeTFuns' (tF : ts)
             in  result
 
-        OpFunCReify
+        OpFunReify
          -> makeTForalls l [KData, KData] $ \[tA, tB]
          -> (tA ~> tB) ~> TFunValue (tA ~> tB)
 

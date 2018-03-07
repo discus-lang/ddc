@@ -89,7 +89,6 @@ takeTyConDiscus tc
         D.TyConDiscusVector     -> xSym "dt-Vector"
         D.TyConDiscusU          -> xSym "dt-U"
         D.TyConDiscusF          -> xSym "dt-F"
-        D.TyConDiscusC          -> xSym "dt-C"
 
 
 -- DaConDiscus ------------------------------------------------------------------------------------
@@ -117,7 +116,7 @@ takeOpFun op
  = case op of
         D.OpFunCurry n          -> xAps "of-curry"   [xNat' n]
         D.OpFunApply n          -> xAps "of-apply"   [xNat' n]
-        D.OpFunCReify           -> xSym "of-creify"
+        D.OpFunReify            -> xSym "of-reify"
 
 
 -- | Take the Shimmer encoding of a vector operator.
