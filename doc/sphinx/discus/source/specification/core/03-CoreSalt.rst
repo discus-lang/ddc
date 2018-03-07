@@ -235,3 +235,16 @@ Garbage Collector Support Primitives
                 Like allocSlot#, but initialize the slot with the given pointer.
 
 Garbage collector support primitives provide hooks on the garbage collector implementation, are implementation specific, and are subject to change in later versions of the Salt language.
+
+
+Control Operators
+-----------------
+
+.. code-block:: none
+
+  fail#        Terminate the program, ungracefully.
+
+The ``#fail`` operator is used to signal an unrecoverable runtime error, such as detection of heap corruption.
+
+
+

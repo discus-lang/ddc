@@ -253,8 +253,8 @@ convertSuperBody ctx ectx blocks label instrs xx
          --  the stack, so the call runs in constant stack space.
          --
          A.XApp{}
-          |  Just (prim, args)                          <- A.takeXPrimApps xx
-          ,  A.PrimCall (A.PrimCallTail arity)          <- prim
+          |  Just (prim, args)                           <- A.takeXPrimApps xx
+          ,  A.PrimControl (A.PrimControlTailCall arity) <- prim
           ,  arity > 0
 
           -- Split the arguments to the tailcall# primitive.
@@ -306,7 +306,7 @@ convertSuperBody ctx ectx blocks label instrs xx
          --   slots.
          A.XApp{}
           | Just (prim, args)                           <- A.takeXPrimApps xx
-          , A.PrimCall (A.PrimCallTail arity)           <- prim
+          , A.PrimControl (A.PrimControlTailCall arity) <- prim
           , arity > 0
 
           -- Split the arguments to the tail-call primitive.

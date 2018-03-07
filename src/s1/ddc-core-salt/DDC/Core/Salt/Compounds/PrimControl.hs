@@ -5,6 +5,7 @@ module DDC.Core.Salt.Compounds.PrimControl
         , xReturn
         , typeOfPrimControl)
 where
+import DDC.Core.Salt.Compounds.PrimTyCon
 import DDC.Core.Salt.Name
 import DDC.Core.Exp.Annot
 
@@ -28,10 +29,24 @@ xReturn a t x
                 [RType t, RTerm x]
 
 
+-- | Produce the type of a primitive control operator.
 typeOfPrimControl :: PrimControl -> Type Name
 typeOfPrimControl pc
  = case pc of
         PrimControlFail         -> tForall kData $ \t -> t
         PrimControlReturn       -> tForall kData $ \t -> t `tFun` t
 
+        PrimControlCall arity
+         -> let Just t   = tFunOfList ([tAddr] ++ replicate arity tAddr ++ [tAddr])
+            in  t
+
+        PrimControlTailCall arity
+         -> let tSuper   = foldr tFun
+                                 (TVar (UIx 0))
+                                 (reverse [TVar (UIx i) | i <- [1..arity]])
+
+                tCall    = foldr TForall (tSuper `tFun` tSuper)
+                                 [BAnon k | k <- replicate (arity + 1) kData]
+
+           in   tCall
 

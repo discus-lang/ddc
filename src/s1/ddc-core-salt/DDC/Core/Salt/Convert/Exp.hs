@@ -75,7 +75,7 @@ convBlockM config context kenv tenv xx
          | ContextTop      <- context
          -> case takeXFragApps xx of
                 Just (NamePrimOp p, xs)
-                 |  isControlPrim p || isCallPrim p
+                 |  isControlPrim p
                  -> do  x1      <- convPrimCallM config kenv tenv p xs
                         return  $ x1 <> semi
 
@@ -87,7 +87,7 @@ convBlockM config context kenv tenv xx
          -- any result var.
          | ContextNest{}            <- context
          , Just (NamePrimOp p, xs)  <- takeXFragApps xx
-         , isControlPrim p || isCallPrim p
+         , isControlPrim p
          -> do  x1      <- convPrimCallM config kenv tenv p xs
                 return  $ x1 <> semi
 
@@ -208,19 +208,11 @@ convBlockM config context kenv tenv xx
         _ -> throw $ ErrorBodyInvalid xx
 
 
--- | Check whether this primop passes control (and does not return).
+-- | Check whether this primop passes control.
 isControlPrim :: PrimOp -> Bool
 isControlPrim pp
  = case pp of
         PrimControl{}   -> True
-        _               -> False
-
-
--- | Check whether this primop passes control (and returns).
-isCallPrim :: PrimOp -> Bool
-isCallPrim pp
- = case pp of
-        PrimCall{}      -> True
         _               -> False
 
 
@@ -457,7 +449,7 @@ convPrimCallM config kenv tenv p args
         --   This doesn't actually do a tailcall.
         --   For straight tail-recursion we need to overwrite the parameters
         --   with the new arguments and jump back to the start of the function.
-        PrimCall (PrimCallTail arity)
+        PrimControl (PrimControlTailCall arity)
          | RTerm xFunTys : xsArgs      <- drop (arity + 1) args
          , Just (xFun, _)        <- takeXApps xFunTys
          , XVar _ (UName nSuper) <- xFun

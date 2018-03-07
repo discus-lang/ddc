@@ -13,6 +13,9 @@ import qualified Data.Sequence          as Seq
 
 
 -- | Convert a primitive store operation to LLVM.
+
+--   TODO: suspect this function is dead code.
+
 convPrimCall
         :: Context              -- ^ Context of the conversion.
         -> Maybe Var            -- ^ Assign result to this var.
@@ -23,14 +26,14 @@ convPrimCall
 convPrimCall ctx mDst p xs
  = let  pp              = contextPlatform ctx
    in case p of
-        A.PrimCall (A.PrimCallStd arity)
+        A.PrimControl (A.PrimControlCall arity)
          | Just (mFun : msArgs) <- sequence $ map (mconvArg ctx) xs
          -> Just $ do
                 xFun'   <- mFun
                 xsArgs' <- sequence msArgs
 
-                vFun@(Var nFun _) 
-                        <- newUniqueNamedVar "fun" 
+                vFun@(Var nFun _)
+                        <- newUniqueNamedVar "fun"
                         $  TPointer $ tFunction (replicate arity (tAddr pp)) (tAddr pp)
 
                 return  $ Seq.fromList $ map annotNil

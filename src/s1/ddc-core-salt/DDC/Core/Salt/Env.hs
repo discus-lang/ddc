@@ -8,7 +8,6 @@ module DDC.Core.Salt.Env
         , typeOfPrimOp
         , typeOfPrimArith
         , typeOfPrimCast
-        , typeOfPrimCall
         , typeOfPrimControl
         , typeOfPrimStore
         , typeOfPrimLit
@@ -138,7 +137,6 @@ typeOfPrimOp pp
  = case pp of
         PrimArith    op -> typeOfPrimArith    op
         PrimCast     cc -> typeOfPrimCast     cc
-        PrimCall     pc -> typeOfPrimCall     pc
         PrimControl  pc -> typeOfPrimControl  pc
         PrimStore    ps -> typeOfPrimStore    ps
 
@@ -157,38 +155,6 @@ typeOfPrimLit lit
         PrimLitChar    _        -> tWord  32
         PrimLitTextLit _        -> tTextLit
         PrimLitTag     _        -> tTag
-
-
--- PrimCall -------------------------------------------------------------------
--- | Take the type of a primitive call operator.
-typeOfPrimCall :: PrimCall -> Type Name
-typeOfPrimCall cc
- = case cc of
-        PrimCallStd  arity
-         -> makePrimCallStdType  arity
-
-        PrimCallTail arity
-         -> makePrimCallTailType arity
-
-
--- | Make the type of the @callN#@ and @tailcallN@ primitives.
-makePrimCallStdType :: Int -> Type Name
-makePrimCallStdType arity
- = let Just t   = tFunOfList ([tAddr] ++ replicate arity tAddr ++ [tAddr])
-   in  t
-
-
--- | Make the type of the @callN#@ and @tailcallN@ primitives.
-makePrimCallTailType :: Int -> Type Name
-makePrimCallTailType arity
- = let  tSuper   = foldr tFun
-                         (TVar (UIx 0))
-                         (reverse [TVar (UIx i) | i <- [1..arity]])
-
-        tCall    = foldr TForall (tSuper `tFun` tSuper)
-                         [BAnon k | k <- replicate (arity + 1) kData]
-
-   in   tCall
 
 
 -------------------------------------------------------------------------------

@@ -96,8 +96,8 @@ transSuper tails xx
          , (_, tsValArgs, tResult)  <- takeTFunWitArgResult $ eraseTForalls tF
 
          -> let arity   = length asArgsVal
-                p       = PrimCallTail arity
-                u       = UPrim (NamePrimOp (PrimCall p))
+                p       = PrimControlTailCall arity
+                u       = UPrim (NamePrimOp (PrimControl p))
             in  xApps a (XVar a u)
                         $  (map RType  (tsValArgs  ++ [tResult]))
                         ++ [RTerm $ xApps a xv (asArgsType ++ asArgsWit)]
