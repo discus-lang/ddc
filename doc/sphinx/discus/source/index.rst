@@ -50,6 +50,7 @@ More Information
 :Bug Tracker:   http://trac.discus-lang.org
 :GitHub Page:   https://github.com/discus-lang
 :Dev Buildbot:  https://travis-ci.org/discus-lang
-:Mailing List:  http://groups.google.com/group/disciple-cafe
-:IRC Channel:   Channel #disciplined on http://freenode.net
+:IRC Channel:   Channel #discus-lang on http://freenode.net
+:Mailing List:  http://groups.google.com/group/discus-lang
+:Commit Log:    http://groups.google.com/group/discus-log
 
