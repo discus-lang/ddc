@@ -1,4 +1,7 @@
 
+Discus
+======
+
 The Discus language is an experimental dialect of Haskell which investigates static typing and program transformation in the presence of computational effects. :ref:`Version 0.5.1 <release-notes-0.5.1>` is "working alpha" quality, meaning there is a complete system that can be hacked around with, but it's not yet industrial strength.
 
 .. figure::  logo/discus-512x512.jpg
