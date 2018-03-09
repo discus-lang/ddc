@@ -110,7 +110,7 @@ takeCallableFromImport n im
  --    primitive type only, but we don't check this fact. We should also
  --    check that each imported function has the standard call pattern.
  --
- | ImportValueSea _ ty  <- im
+ | ImportValueSea _ _ ty  <- im
  = let  cs      = Call.takeCallConsFromType ty
    in   return $ Just (n, Callable CallableImportSea ty cs)
 

@@ -14,7 +14,7 @@ boxingModule :: Module a Name -> Module a Name
 boxingModule mm
  = let
         tsForeignSea
-         = [ (n, t) | (n, ImportValueSea _ t) <- moduleImportValues mm]
+         = [ (n, t) | (n, ImportValueSea _ _ t) <- moduleImportValues mm]
 
    in   Boxing.boxingModule (config tsForeignSea) mm
 

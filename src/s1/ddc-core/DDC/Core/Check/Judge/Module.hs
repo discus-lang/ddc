@@ -18,7 +18,6 @@ import qualified DDC.Core.Env.EnvT      as EnvT
 import qualified DDC.Core.Env.EnvX      as EnvX
 import qualified DDC.Core.Check.Post    as Post
 import qualified Data.Map.Strict        as Map
-import qualified Data.Text              as T
 
 
 -- Wrappers ---------------------------------------------------------------------------------------
@@ -273,8 +272,8 @@ checkModuleM !config mm@ModuleCore{} !mode
         -- If exported names are missing types then fill them in.
         let updateExportValue e
                 | ExportValueLocalNoType n          <- e
-                , Just (ImportValueSea nExternal t) <- lookup n ntsImportValue'
-                = ExportValueSea n (T.pack nExternal) t
+                , Just (ImportValueSea _ nExternal t) <- lookup n ntsImportValue'
+                = ExportValueSea n nExternal t
 
                 | ExportValueLocalNoType n <- e
                 , Just t  <- EnvX.lookupX (UName n) envX_binds
@@ -596,8 +595,8 @@ checkImportValues config env mode nisrcs
                (ImportValueModule _ _ t2 a2)
          = equivT (contextEnvT ctx) t1 t2 && a1 == a2
 
-        compat (ImportValueSea _ t1)
-               (ImportValueSea _ t2)
+        compat (ImportValueSea _ _ t1)
+               (ImportValueSea _ _ t2)
          = equivT (contextEnvT ctx) t1 t2
 
         compat _ _ = False

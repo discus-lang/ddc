@@ -297,7 +297,8 @@ convertImportValueM tctx isrc
         --   We assume that they don't return thunks,
         --   so we don't need any extra arity information to produce
         --   the Salt level type.
-        ImportValueSea str t
-         -> do  t'      <- convertCtorT tctx t
-                return  $  ImportValueSea str t'
+        ImportValueSea n str t
+         -> do  n'      <- convertBindNameM n
+                t'      <- convertCtorT tctx t
+                return  $  ImportValueSea n' str t'
 

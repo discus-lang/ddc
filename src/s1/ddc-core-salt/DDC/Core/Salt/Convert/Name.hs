@@ -47,9 +47,9 @@ seaNameOfSuper mImport mExport nm
         = Just $ text $ sanitizeName $ T.unpack str
 
         -- Super is imported from C-land and not exported.
-        | Just (ImportValueSea strSea _) <- mImport
+        | Just (ImportValueSea _ strSea _) <- mImport
         , Nothing                       <- mExport
-        = Just $ text strSea
+        = Just $ text $ T.unpack strSea
 
         -- ISSUE #320: Handle all the import/export combinations.
         --

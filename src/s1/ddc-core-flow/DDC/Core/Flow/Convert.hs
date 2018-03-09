@@ -37,17 +37,17 @@ convertM mm
 
         let tsImportV'rest =
               [ ( T.NameVar       "getFieldOfBoxed"
-                , ImportValueSea  "getFieldOfBoxed"
+                , ImportValueSea  (T.NameVar "getFieldOfBoxed") "getFieldOfBoxed"
                    $ tForalls [kRegion, kData]
                    $ \[r,d] -> T.tPtr r T.tObj `tFun` T.tNat `tFun` d)
 
               , ( T.NameVar       "setFieldOfBoxed"
-                , ImportValueSea  "setFieldOfBoxed"
+                , ImportValueSea  (T.NameVar "setFieldOfBoxed") "setFieldOfBoxed"
                    $ tForalls [kRegion, kData]
                    $ \[r,d] -> T.tPtr r T.tObj `tFun` T.tNat `tFun` d `tFun` T.tVoid)
 
               , ( T.NameVar       "allocBoxed"
-                , ImportValueSea  "allocBoxed"
+                , ImportValueSea  (T.NameVar "allocBoxed") "allocBoxed"
                    $ tForalls [kRegion       ]
                    $ \[r  ] -> T.tTag          `tFun` T.tNat `tFun` T.tPtr r T.tObj)
               ]
@@ -196,7 +196,8 @@ convertImportValueM isrc
                 t'      <- convertType t
                 return  $ ImportValueModule mn n' t' Nothing
 
-        ImportValueSea str t
-         -> do  t'      <- convertType t
-                return  $ ImportValueSea str t'
+        ImportValueSea n str t
+         -> do  n'      <- convertName n
+                t'      <- convertType t
+                return  $ ImportValueSea n' str t'
 

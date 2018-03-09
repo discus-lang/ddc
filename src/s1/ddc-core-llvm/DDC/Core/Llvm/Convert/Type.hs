@@ -34,8 +34,8 @@ import qualified DDC.Core.Salt.Convert  as A
 import qualified DDC.Core.Module        as C
 import qualified DDC.Core.Exp           as C
 import qualified DDC.Type.Env           as Env
+import qualified Data.Text              as T
 import Control.Monad
-
 
 -- Type -----------------------------------------------------------------------
 -- | Convert a Salt type to an LlvmType.
@@ -153,12 +153,12 @@ importedFunctionDeclOfType pp kenv isrc mesrc nSuper tt
                 , declAlign             = AlignBytes (platformAlignBytes pp)
                 , declGarbageCollector  = Just "shadow-stack" }
 
- | C.ImportValueSea strName _  <- isrc
+ | C.ImportValueSea _ strName _  <- isrc
  = Just $ do
         (tsArgs, tResult)       <- convertSuperType pp kenv tt
         let mkParam t           = Param t []
         return  $ FunctionDecl
-                { declName              = A.sanitizeName strName
+                { declName              = A.sanitizeName $ T.unpack strName
                 , declLinkage           = External
                 , declCallConv          = CC_Ccc
                 , declReturnType        = tResult

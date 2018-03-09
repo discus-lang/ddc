@@ -245,9 +245,11 @@ takeImportValue c iv
                  , [S.DeclMac ("t-" <> tx) (takeType c $ C.importValueModuleType iv)])
 
         C.ImportValueSea{}
-         -> let tx     = T.pack $ C.importValueSeaVar iv
+         -> let Just tx = configTakeVarName c (C.importValueSeaNameInternal iv)
             in  ( xAps "im-val-sea"
-                        [xTxt tx, xMac ("t-" <> tx)]
+                        [ xTxt tx
+                        , xTxt (C.importValueSeaNameExternal iv)
+                        , xMac ("t-" <> tx)]
                 , [S.DeclMac ("t-" <> tx) (takeType c $ C.importValueSeaType iv)])
 
 

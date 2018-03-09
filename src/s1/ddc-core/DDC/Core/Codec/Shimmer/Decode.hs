@@ -348,12 +348,13 @@ takeDeclImVal c mn mpT dd
                 , C.importValueModuleType  = fromType c ssType
                 , C.importValueModuleArity = Just (fromI nT, fromI nX, fromI nB) })
 
-        takeImVal (XAps "im-val-sea" [ssVar@(XTxt txVar), XMac txMacType])
-         | Just ssType <- Map.lookup txMacType mpT
-         , Just n      <- configTakeRef c (ssVar :: SExp)
+        takeImVal (XAps "im-val-sea" [ssNameInternal, XTxt txNameExternal, XMac txMacType])
+         | Just ssType  <- Map.lookup txMacType mpT
+         , Just n       <- configTakeRef c ssNameInternal
          = (n, C.ImportValueSea
-                { C.importValueSeaVar      = T.unpack txVar
-                , C.importValueSeaType     = fromType c ssType })
+                { C.importValueSeaNameInternal  = n
+                , C.importValueSeaNameExternal  = txNameExternal
+                , C.importValueSeaType          = fromType c ssType })
 
         takeImVal _
          = failDecode "takeImVal failed"

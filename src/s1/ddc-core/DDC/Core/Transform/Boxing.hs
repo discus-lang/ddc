@@ -80,12 +80,12 @@ boxingModule config mm
         -- Use explicitly unboxed types when importing foreign sea functions.
         boxingImport imp
          = case imp of
-                ImportValueSea v t
-                  -> ImportValueSea v  $ boxingForeignSeaType config t
+                ImportValueSea nx ni t
+                  -> ImportValueSea nx ni $ boxingForeignSeaType config t
                 _ -> imp
 
         -- Use explicitly unboxed types when exporting foreign sea functions.
-        nsImportSea   = [ n | (n, ImportValueSea _ _) <- moduleImportValues mm]
+        nsImportSea   = [ n | (n, ImportValueSea{}) <- moduleImportValues mm]
         boxingExport expt
          = case expt of
                 ExportValueLocal n t mArity

@@ -17,6 +17,7 @@ module DDC.Core.Module.Import
 where
 import DDC.Core.Module.Name
 import Control.DeepSeq
+import Data.Text        (Text)
 
 
 -- ImportType -------------------------------------------------------------------------------------
@@ -36,7 +37,7 @@ data ImportType n t
         -- | Type of some boxed data.
         --
         --   The objects follow the standard heap object layout, but the code
-        --   that constructs and destructs them may have been written in a 
+        --   that constructs and destructs them may have been written in a
         --   different language.
         --
         --   This is used when importing data types defined in Salt modules.
@@ -106,37 +107,39 @@ data ImportValue n t
         -- | Value imported from a module that we compiled ourselves.
         = ImportValueModule
         { -- | Name of the module that we're importing from.
-          importValueModuleName        :: !ModuleName 
+          importValueModuleName         :: !ModuleName
 
           -- | Name of the the value that we're importing.
-        , importValueModuleVar         :: !n 
+        , importValueModuleVar          :: !n
 
           -- | Type of the value that we're importing.
-        , importValueModuleType        :: !t
+        , importValueModuleType         :: !t
 
           -- | Calling convention for this value,
           --   including the number of type parameters, value parameters, and boxings.
-        , importValueModuleArity       :: !(Maybe (Int, Int, Int)) }
+        , importValueModuleArity        :: !(Maybe (Int, Int, Int)) }
 
         -- | Value imported via the C calling convention.
         | ImportValueSea
-        { -- | Name of the symbol being imported. 
-          --   This can be different from the name that we give it in the core language.
-          importValueSeaVar            :: !String 
+        { -- Name we use to refer to the value internally to the module.
+          importValueSeaNameInternal    :: !n
+
+          -- Name of the value in the external C namespace.
+        , importValueSeaNameExternal    :: !Text
 
           -- | Type of the value that we're importing.
-        , importValueSeaType           :: !t }
+        , importValueSeaType            :: !t }
         deriving Show
 
 
 instance (NFData n, NFData t) => NFData (ImportValue n t) where
  rnf is
   = case is of
-        ImportValueModule mn n t mAV 
+        ImportValueModule mn n t mAV
          -> rnf mn `seq` rnf n `seq` rnf t `seq` rnf mAV
 
-        ImportValueSea v t
-         -> rnf v  `seq` rnf t
+        ImportValueSea ni nx t
+         -> rnf ni `seq` rnf nx `seq` rnf t
 
 
 -- | Take the type of an imported thing.
@@ -144,7 +147,7 @@ typeOfImportValue :: ImportValue n t -> t
 typeOfImportValue src
  = case src of
         ImportValueModule _ _ t _       -> t
-        ImportValueSea      _ t         -> t
+        ImportValueSea    _ _ t         -> t
 
 
 -- | Apply a function to the type in an ImportValue.
@@ -152,5 +155,5 @@ mapTypeOfImportValue :: (t -> t) -> ImportValue n t -> ImportValue n t
 mapTypeOfImportValue f isrc
  = case isrc of
         ImportValueModule mn n t a      -> ImportValueModule mn n (f t) a
-        ImportValueSea s t              -> ImportValueSea s (f t)
+        ImportValueSea ni nx t          -> ImportValueSea ni nx (f t)
 

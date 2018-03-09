@@ -208,7 +208,7 @@ pprImportValue (n, isrc)
                                        <+> text "#-}"
                  , empty ]
 
-        ImportValueSea _var t
+        ImportValueSea _nInternal _nExternal t
          -> text "import foreign c value" <> line
          <> indent 8 (padL 15 (ppr n) <+> text ":" <+> ppr t <> semi)
          <> line

@@ -119,7 +119,7 @@ runtimeImportTypes
 
    , rn utErrorDefault]
 
- where   rn (UName n, t)  = (n, ImportValueSea (renderPlain $ ppr n) t)
+ where   rn (UName n, t)  = (n, ImportValueSea n (T.pack $ renderPlain $ ppr n) t)
          rn _   = error "ddc-core-salt: all runtime bindings must be named."
 
 

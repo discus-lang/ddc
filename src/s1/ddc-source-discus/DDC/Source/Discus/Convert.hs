@@ -193,9 +193,11 @@ toCoreImportValue src
                         <*> toCoreT UniverseSpec t
                         <*> pure mA
 
-        ImportValueSea v t
+        ImportValueSea n v t
          -> ImportValueSea
-         <$> pure v     <*> toCoreT UniverseSpec t
+                        <$> toCoreXBVN n
+                        <*> pure v
+                        <*> toCoreT UniverseSpec t
 
 
 -- DataDef ----------------------------------------------------------------------------------------

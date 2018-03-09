@@ -14,6 +14,7 @@ import DDC.Type.Exp.Simple
 import DDC.Data.Pretty
 import Control.Monad
 import qualified DDC.Control.Parser     as P
+import qualified Data.Text              as T
 
 
 ---------------------------------------------------------------------------------------------------
@@ -204,7 +205,7 @@ pImportForeignValue c src
                 -- the external name to be the same as the internal one.
                 let symbol = renderIndent (ppr n)
 
-                return  $ ImportForeignValue n (ImportValueSea symbol k)
+                return  $ ImportForeignValue n (ImportValueSea n (T.pack symbol) k)
 
         | otherwise
         = P.unexpected "import mode for foreign value."

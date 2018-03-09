@@ -163,7 +163,7 @@ pImportValue src
                 --             with foreign C imports and exports.
                 let symbol = renderIndent (text $ Text.unpack n)
 
-                return  (ImportValue b (ImportValueSea symbol k))
+                return  (ImportValue b (ImportValueSea b (Text.pack symbol) k))
 
         | otherwise
         = P.unexpected "import mode for foreign value"

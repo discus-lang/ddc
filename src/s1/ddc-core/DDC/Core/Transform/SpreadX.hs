@@ -120,8 +120,8 @@ spreadImportValueX kenv _tenv isrc
         ImportValueModule mn n t mArity
          -> ImportValueModule   mn n (spreadT kenv t) mArity
 
-        ImportValueSea n t
-         -> ImportValueSea n    (spreadT kenv t)
+        ImportValueSea ni nx t
+         -> ImportValueSea ni nx (spreadT kenv t)
 
 
 ---------------------------------------------------------------------------------------------------

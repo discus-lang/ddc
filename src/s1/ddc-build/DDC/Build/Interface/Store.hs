@@ -225,24 +225,25 @@ supersOfInterface ii
         -- Build a super declaration from an export.
         takeSuperOfExport ex@ExportValueLocal{}
          = Just $ Super
-                { superName             = exportValueLocalName ex
-                , superModuleName       = modName
-                , superTetraType        = exportValueLocalType ex
-                , superImportValue      = ImportValueModule
-                                        { importValueModuleName  = modName
-                                        , importValueModuleVar   = exportValueLocalName ex
-                                        , importValueModuleType  = exportValueLocalType ex
-                                        , importValueModuleArity = exportValueLocalArity ex }
+                { superName        = exportValueLocalName ex
+                , superModuleName  = modName
+                , superTetraType   = exportValueLocalType ex
+                , superImportValue = ImportValueModule
+                                   { importValueModuleName  = modName
+                                   , importValueModuleVar   = exportValueLocalName ex
+                                   , importValueModuleType  = exportValueLocalType ex
+                                   , importValueModuleArity = exportValueLocalArity ex }
                 }
 
         takeSuperOfExport ex@ExportValueSea{}
          = Just $ Super
-                { superName             = exportValueSeaNameInternal ex
-                , superModuleName       = modName
-                , superTetraType        = exportValueSeaType ex
-                , superImportValue      = ImportValueSea
-                                        { importValueSeaVar  = Text.unpack $ exportValueSeaNameExternal ex
-                                        , importValueSeaType = exportValueSeaType ex }
+                { superName        = exportValueSeaNameInternal ex
+                , superModuleName  = modName
+                , superTetraType   = exportValueSeaType ex
+                , superImportValue = ImportValueSea
+                                   { importValueSeaNameInternal = exportValueSeaNameInternal ex
+                                   , importValueSeaNameExternal = exportValueSeaNameExternal ex
+                                   , importValueSeaType         = exportValueSeaType ex }
                 }
 
         takeSuperOfExport _
