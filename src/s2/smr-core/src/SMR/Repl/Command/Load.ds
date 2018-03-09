@@ -1,14 +1,10 @@
 
 module SMR.Repl.Command.Load
-export { loadSources; loadSource }
+export loadSources; loadSource
 import SMR.Source.Parser
 import SMR.Source.Lexer
 import System.IO.Console
 import System.Posix.Stdlib
-
-import foreign c value
- exit    : Nat# -> S Process Void#
-
 where
 
 
@@ -60,5 +56,4 @@ loadSource
                  -> Just ds'
 
          _ -> Nothing
-
 

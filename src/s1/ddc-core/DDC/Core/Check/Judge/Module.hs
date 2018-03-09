@@ -16,8 +16,9 @@ import DDC.Control.Check                (runCheck, throw)
 import qualified DDC.Type.Env           as Env
 import qualified DDC.Core.Env.EnvT      as EnvT
 import qualified DDC.Core.Env.EnvX      as EnvX
-import qualified Data.Map.Strict        as Map
 import qualified DDC.Core.Check.Post    as Post
+import qualified Data.Map.Strict        as Map
+import qualified Data.Text              as T
 
 
 -- Wrappers ---------------------------------------------------------------------------------------
@@ -120,7 +121,6 @@ checkModuleM !config mm@ModuleCore{} !mode
                         { EnvT.envtEquations
                         = Map.fromList    [ (n, t) | (n, (_, t)) <- nktsImportTypeDef']}]
 
-
         -- Check kinds of local type equations --------------------------------
         --   The right of each type equation can mention
         --   imported abstract types, imported and local data type definitions.
@@ -149,7 +149,6 @@ checkModuleM !config mm@ModuleCore{} !mode
                         }
                 ]
 
-
         -- Check imported data type defs --------------------------------------
         ctrace  $ vcat
                 [ text "* Checking Kinds of Imported Data Types."]
@@ -159,7 +158,6 @@ checkModuleM !config mm@ModuleCore{} !mode
          <- case checkDataDefs config envT_localTypeDefs dataDefsImported of
                 (err : _, _)            -> throw $ ErrorData err
                 ([], dataDefsImported') -> return dataDefsImported'
-
 
         -- Check the local data defs ------------------------------------------
         ctrace  $ vcat
@@ -175,7 +173,6 @@ checkModuleM !config mm@ModuleCore{} !mode
                 = unionDataDefs (configPrimDataDefs config)
                 $ unionDataDefs (fromListDataDefs dataDefsImported')
                                 (fromListDataDefs dataDefsLocal')
-
 
         -- Check types of imported capabilities -------------------------------
         ctrace  $ vcat
@@ -193,7 +190,6 @@ checkModuleM !config mm@ModuleCore{} !mode
                            = Map.fromList
                            $ [ (n, t) | (n, ImportCapAbstract t) <- ntsImportCap'] }]
 
-
         -- Check types of imported values ------------------------------------
         ctrace  $ vcat
                 [ text "* Checking Types of Imported Values."]
@@ -208,7 +204,6 @@ checkModuleM !config mm@ModuleCore{} !mode
                 ,  EnvX.envxDataDefs = dataDefs_top
                 ,  EnvX.envxPrimFun  = \n -> Env.envPrimFun (configPrimTypes config) n }
 
-
         -----------------------------------------------------------------------
         -- Build the top-level config, defs and environments.
         --  These contain names that are visible to bindings in the module.
@@ -216,16 +211,13 @@ checkModuleM !config mm@ModuleCore{} !mode
         let envX_top    = envX_importValues
         let ctx_top     = emptyContext { contextEnvX = envX_top }
 
-
         -- Check the sigs of exported types ---------------
         esrcsType'  <- checkExportTypes   config envT_top
                     $  moduleExportTypes  mm
 
-
         -- Check the sigs of exported values --------------
         esrcsValue' <- checkExportValues  config envT_top
                     $  moduleExportValues mm
-
 
         -- Check the body of the module -------------------
         (x', _, _effs, ctx)
@@ -280,6 +272,10 @@ checkModuleM !config mm@ModuleCore{} !mode
 
         -- If exported names are missing types then fill them in.
         let updateExportValue e
+                | ExportValueLocalNoType n          <- e
+                , Just (ImportValueSea nExternal t) <- lookup n ntsImportValue'
+                = ExportValueSea n (T.pack nExternal) t
+
                 | ExportValueLocalNoType n <- e
                 , Just t  <- EnvX.lookupX (UName n) envX_binds
                 = ExportValueLocal n t Nothing

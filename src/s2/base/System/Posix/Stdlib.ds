@@ -1,11 +1,8 @@
 
 -- | Wrappers for C stdlib
 module System.Posix.Stdlib
-export {
-        stdlib_atoi;
-        stdlib_system;
-        stdlib_mkstemp;
-}
+export  stdlib_atoi; stdlib_system; stdlib_mkstemp
+        exit
 import Data.Numeric.Nat
 import Data.Numeric.Int
 import Data.Numeric.Bool

@@ -235,6 +235,16 @@ supersOfInterface ii
                                         , importValueModuleArity = exportValueLocalArity ex }
                 }
 
+        takeSuperOfExport ex@ExportValueSea{}
+         = Just $ Super
+                { superName             = exportValueSeaNameInternal ex
+                , superModuleName       = modName
+                , superTetraType        = exportValueSeaType ex
+                , superImportValue      = ImportValueSea
+                                        { importValueSeaVar  = Text.unpack $ exportValueSeaNameExternal ex
+                                        , importValueSeaType = exportValueSeaType ex }
+                }
+
         takeSuperOfExport _
          = Nothing
 

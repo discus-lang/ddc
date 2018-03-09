@@ -14,22 +14,6 @@ import foreign abstract capability
         capTopTextAlloc : Alloc RegionText
         capTopTextRead  : Read  RegionText
 
--- | Runtime operators for working with unboxed text literals.
-import foreign c value
-
-        -- | Make a text literal.
-        --   The TextLit# type is a pointer to literal UTF-8 data in
-        --   static memory, which we pack into a boxed object.
-        ddcPrimMakeTextLit     : TextLit# -> TextLit
-
-        -- | Get the size of a boxed text literal.
-        ddcPrimSizeOfTextLit   : TextLit  -> Nat
-
-        -- | Get a single byte from a boxed text literal.
-        --   This is a byte rather than a character,
-        --   as UTF-8 encoded characters can consist of multiple bytes.
-        ddcPrimIndexTextLit    : TextLit  -> Nat -> Word8
-
 where
 
 

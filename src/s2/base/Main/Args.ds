@@ -12,10 +12,6 @@ import Data.Tuple
 import System.Posix.Stdlib
 import System.Env
 import System.IO.Console
-
-import foreign c value
- exit    : Nat# -> S Process Void#
-
 where
 
 
@@ -34,7 +30,6 @@ data Arg (mode: Data) where
                 -> Text                         -- description
                 -> (Nat -> mode -> mode)        -- fold with argument value
                 -> Arg mode
-
 
 
 -- | Get the name of an argument.

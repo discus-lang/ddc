@@ -169,32 +169,39 @@ takeDeclExVal
 takeDeclExVal c mpT dd
  = case dd of
         S.DeclSet "m-ex-val" ssListExTrm
-          -> map takeExTrm $ fromList ssListExTrm
+          -> map takeExVal $ fromList ssListExTrm
         _ -> failDecode "takeDeclExVal"
 
  where
-        takeExTrm (XAps "ex-val-loc" [ssName, XMac txMacTyp, XMac _txMacTrm])
+        takeExVal (XAps "ex-val-loc" [ssName, XMac txMacTyp, XMac _txMacTrm])
          = let nName = fromRef c ssName
            in case Map.lookup txMacTyp mpT of
-                Nothing     -> failDecode $ "takeDeclExTrm missing declaration " ++ show txMacTyp
+                Nothing     -> failDecode $ "takeDeclExVal missing declaration " ++ show txMacTyp
                 Just ssType
                  -> (nName, C.ExportValueLocal
                         { C.exportValueLocalName  = nName
                         , C.exportValueLocalType  = fromType c ssType
                         , C.exportValueLocalArity = Nothing })
 
-        takeExTrm (XAps "ex-val-loc" [ ssName, XMac txMacTyp, XMac _txMacTrm
+        takeExVal (XAps "ex-val-loc" [ ssName, XMac txMacTyp, XMac _txMacTrm
                                      , XNat nT, XNat nX, XNat nB ])
          = let nName = fromRef c ssName
            in case Map.lookup txMacTyp mpT of
-                Nothing     -> failDecode $ "takeDeclExTrm missing declaration " ++ show txMacTyp
+                Nothing     -> failDecode $ "takeDeclExVal missing declaration " ++ show txMacTyp
                 Just ssType
                  -> (nName, C.ExportValueLocal
                         { C.exportValueLocalName  = nName
                         , C.exportValueLocalType  = fromType c ssType
                         , C.exportValueLocalArity = Just (fromI nT, fromI nX, fromI nB) })
 
-        takeExTrm _ = failDecode "takeExVal"
+        takeExVal (XAps "ex-val-sea" [ssNameInternal, XTxt txNameExternal, ssType])
+         = let nInternal = fromRef c ssNameInternal
+           in  (nInternal,  C.ExportValueSea
+                        { C.exportValueSeaNameInternal = nInternal
+                        , C.exportValueSeaNameExternal = txNameExternal
+                        , C.exportValueSeaType         = fromType c ssType })
+
+        takeExVal _ = failDecode "takeExVal"
 
 
 -- DeclImTyp --------------------------------------------------------------------------------------

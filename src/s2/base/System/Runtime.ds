@@ -11,12 +11,11 @@ import foreign abstract type
  --   that objects have been moved around during garbage collection.
  Runtime : Effect
 
-
 import foreign c value
 
  -- | Trace the object graph starting from the object at the given address.
- ddcTraceObj  
-        :  [a: Data] 
+ ddcTraceObj
+        :  [a: Data]
         .  Bool#                -- ^ Recursively trace reachable objects.
         -> Bool#                -- ^ Print a description of each object as we go.
         -> a                    -- ^ Object to start from.

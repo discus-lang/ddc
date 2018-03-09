@@ -22,6 +22,11 @@ export
         -- Operators.
         eqChar;
         eqText;
+
+        -- Primitives.
+        ddcPrimMakeTextLit;
+        ddcPrimSizeOfTextLit;
+        ddcPrimIndexTextLit;
 }
 import Data.Text.Char
 import Data.Numeric.Nat
