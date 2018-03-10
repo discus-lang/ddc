@@ -13,7 +13,6 @@ module DDC.Core.Discus.Convert.Type
         , saltPrimeRegionOfDataType
 
           -- * Data constructors
-        , convertCtorT
         , convertDaCon
 
           -- * Capabilities
@@ -27,6 +26,7 @@ module DDC.Core.Discus.Convert.Type
         , convertDataPrimitiveT
 
           -- * Supers
+        , convertSuperT
         , convertSuperConsT)
 where
 import DDC.Core.Discus.Convert.Type.Kind

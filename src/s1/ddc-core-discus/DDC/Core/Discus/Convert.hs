@@ -232,7 +232,7 @@ convertExportValueM tctx tsSalt esrc
                  -- then it won't be in the map, and we can just convert
                  -- its Discus type to get the Salt version.
                  Nothing
-                  -> do t'      <- convertCtorT tctx t
+                  -> do t'      <- convertSuperT tctx t
                         return $ ExportValueLocal n' t' Nothing
 
         ExportValueLocalNoType n
@@ -241,7 +241,7 @@ convertExportValueM tctx tsSalt esrc
 
         ExportValueSea n x t
          -> do  n'      <- convertBindNameM n
-                t'      <- convertCtorT tctx t
+                t'      <- convertSuperT tctx t
                 return  $ ExportValueSea n' x t'
 
 
@@ -299,6 +299,6 @@ convertImportValueM tctx isrc
         --   the Salt level type.
         ImportValueSea n str t
          -> do  n'      <- convertBindNameM n
-                t'      <- convertCtorT tctx t
+                t'      <- convertSuperT tctx t
                 return  $  ImportValueSea n' str t'
 
