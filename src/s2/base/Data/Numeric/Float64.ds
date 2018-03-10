@@ -16,6 +16,9 @@ export
         float64_log;
 }
 import Class.Numeric
+import Class.Ord
+import Class.Eq
+
 
 import foreign c value
  fabs   : Float64# -> Float64#

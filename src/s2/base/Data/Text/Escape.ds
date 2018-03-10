@@ -89,7 +89,7 @@ escapeTextDisciple (tx: Text): Text
 escapeTextToVectorDisciple
         (tt: Text) (vec: Vector# r Word8) (i0: Nat)
         : S (Write r) Nat
- = weakeff Write r in case tt of
+ = case tt of
         TextLit lit'
          -> escapeTextLitToVectorDisciple lit' vec i0 0 (ddcPrimSizeOfTextLit lit')
 

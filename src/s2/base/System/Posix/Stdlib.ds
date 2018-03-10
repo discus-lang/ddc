@@ -29,9 +29,7 @@ import foreign c value
  system  : Nat# -> S Process Int#
 
  -- ISSUE #440: Use Addr# instead of Nat# in Stdlib.ds
- -- ISSUE #405: Segfault when importing foreign function with suspension type.
- -- Adding the S File result type here causes stdlib_mkstemp_raw below to segfault.
- mkstemp : Nat# -> Int#
+ mkstemp : Nat# -> S (File + Errno) Int#
 
 
 import foreign c value
@@ -72,8 +70,7 @@ stdlib_system (cmd: Text): S Process Int
 stdlib_mkstemp
         (template: Text)
         : S (File + Errno) (Maybe Text)
- = weakeff File in
-   private r with { Read r; Write r; Alloc r} in
+ = private r with { Read r; Write r; Alloc r} in
    do
         -- ISSUE #439: Avoid copying strings via lists in Stdlib.ds.
         vec     = vectorOfCharList [r] $ charListOfText template
@@ -85,10 +82,11 @@ stdlib_mkstemp
 
 
 -- | Wrapper for stdlib version of above that overwrites the template name.
+--   TODO: Pass explicit ptr instead of raw Nat.
 stdlib_mkstemp_raw
         (template: Vector# r Word8)
         : S (File + Errno + Write r) Bool
- = weakeff File + Errno + Write r in
+ = box weakeff Write r in
    do   result  = mkstemp (ddcVectorGuts template)
         not (result == -1i)
 

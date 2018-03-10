@@ -304,6 +304,8 @@ boxingForeignSea config a bRun xx xFn tF xsArg
                 = takeTFunArgResult
                 $ eraseTForalls tF
 
+        -- Get the type of the result value produced from the foreign function,
+        -- unwrapping any suspension constructors in the result.
         let tResultVal
                 | not bRun      = tResult
                 | otherwise     = case takeTSusp tResult of
@@ -315,25 +317,30 @@ boxingForeignSea config a bRun xx xFn tF xsArg
            then Nothing
            else Just ())
 
-        -- For each argument, if it has an unboxed representation then unbox it.
+        -- For each argument,
+        -- if it has a type with an unboxed representation then wrap
+        -- it in an approprite convert# to unboxed it.
         let unboxArg xArg tArg
-             = fromMaybe xArg
-             $ configConvertRepExp config RepUnboxed a tArg xArg
+                = fromMaybe xArg
+                $ configConvertRepExp config RepUnboxed a tArg xArg
 
-        let xsArgValU   = map RTerm $ zipWith unboxArg xsArgVal tsArgVal
-        let xResultU    = xApps a xFn ([RType t | t <- tsArgType] ++ xsArgValU)
+        -- Expression that calls the foreign function,
+        -- producing an unboxed result value.
+        let xResultU
+                = xApps a xFn
+                $  [RType t | t <- tsArgType]
+                ++ [RTerm x | x <- zipWith unboxArg xsArgVal tsArgVal]
 
+        -- Expression that runs the call to the foreign function,
+        -- producing an unboxed result value.
         let xResultRunU
                 | not bRun      = xResultU
                 | otherwise     = XCast a CastRun xResultU
 
-        -- If the result has a boxed representation then box it.
-        let boxResult tRes xRes
-             = fromMaybe xRes
-             $ do tResU      <- configConvertRepType config RepUnboxed tRes
-                  configConvertRepExp config RepBoxed a tResU xResultRunU
-
-        return $ boxResult tResultVal xResultU
+        return
+         $ fromMaybe xResultRunU
+         $ do   tResultValU   <- configConvertRepType config RepUnboxed tResultVal
+                configConvertRepExp config RepBoxed a tResultValU xResultRunU
 
 
 -- | Marshall arguments and return values for function imported from Sea land.
@@ -362,7 +369,8 @@ boxingForeignSeaType config tForeign
                 = tSusp tEffect tResultValue'
 
                 | otherwise
-                = tThing
+                = fromMaybe tThing
+                $ configConvertRepType config RepUnboxed tThing
 
         tsParamU    = map unboxParamType tsParam
         tResultU    = unboxResultType tResult
