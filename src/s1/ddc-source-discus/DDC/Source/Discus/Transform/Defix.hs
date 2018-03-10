@@ -361,6 +361,7 @@ defixInfixNone sp table precHigh args
          : _ : RTerm (XInfixOp sp4 op4) : _ <- args
         , Just def2     <- lookupDefInfixOfSymbol table op2
         , Just def4     <- lookupDefInfixOfSymbol table op4
+        , fixDefPrec def2 == precHigh
         , fixDefPrec def2 == fixDefPrec def4
         = Left  $ ErrorDefixNonAssoc op2 sp2 op4 sp4
 
