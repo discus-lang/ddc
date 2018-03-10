@@ -137,6 +137,8 @@ import value
  -- otherwise we cannot continue execution.
  ddcAllocCollect        : Nat# -> Unit
  ddcPrimFailString      : TextLit# -> Void#
+ ddcPrimFailNat         : Nat# -> Void#
+
  ddcPrimStdoutPutString : TextLit# -> Void#
  ddcPrimShowAddr        : Addr# -> TextLit#
  ddcPrimShowNat         : Nat#  -> TextLit#
@@ -713,15 +715,23 @@ ddcPayloadMixed [r: Region] (obj: Ptr# r Obj): Ptr# r Word8#
 ddcAllocRaw
         [r: Region] (tag: Tag#) (bytesPayload: Nat#): Ptr# r Obj
  = do
-        -- The overall size of the object.
-        bytesReq        = add# (size# [Word32#])
-                         (add# (size# [Word32#]) bytesPayload)
+        -- The requested object size, using the payload length
+        -- provided by the caller.
+        bytesReq
+         = add# (size# [Word32#])
+          (add# (size# [Word32#]) bytesPayload)
 
-        bytesTail       = promote# [Nat#] (band# (truncate# bytesReq) 0b11w32#)
+        -- How many extra bytes we need to add on the end to ensure
+        -- that the resulting object is 4-byte aligned.
+        bytesTail
+         = promote# [Nat#] (band# (truncate# bytesReq) 0b11w32#)
 
-        bytesObj        = case eq# bytesTail 0# of
-                                True#   -> bytesReq
-                                False#  -> add# bytesReq (sub# 4# bytesTail)
+        -- The actual number of bytes we will allocate to store
+        -- the object in the heap, guaranteed to be 4-byte aligned.
+        bytesObj
+         = case eq# bytesTail 0# of
+                True#   -> bytesReq
+                False#  -> add# bytesReq (sub# 4# bytesTail)
 
         -- Check that there's enough space on the heap,
         -- and perform a collection if needed.
@@ -735,15 +745,20 @@ ddcAllocRaw
 ddcAllocRaw_ok
         [r: Region] (tag: Tag#) (bytesObj: Nat#): Ptr# r Obj
  = do
-        addr            = alloc# bytesObj
+        -- Allocate the object and zero the payload.
+        addr    = alloc# bytesObj
         set# addr 0w8# bytesObj
 
-        tag32           = promote# tag
-        format          = 0b00110001w32#
-        header          = bor# (shl# tag32 8w32#) format
+        -- Write the header word.
+        tag32   = promote# tag
+        format  = 0b00110001w32#
+        header  = bor# (shl# tag32 8w32#) format
         write# addr 0# header
 
-        bytesObj32      = truncate# [Word32#] [Nat#] bytesObj
+        -- Write the size field, which is the size of allocated
+        -- space, not the actual size that was requested by the
+        -- caller, which may be smaller.
+        bytesObj32 = truncate# [Word32#] [Nat#] bytesObj
         write# addr 4# bytesObj32
 
         makePtr# addr
@@ -783,25 +798,24 @@ ddcAllocSmall
  = do
         bytesObj        = add# 4# bytesPayload
 
-        -- On a 64-bit machine the total object must be at least 8 bytes so
-        -- we can overwrite it with a broken heart pointer during GC.
-        --
+        -- On a 64-bit machine the total object must be at least 8 bytes
+        -- so we can overwrite it with a broken heart pointer during GC.
         -- The objects must also be 4-byte aligned as we want lowest two
         -- bits of object pointers to always be zero.
-{-
+        -- Although the rest of the compiler and base library could ensure
+        -- these invariants, we check them anyway during development as they
+        -- would be a headache to debug if wrong.
         case ge# bytesObj 8# of
          False# -> fail#
          True#  ->
-          case neq# (band# bytesObj 3#) 0# of
+          case eq# (band# bytesObj 3#) 0# of
            False# -> fail#
            True#  ->
-            do
--}
-        case check# bytesObj of
-         True#   -> ()
-         False#  -> ddcAllocCollect bytesObj
+            do  case check# bytesObj of
+                 True#   -> ()
+                 False#  -> ddcAllocCollect bytesObj
 
-        ddcAllocSmall_ok tag bytesPayload bytesObj
+                ddcAllocSmall_ok tag bytesPayload bytesObj
 
 
 ddcAllocSmall_ok

@@ -192,7 +192,7 @@ cmdLoadOrCompile config buildExe store filePath
                    -- of the paths.
                    if fresh && not (takeFileName filePath == "Main.ds")
                     then do
---                         liftIO  $ putStrLn "* Loading"
+--                         liftIO  $ putStrLn $ "* Loading "  ++ filePathDI
                          result  <- liftIO $ Store.load filePathDI
                          case result of
                           Left  err -> throwE $ P.renderIndent $ P.ppr err

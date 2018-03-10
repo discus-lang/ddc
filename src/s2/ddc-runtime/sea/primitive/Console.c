@@ -59,3 +59,10 @@ void ddcPrimFailString(string_t* str)
 {       fputs(str, stderr);
         fflush(stderr);
 }
+
+// Print a natural number to stderr.
+// Use this when printing an error from the runtime system.
+void ddcPrimFailNat(nat_t x)
+{       fprintf(stderr, "%lu", x);
+        fflush(stderr);
+}

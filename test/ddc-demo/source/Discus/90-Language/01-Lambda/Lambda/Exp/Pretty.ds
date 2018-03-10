@@ -24,7 +24,7 @@ pprExp' ContextBody xx
         XVar name
          -> name
 
-        XAbs ss name x  
+        XAbs ss name x
          -> "λ" % name % "." % pprExp' ContextBody x
 
         XApp x1 x2

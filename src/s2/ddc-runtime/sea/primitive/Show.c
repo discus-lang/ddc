@@ -41,4 +41,3 @@ _DDC_MAKE_PRIM_SHOW_TYPE(Word64, uint64_t,  "%#08" PRIx64, 24);
 _DDC_MAKE_PRIM_SHOW_TYPE(Float32,float32_t, "%f",          24);
 _DDC_MAKE_PRIM_SHOW_TYPE(Float64,float64_t, "%.15lg",       24);
 
-
