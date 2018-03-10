@@ -130,6 +130,7 @@ export value
  ddcPayloadSizeSmall : [r1:    Region]. Ptr# r1 Obj  -> Nat#
 
 
+
 import value
  -- Invoke the garbage collector.
  -- We need to relaim at least the given number of bytes,
@@ -140,6 +141,8 @@ import value
  ddcPrimShowAddr        : Addr# -> TextLit#
  ddcPrimShowNat         : Nat#  -> TextLit#
  ddcPrimShowWord32      : Word32#  -> TextLit#
+
+ ddcTraceObj            : [r : Region]. Bool# -> Bool# -> Ptr# r Obj -> Ptr# r Obj
 
 with letrec
 
@@ -780,10 +783,20 @@ ddcAllocSmall
  = do
         bytesObj        = add# 4# bytesPayload
 
-        -- ISSUE #402: Check that object allocs do not misalign the heap.
-        --   The total object must be at least 8 bytes long and 4-byte aligned.
-        --   The current compiler shouldn't try to allocate such an object,
-        --   but do the check anyway.
+        -- On a 64-bit machine the total object must be at least 8 bytes so
+        -- we can overwrite it with a broken heart pointer during GC.
+        --
+        -- The objects must also be 4-byte aligned as we want lowest two
+        -- bits of object pointers to always be zero.
+{-
+        case ge# bytesObj 8# of
+         False# -> fail#
+         True#  ->
+          case neq# (band# bytesObj 3#) 0# of
+           False# -> fail#
+           True#  ->
+            do
+-}
         case check# bytesObj of
          True#   -> ()
          False#  -> ddcAllocCollect bytesObj
