@@ -139,7 +139,6 @@ convertM pp runConfig defs kenv tenv mm
         let (lts', _)   = splitXLets x1
         let x2          = xLets a lts' (xUnit a)
 
-
         -- Imports and Exports ----------------------------
         -- Convert signatures of imported functions.
         ntsImports'     <- mapM (convertNameImportValueM tctx')
@@ -154,7 +153,6 @@ convertM pp runConfig defs kenv tenv mm
 
         ntsExports'     <- mapM (convertNameExportValueM tctx' ntsAvail)
                         $  moduleExportValues mm
-
 
         -- Build the output module.
         let mm_salt

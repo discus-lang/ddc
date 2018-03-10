@@ -10,7 +10,7 @@ import qualified DDC.Core.Transform.Boxing as Boxing
 
 
 -- | Manage boxing of numeric values in a module.
-boxingModule :: Module a Name -> Module a Name
+boxingModule :: Show a => Module a Name -> Module a Name
 boxingModule mm
  = let
         tsForeignSea

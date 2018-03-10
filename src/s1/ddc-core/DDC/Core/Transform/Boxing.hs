@@ -72,7 +72,7 @@ data Config a n
 -- Module -----------------------------------------------------------------------------------------
 -- | Manage boxing in a module.
 boxingModule
-        :: Ord n
+        :: (Show a, Show n, Ord n)
         => Config a n -> Module a n -> Module a n
 
 boxingModule config mm
@@ -116,8 +116,7 @@ boxingX config xx
                                 $  XCon a (DaConPrim nU tLitU)
          -> xLit
 
-        -- Use unboxed versions of primops by unboxing their arguments then
-        -- reboxing their results.
+        -- Application of primop being run at call site.
         XCast _ CastRun xx'@(XApp a _ _)
          |  Just (n, asArgsAll) <- takeXFragApps xx'
          ,  Just n'             <- configUnboxPrimOpName config n
@@ -128,7 +127,7 @@ boxingX config xx
                         tPrimBoxed tPrimUnboxed
                         asArgsAll'
 
-        -- Unbox primitive applications.
+        -- Application of primop.
         XApp a _ _
          |  Just (n, asArgsAll) <- takeXFragApps xx
          ,  Just n'             <- configUnboxPrimOpName config n
@@ -139,13 +138,25 @@ boxingX config xx
                         tPrimBoxed tPrimUnboxed
                         asArgsAll'
 
-        -- Foreign calls
+        -- Foreign call being run at call site.
+        XCast _ CastRun xx'@(XApp a _ _)
+         | Just (xFn@(XVar _ (UName n)), asArgsAll)
+                                <- takeXApps xx'
+         , Just tForeign        <- configValueTypeOfForeignName config n
+         -> let asArgsAll'      = map (boxingA config) asArgsAll
+            in  boxingForeignSea config a True xx' xFn
+                        tForeign
+                        asArgsAll'
+
+        -- Foreign calls.
         XApp a _ _
          | Just (xFn@(XVar _ (UName n)), asArgsAll)
                                 <- takeXApps xx
          , Just tForeign        <- configValueTypeOfForeignName config n
          -> let asArgsAll'      = map (boxingA config) asArgsAll
-            in  boxingForeignSea config a xx xFn tForeign asArgsAll'
+            in  boxingForeignSea config a False xx xFn
+                        tForeign
+                        asArgsAll'
 
         -- Unbox literal patterns in alternatives.
         XCase a xScrut alts
@@ -185,9 +196,6 @@ boxingAlt config alt
         AAlt p x        -> AAlt p (boxingX config x)
 
 
-
-
-
 ---------------------------------------------------------------------------------------------------
 -- | Marshall arguments and return values of primitive operations.
 --   If something goes wrong then just return the original expression and leave it to
@@ -218,12 +226,12 @@ boxingPrimitive config a bRun xx xFn tPrimBoxed tPrimUnboxed xsArgsAll
         -- Get the boxed version of the types of parameters and return value.
         tPrimBoxedInst   <- instantiateTs tPrimBoxed tsArgs
         let (tsParamBoxed, _tResultBoxed)
-                        = takeTFunArgResult tPrimBoxedInst
+                = takeTFunArgResult tPrimBoxedInst
 
         -- Get the unboxed version of the types of parameters and return value.
         tPrimUnboxedInst <- instantiateTs tPrimUnboxed tsArgs
         let (_tsParamUnboxed, tResultUnboxed)
-                        = takeTFunArgResult tPrimUnboxedInst
+                = takeTFunArgResult tPrimUnboxedInst
 
         -- If the primitive is being run at the call site then we need to
         -- re-box the result AFTER it has been run, not before.
@@ -258,8 +266,9 @@ boxingPrimitive config a bRun xx xFn tPrimBoxed tPrimUnboxed xsArgsAll
                 | not bRun      = xResultU
                 | otherwise     = XCast a CastRun xResultU
 
-        let xResultV =  fromMaybe xResultRunU
-                     $  configConvertRepExp config RepBoxed a tResultUnboxed' xResultRunU
+        let xResultV
+                =  fromMaybe xResultRunU
+                $  configConvertRepExp config RepBoxed a tResultUnboxed' xResultRunU
 
         return xResultV
 
@@ -269,16 +278,19 @@ boxingPrimitive config a bRun xx xFn tPrimBoxed tPrimUnboxed xsArgsAll
 --
 -- * Assumes that the type of the imported thing is in prenex form.
 --
+--  TODO: look through type synonyms.
+--
 boxingForeignSea
-        :: Ord n
+        :: (Show a, Show n, Ord n)
         => Config a n -> a
+        -> Bool         -- ^ Application of foreign function is being run at call site.
         -> Exp a n      -- ^ Whole function application, for debugging.
         -> Exp a n      -- ^ Functional expression.
         -> Type n       -- ^ Type of the foreign function.
         -> [Arg a n]    -- ^ Arguments to the foreign function.
         -> Exp a n
 
-boxingForeignSea config a xx xFn tF xsArg
+boxingForeignSea config a bRun xx xFn tF xsArg
  = fromMaybe xx go
  where go = do
         -- Split off the type args.
@@ -289,8 +301,14 @@ boxingForeignSea config a xx xFn tF xsArg
         -- Unlike primitives, foreign functions are not polytypic, so we can
         -- just erase any outer foralls to reveal the types of the args.
         let (tsArgVal, tResult)
-                        = takeTFunArgResult
-                        $ eraseTForalls tF
+                = takeTFunArgResult
+                $ eraseTForalls tF
+
+        let tResultVal
+                | not bRun      = tResult
+                | otherwise     = case takeTSusp tResult of
+                                        Just (_, t)     -> t
+                                        Nothing         -> tResult
 
         -- We must end up with a type for each argument.
         (if not (length xsArgVal == length tsArgVal)
@@ -302,16 +320,20 @@ boxingForeignSea config a xx xFn tF xsArg
              = fromMaybe xArg
              $ configConvertRepExp config RepUnboxed a tArg xArg
 
-        let xsArgValU = map RTerm $ zipWith unboxArg xsArgVal tsArgVal
-        let xExpU     = xApps a xFn ([RType t | t <- tsArgType] ++ xsArgValU)
+        let xsArgValU   = map RTerm $ zipWith unboxArg xsArgVal tsArgVal
+        let xResultU    = xApps a xFn ([RType t | t <- tsArgType] ++ xsArgValU)
+
+        let xResultRunU
+                | not bRun      = xResultU
+                | otherwise     = XCast a CastRun xResultU
 
         -- If the result has a boxed representation then box it.
         let boxResult tRes xRes
              = fromMaybe xRes
              $ do tResU      <- configConvertRepType config RepUnboxed tRes
-                  configConvertRepExp config RepBoxed a tResU xExpU
+                  configConvertRepExp config RepBoxed a tResU xResultRunU
 
-        return $ boxResult tResult xExpU
+        return $ boxResult tResultVal xResultU
 
 
 -- | Marshall arguments and return values for function imported from Sea land.
@@ -330,12 +352,20 @@ boxingForeignSeaType config tForeign
 
         -- If there is an unboxed representation of each parameter and result
         -- type, then use that.
-        unboxType tThing
+        unboxParamType tThing
                  = fromMaybe tThing
                  $ configConvertRepType config RepUnboxed tThing
 
-        tsParamU    = map unboxType tsParam
-        tResultU    = unboxType tResult
+        unboxResultType tThing
+                | Just (tEffect, tResultValue) <- takeTSusp tThing
+                , Just tResultValue' <- configConvertRepType config RepUnboxed tResultValue
+                = tSusp tEffect tResultValue'
+
+                | otherwise
+                = tThing
+
+        tsParamU    = map unboxParamType tsParam
+        tResultU    = unboxResultType tResult
 
         -- Build the converted type back out of its parts.
         Just tBodyU = tFunOfList (tsParamU ++ [tResultU])
