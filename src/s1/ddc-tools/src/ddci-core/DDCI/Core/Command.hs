@@ -17,7 +17,6 @@ import DDC.Driver.Command.Load
 import DDC.Driver.Command.Trans
 import DDC.Driver.Command.Compile
 import DDC.Driver.Command.ToSalt
-import DDC.Driver.Command.ToC
 import DDC.Driver.Command.ToLlvm
 import DDC.Driver.Command.Flow.Prep
 import DDC.Driver.Command.Flow.Rate
@@ -69,18 +68,17 @@ data Command
 
         -- Conversion to machine code
         | CommandToSalt         -- ^ Convert a module to Disciple Salt.
-        | CommandToC            -- ^ Convert a module to C code.
         | CommandToLlvm         -- ^ Convert a module to LLVM code.
 
-        -- Core Flow specific passes 
+        -- Core Flow specific passes
         | CommandFlowRate       -- ^ Perform rate inference
 
-        | CommandFlowRateLower Flow.Config 
+        | CommandFlowRateLower Flow.Config
                                 -- ^ Perform rate inference, followed by lowering
 
         | CommandFlowPrep       -- ^ Prepare a Core Flow module for lowering.
 
-        | CommandFlowLower Flow.Config  
+        | CommandFlowLower Flow.Config
                                 -- ^ Prepare and Lower a Core Flow module.
 
         | CommandFlowConcretize -- ^ Convert operations on type level rates to concrete ones.
@@ -109,7 +107,7 @@ data Command
 --   Short names that form prefixes of other ones must come later
 --   in the list. Eg ':with-lite' after ':with'
 commands :: [(String, Command)]
-commands 
+commands
  =      [ (":help",             CommandHelp)
         , (":?",                CommandHelp)
         , (":set",              CommandSet)
@@ -132,8 +130,7 @@ commands
 
         -- Conversion to machine code.
         , (":to-salt",          CommandToSalt)
-        , (":to-c",             CommandToC)
-        , (":to-llvm",          CommandToLlvm) 
+        , (":to-llvm",          CommandToLlvm)
 
         -- Core Flow specific passes
         , (":flow-rate-lower",   CommandFlowRateLower Flow.defaultConfigScalar)
@@ -157,7 +154,7 @@ commands
         , (":make",             CommandMake)
 
         -- Inliner control
-        , (":with-salt",        CommandWithSalt) 
+        , (":with-salt",        CommandWithSalt)
         , (":with",             CommandWith) ]
 
 
@@ -167,7 +164,7 @@ readCommand ss
         | null $ words ss
         = Just (CommandBlank,   ss)
 
-        | (cmd, rest) : _ <- [ (cmd, drop (length str) ss) 
+        | (cmd, rest) : _ <- [ (cmd, drop (length str) ss)
                                         | (str, cmd)      <- commands
                                         , isPrefixOf str ss ]
         = Just (cmd, rest)
@@ -213,8 +210,8 @@ handleCmd1 state cmd source line
 
         CommandLoad
          -> do  configDriver    <- getDriverConfigOfState state
-                runError 
-                 $ cmdLoadCoreFromString 
+                runError
+                 $ cmdLoadCoreFromString
                         configDriver
                         (stateLanguage state) source line
                 return state
@@ -223,7 +220,7 @@ handleCmd1 state cmd source line
          -> do  cmdShowType  lang UniverseKind source line
                 return state
 
-        CommandKind       
+        CommandKind
          -> do  cmdShowType  lang UniverseSpec source line
                 return state
 
@@ -231,23 +228,23 @@ handleCmd1 state cmd source line
          -> do  cmdTypeEquiv lang source line
                 return state
 
-        CommandWitType    
+        CommandWitType
          -> do  cmdShowWType lang source line
                 return state
 
-        CommandExpCheck   
+        CommandExpCheck
          -> do  cmdShowSpec  lang ShowSpecAll     False traceCheck source line
                 return state
 
-        CommandExpType  
+        CommandExpType
          -> do  cmdShowSpec  lang ShowSpecData    False traceCheck source line
                 return state
 
-        CommandExpEffect  
+        CommandExpEffect
          -> do  cmdShowSpec  lang ShowSpecEffect  False traceCheck source line
                 return state
 
-        CommandExpClosure 
+        CommandExpClosure
          -> do  cmdShowSpec  lang ShowSpecClosure False traceCheck source line
                 return state
 
@@ -269,21 +266,16 @@ handleCmd1 state cmd source line
                         (Set.member Mode.TraceTrans $ stateModes state)
                         source line
                 return state
-        
+
         CommandTransInteract
          -> do  cmdTransInteract state source line
-        
+
 
         -- Conversion to machine code -----------
         CommandToSalt
          -> do  config  <- getDriverConfigOfState state
                 runError $ cmdToSaltCoreFromString config lang source line
                 return    state
-
-        CommandToC
-         -> do  config  <- getDriverConfigOfState state
-                runError $ cmdToSeaCoreFromString  config lang source line
-                return state
 
         CommandToLlvm
          -> do  config  <- getDriverConfigOfState state

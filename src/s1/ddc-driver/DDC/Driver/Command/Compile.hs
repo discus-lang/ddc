@@ -363,9 +363,7 @@ cmdCompile config bBuildExe' store filePath
 
         (case configViaBackend config of
              ViaLLVM -> DA.saltCompileViaLlvm config source otherObjs
-                                bSlotify bBuildExe modSalt
-
-             ViaC    -> DA.saltCompileViaSea  config source False modSalt)
+                                bSlotify bBuildExe modSalt)
 
 
         -- Get current time stamp for interface file.

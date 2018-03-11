@@ -54,10 +54,6 @@ module DDC.Core.Salt
         , lexModuleString
         , lexExpString
 
-          -- * Conversion
-        , seaOfSaltModule
-        , Error(..)
-
           -- * Name generation
         , freshT
         , freshX
@@ -67,5 +63,4 @@ module DDC.Core.Salt
 where
 import DDC.Core.Salt.Name
 import DDC.Core.Salt.Profile
-import DDC.Core.Salt.Convert
 import DDC.Core.Salt.Exp

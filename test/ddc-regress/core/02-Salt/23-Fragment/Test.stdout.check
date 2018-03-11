@@ -12,138 +12,65 @@ When checking expression.
 
 -- Error: Module does not have a top-level letrec.
 Fragment violation when converting Salt module to target code.
-  Module does not have a top-level letrec.
+  ['n','o',' ','t','o','p',' ','l','e','v','e','l',' ','l','e','t','r','e','c']
 
 
 -- Ok: Function finishes with a return statement.
-// Includes for helper macros and the runtime system. -----------------
-#include "Runtime.h"
-#include "Primitive.h"
-
-// Definitions of the runtime system variables. -----------------------
-addr_t _DDC__heapTop = 0;
-addr_t _DDC__heapMax = 0;
-
-// External definitions for imported symbols. -------------------------
-
-// Function prototypes for locally defined supers. --------------------
-int_t foo (int_t);
-
-// Code for locally defined supers. -----------------------------------
-int_t foo (int_t _x)
-{
-        
-
-        return _x;
+module Main with
+letrec {
+  foo: Int# -> Int#
+    = λ(x: Int#). return# [Int#] x
 }
-
 
 
 -- Ok: Statements in function.
-// Includes for helper macros and the runtime system. -----------------
-#include "Runtime.h"
-#include "Primitive.h"
-
-// Definitions of the runtime system variables. -----------------------
-addr_t _DDC__heapTop = 0;
-addr_t _DDC__heapMax = 0;
-
-// External definitions for imported symbols. -------------------------
-
-// Function prototypes for locally defined supers. --------------------
-int_t foo (int_t);
-
-// Code for locally defined supers. -----------------------------------
-int_t foo (int_t _x)
-{
-        int_t _y = 0;
-
-        _y           = (_x + _x);
-        return _y;
+module Main with
+letrec {
+  foo: Int# -> Int#
+    = λ(x: Int#).
+      let y: Int#
+            = add# [Int#] x x in
+      return# [Int#] y
 }
-
 
 
 -- Ok: Function explicitly fails.
-// Includes for helper macros and the runtime system. -----------------
-#include "Runtime.h"
-#include "Primitive.h"
-
-// Definitions of the runtime system variables. -----------------------
-addr_t _DDC__heapTop = 0;
-addr_t _DDC__heapMax = 0;
-
-// External definitions for imported symbols. -------------------------
-
-// Function prototypes for locally defined supers. --------------------
-int_t foo (int_t);
-
-// Code for locally defined supers. -----------------------------------
-int_t foo (int_t _x)
-{
-        int_t _y = 0;
-
-        _y           = (_x + _x);
-        _FAIL();
+module Main with
+letrec {
+  foo: Int# -> Int#
+    = λ(x: Int#).
+      let y: Int#
+            = add# [Int#] x x in
+      fail# [Int#]
 }
-
 
 
 -- Ok: assignment between variables.
-// Includes for helper macros and the runtime system. -----------------
-#include "Runtime.h"
-#include "Primitive.h"
-
-// Definitions of the runtime system variables. -----------------------
-addr_t _DDC__heapTop = 0;
-addr_t _DDC__heapMax = 0;
-
-// External definitions for imported symbols. -------------------------
-
-// Function prototypes for locally defined supers. --------------------
-int_t foo (int_t);
-
-// Code for locally defined supers. -----------------------------------
-int_t foo (int_t _x)
-{
-        int_t _y = 0;
-
-        _y           = _x;
-        return _y;
+module Main with
+letrec {
+  foo: Int# -> Int#
+    = λ(x: Int#).
+      let y: Int#
+            = x in
+      return# [Int#] y
 }
-
 
 
 -- Ok: assignment from a literal.
-// Includes for helper macros and the runtime system. -----------------
-#include "Runtime.h"
-#include "Primitive.h"
-
-// Definitions of the runtime system variables. -----------------------
-addr_t _DDC__heapTop = 0;
-addr_t _DDC__heapMax = 0;
-
-// External definitions for imported symbols. -------------------------
-
-// Function prototypes for locally defined supers. --------------------
-nat_t foo (nat_t);
-
-// Code for locally defined supers. -----------------------------------
-nat_t foo (nat_t _x)
-{
-        nat_t _y = 0;
-
-        _y           = 5;
-        return _y;
+module Main with
+letrec {
+  foo: Nat# -> Nat#
+    = λ(x: Nat#).
+      let y: Nat#
+            = 5# in
+      return# [Nat#] y
 }
-
 
 
 -- Error: assignment from primop.
 Fragment violation when converting Salt module to target code.
-  Invalid type for local variable.
-  
-  with: ^0 -> ^0 -> ^0
+  Invalid exp: add#
+  Was expecting a variable, primitive, or super application.
 
 
 -- Error: name shadowing in function definition
@@ -169,48 +96,13 @@ Error in transformed module.
 
 -- Error: partially applied primop
 Fragment violation when converting Salt module to target code.
-  Invalid type for local variable.
-  
-  with: Int# -> Int#
+  Cannot use add# at type 'Int#'
 
 
 -- Error: partial application not supported in Salt.
 Fragment violation when converting Salt module to target code.
-  Invalid type for local variable.
-  
-  with: Nat# -> Nat#
-
-
--- Error: cannot instantiate a type variable at an unboxed type.
-// Includes for helper macros and the runtime system. -----------------
-#include "Runtime.h"
-#include "Primitive.h"
-
-// Definitions of the runtime system variables. -----------------------
-addr_t _DDC__heapTop = 0;
-addr_t _DDC__heapMax = 0;
-
-// External definitions for imported symbols. -------------------------
-
-// Function prototypes for locally defined supers. --------------------
-Obj* id (Obj*);
-int_t foo (int_t);
-
-// Code for locally defined supers. -----------------------------------
-Obj* id (Obj* _x)
-{
-        
-
-        return _x;
-}
-
-int_t foo (int_t _x)
-{
-        
-
-        return id(_x);
-}
-
+  Invalid exp: foo1 3#
+  Was expecting a variable, primitive, or super application.
 
 
 -- Error: nested functions

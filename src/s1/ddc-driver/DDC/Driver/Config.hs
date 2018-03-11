@@ -181,11 +181,8 @@ exePathOfConfig config path
 
 ---------------------------------------------------------------------------------------------------
 data ViaBackend
-        -- | Compile via the C backend.
-        = ViaC
-
         -- | Compile via the LLVM backend.
-        | ViaLLVM
+        = ViaLLVM
         deriving Show
 
 

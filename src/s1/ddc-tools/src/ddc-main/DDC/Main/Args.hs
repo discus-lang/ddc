@@ -65,10 +65,6 @@ parseArgs args config
         = parseArgs rest
         $ setMode config $ ModeBaseBuild
 
-        | "-fvia-c"    : rest      <- args
-        = parseArgs rest
-        $ config { configViaBackend = ViaC }
-
         | "-fvia-llvm" : rest   <- args
         = parseArgs rest
         $ config { configViaBackend = ViaLLVM }
@@ -188,10 +184,6 @@ parseArgs args config
         = parseArgs rest
         $ setMode config $ ModeToSalt file
 
-        | "-to-c"    : file : rest  <- args
-        = parseArgs rest
-        $ setMode config $ ModeToC file
-
         | "-to-llvm" : file : rest  <- args
         = parseArgs rest
         $ setMode config $ ModeToLLVM file
@@ -274,7 +266,6 @@ flagOfMode mode
         ModeMake{}                      -> Just "-make"
         ModeBuild{}                     -> Just "-build"
         ModeToSalt{}                    -> Just "-to-salt"
-        ModeToC{}                       -> Just "-to-c"
         ModeToLLVM{}                    -> Just "-to-llvm"
         ModeToPHP{}                     -> Just "-to-php"
         ModeFlowPrep{}                  -> Just "-flow-prep"
@@ -288,5 +279,4 @@ flagOfMode mode
         ModeBaseBuild{}                 -> Just "-basebuild"
         ModePrintBuilder{}              -> Just "-print-builder"
         ModePrintBaseDir{}              -> Just "-print-basedir"
-
 

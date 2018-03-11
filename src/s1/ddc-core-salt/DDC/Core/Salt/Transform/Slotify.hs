@@ -28,7 +28,7 @@ slotifyModule
         :: (Show a, Pretty a)
         => a
         -> Module (AnTEC a A.Name) A.Name
-        -> Either (A.Error  (AnTEC a A.Name))
+        -> Either String
                   (Module (AnTEC a A.Name) A.Name)
 
 slotifyModule a mm@ModuleCore{}
@@ -58,7 +58,7 @@ slotifyModule a mm@ModuleCore{}
              -> Right mmCheck
 
  | otherwise
- = Left (A.ErrorNoTopLevelLetrec mm)
+ = Left "no to level letrec"
 
 
 -- Top level let bindings ------------------------------------------------------

@@ -24,7 +24,6 @@ import DDC.Driver.Command.Flow.Thread
 import qualified DDC.Core.Flow          as Flow
 
 import DDC.Driver.Command.ToSalt
-import DDC.Driver.Command.ToC
 import DDC.Driver.Command.ToLlvm
 import DDC.Driver.Command.ToPHP
 
@@ -138,12 +137,6 @@ run config
          -> do  dconfig <- getDriverConfig config (Just filePath)
                 store   <- Store.new
                 runError $ cmdToSaltFromFile dconfig store filePath
-
-        -- Convert a module to C
-        ModeToC filePath
-         -> do  dconfig <- getDriverConfig config (Just filePath)
-                store   <- Store.new
-                runError $ cmdToSeaFromFile  dconfig store filePath
 
         -- Convert a module to LLVM
         ModeToLLVM filePath

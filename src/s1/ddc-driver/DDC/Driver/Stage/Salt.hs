@@ -3,16 +3,14 @@
 module DDC.Driver.Stage.Salt
         ( saltLoadText
         , saltSimplify
-        , saltToSea
         , saltToLlvm
-        , saltCompileViaSea
         , saltCompileViaLlvm)
 where
 import Control.Monad.Trans.Except
 
 import DDC.Data.Pretty
 import qualified DDC.Data.SourcePos                     as SP
-        
+
 import qualified DDC.Driver.Dump                        as D
 import qualified DDC.Driver.Config                      as D
 import qualified DDC.Driver.Interface.Source            as D
@@ -35,7 +33,7 @@ import qualified DDC.Llvm.Syntax                        as L
 
 ---------------------------------------------------------------------------------------------------
 -- | Load and type-check a Core Salt module.
-saltLoadText 
+saltLoadText
         :: D.Config             -- ^ Driver config.
         -> B.Store              -- ^ Interface store.
         -> D.Source             -- ^ Source file meta-data.
@@ -75,24 +73,8 @@ saltSimplify config _source mm
 
 
 ---------------------------------------------------------------------------------------------------
--- | Convert a Salt module to Sea text.
-saltToSea
-        :: (Show a, Pretty a)
-        => D.Config             -- ^ Driver config.
-        -> D.Source             -- ^ Source file meta data.
-        -> C.Module a A.Name    -- ^ Module to convert.
-        -> ExceptT [B.Error] IO String
-
-saltToSea config source mm
- = BA.saltToSea
-        (D.nameOfSource source)
-        (B.buildSpec $ D.configBuilder config)
-        mm
-
-
----------------------------------------------------------------------------------------------------
 -- | Convert a Salt module to a LLVM module.
-saltToLlvm 
+saltToLlvm
         :: (Show a, Pretty a)
         => D.Config             -- ^ Driver config.
         -> D.Source             -- ^ Source file meta data.
@@ -112,31 +94,6 @@ saltToLlvm config source bAddSlots mm
 
 
 ---------------------------------------------------------------------------------------------------
--- | Compile a Core Salt module using the system C compiler.
-saltCompileViaSea
-        :: (Show a, Pretty a)
-        => D.Config             -- ^ Driver config.
-        -> D.Source             -- ^ Source file meta data.
-        -> Bool                 -- ^ Whether we should link into an executable.
-        -> C.Module a A.Name    -- ^ Module to convert.
-        -> ExceptT [B.Error] IO ()
-
-saltCompileViaSea config source bShouldLinkExe mm
- = do
-        let (oPath, _)  = D.objectPathsOfConfig config (D.nameOfSource source)
-        let mExePath    = if bShouldLinkExe
-                                then Just $ D.exePathOfConfig config oPath
-                                else Nothing
-
-        BA.saltCompileViaSea
-                (D.nameOfSource source)
-                (D.configBuilder config)
-                oPath mExePath Nothing 
-                (D.configKeepSeaFiles config)
-                mm
-
-
----------------------------------------------------------------------------------------------------
 -- | Compile a Core Salt module using the system Llvm compiler.
 saltCompileViaLlvm
         :: (Show a, Pretty a)
@@ -148,7 +105,7 @@ saltCompileViaLlvm
         -> C.Module a A.Name    -- ^ Module to convert.
         -> ExceptT [B.Error] IO ()
 
-saltCompileViaLlvm config source mOtherExeObjs 
+saltCompileViaLlvm config source mOtherExeObjs
         bSlotify bShouldLinkExe mm
  = do
         let (oPath, _)  = D.objectPathsOfConfig config (D.nameOfSource source)
@@ -159,7 +116,7 @@ saltCompileViaLlvm config source mOtherExeObjs
         BA.saltCompileViaLlvm
                 (D.nameOfSource source)
                 (D.configBuilder config)
-                oPath 
+                oPath
                 mExePath
                 mOtherExeObjs
                 bSlotify
@@ -169,5 +126,4 @@ saltCompileViaLlvm config source mOtherExeObjs
                 (D.dump config source "dump.2-salt-07-slotify.dcs")
                 (D.dump config source "dump.2-salt-07-transfer.dcs")
                 mm
-
 

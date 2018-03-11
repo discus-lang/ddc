@@ -2,7 +2,6 @@
 module DDC.Core.Salt.Transform.Transfer
         (transferModule)
 where
-import DDC.Core.Salt.Convert.Base
 import DDC.Core.Salt.Compounds
 import DDC.Core.Salt.Name
 import DDC.Core.Module
@@ -32,7 +31,7 @@ import qualified Data.Map       as Map
 --
 transferModule
         :: Module (AnTEC a Name) Name
-        -> Either (Error  (AnTEC a Name))
+        -> Either String
                   (Module (AnTEC a Name) Name)
 
 transferModule mm@ModuleCore{}
@@ -41,7 +40,7 @@ transferModule mm@ModuleCore{}
           in  Right $ mm { moduleBody = XLet a (LRec bxs') x1 }
 
         | otherwise
-        = Left (ErrorNoTopLevelLetrec mm)
+        = Left "no top level letrec"
 
 
 -- Let ------------------------------------------------------------------------

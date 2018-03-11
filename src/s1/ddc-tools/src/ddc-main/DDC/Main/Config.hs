@@ -51,9 +51,6 @@ data Mode
         -- | Convert a module to Salt.
         | ModeToSalt    FilePath
 
-        -- | Convert a module to C.
-        | ModeToC       FilePath
-
         -- | Convert a module to LLVM.
         | ModeToLLVM    FilePath
 

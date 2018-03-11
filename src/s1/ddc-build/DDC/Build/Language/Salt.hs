@@ -9,7 +9,8 @@ where
 import DDC.Build.Language.Base
 import DDC.Core.Simplifier
 import DDC.Core.Transform.Namify
-import DDC.Core.Fragment
+import DDC.Core.Fragment                hiding (Error)
+import DDC.Data.Pretty
 import DDC.Core.Salt                    as Salt
 import qualified DDC.Core.Salt          as A
 import qualified Data.Map               as Map
@@ -22,7 +23,7 @@ language = Language bundle
 
 
 -- | Language bundle for Disciple Core Salt.
-bundle   :: Bundle Int A.Name A.Error
+bundle   :: Bundle Int A.Name Error
 bundle  = Bundle
         { bundleFragment        = fragment
         , bundleModules         = Map.empty
@@ -34,7 +35,7 @@ bundle  = Bundle
 
 
 -- | Fragment definition for Disciple Core Salt.
-fragment :: Fragment A.Name A.Error
+fragment :: Fragment A.Name Error
 fragment
         = Fragment
         { fragmentProfile       = A.profile
@@ -45,3 +46,10 @@ fragment
         , fragmentCheckModule   = const Nothing
         , fragmentCheckExp      = const Nothing }
 
+
+data Error a
+        = Error
+        deriving Show
+
+instance Pretty (Error a) where
+ ppr Error  = text (show Error)
