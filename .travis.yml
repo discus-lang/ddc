@@ -7,6 +7,7 @@ sudo: false
 
 # cache only works if sudo is false
 # this will attempt to cache the contents of the specified directories between
+# runs to speed up install times
 cache:
     directories:
         - $HOME/.cabal
@@ -15,8 +16,7 @@ cache:
 # clean up anything we don't want to cache
 # log and index files aren't worth caching
 # Note: this should be safe as cabal should still do an install
-#
-#   if a newer version of a dependency is available
+#       if a newer version of a dependency is available
 before_cache:
     - rm -f $HOME/.cabal/logs/*.log
     - rm -f $HOME/.cabal/packages/00-index*
