@@ -10,7 +10,7 @@ show-pkgs :
 .PHONY 	: setup
 setup :
 	@echo "* Installing prerequisite cabal packages..."
-	@cabal update
-	@cabal install mtl parsec random stm text wl-pprint compact
-	@cabal install buildbox inchworm shimmer
+	@$(DEPS_INSTALLER) update
+	@$(DEPS_INSTALLER) install mtl parsec random stm text wl-pprint compact
+	@$(DEPS_INSTALLER) install buildbox inchworm shimmer
 

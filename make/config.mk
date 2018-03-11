@@ -22,6 +22,9 @@ GHCI		= ghci
 # with a cabal sandbox
 # GHC    = cabal exec ghc --
 # GHCI    = cabal exec ghci --
+# with stack
+# GHC    = stack ghc --
+# GHCI    = stack ghci --
 
 GHC_VERSION	= $(shell $(GHC) --version | sed -e "s/.* //g" -e "s/\..*//")
 GHC_VERSION_FLAGS = -rtsopts
@@ -39,6 +42,13 @@ DDC_FLOW_USE_LINEAR_SOLVER = 0
 # If you modify this, you should make recompile affected files:
 # touch packages/ddc-core-flow/DDC/Core/Flow/Transform/Rates/Clusters.hs
 # touch packages/ddc-core-flow/DDC/Core/Flow/Transform/Rates/Clusters/Linear.hs
+
+
+# Installer to use for dependencies -------------------------------------------
+# Use Cabal by default:
+DEPS_INSTALLER = cabal
+# If you prefer stack:
+# DEPS_INSTALLER = stack
 
 
 # Override default config with local config.
