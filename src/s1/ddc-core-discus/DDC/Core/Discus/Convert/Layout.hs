@@ -27,9 +27,8 @@ import qualified DDC.Core.Salt.Name     as A
 --   system, where @NN@ is the word size of the machine.
 data HeapObject
         = HeapObjectBoxed
-        | HeapObjectMixed
         | HeapObjectRaw
-        | HeapObjectRawSmall
+        | HeapObjectSmall
         deriving (Eq, Show)
 
 
@@ -49,14 +48,14 @@ heapObjectOfDataCtor pp ctor
         , Just (NameTyConDiscus TyConDiscusU, [tp]) <- takePrimTyConApps t1
         , Just (NamePrimTyCon  ptc,         [])   <- takePrimTyConApps tp
         , isJust $ A.primTyConWidth pp ptc
-        = Just HeapObjectRawSmall
+        = Just HeapObjectSmall
 
         -- Unboxed strings are represented as pointers to static memory.
         -- The pointer will fit in a RawSmall object.
         | [t1]                                        <- dataCtorFieldTypes ctor
         , Just (NameTyConDiscus TyConDiscusU, [tp])     <- takePrimTyConApps t1
         , Just (NamePrimTyCon  PrimTyConTextLit, [])  <- takePrimTyConApps tp
-        = Just HeapObjectRawSmall
+        = Just HeapObjectSmall
 
         | otherwise
         = Nothing

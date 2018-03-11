@@ -54,7 +54,7 @@ seaNameOfSuper mImport mExport nm
         -- ISSUE #320: Handle all the import/export combinations.
         --
         -- We don't handle the other cases because we would need to
-        -- produce a wrapper to conver the names.
+        -- produce a wrapper to convert the names.
         | Just str                      <- takeNameVar nm
         = Just $ text $ T.unpack str
 

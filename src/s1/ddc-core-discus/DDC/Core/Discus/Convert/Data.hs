@@ -52,8 +52,8 @@ constructData pp a ctorDef rPrime xsFields tsFields
                 $ foldr (XLet a) xObject' lsFields
 
 
- | Just HeapObjectRawSmall      <- heapObjectOfDataCtor  pp ctorDef
- , Just size                    <- payloadSizeOfDataCtor pp ctorDef
+ | Just HeapObjectSmall <- heapObjectOfDataCtor  pp ctorDef
+ , Just size            <- payloadSizeOfDataCtor pp ctorDef
  = do
         -- Allocate the object.
         let bObject     = BAnon (A.tPtr rPrime A.tObj)
@@ -112,7 +112,7 @@ destructData
         -> ConvertM a (Exp a A.Name)
 
 destructData pp a ctorDef uScrut trPrime bsFields xBody
- | Just HeapObjectBoxed         <- heapObjectOfDataCtor pp ctorDef
+ | Just HeapObjectBoxed <- heapObjectOfDataCtor pp ctorDef
  = do
         -- Bind pattern variables to each of the fields.
         let lsFields
@@ -128,8 +128,8 @@ destructData pp a ctorDef uScrut trPrime bsFields xBody
 
         return  $ foldr (XLet a) xBody lsFields
 
- | Just HeapObjectRawSmall      <- heapObjectOfDataCtor   pp ctorDef
- , Just offsets                 <- fieldOffsetsOfDataCtor pp ctorDef
+ | Just HeapObjectSmall <- heapObjectOfDataCtor   pp ctorDef
+ , Just offsets         <- fieldOffsetsOfDataCtor pp ctorDef
  = do
         -- Get the address of the payload.
         let bPayload    = BAnon (A.tPtr trPrime (A.tWord 8))

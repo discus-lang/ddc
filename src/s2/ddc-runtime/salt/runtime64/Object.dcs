@@ -23,9 +23,8 @@
 --           0  0  0  1  a  0  0  1  -- Thunk
 --           0  0  1  0  a  0  0  1  -- DataBoxed
 --           0  0  1  1  a  0  0  1  -- DataRaw
---           0  1  0  0  a  0  0  1  -- DataMixed
 --           0  1  0  1  a  0  0  1  -- SuspIndir
---           -- size --  a  0  1  1  -- DataRawSmall
+--           -- size --  a  0  1  1  -- DataSmall
 --
 --   Data GC Forwarding / Broken-Heart pointers.
 --     During garbage collection, after the GC copies an object to the
@@ -43,12 +42,11 @@
 --     the object. This is useful when the object has been allocated by malloc
 --     and exists outside the DDC runtime's garbage collected heap.
 --
---   Data Data{Boxed, Mixed, Raw, RawSmall}
+--   Data Data{Boxed, Raw, Small}
 --     There are four data object formats:
 --      DataBoxed:    A boxed object containing pointers to more heap objects.
---      DataMixed:    Some heap pointers, and some raw data.
 --      DataRaw:      Contains raw data and no pointers.
---      DataRawSmall: Contains raw data where the size is small enough to
+--      DataSmall:    Contains raw data where the size is small enough to
 --                    encode directly in the format field.
 --
 --     The -obj- (object mode) portion of the format field can be used to
@@ -66,8 +64,8 @@
 --      Thunk        = 2#
 --      DataBoxed    = 3#
 --      DataRaw      = 4#
---      DataMixed    = 5#
---      DataRawSmall = 6#
+--      (unused)     = 5#
+--      DataSmall    = 6#
 --      SuspIndir    = 7#
 --
 --   Note: 64-bit floats.
@@ -113,12 +111,6 @@ export value
  ddcGetBoxed         : [r1 r2: Region]. Ptr# r1 Obj  -> Nat# -> Ptr# r2 Obj
  ddcSetBoxed         : [r1 r2: Region]. Ptr# r1 Obj  -> Nat# -> Ptr# r2 Obj -> Void#
 
- -- Object with mixed pointers and raw, non-pointer data.
- ddcAllocMixed       : [r1:    Region]. Tag# -> Nat# -> Nat# -> Ptr# r1 Obj
- ddcArityOfMixed     : [r:     Region]. Ptr# r Obj   -> Nat#
- ddcGetMixed         : [r1 r2: Region]. Ptr# r1 Obj  -> Nat# -> Ptr# r2 Obj
- ddcPayloadMixed     : [r1:    Region]. Ptr# r1 Obj  -> Ptr# r1 Word8#
-
  -- Objects containing raw non-pointer data.
  ddcAllocRaw         : [r1:    Region]. Tag# -> Nat# -> Ptr# r1 Obj
  ddcPayloadRaw       : [r1:    Region]. Ptr# r1 Obj  -> Ptr# r1 Word8#
@@ -128,8 +120,6 @@ export value
  ddcAllocSmall       : [r1:    Region]. Tag# -> Nat# -> Ptr# r1 Obj
  ddcPayloadSmall     : [r1:    Region]. Ptr# r1 Obj  -> Ptr# r1 Word8#
  ddcPayloadSizeSmall : [r1:    Region]. Ptr# r1 Obj  -> Nat#
-
-
 
 import value
  -- Invoke the garbage collector.
@@ -201,7 +191,6 @@ ddcFormatOfObject_arg (formatField : Word8#) : Nat#
           0b00010000w8# -> 2# -- Thunk
           0b00100000w8# -> 3# -- DataBoxed
           0b00110000w8# -> 4# -- DataRaw
-          0b01000000w8# -> 5# -- DataMixed
           0b01010000w8# -> 7# -- SuspIndir
           _             -> 0# -- Unknown
 
@@ -216,7 +205,6 @@ ddcSizeOfObject [r: Region] (obj: Ptr# r Obj): Nat#
         2# -> ddcSizeOfThunk  obj
         3# -> ddcSizeOfBoxed  obj
         4# -> ddcSizeOfRaw    obj
-        5# -> ddcSizeOfMixed  obj
         6# -> ddcSizeOfSmall  obj
 
         _  -> do ddcFailObj obj "ddcSizeOfObject"# "unrecognized object"#
@@ -239,7 +227,6 @@ ddcHeaderSizeOfObject [r: Region] (obj: Ptr# r Obj): Nat#
         2# -> 16#       -- Thunk
         3# -> 8#        -- Boxed
         4# -> 8#        -- Raw
-        5# -> 16#       -- Mixed
         6# -> 4#        -- Small
 
         _  -> do ddcFailObj obj "ddcHeaderSizeOfObject"# "unrecognized object"#
@@ -412,8 +399,6 @@ ddcAllocThunk_ok [r: Region] (fun:  Addr#)
                 fail#
 
          True#  -> makePtr# addr
-
-
 
 
 -- | Determine the total size of a thunk.
@@ -621,84 +606,6 @@ ddcArityOfBoxed [r : Region] (obj : Ptr# r Obj) : Nat#
  =      promote# (read# [Word32#] (takePtr# obj) 4#)
 
 
--- Mixed ----------------------------------------------------------------------
--- | Allocate a Mixed Data Object.
---   The payload contains some pointers followed by raw data.
---
---   The arity (ptrCount) must be no greater than 2^32, else undefined.
---   The payload can have length up to 2^64.
---
---   typedef struct
---   { uint32_t  tagFormat;
---     uint32_t  ptrCount;  // Number of pointers at the start of the payload.
---     uint64_t  size;      // Size of the whole object, in bytes.
---     ObjData   payload[]; // Contains ptrCount pointers, then raw data.
---   } DataMixed;
---
-ddcAllocMixed
-        [r: Region]
-        (tag: Tag#) (arity: Nat#) (bytesRaw: Nat#)
-        : Ptr# r Obj
- = do
-        bytesPtrs       = shl# arity 3#
-        bytesObj        = add# (size# [Word32#])
-                         (add# (size# [Word32#])
-                         (add# (size# [Word64#])
-                         (add# bytesPtrs bytesRaw)))
-
-        case check# bytesObj of
-         True#  -> ()
-         False# -> ddcAllocCollect bytesObj
-
-        ddcAllocMixed_ok [r] tag arity bytesObj
-
-
-ddcAllocMixed_ok
-        [r: Region]
-        (tag: Tag#) (arity: Nat#) (bytesObj: Nat#)
-        : Ptr# r Obj
- = do
-        -- Alloc and zero whole object because the Salt code generator
-        -- does not guarantee that no more allocations will be performed
-        -- before the argument pointers have been written.
-        addr            = alloc# bytesObj
-        set# addr 0w8# bytesObj
-
-        tag32           = promote# tag
-        format          = 0b01000001w32#
-        header          = bor# (shl# tag32 8w32#) format
-        write# addr 0# header
-
-        arity32         = truncate# [Word32#] [Nat#] arity
-        write# addr 4# arity32
-
-        bytesObj32      = promote#  [Word64#] [Nat#] bytesObj
-        write# addr 8# bytesObj32
-
-        makePtr# addr
-
-
--- | Determine the total size of a mixed data object.
-ddcSizeOfMixed [r : Region] (obj : Ptr# r Obj) : Nat#
- = do   promote# (read# [Word64#] (takePtr# obj) 8#)
-
-
--- | Get one of the pointers from a mixed data object.
-ddcGetMixed [r1 r2: Region] (obj: Ptr# r1 Obj) (index: Nat#): Ptr# r2 Obj
- =      read#   (takePtr# obj)
-                (add# 16# (shl# index (size2# [Addr#])))
-
-
--- | Get the number of pointers in a mixed data object's payload.
-ddcArityOfMixed [r : Region] (obj : Ptr# r Obj) : Nat#
- =      promote# (read# [Word32#] (takePtr# obj) 4#)
-
-
--- | Get the address of the raw data payload from a mixed object.
-ddcPayloadMixed [r: Region] (obj: Ptr# r Obj): Ptr# r Word8#
- =      plusPtr# (castPtr# obj) 16#
-
-
 -- Raw ------------------------------------------------------------------------
 -- | A Raw Data Object.
 --   A raw data object does not contain heap pointers that need to be traced
@@ -864,5 +771,4 @@ ddcFailObj [r: Region]
         ddcPrimFailString "\n"#
         ddcPrimFailString "\n"#
         fail#
-
 

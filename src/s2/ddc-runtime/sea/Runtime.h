@@ -54,7 +54,6 @@ typedef double  float64_t;
 //      0  0  0  1  a  0  0  1  -- Thunk
 //      0  0  1  0  a  0  0  1  -- DataBoxed
 //      0  0  1  1  a  0  0  1  -- DataRaw
-//      0  1  0  0  a  0  0  1  -- DataMixed
 //      0  1  0  1  a  0  0  1  -- SuspIndir
 //      -- size --  a  0  1  1  -- DataRawSmall
 //
@@ -74,12 +73,11 @@ typedef double  float64_t;
 //    the object. This is useful when the object has been allocated by malloc
 //    and exists outside the DDC runtime's garbage collected heap.
 //
-//  * Data{Boxed, Mixed, Raw, RawSmall}
+//  * Data{Boxed, Raw, Small}
 //    There are four data object formats:
 //     DataBoxed:    A boxed object containing pointers to more heap objects.
-//     DataMixed:    Some heap pointers, and some raw data.
 //     DataRaw:      Contains raw data and no pointers.
-//     DataRawSmall: Contains raw data where the size is small enough to
+//     DataSmall:    Contains raw data where the size is small enough to
 //                   encode directly in the format field.
 //
 //    The -obj- (object mode) portion of the format field can be used to
@@ -102,9 +100,8 @@ enum _ObjType
         _ObjTypeThunk,
         _ObjTypeDataBoxed,
         _ObjTypeDataRaw,
-        _ObjTypeDataMixed,
         _ObjTypeSuspIndir,
-        _ObjTypeDataRawSmall
+        _ObjTypeDataSmall
 };
 
 
@@ -129,7 +126,6 @@ enum _ObjFixed
 {       _ObjFixedThunk          = 0x11,
         _ObjFixedDataBoxed      = 0x21,
         _ObjFixedDataRaw        = 0x31,
-        _ObjFixedDataMixed      = 0x41,
         _ObjFixedSuspIndir      = 0x51,
         _ObjFixedMapped         = 0x71
 };
@@ -219,17 +215,4 @@ typedef struct
 Obj*     ddcAllocSmall          (uint32_t tag, nat_t payloadLength);
 uint8_t* ddcPayloadSmall        (Obj* obj);
 nat_t    ddcPaylodSizeSmall     (Obj* obj);
-
-
-// ----------------------------------------------------------------------------
-// A Mixed Data Object.
-//   The payload contains some pointers followed by raw data.
-typedef struct
-{       uint32_t  tagFormat;
-        uint32_t  padding;      // Padding to ensure payload is 8 byte aligned.
-        uint32_t  size;         // Size of the whole object, in bytes.
-        uint32_t  ptrCount;     // Number of pointers at the start of the payload.
-        Obj*      payload[];    // Contains ptrCount pointers, then raw data.
-} DataMixed;
-
 

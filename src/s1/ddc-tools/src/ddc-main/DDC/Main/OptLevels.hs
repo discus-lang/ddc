@@ -100,7 +100,6 @@ opt1_salt config dconfig builder runtimeConfig filePath
                         [ "funThunk", "paramsThunk", "boxesThunk", "argsThunk", "runThunk"
                         , "setThunk", "getThunk"
                         , "getBoxed", "setBoxed"
-                        , "getMixed", "payloadMixed"
                         , "payloadRaw",  "payloadSizeRaw"
                         , "payloadSmall"])]
 

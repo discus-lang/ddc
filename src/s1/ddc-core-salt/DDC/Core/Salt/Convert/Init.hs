@@ -110,5 +110,3 @@ makeMainEntryX config a
         $ XLet a  (LLet  (BNone tVoid)
                          (xddcExit a  0))
         $ xInt a 0
-
-
