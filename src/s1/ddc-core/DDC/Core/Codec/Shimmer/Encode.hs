@@ -138,30 +138,34 @@ takeModuleDecls c mm@C.ModuleCore{}
 -- ModuleName -------------------------------------------------------------------------------------
 takeModuleName :: C.ModuleName -> SExp
 takeModuleName (C.ModuleName parts)
- = xAps "module-name" (map (xSym . T.pack) parts)
+ = xAps "module-name" (map (xTxt . T.pack) parts)
 
 
 -- ExportValue------------------------------------------------------------------------------------
 takeExportValue :: Config n -> C.ExportValue n (C.Type n) -> SExp
 takeExportValue c es
  = case es of
-        C.ExportValueLocal n _ Nothing
+        C.ExportValueLocal mn n _ Nothing
          -> let Just tx = configTakeVarName c n
-            in  xAps "ex-val-loc" [ xTxt tx, xMac ("t-" <> tx), xMac ("x-" <> tx)]
+            in  xAps "ex-val-loc"
+                        [ takeModuleName mn, xTxt tx, xMac ("t-" <> tx), xMac ("x-" <> tx)]
 
-        C.ExportValueLocal n _ (Just (aT, aX, aB))
+        C.ExportValueLocal mn n _ (Just (aT, aX, aB))
          -> let Just tx = configTakeVarName c n
-            in  xAps "ex-val-loc" [ xTxt tx, xMac ("t-" <> tx), xMac ("x-" <> tx)
-                                  , xNat aT, xNat aX, xNat aB]
+            in  xAps "ex-val-loc"
+                        [ takeModuleName mn, xTxt tx, xMac ("t-" <> tx), xMac ("x-" <> tx)
+                        , xNat aT, xNat aX, xNat aB]
 
         C.ExportValueLocalNoType n
          -> let Just tx = configTakeVarName c n
-            in  xAps "ex-val-loc" [ xTxt tx, xMac ("t-" <> tx), xMac ("x-" <> tx)]
+            in  xAps "ex-val-loc"
+                        [ xTxt tx, xMac ("t-" <> tx), xMac ("x-" <> tx)]
 
         -- TODO: split type into own decl so we can import/export via the same data.
         C.ExportValueSea n x t
          -> let Just tx = configTakeVarName c n
-            in  xAps "ex-val-sea" [ xTxt tx, xTxt x, takeType c t ]
+            in  xAps "ex-val-sea"
+                        [ xTxt tx, xTxt x, takeType c t ]
 
 
 -- TypeSyn -----------------------------------------------------------------------------------------
@@ -237,8 +241,11 @@ takeImportValue c iv
  = case iv of
         C.ImportValueModule{}
          -> let Just tx = configTakeVarName c (C.importValueModuleVar iv)
+                mn      = C.importValueModuleName iv
             in  ( xAps "im-val-mod"
-                        $ [xTxt tx, xMac ("t-" <> tx)]
+                        $ [ takeModuleName mn
+                          , xTxt tx
+                          , xMac ("t-" <> tx)]
                        ++ case C.importValueModuleArity iv of
                               Nothing           -> []
                               Just (nt, nx, nb) -> [xNat nt, xNat nx, xNat nb]

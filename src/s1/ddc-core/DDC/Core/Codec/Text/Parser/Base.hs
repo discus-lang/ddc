@@ -57,8 +57,8 @@ pModuleName1 = P.pTokMaybe f
 -- | Parse a qualified variable or constructor name.
 pQualName :: Pretty n => Parser n (QualName n)
 pQualName
- = do   mn      <- pModuleName
-        pTok    (KSymbol SDot)
+ = do   ms      <- P.sepEndBy1 pModuleName1 (pTok (KSymbol SDot))
+        let mn  =  ModuleName $ concat $ map (\(ModuleName ss) -> ss) ms
         n       <- pName
         return  $ QualName mn n
 

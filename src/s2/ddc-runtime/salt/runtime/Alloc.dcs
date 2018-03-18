@@ -2,22 +2,22 @@
 -- | The Allocation System
 module Alloc
 
-export value
+export foreign c value
   -- | Garbage Collect the current heap and possibly resize it so that
-  --   we have at least the given amount of free space available 
+  --   we have at least the given amount of free space available
   --   for allocation.
-  ddcAllocCollect       
+  ddcAllocCollect
         :  Nat# -- ^ How much space must be left after collection.
         -> Unit
 
 import foreign c value
-  ddcCollectHeap        
+  ddcCollectHeap
         :  Addr#
         -> Addr# -> Addr# -> Addr#
         -> Addr# -> Addr# -> Addr#
         -> Unit
 
-  ddcLlvmRootGetStart   
+  ddcLlvmRootGetStart
          : Nat#  -> Addr#
 
   free   : Addr# -> Void#
@@ -35,7 +35,7 @@ ddcAllocCollect (byteCount : Nat#) : Unit
         --   This copies live objects from the front heap to the back heap
         --   then flips the heap. Once it's done the live objects are in the
         --   front heap.
-        ddcCollectHeap  
+        ddcCollectHeap
                 (ddcLlvmRootGetStart 0#)
                 (global# [Addr#] "ddcHeapBase"#)
                 (global# [Addr#] "ddcHeapTop"#)
@@ -50,39 +50,39 @@ ddcAllocCollect (byteCount : Nat#) : Unit
         aNewMax         = read# [Addr#] (global# [Addr#] "ddcHeapMax"#) 0#
 
         case gt# (plusAddr# aNewTop byteCount) aNewMax of
-         -- If there isn't enough space in the collected heap then we 
+         -- If there isn't enough space in the collected heap then we
          -- allocate some more space from the operating system.
          --
          -- Once we've done this we need to call the collector again to
          -- copy the live objects into this newly allocated space.
-         -- We can't just 'memcpy' because we also need to adjust all the 
+         -- We can't just 'memcpy' because we also need to adjust all the
          -- internal pointers to reflect that fact that we've moved the
          -- objects.
          --
-         True#  
+         True#
           ->    ddcAllocResize  byteCount
 
-         False# 
+         False#
           ->    ()
 
 
 -- | Given that we've just performed a GC cycle and don't have enough space
 --   to perform the next allocation, grow the heap by requesting more space
 --   from the OS so that the next allocation will be possible.
-ddcAllocResize 
+ddcAllocResize
         (minAlloc: Nat#)        -- Minimum extra space needed above what
                                 -- we've already got.
         : Unit
- = do   
+ = do
         aCurBase        = read# [Addr#] (global# [Addr#] "ddcHeapBase"#) 0#
         aCurTop         = read# [Addr#] (global# [Addr#] "ddcHeapTop"#)  0#
         aCurMax         = read# [Addr#] (global# [Addr#] "ddcHeapMax"#)  0#
-               
+
         -- Current size of the heap.
         curSize         = add# 1# (truncate# [Nat#] (sub# aCurMax aCurBase))
 
         -- Current usage of the heap.
-        --   When we call ddcAllocResize we've just collected the heap, 
+        --   When we call ddcAllocResize we've just collected the heap,
         --   so this is the exact amount of live data.
         curUsage        = truncate# [Nat#] (sub# aCurTop aCurBase)
 
@@ -104,13 +104,13 @@ ddcAllocResize
         aHeapBackBase1_new      = malloc newSize
         write#  (global# [Addr#] "ddcHeapBackBase"#) 0# aHeapBackBase1_new
         write#  (global# [Addr#] "ddcHeapBackTop"#)  0# aHeapBackBase1_new
-        write#  (global# [Addr#] "ddcHeapBackMax"#)  0# 
+        write#  (global# [Addr#] "ddcHeapBackMax"#)  0#
                 (plusAddr# aHeapBackBase1_new (sub# newSize 1#))
 
         -- Run the collector again to copy live objects into the new back buffer.
         --   This also flips the buffers, so after the collection our freshly
         --   allocated buffer is now the one reachable from the front pointers.
-        ddcCollectHeap  
+        ddcCollectHeap
                 (ddcLlvmRootGetStart 0#)
                 (global# [Addr#] "ddcHeapBase"#)
                 (global# [Addr#] "ddcHeapTop"#)

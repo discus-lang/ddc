@@ -3,7 +3,7 @@
 ok
 ok
 module Test 
-import value f          : Int# -> Int# -> Int#;
+import value Foo.f      : Int# -> Int# -> Int#;
 with
 letrec {
   ffold: [p: Proc].[k: Rate].Ref# Int# -> Series# p k Int# -> Process# p k

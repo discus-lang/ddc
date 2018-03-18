@@ -4,7 +4,8 @@
 module Main
 
 -- Export the main entry point to C land.
-export main : Unit -> S Console Unit
+export value
+ Main.main : Unit -> S Console Unit
 
 -- Define the console effect, which is the one we'll use to
 -- classify actions that write to the console.

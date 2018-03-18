@@ -79,7 +79,7 @@
 --
 module Runtime.Object
 
-export value
+export foreign c value
  -- Get the tag of an object.
  ddcTagOfObject         : [r: Region]. Ptr# r Obj  -> Tag#
  ddcFormatOfObject      : [r: Region]. Ptr# r Obj  -> Nat#
@@ -121,7 +121,7 @@ export value
  ddcPayloadSmall     : [r1:    Region]. Ptr# r1 Obj  -> Ptr# r1 Word8#
  ddcPayloadSizeSmall : [r1:    Region]. Ptr# r1 Obj  -> Nat#
 
-import value
+import foreign c value
  -- Invoke the garbage collector.
  -- We need to relaim at least the given number of bytes,
  -- otherwise we cannot continue execution.

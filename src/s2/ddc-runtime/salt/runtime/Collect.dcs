@@ -2,7 +2,7 @@
 -- | The Garbage Collector
 module Collect
 
-export value
+export foreign c value
 
   -- | Garbage Collect the current heap.
   ddcPerformGC

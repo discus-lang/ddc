@@ -1,18 +1,19 @@
 
 -- Initialization functions for the runtime system.
 --
---   This module is treated specially by the LLVM code generator. 
+--   This module is treated specially by the LLVM code generator.
 --
 --   When compiling this module the global symbols used by the runtime
 --   system are declared statically, and exported with external linkage.
 --   For all other modules the symbols are imported.
 --
 --   This module must contain uses of those global symbols, otherwise
---   the system linker will forget about the symbols when building 
+--   the system linker will forget about the symbols when building
 --   the runtime system .dylib library.
 --
 module Init
-export value
+
+export foreign c value
  ddcInit        :  Nat# -> Nat# -> Addr# -> Unit
  ddcExit        :  Nat# -> Void#
 
@@ -30,7 +31,7 @@ ddcInit (defaultHeapSize: Nat#) -- Default heap size set at compile time.
         (argc: Nat#)            -- Number of command line arguments.
         (argv: Addr#)           -- Pointer to array of command line arguments.
         : Unit
- = do   
+ = do
         ddcAllocInit   defaultHeapSize
         write# (global# [Nat#]  "ddcEnvArgC"#)      0# argc
         write# (global# [Addr#] "ddcEnvArgV"#)      0# argv
@@ -44,7 +45,7 @@ ddcAllocInit (heapSize : Nat#) : Unit
         pHeapBaseA      = malloc heapSize
         write# (global# [Addr#] "ddcHeapBase"#)     0# pHeapBaseA
         write# (global# [Addr#] "ddcHeapTop"#)      0# pHeapBaseA
-        write# (global# [Addr#] "ddcHeapMax"#)      0# 
+        write# (global# [Addr#] "ddcHeapMax"#)      0#
                (plusAddr# pHeapBaseA    (sub# heapSize 1#))
 
         -- Create the back heap.
@@ -60,7 +61,7 @@ ddcAllocInit (heapSize : Nat#) : Unit
 -------------------------------------------------------------------------------
 -- | Shutdown the runtime system and exit cleanly.
 ddcExit (code: Nat#): Void#
- = do   
+ = do
         -- Free the space for the heaps.
         pHeapBaseA      = read# (global# [Addr#] "ddcHeapBase"#)     0#
         pHeapBackBaseA  = read# (global# [Addr#] "ddcHeapBackBase"#) 0#

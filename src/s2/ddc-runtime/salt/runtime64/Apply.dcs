@@ -2,7 +2,7 @@
  -- Thunk application.
 module Runtime.Apply
 
-export value
+export foreign c value
  ddcRunThunk    :  [r1 : Region]. Ptr# r1 Obj -> Ptr# r1 Obj
 
  ddcApply0      :  [r1 : Region]
@@ -22,7 +22,7 @@ export value
                 .  Ptr# r1 Obj -> Ptr# r1 Obj -> Ptr# r1 Obj -> Ptr# r1 Obj
                 -> Ptr# r1 Obj -> Ptr# r1 Obj
 
-import value
+import foreign c value
  ddcAllocThunk  : [r1 : Region]. Addr# -> Nat# -> Nat# -> Nat# -> Nat# -> Ptr# r1 Obj
  ddcCopyThunk   : [r1 : Region]. Ptr# r1 Obj -> Ptr# r1 Obj -> Nat# -> Nat# -> Ptr# r1 Obj
  ddcExtendThunk : [r1 : Region]. Ptr# r1 Obj -> Nat# -> Ptr# r1 Obj

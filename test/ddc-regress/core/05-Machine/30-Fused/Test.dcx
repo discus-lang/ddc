@@ -9,11 +9,12 @@ import foreign abstract type
     a0 : Data
     b0 : Data
     c0 : Data
-import value
-    f0 : a0 -> b0
-    g0 : b0 -> c0
 
-export exec : Source# a0 -> Sink# c0 -> Process#
+import value
+    Base.f0 : a0 -> b0
+    Base.g0 : b0 -> c0
+
+export Map.exec : Source# a0 -> Sink# c0 -> Process#
 
 with
 let     map [a b : Data] (f : a -> b) (as : Stream# a) : Tuple1# (Stream# b)

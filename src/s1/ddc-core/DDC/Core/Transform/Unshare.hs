@@ -323,10 +323,10 @@ updateExportValue
 
 updateExportValue mm ex
  = case ex of
-        ExportValueLocal n _t mArity
+        ExportValueLocal mn n _t mArity
          -> case Map.lookup n mm of
                 Nothing -> ex
-                Just t' -> ExportValueLocal n t' mArity
+                Just t' -> ExportValueLocal mn n t' mArity
 
         ExportValueLocalNoType{} -> ex
         ExportValueSea{}         -> ex

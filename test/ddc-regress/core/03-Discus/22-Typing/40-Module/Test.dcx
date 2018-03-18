@@ -3,8 +3,8 @@
 
 -- Main module exports main function of the correct type.
 :load..
-module Main 
-export main : Unit -> S Pure Unit
+module Main
+export Main.main : Unit -> S Pure Unit
 with letrec
 main (x : Unit) : S Pure Unit
  = box ()
@@ -13,8 +13,8 @@ main (x : Unit) : S Pure Unit
 
 -- Error: No main function.
 :load..
-module Main 
-export blerk : Unit -> S Pure Unit
+module Main
+export Main.blerk : Unit -> S Pure Unit
 with letrec
 blerk (x : Unit) : S Pure Unit
  = box ()
@@ -23,8 +23,8 @@ blerk (x : Unit) : S Pure Unit
 
 -- Error: Main function has invalid type.
 :load..
-module Main 
-export main : Nat# -> Nat# -> S Pure Unit
+module Main
+export Main.main : Nat# -> Nat# -> S Pure Unit
 with letrec
 main (x y : Nat#) : S Pure Unit
  = box ()
@@ -34,9 +34,9 @@ main (x y : Nat#) : S Pure Unit
 -- Error: duplicate export of name.
 -- #295: Check for duplicate exported names in module parser.
 :load..
-module Main 
-export main : Unit -> S Pure Unit
-export main : Unit -> S Pure Unit
+module Main
+export Main.main : Unit -> S Pure Unit
+export Main.main : Unit -> S Pure Unit
 with letrec
 main (x : Unit) : S Pure Unit
  = box ()

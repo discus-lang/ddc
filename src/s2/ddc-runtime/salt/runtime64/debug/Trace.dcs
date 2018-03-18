@@ -2,7 +2,7 @@
 -- | Dumping of the runtime object graph.
 module Trace
 
-export value
+export foreign c value
 
  ddcTraceAlloc
         :  Bool# -> Addr#
@@ -14,7 +14,8 @@ export value
  ddcTraceRoots          : Bool# -> Unit
  ddcTraceHeap           : Bool# -> Unit
 
-import value
+
+import foreign c value
  -- Primitives imported from C-land.
  ddcPrimStdoutPutString : TextLit# -> Void#
  ddcPrimFailString      : TextLit# -> Void#

@@ -28,7 +28,7 @@ lower_map_map_rq2 : [p : Proc]. [k_d : Rate].Series# p k_d Int# -> Vector# Int#
 :flow-wind..
 module Main
 import value {
-        maxx : Int# -> Int# -> Int#;
+        Base.maxx : Int# -> Int# -> Int#;
 } with
 letrec {
 filterMax : [p : Proc]. [k : Rate].Series# p k Int# -> Tuple2# (Vector# Int#) Int#
@@ -57,7 +57,7 @@ filterMax : [p : Proc]. [k : Rate].Series# p k Int# -> Tuple2# (Vector# Int#) In
                 ()) in
    let x4  : Nat#         = read# k2__count in
    let _   : Unit         = vtrunc# x4 x5 in
-   let x9  : Int#         = read# x9__acc 
+   let x9  : Int#         = read# x9__acc
    in T2# x5 x9
 }
 ;;
@@ -67,8 +67,8 @@ filterMax : [p : Proc]. [k : Rate].Series# p k Int# -> Tuple2# (Vector# Int#) In
 :flow-wind..
 module Test with
 letrec {
-  test : [p : Proc]. [k : Rate].RateNat# k 
-        -> Ref# Float32# -> Ref# Float32# 
+  test : [p : Proc]. [k : Rate].RateNat# k
+        -> Ref# Float32# -> Ref# Float32#
         -> Series# p k Float32# -> Series# p k Float32# -> Unit
     = /\(p : Proc).
       /\(k : Rate).

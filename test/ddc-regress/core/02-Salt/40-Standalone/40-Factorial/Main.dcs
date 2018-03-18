@@ -1,7 +1,7 @@
 
 module Main
 export {
-        main      : [r1 r2 : Region]. Nat# -> Ptr# r1 (Ptr# r1 Word8#) -> Int#;
+        Main.main      : [r1 r2 : Region]. Nat# -> Ptr# r1 (Ptr# r1 Word8#) -> Int#;
 }
 import foreign c value {
         ddcInit                : Nat# -> Nat# -> Unit;
