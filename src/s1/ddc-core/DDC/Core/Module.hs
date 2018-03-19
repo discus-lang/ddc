@@ -272,7 +272,7 @@ moduleEnvX kenvPrim tenvPrim dataDefs mm
                 (DataDef.fromListDataDefs $ map snd $ moduleImportDataDefs mm)
                 (DataDef.fromListDataDefs $ map snd $ moduleLocalDataDefs  mm)
 
- , EnvX.envxMap
+ , EnvX.envxLocalMap
         = Map.fromList
                 [ (n, typeOfImportValue isrc)
                 | (n, isrc) <- moduleImportValues mm ]

@@ -23,7 +23,7 @@ import qualified Data.Map                       as Map
 ---------------------------------------------------------------------------------------------------
 -- | Construct the call site, and new lifted binding for a lambda lifted
 --   abstraction.
-liftLambda 
+liftLambda
         :: (Show a, Show n, Pretty n, Ord n, CompoundName n, Pretty a)
         => Profile n            -- ^ Language profile.
         -> Context a n          -- ^ Context of the original abstraction.
@@ -35,7 +35,7 @@ liftLambda
              , Bind n, Exp a n)
 
 liftLambda p c fusFree a bfsParam xBody
- = do   
+ = do
         -- Name of the enclosing top-level binding.
         let Just nTop       = takeTopNameOfCtx        (contextCtx c)
 
@@ -67,7 +67,7 @@ liftLambda p c fusFree a bfsParam xBody
              = error $ unlines
                      [ "ddc-core-simpl.liftLambda: cannot find type of free variable."
                      , show (f, u)
-                     , show (Map.keys $ EnvX.envxMap (contextEnv c)) ]
+                     , show (Map.keys $ EnvX.envxLocalMap (contextEnv c)) ]
 
         let futsFree_types
                 = map joinType fusFree_filtered
@@ -83,8 +83,8 @@ liftLambda p c fusFree a bfsParam xBody
                 ++ [(True, ut) | ut  <- Set.toList
                                      $  freeVarsT Env.empty t]
 
-        let fusFree_body    
-                =  [(True, ut) | ut  <- Set.toList 
+        let fusFree_body
+                =  [(True, ut) | ut  <- Set.toList
                                      $  freeVarsT Env.empty $ typeOfExp p c xLambda]
 
         let futsFree_expandFree
@@ -102,29 +102,29 @@ liftLambda p c fusFree a bfsParam xBody
 
         -- Make the new super.
         --   For the lifted abstraction, wrap it in new lambdas to bind all of
-        --   its free variables. 
+        --   its free variables.
         --   ISSUE #330: Lambda lifter doesn't work with anonymous binders.
         let makeBind ((True,  (UName n)), t) = (True,  BName n t)
             makeBind ((False, (UName n)), t) = (False, BName n t)
             makeBind fut
                     = error $ "ddc-core-simpl.liftLamba: unhandled binder " ++ show fut
-        
+
         let bsParam = map makeBind futsFree
         let xLifted = makeXLamFlags a bsParam xLambda
 
         -- Make a binder for the new super.
-        (bLifted, uLifted)  
-                  <- newVarExtend nTop "L" 
+        (bLifted, uLifted)
+                  <- newVarExtend nTop "L"
                   $  typeOfExp p c xLifted
-        
-        -- At the point where the original abstraction group was, 
+
+        -- At the point where the original abstraction group was,
         -- call our new lifted super instead.
         let makeArg  (True,  u) = RType (TVar u)
             makeArg  (False, u) = RTerm (XVar a u)
 
         let xCall = xApps a (XVar a uLifted)
                   $ map makeArg $ map fst futsFree
-        
+
         -- All done.
         return  ( xCall
                 , bLifted, xLifted)
@@ -133,7 +133,7 @@ liftLambda p c fusFree a bfsParam xBody
 ---------------------------------------------------------------------------------------------------
 -- | Decide whether we need to bind the given variable as a new parameter
 --   on the lifted super.
-needParamForFreeBound 
+needParamForFreeBound
         :: (Ord n)
         => Set n                -- ^ Names of supers at top level.
         -> [(Bool, Bind n)]     -- ^ Parameters of the current lambda abstraction.
@@ -147,23 +147,23 @@ needParamForFreeBound nsSuper bfsParam (bType, u)
         , UName n  <- u
         = not $ Set.member n nsSuper
 
-        -- We don't need new parameters for primitives, 
+        -- We don't need new parameters for primitives,
         -- as we can reference those directly.
         | UPrim{}  <- u
         = False
- 
+
         -- We don't need new paramters for variables that
         -- are already bound by the abstractions that we're lifting.
         | any (boundMatchesBind u . snd) bfsParam
         = False
- 
+
         -- We need a new parameter for this free variable.
         | otherwise
         = True
 
 
 -- Function to get the type of an expression in the given context.
-typeOfExp 
+typeOfExp
         :: (Pretty a, Show a, Show n, Pretty n, Eq n, Ord n)
         => Profile n    -- ^ Language profile.
         -> Context a n  -- ^ Current context.
@@ -179,6 +179,6 @@ typeOfExp p c x
             [ text "ddc-core-simpl.liftLambda: type error in lifted expression"
             , ppr err]
 
-        Right t 
+        Right t
          -> t
 

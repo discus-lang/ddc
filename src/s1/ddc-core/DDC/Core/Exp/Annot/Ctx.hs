@@ -19,7 +19,7 @@ import qualified Data.Map.Strict        as Map
 -- | A one-hole context for `Exp`.
 data Ctx a n
         -- | The top-level context.
-        = CtxTop        
+        = CtxTop
         { ctxEnvX       :: !(EnvX n) }
 
         -- | Body of a type abstraction.
@@ -150,17 +150,17 @@ takeTopLetEnvNamesOfCtx ctx0
          = case ctx of
                 CtxTop env
                  -> Set.fromList
-                 $  Map.keys $ EnvX.envxMap env
+                 $  Map.keys $ EnvX.envxLocalMap env
 
                 CtxLetLLet (CtxTop env) _ b xBody
                  -> Set.unions
-                        [ Set.fromList $ Map.keys $ EnvX.envxMap env
+                        [ Set.fromList $ Map.keys $ EnvX.envxLocalMap env
                         , eatBind b
                         , eatExp xBody]
 
                 CtxLetLRec (CtxTop env) _ bxsBefore b bxsAfter xBody
                  -> Set.unions
-                        [ Set.fromList  $ Map.keys $ EnvX.envxMap env
+                        [ Set.fromList  $ Map.keys $ EnvX.envxLocalMap env
                         , Set.unions    $ map (eatBind . fst) bxsBefore
                         , eatBind b
                         , Set.unions    $ map (eatBind . fst) bxsAfter

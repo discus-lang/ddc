@@ -12,7 +12,7 @@ import qualified DDC.Core.Env.EnvX      as EnvX
 import qualified Data.Map               as Map
 
 
--- | Rewrite operators that use type level rates to ones that 
+-- | Rewrite operators that use type level rates to ones that
 --   use value level ones.
 concretizeModule :: Module () Name -> Module () Name
 concretizeModule mm
@@ -20,7 +20,7 @@ concretizeModule mm
 
 
 -- | Rewrite an expression to use concrete operators.
-concretizeX 
+concretizeX
         :: EnvX Name
         -> ExpF     -> Maybe ExpF
 
@@ -41,10 +41,10 @@ concretizeX env xx
                , [XType tK, xF])   <- takeXPrimApps xx
         , Just (nS, tP, _, tA)     <- findSeriesWithRate env tK
         , xS                       <- XVar (UName nS)
-        = Just 
-        $ xLoopN 
+        = Just
+        $ xLoopN
                 tK                              -- type level rate
-                (xRateOfSeries tP tK tA xS)  -- 
+                (xRateOfSeries tP tK tA xS)  --
                 xF                              -- loop body
 
         -- newVectorR# -> newVector#
@@ -56,7 +56,7 @@ concretizeX env xx
         $ xNewVector
                 tA
                 (xNatOfRateNat tK $ xRateOfSeries tP tK tS xS)
-                
+
         | otherwise
         = Nothing
 
@@ -64,13 +64,13 @@ concretizeX env xx
 -------------------------------------------------------------------------------
 -- | Search the given environment for the name of a RateNat with the
 --   given rate parameter. We only look at named binders.
-findRateNatWithRate 
+findRateNatWithRate
         :: EnvX Name            -- ^ Type Environment.
         -> Type Name            -- ^ Rate type.
         -> Maybe Name
                                 -- ^ RateNat name
 findRateNatWithRate env tR
- = go (Map.toList (EnvX.envxMap env))
+ = go (Map.toList (EnvX.envxLocalMap env))
  where  go []           = Nothing
         go ((n, tRN) : moar)
          | isRateNatTypeOfRate tR tRN = Just n
@@ -78,8 +78,8 @@ findRateNatWithRate env tR
 
 
 -- | Check whether some type is a RateNat type of the given rate.
-isRateNatTypeOfRate 
-        :: Type Name -> Type Name 
+isRateNatTypeOfRate
+        :: Type Name -> Type Name
         -> Bool
 
 isRateNatTypeOfRate tR tRN
@@ -95,13 +95,13 @@ isRateNatTypeOfRate tR tRN
 -------------------------------------------------------------------------------
 -- | Search the given environment for the name of a series with the
 --   given result rate parameter. We only look at named binders.
-findSeriesWithRate 
+findSeriesWithRate
         :: EnvX Name             -- ^ Type Environment.
         -> Type Name            -- ^ Rate type.
         -> Maybe (Name, Type Name, Type Name, Type Name)
         -- ^ Series name, process, result rate, element type.
 findSeriesWithRate env tK
- = go (Map.toList (EnvX.envxMap env))
+ = go (Map.toList (EnvX.envxLocalMap env))
  where  go []           = Nothing
         go ((n, tS) : moar)
          = case isSeriesTypeOfRate tK tS of
@@ -112,8 +112,8 @@ findSeriesWithRate env tK
 -- | Given a rate type and a stream type, check whether the stream
 --   is of the given result rate. If it is then return the process, result rate,
 --   loop rate and element types, otherwise `Nothing`.
-isSeriesTypeOfRate 
-        :: Type Name -> Type Name 
+isSeriesTypeOfRate
+        :: Type Name -> Type Name
         -> Maybe (Type Name, Type Name, Type Name)
 
 isSeriesTypeOfRate tK tS
