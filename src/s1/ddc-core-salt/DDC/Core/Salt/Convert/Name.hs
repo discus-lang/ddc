@@ -1,21 +1,19 @@
+{-# LANGUAGE OverloadedStrings #-}
 
 module DDC.Core.Salt.Convert.Name
-        ( sanitizeName
-        , sanitizeGlobal
-        , seaNameOfSuper
-        , seaNameOfLocal)
+        ( seaNameOfSuper
+        , seaNameOfLocal
+        , sanitizeName)
 where
 import DDC.Core.Salt.Name
 import DDC.Core.Module
 import DDC.Type.Exp.Simple.Exp
 import DDC.Data.Pretty
 import Data.Maybe
-import qualified Data.Text      as T
-
--- | Like 'sanitizeGlobal' but indicate that the name is going to be visible
---   globally.
-sanitizeGlobal :: String -> String
-sanitizeGlobal = sanitizeName
+import qualified DDC.Core.Module.Import as C
+import qualified DDC.Core.Module.Export as C
+import qualified Data.Text              as T
+import qualified Data.List              as L
 
 
 -- | Convert the Salt name of a supercombinator to a name we can use when
@@ -29,26 +27,37 @@ seaNameOfSuper
 seaNameOfSuper mImport mExport nm
 
         -- Super is defined in this module and not exported.
-        | Nothing                       <- mImport
-        , Nothing                       <- mExport
-        , Just str                      <- takeNameVar nm
+        | Nothing               <- mImport
+        , Nothing               <- mExport
+        , Just str              <- takeNameVar nm
         = Just $ text $ sanitizeName $ T.unpack str
 
-        -- Super is defined in this module and exported to C land.
-        | Nothing                       <- mImport
-        , Just _                        <- mExport
-        , Just str                      <- takeNameVar nm
-        = Just $ text $ sanitizeName $ T.unpack str
+        -- Special case for the main function.
+        -- This comes with a export definition but we don't want
+        -- the 'Main' module name in the symbol.
+        -- Super is exported to other modules.
+        | Just ev@ExportValueLocal{} <- mExport
+        , ModuleName ps         <- C.exportValueLocalModuleName ev
+        , Just str              <- takeNameVar nm
+        , ps  == ["Main"]
+        , str == "main"
+        = Just $ text $ T.unpack str
 
-        -- Super is imported from another module and not exported.
-        | Just ImportValueModule{}      <- mImport
-        , Nothing                       <- mExport
-        , Just str                      <- takeNameVar nm
-        = Just $ text $ sanitizeName $ T.unpack str
+        -- Super is exported to other modules.
+        | Just ev@ExportValueLocal{} <- mExport
+        , ModuleName ps         <- C.exportValueLocalModuleName ev
+        , Just str              <- takeNameVar nm
+        = Just $ text $ sanitizeName (L.intercalate "." ps ++ "." ++ T.unpack str)
+
+        -- Super is imported from another module.
+        | Just iv@ImportValueModule{} <- mImport
+        , ModuleName ps         <- C.importValueModuleName iv
+        , Just str              <- takeNameVar nm
+        = Just $ text $ sanitizeName (L.intercalate "." ps ++ "." ++ T.unpack str)
 
         -- Super is imported from C-land and not exported.
         | Just (ImportValueSea _ strSea _) <- mImport
-        , Nothing                       <- mExport
+        , Nothing               <- mExport
         = Just $ text $ T.unpack strSea
 
         -- ISSUE #320: Handle all the import/export combinations.
@@ -67,8 +76,8 @@ seaNameOfSuper mImport mExport nm
 seaNameOfLocal :: Name -> Maybe Doc
 seaNameOfLocal nn
  = case takeNameVar nn of
-        Just str        -> Just $ text $ "_" ++ sanitizeGlobal (T.unpack str)
-        _               -> Nothing
+        Just str -> Just $ text $ "_" ++ sanitizeName (T.unpack str)
+        _        -> Nothing
 
 
 -- Sanitize ---------------------------------------------------------------------------------------
@@ -79,47 +88,42 @@ seaNameOfLocal nn
 --
 sanitizeName :: String -> String
 sanitizeName str
- = let  hasSymbols      = any isJust $ map convertSymbol str
-   in   if hasSymbols
-         then "_sym_" ++ concatMap rewriteChar str
-         else str
+ = concatMap rewriteChar str
 
 
 -- | Get the encoded version of a character.
 rewriteChar :: Char -> String
 rewriteChar c
-        | Just str <- convertSymbol c      = "Z" ++ str
-        | 'Z'      <- c                    = "ZZ"
-        | otherwise                        = [c]
+ = fromMaybe [c] $ convertSymbol c
 
 
 -- | Convert symbols to their sanitized form.
 convertSymbol :: Char -> Maybe String
 convertSymbol c
  = case c of
-        '!'     -> Just "Bg"
-        '@'     -> Just "At"
-        '#'     -> Just "Hs"
-        '$'     -> Just "Dl"
-        '%'     -> Just "Pc"
-        '^'     -> Just "Ht"
-        '&'     -> Just "An"
-        '*'     -> Just "St"
-        '~'     -> Just "Tl"
-        '-'     -> Just "Ms"
-        '+'     -> Just "Ps"
-        '='     -> Just "Eq"
-        '|'     -> Just "Pp"
-        '\\'    -> Just "Bs"
-        '/'     -> Just "Fs"
-        ':'     -> Just "Cl"
-        '.'     -> Just "Dt"
-        '?'     -> Just "Qm"
-        '<'     -> Just "Lt"
-        '>'     -> Just "Gt"
-        '['     -> Just "Br"
-        ']'     -> Just "Kt"
-        '\''    -> Just "Pm"
-        '`'     -> Just "Bt"
+        'Z'     -> Just "ZZ"
+        '!'     -> Just "Zba"
+        '@'     -> Just "Zat"
+        '#'     -> Just "Zha"
+        '$'     -> Just "Zdl"
+        '%'     -> Just "Zpl"
+        '^'     -> Just "Zha"
+        '&'     -> Just "Zam"
+        '*'     -> Just "Zas"
+        '~'     -> Just "Ztl"
+        '-'     -> Just "Zmi"
+        '+'     -> Just "Zpl"
+        '='     -> Just "Zeq"
+        '|'     -> Just "Zpi"
+        '\\'    -> Just "Zbs"
+        '/'     -> Just "Zfs"
+        ':'     -> Just "Zco"
+        '?'     -> Just "Zqn"
+        '<'     -> Just "Zlt"
+        '>'     -> Just "Zgt"
+        '['     -> Just "Zbr"
+        ']'     -> Just "Zke"
+        '\''    -> Just "Zpm"
+        '`'     -> Just "Zbt"
         _       -> Nothing
 

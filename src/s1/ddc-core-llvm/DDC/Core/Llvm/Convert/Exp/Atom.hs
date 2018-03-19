@@ -288,4 +288,3 @@ addConstant ctx lit
         let vRef = Var nLit (TPointer tLit)
         return vRef
 
-
