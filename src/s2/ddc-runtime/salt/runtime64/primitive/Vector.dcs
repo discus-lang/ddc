@@ -1,12 +1,11 @@
 
 module Runtime.Prim.Vector
 
-export value
+export foreign c value
  ddcVectorGuts : [r : Region]. Ptr# r Obj -> Addr#
 
-import value
+import foreign c value
  ddcPayloadRaw : [r : Region]. Ptr# r Obj -> Ptr# r Word8#
-
 
 with letrec
 

@@ -87,8 +87,8 @@ spreadExportTypeT kenv esrc
 ---------------------------------------------------------------------------------------------------
 spreadExportValueT kenv esrc
   = case esrc of
-        ExportValueLocal n t mArity
-         -> ExportValueLocal n (spreadT kenv t) mArity
+        ExportValueLocal mn n t mArity
+         -> ExportValueLocal mn n (spreadT kenv t) mArity
 
         ExportValueLocalNoType n
          -> ExportValueLocalNoType n

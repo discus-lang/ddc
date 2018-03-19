@@ -271,13 +271,20 @@ checkModuleM !config mm@ModuleCore{} !mode
 
         -- If exported names are missing types then fill them in.
         let updateExportValue e
-                | ExportValueLocalNoType n          <- e
+                -- Exported thing was foreign imported from Sea land.
+                | ExportValueLocalNoType n  <- e
                 , Just (ImportValueSea _ nExternal t) <- lookup n ntsImportValue'
                 = ExportValueSea n nExternal t
 
+                -- Exported thing was imported from another module.
                 | ExportValueLocalNoType n <- e
+                , Just (ImportValueModule mn _ t ma)  <- lookup n ntsImportValue'
+                = ExportValueLocal mn n t ma
+
+                -- Exported thing was defined in this module.
+                | ExportValueLocalNoType n  <- e
                 , Just t  <- EnvX.lookupX (UName n) envX_binds
-                = ExportValueLocal n t Nothing
+                = ExportValueLocal (moduleName mm) n t Nothing
 
                 | otherwise = e
 

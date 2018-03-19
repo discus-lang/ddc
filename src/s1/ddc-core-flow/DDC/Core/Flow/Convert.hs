@@ -119,10 +119,10 @@ convertExportValueM
 
 convertExportValueM (_, esrc)
  = case esrc of
-        ExportValueLocal n t _
+        ExportValueLocal mn n t _
          -> do  n'      <- convertName n
                 t'      <- convertType t
-                return  $ (n', ExportValueLocal n' t' Nothing)
+                return  $ (n', ExportValueLocal mn n' t' Nothing)
 
         ExportValueLocalNoType n
          -> do  n'      <- convertName n

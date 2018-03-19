@@ -183,10 +183,10 @@ pImportValue
         => Context n -> Parser n (ImportSpec n)
 
 pImportValue c
- = do   n       <- pName
+ = do   QualName mn n  <- pQualName
         pTokSP (KOp ":")
         t       <- pType c
-        return  $ ImportForeignValue n (ImportValueModule (ModuleName []) n t Nothing)
+        return  $ ImportForeignValue n (ImportValueModule mn n t Nothing)
 
 
 -- | Parse a foreign value import spec.

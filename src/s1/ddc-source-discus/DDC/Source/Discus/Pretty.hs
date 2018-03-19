@@ -134,7 +134,7 @@ instance PrettyLanguage l => Pretty (Module l) where
         sImportedValues
          | null importedValues  = empty
          | otherwise
-         = (vcat $ map pprImportValue importedValues)
+         = (vcat $ map (pprImportValue . snd) importedValues)
          <> line
 
 

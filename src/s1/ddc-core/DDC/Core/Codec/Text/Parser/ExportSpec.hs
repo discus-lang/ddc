@@ -12,7 +12,8 @@ import DDC.Core.Module
 import DDC.Type.Exp.Simple
 import DDC.Data.Pretty
 import Control.Monad
-import qualified DDC.Control.Parser        as P
+import qualified DDC.Control.Parser     as P
+import qualified Data.Text              as T
 
 
 -- An exported thing.
@@ -59,10 +60,10 @@ pExportValue
 
 pExportValue c
  = do
-        n       <- pName
+        QualName mn n <- pQualName
         pTokSP (KOp ":")
         t       <- pType c
-        return  (ExportValue n (ExportValueLocal n t Nothing))
+        return  (ExportValue n (ExportValueLocal mn n t Nothing))
 
 
 -- | Parse a foreign value export spec.
@@ -74,11 +75,13 @@ pExportForeignValue c dst
         | "c"           <- dst
         = do    n       <- pName
                 pTokSP (KOp ":")
-                k       <- pType c
+                t       <- pType c
+
+                let nTxt = renderIndent $ ppr n
 
                 -- ISSUE #327: Allow external symbol to be specified
                 --             with foreign C imports and exports.
-                return  (ExportValue n (ExportValueLocal n k Nothing))
+                return  (ExportValue n (ExportValueSea n (T.pack nTxt) t))
 
         | otherwise
         = P.unexpected "export mode for foreign value."

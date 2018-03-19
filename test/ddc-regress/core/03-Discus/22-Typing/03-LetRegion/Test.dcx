@@ -35,7 +35,7 @@ module Test
 import data Ref (r : Region) (a : Data) where {
         MkRef : a -> Ref r a
 }
-import value writeRef : [r : Region]. [a : Data]. Ref r a -> a -> S (Write r) Unit
+import foreign c value writeRef : [r : Region]. [a : Data]. Ref r a -> a -> S (Write r) Unit
 with letrec
 test : Nat#
  = private r1 with { w1 : Const r1 } in
@@ -45,14 +45,14 @@ test : Nat#
 ;;
 
 
--- Error: private region variable cannot shadow variable that is already 
+-- Error: private region variable cannot shadow variable that is already
 -- in the environment.
 :load..
 module Test
 import data Ref (r : Region) (a : Data) where {
         MkRef : a -> Ref r a
 }
-import value writeRef : [r : Region]. [a : Data]. Ref r a -> a -> S (Write r) Unit
+import foreign c value writeRef : [r : Region]. [a : Data]. Ref r a -> a -> S (Write r) Unit
 with letrec
 test [r : Region] (x : Ref r Nat#) : S (Write r) Unit
  = private r with { w1 : Mutable r } in
@@ -67,11 +67,11 @@ module Test
 import data Ref (r : Region) (a : Data) where {
         MkRef : a -> Ref r a
 }
-import value writeRef : [r : Region]. [a : Data]. Ref r a -> a -> S (Write r) Unit
+import foreign c value writeRef : [r : Region]. [a : Data]. Ref r a -> a -> S (Write r) Unit
 with letrec
 test : Unit
  = do   private r in MkRef [r] [Nat#] 5#
-        () 
+        ()
 ;;
 
 

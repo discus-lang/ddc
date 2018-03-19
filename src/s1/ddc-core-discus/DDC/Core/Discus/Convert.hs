@@ -219,19 +219,19 @@ convertExportValueM
 
 convertExportValueM tctx tsSalt esrc
  = case esrc of
-        ExportValueLocal n t _
+        ExportValueLocal mn n t _
          -> do  n'      <- convertBindNameM n
 
                 case Map.lookup n' tsSalt of
                  -- We have a Salt type for this exported value.
-                 Just t' -> return $ ExportValueLocal n' t' Nothing
+                 Just t' -> return $ ExportValueLocal mn n' t' Nothing
 
                  -- If a type has been foreign imported from Salt land
                  -- then it won't be in the map, and we can just convert
                  -- its Discus type to get the Salt version.
                  Nothing
                   -> do t'      <- convertSuperT tctx t
-                        return $ ExportValueLocal n' t' Nothing
+                        return $ ExportValueLocal mn n' t' Nothing
 
         ExportValueLocalNoType n
          -> do  n'      <- convertBindNameM n

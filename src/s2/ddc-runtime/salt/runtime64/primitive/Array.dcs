@@ -1,13 +1,14 @@
 
 -- | Arrays of pointers to boxed values.
 module Runtime.Prim.Array
-export value
+
+export foreign c value
  allocStoreArray : [r1 r2 : Region]. Nat# -> Ptr# r1 Obj -> Ptr# r2 Obj
  writeStoreArray : [r1 r2 : Region]. Ptr# r1 Obj -> Nat# -> Ptr# r2 Obj -> Ptr# r1 Obj
  readStoreArray  : [r1 r2 : Region]. Ptr# r1 Obj -> Nat# -> Ptr# r2 Obj
  fillStoreArray  : [r1 r2 : Region]. Ptr# r1 Obj -> Nat# -> Nat# -> Ptr# r2 Obj -> Ptr# r1 Obj
 
-import value
+import foreign c value
  ddcAllocBoxed   : [r1    : Region]. Tag# -> Nat# -> Ptr# r1 Obj
  ddcSetBoxed     : [r1 r2 : Region]. Ptr# r1 Obj  -> Nat# -> Ptr# r2 Obj -> Void#
 
@@ -16,10 +17,10 @@ with letrec
 
 -- | Allocate an array of boxed values, consisting of the same element
 --   for all positions.
-allocStoreArray 
+allocStoreArray
         [r1 r2: Region]
         (len: Nat#) (pVal: Ptr# r1 Obj): Ptr# r2 Obj
- = do   
+ = do
         sVal    = allocSlot# [r1]
 
         poke# sVal pVal
@@ -31,10 +32,10 @@ allocStoreArray
 
 
 -- | Write an element into an array.
-writeStoreArray 
-        [r1 r2: Region] 
+writeStoreArray
+        [r1 r2: Region]
         (obj: Ptr# r1 Obj) (ix: Nat#) (val: Ptr# r2 Obj): Ptr# r1 Obj
- = do   
+ = do
         -- Get address of the first byte after the end of the array.
         len     = promote# (peek# [r1] [Word32#] (plusPtr# (castPtr# obj) 4#))
         top     = add# 8#  (shl# len (size2# [Addr#]))
@@ -47,10 +48,10 @@ writeStoreArray
 
 
 -- | Read an element from an array.
-readStoreArray 
+readStoreArray
         [r1 r2: Region]
         (obj: Ptr# r1 Obj) (ix: Nat#): Ptr# r2 Obj
- = do   
+ = do
         -- Get address of the first byte after the end of the array.
         len     = promote# (peek# [r1] [Word32#] (plusPtr# (castPtr# obj) 4#) )
         top     = add# 8#  (shl#  len  (size2# [Addr#]))

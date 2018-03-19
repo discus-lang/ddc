@@ -49,8 +49,8 @@ patchMainExports xx
  = case xx of
         []      -> []
         (x : xs)
-         |  (NameVar "main", ExportValueLocal n _ mArity) <- x
-         -> (NameVar "main", ExportValueLocal n posixMainType mArity) : xs
+         |  (NameVar "main", ExportValueLocal mn n _ mArity) <- x
+         -> (NameVar "main", ExportValueLocal mn n posixMainType mArity) : xs
 
          |  otherwise
          -> x : patchMainExports xs

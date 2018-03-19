@@ -2,8 +2,8 @@ ok
 
 
 -- Main module exports main function of the correct type.
-module Main
-export value main       : Unit -> S Pure Unit;
+module Main 
+export value Main.main : Unit -> S Pure Unit;
 with
 letrec {
   main: Unit -> S Pure Unit

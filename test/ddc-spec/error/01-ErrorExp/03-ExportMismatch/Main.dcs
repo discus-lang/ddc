@@ -6,7 +6,7 @@ module Main
 
 -- Export the main entry point.
 --   Exported type does not match defined type.
-export main  : [r1: Region]. Int#
+export Main.main  : [r1: Region]. Int#
 
 -- Primitive show functions are defined in the runtime system.
 import foreign c value

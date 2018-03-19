@@ -4,11 +4,11 @@
 :load..
 module Main
 export value {
-        main    : Unit -> S Pure Unit;
-        double  : Nat# -> Nat#;
+        Main.main    : Unit -> S Pure Unit;
+        Main.double  : Nat# -> Nat#;
 }
 import value {
-        two : Unit -> Nat#;
+        Main.two : Unit -> Nat#;
 }
 with
 private rt with { w1 : Const rt } in
@@ -30,10 +30,10 @@ letrec {
 :load..
 module  Main
 export value
-        main    : Unit -> S Pure Unit
-        double  : Nat# -> Nat#
+        Main.main    : Unit -> S Pure Unit
+        Main.double  : Nat# -> Nat#
 import value
-        two : Unit -> Nat#
+        Main.two : Unit -> Nat#
 with
 private rt with { w1 : Const rt } in
 let     one = 1# in

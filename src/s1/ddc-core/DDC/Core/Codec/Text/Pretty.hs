@@ -61,11 +61,11 @@ instance (Pretty n, Eq n) => Pretty (Module a n) where
         -- Exports --------------------
         dExportTypes
          | null $ exportTypes   = empty
-         | otherwise            = (vcat $ map pprExportType  exportTypes)  <> line
+         | otherwise            = (vcat $ map (pprExportType  . snd) exportTypes)  <> line
 
         dExportValues
          | null $ exportValues  = empty
-         | otherwise            = (vcat $ map pprExportValue exportValues) <> line
+         | otherwise            = (vcat $ map (pprExportValue . snd) exportValues) <> line
 
         -- Imports --------------------
         dImportTypes
@@ -78,7 +78,7 @@ instance (Pretty n, Eq n) => Pretty (Module a n) where
 
         dImportValues
          | null $ importValues  = empty
-         | otherwise            = (vcat $ map pprImportValue importValues) <> line
+         | otherwise            = (vcat $ map (pprImportValue . snd) importValues) <> line
 
         docsImportsExports
          -- If we're suppressing imports, then don't print it.
@@ -132,39 +132,48 @@ instance (Pretty n, Eq n) => Pretty (Module a n) where
 
 -- Exports ----------------------------------------------------------------------------------------
 -- | Pretty print an exported type definition.
-pprExportType :: (Pretty n, Pretty t) => (n, ExportType n t) -> Doc
-pprExportType (n, esrc)
+pprExportType :: (Pretty n, Pretty t) => ExportType n t -> Doc
+pprExportType esrc
  = case esrc of
-        ExportTypeLocalNoKind _n
+        ExportTypeLocalNoKind n
          -> text "export type" <+> ppr n <> semi
 
-        ExportTypeLocal _n k
-         -> text "export type" <+> padL 10 (ppr n) <+> text ":" <+> ppr k <> semi
+        ExportTypeLocal n k
+         -> text "export type" <+> padL 10 (ppr n) <> text ":" <+> ppr k <> semi
 
 
 -- | Pretty print an exported value definition.
-pprExportValue :: (Pretty n, Pretty t) => (n, ExportValue n t) -> Doc
-pprExportValue (n, esrc)
+pprExportValue :: (Pretty n, Pretty t) => ExportValue n t -> Doc
+pprExportValue esrc
  = case esrc of
-        ExportValueLocalNoType _n
+        ExportValueLocalNoType n
          -> text "export value" <+> ppr n <> semi
 
-        ExportValueLocal _n t Nothing
-         -> text "export value" <+> padL 10 (ppr n) <+> text ":" <+> ppr t <> semi
+        ExportValueLocal mn n t Nothing
+         -> text "export value"
+                <+> padL 10 (ppr mn <> text "." <> ppr n)
+                <>  text ":"
+                <+> ppr t <> semi
 
-        ExportValueLocal _n t (Just (arityType, arityValue, arityBoxes))
-         -> vcat [ text "export value" <+> padL 10 (ppr n) <+> text ":" <+> ppr t <> semi
-                 , text "{-# ARITY   " <+> padL 10 (ppr n)
-                                       <+> ppr arityType
-                                       <+> ppr arityValue
-                                       <+> ppr arityBoxes
-                                       <+> text "#-}"
+        ExportValueLocal mn n t (Just (arityType, arityValue, arityBoxes))
+         -> vcat [ text "export value"
+                        <+> padL 10 (ppr mn <> text "." <> ppr n)
+                        <>  text ":"
+                        <+> ppr t <> semi
+
+                 , text "{-# ARITY   "
+                        <+> padL 10 (ppr mn <> text "." <> ppr n)
+                        <+> ppr arityType
+                        <+> ppr arityValue
+                        <+> ppr arityBoxes
+                        <+> text "#-}"
                  , empty ]
 
         ExportValueSea iName xName t
          -> vcat [ text "export foreign c value"
-                 , indent 8 (padL 15 (ppr iName) <+> text ":" <+> ppr t <> semi)
+                 , indent 8 (padL 15 (ppr iName) <> text ":" <+> ppr t <> semi)
                  , indent 8 (text " from " <> text (show xName)) ]
+
 
 -- Imports ----------------------------------------------------------------------------------------
 -- | Pretty print a type import.
@@ -193,24 +202,31 @@ pprImportCap (n, isrc)
 
 
 -- | Pretty print a value import.
-pprImportValue :: (Pretty n, Pretty t) => (n, ImportValue n t) -> Doc
-pprImportValue (n, isrc)
+pprImportValue :: (Pretty n, Pretty t) => ImportValue n t -> Doc
+pprImportValue isrc
  = case isrc of
-        ImportValueModule _mn _nSrc t Nothing
-         ->        text "import value" <+> padL 10 (ppr n) <+> text ":" <+> ppr t <> semi
+        ImportValueModule mn n t Nothing
+         ->        text "import value"
+                        <+> padL 10 (ppr mn <> text "." <> ppr n)
+                        <+> text ":" <+> ppr t
+                        <>  semi
 
-        ImportValueModule _mn _nSrc t (Just (arityType, arityValue, arityBoxes))
-         -> vcat [ text "import value" <+> padL 10 (ppr n) <+> text ":" <+> ppr t <> semi
-                 , text "{-# ARITY   " <+> padL 10 (ppr n)
-                                       <+> ppr arityType
-                                       <+> ppr arityValue
-                                       <+> ppr arityBoxes
-                                       <+> text "#-}"
+        ImportValueModule mn n t (Just (arityType, arityValue, arityBoxes))
+         -> vcat [ text "import value"
+                        <+> padL 10 (ppr mn <> text "." <> ppr n)
+                        <+> text ":" <+> ppr t
+                        <>  semi
+
+                 , text "{-# ARITY   "
+                        <+> padL 10 (ppr mn <> text "." <> ppr n)
+                        <+> ppr arityType <+> ppr arityValue <+> ppr arityBoxes
+                        <+> text "#-}"
+
                  , empty ]
 
-        ImportValueSea _nInternal _nExternal t
+        ImportValueSea nInternal _nExternal t
          -> text "import foreign c value" <> line
-         <> indent 8 (padL 15 (ppr n) <+> text ":" <+> ppr t <> semi)
+         <> indent 8 (padL 15 (ppr nInternal) <+> text ":" <+> ppr t <> semi)
          <> line
 
 

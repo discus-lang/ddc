@@ -1,17 +1,17 @@
 
 module Runtime.Prim.Text
-export value
+
+export foreign c value
  ddcPrimMakeTextLit     : [r1: Region]. Addr# -> Ptr# r1 Obj
  ddcPrimTakeTextLit     : [r1: Region]. Ptr# r1 Obj -> Addr#
  ddcPrimSizeOfTextLit   : [r1: Region]. Ptr# r1 Obj -> Nat#
  ddcPrimIndexTextLit    : [r1: Region]. Ptr# r1 Obj -> Nat# -> Word8#
 
-import value
+import foreign c value
  -- Objects with raw, non-pointer data.
  ddcAllocRaw            : [r1: Region]. Tag# -> Nat# -> Ptr# r1 Obj
  ddcPayloadRaw          : [r1: Region]. Ptr# r1 Obj  -> Ptr# r1 Word8#
  ddcPayloadSizeRaw      : [r1: Region]. Ptr# r1 Obj  -> Nat#
-
  ddcPrimPutString       : TextLit# -> Void#
 
 with letrec

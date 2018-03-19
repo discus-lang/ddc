@@ -1,6 +1,6 @@
 
 module Main
-export main      : [e: Effect]. Unit -> S e Unit
+export Main.main  : [e: Effect]. Unit -> S e Unit
 with letrec
 
 main [e: Effect] (u: Unit): Unit

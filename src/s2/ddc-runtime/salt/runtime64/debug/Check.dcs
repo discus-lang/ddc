@@ -1,13 +1,13 @@
 
 module Check
 
-export value
+export foreign c value
  ddcCheckObjHeader : [r: Region]. Ptr# r Obj -> Word32#
  ddcCheckObjExtent : [r: Region]. Ptr# r Obj -> Nat# -> Unit
  ddcFailMessage    : TextLit# -> TextLit# -> Void#
  ddcFailField      : TextLit# -> TextLit# -> Void#
 
-import value
+import foreign c value
  ddcPrimShowAddr   : Addr#    -> TextLit#
  ddcPrimShowNat    : Nat#     -> TextLit#
  ddcPrimFailString : TextLit# -> Void#

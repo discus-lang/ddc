@@ -3,8 +3,8 @@
 :set lang Flow
 :set trans Eta
 :load..
-module Test 
-import value f : Int# -> Int# -> Int#
+module Test
+import value Foo.f : Int# -> Int# -> Int#
 with letrec
 ffold [p : Proc] [k : Rate]
     (o : Ref# Int#)

@@ -2,11 +2,11 @@
 -- This module contains an extra misplaced close brace
 -- which the offside rule code needs to give a sensible error for.
 --
--- The point here is that the offside rule inserts a synthetic open 
+-- The point here is that the offside rule inserts a synthetic open
 -- brace after the 'do' but there is a manifest user-written one after it.
 
-module Main 
-export  main    : [r : Region]. Nat# -> Ptr# r Word8# -> Int#;
+module Main
+export  Main.main    : [r : Region]. Nat# -> Ptr# r Word8# -> Int#;
 with letrec
 
 main    [e: Effect] : Unit -> S e Unit

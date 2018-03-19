@@ -10,7 +10,7 @@ ok
 -- forward recursive definitions.
 -- Another pass that converts non-recursive letrecs into lets would be ideal.
 module Map 
-export value exec       : Source# a0 -> Sink# c0 -> Process#;
+export value Main.exec : Source# a0 -> Sink# c0 -> Process#;
 import foreign abstract type
         a0 : Data;
 
@@ -20,8 +20,8 @@ import foreign abstract type
 import foreign abstract type
         c0 : Data;
 
-import value f0         : a0 -> b0;
-import value g0         : b0 -> c0;
+import value Base.f0    : a0 -> b0;
+import value Base.g0    : b0 -> c0;
 with
 let exec: Source# a0 -> Sink# c0 -> Process#
       = process_1_1# [a0] [c0]

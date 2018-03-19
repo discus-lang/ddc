@@ -3,7 +3,8 @@
 module Main
 
 -- Export the main entry point.
-export main  : [r1: Region]. Nat# -> Ptr# r1 Word8# -> Int#
+export foreign c value
+        main  : [r1: Region]. Nat# -> Ptr# r1 Word8# -> Int#
 
 import foreign abstract type
         RegionText      : Region

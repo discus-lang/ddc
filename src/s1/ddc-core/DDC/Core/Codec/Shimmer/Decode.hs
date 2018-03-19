@@ -40,6 +40,7 @@ fromRef c ss
     Just r  -> r
     Nothing -> error "fromRef failed"
 
+
 -- Module -----------------------------------------------------------------------------------------
 takeModuleDecls :: (Ord n, Show n) => Config n -> [SDecl] -> Maybe (C.Module () n)
 takeModuleDecls c decls
@@ -59,15 +60,15 @@ takeModuleDecls c decls
    in   Just $ C.ModuleCore
          { C.moduleName            = mn
          , C.moduleIsHeader        = False
-         , C.moduleExportTypes     = concatMap (takeDeclExTyp c)        $ colExTyp col
-         , C.moduleExportValues    = concatMap (takeDeclExVal c    mpT) $ colExVal col
-         , C.moduleImportTypes     = concatMap (takeDeclImTyp c)        $ colImTyp col
-         , C.moduleImportDataDefs  = concatMap (takeDeclDat   c    mpD) $ colImDat col
-         , C.moduleImportTypeDefs  = concatMap (takeDeclSyn   c    mpS) $ colImSyn col
-         , C.moduleImportCaps      = concatMap (takeDeclImCap c)        $ colImCap col
-         , C.moduleImportValues    = concatMap (takeDeclImVal c mn mpT) $ colImVal col
-         , C.moduleLocalDataDefs   = concatMap (takeDeclDat   c    mpD) $ colLcDat col
-         , C.moduleLocalTypeDefs   = concatMap (takeDeclSyn   c    mpS) $ colLcSyn col
+         , C.moduleExportTypes     = concatMap (takeDeclExTyp c)     $ colExTyp col
+         , C.moduleExportValues    = concatMap (takeDeclExVal c mpT) $ colExVal col
+         , C.moduleImportTypes     = concatMap (takeDeclImTyp c)     $ colImTyp col
+         , C.moduleImportDataDefs  = concatMap (takeDeclDat   c mpD) $ colImDat col
+         , C.moduleImportTypeDefs  = concatMap (takeDeclSyn   c mpS) $ colImSyn col
+         , C.moduleImportCaps      = concatMap (takeDeclImCap c)     $ colImCap col
+         , C.moduleImportValues    = concatMap (takeDeclImVal c mpT) $ colImVal col
+         , C.moduleLocalDataDefs   = concatMap (takeDeclDat   c mpD) $ colLcDat col
+         , C.moduleLocalTypeDefs   = concatMap (takeDeclSyn   c mpS) $ colLcSyn col
          , C.moduleBody            = C.xUnit () }
 
 
@@ -143,6 +144,17 @@ data Collect
         , colDsD   :: [SDecl], colDsS   :: [SDecl], colDsT   :: [SDecl], colDsX :: [SDecl] }
 
 
+-- ModuleName -------------------------------------------------------------------------------------
+fromModuleName :: SExp -> C.ModuleName
+fromModuleName ss
+ = case ss of
+        XAps "module-name" ssParts
+          |  Just txs     <- sequence $ map takeXTxt ssParts
+          -> C.ModuleName $ map T.unpack txs
+
+        _ -> failDecode "takeModuleName"
+
+
 -- DeclExTyp --------------------------------------------------------------------------------------
 takeDeclExTyp :: Ord n => Config n -> SDecl -> [(n, C.ExportType n (C.Type n))]
 takeDeclExTyp c dd
@@ -173,26 +185,32 @@ takeDeclExVal c mpT dd
         _ -> failDecode "takeDeclExVal"
 
  where
-        takeExVal (XAps "ex-val-loc" [ssName, XMac txMacTyp, XMac _txMacTrm])
+        takeExVal (XAps "ex-val-loc"
+                        [ ssModuleName, ssName
+                        , XMac txMacTyp, XMac _txMacTrm])
          = let nName = fromRef c ssName
            in case Map.lookup txMacTyp mpT of
                 Nothing     -> failDecode $ "takeDeclExVal missing declaration " ++ show txMacTyp
                 Just ssType
                  -> (nName, C.ExportValueLocal
-                        { C.exportValueLocalName  = nName
-                        , C.exportValueLocalType  = fromType c ssType
-                        , C.exportValueLocalArity = Nothing })
+                        { C.exportValueLocalModuleName = fromModuleName ssModuleName
+                        , C.exportValueLocalName       = nName
+                        , C.exportValueLocalType       = fromType c ssType
+                        , C.exportValueLocalArity      = Nothing })
 
-        takeExVal (XAps "ex-val-loc" [ ssName, XMac txMacTyp, XMac _txMacTrm
-                                     , XNat nT, XNat nX, XNat nB ])
+        takeExVal (XAps "ex-val-loc"
+                        [ ssModuleName, ssName
+                        , XMac txMacTyp, XMac _txMacTrm
+                        , XNat nT, XNat nX, XNat nB ])
          = let nName = fromRef c ssName
            in case Map.lookup txMacTyp mpT of
                 Nothing     -> failDecode $ "takeDeclExVal missing declaration " ++ show txMacTyp
                 Just ssType
                  -> (nName, C.ExportValueLocal
-                        { C.exportValueLocalName  = nName
-                        , C.exportValueLocalType  = fromType c ssType
-                        , C.exportValueLocalArity = Just (fromI nT, fromI nX, fromI nB) })
+                        { C.exportValueLocalModuleName = fromModuleName ssModuleName
+                        , C.exportValueLocalName       = nName
+                        , C.exportValueLocalType       = fromType c ssType
+                        , C.exportValueLocalArity      = Just (fromI nT, fromI nX, fromI nB) })
 
         takeExVal (XAps "ex-val-sea" [ssNameInternal, XTxt txNameExternal, ssType])
          = let nInternal = fromRef c ssNameInternal
@@ -330,20 +348,21 @@ takeDeclImCap c dd
 takeDeclImVal
         :: Ord n
         => Config n
-        -> C.ModuleName -> Map Text SExp
+        -> Map Text SExp
         -> SDecl -> [(n, C.ImportValue n (C.Type n))]
 
-takeDeclImVal c mn mpT dd
+takeDeclImVal c mpT dd
  = case dd of
         S.DeclSet "m-im-val" ssListImVal
           -> map takeImVal $ fromList ssListImVal
         _ -> failDecode "takeDeclVal failed"
 
- where  takeImVal (XAps "im-val-mod" [ssVar, XMac txMacType, XNat nT, XNat nX, XNat nB])
-         | Just ssType <- Map.lookup txMacType mpT
-         , Just n      <- configTakeRef c (ssVar :: SExp)
+ where  takeImVal (XAps "im-val-mod"
+                        [ssModuleName, ssVar, XMac txMacType, XNat nT, XNat nX, XNat nB])
+         | Just n      <- configTakeRef c (ssVar :: SExp)
+         , Just ssType <- Map.lookup txMacType mpT
          = (n, C.ImportValueModule
-                { C.importValueModuleName  = mn
+                { C.importValueModuleName  = fromModuleName ssModuleName
                 , C.importValueModuleVar   = n
                 , C.importValueModuleType  = fromType c ssType
                 , C.importValueModuleArity = Just (fromI nT, fromI nX, fromI nB) })

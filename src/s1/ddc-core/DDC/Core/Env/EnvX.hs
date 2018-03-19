@@ -56,22 +56,23 @@ import Control.Monad
 data EnvX n
         = EnvX
         { -- | Environment of type expressions.
-          envxEnvT         :: EnvT n
+          envxEnvT              :: EnvT n
 
           -- | Types of baked in, primitive names.
-        , envxPrimFun      :: !(n -> Maybe (Type n))
+        , envxPrimFun           :: !(n -> Maybe (Type n))
 
           -- | Data type definitions.
-        , envxDataDefs     :: !(DataDefs n)
+        , envxDataDefs          :: !(DataDefs n)
 
-          -- | Types of named variables and constructors.
-        , envxMap          :: !(Map n (Type n))
+          -- | Types of named variables and constructors defined
+          --   in the local module
+        , envxLocalMap          :: !(Map n (Type n))
 
           -- | Types of anonymous deBruijn variables.
-        , envxStack        :: ![Type n]
+        , envxLocalStack        :: ![Type n]
 
           -- | The length of the above stack.
-        , envxStackLength  :: !Int }
+        , envxStackLength       :: !Int }
 
 
 -- | An empty environment.
@@ -80,8 +81,8 @@ empty   = EnvX
         { envxEnvT         = EnvT.empty
         , envxPrimFun      = \_ -> Nothing
         , envxDataDefs     = DataDef.emptyDataDefs
-        , envxMap          = Map.empty
-        , envxStack        = []
+        , envxLocalMap     = Map.empty
+        , envxLocalStack   = []
         , envxStackLength  = 0 }
 
 
@@ -116,10 +117,15 @@ singleton b
 extendX :: Ord n => Bind n -> EnvX n -> EnvX n
 extendX bb env
  = case bb of
-         BName n k -> env { envxMap         = Map.insert n k (envxMap env) }
-         BAnon   k -> env { envxStack       = k : envxStack env
-                          , envxStackLength = envxStackLength env + 1 }
-         BNone{}   -> env
+         BName n k
+          -> env { envxLocalMap    = Map.insert n k (envxLocalMap env) }
+
+         BAnon   k
+          -> env { envxLocalStack  = k : envxLocalStack env
+                 , envxStackLength = envxStackLength env + 1 }
+
+         BNone{}
+          -> env
 
 
 -- | Extend an environment with a list of new bindings.
@@ -169,7 +175,7 @@ fromListNT nts
 -- | Convert a map of names to types to a environment.
 fromTypeMap :: Map n (Type n) -> EnvX n
 fromTypeMap m
-        = empty { envxMap = m }
+        = empty { envxLocalMap = m }
 
 
 -- | Extract a `KindEnv` from an EnvX.
@@ -182,7 +188,7 @@ kindEnvOfEnvX env
 typeEnvOfEnvX :: Ord n => EnvX n -> Env.TypeEnv n
 typeEnvOfEnvX env
         = Env.empty
-        { Env.envMap       = envxMap env
+        { Env.envMap       = envxLocalMap env
         , Env.envPrimFun   = \n -> envxPrimFun env n }
 
 
@@ -193,11 +199,11 @@ union :: Ord n => EnvX n -> EnvX n -> EnvX n
 union env1 env2
         = EnvX
         { envxEnvT         = envxEnvT          env1 `EnvT.union` envxEnvT        env2
-        , envxPrimFun      = \n -> envxPrimFun env2 n `mplus`   envxPrimFun env1 n
-        , envxDataDefs     = envxDataDefs      env1 `mappend`   envxDataDefs     env2
-        , envxMap          = envxMap           env1 `Map.union` envxMap          env2
-        , envxStack        = envxStack         env2  ++ envxStack                env1
-        , envxStackLength  = envxStackLength   env2  +  envxStackLength          env1 }
+        , envxPrimFun      = \n -> envxPrimFun env2 n `mplus`    envxPrimFun     env1 n
+        , envxDataDefs     = envxDataDefs      env1 `mappend`    envxDataDefs    env2
+        , envxLocalMap     = envxLocalMap      env1 `Map.union`  envxLocalMap    env2
+        , envxLocalStack   = envxLocalStack    env2  ++          envxLocalStack  env1
+        , envxStackLength  = envxStackLength   env2  +           envxStackLength env1 }
 
 
 -- | Combine multiple environments,
@@ -218,7 +224,7 @@ memberX uu env
 memberBindX :: Ord n => Bind n -> EnvX n -> Bool
 memberBindX uu env
  = case uu of
-        BName n _ -> Map.member n (envxMap env)
+        BName n _ -> Map.member n (envxLocalMap env)
         _         -> False
 
 
@@ -233,17 +239,20 @@ lookupX :: Ord n => Bound n -> EnvX n -> Maybe (Type n)
 lookupX uu env
  = case uu of
         UName n
-         ->      Map.lookup n (envxMap env)
+         ->      Map.lookup n (envxLocalMap env)
          `mplus` envxPrimFun env n
 
-        UIx i   -> P.lookup i (zip [0..] (envxStack env))
-        UPrim n -> envxPrimFun env n
+        UIx i
+         -> P.lookup i (zip [0..] (envxLocalStack env))
+
+        UPrim n
+         -> envxPrimFun env n
 
 
 -- | Lookup a bound name from an environment.
 lookupNameX :: Ord n => n -> EnvX n -> Maybe (Type n)
 lookupNameX n env
-          = Map.lookup n (envxMap env)
+          = Map.lookup n (envxLocalMap env)
 
 
 -- | Yield the total depth of the deBruijn stack.
@@ -262,10 +271,10 @@ depth env = envxStackLength env
 lift :: Ord n => Int -> EnvX n -> EnvX n
 lift n env
         = EnvX
-        { envxEnvT         = envxEnvT env
-        , envxPrimFun      = envxPrimFun      env
-        , envxDataDefs     = envxDataDefs     env
-        , envxMap          = Map.map (liftT n) (envxMap env)
-        , envxStack        = map (liftT n) (envxStack env)
-        , envxStackLength  = envxStackLength  env }
+        { envxEnvT              = envxEnvT env
+        , envxPrimFun           = envxPrimFun       env
+        , envxDataDefs          = envxDataDefs      env
+        , envxLocalMap          = Map.map (liftT n) (envxLocalMap env)
+        , envxLocalStack        = map (liftT n)     (envxLocalStack env)
+        , envxStackLength       = envxStackLength   env }
 

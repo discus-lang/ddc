@@ -40,7 +40,7 @@ letrec {
 
 -- Loop with a guard and a scalar result.
 module Main 
-import value maxx       : Int# -> Int# -> Int#;
+import value Base.maxx  : Int# -> Int# -> Int#;
 with
 letrec {
   filterMax: [p: Proc].[k: Rate].Series# p k Int# -> Tuple2# (Vector# Int#) Int#
