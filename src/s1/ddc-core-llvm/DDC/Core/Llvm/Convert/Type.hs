@@ -144,7 +144,7 @@ importedFunctionDeclOfType pp kenv isrc mesrc nSuper tt
         (tsArgs, tResult)       <- convertSuperType pp kenv tt
         let mkParam t           = Param t []
         return  $ FunctionDecl
-                { declName              = A.sanitizeName strName
+                { declName              = strName
                 , declLinkage           = External
                 , declCallConv          = CC_Ccc
                 , declReturnType        = tResult
@@ -158,7 +158,7 @@ importedFunctionDeclOfType pp kenv isrc mesrc nSuper tt
         (tsArgs, tResult)       <- convertSuperType pp kenv tt
         let mkParam t           = Param t []
         return  $ FunctionDecl
-                { declName              = A.sanitizeName $ T.unpack strName
+                { declName              = T.unpack strName
                 , declLinkage           = External
                 , declCallConv          = CC_Ccc
                 , declReturnType        = tResult
