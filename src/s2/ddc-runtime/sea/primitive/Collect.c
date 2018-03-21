@@ -4,14 +4,14 @@
 
 // ----------------------------------------------------------------------------
 // Code for debugging the LLVM GC shadow stack.
-// This is the reference code from the LLVM docs.
-
+// This is the reference code from the LLVM docs, with some names changed.
+//
 // @brief The map for a single function's stack frame.  One of these is
 //        compiled as constant data into the executable for each function.
 //
 // Storage of metadata values is elided if the %metadata parameter to
 // @llvm.gcroot is null.
-struct FrameMap {
+struct DDCPrimCollectFrameMap {
   uint32_t NumRoots;    //< Number of roots in stack frame.
   uint32_t NumMeta;     //< Number of metadata entries.  May be < NumRoots.
   const void *Meta[];   //< Metadata for each root.
@@ -20,10 +20,13 @@ struct FrameMap {
 
 // @brief A link in the dynamic shadow stack.  One of these is embedded in
 //        the stack frame of each function on the call stack.
-struct StackEntry {
-  struct StackEntry *Next;      //< Link to next stack entry (the caller's).
-  const struct FrameMap *Map;   //< Pointer to constant FrameMap.
-  void *Roots[];                //< Stack roots (in-place array).
+struct DDCPrimCollectStackEntry {
+  //< Link to next stack entry (the caller's).
+  struct DDCPrimCollectStackEntry *Next;
+  //< Pointer to constant FrameMap.
+  const struct DDCPrimCollectFrameMap *Map;
+  //< Stack roots (in-place array).
+  void *Roots[];
 };
 
 
@@ -31,7 +34,7 @@ struct StackEntry {
 //        and pop onto this in their prologue and epilogue.
 //
 // Since there is only a global list, this technique is not threadsafe.
-struct StackEntry *llvm_gc_root_chain;
+struct DDCPrimCollectStackEntry *llvm_gc_root_chain;
 
 
 // @brief Calls Visitor(root, meta) for each GC root on the stack.
@@ -42,8 +45,8 @@ struct StackEntry *llvm_gc_root_chain;
 // might copy them to another heap or generation.
 //
 // @param Visitor A function to invoke for every GC root on the stack.
-void ddcVisitGCRoots(void (*Visitor)(void **Root, const void *Meta)) {
-  for (struct StackEntry *R = llvm_gc_root_chain; R; R = R->Next) {
+void ddcPrimCollectGCRoots(void (*Visitor)(void **Root, const void *Meta)) {
+  for (struct DDCPrimCollectStackEntry *R = llvm_gc_root_chain; R; R = R->Next) {
     uint32_t i = 0;
 
     // For roots [0, NumMeta), the metadata pointer is in the FrameMap.
@@ -58,8 +61,8 @@ void ddcVisitGCRoots(void (*Visitor)(void **Root, const void *Meta)) {
 
 
 // Print out the structure of the LLVM shadow stack.
-void ddcTraceGCRoots (int _x) {
-  for (struct StackEntry *R = llvm_gc_root_chain; R; R = R->Next) {
+void ddcPrimCollectTraceGCRoots (int _x) {
+  for (struct DDCPrimCollectStackEntry *R = llvm_gc_root_chain; R; R = R->Next) {
     uint32_t i = 0;
 
     printf ("map %p\n", R->Map);
