@@ -51,15 +51,30 @@ cmdCompileRecursive
         :: Config               -- ^ Build driver config.
         -> Bool                 -- ^ Build an exectable.
         -> Store                -- ^ Interface store.
-        -> FilePath             -- ^ Path to file to compile
+        -> [FilePath]           -- ^ Paths of files to compile.
         -> ExceptT String IO ()
 
-cmdCompileRecursive config bBuildExe store filePath
- | takeExtension filePath == ".ds"
- = do   cmdCompileRecursiveDS config bBuildExe store [filePath] []
+cmdCompileRecursive config bBuildExe store fsPath
+ -- Recursively build a source program and link with some extra objects.
+ | all (\f -> elem (takeExtension f) [".ds", ".o"]) fsPath
+ = do
+        -- Check that all the files exists before we try to compile any.
+        -- We particuarly want to check the .o files are there before
+        -- we start compiling any .ds files.
+        forM_ fsPath $ \fPath
+         -> do  exists <- liftIO $ doesFileExist fPath
+                when (not exists)
+                 $ throwE $ "No such file " ++ show fPath
+
+        -- Split file list into souce files and extra objects.
+        let fsDS  = filter (\f -> takeExtension f == ".ds") fsPath
+        let fsO   = filter (\f -> takeExtension f == ".o")  fsPath
+
+        -- Start recursive build.
+        cmdCompileRecursiveDS config bBuildExe fsO store fsDS []
 
  | otherwise
- = do   cmdCompile            config bBuildExe store filePath
+ = do   mapM_ (cmdCompile config bBuildExe [] store) fsPath
 
 
 ---------------------------------------------------------------------------------------------------
@@ -73,15 +88,16 @@ cmdCompileRecursive config bBuildExe store filePath
 cmdCompileRecursiveDS
         :: Config               -- ^ Build driver config.
         -> Bool                 -- ^ Build an executable.
+        -> [FilePath]           -- ^ Extra object files to link with.
         -> Store                -- ^ Inferface store.
         -> [FilePath]           -- ^ Names of source files still to load.
         -> [FilePath]           -- ^ Names of source files currently blocked.
         -> ExceptT String IO ()
 
-cmdCompileRecursiveDS _config _bBuildExe _store []           _fsBlocked
+cmdCompileRecursiveDS _config _bBuildExe _fsO _store []         _fsBlocked
  = return ()
 
-cmdCompileRecursiveDS  config  bBuildExe  store (filePath:fs) fsBlocked
+cmdCompileRecursiveDS  config  bBuildExe fsO store (filePath:fs) fsBlocked
  = do
 --        liftIO $ putStrLn "\n\n* ENTER"
 --        liftIO  $ putStr $ unlines
@@ -118,10 +134,10 @@ cmdCompileRecursiveDS  config  bBuildExe  store (filePath:fs) fsBlocked
          -- current module.
          [] -> do
                 -- Compile the current module.
-                cmdLoadOrCompile config bBuildExe store filePath
+                cmdLoadOrCompile config bBuildExe fsO store filePath
 
                 -- Build other modules that are still queued.
-                cmdCompileRecursiveDS config bBuildExe store fs []
+                cmdCompileRecursiveDS config bBuildExe fsO store fs []
 
          -- We still need to load or compile dependent modules.
          ms -> do
@@ -138,7 +154,7 @@ cmdCompileRecursiveDS  config  bBuildExe  store (filePath:fs) fsBlocked
 
                 -- Shift the current module to the end of the queue,
                 -- compiling the dependent modules first.
-                cmdCompileRecursiveDS config bBuildExe store
+                cmdCompileRecursiveDS config bBuildExe fsO store
                         (List.nub $ fsMore ++ fs ++ [filePath])
                         (filePath : fsBlocked)
 
@@ -153,11 +169,12 @@ cmdCompileRecursiveDS  config  bBuildExe  store (filePath:fs) fsBlocked
 cmdLoadOrCompile
         :: Config               -- ^ Build driver config.
         -> Bool                 -- ^ Build an exeecutable.
+        -> [FilePath]           -- ^ Extra object files to link with.
         -> Store                -- ^ Interface store.
         -> FilePath             -- ^ Path to source file.
         -> ExceptT String IO ()
 
-cmdLoadOrCompile config buildExe store filePath
+cmdLoadOrCompile config buildExe fsO store filePath
  = do
         -- Check that the source file exists.
         exists  <- liftIO $ doesFileExist filePath
@@ -205,7 +222,7 @@ cmdLoadOrCompile config buildExe store filePath
             search []
              = do
 --                  liftIO  $ putStrLn "* Compiling"
-                  cmdCompile config buildExe store filePath
+                  cmdCompile config buildExe fsO store filePath
 
         -- Check the config for where the interface might be.
         -- It'll either be next to the source file or in the auxilliary
@@ -283,11 +300,12 @@ interfaceIsFresh store timeDS modNamesNeeded filePathO
 cmdCompile
         :: Config               -- ^ Build driver config.
         -> Bool                 -- ^ Build an executable.
+        -> [FilePath]           -- ^ Extra object files to link with.
         -> Store                -- ^ Interface store.
         -> FilePath             -- ^ Path to source file.
         -> ExceptT String IO ()
 
-cmdCompile config bBuildExe' store filePath
+cmdCompile config bBuildExe' fsExtraO store filePath
  = withExceptT (P.renderIndent . P.vcat . map P.ppr)
  $ do
         let bBuildExe
@@ -312,7 +330,8 @@ cmdCompile config bBuildExe' store filePath
         metas           <- liftIO $ Store.getMeta store
         let pathsDI     =  map Store.metaFilePath metas
         let otherObjs
-                | bBuildExe = Just $ map (\path -> replaceExtension path "o") pathsDI
+                | bBuildExe = Just $  map (\path -> replaceExtension path "o") pathsDI
+                                   ++ fsExtraO
                 | otherwise = Nothing
 
         -- Determine directory for build products.

@@ -116,14 +116,15 @@ run config
          -> do  forceBaseBuild config
                 dconfig <- getDriverConfig config (Just filePath)
                 store   <- Store.new
-                runError $ cmdCompileRecursive dconfig False store filePath
+                runError $ cmdCompileRecursive dconfig False store [filePath]
 
         -- Compile a module into an executable.
-        ModeMake filePath
+        ModeMake [] -> return ()
+        ModeMake fsPath@(filePath1 : _)
          -> do  forceBaseBuild config
-                dconfig <- getDriverConfig config (Just filePath)
+                dconfig <- getDriverConfig config (Just filePath1)
                 store   <- Store.new
-                runError $ cmdCompileRecursive dconfig True store filePath
+                runError $ cmdCompileRecursive dconfig True store fsPath
 
         -- Build libraries or executables following a .spec file.
         ModeBuild filePath

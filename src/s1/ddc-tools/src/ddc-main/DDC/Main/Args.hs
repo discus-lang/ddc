@@ -50,7 +50,7 @@ parseArgs args config
         | flag : file : rest    <- args
         , elem flag ["-make", "--make" ]
         = parseArgs rest
-        $ setMode config $ ModeMake file
+        $ setMode config $ ModeMake [file]
 
         | flag : file : rest    <- args
         , elem flag ["-build", "--build"]
@@ -217,9 +217,9 @@ parseArgs args config
         = error $ "Cannot parse arguments " ++ show args
 
         -- Otherwise, treat the argument as a source file to make.
-        | arg : rest            <- args
+        | filePath : rest       <- args
         = parseArgs rest
-        $ setMode config (ModeMake arg)
+        $ setMode config (ModeMake [filePath])
 
         | otherwise
         = error $ "Cannot parse arguments " ++ show args
@@ -229,11 +229,12 @@ parseArgs args config
 --
 --   We can't have two major modes like '-make' and '-compile' set at the same time.
 --   If this happens then `error`.
+--
 setMode :: Config -> Mode -> Config
 setMode config newMode
- | ModeMake{}    <- configMode config
- , ModeMake{}    <- newMode
- = error "Multi-module compilation is not supported yet."
+ | ModeMake fs1  <- configMode config
+ , ModeMake fs2  <- newMode
+ = config { configMode = ModeMake (fs1 ++ fs2) }
 
  | ModeCompile{} <- configMode config
  , ModeCompile{} <- newMode

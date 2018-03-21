@@ -53,7 +53,7 @@ cmdBaseBuild config store
         let config'      = config { configInferTypes = True }
         let srcSaltFiles = map (buildBaseSrcDir builder </>) (baseSaltFiles builder)
         let objSaltFiles = map (flip replaceExtension "o")   srcSaltFiles
-        mapM_ (cmdCompile config' False store) srcSaltFiles
+        mapM_ (cmdCompile config' False [] store) srcSaltFiles
 
         -- Build all the .c files.
         let srcSeaFiles  = map (buildBaseSrcDir builder </>) (baseSeaFiles builder)

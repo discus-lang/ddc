@@ -17,20 +17,20 @@ import qualified DDC.Core.Module        as C
 
 ---------------------------------------------------------------------------------------------------
 -- | Build all the components defined by a build spec.
-buildSpec  
+buildSpec
         :: Config               -- ^ Build config.
         -> Store                -- ^ Interface store.
         -> Spec                 -- ^ Build spec.
         -> ExceptT String IO ()
 
 buildSpec config store spec
- = do   mapM_   (buildComponent config store) 
+ = do   mapM_   (buildComponent config store)
                 (specComponents spec)
 
 
 ---------------------------------------------------------------------------------------------------
 -- | Build a single component of a build spec.
-buildComponent 
+buildComponent
         :: Config               -- ^ Build config.
         -> Store                -- ^ Interface store.
         -> Component            -- ^ Component to build.
@@ -47,7 +47,7 @@ buildComponent config store component@SpecLibrary{}
         return ()
 
 buildComponent config store component@SpecExecutable{}
- = do   
+ = do
         when (configLogBuild config)
          $ liftIO $ putStrLn $ "* Building executable " ++ specExecutableName component
 
@@ -60,7 +60,7 @@ buildComponent config store component@SpecExecutable{}
 
 ---------------------------------------------------------------------------------------------------
 -- | Build a library consisting of several modules.
-buildLibrary 
+buildLibrary
         :: Config               -- ^ Build config
         -> Store                -- ^ Interface store.
         -> [C.ModuleName]       -- ^ Names of modules still to build
@@ -88,11 +88,11 @@ buildExecutable
 
 buildExecutable config store mMain msOther0
  = go msOther0
- where  
-        go [] 
+ where
+        go []
          = do   let dirs = configModuleBaseDirectories config
                 path     <- locateModuleFromPaths dirs mMain "ds"
-                _        <- cmdCompile config True store path
+                _        <- cmdCompile config True [] store path
                 return ()
 
         go (m : more)
@@ -111,7 +111,7 @@ buildModule
 buildModule config store name
  = do   let dirs = configModuleBaseDirectories config
         path    <- locateModuleFromPaths dirs name "ds"
-        _       <- cmdCompile config False store path
+        _       <- cmdCompile config False [] store path
         return ()
 
 

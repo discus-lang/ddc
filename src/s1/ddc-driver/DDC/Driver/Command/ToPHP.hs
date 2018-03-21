@@ -37,7 +37,7 @@ cmdToPHPFromFile
         -> ExceptT String IO ()
 
 cmdToPHPFromFile config store filePath
- 
+
  -- Convert a Disciple Source Tetra module.
  | ".ds"          <- takeExtension filePath
  =      cmdToPHPSourceTetraFromFile config store filePath
@@ -70,7 +70,7 @@ cmdToPHPSourceTetraFromFile config store filePath
          $ throwE $ "No such file " ++ show filePath
 
         -- Call the compiler to build/load all dependent modules.
-        cmdCompileRecursive config False store filePath
+        cmdCompileRecursive config False store [filePath]
 
         -- Read in the source file.
         src     <- liftIO $ readFile filePath
@@ -91,8 +91,8 @@ cmdToPHPSourceTetraFromString
 
 cmdToPHPSourceTetraFromString config store source str
  = withExceptT (renderIndent . vcat . map ppr)
- $ do  
-        modSalt' 
+ $ do
+        modSalt'
          <- do  modTetra <- DE.sourceLoadText config store  source str
                 return modTetra
 
@@ -134,10 +134,10 @@ cmdToPHPCoreFromFile config language filePath
 
 -------------------------------------------------------------------------------
 -- | Parse, check, and convert a module to PHP.
---   The output is printed to @stdout@. 
+--   The output is printed to @stdout@.
 --   Any errors are thrown in the `ExceptT` monad.
 --
-cmdToPHPCoreFromString  
+cmdToPHPCoreFromString
         :: Config       -- ^ Compiler configuration.
         -> Language     -- ^ Language definition.
         -> Source       -- ^ Source of the code.
@@ -149,7 +149,7 @@ cmdToPHPCoreFromString config language source str
  , fragment             <- bundleFragment  bundle
  , profile              <- fragmentProfile fragment
  = withExceptT (renderIndent . vcat . map ppr)
- $ do   
+ $ do
         let fragName = profileName profile
         store   <- liftIO Store.new
 

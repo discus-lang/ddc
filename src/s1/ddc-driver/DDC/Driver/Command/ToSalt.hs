@@ -71,7 +71,7 @@ cmdToSaltSourceTetraFromFile config store filePath
          $ throwE $ "No such file " ++ show filePath
 
         -- Call the compiler to build/load all dependent modules.
-        cmdCompileRecursive config False store filePath
+        cmdCompileRecursive config False store [filePath]
 
         -- Read in the source file.
         src     <- liftIO $ readFile filePath
