@@ -6,17 +6,16 @@
 // -- Stdin -------------------------------------------------------------------
 // Read a string from stdin and pack it into a vector of characters.
 Obj* ddcPrimStdinGetVector (nat_t len)
-{
-        string_t* pBuf  = alloca (len);
+{       string_t* pBuf  = alloca (len);
         pBuf            = fgets (pBuf, len, stdin);
-        if (pBuf == NULL) {
-                printf("ddc-runtime.ddcPrimStdinGetVector: failed\n");
+        if (pBuf == NULL)
+        {       printf("ddc-runtime.ddcPrimStdinGetVector: failed\n");
                 abort();
         }
 
         nat_t n         = strlen(pBuf);
-        Obj* pObj       = ddcAllocRaw (0, 4 + n + 1);
-        uint8_t* p8     = _ddcPayloadRaw(pObj);
+        Obj* pObj       = ddcRawAlloc (0, 4 + n + 1);
+        uint8_t* p8     = _ddcRawPayload(pObj);
         uint32_t* pLen  = (uint32_t*)p8;
         string_t* pStr  = (string_t*)(p8 + 4);
 
@@ -41,7 +40,7 @@ void ddcPrimStdoutPutTextLit (string_t* str)
 
 // Print a text vector to stdout.
 void ddcPrimStdoutPutVector (Obj* obj)
-{       string_t* str = (string_t*) (_ddcPayloadRaw(obj) + 4);
+{       string_t* str = (string_t*) (_ddcRawPayload(obj) + 4);
         fputs(str, stdout);
         fflush(stdout);
 }

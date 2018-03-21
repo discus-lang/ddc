@@ -1,30 +1,54 @@
 
 -- | Primitives for constructing and destructing 64-bit heap objects.
 --
---   IMPORTANT: Only one of 'Object64' or 'Object32' is linked into the DDC
---   runtime system. It is also the /only/ module that knows about the layout
---   of heap objects. All access to heap objects must go through the interface
---   provided by this module.
+--   Object header
+--   ~~~~~~~~~~~~~
 --
---   All 64-bit heap objects start with a 32-bit word containing the constructor
---   tag of the object and a format field in the least-significant byte.
+--   The DDC runtime uses five sorts of objects.
+--     1) Thunk: Represents a partially applied super combinator.
+--     2) Boxed: An object with pointers to up to 2^8-1  other boxed objects.
+--     3) Array: An object with pointer  to up to 2^32-1 other boxed objects.
+--     4) Raw:   An object containing up to 2^32-1 raw non-pointer bytes.
+--     5) Small: An object containing up to 4 raw non-pointer bytes.
 --
---   OBJECT
---   ~~~~~~
---   byte    3    2    1     0          (in MSB order)
---          TAG2 TAG1 TAG0 FORMAT ...
+--   All objects start with
+--   a 64-bit object  header that includes a format descriptor byte and an
+--   index into the object info table. The header contains all information
+--   needed to compute the size of the object.
 --
---   FORMAT field
+--   TODO: Array object type isn't implemented yet.
+--         We want a 16 bit tag field for Boxed, and to use Array for boxed arrays.
+--
+--     1) Thunk    field:  | params   args  boxes  runs | info  format |
+--                  bits:  |     8      8       8     8 |   24       8 |
+--
+--     2) Boxed    field:  |                arity   tag | info  format |
+--                  bits:  |                   24     8 |   24       8 |
+--
+--     3) Array    field:  |                       size | info  format |
+--                  bits:  |                         32 |   24       8 |
+--
+--     4) Raw      field:  |                       size | info  format |
+--                  bits:  |                         32 |   24       8 |
+--
+--     5) Small    field:  |                       data | info  format |
+--                  bits:  |                         32 |   24       8 |
+--
+--   Format field
 --   ~~~~~~~~~~~~
+--
 --   bit     7  6  5  4  3  2  1  0
---           -- arg ---  -- obj ---
---           X  X  X  X  X  X  0  0  -- Forward / Broken-Heart
+--
+--           X  X  X  X  X  0  0  0  -- Forward
+--           0  0  0  1  X  X  0  1  -- Thunk
+--           0  0  1  0  X  X  0  1  -- Boxed
+--           0  0  1  1  X  X  0  1  -- Raw
+--           0  1  0  0  X  X  0  1  -- Array
+--           0  1  0  1  X  X  0  1  -- Indir
+--           -- size --  X  X  1  1  -- Small
+--
 --           X  X  X  X  a  X  X  X  -- Anchor flag
---           0  0  0  1  a  0  0  1  -- Thunk
---           0  0  1  0  a  0  0  1  -- DataBoxed
---           0  0  1  1  a  0  0  1  -- DataRaw
---           0  1  0  1  a  0  0  1  -- SuspIndir
---           -- size --  a  0  1  1  -- DataSmall
+--
 --
 --   Data GC Forwarding / Broken-Heart pointers.
 --     During garbage collection, after the GC copies an object to the
@@ -42,84 +66,55 @@
 --     the object. This is useful when the object has been allocated by malloc
 --     and exists outside the DDC runtime's garbage collected heap.
 --
---   Data Data{Boxed, Raw, Small}
---     There are four data object formats:
---      DataBoxed:    A boxed object containing pointers to more heap objects.
---      DataRaw:      Contains raw data and no pointers.
---      DataSmall:    Contains raw data where the size is small enough to
---                    encode directly in the format field.
---
 --     The -obj- (object mode) portion of the format field can be used to
 --     determine if the object is a forwarding pointer, has a fixed value for
---     its format field, or is a DataRS object.
---
---   FORMAT enum
---   ~~~~~~~~~~~
---   Code which needs to query the format of a heap object can use
---   `formatOfObject`, which transforms the format field described above in
---   to a more direct representation:
---
---      Unknown      = 0#
---      Forward      = 1#
---      Thunk        = 2#
---      DataBoxed    = 3#
---      DataRaw      = 4#
---      (unused)     = 5#
---      DataSmall    = 6#
---      SuspIndir    = 7#
---
---   Note: 64-bit floats.
---   ~~~~~~~~~~~~~~~~~~~~~~~~~~~
---   The various object formats always contain an even number of 32-bit words
---   in the header portion, before the payload. This ensures that the payloads
---   of all heap objects are 8-byte aligned. We do this to support architectures
---   that cannot load misaligned double precision floats (Float64). Architectures
---   that can load them typically suffer a penalty, so it is good to align heap
---   objects anyway.
+--     its format field, or is a Small object.
 --
 module Runtime.Object
 
 export foreign c value
- -- Get the tag of an object.
- ddcTagOfObject         : [r: Region]. Ptr# r Obj  -> Tag#
- ddcFormatOfObject      : [r: Region]. Ptr# r Obj  -> Nat#
- ddcFormatFieldOfObject : [r: Region]. Ptr# r Obj  -> Word8#
- ddcIsAnchored          : [r: Region]. Ptr# r Obj  -> Bool#
+ -- Object information.
+ ddcObjectHeader        : [r: Region].     Ptr# r Obj -> Word64#
+ ddcObjectFormat        : [r: Region].     Ptr# r Obj -> Nat#
+ ddcObjectSize          : [r: Region].     Ptr# r Obj -> Nat#
+ ddcObjectSizeMinimum   : [r: Region].     Ptr# r Obj -> Nat#
+ ddcObjectIsAnchored    : [r: Region].     Ptr# r Obj -> Bool#
 
- ddcSizeOfObject        : [r:     Region]. Ptr# r Obj  -> Nat#
- ddcHeaderSizeOfObject  : [r:     Region]. Ptr# r Obj  -> Nat#
- ddcReadBrokenHeart     : [r1 r2: Region]. Ptr# r1 Obj -> Ptr# r2 Obj
- ddcWriteBrokenHeart    : [r1 r2: Region]. Ptr# r1 Obj -> Ptr# r2 Obj -> Void#
+ ddcForwardRead         : [r1 r2: Region]. Ptr# r1 Obj -> Ptr# r2 Obj
+ ddcForwardWrite        : [r1 r2: Region]. Ptr# r1 Obj -> Ptr# r2 Obj -> Void#
 
  -- Thunk initialization.
- ddcAllocThunk       : [r1:    Region]. Addr# -> Nat# -> Nat# -> Nat# -> Nat# -> Ptr# r1 Obj
- ddcCopyThunk        : [r1 r2: Region]. Ptr# r1 Obj -> Ptr# r2 Obj -> Nat# -> Nat# -> Ptr# r2 Obj
- ddcExtendThunk      : [r1 r2: Region]. Ptr# r1 Obj -> Nat# -> Ptr# r2 Obj
+ ddcThunkAlloc          : [r1:    Region]. Addr# -> Nat# -> Nat# -> Nat# -> Nat# -> Ptr# r1 Obj
+ ddcThunkCopy           : [r1 r2: Region]. Ptr# r1 Obj -> Ptr# r2 Obj -> Nat# -> Nat# -> Ptr# r2 Obj
+ ddcThunkExtend         : [r1 r2: Region]. Ptr# r1 Obj -> Nat# -> Ptr# r2 Obj
 
- ddcFunThunk         : [r1:    Region]. Ptr# r1 Obj -> Addr#
- ddcParamsThunk      : [r1:    Region]. Ptr# r1 Obj -> Nat#
- ddcBoxesThunk       : [r1:    Region]. Ptr# r1 Obj -> Nat#
- ddcArgsThunk        : [r1:    Region]. Ptr# r1 Obj -> Nat#
- ddcRunsThunk        : [r1:    Region]. Ptr# r1 Obj -> Nat#
+ ddcThunkFun            : [r1:    Region]. Ptr# r1 Obj -> Addr#
+ ddcThunkParams         : [r1:    Region]. Ptr# r1 Obj -> Nat#
+ ddcThunkBoxes          : [r1:    Region]. Ptr# r1 Obj -> Nat#
+ ddcThunkArgs           : [r1:    Region]. Ptr# r1 Obj -> Nat#
+ ddcThunkRuns           : [r1:    Region]. Ptr# r1 Obj -> Nat#
 
- ddcSetThunk         : [r1 r2: Region]. Ptr# r1 Obj -> Nat# -> Nat# -> Ptr# r2 Obj -> Void#
- ddcGetThunk         : [r1 r2: Region]. Ptr# r1 Obj -> Nat# -> Ptr# r2 Obj
+ ddcThunkSetField       : [r1 r2: Region]. Ptr# r1 Obj -> Nat# -> Nat# -> Ptr# r2 Obj -> Void#
+ ddcThunkGetField       : [r1 r2: Region]. Ptr# r1 Obj -> Nat# -> Ptr# r2 Obj
 
  -- Objects with just pointers to boxed things.
- ddcAllocBoxed       : [r1:    Region]. Tag# -> Nat# -> Ptr# r1 Obj
- ddcArityOfBoxed     : [r:     Region]. Ptr# r Obj   -> Nat#
- ddcGetBoxed         : [r1 r2: Region]. Ptr# r1 Obj  -> Nat# -> Ptr# r2 Obj
- ddcSetBoxed         : [r1 r2: Region]. Ptr# r1 Obj  -> Nat# -> Ptr# r2 Obj -> Void#
+ ddcBoxedAlloc          : [r1:    Region]. Tag# -> Nat# -> Ptr# r1 Obj
+ ddcBoxedSize           : [r1:    Region]. Ptr# r1 Obj -> Nat#
+ ddcBoxedFields         : [r1:    Region]. Ptr# r1 Obj -> Nat#
+ ddcBoxedTag            : [r1:    Region]. Ptr# r1 Obj -> Tag#
+ ddcBoxedGetField       : [r1 r2: Region]. Ptr# r1 Obj -> Nat# -> Ptr# r2 Obj
+ ddcBoxedSetField       : [r1 r2: Region]. Ptr# r1 Obj -> Nat# -> Ptr# r2 Obj -> Void#
 
  -- Objects containing raw non-pointer data.
- ddcAllocRaw         : [r1:    Region]. Tag# -> Nat# -> Ptr# r1 Obj
- ddcPayloadRaw       : [r1:    Region]. Ptr# r1 Obj  -> Ptr# r1 Word8#
- ddcPayloadSizeRaw   : [r1:    Region]. Ptr# r1 Obj  -> Nat#
+ ddcRawAlloc            : [r1:    Region]. Tag# -> Nat# -> Ptr# r1 Obj
+ ddcRawPayload          : [r1:    Region]. Ptr# r1 Obj -> Ptr# r1 Word8#
+ ddcRawPayloadSize      : [r1:    Region]. Ptr# r1 Obj -> Nat#
 
  -- Objects with small, raw non-pointer data.
- ddcAllocSmall       : [r1:    Region]. Tag# -> Nat# -> Ptr# r1 Obj
- ddcPayloadSmall     : [r1:    Region]. Ptr# r1 Obj  -> Ptr# r1 Word8#
- ddcPayloadSizeSmall : [r1:    Region]. Ptr# r1 Obj  -> Nat#
+ ddcSmallAlloc          : [r1:    Region]. Tag# -> Nat# -> Ptr# r1 Obj
+ ddcSmallPayload        : [r1:    Region]. Ptr# r1 Obj -> Ptr# r1 Word8#
+ ddcSmallPayloadSize    : [r1:    Region]. Ptr# r1 Obj -> Nat#
+
 
 import foreign c value
  -- Invoke the garbage collector.
@@ -141,74 +136,63 @@ with letrec
 
 -- Object ---------------------------------------------------------------------
 -- | Get the header bits of an object.
-ddcHeaderOfObject [r : Region] (obj : Ptr# r Obj) : Word32#
- = do
-        ptr             = castPtr# obj
-        peek# ptr
+ddcObjectHeader [r: Region] (obj: Ptr# r Obj): Word64#
+ =      peek# (castPtr# obj)
 
 
--- | Get the constructor tag of an object.
-ddcTagOfObject [r: Region] (obj: Ptr# r Obj): Tag#
- = do
-        header          = ddcHeaderOfObject obj
-        tag32           = shr#  header 8w32#
-        promote# tag32
+-- | Get the format of an object as an enumeration value.
+--   TODO: redo the enum values to avoid the inner case-expression.
+--
+--      Unknown      = 0#
+--      Forward      = 1#
+--      Thunk        = 2#
+--      Boxed        = 3#
+--      Raw          = 4#
+--      Array        = 5#
+--      Small        = 6#
+--
+ddcObjectFormat [r : Region] (obj : Ptr# r Obj) : Nat#
+ = do   -- Get the format byte from the header.
+        fmt8    = truncate# [Word8#] (peek# [r] [Word64#] (castPtr# obj))
 
+        -- The low two bits tell us how to interpret the
+        -- rest of the header word.
+        case band# fmt8 0b11w8# of
 
---| Get the format field bits of an object.
-ddcFormatFieldOfObject [r : Region] (obj : Ptr# r Obj) : Word8#
- = do
-        header          = ddcHeaderOfObject obj
-        truncate# [Word8#] [Word32#] header
+          -- Small object with size encoded in header word,
+          -- this is the most common case so comes first.
+          0b11w8#             -> 6# -- Small
 
+          -- Object with format set by second nibble of header word.
+          0b01w8#
+           -> case band# fmt8 0b11110000w8# of
+                0b00010000w8# -> 2# -- Thunk
+                0b00100000w8# -> 3# -- Boxed
+                0b00110000w8# -> 4# -- Raw
+                0b01000000w8# -> 5# -- Array
+                _             -> 0# -- Unknown
 
--- | Get the arg portion of an object's format field.
-ddcArgOfObject [r : Region] (obj : Ptr# r Obj) : Nat#
- = do
-        formatField     = ddcFormatFieldOfObject obj
-        arg8            = shr# (band# formatField 0b11110000w8#) 4w8#
-        promote# arg8
+          -- Forwarding pointers point to 8-byte aligned objects,
+          -- so the lowest three bits are always zero.
+          0b000w8#            -> 1# -- Forward
 
-
---| Get the format of an object.
-ddcFormatOfObject [r : Region] (obj : Ptr# r Obj) : Nat#
- = do
-        formatField     = ddcFormatFieldOfObject obj
-
-        case band# formatField 0b11w8# of
-          0b00w8#       -> 1# -- Forward
-          0b01w8#       -> ddcFormatOfObject_arg formatField
-          0b11w8#       -> 6# -- DataRawSmall
-          _ -> do
-                  header = ddcHeaderOfObject obj
-                  ddcFailObj obj "ddcFormatOfObject"# "unrecognized object format"#
-                  0#
-
-
-ddcFormatOfObject_arg (formatField : Word8#) : Nat#
- = do
-        case band# formatField 0b11110000w8# of
-          0b00010000w8# -> 2# -- Thunk
-          0b00100000w8# -> 3# -- DataBoxed
-          0b00110000w8# -> 4# -- DataRaw
-          0b01010000w8# -> 7# -- SuspIndir
-          _             -> 0# -- Unknown
+          _                   -> 0# -- Unknown
 
 
 --| Get the size of an object.
-ddcSizeOfObject [r: Region] (obj: Ptr# r Obj): Nat#
- = let  n       = ddcFormatOfObject obj
-   in case n of
-        1# -> do ddcFailObj obj "ddcSizeOfObject"# "unexpected forward"#
+ddcObjectSize [r: Region] (obj: Ptr# r Obj): Nat#
+ = case ddcObjectFormat obj of
+        1# -> do ddcFailObject obj "ddcSizeOfObject"# "unexpected forward"#
                  0#
 
-        2# -> ddcSizeOfThunk  obj
-        3# -> ddcSizeOfBoxed  obj
-        4# -> ddcSizeOfRaw    obj
-        6# -> ddcSizeOfSmall  obj
+        2# -> ddcThunkSize  obj
+        3# -> ddcBoxedSize  obj
+        4# -> ddcRawSize    obj
+        6# -> ddcSmallSize  obj
 
-        _  -> do ddcFailObj obj "ddcSizeOfObject"# "unrecognized object"#
+        _  -> do ddcFailObject obj "ddcSizeOfObject"# "unrecognized object"#
                  0#
+
 
 -- | Get the header size of an object, in bytes.
 --   This is also the minimum size an object of that format could be.
@@ -219,18 +203,31 @@ ddcSizeOfObject [r: Region] (obj: Ptr# r Obj): Nat#
 --   this function can be used as the first step in validating a possibly
 --   corrupted object.
 --
-ddcHeaderSizeOfObject [r: Region] (obj: Ptr# r Obj): Nat#
- = case ddcFormatOfObject obj of
-        1# -> do ddcFailObj obj  "ddcHeaderSizeOfObject"# "unexpected forward"#
+ddcObjectSizeMinimum [r: Region] (obj: Ptr# r Obj): Nat#
+ = case ddcObjectFormat obj of
+        1# -> do ddcFailObject obj  "ddcHeaderSizeOfObject"# "unexpected forward"#
                  0#
 
-        2# -> 16#       -- Thunk
-        3# -> 8#        -- Boxed
-        4# -> 8#        -- Raw
-        6# -> 4#        -- Small
+        2# -> 16#   -- Thunk
+        3# -> 8#    -- Boxed
+        4# -> 8#    -- Raw
+        6# -> 4#    -- Small
 
-        _  -> do ddcFailObj obj "ddcHeaderSizeOfObject"# "unrecognized object"#
+        _  -> do ddcFailObject obj "ddcHeaderSizeOfObject"# "unrecognized object"#
                  0#
+
+
+-- | Check if an object is anchored. Anchored objects are allocated outside of
+--   the DDC heap and will be left alone by the garbage collector.
+--
+ddcObjectIsAnchored [r : Region] (obj : Ptr# r Obj) : Bool#
+ = do   -- Get the format byte from the header.
+        fmt8    = truncate# [Word8#] [Word64#] (peek# (castPtr# obj))
+
+        -- Bit 3 tells us if the object is anchored.
+        case band# fmt8 0b1000w8# of
+          0b1000w8# -> True#
+          _         -> False#
 
 
 -- Forwarding Pointers --------------------------------------------------------
@@ -238,59 +235,26 @@ ddcHeaderSizeOfObject [r: Region] (obj: Ptr# r Obj): Nat#
 --   its header is overwritten with a forwarding pointer (aka broken heart)
 --   to its new location.
 --
---   This forwarding pointer is written over the 32 bit header of the object in
---   the from space. As heap objects are always 4 byte aligned, the lowest
---   two bits of the pointer are zero, and we use this to distinguish forwarding
+--   This forwarding pointer is written over the 64-bit header of the object in
+--   the from space. As heap objects are always 8 byte aligned, the lowest three
+--   bits of the pointer are zero, and we use this to distinguish forwarding
 --   pointers from regular objects.
 --
---   The header is only 32 bits, but we need to store a 64 bit pointer.
---
---   We have to put the LOW half in the header, so that the lowest two bits are
---   still zero. The HIGH half goes after this. This happens automatically on
---   little-endian systems, but on big-endian systems we have to do it manually.
-
-
 -- | Reads a forwarding pointer from an overwritten heap object.
-ddcReadBrokenHeart
+ddcForwardRead
         [r1 r2 : Region]
         (obj   : Ptr# r1 Obj)
-               : Ptr# r2 Obj
- =      ddcReadBrokenHeart_le obj
-
-ddcReadBrokenHeart_le
-        [r1 r2 : Region]
-        (obj   : Ptr# r1 Obj)
-               : Ptr# r2 Obj
+        : Ptr# r2 Obj
  =      read# (takePtr# obj) 0#
 
 
 -- | Replaces a heap object with a forwarding pointer to its new location.
-ddcWriteBrokenHeart
+ddcForwardWrite
         [r1 r2  : Region]
         (obj    : Ptr# r1 Obj)
         (newObj : Ptr# r2 Obj)
-                : Void#
- =      ddcWriteBrokenHeart_le obj newObj
-
-ddcWriteBrokenHeart_le
-        [r1 r2  : Region]
-        (obj    : Ptr# r1 Obj)
-        (newObj : Ptr# r2 Obj)
-                : Void#
+        : Void#
  =      write# (takePtr# obj) 0# newObj
-
-
--- Anchored Objects -----------------------------------------------------------
--- | Check if an object is anchored. Anchored objects are allocated outside of
---   the DDC heap and will be left alone by the garbage collector.
---
-ddcIsAnchored [r : Region] (obj : Ptr# r Obj) : Bool#
- = do
-        formatField     = ddcFormatFieldOfObject obj
-
-        case band# formatField 0b1000w8# of
-          0b1000w8# -> True#
-          _         -> False#
 
 
 -- Thunk ----------------------------------------------------------------------
@@ -326,103 +290,82 @@ ddcIsAnchored [r : Region] (obj : Ptr# r Obj) : Bool#
 --    the expression 'box body' is equivalent to (\(_ : Void#). body),
 --    and running it eliminates the outer lambda.
 --
+--   Header Word
+--   ~~~~~~~~~~~
+--    field:  | params   args  boxes  runs | info  format |
+--     bits:  |      8      8      8     8 |   24       8 |
+--    offset: |     56     48     40    32 |    8       0 |
+--
+--   Format Byte
+---  ~~~~~~~~~~~
+--   0  0  0  1  X  X  0  1
+--
+--   Object Layout
+--   ~~~~~~~~~~~~~
 --   typedef struct
---   {   uint32_t  tagFormat;     // Constructor tag and format field.
---       uint8_t   params;        // Value parameters of super.
---       uint8_t   boxes;         // Number of runs required.
+--   {   uint8_t   params;        // Value parameters of super.
 --       uint8_t   args;          // Available arguments.
+--       uint8_t   boxes;         // Number of runs required.
 --       uint8_t   runs;          // Number of times we've been run so far.
+--       uint32_t  infoFormat;    // Info table index and format field.
 --       Fun*      fun;           // Function pointer.
 --       Obj*      payload[];     // Pointers to available arguments.
 --   } Thunk;
 --
-ddcAllocThunk
-        [r: Region] (fun: Addr#)
-        (params: Nat#) (boxes: Nat#)
-        (args:   Nat#) (runs:  Nat#)
+ddcThunkAlloc
+        [r: Region]
+        (aFun:   Addr#)
+        (params: Nat#) (boxes: Nat#) (args:   Nat#) (runs:  Nat#)
         : Ptr# r Obj
  = do
-        -- The payload needs to be big enough to store pointers to the
-        -- current available args.
-        bytesObj        = ddcSizeOfThunk_args args
+        -- Size of the object we need to allocate.
+        bytesObj
+         =  (add# (size# [Word64#])              -- Header word.
+            (add# (size# [Addr#])                -- Function pointer.
+                  (shl# args (size2# [Addr#])))) -- Argument pointers.
 
-        case check# bytesObj of
-         True#  -> ()
-         False# -> ddcAllocCollect bytesObj
+        -- Check there is enough heap space, or force a GC if there is not.
+        (case check# bytesObj of
+          True#  -> ()
+          False# -> ddcAllocCollect bytesObj)
 
-        ddcAllocThunk_ok fun params boxes args runs bytesObj
-
-
-ddcAllocThunk_ok [r: Region] (fun:  Addr#)
-        (params:   Nat#) (boxes: Nat#)
-        (args:     Nat#) (runs:  Nat#)
-        (bytesObj: Nat#)
-        : Ptr# r Obj
- = do
-        -- Alloc and zero whole object because the Salt code generator
-        -- does not guarantee that no more allocations will be performed
-        -- before the argument pointers have been written.
-        addr            = alloc# bytesObj
+        -- Alloc and zero the whole object.
+        --   The Salt code generator does not guarantee that no
+        --   allocations will be performed before the argument pointers
+        --   have been written, so the pointer fields in the half
+        --   constructed object need to be all zero.
+        addr    = alloc# bytesObj
         set# addr 0w8# bytesObj
 
-        -- The tag of thunks is set to all 1 bits to make them easy to identify.
-        tag32           = 0xffffff00w32#
-        format          = 0b00010001w32#
-        header          = bor# tag32 format
-        write# addr 0# header
+        -- Write the header word
+        write# addr 0#
+           (bor# (shl# (promote# [Word64#] params) 56w64#)
+           (bor# (shl# (promote# [Word64#] args)   48w64#)
+           (bor# (shl# (promote# [Word64#] boxes)  40w64#)
+           (bor# (shl# (promote# [Word64#] runs)   32w64#)
+                 0b00010001w64#))))
 
-        -- Truncate params to 8-bits and write to object.
-        params8         = truncate# [Word8#] [Nat#] params
-        write# addr 4# params8
+        -- Write the function pointer
+        write# addr 8# aFun
 
-        -- Truncate boxes  to 8-bits and write to object.
-        boxes8          = truncate# [Word8#] [Nat#] boxes
-        write# addr 5# boxes8
-
-        -- Truncate args count to 8-bits and write to object.
-        args8           = truncate# [Word8#] [Nat#] args
-        write# addr 6# args8
-
-        -- Truncate runs count to 8-bits and write to object.
-        runs8           = truncate# [Word8#] [Nat#] runs
-        write# addr 7# runs8
-
-        -- Write the function pointer.
-        write# addr 8# fun
-
-        sane    = mul#  (lt# params 16#)
-                        (lt# boxes  8#)
-
-        case sane of
-         False#
-          -> do ddcPrimFailString "! Dodgy Thunk Allocation\n"#
-                fail#
-
-         True#  -> makePtr# addr
+        -- Return pointer to the new object.
+        makePtr# addr
 
 
 -- | Determine the total size of a thunk.
-ddcSizeOfThunk [r : Region] (obj : Ptr# r Obj) : Nat#
- =      ddcSizeOfThunk_args (ddcArgsThunk obj)
+ddcThunkSize [r: Region] (obj: Ptr# r Obj): Nat#
+ =      ddcThunkSizeFromArgs (ddcThunkArgs obj)
 
 
 -- | Determine the total size of a thunk, given the number of arguments it has.
-ddcSizeOfThunk_args (args : Nat#) : Nat#
- = do
-        -- The payload needs to be big enough to store pointers to the
-        -- current available args.
-        bytesPayload    = shl# args (size2# [Addr#])
-
-        bytesObj        = add# (size# [Word32#])        -- tagFormat word.
-                         (add# (size# [Word32#])        -- params/boxes/args/runs.
-                         (add# (size# [Word64#])        -- function pointer.
-                                bytesPayload))          -- function args.
-
-        bytesObj
+ddcThunkSizeFromArgs (args: Nat#): Nat#
+ =      (add# (size# [Word64#])              -- Header word.
+        (add# (size# [Addr#])                -- Function pointers.
+              (shl# args (size2# [Addr#])))) -- Argument pointers.
 
 
 -- | Copy the available arguments from one thunk to another.
-ddcCopyThunk
+ddcThunkCopy
         [rSrc rDst: Region]
         (src: Ptr# rSrc Obj) (dst: Ptr# rDst Obj)
         (index: Nat#)        (len: Nat#)
@@ -430,14 +373,14 @@ ddcCopyThunk
  = case ge# index len of
         True#   -> dst
         False#
-         -> do  ptr     = ddcGetThunk [rSrc] [rSrc] src index
-                ddcSetThunk dst 0#  index ptr
-                ddcCopyThunk src dst (add# index 1#) len
+         -> do  ptr = ddcThunkGetField [rSrc] [rSrc] src index
+                ddcThunkSetField dst 0#  index ptr
+                ddcThunkCopy src dst (add# index 1#) len
 
 
 -- | Copy a thunk while extending the number of available argument slots.
 --   This is used when implementing both the curryN# and applyN# core primops.
-ddcExtendThunk
+ddcThunkExtend
         [rSrc rDst: Region]
         (pSrc: Ptr# rSrc Obj) (more: Nat#)
         : Ptr# rDst Obj
@@ -445,53 +388,58 @@ ddcExtendThunk
         sSrc    = allocSlot# [rSrc]
 
         -- Function pointer and arity of that function.
-        fun     = ddcFunThunk    pSrc
-        params  = ddcParamsThunk pSrc
-        boxes   = ddcBoxesThunk  pSrc
+        -- TODO: flatten this code out so we only read the header word once.
+        fun     = ddcThunkFun    pSrc
+        params  = ddcThunkParams pSrc
+        boxes   = ddcThunkBoxes  pSrc
 
         -- Available arguments in source and destination.
-        args    = ddcArgsThunk   pSrc
+        args    = ddcThunkArgs   pSrc
         args'   = add# args      more
 
         -- Number of times the thunk has been run
-        runs    = ddcRunsThunk   pSrc
+        runs    = ddcThunkRuns   pSrc
 
         -- Function pointer.
-        aFun    = ddcFunThunk pSrc
+        aFun    = ddcThunkFun pSrc
 
         -- Allocate a new thunk with the orignal function and arity,
         --  holding the source pointer in a slot over the allocation.
         poke# sSrc pSrc
-        pDst    = ddcAllocThunk [rDst] aFun params boxes args' runs
+        pDst    = ddcThunkAlloc [rDst] aFun params boxes args' runs
         pSrc'   = peek# sSrc
 
         -- Copy argument pointers from the source into the new thunk.
-        ddcCopyThunk pSrc' pDst 0# args
-
-
--- | Get the function pointer from a thunk.
-ddcFunThunk        [r: Region] (obj: Ptr# r Obj): Addr#
- =      read#    [Addr#] (takePtr# obj) 8#
+        ddcThunkCopy pSrc' pDst 0# args
 
 
 -- | Get the arity of the function in a thunk.
-ddcParamsThunk     [r: Region] (obj: Ptr# r Obj): Nat#
- =      promote# (read# [Word8#] (takePtr# obj) 4#)
+ddcThunkParams  [r: Region] (obj: Ptr# r Obj): Nat#
+ = do   header64    = read# [Word64#] (takePtr# obj) 0#
+        promote# (band# (shr# header64 56w64#) 0xffw64#)
 
 
 -- | Get the count of available arguments in a thunk.
-ddcBoxesThunk      [r: Region] (obj: Ptr# r Obj): Nat#
- =      promote# (read# [Word8#] (takePtr# obj) 5#)
+ddcThunkArgs    [r: Region] (obj: Ptr# r Obj): Nat#
+ = do   header64    = read# [Word64#] (takePtr# obj) 0#
+        promote# (band# (shr# header64 48w64#) 0xffw64#)
 
 
 -- | Get the count of available arguments in a thunk.
-ddcArgsThunk       [r: Region] (obj: Ptr# r Obj): Nat#
- =      promote# (read# [Word8#] (takePtr# obj) 6#)
+ddcThunkBoxes   [r: Region] (obj: Ptr# r Obj): Nat#
+ = do   header64    = read# [Word64#] (takePtr# obj) 0#
+        promote# (band# (shr# header64 40w64#) 0xffw64#)
 
 
 -- | Get the count of available arguments in a thunk.
-ddcRunsThunk       [r: Region] (obj: Ptr# r Obj): Nat#
- =      promote# (read# [Word8#] (takePtr# obj) 7#)
+ddcThunkRuns    [r: Region] (obj: Ptr# r Obj): Nat#
+ = do   header64    = read# [Word64#] (takePtr# obj) 0#
+        promote# (band# (shr# header64 32w64#) 0xffw64#)
+
+
+-- | Get the function pointer from a thunk.
+ddcThunkFun     [r: Region] (obj: Ptr# r Obj): Addr#
+ =      read# [Addr#] (takePtr# obj) 8#
 
 
 -- | Set one of the pointers in a thunk.
@@ -500,7 +448,7 @@ ddcRunsThunk       [r: Region] (obj: Ptr# r Obj): Nat#
 --   pointers for the first time the pointer values in the thunk are undefined.
 --   This takes a 'base' and 'offset' parameter separately to allow for easier
 --   code generation.
-ddcSetThunk
+ddcThunkSetField
         [r1 r2: Region]
         (obj: Ptr# r1 Obj) (base: Nat#) (offset: Nat#) (val: Ptr# r2 Obj): Void#
  =      write# (takePtr# obj)
@@ -509,7 +457,7 @@ ddcSetThunk
 
 
 -- | Get one of the arguments from a thunk.
-ddcGetThunk
+ddcThunkGetField
         [r1 r2: Region]
         (obj:   Ptr# r1 Obj) (index: Nat#): Ptr# r2 Obj
  =      read#  (takePtr# obj)
@@ -520,71 +468,83 @@ ddcGetThunk
 -- | Allocate a Boxed Data Object.
 --   The payload contains pointers to other heap objects.
 --
---   The arity must be no greater than 2^32, else undefined.
---   This object type is typically used for algebraic data, which won't have
---   more than 2^32 fields.
+--   Header Word
+--   ~~~~~~~~~~~
+--    field:  |  arity   tag | info  format |
+--     bits:  |     24     8 |   24       8 |
+--   offset:  |     40    32 |    8       0 |
 --
+--   Format Byte
+--   ~~~~~~~~~~~
+--   0  0  1  0  X  X  0  1
+--
+--   Object Layout
+--   ~~~~~~~~~~~~~
 --   typedef struct
---   {    uint32_t  tagFormat;    // Constructor tag and format field.
---        uint32_t  arity;        // Arity of the data constructor.
---                                //  (The number of pointers in the payload)
---        ObjData   payload[];
---   } DataBoxed;
+--   {    uint16_t  arity;        // Number of fields in the payload.
+--        uint16_t  tag;          // Constructor tag and format field.
+--        uint32_t  infoFormat;   // Info table index and format field.
+--        Obj*      payload[];
+--   } Boxed;
 --
-ddcAllocBoxed
+ddcBoxedAlloc
         [r: Region]
         (tag: Tag#) (arity: Nat#): Ptr# r Obj
  = do
-        -- Multiple arity by 8 bytes-per-pointer to get size of payload.
-        bytesObj        = ddcSizeOfBoxed_arity arity
+        -- Size of the object we need to allocate.
+        bytesObj
+         =  (add# (size# [Word64#])                 -- Header word.
+                  (shl# arity (size2# [Addr#])))    -- Field pointers.
 
-        case check# bytesObj of
-         True#  -> ()
-         False# -> ddcAllocCollect bytesObj
+         -- Check there is enough heap space, or force a GC if there is not.
+        (case check# bytesObj of
+          True#  -> ()
+          False# -> ddcAllocCollect bytesObj)
 
-        ddcAllocBoxed_ok tag arity bytesObj
-
-ddcAllocBoxed_ok
-        [r: Region]
-        (tag: Tag#) (arity: Nat#) (bytesObj: Nat#): Ptr# r Obj
- = do
-        -- Alloc and zero whole object because the Salt code generator
-        -- does not guarantee that no more allocations will be performed
-        -- before the argument pointers have been written.
-        addr            = alloc# bytesObj
+        -- Alloc and zero the whole object.
+        --   The Salt code generator does not guarantee that no
+        --   allocations will be performed before the argument pointers
+        --   have been written, so the pointer fields in the half
+        --   constructed object need to be all zero.
+        addr    = alloc# bytesObj
         set# addr 0w8# bytesObj
 
-        tag32           = promote# [Word32#] [Tag#] tag
-        format          = 0b00100001w32#
-        header          = bor# (shl# tag32 8w32#) format
-        write# addr 0# header
+        -- Write the header word.
+        write# addr 0#
+            (bor# (shl# (promote# [Word64#] arity) 40w64#)
+            (bor# (shl# (promote# [Word64#] tag)   32w64#)
+                  0b00100001w64#))
 
-        -- Truncate arity to 32-bits.
-        arity32         = truncate# [Word32#] [Nat#] arity
-        write# addr 4# arity32
-
+        -- Return pointer to the new object.
         makePtr# addr
 
 
 -- | Determine the total size of a boxed data object.
-ddcSizeOfBoxed [r : Region] (obj : Ptr# r Obj) : Nat#
- =      ddcSizeOfBoxed_arity (ddcArityOfBoxed obj)
+ddcBoxedSize [r: Region] (obj: Ptr# r Obj): Nat#
+ =      ddcBoxedSizeFromArity (ddcBoxedFields obj)
 
 
 -- | Determine the total size of a boxed data object, given the number of
 --   pointers in its payload.
-ddcSizeOfBoxed_arity (arity : Nat#) : Nat#
- = do
-        -- Multiple arity by 8 bytes-per-pointer to get size of payload.
-        bytesPayload    = shl# arity (size2# [Addr#])
-        bytesObj        = add# (size# [Word32#])
-                         (add# (size# [Word32#]) bytesPayload)
+ddcBoxedSizeFromArity (arity: Nat#): Nat#
+ =      (add# (size# [Word64#])                 -- Header word.
+              (shl# arity (size2# [Addr#])))    -- Field pointers.
 
-        bytesObj
+
+-- | Get the constructor tag of an object.
+ddcBoxedFields [r: Region] (obj: Ptr# r Obj): Nat#
+ = do   header64    = read# [Word64#] (takePtr# obj) 0#
+        promote# (band# (shr# header64 40w64#) 0xffffffw64#)
+
+
+-- | Get the constructor tag of an object.
+ddcBoxedTag [r: Region] (obj: Ptr# r Obj): Tag#
+ = do   header64    = read# [Word64#] (takePtr# obj) 0#
+        truncate# (band# (shr# header64 32w64#) 0xffw64#)
 
 
 -- | Get one of the pointers from a boxed data object.
-ddcGetBoxed
+ddcBoxedGetField
         [r1 r2: Region]
         (obj: Ptr# r1 Obj) (index: Nat#)
         : Ptr# r2 Obj
@@ -593,7 +553,7 @@ ddcGetBoxed
 
 
 -- | Set one of the pointers from a boxed data object.
-ddcSetBoxed
+ddcBoxedSetField
         [r1 r2: Region]
         (obj: Ptr# r1 Obj) (index: Nat#) (val: Ptr# r2 Obj): Void#
  =      write# (takePtr# obj)
@@ -601,168 +561,167 @@ ddcSetBoxed
                val
 
 
--- | Get the number of pointers in a boxed data object's payload.
-ddcArityOfBoxed [r : Region] (obj : Ptr# r Obj) : Nat#
- =      promote# (read# [Word32#] (takePtr# obj) 4#)
-
-
 -- Raw ------------------------------------------------------------------------
--- | A Raw Data Object.
---   A raw data object does not contain heap pointers that need to be traced
+-- | A Raw Object.
+--   A raw object does not contain heap pointers that need to be traced
 --   by the garbage collector.
 --
---   The payload size must be no greater than (2^32 - 8), else undefined.
+--   Header Word
+--   ~~~~~~~~~~~
+--     field:  |   size | info  format |
+--      bits:  |     32 |   24       8 |
+--    offset:  |     32 |    8       0 |
 --
+--   Format Byte
+--   ~~~~~~~~~~~
+--   0  0  1  1  X  X  0  1
+--
+--   Object Layout
+--   ~~~~~~~~~~~~~
 --   typedef struct
---   { uint32_t  tagFormat;  // Constructor tag and format field.
---     uint32_t  size;       // Size of the whole object, in bytes.
---     uint8_t   payload[];  // Raw data that does not contain heap pointers.
---   } DataRaw;
+--   { uint32_t  size;        // Size of the whole object, in bytes.
+--     uint32_t  infoFormat;  // Info table index and format byte.
+--     uint8_t   payload[];   // Raw data that does not contain heap pointers.
+--   } Raw;
 --
-ddcAllocRaw
-        [r: Region] (tag: Tag#) (bytesPayload: Nat#): Ptr# r Obj
+--   TODO: store size in words rather than bytes to avoid the size check.
+--
+ddcRawAlloc
+        [r: Region]
+        (tag: Tag#) (bytesPayload: Nat#): Ptr# r Obj
  = do
         -- The requested object size, using the payload length
         -- provided by the caller.
         bytesReq
-         = add# (size# [Word32#])
-          (add# (size# [Word32#]) bytesPayload)
+         = add# (size# [Word64#]) bytesPayload
 
         -- How many extra bytes we need to add on the end to ensure
-        -- that the resulting object is 4-byte aligned.
+        -- that the resulting object is 8-byte aligned.
         bytesTail
-         = promote# [Nat#] (band# (truncate# bytesReq) 0b11w32#)
+         = promote# [Nat#] (band# (truncate# bytesReq) 0b111w64#)
 
         -- The actual number of bytes we will allocate to store
-        -- the object in the heap, guaranteed to be 4-byte aligned.
+        -- the object in the heap, guaranteed to be 8-byte aligned.
         bytesObj
          = case eq# bytesTail 0# of
                 True#   -> bytesReq
-                False#  -> add# bytesReq (sub# 4# bytesTail)
+                False#  -> add# bytesReq (sub# 8# bytesTail)
 
-        -- Check that there's enough space on the heap,
-        -- and perform a collection if needed.
-        case check# bytesObj of
-         True#  -> ()
-         False# -> ddcAllocCollect bytesObj
+        -- Check there is enough heap space, or force a GC if there is not.
+        (case check# bytesObj of
+          True#  -> ()
+          False# -> ddcAllocCollect bytesObj)
 
-        -- We're good to allocate the object.
-        ddcAllocRaw_ok tag bytesObj
-
-ddcAllocRaw_ok
-        [r: Region] (tag: Tag#) (bytesObj: Nat#): Ptr# r Obj
- = do
         -- Allocate the object and zero the payload.
+        --   This allocation function is used to allocate unboxed
+        --   arrays, and the caller doesn't zero the payload itself.
         addr    = alloc# bytesObj
         set# addr 0w8# bytesObj
 
         -- Write the header word.
-        tag32   = promote# tag
-        format  = 0b00110001w32#
-        header  = bor# (shl# tag32 8w32#) format
-        write# addr 0# header
+        write# addr 0#
+            (bor# (shl# (promote# [Word64#] bytesObj) 32w64#)
+                  0b00100001w64#)
 
-        -- Write the size field, which is the size of allocated
-        -- space, not the actual size that was requested by the
-        -- caller, which may be smaller.
-        bytesObj32 = truncate# [Word32#] [Nat#] bytesObj
-        write# addr 4# bytesObj32
-
+        -- Return pointer to the new oject.
         makePtr# addr
 
 
 -- | Determine the total size of a raw data object.
-ddcSizeOfRaw [r : Region] (obj : Ptr# r Obj) : Nat#
- =      promote# (read# [Word32#] (takePtr# obj) 4#)
+ddcRawSize [r: Region] (obj: Ptr# r Obj): Nat#
+ = do   header64    = read# [Word64#] (takePtr# obj) 0#
+        promote# (band# (shr# header64 32w64#) 0xffffffffw64#)
 
 
 -- | Get the payload data from a raw object.
-ddcPayloadRaw [r: Region] (obj: Ptr# r Obj): Ptr# r Word8#
+ddcRawPayload [r: Region] (obj: Ptr# r Obj): Ptr# r Word8#
  =      plusPtr# (castPtr# obj) 8#
 
 
 -- | Get the size of the payload of a raw object, in bytes.
-ddcPayloadSizeRaw [r: Region] (obj: Ptr# r Obj): Nat#
- =      sub#    (promote# (read# [Word32#] (takePtr# obj) 4#))
-                8#
+ddcRawPayloadSize [r: Region] (obj: Ptr# r Obj): Nat#
+ = do   header64    = read# [Word64#] (takePtr# obj) 0#
+        sizeObj     = promote# (band# (shr# header64 32w64#) 0xffffffffw64#)
+        sub# sizeObj (size2# [Word64#])
 
 
 -- Small ----------------------------------------------------------------------
--- | A Small object, which an only hold raw, non-pointer data.
---   The object size is encoded as part of format field
---   This saves us from needing to include a separate arity field.
---
+-- | A Small object which holds raw, non-pointer data.
+--   The object size is encoded as part of format field,
+--   which saves us from needing to include a separate size field.
 --   The payload size must be no greater than 16 words, else undefined.
 --
+--   Header Word
+--   ~~~~~~~~~~~
+--    field:  | data | info  format |
+--     bits:  |   32 |   24       8 |
+--   offset:  |   32 |    8       0 |
+--
+--   Format Byte
+--   ~~~~~~~~~~~
+--   -- size --  X  X  1  1  -- Small
+--
+--   Object Layout
+--   ~~~~~~~~~~~~~
 --   typedef struct
---   { uint32_t  tagFormat;  // Constructor tag and format field.
---     uint8_t   payload[];  // Raw data that does not contain heap pointers.
+--   { uint32_t  payload0;      // Bonus raw data that fits in the header word.
+--     uint32_t  infoFormat;    // Info table and format field.
+--     uint8_t   payload[];     // Raw data that does not contain heap pointers.
 --   } DataRawSmall;
 --
-ddcAllocSmall
+ddcSmallAlloc              *** TODO: check all consumers are calling this with words, not bytes.
         [r: Region]
-        (tag: Tag#) (bytesPayload: Nat#): Ptr# r Obj
+        (tag: Tag#) (wordsPayload: Nat#): Ptr# r Obj
  = do
-        bytesObj        = add# 4# bytesPayload
+        -- Size of the object we need to allocate.
+        bytesObj
+         =  add# (size# [Word64#])                        -- Header word.
+                 (shl# wordsPayload (size2# [Word64#]))   -- Payload words.
 
-        -- On a 64-bit machine the total object must be at least 8 bytes
-        -- so we can overwrite it with a broken heart pointer during GC.
-        -- The objects must also be 4-byte aligned as we want lowest two
-        -- bits of object pointers to always be zero.
-        -- Although the rest of the compiler and base library could ensure
-        -- these invariants, we check them anyway during development as they
-        -- would be a headache to debug if wrong.
-        case ge# bytesObj 8# of
-         False# -> fail#
-         True#  ->
-          case eq# (band# bytesObj 3#) 0# of
-           False# -> fail#
-           True#  ->
-            do  case check# bytesObj of
-                 True#   -> ()
-                 False#  -> ddcAllocCollect bytesObj
+        -- Check there is enough heap space, or force a GC if there is not.
+        (case check# bytesObj of
+            True#   -> ()
+            False#  -> ddcAllocCollect bytesObj)
 
-                ddcAllocSmall_ok tag bytesPayload bytesObj
+        -- Allocate the object.
+        --   We don't bother setting it to zero because small objects
+        --   are only used for literals, and all the callers write
+        --   the payload immediately.
+        addr = alloc# bytesObj
 
+        -- Write the header word.
+        write# addr 0#
+            (bor#  (shl# (promote# [Word64#] wordsPayload) 4w64#)
+                    0b0011w64#)
 
-ddcAllocSmall_ok
-        [r: Region]
-        (tag: Tag#) (bytesPayload: Nat#) (bytesObj: Nat#): Ptr# r Obj
- = do
-        addr            = alloc# bytesObj
-
-        tag32           = promote#  tag
-        bytesPayload32  = truncate# bytesPayload
-        wordsPayload32  = shr#  bytesPayload32 2w32#
-        format          = 0b0011w32#
-        header          =  bor# (shl# tag32          8w32#)
-                          (bor# (shl# wordsPayload32 4w32#) format)
-        write# addr 0# header
-
+        -- Return pointer to the new object.
         makePtr# addr
 
 
-ddcSizeOfSmall [r: Region] (obj: Ptr# r Obj): Nat#
- = do   add# 4# (ddcPayloadSizeSmall obj)
-
+ddcSmallSize [r: Region] (obj: Ptr# r Obj): Nat#
+ = do   header64        = read# [Word64#] (takePtr# obj) 0#
+        wordsPayload    = band# (shr# header64 4w64#) 0xfw64#
+        bytesPayload    = shl#  (promote# [Nat#] wordsPayload) (size2# [Word64#])
+        bytesHeader     = size# [Word64#]
+        add# bytesHeader bytesPayload
 
 -- | Get a pointer to the payload data from a raw small object.
-ddcPayloadSmall [r: Region] (obj: Ptr# r Obj): Ptr# r Word8#
- =      plusPtr# (castPtr# obj) 4#
+ddcSmallPayload [r: Region] (obj: Ptr# r Obj): Ptr# r Word8#
+ =      plusPtr# (castPtr# obj) 8#
 
 
--- | Determine the size of a raw small object.
-ddcPayloadSizeSmall [r: Region] (obj: Ptr# r Obj): Nat#
- = do
-        wordsPayload    = ddcArgOfObject obj
-        bytesPayload    = shl# wordsPayload 2#
-        bytesPayload
+-- | Determine the size of a raw small payload, in bytes.
+ddcSmallPayloadSize [r: Region] (obj: Ptr# r Obj): Nat#
+ = do   header64        = read# [Word64#] (takePtr# obj) 0#
+        wordsPayload    = band# (shr# header64 4w64#) 0xfw64#
+        shl# (promote# [Nat#] wordsPayload) (size2# [Word64#])
 
 
 -- Failure --------------------------------------------------------------------
 -- | Report a bogus object and abort the program.
-ddcFailObj [r: Region]
-           (obj: Ptr# r Obj) (fn: TextLit#) (msg: TextLit#): Unit
+ddcFailObject
+        [r: Region]
+        (obj: Ptr# r Obj) (fn: TextLit#) (msg: TextLit#): Unit
  = do
         ddcPrimFailString "ddc-runtime."#
         ddcPrimFailString fn

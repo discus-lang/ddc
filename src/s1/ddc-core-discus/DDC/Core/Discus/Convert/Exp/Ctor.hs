@@ -61,7 +61,6 @@ convertCtorApp ctx (AnTEC tResult _ _ a) dc asArgsAll
                         $  xsArgsValues
 
         -- Determine the Salt type for each of the arguments.
-
         tsArgsValues'   <- mapM (convertDataT tctx)
                         $  map  (annotType . annotOfExp) xsArgsValues
 

@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include "Runtime.h"
 
+
 // ----------------------------------------------------------------------------
 // Code for debugging the LLVM GC shadow stack.
 // This is the reference code from the LLVM docs.
@@ -27,7 +28,7 @@ struct StackEntry {
 };
 
 
-// @brief The head of the singly-linked list of StackEntries.  Functions push
+// @brief The head of the singly-linked list of StackEntries. Functions push
 //        and pop onto this in their prologue and epilogue.
 //
 // Since there is only a global list, this technique is not threadsafe.
@@ -42,50 +43,48 @@ struct StackEntry *llvm_gc_root_chain;
 // might copy them to another heap or generation.
 //
 // @param Visitor A function to invoke for every GC root on the stack.
-void ddcVisitGCRoots(void (*Visitor)(void **Root, const void *Meta)) {
-  for (struct StackEntry *R = llvm_gc_root_chain; R; R = R->Next) {
-    uint32_t i = 0;
+void ddcVisitGCRoots(void (*Visitor)(void **Root, const void *Meta))
+{   for (struct StackEntry *R = llvm_gc_root_chain; R; R = R->Next)
+    {   uint32_t i = 0;
 
-    // For roots [0, NumMeta), the metadata pointer is in the FrameMap.
-    for (uint32_t e = R->Map->NumMeta; i != e; ++i)
-      Visitor(&R->Roots[i], R->Map->Meta[i]);
+        // For roots [0, NumMeta), the metadata pointer is in the FrameMap.
+        for (uint32_t e = R->Map->NumMeta; i != e; ++i)
+          Visitor(&R->Roots[i], R->Map->Meta[i]);
 
-    // For roots [NumMeta, NumRoots), the metadata pointer is null.
-    for (uint32_t e = R->Map->NumRoots; i != e; ++i)
-      Visitor(&R->Roots[i], NULL);
-  }
+        // For roots [NumMeta, NumRoots), the metadata pointer is null.
+        for (uint32_t e = R->Map->NumRoots; i != e; ++i)
+          Visitor(&R->Roots[i], NULL);
+    }
 }
 
 
 // Print out the structure of the LLVM shadow stack.
-void ddcTraceGCRoots (int _x) {
-  for (struct StackEntry *R = llvm_gc_root_chain; R; R = R->Next) {
-    uint32_t i = 0;
+void ddcTraceGCRoots (int _x)
+{   for (struct StackEntry *R = llvm_gc_root_chain; R; R = R->Next)
+    {   uint32_t i = 0;
 
-    printf ("map %p\n", R->Map);
+        printf ("map %p\n", R->Map);
 
-    // For roots [0, NumMeta), the metadata pointer is in the FrameMap.
-    for (uint32_t e = R->Map->NumMeta; i != e; ++i)
-      printf ("root with meta %p\n", R->Roots[i]);
+        // For roots [0, NumMeta), the metadata pointer is in the FrameMap.
+        for (uint32_t e = R->Map->NumMeta; i != e; ++i)
+          printf ("root with meta %p\n", R->Roots[i]);
 
-    // For roots [NumMeta, NumRoots), the metadata pointer is null.
-    for (uint32_t e = R->Map->NumRoots; i != e; ++i)
-      printf ("root no   meta %p\n", R->Roots[i]);
-  }
+        // For roots [NumMeta, NumRoots), the metadata pointer is null.
+        for (uint32_t e = R->Map->NumRoots; i != e; ++i)
+          printf ("root no   meta %p\n", R->Roots[i]);
+    }
 }
 
 
 // ----------------------------------------------------------------------------
 // Get the first root in the LLVM GC shadow stack.
 void*   ddcLlvmRootGetStart (int _x)
-{
-        return llvm_gc_root_chain;
+{       return llvm_gc_root_chain;
 }
 
 
 // Check if this is the last entry in the LLVM GC shadow stack.
 nat_t   ddcLlvmRootIsEnd (void* p)
-{
-        return (p == 0);
+{       return (p == 0);
 }
 

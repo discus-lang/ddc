@@ -8,35 +8,31 @@ export foreign c value
  ddcPrimRefWrite  : [r1 r2 : Region]. Ptr# r1 Obj -> Ptr# r2 Obj -> Void#
 
 import foreign c value
- ddcAllocBoxed    : [r1    : Region]. Tag# -> Nat# -> Ptr# r1 Obj
- ddcGetBoxed      : [r1 r2 : Region]. Ptr# r1 Obj  -> Nat# -> Ptr# r2 Obj
- ddcSetBoxed      : [r1 r2 : Region]. Ptr# r1 Obj  -> Nat# -> Ptr# r2 Obj -> Void#
+ ddcBoxedAlloc    : [r1    : Region]. Tag# -> Nat# -> Ptr# r1 Obj
+ ddcBoxedGetField : [r1 r2 : Region]. Ptr# r1 Obj  -> Nat# -> Ptr# r2 Obj
+ ddcBoxedSetField : [r1 r2 : Region]. Ptr# r1 Obj  -> Nat# -> Ptr# r2 Obj -> Void#
 
 with letrec
 
 
 -- | Allocate a new reference to some boxed value.
 ddcPrimRefAlloc [r1 r2: Region] (pVal: Ptr# r1 Obj): Ptr# r2 Obj
- = do
-        sVal    = allocSlot# [r1]
+ = do   sVal    = allocSlot# [r1]
 
         poke# sVal pVal
-        ref     = ddcAllocBoxed [r2] (truncate# 0#) 1#
+        ref     = ddcBoxedAlloc [r2] (truncate# 0#) 1#
         pVal'   = peek# sVal
 
-        ddcSetBoxed ref 0# pVal'
+        ddcBoxedSetField ref 0# pVal'
         ref
 
 
 -- | Read the value from a reference.
 ddcPrimRefRead  [r1 r2: Region] (ref: Ptr# r1 Obj): Ptr# r2 Obj
- =      ddcGetBoxed ref 0#
+ =      ddcBoxedGetField ref 0#
 
 
 -- | Write a value into reference.
 ddcPrimRefWrite [r1 r2: Region] (ref: Ptr# r1 Obj) (val: Ptr# r2 Obj): Void#
- =      ddcSetBoxed ref 0# val
-
-
-
+ =      ddcBoxedSetField ref 0# val
 

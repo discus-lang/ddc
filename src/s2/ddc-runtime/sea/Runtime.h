@@ -14,10 +14,10 @@ typedef int     bool_t;
 // An unsigned natural number.
 //   Used for object sizes and field counts.
 //   Big enough to represent the number of allocatable bytes.
-typedef size_t   nat_t;
+typedef size_t  nat_t;
 
 // Define int_t to make things look consistent.
-typedef int      int_t;
+typedef int     int_t;
 
 // Generic address type.
 //   #ifdef because Cygwin already defines it.
@@ -29,116 +29,11 @@ typedef uint8_t* addr_t;
 typedef uint32_t tag_t;
 
 // A UTF8 string.
-typedef char     string_t;
+typedef char    string_t;
 
 // Floating point types.
 typedef float   float32_t;
 typedef double  float64_t;
-
-
-// -- Object Format -----------------------------------------------------------
-//
-//  Object: TAG2 TAG1 TAG0 FORMAT ...
-//   byte    3    2    1     0          (in MSB order)
-//
-//  All heap objects start with a 32-bit word containg the tag of the object,
-//  and a format field in the least-significant byte.
-//
-//  Format Field
-//  ~~~~~~~~~~~~
-//
-//  bit 7  6  5  4  3  2  1  0
-//      -- arg ---  -- obj ---
-//      X  X  X  X  X  X  0  0  -- Forward / Broken-Heart
-//      X  X  X  X  a  X  X  X  -- Anchor flag
-//      0  0  0  1  a  0  0  1  -- Thunk
-//      0  0  1  0  a  0  0  1  -- DataBoxed
-//      0  0  1  1  a  0  0  1  -- DataRaw
-//      0  1  0  1  a  0  0  1  -- SuspIndir
-//      -- size --  a  0  1  1  -- DataRawSmall
-//
-//  * GC Forwarding / Broken-Heart pointers.
-//    During garbage collection, after the GC copies an object to the
-//    "to-space" its header in the "from-space" is overwritten with a pointer
-//    to where the "to-space" version of the object is.
-//
-//    We can identify these pointers because their lowest 2 bits are always 00.
-//    This is because objects in the heap are always 4-byte aligned.
-//
-//    For all other values of the format field, we ensure the lowest two bits
-//    are not 00.
-//
-//  * Anchor flag
-//    If bit 3 in the format field is set then the GC is not permitted to move
-//    the object. This is useful when the object has been allocated by malloc
-//    and exists outside the DDC runtime's garbage collected heap.
-//
-//  * Data{Boxed, Raw, Small}
-//    There are four data object formats:
-//     DataBoxed:    A boxed object containing pointers to more heap objects.
-//     DataRaw:      Contains raw data and no pointers.
-//     DataSmall:    Contains raw data where the size is small enough to
-//                   encode directly in the format field.
-//
-//    The -obj- (object mode) portion of the format field can be used to
-//    determine if the object is a forwarding pointer, has a fixed value for
-//    its format field, or is a DataRS object.
-//
-//
-//  Note: 64-bit architectures
-//  ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-//  The various object formats always contain an even number of 32-bit words
-//  in the header portion, before the payload. This ensures that the payload
-//  is 8-byte aligned, which is needed for architecures that cannot load
-//  misaligned double precision floats (Float64).
-
-
-// The object types.
-enum _ObjType
-{       _ObjTypeUnknown,
-        _ObjTypeForward,
-        _ObjTypeThunk,
-        _ObjTypeDataBoxed,
-        _ObjTypeDataRaw,
-        _ObjTypeSuspIndir,
-        _ObjTypeDataSmall
-};
-
-
-// Whether the object is:
-//      a forwarding pointer, has a fixed format,
-//      or is a DataRawSmall object that has its payload size encoded in format
-//      field as well.
-enum _ObjMode
-{       _ObjModeForward         = 0x00,
-        _ObjModeFixed           = 0x01,
-        _ObjModeDataRawSmall    = 0x03
-};
-
-// Use this mask to select the object mode portion of the format field.
-#define _MaskObjMode            0x03
-
-
-// If the object has a fixed format field (ie, has _ObjModeFixed)
-//      then we can determine the format of the rest of the object by masking
-//      the format field with the following mask and testing against this enum.
-enum _ObjFixed
-{       _ObjFixedThunk          = 0x11,
-        _ObjFixedDataBoxed      = 0x21,
-        _ObjFixedDataRaw        = 0x31,
-        _ObjFixedSuspIndir      = 0x51,
-        _ObjFixedMapped         = 0x71
-};
-
-#define _MaskObjFixed           0xf7
-
-
-// Optional flags in the format field.
-enum _ObjFlag
-{        _ObjFlagAnchored        = 0x08
-};
-
-#define _MaskObjAnchored        (~_ObjFlagAnchored)
 
 
 // -- Object Structures -------------------------------------------------------
@@ -151,15 +46,9 @@ typedef struct
 } Obj;
 
 
-// Get the constructor tag of an object.
-static inline
-uint32_t _ddcTagOfObject (Obj* obj)
-{       return obj ->tagFormat >> 8;
-}
-
 // Get the format field of an object.
-static inline
-uint8_t  _ddcFormatOfObject (Obj* obj)
+static inline uint8_t
+_ddcObjectFormat (Obj* obj)
 {       return (uint8_t)(obj ->tagFormat & 0x0f);
 }
 
@@ -169,16 +58,19 @@ uint8_t  _ddcFormatOfObject (Obj* obj)
 //   The payload contains pointers to other heap objects.
 typedef struct
 {       uint32_t  tagFormat;    // Constructor tag and format field.
-        uint32_t  arity;        // Arity of the data constructor.
-                                //  (The number of pointers in the payload)
+        uint32_t  arity;        // Number of fields in object.
         Obj*      payload[];
-} DataBoxed;
+} ObjBoxed;
 
-// Prototypes for functions define in the Salt runtime system.
-Obj*    ddcAllocBoxed   (uint32_t tag, nat_t arity);
-nat_t   ddcArityOfBoxed (Obj* obj);
-Obj*    ddcGetBoxed     (Obj* obj, nat_t ix);
-void    ddcSetBoxed     (Obj* obj, nat_t ix, Obj* x);
+static inline uint32_t
+_ddcBoxedTag (Obj* obj)
+{       return obj ->tagFormat >> 8;
+}
+
+Obj*    ddcBoxedAlloc    (uint32_t tag, nat_t arity);
+nat_t   ddcBoxedFields   (Obj* obj);
+Obj*    ddcBoxedGetField (Obj* obj, nat_t ix);
+void    ddcBoxedSetField (Obj* obj, nat_t ix, Obj* x);
 
 
 // ----------------------------------------------------------------------------
@@ -189,18 +81,17 @@ typedef struct
 {       uint32_t  tagFormat;    // Constructor tag and format field.
         uint32_t  size;         // Size of the whole object, in bytes.
         uint8_t   payload[];    // Raw data that does not contain heap pointers.
-} DataRaw;
+} ObjRaw;
 
-// Prototypes for functions define in the Salt runtime system.
-Obj*     ddcAllocRaw        (uint32_t tag, nat_t payloadLength);
-uint8_t* ddcPayloadRaw      (Obj* obj);
-nat_t    ddcPayloadSizeRaw  (Obj* obj);
+Obj*     ddcRawAlloc        (uint32_t tag, nat_t payloadLength);
+uint8_t* ddcRawPayload      (Obj* obj);
+nat_t    ddcRawPayloadSize  (Obj* obj);
 
-// Inlined versions used when defining primitives in C.
-static inline uint8_t* _ddcPayloadRaw(Obj* obj)
-{
-        return ((uint8_t*)obj) + 8;
+static inline uint8_t*
+_ddcRawPayload(Obj* obj)
+{       return ((uint8_t*)obj) + 8;
 }
+
 
 // ----------------------------------------------------------------------------
 // A Small Raw object.
@@ -209,10 +100,9 @@ static inline uint8_t* _ddcPayloadRaw(Obj* obj)
 typedef struct
 {       uint32_t  tagFormat;    // Constructor tag and format field.
         uint8_t   payload[];    // Raw data that does not contain heap pointers.
-} DataRawSmall;
+} ObjSmall;
 
-// Prototypes for functions define in the Salt runtime system.
-Obj*     ddcAllocSmall          (uint32_t tag, nat_t payloadLength);
-uint8_t* ddcPayloadSmall        (Obj* obj);
-nat_t    ddcPaylodSizeSmall     (Obj* obj);
+Obj*     ddcSmallAlloc      (uint32_t tag, nat_t payloadLength);
+uint8_t* ddcSmallPayload    (Obj* obj);
+nat_t    ddcSmallPayloadSize(Obj* obj);
 

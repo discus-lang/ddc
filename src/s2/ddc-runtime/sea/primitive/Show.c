@@ -21,8 +21,8 @@
         snprintf(pBuf, nBuf - 1, format, x); \
         nat_t n         = strlen(pBuf); \
    \
-        Obj* pObj       = ddcAllocRaw (0, 4 + n + 1); \
-        uint8_t*  p8    = _ddcPayloadRaw(pObj); \
+        Obj* pObj       = ddcRawAlloc (0, 4 + n + 1); \
+        uint8_t*  p8    = _ddcRawPayload(pObj); \
         uint32_t* pLen  = (uint32_t*)p8; \
         string_t* pStr  = (string_t*)(p8 + 4); \
    \

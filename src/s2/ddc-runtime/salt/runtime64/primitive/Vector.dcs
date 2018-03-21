@@ -5,13 +5,12 @@ export foreign c value
  ddcVectorGuts : [r : Region]. Ptr# r Obj -> Addr#
 
 import foreign c value
- ddcPayloadRaw : [r : Region]. Ptr# r Obj -> Ptr# r Word8#
+ ddcRawPayload : [r : Region]. Ptr# r Obj -> Ptr# r Word8#
 
 with letrec
 
 
 -- | Get a pointer to the payload data of a vector.
 ddcVectorGuts [r: Region] (pVec: Ptr# r Obj): Addr#
- = do
-        -- step past the vector length field.
-        takePtr# (plusPtr# (ddcPayloadRaw pVec) 4#)
+ = do   -- step past the vector length field.
+        takePtr# (plusPtr# (ddcRawPayload pVec) 4#)

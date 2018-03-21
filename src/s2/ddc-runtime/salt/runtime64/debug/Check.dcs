@@ -2,7 +2,7 @@
 module Check
 
 export foreign c value
- ddcCheckObjHeader : [r: Region]. Ptr# r Obj -> Word32#
+ ddcCheckObjHeader : [r: Region]. Ptr# r Obj -> Word64#
  ddcCheckObjExtent : [r: Region]. Ptr# r Obj -> Nat# -> Unit
  ddcFailMessage    : TextLit# -> TextLit# -> Void#
  ddcFailField      : TextLit# -> TextLit# -> Void#
@@ -21,14 +21,14 @@ with letrec
 --   We check that the pointer is within the current allocated heap,
 --   and fail# if it is out of range.
 --
-ddcCheckObjHeader [r: Region] (obj: Ptr# r Obj): Word32#
+ddcCheckObjHeader [r: Region] (obj: Ptr# r Obj): Word64#
  = do
-        pHeapBaseA      = read# (global# [Addr#] "ddcHeapBase"#) 0#
-        pHeapTopA       = read# (global# [Addr#] "ddcHeapTop"#)  0#
-        objA            = takePtr# obj
+        pHeapBaseA  = read# (global# [Addr#] "ddcHeapBase"#) 0#
+        pHeapTopA   = read# (global# [Addr#] "ddcHeapTop"#)  0#
+        objA        = takePtr# obj
 
-        valid           = mul# (ge# objA pHeapBaseA)
-                               (lt# objA (minusAddr# pHeapTopA 4#))
+        valid       = mul# (ge# objA pHeapBaseA)
+                           (lt# objA (minusAddr# pHeapTopA 4#))
         case valid of
          True#
           -> peek# (castPtr# obj)
@@ -67,7 +67,7 @@ ddcCheckObjExtent [r: Region] (obj: Ptr# r Obj) (len: Nat#): Unit
 
         case valid of
          True#
-          -> peek# (castPtr# obj)
+          ->    ()
 
          False#
           -> do ddcFailMessage "checkObjExtent"#  "object is not within active heap"#

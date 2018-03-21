@@ -12,8 +12,7 @@
 // inserted as a default case.
 //
 Obj*    ddcPrimErrorDefault(string_t* source, uint32_t line)
-{
-        fprintf ( stderr
+{       fprintf ( stderr
                 , "\nDDC runtime error: inexhaustive case match.\n at: %s:%" PRId32 "\n"
                 , source, line);
         exit(1);

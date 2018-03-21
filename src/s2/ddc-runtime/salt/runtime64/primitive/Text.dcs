@@ -9,9 +9,9 @@ export foreign c value
 
 import foreign c value
  -- Objects with raw, non-pointer data.
- ddcAllocRaw            : [r1: Region]. Tag# -> Nat# -> Ptr# r1 Obj
- ddcPayloadRaw          : [r1: Region]. Ptr# r1 Obj  -> Ptr# r1 Word8#
- ddcPayloadSizeRaw      : [r1: Region]. Ptr# r1 Obj  -> Nat#
+ ddcRawAlloc            : [r1: Region]. Tag# -> Nat# -> Ptr# r1 Obj
+ ddcRawPayload          : [r1: Region]. Ptr# r1 Obj  -> Ptr# r1 Word8#
+ ddcRawPayloadSize      : [r1: Region]. Ptr# r1 Obj  -> Nat#
  ddcPrimPutString       : TextLit# -> Void#
 
 with letrec
@@ -24,17 +24,16 @@ with letrec
 --   indexing and store the pointer and length together in the object.
 --
 --   typedef struct
---   {   uint32_t  tagFormat;   // Constructor tag and format field.
---       uint32_t  size         // Size of this boxed object in bytes.
---       uint32_t  length;      // Length of the string literal in bytes.
---       uint8_t*  ptr;         // Pointer to null terminated string data.
+--   { uint32_t  size;        // Size of the whole object, in bytes.
+--     uint32_t  infoFormat;  // Info table index and format byte.
+--     uint8_t   payload[];   // Raw data that does not contain heap pointers.
+--     uint8_t*  ptr;         // Pointer to null terminated string data.
 --   } TextLit;
 --
 ddcPrimMakeTextLit [r1: Region] (addrString: Addr#): Ptr# r1 Obj
- = do
-        len     = ddcPrimSizeOfString 0# addrString
-        obj     = ddcAllocRaw (truncate# 0#) (add# 4# (size# [Addr#]))
-        payload = takePtr# (ddcPayloadRaw obj)
+ = do   len     = ddcPrimSizeOfString 0# addrString
+        obj     = ddcRawAlloc (add# 4# (size# [Addr#]))
+        payload = takePtr# (ddcRawPayload obj)
         write# [Word32#] payload 0# (truncate# len)
         write# [Addr#]   payload 4# addrString
         obj
@@ -43,14 +42,14 @@ ddcPrimMakeTextLit [r1: Region] (addrString: Addr#): Ptr# r1 Obj
 -- | Take the pointer from a text literal.
 ddcPrimTakeTextLit [r1: Region] (obj: Ptr# r1 Obj): Addr#
  = do
-        payload = takePtr# (ddcPayloadRaw obj)
+        payload = takePtr# (ddcRawPayload obj)
         read# [Addr#] payload 4#
 
 
 -- | Get the size of a text literal, in bytes.
 ddcPrimSizeOfTextLit [r1: Region] (obj: Ptr# r1 Obj): Nat#
  = do
-        payload = takePtr# (ddcPayloadRaw obj)
+        payload = takePtr# (ddcRawPayload obj)
         promote# (read# [Word32#] payload 0#)
 
 

@@ -3,38 +3,39 @@
 module Runtime.Apply
 
 export foreign c value
- ddcRunThunk    :  [r1 : Region]. Ptr# r1 Obj -> Ptr# r1 Obj
+ ddcRunThunk    :  [r1: Region]. Ptr# r1 Obj -> Ptr# r1 Obj
 
- ddcApply0      :  [r1 : Region]
+ ddcApply0      :  [r1: Region]
                 .  Ptr# r1 Obj -> Ptr# r1 Obj
 
- ddcApply1      :  [r1 : Region]
+ ddcApply1      :  [r1: Region]
                 .  Ptr# r1 Obj -> Ptr# r1 Obj -> Ptr# r1 Obj
 
- ddcApply2      :  [r1 : Region]
+ ddcApply2      :  [r1: Region]
                 .  Ptr# r1 Obj -> Ptr# r1 Obj -> Ptr# r1 Obj -> Ptr# r1 Obj
 
- ddcApply3      :  [r1 : Region]
+ ddcApply3      :  [r1: Region]
                 .  Ptr# r1 Obj -> Ptr# r1 Obj -> Ptr# r1 Obj -> Ptr# r1 Obj
                 -> Ptr# r1 Obj
 
- ddcApply4      :  [r1 : Region]
+ ddcApply4      :  [r1: Region]
                 .  Ptr# r1 Obj -> Ptr# r1 Obj -> Ptr# r1 Obj -> Ptr# r1 Obj
                 -> Ptr# r1 Obj -> Ptr# r1 Obj
 
+
 import foreign c value
- ddcAllocThunk  : [r1 : Region]. Addr# -> Nat# -> Nat# -> Nat# -> Nat# -> Ptr# r1 Obj
- ddcCopyThunk   : [r1 : Region]. Ptr# r1 Obj -> Ptr# r1 Obj -> Nat# -> Nat# -> Ptr# r1 Obj
- ddcExtendThunk : [r1 : Region]. Ptr# r1 Obj -> Nat# -> Ptr# r1 Obj
+ ddcThunkAlloc  : [r1: Region]. Addr# -> Nat# -> Nat# -> Nat# -> Nat# -> Ptr# r1 Obj
+ ddcThunkCopy   : [r1: Region]. Ptr# r1 Obj -> Ptr# r1 Obj -> Nat# -> Nat# -> Ptr# r1 Obj
+ ddcThunkExtend : [r1: Region]. Ptr# r1 Obj -> Nat# -> Ptr# r1 Obj
 
- ddcFunThunk    : [r1    : Region]. Ptr# r1 Obj -> Addr#
- ddcParamsThunk : [r1    : Region]. Ptr# r1 Obj -> Nat#
- ddcBoxesThunk  : [r1    : Region]. Ptr# r1 Obj -> Nat#
- ddcArgsThunk   : [r1    : Region]. Ptr# r1 Obj -> Nat#
- ddcRunsThunk   : [r1    : Region]. Ptr# r1 Obj -> Nat#
+ ddcThunkFun    : [r1: Region]. Ptr# r1 Obj -> Addr#
+ ddcThunkParams : [r1: Region]. Ptr# r1 Obj -> Nat#
+ ddcThunkBoxes  : [r1: Region]. Ptr# r1 Obj -> Nat#
+ ddcThunkArgs   : [r1: Region]. Ptr# r1 Obj -> Nat#
+ ddcThunkRuns   : [r1: Region]. Ptr# r1 Obj -> Nat#
 
- ddcSetThunk    : [r1 : Region]. Ptr# r1 Obj -> Nat# -> Nat# -> Ptr# r1 Obj -> Void#
- ddcGetThunk    : [r1 : Region]. Ptr# r1 Obj -> Nat# -> Ptr# r1 Obj
+ ddcThunkSetField : [r1 : Region]. Ptr# r1 Obj -> Nat# -> Nat# -> Ptr# r1 Obj -> Void#
+ ddcThunkGetField : [r1 : Region]. Ptr# r1 Obj -> Nat# -> Ptr# r1 Obj
 
 with letrec
 
@@ -43,14 +44,13 @@ with letrec
 -- | Run a thunk.
 --   If this is the last run the evaluate it,
 --   otherwise increment the run count.
---
 ddcRunThunk
         [r1   : Region]
         (pSrc : Ptr# r1 Obj) : Ptr# r1 Obj
  = do
         sSrc    = allocSlot# [r1]
 
-        boxes   = ddcBoxesThunk pSrc
+        boxes   = ddcThunkBoxes pSrc
         case boxes of
 
          -- The thunk is not boxed,
@@ -63,22 +63,21 @@ ddcRunThunk
          1# ->  ddcEval0 pSrc
 
          -- Create a new thunk with a decremented run counter.
-         _ -> do {
-                fun     = ddcFunThunk    pSrc;
-                params  = ddcParamsThunk pSrc;
-                args    = ddcArgsThunk   pSrc;
-                runs'   = add# (ddcRunsThunk pSrc) 1#;
+         _ -> do
+                fun     = ddcThunkFun    pSrc
+                params  = ddcThunkParams pSrc
+                args    = ddcThunkArgs   pSrc
+                runs'   = add# (ddcThunkRuns pSrc) 1#
 
                 -- Allocate a new thunk with the original function and arity,
                 --  but with a decremented run counter,
                 --  holding the source pointer in a slot across the allocation.
-                poke# sSrc pSrc;
+                poke# sSrc pSrc
 
-                pDst    = ddcAllocThunk [r1] fun params boxes args runs';
+                pDst    = ddcThunkAlloc [r1] fun params boxes args runs'
 
                 -- Copy argument pointers from the source to the new thunk.
-                ddcCopyThunk (peek# sSrc) pDst 0# args;
-        }
+                ddcThunkCopy (peek# sSrc) pDst 0# args
 
 
 -------------------------------------------------------------------------------
@@ -102,10 +101,10 @@ ddcRunThunk
 ddcApply0 [r1 : Region]
           (t : Ptr# r1 Obj) : Ptr# r1 Obj
  = do
-        p       = ddcParamsThunk t
-        a       = ddcArgsThunk   t
-        b       = ddcBoxesThunk  t
-        r       = ddcRunsThunk   t
+        p       = ddcThunkParams t
+        a       = ddcThunkArgs   t
+        b       = ddcThunkBoxes  t
+        r       = ddcThunkRuns   t
         case mul# (eq# a p) (eq# b r) of
          True#  -> ddcEval0 t
          False# -> makePtr# (takePtr# t)
@@ -115,27 +114,27 @@ ddcApply0 [r1 : Region]
 ddcEval0  [r0 r1 : Region]
           (t     : Ptr# r0 Obj) : Ptr# r1 Obj
  = do
-        f       = ddcFunThunk    t
-        p       = ddcParamsThunk t
-        a       = ddcArgsThunk   t
+        f       = ddcThunkFun    t
+        p       = ddcThunkParams t
+        a       = ddcThunkArgs   t
         case p of
          0# -> call0# f
 
-         1# -> call1# f (ddcGetThunk t 0#)
+         1# -> call1# f (ddcThunkGetField t 0#)
 
-         2# -> call2# f (ddcGetThunk t 0#) (ddcGetThunk t 1#)
+         2# -> call2# f (ddcThunkGetField t 0#) (ddcThunkGetField t 1#)
 
-         3# -> call3# f (ddcGetThunk t 0#) (ddcGetThunk t 1#)
-                        (ddcGetThunk t 2#)
+         3# -> call3# f (ddcThunkGetField t 0#) (ddcThunkGetField t 1#)
+                        (ddcThunkGetField t 2#)
 
-         4# -> call4# f (ddcGetThunk t 0#) (ddcGetThunk t 1#)
-                        (ddcGetThunk t 2#) (ddcGetThunk t 3#)
+         4# -> call4# f (ddcThunkGetField t 0#) (ddcThunkGetField t 1#)
+                        (ddcThunkGetField t 2#) (ddcThunkGetField t 3#)
 
          _  -> ddcEvalZ
-                 t f p  (ddcGetThunk t (sub# a 4#))
-                        (ddcGetThunk t (sub# a 3#))
-                        (ddcGetThunk t (sub# a 2#))
-                        (ddcGetThunk t (sub# a 1#))
+                 t f p  (ddcThunkGetField t (sub# a 4#))
+                        (ddcThunkGetField t (sub# a 3#))
+                        (ddcThunkGetField t (sub# a 2#))
+                        (ddcThunkGetField t (sub# a 1#))
 
 
 ----------------------------------------------------------- 1
@@ -145,10 +144,10 @@ ddcApply1 [r1 : Region]
  = do
         sArg1   = allocSlot# [r1]
 
-        p       = ddcParamsThunk t
-        a       = ddcArgsThunk   t
-        b       = ddcBoxesThunk  t
-        r       = ddcRunsThunk   t
+        p       = ddcThunkParams t
+        a       = ddcThunkArgs   t
+        b       = ddcThunkBoxes  t
+        r       = ddcThunkRuns   t
 
         case mul# (eq# (add# a 1#) p) (eq# b r) of {
         True# ->
@@ -156,8 +155,8 @@ ddcApply1 [r1 : Region]
 
         False# ->
         do {    poke# sArg1 pArg1;
-                t'      = ddcExtendThunk t 1#;
-                ddcSetThunk t' a 0# (peek# sArg1);
+                t'      = ddcThunkExtend t 1#;
+                ddcThunkSetField t' a 0# (peek# sArg1);
                 t';
         }}
 
@@ -168,9 +167,9 @@ ddcEval1  [r1 : Region]
  = do
         sArg1   = allocSlot# [r1]
 
-        f       = ddcFunThunk    t
-        p       = ddcParamsThunk t
-        a       = ddcArgsThunk   t
+        f       = ddcThunkFun    t
+        p       = ddcThunkParams t
+        a       = ddcThunkArgs   t
         case p of
          0# -> do
                 poke# sArg1 pArg1
@@ -179,18 +178,18 @@ ddcEval1  [r1 : Region]
 
          1# -> call1# f pArg1
 
-         2# -> call2# f (ddcGetThunk t 0#)  pArg1
+         2# -> call2# f (ddcThunkGetField t 0#)  pArg1
 
-         3# -> call3# f (ddcGetThunk t 0#) (ddcGetThunk t 1#)
+         3# -> call3# f (ddcThunkGetField t 0#) (ddcThunkGetField t 1#)
                         pArg1
 
-         4# -> call4# f (ddcGetThunk t 0#) (ddcGetThunk t 1#)
-                        (ddcGetThunk t 2#)  pArg1
+         4# -> call4# f (ddcThunkGetField t 0#) (ddcThunkGetField t 1#)
+                        (ddcThunkGetField t 2#)  pArg1
 
          _  -> ddcEvalZ
-                t f p   (ddcGetThunk t (sub# a 3#))
-                        (ddcGetThunk t (sub# a 2#))
-                        (ddcGetThunk t (sub# a 1#))
+                t f p   (ddcThunkGetField t (sub# a 3#))
+                        (ddcThunkGetField t (sub# a 2#))
+                        (ddcThunkGetField t (sub# a 1#))
                         pArg1
 
 
@@ -202,10 +201,10 @@ ddcApply2 [r1 : Region]
         sArg1   = allocSlot# [r1]
         sArg2   = allocSlot# [r1]
 
-        p       = ddcParamsThunk t
-        a       = ddcArgsThunk   t
-        b       = ddcBoxesThunk  t
-        r       = ddcRunsThunk   t
+        p       = ddcThunkParams t
+        a       = ddcThunkArgs   t
+        b       = ddcThunkBoxes  t
+        r       = ddcThunkRuns   t
 
         case eq#  (add# a 1#) p of { True# ->
         do {    poke# sArg2 pArg2;
@@ -220,9 +219,9 @@ ddcApply2 [r1 : Region]
         False# ->
         do  {   poke# sArg1 pArg1;
                 poke# sArg2 pArg2;
-                t'      = ddcExtendThunk t 2#;
-                ddcSetThunk t' a 0# (peek# sArg1);
-                ddcSetThunk t' a 1# (peek# sArg2);
+                t'      = ddcThunkExtend t 2#;
+                ddcThunkSetField t' a 0# (peek# sArg1);
+                ddcThunkSetField t' a 1# (peek# sArg2);
                 t';
         }}}
 
@@ -235,9 +234,9 @@ ddcEval2 [r1 : Region]
         sArg1   = allocSlot# [r1]
         sArg2   = allocSlot# [r1]
 
-        f       = ddcFunThunk      t
-        p       = ddcParamsThunk   t
-        a       = ddcArgsThunk     t
+        f       = ddcThunkFun      t
+        p       = ddcThunkParams   t
+        a       = ddcThunkArgs     t
         case p of
          0# -> do {
                 poke# sArg1 pArg1;
@@ -254,15 +253,15 @@ ddcEval2 [r1 : Region]
 
          2# -> call2# f pArg1  pArg2
 
-         3# -> call3# f (ddcGetThunk t 0#)
+         3# -> call3# f (ddcThunkGetField t 0#)
                         pArg1  pArg2
 
-         4# -> call4# f (ddcGetThunk t 0#) (ddcGetThunk t 1#)
+         4# -> call4# f (ddcThunkGetField t 0#) (ddcThunkGetField t 1#)
                         pArg1  pArg2
 
          _  -> ddcEvalZ
-                t f p   (ddcGetThunk t (sub# a 2#))
-                        (ddcGetThunk t (sub# a 1#))
+                t f p   (ddcThunkGetField t (sub# a 2#))
+                        (ddcThunkGetField t (sub# a 1#))
                         pArg1  pArg2
 
 
@@ -278,10 +277,10 @@ ddcApply3 [r1 : Region]
         sArg2   = allocSlot# [r1]
         sArg3   = allocSlot# [r1]
 
-        p       = ddcParamsThunk t
-        a       = ddcArgsThunk   t
-        b       = ddcBoxesThunk  t
-        r       = ddcRunsThunk   t
+        p       = ddcThunkParams t
+        a       = ddcThunkArgs   t
+        b       = ddcThunkBoxes  t
+        r       = ddcThunkRuns   t
 
         case eq#  (add# a 2#) p of { True# ->
         do {    poke# sArg3 pArg3;
@@ -307,10 +306,10 @@ ddcApply3 [r1 : Region]
                 poke# sArg1 pArg1;
                 poke# sArg2 pArg2;
                 poke# sArg3 pArg3;
-                t'      = ddcExtendThunk t 3#;
-                ddcSetThunk t' a 0# (peek# sArg1);
-                ddcSetThunk t' a 1# (peek# sArg2);
-                ddcSetThunk t' a 2# (peek# sArg3);
+                t'      = ddcThunkExtend t 3#;
+                ddcThunkSetField t' a 0# (peek# sArg1);
+                ddcThunkSetField t' a 1# (peek# sArg2);
+                ddcThunkSetField t' a 2# (peek# sArg3);
                 t'
         }}}}
 
@@ -326,9 +325,9 @@ ddcEval3 [r1 : Region]
         sArg2   = allocSlot# [r1]
         sArg3   = allocSlot# [r1]
 
-        f       = ddcFunThunk    t
-        p       = ddcParamsThunk t
-        a       = ddcArgsThunk   t
+        f       = ddcThunkFun    t
+        p       = ddcThunkParams t
+        a       = ddcThunkArgs   t
         case p of
          0# -> do {
                 poke# sArg1 pArg1;
@@ -354,11 +353,11 @@ ddcEval3 [r1 : Region]
 
          3# -> call3# f pArg1  pArg2  pArg3
 
-         4# -> call4# f (ddcGetThunk t 0#)
+         4# -> call4# f (ddcThunkGetField t 0#)
                         pArg1  pArg2  pArg3
 
          _  -> ddcEvalZ
-                 t f p  (ddcGetThunk t (sub# a 1#))
+                 t f p  (ddcThunkGetField t (sub# a 1#))
                         pArg1  pArg2  pArg3
 
 
@@ -375,10 +374,10 @@ ddcApply4 [r1 : Region]
         sArg3   = allocSlot# [r1]
         sArg4   = allocSlot# [r1]
 
-        p       = ddcParamsThunk t
-        a       = ddcArgsThunk   t
-        b       = ddcBoxesThunk  t
-        r       = ddcRunsThunk   t
+        p       = ddcThunkParams t
+        a       = ddcThunkArgs   t
+        b       = ddcThunkBoxes  t
+        r       = ddcThunkRuns   t
 
         case eq# (add# a 3#) p of { True# ->
         do {    poke# sArg4 pArg4;
@@ -412,11 +411,11 @@ ddcApply4 [r1 : Region]
                 poke# sArg2 pArg2;
                 poke# sArg3 pArg3;
                 poke# sArg4 pArg4;
-                t'      = ddcExtendThunk t 4#;
-                ddcSetThunk t' a 0# (peek# sArg1);
-                ddcSetThunk t' a 1# (peek# sArg2);
-                ddcSetThunk t' a 2# (peek# sArg3);
-                ddcSetThunk t' a 3# (peek# sArg4);
+                t'      = ddcThunkExtend t 4#;
+                ddcThunkSetField t' a 0# (peek# sArg1);
+                ddcThunkSetField t' a 1# (peek# sArg2);
+                ddcThunkSetField t' a 2# (peek# sArg3);
+                ddcThunkSetField t' a 3# (peek# sArg4);
                 t'
         }}}}}
 
@@ -433,8 +432,8 @@ ddcEval4  [r1 : Region]
         sArg3   = allocSlot# [r1]
         sArg4   = allocSlot# [r1]
 
-        f       = ddcFunThunk    t
-        p       = ddcParamsThunk t
+        f       = ddcThunkFun    t
+        p       = ddcThunkParams t
         case p of
          0# -> do {
                 poke# sArg1 pArg1;
@@ -500,41 +499,41 @@ ddcEvalZ [r0 r1 r2 r3 r4 r5 : Region]
          : Ptr# r5 Obj
 
  = case arity of
-         4#  -> call4#  fun     argL3 argL2 argL1 argL0
+         4#  -> call4#  fun argL3 argL2 argL1 argL0
 
-         5#  -> call5#  fun     (ddcGetThunk t 0#)
-                                argL3 argL2 argL1 argL0
+         5#  -> call5#  fun  (ddcThunkGetField t 0#)
+                             argL3 argL2 argL1 argL0
 
-         6#  -> call6#  fun     (ddcGetThunk t 0#) (ddcGetThunk t 1#)
-                                argL3 argL2 argL1 argL0
+         6#  -> call6#  fun  (ddcThunkGetField t 0#) (ddcThunkGetField t 1#)
+                             argL3 argL2 argL1 argL0
 
-         7#  -> call7#  fun     (ddcGetThunk t 0#) (ddcGetThunk t 1#)
-                                (ddcGetThunk t 2#)
-                                argL3 argL2 argL1 argL0
+         7#  -> call7#  fun  (ddcThunkGetField t 0#) (ddcThunkGetField t 1#)
+                             (ddcThunkGetField t 2#)
+                             argL3 argL2 argL1 argL0
 
-         8#  -> call8#  fun     (ddcGetThunk t 0#) (ddcGetThunk t 1#)
-                                (ddcGetThunk t 2#) (ddcGetThunk t 3#)
-                                argL3 argL2 argL1 argL0
+         8#  -> call8#  fun  (ddcThunkGetField t 0#) (ddcThunkGetField t 1#)
+                             (ddcThunkGetField t 2#) (ddcThunkGetField t 3#)
+                             argL3 argL2 argL1 argL0
 
-         9#  -> call9#  fun     (ddcGetThunk t 0#) (ddcGetThunk t 1#)
-                                (ddcGetThunk t 2#) (ddcGetThunk t 3#)
-                                (ddcGetThunk t 4#)
-                                argL3 argL2 argL1 argL0
+         9#  -> call9#  fun  (ddcThunkGetField t 0#) (ddcThunkGetField t 1#)
+                             (ddcThunkGetField t 2#) (ddcThunkGetField t 3#)
+                             (ddcThunkGetField t 4#)
+                             argL3 argL2 argL1 argL0
 
-         10# -> call10# fun     (ddcGetThunk t 0#) (ddcGetThunk t 1#)
-                                (ddcGetThunk t 2#) (ddcGetThunk t 3#)
-                                (ddcGetThunk t 4#) (ddcGetThunk t 5#)
-                                argL3 argL2 argL1 argL0
+         10# -> call10# fun  (ddcThunkGetField t 0#) (ddcThunkGetField t 1#)
+                             (ddcThunkGetField t 2#) (ddcThunkGetField t 3#)
+                             (ddcThunkGetField t 4#) (ddcThunkGetField t 5#)
+                             argL3 argL2 argL1 argL0
 
-         11# -> call11# fun     (ddcGetThunk t 0#) (ddcGetThunk t 1#)
-                                (ddcGetThunk t 2#) (ddcGetThunk t 3#)
-                                (ddcGetThunk t 4#) (ddcGetThunk t 5#)
-                                (ddcGetThunk t 6#)
-                                argL3 argL2 argL1 argL0
+         11# -> call11# fun  (ddcThunkGetField t 0#) (ddcThunkGetField t 1#)
+                             (ddcThunkGetField t 2#) (ddcThunkGetField t 3#)
+                             (ddcThunkGetField t 4#) (ddcThunkGetField t 5#)
+                             (ddcThunkGetField t 6#)
+                             argL3 argL2 argL1 argL0
 
-         12# -> call12# fun     (ddcGetThunk t 0#) (ddcGetThunk t 1#)
-                                (ddcGetThunk t 2#) (ddcGetThunk t 3#)
-                                (ddcGetThunk t 4#) (ddcGetThunk t 5#)
-                                (ddcGetThunk t 6#) (ddcGetThunk t 7#)
-                                argL3 argL2 argL1 argL0
+         12# -> call12# fun  (ddcThunkGetField t 0#) (ddcThunkGetField t 1#)
+                             (ddcThunkGetField t 2#) (ddcThunkGetField t 3#)
+                             (ddcThunkGetField t 4#) (ddcThunkGetField t 5#)
+                             (ddcThunkGetField t 6#) (ddcThunkGetField t 7#)
+                             argL3 argL2 argL1 argL0
          _   -> fail#

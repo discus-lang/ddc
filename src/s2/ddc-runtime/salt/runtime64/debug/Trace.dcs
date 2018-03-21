@@ -21,36 +21,34 @@ import foreign c value
  ddcPrimFailString      : TextLit# -> Void#
 
  -- Object checking functions.
- ddcCheckObjHeader      : [r: Region]. Ptr# r Obj -> Word32#
+ ddcCheckObjHeader      : [r: Region]. Ptr# r Obj -> Word64#
  ddcCheckObjExtent      : [r: Region]. Ptr# r Obj -> Nat# -> Unit
 
- -- Broken Hearts
- ddcReadBrokenHeart     : [r1 r2: Region]. Ptr# r1 Obj -> Ptr# r2 Obj
+ -- Forwarding pointers / broken hearts.
+ ddcForwardRead         : [r1 r2: Region]. Ptr# r1 Obj -> Ptr# r2 Obj
 
  -- Generic objects.
- ddcTagOfObject         : [r: Region]. Ptr# r Obj -> Tag#
- ddcFormatOfObject      : [r: Region]. Ptr# r Obj -> Nat#
- ddcFormatFieldOfObject : [r: Region]. Ptr# r Obj -> Word8#
- ddcSizeOfObject        : [r: Region]. Ptr# r Obj -> Nat#
- ddcHeaderSizeOfObject  : [r: Region]. Ptr# r Obj -> Nat#
- ddcGetTag              : [r: Region]. Ptr# r Obj -> Tag#
+ ddcObjectFormat        : [r: Region]. Ptr# r Obj -> Nat#
+ ddcObjectSize          : [r: Region]. Ptr# r Obj -> Nat#
+ ddcObjectSizeMinimum   : [r: Region]. Ptr# r Obj -> Nat#
 
  -- Thunk objects.
- ddcParamsThunk         : [r: Region]. Ptr# r Obj -> Nat#
- ddcBoxesThunk          : [r: Region]. Ptr# r Obj -> Nat#
- ddcArgsThunk           : [r: Region]. Ptr# r Obj -> Nat#
- ddcRunsThunk           : [r: Region]. Ptr# r Obj -> Nat#
- ddcFunThunk            : [r: Region]. Ptr# r Obj -> Addr#
- ddcGetThunk            : [r1 r2 : Region]. Ptr# r1 Obj -> Nat# -> Ptr# r2 Obj
+ ddcThunkParams         : [r: Region]. Ptr# r Obj -> Nat#
+ ddcThunkArgs           : [r: Region]. Ptr# r Obj -> Nat#
+ ddcThunkBoxes          : [r: Region]. Ptr# r Obj -> Nat#
+ ddcThunkRuns           : [r: Region]. Ptr# r Obj -> Nat#
+ ddcThunkFun            : [r: Region]. Ptr# r Obj -> Addr#
+ ddcThunkGetField       : [r1 r2 : Region]. Ptr# r1 Obj -> Nat# -> Ptr# r2 Obj
 
  -- Boxed objects.
- ddcAllocBoxed          : [r1    : Region]. Tag# -> Nat# -> Ptr# r1 Obj
- ddcArityOfBoxed        : [r1    : Region]. Ptr# r1 Obj  -> Nat#
- ddcGetBoxed            : [r1 r2 : Region]. Ptr# r1 Obj  -> Nat# -> Ptr# r2 Obj
- ddcSetBoxed            : [r1 r2 : Region]. Ptr# r1 Obj  -> Nat# -> Ptr# r2 Obj -> Void#
+ ddcBoxedAlloc          : [r1    : Region]. Tag# -> Nat# -> Ptr# r1 Obj
+ ddcBoxedTag            : [r1    : Region]. Ptr# r1 Obj -> Tag#
+ ddcBoxedFields         : [r1    : Region]. Ptr# r1 Obj -> Nat#
+ ddcBoxedGetField       : [r1 r2 : Region]. Ptr# r1 Obj -> Nat# -> Ptr# r2 Obj
+ ddcBoxedSetField       : [r1 r2 : Region]. Ptr# r1 Obj -> Nat# -> Ptr# r2 Obj -> Void#
 
  -- Raw Objects.
- ddcPayloadSizeRaw      : [r1:    Region]. Ptr# r1 Obj  -> Nat#
+ ddcRawPayloadSize      : [r1:     Region]. Ptr# r1 Obj  -> Nat#
 
  -- GC Interface.
  ddcLlvmRootGetStart    : Nat#  -> Addr#
@@ -112,8 +110,7 @@ ddcTraceObj
         -- format field from it.
         ddcCheckObjHeader obj
 
-        format = ddcFormatOfObject obj
-        (case format of
+        (case ddcObjectFormat obj of
           1#    -> traceForward recurse print obj
           2#    -> traceThunk   recurse print obj
           3#    -> traceBoxed   recurse print obj
@@ -136,7 +133,7 @@ traceForward
         (case print of
           False# -> ()
           True#  -> do
-                pTarget = ddcReadBrokenHeart [r] [r] obj
+                pTarget = ddcForwardRead [r] [r] obj
 
                 ddcPrimStdoutPutString "Forward\n"#
                 fieldAddr     "{   ptr            = "# (takePtr# obj)
@@ -162,28 +159,26 @@ traceThunk
                 ddcPrimStdoutPutString "Thunk\n"#
                 fieldAddr     "{   ptr            = "# (takePtr# obj)
                 fieldWord32   "    header         = "# (read# (takePtr# obj) 0#)
-                fieldWord32   "    tag            = "# (promote# (ddcTagOfObject obj))
-                fieldWord32   "    format         = "# (promote# (ddcFormatFieldOfObject obj))
                 ())
 
         -- Check that the rest of the header is also within the heap,
         -- which will also read the tag/format field.
-        ddcCheckObjExtent obj (ddcHeaderSizeOfObject obj)
+        ddcCheckObjExtent obj (ddcObjectSizeMinimum obj)
 
         -- Check that the payload is also within the heap,
         -- which will also read the rest of the header.
-        ddcCheckObjExtent obj (ddcSizeOfObject obj)
+        ddcCheckObjExtent obj (ddcObjectSize obj)
 
         -- Now it's safe to print the rest of the object.
         (case print of
           False# -> ()
           True#  -> do
-                fieldNat      "    params         = "# (ddcParamsThunk obj)
-                fieldNat      "    boxes          = "# (ddcBoxesThunk  obj)
-                fieldNat      "    args           = "# (ddcArgsThunk   obj)
-                fieldNat      "    runs           = "# (ddcRunsThunk   obj)
-                fieldAddr     "    fun            = "# (ddcFunThunk    obj)
-                fieldNat      "    (object size)  = "# (ddcSizeOfObject obj)
+                fieldNat      "    params         = "# (ddcThunkParams obj)
+                fieldNat      "    boxes          = "# (ddcThunkBoxes  obj)
+                fieldNat      "    args           = "# (ddcThunkArgs   obj)
+                fieldNat      "    runs           = "# (ddcThunkRuns   obj)
+                fieldAddr     "    fun            = "# (ddcThunkFun    obj)
+                fieldNat      "    (object size)  = "# (ddcObjectSize  obj)
                 traceThunkPtrs recurse print obj 0#
                 ddcPrimStdoutPutString "}\n"#
                 ())
@@ -202,10 +197,10 @@ traceThunkPtrs
         [r: Region]
         (recurse print: Bool#)
         (obj: Ptr# r Obj) (i: Nat#): Unit
- = case eq# (ddcArgsThunk obj) i of
+ = case eq# (ddcThunkArgs obj) i of
         True#  -> ()
         False#
-         -> do  addr    = takePtr# [r] (ddcGetThunk [r] obj i)
+         -> do  addr    = takePtr# [r] (ddcThunkGetField [r] obj i)
 
                 (case print of
                   False# -> ()
@@ -225,10 +220,10 @@ traceThunkPtrss
         [r: Region]
         (recurse print: Bool#)
         (obj: Ptr# r Obj) (i: Nat#): Unit
- = case eq# (ddcArgsThunk obj) i of
+ = case eq# (ddcThunkArgs obj) i of
          True# -> ()
          False#
-          -> do ddcTraceObj [r] True# print (ddcGetThunk [r] obj i)
+          -> do ddcTraceObj [r] True# print (ddcThunkGetField [r] obj i)
                 traceThunkPtrss recurse print obj (add# i 1#)
 
 
@@ -247,17 +242,16 @@ traceBoxed
                 ddcPrimStdoutPutString "Boxed\n"#
                 fieldAddr     "{   ptr            = "# (takePtr# obj)
                 fieldWord32   "    header         = "# (read# (takePtr# obj) 0#)
-                fieldWord32   "    format         = "# (promote# (ddcFormatFieldOfObject obj))
-                fieldWord32   "    tag            = "# (promote# (ddcTagOfObject obj))
+                fieldWord32   "    tag            = "# (promote# (ddcBoxedTag obj))
                 ())
 
         -- Check that the rest of the header is also within the heap,
         -- which will also read the tag/format field.
-        ddcCheckObjExtent obj (ddcHeaderSizeOfObject obj)
+        ddcCheckObjExtent obj (ddcObjectSizeMinimum obj)
 
         -- Now it's safe to get the arity.
-        arity   = ddcArityOfBoxed obj
-        size    = ddcSizeOfObject obj
+        arity   = ddcBoxedFields obj
+        size    = ddcObjectSize  obj
         (case print of
           False# -> ()
           True#  -> do
@@ -267,7 +261,7 @@ traceBoxed
 
         -- Check that the payload is also within the heap,
         -- which will also read the rest of the header.
-        ddcCheckObjExtent obj (ddcSizeOfObject obj)
+        ddcCheckObjExtent obj (ddcObjectSize obj)
 
         -- Now it's safe to print the rest of the object.
         (case print of
@@ -296,7 +290,7 @@ traceBoxedPtrs
           ->    ()
 
          False#
-          -> do addr     = takePtr# [r] (ddcGetBoxed [r] obj i)
+          -> do addr     = takePtr# [r] (ddcBoxedGetField [r] obj i)
                 (case print of
                   False# -> ()
                   True#  -> do
@@ -318,7 +312,7 @@ traceBoxedPtrss
           -> ()
 
          False#
-          -> do ddcTraceObj [r] recurse print (ddcGetBoxed [r] obj i)
+          -> do ddcTraceObj [r] recurse print (ddcBoxedGetField [r] obj i)
                 traceBoxedPtrss recurse print obj n (add# i 1#)
 
 
@@ -335,28 +329,27 @@ traceRaw [r: Region]
                 ddcPrimStdoutPutString "Raw\n"#
                 fieldAddr     "{   ptr            = "# (takePtr#  obj)
                 fieldWord32   "    header         = "# (read# (takePtr# obj) 0#)
-                fieldWord32   "    format         = "# (promote#  (ddcFormatFieldOfObject obj))
-                fieldWord32   "    tag            = "# (promote#  (ddcTagOfObject obj))
                 ())
 
         -- Check that the rest of the header is also within the heap,
         -- which will also read the tag/format field.
-        ddcCheckObjExtent obj (ddcHeaderSizeOfObject obj)
+        ddcCheckObjExtent obj (ddcObjectSizeMinimum obj)
 
         -- Check that the payload is also within the heap,
         -- which will also read the rest of the header.
-        ddcCheckObjExtent obj (ddcSizeOfObject obj)
+        ddcCheckObjExtent obj (ddcObjectSize obj)
 
         -- Now it's safe to print the rest of the object.
         (case print of
           False#  -> ()
           True#   -> do
-                fieldWord32   "    payload size   = "# (truncate# (ddcPayloadSizeRaw obj))
-                fieldNat      "    (object size)  = "# (ddcSizeOfObject obj)
+                fieldWord32   "    payload size   = "# (truncate# (ddcRawPayloadSize obj))
+                fieldNat      "    (object size)  = "# (ddcObjectSize obj)
                 ddcPrimStdoutPutString "}\n"#
                 ())
 
         obj
+
 
 ---------------------------------------------------------------------------------------------------
 -- | Print a Small object to stdout.
@@ -370,8 +363,7 @@ traceSmall [r: Region] (print: Bool#) (obj: Ptr# r Obj): Ptr# r Obj
                 ddcPrimStdoutPutString "Small\n"#
                 fieldAddr     "{   ptr            = "# (takePtr# obj)
                 fieldWord32   "    header         = "# (read# (takePtr# obj) 0#)
-                fieldWord32   "    format         = "# (promote# (ddcFormatFieldOfObject obj))
-                fieldNat      "    (object size)  = "# (ddcSizeOfObject obj)
+                fieldNat      "    (object size)  = "# (ddcObjectSize obj)
                 ddcPrimStdoutPutString "}\n"#
                 ())
         obj
@@ -516,7 +508,7 @@ traceHeap
 
         -- Advance to the next object.
         -- The current object must have a non-zero size otherwise we'll loop forever.
-        size    = ddcSizeOfObject pObj
+        size    = ddcObjectSize pObj
 
         case eq# size 0# of
          True# -> do

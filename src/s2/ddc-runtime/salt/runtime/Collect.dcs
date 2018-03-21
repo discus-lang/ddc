@@ -22,20 +22,20 @@ export foreign c value
 import foreign c value
   malloc                : Nat# -> Addr#
 
-  ddcFormatOfObject     : Addr# -> Nat#
-  ddcSizeOfObject       : Addr# -> Nat#
-  ddcIsAnchored         : Addr# -> Bool#
+  ddcObjectFormat       : Addr# -> Nat#
+  ddcObjectSize         : Addr# -> Nat#
+  ddcObjectIsAnchored   : Addr# -> Bool#
 
-  ddcReadBrokenHeart    : Addr# -> Addr#
-  ddcWriteBrokenHeart   : Addr# -> Addr# -> Void#
+  ddcForwardRead        : Addr# -> Addr#
+  ddcForwardWrite       : Addr# -> Addr# -> Void#
 
-  ddcArgsThunk          : Addr# -> Nat#
-  ddcGetThunk           : Addr# -> Nat# -> Addr#
-  ddcSetThunk           : Addr# -> Nat# -> Nat# -> Addr# -> Void#
+  ddcThunkArgs          : Addr# -> Nat#
+  ddcThunkGetField      : Addr# -> Nat# -> Addr#
+  ddcThunkSetField      : Addr# -> Nat# -> Nat# -> Addr# -> Void#
 
-  ddcArityOfBoxed       : Addr# -> Nat#
-  ddcGetBoxed           : Addr# -> Nat# -> Addr#
-  ddcSetBoxed           : Addr# -> Nat# -> Addr# -> Void#
+  ddcBoxedFields        : Addr# -> Nat#
+  ddcBoxedGetField      : Addr# -> Nat# -> Addr#
+  ddcBoxedSetField      : Addr# -> Nat# -> Addr# -> Void#
 
   ddcLlvmRootIsEnd      : Addr# -> Bool#
   ddcLlvmRootGetStart   : Nat#  -> Addr#
@@ -203,28 +203,23 @@ ddcEvacuateObject
         (aaBackTop      : Addr#)    -- ^ Address of the back heap top pointer.
         (aObj           : Addr#)    -- ^ Address of the object to evacuate.
                         : Addr#     -- ^ Address that the object has been evacuated to.
- = do
-        format  = ddcFormatOfObject aObj
 
-        -- If this object is a broken heart then return the forwarding pointer.
-        --   We have a "broken heart" because the object we were expecting
-        --   to be here has aready been copied out to the to-space. The old
-        --   header in the from-space will have been over-written by the
-        --   address of where it is now in the to-space.
-        case format of
-         1# -> ddcReadBrokenHeart aObj
+ = case ddcObjectFormat aObj of
+        -- If this object is a forwarding pointer then just return it.
+        --   The object we were expecting to be here has aready been copied
+        --   out to the to-space. The old header in the from-space will have
+        --   been over-written by the address of where it is now in the to-space.
+        1# -> ddcForwardRead aObj
 
-         _  -> case ddcIsAnchored aObj of
+        _  -> case ddcObjectIsAnchored aObj of
                 -- If the object is anchored then leave it alone.
                 --   Anchored objects are allocated outside of our heap,
                 --   and are outside our juristiction.
-                True#
-                 ->     aObj
+                True#   -> aObj
 
                 -- This is a real object in the from-space,
                 -- so evacuate it to the to-space.
-                False#
-                 ->     ddcEvacuateCopy aaBackTop aObj
+                False#  -> ddcEvacuateCopy aaBackTop aObj
 
 
 -- | Copy a single object from the from-space to the to-space.
@@ -234,7 +229,7 @@ ddcEvacuateCopy
                         : Addr#     -- ^ Address that the object has been copied to.
 
  = do   -- Get the size of the whole object.
-        size    = ddcSizeOfObject aObj
+        size    = ddcObjectSize aObj
 
         -- Where we're going to copy it to in the to-space.
         aObjNew = read# aaBackTop 0#
@@ -249,7 +244,7 @@ ddcEvacuateCopy
         -- Overwrite the object header with a broken heart.
         --   This records the fact that we've copied the object,
         --   so if we come back here again we'll know where it's gone.
-        ddcWriteBrokenHeart aObj aObjNew
+        ddcForwardWrite aObj aObjNew
 
         aObjNew
 
@@ -278,7 +273,7 @@ ddcScanHeap
         ddcScanObject aaToSpaceTop aObjScan
 
         -- Go to the next object to scan.
-        size            = ddcSizeOfObject aObjScan
+        size            = ddcObjectSize aObjScan
         aObjNext        = plusAddr# aObjScan size
 
         ddcScanHeap aaToSpaceTop aObjNext
@@ -291,7 +286,7 @@ ddcScanObject
         (aaToSpaceTop   : Addr#)    -- ^ Address of the pointer to the top of the to-space.
         (aObjScan       : Addr#)    -- ^ Address of the next object we need to scan.
                         : Unit
-  = case ddcFormatOfObject aObjScan of
+  = case ddcObjectFormat aObjScan of
           0# -> fail#   -- unknown object.
           1# -> fail#   -- broken heart.
 
@@ -314,7 +309,7 @@ ddcScanThunk
                 aaToSpaceTop
                 aObjScan
                 0#
-                (ddcArgsThunk aObjScan)
+                (ddcThunkArgs aObjScan)
 
 
 -- | Scan a thunk argument.
@@ -327,7 +322,7 @@ ddcScanThunk_arg
     True#  -> ()
     False# -> do
         -- Address where thunk argument is in the from-space.
-        aArgFrom    = ddcGetThunk aObjScan iArg
+        aArgFrom    = ddcThunkGetField aObjScan iArg
 
         -- Skip over null pointer arguments in the thunk.
         --   When the thunk is initially allocated the argument pointers are
@@ -342,7 +337,7 @@ ddcScanThunk_arg
                 aArgTo      = ddcEvacuateObject aaToSpaceTop aArgFrom
 
                 -- Update the thunk to point to the copied object in the to-space.
-                ddcSetThunk aObjScan 0# iArg aArgTo
+                ddcThunkSetField aObjScan 0# iArg aArgTo
 
                 ddcScanThunk_arg aaToSpaceTop aObjScan (add# iArg 1#) nArgs
 
@@ -357,7 +352,7 @@ ddcScanBoxed
                 aaToSpaceTop
                 aObjScan
                 0#
-                (ddcArityOfBoxed aObjScan)
+                (ddcBoxedFields aObjScan)
 
 
 -- | Scan an argument of a boxed object.
@@ -371,7 +366,7 @@ ddcScanBoxed_arg
     True#  -> ()
     False# -> do
         -- Address where the object argument is in the from-space.
-        aArgFrom  = ddcGetBoxed aObjScan iArg
+        aArgFrom  = ddcBoxedGetField aObjScan iArg
 
         -- Skip over null pointer arguments in the boxed object.
         --   When the object is initially allocated the argument pointers are
@@ -386,7 +381,7 @@ ddcScanBoxed_arg
                 aArgTo    = ddcEvacuateObject aaToSpaceTop aArgFrom
 
                 -- Update the argument field boxed object to the copied version of the argument.
-                ddcSetBoxed aObjScan iArg aArgTo
+                ddcBoxedSetField aObjScan iArg aArgTo
 
                 ddcScanBoxed_arg aaToSpaceTop aObjScan (add# iArg 1#) nArgs
 

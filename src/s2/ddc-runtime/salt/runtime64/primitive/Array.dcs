@@ -3,14 +3,15 @@
 module Runtime.Prim.Array
 
 export foreign c value
- allocStoreArray : [r1 r2 : Region]. Nat# -> Ptr# r1 Obj -> Ptr# r2 Obj
- writeStoreArray : [r1 r2 : Region]. Ptr# r1 Obj -> Nat# -> Ptr# r2 Obj -> Ptr# r1 Obj
- readStoreArray  : [r1 r2 : Region]. Ptr# r1 Obj -> Nat# -> Ptr# r2 Obj
- fillStoreArray  : [r1 r2 : Region]. Ptr# r1 Obj -> Nat# -> Nat# -> Ptr# r2 Obj -> Ptr# r1 Obj
+ allocStoreArray  : [r1 r2 : Region]. Nat# -> Ptr# r1 Obj -> Ptr# r2 Obj
+ writeStoreArray  : [r1 r2 : Region]. Ptr# r1 Obj -> Nat# -> Ptr# r2 Obj -> Ptr# r1 Obj
+ readStoreArray   : [r1 r2 : Region]. Ptr# r1 Obj -> Nat# -> Ptr# r2 Obj
+ fillStoreArray   : [r1 r2 : Region]. Ptr# r1 Obj -> Nat# -> Nat# -> Ptr# r2 Obj -> Ptr# r1 Obj
 
 import foreign c value
- ddcAllocBoxed   : [r1    : Region]. Tag# -> Nat# -> Ptr# r1 Obj
- ddcSetBoxed     : [r1 r2 : Region]. Ptr# r1 Obj  -> Nat# -> Ptr# r2 Obj -> Void#
+ ddcBoxedAlloc    : [r1    : Region]. Tag# -> Nat# -> Ptr# r1 Obj
+ ddcBoxedSize     : [r1    : Region]. Ptr# r1 Obj -> Nat#
+ ddcBoxedSetField : [r1 r2 : Region]. Ptr# r1 Obj -> Nat# -> Ptr# r2 Obj -> Void#
 
 with letrec
 
@@ -24,7 +25,7 @@ allocStoreArray
         sVal    = allocSlot# [r1]
 
         poke# sVal pVal
-        arr     = ddcAllocBoxed [r2] (truncate# 0#) len
+        arr     = ddcBoxedAlloc [r2] (truncate# 0#) len
         pVal'   = peek# sVal
 
         fillStoreArray arr 0# len pVal'
@@ -37,12 +38,11 @@ writeStoreArray
         (obj: Ptr# r1 Obj) (ix: Nat#) (val: Ptr# r2 Obj): Ptr# r1 Obj
  = do
         -- Get address of the first byte after the end of the array.
-        len     = promote# (peek# [r1] [Word32#] (plusPtr# (castPtr# obj) 4#))
-        top     = add# 8#  (shl# len (size2# [Addr#]))
+        top     = ddcBoxedSize [r1] obj
 
         -- Bounded poke.
         -- If the requested address is past the end of the array then abort.
-        off     = add# 8#  (shl# ix  (size2# [Addr#]))
+        off     = add# (size# [Word64#]) (shl# ix (size2# [Addr#]))
         _       = pokeBounded# (castPtr# obj) off top val
         obj
 
@@ -53,12 +53,11 @@ readStoreArray
         (obj: Ptr# r1 Obj) (ix: Nat#): Ptr# r2 Obj
  = do
         -- Get address of the first byte after the end of the array.
-        len     = promote# (peek# [r1] [Word32#] (plusPtr# (castPtr# obj) 4#) )
-        top     = add# 8#  (shl#  len  (size2# [Addr#]))
+        top     = ddcBoxedSize [r1] obj
 
         -- Bounded peek.
         -- If the requested address is past the end of the array then abort.
-        off     = add# 8#  (shl#  ix   (size2# [Addr#]))
+        off     = add# (size# [Word64#]) (shl# ix (size2# [Addr#]))
         result  = peekBounded# (castPtr# obj) off top
         result
 
@@ -71,6 +70,6 @@ fillStoreArray
  = case ge# start end of
         True#   -> arr
         False#  -> do
-                ddcSetBoxed arr start val
+                ddcBoxedSetField arr start val
                 fillStoreArray arr (add# start 1#) end val
 
