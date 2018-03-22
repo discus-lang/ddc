@@ -97,7 +97,7 @@ cmdToSaltSourceTetraFromString config store source str
 
         modSalt'
          <-  DA.saltSimplify   config source
-         =<< DE.tetraToSalt    config source
+         =<< DE.discusToSalt    config source
          =<< DE.sourceLoadText config store  source str
 
         errs
@@ -164,8 +164,8 @@ cmdToSaltCoreFromString config language source str
         let makeSalt
                 |   fragName == "Discus"
                 =   DA.saltSimplify  config source
-                =<< DE.tetraToSalt   config source
-                =<< DE.tetraLoadText config store source str
+                =<< DE.discusToSalt   config source
+                =<< DE.discusLoadText config store source str
 
                 |   fragName == "Salt"
                 =   DA.saltSimplify  config source

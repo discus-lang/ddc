@@ -21,8 +21,7 @@ test3 (n : Nat#) : Nat# -> Nat#
 
 
 main (_ : Unit) : S Console Unit
- = box do
-        run writel (showNat (test  2 3))
-        run writel (showNat (test2 2 3))
-        run writel (showNat (test3 2 3))
+ = do   writel (showNat (test  2 3))
+        writel (showNat (test2 2 3))
+        writel (showNat (test3 2 3))
 

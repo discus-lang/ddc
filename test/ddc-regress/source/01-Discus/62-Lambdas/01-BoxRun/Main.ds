@@ -7,8 +7,8 @@ import System.IO.Console
 where
 
 
-main (_ : Unit) : S Console Unit
- = box do
+main ()
+ = do
 
         -- Anonymous functions with unboxed bodies.
         --   The body of the function is not suspended, so the RTS can

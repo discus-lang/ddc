@@ -49,7 +49,7 @@ pModule
         return  $ Module
                 { moduleName            = name
                 , moduleExportTypes     = []
-                , moduleExportValues    = tExports
+                , moduleExportValues    = [(n, s) | ExportValue n s  <- tExports]
                 , moduleImportModules   = [mn     | ImportModule mn  <- tImports]
                 , moduleImportTypes     = [(n, s) | ImportType  n s  <- tImports]
                 , moduleImportCaps      = [(n, s) | ImportCap   n s  <- tImports]
@@ -58,13 +58,52 @@ pModule
 
 
 ---------------------------------------------------------------------------------------------------
-pExportSpecs :: Parser [Bound]
+data ExportSpec
+        = ExportValue Bound     (ExportValue Bound Type)
+        deriving Show
+
+pExportSpecs :: Parser [ExportSpec]
 pExportSpecs
  = do   pTok (KKeyword EExport)
-        pSym SBraceBra
-        vars <- P.sepEndBy1 pBoundName (pSym SSemiColon)
-        pSym SBraceKet
-        return vars
+
+        P.choice
+         [ do   -- export foreign ...
+                pTok (KKeyword EForeign)
+                src     <- liftM (renderIndent . ppr) pName
+
+                P.choice
+                 [      -- export foreign X value (NAME :: TYPE)+
+                   do   pKey EValue
+                        pSym SBraceBra
+                        sigs <- P.sepEndBy1 (pExportValue src)  (pSym SSemiColon)
+                        pSym SBraceKet
+                        return sigs
+                 ]
+
+         , do   pSym SBraceBra
+                names   <- fmap (map fst)
+                        $ P.sepEndBy1 pBoundNameSP (pSym SSemiColon)
+                pSym SBraceKet
+                return  [ExportValue n (ExportValueLocalNoType n) | n <- names]
+         ]
+
+
+-- | Parse a value export spec.
+pExportValue :: String -> Parser ExportSpec
+pExportValue src
+        | elem src ["c", "C"]
+        = do    (b@(UName n), _)  <- pBoundNameSP
+                pTokSP (KOp ":")
+                k       <- pType
+
+                -- ISSUE #327: Allow external symbol to be specified
+                --             with foreign C imports and exports.
+                let symbol = renderIndent (text $ Text.unpack n)
+
+                return  (ExportValue b (ExportValueSea b (Text.pack symbol) k))
+
+        | otherwise
+        = P.unexpected "export mode for foreign value"
 
 
 ---------------------------------------------------------------------------------------------------
@@ -83,10 +122,9 @@ pImportSpecs
  = do   pTok (KKeyword EImport)
 
         P.choice
-                -- import foreign ...
-         [ do   pTok (KKeyword EForeign)
-                src    <- liftM (renderIndent . ppr)
-                        $ P.choice [pName]
+         [ do   -- import foreign ...
+                pTok (KKeyword EForeign)
+                src     <- liftM (renderIndent . ppr) pName
 
                 P.choice
                  [      -- import foreign X type (NAME :: TYPE)+

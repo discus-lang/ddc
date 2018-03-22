@@ -1,7 +1,7 @@
 
 module DDC.Build.Stage.Core.Discus
-        ( tetraToSalt
-        , ConfigTetraToSalt     (..))
+        ( discusToSalt
+        , ConfigDiscusToSalt     (..))
 where
 import Control.Monad.Trans.Except
 import Control.Monad.IO.Class
@@ -30,8 +30,8 @@ import qualified DDC.Core.Discus.Transform.Curry        as ECurry
 
 
 ---------------------------------------------------------------------------------------------------
-data ConfigTetraToSalt
-        = ConfigTetraToSalt
+data ConfigDiscusToSalt
+        = ConfigDiscusToSalt
         { configSinkExplicit    :: B.Sink       -- ^ Sink after making explicit.
         , configSinkLambdas     :: B.Sink       -- ^ Sink after lambda lifting.
         , configSinkUnshare     :: B.Sink       -- ^ Sink after unsharing.
@@ -43,15 +43,15 @@ data ConfigTetraToSalt
         }
 
 
--- | Convert Core Tetra to Core Salt.
-tetraToSalt
+-- | Convert Core Discus to Core Salt.
+discusToSalt
         :: A.Platform           -- ^ Platform configuation.
         -> A.Config             -- ^ Runtime config.
         -> C.Module () E.Name   -- ^ Core tetra module.
-        -> ConfigTetraToSalt    -- ^ Sinker config.
+        -> ConfigDiscusToSalt   -- ^ Sinker config.
         -> ExceptT [B.Error] IO (C.Module () A.Name)
 
-tetraToSalt platform runtimeConfig mm config
+discusToSalt platform runtimeConfig mm config
  = do
         -- Expliciate the core module.
         --   This converts implicit function parameters and arguments to explicit ones
@@ -69,7 +69,7 @@ tetraToSalt platform runtimeConfig mm config
         --   The lambda lifter needs every node annotated with its type.
         mm_checked_lambdas
          <-  B.coreCheck
-                "TetraToSalt/lambdas" BE.fragment C.Recon
+                "DiscusToSalt/lambdas" BE.fragment C.Recon
                 B.SinkDiscard B.SinkDiscard
                 mm_explicit
 
@@ -89,7 +89,7 @@ tetraToSalt platform runtimeConfig mm config
         --   The unsharing transform needs every node annotated with its type.
         mm_checked_unshare
          <- B.coreCheck
-                "TetraToSalt/unshare" BE.fragment C.Recon
+                "DiscusToSalt/unshare" BE.fragment C.Recon
                 B.SinkDiscard B.SinkDiscard
                 mm_lambdas
 
@@ -153,7 +153,7 @@ tetraToSalt platform runtimeConfig mm config
         --   The to-salt conversion needs every node annotated with its type.
         mm_checked_salt
          <- B.coreCheck
-                "TetraToSalt/toSalt" BE.fragment C.Recon
+                "DiscusToSalt/toSalt" BE.fragment C.Recon
                 B.SinkDiscard B.SinkDiscard
                 mm_prep_salt
 
@@ -163,7 +163,9 @@ tetraToSalt platform runtimeConfig mm config
 
         -- Convert Core Tetra to Core Salt.
         mm_salt
-         <- case E.saltOfDiscusModule platform runtimeConfig
+         <- case E.saltOfDiscusModule
+                platform
+                runtimeConfig
                 (C.profilePrimDataDefs E.profile)
                 (C.profilePrimKinds    E.profile)
                 (C.profilePrimTypes    E.profile) mm_checked_salt of

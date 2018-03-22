@@ -1,8 +1,6 @@
 
 module Control.Exception
 export try; throw; fail; error
-export ddcHookHandleTopLevel
-import System.IO.Console
 import Data.Text
 
 import foreign c value
@@ -49,7 +47,7 @@ throw {@a: Data} (ex: Exception): a
 --   This is intended for unrecoverable "program on fire" cases such
 --   as when we detect an internal invariant has been violated.
 --
---   The fact that this function is not assigned an effec type means that the
+--   The fact that this function is not assigned an effect type means that the
 --   optimiser may reorder calls to is, but that doesn't matter if the program
 --   is really on fire.
 --
@@ -61,26 +59,6 @@ fail {@a: Data} (tx: Text): a
 --   This is intended for generic user program exceptions.
 error (tx: Text): S Error Unit
  = ddcPrimExceptionThrow {@Error} {@Unit} (ExceptionError tx)
-
-
--------------------------------------------------------------------------------
--- | Hook for to handle exceptions that get propagated to top-level.
---   For Discus Source programs the desugarer wraps the 'main' function
---   with this handler.
-ddcHookHandleTopLevel (comp: S e Unit): S (e + Console) Unit
- =  try comp $ \ex
- -> case ex of
-        ExceptionFail tx
-         -> writel $ "*** Fail:"  %% tx
-
-        ExceptionError tx
-         -> writel $ "*** Error:" %% tx
-
-        ExceptionSystemFile tx _
-         -> writel $ "*** File IO Error:" %% tx
-
-        ExceptionSystemSocket tx _
-         -> writel $ "*** Socket IO Error:" %% tx
 
 
 -- | Hook for the runtime primitive code to throw a file exception.

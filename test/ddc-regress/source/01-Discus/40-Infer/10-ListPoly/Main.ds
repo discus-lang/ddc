@@ -1,5 +1,7 @@
 
-module Main where
+module Main
+import System.IO.Console
+where
 
 
 -- | Standard Cons-lists.
@@ -14,4 +16,4 @@ ident (xx: List a): List a
         go (Cons x xs)  = Cons x (go xs)
 
 main ()
- = box ()
+ = ()

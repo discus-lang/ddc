@@ -19,14 +19,13 @@ add3 (x y z: Nat#): Nat#
 
 
 thing1 (add2: Nat# -> Nat# -> Nat#): S Console Unit
- = box do
-        run writel (showNat (add2 1 2))
+ =      writel (showNat (add2 1 2))
 
 
 thing2 (_: Unit): S Console Unit
- = box do
+ = do
         add2 = add3 5
-        run writel (showNat (add2 1 2)) 
+        writel (showNat (add2 1 2))
 
 
 thing3 (f: Foo): S Console Unit
@@ -35,8 +34,8 @@ thing3 (f: Foo): S Console Unit
 
 
 main (_: Unit): S Console Unit
- = box do
-        run thing1 (add3 2)
-        run thing2 ()
+ = do
+        thing1 (add3 2)
+        thing2 ()
         ()
 

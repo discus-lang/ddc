@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 
 -- | Unix-style command line interface to DDC.
 --    This interface exports commands that work on whole modules at a time,
@@ -21,11 +22,10 @@ import DDC.Driver.Command.Flow.Concretize
 import DDC.Driver.Command.Flow.Melt
 import DDC.Driver.Command.Flow.Wind
 import DDC.Driver.Command.Flow.Thread
-import qualified DDC.Core.Flow          as Flow
-
 import DDC.Driver.Command.ToSalt
 import DDC.Driver.Command.ToLlvm
 import DDC.Driver.Command.ToPHP
+import qualified DDC.Core.Flow          as Flow
 
 import DDC.Driver.Interface.Source
 import DDC.Build.Builder
@@ -242,7 +242,16 @@ getDriverConfig config mFilePath
         -- The default runtime system config.
         let runtimeConfig
              = Runtime.Config
-             { Runtime.configHeapSize             = configRuntimeHeapSize config }
+             { -- Set the starting heap size.
+               -- The heap will be expanded by the runtime system automatically
+               -- when it becomes full.
+               Runtime.configHeapSize           = configRuntimeHeapSize config
+
+               -- The compile driver handle several language fragments,
+               -- and we don't want to enable the top-level handler for all of
+               -- them. The handler is enabled on a per-fragment basis later
+               -- in the compilation pipeline.
+             , Runtime.configHookHandleTopLevel = Nothing }
 
         -- Build driver config.
         let dconfig

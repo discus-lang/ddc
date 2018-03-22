@@ -6,18 +6,22 @@ export
         print; printl; printll;
         flush;
 }
+
+export foreign c value
+ ddcHookHandleTopLevel  : {@e: Effect} -> S e Unit -> S (e + Console) Unit
+
 import Class.Show
 import Data.Text
+import Control.Exception
 
 import foreign abstract type
  Console  : Effect
 
 import foreign c value
- ddcPrimStdoutPutString    : TextLit# -> S Console Void#
- ddcPrimStdoutPutVector    : {@r: Region} -> Vector# r Word8# -> S Console Void#
- ddcPrimStdoutFlush        : Unit -> S Console Void#
- ddcPrimStdinGetVector     : {@r: Region} -> Nat# -> S Console (Vector# r Word8#)
-
+ ddcPrimStdoutPutString : TextLit# -> S Console Void#
+ ddcPrimStdoutPutVector : {@r: Region} -> Vector# r Word8# -> S Console Void#
+ ddcPrimStdoutFlush     : Unit -> S Console Void#
+ ddcPrimStdinGetVector  : {@r: Region} -> Nat# -> S Console (Vector# r Word8#)
 
 import foreign c value
  -- Get the unboxed text literal from a boxed text literal.
@@ -84,3 +88,22 @@ flush: S Console Unit
  = box do
         ddcPrimStdoutFlush ()
         ()
+
+
+-------------------------------------------------------------------------------
+-- | Hook to handle exceptions that get propagated to top-level.
+ddcHookHandleTopLevel (comp: S e Unit): S (e + Console) Unit
+ =  try comp $ \ex
+ -> case ex of
+        ExceptionFail tx
+         -> writel $ "*** Fail:"  %% tx
+
+        ExceptionError tx
+         -> writel $ "*** Error:" %% tx
+
+        ExceptionSystemFile tx _
+         -> writel $ "*** File IO Error:" %% tx
+
+        ExceptionSystemSocket tx _
+         -> writel $ "*** Socket IO Error:" %% tx
+

@@ -1,4 +1,4 @@
-module Main 
+module Main
 import Data.Numeric.Nat
 import System.IO.Console
 where
@@ -23,7 +23,7 @@ enumFromTo (start : Nat#) (end : Nat#)
         False           -> Cons start (enumFromTo (start + 1) end)
 
 
--- | Apply a worker function to all elements of a list, 
+-- | Apply a worker function to all elements of a list,
 --   yielding a new list.
 mapS (f : a -> S e b) (xx : List a) : S e (List b)
  = box case xx of
@@ -31,13 +31,13 @@ mapS (f : a -> S e b) (xx : List a) : S e (List b)
         Cons x xs       -> Cons (run f x) (run mapS f xs)
 
 
--- | Apply a function to all elements of a list, 
+-- | Apply a function to all elements of a list,
 --   yielding nothing.
 forS (xx : List a) (f : a -> S e Unit) : S e Unit
  = box case xx of
         Nil     -> ()
 
-        Cons x xs       
+        Cons x xs
          -> do  run f x
                 run forS xs f
 
@@ -53,7 +53,7 @@ foldS (f : a -> b -> S e b) (z : b) (xx : List a) : S e b
 filterS (f : a -> S e Bool#) (xx : List a) : S e (List a)
  = box case xx of
         Nil             -> Nil
-        Cons x xs       
+        Cons x xs
          -> case run f x of
                 True   -> Cons x (run filterS f xs)
                 False  -> run filterS f xs
@@ -64,8 +64,8 @@ length (xx : List a) : Nat#
         Cons x xs       -> 1 + length xs
 
 
-main (_ : Unit) : S Console Unit
- = box private r with { Alloc r; Read r; Write r } in 
+main ()
+ = private r with { Alloc r; Read r; Write r } in
    do
         -- Create a demo list.
         xx      = enumFromTo 0 100

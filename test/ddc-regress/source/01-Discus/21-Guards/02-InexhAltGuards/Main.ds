@@ -10,13 +10,13 @@ where
 --   error if x /= 0.
 derp (mx: Maybe Nat#): Nat#
  = case mx of
-        Just x  
+        Just x
          | x == 0       -> 10
 
         Nothing         -> 20
 
 
 main (_: Unit): S Console Unit
- = do
+ = box do
         writel $ showNat (derp (Just 0))
         writel $ showNat (derp (Just 1))

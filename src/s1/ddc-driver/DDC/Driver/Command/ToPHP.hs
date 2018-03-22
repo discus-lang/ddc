@@ -157,7 +157,7 @@ cmdToPHPCoreFromString config language source str
         let makeSalt
                 |  fragName == "Tetra"
                 =  fmap (CReannotate.reannotate (const ()))
-                $  DE.tetraLoadText config store source str
+                $  DE.discusLoadText config store source str
 
                 -- Unrecognised.
                 | otherwise

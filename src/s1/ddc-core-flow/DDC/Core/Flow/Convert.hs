@@ -87,7 +87,12 @@ convertM mm
 
         -- Initialise the salt heap.
         -- Hardcode this for now, because eventually this will target tetra.
-        mm_init <- case initRuntime (Config 10000)  mm_tetra of
+        let configRuntime
+                = Config
+                { configHeapSize                = 10000
+                , configHookHandleTopLevel      = Nothing }
+
+        mm_init <- case initRuntime configRuntime mm_tetra of
                         Nothing   -> return mm_tetra
                         Just mm'  -> return mm'
 

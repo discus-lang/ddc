@@ -11,6 +11,7 @@ import DDC.Core.Exp.Annot
 import Data.List
 
 
+---------------------------------------------------------------------------------------------------
 -- | If this it the Main module, then insert a main function for the posix
 --   entry point that initialises the runtime system and calls the real main function.
 --
@@ -24,38 +25,44 @@ initRuntime
 initRuntime config mm@ModuleCore{}
  | isMainModule mm
  = case initRuntimeTopX config (moduleBody mm) of
-        Nothing -> Nothing
-        Just x' -> Just
-                $ mm    { moduleExportValues    = patchMainExports (moduleExportValues mm)
-                        , moduleBody            = x'}
+    Nothing
+     -> Nothing
+
+    Just x'
+     -> Just    $ mm
+                { moduleExportValues    = patchMainExports (moduleExportValues mm)
+                , moduleBody            = x'}
 
  | otherwise
  = Just mm
 
 
--- | Type of the POSIX main function.
-posixMainType :: Type Name
-posixMainType
-        = tNat `tFun` tAddr `tFun` tInt
-
-
+---------------------------------------------------------------------------------------------------
 -- | Patch the list of export definitions to export our wrapper instead
 --   of the original main function.
 patchMainExports
-        ::  [(Name, ExportValue Name (Type Name))]
-        ->  [(Name, ExportValue Name (Type Name))]
+        :: [(Name, ExportValue Name (Type Name))]
+        -> [(Name, ExportValue Name (Type Name))]
 
 patchMainExports xx
  = case xx of
         []      -> []
+
         (x : xs)
          |  (NameVar "main", ExportValueLocal mn n _ mArity) <- x
-         -> (NameVar "main", ExportValueLocal mn n posixMainType mArity) : xs
+         -> (NameVar "main", ExportValueLocal mn n tPosixMain mArity) : xs
 
          |  otherwise
          -> x : patchMainExports xs
 
 
+-- | Type of the POSIX main function.
+tPosixMain :: Type Name
+tPosixMain
+        = tNat `tFun` tAddr `tFun` tInt
+
+
+---------------------------------------------------------------------------------------------------
 -- | Takes the top-level let-bindings of amodule
 --      and add code to initialise the runtime system.
 initRuntimeTopX :: Config -> Exp a Name -> Maybe (Exp a Name)
@@ -69,7 +76,7 @@ initRuntimeTopX config xx
         bMainOrig'      = BName (NameVar "_main") $ tMainOrig
 
         -- The new entry point of the program is called 'main'.
-        bMainEntry      = BName (NameVar "main")  $ posixMainType
+        bMainEntry      = BName (NameVar "main")  $ tPosixMain
 
         xMainEntry      = makeMainEntryX config a
 
@@ -100,13 +107,23 @@ makeMainEntryX config a
  = let xU       = xAllocBoxed a rTop 0 (xNat a 0)
    in  XLam    a  (BName (NameVar "argc") tNat)
         $ XLam a  (BName (NameVar "argv") tAddr)
-        $ XLet a  (LLet  (BNone tUnit)
-                         (xddcInit a (configHeapSize config)
-                                     (XVar a (UName (NameVar "argc")))
-                                     (XVar a (UName (NameVar "argv")))))
-        $ XLet a  (LLet  (BNone (tBot kData))
-                         (xApps a (XVar a (UName (NameVar "_main")))
-                                  [RTerm xU]))
-        $ XLet a  (LLet  (BNone tVoid)
-                         (xddcExit a  0))
+
+        -- Initialize the runtime system.
+        $ XLLet a (BNone tUnit)
+                  (xddcInit a (configHeapSize config)
+                               (XVar a (UName (NameVar "argc")))
+                               (XVar a (UName (NameVar "argv"))))
+
+        -- Call the user level main function.
+        $ XLLet a (BNone (tBot kData))
+                  (xApps a (XVar a (UName (NameVar "_main"))) [RTerm xU])
+
+        -- Shut down the runtime system.
+        $ XLLet a (BNone tVoid)
+                  (xddcExit a  0)
+
+        -- Inner dummy expression.
         $ xInt a 0
+
+
+pattern XLLet a b x1 x2 = XLet a (LLet b x1) x2

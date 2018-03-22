@@ -108,12 +108,12 @@ pExpApp {c: Config s p}
                          else if nKey' == "run" then return KRun
                          else if nKey' == "seq" then return KSeq
                          else if nKey' == "tag" then return KTag
-                         else fail
+                         else failure
         xsArgs  <- some pExpAtom
         case xsArgs of
          Cons xFirst xsRest
              -> return $ makeXApps (XKey nKey xFirst) xsRest
-         Nil -> fail)
+         Nil -> failure)
 
         -- Application of some other expression.
  $ Cons (do
@@ -166,17 +166,17 @@ pExpAtom {c: Config s p}
          SSym
           -> case configSym c name of
                 Just s  -> return (XRef (RSym s))
-                Nothing -> fail
+                Nothing -> failure
 
          -- Named primitive.
          SPrm
           -> case configPrim c name of
                 Just p  -> return (XRef (RPrm p))
-                Nothing -> fail
+                Nothing -> failure
 
          -- Named keyword.
          SKey
-          -> fail)
+          -> failure)
  $ Nil
 
 

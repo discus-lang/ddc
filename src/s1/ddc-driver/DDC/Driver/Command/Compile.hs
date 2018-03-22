@@ -347,7 +347,7 @@ cmdCompile config bBuildExe' fsExtraO store filePath
 
                 -- Load a Core Tetra module.
                 | ext == ".dct"
-                = fmap Just $ DE.tetraLoadText   config store source src
+                = fmap Just $ DE.discusLoadText config store source src
 
                 -- Load a Core Salt module
                 | ext == ".dcs"
@@ -366,7 +366,7 @@ cmdCompile config bBuildExe' fsExtraO store filePath
                 =<< DA.saltLoadText config store source src
 
                 | Just modTetra <- mModTetra
-                = DE.tetraToSalt  config source
+                = DE.discusToSalt  config source
                 $ CReannotate.reannotate (const ()) modTetra
 
                 | otherwise

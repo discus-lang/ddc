@@ -1,15 +1,13 @@
 
-module Main 
+module Main
 import Data.List
 import Data.Numeric.Nat
 import System.IO.Console
 where
 
-main (_ : Unit) : S Console Unit
- = box private r with { Alloc r; Read r } in
-   do
-        run writel (showNat 5)
-        ()
+main ()
+ = private r with { Alloc r; Read r } in
+   do   writel (showNat 5)
 
 
 
