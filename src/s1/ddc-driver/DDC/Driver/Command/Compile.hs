@@ -1,4 +1,3 @@
-
 module DDC.Driver.Command.Compile
         ( cmdCompileRecursive
         , cmdCompileRecursiveDS
@@ -27,10 +26,12 @@ import qualified DDC.Source.Discus.Lexer        as SE
 import qualified DDC.Source.Discus.Parser       as SE
 import qualified DDC.Core.Codec.Text.Pretty     as P
 import qualified DDC.Core.Codec.Text.Lexer      as C
+import qualified DDC.Core.Salt.Runtime          as A
 import qualified DDC.Core.Module                as C
 import qualified DDC.Control.Parser             as BP
 import qualified DDC.Version                    as Version
 import qualified Data.List                      as List
+import qualified Data.Text                      as T
 
 import qualified DDC.Core.Transform.Reannotate                  as CReannotate
 
@@ -358,6 +359,16 @@ cmdCompile config bBuildExe' fsExtraO store filePath
 
         mModTetra <- makeTetra
 
+        let config_handler
+                | ext == ".ds"
+                = config
+                { configRuntime
+                    = (configRuntime config)
+                    { A.configHookHandleTopLevel = Just $ T.pack "ddcHookHandleTopLevel" } }
+
+                | otherwise
+                = config
+
         -- Convert Core Tetra to Core Salt.
         let makeSalt
                 | ext == ".dcs"
@@ -366,7 +377,7 @@ cmdCompile config bBuildExe' fsExtraO store filePath
                 =<< DA.saltLoadText config store source src
 
                 | Just modTetra <- mModTetra
-                = DE.discusToSalt  config source
+                = DE.discusToSalt  config_handler source
                 $ CReannotate.reannotate (const ()) modTetra
 
                 | otherwise
