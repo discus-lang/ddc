@@ -16,4 +16,4 @@ ident (xx: List a): List a
         go (Cons x xs)  = Cons x (go xs)
 
 main ()
- = ()
+ = box ()

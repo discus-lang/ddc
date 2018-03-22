@@ -261,7 +261,7 @@ letrec {
 
 -- Error: partial application of primitive data constructors is not supported.
 Error in transformed module.
-  in stage TetraToSalt/toSalt
+  in stage DiscusToSalt/toSalt
   in pipe  PipeCoreCheck/Check
   ()
   Type mismatch.
@@ -307,7 +307,7 @@ letrec {
 
 -- Error: partial application of primitive operators is not supported.
 Error in transformed module.
-  in stage TetraToSalt/toSalt
+  in stage DiscusToSalt/toSalt
   in pipe  PipeCoreCheck/Check
   ()
   Type mismatch.

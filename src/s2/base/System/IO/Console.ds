@@ -92,6 +92,10 @@ flush: S Console Unit
 
 -------------------------------------------------------------------------------
 -- | Hook to handle exceptions that get propagated to top-level.
+--
+--   The compiler implicitly wraps the Main.main function of an exectutable
+--   with this hook.
+--
 ddcHookHandleTopLevel (comp: S e Unit): S (e + Console) Unit
  =  try comp $ \ex
  -> case ex of

@@ -359,12 +359,15 @@ cmdCompile config bBuildExe' fsExtraO store filePath
 
         mModTetra <- makeTetra
 
+        -- If we're compiling a Main.ds module then automatically inject
+        -- the default exception handler.
         let config_handler
                 | ext == ".ds"
                 = config
                 { configRuntime
                     = (configRuntime config)
-                    { A.configHookHandleTopLevel = Just $ T.pack "ddcHookHandleTopLevel" } }
+                    { A.configHookHandleTopLevel
+                        = Just (T.pack "Console", T.pack "ddcHookHandleTopLevel") } }
 
                 | otherwise
                 = config

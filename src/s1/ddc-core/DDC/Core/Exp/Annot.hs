@@ -21,6 +21,8 @@ module DDC.Core.Exp.Annot
         , pattern XLLet
         , pattern XLRec
         , pattern XLPrivate
+        , pattern XBox
+        , pattern XRun
 
           -- ** Witnesses
         , Witness       (..)

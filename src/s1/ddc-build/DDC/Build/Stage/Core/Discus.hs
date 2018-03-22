@@ -34,11 +34,11 @@ import qualified DDC.Core.Discus.Transform.Initialize   as DInitialize
 data ConfigDiscusToSalt
         = ConfigDiscusToSalt
         { configSinkExplicit    :: B.Sink       -- ^ Sink after making explicit.
+        , configSinkInitialize  :: B.Sink       -- ^ Sink after initialize transform.
         , configSinkLambdas     :: B.Sink       -- ^ Sink after lambda lifting.
         , configSinkUnshare     :: B.Sink       -- ^ Sink after unsharing.
         , configSinkCurry       :: B.Sink       -- ^ Sink after curry transform.
         , configSinkBoxing      :: B.Sink       -- ^ Sink after boxing transform.
-        , configSinkInitialize  :: B.Sink       -- ^ Sink after initialize transform.
         , configSinkPrep        :: B.Sink       -- ^ Sink after prep before to-salt conversion.
         , configSinkChecked     :: B.Sink       -- ^ Sink after checking before to-salt converion.
         , configSinkSalt        :: B.Sink       -- ^ Sink after conversion to salt.
@@ -66,13 +66,21 @@ discusToSalt platform runtimeConfig mm config
         liftIO $ B.pipeSink (renderIndent $ ppr mm_explicit)
                             (configSinkExplicit config)
 
+        -- Perform the initialize transform.
+        --   This wraps the main function with the default exception handler.
+        let mm_initialize
+                = DInitialize.initializeModule runtimeConfig mm_explicit
+
+        liftIO $ B.pipeSink (renderIndent $ ppr mm_initialize)
+                            (configSinkInitialize config)
+
         -- Re-check the module before lambda lifting.
         --   The lambda lifter needs every node annotated with its type.
         mm_checked_lambdas
          <-  B.coreCheck
                 "DiscusToSalt/lambdas" BD.fragment C.Recon
                 B.SinkDiscard B.SinkDiscard
-                mm_explicit
+                mm_initialize
 
         -- Perform lambda lifting.
         --   This hoists out nested lambda abstractions to top-level,
@@ -129,14 +137,6 @@ discusToSalt platform runtimeConfig mm config
         liftIO $ B.pipeSink (renderIndent $ ppr mm_boxing)
                             (configSinkBoxing config)
 
-        -- Perform the initialize transform.
-        --   This wraps the main function with the default exception handler.
-        let mm_initialized
-                = DInitialize.initializeModule runtimeConfig mm_boxing
-
-        liftIO $ B.pipeSink (renderIndent $ ppr mm_initialized)
-                            (configSinkInitialize config)
-
         -- Prep before conversion to salt.
         --   The to-salt conversion needs the program to be a-normalized.
         mm_prep_salt
@@ -145,7 +145,7 @@ discusToSalt platform runtimeConfig mm config
                         (CNamify.makeNamifier (D.freshT "t"))
                         (CNamify.makeNamifier (D.freshX "x"))
                 `mappend` C.flatten)
-                mm_initialized
+                mm_boxing
 
         liftIO $ B.pipeSink (renderIndent $ ppr mm_prep_salt)
                             (configSinkPrep config)

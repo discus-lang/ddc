@@ -73,7 +73,15 @@ data Config
 
           -- | Hook for the top-level exception handler,
           --   which we will use to wrap the 'main' function.
-        , configHookHandleTopLevel      :: Maybe Text
+          --
+          --   The first name is the name of the Effect that needs to be imported before we
+          --   add the handler, and the second is the name of the handler itself.
+          --   Example, ("Console", "ddcHookHandleTopLevel")
+          --
+          --   We don't insert the handler when the effect is no present as the source
+          --   module won't have imported the module that defines the handler.
+          --
+        , configHookHandleTopLevel      :: Maybe (Text, Text)
         }
 
 

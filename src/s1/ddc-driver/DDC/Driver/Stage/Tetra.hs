@@ -24,7 +24,6 @@ import qualified DDC.Core.Check                 as C
 import qualified DDC.Core.Module                as C
 import qualified DDC.Core.Discus                as CE
 import qualified DDC.Core.Salt                  as CA
-import qualified DDC.Core.Salt.Runtime          as CA
 import qualified DDC.Core.Transform.Reannotate  as CReannotate
 
 import qualified DDC.Data.SourcePos             as SP
@@ -103,17 +102,16 @@ discusToSalt
 discusToSalt config source mm
  = BCD.discusToSalt
         (B.buildSpec $ D.configBuilder config)
-        ((D.configRuntime config)
-                { CA.configHookHandleTopLevel = Just "ddcHookHandleTopLevel"})
+        (D.configRuntime config)
         (CReannotate.reannotate (const ()) mm)
  $ BCD.ConfigDiscusToSalt
         { BCD.configSinkExplicit        = D.dump config source "dump.1-discus-02-explicit.dcd"
-        , BCD.configSinkLambdas         = D.dump config source "dump.1-discus-03-lambdas.dcd"
-        , BCD.configSinkUnshare         = D.dump config source "dump.1-discus-04-unshare.dcd"
-        , BCD.configSinkCurry           = D.dump config source "dump.1-discus-05-curry.dcd"
-        , BCD.configSinkBoxing          = D.dump config source "dump.1-discus-06-boxing.dcd"
-        , BCD.configSinkPrep            = D.dump config source "dump.1-discus-07-prep.dcd"
-        , BCD.configSinkInitialize      = D.dump config source "dump.1-discus-08.initialize.dcd"
+        , BCD.configSinkInitialize      = D.dump config source "dump.1-discus-03.initialize.dcd"
+        , BCD.configSinkLambdas         = D.dump config source "dump.1-discus-04-lambdas.dcd"
+        , BCD.configSinkUnshare         = D.dump config source "dump.1-discus-05-unshare.dcd"
+        , BCD.configSinkCurry           = D.dump config source "dump.1-discus-06-curry.dcd"
+        , BCD.configSinkBoxing          = D.dump config source "dump.1-discus-07-boxing.dcd"
+        , BCD.configSinkPrep            = D.dump config source "dump.1-discus-08-prep.dcd"
         , BCD.configSinkChecked         = D.dump config source "dump.1-discus-09-checked.dcd"
         , BCD.configSinkSalt            = D.dump config source "dump.2-salt-00-convert.dcs"
         }
