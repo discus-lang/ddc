@@ -1,0 +1,33 @@
+
+module System.Posix.Errno
+export errno_get
+export errno_showMessage
+
+import Data.Numeric.Int
+import Data.Text
+
+import foreign abstract type
+ -- | Effect of reading or writing the global C errno variable.
+ ERRNO  : Effect
+
+import foreign c value
+
+ -- TODO: boxing transform messes up when return type is (S Errno Int#)
+ --       the Int# here is converted to (U# Int#), but at the use site
+ --       it is still Int#.
+ ddcPrimErrnoGet : Unit -> Int#
+
+ ddcPrimErrnoShowMessage : Int# -> Text
+
+where
+
+
+-- | Get the value of the global 'errno' variable.
+errno_get: S ERRNO Int
+ = box weakeff ERRNO in ddcPrimErrnoGet ()
+
+
+-- | Show the message for the given errno value.
+errno_showMessage (errno: Int): Text
+ = ddcPrimErrnoShowMessage errno
+

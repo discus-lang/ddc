@@ -3,6 +3,7 @@
 module System.Posix.Stdlib
 export  stdlib_atoi; stdlib_system; stdlib_mkstemp
         exit
+import System.Posix.Errno
 import Data.Numeric.Nat
 import Data.Numeric.Int
 import Data.Numeric.Bool
@@ -11,9 +12,6 @@ import Data.List
 
 
 import foreign abstract type
- -- | Effect of reading or writing the global C errno variable.
- Errno   : Effect
-
  -- | Effect of accessing the file system.
  File   : Effect
 
@@ -29,7 +27,7 @@ import foreign c value
  system  : Nat# -> S Process Int#
 
  -- ISSUE #440: Use Addr# instead of Nat# in Stdlib.ds
- mkstemp : Nat# -> S (File + Errno) Int#
+ mkstemp : Nat# -> S (File + ERRNO) Int#
 
 
 import foreign c value
@@ -69,7 +67,7 @@ stdlib_system (cmd: Text): S Process Int
 --   unique alphanumeric combination.
 stdlib_mkstemp
         (template: Text)
-        : S (File + Errno) (Maybe Text)
+        : S (File + ERRNO) (Maybe Text)
  = private r with { Read r; Write r; Alloc r} in
    do
         -- ISSUE #439: Avoid copying strings via lists in Stdlib.ds.
@@ -85,7 +83,7 @@ stdlib_mkstemp
 --   TODO: Pass explicit ptr instead of raw Nat.
 stdlib_mkstemp_raw
         (template: Vector# r Word8)
-        : S (File + Errno + Write r) Bool
+        : S (File + ERRNO + Write r) Bool
  = box weakeff Write r in
    do   result  = mkstemp (ddcVectorGuts template)
         not (result == -1i)
