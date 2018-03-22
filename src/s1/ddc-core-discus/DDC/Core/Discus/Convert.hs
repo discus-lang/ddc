@@ -13,7 +13,7 @@ import DDC.Core.Discus.Convert.Type
 import DDC.Core.Discus.Convert.Error
 import qualified DDC.Core.Discus.Convert.Type.Base       as T
 
-import DDC.Core.Salt.Transform.Init                     (initRuntime)
+import DDC.Core.Salt.Transform.Initialize               (initializeModule)
 import DDC.Core.Salt.Platform
 import DDC.Core.Exp.Annot
 import DDC.Core.Module
@@ -182,7 +182,7 @@ convertM pp runConfig defs kenv tenv mm
         -- If this is the 'Main' module then add code to initialise the
         -- runtime system. This will fail if given a Main module with no
         -- 'main' function.
-        mm_init <- case initRuntime runConfig mm_salt of
+        mm_init <- case initializeModule runConfig mm_salt of
                         Nothing   -> throw ErrorMainHasNoMain
                         Just mm'  -> return mm'
 
