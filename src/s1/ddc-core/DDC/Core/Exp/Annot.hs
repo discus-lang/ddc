@@ -1,6 +1,6 @@
 
 module DDC.Core.Exp.Annot
-        ( 
+        (
          ---------------------------------------
          -- * Abstract Syntax
           module DDC.Type.Exp
@@ -18,6 +18,9 @@ module DDC.Core.Exp.Annot
         , Cast          (..)
         , pattern XLam
         , pattern XLAM
+        , pattern XLLet
+        , pattern XLRec
+        , pattern XLPrivate
 
           -- ** Witnesses
         , Witness       (..)
@@ -79,7 +82,7 @@ module DDC.Core.Exp.Annot
           -- ** Parameters
         , bindOfParam
         , typeOfParam
-        , replaceTypeOfParam 
+        , replaceTypeOfParam
         , ParamTVB(..)
         , takeXLamParamTVB
         , makeTFunParams

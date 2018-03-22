@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 -- | Adding code to initialise the runtime system.
-module DDC.Core.Salt.Convert.Init
+module DDC.Core.Salt.Transform.Init
         (initRuntime)
 where
 import DDC.Core.Salt.Compounds
@@ -126,4 +126,3 @@ makeMainEntryX config a
         $ xInt a 0
 
 
-pattern XLLet a b x1 x2 = XLet a (LLet b x1) x2

@@ -30,7 +30,6 @@ import DDC.Type.Exp.Simple.Predicates
 import DDC.Data.Pretty
 import qualified DDC.Core.Salt          as A
 import qualified DDC.Core.Salt.Name     as A
-import qualified DDC.Core.Salt.Convert  as A
 import qualified DDC.Core.Module        as C
 import qualified DDC.Core.Exp           as C
 import qualified DDC.Type.Env           as Env

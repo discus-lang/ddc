@@ -1,6 +1,16 @@
 
 module Control.Exception
 export try; throw; fail; error
+
+export foreign c value
+ ddcHookErrorSystemFile
+        :  TextLit# -> Int# -> S Error Unit
+
+ ddcHookErrorSystemSocket
+        :  TextLit# -> Int# -> S Error Unit
+
+
+import Data.Numeric.Int
 import Data.Text
 
 import foreign c value

@@ -13,7 +13,7 @@ import DDC.Core.Discus.Convert.Type
 import DDC.Core.Discus.Convert.Error
 import qualified DDC.Core.Discus.Convert.Type.Base       as T
 
-import DDC.Core.Salt.Convert                            (initRuntime)
+import DDC.Core.Salt.Transform.Init                     (initRuntime)
 import DDC.Core.Salt.Platform
 import DDC.Core.Exp.Annot
 import DDC.Core.Module

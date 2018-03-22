@@ -32,6 +32,9 @@ module DDC.Core.Exp.Annot.Exp
         , Cast          (..)
         , pattern XLam
         , pattern XLAM
+        , pattern XLLet
+        , pattern XLRec
+        , pattern XLPrivate
 
           -- * Witnesses
         , Witness       (..)
@@ -77,8 +80,11 @@ data Exp a n
         deriving (Show, Eq)
 
 
-pattern XLam  a b x     = XAbs a (MTerm b) x
-pattern XLAM  a b x     = XAbs a (MType b) x
+pattern XLam      a b x         = XAbs a (MTerm b) x
+pattern XLAM      a b x         = XAbs a (MType b) x
+pattern XLLet     a b x1 x2     = XLet a (LLet b x1) x2
+pattern XLRec     a bxs x2      = XLet a (LRec bxs)  x2
+pattern XLPrivate a bs mt ws x2 = XLet a (LPrivate bs mt ws) x2
 
 
 -- | Parameter sort.

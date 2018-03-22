@@ -70,11 +70,10 @@ getDriverConfigOfState state
          , D.configInferTypes                   = False
          , D.configViaBackend                   = D.ViaLLVM
 
-         -- ISSUE #300: Allow the default heap size to be set when
-         --   compiling the program.
          , D.configRuntime
                 = Runtime.Config
-                { Runtime.configHeapSize        = 1000000 }
+                { Runtime.configHeapSize        = 1000000
+                , Runtime.configHookHandleTopLevel = Nothing }
 
          , D.configRuntimeLinkStrategy          = D.LinkDefault
          , D.configModuleBaseDirectories        = []

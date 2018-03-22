@@ -16,7 +16,7 @@ import qualified DDC.Core.Flow.Prim      as F
 import qualified DDC.Core.Salt.Name      as T
 import qualified DDC.Core.Salt.Compounds       as T
 
-import DDC.Core.Salt.Convert (initRuntime)
+import DDC.Core.Salt.Transform.Init     (initRuntime)
 import DDC.Core.Salt.Runtime (Config(..))
 
 import qualified Data.Set               as S

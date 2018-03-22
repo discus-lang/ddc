@@ -58,6 +58,11 @@ module DDC.Core.Salt
         , freshT
         , freshX
 
+          -- * Name sanitization
+        , seaNameOfSuper
+        , seaNameOfLocal
+        , sanitizeName
+
           -- * Salt expressions
         , module DDC.Core.Salt.Exp)
 where
