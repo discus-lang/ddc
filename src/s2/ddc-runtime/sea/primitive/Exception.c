@@ -82,9 +82,9 @@ Obj* ddcPrimExceptionTry(Obj* thunk, Obj* handler)
                 // exception. We now need to deallocate the current context
                 // frame and restore the old one before calling the handler,
                 // as the handler itself may throw another exception.
+                llvm_gc_root_chain    = ddcPrimExceptionFrame->llvm_root_chain;
                 free(ddcPrimExceptionFrame->jmp_buf);
                 free(ddcPrimExceptionFrame);
-                llvm_gc_root_chain    = ddcPrimExceptionFrame->llvm_root_chain;
                 ddcPrimExceptionFrame = oldFrame;
 
                 // Now it's safe to call the handler.
