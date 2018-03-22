@@ -1,0 +1,35 @@
+
+module Main
+import Control.Exception
+import System.IO.Console
+where
+
+-- Test nested exception handlers.
+-- All but level3 re-throws, so the handlers 3, 4, and 5 should be executed.
+main ()
+ = level1 (level2 (level3 (level4 (level5 (box error "inside")))))
+
+level1 thing
+ = try thing $ \ex
+ -> do  writel "handler level 1"
+        throw ex
+
+level2 thing
+ = try thing $ \ex
+ -> do  writel "handler level 2"
+        throw ex
+
+level3 thing
+ = try thing $ \ex
+ -> do  writel "handler level 3"
+        -- doesn't throw.
+
+level4 thing
+ = try thing $ \ex
+ -> do  writel "handler level 4"
+        throw ex
+
+level5 thing
+ = try thing $ \ex
+ -> do  writel "handler level 5"
+        throw ex

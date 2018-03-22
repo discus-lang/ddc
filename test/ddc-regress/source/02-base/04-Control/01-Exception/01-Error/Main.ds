@@ -1,0 +1,8 @@
+
+module Main
+import System.IO.Console
+import Control.Exception
+where
+
+main ()
+ = error "so sorry"

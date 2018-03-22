@@ -48,8 +48,14 @@ data Exception where
 
 
 -- | Throw a named exception.
-throw {@a: Data} (ex: Exception): a
- = ddcPrimExceptionThrow {@Pure} {@a} ex
+throw (ex: Exception): S Error Unit
+ = ddcPrimExceptionThrow {@Error} {@Unit} ex
+
+
+-- | Throw an generic exception with the 'Error' effect.
+--   This is intended for generic user program exceptions.
+error (tx: Text): S Error Unit
+ = ddcPrimExceptionThrow {@Error} {@Unit} (ExceptionError tx)
 
 
 -- | Throw an exception from a pure computation to end the program.
@@ -63,12 +69,6 @@ throw {@a: Data} (ex: Exception): a
 --
 fail {@a: Data} (tx: Text): a
  = ddcPrimExceptionThrow {@Pure} {@a} (ExceptionFail tx)
-
-
--- | Throw an generic exception with the 'Error' effect.
---   This is intended for generic user program exceptions.
-error (tx: Text): S Error Unit
- = ddcPrimExceptionThrow {@Error} {@Unit} (ExceptionError tx)
 
 
 -- | Hook for the runtime primitive code to throw a file exception.
