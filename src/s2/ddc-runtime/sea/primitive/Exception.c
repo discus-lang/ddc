@@ -21,12 +21,12 @@ typedef struct _DDCPrimExceptionFrame DDCPrimExceptionFrame;
 
 // Global variable to store the current exception context.
 //   If we have nested exceptions then references to the deeper frames
-//   are stored in the stack frames of the nested ddcPrimTry functions.
+//   are stored in the stack frames of the nested ddcPrimExceptionTry functions.
 DDCPrimExceptionFrame*  ddcPrimExceptionFrame = 0;
 
 
 // Global variable used by ddcPrimThrow to send a value describing
-//   the exception to the handler invocation in ddcPrimTry;
+//   the exception to the handler invocation in ddcPrimExceptionTry;
 Obj*    ddcPrimExceptionValue = 0;
 
 
@@ -37,16 +37,16 @@ extern Obj* ddcRunThunk(Obj* thunk);
 extern Obj* ddcApply1(Obj* thunk, Obj* arg);
 
 
-// ddcPrimTry
+// ddcExceptionPrimTry
 //      (comp:    S eff1 a)
 //      (handler: Exception -> S eff2 a)
-//      : S ((eff1 - Throw) + eff2) a
+//      : S (eff1 + eff2) a
 //
-// Try execting the given computation,
+// Try executing the given computation,
 //  if it throws an exception then run the given handler.
 //
-// We can't express the type directly as a signature, as we want to cut
-// off the Throw effect. This is why 'try' needs its own typing rule.
+// Clients should weaken the type of this function with an appropriate
+// Error effect when they import it.
 //
 Obj* ddcPrimExceptionTry(Obj* thunk, Obj* handler)
 {
@@ -93,7 +93,11 @@ Obj* ddcPrimExceptionTry(Obj* thunk, Obj* handler)
 }
 
 
-// ddcPrimThrow (ex: Exception): S Throw Unit
+// ddcPrimThrow (ex: Exception): S Pure Unit
+//
+// Clients should weaken the type of this function with an appropriate
+// Error effect when they import it.
+//
 void ddcPrimExceptionThrow(Obj* value)
 {       // If there is no context frame then there is no handler to return to.
         // We also don't have any way of printing out the thrown exception
