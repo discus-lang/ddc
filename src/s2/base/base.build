@@ -61,9 +61,10 @@ library
         Data.Stream
         Math.Combinations
         System.Runtime
-        System.Env
-        System.IO.Console
+        System.Posix.Errno
         System.Posix.Stdlib
         System.Posix.Stdio
         System.Posix.Unistd
+        System.IO.Console
+        System.Env
         Main.Args
