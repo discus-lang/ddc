@@ -113,7 +113,8 @@ discusToSalt config source mm
         , BCD.configSinkCurry           = D.dump config source "dump.1-discus-05-curry.dcd"
         , BCD.configSinkBoxing          = D.dump config source "dump.1-discus-06-boxing.dcd"
         , BCD.configSinkPrep            = D.dump config source "dump.1-discus-07-prep.dcd"
-        , BCD.configSinkChecked         = D.dump config source "dump.1-discus-08-checked.dcd"
+        , BCD.configSinkInitialize      = D.dump config source "dump.1-discus-08.initialize.dcd"
+        , BCD.configSinkChecked         = D.dump config source "dump.1-discus-09-checked.dcd"
         , BCD.configSinkSalt            = D.dump config source "dump.2-salt-00-convert.dcs"
         }
 
