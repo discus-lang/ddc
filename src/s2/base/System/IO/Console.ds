@@ -8,14 +8,14 @@ export
 }
 
 export foreign c value
- ddcHookHandleTopLevel  : {@e: Effect} -> S e Unit -> S (e + Console) Unit
+ ddcHookHandleTopLevel  : {@e: Effect} -> S e Unit -> S (Console + e) Unit
 
 import Class.Show
 import Data.Text
 import Control.Exception
 
 import foreign abstract type
- Console  : Effect
+ Console : Effect
 
 import foreign c value
  ddcPrimStdoutPutString : TextLit# -> S Console Void#
@@ -96,7 +96,7 @@ flush: S Console Unit
 --   The compiler implicitly wraps the Main.main function of an exectutable
 --   with this hook.
 --
-ddcHookHandleTopLevel (comp: S e Unit): S (e + Console) Unit
+ddcHookHandleTopLevel (comp: S e Unit): S (Console + e) Unit
  =  try comp $ \ex
  -> case ex of
         ExceptionFail tx

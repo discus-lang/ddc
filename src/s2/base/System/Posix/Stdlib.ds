@@ -27,7 +27,7 @@ import foreign c value
  system  : Nat# -> S Process Int#
 
  -- ISSUE #440: Use Addr# instead of Nat# in Stdlib.ds
- mkstemp : Nat# -> S (File + ERRNO) Int#
+ mkstemp : Nat# -> S (File + Errno) Int#
 
 
 import foreign c value
@@ -67,7 +67,7 @@ stdlib_system (cmd: Text): S Process Int
 --   unique alphanumeric combination.
 stdlib_mkstemp
         (template: Text)
-        : S (File + ERRNO) (Maybe Text)
+        : S (File + Errno) (Maybe Text)
  = private r with { Read r; Write r; Alloc r} in
    do
         -- ISSUE #439: Avoid copying strings via lists in Stdlib.ds.
@@ -83,7 +83,7 @@ stdlib_mkstemp
 --   TODO: Pass explicit ptr instead of raw Nat.
 stdlib_mkstemp_raw
         (template: Vector# r Word8)
-        : S (File + ERRNO + Write r) Bool
+        : S (File + Errno + Write r) Bool
  = box weakeff Write r in
    do   result  = mkstemp (ddcVectorGuts template)
         not (result == -1i)

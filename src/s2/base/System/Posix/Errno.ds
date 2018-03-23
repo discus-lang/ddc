@@ -8,7 +8,7 @@ import Data.Text
 
 import foreign abstract type
  -- | Effect of reading or writing the global C errno variable.
- ERRNO  : Effect
+ Errno  : Effect
 
 import foreign c value
 
@@ -23,11 +23,12 @@ where
 
 
 -- | Get the value of the global 'errno' variable.
-errno_get: S ERRNO Int
- = box weakeff ERRNO in ddcPrimErrnoGet ()
+errno_get: S Errno Int
+ = box weakeff Errno in ddcPrimErrnoGet ()
 
 
 -- | Show the message for the given errno value.
 errno_showMessage (errno: Int): Text
  = ddcPrimErrnoShowMessage errno
+
 
