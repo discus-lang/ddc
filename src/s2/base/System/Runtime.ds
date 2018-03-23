@@ -20,7 +20,6 @@ import foreign c value
         -> a                    -- ^ Object to start from.
         -> S Runtime Unit
 
-
  -- | Trace all objects in the heap, checking that the are well format.
  --   Also print a description of each object if requested.
  ddcTraceHeap

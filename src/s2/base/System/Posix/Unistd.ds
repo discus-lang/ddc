@@ -2,10 +2,14 @@
 module System.Posix.Unistd
 export usleep
 
-
 import foreign abstract type
+ -- | Effect of actions that put the current process to sleep.
  Sleep  : Effect
 
-import foreign c value 
+import foreign c value
+ -- | Sleep until either the given number of microseconds have elapsed or a
+ --   signal is delivered to the process. The actual time slept may be longer
+ --   due to system latencies and possible limitations in the timer resolution
+ --   of the hardware.
  usleep : Nat# -> S Sleep Int#
 
