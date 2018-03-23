@@ -1,5 +1,6 @@
 // Primitive operators defined via C functions.
 #include "primitive/Collect.c"
+#include "primitive/Text.c"
 #include "primitive/Exception.c"
 #include "primitive/Error.c"
 #include "primitive/Show.c"

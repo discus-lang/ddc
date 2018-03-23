@@ -4,10 +4,10 @@ export try; throw; fail; error
 
 export foreign c value
  ddcHookErrorSystemFile
-        :  TextLit# -> Int# -> S Error Unit
+        : Int# -> Vector# RegionText Word8 -> S Error Unit
 
- ddcHookErrorSystemSocket
-        :  TextLit# -> Int# -> S Error Unit
+ ddcHookErrorSystemNetwork
+        : Int# -> Vector# RegionText Word8 -> S Error Unit
 
 
 import Data.Numeric.Int
@@ -43,8 +43,8 @@ data Exception where
 
         -- System IO Exceptions.
         -- These have a message as well as the value of 'errno' if available.
-        ExceptionSystemFile     : Text -> Int -> Exception
-        ExceptionSystemSocket   : Text -> Int -> Exception
+        ExceptionSystemFile     : Int -> Text -> Exception
+        ExceptionSystemNetwork  : Int -> Text -> Exception
 
 
 -- | Throw a named exception.
@@ -72,11 +72,13 @@ fail {@a: Data} (tx: Text): a
 
 
 -- | Hook for the runtime primitive code to throw a file exception.
-ddcHookErrorSystemFile (tx: TextLit#) (errno: Int): S Error Unit
- = weakeff Error in throw $ ExceptionSystemFile (textLit tx) errno
+ddcHookErrorSystemFile
+        (errno: Int#) (vec: Vector# RegionText Word8): S Error Unit
+ = weakeff Error in throw $ ExceptionSystemFile errno (TextVec vec)
 
 
 -- | Hook for the runtime primitive code to throw a socket exception.
-ddcHookErrorSystemSocket (tx: TextLit#) (errno: Int): S Error Unit
- = weakeff Error in throw $ ExceptionSystemSocket (textLit tx) errno
+ddcHookErrorSystemNetwork
+        (errno: Int#) (vec: Vector# RegionText Word8): S Error Unit
+ = weakeff Error in throw $ ExceptionSystemNetwork errno (TextVec vec)
 

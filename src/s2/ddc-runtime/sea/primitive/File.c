@@ -3,37 +3,45 @@
 #include <stdlib.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <errno.h>
 #include "Runtime.h"
+#include "Primitive.h"
+#include "Hooks.h"
+
+// ------------------------------------------------------------------------------------------------
+// Throw a file exception.
+//   This calls back into user land to construct the appropriate exception value.
+void ddcPrimFileFail (const char* fmt, ...)
+{
+        va_list ap;
+        va_start(ap, fmt);
+        ddcHookErrorSystemFile(errno, ddcTextLitVPrintf(fmt, ap));
+        abort();
+}
+
 
 // ------------------------------------------------------------------------------------------------
 // Read the contents of a file into a text vector.
 Obj* ddcPrimFileRead (string_t* path)
 {
+        // Open the file.
         int fd  = open (path, O_RDONLY);
-        if (fd == -1) {
-                printf("ddc-runtime.ddcPrimFileRead: open failed on '%s'.\n", path);
-                abort();
-        }
+        if (fd == -1)
+                ddcPrimFileFail("open failed on file '%s'.", path);
 
+        // Get the file length.
         off_t lenBuf    = lseek (fd, 0, SEEK_END);
-        if (lseek(fd, 0, SEEK_SET) == -1) {
-                printf("ddc-runtime.ddcPrimFileRead: seek failed on '%s'.\n", path);
-                abort();
-        }
+        if (lseek(fd, 0, SEEK_SET) == -1)
+                ddcPrimFileFail("seek failed on file '%s'.", path);
 
-        // Payload contains Word32 data size, the data itself, then the null byte.
-        Obj* pObj       = ddcAllocRaw (0, 4 + lenBuf + 1);
-        uint8_t* p8     = _ddcPayloadRaw(pObj);
-        uint32_t* pLen  = (uint32_t*)p8;
-        string_t* pStr  = (string_t*)(p8 + 4);
-
-        uint32_t  nRead = 0;
-        for(;;) {
-                ssize_t lenRead = read (fd, pStr, lenBuf);
-                if (lenRead == -1) {
-                        printf("ddc-runtime.ddcPrimFileRead: read error on '%s'.\n", path);
-                        abort ();
-                }
+        // Allocate a new vector to hold the data.
+        Obj* pObj       = ddcPrimVectorAlloc8(lenBuf + 1);
+        uint8_t* pStr   = ddcPrimVectorPayload8(pObj);
+        uint32_t nRead  = 0;
+        for(;;)
+        {       ssize_t lenRead = read (fd, pStr, lenBuf);
+                if (lenRead == -1)
+                        ddcPrimFileFail("read failed on file '%s'.", path);
 
                 if (lenRead == 0)
                         break;
@@ -42,46 +50,48 @@ Obj* ddcPrimFileRead (string_t* path)
                 pStr  += lenRead;
         }
 
+        // Write the null terminating character.
         *pStr           = 0;
-        *pLen           = nRead + 1;
 
-        if (close (fd) == -1) {
-                printf("ddc-runtime.ddcPrimFileWrite: close of handle failed on '%s'.\n", path);
-                abort ();
-        }
+        // Check that we successfully read all the data.
+        if (nRead /= lenBuf)
+                ddcPrimFileFail("short read on file '%s'.", path);
+
+        // Close the file handle.
+        if (close (fd) == -1)
+                ddcPrimFileFail("close failed on file '%s'.", path);
+
         return pObj;
 }
 
 
 // ------------------------------------------------------------------------------------------------
 // Write the contents of a text vector to a file.
-void ddcPrimFileWrite (string_t* path, Obj* vec)
+void ddcPrimFileWrite (string_t* path, Obj* pVec)
 {
+        // Open the file.
         int fd  = open (path, O_WRONLY);
-        if (fd == -1) {
-                printf("ddc-runtime.ddcPrimFileWrite: open failed on '%s'.\n", path);
-                abort();
-        }
+        if (fd == -1)
+                ddcPrimFileFail("open failed on '%s'.", path);
 
-        uint8_t* p8     = _ddcPayloadRaw(vec);
+        // Get a pointer to the payload data.
+        uint8_t*  pStr  = ddcPrimVectorPayload8(pVec);
+
+        uint8_t* p8     = _ddcPayloadRaw(pVec);
         uint32_t* pLen  = (uint32_t*)p8;
-        string_t* pStr  = (string_t*)(p8 + 4);
 
+        // Write the data.
         ssize_t nLenTotal   = (ssize_t)*pLen;
         ssize_t nLenWritten = write(fd, (void*)pStr, nLenTotal);
-        if (nLenWritten == -1) {
-                printf("ddc-runtime.ddcPrimFileWrite: write failed on '%s'.\n", path);
-        }
+        if (nLenWritten == -1)
+                ddcPrimFileFail("write failed on '%s'.", path);
 
-        if (nLenWritten /= nLenTotal) {
-                printf("ddc-runtime.ddcPrimFileWrite: short write on '%s'.\n", path);
-                abort ();
-        }
+        // Check we managed to write all the data.
+        if (nLenWritten /= nLenTotal)
+                ddcPrimFileFail("short write on '%s'.", path);
 
-        if (close(fd) == -1) {
-                printf("ddc-runtime.ddcPrimFileWrite: close of handle failed on '%s'.\n", path);
-                abort ();
-        }
-        return;
+        // Close the file handle.
+        if (close(fd) == -1)
+                ddcPrimFileFail("close failed on '%s'.", path);
 }
 

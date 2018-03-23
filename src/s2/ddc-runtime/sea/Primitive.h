@@ -1,112 +1,58 @@
-// Primitive operations that generated C code uses.
-//   These should all be static inlined so we can compile programs without
-//   linking against external code. Operations that need manifest object
-//   code should be defined somewhere else, and preferably imported
-//   by the foreign-function interface.
 #pragma once
-#include <stdio.h>
+#include <stdarg.h>
 #include "Runtime.h"
 
-// Error Primops --------------------------------------------------------------
-// Fail ungracefully.
-//   Called when we find an internal runtime error.
-static inline
-void _FAIL(void)
-{       abort();
-}
+// Primitive functions and operators defined by the runtime system.
+// These are all foreign imported into the base library.
 
+// -- Console -----------------------------------------------------------------
+Obj*            ddcPrimStdinGetVector           (nat_t len);
+void            ddcPrimStdoutPutString          (string_t* str);
+void            ddcPrimStdoutPutTextLit         (string_t* str);
+void            ddcPrimStdoutPutVector          (Obj* obj);
+void            ddcPrimStdoutFlush              (Obj* obj);
+void            ddcPrimFailString               (string_t* str);
+void            ddcPrimFailNat                  (nat_t x);
 
-// Store Primops --------------------------------------------------------------
-extern addr_t _DDC__heapTop;
-extern addr_t _DDC__heapMax;
+// -- Errno -------------------------------------------------------------------
+int             ddcPrimErrnoGet                 ();
+Obj*            ddcPrimErrnoShowMessage         (int errno);
 
+// -- Exception ---------------------------------------------------------------
+Obj*            ddcPrimExceptionTry             (Obj* thunk, Obj* handler);
+void            ddcPrimExceptionThrow           (Obj* value);
 
-// Create the initial store.
-static inline
-void    _CREATE (nat_t bytes)
-{
-        _DDC__heapTop   = malloc (bytes);
-        _DDC__heapMax   = _DDC__heapTop + bytes;
-}
+// -- File --------------------------------------------------------------------
+void            ddcPrimFileFail                 (const char* fmt, ...);
+Obj*            ddcPrimFileRead                 (string_t* path);
+void            ddcPrimFileWrite                (string_t* path, Obj* vec);
 
+// -- Parse -------------------------------------------------------------------
+void*           ddcPrimParseAddr                (Obj* pObj);
+int             ddcPrimParseInt                 (Obj* pObj);
+nat_t           ddcPrimParseNat                 (Obj* pObj);
+uint8_t         ddcPrimParseWord8               (Obj* pObj);
+uint16_t        ddcPrimParseWord16              (Obj* pObj);
+uint32_t        ddcPrimParseWord32              (Obj* pObj);
+uint64_t        ddcPrimParseWord64              (Obj* pObj);
+float32_t       ddcPrimParseFloat32             (Obj* pObj);
+float64_t       ddcPrimParseFloat64             (Obj* pObj);
 
-// Allocate some space in the store
-static inline
-addr_t _ALLOC (nat_t bytes)
-{
-        addr_t obj      = _DDC__heapTop;
-        _DDC__heapTop   = _DDC__heapTop + bytes;
-        return obj;
-}
+// -- Show --------------------------------------------------------------------
+Obj*            ddcPrimShowAddr                 (void*     val);
+Obj*            ddcPrimShowInt                  (int       val);
+Obj*            ddcPrimShowNat                  (nat_t     val);
+Obj*            ddcPrimShowWord8                (uint8_t   val);
+Obj*            ddcPrimShowWord16               (uint16_t  val);
+Obj*            ddcPrimShowWord32               (uint32_t  val);
+Obj*            ddcPrimShowWord64               (uint64_t  val);
+Obj*            ddcPrimShowFloat32              (float32_t val);
+Obj*            ddcPrimShowFloat64              (float64_t val);
 
+// -- Text --------------------------------------------------------------------
+Obj*            ddcTextLitVPrintf               (const char* fmt, va_list ap);
+Obj*            ddcTextLitPrintf                (const char* fmt, ...);
 
-// Check whether there is enough space on the heap to allocate
-//  an object of the given size in bytes.
-static inline
-bool_t  _CHECK (nat_t bytes)
-{
-        return (_DDC__heapTop + bytes < _DDC__heapMax);
-}
-
-
-// Get the size of a type.
-#define _SIZE(type) \
-        sizeof(type)
-
-
-// Get the log2 of the size of a type.
-#define _SIZE2(type) \
-         (sizeof(unsigned int) * 8 - __builtin_clz (sizeof(type)))
-
-
-// Read from a field of an Object.
-//   We use an explicit macro to make it easier to see what is happening in
-//   the generated code.
-#define _READ(type,addr,offset) \
-        (*((type *)(addr + offset)))
-
-
-// Write to a field of an Object.
-//   We use an explicit macro to make it easier to see what is happening in
-//   the generated code.
-#define _WRITE(type,addr,offset,val) \
-        ((*((type *)(addr + offset))) = val)
-
-
-// Add two addresses.
-#define _PLUSADDR(addr,offset) \
-        (addr + offset)
-
-
-// Read from a pointer plus an offset in bytes.
-#define _PEEK(type,ptr,offset) \
-        (*(type *)(((uint8_t *) ptr) + offset))
-
-
-// Write to a pointer plus an offset in bytes.
-#define _POKE(type,ptr,offset,val) \
-        (*((type *)( ((uint8_t*)ptr) + offset)) = val)
-
-
-// Add an offset in bytes to a pointer.
-#define _PLUSPTR(type,ptr,offset) \
-        ((type *)( ((uint8_t *)ptr) + offset))
-
-
-// Subtract an offset in bytes from a pointer.
-#define _MINUSPTR(type,ptr,offset) \
-        ((type *)( ((uint8_t *)ptr) - offset))
-
-
-// Pointer to address conversions.
-#define _MAKEPTR(type,addr) \
-        ((type *)addr)
-
-
-#define _TAKEPTR(type,ptr) \
-        ((addr_t)ptr)
-
-
-#define _CASTPTR(dstType,srcType,ptr) \
-        ((dstType*)ptr)
-
+// -- Vector ------------------------------------------------------------------
+Obj*            ddcPrimVectorAlloc8             (nat_t len);
+uint8_t*        ddcPrimVectorPayload8           (Obj*  vec);

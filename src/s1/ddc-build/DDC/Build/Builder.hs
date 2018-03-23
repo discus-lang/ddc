@@ -334,7 +334,9 @@ builder_X8664_Darwin config host mVersion
         , buildLdExe
                 = \oFiles binFile
                 -> doCmd "linker"               [(2, BuilderCanceled)]
-                        [ "cc -m64 -Wl,-dead_strip"
+                        [ "cc -m64"
+                        , "-Wl,-dead_strip"
+                        , "-Wl,-exported_symbol,_ddcHookErrorSystemFile"
                         , "-o", binFile
                         , intercalate " " oFiles
                         , builderConfigBaseLibDir config

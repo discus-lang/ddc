@@ -28,6 +28,7 @@ export
         ddcPrimSizeOfTextLit;
         ddcPrimIndexTextLit;
 }
+
 import Data.Text.Char
 import Data.Numeric.Nat
 import Data.Numeric.Word8
@@ -36,10 +37,6 @@ import Data.Function
 import Data.Maybe
 import Class.Ord
 import Class.Eq
-
-
--------------------------------------------------------------------------------
--- Foreign imports.
 
 -- | A TextLit is a boxed object that contains a pointer to literal
 --   UTF-8 data in static memory.

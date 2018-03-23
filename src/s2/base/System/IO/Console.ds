@@ -105,9 +105,9 @@ ddcHookHandleTopLevel (comp: S e Unit): S (Console + e) Unit
         ExceptionError tx
          -> writel $ "*** Error:" %% tx
 
-        ExceptionSystemFile tx _
+        ExceptionSystemFile _ tx
          -> writel $ "*** File IO Error:" %% tx
 
-        ExceptionSystemSocket tx _
-         -> writel $ "*** Socket IO Error:" %% tx
+        ExceptionSystemNetwork _ tx
+         -> writel $ "*** Network IO Error:" %% tx
 
