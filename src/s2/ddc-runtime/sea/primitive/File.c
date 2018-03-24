@@ -6,7 +6,7 @@
 #include <errno.h>
 #include "Runtime.h"
 #include "Primitive.h"
-#include "Hooks.h"
+#include "Hook.h"
 
 
 // ----------------------------------------------------------------------------
@@ -17,7 +17,9 @@ void ddcPrimFileFail (const char* fmt, ...)
 {
         va_list ap;
         va_start(ap, fmt);
-        ddcHookErrorSystemFile(errno, ddcTextLitVPrintf(fmt, ap));
+        ddcHookCallExceptionFile
+                ( ddcPrimMakeInt(errno)
+                , ddcTextVecVPrintf(fmt, ap));
         abort();
 }
 

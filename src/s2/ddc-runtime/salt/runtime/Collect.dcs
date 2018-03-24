@@ -1,6 +1,6 @@
 
 -- | The Garbage Collector
-module Collect
+module Runtime.Collect
 
 export foreign c value
 

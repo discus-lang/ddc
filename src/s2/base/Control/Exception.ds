@@ -1,15 +1,7 @@
 
 module Control.Exception
 export try; throw; fail; error
-
-export foreign c value
- ddcHookErrorSystemFile
-        : Int# -> Vector# RegionText Word8 -> S Error Unit
-
- ddcHookErrorSystemNetwork
-        : Int# -> Vector# RegionText Word8 -> S Error Unit
-
-
+import System.Runtime
 import Data.Numeric.Int
 import Data.Text
 
@@ -21,9 +13,6 @@ import foreign c value
  ddcPrimExceptionThrow
         :  {@eff: Effect} -> {@a: Data}
         -> Exception -> S eff a
-
-import foreign abstract type
- Error : Effect
 
 where
 
@@ -70,15 +59,4 @@ error (tx: Text): S Error Unit
 fail {@a: Data} (tx: Text): a
  = ddcPrimExceptionThrow {@Pure} {@a} (ExceptionFail tx)
 
-
--- | Hook for the runtime primitive code to throw a file exception.
-ddcHookErrorSystemFile
-        (errno: Int#) (vec: Vector# RegionText Word8): S Error Unit
- = weakeff Error in throw $ ExceptionSystemFile errno (TextVec vec)
-
-
--- | Hook for the runtime primitive code to throw a socket exception.
-ddcHookErrorSystemNetwork
-        (errno: Int#) (vec: Vector# RegionText Word8): S Error Unit
- = weakeff Error in throw $ ExceptionSystemNetwork errno (TextVec vec)
 

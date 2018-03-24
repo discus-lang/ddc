@@ -17,6 +17,5 @@ Obj*    ddcPrimErrorDefault(string_t* source, uint32_t line)
                 , "\nDDC runtime error: inexhaustive case match.\n at: %s:%" PRId32 "\n"
                 , source, line);
         exit(1);
-
         return 0;
 }

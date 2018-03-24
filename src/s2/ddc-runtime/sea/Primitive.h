@@ -4,7 +4,7 @@
 #include <stdarg.h>
 #include "Runtime.h"
 
-// -- Console -----------------------------------------------------------------
+// -- Console -------------------------------------------------------------------------------------
 Obj*            ddcPrimStdinGetVector           (nat_t len);
 void            ddcPrimStdoutPutString          (string_t* str);
 void            ddcPrimStdoutPutTextLit         (string_t* str);
@@ -13,20 +13,32 @@ void            ddcPrimStdoutFlush              (Obj* obj);
 void            ddcPrimFailString               (string_t* str);
 void            ddcPrimFailNat                  (nat_t x);
 
-// -- Errno -------------------------------------------------------------------
+// -- Errno ---------------------------------------------------------------------------------------
 int             ddcPrimErrnoGet                 ();
 Obj*            ddcPrimErrnoShowMessage         (int errno_val);
 
-// -- Exception ---------------------------------------------------------------
+// -- Error ---------------------------------------------------------------------------------------
+Obj*            ddcPrimErrorDefault             (string_t* source, uint32_t line);
+
+// -- Exception -----------------------------------------------------------------------------------
 Obj*            ddcPrimExceptionTry             (Obj* thunk, Obj* handler);
 void            ddcPrimExceptionThrow           (Obj* value);
 
-// -- File --------------------------------------------------------------------
+// -- File ----------------------------------------------------------------------------------------
 void            ddcPrimFileFail                 (const char* fmt, ...);
 Obj*            ddcPrimFileRead                 (string_t* path);
 void            ddcPrimFileWrite                (string_t* path, Obj* vec);
 
-// -- Parse -------------------------------------------------------------------
+// -- Hook ----------------------------------------------------------------------------------------
+Obj*            ddcHookSetExceptionFile         (Obj* thunk);
+Obj*            ddcHookSetExceptionNetwork      (Obj* thunk);
+Obj*            ddcHookCallExceptionFile        (Obj* pErrno, Obj* pTextBuf);
+Obj*            ddcHookCallExceptionNetwork     (Obj* pErrno, Obj* pTextBuf);
+
+// -- Numeric -------------------------------------------------------------------------------------
+Obj*            ddcPrimMakeInt                  (int i);
+
+// -- Parse ---------------------------------------------------------------------------------------
 void*           ddcPrimParseAddr                (Obj* pObj);
 int             ddcPrimParseInt                 (Obj* pObj);
 nat_t           ddcPrimParseNat                 (Obj* pObj);
@@ -37,7 +49,7 @@ uint64_t        ddcPrimParseWord64              (Obj* pObj);
 float32_t       ddcPrimParseFloat32             (Obj* pObj);
 float64_t       ddcPrimParseFloat64             (Obj* pObj);
 
-// -- Show --------------------------------------------------------------------
+// -- Show ----------------------------------------------------------------------------------------
 Obj*            ddcPrimShowAddr                 (void*     val);
 Obj*            ddcPrimShowInt                  (int       val);
 Obj*            ddcPrimShowNat                  (nat_t     val);
@@ -48,10 +60,10 @@ Obj*            ddcPrimShowWord64               (uint64_t  val);
 Obj*            ddcPrimShowFloat32              (float32_t val);
 Obj*            ddcPrimShowFloat64              (float64_t val);
 
-// -- Text --------------------------------------------------------------------
-Obj*            ddcTextLitVPrintf               (const char* fmt, va_list ap);
-Obj*            ddcTextLitPrintf                (const char* fmt, ...);
+// -- Text ----------------------------------------------------------------------------------------
+Obj*            ddcTextVecVPrintf               (const char* fmt, va_list ap);
+Obj*            ddcTextVecPrintf                (const char* fmt, ...);
 
-// -- Vector ------------------------------------------------------------------
+// -- Vector --------------------------------------------------------------------------------------
 Obj*            ddcPrimVectorAlloc8             (nat_t len);
 uint8_t*        ddcPrimVectorPayload8           (Obj*  vec);

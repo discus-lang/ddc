@@ -44,6 +44,7 @@ library
         Data.Text.Parse
         Data.Text.Stream
         Data.Text
+        System.Runtime
         Control.Exception
         Class.Show
         Class.Parse
@@ -60,7 +61,6 @@ library
         Data.Bag
         Data.Stream
         Math.Combinations
-        System.Runtime
         System.Posix.Errno
         System.Posix.Stdlib
         System.Posix.Stdio

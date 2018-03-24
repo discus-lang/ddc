@@ -8,7 +8,7 @@
 // Print into a freshly allocated DDC TextLit heap object.
 //   This is used to construct error messages and the like that can be passed
 //   back to the user program.
-Obj* ddcTextLitVPrintf(const char* fmt, va_list ap)
+Obj* ddcTextVecVPrintf(const char* fmt, va_list ap)
 {
         // Print string into new allocated temp buffer.
         char* pStr=0;
@@ -38,10 +38,10 @@ Obj* ddcTextLitVPrintf(const char* fmt, va_list ap)
 // Print into a freshly allocated DDC TextLit heap object.
 //   This is used to construct error messages and the like that can be passed
 //   back to the user program.
-Obj* ddcTextLitPrintf(const char* fmt, ...)
+Obj* ddcTextVecPrintf(const char* fmt, ...)
 {
         va_list ap;
         va_start(ap, fmt);
-        return ddcTextLitVPrintf(fmt, ap);
+        return ddcTextVecVPrintf(fmt, ap);
 }
 
