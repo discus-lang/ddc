@@ -1,6 +1,11 @@
+
+// On Linux we need to define _GNU_SOURCE to expose strerror_r.
+#define _GNU_SOURCE
+
 #include <errno.h>
 #include <alloca.h>
 #include <string.h>
+
 #include "runtime/Primitive.h"
 
 

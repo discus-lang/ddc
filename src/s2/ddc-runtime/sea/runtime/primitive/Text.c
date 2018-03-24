@@ -1,3 +1,6 @@
+// On Linux we need to define _GNU_SOURCE to expose vasprintf
+#define _GNU_SOURCE
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
