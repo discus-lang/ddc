@@ -15,7 +15,7 @@ Obj* ddcTextVecVPrintf(const char* fmt, va_list ap)
 {
         // Print string into new allocated temp buffer.
         char* pStr=0;
-        vasprintf(&pStr, fmt, ap);
+        if (vasprintf(&pStr, fmt, ap) < 0) abort();
 
         // Get the length of the printed string, not including the null byte.
         int len = strlen(pStr);

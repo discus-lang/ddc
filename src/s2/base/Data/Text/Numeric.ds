@@ -3,6 +3,7 @@
 module Data.Text.Numeric
 export
 {       showNat;
+        showInt;
         showBinaryNat;  digitBinary;
         showDecimalNat; digitDecimal;
         showHexNat;     digitHex;
@@ -10,6 +11,7 @@ export
         showFloat32;
         showFloat64;
 }
+import Data.Numeric.Int
 import Data.Numeric.Word8
 import Data.Numeric.Float32
 import Data.Numeric.Float64
@@ -29,6 +31,13 @@ where
 -- | Show a natural number.
 showNat (x: Nat): Text
  = showBaseNat 10 digitDecimal 0 'X' x
+
+
+-- | Show an integer number.
+showInt (x: Int): Text
+ = if x >= 0i
+        then       showBaseNat 10 digitDecimal 0 'X' (truncate# x)
+        else "-" % showBaseNat 10 digitDecimal 0 'X' (truncate# (neg# x))
 
 
 -------------------------------------------------------------------------------

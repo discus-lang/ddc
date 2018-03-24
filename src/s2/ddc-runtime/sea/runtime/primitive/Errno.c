@@ -22,8 +22,7 @@ Obj*    ddcPrimErrnoShowMessage (int errno_val)
 {
         // Write message into a temporary buffer.
         char* pBuf      = alloca(1024);
-        if (strerror_r(errno_val, pBuf, 1024) != 0)
-                abort();
+        if (strerror_r(errno_val, pBuf, 1024) != 0) abort();
 
         // Allocate a new vector to hold the message.
         int lenActual   = strlen(pBuf);

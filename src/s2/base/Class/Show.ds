@@ -5,6 +5,7 @@ export
         show_Unit;
         show_Bool;
         show_Nat;
+        show_Int;
         show_Float32;   show_Float64;
         show_Char;      show_Text;
         show_Tup2;
@@ -43,6 +44,11 @@ show_Bool: Show Bool
 -- | Show dictionary for Nat.
 show_Nat: Show Nat
  = Show showNat
+
+
+-- | Show dictionary for Int.
+show_Int: Show Int
+ = Show showInt
 
 
 -- | Show dictionary for Float32.
