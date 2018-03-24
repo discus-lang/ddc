@@ -1,9 +1,19 @@
 
 module Control.Exception
 export try; throw; fail; error
+export foreign c value
+ ddcPrimExceptionTry
+        :  {@eff1 eff2: Effect} -> {@a: Data}
+        -> S eff1 a -> (Exception -> S eff2 a) -> S (eff1 + eff2) a
+
+ ddcPrimExceptionThrow
+        :  {@eff: Effect} -> {@a: Data}
+        -> Exception -> S eff a
+
 import System.Runtime
 import Data.Numeric.Int
 import Data.Text
+
 
 import foreign c value
  ddcPrimExceptionTry
