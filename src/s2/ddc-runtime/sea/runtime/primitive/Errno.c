@@ -1,6 +1,7 @@
-#pragma once
 #include <errno.h>
 #include <alloca.h>
+#include <string.h>
+#include "runtime/Primitive.h"
 
 
 // Get the value of the 'errno' global.

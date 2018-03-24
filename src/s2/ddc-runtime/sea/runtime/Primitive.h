@@ -2,7 +2,8 @@
 // These are all foreign imported into the base library.
 #pragma once
 #include <stdarg.h>
-#include "Runtime.h"
+#include "runtime/Types.h"
+
 
 // -- Console -------------------------------------------------------------------------------------
 Obj*            ddcPrimStdinGetVector           (nat_t len);

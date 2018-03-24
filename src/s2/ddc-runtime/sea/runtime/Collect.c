@@ -1,6 +1,5 @@
-#pragma once
 #include <stdio.h>
-#include "Runtime.h"
+#include "runtime/Types.h"
 
 
 // ----------------------------------------------------------------------------

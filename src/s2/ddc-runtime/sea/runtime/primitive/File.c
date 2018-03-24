@@ -1,12 +1,15 @@
-#pragma once
+
+// On Linux we need to define _GNU_SOURCE before including stdio.h
+// to expose the vasprintf function. On OSX it is visible by default.
+#define _GNU_SOURCE
 #include <stdio.h>
+
 #include <stdlib.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <errno.h>
+#include "runtime/Primitive.h"
 #include "Runtime.h"
-#include "Primitive.h"
-#include "Hook.h"
 
 
 // ----------------------------------------------------------------------------

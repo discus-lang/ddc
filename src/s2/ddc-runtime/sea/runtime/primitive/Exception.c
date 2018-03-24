@@ -1,6 +1,8 @@
-#pragma once
-#include <setjmp.h>
+#include <stdlib.h>
 #include <stdio.h>
+#include <setjmp.h>
+#include "runtime/Primitive.h"
+#include "runtime/Collect.h"
 
 
 // ----------------------------------------------------------------------------

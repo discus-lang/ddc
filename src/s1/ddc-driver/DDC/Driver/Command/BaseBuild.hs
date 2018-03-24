@@ -36,7 +36,15 @@ baseSaltFiles builder
 
 baseSeaFiles  :: Builder -> [FilePath]
 baseSeaFiles _builder
- =      ["ddc-runtime" </> "sea"  </> "Primitive.c"]
+ =      [ "ddc-runtime" </> "sea" </> "runtime" </> "primitive" </> "Console.c"
+        , "ddc-runtime" </> "sea" </> "runtime" </> "primitive" </> "Errno.c"
+        , "ddc-runtime" </> "sea" </> "runtime" </> "primitive" </> "Error.c"
+        , "ddc-runtime" </> "sea" </> "runtime" </> "primitive" </> "Exception.c"
+        , "ddc-runtime" </> "sea" </> "runtime" </> "primitive" </> "File.c"
+        , "ddc-runtime" </> "sea" </> "runtime" </> "primitive" </> "Parse.c"
+        , "ddc-runtime" </> "sea" </> "runtime" </> "primitive" </> "Show.c"
+        , "ddc-runtime" </> "sea" </> "runtime" </> "primitive" </> "Text.c"
+        , "ddc-runtime" </> "sea" </> "runtime" </> "Collect.c" ]
 
 
 -- Buid the base libraries and runtime system.

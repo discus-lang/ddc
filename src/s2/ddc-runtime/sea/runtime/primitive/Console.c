@@ -1,5 +1,8 @@
-#pragma once
+#include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
+#include <alloca.h>
+#include "runtime/Primitive.h"
 #include "Runtime.h"
 
 

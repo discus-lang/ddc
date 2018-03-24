@@ -1,7 +1,7 @@
 // Hooks defined in the base library that can be called back on by the runtime
 // system and the definition of primitive operators.
 #pragma once
-#include "Runtime.h"
+#include "runtime/Types.h"
 
 // The top-level effect handler.
 //   ddcHookHandleTopLevel {@e: Effect} (comp: S e Unit): S (Console + e) Unit
