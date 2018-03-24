@@ -8,6 +8,7 @@
 module Runtime.Prim.Vector
 
 export foreign c value
+ ddcPrimVectorLength    : [r: Region]. Ptr# r Obj -> Nat#
  ddcPrimVectorAlloc8    : [r: Region]. Nat# -> Ptr# r Obj
  ddcPrimVectorPayload8  : [r: Region]. Ptr# r Obj -> Addr#
  ddcVectorGuts          : [r: Region]. Ptr# r Obj -> Addr#
@@ -17,6 +18,11 @@ import foreign c value
  ddcAllocRaw   : [r1: Region]. Tag# -> Nat# -> Ptr# r1 Obj
 
 with letrec
+
+
+-- | Get the length of a primitive unboxed vector.
+ddcPrimVectorLength [r: Region] (pVec: Ptr# r Obj): Nat#
+ = do   promote# (peek# [r] [Word32#] (castPtr# (ddcPayloadRaw pVec)))
 
 
 -- | Allocate a vector of Word8's of the given length.

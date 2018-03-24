@@ -8,9 +8,11 @@
 #include "Primitive.h"
 #include "Hooks.h"
 
-// ------------------------------------------------------------------------------------------------
+
+// ----------------------------------------------------------------------------
 // Throw a file exception.
-//   This calls back into user land to construct the appropriate exception value.
+//   This calls back into user land to construct the appropriate exception
+//   value.
 void ddcPrimFileFail (const char* fmt, ...)
 {
         va_list ap;
@@ -20,7 +22,7 @@ void ddcPrimFileFail (const char* fmt, ...)
 }
 
 
-// ------------------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
 // Read the contents of a file into a text vector.
 Obj* ddcPrimFileRead (string_t* path)
 {
@@ -51,7 +53,7 @@ Obj* ddcPrimFileRead (string_t* path)
         }
 
         // Write the null terminating character.
-        *pStr           = 0;
+        *pStr   = 0;
 
         // Check that we successfully read all the data.
         if (nRead /= lenBuf)
@@ -65,7 +67,7 @@ Obj* ddcPrimFileRead (string_t* path)
 }
 
 
-// ------------------------------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
 // Write the contents of a text vector to a file.
 void ddcPrimFileWrite (string_t* path, Obj* pVec)
 {

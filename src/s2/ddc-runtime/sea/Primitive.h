@@ -1,9 +1,8 @@
+// Primitive functions and operators defined by the runtime system.
+// These are all foreign imported into the base library.
 #pragma once
 #include <stdarg.h>
 #include "Runtime.h"
-
-// Primitive functions and operators defined by the runtime system.
-// These are all foreign imported into the base library.
 
 // -- Console -----------------------------------------------------------------
 Obj*            ddcPrimStdinGetVector           (nat_t len);
@@ -16,7 +15,7 @@ void            ddcPrimFailNat                  (nat_t x);
 
 // -- Errno -------------------------------------------------------------------
 int             ddcPrimErrnoGet                 ();
-Obj*            ddcPrimErrnoShowMessage         (int errno);
+Obj*            ddcPrimErrnoShowMessage         (int errno_val);
 
 // -- Exception ---------------------------------------------------------------
 Obj*            ddcPrimExceptionTry             (Obj* thunk, Obj* handler);

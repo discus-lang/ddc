@@ -3,6 +3,7 @@
 #include <inttypes.h>
 #include "Runtime.h"
 
+
 // Parse functions.
 #define _DDC_MAKE_PRIM_PARSE_TYPE(typeName,typeSpec,format) \
  typeSpec ddcPrimParse##typeName (Obj* pObj) \

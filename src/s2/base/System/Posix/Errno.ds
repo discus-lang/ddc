@@ -17,7 +17,7 @@ import foreign c value
  --       it is still Int#.
  ddcPrimErrnoGet : Unit -> Int#
 
- ddcPrimErrnoShowMessage : Int# -> Text
+ ddcPrimErrnoShowMessage : Int# -> TextVec
 
 where
 
@@ -29,6 +29,6 @@ errno_get: S Errno Int
 
 -- | Show the message for the given errno value.
 errno_showMessage (errno: Int): Text
- = ddcPrimErrnoShowMessage errno
+ = TextVec $ ddcPrimErrnoShowMessage errno
 
 

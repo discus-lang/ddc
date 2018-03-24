@@ -11,20 +11,23 @@ int     ddcPrimErrnoGet ()
 
 
 // Get the name of the given 'errno' value.
-Obj*    ddcPrimErrnoShowMessage (int errno)
+Obj*    ddcPrimErrnoShowMessage (int errno_val)
 {
-        char* buf       = alloca(1024);
-        strerror_r(errno, buf, 1024);
-        int len         = strlen(buf);
+        // Write message into a temporary buffer.
+        char* pBuf      = alloca(1024);
+        strerror_r(errno_val, pBuf, 1024);
 
-        Obj*      pObj  = ddcAllocRaw(0, 4 + len + 1);
-        uint8_t*  p8    = _ddcPayloadRaw(pObj);
-        uint32_t* pLen  = (uint32_t*)p8;
-        string_t* pStr  = (string_t*)(p8 + 4);
+        // Allocate a new vector to hold the message.
+        int lenActual   = strlen(pBuf);
+        Obj* pVec       = ddcPrimVectorAlloc8(lenActual + 1);
+        string_t* pPay  = (string_t*)ddcPrimVectorPayload8(pVec);
 
-        *pLen   = strlen(buf);
-        strncpy(pStr, buf, 1024);
+        // Copy data into the new vector.
+        strncpy(pPay, pBuf, lenActual);
 
-        return pObj;
+        // Ensure there's a null character on the end of the string.
+        *(pPay + lenActual) = 0;
+
+        return pVec;
 }
 

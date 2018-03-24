@@ -2,10 +2,7 @@
 #include <stdarg.h>
 #include <string.h>
 #include "Runtime.h"
-
-
-extern Obj*     ddcPrimVectorAlloc8(nat_t len);
-extern uint8_t* ddcPrimVectorPayload8(Obj* obj);
+#include "Primitive.h"
 
 
 // Print into a freshly allocated DDC TextLit heap object.

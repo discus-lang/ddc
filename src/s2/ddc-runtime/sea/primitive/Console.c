@@ -5,24 +5,27 @@
 
 // -- Stdin -------------------------------------------------------------------
 // Read a string from stdin and pack it into a vector of characters.
-Obj* ddcPrimStdinGetVector (nat_t len)
+Obj* ddcPrimStdinGetVector (nat_t lenMax)
 {
-        string_t* pBuf  = alloca (len);
-        pBuf            = fgets (pBuf, len, stdin);
+        string_t* pBuf  = alloca (lenMax);
+        pBuf            = fgets (pBuf, lenMax, stdin);
         if (pBuf == NULL) {
                 printf("ddc-runtime.ddcPrimStdinGetVector: failed\n");
                 abort();
         }
 
-        nat_t n         = strlen(pBuf);
-        Obj* pObj       = ddcAllocRaw (0, 4 + n + 1);
-        uint8_t* p8     = _ddcPayloadRaw(pObj);
-        uint32_t* pLen  = (uint32_t*)p8;
-        string_t* pStr  = (string_t*)(p8 + 4);
+        // Allocate a new vector to hold the read text.
+        nat_t lenActual = strlen(pBuf);
+        Obj* pVec       = ddcPrimVectorAlloc8(lenActual + 1);
+        string_t* pPay  = (string_t*)ddcPrimVectorPayload8(pVec);
 
-        memcpy(pStr, pBuf, n + 1);
-        *pLen           = n;
-        return pObj;
+        // Copy data into the new vector.
+        strncpy(pPay, pBuf, lenActual);
+
+        // Ensure there's a null character on the end of the string.
+        *(pPay + lenActual) = 0;
+
+        return pVec;
 }
 
 
