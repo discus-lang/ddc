@@ -93,7 +93,7 @@ Terms
  DaCon  ::= '()'                                 (builtin unit data constructor)
          |   Con                                 (named data constructor)
 
- Bind   ::= Var '='Exp                           (binding)
+ Bind   ::= Var '=' Exp                          (binding)
  BindT  ::= Var ':' Type '=' Exp                 (typed binding)
  Sig    ::= Var ':' Type                         (type signature)
 
