@@ -23,6 +23,7 @@ library
         Class.Category
         Data.Numeric.Int
         Data.Numeric.Nat
+        Data.Numeric.Addr
         Data.Numeric.Word8
         Data.Numeric.Word16
         Data.Numeric.Word32
