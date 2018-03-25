@@ -61,8 +61,8 @@ Obj* ddcPrimFileRead (string_t* path)
         *pStr   = 0;
 
         // Check that we successfully read all the data.
-        if (nRead /= lenBuf)
-                ddcPrimFileFail("short read on file '%s'.", path);
+        if (nRead != lenBuf)
+                ddcPrimFileFail("short read on file '%s'");
 
         // Close the file handle.
         if (close (fd) == -1)
