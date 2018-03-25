@@ -366,7 +366,7 @@ toCoreLtsX a lts xBody
                                       bxs))
                 <*> toCoreX a xBody
 
-        S.LPrivate bs Nothing bts
+        S.LPrivate bs (S.CapsList bts)
          -> C.XLet a
                 <$> (C.LPrivate
                         <$> (sequence  $ fmap (toCoreBM UniverseKind)
@@ -375,7 +375,23 @@ toCoreLtsX a lts xBody
                         <*> (sequence  $ fmap toCoreTBK bts))
                 <*> toCoreX a xBody
 
-        S.LPrivate bs (Just tParent) bts
+        S.LPrivate bs S.CapsMutable
+         -> do  bs'          <- sequence $ fmap (toCoreBM UniverseKind)
+                                         $ [S.XBindVarMT b (Just S.KRegion) | b <- bs]
+                let Just us' =  sequence $ map C.takeSubstBoundOfBind bs'
+
+                C.XLet a (C.LPrivate bs' Nothing (bsCapsMutable us'))
+                        <$> toCoreX a xBody
+
+        S.LPrivate bs S.CapsConstant
+         -> do  bs'          <- sequence $ fmap (toCoreBM UniverseKind)
+                                         $ [S.XBindVarMT b (Just S.KRegion) | b <- bs]
+                let Just us' =  sequence $ map C.takeSubstBoundOfBind bs'
+
+                C.XLet a (C.LPrivate bs' Nothing (bsCapsConstant us'))
+                        <$> toCoreX a xBody
+
+        S.LExtend bs tParent (S.CapsList bts)
          -> C.XLet a
                 <$> (C.LPrivate
                         <$> (sequence  $ fmap (toCoreBM UniverseKind)
@@ -383,6 +399,26 @@ toCoreLtsX a lts xBody
                         <*> (fmap Just $ toCoreT UniverseKind tParent)
                         <*> (sequence  $ fmap toCoreTBK bts))
                 <*> toCoreX a xBody
+
+        S.LExtend bs tParent S.CapsMutable
+         -> do  bs'          <- sequence $ fmap (toCoreBM UniverseKind)
+                                         $ [S.XBindVarMT b (Just S.KRegion) | b <- bs]
+                let Just us' =  sequence $ map C.takeSubstBoundOfBind bs'
+                C.XLet a
+                 <$> (C.LPrivate bs'
+                        <$> (fmap Just $ toCoreT UniverseKind tParent)
+                        <*> pure (bsCapsMutable us'))
+                 <*> toCoreX a xBody
+
+        S.LExtend bs tParent S.CapsConstant
+         -> do  bs'          <- sequence $ fmap (toCoreBM UniverseKind)
+                                         $ [S.XBindVarMT b (Just S.KRegion) | b <- bs]
+                let Just us' =  sequence $ map C.takeSubstBoundOfBind bs'
+                C.XLet a
+                 <$> (C.LPrivate bs'
+                        <$> (fmap Just $ toCoreT UniverseKind tParent)
+                        <*> pure (bsCapsConstant us'))
+                 <*> toCoreX a xBody
 
         S.LGroup bRec cls
          -> do  let sigs  = collectSigsFromClauses cls
@@ -396,6 +432,21 @@ toCoreLtsX a lts xBody
                 if bRec
                  then toCoreLtsX a (S.LRec bxs) xBody
                  else toCoreX a (foldr (\(b, xBind) -> S.XLet (S.LLet b xBind)) xBody bxs)
+
+ where  -- Anonymous capabilities for a mutable region.
+        bsCapsMutable us
+         = concat [ let t = C.TVar u
+                    in   [ C.BNone (C.tRead t)
+                         , C.BNone (C.tWrite t)
+                         , C.BNone (C.tAlloc t)]
+                  | u <- us ]
+
+        -- Anonymous capabilities for a constant region.
+        bsCapsConstant us
+         = concat [ let t = C.TVar u
+                    in   [ C.BNone (C.tRead t)
+                         , C.BNone (C.tAlloc t)]
+                  | u <- us ]
 
 
 -- Cast -------------------------------------------------------------------------------------------

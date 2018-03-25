@@ -408,40 +408,63 @@ pLetsSP
       --   private Binder+ (with { Binder : Type ... })? in Exp
     , do sp     <- pKey EPrivate
 
-        -- new private region names.
+         -- new private region names.
          bs     <- P.manyTill pBind
-                $  P.try
-                        $ P.lookAhead
-                        $ P.choice [pKey EIn, pKey EWith]
+                $  P.try $ P.lookAhead $  P.choice [pKey EIn, pKey EWith]
 
          -- Witness types.
-         r      <- pLetWits bs Nothing
-         return (r, sp)
+         tsWit  <- pLetWits
+         return (LPrivate bs (CapsList tsWit), sp)
+
+      -- Mutable private region binding.
+      --   mutable Binder+ in Exp
+    , do sp     <- pKey EMutable
+         bs     <- P.many pBind
+         return (LPrivate bs CapsMutable, sp)
+
+      -- Constant private region binding.
+      --   mutable Binder+ in Exp
+    , do sp     <- pKey EConstant
+         bs     <- P.many pBind
+         return (LPrivate bs CapsConstant, sp)
 
       -- Extend an existing region.
       --   extend Binder+ using Type (with { Binder : Type ...})? in Exp
     , do sp     <- pTokSP (KKeyword EExtend)
 
          -- parent region
-         t      <- pType
+         tParent <- pType
          pTok (KKeyword EUsing)
 
-         -- new private region names.
-         bs     <- P.manyTill pBind
-                $  P.try $ P.lookAhead
-                         $ P.choice
-                                [ pTok (KKeyword EUsing)
-                                , pTok (KKeyword EWith)
-                                , pTok (KKeyword EIn) ]
+         (bs, caps)
+          <- P.choice
+              [ do -- new private region names.
+                   bs     <- P.manyTill pBind
+                          $  P.try $ P.lookAhead
+                                   $ P.choice
+                                          [ pTok (KKeyword EUsing)
+                                          , pTok (KKeyword EWith)
+                                          , pTok (KKeyword EIn) ]
 
-         -- witness types
-         r      <- pLetWits bs (Just t)
-         return (r, sp)
+                   tsWit  <- pLetWits
+                   return (bs, CapsList tsWit)
+
+              , do pTok (KKeyword EMutable)
+                   bs   <- P.many pBind
+                   return (bs, CapsMutable)
+
+              , do pTok (KKeyword EConstant)
+                   bs   <- P.many pBind
+                   return (bs, CapsConstant)
+              ]
+
+         return ( LExtend bs tParent caps
+                , sp)
     ]
 
 
-pLetWits :: [Bind] -> Maybe Type -> Parser Lets
-pLetWits bs mParent
+pLetWits :: Parser [(Bind, Type)]
+pLetWits
  = P.choice
     [ do   pKey EWith
            pSym SBraceBra
@@ -458,9 +481,9 @@ pLetWits bs mParent
                       ])
                       (pSym SSemiColon)
            pSym SBraceKet
-           return (LPrivate bs mParent wits)
+           return wits
 
-    , do   return (LPrivate bs mParent [])
+    , do   return []
     ]
 
 

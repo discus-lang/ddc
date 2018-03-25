@@ -46,6 +46,8 @@ data Keyword
         | EThen
         | EElse
         | EOtherwise
+        | EConstant
+        | EMutable
         deriving (Eq, Show)
 
 
@@ -89,7 +91,8 @@ sayKeyword kw
         EMatch          -> "match"
         EOtherwise      -> "otherwise"
         EThen           -> "then"
-
+        EConstant       -> "constant"
+        EMutable        -> "mutable"
 
 
 -------------------------------------------------------------------------------
@@ -137,6 +140,8 @@ acceptKeyword str
         "match"         -> Just EMatch
         "otherwise"     -> Just EOtherwise
         "then"          -> Just EThen
+        "constant"      -> Just EConstant
+        "mutable"       -> Just EMutable
 
         _               -> Nothing
 

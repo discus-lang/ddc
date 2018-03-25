@@ -315,7 +315,9 @@ desugarLts :: Renames -> Lets -> S Lets
 desugarLts rns lts
  = case lts of
         LLet mb x       -> LLet mb <$> desugarX rns x
+
         LPrivate{}      -> return lts
+        LExtend{}       -> return lts
 
         LGroup bRec cls
          -> LGroup bRec <$> mapM (desugarCl rns) cls

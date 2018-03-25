@@ -26,12 +26,12 @@ parseBool (tx: Text): Maybe Bool
 -- | Parse a Nat.
 --   TODO: This doesn't detect ill-formed strings.
 parseNat (tx: Text): Maybe Nat
- = private r with {Alloc r} in
+ = constant r in
    Just (ddcPrimParseNat (vectorOfText {@r} tx))
 
 
 -- | Parse a Float64.
 --   TODO: This doesn't detect ill-formed strings.
 parseFloat64 (tx: Text): Maybe Float64
- = private r with {Alloc r} in
+ = constant r in
    Just (ddcPrimParseFloat64 (vectorOfText {@r} tx))

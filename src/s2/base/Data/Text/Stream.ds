@@ -23,7 +23,7 @@ where
 -------------------------------------------------------------------------------
 -- | Take a list of characters from a text string.
 text_toList (tx: Text): List Char
- = private r with {Read r; Write r; Alloc r} in
+ = mutable r in
    do   source  = textSource_fromText {@r} tx
         list    = textSource_pullList source
         list
@@ -31,7 +31,7 @@ text_toList (tx: Text): List Char
 
 -- | Take a list of words from a text string.
 text_words (tx: Text): List Text
- = private r with {Read r; Write r; Alloc r} in
+ = mutable r in
    do   source  = textSource_fromText {@r} tx
         words   = textSource_pullWords source
         words
@@ -39,7 +39,7 @@ text_words (tx: Text): List Text
 
 -- | Take a list of lines from a text string.
 text_lines (tx: Text): List Text
- = private r with {Read r; Write r; Alloc r} in
+ = mutable r in
    do   source  = textSource_fromText {@r} tx
         lines   = textSource_pullLines source
         lines
@@ -120,7 +120,7 @@ textSource_toText
 
          | TextChunkLit lit <- chunk
          = do   vecNew
-                 = extend RegionText using r1 with {Alloc r1; Write r1} in
+                 = extend RegionText using mutable r1 in
                    do   -- Copy the remaining part of a chunk to a new vector.
                         vec'    = vectorAlloc# {@r1} (nRemain + 1)
                         copyTextLitToVector lit vec' 0 ix (ix + nRemain)
@@ -136,7 +136,7 @@ textSource_toText
 
          | TextChunkVec vec <- chunk
          = do   vecNew
-                 = extend RegionText using r1 with {Alloc r1; Write r1} in
+                 = extend RegionText using mutable r1 in
                    do   -- Copy the remaining part of the chunk to a new vector.
                         vec'   = vectorAlloc# {@r1} (nRemain + 1)
                         copyTextVecToVector vec vec' 0 ix (ix + nRemain)
