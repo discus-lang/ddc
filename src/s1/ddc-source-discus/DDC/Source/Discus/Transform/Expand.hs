@@ -169,11 +169,17 @@ downX a env xx
                 x'      = expand a env' x
             in  XAbs bm x'
 
-        XLet (LPrivate bts mR bxs) x2
+        XLet (LPrivate bts bxs) x2
          -> let env'    = env   & Env.extendsTyVar' bts
                                 & Env.extendsDaVar  bxs
                 x2'     = expand a env' x2
-            in  XLet (LPrivate bts mR bxs) x2'
+            in  XLet (LPrivate bts bxs) x2'
+
+        XLet (LExtend bts tParent bxs) x2
+         -> let env'    = env   & Env.extendsTyVar' bts
+                                & Env.extendsDaVar  bxs
+                x2'     = expand a env' x2
+            in  XLet (LExtend bts tParent bxs) x2'
 
         XCase  x alts   -> XCase  (downX a env x)
                                   (map (downA a env) alts)

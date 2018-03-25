@@ -109,6 +109,7 @@ instance Defix GLets l where
                 return $ LRec (zip bs xs')
 
         LPrivate{}      -> return lts
+        LExtend{}       -> return lts
 
         LGroup bRec cs  -> liftM (LGroup bRec) (mapM down cs)
 

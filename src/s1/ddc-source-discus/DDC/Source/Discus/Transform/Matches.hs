@@ -237,6 +237,7 @@ desugarLts sp lts
                 return $ LRec $ zip bs xs'
 
         LPrivate{}      -> return lts
+        LExtend{}       -> return lts
 
         LGroup bRec cls
          -> do  let spcls  =  zip (repeat sp) cls

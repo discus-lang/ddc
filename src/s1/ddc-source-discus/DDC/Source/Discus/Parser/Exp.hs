@@ -415,15 +415,17 @@ pLetsSP
                         $ P.choice [pKey EIn, pKey EWith]
 
          -- Witness types.
-         r      <- pLetWits bs Nothing
-         return (r, sp)
+         tsWit  <- pLetWits
+         return ( LPrivate bs tsWit
+                , sp)
+
 
       -- Extend an existing region.
       --   extend Binder+ using Type (with { Binder : Type ...})? in Exp
     , do sp     <- pTokSP (KKeyword EExtend)
 
          -- parent region
-         t      <- pType
+         tParent <- pType
          pTok (KKeyword EUsing)
 
          -- new private region names.
@@ -435,13 +437,14 @@ pLetsSP
                                 , pTok (KKeyword EIn) ]
 
          -- witness types
-         r      <- pLetWits bs (Just t)
-         return (r, sp)
+         tsWit  <- pLetWits
+         return ( LExtend bs tParent tsWit
+                , sp)
     ]
 
 
-pLetWits :: [Bind] -> Maybe Type -> Parser Lets
-pLetWits bs mParent
+pLetWits :: Parser [(Bind, Type)]
+pLetWits
  = P.choice
     [ do   pKey EWith
            pSym SBraceBra
@@ -458,9 +461,9 @@ pLetWits bs mParent
                       ])
                       (pSym SSemiColon)
            pSym SBraceKet
-           return (LPrivate bs mParent wits)
+           return wits
 
-    , do   return (LPrivate bs mParent [])
+    , do   return []
     ]
 
 

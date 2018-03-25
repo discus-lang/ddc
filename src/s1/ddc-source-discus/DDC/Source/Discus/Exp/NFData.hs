@@ -69,7 +69,8 @@ instance NFDataLanguage l => NFData (GLets l) where
   = case lts of
         LLet b x                -> rnf b `seq` rnf x
         LRec bxs                -> rnf bxs
-        LPrivate bs1 mR bs2     -> rnf bs1  `seq` rnf mR `seq` rnf bs2
+        LPrivate bs1 bs2        -> rnf bs1 `seq` rnf bs2
+        LExtend  bs1 t bs2      -> rnf bs1 `seq` rnf t `seq` rnf bs2
         LGroup _bRec cs         -> rnf cs
 
 

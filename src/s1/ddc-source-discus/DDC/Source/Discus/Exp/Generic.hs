@@ -217,7 +217,10 @@ data GLets l
 
         -- | Bind a local region variable,
         --   and witnesses to its properties.
-        | LPrivate ![GXBindVar l] !(Maybe (GType l)) ![(GXBindVar l, GType l)]
+        | LPrivate ![GXBindVar l] ![(GXBindVar l, GType l)]
+
+        -- | Extend an existing region with a sub region that has other capabilities.
+        | LExtend  ![GXBindVar l] !(GType l) ![(GXBindVar l, GType l)]
 
         ---------------------------------------------------
         -- Sugar Constructs

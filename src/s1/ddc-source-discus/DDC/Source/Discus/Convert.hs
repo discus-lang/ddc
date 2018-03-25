@@ -366,7 +366,7 @@ toCoreLtsX a lts xBody
                                       bxs))
                 <*> toCoreX a xBody
 
-        S.LPrivate bs Nothing bts
+        S.LPrivate bs bts
          -> C.XLet a
                 <$> (C.LPrivate
                         <$> (sequence  $ fmap (toCoreBM UniverseKind)
@@ -375,7 +375,7 @@ toCoreLtsX a lts xBody
                         <*> (sequence  $ fmap toCoreTBK bts))
                 <*> toCoreX a xBody
 
-        S.LPrivate bs (Just tParent) bts
+        S.LExtend bs tParent bts
          -> C.XLet a
                 <$> (C.LPrivate
                         <$> (sequence  $ fmap (toCoreBM UniverseKind)

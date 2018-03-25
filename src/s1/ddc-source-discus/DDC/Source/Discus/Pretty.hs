@@ -325,23 +325,23 @@ instance PrettyLanguage l => Pretty (GLets l) where
                                $ map pprLetRecBind bxs)))
                 <$> rbrace
 
-        LPrivate bs Nothing []
+        LPrivate bs []
          -> text "private"
                 <+> (hcat $ punctuate space (map ppr bs))
 
-        LPrivate bs Nothing bsWit
+        LPrivate bs bsWit
          -> text "private"
                 <+> (hcat $ punctuate space (map ppr bs))
                 <+> text "with"
                 <+> braces (cat $ punctuate (text "; ") $ map ppr bsWit)
 
-        LPrivate bs (Just parent) []
+        LExtend bs parent []
          -> text "extend"
                 <+> ppr parent
                 <+> text "using"
                 <+> (hcat $ punctuate space (map ppr bs))
 
-        LPrivate bs (Just parent) bsWit
+        LExtend bs parent bsWit
          -> text "extend"
                 <+> ppr parent
                 <+> text "using"

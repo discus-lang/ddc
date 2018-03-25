@@ -220,8 +220,11 @@ mapBoundAtDepthXLets l f d lts
                 bs' = map (\(b,e) -> (b, mapBoundAtDepthX l f (d + inc) e)) bs
             in  (LRec bs', inc)
 
-        LPrivate _b _ bts
-         -> (lts, countBAnonsB l $ map fst bts)
+        LPrivate _b bsWit
+         -> (lts, countBAnonsB l $ map fst bsWit)
+
+        LExtend _b _tParent bsWit
+         -> (lts, countBAnonsB l $ map fst bsWit)
 
         -- ISSUE #430: In BoundX transform, management of debruijn depth is wrong.
         LGroup bRec cs
