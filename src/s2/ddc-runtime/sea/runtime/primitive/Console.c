@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <alloca.h>
+#include <inttypes.h>
 #include "runtime/Primitive.h"
 #include "Runtime.h"
 
@@ -52,6 +53,30 @@ void ddcPrimStdoutPutVector (Obj* obj)
         fflush(stdout);
 }
 
+// Print a pointer.
+void ddcPrimStdoutPutAddr (void* ptr)
+{       printf("%p", ptr);
+        fflush(stdout);
+}
+
+// Print a natural number.
+void ddcPrimStdoutPutNat (nat_t val)
+{       printf("%zu", val);
+        fflush(stdout);
+}
+
+// Print a Word32 to stdout.
+void ddcPrimStdoutPutWord32 (uint32_t val)
+{       printf("%#04" PRIx32, val);
+        fflush(stdout);
+}
+
+// Print a Word64 to stdout.
+void ddcPrimStdoutPutWord64 (uint64_t val)
+{       printf("%#08" PRIx64, val);
+        fflush(stdout);
+}
+
 // Flush stdout.
 void ddcPrimStdoutFlush (Obj* obj)
 {       fflush(stdout);
@@ -61,14 +86,14 @@ void ddcPrimStdoutFlush (Obj* obj)
 // -- Stderr ------------------------------------------------------------------
 // Print a C string to stderr.
 // Use this when printing an error from the runtime system.
-void ddcPrimFailString(string_t* str)
+void ddcPrimStderrPutString(string_t* str)
 {       fputs(str, stderr);
         fflush(stderr);
 }
 
 // Print a natural number to stderr.
 // Use this when printing an error from the runtime system.
-void ddcPrimFailNat(nat_t x)
+void ddcPrimStderrPutNat(nat_t x)
 {       fprintf(stderr, "%lu", x);
         fflush(stderr);
 }

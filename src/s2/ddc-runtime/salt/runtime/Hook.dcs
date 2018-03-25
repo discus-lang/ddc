@@ -11,7 +11,7 @@ export foreign c value
  ddcHookCallExceptionNetwork    : [r1: Region]. Ptr# r1 Obj -> Ptr# r1 Obj -> Ptr# r1 Obj
 
 import foreign c value
- ddcPrimFailString      : TextLit# -> Void#
+ ddcPrimStderrPutString : TextLit# -> Void#
 
  ddcRunThunk            :  [r1 : Region]. Ptr# r1 Obj -> Ptr# r1 Obj
 
@@ -34,18 +34,22 @@ ddcHookCallExceptionFile    [r1: Region] (pErrno pTextBuf: Ptr# r1 Obj): Ptr# r1
  = do
         addr    = read# (global# [Ptr# r1 Obj] "ddcRuntimeHookExceptionFile"#) 0#
         case neq# addr (promote# 0#) of
-         True#  -> do   ptr     = makePtr# [r1] addr
-                        ddcRunThunk (ddcApply2 ptr pErrno pTextBuf)
+         True#
+          -> do ptr     = makePtr# [r1] addr
+                ddcRunThunk (ddcApply2 ptr pErrno pTextBuf)
 
-         False# -> do   ddcPrimFailString "*** Runtime Error: file exception hook not set\n"#
-                        fail#
+         False#
+          -> do ddcPrimStderrPutString "*** Runtime Error: file exception hook not set\n"#
+                fail#
 
 ddcHookCallExceptionNetwork [r1: Region] (pErrno pTextBuf: Ptr# r1 Obj): Ptr# r1 Obj
  = do
         addr    = read# (global# [Ptr# r1 Obj] "ddcRuntimeHookExceptionNetwork"#) 0#
         case neq# addr (promote# 0#) of
-         True#  -> do   ptr     = makePtr# [r1] addr
-                        ddcRunThunk (ddcApply2 ptr pErrno pTextBuf)
+         True#
+          -> do ptr     = makePtr# [r1] addr
+                ddcRunThunk (ddcApply2 ptr pErrno pTextBuf)
 
-         False# -> do   ddcPrimFailString "*** Runtime Error: network exception hook not set\n"#
-                        fail#
+         False#
+          -> do ddcPrimStderrPutString "*** Runtime Error: network exception hook not set\n"#
+                fail#

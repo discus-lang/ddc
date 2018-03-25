@@ -130,7 +130,6 @@ import foreign c value
  ddcPrimFailNat         : Nat# -> Void#
 
  ddcPrimStdoutPutString : TextLit# -> Void#
- ddcPrimShowAddr        : Addr# -> TextLit#
  ddcPrimShowNat         : Nat#  -> TextLit#
  ddcPrimShowWord32      : Word32#  -> TextLit#
 
