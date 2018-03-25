@@ -113,7 +113,7 @@ discusToSalt platform runtimeConfig mm config
         --   of our top-level supercombinators.
         mm_curry
          <- case DCurry.curryModule mm_unshare of
-                Left err        -> throwE [B.ErrorTetraConvert err]
+                Left err        -> throwE [B.ErrorDiscusConvert err]
                 Right mm'       -> return mm'
 
         liftIO $ B.pipeSink (renderIndent $ ppr mm_curry)
@@ -169,7 +169,7 @@ discusToSalt platform runtimeConfig mm config
                 (C.profilePrimDataDefs D.profile)
                 (C.profilePrimKinds    D.profile)
                 (C.profilePrimTypes    D.profile) mm_checked_salt of
-                Left err        -> throwE [B.ErrorTetraConvert err]
+                Left err        -> throwE [B.ErrorDiscusConvert err]
                 Right mm'       -> return mm'
 
         liftIO $ B.pipeSink (renderIndent $ ppr mm_salt)

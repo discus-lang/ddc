@@ -8,7 +8,7 @@ export
         showDecimalNat; digitDecimal;
         showHexNat;     digitHex;
         showBaseNat;
---        showAddr;
+        showAddr;
         showFloat32;
         showFloat64;
 }
@@ -22,7 +22,7 @@ import Data.Text.Char
 import Data.Text.Operator
 
 import foreign c value
--- ddcPrimShowAddr        : Addr#    -> Vector# RegionText Word8#
+ ddcPrimShowAddr        : Addr#    -> Vector# RegionText Word8#
  ddcPrimShowFloat32     : Float32# -> Vector# RegionText Word8#
  ddcPrimShowFloat64     : Float64# -> Vector# RegionText Word8#
 
@@ -133,8 +133,8 @@ showBaseNat' base digit width pad first x
 
 -------------------------------------------------------------------------------
 -- | Show an address.
---showAddr (a: Addr#): Text
--- = TextVec (ddcPrimShowAddr a)
+showAddr (a: Addr#): Text
+ = TextVec (ddcPrimShowAddr a)
 
 
 -- | Show a Float32.
