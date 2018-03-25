@@ -126,10 +126,8 @@ import foreign c value
  -- We need to relaim at least the given number of bytes,
  -- otherwise we cannot continue execution.
  ddcAllocCollect        : Nat# -> Unit
- ddcPrimFailString      : TextLit# -> Void#
- ddcPrimFailNat         : Nat# -> Void#
-
- ddcPrimStdoutPutString : TextLit# -> Void#
+ ddcPrimStderrPutString : TextLit# -> Void#
+ ddcPrimStderrPutNat    : Nat# -> Void#
  ddcPrimShowNat         : Nat#  -> TextLit#
  ddcPrimShowWord32      : Word32#  -> TextLit#
 
@@ -394,7 +392,7 @@ ddcAllocThunk_ok [r: Region] (fun:  Addr#)
 
         case sane of
          False#
-          -> do ddcPrimFailString "! Dodgy Thunk Allocation\n"#
+          -> do ddcPrimStderrPutString "! Dodgy Thunk Allocation\n"#
                 fail#
 
          True#  -> makePtr# addr
@@ -763,11 +761,11 @@ ddcPayloadSizeSmall [r: Region] (obj: Ptr# r Obj): Nat#
 ddcFailObj [r: Region]
            (obj: Ptr# r Obj) (fn: TextLit#) (msg: TextLit#): Unit
  = do
-        ddcPrimFailString "ddc-runtime."#
-        ddcPrimFailString fn
-        ddcPrimFailString " "#
-        ddcPrimFailString msg
-        ddcPrimFailString "\n"#
-        ddcPrimFailString "\n"#
+        ddcPrimStderrPutString "ddc-runtime."#
+        ddcPrimStderrPutString fn
+        ddcPrimStderrPutString " "#
+        ddcPrimStderrPutString msg
+        ddcPrimStderrPutString "\n"#
+        ddcPrimStderrPutString "\n"#
         fail#
 
