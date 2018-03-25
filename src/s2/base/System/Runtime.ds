@@ -1,38 +1,62 @@
 
 module System.Runtime
-export
-{       runtimeTraceObj;
-        runtimeTraceHeap;
-}
+export  runtime_traceObj
+        runtime_traceHeap
 
+---------------------------------------------------------------------------------------------------
+export foreign c value
+ ddcHookSetExceptionFile        : (Int# -> TextVec -> S Error Unit) -> S Runtime Void#
+ ddcHookSetExceptionNetwork     : (Int# -> TextVec -> S Error Unit) -> S Runtime Void#
+
+import Data.Numeric.Bool
+
+
+---------------------------------------------------------------------------------------------------
 import foreign abstract type
  -- | Effect assigned to actions that perform direct access to the runtime
- --   system. Such functions may read and write raw heap objects, and observe
+ --   system. Such actions may read and write raw heap objects, and observe
  --   that objects have been moved around during garbage collection.
  Runtime : Effect
 
+ -- | Effect assigned to actions that throw errors with the exception mechanism.
+ Error : Effect
+
+
 import foreign c value
 
- -- | Trace the object graph starting from the object at the given address.
+ -- From debug/Trace.dcs
+ -- | Trace the heap starting from the given object,
+ --   printing out a description of them if requested.
  ddcTraceObj
-        :  [a: Data]
-        .  Bool#                -- ^ Recursively trace reachable objects.
+        :  {@a: Data}
+        -> Bool#                -- ^ Recursively trace reachable objects.
         -> Bool#                -- ^ Print a description of each object as we go.
         -> a                    -- ^ Object to start from.
         -> S Runtime Unit
 
-
- -- | Trace all objects in the heap, checking that the are well format.
- --
+ -- | Trace all objects in the heap, checking that the are well formed.
  --   Also print a description of each object if requested.
- --
- ddcTraceHeap:  Bool# -> S Runtime Unit
+ ddcTraceHeap
+        :  Bool#                -- ^ Print a description of each object as we go.
+        -> S Runtime Unit
+
+ -- From Hook.dcs --------------------
+ -- | Set the callback for when the runtime encounters a file exception.
+ ddcHookSetExceptionFile        : (Int# -> TextVec -> S Error Unit) -> S Runtime Void#
+
+ -- | Set the callback for when the runtime encounters a network exception.
+ ddcHookSetExceptionNetwork     : (Int# -> TextVec -> S Error Unit) -> S Runtime Void#
+
 
 where
 
-runtimeTraceObj (recurse print: Bool) (obj: a): S Runtime Unit
- = ddcTraceObj recurse print obj
+ -- | Trace the object graph,
+ --   starting from the given object.
+runtime_traceObj (recurse print: Bool) (obj: a): S Runtime Unit
+ = ddcTraceObj  recurse print obj
 
-runtimeTraceHeap  (print: Bool): S Runtime Unit
- = ddcTraceHeap  print
+-- | Trace and check the entire heap,
+--   starting from the object in the first heap address.
+runtime_traceHeap (print: Bool): S Runtime Unit
+ = ddcTraceHeap print
 

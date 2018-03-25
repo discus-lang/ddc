@@ -8,7 +8,7 @@ salt-runtime_dcs = \
 
 # Runtime C sources.
 salt-runtime_c   = \
-        $(shell find src/s2/ddc-runtime/sea/primitive       -name "*.c")
+        $(shell find src/s2/ddc-runtime/sea/runtime         -name "*.c")
 
 
 # Runtime object file outputs.
@@ -24,7 +24,7 @@ salt-runtime_o   = \
 #  if we touch any of them. The list of source files needs to match the
 #  ones backed into ddc.
 src/s2/ddc-runtime/build/libddc-runtime.a : \
- bin/ddc ${salt-runtime_c} ${salt-runtime_dcs}
+ bin/ddc $(salt-runtime_c) $(salt-runtime_dcs)
 	@echo "* Building $@"
 	@bin/ddc -basebuild
 
