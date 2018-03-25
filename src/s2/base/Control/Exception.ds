@@ -1,6 +1,9 @@
 
 module Control.Exception
-export try; throw; fail; error
+export
+{       try; tryEither;
+        throw; fail; error
+}
 
 export foreign c value
  ddcHookErrorSystemFile
@@ -32,6 +35,12 @@ where
 try     {@eff1 eff2: Effect} {@a: Data}
         (susp: S eff1 a) (handler: Exception -> S eff2 a): S (eff1 + eff2) a
  = ddcPrimExceptionTry susp handler
+
+
+-- | Run a computation, capturing any thrown exception in an Either value.
+tryEither (comp: S eff a): S eff (Either Exception a)
+ = try  (box do { x = run comp; Right x })
+        (\ex -> box Left ex)
 
 
 -------------------------------------------------------------------------------

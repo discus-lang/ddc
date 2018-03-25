@@ -1,6 +1,9 @@
 
 module Data.Numeric.Bool
-export { not; and; or; xor; }
+export
+{       not; and; or; xor;
+        when; unless;
+}
 where
 
 type Bool = Bool#
@@ -30,4 +33,14 @@ xor (x y: Bool): Bool
         else (if y then True  else False)
 
 
+-- | Execute a computation when the predicate is true.
+when (p: Bool) (comp: S eff Unit): S eff Unit
+ = if p then run comp
+        else ()
+
+
+-- | Execute a computation when the predicate is false.
+unless (p: Bool) (comp: S eff Unit): S eff Unit
+ = if p then ()
+        else run comp
 

@@ -234,14 +234,12 @@ pExpAtomSP
    do   (con, sp)       <- pDaConBoundNameSP
         return  (sp, XCon  (DaConBound con))
 
-
         -- Literals.
         --  We just fill-in the type with a hole for now, and leave it to
         --  We also set the literal as being algebraic, which may not be
         --  true (as for Floats). The spreader also needs to fix this.
  , do   (lit, sp)       <- pDaConBoundLitSP
         return  (sp, XCon (DaConPrim lit (TVar UHole)))
-
 
         -- Fragment specific primitive names.
  , do   (nPrim, sp)     <- pPrimValSP
@@ -313,7 +311,6 @@ pExpAtomSP
         return  ( sp
                 , makeXApps xRecord (map RType tsField ++ map RTerm xsField))
 
-
         -- The syntax for the nullary record type constructor '()#' overlaps
         -- with that of the unit data construtor '()', so try the former first.
  , P.try $ do
@@ -350,16 +347,13 @@ pExpAtomSP
                 return  (sp, xField1)
          ]
 
-
         -- Infix operator used as a variable.
  , do   (UName tx, sp) <- pBoundNameOpVarSP
         return  (sp, XInfixVar sp (Text.unpack tx))
 
-
         -- Infix operator used nekkid.
  , do   (UName tx, sp) <- pBoundNameOpSP
         return  (sp, XInfixOp  sp (Text.unpack tx))
-
 
         -- The unit data constructor.
  , do   sp              <- pTokSP (KBuiltin BDaConUnit)
