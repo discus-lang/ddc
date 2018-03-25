@@ -116,7 +116,7 @@ main ()
         -- TODO: showing 32bit floats is broken.
         -- writel $ "showFloat32"          %% showFloat32 123.456f32
 
-        -- TODO: showin 64-bit floats truncates some trailing digits.
+        -- TODO: showing 64-bit floats truncates some trailing digits.
         writel  $ "showFloat64"
                 %% showFloat64 123.456789f64
 

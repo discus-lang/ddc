@@ -6,8 +6,8 @@ where
 
 -- Test exception handler throwing an exception.
 main ()
- = do   try (box error "not likely")
-         $ \ex -> case ex of
-                        ExceptionError msg
-                          -> error "it's still broken"
-                        _ -> writel $ "failed for some other reason"
+ = try (box error "not likely")
+ $ \ex -> case ex of
+                ExceptionError msg
+                  -> error "it's still broken"
+                _ -> writel $ "failed for some other reason"
