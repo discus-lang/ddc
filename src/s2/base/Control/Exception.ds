@@ -1,17 +1,19 @@
 
 module Control.Exception
 export try; throw; fail; error
-
 export foreign c value
- ddcHookErrorSystemFile
-        :  TextLit# -> Int# -> S Error Unit
+ ddcPrimExceptionTry
+        :  {@eff1 eff2: Effect} -> {@a: Data}
+        -> S eff1 a -> (Exception -> S eff2 a) -> S (eff1 + eff2) a
 
- ddcHookErrorSystemSocket
-        :  TextLit# -> Int# -> S Error Unit
+ ddcPrimExceptionThrow
+        :  {@eff: Effect} -> {@a: Data}
+        -> Exception -> S eff a
 
-
+import System.Runtime
 import Data.Numeric.Int
 import Data.Text
+
 
 import foreign c value
  ddcPrimExceptionTry
@@ -21,9 +23,6 @@ import foreign c value
  ddcPrimExceptionThrow
         :  {@eff: Effect} -> {@a: Data}
         -> Exception -> S eff a
-
-import foreign abstract type
- Error : Effect
 
 where
 
@@ -43,8 +42,8 @@ data Exception where
 
         -- System IO Exceptions.
         -- These have a message as well as the value of 'errno' if available.
-        ExceptionSystemFile     : Text -> Int -> Exception
-        ExceptionSystemSocket   : Text -> Int -> Exception
+        ExceptionSystemFile     : Int -> Text -> Exception
+        ExceptionSystemNetwork  : Int -> Text -> Exception
 
 
 -- | Throw a named exception.
@@ -70,13 +69,4 @@ error (tx: Text): S Error Unit
 fail {@a: Data} (tx: Text): a
  = ddcPrimExceptionThrow {@Pure} {@a} (ExceptionFail tx)
 
-
--- | Hook for the runtime primitive code to throw a file exception.
-ddcHookErrorSystemFile (tx: TextLit#) (errno: Int): S Error Unit
- = weakeff Error in throw $ ExceptionSystemFile (textLit tx) errno
-
-
--- | Hook for the runtime primitive code to throw a socket exception.
-ddcHookErrorSystemSocket (tx: TextLit#) (errno: Int): S Error Unit
- = weakeff Error in throw $ ExceptionSystemSocket (textLit tx) errno
 

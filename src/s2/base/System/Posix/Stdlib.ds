@@ -3,6 +3,7 @@
 module System.Posix.Stdlib
 export  stdlib_atoi; stdlib_system; stdlib_mkstemp
         exit
+import System.Posix.Errno
 import Data.Numeric.Nat
 import Data.Numeric.Int
 import Data.Numeric.Bool
@@ -11,9 +12,6 @@ import Data.List
 
 
 import foreign abstract type
- -- | Effect of reading or writing the global C errno variable.
- Errno   : Effect
-
  -- | Effect of accessing the file system.
  File   : Effect
 

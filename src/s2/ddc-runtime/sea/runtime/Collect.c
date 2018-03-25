@@ -1,6 +1,6 @@
-#pragma once
 #include <stdio.h>
-#include "Runtime.h"
+#include "runtime/Types.h"
+
 
 // ----------------------------------------------------------------------------
 // Code for debugging the LLVM GC shadow stack.

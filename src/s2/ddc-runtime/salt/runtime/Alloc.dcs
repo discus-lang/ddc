@@ -1,6 +1,6 @@
 
 -- | The Allocation System
-module Alloc
+module Runtime.Alloc
 
 export foreign c value
   -- | Garbage Collect the current heap and possibly resize it so that

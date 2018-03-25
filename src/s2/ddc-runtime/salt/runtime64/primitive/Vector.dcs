@@ -1,16 +1,52 @@
 
+-- Implementation of primitive unboxed vectors, as specific types.
+--   The Discus to Salt conversion introduces vectors using the same format,
+--   and works for arbitray primitive element types. The code in this module
+--   is intended to help marshalling in the foreign function interface, rather
+--   than being directly used in compiled source code.
+--
 module Runtime.Prim.Vector
 
 export foreign c value
- ddcVectorGuts : [r : Region]. Ptr# r Obj -> Addr#
+ ddcPrimVectorLength    : [r: Region]. Ptr# r Obj -> Nat#
+ ddcPrimVectorAlloc8    : [r: Region]. Nat# -> Ptr# r Obj
+ ddcPrimVectorPayload8  : [r: Region]. Ptr# r Obj -> Addr#
+ ddcVectorGuts          : [r: Region]. Ptr# r Obj -> Addr#
 
 import foreign c value
  ddcPayloadRaw : [r : Region]. Ptr# r Obj -> Ptr# r Word8#
+ ddcAllocRaw   : [r1: Region]. Tag# -> Nat# -> Ptr# r1 Obj
 
 with letrec
 
 
+-- | Get the length of a primitive unboxed vector.
+ddcPrimVectorLength [r: Region] (pVec: Ptr# r Obj): Nat#
+ = do   promote# (peek# [r] [Word32#] (castPtr# (ddcPayloadRaw pVec)))
+
+
+-- | Allocate a vector of Word8's of the given length.
+ddcPrimVectorAlloc8 [r: Region] (len: Nat#): Ptr# r Obj
+ = do   -- Allocate the new object.
+        -- The runtime system zeros the space when it allocates raw objects,
+        -- so we don't need to zero it again separately.
+        pObj     = ddcAllocRaw (truncate# 0#) (add# 4# len)
+
+        -- Write the length field.
+        poke# [r] [Word32#] (castPtr# (ddcPayloadRaw pObj)) (truncate# [Word32#] len)
+
+        -- Return the constructed object.
+        pObj
+
+
+-- | Get a pointer to the vector payload bytes.
+ddcPrimVectorPayload8 [r: Region] (pVec: Ptr# r Obj): Addr#
+ =      takePtr# (plusPtr# (ddcPayloadRaw pVec) 4#)
+
+
+
 -- | Get a pointer to the payload data of a vector.
+--   TODO: use above fn instead.
 ddcVectorGuts [r: Region] (pVec: Ptr# r Obj): Addr#
  = do
         -- step past the vector length field.

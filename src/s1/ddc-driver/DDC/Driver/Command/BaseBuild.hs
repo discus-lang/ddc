@@ -20,11 +20,13 @@ baseSaltFiles builder
         runtime = "ddc-runtime" </> "salt" </> "runtime"
    in   [ runtime         </> "Alloc.dcs"
         , runtime         </> "Collect.dcs"
+        , runtime         </> "Hook.dcs"
         , runtime         </> "Init.dcs"
         , runtime ++ bits </> "debug"     </> "Check.dcs"
         , runtime ++ bits </> "debug"     </> "Trace.dcs"
         , runtime ++ bits </> "primitive" </> "Array.dcs"
         , runtime ++ bits </> "primitive" </> "Env.dcs"
+        , runtime ++ bits </> "primitive" </> "Numeric.dcs"
         , runtime ++ bits </> "primitive" </> "Ref.dcs"
         , runtime ++ bits </> "primitive" </> "Text.dcs"
         , runtime ++ bits </> "primitive" </> "Vector.dcs"
@@ -34,7 +36,15 @@ baseSaltFiles builder
 
 baseSeaFiles  :: Builder -> [FilePath]
 baseSeaFiles _builder
- =      ["ddc-runtime" </> "sea"  </> "Primitive.c"]
+ =      [ "ddc-runtime" </> "sea" </> "runtime" </> "primitive" </> "Console.c"
+        , "ddc-runtime" </> "sea" </> "runtime" </> "primitive" </> "Errno.c"
+        , "ddc-runtime" </> "sea" </> "runtime" </> "primitive" </> "Error.c"
+        , "ddc-runtime" </> "sea" </> "runtime" </> "primitive" </> "Exception.c"
+        , "ddc-runtime" </> "sea" </> "runtime" </> "primitive" </> "File.c"
+        , "ddc-runtime" </> "sea" </> "runtime" </> "primitive" </> "Parse.c"
+        , "ddc-runtime" </> "sea" </> "runtime" </> "primitive" </> "Show.c"
+        , "ddc-runtime" </> "sea" </> "runtime" </> "primitive" </> "Text.c"
+        , "ddc-runtime" </> "sea" </> "runtime" </> "Collect.c" ]
 
 
 -- Buid the base libraries and runtime system.
