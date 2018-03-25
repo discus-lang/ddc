@@ -325,29 +325,49 @@ instance PrettyLanguage l => Pretty (GLets l) where
                                $ map pprLetRecBind bxs)))
                 <$> rbrace
 
-        LPrivate bs []
+        LPrivate bs (CapsList [])
          -> text "private"
                 <+> (hcat $ punctuate space (map ppr bs))
 
-        LPrivate bs bsWit
+        LPrivate bs (CapsList bsWit)
          -> text "private"
                 <+> (hcat $ punctuate space (map ppr bs))
                 <+> text "with"
                 <+> braces (cat $ punctuate (text "; ") $ map ppr bsWit)
 
-        LExtend bs parent []
+        LPrivate bs CapsMutable
+         -> text "mutable"
+                <+> (hcat $ punctuate space (map ppr bs))
+
+        LPrivate bs CapsConstant
+         -> text "constant"
+                <+> (hcat $ punctuate space (map ppr bs))
+
+        LExtend bs parent (CapsList [])
          -> text "extend"
                 <+> ppr parent
                 <+> text "using"
                 <+> (hcat $ punctuate space (map ppr bs))
 
-        LExtend bs parent bsWit
+        LExtend bs parent (CapsList bsWit)
          -> text "extend"
                 <+> ppr parent
                 <+> text "using"
                 <+> (hcat $ punctuate space (map ppr bs))
                 <+> text "with"
                 <+> braces (cat $ punctuate (text "; ") $ map ppr bsWit)
+
+        LExtend bs parent CapsMutable
+         -> text "extend"
+                <+> ppr parent
+                <+> text "with mutable"
+                <+> (hcat $ punctuate space (map ppr bs))
+
+        LExtend bs parent CapsConstant
+         -> text "extend"
+                <+> ppr parent
+                <+> text "with constant"
+                <+> (hcat $ punctuate space (map ppr bs))
 
         LGroup bRec cs
          ->   (if bRec then text "recs" else text "lets")

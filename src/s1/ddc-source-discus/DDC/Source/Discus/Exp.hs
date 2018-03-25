@@ -120,6 +120,9 @@ module DDC.Source.Discus.Exp
           -- *** Let-binding
         , Lets,         GLets       (..)
 
+          -- *** Capabilities
+        , Caps,         GCaps       (..)
+
           -- *** Clauses
         , Clause,       GClause     (..)
 

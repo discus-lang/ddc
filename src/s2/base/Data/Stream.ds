@@ -57,7 +57,7 @@ arrayOfStream
         (d: a)           -- ^ Default element value.
         (ss: Stream s a) -- ^ Stream to evaluate.
         : S (Alloc r1) (Array (Store r1 a) (S (Read r1) a))
- = extend r1 using r2 with { Write r2; Alloc r2 } in
+ = extend r1 using mutable r2 in
    do
         -- Allocate an array of the given maximum size.
         arr     = arrayStore_alloc [r2] n d

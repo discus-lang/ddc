@@ -69,9 +69,17 @@ instance NFDataLanguage l => NFData (GLets l) where
   = case lts of
         LLet b x                -> rnf b `seq` rnf x
         LRec bxs                -> rnf bxs
-        LPrivate bs1 bs2        -> rnf bs1 `seq` rnf bs2
-        LExtend  bs1 t bs2      -> rnf bs1 `seq` rnf t `seq` rnf bs2
+        LPrivate bs1 caps       -> rnf bs1 `seq` rnf caps
+        LExtend  bs1 t caps     -> rnf bs1 `seq` rnf t `seq` rnf caps
         LGroup _bRec cs         -> rnf cs
+
+
+instance NFDataLanguage l => NFData (GCaps l) where
+ rnf caps
+  = case caps of
+        CapsList bts            -> rnf bts
+        CapsMutable             -> ()
+        CapsConstant            -> ()
 
 
 instance NFDataLanguage l => NFData (GAltCase l) where

@@ -43,6 +43,7 @@ module DDC.Source.Discus.Exp.Generic
         , GParam        (..)
         , GArg          (..)
         , GLets         (..)
+        , GCaps         (..)
         , GPat          (..)
         , GClause       (..)
         , GGuard        (..)
@@ -217,10 +218,10 @@ data GLets l
 
         -- | Bind a local region variable,
         --   and witnesses to its properties.
-        | LPrivate ![GXBindVar l] ![(GXBindVar l, GType l)]
+        | LPrivate ![GXBindVar l] !(GCaps l)
 
         -- | Extend an existing region with a sub region that has other capabilities.
-        | LExtend  ![GXBindVar l] !(GType l) ![(GXBindVar l, GType l)]
+        | LExtend  ![GXBindVar l] !(GType l) !(GCaps l)
 
         ---------------------------------------------------
         -- Sugar Constructs
@@ -228,6 +229,18 @@ data GLets l
         --   The flag says if the group is recursive (true) or non-recursive (false).
         --   Multiple clauses in the group may be part of the same function.
         | LGroup   !Bool ![GClause l]
+
+
+-- | Capability list associate with a 'private' or 'extend' construct.
+data GCaps l
+        -- | Explicit list of named capabilities.
+        = CapsList      ![(GXBindVar l, GType l)]
+
+        -- | Sugar for '{Read r; Write r; Alloc r}' for each bound region 'r'.
+        | CapsMutable
+
+        -- | Sugar for '{Read r; Alloc r}' for each bound region 'r'.
+        | CapsConstant
 
 
 -- | Binding clause
@@ -335,6 +348,7 @@ type ShowLanguage l
 
 deriving instance ShowLanguage l => Show (GExp         l)
 deriving instance ShowLanguage l => Show (GLets        l)
+deriving instance ShowLanguage l => Show (GCaps        l)
 deriving instance ShowLanguage l => Show (GClause      l)
 deriving instance ShowLanguage l => Show (GParam       l)
 deriving instance ShowLanguage l => Show (GArg         l)

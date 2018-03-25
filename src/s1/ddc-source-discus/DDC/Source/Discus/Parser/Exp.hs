@@ -408,17 +408,25 @@ pLetsSP
       --   private Binder+ (with { Binder : Type ... })? in Exp
     , do sp     <- pKey EPrivate
 
-        -- new private region names.
+         -- new private region names.
          bs     <- P.manyTill pBind
-                $  P.try
-                        $ P.lookAhead
-                        $ P.choice [pKey EIn, pKey EWith]
+                $  P.try $ P.lookAhead $  P.choice [pKey EIn, pKey EWith]
 
          -- Witness types.
          tsWit  <- pLetWits
-         return ( LPrivate bs tsWit
-                , sp)
+         return (LPrivate bs (CapsList tsWit), sp)
 
+      -- Mutable private region binding.
+      --   mutable Binder+ in Exp
+    , do sp     <- pKey EMutable
+         bs     <- P.many pBind
+         return (LPrivate bs CapsMutable, sp)
+
+      -- Constant private region binding.
+      --   mutable Binder+ in Exp
+    , do sp     <- pKey EConstant
+         bs     <- P.many pBind
+         return (LPrivate bs CapsConstant, sp)
 
       -- Extend an existing region.
       --   extend Binder+ using Type (with { Binder : Type ...})? in Exp
@@ -428,17 +436,29 @@ pLetsSP
          tParent <- pType
          pTok (KKeyword EUsing)
 
-         -- new private region names.
-         bs     <- P.manyTill pBind
-                $  P.try $ P.lookAhead
-                         $ P.choice
-                                [ pTok (KKeyword EUsing)
-                                , pTok (KKeyword EWith)
-                                , pTok (KKeyword EIn) ]
+         (bs, caps)
+          <- P.choice
+              [ do -- new private region names.
+                   bs     <- P.manyTill pBind
+                          $  P.try $ P.lookAhead
+                                   $ P.choice
+                                          [ pTok (KKeyword EUsing)
+                                          , pTok (KKeyword EWith)
+                                          , pTok (KKeyword EIn) ]
 
-         -- witness types
-         tsWit  <- pLetWits
-         return ( LExtend bs tParent tsWit
+                   tsWit  <- pLetWits
+                   return (bs, CapsList tsWit)
+
+              , do pTok (KKeyword EMutable)
+                   bs   <- P.many pBind
+                   return (bs, CapsMutable)
+
+              , do pTok (KKeyword EConstant)
+                   bs   <- P.many pBind
+                   return (bs, CapsConstant)
+              ]
+
+         return ( LExtend bs tParent caps
                 , sp)
     ]
 

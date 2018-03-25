@@ -51,6 +51,6 @@ arrayBulk_freeze
 arrayBulk_compute
         (arr: Array Fun a): Array Bulk a
  = arrayBulk_freeze
- $ extend RegionBulk using r with {Alloc r; Write r}
+ $ extend RegionBulk using mutable r
    in   arrayStore_compute {@r} arr
 

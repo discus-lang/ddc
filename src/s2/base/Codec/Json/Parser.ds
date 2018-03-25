@@ -24,7 +24,7 @@ parseJson (tx: Text): Either JsonParseError Json
 -- | Parse a JSON value from the prefix of a text string,
 --   also returning the unparseable suffix.
 parseJsonPrefix (tx: Text): Either JsonParseError (Json, Text)
- = private r with {Read r; Write r; Alloc r} in
+ = mutable r in
    do   source  = textSource_fromText {@r} tx
         refErr  = allocRef {@r} Nil
         state   = JsonState source refErr

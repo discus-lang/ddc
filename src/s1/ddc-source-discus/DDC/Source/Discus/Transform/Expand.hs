@@ -169,17 +169,37 @@ downX a env xx
                 x'      = expand a env' x
             in  XAbs bm x'
 
-        XLet (LPrivate bts bxs) x2
+        XLet (LPrivate bts (CapsList bxs)) x2
          -> let env'    = env   & Env.extendsTyVar' bts
                                 & Env.extendsDaVar  bxs
                 x2'     = expand a env' x2
-            in  XLet (LPrivate bts bxs) x2'
+            in  XLet (LPrivate bts (CapsList bxs)) x2'
 
-        XLet (LExtend bts tParent bxs) x2
+        XLet (LPrivate bts CapsMutable) x2
+         -> let env'    = env   & Env.extendsTyVar' bts
+                x2'     = expand a env' x2
+            in  XLet (LPrivate bts CapsMutable) x2'
+
+        XLet (LPrivate bts CapsConstant) x2
+         -> let env'    = env   & Env.extendsTyVar' bts
+                x2'     = expand a env' x2
+            in  XLet (LPrivate bts CapsConstant) x2'
+
+        XLet (LExtend bts tParent (CapsList bxs)) x2
          -> let env'    = env   & Env.extendsTyVar' bts
                                 & Env.extendsDaVar  bxs
                 x2'     = expand a env' x2
-            in  XLet (LExtend bts tParent bxs) x2'
+            in  XLet (LExtend bts tParent (CapsList bxs)) x2'
+
+        XLet (LExtend bts tParent CapsMutable) x2
+         -> let env'    = env   & Env.extendsTyVar' bts
+                x2'     = expand a env' x2
+            in  XLet (LExtend bts tParent CapsMutable) x2'
+
+        XLet (LExtend bts tParent CapsConstant) x2
+         -> let env'    = env   & Env.extendsTyVar' bts
+                x2'     = expand a env' x2
+            in  XLet (LExtend bts tParent CapsConstant) x2'
 
         XCase  x alts   -> XCase  (downX a env x)
                                   (map (downA a env) alts)
