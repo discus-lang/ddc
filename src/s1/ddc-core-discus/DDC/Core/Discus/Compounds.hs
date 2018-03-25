@@ -4,7 +4,7 @@ module DDC.Core.Discus.Compounds
 
           -- * Primitive
         , tVoid, tBool, tNat, tInt, tSize, tWord, tFloat
-        , tPtr
+        , tAddr, tPtr
 
           -- * Discus types.
         , tTupleN, tUnboxed, tFunValue, tTextLit

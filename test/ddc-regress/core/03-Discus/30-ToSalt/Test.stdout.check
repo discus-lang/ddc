@@ -239,7 +239,7 @@ letrec {
 
 
 -- Keep witnesses arguments
-Fragment violation when converting Tetra module to Salt module.
+Fragment violation when converting Discus module to Salt module.
   Cannot convert expression.
     Cannot convert function abstraction in this context.
     The program must be lambda-lifted before conversion.

@@ -40,7 +40,7 @@ convertPrimBoxing _ectx ctx xx
          | Just ( E.NamePrimCast E.PrimCastConvert False
                 , [RType tUx, RType tBx, RTerm xArg])   <- takeXFragApps xx
          , isUnboxedRepType tUx
-         , isNumericType    tBx
+         , isNumericType    tBx || isAddrType tBx
          , Just dc      <- makeBoxedPrimDataCtor tBx
          -> Just $ do
                 let a'  = annotTail a
@@ -59,7 +59,7 @@ convertPrimBoxing _ectx ctx xx
          | Just ( E.NamePrimCast E.PrimCastConvert False
                 , [RType tBx, RType tUx, RTerm xArg])   <- takeXFragApps xx
          , isUnboxedRepType tUx
-         , isNumericType    tBx
+         , isNumericType    tBx || isAddrType tBx
          , Just dc      <- makeBoxedPrimDataCtor tBx
          -> Just $ do
                 let a'  = annotTail a

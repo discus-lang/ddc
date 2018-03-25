@@ -24,10 +24,10 @@ data Error
         -- | Error converting the module to Salt to Sea.
         | forall err. Pretty err => ErrorSaltConvert !err
 
-        -- | Error converting the module from Tetra to Salt.
-        | forall err. Pretty err => ErrorTetraConvert !err
+        -- | Error converting the module from Discus to Salt.
+        | forall err. Pretty err => ErrorDiscusConvert !err
 
-        -- | Error converting the module from Tetra to Salt.
+        -- | Error converting the module from Discus to Salt.
         | forall err. Pretty err => ErrorFlowConvert  !err
 
         -- | Error when transforming core program.
@@ -56,12 +56,12 @@ instance Pretty Error where
          -> vcat [ text "Fragment violation when converting Salt module to target code."
                  , indent 2 (ppr err') ]
 
-        ErrorTetraConvert err'
-         -> vcat [ text "Fragment violation when converting Tetra module to Salt module."
+        ErrorDiscusConvert err'
+         -> vcat [ text "Fragment violation when converting Discus module to Salt module."
                  , indent 2 (ppr err') ]
 
         ErrorFlowConvert err'
-         -> vcat [ text "Fragment violation when converting Flow module to Tetra module."
+         -> vcat [ text "Fragment violation when converting Flow module to Discus module."
                  , indent 2 (ppr err') ]
 
         ErrorCoreTransform err'

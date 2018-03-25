@@ -89,6 +89,7 @@ convertRepType RepUnboxed tt
                 PrimTyConNat            -> Just $ tUnboxed tNat
                 PrimTyConInt            -> Just $ tUnboxed tInt
                 PrimTyConSize           -> Just $ tUnboxed tSize
+                PrimTyConAddr           -> Just $ tUnboxed tAddr
                 PrimTyConWord  bits     -> Just $ tUnboxed (tWord  bits)
                 PrimTyConFloat bits     -> Just $ tUnboxed (tFloat bits)
                 PrimTyConTextLit        -> Just $ tUnboxed tTextLit

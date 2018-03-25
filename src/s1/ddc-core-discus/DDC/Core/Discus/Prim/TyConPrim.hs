@@ -7,7 +7,7 @@ module DDC.Core.Discus.Prim.TyConPrim
         , tVoid
         , tBool
         , tNat, tInt, tSize, tWord, tFloat
-        , tPtr
+        , tAddr, tPtr
         , tTextLit)
 where
 import DDC.Core.Discus.Prim.Base
@@ -59,6 +59,11 @@ tInt    = tConPrim PrimTyConInt
 -- | Primitive `WordN` type of the given width.
 tWord   :: Int -> Type Name
 tWord bits = tConPrim (PrimTyConWord bits)
+
+
+-- | Primitive `Addr` type.
+tAddr  :: Type Name
+tAddr   = tConPrim PrimTyConAddr
 
 
 -- | Primitive `Size` type.

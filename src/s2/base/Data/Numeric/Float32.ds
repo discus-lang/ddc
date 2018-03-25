@@ -23,8 +23,8 @@ eq_Float32:  Eq Float32
 ord_Float32:  Ord Float32
  = Ord  compare'
  where  compare' n1 n2
-         | gt# [Float32#] n1 n2     = GT
-         | lt# [Float32#] n1 n2     = LT
+         | gt# [Float32#] n1 n2 = GT
+         | lt# [Float32#] n1 n2 = LT
          | otherwise            = EQ
 
 
