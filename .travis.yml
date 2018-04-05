@@ -3,9 +3,10 @@
 # language `c` is lighter weight, and is fine since we declare most of our own deps
 language: c
 
-sudo: false
+# https://docs.travis-ci.com/user/reference/overview/#Virtualisation-Environment-vs-Operating-System
+sudo: required
+dist: trusty
 
-# cache only works if sudo is false
 # this will attempt to cache the contents of the specified directories between
 # runs to speed up install times
 cache:
@@ -26,29 +27,47 @@ before_cache:
 # using ghc and cabal-install from
 #   https://launchpad.net/~hvr/+archive/ubuntu/ghc
 # llvm from
-#   https://launchpad.net/~h-rayflood/+archive/ubuntu/llvm
-#   https://launchpad.net/~h-rayflood/+archive/ubuntu/gcc-upper
-#   https://launchpad.net/~h-rayflood/+archive/ubuntu/llvm-upper
+#   http://apt.llvm.org
 addons:
-    apt:
-        sources:
-            - sourceline: 'ppa:h-rayflood/llvm'
-            - sourceline: 'ppa:h-rayflood/gcc-upper'
-            - sourceline: 'ppa:h-rayflood/llvm-upper'
-            - sourceline: 'ppa:hvr/ghc'
-        packages:
-            - llvm-3.5-dev
-            - llvm-3.5-runtime
-            - llvm-3.5
-            - ghc-8.2.1
-            - cabal-install-1.24
+  apt:
+    sources: &apt_sources
+      - hvr-ghc
+      - ubuntu-toolchain-r-test
+      - llvm-toolchain-trusty
+      - llvm-toolchain-trusty-5.0
+      - llvm-toolchain-trusty-6.0
 
+    packages: &apt_packages
+      - cabal-install-1.24
+
+compiler:
+  # - GHC-8.4.1   # compact requires base==4.10
+  - GHC-8.2.2
+
+env:
+  global:
+    - CABAL=1.24
+  matrix:
+    - LLVM=6.0.0
+    - LLVM=5.0.1
+
+# Install GHC and LLVM. We could do this via the build matrix configuration
+# without requiring sudo, but this method is easier to set up a cartesean
+# product of 'compiler x matrix' build configurations.
 before_install:
-    # put llvm-3.5 at the front of the path, ahead of any llvm-3.4
-    - export PATH=/usr/lib/llvm-3.5/bin:$PATH
+    - export GHC=${CC:4}
+    - unset CC
+    - sudo -E apt-get -yq --no-install-suggests --no-install-recommends --force-yes install ghc-${GHC} llvm-${LLVM:0:3}-dev
+
     # put ghc and cabal on the path
-    - export PATH=/opt/ghc/8.2.1/bin:/opt/cabal/1.24/bin:$PATH
+    - export PATH=/opt/ghc/${GHC}/bin:/opt/cabal/${CABAL}/bin:$PATH
     - cabal update
+
+    # sanity check
+    - echo "$(ghc --version) [$(ghc --print-project-git-commit-id 2> /dev/null || echo '?')]"
+    - cabal --version
+    - llc-${LLVM:0:3} --version; true
+    - opt-${LLVM:0:3} --version; true
 
 # here we manually install all the needed deps
 # by default travis would run `cabal install --only-dependencies --enable-tests`
@@ -63,3 +82,4 @@ script:
     - make
     - make war
 
+# vim: nospell sw=4
