@@ -244,7 +244,9 @@ determineHostLlvmBinPath mpath
             -- user-specified path). Add other supported versions here.
             --
             candidates =
-              [ "llvm-config-5.0"
+              [ "llvm-config-6.0"
+              , "llvm-config-5.0"
+              , "llvm-config-4.0"
               , "llvm-config"
               ]
 
