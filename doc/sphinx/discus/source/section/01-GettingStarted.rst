@@ -48,5 +48,5 @@ Build and run one of the demos:
 
 .. code-block:: none
 
-  $ bin/ddc -make test/ddc-demo/source/tetra/10-Defib/04-Life/Main.ds
-  $ test/ddc-demo/source/tetra/10-Defib/04-Life/Main -steps 1000
+  $ bin/ddc -make test/ddc-demo/source/Discus/10-Defib/04-Life/Main.ds
+  $ test/ddc-demo/source/Discus/10-Defib/04-Life/Main -steps 1000
