@@ -91,7 +91,7 @@ archPointerWidth arch
 -------------------------------------------------------------------------------
 -- | Operating System.
 data Os
-        -- | Darwin, including the major, minor and patch numbers, 
+        -- | Darwin, including the major, minor and patch numbers,
         --   if specified.
         = OsDarwin (Maybe (Int, Int, Int))
 
@@ -138,11 +138,11 @@ determineHostPlatform
 --   Uses the 'arch' command which must be in the current path.
 determineHostArch :: IO (Maybe Arch)
 determineHostArch
- = do   (exitCode, strArch, _) 
+ = do   (exitCode, strArch, _)
          <- System.readProcessWithExitCode "uname" ["-m"] ""
 
         let result
-                | System.ExitFailure{} <- exitCode     
+                | System.ExitFailure{} <- exitCode
                 = Nothing
 
                 | isPrefixOf "i386"   strArch   = Just ArchX86_32
@@ -160,10 +160,10 @@ determineHostArch
 -- | Determine the host OS.
 --   Uses the 'uname' command which must be in the current path.
 determineHostOs :: IO (Maybe Os)
-determineHostOs 
+determineHostOs
  = do   (exitCode, strOs, _)
          <- System.readProcessWithExitCode "uname" [] ""
-        
+
         case exitCode of
          System.ExitFailure{}
           -> return Nothing
@@ -178,7 +178,7 @@ determineHostOs
 
 -- | Given that we're running on Darwin, determine the version numbers.
 determineHostOsDarwin :: IO (Maybe Os)
-determineHostOsDarwin 
+determineHostOsDarwin
  = do   (exitCode, strVersion, _)
          <- System.readProcessWithExitCode "uname" ["-r"] ""
 
@@ -244,7 +244,9 @@ determineHostLlvmBinPath mpath
             -- user-specified path). Add other supported versions here.
             --
             candidates =
-              [ "llvm-config-5.0"
+              [ "llvm-config-6.0"
+              , "llvm-config-5.0"
+              , "llvm-config-4.0"
               , "llvm-config"
               ]
 
