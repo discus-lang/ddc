@@ -69,13 +69,9 @@ before_install:
     - llc-${LLVM:0:3} --version; true
     - opt-${LLVM:0:3} --version; true
 
-# here we manually install all the needed deps
-# by default travis would run `cabal install --only-dependencies --enable-tests`
-# cabal install was unhappy when all deps were specified, so we install them
-# one-by-one in the right order
+# install necessary library dependencies
 install:
-    - cabal install mtl parsec random stm text wl-pprint compact
-    - cabal install buildbox inchworm shimmer
+    - make setup
 
 script:
     - make clean
