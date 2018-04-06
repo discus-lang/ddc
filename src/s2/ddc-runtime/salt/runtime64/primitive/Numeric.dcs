@@ -5,13 +5,13 @@ export foreign c value
  ddcPrimMakeInt         : [r1: Region]. Int# -> Ptr# r1 Obj
 
 import foreign c value
- ddcAllocSmall          : [r1: Region]. Tag# -> Nat# -> Ptr# r1 Obj
- ddcPayloadSmall        : [r1: Region]. Ptr# r1 Obj  -> Ptr# r1 Word8#
+ ddcSmallAlloc          : [r1: Region]. Tag# -> Nat# -> Ptr# r1 Obj
+ ddcSmallPayload        : [r1: Region]. Ptr# r1 Obj  -> Ptr# r1 Word8#
 
 with letrec
 
 
 ddcPrimMakeInt [r1: Region] (i: Int#): Ptr# r1 Obj
- = do   obj     = ddcAllocSmall (truncate# 0#) 1#
-        poke# (castPtr# (ddcPayloadSmall obj)) i
+ = do   obj     = ddcSmallAlloc (truncate# 0#) 1#
+        poke# (castPtr# (ddcSmallPayload obj)) i
         obj
