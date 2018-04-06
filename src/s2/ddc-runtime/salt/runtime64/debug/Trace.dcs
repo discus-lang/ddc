@@ -21,6 +21,7 @@ import foreign c value
  ddcPrimStdoutPutAddr   : Addr#    -> Void#
  ddcPrimStdoutPutNat    : Nat#     -> Void#
  ddcPrimStdoutPutWord32 : Word32#  -> Void#
+ ddcPrimStdoutPutWord64 : Word64#  -> Void#
 
  ddcPrimStderrPutString : TextLit# -> Void#
  ddcPrimStderrPutNat    : Nat#     -> Void#
@@ -164,7 +165,7 @@ traceThunk
           True#  -> do
                 ddcPrimStdoutPutString "Thunk\n"#
                 fieldAddr     "{   ptr            = "# (takePtr# obj)
-                fieldWord32   "    header         = "# (read# (takePtr# obj) 0#)
+                fieldWord64   "    header         = "# (read# (takePtr# obj) 0#)
                 ())
 
         -- Check that the rest of the header is also within the heap,
@@ -247,7 +248,7 @@ traceBoxed
           True#  -> do
                 ddcPrimStdoutPutString "Boxed\n"#
                 fieldAddr     "{   ptr            = "# (takePtr# obj)
-                fieldWord32   "    header         = "# (read# (takePtr# obj) 0#)
+                fieldWord64   "    header         = "# (read# (takePtr# obj) 0#)
                 fieldWord32   "    tag            = "# (promote# (ddcBoxedTag obj))
                 ())
 
@@ -318,7 +319,12 @@ traceBoxedPtrss
           -> ()
 
          False#
-          -> do ddcTraceObj [r] recurse print (ddcBoxedGetField [r] obj i)
+          -> do ptr  = ddcBoxedGetField [r] obj i
+                addr = takePtr# ptr
+                (case eq# addr (promote# 0#) of
+                  True#  -> ptr
+                  False# -> ddcTraceObj [r] recurse print ptr)
+
                 traceBoxedPtrss recurse print obj n (add# i 1#)
 
 
@@ -334,7 +340,7 @@ traceRaw [r: Region]
           True#   -> do
                 ddcPrimStdoutPutString "Raw\n"#
                 fieldAddr     "{   ptr            = "# (takePtr#  obj)
-                fieldWord32   "    header         = "# (read# (takePtr# obj) 0#)
+                fieldWord64   "    header         = "# (read# (takePtr# obj) 0#)
                 ())
 
         -- Check that the rest of the header is also within the heap,
@@ -368,7 +374,7 @@ traceSmall [r: Region] (print: Bool#) (obj: Ptr# r Obj): Ptr# r Obj
           True#   -> do
                 ddcPrimStdoutPutString "Small\n"#
                 fieldAddr     "{   ptr            = "# (takePtr# obj)
-                fieldWord32   "    header         = "# (read# (takePtr# obj) 0#)
+                fieldWord64   "    header         = "# (read# (takePtr# obj) 0#)
                 fieldWord32   "    format         = "# (truncate# (ddcObjectFormat obj))
                 fieldNat      "    object_size    = "# (ddcObjectSize obj)
                 ddcPrimStdoutPutString "}\n"#
@@ -548,3 +554,9 @@ fieldWord32 (name: TextLit#) (val: Word32#): Void#
         ddcPrimStdoutPutWord32 val
         ddcPrimStdoutPutString ";\n"#
 
+
+-- | Print a Word64# field to stdout.
+fieldWord64 (name: TextLit#) (val: Word64#): Void#
+ = do   ddcPrimStdoutPutString name
+        ddcPrimStdoutPutWord64 val
+        ddcPrimStdoutPutString ";\n"#

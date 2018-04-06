@@ -603,7 +603,7 @@ ddcRawAlloc
         -- Write the header word.
         write# addr 0#
             (bor# (shl# (promote# [Word64#] bytesObj) 32w64#)
-                  0b00100001w64#)
+                  0b00110001w64#)
 
         -- Return pointer to the new oject.
         makePtr# addr

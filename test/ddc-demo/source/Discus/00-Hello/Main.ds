@@ -1,6 +1,7 @@
 
-module Main 
+module Main
 import System.IO.Console
+
 where
 
 main ()
@@ -8,3 +9,4 @@ main ()
         writel "Καλημέρα κόσμε"
         writel "こんにちは 世界"
         writel "হ্যালো বিশ্ব"
+
