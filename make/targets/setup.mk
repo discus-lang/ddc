@@ -11,6 +11,5 @@ show-pkgs :
 setup :
 	@echo "* Installing prerequisite cabal packages..."
 	@$(DEPS_INSTALLER) update
-	@$(DEPS_INSTALLER) install mtl parsec random stm text wl-pprint compact
-	@$(DEPS_INSTALLER) install buildbox inchworm shimmer
+	@$(DEPS_INSTALLER) install mtl parsec random stm text wl-pprint compact buildbox inchworm shimmer
 
