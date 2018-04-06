@@ -8,6 +8,7 @@
 #include "runtime/Types.h"
 
 
+// ----------------------------------------------------------------------------
 // Get the format field of an object.
 static inline uint8_t
 _ddcObjectFormat (Obj* obj)
@@ -16,38 +17,25 @@ _ddcObjectFormat (Obj* obj)
 
 
 // ----------------------------------------------------------------------------
-// A Boxed Data Object.
-//   The payload contains pointers to other heap objects.
-typedef struct
-{       uint32_t  tagFormat;    // Constructor tag and format field.
-        uint32_t  arity;        // Number of fields in object.
-        Obj*      payload[];
-} ObjBoxed;
-
 static inline uint32_t
 _ddcBoxedTag (Obj* obj)
 {       return obj ->tagFormat >> 8;
 }
 
-Obj*    ddcBoxedAlloc    (uint32_t tag, nat_t arity);
-nat_t   ddcBoxedFields   (Obj* obj);
-Obj*    ddcBoxedGetField (Obj* obj, nat_t ix);
-void    ddcBoxedSetField (Obj* obj, nat_t ix, Obj* x);
+Obj*    ddcBoxedAlloc           (uint32_t tag, nat_t arity);
+nat_t   ddcBoxedSize            (Obj* obj);
+nat_t   ddcBoxedSizeFromArity   (nat_t arity);
+tag_t   ddcBoxedTag             (Obj* obj);
+nat_t   ddcBoxedFields          (Obj* obj);
+Obj*    ddcBoxedGetField        (Obj* obj, nat_t ix);
+void    ddcBoxedSetField        (Obj* obj, nat_t ix, Obj* x);
 
 
 // ----------------------------------------------------------------------------
-// A Raw Data Object.
-//   A raw data object does not contain heap pointers that need to be traced
-//   by the garbage collector.
-typedef struct
-{       uint32_t  tagFormat;    // Constructor tag and format field.
-        uint32_t  size;         // Size of the whole object, in bytes.
-        uint8_t   payload[];    // Raw data that does not contain heap pointers.
-} ObjRaw;
-
-Obj*     ddcRawAlloc        (uint32_t tag, nat_t payloadLength);
-uint8_t* ddcRawPayload      (Obj* obj);
-nat_t    ddcRawPayloadSize  (Obj* obj);
+Obj*     ddcRawAlloc            (uint32_t tag, nat_t bytesPayload);
+nat_t    ddcRawSize             (Obj* obj);
+uint8_t* ddcRawPayload          (Obj* obj);
+nat_t    ddcRawPayloadSize      (Obj* obj);
 
 static inline uint8_t*
 _ddcRawPayload(Obj* obj)
@@ -56,15 +44,13 @@ _ddcRawPayload(Obj* obj)
 
 
 // ----------------------------------------------------------------------------
-// A Small Raw object.
-//   The object size is encoded as part of format field.
-//    This saves us from needing to include a separate arity field.
-typedef struct
-{       uint32_t  tagFormat;    // Constructor tag and format field.
-        uint8_t   payload[];    // Raw data that does not contain heap pointers.
-} ObjSmall;
+Obj*     ddcSmallAlloc          (uint32_t tag, nat_t wordsPayload);
+nat_t    ddcSmallSize           (Obj* obj);
+uint8_t* ddcSmallPayload        (Obj* obj);
+nat_t    ddcSmallPayloadSize    (Obj* obj);
 
-Obj*     ddcSmallAlloc      (uint32_t tag, nat_t payloadLength);
-uint8_t* ddcSmallPayload    (Obj* obj);
-nat_t    ddcSmallPayloadSize(Obj* obj);
+static inline uint8_t*
+_ddcSmallPayloadMain(Obj* obj)
+{       return ((uint8_t*)obj) + 8;
+}
 

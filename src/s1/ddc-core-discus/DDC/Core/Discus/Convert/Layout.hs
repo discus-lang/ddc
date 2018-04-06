@@ -25,6 +25,7 @@ import qualified DDC.Core.Salt.Name     as A
 --
 --   The layout of these is defined in the @ObjectNN.dce@ file of the runtime
 --   system, where @NN@ is the word size of the machine.
+--
 data HeapObject
         = HeapObjectBoxed
         | HeapObjectRaw
@@ -67,6 +68,7 @@ heapObjectOfDataCtor pp ctor
 --   header information such as the constructor tag.
 --
 --   This doesn't add any padding for misaligned fields.
+--
 payloadSizeOfDataCtor :: Platform -> DataCtor Name -> Maybe Integer
 payloadSizeOfDataCtor platform ctor
         = liftM sum
@@ -83,6 +85,7 @@ payloadSizeOfDataCtor platform ctor
 --   system.
 --
 --   This doesn't add any padding for misaligned fields.
+--
 fieldOffsetsOfDataCtor :: Platform -> DataCtor Name -> Maybe [Integer]
 fieldOffsetsOfDataCtor platform ctor
         = liftM (init . scanl (+) 0)

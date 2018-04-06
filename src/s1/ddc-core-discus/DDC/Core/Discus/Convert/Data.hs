@@ -44,21 +44,28 @@ constructData pp a ctorDef rPrime xsFields tsFields
                 = [ LLet (BNone A.tVoid)
                          (A.xSetFieldOfBoxed a
                          rPrime trField xObject' ix (liftX 1 xField))
-                  | ix          <- [0..]
-                  | xField      <- xsFields
-                  | trField     <- repeat A.rTop ]
+                  | ix      <- [0..]
+                  | xField  <- xsFields
+                  | trField <- repeat A.rTop ]
 
         return  $ XLet a (LLet bObject xAlloc)
                 $ foldr (XLet a) xObject' lsFields
 
 
  | Just HeapObjectSmall <- heapObjectOfDataCtor  pp ctorDef
- , Just size            <- payloadSizeOfDataCtor pp ctorDef
+ , Just sizeBytes       <- payloadSizeOfDataCtor pp ctorDef
  = do
+        -- Convert size of payload in bytes to size in words,
+        -- as we allocate space for a small object in words.
+        let nTail       = sizeBytes `rem` platformAddrBytes pp
+        let nWords      = if nTail == 0
+                                then  sizeBytes `div` platformAddrBytes pp
+                                else (sizeBytes `div` platformAddrBytes pp) + 1
+
         -- Allocate the object.
         let bObject     = BAnon (A.tPtr rPrime A.tObj)
         let xAlloc      = A.xAllocSmall a rPrime (dataCtorTag ctorDef)
-                        $ A.xNat a size
+                        $ A.xNat a nWords
 
         -- Take a pointer to its payload.
         let bPayload    = BAnon (A.tPtr rPrime (A.tWord 8))
@@ -71,15 +78,16 @@ constructData pp a ctorDef rPrime xsFields tsFields
         -- Statements to write each of the fields.
         let xObject'    = XVar a $ UIx 1
         let xPayload'   = XVar a $ UIx 0
-        let lsFields    = [ LLet (BNone A.tVoid)
-                                 (A.xPoke a rPrime tField
-                                        (A.xPlusPtr a A.rTop tField
-                                                (A.xCastPtr a A.rTop tField (A.tWord 8) xPayload')
-                                                (A.xNat a offset))
-                                        (liftX 2 xField))
-                                | tField        <- tsFields
-                                | offset        <- offsets
-                                | xField        <- xsFields]
+        let lsFields
+                = [ LLet (BNone A.tVoid)
+                         (A.xPoke a rPrime tField
+                                (A.xPlusPtr a A.rTop tField
+                                        (A.xCastPtr a A.rTop tField (A.tWord 8) xPayload')
+                                        (A.xNat a offset))
+                                (liftX 2 xField))
+                  | tField <- tsFields
+                  | offset <- offsets
+                  | xField <- xsFields]
 
         return  $ XLet a (LLet bObject  xAlloc)
                 $ XLet a (LLet bPayload xPayload)
@@ -122,9 +130,9 @@ destructData pp a ctorDef uScrut trPrime bsFields xBody
                         else Just $ LLet bField
                                     (A.xGetFieldOfBoxed a trPrime rField
                                                         (XVar a uScrut) ix)
-                  | bField      <- bsFields
-                  | rField      <- repeat A.rTop
-                  | ix          <- [0..] ]
+                  | bField <- bsFields
+                  | rField <- repeat A.rTop
+                  | ix     <- [0..] ]
 
         return  $ foldr (XLet a) xBody lsFields
 
@@ -147,9 +155,9 @@ destructData pp a ctorDef uScrut trPrime bsFields xBody
                                                 (A.xCastPtr a A.rTop tField (A.tWord 8)
                                                         (XVar a uPayload))
                                                 (A.xNat a offset))
-                  | bField      <- bsFields
-                  | tField      <- map typeOfBind bsFields
-                  | offset      <- offsets ]
+                  | bField <- bsFields
+                  | tField <- map typeOfBind bsFields
+                  | offset <- offsets ]
 
         return  $ foldr (XLet a) xBody
                 $ LLet bPayload xPayload : lsFields

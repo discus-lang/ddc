@@ -21,6 +21,7 @@ import DDC.Control.Check                (throw)
 import qualified Data.Map                as Map
 import qualified Data.Text              as T
 
+
 -- | Convert a data constructor application to Salt.
 convertCtorApp
         :: Show a
