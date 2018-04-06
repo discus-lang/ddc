@@ -9,7 +9,7 @@ letrec {
     = λ(x: Ptr# rT Obj).
       let xx1    
             = let ^      
-                    = ddcSmallAlloc [rT] TAG0# 8# in
+                    = ddcSmallAlloc [rT] TAG0# 1# in
               let ^      
                     = ddcSmallPayload [rT] ^0 in
               let _      
@@ -38,7 +38,7 @@ letrec {
             = add# [Nat#] xx2 xx3 in
       let xx0    
             = let ^      
-                    = ddcSmallAlloc [rT] TAG0# 8# in
+                    = ddcSmallAlloc [rT] TAG0# 1# in
               let ^      
                     = ddcSmallPayload [rT] ^0 in
               let _      
@@ -47,7 +47,7 @@ letrec {
               ^1 in
       let xx5    
             = let ^      
-                    = ddcSmallAlloc [rT] TAG0# 8# in
+                    = ddcSmallAlloc [rT] TAG0# 1# in
               let ^      
                     = ddcSmallPayload [rT] ^0 in
               let _      
@@ -75,7 +75,7 @@ letrec {
       let xx8    
             = add# [Nat#] xx6 xx7 in
       let ^      
-            = ddcSmallAlloc [rT] TAG0# 8# in
+            = ddcSmallAlloc [rT] TAG0# 1# in
       let ^      
             = ddcSmallPayload [rT] ^0 in
       let _      
@@ -102,7 +102,7 @@ letrec {
       case xx0 of {
         True#  
          -> let ^      
-                  = ddcSmallAlloc [rT] TAG0# 8# in
+                  = ddcSmallAlloc [rT] TAG0# 1# in
             let ^      
                   = ddcSmallPayload [rT] ^0 in
             let _      
@@ -111,7 +111,7 @@ letrec {
             ^1;
         _ 
          -> let ^      
-                  = ddcSmallAlloc [rT] TAG0# 8# in
+                  = ddcSmallAlloc [rT] TAG0# 1# in
             let ^      
                   = ddcSmallPayload [rT] ^0 in
             let _      
@@ -139,7 +139,7 @@ letrec {
       case xx0 of {
         5#  
          -> let ^      
-                  = ddcSmallAlloc [rT] TAG0# 8# in
+                  = ddcSmallAlloc [rT] TAG0# 1# in
             let ^      
                   = ddcSmallPayload [rT] ^0 in
             let _      
@@ -148,7 +148,7 @@ letrec {
             ^1;
         6#  
          -> let ^      
-                  = ddcSmallAlloc [rT] TAG0# 8# in
+                  = ddcSmallAlloc [rT] TAG0# 1# in
             let ^      
                   = ddcSmallPayload [rT] ^0 in
             let _      
@@ -157,7 +157,7 @@ letrec {
             ^1;
         _ 
          -> let ^      
-                  = ddcSmallAlloc [rT] TAG0# 8# in
+                  = ddcSmallAlloc [rT] TAG0# 1# in
             let ^      
                   = ddcSmallPayload [rT] ^0 in
             let _      
@@ -196,7 +196,7 @@ letrec {
             case xx1 of {
               0#  
                -> let ^      
-                        = ddcSmallAlloc [rT] TAG0# 8# in
+                        = ddcSmallAlloc [rT] TAG0# 1# in
                   let ^      
                         = ddcSmallPayload [rT] ^0 in
                   let _      
@@ -205,7 +205,7 @@ letrec {
                   ^1;
               _ 
                -> let ^      
-                        = ddcSmallAlloc [rT] TAG0# 8# in
+                        = ddcSmallAlloc [rT] TAG0# 1# in
                   let ^      
                         = ddcSmallPayload [rT] ^0 in
                   let _      
@@ -215,7 +215,7 @@ letrec {
             };
         _ 
          -> let ^      
-                  = ddcSmallAlloc [rT] TAG0# 8# in
+                  = ddcSmallAlloc [rT] TAG0# 1# in
             let ^      
                   = ddcSmallPayload [rT] ^0 in
             let _      
@@ -252,7 +252,7 @@ letrec {
       let xx2    
             = add# [Nat#] xx0 xx1 in
       let ^      
-            = ddcSmallAlloc [rT] TAG0# 8# in
+            = ddcSmallAlloc [rT] TAG0# 1# in
       let ^      
             = ddcSmallPayload [rT] ^0 in
       let _      
@@ -264,7 +264,7 @@ letrec {
     = λ(x: Ptr# rT Obj).
       let xx3    
             = let ^      
-                    = ddcSmallAlloc [rT] TAG0# 8# in
+                    = ddcSmallAlloc [rT] TAG0# 1# in
               let ^      
                     = ddcSmallPayload [rT] ^0 in
               let _      
@@ -309,7 +309,7 @@ letrec {
             x;
         _ 
          -> let ^      
-                  = ddcSmallAlloc [rT] TAG0# 8# in
+                  = ddcSmallAlloc [rT] TAG0# 1# in
             let ^      
                   = ddcSmallPayload [rT] ^0 in
             let _      
@@ -357,7 +357,7 @@ letrec {
       case xx0 of {
         0#  
          -> let ^      
-                  = ddcSmallAlloc [rT] TAG0# 8# in
+                  = ddcSmallAlloc [rT] TAG0# 1# in
             let ^      
                   = ddcSmallPayload [rT] ^0 in
             let _      
@@ -366,7 +366,7 @@ letrec {
             ^1;
         _ 
          -> let ^      
-                  = ddcSmallAlloc [rT] TAG0# 8# in
+                  = ddcSmallAlloc [rT] TAG0# 1# in
             let ^      
                   = ddcSmallPayload [rT] ^0 in
             let _      
@@ -404,7 +404,7 @@ letrec {
               ^0 in
       let xx2    
             = let ^      
-                    = ddcSmallAlloc [rT] TAG0# 8# in
+                    = ddcSmallAlloc [rT] TAG0# 1# in
               let ^      
                     = ddcSmallPayload [rT] ^0 in
               let _      
@@ -421,7 +421,7 @@ letrec {
               ^0 in
       let xx3    
             = let ^      
-                    = ddcSmallAlloc [rT] TAG0# 8# in
+                    = ddcSmallAlloc [rT] TAG0# 1# in
               let ^      
                     = ddcSmallPayload [rT] ^0 in
               let _      
