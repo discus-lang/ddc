@@ -1,8 +1,7 @@
-#pragma once
 #include <stdlib.h>
 #include <stdio.h>
 #include <inttypes.h>
-#include "Runtime.h"
+#include "runtime/Primitive.h"
 
 
 // Abort the program due to an inexhaustive case match.
@@ -16,6 +15,5 @@ Obj*    ddcPrimErrorDefault(string_t* source, uint32_t line)
                 , "\nDDC runtime error: inexhaustive case match.\n at: %s:%" PRId32 "\n"
                 , source, line);
         exit(1);
-
         return 0;
 }

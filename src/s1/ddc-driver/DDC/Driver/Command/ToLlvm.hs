@@ -69,7 +69,7 @@ cmdToLlvmSourceTetraFromFile config store filePath
          $ throwE $ "No such file " ++ show filePath
 
         -- Call the compiler to build/load all dependent modules.
-        cmdCompileRecursive config False store filePath
+        cmdCompileRecursive config False store [filePath]
 
         -- Read in the source file.
         src     <- liftIO $ readFile filePath
@@ -94,7 +94,7 @@ cmdToLlvmSourceTetraFromString config store source str
         modLlvm'
          <-  DA.saltToLlvm     config source True
          =<< DA.saltSimplify   config source
-         =<< DE.tetraToSalt    config source
+         =<< DE.discusToSalt   config source
          =<< DE.sourceLoadText config store  source str
 
         liftIO $ putStrLn (renderIndent $ ppr modLlvm')
@@ -151,8 +151,8 @@ cmdToLlvmCoreFromString config language source str
         let makeSalt
                 |   fragName == "Tetra"
                 =   DA.saltSimplify  config source
-                =<< DE.tetraToSalt   config source
-                =<< DE.tetraLoadText config store source str
+                =<< DE.discusToSalt   config source
+                =<< DE.discusLoadText config store source str
 
                 |   fragName == "Salt"
                 =   DA.saltSimplify  config source

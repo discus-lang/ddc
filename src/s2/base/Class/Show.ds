@@ -5,6 +5,8 @@ export
         show_Unit;
         show_Bool;
         show_Nat;
+        show_Addr;
+        show_Int;
         show_Float32;   show_Float64;
         show_Char;      show_Text;
         show_Tup2;
@@ -16,6 +18,7 @@ import Data.Text
 import Data.Maybe
 import Data.Either
 import Data.List
+import Data.Numeric
 where
 
 
@@ -35,6 +38,7 @@ show {(Show sh): Show a} (x: a): Text
 show_Unit: Show Unit
  = Show   $ λxx -> "()"
 
+
 -- | Show dictionary for Bool.
 show_Bool: Show Bool
   = Show showBool
@@ -43,6 +47,16 @@ show_Bool: Show Bool
 -- | Show dictionary for Nat.
 show_Nat: Show Nat
  = Show showNat
+
+
+-- | Show dictionary for Addr.
+show_Addr: Show Addr
+ = Show showAddr
+
+
+-- | Show dictionary for Int.
+show_Int: Show Int
+ = Show showInt
 
 
 -- | Show dictionary for Float32.

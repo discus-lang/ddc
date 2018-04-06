@@ -1,0 +1,13 @@
+
+module Main
+import Control.Exception
+import System.IO.Console
+where
+
+-- Throw an exception and handle it with a custom handler.
+main ()
+ = try (box error "not likely")
+  $ \ex -> case ex of
+                ExceptionError msg
+                  -> writel $ "failed as " % msg
+                _ -> writel $ "failed for some other reason"

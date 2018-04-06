@@ -268,13 +268,38 @@ bindLets lts cont
                  -> do  xs'     <- mapM freshenExp xs
                         cont (LRec $ zip bs' xs')
 
-        LPrivate brs mt bwts
-         -> do  mt'     <- traverse freshenType mt
-                mapFreshBinds bindBT brs $ \brs'
+        LPrivate brs (CapsList bwts)
+         -> do  mapFreshBinds bindBT brs $ \brs'
                  -> do  let (bws, ts)  = unzip bwts
                         ts'     <- mapM freshenType ts
                         mapFreshBinds bindBX bws $ \bws'
-                         -> cont (LPrivate brs' mt' $ zip bws' ts')
+                         -> cont $ LPrivate brs' (CapsList $ zip bws' ts')
+
+        LPrivate brs CapsConstant
+         -> mapFreshBinds bindBT brs $ \brs'
+         -> cont $ LPrivate brs' CapsConstant
+
+        LPrivate brs CapsMutable
+         -> mapFreshBinds bindBT brs $ \brs'
+         -> cont $ LPrivate brs' CapsMutable
+
+        LExtend brs tParent (CapsList btsWit)
+         -> do  tParent' <- freshenType tParent
+                mapFreshBinds bindBT brs $ \brs'
+                 -> do  let (bws, ts)  = unzip btsWit
+                        ts'     <- mapM freshenType ts
+                        mapFreshBinds bindBX bws $ \bws'
+                         -> cont $ LExtend brs' tParent' (CapsList $ zip bws' ts')
+
+        LExtend brs tParent CapsMutable
+         -> do  tParent' <- freshenType tParent
+                mapFreshBinds bindBT brs $ \brs'
+                 -> cont $ LExtend brs' tParent' CapsMutable
+
+        LExtend brs tParent CapsConstant
+         -> do  tParent' <- freshenType tParent
+                mapFreshBinds bindBT brs $ \brs'
+                 -> cont $ LExtend brs' tParent' CapsConstant
 
         LGroup bRec cls
          -> cont =<< (LGroup bRec <$> freshenClauseGroup cls)

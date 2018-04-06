@@ -16,7 +16,7 @@ underp (d: Derp): Nat#
         Derp x y        -> x + y
 
 
-main (_: Unit): S Console Unit
- = box do
+main ()
+ = do
         x   = Derp 5
-        run writel (showNat (underp (x 6)))
+        writel (showNat (underp (x 6)))

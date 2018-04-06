@@ -43,7 +43,7 @@ data Mode
         | ModeCompile   FilePath
 
         -- | Compile source code into an executable.
-        | ModeMake      FilePath
+        | ModeMake      [FilePath]
 
         -- | Build libraries or executables following a build .spec file.
         | ModeBuild     FilePath

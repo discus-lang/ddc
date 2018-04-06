@@ -23,6 +23,7 @@ library
         Class.Category
         Data.Numeric.Int
         Data.Numeric.Nat
+        Data.Numeric.Addr
         Data.Numeric.Word8
         Data.Numeric.Word16
         Data.Numeric.Word32
@@ -44,6 +45,8 @@ library
         Data.Text.Parse
         Data.Text.Stream
         Data.Text
+        System.Runtime
+        Control.Exception
         Class.Show
         Class.Parse
         Class.Pretty
@@ -59,10 +62,10 @@ library
         Data.Bag
         Data.Stream
         Math.Combinations
-        System.Runtime
-        System.Env
-        System.IO.Console
+        System.Posix.Errno
         System.Posix.Stdlib
         System.Posix.Stdio
         System.Posix.Unistd
+        System.IO.Console
+        System.Env
         Main.Args

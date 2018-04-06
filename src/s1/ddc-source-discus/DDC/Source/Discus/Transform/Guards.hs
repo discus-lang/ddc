@@ -237,6 +237,7 @@ desugarLts sp lts
                 return  $ LRec bxs'
 
         LPrivate{}      -> pure lts
+        LExtend{}       -> pure lts
 
         LGroup bRec cs  -> LGroup bRec <$> mapM (desugarCl sp) cs
 

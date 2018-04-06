@@ -21,15 +21,15 @@ import foreign boxed type
 
 -- Import the abstract type of console effects.
 --   Abstract foreign type imports are used to define types that do not have
---   associated values. Here 'Console' is a type constructor but it has
---   kind 'Effect', which does not classify values. We will use the 'Console'
---   type as the effect of operators that write to the console.
+--   associated values. Here 'Terminal' is a type constructor but it has
+--   kind 'Effect', which does not classify values. We will use the 'Terminal'
+--   type as the effect of operators that write to the terminal.
 --
 --   This is more a 'definition' than an 'import' because the foreign world
 --   does not have a concrete thing that we can import -- there is no actual
 --   corresponding symbol in the object file.
 import foreign abstract type
- Console : Effect
+ Terminal : Effect
 
 
 -- Import the abstract type of a new region.
@@ -37,7 +37,7 @@ import foreign abstract type
 --   rather than being bound locally by a 'private' or 'extend' construct.
 --   'Stash' is a type constructor, while 'Region' is its kind.
 import foreign abstract type
- Stash      : Region
+ Stash : Region
 
 
 -- Import abstract capabilities for our Stash region.
@@ -60,14 +60,14 @@ import foreign c value
 
 -- We'll also import some primitive types and operators that lets us write
 --   to the console. The putString operator itself is defined in the runtime
---   system, and we assign it the 'Console' effect that we introduced above.
+--   system, and we assign it the 'Terminal' effect that we introduced above.
 import foreign boxed type
  TextLit : Data
 
 import foreign c value
  ddcPrimMakeTextLit     : TextLit# -> TextLit
  ddcPrimTakeTextLit     : TextLit  -> TextLit#
- ddcPrimStdoutPutString : TextLit# -> S Console Void#
+ ddcPrimStdoutPutString : TextLit# -> S Terminal Void#
 
 where
 

@@ -1,0 +1,80 @@
+
+module Control.Exception
+export
+{       try; tryEither;
+        throw; fail; error
+}
+export foreign c value
+ ddcPrimExceptionTry
+        :  {@eff1 eff2: Effect} -> {@a: Data}
+        -> S eff1 a -> (Exception -> S eff2 a) -> S (eff1 + eff2) a
+
+ ddcPrimExceptionThrow
+        :  {@eff: Effect} -> {@a: Data}
+        -> Exception -> S eff a
+
+import System.Runtime
+import Data.Numeric.Int
+import Data.Text
+
+
+import foreign c value
+ ddcPrimExceptionTry
+        :  {@eff1 eff2: Effect} -> {@a: Data}
+        -> S eff1 a -> (Exception -> S eff2 a) -> S (eff1 + eff2) a
+
+ ddcPrimExceptionThrow
+        :  {@eff: Effect} -> {@a: Data}
+        -> Exception -> S eff a
+
+where
+
+-------------------------------------------------------------------------------
+-- | Wrapper for 'ddcPrimTry' so we can say just 'try'.
+try     {@eff1 eff2: Effect} {@a: Data}
+        (susp: S eff1 a) (handler: Exception -> S eff2 a): S (eff1 + eff2) a
+ = ddcPrimExceptionTry susp handler
+
+
+-- | Run a computation, capturing any thrown exception in an Either value.
+tryEither (comp: S eff a): S eff (Either Exception a)
+ = try  (box do { x = run comp; Right x })
+        (\ex -> box Left ex)
+
+
+-------------------------------------------------------------------------------
+-- | Type that represents every exception that can be thrown.
+data Exception where
+        -- Generic exceptions.
+        ExceptionFail           : Text -> Exception
+        ExceptionError          : Text -> Exception
+
+        -- System IO Exceptions.
+        -- These have a message as well as the value of 'errno' if available.
+        ExceptionSystemFile     : Int -> Text -> Exception
+        ExceptionSystemNetwork  : Int -> Text -> Exception
+
+
+-- | Throw a named exception.
+throw (ex: Exception): S Error Unit
+ = ddcPrimExceptionThrow {@Error} {@Unit} ex
+
+
+-- | Throw an generic exception with the 'Error' effect.
+--   This is intended for generic user program exceptions.
+error (tx: Text): S Error Unit
+ = ddcPrimExceptionThrow {@Error} {@Unit} (ExceptionError tx)
+
+
+-- | Throw an exception from a pure computation to end the program.
+--
+--   This is intended for unrecoverable "program on fire" cases such
+--   as when we detect an internal invariant has been violated.
+--
+--   The fact that this function is not assigned an effect type means that the
+--   optimiser may reorder calls to is, but that doesn't matter if the program
+--   is really on fire.
+--
+fail {@a: Data} (tx: Text): a
+ = ddcPrimExceptionThrow {@Pure} {@a} (ExceptionFail tx)
+

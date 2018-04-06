@@ -1,9 +1,10 @@
+{-# LANGUAGE OverloadedStrings #-}
 
 -- | Plumb driver configuration into the Tetra specific build stages.
 module DDC.Driver.Stage.Tetra
         ( sourceLoadText
-        , tetraLoadText
-        , tetraToSalt)
+        , discusLoadText
+        , discusToSalt)
 where
 import Control.Monad.Trans.Except
 
@@ -16,8 +17,8 @@ import qualified DDC.Build.Pipeline.Error       as B
 import qualified DDC.Build.Builder              as B
 import qualified DDC.Build.Stage.Core           as B
 import qualified DDC.Build.Language.Discus      as BE
-import qualified DDC.Build.Stage.Source.Discus  as BST
-import qualified DDC.Build.Stage.Core.Discus    as BCT
+import qualified DDC.Build.Stage.Source.Discus  as BSD
+import qualified DDC.Build.Stage.Core.Discus    as BCD
 
 import qualified DDC.Core.Check                 as C
 import qualified DDC.Core.Module                as C
@@ -39,34 +40,34 @@ sourceLoadText
                    (C.Module (C.AnTEC SP.SourcePos CE.Name) CE.Name)
 
 sourceLoadText config store source str
- = BST.sourceLoad
+ = BSD.sourceLoad
         (D.nameOfSource source)
         (D.lineStartOfSource source)
         str
         store
- $ BST.ConfigLoadSourceTetra
-        { BST.configSinkTokens          = D.dump config source "dump.0-source-01-tokens.txt"
-        , BST.configSinkParsed          = D.dump config source "dump.0-source-02-parsed.dst"
-        , BST.configSinkFresh           = D.dump config source "dump.0-source-03-fresh.dst"
-        , BST.configSinkDefix           = D.dump config source "dump.0-source-04-defix.dst"
-        , BST.configSinkExpand          = D.dump config source "dump.0-source-05-expand.dst"
-        , BST.configSinkGuards          = D.dump config source "dump.0-source-06-guards.dst"
-        , BST.configSinkMatches         = D.dump config source "dump.0-source-07-matches.dst"
-        , BST.configSinkPrep            = D.dump config source "dump.0-source-08-prep.dst"
-        , BST.configSinkCore            = D.dump config source "dump.0-source-09-core.dct"
-        , BST.configSinkImport          = D.dump config source "dump.0-source-10-import.dct"
-        , BST.configSinkPreCheck        = D.dump config source "dump.0-source-11-precheck.dct"
-        , BST.configSinkCheckerTrace    = D.dump config source "dump.0-source-12-trace.txt"
-        , BST.configSinkNamified        = D.dump config source "dump.0-source-13-namified.dct"
-        , BST.configSinkChecked         = D.dump config source "dump.0-source-14-checked.dct"
-        , BST.configSinkElaborated      = D.dump config source "dump.0-source-15-elaborated.dct"
-        , BST.configSinkExposed         = D.dump config source "dump.0-source-16-exposed.dct"
+ $ BSD.ConfigLoadSourceTetra
+        { BSD.configSinkTokens          = D.dump config source "dump.0-source-01-tokens.txt"
+        , BSD.configSinkParsed          = D.dump config source "dump.0-source-02-parsed.ds"
+        , BSD.configSinkFresh           = D.dump config source "dump.0-source-03-fresh.ds"
+        , BSD.configSinkDefix           = D.dump config source "dump.0-source-04-defix.ds"
+        , BSD.configSinkExpand          = D.dump config source "dump.0-source-05-expand.ds"
+        , BSD.configSinkGuards          = D.dump config source "dump.0-source-06-guards.ds"
+        , BSD.configSinkMatches         = D.dump config source "dump.0-source-07-matches.ds"
+        , BSD.configSinkPrep            = D.dump config source "dump.0-source-08-prep.ds"
+        , BSD.configSinkCore            = D.dump config source "dump.0-source-09-core.dcd"
+        , BSD.configSinkImport          = D.dump config source "dump.0-source-10-import.dcd"
+        , BSD.configSinkPreCheck        = D.dump config source "dump.0-source-11-precheck.dcd"
+        , BSD.configSinkCheckerTrace    = D.dump config source "dump.0-source-12-trace.txt"
+        , BSD.configSinkNamified        = D.dump config source "dump.0-source-13-namified.dcd"
+        , BSD.configSinkChecked         = D.dump config source "dump.0-source-14-checked.dcd"
+        , BSD.configSinkElaborated      = D.dump config source "dump.0-source-15-elaborated.dcd"
+        , BSD.configSinkExposed         = D.dump config source "dump.0-source-16-exposed.dcd"
         }
 
 
 ---------------------------------------------------------------------------------------------------
--- | Load and type-check a core tetra module.
-tetraLoadText
+-- | Load and type-check a Core Discus module.
+discusLoadText
         :: D.Config             -- ^ Driver config.
         -> B.Store              -- ^ Interface store.
         -> D.Source             -- ^ Source file meta-data.
@@ -74,43 +75,44 @@ tetraLoadText
         -> ExceptT [B.Error] IO
                    (C.Module (C.AnTEC SP.SourcePos CE.Name) CE.Name)
 
-tetraLoadText config _store source str
+discusLoadText config _store source str
  = B.coreLoad
-        "TetraLoad"
+        "DiscusLoad"
         BE.fragment
         (if D.configInferTypes config then C.Synth [] else C.Recon)
         (D.nameOfSource source)
         (D.lineStartOfSource source)
         str
  $ B.ConfigCoreLoad
-        { B.configSinkTokens            = D.dump config source "dump.1-tetra-00-tokens.txt"
-        , B.configSinkParsed            = D.dump config source "dump.1-tetra-01-parsed.dct"
-        , B.configSinkChecked           = D.dump config source "dump.1-tetra-02-checked.dct"
-        , B.configSinkTrace             = D.dump config source "dump.1-tetra-03-trace.txt"
+        { B.configSinkTokens            = D.dump config source "dump.1-discus-00-tokens.txt"
+        , B.configSinkParsed            = D.dump config source "dump.1-discus-01-parsed.ds"
+        , B.configSinkChecked           = D.dump config source "dump.1-discus-02-checked.dcd"
+        , B.configSinkTrace             = D.dump config source "dump.1-discus-03-trace.txt"
         }
 
 
 ---------------------------------------------------------------------------------------------------
--- | Convert Core Tetra module to Core Salt.
-tetraToSalt
+-- | Convert Core Discus module to Core Salt.
+discusToSalt
         :: D.Config
         -> D.Source
         -> C.Module a CE.Name
         -> ExceptT [B.Error] IO (C.Module () CA.Name)
 
-tetraToSalt config source mm
- = BCT.tetraToSalt
+discusToSalt config source mm
+ = BCD.discusToSalt
         (B.buildSpec $ D.configBuilder config)
         (D.configRuntime config)
         (CReannotate.reannotate (const ()) mm)
- $ BCT.ConfigTetraToSalt
-        { BCT.configSinkExplicit        = D.dump config source "dump.1-tetra-02-explicit.dct"
-        , BCT.configSinkLambdas         = D.dump config source "dump.1-tetra-03-lambdas.dct"
-        , BCT.configSinkUnshare         = D.dump config source "dump.1-tetra-04-unshare.dct"
-        , BCT.configSinkCurry           = D.dump config source "dump.1-tetra-05-curry.dct"
-        , BCT.configSinkBoxing          = D.dump config source "dump.1-tetra-06-boxing.dct"
-        , BCT.configSinkPrep            = D.dump config source "dump.1-tetra-07-prep.dct"
-        , BCT.configSinkChecked         = D.dump config source "dump.1-tetra-08-checked.dct"
-        , BCT.configSinkSalt            = D.dump config source "dump.2-salt-00-convert.dcs"
+ $ BCD.ConfigDiscusToSalt
+        { BCD.configSinkExplicit        = D.dump config source "dump.1-discus-02-explicit.dcd"
+        , BCD.configSinkInitialize      = D.dump config source "dump.1-discus-03.initialize.dcd"
+        , BCD.configSinkLambdas         = D.dump config source "dump.1-discus-04-lambdas.dcd"
+        , BCD.configSinkUnshare         = D.dump config source "dump.1-discus-05-unshare.dcd"
+        , BCD.configSinkCurry           = D.dump config source "dump.1-discus-06-curry.dcd"
+        , BCD.configSinkBoxing          = D.dump config source "dump.1-discus-07-boxing.dcd"
+        , BCD.configSinkPrep            = D.dump config source "dump.1-discus-08-prep.dcd"
+        , BCD.configSinkChecked         = D.dump config source "dump.1-discus-09-checked.dcd"
+        , BCD.configSinkSalt            = D.dump config source "dump.2-salt-00-convert.dcs"
         }
 

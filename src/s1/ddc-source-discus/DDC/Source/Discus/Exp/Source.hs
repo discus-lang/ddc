@@ -65,6 +65,7 @@ module DDC.Source.Discus.Exp.Source
         , Param,        GParam      (..),       ParamSort (..)
         , Arg,          GArg        (..)
         , Lets,         GLets       (..)
+        , Caps,         GCaps       (..)
         , Clause,       GClause     (..)
         , Pat,          GPat        (..)
         , Guard,        GGuard      (..)
@@ -148,6 +149,7 @@ type Exp        = GExp        Source
 type Param      = GParam      Source
 type Arg        = GArg        Source
 type Lets       = GLets       Source
+type Caps       = GCaps       Source
 type Clause     = GClause     Source
 type Pat        = GPat        Source
 type Guard      = GGuard      Source

@@ -32,6 +32,7 @@ import DDC.Core.Module
         , ImportCap     (..)
         , ImportValue   (..))
 
+
 ---------------------------------------------------------------------------------------------------
 -- | Run a conversion computation.
 runConvertM :: ConvertM a x -> Either (ErrorConvert a) x
@@ -64,24 +65,37 @@ coreOfSourceModuleM
 
 coreOfSourceModuleM a mm
  = do
-        -- Exported types and values.
+        -- Exported types.
         exportTypes'
          <- sequence
          $  fmap (\n -> (,) <$> toCoreTUCN n
                             <*> (fmap ExportTypeLocalNoKind $ toCoreTUCN n))
          $  S.moduleExportTypes mm
 
+
+        -- Exported values.
+        --  Auto-export the 'main' binding if it isn't already.
         exportValues'
          <- sequence
-         $  fmap (\n -> (,) <$> toCoreXUVN n
-                            <*> (fmap ExportValueLocalNoType $ toCoreXUVN n))
+         $  fmap (\(n, ev) -> (,) <$> toCoreXUVN n <*> toCoreExportValue ev)
          $  S.moduleExportValues mm
+
+        let exportValues_main
+                | C.isMainModuleName (S.moduleName mm)
+                , not   $ elem (S.UName (Text.pack "main"))
+                        $ map fst $ S.moduleExportValues mm
+                =  exportValues'
+                ++ [ ( C.NameVar "main"
+                     , ExportValueLocalNoType (C.NameVar "main"))]
+
+                | otherwise
+                = exportValues'
 
 
         -- Imported types, capabilities and values.
         importTypes'
          <- sequence
-         $  fmap (\(n, it) -> (,) <$> toCoreTBCN n <*> (toCoreImportType it))
+         $  fmap (\(n, it) -> (,) <$> toCoreTBCN n <*> toCoreImportType it)
          $  S.moduleImportTypes  mm
 
         importCaps'
@@ -106,26 +120,14 @@ coreOfSourceModuleM a mm
 
         -- Top level bindings.
         ltsTops
-         <- letsOfTops $  S.moduleTops mm
+         <- letsOfTops $ S.moduleTops mm
 
         return
          $ C.ModuleCore
-                { C.moduleName          = S.moduleName mm
-                , C.moduleIsHeader      = False
-
-                , C.moduleExportTypes   = exportTypes'
-
-                , C.moduleExportValues
-                   =  exportValues'
-                   ++ (if C.isMainModuleName (S.moduleName mm)
-                        && (not $ elem (S.UName (Text.pack "main"))
-                                $ S.moduleExportValues mm)
-
-                        then [ ( C.NameVar "main"
-                             , ExportValueLocalNoType (C.NameVar "main"))]
-
-                        else [])
-
+                { C.moduleName           = S.moduleName mm
+                , C.moduleIsHeader       = False
+                , C.moduleExportTypes    = exportTypes'
+                , C.moduleExportValues   = exportValues_main
                 , C.moduleImportTypes    = importTypes'
                 , C.moduleImportCaps     = importCaps'
                 , C.moduleImportValues   = importValues'
@@ -136,9 +138,12 @@ coreOfSourceModuleM a mm
                 , C.moduleBody           = C.XLet  a ltsTops (C.xUnit a) }
 
 
+-- Tops -------------------------------------------------------------------------------------------
 -- | Extract the top-level bindings from some source definitions.
-letsOfTops :: [S.Top S.Source]
-           -> ConvertM S.Source (C.Lets SP C.Name)
+letsOfTops
+        :: [S.Top S.Source]     -- ^ Top-level clauses to convert.
+        -> ConvertM S.Source (C.Lets SP C.Name)
+
 letsOfTops tops
  = do
         -- Collect up the type signatures defined at top level.
@@ -146,13 +151,30 @@ letsOfTops tops
         let sigs        = collectSigsFromClauses      cls
         let vals        = collectBoundVarsFromClauses cls
 
-        bxps            <- fmap catMaybes
-                        $  mapM (makeBindingFromClause sigs vals) cls
+        bxps    <- fmap catMaybes
+                $  mapM (makeBindingFromClause sigs vals) cls
 
         let (bms, xps)  =  unzip bxps
         bs'             <- mapM (toCoreBM UniverseSpec) bms
         xs'             <- mapM (\(sp, x) -> toCoreX sp x) xps
         return $ C.LRec $ zip bs' xs'
+
+
+-- ExportValue ------------------------------------------------------------------------------------
+toCoreExportValue
+        :: ExportValue S.Bound S.Type
+        -> ConvertM a (ExportValue C.Name (C.Type C.Name))
+
+toCoreExportValue ev
+ = case ev of
+        ExportValueLocalNoType n
+         -> ExportValueLocalNoType <$> toCoreXUVN n
+
+        ExportValueLocal mn n t mArity
+         -> ExportValueLocal mn    <$> toCoreXUVN n <*> toCoreT UniverseSpec t <*> pure mArity
+
+        ExportValueSea n tx t
+         -> ExportValueSea         <$> toCoreXUVN n <*> pure tx <*> toCoreT UniverseSpec t
 
 
 -- ImportType -------------------------------------------------------------------------------------
@@ -344,7 +366,7 @@ toCoreLtsX a lts xBody
                                       bxs))
                 <*> toCoreX a xBody
 
-        S.LPrivate bs Nothing bts
+        S.LPrivate bs (S.CapsList bts)
          -> C.XLet a
                 <$> (C.LPrivate
                         <$> (sequence  $ fmap (toCoreBM UniverseKind)
@@ -353,7 +375,23 @@ toCoreLtsX a lts xBody
                         <*> (sequence  $ fmap toCoreTBK bts))
                 <*> toCoreX a xBody
 
-        S.LPrivate bs (Just tParent) bts
+        S.LPrivate bs S.CapsMutable
+         -> do  bs'          <- sequence $ fmap (toCoreBM UniverseKind)
+                                         $ [S.XBindVarMT b (Just S.KRegion) | b <- bs]
+                let Just us' =  sequence $ map C.takeSubstBoundOfBind bs'
+
+                C.XLet a (C.LPrivate bs' Nothing (bsCapsMutable us'))
+                        <$> toCoreX a xBody
+
+        S.LPrivate bs S.CapsConstant
+         -> do  bs'          <- sequence $ fmap (toCoreBM UniverseKind)
+                                         $ [S.XBindVarMT b (Just S.KRegion) | b <- bs]
+                let Just us' =  sequence $ map C.takeSubstBoundOfBind bs'
+
+                C.XLet a (C.LPrivate bs' Nothing (bsCapsConstant us'))
+                        <$> toCoreX a xBody
+
+        S.LExtend bs tParent (S.CapsList bts)
          -> C.XLet a
                 <$> (C.LPrivate
                         <$> (sequence  $ fmap (toCoreBM UniverseKind)
@@ -361,6 +399,26 @@ toCoreLtsX a lts xBody
                         <*> (fmap Just $ toCoreT UniverseKind tParent)
                         <*> (sequence  $ fmap toCoreTBK bts))
                 <*> toCoreX a xBody
+
+        S.LExtend bs tParent S.CapsMutable
+         -> do  bs'          <- sequence $ fmap (toCoreBM UniverseKind)
+                                         $ [S.XBindVarMT b (Just S.KRegion) | b <- bs]
+                let Just us' =  sequence $ map C.takeSubstBoundOfBind bs'
+                C.XLet a
+                 <$> (C.LPrivate bs'
+                        <$> (fmap Just $ toCoreT UniverseKind tParent)
+                        <*> pure (bsCapsMutable us'))
+                 <*> toCoreX a xBody
+
+        S.LExtend bs tParent S.CapsConstant
+         -> do  bs'          <- sequence $ fmap (toCoreBM UniverseKind)
+                                         $ [S.XBindVarMT b (Just S.KRegion) | b <- bs]
+                let Just us' =  sequence $ map C.takeSubstBoundOfBind bs'
+                C.XLet a
+                 <$> (C.LPrivate bs'
+                        <$> (fmap Just $ toCoreT UniverseKind tParent)
+                        <*> pure (bsCapsConstant us'))
+                 <*> toCoreX a xBody
 
         S.LGroup bRec cls
          -> do  let sigs  = collectSigsFromClauses cls
@@ -374,6 +432,22 @@ toCoreLtsX a lts xBody
                 if bRec
                  then toCoreLtsX a (S.LRec bxs) xBody
                  else toCoreX a (foldr (\(b, xBind) -> S.XLet (S.LLet b xBind)) xBody bxs)
+
+ where  -- Anonymous capabilities for a mutable region.
+        bsCapsMutable us
+         = concat [ let t = C.TVar u
+                    in   [ C.BNone (C.tRead t)
+                         , C.BNone (C.tWrite t)
+                         , C.BNone (C.tAlloc t)]
+                  | u <- us ]
+
+        -- Anonymous capabilities for a constant region.
+        bsCapsConstant us
+         = concat [ let t = C.TVar u
+                    in   [ C.BNone (C.tRead t)
+                         , C.BNone (C.tAlloc t)]
+                  | u <- us ]
+
 
 -- Cast -------------------------------------------------------------------------------------------
 toCoreC :: SP -> S.Cast -> ConvertM S.Source (C.Cast SP C.Name)

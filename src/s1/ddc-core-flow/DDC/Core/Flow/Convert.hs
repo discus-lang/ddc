@@ -12,21 +12,22 @@ import DDC.Core.Exp.Annot
 import DDC.Core.Module
 import DDC.Control.Check
 
-import qualified DDC.Core.Flow.Prim      as F
-import qualified DDC.Core.Salt.Name      as T
+import qualified DDC.Core.Flow.Prim            as F
+import qualified DDC.Core.Salt.Name            as T
 import qualified DDC.Core.Salt.Compounds       as T
 
-import DDC.Core.Salt.Convert (initRuntime)
+import DDC.Core.Salt.Transform.Initialize
 import DDC.Core.Salt.Runtime (Config(..))
 
-import qualified Data.Set               as S
-import qualified Data.Text              as T
+import qualified Data.Set                       as S
+import qualified Data.Text                      as T
 
 
 tetraOfFlowModule :: Module a F.Name -> Either Error (Module a T.Name)
 tetraOfFlowModule mm
  = evalCheck (S.empty, S.empty)
  $ convertM  mm
+
 
 convertM :: Module a F.Name -> ConvertM (Module a T.Name)
 convertM mm
@@ -87,7 +88,12 @@ convertM mm
 
         -- Initialise the salt heap.
         -- Hardcode this for now, because eventually this will target tetra.
-        mm_init <- case initRuntime (Config 10000)  mm_tetra of
+        let configRuntime
+                = Config
+                { configHeapSize                = 10000
+                , configHookHandleTopLevel      = Nothing }
+
+        mm_init <- case initializeModule configRuntime mm_tetra of
                         Nothing   -> return mm_tetra
                         Just mm'  -> return mm'
 

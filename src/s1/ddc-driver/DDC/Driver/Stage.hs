@@ -11,10 +11,10 @@ module DDC.Driver.Stage
         , ViaBackend    (..)
         , RuntimeLinkStrategy (..)
 
-          -- * Tetra stages
+          -- * Discus stages
         , sourceLoadText
-        , tetraLoadText
-        , tetraToSalt
+        , discusLoadText
+        , discusToSalt
 
           -- * Flow stages
         , stageFlowLoad

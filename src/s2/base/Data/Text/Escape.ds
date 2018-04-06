@@ -67,7 +67,7 @@ escapeSizeDisciple (tx: Text): Nat
 -- | Escape encode the given string.
 escapeTextDisciple (tx: Text): Text
  = TextVec
- $ extend RegionText using r1 with {Read r1; Write r1; Alloc r1} in
+ $ extend RegionText using mutable r1 in
    do   -- Determine the length of the encoded string.
         lenEnc  = escapeSizeDisciple tx
 

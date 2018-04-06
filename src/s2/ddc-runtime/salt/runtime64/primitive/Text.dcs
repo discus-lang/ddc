@@ -32,7 +32,7 @@ with letrec
 --
 ddcPrimMakeTextLit [r1: Region] (addrString: Addr#): Ptr# r1 Obj
  = do   len     = ddcPrimSizeOfString 0# addrString
-        obj     = ddcRawAlloc (add# 4# (size# [Addr#]))
+        obj     = ddcRawAlloc (truncate# 0#) (add# 4# (size# [Addr#]))
         payload = takePtr# (ddcRawPayload obj)
         write# [Word32#] payload 0# (truncate# len)
         write# [Addr#]   payload 4# addrString
@@ -55,8 +55,7 @@ ddcPrimSizeOfTextLit [r1: Region] (obj: Ptr# r1 Obj): Nat#
 
 -- | Get a single byte of a text literal.
 ddcPrimIndexTextLit [r1: Region] (obj: Ptr# r1 Obj) (ix: Nat#): Word8#
- = do
-        charPtr = ddcPrimTakeTextLit obj
+ = do   charPtr = ddcPrimTakeTextLit obj
         size    = ddcPrimSizeOfTextLit obj
 
         char    = peekBounded# (makePtr# [r1] charPtr) ix size
@@ -65,8 +64,7 @@ ddcPrimIndexTextLit [r1: Region] (obj: Ptr# r1 Obj) (ix: Nat#): Word8#
 
 -- | Get the number of non-bytes in a null-terminated array of bytes.
 ddcPrimSizeOfString (i: Nat#) (str: Addr#): Nat#
- = do
-        x       = promote# (read# [Word8#] str i)
+ = do   x       = promote# (read# [Word8#] str i)
         case x of
          0#     -> i
          _      -> ddcPrimSizeOfString (add# i 1#) str

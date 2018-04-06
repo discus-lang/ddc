@@ -3,13 +3,16 @@
 module Data.Text.Numeric
 export
 {       showNat;
+        showInt;
         showBinaryNat;  digitBinary;
         showDecimalNat; digitDecimal;
         showHexNat;     digitHex;
         showBaseNat;
+        showAddr;
         showFloat32;
         showFloat64;
 }
+import Data.Numeric.Int
 import Data.Numeric.Word8
 import Data.Numeric.Float32
 import Data.Numeric.Float64
@@ -19,8 +22,9 @@ import Data.Text.Char
 import Data.Text.Operator
 
 import foreign c value
- ddcPrimShowFloat32: Float32# -> Vector# RegionText Word8#
- ddcPrimShowFloat64: Float64# -> Vector# RegionText Word8#
+ ddcPrimShowAddr        : Addr#    -> Vector# RegionText Word8#
+ ddcPrimShowFloat32     : Float32# -> Vector# RegionText Word8#
+ ddcPrimShowFloat64     : Float64# -> Vector# RegionText Word8#
 
 where
 
@@ -29,6 +33,13 @@ where
 -- | Show a natural number.
 showNat (x: Nat): Text
  = showBaseNat 10 digitDecimal 0 'X' x
+
+
+-- | Show an integer number.
+showInt (x: Int): Text
+ = if x >= 0i
+        then       showBaseNat 10 digitDecimal 0 'X' (truncate# x)
+        else "-" % showBaseNat 10 digitDecimal 0 'X' (truncate# (neg# x))
 
 
 -------------------------------------------------------------------------------
@@ -121,6 +132,11 @@ showBaseNat' base digit width pad first x
 
 
 -------------------------------------------------------------------------------
+-- | Show an address.
+showAddr (a: Addr#): Text
+ = TextVec (ddcPrimShowAddr a)
+
+
 -- | Show a Float32.
 showFloat32 (f: Float32): Text
  = TextVec (ddcPrimShowFloat32 f)

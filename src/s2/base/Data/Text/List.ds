@@ -20,7 +20,7 @@ where
 -- | Convert a list of characters to a Text object.
 textOfCharList (xx: List Char): Text
  = TextVec
- $ extend RegionText using r with { Alloc r; Read r; Write r }
+ $ extend RegionText using mutable r
    in  vectorOfCharList [r] xx
 
 

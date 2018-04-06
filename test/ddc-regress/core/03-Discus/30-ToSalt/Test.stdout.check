@@ -239,7 +239,7 @@ letrec {
 
 
 -- Keep witnesses arguments
-Fragment violation when converting Tetra module to Salt module.
+Fragment violation when converting Discus module to Salt module.
   Cannot convert expression.
     Cannot convert function abstraction in this context.
     The program must be lambda-lifted before conversion.
@@ -261,7 +261,7 @@ letrec {
 
 -- Error: partial application of primitive data constructors is not supported.
 Error in transformed module.
-  in stage TetraToSalt/toSalt
+  in stage DiscusToSalt/toSalt
   in pipe  PipeCoreCheck/Check
   ()
   Type mismatch.
@@ -307,7 +307,7 @@ letrec {
 
 -- Error: partial application of primitive operators is not supported.
 Error in transformed module.
-  in stage TetraToSalt/toSalt
+  in stage DiscusToSalt/toSalt
   in pipe  PipeCoreCheck/Check
   ()
   Type mismatch.

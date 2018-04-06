@@ -2,15 +2,12 @@
 module Check
 
 export foreign c value
- ddcCheckObjHeader : [r: Region]. Ptr# r Obj -> Word64#
- ddcCheckObjExtent : [r: Region]. Ptr# r Obj -> Nat# -> Unit
- ddcFailMessage    : TextLit# -> TextLit# -> Void#
- ddcFailField      : TextLit# -> TextLit# -> Void#
+ ddcCheckObjHeader      : [r: Region]. Ptr# r Obj -> Word64#
+ ddcCheckObjExtent      : [r: Region]. Ptr# r Obj -> Nat# -> Unit
+ ddcFailMessage         : TextLit# -> TextLit# -> Void#
 
 import foreign c value
- ddcPrimShowAddr   : Addr#    -> TextLit#
- ddcPrimShowNat    : Nat#     -> TextLit#
- ddcPrimFailString : TextLit# -> Void#
+ ddcPrimStderrPutString : TextLit# -> Void#
 
 with letrec
 
@@ -79,21 +76,10 @@ ddcFailMessage
         (src: TextLit#)         -- ^ Place in the runtime that we encountered the error.
         (msg: TextLit#)         -- ^ Message to print.
         : Void#
- = do   ddcPrimFailString "* ddc-runtime."#
-        ddcPrimFailString src
-        ddcPrimFailString ": "#
-        ddcPrimFailString msg
-        ddcPrimFailString "\n"#
+ = do   ddcPrimStderrPutString "* ddc-runtime."#
+        ddcPrimStderrPutString src
+        ddcPrimStderrPutString ": "#
+        ddcPrimStderrPutString msg
+        ddcPrimStderrPutString "\n"#
 
-
--- | Print a field name and value to stderr.
-ddcFailField
-        (name: TextLit#)        -- ^ Name of the field.
-        (val:  TextLit#)        -- ^ Value of the field.
-        : Void#
- = do   ddcPrimFailString "  "#
-        ddcPrimFailString name
-        ddcPrimFailString ": "#
-        ddcPrimFailString val
-        ddcPrimFailString "\n"#
 

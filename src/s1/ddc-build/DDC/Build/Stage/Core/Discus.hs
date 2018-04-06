@@ -1,7 +1,7 @@
 
 module DDC.Build.Stage.Core.Discus
-        ( tetraToSalt
-        , ConfigTetraToSalt     (..))
+        ( discusToSalt
+        , ConfigDiscusToSalt     (..))
 where
 import Control.Monad.Trans.Except
 import Control.Monad.IO.Class
@@ -11,7 +11,7 @@ import DDC.Data.Pretty
 import qualified DDC.Build.Stage.Core                   as B
 import qualified DDC.Build.Pipeline.Sink                as B
 import qualified DDC.Build.Pipeline.Error               as B
-import qualified DDC.Build.Language.Discus              as BE
+import qualified DDC.Build.Language.Discus              as BD
 
 import qualified DDC.Core.Module                        as C
 import qualified DDC.Core.Check                         as C
@@ -24,15 +24,17 @@ import qualified DDC.Core.Salt                          as A
 import qualified DDC.Core.Salt.Platform                 as A
 import qualified DDC.Core.Salt.Runtime                  as A
 
-import qualified DDC.Core.Discus                        as E
-import qualified DDC.Core.Discus.Transform.Boxing       as EBoxing
-import qualified DDC.Core.Discus.Transform.Curry        as ECurry
+import qualified DDC.Core.Discus                        as D
+import qualified DDC.Core.Discus.Transform.Boxing       as DBoxing
+import qualified DDC.Core.Discus.Transform.Curry        as DCurry
+import qualified DDC.Core.Discus.Transform.Initialize   as DInitialize
 
 
 ---------------------------------------------------------------------------------------------------
-data ConfigTetraToSalt
-        = ConfigTetraToSalt
+data ConfigDiscusToSalt
+        = ConfigDiscusToSalt
         { configSinkExplicit    :: B.Sink       -- ^ Sink after making explicit.
+        , configSinkInitialize  :: B.Sink       -- ^ Sink after initialize transform.
         , configSinkLambdas     :: B.Sink       -- ^ Sink after lambda lifting.
         , configSinkUnshare     :: B.Sink       -- ^ Sink after unsharing.
         , configSinkCurry       :: B.Sink       -- ^ Sink after curry transform.
@@ -43,56 +45,60 @@ data ConfigTetraToSalt
         }
 
 
--- | Convert Core Tetra to Core Salt.
-tetraToSalt
+-- | Convert Core Discus to Core Salt.
+discusToSalt
         :: A.Platform           -- ^ Platform configuation.
         -> A.Config             -- ^ Runtime config.
-        -> C.Module () E.Name   -- ^ Core tetra module.
-        -> ConfigTetraToSalt    -- ^ Sinker config.
+        -> C.Module () D.Name   -- ^ Core tetra module.
+        -> ConfigDiscusToSalt   -- ^ Sinker config.
         -> ExceptT [B.Error] IO (C.Module () A.Name)
 
-tetraToSalt platform runtimeConfig mm config
+discusToSalt platform runtimeConfig mm config
  = do
         -- Expliciate the core module.
         --   This converts implicit function parameters and arguments to explicit ones
         --   as well as substituting in all type equations.
         mm_explicit
          <- B.coreSimplify
-                BE.fragment (0 :: Int) C.expliciate
+                BD.fragment (0 :: Int) C.expliciate
                 mm
 
         liftIO $ B.pipeSink (renderIndent $ ppr mm_explicit)
                             (configSinkExplicit config)
 
+        -- Perform the initialize transform.
+        --   This wraps the main function with the default exception handler.
+        let mm_initialize
+                = DInitialize.initializeModule runtimeConfig mm_explicit
+
+        liftIO $ B.pipeSink (renderIndent $ ppr mm_initialize)
+                            (configSinkInitialize config)
 
         -- Re-check the module before lambda lifting.
         --   The lambda lifter needs every node annotated with its type.
         mm_checked_lambdas
          <-  B.coreCheck
-                "TetraToSalt/lambdas" BE.fragment C.Recon
+                "DiscusToSalt/lambdas" BD.fragment C.Recon
                 B.SinkDiscard B.SinkDiscard
-                mm_explicit
-
+                mm_initialize
 
         -- Perform lambda lifting.
         --   This hoists out nested lambda abstractions to top-level,
         --   producing supercombinators which are top-level functions.
         mm_lambdas
          <-  B.coreSimplify
-                BE.fragment (0 :: Int) C.lambdas mm_checked_lambdas
+                BD.fragment (0 :: Int) C.lambdas mm_checked_lambdas
 
         liftIO $ B.pipeSink (renderIndent $ ppr mm_lambdas)
                             (configSinkLambdas config)
-
 
         -- Re-check the module before performing unsharing.
         --   The unsharing transform needs every node annotated with its type.
         mm_checked_unshare
          <- B.coreCheck
-                "TetraToSalt/unshare" BE.fragment C.Recon
+                "DiscusToSalt/unshare" BD.fragment C.Recon
                 B.SinkDiscard B.SinkDiscard
                 mm_lambdas
-
 
         -- Perform the unsharing transform.
         --   This adds extra unit parameters to all top-level bindings
@@ -102,72 +108,68 @@ tetraToSalt platform runtimeConfig mm config
         liftIO $ B.pipeSink (renderIndent $ ppr mm_checked_unshare)
                             (configSinkUnshare config)
 
-
         -- Perform the curry transform.
         --   This introduces special primops to handle partial application
         --   of our top-level supercombinators.
         mm_curry
-         <- case ECurry.curryModule mm_unshare of
-                Left err        -> throwE [B.ErrorTetraConvert err]
+         <- case DCurry.curryModule mm_unshare of
+                Left err        -> throwE [B.ErrorDiscusConvert err]
                 Right mm'       -> return mm'
 
         liftIO $ B.pipeSink (renderIndent $ ppr mm_curry)
                             (configSinkCurry config)
 
-
         -- Prep before boxing transform.
         --   The boxing transform needs the program to be a-normalized.
         mm_prep_boxing
-         <- B.coreSimplify BE.fragment (0 :: Int)
+         <- B.coreSimplify BD.fragment (0 :: Int)
                 (C.anormalize
-                        (CNamify.makeNamifier (E.freshT "t"))
-                        (CNamify.makeNamifier (E.freshX "x")))
+                        (CNamify.makeNamifier (D.freshT "t"))
+                        (CNamify.makeNamifier (D.freshX "x")))
                 mm_curry
-
 
         -- Perform the boxing transform.
         --   This introduces explicitly unboxed values, using types (U# Nat#),
         --   and makes the original types like Nat# mean explicitly boxed objects.
         let mm_boxing
-                = EBoxing.boxingModule mm_prep_boxing
+                = DBoxing.boxingModule mm_prep_boxing
 
         liftIO $ B.pipeSink (renderIndent $ ppr mm_boxing)
                             (configSinkBoxing config)
 
-
         -- Prep before conversion to salt.
         --   The to-salt conversion needs the program to be a-normalized.
         mm_prep_salt
-         <- B.coreSimplify BE.fragment (0 :: Int)
+         <- B.coreSimplify BD.fragment (0 :: Int)
                 (  C.anormalize
-                        (CNamify.makeNamifier (E.freshT "t"))
-                        (CNamify.makeNamifier (E.freshX "x"))
+                        (CNamify.makeNamifier (D.freshT "t"))
+                        (CNamify.makeNamifier (D.freshX "x"))
                 `mappend` C.flatten)
                 mm_boxing
 
         liftIO $ B.pipeSink (renderIndent $ ppr mm_prep_salt)
                             (configSinkPrep config)
 
-
         -- Re-check before conversion to salt.
         --   The to-salt conversion needs every node annotated with its type.
         mm_checked_salt
          <- B.coreCheck
-                "TetraToSalt/toSalt" BE.fragment C.Recon
+                "DiscusToSalt/toSalt" BD.fragment C.Recon
                 B.SinkDiscard B.SinkDiscard
                 mm_prep_salt
 
         liftIO $ B.pipeSink (renderIndent $ ppr mm_checked_salt)
                             (configSinkChecked config)
 
-
         -- Convert Core Tetra to Core Salt.
         mm_salt
-         <- case E.saltOfDiscusModule platform runtimeConfig
-                (C.profilePrimDataDefs E.profile)
-                (C.profilePrimKinds    E.profile)
-                (C.profilePrimTypes    E.profile) mm_checked_salt of
-                Left err        -> throwE [B.ErrorTetraConvert err]
+         <- case D.saltOfDiscusModule
+                platform
+                runtimeConfig
+                (C.profilePrimDataDefs D.profile)
+                (C.profilePrimKinds    D.profile)
+                (C.profilePrimTypes    D.profile) mm_checked_salt of
+                Left err        -> throwE [B.ErrorDiscusConvert err]
                 Right mm'       -> return mm'
 
         liftIO $ B.pipeSink (renderIndent $ ppr mm_salt)

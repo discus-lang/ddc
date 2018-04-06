@@ -18,7 +18,13 @@ export foreign c value
 import foreign c value
  -- Primitives imported from C-land.
  ddcPrimStdoutPutString : TextLit# -> Void#
- ddcPrimFailString      : TextLit# -> Void#
+ ddcPrimStdoutPutAddr   : Addr#    -> Void#
+ ddcPrimStdoutPutNat    : Nat#     -> Void#
+ ddcPrimStdoutPutWord32 : Word32#  -> Void#
+
+ ddcPrimStderrPutString : TextLit# -> Void#
+ ddcPrimStderrPutNat    : Nat#     -> Void#
+
 
  -- Object checking functions.
  ddcCheckObjHeader      : [r: Region]. Ptr# r Obj -> Word64#
@@ -118,11 +124,11 @@ ddcTraceObj
           6#    -> traceSmall   print obj
 
           _     -> do
-                 ddcPrimFailString "ddc-runtime.ddcTraceObj: Unrecognized object format.\n"#
-                 ddcPrimFailString  "FIXME"# -- (primShowNat format)
-                 ddcPrimFailString "\n"#
+                 ddcPrimStderrPutString "ddc-runtime.ddcTraceObj: Unrecognized object format.\n"#
+                 ddcPrimStderrPutString "\n"#
                  fail#)
         obj
+
 
 ---------------------------------------------------------------------------------------------------
 -- | Trace a forwarding pointer, and optionally print it to stdout.
@@ -178,7 +184,7 @@ traceThunk
                 fieldNat      "    args           = "# (ddcThunkArgs   obj)
                 fieldNat      "    runs           = "# (ddcThunkRuns   obj)
                 fieldAddr     "    fun            = "# (ddcThunkFun    obj)
-                fieldNat      "    (object size)  = "# (ddcObjectSize  obj)
+                fieldNat      "    object_size    = "# (ddcObjectSize  obj)
                 traceThunkPtrs recurse print obj 0#
                 ddcPrimStdoutPutString "}\n"#
                 ())
@@ -206,9 +212,9 @@ traceThunkPtrs
                   False# -> ()
                   True#  -> do
                         ddcPrimStdoutPutString "    arg "#
-                        ddcPrimStdoutPutString "FIXME"# -- (primShowNat i)
+                        ddcPrimStdoutPutNat    i
                         ddcPrimStdoutPutString "          = "#
-                        ddcPrimStdoutPutString "FIXME"# -- (primShowAddr addr)
+                        ddcPrimStdoutPutAddr   addr
                         ddcPrimStdoutPutString ";\n"#
                         ())
 
@@ -256,7 +262,7 @@ traceBoxed
           False# -> ()
           True#  -> do
                 fieldNat      "    arity          = "# arity
-                fieldNat      "    (object size)  = "# size
+                fieldNat      "    object_size    = "# size
                 ())
 
         -- Check that the payload is also within the heap,
@@ -295,9 +301,9 @@ traceBoxedPtrs
                   False# -> ()
                   True#  -> do
                         ddcPrimStdoutPutString "    arg "#
-                        ddcPrimStdoutPutString "FIXME"# -- (primShowNat i)
+                        ddcPrimStdoutPutNat    i
                         ddcPrimStdoutPutString "          = "#
-                        ddcPrimStdoutPutString "FIXME"# -- (primShowAddr addr)
+                        ddcPrimStdoutPutAddr   addr
                         ddcPrimStdoutPutString ";\n"#
                         traceBoxedPtrs print obj n (add# i 1#))
 
@@ -343,8 +349,8 @@ traceRaw [r: Region]
         (case print of
           False#  -> ()
           True#   -> do
-                fieldWord32   "    payload size   = "# (truncate# (ddcRawPayloadSize obj))
-                fieldNat      "    (object size)  = "# (ddcObjectSize obj)
+                fieldWord32   "    payload_size   = "# (truncate# (ddcRawPayloadSize obj))
+                fieldNat      "    object_size    = "# (ddcObjectSize obj)
                 ddcPrimStdoutPutString "}\n"#
                 ())
 
@@ -363,7 +369,8 @@ traceSmall [r: Region] (print: Bool#) (obj: Ptr# r Obj): Ptr# r Obj
                 ddcPrimStdoutPutString "Small\n"#
                 fieldAddr     "{   ptr            = "# (takePtr# obj)
                 fieldWord32   "    header         = "# (read# (takePtr# obj) 0#)
-                fieldNat      "    (object size)  = "# (ddcObjectSize obj)
+                fieldWord32   "    format         = "# (truncate# (ddcObjectFormat obj))
+                fieldNat      "    object_size    = "# (ddcObjectSize obj)
                 ddcPrimStdoutPutString "}\n"#
                 ())
         obj
@@ -482,9 +489,9 @@ ddcTraceHeap (print: Bool#): Unit
           False# -> ()
           True#  -> do
                 ddcPrimStdoutPutString "Heap\n"#
-                fieldAddr     "{   heapBase = "#  pHeapBaseA
-                fieldAddr     "    heapTop  = "#  pHeapTopA
-                fieldAddr     "    heapMax  = "#  pHeapMaxA
+                fieldAddr     "{   heapBase       = "#  pHeapBaseA
+                fieldAddr     "    heapTop        = "#  pHeapTopA
+                fieldAddr     "    heapMax        = "#  pHeapMaxA
                 ddcPrimStdoutPutString "}\n"#
                 ())
 
@@ -512,7 +519,7 @@ traceHeap
 
         case eq# size 0# of
          True# -> do
-                ddcPrimFailString "ddc-runtime.traceHeap: object has zero size\n."#
+                ddcPrimStderrPutString "ddc-runtime.traceHeap: object has zero size\n."#
                 fail#
 
          False# -> do
@@ -524,20 +531,20 @@ traceHeap
 -- | Print an Addr# field to stdout.
 fieldAddr (name: TextLit#) (val: Addr#): Void#
  = do   ddcPrimStdoutPutString name
-        ddcPrimStdoutPutString "FIXME"# -- (primShowAddr val)
+        ddcPrimStdoutPutAddr   val
         ddcPrimStdoutPutString ";\n"#
 
 
 -- | Print a Nat# field to stdout.
 fieldNat (name: TextLit#) (val: Nat#): Void#
  = do   ddcPrimStdoutPutString name
-        ddcPrimStdoutPutString "FIXME"# -- (primShowNat val)
+        ddcPrimStdoutPutNat    val
         ddcPrimStdoutPutString ";\n"#
 
 
 -- | Print a Word32# field to stdout.
 fieldWord32 (name: TextLit#) (val: Word32#): Void#
  = do   ddcPrimStdoutPutString name
-        ddcPrimStdoutPutString "FIXME"# -- (primShowWord32 val)
+        ddcPrimStdoutPutWord32 val
         ddcPrimStdoutPutString ";\n"#
 

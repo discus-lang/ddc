@@ -1,5 +1,9 @@
-#pragma once
+#include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
+#include <alloca.h>
+#include <inttypes.h>
+#include "runtime/Primitive.h"
 #include "Runtime.h"
 
 
@@ -13,15 +17,18 @@ Obj* ddcPrimStdinGetVector (nat_t len)
                 abort();
         }
 
-        nat_t n         = strlen(pBuf);
-        Obj* pObj       = ddcRawAlloc (0, 4 + n + 1);
-        uint8_t* p8     = _ddcRawPayload(pObj);
-        uint32_t* pLen  = (uint32_t*)p8;
-        string_t* pStr  = (string_t*)(p8 + 4);
+        // Allocate a new vector to hold the read text.
+        nat_t lenActual = strlen(pBuf);
+        Obj* pVec       = ddcPrimVectorAlloc8(lenActual + 1);
+        string_t* pPay  = (string_t*)ddcPrimVectorPayload8(pVec);
 
-        memcpy(pStr, pBuf, n + 1);
-        *pLen           = n;
-        return pObj;
+        // Copy data into the new vector.
+        strncpy(pPay, pBuf, lenActual);
+
+        // Ensure there's a null character on the end of the string.
+        *(pPay + lenActual) = 0;
+
+        return pVec;
 }
 
 
@@ -45,6 +52,30 @@ void ddcPrimStdoutPutVector (Obj* obj)
         fflush(stdout);
 }
 
+// Print a pointer.
+void ddcPrimStdoutPutAddr (void* ptr)
+{       printf("%p", ptr);
+        fflush(stdout);
+}
+
+// Print a natural number.
+void ddcPrimStdoutPutNat (nat_t val)
+{       printf("%zu", val);
+        fflush(stdout);
+}
+
+// Print a Word32 to stdout.
+void ddcPrimStdoutPutWord32 (uint32_t val)
+{       printf("%#04" PRIx32, val);
+        fflush(stdout);
+}
+
+// Print a Word64 to stdout.
+void ddcPrimStdoutPutWord64 (uint64_t val)
+{       printf("%#08" PRIx64, val);
+        fflush(stdout);
+}
+
 // Flush stdout.
 void ddcPrimStdoutFlush (Obj* obj)
 {       fflush(stdout);
@@ -54,14 +85,14 @@ void ddcPrimStdoutFlush (Obj* obj)
 // -- Stderr ------------------------------------------------------------------
 // Print a C string to stderr.
 // Use this when printing an error from the runtime system.
-void ddcPrimFailString(string_t* str)
+void ddcPrimStderrPutString(string_t* str)
 {       fputs(str, stderr);
         fflush(stderr);
 }
 
 // Print a natural number to stderr.
 // Use this when printing an error from the runtime system.
-void ddcPrimFailNat(nat_t x)
+void ddcPrimStderrPutNat(nat_t x)
 {       fprintf(stderr, "%lu", x);
         fflush(stderr);
 }

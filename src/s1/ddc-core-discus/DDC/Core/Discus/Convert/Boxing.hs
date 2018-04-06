@@ -17,6 +17,7 @@ module DDC.Core.Discus.Convert.Boxing
         ( isSomeRepType
         , isBoxedRepType
         , isUnboxedRepType
+        , isAddrType
         , isNumericType
         , isVectorType
         , isTextLitType
@@ -91,11 +92,22 @@ isUnboxedRepType :: Type Name -> Bool
 isUnboxedRepType tt
         | Just ( NameTyConDiscus TyConDiscusU
                , [ti])                  <- takePrimTyConApps tt
-        , isNumericType ti || isTextLitType ti
+        , isNumericType ti || isTextLitType ti || isAddrType ti
         = True
 
         | otherwise
         = False
+
+
+-- | Check if some type is an address type.
+isAddrType :: Type Name -> Bool
+isAddrType tt
+         | Just (NamePrimTyCon n, [])   <- takePrimTyConApps tt
+         = case n of
+                PrimTyConAddr           -> True
+                _                       -> False
+
+        | otherwise                     = False
 
 
 -- | Check if some type is a numeric or other primtitype.

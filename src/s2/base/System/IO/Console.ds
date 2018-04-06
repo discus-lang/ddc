@@ -1,39 +1,49 @@
 
 module System.IO.Console
+
+---------------------------------------------------------------------------------------------------
 export
 {       readl;
         write; writel; writell;
         print; printl; printll;
         flush;
 }
+
+export foreign c value
+ ddcHookHandleTopLevel
+        : {@e: Effect} -> S e Unit -> S (Runtime + Console + e) Unit
+
+
+---------------------------------------------------------------------------------------------------
 import Class.Show
 import Data.Text
+import Control.Exception
+import System.Runtime
 
 import foreign abstract type
- Console  : Effect
+ Console : Effect
 
 import foreign c value
- ddcPrimStdoutPutString    : TextLit# -> S Console Void#
- ddcPrimStdoutPutVector    : {@r: Region} -> Vector# r Word8# -> S Console Void#
- ddcPrimStdoutFlush        : Unit -> S Console Void#
- ddcPrimStdinGetVector     : {@r: Region} -> Nat# -> S Console (Vector# r Word8#)
-
+ ddcPrimStdoutPutString         : TextLit# -> S Console Void#
+ ddcPrimStdoutPutVector         : {@r: Region} -> Vector# r Word8# -> S Console Void#
+ ddcPrimStdoutFlush             : Unit -> S Console Void#
+ ddcPrimStdinGetVector          : {@r: Region} -> Nat# -> S Console (Vector# r Word8#)
 
 import foreign c value
  -- Get the unboxed text literal from a boxed text literal.
  -- The unboxed version is a pointer to the text data in static memory.
- ddcPrimTakeTextLit   : TextLit -> TextLit#
+ ddcPrimTakeTextLit             : TextLit -> TextLit#
 
 where
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | Read a text string from the console, up to the maximum line length.
 readl (maxLen: Nat): S Console Text
  = box TextVec (ddcPrimStdinGetVector maxLen)
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | Write text to the console.
 write (tt: Text): S Console Unit
  = box case tt of
@@ -62,7 +72,7 @@ writell (tt: Text): S Console Unit
         write "\n\n"
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | Print a value to the console.
 print {@a: Data} {Show a} (x: a): S Console Unit
  = write (show x)
@@ -78,9 +88,49 @@ printll {@a: Data} {Show a} (x: a): S Console Unit
  = writell (show x)
 
 
--------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------
 -- | Flush the output.
 flush: S Console Unit
  = box do
         ddcPrimStdoutFlush ()
         ()
+
+
+---------------------------------------------------------------------------------------------------
+-- | Install hooks to handle exceptions thrown by the user program as well
+--   as the runtime system.
+--
+--   The compiler implicitly wraps the Main.main function of an exectutable
+--   with this top level handler. Before running the computation we also
+--   install hooks for the runtime system to call when it encounters IO errors.
+--
+ddcHookHandleTopLevel (comp: S e Unit): S (Runtime + Console + e) Unit
+ = do
+        -- Install hooks that the runtime system calls back on
+        -- when it encounters IO errors.
+        ddcHookSetExceptionFile    hookErrorSystemFile
+        ddcHookSetExceptionNetwork hookErrorSystemNetwork
+
+        -- Try the computation and handle errors.
+        try comp $ \ex
+         -> case ex of
+                ExceptionFail tx
+                 -> writel $ "*** Fail:"  %% tx
+
+                ExceptionError tx
+                 -> writel $ "*** Error:" %% tx
+
+                ExceptionSystemFile _ tx
+                 -> writel $ "*** File IO Error:" %% tx
+
+                ExceptionSystemNetwork _ tx
+                 -> writel $ "*** Network IO Error:" %% tx
+
+ where  -- Hook for the runtime primitive code to throw a file exception.
+        hookErrorSystemFile    (errno: Int) (vec: TextVec): S Error Unit
+         = weakeff Error in throw $ ExceptionSystemFile    errno (TextVec vec)
+
+        -- Hook for the runtime primitive code to throw a network exception.
+        hookErrorSystemNetwork (errno: Int) (vec: TextVec): S Error Unit
+         = weakeff Error in throw $ ExceptionSystemNetwork errno (TextVec vec)
+

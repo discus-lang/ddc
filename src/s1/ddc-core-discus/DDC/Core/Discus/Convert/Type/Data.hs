@@ -147,6 +147,7 @@ convertDataAppT ctx tt
                         E.PrimTyConBool         -> True
                         E.PrimTyConNat          -> True
                         E.PrimTyConInt          -> True
+                        E.PrimTyConAddr         -> True
                         E.PrimTyConWord _       -> True
                         E.PrimTyConFloat _      -> True
                         _                       -> False
@@ -160,7 +161,7 @@ convertDataAppT ctx tt
         -- values of the corresponding machine type.
         | Just  ( E.NameTyConDiscus E.TyConDiscusU
                 , [tNum])       <- takePrimTyConApps tt
-        , isNumericType tNum
+        , isNumericType tNum || isAddrType tNum
         = do   tNum'   <- convertDataPrimitiveT tNum
                return tNum'
 
@@ -252,9 +253,9 @@ convertDataPrimitiveT tt
         E.PrimTyConNat          -> return $ A.tNat
         E.PrimTyConInt          -> return $ A.tInt
         E.PrimTyConSize         -> return $ A.tSize
+        E.PrimTyConAddr         -> return $ A.tAddr
         E.PrimTyConWord  bits   -> return $ A.tWord bits
         E.PrimTyConFloat bits   -> return $ A.tFloat bits
-
         E.PrimTyConTextLit      -> return $ A.tTextLit
 
         _ -> throw $ ErrorMalformed $ "Invalid primitive type " ++ (renderIndent $ ppr tt)

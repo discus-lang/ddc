@@ -350,13 +350,13 @@ handleCmd1 state cmd source line
         CommandCompile
          -> do  config  <- getDriverConfigOfState state
                 store   <- Store.new
-                runError $ cmdCompile config False store line
+                runError $ cmdCompile config False [] store line
                 return state
 
         CommandMake
          -> do  config  <- getDriverConfigOfState state
                 store   <- Store.new
-                runError $ cmdCompile config True store line
+                runError $ cmdCompile config True [] store line
                 return state
 
 

@@ -1,5 +1,7 @@
 
-module Main where
+module Main
+import System.IO.Console
+where
 
 
 -- | Standard Cons-lists.

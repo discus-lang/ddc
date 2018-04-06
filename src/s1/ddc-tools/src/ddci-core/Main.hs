@@ -17,7 +17,7 @@ import Data.List
 import qualified DDC.Build.Interface.Store      as Store
 
 main :: IO ()
-main 
+main
  = do   args    <- getArgs
         case args of
          []      -> runInteractive
@@ -38,7 +38,7 @@ main
           -> do let state       = initState (InputInterfaceBatch filePath)
                 dconfig         <- getDriverConfigOfState state
                 store           <- Store.new
-                runError $ cmdCompileRecursive dconfig True store filePath
+                runError $ cmdCompileRecursive dconfig True store [filePath]
 
          -- Run a Disciple-Core-Exchange file.
          [filePath]
@@ -46,7 +46,7 @@ main
           -> do file    <- readFile filePath
                 runBatch filePath file
 
-        
+
          _       -> runArgs args
 
 

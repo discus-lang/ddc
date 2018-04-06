@@ -1,8 +1,10 @@
-#pragma once
+#include <stdio.h>
 #include <string.h>
 #include <inttypes.h>
 #include <alloca.h>
+#include "runtime/Primitive.h"
 #include "Runtime.h"
+
 
 // Show functions.
 //   We provide a binding to the stdlib versions of these instead of defining

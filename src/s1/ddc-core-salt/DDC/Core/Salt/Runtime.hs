@@ -35,8 +35,7 @@ module DDC.Core.Salt.Runtime
         , xRunThunk
 
           -- ** Allocator
-        , xddcInit
-        , xddcExit
+        , xddcInit, xddcExit
         , xAllocCollect
 
           -- ** Error handling
@@ -45,10 +44,8 @@ module DDC.Core.Salt.Runtime
           -- * Calls to primops.
         , xAllocSlot
         , xAllocSlotVal
-        , xRead
-        , xWrite
-        , xPeek
-        , xPoke
+        , xRead, xWrite
+        , xPeek, xPoke
         , xCast
         , xFail
         , xReturn)
@@ -61,6 +58,7 @@ import DDC.Data.Pretty
 import Data.Map                 (Map)
 import qualified Data.Map       as Map
 import qualified Data.Text      as T
+import Data.Text                (Text)
 
 
 -- Runtime -----------------------------------------------------------------------------------------
@@ -69,7 +67,19 @@ data Config
         = Config
         { -- | Use two fixed-size heaps of this many bytes. We allocate two
           --   heaps as the garbage collector is a two-space copying collector.
-          configHeapSize        :: Integer
+          configHeapSize                :: Integer
+
+          -- | Hook for the top-level exception handler,
+          --   which we will use to wrap the 'main' function.
+          --
+          --   The first name is the name of the Effect that needs to be imported before we
+          --   add the handler, and the second is the name of the handler itself.
+          --   Example, ("Console", "ddcHookHandleTopLevel")
+          --
+          --   We don't insert the handler when the effect is no present as the source
+          --   module won't have imported the module that defines the handler.
+          --
+        , configHookHandleTopLevel      :: Maybe (Text, Text)
         }
 
 

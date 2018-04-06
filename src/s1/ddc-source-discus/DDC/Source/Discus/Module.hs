@@ -49,20 +49,20 @@ data Module l
         , moduleExportTypes     :: [GTBoundCon l]
 
           -- | Names of exported values (level-0).
-        , moduleExportValues    :: [GXBoundVar l]
+        , moduleExportValues    :: [(GXBoundVar l, ExportValue (GXBoundVar l) (GType l))]
 
           -- Imports ----------------------------
           -- | Imported modules.
         , moduleImportModules   :: [ModuleName]
 
           -- | Kinds of imported foreign types.
-        , moduleImportTypes     :: [(GTBindCon l, ImportType  (GTBindCon l) (GType l))]
+        , moduleImportTypes     :: [(GTBindCon l,  ImportType  (GTBindCon l) (GType l))]
 
           -- | Types of imported capabilities.
-        , moduleImportCaps      :: [(GXBindVar l, ImportCap   (GXBindVar l) (GType l))]
+        , moduleImportCaps      :: [(GXBindVar l,  ImportCap   (GXBindVar l) (GType l))]
 
           -- | Types of imported foreign values.
-        , moduleImportValues    :: [(GXBindVar l, ImportValue (GXBindVar l) (GType l))]
+        , moduleImportValues    :: [(GXBindVar l,  ImportValue (GXBindVar l) (GType l))]
 
           -- Local ------------------------------
           -- | Top-level things

@@ -121,11 +121,8 @@ import foreign c value
  -- We need to relaim at least the given number of bytes,
  -- otherwise we cannot continue execution.
  ddcAllocCollect        : Nat# -> Unit
- ddcPrimFailString      : TextLit# -> Void#
- ddcPrimFailNat         : Nat# -> Void#
-
- ddcPrimStdoutPutString : TextLit# -> Void#
- ddcPrimShowAddr        : Addr# -> TextLit#
+ ddcPrimStderrPutString : TextLit# -> Void#
+ ddcPrimStderrPutNat    : Nat# -> Void#
  ddcPrimShowNat         : Nat#  -> TextLit#
  ddcPrimShowWord32      : Word32#  -> TextLit#
 
@@ -669,7 +666,7 @@ ddcRawPayloadSize [r: Region] (obj: Ptr# r Obj): Nat#
 --     uint8_t   payload[];     // Raw data that does not contain heap pointers.
 --   } DataRawSmall;
 --
-ddcSmallAlloc              *** TODO: check all consumers are calling this with words, not bytes.
+ddcSmallAlloc              -- TODO: check all consumers are calling this with words, not bytes.
         [r: Region]
         (tag: Tag#) (wordsPayload: Nat#): Ptr# r Obj
  = do
@@ -723,11 +720,11 @@ ddcFailObject
         [r: Region]
         (obj: Ptr# r Obj) (fn: TextLit#) (msg: TextLit#): Unit
  = do
-        ddcPrimFailString "ddc-runtime."#
-        ddcPrimFailString fn
-        ddcPrimFailString " "#
-        ddcPrimFailString msg
-        ddcPrimFailString "\n"#
-        ddcPrimFailString "\n"#
+        ddcPrimStderrPutString "ddc-runtime."#
+        ddcPrimStderrPutString fn
+        ddcPrimStderrPutString " "#
+        ddcPrimStderrPutString msg
+        ddcPrimStderrPutString "\n"#
+        ddcPrimStderrPutString "\n"#
         fail#
 

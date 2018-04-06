@@ -16,7 +16,7 @@ thing (x : Thing) : Nat#
         Two n   -> if n then 0 else 1
 
 main (_ : Unit) : S Console Unit
- = box do   
-        run writel (showNat (thing (One 5)))
-        run writel (showNat (thing (Two False)))
-        run writel (showNat (thing (Two True)))
+ = do
+        writel (showNat (thing (One 5)))
+        writel (showNat (thing (Two False)))
+        writel (showNat (thing (Two True)))

@@ -3,6 +3,7 @@
 module System.Posix.Stdlib
 export  stdlib_atoi; stdlib_system; stdlib_mkstemp
         exit
+import System.Posix.Errno
 import Data.Numeric.Nat
 import Data.Numeric.Int
 import Data.Numeric.Bool
@@ -11,9 +12,6 @@ import Data.List
 
 
 import foreign abstract type
- -- | Effect of reading or writing the global C errno variable.
- Errno   : Effect
-
  -- | Effect of accessing the file system.
  File   : Effect
 
@@ -44,7 +42,7 @@ where
 -- atoi -----------------------------------------------------------------------
 -- | Convert the initial portion of the string to int representation.
 stdlib_atoi (text: Text): Nat
- = private r with { Read r; Write r; Alloc r} in
+ = mutable r in
    do   -- ISSUE #439: Avoid copying strings via lists in Stdlib.ds.
         vec     = vectorOfCharList [r] $ charListOfText text
         atoi (ddcVectorGuts vec)
@@ -55,7 +53,7 @@ stdlib_atoi (text: Text): Nat
 --   The calling process waits for the shell to finish executing the command,
 --   ignoring SIGINT and SIGQUIT, and blocking SIGCHLD.
 stdlib_system (cmd: Text): S Process Int
- = private r with { Read r; Write r; Alloc r } in
+ = mutable r in
    do   vec     = vectorOfCharList [r] $ charListOfText cmd
         run system (ddcVectorGuts vec)
 
@@ -70,7 +68,7 @@ stdlib_system (cmd: Text): S Process Int
 stdlib_mkstemp
         (template: Text)
         : S (File + Errno) (Maybe Text)
- = private r with { Read r; Write r; Alloc r} in
+ = mutable r in
    do
         -- ISSUE #439: Avoid copying strings via lists in Stdlib.ds.
         vec     = vectorOfCharList [r] $ charListOfText template

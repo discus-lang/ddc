@@ -1,7 +1,9 @@
-#pragma once
+#include <stdio.h>
 #include <string.h>
 #include <inttypes.h>
+#include "runtime/Primitive.h"
 #include "Runtime.h"
+
 
 // Parse functions.
 #define _DDC_MAKE_PRIM_PARSE_TYPE(typeName,typeSpec,format) \

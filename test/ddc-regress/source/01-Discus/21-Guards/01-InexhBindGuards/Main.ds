@@ -11,7 +11,7 @@ where
 derp (x: Nat#): Nat#
  | x == 0               = 10
 
-main (_: Unit): S Console Unit
+main ()
  = do
         writel $ showNat (derp 0)
         writel $ showNat (derp 1)

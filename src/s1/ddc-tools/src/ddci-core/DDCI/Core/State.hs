@@ -136,7 +136,8 @@ getDriverConfigOfState state
          --   compiling the program.
          , D.configRuntime
                 = Runtime.Config
-                { Runtime.configHeapSize        = 1000000 }
+                { Runtime.configHeapSize                = 1000000
+                , Runtime.configHookHandleTopLevel      = Nothing }
 
          , D.configRuntimeLinkStrategy    = D.LinkDefault
          , D.configModuleBaseDirectories  = []
