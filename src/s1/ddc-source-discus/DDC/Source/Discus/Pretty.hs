@@ -1,4 +1,4 @@
-{-# LANGUAGE TypeFamilies, UndecidableInstances #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 -- | Pretty printing for Discus modules and expressions.
 module DDC.Source.Discus.Pretty
@@ -16,13 +16,9 @@ import qualified Data.Text                      as Text
 
 
 ---------------------------------------------------------------------------------------------------
-type PrettyLanguage l
- =      ( Pretty l
-        , Pretty (GTAnnot    l)
-
-        , Pretty (GXAnnot    l)
-        , Pretty (GXFrag l)
-        , Pretty (DaCon DaConBound (GType l)))
+type PrettyLanguage a
+ =      ( Pretty a
+        , Pretty (DaCon DaConBound (GType a)))
 
 
 instance Pretty DaConBind where
@@ -145,11 +141,7 @@ instance PrettyLanguage l => Pretty (GExp l) where
   = {-# SCC "ppr[Exp]" #-}
     case xx of
         XAnnot _ x      -> pprPrec d x
-
         XPrim p         -> ppr p
-        XFrag u         -> ppr u
-
-
         XVar  u         -> ppr u
         XCon  dc        -> ppr dc
 

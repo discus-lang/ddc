@@ -1,14 +1,10 @@
 {-# OPTIONS_HADDOCK hide #-}
-{-# LANGUAGE TypeFamilies, UndecidableInstances #-}
 
 -- | Abstract syntax for Discus Source expressions.
 module DDC.Source.Discus.Exp.Term.Base
         ( -- * Types
-          -- ** Type Functions
-          GTAnnot
-
           -- ** Syntax
-        , GType         (..)
+          GType         (..)
         , GTyCon        (..)
 
         , pattern TApp2, pattern TApp3
@@ -20,14 +16,7 @@ module DDC.Source.Discus.Exp.Term.Base
         , pattern TFunExplicit
         , pattern TFunImplicit
 
-          -- ** Dictionaries
-        , ShowGType
-
           -- * Terms
-          -- ** Type Functions
-        , GXAnnot
-        , GXFrag
-
           -- ** Syntax
         , GXBindVarMT   (..)
         , GExp          (..)
@@ -45,70 +34,77 @@ module DDC.Source.Discus.Exp.Term.Base
         , GWitness      (..)
         , GWiCon        (..)
         , DaCon         (..)
-        , Prim          (..)
+        , DaConBind     (..)
+        , DaConBound    (..)
         , ParamSort     (..)
 
-          -- * Dictionaries
-        , ShowLanguage
+          -- ** Primitives
+        , PrimVal       (..)
+        , PrimArith     (..)
+        , PrimCast      (..)
+        , OpVector      (..)
+        , OpFun         (..)
+        , OpError       (..)
+        , PrimLit       (..)
+        , Literal       (..)
+        , Text
+
+         -- ** Sugar
+        , pattern PTrue
+        , pattern PFalse
 
         , module DDC.Source.Discus.Exp.Bind)
 where
 import DDC.Source.Discus.Exp.Bind
+import DDC.Source.Discus.Exp.Term.Prim
 import DDC.Source.Discus.Exp.Type.Base
-import DDC.Core.Exp                     (DaCon (..), Prim (..))
 
+import DDC.Core.Exp             (DaCon   (..))
+import DDC.Core.Exp.Literal     (Literal (..))
+
+import Data.Text                (Text)
 
 -------------------------------------------------------------------------------
 -- Type functions associated with the language AST.
 
--- | Yield the type of annotations.
-type family GXAnnot    l
-
--- | Yield the type of fragment specific primitive names.
-type family GXFrag     l
-
-
 -- | A possibly typed binding.
-data GXBindVarMT l
-        = XBindVarMT Bind (Maybe (GType l))
+data GXBindVarMT a
+        = XBindVarMT Bind (Maybe (GType a))
 
 
 -------------------------------------------------------------------------------
 -- | Well-typed expressions have types of kind `Data`.
-data GExp l
+data GExp a
         ---------------------------------------------------
         -- Core Language Constructs.
         --   These are also in the core language, and after desugaring only
         --   these constructs are used.
         --
-        = XAnnot    !(GXAnnot l) !(GExp   l)
+        = XAnnot    !a !(GExp a)
 
-        -- | Primitives in the ambient calculus.
-        | XPrim     !Prim
-
-        -- | Primitives specific to the language fragment.
-        | XFrag     !(GXFrag  l)
+        -- | Primitives
+        | XPrim     !PrimVal
 
         -- | Data constructor or literal.
-        | XCon      !(DaCon DaConBound (GType l))
+        | XCon      !(DaCon DaConBound (GType a))
 
         -- | Value variable.
         | XVar      !Bound
 
         -- | Function abstraction.
-        | XAbs      !(GParam l)  !(GExp l)
+        | XAbs      !(GParam a)  !(GExp a)
 
         -- | Function application.
-        | XApp      !(GExp  l)   !(GArg l)
+        | XApp      !(GExp  a)   !(GArg a)
 
         -- | A non-recursive let-binding.
-        | XLet      !(GLets l)   !(GExp l)
+        | XLet      !(GLets a)   !(GExp a)
 
         -- | Case branching.
-        | XCase     !(GExp  l)   ![GAltCase l]
+        | XCase     !(GExp  a)   ![GAltCase a]
 
         -- | Type cast.
-        | XCast     !(GCast l)   !(GExp l)
+        | XCast     !(GCast a)   !(GExp a)
 
 
         ---------------------------------------------------
@@ -117,33 +113,46 @@ data GExp l
         --
         -- | Some expressions and infix operators that need to be resolved
         --   into proper function applications.
-        | XDefix    !(GXAnnot l) [GArg l]
+        | XDefix    !a [GArg a]
 
         -- | Use of a naked infix operator, like in 1 + 2.
         --   INVARIANT: only appears in the list of an XDefix node.
-        | XInfixOp  !(GXAnnot l) String
+        | XInfixOp  !a String
 
         -- | Use of an infix operator as a plain variable, like in (+) 1 2.
         --   INVARIANT: only appears in the list of an XDefix node.
-        | XInfixVar !(GXAnnot l) String
+        | XInfixVar !a String
 
         -- | Match expression with default.
         --   Similar to a case expression, except that if an alternative
         --   fails then we try the next one instead of failing.
         --   If none of the alternatives succeeds then the overall value
         --   is the value of the default expression.
-        | XMatch    !(GXAnnot l) ![GAltMatch l] !(GExp l)
+        | XMatch    !a ![GAltMatch a] !(GExp a)
 
         -- | Where expression defines a group of recursive clauses,
         --   and is desugared to a letrec.
-        | XWhere    !(GXAnnot l) !(GExp l) ![GClause l]
+        | XWhere    !a !(GExp a) ![GClause a]
 
         -- | Abstraction which matches its argument against a single pattern.
-        | XAbsPat   !(GXAnnot l) !ParamSort !(GPat l) !(Maybe (GType l)) !(GExp l)
+        | XAbsPat   !a !ParamSort !(GPat a) !(Maybe (GType a)) !(GExp a)
 
         -- | Lambda abstraction that matches its argument against
         --   the given alternatives.
-        | XLamCase  !(GXAnnot l) ![GAltCase l]
+        | XLamCase  !a ![GAltCase a]
+
+
+-- | Binding occurrence of a data constructor.
+data DaConBind
+        = DaConBindName  !Text
+        deriving (Eq, Ord, Show)
+
+
+-- | Bound occurrences of a data constructor.
+data DaConBound
+        = DaConBoundName !Text
+        | DaConBoundLit  !PrimLit
+        deriving (Eq, Ord, Show)
 
 
 -- | Sorts of parameters that we have.
@@ -155,63 +164,63 @@ data ParamSort
 
 
 -- | Parameter for an abstraction.
-data GParam l
+data GParam a
         -- | Type parameter with optional kind.
-        = MType     !Bind     !(Maybe (GType l))
+        = MType     !Bind     !(Maybe (GType a))
 
         -- | Term pattern with optional type.
-        | MTerm     !(GPat l) !(Maybe (GType l))
+        | MTerm     !(GPat a) !(Maybe (GType a))
 
         -- | Implicit term pattern with optional type.
-        | MImplicit !(GPat l) !(Maybe (GType l))
+        | MImplicit !(GPat a) !(Maybe (GType a))
 
 
 -- | Argument of an application.
-data GArg l
+data GArg a
         -- | Type argument.
-        = RType     !(GType    l)
+        = RType     !(GType    a)
 
         -- | Term argument.
-        | RTerm     !(GExp     l)
+        | RTerm     !(GExp     a)
 
         -- | Witness argument.
-        | RWitness  !(GWitness l)
+        | RWitness  !(GWitness a)
 
         -- | Implicit argument.
-        | RImplicit !(GArg     l)
+        | RImplicit !(GArg     a)
 
 
 -- | Possibly recursive bindings.
 --   Whether these are taken as recursive depends on whether they appear
---   in an XLet or XLetrec group.
-data GLets l
+--   in an XLet or XRec group.
+data GLets a
         ---------------------------------------------------
         -- Core Language Constructs
         -- | Non-recursive expression binding.
-        = LLet      !(GXBindVarMT l) !(GExp l)
+        = LLet      !(GXBindVarMT a) !(GExp a)
 
         -- | Recursive binding of lambda abstractions.
-        | LRec     ![(GXBindVarMT l,   GExp l)]
+        | LRec     ![(GXBindVarMT a,   GExp a)]
 
         -- | Bind a local region variable,
         --   and witnesses to its properties.
-        | LPrivate ![Bind] !(GCaps l)
+        | LPrivate ![Bind] !(GCaps a)
 
         -- | Extend an existing region with a sub region that has other capabilities.
-        | LExtend  ![Bind] !(GType l) !(GCaps l)
+        | LExtend  ![Bind] !(GType a) !(GCaps a)
 
         ---------------------------------------------------
         -- Sugar Constructs
         -- | A possibly recursive group of binding clauses.
         --   The flag says if the group is recursive (true) or non-recursive (false).
         --   Multiple clauses in the group may be part of the same function.
-        | LGroup   !Bool ![GClause l]
+        | LGroup   !Bool ![GClause a]
 
 
 -- | Capability list associate with a 'private' or 'extend' construct.
-data GCaps l
+data GCaps a
         -- | Explicit list of named capabilities.
-        = CapsList      ![(Bind, GType l)]
+        = CapsList ![(Bind, GType a)]
 
         -- | Sugar for '{Read r; Write r; Alloc r}' for each bound region 'r'.
         | CapsMutable
@@ -221,63 +230,63 @@ data GCaps l
 
 
 -- | Binding clause
-data GClause l
+data GClause a
         -- | A separate type signature.
-        = SSig   !(GXAnnot l) !Bind   !(GType l)
+        = SSig   !a !Bind   !(GType a)
 
         -- | A function binding using pattern matching and guards.
-        | SLet   !(GXAnnot l) !(GXBindVarMT l) ![GParam l] ![GGuardedExp l]
+        | SLet   !a !(GXBindVarMT a) ![GParam a] ![GGuardedExp a]
 
 
 -- | Patterns.
-data GPat l
+data GPat a
         -- | The default pattern always succeeds.
         = PDefault
 
         -- | Give a name to the value matched by a pattern.
-        | PAt    !Bind !(GPat l)
+        | PAt    !Bind !(GPat a)
 
         -- | The variable pattern always succeeds and binds the value
         --   to the new variable.
         | PVar   !Bind
 
         -- | Match a data constructor and bind its arguments.
-        | PData  !(DaCon DaConBound (GType l)) ![GPat l]
+        | PData  !(DaCon DaConBound (GType a)) ![GPat a]
 
 
 -- | An expression with some guards.
-data GGuardedExp l
-        = GGuard !(GGuard l) !(GGuardedExp l)
-        | GExp   !(GExp   l)
+data GGuardedExp a
+        = GGuard !(GGuard a) !(GGuardedExp a)
+        | GExp   !(GExp   a)
 
 
 -- | Expression guards.
-data GGuard l
-        = GPat   !(GPat l) !(GExp l)
-        | GPred  !(GExp l)
+data GGuard a
+        = GPat   !(GPat a) !(GExp a)
+        | GPred  !(GExp a)
         | GDefault
 
 
 -- | Case alternative.
 --   If the pattern matches then bind the variables then enter
 --   the guarded expression.
-data GAltCase l
-        = AAltCase   !(GPat l) ![GGuardedExp l]
+data GAltCase a
+        = AAltCase   !(GPat a) ![GGuardedExp a]
 
 
 -- | Match alternative.
 --   This is like a case alternative except that the match expression
 --   does not give us a head pattern.
-data GAltMatch l
-        = AAltMatch  !(GGuardedExp l)
+data GAltMatch a
+        = AAltMatch  !(GGuardedExp a)
 
 
 -- | Type casts.
-data GCast l
+data GCast a
         -- | Weaken the effect of an expression.
         --   The given effect is added to the effect
         --   of the body.
-        = CastWeakenEffect  !(GType l)
+        = CastWeakenEffect  !(GType a)
 
         -- | Box a computation,
         --   capturing its effects in the S computation type.
@@ -289,51 +298,50 @@ data GCast l
 
 
 -- | Witnesses.
-data GWitness l
+data GWitness a
         -- | Witness annotation
-        = WAnnot !(GXAnnot l)  !(GWitness l)
+        = WAnnot !a !(GWitness a)
 
         -- | Witness variable.
         | WVar   !Bound
 
         -- | Witness constructor.
-        | WCon   !(GWiCon l)
+        | WCon   !(GWiCon a)
 
         -- | Witness application.
-        | WApp   !(GWitness l) !(GWitness l)
+        | WApp   !(GWitness a) !(GWitness a)
 
         -- | Type can appear as an argument of a witness application.
-        | WType  !(GType l)
+        | WType  !(GType a)
 
 
 -- | Witness constructors.
-data GWiCon l
+data GWiCon a
         -- | Witness constructors defined in the environment.
         --   In the interpreter we use this to hold runtime capabilities.
         --   The attached type must be closed.
-        = WiConBound   !Bound !(GType l)
+        = WiConBound   !Bound !(GType a)
+
+
+-- Patterns ---------------------------------------------------------------------------------------
+pattern PTrue  = PData (DaConPrim (DaConBoundLit (PrimLitBool True))  TBool) []
+pattern PFalse = PData (DaConPrim (DaConBoundLit (PrimLitBool False)) TBool) []
 
 
 -------------------------------------------------------------------------------
-type ShowLanguage l
-        = ( Show l
-          , ShowGType l
-          , Show (GXAnnot    l)
-          , Show (GXFrag l))
-
-deriving instance ShowLanguage l => Show (GExp         l)
-deriving instance ShowLanguage l => Show (GLets        l)
-deriving instance ShowLanguage l => Show (GCaps        l)
-deriving instance ShowLanguage l => Show (GClause      l)
-deriving instance ShowLanguage l => Show (GParam       l)
-deriving instance ShowLanguage l => Show (GArg         l)
-deriving instance ShowLanguage l => Show (GAltCase     l)
-deriving instance ShowLanguage l => Show (GAltMatch    l)
-deriving instance ShowLanguage l => Show (GGuardedExp  l)
-deriving instance ShowLanguage l => Show (GGuard       l)
-deriving instance ShowLanguage l => Show (GPat         l)
-deriving instance ShowLanguage l => Show (GCast        l)
-deriving instance ShowLanguage l => Show (GWitness     l)
-deriving instance ShowLanguage l => Show (GWiCon       l)
-deriving instance ShowLanguage l => Show (GXBindVarMT  l)
+deriving instance Show a => Show (GExp         a)
+deriving instance Show a => Show (GLets        a)
+deriving instance Show a => Show (GCaps        a)
+deriving instance Show a => Show (GClause      a)
+deriving instance Show a => Show (GParam       a)
+deriving instance Show a => Show (GArg         a)
+deriving instance Show a => Show (GAltCase     a)
+deriving instance Show a => Show (GAltMatch    a)
+deriving instance Show a => Show (GGuardedExp  a)
+deriving instance Show a => Show (GGuard       a)
+deriving instance Show a => Show (GPat         a)
+deriving instance Show a => Show (GCast        a)
+deriving instance Show a => Show (GWitness     a)
+deriving instance Show a => Show (GWiCon       a)
+deriving instance Show a => Show (GXBindVarMT  a)
 

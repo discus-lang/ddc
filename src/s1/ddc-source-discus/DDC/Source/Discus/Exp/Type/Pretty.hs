@@ -1,19 +1,12 @@
-{-# LANGUAGE TypeFamilies, UndecidableInstances #-}
 
 module DDC.Source.Discus.Exp.Type.Pretty
-        ( PrettyConfig
-        , pprRawT
+        ( pprRawT
         , pprRawPrecT
         , pprRawC)
 where
 import DDC.Source.Discus.Exp.Type.Base
 import DDC.Data.Pretty
 import qualified Data.Text              as Text
-
-
--- | Synonym for pretty constraints on the configurable types.
-type PrettyConfig l
-      = ( Pretty (GTAnnot   l))
 
 
 instance Pretty TyConBind where
@@ -60,15 +53,13 @@ instance Pretty TyConDiscus where
         TyConDiscusU         -> text "U#"
 
 
-
-
 -- | Pretty print a type using the generic, raw syntax.
-pprRawT     :: PrettyConfig l => GType l -> Doc
+pprRawT     :: Pretty a => GType a -> Doc
 pprRawT tt = pprRawPrecT 0 tt
 
 
 -- | Like `pprRawT`, but take the initial precedence.
-pprRawPrecT :: PrettyConfig l => Int -> GType l -> Doc
+pprRawPrecT :: Pretty a => Int -> GType a -> Doc
 pprRawPrecT d tt
  = case tt of
         TAnnot a t
@@ -88,7 +79,7 @@ pprRawPrecT d tt
 
 
 -- | Pretty print a type constructor using the generic, raw syntax.
-pprRawC :: PrettyConfig l => GTyCon l -> Doc
+pprRawC :: Pretty a => GTyCon a -> Doc
 pprRawC cc
   = case cc of
         TyConFunExplicit -> text "->"

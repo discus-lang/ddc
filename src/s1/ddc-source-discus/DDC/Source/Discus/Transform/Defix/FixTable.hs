@@ -1,4 +1,4 @@
-{-# LANGUAGE TypeFamilies #-}
+
 -- | Defines the table that tracks what precedence and associativity
 --   infix operators have. The config for common operators is currently
 --   hard-coded, rather than being configurable in the source language.
@@ -19,12 +19,12 @@ import qualified Data.Text              as Text
 
 
 -- | Table of infix operator definitions.
-data FixTable l
-        = FixTable [FixDef l]
+data FixTable a
+        = FixTable [FixDef a]
 
 
 -- | Infix operator definition.
-data FixDef l
+data FixDef a
         -- A prefix operator
         = FixDefPrefix
         { -- String of the operator
@@ -32,7 +32,7 @@ data FixDef l
 
           -- Expression to rewrite the operator to,
           -- given the annotation of the original symbol.
-        , fixDefExp     :: GXAnnot l -> GExp l }
+        , fixDefExp     :: a -> GExp a }
 
         -- An infix operator.
         | FixDefInfix
@@ -41,7 +41,7 @@ data FixDef l
 
           -- Expression to rewrite the operator to,
           -- given the annotation of the original symbol.
-        , fixDefExp     :: GXAnnot l -> GExp l
+        , fixDefExp     :: a -> GExp a
 
           -- Associativity of infix operator.
         , fixDefAssoc   :: InfixAssoc
@@ -89,10 +89,10 @@ lookupDefPrefixOfSymbol (FixTable defs) str
 
 -- | Get the precedence of an infix symbol, else Error.
 getInfixDefOfSymbol
-        :: GXAnnot l
-        -> FixTable l
+        :: a
+        -> FixTable a
         -> String
-        -> Either (Error l) (FixDef l)
+        -> Either (Error a) (FixDef a)
 
 getInfixDefOfSymbol a table str
  = case lookupDefInfixOfSymbol table str of

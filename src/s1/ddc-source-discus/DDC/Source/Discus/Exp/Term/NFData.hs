@@ -1,23 +1,16 @@
 {-# OPTIONS_HADDOCK hide #-}
-{-# LANGUAGE UndecidableInstances #-}
+
 module DDC.Source.Discus.Exp.Term.NFData where
 import DDC.Source.Discus.Exp.Term.Base
-import qualified DDC.Source.Discus.Exp.Type.NFData    as T
+import DDC.Source.Discus.Exp.Type.NFData  ()
 import Control.DeepSeq
 
 ---------------------------------------------------------------------------------------------------
-type NFDataLanguage l
-        = ( NFData l
-          , T.NFDataLanguage l
-          , NFData (GXAnnot   l)
-          , NFData (GXFrag    l))
-
-instance NFDataLanguage l => NFData (GExp l) where
+instance NFData l => NFData (GExp l) where
  rnf xx
   = case xx of
         XAnnot    a x           -> rnf a `seq` rnf x
         XPrim     _             -> ()
-        XFrag     p             -> rnf p
         XVar      _             -> ()
         XCon      _             -> ()
         XAbs      p x           -> rnf p   `seq` rnf x
@@ -34,19 +27,19 @@ instance NFDataLanguage l => NFData (GExp l) where
         XLamCase  a as          -> rnf a   `seq` rnf as
 
 
-instance NFDataLanguage l => NFData (GXBindVarMT l) where
+instance NFData l => NFData (GXBindVarMT l) where
  rnf (XBindVarMT _ mt)
   = rnf mt
 
 
-instance NFDataLanguage l => NFData (GClause l) where
+instance NFData l => NFData (GClause l) where
  rnf cc
   = case cc of
         SSig a _ t              -> rnf a `seq` rnf t
         SLet a _ ps gxs         -> rnf a `seq` rnf ps `seq` rnf gxs
 
 
-instance NFDataLanguage l => NFData (GParam l) where
+instance NFData l => NFData (GParam l) where
  rnf pp
   = case pp of
         MType     _ mt          -> rnf mt
@@ -54,7 +47,7 @@ instance NFDataLanguage l => NFData (GParam l) where
         MImplicit p mt          -> rnf p `seq` rnf mt
 
 
-instance NFDataLanguage l => NFData (GArg l) where
+instance NFData l => NFData (GArg l) where
  rnf aa
   = case aa of
         RType t                 -> rnf t
@@ -63,7 +56,7 @@ instance NFDataLanguage l => NFData (GArg l) where
         RWitness  w             -> rnf w
 
 
-instance NFDataLanguage l => NFData (GLets l) where
+instance NFData l => NFData (GLets l) where
  rnf lts
   = case lts of
         LLet b x                -> rnf b `seq` rnf x
@@ -73,7 +66,7 @@ instance NFDataLanguage l => NFData (GLets l) where
         LGroup _bRec cs         -> rnf cs
 
 
-instance NFDataLanguage l => NFData (GCaps l) where
+instance NFData l => NFData (GCaps l) where
  rnf caps
   = case caps of
         CapsList _              -> ()
@@ -81,19 +74,19 @@ instance NFDataLanguage l => NFData (GCaps l) where
         CapsConstant            -> ()
 
 
-instance NFDataLanguage l => NFData (GAltCase l) where
+instance NFData l => NFData (GAltCase l) where
  rnf aa
   = case aa of
         AAltCase w gxs          -> rnf w `seq` rnf gxs
 
 
-instance NFDataLanguage l => NFData (GAltMatch l) where
+instance NFData l => NFData (GAltMatch l) where
  rnf aa
   = case aa of
         AAltMatch gs            -> rnf gs
 
 
-instance NFDataLanguage l => NFData (GPat l) where
+instance NFData l => NFData (GPat l) where
  rnf pp
   = case pp of
         PDefault                -> ()
@@ -102,14 +95,14 @@ instance NFDataLanguage l => NFData (GPat l) where
         PData _ bs              -> rnf bs
 
 
-instance NFDataLanguage l => NFData (GGuardedExp l) where
+instance NFData l => NFData (GGuardedExp l) where
  rnf gx
   = case gx of
         GGuard g gx'            -> rnf g `seq` rnf gx'
         GExp x                  -> rnf x
 
 
-instance NFDataLanguage l => NFData (GGuard l) where
+instance NFData l => NFData (GGuard l) where
  rnf gg
   = case gg of
         GPred x                 -> rnf x
@@ -117,7 +110,7 @@ instance NFDataLanguage l => NFData (GGuard l) where
         GDefault                -> ()
 
 
-instance NFDataLanguage l => NFData (GCast l) where
+instance NFData l => NFData (GCast l) where
  rnf cc
   = case cc of
         CastWeakenEffect e      -> rnf e
@@ -125,7 +118,7 @@ instance NFDataLanguage l => NFData (GCast l) where
         CastRun                 -> ()
 
 
-instance NFDataLanguage l => NFData (GWitness l) where
+instance NFData l => NFData (GWitness l) where
  rnf ww
   = case ww of
         WAnnot a w              -> rnf a `seq` rnf w
@@ -135,8 +128,36 @@ instance NFDataLanguage l => NFData (GWitness l) where
         WType  t                -> rnf t
 
 
-instance NFDataLanguage l => NFData (GWiCon l) where
+instance NFData l => NFData (GWiCon l) where
  rnf wc
   = case wc of
         WiConBound _ t          -> rnf t
+
+
+instance NFData PrimLit where
+ rnf lit
+  = case lit of
+        PrimLitBool     b       -> rnf b
+        PrimLitNat      n       -> rnf n
+        PrimLitInt      i       -> rnf i
+        PrimLitSize     s       -> rnf s
+        PrimLitWord     i bits  -> rnf i `seq` rnf bits
+        PrimLitFloat    d bits  -> rnf d `seq` rnf bits
+        PrimLitChar     c       -> rnf c
+        PrimLitTextLit  bs      -> rnf bs
+
+
+instance NFData PrimVal where
+ rnf val
+  = case val of
+        PrimValError    p       -> rnf p
+        PrimValLit      lit     -> rnf lit
+        PrimValArith    p       -> rnf p
+        PrimValCast     p       -> rnf p
+        PrimValVector   p       -> rnf p
+        PrimValFun      p       -> rnf p
+        PrimValElaborate        -> ()
+        PrimValProject _        -> ()
+        PrimValShuffle          -> ()
+        PrimValCombine          -> ()
 

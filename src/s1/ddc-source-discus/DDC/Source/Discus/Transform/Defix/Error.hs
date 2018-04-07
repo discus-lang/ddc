@@ -1,4 +1,4 @@
-{-# LANGUAGE TypeFamilies, UndecidableInstances #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 -- | Things that can go wrong when resolving infix expressions.
 module DDC.Source.Discus.Transform.Defix.Error
@@ -9,34 +9,34 @@ import DDC.Source.Discus.Pretty
 
 
 -- | Things that can go wrong when defixing code.
-data Error l
+data Error a
         -- | Infix operator symbol has no infix definition.
         = ErrorNoInfixDef
-        { errorAnnot            :: GXAnnot l
+        { errorAnnot            :: a
         , errorSymbol           :: String }
 
         -- | Two non-associative operators with the same precedence.
         | ErrorDefixNonAssoc
         { errorOp1              :: String
-        , errorAnnot1           :: GXAnnot l
+        , errorAnnot1           :: a
         , errorOp2              :: String
-        , errorAnnot2           :: GXAnnot l }
+        , errorAnnot2           :: a }
 
         -- | Two operators of different associativies with same precedence.
         | ErrorDefixMixedAssoc
-        { errorAnnot            :: GXAnnot l
+        { errorAnnot            :: a
         , errorOps              :: [String] }
 
         -- | Infix expression is malformed.
         --   Eg "+ 3" or "2 + + 2"
         | ErrorMalformed
-        { errorAnnot            :: GXAnnot l
-        , errorExp              :: GExp l }
+        { errorAnnot            :: a
+        , errorExp              :: GExp a }
 
-deriving instance ShowLanguage l => Show (Error l)
+deriving instance Show a => Show (Error a)
 
 
-instance PrettyLanguage l => Pretty (Error l) where
+instance PrettyLanguage a => Pretty (Error a) where
  ppr err
   = case err of
         ErrorNoInfixDef{}

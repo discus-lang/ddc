@@ -1,4 +1,3 @@
-{-# LANGUAGE UndecidableInstances #-}
 
 -- | Definition of Source Discus modules.
 module DDC.Source.Discus.Module
@@ -67,10 +66,10 @@ data Module l
         , moduleTops            :: [Top l] }
 
 
-deriving instance ShowLanguage l => Show (Module l)
+deriving instance Show a => Show (Module a)
 
 
-instance NFDataLanguage l => NFData (Module l) where
+instance NFData a => NFData (Module a) where
  rnf !mm
         =     rnf (moduleName           mm)
         `seq` rnf (moduleExportTypes    mm)
@@ -89,27 +88,27 @@ isMainModule mm
 
 
 -- Top Level Thing --------------------------------------------------------------------------------
-data Top l
+data Top a
         -- | Some top-level, possibly recursive clauses.
         = TopClause
-        { topAnnot      :: GXAnnot l
-        , topClause     :: GClause l }
+        { topAnnot      :: a
+        , topClause     :: GClause a }
 
         -- | Data type definition.
         | TopData
-        { topAnnot      :: GXAnnot l
-        , topDataDef    :: DataDef l }
+        { topAnnot      :: a
+        , topDataDef    :: DataDef a }
 
         -- | Type binding.
         | TopType
-        { topAnnot      :: GXAnnot l
+        { topAnnot      :: a
         , topTypeBind   :: TyConBind
-        , topTypeExp    :: GType l }
+        , topTypeExp    :: GType a }
 
 
-deriving instance ShowLanguage l => Show (Top l)
+deriving instance Show a => Show (Top a)
 
-instance NFDataLanguage l => NFData (Top l) where
+instance NFData a => NFData (Top a) where
  rnf !top
   = case top of
         TopClause a c   -> rnf a `seq` rnf c

@@ -1,5 +1,5 @@
-{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE OverloadedStrings #-}
+
 -- | Source Discus conversion to Disciple Core Discus language.
 module DDC.Source.Discus.Convert
         ( ConvertM
@@ -40,8 +40,8 @@ runConvertM cc = cc
 -- | Convert a Source Discus module to Core Discus.
 coreOfSourceModule
         :: SP
-        -> S.Module S.Source
-        -> Either (ErrorConvert S.Source) (C.Module SP C.Name)
+        -> S.Module SP
+        -> Either (ErrorConvert SP) (C.Module SP C.Name)
 
 coreOfSourceModule a mm
         = runConvertM
@@ -59,8 +59,8 @@ coreOfSourceModule a mm
 --
 coreOfSourceModuleM
         :: SP
-        -> S.Module S.Source
-        -> ConvertM S.Source (C.Module SP C.Name)
+        -> S.Module SP
+        -> ConvertM SP (C.Module SP C.Name)
 
 coreOfSourceModuleM a mm
  = do
@@ -140,8 +140,8 @@ coreOfSourceModuleM a mm
 -- Tops -------------------------------------------------------------------------------------------
 -- | Extract the top-level bindings from some source definitions.
 letsOfTops
-        :: [S.Top S.Source]     -- ^ Top-level clauses to convert.
-        -> ConvertM S.Source (C.Lets SP C.Name)
+        :: [S.Top SP]   -- ^ Top-level clauses to convert.
+        -> ConvertM SP (C.Lets SP C.Name)
 
 letsOfTops tops
  = do
@@ -222,7 +222,7 @@ toCoreImportValue src
 
 
 -- DataDef ----------------------------------------------------------------------------------------
-toCoreDataDef :: S.DataDef S.Source -> ConvertM a (C.Name, C.DataDef C.Name)
+toCoreDataDef :: S.DataDef SP -> ConvertM a (C.Name, C.DataDef C.Name)
 toCoreDataDef def
  = do
         defParams       <- sequence $ fmap toCoreTBK $ S.dataDefParams def
@@ -244,9 +244,9 @@ toCoreDataDef def
 
 -- DataCtor ---------------------------------------------------------------------------------------
 toCoreDataCtor
-        :: S.DataDef  S.Source
+        :: S.DataDef  SP
         -> Integer
-        -> S.DataCtor S.Source
+        -> S.DataCtor SP
         -> ConvertM a (C.DataCtor C.Name)
 
 toCoreDataCtor dataDef tag ctor
@@ -265,18 +265,28 @@ toCoreDataCtor dataDef tag ctor
 
 
 -- Exp --------------------------------------------------------------------------------------------
-toCoreX :: SP -> S.Exp -> ConvertM S.Source (C.Exp SP C.Name)
+toCoreX :: SP -> S.Exp -> ConvertM SP (C.Exp SP C.Name)
 toCoreX a xx
  = case xx of
         S.XAnnot a' x
          -> toCoreX a' x
 
-        S.XPrim p
-         ->     return  $ C.XPrim a p
+        S.XPrim S.PrimValElaborate
+         -> return $ C.XPrim a C.PElaborate
 
-        S.XFrag p
-         -> do  let p'  =  toCorePrimVal p
-                return  $ C.XVar a (C.UPrim p')
+        S.XPrim (S.PrimValProject n)
+         -> return $ C.XPrim a (C.PProject n)
+
+        S.XPrim S.PrimValShuffle
+         -> return $ C.XPrim a C.PShuffle
+
+        S.XPrim S.PrimValCombine
+         -> return $ C.XPrim a C.PCombine
+
+        S.XPrim p
+         -> case toCorePrimVal p of
+                Just p' -> return $ C.XVar a (C.UPrim p')
+                _       -> error "ddc-source-discus: cannot convert prim"
 
         S.XVar u
          -> C.XVar      <$> pure a <*> toCoreU u
@@ -297,10 +307,10 @@ toCoreX a xx
         -- We don't want to wrap the source file path passed to the default# prim
         -- in a Text constructor, so detect this case separately.
         S.XApp  _ _
-         |  Just ( p@(S.PrimValError S.OpErrorDefault)
+         |  Just ( S.XPrim p@(S.PrimValError S.OpErrorDefault)
                  , [S.RTerm (S.XCon dc1), S.RTerm (S.XCon dc2)])
-                 <- S.takeXFragApps xx
-         -> do  xPrim'  <- toCoreX  a (S.XFrag p)
+                 <- S.takeXApps xx
+         -> do  xPrim'  <- toCoreX  a (S.XPrim p)
                 dc1'    <- toCoreDC dc1
                 dc2'    <- toCoreDC dc2
                 return  $  C.xApps a xPrim'
@@ -330,7 +340,7 @@ toCoreX a xx
 
 
 -- Arg --------------------------------------------------------------------------------------------
-toCoreArg :: SP -> S.Arg  -> ConvertM S.Source (C.Arg  SP C.Name)
+toCoreArg :: SP -> S.Arg  -> ConvertM SP (C.Arg  SP C.Name)
 toCoreArg sp xx
  = case xx of
         S.RType t
@@ -345,11 +355,12 @@ toCoreArg sp xx
         S.RImplicit arg'
           -> C.RImplicit <$> toCoreArg sp arg'
 
+
 -- Lets -------------------------------------------------------------------------------------------
 toCoreLtsX
         :: SP
         -> S.Lets -> S.Exp
-        -> ConvertM S.Source (C.Exp SP C.Name)
+        -> ConvertM SP (C.Exp SP C.Name)
 toCoreLtsX a lts xBody
  = case lts of
         S.LLet b xBind
@@ -449,7 +460,7 @@ toCoreLtsX a lts xBody
 
 
 -- Cast -------------------------------------------------------------------------------------------
-toCoreC :: SP -> S.Cast -> ConvertM S.Source (C.Cast SP C.Name)
+toCoreC :: SP -> S.Cast -> ConvertM SP (C.Cast SP C.Name)
 toCoreC _a cc
  = case cc of
         S.CastWeakenEffect eff
@@ -463,7 +474,7 @@ toCoreC _a cc
 
 
 -- Alt --------------------------------------------------------------------------------------------
-toCoreA  :: SP -> S.AltCase -> ConvertM S.Source (C.Alt SP C.Name)
+toCoreA  :: SP -> S.AltCase -> ConvertM SP (C.Alt SP C.Name)
 toCoreA sp alt
  = case alt of
         S.AAltCase w [S.GExp x]

@@ -1,4 +1,5 @@
-{-# LANGUAGE TypeFamilies, OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings, ExplicitNamespaces #-}
+
 -- | A light simplification pass before conversion of desugared code to Core.
 module DDC.Source.Discus.Transform.Prep
         ( type S, evalState, newVar
@@ -48,7 +49,7 @@ progress
 --   We keep applying the prep transforms we have until they
 --   stop making progress.
 --
-desugarModule :: Module Source -> S (Module Source)
+desugarModule :: Module SourcePos -> S (Module SourcePos)
 desugarModule mm
  = do   (_, n, i) <- S.get
         S.put (False, n, i)
@@ -61,7 +62,7 @@ desugarModule mm
 
 
 -- | Prepare a source module for conversion to core.
-desugarModule1 :: Module Source -> S (Module Source)
+desugarModule1 :: Module SourcePos -> S (Module SourcePos)
 desugarModule1 mm
  = do   ts'     <- mapM desugarTop $ moduleTops mm
         return  $ mm { moduleTops = ts' }
@@ -69,7 +70,7 @@ desugarModule1 mm
 
 ---------------------------------------------------------------------------------------------------
 -- | Desugar a top-level definition.
-desugarTop :: Top Source -> S (Top Source)
+desugarTop :: Top SourcePos -> S (Top SourcePos)
 desugarTop tt
  = case tt of
         TopType{}       -> return tt
@@ -250,7 +251,6 @@ desugarX rns xx
         -- Boilerplate.
         XAnnot a x              -> XAnnot a    <$> desugarX rns x
         XPrim{}                 -> return xx
-        XFrag{}                 -> return xx
         XVar{}                  -> return xx
         XCon{}                  -> return xx
         XAbs  mb x              -> XAbs mb     <$> desugarX   rns x

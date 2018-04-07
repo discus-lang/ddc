@@ -1,4 +1,5 @@
-{-# LANGUAGE TypeFamilies, OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings #-}
+
 -- | Desugar match expressions to case expressions.
 --
 --   In a match expression if matching fails in one block of guards then
@@ -14,7 +15,6 @@ module DDC.Source.Discus.Transform.Matches
         , desugarModule)
 where
 import DDC.Source.Discus.Module
-import DDC.Source.Discus.Prim
 import DDC.Source.Discus.Exp
 import Data.Monoid
 import Data.Text                        (Text)
@@ -25,7 +25,7 @@ import qualified Data.Text              as Text
 
 -------------------------------------------------------------------------------
 -- | Desugar match expressions to case expressions in a module.
-desugarModule :: Module Source -> S (Module Source)
+desugarModule :: Module SourcePos -> S (Module SourcePos)
 desugarModule mm
  = do   ts'     <- desugarTops $ moduleTops mm
         return  $  mm { moduleTops = ts' }
@@ -33,7 +33,7 @@ desugarModule mm
 
 -------------------------------------------------------------------------------
 -- | Desugar top-level definitions.
-desugarTops :: [Top Source] -> S [Top Source]
+desugarTops :: [Top SourcePos] -> S [Top SourcePos]
 desugarTops ts
  = do   let tsType  = [t          | t@TopType{}     <- ts]
         let tsData  = [t          | t@TopData{}     <- ts]
@@ -177,7 +177,6 @@ desugarX sp xx
         -- Boilerplate.
         XAnnot sp' x -> XAnnot sp' <$> desugarX sp' x
         XPrim{}      -> pure xx
-        XFrag{}      -> pure xx
         XVar{}       -> pure xx
         XCon{}       -> pure xx
         XAbs  b x    -> XAbs b     <$> desugarX sp x

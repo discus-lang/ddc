@@ -1,4 +1,5 @@
-{-# LANGUAGE TypeFamilies, OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings, ExplicitNamespaces #-}
+
 module DDC.Source.Discus.Transform.Freshen.State
         ( type S
         , State (..),   stateZero

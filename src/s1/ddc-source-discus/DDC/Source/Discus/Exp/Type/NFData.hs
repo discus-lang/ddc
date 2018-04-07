@@ -1,13 +1,8 @@
-{-# LANGUAGE UndecidableInstances #-}
 
 module DDC.Source.Discus.Exp.Type.NFData where
 import DDC.Source.Discus.Exp.Type.Base
 import Control.DeepSeq
 
-
-type NFDataLanguage l
-        = ( NFData l
-          , NFData (GTAnnot l))
 
 instance NFData Bind where
  rnf !_ = ()
@@ -33,7 +28,7 @@ instance NFData TyConDiscus where
  rnf !_ = ()
 
 
-instance NFDataLanguage l => NFData (GType l) where
+instance NFData a => NFData (GType a) where
  rnf xx
   = case xx of
         TAnnot a t              -> rnf a  `seq` rnf t
@@ -43,7 +38,7 @@ instance NFDataLanguage l => NFData (GType l) where
         TApp   t1 t2            -> rnf t1 `seq` rnf t2
 
 
-instance NFDataLanguage l => NFData (GTyCon l) where
+instance NFData a => NFData (GTyCon a) where
  rnf xx
   = case xx of
         TyConUnit               -> ()

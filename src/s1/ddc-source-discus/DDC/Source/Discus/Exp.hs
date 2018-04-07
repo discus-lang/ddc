@@ -1,4 +1,3 @@
-{-# LANGUAGE TypeFamilies #-}
 
 -- | Definition of Source Discus Abstract Syntax,
 --   and utilities for working with it.
@@ -9,10 +8,12 @@ module DDC.Source.Discus.Exp
         , Bound         (..)
         , takeBoundOfBind
 
-          -------------------------------------------------
-          -- * Types
+          -----------------------------
+          -- ** Annotations
+        , SourcePos
 
           -----------------------------
+          -- * Types
           -- ** Syntax
           -- *** Expressions
         , Type,         GType  (..)
@@ -21,11 +22,6 @@ module DDC.Source.Discus.Exp
         , TyCon,        GTyCon (..)
         , TyConBind     (..)
         , TyConBound    (..)
-
-          -----------------------------
-          -- ** Type Generics
-        , Source        (..)
-        , GTAnnot
 
           -----------------------------
           -- ** Type Constructors
@@ -62,6 +58,9 @@ module DDC.Source.Discus.Exp
         , pattern TFloat
         , pattern TTextLit
 
+        , pattern TVector
+        , pattern TFunValue
+
           -----------------------------
           -- ** Predicates
         , isAtomT
@@ -97,9 +96,7 @@ module DDC.Source.Discus.Exp
           -------------------------------------------------
           -- * Terms
           -- ** Syntax
-        , Annot,        GXAnnot
         , BindVarMT,    GXBindVarMT (..)
-        , Frag,         GXFrag
 
           -- *** Expressions
         , Exp,          GExp        (..)
@@ -147,17 +144,17 @@ module DDC.Source.Discus.Exp
         , DaConBind     (..)
         , DaConBound    (..)
 
-          -- ** Primitives
-        , Prim          (..)
-
           -----------------------------
           -- ** Term Primitives
         , PrimVal       (..)
         , PrimArith     (..)
+        , PrimCast      (..)
+        , PrimLit       (..)
         , OpVector      (..)
         , OpFun         (..)
         , OpError       (..)
-        , PrimLit       (..)
+        , Literal       (..)
+        , Text
 
           -----------------------------
           -- ** Pattern Synonyms
@@ -198,7 +195,6 @@ module DDC.Source.Discus.Exp
         , takeXAppsAsList
         , takeXAppsWithAnnots
         , takeXConApps
-        , takeXFragApps
 
           -- *** Clauses
         , bindOfClause
@@ -221,72 +217,53 @@ module DDC.Source.Discus.Exp
         , takeWAppsAsList
         , takePrimWiConApps
 
+          -- *** Primitives
+        , primLitOfLiteral
+        , makeXErrorDefault
+
         -------------------------------------------------
         -- * Data Declarations
         , DataDef       (..)
         , DataCtor      (..)
-        , typeOfDataCtor
-
-        -------------------------------------------------
-        -- * Dictionaries
-        , ShowLanguage
-        , NFDataLanguage)
+        , typeOfDataCtor)
 where
+
+import DDC.Source.Discus.Exp.Type.Compounds
+import DDC.Source.Discus.Exp.Type.NFData        ()
+import DDC.Source.Discus.Exp.Type.Pretty        ()
+import DDC.Source.Discus.Exp.Type.Base
 
 import DDC.Source.Discus.Exp.Term.Predicates
 import DDC.Source.Discus.Exp.Term.Compounds
-import DDC.Source.Discus.Exp.Term.NFData
+import DDC.Source.Discus.Exp.Term.NFData        ()
+import DDC.Source.Discus.Exp.Term.Pretty        ()
 import DDC.Source.Discus.Exp.Term.Base
 
-import DDC.Source.Discus.Exp.Type.Compounds
-
 import DDC.Source.Discus.Exp.DataDef
-
-import DDC.Source.Discus.Prim
 
 import DDC.Type.Exp.TyCon               as T
 
 import DDC.Data.SourcePos
-import DDC.Data.Pretty
-
-
--- Language -------------------------------------------------------------------
--- | Type index for Source Discus Language.
-data Source
-        = Source
-        deriving Show
-
-instance Pretty Source where
- ppr ss = text (show ss)
-
 
 
 -- Type AST -------------------------------------------------------------------
-type Type       = GType  Source
-type TyCon      = GTyCon Source
-
-type instance GTAnnot    Source = SourcePos
-
+type Type       = GType       SourcePos
+type TyCon      = GTyCon      SourcePos
 
 -- Term AST -------------------------------------------------------------------
-type Annot      = GXAnnot     Source
-type BindVarMT  = GXBindVarMT Source
-type Frag       = GXFrag      Source
-type Exp        = GExp        Source
-type Param      = GParam      Source
-type Arg        = GArg        Source
-type Lets       = GLets       Source
-type Caps       = GCaps       Source
-type Clause     = GClause     Source
-type Pat        = GPat        Source
-type Guard      = GGuard      Source
-type GuardedExp = GGuardedExp Source
-type AltCase    = GAltCase    Source
-type AltMatch   = GAltMatch   Source
-type Cast       = GCast       Source
-type Witness    = GWitness    Source
-type WiCon      = GWiCon      Source
-
-type instance GXAnnot    Source = SourcePos
-type instance GXFrag     Source = PrimVal
+type BindVarMT  = GXBindVarMT SourcePos
+type Exp        = GExp        SourcePos
+type Param      = GParam      SourcePos
+type Arg        = GArg        SourcePos
+type Lets       = GLets       SourcePos
+type Caps       = GCaps       SourcePos
+type Clause     = GClause     SourcePos
+type Pat        = GPat        SourcePos
+type Guard      = GGuard      SourcePos
+type GuardedExp = GGuardedExp SourcePos
+type AltCase    = GAltCase    SourcePos
+type AltMatch   = GAltMatch   SourcePos
+type Cast       = GCast       SourcePos
+type Witness    = GWitness    SourcePos
+type WiCon      = GWiCon      SourcePos
 

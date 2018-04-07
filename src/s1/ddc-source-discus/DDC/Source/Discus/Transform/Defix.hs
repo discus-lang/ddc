@@ -61,7 +61,6 @@ instance Defix GExp l where
     in case xx of
         XAnnot a x      -> liftM  (XAnnot a) (defix table x)
         XPrim{}         -> return xx
-        XFrag{}         -> return xx
         XVar{}          -> return xx
         XCon{}          -> return xx
         XAbs  b x       -> liftM  (XAbs  b) (down x)
@@ -160,7 +159,7 @@ instance Defix GGuard l where
 --   and produces (f a) + (g b) with three nodes in the XDefix list.
 --
 defixApps
-        :: GXAnnot  l
+        :: l
         -> FixTable l
         -> [GArg l]
         -> Either (Error l) [GArg l]
@@ -215,7 +214,7 @@ defixApps a table xx
 --   The input needs to have already been preprocessed by defixApps above.
 --
 defixExps
-        :: GXAnnot  l           -- ^ Annotation from original XDefix node.
+        :: l                    -- ^ Annotation from original XDefix node.
         -> FixTable l           -- ^ Table of infix defs.
         -> [GArg l]             -- ^ Body of the XDefix node.
         -> Either (Error l) (GExp l)
@@ -249,7 +248,7 @@ defixExps a table args
 
 -- | Try to defix a sequence of expressions and XInfixOp nodes.
 defixInfix
-        :: GXAnnot  l           -- ^ Annotation from original XDefix node.
+        :: l                    -- ^ Annotation from original XDefix node.
         -> FixTable l           -- ^ Table of infix defs.
         -> [GArg l]             -- ^ Body of the XDefix node.
         -> Either (Error l) (Maybe [GArg l])
@@ -306,7 +305,7 @@ defixInfix_ops sp table xs spOpStrs
 
 -- | Defix some left associative ops.
 defixInfixLeft
-        :: GXAnnot l -> FixTable l -> Int
+        :: l -> FixTable l -> Int
         -> [GArg l] -> Either (Error l) [GArg l]
 
 defixInfixLeft sp table precHigh
@@ -330,7 +329,7 @@ defixInfixLeft sp _ _ xs
 --   The input expression list is reversed, so we can eat the operators left
 --   to right. However, be careful to build the App node the right way around.
 defixInfixRight
-        :: GXAnnot l  -> FixTable l -> Int
+        :: l  -> FixTable l -> Int
         -> [GArg l] -> Either (Error l) [GArg l]
 
 defixInfixRight sp table precHigh
@@ -352,7 +351,7 @@ defixInfixRight sp _ _ xs
 
 -- | Defix non-associative ops.
 defixInfixNone
-        :: GXAnnot l -> FixTable l -> Int
+        :: l -> FixTable l -> Int
         -> [GArg l] -> Either (Error l) [GArg l]
 
 defixInfixNone sp table precHigh args

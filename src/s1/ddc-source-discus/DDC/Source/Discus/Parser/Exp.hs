@@ -1,4 +1,3 @@
-{-# LANGUAGE TypeFamilies #-}
 
 -- | Parser for Source Discus expressions.
 module DDC.Source.Discus.Parser.Exp
@@ -14,8 +13,7 @@ import DDC.Source.Discus.Parser.Type
 import DDC.Source.Discus.Parser.Witness
 import DDC.Source.Discus.Parser.Param
 import DDC.Source.Discus.Parser.Base
-import DDC.Source.Discus.Exp
-import DDC.Source.Discus.Prim            as S
+import DDC.Source.Discus.Exp            as S
 import DDC.Core.Codec.Text.Lexer.Tokens
 import Control.Monad.Except
 import qualified DDC.Control.Parser     as P
@@ -243,7 +241,7 @@ pExpAtomSP
 
         -- Fragment specific primitive names.
  , do   (nPrim, sp)     <- pPrimValSP
-        return  (sp, XFrag nPrim)
+        return  (sp, XPrim nPrim)
 
         -- Primitive names.
  , do   (u, sp)         <- pBoundNameSP
@@ -254,10 +252,10 @@ pExpAtomSP
                 n    <- fmap fst $ pVarNameSP
                 pSym SRoundKet
                 pSym SHash
-                return (sp, XPrim (PProject n))
+                return (sp, XPrim (PrimValProject n))
 
           | Text.pack "elaborate#" == tx
-          -> do return (sp, XPrim (PElaborate))
+          -> do return (sp, XPrim PrimValElaborate)
 
          _      -> return (sp, XVar u)
 
@@ -266,13 +264,16 @@ pExpAtomSP
 
         -- Detect names of primitives in the ambient calculus.
         if      u == (UName $ Text.pack "elaborate#")
-                then return (sp, XPrim PElaborate)
+                then return (sp, XPrim PrimValElaborate)
+
         else if u == (UName $ Text.pack "project#")
-                then return (sp, XPrim (PProject (Text.pack "field")))
+                then return (sp, XPrim (PrimValProject (Text.pack "field")))
+
         else if u == (UName $ Text.pack "shuffle#")
-                then return (sp, XPrim PShuffle)
+                then return (sp, XPrim PrimValShuffle)
+
         else if u == (UName $ Text.pack "combine#")
-                then return (sp, XPrim PCombine)
+                then return (sp, XPrim PrimValCombine)
 
         else return (sp, XVar u)
 

@@ -4,27 +4,28 @@
 
 # -- Language features --------------------------------------------------------
 GHC_LANGUAGE	:= \
-	-XBangPatterns \
-        -XPatternGuards \
-        -XParallelListComp \
-        -XKindSignatures \
-        -XScopedTypeVariables \
-        -XFlexibleInstances \
-	-XFlexibleContexts \
-	-XMultiParamTypeClasses \
-        -XFunctionalDependencies \
-	-XTypeSynonymInstances \
-	-XExistentialQuantification \
-	-XNoMonomorphismRestriction \
         -XRankNTypes \
-	-XStandaloneDeriving \
-        -XDeriveDataTypeable \
         -XViewPatterns \
-        -XTupleSections \
         -XInstanceSigs \
+	-XBangPatterns \
+        -XTupleSections \
+        -XPatternGuards \
+        -XKindSignatures \
         -XPatternSynonyms \
         -XConstraintKinds \
-        -XDuplicateRecordFields
+	-XFlexibleContexts \
+        -XParallelListComp \
+        -XFlexibleInstances \
+	-XStandaloneDeriving \
+        -XExplicitNamespaces \
+        -XDeriveDataTypeable \
+        -XScopedTypeVariables \
+	-XTypeSynonymInstances \
+	-XMultiParamTypeClasses \
+        -XDuplicateRecordFields \
+        -XFunctionalDependencies \
+	-XExistentialQuantification \
+	-XNoMonomorphismRestriction
 
 
 # -- Warnings -----------------------------------------------------------------

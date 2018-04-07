@@ -24,7 +24,7 @@ import DDC.Core.Codec.Text.Parser
 
 -- Module -----------------------------------------------------------------------------------------
 -- | Parse a source tetra module.
-pModule :: Parser (Module Source)
+pModule :: Parser (Module SourcePos)
 pModule
  = do
         _sp      <- pTokSP (KKeyword EModule)
@@ -207,7 +207,7 @@ pImportValue src
 
 
 -- Top Level --------------------------------------------------------------------------------------
-pTop    :: Parser (Top Source)
+pTop    :: Parser (Top SourcePos)
 pTop
  = P.choice
  [ do   -- A top-level, possibly recursive binding.
@@ -223,7 +223,7 @@ pTop
 
 
 -- Type -------------------------------------------------------------------------------------------
-pDeclType :: Parser (Top Source)
+pDeclType :: Parser (Top SourcePos)
 pDeclType
  = do   sp      <- pKey EType
         bType   <- pTyConBindName
@@ -248,7 +248,7 @@ pTypeParam
 
 -- Data -------------------------------------------------------------------------------------------
 -- | Parse a data type declaration.
-pDeclData :: Parser (Top Source)
+pDeclData :: Parser (Top SourcePos)
 pDeclData
  = do   sp      <- pTokSP (KKeyword EData)
         b       <- pTyConBindName
@@ -267,7 +267,7 @@ pDeclData
          ]
 
 -- | Parse a data constructor declaration.
-pDeclDataCtor :: Parser (DataCtor Source)
+pDeclDataCtor :: Parser (DataCtor SourcePos)
 pDeclDataCtor
  = do   n       <- pDaConBindName
         pTokSP (KOp ":")

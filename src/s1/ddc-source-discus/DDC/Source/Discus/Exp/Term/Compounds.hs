@@ -1,5 +1,4 @@
 {-# OPTIONS_HADDOCK hide #-}
-{-# LANGUAGE TypeFamilies #-}
 
 -- | Utilities for constructing and destructing Source Discus expressions.
 module DDC.Source.Discus.Exp.Term.Compounds
@@ -41,7 +40,6 @@ module DDC.Source.Discus.Exp.Term.Compounds
         , takeXAppsAsList
         , takeXAppsWithAnnots
         , takeXConApps
-        , takeXFragApps
 
           -- ** Arguments
         , takeRType
@@ -67,13 +65,18 @@ module DDC.Source.Discus.Exp.Term.Compounds
           -- * Witnesses
         , wApp
         , wApps
---        , takeXWitness
         , takeWAppsAsList
-        , takePrimWiConApps)
+        , takePrimWiConApps
+
+          -- * Primitives
+        , primLitOfLiteral
+        , makeXErrorDefault)
 where
 import DDC.Source.Discus.Exp.Term.Base
-import qualified DDC.Source.Discus.Exp.Type.Compounds as T
+import DDC.Source.Discus.Exp.Type.Base
+import DDC.Source.Discus.Exp.Type.Compounds     as T
 import Data.Maybe
+import Data.Text        (Text)
 
 import DDC.Core.Exp.Annot
         ( dcUnit
@@ -110,12 +113,11 @@ makeTBot k = TCon (TyConUnion k)
 -- Annotations ----------------------------------------------------------------
 -- | Take the outermost annotation from an expression,
 --   if there is one.
-takeAnnotOfExp :: GExp l -> Maybe (GXAnnot l)
+takeAnnotOfExp :: GExp a -> Maybe a
 takeAnnotOfExp xx
  = case xx of
         XAnnot a _          -> Just a
         XPrim{}             -> Nothing
-        XFrag{}             -> Nothing
         XVar{}              -> Nothing
         XCon{}              -> Nothing
         XAbs    _  x        -> takeAnnotOfExp x
@@ -136,7 +138,7 @@ firstJust = listToMaybe . catMaybes
 
 -- | Take the outermost annotation from an argument,
 --   if there is one.
-takeAnnotOfArg :: GArg l -> Maybe (GXAnnot l)
+takeAnnotOfArg :: GArg a -> Maybe a
 takeAnnotOfArg arg
  = case arg of
         RType _             -> Nothing
@@ -154,7 +156,7 @@ makeXApps t1 ts     = foldl XApp t1 ts
 -- | Build sequence of applications.
 --   Similar to `xApps` but also takes list of annotations for
 --   the `XApp` constructors.
-makeXAppsWithAnnots :: GExp l -> [(GArg l, Maybe (GXAnnot l))] -> GExp l
+makeXAppsWithAnnots :: GExp a -> [(GArg a, Maybe a)] -> GExp a
 makeXAppsWithAnnots f xas
  = case xas of
         []                  -> f
@@ -198,7 +200,7 @@ takeXAppsAsList xx
 
 -- | Destruct sequence of applications.
 --   Similar to `takeXAppsAsList` but also keeps annotations for later.
-takeXAppsWithAnnots :: GExp l -> (GExp l, [(GArg l, Maybe (GXAnnot l))])
+takeXAppsWithAnnots :: GExp a -> (GExp a, [(GArg a, Maybe a)])
 takeXAppsWithAnnots xx
  = case xx of
         XAnnot a (XApp f arg)
@@ -211,16 +213,6 @@ takeXAppsWithAnnots xx
 
         _ -> (xx, [])
 
-
--- | Flatten an application of a primop into the variable
---   and its arguments.
---
---   Returns `Nothing` if the expression isn't a primop application.
-takeXFragApps :: GExp l -> Maybe (GXFrag l, [GArg l])
-takeXFragApps xx
- = case takeXAppsAsList xx of
-        (XFrag p, args) -> Just (p, args)
-        _               -> Nothing
 
 -- | Flatten an application of a data constructor into the constructor
 --   and its arguments.
@@ -278,4 +270,31 @@ bindOfClause cc
 -- Casts ----------------------------------------------------------------------
 pattern XBox x = XCast CastBox x
 pattern XRun x = XCast CastRun x
+
+
+-- Primitive ------------------------------------------------------------------
+-- | Convert a literal to a Discus name.
+primLitOfLiteral :: Literal -> Maybe PrimLit
+primLitOfLiteral lit
+ = case lit of
+        LNat    n               -> Just $ PrimLitNat     n
+        LInt    i               -> Just $ PrimLitInt     i
+        LSize   s               -> Just $ PrimLitSize    s
+        LWord   i b             -> Just $ PrimLitWord    i b
+
+        LFloat  f (Just 32)     -> Just $ PrimLitFloat   f 32
+        LFloat  f (Just 64)     -> Just $ PrimLitFloat   f 64
+        LFloat  f Nothing       -> Just $ PrimLitFloat   f 64
+
+        LChar   c               -> Just $ PrimLitChar    c
+        LString tx              -> Just $ PrimLitTextLit tx
+
+        _                       -> Nothing
+
+makeXErrorDefault :: Text -> Integer -> GExp l
+makeXErrorDefault name n
+ = makeXApps
+        (XPrim (PrimValError OpErrorDefault))
+        [ RTerm $ XCon (DaConPrim (DaConBoundLit (PrimLitTextLit name)) (TBot KData))
+        , RTerm $ XCon (DaConPrim (DaConBoundLit (PrimLitNat     n))    (TBot KData))]
 

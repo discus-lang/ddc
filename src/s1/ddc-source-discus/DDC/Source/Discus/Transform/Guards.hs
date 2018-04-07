@@ -1,4 +1,4 @@
-{-# LANGUAGE TypeFamilies, OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 -- | Desugar guards and nested patterns to match expressions.
 module DDC.Source.Discus.Transform.Guards
@@ -6,7 +6,6 @@ module DDC.Source.Discus.Transform.Guards
         , desugarModule)
 where
 import DDC.Source.Discus.Module
-import DDC.Source.Discus.Prim
 import DDC.Source.Discus.Exp
 import Data.Monoid
 import Data.Text                        (Text)
@@ -18,7 +17,7 @@ import qualified Data.Text              as Text
 
 -------------------------------------------------------------------------------
 -- | Desugar guards and nested patterns to match expressions.
-desugarModule :: Module Source -> S (Module Source)
+desugarModule :: Module SourcePos -> S (Module SourcePos)
 desugarModule mm
  = do   ts'     <- mapM desugarTop $ moduleTops mm
         return  $ mm { moduleTops = ts' }
@@ -26,7 +25,7 @@ desugarModule mm
 
 -------------------------------------------------------------------------------
 -- | Desugar a top-level thing.
-desugarTop    :: Top Source -> S (Top Source)
+desugarTop    :: Top SourcePos -> S (Top SourcePos)
 desugarTop tt
  = case tt of
         TopClause sp c  -> TopClause sp <$> desugarCl sp c
@@ -58,7 +57,6 @@ desugarX sp xx
         -- Boilerplate.
         XAnnot sp' x    -> XAnnot sp' <$> desugarX sp' x
         XPrim{}         -> pure xx
-        XFrag{}         -> pure xx
         XVar{}          -> pure xx
         XCon{}          -> pure xx
         XApp  x1 r2     -> XApp       <$> desugarX   sp x1  <*> desugarArg sp r2

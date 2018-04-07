@@ -1,4 +1,3 @@
-{-# LANGUAGE TypeFamilies, UndecidableInstances #-}
 
 -- | Source Discus data type definitions.
 module DDC.Source.Discus.Exp.DataDef
@@ -26,8 +25,7 @@ data DataDef l
           -- | Parameters and return type of each constructor.
         , dataDefCtors          :: [DataCtor l] }
 
-deriving instance (ShowLanguage l, Show (DataCtor l))
- => Show (DataDef l)
+deriving instance Show l => Show (DataDef l)
 
 instance NFData (DataDef n) where
  rnf !_ = ()
@@ -46,7 +44,7 @@ data DataCtor l
           -- | Result type of the constructor.
         , dataCtorResultType    :: !(GType l) }
 
-deriving instance (ShowLanguage l)
+deriving instance (Show l)
  => Show (DataCtor l)
 
 

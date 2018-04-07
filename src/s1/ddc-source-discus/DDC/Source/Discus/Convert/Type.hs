@@ -21,7 +21,7 @@ import DDC.Source.Discus.Convert.Base
 import DDC.Type.Universe                        (Universe (..), universeUp)
 
 import qualified DDC.Source.Discus.Exp          as S
-import qualified DDC.Source.Discus.Prim         as S
+import qualified DDC.Source.Discus.Env          as S
 
 import qualified DDC.Core.Discus.Compounds      as C
 import qualified DDC.Core.Discus.Prim           as C
@@ -168,7 +168,7 @@ toCoreXBVN bb
 
 
 -- | Convert a type binder and kind to core.
-toCoreTBK :: (S.Bind, S.GType S.Source)
+toCoreTBK :: (S.Bind, S.GType S.SourcePos)
           -> ConvertM a (C.Bind C.Name)
 toCoreTBK (bb, k)
  = case bb of
@@ -230,7 +230,8 @@ toCoreBT uu b mt
 
 
 -- | Convert a possibly annoted binding occurrence of a variable to core.
-toCoreBM :: Universe -> S.GXBindVarMT S.Source -> ConvertM a (C.Bind C.Name)
+toCoreBM :: Universe -> S.GXBindVarMT S.SourcePos
+         -> ConvertM a (C.Bind C.Name)
 toCoreBM uu bb
  = case bb of
         S.XBindVarMT S.BNone     (Just t)

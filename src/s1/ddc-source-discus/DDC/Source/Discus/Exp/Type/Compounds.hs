@@ -137,15 +137,15 @@ takeTFuns' tt
 
 -- Forall types ---------------------------------------------------------------
 -- | Construct a forall quantified type using an anonymous binder.
-makeTForall :: l -> GType l -> (GType l -> GType l) -> GType l
-makeTForall _l k makeBody
+makeTForall :: GType l -> (GType l -> GType l) -> GType l
+makeTForall k makeBody
         =  withBinding $ \b u
         -> TApp (TCon (TyConForall k)) (TAbs b k (makeBody (TVar u)))
 
 
 -- | Construct a forall quantified type using some anonymous binders.
-makeTForalls :: l -> [GType l] -> ([GType l] -> GType l) -> GType l
-makeTForalls _l ks makeBody
+makeTForalls :: [GType l] -> ([GType l] -> GType l) -> GType l
+makeTForalls ks makeBody
         = withBindings (length ks) $ \bs us
         -> foldr (\(k, b) t -> TApp (TCon (TyConForall k)) (TAbs b k t))
                         (makeBody $ reverse $ map TVar us)
@@ -258,3 +258,5 @@ splitTUnionsOfKind k t
 
         | otherwise
         = Just [t]
+
+

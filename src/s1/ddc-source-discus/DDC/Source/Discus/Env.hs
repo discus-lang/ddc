@@ -1,4 +1,4 @@
-{-# LANGUAGE TypeFamilies #-}
+
 -- | Source Discus primitive type and kind environments.
 module DDC.Source.Discus.Env
         ( Env           (..)
@@ -35,10 +35,11 @@ module DDC.Source.Discus.Env
 
           -- * Primitive Kinds and Types.
         , kindOfPrimType
+        , kindPrimTyCon
+        , kindPrimTyConDiscus
         , typeOfPrimVal
         , typeOfPrimLit)
 where
-import DDC.Source.Discus.Prim
 import DDC.Source.Discus.Exp
 import Data.Map                         (Map)
 import Data.Sequence                    (Seq)
@@ -289,6 +290,15 @@ daStackDepth env = Seq.length (envDaStack env)
 
 
 ---------------------------------------------------------------------------------------------------
+-- | Take the types of data constructors from a data type definition.
+envOfDataDef :: DataDef SourcePos -> Env
+envOfDataDef def
+        =  unions
+        $ [singletonDaCon (dataCtorName ctor) (typeOfDataCtor def ctor)
+                | ctor  <- dataDefCtors def]
+
+
+---------------------------------------------------------------------------------------------------
 -- | Take the kind of a primitive type.
 kindOfPrimType :: TyConPrim -> Maybe Type
 kindOfPrimType tt
@@ -301,16 +311,48 @@ kindOfPrimType tt
         TyConPrimDiscus tc      -> Just (kindPrimTyConDiscus tc)
 
 
+-- | Yield the kind of a type constructor.
+kindPrimTyCon :: PrimTyCon -> GType l
+kindPrimTyCon tc
+ = case tc of
+        PrimTyConVoid           -> KData
+        PrimTyConBool           -> KData
+        PrimTyConNat            -> KData
+        PrimTyConInt            -> KData
+        PrimTyConSize           -> KData
+        PrimTyConWord  _        -> KData
+        PrimTyConFloat _        -> KData
+        PrimTyConVec   _        -> KData   ~> KData
+        PrimTyConAddr           -> KData
+        PrimTyConPtr            -> KRegion ~> KData ~> KData
+        PrimTyConTextLit        -> KData
+        PrimTyConTag            -> KData
+
+
+-- | Take the kind of a baked-in data constructor.
+kindPrimTyConDiscus tc
+ = case tc of
+        TyConDiscusTuple n      -> foldr (~>) KData (replicate n KData)
+        TyConDiscusVector       -> KRegion ~> KData ~> KData
+        TyConDiscusF            -> KData   ~> KData
+        TyConDiscusU            -> KData   ~> KData
+
+
+---------------------------------------------------------------------------------------------------
 -- | Take the type of a primitive name.
-typeOfPrimVal :: PrimVal -> Type
+typeOfPrimVal :: PrimVal -> Maybe Type
 typeOfPrimVal dc
  = case dc of
-        PrimValLit      l       -> typeOfPrimLit l
-        PrimValArith    p       -> typePrimArith Source p
-        PrimValCast     p       -> typePrimCast  Source p
-        PrimValError    p       -> typeOpError   Source p
-        PrimValVector   p       -> typeOpVector  Source p
-        PrimValFun      p       -> typeOpFun     Source p
+        PrimValLit      l       -> Just $ typeOfPrimLit l
+        PrimValArith    p       -> Just $ typePrimArith p
+        PrimValCast     p       -> Just $ typePrimCast  p
+        PrimValError    p       -> Just $ typeOpError   p
+        PrimValVector   p       -> Just $ typeOpVector  p
+        PrimValFun      p       -> Just $ typeOpFun     p
+        PrimValElaborate        -> Nothing
+        PrimValProject{}        -> Nothing
+        PrimValShuffle          -> Nothing
+        PrimValCombine          -> Nothing
 
 
 -- | Take the type of a primitive literal.
@@ -327,11 +369,104 @@ typeOfPrimLit pl
         PrimLitTextLit  _       -> TTextLit
 
 
----------------------------------------------------------------------------------------------------
--- | Take the types of data constructors from a data type definition.
-envOfDataDef :: DataDef Source -> Env
-envOfDataDef def
-        =  unions
-        $ [singletonDaCon (dataCtorName ctor) (typeOfDataCtor def ctor)
-                | ctor  <- dataDefCtors def]
+-- | Take the type of a primitive function operator.
+typeOpFun :: OpFun -> Type
+typeOpFun op
+ = case op of
+        OpFunCurry n
+         -> makeTForalls (replicate (n + 1) KData) $ \ts
+         -> let Just tF         = makeTFuns' ts
+                Just result     = makeTFuns' (tF : ts)
+            in  result
+
+        OpFunApply n
+         -> makeTForalls (replicate (n + 1) KData) $ \ts
+         -> let Just tF         = makeTFuns' ts
+                Just result     = makeTFuns' (tF : ts)
+            in  result
+
+        OpFunReify
+         -> makeTForalls [KData, KData] $ \[tA, tB]
+         -> (tA ~> tB) ~> TFunValue (tA ~> tB)
+
+
+-- | Take the type of a primitive vector operator.
+typeOpVector :: OpVector -> Type
+typeOpVector op
+ = case op of
+        OpVectorAlloc
+         -> makeTForalls [KRegion, KData] $ \[tR, tA]
+         -> TSusp (TAlloc tR) (TVector tR tA)
+
+        OpVectorLength
+         -> makeTForalls [KRegion, KData] $ \[tR, tA]
+         -> TVector tR tA ~> TNat
+
+        OpVectorRead
+         -> makeTForalls [KRegion, KData] $ \[tR, tA]
+         -> TVector tR tA ~> TNat ~> TSusp (TRead tR) tA
+
+        OpVectorWrite
+         -> makeTForalls [KRegion, KData] $ \[tR, tA]
+         -> TVector tR tA ~> TNat ~> tA ~> TSusp (TWrite tR) TVoid
+
+
+-- | Take the type of a primitive error function.
+typeOpError :: OpError -> Type
+typeOpError err
+ = case err of
+        OpErrorDefault
+         -> makeTForall KData $ \t
+         -> TTextLit ~> TNat ~> t
+
+
+-- | Take the type of a primitive arithmetic operator.
+typePrimCast :: PrimCast -> GType l
+typePrimCast op
+ = case op of
+        PrimCastConvert
+         -> makeTForalls [KData, KData] $ \[t1, t2]
+         -> t1 ~> t2
+
+        PrimCastPromote
+         -> makeTForalls [KData, KData] $ \[t1, t2]
+         -> t1 ~> t2
+
+        PrimCastTruncate
+         -> makeTForalls [KData, KData] $  \[t1, t2]
+         -> t1 ~> t2
+
+
+-- | Take the type of a primitive arithmetic operator.
+typePrimArith :: PrimArith -> GType l
+typePrimArith op
+ = case op of
+        -- Numeric
+        PrimArithNeg  -> makeTForall KData $ \t -> t ~> t
+        PrimArithAdd  -> makeTForall KData $ \t -> t ~> t ~> t
+        PrimArithSub  -> makeTForall KData $ \t -> t ~> t ~> t
+        PrimArithMul  -> makeTForall KData $ \t -> t ~> t ~> t
+        PrimArithDiv  -> makeTForall KData $ \t -> t ~> t ~> t
+        PrimArithMod  -> makeTForall KData $ \t -> t ~> t ~> t
+        PrimArithRem  -> makeTForall KData $ \t -> t ~> t ~> t
+
+        -- Comparison
+        PrimArithEq   -> makeTForall KData $ \t -> t ~> t ~> TBool
+        PrimArithNeq  -> makeTForall KData $ \t -> t ~> t ~> TBool
+        PrimArithGt   -> makeTForall KData $ \t -> t ~> t ~> TBool
+        PrimArithLt   -> makeTForall KData $ \t -> t ~> t ~> TBool
+        PrimArithLe   -> makeTForall KData $ \t -> t ~> t ~> TBool
+        PrimArithGe   -> makeTForall KData $ \t -> t ~> t ~> TBool
+
+        -- Boolean
+        PrimArithAnd  -> TBool ~> TBool ~> TBool
+        PrimArithOr   -> TBool ~> TBool ~> TBool
+
+        -- Bitwise
+        PrimArithShl  -> makeTForall KData $ \t -> t ~> t ~> t
+        PrimArithShr  -> makeTForall KData $ \t -> t ~> t ~> t
+        PrimArithBAnd -> makeTForall KData $ \t -> t ~> t ~> t
+        PrimArithBOr  -> makeTForall KData $ \t -> t ~> t ~> t
+        PrimArithBXOr -> makeTForall KData $ \t -> t ~> t ~> t
+
 

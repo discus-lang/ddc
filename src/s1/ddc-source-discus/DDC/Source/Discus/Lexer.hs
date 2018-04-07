@@ -2,18 +2,37 @@
 -- | Lexer for Source Discus tokens.
 module DDC.Source.Discus.Lexer
         ( Name (..)
-        , lexModuleString)
+        , lexModuleString
+
+        , readName
+        , readPrimType
+        , readPrimLit
+        , readPrimVal
+        , readPrimTyConDiscus)
 where
-import DDC.Source.Discus.Prim
+import DDC.Source.Discus.Exp.Type.Prim
 import DDC.Source.Discus.Exp.Type.Pretty        ()
 import DDC.Source.Discus.Exp.Type.NFData        ()
+
+import DDC.Source.Discus.Exp.Term.Prim
+import DDC.Source.Discus.Exp.Term.Pretty        ()
+import DDC.Source.Discus.Exp.Term.NFData        ()
+
 import DDC.Core.Codec.Text.Lexer
 import DDC.Data.Pretty
 import Control.DeepSeq
 import Data.Char
 import Data.Text                (Text)
+import Data.List
 import qualified Data.Text      as Text
 
+import DDC.Core.Discus.Prim
+        ( readPrimTyCon
+        , readPrimCastFlag
+        , readPrimArithFlag
+        , readOpFun
+        , readOpErrorFlag
+        , readOpVectorFlag)
 
 ---------------------------------------------------------------------------------------------------
 -- | Union of all names that we detect during lexing.
@@ -52,8 +71,8 @@ instance NFData Name where
         NameVar s               -> rnf s
         NameCon s               -> rnf s
         NamePrimType p          -> rnf p
-        NamePrimValLit p        -> rnf p
-        NamePrimValOp  p        -> rnf p
+        NamePrimValLit _        -> ()
+        NamePrimValOp  _        -> ()
 
 
 -- | Read the name of a variable, constructor or literal.
@@ -81,6 +100,97 @@ readName str
 
         | otherwise
         = Nothing
+
+
+-- | Read the name of a primitive type.
+readPrimType :: String -> Maybe TyConPrim
+readPrimType str
+        | Just p <- readPrimTyConDiscus str
+        = Just $ TyConPrimDiscus p
+
+        | Just p <- readPrimTyCon str
+        = Just $ TyConPrimTyCon p
+
+        | otherwise
+        = Nothing
+
+
+-- | Read the name of a primitive literal.
+readPrimLit :: String -> Maybe PrimLit
+readPrimLit str
+        -- Literal Bools
+        | str == "True"        = Just $ PrimLitBool True
+        | str == "False"       = Just $ PrimLitBool False
+
+        -- Literal Nat
+        | Just val <- readLitNat str
+        = Just $ PrimLitNat  val
+
+        -- Literal Ints
+        | Just val <- readLitInt str
+        = Just $ PrimLitInt  val
+
+        -- Literal Sizes
+        | Just val <- readLitSize str
+        = Just $ PrimLitSize val
+
+        -- Literal Words
+        | Just (val, bits) <- readLitWordOfBits str
+        , elem bits [8, 16, 32, 64]
+        = Just $ PrimLitWord val bits
+
+        -- Literal Floats
+        | Just (val, mbits) <- readLitFloatOfBits str
+        = case mbits of
+                Just 32         -> Just $ PrimLitFloat val 32
+                Just 64         -> Just $ PrimLitFloat val 64
+                Nothing         -> Just $ PrimLitFloat val 64
+                _               -> Nothing
+
+        | otherwise
+        = Nothing
+
+
+-- | Read the name of a primtive value.
+readPrimVal :: String -> Maybe PrimVal
+readPrimVal str
+        | Just (p, False) <- readOpErrorFlag str
+        = Just $ PrimValError  p
+
+        | Just lit        <- readPrimLit str
+        = Just $ PrimValLit    lit
+
+        | Just (p, False) <- readPrimArithFlag str
+        = Just $ PrimValArith  p
+
+        | Just (p, False) <- readPrimCastFlag  str
+        = Just $ PrimValCast   p
+
+        | Just (p, False) <- readOpVectorFlag  str
+        = Just $ PrimValVector p
+
+        | Just p          <- readOpFun str
+        = Just $ PrimValFun    p
+
+        | otherwise
+        = Nothing
+
+
+-- | Read the name of a baked-in type constructor.
+readPrimTyConDiscus :: String -> Maybe TyConDiscus
+readPrimTyConDiscus str
+        | Just rest     <- stripPrefix "Tuple" str
+        , (ds, "")      <- span isDigit rest
+        , not $ null ds
+        , arity         <- read ds
+        = Just $ TyConDiscusTuple arity
+
+        | otherwise
+        = case str of
+                "Vector#"       -> Just TyConDiscusVector
+                "F#"            -> Just TyConDiscusF
+                "U#"            -> Just TyConDiscusU
+                _               -> Nothing
 
 
 ---------------------------------------------------------------------------------------------------

@@ -1,4 +1,3 @@
-{-# LANGUAGE TypeFamilies, UndecidableInstances #-}
 
 -- | Look at type signatures and add quantifiers to bind any free type
 --   variables.
@@ -28,7 +27,6 @@ where
 import DDC.Source.Discus.Collect.FreeVars
 import DDC.Source.Discus.Exp
 import DDC.Source.Discus.Module
-import DDC.Data.SourcePos
 import Data.Function
 import DDC.Source.Discus.Env             (Env)
 import Data.Maybe
@@ -38,7 +36,7 @@ import qualified Data.List              as List
 
 
 -- | Run the expander on the given module.
-expandModule :: SourcePos -> Module Source -> Module Source
+expandModule :: SourcePos -> Module SourcePos -> Module SourcePos
 expandModule sp mm
  = expand sp Env.empty mm
 
@@ -51,7 +49,7 @@ class Expand c where
 
 
 ---------------------------------------------------------------------------------------------------
-instance Expand (Module Source) where
+instance Expand (Module SourcePos) where
  expand = expandM
 
 expandM a env mm
@@ -86,7 +84,7 @@ expandM a env mm
 
 
 ---------------------------------------------------------------------------------------------------
-instance Expand (Top Source) where
+instance Expand (Top SourcePos) where
  expand = expandT
 
 expandT _a env top
@@ -114,7 +112,6 @@ downX a env xx
 
         -- Invoke the expander --------
         XPrim{}         -> xx
-        XFrag{}         -> xx
         XVar{}          -> xx
         XCon{}          -> xx
 

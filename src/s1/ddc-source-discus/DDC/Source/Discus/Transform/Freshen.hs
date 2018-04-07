@@ -1,4 +1,5 @@
-{-# LANGUAGE TypeFamilies, OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings, ExplicitNamespaces #-}
+
 -- | Freshen shadowed names in the source file,
 --   and rewrite anonymous binders to their named forms.
 module DDC.Source.Discus.Transform.Freshen
@@ -16,7 +17,7 @@ import qualified Data.List              as List
 
 -------------------------------------------------------------------------------
 -- | Freshen the given module.
-freshenModule :: Module Source -> S (Module Source)
+freshenModule :: Module SourcePos -> S (Module SourcePos)
 freshenModule mm
  = do   tops'   <- freshenTops $ moduleTops mm
         return  $  mm { moduleTops = tops' }
@@ -24,7 +25,7 @@ freshenModule mm
 
 -------------------------------------------------------------------------------
 -- | Freshen a top level thing.
-freshenTops :: [Top Source] -> S [Top Source]
+freshenTops :: [Top SourcePos] -> S [Top SourcePos]
 freshenTops tops
  = do
         let (topCls, topRest) = List.partition isTopClause tops
@@ -35,7 +36,7 @@ freshenTops tops
 
 
 -- | Check if this top level thing is a clause.
-isTopClause :: Top Source -> Bool
+isTopClause :: Top SourcePos -> Bool
 isTopClause tt
  = case tt of
         TopClause{}     -> True
@@ -175,7 +176,6 @@ freshenExp xx
  = case xx of
         XAnnot a x      -> XAnnot a <$> freshenExp x
         XPrim{}         -> return xx
-        XFrag{}         -> return xx
         XVar u          -> XVar     <$> boundUX u
         XCon{}          -> return xx
 

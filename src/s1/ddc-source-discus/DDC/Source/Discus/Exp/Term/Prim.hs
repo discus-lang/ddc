@@ -1,30 +1,14 @@
 
--- | Definition of names used in Source Discus language.
-module DDC.Source.Discus.Prim.Base
-        (
-          -- * Primitive Values
-          PrimVal       (..)
-
-          -- ** Primitive arithmetic operators.
-        , PrimArith     (..)
-
-          -- ** Primitive casting operators.
-        , PrimCast      (..)
-
-          -- ** Primitive vector operators.
+module DDC.Source.Discus.Exp.Term.Prim
+        ( OpFun         (..)
         , OpVector      (..)
-
-          -- ** Primitive function operators.
-        , OpFun         (..)
-
-          -- ** Primitive error handling.
         , OpError       (..)
-
-          -- ** Primitive literals.
         , PrimLit       (..)
-        , primLitOfLiteral)
+        , PrimVal       (..)
+        , PrimArith     (..)
+        , PrimCast      (..)
+        , Text)
 where
-import DDC.Core.Exp.Literal
 import DDC.Core.Discus
         ( OpFun         (..)
         , OpVector      (..)
@@ -32,10 +16,10 @@ import DDC.Core.Discus
         , PrimArith     (..)
         , PrimCast      (..))
 
-import Data.Text        (Text)
+import Data.Text      (Text)
 
 
----------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 -- | Primitive values.
 data PrimVal
         -- | Primitive literals.
@@ -55,10 +39,23 @@ data PrimVal
 
         -- | Primitive function operators.
         | PrimValFun            !OpFun
+
+        -- | Elaborate value.
+        | PrimValElaborate
+
+        -- | Record field projection.
+        | PrimValProject        !Text
+
+        -- | Record field shuffle.
+        | PrimValShuffle
+
+        -- | Record field combine.
+        | PrimValCombine
         deriving (Eq, Ord, Show)
 
 
----------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
+-- | Primitive literals.
 data PrimLit
         -- | A boolean literal.
         = PrimLitBool           !Bool
@@ -89,23 +86,3 @@ data PrimLit
         -- | Text literals (UTF-8 encoded)
         | PrimLitTextLit        !Text
         deriving (Eq, Ord, Show)
-
-
--- | Convert a literal to a Discus name.
-primLitOfLiteral :: Literal -> Maybe PrimLit
-primLitOfLiteral lit
- = case lit of
-        LNat    n               -> Just $ PrimLitNat     n
-        LInt    i               -> Just $ PrimLitInt     i
-        LSize   s               -> Just $ PrimLitSize    s
-        LWord   i b             -> Just $ PrimLitWord    i b
-
-        LFloat  f (Just 32)     -> Just $ PrimLitFloat   f 32
-        LFloat  f (Just 64)     -> Just $ PrimLitFloat   f 64
-        LFloat  f Nothing       -> Just $ PrimLitFloat   f 64
-
-        LChar   c               -> Just $ PrimLitChar    c
-        LString tx              -> Just $ PrimLitTextLit tx
-
-        _                       -> Nothing
-

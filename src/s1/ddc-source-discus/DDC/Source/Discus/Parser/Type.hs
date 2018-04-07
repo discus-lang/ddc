@@ -1,4 +1,4 @@
-{-# LANGUAGE TypeFamilies #-}
+
 module DDC.Source.Discus.Parser.Type
         ( pBind
         , pType
@@ -8,9 +8,9 @@ module DDC.Source.Discus.Parser.Type
         , pTyConSP
         , pTyConBound)
 where
-import DDC.Source.Discus.Parser.Base                            as S
-import DDC.Source.Discus.Exp                                    as S
-import qualified DDC.Source.Discus.Exp.Type.Prim.TyConDiscus    as S
+import DDC.Source.Discus.Parser.Base            as S
+import DDC.Source.Discus.Lexer                  as S
+import DDC.Source.Discus.Exp                    as S
 
 import DDC.Core.Codec.Text.Lexer.Tokens         as K
 import qualified DDC.Source.Discus.Lexer        as SL

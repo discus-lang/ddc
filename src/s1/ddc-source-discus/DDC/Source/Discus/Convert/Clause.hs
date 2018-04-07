@@ -34,8 +34,7 @@ makeBindingFromClause
         :: [(S.Bind, S.Type)]        -- ^ Type signatures in the same group.
         -> [ S.Bind ]                -- ^ Bound values defined in the same group.
         -> S.Clause                     -- ^ Clause to consider.
-        -> ConvertM S.Source
-                    (Maybe (S.BindVarMT, (SP, S.Exp)))
+        -> ConvertM SP (Maybe (S.BindVarMT, (SP, S.Exp)))
                                         -- ^ Let-bindings with attached signatures.
 makeBindingFromClause sigs vals cc
  = case cc of

@@ -1,11 +1,7 @@
-{-# LANGUAGE TypeFamilies, UndecidableInstances #-}
 
 -- Generic type expression representation.
 module DDC.Source.Discus.Exp.Type.Base
         ( module DDC.Source.Discus.Exp.Bind
-
-          -- * Type Families
-        , GTAnnot
 
           -- * Abstract Syntax
         , GType         (..)
@@ -47,11 +43,9 @@ module DDC.Source.Discus.Exp.Type.Base
         , pattern TTextLit
 
         , pattern TVector
-        , pattern TFunValue
-
-          -- * Classes
-        , ShowGType)
+        , pattern TFunValue)
 where
+import DDC.Source.Discus.Exp.Type.Prim
 import DDC.Source.Discus.Exp.Bind
 import DDC.Type.Exp.TyCon
 
@@ -59,34 +53,27 @@ import DDC.Core.Discus  (PrimTyCon     (..))
 
 
 ---------------------------------------------------------------------------------------------------
--- Type functions associated with the language AST.
-
--- | Yield the type of annotations.
-type family GTAnnot    l
-
-
----------------------------------------------------------------------------------------------------
 -- | Generic type expression representation.
-data GType l
+data GType a
         -- | An annotated type.
-        = TAnnot     !(GTAnnot l) (GType l)
+        = TAnnot     !a (GType a)
 
         -- | Type constructor or literal.
-        | TCon       !(GTyCon l)
+        | TCon       !(GTyCon a)
 
         -- | Type variable.
         | TVar       !Bound
 
         -- | Type abstracton.
-        | TAbs       !Bind (GType l) (GType l)
+        | TAbs       !Bind (GType a) (GType a)
 
         -- | Type application.
-        | TApp       !(GType l) (GType l)
+        | TApp       !(GType a) (GType a)
 
 
 -- | Wrapper for primitive constructors that adds the ones
 --   common to SystemFω based languages.
-data GTyCon l
+data GTyCon a
         -- | The void constructor.
         = TyConVoid
 
@@ -100,60 +87,22 @@ data GTyCon l
         | TyConFunImplicit
 
         -- | Take the least upper bound at the given kind.
-        | TyConUnion  !(GType l)
+        | TyConUnion  !(GType a)
 
         -- | The least element of the given kind.
-        | TyConBot    !(GType l)
+        | TyConBot    !(GType a)
 
         -- | The universal quantifier with a parameter of the given kind.
-        | TyConForall !(GType l)
+        | TyConForall !(GType a)
 
         -- | The existential quantifier with a parameter of the given kind.
-        | TyConExists !(GType l)
+        | TyConExists !(GType a)
 
         -- | Primitive constructor.
         | TyConPrim   !TyConPrim
 
         -- | Bound constructor.
         | TyConBound  !TyConBound
-
-
--- | Primitive machine types.
-data TyConPrim
-        -- | Primitive sort constructors.
-        = TyConPrimSoCon        !SoCon
-
-        -- | Primitive kind constructors.
-        | TyConPrimKiCon        !KiCon
-
-        -- | Primitive witness type constructors.
-        | TyConPrimTwCon        !TwCon
-
-        -- | Other type constructors at the spec level.
-        | TyConPrimTcCon        !TcCon
-
-        -- | Primitive machine type constructors.
-        | TyConPrimTyCon        !PrimTyCon
-
-        -- | Primtive type constructors specific to the Discus fragment.
-        | TyConPrimDiscus       !TyConDiscus
-        deriving (Eq, Ord, Show)
-
-
--- | Primitive type constructors specific to the Discus language fragment.
-data TyConDiscus
-        -- | @TupleN#@. Tuples.
-        = TyConDiscusTuple !Int
-
-        -- | @Vector#@. Vectors.
-        | TyConDiscusVector
-
-        -- | @F#@.       Reified function values.
-        | TyConDiscusF
-
-        -- | @U#@.       Explicitly unboxed values.
-        | TyConDiscusU
-        deriving (Eq, Ord, Show)
 
 
 ---------------------------------------------------------------------------------------------------
@@ -257,17 +206,9 @@ pattern TVector   tR tA = TApp2 (TCon (TyConPrim (TyConPrimDiscus TyConDiscusVec
 pattern TFunValue tA    = TApp  (TCon (TyConPrim (TyConPrimDiscus TyConDiscusF)))      tA
 
 ---------------------------------------------------------------------------------------------------
-deriving instance (Eq (GType l)) => Eq (GTyCon l)
+deriving instance Eq a   => Eq   (GTyCon a)
+deriving instance Eq a   => Eq   (GType a)
 
-deriving instance
-        ( Eq (GTAnnot l),   Eq (GTyCon l))
-        => Eq (GType l)
-
--- | Synonym for show constraints of all language types.
-type ShowGType l
-        = ( Show l
-          , Show (GTAnnot   l))
-
-deriving instance ShowGType l => Show (GType  l)
-deriving instance ShowGType l => Show (GTyCon l)
+deriving instance Show a => Show (GType a)
+deriving instance Show a => Show (GTyCon a)
 

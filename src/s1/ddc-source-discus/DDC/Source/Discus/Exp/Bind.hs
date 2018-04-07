@@ -8,15 +8,12 @@ module DDC.Source.Discus.Exp.Bind
         , Bound         (..)
         , takeBoundOfBind
 
-        , DaConBind     (..)
-        , DaConBound    (..)
         , TyConBind     (..)
         , TyConBound    (..)
 
         , withBindings
         , withBinding)
 where
-import DDC.Source.Discus.Prim.Base
 import Data.Text                (Text)
 
 type Name = Text
@@ -53,19 +50,6 @@ takeBoundOfBind bb
         BNone    -> Nothing
         BAnon    -> Just $ UIx 0
         BName tx -> Just $ UName tx
-
-
--- | Binding occurrence of a data constructor.
-data DaConBind
-        = DaConBindName  !Text
-        deriving (Eq, Ord, Show)
-
-
--- | Bound occurrences of a data constructor.
-data DaConBound
-        = DaConBoundName !Text
-        | DaConBoundLit  !PrimLit
-        deriving (Eq, Ord, Show)
 
 
 -- | Binding occurrence of a type constructor.

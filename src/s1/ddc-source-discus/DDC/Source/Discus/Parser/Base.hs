@@ -27,10 +27,11 @@ module DDC.Source.Discus.Parser.Base
           -- * Primitive Operators
         , pPrimValSP)
 where
-import DDC.Source.Discus.Exp.Bind        hiding (Name)
-import DDC.Source.Discus.Prim
+import DDC.Source.Discus.Exp            hiding (Name)
 import DDC.Source.Discus.Lexer
+
 import DDC.Core.Codec.Text.Lexer.Tokens
+
 import DDC.Control.Parser               ((<?>))
 import DDC.Control.Parser               (SourcePos(..))
 import Data.Text                        (Text)

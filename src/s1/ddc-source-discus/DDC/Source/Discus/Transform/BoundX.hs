@@ -1,4 +1,4 @@
-{-# LANGUAGE TypeFamilies #-}
+
 -- | Lifting level-0 deBruijn indices in source expressions.
 --
 --   Level-0 indices are used for both value and witness variables.
@@ -60,7 +60,6 @@ downX l f d xx
   = case xx of
         XAnnot a x      -> XAnnot  a (downX l f d x)
         XPrim  p        -> XPrim   p
-        XFrag  p        -> XFrag   p
         XVar   u        -> XVar   (f d u)
         XCon   c        -> XCon    c
         XApp   x1 r2    -> XApp x1 (downArg l f d r2)

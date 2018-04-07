@@ -169,7 +169,7 @@ sourceParse
         -> Int                  -- ^ Line number in source file.
         -> String               -- ^ Text of source file.
         -> B.Sink               -- ^ Sink for tokens.
-        -> ExceptT [B.Error] IO (S.Module S.Source)
+        -> ExceptT [B.Error] IO (S.Module S.SourcePos)
 
 sourceParse
         srcName srcLine str
@@ -199,8 +199,8 @@ sourceDesugar
         -> B.Sink               -- ^ Sink after desugaring guards.
         -> B.Sink               -- ^ Sink after desugaring matches.
         -> B.Sink               -- ^ Sink after prep for conversion to core.
-        -> S.Module S.Source
-        -> ExceptT [B.Error] IO (S.Module S.Source)
+        -> S.Module S.SourcePos
+        -> ExceptT [B.Error] IO (S.Module S.SourcePos)
 
 sourceDesugar
         sinkFresh  sinkDefix   sinkExpand
@@ -256,7 +256,7 @@ sourceLower
         -> B.Sink               -- ^ Sink after conversion to core.
         -> B.Sink               -- ^ Sink after resolving.
         -> B.Sink               -- ^ Sink after spreading.
-        -> S.Module S.Source
+        -> S.Module S.SourcePos
         -> ExceptT [B.Error] IO (C.Module SP.SourcePos CE.Name)
 
 sourceLower store sinkCore sinkImport sinkSpread mm

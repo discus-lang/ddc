@@ -4,8 +4,8 @@ module DDC.Source.Discus.Convert.Prim
         , toCorePrimVal
         , toCorePrimLit)
 where
-import qualified DDC.Core.Discus.Prim    as C
-import qualified DDC.Source.Discus.Prim  as S
+import qualified DDC.Core.Discus.Prim           as C
+import qualified DDC.Source.Discus.Exp          as S
 
 
 -- | Convert a Discus specific type constructor to core.
@@ -19,15 +19,16 @@ toCoreTyConDiscus tc
 
 
 -- | Convert a value primtivie to a core name.
-toCorePrimVal :: S.PrimVal -> C.Name
+toCorePrimVal :: S.PrimVal -> Maybe C.Name
 toCorePrimVal pv
  = case pv of
-        S.PrimValArith  p       -> C.NamePrimArith  p False
-        S.PrimValCast   p       -> C.NamePrimCast   p False
-        S.PrimValError  p       -> C.NameOpError    p False
-        S.PrimValVector p       -> C.NameOpVector   p False
-        S.PrimValFun    p       -> C.NameOpFun      p
-        S.PrimValLit    p       -> toCorePrimLit    p
+        S.PrimValArith  p       -> Just $ C.NamePrimArith  p False
+        S.PrimValCast   p       -> Just $ C.NamePrimCast   p False
+        S.PrimValError  p       -> Just $ C.NameOpError    p False
+        S.PrimValVector p       -> Just $ C.NameOpVector   p False
+        S.PrimValFun    p       -> Just $ C.NameOpFun      p
+        S.PrimValLit    p       -> Just $ toCorePrimLit    p
+        _                       -> Nothing
 
 
 -- | Convert a primitive literal to a core name.
