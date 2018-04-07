@@ -15,23 +15,20 @@ module DDC.Source.Discus.Exp
           -----------------------------
           -- * Types
           -- ** Syntax
-          -- *** Expressions
         , Type,         GType  (..)
 
-          -- *** TyCons
+          -----------------------------
+          -- ** Constructors
         , TyCon,        GTyCon (..)
         , TyConBind     (..)
         , TyConBound    (..)
-
-          -----------------------------
-          -- ** Type Constructors
         , SoCon         (..)
         , KiCon         (..)
         , TwCon         (..)
         , TcCon         (..)
 
           -----------------------------
-          -- ** Type Primitives
+          -- ** Primitives
         , TyConPrim     (..)
         , PrimTyCon     (..)
         , TyConDiscus   (..)
@@ -145,7 +142,7 @@ module DDC.Source.Discus.Exp
         , DaConBound    (..)
 
           -----------------------------
-          -- ** Term Primitives
+          -- ** Primitives
         , PrimVal       (..)
         , PrimArith     (..)
         , PrimCast      (..)

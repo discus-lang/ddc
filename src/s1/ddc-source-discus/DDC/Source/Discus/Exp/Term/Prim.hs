@@ -1,3 +1,4 @@
+{-# OPTIONS_HADDOCK hide #-}
 
 module DDC.Source.Discus.Exp.Term.Prim
         ( OpFun         (..)

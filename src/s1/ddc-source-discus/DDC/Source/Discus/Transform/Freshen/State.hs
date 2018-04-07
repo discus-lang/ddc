@@ -1,3 +1,4 @@
+{-# OPTIONS_HADDOCK hide #-}
 {-# LANGUAGE OverloadedStrings, ExplicitNamespaces #-}
 
 module DDC.Source.Discus.Transform.Freshen.State

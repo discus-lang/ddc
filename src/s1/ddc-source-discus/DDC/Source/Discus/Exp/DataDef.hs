@@ -1,3 +1,4 @@
+{-# OPTIONS_HADDOCK hide #-}
 
 -- | Source Discus data type definitions.
 module DDC.Source.Discus.Exp.DataDef

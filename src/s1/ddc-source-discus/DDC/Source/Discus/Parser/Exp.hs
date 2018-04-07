@@ -1,3 +1,4 @@
+{-# OPTIONS_HADDOCK hide #-}
 
 -- | Parser for Source Discus expressions.
 module DDC.Source.Discus.Parser.Exp

@@ -1,3 +1,4 @@
+{-# OPTIONS_HADDOCK hide #-}
 {-# LANGUAGE ExplicitNamespaces #-}
 module DDC.Source.Discus.Parser.Base
         ( type Parser

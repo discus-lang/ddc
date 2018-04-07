@@ -1,3 +1,4 @@
+{-# OPTIONS_HADDOCK hide #-}
 
 -- Generic type expression representation.
 module DDC.Source.Discus.Exp.Type.Base

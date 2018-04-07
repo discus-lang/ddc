@@ -74,7 +74,7 @@ cmdLoadFromFile config store mStrSimpl fsTemplates filePath
          Left err    -> throwE $ renderIndent $ ppr err
          Right iface -> liftIO $ putStrLn $ T.unpack $ IntText.encodeInterface iface
 
- -- | Load a Discus Source module.
+ -- Load a Discus Source module.
  | ".ds"        <- takeExtension filePath
  = case mStrSimpl of
         Nothing

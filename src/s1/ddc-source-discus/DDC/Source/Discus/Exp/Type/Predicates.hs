@@ -1,3 +1,4 @@
+{-# OPTIONS_HADDOCK hide #-}
 
 -- | Predicates on type expressions.
 module DDC.Source.Discus.Exp.Type.Predicates

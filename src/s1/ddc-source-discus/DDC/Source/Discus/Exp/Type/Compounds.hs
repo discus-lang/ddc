@@ -1,3 +1,4 @@
+{-# OPTIONS_HADDOCK hide #-}
 {-# OPTIONS -fno-warn-missing-signatures #-}
 module DDC.Source.Discus.Exp.Type.Compounds
         ( -- * Destructors

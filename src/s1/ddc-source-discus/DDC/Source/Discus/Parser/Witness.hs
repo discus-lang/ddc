@@ -1,3 +1,4 @@
+{-# OPTIONS_HADDOCK hide #-}
 
 module DDC.Source.Discus.Parser.Witness
         ( pWitness

@@ -1,3 +1,4 @@
+{-# OPTIONS_HADDOCK hide #-}
 
 -- | Defines the table that tracks what precedence and associativity
 --   infix operators have. The config for common operators is currently

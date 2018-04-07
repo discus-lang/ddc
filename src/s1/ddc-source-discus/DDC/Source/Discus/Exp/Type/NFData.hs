@@ -1,3 +1,4 @@
+{-# OPTIONS_HADDOCK hide #-}
 
 module DDC.Source.Discus.Exp.Type.NFData where
 import DDC.Source.Discus.Exp.Type.Base

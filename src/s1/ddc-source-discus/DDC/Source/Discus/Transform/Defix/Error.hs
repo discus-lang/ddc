@@ -1,3 +1,4 @@
+{-# OPTIONS_HADDOCK hide #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 -- | Things that can go wrong when resolving infix expressions.

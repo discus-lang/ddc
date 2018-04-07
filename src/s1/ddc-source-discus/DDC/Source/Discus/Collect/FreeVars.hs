@@ -1,7 +1,8 @@
+{-# OPTIONS_HADDOCK hide #-}
 
 module DDC.Source.Discus.Collect.FreeVars where
 import DDC.Source.Discus.Exp
-import DDC.Source.Discus.Env             (Env, Presence(..))
+import DDC.Source.Discus.Env            (Env, Presence(..))
 import Data.Set                         (Set)
 import qualified DDC.Source.Discus.Env  as Env
 import qualified Data.Set               as Set
