@@ -41,6 +41,7 @@ module DDC.Source.Discus.Env
         , typeOfPrimLit)
 where
 import DDC.Source.Discus.Exp
+import DDC.Source.Discus.Exp.DataDef
 import Data.Map                         (Map)
 import Data.Sequence                    (Seq)
 import Data.Text                        (Text)

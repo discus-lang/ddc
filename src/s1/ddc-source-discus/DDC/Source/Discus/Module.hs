@@ -19,9 +19,11 @@ module DDC.Source.Discus.Module
         , Top           (..)
 
           -- * Data type definitions
-        , DataDef       (..))
+        , DataDef       (..)
+        , DataCtor      (..))
 where
 import DDC.Source.Discus.Exp
+import DDC.Source.Discus.Exp.DataDef
 import Control.DeepSeq
 
 import DDC.Core.Module

@@ -267,6 +267,7 @@ pDeclData
          , do   return  $ TopData sp (DataDef b ps [])
          ]
 
+
 -- | Parse a data constructor declaration.
 pDeclDataCtor :: Parser (DataCtor SourcePos)
 pDeclDataCtor

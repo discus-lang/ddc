@@ -216,13 +216,7 @@ module DDC.Source.Discus.Exp
 
           -- *** Primitives
         , primLitOfLiteral
-        , makeXErrorDefault
-
-        -------------------------------------------------
-        -- * Data Declarations
-        , DataDef       (..)
-        , DataCtor      (..)
-        , typeOfDataCtor)
+        , makeXErrorDefault)
 where
 
 import DDC.Source.Discus.Exp.Type.Compounds
@@ -235,8 +229,6 @@ import DDC.Source.Discus.Exp.Term.Compounds
 import DDC.Source.Discus.Exp.Term.NFData        ()
 import DDC.Source.Discus.Exp.Term.Pretty        ()
 import DDC.Source.Discus.Exp.Term.Base
-
-import DDC.Source.Discus.Exp.DataDef
 
 import DDC.Type.Exp.TyCon               as T
 
