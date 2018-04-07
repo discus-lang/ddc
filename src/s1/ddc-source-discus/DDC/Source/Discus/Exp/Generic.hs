@@ -60,8 +60,8 @@ module DDC.Source.Discus.Exp.Generic
           -- * Dictionaries
         , ShowLanguage)
 where
-import DDC.Type.Exp.Generic.Binding
-import DDC.Type.Exp.Generic.Exp
+import DDC.Source.Discus.Exp.Type.Binding
+import DDC.Source.Discus.Exp.Type.Exp
 import DDC.Core.Exp                     (DaCon (..), Prim (..))
 
 

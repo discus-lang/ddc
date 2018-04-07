@@ -10,7 +10,7 @@ import DDC.Source.Discus.Exp.Predicates
 import DDC.Source.Discus.DataDef
 import DDC.Source.Discus.Module
 import DDC.Source.Discus.Exp.Source
-import DDC.Type.Exp.Generic.Pretty
+import DDC.Source.Discus.Exp.Type.Pretty
 import DDC.Core.Codec.Text.Pretty
 import DDC.Data.Pretty
 import Prelude                                  hiding ((<$>))

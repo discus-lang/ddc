@@ -2,7 +2,7 @@
 
 -- | Simple predicates on Source Discus things.
 module DDC.Source.Discus.Exp.Predicates
-        ( module DDC.Type.Exp.Generic.Predicates
+        ( module DDC.Source.Discus.Exp.Type.Predicates
 
           -- * Atoms
         , isXVar,       isXCon
@@ -22,7 +22,7 @@ module DDC.Source.Discus.Exp.Predicates
         , isPVar)
 where
 import DDC.Source.Discus.Exp.Generic
-import DDC.Type.Exp.Generic.Predicates
+import DDC.Source.Discus.Exp.Type.Predicates
 
 
 -- Atoms ----------------------------------------------------------------------

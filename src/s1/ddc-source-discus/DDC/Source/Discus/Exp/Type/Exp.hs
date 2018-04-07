@@ -1,7 +1,7 @@
 {-# LANGUAGE TypeFamilies, UndecidableInstances #-}
 
 -- Generic type expression representation.
-module DDC.Type.Exp.Generic.Exp 
+module DDC.Source.Discus.Exp.Type.Exp
         ( -- * Type Families
           GTAnnot
         , GTBindVar, GTBoundVar
@@ -126,7 +126,7 @@ data GTyCon l
         | TyConBound  !(GTBoundCon l)
 
 
-deriving instance 
+deriving instance
         (Eq (GType l), Eq (GTPrim l), Eq (GTBoundCon l))
         => Eq (GTyCon l)
 

@@ -1,9 +1,9 @@
 
 -- | Predicates on type expressions.
-module DDC.Type.Exp.Generic.Predicates
+module DDC.Source.Discus.Exp.Type.Predicates
         (isAtomT)
 where
-import DDC.Type.Exp.Generic.Exp
+import DDC.Source.Discus.Exp.Type.Exp
 
 
 -- | Check whether a type is a `TVar` or `TCon`.

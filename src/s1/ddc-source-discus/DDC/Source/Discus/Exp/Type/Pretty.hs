@@ -1,12 +1,12 @@
 {-# LANGUAGE TypeFamilies, UndecidableInstances #-}
 
-module DDC.Type.Exp.Generic.Pretty
+module DDC.Source.Discus.Exp.Type.Pretty
         ( PrettyConfig
         , pprRawT
         , pprRawPrecT
         , pprRawC)
 where
-import DDC.Type.Exp.Generic.Exp
+import DDC.Source.Discus.Exp.Type.Exp
 import DDC.Data.Pretty
 
 
@@ -28,14 +28,14 @@ pprRawPrecT :: PrettyConfig l => Int -> GType l -> Doc
 pprRawPrecT d tt
  = case tt of
         TAnnot a t
-         ->  braces (ppr a) 
+         ->  braces (ppr a)
          <+> pprRawT t
 
         TCon c   -> pprRawC c
         TVar u   -> ppr u
 
-        TAbs b k t 
-         -> pprParen (d > 1) 
+        TAbs b k t
+         -> pprParen (d > 1)
          $  text "λ" <> ppr b <> text ":" <+> pprRawT k <> text "." <+> pprRawT t
 
         TApp t1 t2

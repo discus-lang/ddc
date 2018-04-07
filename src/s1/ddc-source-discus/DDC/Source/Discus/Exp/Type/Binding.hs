@@ -1,9 +1,9 @@
 {-# LANGUAGE TypeFamilies #-}
-module DDC.Type.Exp.Generic.Binding 
+module DDC.Source.Discus.Exp.Type.Binding
         ( Binding       (..)
         , Anon          (..))
 where
-import DDC.Type.Exp.Generic.Exp
+import DDC.Source.Discus.Exp.Type.Exp
 
 
 -- Binding --------------------------------------------------------------------
@@ -20,7 +20,7 @@ class Binding l where
 -- Anon -----------------------------------------------------------------------
 -- | Class of languages that support anonymous binding.
 class Anon l where
- 
+
  -- | Evaluate a function given a new anonymous binding and matching
  --   bound occurrence.
  withBinding  :: l -> (GTBindVar l -> GTBoundVar l -> a) -> a

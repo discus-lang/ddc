@@ -239,5 +239,5 @@ import DDC.Source.Discus.Exp.Predicates
 import DDC.Source.Discus.Exp.Compounds
 import DDC.Source.Discus.Exp.NFData
 import DDC.Source.Discus.Pretty
-import DDC.Type.Exp.Generic.Compounds
+import DDC.Source.Discus.Exp.Type.Compounds
 

@@ -1,5 +1,5 @@
 {-# OPTIONS -fno-warn-missing-signatures #-}
-module DDC.Type.Exp.Generic.Compounds
+module DDC.Source.Discus.Exp.Type.Compounds
         ( -- * Destructors
           takeTCon
         , takeTVar
@@ -14,7 +14,7 @@ module DDC.Type.Exp.Generic.Compounds
         , takeTFun,     takeTFuns,      takeTFuns'
 
           -- * Forall Types
-        , makeTForall,  makeTForalls 
+        , makeTForall,  makeTForalls
         , takeTForall
 
           -- * Exists Types
@@ -25,8 +25,8 @@ module DDC.Type.Exp.Generic.Compounds
         , makeTUnions,  takeTUnions
         , splitTUnionsOfKind)
 where
-import DDC.Type.Exp.Generic.Exp
-import DDC.Type.Exp.Generic.Binding
+import DDC.Source.Discus.Exp.Type.Exp
+import DDC.Source.Discus.Exp.Type.Binding
 
 
 -- Destructors ----------------------------------------------------------------
@@ -140,14 +140,14 @@ takeTFuns' tt
 -- | Construct a forall quantified type using an anonymous binder.
 makeTForall :: Anon l  => l -> GType l -> (GType l -> GType l) -> GType l
 makeTForall l k makeBody
-        =  withBinding l $ \b u 
+        =  withBinding l $ \b u
         -> TApp (TCon (TyConForall k)) (TAbs b k (makeBody (TVar u)))
 
 
 -- | Construct a forall quantified type using some anonymous binders.
 makeTForalls :: Anon l => l -> [GType l] -> ([GType l] -> GType l) -> GType l
 makeTForalls l ks makeBody
-        = withBindings l (length ks) $ \bs us 
+        = withBindings l (length ks) $ \bs us
         -> foldr (\(k, b) t -> TApp (TCon (TyConForall k)) (TAbs b k t))
                         (makeBody $ reverse $ map TVar us)
                         (zip ks bs)
@@ -172,14 +172,14 @@ takeTForall tt
 -- | Construct an exists quantified type using an anonymous binder.
 makeTExists :: Anon l => l -> GType l -> (GType l -> GType l) -> GType l
 makeTExists l k makeBody
-        =  withBinding l $ \b u 
+        =  withBinding l $ \b u
         -> TApp (TCon (TyConExists k)) (TAbs b k (makeBody (TVar u)))
 
 
 -- | Destruct an exists quantified type, if this is one.
---   
+--
 --   The kind we return comes from the abstraction rather than the
---   Exists constructor. 
+--   Exists constructor.
 takeTExists :: GType l -> Maybe (GType l, GTBindVar l, GType l)
 takeTExists tt
         | Just (t1, t2)         <- takeTApp tt
@@ -187,7 +187,7 @@ takeTExists tt
         , Just (b, k, t)        <- takeTAbs t2
         = Just (k, b, t)
 
-        | otherwise     
+        | otherwise
         = Nothing
 
 

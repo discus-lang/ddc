@@ -1,7 +1,7 @@
 {-# LANGUAGE UndecidableInstances #-}
 
-module DDC.Type.Exp.Generic.NFData where
-import DDC.Type.Exp.Generic.Exp
+module DDC.Source.Discus.Exp.Type.NFData where
+import DDC.Source.Discus.Exp.Type.Exp
 import Control.DeepSeq
 
 

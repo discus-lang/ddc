@@ -73,7 +73,7 @@ module DDC.Source.Discus.Exp.Compounds
 where
 import DDC.Source.Discus.Exp.Generic
 import Data.Maybe
-import qualified DDC.Type.Exp.Generic.Compounds as T
+import qualified DDC.Source.Discus.Exp.Type.Compounds as T
 
 import DDC.Core.Exp.Annot
         ( dcUnit
