@@ -26,7 +26,10 @@ module DDC.Source.Discus.Parser.Base
         , pDaConBoundLit,       pDaConBoundLitSP
 
           -- * Primitive Operators
-        , pPrimValSP)
+        , pPrimValSP
+
+          -- * Literals
+        , pTextSP)
 where
 import DDC.Source.Discus.Exp            hiding (Name)
 import DDC.Source.Discus.Lexer
@@ -164,4 +167,10 @@ pPrimValSP =  P.pTokMaybeSP f <?> "a primitive operator"
  where  f (KN (KVar (NamePrimValOp p))) = Just p
         f _                             = Nothing
 
+
+-- Literal Values --------------------------------------------------------------
+pTextSP :: Parser (Text, SourcePos)
+pTextSP =  P.pTokMaybeSP f <?> "a primitive operator"
+ where  f (KA (KLiteral (LString tx) False)) = Just tx
+        f _                                  = Nothing
 

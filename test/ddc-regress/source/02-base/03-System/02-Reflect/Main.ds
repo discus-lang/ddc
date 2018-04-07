@@ -1,0 +1,9 @@
+
+module Main
+import System.Runtime.Reflect
+
+where
+
+main ()
+ = do   printl (reflect_toValue (Cons 3 Nil))
+        printl (reflect_toValue ((\y z -> writel $ "derp" % z) 5))

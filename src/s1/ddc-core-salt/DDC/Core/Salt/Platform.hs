@@ -22,7 +22,7 @@ data Platform
         , platformNatBytes      :: Integer
 
           -- | Align functions on this boundary in bytes.
-        , platformAlignBytes    :: Integer 
+        , platformAlignBytes    :: Integer
 
           -- | Minimum size of a heap object in bytes.
         , platformObjBytes      :: Integer }
@@ -34,16 +34,16 @@ instance Pretty Platform where
         [ text "Address Width       (bytes) : "
                 <> text (show $ platformAddrBytes  pp)
 
-        , text "Tag Word Width      (bytes) : " 
+        , text "Tag Word Width      (bytes) : "
                 <> text (show $ platformTagBytes   pp)
 
-        , text "Nat Word Width      (bytes) : " 
+        , text "Nat Word Width      (bytes) : "
                 <> text (show $ platformNatBytes   pp)
 
-        , text "Function Alignment  (bytes) : " 
+        , text "Function Alignment  (bytes) : "
                 <> text (show $ platformAlignBytes pp)
 
-        , text "Minimum Object Size (bytes) : " 
+        , text "Minimum Object Size (bytes) : "
                 <> text (show $ platformObjBytes   pp) ]
 
 
@@ -57,16 +57,16 @@ platform32
         { platformAddrBytes     = 4
         , platformTagBytes      = 4
         , platformNatBytes      = 4
-        , platformAlignBytes    = 4 
+        , platformAlignBytes    = 4
         , platformObjBytes      = 8 }
 
 
 -- | 64-bit platform specification.
 platform64 :: Platform
-platform64 
+platform64
         = Platform
         { platformAddrBytes     = 8
-        , platformTagBytes      = 4
+        , platformTagBytes      = 8
         , platformNatBytes      = 8
         , platformAlignBytes    = 8
         , platformObjBytes      = 8 }

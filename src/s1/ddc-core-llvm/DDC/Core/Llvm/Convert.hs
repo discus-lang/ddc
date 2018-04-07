@@ -122,7 +122,6 @@ convertModuleM pp mm@(C.ModuleCore{})
 
         importDecls <- sequence msImportDecls
 
-
         -- Convert super definitions ---------
         --   This is the code for locally defined functions.
         let ctx = Context
@@ -158,7 +157,14 @@ convertModuleM pp mm@(C.ModuleCore{})
                 { modComments           = []
                 , modAliases            = [aObj pp]
                 , modGlobals            = globals
-                , modFwdDecls           = primDecls pp ++ importDecls
+
+                -- When building the forward declarations ensure that any
+                -- foreign imported functions don't clobber primitive imports.
+                , modFwdDecls
+                        =  map snd $ Map.toList $ Map.union
+                                (Map.fromList [ (declName d, d) | d <- importDecls])
+                                (Map.fromList [ (declName d, d) | d <- primDecls pp])
+
                 , modFuncs              = functions
                 , modMDecls             = concat mdecls }
 

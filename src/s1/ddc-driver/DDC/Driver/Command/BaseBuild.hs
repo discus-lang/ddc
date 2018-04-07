@@ -27,6 +27,7 @@ baseSaltFiles builder
         , runtime ++ bits </> "primitive" </> "Array.dcs"
         , runtime ++ bits </> "primitive" </> "Env.dcs"
         , runtime ++ bits </> "primitive" </> "Numeric.dcs"
+        , runtime ++ bits </> "primitive" </> "Reflect.dcs"
         , runtime ++ bits </> "primitive" </> "Ref.dcs"
         , runtime ++ bits </> "primitive" </> "Text.dcs"
         , runtime ++ bits </> "primitive" </> "Vector.dcs"

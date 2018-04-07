@@ -249,7 +249,7 @@ traceBoxed
                 ddcPrimStdoutPutString "Boxed\n"#
                 fieldAddr     "{   ptr            = "# (takePtr# obj)
                 fieldWord64   "    header         = "# (read# (takePtr# obj) 0#)
-                fieldWord32   "    tag            = "# (promote# (ddcBoxedTag obj))
+                fieldWord64   "    tag            = "# (promote# (ddcBoxedTag obj))
                 ())
 
         -- Check that the rest of the header is also within the heap,

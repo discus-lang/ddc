@@ -1,0 +1,159 @@
+
+module System.Runtime.Reflect
+export  show_ValueFormat
+        show_Value
+        reflect_toValue
+        reflect_formatOfValue
+
+
+import Control.Exception
+import System.IO.Console
+import Data.Numeric
+
+import foreign abstract type
+ Reflect : Effect
+
+import foreign boxed type
+ Value   : Data
+
+
+-- Import primitive object functions from the runtime system.
+--
+-- Some of these need to be given different names as the Discus -> Salt
+-- code generator also imports the same primitives, but at different types,
+-- and we can't have the two imports conflicting in the generated Salt code.
+--
+import foreign c value
+ ddcPrimReflectValue
+  : {@a: Data} -> a -> S Reflect Value
+
+ ddcObjectFormat
+  : Value -> Nat
+
+ -- Thunk ---------
+ ddcThunkParams_refl    "ddcThunkParams"
+  : Value -> Nat
+
+ ddcThunkBoxes_refl     "ddcThunkBoxes"
+  : Value -> Nat
+
+ ddcThunkArgs_refl      "ddcThunkArgs"
+  : Value -> Nat
+
+ ddcThunkRuns_refl      "ddcThunkRuns"
+  : Value -> Nat
+
+ -- Boxed ---------
+ ddcBoxedFields         : Value -> Nat
+
+ ddcBoxedTag_refl       "ddcBoxedTag"
+  : Value -> Nat
+
+ ddcBoxedGetField_refl  "ddcBoxedGetField"
+  : Value -> Nat -> Value
+
+ -- Small --------
+ ddcSmallPayloadSize_refl "ddcSmallPayloadSize"
+  : Value -> Nat
+
+where
+
+
+-------------------------------------------------------------------------------
+data ValueFormat where
+        ValueFormatThunk     : Nat -> Nat -> Nat -> Nat -> ValueFormat
+        ValueFormatBoxed     : Nat -> Nat -> ValueFormat
+        ValueFormatRaw       : ValueFormat
+        ValueFormatArray     : ValueFormat
+        ValueFormatSmall     : Nat -> ValueFormat
+
+
+show_ValueFormat: Show ValueFormat
+ = Show reflect_showValueFormat
+
+reflect_showValueFormat (f: ValueFormat): Text
+ = case f of
+        ValueFormatThunk        -> "Thunk"
+
+        ValueFormatBoxed tag nFields
+         -> "Boxed" %% show tag %% show nFields
+
+        ValueFormatRaw          -> "Raw"
+        ValueFormatArray        -> "Array"
+
+        ValueFormatSmall nSize
+         -> "Small" %% show nSize
+
+
+-------------------------------------------------------------------------------
+-- | Throw a reflection failure exception.
+reflect_fail (tx: Text): a
+ = ddcPrimExceptionThrow {@Pure}
+ $ ExceptionSystemReflect tx
+
+
+-------------------------------------------------------------------------------
+-- | Reflect the runtime representation of a value.
+--
+--   Operationally this is a no-op, but in the source language we assign it
+--   an effectful type to track the fact that we're looking at the runtime
+--   representation.
+--
+--   The representation may change when we recompile the program,
+--   but it will not change at runtime after we have casted it to a generic
+--   value.
+--
+reflect_toValue (x: a): S Reflect Value
+ = ddcPrimReflectValue x
+
+
+-- | Get the runtime representation format of a value.
+reflect_formatOfValue (v: Value): ValueFormat
+ = case ddcObjectFormat v of
+        2 -> do nParams = ddcThunkParams_refl v
+                nBoxes  = ddcThunkBoxes_refl  v
+                nArgs   = ddcThunkArgs_refl   v
+                nRuns   = ddcThunkRuns_refl   v
+                ValueFormatThunk nParams nBoxes nArgs nRuns
+
+        3 -> do tag     = ddcBoxedTag_refl v
+                nFields = ddcBoxedFields   v
+                ValueFormatBoxed tag nFields
+
+        4 -> ValueFormatRaw
+
+        5 -> ValueFormatArray
+
+        6 -> do nSize   = ddcSmallPayloadSize_refl v
+                ValueFormatSmall nSize
+
+        _ -> reflect_fail "formatOfValue"
+
+
+-------------------------------------------------------------------------------
+show_Value: Show Value
+ = Show reflect_showValue
+
+reflect_showValue (v: Value): Text
+ = case reflect_formatOfValue v of
+        ValueFormatThunk nParams nBoxes nArgs nRuns
+         -> parens
+         $ "Thunk" %% show nParams %% show nBoxes %% show nArgs %% show nRuns
+
+        ValueFormatBoxed tag nFields
+         -> parens
+         $ "Boxed" %% show tag %% show nFields
+         % foldl pastes ""
+                (map (\n -> reflect_showValue (ddcBoxedGetField_refl v n))
+                     (generate nFields id))
+
+        ValueFormatRaw
+         -> "Raw"
+
+        ValueFormatArray
+         -> "Array"
+
+        ValueFormatSmall nSize
+         -> parens
+         $ "Small" %% show nSize
+

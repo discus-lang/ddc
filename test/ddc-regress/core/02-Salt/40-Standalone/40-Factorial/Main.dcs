@@ -15,7 +15,7 @@ allocRaw [r : Region] (tag : Tag#) (bytesPayload : Nat#)
  = do { bytesObj        = add# [Nat#] 8# bytesPayload;
         addr            = alloc# bytesObj;
 
-        tag32           = promote# [Word32#] [Tag#] tag;
+        tag32           = truncate# [Word32#] [Tag#] tag;
         format          = 0b00110001w32#;
         tagShift        = shl# [Word32#] tag32 8w32#;
         header          = bor# [Word32#] tagShift format;

@@ -1,5 +1,5 @@
 
-module Runtime.Numeric
+module Runtime.Prim.Numeric
 
 export foreign c value
  ddcPrimMakeInt         : [r1: Region]. Int# -> Ptr# r1 Obj

@@ -126,6 +126,10 @@ ddcHookHandleTopLevel (comp: S e Unit): S (Runtime + Console + e) Unit
                 ExceptionSystemNetwork _ tx
                  -> writel $ "*** Network IO Error:" %% tx
 
+                ExceptionSystemReflect tx
+                 -> writel $ "*** Reflection Error:" %% tx
+
+
  where  -- Hook for the runtime primitive code to throw a file exception.
         hookErrorSystemFile    (errno: Int) (vec: TextVec): S Error Unit
          = weakeff Error in throw $ ExceptionSystemFile    errno (TextVec vec)

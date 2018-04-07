@@ -40,7 +40,7 @@ allocRawLocal_ok [r: Region] (tag: Tag#) (bytesObj: Nat#): Ptr# r Obj
         addr            = alloc# bytesObj
 
         -- Write the header word.
-        tag32           = promote# [Word32#] [Tag#] tag
+        tag32           = truncate# [Word32#] [Tag#] tag
         format          = 0b00110001w32#
         tagShift        = shl# tag32 8w32#
         header          = bor# tagShift format

@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 
 -- | Conversion of Disciple Core Discus to Disciple Core Salt.
 module DDC.Core.Discus.Convert
@@ -147,8 +148,10 @@ convertM pp runConfig defs kenv tenv mm
         -- Convert signatures of exported functions.
         --  Locally defined values can be exported,
         --  and imported values can be re-exported.
-        let ntsImport'  =  [(n, typeOfImportValue iv) | (n, iv) <- ntsImports']
+        let ntsImport'  =  [(n, typeOfImportValue iv) | (n, iv) <- ntsImports' ]
+
         let ntsSuper'   =  [(n, t) | BName n t <- concat $ map snd $ map bindsOfLets lts']
+
         let ntsAvail    =  Map.fromList $ ntsSuper' ++ ntsImport'
 
         ntsExports'     <- mapM (convertNameExportValueM tctx' ntsAvail)
@@ -165,9 +168,11 @@ convertM pp runConfig defs kenv tenv mm
                 , moduleExportTypes     = []
                 , moduleExportValues    = ntsExports'
 
-                , moduleImportTypes     = Map.toList $ A.runtimeImportKinds
+                , moduleImportTypes     = Map.toList A.runtimeImportKinds
                 , moduleImportCaps      = []
-                , moduleImportValues    = (Map.toList A.runtimeImportTypes) ++ ntsImports'
+
+                , moduleImportValues    = Map.toList A.runtimeImportTypes ++ ntsImports'
+
                 , moduleImportDataDefs  = []
                 , moduleImportTypeDefs  = []
 

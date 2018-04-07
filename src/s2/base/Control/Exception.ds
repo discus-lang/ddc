@@ -53,6 +53,7 @@ data Exception where
         -- These have a message as well as the value of 'errno' if available.
         ExceptionSystemFile     : Int -> Text -> Exception
         ExceptionSystemNetwork  : Int -> Text -> Exception
+        ExceptionSystemReflect  : Text -> Exception
 
 
 -- | Throw a named exception.

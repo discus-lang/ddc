@@ -91,16 +91,20 @@ pExportSpecs
 -- | Parse a value export spec.
 pExportValue :: String -> Parser ExportSpec
 pExportValue src
-        | elem src ["c", "C"]
-        = do    (b@(UName n), _)  <- pBoundNameSP
+ | elem src ["c", "C"]
+ = do   (b@(UName n), _)  <- pBoundNameSP
+
+        P.choice
+         [ do   (txSymbol, _) <- pTextSP
                 pTokSP (KOp ":")
                 k       <- pType
+                return  (ExportValue b (ExportValueSea b txSymbol k))
 
-                -- ISSUE #327: Allow external symbol to be specified
-                --             with foreign C imports and exports.
-                let symbol = renderIndent (text $ Text.unpack n)
 
-                return  (ExportValue b (ExportValueSea b (Text.pack symbol) k))
+         , do   let txSymbol = Text.pack $ renderIndent (text $ Text.unpack n)
+                pTokSP (KOp ":")
+                k       <- pType
+                return  (ExportValue b (ExportValueSea b txSymbol k)) ]
 
         | otherwise
         = P.unexpected "export mode for foreign value"
@@ -192,19 +196,23 @@ pImportCapability src
 -- | Parse a value import spec.
 pImportValue :: String -> Parser ImportSpec
 pImportValue src
-        | elem src ["c", "C"]
-        = do    (b@(BName n), _)  <- pBindNameSP
+ | elem src ["c", "C"]
+ = do   (b@(BName n), _)  <- pBindNameSP
+
+        P.choice
+         [ do   (txSymbol, _) <- pTextSP
                 pTokSP (KOp ":")
                 k       <- pType
+                return  (ImportValue b (ImportValueSea b txSymbol k))
 
-                -- ISSUE #327: Allow external symbol to be specified
-                --             with foreign C imports and exports.
-                let symbol = renderIndent (text $ Text.unpack n)
+         , do   let txSymbol = Text.pack $ renderIndent (text $ Text.unpack n)
+                pTokSP (KOp ":")
+                k       <- pType
+                return  (ImportValue b (ImportValueSea b txSymbol k))
+         ]
 
-                return  (ImportValue b (ImportValueSea b (Text.pack symbol) k))
-
-        | otherwise
-        = P.unexpected "import mode for foreign value"
+ | otherwise
+ = P.unexpected "import mode for foreign value"
 
 
 -- Top Level --------------------------------------------------------------------------------------

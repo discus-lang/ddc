@@ -46,7 +46,7 @@ define internal fastcc i64 @tag(%s.Obj*  %_v13.x3) align 8 gc "shadow-stack"
 l14.init:
         br label %l15.body
 l15.body:
-        ret i64 4
+        ret i64 8
 }
 
 
@@ -109,7 +109,7 @@ define internal fastcc i64 @tag(%s.Obj*  %_v24.x5) align 8 gc "shadow-stack"
 l25.init:
         br label %l26.body
 l26.body:
-        ret i64 2
+        ret i64 3
 }
 
 

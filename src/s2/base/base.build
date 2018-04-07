@@ -67,5 +67,6 @@ library
         System.Posix.Stdio
         System.Posix.Unistd
         System.IO.Console
+        System.Runtime.Reflect
         System.Env
         Main.Args
