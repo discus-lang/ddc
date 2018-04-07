@@ -19,31 +19,11 @@ import qualified Data.Text                      as Text
 type PrettyLanguage l
  =      ( Pretty l
         , Pretty (GTAnnot    l)
-        , Pretty (GTBindVar  l), Pretty (GTBoundVar l)
-        , Pretty (GTBindCon  l), Pretty (GTBoundCon l)
         , Pretty (GTPrim     l)
 
         , Pretty (GXAnnot    l)
-        , Pretty (GXBindVar  l), Pretty (GXBoundVar l)
-        , Pretty (GXBindCon  l), Pretty (GXBoundCon l)
         , Pretty (GXFrag l)
-        , Pretty (DaCon (GXBoundCon l) (GType l)))
-
-
-instance Pretty Bind where
- ppr bb
-  = case bb of
-        BNone   -> text "_"
-        BAnon   -> text "^"
-        BName t -> text (Text.unpack t)
-
-
-instance Pretty Bound where
- ppr uu
-  = case uu of
-        UIx i   -> int i
-        UName t -> text (Text.unpack t)
-        UHole   -> text "?"
+        , Pretty (DaCon DaConBound (GType l)))
 
 
 instance Pretty DaConBind where
@@ -55,14 +35,6 @@ instance Pretty DaConBound where
   = case uu of
         DaConBoundName tt       -> text (Text.unpack tt)
         DaConBoundLit  pl       -> ppr  pl
-
-
-instance Pretty TyConBind where
- ppr (TyConBindName tx)  = text (Text.unpack tx)
-
-
-instance Pretty TyConBound where
- ppr (TyConBoundName tx) = text (Text.unpack tx)
 
 
 -- Bind -------------------------------------------------------------------------------------------

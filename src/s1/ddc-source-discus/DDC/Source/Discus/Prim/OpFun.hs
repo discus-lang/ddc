@@ -12,7 +12,7 @@ import DDC.Source.Discus.Exp.Term.Compounds
 
 
 -- | Take the type of a primitive function operator.
-typeOpFun :: (Anon l, GTPrim l ~ PrimType)
+typeOpFun :: (GTPrim l ~ PrimType)
           => l -> OpFun -> GType l
 typeOpFun l op
  = case op of

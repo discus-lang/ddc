@@ -26,7 +26,6 @@ module DDC.Source.Discus.Exp.Type.Compounds
         , splitTUnionsOfKind)
 where
 import DDC.Source.Discus.Exp.Type.Base
-import DDC.Source.Discus.Exp.Binding
 
 
 -- Destructors ----------------------------------------------------------------
@@ -40,7 +39,7 @@ takeTCon tt
 
 
 -- | Take a type variable, looking through annotations.
-takeTVar :: GType l -> Maybe (GTBoundVar l)
+takeTVar :: GType l -> Maybe Bound
 takeTVar tt
  = case tt of
         TAnnot _ t      -> takeTVar t
@@ -49,7 +48,7 @@ takeTVar tt
 
 
 -- | Take a type abstraction, looking through annotations.
-takeTAbs :: GType l -> Maybe (GTBindVar l, GType l, GType l)
+takeTAbs :: GType l -> Maybe (Bind, GType l, GType l)
 takeTAbs tt
  = case tt of
         TAnnot _ t      -> takeTAbs t
@@ -138,16 +137,16 @@ takeTFuns' tt
 
 -- Forall types ---------------------------------------------------------------
 -- | Construct a forall quantified type using an anonymous binder.
-makeTForall :: Anon l  => l -> GType l -> (GType l -> GType l) -> GType l
-makeTForall l k makeBody
-        =  withBinding l $ \b u
+makeTForall :: l -> GType l -> (GType l -> GType l) -> GType l
+makeTForall _l k makeBody
+        =  withBinding $ \b u
         -> TApp (TCon (TyConForall k)) (TAbs b k (makeBody (TVar u)))
 
 
 -- | Construct a forall quantified type using some anonymous binders.
-makeTForalls :: Anon l => l -> [GType l] -> ([GType l] -> GType l) -> GType l
-makeTForalls l ks makeBody
-        = withBindings l (length ks) $ \bs us
+makeTForalls :: l -> [GType l] -> ([GType l] -> GType l) -> GType l
+makeTForalls _l ks makeBody
+        = withBindings (length ks) $ \bs us
         -> foldr (\(k, b) t -> TApp (TCon (TyConForall k)) (TAbs b k t))
                         (makeBody $ reverse $ map TVar us)
                         (zip ks bs)
@@ -157,7 +156,7 @@ makeTForalls l ks makeBody
 --
 --   The kind we return comes from the abstraction rather than the
 --   Forall constructor.
-takeTForall :: GType l -> Maybe (GType l, GTBindVar l, GType l)
+takeTForall :: GType l -> Maybe (GType l, Bind, GType l)
 takeTForall tt
         | Just (t1, t2)         <- takeTApp tt
         , Just (TyConForall _)  <- takeTCon t1
@@ -170,9 +169,9 @@ takeTForall tt
 
 -- Exists types ---------------------------------------------------------------
 -- | Construct an exists quantified type using an anonymous binder.
-makeTExists :: Anon l => l -> GType l -> (GType l -> GType l) -> GType l
-makeTExists l k makeBody
-        =  withBinding l $ \b u
+makeTExists :: l -> GType l -> (GType l -> GType l) -> GType l
+makeTExists _l k makeBody
+        =  withBinding $ \b u
         -> TApp (TCon (TyConExists k)) (TAbs b k (makeBody (TVar u)))
 
 
@@ -180,7 +179,7 @@ makeTExists l k makeBody
 --
 --   The kind we return comes from the abstraction rather than the
 --   Exists constructor.
-takeTExists :: GType l -> Maybe (GType l, GTBindVar l, GType l)
+takeTExists :: GType l -> Maybe (GType l, Bind, GType l)
 takeTExists tt
         | Just (t1, t2)         <- takeTApp tt
         , Just (TyConExists _)  <- takeTCon t1

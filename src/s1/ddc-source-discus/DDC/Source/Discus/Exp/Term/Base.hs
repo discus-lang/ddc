@@ -3,15 +3,9 @@
 
 -- | Abstract syntax for Discus Source expressions.
 module DDC.Source.Discus.Exp.Term.Base
-        ( -- * Classes
-          HasAnonBind   (..)
-        , Anon          (..)
-
-          -- * Types
+        ( -- * Types
           -- ** Type Functions
-        , GTAnnot
-        , GTBindVar,    GTBoundVar
-        , GTBindCon,    GTBoundCon
+          GTAnnot
         , GTPrim
 
           -- ** Syntax
@@ -33,8 +27,6 @@ module DDC.Source.Discus.Exp.Term.Base
           -- * Terms
           -- ** Type Functions
         , GXAnnot
-        , GXBindVar, GXBoundVar
-        , GXBindCon, GXBoundCon
         , GXFrag
 
           -- ** Syntax
@@ -58,9 +50,11 @@ module DDC.Source.Discus.Exp.Term.Base
         , ParamSort     (..)
 
           -- * Dictionaries
-        , ShowLanguage)
+        , ShowLanguage
+
+        , module DDC.Source.Discus.Exp.Bind)
 where
-import DDC.Source.Discus.Exp.Binding
+import DDC.Source.Discus.Exp.Bind
 import DDC.Source.Discus.Exp.Type.Base
 import DDC.Core.Exp                     (DaCon (..), Prim (..))
 
@@ -71,29 +65,13 @@ import DDC.Core.Exp                     (DaCon (..), Prim (..))
 -- | Yield the type of annotations.
 type family GXAnnot    l
 
--- | Yield the type of binding occurrences of variables.
-type family GXBindVar  l
-
--- | Yield the type of bound occurrences of variables.
-type family GXBoundVar l
-
--- | Yield the type of binding occurrences of constructors.
-type family GXBindCon  l
-
--- | Yield the type of bound occurrences of constructors.
-type family GXBoundCon l
-
 -- | Yield the type of fragment specific primitive names.
 type family GXFrag     l
 
 
-class HasAnonBind l where
- isAnon :: l -> GXBindVar l -> Bool
-
-
 -- | A possibly typed binding.
 data GXBindVarMT l
-        = XBindVarMT (GXBindVar l) (Maybe (GType l))
+        = XBindVarMT Bind (Maybe (GType l))
 
 
 -------------------------------------------------------------------------------
@@ -113,10 +91,10 @@ data GExp l
         | XFrag     !(GXFrag  l)
 
         -- | Data constructor or literal.
-        | XCon      !(DaCon (GXBoundCon l) (GType l))
+        | XCon      !(DaCon DaConBound (GType l))
 
         -- | Value variable.
-        | XVar      !(GXBoundVar l)
+        | XVar      !Bound
 
         -- | Function abstraction.
         | XAbs      !(GParam l)  !(GExp l)
@@ -180,13 +158,13 @@ data ParamSort
 -- | Parameter for an abstraction.
 data GParam l
         -- | Type parameter with optional kind.
-        = MType     !(GXBindVar l) !(Maybe (GType l))
+        = MType     !Bind     !(Maybe (GType l))
 
         -- | Term pattern with optional type.
-        | MTerm     !(GPat l)      !(Maybe (GType l))
+        | MTerm     !(GPat l) !(Maybe (GType l))
 
         -- | Implicit term pattern with optional type.
-        | MImplicit !(GPat l)      !(Maybe (GType l))
+        | MImplicit !(GPat l) !(Maybe (GType l))
 
 
 -- | Argument of an application.
@@ -218,10 +196,10 @@ data GLets l
 
         -- | Bind a local region variable,
         --   and witnesses to its properties.
-        | LPrivate ![GXBindVar l] !(GCaps l)
+        | LPrivate ![Bind] !(GCaps l)
 
         -- | Extend an existing region with a sub region that has other capabilities.
-        | LExtend  ![GXBindVar l] !(GType l) !(GCaps l)
+        | LExtend  ![Bind] !(GType l) !(GCaps l)
 
         ---------------------------------------------------
         -- Sugar Constructs
@@ -234,7 +212,7 @@ data GLets l
 -- | Capability list associate with a 'private' or 'extend' construct.
 data GCaps l
         -- | Explicit list of named capabilities.
-        = CapsList      ![(GXBindVar l, GType l)]
+        = CapsList      ![(Bind, GType l)]
 
         -- | Sugar for '{Read r; Write r; Alloc r}' for each bound region 'r'.
         | CapsMutable
@@ -246,7 +224,7 @@ data GCaps l
 -- | Binding clause
 data GClause l
         -- | A separate type signature.
-        = SSig   !(GXAnnot l) !(GXBindVar l)   !(GType l)
+        = SSig   !(GXAnnot l) !Bind   !(GType l)
 
         -- | A function binding using pattern matching and guards.
         | SLet   !(GXAnnot l) !(GXBindVarMT l) ![GParam l] ![GGuardedExp l]
@@ -258,14 +236,14 @@ data GPat l
         = PDefault
 
         -- | Give a name to the value matched by a pattern.
-        | PAt    !(GXBindVar l) !(GPat l)
+        | PAt    !Bind !(GPat l)
 
         -- | The variable pattern always succeeds and binds the value
         --   to the new variable.
-        | PVar   !(GXBindVar l)
+        | PVar   !Bind
 
         -- | Match a data constructor and bind its arguments.
-        | PData  !(DaCon (GXBoundCon l) (GType l)) ![GPat l]
+        | PData  !(DaCon DaConBound (GType l)) ![GPat l]
 
 
 -- | An expression with some guards.
@@ -317,7 +295,7 @@ data GWitness l
         = WAnnot !(GXAnnot l)  !(GWitness l)
 
         -- | Witness variable.
-        | WVar   !(GXBoundVar l)
+        | WVar   !Bound
 
         -- | Witness constructor.
         | WCon   !(GWiCon l)
@@ -334,7 +312,7 @@ data GWiCon l
         -- | Witness constructors defined in the environment.
         --   In the interpreter we use this to hold runtime capabilities.
         --   The attached type must be closed.
-        = WiConBound   !(GXBoundVar l) !(GType l)
+        = WiConBound   !Bound !(GType l)
 
 
 -------------------------------------------------------------------------------
@@ -342,8 +320,6 @@ type ShowLanguage l
         = ( Show l
           , ShowGType l
           , Show (GXAnnot    l)
-          , Show (GXBindVar l), Show (GXBoundVar l)
-          , Show (GXBindCon l), Show (GXBoundCon l)
           , Show (GXFrag l))
 
 deriving instance ShowLanguage l => Show (GExp         l)

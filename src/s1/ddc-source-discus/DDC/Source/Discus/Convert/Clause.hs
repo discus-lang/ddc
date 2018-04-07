@@ -10,7 +10,7 @@ import qualified DDC.Source.Discus.Exp                   as S
 
 
 -- | Collect type signatures defined in a clause group.
-collectSigsFromClauses      :: [S.Clause] -> [(S.BindVar, S.Type)]
+collectSigsFromClauses      :: [S.Clause] -> [(S.Bind, S.Type)]
 collectSigsFromClauses cls
  = go cls
  where  go (S.SSig _ b t : cls')
@@ -20,7 +20,7 @@ collectSigsFromClauses cls
 
 
 -- | Collect binders for values defined in a clause group.
-collectBoundVarsFromClauses :: [S.Clause] -> [S.BindVar]
+collectBoundVarsFromClauses :: [S.Clause] -> [S.Bind]
 collectBoundVarsFromClauses cls
  = go cls
  where  go (S.SLet _ (S.XBindVarMT b _) _ _ : cls')
@@ -31,8 +31,8 @@ collectBoundVarsFromClauses cls
 
 -- | Strip a let-binding from a clause.
 makeBindingFromClause
-        :: [(S.BindVar, S.Type)]        -- ^ Type signatures in the same group.
-        -> [ S.BindVar ]                -- ^ Bound values defined in the same group.
+        :: [(S.Bind, S.Type)]        -- ^ Type signatures in the same group.
+        -> [ S.Bind ]                -- ^ Bound values defined in the same group.
         -> S.Clause                     -- ^ Clause to consider.
         -> ConvertM S.Source
                     (Maybe (S.BindVarMT, (SP, S.Exp)))

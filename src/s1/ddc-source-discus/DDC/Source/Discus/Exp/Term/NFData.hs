@@ -7,10 +7,9 @@ import Control.DeepSeq
 
 ---------------------------------------------------------------------------------------------------
 type NFDataLanguage l
-        = ( NFData l, T.NFDataLanguage l
+        = ( NFData l
+          , T.NFDataLanguage l
           , NFData (GXAnnot   l)
-          , NFData (GXBindVar l),  NFData (GXBoundVar l)
-          , NFData (GXBindCon l),  NFData (GXBoundCon l)
           , NFData (GXFrag    l))
 
 instance NFDataLanguage l => NFData (GExp l) where
@@ -19,8 +18,8 @@ instance NFDataLanguage l => NFData (GExp l) where
         XAnnot    a x           -> rnf a `seq` rnf x
         XPrim     _             -> ()
         XFrag     p             -> rnf p
-        XVar      u             -> rnf u
-        XCon      dc            -> rnf dc
+        XVar      _             -> ()
+        XCon      _             -> ()
         XAbs      p x           -> rnf p   `seq` rnf x
         XApp      x1 a2         -> rnf x1  `seq` rnf a2
         XLet      lts x         -> rnf lts `seq` rnf x
@@ -36,21 +35,21 @@ instance NFDataLanguage l => NFData (GExp l) where
 
 
 instance NFDataLanguage l => NFData (GXBindVarMT l) where
- rnf (XBindVarMT b mt)
-  = rnf b `seq` rnf mt
+ rnf (XBindVarMT _ mt)
+  = rnf mt
 
 
 instance NFDataLanguage l => NFData (GClause l) where
  rnf cc
   = case cc of
-        SSig a b t              -> rnf a `seq` rnf b `seq` rnf t
-        SLet a b ps gxs         -> rnf a `seq` rnf b `seq` rnf ps `seq` rnf gxs
+        SSig a _ t              -> rnf a `seq` rnf t
+        SLet a _ ps gxs         -> rnf a `seq` rnf ps `seq` rnf gxs
 
 
 instance NFDataLanguage l => NFData (GParam l) where
  rnf pp
   = case pp of
-        MType     b mt          -> rnf b `seq` rnf mt
+        MType     _ mt          -> rnf mt
         MTerm     p mt          -> rnf p `seq` rnf mt
         MImplicit p mt          -> rnf p `seq` rnf mt
 
@@ -69,15 +68,15 @@ instance NFDataLanguage l => NFData (GLets l) where
   = case lts of
         LLet b x                -> rnf b `seq` rnf x
         LRec bxs                -> rnf bxs
-        LPrivate bs1 caps       -> rnf bs1 `seq` rnf caps
-        LExtend  bs1 t caps     -> rnf bs1 `seq` rnf t `seq` rnf caps
+        LPrivate{}              -> ()
+        LExtend _ t _           -> rnf t
         LGroup _bRec cs         -> rnf cs
 
 
 instance NFDataLanguage l => NFData (GCaps l) where
  rnf caps
   = case caps of
-        CapsList bts            -> rnf bts
+        CapsList _              -> ()
         CapsMutable             -> ()
         CapsConstant            -> ()
 
@@ -98,9 +97,9 @@ instance NFDataLanguage l => NFData (GPat l) where
  rnf pp
   = case pp of
         PDefault                -> ()
-        PAt   b p               -> rnf b  `seq` rnf p
-        PVar  b                 -> rnf b
-        PData dc bs             -> rnf dc `seq` rnf bs
+        PAt   _ p               -> rnf p
+        PVar  _                 -> ()
+        PData _ bs              -> rnf bs
 
 
 instance NFDataLanguage l => NFData (GGuardedExp l) where
@@ -130,7 +129,7 @@ instance NFDataLanguage l => NFData (GWitness l) where
  rnf ww
   = case ww of
         WAnnot a w              -> rnf a `seq` rnf w
-        WVar   u                -> rnf u
+        WVar   _u               -> ()
         WCon   c                -> rnf c
         WApp   w1 w2            -> rnf w1 `seq` rnf w2
         WType  t                -> rnf t
@@ -139,5 +138,5 @@ instance NFDataLanguage l => NFData (GWitness l) where
 instance NFDataLanguage l => NFData (GWiCon l) where
  rnf wc
   = case wc of
-        WiConBound u t          -> rnf u `seq` rnf t
+        WiConBound _ t          -> rnf t
 

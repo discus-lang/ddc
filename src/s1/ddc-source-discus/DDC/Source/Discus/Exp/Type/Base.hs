@@ -2,10 +2,10 @@
 
 -- Generic type expression representation.
 module DDC.Source.Discus.Exp.Type.Base
-        ( -- * Type Families
-          GTAnnot
-        , GTBindVar, GTBoundVar
-        , GTBindCon, GTBoundCon
+        ( module DDC.Source.Discus.Exp.Bind
+
+          -- * Type Families
+        , GTAnnot
         , GTPrim
 
           -- * Abstract Syntax
@@ -29,6 +29,7 @@ module DDC.Source.Discus.Exp.Type.Base
           -- * Classes
         , ShowGType)
 where
+import DDC.Source.Discus.Exp.Bind
 
 
 ---------------------------------------------------------------------------------------------------
@@ -36,18 +37,6 @@ where
 
 -- | Yield the type of annotations.
 type family GTAnnot    l
-
--- | Yield the type of binding occurrences of variables.
-type family GTBindVar  l
-
--- | Yield the type of bound occurrences of variables.
-type family GTBoundVar l
-
--- | Yield the type of binding occurrences of constructors.
-type family GTBindCon  l
-
--- | Yield the type of bound occurrences of constructors.
-type family GTBoundCon l
 
 -- | Yield the type of primitive type names.
 type family GTPrim     l
@@ -63,10 +52,10 @@ data GType l
         | TCon       !(GTyCon l)
 
         -- | Type variable.
-        | TVar       !(GTBoundVar l)
+        | TVar       !Bound
 
         -- | Type abstracton.
-        | TAbs       !(GTBindVar l) (GType l) (GType l)
+        | TAbs       !Bind (GType l) (GType l)
 
         -- | Type application.
         | TApp       !(GType l) (GType l)
@@ -86,8 +75,7 @@ pattern TApp5 t0 t1 t2 t3 t4 t5 = TApp (TApp (TApp (TApp (TApp t0 t1) t2) t3) t4
 
 
 deriving instance
-        ( Eq (GTAnnot l),   Eq (GTyCon l)
-        , Eq (GTBindVar l), Eq (GTBoundVar l))
+        ( Eq (GTAnnot l),   Eq (GTyCon l))
         => Eq (GType l)
 
 
@@ -123,11 +111,11 @@ data GTyCon l
         | TyConPrim   !(GTPrim l)
 
         -- | Bound constructor.
-        | TyConBound  !(GTBoundCon l)
+        | TyConBound  !TyConBound
 
 
 deriving instance
-        (Eq (GType l), Eq (GTPrim l), Eq (GTBoundCon l))
+        (Eq (GType l), Eq (GTPrim l))
         => Eq (GTyCon l)
 
 
@@ -159,8 +147,6 @@ pattern TFunImplicit t1 t2  = TApp (TApp (TCon TyConFunImplicit) t1) t2
 type ShowGType l
         = ( Show l
           , Show (GTAnnot   l)
-          , Show (GTBindVar l), Show (GTBoundVar l)
-          , Show (GTBindCon l), Show (GTBoundCon l)
           , Show (GTPrim    l))
 
 deriving instance ShowGType l => Show (GType  l)

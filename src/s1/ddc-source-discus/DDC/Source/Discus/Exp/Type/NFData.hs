@@ -8,9 +8,22 @@ import Control.DeepSeq
 type NFDataLanguage l
         = ( NFData l
           , NFData (GTAnnot l)
-          , NFData (GTBindVar l), NFData (GTBoundVar l)
-          , NFData (GTBindCon l), NFData (GTBoundCon l)
           , NFData (GTPrim l))
+
+instance NFData Bind where
+ rnf !_ = ()
+
+
+instance NFData Bound where
+ rnf !_ = ()
+
+
+instance NFData TyConBind where
+ rnf !_ = ()
+
+
+instance NFData TyConBound where
+ rnf !_ = ()
 
 
 instance NFDataLanguage l => NFData (GType l) where
@@ -18,8 +31,8 @@ instance NFDataLanguage l => NFData (GType l) where
   = case xx of
         TAnnot a t              -> rnf a  `seq` rnf t
         TCon   tc               -> rnf tc
-        TVar   bv               -> rnf bv
-        TAbs   bv k t           -> rnf bv `seq` rnf k `seq` rnf t
+        TVar   _bv              -> ()
+        TAbs   _bv k t          -> rnf k  `seq` rnf t
         TApp   t1 t2            -> rnf t1 `seq` rnf t2
 
 
@@ -35,5 +48,5 @@ instance NFDataLanguage l => NFData (GTyCon l) where
         TyConForall t           -> rnf t
         TyConExists t           -> rnf t
         TyConPrim   p           -> rnf p
-        TyConBound  bc          -> rnf bc
+        TyConBound  _bc         -> ()
 

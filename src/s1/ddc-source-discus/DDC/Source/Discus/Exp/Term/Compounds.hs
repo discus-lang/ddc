@@ -91,7 +91,7 @@ import DDC.Core.Exp.Annot
 
 -- Binds ----------------------------------------------------------------------
 -- | Take the `GBind` of a `GBindMT`
-bindOfBindMT :: GXBindVarMT l -> GXBindVar l
+bindOfBindMT :: GXBindVarMT l -> Bind
 bindOfBindMT (XBindVarMT g _mt) = g
 
 
@@ -226,7 +226,7 @@ takeXFragApps xx
 --   and its arguments.
 --
 --   Returns `Nothing` if the expression isn't a constructor application.
-takeXConApps :: GExp l -> Maybe (DaCon (GXBoundCon l) (GType l), [GArg l])
+takeXConApps :: GExp l -> Maybe (DaCon DaConBound (GType l), [GArg l])
 takeXConApps xx
  = case takeXAppsAsList xx of
         (XCon dc, args) -> Just (dc, args)
@@ -268,7 +268,7 @@ takeRImplicit arg
 
 -- Clauses --------------------------------------------------------------------
 -- | Take the binding variable of a clause.
-bindOfClause :: GClause l -> GXBindVar l
+bindOfClause :: GClause l -> Bind
 bindOfClause cc
  = case cc of
         SSig _ b _                      -> b

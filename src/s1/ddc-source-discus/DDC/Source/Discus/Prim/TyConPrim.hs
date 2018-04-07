@@ -20,7 +20,6 @@ import DDC.Source.Discus.Prim.Base
 import DDC.Source.Discus.Prim.TyCon
 import DDC.Source.Discus.Exp.Term.Base
 import DDC.Source.Discus.Exp.Term.Compounds
-import DDC.Source.Discus.Exp.Bind
 import Data.Text                        (Text)
 
 
@@ -75,8 +74,7 @@ pattern PFalse = PData (DaConPrim (DaConBoundLit (PrimLitBool False)) TBool) []
 
 -- Primitives -------------------------------------------------------------------------------------
 makeXErrorDefault
-        :: ( GXBoundCon l ~ DaConBound
-           , GXFrag l     ~ PrimVal
+        :: ( GXFrag l     ~ PrimVal
            , GTPrim l     ~ PrimType)
         => Text -> Integer -> GExp l
 makeXErrorDefault name n

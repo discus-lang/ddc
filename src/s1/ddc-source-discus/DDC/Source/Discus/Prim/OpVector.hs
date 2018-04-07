@@ -12,7 +12,7 @@ import DDC.Source.Discus.Exp.Term.Compounds
 
 
 -- | Take the type of a primitive vector operator.
-typeOpVector :: forall l. (Anon l, GTPrim l ~ PrimType) => l -> OpVector -> GType l
+typeOpVector :: forall l. (GTPrim l ~ PrimType) => l -> OpVector -> GType l
 typeOpVector l op
  = case op of
         OpVectorAlloc

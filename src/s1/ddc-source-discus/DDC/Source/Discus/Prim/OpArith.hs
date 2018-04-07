@@ -13,7 +13,7 @@ import DDC.Source.Discus.Exp.Term.Compounds
 
 -- | Take the type of a primitive arithmetic operator.
 typePrimArith
-        :: (Anon l, GTPrim l ~ PrimType)
+        :: (GTPrim l ~ PrimType)
         => l -> PrimArith -> GType l
 typePrimArith l op
  = case op of

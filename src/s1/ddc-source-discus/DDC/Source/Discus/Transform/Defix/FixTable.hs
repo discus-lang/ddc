@@ -101,7 +101,7 @@ getInfixDefOfSymbol a table str
 
 
 -- | Default fixity table for infix operators.
-defaultFixTable :: GXBoundVar l ~ Bound => FixTable l
+defaultFixTable :: FixTable l
 defaultFixTable
  = FixTable
         [ FixDefPrefix  "-"     (xvar "neg")

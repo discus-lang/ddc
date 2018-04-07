@@ -26,8 +26,6 @@ module DDC.Source.Discus.Exp
           -- ** Type Generics
         , Source        (..)
         , GTAnnot
-        , GTBindVar,    GTBoundVar
-        , GTBindCon,    GTBoundCon
         , GTPrim
 
           -----------------------------
@@ -101,11 +99,7 @@ module DDC.Source.Discus.Exp
           -- * Terms
           -- ** Syntax
         , Annot,        GXAnnot
-        , BindVar,      GXBindVar
         , BindVarMT,    GXBindVarMT (..)
-        , BoundVar,     GXBoundVar
-        , BindCon,      GXBindCon
-        , BoundCon,     GXBoundCon
         , Frag,         GXFrag
 
           -- *** Expressions
@@ -247,11 +241,9 @@ import DDC.Source.Discus.Exp.Term.Base
 
 import DDC.Source.Discus.Exp.Type.Compounds
 
-import DDC.Source.Discus.Exp.Bind
 import DDC.Source.Discus.Exp.DataDef
 
 import DDC.Source.Discus.Prim
-
 
 import DDC.Type.Exp.TyCon               as T
 
@@ -269,37 +261,18 @@ instance Pretty Source where
  ppr ss = text (show ss)
 
 
-instance HasAnonBind Source where
- isAnon _ BAnon = True
- isAnon _ _     = False
-
-
-instance Anon Source where
- withBindings Source n f
-  = let bs      = replicate n BAnon
-        us      = reverse [UIx i | i <- [0..(n - 1)]]
-    in  f bs us
-
 
 -- Type AST -------------------------------------------------------------------
 type Type       = GType  Source
 type TyCon      = GTyCon Source
 
 type instance GTAnnot    Source = SourcePos
-type instance GTBindVar  Source = Bind
-type instance GTBoundVar Source = Bound
-type instance GTBindCon  Source = TyConBind
-type instance GTBoundCon Source = TyConBound
 type instance GTPrim     Source = PrimType
 
 
 -- Term AST -------------------------------------------------------------------
 type Annot      = GXAnnot     Source
-type BindVar    = GXBindVar   Source
 type BindVarMT  = GXBindVarMT Source
-type BoundVar   = GXBoundVar  Source
-type BindCon    = GXBoundCon  Source
-type BoundCon   = GXBoundCon  Source
 type Frag       = GXFrag      Source
 type Exp        = GExp        Source
 type Param      = GParam      Source
@@ -317,12 +290,5 @@ type Witness    = GWitness    Source
 type WiCon      = GWiCon      Source
 
 type instance GXAnnot    Source = SourcePos
-type instance GXBindVar  Source = Bind
-type instance GXBoundVar Source = Bound
-type instance GXBindCon  Source = DaConBind
-type instance GXBoundCon Source = DaConBound
 type instance GXFrag     Source = PrimVal
-
-
-
 

@@ -18,10 +18,10 @@ import Control.DeepSeq
 data DataDef l
         = DataDef
         { -- | Data type name.
-          dataDefTypeName       :: !(GTBindCon l)
+          dataDefTypeName       :: !TyConBind
 
           -- | Type parameters and their kinds.
-        , dataDefParams         :: [(GTBindVar l, GType l)]
+        , dataDefParams         :: [(Bind, GType l)]
 
           -- | Parameters and return type of each constructor.
         , dataDefCtors          :: [DataCtor l] }
@@ -38,7 +38,7 @@ instance NFData (DataDef n) where
 data DataCtor l
         = DataCtor
         { -- | Name of the data constructor.
-          dataCtorName          :: !(GXBindCon l)
+          dataCtorName          :: !DaConBind
 
           -- | Types of each of the fields of the constructor.
         , dataCtorFieldTypes    :: ![GType l]

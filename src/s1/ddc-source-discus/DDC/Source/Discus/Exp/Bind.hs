@@ -3,13 +3,18 @@
 module DDC.Source.Discus.Exp.Bind
         ( Name
         , Bind          (..)
+        , isBAnon
+
         , Bound         (..)
         , takeBoundOfBind
 
         , DaConBind     (..)
         , DaConBound    (..)
         , TyConBind     (..)
-        , TyConBound    (..))
+        , TyConBound    (..)
+
+        , withBindings
+        , withBinding)
 where
 import DDC.Source.Discus.Prim.Base
 import Data.Text                (Text)
@@ -22,6 +27,10 @@ data Bind
         | BAnon
         | BName !Text
         deriving (Eq, Ord, Show)
+
+isBAnon :: Bind -> Bool
+isBAnon BAnon   = True
+isBAnon _       = False
 
 
 -- | Bound occurrence of a variable.
@@ -48,25 +57,36 @@ takeBoundOfBind bb
 
 -- | Binding occurrence of a data constructor.
 data DaConBind
-        = DaConBindName  Text
+        = DaConBindName  !Text
         deriving (Eq, Ord, Show)
 
 
 -- | Bound occurrences of a data constructor.
 data DaConBound
-        = DaConBoundName Text
-        | DaConBoundLit  PrimLit
+        = DaConBoundName !Text
+        | DaConBoundLit  !PrimLit
         deriving (Eq, Ord, Show)
 
 
 -- | Binding occurrence of a type constructor.
 data TyConBind
-        = TyConBindName  Text
+        = TyConBindName  !Text
         deriving (Eq, Ord, Show)
 
 
 -- | Bound occurrence of a type constructor.
 data TyConBound
-        = TyConBoundName Text
+        = TyConBoundName !Text
         deriving (Eq, Ord, Show)
+
+
+withBindings :: Int -> ([Bind] -> [Bound] -> a) -> a
+withBindings n f
+  = let bs      = replicate n BAnon
+        us      = reverse [UIx i | i <- [0..(n - 1)]]
+    in  f bs us
+
+
+withBinding :: (Bind -> Bound -> a) -> a
+withBinding f = f BAnon (UIx 0)
 

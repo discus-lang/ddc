@@ -24,10 +24,10 @@ data ErrorConvert l
 
         -- | Found multiple type signatures for the same binder.
         --   This should have been desugared in a prior pass.
-        | ErrorMultipleSignatures        SourcePos (GXBindVar l)
+        | ErrorMultipleSignatures        SourcePos Bind
 
         -- | Type signature lacks associated value-level binding.
-        | ErrorTypeSignatureLacksBinding SourcePos (GXBindVar l)
+        | ErrorTypeSignatureLacksBinding SourcePos Bind
 
 
 instance (PrettyLanguage l) => Pretty (ErrorConvert l) where

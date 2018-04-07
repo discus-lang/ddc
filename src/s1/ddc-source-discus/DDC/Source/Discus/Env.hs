@@ -1,4 +1,4 @@
-
+{-# LANGUAGE TypeFamilies #-}
 -- | Source Discus primitive type and kind environments.
 module DDC.Source.Discus.Env
         ( Env           (..)
@@ -302,7 +302,7 @@ kindOfPrimType tt
 
 
 -- | Take the type of a primitive name.
-typeOfPrimVal  :: PrimVal -> Type
+typeOfPrimVal :: PrimVal -> Type
 typeOfPrimVal dc
  = case dc of
         PrimValLit      l       -> typeOfPrimLit l
@@ -314,7 +314,7 @@ typeOfPrimVal dc
 
 
 -- | Take the type of a primitive literal.
-typeOfPrimLit   :: PrimLit -> Type
+typeOfPrimLit :: PrimLit -> Type
 typeOfPrimLit pl
  = case pl of
         PrimLitBool     _       -> TBool
@@ -329,9 +329,7 @@ typeOfPrimLit pl
 
 ---------------------------------------------------------------------------------------------------
 -- | Take the types of data constructors from a data type definition.
-envOfDataDef
-        :: DataDef Source -> Env
-
+envOfDataDef :: DataDef Source -> Env
 envOfDataDef def
         =  unions
         $ [singletonDaCon (dataCtorName ctor) (typeOfDataCtor def ctor)

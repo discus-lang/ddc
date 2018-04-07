@@ -139,13 +139,13 @@ toCoreTC uu tc
 
 -- Bind -------------------------------------------------------------------------------------------
 -- | Convert a type constructor binding occurrence to a core name.
-toCoreTBCN :: S.GTBindCon S.Source  -> ConvertM a C.Name
+toCoreTBCN :: S.TyConBind  -> ConvertM a C.Name
 toCoreTBCN (S.TyConBindName n)
  = return $ C.NameCon n
 
 
 -- | Convert a type constructor bound occurrence to a core name.
-toCoreTUCN :: S.GTBoundCon S.Source -> ConvertM a C.Name
+toCoreTUCN :: S.TyConBound -> ConvertM a C.Name
 toCoreTUCN (S.TyConBoundName n)
  = return $ C.NameCon n
 
@@ -159,7 +159,7 @@ toCoreXUVN uu
         S.UHole   -> return $ C.NameHole
 
 
-toCoreXBVN  :: S.GTBindVar S.Source -> ConvertM a C.Name
+toCoreXBVN  :: S.Bind -> ConvertM a C.Name
 toCoreXBVN bb
  = case bb of
         S.BNone   -> error "ddc-source-discus.toCoreXBVN: none bound"
@@ -168,7 +168,7 @@ toCoreXBVN bb
 
 
 -- | Convert a type binder and kind to core.
-toCoreTBK :: (S.GTBindVar S.Source, S.GType S.Source)
+toCoreTBK :: (S.Bind, S.GType S.Source)
           -> ConvertM a (C.Bind C.Name)
 toCoreTBK (bb, k)
  = case bb of
