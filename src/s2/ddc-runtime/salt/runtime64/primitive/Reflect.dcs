@@ -1,0 +1,12 @@
+
+module Runtime.Prim.Reflect
+
+export foreign c value
+ ddcPrimReflectValue    : [r1: Region]. Ptr# r1 Obj -> Ptr# r1 Obj
+
+with letrec
+
+-- | Reflecting a value is a no-op at the runtime system level,
+--   though represents a type cast to the source language.
+ddcPrimReflectValue [r1: Region] (obj: Ptr# r1 Obj): Ptr# r1 Obj
+ = obj
