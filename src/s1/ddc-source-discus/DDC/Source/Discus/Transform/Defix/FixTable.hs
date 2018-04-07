@@ -13,7 +13,7 @@ module DDC.Source.Discus.Transform.Defix.FixTable
         , defaultFixTable)
 where
 import DDC.Source.Discus.Transform.Defix.Error
-import DDC.Source.Discus.Exp.Source
+import DDC.Source.Discus.Exp
 import Data.List
 import qualified Data.Text              as Text
 

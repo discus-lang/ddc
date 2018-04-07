@@ -22,9 +22,7 @@ module DDC.Source.Discus.Module
           -- * Data type definitions
         , DataDef       (..))
 where
-import DDC.Source.Discus.Exp.DataDef
-import DDC.Source.Discus.Exp.Source
-import DDC.Source.Discus.Exp.Term.NFData
+import DDC.Source.Discus.Exp
 import Control.DeepSeq
 
 import DDC.Core.Module
