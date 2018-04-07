@@ -5,6 +5,8 @@ module DDC.Source.Discus.Lexer
         , lexModuleString)
 where
 import DDC.Source.Discus.Prim
+import DDC.Source.Discus.Exp.Type.Pretty        ()
+import DDC.Source.Discus.Exp.Type.NFData        ()
 import DDC.Core.Codec.Text.Lexer
 import DDC.Data.Pretty
 import Control.DeepSeq
@@ -23,7 +25,7 @@ data Name
         | NameCon        !Text
 
         -- | Primitive type names.
-        | NamePrimType   !PrimType
+        | NamePrimType   !TyConPrim
 
         -- | Primitive literal values.
         | NamePrimValLit !PrimLit

@@ -4,17 +4,13 @@
 module DDC.Source.Discus.Prim.OpArith
         (typePrimArith)
 where
-import DDC.Source.Discus.Prim.TyCon
-import DDC.Source.Discus.Prim.TyConPrim
 import DDC.Source.Discus.Prim.Base
-import DDC.Source.Discus.Exp.Term.Base
+import DDC.Source.Discus.Exp.Type.Base
 import DDC.Source.Discus.Exp.Term.Compounds
 
 
 -- | Take the type of a primitive arithmetic operator.
-typePrimArith
-        :: (GTPrim l ~ PrimType)
-        => l -> PrimArith -> GType l
+typePrimArith :: l -> PrimArith -> GType l
 typePrimArith l op
  = case op of
         -- Numeric

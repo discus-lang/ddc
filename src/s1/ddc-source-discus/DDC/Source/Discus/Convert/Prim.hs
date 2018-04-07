@@ -9,13 +9,13 @@ import qualified DDC.Source.Discus.Prim  as S
 
 
 -- | Convert a Discus specific type constructor to core.
-toCoreTyConDiscus :: S.PrimTyConDiscus -> C.TyConDiscus
+toCoreTyConDiscus :: S.TyConDiscus -> C.TyConDiscus
 toCoreTyConDiscus tc
  = case tc of
-        S.PrimTyConDiscusTuple n -> C.TyConDiscusTuple n
-        S.PrimTyConDiscusVector  -> C.TyConDiscusVector
-        S.PrimTyConDiscusF       -> C.TyConDiscusF
-        S.PrimTyConDiscusU       -> C.TyConDiscusU
+        S.TyConDiscusTuple n    -> C.TyConDiscusTuple n
+        S.TyConDiscusVector     -> C.TyConDiscusVector
+        S.TyConDiscusF          -> C.TyConDiscusF
+        S.TyConDiscusU          -> C.TyConDiscusU
 
 
 -- | Convert a value primtivie to a core name.

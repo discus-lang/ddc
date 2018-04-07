@@ -13,8 +13,7 @@ import qualified Data.Text              as Text
 
 -- | Synonym for pretty constraints on the configurable types.
 type PrettyConfig l
-      = ( Pretty (GTAnnot   l)
-        , Pretty (GTPrim    l))
+      = ( Pretty (GTAnnot   l))
 
 
 instance Pretty TyConBind where
@@ -39,6 +38,28 @@ instance Pretty Bound where
         UIx i   -> int i
         UName t -> text (Text.unpack t)
         UHole   -> text "?"
+
+
+instance Pretty TyConPrim where
+ ppr t
+  = case t of
+        TyConPrimSoCon c        -> ppr c
+        TyConPrimKiCon c        -> ppr c
+        TyConPrimTwCon c        -> ppr c
+        TyConPrimTcCon c        -> ppr c
+        TyConPrimTyCon c        -> ppr c
+        TyConPrimDiscus c       -> ppr c
+
+
+instance Pretty TyConDiscus where
+ ppr tc
+  = case tc of
+        TyConDiscusTuple n   -> text "Tuple" <> int n
+        TyConDiscusVector    -> text "Vector"
+        TyConDiscusF         -> text "F#"
+        TyConDiscusU         -> text "U#"
+
+
 
 
 -- | Pretty print a type using the generic, raw syntax.

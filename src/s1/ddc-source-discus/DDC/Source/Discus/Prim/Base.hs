@@ -1,17 +1,9 @@
 
 -- | Definition of names used in Source Discus language.
 module DDC.Source.Discus.Prim.Base
-        ( -- * Primitive Types
-          PrimType      (..)
-
-          -- ** Primitive machine type constructors.
-        , PrimTyCon     (..)
-
-          -- ** Primitive Discus specific type constructors.
-        , PrimTyConDiscus(..)
-
+        (
           -- * Primitive Values
-        , PrimVal       (..)
+          PrimVal       (..)
 
           -- ** Primitive arithmetic operators.
         , PrimArith     (..)
@@ -32,57 +24,15 @@ module DDC.Source.Discus.Prim.Base
         , PrimLit       (..)
         , primLitOfLiteral)
 where
-import DDC.Type.Exp.TyCon
 import DDC.Core.Exp.Literal
 import DDC.Core.Discus
         ( OpFun         (..)
         , OpVector      (..)
         , OpError       (..)
-        , PrimTyCon     (..)
         , PrimArith     (..)
         , PrimCast      (..))
 
 import Data.Text        (Text)
-
-
----------------------------------------------------------------------------------------------------
--- | Primitive types.
-data PrimType
-        -- | Primitive sort constructors.
-        = PrimTypeSoCon         !SoCon
-
-        -- | Primitive kind constructors.
-        | PrimTypeKiCon         !KiCon
-
-        -- | Primitive witness type constructors.
-        | PrimTypeTwCon         !TwCon
-
-        -- | Other type constructors at the spec level.
-        | PrimTypeTcCon         !TcCon
-
-        -- | Primitive machine type constructors.
-        | PrimTypeTyCon         !PrimTyCon
-
-        -- | Primtive type constructors specific to the Discus fragment.
-        | PrimTypeTyConDiscus    !PrimTyConDiscus
-        deriving (Eq, Ord, Show)
-
-
----------------------------------------------------------------------------------------------------
--- | Primitive type constructors specific to the Discus language fragment.
-data PrimTyConDiscus
-        -- | @TupleN#@. Tuples.
-        = PrimTyConDiscusTuple !Int
-
-        -- | @Vector#@. Vectors.
-        | PrimTyConDiscusVector
-
-        -- | @F#@.       Reified function values.
-        | PrimTyConDiscusF
-
-        -- | @U#@.       Explicitly unboxed values.
-        | PrimTyConDiscusU
-        deriving (Eq, Ord, Show)
 
 
 ---------------------------------------------------------------------------------------------------

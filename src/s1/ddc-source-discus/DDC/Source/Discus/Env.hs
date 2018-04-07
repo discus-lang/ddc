@@ -290,15 +290,15 @@ daStackDepth env = Seq.length (envDaStack env)
 
 ---------------------------------------------------------------------------------------------------
 -- | Take the kind of a primitive type.
-kindOfPrimType :: PrimType -> Maybe Type
+kindOfPrimType :: TyConPrim -> Maybe Type
 kindOfPrimType tt
  = case tt of
-        PrimTypeSoCon _         -> Nothing
-        PrimTypeKiCon _         -> Nothing
-        PrimTypeTwCon _         -> Nothing
-        PrimTypeTcCon _         -> Nothing
-        PrimTypeTyCon tc        -> Just (kindPrimTyCon tc)
-        PrimTypeTyConDiscus tc   -> Just (kindPrimTyConDiscus tc)
+        TyConPrimSoCon _        -> Nothing
+        TyConPrimKiCon _        -> Nothing
+        TyConPrimTwCon _        -> Nothing
+        TyConPrimTcCon _        -> Nothing
+        TyConPrimTyCon tc       -> Just (kindPrimTyCon tc)
+        TyConPrimDiscus tc      -> Just (kindPrimTyConDiscus tc)
 
 
 -- | Take the type of a primitive name.

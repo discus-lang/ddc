@@ -26,7 +26,6 @@ module DDC.Source.Discus.Exp
           -- ** Type Generics
         , Source        (..)
         , GTAnnot
-        , GTPrim
 
           -----------------------------
           -- ** Type Constructors
@@ -37,9 +36,9 @@ module DDC.Source.Discus.Exp
 
           -----------------------------
           -- ** Type Primitives
-        , PrimType       (..)
-        , PrimTyCon      (..)
-        , PrimTyConDiscus (..)
+        , TyConPrim     (..)
+        , PrimTyCon     (..)
+        , TyConDiscus   (..)
 
           -----------------------------
           -- ** Pattern Synonyms
@@ -267,7 +266,6 @@ type Type       = GType  Source
 type TyCon      = GTyCon Source
 
 type instance GTAnnot    Source = SourcePos
-type instance GTPrim     Source = PrimType
 
 
 -- Term AST -------------------------------------------------------------------

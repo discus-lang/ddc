@@ -7,8 +7,7 @@ import Control.DeepSeq
 
 type NFDataLanguage l
         = ( NFData l
-          , NFData (GTAnnot l)
-          , NFData (GTPrim l))
+          , NFData (GTAnnot l))
 
 instance NFData Bind where
  rnf !_ = ()
@@ -23,6 +22,14 @@ instance NFData TyConBind where
 
 
 instance NFData TyConBound where
+ rnf !_ = ()
+
+
+instance NFData TyConPrim where
+ rnf !_ = ()
+
+
+instance NFData TyConDiscus where
  rnf !_ = ()
 
 

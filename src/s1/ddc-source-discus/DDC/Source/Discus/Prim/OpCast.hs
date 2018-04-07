@@ -4,16 +4,13 @@
 module DDC.Source.Discus.Prim.OpCast
         (typePrimCast)
 where
-import DDC.Source.Discus.Prim.TyCon
 import DDC.Source.Discus.Prim.Base
-import DDC.Source.Discus.Exp.Term.Base
+import DDC.Source.Discus.Exp.Type.Base
 import DDC.Source.Discus.Exp.Term.Compounds
 
 
 -- | Take the type of a primitive arithmetic operator.
-typePrimCast
-        :: (GTPrim l ~ PrimType)
-        => l -> PrimCast -> GType l
+typePrimCast :: l -> PrimCast -> GType l
 typePrimCast l op
  = case op of
         PrimCastConvert

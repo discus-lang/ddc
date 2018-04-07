@@ -6,7 +6,6 @@ module DDC.Source.Discus.Exp.Term.Base
         ( -- * Types
           -- ** Type Functions
           GTAnnot
-        , GTPrim
 
           -- ** Syntax
         , GType         (..)

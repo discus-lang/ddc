@@ -3,16 +3,13 @@
 module DDC.Source.Discus.Prim.OpVector
         (typeOpVector)
 where
-import DDC.Source.Discus.Prim.TyCon
-import DDC.Source.Discus.Prim.TyConPrim
-import DDC.Source.Discus.Prim.TyConDiscus
 import DDC.Source.Discus.Prim.Base
-import DDC.Source.Discus.Exp.Term.Base
+import DDC.Source.Discus.Exp.Type.Base
 import DDC.Source.Discus.Exp.Term.Compounds
 
 
 -- | Take the type of a primitive vector operator.
-typeOpVector :: forall l. (GTPrim l ~ PrimType) => l -> OpVector -> GType l
+typeOpVector :: forall l. l -> OpVector -> GType l
 typeOpVector l op
  = case op of
         OpVectorAlloc

@@ -19,7 +19,6 @@ import qualified Data.Text                      as Text
 type PrettyLanguage l
  =      ( Pretty l
         , Pretty (GTAnnot    l)
-        , Pretty (GTPrim     l)
 
         , Pretty (GXAnnot    l)
         , Pretty (GXFrag l)

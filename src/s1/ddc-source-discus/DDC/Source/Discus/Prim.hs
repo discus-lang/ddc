@@ -2,7 +2,7 @@
 -- | Definitions of Source Discus primitive names and operators.
 module DDC.Source.Discus.Prim
         ( -- * Primitive Types
-          PrimType      (..)
+          TyConPrim     (..)
         , readPrimType
 
           -- ** Primitive machine type constructors.
@@ -28,7 +28,7 @@ module DDC.Source.Discus.Prim
         , pattern TTextLit
 
           -- ** Primitive tetra type constructors.
-        , PrimTyConDiscus(..)
+        , TyConDiscus(..)
         , kindPrimTyConDiscus
 
           -- * Primitive values
@@ -65,14 +65,14 @@ module DDC.Source.Discus.Prim
         , pattern PFalse)
 where
 import DDC.Source.Discus.Prim.Base
-import DDC.Source.Discus.Prim.TyCon
-import DDC.Source.Discus.Prim.TyConPrim
-import DDC.Source.Discus.Prim.TyConDiscus
 import DDC.Source.Discus.Prim.OpArith
 import DDC.Source.Discus.Prim.OpCast
 import DDC.Source.Discus.Prim.OpFun
 import DDC.Source.Discus.Prim.OpVector
 import DDC.Source.Discus.Prim.OpError
+import DDC.Source.Discus.Exp.Type.Base
+import DDC.Source.Discus.Exp.Type.Prim.TyConPrim
+import DDC.Source.Discus.Exp.Type.Prim.TyConDiscus
 import DDC.Data.Pretty
 import Control.DeepSeq
 import qualified Data.Text              as T
@@ -94,36 +94,14 @@ import DDC.Core.Salt.Name
 
 
 ---------------------------------------------------------------------------------------------------
-instance Pretty PrimType where
- ppr t
-  = case t of
-        PrimTypeSoCon c         -> ppr c
-        PrimTypeKiCon c         -> ppr c
-        PrimTypeTwCon c         -> ppr c
-        PrimTypeTcCon c         -> ppr c
-        PrimTypeTyCon c         -> ppr c
-        PrimTypeTyConDiscus c    -> ppr c
-
-
-instance NFData PrimType where
- rnf t
-  = case t of
-        PrimTypeSoCon _         -> ()
-        PrimTypeKiCon _         -> ()
-        PrimTypeTwCon _         -> ()
-        PrimTypeTcCon _         -> ()
-        PrimTypeTyCon c         -> rnf c
-        PrimTypeTyConDiscus c    -> rnf c
-
-
 -- | Read the name of a primitive type.
-readPrimType :: String -> Maybe PrimType
+readPrimType :: String -> Maybe TyConPrim
 readPrimType str
         | Just p <- readPrimTyConDiscus str
-        = Just $ PrimTypeTyConDiscus p
+        = Just $ TyConPrimDiscus p
 
         | Just p <- readPrimTyCon str
-        = Just $ PrimTypeTyCon p
+        = Just $ TyConPrimTyCon p
 
         | otherwise
         = Nothing

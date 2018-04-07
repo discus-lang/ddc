@@ -2,9 +2,8 @@
 module DDC.Source.Discus.Prim.OpError
         ( typeOpError)
 where
-import DDC.Source.Discus.Prim.TyConPrim
 import DDC.Source.Discus.Prim.Base
-import DDC.Source.Discus.Prim.TyCon
+import DDC.Source.Discus.Exp.Type.Base
 import DDC.Source.Discus.Exp.Term.Compounds
 
 

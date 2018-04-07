@@ -114,17 +114,17 @@ toCoreTC uu tc
         S.TyConPrim pt
          -> case pt of
                 -- Ambient TyCons
-                S.PrimTypeSoCon sc -> return $ Just $ C.TyConSort    sc
-                S.PrimTypeKiCon kc -> return $ Just $ C.TyConKind    kc
-                S.PrimTypeTwCon tw -> return $ Just $ C.TyConWitness tw
-                S.PrimTypeTcCon ts -> return $ Just $ C.TyConSpec    ts
+                S.TyConPrimSoCon sc -> return $ Just $ C.TyConSort    sc
+                S.TyConPrimKiCon kc -> return $ Just $ C.TyConKind    kc
+                S.TyConPrimTwCon tw -> return $ Just $ C.TyConWitness tw
+                S.TyConPrimTcCon ts -> return $ Just $ C.TyConSpec    ts
 
                 -- Primitive TyCons
-                S.PrimTypeTyCon tcy
+                S.TyConPrimTyCon tcy
                  -> do  k       <- toCoreT UniverseKind $ S.kindPrimTyCon tcy
                         return  $ Just $ C.TyConBound (C.UPrim (C.NamePrimTyCon tcy)) k
 
-                S.PrimTypeTyConDiscus tct
+                S.TyConPrimDiscus tct
                  -> do  k       <- toCoreT UniverseKind $ S.kindPrimTyConDiscus tct
                         let tct' =  toCoreTyConDiscus tct
                         return  $ Just $ C.TyConBound (C.UPrim (C.NameTyConDiscus tct')) k
@@ -278,6 +278,3 @@ toCoreDaConBound dcb
  = case dcb of
         S.DaConBoundName tx     -> C.NameCon tx
         S.DaConBoundLit pl      -> toCorePrimLit pl
-
-
-

@@ -4,16 +4,13 @@
 module DDC.Source.Discus.Prim.OpFun
         (typeOpFun)
 where
-import DDC.Source.Discus.Prim.TyCon
-import DDC.Source.Discus.Prim.TyConDiscus
 import DDC.Source.Discus.Prim.Base
-import DDC.Source.Discus.Exp.Term.Base
+import DDC.Source.Discus.Exp.Type.Base
 import DDC.Source.Discus.Exp.Term.Compounds
 
 
 -- | Take the type of a primitive function operator.
-typeOpFun :: (GTPrim l ~ PrimType)
-          => l -> OpFun -> GType l
+typeOpFun :: l -> OpFun -> GType l
 typeOpFun l op
  = case op of
         OpFunCurry n

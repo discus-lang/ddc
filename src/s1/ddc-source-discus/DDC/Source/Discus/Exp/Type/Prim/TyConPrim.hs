@@ -1,15 +1,7 @@
 {-# LANGUAGE TypeFamilies #-}
 -- | Definitions of primitive types for Source Discus language.
-module DDC.Source.Discus.Prim.TyConPrim
+module DDC.Source.Discus.Exp.Type.Prim.TyConPrim
         ( kindPrimTyCon
-        , pattern TVoid
-        , pattern TBool
-        , pattern TNat
-        , pattern TInt
-        , pattern TSize
-        , pattern TWord
-        , pattern TFloat
-        , pattern TTextLit
 
         , pattern PTrue
         , pattern PFalse
@@ -17,17 +9,15 @@ module DDC.Source.Discus.Prim.TyConPrim
         , makeXErrorDefault)
 where
 import DDC.Source.Discus.Prim.Base
-import DDC.Source.Discus.Prim.TyCon
+import DDC.Source.Discus.Exp.Type.Base
 import DDC.Source.Discus.Exp.Term.Base
 import DDC.Source.Discus.Exp.Term.Compounds
 import Data.Text                        (Text)
 
 
+---------------------------------------------------------------------------------------------------
 -- | Yield the kind of a type constructor.
-kindPrimTyCon
-        :: (PrimType ~ GTPrim l)
-        => PrimTyCon -> GType l
-
+kindPrimTyCon :: PrimTyCon -> GType l
 kindPrimTyCon tc
  = case tc of
         PrimTyConVoid    -> KData
@@ -44,29 +34,6 @@ kindPrimTyCon tc
         PrimTyConTag     -> KData
 
 
--- Compounds --------------------------------------------------------------------------------------
--- | Primitive `Bool` type.
-pattern TBool           = TCon (TyConPrim (PrimTypeTyCon PrimTyConBool))
-
--- | Primitive `Nat` type.
-pattern TNat            = TCon (TyConPrim (PrimTypeTyCon PrimTyConNat))
-
--- | Primitive `Int` type.
-pattern TInt            = TCon (TyConPrim (PrimTypeTyCon PrimTyConInt))
-
--- | Primitive `Size` type.
-pattern TSize           = TCon (TyConPrim (PrimTypeTyCon PrimTyConSize) )
-
--- | Primitive `WordN` type of the given width.
-pattern TWord bits      = TCon (TyConPrim (PrimTypeTyCon (PrimTyConWord bits)))
-
--- | Primitive `FloatN` type of the given width.
-pattern TFloat bits     = TCon (TyConPrim (PrimTypeTyCon (PrimTyConFloat bits)))
-
--- | Primitive `TextLit` type.
-pattern TTextLit        = TCon (TyConPrim (PrimTypeTyCon PrimTyConTextLit))
-
-
 -- Patterns ---------------------------------------------------------------------------------------
 pattern PTrue  = PData (DaConPrim (DaConBoundLit (PrimLitBool True))  TBool) []
 pattern PFalse = PData (DaConPrim (DaConBoundLit (PrimLitBool False)) TBool) []
@@ -74,8 +41,7 @@ pattern PFalse = PData (DaConPrim (DaConBoundLit (PrimLitBool False)) TBool) []
 
 -- Primitives -------------------------------------------------------------------------------------
 makeXErrorDefault
-        :: ( GXFrag l     ~ PrimVal
-           , GTPrim l     ~ PrimType)
+        :: (GXFrag l     ~ PrimVal)
         => Text -> Integer -> GExp l
 makeXErrorDefault name n
  = makeXApps

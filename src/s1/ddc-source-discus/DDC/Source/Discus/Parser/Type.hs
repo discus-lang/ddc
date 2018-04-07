@@ -8,9 +8,10 @@ module DDC.Source.Discus.Parser.Type
         , pTyConSP
         , pTyConBound)
 where
-import DDC.Source.Discus.Parser.Base            as S
-import DDC.Source.Discus.Exp                    as S
-import DDC.Source.Discus.Prim.TyConDiscus       as S
+import DDC.Source.Discus.Parser.Base                            as S
+import DDC.Source.Discus.Exp                                    as S
+import qualified DDC.Source.Discus.Exp.Type.Prim.TyConDiscus    as S
+
 import DDC.Core.Codec.Text.Lexer.Tokens         as K
 import qualified DDC.Source.Discus.Lexer        as SL
 
@@ -181,7 +182,7 @@ pTypeArgSP
         ns     <- fmap (map fst) $ P.sepBy pVarNameSP (pSym SComma)
         pSym SRoundKet
         pSym SHash
-        return ( TCon (TyConPrim (PrimTypeTcCon (TcConRecord ns)))
+        return ( TCon (TyConPrim (TyConPrimTcCon (TcConRecord ns)))
                , sp)
 
         -- Tuple type.
@@ -211,7 +212,7 @@ pTypeArgSP
                             return  (n, t))
                         (pSym SComma)
         pSym SRoundKet
-        let tRecord = TCon (TyConPrim (PrimTypeTcCon (TcConRecord nsField)))
+        let tRecord = TCon (TyConPrim (TyConPrimTcCon (TcConRecord nsField)))
         return  ( makeTApps tRecord tsField
                 , sp)
 
@@ -220,7 +221,7 @@ pTypeArgSP
  , P.try
     $ do sp     <- pTokSP $ KBuiltin BDaConUnit
          pSym SHash
-         return ( TCon (TyConPrim (PrimTypeTcCon (TcConRecord [])))
+         return ( TCon (TyConPrim (TyConPrimTcCon (TcConRecord [])))
                 , sp)
 
    -- (TYPE2)
@@ -238,7 +239,7 @@ pTypeBuiltinSP
  = P.choice
  [      -- (=>)
    do   sp      <- pTokSP $ KOpVar "=>"
-        return  (TAnnot sp $ TCon (TyConPrim (PrimTypeTwCon TwConImpl)), sp)
+        return  (TAnnot sp $ TCon (TyConPrim (TyConPrimTwCon TwConImpl)), sp)
 
         -- (->)
  , do   sp      <- pTokSP $ KOpVar "->"
@@ -261,16 +262,16 @@ pTyConSP  =   P.pTokMaybeSP f <?> "a type constructor"
         = case kk of
                 -- Primitive Ambient TyCons.
                 KA (KBuiltin (BSoCon c))
-                 -> Just $ TyConPrim $ PrimTypeSoCon c
+                 -> Just $ TyConPrim $ TyConPrimSoCon c
 
                 KA (KBuiltin (BKiCon c))
-                 -> Just $ TyConPrim $ PrimTypeKiCon c
+                 -> Just $ TyConPrim $ TyConPrimKiCon c
 
                 KA (KBuiltin (BTwCon c))
-                 -> Just $ TyConPrim $ PrimTypeTwCon c
+                 -> Just $ TyConPrim $ TyConPrimTwCon c
 
                 KA (KBuiltin (BTcCon c))
-                 -> Just $ TyConPrim $ PrimTypeTcCon c
+                 -> Just $ TyConPrim $ TyConPrimTcCon c
 
                 -- Primitive TyCons.
                 KN (KCon (SL.NamePrimType tc))
