@@ -1,7 +1,7 @@
 {-# OPTIONS_HADDOCK hide #-}
 {-# LANGUAGE UndecidableInstances #-}
-module DDC.Source.Discus.Exp.NFData where
-import DDC.Source.Discus.Exp.Generic
+module DDC.Source.Discus.Exp.Term.NFData where
+import DDC.Source.Discus.Exp.Term.Base
 import qualified DDC.Source.Discus.Exp.Type.NFData    as T
 import Control.DeepSeq
 

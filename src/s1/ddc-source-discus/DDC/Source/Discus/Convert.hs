@@ -15,7 +15,6 @@ import DDC.Source.Discus.Convert.Prim
 import DDC.Source.Discus.Convert.Base
 
 import qualified DDC.Source.Discus.Module       as S
-import qualified DDC.Source.Discus.DataDef      as S
 import qualified DDC.Source.Discus.Exp          as S
 
 import qualified DDC.Core.Discus.Compounds      as C

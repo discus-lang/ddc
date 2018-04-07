@@ -6,10 +6,10 @@ module DDC.Source.Discus.Pretty
         , module DDC.Data.Pretty
         , PrettyLanguage)
 where
-import DDC.Source.Discus.Exp.Predicates
-import DDC.Source.Discus.DataDef
 import DDC.Source.Discus.Module
 import DDC.Source.Discus.Exp.Source
+import DDC.Source.Discus.Exp.DataDef
+import DDC.Source.Discus.Exp.Term.Predicates
 import DDC.Source.Discus.Exp.Type.Pretty
 import DDC.Core.Codec.Text.Pretty
 import DDC.Data.Pretty

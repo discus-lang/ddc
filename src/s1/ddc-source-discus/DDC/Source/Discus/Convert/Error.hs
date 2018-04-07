@@ -5,7 +5,7 @@ module DDC.Source.Discus.Convert.Error
 where
 import DDC.Data.SourcePos
 import DDC.Source.Discus.Pretty
-import DDC.Source.Discus.Exp.Generic
+import DDC.Source.Discus.Exp.Term.Base
 
 
 -- | Things that can go wrong when converting source to core.

@@ -228,6 +228,12 @@ module DDC.Source.Discus.Exp
         , takePrimWiConApps
 
         -------------------------------------------------
+        -- * Data Declarations
+        , DataDef       (..)
+        , DataCtor      (..)
+        , typeOfDataCtor
+
+        -------------------------------------------------
         -- * Dictionaries
         , ShowLanguage
         , PrettyLanguage
@@ -235,9 +241,10 @@ module DDC.Source.Discus.Exp
 where
 import DDC.Source.Discus.Exp.Bind
 import DDC.Source.Discus.Exp.Source
-import DDC.Source.Discus.Exp.Predicates
-import DDC.Source.Discus.Exp.Compounds
-import DDC.Source.Discus.Exp.NFData
-import DDC.Source.Discus.Pretty
+import DDC.Source.Discus.Exp.Term.Predicates
+import DDC.Source.Discus.Exp.Term.Compounds
+import DDC.Source.Discus.Exp.Term.NFData
 import DDC.Source.Discus.Exp.Type.Compounds
+import DDC.Source.Discus.Exp.DataDef
+import DDC.Source.Discus.Pretty
 

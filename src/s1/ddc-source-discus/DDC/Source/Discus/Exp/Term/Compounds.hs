@@ -2,7 +2,7 @@
 {-# LANGUAGE TypeFamilies #-}
 
 -- | Utilities for constructing and destructing Source Discus expressions.
-module DDC.Source.Discus.Exp.Compounds
+module DDC.Source.Discus.Exp.Term.Compounds
         ( takeAnnotOfExp
 
           -- * Binds
@@ -71,9 +71,9 @@ module DDC.Source.Discus.Exp.Compounds
         , takeWAppsAsList
         , takePrimWiConApps)
 where
-import DDC.Source.Discus.Exp.Generic
-import Data.Maybe
+import DDC.Source.Discus.Exp.Term.Base
 import qualified DDC.Source.Discus.Exp.Type.Compounds as T
+import Data.Maybe
 
 import DDC.Core.Exp.Annot
         ( dcUnit

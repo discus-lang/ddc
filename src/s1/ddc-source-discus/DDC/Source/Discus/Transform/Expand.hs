@@ -27,7 +27,6 @@ module DDC.Source.Discus.Transform.Expand
 where
 import DDC.Source.Discus.Collect.FreeVars
 import DDC.Source.Discus.Exp
-import DDC.Source.Discus.DataDef
 import DDC.Source.Discus.Module
 import DDC.Data.SourcePos
 import Data.Function
@@ -70,7 +69,7 @@ expandM a env mm
 
                 -- Clauses should have already desugared.
                 TopClause _ SSig{} -> (p, Env.empty)
-                TopData   _ def    -> (p, envOfDataDef def)
+                TopData   _ def    -> (p, Env.envOfDataDef def)
                 TopType{}          -> (p, Env.empty)
 
         (tops_quant, envs)

@@ -1,9 +1,9 @@
 {-# LANGUAGE TypeFamilies #-}
-module DDC.Source.Discus.Exp.Type.Binding
+module DDC.Source.Discus.Exp.Binding
         ( Binding       (..)
         , Anon          (..))
 where
-import DDC.Source.Discus.Exp.Type.Exp
+import DDC.Source.Discus.Exp.Type.Base
 
 
 -- Binding --------------------------------------------------------------------

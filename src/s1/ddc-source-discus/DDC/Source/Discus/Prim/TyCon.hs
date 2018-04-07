@@ -11,7 +11,7 @@ module DDC.Source.Discus.Prim.TyCon
         , pattern TAlloc)
 where
 import DDC.Source.Discus.Prim.Base
-import DDC.Source.Discus.Exp.Type.Exp
+import DDC.Source.Discus.Exp.Type.Base
 import DDC.Type.Exp.TyCon
 
 

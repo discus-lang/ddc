@@ -10,7 +10,6 @@ where
 import DDC.Source.Discus.Parser.Exp     as S
 import DDC.Source.Discus.Parser.Base    as S
 import DDC.Source.Discus.Module         as S
-import DDC.Source.Discus.DataDef        as S
 import DDC.Source.Discus.Exp            as S
 import DDC.Core.Codec.Text.Lexer.Tokens as K
 import DDC.Data.Pretty

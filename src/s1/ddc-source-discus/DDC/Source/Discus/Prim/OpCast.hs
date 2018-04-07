@@ -6,8 +6,8 @@ module DDC.Source.Discus.Prim.OpCast
 where
 import DDC.Source.Discus.Prim.TyCon
 import DDC.Source.Discus.Prim.Base
-import DDC.Source.Discus.Exp.Generic
-import DDC.Source.Discus.Exp.Compounds
+import DDC.Source.Discus.Exp.Term.Base
+import DDC.Source.Discus.Exp.Term.Compounds
 
 
 -- | Take the type of a primitive arithmetic operator.

@@ -1,19 +1,15 @@
 {-# LANGUAGE TypeFamilies, UndecidableInstances #-}
 
 -- | Source Discus data type definitions.
-module DDC.Source.Discus.DataDef
+module DDC.Source.Discus.Exp.DataDef
         ( -- * Data Type Definition.
           DataDef  (..)
-        , envOfDataDef
 
           -- * Data Constructor Definition.
         , DataCtor (..)
         , typeOfDataCtor)
 where
-import DDC.Source.Discus.Exp.Generic
-import DDC.Source.Discus.Exp.Source
-import DDC.Source.Discus.Env             (Env)
-import qualified DDC.Source.Discus.Env   as Env
+import DDC.Source.Discus.Exp.Term.Base
 import Control.DeepSeq
 
 
@@ -35,16 +31,6 @@ deriving instance (ShowLanguage l, Show (DataCtor l))
 
 instance NFData (DataDef n) where
  rnf !_ = ()
-
-
--- | Take the types of data constructors from a data type definition.
-envOfDataDef
-        :: DataDef Source -> Env
-
-envOfDataDef def
-        =  Env.unions
-        $ [Env.singletonDaCon (dataCtorName ctor) (typeOfDataCtor def ctor)
-                | ctor  <- dataDefCtors def]
 
 
 -- DataCtor -------------------------------------------------------------------

@@ -3,7 +3,7 @@
 module DDC.Source.Discus.Exp.Type.Predicates
         (isAtomT)
 where
-import DDC.Source.Discus.Exp.Type.Exp
+import DDC.Source.Discus.Exp.Type.Base
 
 
 -- | Check whether a type is a `TVar` or `TCon`.

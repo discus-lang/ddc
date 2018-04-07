@@ -6,7 +6,7 @@ module DDC.Source.Discus.Exp.Type.Pretty
         , pprRawPrecT
         , pprRawC)
 where
-import DDC.Source.Discus.Exp.Type.Exp
+import DDC.Source.Discus.Exp.Type.Base
 import DDC.Data.Pretty
 
 

@@ -18,9 +18,9 @@ module DDC.Source.Discus.Prim.TyConPrim
 where
 import DDC.Source.Discus.Prim.Base
 import DDC.Source.Discus.Prim.TyCon
-import DDC.Source.Discus.Exp.Generic
+import DDC.Source.Discus.Exp.Term.Base
+import DDC.Source.Discus.Exp.Term.Compounds
 import DDC.Source.Discus.Exp.Bind
-import DDC.Source.Discus.Exp.Compounds
 import Data.Text                        (Text)
 
 

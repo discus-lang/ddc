@@ -4,7 +4,7 @@
 module DDC.Source.Discus.Transform.Defix.Error
         (Error (..))
 where
-import DDC.Source.Discus.Exp.Generic
+import DDC.Source.Discus.Exp.Term.Base
 import DDC.Source.Discus.Pretty
 
 

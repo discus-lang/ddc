@@ -1,7 +1,7 @@
 {-# OPTIONS_HADDOCK hide #-}
 
 -- | Simple predicates on Source Discus things.
-module DDC.Source.Discus.Exp.Predicates
+module DDC.Source.Discus.Exp.Term.Predicates
         ( module DDC.Source.Discus.Exp.Type.Predicates
 
           -- * Atoms
@@ -21,7 +21,7 @@ module DDC.Source.Discus.Exp.Predicates
         , isPDefault
         , isPVar)
 where
-import DDC.Source.Discus.Exp.Generic
+import DDC.Source.Discus.Exp.Term.Base
 import DDC.Source.Discus.Exp.Type.Predicates
 
 

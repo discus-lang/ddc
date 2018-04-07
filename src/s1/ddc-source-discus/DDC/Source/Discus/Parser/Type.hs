@@ -9,7 +9,7 @@ module DDC.Source.Discus.Parser.Type
         , pTyConBound)
 where
 import DDC.Source.Discus.Parser.Base            as S
-import DDC.Source.Discus.Exp.Compounds          as S
+import DDC.Source.Discus.Exp.Term.Compounds     as S
 import DDC.Source.Discus.Exp.Source             as S
 import DDC.Source.Discus.Prim.TyConDiscus       as S
 import DDC.Core.Codec.Text.Lexer.Tokens         as K

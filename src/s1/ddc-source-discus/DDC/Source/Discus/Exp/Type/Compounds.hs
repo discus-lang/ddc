@@ -25,8 +25,8 @@ module DDC.Source.Discus.Exp.Type.Compounds
         , makeTUnions,  takeTUnions
         , splitTUnionsOfKind)
 where
-import DDC.Source.Discus.Exp.Type.Exp
-import DDC.Source.Discus.Exp.Type.Binding
+import DDC.Source.Discus.Exp.Type.Base
+import DDC.Source.Discus.Exp.Binding
 
 
 -- Destructors ----------------------------------------------------------------

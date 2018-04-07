@@ -21,6 +21,9 @@ module DDC.Source.Discus.Env
         , extendDaCon
         , lookupDaCon
 
+          -- * Data Defs
+        , envOfDataDef
+
           -- ** Term Variables
         , singletonDaVar
         , singletonDaVar'
@@ -37,6 +40,7 @@ module DDC.Source.Discus.Env
 where
 import DDC.Source.Discus.Prim
 import DDC.Source.Discus.Exp.Source
+import DDC.Source.Discus.Exp.DataDef
 import Data.Map                         (Map)
 import Data.Sequence                    (Seq)
 import Data.Text                        (Text)
@@ -323,4 +327,14 @@ typeOfPrimLit pl
         PrimLitChar     _       -> TWord  32
         PrimLitTextLit  _       -> TTextLit
 
+
+---------------------------------------------------------------------------------------------------
+-- | Take the types of data constructors from a data type definition.
+envOfDataDef
+        :: DataDef Source -> Env
+
+envOfDataDef def
+        =  unions
+        $ [singletonDaCon (dataCtorName ctor) (typeOfDataCtor def ctor)
+                | ctor  <- dataDefCtors def]
 

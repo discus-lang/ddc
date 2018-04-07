@@ -1,7 +1,7 @@
 {-# LANGUAGE TypeFamilies, UndecidableInstances #-}
 
 -- Generic type expression representation.
-module DDC.Source.Discus.Exp.Type.Exp
+module DDC.Source.Discus.Exp.Type.Base
         ( -- * Type Families
           GTAnnot
         , GTBindVar, GTBoundVar

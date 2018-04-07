@@ -95,7 +95,7 @@ module DDC.Source.Discus.Exp.Source
           -- ** Dictionaries
         , ShowLanguage)
 where
-import DDC.Source.Discus.Exp.Generic
+import DDC.Source.Discus.Exp.Term.Base
 import DDC.Source.Discus.Exp.Bind
 import DDC.Source.Discus.Prim
 import DDC.Type.Exp.TyCon               as T

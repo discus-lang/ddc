@@ -8,8 +8,8 @@ module DDC.Source.Discus.Prim.TyConDiscus
 where
 import DDC.Source.Discus.Prim.TyCon
 import DDC.Source.Discus.Prim.Base
-import DDC.Source.Discus.Exp.Generic
-import DDC.Source.Discus.Exp.Compounds
+import DDC.Source.Discus.Exp.Term.Base
+import DDC.Source.Discus.Exp.Term.Compounds
 
 import DDC.Data.Pretty
 import Data.Char

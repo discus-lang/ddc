@@ -2,7 +2,7 @@
 {-# LANGUAGE TypeFamilies, UndecidableInstances #-}
 
 -- | Abstract syntax for Discus Source expressions.
-module DDC.Source.Discus.Exp.Generic
+module DDC.Source.Discus.Exp.Term.Base
         ( -- * Classes
           HasAnonBind   (..)
         , Anon          (..)
@@ -60,8 +60,8 @@ module DDC.Source.Discus.Exp.Generic
           -- * Dictionaries
         , ShowLanguage)
 where
-import DDC.Source.Discus.Exp.Type.Binding
-import DDC.Source.Discus.Exp.Type.Exp
+import DDC.Source.Discus.Exp.Binding
+import DDC.Source.Discus.Exp.Type.Base
 import DDC.Core.Exp                     (DaCon (..), Prim (..))
 
 

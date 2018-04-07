@@ -8,7 +8,7 @@ module DDC.Source.Discus.Transform.BoundX
         , MapBoundX     (..)
         , HasAnonBind   (..))
 where
-import DDC.Source.Discus.Exp.Generic
+import DDC.Source.Discus.Exp.Term.Base
 import DDC.Source.Discus.Exp.Bind
 
 ---------------------------------------------------------------------------------------------------
