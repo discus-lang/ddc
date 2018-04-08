@@ -351,7 +351,6 @@ Effects
 
 The ``weakeff`` construct is used to weaken the effect of the body expression. The provided type must be an effect type, which is added to the effect of the body expression.
 
-
 The ``box`` form suspends an effectful expression, yielding a closure.
 
 The ``run`` form executes a closure, yielding the result value.

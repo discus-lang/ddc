@@ -1,4 +1,6 @@
 
+.. _core-salt-fragment:
+
 Core Salt Fragment
 ==================
 

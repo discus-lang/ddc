@@ -1,4 +1,6 @@
 
+.. _core-discus-fragment:
+
 Core Discus Fragment
 ====================
 
