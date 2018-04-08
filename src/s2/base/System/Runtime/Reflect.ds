@@ -93,7 +93,7 @@ reflect_fail (tx: Text): a
 
 
 -------------------------------------------------------------------------------
--- | Reflect the runtime representation of a value.
+-- | Reify the runtime representation of a value.
 --
 --   Operationally this is a no-op, but in the source language we assign it
 --   an effectful type to track the fact that we're looking at the runtime
