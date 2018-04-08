@@ -10,4 +10,5 @@ Core Languages
    ../specification/core/02-Statics.rst
    ../specification/core/03-CoreDiscus.rst
    ../specification/core/04-CoreSalt.rst
+   ../specification/core/05-Shimmer.rst
 
