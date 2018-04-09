@@ -124,7 +124,7 @@ Terms
     |  Var                                            (variable)
 
     |  'λ' '(' Var ':' Type ')' '.' Exp               (explicit term abstraction)
-    |  'λ' '{' Var ':' Type ')' '.' Exp               (implicit term abstraction)
+    |  'λ' '{' Var ':' Type '}' '.' Exp               (implicit term abstraction)
     |  'Λ' '(' Var ':' Type ')' '.' Exp               (type abstraction)
 
     |  Exp Exp                                        (explicit term application)

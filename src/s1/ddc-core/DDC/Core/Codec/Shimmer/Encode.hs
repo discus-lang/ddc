@@ -462,6 +462,7 @@ takeType c tt
         C.TCon tc       -> takeTyCon c tc
         C.TVar u        -> takeBound c u
 
+
 -- Bind -------------------------------------------------------------------------------------------
 takeBind  :: Config n -> C.Bind n -> SExp
 takeBind c bb

@@ -37,6 +37,12 @@ Modules
     |  '@t-NAME'   '=' Type                             (type declaration)
     |  '@x-NAME'   '=' Term                             (term declaration)
 
+  TypDat
+   ::= '%typ-dat' NAME '@d-NAME'                        (data type name)
+
+  TypSyn
+   ::= '%typ-syn' NAME '@s-NAME'                        (type synonym name)
+
 
 Exports
 -------
@@ -75,33 +81,54 @@ Imports
    |   '%im-val-sea' NAME Text '@t-NAME'                (import value from sea)
 
 
- TypDat
-  ::=  '%typ-dat'    NAME '@d-NAME'                     (imported data type)
-
-
- TypSyn
-  ::=  '%typ-syn'    NAME '@s-NAME'                     (imported type synonym)
-
 
 Data Declarations
 -----------------
 
+.. code-block:: none
+
  DataDef                                                (data type declarations)
-  ::= ... TODO ...
+  ::= '%d-alg' Name List[Bind] Maybe[List[Ctor]]        (algebraic data type)
 
 
 Types
 -----
 
- Type                                                   (type declarations)
-  ::= ... TODO ...
+.. code-block:: none
 
+ Type                                                   (type declarations)
+  ::= Bound                                             (bound type variable)
+   |  TyCon                                             (type constructor)
+   |  '%tb' Bind Type                                   (type abstraction)
+   |  '%ta' Type Type+                                  (type application)
+   |  '%tl' Bind Type                                   (forall type)
+   |  '%ts' Type Type*                                  (sum type)
+   |  '%tf' TypeParam+ Type                             (flat function type)
+   |  '%tu' Bound Type+                                 (flat constructor application)
+
+ TypeParam
+  ::= Type                                              (type of explicit parameter)
+   | '%ni' Type                                         (type of implicit parameter)
+   | '%nn' TcCon Type                                   (type of function parameter)
 
 Terms
 -----
 
+.. code-block:: none
+
  Term                                                   (term declarations)
-  ::= ... TODO ...
+  ::= Bound                                             (bound variable)
+   |  DaCon                                             (bound data constructor)
+   |  VaPrim                                            (primitive value)
+
+   |  '%xpe'                                            (primitive elaboration)
+   |  '%xpp' Name                                       (primitive record projection)
+   |  '%xps'                                            (primitive record shuffle)
+   |  '%xpc'                                            (primitive record combine)
+
+   |  '%xdu'                                            (primitive unit data constructor)
+   |  '%xdr' Name                                       (primitive record type)
+   |  '
 
 
 .. _`binary format`:    https://hackage.haskell.org/package/shimmer-0.1.2/docs/SMR-Core-Codec.html
