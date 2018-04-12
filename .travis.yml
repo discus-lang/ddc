@@ -41,7 +41,6 @@ addons:
       - cabal-install-1.24
 
 compiler:
- matrix:
   - GHC-8.4.1
   - GHC-8.2.2
 
