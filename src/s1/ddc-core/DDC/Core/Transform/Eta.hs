@@ -1,7 +1,4 @@
 
--- Suppress Data.Monoid warnings during GHC 8.4.1 transition
-{-# OPTIONS  -Wno-unused-imports #-}
-
 -- Eta-expand functional values.
 ---
 -- NOTE: This is module currently just does eta-expansion, but in future
@@ -25,13 +22,11 @@ import DDC.Core.Simplifier.Result
 import DDC.Type.Transform.AnonymizeT
 import Control.Monad.Writer     (Writer, tell, runWriter)
 import Data.Typeable
+import DDC.Data.Monoidal
 import DDC.Core.Env.EnvX                        (EnvX)
 import qualified DDC.Core.Env.EnvX              as EnvX
 import qualified DDC.Core.Codec.Text.Pretty     as P
 import Prelude                                  hiding ((<$>))
-
--- GHC 8.2 -> 8.4 transition.
-import Data.Semigroup                   (Semigroup(..), Monoid(..))
 
 
 -------------------------------------------------------------------------------

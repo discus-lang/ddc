@@ -1,8 +1,6 @@
-
--- Suppress Data.Monoid warnings during GHC 8.4.1 transition
-{-# OPTIONS  -Wno-unused-imports #-}
-
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE CPP #-}
+
 module DDC.Core.Discus.Codec.Shimmer.Encode
         ( takeName
         , takeVarName
@@ -14,8 +12,11 @@ import qualified SMR.Prim.Name          as S
 import qualified Data.Text              as T
 import Data.Text                        (Text)
 
--- GHC 8.2 -> 8.4 transition.
-import Data.Semigroup                   (Monoid(..), Semigroup(..))
+#if __GLASGOW_HASKELL__ >= 741
+import DDC.Data.Monoidal        ()
+#else
+import DDC.Data.Monoidal
+#endif
 
 
 ---------------------------------------------------------------------------------------------------

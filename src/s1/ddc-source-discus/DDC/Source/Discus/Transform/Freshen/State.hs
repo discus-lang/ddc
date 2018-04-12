@@ -1,9 +1,7 @@
 {-# OPTIONS_HADDOCK hide #-}
-
--- Suppress Data.Monoid warnings during GHC 8.4.1 transition
-{-# OPTIONS  -Wno-unused-imports #-}
-
 {-# LANGUAGE OverloadedStrings, ExplicitNamespaces #-}
+{-# LANGUAGE CPP #-}
+
 module DDC.Source.Discus.Transform.Freshen.State
         ( type S
         , State (..),   stateZero
@@ -23,8 +21,11 @@ import qualified Data.Text              as Text
 import qualified Data.Set               as Set
 import qualified Data.Map.Strict        as Map
 
--- GHC 8.2 -> 8.4 transition.
-import Data.Semigroup                  (Monoid(..), Semigroup(..))
+#if __GLASGOW_HASKELL__ >= 741
+import DDC.Data.Monoidal        ()
+#else
+import DDC.Data.Monoidal
+#endif
 
 
 -------------------------------------------------------------------------------

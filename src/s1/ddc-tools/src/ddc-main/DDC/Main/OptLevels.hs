@@ -1,8 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
 
--- Suppress Data.Monoid warnings during GHC 8.4.1 transition
-{-# OPTIONS  -Wno-unused-imports #-}
-
 -- | Define the default optimisation levels.
 module DDC.Main.OptLevels
         ( getSimplSaltOfConfig)
@@ -17,8 +14,9 @@ import DDC.Core.Transform.Inline
 import DDC.Core.Transform.Namify
 import DDC.Core.Transform.Reannotate
 import DDC.Core.Simplifier                      (Simplifier)
+import DDC.Data.Monoidal
+import DDC.Data.Monoidal                ()
 import System.FilePath
-import Control.Monad
 import Data.List
 import Data.Maybe
 import qualified DDC.Driver.Config              as D
@@ -29,9 +27,6 @@ import qualified DDC.Core.Salt.Runtime          as Salt
 import qualified DDC.Build.Language.Salt        as Salt
 import qualified Data.Map                       as Map
 import qualified Data.Set                       as Set
-
--- GHC 8.2 -> 8.4 transition.
-import Data.Semigroup                  (Monoid(..), Semigroup(..))
 
 
 -- | Get the simplifier for Salt code from the config.

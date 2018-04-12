@@ -1,7 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-
--- Suppress Data.Monoid warnings during GHC 8.4.1 transition
-{-# OPTIONS  -Wno-unused-imports #-}
+{-# LANGUAGE CPP #-}
 
 -- | Desugar match expressions to case expressions.
 --
@@ -24,9 +22,11 @@ import qualified DDC.Data.SourcePos     as SP
 import qualified Control.Monad.State    as S
 import qualified Data.Text              as Text
 
--- GHC 8.2 -> 8.4 transition.
-import Data.Semigroup                  (Monoid(..), Semigroup(..))
-
+#if __GLASGOW_HASKELL__ >= 741
+import DDC.Data.Monoidal        ()
+#else
+import DDC.Data.Monoidal
+#endif
 
 -------------------------------------------------------------------------------
 -- | Desugar match expressions to case expressions in a module.

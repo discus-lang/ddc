@@ -1,6 +1,4 @@
-
--- Suppress Data.Monoid warnings during GHC 8.4.1 transition
-{-# OPTIONS  -Wno-unused-imports #-}
+{-# LANGUAGE CPP #-}
 
 module DDC.Core.Flow.Transform.Melt
         ( Info (..)
@@ -12,12 +10,15 @@ import DDC.Core.Flow.Compounds
 import DDC.Core.Module
 import DDC.Core.Flow.Transform.Annotate
 import DDC.Core.Flow.Transform.Deannotate
-import Control.Monad.Writer.Strict      hiding (Alt(..))
-import qualified Data.Set               as Set
-import Data.Set                         (Set)
+import Control.Monad.Writer.Strict              hiding (Alt(..))
+import Data.Set                                 (Set)
+import qualified Data.Set                       as Set
 
--- GHC 8.2 -> 8.4 transition.
-import Data.Semigroup                   (Monoid(..), Semigroup(..))
+#if __GLASGOW_HASKELL__ >= 741
+import DDC.Data.Monoidal        ()
+#else
+import DDC.Data.Monoidal
+#endif
 
 
 -------------------------------------------------------------------------------

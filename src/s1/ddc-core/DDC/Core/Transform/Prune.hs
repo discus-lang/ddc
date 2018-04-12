@@ -1,7 +1,4 @@
 
--- Suppress Data.Monoid warnings during GHC 8.4.1 transition
-{-# OPTIONS  -Wno-unused-imports #-}
-
 -- | Erase contained let-bindings that have no uses.
 --
 --   Contained bindings are ones that do not perform effects that are
@@ -24,6 +21,7 @@ import DDC.Core.Exp
 import Data.Typeable
 import Control.Monad.Writer                             (Writer, runWriter, tell)
 import DDC.Core.Env.EnvX                                (EnvX)
+import DDC.Data.Monoidal
 import qualified Data.Map                               as Map
 import qualified DDC.Data.Pretty                        as P
 import qualified DDC.Core.Transform.SubstituteXX        as S
@@ -32,8 +30,6 @@ import qualified DDC.Type.Sum                           as TS
 import qualified DDC.Core.Env.EnvT                      as EnvT
 import Prelude                                          hiding ((<$>))
 
--- GHC 8.2 -> 8.4 transition.
-import Data.Semigroup                   (Semigroup(..), Monoid(..))
 
 
 -------------------------------------------------------------------------------

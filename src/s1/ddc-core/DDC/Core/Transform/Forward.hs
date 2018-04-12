@@ -1,7 +1,4 @@
 
--- Suppress Data.Monoid warnings during GHC 8.4.1 transition
-{-# OPTIONS  -Wno-unused-imports #-}
-
 -- | Float let-bindings with a single use forward into their use-sites.
 module DDC.Core.Transform.Forward
         ( ForwardInfo   (..)
@@ -16,17 +13,17 @@ import DDC.Core.Module
 import DDC.Core.Simplifier.Base
 import DDC.Core.Transform.Reannotate
 import DDC.Core.Fragment
+import DDC.Data.Monoidal        ()
 import Data.Map                 (Map)
 import Control.Monad
 import Control.Monad.Writer     (Writer, runWriter, tell)
+import DDC.Data.Monoidal
 import Data.Typeable
 import qualified Data.Map                               as Map
 import qualified DDC.Core.Transform.SubstituteXX        as S
 import qualified DDC.Data.Pretty                        as P
 import Prelude                                          hiding ((<$>))
 
--- GHC 8.2 -> 8.4 transition.
-import Data.Semigroup                   (Semigroup(..), Monoid(..))
 
 
 -------------------------------------------------------------------------------

@@ -1,6 +1,4 @@
-
--- Suppress Data.Monoid warnings during GHC 8.4.1 transition
-{-# OPTIONS  -Wno-unused-imports #-}
+{-# LANGUAGE CPP #-}
 
 -- | Common simplifier recipes that combine multiple transforms.
 module DDC.Core.Simplifier.Recipe
@@ -29,8 +27,11 @@ import qualified DDC.Core.Transform.Snip  as Snip
 import qualified DDC.Core.Transform.Beta  as Beta
 import DDC.Type.Env
 
--- GHC 8.2 -> 8.4 transition.
-import Data.Semigroup                   (Semigroup(..), Monoid(..))
+#if __GLASGOW_HASKELL__ >= 741
+import DDC.Data.Monoidal        ()
+#else
+import DDC.Data.Monoidal
+#endif
 
 
 -- Atomic ---------------------------------------------------------------------

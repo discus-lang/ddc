@@ -1,8 +1,6 @@
-
--- Suppress Data.Monoid warnings during GHC 8.4.1 transition
-{-# OPTIONS  -Wno-unused-imports #-}
-
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE CPP #-}
+
 module DDC.Core.Discus.Convert.Type.Super
         ( convertSuperT
         , convertSuperConsT)
@@ -16,8 +14,11 @@ import DDC.Core.Exp.Annot
 import qualified DDC.Core.Discus.Prim   as E
 import qualified DDC.Core.Salt.Name     as A
 
--- GHC 8.2 -> 8.4 transition.
-import Data.Semigroup                   (Monoid(..), Semigroup(..))
+#if __GLASGOW_HASKELL__ >= 741
+import DDC.Data.Monoidal        ()
+#else
+import DDC.Data.Monoidal
+#endif
 
 ---------------------------------------------------------------------------------------------------
 -- | Convert the type of a super to Salt.

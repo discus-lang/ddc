@@ -1,6 +1,4 @@
-
--- Suppress Data.Monoid warnings during GHC 8.4.1 transition
-{-# OPTIONS  -Wno-unused-imports #-}
+{-# LANGUAGE CPP #-}
 
 -- | Beta-reduce applications of a explicit lambda abstractions
 --   to variables and values.
@@ -25,8 +23,11 @@ import Prelude                          hiding ((<$>))
 import qualified DDC.Core.Env.EnvX      as EnvX
 import qualified DDC.Data.Pretty        as P
 
--- GHC 8.2 -> 8.4 transition.
-import Data.Semigroup                   (Monoid(..), Semigroup(..))
+#if __GLASGOW_HASKELL__ >= 741
+import DDC.Data.Monoidal        ()
+#else
+import DDC.Data.Monoidal
+#endif
 
 
 -------------------------------------------------------------------------------

@@ -1,7 +1,5 @@
 {-# LANGUAGE OverloadedStrings, ExplicitNamespaces #-}
-
--- Suppress Data.Monoid warnings during GHC 8.4.1 transition
-{-# OPTIONS  -Wno-unused-imports #-}
+{-# LANGUAGE CPP #-}
 
 -- | A light simplification pass before conversion of desugared code to Core.
 module DDC.Source.Discus.Transform.Prep
@@ -14,10 +12,11 @@ import Data.Text                                (Text)
 import qualified Control.Monad.State.Strict     as S
 import qualified Data.Text                      as Text
 
--- GHC 8.2 -> 8.4 transition.
-import Data.Semigroup                  (Monoid(..), Semigroup(..))
-
-
+#if __GLASGOW_HASKELL__ >= 741
+import DDC.Data.Monoidal        ()
+#else
+import DDC.Data.Monoidal
+#endif
 
 ---------------------------------------------------------------------------------------------------
 -- | State holding a variable name prefix and counter to
