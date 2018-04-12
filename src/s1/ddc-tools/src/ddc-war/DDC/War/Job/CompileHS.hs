@@ -10,14 +10,12 @@ import BuildBox.Command.System
 import BuildBox.Build.Benchmark
 import BuildBox.Data.Physical
 import BuildBox.IO.Directory
-import BuildBox.Pretty
 import BuildBox
 import System.FilePath
 import System.Directory
 import Control.Monad
 import Data.List
-import Text.PrettyPrint.Leijen
-
+import DDC.War.Driver   (parens)
 
 -- | Use GHC to compile/make file.
 data Spec
@@ -46,7 +44,7 @@ data Spec
 data Result
         = ResultSuccess Seconds
         | ResultFailure
-        deriving Show
+
 
 resultSuccess :: Result -> Bool
 resultSuccess result
@@ -55,11 +53,11 @@ resultSuccess result
         _               -> False
 
 
-instance Pretty Result where
- pretty result
+instance Show Result where
+ show result
   = case result of
-        ResultSuccess seconds   -> text "success" <+> parens (ppr seconds)
-        ResultFailure           -> text "failed"
+        ResultSuccess seconds   -> "success" ++ parens (show seconds)
+        ResultFailure           -> "failed"
 
 
 -- | Compile a Haskell Source File

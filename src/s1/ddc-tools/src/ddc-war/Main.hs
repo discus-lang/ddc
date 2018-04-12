@@ -1,7 +1,6 @@
 
 import DDC.War.Config
 import DDC.War.Option
-import BuildBox.Pretty
 import BuildBox
 import System.Environment
 import System.Directory
@@ -30,7 +29,7 @@ mainTest spec
  = do   tmp     <- getTemporaryDirectory
         result  <- runBuild tmp $ T.build spec
         case result of
-         Left err       -> error    $ renderIndent $ ppr err
+         Left err       -> error    $ show err
          Right _        -> return ()
 
 
@@ -40,5 +39,5 @@ mainNightly spec
  = do   tmp     <- getTemporaryDirectory
         result  <- runBuild tmp  $ N.build spec
         case result of
-         Left err       -> error    $ renderIndent $ ppr err
-         Right result'  -> putStrLn $ renderIndent $ ppr result'
+         Left err       -> error    $ show err
+         Right result'  -> putStrLn $ show result'

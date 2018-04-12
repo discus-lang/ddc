@@ -10,12 +10,11 @@ import BuildBox.Command.System
 import BuildBox.Build.Benchmark
 import BuildBox.Data.Physical
 import BuildBox.IO.Directory
-import BuildBox.Pretty
 import BuildBox
 import System.FilePath
 import Control.Monad
 import Data.List
-import Text.PrettyPrint.Leijen
+import DDC.War.Driver   (parens)
 
 
 -- | Use DDC to compile a source file.
@@ -52,7 +51,7 @@ data Result
         = ResultSuccess Seconds
         | ResultUnexpectedSuccess
         | ResultUnexpectedFailure
-        deriving Show
+
 
 resultSuccess :: Result -> Bool
 resultSuccess result
@@ -61,12 +60,12 @@ resultSuccess result
         _               -> False
 
 
-instance Pretty Result where
- pretty result
+instance Show Result where
+ show result
   = case result of
-        ResultSuccess seconds    -> text "success" <+> parens (ppr seconds)
-        ResultUnexpectedFailure  -> text "failed"
-        ResultUnexpectedSuccess  -> text "unexpected"
+        ResultSuccess seconds    -> "success" ++ " " ++ parens (show seconds)
+        ResultUnexpectedFailure  -> "failed"
+        ResultUnexpectedSuccess  -> "unexpected"
 
 
 -- | Compile a Disciple source file.

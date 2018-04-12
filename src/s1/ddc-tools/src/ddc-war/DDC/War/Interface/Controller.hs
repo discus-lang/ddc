@@ -5,7 +5,6 @@ module DDC.War.Interface.Controller
         , controller)
 where
 import DDC.War.Driver
-import BuildBox.Pretty
 import BuildBox.Control.Gang
 import System.IO
 import Control.Concurrent
@@ -16,7 +15,6 @@ import Data.Maybe
 import Data.List
 import DDC.War.Interface.VT100      as VT100
 import qualified System.Process
-import Text.PrettyPrint.Leijen
 
 
 data Config
@@ -137,17 +135,16 @@ handleResult config gang chainsTotal
         let width'       = configFormatPathWidth config
 
         putStrLn
-         $ renderIndent
          $ parens (padR (length $ show chainsTotal)
-                        (ppr $ chainIx)
-                        <> text "."
-                        <> ppr jobIx
-                        <> text "/"
-                        <> ppr chainsTotal)
-           <+> padL width' (text testName2)
-           <+> padL 5      (text wayName)
-           <+> padL 8      (text actionName)
-           <+> colorizeStatus config actionName (renderIndent status)
+                        (show chainIx)
+                        ++ "."
+                        ++ show jobIx
+                        ++ "/"
+                        ++ show chainsTotal)
+           ++ " " ++  padL width' testName2
+           ++ " " ++  padL 5      wayName
+           ++ " " ++  padL 8      actionName
+           ++ " " ++  colorizeStatus config actionName (show status)
 
         hFlush stdout
         return True
@@ -182,7 +179,7 @@ handleResult config gang chainsTotal
  | ProductDiff{}        <- product'
  = handleResult config gang chainsTotal
         $ Result chainIx jobIx jobId actionName
-        $ ProductStatus (text "failed") False
+        $ ProductStatus "failed" False
 
  -- Bogus pattern match to avoid warning.
  | otherwise
@@ -234,32 +231,31 @@ handleResult_askDiff fileRef fileOut fileDiff
         result
 
 
-colorizeStatus :: Config -> String -> String -> Doc
+colorizeStatus :: Config -> String -> String -> String
 colorizeStatus config jobName status
         | not $ configColoredOutput config
-        = text status
+        = status
 
         | isPrefixOf "ok" status
-        = colorDoc [Foreground Green] (text status)
+        = colorDoc [Foreground Green] status
 
         | isPrefixOf "success" status
         , jobName == "run"
-        = colorDoc [Foreground Green] (text status)
+        = colorDoc [Foreground Green] status
 
         | isPrefixOf "success" status
         , jobName == "compile"
-        = colorDoc [Foreground Blue]  (text status)
+        = colorDoc [Foreground Blue]  status
 
         | isPrefixOf "failed"  status
-        = colorDoc [Foreground Red]   (text status)
+        = colorDoc [Foreground Red]   status
 
         | otherwise
-        = text status
+        = status
 
 
-colorDoc :: [VT100.Mode] -> Doc -> Doc
+colorDoc :: [VT100.Mode] -> String -> String
 colorDoc vmode doc
-        = text
-        $ concat [ setMode vmode
-                 , renderPlain doc
-                 , setMode [Reset] ]
+ = concat [ setMode vmode
+          , doc
+          , setMode [Reset] ]

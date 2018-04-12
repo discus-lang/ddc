@@ -11,13 +11,12 @@ import BuildBox.Command.System
 import BuildBox.Build.Benchmark
 import BuildBox.Data.Physical
 import BuildBox.IO.Directory
-import BuildBox.Pretty
 import BuildBox
+import DDC.War.Driver           (parens)
 import System.FilePath
 import System.Directory
 import Control.Monad
 import Data.List
-import Text.PrettyPrint.Leijen
 import qualified System.FilePath.Posix as P
 
 
@@ -63,7 +62,6 @@ data Result
         = ResultSuccess Seconds
         | ResultUnexpectedFailure
         | ResultUnexpectedSuccess
-        deriving Show
 
 
 resultSuccess :: Result -> Bool
@@ -73,12 +71,12 @@ resultSuccess result
         _               -> False
 
 
-instance Pretty Result where
- pretty result
+instance Show Result where
+ show result
   = case result of
-        ResultSuccess seconds   -> text "success" <+> parens (ppr seconds)
-        ResultUnexpectedFailure -> text "failed"
-        ResultUnexpectedSuccess -> text "unexpected"
+        ResultSuccess seconds   -> "success" ++ " " ++ parens (show seconds)
+        ResultUnexpectedFailure -> "failed"
+        ResultUnexpectedSuccess -> "unexpected"
 
 
 -- Build ----------------------------------------------------------------------

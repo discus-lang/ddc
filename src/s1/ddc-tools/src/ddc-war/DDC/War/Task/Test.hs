@@ -13,7 +13,6 @@ import qualified DDC.War.Driver                 as Driver
 import qualified DDC.War.Driver.Gang            as Driver
 
 import BuildBox.IO.Directory
-import BuildBox.Pretty
 import BuildBox
 
 import System.Directory
@@ -23,7 +22,6 @@ import Control.Monad
 import Control.Monad.STM
 import Control.Exception
 import Data.List
-import Text.PrettyPrint.Leijen
 
 import qualified Data.Sequence          as Seq
 import qualified Data.Foldable          as Seq
@@ -59,13 +57,12 @@ data Spec
 
 data Result
         = ResultSuccess
-        deriving Show
 
 
-instance Pretty Result where
- pretty result
+instance Show Result where
+ show result
   = case result of
-        ResultSuccess   -> text "success"
+        ResultSuccess   -> "success"
 
 
 build :: Spec -> Build Result
@@ -117,7 +114,7 @@ build spec
         -- Write all results to file if we were asked for it
         let chainsTotal = length chains
         let pathWidth   = specFormatPathWidth spec
-        let pprResult   = renderIndent . Driver.prettyResult chainsTotal prefix pathWidth
+        let pprResult   = Driver.prettyResult chainsTotal prefix pathWidth
         (case specResultsFileAll spec of
           Nothing       -> return ()
           Just file     -> io   $ writeFile file

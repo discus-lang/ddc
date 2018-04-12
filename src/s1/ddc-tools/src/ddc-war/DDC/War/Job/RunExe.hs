@@ -9,10 +9,9 @@ import BuildBox.Build.Benchmark
 import BuildBox.Command.File
 import BuildBox.Command.System
 import BuildBox.Data.Physical
-import BuildBox.Pretty
 import BuildBox
+import DDC.War.Driver (parens)
 import Data.List
-import Text.PrettyPrint.Leijen
 
 
 -- | Run a binary.
@@ -42,7 +41,6 @@ data Result
         = ResultSuccess Seconds
         | ResultUnexpectedFailure
         | ResultUnexpectedSuccess
-        deriving Show
 
 
 resultSuccess :: Result -> Bool
@@ -52,12 +50,12 @@ resultSuccess result
         _               -> False
 
 
-instance Pretty Result where
- pretty result
+instance Show Result where
+ show result
   = case result of
-        ResultSuccess seconds   -> text "success" <+> parens (ppr seconds)
-        ResultUnexpectedFailure -> text "failed"
-        ResultUnexpectedSuccess -> text "unexpected"
+        ResultSuccess seconds   -> "success" ++ " " ++ parens (show seconds)
+        ResultUnexpectedFailure -> "failed"
+        ResultUnexpectedSuccess -> "unexpected"
 
 
 -- | Run a binary

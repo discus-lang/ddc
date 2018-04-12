@@ -6,13 +6,13 @@ module DDC.War.Driver.Base
         , Product       (..)
         , Result        (..)
         , prettyResult
-        , Spec          (..))
+        , Spec          (..)
+
+        , padL, padR, parens)
 where
-import BuildBox.Pretty
 import BuildBox
 import Data.Maybe
 import Data.List
-import Text.PrettyPrint.Leijen
 
 
 -- | A printable job identifier.
@@ -23,16 +23,15 @@ data JobId
         deriving Show
 
 
-
 -- | A single job to run.
 --   The exact specification is defined by the client.
 data Job
         =  forall spec result. Spec spec result
         => Job JobId String spec (Build result)
 
-instance Pretty Job where
- pretty (Job jobId actionName spec _)
-  = text "Job" <+> text (show jobId) <+> text actionName <+> text (show spec)
+instance Show Job where
+ show (Job jobId actionName spec _)
+  = "Job" ++ show jobId ++ actionName ++ show spec
 
 
 -- | A chain of jobs to run one after another.
@@ -41,10 +40,9 @@ instance Pretty Job where
 data Chain
         = Chain [Job]
 
-instance Pretty Chain where
- pretty (Chain jobs)
-  =   text "Chain"
-  <+> ppr jobs
+instance Show Chain where
+ show (Chain jobs)
+  =   "Chain" ++ " " ++ show jobs
 
 
 -- | The product that we got when running a job.
@@ -52,7 +50,7 @@ instance Pretty Chain where
 --   how to proceed.
 data Product
         = ProductStatus
-        { productStatusMsg      :: Doc
+        { productStatusMsg      :: String
         , productStatusSuccess  :: Bool }
 
         | ProductDiff
@@ -71,32 +69,31 @@ data Result
         , resultProduct         :: Product }
 
 
-prettyResult :: Int -> String -> Int -> Result -> Doc
+prettyResult :: Int -> String -> Int -> Result -> String
 prettyResult chainsTotal prefix padWidth result
         | Result chainIx jobIx jobId actionName product' <- result
         , JobId  testName wayName                       <- jobId
         = let   status
                  = case product' of
                         ProductStatus s _ -> s
-                        ProductDiff{}     -> text "diff"
+                        ProductDiff{}     -> "diff"
 
                 testName'
                  = fromMaybe testName (stripPrefix prefix testName)
 
           in   parens (padR  (length $ show chainsTotal)
-                             (ppr chainIx)
-                   <>  text "."
-                   <>        (ppr jobIx))
-           <+> padL padWidth (text testName')
-           <+> padL 5        (text wayName)
-           <+> padL 8        (text actionName)
-           <+> status
+                      (show chainIx)
+                   ++ "."
+                   ++ (show jobIx))
+           ++ " " ++ padL padWidth testName'
+           ++ " " ++ padL 5        wayName
+           ++ " " ++ padL 8        actionName
+           ++ " " ++ status
 
-        where
 
 -- Spec -----------------------------------------------------------------------
 -- | Class of Job specifications.
-class (Show spec, Pretty result)
+class (Show spec, Show result)
         => Spec spec result | spec -> result where
 
  -- | Get a short name to describe the job that this spec describes,
@@ -113,4 +110,9 @@ class (Show spec, Pretty result)
  -- | Make the job product from its result.
  --   This cuts away information that the controller doesn't care about.
  productOfResult  :: spec -> result -> Product
+
+
+padR n s = replicate (n - length s) ' ' ++ s
+padL n s = s ++ replicate (n - length s) ' '
+parens s = "(" ++ s ++ ")"
 

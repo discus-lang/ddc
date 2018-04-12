@@ -10,28 +10,27 @@ import qualified DDC.War.Job.RunDCX     as RunDCX
 import qualified DDC.War.Job.RunDSX     as RunDSX
 import qualified DDC.War.Job.RunExe     as RunExe
 import qualified DDC.War.Job.Shell      as Shell
-import BuildBox.Pretty
 
 
 instance Spec CompileDC.Spec CompileDC.Result where
  specActionName _               = "compile"
  buildFromSpec                  = CompileDC.build
- productOfResult _ result       
-        = ProductStatus (ppr result) (CompileDC.resultSuccess result)
+ productOfResult _ result
+        = ProductStatus (show result) (CompileDC.resultSuccess result)
 
 
 instance Spec CompileDS.Spec  CompileDS.Result where
  specActionName _               = "compile"
  buildFromSpec                  = CompileDS.build
- productOfResult _ result       
-        = ProductStatus (ppr result) (CompileDS.resultSuccess result)
+ productOfResult _ result
+        = ProductStatus (show result) (CompileDS.resultSuccess result)
 
 
 instance Spec CompileHS.Spec  CompileHS.Result where
  specActionName _               = "compile"
  buildFromSpec                  = CompileHS.build
  productOfResult _ result
-        = ProductStatus (ppr result) (CompileHS.resultSuccess result)
+        = ProductStatus (show result) (CompileHS.resultSuccess result)
 
 
 instance Spec Diff.Spec       Diff.Result where
@@ -39,10 +38,10 @@ instance Spec Diff.Spec       Diff.Result where
  buildFromSpec                  = Diff.build
  productOfResult _ result
   = case result of
-        Diff.ResultSame                 
-         -> ProductStatus (ppr result) True
+        Diff.ResultSame
+         -> ProductStatus (show result) True
 
-        Diff.ResultDiff ref out diff    
+        Diff.ResultDiff ref out diff
          -> ProductDiff ref out diff
 
 
@@ -50,29 +49,26 @@ instance Spec RunDCX.Spec     RunDCX.Result where
  specActionName _               = "run"
  buildFromSpec                  = RunDCX.build
  productOfResult _ result
-        = ProductStatus (ppr result) (RunDCX.resultSuccess result)
+        = ProductStatus (show result) (RunDCX.resultSuccess result)
 
 
 instance Spec RunDSX.Spec     RunDSX.Result where
  specActionName _               = "run"
  buildFromSpec                  = RunDSX.build
  productOfResult _ result
-        = ProductStatus (ppr result) (RunDSX.resultSuccess result)
+        = ProductStatus (show result) (RunDSX.resultSuccess result)
 
 
 instance Spec RunExe.Spec     RunExe.Result where
  specActionName _               = "run"
  buildFromSpec                  = RunExe.build
  productOfResult _ result
-        = ProductStatus (ppr result) (RunExe.resultSuccess result)
+        = ProductStatus (show result) (RunExe.resultSuccess result)
 
 
 instance Spec Shell.Spec      Shell.Result where
  specActionName _               = "shell"
  buildFromSpec                  = Shell.build
  productOfResult _ result
-        = ProductStatus (ppr result) (Shell.resultSuccess result)
-
-
-
+        = ProductStatus (show result) (Shell.resultSuccess result)
 

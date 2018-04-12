@@ -10,7 +10,6 @@ import BuildBox.Command.System
 import BuildBox.Command.File
 import BuildBox.Command.Environment
 import BuildBox.Control.Cron
-import BuildBox.Pretty
 import BuildBox.Build
 import BuildBox.Time
 import BuildBox                 as BuildBox
@@ -19,7 +18,6 @@ import Data.Char
 
 import System.FilePath.Posix    as Remote
 import System.FilePath          as Local
-import Text.PrettyPrint.Leijen  hiding (Pretty)
 
 outLn' s = outLn (s :: String)
 
@@ -77,11 +75,11 @@ data Result
         | ResultFailure
 
 
-instance Pretty Result where
- pretty result
+instance Show Result where
+ show result
   = case result of
-        ResultSuccess   -> text "success"
-        ResultFailure   -> text "failure"
+        ResultSuccess   -> "success"
+        ResultFailure   -> "failure"
 
 
 -- Build ----------------------------------------------------------------------
@@ -261,7 +259,7 @@ postFailure spec err
         let subject     =  "DDC Build FAILURE (" ++ hostId ++ ")"
 
         -- Create message body.
-        let body        = renderIndent $ pretty err
+        let body        = show err
 
         -- Send the mail
         mail    <- createMailWithCurrentTime addrFrom addrTo subject body
