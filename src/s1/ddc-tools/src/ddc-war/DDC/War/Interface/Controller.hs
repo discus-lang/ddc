@@ -16,19 +16,20 @@ import Data.Maybe
 import Data.List
 import DDC.War.Interface.VT100      as VT100
 import qualified System.Process
+import Text.PrettyPrint.Leijen
 
 
 data Config
         = Config
-        { -- | Allow the user to control the driver from the console, 
+        { -- | Allow the user to control the driver from the console,
           --   and ask what to do interactively if a file is different than expected.
-          configInteractive     :: Bool 
+          configInteractive     :: Bool
 
           -- | Use VT100 colors in the output.
         , configColoredOutput   :: Bool
 
           -- | Pad test names out to this column width.
-        , configFormatPathWidth :: Int 
+        , configFormatPathWidth :: Int
 
           -- | Suppress this prefix from the front of displayed test names.
           --   Test names usually have fully qualified paths,
@@ -37,12 +38,12 @@ data Config
         , configSuppressPrefix  :: String }
         deriving Show
 
-        
+
 
 -- | Gang controller and user interface for the war test driver.
 --   This should be forked into its own thread, so it runs concurrently
 --   with the gang that is actually executing the tests.
-controller 
+controller
         :: Config
         -> Gang
         -> Int                 -- ^ Total number of chains.
@@ -51,7 +52,7 @@ controller
 
 controller config gang chainsTotal chanResult
  = liftM reverse $ go_start []
- where  
+ where
         -- See if there is an input on the console.
         go_start :: [Result] -> IO [Result]
         go_start jobResults
@@ -65,7 +66,7 @@ controller config gang chainsTotal chanResult
          | otherwise
          = go_checkResult jobResults
 
-        
+
         -- We've got input on the console, wait for already running tests then bail out.
         go_input jobResults
          = do   putStrLn "Interrupt. Waiting for running jobs (CTRL-C kills)..."
@@ -123,30 +124,30 @@ controller config gang chainsTotal chanResult
                  else return (jobResult : jobResults)
 
 -- | Handle a job result.
---   Returns True if the controller should continue, 
+--   Returns True if the controller should continue,
 --   or False if we should shut down and return to the caller.
 handleResult :: Config -> Gang -> Int -> Result -> IO Bool
 handleResult config gang chainsTotal
         (Result chainIx jobIx jobId actionName product')
  | JobId testName wayName       <- jobId
  , ProductStatus status _       <- product'
- = do   let testName2    = fromMaybe testName 
+ = do   let testName2    = fromMaybe testName
                                 (stripPrefix (configSuppressPrefix config) testName)
 
-        let width        = configFormatPathWidth config
+        let width'       = configFormatPathWidth config
 
-        putStrLn 
-         $ render 
+        putStrLn
+         $ renderIndent
          $ parens (padR (length $ show chainsTotal)
-                        (ppr $ chainIx) 
+                        (ppr $ chainIx)
                         <> text "."
                         <> ppr jobIx
-                        <> text "/" 
+                        <> text "/"
                         <> ppr chainsTotal)
-           <+> padL width (text testName2)
-           <+> padL 5     (text wayName)
-           <+> padL 8     (text actionName)
-           <+> colorizeStatus config actionName (render status)
+           <+> padL width' (text testName2)
+           <+> padL 5      (text wayName)
+           <+> padL 8      (text actionName)
+           <+> colorizeStatus config actionName (renderIndent status)
 
         hFlush stdout
         return True
@@ -155,7 +156,7 @@ handleResult config gang chainsTotal
  --   then ask the user what to do about it.
  | ProductDiff fileRef fileOut fileDiff <- product'
  , configInteractive config
- = do   
+ = do
         putStr  $  "\n"
                 ++ "-- Output Differs  -------------------------------------------------------------\n"
                 ++ "   expected file: " ++ fileRef      ++      "\n"
@@ -166,8 +167,8 @@ handleResult config gang chainsTotal
         str     <- readFile fileDiff
         putStr  str
         hFlush stdout
-        
-        -- Ask the user what to do about it, 
+
+        -- Ask the user what to do about it,
         --  and pause the gang while we're waiting for user input
         pauseGang gang
         keepGoing       <- handleResult_askDiff fileRef fileOut fileDiff
@@ -179,7 +180,7 @@ handleResult config gang chainsTotal
  -- If a file is different than expected in batch mode,
  --   then just print the status.
  | ProductDiff{}        <- product'
- = handleResult config gang chainsTotal 
+ = handleResult config gang chainsTotal
         $ Result chainIx jobIx jobId actionName
         $ ProductStatus (text "failed") False
 
@@ -220,7 +221,7 @@ handleResult_askDiff fileRef fileOut fileDiff
 
                 -- Update the expected output with the actual one
                 | ('u': _)      <- cmd
-                = do    System.Process.system 
+                = do    System.Process.system
                                 $ "cp " ++ fileOut ++ " " ++ fileRef
 
                         return True
@@ -229,7 +230,7 @@ handleResult_askDiff fileRef fileOut fileDiff
                 | otherwise
                 = do    putStr   $ "Invalid command.\n"
                         handleResult_askDiff fileRef fileOut fileDiff
-        
+
         result
 
 
@@ -258,7 +259,7 @@ colorizeStatus config jobName status
 
 colorDoc :: [VT100.Mode] -> Doc -> Doc
 colorDoc vmode doc
-        = text 
+        = text
         $ concat [ setMode vmode
-                 , render doc
+                 , renderPlain doc
                  , setMode [Reset] ]

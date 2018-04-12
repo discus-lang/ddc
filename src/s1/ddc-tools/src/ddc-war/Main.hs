@@ -10,17 +10,17 @@ import qualified DDC.War.Task.Test              as T
 
 
 main :: IO ()
-main 
+main
  = do   -- Parse command line options, and exit if they're no good.
         args    <- getArgs
         config  <- parseOptions args defaultConfig
-        
+
         case configNightly config of
-         Nothing 
+         Nothing
           -> let Just spec = configTest config
              in  mainTest spec
 
-         Just spec      
+         Just spec
           -> mainNightly  spec
 
 
@@ -30,15 +30,15 @@ mainTest spec
  = do   tmp     <- getTemporaryDirectory
         result  <- runBuild tmp $ T.build spec
         case result of
-         Left err       -> error    $ render $ ppr err
+         Left err       -> error    $ renderIndent $ ppr err
          Right _        -> return ()
 
 
 -- | Run the nightly build.
 mainNightly :: N.Spec -> IO ()
 mainNightly spec
- = do   tmp     <- getTemporaryDirectory  
+ = do   tmp     <- getTemporaryDirectory
         result  <- runBuild tmp  $ N.build spec
         case result of
-         Left err       -> error    $ render $ ppr err
-         Right result'  -> putStrLn $ render $ ppr result'
+         Left err       -> error    $ renderIndent $ ppr err
+         Right result'  -> putStrLn $ renderIndent $ ppr result'

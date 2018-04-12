@@ -14,18 +14,19 @@ import BuildBox.IO.Directory
 import BuildBox.Pretty
 import BuildBox
 import System.FilePath
-import qualified System.FilePath.Posix as P
 import System.Directory
 import Control.Monad
 import Data.List
+import Text.PrettyPrint.Leijen
+import qualified System.FilePath.Posix as P
 
 
 -- | Use ddci-core to compile/make file a DCE file
 data Spec
         = Spec
         { -- | Root source file of the program (the 'Main.ds')
-          specFile               :: FilePath 
-                       
+          specFile               :: FilePath
+
           -- | Extra DDC options for building in this way.
         , specOptionsDDC         :: [String]
 
@@ -37,14 +38,14 @@ data Spec
 
            -- | Put what DDC says to stdout here.
         , specCompileStdout      :: FilePath
-                
+
            -- | Put what DDC says to stderr here.
-        , specCompileStderr      :: FilePath 
+        , specCompileStderr      :: FilePath
 
           -- | If Just, then we're making an executable, and put the binary here.
           --   Otherwise simply compile it
-        , specMaybeMainBin       :: Maybe FilePath 
-                
+        , specMaybeMainBin       :: Maybe FilePath
+
           -- | True if the compile is expected to succeed, else not.
         , specShouldSucceed      :: Bool }
         deriving Show
@@ -73,8 +74,8 @@ resultSuccess result
 
 
 instance Pretty Result where
- ppr result
-  = case result of 
+ pretty result
+  = case result of
         ResultSuccess seconds   -> text "success" <+> parens (ppr seconds)
         ResultUnexpectedFailure -> text "failed"
         ResultUnexpectedSuccess -> text "unexpected"
@@ -83,7 +84,7 @@ instance Pretty Result where
 -- Build ----------------------------------------------------------------------
 -- | Compile a Disciple Core Sea source file.
 build :: Spec -> Build Result
-build   (Spec   srcDC_ optionsDDC _fragment 
+build   (Spec   srcDC_ optionsDDC _fragment
                 buildDir mainCompOut mainCompErr
                 mMainBin shouldSucceed)
 
@@ -106,11 +107,11 @@ build   (Spec   srcDC_ optionsDDC _fragment
 
         -- The directory holding the Main.dce file.
         let (srcDir, _srcFile)  = splitFileName srcDC
-                
+
         -- Touch everything that looks like a source file to ensure
         -- it gets rebuilt.
         sources <- io
-                $  liftM (filter (\f -> isSuffixOf ".dcs" f 
+                $  liftM (filter (\f -> isSuffixOf ".dcs" f
                                      || isSuffixOf ".dct" f
                                      || isSuffixOf ".dcl" f
                                      || isSuffixOf ".ds"  f))
@@ -132,7 +133,7 @@ build   (Spec   srcDC_ optionsDDC _fragment
 
                         -- Build the program.
                         timeBuild
-                         $ systemTee False 
+                         $ systemTee False
                                 (ddcBin
                                 ++ " "               ++ intercalate " " optionsDDC
                                 ++ " -output "       ++ mainBin
@@ -158,7 +159,7 @@ build   (Spec   srcDC_ optionsDDC _fragment
         case code of
          ExitFailure _
           | shouldSucceed       -> return ResultUnexpectedFailure
-        
+
          ExitSuccess
           | not shouldSucceed   -> return ResultUnexpectedSuccess
 

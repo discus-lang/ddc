@@ -12,6 +12,7 @@ import BuildBox.Data.Physical
 import BuildBox.Pretty
 import BuildBox
 import Data.List
+import Text.PrettyPrint.Leijen
 
 
 -- | Run a binary.
@@ -21,16 +22,16 @@ data Spec
           specFileSrc    :: FilePath
 
           -- | Binary to run.
-        , specFileBin    :: FilePath 
-        
+        , specFileBin    :: FilePath
+
           -- | Command line arguments to pass.
         , specCmdArgs    :: [String]
 
           -- | Put what binary said on stdout here.
         , specRunStdout  :: FilePath
-                
+
           -- | Put what binary said on stderr here.
-        , specRunStderr  :: FilePath 
+        , specRunStderr  :: FilePath
 
           -- | True if we expect the executable to succeed.
         , specShouldSucceed :: Bool }
@@ -52,7 +53,7 @@ resultSuccess result
 
 
 instance Pretty Result where
- ppr result 
+ pretty result
   = case result of
         ResultSuccess seconds   -> text "success" <+> parens (ppr seconds)
         ResultUnexpectedFailure -> text "failed"
@@ -62,12 +63,12 @@ instance Pretty Result where
 -- | Run a binary
 build :: Spec -> Build Result
 build (Spec     _fileName
-                mainBin args 
+                mainBin args
                 mainRunOut mainRunErr
                 shouldSucceed)
- = do   
+ = do
         needs mainBin
- 
+
         -- Run the binary.
         (time, (code, strOut, strErr))
          <- timeBuild
@@ -76,12 +77,12 @@ build (Spec     _fileName
         -- Write its output to files.
         atomicWriteFile mainRunOut strOut
         atomicWriteFile mainRunErr strErr
-        
+
         case code of
          ExitFailure _
           | shouldSucceed       -> return ResultUnexpectedFailure
 
-         ExitSuccess    
+         ExitSuccess
           | not shouldSucceed   -> return ResultUnexpectedSuccess
 
          _                      -> return $ ResultSuccess time

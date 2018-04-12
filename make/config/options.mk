@@ -75,7 +75,6 @@ DDC_PACKAGES	:= \
 	-hide-all-packages \
         -package base \
         -package array \
-        -package compact \
         -package bytestring \
         -package containers \
         -package deepseq \

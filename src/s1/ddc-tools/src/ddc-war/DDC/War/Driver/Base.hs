@@ -12,11 +12,13 @@ import BuildBox.Pretty
 import BuildBox
 import Data.Maybe
 import Data.List
+import Text.PrettyPrint.Leijen
+
 
 -- | A printable job identifier.
 data JobId
         = JobId
-        { jobIdName             :: String 
+        { jobIdName             :: String
         , jobIdWay              :: String }
         deriving Show
 
@@ -29,7 +31,7 @@ data Job
         => Job JobId String spec (Build result)
 
 instance Pretty Job where
- ppr (Job jobId actionName spec _)
+ pretty (Job jobId actionName spec _)
   = text "Job" <+> text (show jobId) <+> text actionName <+> text (show spec)
 
 
@@ -40,20 +42,20 @@ data Chain
         = Chain [Job]
 
 instance Pretty Chain where
- ppr (Chain jobs)
+ pretty (Chain jobs)
   =   text "Chain"
   <+> ppr jobs
 
 
 -- | The product that we got when running a job.
 --   This is the information that the interactive interface needs to decide
---   how to proceed. 
+--   how to proceed.
 data Product
-        = ProductStatus 
+        = ProductStatus
         { productStatusMsg      :: Doc
         , productStatusSuccess  :: Bool }
 
-        | ProductDiff   
+        | ProductDiff
         { productDiffRef        :: FilePath
         , productDiffOut        :: FilePath
         , productDiffDiff       :: FilePath }
@@ -61,7 +63,7 @@ data Product
 
 -- | Description of a job and the product we got from running it.
 data Result
-        = Result 
+        = Result
         { resultChainIx         :: Int
         , resultJobIx           :: Int
         , resultJobId           :: JobId
@@ -85,19 +87,19 @@ prettyResult chainsTotal prefix padWidth result
                              (ppr chainIx)
                    <>  text "."
                    <>        (ppr jobIx))
-           <+> padL padWidth (text testName') 
+           <+> padL padWidth (text testName')
            <+> padL 5        (text wayName)
            <+> padL 8        (text actionName)
            <+> status
 
-        where 
+        where
 
 -- Spec -----------------------------------------------------------------------
 -- | Class of Job specifications.
 class (Show spec, Pretty result)
         => Spec spec result | spec -> result where
 
- -- | Get a short name to describe the job that this spec describes, 
+ -- | Get a short name to describe the job that this spec describes,
  --   eg "compile" or "run"
  specActionName    :: spec -> String
 
@@ -111,6 +113,4 @@ class (Show spec, Pretty result)
  -- | Make the job product from its result.
  --   This cuts away information that the controller doesn't care about.
  productOfResult  :: spec -> result -> Product
-
-
 

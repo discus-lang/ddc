@@ -16,25 +16,26 @@ import System.FilePath
 import System.Directory
 import Control.Monad
 import Data.List
+import Text.PrettyPrint.Leijen
 
 
 -- | Use GHC to compile/make file.
 data Spec
-        = Spec 
+        = Spec
         { -- | Root source file of the program (the 'Main.ds')
-          specFile               :: FilePath 
-                
+          specFile               :: FilePath
+
           -- | Extra DDC options for building in this way.
-        , specOptionsGHC         :: [String] 
-                                
+        , specOptionsGHC         :: [String]
+
           -- | Scratch dir to do the build in.
         , specScratchDir         :: String
 
           -- | Put what DDC says to stdout here.
         , specCompileStdout      :: FilePath
-                
+
           -- | Put what DDC says to stderr here.
-        , specCompileStderr      :: FilePath 
+        , specCompileStderr      :: FilePath
 
           -- | If Just, then we're making an executable, and put the binary here.
           --   Otherwise simply compile it
@@ -55,7 +56,7 @@ resultSuccess result
 
 
 instance Pretty Result where
- ppr result 
+ pretty result
   = case result of
         ResultSuccess seconds   -> text "success" <+> parens (ppr seconds)
         ResultFailure           -> text "failed"
@@ -68,10 +69,10 @@ build  (Spec    srcHS _optionsGHC
                 mainBin)
 
  = do   needs srcHS
-        
+
         -- The directory holding the Main.hs file.
         let (srcDir, srcFile)   = splitFileName srcHS
-                
+
         -- Copy the .hs files to the build directory.
         -- This freshens them and ensures we won't conflict with other make jobs
         -- running on the same source files, but in different ways.
@@ -85,7 +86,7 @@ build  (Spec    srcHS _optionsGHC
         -- The copied version of the root source file.
         let srcCopyHS   = buildDir ++ "/" ++ srcFile
         let buildMk     = buildDir ++ "/build.mk"
-        
+
         -- We're doing this via a makefile so we get the ghc flags and options
         -- from the DDC build system. The paths in the make file need to be in
         -- posix form with '/' as the separators.
@@ -93,9 +94,9 @@ build  (Spec    srcHS _optionsGHC
         let hacks f     = map (\z -> if z == '\\' then '/' else z) f
         let mainBin'    = hacks $ makeRelative currentDir mainBin
         let srcCopyHS'  = hacks $ makeRelative currentDir srcCopyHS
-        
+
         genBuildMk buildMk mainBin' srcCopyHS'
-        
+
         (time, (code, strOut, strErr))
           <- timeBuild
           $  systemTee False
@@ -107,7 +108,7 @@ build  (Spec    srcHS _optionsGHC
         case code of
          ExitSuccess    -> return $ ResultSuccess time
          ExitFailure _  -> return ResultFailure
-                
+
 
 genBuildMk :: FilePath -> String -> String -> Build ()
 genBuildMk outfile mainBin mainHs

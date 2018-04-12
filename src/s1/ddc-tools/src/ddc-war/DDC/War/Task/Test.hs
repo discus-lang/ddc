@@ -23,6 +23,7 @@ import Control.Monad
 import Control.Monad.STM
 import Control.Exception
 import Data.List
+import Text.PrettyPrint.Leijen
 
 import qualified Data.Sequence          as Seq
 import qualified Data.Foldable          as Seq
@@ -62,7 +63,7 @@ data Result
 
 
 instance Pretty Result where
- ppr result
+ pretty result
   = case result of
         ResultSuccess   -> text "success"
 
@@ -116,7 +117,7 @@ build spec
         -- Write all results to file if we were asked for it
         let chainsTotal = length chains
         let pathWidth   = specFormatPathWidth spec
-        let pprResult   = render . Driver.prettyResult chainsTotal prefix pathWidth
+        let pprResult   = renderIndent . Driver.prettyResult chainsTotal prefix pathWidth
         (case specResultsFileAll spec of
           Nothing       -> return ()
           Just file     -> io   $ writeFile file

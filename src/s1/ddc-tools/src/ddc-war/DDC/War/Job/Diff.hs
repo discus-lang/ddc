@@ -2,24 +2,25 @@
 module DDC.War.Job.Diff
         ( Spec         (..)
         , Result       (..)
-        , resultSuccess 
+        , resultSuccess
         , build)
 where
 import BuildBox.Command.File
 import BuildBox.Command.System
 import BuildBox.Pretty
 import BuildBox
+import Text.PrettyPrint.Leijen
 
 
 -- | Diff two files.
 data Spec
         = Spec
         { -- | The baseline file.
-          specFile       :: FilePath 
-                
+          specFile       :: FilePath
+
           -- | File produced that we want to compare with the baseline.
-        , specFileOut    :: FilePath 
-                
+        , specFileOut    :: FilePath
+
           -- | Put the result of the diff here.
         , specFileDiff   :: FilePath }
         deriving Show
@@ -29,7 +30,7 @@ data Spec
 data Result
         = ResultSame
 
-        | ResultDiff 
+        | ResultDiff
         { resultFileRef  :: FilePath
         , resultFileOut  :: FilePath
         , resultFileDiff :: FilePath }
@@ -44,7 +45,7 @@ resultSuccess result
 
 
 instance Pretty Result where
- ppr result
+ pretty result
   = case result of
         ResultSame      -> text "ok"
         ResultDiff{}    -> text "diff"
@@ -56,15 +57,15 @@ build :: Spec -> Build Result
 build (Spec fileRef fileOut fileDiff)
  = do   needs fileRef
         needs fileOut
-        
+
         let diffExe     = "diff"
-        
+
         -- Run the binary.
         (_code, strOut, _strErr)
-         <- systemTee False 
+         <- systemTee False
                 (diffExe ++ " --ignore-space-change " ++ fileRef ++ " " ++ fileOut)
                 ""
-        
+
         -- Write its output to file.
         atomicWriteFile fileDiff strOut
 

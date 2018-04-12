@@ -15,33 +15,34 @@ import BuildBox
 import System.FilePath
 import Control.Monad
 import Data.List
+import Text.PrettyPrint.Leijen
 
 
 -- | Use DDC to compile a source file.
 data Spec
         = Spec
         { -- | Root source file of the program (the 'Main.ds')
-          specFile               :: FilePath 
-                
+          specFile               :: FilePath
+
           -- | Extra DDC options for building in this way.
-        , specOptionsDDC         :: [String] 
-                
+        , specOptionsDDC         :: [String]
+
           -- | Extra GHC RTS options for building in this way.
         , specOptionsRTS         :: [String]
-                
+
           -- | Scratch dir to do the build in.
         , specScratchDir         :: String
 
           -- | Put what DDC says to stdout here.
         , specCompileStdout      :: FilePath
-                
+
           -- | Put what DDC says to stderr here.
-        , specCompileStderr      :: FilePath 
+        , specCompileStderr      :: FilePath
 
           -- | If Just, then we're making an executable, and put the binary here.
           --   Otherwise simply compile it
-        , specMaybeMainBin       :: Maybe FilePath 
-                
+        , specMaybeMainBin       :: Maybe FilePath
+
           -- | True if the compile is expected to succeed, else not.
         , specShouldSucceed      :: Bool }
         deriving Show
@@ -61,7 +62,7 @@ resultSuccess result
 
 
 instance Pretty Result where
- ppr result 
+ pretty result
   = case result of
         ResultSuccess seconds    -> text "success" <+> parens (ppr seconds)
         ResultUnexpectedFailure  -> text "failed"
@@ -78,10 +79,10 @@ build (Spec     srcDS optionsDDC _optionsRTS
 
         needs srcDS
         needs ddcExe
-        
+
         -- The directory holding the Main.ds file.
         let (srcDir, _srcFile)  = splitFileName srcDS
-                
+
         -- Touch the .ds files to the build directory to ensure they're built.
         sources <- io
                 $  liftM (filter (\f -> isSuffixOf ".ds" f || isSuffixOf ".build" f))
@@ -95,13 +96,13 @@ build (Spec     srcDS optionsDDC _optionsRTS
         -- Do the compile.
         let compile
                 | Just mainBin  <- mMainBin
-                = do    
+                = do
                         -- If there is an existing binary then remove it.
                         ssystemq $ "rm -f " ++ mainBin
 
                         -- Build the program.
-                        timeBuild 
-                         $ systemTee False 
+                        timeBuild
+                         $ systemTee False
                                 (ddcExe
                                 ++ " "             ++ intercalate " " optionsDDC
                                 ++ " -output "     ++ mainBin
@@ -122,14 +123,14 @@ build (Spec     srcDS optionsDDC _optionsRTS
 
         (time, (code, strOut, strErr))
                 <- compile
-        
+
         atomicWriteFile mainCompOut strOut
         atomicWriteFile mainCompErr strErr
 
         case code of
          ExitFailure _
           | shouldSucceed       -> return ResultUnexpectedFailure
-        
+
          ExitSuccess
           | not shouldSucceed   -> return ResultUnexpectedSuccess
 

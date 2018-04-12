@@ -13,20 +13,21 @@ import BuildBox.Pretty
 import BuildBox
 import System.Directory
 import System.FilePath
+import Text.PrettyPrint.Leijen
 
 
--- | Feed a file into DDCi-core        
+-- | Feed a file into DDCi-core
 data Spec
         = Spec
         { -- | Root source file of the program (the 'Main.ds')
-          specFile               :: FilePath 
-                
+          specFile               :: FilePath
+
           -- | Scratch dir to do the build in.
         , specScratchDir         :: String
 
           -- | Put what DDC says to stdout here.
         , specCompileStdout      :: FilePath
-                
+
           -- | Put what DDC says to stderr here.
         , specCompileStderr      :: FilePath }
         deriving Show
@@ -46,7 +47,7 @@ resultSuccess result
 
 
 instance Pretty Result where
- ppr result 
+ pretty result
   = case result of
         ResultSuccess seconds   -> text "success" <+> parens (ppr seconds)
         ResultFailure           -> text "failed"

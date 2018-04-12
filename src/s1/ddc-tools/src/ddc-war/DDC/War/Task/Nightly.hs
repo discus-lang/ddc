@@ -19,19 +19,20 @@ import Data.Char
 
 import System.FilePath.Posix    as Remote
 import System.FilePath          as Local
+import Text.PrettyPrint.Leijen  hiding (Pretty)
 
 
 -- Spec -----------------------------------------------------------------------
 data Spec
         = Spec
         {  -- | Use this scratch directory to perform the build.
-          specLocalBuildDir     :: Maybe FilePath 
+          specLocalBuildDir     :: Maybe FilePath
 
           -- | URL of DDC snapshot.tgz
         , specRemoteSnapshotURL :: String
 
           -- | URL of DDC repository, used to update the snapshot.
-        , specRemoteRepoURL     :: String 
+        , specRemoteRepoURL     :: String
 
           -- | Inject this number of threads into the config-override.mk file
         , specBuildThreads      :: Int
@@ -53,10 +54,10 @@ data Spec
         , specMailer            :: Maybe Mailer
 
           -- | Send mail from this address.
-        , specMailFrom          :: Maybe String 
+        , specMailFrom          :: Maybe String
 
           -- | Send mail to this address.
-        , specMailTo            :: Maybe String 
+        , specMailTo            :: Maybe String
 
           -- | User and host name to copy logs to eg 'overlord@deluge.ouroborus.net'
         , specLogUserHost       :: Maybe String
@@ -78,7 +79,7 @@ data Result
 
 
 instance Pretty Result where
- ppr result
+ pretty result
   = case result of
         ResultSuccess   -> text "success"
         ResultFailure   -> text "failure"
@@ -90,18 +91,18 @@ build :: Spec -> Build Result
 build spec
  = case specContinuous spec of
         -- Do a one-shot build.
-        Nothing         
+        Nothing
          -> buildCatch spec
 
         -- Continuous build
-        Just whence 
+        Just whence
          -> do  outLn $ "* Starting cron loop"
-                cronLoop 
-                 $  makeSchedule 
+                cronLoop
+                 $  makeSchedule
                         [ ("nightly"
                           , whence
-                          , if specNow spec 
-                                then Just Immediate 
+                          , if specNow spec
+                                then Just Immediate
                                 else Nothing
                           , buildCatch spec >> return ()) ]
 
@@ -112,8 +113,8 @@ build spec
 
 buildCatch :: Spec -> Build Result
 buildCatch spec
- = BuildBox.catch 
-        (buildProject spec) 
+ = BuildBox.catch
+        (buildProject spec)
         (\err -> do
                 postFailure spec err
                 return  ResultFailure)
@@ -121,9 +122,9 @@ buildCatch spec
 
 buildProject :: Spec -> Build Result
 buildProject spec
- = do   
+ = do
         strTime         <- io $ getStampyTime
-        let Just localBuildDir = specLocalBuildDir spec 
+        let Just localBuildDir = specLocalBuildDir spec
         let buildDir           = localBuildDir Local.</> strTime
 
         let urlSnapshot  = specRemoteSnapshotURL spec
@@ -133,10 +134,10 @@ buildProject spec
 
         ensureDir buildDir
         inDir     buildDir
-         $ do 
+         $ do
                 outLn "* Creating log directory"
                 ensureDir "log"
-                
+
                 outLn "* Downloading snapshot"
                 (getOut, getErr) <- ssystem $ "wget --progress=bar " ++ urlSnapshot
                 io $ writeFile "log/01-wget.stdout" getOut
@@ -155,9 +156,9 @@ buildProject spec
 
                         outLn "* Writing build config"
                         needs "make"
-                        io $ writeFile "make/config-override.mk" 
+                        io $ writeFile "make/config-override.mk"
                            $ unlines [ "THREADS = " ++ show buildThreads
-                                     , "BUILDFLAVOUR = " ++ buildFlavour 
+                                     , "BUILDFLAVOUR = " ++ buildFlavour
                                      , "" ]
 
                         outLn "* Building project"
@@ -193,7 +194,7 @@ copyLogs :: Spec -> String -> Build ()
 copyLogs spec strTime
  | Just userHost <- specLogUserHost  spec
  , Just logDir   <- specLogRemoteDir spec
- = do   
+ = do
         outLn $ "* Copying logs to " ++ userHost
 
         let dir = logDir Remote.</> strTime
@@ -215,7 +216,7 @@ postSuccess spec strTime strFailed
  | Just mailer          <- specMailer   spec
  , Just addrFrom        <- specMailFrom spec
  , Just addrTo          <- specMailTo   spec
- = do   
+ = do
         outLn "* Reporting build success"
 
         -- The overall build succeeded, but some tests might have failed.
@@ -223,15 +224,15 @@ postSuccess spec strTime strFailed
 
         -- Create message subject.
         hostId          <- getHostId
-        let subject     
-                | nFailed == 0  
+        let subject
+                | nFailed == 0
                 = "DDC Build Success (" ++ hostId ++ ")"
 
-                | otherwise     
+                | otherwise
                 = "DDC Build Success (" ++ hostId ++ ") with " ++ show nFailed ++ " failed tests"
 
         -- Create message body.
-        let strLog      
+        let strLog
                 = case specLogRemoteURL spec of
                    Nothing  -> ""
                    Just url -> "Logs are at: " ++ url ++ "/" ++ strTime ++ "\n\n"
@@ -253,7 +254,7 @@ postFailure spec err
  | Just mailer          <- specMailer   spec
  , Just addrFrom        <- specMailFrom spec
  , Just addrTo          <- specMailTo   spec
- = do   
+ = do
         outLn "* Reporting build failure"
 
         -- Create message subject.
@@ -261,7 +262,7 @@ postFailure spec err
         let subject     =  "DDC Build FAILURE (" ++ hostId ++ ")"
 
         -- Create message body.
-        let body        = render $ ppr err
+        let body        = renderIndent $ pretty err
 
         -- Send the mail
         mail    <- createMailWithCurrentTime addrFrom addrTo subject body

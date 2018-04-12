@@ -11,6 +11,7 @@ import BuildBox.Build.Benchmark
 import BuildBox.Data.Physical
 import BuildBox.Pretty
 import BuildBox
+import Text.PrettyPrint.Leijen
 
 
 -- | Run a shell script.
@@ -27,9 +28,9 @@ data Spec
 
           -- | Put what DDC says to stdout here.
         , specShellStdout        :: FilePath
-                
+
           -- | Put what DDC says to stderr here.
-        , specShellStderr        :: FilePath 
+        , specShellStderr        :: FilePath
 
           -- | True if the compile is expected to succeed, else not.
         , specShouldSucceed      :: Bool }
@@ -51,7 +52,7 @@ resultSuccess result
 
 
 instance Pretty Result where
- ppr result 
+ pretty result
   = case result of
         ResultSuccess seconds   -> text "success" <+> parens (ppr seconds)
         ResultUnexpectedFailure -> text "failed"
@@ -63,21 +64,21 @@ build :: Spec -> Build Result
 build   (Spec   mainSH sourceDir scratchDir
                 mainRunOut mainRunErr
                 shouldSucceed)
- = do   
+ = do
         needs mainSH
         ensureDir scratchDir
-        
+
         -- Run the binary.
         (time, (code, strOut, strErr))
          <- timeBuild
-         $  systemTee False 
-                ("sh " ++ mainSH ++ " " ++ sourceDir ++ " " ++ scratchDir) 
+         $  systemTee False
+                ("sh " ++ mainSH ++ " " ++ sourceDir ++ " " ++ scratchDir)
                 ""
-                
+
         -- Write its output to files.
         atomicWriteFile mainRunOut strOut
         atomicWriteFile mainRunErr strErr
-                
+
         case code of
          ExitSuccess
           | shouldSucceed       -> return $ ResultSuccess time
