@@ -1,4 +1,7 @@
 
+-- Suppress Data.Monoid warnings during GHC 8.4.1 transition
+{-# OPTIONS  -Wno-unused-imports #-}
+
 module DDC.Core.Collect.Support
         ( Support       (..)
         , SupportX      (..)
@@ -14,7 +17,10 @@ import DDC.Type.Env             (KindEnv, TypeEnv)
 import qualified DDC.Type.Env   as Env
 import qualified Data.Set       as Set
 import Data.Maybe
-import Data.Monoid              ()
+
+-- GHC 8.2 -> 8.4 transition.
+import Data.Semigroup                   (Semigroup(..))
+import Data.Monoid                      (Monoid(..))
 
 ---------------------------------------------------------------------------------------------------
 data Support n
