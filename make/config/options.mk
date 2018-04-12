@@ -85,6 +85,7 @@ DDC_PACKAGES	:= \
         -package transformers \
         -package mtl \
         -package parsec \
+        -package compact \
         -package random \
         -package stm \
         -package text \
