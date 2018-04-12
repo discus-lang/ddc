@@ -67,8 +67,6 @@ data Spec
 
           -- | HTTP address of where the above logs appear
         , specLogRemoteURL      :: Maybe String }
-
-
         deriving Show
 
 

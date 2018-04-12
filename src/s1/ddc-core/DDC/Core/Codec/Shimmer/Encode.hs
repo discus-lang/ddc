@@ -26,8 +26,7 @@ import qualified Data.Text                      as T
 import Data.Text                                (Text)
 
 -- GHC 8.2 -> 8.4 transition.
-import Data.Monoid
-import Data.Semigroup
+import Data.Semigroup                   (Monoid(..), Semigroup(..))
 
 
 ---------------------------------------------------------------------------------------------------

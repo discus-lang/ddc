@@ -30,9 +30,8 @@ import qualified DDC.Build.Language.Salt        as Salt
 import qualified Data.Map                       as Map
 import qualified Data.Set                       as Set
 
-
 -- GHC 8.2 -> 8.4 transition.
-import Data.Monoid                      (Monoid(..))
+import Data.Semigroup                  (Monoid(..), Semigroup(..))
 
 
 -- | Get the simplifier for Salt code from the config.

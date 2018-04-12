@@ -17,7 +17,8 @@ import qualified Data.Map                               as Map
 import qualified Data.Text                              as T
 
 -- GHC 8.2 -> 8.4 transition.
-import Data.Monoid                      (Monoid(..))
+import Data.Semigroup                   (Monoid(..), Semigroup(..))
+
 
 -- | Convert some let-bindings to Salt.
 convertLets

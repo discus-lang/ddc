@@ -19,8 +19,7 @@ import DDC.Core.Flow.Prim
 import DDC.Core.Flow.Context
 
 -- GHC 8.2 -> 8.4 transition.
-import Data.Semigroup                   (Semigroup(..))
-import Data.Monoid                      (Monoid(..))
+import Data.Semigroup                   (Monoid(..), Semigroup(..))
 
 
 -- | An imperative procedure made up of some loops.

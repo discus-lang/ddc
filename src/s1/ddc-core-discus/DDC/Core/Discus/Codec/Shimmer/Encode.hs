@@ -15,7 +15,8 @@ import qualified Data.Text              as T
 import Data.Text                        (Text)
 
 -- GHC 8.2 -> 8.4 transition.
-import Data.Monoid                      (Monoid(..))
+import Data.Semigroup                   (Monoid(..), Semigroup(..))
+
 
 ---------------------------------------------------------------------------------------------------
 type SExp = S.Exp Text S.Prim

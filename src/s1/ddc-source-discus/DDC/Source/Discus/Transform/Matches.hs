@@ -25,7 +25,7 @@ import qualified Control.Monad.State    as S
 import qualified Data.Text              as Text
 
 -- GHC 8.2 -> 8.4 transition.
-import Data.Monoid                      (Monoid(..))
+import Data.Semigroup                  (Monoid(..), Semigroup(..))
 
 
 -------------------------------------------------------------------------------

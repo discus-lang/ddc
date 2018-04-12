@@ -18,16 +18,15 @@ import DDC.Core.Transform.SubstituteWX
 import DDC.Core.Transform.SubstituteXX
 import DDC.Core.Simplifier.Result
 
-import DDC.Data.Pretty
 import DDC.Core.Env.EnvX                (EnvX)
 import Control.Monad.Writer             (Writer, runWriter, tell)
 import Data.Typeable                    (Typeable)
 import Prelude                          hiding ((<$>))
 import qualified DDC.Core.Env.EnvX      as EnvX
+import qualified DDC.Data.Pretty        as P
 
 -- GHC 8.2 -> 8.4 transition.
-import Data.Monoid
-import Data.Semigroup
+import Data.Semigroup                   (Monoid(..), Semigroup(..))
 
 
 -------------------------------------------------------------------------------
@@ -67,15 +66,15 @@ data Info
         deriving Typeable
 
 
-instance Pretty Info where
+instance P.Pretty Info where
  ppr (Info ty wit val lets skip)
-  =  text "Beta reduction:"
-  <$> indent 4 (vcat
-      [ text "Types:          " <> int ty
-      , text "Witnesses:      " <> int wit
-      , text "Values:         " <> int val
-      , text "Values letted:  " <> int lets
-      , text "Values skipped: " <> int skip ])
+  =     P.text "Beta reduction:"
+  P.<$> P.indent 4 (P.vcat
+      [ P.text "Types:          " P.<> P.int ty
+      , P.text "Witnesses:      " P.<> P.int wit
+      , P.text "Values:         " P.<> P.int val
+      , P.text "Values letted:  " P.<> P.int lets
+      , P.text "Values skipped: " P.<> P.int skip ])
 
 
 instance Semigroup Info where

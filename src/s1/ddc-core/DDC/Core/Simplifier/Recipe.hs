@@ -30,8 +30,7 @@ import qualified DDC.Core.Transform.Beta  as Beta
 import DDC.Type.Env
 
 -- GHC 8.2 -> 8.4 transition.
-import Data.Semigroup                   (Semigroup(..))
-import Data.Monoid
+import Data.Semigroup                   (Semigroup(..), Monoid(..))
 
 
 -- Atomic ---------------------------------------------------------------------

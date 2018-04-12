@@ -17,8 +17,8 @@ import qualified Data.Set               as Set
 import Data.Set                         (Set)
 
 -- GHC 8.2 -> 8.4 transition.
-import Data.Semigroup                   (Semigroup(..))
-import Data.Monoid                      (Monoid(..))
+import Data.Semigroup                   (Monoid(..), Semigroup(..))
+
 
 -------------------------------------------------------------------------------
 

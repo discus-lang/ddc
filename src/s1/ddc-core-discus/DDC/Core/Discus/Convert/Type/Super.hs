@@ -17,8 +17,7 @@ import qualified DDC.Core.Discus.Prim   as E
 import qualified DDC.Core.Salt.Name     as A
 
 -- GHC 8.2 -> 8.4 transition.
-import Data.Semigroup                   (Semigroup(..))
-import Data.Monoid                      (Monoid(..))
+import Data.Semigroup                   (Monoid(..), Semigroup(..))
 
 ---------------------------------------------------------------------------------------------------
 -- | Convert the type of a super to Salt.

@@ -29,7 +29,6 @@ module DDC.Core.Check.Base
         , module DDC.Type.DataDef
         , module DDC.Type.Universe
         , module DDC.Type.Exp.Simple
-        , module DDC.Data.Pretty
         , module DDC.Data.ListUtils
         , module Control.Monad
         , module Data.Maybe)
@@ -48,7 +47,6 @@ import DDC.Type.DataDef
 import DDC.Type.Universe
 import DDC.Type.Exp.Simple
 import DDC.Control.Check                (throw, runCheck, evalCheck)
-import DDC.Data.Pretty
 import DDC.Data.ListUtils
 
 import Control.Monad
@@ -57,7 +55,9 @@ import Data.Maybe
 import Data.Set                         (Set)
 import qualified Data.Set               as Set
 import qualified DDC.Control.Check      as G
+import qualified DDC.Data.Pretty        as P
 import Prelude                          hiding ((<$>))
+
 
 -- GHC 8.2 -> 8.4 transition.
 import Data.Monoid
@@ -130,14 +130,14 @@ emptyCheckTrace
 unionCheckTrace :: CheckTrace -> CheckTrace -> CheckTrace
 unionCheckTrace ct1 ct2
         = CheckTrace
-        { checkTraceDoc = checkTraceDoc ct1 <> checkTraceDoc ct2 }
+        { checkTraceDoc = checkTraceDoc ct1 P.<> checkTraceDoc ct2 }
 
 
 -- | Append a doc to the checker trace.
 ctrace :: Doc -> CheckM a n ()
 ctrace doc'
  = do   (tr, ix, pos)       <- G.get
-        let tr' = tr { checkTraceDoc = checkTraceDoc tr <$> doc' }
+        let tr' = tr { checkTraceDoc = checkTraceDoc tr P.<$> doc' }
         G.put (tr', ix, pos)
         return  ()
 

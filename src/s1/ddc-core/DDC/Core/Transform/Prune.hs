@@ -21,11 +21,11 @@ import DDC.Core.Fragment
 import DDC.Core.Check
 import DDC.Core.Module
 import DDC.Core.Exp
-import DDC.Data.Pretty
 import Data.Typeable
 import Control.Monad.Writer                             (Writer, runWriter, tell)
 import DDC.Core.Env.EnvX                                (EnvX)
 import qualified Data.Map                               as Map
+import qualified DDC.Data.Pretty                        as P
 import qualified DDC.Core.Transform.SubstituteXX        as S
 import qualified DDC.Type.Exp.Simple                    as T
 import qualified DDC.Type.Sum                           as TS
@@ -33,8 +33,7 @@ import qualified DDC.Core.Env.EnvT                      as EnvT
 import Prelude                                          hiding ((<$>))
 
 -- GHC 8.2 -> 8.4 transition.
-import Data.Semigroup                   (Semigroup(..))
-import Data.Monoid
+import Data.Semigroup                   (Semigroup(..), Monoid(..))
 
 
 -------------------------------------------------------------------------------
@@ -46,11 +45,11 @@ data PruneInfo
     deriving Typeable
 
 
-instance Pretty PruneInfo where
+instance P.Pretty PruneInfo where
  ppr (PruneInfo remo)
-  =  text "Prune:"
-  <$> indent 4 (vcat
-      [ text "Removed:        " <> int remo])
+  =   P.text "Prune:"
+  P.<$> P.indent 4 (P.vcat
+      [ P.text "Removed:        " P.<> P.int remo])
 
 
 instance Semigroup PruneInfo where
@@ -76,7 +75,7 @@ unionPruneInfo (PruneInfo r1) (PruneInfo r2)
 -------------------------------------------------------------------------------
 -- | Erase pure let-bindings in a module that have no uses.
 pruneModule
-        :: (Show a, Show n, Ord n, Pretty n)
+        :: (Show a, Show n, Ord n, P.Pretty n)
         => Profile n           -- ^ Profile of the language we're in
         -> Module a n
         -> Module a n
@@ -102,7 +101,7 @@ pruneModule profile mm
 
 -- | Erase pure let-bindings in an expression that have no uses.
 pruneX
-        :: (Show a, Show n, Ord n, Pretty n)
+        :: (Show a, Show n, Ord n, P.Pretty n)
         => Profile n            -- ^ Profile of the language we're in
         -> EnvX n               -- ^ Type checker environment.
         -> Exp a n
@@ -143,8 +142,8 @@ transformTypeUsage profile env trans xx
             in  (x'', info)
 
         Left _
-         -> error $  renderIndent
-         $  vcat [ text "ddc-core-simpl.Prune: core type error" ]
+         -> error $  P.renderIndent
+         $  P.vcat [ P.text "ddc-core-simpl.Prune: core type error" ]
 
 
 -------------------------------------------------------------------------------

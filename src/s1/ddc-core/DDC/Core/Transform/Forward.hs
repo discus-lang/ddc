@@ -10,7 +10,6 @@ module DDC.Core.Transform.Forward
         , forwardModule
         , forwardX)
 where
-import DDC.Data.Pretty
 import DDC.Core.Analysis.Usage
 import DDC.Core.Exp.Annot
 import DDC.Core.Module
@@ -23,11 +22,11 @@ import Control.Monad.Writer     (Writer, runWriter, tell)
 import Data.Typeable
 import qualified Data.Map                               as Map
 import qualified DDC.Core.Transform.SubstituteXX        as S
+import qualified DDC.Data.Pretty                        as P
 import Prelude                                          hiding ((<$>))
 
 -- GHC 8.2 -> 8.4 transition.
-import Data.Semigroup                   (Semigroup(..))
-import Data.Monoid                      (Monoid(..))
+import Data.Semigroup                   (Semigroup(..), Monoid(..))
 
 
 -------------------------------------------------------------------------------
@@ -45,13 +44,13 @@ data ForwardInfo
         deriving Typeable
 
 
-instance Pretty ForwardInfo where
+instance P.Pretty ForwardInfo where
  ppr (ForwardInfo inspected substs bindings)
-  =  text "Forward:"
-  <$> indent 4 (vcat
-      [ text "Total bindings inspected:      " <> int inspected
-      , text "  Trivial substitutions made:  " <> int substs
-      , text "  Bindings moved forward:      " <> int bindings ])
+  =  P.text "Forward:"
+  P.<$> P.indent 4 (P.vcat
+      [ P.text "Total bindings inspected:      " P.<> P.int inspected
+      , P.text "  Trivial substitutions made:  " P.<> P.int substs
+      , P.text "  Bindings moved forward:      " P.<> P.int bindings ])
 
 
 instance Semigroup ForwardInfo where

@@ -24,7 +24,7 @@ import qualified Data.Set               as Set
 import qualified Data.Map.Strict        as Map
 
 -- GHC 8.2 -> 8.4 transition.
-import Data.Monoid                      (Monoid(..))
+import Data.Semigroup                  (Monoid(..), Semigroup(..))
 
 
 -------------------------------------------------------------------------------
