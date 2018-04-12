@@ -41,7 +41,8 @@ addons:
       - cabal-install-1.24
 
 compiler:
-  # - GHC-8.4.1   # compact requires base==4.10
+ matrix:
+  - GHC-8.4.1
   - GHC-8.2.2
 
 env:
