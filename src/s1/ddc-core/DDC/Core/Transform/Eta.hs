@@ -1,4 +1,7 @@
 
+-- Suppress Data.Monoid warnings during GHC 8.4.1 transition
+{-# OPTIONS  -Wno-unused-imports #-}
+
 -- Eta-expand functional values.
 ---
 -- NOTE: This is module currently just does eta-expansion, but in future
@@ -26,6 +29,10 @@ import Data.Typeable
 import DDC.Core.Env.EnvX                (EnvX)
 import qualified DDC.Core.Env.EnvX      as EnvX
 import Prelude                          hiding ((<$>))
+
+-- GHC 8.2 -> 8.4 transition.
+import Data.Semigroup                   (Semigroup(..))
+import Data.Monoid                      (Monoid(..))
 
 
 -------------------------------------------------------------------------------
@@ -61,10 +68,23 @@ instance Pretty Info where
       , text "level-0 lambdas added:     " <> int ex0 ])
 
 
+instance Semigroup Info where
+ (<>)           = unionInfo
+
+
 instance Monoid Info where
- mempty  = Info 0 0
- mappend (Info ex1  ex0)
-         (Info ex1' ex0')
+ mempty         = emptyInfo
+ mappend        = unionInfo
+
+
+-- | Construct an empty Info record.
+emptyInfo :: Info
+emptyInfo       = Info 0 0
+
+
+-- | Union two info records.
+unionInfo :: Info -> Info -> Info
+unionInfo (Info ex1 ex0) (Info ex1' ex0')
   = Info (ex1 + ex1') (ex0 + ex0')
 
 

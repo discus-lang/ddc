@@ -1,6 +1,9 @@
 {-# OPTIONS_HADDOCK hide #-}
-{-# LANGUAGE OverloadedStrings, ExplicitNamespaces #-}
 
+-- Suppress Data.Monoid warnings during GHC 8.4.1 transition
+{-# OPTIONS  -Wno-unused-imports #-}
+
+{-# LANGUAGE OverloadedStrings, ExplicitNamespaces #-}
 module DDC.Source.Discus.Transform.Freshen.State
         ( type S
         , State (..),   stateZero
@@ -12,7 +15,6 @@ module DDC.Source.Discus.Transform.Freshen.State
         , mapFreshBinds)
 where
 import DDC.Source.Discus.Exp
-import Data.Monoid
 import Data.Set                         (Set)
 import Data.Map.Strict                  (Map)
 import Data.Text                        (Text)
@@ -20,6 +22,9 @@ import qualified Control.Monad.State    as S
 import qualified Data.Text              as Text
 import qualified Data.Set               as Set
 import qualified Data.Map.Strict        as Map
+
+-- GHC 8.2 -> 8.4 transition.
+import Data.Monoid                      (Monoid(..))
 
 
 -------------------------------------------------------------------------------

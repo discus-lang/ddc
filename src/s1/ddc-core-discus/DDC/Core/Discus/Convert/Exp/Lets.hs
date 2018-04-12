@@ -1,4 +1,7 @@
 
+-- Suppress Data.Monoid warnings during GHC 8.4.1 transition
+{-# OPTIONS  -Wno-unused-imports #-}
+
 module DDC.Core.Discus.Convert.Exp.Lets
         (convertLets)
 where
@@ -12,7 +15,9 @@ import qualified DDC.Core.Discus.Prim                   as E
 import qualified DDC.Core.Salt.Name                     as A
 import qualified Data.Map                               as Map
 import qualified Data.Text                              as T
-import Data.Monoid
+
+-- GHC 8.2 -> 8.4 transition.
+import Data.Monoid                      (Monoid(..))
 
 -- | Convert some let-bindings to Salt.
 convertLets

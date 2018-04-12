@@ -1,3 +1,6 @@
+-- Suppress Data.Monoid warnings during GHC 8.4.1 transition
+{-# OPTIONS  -Wno-unused-imports #-}
+
 module DDC.Core.Flow.Transform.Rates.CnfFromExp
         (cnfOfExp, takeXLamFlags_safe) where
 import DDC.Core.Collect
@@ -14,6 +17,10 @@ import           Data.List              (intersect, nub)
 import           Data.Maybe             (catMaybes)
 import           Data.Monoid
 import qualified Data.Set               as Set
+
+-- GHC 8.2 -> 8.4 transition.
+import Data.Semigroup                   (Semigroup(..))
+import Data.Monoid                      (Monoid(..))
 
 
 -----------------------------------

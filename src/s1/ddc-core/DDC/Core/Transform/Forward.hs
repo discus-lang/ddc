@@ -1,4 +1,7 @@
 
+-- Suppress Data.Monoid warnings during GHC 8.4.1 transition
+{-# OPTIONS  -Wno-unused-imports #-}
+
 -- | Float let-bindings with a single use forward into their use-sites.
 module DDC.Core.Transform.Forward
         ( ForwardInfo   (..)
@@ -21,6 +24,10 @@ import Data.Typeable
 import qualified Data.Map                               as Map
 import qualified DDC.Core.Transform.SubstituteXX        as S
 import Prelude                                          hiding ((<$>))
+
+-- GHC 8.2 -> 8.4 transition.
+import Data.Semigroup                   (Semigroup(..))
+import Data.Monoid                      (Monoid(..))
 
 
 -------------------------------------------------------------------------------
@@ -47,9 +54,23 @@ instance Pretty ForwardInfo where
       , text "  Bindings moved forward:      " <> int bindings ])
 
 
+instance Semigroup ForwardInfo where
+ (<>)           = unionForwardInfo
+
+
 instance Monoid ForwardInfo where
- mempty = ForwardInfo 0 0 0
- mappend (ForwardInfo i1 s1 b1)(ForwardInfo i2 s2 b2)
+ mempty         = emptyForwardInfo
+ mappend        = unionForwardInfo
+
+
+-- | Construct an empty ForwardInfo
+emptyForwardInfo :: ForwardInfo
+emptyForwardInfo = ForwardInfo 0 0 0
+
+
+-- | Union two ForwardInfo
+unionForwardInfo :: ForwardInfo -> ForwardInfo -> ForwardInfo
+unionForwardInfo (ForwardInfo i1 s1 b1) (ForwardInfo i2 s2 b2)
         = ForwardInfo (i1 + i2) (s1 + s2) (b1 + b2)
 
 

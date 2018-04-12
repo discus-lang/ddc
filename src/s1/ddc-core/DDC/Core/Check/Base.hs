@@ -1,4 +1,7 @@
 
+-- Suppress Data.Monoid warnings during GHC 8.2 -> 8.4 transition.
+{-# OPTIONS  -Wno-unused-imports #-}
+
 module DDC.Core.Check.Base
         ( -- Things defined in this module.
           Config (..)
@@ -56,6 +59,10 @@ import qualified Data.Set               as Set
 import qualified DDC.Control.Check      as G
 import Prelude                          hiding ((<$>))
 
+-- GHC 8.2 -> 8.4 transition.
+import Data.Monoid
+import Data.Semigroup
+
 
 -- | Type checker monad.
 --   Used to manage type errors.
@@ -96,7 +103,6 @@ applySolved ctx tt
         Right t -> return t
 
 
-
 -- CheckTrace -----------------------------------------------------------------
 -- | Human readable trace of the type checker.
 data CheckTrace
@@ -104,12 +110,25 @@ data CheckTrace
         { checkTraceDoc :: Doc }
 
 instance Pretty CheckTrace where
- ppr ct = checkTraceDoc ct
+ ppr ct         = checkTraceDoc ct
+
+instance Semigroup CheckTrace where
+ (<>)           = unionCheckTrace
 
 instance Monoid CheckTrace where
- mempty = CheckTrace empty
+ mempty         = emptyCheckTrace
+ mappend        = unionCheckTrace
 
- mappend ct1 ct2
+
+-- | Construct an empty `CheckTrace`.
+emptyCheckTrace :: CheckTrace
+emptyCheckTrace
+        = CheckTrace empty
+
+
+-- | Union two `ChecTrace`s.
+unionCheckTrace :: CheckTrace -> CheckTrace -> CheckTrace
+unionCheckTrace ct1 ct2
         = CheckTrace
         { checkTraceDoc = checkTraceDoc ct1 <> checkTraceDoc ct2 }
 

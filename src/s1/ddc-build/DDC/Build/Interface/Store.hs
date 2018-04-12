@@ -26,10 +26,10 @@ import qualified DDC.Build.Interface.Codec.Text.Decode          as IT
 import qualified DDC.Build.Interface.Codec.Shimmer.Decode       as IS
 import qualified DDC.Core.Discus                                as D
 import qualified Data.Map.Strict                                as Map
-import qualified Data.Compact                                   as Compact
 import qualified Data.ByteString                                as BS
 import qualified Data.Text.Encoding                             as Text
 import qualified Data.Text                                      as Text
+
 
 ---------------------------------------------------------------------------------------------------
 -- | Abstract API to a collection of module interfaces.
@@ -145,16 +145,24 @@ load filePath
          -- Binary interface file in Shimmer format.
          then do
                 let iint = IS.decodeInterface filePath timeStamp bs
-                cInt    <- Compact.compactWithSharing iint
-                return  $  Compact.getCompact cInt
+
+                -- Compact hasn't been updated for GHC 8.4.1
+--                cInt    <- Compact.compactWithSharing iint
+--                return  $  Compact.getCompact cInt
+
+                return iint
 
          -- Textual interface file in Discus Source format.
          else do
                 let tx   = Text.decodeUtf8 bs
                 let str  = Text.unpack tx
                 let iint = IT.decodeInterface filePath timeStamp str
-                cInt    <- Compact.compactWithSharing iint
-                return  $  Compact.getCompact cInt
+
+                -- Compact hasn't been updated for GHC 8.4.1
+--                cInt    <- Compact.compactWithSharing iint
+--                return  $  Compact.getCompact cInt
+
+                return iint
 
 
 -- | Get metadata of interfaces currently in the store.

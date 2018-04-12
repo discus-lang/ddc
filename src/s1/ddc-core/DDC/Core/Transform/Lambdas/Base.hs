@@ -1,4 +1,7 @@
 
+-- Suppress Data.Monoid warnings during GHC 8.4.1 transition
+{-# OPTIONS  -Wno-unused-imports #-}
+
 module DDC.Core.Transform.Lambdas.Base
         ( S, evalState
         , newVar
@@ -11,9 +14,13 @@ import DDC.Core.Exp.Annot
 import DDC.Data.Name
 import qualified Control.Monad.State.Strict     as S
 
+-- GHC 8.2 -> 8.4 transition.
+import Data.Semigroup                   (Semigroup(..))
+import Data.Monoid
+
 
 ---------------------------------------------------------------------------------------------------
--- | State holding a variable name prefix and counter to 
+-- | State holding a variable name prefix and counter to
 --   create fresh variable names.
 type S  = S.State (String, Int)
 
@@ -22,11 +29,11 @@ type S  = S.State (String, Int)
 --   using the given prefix for freshly introduced variables.
 evalState :: String -> S a -> a
 evalState n c
- = S.evalState c (n, 0) 
+ = S.evalState c (n, 0)
 
 
 -- | Allocate a new named variable, yielding its associated bind and bound.
-newVar 
+newVar
         :: CompoundName n
         => String       -- ^ Informational name to add.
         -> Type n       -- ^ Type of the new binder.
@@ -60,19 +67,31 @@ newVarExtend name prefix t
 data Result a n
         = Result
         { -- | Whether we've made any progress in this pass.
-          _resultProgress       :: Bool        
+          _resultProgress       :: Bool
 
-          -- | Bindings that we've already lifted out, 
+          -- | Bindings that we've already lifted out,
           --   and should be added at top-level.
         , _resultBindings       :: [(Bind n, Exp a n)]
         }
 
 
+instance Semigroup (Result a n) where
+ (<>)           = unionResult
+
+
 instance Monoid (Result a n) where
- mempty
-  = Result False []
- 
- mappend (Result p1 lts1) (Result p2 lts2)
+ mempty         = emptyResult
+ mappend        = unionResult
+
+
+-- | Construct an empty result.
+emptyResult :: Result a n
+emptyResult     = Result False []
+
+
+-- | Union two results.
+unionResult     :: Result a n -> Result a n -> Result a n
+unionResult (Result p1 lts1) (Result p2 lts2)
   = Result (p1 || p2) (lts1 ++ lts2)
 
 
@@ -91,7 +110,7 @@ isLiftyContext ctx
         --  We want to lift the whole binding group together.
         CtxLAM{}        -> False
         CtxLam{}        -> False
-   
+
         -- We can't do code generation for abstractions in these contexts,
         -- so they need to be lifted.
         CtxAppLeft{}    -> True

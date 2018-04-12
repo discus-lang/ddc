@@ -1,9 +1,11 @@
 
--- | A `Procedure` is an abstract imperative loop nest. 
+-- Suppress Data.Monoid warnings during GHC 8.4.1 transition
+{-# OPTIONS  -Wno-unused-imports #-}
+
+-- | A `Procedure` is an abstract imperative loop nest.
 --   The loops are represented as a separated loop anatomy, to make it
 --   easy to incrementally build them from a data flow graph expressed
 --   as a `Process`.
---
 module DDC.Core.Flow.Procedure
         ( Procedure     (..)
         , Nest          (..)
@@ -15,6 +17,10 @@ where
 import DDC.Core.Flow.Exp
 import DDC.Core.Flow.Prim
 import DDC.Core.Flow.Context
+
+-- GHC 8.2 -> 8.4 transition.
+import Data.Semigroup                   (Semigroup(..))
+import Data.Monoid                      (Monoid(..))
 
 
 -- | An imperative procedure made up of some loops.
@@ -39,13 +45,13 @@ data Nest
         , nestInner             :: Nest
         , nestEnd               :: [StmtEnd] }
 
-        -- Guarded context, 
+        -- Guarded context,
         -- used when lowering pack-like operations.
         | NestGuard
         { nestOuterRate         :: Type Name
         , nestInnerRate         :: Type Name
         , nestFlags             :: Bound Name
-        , nestBody              :: [StmtBody] 
+        , nestBody              :: [StmtBody]
         , nestInner             :: Nest }
 
         -- Segmented context,
@@ -59,10 +65,23 @@ data Nest
         deriving Show
 
 
-instance Monoid Nest where
- mempty  = NestEmpty
+instance Semigroup Nest where
+ (<>)           = unionNest
 
- mappend n1 n2
+
+instance Monoid Nest where
+ mempty         = emptyNest
+ mappend        = unionNest
+
+
+-- | Construct an empty nest.
+emptyNest  :: Nest
+emptyNest = NestEmpty
+
+
+-- | Union two nests.
+unionNest :: Nest -> Nest -> Nest
+unionNest n1 n2
   = case (n1, n2) of
         (NestEmpty,    _)               -> n2
         (_,            NestEmpty)       -> n1
@@ -87,7 +106,7 @@ data StmtStart
         , startVecNewRate       :: Type Name }
 
         -- | Inititlise a new accumulator.
-        | StartAcc 
+        | StartAcc
         { startAccName          :: Name
         , startAccType          :: Type Name
         , startAccExp           :: Exp () Name }

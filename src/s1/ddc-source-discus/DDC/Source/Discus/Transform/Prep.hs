@@ -1,5 +1,8 @@
 {-# LANGUAGE OverloadedStrings, ExplicitNamespaces #-}
 
+-- Suppress Data.Monoid warnings during GHC 8.4.1 transition
+{-# OPTIONS  -Wno-unused-imports #-}
+
 -- | A light simplification pass before conversion of desugared code to Core.
 module DDC.Source.Discus.Transform.Prep
         ( type S, evalState, newVar
@@ -7,10 +10,13 @@ module DDC.Source.Discus.Transform.Prep
 where
 import DDC.Source.Discus.Module
 import DDC.Source.Discus.Exp
-import Data.Monoid
 import Data.Text                                (Text)
 import qualified Control.Monad.State.Strict     as S
 import qualified Data.Text                      as Text
+
+-- GHC 8.2 -> 8.4 transition.
+import Data.Monoid                      (Monoid(..))
+
 
 
 ---------------------------------------------------------------------------------------------------

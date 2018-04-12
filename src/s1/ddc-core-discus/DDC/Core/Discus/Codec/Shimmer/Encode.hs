@@ -1,3 +1,7 @@
+
+-- Suppress Data.Monoid warnings during GHC 8.4.1 transition
+{-# OPTIONS  -Wno-unused-imports #-}
+
 {-# LANGUAGE OverloadedStrings #-}
 module DDC.Core.Discus.Codec.Shimmer.Encode
         ( takeName
@@ -9,7 +13,9 @@ import qualified SMR.Core.Exp           as S
 import qualified SMR.Prim.Name          as S
 import qualified Data.Text              as T
 import Data.Text                        (Text)
-import Data.Monoid
+
+-- GHC 8.2 -> 8.4 transition.
+import Data.Monoid                      (Monoid(..))
 
 ---------------------------------------------------------------------------------------------------
 type SExp = S.Exp Text S.Prim

@@ -11,13 +11,13 @@ module DDC.Type.DataDef
 
         -- * Data type definition table
         , DataDefs   (..)
-        
+
         , DataMode   (..)
         , emptyDataDefs
         , insertDataDef
         , unionDataDefs
         , fromListDataDefs
-        
+
         , DataType   (..)
         , kindOfDataType
         , lookupModeOfDataType
@@ -45,10 +45,10 @@ data DataDef n
           -- | Binders for type parameters.
         , dataDefParams         :: ![Bind n]
 
-          -- | Constructors of the data type, 
-          --   or Nothing if the data type is algbraic but there are too many 
+          -- | Constructors of the data type,
+          --   or Nothing if the data type is algbraic but there are too many
           --      constructors to list (like with `Int`).
-        , dataDefCtors          :: !(Maybe [DataCtor n]) 
+        , dataDefCtors          :: !(Maybe [DataCtor n])
 
           -- | Whether the data type is algebraic.
           --   These can be deconstructed with 'case' expressions.
@@ -75,9 +75,9 @@ kindOfDataDef :: DataDef n -> Kind n
 kindOfDataDef def
  = let  ksParam = map typeOfBind $ dataDefParams def
    in   kFuns ksParam kData
-   
 
--- | Get the type associated with a data definition, 
+
+-- | Get the type associated with a data definition,
 --   that is, the type produced by the constructors.
 dataTypeOfDataDef :: DataDef n -> Type n
 dataTypeOfDataDef def
@@ -93,45 +93,45 @@ dataTypeOfDataDef def
 dataCtorNamesOfDataDef :: DataDef n -> Maybe [n]
 dataCtorNamesOfDataDef def
  = case dataDefCtors def of
-        Nothing         -> Nothing 
+        Nothing         -> Nothing
         Just ctors      -> Just $ map dataCtorName ctors
 
 
 -- | Shortcut for constructing a `DataDef` for an algebraic type.
 --
 --   Values of algebraic type can be deconstructed with case-expressions.
-makeDataDefAlg 
+makeDataDefAlg
         :: n            -- ^ Name of data type.
         -> [Bind n]     -- ^ Type parameters.
-        -> Maybe [(n, [Type n])]        
+        -> Maybe [(n, [Type n])]
                         -- ^ Constructor names and field types,
                         --      or `Nothing` if there are too many to list.
         -> DataDef n
 
-makeDataDefAlg nData bsParam Nothing 
+makeDataDefAlg nData bsParam Nothing
         = DataDef
         { dataDefTypeName       = nData
         , dataDefParams         = bsParam
-        , dataDefCtors          = Nothing 
+        , dataDefCtors          = Nothing
         , dataDefIsAlgebraic    = True }
 
 makeDataDefAlg nData bsParam (Just ntsField)
  = let  usParam = takeSubstBoundsOfBinds bsParam
         ksParam = map typeOfBind bsParam
-        tc      = TyConBound (UName nData) 
+        tc      = TyConBound (UName nData)
                              (kFuns ksParam kData)
 
         tResult = tApps (TCon tc) (map TVar usParam)
-   
+
         ctors   = [ DataCtor n tag tsField tResult nData bsParam
                             | tag          <- [0..]
-                            | (n, tsField) <- ntsField] 
+                            | (n, tsField) <- ntsField]
    in   DataDef
         { dataDefTypeName       = nData
         , dataDefParams         = bsParam
-        , dataDefCtors          = Just ctors 
+        , dataDefCtors          = Just ctors
         , dataDefIsAlgebraic    = True }
-  
+
 
 -- | Shortcut for constructing a `DataDef` for an abstract type.
 --
@@ -168,7 +168,7 @@ data DataMode n
 
 -- | Describes a data type constructor, used in the `DataDefs` table.
 data DataType n
-        = DataType 
+        = DataType
         { -- | Name of data type constructor.
           dataTypeName       :: !n
 
@@ -177,7 +177,7 @@ data DataType n
 
           -- | Names of data constructors of this data type,
           --   or `Nothing` if it has infinitely many constructors.
-        , dataTypeMode       :: !(DataMode n) 
+        , dataTypeMode       :: !(DataMode n)
 
           -- | Whether the data type is algebraic.
         , dataTypeIsAlgebraic :: Bool }
@@ -200,9 +200,9 @@ data DataCtor n
         , dataCtorResultType  :: !(Type n)
 
           -- | Name of result type of constructor.
-        , dataCtorTypeName    :: !n 
+        , dataCtorTypeName    :: !n
 
-          -- | Parameters of data type 
+          -- | Parameters of data type
         , dataCtorTypeParams :: ![Bind n] }
         deriving Show
 
@@ -217,7 +217,7 @@ mapTypeOfDataCtor f ctor
 -- | Get the type of `DataCtor`
 typeOfDataCtor :: DataCtor n -> Type n
 typeOfDataCtor ctor
- = let  Just t   = tFunOfList (  dataCtorFieldTypes ctor 
+ = let  Just t   = tFunOfList (  dataCtorFieldTypes ctor
                               ++ [dataCtorResultType ctor] )
    in   foldr TForall t (dataCtorTypeParams ctor)
 
@@ -225,11 +225,6 @@ typeOfDataCtor ctor
 instance NFData n => NFData (DataCtor n) where
  rnf (DataCtor n t fs tR nT bsParam)
   = rnf n `seq` rnf t `seq` rnf fs `seq` rnf tR `seq` rnf nT `seq` rnf bsParam
-
-
-instance Ord n => Monoid (DataDefs n) where
- mempty  = emptyDataDefs
- mappend = unionDataDefs
 
 
 -- | An empty table of data type definitions.
@@ -254,7 +249,7 @@ insertDataDef (DataDef nType bsParam mCtors isAlg) dataDefs
  = let  defType = DataType
                 { dataTypeName        = nType
                 , dataTypeParams      = bsParam
-                , dataTypeMode        = defMode 
+                , dataTypeMode        = defMode
                 , dataTypeIsAlgebraic = isAlg }
 
         defMode = case mCtors of
@@ -264,7 +259,7 @@ insertDataDef (DataDef nType bsParam mCtors isAlg) dataDefs
    in   dataDefs
          { dataDefsTypes = Map.insert nType defType (dataDefsTypes dataDefs)
          , dataDefsCtors = Map.union (dataDefsCtors dataDefs)
-                         $ Map.fromList [(n, def) 
+                         $ Map.fromList [(n, def)
                                 | def@(DataCtor n _ _ _ _ _) <- concat $ maybeToList mCtors ]}
 
 
@@ -274,7 +269,7 @@ fromListDataDefs defs
         = foldr insertDataDef emptyDataDefs defs
 
 
--- | Yield the list of data constructor names for some data type, 
+-- | Yield the list of data constructor names for some data type,
 --   or `Nothing` for large types with too many constructors to list.
 lookupModeOfDataType :: Ord n => n -> DataDefs n -> Maybe (DataMode n)
 lookupModeOfDataType n defs

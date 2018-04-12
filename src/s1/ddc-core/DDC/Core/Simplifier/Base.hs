@@ -1,4 +1,7 @@
 
+-- Suppress Data.Monoid warnings during GHC 8.4.1 transition
+{-# OPTIONS  -Wno-unused-imports #-}
+
 module DDC.Core.Simplifier.Base
         ( -- * Simplifier Specifications
           Simplifier(..)
@@ -25,6 +28,10 @@ import qualified DDC.Core.Transform.Eta         as Eta
 import qualified DDC.Core.Transform.Beta        as Beta
 import qualified DDC.Core.Transform.FoldCase    as FoldCase
 
+-- GHC 8.2 -> 8.4 transition.
+import Data.Semigroup                   (Semigroup(..))
+import Data.Monoid
+
 
 -- Simplifier -----------------------------------------------------------------
 -- | Specification of how to simplify a core program.
@@ -41,9 +48,13 @@ data Simplifier s a n
         | Fix   Int                (Simplifier s a n)
 
 
+instance Semigroup (Simplifier s a n) where
+ (<>)           = unionSimplifier
+
+
 instance Monoid (Simplifier s a n) where
- mempty  = Trans Id
- mappend = Seq
+ mempty         = emptySimplifier
+ mappend        = unionSimplifier
 
 
 instance Pretty (Simplifier s a n) where
@@ -57,6 +68,16 @@ instance Pretty (Simplifier s a n) where
 
         Trans t1
          -> ppr t1
+
+
+-- | Construct an empty simplifier.
+emptySimplifier :: Simplifier s a n
+emptySimplifier = Trans Id
+
+
+-- | Union two simplifiers.
+unionSimplifier :: Simplifier s a n -> Simplifier s a n -> Simplifier s a n
+unionSimplifier = Seq
 
 
 -- Transform ------------------------------------------------------------------
@@ -81,7 +102,7 @@ data Transform s a n
         -- | Perform eta expansion and reduction.
         | Eta    Eta.Config
 
-        -- | Inline type equations 
+        -- | Inline type equations
         --   and convert to explicit abstraction and application.
         | Expliciate
 
@@ -104,12 +125,12 @@ data Transform s a n
 
         -- | Rewrite anonymous binders to fresh named binders.
         | Namify
-                { -- | Create a namifier to make fresh type (level-1) 
+                { -- | Create a namifier to make fresh type (level-1)
                   --   names that don't conflict with any already in this
                   --   environment.
                   transMkNamifierT :: Env n -> Namifier s n
 
-                  -- | Create a namifier to make fresh value or witness (level-0) 
+                  -- | Create a namifier to make fresh value or witness (level-0)
                   --   names that don't conflict with any already in this
                   --   environment.
                 , transMkNamifierX :: Env n -> Namifier s n }
@@ -127,7 +148,7 @@ data Transform s a n
 
 
 -- | Function to get the inliner template (unfolding) for the given name.
-type InlinerTemplates a n 
+type InlinerTemplates a n
         = (n -> Maybe (Exp a n))
 
 -- | Rewrite rules along with their names.
@@ -154,5 +175,5 @@ instance Pretty (Transform s a n) where
         Prune           -> text "Prune"
         Rewrite{}       -> text "Rewrite"
         Snip{}          -> text "Snip"
-        
+
 

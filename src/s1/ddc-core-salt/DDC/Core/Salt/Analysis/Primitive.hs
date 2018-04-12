@@ -1,4 +1,7 @@
 
+-- Suppress Data.Monoid warnings during GHC 8.4.1 transition
+{-# OPTIONS  -Wno-unused-imports #-}
+
 -- | Collect information about the use of various primitives in a module.
 module DDC.Core.Salt.Analysis.Primitive
         ( collectModule
@@ -12,6 +15,10 @@ import Data.Map                         (Map)
 import qualified DDC.Core.Salt.Name     as A
 import qualified Data.Map               as Map
 
+-- GHC 8.2 -> 8.4 transition.
+import Data.Semigroup                   (Semigroup(..))
+import Data.Monoid                      (Monoid(..))
+
 
 -------------------------------------------------------------------------------
 --- | Support of some term.
@@ -23,12 +30,26 @@ data Support
         deriving Show
 
 
-instance Monoid Support where
- mempty = Support Map.empty
+instance Semigroup Support where
+ (<>)           = unionSupport
 
- mappend s1 s2
-        = Support 
-        { supportGlobal 
+
+-- | Union two supports.
+instance Monoid Support where
+ mempty         = emptySupport
+ mappend        = unionSupport
+
+
+-- | Construct an empty support.
+emptySupport :: Support
+emptySupport = Support Map.empty
+
+
+-- | Union two supports
+unionSupport :: Support -> Support -> Support
+unionSupport s1 s2
+        = Support
+        { supportGlobal
           = Map.unionWith (++) (supportGlobal s1) (supportGlobal s2) }
 
 

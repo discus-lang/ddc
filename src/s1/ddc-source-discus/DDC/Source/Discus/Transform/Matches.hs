@@ -1,5 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 
+-- Suppress Data.Monoid warnings during GHC 8.4.1 transition
+{-# OPTIONS  -Wno-unused-imports #-}
+
 -- | Desugar match expressions to case expressions.
 --
 --   In a match expression if matching fails in one block of guards then
@@ -16,11 +19,13 @@ module DDC.Source.Discus.Transform.Matches
 where
 import DDC.Source.Discus.Module
 import DDC.Source.Discus.Exp
-import Data.Monoid
 import Data.Text                        (Text)
 import qualified DDC.Data.SourcePos     as SP
 import qualified Control.Monad.State    as S
 import qualified Data.Text              as Text
+
+-- GHC 8.2 -> 8.4 transition.
+import Data.Monoid                      (Monoid(..))
 
 
 -------------------------------------------------------------------------------

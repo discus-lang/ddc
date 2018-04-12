@@ -1,4 +1,7 @@
 
+-- Suppress Data.Monoid warnings during GHC 8.4.1 transition
+{-# OPTIONS  -Wno-unused-imports #-}
+
 -- | Common simplifier recipes that combine multiple transforms.
 module DDC.Core.Simplifier.Recipe
         ( -- * Atomic recipies
@@ -25,6 +28,9 @@ import DDC.Core.Transform.Namify
 import qualified DDC.Core.Transform.Snip  as Snip
 import qualified DDC.Core.Transform.Beta  as Beta
 import DDC.Type.Env
+
+-- GHC 8.2 -> 8.4 transition.
+import Data.Semigroup                   (Semigroup(..))
 import Data.Monoid
 
 
@@ -99,16 +105,16 @@ snipOver  = Trans (Snip Snip.configZero { Snip.configSnipOverApplied = True })
 
 -- Compound -------------------------------------------------------------------
 -- | Conversion to administrative normal-form.
-anormalize 
-        :: (KindEnv n -> Namifier s n) 
+anormalize
+        :: (KindEnv n -> Namifier s n)
                 -- ^ Make a namifier to create fresh level-1 names.
-        -> (TypeEnv n -> Namifier s n) 
+        -> (TypeEnv n -> Namifier s n)
                 -- ^ Make a namifier to create fresh level-0 names.
         -> Simplifier s a n
 
 anormalize namK namT
         =  snip
-        <> Trans Flatten 
+        <> Trans Flatten
         <> Trans (Namify namK namT)
 
 
