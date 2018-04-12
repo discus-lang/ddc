@@ -52,7 +52,7 @@ data NoInformation
 
 instance Pretty NoInformation where
     ppr (NoInformation name)
-        = text name <> text ": No information"
+        = string name %% text ": No information"
 
 
 instance Pretty (TransformResult r) where

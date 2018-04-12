@@ -1,7 +1,4 @@
 
--- Suppress Data.Monoid warnings during GHC 8.2 -> 8.4 transition.
-{-# OPTIONS  -Wno-unused-imports #-}
-
 module DDC.Core.Check.Base
         ( -- Things defined in this module.
           Config (..)
@@ -50,18 +47,12 @@ import DDC.Control.Check                (throw, runCheck, evalCheck)
 import DDC.Data.ListUtils
 
 import Control.Monad
-import Data.Monoid                      hiding ((<>))
 import Data.Maybe
 import Data.Set                         (Set)
+import DDC.Data.Pretty                  as P
 import qualified Data.Set               as Set
 import qualified DDC.Control.Check      as G
-import qualified DDC.Data.Pretty        as P
 import Prelude                          hiding ((<$>))
-
-
--- GHC 8.2 -> 8.4 transition.
-import Data.Monoid
-import Data.Semigroup
 
 
 -- | Type checker monad.

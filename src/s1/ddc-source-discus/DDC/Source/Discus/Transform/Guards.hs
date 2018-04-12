@@ -1,4 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
 
 -- Suppress Data.Monoid warnings during GHC 8.4.1 transition
 {-# OPTIONS  -Wno-unused-imports #-}

@@ -12,13 +12,10 @@ import DDC.Core.Flow.Transform.Annotate
 import DDC.Core.Flow.Transform.Deannotate
 import Control.Monad.Writer.Strict              hiding (Alt(..))
 import Data.Set                                 (Set)
+import Data.Semigroup                           (Semigroup(..))
+import Data.Monoid                              (Monoid(..))
 import qualified Data.Set                       as Set
 
-#if __GLASGOW_HASKELL__ >= 741
-import DDC.Data.Monoidal        ()
-#else
-import DDC.Data.Monoidal
-#endif
 
 
 -------------------------------------------------------------------------------

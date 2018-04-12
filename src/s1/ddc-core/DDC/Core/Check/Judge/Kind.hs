@@ -13,14 +13,15 @@ import DDC.Type.DataDef
 import DDC.Type.Universe
 import DDC.Type.Exp
 import DDC.Data.Pretty
-import Control.Monad
 import Data.List
+import Control.Monad
 import DDC.Core.Check.Base              (CheckM)
 import qualified DDC.Core.Check.Base    as C
 import qualified DDC.Type.Sum           as TS
 import qualified DDC.Core.Env.EnvX      as EnvX
 import qualified DDC.Core.Env.EnvT      as EnvT
 import qualified Data.Map               as Map
+
 
 import DDC.Core.Check.Base
         ( throw

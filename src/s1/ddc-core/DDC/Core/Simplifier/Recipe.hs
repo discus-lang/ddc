@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP #-}
 
 -- | Common simplifier recipes that combine multiple transforms.
 module DDC.Core.Simplifier.Recipe
@@ -23,15 +22,10 @@ module DDC.Core.Simplifier.Recipe
 where
 import DDC.Core.Simplifier.Base
 import DDC.Core.Transform.Namify
+import Data.Semigroup                   (Semigroup(..))
 import qualified DDC.Core.Transform.Snip  as Snip
 import qualified DDC.Core.Transform.Beta  as Beta
 import DDC.Type.Env
-
-#if __GLASGOW_HASKELL__ >= 741
-import DDC.Data.Monoidal        ()
-#else
-import DDC.Data.Monoidal
-#endif
 
 
 -- Atomic ---------------------------------------------------------------------

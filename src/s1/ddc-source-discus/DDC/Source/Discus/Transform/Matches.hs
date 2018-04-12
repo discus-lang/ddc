@@ -1,5 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE CPP #-}
 
 -- | Desugar match expressions to case expressions.
 --
@@ -18,15 +16,11 @@ where
 import DDC.Source.Discus.Module
 import DDC.Source.Discus.Exp
 import Data.Text                        (Text)
+import Data.Semigroup                   (Semigroup(..))
 import qualified DDC.Data.SourcePos     as SP
 import qualified Control.Monad.State    as S
 import qualified Data.Text              as Text
 
-#if __GLASGOW_HASKELL__ >= 741
-import DDC.Data.Monoidal        ()
-#else
-import DDC.Data.Monoidal
-#endif
 
 -------------------------------------------------------------------------------
 -- | Desugar match expressions to case expressions in a module.

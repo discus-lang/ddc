@@ -129,28 +129,28 @@ instance (Pretty n, Eq n) => Pretty (Elem n) where
   = case ll of
         ElemPos p
          -> text "P "
-         <> ppr p
+          % ppr p
 
         ElemKind b role
          -> text "K "
-         <> (padL 4 $ ppr (binderOfBind b))
-                <+> text ":"
-                <+> (ppr $ typeOfBind b)
-                <+> text "@" <> ppr role
+          % (padL 4 $ ppr (binderOfBind b))
+                %% text ":"
+                %% (ppr $ typeOfBind b)
+                %% text "@" <> ppr role
 
         ElemType b
          -> text "T "
-         <> (padL 4 $ ppr (binderOfBind b))
-                <+> text ":"
-                <+> (ppr $ typeOfBind b)
+          % (padL 4 $ ppr (binderOfBind b))
+                %% text ":"
+                %% (ppr $ typeOfBind b)
 
         ElemExistsDecl (Exists i k)
          -> text "D "
-         <> padL 4 (text "?" <> ppr i) <+> text ":" <+> ppr k
+          % padL 4 (text "?" % ppr i) %% text ":" %% ppr k
 
         ElemExistsEq (Exists i k) t
          -> text "E "
-         <> padL 4 (text "?" <> ppr i) <+> text ":" <+> ppr k <+> text "=" <+> ppr t
+          % padL 4 (text "?" % ppr i) %% text ":" %% ppr k %% text "=" %% ppr t
 
 
 -- | Take the existential from this context element, if there is one.

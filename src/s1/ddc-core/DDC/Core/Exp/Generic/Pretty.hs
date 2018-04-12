@@ -7,7 +7,6 @@ import DDC.Core.Exp.DaCon
 import DDC.Type.Exp.Simple      ()
 import DDC.Type.Exp.Simple.Exp
 import DDC.Data.Pretty
-import qualified Data.Text      as Text
 import Prelude                  hiding ((<$>))
 
 
@@ -83,7 +82,7 @@ instance PrettyLanguage l => Pretty (GExp l) where
         XLet lts x
          ->  pprParen' (d > 2)
          $   vcat
-                [ pprLts lts <+> text "in"
+                [ pprLts lts %% text "in"
                 , pprX x ]
 
         -- Print single alternative case expressions as 'letcase'.
@@ -93,30 +92,29 @@ instance PrettyLanguage l => Pretty (GExp l) where
          | modeExpUseLetCase mode
          ->  pprParen' (d > 2)
          $   vcat
-                [ text "letcase" <+> ppr p
-                        <+> nest 2 (breakWhen (not $ isSimpleX x1)
-                                   <> text "=" <+> align (pprX x1))
-                        <+> text "in"
+                [ text "letcase" %% ppr p
+                        %% nest 2 (breakWhen (not $ isSimpleX x1)
+                                  % text "=" %% align (pprX x1))
+                        %% text "in"
                 , pprX x2]
 
         XCase x alts
          -> pprParen' (d > 2)
-         $  (nest 2 $ text "case" <+> ppr x <+> text "of" <+> lbrace <> line
-                <> (vcat $ punctuate semi $ map pprAlt alts))
-         <> line
-         <> rbrace
+         $  (nest 2 $ text "case" %% ppr x %% text "of" %% lbrace % line
+                % (vcat $ punctuate semi $ map pprAlt alts))
+         % line % rbrace
 
         XCast CastBox x
          -> pprParen' (d > 2)
-         $  vcat [ text "box", pprX x]
+         $  vcat [text "box", pprX x]
 
         XCast CastRun x
          -> pprParen' (d > 2)
-         $  text "run"  <+> pprX x
+         $  text "run" %% pprX x
 
         XCast cc x
          ->  pprParen' (d > 2)
-         $   vcat [ ppr cc <+> text "in"
+         $   vcat [ ppr cc %% text "in"
                   , pprX x]
 
 
@@ -129,9 +127,9 @@ instance PrettyLanguage l => Pretty (GArg l) where
 
  pprModePrec mode n aa
   = case aa of
-        RType    t      -> text "[" <> ppr t <> text "]"
+        RType    t      -> text "[" % ppr t % text "]"
         RExp     x      -> pprModePrec (modeArgExp mode) n  x
-        RWitness w      -> text "<" <> ppr w <> text ">"
+        RWitness w      -> text "<" % ppr w % text ">"
 
 
 -- Pat ------------------------------------------------------------------------
@@ -139,7 +137,7 @@ instance PrettyLanguage l => Pretty (GPat l) where
  ppr pp
   = case pp of
         PDefault        -> text "_"
-        PData u bs      -> ppr u <+> sep (map ppr bs)
+        PData u bs      -> ppr u %% sep (map ppr bs)
 
 
 -- Alt ------------------------------------------------------------------------
@@ -154,15 +152,15 @@ instance PrettyLanguage l => Pretty (GAlt l) where
 
  pprModePrec mode _ (AAlt p x)
   = let pprX    = pprModePrec (modeAltExp mode) 0
-    in  ppr p <+> nest 1 (line <> nest 3 (text "->" <+> pprX x))
+    in  ppr p %% nest 1 (line % nest 3 (text "->" %% pprX x))
 
 
 -- Cast -----------------------------------------------------------------------
 instance PrettyLanguage l => Pretty (GCast l) where
  ppr cc
   = case cc of
-        CastWeakenEffect  eff   -> text "weakeff" <+> brackets (ppr eff)
-        CastPurify w            -> text "purify"  <+> angles   (ppr w)
+        CastWeakenEffect  eff   -> text "weakeff" %% brackets (ppr eff)
+        CastPurify w            -> text "purify"  %% angles   (ppr w)
         CastBox                 -> text "box"
         CastRun                 -> text "run"
 
@@ -187,47 +185,51 @@ instance PrettyLanguage l => Pretty (GLets l) where
   = let pprX    = pprModePrec (modeLetsExp mode) 0
     in case lts of
         LLet b x
-         ->  text "let"
-         <+> align ( ppr b
-                 <>  nest 2 ( text "=" <+> align (pprX x)))
+         -> text "let"
+         %% align ( ppr b
+                   %  nest 2 ( text "=" %% align (pprX x)))
 
         LRec bxs
          -> let pprLetRecBind (b, x)
                  =  ppr b
-                 <> nest 2 (  breakWhen (not $ isSimpleX x)
-                           <> text "=" <+> align (pprX x))
+                 % nest 2 (  breakWhen (not $ isSimpleX x)
+                           % text "=" %% align (pprX x))
 
            in vcat
                 [ nest 2 $ text "letrec"
-                  <+> lbrace
-                  <>  (  line
-                      <> (vcat $ punctuate (semi <> line)
+                  %% lbrace
+                  %  (  line
+                      % (vcat $ punctuate (semi % line)
                                $ map pprLetRecBind bxs))
                 , rbrace]
 
         LPrivate bs Nothing []
-         -> text "private"
-                <+> (hcat $ punctuate space $ map ppr bs)
+         -> hsep
+                [ text "private"
+                , (hcat $ punctuate space $ map ppr bs) ]
 
         LPrivate bs Nothing bws
-         -> text "private"
-                <+> (hcat $ punctuate space $ map ppr bs)
-                <+> text "with"
-                <+> braces (cat $ punctuate (text "; ") $ map ppr bws)
+         -> hsep
+                [ text "private"
+                , (hcat $ punctuate space $ map ppr bs)
+                , text "with"
+                , braces (cat $ punctuate (text "; ") $ map ppr bws) ]
 
         LPrivate bs (Just parent) []
-         -> text "extend"
-                <+> ppr parent
-                <+> text "using"
-                <+> (hcat $ punctuate space $ map ppr bs)
+         -> hsep
+                [ text "extend"
+                , ppr parent
+                , text "using"
+                , (hcat $ punctuate space $ map ppr bs) ]
 
         LPrivate bs (Just parent) bws
-         -> text "extend"
-                <+> ppr parent
-                <+> text "using"
-                <+> (hcat $ punctuate space $ map ppr bs)
-                <+> text "with"
-                <+> braces (cat $ punctuate (text "; ") $ map ppr bws)
+         -> hsep
+                [ text "extend"
+                , ppr parent
+                , text "using"
+                , (hcat $ punctuate space $ map ppr bs)
+                , text "with"
+                , braces (cat $ punctuate (text "; ") $ map ppr bws) ]
 
 
 -- Witness --------------------------------------------------------------------
@@ -236,8 +238,8 @@ instance PrettyLanguage l => Pretty (GWitness l) where
   = case ww of
         WVar  n         -> ppr n
         WCon  wc        -> ppr wc
-        WApp  w1 w2     -> pprParen (d > 10) (ppr w1 <+> pprPrec 11 w2)
-        WType t         -> text "[" <> ppr t <> text "]"
+        WApp  w1 w2     -> pprParen (d > 10) (ppr w1 %% pprPrec 11 w2)
+        WType t         -> text "[" % ppr t % text "]"
 
 
 -- WiCon ----------------------------------------------------------------------
@@ -255,8 +257,8 @@ instance PrettyLanguage l => Pretty (DaCon l (Type l)) where
 
         DaConRecord ns
          -> text "("
-         <> (hcat $ punctuate (text ",") $ map (text . Text.unpack) ns)
-         <> text ")"
+         %  (hcat $ punctuate (text ",") $ map text ns)
+         %  text ")"
 
         DaConPrim  n _  -> ppr n
         DaConBound n    -> ppr n

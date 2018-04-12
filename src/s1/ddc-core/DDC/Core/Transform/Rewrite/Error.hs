@@ -1,3 +1,4 @@
+
 module DDC.Core.Transform.Rewrite.Error
         ( Error (..)
         , Side  (..))

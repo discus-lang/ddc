@@ -13,17 +13,16 @@ import DDC.Core.Module
 import DDC.Core.Simplifier.Base
 import DDC.Core.Transform.Reannotate
 import DDC.Core.Fragment
-import DDC.Data.Monoidal        ()
 import Data.Map                 (Map)
 import Control.Monad
 import Control.Monad.Writer     (Writer, runWriter, tell)
-import DDC.Data.Monoidal
 import Data.Typeable
+import Data.Semigroup           (Semigroup(..))
+import Data.Monoid              (Monoid(..))
 import qualified Data.Map                               as Map
 import qualified DDC.Core.Transform.SubstituteXX        as S
 import qualified DDC.Data.Pretty                        as P
 import Prelude                                          hiding ((<$>))
-
 
 
 -------------------------------------------------------------------------------

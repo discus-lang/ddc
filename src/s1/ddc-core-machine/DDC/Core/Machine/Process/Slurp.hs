@@ -15,7 +15,7 @@ import Control.Monad (when)
 import qualified Data.Map as Map
 
 import DDC.Core.Codec.Text.Pretty       ()
-import DDC.Data.Pretty (Doc, Pretty(..), ppr, text, line)
+import DDC.Data.Pretty                  hiding (nest)
 
 
 data SlurpError

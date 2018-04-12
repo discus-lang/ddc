@@ -452,9 +452,9 @@ makeSub config a ctx0 x0 xL tL tR err
  = do
         ctrace  $ vcat
                 [ text "**  Sub_Fail"
-                , text "    tL: " <> text (show tL)
-                , text "    tR: " <> text (show tR)
-                , mempty ]
+                , text "    tL: " % string (show tL)
+                , text "    tR: " % string (show tR)
+                , empty ]
 
         throw err
 

@@ -52,7 +52,7 @@ instance NFData PrimArith where
 instance Pretty PrimArith where
  ppr op
   = let Just (_, n) = find (\(p, _) -> op == p) primArithNames
-    in  (text n)
+    in  string n
 
 
 -- | Read a primitive operator.
@@ -80,7 +80,7 @@ primArithNames
         , (PrimArithLt ,        "lt#" )
         , (PrimArithLe ,        "le#" )
         , (PrimArithAnd,        "and#")
-        , (PrimArithOr ,        "or#" ) 
+        , (PrimArithOr ,        "or#" )
         , (PrimArithShl,        "shl#")
         , (PrimArithShr,        "shr#")
         , (PrimArithBAnd,       "band#")

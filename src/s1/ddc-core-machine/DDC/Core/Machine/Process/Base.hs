@@ -90,21 +90,24 @@ instance Pretty BlockNext where
 
 instance Pretty Block where
  ppr (BlockPull c v n)
-  = text "pull#" <+> ppr c <+> ppr v <+> ppr n
+  = text "pull#" %% ppr c %% ppr v %% ppr n
+
  ppr (BlockPush c x n)
-  = text "push#" <+> ppr c <+> pprPrec 11 x <+> ppr n
+  = text "push#" %% ppr c %% pprPrec 11 x %% ppr n
+
  ppr (BlockDrop c n)
-  = text "drop#" <+> ppr c <+> ppr n
+  = text "drop#" %% ppr c %% ppr n
+
  ppr (BlockJump n)
   = ppr n
 
 pprBlockPair :: Label -> Block -> Doc
 pprBlockPair lbl block
- = ppr lbl <+> text "=" <+> ppr block
+ = ppr lbl %% text "=" %% ppr block
 
 pprChannelTypePair :: Channel -> ChannelType -> Doc
 pprChannelTypePair c t
- = ppr c <+> text "=" <+> ppr t
+ = ppr c %% text "=" %% ppr t
 
 instance Pretty Process where
  ppr (Process start blocks chans)

@@ -15,6 +15,7 @@ GHC_LANGUAGE	:= \
         -XConstraintKinds \
 	-XFlexibleContexts \
         -XParallelListComp \
+	-XOverloadedStrings \
         -XFlexibleInstances \
 	-XStandaloneDeriving \
         -XExplicitNamespaces \
@@ -88,7 +89,6 @@ DDC_PACKAGES	:= \
         -package random \
         -package stm \
         -package text \
-        -package wl-pprint \
         -package buildbox \
         -package haskeline \
         -package inchworm \

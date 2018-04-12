@@ -58,8 +58,8 @@ data Name
 instance Pretty Name where
  ppr nn
   = case nn of
-        NameVar  v              -> text (Text.unpack v)
-        NameCon  c              -> text (Text.unpack c)
+        NameVar  v              -> text v
+        NameCon  c              -> text c
         NamePrimType p          -> ppr p
         NamePrimValLit p        -> ppr p
         NamePrimValOp  p        -> ppr p

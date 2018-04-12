@@ -260,32 +260,32 @@ instance Pretty s => Pretty (Scalar s a) where
 
 instance (Pretty s, Pretty a) => Pretty (Bind s a) where
  ppr (SBind n (Fold f i a))
-  = bind (ppr n) "reduce" (ppr f <+> ppr i <+> ppr a)
+  = bind (ppr n) "reduce" (ppr f %% ppr i %% ppr a)
 
  ppr (ABind n (MapN f as))
-  = bind (ppr n) "mapN"   (ppr f <+> hsep (map ppr as))
+  = bind (ppr n) "mapN"   (ppr f %% hsep (map ppr as))
 
  ppr (ABind n (Filter f a))
-  = bind (ppr n) "filter" (ppr f <+> ppr a)
+  = bind (ppr n) "filter" (ppr f %% ppr a)
 
  ppr (ABind n (Gather a b))
-  = bind (ppr n) "gather" (ppr a <+> ppr b)
+  = bind (ppr n) "gather" (ppr a %% ppr b)
 
  ppr (ABind n (Generate sz f))
-  = bind (ppr n) "generate" (ppr sz <+> ppr f)
+  = bind (ppr n) "generate" (ppr sz %% ppr f)
 
  ppr (ABind n (Cross a b))
-  = bind (ppr n) "cross"    (ppr a <+> ppr b)
+  = bind (ppr n) "cross"    (ppr a %% ppr b)
 
  ppr (Ext out _ ins)
   = bind (ppr out) "external" (binds ins)
   where
    binds (ss,as)
-    = encloseSep lbrace rbrace space (map ppr ss) <+> hcat (map ppr as)
+    = encloseSep lbrace rbrace space (map ppr ss) %% hcat (map ppr as)
 
 bind :: Doc -> String -> Doc -> Doc
 bind nm com args
- = nm <+> nest 4 (equals <+> text com <+> args)
+ = nm %% nest 4 (equals %% string com %% args)
 
 instance (Pretty s, Pretty a) => Pretty (Program s a) where
  ppr (Program ins binds outs)
@@ -293,13 +293,13 @@ instance (Pretty s, Pretty a) => Pretty (Program s a) where
   where
    params
     = vcat
-    [ vcat (map (\i -> text "param scalar" <+> ppr i) (fst ins))
-    , vcat (map (\i -> text "param array"  <+> ppr i) (snd ins)) ]
+    [ vcat (map (\i -> text "param scalar" %% ppr i) (fst ins))
+    , vcat (map (\i -> text "param array"  %% ppr i) (snd ins)) ]
 
    returns
     = vcat
-    [ vcat (map (\i -> text "return"       <+> ppr i) (fst outs))
-    , vcat (map (\i -> text "return"       <+> ppr i) (snd outs))]
+    [ vcat (map (\i -> text "return"       %% ppr i) (fst outs))
+    , vcat (map (\i -> text "return"       %% ppr i) (snd outs))]
 
 instance (Pretty s, Pretty a) => Pretty (CName s a) where
  ppr (NameScalar s) = text "{" <> ppr s <> text "}"

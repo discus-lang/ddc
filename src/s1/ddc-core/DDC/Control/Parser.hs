@@ -1,5 +1,4 @@
 {-# LANGUAGE TypeFamilies #-}
-
 -- | Parser utilities.
 module DDC.Control.Parser
         ( module Text.Parsec
@@ -12,12 +11,11 @@ module DDC.Control.Parser
         , pTok,         pTokSP)
 where
 import DDC.Data.Pretty
-import DDC.Data.SourcePos       as D
+import DDC.Data.SourcePos               as D
 import Data.Functor.Identity
-import Text.Parsec              hiding (SourcePos)
-import Text.Parsec              as P  
-import Text.Parsec.Error        as P
-
+import Text.Parsec                      hiding (string, char, SourcePos(..))
+import qualified Text.Parsec            as P
+import qualified Text.Parsec.Error      as P
 
 -- | A generic parser,
 --   parameterised over token and return types.
@@ -42,9 +40,9 @@ runTokenParser
         -> [Located k]          -- ^ Tokens to parse.
         -> Either P.ParseError a
 
-runTokenParser tokenShow fileName parser 
+runTokenParser tokenShow fileName parser
  = P.runParser eofParser
-        ParseState 
+        ParseState
         { stateTokenShow        = tokenShow
         , stateFileName         = fileName }
         fileName
@@ -55,7 +53,7 @@ runTokenParser tokenShow fileName parser
         -- @Show (Token k)@
         (do
                 c <- pTokMaybe Just
-                unexpected (tokenShow c)) <|> return r
+                P.unexpected (tokenShow c)) P.<|> return r
 
 
 -------------------------------------------------------------------------------
@@ -66,30 +64,30 @@ pTok k  = pTokMaybe $ \k' -> if k == k' then Just () else Nothing
 
 -- | Accept the given token, returning its source position.
 pTokSP :: k -> Parser k D.SourcePos
-pTokSP k  
- = do   (_, sp) <- pTokMaybeSP 
+pTokSP k
+ = do   (_, sp) <- pTokMaybeSP
                 $ \k' -> if k == k' then Just () else Nothing
         return sp
 
 
 -- | Accept a token and return the given value.
 pTokAs :: k -> t -> Parser k t
-pTokAs k t 
+pTokAs k t
  = do   pTok k
         return t
 
 
--- | Accept a token and return the given value, 
+-- | Accept a token and return the given value,
 --   along with the source position of the token.
 pTokAsSP :: k -> t -> Parser k (t, D.SourcePos)
-pTokAsSP k t 
+pTokAsSP k t
  = do   sp      <- pTokSP k
         return  (t, sp)
 
 
--- | Accept a token if the function returns `Just`. 
+-- | Accept a token if the function returns `Just`.
 pTokMaybe :: (k -> Maybe a) -> Parser k a
-pTokMaybe f 
+pTokMaybe f
  = do   state   <- P.getState
 
         P.token (stateTokenShow state . valueOfLocated)
@@ -97,13 +95,13 @@ pTokMaybe f
                 (f . valueOfLocated)
 
 
--- | Accept a token if the function return `Just`, 
+-- | Accept a token if the function return `Just`,
 --   also returning the source position of that token.
 pTokMaybeSP  :: (k -> Maybe a) -> Parser k (a, D.SourcePos)
 pTokMaybeSP f
  = do   state   <- P.getState
 
-        let f' token' 
+        let f' token'
                 = case f (valueOfLocated token') of
                         Nothing -> Nothing
                         Just x  -> Just (x, sourcePosOfLocated token')
@@ -118,19 +116,19 @@ instance Pretty P.ParseError where
  data PrettyMode P.ParseError   = PrettyParseError
  pprDefaultMode                 = PrettyParseError
  ppr err
-  = vcat $  [  text "Parse error in" <+> text (show (P.errorPos err)) ]
+  = vcat $  [  text "Parse error in" %% string (show (P.errorPos err)) ]
          ++ (map ppr $ packMessages $ P.errorMessages err)
-         
-         
+
+
 instance Pretty P.Message where
  data PrettyMode P.Message      = PrettyMessage
  pprDefaultMode                 = PrettyMessage
  ppr msg
   = case msg of
-        SysUnExpect str -> text "Unexpected" <+> text str <> text "."
-        UnExpect    str -> text "Unexpected" <+> text str <> text "."
-        Expect      str -> text "Expected"   <+> text str <> text "."
-        Message     str -> text str
+        P.SysUnExpect str -> string "Unexpected" %% string str % char '.'
+        P.UnExpect    str -> string "Unexpected" %% string str % char '.'
+        P.Expect      str -> string "Expected"   %% string str % char '.'
+        P.Message     str -> string str
 
 
 -- | When we get a parse error, parsec adds multiple 'Unexpected' messages,

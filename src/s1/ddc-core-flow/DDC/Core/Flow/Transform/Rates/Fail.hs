@@ -44,7 +44,7 @@ data Fail
 
 
 instance Pretty Fail where
- ppr fails = text (show fails)
+ ppr fails = string (show fails)
 
 
 type LogFailures a = Writer [Fail] a

@@ -169,9 +169,9 @@ instance NFData DaConMachine where
 instance Pretty Name where
  ppr nn
   = case nn of
-        NameVar         s       -> text s
-        NameVarMod      n s     -> ppr n <> text "$" <> text s
-        NameCon         s       -> text s
+        NameVar         s       -> string s
+        NameVarMod      n s     -> ppr n <> text "$" <> string s
+        NameCon         s       -> string s
         NameKiConMachine con    -> ppr con
         NameTyConMachine con    -> ppr con
         NameDaConMachine con    -> ppr con

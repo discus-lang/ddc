@@ -30,8 +30,8 @@ bundle  = Bundle
         , bundleModules         = Map.empty
         , bundleStateInit       = 0 :: Int
         , bundleSimplifier      = Trans Id
-        , bundleMakeNamifierT   = makeNamifier freshT 
-        , bundleMakeNamifierX   = makeNamifier freshX 
+        , bundleMakeNamifierT   = makeNamifier freshT
+        , bundleMakeNamifierX   = makeNamifier freshX
         , bundleRewriteRules    = Map.empty }
 
 
@@ -39,7 +39,7 @@ bundle  = Bundle
 fragment :: Fragment Name Error
 fragment
         = Fragment
-        { fragmentProfile       = profile 
+        { fragmentProfile       = profile
         , fragmentExtension     = "dcf"
         , fragmentReadName      = readName
         , fragmentLexModule     = lexModuleString
@@ -53,5 +53,5 @@ data Error a
         deriving Show
 
 instance Pretty (Error a) where
- ppr Error  = text (show Error)
+ ppr Error  = string (show Error)
 

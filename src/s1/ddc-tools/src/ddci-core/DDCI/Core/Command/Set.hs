@@ -35,11 +35,11 @@ cmdSet state []
 
         putStrLn $ renderIndent
          $ vcat
-         [ vcat  [ text "Modes:      " <> text (show $ Set.toList $ stateModes state)
-                 , text "Language:   " <> text langName
+         [ vcat  [ text "Modes:      " <> string (show $ Set.toList $ stateModes state)
+                 , text "Language:   " <> string langName
                  , text "Simplifier: " <> ppr  simpl
                  , text "Builder:    "
-                       <> text (show $ liftM Build.builderName $ stateBuilder state) ]
+                       <> string (show $ liftM Build.builderName $ stateBuilder state) ]
          , vcat (text "With:       " : map ppr (Map.keys modules))
          , vcat (text "With Salt:  " : map ppr (Map.keys (stateWithSalt state))) ]
 

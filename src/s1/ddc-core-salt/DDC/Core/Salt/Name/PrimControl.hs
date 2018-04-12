@@ -46,10 +46,10 @@ instance Pretty PrimControl where
          -> text "return#"
 
         PrimControlCall  arity
-         -> text "call"     <> int arity <> text "#"
+         -> text "call"     % int arity % text "#"
 
         PrimControlTailCall arity
-         -> text "tailcall" <> int arity <> text "#"
+         -> text "tailcall" % int arity % text "#"
 
 
 readPrimControl :: String -> Maybe PrimControl

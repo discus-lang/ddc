@@ -1,4 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
 
 -- | Define the default optimisation levels.
 module DDC.Main.OptLevels
@@ -14,11 +13,10 @@ import DDC.Core.Transform.Inline
 import DDC.Core.Transform.Namify
 import DDC.Core.Transform.Reannotate
 import DDC.Core.Simplifier                      (Simplifier)
-import DDC.Data.Monoidal
-import DDC.Data.Monoidal                ()
 import System.FilePath
 import Data.List
 import Data.Maybe
+import Data.Semigroup                           (Semigroup(..))
 import qualified DDC.Driver.Config              as D
 import qualified DDC.Core.Simplifier            as S
 import qualified DDC.Core.Simplifier.Recipe     as S
@@ -82,7 +80,7 @@ opt1_salt config dconfig builder runtimeConfig filePath
         --  If any of these don't load then the 'cmdReadModule' function
         --  will display the errors.
         minlineModules
-                <- liftM sequence
+                <- fmap sequence
                 $  mapM (cmdReadModule dconfig Salt.fragment)
                         inlineModulePaths
 

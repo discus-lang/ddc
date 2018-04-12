@@ -20,10 +20,11 @@ import DDC.Core.Transform.BoundX
 import DDC.Core.Transform.BoundT
 import DDC.Core.Simplifier.Result
 import DDC.Type.Transform.AnonymizeT
-import Control.Monad.Writer     (Writer, tell, runWriter)
+import Control.Monad.Writer                     (Writer, tell, runWriter)
 import Data.Typeable
-import DDC.Data.Monoidal
 import DDC.Core.Env.EnvX                        (EnvX)
+import Data.Semigroup                           (Semigroup(..))
+import Data.Monoid                              (Monoid(..))
 import qualified DDC.Core.Env.EnvX              as EnvX
 import qualified DDC.Core.Codec.Text.Pretty     as P
 import Prelude                                  hiding ((<$>))

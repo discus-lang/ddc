@@ -22,8 +22,8 @@ import qualified DDC.Type.Exp.Simple                    as T
 import qualified Data.Map                               as Map
 import qualified Data.Set                               as Set
 import Data.Maybe
-import Control.Monad
 import Control.Monad.Writer (tell, runWriter, Writer)
+import Control.Monad
 import Data.List
 import Data.Typeable
 import Prelude                                          hiding ((<$>))
@@ -49,8 +49,8 @@ instance Pretty RewriteInfo where
 
 
 instance Pretty RewriteLog where
- ppr (LogRewrite name) = text "Rewrite: " <> text name
- ppr (LogUnfold  name) = text "Unfold:  " <> text name
+ ppr (LogRewrite name) = text "Rewrite: " <> string name
+ ppr (LogUnfold  name) = text "Unfold:  " <> string name
 
 isProgress = not . null
 
@@ -480,7 +480,7 @@ matchWithRule
         --  This should always match because checked rules are guaranteed not to
         --  have `BAnon` or `BNone` binders.
         let Just vs
-                = liftM Set.fromList
+                = fmap Set.fromList
                 $ sequence
                 $ map T.takeNameOfBind
                 $ map snd binds

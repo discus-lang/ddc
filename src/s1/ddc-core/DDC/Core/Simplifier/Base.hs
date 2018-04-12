@@ -1,7 +1,4 @@
 
--- Suppress Data.Monoid warnings during GHC 8.4.1 transition
-{-# OPTIONS  -Wno-unused-imports #-}
-
 module DDC.Core.Simplifier.Base
         ( -- * Simplifier Specifications
           Simplifier(..)
@@ -27,10 +24,6 @@ import qualified DDC.Core.Transform.Snip        as Snip
 import qualified DDC.Core.Transform.Eta         as Eta
 import qualified DDC.Core.Transform.Beta        as Beta
 import qualified DDC.Core.Transform.FoldCase    as FoldCase
-
--- GHC 8.2 -> 8.4 transition.
-import Data.Semigroup                   (Semigroup(..))
-import Data.Monoid
 
 
 -- Simplifier -----------------------------------------------------------------
@@ -60,14 +53,9 @@ instance Monoid (Simplifier s a n) where
 instance Pretty (Simplifier s a n) where
  ppr ss
   = case ss of
-        Seq s1 s2
-         -> ppr s1 <+> text ";" <+> ppr s2
-
-        Fix i s
-         -> text "fix" <+> int i <+> ppr s
-
-        Trans t1
-         -> ppr t1
+        Seq s1 s2 -> ppr s1 %% text ";" %% ppr s2
+        Fix i s   -> text "fix" %% int i %% ppr s
+        Trans t1  -> ppr t1
 
 
 -- | Construct an empty simplifier.

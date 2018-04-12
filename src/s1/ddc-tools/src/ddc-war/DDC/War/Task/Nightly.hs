@@ -21,6 +21,7 @@ import System.FilePath.Posix    as Remote
 import System.FilePath          as Local
 import Text.PrettyPrint.Leijen  hiding (Pretty)
 
+outLn' s = outLn (s :: String)
 
 -- Spec -----------------------------------------------------------------------
 data Spec
@@ -94,7 +95,7 @@ build spec
 
         -- Continuous build
         Just whence
-         -> do  outLn $ "* Starting cron loop"
+         -> do  outLn' "* Starting cron loop"
                 cronLoop
                  $  makeSchedule
                         [ ("nightly"
@@ -133,39 +134,39 @@ buildProject spec
         ensureDir buildDir
         inDir     buildDir
          $ do
-                outLn "* Creating log directory"
+                outLn' "* Creating log directory"
                 ensureDir "log"
 
-                outLn "* Downloading snapshot"
+                outLn' "* Downloading snapshot"
                 (getOut, getErr) <- ssystem $ "wget --progress=bar " ++ urlSnapshot
                 io $ writeFile "log/01-wget.stdout" getOut
                 io $ writeFile "log/01-wget.stderr" getErr
 
                 needs (Remote.takeFileName urlSnapshot)
-                outLn "* Unpacking snapshot"
+                outLn' "* Unpacking snapshot"
                 ssystem $ "tar zxf " ++ Remote.takeFileName urlSnapshot
 
                 inDir "ddc-head"
                  $ do
-                        outLn "* Updating shapshot"
+                        outLn' "* Updating shapshot"
                         (darcsOut, darcsErr) <- ssystem $ "darcs pull -av " ++ urlRepo
                         io $ writeFile "../log/02-darcs.stdout" darcsOut
                         io $ writeFile "../log/02-darcs.stderr" darcsErr
 
-                        outLn "* Writing build config"
+                        outLn' "* Writing build config"
                         needs "make"
                         io $ writeFile "make/config-override.mk"
                            $ unlines [ "THREADS = " ++ show buildThreads
                                      , "BUILDFLAVOUR = " ++ buildFlavour
                                      , "" ]
 
-                        outLn "* Building project"
+                        outLn' "* Building project"
                         needs "Makefile"
                         (makeOut, makeErr) <- ssystem $ "make nightly"
                         io $ writeFile "../log/03-make.stdout" makeOut
                         io $ writeFile "../log/03-make.stderr" makeErr
 
-                        outLn "* Copying results"
+                        outLn' "* Copying results"
                         needs "war.results"
                         needs "war.failed"
                         ssystem "cp war.results ../log"
@@ -181,7 +182,7 @@ buildProject spec
                 postSuccess spec strTime strFailed
 
         when (specCleanup spec)
-         $ do   outLn "* Cleaning up"
+         $ do   outLn' "* Cleaning up"
                 clobberDir buildDir
 
         return ResultSuccess
@@ -215,7 +216,7 @@ postSuccess spec strTime strFailed
  , Just addrFrom        <- specMailFrom spec
  , Just addrTo          <- specMailTo   spec
  = do
-        outLn "* Reporting build success"
+        outLn ("* Reporting build success" :: String)
 
         -- The overall build succeeded, but some tests might have failed.
         let nFailed     =  length $ lines strFailed
@@ -253,7 +254,7 @@ postFailure spec err
  , Just addrFrom        <- specMailFrom spec
  , Just addrTo          <- specMailTo   spec
  = do
-        outLn "* Reporting build failure"
+        outLn ("* Reporting build failure" :: String)
 
         -- Create message subject.
         hostId          <- getHostId

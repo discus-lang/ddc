@@ -198,6 +198,6 @@ instance Pretty Error where
          -> vcat [ text "Not in scope: " <> squotes (ppr n) ]
 
         ErrorMultiple n ms
-         -> vcat $  [ text "Variable" <+> squotes (ppr n) <+> text "defined in multiple modules:" ]
+         -> vcat $  [ text "Variable" %% squotes (ppr n) %% text "defined in multiple modules:" ]
                  ++ (map ppr ms)
 

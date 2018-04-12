@@ -12,7 +12,6 @@ import DDC.Core.Codec.Text.Lexer.Tokens
 import DDC.Core.Module
 import DDC.Type.Exp.Simple
 import DDC.Data.Pretty
-import Control.Monad
 import qualified DDC.Control.Parser     as P
 import qualified Data.Text              as T
 
@@ -79,7 +78,7 @@ pImportSpecs c
 
                 -- foreign ...
          , do   pTok (KKeyword EForeign)
-                src     <- liftM (renderIndent . ppr) pName
+                src     <- fmap (renderIndent . ppr) pName
 
                 P.choice
                  [      -- import foreign MODE type { (NAME : KIND)+ }

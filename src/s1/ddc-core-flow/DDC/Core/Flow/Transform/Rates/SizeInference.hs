@@ -457,7 +457,7 @@ instance (Pretty v) => Pretty (K v) where
 
 instance (Pretty v) => Pretty (Type v) where
  ppr (TVar   v)   = ppr v
- ppr (TCross a b) = ppr a <+> text "*" <+> ppr b
+ ppr (TCross a b) = ppr a %% text "*" %% ppr b
 
 
 instance (Pretty v) => Pretty (Maybe (Type v)) where
@@ -466,18 +466,18 @@ instance (Pretty v) => Pretty (Maybe (Type v)) where
 
 
 instance (Pretty v) => Pretty (Scope v) where
- ppr (EVar v t)   = ppr v <+> text ":" <+> ppr t
- ppr (EUnify v)   = text "∀" <> ppr v
- ppr (ERigid v)   = text "∃" <> ppr v
+ ppr (EVar v t)   = ppr v %% text ":" %% ppr t
+ ppr (EUnify v)   = text "∀" % ppr v
+ ppr (ERigid v)   = text "∃" % ppr v
 
 
 instance (Pretty v) => Pretty (Scheme v) where
  ppr (Scheme foralls exists from to)
-  =   text "∀" <> hcat (map ppr foralls) <> text ". "
-  <+> text "∃" <> hcat (map ppr exists)  <> text ". "
-  <+> tupled (map tppr from) <+> text "→"
-  <+> tupled (map tppr to)
+  =  text "∀" % hcat (map ppr foralls) % text ". "
+  %% text "∃" % hcat (map ppr exists)  % text ". "
+  %% tupled (map tppr from) %% text "→"
+  %% tupled (map tppr to)
   where
-   tppr (v,t) = ppr v <+> text ":" <+> ppr t
+   tppr (v,t) = ppr v %% text ":" %% ppr t
 
 

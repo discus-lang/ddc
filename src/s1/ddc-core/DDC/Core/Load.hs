@@ -69,7 +69,7 @@ instance ( Eq n, Show n, Pretty n
   = case err of
         ErrorRead str
          -> vcat [ text "While reading."
-                 , indent 2 $ text str ]
+                 , indent 2 $ string str ]
 
         ErrorParser     err'
          -> vcat [ text "While parsing."

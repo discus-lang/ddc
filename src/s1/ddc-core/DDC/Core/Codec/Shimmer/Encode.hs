@@ -1,5 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE CPP #-}
+
 module DDC.Core.Codec.Shimmer.Encode
         ( Config (..)
         , takeModuleDecls
@@ -15,18 +14,12 @@ import qualified DDC.Core.Exp                   as C
 import qualified DDC.Core.Exp.Annot.Compounds   as C
 import qualified DDC.Type.DataDef               as C
 import qualified DDC.Type.Sum                   as Sum
-
 import qualified SMR.Core.Exp                   as S
 import qualified SMR.Prim.Name                  as S
-
 import qualified Data.Text                      as T
 import Data.Text                                (Text)
+import DDC.Data.Pretty
 
-#if __GLASGOW_HASKELL__ >= 741
-import DDC.Data.Monoidal        ()
-#else
-import DDC.Data.Monoidal
-#endif
 
 ---------------------------------------------------------------------------------------------------
 type SExp  = S.Exp  Text S.Prim
@@ -131,8 +124,8 @@ takeModuleDecls c mm@C.ModuleCore{}
         takeDeclTop (C.BName n t, x)
          = case configTakeRef c n of
                 S.XApp _ [S.XRef (S.RTxt tx)]
-                  -> [ S.DeclMac (T.pack "t-" <> tx) (takeType c t)
-                     , S.DeclMac (T.pack "x-" <> tx) (takeExp  c x)  ]
+                  -> [ S.DeclMac (text "t-" % tx) (takeType c t)
+                     , S.DeclMac (text "x-" % tx) (takeExp  c x)  ]
 
                 s -> error $ "ddc-core.takeDeclTop: unexpected takeRef " ++ show s
 

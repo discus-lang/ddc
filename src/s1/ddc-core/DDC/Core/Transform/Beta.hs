@@ -1,4 +1,3 @@
-{-# LANGUAGE CPP #-}
 
 -- | Beta-reduce applications of a explicit lambda abstractions
 --   to variables and values.
@@ -15,19 +14,12 @@ import DDC.Core.Transform.SubstituteTX
 import DDC.Core.Transform.SubstituteWX
 import DDC.Core.Transform.SubstituteXX
 import DDC.Core.Simplifier.Result
-
 import DDC.Core.Env.EnvX                (EnvX)
 import Control.Monad.Writer             (Writer, runWriter, tell)
 import Data.Typeable                    (Typeable)
 import Prelude                          hiding ((<$>))
+import DDC.Data.Pretty                  as P
 import qualified DDC.Core.Env.EnvX      as EnvX
-import qualified DDC.Data.Pretty        as P
-
-#if __GLASGOW_HASKELL__ >= 741
-import DDC.Data.Monoidal        ()
-#else
-import DDC.Data.Monoidal
-#endif
 
 
 -------------------------------------------------------------------------------
@@ -67,16 +59,16 @@ data Info
         deriving Typeable
 
 
-instance P.Pretty Info where
+instance Pretty Info where
  ppr (Info ty wit val lets skip)
-  = P.vcat
-  [ P.text "Beta reduction:"
-  , P.indent 4 $ P.vcat
-      [ P.text "Types:          " <> P.int ty
-      , P.text "Witnesses:      " <> P.int wit
-      , P.text "Values:         " <> P.int val
-      , P.text "Values letted:  " <> P.int lets
-      , P.text "Values skipped: " <> P.int skip ] ]
+  = vcat
+  [ text "Beta reduction:"
+  , indent 4 $ vcat
+      [ text "Types:          " % int ty
+      , text "Witnesses:      " % int wit
+      , text "Values:         " % int val
+      , text "Values letted:  " % int lets
+      , text "Values skipped: " % int skip ] ]
 
 
 instance Semigroup Info where

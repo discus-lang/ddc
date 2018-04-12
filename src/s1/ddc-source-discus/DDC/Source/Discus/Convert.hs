@@ -1,4 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
 
 -- | Source Discus conversion to Disciple Core Discus language.
 module DDC.Source.Discus.Convert

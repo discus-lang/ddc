@@ -15,12 +15,8 @@ where
 import DDC.Core.Flow.Exp
 import DDC.Core.Flow.Prim
 import DDC.Core.Flow.Context
-
-#if __GLASGOW_HASKELL__ >= 741
-import DDC.Data.Monoidal        ()
-#else
-import DDC.Data.Monoidal
-#endif
+import Data.Semigroup           (Semigroup(..))
+import Data.Monoid              (Monoid(..))
 
 
 -- | An imperative procedure made up of some loops.

@@ -11,17 +11,17 @@ import DDC.Core.Codec.Text.Lexer.Tokens
 import DDC.Core.Exp.Annot
 import DDC.Type.DataDef
 import DDC.Data.Pretty
-import Control.Monad
 import qualified DDC.Control.Parser     as P
 
 
 pDataDef
         :: (Ord n, Pretty n)
         => Context n -> Parser n (DataDef n)
+
 pDataDef c
  = do   pTokSP (KKeyword EData)
         nData   <- pName
-        bsParam <- liftM concat $ P.many (pDataParam c)
+        bsParam <- fmap concat $ P.many (pDataParam c)
 
         P.choice
          [ -- Data declaration with constructors that have explicit types.

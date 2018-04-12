@@ -17,7 +17,7 @@ import qualified Data.Foldable  as Seq
 
 -------------------------------------------------------------------------------
 instance Pretty Label where
- ppr (Label str)        = text str
+ ppr (Label str) = string str
 
 
 -------------------------------------------------------------------------------
@@ -83,7 +83,7 @@ instance Pretty Instr where
     in  case ii of
         -- Meta-instructions -------------------------------
         IComment strs
-         -> vcat $ map (semi <+>) $ map text strs
+         -> vcat $ map (semi %%) $ map string strs
 
         ISet dst val
          -> hsep [ fill 12 (ppr $ nameOfVar dst)
@@ -96,15 +96,15 @@ instance Pretty Instr where
         -- Phi nodes --------------------------------------
         IPhi vDst expLabels
          -> padVar vDst
-                <+> equals
-                <+> text "phi"
-                <+> ppr (typeOfVar vDst)
-                <+> hcat
-                     (intersperse (comma <> space)
+                %% equals
+                %% text "phi"
+                %% ppr (typeOfVar vDst)
+                %% hcat
+                     (intersperse (comma % space)
                         [ brackets
-                                (   pprPlainX xSrc
-                                <>  comma
-                                <+> text "%" <> ppr label)
+                                (  pprPlainX xSrc
+                                %  comma
+                                %% text "%" % ppr label)
                         | (xSrc, label)         <- expLabels ])
 
         -- Terminator Instructions ------------------------
@@ -112,7 +112,7 @@ instance Pretty Instr where
          -> text "ret void"
 
         IReturn (Just value)
-         -> text "ret" <+> ppr value
+         -> text "ret" %% ppr value
 
         IBranch label
          -> text "br label %"  <> ppr label
@@ -125,14 +125,14 @@ instance Pretty Instr where
 
         ISwitch x1 lDefault alts
          -> text "switch"
-                <+> ppr x1 <> comma
-                <+> text "label %" <> ppr lDefault
-                <+> lbracket
-                <+> (hsep [ ppr discrim
-                                <> comma
-                                <> text "label %" <> ppr dest
-                                | (discrim, dest) <- alts ])
-                <+> rbracket
+                %% ppr x1 % comma
+                %% text "label %" % ppr lDefault
+                %% lbracket
+                %% (hsep [ ppr discrim
+                                % comma
+                                % text "label %" % ppr dest
+                         | (discrim, dest) <- alts ])
+                %% rbracket
 
         IUnreachable
          -> text "unreachable"
@@ -140,47 +140,47 @@ instance Pretty Instr where
         -- Memory Operations ------------------------------
         IAlloca vDst tVal
          -> padVar vDst
-                <+> equals
-                <+> text "alloca"
-                <+> ppr tVal
+                %% equals
+                %% text "alloca"
+                %% ppr tVal
 
         ILoad vDst x1
          -- From LLVM 3.7 we need to give the type of the source pointer
          -- as well as the type of the result of the load.
          |  configWantsLoadReturnTypes config
          -> padVar vDst
-                <+> equals
-                <+> text "load"
-                <+> ppr (typeOfVar vDst) <> comma       -- Type of result.
-                <+> ppr x1                              -- Pointer type of source.
+                %% equals
+                %% text "load"
+                %% ppr (typeOfVar vDst) % comma       -- Type of result.
+                %% ppr x1                              -- Pointer type of source.
 
          -- Before LLVM 3.7 we only needed to give the type of the source pointer.
          |  otherwise
          -> padVar vDst
-                <+> equals
-                <+> text "load" <+> ppr x1
+                %% equals
+                %% text "load" %% ppr x1
 
         IStore xDst xSrc
          -> text "store"
-                <+> ppr xSrc  <> comma
-                <+> ppr xDst
+                %% ppr xSrc % comma
+                %% ppr xDst
 
         -- Binary Operations ------------------------------
         IOp vDst op x1 x2
          -> padVar vDst
-                <+> equals
-                <+> ppr op      <+> ppr (typeOfExp x1)
-                <+> pprPlainX x1 <> comma
-                <+> pprPlainX x2
+                %% equals
+                %% ppr op       %% ppr (typeOfExp x1)
+                %% pprPlainX x1 %  comma
+                %% pprPlainX x2
 
         -- Conversion operations --------------------------
         IConv vDst conv xSrc
          -> padVar vDst
-                <+> equals
-                <+> ppr conv
-                <+> ppr xSrc
-                <+> text "to"
-                <+> ppr (typeOfVar vDst)
+                %% equals
+                %% ppr conv
+                %% ppr xSrc
+                %% text "to"
+                %% ppr (typeOfVar vDst)
 
         IGet vDst xSrc os
          -- From LLVM 3.7 we need to give the type of the source pointer
@@ -188,32 +188,32 @@ instance Pretty Instr where
          |  configWantsLoadReturnTypes config
          ,  XVar (Var _ (TPointer t)) <- xSrc
          -> padVar vDst
-                <+> equals
-                <+> text "getelementptr"
-                <+> ppr t <> comma              -- Type of result
-                <+> (hcat $ punctuate (text ", ") $ (ppr xSrc : map ppr os))
+                %% equals
+                %% text "getelementptr"
+                %% ppr t <> comma              -- Type of result
+                %% (hcat $ punctuate (text ", ") $ (ppr xSrc : map ppr os))
 
          -- Before LLVM 3.7 we only needed to give the type of the source pointer.
          |  otherwise
          -> padVar vDst
-                <+> equals
-                <+> text "getelementptr"
-                <+> (hcat $ punctuate (text ", ") $ (ppr xSrc : map ppr os))
+                %% equals
+                %% text "getelementptr"
+                %% (hcat $ punctuate (text ", ") $ (ppr xSrc : map ppr os))
 
         -- Other operations -------------------------------
         ICmp vDst (ICond icond) x1 x2
          -> padVar vDst
-                <+> equals
-                <+> text "icmp"  <+> ppr icond  <+> ppr (typeOfExp x1)
-                <+> pprPlainX x1 <> comma
-                <+> pprPlainX x2
+                %% equals
+                %% text "icmp"  %% ppr icond %% ppr (typeOfExp x1)
+                %% pprPlainX x1 %  comma
+                %% pprPlainX x2
 
         ICmp vDst (FCond fcond) x1 x2
          -> padVar vDst
-                <+> equals
-                <+> text "fcmp"  <+> ppr fcond  <+> ppr (typeOfExp x1)
-                <+> pprPlainX x1 <> comma
-                <+> pprPlainX x2
+                %% equals
+                %% text "fcmp"  %% ppr fcond %% ppr (typeOfExp x1)
+                %% pprPlainX x1 %  comma
+                %% pprPlainX x2
 
         ICall mdst callType callConv tResult name xsArgs attrs
          -> let call'
@@ -223,7 +223,7 @@ instance Pretty Instr where
                 dst'
                  = case mdst of
                         Nothing      -> mempty
-                        Just dst     -> fill 12 (ppr $ nameOfVar dst) <+> equals <> space
+                        Just dst     -> fill 12 (ppr $ nameOfVar dst) %% equals % space
 
                 convSuffix' 0 = mempty
                 convSuffix' _ = space
@@ -237,7 +237,7 @@ instance Pretty Instr where
                  = width conv' convSuffix'
 
 
-            in dst' <> call' <+> convSpace' <> ppr tResult <+> ppr name
-                   <+> encloseSep lparen rparen (comma <> space) (map ppr xsArgs)
-                   <+> hsep (map ppr attrs)
+            in dst' %  call' %% convSpace' % ppr tResult %% ppr name
+                    %% encloseSep lparen rparen (comma % space) (map ppr xsArgs)
+                    %% hsep (map ppr attrs)
 

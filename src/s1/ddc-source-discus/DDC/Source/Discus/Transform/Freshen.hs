@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings, ExplicitNamespaces #-}
+{-# LANGUAGE ExplicitNamespaces #-}
 
 -- | Freshen shadowed names in the source file,
 --   and rewrite anonymous binders to their named forms.

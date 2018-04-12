@@ -1,6 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE CPP #-}
-
 module DDC.Core.Discus.Codec.Shimmer.Encode
         ( takeName
         , takeVarName
@@ -11,12 +8,6 @@ import qualified SMR.Core.Exp           as S
 import qualified SMR.Prim.Name          as S
 import qualified Data.Text              as T
 import Data.Text                        (Text)
-
-#if __GLASGOW_HASKELL__ >= 741
-import DDC.Data.Monoidal        ()
-#else
-import DDC.Data.Monoidal
-#endif
 
 
 ---------------------------------------------------------------------------------------------------

@@ -1,4 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
 
 -- | Conversion of Flow types to Tetra types
 -- This only handles the subset of flow that occurs after lowering.

@@ -1,5 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE CPP #-}
 
 module DDC.Core.Discus.Convert.Type.Super
         ( convertSuperT
@@ -14,11 +12,6 @@ import DDC.Core.Exp.Annot
 import qualified DDC.Core.Discus.Prim   as E
 import qualified DDC.Core.Salt.Name     as A
 
-#if __GLASGOW_HASKELL__ >= 741
-import DDC.Data.Monoidal        ()
-#else
-import DDC.Data.Monoidal
-#endif
 
 ---------------------------------------------------------------------------------------------------
 -- | Convert the type of a super to Salt.

@@ -19,8 +19,8 @@ checkLet !table !ctx0 mode demand xx@(XLet a lts xBody)
 
  = do   ctrace  $ vcat
                 [ text "*>  Let"
-                , text "    mode   =" <+> ppr mode
-                , text "    demand =" <+> (text $ show demand)
+                , text "    mode   =" %% ppr mode
+                , text "    demand =" %% (string $ show demand)
                 , mempty]
 
         let config  = tableConfig table
@@ -42,8 +42,8 @@ checkLet !table !ctx0 mode demand xx@(XLet a lts xBody)
         -- -- Check the body expression in a context
         -- -- extended with the types of the bindings.
         ctrace  $ vcat
-                [ text "*.  Let Body " <> ppr mode
-                , text "    demand = " <> (text $ show demand)
+                [ text "*.  Let Body " % ppr mode
+                , text "    demand = " % (string $ show demand)
                 , mempty]
 
         (xBody', tBody, effsBody, ctx2)
@@ -80,7 +80,7 @@ checkLet !table !ctx0 mode demand xx@(XLet a lts xBody)
 
         ctrace  $ vcat
                 [ text "*<  Let " <> ppr mode
-                , text "    demand = " <> (text $ show demand)
+                , text "    demand = " % (string $ show demand)
                 , text "    -- EXP IN  ----"
                 , indent 4 $ ppr xx
                 , text "    -- EXP OUT ----"
@@ -186,9 +186,9 @@ checkLetsM !bidir xx !table !ctx0 !demand (LLet b xBind)
                 return (Check tAnnot', ctx1)
 
         ctrace  $ vcat
-                [ text "*>  Let Bind"  <+> ppr mode
-                , text "    demand = " <> (text $ show demand)
-                , text "    bind   = " <> (ppr b)
+                [ text "*>  Let Bind" %% ppr mode
+                , text "    demand = " % (string $ show demand)
+                , text "    bind   = " % (ppr b)
                 , mempty ]
 
         -- Check the expression in the right of the binding.
@@ -245,8 +245,8 @@ checkLetsM !bidir !xx !table !ctx0 !demand (LRec bxs)
 
         ctrace  $ vcat
                 [ text "*>  Let Rec"
-                , text "    demand = " <> (text $ show demand)
-                , text "    binds  = " <> (ppr  $ map fst bxs)
+                , text "    demand = " % (string $ show demand)
+                , text "    binds  = " % (ppr  $ map fst bxs)
                 , mempty ]
 
         -- Named binders cannot be multiply defined.
@@ -257,8 +257,8 @@ checkLetsM !bidir !xx !table !ctx0 !demand (LRec bxs)
 
         ctrace  $ vcat
                 [ text "**  Let Rec Binds"
-                , text "    demand = " <> (text $ show demand)
-                , text "    binds  = " <> (ppr  $ map fst bxs)
+                , text "    demand = " % (string $ show demand)
+                , text "    binds  = " % (ppr $ map fst bxs)
                 , mempty ]
 
         -- Check the type annotations on all the binders.
@@ -271,9 +271,9 @@ checkLetsM !bidir !xx !table !ctx0 !demand (LRec bxs)
 
         ctrace  $ vcat
                 [ text "**  Let Rec Exps"
-                , text "    demand = " <> (text $ show demand)
-                , text "    binds  = " <> (ppr  $ map fst bxs)
-                , mempty ]
+                , text "    demand = " % (string $ show demand)
+                , text "    binds  = " % (ppr $ map fst bxs)
+                , empty ]
 
         -- Check the right hand sides.
         (results, ctx4)
@@ -397,7 +397,7 @@ checkRecBindExps table False a ctx0 demand bxs0
          = do
                 ctrace  $ vcat
                         [ text "*>  Let Rec Bind RECON"
-                        , text "    demand     = " <> (text $ show demand)
+                        , text "    demand     = " <> (string $ show demand)
                         , text "    in binder  = " <> ppr (binderOfBind b)
                         , text "    in type    = " <> ppr (typeOfBind   b)
                         , mempty ]
@@ -419,11 +419,11 @@ checkRecBindExps table False a ctx0 demand bxs0
 
                 ctrace  $ vcat
                         [ text "*<  Let Rec Bind RECON"
-                        , text "    demand     =" <+> (text $ show demand)
-                        , text "    in  binder =" <+> ppr (binderOfBind b)
-                        , text "    in  type   =" <+> ppr (typeOfBind   b)
-                        , text "    out type   =" <+> ppr t
-                        , mempty ]
+                        , text "    demand     =" %% (string $ show demand)
+                        , text "    in  binder =" %% ppr (binderOfBind b)
+                        , text "    in  type   =" %% ppr (typeOfBind   b)
+                        , text "    out type   =" %% ppr t
+                        , empty ]
 
                 -- Check the rest of the bindings.
                 (moar,   ctx'') <- go bxs ctx'
@@ -440,10 +440,10 @@ checkRecBindExps table True _a ctx0 demand bxs0
          = do
                 ctrace  $ vcat
                         [ text "*>  Let Rec Bind BIDIR"
-                        , text "    demand    =" <+> (text $ show demand)
-                        , text "    in binder =" <+> ppr (binderOfBind b)
-                        , text "    in type   =" <+> ppr (typeOfBind   b)
-                        , mempty ]
+                        , text "    demand    =" %% (string $ show demand)
+                        , text "    in binder =" %% ppr (binderOfBind b)
+                        , text "    in type   =" %% ppr (typeOfBind   b)
+                        , empty ]
 
                 -- Check the right of the binding.
                 --  We checked that the expression is a syntactic lambda
@@ -458,11 +458,11 @@ checkRecBindExps table True _a ctx0 demand bxs0
 
                 ctrace  $ vcat
                         [ text "*<  Let Rec Bind BIDIR"
-                        , text "    demand     =" <+> (text $ show demand)
-                        , text "    in  binder =" <+> ppr (binderOfBind b)
-                        , text "    in  type   =" <+> ppr (typeOfBind   b)
-                        , text "    out type   =" <+> ppr t
-                        , mempty ]
+                        , text "    demand     =" %% (string $ show demand)
+                        , text "    in  binder =" %% ppr (binderOfBind b)
+                        , text "    in  type   =" %% ppr (typeOfBind   b)
+                        , text "    out type   =" %% ppr t
+                        , empty ]
 
                 -- Check the rest of the bindings.
                 (moar, ctx'') <- go bxs ctx'

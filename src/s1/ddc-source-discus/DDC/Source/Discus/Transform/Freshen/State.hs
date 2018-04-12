@@ -1,6 +1,5 @@
 {-# OPTIONS_HADDOCK hide #-}
-{-# LANGUAGE OverloadedStrings, ExplicitNamespaces #-}
-{-# LANGUAGE CPP #-}
+{-# LANGUAGE ExplicitNamespaces #-}
 
 module DDC.Source.Discus.Transform.Freshen.State
         ( type S
@@ -16,16 +15,11 @@ import DDC.Source.Discus.Exp
 import Data.Set                         (Set)
 import Data.Map.Strict                  (Map)
 import Data.Text                        (Text)
+import Data.Semigroup                   (Semigroup(..))
 import qualified Control.Monad.State    as S
 import qualified Data.Text              as Text
 import qualified Data.Set               as Set
 import qualified Data.Map.Strict        as Map
-
-#if __GLASGOW_HASKELL__ >= 741
-import DDC.Data.Monoidal        ()
-#else
-import DDC.Data.Monoidal
-#endif
 
 
 -------------------------------------------------------------------------------

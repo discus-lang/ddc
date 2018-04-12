@@ -14,7 +14,7 @@ import qualified DDC.Type.Sum   as T
 
 
 -- | Universes of the Disciple Core language.
-data Universe 
+data Universe
         -- | A numbered universe (levels 4..)
         = UniverseLevel Int
 
@@ -43,10 +43,10 @@ data Universe
 
         -- | (level 0). The universe of data values.
         --   These are physical data objects that take up space at runtime.
-        --   This is like the @Set@ universe in constructive logic, but the 
+        --   This is like the @Set@ universe in constructive logic, but the
         --   expressions may diverge or cause side effects.
         | UniverseData
-        deriving (Show, Eq) 
+        deriving (Show, Eq)
 
 
 instance Pretty Universe where
@@ -91,7 +91,7 @@ universeFromType2 tt
 
         TCon (TyConSort _)      -> Just UniverseSpec
 
-        TCon (TyConKind kc)     
+        TCon (TyConKind kc)
          -> case kc of
                 KiConWitness    -> Just UniverseWitness
                 KiConData       -> Just UniverseData
@@ -121,13 +121,13 @@ universeFromType1 kenv tt
         TCon (TyConSort _)                -> Just UniverseKind
         TCon (TyConKind _)                -> Just UniverseSpec
         TCon (TyConWitness _)             -> Just UniverseWitness
-        
+
         TCon (TyConSpec TcConUnit)        -> Just UniverseData
         TCon (TyConSpec TcConFunExplicit) -> Just UniverseData
         TCon (TyConSpec TcConFunImplicit) -> Just UniverseData
         TCon (TyConSpec TcConSusp)        -> Just UniverseData
         TCon (TyConSpec _)                -> Nothing
-        
+
         TCon (TyConBound  _ k)     -> universeFromType2 k
         TCon (TyConExists _ k)     -> universeFromType2 k
 

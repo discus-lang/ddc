@@ -76,9 +76,9 @@ data Meta
 
 instance Pretty Meta where
         ppr (Meta path stamp name)
-         = hsep [ padL 60 $ text (show path)
-                , padL 30 $ text (show stamp)
-                , text (show name)]
+         = hsep [ padL 60 $ string (show path)
+                , padL 30 $ string (show stamp)
+                , string (show name)]
 
 
 -- | Interface for some top-level super.

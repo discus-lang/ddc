@@ -127,8 +127,8 @@ checkCase !table !ctx0 mode demand
 
         ctrace  $ vcat
                 [ text "*<  Case"
-                , text "    modeDiscrim"  <+> ppr modeDiscrim
-                , text "    tAlt = "      <+> ppr tAlt
+                , text "    modeDiscrim" %% ppr modeDiscrim
+                , text "    tAlt = "     %% ppr tAlt
                 , indent 2 $ ppr ctx0
                 , indent 2 $ ppr ctx1
                 , indent 2 $ ppr ctx2
@@ -274,7 +274,7 @@ checkAltsM !table !a !xx !tDiscrim !tsArgs !mode !demand !alts0 !ctx
    = do
         ctrace  $ vcat
                 [ text "*>  Alt"
-                , text "    mode:   " <+> ppr mode
+                , text "    mode:   " %% ppr mode
                 , indent 4 $ ppr ctx
                 , mempty ]
 
@@ -333,12 +333,12 @@ checkAltsM !table !a !xx !tDiscrim !tsArgs !mode !demand !alts0 !ctx
         ctrace  $ vcat
                 [ text "*<  Alt"
                 , ppr alt
-                , text "  MODE:   " <+> ppr mode
-                , text "  tBody': " <+> ppr tBody'
+                , text "  MODE:   " %% ppr mode
+                , text "  tBody': " %% ppr tBody'
                 , ppr ctx0
                 , ppr ctxBody
                 , ppr ctx_cut
-                , mempty ]
+                , empty ]
 
         -- We're returning the new context for kicks,
         -- but the caller doesn't use it because we don't want the order of

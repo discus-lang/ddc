@@ -25,7 +25,7 @@ data PrimCast
         --   without loss of precision.
         | PrimCastPromote
 
-        -- | Truncate a value to a new width, 
+        -- | Truncate a value to a new width,
         --   possibly losing precision.
         | PrimCastTruncate
         deriving (Eq, Ord, Show)
@@ -33,7 +33,7 @@ data PrimCast
 
 instance NFData PrimCast where
  rnf !_ = ()
- 
+
 
 instance Pretty PrimCast where
  ppr c
@@ -53,7 +53,7 @@ readPrimCast str
 
 
 -- | Check for a valid promotion primop.
-primCastPromoteIsValid 
+primCastPromoteIsValid
         :: Platform     -- ^ Target platform.
         -> PrimTyCon    -- ^ Source type.
         -> PrimTyCon    -- ^ Destination type.
@@ -83,7 +83,7 @@ primCastPromoteIsValid pp src dst
 
 
 -- | Check for valid truncation primop.
-primCastTruncateIsValid 
+primCastTruncateIsValid
         :: Platform     -- ^ Target platform.
         -> PrimTyCon    -- ^ Source type.
         -> PrimTyCon    -- ^ Destination type.

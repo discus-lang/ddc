@@ -71,9 +71,9 @@ instance Pretty Error where
         ErrorSuperArityMismatch n t arity
          -> vcat [ text "During curry transform."
                  , text " Arity information for "
-                        <> ppr n   <> text " does not match its type."
+                        <> ppr n    <> text " does not match its type."
                  , text "  type:  " <> ppr t
-                 , text "  arity: " <> text (show arity) ]
+                 , text "  arity: " <> string (show arity) ]
 
         ErrorSuperTypeMismatch n tAnnot tTable
          -> vcat [ text "During curry transform."
@@ -85,8 +85,8 @@ instance Pretty Error where
         ErrorSuperCallPatternMismatch n t cs es
          -> vcat [ text "During curry transform."
                  , text " Call pattern mismatch when calling " <> ppr n
-                 , text "  call type:  " <> text (show t)
-                 , text "  call cons:  " <> text (show cs)
-                 , text "  call elims: " <> text (show es) ]
+                 , text "  call type:  " <> string (show t)
+                 , text "  call cons:  " <> string (show cs)
+                 , text "  call elims: " <> string (show es) ]
 
 

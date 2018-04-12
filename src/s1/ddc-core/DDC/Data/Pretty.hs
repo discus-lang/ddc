@@ -5,7 +5,11 @@
 --   This is a re-export of Daan Leijen's pretty printer package (@wl-pprint@),
 --   but with a `Pretty` class that includes a `pprPrec` function.
 module DDC.Data.Pretty
-        ( Pretty(..)
+        ( T.Textual(..)
+        , T.Text
+        , (T.%), (T.%%)
+
+        , Pretty(..)
         , P.Doc
 
         -- * Character documents
@@ -16,29 +20,16 @@ module DDC.Data.Pretty
         , P.squote,   P.dquote
         , P.semi, P.colon, P.comma, P.space, P.dot, P.backslash, P.equals
 
-        -- * Primitive type documents.
-        , P.char, P.string, P.text, P.int, P.integer, P.float, P.double
-
-        -- * Basic combinators
-        , P.line,  P.linebreak, P.softline, P.softbreak
-        , P.nest,  P.align, P.hang, P.indent
-
-        , P.pspace, P.pline, P.plinebreak, P.psoftline, P.psoftbreak
-
         -- * Bracketing combinators
         , P.enclose, P.parens, P.squotes, P.dquotes, P.angles, P.braces, P.brackets
         , P.encloseSep, P.tupled
 
-        -- * List combinators
-        , P.sep, P.hsep, P.vsep
-        , P.cat, P.hcat, P.vcat
+        -- * Layout combinators
+        , P.linebreak, P.softline, P.softbreak
+        , P.nest,   P.align, P.hang, P.indent
+        , P.pspace, P.pline, P.plinebreak, P.psoftline, P.psoftbreak
+        , P.sep,    P.cat
         , P.punctuate
-
-        -- * Operators
-        , (<+>), (</>)
-
-        , pprParen
-        , padL
         , P.fill, P.width
 
         -- * Rendering
@@ -46,30 +37,37 @@ module DDC.Data.Pretty
         , render
         , renderPlain
         , renderIndent
-        , putDoc, putDocLn)
+        , putDoc, putDocLn
+
+        -- * Utils
+        , padL
+        , pprParen)
+
 where
 import Data.Set                         (Set)
 import qualified Data.Set               as Set
+import qualified Data.Text              as Text
+import qualified DDC.Data.Textual       as T
 import qualified DDC.Data.PrettyPrint   as P
 
 
--- Utils ---------------------------------------------------------------------
--- | Wrap a `Doc` in parens if the predicate is true.
-pprParen :: Bool -> P.Doc -> P.Doc
-pprParen b c
- = if b then P.parens c
-        else c
-
-
-infixr 5 </>
-infixr 7 <+>
-
-(<+>)   :: P.Doc -> P.Doc -> P.Doc
-(<+>)   =  P.pspace
-
-(</>)   :: P.Doc -> P.Doc -> P.Doc
-(</>)   =  P.psoftline
-
+-- Textual -------------------------------------------------------------------
+instance T.Textual P.Doc where
+ empty          = P.text ""
+ paste  t1 t2   = P.hcat [t1, t2]
+ pastes t1 t2   = P.hsep [t1, t2]
+ line           = P.line
+ char           = P.char
+ string         = P.string
+ text           = P.string . Text.unpack        -- TODO: avoid conversion
+ int            = P.int
+ integer        = P.integer
+ float          = P.float
+ double         = P.double
+ hcat           = P.hcat
+ hsep           = P.hsep
+ vcat           = P.vcat
+ vsep           = P.vsep
 
 
 -- Pretty Class --------------------------------------------------------------
@@ -176,5 +174,12 @@ putDocLn  :: RenderMode -> P.Doc -> IO ()
 putDocLn mode doc
         = putStrLn $ render mode doc
 
+
+-- Utils ---------------------------------------------------------------------
+-- | Wrap a `Doc` in parens if the predicate is true.
+pprParen :: Bool -> P.Doc -> P.Doc
+pprParen b c
+ = if b then P.parens c
+        else c
 
 

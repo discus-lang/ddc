@@ -45,18 +45,18 @@ instance Pretty Error where
   = vcat [ text "Duplicate section in interface file." ]
 
  ppr (ErrorBadMagic path l)
-  = vcat [ text path <> text ":" <> int l
+  = vcat [ string path <> text ":" <> int l
          , text "Bad header in interface file." ]
 
  ppr (ErrorParse path l)
-  = vcat [ text path <> text ":" <> int l
+  = vcat [ string path <> text ":" <> int l
          , text "Parse error in interface file." ]
 
  ppr ErrorParseEnd
   = vcat [ text "Parse error at end of interface file." ]
 
  ppr (ErrorLoadTetra path err)
-  = vcat [ text path
+  = vcat [ string path
          , text "Error when loading Tetra module from interface file."
          , indent 2 $ ppr err ]
 

@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
+
 module DDC.Core.Discus.Env
         ( primDataDefs
         , primSortEnv

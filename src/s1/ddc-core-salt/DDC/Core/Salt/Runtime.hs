@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
+
 -- | Bindings to functions exported by the runtime system,
 --   and wrappers for related primops.
 module DDC.Core.Salt.Runtime

@@ -205,7 +205,7 @@ cmdShowType language uni source str
         eTK     = loadTypeFromTokens fragment uni srcName toks
    in   case eTK of
          Left err       -> outDocLn $ ppr err
-         Right (t, k)   -> outDocLn $ ppr t <+> text "::" <+> ppr k
+         Right (t, k)   -> outDocLn $ ppr t %% text "::" %% ppr k
 
 
 -- tequiv -----------------------------------------------------------------------------------------
@@ -361,26 +361,26 @@ cmdShowSpec language showMode checkMode shouldPrintTrace source ss
            in case showMode of
                 ShowSpecAll
                  -> do  outDocLn $ ppr x
-                        outDocLn $ text ":*:" <+> ppr t
+                        outDocLn $ text ":*:" %% ppr t
 
                         when (featuresTrackedEffects  features)
-                         $ outDocLn $ text ":!:" <+> ppr eff
+                         $ outDocLn $ text ":!:" %% ppr eff
 
                         when (featuresTrackedClosures features)
-                         $ outDocLn $ text ":$:" <+> ppr clo
+                         $ outDocLn $ text ":$:" %% ppr clo
 
                         when shouldPrintTrace
                          $ do   outDocLn $ checkTraceDoc ct
                                 outDoc (text "\n")
 
                 ShowSpecData
-                 ->     outDocLn $ ppr x <+> text "::" <+> ppr t
+                 ->     outDocLn $ ppr x %% text "::" %% ppr t
 
                 ShowSpecEffect
-                 ->     outDocLn $ ppr x <+> text ":!:" <+> ppr eff
+                 ->     outDocLn $ ppr x %% text ":!:" %% ppr eff
 
                 ShowSpecClosure
-                 ->     outDocLn $ ppr x <+> text ":$:" <+> ppr clo
+                 ->     outDocLn $ ppr x %% text ":$:" %% ppr clo
 
         goResult _ _
          = return ()
@@ -415,5 +415,5 @@ cmdShowWType language source str
         eTK     = loadWitnessFromTokens fragment srcName toks
    in   case eTK of
          Left err       -> outDocLn $ ppr err
-         Right (t, k)   -> outDocLn $ ppr t <+> text "::" <+> ppr k
+         Right (t, k)   -> outDocLn $ ppr t %% text "::" %% ppr k
 

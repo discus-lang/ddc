@@ -1,4 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
 
 -- | Add code to initialize the module.
 module DDC.Core.Discus.Transform.Initialize

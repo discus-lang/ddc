@@ -20,25 +20,25 @@ instance Pretty FunctionDecl where
 
         align'  = case a of
                    AlignNone       -> mempty
-                   AlignBytes a'   -> text " align" <+> ppr a'
+                   AlignBytes a'   -> text " align" %% ppr a'
 
         gc'     = case strategy of
                    Nothing         -> mempty
-                   Just strategy'  -> text " gc" <+> dquotes (text strategy')
+                   Just strategy'  -> text " gc" %% dquotes (string strategy')
 
         args'   = hcat $ punctuate comma $ map ppr params
 
-    in  ppr l   <+> ppr c
-                <+> ppr r
-                <+> text " @"
-                <>  ppr n <> brackets (args' <> varg')
-                <>  align'
-                <>  gc'
+    in  ppr l   %% ppr c
+                %% ppr r
+                %% text " @"
+                %  ppr n % brackets (args' %% varg')
+                %  align'
+                %  gc'
 
 
 instance Pretty TypeAlias where
  ppr (TypeAlias name ty)
-        = text "%" <> text name <+> equals <+> text "type" <+> ppr ty
+        = text "%" <> string name %% equals %% text "type" %% ppr ty
 
 
 instance Pretty Type where
@@ -60,7 +60,7 @@ instance Pretty Type where
          -> brackets  $ integer nr <> text " x " <> ppr tp
 
         TAlias (TypeAlias s _)
-         -> text "%"  <> text s
+         -> text "%"  <> string s
 
         TFunction (FunctionDecl _ _ _ r varg params _ _)
          -> let varg' = case varg of

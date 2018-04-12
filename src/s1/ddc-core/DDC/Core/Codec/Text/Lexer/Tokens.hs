@@ -56,7 +56,6 @@ import DDC.Core.Codec.Text.Lexer.Token.Builtin
 import DDC.Core.Codec.Text.Lexer.Token.Literal
 import DDC.Core.Codec.Text.Lexer.Token.Names
 import DDC.Core.Codec.Text.Pretty
-import Control.Monad
 import Data.Text                (Text)
 import qualified Data.Text      as T
 
@@ -127,7 +126,7 @@ renameToken f kk
 
         KM t    -> Just $ KM t
         KA t    -> Just $ KA t
-        KN t    -> liftM KN $ renameTokenNamed f t
+        KN t    -> fmap KN $ renameTokenNamed f t
 
 
 -- | Describe a token for parser error messages.
@@ -234,8 +233,8 @@ data TokenNamed n
 describeTokenNamed :: Pretty n => TokenNamed n -> String
 describeTokenNamed tn
  = case tn of
-        KCon n  -> renderPlain $ text "constructor" <+> (dquotes $ ppr n)
-        KVar n  -> renderPlain $ text "variable"    <+> (dquotes $ ppr n)
+        KCon n  -> renderPlain $ text "constructor" %% (dquotes $ ppr n)
+        KVar n  -> renderPlain $ text "variable"    %% (dquotes $ ppr n)
 
 
 -- | Apply a function to all the names in a `TokNamed`.
@@ -247,6 +246,6 @@ renameTokenNamed
 
 renameTokenNamed f kk
   = case kk of
-        KCon c           -> liftM KCon $ f c
-        KVar c           -> liftM KVar $ f c
+        KCon c  -> fmap KCon $ f c
+        KVar c  -> fmap KVar $ f c
 

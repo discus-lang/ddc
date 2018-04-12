@@ -51,7 +51,7 @@ import DDC.Core.Env.EnvX                (EnvT)
 import DDC.Type.Transform.BoundT
 import DDC.Type.Exp.Simple
 import DDC.Type.DataDef
-import qualified DDC.Data.Pretty        as P
+import DDC.Data.Pretty
 import qualified DDC.Core.Env.EnvT      as EnvT
 import qualified DDC.Core.Env.EnvX      as EnvX
 import qualified DDC.Type.Env           as Env
@@ -93,17 +93,16 @@ data Context n
         , contextSolved         :: IntMap (Type n) }
 
 
-instance (P.Pretty n, Eq n) => P.Pretty (Context n) where
+instance (Pretty n, Eq n) => Pretty (Context n) where
  ppr (Context _ genPos genExists ls _solved)
-  = P.vcat
-  [ P.text "Context "
-  , P.text "  genPos    = " <> P.int genPos
-  , P.text "  genExists = " <> P.int genExists
-  , P.indent 2 $ P.vcat
-        [P.padL 4 (P.int i)
-                `P.pspace` P.ppr l
-                        | l <- reverse ls
-                        | i <- [0..]]]
+  = vcat
+  [ text "Context "
+  , text "  genPos    = " % int genPos
+  , text "  genExists = " % int genExists
+  , indent 2 $ vcat
+        [padL 4 (int i) %% ppr l
+                | l <- reverse ls
+                | i <- [0..]]]
 
 
 

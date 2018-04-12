@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
+
 -- | Adding code to initialise the runtime system.
 module DDC.Core.Salt.Transform.Initialize
         (initializeModule)

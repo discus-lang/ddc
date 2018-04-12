@@ -8,7 +8,7 @@ import DDC.Core.Flow.Prim
 import DDC.Core.Flow.Exp
 import DDC.Core.Flow.Transform.Rates.Fail
 import DDC.Core.Flow.Transform.Rates.Combinators        as CNF
-import DDC.Data.Monoidal
+import Control.Monad
 import qualified DDC.Type.Env           as Env
 
 import           Data.List              (intersect, nub)
@@ -43,6 +43,7 @@ cnfOfExp fun
 
         let lam_names = catMaybes $ map (takeNameOfBind . snd) lams
         let names     = lam_names ++ map fst binds
+
         -- Make sure names are unique
         when (length names /= length (nub names)) $
           Left FailNamesNotUnique

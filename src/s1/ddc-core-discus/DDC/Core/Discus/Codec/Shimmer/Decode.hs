@@ -1,5 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE PatternSynonyms #-}
 module DDC.Core.Discus.Codec.Shimmer.Decode
         (takeName)
 where

@@ -25,14 +25,14 @@ instance Pretty Function where
 
         secDoc   = case sec of
                         SectionAuto       -> mempty
-                        SectionSpecific s -> text "section" <+> (dquotes $ text s)
+                        SectionSpecific s -> text "section" %% (dquotes $ string s)
 
         pprBlock = pprModePrec (PrettyModeBlock config) prec
 
     in vcat
         [ text "define"
-                <+> pprFunctionHeader decl (Just paramNames)
-                        <+> attrDoc <+> secDoc
+                %% pprFunctionHeader decl (Just paramNames)
+                %% attrDoc %% secDoc
         , lbrace
         , vcat (map pprBlock body)
         , rbrace ]
@@ -50,22 +50,22 @@ pprFunctionHeader
 
         align' = case alignment of
                         AlignNone       -> mempty
-                        AlignBytes b    -> text " align" <+> ppr b
+                        AlignBytes b    -> text " align" %% ppr b
 
         gc'    = case strategy of
                         Nothing         -> mempty
-                        Just strategy'  -> text " gc" <+> dquotes (text strategy')
+                        Just strategy'  -> text " gc" %% dquotes (string strategy')
 
         args'
          = case mnsParams of
              Just nsParams
-              -> [ ppr ty <+> hsep (map ppr attrs) <+> text "%" <> text nParam
-                        | Param ty attrs <- params
-                        | nParam         <- nsParams ]
+              -> [ ppr ty %% hsep (map ppr attrs) %% text "%" % string nParam
+                 | Param ty attrs <- params
+                 | nParam         <- nsParams ]
 
              Nothing
-              -> [ ppr ty <+> hsep (map ppr attrs)
-                        | Param ty attrs <- params ]
+              -> [ ppr ty %% hsep (map ppr attrs)
+                 | Param ty attrs <- params ]
 
         convSuffix' 0 = mempty
         convSuffix' _ = space
@@ -74,11 +74,11 @@ pprFunctionHeader
          = width (ppr callConv) convSuffix'
 
     in ppr linkage
-        <+> convSpace'
-        <>  ppr tReturn
-        <+> text "@" <> text name
-        <>  lparen
-        <>  (hcat $ punctuate (comma <> space) args') <> varg'
-        <>  rparen
-        <>  align'
-        <>  gc'
+        %% convSpace'
+        %  ppr tReturn
+        %% text "@" % string name
+        %  lparen
+        %  (hcat $ punctuate (comma % space) args') % varg'
+        %  rparen
+        %  align'
+        %  gc'

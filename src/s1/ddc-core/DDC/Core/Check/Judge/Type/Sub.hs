@@ -14,7 +14,7 @@ checkSub table !a ctx0 demand xx0 tExpect
  = do
         ctrace  $ vcat
                 [ text "*>  Sub Check"
-                , text "    demand:  " <> (text $ show demand)
+                , text "    demand:  " <> (string $ show demand)
                 , text "    tExpect: " <> (ppr tExpect)
                 , indent 4 $ ppr ctx0
                 , mempty ]
@@ -45,7 +45,7 @@ checkSub table !a ctx0 demand xx0 tExpect
 
         ctrace  $ vcat
                 [ text "*.  Sub Check"
-                , text "    demand:   " <> (text $ show demand)
+                , text "    demand:   " <> (string $ show demand)
                 , text "    tExpect:  " <> ppr tExpect_ctx1
                 , text "    tSynth:   " <> ppr tSynth_ctx1
                 , text "    tDequant: " <> ppr tDequant
@@ -199,5 +199,4 @@ stripImplicitParams ctx tt
                         , tResult')
 
         _ ->    return ([], tt)
-
 

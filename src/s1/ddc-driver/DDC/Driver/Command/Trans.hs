@@ -211,10 +211,10 @@ transExp traceTrans profile env zero simpl xx
            -> do outDocLn $ vcat
                     [ text "* CRASH AND BURN: Transform is not type preserving."
                     , ppr x'
-                    , text ":: 1 " <+> ppr t1
-                    , text ":: 2 " <+> ppr t2
-                    , text ":!:1 " <+> ppr eff1
-                    , text ":!:2 " <+> ppr eff2 ]
+                    , text ":: 1 " %% ppr t1
+                    , text ":: 2 " %% ppr t2
+                    , text ":!:1 " %% ppr eff1
+                    , text ":!:2 " %% ppr eff2 ]
                  return Nothing
 
           Left err

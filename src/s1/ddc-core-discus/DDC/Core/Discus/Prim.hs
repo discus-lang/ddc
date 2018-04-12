@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
+
 module DDC.Core.Discus.Prim
         ( -- * Names and lexing.
           Name          (..)
@@ -110,9 +110,9 @@ instance NFData Name where
 instance Pretty Name where
  ppr nn
   = case nn of
-        NameVar  v              -> text $ T.unpack v
-        NameCon  c              -> text $ T.unpack c
-        NameExt  n s            -> ppr n <> text "$" <> text (T.unpack s)
+        NameVar  v              -> text v
+        NameCon  c              -> text c
+        NameExt  n s            -> ppr n <> text "$" <> text s
 
         NameTyConDiscus tc      -> ppr tc
         NameDaConDiscus dc      -> ppr dc
@@ -140,8 +140,8 @@ instance Pretty Name where
         NameLitSize    s        -> integer s <> text "s"                <> text "#"
         NameLitWord    i bits   -> integer i <> text "w" <> int bits    <> text "#"
         NameLitFloat   f bits   -> double  f <> text "f" <> int bits    <> text "#"
-        NameLitChar    c        -> text (show c)                        <> text "#"
-        NameLitTextLit tx       -> text (show $ T.unpack tx)            <> text "#"
+        NameLitChar    c        -> string (show c)                      <> text "#"
+        NameLitTextLit tx       -> string (show $ T.unpack tx)          <> text "#"
 
         NameLitUnboxed n        -> ppr n <> text "#"
 

@@ -59,13 +59,13 @@ pprMDecl (PrettyModeMDecl config) _ (MDecl ref m)
 -------------------------------------------------------------------------------
 instance Pretty (MRef) where
  ppr (MRef i)
-  = text ("!" ++ show i)
+  = string ("!" ++ show i)
 
 
 -------------------------------------------------------------------------------
 instance Pretty MDString where
  ppr (MDString s)
-  = text "!" <> (dquotes $ text s)
+  = text "!" <> (dquotes $ string s)
 
 
 -------------------------------------------------------------------------------

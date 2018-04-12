@@ -1,3 +1,4 @@
+
 -- | Convert Disciple Core to PHP code
 module DDC.Core.Babel.PHP where
 import DDC.Core.Collect
@@ -10,8 +11,6 @@ import qualified DDC.Type.Env as Env
 
 import qualified Data.Set as Set
 import qualified Data.Map as Map
-
--- import Data.Maybe (isNothing)
 
 
 phpOfModule
@@ -57,13 +56,13 @@ phpOfDataDefs ds
    = let name = dataCtorName c
          args = map (("_"++) . show) [1..length (dataCtorFieldTypes c)]
      in vcat
-      [ text "class" <+> bare_name name <+> text "{"
+      [ text "class" %% bare_name name %% text "{"
       , indent 4 $ vcat $
-        [ text "function __construct" <> parenss (map var_name_t args) <+> text "{"
+        [ text "function __construct" <> parenss (map var_name_t args) %% text "{"
         , indent 4 $ vcat
                   $ map (\i -> obj_field_tt "this" i
                             <> text " = " <> var_name_t i <> text ";") args
-        , indent 4 $ obj_field_tt "this" "tag" <+> text " = " <+> string_of name <> text ";"
+        , indent 4 $ obj_field_tt "this" "tag" %% text " = " %% string_of name <> text ";"
         , text "}"
         ]
       , text "}"
@@ -91,8 +90,8 @@ phpOfExp xx ctx m
     XVar _ v
      | UName n <- v
      , Just  arity <- Map.lookup n m
-     -> wrap $ text "DDC::curry(" <> bare_name n <> text ", "
-                                  <> text (show arity) <> text ")"
+     -> wrap $ text "DDC::curry(" % bare_name n % text ", "
+                                  % string (show arity) % text ")"
      | UPrim p <- v
      -> wrap $ phpOfPrimOp p []
      | otherwise
@@ -111,9 +110,10 @@ phpOfExp xx ctx m
     XLam a _ _
      | Just (bs, f) <- takeXLamFlags xx
      , bs' <- filter (not.fst) bs
-     -> wrap $ text "DDC::curry(/* Lam " <+> text (show a)
-                <+> text "*/" <+> makeFunction Nothing bs f m <> text ", "
-                <> text (show (length bs')) <> text ")"
+     -> wrap $ text "DDC::curry(/* Lam " %% string (show a)
+                %% text "*/"
+                %% makeFunction Nothing bs f m % text ", "
+                %  string (show (length bs'))  % text ")"
 
      -- (" <> var_name_b b <> text ")/* Lam " <+> text (show a)
      --   <+> text "*/ {" <+> phpOfExp x CRet <+> text " }, 1)"
@@ -146,7 +146,7 @@ phpOfExp xx ctx m
     XLet a lets x
      | (ldocs, m') <- phpOfLets lets ctx m
      -> vcat
-         [ text "/* Let " <> text (show a) <> text " */"
+         [ text "/* Let " <> string (show a) <> text " */"
          , ldocs
          , phpOfExp x ctx m'
          ]
@@ -154,7 +154,7 @@ phpOfExp xx ctx m
     XCase a x alts
      -> vcat
          -- Case expressions aren't finished.
-         [ text "/* Case " <> text (show a) <> text " */"
+         [ text "/* Case "  <> string (show a) <> text " */"
          , text "$SCRUT = " <> phpOfExp x CExp m <> text ";"
          , phpOfAlts "SCRUT" alts ctx m
          ]
@@ -304,39 +304,46 @@ var_name_b b = text "$" <> bare_name_b b
 
 var_name_u :: Bound T.Name -> Doc
 var_name_u (UName n) = text "$" <> bare_name n
-var_name_u (UIx _) = error "ddc-core-babel.var_name: Only named vars allowed"
+var_name_u (UIx _)   = error "ddc-core-babel.var_name: Only named vars allowed"
 var_name_u (UPrim n) = sanitise_prim n
 
 var_name_t :: String -> Doc
-var_name_t n = text "$" <> text n
+var_name_t n = text "$" <> string n
 
 obj_field :: Doc -> Doc -> Doc
 obj_field n m = text "$" <> n <> text "->" <> m
 
 obj_field_tt :: String -> String -> Doc
-obj_field_tt n m = obj_field (text n) (text m)
+obj_field_tt n m = obj_field (string n) (string m)
 
 sanitise_prim :: T.Name -> Doc
 sanitise_prim n
  | T.NameLitBool True <- n
  = text "true"
+
  | T.NameLitBool False <- n
  = text "false"
+
  | T.NameLitNat i <- n
- = text (show i)
+ = string (show i)
+
  | T.NameLitInt i <- n
- = text (show i)
+ = string (show i)
+
  | T.NameLitSize i <- n
- = text (show i)
+ = string (show i)
+
  | T.NameLitWord i _ <- n
- = text (show i)
+ = string (show i)
+
  | T.NameLitFloat i _ <- n
- = text (show i)
+ = string (show i)
+
  | T.NameLitTextLit t <- n
- = text (show t)
+ = string (show t)
 
  | T.NamePrimArith p _ <- n
- = text ("DDC::" ++ show p)
+ = string ("DDC::" ++ show p)
  -- = text ("DDC::curry(DDC::" ++ show p ++ ", DDC::" ++ show p ++ "_arity)")
 
  | T.NameLitUnboxed nn <- n
@@ -347,7 +354,7 @@ sanitise_prim n
 
 -- String conversion isn't finished.
 string_of :: T.Name -> Doc
-string_of n = text $ show $ show $ ppr n
+string_of n = string $ show $ show $ ppr n
 
 parenss :: [Doc] -> Doc
 parenss xs = encloseSep lparen rparen (comma <> space) xs
@@ -357,11 +364,13 @@ phpOfPrimOp op args
  | Just (ty, s) <- getOp
  = case (ty, args) of
     (Infix, [l,r])
-     -> text "(" <> l <+> text s <+> r <> text ")"
+     -> text "(" % l %% string s %% r % text ")"
+
     (Prefix, [r])
-     -> text "(" <> text s <+> r <> text ")"
+     -> text "(" % string s %% r % text ")"
+
     (Suffix, [l])
-     -> text "(" <> l <+> text s <> text ")"
+     -> text "(" % l %% string s % text ")"
     _
      -> fallback
 

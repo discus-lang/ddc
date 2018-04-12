@@ -15,23 +15,23 @@ cmdSet :: State -> String -> IO State
 
 cmdSet state []
  = do   putDocLn RenderIndent
-         $ vcat [ text "Modes:   " 
-                        <> text (show $ Set.toList $ stateModes state) ]
+         $ vcat [  text "Modes:   "
+                <> string (show $ Set.toList $ stateModes state) ]
 
         return state
 
 cmdSet state cmd
  | "builder" : name : []        <- words cmd
  = do   config  <- getDefaultBuilderConfig
-        mHost   <- Build.determineDefaultBuilderHost 
+        mHost   <- Build.determineDefaultBuilderHost
 
         case mHost of
-         Nothing        
+         Nothing
           -> do putStrLn "cannot determine build environment"
                 return state
 
          Just host
-          -> case find (\b -> Build.builderName b == name) 
+          -> case find (\b -> Build.builderName b == name)
                        (Build.builders config host) of
 
               Nothing
@@ -69,13 +69,13 @@ parseModeChange str
         ('+' : strMode)
          | Just mode    <- readMode strMode
          -> Just (True, mode)
-        
+
         ('/' : strMode)
          | Just mode    <- readMode strMode
          -> Just (False, mode)
 
         (c : strMode)
-         | isUpper c 
+         | isUpper c
          , Just mode    <- readMode (c : strMode)
          -> Just (True, mode)
 

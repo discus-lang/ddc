@@ -56,9 +56,9 @@ checkAppX !table !ctx0
  = do
         ctrace  $ vcat
                 [ text "*>  App Synth"
-                , text "    mode    = " <> ppr mode
-                , text "    xx      = " <> ppr xx
-                , mempty ]
+                , text "    mode    = " % ppr mode
+                , text "    xx      = " % ppr xx
+                , empty ]
 
         -- Synth a type for the functional expression.
         (xFn', tFn, effsFn, ctx1)
@@ -75,16 +75,16 @@ checkAppX !table !ctx0
 
         ctrace  $ vcat
                 [ text "*<  App Synth"
-                , text "    mode    = " <> ppr mode
-                , text "    demand  = " <> (text $ show demand)
+                , text "    mode    = " % ppr mode
+                , text "    demand  = " % (string $ show demand)
                 , indent 4 $ ppr xx
-                , text "    tFn     = " <> ppr tFn'
-                , text "    arg     = " <> ppr arg
-                , text "    xResult = " <> ppr xResult
-                , text "    tResult = " <> ppr tResult
+                , text "    tFn     = " % ppr tFn'
+                , text "    arg     = " % ppr arg
+                , text "    xResult = " % ppr xResult
+                , text "    tResult = " % ppr tResult
                 , indent 4 $ ppr ctx0
                 , indent 4 $ ppr ctx2
-                , mempty ]
+                , empty ]
 
         return  (xResult, tResult, esResult, ctx2)
 
@@ -95,8 +95,8 @@ checkAppX !table !ctx
  = do
         ctrace  $ vcat
                 [ text "*>  App Check"
-                , text "    tExpected = " <> ppr tExpected
-                , mempty ]
+                , text "    tExpected = " % ppr tExpected
+                , empty ]
 
         result  <- checkSub table a ctx demand xx tExpected
 
@@ -213,15 +213,15 @@ synthAppArg table
  = do
         ctrace  $ vcat
                 [ text "*>  App Synth Match"
-                , text "    demand    = " <> ppr demand
-                , text "    scope     = " <> ppr isScope
-                , text "    tFn       = " <> ppr tFn
-                , text "    arg       = " <> ppr arg
-                , text "    paramSort = " <> text (show paramSort)
-                , text "    paramMode = " <> text (show paramMode)
-                , text "    bParam    = " <> ppr bParam
-                , text "    tResult   = " <> ppr tResult
-                , mempty ]
+                , text "    demand    = " % ppr demand
+                , text "    scope     = " % ppr isScope
+                , text "    tFn       = " % ppr tFn
+                , text "    arg       = " % ppr arg
+                , text "    paramSort = " % string (show paramSort)
+                , text "    paramMode = " % string (show paramMode)
+                , text "    bParam    = " % ppr bParam
+                , text "    tResult   = " % ppr tResult
+                , empty ]
 
         -- Check the argument.
         let tParam = typeOfBind bParam
@@ -392,13 +392,13 @@ synthAppArg table
         -- Result expression.
         ctrace  $ vcat
                 [ text "*<  App Synth Elaborate Type"
-                , text "    demand  = " <> ppr demand
-                , text "    scope   = " <> ppr isScope
-                , text "    xFn     = " <> ppr xFn
-                , text "    tFn     = " <> ppr tFn
-                , text "    arg     = " <> ppr arg
-                , text "    xResult = " <> ppr xResult
-                , text "    tResult = " <> ppr tResult
+                , text "    demand  = " % ppr demand
+                , text "    scope   = " % ppr isScope
+                , text "    xFn     = " % ppr xFn
+                , text "    tFn     = " % ppr tFn
+                , text "    arg     = " % ppr arg
+                , text "    xResult = " % ppr xResult
+                , text "    tResult = " % ppr tResult
                 , indent 4 $ ppr ctx2
                 , mempty ]
 

@@ -282,7 +282,7 @@ data FixInfo
 instance Pretty FixInfo where
  ppr (FixInfo num i1)
   =  P.vcat
-        [ text "fix" <+> int num <> text ":"
+        [ text "fix" %% int num % text ":"
         , indent 4 (ppr i1)]
 
 

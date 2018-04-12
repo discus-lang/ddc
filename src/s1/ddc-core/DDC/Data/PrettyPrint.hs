@@ -1,6 +1,7 @@
 {-# LANGUAGE CPP #-}
 {-# OPTIONS -Wno-unused-matches #-}
 {-# OPTIONS -Wno-name-shadowing #-}
+{-# OPTIONS -Wno-unused-imports #-}
 
 -----------------------------------------------------------------------------
 -- This was slurped into DDC and hacked around when GHC 8.4.1 was released,
@@ -122,10 +123,6 @@ module DDC.Data.PrettyPrint (
         ) where
 
 import System.IO (Handle,hPutStr,hPutChar,stdout)
-
-#if MIN_VERSION_base(4,8,0)
-import Prelude hiding ((<$>))
-#endif
 
 
 -----------------------------------------------------------
@@ -400,55 +397,69 @@ enclose l r x   = l <> x <> r
 -- | The document @lparen@ contains a left parenthesis, \"(\".
 lparen :: Doc
 lparen          = char '('
+
 -- | The document @rparen@ contains a right parenthesis, \")\".
 rparen :: Doc
 rparen          = char ')'
+
 -- | The document @langle@ contains a left angle, \"\<\".
 langle :: Doc
 langle          = char '<'
+
 -- | The document @rangle@ contains a right angle, \">\".
 rangle :: Doc
 rangle          = char '>'
+
 -- | The document @lbrace@ contains a left brace, \"{\".
 lbrace :: Doc
 lbrace          = char '{'
+
 -- | The document @rbrace@ contains a right brace, \"}\".
 rbrace :: Doc
 rbrace          = char '}'
+
 -- | The document @lbracket@ contains a left square bracket, \"[\".
 lbracket :: Doc
 lbracket        = char '['
+
 -- | The document @rbracket@ contains a right square bracket, \"]\".
 rbracket :: Doc
 rbracket        = char ']'
 
-
 -- | The document @squote@ contains a single quote, \"'\".
 squote :: Doc
 squote          = char '\''
+
 -- | The document @dquote@ contains a double quote, '\"'.
 dquote :: Doc
 dquote          = char '"'
+
 -- | The document @semi@ contains a semi colon, \";\".
 semi :: Doc
 semi            = char ';'
+
 -- | The document @colon@ contains a colon, \":\".
 colon :: Doc
 colon           = char ':'
+
 -- | The document @comma@ contains a comma, \",\".
 comma :: Doc
 comma           = char ','
+
 -- | The document @space@ contains a single space, \" \".
 --
 -- > x <+> y   = x <> space <> y
 space :: Doc
 space           = char ' '
+
 -- | The document @dot@ contains a single dot, \".\".
 dot :: Doc
 dot             = char '.'
+
 -- | The document @backslash@ contains a back slash, \"\\\".
 backslash :: Doc
 backslash       = char '\\'
+
 -- | The document @equals@ contains an equal sign, \"=\".
 equals :: Doc
 equals          = char '='
@@ -956,7 +967,6 @@ putDoc doc              = hPutDoc stdout doc
 -- >          }
 hPutDoc :: Handle -> Doc -> IO ()
 hPutDoc handle doc      = displayIO handle (renderPretty 0.4 80 doc)
-
 
 
 -----------------------------------------------------------

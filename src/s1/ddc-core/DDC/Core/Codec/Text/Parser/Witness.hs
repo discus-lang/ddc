@@ -13,7 +13,6 @@ import DDC.Data.Pretty
 import DDC.Control.Parser               ((<?>), SourcePos)
 import qualified DDC.Control.Parser     as P
 import qualified DDC.Type.Exp.Simple    as T
-import Control.Monad
 
 
 -- | Parse a witness expression.
@@ -73,7 +72,7 @@ pWitnessAtom
         => Context n -> Parser n (Witness SourcePos n)
 
 pWitnessAtom c
-        = liftM fst (pWitnessAtomSP c)
+        = fmap fst (pWitnessAtomSP c)
 
 
 -- | Parse a variable, constructor or parenthesised witness,
