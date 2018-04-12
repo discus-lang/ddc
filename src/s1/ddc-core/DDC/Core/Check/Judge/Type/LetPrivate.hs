@@ -32,7 +32,7 @@ checkLetPrivate !table !ctx mode demand
                 , text "    in region binds  =" <+> ppr bsRgn
                 , text "    in parent bind   =" <+> text (show mtParent)
                 , text "    in witness binds =" <+> ppr bsWit
-                , empty ]
+                , mempty ]
 
         -- Check the kinds of the region binders.
         -- These must already set to kind Region.

@@ -80,24 +80,25 @@ instance PrettyLanguage l => Pretty (Module l) where
         , moduleImportTypes     = importedTypes
         , moduleImportValues    = importedValues
         , moduleTops            = tops }
-  =  text "module"
+  = vcat
+  [ text "module"
         <+> ppr name
         <>  sImportedTypes
         <>  sImportedValues
         <>   (if null importedTypes && null importedValues
                 then space <> text "where"
                 else text "where")
-        <$$> (vcat $ map ppr tops)
+  , vcat $ map ppr tops]
 
   where sImportedTypes
-         | null importedTypes   = empty
+         | null importedTypes   = mempty
          | otherwise
          = line
          <> (vcat $ map pprImportType importedTypes)
          <> line
 
         sImportedValues
-         | null importedValues  = empty
+         | null importedValues  = mempty
          | otherwise
          = (vcat $ map (pprImportValue . snd) importedValues)
          <> line
@@ -110,21 +111,23 @@ instance PrettyLanguage l => Pretty (Top l) where
   <> semi <> line
 
  ppr (TopData _ (DataDef name params ctors))
-  = (text "data"
+  = vcat
+  [ text "data"
         <+> hsep ( ppr name
                  : map pprParam params)
         <+> text "where"
-        <+> lbrace)
-  <$> indent 8
-        (vcat [ ppr (dataCtorName ctor)
+        <+> lbrace
+
+  , indent 8
+        $ vcat [ ppr (dataCtorName ctor)
                 <+> text ":"
                 <+> (hsep   $ punctuate (text " ->")
                                 $ (  map (pprPrec 6) (dataCtorFieldTypes ctor)
                                   ++ [ ppr           (dataCtorResultType ctor)]))
                 <> semi
-                        | ctor       <- ctors ])
-  <> line <> rbrace <> semi
-  <> line
+                        | ctor       <- ctors ]
+  , rbrace <> semi
+  , mempty ]
 
  ppr (TopType _ b t)
   =  text "type" <+> ppr b <+> text "=" <+> ppr t
@@ -171,8 +174,7 @@ instance PrettyLanguage l => Pretty (GExp l) where
 
         XLet lts x
          ->  pprParen' (d > 2)
-         $   ppr lts <+> text "in"
-         <$> ppr x
+         $   vcat [ ppr lts <+> text "in", ppr x]
 
         XCase x alts
          -> pprParen' (d > 2)
@@ -183,7 +185,7 @@ instance PrettyLanguage l => Pretty (GExp l) where
 
         XCast CastBox x
          -> pprParen' (d > 2)
-         $  text "box"  <$> ppr x
+         $  vcat [ text "box", ppr x]
 
         XCast CastRun x
          -> pprParen' (d > 2)
@@ -191,8 +193,7 @@ instance PrettyLanguage l => Pretty (GExp l) where
 
         XCast cc x
          ->  pprParen' (d > 2)
-         $   ppr cc <+> text "in"
-         <$> ppr x
+         $   vcat [ ppr cc <+> text "in", ppr x]
 
         XDefix    _ xs
          -> text "[" <> text "DEFIX|" <+> hsep (map (pprPrec 11) xs) <+> text "]"
@@ -231,7 +232,7 @@ instance PrettyLanguage l => Pretty (GExp l) where
                 <> pprPrec 2 p
                 <> (case mt of
                         Just t  -> text ": " <> ppr t
-                        Nothing -> empty)
+                        Nothing -> mempty)
                 <> (case ps of
                         MSType          -> text "]"
                         MSTerm          -> text ")"
@@ -279,12 +280,13 @@ instance PrettyLanguage l => Pretty (GLets l) where
                  <>  nest 2 (  breakWhen (not $ isSimpleX x)
                             <> text "=" <+> align (ppr x))
 
-           in   (nest 2 $ text "rec"
+           in vcat
+                [ nest 2 $ text "rec"
                   <+> lbrace
                   <>  (  line
                       <> (vcat $ punctuate (semi <> line)
-                               $ map pprLetRecBind bxs)))
-                <$> rbrace
+                               $ map pprLetRecBind bxs))
+                , rbrace]
 
         LPrivate bs (CapsList [])
          -> text "private"

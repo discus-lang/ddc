@@ -44,27 +44,27 @@ instance Pretty CallConv where
         CC_Coldcc       -> text "coldcc"
         CC_Ncc i        -> text "cc "  <> int i
         CC_X86_Stdcc    -> text "x86_stdcallcc"
-        CC_Intrinsic    -> empty
+        CC_Intrinsic    -> mempty
 
 
 instance Pretty Linkage where
  ppr lt
   = case lt of
-        Internal          -> text "internal"
-        LinkOnce          -> text "linkonce"
-        Weak              -> text "weak"
-        Appending         -> text "appending"
-        ExternWeak        -> text "extern_weak"
+        Internal        -> text "internal"
+        LinkOnce        -> text "linkonce"
+        Weak            -> text "weak"
+        Appending       -> text "appending"
+        ExternWeak      -> text "extern_weak"
 
         -- ExternallyVisible does not have a textual representation, it is
         -- the linkage type a function resolves to if no other is specified
         -- in Llvm.
-        ExternallyVisible -> empty
+        ExternallyVisible -> mempty
 
-        External          -> text "external"
+        External        -> text "external"
 
 instance Pretty CallType where
  ppr ct
   = case ct of
-        CallTypeStd     -> empty
+        CallTypeStd     -> mempty
         CallTypeTail    -> text "tail"

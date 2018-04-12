@@ -15,7 +15,7 @@ import Control.Monad (when)
 import qualified Data.Map as Map
 
 import DDC.Core.Codec.Text.Pretty       ()
-import DDC.Data.Pretty (Doc, Pretty(..), ppr, text, line, (<>))
+import DDC.Data.Pretty (Doc, Pretty(..), ppr, text, line)
 
 
 data SlurpError
@@ -29,12 +29,16 @@ data SlurpError
 instance Pretty SlurpError where
  ppr (SlurpErrorNetworkBodyNotStreamProcessOrEnd x)
   = text "Network body: expected a stream# or return tuple. Got:" <> line <> ppr x
+
  ppr (SlurpErrorNetworkNotPartiallyAppliedProcesNest x)
   = text "Network body: expected a top-level process# with single argument of process nest. Got:" <> line <> ppr x
+
  ppr (SlurpErrorNetworkEndNotUnit x)
   = text "Network body: end of module should be unit. Got:" <> line <> ppr x
+
  ppr (SlurpErrorProcessBodyNotFunction x)
   = text "Process body: expected lambda with sources and sinks. Got:" <> line <> ppr x
+
  ppr (SlurpErrorOther other x)
   = other <> line <> ppr x
 

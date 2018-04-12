@@ -34,13 +34,14 @@ cmdSet state []
         let langName    = profileName (fragmentProfile fragment)
 
         putStrLn $ renderIndent
-         $ vcat  [ text "Modes:      " <> text (show $ Set.toList $ stateModes state)
+         $ vcat
+         [ vcat  [ text "Modes:      " <> text (show $ Set.toList $ stateModes state)
                  , text "Language:   " <> text langName
                  , text "Simplifier: " <> ppr  simpl
-                 , text "Builder:    " 
+                 , text "Builder:    "
                        <> text (show $ liftM Build.builderName $ stateBuilder state) ]
-         <$> vcat (text "With:       " : map ppr (Map.keys modules))
-         <$> vcat (text "With Salt:  " : map ppr (Map.keys (stateWithSalt state)))
+         , vcat (text "With:       " : map ppr (Map.keys modules))
+         , vcat (text "With Salt:  " : map ppr (Map.keys (stateWithSalt state))) ]
 
         return state
 
@@ -59,15 +60,15 @@ cmdSet state cmd
  | "trans" : rest       <- words cmd
  , Language bundle      <- stateLanguage state
  , modules              <- bundleModules       bundle
- , rules                <- bundleRewriteRules  bundle 
+ , rules                <- bundleRewriteRules  bundle
  , mkNamT               <- bundleMakeNamifierT bundle
  , mkNamX               <- bundleMakeNamifierX bundle
  , fragment             <- bundleFragment      bundle
- = do   case parseSimplifier 
+ = do   case parseSimplifier
                 (fragmentReadName fragment)
                 (SimplifierDetails
-                        mkNamT mkNamX 
-                        (Map.assocs rules) 
+                        mkNamT mkNamX
+                        (Map.assocs rules)
                         (Map.elems  modules))
                 (concat $ intersperse " " rest) of
 
@@ -85,7 +86,7 @@ cmdSet state cmd
  , Language bundle      <- stateLanguage state
  , fragment             <- bundleFragment      bundle
  , modules              <- bundleModules       bundle
- , rules                <- bundleRewriteRules  bundle 
+ , rules                <- bundleRewriteRules  bundle
  = case R.parseRewrite fragment modules rest of
         Right (R.SetAdd name rule)
          -> do  chatStrLn state $ "ok, added " ++ name
@@ -104,7 +105,7 @@ cmdSet state cmd
          -> do  let rules' = Map.toList rules
                 mapM_ (uncurry $ R.showRule state 0) rules'
                 return state
-        
+
         Left e
          -> do  chatStrLn state e
                 return state
@@ -119,7 +120,7 @@ cmdSet state cmd
                  return state
 
          Just host
-          -> case find (\b -> Build.builderName b == name) 
+          -> case find (\b -> Build.builderName b == name)
                        (Build.builders config host) of
 
                  Nothing
@@ -143,7 +144,7 @@ cmdSet state cmd
          -> do  let state'  = foldr (uncurry adjustMode) state changes
                 chatStrLn state "ok"
                 return state'
-        
+
         Nothing
          -> do  chatStrLn state "mode parse error"
                 return state
@@ -163,13 +164,13 @@ parseModeChange str
         ('+' : strMode)
          | Just mode    <- readMode strMode
          -> Just (True, mode)
-        
+
         ('/' : strMode)
          | Just mode    <- readMode strMode
          -> Just (False, mode)
 
         (c : strMode)
-         | isUpper c 
+         | isUpper c
          , Just mode    <- readMode (c : strMode)
          -> Just (True, mode)
 

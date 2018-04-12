@@ -55,7 +55,7 @@ checkAppT !table !ctx0 Recon demand
                 , text "     tArg: " <+> ppr tArg
                 , text "  tResult: " <+> ppr tResult
                 , indent 2 $ ppr ctx2
-                , empty ]
+                , mempty ]
 
         returnX aApp
                 (\z -> XApp z xFn' (RType tArg'))
@@ -85,7 +85,7 @@ checkAppT !table !ctx0 (Synth {}) demand
                 , text "     tArg: " <+> ppr tArg
                 , text "  tResult: " <+> ppr tResult
                 , indent 2 $ ppr ctx2
-                , empty ]
+                , mempty ]
 
         returnX aApp
                 (\z -> XApp z xFn' (RType tArg'))

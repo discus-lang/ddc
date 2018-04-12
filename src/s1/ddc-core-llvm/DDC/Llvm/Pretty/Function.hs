@@ -19,45 +19,46 @@ instance Pretty Function where
         { modeFunctionConfig = defaultConfig }
 
  pprModePrec (PrettyModeFunction config) prec
-        (Function decl paramNames attrs sec body) 
-  = let 
+        (Function decl paramNames attrs sec body)
+  = let
         attrDoc  = hsep $ map ppr attrs
 
         secDoc   = case sec of
-                        SectionAuto       -> empty
+                        SectionAuto       -> mempty
                         SectionSpecific s -> text "section" <+> (dquotes $ text s)
 
         pprBlock = pprModePrec (PrettyModeBlock config) prec
 
-    in text "define" 
-        <+> pprFunctionHeader decl (Just paramNames)
-                <+> attrDoc <+> secDoc
-        <$> lbrace
-        <$> vcat (map pprBlock body)
-        <$> rbrace
+    in vcat
+        [ text "define"
+                <+> pprFunctionHeader decl (Just paramNames)
+                        <+> attrDoc <+> secDoc
+        , lbrace
+        , vcat (map pprBlock body)
+        , rbrace ]
 
 
 -- | Print out a function defenition header.
 pprFunctionHeader :: FunctionDecl -> Maybe [String] -> Doc
-pprFunctionHeader 
+pprFunctionHeader
         (FunctionDecl name linkage callConv tReturn varg params alignment strategy)
         mnsParams
   = let varg'  = case varg of
                       VarArgs | null params -> text "..."
                               | otherwise   -> text ", ..."
-                      _otherwise            -> empty
+                      _otherwise            -> mempty
 
         align' = case alignment of
-                        AlignNone       -> empty
+                        AlignNone       -> mempty
                         AlignBytes b    -> text " align" <+> ppr b
 
         gc'    = case strategy of
-                        Nothing         -> empty
+                        Nothing         -> mempty
                         Just strategy'  -> text " gc" <+> dquotes (text strategy')
 
-        args'  
+        args'
          = case mnsParams of
-             Just nsParams      
+             Just nsParams
               -> [ ppr ty <+> hsep (map ppr attrs) <+> text "%" <> text nParam
                         | Param ty attrs <- params
                         | nParam         <- nsParams ]
@@ -66,7 +67,7 @@ pprFunctionHeader
               -> [ ppr ty <+> hsep (map ppr attrs)
                         | Param ty attrs <- params ]
 
-        convSuffix' 0 = empty
+        convSuffix' 0 = mempty
         convSuffix' _ = space
 
         convSpace'
@@ -76,8 +77,8 @@ pprFunctionHeader
         <+> convSpace'
         <>  ppr tReturn
         <+> text "@" <> text name
-        <>  lparen 
-        <>  (hcat $ punctuate (comma <> space) args') <> varg' 
-        <>  rparen 
+        <>  lparen
+        <>  (hcat $ punctuate (comma <> space) args') <> varg'
+        <>  rparen
         <>  align'
         <>  gc'

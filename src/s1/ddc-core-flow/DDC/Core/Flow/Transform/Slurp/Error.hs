@@ -39,36 +39,36 @@ instance Pretty Error where
   = case err of
         ErrorBadProcess x
          -> vcat [ text "Bad series process definition."
-                 , empty
+                 , mempty
                  , ppr (annotate () x) ]
 
         ErrorBadOperator x
          -> vcat [ text "Bad series operator."
-                 , empty
+                 , mempty
                  , ppr (annotate () x) ]
 
         ErrorNotInContext n
          -> vcat [ text "Referenced name not in context."
                  , text "All Series, Processes and Resizes must be locally bound"
-                 , empty
+                 , mempty
                  , ppr n ]
 
         ErrorCannotMergeContext c1 c2
          -> vcat [ text "Cannot merge contexts"
-                 , empty
+                 , mempty
                  , text "Embed:"
                  , ppr c1
-                 , empty
+                 , mempty
                  , text "Into:"
                  , ppr c2 ]
 
         ErrorCannotSplitContext c
          -> vcat [ text "Cannot split context into its append parts"
-                 , empty
+                 , mempty
                  , ppr c]
 
         ErrorCannotResizeContext c
          -> vcat [ text "Cannot resize append context, because it's not an append"
-                 , empty
+                 , mempty
                  , ppr c]
 

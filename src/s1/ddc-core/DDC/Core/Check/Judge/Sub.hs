@@ -53,7 +53,7 @@ makeSub config a ctx0 x0 xL tL tR err
                 , text "    tL:  " <> ppr tL
                 , text "    tL': " <> ppr tL'
                 , text "    tR:  " <> ppr tR
-                , empty ]
+                , mempty ]
 
         makeSub config a ctx0 x0 xL tL' tR err
 
@@ -69,7 +69,7 @@ makeSub config a ctx0 x0 xL tL tR err
                 , text "    tL:  " <> ppr tL
                 , text "    tR:  " <> ppr tR
                 , text "    tR': " <> ppr tR
-                , empty ]
+                , mempty ]
 
         makeSub config a ctx0 x0 xL tL tR' err
 
@@ -87,7 +87,7 @@ makeSub config a ctx0 x0 xL tL tR err
                 , text "    tR: " <> ppr tR
                 , text "    xL: " <> ppr xL
                 , indent 4 $ ppr ctx0
-                , empty ]
+                , mempty ]
 
         return  ( xL
                 , Sum.empty kEffect
@@ -106,7 +106,7 @@ makeSub config a ctx0 x0 xL tL tR err
                 , text "    xL: " <> ppr xL
                 , indent 4 $ ppr ctx0
                 , indent 4 $ ppr ctx1
-                , empty ]
+                , mempty ]
 
         return  ( xL
                 , Sum.empty kEffect
@@ -125,7 +125,7 @@ makeSub config a ctx0 x0 xL tL tR err
                 , text "    xL: " <> ppr xL
                 , indent 4 $ ppr ctx0
                 , indent 4 $ ppr ctx1
-                , empty ]
+                , mempty ]
 
         return  ( xL
                 , Sum.empty kEffect
@@ -150,7 +150,7 @@ makeSub config a ctx0 x0 xL tL tR err
                 , text "    tL: " <> ppr tL
                 , text "    tR: " <> ppr tR
                 , text "    xL: " <> ppr xL
-                , empty ]
+                , mempty ]
 
         return  ( xL
                 , Sum.empty kEffect
@@ -189,7 +189,7 @@ makeSub config a ctx0 x0 xL tL tR err
                 , text "    tR: " <> ppr tR
                 , text "    xL: " <> ppr xL
                 , indent 4 $ ppr ctx0
-                , empty ]
+                , mempty ]
 
         return  ( xL
                 , Sum.empty kEffect
@@ -208,7 +208,7 @@ makeSub config a ctx0 x0 xL tL tR err
                 , text "    tL: " <> ppr tL
                 , text "    tR: " <> ppr tR
                 , text "    xL: " <> ppr xL
-                , empty ]
+                , mempty ]
 
         (_, effs1, ctx1) <- makeSub config a ctx0 x0 xL tR1 tL1 err
         tL2'             <- applyContext     ctx1 tL2
@@ -220,7 +220,7 @@ makeSub config a ctx0 x0 xL tL tR err
                 , indent 4 $ ppr ctx0
                 , indent 4 $ ppr ctx1
                 , indent 4 $ ppr ctx2
-                , empty ]
+                , mempty ]
 
         return  ( xL
                 , Sum.union effs1 effs2
@@ -245,7 +245,7 @@ makeSub config a ctx0 x0 xL tL tR err
                 , text "    tL:      " <> ppr tL
                 , text "    tR:      " <> ppr tR
                 , text "    xL:      " <> ppr xL
-                , empty ]
+                , mempty ]
 
         let tArg        = tL1
         let tElaborate  = tForall kData $ \tA -> tA
@@ -265,7 +265,7 @@ makeSub config a ctx0 x0 xL tL tR err
                 , text "    tL:       " <> ppr tL
                 , text "    tR:       " <> ppr tR
                 , text "    xL_elab': " <> ppr xL_elab'
-                , empty ]
+                , mempty ]
 
         return  ( xL_elab'
                 , effs1
@@ -288,7 +288,7 @@ makeSub config a ctx0 x0 xL tL tR err
                 , text "    xL:      " <> ppr xL
                 , text "    tEffect: " <> ppr tEffect
                 , text "    tResult: " <> ppr tResult
-                , empty ]
+                , mempty ]
 
         let aRun    = AnTEC tResult tEffect (tBot kClosure) a
         let xL_run  = XCast aRun CastRun xL
@@ -318,7 +318,7 @@ makeSub config a ctx0 x0 xL tL tR err
                 , text "    tL: " <> ppr tL
                 , text "    tR: " <> ppr tR
                 , text "    xL: " <> ppr xL
-                , empty ]
+                , mempty ]
 
         ctx1    <- makeEqT config ctx0 tL1 tR1 err
         tL2'    <- applyContext ctx1 tL2
@@ -330,7 +330,7 @@ makeSub config a ctx0 x0 xL tL tR err
                 , indent 4 $ ppr ctx0
                 , indent 4 $ ppr ctx1
                 , indent 4 $ ppr ctx2
-                , empty ]
+                , mempty ]
 
         return  ( xL
                 , Sum.empty kEffect
@@ -357,7 +357,7 @@ makeSub config a ctx0 x0 xL tL tR err
                 , text "    xL:  " <> ppr xL
                 , text "    iA:  " <> ppr iA
                 , text "    t1': " <> ppr t1'
-                , empty ]
+                , mempty ]
 
         -- Check the new body against the right type,
         -- so that the existential we just made is instantiated
@@ -388,7 +388,7 @@ makeSub config a ctx0 x0 xL tL tR err
                 , text "    xL2: " <> ppr xL2
                 , indent 4 $ ppr ctx0
                 , indent 4 $ ppr ctx4
-                , empty ]
+                , mempty ]
 
         return  ( xL2
                 , effs3
@@ -405,7 +405,7 @@ makeSub config a ctx0 x0 xL tL tR err
                 , text "    tL: " <> ppr tL
                 , text "    tR: " <> ppr tR
                 , text "    xL: " <> ppr xL
-                , empty ]
+                , mempty ]
 
         -- Make a new existential to instantiate the quantified
         -- variable and substitute it into the body.
@@ -439,7 +439,7 @@ makeSub config a ctx0 x0 xL tL tR err
                 , text "    tR:     " <> ppr tR
                 , text "    xL:     " <> ppr xL
                 , text "    xL_abs: " <> ppr xL_abs
-                , empty ]
+                , mempty ]
 
         return  ( xL_abs
                 , Sum.empty kEffect
@@ -454,7 +454,7 @@ makeSub config a ctx0 x0 xL tL tR err
                 [ text "**  Sub_Fail"
                 , text "    tL: " <> text (show tL)
                 , text "    tR: " <> text (show tR)
-                , empty ]
+                , mempty ]
 
         throw err
 

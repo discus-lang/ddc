@@ -56,10 +56,11 @@ data Info
 
 instance P.Pretty Info where
  ppr (Info ex1 ex0)
-  = P.text "Eta Transform"
-  P.<$> P.indent 4 (P.vcat
-      [ P.text "level-1 lambdas added:     " P.<> P.int ex1
-      , P.text "level-0 lambdas added:     " P.<> P.int ex0 ])
+  = P.vcat
+  [ P.text "Eta Transform"
+  , P.indent 4 $ P.vcat
+      [ P.text "level-1 lambdas added:     " <> P.int ex1
+      , P.text "level-0 lambdas added:     " <> P.int ex0 ]]
 
 
 instance Semigroup Info where

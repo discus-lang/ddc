@@ -81,7 +81,7 @@ checkLam !table !a !ctx !m1 !x2 !(Synth {})
         ctrace  $ vcat
                 [ text "*>  Lam SYNTH"
                 , text "    in  bind = " <+> ppr m1
-                , empty ]
+                , mempty ]
 
         let config      = tableConfig table
         let xx          = XAbs a m1 x2
@@ -177,7 +177,7 @@ checkLam !table !a !ctx !m1 !x2 !(Synth {})
                 , text "    out type = " <+> ppr tAbs
                 , indent 4 $ ppr ctx
                 , indent 4 $ ppr ctx_cut
-                , empty ]
+                , mempty ]
 
         return  ( xAbs'
                 , tAbs
@@ -195,7 +195,7 @@ checkLam !table !a !ctx !m1 !x2 !(Check tExpected)
                 [ text "*>  Lam CHECK"
                 , text "    in bind =" <+> ppr m1
                 , text "    in type =" <+> ppr tExpected
-                , empty ]
+                , mempty ]
 
         let config      = tableConfig table
         let xx          = XAbs a m1 x2
@@ -320,7 +320,7 @@ checkLam !table !a !ctx !m1 !x2 !(Check tExpected)
                 , text "    out type: " <> ppr tAbs'
                 , indent 4 $ ppr ctx
                 , indent 4 $ ppr ctx_cut
-                , empty ]
+                , mempty ]
 
         return  ( xAbs'
                 , tAbs'
@@ -338,7 +338,7 @@ checkLam !table !a !ctx !m1 !x2 !(Check tExpected)
                 , text "    m1        = " <> ppr m1
                 , text "    x2        = " <> (indent 4 $ ppr x2)
                 , text "    tExpected = " <> ppr tExpected
-                , empty ]
+                , mempty ]
 
         checkSub table a ctx DemandNone (XAbs a m1 x2) tExpected
 

@@ -13,7 +13,7 @@ import DDC.Core.Exp
 import Control.Monad (foldM)
 
 import DDC.Core.Codec.Text.Pretty          ()
-import DDC.Data.Pretty (Pretty(..), ppr, text, (<>), vcat, punctuate, hcat, renderIndent)
+import DDC.Data.Pretty (Pretty(..), ppr, text, vcat, punctuate, hcat, renderIndent)
 
 data FuseError
  = FuseErrorInternalError String
@@ -23,8 +23,10 @@ data FuseError
 instance Pretty FuseError where
  ppr (FuseErrorInternalError str)
   = text ("Internal error: " ++ str)
+
  ppr (FuseErrorNoSuchBlock lp lq)
   = text "Malformed input process: no such block at label " <> ppr lp <> text " or " <> ppr lq
+
  ppr (FuseErrorNeither l s1 s2)
   = vcat
   [ text "Neither machine can progress."

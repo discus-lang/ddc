@@ -5,11 +5,11 @@ module DDC.Core.Transform.Rewrite
         , rewriteModule
         , rewriteX)
 where
-import DDC.Data.Pretty
 import DDC.Core.Exp.Annot                               as X
 import DDC.Core.Module
 import Data.Map                                         (Map)
 import DDC.Core.Simplifier.Base (TransformResult(..), TransformInfo(..))
+import DDC.Data.Pretty                                  as P
 import qualified DDC.Core.Transform.AnonymizeX          as A
 import qualified DDC.Core.Transform.Rewrite.Disjoint    as RD
 import qualified DDC.Core.Transform.Rewrite.Env         as RE
@@ -43,8 +43,9 @@ data RewriteLog
 
 instance Pretty RewriteInfo where
  ppr (RewriteInfo rules)
-        =   text "Rules fired:"
-        <$> indent 4 (vcat $ map ppr rules)
+  = P.vcat
+        [ text "Rules fired:"
+        , indent 4 (vcat $ map ppr rules) ]
 
 
 instance Pretty RewriteLog where

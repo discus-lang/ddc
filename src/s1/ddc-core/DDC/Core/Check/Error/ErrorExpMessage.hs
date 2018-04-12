@@ -185,7 +185,7 @@ ppr' (ErrorWAppMismatch a ww t1 t2)
         , text "Type mismatch in witness application."
         , text "  Constructor expects: "       <> ppr t1
         , text "      but argument is: "       <> ppr t2
-        , empty
+        , mempty
         , text "with: "                        <> align (ppr ww) ]
 
 ppr' (ErrorWAppNotCtor a ww t1 t2)
@@ -193,7 +193,7 @@ ppr' (ErrorWAppNotCtor a ww t1 t2)
         , text "Type cannot apply non-constructor witness"
         , text "              of type: "       <> ppr t1
         , text "  to argument of type: "       <> ppr t2
-        , empty
+        , mempty
         , text "with: "                        <> align (ppr ww) ]
 
 ppr' (ErrorWitnessNotPurity a xx w t)
@@ -201,7 +201,7 @@ ppr' (ErrorWitnessNotPurity a xx w t)
         , text "Witness for a purify does not witness purity."
         , text "        Witness: "             <> ppr w
         , text "       has type: "             <> ppr t
-        , empty
+        , mempty
         , text "with: "                        <> align (ppr xx) ]
 
 
@@ -278,7 +278,7 @@ ppr' (ErrorRunCannotInfer a _xx)
 ppr' (ErrorNakedWitness a xx)
  = vcat [ ppr a
         , text "Found naked witness in core program."
-        , empty
+        , mempty
         , text "with: "                        <> align (ppr xx) ]
 
 
@@ -286,10 +286,10 @@ ppr' (ErrorNakedWitness a xx)
 ppr' (ErrorAmbiguousType a)
  = vcat [ ppr a
         , text "Ambigous type"
-        , empty ]
+        , mempty ]
 
 ppr' (ErrorAmbiguousTypeExp a x)
  = vcat [ ppr a
         , text "Ambigous type in expression:"
         , ppr x
-        , empty ]
+        , mempty ]

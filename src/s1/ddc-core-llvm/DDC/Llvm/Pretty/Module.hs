@@ -3,7 +3,7 @@ module DDC.Llvm.Pretty.Module where
 import DDC.Llvm.Syntax.Module
 import DDC.Llvm.Syntax.Exp
 import DDC.Llvm.Syntax.Type
-import DDC.Llvm.Pretty.Function 
+import DDC.Llvm.Pretty.Function
 import DDC.Llvm.Pretty.Exp      ()
 import DDC.Llvm.Pretty.Metadata
 import DDC.Llvm.Pretty.Base
@@ -25,28 +25,29 @@ instance Pretty Module where
         = PrettyModeModule
         { modeModuleConfig      :: Config }
 
- pprDefaultMode 
+ pprDefaultMode
         = PrettyModeModule
-        { modeModuleConfig      = defaultConfig }   
+        { modeModuleConfig      = defaultConfig }
 
- pprModePrec 
+ pprModePrec
         (PrettyModeModule config) prec
         (Module _comments aliases globals decls funcs mdecls)
-  = let 
+  = let
         pprFunction' = pprModePrec (PrettyModeFunction config) prec
         pprMDecl'    = pprModePrec (PrettyModeMDecl    config) prec
 
-    in   (vcat $ map ppr aliases)
-    <$$> (vcat $ map ppr globals)
-    <$$> (vcat $ map (\decl -> text "declare" 
-                          <+> pprFunctionHeader decl Nothing) decls)
-    <$$>  empty
-    <$$>  (vcat $ punctuate line 
-                $ map pprFunction' funcs)
-    <$$>  line
-    <$$>  empty
-    <$$>  (vcat $ map pprMDecl' mdecls)
-    <$$>  empty
+    in vcat
+        [  vcat $ map ppr aliases
+        ,  vcat $ map ppr globals
+        ,  vcat $ map (\decl -> text "declare"
+                          <+> pprFunctionHeader decl Nothing) decls
+        ,  mempty
+        ,  vcat $ punctuate line
+                $ map pprFunction' funcs
+        ,  line
+        ,  mempty
+        ,  vcat $ map pprMDecl' mdecls
+        ,  mempty ]
 
 
 -------------------------------------------------------------------------------
@@ -58,7 +59,7 @@ instance Pretty Global where
 
         GlobalExternal (Var name t)
          -> ppr name <+> text "= external global " <+> ppr t
- 
+
 
 -------------------------------------------------------------------------------
 instance Pretty Static where
@@ -67,7 +68,7 @@ instance Pretty Static where
         StaticComment s
          -> text "; " <> text s
 
-        StaticLit l 
+        StaticLit l
          -> ppr l
 
         StaticUninitType t
@@ -77,22 +78,22 @@ instance Pretty Static where
          -> ppr t <> text " c\"" <> text s <> text "\\00\""
 
         StaticArray d t
-         -> ppr t 
+         -> ppr t
          <> text " [" <> hcat (punctuate comma $ map ppr d) <> text "]"
 
         StaticStruct  d t
-         -> ppr t 
+         -> ppr t
          <> text "<{" <> hcat (punctuate comma $ map ppr d) <> text "}>"
 
         StaticPointer (Var n t)
          -> ppr t     <> text "*" <+> ppr n
 
         StaticBitc v t
-         -> ppr t 
+         -> ppr t
          <> text " bitcast"  <+> parens (ppr v <> text " to " <> ppr t)
 
         StaticPtoI v t
-         -> ppr t 
+         -> ppr t
          <> text " ptrtoint" <+> parens (ppr v <> text " to " <> ppr t)
 
         StaticAdd s1 s2

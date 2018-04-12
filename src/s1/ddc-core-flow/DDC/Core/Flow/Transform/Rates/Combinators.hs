@@ -8,7 +8,7 @@ module DDC.Core.Flow.Transform.Rates.Combinators
         , freeOfBind, cnameOfBind
         , outputsOfCluster, inputsOfCluster
         , seriesInputsOfCluster
-        ) 
+        )
 where
 import DDC.Data.Pretty
 import DDC.Core.Flow.Exp (ExpF)
@@ -49,7 +49,7 @@ data ABind s a
  -- | filter    :: (a -> Bool)        -> Array a                 -> Array a
  | Filter     (Fun s a)  a
  -- | generate  ::  Nat               -> (Nat -> a)              -> Array a
- | Generate (Scalar s a) (Fun s a) 
+ | Generate (Scalar s a) (Fun s a)
  -- | gather    ::  Array a           -> Array Nat               -> Array a
  | Gather                a a
  -- | cross     ::  Array a           -> Array b                 -> Array (a, b)
@@ -289,15 +289,17 @@ bind nm com args
 
 instance (Pretty s, Pretty a) => Pretty (Program s a) where
  ppr (Program ins binds outs)
-  = params <$> vcat (map ppr binds) <$> returns
+  = vcat [ params, vcat (map ppr binds), returns]
   where
    params
-    =   vcat (map (\i -> text "param scalar" <+> ppr i) (fst ins))
-    <$> vcat (map (\i -> text "param array"  <+> ppr i) (snd ins))
+    = vcat
+    [ vcat (map (\i -> text "param scalar" <+> ppr i) (fst ins))
+    , vcat (map (\i -> text "param array"  <+> ppr i) (snd ins)) ]
 
    returns
-    =   vcat (map (\i -> text "return"       <+> ppr i) (fst outs))
-    <$> vcat (map (\i -> text "return"       <+> ppr i) (snd outs))
+    = vcat
+    [ vcat (map (\i -> text "return"       <+> ppr i) (fst outs))
+    , vcat (map (\i -> text "return"       <+> ppr i) (snd outs))]
 
 instance (Pretty s, Pretty a) => Pretty (CName s a) where
  ppr (NameScalar s) = text "{" <> ppr s <> text "}"

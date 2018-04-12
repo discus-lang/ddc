@@ -28,7 +28,7 @@ encodeInterface i
                 Just m  -> vcat [ line
                                 , text $ makeInterfaceTearLine "Tetra"
                                 , ppr m ]
-                Nothing -> empty)
+                Nothing -> mempty)
 
 
 -- | Tear line to separate sections of the interface file.

@@ -43,9 +43,10 @@ data PruneInfo
 
 instance P.Pretty PruneInfo where
  ppr (PruneInfo remo)
-  =   P.text "Prune:"
-  P.<$> P.indent 4 (P.vcat
-      [ P.text "Removed:        " P.<> P.int remo])
+  = P.vcat
+  [ P.text "Prune:"
+  , P.indent 4 $ P.vcat
+      [ P.text "Removed:        " <> P.int remo ]]
 
 
 instance Semigroup PruneInfo where

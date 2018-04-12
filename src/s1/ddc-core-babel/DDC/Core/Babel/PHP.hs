@@ -192,7 +192,7 @@ phpOfLets lets ctx m
 
     LRec bxs
      | m' <- foldr insertArity m bxs
-     -> ( foldl (<>) empty $ map (\(b,x) -> fst $ phpOfLets (LLet b x) ctx m') bxs
+     -> ( foldl (<>) mempty $ map (\(b,x) -> fst $ phpOfLets (LLet b x) ctx m') bxs
         , m')
 
     _

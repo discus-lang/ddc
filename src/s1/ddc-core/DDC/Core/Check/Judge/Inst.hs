@@ -40,7 +40,7 @@ makeInstL !config !a !ctx0 !iL !tR !err
                 , text "    RIGHT: " <> ppr tR
                 , indent 4 $ ppr ctx0
                 , indent 4 $ ppr ctx1
-                , empty ]
+                , mempty ]
 
         return ctx1
 
@@ -73,7 +73,7 @@ makeInstL !config !a !ctx0 !iL !tR !err
                 , text "    RIGHT: " <> ppr tR
                 , indent 4 $ ppr ctx0
                 , indent 4 $ ppr ctx3
-                , empty ]
+                , mempty ]
 
         return ctx3
 
@@ -85,7 +85,7 @@ makeInstL !config !a !ctx0 !iL !tR !err
                 , text "    LEFT:    " <> ppr iL
                 , text "    RIGHT:   " <> ppr tR
                 , indent 4 $ ppr ctx0
-                , empty ]
+                , mempty ]
 
         (_, kCon, _)    <- checkTypeM config ctx0 UniverseSpec tCon Recon
         let (ksParam, kResult) = takeKFuns kCon
@@ -121,7 +121,7 @@ makeInstL !config !a !ctx0 !iL !tR !err
                 , text "    tInst:   " <> ppr tInst
                 , indent 4 $ ppr ctx0
                 , indent 4 $ ppr ctx2
-                , empty ]
+                , mempty ]
 
         return ctx2
 
@@ -136,7 +136,7 @@ makeInstL !config !a !ctx0 !iL !tR !err
                 , text "    RIGHT: " <> ppr tR
                 , indent 4 $ ppr ctx0
                 , indent 4 $ ppr ctx1
-                , empty ]
+                , mempty ]
 
         return ctx1
 
@@ -148,7 +148,7 @@ makeInstL !config !a !ctx0 !iL !tR !err
                 , text "  LEFT:  " <> ppr iL
                 , text "  RIGHT: " <> ppr tR
                 , indent 2 $ ppr ctx0
-                , empty ]
+                , mempty ]
 
         throw err
 
@@ -186,7 +186,7 @@ makeInstR !config !a !ctx0 !tL !iR !err
                 , text "    RIGHT: " <> ppr iR
                 , indent 4 $ ppr ctx0
                 , indent 4 $ ppr ctx1
-                , empty ]
+                , mempty ]
 
         return ctx1
 
@@ -200,7 +200,7 @@ makeInstR !config !a !ctx0 !tL !iR !err
                 , text "    RIGHT: " <> ppr iR
                 , indent 4 $ ppr ctx0
                 , indent 4 $ ppr ctx1
-                , empty ]
+                , mempty ]
 
         return ctx1
 
@@ -233,7 +233,7 @@ makeInstR !config !a !ctx0 !tL !iR !err
                 , text "    RIGHT: " <> ppr iR
                 , indent 4 $ ppr ctx0
                 , indent 4 $ ppr ctx3
-                , empty ]
+                , mempty ]
 
         return ctx3
 
@@ -245,7 +245,7 @@ makeInstR !config !a !ctx0 !tL !iR !err
                 , text "    LEFT:    " <> ppr iR
                 , text "    RIGHT:   " <> ppr tL
                 , indent 4 $ ppr ctx0
-                , empty ]
+                , mempty ]
 
         (_, kCon, _)    <- checkTypeM config ctx0 UniverseSpec tCon Recon
         let (ksParam, kResult) = takeKFuns kCon
@@ -281,7 +281,7 @@ makeInstR !config !a !ctx0 !tL !iR !err
                 , text "    tInst:   " <> ppr tInst
                 , indent 4 $ ppr ctx0
                 , indent 4 $ ppr ctx2
-                , empty ]
+                , mempty ]
 
         return ctx2
 
@@ -293,6 +293,6 @@ makeInstR !config !a !ctx0 !tL !iR !err
                 , text "  LEFT:  " <> ppr tL
                 , text "  RIGHT: " <> ppr iR
                 , indent 2 $ ppr ctx0
-                , empty ]
+                , mempty ]
 
         throw err

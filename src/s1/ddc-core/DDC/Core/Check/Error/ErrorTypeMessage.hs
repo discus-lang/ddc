@@ -30,7 +30,7 @@ ppr' (ErrorTypeMismatch uni tInferred tExpected tt)
                <+> text thing' <> text ":"      <+> ppr tExpected
        , text " does not match inferred"
                <+> text thing' <> text ":"      <+> ppr tInferred
-       , empty
+       , mempty
        , text "with: "                          <> align (ppr tt) ]
 
 ppr' (ErrorTypeInfinite tExt tBind)

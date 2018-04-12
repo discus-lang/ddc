@@ -29,7 +29,7 @@ makeEqT config ctx0 tL tR err
                 , text "    tL : " <> ppr tL
                 , text "    tL': " <> ppr tL'
                 , text "    tR : " <> ppr tR
-                , empty ]
+                , mempty ]
 
         makeEqT config ctx0 tL' tR err
 
@@ -44,7 +44,7 @@ makeEqT config ctx0 tL tR err
                 , text "    tL : " <> ppr tL
                 , text "    tR : " <> ppr tR
                 , text "    tR': " <> ppr tR'
-                , empty ]
+                , mempty ]
 
         makeEqT config ctx0 tL tR' err
 
@@ -56,7 +56,7 @@ makeEqT config ctx0 tL tR err
                 [ text "**  EqT_SolveL"
                 , text "    tL:  " <> ppr tL
                 , text "    tR:  " <> ppr tR
-                , empty ]
+                , mempty ]
 
         let Just ctx1   = updateExists [] iL tR ctx0
 
@@ -71,7 +71,7 @@ makeEqT config ctx0 tL tR err
                 [ text "**  EqT_SolveR"
                 , text "    tL:  " <> ppr tL
                 , text "    tR:  " <> ppr tR
-                , empty ]
+                , mempty ]
 
         let Just ctx1   = updateExists [] iR tL ctx0
 
@@ -93,7 +93,7 @@ makeEqT config ctx0 tL tR err
                 , text "    tR: " <> ppr tR
                 , indent 4 $ ppr ctx0
                 , indent 4 $ ppr ctx1
-                , empty ]
+                , mempty ]
 
         return ctx1
 
@@ -113,7 +113,7 @@ makeEqT config ctx0 tL tR err
                 , text "    tR: " <> ppr tR
                 , indent 4 $ ppr ctx0
                 , indent 4 $ ppr ctx1
-                , empty ]
+                , mempty ]
 
         return ctx1
 
@@ -145,7 +145,7 @@ makeEqT config ctx0 tL tR err
                 [ text "**  EqT_Con"
                 , text "    tL: " <> ppr tL
                 , text "    tR: " <> ppr tR
-                , empty ]
+                , mempty ]
 
         return ctx0
 
@@ -158,7 +158,7 @@ makeEqT config ctx0 tL tR err
                 [ text "*>  EqT_App"
                 , text "    tL: " <> ppr tL
                 , text "    tR: " <> ppr tR
-                , empty ]
+                , mempty ]
 
         ctx1    <- makeEqT config ctx0 tL1  tR1  err
         tL2'    <- applyContext ctx1 tL2
@@ -171,7 +171,7 @@ makeEqT config ctx0 tL tR err
                 , text "    tR: " <> ppr tR
                 , indent 4 $ ppr ctx0
                 , indent 4 $ ppr ctx2
-                , empty ]
+                , mempty ]
 
         return ctx2
 
@@ -182,7 +182,7 @@ makeEqT config ctx0 tL tR err
                 [ text "**  EqT_Equiv"
                 , text "    tL: " <> ppr tL
                 , text "    tR: " <> ppr tR
-                , empty ]
+                , mempty ]
 
         return ctx0
 
@@ -195,7 +195,7 @@ makeEqT config ctx0 tL tR err
                 , text "  tL: " <> ppr tL
                 , text "  tR: " <> ppr tR
                 , indent 2 $ ppr ctx0
-                , empty ]
+                , mempty ]
 
         throw err
 

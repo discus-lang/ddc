@@ -122,22 +122,21 @@ instance Monoid CheckTrace where
 
 -- | Construct an empty `CheckTrace`.
 emptyCheckTrace :: CheckTrace
-emptyCheckTrace
-        = CheckTrace empty
+emptyCheckTrace = CheckTrace mempty
 
 
 -- | Union two `ChecTrace`s.
 unionCheckTrace :: CheckTrace -> CheckTrace -> CheckTrace
 unionCheckTrace ct1 ct2
         = CheckTrace
-        { checkTraceDoc = checkTraceDoc ct1 P.<> checkTraceDoc ct2 }
+        { checkTraceDoc = checkTraceDoc ct1 <> checkTraceDoc ct2 }
 
 
 -- | Append a doc to the checker trace.
 ctrace :: Doc -> CheckM a n ()
 ctrace doc'
  = do   (tr, ix, pos)       <- G.get
-        let tr' = tr { checkTraceDoc = checkTraceDoc tr P.<$> doc' }
+        let tr' = tr { checkTraceDoc = checkTraceDoc tr `P.pline` doc' }
         G.put (tr', ix, pos)
         return  ()
 

@@ -22,7 +22,7 @@ checkCase !table !ctx0 mode demand
                 , text "    xDiscrim: " <> ppr xDiscrim
                 , text "    mode:     " <> ppr mode
                 , indent 2 $ ppr ctx0
-                , empty ]
+                , mempty ]
 
         -- There must be at least one alternative, even if there are no data
         -- constructors. The rest of the checking code assumes this, and will
@@ -133,7 +133,7 @@ checkCase !table !ctx0 mode demand
                 , indent 2 $ ppr ctx1
                 , indent 2 $ ppr ctx2
                 , indent 2 $ ppr ctx4
-                , empty ]
+                , mempty ]
 
         returnX a
                 (\z -> XCase z xDiscrim' alts')
@@ -276,7 +276,7 @@ checkAltsM !table !a !xx !tDiscrim !tsArgs !mode !demand !alts0 !ctx
                 [ text "*>  Alt"
                 , text "    mode:   " <+> ppr mode
                 , indent 4 $ ppr ctx
-                , empty ]
+                , mempty ]
 
         -- Get the constructor type associated with this pattern.
         Just tCtor <- ctorTypeOfPat table ctx a (PData dc bsArg)
@@ -338,7 +338,7 @@ checkAltsM !table !a !xx !tDiscrim !tsArgs !mode !demand !alts0 !ctx
                 , ppr ctx0
                 , ppr ctxBody
                 , ppr ctx_cut
-                , empty ]
+                , mempty ]
 
         -- We're returning the new context for kicks,
         -- but the caller doesn't use it because we don't want the order of

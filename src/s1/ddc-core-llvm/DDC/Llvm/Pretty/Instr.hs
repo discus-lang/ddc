@@ -30,14 +30,15 @@ instance  Pretty Block where
         = PrettyModeBlock
         { modeBlockConfig = defaultConfig }
 
- pprModePrec 
-        (PrettyModeBlock config) prec 
+ pprModePrec
+        (PrettyModeBlock config) prec
         (Block label instrs)
   = let downAnnotInstr
          = pprModePrec (PrettyModeAnnotInstr config) prec
 
-    in    ppr label <>  colon 
-     <$$> indent 8 (vcat $ map downAnnotInstr $ Seq.toList instrs)
+    in vcat
+         [ ppr label <>  colon
+         , indent 8 $ vcat $ map downAnnotInstr $ Seq.toList instrs]
 
 
 -------------------------------------------------------------------------------
@@ -69,19 +70,19 @@ instance Pretty Instr where
         = PrettyModeInstr
         { modeInstrConfig :: Config }
 
- pprDefaultMode 
+ pprDefaultMode
         = PrettyModeInstr
         { modeInstrConfig = defaultConfig }
 
  pprModePrec (PrettyModeInstr config) _prec ii
-  = let 
+  = let
         -- Pad binding occurrence of variable.
         padVar  var
          = fill 12 (ppr $ nameOfVar var)
 
     in  case ii of
         -- Meta-instructions -------------------------------
-        IComment strs           
+        IComment strs
          -> vcat $ map (semi <+>) $ map text strs
 
         ISet dst val
@@ -89,7 +90,7 @@ instance Pretty Instr where
                  , equals
                  , ppr val ]
 
-        INop 
+        INop
          -> text "nop"
 
         -- Phi nodes --------------------------------------
@@ -107,10 +108,10 @@ instance Pretty Instr where
                         | (xSrc, label)         <- expLabels ])
 
         -- Terminator Instructions ------------------------
-        IReturn Nothing         
+        IReturn Nothing
          -> text "ret void"
 
-        IReturn (Just value)    
+        IReturn (Just value)
          -> text "ret" <+> ppr value
 
         IBranch label
@@ -127,7 +128,7 @@ instance Pretty Instr where
                 <+> ppr x1 <> comma
                 <+> text "label %" <> ppr lDefault
                 <+> lbracket
-                <+> (hsep [ ppr discrim 
+                <+> (hsep [ ppr discrim
                                 <> comma
                                 <> text "label %" <> ppr dest
                                 | (discrim, dest) <- alts ])
@@ -148,15 +149,15 @@ instance Pretty Instr where
          -- as well as the type of the result of the load.
          |  configWantsLoadReturnTypes config
          -> padVar vDst
-                <+> equals 
-                <+> text "load" 
+                <+> equals
+                <+> text "load"
                 <+> ppr (typeOfVar vDst) <> comma       -- Type of result.
                 <+> ppr x1                              -- Pointer type of source.
 
          -- Before LLVM 3.7 we only needed to give the type of the source pointer.
          |  otherwise
-         -> padVar vDst 
-                <+> equals 
+         -> padVar vDst
+                <+> equals
                 <+> text "load" <+> ppr x1
 
         IStore xDst xSrc
@@ -169,7 +170,7 @@ instance Pretty Instr where
          -> padVar vDst
                 <+> equals
                 <+> ppr op      <+> ppr (typeOfExp x1)
-                <+> pprPlainX x1 <> comma 
+                <+> pprPlainX x1 <> comma
                 <+> pprPlainX x2
 
         -- Conversion operations --------------------------
@@ -183,7 +184,7 @@ instance Pretty Instr where
 
         IGet vDst xSrc os
          -- From LLVM 3.7 we need to give the type of the source pointer
-         -- as well as the type of the result of the load.      
+         -- as well as the type of the result of the load.
          |  configWantsLoadReturnTypes config
          ,  XVar (Var _ (TPointer t)) <- xSrc
          -> padVar vDst
@@ -221,15 +222,15 @@ instance Pretty Instr where
                         _            -> text "call"
                 dst'
                  = case mdst of
-                        Nothing      -> empty
+                        Nothing      -> mempty
                         Just dst     -> fill 12 (ppr $ nameOfVar dst) <+> equals <> space
 
-                convSuffix' 0 = empty
+                convSuffix' 0 = mempty
                 convSuffix' _ = space
 
                 conv'
                  = case callConv of
-                        Nothing -> empty
+                        Nothing -> mempty
                         Just cc -> ppr cc
 
                 convSpace'

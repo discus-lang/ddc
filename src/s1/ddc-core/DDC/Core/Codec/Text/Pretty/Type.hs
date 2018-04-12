@@ -18,7 +18,7 @@ instance (Pretty n, Eq n) => Pretty (Bind n) where
         BNone   t       -> text "_"  <> pprT t
 
   where pprT t
-         | isBot t      = empty
+         | isBot t      = mempty
          | otherwise    = text ": " <> ppr t
 
 -- Binder ---------------------------------------------------------------------

@@ -84,13 +84,13 @@ instance Show a => Pretty (Error a) where
         ErrorUnsupported xx doc
          -> vcat [ text "Cannot convert expression."
                  , indent 2 $ doc
-                 , empty
+                 , mempty
                  , indent 2 $ text "with:" <+> ppr xx ]
 
         ErrorUnsupportedArg aa doc
          -> vcat [ text "Cannot convert argument."
                  , indent 2 $ doc
-                 , empty
+                 , mempty
                  , indent 2 $ text "with:" <+> ppr aa ]
 
         ErrorBotAnnot

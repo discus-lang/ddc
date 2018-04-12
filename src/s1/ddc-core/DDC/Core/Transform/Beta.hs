@@ -69,13 +69,14 @@ data Info
 
 instance P.Pretty Info where
  ppr (Info ty wit val lets skip)
-  =     P.text "Beta reduction:"
-  P.<$> P.indent 4 (P.vcat
-      [ P.text "Types:          " P.<> P.int ty
-      , P.text "Witnesses:      " P.<> P.int wit
-      , P.text "Values:         " P.<> P.int val
-      , P.text "Values letted:  " P.<> P.int lets
-      , P.text "Values skipped: " P.<> P.int skip ])
+  = P.vcat
+  [ P.text "Beta reduction:"
+  , P.indent 4 $ P.vcat
+      [ P.text "Types:          " <> P.int ty
+      , P.text "Witnesses:      " <> P.int wit
+      , P.text "Values:         " <> P.int val
+      , P.text "Values letted:  " <> P.int lets
+      , P.text "Values skipped: " <> P.int skip ] ]
 
 
 instance Semigroup Info where

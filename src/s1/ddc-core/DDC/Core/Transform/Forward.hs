@@ -43,11 +43,12 @@ data ForwardInfo
 
 instance P.Pretty ForwardInfo where
  ppr (ForwardInfo inspected substs bindings)
-  =  P.text "Forward:"
-  P.<$> P.indent 4 (P.vcat
-      [ P.text "Total bindings inspected:      " P.<> P.int inspected
-      , P.text "  Trivial substitutions made:  " P.<> P.int substs
-      , P.text "  Bindings moved forward:      " P.<> P.int bindings ])
+  = P.vcat
+  [ P.text "Forward:"
+  , P.indent 4 $ P.vcat
+        [ P.text "Total bindings inspected:      " <> P.int inspected
+        , P.text "  Trivial substitutions made:  " <> P.int substs
+        , P.text "  Bindings moved forward:      " <> P.int bindings ]]
 
 
 instance Semigroup ForwardInfo where

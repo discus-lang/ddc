@@ -123,13 +123,13 @@ instance Pretty Builder where
  ppr builder
         = vcat
         [ text "Builder Name : " <> text (builderName builder)
-        , empty
+        , mempty
         , text "Host Platform"
         , indent 1 $ ppr $ buildHost builder
-        , empty
+        , mempty
         , text "Target Platform"
         , indent 1 $ ppr $ buildTarget builder
-        , empty
+        , mempty
         , text "LLVM Target Spec"
         , indent 1 $ ppr $ buildSpec builder ]
 

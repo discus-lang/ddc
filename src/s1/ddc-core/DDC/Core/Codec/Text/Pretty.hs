@@ -60,35 +60,35 @@ instance (Pretty n, Eq n) => Pretty (Module a n) where
 
         -- Exports --------------------
         dExportTypes
-         | null $ exportTypes   = empty
+         | null $ exportTypes   = mempty
          | otherwise            = (vcat $ map (pprExportType  . snd) exportTypes)  <> line
 
         dExportValues
-         | null $ exportValues  = empty
+         | null $ exportValues  = mempty
          | otherwise            = (vcat $ map (pprExportValue . snd) exportValues) <> line
 
         -- Imports --------------------
         dImportTypes
-         | null $ importTypes   = empty
+         | null $ importTypes   = mempty
          | otherwise            = (vcat $ map pprImportType  importTypes)  <> line
 
         dImportCaps
-         | null $ importCaps    = empty
+         | null $ importCaps    = mempty
          | otherwise            = (vcat $ map pprImportCap   importCaps)   <> line
 
         dImportValues
-         | null $ importValues  = empty
+         | null $ importValues  = mempty
          | otherwise            = (vcat $ map (pprImportValue . snd) importValues) <> line
 
         docsImportsExports
          -- If we're suppressing imports, then don't print it.
          | modeModuleSuppressImports mode
-         = empty
+         = mempty
 
          -- If there are no imports or exports then suppress printing.
          | null exportTypes, null exportValues
          , null importTypes, null importCaps, null importValues
-         = empty
+         = mempty
 
          | otherwise
          = line <> dExportTypes <> dExportValues
@@ -96,23 +96,23 @@ instance (Pretty n, Eq n) => Pretty (Module a n) where
 
         -- Data Definitions -----
         docsDataImport
-         | null importData = empty
+         | null importData = mempty
          | otherwise
          = line <> vsep  (map (\i -> text "import" <+> ppr i) $ map snd importData)
 
         docsDataLocal
-         | null localData = empty
+         | null localData = mempty
          | otherwise
          = line <> vsep  (map ppr $ map snd localData)
 
         -- Type Definitions -----
         docsTypeImport
-         | null importType = empty
+         | null importType = mempty
          | otherwise
          = line <> vsep  (map (\i -> text "import" <+> pprTypeDef i) $ importType)
 
         docsTypeLocal
-         | null localType  = empty
+         | null localType  = mempty
          | otherwise
          = line <> vsep  (map pprTypeDef localType)
 
@@ -125,9 +125,9 @@ instance (Pretty n, Eq n) => Pretty (Module a n) where
          <>  docsTypeImport
          <>  docsTypeLocal
          <>  (case lts of
-                []       -> empty
-                [LRec[]] -> empty
-                _        -> text "with" <$$> (vcat $ map pprLts lts))
+                []       -> mempty
+                [LRec[]] -> mempty
+                _        -> text "with" `plinebreak` (vcat $ map pprLts lts))
 
 
 -- Exports ----------------------------------------------------------------------------------------
@@ -167,7 +167,7 @@ pprExportValue esrc
                         <+> ppr arityValue
                         <+> ppr arityBoxes
                         <+> text "#-}"
-                 , empty ]
+                 , mempty ]
 
         ExportValueSea iName xName t
          -> vcat [ text "export foreign c value"
@@ -222,7 +222,7 @@ pprImportValue isrc
                         <+> ppr arityType <+> ppr arityValue <+> ppr arityBoxes
                         <+> text "#-}"
 
-                 , empty ]
+                 , mempty ]
 
         ImportValueSea nInternal _nExternal t
          -> text "import foreign c value" <> line
@@ -238,19 +238,21 @@ instance (Pretty n, Eq n) => Pretty (DataDef n) where
 -- | Pretty print a data type definition.
 pprDataDef :: (Pretty n, Eq n) => DataDef n -> Doc
 pprDataDef def
-  =   (text "data"
+  = vcat
+  [ text "data"
         <+> hsep ( ppr (dataDefTypeName def)
                  : map (parens . ppr) (dataDefParams def))
         <+> text "where"
-        <+>  lbrace)
-  <$> (case dataDefCtors def of
+        <+>  lbrace
+
+  , case dataDefCtors def of
         Just ctors
          -> indent 8
           $ vcat [ ppr ctor <> semi | ctor <- ctors]
 
         Nothing
-         -> text "LARGE")
-  <> line <> rbrace <> line
+         -> text "LARGE"
+  ] <> line <> rbrace <> line
 
 
 -- DataCtor ---------------------------------------------------------------------------------------

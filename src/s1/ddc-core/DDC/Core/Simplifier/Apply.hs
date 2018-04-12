@@ -43,7 +43,7 @@ import Prelude                                  hiding ((<$>))
 --
 --   The state monad can be used by `Namifier` functions to generate fresh names.
 --
-applySimplifier 
+applySimplifier
         :: (Show a, Pretty a, Ord n, Show n, Pretty n, CompoundName n)
         => Profile n            -- ^ Profile of language we're working in
         -> KindEnv n            -- ^ Kind environment
@@ -62,7 +62,7 @@ applySimplifier !profile !kenv !tenv !spec !mm
                 let info =
                         case (resultInfo tm, resultInfo tm') of
                         (TransformInfo i1, TransformInfo i2) -> SeqInfo i1 i2
-                
+
                 let again    = resultAgain    tm || resultAgain    tm'
                 let progress = resultProgress tm || resultProgress tm'
 
@@ -77,7 +77,7 @@ applySimplifier !profile !kenv !tenv !spec !mm
                 let info =
                         case resultInfo tm of
                         TransformInfo info1 -> FixInfo i info1
-                
+
                 return TransformResult
                         { result         = result tm
                         , resultAgain    = resultAgain    tm
@@ -104,20 +104,20 @@ applyFixpoint !profile !kenv !tenv !i' !spec !mm'
  where
   simp = applySimplifier profile kenv tenv spec
 
-  go 0 mm progress 
+  go 0 mm progress
    = do tm  <- simp mm
         return tm { resultProgress = progress }
 
-  go i mm progress 
+  go i mm progress
    = do tm  <- simp mm
         case resultAgain tm of
-         False 
+         False
           ->    return tm { resultProgress = progress }
 
-         True  
+         True
           -> do tm' <- go (i-1) (result tm) True
 
-                let info 
+                let info
                      = case (resultInfo tm, resultInfo tm') of
                         (TransformInfo i1, TransformInfo i2)
                           -> SeqInfo i1 i2
@@ -150,7 +150,7 @@ applyTransform !profile !_kenv !_tenv !spec !mm
         Expliciate       -> res    $ Expliciate.expliciateModule mm
         Flatten          -> res    $ flatten mm
 
-        Forward          
+        Forward
          -> let config  = Forward.Config (const FloatAllow) False
             in  return $ forwardModule profile config mm
 
@@ -173,7 +173,7 @@ applyTransform !profile !_kenv !_tenv !spec !mm
 --
 --   The state monad can be used by `Namifier` functions to generate fresh names.
 --
-applySimplifierX 
+applySimplifierX
         :: (Show a, Pretty a, Show n, Ord n, Pretty n, CompoundName n)
         => Profile n            -- ^ Profile of language we're working in
         -> KindEnv n            -- ^ Kind environment
@@ -192,7 +192,7 @@ applySimplifierX !profile !kenv !tenv !spec !xx
                 let info =
                         case (resultInfo tx, resultInfo tx') of
                         (TransformInfo i1, TransformInfo i2) -> SeqInfo i1 i2
-                
+
                 let again    = resultAgain    tx || resultAgain    tx'
                 let progress = resultProgress tx || resultProgress tx'
 
@@ -207,13 +207,13 @@ applySimplifierX !profile !kenv !tenv !spec !xx
                 let info =
                         case resultInfo tx of
                         TransformInfo info1 -> FixInfo i info1
-                
+
                 return TransformResult
                         { result         = result tx
                         , resultAgain    = resultAgain    tx
                         , resultProgress = resultProgress tx
                         , resultInfo     = TransformInfo info }
-                
+
         Trans t1
          -> applyTransformX profile kenv tenv t1 xx
 
@@ -234,22 +234,22 @@ applyFixpointX !profile !kenv !tenv !i' !s !xx'
  where
   simp = applySimplifierX profile kenv tenv s
 
-  go 0 xx progress 
+  go 0 xx progress
    = do tx <- simp xx
         return tx { resultProgress = progress }
 
-  go i xx progress 
+  go i xx progress
    = do tx      <- simp xx
         case resultAgain tx of
-         False 
+         False
           ->    return tx { resultProgress = progress }
 
-         True  
+         True
           -> do tx'        <- go (i-1) (result tx) True
 
-                let info 
+                let info
                      = case (resultInfo tx, resultInfo tx') of
-                        (TransformInfo i1, TransformInfo i2) 
+                        (TransformInfo i1, TransformInfo i2)
                           -> SeqInfo i1 i2
 
                 return TransformResult
@@ -268,7 +268,7 @@ data SeqInfo
 
 
 instance Pretty SeqInfo where
- ppr (SeqInfo i1 i2) = ppr i1 P.<> text ";" <$> ppr i2
+ ppr (SeqInfo i1 i2) = ppr i1 <> text ";" `P.pline` ppr i2
 
 
 -- | Result of applying a simplifier until we reach a fixpoint.
@@ -280,13 +280,14 @@ data FixInfo
 
 
 instance Pretty FixInfo where
- ppr (FixInfo num i1) 
-  =  text "fix" <+> int num P.<> text ":"
-  <$> indent 4 (ppr i1)
+ ppr (FixInfo num i1)
+  =  P.vcat
+        [ text "fix" <+> int num <> text ":"
+        , indent 4 (ppr i1)]
 
 
 -- | Apply a single transform to an expression.
-applyTransformX 
+applyTransformX
         :: (Show a, Show n, Ord n, Pretty n)
         => Profile n            -- ^ Profile of language we're working in
         -> KindEnv n            -- ^ Kind environment
@@ -297,7 +298,7 @@ applyTransformX
 
 applyTransformX !profile !kenv !tenv !spec !xx
  = let  res x   = return $ resultDone (show $ ppr spec) x
-        env     = EnvX.fromPrimEnvs 
+        env     = EnvX.fromPrimEnvs
                         (profilePrimKinds    profile)
                         (profilePrimTypes    profile)
                         (profilePrimDataDefs profile)
@@ -311,7 +312,7 @@ applyTransformX !profile !kenv !tenv !spec !xx
         Expliciate        -> res    $ Expliciate.expliciateExp (Map.empty) xx
         Flatten           -> res    $ flatten xx
 
-        Forward          
+        Forward
          -> let config  = Forward.Config (const FloatAllow) False
             in  return $ forwardX profile config xx
 

@@ -61,7 +61,7 @@ instance (Pretty n, Eq n) => Pretty (Exp a n) where
                 groups = partitionBindsByType bs
             in  pprParen' (d > 1)
                  $  (cat $ map (pprBinderGroup (text "Λ")) groups)
-                 <>  (if      isXLAM    xBody then empty
+                 <>  (if      isXLAM    xBody then mempty
                       else if isXLam    xBody then line
                       else if isSimpleX xBody then space
                       else    line)
@@ -110,8 +110,9 @@ instance (Pretty n, Eq n) => Pretty (Exp a n) where
 
         XLet _ lts x
          ->  pprParen' (d > 2)
-         $   pprLts lts <+> text "in"
-         <$> pprX x
+         $   vcat
+                [ pprLts lts <+> text "in"
+                , pprX x]
 
         -- Print single alternative case expressions as 'letcase'.
         --    case x1 of { C v1 v2 -> x2 }
@@ -119,11 +120,12 @@ instance (Pretty n, Eq n) => Pretty (Exp a n) where
         XCase _ x1 [AAlt p x2]
          | modeExpUseLetCase mode
          ->  pprParen' (d > 2)
-         $   text "letcase" <+> ppr p
-                <+> nest 2 (breakWhen (not $ isSimpleX x1)
-                            <> text "=" <+> align (pprX x1))
-                <+> text "in"
-         <$> pprX x2
+         $   vcat
+                [ text "letcase" <+> ppr p
+                        <+> nest 2 (breakWhen (not $ isSimpleX x1)
+                              <> text "=" <+> align (pprX x1))
+                        <+> text "in"
+                , pprX x2]
 
         XCase _ x alts
          -> pprParen' (d > 2)
@@ -134,7 +136,7 @@ instance (Pretty n, Eq n) => Pretty (Exp a n) where
 
         XCast _ CastBox x
          -> pprParen' (d > 2)
-         $  text "box"  <$> pprX x
+         $  vcat [text "box", pprX x]
 
         XCast _ CastRun x
          -> pprParen' (d > 2)
@@ -142,8 +144,7 @@ instance (Pretty n, Eq n) => Pretty (Exp a n) where
 
         XCast _ cc x
          ->  pprParen' (d > 2)
-         $   ppr cc <+> text "in"
-         <$> pprX x
+         $   vcat [ ppr cc <+> text "in", pprX x ]
 
 
 -- Param ----------------------------------------------------------------------
@@ -283,12 +284,13 @@ instance (Pretty n, Eq n) => Pretty (Lets a n) where
                  <>  nest 2 (  breakWhen (not $ isSimpleX x)
                             <> text "=" <+> align (pprX x))
 
-           in   (nest 2 $ text "letrec"
-                  <+> lbrace
-                  <>  (  line
+           in vcat
+                [ nest 2 $ text "letrec"
+                   <+> lbrace
+                   <>  (  line
                       <> (vcat $ punctuate (semi <> line)
-                               $ map pprLetRecBind bxs)))
-                <$> rbrace
+                               $ map pprLetRecBind bxs))
+                , rbrace ]
 
         LPrivate bs Nothing []
          -> text "private"
