@@ -7,6 +7,7 @@ module DDC.War.Job.Diff
 where
 import BuildBox.Command.File
 import BuildBox.Command.System
+import BuildBox.Pretty
 import BuildBox
 
 
@@ -42,11 +43,11 @@ resultSuccess result
         _               -> False
 
 
-instance Show Result where
- show result
+instance Pretty Result where
+ ppr result
   = case result of
-        ResultSame      -> "ok"
-        ResultDiff{}    -> "diff"
+        ResultSame      -> string "ok"
+        ResultDiff{}    -> string "diff"
 
 
 -- | Compare two files for differences.

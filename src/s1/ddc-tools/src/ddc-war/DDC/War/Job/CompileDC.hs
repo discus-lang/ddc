@@ -11,8 +11,8 @@ import BuildBox.Command.System
 import BuildBox.Build.Benchmark
 import BuildBox.Data.Physical
 import BuildBox.IO.Directory
+import BuildBox.Pretty
 import BuildBox
-import DDC.War.Driver           (parens)
 import System.FilePath
 import System.Directory
 import Control.Monad
@@ -71,12 +71,17 @@ resultSuccess result
         _               -> False
 
 
-instance Show Result where
- show result
+instance Pretty Result where
+ ppr result
   = case result of
-        ResultSuccess seconds   -> "success" ++ " " ++ parens (show seconds)
-        ResultUnexpectedFailure -> "failed"
-        ResultUnexpectedSuccess -> "unexpected"
+        ResultSuccess seconds
+         -> string "success" %% parens (ppr seconds)
+
+        ResultUnexpectedFailure
+         -> string "failed"
+
+        ResultUnexpectedSuccess
+         -> string "unexpected"
 
 
 -- Build ----------------------------------------------------------------------

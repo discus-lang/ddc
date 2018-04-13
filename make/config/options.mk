@@ -75,20 +75,20 @@ GHC_WARNINGS	:= \
 DDC_PACKAGES	:= \
 	-hide-all-packages \
         -package base \
+        -package time \
+        -package text \
         -package array \
+        -package random \
         -package bytestring \
         -package containers \
-        -package deepseq \
         -package directory \
+        -package transformers \
+        -package deepseq \
         -package filepath \
         -package process \
-        -package time \
-        -package transformers \
-        -package mtl \
         -package parsec \
-        -package random \
+        -package mtl \
         -package stm \
-        -package text \
         -package buildbox \
         -package haskeline \
         -package inchworm \

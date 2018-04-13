@@ -9,10 +9,10 @@ import BuildBox.Command.File
 import BuildBox.Command.System
 import BuildBox.Build.Benchmark
 import BuildBox.Data.Physical
+import BuildBox.Pretty
 import BuildBox
 import System.Directory
 import System.FilePath
-import DDC.War.Driver   (parens)
 
 
 -- | Feed a file into DDCi-core
@@ -44,11 +44,14 @@ resultSuccess result
         _               -> False
 
 
-instance Show Result where
- show result
+instance Pretty Result where
+ ppr result
   = case result of
-        ResultSuccess seconds   -> "success" ++ " " ++ parens (show seconds)
-        ResultFailure           -> "failed"
+        ResultSuccess seconds
+         -> string "success" %% parens (ppr seconds)
+
+        ResultFailure
+         -> string "failed"
 
 
 -- | Compile a Haskell Source File

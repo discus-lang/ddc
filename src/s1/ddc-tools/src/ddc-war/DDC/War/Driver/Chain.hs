@@ -6,7 +6,6 @@ module DDC.War.Driver.Chain
         , runJob)
 where
 import DDC.War.Driver
-import BuildBox
 import Control.Concurrent.STM.TChan
 import Control.Monad
 import Control.Monad.STM
@@ -34,7 +33,7 @@ runJobWithTChan
 
 runJobWithTChan mChannel ixChain ixJob job
  = case mChannel of
-        Nothing 
+        Nothing
          ->     runJob ixChain ixJob job
 
         Just channel
@@ -60,7 +59,7 @@ runJob   :: Int                 -- ^ Index of this chain.
          -> Build Result
 
 runJob ixChain ixJob (Job jobId actionName spec builder)
- = do   
+ = do
         -- Run the job.
         result          <- builder
 

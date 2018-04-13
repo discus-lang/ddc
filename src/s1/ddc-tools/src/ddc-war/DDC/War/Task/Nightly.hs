@@ -10,6 +10,7 @@ import BuildBox.Command.System
 import BuildBox.Command.File
 import BuildBox.Command.Environment
 import BuildBox.Control.Cron
+import BuildBox.Pretty
 import BuildBox.Build
 import BuildBox.Time
 import BuildBox                 as BuildBox
@@ -19,7 +20,6 @@ import Data.Char
 import System.FilePath.Posix    as Remote
 import System.FilePath          as Local
 
-outLn' s = outLn (s :: String)
 
 -- Spec -----------------------------------------------------------------------
 data Spec
@@ -93,7 +93,7 @@ build spec
 
         -- Continuous build
         Just whence
-         -> do  outLn' "* Starting cron loop"
+         -> do  outLn $ string "* Starting cron loop"
                 cronLoop
                  $  makeSchedule
                         [ ("nightly"
@@ -132,39 +132,39 @@ buildProject spec
         ensureDir buildDir
         inDir     buildDir
          $ do
-                outLn' "* Creating log directory"
+                outLn $ string "* Creating log directory"
                 ensureDir "log"
 
-                outLn' "* Downloading snapshot"
+                outLn $ string "* Downloading snapshot"
                 (getOut, getErr) <- ssystem $ "wget --progress=bar " ++ urlSnapshot
                 io $ writeFile "log/01-wget.stdout" getOut
                 io $ writeFile "log/01-wget.stderr" getErr
 
                 needs (Remote.takeFileName urlSnapshot)
-                outLn' "* Unpacking snapshot"
+                outLn $ string "* Unpacking snapshot"
                 ssystem $ "tar zxf " ++ Remote.takeFileName urlSnapshot
 
                 inDir "ddc-head"
                  $ do
-                        outLn' "* Updating shapshot"
+                        outLn $ string "* Updating shapshot"
                         (darcsOut, darcsErr) <- ssystem $ "darcs pull -av " ++ urlRepo
                         io $ writeFile "../log/02-darcs.stdout" darcsOut
                         io $ writeFile "../log/02-darcs.stderr" darcsErr
 
-                        outLn' "* Writing build config"
+                        outLn $ string "* Writing build config"
                         needs "make"
                         io $ writeFile "make/config-override.mk"
                            $ unlines [ "THREADS = " ++ show buildThreads
                                      , "BUILDFLAVOUR = " ++ buildFlavour
                                      , "" ]
 
-                        outLn' "* Building project"
+                        outLn $ string "* Building project"
                         needs "Makefile"
                         (makeOut, makeErr) <- ssystem $ "make nightly"
                         io $ writeFile "../log/03-make.stdout" makeOut
                         io $ writeFile "../log/03-make.stderr" makeErr
 
-                        outLn' "* Copying results"
+                        outLn $ string "* Copying results"
                         needs "war.results"
                         needs "war.failed"
                         ssystem "cp war.results ../log"
@@ -180,7 +180,7 @@ buildProject spec
                 postSuccess spec strTime strFailed
 
         when (specCleanup spec)
-         $ do   outLn' "* Cleaning up"
+         $ do   outLn $ string "* Cleaning up"
                 clobberDir buildDir
 
         return ResultSuccess
@@ -192,7 +192,7 @@ copyLogs spec strTime
  | Just userHost <- specLogUserHost  spec
  , Just logDir   <- specLogRemoteDir spec
  = do
-        outLn $ "* Copying logs to " ++ userHost
+        outLn $ string $ "* Copying logs to " ++ userHost
 
         let dir = logDir Remote.</> strTime
 
@@ -214,7 +214,7 @@ postSuccess spec strTime strFailed
  , Just addrFrom        <- specMailFrom spec
  , Just addrTo          <- specMailTo   spec
  = do
-        outLn ("* Reporting build success" :: String)
+        outLn $ string "* Reporting build success"
 
         -- The overall build succeeded, but some tests might have failed.
         let nFailed     =  length $ lines strFailed
@@ -252,7 +252,7 @@ postFailure spec err
  , Just addrFrom        <- specMailFrom spec
  , Just addrTo          <- specMailTo   spec
  = do
-        outLn ("* Reporting build failure" :: String)
+        outLn $ string "* Reporting build failure"
 
         -- Create message subject.
         hostId          <- getHostId

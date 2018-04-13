@@ -13,6 +13,7 @@ import qualified DDC.War.Driver                 as Driver
 import qualified DDC.War.Driver.Gang            as Driver
 
 import BuildBox.IO.Directory
+import BuildBox.Pretty
 import BuildBox
 
 import System.Directory
@@ -27,7 +28,7 @@ import qualified Data.Sequence          as Seq
 import qualified Data.Foldable          as Seq
 import qualified Data.Set               as Set
 import qualified Data.Traversable       as Seq
-
+import qualified Data.Text              as T
 
 -- | Run regression tests.
 data Spec
@@ -118,7 +119,8 @@ build spec
         (case specResultsFileAll spec of
           Nothing       -> return ()
           Just file     -> io   $ writeFile file
-                                $ unlines
+                                $ T.unpack
+                                $ vcat
                                 $ map pprResult
                                 $ results)
 
@@ -130,7 +132,8 @@ build spec
         (case specResultsFileFailed spec of
           Nothing       -> return ()
           Just file     -> io   $ writeFile file
-                                $ unlines
+                                $ T.unpack
+                                $ vcat
                                 $ map pprResult
                                 $ filter (not . wasSuccess . Driver.resultProduct)
                                 $ results)
